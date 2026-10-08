@@ -12,6 +12,7 @@ using namespace EE::System;
 namespace EE { namespace Graphics {
 
 class Texture;
+using TexturePtr = ResourcePtr<Texture>;
 
 /** @enum EE::Graphics::ParticleEffect Predefined effects for the particle system. Use Callback when
  * wan't to create a new effect, o set the parameters using NoFx, but it's much more limited. */
@@ -157,7 +158,7 @@ class EE_API ParticleSystem {
   private:
 	Particle* mParticle;
 	Uint32 mPCount;
-	const Texture* mTexture;
+	TexturePtr mTexture;
 	Uint32 mPLeft;
 	Uint32 mLoops;
 

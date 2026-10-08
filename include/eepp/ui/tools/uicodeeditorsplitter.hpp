@@ -1,6 +1,9 @@
 #ifndef EE_UI_TOOLS_UICODEEDITORSPLITTER_HPP
 #define EE_UI_TOOLS_UICODEEDITORSPLITTER_HPP
 
+#include <eepp/core/containers.hpp>
+#include <eepp/scene/eventconnection.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/splitdirection.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uimessagebox.hpp>
@@ -8,18 +11,15 @@
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 
-#include <eepp/system/log.hpp>
-#include <unordered_map>
-
 using namespace EE::UI::Doc;
 
 namespace EE { namespace UI { namespace Tools {
 
 class EE_API UICodeEditorSplitter {
   public:
-	static const std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
+	static const KeyBindings::ShortcutMap getDefaultKeybindings();
 
-	static const std::map<KeyBindings::Shortcut, std::string> getLocalDefaultKeybindings();
+	static const KeyBindings::ShortcutMap getLocalDefaultKeybindings();
 
 	static Uint32 getDefaultSwitchToTabModifier();
 
@@ -430,12 +430,18 @@ class EE_API UICodeEditorSplitter {
 	size_t mNavigationHistoryMaxSize{ 100 };
 	std::vector<NavigationRecord> mNavigationHistory;
 	size_t mNavigationHistoryPos{ std::numeric_limits<size_t>::max() };
-	std::unordered_map<UICodeEditor*, TextRanges> mEditorSelections;
+	UnorderedMap<UICodeEditor*, TextRanges> mEditorSelections;
 	std::function<void( UITabWidget* )> mOnTabWidgetCreateCb;
 	Float mVisualSplitEdgePercent{ 0.1 };
 	TabTryCloseCallback mTabTryCloseCb;
 	std::function<bool( SplitDirection direction, UIWidget* widget )> mCanCreateSplitFn;
-	std::unordered_map<Node*, std::vector<Uint32>> mEventCbs;
+	// Splitter-owned widget and tab widget callbacks. Lifetime: while the node belongs to this
+	// splitter ( attached when a widget enters a managed UITabWidget through OnTabAdded, detached
+	// when it leaves one through OnTabClosed ).
+	UnorderedMap<Node*, Scene::EventConnectionList> mEventCbs;
+	// Editor-lifetime callbacks. Not detached on tab moves: they live until the editor is
+	// destroyed or the splitter is destroyed.
+	UnorderedMap<UICodeEditor*, Scene::EventConnection> mEditorCloseCbs;
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  std::shared_ptr<ThreadPool> threadPool,
@@ -444,9 +450,13 @@ class EE_API UICodeEditorSplitter {
 
 	virtual void onTabClosed( const TabEvent* tabEvent );
 
+	void attachWidgetEvents( UIWidget* widget );
+
+	void detachWidgetEvents( UIWidget* widget );
+
 	void saveEditorSelection( UICodeEditor* editor );
 
-	void restoreEditorSelection( UICodeEditor* editor );
+	void restoreEditorSelection( UICodeEditor* editor, bool scrollToCursor );
 
 	void closeAllTabs( std::vector<UITab*> tabs, UITabWidget::FocusTabBehavior focusTabBehavior );
 

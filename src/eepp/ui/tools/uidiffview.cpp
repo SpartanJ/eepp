@@ -4,22 +4,45 @@
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
+#include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
+#include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/window.hpp>
 
 #include <dtl/dtl.hpp>
 
 namespace EE { namespace UI { namespace Tools {
+
+struct UIDiffView::PreparedPatch {
+	std::vector<DiffLine> lines;
+	std::string filename;
+	std::string binaryOldPath;
+	std::string binaryNewPath;
+	std::string binaryFileName;
+	bool hasCompleteFile{ false };
+	bool isBinaryImage{ false };
+};
+
+class UIDiffView::PreparedMultiFileDiff {
+  public:
+	std::vector<PreparedPatch> patches;
+	size_t addedLines{ 0 };
+	size_t removedLines{ 0 };
+};
 
 static bool imagesHaveSameDimensions( const std::string& oldFilePath,
 									  const std::string& newFilePath ) {
@@ -39,7 +62,8 @@ static bool setImageViewerImageSize( UIImageViewer* viewer ) {
 	if ( !viewer || !viewer->getImage() || !viewer->getImage()->getDrawable() )
 		return false;
 
-	auto imageSize( viewer->getImage()->getDrawable()->getPixelsSize() );
+	// Sprite logical dimensions are source pixels; getPixelsSize() includes UI density.
+	auto imageSize( viewer->getImage()->getDrawable()->getSize() );
 	auto viewerSize( viewer->getPixelsSize() );
 	auto scale(
 		viewerSize.x > 0 && viewerSize.y > 0 &&
@@ -67,33 +91,273 @@ static Sprite* setImageViewerImage( UIImageViewer* viewer, Image* image ) {
 
 	auto sprite = Sprite::New();
 	sprite->createStatic( texture );
-	sprite->setAsTextureOwner( true );
-	sprite->setAsTextureRegionOwner( true );
+	Sprite* spritePtr = sprite.get();
 
 	viewer->reset();
-	viewer->getImage()->setDrawable( sprite, true );
+	viewer->getImage()->setDrawable( std::move( sprite ) );
 	setImageViewerImageSize( viewer );
-	return sprite;
+	return spritePtr;
 }
 
 UIScrollView* UIDiffView::NewMultiFileDiffViewer( const std::string& patchText,
-												  const std::string& repoPath ) {
+												  const std::string& repoPath, ViewMode viewMode,
+												  bool interactiveFileHeaders ) {
+	return NewMultiFileDiffViewer( prepareMultiFileDiff( patchText ), repoPath, viewMode,
+								   interactiveFileHeaders );
+}
+
+UIScrollView*
+UIDiffView::NewMultiFileDiffViewer( std::shared_ptr<PreparedMultiFileDiff> preparedDiff,
+									const std::string& repoPath, ViewMode viewMode,
+									bool interactiveFileHeaders ) {
+	if ( !preparedDiff )
+		return nullptr;
+
+	auto* uiSceneNode = SceneManager::instance()->getUISceneNode();
+	const bool wasLoading = uiSceneNode && uiSceneNode->isLoading();
+	if ( uiSceneNode )
+		uiSceneNode->setIsLoading( true );
+
 	auto scrollView = UIScrollView::New();
 	auto vbox = UILinearLayout::NewVertical();
 	vbox->setParent( scrollView );
 	vbox->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 
-	auto diffs = UIDiffView::splitDiff( patchText );
-
-	for ( const auto& diff : diffs ) {
+	for ( auto& patch : preparedDiff->patches ) {
 		auto* diffView = UIDiffView::New();
+		diffView->setViewMode( viewMode );
 		diffView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 		diffView->setParent( vbox );
 		diffView->setHeadersVisible( true );
-		diffView->loadFromPatch( diff, "", "", repoPath );
+		diffView->setViewModeToggleVisible( false );
+		diffView->setCompleteViewToggleVisible( false );
+		diffView->setInteractiveFileHeader( interactiveFileHeaders );
+		diffView->loadPreparedPatch( std::move( patch ), "", "", repoPath );
+	}
+
+	if ( uiSceneNode ) {
+		uiSceneNode->setIsLoading( wasLoading );
+		if ( !wasLoading ) {
+			// A diff view owns several editors, scroll bars, toggles and image viewers. Queueing
+			// each intermediate widget separately makes style invalidation scan an ever-growing
+			// dirty set. One recursive invalidation of the completed tree provides the same final
+			// styling.
+			uiSceneNode->invalidateStyle( scrollView, true );
+			uiSceneNode->invalidateStyleState( scrollView, true, true );
+		}
 	}
 
 	return scrollView;
+}
+
+std::vector<UIDiffView*> UIDiffView::multiFileDiffViews( UIScrollView* multiDiff ) {
+	return multiDiff ? multiDiff->findAllByType<UIDiffView>( UI_TYPE_DIFF_VIEW )
+					 : std::vector<UIDiffView*>{};
+}
+
+void UIDiffView::setMultiFileViewMode( UIScrollView* multiDiff, ViewMode mode ) {
+	for ( auto* diff : multiFileDiffViews( multiDiff ) )
+		diff->setViewMode( mode );
+}
+
+void UIDiffView::setMultiFileCollapsed( UIScrollView* multiDiff, bool collapsed ) {
+	for ( auto* diff : multiFileDiffViews( multiDiff ) )
+		diff->setCollapsed( collapsed );
+}
+
+UIMultiDiffView* UIMultiDiffView::New( const std::string& patchText, const std::string& repoPath,
+									   UIDiffView::ViewMode viewMode,
+									   bool interactiveFileHeaders ) {
+	return New( UIDiffView::prepareMultiFileDiff( patchText ), repoPath, viewMode,
+				interactiveFileHeaders );
+}
+
+UIMultiDiffView*
+UIMultiDiffView::New( std::shared_ptr<UIDiffView::PreparedMultiFileDiff> preparedDiff,
+					  const std::string& repoPath, UIDiffView::ViewMode viewMode,
+					  bool interactiveFileHeaders ) {
+	if ( !preparedDiff )
+		return nullptr;
+	auto* view = eeNew( UIMultiDiffView, () );
+	view->load( std::move( preparedDiff ), repoPath, viewMode, interactiveFileHeaders );
+	return view;
+}
+
+UIMultiDiffView::UIMultiDiffView() : UILinearLayout( "multidiffview", UIOrientation::Vertical ) {
+	beginAttributesTransaction();
+
+	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+
+	mToolbar = UILinearLayout::NewHorizontal();
+	mToolbar->setParent( this );
+	mToolbar->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+	mToolbar->setPadding( Rectf( 8, 4, 8, 4 ) );
+
+	mFilesToggle = UIPushButton::New();
+	mFilesToggle->setParent( mToolbar );
+	mFilesToggle->addClass( "git_commit_btn" );
+	mFilesToggle->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+	mFilesToggle->onClick( [this]( const Event* ) { setCollapsed( !mCollapsed ); } );
+
+	mModeToggle = UIPushButton::New();
+	mModeToggle->setParent( mToolbar );
+	mModeToggle->addClass( "git_commit_btn" );
+	mModeToggle->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+	mModeToggle->setLayoutMarginLeft( 4 );
+	mModeToggle->setTextAsFallback( true );
+	mModeToggle->onClick( [this]( const Event* ) {
+		setViewMode( mViewMode == UIDiffView::ViewMode::Unified ? UIDiffView::ViewMode::SideBySide
+																: UIDiffView::ViewMode::Unified );
+	} );
+
+	mFilesStatus = UITextView::New();
+	mFilesStatus->setParent( mToolbar );
+	mFilesStatus->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
+	mFilesStatus->setLayoutWeight( 1 );
+	mFilesStatus->setLayoutMarginLeft( 8 );
+	mFilesStatus->setGravity( UI_VALIGN_CENTER );
+	mFilesStatus->setLayoutGravity( UI_VALIGN_CENTER );
+	mFilesStatus->setUsingCustomStyling( true );
+
+	mScrollView = UIScrollView::New();
+	mScrollView->setParent( this );
+	mScrollView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
+	mScrollView->setLayoutWeight( 1 );
+
+	endAttributesTransaction();
+}
+
+void UIMultiDiffView::load( std::shared_ptr<UIDiffView::PreparedMultiFileDiff> preparedDiff,
+							const std::string& repoPath, UIDiffView::ViewMode viewMode,
+							bool interactiveFileHeaders ) {
+	auto* uiSceneNode = SceneManager::instance()->getUISceneNode();
+	const bool wasLoading = uiSceneNode && uiSceneNode->isLoading();
+	if ( uiSceneNode )
+		uiSceneNode->setIsLoading( true );
+
+	mViewMode = viewMode;
+	mFileCount = preparedDiff->patches.size();
+	mAddedLines = preparedDiff->addedLines;
+	mRemovedLines = preparedDiff->removedLines;
+	auto* content = UILinearLayout::NewVertical();
+	content->setParent( mScrollView );
+	content->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+	mDiffViews.reserve( preparedDiff->patches.size() );
+	for ( auto& patch : preparedDiff->patches ) {
+		auto* diffView = UIDiffView::New();
+		diffView->setViewMode( viewMode );
+		diffView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+		diffView->setParent( content );
+		diffView->setHeadersVisible( true );
+		diffView->setViewModeToggleVisible( false );
+		diffView->setCompleteViewToggleVisible( false );
+		diffView->setInteractiveFileHeader( interactiveFileHeaders );
+		diffView->loadPreparedPatch( std::move( patch ), "", "", repoPath );
+		mDiffViews.emplace_back( diffView );
+	}
+
+	updateFilesToggle();
+	updateModeToggle();
+	updateStatus();
+	if ( uiSceneNode ) {
+		uiSceneNode->setIsLoading( wasLoading );
+		if ( !wasLoading ) {
+			uiSceneNode->invalidateStyle( this, true );
+			uiSceneNode->invalidateStyleState( this, true, true );
+		}
+	}
+}
+
+void UIMultiDiffView::setViewMode( UIDiffView::ViewMode mode ) {
+	if ( mViewMode == mode )
+		return;
+	mViewMode = mode;
+	for ( auto* diff : mDiffViews )
+		diff->setViewMode( mode );
+	updateModeToggle();
+}
+
+void UIMultiDiffView::setCollapsed( bool collapsed ) {
+	if ( mCollapsed == collapsed )
+		return;
+	mCollapsed = collapsed;
+	for ( auto* diff : mDiffViews )
+		diff->setCollapsed( collapsed );
+	updateFilesToggle();
+}
+
+void UIMultiDiffView::setToolbarVisible( bool visible ) {
+	mToolbar->setVisible( visible );
+}
+
+bool UIMultiDiffView::isToolbarVisible() const {
+	return mToolbar->isVisible();
+}
+
+void UIMultiDiffView::updateFilesToggle() {
+	const String text = mCollapsed ? i18n( "git_expand_all_files", "Expand All Files" )
+								   : i18n( "git_collapse_all_files", "Collapse All Files" );
+	mFilesToggle->setTooltipText( text );
+	if ( auto* scene = getUISceneNode() ) {
+		if ( auto* icon = scene->findIcon( mCollapsed ? "expand-all" : "collapse-all" ) )
+			mFilesToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+	}
+	mFilesToggle->setText( mFilesToggle->hasIcon() ? String{} : text );
+}
+
+void UIMultiDiffView::updateModeToggle() {
+	const bool unified = mViewMode == UIDiffView::ViewMode::Unified;
+	mModeToggle->setText( unified ? i18n( "git_split_diff", "Split" )
+								  : i18n( "git_unified_diff", "Unified" ) );
+	mModeToggle->setTooltipText(
+		unified ? i18n( "git_switch_to_split_diff", "Switch to split diff view" )
+				: i18n( "git_switch_to_unified_diff", "Switch to unified diff view" ) );
+	if ( auto* scene = getUISceneNode() ) {
+		if ( auto* icon = scene->findIcon( unified ? "split-horizontal" : "layout" ) )
+			mModeToggle->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+	}
+}
+
+void UIMultiDiffView::updateStatus() {
+	mFilesStatus->setText( String::format(
+		i18n( "git_changed_files_summary", "Changed files (%zu)  +%zu -%zu" ).toUtf8(), mFileCount,
+		mAddedLines, mRemovedLines ) );
+	if ( auto* scene = getUISceneNode();
+		 scene && scene->getRoot() && scene->getRoot()->getUIStyle() ) {
+		auto* root = scene->getRoot();
+		auto font = root->getUIStyle()->getVariable( "--font" );
+		auto warning = root->getUIStyle()->getVariable( "--theme-warning" );
+		auto success = root->getUIStyle()->getVariable( "--theme-success" );
+		auto error = root->getUIStyle()->getVariable( "--theme-error" );
+		std::vector<SyntaxPattern> patterns;
+		patterns.emplace_back( SyntaxPattern( { ".*%((%d+)%)%s+(%+%d+)%s+(%-%d+)" },
+											  { "normal", "warning", "keyword", "type" } ) );
+		SyntaxDefinition definition( "multi_diff_files_status", {}, std::move( patterns ) );
+		SyntaxColorScheme scheme(
+			"multi_diff_files_status",
+			{ { "normal"_sst,
+				{ font.isEmpty() ? mFilesStatus->getFontColor()
+								 : Color::fromString( font.getValue() ) } },
+			  { "warning"_sst,
+				{ warning.isEmpty() ? Color( 220, 170, 0 )
+									: Color::fromString( warning.getValue() ) } },
+			  { "keyword"_sst,
+				{ success.isEmpty() ? Color( 0, 180, 60 )
+									: Color::fromString( success.getValue() ) } },
+			  { "type"_sst,
+				{ error.isEmpty() ? Color( 220, 50, 70 )
+								  : Color::fromString( error.getValue() ) } } },
+			{} );
+		SyntaxTokenizer::tokenizeText( definition, scheme, mFilesStatus->getTextCache() );
+		mFilesStatus->invalidateDraw();
+	}
+}
+
+void UIMultiDiffView::onThemeLoaded() {
+	UILinearLayout::onThemeLoaded();
+	updateFilesToggle();
+	updateModeToggle();
+	updateStatus();
 }
 
 class UIDiffEditorPlugin : public UICodeEditorPlugin {
@@ -126,13 +390,28 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 
 	void onRegister( UICodeEditor* editor ) override {
 		Float glyphWidth = editor->getGlyphWidth();
-		Float totalChars = mView->getViewMode() == UIDiffView::ViewMode::Unified ? 10 : 5;
-		mGutterWidth = PixelDensity::dpToPx( glyphWidth * totalChars );
+		Float totalChars =
+			editor == mView->getEditor() ? mLineNumberDigits * 2 + 1 : mLineNumberDigits;
+		mGutterWidth = glyphWidth * totalChars;
 		mPluginTopSpace = PixelDensity::dpToPxI( 20 );
 		editor->registerGutterSpace( this, mGutterWidth, 0 );
 
 		if ( mView->areHeadersVisible() ) {
 			editor->registerTopSpace( this, mPluginTopSpace, 0 );
+		}
+
+		if ( mView->isInteractiveFileHeader() ) {
+			mHeaderIconWidth = 0;
+			const int iconSize = PixelDensity::dpToPxI( 14 );
+			if ( auto* icon = editor->getUISceneNode()->findIcon( "chevron-down" ) )
+				mExpandedIcon = icon->createDrawable( iconSize );
+			if ( auto* icon = editor->getUISceneNode()->findIcon( "chevron-right" ) )
+				mCollapsedIcon = icon->createDrawable( iconSize );
+			if ( mExpandedIcon )
+				mHeaderIconWidth = mExpandedIcon->getPixelsSize().getWidth();
+			if ( mCollapsedIcon )
+				mHeaderIconWidth =
+					std::max( mHeaderIconWidth, mCollapsedIcon->getPixelsSize().getWidth() );
 		}
 	}
 
@@ -146,6 +425,13 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 	void registerUpdate( UICodeEditor* editor ) {
 		onUnregister( editor );
 		onRegister( editor );
+	}
+
+	void setLineNumberDigits( UICodeEditor* editor, int digits ) {
+		if ( mLineNumberDigits == digits )
+			return;
+		mLineNumberDigits = digits;
+		registerUpdate( editor );
 	}
 
 	void drawTop( UICodeEditor* editor, const Vector2f& screenStart, const Sizef& size,
@@ -170,12 +456,88 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 		Float fontSize = editor->getUISceneNode()->getUIThemeManager()->getDefaultFontSize();
 		Float textOffsetY =
 			eefloor( ( size.getHeight() - font->getLineSpacing( fontSize ) ) * 0.5f );
-		Color textColor( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::LineNumber2 ) );
-		Vector2f pos( screenStart.x + eefloor( PixelDensity::dpToPx( 8 ) ),
-					  screenStart.y + textOffsetY );
+		const Uint32 textHints = mView->getFileName().getTextHints() | mView->getDefaultTextHints();
+		Color textColor( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Text ) );
+		Color hintColor( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::LineNumber2 ) );
+		FontStyleConfig textConfig;
+		textConfig.Font = font;
+		textConfig.CharacterSize = fontSize;
+		textConfig.FontColor = textColor;
+		Float left = screenStart.x + eefloor( PixelDensity::dpToPx( 8 ) );
+		const Float gap = eefloor( PixelDensity::dpToPx( 6 ) );
 
-		Text::draw( mView->getFileName(), pos, font, fontSize, textColor, 0, 0.f, Color::Black,
-					Color::Black, { 1, 1 }, 4, mView->getFileName().getTextHints() );
+		if ( mView->isInteractiveFileHeader() ) {
+			auto& icon = mView->isCollapsed() ? mCollapsedIcon : mExpandedIcon;
+			if ( icon ) {
+				icon->setColor( textColor );
+				const Sizef iconSize = icon->getPixelsSize();
+				icon->draw(
+					{ left + eefloor( ( mHeaderIconWidth - iconSize.x ) * 0.5f ),
+					  screenStart.y + eefloor( ( size.getHeight() - iconSize.y ) * 0.5f ) } );
+			}
+			left += mHeaderIconWidth + gap;
+		}
+
+		Vector2f pos( left, screenStart.y + textOffsetY );
+		const String& fileName = mView->getFileDisplayName().empty() ? mView->getFileName()
+																	 : mView->getFileDisplayName();
+		Text::draw( fileName, pos, font, fontSize, textColor, 0, 0.f, Color::Black, Color::Black,
+					{ 1, 1 }, 4, textHints );
+		pos.x += Text::getTextWidth( fileName, textConfig, 4, textHints ) + gap;
+		if ( !mView->getFileDisplayPath().empty() )
+			Text::draw( mView->getFileDisplayPath(), pos, font, fontSize, hintColor, 0, 0.f,
+						Color::Black, Color::Black, { 1, 1 }, 4, textHints );
+
+		if ( mView->isInteractiveFileHeader() ) {
+			const auto variableColor = [editor]( const char* variable, Color fallback ) {
+				auto value =
+					editor->getUISceneNode()->getRoot()->getUIStyle()->getVariable( variable );
+				return value.isEmpty() ? fallback : Color::fromString( value.getValue() );
+			};
+			const Color addedColor = variableColor( "--theme-success", Color( 0, 180, 60 ) );
+			const Color removedColor = variableColor( "--theme-error", Color( 220, 50, 70 ) );
+			FontStyleConfig addedConfig( textConfig );
+			addedConfig.FontColor = addedColor;
+			FontStyleConfig removedConfig( textConfig );
+			removedConfig.FontColor = removedColor;
+			const Float removedWidth =
+				Text::getTextWidth( mView->getRemovedLinesText(), removedConfig, 4, textHints );
+			const Float addedWidth =
+				Text::getTextWidth( mView->getAddedLinesText(), addedConfig, 4, textHints );
+			Float right = screenStart.x + width - eefloor( PixelDensity::dpToPx( 8 ) );
+			right -= removedWidth;
+			Text::draw( mView->getRemovedLinesText(), { right, screenStart.y + textOffsetY }, font,
+						fontSize, removedColor, 0, 0.f, Color::Black, Color::Black, { 1, 1 }, 4,
+						textHints );
+			right -= gap + addedWidth;
+			Text::draw( mView->getAddedLinesText(), { right, screenStart.y + textOffsetY }, font,
+						fontSize, addedColor, 0, 0.f, Color::Black, Color::Black, { 1, 1 }, 4,
+						textHints );
+		}
+	}
+
+	bool onMouseClick( UICodeEditor* editor, const Vector2i& position,
+					   const Uint32& flags ) override {
+		if ( !mView->isInteractiveFileHeader() || !( flags & EE_BUTTON_LMASK ) )
+			return false;
+		const Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
+		if ( localPos.x >= 0 && localPos.x < editor->getTopAreaWidth() && localPos.y >= 0 &&
+			 localPos.y < mPluginTopSpace ) {
+			mView->setCollapsed( !mView->isCollapsed() );
+			return true;
+		}
+		return false;
+	}
+
+	bool onMouseMove( UICodeEditor* editor, const Vector2i& position,
+					  const Uint32& /*flags*/ ) override {
+		if ( !mView->isInteractiveFileHeader() )
+			return false;
+		const Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
+		if ( localPos.x >= 0 && localPos.x < editor->getTopAreaWidth() && localPos.y >= 0 &&
+			 localPos.y < mPluginTopSpace )
+			editor->getUISceneNode()->setCursor( Cursor::Hand );
+		return false;
 	}
 
 	void drawBeforeLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
@@ -249,34 +611,37 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 		const auto& lines = mView->getDiffLines();
 		const auto& line = lines[viewLines[index]];
 
-		static constexpr auto bufSize = 16;
+		static constexpr auto bufSize = 64;
 		String::StringBaseType buf[bufSize] = {};
 		if ( mView->getViewMode() == UIDiffView::ViewMode::Unified ) {
 			switch ( line.type ) {
 				case UIDiffView::DiffLineType::Added:
-					String::formatBuffer( buf, bufSize, "%5s %5lld", "",
-										  (long long)line.newLineNum );
+					String::formatBuffer( buf, bufSize, "%*s %*lld", mLineNumberDigits, "",
+										  mLineNumberDigits, (long long)line.newLineNum );
 					break;
 				case UIDiffView::DiffLineType::Removed:
-					String::formatBuffer( buf, bufSize, "%5lld %5s", (long long)line.oldLineNum,
-										  "" );
+					String::formatBuffer( buf, bufSize, "%*lld %*s", mLineNumberDigits,
+										  (long long)line.oldLineNum, mLineNumberDigits, "" );
 					break;
 				case UIDiffView::DiffLineType::Header:
-					String::formatBuffer( buf, bufSize, "%5lld %5lld", (long long)line.oldLineNum,
+					String::formatBuffer( buf, bufSize, "%*lld %*lld", mLineNumberDigits,
+										  (long long)line.oldLineNum, mLineNumberDigits,
 										  (long long)line.newLineNum );
 					break;
 				case UIDiffView::DiffLineType::Common:
-					String::formatBuffer( buf, bufSize, "%5lld %5s", (long long)line.oldLineNum,
-										  "" );
+					String::formatBuffer( buf, bufSize, "%*lld %*s", mLineNumberDigits,
+										  (long long)line.oldLineNum, mLineNumberDigits, "" );
 					break;
 			}
 		} else {
 			if ( editor == mView->getLeftEditor() ) {
 				if ( line.oldLineNum > 0 )
-					String::formatBuffer( buf, bufSize, "%5lld", (long long)line.oldLineNum );
+					String::formatBuffer( buf, bufSize, "%*lld", mLineNumberDigits,
+										  (long long)line.oldLineNum );
 			} else {
 				if ( line.newLineNum > 0 )
-					String::formatBuffer( buf, bufSize, "%5lld", (long long)line.newLineNum );
+					String::formatBuffer( buf, bufSize, "%*lld", mLineNumberDigits,
+										  (long long)line.newLineNum );
 			}
 		}
 
@@ -287,20 +652,25 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 		FontStyleConfig config = editor->getFontStyleConfig();
 		config.FontColor = editor->getColorScheme().getEditorColor( SyntaxStyleTypes::LineNumber );
 
-		Float textWidth = Text::getTextWidth( text, config, 4, TextHints::AllAscii );
+		const Uint32 textHints = TextHints::AllAscii | editor->getDefaultTextHints();
+		Float textWidth = Text::getTextWidth( text, config, 4, textHints );
 
 		Vector2f pos( screenStart.x + std::floor( ( mGutterWidth - textWidth ) * 0.5f ),
 					  screenStart.y + std::floor( ( lineHeight - config.Font->getLineSpacing(
 																	 config.CharacterSize ) ) *
 												  0.5f ) );
 
-		Text::draw( text, pos, config, 4, TextHints::AllAscii );
+		Text::draw( text, pos, config, 4, textHints );
 	}
 
   protected:
 	UIDiffView* mView;
+	int mLineNumberDigits{ 5 };
 	Float mGutterWidth{ 0 };
 	Float mPluginTopSpace{ 0 };
+	Float mHeaderIconWidth{ 0 };
+	DrawablePtr mExpandedIcon;
+	DrawablePtr mCollapsedIcon;
 };
 
 UIDiffView* UIDiffView::New() {
@@ -363,7 +733,6 @@ UIDiffView::UIDiffView() :
 	createEditor( mEditor, mPlugin );
 	createEditor( mLeftEditor, mLeftPlugin );
 	createEditor( mRightEditor, mRightPlugin );
-	createImageViewers();
 
 	mEditor->on( Event::OnFontChanged, [this]( auto ) { mPlugin->registerUpdate( mEditor ); } );
 	mLeftEditor->on( Event::OnFontChanged, [this]( auto ) {
@@ -376,6 +745,16 @@ UIDiffView::UIDiffView() :
 		mLeftEditor->setFontSize( mRightEditor->getFontSize() );
 		mLeftPlugin->registerUpdate( mLeftEditor );
 	} );
+	mRightEditor->getVScrollBar()->on( Event::OnSizeChange,
+									   [this]( auto ) { updateModeButton(); } );
+
+	for ( auto* editor : { mEditor, mLeftEditor, mRightEditor } ) {
+		editor->on( Event::OnSizeChange, [this]( auto ) { onAutoSize(); } );
+
+		editor->on( Event::OnShowFindReplace, [this]( auto ) { updateButtonsVisibility(); } );
+
+		editor->on( Event::OnHideFindReplace, [this]( auto ) { updateButtonsVisibility(); } );
+	}
 
 	mLeftEditor->setVisible( false );
 	mRightEditor->setVisible( false );
@@ -413,7 +792,6 @@ UIDiffView::UIDiffView() :
 	mCompleteViewToggle->on( Event::OnSizeChange, [this]( auto ) { updateModeButton(); } );
 
 	updateButtonsText();
-	updateImagesPosAndSize();
 }
 
 UIDiffView::~UIDiffView() {
@@ -450,32 +828,34 @@ void UIDiffView::createEditor( UICodeEditor*& editor,
 	editor->registerPlugin( plugin.get() );
 }
 
-void UIDiffView::createImageViewers() {
-	const auto initImageView = [this] {
-		auto iv = UIImageViewer::New();
-		iv->setParent( this );
-		iv->setVisible( false );
-		iv->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-		iv->setDisplayOptions( UIImageViewer::DisplayDimensions );
-		return iv;
-	};
-	mLeftImageViewer = initImageView();
-	mRightImageViewer = initImageView();
-	mDiffImageViewer = initImageView();
+UIImageViewer* UIDiffView::createImageViewer() {
+	auto* imageViewer = UIImageViewer::New();
+	imageViewer->setParent( this );
+	// Image viewers are created lazily; keep the overlay buttons last for hit testing.
+	mModeToggle->toFront();
+	mCompleteViewToggle->toFront();
+	imageViewer->setVisible( false );
+	imageViewer->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	imageViewer->setDisplayOptions( UIImageViewer::DisplayDimensions );
+	imageViewer->setUseNativeImageSize( true );
+	return imageViewer;
+}
+
+void UIDiffView::resetImageViewers() {
+	for ( auto* imageViewer : { mLeftImageViewer, mRightImageViewer, mDiffImageViewer } ) {
+		if ( imageViewer ) {
+			imageViewer->reset();
+			imageViewer->setVisible( false );
+		}
+	}
+	mSprite = nullptr;
 }
 
 void UIDiffView::resetToTextDiffView() {
 	mIsImageDiff = false;
 	mImageDiffOldPath.clear();
 	mImageDiffNewPath.clear();
-	if ( mLeftImageViewer ) {
-		mLeftImageViewer->reset();
-		mLeftImageViewer->setVisible( false );
-	}
-	if ( mRightImageViewer ) {
-		mRightImageViewer->reset();
-		mRightImageViewer->setVisible( false );
-	}
+	resetImageViewers();
 	mEditor->setVisible( mViewMode == ViewMode::Unified );
 	mLeftEditor->setVisible( mViewMode == ViewMode::SideBySide );
 	mRightEditor->setVisible( mViewMode == ViewMode::SideBySide );
@@ -488,8 +868,8 @@ void UIDiffView::setViewMode( ViewMode mode ) {
 	mViewMode = mode;
 
 	if ( mIsImageDiff ) {
-		onSizeChange();
 		updateImageDiffView();
+		onSizeChange();
 		updateButtonsText();
 		return;
 	}
@@ -517,7 +897,7 @@ void UIDiffView::setViewMode( ViewMode mode ) {
 
 void UIDiffView::setViewModeToggleVisible( bool visible ) {
 	mViewModeToggleVisible = visible;
-	mModeToggle->setVisible( visible );
+	updateButtonsVisibility();
 	updateModeButton();
 }
 
@@ -528,6 +908,7 @@ void UIDiffView::setCompleteView( bool complete ) {
 	updateButtonsText();
 	if ( mIsImageDiff ) {
 		updateImageDiffView();
+		onSizeChange();
 		return;
 	}
 	updateEditorsText();
@@ -535,7 +916,7 @@ void UIDiffView::setCompleteView( bool complete ) {
 
 void UIDiffView::setCompleteViewToggleVisible( bool visible ) {
 	mCompleteViewToggleVisible = visible;
-	mCompleteViewToggle->setVisible( visible );
+	updateButtonsVisibility();
 	updateModeButton();
 }
 
@@ -556,7 +937,8 @@ void UIDiffView::updateModeButton() {
 	auto vmargin = mHeadersVisible ? emptySpace * 0.5f : margin;
 
 	Float currentX = getPixelsSize().getWidth() - margin;
-	currentX -= mRightEditor->getVScrollBar()->getPixelsSize().getWidth();
+	Float vScrollWidth = mRightEditor->getVScrollBar()->getPixelsSize().getWidth();
+	currentX -= vScrollWidth;
 
 	if ( mViewModeToggleVisible && mModeToggle ) {
 		currentX -= mModeToggle->getPixelsSize().getWidth();
@@ -588,55 +970,64 @@ void UIDiffView::onAutoSize() {
 		return;
 
 	if ( mEditor && mLeftEditor && !mIsImageDiff ) {
-		setPixelsSize( getPixelsSize().getWidth(), mViewMode == ViewMode::Unified
-													   ? mEditor->getPixelsSize().getHeight()
-													   : mLeftEditor->getPixelsSize().getHeight() );
+		setPixelsSize( getPixelsSize().getWidth(),
+					   std::ceil( mViewMode == ViewMode::Unified
+									  ? mEditor->getPixelsSize().getHeight()
+									  : mLeftEditor->getPixelsSize().getHeight() ) );
 	}
 
-	if ( mIsImageDiff && mLeftImageViewer && mRightImageViewer && mDiffImageViewer ) {
+	if ( mIsImageDiff ) {
 		bool displayDiffImage;
 		bool displayLeftImage;
 		imageDisplayState( displayDiffImage, displayLeftImage );
 		Float height = PixelDensity::dpToPx( 64 ); // force a min height
 		auto viewImageHeight = []( auto iv ) -> Float {
 			if ( iv && iv->getImage() && iv->getImage()->getDrawable() )
-				return iv->getImage()->getDrawable()->getPixelsSize().getHeight();
+				return iv->getImage()->getDrawable()->getSize().getHeight();
 			return 0;
 		};
 
-		height = std::max( height, viewImageHeight( mLeftImageViewer ) );
-		height = std::max( height, viewImageHeight( mRightImageViewer ) );
-
-		if ( displayDiffImage )
-			height = std::max( height, viewImageHeight( mDiffImageViewer ) );
+		if ( displayDiffImage ) {
+			height = std::ceil( std::max( height, viewImageHeight( mDiffImageViewer ) ) );
+		} else {
+			if ( displayLeftImage )
+				height = std::max( height, viewImageHeight( mLeftImageViewer ) );
+			height = std::max( height, viewImageHeight( mRightImageViewer ) );
+		}
 
 		setPixelsSize( getPixelsSize().getWidth(), height );
 	}
 }
 
 void UIDiffView::updateImagesPosAndSize() {
+	if ( !mIsImageDiff )
+		return;
+
 	const Sizef size( getPixelsSize() );
 
 	bool displayDiffImage;
 	bool displayLeftImage;
 	imageDisplayState( displayDiffImage, displayLeftImage );
 
-	mLeftImageViewer->setVisible( true );
-	mLeftImageViewer->setPixelsPosition( 0, 0 );
-	mLeftImageViewer->setPixelsSize( { size.getWidth() * 0.5f, size.getHeight() } );
-	setImageViewerImageSize( mLeftImageViewer );
+	if ( mLeftImageViewer ) {
+		mLeftImageViewer->setPixelsPosition( 0, 0 );
+		mLeftImageViewer->setPixelsSize( { size.getWidth() * 0.5f, size.getHeight() } );
+		setImageViewerImageSize( mLeftImageViewer );
+	}
 
-	mRightImageViewer->setVisible( true );
-	mRightImageViewer->setPixelsSize(
-		displayLeftImage ? Sizef{ size.getWidth() * 0.5f, size.getHeight() } : size );
-	mRightImageViewer->setPixelsPosition(
-		displayLeftImage ? std::floor( size.getWidth() * 0.5f ) : 0.f, 0.f );
-	setImageViewerImageSize( mRightImageViewer );
+	if ( mRightImageViewer ) {
+		mRightImageViewer->setPixelsSize(
+			displayLeftImage ? Sizef{ size.getWidth() * 0.5f, size.getHeight() } : size );
+		mRightImageViewer->setPixelsPosition(
+			displayLeftImage ? std::floor( size.getWidth() * 0.5f ) : 0.f, 0.f );
+		setImageViewerImageSize( mRightImageViewer );
+	}
 
-	mDiffImageViewer->setVisible( true );
-	mDiffImageViewer->setPixelsPosition( 0, 0 );
-	mDiffImageViewer->setPixelsSize( size );
-	setImageViewerImageSize( mDiffImageViewer );
+	if ( mDiffImageViewer ) {
+		mDiffImageViewer->setPixelsPosition( 0, 0 );
+		mDiffImageViewer->setPixelsSize( size );
+		setImageViewerImageSize( mDiffImageViewer );
+	}
 
 	onAutoSize();
 	updateModeButton();
@@ -677,8 +1068,12 @@ void UIDiffView::updateEditorsText() {
 	String leftText;
 	String rightText;
 	mViewLines.clear();
+	Int64 largestLineNum = 99999;
 
 	for ( size_t i = 0; i < mLines.size(); ++i ) {
+		largestLineNum = std::max( { largestLineNum, mLines[i].oldLineNum, mLines[i].newLineNum } );
+		if ( mCollapsed )
+			continue;
 		bool showLine = mShowCompleteView;
 
 		if ( !showLine ) {
@@ -725,6 +1120,11 @@ void UIDiffView::updateEditorsText() {
 		mLeftEditor->getDocument().setSyntaxDefinition( mSyntaxDef );
 		mRightEditor->getDocument().setSyntaxDefinition( mSyntaxDef );
 	}
+
+	const int lineNumberDigits = Math::countDigits( largestLineNum );
+	mPlugin->setLineNumberDigits( mEditor, lineNumberDigits );
+	mLeftPlugin->setLineNumberDigits( mLeftEditor, lineNumberDigits );
+	mRightPlugin->setLineNumberDigits( mRightEditor, lineNumberDigits );
 }
 
 bool UIDiffView::loadImageDiffFromPaths( const std::string& oldFilePath,
@@ -736,6 +1136,7 @@ bool UIDiffView::loadImageDiffFromPaths( const std::string& oldFilePath,
 	if ( !hasOldImage && !hasNewImage )
 		return false;
 
+	resetImageViewers();
 	mLines.clear();
 	mViewLines.clear();
 	mSyntaxDef.reset();
@@ -759,8 +1160,8 @@ bool UIDiffView::loadImageDiffFromPaths( const std::string& oldFilePath,
 
 	setCompleteViewToggleVisible( !mImageDiffOldPath.empty() && !mImageDiffNewPath.empty() );
 	updateButtonsText();
-	onSizeChange();
 	updateImageDiffView();
+	onSizeChange();
 	return true;
 }
 
@@ -790,18 +1191,23 @@ void UIDiffView::updateImageDiffView() {
 	mLeftEditor->setVisible( false );
 	mRightEditor->setVisible( false );
 
-	mDiffImageViewer->setVisible( false );
+	if ( mDiffImageViewer )
+		mDiffImageViewer->setVisible( false );
 
 	if ( displayLeftImage ) {
+		if ( !mLeftImageViewer )
+			mLeftImageViewer = createImageViewer();
 		mLeftImageViewer->setVisible( true );
 		if ( !mLeftImageViewer->hasImage() )
 			mLeftImageViewer->loadImageAsync( mImageDiffOldPath, false, false );
-	} else {
+	} else if ( mLeftImageViewer ) {
 		mLeftImageViewer->reset();
 		mLeftImageViewer->setVisible( false );
 	}
 
 	if ( displayDiffImage ) {
+		if ( !mDiffImageViewer )
+			mDiffImageViewer = createImageViewer();
 		if ( nullptr == mSprite ) {
 			Image oldImage( mImageDiffOldPath, 4 );
 			Image newImage( mImageDiffNewPath, 4 );
@@ -812,8 +1218,10 @@ void UIDiffView::updateImageDiffView() {
 			}
 		}
 
-		mLeftImageViewer->setVisible( false );
-		mRightImageViewer->setVisible( false );
+		if ( mLeftImageViewer )
+			mLeftImageViewer->setVisible( false );
+		if ( mRightImageViewer )
+			mRightImageViewer->setVisible( false );
 		mDiffImageViewer->setVisible( true );
 		return;
 	}
@@ -822,21 +1230,24 @@ void UIDiffView::updateImageDiffView() {
 		mImageDiffNewPath.empty() ? mImageDiffOldPath : mImageDiffNewPath;
 
 	if ( !displayPath.empty() ) {
+		if ( !mRightImageViewer )
+			mRightImageViewer = createImageViewer();
 		mRightImageViewer->setVisible( true );
 		if ( !mRightImageViewer->hasImage() )
 			mRightImageViewer->loadImageAsync( displayPath, false, false );
-	} else {
+	} else if ( mRightImageViewer ) {
 		mRightImageViewer->reset();
 		mRightImageViewer->setVisible( false );
 	}
 }
 
-void UIDiffView::computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine ) {
+static void computeSubLineDiffImpl( UIDiffView::DiffLine& oldLine, UIDiffView::DiffLine& newLine,
+									UIDiffView::SubLineDiffAlgorithm algorithm ) {
 	dtl::Diff<String::StringBaseType, String::View> diff( oldLine.text.view(),
 														  newLine.text.view() );
 	diff.compose();
 
-	if ( mSubLineDiffAlgorithm == SubLineDiffAlgorithm::SES ) {
+	if ( algorithm == UIDiffView::SubLineDiffAlgorithm::SES ) {
 		auto ses = diff.getSes().getSequence();
 		Int64 oldIdx = 0;
 		Int64 newIdx = 0;
@@ -906,11 +1317,18 @@ void UIDiffView::computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine ) {
 	}
 }
 
-static void applySubLineDiff(
+void UIDiffView::computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine ) {
+	computeSubLineDiffImpl( oldLine, newLine, mSubLineDiffAlgorithm );
+}
+
+static bool applySubLineDiff(
 	std::vector<UIDiffView::DiffLine>& lines,
-	std::function<void( UIDiffView::DiffLine&, UIDiffView::DiffLine& )> computeSubLineDiff ) {
+	std::function<void( UIDiffView::DiffLine&, UIDiffView::DiffLine& )> computeSubLineDiff,
+	const std::shared_ptr<std::atomic_bool>& cancelled = {} ) {
 	size_t i = 0;
 	while ( i < lines.size() ) {
+		if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
+			return false;
 		if ( lines[i].type == UIDiffView::DiffLineType::Removed ) {
 			size_t j = i;
 			while ( j < lines.size() && lines[j].type == UIDiffView::DiffLineType::Removed )
@@ -923,6 +1341,8 @@ static void applySubLineDiff(
 			size_t numAdded = k - j;
 			size_t numToCompare = std::min( numRemoved, numAdded );
 			for ( size_t m = 0; m < numToCompare; m++ ) {
+				if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
+					return false;
 				computeSubLineDiff( lines[i + m], lines[j + m] );
 			}
 			i = k;
@@ -930,6 +1350,7 @@ static void applySubLineDiff(
 			i++;
 		}
 	}
+	return true;
 }
 
 struct BinaryImagePatch {
@@ -1050,19 +1471,21 @@ static BinaryImagePatch parseBinaryImagePatch( const std::vector<std::string>& l
 	return patch;
 }
 
-void UIDiffView::loadFromPatch( const std::string& patchText, const std::string& originalFilePath,
-								const std::string& oldFilePath, const std::string& repoPath ) {
-	resetToTextDiffView();
-	mLines.clear();
+UIDiffView::PreparedPatch
+UIDiffView::preparePatch( const std::string& patchText, const std::string& originalFilePath,
+						  SubLineDiffAlgorithm algorithm,
+						  const std::shared_ptr<std::atomic_bool>& cancelled ) {
+	PreparedPatch prepared;
 	auto lines = String::split( patchText, '\n', true );
+	if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
+		return prepared;
 
 	std::string fileText;
-	bool hasCompleteFile = false;
 	std::vector<std::string> fileLines;
 	if ( !originalFilePath.empty() && FileSystem::fileExists( originalFilePath ) ) {
 		FileSystem::fileGet( originalFilePath, fileText );
 		fileLines = String::split( fileText, '\n', true );
-		hasCompleteFile = true;
+		prepared.hasCompleteFile = true;
 	}
 
 	Int64 oldLineNum = 0;
@@ -1072,26 +1495,16 @@ void UIDiffView::loadFromPatch( const std::string& patchText, const std::string&
 	std::string filename;
 
 	auto imagePatch = parseBinaryImagePatch( lines, originalFilePath );
-	if ( imagePatch.isBinary ) {
-		std::string oldImagePath( oldFilePath );
-		if ( oldImagePath.empty() ) {
-			oldImagePath =
-				resolveImagePatchPath( imagePatch.oldPath, originalFilePath, false, repoPath );
-		}
-		std::string newImagePath(
-			resolveImagePatchPath( imagePatch.newPath, originalFilePath, true, repoPath ) );
+	prepared.isBinaryImage = imagePatch.isBinary;
+	prepared.binaryOldPath = std::move( imagePatch.oldPath );
+	prepared.binaryNewPath = std::move( imagePatch.newPath );
+	prepared.binaryFileName = std::move( imagePatch.fileName );
+	prepared.lines.reserve( lines.size() + fileLines.size() );
 
-		if ( oldImagePath == newImagePath )
-			oldImagePath.clear();
-
-		if ( loadImageDiffFromPaths( oldImagePath, newImagePath ) ) {
-			if ( !imagePatch.fileName.empty() )
-				mFileName = std::move( imagePatch.fileName );
-			return;
-		}
-	}
-
-	for ( const auto& line : lines ) {
+	for ( size_t lineIdx = 0; lineIdx < lines.size(); ++lineIdx ) {
+		if ( ( lineIdx & 0xFF ) == 0 && cancelled && cancelled->load( std::memory_order_relaxed ) )
+			return PreparedPatch{};
+		const auto& line = lines[lineIdx];
 		if ( String::startsWith( line, "diff " ) || String::startsWith( line, "index " ) ||
 			 String::startsWith( line, "--- " ) || String::startsWith( line, "+++ " ) ) {
 			if ( String::startsWith( line, "+++ " ) ) {
@@ -1107,27 +1520,33 @@ void UIDiffView::loadFromPatch( const std::string& patchText, const std::string&
 			size_t minusPos = line.find( "-" );
 			size_t plusPos = line.find( "+" );
 			if ( minusPos != std::string::npos && plusPos != std::string::npos ) {
+				auto parseLineNumber = [&line]( size_t start, size_t end, Int64& lineNumber ) {
+					if ( end == std::string::npos || end <= start )
+						return false;
+					Int64 parsedLineNumber;
+					if ( !String::fromString( parsedLineNumber, std::string_view{ line }.substr(
+																	start, end - start ) ) )
+						return false;
+					lineNumber = parsedLineNumber - 1;
+					return true;
+				};
 				size_t commaPos = line.find( ",", minusPos );
 				size_t spacePos = line.find( " ", minusPos );
 				if ( commaPos != std::string::npos && commaPos < spacePos ) {
-					oldLineNum =
-						std::stoll( line.substr( minusPos + 1, commaPos - minusPos - 1 ) ) - 1;
+					parseLineNumber( minusPos + 1, commaPos, oldLineNum );
 				} else if ( spacePos != std::string::npos ) {
-					oldLineNum =
-						std::stoll( line.substr( minusPos + 1, spacePos - minusPos - 1 ) ) - 1;
+					parseLineNumber( minusPos + 1, spacePos, oldLineNum );
 				}
 
 				commaPos = line.find( ",", plusPos );
 				spacePos = line.find( " ", plusPos );
 				if ( commaPos != std::string::npos && commaPos < spacePos ) {
-					newLineNum =
-						std::stoll( line.substr( plusPos + 1, commaPos - plusPos - 1 ) ) - 1;
+					parseLineNumber( plusPos + 1, commaPos, newLineNum );
 				} else if ( spacePos != std::string::npos ) {
-					newLineNum =
-						std::stoll( line.substr( plusPos + 1, spacePos - plusPos - 1 ) ) - 1;
+					parseLineNumber( plusPos + 1, spacePos, newLineNum );
 				}
 
-				if ( hasCompleteFile ) {
+				if ( prepared.hasCompleteFile ) {
 					while ( expectedNewLineNum < newLineNum + 1 &&
 							expectedNewLineNum <= (Int64)fileLines.size() ) {
 						DiffLine dline;
@@ -1135,7 +1554,7 @@ void UIDiffView::loadFromPatch( const std::string& patchText, const std::string&
 						dline.text = fileLines[expectedNewLineNum - 1];
 						dline.oldLineNum = expectedOldLineNum++;
 						dline.newLineNum = expectedNewLineNum++;
-						mLines.push_back( dline );
+						prepared.lines.push_back( std::move( dline ) );
 					}
 				}
 				expectedOldLineNum = oldLineNum + 1;
@@ -1172,36 +1591,104 @@ void UIDiffView::loadFromPatch( const std::string& patchText, const std::string&
 			expectedNewLineNum = newLineNum + 1;
 		}
 
-		mLines.push_back( dline );
+		prepared.lines.push_back( std::move( dline ) );
 	}
 
-	if ( hasCompleteFile ) {
+	if ( prepared.hasCompleteFile ) {
 		while ( expectedNewLineNum <= (Int64)fileLines.size() ) {
+			if ( ( expectedNewLineNum & 0xFF ) == 0 && cancelled &&
+				 cancelled->load( std::memory_order_relaxed ) )
+				return PreparedPatch{};
 			DiffLine dline;
 			dline.type = DiffLineType::Common;
 			dline.text = fileLines[expectedNewLineNum - 1];
 			dline.oldLineNum = expectedOldLineNum++;
 			dline.newLineNum = expectedNewLineNum++;
-			mLines.push_back( dline );
+			prepared.lines.push_back( std::move( dline ) );
 		}
 	}
 
-	applySubLineDiff( mLines, [this]( DiffLine& oldLine, DiffLine& newLine ) {
-		computeSubLineDiff( oldLine, newLine );
-	} );
+	if ( !applySubLineDiff(
+			 prepared.lines,
+			 [algorithm]( DiffLine& oldLine, DiffLine& newLine ) {
+				 computeSubLineDiffImpl( oldLine, newLine, algorithm );
+			 },
+			 cancelled ) )
+		return PreparedPatch{};
 
-	setCompleteViewToggleVisible( hasCompleteFile );
+	prepared.filename = std::move( filename );
+	return prepared;
+}
 
-	if ( !filename.empty() ) {
-		auto def = SyntaxDefinitionManager::instance()->getByExtension( filename );
+std::shared_ptr<UIDiffView::PreparedMultiFileDiff>
+UIDiffView::prepareMultiFileDiff( const std::string& patchText,
+								  const std::shared_ptr<std::atomic_bool>& cancelled ) {
+	if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
+		return {};
+
+	auto diffs = splitDiff( patchText );
+	auto prepared = std::make_shared<PreparedMultiFileDiff>();
+	prepared->patches.reserve( diffs.size() );
+	for ( const auto& diff : diffs ) {
+		if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
+			return {};
+		auto patch = preparePatch( diff, "", SubLineDiffAlgorithm::LCS, cancelled );
+		for ( const auto& line : patch.lines ) {
+			prepared->addedLines += line.type == DiffLineType::Added;
+			prepared->removedLines += line.type == DiffLineType::Removed;
+		}
+		prepared->patches.emplace_back( std::move( patch ) );
+	}
+
+	if ( cancelled && cancelled->load( std::memory_order_relaxed ) )
+		return {};
+	return prepared;
+}
+
+void UIDiffView::loadPreparedPatch( PreparedPatch&& patch, const std::string& originalFilePath,
+									const std::string& oldFilePath, const std::string& repoPath ) {
+	resetToTextDiffView();
+	mLines.clear();
+
+	if ( patch.isBinaryImage ) {
+		std::string oldImagePath( oldFilePath );
+		if ( oldImagePath.empty() ) {
+			oldImagePath =
+				resolveImagePatchPath( patch.binaryOldPath, originalFilePath, false, repoPath );
+		}
+		std::string newImagePath(
+			resolveImagePatchPath( patch.binaryNewPath, originalFilePath, true, repoPath ) );
+		if ( oldImagePath == newImagePath )
+			oldImagePath.clear();
+
+		if ( loadImageDiffFromPaths( oldImagePath, newImagePath ) ) {
+			if ( !patch.binaryFileName.empty() )
+				mFileName = String::fromUtf8( patch.binaryFileName );
+			updateFileHeaderInfo();
+			return;
+		}
+	}
+
+	mLines = std::move( patch.lines );
+	setCompleteViewToggleVisible( patch.hasCompleteFile );
+
+	if ( !patch.filename.empty() ) {
+		auto def = SyntaxDefinitionManager::instance()->getByExtension( patch.filename );
 		mSyntaxDef =
 			SyntaxDefinitionManager::instance()->getLanguageDefinition( def.getLanguageIndex() );
-		mFileName = std::move( filename );
+		mFileName = String::fromUtf8( patch.filename );
 	}
+	updateFileHeaderInfo();
 
 	updateEditorsText();
 	updateButtonsText();
 	onSizeChange();
+}
+
+void UIDiffView::loadFromPatch( const std::string& patchText, const std::string& originalFilePath,
+								const std::string& oldFilePath, const std::string& repoPath ) {
+	loadPreparedPatch( preparePatch( patchText, originalFilePath, mSubLineDiffAlgorithm, {} ),
+					   originalFilePath, oldFilePath, repoPath );
 }
 
 void UIDiffView::loadFromStrings( const std::string& oldText, const std::string& newText,
@@ -1250,6 +1737,7 @@ void UIDiffView::loadFromStrings( const std::string& oldText, const std::string&
 			SyntaxDefinitionManager::instance()->getLanguageDefinition( def.getLanguageIndex() );
 		mFileName = FileSystem::fileNameFromPath( originalFilePath );
 	}
+	updateFileHeaderInfo();
 
 	updateEditorsText();
 	updateButtonsText();
@@ -1279,18 +1767,40 @@ void UIDiffView::loadFromFile( const std::string& oldFilePath, const std::string
 	loadFromStrings( oldText, newText );
 }
 
+void UIDiffView::updateButtonsVisibility() {
+	bool findReplaceVisible{ false };
+	for ( const auto* editor : { mEditor, mLeftEditor, mRightEditor } ) {
+		const auto* findReplace = editor->getFindReplace();
+		if ( editor->isVisible() && findReplace && findReplace->isVisible() ) {
+			findReplaceVisible = true;
+			break;
+		}
+	}
+	mModeToggle->setVisible( mViewModeToggleVisible && !findReplaceVisible );
+	mCompleteViewToggle->setVisible( mCompleteViewToggleVisible && !findReplaceVisible &&
+									 !mIsImageDiff );
+}
+
 void UIDiffView::updateButtonsText() {
 	mModeToggle->setText( i18n( "diffview_side_by_side", "Side by Side" ) );
 	mModeToggle->setSelected( mViewMode != ViewMode::Unified );
 	mCompleteViewToggle->setText( i18n( "diffview_compact", "Compact" ) );
-	mCompleteViewToggle->setVisible( !mIsImageDiff );
 	mCompleteViewToggle->setSelected( !mShowCompleteView );
+	updateButtonsVisibility();
 }
 
 void UIDiffView::setSyntaxColorScheme( const SyntaxColorScheme& colorScheme ) {
 	mEditor->setColorScheme( colorScheme );
 	mLeftEditor->setColorScheme( colorScheme );
 	mRightEditor->setColorScheme( colorScheme );
+}
+
+void UIDiffView::setCollapsed( bool collapsed ) {
+	if ( mCollapsed == collapsed )
+		return;
+	mCollapsed = collapsed;
+	updateEditorsText();
+	onSizeChange();
 }
 
 void UIDiffView::setHeadersVisible( bool visible ) {
@@ -1301,6 +1811,33 @@ void UIDiffView::setHeadersVisible( bool visible ) {
 	mLeftPlugin->registerUpdate( mLeftEditor );
 	mRightPlugin->registerUpdate( mRightEditor );
 	updateModeButton();
+}
+
+void UIDiffView::setInteractiveFileHeader( bool enabled ) {
+	if ( enabled == mInteractiveFileHeader )
+		return;
+	mInteractiveFileHeader = enabled;
+	mPlugin->registerUpdate( mEditor );
+	mLeftPlugin->registerUpdate( mLeftEditor );
+	mRightPlugin->registerUpdate( mRightEditor );
+	mEditor->invalidateDraw();
+	mLeftEditor->invalidateDraw();
+	mRightEditor->invalidateDraw();
+}
+
+void UIDiffView::updateFileHeaderInfo() {
+	const std::string fileName( mFileName.toUtf8() );
+	mFileDisplayName = String::fromUtf8( FileSystem::fileNameFromPath( fileName ) );
+	mFileDisplayPath = String::fromUtf8( FileSystem::fileRemoveFileName( fileName ) );
+
+	std::size_t added = 0;
+	std::size_t removed = 0;
+	for ( const auto& line : mLines ) {
+		added += line.type == DiffLineType::Added;
+		removed += line.type == DiffLineType::Removed;
+	}
+	mAddedLinesText = String::format( "+ %zu", added );
+	mRemovedLinesText = String::format( "- %zu", removed );
 }
 
 Uint32 UIDiffView::onKeyDown( const KeyEvent& event ) {

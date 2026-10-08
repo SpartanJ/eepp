@@ -2,6 +2,7 @@
 #define EE_UI_UIBACKGROUNDDRAWABLE_HPP
 
 #include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/ui/border.hpp>
 
 using namespace EE::Graphics;
@@ -63,7 +64,7 @@ class EE_API UIBackgroundDrawable : public Drawable {
   protected:
 	const UINode* mOwner;
 	BorderRadiuseStr mRadiusesStr;
-	VertexBuffer* mVertexBuffer;
+	Graphics::VertexBufferUniquePtr mVertexBuffer;
 	Sizef mSize;
 	BorderRadiuses mRadiuses;
 	bool mNeedsUpdate;

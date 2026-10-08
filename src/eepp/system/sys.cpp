@@ -627,44 +627,7 @@ static std::string sGetProcessPath() {
 		return std::string( dirname( exe_file ) ) + "/";
 	}
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-#ifdef UNICODE
-	// Get path to executable:
-	char szDrive[_MAX_DRIVE];
-	char szDir[_MAX_DIR];
-	char szFilename[_MAX_DIR];
-	char szExt[_MAX_DIR];
-	std::wstring dllName( _MAX_DIR, 0 );
-
-	GetModuleFileName( 0, &dllName[0], _MAX_PATH );
-
-	std::string dllstrName( String( dllName ).toUtf8() );
-
-#ifdef EE_COMPILER_MSVC
-	_splitpath_s( dllstrName.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFilename, _MAX_DIR,
-				  szExt, _MAX_DIR );
-#else
-	_splitpath( dllstrName.c_str(), szDrive, szDir, szFilename, szExt );
-#endif
-
-	return std::string( szDrive ) + std::string( szDir );
-#else
-	// Get path to executable:
-	TCHAR szDllName[_MAX_PATH];
-	TCHAR szDrive[_MAX_DRIVE];
-	TCHAR szDir[_MAX_DIR];
-	TCHAR szFilename[_MAX_DIR];
-	TCHAR szExt[_MAX_DIR];
-	GetModuleFileName( 0, szDllName, _MAX_PATH );
-
-#ifdef EE_COMPILER_MSVC
-	_splitpath_s( szDllName, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFilename, _MAX_DIR, szExt,
-				  _MAX_DIR );
-#else
-	_splitpath( szDllName, szDrive, szDir, szFilename, szExt );
-#endif
-
-	return std::string( szDrive ) + std::string( szDir );
-#endif
+	return FileSystem::fileRemoveFileName( Sys::getProcessFilePath() );
 #elif EE_PLATFORM == EE_PLATFORM_BSD
 	int mib[4];
 	mib[0] = CTL_KERN;
@@ -701,25 +664,34 @@ std::string Sys::getProcessPath() {
 	return path;
 }
 
-double Sys::getSystemTime() {
+Int64 Sys::getSystemTime() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	static LARGE_INTEGER Frequency;
-	static BOOL UseHighPerformanceTimer = QueryPerformanceFrequency( &Frequency );
+	using GetSystemTimePreciseAsFileTimeType = VOID( WINAPI* )( LPFILETIME );
+	static const auto getSystemTimePreciseAsFileTime =
+		reinterpret_cast<GetSystemTimePreciseAsFileTimeType>( GetProcAddress(
+			GetModuleHandleA( "kernel32.dll" ), "GetSystemTimePreciseAsFileTime" ) );
 
-	if ( UseHighPerformanceTimer ) {
-		// High performance counter available : use it
-		LARGE_INTEGER CurrentTime;
-		QueryPerformanceCounter( &CurrentTime );
-		return static_cast<double>( CurrentTime.QuadPart ) / Frequency.QuadPart;
-	} else
-		// High performance counter not available : use GetTickCount (less accurate)
-		return GetTickCount() * 0.001;
+	FILETIME fileTime;
+	if ( getSystemTimePreciseAsFileTime )
+		getSystemTimePreciseAsFileTime( &fileTime );
+	else
+		GetSystemTimeAsFileTime( &fileTime );
+
+	ULARGE_INTEGER ticks;
+	ticks.LowPart = fileTime.dwLowDateTime;
+	ticks.HighPart = fileTime.dwHighDateTime;
+	constexpr Int64 WINDOWS_TO_UNIX_EPOCH = 116444736000000000LL;
+	return ( static_cast<Int64>( ticks.QuadPart ) - WINDOWS_TO_UNIX_EPOCH ) / 10000;
 #else
 	timeval Time = { 0, 0 };
 	gettimeofday( &Time, NULL );
 
-	return Time.tv_sec + Time.tv_usec / 1000000.;
+	return static_cast<Int64>( Time.tv_sec ) * 1000 + Time.tv_usec / 1000;
 #endif
+}
+
+Int64 Sys::getUnixTimestamp() {
+	return getSystemTime() / 1000;
 }
 
 ProcessID Sys::getProcessID() {
@@ -1135,18 +1107,8 @@ std::string Sys::which( const std::string& exeName,
 		 FileSystem::fileExists( exeName ) )
 		return exeName;
 
-	std::vector<std::string> PATHS = getEnvSplit( "PATH" );
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	static std::vector<std::string> PATHEXTS = getEnvSplit( "PATHEXT" );
-	std::string exePath;
-#endif
-
-	if ( !customSearchPaths.empty() ) {
-		for ( const auto& searchPath : customSearchPaths )
-			PATHS.emplace_back( searchPath );
-	}
-
-#if EE_PLATFORM == EE_PLATFORM_WIN
 	bool hasExtension = false;
 	for ( const auto& pathExt : PATHEXTS ) {
 		if ( String::endsWith( exeName, pathExt ) ) {
@@ -1156,25 +1118,59 @@ std::string Sys::which( const std::string& exeName,
 	}
 #endif
 
-	for ( const auto& path : PATHS ) {
-		std::string fpath( path );
-		FileSystem::dirAddSlashAtEnd( fpath );
-		fpath += exeName;
+	std::string foundPath;
+	std::string candidate;
 #if EE_PLATFORM == EE_PLATFORM_WIN
-		if ( hasExtension ) {
-			if ( FileSystem::fileExists( fpath ) )
-				return fpath;
-		} else {
-			for ( const auto& pathext : PATHEXTS ) {
-				exePath = fpath + pathext;
-				if ( FileSystem::fileExists( exePath ) )
-					return exePath;
-			}
-		}
-#else
-		if ( FileSystem::fileExists( fpath ) )
-			return fpath;
+	std::string candidateWithExtension;
 #endif
+	struct SearchContext {
+		const std::string* exeName;
+		std::string* foundPath;
+		std::string* candidate;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		const std::vector<std::string>* pathExts;
+		std::string* candidateWithExtension;
+		bool hasExtension;
+#endif
+	};
+	SearchContext context{ &exeName, &foundPath, &candidate };
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	context.pathExts = &PATHEXTS;
+	context.candidateWithExtension = &candidateWithExtension;
+	context.hasExtension = hasExtension;
+#endif
+	auto searchPath = [context = &context]( std::string_view path ) {
+		context->candidate->assign( path );
+		FileSystem::dirAddSlashAtEnd( *context->candidate );
+		context->candidate->append( *context->exeName );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if ( !context->hasExtension ) {
+			for ( const auto& pathExt : *context->pathExts ) {
+				context->candidateWithExtension->assign( *context->candidate );
+				context->candidateWithExtension->append( pathExt );
+				if ( FileSystem::fileExists( *context->candidateWithExtension ) ) {
+					*context->foundPath = std::move( *context->candidateWithExtension );
+					return false;
+				}
+			}
+			return true;
+		}
+#endif
+		if ( FileSystem::fileExists( *context->candidate ) ) {
+			*context->foundPath = std::move( *context->candidate );
+			return false;
+		}
+		return true;
+	};
+
+	const std::string paths = getEnv( "PATH" );
+	String::splitCb( searchPath, paths, std::string( 1, PATH_SEP_CHAR ), "", "" );
+	if ( !foundPath.empty() )
+		return foundPath;
+
+	for ( const auto& path : customSearchPaths ) {
+		if ( !searchPath( path ) )
+			return foundPath;
 	}
 	return "";
 }
@@ -1192,6 +1188,14 @@ std::string Sys::getEnv( const std::string& name ) {
 #else
 	char* env = ::getenv( name.c_str() );
 	return NULL == env ? std::string() : std::string( env );
+#endif
+}
+
+bool Sys::setEnv( const char* name, const char* value ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return 0 == _putenv_s( name, value );
+#else
+	return 0 == setenv( name, value, 1 );
 #endif
 }
 
@@ -1352,11 +1356,23 @@ std::string Sys::getProcessFilePath() {
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	std::wstring exename( _MAX_DIR, 0 );
-	DWORD size = GetModuleFileNameW( 0, &exename[0], _MAX_PATH );
-	if ( size > 0 && size < _MAX_PATH )
-		exename.resize( size ); // Resize to actual size without extra null characters
-	return String( exename ).toUtf8();
+	// Windows paths are UTF-16. Using GetModuleFileNameA here makes executable paths containing
+	// characters outside the active ANSI code page unusable (for example, CJK install paths).
+	DWORD capacity = _MAX_PATH;
+	while ( capacity <= 32768 ) {
+		std::wstring exename( capacity, 0 );
+		DWORD size = GetModuleFileNameW( nullptr, &exename[0], capacity );
+		if ( size == 0 )
+			return {};
+		if ( size < capacity ) {
+			exename.resize( size );
+			return String( exename ).toUtf8();
+		}
+		if ( capacity == 32768 )
+			break;
+		capacity = eemin<DWORD>( capacity * 2, 32768 );
+	}
+	return {};
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 	char path[] = "/proc/self/exe";
 	ssize_t len = readlink( path, exename, PATH_MAX - 1 );
@@ -2257,7 +2273,9 @@ static bool _isOSUsingDarkColorScheme() {
 #elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	// Executes JavaScript: window.matchMedia('(prefers-color-scheme: dark)').matches
 	return EM_ASM_INT( {
-			   if ( typeof window != = 'undefined' && window.matchMedia ) {
+			   // EM_ASM stringifies C/C++ preprocessing tokens. JavaScript's !== is split into
+			   // "!= =" and becomes invalid, so use != for this typeof string comparison.
+			   if ( typeof window != 'undefined' && window.matchMedia ) {
 				   return window.matchMedia( '(prefers-color-scheme: dark)' ).matches ? 1 : 0;
 			   }
 			   return 0;

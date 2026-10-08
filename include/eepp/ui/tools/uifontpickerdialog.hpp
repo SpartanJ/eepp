@@ -28,6 +28,7 @@ class UIColorPicker;
 
 struct UIFontSelection {
 	FontDesc font;
+	/** Font size in density-independent pixels. */
 	Uint32 size{ 12 };
 	bool underline{ false };
 	bool strikeThrough{ false };
@@ -54,12 +55,19 @@ class EE_API UIFontPickerDialog : public UIWindow {
 		ShowEffects = 1 << 2,
 		ShowColor = 1 << 3,
 		ShowApplyButton = 1 << 4,
-		DefaultFlags = ShowSize | ShowEffects | ShowColor,
+		ShowStyle = 1 << 5,
+		DefaultFlags = ShowSize | ShowEffects | ShowColor | ShowStyle,
 	};
 
 	struct FontStyleEntry {
 		std::string label;
 		FontDesc desc;
+	};
+
+	struct FontFamilyEntry {
+		std::string label;
+		std::string family;
+		std::string externalFontKey;
 	};
 
 	static UIFontPickerDialog* New( Uint32 flags = DefaultFlags );
@@ -113,11 +121,15 @@ class EE_API UIFontPickerDialog : public UIWindow {
 	FontPickedCb mFontPickedCb;
 	FontSelectionChangedCb mFontSelectionChangedCb;
 	std::vector<FontDesc> mFonts;
-	std::vector<std::string> mFamilies;
+	std::vector<FontFamilyEntry> mFamilies;
 	std::vector<FontStyleEntry> mStyles;
 	std::vector<Uint32> mSizes;
 	UnorderedSet<std::string> mLoadedFontKeys;
+	UnorderedSet<std::string> mExternalFontKeys;
 	UnorderedMap<std::string, std::string> mFontTags;
+	Graphics::FontTrueTypePtr mPreviewFont;
+	Graphics::Font* mPreviewTextDefaultFont{ nullptr };
+	Graphics::Font* mPreviewInputDefaultFont{ nullptr };
 	std::shared_ptr<Models::Model> mFamilyModel;
 	std::shared_ptr<Models::Model> mStyleModel;
 	std::shared_ptr<Models::Model> mSizeModel;
@@ -171,7 +183,7 @@ class EE_API UIFontPickerDialog : public UIWindow {
 
 	void sortFonts();
 
-	void mergeFontManagerFonts( std::vector<FontDesc>& fonts );
+	void mergeLoadedFonts( std::vector<FontDesc>& fonts );
 
 	void updateFontTags();
 
@@ -189,9 +201,11 @@ class EE_API UIFontPickerDialog : public UIWindow {
 
 	void updatePreview();
 
+	void clearPreviewFont();
+
 	void selectInitialRows();
 
-	void selectFamily( const std::string& family );
+	void selectFamily( const FontDesc& font );
 
 	void selectRegularStyle();
 
@@ -206,6 +220,9 @@ class EE_API UIFontPickerDialog : public UIWindow {
 	void browseFont();
 
 	bool addExternalFont( const std::string& path, Uint32 faceIndex = 0 );
+	bool isExternalFont( const FontDesc& font ) const;
+	std::string externalTag( const FontDesc& font, bool includeFileName );
+	bool familyEntryMatchesFont( const FontFamilyEntry& family, const FontDesc& font ) const;
 
 	void clearBrowseDialog();
 

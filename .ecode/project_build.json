@@ -245,7 +245,7 @@
         "working_dir": "${project_root}/bin"
       },
       {
-        "args": "-u",
+        "args": "",
         "command": "${project_root}/bin/eepp-UIEditor-debug",
         "name": "eepp-UIEditor-debug",
         "working_dir": "${project_root}/bin"
@@ -386,6 +386,48 @@
         "args": "",
         "command": "${project_root}/bin/eepp-ui-font-picker-debug",
         "name": "eepp-ui-font-picker-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-TextureAtlasEditor-debug",
+        "name": "eepp-TextureAtlasEditor-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-sprites-debug",
+        "name": "eepp-sprites-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-data-collections-debug",
+        "name": "eepp-ui-data-collections-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-data-handling-debug",
+        "name": "eepp-ui-data-handling-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-application-multi-window-debug",
+        "name": "eepp-ui-application-multi-window-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eproc-debug",
+        "name": "eproc-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-charts-debug",
+        "name": "eepp-ui-charts-debug",
         "working_dir": "${project_root}/bin"
       }
     ],
@@ -621,6 +663,12 @@
         "args": "",
         "command": "${project_root}/bin/eepp-ui-markdownview-debug",
         "name": "eepp-ui-markdownview-debug",
+        "working_dir": "${project_root}/bin/"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eterm-debug",
+        "name": "eterm-debug",
         "working_dir": "${project_root}/bin/"
       }
     ],

@@ -59,6 +59,8 @@ class EE_API UIDropDownList : public UIDropDown {
 
 	virtual void onClassChange();
 
+	virtual void onAutoSize();
+
 	void destroyListBox();
 
 	void updateClickStep();

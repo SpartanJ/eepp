@@ -28,7 +28,9 @@ class EE_API LineWrap {
 
 	static std::string fromLineWrapType( LineWrapType type );
 
-	static bool isWrapChar( String::StringBaseType ch );
+	static inline bool isWrapChar( String::StringBaseType ch ) {
+		return ch == ' ' || ch == '.' || ch == '-' || ch == ',';
+	}
 
 	static LineWrapInfo
 	computeLineBreaks( const String::View& string, Font* font, Uint32 characterSize, Float maxWidth,
@@ -88,8 +90,13 @@ class EE_API LineWrap {
 								 Uint32 fontStyle, Float outlineThickness, Uint32 tabWidth = 0.f,
 								 Float maxWidth = 0.f, bool tabStops = false );
 
-	static Float computeOffsets( const String::View& string, const FontStyleConfig& fontStyle,
-								 Uint32 tabWidth, Float maxWidth = 0.f, bool tabStops = false );
+	static inline Float computeOffsets( const String::View& string,
+										const FontStyleConfig& fontStyle, Uint32 tabWidth,
+										Float maxWidth = 0.f, bool tabStops = false ) {
+		return LineWrap::computeOffsets( string, fontStyle.Font, fontStyle.CharacterSize,
+										 fontStyle.Style, fontStyle.OutlineThickness, tabWidth,
+										 maxWidth, tabStops );
+	}
 
   protected:
 	template <typename T>

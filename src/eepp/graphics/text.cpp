@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <cmath>
-#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
@@ -24,16 +24,41 @@ bool Text::TextShaperEnabled = false;
 bool Text::TextShaperOptimizations = true;
 Uint32 Text::GlobalInvalidationId = 0;
 
-Float Text::tabAdvance( Float hspace, Uint32 tabWidth, std::optional<Float> tabOffset ) {
-	Float advance = hspace * tabWidth;
-	if ( tabOffset ) {
-		Float offset = fmodf( *tabOffset, advance );
-		advance = advance - offset;
-		// If there is not enough space until the next stop, skip it
-		if ( advance < hspace )
-			advance += hspace * tabWidth;
-	}
-	return advance;
+Uint32 Text::fontFeaturesFromString( const std::string& value ) {
+	Uint32 features = 0;
+	String::splitCb(
+		[&features]( std::string_view feature ) {
+			feature = String::trim( feature, " \t'\"" );
+			if ( String::iequals( feature, "liga" ) )
+				features |= TextHints::StandardLigatures;
+			else if ( String::iequals( feature, "calt" ) )
+				features |= TextHints::ContextualAlternates;
+			else if ( String::iequals( feature, "clig" ) )
+				features |= TextHints::ContextualLigatures;
+			else if ( String::iequals( feature, "dlig" ) )
+				features |= TextHints::DiscretionaryLigatures;
+			return true;
+		},
+		value, ",", "", "" );
+	return features;
+}
+
+std::string Text::fontFeaturesToString( Uint32 features ) {
+	std::string value;
+	const auto append = [&value]( const char* feature ) {
+		if ( !value.empty() )
+			value += ',';
+		value += feature;
+	};
+	if ( features & TextHints::StandardLigatures )
+		append( "liga" );
+	if ( features & TextHints::ContextualAlternates )
+		append( "calt" );
+	if ( features & TextHints::ContextualLigatures )
+		append( "clig" );
+	if ( features & TextHints::DiscretionaryLigatures )
+		append( "dlig" );
+	return value;
 }
 
 std::string Text::styleFlagToString( const Uint32& flags ) {
@@ -231,20 +256,22 @@ Text* Text::New( Font* font, unsigned int characterSize ) {
 
 static inline void drawGlyph( BatchRenderer* BR, GlyphDrawable* gd, const Vector2f& position,
 							  const Color& color, bool isItalic ) {
+	BR->setSubpixelText( gd->getGlyphRenderMode() == GlyphRenderMode::Subpixel );
 	BR->quadsSetColor( color );
-	BR->quadsSetTexCoord( gd->getSrcRect().Left, gd->getSrcRect().Top,
-						  gd->getSrcRect().Left + gd->getSrcRect().Right,
-						  gd->getSrcRect().Top + gd->getSrcRect().Bottom );
+	const auto& srcRect = gd->getSrcRect();
+	const auto& offset = gd->getGlyphOffset();
+	const auto& destSize = gd->getDestSize();
+	BR->quadsSetTexCoord( srcRect.Left, srcRect.Top, srcRect.Left + srcRect.Right,
+						  srcRect.Top + srcRect.Bottom );
 	if ( isItalic && !gd->isItalic() ) {
-		Float x = position.x + gd->getGlyphOffset().x;
-		Float y = position.y + gd->getGlyphOffset().y;
-		Float italic = 0.208f * gd->getDestSize().getWidth(); // 12 degrees
-		BR->batchQuadFree( x + italic, y, x, y + gd->getDestSize().getHeight(),
-						   x + gd->getDestSize().getWidth(), y + gd->getDestSize().getHeight(),
-						   x + gd->getDestSize().getWidth() + italic, y );
+		Float x = position.x + offset.x;
+		Float y = position.y + offset.y;
+		Float italic = 0.208f * destSize.getWidth(); // 12 degrees
+		BR->batchQuadFree( x + italic, y, x, y + destSize.getHeight(), x + destSize.getWidth(),
+						   y + destSize.getHeight(), x + destSize.getWidth() + italic, y );
 	} else {
-		BR->batchQuad( position.x + gd->getGlyphOffset().x, position.y + gd->getGlyphOffset().y,
-					   gd->getDestSize().getWidth(), gd->getDestSize().getHeight() );
+		BR->batchQuad( position.x + offset.x, position.y + offset.y, destSize.getWidth(),
+					   destSize.getHeight() );
 	}
 }
 
@@ -253,6 +280,7 @@ static inline void _drawUnderline( Font* font, Float fontSize, const Color& font
 								   Float outlineThickness, const Vector2f& pos, Float width,
 								   const Color& shadowColor, const Vector2f& shadowOffset,
 								   const Color& outlineColor ) {
+	BR->setSubpixelText( false );
 	Float underlineOffset = font->getUnderlinePosition( fontSize );
 	Float underlineThickness = font->getUnderlineThickness( fontSize );
 	Float top =
@@ -294,6 +322,7 @@ static inline void _drawStrikeThrough( Font* font, Float fontSize, const Color& 
 									   Float outlineThickness, const Vector2f& pos, Float width,
 									   const Color& shadowColor, const Vector2f& shadowOffset,
 									   const Color& outlineColor ) {
+	BR->setSubpixelText( false );
 	Rectf xBounds =
 		font->getGlyph( L'x', fontSize, style & Text::Bold, style & Text::Italic ).bounds;
 	Float strikeThroughOffset = xBounds.Top + xBounds.Bottom * 0.5f;
@@ -341,11 +370,12 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	String::StringBaseType prevChar = 0;
 	bool isBold = ( style & Text::Bold ) != 0;
 	bool isItalic = ( style & Text::Italic ) != 0;
-	bool fallbacksToColorEmoji =
-		font && font->getType() == FontType::TTF &&
-		!static_cast<FontTrueType*>( font )->isColorEmojiFont() &&
-		FontManager::instance()->getColorEmojiFont() != nullptr &&
-		FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF;
+	FontTrueType* trueTypeFont =
+		font && font->getType() == FontType::TTF ? static_cast<FontTrueType*>( font ) : nullptr;
+	FontService* fontService = trueTypeFont ? trueTypeFont->getFontService() : nullptr;
+	bool fallbacksToColorEmoji = trueTypeFont && !trueTypeFont->isColorEmojiFont() && fontService &&
+								 fontService->getColorEmojiFont() != nullptr &&
+								 fontService->getColorEmojiFont()->getType() == FontType::TTF;
 	bool isMonospace = font && ( font->isMonospace() ||
 								 ( font->getType() == FontType::TTF &&
 								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
@@ -355,12 +385,14 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	Float height = font->getLineSpacing( fontSize );
 	Sizef size{ 0, height };
 	size_t ssize = string.size();
+	if ( ssize == 0 )
+		return size;
 	BatchRenderer* BR = GlobalBatchRenderer::instance();
-	Texture* fontTexture = font->getTexture( fontSize );
+	const TexturePtr& fontTexture = font->getTexture( fontSize );
 	Float tabAlign = 0;
 	GlyphDrawable* spaceGlyph = nullptr;
 	GlyphDrawable* tabGlyph = nullptr;
-	Float hspace = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance;
+	Float hspace = font->getGlyphAdvance( ' ', fontSize, isBold, isItalic );
 	std::optional<Float> tabOffset{ whitespaceDisplayConfig.tabOffset };
 	if ( whitespaceDisplayConfig.tabDisplayCharacter )
 		tabGlyph = font->getGlyphDrawable( whitespaceDisplayConfig.tabDisplayCharacter, fontSize );
@@ -640,9 +672,10 @@ void Text::create( Font* font, const String& text, Color FontColor, Color FontSh
 
 void Text::checkColorEmojis() {
 	mContainsColorEmoji = false;
-	if ( mFontStyleConfig.Font && FontManager::instance()->getColorEmojiFont() != nullptr ) {
-		if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
-			FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFontStyleConfig.Font );
+	if ( mFontStyleConfig.Font && mFontStyleConfig.Font->getType() == FontType::TTF ) {
+		FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFontStyleConfig.Font );
+		FontService* fontService = fontTrueType->getFontService();
+		if ( fontService && fontService->getColorEmojiFont() != nullptr ) {
 			if ( fontTrueType->isColorEmojiFont() || !fontTrueType->isEmojiFont() )
 				mContainsColorEmoji = Font::containsEmojiCodePoint( mString );
 		}
@@ -654,7 +687,7 @@ void Text::onNewString() {
 	mGeometryNeedUpdate = true;
 	mCachedWidthNeedUpdate = true;
 	mVisualLinesNeedUpdate = true;
-	mTextHints = mString.getTextHints();
+	mTextHints = mString.getTextHints() | mTextDrawHints;
 	checkColorEmojis();
 }
 
@@ -819,7 +852,7 @@ Float Text::getOutlineThickness() const {
 	return mFontStyleConfig.OutlineThickness;
 }
 
-Vector2f Text::findCharacterPos( std::size_t index ) const {
+Vector2f Text::findCharacterPos( std::size_t index, LigatureCaretMode ligatureCaretMode ) const {
 	// Make sure that we have a valid font
 	if ( !mFontStyleConfig.Font || mString.empty() )
 		return Vector2f();
@@ -829,19 +862,20 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 		index = mString.size();
 
 	if ( mLineWrapMode == LineWrapMode::NoWrap || mMaxWrapWidth <= 0 ) {
-		return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
-									   mString, mFontStyleConfig.Style, mTabWidth,
-									   mFontStyleConfig.OutlineThickness, {}, true, mTextHints,
-									   TextDirection::Unspecified, mInitialOffset );
+		return Text::findCharacterPos(
+			index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mString,
+			mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, true,
+			mTextHints, TextDirection::Unspecified, mInitialOffset, ligatureCaretMode );
 	}
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
 		 !canSkipShaping( mTextHints ) ) {
-		return Text::findCharacterPos(
-			index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mString,
-			mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, true,
-			mTextHints, TextDirection::Unspecified, mLineWrapMode, mMaxWrapWidth, mInitialOffset );
+		return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
+									   mString, mFontStyleConfig.Style, mTabWidth,
+									   mFontStyleConfig.OutlineThickness, {}, true, mTextHints,
+									   TextDirection::Unspecified, mLineWrapMode, mMaxWrapWidth,
+									   mInitialOffset, ligatureCaretMode );
 	}
 #endif
 
@@ -889,7 +923,8 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 	Vector2f pos = Text::findCharacterPos(
 		index - startIdx, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, strWrapper,
 		mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, true, mTextHints,
-		TextDirection::Unspecified, lineIndex == 0 ? mInitialOffset : Vector2f::Zero );
+		TextDirection::Unspecified, lineIndex == 0 ? mInitialOffset : Vector2f::Zero,
+		ligatureCaretMode );
 
 	return Vector2f( pos.x + centerDiffX, y );
 }
@@ -1028,7 +1063,7 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
 								   canSkipShaping( textDrawHints ) ) );
 	Float hspace = static_cast<Float>(
-		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
+		font->getGlyphAdvance( L' ', fontSize, bold, italic, outlineThickness ) );
 
 	if ( isMonospace ) {
 		size_t len = string.length();
@@ -1093,7 +1128,7 @@ Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const Str
 	bool bold = ( style & Text::Bold ) != 0;
 	bool italic = ( style & Text::Italic ) != 0;
 	Float hspace = static_cast<Float>(
-		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
+		font->getGlyphAdvance( L' ', fontSize, bold, italic, outlineThickness ) );
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && font->getType() == FontType::TTF &&
@@ -1140,10 +1175,11 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 								 const String& string, const Uint32& style, const Uint32& tabWidth,
 								 const Float& outlineThickness, std::optional<Float> tabOffset,
 								 bool allowNewLine, Uint32 textDrawHints, TextDirection direction,
-								 const Vector2f& initialOffset ) {
+								 const Vector2f& initialOffset,
+								 LigatureCaretMode ligatureCaretMode ) {
 	return findCharacterPos( index, font, fontSize, string, style, tabWidth, outlineThickness,
 							 tabOffset, allowNewLine, textDrawHints, direction,
-							 LineWrapMode::NoWrap, 0.f, initialOffset );
+							 LineWrapMode::NoWrap, 0.f, initialOffset, ligatureCaretMode );
 }
 
 Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
@@ -1151,7 +1187,8 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 								 const Float& outlineThickness, std::optional<Float> tabOffset,
 								 bool allowNewLine, Uint32 textDrawHints, TextDirection direction,
 								 LineWrapMode lineWrapMode, Float maxWrapWidth,
-								 const Vector2f& initialOffset ) {
+								 const Vector2f& initialOffset,
+								 LigatureCaretMode ligatureCaretMode ) {
 	// Make sure that we have a valid font
 	if ( !font )
 		return Vector2f();
@@ -1164,7 +1201,7 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 	bool bold = ( style & Text::Bold ) != 0;
 	bool italic = ( style & Italic ) != 0;
 	Float hspace = static_cast<Float>(
-		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
+		font->getGlyphAdvance( L' ', fontSize, bold, italic, outlineThickness ) );
 	Float vspace = static_cast<Float>( font->getLineSpacing( fontSize ) );
 
 	// Compute the position, starting from initialOffset
@@ -1188,6 +1225,61 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 												 : layout->paragraphs.front().shapedGlyphs.back();
 			return ( lastGlyph.position + lastGlyph.advance + Vector2f{ 0, initialOffset.y } )
 				.trunc();
+		}
+
+		// HarfBuzz can map several source characters to a single glyph cluster. Find the cluster
+		// surrounding the requested grapheme boundary in one pass, regardless of visual order.
+		const ShapedGlyph* caretCluster = nullptr;
+		std::size_t clusterStart = 0;
+		std::size_t clusterEnd = string.size();
+		Float clusterLeft = 0;
+		Float clusterRight = 0;
+		bool hasExactCluster = false;
+		for ( const ShapedTextParagraph& sp : layout->paragraphs ) {
+			for ( std::size_t i = 0; i < sp.shapedGlyphs.size(); ) {
+				const std::size_t currentStart = sp.shapedGlyphs[i].stringIndex;
+				Float currentLeft = sp.shapedGlyphs[i].position.x;
+				Float currentRight = currentLeft + sp.shapedGlyphs[i].advance.x;
+				std::size_t j = i + 1;
+				while ( j < sp.shapedGlyphs.size() &&
+						sp.shapedGlyphs[j].stringIndex == currentStart ) {
+					currentLeft = std::min( currentLeft, sp.shapedGlyphs[j].position.x );
+					currentRight = std::max( currentRight, sp.shapedGlyphs[j].position.x +
+															   sp.shapedGlyphs[j].advance.x );
+					++j;
+				}
+				if ( currentStart < index && ( !caretCluster || currentStart > clusterStart ) ) {
+					caretCluster = &sp.shapedGlyphs[i];
+					clusterStart = currentStart;
+					clusterLeft = currentLeft;
+					clusterRight = currentRight;
+				}
+				if ( currentStart == index )
+					hasExactCluster = true;
+				if ( currentStart > index )
+					clusterEnd = std::min( clusterEnd, currentStart );
+				i = j;
+			}
+		}
+		if ( ligatureCaretMode == LigatureCaretMode::Interpolate && caretCluster &&
+			 !hasExactCluster && index < clusterEnd && string.isGraphemeBoundary( index ) ) {
+			std::size_t boundaryCount = 0;
+			std::size_t boundaryIndex = 0;
+			for ( std::size_t boundary = clusterStart + 1; boundary <= clusterEnd; ++boundary ) {
+				if ( string.isGraphemeBoundary( boundary ) ) {
+					++boundaryCount;
+					if ( boundary <= index )
+						boundaryIndex = boundaryCount;
+				}
+			}
+			if ( boundaryCount > 0 ) {
+				const Float ratio =
+					static_cast<Float>( boundaryIndex ) / static_cast<Float>( boundaryCount );
+				const Float x = caretCluster->direction == TextDirection::RightToLeft
+									? clusterRight - ( clusterRight - clusterLeft ) * ratio
+									: clusterLeft + ( clusterRight - clusterLeft ) * ratio;
+				return Vector2f{ x, caretCluster->position.y + initialOffset.y }.trunc();
+			}
 		}
 
 		Uint32 maxStringIndex = 0;
@@ -1360,7 +1452,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 	Vector2f fpos( adjX, adjY );
 
 	Float hspace = static_cast<Float>(
-		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
+		font->getGlyphAdvance( L' ', fontSize, bold, italic, outlineThickness ) );
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && font->getType() == FontType::TTF &&
@@ -1382,6 +1474,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 
 			for ( auto i = 0; i < sgs; i++ ) {
 				const ShapedGlyph* sg = &sp.shapedGlyphs[i];
+				const ShapedGlyph* firstClusterGlyph = sg;
 
 				charLeft = sg->position.x;
 				charTop = sg->position.y;
@@ -1392,20 +1485,21 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 				while ( i + 1 < sgs && sp.shapedGlyphs[i + 1].stringIndex == sg->stringIndex ) {
 					i++;
 					sg = &sp.shapedGlyphs[i];
+					charLeft = std::min( charLeft, sg->position.x );
 					charBottom = sg->position.y + vspace;
-					charRight = sg->position.x + sg->advance.x;
+					charRight = std::max( charRight, sg->position.x + sg->advance.x );
 				};
 
 				if ( fpos.y >= charTop && fpos.y <= charBottom ) {
 					auto findNextInsertionIndex = [&]() -> Int32 {
-						if ( layout->isRTL() ) {
+						if ( firstClusterGlyph->direction == TextDirection::RightToLeft ) {
 							if ( i > 0 ) {
 								for ( auto j = i - 1; j >= 0; j-- ) {
 									if ( sp.shapedGlyphs[j].stringIndex > sg->stringIndex )
 										return sp.shapedGlyphs[j].stringIndex;
 								}
 							}
-							return 0;
+							return tSize;
 						} else {
 							for ( auto j = i + 1; j < sgs; ++j ) {
 								if ( sp.shapedGlyphs[j].stringIndex > sg->stringIndex )
@@ -1416,12 +1510,31 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 					};
 
 					if ( fpos.x >= charLeft && fpos.x < charRight ) {
-						Float midPoint = charLeft + ( charRight - charLeft ) * 0.5f;
-						if ( fpos.x < midPoint ) {
-							return sg->stringIndex;
-						} else {
-							return findNextInsertionIndex();
+						const Int32 nextInsertionIndex = findNextInsertionIndex();
+						const std::size_t clusterStart = firstClusterGlyph->stringIndex;
+						const std::size_t clusterEnd = std::max<std::size_t>(
+							static_cast<std::size_t>( nextInsertionIndex ), clusterStart + 1 );
+						std::size_t boundaryCount = 1;
+						for ( std::size_t boundary = clusterStart + 1; boundary < clusterEnd;
+							  ++boundary ) {
+							if ( string.isGraphemeBoundary( boundary ) )
+								++boundaryCount;
 						}
+						const Float width = charRight - charLeft;
+						Float ratio = width > 0 ? ( fpos.x - charLeft ) / width : 0.f;
+						if ( firstClusterGlyph->direction == TextDirection::RightToLeft )
+							ratio = 1.f - ratio;
+						const std::size_t caret = static_cast<std::size_t>(
+							std::round( ratio * static_cast<Float>( boundaryCount ) ) );
+						if ( caret == 0 )
+							return clusterStart;
+						std::size_t boundaryIndex = 0;
+						for ( std::size_t boundary = clusterStart + 1; boundary < clusterEnd;
+							  ++boundary ) {
+							if ( string.isGraphemeBoundary( boundary ) && ++boundaryIndex == caret )
+								return boundary;
+						}
+						return clusterEnd;
 					}
 				}
 
@@ -1679,12 +1792,46 @@ Float Text::getLineSpacing() const {
 			   : 0;
 }
 
+static void drawTextVertexRanges( const std::vector<GlyphRenderMode>& renderModes,
+								  unsigned int numVertices, bool allowSubpixel ) {
+	const unsigned int verticesPerQuad = GLi->quadVertex();
+	const unsigned int primitive = GLi->quadsSupported() ? GL_QUADS : GL_TRIANGLES;
+	if ( renderModes.empty() || renderModes.size() * verticesPerQuad != numVertices ) {
+		GLi->drawArrays( primitive, 0, numVertices );
+		return;
+	}
+
+	size_t rangeStart = 0;
+	while ( rangeStart < renderModes.size() ) {
+		size_t rangeEnd = rangeStart + 1;
+		while ( rangeEnd < renderModes.size() && renderModes[rangeEnd] == renderModes[rangeStart] )
+			++rangeEnd;
+
+		const int first = rangeStart * verticesPerQuad;
+		const int count = ( rangeEnd - rangeStart ) * verticesPerQuad;
+		bool drawn = false;
+		if ( renderModes[rangeStart] == GlyphRenderMode::Subpixel ) {
+			if ( allowSubpixel )
+				drawn = GLi->drawSubpixelArrays( primitive, first, count );
+			if ( !drawn )
+				drawn = GLi->drawSubpixelFallbackArrays( primitive, first, count );
+		}
+		if ( !drawn )
+			GLi->drawArrays( primitive, first, count );
+		rangeStart = rangeEnd;
+	}
+}
+
 Uint32 Text::getTextHints() const {
 	return mTextHints;
 }
 
 void Text::setTextHints( Uint32 textHints ) {
-	mTextHints = textHints;
+	if ( mTextDrawHints != textHints ) {
+		mTextDrawHints = textHints;
+		mTextHints = mString.getTextHints() | mTextDrawHints;
+		invalidate();
+	}
 }
 
 void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Float& rotation,
@@ -1695,6 +1842,9 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		return;
 
 	unsigned int numvert = mVertices.size();
+	const bool containsSubpixel = !mRenderModes.empty();
+	const Float drawX = containsSubpixel && rotation == 0.f && scale == 1.f ? std::trunc( X ) : X;
+	const Float drawY = containsSubpixel && rotation == 0.f && scale == 1.f ? std::trunc( Y ) : Y;
 
 	GlobalBatchRenderer::instance()->draw();
 
@@ -1725,7 +1875,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		GLi->rotatef( rotation, 0.0f, 0.0f, 1.0f );
 		GLi->translatef( -center.x + cX, -center.y + cY, 0.f );
 	} else {
-		GLi->translatef( X, Y, 0 );
+		GLi->translatef( drawX, drawY, 0 );
 	}
 
 	if ( backgroundColor != Color::Transparent ) {
@@ -1755,7 +1905,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		if ( rotation != 0.0f || scale != 1.0f ) {
 			GLi->popMatrix();
 		} else {
-			GLi->translatef( -X, -Y, 0 );
+			GLi->translatef( -drawX, -drawY, 0 );
 		}
 		return;
 	}
@@ -1763,48 +1913,41 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 	if ( mColors.empty() )
 		return;
 
-	Texture* texture = mFontStyleConfig.Font->getTexture( mFontStyleConfig.CharacterSize );
+	const TexturePtr& texture = mFontStyleConfig.Font->getTexture( mFontStyleConfig.CharacterSize );
 	if ( !texture )
 		return;
 	texture->bind();
 	BlendMode::setMode( effect );
+	const bool allowSubpixel = effect == BlendMode::Alpha() && rotation == 0.f && scale == 1.f;
 
 	Uint32 alloc = numvert * sizeof( VertexCoords );
-	Uint32 allocC = numvert * GLi->quadVertex();
 
 	if ( 0 != mFontStyleConfig.OutlineThickness ) {
 		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0,
-						   reinterpret_cast<const char*>( outlineColors.data() ), allocC );
+						   reinterpret_cast<const char*>( outlineColors.data() ),
+						   outlineColors.size() * sizeof( Color ) );
 		GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
 							  reinterpret_cast<char*>( &mOutlineVertices[0] ), alloc );
 		GLi->vertexPointer( 2, GL_FP, sizeof( VertexCoords ),
 							reinterpret_cast<char*>( &mOutlineVertices[0] ) + sizeof( Float ) * 2,
 							alloc );
 
-		if ( GLi->quadsSupported() ) {
-			GLi->drawArrays( GL_QUADS, 0, numvert );
-		} else {
-			GLi->drawArrays( GL_TRIANGLES, 0, numvert );
-		}
+		drawTextVertexRanges( mOutlineRenderModes, numvert, allowSubpixel );
 	}
 
 	GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const char*>( colors.data() ),
-					   allocC );
+					   colors.size() * sizeof( Color ) );
 	GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
 						  reinterpret_cast<char*>( &mVertices[0] ), alloc );
 	GLi->vertexPointer( 2, GL_FP, sizeof( VertexCoords ),
 						reinterpret_cast<char*>( &mVertices[0] ) + sizeof( Float ) * 2, alloc );
 
-	if ( GLi->quadsSupported() ) {
-		GLi->drawArrays( GL_QUADS, 0, numvert );
-	} else {
-		GLi->drawArrays( GL_TRIANGLES, 0, numvert );
-	}
+	drawTextVertexRanges( mRenderModes, numvert, allowSubpixel );
 
 	if ( rotation != 0.0f || scale != 1.0f ) {
 		GLi->popMatrix();
 	} else {
-		GLi->translatef( -X, -Y, 0 );
+		GLi->translatef( -drawX, -drawY, 0 );
 	}
 }
 
@@ -1823,16 +1966,20 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 	ensureColorUpdate();
 
 	if ( mFontStyleConfig.Style & Shadow ) {
-		std::vector<Color> colors;
 		Color shadowColor( getShadowColor() );
 		if ( getFillColor().a != 255 ) {
 			shadowColor.a =
 				(Uint8)( (Float)shadowColor.a * ( (Float)getFillColor().a / (Float)255 ) );
 		}
-		colors.assign( mColors.size(), shadowColor );
+		if ( mShadowColors.size() != mColors.size() ||
+			 ( !mShadowColors.empty() && mShadowColors.front() != shadowColor ) )
+			mShadowColors.assign( mColors.size(), shadowColor );
+
+		static const std::vector<Color> emptyColors;
+		const std::vector<Color>& shadowOutlineColors =
+			mFontStyleConfig.OutlineThickness > 0 ? mOutlineColors : emptyColors;
 		draw( X + mFontStyleConfig.ShadowOffset.x, Y + mFontStyleConfig.ShadowOffset.y, scale,
-			  rotation, effect, rotationCenter, scaleCenter, colors,
-			  mFontStyleConfig.OutlineThickness > 0 ? mOutlineColors : std::vector<Color>{},
+			  rotation, effect, rotationCenter, scaleCenter, mShadowColors, shadowOutlineColors,
 			  Color::Transparent );
 	}
 
@@ -1856,7 +2003,9 @@ void Text::ensureGeometryUpdate() {
 
 	// Clear the previous geometry
 	mVertices.clear();
+	mRenderModes.clear();
 	mOutlineVertices.clear();
+	mOutlineRenderModes.clear();
 
 	if ( mCachedWidthNeedUpdate )
 		mLinesWidth.clear();
@@ -2646,6 +2795,9 @@ void Text::setFillColor( const std::vector<Color>& colors ) {
 // Add an underline or strikethrough line to the vertex array
 void Text::addLine( std::vector<VertexCoords>& vertices, Float lineLength, Float lineTop,
 					Float offset, Float thickness, Float outlineThickness, Int32 centerDiffX ) {
+	auto& renderModes = &vertices == &mOutlineVertices ? mOutlineRenderModes : mRenderModes;
+	if ( !renderModes.empty() )
+		renderModes.push_back( GlyphRenderMode::Mask );
 	Float top = std::floor( lineTop + offset - ( thickness / 2 ) + 0.5f );
 	Float bottom = top + std::floor( thickness + 0.5f );
 	Float u1 = 0;
@@ -2721,10 +2873,23 @@ void Text::addLine( std::vector<VertexCoords>& vertices, Float lineLength, Float
 void Text::addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,
 						 const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness,
 						 Int32 centerDiffX ) {
+	auto& renderModes = &vertices == &mOutlineVertices ? mOutlineRenderModes : mRenderModes;
+	if ( glyph.renderMode == GlyphRenderMode::Subpixel ) {
+		if ( renderModes.empty() )
+			renderModes.resize( vertices.size() / GLi->quadVertex(), GlyphRenderMode::Mask );
+		renderModes.push_back( GlyphRenderMode::Subpixel );
+	} else if ( !renderModes.empty() ) {
+		renderModes.push_back( GlyphRenderMode::Mask );
+	}
+	if ( glyph.renderMode == GlyphRenderMode::Subpixel )
+		position = position.trunc();
 	Float padding = 1.0;
 	Float left = glyph.bounds.Left - padding;
 	Float top = glyph.bounds.Top - padding;
-	Float right = glyph.bounds.Left + glyph.bounds.Right + padding;
+	Float right = glyph.bounds.Left +
+				  ( glyph.renderMode == GlyphRenderMode::Subpixel ? glyph.size.getWidth()
+																  : glyph.bounds.Right ) +
+				  padding;
 	Float bottom = glyph.bounds.Top + glyph.bounds.Bottom + padding;
 
 	Float u1 = static_cast<Float>( glyph.textureRect.Left - padding );
@@ -2963,11 +3128,9 @@ SmallVector<Rectf> Text::getSelectionRects( TextSelectionRange range ) {
 
 	size_t startLine = findVisualLineFromCharIndex( range.start );
 	size_t endLine = findVisualLineFromCharIndex( range.end );
-	Float hspace =
-		mFontStyleConfig.Font
-			->getGlyph( ' ', mFontStyleConfig.CharacterSize, mFontStyleConfig.Style & Text::Bold,
-						mFontStyleConfig.Style & Text::Italic )
-			.advance;
+	Float hspace = mFontStyleConfig.Font->getGlyphAdvance( ' ', mFontStyleConfig.CharacterSize,
+														   mFontStyleConfig.Style & Text::Bold,
+														   mFontStyleConfig.Style & Text::Italic );
 	Float vspace = getLineSpacing();
 
 	for ( size_t i = startLine; i <= endLine; ++i ) {

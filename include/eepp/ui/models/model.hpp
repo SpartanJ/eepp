@@ -100,7 +100,7 @@ class EE_API Model {
 
 	virtual bool isEditable( const ModelIndex& ) const { return false; }
 
-	bool isValid( const ModelIndex& index ) const {
+	virtual bool isValid( const ModelIndex& index ) const {
 		auto parentIndex = this->parentIndex( index );
 		return index.row() >= 0 && index.row() < (Int64)rowCount( parentIndex ) &&
 			   index.column() >= 0 && index.column() < (Int64)columnCount( parentIndex );
@@ -141,6 +141,7 @@ class EE_API Model {
 	void beginMoveColumns( ModelIndex const& sourceParent, int first, int last,
 						   ModelIndex const& targetParent, int target_index );
 	bool beginDeleteRows( ModelIndex const& parent, int first, int last );
+	bool beginDeleteRows( ModelIndex const& index );
 	bool beginDeleteColumns( ModelIndex const& parent, int first, int last );
 
 	void endInsertRows();
@@ -174,6 +175,12 @@ class EE_API Model {
 	enum class Direction { Row, Column };
 
 	struct Operation {
+		struct PersistentMove {
+			ModelIndex index;
+			ModelIndex targetParent;
+			int targetDimension;
+		};
+
 		OperationType type{ OperationType::Invalid };
 		Direction direction{ Direction::Row };
 		ModelIndex sourceParent;
@@ -181,6 +188,7 @@ class EE_API Model {
 		int last{ 0 };
 		ModelIndex targetParent;
 		int target{ 0 };
+		std::vector<PersistentMove> persistentMoves;
 
 		Operation( OperationType type ) : type( type ) {}
 
@@ -206,6 +214,10 @@ class EE_API Model {
 	void handleInsert( Operation const& );
 	void handleMove( Operation const& );
 	void handleDelete( Operation const& );
+	void saveMovedIndices( Operation& );
+	void notifyIndexDeleted( const void* internalData ) const;
+	void applyPersistentIndexChanges(
+		const std::vector<std::pair<ModelIndex, ModelIndex>>& indexChanges );
 
 	template <bool IsRow> void saveDeletedIndices( ModelIndex const& parent, int first, int last );
 

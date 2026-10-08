@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <eepp/core/memorymanager.hpp>
 #include <eepp/system/threadpool.hpp>
 
 namespace EE { namespace System {
@@ -110,7 +111,7 @@ bool ThreadPool::removeWithTag( const Uint64& tag ) {
 	return !ids.empty();
 }
 
-Uint64 ThreadPool::run( const std::function<void()>& func,
+Uint64 ThreadPool::run( SmallFunction<48> func,
 						const std::function<void( const Uint64& )>& doneCallback,
 						const Uint64& tag ) {
 	Uint64 id = ++mLastWorkId;
@@ -120,7 +121,7 @@ Uint64 ThreadPool::run( const std::function<void()>& func,
 		if ( mShuttingDown )
 			return id;
 
-		mWork.emplace_back( new Work{ id, func, doneCallback, tag } );
+		mWork.emplace_back( new Work{ id, std::move( func ), doneCallback, tag } );
 	}
 
 	mWorkAvailable.notify_one();

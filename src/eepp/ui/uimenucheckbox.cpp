@@ -106,15 +106,11 @@ void UIMenuCheckBox::switchActive() {
 	setActive( !mActive );
 }
 
-Uint32 UIMenuCheckBox::onMessage( const NodeMessage* msg ) {
-	switch ( msg->getMsg() ) {
-		case NodeMessage::MouseUp: {
-			if ( msg->getFlags() & EE_BUTTON_LMASK )
-				switchActive();
-			break;
-		}
-	}
-	return 0;
+void UIMenuCheckBox::activate() {
+	if ( !isEnabled() )
+		return;
+	switchActive();
+	UIMenuItem::activate();
 }
 
 void UIMenuCheckBox::onStateChange() {
@@ -132,7 +128,6 @@ bool UIMenuCheckBox::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Selected:
-		case PropertyId::Checked:
 		case PropertyId::Value:
 			setActive( attribute.asBool() );
 			break;
@@ -151,7 +146,6 @@ std::string UIMenuCheckBox::getPropertyString( const PropertyDefinition* propert
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Selected:
-		case PropertyId::Checked:
 		case PropertyId::Value:
 			return isActive() ? "true" : "false";
 		default:

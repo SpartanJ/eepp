@@ -1,5 +1,6 @@
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/inputevent.hpp>
@@ -24,10 +25,22 @@ EventDispatcher::EventDispatcher( SceneNode* sceneNode ) :
 	mFirstPress( false ),
 	mNodeWasDragging( NULL ),
 	mNodeDragging( NULL ) {
-	mCbId = mInput->pushCallback( [this]( InputEvent* event ) { inputCallback( event ); } );
+	mCbId = mInput->pushCallback( [this]( InputEvent* event ) {
+		if ( mSceneNode->isUISceneNode() ) {
+			auto context = mSceneNode->asType<UI::UISceneNode>()->makeCurrent();
+			inputCallback( event );
+		} else {
+			inputCallback( event );
+		}
+	} );
 	mIMECbId = mWindow->getIME().addTextEditingCb(
 		[this]( const String& text, Int32 start, Int32 length ) {
-			sendTextEditing( text, start, length );
+			if ( mSceneNode->isUISceneNode() ) {
+				auto context = mSceneNode->asType<UI::UISceneNode>()->makeCurrent();
+				sendTextEditing( text, start, length );
+			} else {
+				sendTextEditing( text, start, length );
+			}
 		} );
 }
 
@@ -56,7 +69,7 @@ void EventDispatcher::inputCallback( InputEvent* event ) {
 			break;
 		case InputEvent::KeyDown:
 			sendKeyDown( event->key.keysym.sym, event->key.keysym.scancode,
-						 event->key.keysym.unicode, event->key.keysym.mod );
+						 event->key.keysym.unicode, event->key.keysym.mod, event->key.repeat != 0 );
 			break;
 		case InputEvent::TextInput:
 			sendTextInput( event->text.text, event->text.timestamp );
@@ -66,9 +79,9 @@ void EventDispatcher::inputCallback( InputEvent* event ) {
 							 event->textediting.length );
 			break;
 		case InputEvent::MouseWheel:
-			sendMouseWheel( { event->wheel.x, event->wheel.y },
-							event->wheel.direction == InputEvent::WheelEvent::Normal ? true
-																					 : false );
+			mPendingMouseWheelEvents.push_back(
+				{ { event->wheel.x, event->wheel.y },
+				  event->wheel.direction == InputEvent::WheelEvent::Flipped } );
 			break;
 		case InputEvent::SysWM:
 		case InputEvent::VideoResize:
@@ -99,6 +112,8 @@ void EventDispatcher::update( const Time& time ) {
 			sendMsg( oldOverNode, NodeMessage::MouseLeave );
 		}
 
+		onMouseOverNodeChange( mOverNode );
+
 		if ( NULL != mOverNode ) {
 			mOverNode->onMouseOver( mMousePosi, 0 );
 			sendMsg( mOverNode, NodeMessage::MouseOver );
@@ -110,13 +125,24 @@ void EventDispatcher::update( const Time& time ) {
 		}
 	}
 
+	if ( !mPendingMouseWheelEvents.empty() ) {
+		std::vector<PendingMouseWheelEvent> pendingMouseWheelEvents;
+		pendingMouseWheelEvents.swap( mPendingMouseWheelEvents );
+		for ( const auto& event : pendingMouseWheelEvents )
+			sendMouseWheel( event.offset, event.flipped );
+	}
+
 	if ( mDisableMousePress || mJustDisabledMousePress ) {
 		mJustDisabledMousePress = false;
 		return;
 	}
 
-	if ( NULL != mNodeDragging )
+	mJustFinishDragging = false;
+
+	if ( NULL != mNodeDragging ) {
 		mNodeDragging->onCalculateDrag( mMousePos, mInput->getPressTrigger() );
+		mJustFinishDragging = mNodeDragging == NULL;
+	}
 
 	mJustPressed = false;
 
@@ -160,7 +186,7 @@ void EventDispatcher::update( const Time& time ) {
 	}
 
 	if ( mInput->getReleaseTrigger() ) {
-		if ( NULL != mFocusNode ) {
+		if ( NULL != mFocusNode || ( mInput->getReleaseTrigger() & EE_BUTTON_MMASK ) ) {
 			if ( !nodeWasDragging || mMousePos == mLastMousePos ) {
 				// The focused node can change after the MouseUp ( since the node can call
 				// "setFocus()" on other node And the MouseClick would be received by the new
@@ -182,14 +208,21 @@ void EventDispatcher::update( const Time& time ) {
 				}
 
 				if ( mInput->getClickTrigger() && mDownNode == mOverNode ) {
-					mLastFocusNode->onMouseClick( mMousePosi, mInput->getClickTrigger() );
-					sendMsg( mLastFocusNode, NodeMessage::MouseClick, mInput->getClickTrigger() );
+					// Middle click should activate the hovered widget without changing keyboard
+					// focus.
+					Node* clickNode = ( mInput->getClickTrigger() & EE_BUTTON_MMASK )
+										  ? mOverNode
+										  : mLastFocusNode;
+					if ( clickNode ) {
+						clickNode->onMouseClick( mMousePosi, mInput->getClickTrigger() );
+						sendMsg( clickNode, NodeMessage::MouseClick, mInput->getClickTrigger() );
+					}
 
-					if ( mInput->getDoubleClickTrigger() &&
+					if ( clickNode && mInput->getDoubleClickTrigger() &&
 						 mClickPos.distance( mMousePosi ) < 10 ) {
-						mLastFocusNode->onMouseDoubleClick( mMousePosi,
-															mInput->getDoubleClickTrigger() );
-						sendMsg( mLastFocusNode, NodeMessage::MouseDoubleClick,
+						clickNode->onMouseDoubleClick( mMousePosi,
+													   mInput->getDoubleClickTrigger() );
+						sendMsg( clickNode, NodeMessage::MouseDoubleClick,
 								 mInput->getDoubleClickTrigger() );
 					}
 
@@ -216,7 +249,11 @@ void EventDispatcher::update( const Time& time ) {
 	} else if ( nodeWasDragging && !isNodeDragging() ) {
 		mInput->captureMouse( false );
 	}
+
+	mJustFinishDragging = false;
 }
+
+void EventDispatcher::onMouseOverNodeChange( Node* ) {}
 
 Input* EventDispatcher::getInput() const {
 	return mInput;
@@ -260,8 +297,8 @@ void EventDispatcher::sendKeyUp( const Keycode& keyCode, const Scancode& scancod
 }
 
 void EventDispatcher::sendKeyDown( const Keycode& keyCode, const Scancode& scancode,
-								   const Uint32& chr, const Uint32& mod ) {
-	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyDown, keyCode, scancode, chr, mod );
+								   const Uint32& chr, const Uint32& mod, bool repeat ) {
+	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyDown, keyCode, scancode, chr, mod, repeat );
 	Node* node = mFocusNode;
 	while ( NULL != node ) {
 		if ( node->isEnabled() && node->onKeyDown( keyEvent ) )
@@ -271,7 +308,7 @@ void EventDispatcher::sendKeyDown( const Keycode& keyCode, const Scancode& scanc
 }
 
 void EventDispatcher::sendMouseWheel( const Vector2f& offset, bool flipped ) {
-	Node* node = mFocusNode;
+	Node* node = nullptr != mOverNode ? mOverNode : mFocusNode;
 	while ( NULL != node ) {
 		if ( node->isEnabled() && node->onMouseWheel( offset, flipped ) )
 			break;

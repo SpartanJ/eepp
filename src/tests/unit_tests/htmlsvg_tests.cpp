@@ -2,6 +2,7 @@
 
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
@@ -26,7 +27,7 @@ static UISceneNode* createScene() {
 													  true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	if ( !font->loaded() ) {
 		Engine::destroySingleton();
@@ -236,6 +237,74 @@ UTEST( UISvg, svgInsideBlockElement ) {
 	EXPECT_FALSE( svgWidget->getSvgXml().empty() );
 
 	destroyScene( sceneNode );
+}
+
+UTEST( UISvg, percentageHeightResolvesAfterContainingBlockLayout ) {
+	auto sceneNode = createScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+
+	std::string html = R"html(<!doctype html>
+<html>
+<body>
+<button id="button" style="height:34.5px;padding:2px 6px 3px">
+  <svg id="icon" viewBox="0 0 26 26" style="width:100%;height:100%">
+    <path d="M11 2a9 9 0 105.641 16.01l3.652 3.697 1.414-1.414-3.697-3.653A9 9 0 0011 2z"/>
+  </svg>
+</button>
+</body>
+</html>)html";
+
+	auto rootWidget = sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	ASSERT_TRUE( rootWidget != nullptr );
+	sceneNode->updateDirtyLayouts();
+
+	auto* button = rootWidget->querySelector( "#button" );
+	auto* svgWidget = rootWidget->querySelector( "#icon" )->asType<UISvg>();
+	ASSERT_TRUE( button != nullptr );
+	ASSERT_TRUE( svgWidget != nullptr );
+	EXPECT_EQ( svgWidget->getLayoutHeightPolicy(), SizePolicy::Fixed );
+	EXPECT_GT( svgWidget->getPixelsSize().getHeight(), 0.f );
+	EXPECT_NEAR( button->getPixelsSize().getHeight(), 34.5f, 1.f );
+	EXPECT_NEAR( svgWidget->getPixelsSize().getHeight(), 27.5f, 1.f );
+
+	button->setStyleSheetProperty( StyleSheetProperty( "height", "50px" ) );
+	sceneNode->updateDirtyLayouts();
+	EXPECT_NEAR( svgWidget->getPixelsSize().getHeight(), 43.f, 1.f );
+
+	destroyScene( sceneNode );
+}
+
+UTEST( UISvg, percentageSizeUsesPhysicalContainingBlockAtPixelDensity2 ) {
+	auto sceneNode = createScene();
+	ASSERT_TRUE( sceneNode != nullptr );
+	PixelDensity::setPixelDensity( 2.f );
+
+	std::string html = R"html(<!doctype html>
+<html>
+<body>
+<div id="box" style="box-sizing:border-box;width:64px;height:34.5px;padding:2px 6px 3px">
+  <svg id="icon" viewBox="0 0 26 26" style="width:100%;height:100%">
+    <circle cx="13" cy="13" r="10"/>
+  </svg>
+</div>
+</body>
+</html>)html";
+
+	auto rootWidget = sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	ASSERT_TRUE( rootWidget != nullptr );
+	sceneNode->updateDirtyLayouts();
+
+	auto* box = rootWidget->querySelector( "#box" );
+	auto* svgWidget = rootWidget->querySelector( "#icon" )->asType<UISvg>();
+	ASSERT_TRUE( box != nullptr );
+	ASSERT_TRUE( svgWidget != nullptr );
+	EXPECT_NEAR( box->getPixelsSize().getWidth(), 128.f, 1.f );
+	EXPECT_NEAR( box->getPixelsSize().getHeight(), 69.f, 1.f );
+	EXPECT_NEAR( svgWidget->getPixelsSize().getWidth(), 104.f, 1.f );
+	EXPECT_NEAR( svgWidget->getPixelsSize().getHeight(), 59.f, 1.f );
+
+	destroyScene( sceneNode );
+	PixelDensity::setPixelDensity( 1.f );
 }
 
 UTEST( UISvg, svgWithMemoryAsset ) {

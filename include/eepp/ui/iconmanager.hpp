@@ -13,8 +13,9 @@ class UIIconTheme;
 
 class EE_API IconManager {
   public:
-	static UIIconTheme* init( const std::string& iconThemeName, FontTrueType* remixIconFont,
-							  FontTrueType* noniconFont, FontTrueType* codIconFont );
+	static ResourcePtr<UIIconTheme> init( const std::string& iconThemeName,
+										  FontTrueType* remixIconFont, FontTrueType* noniconFont,
+										  FontTrueType* codIconFont );
 };
 
 }} // namespace EE::UI

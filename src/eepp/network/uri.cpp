@@ -1,3 +1,4 @@
+#include <eepp/core/debug.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/sys.hpp>
 

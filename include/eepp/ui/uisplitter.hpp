@@ -1,6 +1,7 @@
 #ifndef EE_UI_UISPLITTER_HPP
 #define EE_UI_UISPLITTER_HPP
 
+#include <eepp/scene/eventconnection.hpp>
 #include <eepp/ui/uilayout.hpp>
 
 namespace EE { namespace UI {
@@ -22,6 +23,10 @@ class EE_API UISplitter : public UILayout {
 	const bool& alwaysShowSplitter() const;
 
 	void setAlwaysShowSplitter( bool alwaysShowSplitter );
+
+	const bool& hideSplitterOnEdge() const;
+
+	void setHideSplitterOnEdge( bool hideSplitterOnEdge );
 
 	const StyleSheetLength& getSplitPartition() const;
 
@@ -49,10 +54,12 @@ class EE_API UISplitter : public UILayout {
   protected:
 	UIOrientation mOrientation;
 	bool mAlwaysShowSplitter;
+	bool mHideSplitterOnEdge;
 	StyleSheetLength mSplitPartition;
 	UIWidget* mSplitter;
 	UIWidget* mFirstWidget;
 	UIWidget* mLastWidget;
+	Scene::EventConnectionList mEventConnections;
 
 	UISplitter();
 
@@ -63,6 +70,8 @@ class EE_API UISplitter : public UILayout {
 	void updateFromDrag();
 
 	void updateSplitterDragFlags();
+
+	bool shouldShowSplitter() const;
 };
 
 }} // namespace EE::UI

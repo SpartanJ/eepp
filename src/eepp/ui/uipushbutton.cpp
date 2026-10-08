@@ -1,4 +1,3 @@
-#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiicon.hpp>
@@ -397,13 +396,13 @@ void UIPushButton::updateTextBox() {
 	}
 }
 
-UIPushButton* UIPushButton::setIcon( Drawable* icon, bool ownIt ) {
+UIPushButton* UIPushButton::setIcon( DrawablePtr icon ) {
 	if ( nullptr == mIcon || mIcon->getDrawable() != icon ) {
 		if ( icon )
 			getIcon()->setPixelsSize( icon->getPixelsSize() );
 		if ( icon == nullptr && mIcon == nullptr )
 			return this;
-		getIcon()->setDrawable( icon, ownIt );
+		getIcon()->setDrawable( std::move( icon ) );
 		updateTextBox();
 	}
 	return this;
@@ -681,18 +680,15 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::Icon: {
 			const std::string& val = attribute.value();
-			Drawable* icon = NULL;
-			bool ownIt;
 			UIIcon* iconF = getUISceneNode()->findIcon( val );
 			if ( iconF ) {
-				setIcon( iconF->getSize(
+				setIcon( iconF->createDrawable(
 					eemax<size_t>( mSize.getHeight() - mPaddingPx.Top - mPadding.Bottom,
-								   PixelDensity::dpToPxI( 16 ) ) ) );
-			} else if ( NULL !=
-						( icon = StyleSheetSpecification::instance()
-									 ->getDrawableImageParser()
-									 .createDrawable( val, getPixelsSize(), ownIt, this ) ) ) {
-				setIcon( icon, ownIt );
+									   PixelDensity::dpToPxI( 16 ) ) ) );
+			} else if ( DrawablePtr icon = StyleSheetSpecification::instance()
+										->getDrawableImageParser()
+										.createDrawable( val, getPixelsSize(), this ) ) {
+				setIcon( std::move( icon ) );
 			}
 			break;
 		}

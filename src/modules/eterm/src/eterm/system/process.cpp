@@ -23,6 +23,7 @@
 #ifndef _WIN32
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/sys.hpp>
 #include <eepp/version.hpp>
 #include <eterm/system/process.hpp>
 #include <poll.h>
@@ -109,54 +110,83 @@ int Process::getExitCode() const {
 
 Process::Process( int pid ) : mPID( pid ) {}
 
-static void execshell( const char* cmd, const char* const* args, std::string workingDirectory,
-					   const std::unordered_map<std::string, std::string>& env ) {
-	const struct passwd* pw;
-	const char* sh;
+struct ProcessLaunchData {
+	std::string executable;
+	std::string workingDirectory;
+	std::vector<char*> arguments;
+	std::vector<std::string> environmentStorage;
+	std::vector<char*> environment;
+};
 
-	errno = 0;
-	if ( ( pw = getpwuid( getuid() ) ) == NULL ) {
-		if ( errno ) {
-			fprintf( stderr, "getpwuid: %s\n", strerror( errno ) );
-			_exit( 1 );
-		} else {
+static bool prepareProcessLaunch( const std::string& program, const std::vector<std::string>& args,
+								  const std::string& workingDirectory,
+								  const std::unordered_map<std::string, std::string>& env,
+								  ProcessLaunchData& launch ) {
+	long passwordBufferSize = sysconf( _SC_GETPW_R_SIZE_MAX );
+	if ( passwordBufferSize < 0 )
+		passwordBufferSize = 16384;
+	std::vector<char> passwordBuffer( static_cast<size_t>( passwordBufferSize ) );
+	struct passwd passwordData;
+	struct passwd* passwordResult = nullptr;
+	const int passwordError = getpwuid_r( getuid(), &passwordData, passwordBuffer.data(),
+										  passwordBuffer.size(), &passwordResult );
+	if ( passwordError || !passwordResult ) {
+		if ( passwordError )
+			fprintf( stderr, "getpwuid_r: %s\n", strerror( passwordError ) );
+		else
 			fprintf( stderr, "who are you?\n" );
-			_exit( 1 );
-		}
+		return false;
 	}
+	const struct passwd* pw = passwordResult;
 
-	if ( ( sh = getenv( "SHELL" ) ) == NULL )
-		sh = ( pw->pw_shell[0] ) ? pw->pw_shell : cmd;
+	launch.executable = Sys::which( program );
+	if ( launch.executable.empty() )
+		launch.executable = program;
+	launch.workingDirectory = workingDirectory.empty() ? pw->pw_dir : workingDirectory;
 
-	if ( workingDirectory.empty() )
-		workingDirectory = pw->pw_dir;
+	launch.arguments.reserve( args.size() + 2 );
+	launch.arguments.emplace_back( const_cast<char*>( program.c_str() ) );
+	for ( const auto& argument : args )
+		launch.arguments.emplace_back( const_cast<char*>( argument.c_str() ) );
+	launch.arguments.emplace_back( nullptr );
 
-	FileSystem::changeWorkingDirectory( workingDirectory );
+	auto environment = Sys::getEnvironmentVariables();
+	environment.erase( "COLUMNS" );
+	environment.erase( "LINES" );
+	environment.erase( "TERMCAP" );
+	environment["LOGNAME"] = pw->pw_name;
+	environment["USER"] = pw->pw_name;
+	const char* shell = getenv( "SHELL" );
+	environment["SHELL"] = shell ? shell : ( pw->pw_shell[0] ? pw->pw_shell : program );
+	environment["HOME"] = pw->pw_dir;
+	environment["TERM"] = "xterm-256color";
+	environment["TERM_PROGRAM"] = "eterm";
+	environment["TERM_PROGRAM_VERSION"] = EE::Version::getVersionName( false );
+	environment["COLORTERM"] = "24bit";
+	for ( const auto& entry : env )
+		environment[entry.first] = entry.second;
 
-	unsetenv( "COLUMNS" );
-	unsetenv( "LINES" );
-	unsetenv( "TERMCAP" );
-	setenv( "LOGNAME", pw->pw_name, 1 );
-	setenv( "USER", pw->pw_name, 1 );
-	setenv( "SHELL", sh, 1 );
-	setenv( "HOME", pw->pw_dir, 1 );
-	setenv( "TERM", "xterm-256color", 1 );
-	setenv( "TERM_PROGRAM", "eterm", 1 );
-	setenv( "TERM_PROGRAM_VERSION", EE::Version::getVersionName( false ).c_str(), 1 );
-	setenv( "COLORTERM", "24bit", 1 );
+	launch.environmentStorage.reserve( environment.size() );
+	for ( const auto& entry : environment )
+		launch.environmentStorage.emplace_back( entry.first + "=" + entry.second );
+	launch.environment.reserve( launch.environmentStorage.size() + 1 );
+	for ( auto& entry : launch.environmentStorage )
+		launch.environment.emplace_back( entry.data() );
+	launch.environment.emplace_back( nullptr );
+	return true;
+}
 
-	for ( const auto& e : env )
-		setenv( e.first.c_str(), e.second.c_str(), 1 );
-
-	signal( SIGCHLD, SIG_DFL );
-	signal( SIGHUP, SIG_DFL );
-	signal( SIGINT, SIG_DFL );
-	signal( SIGQUIT, SIG_DFL );
-	signal( SIGTERM, SIG_DFL );
-	signal( SIGALRM, SIG_DFL );
-
-	execvp( cmd, (char* const*)args );
-	_exit( 1 );
+static void resetSignalHandlers() {
+	struct sigaction action;
+	memset( &action, 0, sizeof( action ) );
+	action.sa_handler = SIG_DFL;
+	sigemptyset( &action.sa_mask );
+	sigaction( SIGCHLD, &action, nullptr );
+	sigaction( SIGHUP, &action, nullptr );
+	sigaction( SIGINT, &action, nullptr );
+	sigaction( SIGQUIT, &action, nullptr );
+	sigaction( SIGTERM, &action, nullptr );
+	sigaction( SIGALRM, &action, nullptr );
 }
 
 std::unique_ptr<Process> Process::createWithPipe( const std::string& /*program*/,
@@ -173,37 +203,42 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 								   const std::string& workingDirectory,
 								   Terminal::PseudoTerminal& pseudoTerminal,
 								   const std::unordered_map<std::string, std::string>& env ) {
+	// The calling process may already contain other threads. Prepare every allocation and libc
+	// lookup before fork: the child may safely call only async-signal-safe operations until exec
+	// replaces the inherited multithreaded process image.
+	ProcessLaunchData launch;
+	if ( !prepareProcessLaunch( program, args, workingDirectory, env, launch ) )
+		return nullptr;
+
 	int pid = fork();
 	if ( pid == -1 ) {
 		fprintf( stderr, "Failed to fork process\n" );
 		return nullptr;
 	} else if ( pid == 0 ) {
-		setsid();
-		dup2( (int)pseudoTerminal.mSlave, 0 );
-		dup2( (int)pseudoTerminal.mSlave, 1 );
-		dup2( (int)pseudoTerminal.mSlave, 2 );
-
-		if ( ioctl( (int)pseudoTerminal.mSlave, TIOCSCTTY, NULL ) < 0 ) {
-			fprintf( stderr, "ioctl TIOCSCTTY failed: %s", strerror( errno ) );
-			exit( 1 );
+		const int master = (int)pseudoTerminal.mMaster;
+		const int slave = (int)pseudoTerminal.mSlave;
+		if ( setsid() < 0 || dup2( slave, STDIN_FILENO ) < 0 || dup2( slave, STDOUT_FILENO ) < 0 ||
+			 dup2( slave, STDERR_FILENO ) < 0 ) {
+			_exit( 1 );
 		}
 
-		if ( (int)pseudoTerminal.mSlave > 2 )
-			close( (int)pseudoTerminal.mSlave );
+		if ( ioctl( slave, TIOCSCTTY, NULL ) < 0 )
+			_exit( 1 );
+
+		if ( slave > STDERR_FILENO )
+			close( slave );
+		if ( master > STDERR_FILENO )
+			close( master );
+		if ( chdir( launch.workingDirectory.c_str() ) < 0 )
+			_exit( 1 );
 
 #ifdef __OpenBSD__
-		if ( pledge( "stdio getpw proc exec", NULL ) == -1 ) {
-			fprintf( stderr, "pledge\n" );
-			exit( 1 );
-		}
+		if ( pledge( "stdio proc exec", NULL ) == -1 )
+			_exit( 1 );
 #endif
-		std::vector<const char*> argsV;
-		argsV.push_back( program.c_str() );
-		for ( auto& a : args ) {
-			argsV.push_back( a.c_str() );
-		}
-		argsV.push_back( nullptr );
-		execshell( program.c_str(), argsV.data(), workingDirectory, env );
+		resetSignalHandlers();
+		execve( launch.executable.c_str(), launch.arguments.data(), launch.environment.data() );
+		_exit( 1 );
 	} else {
 		pseudoTerminal.mSlave.release();
 		return std::unique_ptr<Process>( new Process( pid ) );

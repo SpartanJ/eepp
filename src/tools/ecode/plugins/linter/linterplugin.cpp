@@ -1,5 +1,6 @@
 ﻿#include "linterplugin.hpp"
 #include "../../notificationcenter.hpp"
+#include "../../settingspage.hpp"
 #include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -30,6 +31,41 @@ using json = nlohmann::json;
 
 namespace ecode {
 
+void LinterPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addText( "delay-time", "/config/delay_time", i18n( "linter_delay_time", "Lint Delay" ),
+				  i18n( "linter_delay_time_desc", "Time to wait before linting after an edit." ),
+				  getDelayTime().toString(), []( const std::string& text ) {
+					  Time value;
+					  return SettingsPage::parseNonNegativeSettingsTime( text, value );
+				  } );
+	page.addBool( "enable-lsp-diagnostics", "/config/enable_lsp_diagnostics",
+				  i18n( "linter_enable_lsp_diagnostics", "Language Server Diagnostics" ),
+				  i18n( "linter_enable_lsp_diagnostics_desc",
+						"Display diagnostics reported by language servers." ),
+				  true );
+	page.addBool( "enable-error-lens", "/config/enable_error_lens",
+				  i18n( "linter_enable_error_lens", "Error Lens" ),
+				  i18n( "linter_enable_error_lens_desc",
+						"Display diagnostic messages inline in the editor." ),
+				  true );
+	page.addStringList(
+		"disable-lsp-languages", "/config/disable_lsp_languages",
+		i18n( "linter_disable_lsp_languages", "Disable LSP Diagnostic Languages" ),
+		i18n( "linter_disable_lsp_languages_desc",
+			  "Comma-separated language identifiers where LSP diagnostics are disabled." ) );
+	page.addStringList(
+		"disable-languages", "/config/disable_languages",
+		i18n( "linter_disable_languages", "Disable Linter Languages" ),
+		i18n( "linter_disable_languages_desc",
+			  "Comma-separated language identifiers where linters are disabled." ) );
+	page.addBool( "goto-ignore-warnings", "/config/goto_ignore_warnings",
+				  i18n( "linter_goto_ignore_warnings", "Ignore Warnings When Navigating" ),
+				  i18n( "linter_goto_ignore_warnings_desc",
+						"Skip warnings when navigating between diagnostics." ),
+				  false );
+}
+
 Plugin* LinterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( LinterPlugin, ( pluginManager, false ) );
 }
@@ -49,8 +85,6 @@ LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) : Plugin( 
 LinterPlugin::~LinterPlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
-	mManager->unsubscribeMessages( this );
-	unsubscribeFileSystemListener();
 
 	{
 		std::lock_guard l( mRunningProcessesMutex );
@@ -62,17 +96,11 @@ LinterPlugin::~LinterPlugin() {
 
 	std::unique_lock<std::mutex> lock( mWorkMutex );
 	mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
+}
 
-	for ( const auto& editor : mEditors ) {
-		for ( auto& kb : mKeyBindings ) {
-			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
-			if ( editor.first->hasDocument() )
-				editor.first->getDocument().removeCommand( kb.first );
-		}
-		for ( auto listener : editor.second )
-			editor.first->removeEventListener( listener );
-		editor.first->unregisterPlugin( this );
-	}
+void LinterPlugin::unregisterEditors() {
+	while ( !mEditors.empty() )
+		mEditors.begin()->first->unregisterPlugin( this );
 }
 
 size_t LinterPlugin::linterFilePatternPosition( const std::vector<std::string>& patterns ) {
@@ -717,7 +745,7 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 }
 
 void LinterPlugin::onUnregister( UICodeEditor* editor ) {
-	if ( mShuttingDown )
+	if ( mShuttingDown && !mUnregistering )
 		return;
 
 	Lock l( mDocMutex );
@@ -725,17 +753,17 @@ void LinterPlugin::onUnregister( UICodeEditor* editor ) {
 	auto cbs = mEditors[editor];
 	for ( auto listener : cbs )
 		editor->removeEventListener( listener );
+	for ( auto& kb : mKeyBindings )
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
 	mEditors.erase( editor );
 	mEditorDocs.erase( editor );
 	for ( auto editorIt : mEditorDocs )
 		if ( editorIt.second == doc )
 			return;
 
-	for ( auto& kb : mKeyBindings ) {
-		editor->getKeyBindings().removeCommandKeybind( kb.first );
-		if ( editor->hasDocument() )
-			editor->getDocument().removeCommand( kb.first );
-	}
+	for ( auto& kb : mKeyBindings )
+		doc->removeCommand( kb.first );
+	doc->removeCommand( "linter-copy-error-message" );
 
 	mDocs.erase( doc );
 	mDirtyDoc.erase( doc );
@@ -746,9 +774,9 @@ void LinterPlugin::onUnregister( UICodeEditor* editor ) {
 void LinterPlugin::update( UICodeEditor* editor ) {
 	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 	auto it = mDirtyDoc.find( doc.get() );
-	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
+	if ( it != mDirtyDoc.end() && it->second.getElapsedTime() >= mDelayTime ) {
 		mDirtyDoc.erase( doc.get() );
-		mThreadPool->run( [this, doc] { lintDoc( doc ); } );
+		mThreadPool->run( [this, doc = std::move( doc )] { lintDoc( doc ); } );
 	}
 }
 
@@ -1144,12 +1172,12 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 			if ( !match.diagnostic.codeActions.empty() ) {
 				Color wcolor(
 					editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
-				if ( nullptr == mLightbulbIcon ) {
+				if ( mLightbulbIcon == nullptr )
 					mLightbulbIcon = editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
 						"lightbulb-autofix" );
-				}
 				if ( nullptr != mLightbulbIcon ) {
-					Drawable* drawable = mLightbulbIcon->getSize( (int)eefloor( lineHeight ) );
+					const int iconSize = (int)eefloor( lineHeight );
+					Drawable* drawable = mLightbulbIcon->getSource( iconSize ).get();
 					if ( drawable == nullptr )
 						return;
 
@@ -1468,10 +1496,12 @@ Linter LinterPlugin::supportsLinter( std::shared_ptr<TextDocument> doc ) {
 }
 
 void LinterPlugin::setDocDirty( TextDocument* doc ) {
-	mDirtyDoc[doc] = std::make_unique<Clock>();
+	auto [it, inserted] = mDirtyDoc.try_emplace( doc );
+	if ( !inserted )
+		it->second.restart();
 }
 void LinterPlugin::setDocDirty( UICodeEditor* editor ) {
-	mDirtyDoc[editor->getDocumentRef().get()] = std::make_unique<Clock>();
+	setDocDirty( editor->getDocumentRef().get() );
 }
 
 void LinterPlugin::invalidateEditors( TextDocument* doc ) {
@@ -1501,7 +1531,7 @@ bool LinterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 			 match.lensBox[editor].contains( localPos ) ) {
 			menu->addSeparator();
 			menu->add( editor->i18n( "linter_copy_error_message", "Copy Error Message" ),
-					   mManager->getUISceneNode()->findIcon( "copy" )->getSize(
+					   mManager->getUISceneNode()->findIcon( "copy" )->createDrawable(
 						   PixelDensity::dpToPxI( 12 ) ) )
 				->setId( "linter-copy-error-message" );
 			mErrorMsg = match.text;

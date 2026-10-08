@@ -23,6 +23,8 @@ namespace EE { namespace UI {
 
 class UITooltip;
 class UIStyle;
+class UIWidget;
+class UITextSelectionController;
 
 struct MarginAuto {
 	static constexpr auto Left = ( 1 << 0 );
@@ -30,6 +32,8 @@ struct MarginAuto {
 	static constexpr auto Top = ( 1 << 2 );
 	static constexpr auto Bottom = ( 1 << 3 );
 };
+
+using WidgetQueryResult = SmallVector<UIWidget*, 8>;
 
 /**
  * @brief Base class for all UI widgets in the eepp framework.
@@ -73,6 +77,12 @@ class EE_API UIWidget : public UINode {
 
 	virtual ~UIWidget();
 
+	virtual UITextSelectionController* getTextSelectionController();
+
+	virtual const UITextSelectionController* getTextSelectionController() const;
+
+	UITextSelectionController* getTextSelectionControllerInTree() const;
+
 	/**
 	 * @brief Gets the widget type identifier.
 	 *
@@ -93,6 +103,12 @@ class EE_API UIWidget : public UINode {
 	virtual bool isType( const Uint32& type ) const {
 		return UIWidget::getType() == type || UINode::isType( type );
 	}
+
+	/** Returns the scene-level text rendering hints inherited by this widget. */
+	Uint32 getDefaultTextHints() const;
+
+	/** Called when the scene-level text rendering hints change. */
+	virtual void onTextHintsChanged();
 
 	/**
 	 * @brief Sets multiple flags on the widget.
@@ -130,12 +146,14 @@ class EE_API UIWidget : public UINode {
 	virtual UIWidget* setAnchors( const Uint32& flags );
 
 	/**
-	 * @brief Sets the theme for this widget.
+	 * @brief Sets the borrowed theme used by this widget.
 	 *
-	 * Applies the specified theme to the widget, affecting its visual appearance.
-	 * The theme controls colors, fonts, borders, and other visual properties.
+	 * The widget stores @p Theme as a non-owning pointer and does not increment its reference
+	 * count. The theme must outlive this use; normally it is retained by the containing scene's
+	 * UIThemeManager. This keeps per-widget theme access inexpensive while centralizing ownership
+	 * at the scene boundary.
 	 *
-	 * @param Theme Pointer to the UITheme to apply.
+	 * @param Theme Borrowed theme to apply, or null to use no explicit theme.
 	 */
 	virtual void setTheme( UITheme* Theme );
 
@@ -623,6 +641,9 @@ class EE_API UIWidget : public UINode {
 	 */
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
+	/** @return The cursor resolved from this widget's current style. */
+	Cursor::Type getCursor() const;
+
 	void propagateInheritedProperty( const CSS::StyleSheetProperty& property );
 
 	/**
@@ -1049,6 +1070,9 @@ class EE_API UIWidget : public UINode {
 	 */
 	UIStyle* getUIStyle() const;
 
+	/** Resolve a CSS color variable, or return fallback when it is absent. */
+	Color themeColor( const std::string& variable, Color fallback ) const;
+
 	/**
 	 * @brief Reloads the widget's style.
 	 *
@@ -1107,7 +1131,7 @@ class EE_API UIWidget : public UINode {
 	 * @param className The CSS class to search for.
 	 * @return Vector of matching UIWidget pointers.
 	 */
-	std::vector<UIWidget*> findAllByClass( const std::string& className );
+	WidgetQueryResult findAllByClass( const std::string& className );
 
 	/**
 	 * @brief Finds all widgets by CSS tag.
@@ -1117,7 +1141,7 @@ class EE_API UIWidget : public UINode {
 	 * @param tag The CSS tag to search for.
 	 * @return Vector of matching UIWidget pointers.
 	 */
-	std::vector<UIWidget*> findAllByTag( const std::string& tag );
+	WidgetQueryResult findAllByTag( const std::string& tag );
 
 	/**
 	 * @brief Finds a widget by CSS class.
@@ -1179,7 +1203,7 @@ class EE_API UIWidget : public UINode {
 	 * @param selector The CSS selector to use.
 	 * @return Vector of all matching UIWidget pointers.
 	 */
-	std::vector<UIWidget*> querySelectorAll( const CSS::StyleSheetSelector& selector );
+	WidgetQueryResult querySelectorAll( const CSS::StyleSheetSelector& selector );
 
 	/**
 	 * @brief Queries all widgets using a CSS selector string.
@@ -1189,7 +1213,7 @@ class EE_API UIWidget : public UINode {
 	 * @param selector The CSS selector string to use.
 	 * @return Vector of all matching UIWidget pointers.
 	 */
-	std::vector<UIWidget*> querySelectorAll( const std::string& selector );
+	WidgetQueryResult querySelectorAll( const std::string& selector );
 
 	/**
 	 * @brief Gets a property value as a string.
@@ -1330,6 +1354,17 @@ class EE_API UIWidget : public UINode {
 	 * @return True if the widget has the pseudo-class, false otherwise.
 	 */
 	bool hasPseudoClass( const std::string& pseudoCls ) const;
+
+	/**
+	 * @brief Checks if this widget has a specific pseudo-class.
+	 *
+	 * Determines whether this widget currently has the specified pseudo-class
+	 * (e.g., hover, focus, active).
+	 *
+	 * @param pseudoCls The pseudo-class to check.
+	 * @return True if the widget has the pseudo-class, false otherwise.
+	 */
+	bool hasPseudoClass( StyleSheetSelectorRule::PseudoClasses pseudoCls ) const;
 
 	/**
 	 * @brief Checks if the tooltip is enabled for this widget.
@@ -1516,10 +1551,12 @@ class EE_API UIWidget : public UINode {
 	mutable Float mMinIntrinsicWidth{ 0 };
 	mutable Float mMaxIntrinsicWidth{ 0 };
 	mutable bool mIntrinsicWidthsDirty{ true };
+	Uint8 mCursor{ static_cast<Uint8>( Cursor::Arrow ) };
 	Uint8 mMarginAuto{ 0 };
 
 	void calculateAutoMargin();
 	void rebuildClassHashes();
+	void propagateInheritedPropertyResolved( const CSS::StyleSheetProperty& property );
 
 	/**
 	 * @brief Default constructor.
@@ -1640,6 +1677,10 @@ class EE_API UIWidget : public UINode {
 	 */
 	virtual void onSizeChange();
 
+	/** Updates size-dependent drawing state without treating measured layout output as new input.
+	 */
+	void onSizeChange( bool notifyLayout );
+
 	/**
 	 * @brief Handles size policy change events.
 	 *
@@ -1647,6 +1688,21 @@ class EE_API UIWidget : public UINode {
 	 * implement custom handling of size policy changes.
 	 */
 	virtual void onSizePolicyChange();
+
+	/**
+	 * @brief Called when the outermost attributes transaction ends.
+	 *
+	 * Invoked from endAttributesTransaction() after the transaction count reaches
+	 * zero but before the accumulated layout notifications are emitted. Property
+	 * setters run immediately even inside a transaction, so interdependent
+	 * properties can be observed in a partially applied state mid-loop. This hook
+	 * lets derived widgets perform a final-state reconciliation once the complete
+	 * style is applied, making the resulting geometry independent of the setter
+	 * application order.
+	 */
+	virtual void onAttributesTransactionEnd();
+
+	bool isInAttributesTransaction() const { return mAttributesTransactionCount > 0; }
 
 	/**
 	 * @brief Handles auto-size events.

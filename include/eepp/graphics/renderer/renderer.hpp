@@ -27,6 +27,8 @@ class RendererGLES2;
  */
 class EE_API Renderer {
   public:
+	/** Pixel layouts supported by framebuffer readback operations. */
+	enum class PixelFormat : Uint8 { RGB24, RGBA32 };
 	/** @return The graphic library renderer version from a string. */
 	static GraphicsLibraryVersion glVersionFromString( std::string glVersion );
 
@@ -74,6 +76,9 @@ class EE_API Renderer {
 
 	bool pointSpriteSupported();
 
+	/** Configures point-sprite coordinate replacement when required by the active graphics API. */
+	void configurePointSprite();
+
 	bool shadersSupported();
 
 	void clear( unsigned int mask );
@@ -90,6 +95,12 @@ class EE_API Renderer {
 
 	void drawArrays( unsigned int mode, int first, int count );
 
+	/** Draws an LCD coverage range into RGB independently and updates destination alpha. */
+	bool drawSubpixelArrays( unsigned int mode, int first, int count );
+
+	/** Draws an LCD coverage range as neutral grayscale using its mean coverage. */
+	bool drawSubpixelFallbackArrays( unsigned int mode, int first, int count );
+
 	void drawElements( unsigned int mode, int count, unsigned int type, const void* indices );
 
 	void bindTexture( unsigned int target, unsigned int texture );
@@ -104,6 +115,9 @@ class EE_API Renderer {
 							unsigned int sfactorAlpha, unsigned int dfactorAlpha );
 
 	void blendEquationSeparate( unsigned int modeRGB, unsigned int modeAlpha );
+
+	bool bindFragDataLocationIndexed( unsigned int program, unsigned int colorNumber,
+									  unsigned int index, const char* name );
 
 	void blitFrameBuffer( int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0,
 						  int dstX1, int dstY1, unsigned int mask, unsigned int filter );
@@ -156,6 +170,9 @@ class EE_API Renderer {
 
 	virtual void enable( unsigned int cap );
 
+	/** Reapplies renderer state cached outside OpenGL after changing the current context. */
+	virtual void onContextChanged();
+
 	virtual GraphicsLibraryVersion version() = 0;
 
 	virtual std::string versionStr() = 0;
@@ -197,6 +214,9 @@ class EE_API Renderer {
 
 	virtual void setShader( ShaderProgram* Shader );
 
+	/** Selects built-in texture sampling: normal RGBA (0), LCD R/G/B (1-3), or LCD mean (4). */
+	virtual bool setTextureColorMode( Int32 mode );
+
 	virtual void clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width,
 									const Int32& Height ) = 0;
 
@@ -236,6 +256,8 @@ class EE_API Renderer {
 	void stencilMask( unsigned int mask );
 
 	void colorMask( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha );
+
+	void getColorMask( Uint8 mask[4] ) const;
 
 	void bindVertexArray( unsigned int array );
 
@@ -310,9 +332,9 @@ class EE_API Renderer {
 
 	void getCompressedTexImage( unsigned int target, int level, void* pixels );
 
-	const bool& quadsSupported() const;
+	inline bool quadsSupported() const { return mQuadsSupported; }
 
-	const int& quadVertex() const;
+	inline int quadVertex() const { return mQuadVertex; }
 
 	ClippingMask* getClippingMask() const;
 
@@ -346,11 +368,28 @@ class EE_API Renderer {
 
 	void readPixels( int x, int y, unsigned int width, unsigned int height, void* pixels );
 
+	/** Reads a framebuffer rectangle into caller-owned storage.
+	 * @param x Left coordinate of the rectangle.
+	 * @param y Bottom coordinate of the rectangle.
+	 * @param width Rectangle width in pixels.
+	 * @param height Rectangle height in pixels.
+	 * @param format Destination pixel format.
+	 * @param pixels Destination storage.
+	 * @param stride Destination row stride in bytes.
+	 * @return True if the arguments are valid and the pixels were read.
+	 */
+	bool readPixels( int x, int y, unsigned int width, unsigned int height, PixelFormat format,
+					 void* pixels, size_t stride );
+
 	Color readPixel( int x, int y );
 
 	void waitForIdle();
 
   protected:
+	virtual bool drawSubpixelDualSourceArrays( unsigned int mode, int first, int count );
+
+	static const Vector3ff& textureColorChannel( Int32 mode );
+
 	static Renderer* sSingleton;
 
 	enum RendererStateFlags {
@@ -366,6 +405,7 @@ class EE_API Renderer {
 	int mQuadVertex;
 	float mLineWidth;
 	unsigned int mCurVAO;
+	Uint8 mColorMask[4]{ 1, 1, 1, 1 };
 
 	ClippingMask* mClippingMask;
 

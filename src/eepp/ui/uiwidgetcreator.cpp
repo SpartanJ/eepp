@@ -1,13 +1,20 @@
+#include <eepp/ui/charts/uichart.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
+#include <eepp/ui/tools/uimergeview.hpp>
 #include <eepp/ui/tools/uitextureviewer.hpp>
+#include <eepp/ui/uicalendar.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uiconsole.hpp>
+#include <eepp/ui/uidatepicker.hpp>
+#include <eepp/ui/uidatetimeedit.hpp>
+#include <eepp/ui/uidatetimepicker.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uidropdownmodellist.hpp>
+#include <eepp/ui/uiflowlayout.hpp>
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/uihtmldetails.hpp>
 #include <eepp/ui/uihtmlform.hpp>
@@ -36,7 +43,6 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
-#include <eepp/ui/uistacklayout.hpp>
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uisvg.hpp>
@@ -48,6 +54,7 @@
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uitimepicker.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uitreeview.hpp>
@@ -67,9 +74,9 @@ UIWidgetCreator::WidgetCallbackMap UIWidgetCreator::widgetCallback =
 UIWidgetCreator::RegisteredWidgetCallbackMap UIWidgetCreator::registeredWidget =
 	UIWidgetCreator::RegisteredWidgetCallbackMap();
 
-static const std::string_view getHTMLBaseDefaultsCSS() {
+static const std::string_view getHTMLBasicDefaultsCSS() {
 	return R"css(
-body { color: black; margin: 0.67em; }
+body { margin: 0.67em; }
 
 h1 { font-size: 2em; font-weight: bold; margin: 0.67em 0; }
 h2 { font-size: 1.5em; font-weight: bold; margin: 0.83em 0; }
@@ -81,7 +88,7 @@ h6 { font-size: 0.67em; font-weight: bold; margin: 2.33em 0; }
 p { margin: 1em 0; }
 pre { margin: 1em 0; white-space: pre; }
 blockquote { margin: 1em 0; }
-hr { display: block; border-width: 1px; border-color: gray; margin: 0.5em 0; min-height: 2px; }
+hr { display: block; border-width: 1px; border-style: solid; margin: 0.5em 0; min-height: 2px; }
 ul, ol, dl { margin: 1em 0; }
 
 b, strong { font-weight: bold; }
@@ -93,9 +100,8 @@ code, kbd { font-family: monospace; }
 sub, sup { font-size: smaller; }
 mark { background-color: yellow; }
 
-a, a:link { color: #0000EE; text-decoration: none; cursor: arrow; }
+a, a:link { text-decoration: none; cursor: arrow; }
 a:hover { text-decoration: underline; cursor: hand; }
-a:visited { color: #551A8B; }
 
 ul { padding-left: 40dp; list-style-type: disc; }
 ol { padding-left: 40dp; list-style-type: decimal; }
@@ -103,12 +109,29 @@ dd { margin-left: 40dp; }
 
 summary { cursor: pointer; padding-left: 20dp; list-style-type: disclosure-closed; }
 
-textarea { border-width: 1dp; border-color: #767676; background-color: white; color: black; padding: 2dp; selection-back-color: lightgray; }
+form { margin-top: 0em; margin-bottom: 1em; }
+)css";
+}
+
+static const std::string_view getHTMLDocumentDefaultsCSS() {
+	return R"css(
+body { color: black; }
+mark { background-color: yellow; }
+
+hr { border-color: gray; }
+a, a:link { color: #0000EE; }
+a:visited { color: #551A8B; }
+
+textarea { border-width: 1dp; border-style: solid; border-color: #767676; background-color: white; color: black; padding: 2dp; selection-back-color: lightgray; }
 
 input[type="text"],
 input[type="password"],
-input[type="number"] {
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
 	border-width: 1dp;
+	border-style: solid;
 	border-color: #767676;
 	background-color: white;
 	color: black;
@@ -120,11 +143,22 @@ input[type="number"] {
 }
 
 button,
+select,
+meter,
+progress,
+input[type="submit"],
+input[type="button"],
+input[type="image"],
+input[type="reset"] { user-select: none; }
+
+button,
 input[type="submit"],
 input[type="button"],
 input[type="reset"] {
 	display: inline-block;
+	box-sizing: border-box;
 	border-width: 1dp;
+	border-style: solid;
 	border-color: #767676;
 	background-color: #f0f0f0;
 	color: black;
@@ -184,12 +218,110 @@ RadioButton::active {
 	foreground-position: 6dp 6dp;
 }
 
+/* Anonymous temporal controls use browser-like light defaults within the document. */
+Calendar {
+	color: black;
+	font-size: 12dp;
+	background-color: white;
+	border-color: #767676;
+	border-width: 1dp;
+	width: auto;
+	height: auto;
+	min-width: 160dp;
+	min-height: 160dp;
+}
+Calendar::previous, Calendar::next, Calendar::title, Calendar::today, Calendar::day {
+	color: black;
+	padding: 0;
+	border-width: 0;
+	background-color: transparent;
+}
+Calendar::previous {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M10.8284 12.0007L15.7782 16.9504L14.364 18.3646L8 12.0007L14.364 5.63672L15.7782 7.05093L10.8284 12.0007Z'/></svg>");
+}
+Calendar::next {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M13.1717 12.0007L8.22192 7.05093L9.63614 5.63672L16.0001 12.0007L9.63614 18.3646L8.22192 16.9504L13.1717 12.0007Z'/></svg>");
+}
+Calendar::previous, Calendar::next {
+	cursor: arrow;
+	foreground-size: 12dp 12dp;
+	foreground-position: center;
+	foreground-repeat: no-repeat;
+	foreground-tint: black;
+}
+Calendar::weekday, Calendar::day.outside-month { color: #767676; }
+Calendar::day.selected, Calendar::day:hover { background-color: #0078d7; color: white; }
+Calendar::day.today { border-color: #767676; border-width: 1dp; }
+Calendar::day.focused { border-color: black; border-width: 1dp; }
+Calendar::day:disabled { opacity: 0.35; }
+DatePicker::button, DateTimePicker::button {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M9 1V3H15V1H17V3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H7V1H9ZM20 11H4V19H20V11ZM7 5H4V9H20V5H17V7H15V5H9V7H7V5Z'/></svg>");
+	foreground-size: 12dp 12dp;
+	foreground-position: center;
+	foreground-repeat: no-repeat;
+	foreground-tint: black;
+	padding: 0;
+	cursor: arrow;
+	border-width: 0;
+	background-color: transparent;
+}
+DatePicker:disabled > DatePicker::button, DateTimePicker:disabled > DateTimePicker::button,
+DatePicker[allow-editing=false] > DatePicker::button,
+DateTimePicker[allow-editing=false] > DateTimePicker::button {
+	foreground-tint: #767676;
+	background-color: transparent;
+	cursor: arrow;
+}
+
+/* Combined popup: a reusable calendar followed by a segmented time editor. */
+DateTimePicker::popup {
+	width: auto;
+	height: auto;
+	background-color: white;
+	border-color: #767676;
+	border-width: 1dp;
+	border-radius: 2dp;
+}
+DateTimePicker::popup > Calendar {
+	border-width: 0;
+	background-color: transparent;
+}
+DateTimePicker::time {
+	text-align: center;
+	font-size: 18dp;
+	padding: 24dp 8dp;
+	min-height: 72dp;
+	color: black;
+	background-color: transparent;
+	border-color: #767676;
+	border-width: 1dp 0 0 0;
+}
+DateTimePicker::time-up, DateTimePicker::time-down {
+	foreground-size: 12dp 12dp;
+	foreground-position: center;
+	foreground-repeat: no-repeat;
+	foreground-tint: black;
+	background-color: transparent;
+	border-width: 0;
+	padding: 0;
+	width: 24dp;
+	height: 22dp;
+	cursor: arrow;
+}
+DateTimePicker::time-up {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 8L18 14L16.5858 15.4142L12 10.8284L7.41421 15.4142L6 14L12 8Z'/></svg>");
+}
+DateTimePicker::time-down {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 16L6 10L7.41421 8.58579L12 13.1716L16.5858 8.58579L18 10L12 16Z'/></svg>");
+}
+
 )css";
 }
 
 void UIWidgetCreator::createBaseWidgetList() {
 	if ( !sBaseListCreated ) {
 		registeredWidget["widget"] = UIWidget::New;
+		registeredWidget["chart"] = Charts::UIChart::New;
 		registeredWidget["linearlayout"] = UILinearLayout::NewVertical;
 		registeredWidget["relativelayout"] = UIRelativeLayout::New;
 		registeredWidget["textview"] = UITextView::New;
@@ -213,6 +345,11 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tabwidget"] = UITabWidget::New;
 		registeredWidget["textedit"] = UITextEdit::New;
 		registeredWidget["textinput"] = UITextInput::New;
+		registeredWidget["datetimeedit"] = []() -> UIWidget* { return UIDateTimeEdit::New(); };
+		registeredWidget["calendar"] = UICalendar::New;
+		registeredWidget["datepicker"] = UIDatePicker::New;
+		registeredWidget["timepicker"] = UITimePicker::New;
+		registeredWidget["datetimepicker"] = UIDateTimePicker::New;
 		registeredWidget["loader"] = UILoader::New;
 		registeredWidget["selectbutton"] = UISelectButton::New;
 		registeredWidget["window"] = UIWindow::New;
@@ -223,7 +360,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["textureregion"] = UITextureRegion::New;
 		registeredWidget["touchdraggable"] = UITouchDraggableWidget::New;
 		registeredWidget["gridlayout"] = UIGridLayout::New;
-		registeredWidget["stacklayout"] = UIStackLayout::New;
+		registeredWidget["flowlayout"] = UIFlowLayout::New;
 		registeredWidget["viewpager"] = UIViewPager::New;
 		registeredWidget["codeeditor"] = UICodeEditor::New;
 		registeredWidget["diffview"] = Tools::UIDiffView::New;
@@ -244,6 +381,8 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["richtext"] = UIRichText::New;
 		registeredWidget["textspan"] = UITextSpan::New;
 		registeredWidget["markdownview"] = UIMarkdownView::New;
+		registeredWidget["scrollablemarkdownview"] = UIScrollableMarkdownView::New;
+		registeredWidget["mergeview"] = Tools::UIMergeView::New;
 
 		// Aliases
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
@@ -413,16 +552,26 @@ std::vector<std::string> UIWidgetCreator::getWidgetNames() {
 	return names;
 }
 
-void UIWidgetCreator::loadHTMLBaseDefaults( CSS::StyleSheet& styleSheet, Uint32 marker ) {
+static void loadHTMLDefaults( CSS::StyleSheet& styleSheet, Uint32 marker, std::string_view css ) {
 	if ( styleSheet.markerExists( marker ) )
 		return;
 	CSS::StyleSheetParser parser;
-	if ( parser.loadFromString( getHTMLBaseDefaultsCSS() ) ) {
-		CSS::StyleSheet baseDefaults = parser.getStyleSheet();
+	if ( parser.loadFromString( css ) ) {
+		CSS::StyleSheet& baseDefaults = parser.getStyleSheet();
 		baseDefaults.setSelectorSpecificity( -1 );
 		baseDefaults.setMarker( marker );
 		styleSheet.combineStyleSheet( baseDefaults );
 	}
+}
+
+void UIWidgetCreator::loadHTMLBasicDefaults( CSS::StyleSheet& styleSheet, Uint32 marker ) {
+	loadHTMLDefaults( styleSheet, marker, getHTMLBasicDefaultsCSS() );
+}
+
+void UIWidgetCreator::loadHTMLBaseDefaults( CSS::StyleSheet& styleSheet, Uint32 marker ) {
+	loadHTMLBasicDefaults( styleSheet, marker );
+	loadHTMLDefaults( styleSheet, String::hash( "html_document_defaults" ),
+					  getHTMLDocumentDefaultsCSS() );
 }
 
 }} // namespace EE::UI

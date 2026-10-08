@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCCONDITION_HPP
 #define EE_SYSTEMCCONDITION_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
 #include <eepp/core/noncopyable.hpp>
 
 namespace EE { namespace System {

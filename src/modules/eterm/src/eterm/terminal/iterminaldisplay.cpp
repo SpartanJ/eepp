@@ -79,6 +79,9 @@ const char* ITerminalDisplay::getClipboard() const {
 	return "";
 }
 
+void ITerminalDisplay::drawGraphics( std::shared_ptr<TerminalGraphicsPresentation>,
+									 std::vector<TerminalGraphicsUpdate> ) {}
+
 void ITerminalDisplay::onProcessExit( int /*exitCode*/ ) {}
 
 void ITerminalDisplay::onScrollPositionChange() {}

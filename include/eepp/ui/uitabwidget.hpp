@@ -2,6 +2,7 @@
 #define EE_UI_UITABWIDGET_HPP
 
 #include <deque>
+#include <eepp/scene/eventconnection.hpp>
 #include <eepp/ui/splitdirection.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -68,7 +69,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
-	UITab* add( const String& text, UINode* nodeOwned, Drawable* icon = NULL );
+	UITab* add( const String& text, UINode* nodeOwned, DrawablePtr icon = {} );
 
 	UITabWidget* add( UITab* tab );
 
@@ -92,7 +93,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	void removeAllTabs( bool destroyOwnedNode = true, bool immediateClose = false );
 
-	void insertTab( const String& text, UINode* nodeOwned, Drawable* icon, const Uint32& index );
+	void insertTab( const String& text, UINode* nodeOwned, DrawablePtr icon, const Uint32& index );
 
 	void insertTab( UITab* tab, const Uint32& index );
 
@@ -260,12 +261,13 @@ class EE_API UITabWidget : public UIWidget {
 	UIListView* mTabSwitcher{ nullptr };
 	TabJumpMode mTabJumpMode{ TabJumpMode::Linear };
 	std::function<bool( const UIWidget* widget )> mAcceptsDropOfWidgetFn;
+	Scene::EventConnectionList mEventConnections;
 
 	UITabWidget();
 
 	void onThemeLoaded();
 
-	UITab* createTab( const String& text, UINode* nodeOwned, Drawable* icon );
+	UITab* createTab( const String& text, UINode* nodeOwned, DrawablePtr icon );
 
 	void removeTab( const Uint32& index, bool destroyOwnedNode, bool destroyTab,
 					bool immediateClose,

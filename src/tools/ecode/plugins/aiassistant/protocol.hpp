@@ -1,10 +1,11 @@
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <optional>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 namespace ecode {
 
@@ -12,6 +13,15 @@ struct LLMCacheConfiguration {
 	int maxCacheAnchors;
 	int minTotalToken;
 	bool shouldSpeculate;
+};
+
+enum class LLMReasoningType : std::uint8_t { None, Toggle, Effort, TokenBudget };
+
+struct LLMReasoningConfiguration {
+	std::vector<std::string> efforts;
+	std::uint32_t minBudgetTokens{ 0 };
+	std::uint32_t maxBudgetTokens{ 0 };
+	LLMReasoningType type{ LLMReasoningType::None };
 };
 
 struct LLMModel {
@@ -23,6 +33,7 @@ struct LLMModel {
 	std::optional<std::size_t> maxOutputTokens;
 	std::optional<double> defaultTemperature;
 	std::optional<LLMCacheConfiguration> cacheConfiguration;
+	std::optional<LLMReasoningConfiguration> reasoningConfiguration;
 	bool isEphemeral{ false };
 	bool cheapest{ false };
 	bool reasoning{ false };
@@ -37,6 +48,7 @@ struct LLMProvider {
 	std::string apiUrl;
 	std::optional<std::string> fetchModelsUrl;
 	std::optional<int> version;
+	std::vector<std::string> apiKeyEnvVars;
 	std::vector<LLMModel> models;
 };
 

@@ -1,7 +1,8 @@
 #ifndef EE_WINDOWCCURSOR_HPP
 #define EE_WINDOWCCURSOR_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/string.hpp>
 #include <eepp/math/vector2.hpp>
 #include <eepp/window/windowhandle.hpp>
 using namespace EE::Math;
@@ -35,6 +36,8 @@ class EE_API Cursor {
 	};
 
 	static Cursor::Type fromName( std::string name );
+
+	static const char* toName( Cursor::Type cursor );
 
 	/** @enum SysType list the system cursors that can be used */
 	enum SysType {
@@ -78,6 +81,7 @@ class EE_API Cursor {
 	Vector2i mHotSpot;
 	EE::Window::Window* mWindow;
 
+	// The texture pixels are copied synchronously; Cursor does not retain this borrow.
 	Cursor( Texture* tex, const Vector2i& hotspot, const std::string& getName,
 			EE::Window::Window* window );
 

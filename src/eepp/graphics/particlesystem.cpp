@@ -14,7 +14,7 @@ namespace EE { namespace Graphics {
 ParticleSystem::ParticleSystem() :
 	mParticle( NULL ),
 	mPCount( 0 ),
-	mTexture( 0 ),
+	mTexture(),
 	mPLeft( 0 ),
 	mLoops( 0 ),
 	mEffect( ParticleEffect::Nofx ),
@@ -324,7 +324,7 @@ void ParticleSystem::draw() {
 
 	if ( mPointsSup ) {
 		if ( NULL != mTexture ) {
-			const_cast<Texture*>( mTexture )->bind();
+			mTexture->bind();
 		} else {
 			GLi->disable( GL_TEXTURE_2D );
 			GLi->disableClientState( GL_TEXTURE_COORD_ARRAY );

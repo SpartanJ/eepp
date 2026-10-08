@@ -27,6 +27,8 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 	void showSubMenu();
 
+	void notifySubMenuWillShow();
+
 	const Time& getMouseOverTimeShowMenu() const;
 
 	void setMouseOverTimeShowMenu( const Time& maxTime );
@@ -38,7 +40,7 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 	UIWidget* mArrow{ nullptr };
 	Time mMaxTime;
 	Action* mCurWait{ nullptr };
-	Uint32 mSubMenuCloseCb{ 0 };
+	EventConnection mSubMenuCloseConnection;
 
 	UIMenuSubMenu();
 

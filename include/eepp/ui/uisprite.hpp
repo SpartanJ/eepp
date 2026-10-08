@@ -1,12 +1,8 @@
 #ifndef EE_UICUISPRITE_HPP
 #define EE_UICUISPRITE_HPP
 
+#include <eepp/graphics/sprite.hpp>
 #include <eepp/ui/uiwidget.hpp>
-
-namespace EE { namespace Graphics {
-class Sprite;
-class TextureRegion;
-}} // namespace EE::Graphics
 
 namespace EE { namespace UI {
 
@@ -26,11 +22,9 @@ class EE_API UISprite : public UIWidget {
 
 	virtual void setAlpha( const Float& alpha );
 
-	Graphics::Sprite* getSprite() const;
+	const Graphics::SpritePtr& getSprite() const;
 
-	Drawable* getDrawable() const;
-
-	UISprite* setSprite( Graphics::Sprite* sprite );
+	UISprite* setSprite( Graphics::SpritePtr sprite );
 
 	Color getColor() const;
 
@@ -42,10 +36,6 @@ class EE_API UISprite : public UIWidget {
 
 	const Vector2f& getAlignOffset() const;
 
-	UISprite* setIsSpriteOwner( const bool& dealloc );
-
-	bool getDeallocSprite();
-
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
@@ -54,11 +44,10 @@ class EE_API UISprite : public UIWidget {
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
   protected:
-	Graphics::Sprite* mSprite;
+	Graphics::SpritePtr mSprite;
 	RenderMode mRender;
 	Vector2f mAlignOffset;
 	TextureRegion* mTextureRegionLast;
-	bool mDealloc;
 
 	UISprite();
 
@@ -70,7 +59,6 @@ class EE_API UISprite : public UIWidget {
 
 	virtual void onSizeChange();
 
-	Uint32 deallocSprite();
 };
 
 }} // namespace EE::UI

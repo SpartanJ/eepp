@@ -1,13 +1,15 @@
 #ifndef EE_UI_TOOLS_UITABWIDGETSPLITTER_HPP
 #define EE_UI_TOOLS_UITABWIDGETSPLITTER_HPP
 
+#include <eepp/core/containers.hpp>
+#include <eepp/scene/eventconnection.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/ui/splitdirection.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 
-#include <nlohmann/json_fwd.hpp>
+#include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 
 namespace EE { namespace Graphics {
 class Drawable;
@@ -118,6 +120,12 @@ class EE_API UITabWidgetSplitter {
 
 	void setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab );
 
+	/** Whether splitting keeps single-tab bars visible. Disabled by default.
+	 * Explicitly hidden tab bars (setHideTabBar) remain hidden. */
+	bool getShowTabBarWhenSplit() const;
+
+	void setShowTabBarWhenSplit( bool showTabBarWhenSplit );
+
 	void setHideTabBar( bool hideTabBar );
 
 	bool getVisualSplitting() const;
@@ -129,6 +137,8 @@ class EE_API UITabWidgetSplitter {
 	void setVisualSplitEdgePercent( Float visualSplitEdgePercent );
 
 	void setOnTabWidgetCreateCb( std::function<void( UITabWidget* )> cb );
+
+	void setOnTabWidgetCloseCb( std::function<void( UITabWidget* )> cb );
 
 	void closeSplitter( UISplitter* splitter );
 
@@ -251,17 +261,27 @@ class EE_API UITabWidgetSplitter {
 	bool mHideTabBar{ false };
 	bool mHideTabBarOnSingleTab{ true };
 	bool mVisualSplitting{ true };
+	bool mShowTabBarWhenSplit{ false };
 	Float mVisualSplitEdgePercent{ 0.1 };
 	Mutex mTabWidgetMutex;
 	std::function<void( UITabWidget* )> mOnTabWidgetCreateCb;
+	std::function<void( UITabWidget* )> mOnTabWidgetCloseCb;
 	std::function<bool( SplitDirection direction, UIWidget* widget )> mCanCreateSplitFn;
 	TabTryCloseCallback mTabTryCloseCb;
 	mutable Mutex mWidgetTypesMutex;
-	std::unordered_map<std::string, WidgetTypeCallback> mWidgetTypes;
+	UnorderedMap<std::string, WidgetTypeCallback> mWidgetTypes;
+	UnorderedMap<UITabWidget*, Scene::EventConnectionList> mTabWidgetEventConnections;
+	UnorderedMap<UIWidget*, Scene::EventConnectionList> mWidgetEventConnections;
 
 	UITabWidgetSplitter( Client* client, UISceneNode* sceneNode );
 
 	virtual void onTabClosed( const TabEvent* tabEvent );
+
+	void attachWidgetEvents( UIWidget* widget );
+
+	void detachWidgetEvents( UIWidget* widget );
+
+	void updateTabBarVisibility();
 
 	void closeAllTabs( std::vector<UITab*> tabs, UITabWidget::FocusTabBehavior focusTabBehavior );
 

@@ -4,7 +4,7 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
-#include <eepp/ui/uidatabind.hpp>
+#include <eepp/ui/databinding/uidatabind.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uitextinput.hpp>

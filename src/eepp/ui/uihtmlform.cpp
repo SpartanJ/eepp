@@ -76,6 +76,31 @@ std::vector<PropertyId> UIHTMLForm::getPropertiesImplemented() const {
 	return props;
 }
 
+namespace {
+
+bool checkFormControls( const Node* node ) {
+	if ( node->isType( UI_TYPE_HTML_INPUT ) )
+		return static_cast<const UIHTMLInput*>( node )->checkValidity();
+	for ( const Node* child = node->getFirstChild(); child; child = child->getNextNode() ) {
+		if ( !checkFormControls( child ) )
+			return false;
+	}
+	return true;
+}
+
+} // namespace
+
+bool UIHTMLForm::checkValidity() const {
+	return checkFormControls( this );
+}
+
+bool UIHTMLForm::requestSubmit() {
+	if ( !checkValidity() )
+		return false;
+	submit();
+	return true;
+}
+
 void UIHTMLForm::submit() {
 	std::vector<std::pair<std::string, std::string>> fields;
 	collectFormData( this, fields );
@@ -83,7 +108,9 @@ void UIHTMLForm::submit() {
 	UISceneNode* sceneNode = getUISceneNode();
 
 	NavigationRequest request;
-	request.uri = URI( mAction );
+	// With no action, HTML submits to the current document URL, not its asset base URI.
+	request.uri = mAction.empty() ? sceneNode->getReferer() : URI( mAction );
+	request.source = this;
 
 	if ( mEnctype == "multipart/form-data" ) {
 		request.method = "POST";
@@ -130,8 +157,6 @@ void UIHTMLForm::submit() {
 static String getWidgetFormValue( UIWidget* widget ) {
 	if ( widget->isType( UI_TYPE_HTML_WIDGET ) )
 		return static_cast<UIHTMLWidget*>( widget )->getFormValue();
-	if ( widget->isType( UI_TYPE_HTML_INPUT ) )
-		return static_cast<UIHTMLInput*>( widget )->getFormValue();
 	if ( widget->isType( UI_TYPE_TEXTINPUT ) )
 		return static_cast<UITextInput*>( widget )->getText();
 	if ( widget->isType( UI_TYPE_TEXTEDIT ) )
@@ -144,7 +169,9 @@ void UIHTMLForm::collectFormData( Node* node,
 	if ( !node )
 		return;
 
-	UIWidget* widget = node->asType<UIWidget>();
+	if ( node->isType( UI_TYPE_HTML_INPUT ) && !node->isEnabled() )
+		return;
+	UIWidget* widget = node->isWidget() ? node->asType<UIWidget>() : nullptr;
 	if ( widget ) {
 		std::string name;
 		UIStyle* style = widget->getUIStyle();
@@ -157,8 +184,13 @@ void UIHTMLForm::collectFormData( Node* node,
 			name = widget->getPropertyString( "name" );
 		if ( !name.empty() ) {
 			String value = getWidgetFormValue( widget );
-			if ( !value.empty() )
+			const auto* input = widget->isType( UI_TYPE_HTML_INPUT )
+									? static_cast<const UIHTMLInput*>( widget )
+									: nullptr;
+			if ( !value.empty() || ( input && input->getChildWidget() &&
+									 input->getChildWidget()->isType( UI_TYPE_DATETIMEEDIT ) ) ) {
 				fields.emplace_back( name, value.toUtf8() );
+			}
 		}
 	}
 
@@ -171,7 +203,7 @@ void UIHTMLForm::collectFormData( Node* node,
 
 Uint32 UIHTMLForm::onMessage( const NodeMessage* msg ) {
 	if ( msg->getMsg() == NodeMessage::MouseClick && isSubmitTrigger( msg->getSender() ) ) {
-		submit();
+		requestSubmit();
 		return 1;
 	}
 	return UIRichText::onMessage( msg );

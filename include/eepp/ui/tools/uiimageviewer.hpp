@@ -76,6 +76,23 @@ class EE_API UIImageViewer : public UIWidget {
 
 	void resetImageView();
 
+	/** Recalculates the displayed image size and position when the viewer size changes. */
+	void setAutoFitOnSizeChange( bool enabled ) { mAutoFitOnSizeChange = enabled; }
+
+	bool getAutoFitOnSizeChange() const { return mAutoFitOnSizeChange; }
+
+	/**
+	 * Uses the image's native pixel dimensions when it fits in the viewer, independently of the
+	 * UI pixel density. Images larger than the viewer are still scaled down to fit.
+	 */
+	void setUseNativeImageSize( bool enabled ) { mUseNativeImageSize = enabled; }
+
+	bool getUseNativeImageSize() const { return mUseNativeImageSize; }
+
+	void setPreserveImageView( bool preserve ) { mPreserveImageView = preserve; }
+
+	bool getPreserveImageView() const { return mPreserveImageView; }
+
 	bool isLoading() const { return mLoading; }
 
 	bool hasImage() const;
@@ -100,6 +117,9 @@ class EE_API UIImageViewer : public UIWidget {
 	Int64 mCurFileSize{ 0 };
 	Image::Format mCurFileType;
 	Uint32 mDisplayOptions{ 0 };
+	bool mPreserveImageView{ false };
+	bool mAutoFitOnSizeChange{ false };
+	bool mUseNativeImageSize{ false };
 
 	UIImageViewer();
 
@@ -108,6 +128,8 @@ class EE_API UIImageViewer : public UIWidget {
 	virtual Uint32 onMessage( const NodeMessage* ) override;
 
 	virtual Uint32 onKeyDown( const KeyEvent& event ) override;
+
+	void updateImageLayout();
 
 	void updateTextDisplay();
 };

@@ -37,9 +37,10 @@ ios_size IOStreamMemory::write( const char* data, ios_size size ) {
 		memcpy( mWritePtr + mPos, data, size );
 
 		mPos += size;
+		return size;
 	}
 
-	return mPos;
+	return 0;
 }
 
 ios_size IOStreamMemory::seek( ios_size position ) {

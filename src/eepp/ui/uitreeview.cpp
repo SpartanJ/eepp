@@ -2,6 +2,7 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/scopedop.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
@@ -10,6 +11,7 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <stack>
+#include <string_view>
 
 namespace EE { namespace UI {
 
@@ -42,6 +44,11 @@ UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& in
 	auto newMetadata = MetadataForIndex();
 	mViewMetadata.insert( { index.internalData(), std::move( newMetadata ) } );
 	return mViewMetadata[index.internalData()];
+}
+
+void UITreeView::onModelIndexDeleted( const void* internalData ) {
+	UIAbstractTableView::onModelIndexDeleted( internalData );
+	mViewMetadata.erase( const_cast<void*>( internalData ) );
 }
 
 UITreeView::IterationDecision UITreeView::traverseIndex( TraverseTreeVars& v,
@@ -85,6 +92,18 @@ void UITreeView::traverseTree( TreeViewCallback callback ) const {
 		if ( decision == IterationDecision::Break || decision == IterationDecision::Stop )
 			break;
 	}
+}
+
+void UITreeView::selectAll() {
+	if ( !getModel() )
+		return;
+	std::vector<ModelIndex> indexes;
+	indexes.reserve( getItemCount() );
+	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
+		indexes.push_back( index );
+		return IterationDecision::Continue;
+	} );
+	getSelection().set( indexes );
 }
 
 void UITreeView::createOrUpdateColumns( bool resetColumnData ) {
@@ -288,9 +307,10 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 			Float minIndent = 0;
 			if ( !mExpandersAsIcons && mExpandIcon && mContractIcon ) {
 				minIndent =
-					eemax(
-						mExpandIcon->getSize( mExpanderIconSize )->getPixelsSize().getWidth(),
-						mContractIcon->getSize( mExpanderIconSize )->getPixelsSize().getWidth() ) +
+					eemax( mExpandIcon->getSource( mExpanderIconSize )->getPixelsSize().getWidth(),
+						   mContractIcon->getSource( mExpanderIconSize )
+							   ->getPixelsSize()
+							   .getWidth() ) +
 					image->getLayoutPixelsMargin().Right;
 			}
 
@@ -300,14 +320,14 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 
 			if ( hasChildren ) {
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
-				Drawable* drawable = icon ? icon->getSize( mExpanderIconSize ) : nullptr;
+				DrawablePtr drawable = icon ? icon->getSource( mExpanderIconSize ) : DrawablePtr{};
 
 				if ( drawable == nullptr ) {
 					image->setVisible( false );
 				} else {
 					image->setVisible( true );
 					image->setPixelsSize( drawable ? drawable->getPixelsSize() : Sizef( 0, 0 ) );
-					image->setDrawable( drawable );
+					image->setDrawable( std::move( drawable ) );
 					if ( !mExpandersAsIcons )
 						indentation = indentation - image->getPixelsSize().getWidth();
 				}
@@ -330,7 +350,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 			cell->setIcon( icon.asDrawable() );
 		} else if ( icon.is( Variant::Type::Icon ) && icon.asIcon() ) {
 			isVisible = true;
-			cell->setIcon( icon.asIcon()->getSize( mIconSize ) );
+			cell->setIcon( icon.asIcon()->createDrawable( mIconSize ) );
 		}
 		if ( cell->hasIcon() )
 			cell->getIcon()->setVisible( isVisible );
@@ -387,7 +407,7 @@ void UITreeView::drawChildren() {
 		UITableRow* rowNode = updateRow( v.realRowIndex, index, yOffset );
 		rowNode->setChildrenVisibility( false, false );
 		v.realColIndex = 0;
-		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
+		for ( size_t colIndex : getColumnOrder() ) {
 			auto& colData = columnData( colIndex );
 			if ( !colData.visible || ( xOffset + colData.width ) - mScrollOffset.x < 0 ) {
 				if ( colData.visible )
@@ -439,8 +459,6 @@ Node* UITreeView::overFind( const Vector2f& point ) {
 	if ( mEnabled && mVisible ) {
 		updateWorldPolygon();
 		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
-			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-			mSceneNode->addMouseOverNode( this );
 			if ( mHScroll->isVisible() && ( pOver = mHScroll->overFind( point ) ) )
 				return pOver;
 			if ( mVScroll->isVisible() && ( pOver = mVScroll->overFind( point ) ) )
@@ -470,7 +488,10 @@ Node* UITreeView::overFind( const Vector2f& point ) {
 }
 
 bool UITreeView::isExpanded( const ModelIndex& index ) const {
-	return getIndexMetadata( index ).open;
+	if ( !index.isValid() )
+		return false;
+	auto found = mViewMetadata.find( index.internalData() );
+	return found != mViewMetadata.end() && found->second.open;
 }
 
 void UITreeView::setExpanded( const std::vector<ModelIndex>& indexes, bool expanded ) {
@@ -721,6 +742,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				if ( !metadata.open ) {
 					metadata.open = true;
 					createOrUpdateColumns( false );
+					onOpenTreeModelIndex( curIndex, true );
 					return 0;
 				}
 				getSelection().set( getModel()->index( 0, getModel()->treeColumn(), curIndex ) );
@@ -733,6 +755,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				if ( metadata.open ) {
 					metadata.open = false;
 					createOrUpdateColumns( false );
+					onOpenTreeModelIndex( curIndex, false );
 					return 0;
 				}
 			}
@@ -749,6 +772,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 					auto& metadata = getIndexMetadata( curIndex );
 					metadata.open = !metadata.open;
 					createOrUpdateColumns( false );
+					onOpenTreeModelIndex( curIndex, metadata.open );
 				} else {
 					onOpenModelIndex( curIndex, &event );
 				}
@@ -786,11 +810,6 @@ void UITreeView::clearViewMetadata() {
 	mViewMetadata.clear();
 }
 
-void UITreeView::onSortColumn( const size_t& ) {
-	// Do nothing.
-	return;
-}
-
 ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& caseSensitive,
 										FindRowWithTextMatchKind matchKind ) const {
 	const Model* model = getModel();
@@ -802,19 +821,22 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
 		Variant var = model->data( index );
 		if ( var.isValid() ) {
+			std::string convertedValue;
+			const std::string_view value =
+				var.isStdStringLike() ? var.asStdStringView()
+									  : std::string_view{ convertedValue = var.toString() };
 			bool matches = false;
 			switch ( matchKind ) {
 				case Abstract::UIAbstractView::FindRowWithTextMatchKind::Equals:
-					matches = var.toString() == text;
+					matches = value == text;
 					break;
 				case Abstract::UIAbstractView::FindRowWithTextMatchKind::StartsWith:
-					matches = String::startsWith( caseSensitive ? var.toString()
-																: String::toLower( var.toString() ),
-												  caseSensitive ? text : String::toLower( text ) );
+					matches = caseSensitive ? String::startsWith( value, text )
+											: String::istartsWith( value, text );
 					break;
 				case Abstract::UIAbstractView::FindRowWithTextMatchKind::Contains:
-					matches = caseSensitive ? String::contains( var.toString(), text )
-											: String::icontains( var.toString(), text );
+					matches = caseSensitive ? String::contains( value, text )
+											: String::icontains( value, text );
 					break;
 			}
 
@@ -838,18 +860,21 @@ ModelIndex UITreeView::openRowWithPath( const std::vector<std::string>& pathTree
 		ModelIndex foundIndex = {};
 		const auto& part = pathTree[i];
 
-		traverseTree(
-			[&model, &foundIndex, &part, &parentIndex,
-			 i]( const int&, const ModelIndex& index, const size_t& indentLevel, const Float& ) {
-				Variant var = model->data( index );
-				if ( i == indentLevel && var.isValid() && var.toString() == part ) {
-					if ( !parentIndex.isValid() || parentIndex == index.parent() ) {
-						foundIndex = index;
-						return IterationDecision::Stop;
-					}
+		traverseTree( [&model, &foundIndex, &part, &parentIndex,
+					   i]( const int&, const ModelIndex& index, const size_t& indentLevel,
+						   const Float& ) {
+			Variant var = model->data( index );
+			const bool matches =
+				i == indentLevel && var.isValid() &&
+				( var.isStdStringLike() ? var.asStdStringView() == part : var.toString() == part );
+			if ( matches ) {
+				if ( !parentIndex.isValid() || parentIndex == index.parent() ) {
+					foundIndex = index;
+					return IterationDecision::Stop;
 				}
-				return IterationDecision::Continue;
-			} );
+			}
+			return IterationDecision::Continue;
+		} );
 
 		if ( foundIndex == ModelIndex() )
 			break;
@@ -1001,6 +1026,53 @@ UITreeViewCell::UITreeViewCell( const std::function<UITextView*( UIPushButton* )
 
 UIWidget* UITreeViewCell::getExtraInnerWidget() const {
 	return mImage;
+}
+
+bool UITreeView::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::IndentWidth:
+			setIndentWidth( lengthFromValue( attribute.getValue(), PropertyRelativeTarget::None ) );
+			break;
+		case PropertyId::ExpanderIconSize:
+			setExpanderIconSize(
+				(size_t)lengthFromValue( attribute.getValue(), PropertyRelativeTarget::None ) );
+			break;
+		default:
+			return UIAbstractTableView::applyProperty( attribute );
+	}
+
+	return true;
+}
+
+std::string UITreeView::getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::IndentWidth:
+			return String::fromFloat( getIndentWidth(), "px" );
+		case PropertyId::ExpanderIconSize:
+			return String::fromFloat( (Float)getExpanderIconSize(), "px" );
+		default:
+			return UIAbstractTableView::getPropertyString( propertyDef, propertyIndex );
+	}
+}
+
+std::vector<PropertyId> UITreeView::getPropertiesImplemented() const {
+	auto props = UIAbstractTableView::getPropertiesImplemented();
+	props.insert( props.end(), { PropertyId::IndentWidth, PropertyId::ExpanderIconSize } );
+	return props;
+}
+
+void UITreeView::setTableFlags( Uint32 flags ) {
+	UIAbstractTableView::setTableFlags( flags );
+	setExpandersAsIcons( flags & TableFlagExpandersAsIcons );
+	setFocusOnSelection( flags & TableFlagFocusOnSelection );
+	setDisableCellClipping( flags & TableFlagDisableClipping );
 }
 
 }} // namespace EE::UI

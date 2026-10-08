@@ -232,6 +232,9 @@ StyleSheetLength::StyleSheetLength( const Float& val, const StyleSheetLength::Un
 	mUnit( unit ), mValue( val ) {}
 
 StyleSheetLength::StyleSheetLength( const std::string& val, const Float& defaultValue ) :
+	StyleSheetLength( fromString( std::string_view{ val }, defaultValue ) ) {}
+
+StyleSheetLength::StyleSheetLength( std::string_view val, const Float& defaultValue ) :
 	StyleSheetLength( fromString( val, defaultValue ) ) {}
 
 StyleSheetLength::StyleSheetLength( const StyleSheetLength& val ) {
@@ -382,9 +385,14 @@ StyleSheetLength& StyleSheetLength::operator=( const StyleSheetLength& val ) {
 
 StyleSheetLength StyleSheetLength::fromString( const std::string& str, const Float& defaultValue,
 											   bool pxAsDp ) {
+	return fromString( std::string_view{ str }, defaultValue, pxAsDp );
+}
+
+StyleSheetLength StyleSheetLength::fromString( std::string_view str, const Float& defaultValue,
+											   bool pxAsDp ) {
 	StyleSheetLength length;
 	length.setValue( defaultValue, Unit::Px );
-	const std::string_view value = String::trim( std::string_view( str ) );
+	const std::string_view value = String::trim( str );
 
 	if ( isFunctionString( value ) ) {
 		Unit funcUnit = Unit::Px;
@@ -470,9 +478,8 @@ bool StyleSheetLength::isFunctionString( std::string_view str ) {
 		   String::istartsWith( str, "max(" ) || String::istartsWith( str, "calc(" );
 }
 
-bool StyleSheetLength::parseFunction( const std::string& str, Unit& outUnit, Arguments& outArgs ) {
-	std::string_view sv( str );
-	std::string_view trimmed = String::trim( sv );
+bool StyleSheetLength::parseFunction( std::string_view str, Unit& outUnit, Arguments& outArgs ) {
+	std::string_view trimmed = String::trim( str );
 
 	if ( String::istartsWith( trimmed, "clamp(" ) ) {
 		outUnit = Unit::Clamp;

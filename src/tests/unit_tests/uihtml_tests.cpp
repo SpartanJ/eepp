@@ -1,17 +1,21 @@
 #include "compareimages.hpp"
 #include "utest.hpp"
 
-#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/fontfamily.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/resourcescope.hpp>
+#include <eepp/graphics/text.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/textureregion.hpp>
+#include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
@@ -19,33 +23,43 @@
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uihtmldetails.hpp>
 #include <eepp/ui/uihtmlimage.hpp>
 #include <eepp/ui/uihtmlinput.hpp>
+#include <eepp/ui/uihtmlliststyle.hpp>
 #include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uihtmltextarea.hpp>
 #include <eepp/ui/uihtmltextinput.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uimarkdownview.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/clipboard.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
+#include <random>
 
 using namespace EE;
 using namespace EE::Graphics;
@@ -54,16 +68,35 @@ using namespace EE::Scene;
 using namespace EE::UI;
 using namespace EE::UI::Tools;
 
+static Texture* getDrawableTexture( Drawable* drawable ) {
+	if ( !drawable )
+		return nullptr;
+	switch ( drawable->getDrawableType() ) {
+		case Drawable::TEXTURE:
+			return static_cast<Texture*>( drawable );
+		case Drawable::TEXTUREDRAWABLE:
+			return static_cast<TextureDrawable*>( drawable )->getTexture().get();
+		case Drawable::TEXTUREREGION:
+			return static_cast<TextureRegion*>( drawable )->getTexture().get();
+		default:
+			return nullptr;
+	}
+}
+
+static Texture* getDrawableTexture( const DrawablePtr& drawable ) {
+	return getDrawableTexture( drawable.get() );
+}
+
 static void init_ui_test() {
 	Engine::instance()->createWindow( WindowSettings( 1024, 650, "HTML Tables Test",
 													  WindowStyle::Default, WindowBackend::Default,
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
-	FontTrueType* monospace = FontTrueType::New( "monospace" );
+	FontTrueType* monospace = FontTrueType::New( "monospace" ).get();
 	monospace->loadFromFile( "../assets/fonts/DejaVuSansMono.ttf" );
 	FontFamily::loadFromRegular( monospace );
 
@@ -72,6 +105,21 @@ static void init_ui_test() {
 	sceneNode->setColorSchemePreference( ColorSchemePreference::Light );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
+}
+
+static void beginSelectionPress( UISceneNode* sceneNode, const Vector2i& point ) {
+	auto* window = sceneNode->getWindow();
+	auto* input = window->getInput();
+	input->setMousePos( window->mapCoordsToPixel( point.asFloat(), window->getDefaultView() ) );
+	input->injectButtonPress( EE_BUTTON_LEFT );
+	sceneNode->getEventDispatcher()->update( Seconds( 0 ) );
+}
+
+static void endSelectionPress( UISceneNode* sceneNode ) {
+	auto* input = sceneNode->getWindow()->getInput();
+	input->setMousePos( { 1000, 600 } );
+	input->injectButtonRelease( EE_BUTTON_LEFT );
+	sceneNode->getEventDispatcher()->update( Seconds( 0 ) );
 }
 
 static String uiHtmlRenderedText( const RichText& richText ) {
@@ -111,7 +159,7 @@ UTEST( UIHTMLTable, complexLayout ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -172,7 +220,7 @@ UTEST( UIHTMLTable, complexLayout2 ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -216,22 +264,20 @@ UTEST( UIHTMLTable, complexLayout2 ) {
 }
 
 UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
-	if ( std::getenv( "EEPP_REDDIT_OLD_THREAD_VISUAL" ) == nullptr )
-		UTEST_SKIP( "set EEPP_REDDIT_OLD_THREAD_VISUAL=1 to render the old Reddit fixture" );
-
 	auto win = Engine::instance()->createWindow(
-		WindowSettings( 1024, 1000, "Old Reddit Thread Test", WindowStyle::Default,
+		WindowSettings( 1024, 1400, "Old Reddit Thread Test", VisualTestWindowStyle,
 						WindowBackend::Default, 32, {}, 1, false, true ),
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	if ( !FileSystem::fileExists( "assets/html/reddit_old_thread_files/reddit.ETA_etA2z5U.css" ) ) {
+	if ( !FileSystem::fileExists( Sys::getProcessPath() +
+								  "assets/html/reddit_old_thread_files/reddit.ETA_etA2z5U.css" ) ) {
 
 		Engine::destroySingleton();
 		UTEST_SKIP( "old Reddit fixture CSS asset is not readable" );
 	}
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -280,6 +326,8 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	auto selftextMd = documentRoot->querySelector( ".link .usertext-body .md" );
 	auto selftextFirstP = documentRoot->querySelector( ".link .usertext-body .md p" );
 	auto postTitle = documentRoot->querySelector( ".link .top-matter > p.title" );
+	auto postTitleAnchor = documentRoot->querySelector( ".link .top-matter > p.title > a.title" );
+	auto postDomain = documentRoot->querySelector( ".link .top-matter > p.title > .domain" );
 	auto postTagline = documentRoot->querySelector( ".link .top-matter > p.tagline" );
 	auto postExpando = documentRoot->querySelector( ".link .expando" );
 	auto postUsertext = documentRoot->querySelector( ".link .expando > form.usertext" );
@@ -290,6 +338,15 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	auto commentHelpToggle = documentRoot->querySelector( ".commentarea .help-toggle" );
 	auto commentContentPolicy = documentRoot->querySelector( ".commentarea a.reddiquette" );
 	auto flairCheckbox = documentRoot->find( "flair_enabled" );
+	auto commentButtons =
+		documentRoot->querySelector( "#thing_t1_on791mh > .entry > .flat-list.buttons" );
+	auto redditFooter = documentRoot->querySelector( ".footer-parent > .footer" );
+	auto fancyToggle = documentRoot->querySelector( ".titlebox .fancy-toggle-button" );
+	auto leaveButton =
+		documentRoot->querySelector( ".titlebox .fancy-toggle-button .option.active.remove" );
+	auto searchText = documentRoot->querySelector( "#search input[type=text]" );
+	auto searchSubmit = documentRoot->querySelector( "#search input[type=submit]" );
+	auto shortlinkText = documentRoot->find( "shortlink-text" );
 
 	ASSERT_TRUE( side != nullptr );
 	ASSERT_TRUE( siteTable != nullptr );
@@ -308,6 +365,8 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	ASSERT_TRUE( selftextMd != nullptr );
 	ASSERT_TRUE( selftextFirstP != nullptr );
 	ASSERT_TRUE( postTitle != nullptr );
+	ASSERT_TRUE( postTitleAnchor != nullptr );
+	ASSERT_TRUE( postDomain != nullptr );
 	ASSERT_TRUE( postTagline != nullptr );
 	ASSERT_TRUE( postExpando != nullptr );
 	ASSERT_TRUE( postUsertext != nullptr );
@@ -318,145 +377,67 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	ASSERT_TRUE( commentHelpToggle != nullptr );
 	ASSERT_TRUE( commentContentPolicy != nullptr );
 	ASSERT_TRUE( flairCheckbox != nullptr );
+	ASSERT_TRUE( commentButtons != nullptr );
+	ASSERT_TRUE( redditFooter != nullptr );
+	ASSERT_TRUE( fancyToggle != nullptr );
+	ASSERT_TRUE( leaveButton != nullptr );
+	ASSERT_TRUE( searchText != nullptr );
+	ASSERT_TRUE( searchSubmit != nullptr );
+	ASSERT_TRUE( shortlinkText != nullptr );
+	EXPECT_LT( shortlinkText->asType<UIWidget>()->getPixelsSize().getHeight(), 30.f );
+	EXPECT_EQ( searchText->asType<UIHTMLWidget>()->getBaselineAlign().type,
+			   CSSBaselineAlignment::Middle );
+	EXPECT_EQ( searchSubmit->asType<UIHTMLWidget>()->getBaselineAlign().type,
+			   CSSBaselineAlignment::Middle );
+	EXPECT_STRINGEQ( leaveButton->asType<UITextSpan>()->getText(), "leave" );
+	EXPECT_GT( fancyToggle->getPixelsSize().getWidth(), 0.f );
+	EXPECT_GT( fancyToggle->getPixelsSize().getHeight(), 0.f );
+	const Vector2f searchTextWorld =
+		searchText->asType<UIWidget>()->convertToWorldSpace( Vector2f::Zero );
+	const Vector2f searchSubmitWorld =
+		searchSubmit->asType<UIWidget>()->convertToWorldSpace( Vector2f::Zero );
+	EXPECT_NEAR( searchTextWorld.y + searchText->getPixelsSize().getHeight() * 0.5f,
+				 searchSubmitWorld.y + searchSubmit->getPixelsSize().getHeight() * 0.5f, 1.f );
+	EXPECT_EQ( redditFooter->asType<UIHTMLWidget>()->getDisplay(), CSSDisplay::Flex );
+	Float footerColumnRight = 0.f;
+	for ( auto* col : redditFooter->findAllByClass( "col" ) ) {
+		EXPECT_GE( col->getPixelsPosition().x, footerColumnRight );
+		footerColumnRight = col->getPixelsPosition().x + col->getPixelsSize().getWidth();
+		Float footerItemBottom = 0.f;
+		for ( auto* li : col->querySelectorAll( "li" ) ) {
+			EXPECT_GE( li->getPixelsPosition().y, footerItemBottom );
+			footerItemBottom = li->getPixelsPosition().y + li->getPixelsSize().getHeight();
+		}
+	}
+	Float commentButtonRight = 0.f;
+	for ( auto* li : commentButtons->findAllByTag( "li" ) ) {
+		ASSERT_TRUE( li->findByTag( "a" ) != nullptr );
+		EXPECT_GE( li->getPixelsPosition().x, commentButtonRight );
+		commentButtonRight = li->getPixelsPosition().x + li->getPixelsSize().getWidth();
+	}
+	EXPECT_GE( postDomain->getPixelsPosition().x, postTitleAnchor->getPixelsPosition().x +
+													  postTitleAnchor->getPixelsSize().getWidth() );
 
 	UIWidget* content =
 		siteTable->getParent()->isWidget() ? siteTable->getParent()->asType<UIWidget>() : nullptr;
 	ASSERT_TRUE( content != nullptr );
-
-	Vector2f sidePos = side->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f contentPos = content->convertToWorldSpace( { 0, 0 } );
 	Vector2f midcolPos = midcol->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f entryPos = entry->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f arrowPos = arrow->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f srHeaderPos = srHeader->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f redesignButtonPos =
-		redesignButton->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f srDropPos = srDrop->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f srListPos = srList->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
+	Vector2f srHeaderPos = srHeader->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
+	Vector2f srDropPos = srDrop->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f srFlatListPos = srFlatList->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f headerBottomLeftPos =
 		headerBottomLeft->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f headerBottomRightPos =
 		headerBottomRight->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f headerPos = header->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f dropChoicesPos = dropChoices->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f selftextMdPos = selftextMd->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f selftextFirstPPos =
-		selftextFirstP->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f postTitlePos = postTitle->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f postTaglinePos = postTagline->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f postExpandoPos = postExpando->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f postUsertextPos = postUsertext->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f commentAreaPos = commentArea->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f commentFormPos = commentForm->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f commentEditPos = commentEdit->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-	Vector2f commentTextareaPos =
-		commentTextarea->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
+
 	Vector2f commentHelpTogglePos =
 		commentHelpToggle->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	Vector2f commentContentPolicyPos =
 		commentContentPolicy->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
-
-	auto fontSizeOf = []( Node* node ) -> Uint32 {
-		return node->isType( UI_TYPE_RICHTEXT ) ? node->asType<UIRichText>()->getFontSize() : 0;
-	};
-
-	std::cerr << "old reddit rects: "
-			  << "side=(" << sidePos.x << "," << sidePos.y << " "
-			  << side->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << side->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "content=(" << contentPos.x << "," << contentPos.y << " "
-			  << content->getPixelsSize().getWidth() << "x" << content->getPixelsSize().getHeight()
-			  << ") "
-			  << "midcol=(" << midcolPos.x << "," << midcolPos.y << " "
-			  << midcol->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << midcol->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "entry=(" << entryPos.x << "," << entryPos.y << " "
-			  << entry->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << entry->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "arrow=(" << arrowPos.x << "," << arrowPos.y << " "
-			  << arrow->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << arrow->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "srHeader=(" << srHeaderPos.x << "," << srHeaderPos.y << " "
-			  << srHeader->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << srHeader->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "redesignButton=(" << redesignButtonPos.x << "," << redesignButtonPos.y << " "
-			  << redesignButton->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << redesignButton->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "srDrop=(" << srDropPos.x << "," << srDropPos.y << " "
-			  << srDrop->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << srDrop->asType<UIWidget>()->getPixelsSize().getHeight() << " float="
-			  << CSSFloatHelper::toString( srDrop->asType<UIHTMLWidget>()->getCSSFloat() ) << ") "
-			  << "srList=(" << srListPos.x << "," << srListPos.y << " "
-			  << srList->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << srList->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " lines=" << srList->asType<UIRichText>()->getRichTextPtr()->getLines().size()
-			  << " wrap=" << srList->asType<UIRichText>()->getLineWrap() << ") "
-			  << "headerBottomLeft=(" << headerBottomLeftPos.x << "," << headerBottomLeftPos.y
-			  << " " << headerBottomLeft->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << headerBottomLeft->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "headerBottomRight=(" << headerBottomRightPos.x << "," << headerBottomRightPos.y
-			  << " " << headerBottomRight->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << headerBottomRight->asType<UIWidget>()->getPixelsSize().getHeight() << " position="
-			  << CSSPositionHelper::toString(
-					 headerBottomRight->asType<UIHTMLWidget>()->getCSSPosition() )
-			  << ") "
-			  << "header=(" << headerPos.x << "," << headerPos.y << " "
-			  << header->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << header->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " offset=" << header->asType<UIWidget>()->getPixelsContentOffset().Left << ","
-			  << header->asType<UIWidget>()->getPixelsContentOffset().Top << ","
-			  << header->asType<UIWidget>()->getPixelsContentOffset().Right << ","
-			  << header->asType<UIWidget>()->getPixelsContentOffset().Bottom << ") "
-			  << "dropChoices=(" << dropChoicesPos.x << "," << dropChoicesPos.y << " "
-			  << dropChoices->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << dropChoices->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " visible=" << dropChoices->asType<UIWidget>()->isVisible() << " display="
-			  << CSSDisplayHelper::toString( dropChoices->asType<UIHTMLWidget>()->getDisplay() )
-			  << ") "
-			  << "selftextMd=(" << selftextMdPos.x << "," << selftextMdPos.y << " "
-			  << selftextMd->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << selftextMd->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " font=" << fontSizeOf( selftextMd ) << ") "
-			  << "selftextFirstP=(" << selftextFirstPPos.x << "," << selftextFirstPPos.y << " "
-			  << selftextFirstP->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << selftextFirstP->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " font=" << fontSizeOf( selftextFirstP ) << ") "
-			  << "postTitle=(" << postTitlePos.x << "," << postTitlePos.y << " "
-			  << postTitle->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << postTitle->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " font=" << fontSizeOf( postTitle ) << ") "
-			  << "postTagline=(" << postTaglinePos.x << "," << postTaglinePos.y << " "
-			  << postTagline->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << postTagline->asType<UIWidget>()->getPixelsSize().getHeight()
-			  << " font=" << fontSizeOf( postTagline ) << ") "
-			  << "postExpando=(" << postExpandoPos.x << "," << postExpandoPos.y << " "
-			  << postExpando->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << postExpando->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "postUsertext=(" << postUsertextPos.x << "," << postUsertextPos.y << " "
-			  << postUsertext->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << postUsertext->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "commentArea=(" << commentAreaPos.x << "," << commentAreaPos.y << " "
-			  << commentArea->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << commentArea->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "commentForm=(" << commentFormPos.x << "," << commentFormPos.y << " "
-			  << commentForm->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << commentForm->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "commentEdit=(" << commentEditPos.x << "," << commentEditPos.y << " "
-			  << commentEdit->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << commentEdit->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "commentTextarea=(" << commentTextareaPos.x << "," << commentTextareaPos.y << " "
-			  << commentTextarea->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << commentTextarea->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "commentContentPolicy=(" << commentContentPolicyPos.x << ","
-			  << commentContentPolicyPos.y << " "
-			  << commentContentPolicy->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << commentContentPolicy->asType<UIWidget>()->getPixelsSize().getHeight() << ") "
-			  << "commentHelpToggle=(" << commentHelpTogglePos.x << "," << commentHelpTogglePos.y
-			  << " " << commentHelpToggle->asType<UIWidget>()->getPixelsSize().getWidth() << "x"
-			  << commentHelpToggle->asType<UIWidget>()->getPixelsSize().getHeight() << ")"
-			  << std::endl;
-
+	Vector2f commentEditPos = commentEdit->asType<UIWidget>()->convertToWorldSpace( { 0, 0 } );
 	const Float midcolCenter =
 		midcolPos.x + midcol->asType<UIWidget>()->getPixelsSize().getWidth() / 2.f;
 	const Float arrowCenter =
@@ -508,10 +489,7 @@ UTEST( UIHTML, redditOldThreadWebViewSmoke ) {
 	EXPECT_NEAR( arrowBackgroundLayer->getOffset().x, -42.f, 0.1f );
 	EXPECT_NEAR( arrowBackgroundLayer->getOffset().y, -1678.f, 0.1f );
 
-	if ( !FileSystem::fileExists( "output" ) )
-		FileSystem::makeDir( "output" );
-	win->getFrontBufferImage().saveToFile( "output/eepp-reddit-old-thread-current.webp",
-										   Image::SaveType::WEBP );
+	compareImages( utest_state, utest_result, win, "eepp-ui-reddit-old-thread", "html" );
 
 	Engine::destroySingleton();
 }
@@ -1028,7 +1006,7 @@ UTEST( UIRichText, anchorMargins ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1070,7 +1048,7 @@ UTEST( UIRichText, spanPadding ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1104,7 +1082,7 @@ UTEST( UIRichText, anchorPadding ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1144,7 +1122,7 @@ UTEST( UIRichText, anchorPaddingLineHeight ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1184,7 +1162,7 @@ UTEST( UIHTML, InlineBaselineAlignmentProperties ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1237,7 +1215,7 @@ UTEST( UIHTML, InlineBlockVerticalAlignDoesNotInflateOwnTextLine ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1286,7 +1264,7 @@ UTEST( UIHTMLTable, complexLayout3 ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1302,6 +1280,8 @@ UTEST( UIHTMLTable, complexLayout3 ) {
 	win->setClearColor( Color::White );
 
 	win->getInput()->update();
+	EXPECT_EQ( win->getInput()->getMousePos().x, 0 );
+	EXPECT_EQ( win->getInput()->getMousePos().y, 0 );
 	SceneManager::instance()->update();
 
 	win->clear();
@@ -1319,7 +1299,7 @@ UTEST( UIHTMLTable, nestedPerformance ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1370,7 +1350,7 @@ UTEST( UIHTMLTable, specifiedWidth ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1410,7 +1390,7 @@ UTEST( UIHTMLTable, nestedSpecifiedWidth ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -1447,6 +1427,7 @@ UTEST( UIHTMLTable, nestedSpecifiedWidth ) {
 UTEST( UIHTMLInput, sizeAttribute ) {
 	init_ui_test();
 	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->combineStyleSheet( "* { background-color: #fedcba; border-width: 2px; }" );
 	sceneNode->loadLayoutFromString( R"html(
 		<vbox layout_width="wrap_content" layout_height="wrap_content">
 			<input id="i1" size="10" />
@@ -1507,6 +1488,41 @@ UTEST( UIHTMLInput, sizeAttribute ) {
 	EXPECT_TRUE( crc->getChildWidget()->isType( UI_TYPE_RADIOBUTTON ) );
 	EXPECT_TRUE( crc->getChildWidget()->asType<UIRadioButton>()->isActive() );
 	EXPECT_TRUE( crc->getFormValue() == "on" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, adjacentBlockMarginsCollapse ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<html><body>
+			<div id="container" style="width: 300px; height: wrap-content; padding: 0;">
+				<p id="p1" style="font-size: 10px; line-height: 20px; margin: 6px 0;">one</p>
+				<p id="p2" style="font-size: 10px; line-height: 20px; margin: 6px 0;">two</p>
+				<p id="p3" style="font-size: 10px; line-height: 20px; margin: 6px 0;">three</p>
+			</div>
+		</body></html>
+	)html" );
+	sceneNode->updateDirtyLayouts();
+
+	auto* container = sceneNode->getRoot()->find( "container" )->asType<UIWidget>();
+	auto* p1 = sceneNode->getRoot()->find( "p1" )->asType<UIWidget>();
+	auto* p2 = sceneNode->getRoot()->find( "p2" )->asType<UIWidget>();
+	auto* p3 = sceneNode->getRoot()->find( "p3" )->asType<UIWidget>();
+	ASSERT_TRUE( container != nullptr );
+	ASSERT_TRUE( p1 != nullptr );
+	ASSERT_TRUE( p2 != nullptr );
+	ASSERT_TRUE( p3 != nullptr );
+
+	EXPECT_NEAR( p1->getPixelsPosition().y, 6.f, 0.5f );
+	EXPECT_NEAR( p2->getPixelsPosition().y -
+					 ( p1->getPixelsPosition().y + p1->getPixelsSize().getHeight() ),
+				 6.f, 0.5f );
+	EXPECT_NEAR( p3->getPixelsPosition().y -
+					 ( p2->getPixelsPosition().y + p2->getPixelsSize().getHeight() ),
+				 6.f, 0.5f );
+	EXPECT_NEAR( p3->getPixelsPosition().y + p3->getPixelsSize().getHeight(), 78.f, 0.5f );
 
 	Engine::destroySingleton();
 }
@@ -1949,13 +1965,126 @@ UTEST( UIHTML, FormControlsDefaultInlineBlock ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTMLInput, hostOwnsCSSBox ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<vbox layout_width="wrap_content" layout_height="wrap_content">
+			<input id="styled_input" type="text"
+				style="background-color: #123456; border: 3px solid #abcdef; padding: 5px;" />
+		</vbox>
+	)html" );
+	sceneNode->updateDirtyLayouts();
+
+	auto* input = sceneNode->getRoot()->find( "styled_input" )->asType<UIHTMLInput>();
+	ASSERT_TRUE( input != nullptr );
+	auto* implementation = input->getChildWidget();
+	ASSERT_TRUE( implementation != nullptr );
+
+	EXPECT_TRUE( input->hasBackground() );
+	EXPECT_TRUE( input->hasBorder() );
+	EXPECT_FALSE( implementation->hasBackground() );
+	EXPECT_FALSE( implementation->hasBorder() );
+	EXPECT_TRUE( 0 == ( implementation->getFlags() & UI_HTML_ELEMENT ) );
+	EXPECT_NEAR( input->getPixelsPadding().Left, 5.f, 0.01f );
+	EXPECT_NEAR( input->getPixelsPadding().Top, 5.f, 0.01f );
+	EXPECT_NEAR( input->getPixelsPadding().Right, 5.f, 0.01f );
+	EXPECT_NEAR( input->getPixelsPadding().Bottom, 5.f, 0.01f );
+	EXPECT_TRUE( implementation->getPadding() == Rectf() );
+	EXPECT_NEAR( implementation->getPixelsPosition().x, 8.f, 0.01f );
+	EXPECT_NEAR( implementation->getPixelsPosition().y, 8.f, 0.01f );
+	EXPECT_NEAR( implementation->getPixelsSize().getWidth(),
+				 input->getPixelsSize().getWidth() - 16.f, 0.01f );
+	EXPECT_NEAR( implementation->getPixelsSize().getHeight(),
+				 input->getPixelsSize().getHeight() - 16.f, 0.01f );
+
+	input->setInputType( "email" );
+	EXPECT_STDSTREQ( input->getInputType(), "email" );
+	EXPECT_TRUE( input->getChildWidget()->isType( UI_TYPE_TEXTINPUT ) );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLInput, inlineTextUsesReplacedControlBaselineAndFontMetrics ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<div id="line" style="font-size: 14px; line-height: 20px;">
+			<span id="label">label</span><input id="input" type="text"
+				style="font-size: 14px; border: 1px solid gray; padding: 3px 2px;" />
+		</div>
+	)html" );
+	sceneNode->updateDirtyLayouts();
+
+	auto* line = sceneNode->getRoot()->find( "line" )->asType<UIHTMLWidget>();
+	auto* label = sceneNode->getRoot()->find( "label" )->asType<UITextSpan>();
+	auto* input = sceneNode->getRoot()->find( "input" )->asType<UIHTMLInput>();
+	ASSERT_TRUE( line != nullptr );
+	ASSERT_TRUE( label != nullptr );
+	ASSERT_TRUE( input != nullptr );
+	ASSERT_TRUE( input->getChildWidget()->isType( UI_TYPE_HTML_TEXTINPUT ) );
+	auto* textInput = input->getChildWidget()->asType<UIHTMLTextInput>();
+	ASSERT_TRUE( textInput->getFont() != nullptr );
+
+	const Float expectedContentHeight =
+		std::ceil( textInput->getFont()->getAscent( textInput->getFontSize() ) +
+				   textInput->getFont()->getDescent( textInput->getFontSize() ) );
+	EXPECT_NEAR( textInput->getPixelsSize().getHeight(), expectedContentHeight, 0.01f );
+	EXPECT_NEAR( input->getPixelsSize().getHeight(),
+				 expectedContentHeight + input->getPixelsContentOffset().Top +
+					 input->getPixelsContentOffset().Bottom,
+				 0.01f );
+
+	const auto& lines = line->getRichTextPtr()->getLines();
+	ASSERT_EQ( lines.size(), (size_t)1 );
+	const Float lineBaseline = line->convertToWorldSpace( Vector2f::Zero ).y +
+							   line->getPixelsContentOffset().Top + lines.front().y +
+							   lines.front().maxAscent;
+	const Float inputBaseline =
+		input->convertToWorldSpace( Vector2f::Zero ).y + input->getReplacedElementBaseline();
+	EXPECT_NEAR( inputBaseline, lineBaseline, 0.5f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLInput, dynamicTypeKeepsHostAndState ) {
+	init_ui_test();
+	auto* input = UIHTMLInput::New();
+	input->setParent( SceneManager::instance()->getUISceneNode()->getRoot() );
+	static_cast<UITextInput*>( input->getChildWidget() )->setText( "edited value" );
+
+	UIHTMLInput* originalHost = input;
+	input->setInputType( "checkbox" );
+	EXPECT_EQ( input, originalHost );
+	EXPECT_TRUE( input->getChildWidget()->isType( UI_TYPE_CHECKBOX ) );
+
+	input->setInputType( "hidden" );
+	EXPECT_FALSE( input->isVisible() );
+	EXPECT_FALSE( input->isEnabled() );
+	EXPECT_EQ( input->getDisplay(), CSSDisplay::None );
+
+	input->setInputType( "text" );
+	EXPECT_EQ( input, originalHost );
+	EXPECT_TRUE( input->isVisible() );
+	EXPECT_TRUE( input->isEnabled() );
+	EXPECT_EQ( input->getDisplay(), CSSDisplay::InlineBlock );
+	ASSERT_TRUE( input->getChildWidget()->isType( UI_TYPE_TEXTINPUT ) );
+	EXPECT_TRUE( static_cast<UITextInput*>( input->getChildWidget() )->getText() ==
+				 "edited value" );
+
+	input->setInputType( "unsupported-type" );
+	EXPECT_STDSTREQ( input->getInputType(), "text" );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTMLTable, tableLayoutFixed ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 650, "HTML Tables Test",
 													  WindowStyle::Default, WindowBackend::Default,
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2003,7 +2132,7 @@ UTEST( UIHTMLBody, backgroundColorPropagation ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2080,7 +2209,7 @@ UTEST( UILayout, marginAuto ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2182,6 +2311,25 @@ UTEST( UILayout, listStyleTypeDecimal ) {
 	EXPECT_TRUE( li3->getPropertyString( propDef ) == "decimal" );
 
 	Engine::destroySingleton();
+}
+
+UTEST( UILayout, textListMarkerTracksInheritedColor ) {
+	FontStyleConfig inheritedStyle;
+	inheritedStyle.FontColor = Color( 224, 230, 237 );
+	inheritedStyle.CharacterSize = 19;
+
+	Text marker;
+	marker.setString( "1." );
+	UIHTMLListStyle::syncTextMarkerColor( marker, inheritedStyle.FontColor );
+
+	EXPECT_TRUE( marker.getFillColor() == inheritedStyle.FontColor );
+}
+
+UTEST( UILayout, textListMarkerPositionIsPixelAligned ) {
+	const Vector2f markerPos = UIHTMLListStyle::getTextMarkerPosition(
+		{ 100.75f, 40.5f }, Rectf( 0.25f, 1.75f, 0.f, 0.f ), 12.4f, 17.f );
+
+	EXPECT_TRUE( markerPos == markerPos.floor() );
 }
 
 UTEST( UILayout, listStyleTypeDisc ) {
@@ -2348,7 +2496,7 @@ UTEST( UIHTMLDetails, lobstersInlineBlockCachesWidth ) {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
@@ -2528,7 +2676,7 @@ UTEST( UIBorder, renderingVariations ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2555,6 +2703,40 @@ UTEST( UIBorder, renderingVariations ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIBorder, cssSideStyles ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"html(
+		<html><body>
+			<div id="styled" style="width: 100px; height: 40px;
+				border-top: 1px dotted gray; border-right: 2px dashed red;
+				border-bottom: 3px solid blue; border-left: none;"></div>
+			<div id="initial" style="width: 100px; height: 40px; border-top-width: 5px;"></div>
+		</body></html>
+	)html" );
+	sceneNode->updateDirtyLayouts();
+
+	auto* styled = sceneNode->getRoot()->find( "styled" )->asType<UIWidget>();
+	ASSERT_TRUE( styled != nullptr );
+	const Borders& borders = styled->getBorder()->getBorders();
+	EXPECT_EQ( borders.top.style, BorderStyle::Dotted );
+	EXPECT_EQ( borders.right.style, BorderStyle::Dashed );
+	EXPECT_EQ( borders.bottom.style, BorderStyle::Solid );
+	EXPECT_EQ( borders.left.style, BorderStyle::None );
+	EXPECT_EQ( borders.top.width, 1 );
+	EXPECT_EQ( borders.right.width, 2 );
+	EXPECT_EQ( borders.bottom.width, 3 );
+	EXPECT_EQ( borders.left.width, 0 );
+
+	auto* initial = sceneNode->getRoot()->find( "initial" )->asType<UIWidget>();
+	ASSERT_TRUE( initial != nullptr );
+	const Borders& initialBorders = initial->getBorder()->getBorders();
+	EXPECT_EQ( initialBorders.top.style, BorderStyle::None );
+	EXPECT_EQ( initialBorders.top.width, 5 );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIBorder, renderingVariations2 ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 653, "Border Rendering Test 2", VisualTestWindowStyle,
@@ -2562,7 +2744,7 @@ UTEST( UIBorder, renderingVariations2 ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -2590,12 +2772,11 @@ UTEST( UIBorder, renderingVariations2 ) {
 }
 
 static UISceneNode* init_test_inline_block() {
-	FontTrueType* font = nullptr;
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-	font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
-	FontTrueType* monoFont = FontTrueType::New( "monospace" );
+	FontTrueType* monoFont = FontTrueType::New( "monospace" ).get();
 	monoFont->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
@@ -2636,6 +2817,62 @@ UTEST( UIHTML, BodyViewportMinimumHeightUsesSceneViewport ) {
 	EXPECT_NEAR( bodyNode->getPixelsSize().getHeight(), 600.f, 1.f );
 	EXPECT_EQ( sceneNode->getPixelsSize().getWidth(), 800 );
 	EXPECT_EQ( sceneNode->getPixelsSize().getHeight(), 3000 );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, DuckDuckGoHomepageAbsoluteContentDoesNotGrowBody ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1280, 720, "DuckDuckGo homepage body height", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	UISceneNode* sceneNode = init_test_inline_block();
+
+	auto* vbox = sceneNode->loadLayoutFromString( R"xml(
+		<vbox layout_width="match_parent" layout_height="match_parent">
+			<hbox layout_width="match_parent" layout_height="wrap_content">
+				<PushButton lw="26dp" id="backbtn" text="Back" />
+				<PushButton lw="26dp" id="fwdbtn" text="Forward" />
+				<PushButton lw="26dp" id="refreshbtn" text="Refresh" />
+				<TextInput id="url_bar" layout_width="0" layout_weight="1" />
+			</hbox>
+			<WebView id="webview" layout_width="match_parent" layout_height="0"
+				layout_weight="1" />
+		</vbox>
+	)xml" );
+	ASSERT_TRUE( vbox != nullptr );
+	auto* webView = vbox->find( "webview" )->asType<UIWebView>();
+	ASSERT_TRUE( webView != nullptr );
+
+	auto* documentScene = webView->getDocumentSceneNode();
+	bool navigationCompleted = false;
+	webView->onNavigationCompleted(
+		[&navigationCompleted]( const URI& ) { navigationCompleted = true; } );
+	webView->loadURI( URI( "assets/html/ddg_html.html" ) );
+
+	for ( int i = 0; i < 300; ++i ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+	ASSERT_TRUE( navigationCompleted );
+
+	auto* body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	auto* content =
+		documentScene->getRoot()->find( "content_wrapper_homepage" )->asType<UIWidget>();
+	ASSERT_TRUE( body != nullptr );
+	ASSERT_TRUE( content != nullptr );
+	EXPECT_NEAR( body->getPixelsSize().getHeight(),
+				 documentScene->getViewportPixelsSize().getHeight(), 2.f );
+	EXPECT_NEAR( webView->getDocumentContainer()->getPixelsSize().getHeight(),
+				 documentScene->getViewportPixelsSize().getHeight(), 2.f );
+	EXPECT_NEAR( content->getPixelsPosition().y,
+				 documentScene->getLayoutViewportPixelsSize().getHeight() * 0.24f, 2.f );
+	EXPECT_LT( content->getPixelsPosition().y, body->getPixelsSize().getHeight() );
+	EXPECT_LT( content->getPixelsPosition().y + content->getPixelsSize().getHeight(),
+			   body->getPixelsSize().getHeight() );
+	EXPECT_FALSE( webView->getHorizontalScrollBar()->isVisible() );
+	EXPECT_FALSE( webView->getVerticalScrollBar()->isVisible() );
 
 	Engine::destroySingleton();
 }
@@ -2700,6 +2937,61 @@ ul > li {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, InlineAnchorsInsideInlineBlockSiblingsKeepDocumentOrder ) {
+	init_ui_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->setThreadPool( ThreadPool::createShared( 1 ) );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><head>
+			<link rel="stylesheet" href="reddit_inline_order_deferred.css" defer="25" />
+		</head><body>
+			<div class="entry">
+				<p id="title"><a id="post-title">Low-level coding dataset</a>
+					<span id="domain">(<a>self.cpp</a>)</span></p>
+				<ul class="buttons" id="comment-buttons">
+					<span class="float-marker"></span>
+					<li><a>permalink</a></li><li><a>embed</a></li><li><a>save</a></li>
+					<li><a>report</a></li><li><a>reply</a></li>
+				</ul>
+			</div>
+		</body></html>
+	)html" ) );
+
+	UIWidget* buttons = nullptr;
+	for ( int i = 0; i < 200; ++i ) {
+		SceneManager::instance()->update();
+		buttons = sceneNode->getRoot()->find( "comment-buttons" )->asType<UIWidget>();
+		if ( buttons ) {
+			auto items = buttons->findAllByTag( "li" );
+			if ( !items.empty() &&
+				 items.front()->asType<UIHTMLWidget>()->getDisplay() == CSSDisplay::InlineBlock )
+				break;
+		}
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+
+	auto* postTitle = sceneNode->getRoot()->find( "post-title" )->asType<UIWidget>();
+	auto* domain = sceneNode->getRoot()->find( "domain" )->asType<UIWidget>();
+	ASSERT_TRUE( postTitle != nullptr );
+	ASSERT_TRUE( domain != nullptr );
+	ASSERT_TRUE( buttons != nullptr );
+	EXPECT_GE( domain->getPixelsPosition().x,
+			   postTitle->getPixelsPosition().x + postTitle->getPixelsSize().getWidth() );
+
+	auto listItems = buttons->findAllByTag( "li" );
+	ASSERT_EQ( listItems.size(), (size_t)5 );
+	Float previousRight = listItems.front()->getPixelsPosition().x;
+	for ( auto* listItem : listItems ) {
+		EXPECT_GE( listItem->getPixelsPosition().x, previousRight );
+		EXPECT_GT( listItem->getPixelsSize().getWidth(), 0.f );
+		previousRight = listItem->getPixelsPosition().x + listItem->getPixelsSize().getWidth();
+	}
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, StyleSheetTraversalBoundaries ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "CSS Traversal Test",
 													  WindowStyle::Default, WindowBackend::Default,
@@ -2748,6 +3040,1460 @@ UTEST( UIHTML, StyleSheetTraversalBoundaries ) {
 	EXPECT_TRUE( nativeChild->getStyleSheetParentElement() == nativeWidget );
 
 	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScopedNavigationInterceptorsComposeWithSceneHandler ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* outer = UILinearLayout::NewVertical();
+	outer->setParent( scene->getRoot() );
+	auto* inner = UILinearLayout::NewVertical();
+	inner->setParent( outer );
+	auto* source = UITextSpan::New();
+	source->setParent( inner );
+	std::string calls;
+	scene->setNavigationInterceptorCb( [&]( const NavigationRequest& ) {
+		calls += "scene ";
+		return true;
+	} );
+	scene->setNavigationInterceptorCb( outer, [&]( const NavigationRequest& ) {
+		calls += "outer ";
+		return false;
+	} );
+	scene->setNavigationInterceptorCb( inner, [&]( const NavigationRequest& ) {
+		calls += "inner ";
+		// Removing this handler during dispatch must not invalidate the callable being invoked.
+		scene->setNavigationInterceptorCb( inner, {} );
+		return false;
+	} );
+	NavigationRequest request{ URI( "https://example.com" ) };
+	request.source = source;
+	scene->navigate( request );
+	EXPECT_STDSTREQ( calls, "inner outer scene " );
+	calls.clear();
+	scene->navigate( request );
+	EXPECT_STDSTREQ( calls, "outer scene " );
+	scene->setNavigationInterceptorCb( inner, [&]( const NavigationRequest& ) {
+		calls += "handled ";
+		return true;
+	} );
+	calls.clear();
+	scene->navigate( request );
+	EXPECT_STDSTREQ( calls, "handled " );
+	request.source = nullptr;
+	calls.clear();
+	scene->navigate( request );
+	EXPECT_STDSTREQ( calls, "scene " );
+	scene->setNavigationInterceptorCb( inner, {} );
+	scene->setNavigationInterceptorCb( outer, {} );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScopedNavigationInterceptorRequiresSceneTreeMembership ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* detached = Node::New();
+	int scoped = 0;
+	int fallback = 0;
+	auto interceptor = [&]( const NavigationRequest& ) {
+		++scoped;
+		return true;
+	};
+	scene->setNavigationInterceptorCb( [&]( const NavigationRequest& ) {
+		++fallback;
+		return true;
+	} );
+	NavigationRequest request{ URI( "https://example.com" ) };
+	EXPECT_FALSE( scene->setNavigationInterceptorCb( nullptr, interceptor ) );
+	EXPECT_FALSE( scene->setNavigationInterceptorCb( detached, interceptor ) );
+	request.source = detached;
+	scene->navigate( request );
+	EXPECT_EQ( scoped, 0 );
+	EXPECT_EQ( fallback, 1 );
+	eeDelete( detached );
+	auto* otherScene = UISceneNode::New();
+	SceneManager::instance()->add( otherScene );
+	auto* foreign = UIWidget::New();
+	foreign->setParent( otherScene->getRoot() );
+	EXPECT_FALSE( scene->setNavigationInterceptorCb( foreign, interceptor ) );
+	request.source = foreign;
+	scene->navigate( request );
+	EXPECT_EQ( scoped, 0 );
+	EXPECT_EQ( fallback, 2 );
+	foreign->setParent( scene->getRoot() );
+	EXPECT_TRUE( scene->setNavigationInterceptorCb( foreign, interceptor ) );
+	EXPECT_TRUE( scene->setNavigationInterceptorCb( foreign, interceptor ) );
+	scene->navigate( request );
+	EXPECT_EQ( scoped, 1 );
+	EXPECT_EQ( fallback, 2 );
+	foreign->setParent( otherScene->getRoot() );
+	// Removal must work after reparenting, otherwise the old scene retains a stale callback.
+	EXPECT_TRUE( scene->setNavigationInterceptorCb( foreign, {} ) );
+	EXPECT_FALSE( scene->setNavigationInterceptorCb( foreign, {} ) );
+	scene->navigate( request );
+	EXPECT_EQ( scoped, 1 );
+	EXPECT_EQ( fallback, 3 );
+	EXPECT_TRUE( scene->setNavigationInterceptorCb( scene, interceptor ) );
+	request.source = scene->getRoot();
+	scene->navigate( request );
+	EXPECT_EQ( scoped, 2 );
+	EXPECT_EQ( fallback, 3 );
+	EXPECT_TRUE( scene->setNavigationInterceptorCb( scene, {} ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownFollowsLocalLinksAndRebasesNavigation ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	scene->setURIFromURL( URI( "https://outer.example.com/guide/index.html" ) );
+	const URI sceneURI = scene->getURI();
+	const std::string dir =
+		Sys::getTempPath() + "eepp_markdown_navigation" + FileSystem::getOSSlash();
+	const std::string docs = dir + "docs" + FileSystem::getOSSlash();
+	const std::string intro = docs + "intro.md";
+	const std::string destination = dir + "next page.markdown";
+	ASSERT_TRUE( FileSystem::makeDir( docs, true ) );
+	ASSERT_TRUE( FileSystem::fileWrite( intro, "[Next](../next%20page.markdown)" ) );
+	ASSERT_TRUE( FileSystem::fileWrite( destination, "# Destination" ) );
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( scene->getRoot() );
+	markdown->loadFromString( "[Intro](file://docs/intro.md)", dir + "README.md" );
+	EXPECT_TRUE( markdown->getFollowLocalLinks() );
+	int completed = 0;
+	int failed = 0;
+	markdown->on( Event::OnNavigationCompleted, [&]( const Event* event ) {
+		EXPECT_TRUE( static_cast<const UIMarkdownView::NavigationEvent*>( event )->success );
+		++completed;
+	} );
+	markdown->on( Event::OnNavigationError, [&]( const Event* event ) {
+		EXPECT_FALSE( static_cast<const UIMarkdownView::NavigationEvent*>( event )->success );
+		++failed;
+	} );
+	auto clickLink = [&] {
+		auto* anchor = markdown->findByTag<UIAnchorSpan>( "a" );
+		NodeMessage click( anchor, NodeMessage::MouseClick, EE_BUTTON_LMASK );
+		anchor->messagePost( &click );
+		scene->update( Milliseconds( 16 ) );
+	};
+	clickLink();
+	EXPECT_EQ( completed, 1 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), intro );
+	clickLink();
+	EXPECT_EQ( completed, 2 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), destination );
+	EXPECT_TRUE( markdown->findByTag( "h1" ) != nullptr );
+	EXPECT_TRUE( sceneURI == scene->getURI() );
+	NavigationRequest missing{ URI( "missing.md" ) };
+	missing.source = markdown;
+	scene->navigate( missing );
+	EXPECT_EQ( failed, 1 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), destination );
+	EXPECT_TRUE( markdown->findByTag( "h1" ) != nullptr );
+	FileSystem::fileRemove( intro );
+	FileSystem::fileRemove( destination );
+	FileSystem::fileRemove( docs );
+	FileSystem::fileRemove( dir );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScrollableMarkdownViewLoadsInlineContentAndRoutesShortcuts ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	scene->loadLayoutFromString(
+		R"xml(<ScrollableMarkdownView id="document" layout_width="180dp" layout_height="100dp"><![CDATA[# Inline Markdown]]></ScrollableMarkdownView>)xml" );
+	auto* view = scene->find<UIScrollableMarkdownView>( "document" );
+	ASSERT_TRUE( view != nullptr );
+	EXPECT_TRUE( view->isType( UI_TYPE_SCROLLABLEMARKDOWNVIEW ) );
+	EXPECT_TRUE( view->isType( UI_TYPE_SCROLLVIEW ) );
+	auto* markdown = view->getMarkdownView();
+	EXPECT_TRUE( markdown == view->getScrollView() );
+	EXPECT_TRUE( markdown->getParent() == view->getContainer() );
+	ASSERT_TRUE( markdown->findByTag( "h1" ) != nullptr );
+	scene->update( Seconds( 1 ) );
+	markdown->getTextSelectionController()->selectAll();
+	EXPECT_STRINGEQ( markdown->getTextSelectionController()->getSelectionString(),
+					 String( "Inline Markdown" ) );
+	std::string content;
+	for ( int i = 0; i < 40; ++i )
+		content += "paragraph\n\n";
+	markdown->loadFromString( content );
+	scene->update( Seconds( 1 ) );
+	auto* bar = view->getVerticalScrollBar();
+	ASSERT_TRUE( bar->isEnabled() );
+	int commands = 0;
+	view->setCommand( "custom-page", [&] { ++commands; } );
+	view->getKeyBindings().addKeybind( { KEY_PAGEDOWN, 0 }, "custom-page" );
+	scene->getEventDispatcher()->setFocusNode( markdown );
+	scene->getEventDispatcher()->sendKeyDown( KEY_PAGEDOWN, SCANCODE_PAGEDOWN, 0, 0 );
+	EXPECT_EQ( commands, 1 );
+	EXPECT_EQ( bar->getValue(), 0.f );
+	view->unsetCommand( "custom-page" );
+	scene->getEventDispatcher()->sendKeyDown( KEY_PAGEDOWN, SCANCODE_PAGEDOWN, 0, 0 );
+	EXPECT_GT( bar->getValue(), 0.f );
+	view->setEnableDefaultKeybindings( false );
+	const Float position = bar->getValue();
+	scene->getEventDispatcher()->sendKeyDown( KEY_PAGEDOWN, SCANCODE_PAGEDOWN, 0, 0 );
+	EXPECT_EQ( bar->getValue(), position );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScrollableMarkdownViewResetsScrollOnlyAfterSuccessfulNavigation ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* view = UIScrollableMarkdownView::New();
+	view->setParent( scene->getRoot() );
+	view->setPixelsSize( 180, 100 );
+	auto* markdown = view->getMarkdownView();
+	markdown->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
+	markdown->setPixelsSize( 400, 100 );
+	std::string content;
+	for ( int i = 0; i < 40; ++i )
+		content += "paragraph\n\n";
+	const std::string source = Sys::getTempPath() + "eepp_scrollable_source.md";
+	const std::string path = Sys::getTempPath() + "eepp_scrollable_destination.md";
+	ASSERT_TRUE( FileSystem::fileWrite( path, content ) );
+	markdown->loadFromString( content, source );
+	scene->update( Seconds( 1 ) );
+	auto* bar = view->getVerticalScrollBar();
+	ASSERT_TRUE( bar->isEnabled() );
+	auto* horizontal = view->getHorizontalScrollBar();
+	ASSERT_TRUE( horizontal->isEnabled() );
+	bar->setValue( 0.7f );
+	horizontal->setValue( 0.4f );
+	markdown->loadFromString( content, source );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_NEAR( bar->getValue(), 0.7f, 0.001f );
+	EXPECT_NEAR( horizontal->getValue(), 0.4f, 0.001f );
+	// A Windows drive path passed directly to URI is parsed as a scheme, not a file URL.
+	NavigationRequest request{ URI( "file://" + path + ".missing.md" ) };
+	request.source = markdown;
+	scene->navigate( request );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), source );
+	EXPECT_NEAR( bar->getValue(), 0.7f, 0.001f );
+	EXPECT_NEAR( horizontal->getValue(), 0.4f, 0.001f );
+	request.uri = URI( "file://" + path );
+	scene->navigate( request );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), path );
+	EXPECT_EQ( bar->getValue(), 0.f );
+	EXPECT_EQ( horizontal->getValue(), 0.f );
+	FileSystem::fileRemove( path );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScrollableMarkdownHistoryCommitsSuccessfulLoadsAndPreservesForwardUpdates ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* view = UIScrollableMarkdownView::New();
+	view->setParent( scene->getRoot() );
+	view->setHistoryNavigationEnabled( true );
+	view->setPixelsSize( 300, 200 );
+	auto* markdown = view->getMarkdownView();
+	const std::string dir = Sys::getTempPath() + "eepp_markdown_history" + FileSystem::getOSSlash();
+	ASSERT_TRUE( FileSystem::makeDir( dir, true ) );
+	const std::string source = dir + "source.md";
+	const std::string first = dir + "first.md";
+	const std::string second = dir + "second.md";
+	const std::string branch = dir + "branch.md";
+	for ( const auto& path : { source, first, second, branch } )
+		ASSERT_TRUE( FileSystem::fileWrite( path, "# Document" ) );
+	markdown->loadFromString( "[Next](first.md)", source );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	EXPECT_EQ( view->getHistory().size(), 1u );
+	NavigationRequest request{ URI( "first.md" ) };
+	request.source = markdown;
+	scene->navigate( request );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), first );
+	markdown->loadFromFile( second );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_EQ( view->getHistory().size(), 3u );
+	EXPECT_EQ( view->getHistoryIndex(), 2 );
+	EXPECT_TRUE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	EXPECT_TRUE( view->execute( "go-back" ) );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), first );
+	EXPECT_EQ( view->getHistoryIndex(), 1 );
+	scene->getEventDispatcher()->setFocusNode( markdown );
+	scene->getEventDispatcher()->sendKeyDown( KEY_LEFTBRACKET, SCANCODE_LEFTBRACKET, 0,
+											  KeyMod::getDefaultModifier() );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), source );
+	EXPECT_EQ( view->getHistoryIndex(), 0 );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_TRUE( view->canGoForward() );
+	markdown->loadFromString( "# Updated source buffer", source );
+	EXPECT_EQ( view->getHistory().size(), 3u );
+	EXPECT_TRUE( view->canGoForward() );
+	scene->getEventDispatcher()->setFocusNode( markdown );
+	scene->getEventDispatcher()->sendKeyDown( KEY_RIGHTBRACKET, SCANCODE_RIGHTBRACKET, 0,
+											  KeyMod::getDefaultModifier() );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), first );
+	FileSystem::fileRemove( second );
+	view->goHistoryForward();
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), first );
+	EXPECT_EQ( view->getHistoryIndex(), 1 );
+	EXPECT_TRUE( view->canGoForward() );
+	markdown->loadFromFile( branch );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_EQ( view->getHistory().size(), 3u );
+	EXPECT_STDSTREQ( view->getHistory().back(), branch );
+	EXPECT_FALSE( view->canGoForward() );
+	markdown->loadFromString( "updated branch", branch );
+	EXPECT_EQ( view->getHistory().size(), 3u );
+	markdown->loadFromString( "anonymous replacement" );
+	EXPECT_TRUE( view->getHistory().empty() );
+	EXPECT_EQ( view->getHistoryIndex(), -1 );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	for ( const auto& path : { source, first, branch } )
+		FileSystem::fileRemove( path );
+	FileSystem::fileRemove( dir );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScrollableMarkdownHistoryMenuEnablesDirectionsAndExecutesCommands ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* view = UIScrollableMarkdownView::New();
+	view->setParent( scene->getRoot() );
+	view->setPixelsSize( 300, 200 );
+	auto* markdown = view->getMarkdownView();
+	const std::string source = Sys::getTempPath() + "eepp_markdown_menu_source.md";
+	const std::string destination = Sys::getTempPath() + "eepp_markdown_menu_destination.md";
+	ASSERT_TRUE( FileSystem::fileWrite( source, "# Source" ) );
+	ASSERT_TRUE( FileSystem::fileWrite( destination, "# Destination" ) );
+	markdown->loadFromString( "# Source", source );
+	EXPECT_FALSE( view->isHistoryNavigationEnabled() );
+	EXPECT_TRUE( view->getHistory().empty() );
+	EXPECT_EQ( view->getHistoryIndex(), -1 );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	EXPECT_FALSE( view->hasCommand( "go-back" ) );
+	EXPECT_FALSE( view->hasCommand( "go-forward" ) );
+	EXPECT_FALSE( view->getKeyBindings().hasCommand( "go-back" ) );
+	EXPECT_FALSE( view->getKeyBindings().hasCommand( "go-forward" ) );
+	markdown->loadFromString( "# Destination", destination );
+	view->goHistoryBack();
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), destination );
+	EXPECT_TRUE( view->getHistory().empty() );
+	markdown->loadFromString( "# Source", source );
+	scene->update( Milliseconds( 16 ) );
+	auto showMenu = [&] {
+		NodeMessage click( view->getContainer(), NodeMessage::MouseUp, EE_BUTTON_RMASK );
+		view->getContainer()->messagePost( &click );
+		scene->update( Milliseconds( 16 ) );
+		return scene->getRoot()->findByClass<UIPopUpMenu>( "text-selection-menu" );
+	};
+	auto* menu = showMenu();
+	ASSERT_TRUE( menu != nullptr );
+	EXPECT_TRUE( menu->getItemId( "go-back" ) == nullptr );
+	EXPECT_TRUE( menu->getItemId( "go-forward" ) == nullptr );
+	menu->close();
+	scene->update( Milliseconds( 16 ) );
+	view->setHistoryNavigationEnabled( true );
+	EXPECT_TRUE( view->isHistoryNavigationEnabled() );
+	ASSERT_EQ( view->getHistory().size(), 1u );
+	EXPECT_STDSTREQ( view->getHistory()[0], source );
+	view->setHistoryNavigationEnabled( true );
+	EXPECT_EQ( view->getHistory().size(), 1u );
+	markdown->loadFromFile( destination );
+	scene->update( Milliseconds( 16 ) );
+	menu = showMenu();
+	ASSERT_TRUE( menu != nullptr );
+	ASSERT_TRUE( menu->getItemId( "go-back" ) != nullptr );
+	ASSERT_TRUE( menu->getItemId( "go-forward" ) != nullptr );
+	EXPECT_TRUE( menu->getItemId( "go-back" )->isEnabled() );
+	EXPECT_FALSE( menu->getItemId( "go-forward" )->isEnabled() );
+	menu->getItemId( "go-back" )->activate();
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), source );
+	menu = showMenu();
+	ASSERT_TRUE( menu != nullptr );
+	EXPECT_FALSE( menu->getItemId( "go-back" )->isEnabled() );
+	EXPECT_TRUE( menu->getItemId( "go-forward" )->isEnabled() );
+	menu->getItemId( "go-forward" )->activate();
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), destination );
+	int customBack = 0;
+	view->setCommand( "go-back", [&] { ++customBack; } );
+	menu = showMenu();
+	ASSERT_TRUE( menu != nullptr );
+	menu->getItemId( "go-back" )->activate();
+	EXPECT_EQ( customBack, 1 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), destination );
+	view->setCommand( "custom", [] {} );
+	view->getKeyBindings().addKeybindString( "F8", "custom" );
+	view->getKeyBindings().addKeybindString( "F9", "go-back" );
+	const KeyBindings sharedBindings = view->getKeyBindings();
+	view->setHistoryNavigationEnabled( false );
+	EXPECT_FALSE( view->isHistoryNavigationEnabled() );
+	EXPECT_TRUE( view->getHistory().empty() );
+	EXPECT_EQ( view->getHistoryIndex(), -1 );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	EXPECT_FALSE( view->execute( "go-back" ) );
+	EXPECT_FALSE( view->execute( "go-forward" ) );
+	EXPECT_FALSE( view->getKeyBindings().hasCommand( "go-back" ) );
+	EXPECT_FALSE( view->getKeyBindings().hasCommand( "go-forward" ) );
+	EXPECT_EQ( view->getKeyBindings().getShortcutMap().size(), 1u );
+	EXPECT_TRUE( view->execute( "custom" ) );
+	EXPECT_TRUE( view->getKeyBindings().hasCommand( "custom" ) );
+	EXPECT_EQ( sharedBindings.getShortcutMap().size(), 4u );
+	menu->close();
+	scene->update( Milliseconds( 16 ) );
+	menu = showMenu();
+	ASSERT_TRUE( menu != nullptr );
+	EXPECT_TRUE( menu->getItemId( "go-back" ) == nullptr );
+	EXPECT_TRUE( menu->getItemId( "go-forward" ) == nullptr );
+	markdown->loadFromString( "# Source again", source );
+	EXPECT_TRUE( view->getHistory().empty() );
+	view->setHistoryNavigationEnabled( true );
+	EXPECT_EQ( view->getHistory().size(), 1u );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	FileSystem::fileRemove( source );
+	FileSystem::fileRemove( destination );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScrollableMarkdownPendingHistoryTraversalRespectsReplacement ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* view = UIScrollableMarkdownView::New();
+	view->setParent( scene->getRoot() );
+	view->setHistoryNavigationEnabled( true );
+	auto* markdown = view->getMarkdownView();
+	const std::string source = Sys::getTempPath() + "eepp_markdown_pending_source.md";
+	const std::string destination = Sys::getTempPath() + "eepp_markdown_pending_destination.md";
+	ASSERT_TRUE( FileSystem::fileWrite( source, "# Source" ) );
+	ASSERT_TRUE( FileSystem::fileWrite( destination, "# Destination" ) );
+	markdown->loadFromString( "# Source", source );
+	markdown->loadFromString( "# Destination", destination );
+	markdown->loadFromString( "# Third", Sys::getTempPath() + "third.md" );
+	auto pool = ThreadPool::createShared( 1 );
+	scene->setThreadPool( pool );
+	std::atomic<bool> release{ false };
+	std::atomic<bool> finished{ false };
+	auto blockWorker = [&] {
+		pool->run( [&] {
+			while ( !release.load() )
+				Sys::sleep( Milliseconds( 1 ) );
+		} );
+	};
+	auto finishLoads = [&] {
+		pool->run( [&] { finished = true; } );
+		release = true;
+		Clock timeout;
+		while ( !finished.load() && timeout.getElapsedTime() < Seconds( 5 ) )
+			Sys::sleep( Milliseconds( 1 ) );
+		scene->update( Milliseconds( 16 ) );
+		return finished.load();
+	};
+	blockWorker();
+	view->goHistoryBack();
+	view->goHistoryBack();
+	markdown->on( Event::OnLinkOpenRequested, []( const Event* event ) {
+		static_cast<const UIMarkdownView::LinkOpenEvent*>( event )->accept();
+	} );
+	NavigationRequest custom{ URI( "https://example.com/new-tab" ) };
+	custom.target = NavigationRequest::Target::NewTab;
+	EXPECT_TRUE( markdown->navigate( custom ) );
+	EXPECT_EQ( view->getHistoryIndex(), 2 );
+	EXPECT_TRUE( finishLoads() );
+	EXPECT_EQ( view->getHistoryIndex(), 0 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), source );
+	EXPECT_EQ( view->getHistory().size(), 3u );
+	release = false;
+	finished = false;
+	blockWorker();
+	view->goHistoryForward();
+	markdown->loadFromString( "# Updated source", source );
+	EXPECT_TRUE( finishLoads() );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), source );
+	EXPECT_EQ( view->getHistoryIndex(), 0 );
+	EXPECT_TRUE( view->canGoForward() );
+
+	// Turning history off does not let an in-flight document load repopulate it.
+	release = false;
+	finished = false;
+	blockWorker();
+	view->goHistoryForward();
+	view->setHistoryNavigationEnabled( false );
+	EXPECT_TRUE( finishLoads() );
+	EXPECT_TRUE( view->getHistory().empty() );
+	EXPECT_EQ( view->getHistoryIndex(), -1 );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	view->setHistoryNavigationEnabled( true );
+	EXPECT_EQ( view->getHistory().size(), 1u );
+	EXPECT_FALSE( view->canGoBack() );
+	EXPECT_FALSE( view->canGoForward() );
+	scene->setThreadPool( nullptr );
+	pool.reset();
+	FileSystem::fileRemove( source );
+	FileSystem::fileRemove( destination );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownLinkPolicyAndCustomTargets ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( scene->getRoot() );
+	const std::string path = Sys::getTempPath() + "README.md";
+	markdown->loadFromString( "[Link](chapter.md)", path );
+	auto* anchor = markdown->findByTag<UIAnchorSpan>( "a" );
+	int fallback = 0;
+	scene->setNavigationInterceptorCb( [&]( const NavigationRequest& ) {
+		++fallback;
+		return true;
+	} );
+	markdown->setFollowLocalLinks( false );
+	NodeMessage click( anchor, NodeMessage::MouseClick, EE_BUTTON_LMASK );
+	anchor->messagePost( &click );
+	EXPECT_EQ( fallback, 1 );
+	markdown->setFollowLocalLinks( true );
+	int custom = 0;
+	markdown->on( Event::OnLinkOpenRequested, [&]( const Event* event ) {
+		const auto* link = static_cast<const UIMarkdownView::LinkOpenEvent*>( event );
+		EXPECT_TRUE( link->request.target == NavigationRequest::Target::NewTab );
+		EXPECT_STDSTREQ( link->request.uri.getFSPath(), Sys::getTempPath() + "chapter.md" );
+		EXPECT_TRUE( link->request.source == anchor );
+		++custom;
+		link->accept();
+	} );
+	NodeMessage middle( anchor, NodeMessage::MouseClick, EE_BUTTON_MMASK );
+	anchor->messagePost( &middle );
+	NavigationRequest modified{ URI( "chapter.md" ) };
+	modified.source = anchor;
+	modified.mouseButtons = EE_BUTTON_LMASK;
+	modified.modifiers = KeyMod::getDefaultModifier();
+	scene->navigate( modified );
+	modified.target = NavigationRequest::Target::NewTab;
+	modified.mouseButtons = 0;
+	scene->navigate( modified );
+	EXPECT_EQ( custom, 3 );
+	EXPECT_EQ( fallback, 1 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), path );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownLinkResolutionIsScopedAndFollowsSceneChanges ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	scene->setURIFromURL( URI( "https://outer.example.com/guide/index.html" ) );
+	const std::string base = Sys::getTempPath();
+	const std::string firstDir = base + "project-a" + FileSystem::getOSSlash();
+	const std::string secondDir = base + "project-b" + FileSystem::getOSSlash();
+	const std::string firstLinkPath =
+		firstDir + "docs" + FileSystem::getOSSlash() + "intro page.md";
+	const std::string secondLinkPath = secondDir + "docs" + FileSystem::getOSSlash() + "intro.md";
+	auto* first = UIMarkdownView::New();
+	first->setParent( scene->getRoot() );
+	first->loadFromString( "[Link](file://docs/intro%20page.md?q=docs#details)",
+						   firstDir + "README.md" );
+	auto* second = UIMarkdownView::New();
+	second->setParent( scene->getRoot() );
+	second->loadFromString( "[Link](docs/intro.md)", secondDir + "README.md" );
+	std::string firstPath;
+	std::string secondPath;
+	first->on( Event::OnLinkOpenRequested, [&]( const Event* event ) {
+		const auto* request = static_cast<const UIMarkdownView::LinkOpenEvent*>( event );
+		firstPath = request->request.uri.getFSPath();
+		EXPECT_STDSTREQ( request->request.uri.getQuery(), "q=docs" );
+		EXPECT_STDSTREQ( request->request.uri.getFragment(), "details" );
+		request->accept();
+	} );
+	second->on( Event::OnLinkOpenRequested, [&]( const Event* event ) {
+		const auto* request = static_cast<const UIMarkdownView::LinkOpenEvent*>( event );
+		secondPath = request->request.uri.getFSPath();
+		request->accept();
+	} );
+	auto* link = first->findByTag<UIAnchorSpan>( "a" );
+	NodeMessage firstClick( link, NodeMessage::MouseClick, EE_BUTTON_LMASK );
+	link->messagePost( &firstClick );
+	auto* secondLink = second->findByTag<UIAnchorSpan>( "a" );
+	NodeMessage secondClick( secondLink, NodeMessage::MouseClick, EE_BUTTON_LMASK );
+	secondLink->messagePost( &secondClick );
+	EXPECT_STDSTREQ( firstPath, firstLinkPath );
+	EXPECT_STDSTREQ( secondPath, secondLinkPath );
+	URI absolute;
+	absolute.setScheme( "file" );
+	absolute.setPath( "/absolute/guide.md" );
+	EXPECT_TRUE( first->resolveLink( absolute ) == absolute );
+	scene->update( Milliseconds( 16 ) );
+	UIPopUpMenu* menu = nullptr;
+	first->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+	} );
+	NodeMessage rightUp( link, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	link->messagePost( &rightUp );
+	ASSERT_TRUE( menu != nullptr );
+	menu->getItemId( "copy-link" )->activate();
+	EXPECT_STDSTREQ( scene->getWindow()->getClipboard()->getText(),
+					 first->resolveLink( URI( link->getHref() ) ).toString() );
+	auto* otherScene = UISceneNode::New();
+	SceneManager::instance()->add( otherScene );
+	first->setParent( otherScene->getRoot() );
+	firstPath.clear();
+	link->messagePost( &firstClick );
+	EXPECT_STDSTREQ( firstPath, firstLinkPath );
+	secondPath.clear();
+	secondLink->messagePost( &secondClick );
+	EXPECT_STDSTREQ( secondPath, secondLinkPath );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownPendingFileLoadsRespectReplacementAndDestruction ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto pool = ThreadPool::createShared( 1 );
+	scene->setThreadPool( pool );
+	const std::string path = Sys::getTempPath() + "eepp_markdown_async.md";
+	const std::string latestPath = Sys::getTempPath() + "eepp_markdown_async_latest.md";
+	ASSERT_TRUE( FileSystem::fileWrite( path, "stale" ) );
+	ASSERT_TRUE( FileSystem::fileWrite( latestPath, "latest" ) );
+	std::atomic<bool> release{ false };
+	std::atomic<bool> finished{ false };
+	auto waitForWorker = [&] {
+		Clock timeout;
+		while ( !finished.load() && timeout.getElapsedTime() < Seconds( 5 ) )
+			Sys::sleep( Milliseconds( 1 ) );
+		scene->update( Milliseconds( 16 ) );
+		return finished.load();
+	};
+	pool->run( [&] {
+		while ( !release.load() )
+			Sys::sleep( Milliseconds( 1 ) );
+	} );
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( scene->getRoot() );
+	int completed = 0;
+	markdown->on( Event::OnNavigationCompleted, [&]( const Event* ) { ++completed; } );
+	markdown->loadFromFile( path );
+	markdown->loadFromString( "replacement" );
+	auto* destroyed = UIMarkdownView::New();
+	destroyed->setParent( scene->getRoot() );
+	destroyed->loadFromFile( path );
+	eeDelete( destroyed );
+	pool->run( [&] { finished = true; } );
+	release = true;
+	EXPECT_TRUE( waitForWorker() );
+	EXPECT_EQ( completed, 0 );
+	EXPECT_TRUE( markdown->getDocumentPath().empty() );
+	markdown->getTextSelectionController()->selectAll();
+	EXPECT_STRINGEQ( markdown->getTextSelectionController()->getSelectionString(),
+					 String( "replacement" ) );
+	// A live view still receives background completions after stale jobs are discarded.
+	finished = false;
+	markdown->loadFromFile( path );
+	markdown->loadFromFile( latestPath );
+	pool->run( [&] { finished = true; } );
+	EXPECT_TRUE( waitForWorker() );
+	EXPECT_EQ( completed, 1 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), latestPath );
+	markdown->getTextSelectionController()->selectAll();
+	EXPECT_STRINGEQ( markdown->getTextSelectionController()->getSelectionString(),
+					 String( "latest" ) );
+	// Replacing content in a document observer cancels the older completion too.
+	markdown->on( Event::OnDocumentChanged, [&]( const Event* ) {
+		if ( markdown->getDocumentPath() == path )
+			markdown->loadFromString( "observer replacement", latestPath );
+	} );
+	finished = false;
+	markdown->loadFromFile( path );
+	pool->run( [&] { finished = true; } );
+	EXPECT_TRUE( waitForWorker() );
+	EXPECT_EQ( completed, 1 );
+	EXPECT_STDSTREQ( markdown->getDocumentPath(), latestPath );
+	markdown->getTextSelectionController()->selectAll();
+	EXPECT_STRINGEQ( markdown->getTextSelectionController()->getSelectionString(),
+					 String( "observer replacement" ) );
+	// A document observer may destroy the view before the navigation-completion event.
+	auto* closing = UIMarkdownView::New();
+	closing->setParent( scene->getRoot() );
+	closing->on( Event::OnDocumentChanged,
+				 []( const Event* event ) { eeDelete( event->getNode() ); } );
+	closing->on( Event::OnNavigationCompleted, [&]( const Event* ) { ++completed; } );
+	finished = false;
+	closing->loadFromFile( path );
+	pool->run( [&] { finished = true; } );
+	EXPECT_TRUE( waitForWorker() );
+	EXPECT_EQ( completed, 1 );
+	scene->setThreadPool( nullptr );
+	pool.reset();
+	FileSystem::fileRemove( path );
+	FileSystem::fileRemove( latestPath );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownViewLoadsBodyChildrenIntoNativeTree ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	StyleSheetParser parser;
+	ASSERT_TRUE( parser.loadFromString( std::string_view{ "MarkdownView p { color: red; }" } ) );
+	sceneNode->setStyleSheet( parser.getStyleSheet() );
+
+	auto* markdownView = UIMarkdownView::New();
+	markdownView->setParent( sceneNode->getRoot() );
+	markdownView->loadFromString( "Paragraph" );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto* paragraph = markdownView->findByTag( "p" );
+	ASSERT_TRUE( paragraph != nullptr );
+	ASSERT_TRUE( paragraph->isType( UI_TYPE_RICHTEXT ) );
+	EXPECT_TRUE( markdownView->findByType( UI_TYPE_HTML_HTML ) == nullptr );
+	EXPECT_TRUE( markdownView->findByType( UI_TYPE_HTML_BODY ) == nullptr );
+	EXPECT_TRUE( paragraph->getStyleSheetParentElement() == markdownView );
+	EXPECT_TRUE( Color::Red == paragraph->asType<UIRichText>()->getFontColor() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownLoadsOnlyBasicHTMLDefaults ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "# Heading\n\nParagraph" );
+	sceneNode->update( Seconds( 1 ) );
+
+	EXPECT_TRUE( sceneNode->getStyleSheet().markerExists( String::hash( "html_defaults" ) ) );
+	EXPECT_FALSE(
+		sceneNode->getStyleSheet().markerExists( String::hash( "html_document_defaults" ) ) );
+	auto* heading = markdown->findByTag( "h1" )->asType<UIRichText>();
+	auto* paragraph = markdown->findByTag( "p" )->asType<UIRichText>();
+	ASSERT_TRUE( heading != nullptr );
+	ASSERT_TRUE( paragraph != nullptr );
+	EXPECT_GT( heading->getFontSize(), paragraph->getFontSize() );
+
+	auto* body = UIHTMLBody::New( "body" );
+	body->setParent( sceneNode->getRoot() );
+	EXPECT_TRUE(
+		sceneNode->getStyleSheet().markerExists( String::hash( "html_document_defaults" ) ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, BreezeStylesMarkdownRuleAndHTMLTextarea ) {
+	UIApplication app(
+		WindowSettings( 1024, 650, "Breeze HTML defaults test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* sceneNode = app.getUI();
+
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "Before\n\n---\n\nAfter" );
+	auto* textarea = UIHTMLTextArea::New();
+	textarea->setParent( sceneNode->getRoot() );
+	sceneNode->update( Seconds( 1 ) );
+
+	auto* rule = markdown->findByTag( "hr" )->asType<UIWidget>();
+	ASSERT_TRUE( rule != nullptr );
+	EXPECT_TRUE( rule->getBorder()->getBorders().top.realColor == Color( "#31363b" ) );
+	EXPECT_TRUE( textarea->getBackgroundColor() == Color( "#232629" ) );
+}
+
+UTEST( UIHTML, UserSelectUsedValueAndRichTextDefault ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* parent = UIHTMLWidget::New();
+	parent->setParent( sceneNode->getRoot() );
+	auto* child = UIHTMLWidget::New();
+	child->setParent( parent );
+	EXPECT_EQ( CSSUserSelect::Text, child->getUsedUserSelect() );
+	parent->setUserSelect( CSSUserSelect::None );
+	EXPECT_EQ( CSSUserSelect::None, child->getUsedUserSelect() );
+	child->setUserSelect( CSSUserSelect::Text );
+	EXPECT_EQ( CSSUserSelect::Text, child->getUsedUserSelect() );
+	child->setUserSelect( CSSUserSelect::Auto );
+	parent->setUserSelect( CSSUserSelect::All );
+	EXPECT_EQ( CSSUserSelect::All, child->getUsedUserSelect() );
+	EXPECT_EQ( CSSUserSelect::Contain, CSSUserSelectHelper::fromString( "contain" ) );
+	const auto* standard = StyleSheetSpecification::instance()->getProperty( "user-select" );
+	const auto* alias = StyleSheetSpecification::instance()->getProperty( "-webkit-user-select" );
+	ASSERT_TRUE( standard != nullptr );
+	ASSERT_TRUE( alias != nullptr );
+	EXPECT_EQ( PropertyId::UserSelect, alias->getPropertyId() );
+	EXPECT_FALSE( standard->isInherited() );
+	sceneNode->loadLayoutFromString(
+		R"xml(<div id="aliased-selection" style="-webkit-user-select:none">text</div>)xml" );
+	auto* aliased = sceneNode->find<UIRichText>( "aliased-selection" );
+	ASSERT_TRUE( aliased != nullptr );
+	EXPECT_EQ( CSSUserSelect::None, aliased->getUserSelect() );
+	sceneNode->loadLayoutFromString(
+		R"xml(<richtext id="optout-selection" text-selection="false">text</richtext>)xml" );
+	auto* optout = sceneNode->find<UIRichText>( "optout-selection" );
+	ASSERT_TRUE( optout != nullptr );
+	EXPECT_FALSE( optout->isTextSelectionEnabled() );
+	auto* richText = UIRichText::New();
+	EXPECT_TRUE( richText->isTextSelectionEnabled() );
+	richText->setTextSelectionEnabled( false );
+	EXPECT_FALSE( richText->isTextSelectionEnabled() );
+	auto* span = UITextSpan::New();
+	EXPECT_TRUE( span->isTextSelectionEnabled() );
+	eeDelete( span );
+	eeDelete( richText );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownDocumentSelectionProjectsAndCopies ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "al**ph**a\n\nbravo\n\ncharlie" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* firstNode = markdown->findByTag( "p" );
+	ASSERT_TRUE( firstNode != nullptr );
+	auto* first = firstNode->asType<UIRichText>();
+	auto* strong = first->findByTag( "strong" );
+	ASSERT_TRUE( strong != nullptr );
+	EXPECT_FALSE( strong->asType<UIRichText>()->isTextSelectionOwner() );
+	UIRichText* second = nullptr;
+	UIRichText* third = nullptr;
+	for ( Node* node = first->getNextNode(); node; node = node->getNextNode() ) {
+		if ( node->isType( UI_TYPE_RICHTEXT ) &&
+			 node->asType<UIRichText>()->getElementTag() == "p" ) {
+			if ( !second )
+				second = node->asType<UIRichText>();
+			else {
+				third = node->asType<UIRichText>();
+				break;
+			}
+		}
+	}
+	ASSERT_TRUE( second != nullptr );
+	ASSERT_TRUE( third != nullptr );
+	auto* controller = markdown->getTextSelectionController();
+	controller->setSelection( { first, 2 }, { third, 3 } );
+	EXPECT_EQ( first->getTextSelectionRange().first, 2 );
+	EXPECT_EQ( second->getTextSelectionRange().second, 5 );
+	EXPECT_EQ( third->getTextSelectionRange().second, 3 );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "pha\nbravo\ncha" );
+	// SDL may return native CRLF line endings from the Windows clipboard.
+	auto clipboardText = [&]() {
+		auto text = sceneNode->getWindow()->getClipboard()->getText();
+		String::replaceAll( text, "\r\n", "\n" );
+		return text;
+	};
+	EXPECT_TRUE( controller->copySelection() );
+	EXPECT_STDSTREQ( "pha\nbravo\ncha", clipboardText() );
+	markdown->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
+	markdown->setPixelsSize( 110, markdown->getPixelsSize().getHeight() );
+	sceneNode->update( Seconds( 1 ) );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "pha\nbravo\ncha" );
+	controller->setSelection( { third, 3 }, { first, 2 } );
+	EXPECT_TRUE( controller->getSelection().anchor.owner == third );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "pha\nbravo\ncha" );
+	KeyEvent selectAll( markdown, Event::KeyDown, KEY_A, SCANCODE_A, 0,
+						KeyMod::getDefaultModifier() );
+	KeyEvent copy( markdown, Event::KeyDown, KEY_C, SCANCODE_C, 0, KeyMod::getDefaultModifier() );
+	EXPECT_TRUE( controller->onKeyDown( selectAll ) );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "alpha\nbravo\ncharlie" );
+	EXPECT_TRUE( controller->onKeyDown( copy ) );
+	EXPECT_STDSTREQ( "alpha\nbravo\ncharlie", clipboardText() );
+	first->setUserSelect( CSSUserSelect::None );
+	strong->asType<UIRichText>()->setUserSelect( CSSUserSelect::Text );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "ph\nbravo\ncharlie" );
+	first->setUserSelect( CSSUserSelect::Text );
+	strong->asType<UIRichText>()->setUserSelect( CSSUserSelect::None );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "ala\nbravo\ncharlie" );
+	strong->asType<UIRichText>()->setUserSelect( CSSUserSelect::Text );
+	strong->asType<UIRichText>()->setTextSelectionEnabled( false );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "ala\nbravo\ncharlie" );
+	strong->asType<UIRichText>()->setTextSelectionEnabled( true );
+	strong->asType<UIRichText>()->setUserSelect( CSSUserSelect::All );
+	controller->setSelection( { first, 2 }, { first, 3 } );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "ph" );
+	strong->asType<UIRichText>()->setUserSelect( CSSUserSelect::Contain );
+	controller->setSelection( { first, 3 }, { third, 3 } );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "h" );
+	markdown->loadFromString( "replacement" );
+	EXPECT_FALSE( controller->hasSelection() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownDocumentSelectionPolicies ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "before\n\nmiddle\n\nafter" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* firstNode = markdown->findByTag( "p" );
+	ASSERT_TRUE( firstNode != nullptr );
+	auto* first = firstNode->asType<UIRichText>();
+	auto* second = first->getNextNode()->asType<UIRichText>();
+	auto* third = second->getNextNode()->asType<UIRichText>();
+	auto* controller = markdown->getTextSelectionController();
+	second->setUserSelect( CSSUserSelect::None );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "before\nafter" );
+	EXPECT_EQ( second->getTextSelectionRange().first, second->getTextSelectionRange().second );
+	second->setUserSelect( CSSUserSelect::All );
+	controller->setSelection( { second, 2 }, { third, 2 } );
+	EXPECT_EQ( second->getTextSelectionRange().first, 0 );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "middle\naf" );
+	second->setUserSelect( CSSUserSelect::Contain );
+	controller->setSelection( { second, 2 }, { third, 2 } );
+	EXPECT_EQ( third->getTextSelectionRange().first, third->getTextSelectionRange().second );
+	EXPECT_STRINGEQ( controller->getSelectionString(), "ddle" );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "before\nmiddle\nafter" );
+	second->close();
+	sceneNode->update( Seconds( 1 ) );
+	EXPECT_FALSE( controller->hasSelection() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownSelectionClearsBeforeAncestorDestroysOwners ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "- alpha\n- bravo\n\noutside" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* list = markdown->findByTag( "ul" );
+	ASSERT_TRUE( list != nullptr );
+	auto* first = list->findByTag( "li" )->asType<UIRichText>();
+	auto* controller = markdown->getTextSelectionController();
+	controller->setSelection( { first, 1 }, { first, 4 } );
+	ASSERT_TRUE( controller->hasSelection() );
+	eeDelete( list );
+	EXPECT_FALSE( controller->hasSelection() );
+	EXPECT_FALSE( controller->getSelection().isValid() );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "outside" );
+	auto* paragraph = markdown->findByTag( "p" );
+	ASSERT_TRUE( paragraph != nullptr );
+	eeDelete( paragraph );
+	EXPECT_FALSE( controller->getSelection().isValid() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownTableSelectionCopyOrder ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "| A | B |\n| --- | --- |\n| C | D |" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* selection = markdown->getTextSelectionController();
+	selection->selectAll();
+	EXPECT_STRINGEQ( selection->getSelectionString(), "A\tB\nC\tD" );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownListItemsAllowPartialSelection ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "- alpha item\n  - nested word\n- second item" );
+	sceneNode->flushDirtyStyleAndLayout();
+	auto listItems = markdown->findAllByTag( "li" );
+	ASSERT_EQ( listItems.size(), 3u );
+	auto* parent = listItems[0]->asType<UIRichText>();
+	auto* nested = listItems[1]->asType<UIRichText>();
+	auto* controller = markdown->getTextSelectionController();
+	auto pointAtOffset = []( UIRichText* owner, Int64 offset ) {
+		Rectf rect = owner->getScreenRect();
+		for ( int y = static_cast<int>( rect.Top ); y < static_cast<int>( rect.Bottom ); ++y ) {
+			for ( int x = static_cast<int>( rect.Left ); x < static_cast<int>( rect.Right ); ++x ) {
+				Vector2i point( x, y );
+				if ( owner->findTextCharacterFromWorldPosition( point.asFloat() ) == offset )
+					return point;
+			}
+		}
+		return Vector2i( -1, -1 );
+	};
+	for ( auto* owner : { parent, nested } ) {
+		Vector2i start = pointAtOffset( owner, 1 );
+		Vector2i end = pointAtOffset( owner, 4 );
+		ASSERT_GE( start.x, 0 );
+		ASSERT_GE( end.x, 0 );
+		beginSelectionPress( sceneNode, start );
+		EXPECT_TRUE( controller->onMouseDown( owner, start, EE_BUTTON_LMASK ) );
+		EXPECT_TRUE( controller->getSelection().anchor.owner == owner );
+		EXPECT_TRUE( controller->onMouseUp( end, EE_BUTTON_LMASK ) );
+		endSelectionPress( sceneNode );
+		EXPECT_TRUE( controller->getSelection().focus.owner == owner );
+		EXPECT_EQ( owner->getTextSelectionRange().first, 1 );
+		EXPECT_EQ( owner->getTextSelectionRange().second, 4 );
+	}
+	EXPECT_STRINGEQ( controller->getSelectionString(), "est" );
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "alpha item\nnested word\nsecond item" );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, DocumentSelectionOrdersTextAroundNestedList ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* document = UIMarkdownView::New();
+	document->setParent( sceneNode->getRoot() );
+	sceneNode->loadLayoutFromString(
+		HTMLFormatter::HTMLtoXML( "<ul><li id='parent-item'>before<ul><li "
+								  "id='child-item'>child</li></ul>after</li></ul>" ),
+		document );
+	sceneNode->update( Seconds( 1 ) );
+	auto* parent = document->find<UIRichText>( "parent-item" );
+	auto* child = document->find<UIRichText>( "child-item" );
+	ASSERT_TRUE( parent != nullptr && child != nullptr );
+	auto* controller = document->getTextSelectionController();
+	controller->selectAll();
+	std::string copied = controller->getSelectionString().toUtf8();
+	EXPECT_STDSTREQ( copied, "before\nchild\nafter" );
+	auto before = copied.find( "before" );
+	auto nested = copied.find( "child" );
+	auto after = copied.find( "after" );
+	EXPECT_TRUE( before != std::string::npos );
+	EXPECT_TRUE( nested != std::string::npos );
+	EXPECT_TRUE( after != std::string::npos );
+	EXPECT_LT( before, nested );
+	EXPECT_LT( nested, after );
+	controller->setSelection( { child, 1 }, { parent, parent->getTextCharacterCount() } );
+	copied = controller->getSelectionString().toUtf8();
+	EXPECT_TRUE( copied.find( "before" ) == std::string::npos );
+	EXPECT_TRUE( copied.find( "hild" ) != std::string::npos );
+	EXPECT_TRUE( copied.find( "after" ) != std::string::npos );
+	EXPECT_LT( copied.find( "hild" ), copied.find( "after" ) );
+	controller->setSelection( { parent, 1 }, { parent, parent->getTextCharacterCount() } );
+	EXPECT_EQ( child->getTextSelectionRange().first, 0 );
+	EXPECT_EQ( child->getTextSelectionRange().second, child->getTextCharacterCount() );
+	copied = controller->getSelectionString().toUtf8();
+	EXPECT_TRUE( copied.find( "efore" ) != std::string::npos );
+	EXPECT_TRUE( copied.find( "child" ) != std::string::npos );
+	EXPECT_TRUE( copied.find( "after" ) != std::string::npos );
+	EXPECT_LT( copied.find( "efore" ), copied.find( "child" ) );
+	EXPECT_LT( copied.find( "child" ), copied.find( "after" ) );
+	controller->setSelection( { parent, parent->getTextCharacterCount() }, { parent, 1 } );
+	EXPECT_STDSTREQ( controller->getSelectionString().toUtf8(), copied );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownPointerSelectionCrossesOwnersAndIgnoresNoneStart ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "alpha\n\nbravo\n\ncharlie" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* first = markdown->findByTag( "p" )->asType<UIRichText>();
+	auto* second = first->getNextNode()->asType<UIRichText>();
+	auto* third = second->getNextNode()->asType<UIRichText>();
+	auto* controller = markdown->getTextSelectionController();
+	auto firstRect = first->getScreenRect();
+	auto thirdRect = third->getScreenRect();
+	Vector2i firstPoint( static_cast<int>( firstRect.Left + 2 ),
+						 static_cast<int>( firstRect.Top + firstRect.getHeight() / 2 ) );
+	Vector2i thirdPoint( static_cast<int>( thirdRect.Left + thirdRect.getWidth() - 2 ),
+						 static_cast<int>( thirdRect.Top + thirdRect.getHeight() / 2 ) );
+	auto* input = sceneNode->getWindow()->getInput();
+	beginSelectionPress( sceneNode, firstPoint );
+	EXPECT_TRUE( controller->onMouseDown( first, firstPoint, EE_BUTTON_LMASK ) );
+	input->setMousePos( thirdPoint );
+	controller->updateSelectionDrag();
+	EXPECT_TRUE( controller->hasSelection() );
+	EXPECT_TRUE( controller->onMouseDown( first, firstPoint, EE_BUTTON_LMASK ) );
+	EXPECT_TRUE( controller->hasSelection() );
+	EXPECT_TRUE( controller->onMouseUp( thirdPoint, EE_BUTTON_LMASK ) );
+	endSelectionPress( sceneNode );
+	EXPECT_TRUE( controller->consumeSuppressedClick() );
+	EXPECT_TRUE( controller->hasSelection() );
+	EXPECT_TRUE( controller->getSelection().anchor.owner == first );
+	EXPECT_TRUE( controller->getSelection().focus.owner == third );
+	second->setUserSelect( CSSUserSelect::None );
+	String selectionBefore = controller->getSelectionString();
+	auto secondRect = second->getScreenRect();
+	Vector2i secondPoint( static_cast<int>( secondRect.Left + 2 ),
+						  static_cast<int>( secondRect.Top + secondRect.getHeight() / 2 ) );
+	beginSelectionPress( sceneNode, secondPoint );
+	EXPECT_FALSE( controller->onMouseDown( second, secondPoint, EE_BUTTON_LMASK ) );
+	EXPECT_STRINGEQ( controller->getSelectionString(), selectionBefore );
+	endSelectionPress( sceneNode );
+	second->setUserSelect( CSSUserSelect::Text );
+	second->setTextSelectionEnabled( false );
+	selectionBefore = controller->getSelectionString();
+	beginSelectionPress( sceneNode, secondPoint );
+	EXPECT_FALSE( controller->onMouseDown( second, secondPoint, EE_BUTTON_LMASK ) );
+	EXPECT_STRINGEQ( controller->getSelectionString(), selectionBefore );
+	endSelectionPress( sceneNode );
+	beginSelectionPress( sceneNode, firstPoint );
+	EXPECT_TRUE( controller->onMouseDown( first, firstPoint, EE_BUTTON_LMASK ) );
+	input->setMousePos( thirdPoint );
+	controller->updateSelectionDrag();
+	EXPECT_TRUE( controller->onMouseUp( firstPoint, EE_BUTTON_LMASK ) );
+	endSelectionPress( sceneNode );
+	EXPECT_TRUE( controller->consumeSuppressedClick() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownSelectionStartsOnlyFromViewContent ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->setPixelsSize( 180, 100 );
+	markdown->loadFromString( "paragraph" );
+	auto* scrollbar = UIScrollBar::NewVertical();
+	scrollbar->setParent( markdown );
+	scrollbar->setPosition( 140, 0 );
+	scrollbar->setPixelsSize( 12, 80 );
+	auto* editor = UICodeEditor::New();
+	editor->setParent( sceneNode->getRoot() );
+	editor->setPosition( 250, 0 );
+	editor->setPixelsSize( 200, 100 );
+	sceneNode->update( Seconds( 1 ) );
+	auto* first = markdown->findByTag( "p" )->asType<UIRichText>();
+	auto textRect = first->getScreenRect();
+	Vector2i textPoint( static_cast<int>( textRect.Left + 2 ),
+						static_cast<int>( textRect.Top + textRect.getHeight() / 2 ) );
+	auto* controller = markdown->getTextSelectionController();
+	auto* input = sceneNode->getWindow()->getInput();
+	for ( auto* origin :
+		  { static_cast<UIWidget*>( scrollbar ), static_cast<UIWidget*>( editor ) } ) {
+		auto rect = origin->getScreenRect();
+		Vector2i originPoint( static_cast<int>( rect.Left + 1 ), static_cast<int>( rect.Top + 1 ) );
+		beginSelectionPress( sceneNode, originPoint );
+		auto* down = sceneNode->getEventDispatcher()->getMouseDownNode();
+		EXPECT_TRUE( down == origin || origin->inParentTreeOf( down ) );
+		input->setMousePos( sceneNode->getWindow()->mapCoordsToPixel(
+			textPoint.asFloat(), sceneNode->getWindow()->getDefaultView() ) );
+		EXPECT_FALSE( controller->onMouseDown( first, textPoint, EE_BUTTON_LMASK ) );
+		EXPECT_FALSE( controller->isSelecting() );
+		endSelectionPress( sceneNode );
+	}
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownSelectionAutoScrollsContainingScrollView ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* scrollView = UIScrollView::New();
+	scrollView->setPixelsSize( 180, 100 );
+	scrollView->setParent( sceneNode->getRoot() );
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( scrollView );
+	std::string content;
+	for ( int i = 0; i < 20; ++i )
+		content += "paragraph\n\n";
+	markdown->loadFromString( content );
+	sceneNode->update( Seconds( 1 ) );
+	ASSERT_TRUE( scrollView->getVerticalScrollBar()->isEnabled() );
+	auto* first = markdown->findByTag( "p" )->asType<UIRichText>();
+	auto firstRect = first->getScreenRect();
+	Vector2i start( static_cast<int>( firstRect.Left + 2 ),
+					static_cast<int>( firstRect.Top + firstRect.getHeight() / 2 ) );
+	auto* input = sceneNode->getWindow()->getInput();
+	beginSelectionPress( sceneNode, start );
+	auto* controller = markdown->getTextSelectionController();
+	EXPECT_TRUE( controller->onMouseDown( first, start, EE_BUTTON_LMASK ) );
+	auto viewport = scrollView->getContainer()->getScreenRect();
+	Float scrollRange = scrollView->getScrollView()->asType<UINode>()->getPixelsSize().getHeight() -
+						scrollView->getContainer()->getPixelsSize().getHeight();
+	ASSERT_GT( scrollRange, 0.f );
+	input->setMousePos( sceneNode->getWindow()->mapCoordsToPixel(
+		{ viewport.Left + 10, viewport.Bottom - 2 }, sceneNode->getWindow()->getDefaultView() ) );
+	controller->updateSelectionDrag();
+	EXPECT_GT( scrollView->getVerticalScrollBar()->getValue(), 0.f );
+	Float lineHeight = first->getFont()->getFontHeight( first->getFontSize() );
+	EXPECT_GT( scrollView->getVerticalScrollBar()->getValue() * scrollRange, lineHeight * 0.5f );
+	EXPECT_LT( scrollView->getVerticalScrollBar()->getValue() * scrollRange, lineHeight * 2.f );
+	scrollView->getVerticalScrollBar()->setValue( 0.8f );
+	input->setMousePos( sceneNode->getWindow()->mapCoordsToPixel(
+		{ viewport.Left + 10, viewport.Top + 2 }, sceneNode->getWindow()->getDefaultView() ) );
+	controller->updateSelectionDrag();
+	EXPECT_LT( scrollView->getVerticalScrollBar()->getValue(), 0.8f );
+	EXPECT_TRUE( controller->isSelecting() );
+	controller->onMouseUp( input->getMousePos(), EE_BUTTON_LMASK );
+	endSelectionPress( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownInlineCodeHasSelectionGeometry ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "before `inline code` after" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* paragraph = markdown->findByTag( "p" )->asType<UIRichText>();
+	auto* code = paragraph->findByTag( "code" );
+	ASSERT_TRUE( code != nullptr );
+	EXPECT_FALSE( code->asType<UIRichText>()->isTextSelectionOwner() );
+	auto* controller = markdown->getTextSelectionController();
+	controller->selectAll();
+	EXPECT_STRINGEQ( controller->getSelectionString(), "before inline code after" );
+	EXPECT_TRUE( !paragraph->getRichText().getSelectionRects().empty() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownContextMenuCanBeExtended ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "selectable text" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* paragraph = markdown->findByTag( "p" )->asType<UIRichText>();
+	markdown->getTextSelectionController()->selectAll();
+	int menuEvents = 0;
+	size_t menuItems = 0;
+	markdown->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		++menuEvents;
+		auto* menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+		menu->add( "Custom action" );
+		menuItems = menu->getCount();
+	} );
+	NodeMessage mouseUp( paragraph, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	paragraph->messagePost( &mouseUp );
+	EXPECT_EQ( menuEvents, 1 );
+	EXPECT_EQ( menuItems, 3u );
+	markdown->getTextSelectionController()->clear();
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownContextMenuCopiesLinkWithoutSelection ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->setURIFromURL( URI( "https://docs.example.com/guide/index.md" ) );
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "[link](../api/item?q=docs&lang=en#details) and plain text" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* anchor = markdown->findByTag<UIAnchorSpan>( "a" );
+	ASSERT_TRUE( anchor != nullptr );
+	UIPopUpMenu* menu = nullptr;
+	markdown->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+	} );
+	NodeMessage mouseUp( anchor, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	anchor->messagePost( &mouseUp );
+	ASSERT_TRUE( menu != nullptr );
+	EXPECT_FALSE( menu->getItemId( "copy" )->isEnabled() );
+	ASSERT_TRUE( menu->getItemId( "copy-link" ) != nullptr );
+	menu->getItemId( "copy-link" )->activate();
+	EXPECT_STDSTREQ( "https://docs.example.com/api/item?q=docs&lang=en#details",
+					 sceneNode->getWindow()->getClipboard()->getText() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, WebViewContextMenuCopiesLinkUsingDocumentURI ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->setURIFromURL( URI( "https://outer.example.com/page" ) );
+	auto* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	auto* documentScene = webView->getDocumentSceneNode();
+	documentScene->setURIFromURL( URI( "https://docs.example.com/guide/index.html" ) );
+	documentScene->loadLayoutFromString(
+		HTMLFormatter::HTMLtoXML(
+			R"html(<html><body><p><a id="link" href="../api/item?q=docs&amp;lang=en#details">link</a></p></body></html>)html" ),
+		webView->getDocumentContainer() );
+	webView->getTextSelectionController()->onDocumentChanged();
+	sceneNode->update( Seconds( 1 ) );
+	auto* anchor = documentScene->find<UIAnchorSpan>( "link" );
+	ASSERT_TRUE( anchor != nullptr );
+	UIPopUpMenu* menu = nullptr;
+	webView->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+	} );
+	NodeMessage mouseUp( anchor, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	anchor->messagePost( &mouseUp );
+	ASSERT_TRUE( menu != nullptr );
+	auto* copyLink = menu->getItemId( "copy-link" );
+	ASSERT_TRUE( copyLink != nullptr );
+	copyLink->activate();
+	EXPECT_STDSTREQ( "https://docs.example.com/api/item?q=docs&lang=en#details",
+					 sceneNode->getWindow()->getClipboard()->getText() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, WebViewOpensResolvedLinkInNewTab ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* webView = UIWebView::New();
+	webView->setParent( scene->getRoot() );
+	auto* document = webView->getDocumentSceneNode();
+	document->setURIFromURL( URI( "https://docs.example.com/guide/index.html" ) );
+	document->loadLayoutFromString(
+		HTMLFormatter::HTMLtoXML(
+			R"html(<html><body><a id="link" href="../api/item">link</a></body></html>)html" ),
+		webView->getDocumentContainer() );
+	webView->getTextSelectionController()->onDocumentChanged();
+	scene->update( Seconds( 1 ) );
+	auto* anchor = document->find<UIAnchorSpan>( "link" );
+	ASSERT_TRUE( anchor != nullptr );
+	std::vector<std::string> opened;
+	webView->on( Event::OnLinkOpenRequested, [&]( const Event* event ) {
+		auto* request = static_cast<const UIWebView::LinkOpenEvent*>( event );
+		opened.push_back( request->uri.toString() );
+		request->accept();
+	} );
+	NodeMessage middleClick( anchor, NodeMessage::MouseClick, EE_BUTTON_MMASK );
+	anchor->messagePost( &middleClick );
+	ASSERT_EQ( opened.size(), 1u );
+	EXPECT_STDSTREQ( opened.back(), "https://docs.example.com/api/item" );
+	NavigationRequest modifiedClick{ URI( anchor->getHref() ) };
+	modifiedClick.source = anchor;
+	modifiedClick.mouseButtons = EE_BUTTON_LMASK;
+	modifiedClick.modifiers = KeyMod::getDefaultModifier();
+	document->navigate( modifiedClick );
+	ASSERT_EQ( opened.size(), 2u );
+	EXPECT_STDSTREQ( opened.back(), "https://docs.example.com/api/item" );
+	UIPopUpMenu* menu = nullptr;
+	webView->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		auto* context = static_cast<const ContextMenuEvent*>( event );
+		menu = context->getMenu();
+		if ( context->getTarget() == anchor ) {
+			menu->add( "Open Link in New Tab" )->setId( "open-link-new-tab" );
+			menu->on( Event::OnItemClicked, [document, anchor]( const Event* itemEvent ) {
+				if ( itemEvent->getNode()->getId() == "open-link-new-tab" ) {
+					NavigationRequest request{ URI( anchor->getHref() ) };
+					request.target = NavigationRequest::Target::NewTab;
+					document->navigate( request );
+				}
+			} );
+		}
+	} );
+	NodeMessage rightUp( anchor, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	anchor->messagePost( &rightUp );
+	ASSERT_TRUE( menu != nullptr );
+	auto* open = menu->getItemId( "open-link-new-tab" );
+	ASSERT_TRUE( open != nullptr );
+	open->activate();
+	ASSERT_EQ( opened.size(), 3u );
+	EXPECT_STDSTREQ( opened.back(), "https://docs.example.com/api/item" );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, PasswordTextUsesUpdatedFontColor ) {
+	struct PasswordInputProbe : UITextInput {
+		PasswordInputProbe() : UITextInput() {}
+		Color visibleColor() { return getVisibleTextCache().getFillColor(); }
+	};
+	init_ui_test();
+	auto* input = eeNew( PasswordInputProbe, () );
+	input->setParent( SceneManager::instance()->getUISceneNode()->getRoot() );
+	input->setMode( UITextInput::TextInputMode::Password );
+	input->setFontColor( Color( 17, 31, 47 ) );
+	EXPECT_TRUE( input->visibleColor() == Color( 17, 31, 47 ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownContextMenuOmitsLinkForSelection ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "[link](https://example.com/page) and plain text" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* anchor = markdown->findByTag<UIAnchorSpan>( "a" );
+	ASSERT_TRUE( anchor != nullptr );
+	markdown->getTextSelectionController()->selectAll();
+	UIPopUpMenu* menu = nullptr;
+	markdown->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+	} );
+	NodeMessage mouseUp( anchor, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	anchor->messagePost( &mouseUp );
+	ASSERT_TRUE( menu != nullptr );
+	EXPECT_TRUE( menu->getItemId( "copy" )->isEnabled() );
+	EXPECT_TRUE( menu->getItemId( "copy-link" ) == nullptr );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownContextMenuOmitsLinkForPlainText ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "[link](https://example.com/page) and plain text" );
+	sceneNode->update( Seconds( 1 ) );
+	auto* paragraph = markdown->findByTag( "p" );
+	ASSERT_TRUE( paragraph != nullptr );
+	UIPopUpMenu* menu = nullptr;
+	markdown->on( Event::OnCreateContextMenu, [&]( const Event* event ) {
+		menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+	} );
+	NodeMessage mouseUp( paragraph, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	paragraph->messagePost( &mouseUp );
+	ASSERT_TRUE( menu != nullptr );
+	EXPECT_TRUE( menu->getItemId( "copy-link" ) == nullptr );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownContextMenuDefersToChildHandlers ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( sceneNode->getRoot() );
+	markdown->loadFromString( "selectable text" );
+	sceneNode->update( Seconds( 1 ) );
+	int documentMenus = 0;
+	auto menuConnection =
+		markdown->connect( Event::OnCreateContextMenu, [&]( const Event* ) { ++documentMenus; } );
+
+	auto* input = UIHTMLTextInput::New();
+	input->setParent( markdown );
+	NodeMessage inputMouseUp( input, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	input->messagePost( &inputMouseUp );
+	EXPECT_EQ( documentMenus, 0 );
+
+	auto* editor = UICodeEditor::New();
+	editor->setParent( markdown );
+	NodeMessage editorMouseUp( editor, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	editor->messagePost( &editorMouseUp );
+	EXPECT_EQ( documentMenus, 0 );
+
+	auto* paragraph = markdown->findByTag( "p" )->asType<UIRichText>();
+	NodeMessage paragraphMouseUp( paragraph, NodeMessage::MouseUp, EE_BUTTON_RMASK );
+	paragraph->messagePost( &paragraphMouseUp );
+	EXPECT_EQ( documentMenus, 1 );
+	menuConnection.disconnect();
+	markdown->getTextSelectionController()->clear();
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ScriptNestedInUnknownElementIsNotRendered ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><body><react-app id="app">
+			<script type="application/json">{"payload":"must-not-render"}</script>
+			<span id="visible">Visible</span>
+		</react-app></body></html>
+	)html" ) );
+
+	auto* app = sceneNode->getRoot()->find( "app" );
+	ASSERT_TRUE( app != nullptr );
+	EXPECT_TRUE( app->asType<UIWidget>()->findByTag( "script" ) == nullptr );
+	EXPECT_TRUE( app->find( "visible" ) != nullptr );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, UnsupportedBlockAtRulesDoNotLeakNestedRules ) {
+	StyleSheetParser parser;
+	ASSERT_TRUE( parser.loadFromString( std::string_view{
+		"@layer framework { .layered { color: red; } @supports (display: grid) { .nested { "
+		"display: grid; } } } .visible { color: blue; }" } ) );
+
+	EXPECT_TRUE( parser.getStyleSheet().findStyleFromSelectorName( ".layered" ).empty() );
+	EXPECT_TRUE( parser.getStyleSheet().findStyleFromSelectorName( ".nested" ).empty() );
+	EXPECT_EQ( 1u, parser.getStyleSheet().findStyleFromSelectorName( ".visible" ).size() );
 }
 
 UTEST( UIHTML, StyleSheetSiblingCombinators ) {
@@ -2804,6 +4550,723 @@ UTEST( UIHTML, StyleSheetSiblingCombinators ) {
 	EXPECT_TRUE( inverseSibling.select( a ) );
 	EXPECT_FALSE( inverseSibling.select( b ) );
 
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, NestedTableHoverSelectorBacktracks ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><head><style>
+			body > center > table > tbody > tr:first-child * {
+				background-color: #505050 !important;
+			}
+			body > center > table > tbody > tr:first-child * a:hover {
+				background: #404040 !important;
+			}
+		</style></head><body><center><table><tr><td>
+			<table><tr><td><span><a id="link" href="#">Link</a></span></td></tr></table>
+		</td></tr><tr><td><a id="outside" href="#">Outside</a></td></tr></table></center></body></html>
+	)html" ) );
+	sceneNode->update( Seconds( 1 ) );
+	auto* link = sceneNode->getRoot()->find( "link" )->asType<UITextSpan>();
+	auto* outside = sceneNode->getRoot()->find( "outside" )->asType<UIWidget>();
+	ASSERT_TRUE( link != nullptr );
+	ASSERT_TRUE( outside != nullptr );
+	StyleSheetSelector selector( "body > center > table > tbody > tr:first-child * a:hover" );
+	EXPECT_FALSE( selector.select( link ) );
+	EXPECT_TRUE( selector.select( link, false ) );
+	sceneNode->getEventDispatcher()->setMouseOverNode( outside );
+	outside->pushState( UIState::StateHover );
+	EXPECT_FALSE( selector.select( outside ) );
+	EXPECT_TRUE( link->getFontBackgroundColor() == Color( "#505050" ) );
+	sceneNode->getEventDispatcher()->setMouseOverNode( link );
+	link->pushState( UIState::StateHover );
+	EXPECT_TRUE( selector.select( link ) );
+	EXPECT_TRUE( link->getFontBackgroundColor() == Color( "#404040" ) );
+	sceneNode->getEventDispatcher()->setMouseOverNode( nullptr );
+	link->popState( UIState::StateHover );
+	EXPECT_FALSE( selector.select( link ) );
+	EXPECT_TRUE( link->getFontBackgroundColor() == Color( "#505050" ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, DescendantSelectorBacktracksUniversalMatch ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"xml(
+		<div id="scope">
+			<style>#target { opacity: 0; } #scope > *:hover span { opacity: 1; }</style>
+			<div id="outer" class="branch"><div id="inner" class="branch"><span id="target" /></div></div>
+		</div>
+	)xml" );
+	auto* target = sceneNode->getRoot()->find( "target" )->asType<UIWidget>();
+	ASSERT_TRUE( target != nullptr );
+	EXPECT_TRUE( StyleSheetSelector( "#scope > * span" ).select( target ) );
+	EXPECT_FALSE( StyleSheetSelector( "#missing > * span" ).select( target ) );
+	EXPECT_FALSE( StyleSheetSelector( "#scope > span" ).select( target ) );
+	EXPECT_FALSE( StyleSheetSelector( "#inner * span" ).select( target ) );
+	auto* outer = sceneNode->getRoot()->find( "outer" )->asType<UIWidget>();
+	auto* inner = sceneNode->getRoot()->find( "inner" )->asType<UIWidget>();
+	ASSERT_TRUE( outer != nullptr );
+	ASSERT_TRUE( inner != nullptr );
+	StyleSheetSelector selector( "#scope > *:hover span" );
+	auto related = selector.getRelatedElements( target, false );
+	ASSERT_EQ( 1u, related.size() );
+	EXPECT_TRUE( related.front() == outer );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+	sceneNode->getEventDispatcher()->setMouseOverNode( outer );
+	outer->pushState( UIState::StateHover );
+	EXPECT_EQ( target->getAlpha(), 255.f );
+	sceneNode->getEventDispatcher()->setMouseOverNode( nullptr );
+	outer->popState( UIState::StateHover );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, SiblingSelectorBacktracksRelatedMatch ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"xml(
+		<div>
+			<style>
+				#target { opacity: 0; }
+				#start + .candidate:hover ~ #target { opacity: 1; }
+			</style>
+			<div id="start" /><div id="first" class="candidate" />
+			<span /><div id="second" class="candidate" /><div id="target" />
+		</div>
+	)xml" );
+	auto* first = sceneNode->getRoot()->find( "first" )->asType<UIWidget>();
+	auto* second = sceneNode->getRoot()->find( "second" )->asType<UIWidget>();
+	auto* target = sceneNode->getRoot()->find( "target" )->asType<UIWidget>();
+	ASSERT_TRUE( first != nullptr );
+	ASSERT_TRUE( second != nullptr );
+	ASSERT_TRUE( target != nullptr );
+	StyleSheetSelector selector( "#start + .candidate:hover ~ #target" );
+	EXPECT_TRUE( selector.select( target, false ) );
+	auto related = selector.getRelatedElements( target, false );
+	ASSERT_EQ( 1u, related.size() );
+	EXPECT_TRUE( related.front() == first );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+	sceneNode->getEventDispatcher()->setMouseOverNode( second );
+	second->pushState( UIState::StateHover );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+	sceneNode->getEventDispatcher()->setMouseOverNode( nullptr );
+	second->popState( UIState::StateHover );
+	sceneNode->getEventDispatcher()->setMouseOverNode( first );
+	first->pushState( UIState::StateHover );
+	EXPECT_TRUE( selector.select( target ) );
+	EXPECT_EQ( target->getAlpha(), 255.f );
+	sceneNode->getEventDispatcher()->setMouseOverNode( nullptr );
+	first->popState( UIState::StateHover );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, SelectorBacktracksAcrossHTMLRootSibling ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto append = []( UIWidget* parent, UIWidget* child, const char* id, const char* cls = "" ) {
+		child->setId( id );
+		if ( *cls )
+			child->addClass( cls );
+		child->setParent( parent );
+		return child;
+	};
+	// <html> is a style sheet parent boundary only: its siblings remain sibling-visible.
+	auto* scope = append( sceneNode->getRoot(), UIWidget::NewWithTag( "div" ), "scope" );
+	auto* earlier = append( scope, UIWidget::NewWithTag( "div" ), "earlier", "candidate" );
+	auto* root = append( scope, UIHTMLHtml::New( "html" ), "root", "candidate" );
+	append( root, UIWidget::NewWithTag( "span" ), "before" );
+	auto* inner = append( root, UIWidget::NewWithTag( "p" ), "inner" );
+	auto* nested = append( inner, UIWidget::NewWithTag( "span" ), "nested" );
+	auto* target = append( scope, UIWidget::NewWithTag( "a" ), "target" );
+	ASSERT_TRUE( root->isType( UI_TYPE_HTML_HTML ) );
+	ASSERT_TRUE( root->getParent() == scope );
+	ASSERT_TRUE( root->getStyleSheetParentElement() == nullptr );
+	ASSERT_TRUE( target->getStyleSheetPreviousSiblingElement() == root );
+
+	for ( bool applyPseudo : { true, false } ) {
+		// The nearer candidate is the boundary; only the earlier sibling has #scope as parent.
+		EXPECT_TRUE(
+			StyleSheetSelector( "#scope > .candidate ~ a" ).select( target, applyPseudo ) );
+		EXPECT_TRUE( StyleSheetSelector( "#scope .candidate ~ a" ).select( target, applyPseudo ) );
+		// A + step from the retried descendant candidate leaves the document through <html>.
+		EXPECT_TRUE( StyleSheetSelector( "#scope * + * span" ).select( nested, applyPseudo ) );
+	}
+	auto related =
+		StyleSheetSelector( "#scope > .candidate:hover ~ a" ).getRelatedElements( target, false );
+	ASSERT_EQ( 1u, related.size() );
+	EXPECT_TRUE( related.front() == earlier );
+
+	// Document isolation: nothing inside <html> matches through its physical parent.
+	EXPECT_FALSE( StyleSheetSelector( "#scope > html" ).select( root ) );
+	EXPECT_FALSE( StyleSheetSelector( "* html" ).select( root ) );
+	EXPECT_FALSE( StyleSheetSelector( "#scope span" ).select( nested ) );
+	EXPECT_FALSE( StyleSheetSelector( "div p span" ).select( nested ) );
+	EXPECT_FALSE( StyleSheetSelector( "#scope .candidate span" ).select( nested ) );
+	EXPECT_TRUE(
+		StyleSheetSelector( "#scope .candidate:hover span" ).getRelatedElements( nested ).empty() );
+	EXPECT_TRUE( StyleSheetSelector( "html.candidate > p > span" ).select( nested ) );
+	EXPECT_TRUE( StyleSheetSelector( ".candidate span" ).select( nested ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, SelectorRetriesDoNotTreatAncestorMatchesAsSiblingCandidates ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto append = []( UIWidget* parent, UIWidget* child ) {
+		child->setParent( parent );
+		return child;
+	};
+	// scope > [first, root:html > [inner, nested:html]], followed by next.
+	auto* scope = append( sceneNode->getRoot(), UIWidget::NewWithTag( "div" ) );
+	append( scope, UIWidget::NewWithTag( "div" ) );
+	auto* root = append( scope, UIHTMLHtml::New( "html" ) );
+	append( root, UIWidget::NewWithTag( "div" ) );
+	auto* nested = append( root, UIHTMLHtml::New( "html" ) );
+	append( sceneNode->getRoot(), UIWidget::NewWithTag( "div" ) );
+	// The only ~ candidate is the inner div. Its ancestor match is <html>, whose earlier sibling
+	// leads to the next div through "* |", but that <html> is not a ~ candidate of the subject.
+	EXPECT_FALSE( StyleSheetSelector( "div | * * ~ html" ).select( nested, false ) );
+	EXPECT_TRUE( StyleSheetSelector( "html * ~ html" ).select( nested, false ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, StateSubscriptionsCoverEveryEligibleAncestor ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"xml(
+		<div id="scope">
+			<style>span { opacity: 0; } .candidate:hover span { opacity: 1; }</style>
+			<div id="outer" class="candidate"><div id="inner" class="candidate"><span id="target" /></div></div>
+		</div>
+	)xml" );
+	auto* outer = sceneNode->getRoot()->find( "outer" )->asType<UIWidget>();
+	auto* inner = sceneNode->getRoot()->find( "inner" )->asType<UIWidget>();
+	auto* target = sceneNode->getRoot()->find( "target" )->asType<UIWidget>();
+	ASSERT_TRUE( outer != nullptr );
+	ASSERT_TRUE( inner != nullptr );
+	ASSERT_TRUE( target != nullptr );
+	StyleSheetSelector selector( ".candidate:hover span" );
+	auto* dispatcher = sceneNode->getEventDispatcher();
+
+	for ( auto [hovered, other] : { std::pair{ outer, inner }, std::pair{ inner, outer } } ) {
+		EXPECT_FALSE( selector.select( target ) );
+		EXPECT_EQ( target->getAlpha(), 0.f );
+		dispatcher->setMouseOverNode( hovered );
+		hovered->pushState( UIState::StateHover );
+		EXPECT_TRUE( hovered->hasPseudoClass( "hover" ) );
+		EXPECT_FALSE( other->hasPseudoClass( "hover" ) );
+		EXPECT_TRUE( selector.select( target ) );
+		// Normal state-change propagation must refresh the target, without a style reload.
+		EXPECT_EQ( target->getAlpha(), 255.f );
+		dispatcher->setMouseOverNode( nullptr );
+		hovered->popState( UIState::StateHover );
+		EXPECT_FALSE( hovered->hasPseudoClass( "hover" ) );
+		EXPECT_EQ( target->getAlpha(), 0.f );
+	}
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, StateSubscriptionsRespectLeftHandConstraints ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( R"xml(
+		<div id="scope">
+			<style>
+				#target, #later { opacity: 0; }
+				#scope > .candidate:hover span { opacity: 1; }
+				.item:hover ~ #later { opacity: 1; }
+			</style>
+			<div id="outer" class="candidate"><div id="inner" class="candidate"><span id="target" /></div></div>
+			<div id="first" class="item" /><span /><div id="second" class="item" /><div id="later" />
+		</div>
+	)xml" );
+	auto find = [&]( const char* id ) {
+		return sceneNode->getRoot()->find( id )->asType<UIWidget>();
+	};
+	auto* outer = find( "outer" );
+	auto* inner = find( "inner" );
+	auto* target = find( "target" );
+	auto* first = find( "first" );
+	auto* second = find( "second" );
+	auto* later = find( "later" );
+	auto* dispatcher = sceneNode->getEventDispatcher();
+	auto hover = [&]( UIWidget* widget, bool enable ) {
+		dispatcher->setMouseOverNode( enable ? widget : nullptr );
+		if ( enable )
+			widget->pushState( UIState::StateHover );
+		else
+			widget->popState( UIState::StateHover );
+	};
+	auto relatedTo = []( UIWidget* widget, UIWidget* dependent ) {
+		return widget->getUIStyle()->getRelatedWidgets().count( dependent ) != 0;
+	};
+
+	// Only #outer can satisfy "#scope >"; #inner must not become a dependency.
+	auto related =
+		StyleSheetSelector( "#scope > .candidate:hover span" ).getRelatedElements( target, false );
+	ASSERT_EQ( 1u, related.size() );
+	EXPECT_TRUE( related.front() == outer );
+	EXPECT_TRUE( relatedTo( outer, target ) );
+	EXPECT_FALSE( relatedTo( inner, target ) );
+	hover( inner, true );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+	hover( inner, false );
+	hover( outer, true );
+	EXPECT_EQ( target->getAlpha(), 255.f );
+	hover( outer, false );
+	EXPECT_EQ( target->getAlpha(), 0.f );
+
+	// Every eligible general-sibling candidate is a dependency, not only the nearest one.
+	related = StyleSheetSelector( ".item:hover ~ #later" ).getRelatedElements( later, false );
+	EXPECT_EQ( 2u, related.size() );
+	EXPECT_TRUE( relatedTo( first, later ) );
+	EXPECT_TRUE( relatedTo( second, later ) );
+	for ( auto* item : { first, second } ) {
+		hover( item, true );
+		EXPECT_EQ( later->getAlpha(), 255.f );
+		hover( item, false );
+		EXPECT_EQ( later->getAlpha(), 0.f );
+	}
+
+	// Style reloads and destruction remove every subscription created above.
+	later->setId( "unmatched" );
+	sceneNode->updateDirtyStyles();
+	EXPECT_FALSE( relatedTo( first, later ) );
+	EXPECT_FALSE( relatedTo( second, later ) );
+	eeDelete( target );
+	EXPECT_TRUE( outer->getUIStyle()->getRelatedWidgets().empty() );
+	Engine::destroySingleton();
+}
+
+namespace {
+
+struct ReferenceCompound {
+	char combinator;
+	bool tracksState;
+	StyleSheetSelector selector;
+};
+
+// Exhaustive Selectors 4 matching over eepp's navigation primitives. Every candidate of every
+// combinator is tried, and dependencies are the union over all successful paths.
+bool referenceComplete( const std::vector<ReferenceCompound>& compounds, size_t index,
+						UIWidget* element, bool applyPseudo, std::vector<UIWidget*>& related ) {
+	if ( index + 1 == compounds.size() )
+		return true;
+	const auto& compound = compounds[index + 1];
+	bool matched = false;
+	auto tryCandidate = [&]( UIWidget* candidate ) {
+		if ( !compound.selector.select( candidate, applyPseudo ) ||
+			 !referenceComplete( compounds, index + 1, candidate, applyPseudo, related ) ) {
+			return;
+		}
+		matched = true;
+		if ( compound.tracksState &&
+			 std::find( related.begin(), related.end(), candidate ) == related.end() ) {
+			related.push_back( candidate );
+		}
+	};
+	switch ( compound.combinator ) {
+		case '>':
+			if ( auto* parent = element->getStyleSheetParentElement() )
+				tryCandidate( parent );
+			break;
+		case '+':
+			if ( auto* sibling = element->getStyleSheetPreviousSiblingElement() )
+				tryCandidate( sibling );
+			break;
+		case '|':
+			if ( auto* sibling = element->getStyleSheetNextSiblingElement() )
+				tryCandidate( sibling );
+			break;
+		case ' ':
+			for ( auto* parent = element->getStyleSheetParentElement(); parent;
+				  parent = parent->getStyleSheetParentElement() ) {
+				tryCandidate( parent );
+			}
+			break;
+		case '~':
+			for ( auto* sibling = element->getStyleSheetPreviousSiblingElement(); sibling;
+				  sibling = sibling->getStyleSheetPreviousSiblingElement() ) {
+				tryCandidate( sibling );
+			}
+			break;
+	}
+	return matched;
+}
+
+} // namespace
+
+UTEST( UIHTML, SelectorMatchingAgreesWithExhaustiveReference ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	// mt19937 output is fully specified, so the generated cases are identical on every platform.
+	std::mt19937 random( 1709 );
+	auto pick = [&]( size_t count ) { return static_cast<size_t>( random() % count ); };
+	static constexpr const char* Compounds[] = {
+		"*",		  "div",	"span",			 "html",
+		".c",		  ".d",		"div.c",		 "*:hover",
+		".c:hover",	  "html.d", "*:first-child", "span:first-child",
+		"div:hover.d" };
+	static constexpr char Combinators[] = { ' ', '>', '+', '~', '|' };
+	size_t comparisons = 0;
+	size_t failures = 0;
+
+	for ( int tree = 0; tree < 400; ++tree ) {
+		auto* container = UIWidget::NewWithTag( "div" );
+		container->setParent( sceneNode->getRoot() );
+		std::vector<UIWidget*> parents{ container };
+		std::vector<UIWidget*> elements;
+		const size_t nodeCount = 6 + pick( 6 );
+		for ( size_t i = 0; i < nodeCount; ++i ) {
+			auto* parent = parents[pick( parents.size() )];
+			const size_t kind = pick( 10 );
+			if ( kind == 0 ) {
+				// Raw text is skipped by sibling navigation and never a selector subject.
+				auto* text = UITextNode::New();
+				text->setParent( parent );
+				continue;
+			}
+			UIWidget* widget = kind <= 2   ? UIHTMLHtml::New( "html" )
+							   : kind <= 6 ? UIWidget::NewWithTag( "div" )
+										   : UIWidget::NewWithTag( "span" );
+			widget->setParent( parent );
+			if ( pick( 2 ) )
+				widget->addClass( "c" );
+			if ( pick( 3 ) == 0 )
+				widget->addClass( "d" );
+			if ( pick( 3 ) == 0 )
+				widget->pushState( UIState::StateHover );
+			parents.push_back( widget );
+			elements.push_back( widget );
+		}
+
+		for ( int s = 0; s < 40; ++s ) {
+			std::string text;
+			std::vector<ReferenceCompound> compounds;
+			const size_t length = 1 + pick( 5 );
+			std::vector<std::pair<const char*, char>> parts;
+			for ( size_t i = 0; i < length; ++i ) {
+				const char* compound = Compounds[pick( std::size( Compounds ) )];
+				const char combinator = i == 0 ? 0 : Combinators[pick( std::size( Combinators ) )];
+				if ( i != 0 )
+					text += combinator == ' ' ? std::string( " " )
+											  : std::string( " " ) + combinator + " ";
+				text += compound;
+				parts.emplace_back( compound, combinator );
+			}
+			// Selector rules run right to left; each compound carries the combinator to its right.
+			for ( size_t i = length; i-- > 0; ) {
+				StyleSheetSelector compound( parts[i].first );
+				const auto& rule = compound.getRule( 0 );
+				compounds.push_back( { i + 1 < length ? parts[i + 1].second : '\0',
+									   rule.hasPseudoClasses() || rule.hasStructuralPseudoClasses(),
+									   std::move( compound ) } );
+			}
+			StyleSheetSelector selector( text );
+			for ( auto* element : elements ) {
+				for ( bool applyPseudo : { true, false } ) {
+					std::vector<UIWidget*> expectedRelated;
+					const bool expected =
+						compounds[0].selector.select( element, applyPseudo ) &&
+						referenceComplete( compounds, 0, element, applyPseudo, expectedRelated );
+					if ( !expected )
+						expectedRelated.clear();
+					auto related = selector.getRelatedElements( element, applyPseudo );
+					std::vector<UIWidget*> actualRelated( related.begin(), related.end() );
+					std::sort( expectedRelated.begin(), expectedRelated.end() );
+					std::sort( actualRelated.begin(), actualRelated.end() );
+					++comparisons;
+					if ( expected != selector.select( element, applyPseudo ) ||
+						 expectedRelated != actualRelated ) {
+						if ( failures++ < 8 ) {
+							UTEST_PRINT_INFO(
+								String::format(
+									"tree %d selector \"%s\" element %zu pseudo %d", tree,
+									text.c_str(),
+									std::find( elements.begin(), elements.end(), element ) -
+										elements.begin(),
+									applyPseudo )
+									.c_str() );
+						}
+					}
+				}
+			}
+		}
+		eeDelete( container );
+	}
+	EXPECT_EQ( 0u, failures );
+	EXPECT_GT( comparisons, 200000u );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, AttributeSelectorsMatchWidgetIds ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* parent = UIWidget::NewWithTag( "div" );
+	parent->setId( "probe-parent" );
+	parent->setParent( sceneNode->getRoot() );
+	auto* child = UIWidget::NewWithTag( "a" );
+	child->setParent( parent );
+	auto* idProperty = StyleSheetSpecification::instance()->getProperty( PropertyId::Id );
+	EXPECT_STDSTREQ( "probe-parent", parent->getPropertyString( idProperty ) );
+	EXPECT_TRUE( StyleSheetSelector( "[id=probe-parent] a" ).select( child ) );
+	EXPECT_TRUE( StyleSheetSelector( "*[id] > a" ).select( child ) );
+	EXPECT_TRUE( StyleSheetSelector( "[id^=probe] a" ).select( child ) );
+	EXPECT_FALSE( StyleSheetSelector( "[id=other] a" ).select( child ) );
+	// A widget without an id has no id attribute.
+	EXPECT_FALSE( StyleSheetSelector( "a[id]" ).select( child ) );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, LongSelectorsKeepEveryCheckpoint ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	UIWidget* tail = UIWidget::NewWithTag( "div" );
+	tail->setId( "scope" );
+	tail->setParent( sceneNode->getRoot() );
+	for ( int i = 0; i < 30; ++i ) {
+		auto* child = UIWidget::NewWithTag( "div" );
+		child->setParent( tail );
+		tail = child;
+	}
+	auto* target = UIWidget::NewWithTag( "a" );
+	target->setParent( tail );
+	// 20 compounds exceed the 16 that always fit, so storage is sized by the 9 compounds that
+	// keep checkpoints: each descendant search precedes a > step and keeps one while the nearest
+	// candidates are retried.
+	std::string body;
+	for ( int i = 0; i < 9; ++i )
+		body += "* > div ";
+	EXPECT_TRUE( StyleSheetSelector( "#scope > " + body + "a" ).select( target ) );
+	EXPECT_FALSE( StyleSheetSelector( "#missing > " + body + "a" ).select( target ) );
+	EXPECT_FALSE(
+		StyleSheetSelector( "#scope > " + body + body + body + body + "a" ).select( target ) );
+	// Child steps keep no checkpoints, so this needs no checkpoint storage at all.
+	std::string children;
+	for ( int i = 0; i < 30; ++i )
+		children += "div > ";
+	EXPECT_TRUE( StyleSheetSelector( "#scope > " + children + "a" ).select( target ) );
+	EXPECT_FALSE( StyleSheetSelector( "#scope > " + children + "span" ).select( target ) );
+
+	// Checkpoint storage grows 16 > 32 > 64 entries on the stack, then falls back to the heap.
+	// The selectors above cover 16 (9 checkpoints) and 64 (36); these cover 32 and the heap.
+	UIWidget* deepTail = UIWidget::NewWithTag( "div" );
+	deepTail->setId( "deep" );
+	deepTail->setParent( sceneNode->getRoot() );
+	for ( int i = 0; i < 160; ++i ) {
+		auto* child = UIWidget::NewWithTag( "div" );
+		child->setParent( deepTail );
+		deepTail = child;
+	}
+	auto* deepTarget = UIWidget::NewWithTag( "a" );
+	deepTarget->setParent( deepTail );
+	for ( int checkpoints : { 20, 72 } ) {
+		std::string longBody;
+		for ( int i = 0; i < checkpoints; ++i )
+			longBody += "* > div ";
+		EXPECT_TRUE( StyleSheetSelector( "#deep > " + longBody + "a" ).select( deepTarget ) );
+		EXPECT_FALSE( StyleSheetSelector( "#missing > " + longBody + "a" ).select( deepTarget ) );
+		EXPECT_FALSE( StyleSheetSelector( "#deep > " + longBody + "span" ).select( deepTarget ) );
+		// Each "* > div" pair consumes two levels, so more than 80 pairs cannot fit the chain.
+		std::string tooLong;
+		while ( tooLong.size() / std::strlen( "* > div " ) <= 80 )
+			tooLong += longBody;
+		EXPECT_FALSE( StyleSheetSelector( "#deep > " + tooLong + "a" ).select( deepTarget ) );
+	}
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, RelatedElementsShareSuffixSearches ) {
+	class CountingWidget : public UIWidget {
+	  public:
+		CountingWidget( size_t& checks ) : UIWidget( "div" ), mChecks( checks ) {}
+
+		std::string getPropertyString( const PropertyDefinition* property,
+									   const Uint32& index = 0 ) const {
+			if ( property && property->getPropertyId() == PropertyId::Id )
+				++mChecks;
+			return UIWidget::getPropertyString( property, index );
+		}
+
+	  private:
+		size_t& mChecks;
+	};
+
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	size_t checks = 0;
+	constexpr size_t count = 128;
+	auto* scope = eeNew( CountingWidget, ( checks ) );
+	scope->setId( "scope" );
+	scope->setParent( sceneNode->getRoot() );
+
+	// Nested candidates: each one would search its ancestors again for [id=scope].
+	UIWidget* tail = scope;
+	for ( size_t i = 0; i < count; ++i ) {
+		auto* candidate = eeNew( CountingWidget, ( checks ) );
+		candidate->addClass( "candidate" );
+		candidate->setParent( tail );
+		tail = candidate;
+	}
+	auto* nestedTarget = UIWidget::NewWithTag( "a" );
+	nestedTarget->setParent( tail );
+	checks = 0;
+	EXPECT_EQ( count, StyleSheetSelector( "[id=scope] .candidate:hover a" )
+						  .getRelatedElements( nestedTarget, false )
+						  .size() );
+	// Every element is checked once, not once per candidate below it.
+	EXPECT_GT( checks, 0u );
+	EXPECT_LE( checks, count + 2 );
+	// A tracked rest repeats elements across candidates; each must still be reported once.
+	auto nestedPairs = StyleSheetSelector( ".candidate:hover > .candidate:hover a" )
+						   .getRelatedElements( nestedTarget, false );
+	EXPECT_EQ( count, nestedPairs.size() );
+	EXPECT_EQ( count, UnorderedSet<UIWidget*>( nestedPairs.begin(), nestedPairs.end() ).size() );
+
+	// Sibling candidates share their parent, so the climb to [id=scope] happens once.
+	auto* list = eeNew( CountingWidget, ( checks ) );
+	list->addClass( "list" );
+	list->setParent( scope );
+	for ( size_t i = 0; i < count; ++i ) {
+		auto* item = eeNew( CountingWidget, ( checks ) );
+		item->addClass( "item" );
+		item->setParent( list );
+	}
+	auto* siblingTarget = UIWidget::NewWithTag( "a" );
+	siblingTarget->setParent( list );
+	checks = 0;
+	EXPECT_EQ( count, StyleSheetSelector( "[id=scope] .item:hover ~ a" )
+						  .getRelatedElements( siblingTarget, false )
+						  .size() );
+	EXPECT_GT( checks, 0u );
+	EXPECT_LE( checks, 2u );
+	// The shared rest is above every candidate, so the list is reported once with all items.
+	auto shared = StyleSheetSelector( ".list:hover > .item:hover ~ a" )
+					  .getRelatedElements( siblingTarget, false );
+	EXPECT_EQ( count + 1, shared.size() );
+	EXPECT_EQ( count + 1, UnorderedSet<UIWidget*>( shared.begin(), shared.end() ).size() );
+	EXPECT_TRUE( std::find( shared.begin(), shared.end(), list ) != shared.end() );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, SelectorFailuresPruneRepeatedDescendantSearches ) {
+	class CountingWidget : public UIWidget {
+	  public:
+		CountingWidget( size_t& checks ) : UIWidget( "div" ), mChecks( checks ) {
+			setId( "probe" );
+		}
+
+		std::string getPropertyString( const PropertyDefinition* property,
+									   const Uint32& index = 0 ) const {
+			if ( property && property->getPropertyId() == PropertyId::Id )
+				++mChecks;
+			return UIWidget::getPropertyString( property, index );
+		}
+
+	  private:
+		size_t& mChecks;
+	};
+
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	size_t checks = 0;
+	constexpr size_t depth = 24;
+	constexpr size_t compounds = 6;
+	UIWidget* parent = sceneNode->getRoot();
+	for ( size_t i = 0; i < depth; ++i ) {
+		auto* widget = eeNew( CountingWidget, ( checks ) );
+		widget->setParent( parent );
+		parent = widget;
+	}
+	auto* target = UIWidget::NewWithTag( "a" );
+	target->setParent( parent );
+
+	// "missing " creates no checkpoints (every descendant search precedes another one), so it
+	// covers immediate exhaustion. "missing > " checkpoints the last * and exercises retries. With
+	// no prefix, C(24, 6) paths match, and dependency collection must share their states.
+	for ( const char* prefix : { "missing ", "missing > ", "" } ) {
+		const bool matches = *prefix == '\0';
+		std::string selectorText( prefix );
+		std::string relatedText( prefix );
+		for ( size_t i = 0; i < compounds; ++i ) {
+			selectorText += "*[id=probe] ";
+			relatedText += "*[id=probe]:hover ";
+		}
+		selectorText += "a";
+		relatedText += "a";
+		StyleSheetSelector selector( selectorText );
+		checks = 0;
+		EXPECT_EQ( matches, selector.select( target ) );
+		// Exhausting the ancestor search must not enumerate combinations of earlier matches.
+		// The lower bound keeps the test from passing if attribute checks stop being counted.
+		EXPECT_GT( checks, 0u );
+		EXPECT_LE( checks, depth * compounds );
+		checks = 0;
+		// Every probe lies on some matching path, so each one is a dependency.
+		EXPECT_EQ( matches ? depth : 0u,
+				   StyleSheetSelector( relatedText ).getRelatedElements( target, false ).size() );
+		EXPECT_GT( checks, 0u );
+		EXPECT_LE( checks, depth * compounds );
+	}
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, StylesheetsDoNotPaintRawTextNodes ) {
+	init_ui_test();
+	auto* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><head><style>
+			#host { font-size: 24px; color: white; }
+			#host * { background-color: #505050; }
+		</style></head><body><div id="host"><span id="row"><a>Left</a> | <a>Right</a></span></div></body></html>
+	)html" ) );
+	sceneNode->update( Seconds( 1 ) );
+	auto* row = sceneNode->getRoot()->find( "row" )->asType<UITextSpan>();
+	ASSERT_TRUE( row != nullptr );
+	auto* separatorNode = row->getFirstChild()->getNextNode();
+	ASSERT_TRUE( separatorNode != nullptr && separatorNode->isTextNode() );
+	auto* separator = separatorNode->asType<UITextNode>();
+	EXPECT_TRUE( separator->getText() == " | " );
+	EXPECT_TRUE( separator->getBackgroundColor() == Color::Transparent );
+	EXPECT_TRUE( sceneNode->getStyleSheet().getElementStyles( separator ) == nullptr );
+	EXPECT_TRUE( row->getFontBackgroundColor() == Color( "#505050" ) );
+	auto* colorProperty = StyleSheetSpecification::instance()->getProperty( PropertyId::Color );
+	EXPECT_TRUE( Color( separator->getPropertyString( colorProperty ) ) == Color::White );
+
+	// Raw text remains queryable by the inspector, although it receives no matched CSS rules.
+	EXPECT_TRUE( StyleSheetSelector( "textnode" ).select( separator ) );
+
+	auto* win = Engine::instance()->getCurrentWindow();
+	win->clear();
+	SceneManager::instance()->draw();
+	// Read before display(): readback uses the back buffer, whose contents are undefined after a
+	// buffer swap on some platforms (Windows drivers do not preserve them).
+	Image image = win->getFrontBufferImage();
+	const Vector2i position = separator->convertToWorldSpace( Vector2f::Zero ).asInt();
+	const Sizei size = separator->getPixelsSize().asInt();
+	ASSERT_GT( size.getWidth(), 0 );
+	ASSERT_GT( size.getHeight(), 0 );
+	ASSERT_GE( position.x, 0 );
+	ASSERT_GE( position.y, 0 );
+	ASSERT_LE( position.x + size.getWidth(), static_cast<int>( image.getWidth() ) );
+	ASSERT_LE( position.y + size.getHeight(), static_cast<int>( image.getHeight() ) );
+	const Color backgroundColor = row->getFontBackgroundColor();
+	bool visibleGlyph = false;
+	for ( int y = position.y; y < position.y + size.getHeight(); ++y ) {
+		for ( int x = position.x; x < position.x + size.getWidth(); ++x ) {
+			const Color pixel = image.getPixel( x, y );
+			if ( pixel.r > backgroundColor.r || pixel.g > backgroundColor.g ||
+				 pixel.b > backgroundColor.b )
+				visibleGlyph = true;
+		}
+	}
+	EXPECT_TRUE( visibleGlyph );
 	Engine::destroySingleton();
 }
 
@@ -3626,6 +6089,28 @@ UTEST( UIHTML, ContactFormLayout ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIBackground, shorthandImageVariableAfterSize ) {
+	auto* specification = StyleSheetSpecification::instance();
+	const auto* shorthand = specification->getShorthand( "background" );
+	ASSERT_TRUE( shorthand != nullptr );
+
+	auto properties = shorthand->parse(
+		"no-repeat center/100% var(--sf-img-1), linear-gradient(transparent, transparent)" );
+	auto valueOf = [&properties]( const std::string& name ) -> std::string {
+		for ( const auto& property : properties ) {
+			if ( property.getName() == name )
+				return property.getValue();
+		}
+		return {};
+	};
+
+	EXPECT_STDSTREQ( valueOf( "background-image" ),
+					 "var(--sf-img-1),linear-gradient(transparent, transparent)" );
+	EXPECT_STDSTREQ( valueOf( "background-size" ), "100%,auto" );
+	EXPECT_STDSTREQ( valueOf( "background-position-x" ), "center,0%" );
+	EXPECT_STDSTREQ( valueOf( "background-position-y" ), "center,0%" );
+}
+
 UTEST( UIBackground, imageAtlasPositioning ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 653, "Background Atlas Test", VisualTestWindowStyle,
@@ -3822,9 +6307,10 @@ UTEST( UIBackground, RemoteImageReusesCachedTexture ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	UISceneNode* sceneNode = init_test_inline_block();
 	const std::string imageURL = "http://127.0.0.1:1/eepp-cached-background.png";
-	Texture* cached = TextureFactory::instance()->createEmptyTexture(
+	TexturePtr cached = TextureFactory::instance()->createEmptyTexture(
 		8, 8, 4, Color::White, false, Texture::ClampMode::ClampToEdge, false, false, imageURL );
 	ASSERT_TRUE( cached != nullptr );
+	sceneNode->getResourceScope()->publishLocal( imageURL, cached );
 
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
 		<body>
@@ -3842,9 +6328,13 @@ UTEST( UIBackground, RemoteImageReusesCachedTexture ) {
 	ASSERT_TRUE( second->getBackground() != nullptr );
 	ASSERT_TRUE( first->getBackground()->getLayer( 0 ) != nullptr );
 	ASSERT_TRUE( second->getBackground()->getLayer( 0 ) != nullptr );
-	EXPECT_EQ( cached, first->getBackground()->getLayer( 0 )->getDrawable() );
-	EXPECT_EQ( cached, second->getBackground()->getLayer( 0 )->getDrawable() );
+	const DrawablePtr& firstDrawable = first->getBackground()->getLayer( 0 )->getDrawable();
+	const DrawablePtr& secondDrawable = second->getBackground()->getLayer( 0 )->getDrawable();
+	EXPECT_EQ( cached.get(), getDrawableTexture( firstDrawable ) );
+	EXPECT_EQ( cached.get(), getDrawableTexture( secondDrawable ) );
+	EXPECT_NE( firstDrawable.get(), secondDrawable.get() );
 
+	cached.reset();
 	Engine::destroySingleton();
 }
 
@@ -4354,7 +6844,7 @@ static UISceneNode* createWinAndLoadHTML( std::string winName, std::string htmlP
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	if ( font == nullptr || !font->loaded() )
 		return nullptr;
@@ -4422,7 +6912,7 @@ UTEST( FontTrueType, glyphScaleZeroDimensionsNoCrash ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -4593,12 +7083,111 @@ UTEST( UIHTML, BlockSizeInfDoesNotHang ) {
 	sceneNode->update( Seconds( 1 ) );
 	sceneNode->updateDirtyLayouts();
 
-	// If we got here without hanging, the test passes.
 	auto body = sceneNode->getRoot()->findByTag( "body" );
 	ASSERT_TRUE( body != nullptr );
 	auto bodyWidget = body->asType<UIWidget>();
 	EXPECT_GT( bodyWidget->getPixelsSize().getHeight(), 0.f );
 
+	auto* logoNode = sceneNode->getRoot()->findByClass( "logo" );
+	ASSERT_TRUE( logoNode != nullptr );
+	auto* logo = logoNode->asType<UIWidget>();
+	auto* logoLink = logo->getParent()->asType<UIWidget>();
+	ASSERT_TRUE( logoLink != nullptr );
+	EXPECT_GT( logoLink->getPixelsSize().getWidth(), 0.f );
+	EXPECT_NEAR( logoLink->getPixelsSize().getWidth(), logo->getPixelsSize().getWidth(), 1.f );
+	EXPECT_LT( logoLink->getPixelsSize().getWidth(), 1024.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, WebViewAsyncInlineImageAutoMarginsResolveToZero ) {
+	Engine::instance()->createWindow( WindowSettings( 2048, 1152, "Image Anchor Bounds Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	auto* win = Engine::instance()->getCurrentWindow();
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setThreadPool( ThreadPool::createShared( 4 ) );
+	auto* host = sceneNode->loadLayoutFromString( R"xml(
+		<vbox layout_width="match_parent" layout_height="match_parent">
+			<hbox layout_width="match_parent" layout_height="wrap_content">
+				<TextInput layout_width="0" layout_weight="1" />
+			</hbox>
+			<WebView id="webview" layout_width="match_parent" layout_height="0" layout_weight="1" />
+		</vbox>
+	)xml" );
+	auto* webView = host->find( "webview" )->asType<UIWebView>();
+	webView->loadURI( URI( "./assets/html/block_size_inf.html" ) );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	UIWidget* logo = nullptr;
+	for ( int i = 0; i < 200; ++i ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Milliseconds( 16 ) );
+		logo = documentScene->getRoot()->findByClass( "logo" );
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+
+	ASSERT_TRUE( logo != nullptr );
+	auto* logoLink = logo->getParent()->asType<UIWidget>();
+	ASSERT_TRUE( logoLink != nullptr );
+	EXPECT_GT( logoLink->getPixelsSize().getWidth(), 0.f );
+	EXPECT_NEAR( logoLink->getPixelsSize().getWidth(), logo->getPixelsSize().getWidth(), 1.f );
+	EXPECT_LT( logoLink->getPixelsSize().getWidth(), webView->getPixelsSize().getWidth() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, FormattingRoleUsedMarginsAreNonMutating ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "CSS used margin roles", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	UISceneNode* sceneNode = init_test_inline_block();
+	auto* parent = UIHTMLWidget::New();
+	parent->setParent( sceneNode->getRoot() );
+	parent->setPixelsSize( 400.f, 200.f );
+	parent->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	auto* image = UIHTMLImage::New();
+	image->setParent( parent );
+	image->setPixelsSize( 100.f, 40.f );
+	image->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	image->setLayoutPixelsMargin( { 23.f, 17.f, 29.f, 19.f } );
+	image->setLayoutMarginAuto( true, true, true, true );
+
+	EXPECT_EQ( image->getFormattingRole(), CSSFormattingRole::Inline );
+	auto used = image->resolveUsedMargins();
+	EXPECT_TRUE( used.value == Rectf::Zero );
+	EXPECT_TRUE( image->getLayoutPixelsMargin() == Rectf( 23.f, 17.f, 29.f, 19.f ) );
+
+	image->setDisplay( CSSDisplay::Block );
+	EXPECT_EQ( image->getFormattingRole(), CSSFormattingRole::NormalFlowBlock );
+	used = image->resolveUsedMargins();
+	EXPECT_NEAR( used.value.Left, 150.f, 0.01f );
+	EXPECT_NEAR( used.value.Right, 150.f, 0.01f );
+	EXPECT_EQ( used.value.Top, 0.f );
+	EXPECT_EQ( used.value.Bottom, 0.f );
+
+	image->setCSSFloat( CSSFloat::Left );
+	EXPECT_EQ( image->getFormattingRole(), CSSFormattingRole::Float );
+	EXPECT_TRUE( image->resolveUsedMargins().value == Rectf::Zero );
+	image->setCSSFloat( CSSFloat::None );
+	image->setCSSPosition( CSSPosition::Absolute );
+	EXPECT_EQ( image->getFormattingRole(), CSSFormattingRole::Absolute );
+	EXPECT_TRUE( image->resolveUsedMargins().value == Rectf::Zero );
+	image->setCSSPosition( CSSPosition::Static );
+
+	parent->setDisplay( CSSDisplay::Flex );
+	EXPECT_EQ( image->getFormattingRole(), CSSFormattingRole::FlexItem );
+	EXPECT_TRUE( image->resolveUsedMargins().value == Rectf::Zero );
+	parent->setDisplay( CSSDisplay::Grid );
+	EXPECT_EQ( image->getFormattingRole(), CSSFormattingRole::GridItem );
+	EXPECT_TRUE( image->resolveUsedMargins().value == Rectf::Zero );
+
+	(void)win;
 	Engine::destroySingleton();
 }
 
@@ -4761,6 +7350,26 @@ UTEST( UIHTML, FlexMediaQueriesLayout ) {
 	EXPECT_GT( essayNavWidget->getPixelsSize().getHeight(), 10.f );
 	EXPECT_GT( essayNavWidget->getPixelsSize().getWidth(), 10.f );
 
+	// Valid input types that use the text implementation must retain their state for attribute
+	// selectors. Collapsing "email" to "text" loses this rule and exposes the white UA default.
+	auto* newsletter = bodyWidget->findByClass( "newsletter-form" );
+	ASSERT_TRUE( newsletter != nullptr );
+	auto* emailInput = newsletter->findByTag( "input" )->asType<UIHTMLInput>();
+	ASSERT_TRUE( emailInput != nullptr );
+	EXPECT_STDSTREQ( emailInput->getInputType(), "email" );
+	EXPECT_TRUE( emailInput->getBackgroundColor() == Color( "#1C1917" ) );
+	auto* emailImplementation = emailInput->getChildWidget();
+	ASSERT_TRUE( emailImplementation != nullptr );
+	const Rectf emailContentOffset = emailInput->getPixelsContentOffset();
+	EXPECT_NEAR( emailImplementation->getPixelsSize().getWidth(),
+				 emailInput->getPixelsSize().getWidth() - emailContentOffset.Left -
+					 emailContentOffset.Right,
+				 0.01f );
+	EXPECT_NEAR( emailImplementation->getPixelsSize().getHeight(),
+				 emailInput->getPixelsSize().getHeight() - emailContentOffset.Top -
+					 emailContentOffset.Bottom,
+				 0.01f );
+
 	// The essay-nav link contains two spans: label and title
 	// They should stack vertically (flex-direction: column on the <a>)
 	// so the link height should be at least the sum of both span heights
@@ -4919,6 +7528,47 @@ UTEST( UIHTML, FlexLiItemsWrapContentWidth ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTML, FlexStretchPreservesAutoCrossSizeAfterChildLayout ) {
+	Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "Flex Stretch Auto Cross Size Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><head><style>
+			.container { display: flex; width: 600px; }
+			.short { width: 200px; padding: 10px; }
+			.tall { width: 200px; height: 300px; }
+		</style></head><body>
+			<div class="container">
+				<aside class="short"><p>Short content</p></aside>
+				<main class="tall"></main>
+			</div>
+		</body></html>
+	)html" ) );
+
+	sceneNode->update( Seconds( 1 ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto* containerNode = sceneNode->getRoot()->findByClass( "container" );
+	auto* shortItemNode = sceneNode->getRoot()->findByClass( "short" );
+	auto* tallItemNode = sceneNode->getRoot()->findByClass( "tall" );
+	ASSERT_TRUE( containerNode != nullptr );
+	ASSERT_TRUE( shortItemNode != nullptr );
+	ASSERT_TRUE( tallItemNode != nullptr );
+	auto* container = containerNode->asType<UIWidget>();
+	auto* shortItem = shortItemNode->asType<UIWidget>();
+	auto* tallItem = tallItemNode->asType<UIWidget>();
+
+	EXPECT_NEAR( container->getPixelsSize().getHeight(), tallItem->getPixelsSize().getHeight(),
+				 1.f );
+	EXPECT_NEAR( shortItem->getPixelsSize().getHeight(), tallItem->getPixelsSize().getHeight(),
+				 1.f );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTML, ImagePercentageWidthRespectsParentMaxWidth ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 768, "img pct width respects parent max-width", WindowStyle::Default,
@@ -5012,7 +7662,7 @@ UTEST( UIHTML, TextureReplaceInvalidatesRichTextAncestors ) {
 	auto* img = images[0]->asType<UIHTMLImage>();
 	ASSERT_TRUE( img != nullptr );
 
-	Texture* texture =
+	TexturePtr texture =
 		TextureFactory::instance()->createEmptyTexture( 1, 1, 4, Color::Transparent );
 	ASSERT_TRUE( texture != nullptr );
 	img->setDrawable( texture );
@@ -5031,6 +7681,7 @@ UTEST( UIHTML, TextureReplaceInvalidatesRichTextAncestors ) {
 	EXPECT_GT( body->getPixelsSize().getHeight(), bodyInitialHeight + 150.f );
 	EXPECT_GT( doc->getPixelsSize().getHeight(), docInitialHeight + 150.f );
 
+	texture.reset();
 	Engine::destroySingleton();
 }
 
@@ -5115,7 +7766,7 @@ UTEST( UIHTML, DeferredFileImageReusesCachedTexture ) {
 	sceneNode->setURI( URI( "file://" + processPath ) );
 	URI imageURI = sceneNode->solveRelativePath( URI( "../assets/icon/ee.png" ) );
 	ASSERT_TRUE( FileSystem::fileExists( imageURI.getFSPath() ) );
-	Drawable* cached = DrawableSearcher::searchByName( imageURI.toString() );
+	DrawablePtr cached = sceneNode->getDrawableResolver().resolve( imageURI.toString() );
 	ASSERT_TRUE( cached != nullptr );
 
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
@@ -5141,9 +7792,11 @@ UTEST( UIHTML, DeferredFileImageReusesCachedTexture ) {
 	auto* second = secondNode->asType<UIHTMLImage>();
 	ASSERT_TRUE( first != nullptr );
 	ASSERT_TRUE( second != nullptr );
-	EXPECT_EQ( cached, first->getDrawable() );
-	EXPECT_EQ( cached, second->getDrawable() );
+	EXPECT_EQ( getDrawableTexture( cached ), getDrawableTexture( first->getDrawable() ) );
+	EXPECT_EQ( getDrawableTexture( cached ), getDrawableTexture( second->getDrawable() ) );
+	EXPECT_NE( first->getDrawable().get(), second->getDrawable().get() );
 
+	cached.reset();
 	Engine::destroySingleton();
 }
 
@@ -5155,9 +7808,10 @@ UTEST( UIHTML, RemoteImageReusesCachedTexture ) {
 	const std::string imageURL = "http://127.0.0.1:1/eepp-cached-image.png";
 
 	UISceneNode* sceneNode = init_test_inline_block();
-	Texture* cached = TextureFactory::instance()->createEmptyTexture(
+	TexturePtr cached = TextureFactory::instance()->createEmptyTexture(
 		8, 8, 4, Color::White, false, Texture::ClampMode::ClampToEdge, false, false, imageURL );
 	ASSERT_TRUE( cached != nullptr );
+	sceneNode->getResourceScope()->publishLocal( imageURL, cached );
 
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
 		<!doctype html>
@@ -5182,9 +7836,11 @@ UTEST( UIHTML, RemoteImageReusesCachedTexture ) {
 	auto* second = secondNode->asType<UIHTMLImage>();
 	ASSERT_TRUE( first != nullptr );
 	ASSERT_TRUE( second != nullptr );
-	EXPECT_EQ( cached, first->getDrawable() );
-	EXPECT_EQ( cached, second->getDrawable() );
+	EXPECT_EQ( cached.get(), getDrawableTexture( first->getDrawable() ) );
+	EXPECT_EQ( cached.get(), getDrawableTexture( second->getDrawable() ) );
+	EXPECT_NE( first->getDrawable().get(), second->getDrawable().get() );
 
+	cached.reset();
 	Engine::destroySingleton();
 }
 
@@ -5295,7 +7951,7 @@ UTEST( UIHTML, RonStonerDeferredImagesUpdateDocumentHeight ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -5327,7 +7983,7 @@ UTEST( UIHTML, RonStonerDeferredImagesUpdateDocumentHeight ) {
 	ASSERT_TRUE( documentScene != nullptr );
 
 	UIWidget* body = nullptr;
-	std::vector<UIWidget*> images;
+	WidgetQueryResult images;
 	for ( int i = 0; i < 300; ++i ) {
 		pump();
 		body = documentScene->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
@@ -5341,7 +7997,7 @@ UTEST( UIHTML, RonStonerDeferredImagesUpdateDocumentHeight ) {
 
 	auto allImagesLoaded = [&images] {
 		for ( auto* image : images ) {
-			auto* uiImage = image ? image->asType<UIImage>() : nullptr;
+			auto* uiImage = image ? image->asType<UIHTMLImage>() : nullptr;
 			if ( uiImage == nullptr || uiImage->getDrawable() == nullptr )
 				return false;
 		}
@@ -5355,6 +8011,24 @@ UTEST( UIHTML, RonStonerDeferredImagesUpdateDocumentHeight ) {
 
 	for ( int i = 0; i < 30; ++i )
 		pump();
+
+	ASSERT_GT( images.size(), 1u );
+	UIWidget* champion = images[1];
+	UIWidget* championParagraph = champion->getParent()->asType<UIWidget>();
+	ASSERT_TRUE( championParagraph != nullptr );
+	EXPECT_NEAR( champion->getPixelsSize().getWidth(),
+				 championParagraph->getPixelsSize().getWidth(), 1.f );
+	EXPECT_GT( champion->getPixelsSize().getHeight(), 500.f );
+	EXPECT_GE( championParagraph->getPixelsSize().getHeight(),
+			   champion->getPixelsSize().getHeight() );
+	Node* following = championParagraph->getNextNode();
+	while ( following &&
+			( !following->isWidget() || following->asType<UIWidget>()->getElementTag() != "p" ) )
+		following = following->getNextNode();
+	ASSERT_TRUE( following != nullptr );
+	EXPECT_GE( following->asType<UIWidget>()->getPixelsPosition().y + 1.f,
+			   championParagraph->getPixelsPosition().y +
+				   championParagraph->getPixelsSize().getHeight() );
 
 	const Float bodyHeightAfterAsyncLoad = body->getPixelsSize().getHeight();
 	const Float docHeightAfterAsyncLoad =
@@ -5385,7 +8059,7 @@ UTEST( UIHTML, NewsBlurStoryArchiveLayoutStabilizes ) {
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
 	FontFamily::loadFromRegular( font );
@@ -5822,5 +8496,200 @@ UTEST( UIHTML, ImageMaxWidthConstrainsWebpWithHeightAuto ) {
 	EXPECT_GT( actualRatio, expectedRatio * 0.9f );
 	EXPECT_LT( actualRatio, expectedRatio * 1.1f );
 
+	Engine::destroySingleton();
+}
+
+// Applies width/height/max-width to an image inside a single attributes
+// transaction in the given order, then returns the final pixels size. The reset
+// pass restores the image to a known base state (no fixed dimensions and no
+// max-width constraint) before the target order is applied. Returns Sizef::Zero
+// when the fixture image cannot be found.
+static Sizef applyImageSizingOrder( UISceneNode* sceneNode,
+									const std::vector<std::string>& order ) {
+	auto images = sceneNode->getRoot()->findAllByTag( "img" );
+	if ( images.size() != 1 )
+		return Sizef::Zero;
+	auto* img = images[0]->asType<UIHTMLImage>();
+	if ( !img )
+		return Sizef::Zero;
+
+	img->beginAttributesTransaction();
+	img->applyProperty( StyleSheetProperty( "width", "auto" ) );
+	img->applyProperty( StyleSheetProperty( "height", "auto" ) );
+	img->applyProperty( StyleSheetProperty( "max-width", "none" ) );
+	img->endAttributesTransaction();
+	img->updateLayout();
+
+	img->beginAttributesTransaction();
+	for ( const auto& name : order ) {
+		if ( name == "width" )
+			img->applyProperty( StyleSheetProperty( "width", "2560px" ) );
+		else if ( name == "height" )
+			img->applyProperty( StyleSheetProperty( "height", "auto" ) );
+		else
+			img->applyProperty( StyleSheetProperty( "max-width", "100%" ) );
+	}
+	img->endAttributesTransaction();
+	img->updateLayout();
+
+	return img->getPixelsSize();
+}
+
+UTEST( UIHTML, ImagePropertyApplicationOrderIndependent ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "img sizing property order", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+
+	const std::string html = R"html(
+		<!doctype html>
+		<html>
+		<head><style>body { margin: 0; } div { width: 800px; }</style></head>
+		<body><div><img src="image_width_3.webp" width="2560" height="1436"></div></body>
+		</html>
+	)html";
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+
+	const Sizef base = applyImageSizingOrder( sceneNode, { "width", "height", "max-width" } );
+	EXPECT_GT( base.getWidth(), 0.f );
+	EXPECT_GT( base.getHeight(), 0.f );
+	// max-width:100% constrains the image to the 800px containing block, and
+	// height:auto keeps the 1436/2560 aspect ratio.
+	EXPECT_LE( base.getWidth(), 800.f );
+	EXPECT_NEAR( base.getHeight() / base.getWidth(), 1436.f / 2560.f, 0.01f );
+
+	const std::vector<std::vector<std::string>> orders = {
+		{ "max-width", "height", "width" },
+		{ "height", "width", "max-width" },
+		{ "max-width", "width", "height" },
+	};
+	for ( const auto& order : orders ) {
+		const Sizef other = applyImageSizingOrder( sceneNode, order );
+		EXPECT_NEAR( other.getWidth(), base.getWidth(), 1.f );
+		EXPECT_NEAR( other.getHeight(), base.getHeight(), 1.f );
+	}
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, ImageHeightAutoMaxWidthStyleStateTransition ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 768, "img style state transition", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_inline_block();
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+
+	const std::string html = R"html(
+		<!doctype html>
+		<html>
+		<head><style>body { margin: 0; } div { width: 800px; }</style></head>
+		<body><div><img src="image_width_3.webp" width="2560" height="1436"></div></body>
+		</html>
+	)html";
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->getInput()->update();
+	SceneManager::instance()->update();
+	sceneNode->updateDirtyLayouts();
+
+	auto images = sceneNode->getRoot()->findAllByTag( "img" );
+	ASSERT_EQ( images.size(), (size_t)1 );
+	auto* img = images[0]->asType<UIHTMLImage>();
+	ASSERT_TRUE( img != nullptr );
+
+	// HTML attributes alone keep the fixed 2560x1436 box.
+	EXPECT_NEAR( img->getPixelsSize().getWidth(), 2560.f, 1.f );
+	EXPECT_NEAR( img->getPixelsSize().getHeight(), 1436.f, 1.f );
+
+	const std::string rule = "img { height: auto; max-width: 100%; }";
+
+	// Apply height:auto + max-width:100% through a style state change.
+	sceneNode->setStyleSheet( rule );
+	sceneNode->updateDirtyLayouts();
+	const Float constrainedWidth = img->getPixelsSize().getWidth();
+	const Float constrainedHeight = img->getPixelsSize().getHeight();
+	EXPECT_LE( constrainedWidth, 800.f );
+	EXPECT_NEAR( constrainedHeight / constrainedWidth, 1436.f / 2560.f, 0.01f );
+
+	// Remove the rule, then reapply it: the final geometry must be identical.
+	sceneNode->setStyleSheet( CSS::StyleSheet() );
+	sceneNode->updateDirtyLayouts();
+	sceneNode->setStyleSheet( rule );
+	sceneNode->updateDirtyLayouts();
+	EXPECT_NEAR( img->getPixelsSize().getWidth(), constrainedWidth, 1.f );
+	EXPECT_NEAR( img->getPixelsSize().getHeight(), constrainedHeight, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, MarkdownSpaceScrollingUsesParentViewport ) {
+	init_ui_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* scroll = UIScrollView::New();
+	scroll->setParent( scene->getRoot() );
+	scroll->setPixelsSize( 400, 300 );
+	scroll->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	auto* markdown = UIMarkdownView::New();
+	markdown->setParent( scroll->getContainer() );
+	std::string text;
+	for ( int i = 0; i < 60; ++i )
+		text += "A paragraph of Markdown content.\n\n";
+	markdown->loadFromString( text );
+	for ( int i = 0; i < 10; ++i )
+		scene->update( Seconds( 1.f / 60.f ) );
+	auto* bar = scroll->getVerticalScrollBar();
+	const Float viewport = scroll->getContainer()->getPixelsSize().getHeight();
+	const Float range = markdown->getPixelsSize().getHeight() - viewport;
+	ASSERT_TRUE( range > 2.f * viewport );
+	scene->getEventDispatcher()->setFocusNode( markdown );
+	// Establish the key-only path explicitly; SDL2 enables text input on desktop by default.
+	scene->getWindow()->stopTextInput();
+	ASSERT_FALSE( scene->getWindow()->isTextInputActive() );
+	scene->getEventDispatcher()->sendKeyDown( KEY_SPACE, SCANCODE_SPACE, 0, 0 );
+	EXPECT_NEAR( viewport, bar->getValue() * range, 1.f );
+	scene->getEventDispatcher()->sendKeyDown( KEY_SPACE, SCANCODE_SPACE, 0, KEYMOD_LSHIFT );
+	EXPECT_EQ( 0.f, bar->getValue() );
+	scene->getWindow()->startTextInput();
+	scene->getEventDispatcher()->sendKeyDown( KEY_SPACE, SCANCODE_SPACE, 0, 0 );
+	EXPECT_EQ( 0.f, bar->getValue() );
+	scene->getEventDispatcher()->sendTextInput( ' ', 0 );
+	EXPECT_NEAR( viewport, bar->getValue() * range, 1.f );
+	scroll->setEnableDefaultKeybindings( false );
+	scene->getEventDispatcher()->sendTextInput( ' ', 0 );
+	EXPECT_NEAR( viewport, bar->getValue() * range, 1.f );
+	scene->getWindow()->stopTextInput();
+	scene->getEventDispatcher()->sendKeyDown( KEY_SPACE, SCANCODE_SPACE, 0, 0 );
+	EXPECT_NEAR( viewport, bar->getValue() * range, 1.f );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTML, PasswordSelectionUsesVisibleGlyphWidth ) {
+	struct PasswordSelectionProbe : UITextInput {
+		Float maskedWidth() { return getVisibleTextCache().getTextWidth(); }
+
+		Float selectedWidth() {
+			selCurInit( 0 );
+			selCurEnd( getText().size() );
+			drawSelection( getVisibleTextCache() );
+			return mSelRectsCache.empty() ? 0.f : mSelRectsCache.front().getSize().getWidth();
+		}
+	};
+	static_assert( sizeof( PasswordSelectionProbe ) == sizeof( UITextInput ) );
+	init_ui_test();
+	auto* input = eeNew( PasswordSelectionProbe, () );
+	input->setParent( SceneManager::instance()->getUISceneNode()->getRoot() );
+	input->setText( "WWWWWWWW" );
+	const Float unmaskedWidth = input->getTextCache()->getTextWidth();
+	input->setMode( UITextInput::TextInputMode::Password );
+	const Float maskedWidth = input->maskedWidth();
+	ASSERT_TRUE( std::abs( unmaskedWidth - maskedWidth ) > 1.f );
+	EXPECT_NEAR( maskedWidth, input->selectedWidth(), 1.f );
 	Engine::destroySingleton();
 }

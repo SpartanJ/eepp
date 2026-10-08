@@ -3,12 +3,16 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/primitivetype.hpp>
+#include <eepp/graphics/resource.hpp>
 #include <eepp/graphics/vertexbufferhelper.hpp>
 
 #include <eepp/system/color.hpp>
 using namespace EE::System;
 
 namespace EE { namespace Graphics {
+
+class VertexBuffer;
+using VertexBufferUniquePtr = std::unique_ptr<VertexBuffer, ResourceDeleter<VertexBuffer>>;
 
 /** @brief The vertex buffer class holds vertex data. The vertex position, colors, texture
  *coordinates and indexes. This is useful to accelerate and encapsulate data.
@@ -27,14 +31,14 @@ class EE_API VertexBuffer {
 	 *extensions are supported ( almost for sure that it's supported ). More information here:
 	 *http://www.opengl.org/sdk/docs/man/xhtml/glBufferData.xml
 	 */
-	static VertexBuffer* New( const Uint32& vertexFlags = VERTEX_FLAGS_DEFAULT,
-							  PrimitiveType drawType = PRIMITIVE_QUADS,
-							  const Int32& reserveVertexSize = 0, const Int32& reserveIndexSize = 0,
-							  VertexBufferUsageType usageType = VertexBufferUsageType::Static );
+	static VertexBufferUniquePtr
+	New( const Uint32& vertexFlags = VERTEX_FLAGS_DEFAULT, PrimitiveType drawType = PRIMITIVE_QUADS,
+		 const Int32& reserveVertexSize = 0, const Int32& reserveIndexSize = 0,
+		 VertexBufferUsageType usageType = VertexBufferUsageType::Static );
 
 	/** Creates the simple vertex array implementation ( without VBOs or VAO ), which it's faster
 	 * for many cases. */
-	static VertexBuffer*
+	static VertexBufferUniquePtr
 	NewVertexArray( const Uint32& vertexFlags = VERTEX_FLAGS_DEFAULT,
 					PrimitiveType drawType = PRIMITIVE_QUADS, const Int32& reserveVertexSize = 0,
 					const Int32& reserveIndexSize = 0,
@@ -215,7 +219,7 @@ class EE_API VertexBuffer {
 	// Creates a rounded rectangle.
 	Polygon2f Poly = Polygon2f::createRoundedRectangle( 0, 0, 256, 50 );
 
-	VertexBuffer * VBO = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_FAN );
+	auto VBO = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_FAN );
 
 	if ( NULL != VBO ) {
 		// Upload the rounded rectangle data to the vertex buffer.

@@ -26,7 +26,7 @@ class EE_API StyleSheetPropertyAnimation : public Action {
 							   const PropertyDefinition* property, const std::string& startValue,
 							   const std::string& endValue,
 							   const Ease::Interpolation& timingFunction,
-							   const std::vector<double> timingFunctionParameters,
+							   const TimingFunction::Parameters& timingFunctionParameters,
 							   const Uint32& propertyIndex, const bool& isDone );
 
 	static StyleSheetPropertyAnimation* fromAnimationKeyframes(
@@ -46,6 +46,13 @@ class EE_API StyleSheetPropertyAnimation : public Action {
 		 const std::string& endValue, const Uint32& propertyIndex, const Time& duration,
 		 const Time& delay, const Ease::Interpolation& timingFunction,
 		 const std::vector<double>& timingFunctionParameters,
+		 const AnimationOrigin& animationOrigin );
+
+	static StyleSheetPropertyAnimation*
+	New( const PropertyDefinition* property, const std::string& startValue,
+		 const std::string& endValue, const Uint32& propertyIndex, const Time& duration,
+		 const Time& delay, const Ease::Interpolation& timingFunction,
+		 const TimingFunction::Parameters& timingFunctionParameters,
 		 const AnimationOrigin& animationOrigin );
 
 	void start() override;
@@ -87,8 +94,8 @@ class EE_API StyleSheetPropertyAnimation : public Action {
   protected:
 	AnimationDefinition mAnimation;
 	const PropertyDefinition* mPropertyDef;
-	std::vector<std::string> mStates;
-	std::vector<Float> mAnimationStepsTime;
+	SmallVector<std::string, 4> mStates;
+	SmallVector<Float, 4> mAnimationStepsTime;
 	Time mRealElapsed;
 	Time mElapsed;
 	Int32 mPendingIterations;
@@ -101,6 +108,13 @@ class EE_API StyleSheetPropertyAnimation : public Action {
 								 const PropertyDefinition* propertyDef,
 								 std::vector<std::string> states,
 								 std::vector<Float> animationStepsTime, const Uint32& propertyIndex,
+								 const AnimationOrigin& animationOrigin );
+
+	StyleSheetPropertyAnimation( const AnimationDefinition& animation,
+								 const PropertyDefinition* propertyDef,
+								 SmallVector<std::string, 4> states,
+								 SmallVector<Float, 4> animationStepsTime,
+								 const Uint32& propertyIndex,
 								 const AnimationOrigin& animationOrigin );
 
 	void onStart() override;

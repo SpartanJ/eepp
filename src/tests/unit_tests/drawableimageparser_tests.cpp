@@ -25,7 +25,7 @@ using namespace EE::UI::CSS;
 static UISceneNode* initDrawableParserTest() {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
@@ -53,15 +53,13 @@ UTEST( DrawableImageParser, TwoStopsWithPosition ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable( "linear-gradient(#f5eedd 0%, #ebe0c2 100%)",
-												Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable = parser.createDrawable( "linear-gradient(#f5eedd 0%, #ebe0c2 100%)",
+												  Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	ASSERT_TRUE( ownIt );
 	ASSERT_EQ( drawable->getDrawableType(), Drawable::LINEARGRADIENT );
 
-	auto* grad = static_cast<LinearGradientDrawable*>( drawable );
+	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
 	const auto& stops = grad->getColorStops();
 	ASSERT_EQ( stops.size(), (size_t)2 );
 	EXPECT_EQ( stops[0].value, 0.f );
@@ -72,7 +70,6 @@ UTEST( DrawableImageParser, TwoStopsWithPosition ) {
 	EXPECT_TRUE( stops[1].color == expectEbe );
 	EXPECT_EQ( grad->getAngle(), 180.f ); /* default: to bottom */
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -85,18 +82,16 @@ UTEST( DrawableImageParser, DirectionToRight ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable( "linear-gradient(to right, red, blue)",
-												Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable =
+		parser.createDrawable( "linear-gradient(to right, red, blue)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	auto* grad = static_cast<LinearGradientDrawable*>( drawable );
+	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
 	EXPECT_EQ( grad->getAngle(), 90.f );
 	EXPECT_EQ( grad->getColorStops().size(), (size_t)2 );
 	EXPECT_TRUE( grad->getColorStops()[0].color == Color::fromString( "red" ) );
 	EXPECT_TRUE( grad->getColorStops()[1].color == Color::fromString( "blue" ) );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -109,16 +104,14 @@ UTEST( DrawableImageParser, AngleDegrees ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable( "linear-gradient(45deg, red 0%, blue 100%)",
-												Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable = parser.createDrawable( "linear-gradient(45deg, red 0%, blue 100%)",
+												  Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	auto* grad = static_cast<LinearGradientDrawable*>( drawable );
+	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
 	EXPECT_EQ( grad->getAngle(), 45.f );
 	EXPECT_EQ( grad->getColorStops().size(), (size_t)2 );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -131,16 +124,14 @@ UTEST( DrawableImageParser, AngleTurn ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable( "linear-gradient(0.25turn, red, blue)",
-												Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable =
+		parser.createDrawable( "linear-gradient(0.25turn, red, blue)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	auto* grad = static_cast<LinearGradientDrawable*>( drawable );
+	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
 	EXPECT_EQ( grad->getAngle(), 90.f ); /* 0.25 * 360 = 90 */
 	EXPECT_EQ( grad->getColorStops().size(), (size_t)2 );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -153,12 +144,11 @@ UTEST( DrawableImageParser, ThreeStops ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable( "linear-gradient(red 0%, green 50%, blue 100%)",
-												Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable = parser.createDrawable( "linear-gradient(red 0%, green 50%, blue 100%)",
+												  Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	auto* grad = static_cast<LinearGradientDrawable*>( drawable );
+	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
 	const auto& stops = grad->getColorStops();
 	ASSERT_EQ( stops.size(), (size_t)3 );
 	EXPECT_EQ( stops[0].value, 0.f );
@@ -166,7 +156,6 @@ UTEST( DrawableImageParser, ThreeStops ) {
 	EXPECT_TRUE( stops[1].color == Color::fromString( "green" ) );
 	EXPECT_TRUE( stops[2].color == Color::fromString( "blue" ) );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -179,12 +168,11 @@ UTEST( DrawableImageParser, ColorHint ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable( "linear-gradient(red 0%, 25%, blue 100%)",
-												Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable =
+		parser.createDrawable( "linear-gradient(red 0%, 25%, blue 100%)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	auto* grad = static_cast<LinearGradientDrawable*>( drawable );
+	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
 	const auto& stops = grad->getColorStops();
 
 	/* Hint expands to 16 sampled sub-stops + 2 color stops = 18 total
@@ -209,7 +197,6 @@ UTEST( DrawableImageParser, ColorHint ) {
 	}
 	EXPECT_TRUE( foundMidpoint );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -222,12 +209,11 @@ UTEST( DrawableImageParser, StopsWithoutPositions ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable( "linear-gradient(red, green, blue)",
-												Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable =
+		parser.createDrawable( "linear-gradient(red, green, blue)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	auto* grad = static_cast<LinearGradientDrawable*>( drawable );
+	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
 	const auto& stops = grad->getColorStops();
 	ASSERT_EQ( stops.size(), (size_t)3 );
 	/* Should be evenly distributed: 0%, 50%, 100% */
@@ -235,7 +221,6 @@ UTEST( DrawableImageParser, StopsWithoutPositions ) {
 	EXPECT_NEAR( stops[1].value, 50.f, 0.01f );
 	EXPECT_EQ( stops[2].value, 100.f );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -248,17 +233,15 @@ UTEST( DrawableImageParser, EmptyAngleFallsThrough ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
 	/* No direction specified, should default to 180 (to bottom) */
-	Drawable* drawable =
-		parser.createDrawable( "linear-gradient(red, blue)", Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable =
+		parser.createDrawable( "linear-gradient(red, blue)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	auto* grad = static_cast<LinearGradientDrawable*>( drawable );
+	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
 	EXPECT_EQ( grad->getAngle(), 180.f );
 	EXPECT_EQ( grad->getColorStops().size(), (size_t)2 );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -271,20 +254,18 @@ UTEST( DrawableImageParser, RepeatingTwoStops ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable( "repeating-linear-gradient(red, blue)",
-												Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable =
+		parser.createDrawable( "repeating-linear-gradient(red, blue)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	ASSERT_TRUE( drawable->getDrawableType() == Drawable::REPEATINGLINEARGRADIENT );
-	auto* grad = static_cast<LinearGradientDrawable*>( drawable );
+	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
 	EXPECT_TRUE( grad->isRepeating() );
 	const auto& stops = grad->getColorStops();
 	ASSERT_EQ( stops.size(), (size_t)2 );
 	EXPECT_EQ( stops[0].value, 0.f );
 	EXPECT_EQ( stops[1].value, 100.f );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -297,18 +278,16 @@ UTEST( DrawableImageParser, RepeatingWithAngle ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable(
-		"repeating-linear-gradient(45deg, #f00, #0f0, #00f)", Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable = parser.createDrawable(
+		"repeating-linear-gradient(45deg, #f00, #0f0, #00f)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	auto* grad = static_cast<LinearGradientDrawable*>( drawable );
+	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
 	EXPECT_EQ( grad->getAngle(), 45.f );
 	EXPECT_TRUE( grad->isRepeating() );
 	const auto& stops = grad->getColorStops();
 	ASSERT_EQ( stops.size(), (size_t)3 );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -321,19 +300,17 @@ UTEST( DrawableImageParser, RepeatingWithPositions ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable( "repeating-linear-gradient(red 10%, blue 40%)",
-												Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable = parser.createDrawable( "repeating-linear-gradient(red 10%, blue 40%)",
+												  Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	auto* grad = static_cast<LinearGradientDrawable*>( drawable );
+	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
 	EXPECT_TRUE( grad->isRepeating() );
 	const auto& stops = grad->getColorStops();
 	ASSERT_EQ( stops.size(), (size_t)2 );
 	EXPECT_EQ( stops[0].value, 10.f );
 	EXPECT_EQ( stops[1].value, 40.f );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -346,20 +323,18 @@ UTEST( DrawableImageParser, RadialTwoStops ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable =
-		parser.createDrawable( "radial-gradient(red, blue)", Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable =
+		parser.createDrawable( "radial-gradient(red, blue)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	ASSERT_TRUE( drawable->getDrawableType() == Drawable::RADIALGRADIENT );
-	auto* grad = static_cast<RadialGradientDrawable*>( drawable );
+	auto* grad = static_cast<RadialGradientDrawable*>( drawable.get() );
 	EXPECT_FALSE( grad->isRepeating() );
 	const auto& stops = grad->getColorStops();
 	ASSERT_EQ( stops.size(), (size_t)2 );
 	EXPECT_EQ( stops[0].value, 0.f );
 	EXPECT_EQ( stops[1].value, 1.f );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -372,16 +347,14 @@ UTEST( DrawableImageParser, RadialCircleKeyword ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable( "radial-gradient(circle, #f00, #00f)",
-												Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable =
+		parser.createDrawable( "radial-gradient(circle, #f00, #00f)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	auto* grad = static_cast<RadialGradientDrawable*>( drawable );
+	auto* grad = static_cast<RadialGradientDrawable*>( drawable.get() );
 	EXPECT_EQ( grad->getShape(), RadialGradientDrawable::CIRCLE );
 	EXPECT_EQ( grad->getColorStops().size(), (size_t)2 );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -394,18 +367,16 @@ UTEST( DrawableImageParser, RadialWithPositions ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable( "radial-gradient(red 10%, blue 80%)",
-												Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable =
+		parser.createDrawable( "radial-gradient(red 10%, blue 80%)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	auto* grad = static_cast<RadialGradientDrawable*>( drawable );
+	auto* grad = static_cast<RadialGradientDrawable*>( drawable.get() );
 	const auto& stops = grad->getColorStops();
 	ASSERT_EQ( stops.size(), (size_t)2 );
 	EXPECT_EQ( stops[0].value, 10.f );
 	EXPECT_EQ( stops[1].value, 80.f );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -418,20 +389,18 @@ UTEST( DrawableImageParser, RepeatingRadial ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable( "repeating-radial-gradient(red 10%, blue 40%)",
-												Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable = parser.createDrawable( "repeating-radial-gradient(red 10%, blue 40%)",
+												  Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
 	ASSERT_TRUE( drawable->getDrawableType() == Drawable::REPEATINGRADIALGRADIENT );
-	auto* grad = static_cast<RadialGradientDrawable*>( drawable );
+	auto* grad = static_cast<RadialGradientDrawable*>( drawable.get() );
 	EXPECT_TRUE( grad->isRepeating() );
 	const auto& stops = grad->getColorStops();
 	ASSERT_EQ( stops.size(), (size_t)2 );
 	EXPECT_EQ( stops[0].value, 10.f );
 	EXPECT_EQ( stops[1].value, 40.f );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }
 
@@ -444,12 +413,11 @@ UTEST( DrawableImageParser, TwoLengthStopSyntax ) {
 	UINode* node = createTestNode( sceneNode );
 
 	auto& parser = StyleSheetSpecification::instance()->getDrawableImageParser();
-	bool ownIt = false;
-	Drawable* drawable = parser.createDrawable(
-		"repeating-linear-gradient(red 0 10px, blue 10px 20px)", Sizef( 100, 100 ), ownIt, node );
+	DrawablePtr drawable = parser.createDrawable(
+		"repeating-linear-gradient(red 0 10px, blue 10px 20px)", Sizef( 100, 100 ), node );
 
 	ASSERT_TRUE( drawable != NULL );
-	auto* grad = static_cast<LinearGradientDrawable*>( drawable );
+	auto* grad = static_cast<LinearGradientDrawable*>( drawable.get() );
 	EXPECT_TRUE( grad->isRepeating() );
 	const auto& stops = grad->getColorStops();
 	/* red 0 10px → two stops: raw pos 0 and raw pos 10. blue 10px 20px →
@@ -465,6 +433,5 @@ UTEST( DrawableImageParser, TwoLengthStopSyntax ) {
 	EXPECT_EQ( stops[3].value, 20.f );
 	EXPECT_EQ( stops[3].unit, EE::UI::CSS::StyleSheetLength::Px );
 
-	eeSAFE_DELETE( drawable );
 	Engine::destroySingleton();
 }

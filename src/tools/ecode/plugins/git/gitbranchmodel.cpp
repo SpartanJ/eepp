@@ -8,7 +8,7 @@ size_t GitBranchModel::hashBranches( const std::vector<Git::Branch>& branches ) 
 	for ( const auto& branch : branches )
 		hash = hashCombine( hash, String::hash( branch.name ), String::hash( branch.remote ),
 							String::hash( branch.lastCommit ), branch.type, branch.ahead,
-							branch.behind, String::hash( branch.date ) );
+							branch.behind, String::hash( branch.date ), branch.localOnly );
 	return hash;
 }
 
@@ -37,8 +37,27 @@ GitBranchModel::GitBranchModel( std::vector<Git::Branch>&& branches, size_t hash
 		type.emplace_back( std::move( branch ) );
 	}
 	for ( auto& branch : branchTypes ) {
-		mBranches.emplace_back(
-			BranchData{ std::move( branch.first ), std::move( branch.second ) } );
+		BranchData data{ std::move( branch.first ), std::move( branch.second ), {} };
+		data.historyDisplay.reserve( data.data.size() );
+		for ( const auto& ref : data.data ) {
+			String kind;
+			switch ( ref.type ) {
+				case Git::RefType::Head:
+					kind = mPlugin->i18n( "git_local_branch", "Local" );
+					break;
+				case Git::RefType::Remote:
+					kind = mPlugin->i18n( "git_remote_branch", "Remote" );
+					break;
+				case Git::RefType::Tag:
+					kind = mPlugin->i18n( "git_tag", "Tag" );
+					break;
+				default:
+					break;
+			}
+			data.historyDisplay.emplace_back( kind + String{ " · " } +
+											  String::fromUtf8( ref.name ) );
+		}
+		mBranches.emplace_back( std::move( data ) );
 	}
 }
 
@@ -108,6 +127,10 @@ Variant GitBranchModel::data( const ModelIndex& index, ModelRole role ) const {
 					} else if ( branch.type == Git::Head && branch.gone ) {
 						return Variant( String::format(
 							"%s (%s)", branch.name, mPlugin->i18n( "gone", "gone" ).toUtf8() ) );
+					} else if ( branch.type == Git::Head && branch.localOnly ) {
+						return Variant( String::format(
+							"%s (%s)", branch.name,
+							mPlugin->i18n( "git_local_only", "local only" ).toUtf8() ) );
 					} else if ( branch.type == Git::Stash ) {
 						return Variant( String::format( "%s: %s", branch.date, branch.name ) );
 					}
@@ -119,6 +142,8 @@ Variant GitBranchModel::data( const ModelIndex& index, ModelRole role ) const {
 					return Variant( branch.typeStr() );
 				case Column::LastCommit:
 					return Variant( branch.lastCommit.c_str() );
+				case Column::HistoryDisplay:
+					return Variant( &mBranches[index.internalId()].historyDisplay[index.row()] );
 			}
 			return Variant( GIT_EMPTY );
 		}
@@ -166,6 +191,10 @@ Variant GitBranchModel::data( const ModelIndex& index, ModelRole role ) const {
 }
 
 Git::Branch GitBranchModel::branch( const ModelIndex& index ) const {
+	return branchRef( index );
+}
+
+const Git::Branch& GitBranchModel::branchRef( const ModelIndex& index ) const {
 	return *static_cast<Git::Branch*>( index.internalData() );
 }
 

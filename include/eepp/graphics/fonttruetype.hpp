@@ -15,15 +15,26 @@ namespace EE { namespace Graphics {
 
 enum class FontWeight : Uint16;
 struct FontDesc;
+class ResourceScope;
+
+class FontTrueType;
+class FontService;
+using FontTrueTypePtr = ResourcePtr<FontTrueType>;
+using FontTrueTypeWeakPtr = ResourceWeakPtr<FontTrueType>;
 
 class EE_API FontTrueType : public Font {
   public:
-	static FontTrueType* New( const std::string& FontName );
+	static FontTrueTypePtr New( const std::string& FontName );
+	static FontTrueTypePtr New( const std::string& FontName, ResourceScope& resourceScope );
 
-	static FontTrueType* New( const std::string& FontName, const std::string& filename );
+	static FontTrueTypePtr New( const std::string& FontName, const std::string& filename );
+	static FontTrueTypePtr New( const std::string& FontName, const std::string& filename,
+								ResourceScope& resourceScope );
 
-	static FontTrueType* New( const std::string& FontName, const std::string& filename,
-							  Uint32 faceIndex );
+	static FontTrueTypePtr New( const std::string& FontName, const std::string& filename,
+								Uint32 faceIndex );
+	static FontTrueTypePtr New( const std::string& FontName, const std::string& filename,
+								Uint32 faceIndex, ResourceScope& resourceScope );
 
 	~FontTrueType();
 
@@ -47,6 +58,9 @@ class EE_API FontTrueType : public Font {
 
 	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 					Float outlineThickness = 0 ) const;
+
+	Float getGlyphAdvance( Uint32 codePoint, unsigned int characterSize, bool bold = false,
+						   bool italic = false, Float outlineThickness = 0 ) const;
 
 	Glyph getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
 						   Float outlineThickness = 0 ) const;
@@ -77,9 +91,10 @@ class EE_API FontTrueType : public Font {
 
 	Float getUnderlineThickness( unsigned int characterSize ) const;
 
-	Texture* getTexture( unsigned int characterSize ) const;
+	const TexturePtr& getTexture( unsigned int characterSize ) const;
 
 	bool loaded() const;
+	FontService* getFontService() const;
 
 	FontTrueType( const FontTrueType& ) = delete;
 	FontTrueType& operator=( const FontTrueType& ) = delete;
@@ -151,19 +166,19 @@ class EE_API FontTrueType : public Font {
 
 	virtual bool hasItalic() const { return mIsItalic || mFontItalic != nullptr; }
 
-	virtual bool hasBoldItalic() const { return isBoldItalic() || mFontBoldItalic; }
+	virtual bool hasBoldItalic() const { return isBoldItalic() || mFontBoldItalic != nullptr; }
 
-	FontTrueType* getBoldFont() const { return mFontBold; }
+	const FontTrueTypePtr& getBoldFont() const { return mFontBold; }
 
-	FontTrueType* getItalicFont() const { return mFontItalic; }
+	const FontTrueTypePtr& getItalicFont() const { return mFontItalic; }
 
-	FontTrueType* getBoldItalicFont() const { return mFontBoldItalic; }
+	const FontTrueTypePtr& getBoldItalicFont() const { return mFontBoldItalic; }
 
-	void setBoldFont( FontTrueType* fontBold );
+	void setBoldFont( const FontTrueTypePtr& fontBold );
 
-	void setItalicFont( FontTrueType* fontItalic );
+	void setItalicFont( const FontTrueTypePtr& fontItalic );
 
-	void setBoldItalicFont( FontTrueType* fontBoldItalic );
+	void setBoldItalicFont( const FontTrueTypePtr& fontBoldItalic );
 
 	void* face() const { return mFace; }
 
@@ -178,8 +193,11 @@ class EE_API FontTrueType : public Font {
   protected:
 	friend class Text;
 	friend class TextLayout;
+	friend class FontService;
+	friend class ResourceScope;
 
-	explicit FontTrueType( const std::string& FontName );
+	explicit FontTrueType( const std::string& FontName, FontService& fontService );
+	void setFontService( FontService* fontService );
 
 	struct Row {
 		Row( unsigned int rowTop, unsigned int rowHeight ) :
@@ -201,11 +219,11 @@ class EE_API FontTrueType : public Font {
 
 		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
 		GlyphDrawableTable
-			drawables; ///> Table mapping code points to their corresponding glyph drawables.
-		Texture* texture{ nullptr }; ///< Texture containing the pixels of the glyphs
-		std::vector<Row> rows;		 ///< List containing the position of all the existing rows
-		Uint32 fontInternalId{ 0 };	 // The font internal id
-		unsigned int nextRow;		 ///< Y position of the next new row in the texture
+			drawables;		///> Table mapping code points to their corresponding glyph drawables.
+		TexturePtr texture; ///< Texture containing the pixels of the glyphs
+		std::vector<Row> rows;		///< List containing the position of all the existing rows
+		Uint32 fontInternalId{ 0 }; // The font internal id
+		unsigned int nextRow;		///< Y position of the next new row in the texture
 		const FontTrueType* font{ nullptr };
 	};
 
@@ -267,15 +285,14 @@ class EE_API FontTrueType : public Font {
 	mutable UnorderedMap<Uint32, std::tuple<Uint32, Uint32, bool>> mKeyCache;
 	mutable UnorderedMap<Uint64, Float> mKerningCache;		// For codepoints (getKerning)
 	mutable UnorderedMap<Uint64, Float> mKerningGlyphCache; // For glyph indices
+	mutable UnorderedMap<unsigned int, UnorderedMap<Uint64, Float>> mGlyphAdvanceCache;
 	FontHinting mHinting{ FontHinting::Full };
 	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
+	FontService* mFontService{ nullptr };
 	Uint32 mFaceIndex{ 0 };
-	FontTrueType* mFontBold{ nullptr };
-	FontTrueType* mFontItalic{ nullptr };
-	FontTrueType* mFontBoldItalic{ nullptr };
-	Uint32 mFontBoldCb{ 0 };
-	Uint32 mFontItalicCb{ 0 };
-	Uint32 mFontBoldItalicCb{ 0 };
+	FontTrueTypePtr mFontBold;
+	FontTrueTypePtr mFontItalic;
+	FontTrueTypePtr mFontBoldItalic;
 
 	Float getGlyphTopOffset( unsigned int characterSize ) const;
 
@@ -284,12 +301,6 @@ class EE_API FontTrueType : public Font {
 	bool setFontFace( void* face );
 
 	void updateMonospaceState() const;
-
-	void disconnectBoldFont();
-
-	void disconnectItalicFont();
-
-	void disconnectBoldItalicFont();
 };
 
 }} // namespace EE::Graphics

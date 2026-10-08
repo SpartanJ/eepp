@@ -25,7 +25,7 @@ class EE_API UIHTMLTable : public UIHTMLWidget {
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& state = 0 ) const;
+										   const Uint32& propertyIndex = 0 ) const;
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
@@ -57,7 +57,7 @@ class EE_API UIHTMLTableCell : public UIRichText {
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& state = 0 ) const;
+										   const Uint32& propertyIndex = 0 ) const;
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
@@ -67,6 +67,8 @@ class EE_API UIHTMLTableCell : public UIRichText {
 
   protected:
 	Uint32 mColSpan{ 1 };
+
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
 	virtual void onLayoutUpdate();
 };

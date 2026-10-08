@@ -1,5 +1,6 @@
 #include "formatterplugin.hpp"
 #include "../../notificationcenter.hpp"
+#include "../../settingspage.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
@@ -17,6 +18,15 @@
 using json = nlohmann::json;
 
 namespace ecode {
+
+void FormatterPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addBool( "auto-format-on-save", "/config/auto_format_on_save",
+				  i18n( "formatter_auto_format_on_save", "Format on Save" ),
+				  i18n( "formatter_auto_format_on_save_desc",
+						"Automatically format supported documents when saving." ),
+				  false );
+}
 
 Plugin* FormatterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( FormatterPlugin, ( pluginManager, false ) );
@@ -38,23 +48,16 @@ FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 FormatterPlugin::~FormatterPlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
-	unsubscribeFileSystemListener();
 
 	if ( mWorkersCount != 0 ) {
 		std::unique_lock<std::mutex> lock( mWorkMutex );
 		mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
 	}
+}
 
-	for ( auto& editor : mEditors ) {
-		for ( auto& kb : mKeyBindings ) {
-			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
-			if ( editor.first->hasDocument() )
-				editor.first->getDocument().removeCommand( kb.first );
-		}
-		for ( auto listener : editor.second )
-			editor.first->removeEventListener( listener );
-		editor.first->unregisterPlugin( this );
-	}
+void FormatterPlugin::unregisterEditors() {
+	while ( !mEditors.empty() )
+		mEditors.begin()->first->unregisterPlugin( this );
 }
 
 void FormatterPlugin::onRegister( UICodeEditor* editor ) {
@@ -105,8 +108,10 @@ void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
 	auto cbs = mEditors[editor];
 	for ( auto listener : cbs )
 		editor->removeEventListener( listener );
+	for ( auto& kb : mKeyBindings )
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
 
-	if ( mShuttingDown )
+	if ( mShuttingDown && !mUnregistering )
 		return;
 	mEditors.erase( editor );
 	mEditorDocs.erase( editor );
@@ -116,11 +121,8 @@ void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
 		if ( editorIt.second == doc )
 			return;
 
-	for ( auto& kb : mKeyBindings ) {
-		editor->getKeyBindings().removeCommandKeybind( kb.first );
-		if ( editor->hasDocument() )
-			editor->getDocument().removeCommand( kb.first );
-	}
+	for ( auto& kb : mKeyBindings )
+		doc->removeCommand( kb.first );
 }
 
 bool FormatterPlugin::getAutoFormatOnSave() const {

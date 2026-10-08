@@ -287,8 +287,9 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 
 	mRoot->on( Event::OnLayoutUpdate, [this]( const Event* ) {
 		if ( mHuePicker->getDrawable() == nullptr ) {
-			mHuePicker->setDrawable( createHueTexture( mHuePicker->getPixelsSize() ), true );
-			mCurrentColor->setBackgroundDrawable( createGridTexture(), true );
+			mHuePicker->setDrawable( createHueTexture( mHuePicker->getPixelsSize() ) );
+			mCurrentColor->setBackgroundDrawable(
+				makeResource<TextureRegion>( createGridTexture() ) );
 			mCurrentColor->setBackgroundRepeat( "repeat" );
 			updateAll();
 		}
@@ -369,7 +370,7 @@ void UIColorPicker::windowClose( const Event* ) {
 	eeDelete( this );
 }
 
-Texture* UIColorPicker::createHueTexture( const Sizef& size ) {
+TexturePtr UIColorPicker::createHueTexture( const Sizef& size ) {
 	Image image( 1, (Uint32)size.getHeight(), 3 );
 
 	for ( Uint32 y = 0; y < image.getHeight(); y++ ) {
@@ -385,7 +386,7 @@ Texture* UIColorPicker::createHueTexture( const Sizef& size ) {
 							   image.getChannels() );
 }
 
-Texture* UIColorPicker::createGridTexture() {
+TexturePtr UIColorPicker::createGridTexture() {
 	Sizef size( PixelDensity::dpToPx( Sizef( 26, 24 ) ) );
 	Image image( size.getWidth(), size.getHeight(), 3, Color( 128, 128, 128, 255 ) );
 	Color highlightColor( 204, 204, 204, 255 );
@@ -404,9 +405,9 @@ Texture* UIColorPicker::createGridTexture() {
 }
 
 void UIColorPicker::updateColorPicker() {
-	DrawableGroup* colorRectangle = DrawableGroup::New();
+	auto colorRectangle = DrawableGroup::New();
 
-	RectangleDrawable* rectDrawable = RectangleDrawable::New();
+	auto rectDrawable = makeResource<RectangleDrawable>();
 
 	RectColors rectColors;
 	rectDrawable->setSize( mColorPicker->getPixelsSize() );
@@ -417,7 +418,7 @@ void UIColorPicker::updateColorPicker() {
 	rectDrawable->setRectColors( rectColors );
 	colorRectangle->addDrawable( rectDrawable );
 
-	rectDrawable = RectangleDrawable::New();
+	rectDrawable = makeResource<RectangleDrawable>();
 	rectDrawable->setSize( mColorPicker->getPixelsSize() );
 	rectColors.TopLeft = Color::Transparent;
 	rectColors.BottomLeft = Color::Black;
@@ -426,7 +427,7 @@ void UIColorPicker::updateColorPicker() {
 	rectDrawable->setRectColors( rectColors );
 	colorRectangle->addDrawable( rectDrawable );
 
-	mColorPicker->setDrawable( colorRectangle, true );
+	mColorPicker->setDrawable( std::move( colorRectangle ) );
 }
 
 void UIColorPicker::updateGuideLines() {
@@ -573,7 +574,7 @@ void UIColorPicker::registerEvents() {
 			->setPosition( 0, 0 )
 			->setSize( mRoot->getSceneNode()->getSize() );
 		mCoverWidget->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT |
-								 UI_ANCHOR_BOTTOM );
+								  UI_ANCHOR_BOTTOM );
 		mCoverWidget->on( Event::MouseMove, [this]( const Event* event ) {
 			Vector2i position = reinterpret_cast<const MouseEvent*>( event )->getPosition();
 			setColor( GLi->readPixel( position.x,

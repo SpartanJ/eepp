@@ -6,6 +6,13 @@
 #include <eepp/window/platformhelper.hpp>
 #include <eepp/window/window.hpp>
 
+#include <memory>
+
+namespace EE { namespace Graphics {
+class ResourceCatalog;
+class ResourceScope;
+}} // namespace EE::Graphics
+
 namespace EE { namespace System {
 class IniFile;
 class Pack;
@@ -21,6 +28,28 @@ class EE_API Engine {
 	SINGLETON_DECLARE_HEADERS( Engine )
 
   public:
+	/** Scoped binding of the current native window and graphics context. Restores the previous
+	 * binding when destroyed. Context objects are movable but cannot be copied. */
+	class EE_API WindowContext {
+	  public:
+		~WindowContext();
+
+		WindowContext( const WindowContext& ) = delete;
+		WindowContext& operator=( const WindowContext& ) = delete;
+
+		WindowContext( WindowContext&& other ) noexcept;
+		WindowContext& operator=( WindowContext&& ) = delete;
+
+	  private:
+		friend class Engine;
+
+		WindowContext( Engine* engine, EE::Window::Window* window );
+
+		Engine* mEngine{ nullptr };
+		EE::Window::Window* mPreviousWindow{ nullptr };
+		bool mActive{ true };
+	};
+
 	~Engine();
 
 	static bool isEngineRunning();
@@ -47,6 +76,9 @@ class EE_API Engine {
 	/** Set the window as the current. */
 	void setCurrentWindow( EE::Window::Window* window );
 
+	/** Makes @p window and its graphics context current for the returned scope. */
+	WindowContext makeWindowCurrent( EE::Window::Window* window );
+
 	/** @return The number of windows created. */
 	Uint32 getWindowCount() const;
 
@@ -59,6 +91,10 @@ class EE_API Engine {
 	void forEachWindow( std::function<void( EE::Window::Window* )> cb );
 
 	EE::Window::Window* getWindowID( const Uint32& winID );
+
+	/** Begins an input frame for every window, pumps the backend event queue once, routes events by
+	 * window ID, and then completes every input frame. */
+	void updateInput();
 
 	/** Constructs WindowSettings from an ini file
 	It will search for the following properties:
@@ -140,6 +176,12 @@ class EE_API Engine {
 	/** @return The display manager. Holds the physical displays information. */
 	DisplayManager* getDisplayManager();
 
+	/** @return The catalog used for resources intentionally exported application-wide. */
+	std::shared_ptr<Graphics::ResourceCatalog> getGlobalResourceCatalog() const;
+
+	/** @return The default Graphics scope. It explicitly imports the global resource catalog. */
+	std::shared_ptr<Graphics::ResourceScope> getDefaultResourceScope() const;
+
 	/** Open a URL in a separate, system-provided application.
 	 * @return true if success
 	 */
@@ -156,6 +198,8 @@ class EE_API Engine {
 	PlatformHelper* mPlatformHelper;
 	Pack* mZip;
 	DisplayManager* mDisplayManager;
+	std::shared_ptr<Graphics::ResourceCatalog> mGlobalResourceCatalog;
+	std::shared_ptr<Graphics::ResourceScope> mDefaultResourceScope;
 
 	Engine();
 
@@ -166,7 +210,7 @@ class EE_API Engine {
 	EE::Window::Window* createSDL2Window( const WindowSettings& Settings,
 										  const ContextSettings& Context );
 
-#ifdef EE_BACKEND_SDL3
+#if defined( EE_BACKEND_SDL3 ) || defined( EE_SDL_VERSION_3 )
 	Backend::WindowBackendLibrary* createSDL3Backend( const WindowSettings& Settings );
 
 	EE::Window::Window* createSDL3Window( const WindowSettings& Settings,

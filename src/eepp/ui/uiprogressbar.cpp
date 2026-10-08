@@ -1,4 +1,3 @@
-#include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiprogressbar.hpp>

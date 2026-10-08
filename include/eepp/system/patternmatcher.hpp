@@ -1,6 +1,7 @@
 #ifndef EE_SYSTEM_PATTERNMATCHER_HPP
 #define EE_SYSTEM_PATTERNMATCHER_HPP
 
+#include <array>
 #include <eepp/config.hpp>
 #include <string>
 #include <string_view>
@@ -23,16 +24,19 @@ class EE_API PatternMatcher {
 	class EE_API State {
 	  public:
 		State( PatternMatcher* pattern, bool ownPattern );
+		State( const State& other );
+		State& operator=( const State& other );
 
 		~State();
 
-		bool range( int index, int& start, int& end );
+		void swap( State& other ) noexcept;
+
+		bool range( int index, int& start, int& end ) const;
 
 		bool matches( const char* string, size_t length );
 
 		PatternMatcher* mPattern;
-		Range* mRanges;
-		size_t mRefCount;
+		std::array<Range, 10> mRanges;
 		bool mOwnPattern;
 	};
 
@@ -87,7 +91,7 @@ class EE_API PatternMatcher {
 		iterator end() { return iterator( nullptr ); }
 
 	  protected:
-		PatternMatcher::State* mState{ nullptr };
+		PatternMatcher::State mState;
 		const char* mString{ nullptr };
 		size_t mLength{ 0 };
 	};
@@ -107,7 +111,7 @@ class EE_API PatternMatcher {
 	PatternMatcher::Match gmatch( const std::string& string ) &;
 
 	bool range( int indexGet, int& startMatch, int& endMatch,
-				PatternMatcher::Range* returnedMatched ) const;
+				const PatternMatcher::Range* returnedMatched ) const;
 
 	bool find( const std::string& s, int& startMatch, int& endMatch, int offset = 0,
 			   int returnedMatchIndex = 0 ) const;

@@ -1,6 +1,23 @@
 require "premake.export-compile-commands.export-compile-commands"
 require "premake.premake-cmake.cmake"
-require "premake.premake-ninja.ninja"
+
+local function premake_is_previous_to_beta8()
+	if _PREMAKE_VERSION:match("^5%.0%.0[%.%-]alpha%d+$") then
+		return true
+	end
+
+	local beta = _PREMAKE_VERSION:match("^5%.0%.0[%.%-]beta(%d+)$")
+	if beta then
+		return tonumber(beta) < 8
+	end
+
+	return false
+end
+
+-- We will disable this later, since config names are different (local ninja use old naming convention with config=debug or config=release while the new one uses the premake5 convention config=debug_x86_64 and config=release_x86_64)
+if true or premake_is_previous_to_beta8() then
+	require "premake.premake-ninja.ninja"
+end
 
 newoption { trigger = "with-openssl", description = "Enables OpenSSL support ( and disables mbedtls backend )." }
 newoption { trigger = "with-dynamic-freetype", description = "Dynamic link against freetype." }
@@ -34,6 +51,7 @@ newoption {
     description = "Set the shared data directory",
 }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
+newoption { trigger = "with-lto", description = "Enables Link-Time Optimization for release builds." }
 
 function is_arm64_arch()
 	local arch = _OPTIONS["arch"]
@@ -147,6 +165,17 @@ end
 
 function is_xcode()
 	return ( string.starts(_ACTION,"xcode") )
+end
+
+-- True when the configuration is built with clang. FreeBSD targets are forced
+-- to clang ( see the workspace "eepp" toolset filter ), macOS and iOS default
+-- to it.
+function is_clang()
+	if _OPTIONS["cc"] then
+		return _OPTIONS["cc"] == "clang"
+	end
+
+	return os.istarget("bsd") or os.istarget("macosx") or os.istarget("ios")
 end
 
 function set_kind()
@@ -372,7 +401,7 @@ function build_base_configuration( package_name )
 		buildoptions { "/utf-8" }
 
 	filter "system:emscripten"
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		buildoptions { "-O3 -s USE_SDL=2" }
 		buildoptions { "-s USE_PTHREADS=1" }
 
 	filter {}
@@ -392,7 +421,7 @@ function build_base_cpp_configuration( package_name )
 	end
 
 	filter "action:vs*"
-		buildoptions{ "/std:c++20", "/utf-8" }
+		buildoptions{ "/std:c++20", "/utf-8", "/Zc:preprocessor" }
 
 	filter "action:not vs*"
 		cppdialect "C++20"
@@ -412,7 +441,7 @@ function build_base_cpp_configuration( package_name )
 		symbols "On"
 
 	filter "system:emscripten"
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		buildoptions { "-O3 -s USE_SDL=2" }
 		buildoptions { "-s USE_PTHREADS=1" }
 
 	filter {}
@@ -442,8 +471,30 @@ function get_architecture()
 end
 
 function build_link_configuration( package_name, use_ee_icon )
+	filter {}
 	incdirs { "include" }
 	local extension = "";
+
+	if package_name ~= "eepp" and package_name ~= "eepp-static" then
+		files { "src/eepp/core/memorymanagerglobal.cpp" }
+	end
+
+	if os.istarget("emscripten") and package_name ~= "eepp" and package_name ~= "eepp-static" then
+		local without_assets = {
+			["eepp-empty-window"] = true,
+			["eepp-sound"] = true,
+			["eepp-vbo-fbo-batch"] = true,
+			["eepp-physics-demo"] = true,
+			["eepp-http-request"] = true,
+		}
+		if not without_assets[package_name] then
+			if package_name == "ecode" then
+				linkoptions { "--preload-file " .. package_name .. "/assets/" }
+			else
+				linkoptions { "--preload-file assets/" }
+			end
+		end
+	end
 
 	if package_name == "eepp" then
 		defines { "EE_EXPORTS" }
@@ -463,7 +514,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	end
 
 	if _OPTIONS["with-mold-linker"] then
-		if _OPTIONS.platform == "clang" or _OPTIONS.platform == "clang-analyzer" then
+		if is_clang() then
 			linkoptions { "-fuse-ld=mold" }
 		else
 			gccversion = os.outputof( "gcc -dumpfullversion" )
@@ -498,6 +549,9 @@ function build_link_configuration( package_name, use_ee_icon )
 			linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
 		end
 
+	filter "system:macosx"
+		linkoptions { "-weak_framework UniformTypeIdentifiers" }
+
 	filter { "system:bsd" }
 		if package_name ~= "eepp" and package_name ~= "eepp-static" then
 			if type(userelativelinks) == "function" then
@@ -524,7 +578,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 	filter "action:vs*"
-		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj", "/Zc:preprocessor" }
 
 	filter "action:not vs*"
 		buildoptions { "-Wall" }
@@ -583,8 +637,11 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	filter "system:emscripten"
 		targetname ( package_name .. extension )
-		linkoptions { "-O3 -s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2" }
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		if package_name ~= "eepp" and package_name ~= "eepp-static" then
+			targetextension ".html"
+		end
+		linkoptions { "-O3 -s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2 -s ENVIRONMENT=worker,web -s EXPORTED_RUNTIME_METHODS=ccall" }
+		buildoptions { "-O3 -s USE_SDL=2" }
 		buildoptions { "-s USE_PTHREADS=1" }
 		linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
 
@@ -614,7 +671,7 @@ function generate_os_links()
 	elseif os.istarget("mingw32") then
 		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
 	elseif os.istarget("macosx") then
-		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework", "CoreText.framework" } )
+		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
 	elseif os.istarget("bsd") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.istarget("haiku") then
@@ -656,7 +713,8 @@ function parse_args()
 	if _OPTIONS["thread-sanitizer"] then
 		buildoptions { "-fsanitize=thread" }
 		linkoptions { "-fsanitize=thread" }
-		if not os.istarget("macosx") then
+		-- clang links its own sanitizer runtimes, -ltsan is gcc only.
+		if not is_clang() then
 			links { "tsan" }
 		end
 	end
@@ -664,13 +722,29 @@ function parse_args()
 	if _OPTIONS["address-sanitizer"] then
 		buildoptions { "-fsanitize=address" }
 		linkoptions { "-fsanitize=address" }
-		if not os.istarget("macosx") then
+		-- clang links its own sanitizer runtimes, -lasan is gcc only.
+		if not is_clang() then
 			links { "asan" }
 		end
 	end
 
 	if _OPTIONS["time-trace"] then
 		buildoptions { "-ftime-trace" }
+	end
+
+	if _OPTIONS["with-lto"] then
+		filter { "configurations:release*", "toolset:gcc", "not system:emscripten" }
+			buildoptions { "-flto=auto" }
+			linkoptions { "-flto=auto" }
+
+		filter { "configurations:release*", "toolset:clang", "not system:emscripten" }
+			buildoptions { "-flto=thin" }
+			linkoptions { "-flto=thin" }
+
+		filter { "configurations:release*", "toolset:msc" }
+			linktimeoptimization "On"
+
+		filter {}
 	end
 end
 
@@ -696,6 +770,7 @@ function add_static_links()
 	end
 
 	links { "SOIL2-static",
+			"simdutf-static",
 			"chipmunk-static",
 			"libzip-static",
 			"jpeg-compressor-static",
@@ -739,7 +814,9 @@ end
 function add_sdl2()
 	print("Using SDL2 backend");
 	if not can_add_static_backend("SDL2") then
-		table.insert( link_list, get_backend_link_name( "SDL2" ) )
+		if not os.istarget("emscripten") then
+			table.insert( link_list, get_backend_link_name( "SDL2" ) )
+		end
 	else
 		print("Using static backend")
 		insert_static_backend( "SDL2" )
@@ -1033,7 +1110,7 @@ function build_eepp( build_name )
 
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
-		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj", "/Zc:preprocessor" }
 
 	filter { "action:export-compile-commands", "system:macosx" }
 		buildoptions { "-std=c++20" }
@@ -1042,6 +1119,8 @@ function build_eepp( build_name )
 end
 
 function target_dir_lib(path)
+	filter "architecture:wasm32"
+		targetdir("libs/" .. os.target() .. "/wasm32/" .. path .. "/")
 	filter "architecture:x86"
 		targetdir("libs/" .. os.target() .. "/x86/" .. path .. "/")
 	filter "architecture:x86_64"
@@ -1084,10 +1163,21 @@ workspace "eepp"
 	if _ACTION == "ninja" then
 		configurations { "debug", "release" }
 		platforms { get_architecture() }
+	elseif os.istarget("emscripten") then
+		configurations { "debug", "release" }
+		platforms { "wasm32" }
 	else
 		configurations { "debug", "release" }
 		platforms { "x86_64", "x86", "arm64" }
 	end
+
+	-- FreeBSD builds use clang: force the clang toolset so the generated project
+	-- files never fall back to the default gcc toolchain of the bsd system.
+	-- An explicitly requested compiler (--cc) still takes precedence.
+	filter { "system:bsd", "not options:cc" }
+		toolset "clang"
+	filter {}
+
 	rtti "On"
 	download_and_extract_dependencies()
 	select_backend()
@@ -1110,6 +1200,9 @@ workspace "eepp"
 
 	filter "platforms:x86_64"
 		architecture "x86_64"
+
+	filter "platforms:wasm32"
+		architecture "wasm32"
 
 	filter { "platforms:x86_64", "system:macosx" }
 		architecture "x86_64"
@@ -1193,6 +1286,14 @@ workspace "eepp"
 		language "C++"
 		files { "src/thirdparty/pugixml/*.cpp" }
 		build_base_cpp_configuration( "pugixml" )
+		target_dir_thirdparty()
+
+	project "simdutf-static"
+		kind "StaticLib"
+		language "C++"
+		files { "src/thirdparty/simdutf/simdutf.cpp" }
+		includedirs { "src/thirdparty/simdutf" }
+		build_base_cpp_configuration( "simdutf" )
 		target_dir_thirdparty()
 
 	project "zlib-static"
@@ -1518,19 +1619,23 @@ workspace "eepp"
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
-	project "eepp-maps"
-		kind "SharedLib"
-		language "C++"
-		cppdialect "C++20"
-		incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
-		files { "src/modules/maps/src/**.cpp" }
-		links { "eepp-shared" }
-		defines { "EE_MAPS_EXPORTS" }
-		build_base_cpp_configuration( "eepp-maps" )
-		postsymlinklib_arch( "eepp-maps" )
-		target_dir_lib("")
-		filter "action:not vs*"
-			buildoptions { "-Wall" }
+	if not os.istarget("emscripten") then
+		project "eepp-maps"
+			kind "SharedLib"
+			language "C++"
+			cppdialect "C++20"
+			incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
+			files { "src/modules/maps/src/**.cpp" }
+			links { "eepp-shared" }
+			defines { "EE_MAPS_EXPORTS" }
+			build_base_cpp_configuration( "eepp-maps" )
+			postsymlinklib_arch( "eepp-maps" )
+			target_dir_lib("")
+			filter { "system:windows", "action:not vs*" }
+				links { "winpthread" }
+			filter "action:not vs*"
+				buildoptions { "-Wall" }
+	end
 
 	project "eepp-physics-static"
 		kind "StaticLib"
@@ -1547,19 +1652,21 @@ workspace "eepp"
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
-	project "eepp-physics"
-		kind "SharedLib"
-		language "C++"
-		cppdialect "C++20"
-		incdirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
-		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
-		links { "chipmunk-static", "eepp-shared" }
-		defines { "EE_PHYSICS_EXPORTS" }
-		build_base_cpp_configuration( "eepp-physics" )
-		postsymlinklib_arch( "eepp-physics" )
-		target_dir_lib("")
-		filter "action:not vs*"
-			buildoptions { "-Wall" }
+	if not os.istarget("emscripten") then
+		project "eepp-physics"
+			kind "SharedLib"
+			language "C++"
+			cppdialect "C++20"
+			incdirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
+			files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
+			links { "chipmunk-static", "eepp-shared" }
+			defines { "EE_PHYSICS_EXPORTS" }
+			build_base_cpp_configuration( "eepp-physics" )
+			postsymlinklib_arch( "eepp-physics" )
+			target_dir_lib("")
+			filter "action:not vs*"
+				buildoptions { "-Wall" }
+	end
 
 	project "eterm-static"
 		kind "StaticLib"
@@ -1596,6 +1703,24 @@ workspace "eepp"
 		filter { "action:export-compile-commands", "system:macosx" }
 			buildoptions { "-std=c++20" }
 
+	if os.istarget("macosx") then
+	project "eepp-macos-helper-static"
+		kind "StaticLib"
+		language "C++"
+		cppdialect "C++20"
+		incdirs { "include", "src" }
+		files { "src/eepp/ui/platform/macos/macosmenubar.mm",
+				"src/eepp/window/platform/macos/platformhelper.mm",
+				"src/eepp/system/fileassociation_macos.mm" }
+		buildoptions { "-x objective-c++" }
+		build_base_cpp_configuration( "eepp-macos-helper" )
+		target_dir_lib( "" )
+		filter "action:not vs*"
+			buildoptions { "-Wall" }
+		filter { "action:export-compile-commands", "system:macosx" }
+			buildoptions { "-std=c++20" }
+	end
+
 	-- Library
 	if not _OPTIONS["disable-static-build"] then
 	project "eepp-static"
@@ -1605,12 +1730,19 @@ workspace "eepp"
 		target_dir_lib("")
 	end
 
-	project "eepp-shared"
-		kind "SharedLib"
-		language "C++"
-		build_eepp( "eepp" )
-		postsymlinklib_arch( "eepp" )
-		target_dir_lib("")
+	if not os.istarget("emscripten") then
+		project "eepp-shared"
+			kind "SharedLib"
+			language "C++"
+			build_eepp( "eepp" )
+			postsymlinklib_arch( "eepp" )
+			target_dir_lib("")
+			-- Bind calls between libeepp's own functions directly instead of through the PLT. ELF
+			-- only: Mach-O and PE already bind them directly.
+			if os.istarget("linux") or os.istarget("bsd") or os.istarget("haiku") then
+				linkoptions { "-Wl,-Bsymbolic-functions" }
+			end
+	end
 
 	-- Examples
 	project "eepp-external-shader"
@@ -1669,6 +1801,12 @@ workspace "eepp"
 		files { "src/examples/ui_custom_widget/*.cpp" }
 		build_link_configuration( "eepp-ui-custom-widget", true )
 
+	project "eepp-ui-charts"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_charts/*.cpp" }
+		build_link_configuration( "eepp-ui-charts", true )
+
 	project "eepp-ui-hello-world"
 		set_kind()
 		language "C++"
@@ -1681,6 +1819,18 @@ workspace "eepp"
 		files { "src/examples/ui_application_hello_world/*.cpp" }
 		build_link_configuration( "eepp-ui-application-hello-world", true )
 
+	project "eepp-ui-application-multi-window"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_application_multi_window/*.cpp" }
+		build_link_configuration( "eepp-ui-application-multi-window", true )
+
+	project "eepp-ui-date-time-picker"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_date_time_picker/*.cpp" }
+		build_link_configuration( "eepp-ui-date-time-picker", true )
+
 	project "eepp-ui-font-picker"
 		set_kind()
 		language "C++"
@@ -1692,6 +1842,18 @@ workspace "eepp"
 		language "C++"
 		files { "src/examples/ui_dropdownmodellist/*.cpp" }
 		build_link_configuration( "eepp-ui-dropdownmodellist", true )
+
+	project "eepp-ui-data-handling"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_data_handling/*.cpp" }
+		build_link_configuration( "eepp-ui-data-handling", true )
+
+	project "eepp-ui-data-collections"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_data_collections/*.cpp" }
+		build_link_configuration( "eepp-ui-data-collections", true )
 
 	project "eepp-ui-richtext"
 		set_kind()
@@ -1793,26 +1955,6 @@ workspace "eepp"
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 
-	if os.istarget("macosx") then
-	project "ecode-macos-helper-static"
-		kind "StaticLib"
-		language "C++"
-		target_dir_thirdparty()
-		filter "system:macosx"
-			files { "src/tools/ecode/macos/*.m" }
-		filter { "configurations:debug*", "action:not vs*" }
-			defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
-			symbols "On"
-			buildoptions{ "-Wall" }
-			targetname ( "ecode-macos-helper-static-debug" )
-		filter { "configurations:release*", "action:not vs*" }
-			defines { "NDEBUG" }
-			optimize "Speed"
-			targetname ( "ecode-macos-helper-static" )
-		filter { "configurations:release*", "action:not vs*", "options:with-debug-symbols" }
-			symbols "On"
-	end
-
 	project "ecode"
 		set_kind()
 		language "C++"
@@ -1835,7 +1977,6 @@ workspace "eepp"
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/ecode.x64.res" }
 		filter "system:macosx"
 			links { "CoreFoundation.framework", "CoreServices.framework", "Cocoa.framework" }
-			links { "ecode-macos-helper-static" }
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 		filter "system:linux"
@@ -1856,9 +1997,9 @@ workspace "eepp"
 	project "eterm"
 		set_kind()
 		language "C++"
-		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
+		incdirs { "src/thirdparty/efsw/include", "src/modules/eterm/include/", "src/thirdparty" }
 		files { "src/tools/eterm/**.cpp" }
-		links { "eterm-static" }
+		links { "efsw-static", "eterm-static" }
 		build_link_configuration( "eterm", false )
 		filter { "system:windows", "action:vs*" }
 			files { "bin/assets/icon/eterm.rc", "bin/assets/icon/eterm.ico" }
@@ -1869,6 +2010,10 @@ workspace "eepp"
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eterm.x64.res" }
 		filter "system:linux or system:bsd"
 			links { "util" }
+		filter { "system:not windows", "system:not haiku" }
+			links { "pthread" }
+		filter "system:macosx"
+			links { "CoreFoundation.framework", "CoreServices.framework" }
 		filter "system:haiku"
 			links { "bsd" }
 
@@ -1878,6 +2023,64 @@ workspace "eepp"
 		incdirs { "src/thirdparty" }
 		files { "src/tools/texturepacker/*.cpp" }
 		build_link_configuration( "eepp-TexturePacker", true )
+
+	project "eeiv"
+		set_kind()
+		language "C++"
+		filter { "system:windows", "action:vs*" }
+			files { "bin/assets/icon/eeiv.rc", "bin/assets/icon/eeiv.ico" }
+			vpaths { ['Resources/*'] = { "eeiv.rc", "eeiv.ico" } }
+		filter { "system:windows", "action:not vs*", "architecture:x86" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eeiv.res" }
+		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eeiv.x64.res" }
+		filter {}
+		files { "src/tools/eeiv/*.cpp" }
+		build_link_configuration( "eeiv", false )
+
+	project "eproc"
+		set_kind()
+		language "C++"
+		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
+		filter { "system:windows", "action:vs*" }
+			files { "bin/assets/icon/eproc.rc", "bin/assets/icon/eproc.ico" }
+			vpaths { ['Resources/*'] = { "eproc.rc", "eproc.ico" } }
+		filter { "system:windows", "action:not vs*", "architecture:x86" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eproc.res" }
+		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eproc.x64.res" }
+		filter {}
+		files {
+			"src/tools/eproc/appconfig.cpp",
+			"src/tools/eproc/eproc.cpp",
+			"src/tools/eproc/gui_window_tracker.cpp",
+			"src/tools/eproc/process_collector.cpp",
+			"src/tools/eproc/process_info.cpp",
+			"src/tools/eproc/process_model.cpp",
+			"src/tools/eproc/process_table_state.cpp",
+			"src/tools/eproc/settingspanel.cpp",
+			"src/tools/eproc/window_icon.cpp",
+		}
+		filter "system:linux"
+			files {
+				"src/tools/eproc/platform/linux/gpu_reader_nvidia.cpp",
+				"src/tools/eproc/platform/linux/gpu_reader_drm.cpp",
+				"src/tools/eproc/platform/linux/process_collector_linux.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp",
+				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
+			}
+		filter "system:windows"
+			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp" }
+			links { "psapi", "advapi32" }
+		filter "system:macosx"
+			files { "src/tools/eproc/platform/macos/process_collector_macos.cpp",
+				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+		filter "system:bsd"
+			files { "src/tools/eproc/platform/freebsd/process_collector_freebsd.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp" }
+		filter {}
+		build_link_configuration( "eproc", false )
 
 	-- Tests
 	project "eepp-test"
@@ -1906,12 +2109,45 @@ workspace "eepp"
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
+		defines { "EE_UNIT_TESTS" }
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp",
-				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp" }
+				"src/tools/eproc/process_info.cpp",
+				"src/tools/eproc/process_model.cpp",
+				"src/tools/eproc/process_table_state.cpp",
+				"src/tools/eproc/window_icon.cpp",
+				"src/tools/ecode/ignorematcher.cpp",
+				"src/tools/ecode/jsonhelper.cpp",
+				"src/tools/ecode/projectdirectorytree.cpp",
+				"src/tools/ecode/plugins/git/git.cpp",
+				"src/tools/ecode/plugins/git/gitdiff.cpp",
+				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
+				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
+		filter { "system:not windows", "system:not haiku" }
+			links { "pthread" }
+		filter "system:macosx"
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+			files { "src/tools/eproc/process_collector.cpp",
+				"src/tools/eproc/platform/macos/process_collector_macos.cpp",
+				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
+		filter "system:haiku"
+			links { "bsd", "network" }
+		filter "system:bsd"
+			links { "util" }
+		filter {}
 		eepp_module_backward_add( false )
+
+		filter { "system:linux" }
+			files { "src/tools/eproc/process_collector.cpp",
+				"src/tools/eproc/platform/linux/process_collector_linux.cpp",
+				"src/tools/eproc/platform/linux/gpu_reader_nvidia.cpp",
+				"src/tools/eproc/platform/linux/gpu_reader_drm.cpp",
+				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp" }
+		filter {}
+
 		build_link_configuration( "eepp-unit_tests", true )
 
 if os.isfile("external_projects.lua") then

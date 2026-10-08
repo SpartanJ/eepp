@@ -22,6 +22,7 @@
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/textundostack.hpp>
 #include <functional>
+#include <memory>
 #include <vector>
 
 using namespace EE::System;
@@ -38,6 +39,15 @@ struct DocumentContentChange {
 
 class EE_API TextDocument {
   public:
+	class EE_API ScopedReadLock : NonCopyable {
+	  public:
+		explicit ScopedReadLock( const TextDocument& document );
+
+	  private:
+		Lock mLinesLock;
+		Lock mDocumentLock;
+	};
+
 	static bool isTextDocumentCommand( std::string_view cmd );
 
 	static bool isTextDocumentCommand( String::HashType cmdHash );
@@ -123,6 +133,7 @@ class EE_API TextDocument {
 
 	typedef std::function<void()> DocumentCommand;
 	typedef std::function<void( Client* )> DocumentRefCommand;
+	typedef UnorderedMap<std::string, DocumentRefCommand> DocumentRefCommands;
 
 	TextDocument( bool verbose = true );
 
@@ -212,6 +223,8 @@ class EE_API TextDocument {
 	std::string getHashHexString() const;
 
 	String getText( const TextRange& range ) const;
+
+	void getTextToBuffer( const TextRange& range, String& buffer ) const;
 
 	String getText() const;
 
@@ -439,6 +452,9 @@ class EE_API TextDocument {
 
 	void setCommand( const std::string& command, const DocumentRefCommand& func );
 
+	/** Installs an immutable command table shared by documents with the same client type. */
+	void setSharedRefCommands( std::shared_ptr<const DocumentRefCommands> commands );
+
 	bool hasCommand( const std::string& command );
 
 	bool removeCommand( const std::string& command );
@@ -561,6 +577,14 @@ class EE_API TextDocument {
 	void setAutoCloseBracketsPairs(
 		const std::vector<std::pair<String::StringBaseType, String::StringBaseType>>&
 			autoCloseBracketsPairs );
+
+	bool getTabOutEnabled() const;
+
+	void setTabOutEnabled( bool enabled );
+
+	const String& getTabOutChars() const;
+
+	void setTabOutChars( const String& chars );
 
 	bool isDirtyOnFileSystem() const;
 
@@ -746,6 +770,9 @@ class EE_API TextDocument {
 
 	String toString();
 
+	/** Convert the document to UTF-8, reusing the output buffer capacity. */
+	void toUtf8String( std::string& stream );
+
 	std::string toUtf8String();
 
   protected:
@@ -778,6 +805,7 @@ class EE_API TextDocument {
 	bool mTrimTrailingWhitespaces{ false };
 	bool mVerbose{ false };
 	bool mAutoCloseBrackets{ false };
+	bool mTabOutEnabled{ false };
 	bool mDirtyOnFileSystem{ false };
 	bool mSaving{ false };
 	bool mDeleteOnClose{ false };
@@ -787,6 +815,7 @@ class EE_API TextDocument {
 	bool mDoingTextInput{ false };
 	bool mInsertingText{ false };
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> mAutoCloseBracketsPairs;
+	String mTabOutChars{ ")]}'\":;>," };
 	Uint32 mIndentWidth{ 4 };
 	IndentType mIndentType{ IndentType::IndentTabs };
 	AutoIndentConfig mAutoIndent{ AutoIndentConfig::Smart };
@@ -797,6 +826,8 @@ class EE_API TextDocument {
 	Uint32 mPageSize{ 10 };
 	UnorderedMap<std::string, DocumentCommand> mCommands;
 	UnorderedMap<std::string, DocumentRefCommand> mRefCommands;
+	std::shared_ptr<const DocumentRefCommands> mSharedRefCommands;
+	std::unique_ptr<UnorderedSet<std::string>> mRemovedDefaultCommands;
 	String mNonWordChars;
 	Client* mActiveClient{ nullptr };
 	mutable Mutex mLoadingMutex;
@@ -805,10 +836,16 @@ class EE_API TextDocument {
 	size_t mLastSelection{ 0 };
 	std::unique_ptr<SyntaxHighlighter> mHighlighter;
 	Mutex mStopFlagsMutex;
-	UnorderedMap<bool*, std::unique_ptr<bool>> mStopFlags;
+	UnorderedMap<std::atomic_bool*, std::unique_ptr<std::atomic_bool>> mStopFlags;
 	FoldRangeService mFoldRangeService;
 
 	void initializeCommands();
+
+	using BuiltinDocumentCommand = void ( * )( TextDocument* );
+
+	static const UnorderedMap<std::string, BuiltinDocumentCommand>& getBuiltinCommands();
+
+	bool isDefaultCommandRemoved( const std::string& command ) const;
 
 	void cleanChangeId();
 
@@ -831,6 +868,8 @@ class EE_API TextDocument {
 	void notifyLineCountChanged( const size_t& lastCount, const size_t& newCount );
 
 	void notifyLineChanged( const Int64& lineIndex );
+
+	void notifyLinesChanged( const Int64& firstLine, const Int64& lastLine );
 
 	void notifyUndoRedo( const UndoRedo& eventType );
 

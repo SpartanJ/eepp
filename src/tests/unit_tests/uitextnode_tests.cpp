@@ -1,9 +1,9 @@
 #include "utest.hpp"
 
 #include <eepp/graphics/fontfamily.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/richtext.hpp>
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
@@ -39,7 +39,7 @@ static UISceneNode* createRichTextScene() {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	if ( !font->loaded() ) {
 		Engine::destroySingleton();

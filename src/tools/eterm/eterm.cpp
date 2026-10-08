@@ -1,233 +1,23 @@
-#include <args/args.hxx>
-#include <eepp/ee.hpp>
-#include <eterm/terminal/terminaldisplay.hpp>
+#include "eterm.hpp"
 #include <iostream>
 
-EE::Window::Window* win = NULL;
-std::shared_ptr<TerminalDisplay> terminal = nullptr;
-Clock lastRender;
-Clock secondsCounter;
-Time frameTime{ Time::Zero };
-bool benchmarkMode{ false };
-bool warnBeforeClose{ false };
-std::string windowStringData;
-std::map<std::string, TerminalColorScheme> terminalColorSchemes;
-bool displayingWarnBeforeClose{ false };
-bool yesPicked{ true };
-bool needsRedraw{ false };
-Rectf yesBtn;
-Rectf noBtn;
+namespace eterm {
 
-void loadColorSchemes( const std::string& resPath ) {
-	auto configPath = Sys::getConfigPath( "eterm" );
-	auto colorSchemes =
-		TerminalColorScheme::loadFromFile( resPath + "colorschemes/terminalcolorschemes.conf" );
-	auto colorSchemesPath = configPath + FileSystem::getOSSlash() + "colorschemes";
-	if ( FileSystem::isDirectory( colorSchemesPath ) ) {
-		auto colorSchemesFiles = FileSystem::filesGetInPath( colorSchemesPath );
-		for ( auto& file : colorSchemesFiles ) {
-			auto colorSchemesInFile = TerminalColorScheme::loadFromFile( file );
-			std::copy( colorSchemesInFile.begin(), colorSchemesInFile.end(),
-					   std::back_inserter( colorSchemes ) );
-		}
-	}
-	for ( auto colorScheme : colorSchemes )
-		terminalColorSchemes.insert( { colorScheme.getName(), colorScheme } );
+struct TabWidgetSplitterDeleter {
+	void operator()( UITabWidgetSplitter* splitter ) const { eeDelete( splitter ); }
+};
+
+void App::TerminalSplitterClient::onTabCreated( UITab* tab, UIWidget* widget ) {
+	if ( mApp.terminalIcon && widget && widget->isType( UI_TYPE_TERMINAL ) )
+		tab->setIcon( mApp.terminalIcon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+	mApp.configureTab( tab );
 }
 
-void inputCallback( InputEvent* event ) {
-	if ( !terminal || event->Type == InputEvent::EventsSent )
-		return;
-
-	switch ( event->Type ) {
-		case InputEvent::MouseMotion: {
-			terminal->onMouseMove( win->getInput()->getMousePos(),
-								   win->getInput()->getPressTrigger() );
-			break;
-		}
-		case InputEvent::MouseButtonDown: {
-			if ( displayingWarnBeforeClose ) {
-				if ( ( win->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
-					if ( yesBtn.contains( win->getInput()->getMousePos().asFloat() ) ) {
-						win->close();
-					} else if ( noBtn.contains( win->getInput()->getMousePos().asFloat() ) ) {
-						displayingWarnBeforeClose = false;
-						needsRedraw = true;
-					}
-				}
-			} else {
-				terminal->onMouseDown( win->getInput()->getMousePos(),
-									   win->getInput()->getPressTrigger() );
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-				win->startTextInput();
-#endif
-			}
-			break;
-		}
-		case InputEvent::MouseButtonUp: {
-			terminal->onMouseUp( win->getInput()->getMousePos(),
-								 win->getInput()->getReleaseTrigger() );
-
-			if ( win->getInput()->getDoubleClickTrigger() ) {
-				terminal->onMouseDoubleClick( win->getInput()->getMousePos(),
-											  win->getInput()->getDoubleClickTrigger() );
-			}
-
-			break;
-		}
-		case InputEvent::Window: {
-			switch ( event->window.type ) {
-				case InputEvent::WindowKeyboardFocusLost:
-				case InputEvent::WindowKeyboardFocusGain: {
-					terminal->setFocus( win->hasFocus() );
-					break;
-				}
-			}
-			break;
-		}
-		case InputEvent::KeyUp: {
-			break;
-		}
-		case InputEvent::KeyDown: {
-			if ( displayingWarnBeforeClose ) {
-				if ( event->key.keysym.sym == EE::Window::KEY_TAB ||
-					 event->key.keysym.sym == EE::Window::KEY_LEFT ||
-					 event->key.keysym.sym == EE::Window::KEY_RIGHT ) {
-					yesPicked = !yesPicked;
-					needsRedraw = true;
-				} else if ( event->key.keysym.sym == EE::Window::KEY_Y ) {
-					win->close();
-				} else if ( event->key.keysym.sym == EE::Window::KEY_N ) {
-					displayingWarnBeforeClose = false;
-					needsRedraw = true;
-				} else if ( event->key.keysym.sym == EE::Window::KEY_RETURN ||
-							event->key.keysym.sym == EE::Window::KEY_KP_ENTER ) {
-					if ( yesPicked )
-						win->close();
-					else {
-						displayingWarnBeforeClose = false;
-						needsRedraw = true;
-					}
-				} else if ( event->key.keysym.sym == EE::Window::KEY_ESCAPE ) {
-					displayingWarnBeforeClose = false;
-					needsRedraw = true;
-				}
-			} else {
-				terminal->onKeyDown( event->key.keysym.sym, event->key.keysym.unicode,
-									 event->key.keysym.mod, event->key.keysym.scancode );
-			}
-
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-			if ( event->key.keysym.sym == KEY_RETURN ||
-				 event->key.keysym.scancode == SCANCODE_RETURN ) {
-				win->startTextInput();
-			}
-#endif
-			break;
-		}
-		case InputEvent::TextInput: {
-			terminal->onTextInput( event->text.text );
-			break;
-		}
-		case InputEvent::TextEditing: {
-			terminal->onTextEditing( event->textediting.text, event->textediting.start,
-									 event->textediting.length );
-
-			break;
-		}
-		case InputEvent::VideoExpose:
-			terminal->setFocus( win->hasFocus() );
-			terminal->invalidate();
-			break;
-		case InputEvent::VideoResize: {
-			terminal->setPosition( { 0, 0 } );
-			terminal->setSize( win->getSize().asFloat() );
-			break;
-		}
-	}
+void App::TerminalSplitterClient::onWidgetFocusChange( UIWidget* ) {
+	mApp.updateWindowTitle();
 }
 
-bool onCloseRequestCallback( EE::Window::Window* ) {
-	if ( warnBeforeClose &&
-		 Sys::processHasChildren( terminal->getTerminal()->getProcess()->pid() ) ) {
-		displayingWarnBeforeClose = true;
-		needsRedraw = true;
-		return false;
-	}
-	return true;
-}
-
-EE_MAIN_FUNC int main( int argc, char* argv[] ) {
-#ifdef EE_DEBUG
-	Log::instance()->setLogToStdOut( true );
-	Log::instance()->setLiveWrite( true );
-#endif
-	args::ArgumentParser parser( "eterm" );
-	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
-	args::ValueFlag<std::string> shell( parser, "shell", "Shell name or path", { 's', "shell" },
-										"" );
-	args::ValueFlag<std::string> shellArgs( parser, "shell-args", "Shell command line arguments",
-											{ "shell-args" }, "" );
-	args::ValueFlag<size_t> historySize( parser, "scrollback", "Maximum history size (lines)",
-										 { 'l', "scrollback" }, 10000 );
-	args::Flag fb( parser, "framebuffer", "Use frame buffer (more memory usage, less CPU usage)",
-				   { "fb", "framebuffer" } );
-	args::ValueFlag<std::string> fontPath( parser, "fontpath", "Font path", { 'f', "font" } );
-	args::ValueFlag<std::string> fallbackFontPathF( parser, "fallback-fontpath",
-													"Fallback Font path", { "fallback-font" } );
-	args::ValueFlag<Float> fontSize( parser, "fontsize", "Font size (in dp)", { "fontsize" }, 11 );
-	args::ValueFlag<Float> width( parser, "winwidth", "Window width (in dp)", { "width" }, 1280 );
-	args::ValueFlag<Float> height( parser, "winheight", "Window height (in dp)", { "height" },
-								   720 );
-	args::ValueFlag<Float> pixelDensityConf( parser, "pixel-density",
-											 "Set default application pixel density",
-											 { 'd', "pixel-density" } );
-	args::Positional<std::string> wd( parser, "wording-dir", "Working Directory / executable" );
-	args::Flag closeOnExit( parser, "close-on-exit",
-							"close the application when the executable exits", { 'c', "close" } );
-	args::ValueFlag<std::string> executeInShell(
-		parser, "execute-in-shell", "execute program in shell", { 'e', "execute" }, "" );
-	args::Flag vsync( parser, "vsync", "Enable vsync", { "vsync" } );
-	args::ValueFlag<std::string> colorScheme( parser, "color-scheme", "Load color scheme",
-											  { "color-scheme" }, "" );
-	args::Flag listColorSchemes( parser, "color-schemes", "Lists color schemes",
-								 { "list-color-schemes" } );
-	args::ValueFlag<Uint32> maxFPS( parser, "max-fps",
-									"Maximum rendering frames per second of the terminal. Default "
-									"value will be the refresh rate of the screen.",
-									{ "max-fps" }, 0 );
-	args::MapFlag<std::string, TerminalCursorMode> cursorStyle(
-		parser, "cursor-style",
-		"Sets the cursor-style (accepted values: blinking_block, steady_block, blink_underline, "
-		"steady_underline, blink_bar, steady_bar)",
-		{ "cursor-style" }, TerminalCursorHelper::getTerminalCursorModeMap(),
-		TerminalCursorMode::SteadyUnderline );
-	args::Flag benchmarkModeFlag(
-		parser, "benchmark-mode",
-		"Render as much as possible to measure the rendering performance.", { "benchmark-mode" } );
-	args::Flag warnBeforeCloseFlag(
-		parser, "warn-before-closing",
-		"Prompts for confirmation if a program is still running when closing the terminal.",
-		{ "warn-before-closing" } );
-
-	try {
-		parser.ParseCLI( argc, argv );
-	} catch ( const args::Help& ) {
-		std::cout << parser;
-		return EXIT_SUCCESS;
-	} catch ( const args::ParseError& e ) {
-		std::cerr << e.what() << std::endl;
-		std::cerr << parser;
-		return EXIT_FAILURE;
-	} catch ( args::ValidationError& e ) {
-		std::cerr << e.what() << std::endl;
-		std::cerr << parser;
-		return EXIT_FAILURE;
-	}
-
-	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
-	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
-
+std::string App::getResourcePath() const {
 	std::string resPath = Sys::getProcessPath();
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	if ( String::contains( resPath, "ecode.app" ) ) {
@@ -244,210 +34,1057 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 #endif
 	resPath += "assets";
 	FileSystem::dirAddSlashAtEnd( resPath );
+	return resPath;
+}
 
-	if ( listColorSchemes.Get() || colorScheme )
-		loadColorSchemes( resPath );
+String App::i18n( const std::string& key, const String& defaultValue ) const {
+	return scene ? scene->i18n( key, defaultValue ) : defaultValue;
+}
 
-	if ( listColorSchemes.Get() ) {
-		std::cout << "Color schemes:\n";
-		for ( const auto& tcs : terminalColorSchemes )
-			std::cout << "\t" << tcs.first << "\n";
-		return EXIT_SUCCESS;
+void App::loadColorSchemes( const std::string& resPath ) {
+	auto colorSchemes =
+		TerminalColorScheme::loadFromFile( resPath + "colorschemes/terminalcolorschemes.conf" );
+	const std::string configColorSchemesPath =
+		Sys::getConfigPath( "eterm" ) + FileSystem::getOSSlash() + "colorschemes";
+	if ( FileSystem::isDirectory( configColorSchemesPath ) ) {
+		for ( const auto& file : FileSystem::filesGetInPath( configColorSchemesPath ) ) {
+			auto fileColorSchemes = TerminalColorScheme::loadFromFile( file );
+			colorSchemes.insert( colorSchemes.end(),
+								 std::make_move_iterator( fileColorSchemes.begin() ),
+								 std::make_move_iterator( fileColorSchemes.end() ) );
+		}
+	}
+	for ( auto& colorScheme : colorSchemes ) {
+		std::string name = colorScheme.getName();
+		terminalColorSchemes.emplace( std::move( name ), std::move( colorScheme ) );
+	}
+}
+
+UITerminal* App::terminalFromTab( UITab* tab ) {
+	return tab && tab->getOwnedWidget() && tab->getOwnedWidget()->isType( UI_TYPE_TERMINAL )
+			   ? tab->getOwnedWidget()->asType<UITerminal>()
+			   : nullptr;
+}
+
+void App::savePreferences() {
+	if ( config && !config->savePreferences() )
+		Log::error( "Could not save eterm configuration to %s", config->getConfigPath() );
+}
+
+void App::saveWindowState() {
+	if ( !config || !appWindow )
+		return;
+	config->captureWindowState( appWindow );
+	if ( !config->saveWindowState() )
+		Log::error( "Could not save eterm window state to %s", config->getConfigPath() );
+}
+
+void App::forEachTerminal( const std::function<void( UITerminal* )>& fn ) {
+	if ( !tabSplitter )
+		return;
+	tabSplitter->forEachWidgetType(
+		UI_TYPE_TERMINAL, [&fn]( UIWidget* widget ) { fn( widget->asType<UITerminal>() ); } );
+}
+
+void App::createNewTerminal() {
+	auto* current = tabSplitter ? tabSplitter->getCurWidget() : nullptr;
+	auto* terminal =
+		current && current->isType( UI_TYPE_TERMINAL ) ? current->asType<UITerminal>() : nullptr;
+	switch ( config->terminal.newTerminalBehavior ) {
+		case NewTerminalBehavior::VerticalSplit:
+			createTerminalSplit( SplitDirection::Right, terminal );
+			break;
+		case NewTerminalBehavior::HorizontalSplit:
+			createTerminalSplit( SplitDirection::Bottom, terminal );
+			break;
+		default:
+			createTerminal();
+			break;
+	}
+}
+
+void App::updateWindowTitle() {
+	if ( !appWindow )
+		return;
+	String title{ "eterm" };
+	if ( tabSplitter ) {
+		if ( auto* terminal = tabSplitter->getCurWidget() &&
+									  tabSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL )
+								  ? tabSplitter->getCurWidget()->asType<UITerminal>()
+								  : nullptr;
+			 terminal && !terminal->getTitle().empty() ) {
+			title += " - ";
+			title += terminal->getTitle();
+		}
+	}
+	if ( benchmarkMode ) {
+		title += " - ";
+		title += String::toString( appWindow->getFPS() );
+		title += " " + i18n( "fps", "FPS" );
+	}
+	appWindow->setTitle( title );
+}
+
+bool App::hasTerminals() const {
+	bool found = false;
+	if ( tabSplitter )
+		tabSplitter->forEachWidgetStoppable( [&found]( UIWidget* ) {
+			found = true;
+			return true;
+		} );
+	return found;
+}
+
+bool App::hasRunningChildren( UITab* tab ) {
+	auto* terminal = terminalFromTab( tab );
+	return terminal && terminal->getTerm() &&
+		   Sys::processHasChildren( terminal->getTerm()->getProcessId() );
+}
+
+void App::closeTab( UITab* tab ) {
+	if ( !tabSplitter || !tab || !tab->getOwnedWidget() )
+		return;
+	tabSplitter->closeTab( tab->getOwnedWidget()->asType<UIWidget>(),
+						   UITabWidget::FocusTabBehavior::Default );
+}
+
+void App::queueExitCloseTab( UITab* tab ) {
+	if ( tab && std::find( pendingExitCloseTabs.begin(), pendingExitCloseTabs.end(), tab ) ==
+					pendingExitCloseTabs.end() ) {
+		pendingExitCloseTabs.emplace_back( tab );
+	}
+}
+
+void App::queueExitedTabs() {
+	if ( !terminalConfig.closeOnExit )
+		return;
+	tabSplitter->forEachTab( [this]( UITab* tab ) {
+		auto* terminal = terminalFromTab( tab );
+		if ( !terminal || !terminal->getTerm() )
+			return;
+		const auto& session = terminal->getTerm()->getSession();
+		auto snapshot = session ? session->snapshot() : nullptr;
+		if ( snapshot && snapshot->processExited )
+			queueExitCloseTab( tab );
+	} );
+}
+
+void App::requestCloseTab( UITab* tab ) {
+	if ( !warnBeforeClose || !hasRunningChildren( tab ) ) {
+		closeTab( tab );
+		return;
+	}
+	if ( closeDialog )
+		return;
+	closeDialog = UIMessageBox::New(
+		UIMessageBox::OK_CANCEL,
+		i18n( "close_terminal_running_process_confirm",
+			  "Are you sure you want to close this terminal?\nIt is still running a process." ) );
+	closeDialogWidget = tab->getOwnedWidget()->asType<UIWidget>();
+	closeDialog->setTitle( "eterm" );
+	closeDialog->on( Event::OnConfirm, [this]( const Event* ) {
+		if ( closeDialogWidget && tabSplitter->ownedWidgetExists( closeDialogWidget ) )
+			tabSplitter->closeTab( closeDialogWidget, UITabWidget::FocusTabBehavior::Default );
+	} );
+	closeDialog->on( Event::OnClose, [this]( const Event* ) {
+		closeDialog = nullptr;
+		closeDialogWidget = nullptr;
+	} );
+	closeDialog->center();
+	closeDialog->showWhenReady();
+}
+
+void App::renameSession( UITerminal* terminal ) {
+	if ( !terminal )
+		return;
+	auto* msgBox =
+		UIMessageBox::New( UIMessageBox::INPUT, i18n( "new_terminal_name", "New terminal name:" ) );
+	msgBox->setTitle( "eterm" );
+	msgBox->getTextInput()->setHint( i18n( "any_name_ellipsis", "Any name..." ) );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->on( Event::OnConfirm, [msgBox, terminal]( const Event* ) {
+		terminal->setTitle( msgBox->getTextInput()->getText().toUtf8() );
+		msgBox->close();
+		terminal->setFocus();
+	} );
+	msgBox->showWhenReady();
+}
+
+void App::maximizeTabWidget( UITabWidget* tabWidget ) {
+	if ( !tabWidget || scene->getRoot()->hasChild( "detached_tab_widget_win" ) )
+		return;
+
+	UIWindow::StyleConfig winCfg;
+	winCfg.WinFlags = UI_WIN_SHADOW | UI_WIN_MODAL | UI_WIN_EPHEMERAL | UI_WIN_NO_DECORATION;
+	auto* win = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, winCfg );
+	maximizedTabWidgetWindow = win;
+	maximizedTabWidget = tabWidget;
+	win->setPixelsSize( scene->getPixelsSize() - PixelDensity::dpToPx( 64 ) );
+	win->setId( "detached_tab_widget_win" );
+	win->getModalWidget()->onClick( [this]( auto ) { restoreMaximizedTabWidget(); } );
+	win->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_LEFT | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT );
+	win->toFront();
+	win->center();
+	win->setKeyBindingCommand( "close-maximized-tab-widget",
+							   [this] { restoreMaximizedTabWidget(); } );
+	win->getKeyBindings().addKeybind( { KEY_ESCAPE }, "close-maximized-tab-widget" );
+	win->setCheckEphemeralCloseFn( []( Node* focusNode ) {
+		if ( focusNode->isType( UI_TYPE_POPUPMENU ) )
+			return false;
+		if ( focusNode->getSceneNode()->isUISceneNode() ) {
+			auto* sceneNode = static_cast<UISceneNode*>( focusNode->getSceneNode() );
+			auto* widgetTreeView = sceneNode->getRoot()->hasChild( "widget-tree-view" );
+			if ( widgetTreeView &&
+				 ( focusNode == widgetTreeView || widgetTreeView->inParentTreeOf( focusNode ) ) )
+				return false;
+		}
+		return true;
+	} );
+	auto* tabWidgetParent = tabWidget->getParent();
+	const bool wasFirstSplit = tabWidgetParent->isType( UI_TYPE_SPLITTER ) &&
+							   tabWidgetParent->asType<UISplitter>()->getFirstWidget() == tabWidget;
+	auto* nodeLink = UINodeLink::NewLink( tabWidget );
+	maximizedTabWidgetLink = nodeLink;
+	if ( wasFirstSplit )
+		nodeLink->setClass( "was_first_split" );
+	tabWidget->setParent( win );
+	tabWidget->setId( "detached_tab_widget" );
+	tabWidget->setPixelsPosition( Vector2f::Zero );
+	tabWidget->setPixelsSize( win->getContainer()->getPixelsSize() );
+	tabWidget->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_LEFT | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT );
+	if ( !tabWidget->inParentTreeOf( scene->getEventDispatcher()->getFocusNode() ) )
+		tabWidget->getTabSelected()->getOwnedWidget()->setFocus();
+	win->on( Event::OnWindowClose, [this]( auto ) { restoreMaximizedTabWidget(); } );
+	nodeLink->setParent( tabWidgetParent );
+	nodeLink->setId( "nodelink_tab_widget" );
+	if ( wasFirstSplit && tabWidgetParent->isType( UI_TYPE_SPLITTER ) )
+		tabWidgetParent->asType<UISplitter>()->swap();
+
+	auto* fullscreenImg = UIImage::New();
+	fullscreenImg->unsetFlags( UI_AUTO_SIZE );
+	fullscreenImg->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	fullscreenImg->setParent( win );
+	fullscreenImg->setSize( { 24, tabWidget->getTabBar()->getSize().getHeight() } );
+	fullscreenImg->setPosition( { tabWidget->getSize().getWidth() - 24, 0 } );
+	fullscreenImg->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
+	if ( auto* icon = scene->findIcon( "fullscreen" ) )
+		fullscreenImg->setDrawable( icon->createDrawable( PixelDensity::dpToPxI( 16 ) ) );
+	fullscreenImg->setVerticalAlign( UI_VALIGN_CENTER );
+	fullscreenImg->setHorizontalAlign( UI_HALIGN_CENTER );
+	fullscreenImg->addClass( "pseudo_anchor" );
+	fullscreenImg->toFront();
+	fullscreenImg->onClick( [this]( const Event* ) {
+		restoreMaximizedTabWidget();
+		appWindow->getCursorManager()->set( Cursor::SysType::SysArrow );
+	} );
+}
+
+void App::restoreMaximizedTabWidget() {
+	if ( !scene || !SceneManager::isActive() )
+		return;
+	if ( !maximizedTabWidgetLink || !maximizedTabWidget )
+		return;
+	auto* nodeLink = maximizedTabWidgetLink;
+	auto* curTabWidget = maximizedTabWidget;
+	auto* win = maximizedTabWidgetWindow;
+	auto* splitterParent = nodeLink->getParent();
+	nodeLink->setParent( scene );
+	curTabWidget->setParent( splitterParent );
+	curTabWidget->setAnchors( 0 );
+	curTabWidget->setId( "" );
+	if ( nodeLink->hasClass( "was_first_split" ) && splitterParent->isType( UI_TYPE_SPLITTER ) ) {
+		splitterParent->asType<UISplitter>()->swap();
+	}
+	nodeLink->close();
+	maximizedTabWidgetLink = nullptr;
+	maximizedTabWidget = nullptr;
+	maximizedTabWidgetWindow = nullptr;
+	if ( win && !win->isClosing() )
+		win->close();
+}
+
+void App::configureTab( UITab* tab ) {
+	tab->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
+		const auto* menuEvent = static_cast<const ContextMenuEvent*>( event );
+		auto* menu = menuEvent->getMenu();
+		auto* clickedTab = event->getNode()->asType<UITab>();
+		auto* terminal = terminalFromTab( clickedTab );
+		if ( !menu || !terminal || !clickedTab->getTabWidget() )
+			return;
+
+		const auto addItem = [this, menu, terminal]( const String& text, const std::string& icon,
+													 const std::string& command ) {
+			DrawablePtr drawable;
+			if ( auto* menuIcon = scene->findIcon( icon ) )
+				drawable = menuIcon->createDrawable( PixelDensity::dpToPxI( 12 ) );
+			auto* item = menu->add( text, std::move( drawable ),
+									terminal->getKeyBindings().getCommandKeybindString( command ) );
+			item->setId( command );
+			return item;
+		};
+		addItem( i18n( "close_tab", "Close Tab" ), "document-close", "close-tab" );
+		addItem( i18n( "close_other_tabs", "Close Other Tabs" ), "", "close-other-tabs" );
+		addItem( i18n( "close_clean_tabs", "Close Clean Tabs" ), "", "close-clean-tabs" );
+		addItem( i18n( "close_all_tabs", "Close All Tabs" ), "", "close-all-tabs" );
+		addItem( i18n( "close_tabs_to_the_left", "Close Tabs To The Left" ), "",
+				 "close-tabs-to-the-left" );
+		addItem( i18n( "close_tabs_to_the_right", "Close Tabs To The Right" ), "",
+				 "close-tabs-to-the-right" );
+
+		menu->addSeparator();
+		addItem( i18n( "split_left", "Split Left" ), "split-horizontal", "split-left" );
+		addItem( i18n( "split_right", "Split Right" ), "split-horizontal", "split-right" );
+		addItem( i18n( "split_top", "Split Top" ), "split-vertical", "split-top" );
+		addItem( i18n( "split_bottom", "Split Bottom" ), "split-vertical", "split-bottom" );
+
+		menu->addSeparator();
+		auto* exclusiveMode = menu->addCheckBox(
+			i18n( "enable_exclusive_mode", "Enable Exclusive Mode" ), terminal->getExclusiveMode(),
+			terminal->getKeyBindings().getCommandKeybindString(
+				UITerminal::getExclusiveModeToggleCommandName() ) );
+		exclusiveMode->setId( UITerminal::getExclusiveModeToggleCommandName() );
+		addItem( i18n( "rename_session", "Rename Session" ), "", "terminal-rename" );
+		addItem( i18n( "settings", "Settings" ), "settings", "open-settings" );
+
+		menu->addSeparator();
+		const bool canMove = clickedTab->getTabWidget()->getTabCount() > 1;
+		const Uint32 tabIndex = clickedTab->getTabWidget()->getTabIndex( clickedTab );
+		addItem( i18n( "move_tab_left", "Move Tab Left" ), "", "move-tab-left" )
+			->setEnabled( canMove && tabIndex > 0 );
+		addItem( i18n( "move_tab_right", "Move Tab Right" ), "", "move-tab-right" )
+			->setEnabled( canMove && tabIndex + 1 < clickedTab->getTabWidget()->getTabCount() );
+		addItem( i18n( "move_tab_to_start", "Move Tab To Start" ), "window", "move-tab-to-start" )
+			->setEnabled( canMove );
+		addItem( i18n( "move_tab_to_end", "Move Tab To End" ), "window", "move-tab-to-end" )
+			->setEnabled( canMove );
+
+		menu->addSeparator();
+		addItem( scene->getRoot()->hasChild( "detached_tab_widget_win" )
+					 ? i18n( "restore_maximized_tab_widget", "Restore Maximized Tab Widget" )
+					 : i18n( "maximize_tab_widget", "Maximize Tab Widget" ),
+				 "fullscreen",
+				 scene->getRoot()->hasChild( "detached_tab_widget_win" )
+					 ? "restore-maximized-tab-widget"
+					 : "maximize-tab-widget" );
+
+		menu->on( Event::OnItemClicked, [this, clickedTab, terminal]( const Event* itemEvent ) {
+			if ( !itemEvent->getNode()->isType( UI_TYPE_MENUITEM ) )
+				return;
+			const auto& command = itemEvent->getNode()->getId();
+			auto* previous = tabSplitter->getCurWidget();
+			tabSplitter->setCurrentWidget( terminal );
+
+			if ( command == "close-clean-tabs" ) {
+				tabSplitter->tryCloseAllTabs( terminal, UITabWidget::FocusTabBehavior::Default );
+			} else if ( command == "move-tab-to-start" ) {
+				clickedTab->getTabWidget()->moveTab( clickedTab, 0 );
+			} else if ( command == "move-tab-to-end" ) {
+				clickedTab->getTabWidget()->moveTab( clickedTab,
+													 clickedTab->getTabWidget()->getTabCount() );
+			} else if ( command == "maximize-tab-widget" ) {
+				maximizeTabWidget( clickedTab->getTabWidget() );
+			} else if ( command == "restore-maximized-tab-widget" ) {
+				restoreMaximizedTabWidget();
+			} else if ( command == "open-settings" ) {
+				settingsActions->showSettings();
+			} else {
+				terminal->execute( command );
+			}
+
+			if ( previous && tabSplitter->ownedWidgetExists( previous ) )
+				tabSplitter->setCurrentWidget( previous );
+		} );
+	} );
+}
+
+UITerminal* App::createTerminal( UITabWidget* target ) {
+	if ( !target && tabSplitter ) {
+		auto* current = tabSplitter->getCurWidget();
+		target = current ? tabSplitter->tabWidgetFromWidget( current )
+						 : tabSplitter->getFirstTabWidget();
+	}
+	if ( !target )
+		return nullptr;
+	Sizef initialSize{ 16, 16 };
+	if ( target->getContainerNode() &&
+		 target->getContainerNode()->getPixelsSize() != Sizef::Zero ) {
+		initialSize = target->getContainerNode()->getPixelsSize();
 	}
 
-	displayManager->enableScreenSaver();
-	displayManager->enableMouseFocusClickThrough();
-	displayManager->disableBypassCompositor();
+	auto* terminal = UITerminal::New(
+		terminalFont, terminalFontSize, initialSize, terminalConfig.program,
+		terminalConfig.arguments, {}, terminalConfig.workingDirectory, terminalConfig.historySize,
+		nullptr, terminalConfig.useFrameBuffer, terminalConfig.keepAlive );
+	if ( !terminal || !terminal->getTerm() ) {
+		eeSAFE_DELETE( terminal );
+		return nullptr;
+	}
 
-	Sizei winSize( width.Get(), height.Get() );
-	win = Engine::instance()->createWindow(
-		WindowSettings( winSize.getWidth(), winSize.getHeight(), "eterm", WindowStyle::Default,
-						WindowBackend::Default, 32, resPath + "icon/eterm.png",
-						pixelDensityConf ? pixelDensityConf.Get()
-										 : currentDisplay->getPixelDensity() ),
-		ContextSettings( vsync.Get(), benchmarkModeFlag.Get() ? 0 : maxFPS.Get() ) );
+	terminal->getTerm()->setAllowMemoryTrimming( true );
+	terminal->getTerm()->setCursorMode( terminalConfig.cursorStyle );
+	terminal->getTerm()->setFontHinting( terminalConfig.fontHinting );
+	terminal->getTerm()->setFontAntialiasing( terminalConfig.fontAntialiasing );
+	terminal->setExclusiveMode( config->terminal.exclusiveMode );
+	terminal->setScrollViewType( config->terminal.scrollBarType );
+	terminal->setVerticalScrollMode( config->terminal.scrollBarMode );
+	if ( selectedColorScheme )
+		terminal->setColorScheme( *selectedColorScheme );
 
-	if ( win->isOpen() ) {
-		win->setClearColor( RGB( 0, 0, 0 ) );
+	auto* tab =
+		tabSplitter->createWidgetInTabWidget( target, terminal, i18n( "terminal", "Terminal" ) )
+			.first;
+	addTabKeyBindings( terminal );
+	terminal->on( Event::OnTitleChange, [this, tab, terminal]( const Event* ) {
+		tab->setText( terminal->getTitle().empty() ? i18n( "terminal", "Terminal" )
+												   : String( terminal->getTitle() ) );
+		if ( tabSplitter->getCurWidget() == terminal )
+			updateWindowTitle();
+	} );
+	terminal->getTerm()->pushEventCallback( [this, tab]( const TerminalDisplay::Event& event ) {
+		if ( terminalConfig.closeOnExit && event.type == TerminalDisplay::EventType::PROCESS_EXIT )
+			queueExitCloseTab( tab );
+	} );
+	terminal->on( Event::OnCreateContextMenu, [this, terminal]( const Event* event ) {
+		auto menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
+		const auto addItem = [this, menu, terminal]( const String& text, const std::string& icon,
+													 const std::string& command ) {
+			DrawablePtr drawable;
+			if ( auto* menuIcon = scene->findIcon( icon ) )
+				drawable = menuIcon->createDrawable( PixelDensity::dpToPxI( 12 ) );
+			auto* item = menu->add( text, std::move( drawable ),
+									terminal->getKeyBindings().getCommandKeybindString( command ) );
+			item->setId( command );
+			return item;
+		};
+		menu->addSeparator();
+		addItem( i18n( "new_terminal", "New Terminal" ), "terminal", "create-new-terminal" );
+		menu->addSeparator();
+		addItem( i18n( "settings", "Settings" ), "settings", "open-settings" );
+		addItem( i18n( "key_bindings", "Keybindings" ), "keybindings", "open-keybindings" );
+		menu->on( Event::OnItemClicked, [this, terminal]( const Event* itemEvent ) {
+			if ( !itemEvent->getNode()->isType( UI_TYPE_MENUITEM ) )
+				return;
+			const auto& command = itemEvent->getNode()->getId();
+			auto* previous = tabSplitter->getCurWidget();
+			tabSplitter->setCurrentWidget( terminal );
+			terminal->execute( command );
+			if ( previous && tabSplitter->ownedWidgetExists( previous ) )
+				tabSplitter->setCurrentWidget( previous );
+		} );
+	} );
+	tabSplitter->setCurrentWidget( terminal );
+	if ( !terminalConfig.executeInShell.empty() )
+		terminal->executeFile( terminalConfig.executeInShell );
+	terminal->setFocus();
+	updateWindowTitle();
+	return terminal;
+}
 
-		benchmarkMode = benchmarkModeFlag.Get();
-		warnBeforeClose = warnBeforeCloseFlag.Get();
+UITerminal* App::createTerminalSplit( SplitDirection direction, UIWidget* widget ) {
+	auto* source = widget ? tabSplitter->tabWidgetFromWidget( widget ) : nullptr;
+	auto* target = source ? tabSplitter->splitTabWidget( direction, source ) : nullptr;
+	return target ? createTerminal( target ) : nullptr;
+}
 
-		FontTrueType* fontMono = nullptr;
-		if ( fontPath && FileSystem::fileExists( fontPath.Get() ) ) {
-			FileInfo file( fontPath.Get() );
-			fontMono = FontTrueType::New( "monospace" );
-			if ( fontMono->loadFromFile( file.getFilepath() ) ) {
-				FontFamily::loadFromRegular( fontMono );
-			} else {
-				fontMono = nullptr;
+void App::moveTab( UIWidget* widget, int offset ) {
+	if ( !widget || offset == 0 )
+		return;
+	auto* tabs = tabSplitter->tabWidgetFromWidget( widget );
+	auto* tab = tabs ? tabs->getTabFromOwnedWidget( widget ) : nullptr;
+	if ( !tab )
+		return;
+	const Uint32 index = tabs->getTabIndex( tab );
+	if ( offset < 0 && index > 0 )
+		tabs->moveTab( tab, index - 1 );
+	else if ( offset > 0 && index + 1 < tabs->getTabCount() )
+		tabs->moveTab( tab, index + 1 );
+}
+
+void App::addTabKeyBindings( UITerminal* terminal ) {
+	registerTabCommands( *terminal, terminal );
+	terminal->setCommand( "terminal-rename", [this, terminal] { renameSession( terminal ); } );
+	terminal->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [terminal] {
+		terminal->setExclusiveMode( !terminal->getExclusiveMode() );
+	} );
+	applyKeybindings( terminal );
+}
+
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+void App::executeMenuCommand( const std::string& command ) {
+	if ( command == "create-new-terminal" ) {
+		createNewTerminal();
+		return;
+	}
+	if ( command == "open-settings" ) {
+		settingsActions->showSettings();
+		return;
+	}
+	if ( command == "open-keybindings" ) {
+		openKeybindings();
+		return;
+	}
+
+	auto* widget = tabSplitter ? tabSplitter->getCurWidget() : nullptr;
+	if ( !widget )
+		return;
+	if ( widget->isType( UI_TYPE_TERMINAL ) ) {
+		widget->asType<UITerminal>()->execute( command );
+	} else if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
+		auto* editor = widget->asType<UICodeEditor>();
+		editor->getDocument().execute( command, editor );
+	}
+}
+
+void App::syncGlobalMenuKeybindings() {
+	if ( !menuBar )
+		return;
+
+	KeyBindings bindings( appWindow->getInput() );
+	bindings.addKeybindsStringUnordered( keybindings );
+	for ( Uint32 menuIndex = 0; menuIndex < menuBar->getButtonsCount(); ++menuIndex ) {
+		auto* menu = menuBar->getPopUpMenu( menuIndex );
+		for ( Uint32 itemIndex = 0; menu && itemIndex < menu->getCount(); ++itemIndex ) {
+			auto* item = menu->getItem( itemIndex );
+			if ( item->isType( UI_TYPE_MENUITEM ) && !item->getId().empty() ) {
+				item->asType<UIMenuItem>()->setShortcutText(
+					bindings.getCommandKeybindString( item->getId() ) );
 			}
 		}
-		if ( fontMono == nullptr ) {
-			fontMono = FontTrueType::New( "monospace" );
-			fontMono->loadFromFile( resPath + "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
-			FontFamily::loadFromRegular( fontMono, "DejaVuSansMono" );
-		}
+	}
+}
 
-		if ( FileSystem::fileExists( resPath + "fonts/NotoColorEmoji.ttf" ) ) {
-			FontTrueType::New( "emoji-color" )
-				->loadFromFile( resPath + "fonts/NotoColorEmoji.ttf" );
-		} else if ( FileSystem::fileExists( resPath + "fonts/NotoEmoji-Regular.ttf" ) ) {
-			FontTrueType::New( "emoji-font" )
-				->loadFromFile( resPath + "fonts/NotoEmoji-Regular.ttf" );
-		}
+void App::createGlobalMenuBar() {
+	menuBar = UIMenuBar::New();
+	/* The native menu is not part of the visible layout. Keeping it outside mainLayout preserves
+	 * UITabWidgetSplitter's invariant that its base layout owns only the splitter tree. */
+	menuBar->setParent( scene->getRoot() );
+	menuBar->setVisible( false );
+	/* Installing an application-owned menu replaces AppKit's default Close Window item. Do not add
+	 * a Cmd+W item here: eterm intentionally leaves it unbound and closes tabs with the configured
+	 * close-tab shortcut (Cmd+Shift+W by default). */
 
-		std::string fallbackFontPath( fallbackFontPathF
-										  ? fallbackFontPathF.Get()
-										  : resPath + "fonts/DroidSansFallbackFull.ttf" );
-		if ( FileSystem::fileExists( fallbackFontPath ) ) {
-			FontTrueType* fallbackFont = FontTrueType::New( "fallback-font" );
-			if ( fallbackFont->loadFromFile( fallbackFontPath ) )
-				FontManager::instance()->addFallbackFont( fallbackFont );
-		}
+	const auto addCommand = []( UIPopUpMenu* menu, const String& text,
+								const std::string& command ) {
+		auto* item = menu->add( text );
+		item->setId( command );
+		return item;
+	};
+	const auto onItemClicked = [this]( const Event* event ) {
+		if ( event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			executeMenuCommand( event->getNode()->getId() );
+	};
 
-		Float realMaxFPS = maxFPS.Get() ? maxFPS.Get() : currentDisplay->getRefreshRate();
-		frameTime = benchmarkMode ? Time::Zero : Milliseconds( 1000.f / realMaxFPS );
+	auto* fileMenu = UIPopUpMenu::New();
+	addCommand( fileMenu, i18n( "new_terminal", "New Terminal" ), "create-new-terminal" );
+	addCommand( fileMenu, i18n( "close_tab", "Close Tab" ), "close-tab" );
+	fileMenu->addSeparator();
+	addCommand( fileMenu, i18n( "settings", "Settings..." ), "open-settings" )
+		->setMenuRole( MenuRole::Preferences );
+	addCommand( fileMenu, i18n( "key_bindings", "Keybindings..." ), "open-keybindings" );
+	fileMenu->on( Event::OnItemClicked, onItemClicked );
+	menuBar->addMenuButton( i18n( "file", "File" ), fileMenu );
 
-		FileInfo file( wd ? wd.Get() : FileSystem::getCurrentWorkingDirectory() );
-		terminal = TerminalDisplay::create(
-			win, fontMono, PixelDensity::dpToPx( fontSize.Get() ), win->getSize().asFloat(),
-			file.isRegularFile() && file.isExecutable() ? file.getFilepath() : shell.Get(),
-			shellArgs ? String::split( shellArgs.Get() ) : std::vector<std::string>(),
-			file.getDirectoryPath(), historySize.Get(), nullptr, fb.Get(),
-			!( file.isRegularFile() && file.isExecutable() ) );
+	auto* editMenu = UIPopUpMenu::New();
+	addCommand( editMenu, i18n( "copy", "Copy" ), "terminal-copy" );
+	addCommand( editMenu, i18n( "paste", "Paste" ), "terminal-paste" );
+	editMenu->addSeparator();
+	addCommand( editMenu, i18n( "find_ellipsis", "Find..." ), "terminal-find" );
+	addCommand( editMenu, i18n( "find_next", "Find Next" ), "terminal-find-next" );
+	addCommand( editMenu, i18n( "find_previous", "Find Previous" ), "terminal-find-previous" );
+	editMenu->on( Event::OnItemClicked, onItemClicked );
+	editMenu->on( Event::OnMenuShow, [this, editMenu]( const Event* ) {
+		const auto* widget = tabSplitter ? tabSplitter->getCurWidget() : nullptr;
+		const bool enabled = widget && widget->isType( UI_TYPE_TERMINAL );
+		for ( Uint32 i = 0; i < editMenu->getCount(); ++i )
+			editMenu->getItem( i )->setEnabled( enabled );
+	} );
+	menuBar->addMenuButton( i18n( "edit", "Edit" ), editMenu );
 
-		if ( terminal == nullptr ) {
-			win->close();
-			win->showMessageBox( EE::Window::Window::MessageBoxType::Error, "eterm",
-								 "Operating System not supported." );
-			terminal.reset();
-			Engine::destroySingleton();
-			MemoryManager::showResults();
+	auto* windowMenu = UIPopUpMenu::New();
+	windowMenu->setMenuBarRole( MenuBarRole::Window );
+	addCommand( windowMenu, i18n( "previous_tab", "Previous Tab" ), "previous-tab" );
+	addCommand( windowMenu, i18n( "next_tab", "Next Tab" ), "next-tab" );
+	windowMenu->addSeparator();
+	addCommand( windowMenu, i18n( "split_left", "Split Left" ), "split-left" );
+	addCommand( windowMenu, i18n( "split_right", "Split Right" ), "split-right" );
+	addCommand( windowMenu, i18n( "split_top", "Split Top" ), "split-top" );
+	addCommand( windowMenu, i18n( "split_bottom", "Split Bottom" ), "split-bottom" );
+	windowMenu->on( Event::OnItemClicked, onItemClicked );
+	menuBar->addMenuButton( i18n( "window", "Window" ), windowMenu );
+
+	syncGlobalMenuKeybindings();
+	menuBar->setGlobalMenuBarEnabled( true );
+}
+#endif
+
+bool App::closeWindow( EE::Window::Window* ) {
+	if ( closeApproved || !warnBeforeClose ) {
+		saveWindowState();
+		return true;
+	}
+	bool running = false;
+	tabSplitter->forEachTab( [&running]( UITab* tab ) { running |= hasRunningChildren( tab ); } );
+	if ( !running ) {
+		saveWindowState();
+		return true;
+	}
+	if ( closeDialog )
+		return false;
+	closeDialog = UIMessageBox::New(
+		UIMessageBox::OK_CANCEL,
+		i18n( "close_window_running_process_confirm",
+			  "Are you sure you want to close this window? It is still running a process." ) );
+	closeDialog->setTitle( "eterm" );
+	closeDialog->on( Event::OnConfirm, [this]( const Event* ) {
+		closeApproved = true;
+		saveWindowState();
+		appWindow->close();
+	} );
+	closeDialog->on( Event::OnClose, [this]( const Event* ) {
+		closeDialog = nullptr;
+		closeDialogWidget = nullptr;
+	} );
+	closeDialog->center();
+	closeDialog->showWhenReady();
+	return false;
+}
+
+int App::run( int argc, char* argv[] ) {
+#ifdef EE_DEBUG
+	Log::instance()->setLogToStdOut( !Runtime::isOffscreen() );
+	Log::instance()->setLiveWrite( true );
+#endif
+	config = std::make_unique<eterm::AppConfig>( Sys::getConfigPath( "eterm" ) );
+	config->load();
+	args::ArgumentParser parser( "eterm" );
+	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
+	args::ValueFlag<std::string> shell( parser, "shell", "Shell name or path", { 's', "shell" },
+										config->terminal.shell );
+	args::ValueFlag<std::string> shellArgs( parser, "shell-args", "Shell command line arguments",
+											{ "shell-args" }, config->terminal.shellArguments );
+	args::ValueFlag<size_t> historySize( parser, "scrollback", "Maximum history size (lines)",
+										 { 'l', "scrollback" }, config->terminal.historySize );
+	args::Flag fb( parser, "framebuffer", "Use frame buffer (more memory usage, less CPU usage)",
+				   { "fb", "framebuffer" } );
+	args::ValueFlag<std::string> fontPath( parser, "fontpath", "Font path", { 'f', "font" },
+										   config->font.path );
+	args::ValueFlag<std::string> fallbackFontPath( parser, "fallback-fontpath",
+												   "Fallback Font path", { "fallback-font" },
+												   config->font.fallbackPath );
+	args::ValueFlag<Float> fontSize( parser, "fontsize", "Font size (in dp)", { "fontsize" },
+									 config->font.size );
+	const std::unordered_map<std::string, FontHinting> fontHintingMap{
+		{ "none", FontHinting::None },
+		{ "slight", FontHinting::Slight },
+		{ "full", FontHinting::Full },
+	};
+	args::MapFlag<std::string, FontHinting> fontHinting(
+		parser, "font-hinting", "Font hinting mode (accepted values: none, slight, full)",
+		{ "font-hinting" }, fontHintingMap, config->font.hinting );
+	const std::unordered_map<std::string, FontAntialiasing> fontAntialiasingMap{
+		{ "none", FontAntialiasing::None },
+		{ "grayscale", FontAntialiasing::Grayscale },
+		{ "subpixel", FontAntialiasing::Subpixel },
+	};
+	args::MapFlag<std::string, FontAntialiasing> fontAntialiasing(
+		parser, "font-antialiasing",
+		"Font antialiasing mode (accepted values: none, grayscale, subpixel)",
+		{ "font-antialiasing" }, fontAntialiasingMap, config->font.antialiasing );
+	args::ValueFlag<Float> width( parser, "winwidth", "Window width (in dp)", { "width" },
+								  config->windowState.size.getWidth() );
+	args::ValueFlag<Float> height( parser, "winheight", "Window height (in dp)", { "height" },
+								   config->windowState.size.getHeight() );
+	args::ValueFlag<Float> pixelDensity( parser, "pixel-density",
+										 "Set default application pixel density",
+										 { 'd', "pixel-density" } );
+	args::ValueFlag<std::string> prefersColorScheme(
+		parser, "prefers-color-scheme",
+		"Set the preferred color scheme (\"light\", \"dark\" or \"system\")",
+		{ 'c', "prefers-color-scheme" } );
+	args::Positional<std::string> wd( parser, "wording-dir", "Working Directory / executable" );
+	args::Flag closeOnExit( parser, "close-on-exit",
+							"close the application when the executable exits",
+							{ "close", "close-on-exit" } );
+	args::ValueFlag<std::string> executeInShell( parser, "execute-in-shell",
+												 "execute program in shell", { 'e', "execute" },
+												 config->terminal.executeInShell );
+	args::Flag vsync( parser, "vsync", "Enable vsync", { "vsync" } );
+	args::ValueFlag<std::string> colorScheme( parser, "color-scheme", "Load color scheme",
+											  { "color-scheme" }, config->theme.colorScheme );
+	args::Flag listColorSchemes( parser, "color-schemes", "Lists color schemes",
+								 { "list-color-schemes" } );
+	args::ValueFlag<Uint32> maxFPS( parser, "max-fps",
+									"Maximum rendering frames per second of the terminal. Default "
+									"value will be the refresh rate of the screen.",
+									{ "max-fps" }, config->window.maxFPS );
+	args::MapFlag<std::string, TerminalCursorMode> cursorStyle(
+		parser, "cursor-style",
+		"Sets the cursor-style (accepted values: blinking_block, steady_block, blink_underline, "
+		"steady_underline, blink_bar, steady_bar)",
+		{ "cursor-style" }, TerminalCursorHelper::getTerminalCursorModeMap(),
+		config->terminal.cursorStyle );
+	args::Flag benchmarkModeFlag(
+		parser, "benchmark-mode",
+		"Render as much as possible to measure the rendering performance.", { "benchmark-mode" } );
+	args::Flag warnBeforeCloseFlag(
+		parser, "warn-before-closing",
+		"Prompts for confirmation if a program is still running when closing the terminal.",
+		{ "warn-before-closing" } );
+	args::Flag alwaysShowTabBar( parser, "always-show-tab-bar",
+								 "Always show the tab bar, even with a single tab.",
+								 { "always-show-tab-bar" } );
+	args::ValueFlag<size_t> initialTabs( parser, "tabs", "Number of initial terminal tabs",
+										 { "tabs" }, config->terminal.initialTabs );
+
+	try {
+		parser.ParseCLI( argc, argv );
+	} catch ( const args::Help& ) {
+		std::cout << parser;
+		return EXIT_SUCCESS;
+	} catch ( const args::ParseError& error ) {
+		std::cerr << error.what() << std::endl;
+		std::cerr << parser;
+		return EXIT_FAILURE;
+	} catch ( args::ValidationError& error ) {
+		std::cerr << error.what() << std::endl;
+		std::cerr << parser;
+		return EXIT_FAILURE;
+	}
+	config->terminal.shell = shell.Get();
+	config->terminal.shellArguments = shellArgs.Get();
+	config->terminal.historySize = historySize.Get();
+	config->font.path = fontPath.Get();
+	config->font.fallbackPath = fallbackFontPath.Get();
+	config->font.size = fontSize.Get();
+	config->font.hinting = fontHinting.Get();
+	config->font.antialiasing = fontAntialiasing.Get();
+	config->windowState.size = { static_cast<int>( width.Get() ),
+								 static_cast<int>( height.Get() ) };
+	if ( pixelDensity )
+		config->window.pixelDensity = pixelDensity.Get();
+	if ( prefersColorScheme ) {
+		const std::string& scheme = prefersColorScheme.Get();
+		if ( scheme != "light" && scheme != "dark" && scheme != "system" ) {
+			std::cerr << "Color scheme must be light, dark, or system\n";
 			return EXIT_FAILURE;
 		}
+		config->theme.uiColorScheme = ColorSchemePreferences::fromStringExt( scheme );
+	}
+	if ( wd )
+		config->terminal.workingDirectory = wd.Get();
+	config->terminal.executeInShell = executeInShell.Get();
+	config->theme.colorScheme = colorScheme.Get();
+	config->window.maxFPS = maxFPS.Get();
+	config->terminal.cursorStyle = cursorStyle.Get();
+	config->terminal.initialTabs = initialTabs.Get();
+	config->terminal.useFrameBuffer |= fb.Get();
+	config->terminal.closeOnExit |= closeOnExit.Get();
+	config->window.vsync |= vsync.Get();
+	config->window.benchmarkMode |= benchmarkModeFlag.Get();
+	config->window.warnBeforeClose |= warnBeforeCloseFlag.Get();
+	config->window.alwaysShowTabBar |= alwaysShowTabBar.Get();
+	if ( !config->savePreferences() )
+		Log::error( "Could not save eterm configuration to %s", config->getConfigPath() );
 
-		terminal->getTerminal()->setAllowMemoryTrimnming( true );
-		terminal->setCursorMode( cursorStyle.Get() );
-		terminal->pushEventCallback( [&closeOnExit]( const TerminalDisplay::Event& event ) {
-			if ( event.type == TerminalDisplay::EventType::TITLE ) {
-				windowStringData = event.eventData;
-				win->setTitle( "eterm - " + windowStringData );
-			} else if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
-						closeOnExit.Get() ) {
-				win->close();
-			}
-		} );
-		if ( shell )
-			terminal->setKeepAlive( false );
-
-		if ( colorScheme ) {
-			auto selColorScheme = terminalColorSchemes.find( colorScheme.Get() );
-			if ( selColorScheme != terminalColorSchemes.end() )
-				terminal->setColorScheme( selColorScheme->second );
-		}
-
-		if ( !executeInShell.Get().empty() )
-			terminal->executeFile( executeInShell.Get() );
-
-		win->startTextInput();
-
-		win->getInput()->pushCallback( &inputCallback );
-
-		win->setCloseRequestCallback(
-			[]( EE::Window::Window* win ) -> bool { return onCloseRequestCallback( win ); } );
-
-		win->runMainLoop( [fontMono] {
-			bool termNeedsUpdate = false;
-			win->getInput()->update();
-			auto mousePos = win->getInput()->getRelativeMousePos();
-			bool mouseOutsideBounds = mousePos.y < 0 || mousePos.y > win->getSize().getHeight();
-
-			if ( terminal )
-				termNeedsUpdate = !terminal->update( !mouseOutsideBounds );
-
-			if ( ( terminal && ( benchmarkMode || terminal->isDirty() ) &&
-				   ( !termNeedsUpdate || lastRender.getElapsedTime() >= frameTime ) ) ||
-				 needsRedraw ) {
-				lastRender.restart();
-				win->clear();
-				terminal->draw();
-
-				if ( displayingWarnBeforeClose ) {
-					Sizef winSize{ win->getSize().asFloat() };
-					Sizef buttonSize{ PixelDensity::dpToPx( 100 ), PixelDensity::dpToPx( 32 ) };
-					Primitives p;
-					p.setColor( Color( terminal->getColorScheme().getBackground(), 200 ) );
-					p.drawRectangle( { { 0, 0 }, winSize } );
-
-					Text text( "Are you sure you want to close this window? It is still running a "
-							   "process.",
-							   fontMono );
-
-					text.draw( ( winSize.getWidth() - text.getLocalBounds().getWidth() ) * 0.5f,
-							   winSize.getHeight() * 0.5f - text.getTextHeight() -
-								   PixelDensity::dpToPx( 32 ) );
-
-					yesBtn = Rectf{ { ( winSize.getWidth() * 0.5f - buttonSize.getWidth() * 0.5f -
-										PixelDensity::dpToPx( 75 ) ),
-									  win->getHeight() * 0.5f },
-									buttonSize }
-								 .floor();
-
-					p.setColor( terminal->getColorScheme().getBackground() );
-					p.drawRoundedRectangle( yesBtn );
-
-					noBtn = { Vector2f( yesBtn.getPosition().x + yesBtn.getSize().getWidth(),
-										yesBtn.getPosition().y ) +
-								  Vector2f( PixelDensity::dpToPx( 50 ), 0 ),
-							  yesBtn.getSize() };
-
-					p.drawRoundedRectangle( noBtn );
-
-					Text yes( "Yes", fontMono );
-					yes.draw(
-						eefloor( yesBtn.getPosition().x +
-								 ( yesBtn.getSize().getWidth() - yes.getLocalBounds().getWidth() ) *
-									 0.5f ),
-						eefloor( yesBtn.getPosition().y +
-								 ( yesBtn.getSize().getHeight() - yes.getTextHeight() ) * 0.5f ) );
-
-					Text no( "No", fontMono );
-					no.draw(
-						eeceil( noBtn.getPosition().x +
-								( noBtn.getSize().getWidth() - no.getLocalBounds().getWidth() ) *
-									0.5f ),
-						eefloor( noBtn.getPosition().y +
-								 ( noBtn.getSize().getHeight() - no.getTextHeight() ) * 0.5f ) );
-
-					p.setFillMode( PrimitiveFillMode::DRAW_LINE );
-					p.setColor( terminal->getColorScheme().getForeground() );
-					p.drawRoundedRectangle( yesBtn );
-					p.drawRoundedRectangle( noBtn );
-					p.setColor( terminal->getColorScheme().getPaletteIndex( 5 ) );
-					p.drawRoundedRectangle( yesPicked ? yesBtn : noBtn );
-				}
-
-				win->display();
-
-				needsRedraw = false;
-			} else if ( !benchmarkMode && !termNeedsUpdate ) {
-				win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
-			}
-
-			if ( benchmarkMode && secondsCounter.getElapsedTime() >= Seconds( 1 ) ) {
-				win->setTitle( "eterm - " + windowStringData + " - " +
-							   String::toString( win->getFPS() ) + " FPS" );
-				secondsCounter.restart();
-			}
-		} );
+	const std::string initialWorkingDirectory = FileSystem::getCurrentWorkingDirectory();
+	const std::string resPath = getResourcePath();
+	loadColorSchemes( resPath );
+	if ( listColorSchemes.Get() ) {
+		std::cout << "Color schemes:\n";
+		for ( const auto& colorSchemeEntry : terminalColorSchemes )
+			std::cout << "\t" << colorSchemeEntry.first << "\n";
+		return EXIT_SUCCESS;
+	}
+	if ( !config->theme.colorScheme.empty() ) {
+		auto colorSchemeIt = terminalColorSchemes.find( config->theme.colorScheme );
+		if ( colorSchemeIt != terminalColorSchemes.end() )
+			selectedColorScheme = &colorSchemeIt->second;
 	}
 
-	terminal.reset();
+	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
+	Display* currentDisplay = displayManager->getDisplayIndex(
+		config->windowState.displayIndex >= 0 &&
+				config->windowState.displayIndex < displayManager->getDisplayCount()
+			? config->windowState.displayIndex
+			: 0 );
+	if ( !currentDisplay ) {
+		std::cerr << "Display not found, exiting" << std::endl;
+		return EXIT_FAILURE;
+	}
 
-	Engine::destroySingleton();
+	Sizei windowSize( config->windowState.size );
+	const auto displaySize = currentDisplay->getUsableBounds().getSize();
+	if ( displaySize.getWidth() > 0 && windowSize.getWidth() >= displaySize.getWidth() )
+		windowSize.setWidth( static_cast<int>( displaySize.getWidth() * 0.8f ) );
+	if ( displaySize.getHeight() > 0 && windowSize.getHeight() >= displaySize.getHeight() )
+		windowSize.setHeight( static_cast<int>( displaySize.getHeight() * 0.75f ) );
 
-	MemoryManager::showResults();
+	FontTrueTypePtr uiFont;
+	if ( !config->font.uiPath.empty() && FileSystem::fileExists( config->font.uiPath ) ) {
+		uiFont = FontTrueType::New( "eterm-ui-font" );
+		if ( !uiFont->loadFromFile( config->font.uiPath ) )
+			uiFont.reset();
+	}
+	UIApplication::Settings appSettings;
+	appSettings.basePath = FileSystem::removeLastFolderFromPath( resPath );
+	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
+	if ( config->window.pixelDensity > 0 ) {
+		appSettings.pixelDensity = config->window.pixelDensity;
+	} else if ( environmentDensity > 0 ) {
+		appSettings.pixelDensity = environmentDensity;
+	} else {
+		appSettings.pixelDensity = currentDisplay->getPixelDensity();
+	}
+	appSettings.fontHinting = config->font.hinting;
+	appSettings.fontAntialiasing = config->font.antialiasing;
+	appSettings.baseFont = uiFont.get();
+	const Int32 frameRateLimit =
+		config->window.benchmarkMode ? 0 : static_cast<Int32>( config->window.maxFPS );
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	const char* windowIcon = "icon/eterm-macos.png";
+#else
+	const char* windowIcon = "icon/eterm.png";
+#endif
+	UIApplication app(
+		WindowSettings( windowSize.getWidth(), windowSize.getHeight(), "eterm",
+						WindowStyle::Default, WindowBackend::Default, 32, resPath + windowIcon ),
+		appSettings,
+		ContextSettings( config->window.vsync, frameRateLimit, config->window.multisamples,
+						 config->window.rendererVersion ) );
+	appWindow = app.getWindow();
+	scene = app.getUI();
+	if ( !appWindow || !appWindow->isOpen() || !scene )
+		return EXIT_FAILURE;
+	scene->setSmoothScrollEnabled( config->ui.smoothScroll );
+	settingsActions = std::make_unique<SettingsActions>( this );
+	keybindingsPath = config->getConfigPath() + "keybindings.cfg";
+	loadKeybindings();
+	fileWatcher = std::make_unique<efsw::FileWatcher>();
+	fileWatcher->addWatch( config->getConfigPath(), this );
+	fileWatcher->watch();
+	scene->setColorSchemePreference( config->theme.uiColorScheme );
+	scene->updateWindowTitleBarColor();
+	scene->getUIThemeManager()->setDefaultFontSize( config->font.uiSize );
+	FileSystem::changeWorkingDirectory( initialWorkingDirectory );
+	appWindow->setClearColor( RGB( 0, 0, 0 ) );
+	scene->getUIThemeManager()->setDefaultEffectsEnabled( false );
+	scene->combineStyleSheet( R"css(
+		TabWidget {
+			max-tab-width: 200dp;
+		}
+		Tab > Tab::Text {
+			text-overflow: ellipsis;
+		}
+		.pseudo_anchor {
+			tint: var(--floating-icon);
+			cursor: arrow;
+		}
+		.pseudo_anchor:hover {
+			tint: var(--primary);
+			cursor: hand;
+		}
+		Tab.tab_modified > Tab::close {
+			foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' width='12' height='12' fill='#ffffff'><path d='M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z'></path></svg>");
+			foreground-tint: var(--primary);
+			foreground-size: 6dp 6dp;
+			foreground-position: center;
+			opacity: 1;
+		}
+		Tab.tab_modified > Tab::close:hover {
+			foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
+			foreground-tint: var(--tab-close-hover);
+			foreground-size: 10dp 10dp;
+			foreground-position: center;
+		}
+	)css" );
 
+	auto& resourceScope = *scene->getResourceScope();
+	auto remixIconFont = FontTrueType::New( "eterm-remixicon", resourceScope );
+	auto noniconsFont = FontTrueType::New( "eterm-nonicons", resourceScope );
+	auto codIconFont = FontTrueType::New( "eterm-codicon", resourceScope );
+	if ( remixIconFont->loadFromFile( resPath + "fonts/remixicon.ttf" ) &&
+		 noniconsFont->loadFromFile( resPath + "fonts/nonicons.ttf" ) &&
+		 codIconFont->loadFromFile( resPath + "fonts/codicon.ttf" ) ) {
+		scene->getUIIconThemeManager()->setCurrentTheme( IconManager::init(
+			"eterm", remixIconFont.get(), noniconsFont.get(), codIconFont.get() ) );
+		terminalIcon = scene->findIcon( "terminal" );
+	}
+	if ( !config->font.path.empty() && FileSystem::fileExists( config->font.path ) ) {
+		terminalFont = FontTrueType::New( "eterm-monospace", resourceScope ).get();
+		if ( terminalFont->loadFromFile( config->font.path ) )
+			FontFamily::loadFromRegular( terminalFont );
+		else
+			terminalFont = nullptr;
+	}
+	if ( !terminalFont ) {
+		terminalFont = FontTrueType::New( "eterm-monospace", resourceScope ).get();
+		if ( !terminalFont->loadFromFile( resPath + "fonts/DejaVuSansMonoNerdFontComplete.ttf" ) ) {
+			std::cerr << "Could not load terminal font" << std::endl;
+			return EXIT_FAILURE;
+		}
+		FontFamily::loadFromRegular( terminalFont, "DejaVuSansMono" );
+	}
+
+	if ( !config->font.fallbackPath.empty() ) {
+		if ( FileSystem::fileExists( config->font.fallbackPath ) ) {
+			auto fallback = FontTrueType::New( "eterm-fallback-font", resourceScope );
+			if ( fallback->loadFromFile( config->font.fallbackPath ) )
+				resourceScope.getFontService().addFallbackFont( std::move( fallback ) );
+		}
+	} else if ( auto fallback = resourceScope.findFont( "DroidSansFallbackFull" ) ) {
+		resourceScope.getFontService().addFallbackFont( std::move( fallback ) );
+	}
+
+	const std::string launchPath = config->terminal.workingDirectory.empty()
+									   ? initialWorkingDirectory
+									   : config->terminal.workingDirectory;
+	FileInfo launchFile( launchPath );
+	const bool launchExecutable = launchFile.isRegularFile() && launchFile.isExecutable();
+	terminalConfig.program = launchExecutable ? launchFile.getFilepath() : config->terminal.shell;
+	terminalConfig.arguments = config->terminal.shellArguments.empty()
+								   ? std::vector<std::string>{}
+								   : String::split( config->terminal.shellArguments );
+	terminalConfig.workingDirectory = launchFile.getDirectoryPath();
+	terminalConfig.executeInShell = config->terminal.executeInShell;
+	terminalConfig.historySize = config->terminal.historySize;
+	terminalConfig.cursorStyle = config->terminal.cursorStyle;
+	terminalConfig.fontHinting = config->font.hinting;
+	terminalConfig.fontAntialiasing = config->font.antialiasing;
+	terminalConfig.useFrameBuffer = config->terminal.useFrameBuffer;
+	terminalConfig.keepAlive = !launchExecutable && config->terminal.shell.empty();
+	terminalConfig.closeOnExit = config->terminal.closeOnExit;
+	warnBeforeClose = config->window.warnBeforeClose;
+	benchmarkMode = config->window.benchmarkMode;
+	terminalFontSize = PixelDensity::dpToPx( config->font.size );
+
+	mainLayout = UILinearLayout::NewVertical();
+	mainLayout->setParent( scene->getRoot() );
+	mainLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+	mainLayout->setPixelsSize( appWindow->getSize().asFloat() );
+
+	std::unique_ptr<UITabWidgetSplitter, TabWidgetSplitterDeleter> tabSplitterOwner(
+		UITabWidgetSplitter::New( &splitterClient, scene ) );
+	tabSplitter = tabSplitterOwner.get();
+	tabSplitter->setHideTabBarOnSingleTab( !config->window.alwaysShowTabBar );
+	tabSplitter->setShowTabBarWhenSplit( config->window.showTabBarWhenSplit );
+	tabSplitter->setCanCreateSplitFn( [this]( SplitDirection, UIWidget* ) {
+		restoreMaximizedTabWidget();
+		return true;
+	} );
+	tabSplitter->setTabTryCloseCallback( [this]( UIWidget* widget, UITabWidget::FocusTabBehavior,
+												 std::function<void()> ) {
+		if ( auto* detachedTabWidget = scene->getRoot()->find<UIWidget>( "detached_tab_widget" );
+			 widget && detachedTabWidget && detachedTabWidget->inParentTreeOf( widget ) ) {
+			restoreMaximizedTabWidget();
+		}
+		if ( warnBeforeClose ) {
+			auto* tab = tabSplitter->getTabFromWidget( widget );
+			if ( hasRunningChildren( tab ) ) {
+				requestCloseTab( tab );
+				return false;
+			}
+		}
+		return true;
+	} );
+	tabSplitter->setOnTabWidgetCreateCb( [this]( UITabWidget* tabs ) {
+		tabs->on( Event::OnTabSelected, [this]( const Event* ) { updateWindowTitle(); } );
+		tabs->on( Event::OnTabClosed, [this]( const Event* event ) {
+			auto* closedTab = static_cast<const TabEvent*>( event )->getTab();
+			pendingExitCloseTabs.erase(
+				std::remove( pendingExitCloseTabs.begin(), pendingExitCloseTabs.end(), closedTab ),
+				pendingExitCloseTabs.end() );
+			if ( closeDialogWidget == closedTab->getOwnedWidget() )
+				closeDialogWidget = nullptr;
+			if ( !hasTerminals() ) {
+				saveWindowState();
+				appWindow->close();
+			} else {
+				updateWindowTitle();
+			}
+		} );
+	} );
+	auto* tabs = tabSplitter->createTabWidget( mainLayout );
+	if ( !tabs ) {
+		std::cerr << "Could not create terminal tab widget" << std::endl;
+		return EXIT_FAILURE;
+	}
+	mainLayout->updateLayout();
+
+	for ( size_t tab = 0; tab < eemax( static_cast<size_t>( 1 ), config->terminal.initialTabs );
+		  ++tab ) {
+		if ( !createTerminal( tabs ) ) {
+			appWindow->showMessageBox(
+				EE::Window::Window::MessageBoxType::Error, "eterm",
+				i18n( "operating_system_not_supported", "Operating System not supported." ) );
+			return EXIT_FAILURE;
+		}
+	}
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	createGlobalMenuBar();
+#endif
+	if ( config->windowState.position != Vector2i( -1, -1 ) &&
+		 config->windowState.displayIndex < displayManager->getDisplayCount() ) {
+		// 1 px offset to avoid a bug in SDL2 2.28 when maximizing windows
+		appWindow->setPosition( config->windowState.position.x +
+									( config->windowState.maximized ? -1 : 0 ),
+								config->windowState.position.y );
+	}
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	if ( config->windowState.maximized ) {
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+		scene->runOnMainThread( [this] { appWindow->maximize(); } );
+#elif EE_PLATFORM != EE_PLATFORM_MACOS
+		appWindow->maximize();
+#endif
+	}
+#endif
+
+	appWindow->setCloseRequestCallback(
+		[this]( EE::Window::Window* window ) { return closeWindow( window ); } );
+	appWindow->setQuitCallback( [this]( EE::Window::Window* window ) {
+		if ( window->isOpen() && closeWindow( window ) )
+			window->close();
+	} );
+	app.setShowMemoryManagerResult( true );
+	appWindow->runMainLoop( [this] {
+		appWindow->getInput()->update();
+		SceneManager::instance()->update();
+		if ( keybindingsChanged.exchange( false, std::memory_order_acq_rel ) )
+			reloadKeybindings();
+		queueExitedTabs();
+		// Process-exit events are drained from UITerminal scheduled updates. Removing a tab from
+		// that callback would mutate the scheduled-widget set while it is being traversed.
+		while ( !pendingExitCloseTabs.empty() ) {
+			auto* tab = pendingExitCloseTabs.back();
+			pendingExitCloseTabs.pop_back();
+			closeTab( tab );
+		}
+		if ( !appWindow->isOpen() )
+			return;
+		if ( benchmarkMode || scene->invalidated() ) {
+			appWindow->clear();
+			SceneManager::instance()->draw();
+			appWindow->display();
+		} else {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+			appWindow->getInput()->waitEvent( Milliseconds( appWindow->hasFocus() ? 16 : 100 ) );
+#endif
+		}
+		if ( benchmarkMode && secondsCounter.getElapsedTime() >= Seconds( 1 ) ) {
+			updateWindowTitle();
+			secondsCounter.restart();
+		}
+	} );
+	// Native destruction is deferred to keep the GL context alive during UI teardown.
+	// Hide first: stopping the file watcher can wait for its polling thread.
+	appWindow->hide();
+	fileWatcher.reset();
 	return EXIT_SUCCESS;
+}
+
+} // namespace eterm
+
+EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+	App app;
+	return app.run( argc, argv );
 }

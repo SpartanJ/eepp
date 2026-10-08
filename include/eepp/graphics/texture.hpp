@@ -1,8 +1,9 @@
 #ifndef EE_GRAPHICSCTEXTURE_H
 #define EE_GRAPHICSCTEXTURE_H
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
 #include <eepp/core/noncopyable.hpp>
+#include <eepp/core/string.hpp>
 #include <eepp/graphics/drawableresource.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/resource.hpp>
@@ -34,7 +35,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	static Uint32 getMaximumSize();
 
 	/* @return an array of Textures and the delay of the first frame */
-	static std::pair<std::vector<Texture*>, int> loadGif( IOStream& stream );
+	static std::pair<std::vector<TexturePtr>, int> loadGif( IOStream& stream );
 
 	/** Set the OpenGL Texture Id (texture handle) */
 	void setHandle( const int& texture ) { mTexture = texture; }
@@ -293,6 +294,8 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	void draw( const Vector2f& position, const Sizef& size );
 
 	virtual bool isStateful() { return false; }
+
+	DrawablePtr clone() const;
 
 	/** @return The process-wide identity assigned to this texture. */
 	ResourceId getTextureId() const;

@@ -225,12 +225,12 @@ void UIHTMLSummary::draw() {
 			UIHTMLListStyle::drawPrimitiveMarker( markerType, mScreenPos, mPaddingPx,
 												  mRichText.getFontStyleConfig() );
 		} else if ( mListMarkerText && !mListMarkerText->getString().empty() ) {
-			const Float fontSize = mRichText.getFontStyleConfig().CharacterSize;
-			const Float offset = 0.25f * fontSize;
-			const Float markerX =
-				mScreenPos.x + mPaddingPx.Left - mListMarkerText->getTextWidth() - offset;
-			mListMarkerText->draw( markerX, mScreenPos.y + mPaddingPx.Top, Vector2f::One, 0.f,
-								   getBlendMode() );
+			const FontStyleConfig& style = mRichText.getFontStyleConfig();
+			UIHTMLListStyle::syncTextMarkerColor( *mListMarkerText, style.FontColor );
+			const Float fontSize = style.CharacterSize;
+			const Vector2f markerPos = UIHTMLListStyle::getTextMarkerPosition(
+				mScreenPos, mPaddingPx, mListMarkerText->getTextWidth(), fontSize );
+			mListMarkerText->draw( markerPos.x, markerPos.y, Vector2f::One, 0.f, getBlendMode() );
 		}
 	}
 }

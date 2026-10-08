@@ -1,4 +1,3 @@
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
@@ -88,8 +87,10 @@ UITabWidget::UITabWidget() :
 	mTabScroll = UIScrollBar::NewHorizontalWithTag( "scrollbarmini" );
 	mTabScroll->setParent( mTabBar );
 	mTabScroll->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
-	mTabScroll->on( Event::OnSizeChange, [this]( const Event* ) { updateScrollBar(); } );
-	mTabScroll->on( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
+	mEventConnections +=
+		mTabScroll->connect( Event::OnSizeChange, [this]( const Event* ) { updateScrollBar(); } );
+	mEventConnections +=
+		mTabScroll->connect( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
 
 	onSizeChange();
 
@@ -525,11 +526,11 @@ void UITabWidget::updateTabs() {
 	}
 }
 
-UITab* UITabWidget::createTab( const String& text, UINode* nodeOwned, Drawable* icon ) {
+UITab* UITabWidget::createTab( const String& text, UINode* nodeOwned, DrawablePtr icon ) {
 	UITab* tab = UITab::New();
 	tab->setParent( mTabBar );
 	tab->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
-	tab->setIcon( icon );
+	tab->setIcon( std::move( icon ) );
 	tab->setText( text );
 	tab->setVisible( true );
 	tab->setEnabled( true );
@@ -553,14 +554,18 @@ UITab* UITabWidget::createTab( const String& text, UINode* nodeOwned, Drawable* 
 	return tab;
 }
 
-UITab* UITabWidget::add( const String& text, UINode* nodeOwned, Drawable* icon ) {
-	UITab* tab = createTab( text, nodeOwned, icon );
+UITab* UITabWidget::add( const String& text, UINode* nodeOwned, DrawablePtr icon ) {
+	UITab* tab = createTab( text, nodeOwned, std::move( icon ) );
 	add( tab );
 	return tab;
 }
 
 UITabWidget* UITabWidget::add( UITab* tab ) {
 	tab->setParent( mTabBar );
+	if ( tab->getOwnedWidget() && tab->getOwnedWidget()->isWidget() )
+		tab->getOwnedWidget()->asType<UIWidget>()->setLayoutSizePolicy( SizePolicy::Fixed,
+																		SizePolicy::Fixed );
+	refreshOwnedWidget( tab );
 
 	mTabs.push_back( tab );
 
@@ -789,9 +794,9 @@ void UITabWidget::removeAllTabs( bool destroyOwnedNode, bool immediateClose ) {
 	}
 }
 
-void UITabWidget::insertTab( const String& text, UINode* nodeOwned, Drawable* icon,
+void UITabWidget::insertTab( const String& text, UINode* nodeOwned, DrawablePtr icon,
 							 const Uint32& index ) {
-	insertTab( createTab( text, nodeOwned, icon ), index );
+	insertTab( createTab( text, nodeOwned, std::move( icon ) ), index );
 }
 
 void UITabWidget::insertTab( UITab* Tab, const Uint32& index ) {

@@ -17,7 +17,13 @@ UITabWidgetSplitter::UITabWidgetSplitter( UITabWidgetSplitter::Client* client,
 										  UISceneNode* sceneNode ) :
 	mUISceneNode( sceneNode ), mClient( client ) {}
 
-UITabWidgetSplitter::~UITabWidgetSplitter() {}
+UITabWidgetSplitter::~UITabWidgetSplitter() {
+	mTabWidgetEventConnections.clear();
+	mWidgetEventConnections.clear();
+	mTabWidgets.clear();
+	mCurWidget = nullptr;
+	mClient = nullptr;
+}
 
 UITabWidget* UITabWidgetSplitter::tabWidgetFromWidget( UIWidget* widget ) const {
 	if ( widget )
@@ -49,23 +55,10 @@ void UITabWidgetSplitter::setCurrentWidget( UIWidget* curWidget ) {
 std::pair<UITab*, UIWidget*>
 UITabWidgetSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget* widget,
 											  const std::string& tabName, bool focus ) {
-	eeASSERT( curWidgetExists() );
 	if ( nullptr == tabWidget )
 		return std::make_pair( (UITab*)nullptr, (UIWidget*)nullptr );
 	UITab* tab = tabWidget->add( tabName, widget );
 	widget->setData( (UintPtr)tab );
-	widget->on( Event::OnFocusWithin, [this]( const Event* event ) {
-		setCurrentWidget( event->getNode()->asType<UIWidget>() );
-	} );
-	widget->on( Event::OnTitleChange, [this]( const Event* event ) {
-		const TextEvent* tevent = static_cast<const TextEvent*>( event );
-		UIWidget* widget = event->getNode()->asType<UIWidget>();
-		UITabWidget* tabWidget = tabWidgetFromWidget( widget );
-		UITab* tab = tabWidget->getTabFromOwnedWidget( widget );
-		if ( !tab )
-			return;
-		tab->setText( tevent->getText() );
-	} );
 	if ( focus )
 		tabWidget->setTabSelected( tab );
 	mClient->onTabCreated( tab, widget );
@@ -157,7 +150,8 @@ UITabWidget* UITabWidgetSplitter::createTabWidget( Node* parent ) {
 			},
 			mVisualSplitEdgePercent );
 	}
-	tabWidget->on( Event::OnTabSelected, [this]( const Event* event ) {
+	auto& connections = mTabWidgetEventConnections[tabWidget];
+	connections += tabWidget->connect( Event::OnTabSelected, [this]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
 		eeASSERT( nullptr != tabWidget && nullptr != tabWidget->getTabSelected() &&
 				  nullptr != tabWidget->getTabSelected()->getOwnedWidget() );
@@ -175,13 +169,22 @@ UITabWidget* UITabWidgetSplitter::createTabWidget( Node* parent ) {
 			}
 			return false;
 		} );
-	tabWidget->on( Event::OnTabClosed, [this]( const Event* event ) {
+	connections += tabWidget->connect( Event::OnTabAdded, [this]( const Event* event ) {
+		const auto* tabEvent = static_cast<const TabEvent*>( event );
+		Node* ownedNode = tabEvent->getTab()->getOwnedWidget();
+		if ( ownedNode && ownedNode->isWidget() )
+			attachWidgetEvents( ownedNode->asType<UIWidget>() );
+	} );
+	connections += tabWidget->connect( Event::OnTabClosed, [this]( const Event* event ) {
 		onTabClosed( static_cast<const TabEvent*>( event ) );
 	} );
 	if ( mOnTabWidgetCreateCb )
 		mOnTabWidgetCreateCb( tabWidget );
-	Lock l( mTabWidgetMutex );
-	mTabWidgets.push_back( tabWidget );
+	{
+		Lock l( mTabWidgetMutex );
+		mTabWidgets.push_back( tabWidget );
+	}
+	updateTabBarVisibility();
 	return tabWidget;
 }
 
@@ -497,9 +500,12 @@ void UITabWidgetSplitter::closeTabWidgets( UISplitter* splitter ) {
 	Node* node = splitter->getFirstChild();
 	while ( node ) {
 		if ( node->isType( UI_TYPE_TABWIDGET ) ) {
-			auto it =
-				std::find( mTabWidgets.begin(), mTabWidgets.end(), node->asType<UITabWidget>() );
+			auto tabWidget = node->asType<UITabWidget>();
+			auto it = std::find( mTabWidgets.begin(), mTabWidgets.end(), tabWidget );
 			if ( it != mTabWidgets.end() ) {
+				if ( mOnTabWidgetCloseCb )
+					mOnTabWidgetCloseCb( tabWidget );
+				mTabWidgetEventConnections.erase( tabWidget );
 				Lock l( mTabWidgetMutex );
 				mTabWidgets.erase( it );
 			}
@@ -616,12 +622,42 @@ void UITabWidgetSplitter::closeSplitter( UISplitter* splitter ) {
 	closeTabWidgets( splitter );
 }
 
+void UITabWidgetSplitter::attachWidgetEvents( UIWidget* widget ) {
+	if ( nullptr == widget ||
+		 mWidgetEventConnections.find( widget ) != mWidgetEventConnections.end() )
+		return;
+
+	auto& connections = mWidgetEventConnections[widget];
+	connections += widget->connect( Event::OnFocusWithin, [this]( const Event* event ) {
+		setCurrentWidget( event->getNode()->asType<UIWidget>() );
+	} );
+	connections += widget->connect( Event::OnTitleChange, [this]( const Event* event ) {
+		const TextEvent* tevent = static_cast<const TextEvent*>( event );
+		UIWidget* widget = event->getNode()->asType<UIWidget>();
+		UITab* tab = getTabFromWidget( widget );
+		if ( !tab )
+			return;
+		tab->setText( tevent->getText() );
+	} );
+}
+
+void UITabWidgetSplitter::detachWidgetEvents( UIWidget* widget ) {
+	if ( nullptr == widget )
+		return;
+
+	mWidgetEventConnections.erase( widget );
+}
+
 void UITabWidgetSplitter::onTabClosed( const TabEvent* tabEvent ) {
 	UIWidget* widget = tabEvent->getTab()->getOwnedWidget()->asType<UIWidget>();
 	UITabWidget* tabWidget = tabEvent->getTab()->getTabWidget();
+	detachWidgetEvents( widget );
 	if ( tabWidget->getTabCount() == 0 ) {
 		UISplitter* splitter = splitterFromWidget( widget );
 		if ( splitter && splitter->isFull() ) {
+			if ( mOnTabWidgetCloseCb )
+				mOnTabWidgetCloseCb( tabWidget );
+			mTabWidgetEventConnections.erase( tabWidget );
 			tabWidget->close();
 			auto itWidget = std::find( mTabWidgets.begin(), mTabWidgets.end(), tabWidget );
 			if ( itWidget != mTabWidgets.end() ) {
@@ -647,6 +683,7 @@ void UITabWidgetSplitter::onTabClosed( const TabEvent* tabEvent ) {
 				Node* remainingNode = tabWidget == splitter->getFirstWidget()
 										  ? splitter->getLastWidget()
 										  : splitter->getFirstWidget();
+				remainingNode->detach();
 				closeSplitter( splitter );
 				eeASSERT( parent->getChildCount() == 0 );
 				remainingNode->setParent( parent );
@@ -657,6 +694,7 @@ void UITabWidgetSplitter::onTabClosed( const TabEvent* tabEvent ) {
 				focusSomeWidget( nullptr );
 			}
 
+			updateTabBarVisibility();
 			eeASSERT( !mTabWidgets.empty() );
 			eeASSERT( !( mTabWidgets.size() == 1 && mTabWidgets[0]->getTabCount() == 0 ) );
 			return;
@@ -674,6 +712,10 @@ void UITabWidgetSplitter::onTabClosed( const TabEvent* tabEvent ) {
 
 void UITabWidgetSplitter::setOnTabWidgetCreateCb( std::function<void( UITabWidget* )> cb ) {
 	mOnTabWidgetCreateCb = std::move( cb );
+}
+
+void UITabWidgetSplitter::setOnTabWidgetCloseCb( std::function<void( UITabWidget* )> cb ) {
+	mOnTabWidgetCloseCb = std::move( cb );
 }
 
 bool UITabWidgetSplitter::getVisualSplitting() const {
@@ -733,12 +775,27 @@ bool UITabWidgetSplitter::getHideTabBarOnSingleTab() const {
 	return mHideTabBarOnSingleTab;
 }
 
+void UITabWidgetSplitter::updateTabBarVisibility() {
+	const bool hideSingleTabBar = mHideTabBarOnSingleTab && !( mShowTabBarWhenSplit && hasSplit() );
+	for ( auto* widget : mTabWidgets )
+		widget->setHideTabBarOnSingleTab( hideSingleTabBar );
+}
+
 void UITabWidgetSplitter::setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab ) {
 	if ( hideTabBarOnSingleTab != mHideTabBarOnSingleTab ) {
 		mHideTabBarOnSingleTab = hideTabBarOnSingleTab;
+		updateTabBarVisibility();
+	}
+}
 
-		for ( auto widget : mTabWidgets )
-			widget->setHideTabBarOnSingleTab( hideTabBarOnSingleTab );
+bool UITabWidgetSplitter::getShowTabBarWhenSplit() const {
+	return mShowTabBarWhenSplit;
+}
+
+void UITabWidgetSplitter::setShowTabBarWhenSplit( bool showTabBarWhenSplit ) {
+	if ( mShowTabBarWhenSplit != showTabBarWhenSplit ) {
+		mShowTabBarWhenSplit = showTabBarWhenSplit;
+		updateTabBarVisibility();
 	}
 }
 
@@ -912,7 +969,7 @@ void UITabWidgetSplitter::unserializeNode( const nlohmann::json& j, UITabWidget*
 					!result.title.empty() ? result.title : file.value( "title", "" );
 				auto [tab, _] = createWidgetInTabWidget( curTabWidget, result.widget, title );
 				if ( result.icon )
-					tab->setIcon( result.icon );
+					tab->setIcon( result.icon->clone() );
 			}
 		}
 		if ( curTabWidget->getTabCount() > 0 ) {

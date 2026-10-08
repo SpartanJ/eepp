@@ -2,11 +2,16 @@
 #define EE_GRAPHICSCSHADER_H
 
 #include <eepp/graphics/base.hpp>
+#include <eepp/graphics/resource.hpp>
 
 #include <eepp/system/pack.hpp>
 using namespace EE::System;
 
 namespace EE { namespace Graphics {
+
+class Shader;
+using ShaderPtr = ResourcePtr<Shader>;
+using ShaderWeakPtr = ResourceWeakPtr<Shader>;
 
 /** @brief The basic shader class. */
 class EE_API Shader {

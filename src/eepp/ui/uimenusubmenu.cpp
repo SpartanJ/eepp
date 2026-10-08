@@ -27,8 +27,6 @@ UIMenuSubMenu::UIMenuSubMenu() :
 
 UIMenuSubMenu::~UIMenuSubMenu() {
 	if ( mSubMenu ) {
-		if ( mSubMenuCloseCb )
-			mSubMenu->removeEventListener( mSubMenuCloseCb );
 		mSubMenu->setOwnerNode( nullptr );
 	}
 }
@@ -83,14 +81,14 @@ UIWidget* UIMenuSubMenu::getExtraInnerWidget() const {
 void UIMenuSubMenu::setSubMenu( UIMenu* subMenu ) {
 	if ( nullptr != mSubMenu && mSubMenu != subMenu ) {
 		getActionManager()->removeActionsByTagFromTarget( this, String::hash( "subMenu" ) );
-		if ( mSubMenuCloseCb )
-			mSubMenu->removeEventListener( mSubMenuCloseCb );
+		mSubMenuCloseConnection.disconnect();
 		mSubMenu->setOwnerNode( nullptr );
 	}
 	mSubMenu = subMenu;
 	if ( nullptr != mSubMenu ) {
 		mSubMenu->setOwnerNode( this );
-		mSubMenuCloseCb = mSubMenu->on( Event::OnClose, [this]( auto ) { mSubMenu = nullptr; } );
+		mSubMenuCloseConnection =
+			mSubMenu->connect( Event::OnClose, [this]( auto ) { mSubMenu = nullptr; } );
 	}
 }
 
@@ -99,12 +97,14 @@ UIMenu* UIMenuSubMenu::getSubMenu() const {
 }
 
 void UIMenuSubMenu::showSubMenu() {
-	sendCommonEvent( Event::OnMenuShow );
+	notifySubMenuWillShow();
+	if ( nullptr == mSubMenu )
+		return;
 	UIMenu* menu = getParent()->asType<UIMenu>();
 	mSubMenu->setParent( menu->getParent() );
 	Vector2f pos = getPixelsPosition();
 	nodeToWorldTranslation( pos );
-	pos.x += mSize.getWidth() + menu->getPadding().Right;
+	pos.x += mSize.getWidth() + menu->getPixelsPadding().Right;
 	UIMenu::findBestMenuPos( pos, mSubMenu, menu, this );
 	mSubMenu->getParent()->worldToNode( pos );
 	mSubMenu->setPosition( pos );
@@ -114,6 +114,10 @@ void UIMenuSubMenu::showSubMenu() {
 		mSubMenu->show();
 		menu->mCurrentSubMenu = mSubMenu;
 	}
+}
+
+void UIMenuSubMenu::notifySubMenuWillShow() {
+	sendCommonEvent( Event::OnMenuShow );
 }
 
 Uint32 UIMenuSubMenu::onMouseOver( const Vector2i& pos, const Uint32& flags ) {
@@ -161,6 +165,7 @@ void UIMenuSubMenu::setMouseOverTimeShowMenu( const Time& maxTime ) {
 void UIMenuSubMenu::onClose() {
 	if ( mSubMenu )
 		mSubMenu->setOwnerNode( nullptr );
+	UIMenuItem::onClose();
 }
 
 }} // namespace EE::UI

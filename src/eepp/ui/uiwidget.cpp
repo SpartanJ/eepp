@@ -18,6 +18,7 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
+#include <optional>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -25,6 +26,15 @@
 using namespace EE::Window;
 
 namespace EE { namespace UI {
+
+Uint32 UIWidget::getDefaultTextHints() const {
+	const UISceneNode* sceneNode = getUISceneNode();
+	return sceneNode ? sceneNode->getDefaultTextHints() : 0;
+}
+
+void UIWidget::onTextHintsChanged() {
+	invalidateDraw();
+}
 
 static bool isDataAttributeName( std::string_view name ) {
 	return String::istartsWith( String::trim( name ), "data-" );
@@ -245,7 +255,7 @@ UIWidget* UIWidget::updateLayoutMarginAuto() {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
-	if ( mLayoutMargin != margin ) {
+	if ( mLayoutMarginPx != margin ) {
 		mLayoutMarginPx = margin;
 		mLayoutMargin = PixelDensity::pxToDp( mLayoutMarginPx ).ceil();
 		onMarginChange();
@@ -257,7 +267,7 @@ UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginLeft( const Float& marginLeft ) {
-	if ( mLayoutMargin.Left != marginLeft ) {
+	if ( mLayoutMarginPx.Left != marginLeft ) {
 		mLayoutMarginPx.Left = marginLeft;
 		mLayoutMargin.Left = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Left ) );
 		onMarginChange();
@@ -269,7 +279,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginLeft( const Float& marginLeft ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginRight( const Float& marginRight ) {
-	if ( mLayoutMargin.Right != marginRight ) {
+	if ( mLayoutMarginPx.Right != marginRight ) {
 		mLayoutMarginPx.Right = marginRight;
 		mLayoutMargin.Right = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Right ) );
 		onMarginChange();
@@ -281,7 +291,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginRight( const Float& marginRight ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginTop( const Float& marginTop ) {
-	if ( mLayoutMargin.Top != marginTop ) {
+	if ( mLayoutMarginPx.Top != marginTop ) {
 		mLayoutMarginPx.Top = marginTop;
 		mLayoutMargin.Top = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Top ) );
 		onMarginChange();
@@ -293,7 +303,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginTop( const Float& marginTop ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginBottom( const Float& marginBottom ) {
-	if ( mLayoutMargin.Bottom != marginBottom ) {
+	if ( mLayoutMarginPx.Bottom != marginBottom ) {
 		mLayoutMarginPx.Bottom = marginBottom;
 		mLayoutMargin.Bottom = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Bottom ) );
 		onMarginChange();
@@ -405,6 +415,7 @@ UITooltip* UIWidget::createTooltip() {
 	mTooltip->setTooltipOf( this );
 	if ( !mTooltipText.empty() )
 		mTooltip->setText( mTooltipText );
+	sendCommonEvent( Event::OnTooltipCreated );
 	return mTooltip;
 }
 
@@ -427,6 +438,24 @@ void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 			mUISceneNode->invalidateStyleState( child );
 		}
 	}
+}
+
+UITextSelectionController* UIWidget::getTextSelectionController() {
+	return nullptr;
+}
+
+const UITextSelectionController* UIWidget::getTextSelectionController() const {
+	return nullptr;
+}
+
+UITextSelectionController* UIWidget::getTextSelectionControllerInTree() const {
+	for ( Node* node = const_cast<UIWidget*>( this ); node; node = node->getParent() ) {
+		if ( node->isWidget() ) {
+			if ( auto* controller = node->asType<UIWidget>()->getTextSelectionController() )
+				return controller;
+		}
+	}
+	return nullptr;
 }
 
 Uint32 UIWidget::onKeyDown( const KeyEvent& event ) {
@@ -519,7 +548,6 @@ Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 		 NULL != mTooltip && !mTooltip->dontAutoHideOnMouseMove() ) {
 		mTooltip->hide();
 	}
-
 	return UINode::onMouseLeave( Pos, Flags );
 }
 
@@ -624,6 +652,11 @@ UITooltip* UIWidget::getTooltip() {
 void UIWidget::calculateAutoMargin() {
 	if ( !mMarginAuto || !getParent() || !getParent()->isWidget() )
 		return;
+	// HTML auto margins are computed used values owned by the active formatting context. Mutating
+	// the stored resolved margin here leaks block-layout results into inline, flex, positioned, or
+	// asynchronously restyled passes. This native solver remains for eepp layout widgets only.
+	if ( mFlags & UI_HTML_ELEMENT )
+		return;
 
 	UIWidget* parent = getParent()->asType<UIWidget>();
 	Sizef parentSize = parent->getPixelsSize();
@@ -719,6 +752,10 @@ void UIWidget::onVisibilityChange() {
 }
 
 void UIWidget::onSizeChange() {
+	onSizeChange( true );
+}
+
+void UIWidget::onSizeChange( bool notifyLayout ) {
 	if ( mMarginAuto != 0 )
 		calculateAutoMargin();
 	UINode::onSizeChange();
@@ -732,7 +769,8 @@ void UIWidget::onSizeChange() {
 	if ( mForeground != NULL )
 		mForeground->invalidate();
 
-	notifyLayoutAttrChange( LayoutInvalidation::Self );
+	if ( notifyLayout )
+		notifyLayoutAttrChange( LayoutInvalidation::Self );
 }
 
 void UIWidget::onSizePolicyChange() {}
@@ -976,9 +1014,9 @@ UIWidget* UIWidget::setPaddingBottom( const Float& paddingBottom ) {
 }
 
 UIWidget* UIWidget::setPaddingPixels( const Rectf& padding ) {
-	if ( padding != mPadding ) {
+	if ( padding != mPaddingPx ) {
 		mPaddingPx = padding;
-		mPadding = PixelDensity::pxToDp( mPadding ).ceil();
+		mPadding = PixelDensity::pxToDp( mPaddingPx ).ceil();
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange( LayoutInvalidation::Self );
@@ -988,9 +1026,9 @@ UIWidget* UIWidget::setPaddingPixels( const Rectf& padding ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsLeft( const Float& paddingLeft ) {
-	if ( paddingLeft != mPadding.Left ) {
+	if ( paddingLeft != mPaddingPx.Left ) {
 		mPaddingPx.Left = paddingLeft;
-		mPadding.Left = eeceil( PixelDensity::pxToDp( mPadding.Left ) );
+		mPadding.Left = eeceil( PixelDensity::pxToDp( mPaddingPx.Left ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange( LayoutInvalidation::Self );
@@ -1000,9 +1038,9 @@ UIWidget* UIWidget::setPaddingPixelsLeft( const Float& paddingLeft ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsRight( const Float& paddingRight ) {
-	if ( paddingRight != mPadding.Right ) {
+	if ( paddingRight != mPaddingPx.Right ) {
 		mPaddingPx.Right = paddingRight;
-		mPadding.Right = eeceil( PixelDensity::pxToDp( mPadding.Right ) );
+		mPadding.Right = eeceil( PixelDensity::pxToDp( mPaddingPx.Right ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange( LayoutInvalidation::Self );
@@ -1012,9 +1050,9 @@ UIWidget* UIWidget::setPaddingPixelsRight( const Float& paddingRight ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsTop( const Float& paddingTop ) {
-	if ( paddingTop != mPadding.Top ) {
+	if ( paddingTop != mPaddingPx.Top ) {
 		mPaddingPx.Top = paddingTop;
-		mPadding.Top = eeceil( PixelDensity::pxToDp( mPadding.Top ) );
+		mPadding.Top = eeceil( PixelDensity::pxToDp( mPaddingPx.Top ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange( LayoutInvalidation::Self );
@@ -1024,9 +1062,9 @@ UIWidget* UIWidget::setPaddingPixelsTop( const Float& paddingTop ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsBottom( const Float& paddingBottom ) {
-	if ( paddingBottom != mPadding.Bottom ) {
+	if ( paddingBottom != mPaddingPx.Bottom ) {
 		mPaddingPx.Bottom = paddingBottom;
-		mPadding.Bottom = eeceil( PixelDensity::pxToDp( mPadding.Bottom ) );
+		mPadding.Bottom = eeceil( PixelDensity::pxToDp( mPaddingPx.Bottom ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange( LayoutInvalidation::Self );
@@ -1318,6 +1356,10 @@ bool UIWidget::hasPseudoClass( const std::string& pseudoCls ) const {
 	return ( mPseudoClasses & StyleSheetSelectorRule::toPseudoClass( pseudoCls ) ) != 0;
 }
 
+bool UIWidget::hasPseudoClass( StyleSheetSelectorRule::PseudoClasses pseudoCls ) const {
+	return ( mPseudoClasses & static_cast<Uint32>( pseudoCls ) ) != 0;
+}
+
 bool UIWidget::isTooltipEnabled() const {
 	return ( mFlags & UI_TOOLTIP_ENABLED ) != 0;
 }
@@ -1441,6 +1483,10 @@ UIStyle* UIWidget::getUIStyle() const {
 	return mStyle;
 }
 
+Color UIWidget::themeColor( const std::string& variable, Color fallback ) const {
+	return mStyle ? mStyle->getColorVariable( variable, fallback ) : fallback;
+}
+
 void UIWidget::reloadStyle( bool reloadChildren, bool disableAnimations, bool reportStateChange,
 							bool forceReApplyProperties, bool resetPropertyCache ) {
 	createStyle();
@@ -1501,10 +1547,18 @@ void UIWidget::beginAttributesTransaction() {
 	mAttributesTransactionCount++;
 }
 
+void UIWidget::onAttributesTransactionEnd() {}
+
 void UIWidget::endAttributesTransaction() {
+	eeASSERT( mAttributesTransactionCount > 0 );
 	mAttributesTransactionCount--;
 
 	if ( 0 == mAttributesTransactionCount ) {
+		// Reconcile interdependent properties against the complete, final style
+		// before emitting the accumulated layout notifications so that any change
+		// triggered by the reconciliation is folded into the same pending flags.
+		onAttributesTransactionEnd();
+
 		if ( mFlags & UI_ATTRIBUTE_CHANGED ) {
 			LayoutInvalidationFlags reasons = mPendingLayoutReasons;
 			mPendingLayoutReasons = 0;
@@ -1530,8 +1584,8 @@ const Uint32& UIWidget::getStylePreviousState() const {
 	return NULL != mStyle ? mStyle->getPreviousState() : mState;
 }
 
-std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) {
-	std::vector<UIWidget*> widgets;
+WidgetQueryResult UIWidget::findAllByClass( const std::string& className ) {
+	WidgetQueryResult widgets;
 
 	if ( !isClosing() && hasClass( className ) && !inClosingTree() ) {
 		widgets.push_back( this );
@@ -1541,8 +1595,7 @@ std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) 
 
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
-			std::vector<UIWidget*> foundWidgets =
-				child->asType<UIWidget>()->findAllByClass( className );
+			WidgetQueryResult foundWidgets = child->asType<UIWidget>()->findAllByClass( className );
 
 			if ( !foundWidgets.empty() )
 				widgets.insert( widgets.end(), foundWidgets.begin(), foundWidgets.end() );
@@ -1554,8 +1607,8 @@ std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) 
 	return widgets;
 }
 
-std::vector<UIWidget*> UIWidget::findAllByTag( const std::string& tag ) {
-	std::vector<UIWidget*> widgets;
+WidgetQueryResult UIWidget::findAllByTag( const std::string& tag ) {
+	WidgetQueryResult widgets;
 
 	if ( !isClosing() && getElementTag() == tag && !inClosingTree() ) {
 		widgets.push_back( this );
@@ -1565,7 +1618,7 @@ std::vector<UIWidget*> UIWidget::findAllByTag( const std::string& tag ) {
 
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
-			std::vector<UIWidget*> foundWidgets = child->asType<UIWidget>()->findAllByTag( tag );
+			WidgetQueryResult foundWidgets = child->asType<UIWidget>()->findAllByTag( tag );
 
 			if ( !foundWidgets.empty() )
 				widgets.insert( widgets.end(), foundWidgets.begin(), foundWidgets.end() );
@@ -1640,8 +1693,8 @@ UIWidget* UIWidget::querySelector( const CSS::StyleSheetSelector& selector ) {
 	return NULL;
 }
 
-std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector& selector ) {
-	std::vector<UIWidget*> widgets;
+WidgetQueryResult UIWidget::querySelectorAll( const CSS::StyleSheetSelector& selector ) {
+	WidgetQueryResult widgets;
 
 	if ( !isClosing() && !inClosingTree() && selector.select( this ) ) {
 		widgets.push_back( this );
@@ -1651,7 +1704,7 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector
 
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
-			std::vector<UIWidget*> foundWidgets =
+			WidgetQueryResult foundWidgets =
 				child->asType<UIWidget>()->querySelectorAll( selector );
 
 			if ( !foundWidgets.empty() )
@@ -1687,8 +1740,12 @@ UIWidget* UIWidget::querySelector( const std::string& selector ) {
 	return querySelector( CSS::StyleSheetSelector( selector ) );
 }
 
-std::vector<UIWidget*> UIWidget::querySelectorAll( const std::string& selector ) {
+WidgetQueryResult UIWidget::querySelectorAll( const std::string& selector ) {
 	return querySelectorAll( CSS::StyleSheetSelector( selector ) );
+}
+
+Cursor::Type UIWidget::getCursor() const {
+	return static_cast<Cursor::Type>( mCursor );
 }
 
 std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
@@ -1751,6 +1808,10 @@ std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
 			 PropertyId::BorderTopWidth,
 			 PropertyId::BorderRightWidth,
 			 PropertyId::BorderBottomWidth,
+			 PropertyId::BorderLeftStyle,
+			 PropertyId::BorderTopStyle,
+			 PropertyId::BorderRightStyle,
+			 PropertyId::BorderBottomStyle,
 			 PropertyId::BorderTopLeftRadius,
 			 PropertyId::BorderTopRightRadius,
 			 PropertyId::BorderBottomLeftRadius,
@@ -1832,7 +1893,7 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::Opacity:
 			return String::fromFloat( getAlpha() / 255.f );
 		case PropertyId::Cursor:
-			return "arrow";
+			return Cursor::toName( getCursor() );
 		case PropertyId::Visible:
 			return isVisible() ? "true" : "false";
 		case PropertyId::Enabled:
@@ -1907,6 +1968,14 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::fromFloat( setBorderEnabled( true )->getBorders().top.width, "px" );
 		case PropertyId::BorderBottomWidth:
 			return String::fromFloat( setBorderEnabled( true )->getBorders().bottom.width, "px" );
+		case PropertyId::BorderLeftStyle:
+			return Borders::fromBorderStyle( setBorderEnabled( true )->getBorders().left.style );
+		case PropertyId::BorderRightStyle:
+			return Borders::fromBorderStyle( setBorderEnabled( true )->getBorders().right.style );
+		case PropertyId::BorderTopStyle:
+			return Borders::fromBorderStyle( setBorderEnabled( true )->getBorders().top.style );
+		case PropertyId::BorderBottomStyle:
+			return Borders::fromBorderStyle( setBorderEnabled( true )->getBorders().bottom.style );
 		case PropertyId::BorderTopLeftRadius:
 			return String::format(
 				"%s %s",
@@ -1941,6 +2010,8 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 					   : "false";
 		case PropertyId::Focusable:
 			return isTabFocusable() ? "true" : "false";
+		case PropertyId::Id:
+			return getId();
 		case PropertyId::Class: {
 			std::string cls;
 			const auto& classes = getStyleSheetClasses();
@@ -1966,14 +2037,18 @@ void UIWidget::setStyleSheetInlineProperty( const std::string& name, const std::
 }
 
 void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& property ) {
-	CSS::StyleSheetProperty propToPropagate = property;
+	const CSS::StyleSheetProperty* propertyToPropagate = &property;
+	std::optional<CSS::StyleSheetProperty> resolvedProperty;
 
-	if ( propToPropagate.needsValueSubstitution() && NULL != mStyle )
-		mStyle->applyVarValues( &propToPropagate );
+	if ( property.needsValueSubstitution() && NULL != mStyle ) {
+		resolvedProperty.emplace( property );
+		mStyle->applyVarValues( &*resolvedProperty );
+		propertyToPropagate = &*resolvedProperty;
+	}
 
-	if ( propToPropagate.getPropertyDefinition() &&
-		 propToPropagate.getPropertyDefinition()->getPropertyId() == PropertyId::FontSize ) {
-		StyleSheetLength length( propToPropagate.value() );
+	if ( propertyToPropagate->getPropertyDefinition() &&
+		 propertyToPropagate->getPropertyDefinition()->getPropertyId() == PropertyId::FontSize ) {
+		StyleSheetLength length( propertyToPropagate->value() );
 		Float pxSize = 0;
 
 		if ( length.getUnit() == StyleSheetLength::Unit::Rem ) {
@@ -2001,14 +2076,23 @@ void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& proper
 			else
 				pxSize = ( length.getValue() / 100.f ) * parentFontSize;
 		} else {
-			pxSize = lengthFromValue( propToPropagate );
+			pxSize = lengthFromValue( *propertyToPropagate );
 		}
 
-		propToPropagate = CSS::StyleSheetProperty(
-			propToPropagate.getName(), String::fromFloat( PixelDensity::pxToDp( pxSize ), "dp" ),
-			propToPropagate.getSpecificity() );
+		const PropertyDefinition* propertyDefinition = propertyToPropagate->getPropertyDefinition();
+		const Uint32 propertyIndex = propertyToPropagate->getIndex();
+		const Int64 specificity = propertyToPropagate->getSpecificity();
+		resolvedProperty.emplace( propertyDefinition,
+								  String::fromFloat( PixelDensity::pxToDp( pxSize ), "dp" ),
+								  propertyIndex );
+		resolvedProperty->setSpecificity( specificity );
+		propertyToPropagate = &*resolvedProperty;
 	}
 
+	propagateInheritedPropertyResolved( *propertyToPropagate );
+}
+
+void UIWidget::propagateInheritedPropertyResolved( const CSS::StyleSheetProperty& property ) {
 	Node* child = getFirstChild();
 	while ( child ) {
 		if ( child->isWidget() ) {
@@ -2016,9 +2100,9 @@ void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& proper
 			UIStyle* childStyle = childWidget->getUIStyle();
 			// Only propagate if the child doesn't explicitly override it
 			if ( childStyle && !childStyle->hasLocalProperty(
-								   propToPropagate.getPropertyDefinition()->getPropertyId() ) ) {
-				childWidget->applyProperty( propToPropagate );
-				childWidget->propagateInheritedProperty( propToPropagate );
+								   property.getPropertyDefinition()->getPropertyId() ) ) {
+				childWidget->applyProperty( property );
+				childWidget->propagateInheritedPropertyResolved( property );
 			}
 		}
 		child = child->getNextNode();
@@ -2302,14 +2386,14 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::LayoutWidth: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-
-			if ( "match_parent" == val || "match-parent" == val || "mp" == val ) {
+			const std::string& val = attribute.getValue();
+			if ( String::iequals( val, "match_parent" ) || String::iequals( val, "match-parent" ) ||
+				 String::iequals( val, "mp" ) ) {
 				setLayoutWidthPolicy( SizePolicy::MatchParent );
-			} else if ( "wrap_content" == val || "wrap-content" == val || "wc" == val ) {
+			} else if ( String::iequals( val, "wrap_content" ) ||
+						String::iequals( val, "wrap-content" ) || String::iequals( val, "wc" ) ) {
 				setLayoutWidthPolicy( SizePolicy::WrapContent );
-			} else if ( "fixed" == val ) {
+			} else if ( String::iequals( val, "fixed" ) ) {
 				setLayoutWidthPolicy( SizePolicy::Fixed );
 				unsetFlags( UI_AUTO_SIZE );
 			} else {
@@ -2325,14 +2409,14 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::LayoutHeight: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-
-			if ( "match_parent" == val || "match-parent" == val || "mp" == val ) {
+			const std::string& val = attribute.getValue();
+			if ( String::iequals( val, "match_parent" ) || String::iequals( val, "match-parent" ) ||
+				 String::iequals( val, "mp" ) ) {
 				setLayoutHeightPolicy( SizePolicy::MatchParent );
-			} else if ( "wrap_content" == val || "wrap-content" == val || "wc" == val ) {
+			} else if ( String::iequals( val, "wrap_content" ) ||
+						String::iequals( val, "wrap-content" ) || String::iequals( val, "wc" ) ) {
 				setLayoutHeightPolicy( SizePolicy::WrapContent );
-			} else if ( "fixed" == val ) {
+			} else if ( String::iequals( val, "fixed" ) ) {
 				setLayoutHeightPolicy( SizePolicy::Fixed );
 				unsetFlags( UI_AUTO_SIZE );
 			} else {
@@ -2352,8 +2436,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::LayoutToRightOf:
 		case PropertyId::LayoutToTopOf: {
 			PositionPolicy rule = PositionPolicy::None;
-			PropertyId layoutId =
-				static_cast<PropertyId>( attribute.getPropertyDefinition()->getId() );
+			PropertyId layoutId = attribute.getPropertyDefinition()->getPropertyId();
 			if ( layoutId == PropertyId::LayoutToLeftOf )
 				rule = PositionPolicy::LeftOf;
 			else if ( layoutId == PropertyId::LayoutToRightOf )
@@ -2374,9 +2457,9 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setClipType( UIClip::fromString( attribute.asString() ) );
 			break;
 		case PropertyId::Overflow: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-			if ( val == "hidden" || val == "auto" || val == "scroll" )
+			const std::string& val = attribute.getValue();
+			if ( String::iequals( val, "hidden" ) || String::iequals( val, "auto" ) ||
+				 String::iequals( val, "scroll" ) )
 				setClipType( ClipType::ContentBox );
 			else
 				setClipType( ClipType::None );
@@ -2410,7 +2493,10 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::Cursor:
-			mSceneNode->setCursor( Cursor::fromName( attribute.getValue() ) );
+			mCursor = static_cast<Uint8>( Cursor::fromName( attribute.getValue() ) );
+			if ( mSceneNode && getEventDispatcher() &&
+				 getEventDispatcher()->getMouseOverNode() == this )
+				mSceneNode->setCursor( getCursor() );
 			break;
 		case PropertyId::BackgroundPositionX:
 			setBackgroundPositionX( attribute.value(), attribute.getIndex() );
@@ -2478,6 +2564,22 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::BorderBottomWidth:
 			setBorderEnabled( true )->setBottomWidth( attribute.value() );
+			invalidateDraw();
+			break;
+		case PropertyId::BorderLeftStyle:
+			setBorderEnabled( true )->setLeftStyle( attribute.value() );
+			invalidateDraw();
+			break;
+		case PropertyId::BorderRightStyle:
+			setBorderEnabled( true )->setRightStyle( attribute.value() );
+			invalidateDraw();
+			break;
+		case PropertyId::BorderTopStyle:
+			setBorderEnabled( true )->setTopStyle( attribute.value() );
+			invalidateDraw();
+			break;
+		case PropertyId::BorderBottomStyle:
+			setBorderEnabled( true )->setBottomStyle( attribute.value() );
 			invalidateDraw();
 			break;
 		case PropertyId::BorderTopLeftRadius:
@@ -2588,7 +2690,7 @@ std::string UIWidget::getLayoutWidthPolicyString() const {
 		return "match_parent";
 	else if ( rules == SizePolicy::WrapContent )
 		return "wrap_content";
-	return String::fromFloat( getSize().getHeight(), "dp" );
+	return String::fromFloat( getSize().getWidth(), "dp" );
 }
 
 std::string UIWidget::getLayoutHeightPolicyString() const {

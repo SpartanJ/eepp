@@ -15,6 +15,7 @@ void addMarkdown() {
 		{ "Markdown",
 		  { "%.md$", "%.markdown$" },
 		  {
+			  { { "```text", "```" }, "string" },
 			  { { "```[%w \t%+%-#]+", "```" }, "function", dynSyntax },
 			  { { "include", "#comments" }, "normal" },
 			  { { "include", "#strings" }, "normal" },

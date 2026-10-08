@@ -39,6 +39,8 @@ class EE_API RendererGLES2 : public RendererGLShader {
 
 	void enable( unsigned int cap );
 
+	void onContextChanged();
+
 	void enableClientState( unsigned int array );
 
 	void disableClientState( unsigned int array );
@@ -74,7 +76,7 @@ class EE_API RendererGLES2 : public RendererGLShader {
 	void reloadCurrentShader();
 
   protected:
-	ShaderProgram* mShaders[EEGLES2_SHADERS_COUNT];
+	ShaderProgramPtr mShaders[EEGLES2_SHADERS_COUNT];
 	int mAttribsLoc[EEGL_ARRAY_STATES_COUNT];
 	int mAttribsLocStates[EEGL_ARRAY_STATES_COUNT];
 	int mPlanes[EE_MAX_PLANES];
@@ -98,6 +100,8 @@ class EE_API RendererGLES2 : public RendererGLShader {
 	void reloadShader( ShaderProgram* Shader );
 
 	void checkLocalShader();
+	ShaderProgramPtr createSubpixelDualSourceShader();
+	bool canUseSubpixelDualSourceShader() const;
 };
 
 }} // namespace EE::Graphics

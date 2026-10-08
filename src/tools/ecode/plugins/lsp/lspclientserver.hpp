@@ -75,6 +75,8 @@ class LSPClientServer {
 
 	bool registerDoc( const std::shared_ptr<TextDocument>& doc );
 
+	void detachDocuments();
+
 	bool isRunning();
 
 	bool isReady() const;

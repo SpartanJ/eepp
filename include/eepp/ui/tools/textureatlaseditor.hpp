@@ -2,7 +2,6 @@
 #define EE_UITOOLSCTEXTUREATLASEDITOR_HPP
 
 #include <eepp/graphics/textureatlasloader.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturepacker.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/base.hpp>

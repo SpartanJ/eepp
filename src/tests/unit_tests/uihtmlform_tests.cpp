@@ -31,7 +31,7 @@ static UISceneNode* initFormTest( const std::string& title ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
@@ -127,6 +127,30 @@ UTEST( UIHTMLForm, submitPOST ) {
 	EXPECT_TRUE( interceptedBody.find( "password=" ) != std::string::npos );
 	EXPECT_TRUE( interceptedBody.find( URI::encode( "secret" ) ) != std::string::npos );
 
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLForm, emptyActionSubmitsToCurrentDocumentURL ) {
+	auto* sceneNode = initFormTest( "Form Empty Action Test" );
+	sceneNode->setURIFromURL( URI( "https://news.ycombinator.com/login?goto=news" ) );
+	NavigationRequest intercepted;
+	sceneNode->setNavigationInterceptorCb( [&]( const NavigationRequest& request ) {
+		intercepted = request;
+		return true;
+	} );
+	auto* form = UIHTMLForm::New();
+	form->setParent( sceneNode->getRoot() );
+	form->setMethod( "post" );
+	auto* account = UIHTMLInput::New();
+	account->setParent( form );
+	account->setInputType( "text" );
+	account->setStyleSheetInlineProperty( "name", "acct" );
+	static_cast<UITextInput*>( account->getChildWidget() )->setText( "example" );
+	form->submit();
+	EXPECT_TRUE( intercepted.uri.toString() == "https://news.ycombinator.com/login?goto=news" );
+	EXPECT_TRUE( intercepted.method == "POST" );
+	EXPECT_TRUE( intercepted.body.find( "acct=example" ) != std::string::npos );
+	EXPECT_TRUE( intercepted.source == form );
 	Engine::destroySingleton();
 }
 

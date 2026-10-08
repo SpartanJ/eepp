@@ -22,9 +22,7 @@ class EE_API StyleSheetPropertiesParser {
 	const StyleSheetVariables& getVariables() const;
 
   protected:
-	enum ReadState { ReadingPropertyName, ReadingPropertyValue, ReadingComment };
-
-	ReadState mPrevRs{ ReadingPropertyName };
+	enum ReadState { ReadingPropertyName, ReadingPropertyValue };
 
 	StyleSheetProperties mProperties;
 	StyleSheetVariables mVariables;
@@ -34,8 +32,6 @@ class EE_API StyleSheetPropertiesParser {
 
 	int readPropertyValue( ReadState& rs, std::size_t pos, std::string& buffer,
 						   std::string_view str );
-
-	int readComment( ReadState& rs, std::size_t pos, std::string& buffer, std::string_view str );
 
 	void addProperty( std::string name, std::string value );
 };

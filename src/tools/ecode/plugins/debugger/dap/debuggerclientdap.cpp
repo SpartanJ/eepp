@@ -25,6 +25,16 @@ inline DebuggerClientDap::ResponseHandler makeResponseHandler(
 	};
 }
 
+template <typename T, typename Notify>
+void notifyAllWithValue( const std::vector<DebuggerClient::Listener*>& listeners, T value,
+						 Notify&& notify ) {
+	if ( listeners.empty() )
+		return;
+	for ( std::size_t i = 0; i + 1 < listeners.size(); ++i )
+		notify( listeners[i], T( value ) );
+	notify( listeners.back(), std::move( value ) );
+}
+
 DebuggerClientDap::DebuggerClientDap( const ProtocolSettings& protocolSettings,
 									  std::unique_ptr<Bus>&& bus ) :
 	mProtocol( protocolSettings ) {
@@ -784,11 +794,15 @@ bool DebuggerClientDap::threads() {
 			if ( response.success && response.body.contains( DAP_THREADS ) ) {
 				std::vector<DapThread> threads(
 					DapThread::parseList( response.body[DAP_THREADS] ) );
-				for ( auto listener : mListeners )
-					listener->threads( std::move( threads ), mCurrentSessionId );
+				notifyAllWithValue( mListeners, std::move( threads ),
+									[this]( auto* listener, auto&& value ) {
+										listener->threads( std::move( value ), mCurrentSessionId );
+									} );
 			} else {
-				for ( auto listener : mListeners )
-					listener->threads( {}, mCurrentSessionId );
+				notifyAllWithValue( mListeners, std::vector<DapThread>{},
+									[this]( auto* listener, auto&& value ) {
+										listener->threads( std::move( value ), mCurrentSessionId );
+									} );
 			}
 		},
 		mCurrentSessionId );
@@ -805,14 +819,16 @@ bool DebuggerClientDap::stackTrace( int threadId, int startFrame, int levels ) {
 			const int threadId = request.value( DAP_THREAD_ID, 1 );
 			if ( response.success ) {
 				StackTraceInfo stackTraceInfo( response.body );
-				for ( auto listener : mListeners )
-					listener->stackTrace( threadId, std::move( stackTraceInfo ),
-										  mCurrentSessionId );
+				notifyAllWithValue( mListeners, std::move( stackTraceInfo ),
+									[this, threadId]( auto* listener, auto&& value ) {
+										listener->stackTrace( threadId, std::move( value ),
+															  mCurrentSessionId );
+									} );
 			} else {
-				StackTraceInfo stackTraceInfo;
-				for ( auto listener : mListeners )
-					listener->stackTrace( threadId, std::move( stackTraceInfo ),
-										  mCurrentSessionId );
+				notifyAllWithValue(
+					mListeners, StackTraceInfo{}, [this, threadId]( auto* listener, auto&& value ) {
+						listener->stackTrace( threadId, std::move( value ), mCurrentSessionId );
+					} );
 			}
 		},
 		mCurrentSessionId );
@@ -827,12 +843,17 @@ bool DebuggerClientDap::scopes( int frameId ) {
 			const int frameId = request.value( DAP_FRAME_ID, 1 );
 			if ( response.success && response.body.contains( DAP_SCOPES ) ) {
 				auto scopes( Scope::parseList( response.body[DAP_SCOPES] ) );
-				for ( auto listener : mListeners )
-					listener->scopes( frameId, std::move( scopes ), mCurrentSessionId );
+				notifyAllWithValue( mListeners, std::move( scopes ),
+									[this, frameId]( auto* listener, auto&& value ) {
+										listener->scopes( frameId, std::move( value ),
+														  mCurrentSessionId );
+									} );
 			} else {
-				std::vector<Scope> scopes;
-				for ( auto listener : mListeners )
-					listener->scopes( frameId, std::move( scopes ), mCurrentSessionId );
+				notifyAllWithValue( mListeners, std::vector<Scope>{},
+									[this, frameId]( auto* listener, auto&& value ) {
+										listener->scopes( frameId, std::move( value ),
+														  mCurrentSessionId );
+									} );
 			}
 		},
 		mCurrentSessionId );
@@ -907,12 +928,15 @@ bool DebuggerClientDap::modules( int start, int count ) {
 		[this]( const auto& response, const auto& ) {
 			if ( response.success ) {
 				ModulesInfo info( response.body );
-				for ( auto listener : mListeners )
-					listener->modules( std::move( info ), mCurrentSessionId );
+				notifyAllWithValue( mListeners, std::move( info ),
+									[this]( auto* listener, auto&& value ) {
+										listener->modules( std::move( value ), mCurrentSessionId );
+									} );
 			} else {
-				ModulesInfo info;
-				for ( auto listener : mListeners )
-					listener->modules( std::move( info ), mCurrentSessionId );
+				notifyAllWithValue( mListeners, ModulesInfo{},
+									[this]( auto* listener, auto&& value ) {
+										listener->modules( std::move( value ), mCurrentSessionId );
+									} );
 			}
 		},
 		mCurrentSessionId );

@@ -1061,6 +1061,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 								// redirections, send a new request to the redirection location.
 								if ( ( received.getStatus() == Response::MovedPermanently ||
 									   received.getStatus() == Response::MovedTemporarily ||
+									   received.getStatus() == Response::SeeOther ||
 									   received.getStatus() == Response::PermanentRedirect ||
 									   received.getStatus() == Response::TemporaryRedirect ) &&
 									 request.getFollowRedirect() ) {
@@ -1094,9 +1095,38 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 											newRequest.setProgressCallback(
 												request.getProgressCallback() );
 
-											if ( received.hasField( "set-cookie" ) ) {
-												newRequest.setField(
-													"Cookie", received.getField( "set-cookie" ) );
+											if ( received.hasField( "set-cookie" ) &&
+												 ( uri.getHost().empty() ||
+												   uri.getHost() == getHostName() ) ) {
+												const std::string& setCookie =
+													received.getField( "set-cookie" );
+												std::string_view cookiePair = String::trim(
+													std::string_view( setCookie )
+														.substr( 0, setCookie.find( ';' ) ) );
+												const size_t equals = cookiePair.find( '=' );
+												if ( equals != std::string::npos && equals != 0 ) {
+													std::string cookieHeader( cookiePair );
+													std::string_view cookieName =
+														cookiePair.substr( 0, equals );
+													const std::string& previous =
+														request.getField( "cookie" );
+													String::readBySeparator(
+														previous,
+														[&]( std::string_view part ) {
+															std::string_view pair =
+																String::trim( part );
+															if ( !pair.empty() &&
+																 pair.substr( 0,
+																			  pair.find( '=' ) ) !=
+																	 cookieName ) {
+																cookieHeader += "; ";
+																cookieHeader.append( pair.data(),
+																					 pair.size() );
+															}
+														},
+														';' );
+													newRequest.setField( "Cookie", cookieHeader );
+												}
 											}
 
 											request.mRedirectionCount++;
@@ -1815,7 +1845,7 @@ static constexpr const char* LINE_END = "\r\n";
 
 Http::MultipartEntitiesBuilder::MultipartEntitiesBuilder() :
 	MultipartEntitiesBuilder( "eepp-client-boundary-" +
-							  String::toString( (Uint64)Sys::getSystemTime() ) ) {}
+							  String::toString( Sys::getUnixTimestamp() ) ) {}
 
 Http::MultipartEntitiesBuilder::MultipartEntitiesBuilder( const std::string& boundary ) :
 	mBoundary( boundary ) {}

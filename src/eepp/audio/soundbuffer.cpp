@@ -8,7 +8,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/system/scopedbuffer.hpp>
 
 namespace EE { namespace Audio {
@@ -49,10 +49,10 @@ SoundBuffer::~SoundBuffer() {
 
 bool SoundBuffer::loadFromFile( const std::string& filename ) {
 	if ( !FileSystem::fileExists( filename ) ) {
-		if ( PackManager::instance()->isFallbackToPacksActive() ) {
+		if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 			std::string tPath( filename );
 
-			Pack* tPack = PackManager::instance()->exists( tPath );
+			Pack* tPack = PackRegistry::instance()->exists( tPath );
 
 			if ( NULL != tPack ) {
 				return loadFromPack( tPack, tPath );

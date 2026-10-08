@@ -1,10 +1,12 @@
 #ifndef EE_WINDOWCWINDOW_HPP
 #define EE_WINDOWCWINDOW_HPP
 
+#include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/view.hpp>
 #include <eepp/window/base.hpp>
+#include <eepp/window/framepresenter.hpp>
 #include <eepp/window/inputmethod.hpp>
 
 #include <limits>
@@ -25,8 +27,11 @@ enum WindowStyle {
 	Resize = ( 1 << 2 ),
 	Fullscreen = ( 1 << 3 ),
 	UseDesktopResolution = ( 1 << 4 ),
+	Hidden = ( 1 << 5 ),
 #if EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_ANDROID
 	Default = Borderless
+#elif defined( EE_UNIT_TESTS )
+	Default = Titlebar | Resize | Hidden
 #else
 	Default = Titlebar | Resize
 #endif
@@ -40,6 +45,28 @@ enum class WindowFlashOperation {
 
 enum class WindowBackend : Uint32 { SDL2, SDL3, Default };
 
+/** Pixel layout requested from Window::readFrameBuffer(). */
+enum class FramePixelFormat : Uint8 { RGB24, RGBA32 };
+
+/** Row orientation of framebuffer readback storage. */
+enum class FrameOrigin : Uint8 { BottomLeft, TopLeft };
+
+/** Description of caller-owned storage for a framebuffer rectangle readback. */
+struct FrameReadback {
+	/** Destination pixel storage. */
+	Uint8* pixels{ nullptr };
+	/** Rectangle size in pixels. */
+	Sizei size;
+	/** Destination row stride in bytes. */
+	size_t stride{ 0 };
+	/** Bottom-left framebuffer coordinate of the rectangle. */
+	Vector2i position;
+	/** Destination pixel layout. */
+	FramePixelFormat format{ FramePixelFormat::RGB24 };
+	/** Requested destination row orientation. */
+	FrameOrigin origin{ FrameOrigin::BottomLeft };
+};
+
 #ifndef EE_SCREEN_KEYBOARD_ENABLED
 #define EE_SCREEN_KEYBOARD_ENABLED false
 #endif
@@ -50,7 +77,7 @@ class WindowSettings {
 	inline WindowSettings( Uint32 width, Uint32 height, const std::string& title = std::string(),
 						   Uint32 style = WindowStyle::Default,
 						   WindowBackend backend = WindowBackend::Default, Uint32 bpp = 32,
-						   const std::string& icon = std::string(), const Float& pixelDensity = 1,
+						   const std::string& icon = std::string(), const Float& pixelDensity = 0,
 						   const bool& useScreenKeyboard = EE_SCREEN_KEYBOARD_ENABLED,
 						   bool disableHiDPI = false ) :
 		Style( style ),
@@ -70,7 +97,7 @@ class WindowSettings {
 		Height( 600 ),
 		BitsPerPixel( 32 ),
 		Backend( WindowBackend::Default ),
-		PixelDensity( 1 ),
+		PixelDensity( 0 ),
 		UseScreenKeyboard( EE_SCREEN_KEYBOARD_ENABLED ),
 		DisableHiDPI( false ) {}
 
@@ -81,7 +108,7 @@ class WindowSettings {
 	std::string Icon;
 	std::string Title;
 	WindowBackend Backend{ WindowBackend::Default };
-	Float PixelDensity{ 1 };
+	Float PixelDensity{ 0 }; //!< Zero leaves UI density to EEPP_PIXEL_DENSITY or display detection.
 	bool UseScreenKeyboard{ EE_SCREEN_KEYBOARD_ENABLED };
 	bool DisableHiDPI{ false };
 };
@@ -247,6 +274,14 @@ class EE_API Window {
 	 */
 	virtual void setSize( Uint32 Width, Uint32 Height, bool isWindowed ) = 0;
 
+	/** Sets the native minimum client size in screen coordinates. Backends without native support
+	 * may leave the default no-op implementation. */
+	virtual void setMinimumSize( Uint32 Width, Uint32 Height );
+
+	/** Makes this window modal for @p parent. Passing nullptr clears modality where supported.
+	 * @return True when the backend applied the requested relationship. */
+	virtual bool setModalFor( Window* parent );
+
 	/** @return The window size in pixels */
 	virtual Sizei getSize() const;
 
@@ -283,6 +318,12 @@ class EE_API Window {
 	Emscripten. Since there's no swap buffers.
 	*/
 	virtual void display( bool clear = false );
+
+	/** Presents the rendered frame.
+	 * @param clear Whether to clear the back buffer after presentation.
+	 * @param limitFrameRate Whether to apply this window's frame-rate limiter. Multi-window loops
+	 * disable this per window and throttle once after all windows have been presented. */
+	void display( bool clear, bool limitFrameRate );
 
 	/** @return The elapsed time for the last frame rendered */
 	virtual const System::Time& getElapsed() const;
@@ -323,6 +364,13 @@ class EE_API Window {
 
 	/** Close the window if is running */
 	virtual void close();
+
+	/** Defers backend resource destruction until the Engine destroys this Window. Intended for
+	 * owners that must release scene resources at a safe point after close(). */
+	void setDeferNativeResourceDestructionOnClose( bool defer );
+
+	/** Returns whether close() leaves native resources alive until Engine destruction. */
+	bool getDeferNativeResourceDestructionOnClose() const;
 
 	/** Set the current active view
 	 * @param view New view to use (pass GetDefaultView() to set the default view)
@@ -372,6 +420,13 @@ class EE_API Window {
 	 * @return False if failed, otherwise returns True
 	 */
 	Image getFrontBufferImage();
+
+	/** Reads a framebuffer rectangle into caller-owned storage without allocating an Image.
+	 * The destination must hold at least `stride * size.y` bytes. TopLeft origin is written
+	 * directly in that orientation without a separate full-frame flip allocation.
+	 * @return True if the readback description is valid and the pixels were read.
+	 */
+	bool readFrameBuffer( FrameReadback& readback );
 
 	/** @return The pointer to the Window Info ( read only ) */
 	const WindowInfo* getWindowInfo() const;
@@ -534,6 +589,7 @@ class EE_API Window {
 	friend class Input;
 
 	mutable WindowInfo mWindow;
+	bool mDeferNativeResourceDestructionOnClose{ false };
 	Clipboard* mClipboard;
 	Input* mInput;
 	CursorManager* mCursorManager;
@@ -546,6 +602,8 @@ class EE_API Window {
 	Sizei mLastWindowedSize;
 	InputMethod mIME;
 	std::function<void()> mMainLoop;
+	FrameBufferUniquePtr mLogicalFrameBuffer;
+	std::unique_ptr<FramePresenter> mFramePresenter;
 
 	class FrameData {
 	  public:
@@ -592,6 +650,15 @@ class EE_API Window {
 	void sendVideoResizeCb();
 
 	void createView();
+
+	/** Creates the logical root framebuffer and presenter required by the active runtime. */
+	bool initializeRuntimeRenderTarget();
+
+	/** Resizes the logical root framebuffer and notifies its presenter. */
+	void resizeRuntimeRenderTarget( Uint32 width, Uint32 height );
+
+	/** Releases runtime presentation and logical framebuffer resources. */
+	void shutdownRuntimeRenderTarget();
 
 	void calculateFps();
 

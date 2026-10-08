@@ -11,6 +11,14 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
+static Float getEventWindowScale( EE::Window::Window* pollingWindow, Uint32 windowId ) {
+	if ( windowId == 0 || windowId == pollingWindow->getWindowID() )
+		return pollingWindow->getScale();
+	if ( auto* eventWindow = Engine::instance()->getWindowID( windowId ) )
+		return eventWindow->getScale();
+	return pollingWindow->getScale();
+}
+
 InputSDL::InputSDL( EE::Window::Window* window ) :
 	Input( window, eeNew( JoystickManagerSDL, () ) ), mDPIScale( 1.f ) {
 #if defined( EE_X11_PLATFORM )
@@ -21,12 +29,8 @@ InputSDL::InputSDL( EE::Window::Window* window ) :
 InputSDL::~InputSDL() {}
 
 void InputSDL::update() {
+	beginInputFrame();
 	SDL_Event SDLEvent;
-	cleanStates();
-
-	++mEventsSentId;
-	if ( mEventsSentId == std::numeric_limits<Uint64>::max() )
-		mEventsSentId = 0;
 
 	if ( !mQueuedEvents.empty() ) {
 		for ( const auto& prevEvent : mQueuedEvents )
@@ -35,9 +39,7 @@ void InputSDL::update() {
 	}
 	while ( SDL_PollEvent( &SDLEvent ) )
 		sendEvent( SDLEvent );
-	InputEvent endProcessingEvent;
-	endProcessingEvent.Type = InputEvent::EventsSent;
-	processEvent( &endProcessingEvent );
+	endInputFrame();
 }
 
 void InputSDL::waitEvent( const Time& timeout ) {
@@ -92,6 +94,26 @@ bool InputSDL::isMouseCaptured() const {
 		   SDL_WINDOW_MOUSE_CAPTURE;
 }
 
+bool InputSDL::pushEvent( const InputEvent& event ) {
+	if ( event.Type != InputEvent::MouseWheel )
+		return Input::pushEvent( event );
+
+	SDL_Event sdlEvent{};
+	sdlEvent.type = SDL_MOUSEWHEEL;
+	sdlEvent.wheel.windowID = event.WinID;
+	sdlEvent.wheel.x = static_cast<Sint32>( event.wheel.x );
+	sdlEvent.wheel.y = static_cast<Sint32>( event.wheel.y );
+	sdlEvent.wheel.direction = event.wheel.direction == InputEvent::WheelEvent::Normal
+								   ? SDL_MOUSEWHEEL_NORMAL
+								   : SDL_MOUSEWHEEL_FLIPPED;
+#if SDL_VERSION_ATLEAST( 2, 0, 18 )
+	sdlEvent.wheel.preciseX = event.wheel.x;
+	sdlEvent.wheel.preciseY = event.wheel.y;
+#endif
+	sendEvent( sdlEvent );
+	return true;
+}
+
 std::string InputSDL::getKeyName( const Keycode& keyCode ) const {
 	return std::string( SDL_GetKeyName( keyCode ) );
 }
@@ -118,7 +140,11 @@ Scancode InputSDL::getScancodeFromKey( const Keycode& scancode ) const {
 
 void InputSDL::init() {
 	mDPIScale = mWindow->getScale();
-	mMousePos = queryMousePos();
+	// A hidden window has no pointer position of its own. Its global screen position must not
+	// make hover state depend on where the user happens to be moving the desktop cursor.
+	mMousePos = mWindow->getWindowInfo()->WindowConfig.Style & WindowStyle::Hidden
+					? Vector2i( 0, 0 )
+					: queryMousePos();
 }
 
 void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
@@ -129,9 +155,12 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 				case SDL_WINDOWEVENT_RESIZED: {
 					event.Type = InputEvent::VideoResize;
 					event.WinID = SDLEvent.window.windowID;
-					mDPIScale = mWindow->getScale();
-					event.resize.w = SDLEvent.window.data1 * mDPIScale;
-					event.resize.h = SDLEvent.window.data2 * mDPIScale;
+					const Float eventWindowScale =
+						getEventWindowScale( mWindow, SDLEvent.window.windowID );
+					if ( SDLEvent.window.windowID == mWindow->getWindowID() )
+						mDPIScale = eventWindowScale;
+					event.resize.w = SDLEvent.window.data1 * eventWindowScale;
+					event.resize.h = SDLEvent.window.data2 * eventWindowScale;
 					break;
 				}
 				case SDL_WINDOWEVENT_HIT_TEST: {
@@ -242,14 +271,16 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		}
 		case SDL_TEXTINPUT: {
 			String txt = String::fromUtf8( std::string_view{ SDLEvent.text.text } );
+			if ( txt.empty() )
+				break;
 			event.Type = InputEvent::TextInput;
 			event.text.timestamp = SDLEvent.text.timestamp;
 			event.WinID = SDLEvent.text.windowID;
-			for ( size_t i = 0; i < txt.size() - 1; i++ ) {
-				event.text.text = txt[i];
-				processEvent( &event );
+			for ( const auto& character : txt ) {
+				event.text.text = character;
+				processEventForWindow( &event );
 			}
-			event.text.text = txt[txt.size() - 1];
+			event.Type = InputEvent::NoEvent;
 			break;
 		}
 		case SDL_TEXTEDITING: {
@@ -273,6 +304,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		case SDL_KEYDOWN: {
 			event.Type = InputEvent::KeyDown;
 			event.key.state = SDLEvent.key.state;
+			event.key.repeat = SDLEvent.key.repeat;
 			event.key.which = SDLEvent.key.windowID;
 			event.key.keysym.sym = (Keycode)SDLEvent.key.keysym.sym;
 			event.key.keysym.scancode = (Scancode)SDLEvent.key.keysym.scancode;
@@ -284,6 +316,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		case SDL_KEYUP: {
 			event.Type = InputEvent::KeyUp;
 			event.key.state = SDLEvent.key.state;
+			event.key.repeat = 0;
 			event.key.which = SDLEvent.key.windowID;
 			event.key.keysym.sym = (Keycode)SDLEvent.key.keysym.sym;
 			event.key.keysym.scancode = (Scancode)SDLEvent.key.keysym.scancode;
@@ -293,13 +326,14 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_MOUSEMOTION: {
+			const Float eventWindowScale = getEventWindowScale( mWindow, SDLEvent.motion.windowID );
 			event.Type = InputEvent::MouseMotion;
 			event.motion.which = SDLEvent.motion.windowID;
 			event.motion.state = SDLEvent.motion.state;
-			event.motion.x = SDLEvent.motion.x * mDPIScale;
-			event.motion.y = SDLEvent.motion.y * mDPIScale;
-			event.motion.xrel = SDLEvent.motion.xrel * mDPIScale;
-			event.motion.yrel = SDLEvent.motion.yrel * mDPIScale;
+			event.motion.x = SDLEvent.motion.x * eventWindowScale;
+			event.motion.y = SDLEvent.motion.y * eventWindowScale;
+			event.motion.xrel = SDLEvent.motion.xrel * eventWindowScale;
+			event.motion.yrel = SDLEvent.motion.yrel * eventWindowScale;
 			event.WinID = SDLEvent.motion.windowID;
 			break;
 		}
@@ -353,11 +387,11 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 
 			event.Type = InputEvent::MouseButtonDown;
 			event.button.state = 1;
-			processEvent( &event );
+			processEventForWindow( &event );
 
 			event.Type = InputEvent::MouseButtonUp;
 			event.button.state = 0;
-			processEvent( &event );
+			processEventForWindow( &event );
 
 			event.Type = InputEvent::MouseWheel;
 			event.wheel.which = SDLEvent.wheel.which;
@@ -372,7 +406,6 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.wheel.x = SDLEvent.wheel.x;
 			event.wheel.y = SDLEvent.wheel.y;
 #endif
-			processEvent( &event );
 			break;
 		}
 		case SDL_FINGERMOTION: {
@@ -466,6 +499,12 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.syswm.msg = (InputEvent::SysWMmsg*)SDLEvent.syswm.msg;
 			break;
 		}
+		case SDL_CLIPBOARDUPDATE: {
+			event.Type = InputEvent::ClipboardChanged;
+			event.clipboard.owner = InputEvent::ClipboardOwner::Unknown;
+			event.WinID = 0;
+			break;
+		}
 		case SDL_DROPFILE: {
 			event.Type = InputEvent::FileDropped;
 			event.file.file = SDLEvent.drop.file;
@@ -492,17 +531,8 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		}
 	}
 
-	EE::Window::Window* win;
-
-	if ( InputEvent::NoEvent != event.Type ) {
-		if ( event.WinID == mWindow->getWindowID() || event.WinID == 0 ) {
-			processEvent( &event );
-		} else if ( ( win = Engine::instance()->getWindowID( event.WinID ) ) ) {
-			win->getInput()->processEvent( &event );
-		} else {
-			processEvent( &event );
-		}
-	}
+	if ( InputEvent::NoEvent != event.Type )
+		processEventForWindow( &event );
 
 	if ( InputEvent::FileDropped == event.Type || InputEvent::TextDropped == event.Type )
 		SDL_free( SDLEvent.drop.file );

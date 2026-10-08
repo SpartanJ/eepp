@@ -1,9 +1,9 @@
-#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimenubar.hpp>
+#include <eepp/ui/uipopup.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -58,20 +58,20 @@ void UIMenu::onPaddingChange() {
 	widgetsSetPos();
 }
 
-UIMenuItem* UIMenu::createMenuItem( const String& text, Drawable* icon,
+UIMenuItem* UIMenu::createMenuItem( const String& text, DrawablePtr icon,
 									const String& shortcutText ) {
 	UIMenuItem* widget = UIMenuItem::New();
 	widget->setHorizontalAlign( UI_HALIGN_LEFT );
 	widget->setParent( this );
 	widget->setIconMinimumSize( mIconMinSize );
-	widget->setIcon( icon );
+	widget->setIcon( std::move( icon ) );
 	widget->setText( text );
 	widget->setShortcutText( shortcutText );
 	return widget;
 }
 
-UIMenuItem* UIMenu::add( const String& text, Drawable* icon, const String& shortcutText ) {
-	UIMenuItem* menuItem = createMenuItem( text, icon, shortcutText );
+UIMenuItem* UIMenu::add( const String& text, DrawablePtr icon, const String& shortcutText ) {
+	UIMenuItem* menuItem = createMenuItem( text, std::move( icon ), shortcutText );
 	add( menuItem );
 	return menuItem;
 }
@@ -113,19 +113,19 @@ UIMenuRadioButton* UIMenu::addRadioButton( const String& text, const bool& activ
 	return radioButton;
 }
 
-UIMenuSubMenu* UIMenu::createSubMenu( const String& text, Drawable* icon, UIMenu* subMenu ) {
+UIMenuSubMenu* UIMenu::createSubMenu( const String& text, DrawablePtr icon, UIMenu* subMenu ) {
 	UIMenuSubMenu* menu = UIMenuSubMenu::New();
 	menu->setHorizontalAlign( UI_HALIGN_LEFT );
 	menu->setParent( this );
 	menu->setIconMinimumSize( mIconMinSize );
-	menu->setIcon( icon );
+	menu->setIcon( std::move( icon ) );
 	menu->setText( text );
 	menu->setSubMenu( subMenu );
 	return menu;
 }
 
-UIMenuSubMenu* UIMenu::addSubMenu( const String& text, Drawable* icon, UIMenu* subMenu ) {
-	UIMenuSubMenu* menu = createSubMenu( text, icon, subMenu );
+UIMenuSubMenu* UIMenu::addSubMenu( const String& text, DrawablePtr icon, UIMenu* subMenu ) {
+	UIMenuSubMenu* menu = createSubMenu( text, std::move( icon ), subMenu );
 	add( menu );
 	return menu;
 }
@@ -269,8 +269,8 @@ void UIMenu::removeAll() {
 	resizeMe();
 }
 
-void UIMenu::insert( const String& text, Drawable* icon, const Uint32& index ) {
-	insert( createMenuItem( text, icon ), index );
+void UIMenu::insert( const String& text, DrawablePtr icon, const Uint32& index ) {
+	insert( createMenuItem( text, std::move( icon ) ), index );
 }
 
 void UIMenu::insert( UIWidget* widget, const Uint32& index ) {
@@ -306,8 +306,13 @@ Uint32 UIMenu::onMessage( const NodeMessage* msg ) {
 		}
 		case NodeMessage::MouseUp: {
 			if ( msg->getSender()->getParent() == this && ( msg->getFlags() & EE_BUTTONS_LRM ) ) {
-				Event itemEvent( msg->getSender(), Event::OnItemClicked );
-				sendEvent( &itemEvent );
+				if ( msg->getSender()->isType( UI_TYPE_MENUITEM ) &&
+					 !msg->getSender()->isType( UI_TYPE_MENUSUBMENU ) ) {
+					msg->getSender()->asType<UIMenuItem>()->activate();
+				} else {
+					Event itemEvent( msg->getSender(), Event::OnItemClicked );
+					sendEvent( &itemEvent );
+				}
 				return 1;
 			}
 			break;
@@ -387,16 +392,39 @@ void UIMenu::resizeMe() {
 }
 
 bool UIMenu::show() {
+	const bool notify = !isVisible();
 	setEnabled( true );
 	setVisible( true );
+	if ( notify )
+		notifyMenuWillShow();
 	return true;
 }
 
 bool UIMenu::hide() {
+	const bool notify = isVisible();
 	setEnabled( false );
 	setVisible( false );
 	safeHide();
+	if ( notify )
+		notifyMenuDidHide();
 	return true;
+}
+
+void UIMenu::notifyMenuWillShow() {
+	sendCommonEvent( Event::OnMenuShow );
+}
+
+void UIMenu::notifyMenuDidHide() {
+	sendCommonEvent( Event::OnMenuHide );
+}
+
+MenuBarRole UIMenu::getMenuBarRole() const {
+	return mMenuBarRole;
+}
+
+UIMenu* UIMenu::setMenuBarRole( MenuBarRole role ) {
+	mMenuBarRole = role;
+	return this;
 }
 
 void UIMenu::safeHide() {
@@ -553,17 +581,23 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& event ) {
 	return UIWidget::onKeyDown( event );
 }
 
-static Drawable* getIconDrawable( const std::string& name, UIIconThemeManager* iconThemeManager ) {
-	Drawable* iconDrawable = nullptr;
-	if ( nullptr != iconThemeManager ) {
-		UIIcon* icon = iconThemeManager->findIcon( name );
+static DrawablePtr getIconDrawable( const std::string& name, UISceneNode* sceneNode ) {
+	DrawablePtr iconDrawable;
+	if ( sceneNode ) {
+		UIIcon* icon = sceneNode->findIcon( name );
 		if ( icon ) {
 			// TODO: Fix size
-			iconDrawable = icon->getSize( PixelDensity::dpToPx( 16 ) );
+			iconDrawable = icon->createDrawable( PixelDensity::dpToPx( 16 ) );
 		}
 	}
-	if ( nullptr == iconDrawable )
-		iconDrawable = DrawableSearcher::searchByName( name );
+	if ( !iconDrawable ) {
+		if ( sceneNode ) {
+			iconDrawable = sceneNode->getDrawableResolver().resolve( name );
+		} else {
+			DrawableResolver resolver( defaultResourceScope() );
+			iconDrawable = resolver.resolve( name );
+		}
+	}
 	return iconDrawable;
 }
 
@@ -578,8 +612,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			std::string text( item.attribute( "text" ).as_string() );
 			std::string icon( item.attribute( "icon" ).as_string() );
 			if ( nullptr != mSceneNode && mSceneNode->isUISceneNode() )
-				add( getTranslatorString( text ),
-					 getIconDrawable( icon, getUISceneNode()->getUIIconThemeManager() ) );
+				add( getTranslatorString( text ), getIconDrawable( icon, getUISceneNode() ) );
 		} else if ( name == "menuseparator" || name == "separator" ) {
 			addSeparator();
 		} else if ( name == "menucheckbox" || name == "checkbox" ) {
@@ -597,8 +630,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			if ( nullptr != getDrawInvalidator() )
 				subMenu->setParent( getDrawInvalidator() );
 			subMenu->loadFromXmlNode( item );
-			addSubMenu( getTranslatorString( text ),
-						getIconDrawable( icon, getUISceneNode()->getUIIconThemeManager() ),
+			addSubMenu( getTranslatorString( text ), getIconDrawable( icon, getUISceneNode() ),
 						subMenu );
 		}
 	}
@@ -700,169 +732,82 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIWidget* menu, UIMenu* parent, UIM
 	if ( nullptr == sceneNode )
 		return;
 
+	if ( trigger || !parent || !subMenu ) {
+		pos = UIPopUp::findBestPosition( menu, pos, trigger, true );
+		return;
+	}
+
+	// Cascading menus also avoid overlapping the previous menu in the chain.
 	Rectf qScreen( 0.f, 0.f, sceneNode->getPixelsSize().getWidth(),
 				   sceneNode->getPixelsSize().getHeight() );
-	Vector2f oriPos( pos );
-	Rectf qPos( pos.x, pos.y, pos.x + menu->getPixelsSize().getWidth(),
-				pos.y + menu->getPixelsSize().getHeight() );
+	Rectf qPos( pos, menu->getPixelsSize() );
+	Rectf qPrevMenu;
+	bool clipMenu = parent->getOwnerNode() && parent->getOwnerNode()->getParent() &&
+					parent->getOwnerNode()->getParent()->isType( UI_TYPE_MENU );
 
-	if ( nullptr != trigger ) {
-		Rectf qTrigger = trigger->getScreenRect();
-		// Try to position below the trigger
-		pos.y = qTrigger.Bottom;
+	Vector2f sPos = subMenu->getPixelsPosition();
+	subMenu->nodeToWorldTranslation( sPos );
+
+	Vector2f pPos = parent->getPixelsPosition();
+	parent->nodeToWorldTranslation( pPos );
+
+	if ( clipMenu ) {
+		UIMenu* parentOwner = parent->getOwnerNode()->getParent()->asType<UIMenu>();
+		Vector2f poPos = parentOwner->getPixelsPosition();
+		parentOwner->nodeToWorldTranslation( poPos );
+		qPrevMenu = Rectf( poPos.x, poPos.y, poPos.x + parentOwner->getPixelsSize().getWidth(),
+						   poPos.y + parentOwner->getPixelsSize().getHeight() );
+	}
+
+	Rectf qParent( pPos.x, pPos.y, pPos.x + parent->getPixelsSize().getWidth(),
+				   pPos.y + parent->getPixelsSize().getHeight() );
+
+	pos.x = qParent.Right;
+	pos.y = sPos.y;
+	qPos.Left = pos.x;
+	qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+	qPos.Top = pos.y;
+	qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+
+	if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
+		pos.y = sPos.y + subMenu->getPixelsSize().getHeight() - menu->getPixelsSize().getHeight();
 		qPos.Top = pos.y;
 		qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-		if ( !qScreen.contains( qPos ) ) {
-			// Try to position above the trigger
-			pos.y = qTrigger.Top - menu->getPixelsSize().getHeight();
-			qPos.Top = pos.y;
-			qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-			if ( !qScreen.contains( qPos ) ) {
-				// Try to position to the right of the trigger
-				pos.x = qTrigger.Right;
-				pos.y = qTrigger.Top;
-				qPos.Left = pos.x;
-				qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-				qPos.Top = pos.y;
-				qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-				if ( !qScreen.contains( qPos ) ) {
-					// Try to position to the left of the trigger
-					pos.x = qTrigger.Left - menu->getPixelsSize().getWidth();
-					qPos.Left = pos.x;
-					qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-
-					if ( !qScreen.contains( qPos ) ) {
-						// Reset to original position if no better position found
-						pos = oriPos;
-						qPos.Left = pos.x;
-						qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-						qPos.Top = pos.y;
-						qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-					}
-				}
-			}
-		}
-	} else if ( nullptr != parent && nullptr != subMenu ) {
-		Rectf qPrevMenu;
-		bool clipMenu = parent->getOwnerNode() && parent->getOwnerNode()->getParent() &&
-						parent->getOwnerNode()->getParent()->isType( UI_TYPE_MENU );
-
-		Vector2f sPos = subMenu->getPixelsPosition();
-		subMenu->nodeToWorldTranslation( sPos );
-
-		Vector2f pPos = parent->getPixelsPosition();
-		parent->nodeToWorldTranslation( pPos );
-
-		if ( clipMenu ) {
-			UIMenu* parentOwner = parent->getOwnerNode()->getParent()->asType<UIMenu>();
-			Vector2f poPos = parentOwner->getPixelsPosition();
-			parentOwner->nodeToWorldTranslation( poPos );
-			qPrevMenu = Rectf( poPos.x, poPos.y, poPos.x + parentOwner->getPixelsSize().getWidth(),
-							   poPos.y + parentOwner->getPixelsSize().getHeight() );
-		}
-
-		Rectf qParent( pPos.x, pPos.y, pPos.x + parent->getPixelsSize().getWidth(),
-					   pPos.y + parent->getPixelsSize().getHeight() );
-
-		pos.x = qParent.Right;
-		pos.y = sPos.y;
-		qPos.Left = pos.x;
-		qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-		qPos.Top = pos.y;
-		qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
 		if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
-			pos.y =
-				sPos.y + subMenu->getPixelsSize().getHeight() - menu->getPixelsSize().getHeight();
+			pos.x = qParent.Left - menu->getPixelsSize().getWidth();
+			pos.y = sPos.y;
+			qPos.Left = pos.x;
+			qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
 			qPos.Top = pos.y;
 			qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+
 			if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
-				pos.x = qParent.Left - menu->getPixelsSize().getWidth();
-				pos.y = sPos.y;
-				qPos.Left = pos.x;
-				qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+				pos.y = sPos.y + subMenu->getPixelsSize().getHeight() -
+						menu->getPixelsSize().getHeight();
 				qPos.Top = pos.y;
 				qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
 
-				if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
-					pos.y = sPos.y + subMenu->getPixelsSize().getHeight() -
-							menu->getPixelsSize().getHeight();
-					qPos.Top = pos.y;
-					qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-					if ( !qScreen.contains( qPos ) ) {
-						if ( menu->getPixelsSize().getHeight() <= qScreen.getHeight() ) {
-							pos = { pos.x, eefloor( ( qScreen.getHeight() -
-													  menu->getPixelsSize().getHeight() ) *
-													0.5f ) };
-						} else {
-							pos = { pos.x, 0 };
-						}
-					}
-
-					if ( pos.x < 0 )
-						pos.x = 0;
-					if ( pos.y < 0 )
-						pos.y = 0;
-
-					qPos.Left = qParent.Right;
-					qPos.Top = pos.y;
-					qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-					qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-					if ( qScreen.contains( qPos ) && ( !clipMenu || !qPrevMenu.overlap( qPos ) ) ) {
-						pos.x = qPos.Left;
+				if ( !qScreen.contains( qPos ) ) {
+					if ( menu->getPixelsSize().getHeight() <= qScreen.getHeight() ) {
+						pos = { pos.x, eefloor( ( qScreen.getHeight() -
+												  menu->getPixelsSize().getHeight() ) *
+												0.5f ) };
+					} else {
+						pos = { pos.x, 0 };
 					}
 				}
-			}
-		}
-	} else {
-		if ( !qScreen.contains( qPos ) ) {
-			pos.y -= menu->getPixelsSize().getHeight();
-			qPos.Top -= menu->getPixelsSize().getHeight();
-			qPos.Bottom -= menu->getPixelsSize().getHeight();
 
-			if ( !qScreen.contains( qPos ) ) {
-				pos.x -= menu->getPixelsSize().getWidth();
-				qPos.Left -= menu->getPixelsSize().getWidth();
-				qPos.Right -= menu->getPixelsSize().getWidth();
+				if ( pos.x < 0 )
+					pos.x = 0;
+				if ( pos.y < 0 )
+					pos.y = 0;
 
-				if ( !qScreen.contains( qPos ) ) {
-					pos.y += menu->getPixelsSize().getHeight();
-					qPos.Top += menu->getPixelsSize().getHeight();
-					qPos.Bottom += menu->getPixelsSize().getHeight();
-
-					if ( !qScreen.contains( qPos ) ) {
-						pos = oriPos;
-						pos.y -= menu->getPixelsSize().getHeight();
-						qPos.Left = pos.x;
-						qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-						qPos.Top = pos.y;
-						qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-						if ( !qScreen.contains( qPos ) ) {
-							pos.y = qScreen.Bottom - menu->getPixelsSize().getHeight();
-							qPos.Left = pos.x;
-							qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-
-							if ( qPos.Right > qScreen.Right ) {
-								qPos.Right = qScreen.Right;
-								qPos.Left = qPos.Right - menu->getPixelsSize().getWidth();
-							}
-
-							qPos.Top = pos.y;
-							qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-							if ( qPos.Top < qScreen.Top ) {
-								qPos.Top = qScreen.Top;
-								qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-							}
-
-							pos = qPos.getPosition();
-						}
-					}
+				qPos.Left = qParent.Right;
+				qPos.Top = pos.y;
+				qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+				qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+				if ( qScreen.contains( qPos ) && ( !clipMenu || !qPrevMenu.overlap( qPos ) ) ) {
+					pos.x = qPos.Left;
 				}
 			}
 		}

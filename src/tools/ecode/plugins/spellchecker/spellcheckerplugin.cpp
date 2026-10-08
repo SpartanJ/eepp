@@ -1,4 +1,5 @@
 #include "spellcheckerplugin.hpp"
+#include "../../settingspage.hpp"
 #include "eepp/ui/abstract/uiabstractview.hpp"
 #include "eepp/ui/models/itemlistmodel.hpp"
 #include "eepp/window/engine.hpp"
@@ -14,6 +15,18 @@
 using json = nlohmann::json;
 
 namespace ecode {
+
+void SpellCheckerPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addText( "delay-time", "/config/delay_time",
+				  i18n( "spellchecker_delay_time", "Spell Check Delay" ),
+				  i18n( "spellchecker_delay_time_desc",
+						"Time to wait before checking spelling after an edit." ),
+				  getDelayTime().toString(), []( const std::string& text ) {
+					  Time value;
+					  return SettingsPage::parseNonNegativeSettingsTime( text, value );
+				  } );
+}
 
 static constexpr auto SPELL_CHECKER_CMD = "typos";
 static constexpr auto SPELL_CHECKER_ARGS = "--format=brief";
@@ -217,6 +230,7 @@ void SpellCheckerPlugin::goToPrevError( UICodeEditor* editor ) {
 
 void SpellCheckerPlugin::onUnregisterDocument( TextDocument* doc ) {
 	mDirtyDoc.erase( doc );
+	PluginBase::onUnregisterDocument( doc );
 }
 
 void SpellCheckerPlugin::onDocumentChanged( UICodeEditor*, TextDocument* oldDoc ) {
@@ -230,19 +244,21 @@ void SpellCheckerPlugin::onRegisterListeners( UICodeEditor* editor,
 }
 
 void SpellCheckerPlugin::setDocDirty( TextDocument* doc ) {
-	mDirtyDoc[doc] = std::make_unique<Clock>();
+	auto [it, inserted] = mDirtyDoc.try_emplace( doc );
+	if ( !inserted )
+		it->second.restart();
 }
 
 void SpellCheckerPlugin::setDocDirty( UICodeEditor* editor ) {
-	mDirtyDoc[editor->getDocumentRef().get()] = std::make_unique<Clock>();
+	setDocDirty( editor->getDocumentRef().get() );
 }
 
 void SpellCheckerPlugin::update( UICodeEditor* editor ) {
 	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 	auto it = mDirtyDoc.find( doc.get() );
-	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
+	if ( it != mDirtyDoc.end() && it->second.getElapsedTime() >= mDelayTime ) {
 		mDirtyDoc.erase( doc.get() );
-		mThreadPool->run( [this, doc] { spellCheckDoc( doc ); } );
+		mThreadPool->run( [this, doc = std::move( doc )] { spellCheckDoc( doc ); } );
 	}
 }
 
@@ -254,11 +270,11 @@ void SpellCheckerPlugin::spellCheckDoc( std::shared_ptr<TextDocument> doc ) {
 		return;
 
 	ScopedOp op(
-		[this, doc]() {
+		[this] {
 			std::lock_guard l( mWorkMutex );
 			mWorkersCount++;
 		},
-		[this]() {
+		[this] {
 			{
 				std::lock_guard l( mWorkMutex );
 				mWorkersCount--;
@@ -529,7 +545,7 @@ bool SpellCheckerPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu*
 						 const std::string& icon = "" ) {
 		subMenu
 			->add( i18n( txtKey, txtVal ),
-				   !icon.empty() ? findIcon( icon )->getSize( PixelDensity::dpToPxI( 12 ) )
+				   !icon.empty() ? findIcon( icon )->createDrawable( PixelDensity::dpToPxI( 12 ) )
 								 : nullptr,
 				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
 			->setId( txtKey );

@@ -21,24 +21,6 @@ class XmlStringWriter : public pugi::xml_writer {
 	}
 };
 
-class PendingSpriteTransfer {
-  public:
-	explicit PendingSpriteTransfer( Sprite* sprite ) : mSprite( sprite ) {}
-	PendingSpriteTransfer( const PendingSpriteTransfer& ) = delete;
-	PendingSpriteTransfer& operator=( const PendingSpriteTransfer& ) = delete;
-
-	~PendingSpriteTransfer() { eeSAFE_DELETE( mSprite ); }
-
-	Sprite* release() {
-		Sprite* sprite = mSprite;
-		mSprite = nullptr;
-		return sprite;
-	}
-
-  private:
-	Sprite* mSprite{ nullptr };
-};
-
 } // namespace
 
 UISvg* UISvg::New() {
@@ -86,7 +68,7 @@ void UISvg::scheduleRasterize() {
 		return;
 
 	if ( !getUISceneNode()->hasThreadPool() ) {
-		rasterizeSvg( mSvgXml );
+		rasterizeSvg( mSvgXml, size );
 		return;
 	}
 
@@ -94,28 +76,44 @@ void UISvg::scheduleRasterize() {
 
 	std::string svgXml( mSvgXml );
 	mTaskId = getUISceneNode()->getThreadPool()->run(
-		[this, svgXml = std::move( svgXml )] { rasterizeSvg( svgXml ); }, {}, (Uint64)this );
+		[this, svgXml = std::move( svgXml ), size] { rasterizeSvg( svgXml, size ); }, {},
+		(Uint64)this );
 }
 
-void UISvg::rasterizeSvg( const std::string& svgXml ) {
-	Texture* texture = TextureFactory::instance()->loadFromMemory(
-		(const unsigned char*)svgXml.data(), svgXml.size() );
+void UISvg::rasterizeSvg( const std::string& svgXml, const Sizef& targetSize ) {
+	pugi::xml_document document;
+	std::string rasterXml;
+	if ( document.load_buffer( svgXml.data(), svgXml.size() ) ) {
+		pugi::xml_node root = document.document_element();
+		auto setRasterDimension = [&]( const char* name, Float value ) {
+			pugi::xml_attribute attribute = root.attribute( name );
+			if ( !attribute )
+				attribute = root.append_attribute( name );
+			if ( attribute.as_string()[0] == '\0' ||
+				 std::string_view( attribute.as_string() ).find( '%' ) != std::string_view::npos )
+				attribute.set_value( value );
+		};
+		setRasterDimension( "width", targetSize.getWidth() );
+		setRasterDimension( "height", targetSize.getHeight() );
+		XmlStringWriter writer;
+		document.print( writer );
+		rasterXml = std::move( writer.result );
+	}
+	const std::string& source = rasterXml.empty() ? svgXml : rasterXml;
+	TexturePtr texture = TextureFactory::instance()->loadFromMemory(
+		(const unsigned char*)source.data(), source.size() );
 
 	if ( !texture )
 		return;
 
-	Sprite* sprite = Sprite::New();
-	sprite->createStatic( texture );
-	sprite->setAsTextureOwner( true );
-	sprite->setAsTextureRegionOwner( true );
+	SpritePtr sprite = Sprite::New();
+	// TextureRegion destination sizes are density-independent and get converted back to pixels by
+	// the drawable. The SVG texture is already rasterized at the widget's physical pixel size.
+	sprite->createStatic( std::move( texture ), PixelDensity::pxToDp( targetSize ) );
 
-	auto spriteTransfer = std::make_shared<PendingSpriteTransfer>( sprite );
-
-	runOnMainThread( [this, spriteTransfer] {
-		Sprite* sprite = spriteTransfer->release();
-		if ( sprite ) {
-			setDrawable( sprite, true );
-		}
+	runOnMainThread( [this, sprite = std::move( sprite )]() mutable {
+		if ( sprite )
+			setDrawable( std::move( sprite ) );
 	} );
 }
 

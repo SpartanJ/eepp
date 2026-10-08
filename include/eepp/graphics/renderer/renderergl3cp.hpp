@@ -33,6 +33,8 @@ class EE_API RendererGL3CP : public RendererGLShader {
 
 	void enable( unsigned int cap );
 
+	void onContextChanged();
+
 	void enableClientState( unsigned int array );
 
 	void disableClientState( unsigned int array );
@@ -70,7 +72,7 @@ class EE_API RendererGL3CP : public RendererGLShader {
 	void reloadCurrentShader();
 
   protected:
-	ShaderProgram* mShaders[EEGL3CP_SHADERS_COUNT];
+	ShaderProgramPtr mShaders[EEGL3CP_SHADERS_COUNT];
 	unsigned int mVAO;
 	unsigned int mVBO[8];
 	int mAttribsLoc[EEGL_ARRAY_STATES_COUNT];
@@ -96,6 +98,8 @@ class EE_API RendererGL3CP : public RendererGLShader {
 	void reloadShader( ShaderProgram* Shader );
 
 	void allocateBuffers( const Uint32& size );
+	ShaderProgramPtr createSubpixelDualSourceShader();
+	bool canUseSubpixelDualSourceShader() const;
 };
 
 }} // namespace EE::Graphics

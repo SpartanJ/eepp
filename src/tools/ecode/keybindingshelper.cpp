@@ -72,17 +72,19 @@ void KeybindingsHelper::updateKeybindings(
 	IniFile& ini, const std::string& group, Input* input,
 	std::unordered_map<std::string, std::string>& keybindings,
 	std::unordered_map<std::string, std::string>& invertedKeybindings,
-	const std::map<KeyBindings::Shortcut, std::string>& defKeybindings, bool forceRebind,
+	const KeyBindings::ShortcutMap& defKeybindings, bool forceRebind,
 	const std::map<std::string, std::string>& migrateKeyindings, IniFile& iniState ) {
 	KeyBindings bindings( input );
 	bool added = false;
 	bool migrated = false;
+	const auto orderedDefaultShortcuts = KeyBindings::getOrderedShortcuts( defKeybindings );
 
 	if ( ini.findKey( group ) != IniFile::noID ) {
 		keybindings = ini.getKeyUnorderedMap( group );
 	} else {
-		for ( const auto& it : defKeybindings )
-			ini.setValue( group, bindings.getShortcutString( it.first ), it.second );
+		for ( const auto& shortcut : orderedDefaultShortcuts )
+			ini.setValue( group, bindings.getShortcutString( shortcut ),
+						  defKeybindings.find( shortcut )->second );
 		added = true;
 	}
 	for ( const auto& key : keybindings )
@@ -93,9 +95,9 @@ void KeybindingsHelper::updateKeybindings(
 			auto foundCmd = invertedKeybindings.find( migrate.first );
 			if ( foundCmd != invertedKeybindings.end() && foundCmd->second == migrate.second ) {
 				KeyBindings::Shortcut shortcut;
-				for ( const auto& defKb : defKeybindings ) {
-					if ( defKb.second == foundCmd->first ) {
-						shortcut = defKb.first;
+				for ( const auto& defaultShortcut : orderedDefaultShortcuts ) {
+					if ( defKeybindings.find( defaultShortcut )->second == foundCmd->first ) {
+						shortcut = defaultShortcut;
 						break;
 					}
 				}
@@ -121,15 +123,16 @@ void KeybindingsHelper::updateKeybindings(
 	bool keybindingsWereEmpty = keybindings.empty();
 
 	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
-		for ( auto& key : defKeybindings ) {
-			auto foundCmd = invertedKeybindings.find( key.second );
-			auto shortcutStr = bindings.getShortcutString( key.first );
+		for ( const auto& shortcut : orderedDefaultShortcuts ) {
+			const auto& command = defKeybindings.find( shortcut )->second;
+			auto foundCmd = invertedKeybindings.find( command );
+			auto shortcutStr = bindings.getShortcutString( shortcut );
 
 			if ( ( foundCmd == invertedKeybindings.end() || keybindingsWereEmpty ) &&
 				 keybindings.find( shortcutStr ) == keybindings.end() ) {
-				keybindings[shortcutStr] = key.second;
-				invertedKeybindings[key.second] = shortcutStr;
-				ini.setValue( group, shortcutStr, key.second );
+				keybindings[shortcutStr] = command;
+				invertedKeybindings[command] = shortcutStr;
+				ini.setValue( group, shortcutStr, command );
 				added = true;
 			}
 		}

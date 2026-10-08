@@ -23,6 +23,8 @@ class EE_API UIMenuCheckBox : public UIMenuItem {
 
 	void switchActive();
 
+	virtual void activate();
+
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
@@ -36,8 +38,6 @@ class EE_API UIMenuCheckBox : public UIMenuItem {
 	UISkin* mSkinInactive;
 
 	UIMenuCheckBox();
-
-	Uint32 onMessage( const NodeMessage* msg );
 
 	virtual void onStateChange();
 };

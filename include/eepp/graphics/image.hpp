@@ -1,7 +1,8 @@
 #ifndef EE_GRAPHICSCIMAGE_HPP
 #define EE_GRAPHICSCIMAGE_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/memorymanager.hpp>
 
 #include <eepp/math/rect.hpp>
 #include <eepp/math/size.hpp>
@@ -154,7 +155,7 @@ class EE_API Image {
 
 	/** @return The save type from a given extension ( example: "png" => SaveType::SAVE_TYPE_PNG )
 	 */
-	static SaveType extensionToSaveType( const std::string& Extension );
+	static SaveType extensionToSaveType( std::string_view extension );
 
 	/** @return Convert the number of channels to a pixel format */
 	static PixelFormat channelsToPixelFormat( const Uint32& channels );
@@ -315,11 +316,11 @@ class EE_API Image {
 	/** Overload the assignment operator to ensure the image copy */
 	Image& operator=( const Image& right );
 
-    /** @brief Move constructor */
-    Image( Image&& other ) noexcept;
+	/** @brief Move constructor */
+	Image( Image&& other ) noexcept;
 
-    /** @brief Move assignment operator */
-    Image& operator=( Image&& other ) noexcept;
+	/** @brief Move assignment operator */
+	Image& operator=( Image&& other ) noexcept;
 
 	virtual ~Image();
 
@@ -431,7 +432,7 @@ class EE_API Image {
 	const FormatConfiguration& getImageFormatConfiguration() const;
 
 	struct DiffResult {
-		Image* diffImage{ nullptr }; ///< The visual diff image. Null if dimensions mismatched.
+		Image* diffImage{ nullptr }; ///< Null when visual output was disabled or cannot be created.
 		long long numDifferentPixels{ 0 }; ///< The number of pixels that exceeded the threshold.
 		double maxDeltaE{ 0.0 };		   ///< The maximum perceptual difference (Delta E) found.
 		bool areSame() const { return numDifferentPixels == 0; }
@@ -449,10 +450,13 @@ class EE_API Image {
 	 *        A value of 1.0 is roughly the limit of human perception.
 	 *        A common default for tests is 2.3 (a "just noticeable difference").
 	 * @param diffColor The color used to highlight differing pixels in the output image.
+	 * @param createDiffImage Whether to create the visual diff image. Disable this for comparisons
+	 *        that only need statistics.
 	 * @return A DiffResult struct containing the diff image and statistics.
 	 */
 	DiffResult diff( const Image& other, float threshold = 2.3f,
-					 const Color& diffColor = Color( 255, 0, 255, 255 ) ) const;
+					 const Color& diffColor = Color( 255, 0, 255, 255 ),
+					 bool createDiffImage = true ) const;
 
   protected:
 	Uint8* mPixels;

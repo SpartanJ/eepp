@@ -9,6 +9,9 @@ namespace EE { namespace UI { namespace Tools {
 class EE_API HTMLFormatter {
   public:
 	static std::string HTMLtoXML( const std::string& layoutString );
+
+	/** Converts HTML to XML, serializing only the children of the parsed body element. */
+	static std::string HTMLBodyToXML( const std::string& layoutString );
 };
 
 }}} // namespace EE::UI::Tools

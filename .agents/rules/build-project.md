@@ -1,0 +1,126 @@
+# Build Instructions
+
+The build configurations in `.ecode/project_build.json` are the source of truth for the
+developer's local build workflows. Check that file before selecting a generator, backend, or
+build flags. In particular, do not use an AddressSanitizer build to evaluate runtime performance.
+
+## macOS Builds (Required Workflow)
+
+On a macOS host, the scripts in `projects/macos` override the generic Premake and Make instructions
+below. They regenerate and build the project with the same options used by the developer and must be
+used for debug, release, unit-test, targeted, and clean builds. Do not invoke `premake4`, `premake5`,
+or `make -C make/macosx` directly on macOS, because doing so can regenerate the shared build tree
+with incompatible options and cause subsequent local builds to fail.
+
+Before building, read `.ecode/project_build.json` and use the configuration and target selected
+there. From the repository root, run `projects/macos/make_no_fw.sh` first, forwarding the exact
+`config=<build_type>`, target, and action arguments required by the task. Examples:
+
+* Debug: `projects/macos/make_no_fw.sh config=debug`
+* Release: `projects/macos/make_no_fw.sh config=release`
+* Debug unit tests: `projects/macos/make_no_fw.sh config=debug eepp-unit_tests`
+* Release unit tests: `projects/macos/make_no_fw.sh config=release eepp-unit_tests`
+* Clean: `projects/macos/make_no_fw.sh config=<build_type> clean`
+
+If `make_no_fw.sh` fails, retry once with `projects/macos/make.sh`, preserving the exact same
+arguments. Do not add sanitizer, linker, framework, generator, architecture, or parallelism flags
+outside the scripts unless `.ecode/project_build.json` itself requires them. Do not fall back to a
+hand-written Premake or direct Make command.
+
+## Release Builds (Linux)
+
+For release builds, use the `eepp-linux-ninja` configuration from
+`.ecode/project_build.json`. At the time of writing, its commands are:
+
+`premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 ninja`
+
+`ninja -C make/linux release`
+
+This produces an optimized release build with debug symbols and without AddressSanitizer. Run the
+release executable (for example, `bin/eepp-ui-html`) when measuring performance. Recheck
+`.ecode/project_build.json` before use because the local configuration may change.
+
+This workflow is mandatory for any task whose purpose includes performance investigation,
+optimization, benchmarking, or validating runtime speed. Do not reuse a gmake tree generated with
+`--address-sanitizer`, and do not substitute `make config=release`: regenerate with the current
+`eepp-linux-ninja` command and build the `release` Ninja target exactly as configured above.
+
+The debug/unit-test workflow below is additional correctness validation. It does not replace the
+release Ninja build required for performance work.
+
+## Debug and Unit-Test Builds
+
+All build commands must be executed from the **root project directory**. On macOS, follow the
+required script workflow above. The generic steps below apply to other hosts.
+
+## Step 1: Regenerate Project Files
+Always regenerate the project files before compiling or running tests after making changes. Do this even for edits to existing files, because the checked-in makefiles can be stale and may reference removed files or miss recently added targets.
+
+*   **Tool:** On non-macOS hosts, use `premake4` if installed; otherwise, fallback to `premake5` (the parameters are identical).
+*   **Linker Flag (`--with-mold-linker`):** This flag is conditional. If the `mold` linker is installed on the system, you **must** include it to speed up linking. If `mold` is not installed, omit the flag.
+
+Choose the generator command from the configuration that will be built. Debug builds use AddressSanitizer; release builds do not.
+
+**Release command (if `mold` is installed):**
+`premake4 --disable-static-build --with-mold-linker --with-debug-symbols gmake`
+
+**Release command (if `mold` is NOT installed):**
+`premake4 --disable-static-build --with-debug-symbols gmake`
+
+**Debug command (if `mold` is installed):**
+`premake4 --disable-static-build --with-mold-linker --with-debug-symbols --address-sanitizer gmake`
+
+**Debug command (if `mold` is NOT installed):**
+`premake4 --disable-static-build --with-debug-symbols --address-sanitizer gmake`
+
+Never add `--address-sanitizer` when generating project files for a release build, and never omit it
+when generating project files for a debug build. Always regenerate immediately before building so
+the generated files match the intended configuration. Generator options are not tracked as object
+dependencies, so when switching sanitizer mode, clean the affected configuration before rebuilding
+to avoid mixing instrumented and uninstrumented C++ objects.
+
+## Step 1a: Format Changed Files
+After editing any C or C++ source file (`.c`, `.cpp`, `.h`, `.hpp`), you **must** run `clang-format` on all modified files to ensure consistent formatting with the project's style (defined in `.clang-format` at the repository root).
+
+**Command (formats all currently modified tracked files at once):**
+`git diff --name-only -- '*.c' '*.cpp' '*.h' '*.hpp' | xargs clang-format -i`
+
+Run this **after** all edits and **before** attempting to compile.
+
+---
+
+## Step 2: Compile the Project
+To compile the project in debug mode, execute the `make` command, ensuring you point to the correct directory for your current Operating System.
+
+### Build Parallelism
+
+Always use all processors reported by the platform when selecting the parallel job count. On Linux
+and other systems with `nproc`, use `-j$(nproc)` exactly; do not substitute an arbitrary fixed value
+such as `-j4`. Use the platform-equivalent processor-count command where `nproc` is unavailable.
+
+On macOS, do not query `sysctl` or select a job count separately; the required scripts above own
+parallelism and invoke the platform query themselves.
+
+The valid OS directory names are: `windows`, `macosx`, `linux`, `bsd`, `haiku`.
+
+Run the following command, replacing `<os_name>` with the correct environment:
+`make -C make/<os_name> -j$(nproc)`
+
+**Examples:**
+*   Linux: `make -C make/linux -j$(nproc)`
+*   macOS: use `projects/macos/make_no_fw.sh config=<build_type>` as documented above.
+*   Windows: `make -C make/windows -j%NUMBER_OF_PROCESSORS%`
+
+## Running GUI Examples Under Xvfb
+
+Xvfb does not support the multisampled OpenGL contexts requested by some eepp examples. In
+particular, `src/examples/ui_html/ui_html.cpp` normally requests 4x MSAA. Launching that binary
+through `xvfb-run` or `projects/scripts/xvfb-run-eepp` can therefore fail immediately with
+`Could not create window, exiting`, even though the application works on a real display.
+
+*   Do not treat this window-creation failure as evidence of a bug in the feature being tested.
+*   Unit tests normally request a non-multisampled context and are unaffected.
+*   For a temporary headless diagnostic of an example, make the diagnostic-only execution path
+    request 0 MSAA, run it through `projects/scripts/xvfb-run-eepp`, and revert the temporary
+    example instrumentation afterward.
+*   Never weaken the example's normal graphics configuration merely to accommodate Xvfb.

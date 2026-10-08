@@ -26,6 +26,7 @@
 #include <eepp/scene/actions/tint.hpp>
 #include <eepp/scene/actions/visible.hpp>
 #include <eepp/scene/event.hpp>
+#include <eepp/scene/eventconnection.hpp>
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/scene/mouseevent.hpp>

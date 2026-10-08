@@ -105,12 +105,13 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 			else if ( PixelDensity::getPixelDensity() >= 2.f )
 				pd = "2x";
 
-			FontTrueType* font = FontTrueType::New( "NotoSans-Regular",
-													resPath + "assets/fonts/NotoSans-Regular.ttf" );
+			FontTrueTypePtr font = FontTrueType::New( "NotoSans-Regular",
+													  resPath + "assets/fonts/NotoSans-Regular.ttf",
+													  *uiSceneNode->getResourceScope() );
 
-			UITheme* theme = UITheme::load( "uitheme" + pd, "uitheme" + pd,
-											resPath + "assets/ui/uitheme" + pd + ".eta", font,
-											resPath + "assets/ui/uitheme.css" );
+			auto theme = UITheme::load( "uitheme" + pd, "uitheme" + pd,
+										resPath + "assets/ui/uitheme" + pd + ".eta", font.get(),
+										resPath + "assets/ui/uitheme.css" );
 
 			/*UITheme* theme =
 				UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );*/
@@ -120,7 +121,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 			uiSceneNode->getUIThemeManager()
 				->setDefaultEffectsEnabled( true )
 				->setDefaultTheme( theme )
-				->setDefaultFont( font )
+				->setDefaultFont( font.get() )
 				->add( theme );
 		}
 

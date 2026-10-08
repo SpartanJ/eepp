@@ -1,3 +1,4 @@
+#include <eepp/core/string.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 
 namespace EE { namespace System {

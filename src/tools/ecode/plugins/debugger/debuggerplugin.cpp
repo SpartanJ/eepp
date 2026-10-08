@@ -1,6 +1,7 @@
 #include "debuggerplugin.hpp"
 #include "../../jsonhelper.hpp"
 #include "../../notificationcenter.hpp"
+#include "../../settingspage.hpp"
 #include "../../terminalmanager.hpp"
 #include "../../uistatusbar.hpp"
 #include "../../widgetcommandexecuter.hpp"
@@ -29,6 +30,27 @@ static constexpr auto REQUEST_TYPE_LAUNCH = "launch";
 static constexpr auto REQUEST_TYPE_ATTACH = "attach";
 
 namespace ecode {
+
+void DebuggerPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addBool(
+		"fetch-registers", "/config/fetch_registers",
+		i18n( "debugger_fetch_registers", "Fetch Registers" ),
+		i18n( "debugger_fetch_registers_desc", "Request processor registers while debugging." ),
+		false );
+	page.addBool(
+		"fetch-globals", "/config/fetch_globals",
+		i18n( "debugger_fetch_globals", "Fetch Global Variables" ),
+		i18n( "debugger_fetch_globals_desc", "Request global variables while debugging." ), false );
+	page.addBool( "silent", "/config/silent", i18n( "debugger_silent", "Silent Debugger Logs" ),
+				  i18n( "debugger_silent_desc", "Hide non-critical debugger log messages." ),
+				  true );
+	page.addBool( "load-vscode-launch-config", "/config/load_vscode_launch_config",
+				  i18n( "debugger_load_vscode_launch_config", "Load VS Code Launch Configuration" ),
+				  i18n( "debugger_load_vscode_launch_config_desc",
+						"Load compatible launch configurations from .vscode/launch.json." ),
+				  true );
+}
 
 static constexpr auto INPUT_PATTERN = "%$%{input%:([%w_]+)%}"sv;
 static constexpr auto ENV_PATTERN = "%$%{env%:([%w_]+)%}"sv;
@@ -133,7 +155,7 @@ Plugin* DebuggerPlugin::NewSync( PluginManager* pluginManager ) {
 }
 
 DebuggerPlugin::DebuggerPlugin( PluginManager* pluginManager, bool sync ) :
-	PluginBase( pluginManager ) {
+	PluginBase( pluginManager ), mLifetime( this, getUISceneNode() ) {
 	if ( sync ) {
 		load( pluginManager );
 	} else {
@@ -145,42 +167,13 @@ DebuggerPlugin::~DebuggerPlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
 
-	{
-		Lock l( mClientsMutex );
-		for ( const auto& client : mClients )
-			client.first->unregisterClient( client.second.get() );
-	}
-
-	if ( mSidePanel && mTab ) {
-		if ( Engine::isMainThread() )
-			mSidePanel->removeTab( mTab );
-		else {
-			auto sidePanel = mSidePanel;
-			auto tab = mTab;
-			mSidePanel->runOnMainThread( [sidePanel, tab] { sidePanel->removeTab( tab ); } );
-		}
-	}
-
-	if ( getPluginContext()->getStatusBar() )
-		getPluginContext()->getStatusBar()->removeStatusBarElement( "status_app_debugger" );
-
-	mManager->unsubscribeMessages( this );
-
-	for ( auto editor : mEditors ) {
-		onBeforeUnregister( editor.first );
-		onUnregisterEditor( editor.first );
-	}
-
 	mDebugger.reset();
 	mListener.reset();
+}
 
-	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() &&
-		 getPluginContext() && getPluginContext()->getMainLayout() ) {
-		getPluginContext()->getMainLayout()->unsetCommands( mRegisteredCommands );
-
-		for ( const auto& kb : mKeyBindings )
-			getPluginContext()->getMainLayout()->getKeyBindings().removeCommandKeybind( kb.first );
-	}
+void DebuggerPlugin::onSaveState( IniFile* state ) {
+	if ( auto controller = getStatusDebuggerController() )
+		state->setValue( "debugger", "panel_layout", controller->saveLayout() );
 }
 
 void DebuggerPlugin::onSaveProject( const std::string& /*projectFolder*/,
@@ -476,6 +469,11 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 			mSilence = config.value( "silent", true );
 		else if ( updateConfigFile )
 			config["silent"] = mSilence;
+
+		if ( config.contains( "load_vscode_launch_config" ) )
+			mLoadVSCodeLaunchConfig = config.value( "load_vscode_launch_config", true );
+		else if ( updateConfigFile )
+			config["load_vscode_launch_config"] = mLoadVSCodeLaunchConfig;
 	}
 
 	if ( j.contains( "dap" ) ) {
@@ -574,11 +572,11 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 		mKeyBindings["debugger-step-over"] = "f10";
 		mKeyBindings["debugger-step-into"] = "f11";
 		mKeyBindings["debugger-step-out"] = "shift+f11";
-		#if EE_PLATFORM == EE_PLATFORM_MACOS
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 		mKeyBindings["toggle-status-app-debugger"] = "mod+6";
-		#else
+#else
 		mKeyBindings["toggle-status-app-debugger"] = "alt+6";
-		#endif
+#endif
 	}
 
 	if ( j.contains( "keybindings" ) ) {
@@ -680,6 +678,7 @@ void DebuggerPlugin::loadProjectConfiguration( const std::string& path ) {
 }
 
 void DebuggerPlugin::loadProjectConfigurations() {
+	const auto lifetime = mLifetime.weakHandle();
 	if ( mProjectPath.empty() )
 		return;
 
@@ -688,17 +687,20 @@ void DebuggerPlugin::loadProjectConfigurations() {
 		mDapConfigs.clear();
 	}
 
-	mThreadPool->run( [this] {
-		std::string config = mProjectPath + ".vscode/launch.json";
-		if ( FileSystem::fileExists( config ) )
-			loadProjectConfiguration( config );
+	mThreadPool->run( [this, lifetime] {
+		std::string config;
+		if ( mLoadVSCodeLaunchConfig ) {
+			config = mProjectPath + ".vscode/launch.json";
+			if ( FileSystem::fileExists( config ) )
+				loadProjectConfiguration( config );
+		}
 		config = mProjectPath + ".ecode/launch.json";
 		if ( FileSystem::fileExists( config ) )
 			loadProjectConfiguration( config );
 
-		getUISceneNode()->runOnMainThread( [this] {
-			updateDebuggerConfigurationList();
-			updateSelectedDebugConfig();
+		lifetime.run( []( DebuggerPlugin* plugin ) {
+			plugin->updateDebuggerConfigurationList();
+			plugin->updateSelectedDebugConfig();
 		} );
 	} );
 }
@@ -709,11 +711,11 @@ PluginRequestHandle DebuggerPlugin::processMessage( const PluginMessage& msg ) {
 			mProjectPath = msg.asJSON()["folder"];
 
 			if ( getUISceneNode() && mSidePanel ) {
-				getUISceneNode()->runOnMainThread( [this] {
-					if ( mProjectPath.empty() ) {
-						hideSidePanel();
-						Lock l( mDapsMutex );
-						mDapConfigs.clear();
+				mLifetime.weakHandle().run( []( DebuggerPlugin* plugin ) {
+					if ( plugin->mProjectPath.empty() ) {
+						plugin->hideSidePanel();
+						Lock l( plugin->mDapsMutex );
+						plugin->mDapConfigs.clear();
 					}
 				} );
 			}
@@ -725,6 +727,7 @@ PluginRequestHandle DebuggerPlugin::processMessage( const PluginMessage& msg ) {
 			break;
 		}
 		case ecode::PluginMessageType::UIReady: {
+			mLifetime.setDispatcher( getUISceneNode() );
 			registerCommands( getPluginContext()->getMainLayout() );
 			for ( const auto& kb : mKeyBindings ) {
 				getPluginContext()->getMainLayout()->getKeyBindings().addKeybindString( kb.second,
@@ -749,9 +752,10 @@ void DebuggerPlugin::updateUI() {
 	if ( !getUISceneNode() )
 		return;
 
-	getUISceneNode()->runOnMainThread( [this] {
-		buildSidePanelTab();
-		buildStatusBar();
+	mLifetime.setDispatcher( getUISceneNode() );
+	mLifetime.weakHandle().run( []( DebuggerPlugin* plugin ) {
+		plugin->buildSidePanelTab();
+		plugin->buildStatusBar();
 	} );
 }
 
@@ -760,8 +764,9 @@ void DebuggerPlugin::buildSidePanelTab() {
 		if ( mProjectPath.empty() )
 			return;
 		UIIcon* icon = findIcon( "debug" );
-		mTab = mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
-								icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
+		mTab =
+			mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
+							 icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
 		mTab->setId( "debugger_tab" );
 		mTab->setTextAsFallback( true );
 
@@ -821,7 +826,7 @@ void DebuggerPlugin::buildSidePanelTab() {
 	mTabContents =
 		getUISceneNode()->loadLayoutFromString( STYLE, nullptr, String::hash( "debugger_plugin" ) );
 	mTab = mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
-							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
+							icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
 	mTab->setId( "debugger_tab" );
 	mTab->setTextAsFallback( true );
 
@@ -1209,9 +1214,7 @@ bool DebuggerPlugin::replaceInVal( std::string& val,
 	String::replaceAll( val, KEY_PATH_SEPARATOR, FileSystem::getOSSlash() );
 	String::replaceAll( val, KEY_PATH_SEPARATOR_ABBR, FileSystem::getOSSlash() );
 	String::replaceAll( val, KEY_UUID, UUID().toString() );
-	String::replaceAll( val, KEY_TIMESTAMP,
-						std::to_string( std::chrono::system_clock::to_time_t(
-							std::chrono::system_clock::now() ) ) );
+	String::replaceAll( val, KEY_TIMESTAMP, std::to_string( Sys::getUnixTimestamp() ) );
 
 	auto* editor = getPluginContext()->getSplitter()->getCurEditor();
 	if ( getPluginContext()->getSplitter()->getCurEditor() ) {
@@ -1461,15 +1464,16 @@ void DebuggerPlugin::registerCommands( TCommandRegister* executer ) {
 					if ( exitCode == 0 ) {
 						runCurrentConfig();
 					} else {
-						getPluginContext()->getUISceneNode()->runOnMainThread( [this] {
+						mLifetime.weakHandle().run( []( DebuggerPlugin* plugin ) {
 							auto msgBox = UIMessageBox::New(
 								UIMessageBox::YES_NO,
-								i18n( "build_failed_debug_anyways",
-									  "Building the project failed, do you want to "
-									  "debug the binary anyways?" ) );
-							msgBox->setTitle( i18n( "build_failed", "Build Failed" ) );
+								plugin->i18n( "build_failed_debug_anyways",
+											  "Building the project failed, do you want to "
+											  "debug the binary anyways?" ) );
+							msgBox->setTitle( plugin->i18n( "build_failed", "Build Failed" ) );
 							msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
-							msgBox->on( Event::OnConfirm, [this]( auto ) { runCurrentConfig(); } );
+							msgBox->on( Event::OnConfirm,
+										[plugin]( auto ) { plugin->runCurrentConfig(); } );
 							msgBox->showWhenReady();
 						} );
 					}
@@ -1539,8 +1543,37 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 
 void DebuggerPlugin::onUnregisterDocument( TextDocument* doc ) {
 	Lock l( mClientsMutex );
-	doc->unregisterClient( mClients[doc].get() );
-	mClients.erase( doc );
+	auto client = mClients.find( doc );
+	if ( client != mClients.end() ) {
+		doc->unregisterClient( client->second.get() );
+		mClients.erase( client );
+	}
+	PluginBase::onUnregisterDocument( doc );
+	doc->removeCommand( "show-debugger-tab" );
+}
+
+void DebuggerPlugin::unregisterEditors() {
+	mLifetime.invalidate();
+	PluginBase::unregisterEditors();
+	{
+		Lock l( mClientsMutex );
+		for ( const auto& client : mClients )
+			client.first->unregisterClient( client.second.get() );
+		mClients.clear();
+	}
+	if ( mSidePanel && mTab ) {
+		mSidePanel->removeTab( mTab );
+		mTab = nullptr;
+	}
+	if ( getPluginContext()->getStatusBar() )
+		getPluginContext()->getStatusBar()->removeStatusBarElement( "status_app_debugger" );
+	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() &&
+		 getPluginContext() && getPluginContext()->getMainLayout() ) {
+		getPluginContext()->getMainLayout()->unsetCommands( mRegisteredCommands );
+
+		for ( const auto& kb : mKeyBindings )
+			getPluginContext()->getMainLayout()->getKeyBindings().removeCommandKeybind( kb.first );
+	}
 }
 
 void DebuggerPlugin::onRegisterEditor( UICodeEditor* editor ) {
@@ -1601,11 +1634,12 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 															   : SyntaxStyleTypes::LineNumber2 ) )
 									 .blendAlpha( editor->getAlpha() ) );
 
-					static UIIcon* circleFilled = getUISceneNode()->findIcon( "circle-perfect" );
-
-					if ( circleFilled ) {
+					bool iconDrawn = false;
+					if ( mBreakpointIcon == nullptr )
+						mBreakpointIcon = getUISceneNode()->findIcon( "circle-perfect" );
+					if ( mBreakpointIcon ) {
 						Float finalHeight = eefloor( radius * 1.75f );
-						Drawable* drawable = circleFilled->getSize( finalHeight );
+						Drawable* drawable = mBreakpointIcon->getSource( (int)finalHeight ).get();
 						if ( drawable ) {
 							Color oldColor = drawable->getColor();
 							drawable->setColor( color );
@@ -1613,8 +1647,10 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 								Sizef{ lnPos.x, lnPos.y + ( lineHeight - finalHeight ) * 0.5f }
 									.floor() );
 							drawable->setColor( oldColor );
+							iconDrawn = true;
 						}
-					} else {
+					}
+					if ( !iconDrawn ) {
 						p.setColor( color );
 
 						p.drawCircle( Sizef{ lnPos.x + radius + ( gutterSpace - radius ) * 0.5f,
@@ -1645,12 +1681,16 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 			Float dim = radius * 2;
 			Float gutterSpace = editor->getGutterSpace( this );
 
-			static UIIcon* sfIcon = getUISceneNode()->findIcon( "debug-stackframe" );
-			if ( sfIcon ) {
-				Drawable* drawable = sfIcon->getSize( lineHeight );
+			if ( mStackFrameIcon == nullptr )
+				mStackFrameIcon = getUISceneNode()->findIcon( "debug-stackframe" );
+			if ( mStackFrameIcon ) {
+				const int iconSize = (int)eefloor( lineHeight );
+				Drawable* drawable = mStackFrameIcon->getSource( iconSize ).get();
 				if ( drawable ) {
+					Color oldColor = drawable->getColor();
 					drawable->setColor( color );
 					drawable->draw( lnPos.floor() );
+					drawable->setColor( oldColor );
 					return;
 				}
 			}
@@ -2170,11 +2210,14 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 						  DapRunConfig&& runConfig, int randPort, bool forceUseProgram,
 						  bool usesPorts, bool unstableFrameId ) {
 	std::optional<Command> cmdOpt = debuggerBinaryExists( debugger, runConfig );
+	auto mode = protocolSettings.launchArgs.value( "mode", "" );
+	if ( mode.empty() )
+		mode = "local";
+	const bool needsProcess =
+		protocolSettings.launchRequestType == REQUEST_TYPE_LAUNCH ||
+		( protocolSettings.launchRequestType == REQUEST_TYPE_ATTACH && mode == "local" );
 
-	if ( !cmdOpt && ( protocolSettings.launchRequestType == REQUEST_TYPE_LAUNCH ||
-					  ( protocolSettings.launchRequestType == REQUEST_TYPE_ATTACH &&
-						protocolSettings.launchArgs.value( "mode", "" ) == "local" &&
-						protocolSettings.launchArgs.contains( "program" ) ) ) ) {
+	if ( !cmdOpt && needsProcess ) {
 		auto msg =
 			String::format( i18n( "debugger_binary_not_found",
 								  "Debugger binary not found. Binary \"%s\" must be installed." )
@@ -2185,7 +2228,7 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 		return;
 	}
 
-	Command cmd = std::move( *cmdOpt );
+	Command cmd = cmdOpt ? std::move( *cmdOpt ) : Command{};
 	bool isRemote = false;
 	bool runsDapServer = false;
 
@@ -2218,14 +2261,10 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 			mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
 		}
 	} else if ( protocolSettings.launchRequestType == REQUEST_TYPE_ATTACH ) {
-		auto mode = protocolSettings.launchArgs.value( "mode", "" );
-		if ( mode.empty() )
-			mode = "local";
-
-		bool useSocket = !con.host.empty() && con.port != 0;
-		if ( ( protocolSettings.launchArgs.contains( "host" ) ||
-			   protocolSettings.launchArgs.contains( "port" ) ) &&
-			 !useSocket ) {
+		const bool socketRequested = protocolSettings.launchArgs.contains( "host" ) ||
+									 protocolSettings.launchArgs.contains( "port" );
+		bool useSocket = runsDapServer || ( socketRequested && con.isValid() );
+		if ( socketRequested && !useSocket ) {
 			getManager()->getPluginContext()->getNotificationCenter()->addNotification(
 				i18n( "host_port_required", "No host or port has been specified." ) );
 			return;
@@ -2308,28 +2347,27 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 								   std::function<void( int )> doneFn ) {
 		if ( !FileSystem::fileExists( cmd ) )
 			cmd = FileSystem::fileNameFromPath( cmd );
-		getUISceneNode()->runOnMainThread( [this, isIntegrated, cmd = std::move( cmd ), cwd, args,
-											doneFn = std::move( doneFn ), env = std::move( env )] {
+		mLifetime.weakHandle().run( [isIntegrated, cmd = std::move( cmd ), cwd, args,
+									 doneFn = std::move( doneFn ),
+									 env = std::move( env )]( DebuggerPlugin* plugin ) {
 			if ( isIntegrated || !env.empty() ) {
 				UITerminal* term =
-					getPluginContext()->getTerminalManager()->createTerminalInSplitter(
+					plugin->getPluginContext()->getTerminalManager()->createTerminalInSplitter(
 						cwd, cmd, args, env, false, false );
 
-				doneFn( term && term->getTerm() && term->getTerm()->getTerminal() &&
-								term->getTerm()->getTerminal()->getProcess()
-							? term->getTerm()->getTerminal()->getProcess()->pid()
-							: 0 );
+				doneFn( term && term->getTerm() ? term->getTerm()->getProcessId() : 0 );
 			} else {
 				std::string fcmd = cmd + ( !args.empty() ? " " : "" ) + String::join( args, ' ' );
-				doneFn(
-					getPluginContext()->getTerminalManager()->openInExternalTerminal( fcmd, cwd ) );
+				doneFn( plugin->getPluginContext()->getTerminalManager()->openInExternalTerminal(
+					fcmd, cwd ) );
 			}
 		} );
 	};
 
 	dap->runTargetCb = [this] {
-		getUISceneNode()->runOnMainThread(
-			[this] { getPluginContext()->runCommand( "project-run-executable" ); } );
+		mLifetime.weakHandle().run( []( DebuggerPlugin* plugin ) {
+			plugin->getPluginContext()->runCommand( "project-run-executable" );
+		} );
 	};
 
 	mDebugger->start();

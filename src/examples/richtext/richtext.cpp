@@ -9,7 +9,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 	FontTrueType* font =
-		FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+		FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" ).get();
 
 	if ( !font || !font->loaded() )
 		return EXIT_FAILURE;

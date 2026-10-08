@@ -10,7 +10,7 @@ namespace ecode {
 StatusBuildOutputController::StatusBuildOutputController( UISplitter* mainSplitter,
 														  UISceneNode* uiSceneNode,
 														  PluginContextProvider* pluginContext ) :
-	StatusBarElement( mainSplitter, uiSceneNode, pluginContext ) {}
+	StatusBarElement( mainSplitter, uiSceneNode, pluginContext ), mLifetime( this, uiSceneNode ) {}
 
 static std::string getProjectOutputParserTypeToString( const ProjectOutputParserTypes& type ) {
 	switch ( type ) {
@@ -286,8 +286,8 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 			updateBuildButton();
 
 			if ( !mContext->getWindow()->hasFocus() ) {
-				mContext->getUISceneNode()->runOnMainThread( [this] {
-					mContext->getWindow()->flash( WindowFlashOperation::UntilFocused );
+				mLifetime.weakHandle().run( []( StatusBuildOutputController* controller ) {
+					controller->mContext->getWindow()->flash( WindowFlashOperation::UntilFocused );
 				} );
 			}
 
@@ -527,19 +527,25 @@ void StatusBuildOutputController::createContainer() {
 								if ( !data.isValid() )
 									return;
 								std::string path = data.toString();
-								mUISceneNode->runOnMainThread( [this, path, lineNum, colNum] {
-									UITab* tab = mSplitter->isDocumentOpen( path );
-									if ( !tab ) {
-										mContext->loadFileFromPath(
-											path, true, nullptr,
-											[this, lineNum, colNum]( auto, auto ) {
-												onLoadDone( lineNum, colNum );
-											} );
-									} else {
-										tab->getTabWidget()->setTabSelected( tab );
-										onLoadDone( lineNum, colNum );
-									}
-								} );
+								mLifetime.weakHandle().run(
+									[path, lineNum,
+									 colNum]( StatusBuildOutputController* controller ) {
+										UITab* tab = controller->mSplitter->isDocumentOpen( path );
+										if ( !tab ) {
+											controller->mContext->loadFileFromPath(
+												path, true, nullptr,
+												[lifetime = controller->mLifetime.weakHandle(),
+												 lineNum, colNum]( auto, auto ) {
+													lifetime.run(
+														[lineNum, colNum]( auto* loaded ) {
+															loaded->onLoadDone( lineNum, colNum );
+														} );
+												} );
+										} else {
+											tab->getTabWidget()->setTabSelected( tab );
+											controller->onLoadDone( lineNum, colNum );
+										}
+									} );
 							} );
 					}
 				} else {

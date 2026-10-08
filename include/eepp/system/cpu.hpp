@@ -7,6 +7,8 @@ namespace EE { namespace System {
 
 class EE_API CPU {
   public:
+	static bool hasSSSE3();
+
 	static bool hasAVX2();
 
 	static bool hasNEON();

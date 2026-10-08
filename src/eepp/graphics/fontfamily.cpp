@@ -1,4 +1,5 @@
 #include <eepp/graphics/fontfamily.hpp>
+#include <eepp/graphics/fontservice.hpp>
 #include <eepp/system/filesystem.hpp>
 
 using namespace std::literals;
@@ -53,11 +54,15 @@ std::string FontFamily::findType( const std::string& fontpath, const std::string
 	return "";
 }
 
-FontTrueType* FontFamily::setFont( FontTrueType* font, const std::string& fontpath,
-								   const std::string_view& fontType ) {
+void FontFamily::setFont( FontTrueType* font, const std::string& fontpath,
+						  const std::string_view& fontType ) {
 	if ( fontpath.empty() )
-		return nullptr;
-	FontTrueType* loadedFont = FontTrueType::New( font->getName() + "-" + fontType, fontpath );
+		return;
+	FontService* fontService = font->getFontService();
+	FontTrueTypePtr loadedFont =
+		fontService ? FontTrueType::New( font->getName() + "-" + fontType, fontpath,
+										 fontService->getResourceScope() )
+					: FontTrueType::New( font->getName() + "-" + fontType, fontpath );
 	if ( fontType == "bold"sv )
 		font->setBoldFont( loadedFont );
 	else if ( fontType == "italic"sv )
@@ -66,7 +71,6 @@ FontTrueType* FontFamily::setFont( FontTrueType* font, const std::string& fontpa
 		font->setBoldItalicFont( loadedFont );
 	loadedFont->setBoldAdvanceSameAsRegular( font->getBoldAdvanceSameAsRegular() );
 	loadedFont->setEnableDynamicMonospace( font->getEnableDynamicMonospace() );
-	return loadedFont;
 }
 
 }} // namespace EE::Graphics

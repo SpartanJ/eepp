@@ -685,7 +685,7 @@ void TexturePacker::saveTextureRegions() {
 
 	TexGrHdr.Magic = EE_TEXTURE_ATLAS_MAGIC;
 	TexGrHdr.Version = HDR_TEXTURE_ATLAS_VERSION;
-	TexGrHdr.Date = static_cast<Uint64>( Sys::getSystemTime() );
+	TexGrHdr.Date = static_cast<Uint64>( Sys::getUnixTimestamp() );
 	TexGrHdr.TextureCount = 1;
 	TexGrHdr.Format = static_cast<int>( mFormat );
 	TexGrHdr.Width = mWidth;

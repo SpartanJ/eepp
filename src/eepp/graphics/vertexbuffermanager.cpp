@@ -1,14 +1,14 @@
-#include <eepp/graphics/vertexbuffermanager.hpp>
+#include <eepp/graphics/vertexbufferregistry.hpp>
 
 namespace EE { namespace Graphics { namespace Private {
 
-SINGLETON_DECLARE_IMPLEMENTATION( VertexBufferManager )
+SINGLETON_DECLARE_IMPLEMENTATION( VertexBufferRegistry )
 
-VertexBufferManager::VertexBufferManager() {}
+VertexBufferRegistry::VertexBufferRegistry() {}
 
-VertexBufferManager::~VertexBufferManager() {}
+VertexBufferRegistry::~VertexBufferRegistry() {}
 
-void VertexBufferManager::reload() {
+void VertexBufferRegistry::reload() {
 	for ( auto& vb : mResources )
 		vb->reload();
 }

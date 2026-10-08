@@ -326,7 +326,7 @@ class ProjectBuildManager {
 
 	void cancelRun();
 
-	ProjectBuildConfiguration getConfig() const;
+	const ProjectBuildConfiguration& getConfig() const;
 
 	void setConfig( const ProjectBuildConfiguration& config );
 

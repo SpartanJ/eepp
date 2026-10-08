@@ -21,19 +21,21 @@ class EE_API StyleSheetStyle {
 
 	std::string build( bool emitMediaQueryStart = true, bool emitMediaQueryEnd = true );
 
-	const StyleSheetSelector& getSelector() const;
+	inline const StyleSheetSelector& getSelector() const { return mSelector; }
 
-	const StyleSheetProperties& getProperties() const;
+	inline const StyleSheetProperties& getProperties() const { return mProperties; }
 
-	StyleSheetProperties& getPropertiesRef();
+	inline StyleSheetProperties& getPropertiesRef() { return mProperties; }
 
 	const StyleSheetVariables& getVariables() const;
+
+	StyleSheetProperty* getPropertyById( const PropertyId& id );
 
 	const StyleSheetProperty* getPropertyById( const PropertyId& id ) const;
 
 	const StyleSheetProperty* getPropertyByDefinition( const PropertyDefinition* def ) const;
 
-	StyleSheetProperty* getPropertyById( const Uint32& id );
+	StyleSheetProperty* getPropertyByNameHash( const String::HashType& id );
 
 	void setProperty( const StyleSheetProperty& property );
 
@@ -55,7 +57,7 @@ class EE_API StyleSheetStyle {
 
 	void setVariable( const StyleSheetVariable& variable, bool setSelectorSpecificity = true );
 
-	bool isMediaValid() const { return !mMediaQueryList || mMediaQueryList->isUsed(); }
+	inline bool isMediaValid() const { return !mMediaQueryList || mMediaQueryList->isUsed(); }
 
 	const MediaQueryList::ptr& getMediaQueryList() const;
 

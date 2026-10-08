@@ -22,6 +22,7 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 #include <eepp/config.hpp>
+#include <eterm/terminal/terminalgraphics.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 
 using namespace EE;
@@ -79,6 +80,9 @@ class ITerminalDisplay {
 
 	virtual void drawCursor( int cx, int cy, TerminalGlyph g, int ox, int oy,
 							 TerminalGlyph og ) = 0;
+
+	virtual void drawGraphics( std::shared_ptr<TerminalGraphicsPresentation> presentation,
+							   std::vector<TerminalGraphicsUpdate> updates );
 
 	virtual void drawEnd() = 0;
 

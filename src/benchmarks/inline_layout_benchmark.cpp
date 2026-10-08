@@ -43,9 +43,9 @@ static int getSelectorMatchingIterations() {
 }
 
 UTEST( Benchmark, CSSSelectorMatching ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "CSS selector bench",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
+	Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "CSS selector bench", WindowStyle::Default | WindowStyle::Hidden,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
 	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 
@@ -96,9 +96,9 @@ UTEST( Benchmark, CSSSelectorMatching ) {
 }
 
 UTEST( Benchmark, CSSClassIndexLookup ) {
-	Engine::instance()->createWindow( WindowSettings( 800, 600, "CSS class index bench",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
+	Engine::instance()->createWindow( WindowSettings(
+		800, 600, "CSS class index bench", WindowStyle::Default | WindowStyle::Hidden,
+		WindowBackend::Default, 32, {}, 1, false, true ) );
 	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 
@@ -155,8 +155,9 @@ UTEST( Benchmark, CSSClassIndexLookup ) {
 
 UTEST( Benchmark, CSSAttributeSelectorMatching ) {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "CSS attribute selector bench",
-													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ),
+													  WindowStyle::Default | WindowStyle::Hidden,
+													  WindowBackend::Default, 32, {}, 1, false,
+													  true ),
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	UIHTMLWidget* widget = UIHTMLWidget::New();
 	widget->setDataProperty( "data-empty", "" );
@@ -232,11 +233,12 @@ static int getMarkdownFlushIterations() {
 }
 
 UTEST( Benchmark, InlineLayout ) {
-	Engine::instance()->createWindow( WindowSettings(
-		800, 600, "bench", WindowStyle::Default, WindowBackend::Default, 32, {}, 1, false, true ) );
+	Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "bench", WindowStyle::Default | WindowStyle::Hidden,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	if ( !font->loaded() ) {
 		Engine::destroySingleton();
@@ -310,8 +312,8 @@ UTEST( Benchmark, MarkdownReadme ) {
 	}
 
 	EE::Window::Window* window = Engine::instance()->createWindow(
-		WindowSettings( 1280, 720, "markdown bench", WindowStyle::Default, WindowBackend::Default,
-						32, {}, 1, false, true ) );
+		WindowSettings( 1280, 720, "markdown bench", WindowStyle::Default | WindowStyle::Hidden,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
 	if ( !window || !window->isOpen() ) {
 		Engine::destroySingleton();
 		UTEST_PRINT_INFO( "Failed to create window, skipping benchmark" );
@@ -323,9 +325,9 @@ UTEST( Benchmark, MarkdownReadme ) {
 	UISceneNode* ui = UISceneNode::New( window );
 	SceneManager::instance()->add( ui );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	FontTrueType* monoFont = FontTrueType::New( "monospace" );
+	FontTrueType* monoFont = FontTrueType::New( "monospace" ).get();
 	monoFont->loadFromFile( "../assets/fonts/DejaVuSansMono.ttf" );
 	if ( !font->loaded() || !monoFont->loaded() ) {
 		Engine::destroySingleton();

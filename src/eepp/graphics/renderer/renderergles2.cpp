@@ -148,6 +148,40 @@ void RendererGLES2::reloadCurrentShader() {
 	reloadShader( mCurShader );
 }
 
+void RendererGLES2::onContextChanged() {
+	Renderer::onContextChanged();
+	reloadCurrentShader();
+}
+
+ShaderProgramPtr RendererGLES2::createSubpixelDualSourceShader() {
+#ifdef EE_GLES2
+	static const char fragmentShader[] = R"(#extension GL_EXT_blend_func_extended : require
+precision mediump float;
+precision lowp int;
+uniform sampler2D textureUnit0;
+varying vec4 dgl_Color;
+varying mediump vec4 dgl_TexCoord[1];
+void main() {
+	vec3 coverage = texture2D( textureUnit0, dgl_TexCoord[0].xy ).rgb;
+	float meanCoverage = dot( coverage, vec3( 1.0 / 3.0 ) );
+	gl_FragColor = vec4( dgl_Color.rgb, dgl_Color.a * meanCoverage );
+	gl_SecondaryFragColorEXT = vec4( dgl_Color.a * coverage, 0.0 );
+}
+)";
+	return RendererGLShader::createSubpixelDualSourceShader( mBaseVertexShader, fragmentShader,
+															 false );
+#else
+	std::string vertexShader = mBaseVertexShader;
+	String::replaceAll( vertexShader, "#version 120", "#version 130" );
+	return RendererGLShader::createSubpixelDualSourceShader(
+		vertexShader, subpixelDualSourceFragmentShaderGLSL130(), true );
+#endif
+}
+
+bool RendererGLES2::canUseSubpixelDualSourceShader() const {
+	return !mClippingEnabled && !mPointSpriteEnabled;
+}
+
 void RendererGLES2::reloadShader( ShaderProgram* Shader ) {
 	mCurShader = NULL;
 
@@ -155,12 +189,12 @@ void RendererGLES2::reloadShader( ShaderProgram* Shader ) {
 }
 
 void RendererGLES2::setShader( const EEGLES2_SHADERS& Shader ) {
-	setShader( mShaders[Shader] );
+	setShader( mShaders[Shader].get() );
 }
 
 void RendererGLES2::checkLocalShader() {
 	for ( Uint32 i = 0; i < EEGLES2_SHADERS_COUNT; i++ ) {
-		if ( mShaders[i] == mCurShader ) {
+		if ( mShaders[i].get() == mCurShader ) {
 			mCurShaderLocal = true;
 			return;
 		}
@@ -171,7 +205,7 @@ void RendererGLES2::checkLocalShader() {
 
 void RendererGLES2::setShader( ShaderProgram* Shader ) {
 	if ( NULL == Shader ) {
-		Shader = mShaders[EEGLES2_SHADER_BASE];
+		Shader = mShaders[EEGLES2_SHADER_BASE].get();
 	}
 
 	if ( mCurShader == Shader ) {
@@ -198,6 +232,8 @@ void RendererGLES2::setShader( ShaderProgram* Shader ) {
 	mProjectionMatrix_id = mCurShader->getUniformLocation( "dgl_ProjectionMatrix" );
 	mModelViewMatrix_id = mCurShader->getUniformLocation( "dgl_ModelViewMatrix" );
 	mTextureMatrix_id = mCurShader->getUniformLocation( "dgl_TextureMatrix" );
+	mTextureColorMode_id = mCurShader->getUniformLocation( "dgl_TextureColorMode" );
+	mTextureColorChannel_id = mCurShader->getUniformLocation( "dgl_TextureColorChannel" );
 	mTexActiveLoc = mCurShader->getUniformLocation( "dgl_TexActive" );
 	mClippingEnabledLoc = mCurShader->getUniformLocation( "dgl_ClippingEnabled" );
 	mPointSizeLoc = mCurShader->getUniformLocation( "dgl_PointSize" );
@@ -222,6 +258,11 @@ void RendererGLES2::setShader( ShaderProgram* Shader ) {
 	}
 
 	useProgram( mCurShader->getHandler() );
+	if ( mTextureColorMode_id != -1 )
+		mCurShader->setUniform( mTextureColorMode_id, mTextureColorMode );
+	if ( mTextureColorChannel_id != -1 && mTextureColorMode != 0 ) {
+		mCurShader->setUniform( mTextureColorChannel_id, textureColorChannel( mTextureColorMode ) );
+	}
 
 	if ( -1 != mAttribsLoc[EEGL_VERTEX_ARRAY] )
 		enableClientState( GL_VERTEX_ARRAY );
@@ -432,7 +473,7 @@ void RendererGLES2::texCoordPointer( int size, unsigned int type, int stride, co
 									 unsigned int /*allocate*/ ) {
 	if ( mCurShaderLocal ) {
 		if ( 1 == mTexActive ) {
-			if ( mCurShader == mShaders[EEGLES2_SHADER_PRIMITIVE] ) {
+			if ( mCurShader == mShaders[EEGLES2_SHADER_PRIMITIVE].get() ) {
 				if ( mClippingEnabled ) {
 					setShader( EEGLES2_SHADER_CLIPPED );
 				} else if ( mPointSpriteEnabled ) {

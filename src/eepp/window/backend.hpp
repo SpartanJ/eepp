@@ -1,7 +1,7 @@
 #ifndef EE_WINDOWCBACKEND_HPP
 #define EE_WINDOWCBACKEND_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
 
 namespace EE { namespace Window { namespace Backend {
 

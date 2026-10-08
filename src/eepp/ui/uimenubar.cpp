@@ -1,6 +1,7 @@
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/platformmenubar.hpp>
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -45,19 +46,25 @@ void UIMenuBar::setCurrentMenu( UIPopUpMenu* currentMenu ) {
 	mWaitingUp = nullptr;
 }
 
+void UIMenuBar::positionMenu( UISelectButton* button, UIPopUpMenu* menu ) {
+	Vector2f pos( 0, button->getSize().getHeight() );
+	button->nodeToWorld( pos );
+	menu->setParent( getWindowContainer() );
+	menu->getParent()->worldToNode( pos );
+	menu->setPosition( pos );
+}
+
 void UIMenuBar::showMenu( const Uint32& index ) {
 	eeASSERT( index < mButtons.size() );
 	auto but = mButtons[index];
 	auto tbut = but.first;
 	auto tpop = but.second;
 
-	Vector2f pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );
-	tpop->setPosition( pos );
+	positionMenu( tbut, tpop );
 
 	if ( !tpop->isVisible() ) {
 		mCurrentMenu = tpop;
 		tbut->select();
-		tpop->setParent( getWindowContainer() );
 		tpop->show();
 		mWaitingUp = tpop;
 	} else if ( mCurrentMenu != tpop || mWaitingUp == nullptr ) {
@@ -88,6 +95,7 @@ void UIMenuBar::showPrevMenu() {
 }
 
 UIMenuBar::~UIMenuBar() {
+	setGlobalMenuBarEnabled( false );
 	destroyMenus();
 }
 
@@ -153,6 +161,7 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 		button->setThemeSkin( mTheme, "menubarbutton" );
 
 	refreshButtons();
+	syncGlobalMenuBar();
 }
 
 void UIMenuBar::setTheme( UITheme* theme ) {
@@ -176,6 +185,7 @@ void UIMenuBar::removeMenuButton( const String& buttonText ) {
 				it->second->close();
 			mButtons.erase( it );
 			refreshButtons();
+			syncGlobalMenuBar();
 			break;
 		}
 	}
@@ -208,7 +218,36 @@ UIPopUpMenu* UIMenuBar::getPopUpMenu( const Uint32& index ) const {
 UIMenuBar* UIMenuBar::setPopUpMenu( const Uint32& index, UIPopUpMenu* menu ) {
 	eeASSERT( index < mButtons.size() );
 	mButtons[index].second = menu;
+	syncGlobalMenuBar();
 	return this;
+}
+
+bool UIMenuBar::isGlobalMenuBarSupported() const {
+	return PlatformMenuBar::isSupported();
+}
+
+UIMenuBar* UIMenuBar::setGlobalMenuBarEnabled( bool enabled ) {
+	if ( enabled == isGlobalMenuBarEnabled() )
+		return this;
+
+	if ( enabled ) {
+		mPlatformMenuBar = PlatformMenuBar::create();
+		if ( mPlatformMenuBar )
+			mPlatformMenuBar->install( this );
+	} else if ( mPlatformMenuBar ) {
+		mPlatformMenuBar->uninstall();
+		mPlatformMenuBar.reset();
+	}
+	return this;
+}
+
+bool UIMenuBar::isGlobalMenuBarEnabled() const {
+	return nullptr != mPlatformMenuBar;
+}
+
+void UIMenuBar::syncGlobalMenuBar() {
+	if ( mPlatformMenuBar )
+		mPlatformMenuBar->syncTopLevel();
 }
 
 size_t UIMenuBar::getButtonsCount() const {
@@ -288,15 +327,12 @@ Uint32 UIMenuBar::onMessage( const NodeMessage* msg ) {
 				if ( tpop == nullptr )
 					return 1;
 
-				Vector2f pos( tbut->getPosition().x,
-							  tbut->getPosition().y + tbut->getSize().getHeight() );
-				tpop->setPosition( pos );
+				positionMenu( tbut, tpop );
 
 				if ( msg->getMsg() == NodeMessage::MouseOver ) {
 					if ( nullptr != mCurrentMenu && mCurrentMenu != tpop ) {
 						mCurrentMenu = tpop;
 						tbut->select();
-						tpop->setParent( getWindowContainer() );
 						tpop->show();
 					}
 				} else {
@@ -305,7 +341,6 @@ Uint32 UIMenuBar::onMessage( const NodeMessage* msg ) {
 						if ( !tpop->isVisible() ) {
 							mCurrentMenu = tpop;
 							tbut->select();
-							tpop->setParent( getWindowContainer() );
 							tpop->show();
 							mWaitingUp = tpop;
 						} else if ( mCurrentMenu != tpop || mWaitingUp == nullptr ) {

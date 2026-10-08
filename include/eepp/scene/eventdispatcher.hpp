@@ -6,6 +6,7 @@
 #include <eepp/scene/nodefocusreason.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/window/keycodes.hpp>
+#include <vector>
 
 using namespace EE::System;
 using namespace EE::Math;
@@ -60,7 +61,7 @@ class EE_API EventDispatcher {
 					const Uint32& mod );
 
 	void sendKeyDown( const Keycode& keyCode, const Scancode& scancode, const Uint32& chr,
-					  const Uint32& mod );
+					  const Uint32& mod, bool repeat = false );
 
 	void sendMouseClick( Node* toNode, const Vector2i& pos, const Uint32 flags );
 
@@ -120,7 +121,11 @@ class EE_API EventDispatcher {
 
 	bool isFirstPress() const;
 
+	bool justFinishDragging() const { return mJustFinishDragging; }
+
   protected:
+	virtual void onMouseOverNodeChange( Node* node );
+
 	EE::Window::Window* mWindow;
 	Input* mInput;
 	SceneNode* mSceneNode;
@@ -140,11 +145,17 @@ class EE_API EventDispatcher {
 	bool mJustPressed{ false };
 	bool mDisableMousePress{ false };
 	bool mJustDisabledMousePress{ false };
+	bool mJustFinishDragging{ false };
 	Node* mNodeWasDragging;
 	Node* mNodeDragging;
 	Time mElapsed;
 	Uint32 mCurFocusId{ 0 };
 	std::map<Uint32, FocusCallback> mFocusCbs;
+	struct PendingMouseWheelEvent {
+		Vector2f offset;
+		bool flipped;
+	};
+	std::vector<PendingMouseWheelEvent> mPendingMouseWheelEvents;
 
 	virtual void inputCallback( InputEvent* event );
 };

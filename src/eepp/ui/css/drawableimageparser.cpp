@@ -1,11 +1,9 @@
 #include <eepp/graphics/circledrawable.hpp>
 #include <eepp/graphics/convexshapedrawable.hpp>
 #include <eepp/graphics/drawable.hpp>
-#include <eepp/graphics/drawablesearcher.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/triangledrawable.hpp>
-#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
@@ -16,7 +14,6 @@
 #include <eepp/ui/uiscenenode.hpp>
 
 using namespace EE::Graphics;
-using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -153,26 +150,22 @@ bool DrawableImageParser::exists( const std::string& name ) const {
 	return mFuncs.find( name ) != mFuncs.end();
 }
 
-Drawable* DrawableImageParser::createDrawable( const std::string& value, const Sizef& size,
-											   bool& ownIt, UINode* node ) {
+DrawablePtr DrawableImageParser::createDrawable( const std::string& value, const Sizef& size,
+												 UINode* node ) {
 	FunctionString functionType = FunctionString::parse( value );
-	Drawable* res = NULL;
-	ownIt = false;
 
 	if ( "none" == value )
-		return NULL;
+		return {};
 
 	if ( !functionType.isEmpty() ) {
 		if ( exists( functionType.getName() ) )
-			return mFuncs[functionType.getName()]( functionType, size, ownIt, node );
-	} else if ( NULL != ( res = DrawableSearcher::searchByName(
-							  value, false, node->getUISceneNode()->getReferer() ) ) ) {
-		if ( res->getDrawableType() == Drawable::SPRITE )
-			ownIt = true;
-		return res;
+			return mFuncs[functionType.getName()]( functionType, size, node );
+	} else if ( DrawablePtr drawable =
+					node->getUISceneNode()->getDrawableResolver().resolve( value ) ) {
+		return drawable;
 	}
 
-	return res;
+	return {};
 }
 
 void DrawableImageParser::addParser( const std::string& name,
@@ -189,11 +182,11 @@ void DrawableImageParser::addParser( const std::string& name,
 
 void DrawableImageParser::registerBaseParsers() {
 	// Shared parsing logic for linear-gradient and repeating-linear-gradient
-	auto parseGradient = []( const FunctionString& functionType, bool& ownIt, UINode* node,
-							 bool repeating ) -> Drawable* {
+	auto parseGradient = []( const FunctionString& functionType, UINode* node,
+							 bool repeating ) -> DrawablePtr {
 		const auto& params( functionType.getParameters() );
 		if ( params.size() < 2 )
-			return NULL;
+			return {};
 
 		size_t paramIdx = 0;
 		Float angle = 180.f; /* default: to bottom */
@@ -331,7 +324,7 @@ void DrawableImageParser::registerBaseParsers() {
 					colorStopCount++;
 			}
 			if ( colorStopCount < 2 )
-				return NULL;
+				return {};
 		}
 
 		// Sort by position. Hints with the same position as a color stop are
@@ -450,34 +443,33 @@ void DrawableImageParser::registerBaseParsers() {
 		}
 
 		if ( stops.size() < 2 )
-			return NULL;
+			return {};
 
-		LinearGradientDrawable* drawable =
-			repeating ? LinearGradientDrawable::NewRepeating() : LinearGradientDrawable::New();
+		auto drawable = makeResource<LinearGradientDrawable>(
+			repeating ? Drawable::REPEATINGLINEARGRADIENT : Drawable::LINEARGRADIENT );
 		drawable->setColorStops( std::move( stops ) );
 		drawable->setAngle( angle );
-		ownIt = true;
 		return drawable;
 	};
 
 	mFuncs["linear-gradient"] = [parseGradient]( const FunctionString& functionType,
-												 const Sizef& /*size*/, bool& ownIt,
-												 UINode* node ) -> Drawable* {
-		return parseGradient( functionType, ownIt, node, false );
+												 const Sizef& /*size*/,
+												 UINode* node ) -> DrawablePtr {
+		return parseGradient( functionType, node, false );
 	};
 
 	mFuncs["repeating-linear-gradient"] = [parseGradient]( const FunctionString& functionType,
-														   const Sizef& /*size*/, bool& ownIt,
-														   UINode* node ) -> Drawable* {
-		return parseGradient( functionType, ownIt, node, true );
+														   const Sizef& /*size*/,
+														   UINode* node ) -> DrawablePtr {
+		return parseGradient( functionType, node, true );
 	};
 
 	// Shared parsing logic for radial-gradient and repeating-radial-gradient
-	auto parseRadialGradient = []( const FunctionString& functionType, bool& ownIt, UINode* node,
-								   bool repeating ) -> Drawable* {
+	auto parseRadialGradient = []( const FunctionString& functionType, UINode* node,
+								   bool repeating ) -> DrawablePtr {
 		const auto& params( functionType.getParameters() );
 		if ( params.size() < 2 )
-			return NULL;
+			return {};
 
 		size_t paramIdx = 0;
 		RadialGradientDrawable::ShapeType shape = RadialGradientDrawable::CIRCLE;
@@ -557,7 +549,7 @@ void DrawableImageParser::registerBaseParsers() {
 					colorStopCount++;
 			}
 			if ( colorStopCount < 2 )
-				return NULL;
+				return {};
 		}
 
 		std::sort( gradientStops.begin(), gradientStops.end(),
@@ -671,37 +663,36 @@ void DrawableImageParser::registerBaseParsers() {
 		}
 
 		if ( stops.size() < 2 )
-			return NULL;
+			return {};
 
-		RadialGradientDrawable* drawable =
-			repeating ? RadialGradientDrawable::NewRepeating() : RadialGradientDrawable::New();
+		auto drawable = makeResource<RadialGradientDrawable>(
+			repeating ? Drawable::REPEATINGRADIALGRADIENT : Drawable::RADIALGRADIENT );
 		drawable->setColorStops( std::move( stops ) );
 		drawable->setShape( shape );
 		drawable->setExtent( extent );
 		drawable->setCenter( center );
-		ownIt = true;
 		return drawable;
 	};
 
 	mFuncs["radial-gradient"] = [parseRadialGradient]( const FunctionString& functionType,
-													   const Sizef& /*size*/, bool& ownIt,
-													   UINode* node ) -> Drawable* {
-		return parseRadialGradient( functionType, ownIt, node, false );
+													   const Sizef& /*size*/,
+													   UINode* node ) -> DrawablePtr {
+		return parseRadialGradient( functionType, node, false );
 	};
 
 	mFuncs["repeating-radial-gradient"] = [parseRadialGradient]( const FunctionString& functionType,
-																 const Sizef& /*size*/, bool& ownIt,
-																 UINode* node ) -> Drawable* {
-		return parseRadialGradient( functionType, ownIt, node, true );
+																 const Sizef& /*size*/,
+																 UINode* node ) -> DrawablePtr {
+		return parseRadialGradient( functionType, node, true );
 	};
 
-	mFuncs["circle"] = []( const FunctionString& functionType, const Sizef& size, bool& ownIt,
-						   UINode* node ) -> Drawable* {
+	mFuncs["circle"] = []( const FunctionString& functionType, const Sizef& size,
+						   UINode* node ) -> DrawablePtr {
 		if ( functionType.getParameters().size() < 1 ) {
-			return NULL;
+			return {};
 		}
 
-		CircleDrawable* drawable = CircleDrawable::New();
+		auto drawable = makeResource<CircleDrawable>();
 
 		const auto& params( functionType.getParameters() );
 
@@ -722,17 +713,16 @@ void DrawableImageParser::registerBaseParsers() {
 		}
 
 		drawable->setOffset( drawable->getSize() / 2.f );
-		ownIt = true;
 		return drawable;
 	};
 
-	mFuncs["rectangle"] = []( const FunctionString& functionType, const Sizef& size, bool& ownIt,
-							  UINode* node ) -> Drawable* {
+	mFuncs["rectangle"] = []( const FunctionString& functionType, const Sizef& size,
+							  UINode* node ) -> DrawablePtr {
 		if ( functionType.getParameters().size() < 1 ) {
-			return NULL;
+			return {};
 		}
 
-		RectangleDrawable* drawable = RectangleDrawable::New();
+		auto drawable = makeResource<RectangleDrawable>();
 		RectColors rectColors;
 		std::vector<Color> colors;
 
@@ -779,22 +769,19 @@ void DrawableImageParser::registerBaseParsers() {
 			rectColors.BottomRight = colors[2];
 			rectColors.TopRight = colors[3];
 			drawable->setRectColors( rectColors );
-			ownIt = true;
 			return drawable;
-		} else {
-			eeSAFE_DELETE( drawable );
 		}
 
-		return drawable;
+		return {};
 	};
 
-	mFuncs["triangle"] = []( const FunctionString& functionType, const Sizef& size, bool& ownIt,
-							 UINode* node ) -> Drawable* {
+	mFuncs["triangle"] = []( const FunctionString& functionType, const Sizef& size,
+							 UINode* node ) -> DrawablePtr {
 		if ( functionType.getParameters().size() < 2 ) {
-			return NULL;
+			return {};
 		}
 
-		TriangleDrawable* drawable = TriangleDrawable::New();
+		auto drawable = makeResource<TriangleDrawable>();
 		std::vector<Color> colors;
 		std::vector<Vector2f> vertices;
 
@@ -849,22 +836,19 @@ void DrawableImageParser::registerBaseParsers() {
 			}
 
 			drawable->setTriangle( triangle );
-			ownIt = true;
 			return drawable;
-		} else {
-			eeSAFE_DELETE( drawable );
 		}
 
-		return drawable;
+		return {};
 	};
 
-	mFuncs["poly"] = []( const FunctionString& functionType, const Sizef& size, bool& ownIt,
-						 UINode* node ) -> Drawable* {
+	mFuncs["poly"] = []( const FunctionString& functionType, const Sizef& size,
+						 UINode* node ) -> DrawablePtr {
 		if ( functionType.getParameters().size() < 2 ) {
-			return NULL;
+			return {};
 		}
 
-		ConvexShapeDrawable* drawable = ConvexShapeDrawable::New();
+		auto drawable = makeResource<ConvexShapeDrawable>();
 		std::vector<Color> colors;
 		std::vector<Vector2f> vertices;
 
@@ -908,25 +892,22 @@ void DrawableImageParser::registerBaseParsers() {
 				drawable->addPoint( vertices[i], colors[i % colors.size()] );
 			}
 
-			ownIt = true;
 			return drawable;
-		} else {
-			eeSAFE_DELETE( drawable );
 		}
 
-		return drawable;
+		return {};
 	};
 
-	mFuncs["url"] = []( const FunctionString& functionType, const Sizef& /*size*/, bool& /*ownIt*/,
-						UINode* node ) -> Drawable* {
+	mFuncs["url"] = []( const FunctionString& functionType, const Sizef& /*size*/,
+						UINode* node ) -> DrawablePtr {
 		if ( functionType.getParameters().size() < 1 )
-			return NULL;
+			return {};
 		const auto& param = functionType.getParameters().at( 0 );
 		if ( functionType.getName() == "url" && !param.empty() && param[0] != '@' &&
 			 !String::startsWith( param, "data:image/" ) ) {
-			return DrawableSearcher::searchByName(
-				node->getUISceneNode()->solveRelativePath( param ).toString(), false,
-				node->getUISceneNode()->getReferer() );
+			DrawablePtr drawable = node->getUISceneNode()->getDrawableResolver().resolve(
+				node->getUISceneNode()->solveRelativePath( param ).toString() );
+			return drawable;
 		} else if ( functionType.getParameters().size() > 1 &&
 					String::startsWith( param, "data:image/" ) ) {
 			auto cparam = functionType.getParameters().at( 0 );
@@ -934,15 +915,16 @@ void DrawableImageParser::registerBaseParsers() {
 				cparam += ',';
 				cparam += functionType.getParameters().at( i );
 			}
-			return DrawableSearcher::searchByName( cparam, false,
-												   node->getUISceneNode()->getReferer() );
+			DrawablePtr drawable = node->getUISceneNode()->getDrawableResolver().resolve( cparam );
+			return drawable;
 		}
-		return DrawableSearcher::searchByName( param, false, node->getUISceneNode()->getReferer() );
+		DrawablePtr drawable = node->getUISceneNode()->getDrawableResolver().resolve( param );
+		return drawable;
 	};
 
-	mFuncs["icon"] = []( const FunctionString& functionType, const Sizef& size, bool&,
-						 UINode* node ) -> Drawable* {
-		auto* uiScene = SceneManager::instance()->getUISceneNode();
+	mFuncs["icon"] = []( const FunctionString& functionType, const Sizef& size,
+						 UINode* node ) -> DrawablePtr {
+		auto* uiScene = node->getUISceneNode();
 		const auto& params = functionType.getParameters();
 		if ( params.size() < 2 )
 			return nullptr;
@@ -951,12 +933,12 @@ void DrawableImageParser::registerBaseParsers() {
 										  node->convertLength( length, size.getWidth() ) );
 	};
 
-	mFuncs["glyph"] = []( const FunctionString& functionType, const Sizef& size, bool&,
-						  UINode* node ) -> Drawable* {
+	mFuncs["glyph"] = []( const FunctionString& functionType, const Sizef& size,
+						  UINode* node ) -> DrawablePtr {
 		const auto& params = functionType.getParameters();
 		if ( params.size() < 3 )
 			return nullptr;
-		Font* font = FontManager::instance()->getByName( params[0] );
+		Font* font = node->getUISceneNode()->getResourceScope()->findFont( params[0] ).get();
 		if ( font == nullptr )
 			return nullptr;
 		Uint32 codePoint = 0;
@@ -972,8 +954,9 @@ void DrawableImageParser::registerBaseParsers() {
 		} else if ( String::fromString( value, buffer ) ) {
 			codePoint = value;
 		}
-		return font->getGlyphDrawable( codePoint,
-									   node->convertLength( params[1], size.getWidth() ) );
+		Drawable* drawable =
+			font->getGlyphDrawable( codePoint, node->convertLength( params[1], size.getWidth() ) );
+		return drawable ? drawable->clone() : DrawablePtr{};
 	};
 }
 

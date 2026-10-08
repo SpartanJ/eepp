@@ -5,11 +5,12 @@
 #include "llmchatcompletionrequest.hpp"
 #include "protocol.hpp"
 
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/widgetcommandexecuter.hpp>
 
 #include <eepp/core/containers.hpp>
-#include <nlohmann/json_fwd.hpp>
+#include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 
 namespace EE { namespace UI {
 class UIWidget;
@@ -51,6 +52,8 @@ class LLMChat {
 };
 
 class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
+	friend class AIAssistantPlugin;
+
   public:
 	static LLMChatUI* New( PluginManager* manager ) { return eeNew( LLMChatUI, ( manager ) ); }
 
@@ -100,6 +103,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	std::string mSummary;
 	long mTimestamp{ 0 };
 	PluginManager* mManager{ nullptr };
+	MainThreadLifetime<LLMChatUI> mLifetime;
 	UISplitter* mChatSplitter{ nullptr };
 	UIWidget* mChatsList{ nullptr };
 	UICodeEditor* mChatInput{ nullptr };
@@ -116,6 +120,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UISelectButton* mChatAgentMode{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };
 	UIPushButton* mModelBtn{ nullptr };
+	UIDropDownList* mReasoningEffort{ nullptr };
 	UIPushButton* mAgentBtn{ nullptr };
 	UIPushButton* mAgentConfigBtn{ nullptr };
 
@@ -162,6 +167,9 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	bool mLinkMode{ false };
 	bool mDisplayReasoning{ false };
 	bool mInReasoning{ false };
+	bool mReasoningEnabled{ false };
+	std::string mSelectedReasoningEffort;
+	std::size_t mReasoningBudgetTokens{ 0 };
 	std::vector<LLMModel> mNewModels;
 
 	LLMModel findModel( const std::string& provider, const std::string& model );
@@ -190,7 +198,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void toggleEnableChats( bool enabled );
 
-	Drawable* findIcon( const std::string& name, const size_t iconSize );
+	DrawablePtr findIcon( const std::string& name, const size_t iconSize );
 
 	UIWidget* addChatUI( LLMChat::Role role );
 
@@ -206,7 +214,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void addThinkingBubble();
 
-	void updateThinkingBubble( const std::string& chunk );
+	void updateThinkingBubble( std::string chunk );
 
 	void addPermissionUI( const acp::RequestPermissionRequest& req,
 						  std::function<void( const acp::RequestPermissionResponse& )> cb );
@@ -216,6 +224,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	String getModelDisplayName( const LLMModel& model ) const;
 
 	bool selectModel( std::optional<LLMModel> model );
+
+	void updateReasoningControl();
 
 	bool selectAgent( const std::string& agent );
 
@@ -247,7 +257,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void removeLastChat();
 
-	void setProviders( LLMProviders&& providers );
+	void setProviders( LLMProviders&& providers, bool refreshModels = false );
 
 	virtual Uint32 onMessage( const NodeMessage* );
 

@@ -43,6 +43,10 @@ class DiscordRPCplugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
+	bool hasSettingsPage() const override { return true; }
+
+	void registerSettings( SettingsPage& page ) override;
+
   protected:
 	DiscordIPC mIPC;
 	Mutex mDataMutex;
@@ -66,6 +70,8 @@ class DiscordRPCplugin : public PluginBase {
 	virtual void onRegisterEditor( UICodeEditor* editor ) override;
 
 	virtual void onUnregisterEditor( UICodeEditor* editor ) override;
+
+	virtual void onUnregisterDocument( TextDocument* doc ) override;
 
 	DiscordRPCplugin( PluginManager* pluginManager, bool sync );
 

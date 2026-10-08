@@ -28,7 +28,6 @@
 #include <eepp/window/window.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
-#include <chrono>
 #include <nlohmann/json.hpp>
 
 using namespace EE::System;
@@ -334,7 +333,7 @@ class AgentSessionHistoryModel : public Model {
 };
 
 static const char* DEFAULT_PROVIDER = "google";
-static const char* DEFAULT_MODEL = "gemini-2.5-flash";
+static const char* DEFAULT_MODEL = "gemini-3.7-flash";
 
 const char* LLMChat::roleToString( Role role ) {
 	switch ( role ) {
@@ -472,6 +471,11 @@ DropDownList.role_ui {
 	border-color: transparent;
 	background-color: var(--tab-back);
 }
+.reasoning_ui {
+	min-width: 64dp;
+	max-width: 96dp;
+	margin-right: 4dp;
+}
 .llm_chatui DropDownList:hover,
 .model_ui:hover,
 .agent_ui:hover {
@@ -546,6 +550,7 @@ DropDownList.role_ui {
 			<PushButton id="llm_chat_history" class="llm_button" text="@string(chat_history, Chat History)" tooltip="@string(chat_history, Chat History)" icon="icon(chat-history, 14dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_more" class="llm_button" tooltip="@string(more_options, More Options)" icon="icon(more-fill, 14dp)" min-width="32dp" />
 			<PushButton class="model_ui" lw="0" lw8="1" lh="mp" margin-left="4dp" margin-right="4dp" tooltip="@string(select_model, Select Model)" />
+			<DropDownList class="reasoning_ui" lw="wc" lh="mp" tooltip='@string(reasoning_effort, "Reasoning Effort")' visible="false" />
 			<PushButton class="agent_ui" lw="0" lw8="1" lh="mp" margin-left="4dp" margin-right="4dp" tooltip="@string(select_agent, Select Agent)" visible="false" />
 			<SelectButton id="llm_agent_mode" class="llm_button" tooltip="@string(toggle_agent_mode, Toggle Agent Mode)" icon="icon(robot-2, 14dp)" min-width="32dp" margin-right="4dp" select-on-click="true" />
 			<PushButton class="agent_config_ui" tooltip="@string(agent_config, Agent Config)" icon="icon(agent, 14dp)" min-width="32dp" margin-right="4dp" visible="false" />
@@ -594,7 +599,7 @@ static const char* DEFAULT_PERMISSION_GLOBE = R"xml(
 	</hbox>
 	<vbox class="data_ui" lw="mp" lh="wc" padding="8dp">
 		<MarkdownView class="permission_desc" lw="mp" lh="wc" />
-		<StackLayout class="permission_options" lw="mp" lh="wc" />
+		<FlowLayout class="permission_options" lw="mp" lh="wc" />
 	</vbox>
 </vbox>
 )xml";
@@ -603,6 +608,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	UILinearLayout(),
 	WidgetCommandExecuter( getInput() ),
 	mManager( manager ),
+	mLifetime( this, getUISceneNode() ),
 	mDisplayReasoning( getPlugin() && getPlugin()->displayReasoning() ) {
 	setClass( "llm_chatui" );
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
@@ -614,10 +620,32 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	mChatsList = findByClass( "llm_chats" );
 	mModelBtn = findByClass<UIPushButton>( "model_ui" );
+	mReasoningEffort = findByClass<UIDropDownList>( "reasoning_ui" );
+	mReasoningEffort->getListBox()->on( Event::OnItemSelected, [this]( auto ) {
+		const auto& config = mCurModel.reasoningConfiguration;
+		const Int32 selected = mReasoningEffort->getListBox()->getItemSelectedIndex();
+		mSelectedReasoningEffort.clear();
+		mReasoningEnabled = config && selected > 0;
+		if ( config && config->type == LLMReasoningType::Effort ) {
+			if ( selected == 0 && std::find( config->efforts.begin(), config->efforts.end(),
+											 "none" ) != config->efforts.end() ) {
+				mReasoningEnabled = true;
+				mSelectedReasoningEffort = "none";
+			} else if ( selected > 0 ) {
+				Int32 index = 1;
+				for ( const auto& effort : config->efforts ) {
+					if ( effort != "none" && index++ == selected ) {
+						mSelectedReasoningEffort = effort;
+						break;
+					}
+				}
+			}
+		}
+	} );
 	mModelBtn->onClick( [this]( auto ) { execute( "ai-select-model" ); } );
-	mModelBtn->on( Event::MouseUp, [this]( const Event* event ) {
-		const auto mouseEvent = event->asMouseEvent();
-		if ( !( mouseEvent->getFlags() & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK ) ) )
+	mModelBtn->on( Event::MouseWheel, [this]( const Event* event ) {
+		const auto wheelEvent = event->asMouseWheelEvent();
+		if ( wheelEvent->getOffset().y == 0.f )
 			return;
 
 		if ( nullptr == mLocateModelTable->getModel() ) {
@@ -628,9 +656,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 			selectModel( mCurModel );
 		}
 
-		if ( mouseEvent->getFlags() & EE_BUTTON_WUMASK ) {
+		if ( wheelEvent->getOffset().y > 0.f ) {
 			mLocateModelTable->moveSelection( -1 );
-		} else if ( mouseEvent->getFlags() & EE_BUTTON_WDMASK ) {
+		} else {
 			mLocateModelTable->moveSelection( 1 );
 		}
 
@@ -646,9 +674,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mAgentBtn->onClick( [this]( auto ) { execute( "ai-select-agent" ); } );
 	mAgentConfigBtn = findByClass<UIPushButton>( "agent_config_ui" );
 	mAgentConfigBtn->onClick( [this]( auto ) { showAgentConfigWindow(); } );
-	mAgentBtn->on( Event::MouseUp, [this]( const Event* event ) {
-		const auto mouseEvent = event->asMouseEvent();
-		if ( !( mouseEvent->getFlags() & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK ) ) )
+	mAgentBtn->on( Event::MouseWheel, [this]( const Event* event ) {
+		const auto wheelEvent = event->asMouseWheelEvent();
+		if ( wheelEvent->getOffset().y == 0.f )
 			return;
 
 		if ( nullptr == mLocateAgentTable->getModel() ) {
@@ -659,9 +687,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 			selectModel( mCurModel );
 		}
 
-		if ( mouseEvent->getFlags() & EE_BUTTON_WUMASK ) {
+		if ( wheelEvent->getOffset().y > 0.f ) {
 			mLocateAgentTable->moveSelection( -1 );
-		} else if ( mouseEvent->getFlags() & EE_BUTTON_WDMASK ) {
+		} else {
 			mLocateAgentTable->moveSelection( 1 );
 		}
 
@@ -1088,6 +1116,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	auto providers = getPlugin()->getProviders();
 	setProviders( std::move( providers ) );
 	mCurModel = getDefaultModel();
+	updateReasoningControl();
 
 	mAgents = getPlugin()->getAgents();
 
@@ -1143,6 +1172,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 }
 
 LLMChatUI::~LLMChatUI() {
+	mLifetime.invalidate();
 	if ( mRequest ) {
 		mRequest->cancelCb = nullptr;
 		mRequest->doneCb = nullptr;
@@ -1562,9 +1592,40 @@ bool LLMChatUI::selectModel( std::optional<LLMModel> model ) {
 	if ( model ) {
 		mModelBtn->setText( getModelDisplayName( *model ) );
 		mCurModel = *model;
+		updateReasoningControl();
 		return true;
 	}
 	return false;
+}
+
+void LLMChatUI::updateReasoningControl() {
+	auto* list = mReasoningEffort->getListBox();
+	list->clear();
+	mReasoningEnabled = false;
+	mSelectedReasoningEffort.clear();
+	mReasoningBudgetTokens = 0;
+	const auto& config = mCurModel.reasoningConfiguration;
+	if ( !config || config->type == LLMReasoningType::None ) {
+		mReasoningEffort->setVisible( false );
+		return;
+	}
+	const bool supportsOff = config->type != LLMReasoningType::Effort ||
+							 std::find( config->efforts.begin(), config->efforts.end(), "none" ) !=
+								 config->efforts.end();
+	std::vector<String> items{ supportsOff ? i18n( "reasoning_off", "Off" )
+										   : i18n( "reasoning_default", "Default" ) };
+	if ( config->type == LLMReasoningType::Effort ) {
+		for ( const auto& effort : config->efforts )
+			if ( effort != "none" )
+				items.emplace_back( String::capitalize( effort ) );
+	} else {
+		items.emplace_back( i18n( "reasoning_on", "On" ) );
+	}
+	if ( config->type == LLMReasoningType::TokenBudget )
+		mReasoningBudgetTokens = config->minBudgetTokens ? config->minBudgetTokens : 1024;
+	list->addListBoxItems( items );
+	list->setSelected( 0 );
+	mReasoningEffort->setVisible( true );
 }
 
 bool LLMChatUI::selectAgent( const std::string& agent ) {
@@ -1582,11 +1643,22 @@ void LLMChatUI::fillModelDropDownList() {
 	for ( const auto& [_, data] : mProviders )
 		reserve += data.models.size();
 	mModels.reserve( reserve + 8 /* extra space for local models */ );
+	std::map<std::string, bool> providerAvailable;
 	for ( const auto& [name, data] : mProviders ) {
-		if ( !data.enabled )
-			continue;
-		for ( const auto& model : data.models )
-			mModels.push_back( model );
+		providerAvailable[name] =
+			data.enabled &&
+			AIAssistantPlugin::getApiKeyFromProvider( name, getPlugin() ).has_value();
+	}
+	// Credentialed and keyless providers are immediately usable, so keep their models at
+	// the top of both the complete list and filtered search results. The rest of the catalog
+	// remains discoverable for users looking for a provider they have not configured yet.
+	for ( const bool available : { true, false } ) {
+		for ( const auto& [name, data] : mProviders ) {
+			if ( !data.enabled || providerAvailable[name] != available )
+				continue;
+			for ( const auto& model : data.models )
+				mModels.push_back( model );
+		}
 	}
 	getUISceneNode()->getThreadPool()->run( [this] { fillApiModels(); } );
 }
@@ -1895,6 +1967,9 @@ void LLMChatUI::writeToLastChat( const std::string& text ) {
 
 void LLMChatUI::updateAgentModeUI() {
 	mModelBtn->setVisible( !mIsAgentMode );
+	mReasoningEffort->setVisible( !mIsAgentMode && mCurModel.reasoningConfiguration &&
+								  mCurModel.reasoningConfiguration->type !=
+									  LLMReasoningType::None );
 	mAgentBtn->setVisible( mIsAgentMode );
 	mAgentConfigBtn->setVisible( mIsAgentMode );
 	mChatAdd->setVisible( !mIsAgentMode );
@@ -1931,7 +2006,6 @@ void LLMChatUI::setupAgentSession() {
 		auto sessionUpdate = msg.value( "sessionUpdate", "" );
 		if ( sessionUpdate == "agent_message_chunk" ) {
 			if ( msg.contains( "content" ) && msg["content"].contains( "text" ) ) {
-				mThinkingBubble = nullptr; // Reset thinking bubble so next thought gets a new one
 				auto chunk = msg["content"].value( "text", "" );
 				if ( !chunk.empty() )
 					writeToLastChat( chunk );
@@ -1940,7 +2014,7 @@ void LLMChatUI::setupAgentSession() {
 			if ( msg.contains( "content" ) && msg["content"].contains( "text" ) ) {
 				auto chunk = msg["content"].value( "text", "" );
 				if ( !chunk.empty() )
-					runOnMainThread( [this, chunk] { updateThinkingBubble( chunk ); } );
+					updateThinkingBubble( std::move( chunk ) );
 			}
 		} else if ( sessionUpdate == "tool_call" || sessionUpdate == "tool_call_update" ) {
 			addToolCallUpdate( msg );
@@ -2023,7 +2097,7 @@ void LLMChatUI::doAgentRequest() {
 		auto* thinking = editor->findByClass<UIImage>( "thinking" );
 		auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
 		thinking->setVisible( true );
-		thinking->setPosition( { PixelDensity::dpToPx( 8 ), PixelDensity::dpToPx( 3 ) } );
+		thinking->setPosition( { 8, 3 } );
 		thinking->setInterval( [thinking] { thinking->rotate( 360 / 32 ); }, Seconds( 0.125 ),
 							   thinkingID );
 
@@ -2053,7 +2127,7 @@ void LLMChatUI::doAgentRequest() {
 		auto* thinking = editor->findByClass<UIImage>( "thinking" );
 		auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
 		thinking->setVisible( true );
-		thinking->setPosition( { PixelDensity::dpToPx( 8 ), PixelDensity::dpToPx( 3 ) } );
+		thinking->setPosition( { 8, 3 } );
 		thinking->setInterval( [thinking] { thinking->rotate( 360 / 32 ); }, Seconds( 0.125 ),
 							   thinkingID );
 
@@ -2293,6 +2367,8 @@ nlohmann::json LLMChatUI::chatToJson( bool forRequest ) {
 		if ( !roleDDL || !editorNode || !editorNode->isType( UI_TYPE_CODEEDITOR ) )
 			continue;
 		UICodeEditor* codeEditor = editorNode->asType<UICodeEditor>();
+		if ( codeEditor->getDocument().isEmpty() )
+			continue;
 		std::string role = LLMChat::roleToString(
 			static_cast<LLMChat::Role>( roleDDL->getListBox()->getItemSelectedIndex() ) );
 		auto text = codeEditor->getDocument().toUtf8String();
@@ -2322,11 +2398,35 @@ nlohmann::json LLMChatUI::serializeChat( const LLMModel& model, bool forRequest 
 		{ "model", model.name }, { "stream", true }, { "messages", chatToJson( forRequest ) } };
 	if ( model.maxOutputTokens )
 		j["max_tokens"] = *model.maxOutputTokens;
+	if ( model.hash == mCurModel.hash && mReasoningEnabled && model.reasoningConfiguration ) {
+		const auto& reasoning = *model.reasoningConfiguration;
+		if ( reasoning.type == LLMReasoningType::Effort && !mSelectedReasoningEffort.empty() ) {
+			if ( model.provider == "anthropic" ) {
+				j["thinking"] = { { "type", "adaptive" } };
+				j["output_config"] = { { "effort", mSelectedReasoningEffort } };
+			} else if ( model.provider == "openrouter" ) {
+				j["reasoning"] = { { "effort", mSelectedReasoningEffort } };
+			} else {
+				j["reasoning_effort"] = mSelectedReasoningEffort;
+			}
+		} else if ( reasoning.type == LLMReasoningType::Toggle ) {
+			if ( model.provider == "anthropic" )
+				j["thinking"] = { { "type", "adaptive" } };
+			else
+				j["reasoning"] = { { "enabled", true } };
+		} else if ( reasoning.type == LLMReasoningType::TokenBudget ) {
+			if ( model.provider == "anthropic" )
+				j["thinking"] = { { "type", "enabled" },
+								  { "budget_tokens", mReasoningBudgetTokens } };
+			else
+				j["reasoning"] = { { "max_tokens", mReasoningBudgetTokens } };
+		}
+	}
 	return j;
 }
 
 nlohmann::json LLMChatUI::serialize() {
-	mTimestamp = std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() );
+	mTimestamp = Sys::getUnixTimestamp();
 	nlohmann::json j;
 	j["uuid"] = mUUID.toString();
 	if ( !mIsAgentMode ) {
@@ -2340,6 +2440,9 @@ nlohmann::json LLMChatUI::serialize() {
 	j["locked"] = mChatLocked;
 	j["agent_mode"] = mIsAgentMode;
 	j["agent_name"] = mCurAgent;
+	j["reasoning_enabled"] = mReasoningEnabled;
+	j["reasoning_effort"] = mSelectedReasoningEffort;
+	j["reasoning_budget_tokens"] = mReasoningBudgetTokens;
 	if ( mAgentSession && !mAgentSession->getSessionId().empty() )
 		j["session_id"] = mAgentSession->getSessionId();
 	return j;
@@ -2354,6 +2457,10 @@ std::string LLMChatUI::unserialize( const nlohmann::json& payload ) {
 	mChatLocked = payload.value( "locked", false );
 	mIsAgentMode = payload.value( "agent_mode", false );
 	mCurAgent = payload.value( "agent_name", "" );
+	const bool reasoningEnabled = payload.value( "reasoning_enabled", false );
+	const std::string reasoningEffort = payload.value( "reasoning_effort", "" );
+	const std::size_t reasoningBudget =
+		payload.value( "reasoning_budget_tokens", std::size_t{ 0 } );
 
 	selectAgent( mCurAgent );
 
@@ -2382,6 +2489,24 @@ std::string LLMChatUI::unserialize( const nlohmann::json& payload ) {
 	} else {
 		if ( !selectModel( mCurModel ) )
 			fillModelDropDownList();
+		if ( reasoningEnabled && mCurModel.reasoningConfiguration ) {
+			const auto& config = *mCurModel.reasoningConfiguration;
+			Int32 selection = 1;
+			if ( config.type == LLMReasoningType::Effort ) {
+				selection = 0;
+				if ( reasoningEffort != "none" ) {
+					for ( const auto& effort : config.efforts ) {
+						if ( effort == "none" )
+							continue;
+						++selection;
+						if ( effort == reasoningEffort )
+							break;
+					}
+				}
+			}
+			mReasoningBudgetTokens = reasoningBudget ? reasoningBudget : mReasoningBudgetTokens;
+			mReasoningEffort->getListBox()->setSelected( selection );
+		}
 	}
 
 	if ( !mIsAgentMode && payload.contains( "chat" ) && payload["chat"].is_object() ) {
@@ -2446,6 +2571,11 @@ std::string LLMChatUI::prepareApiUrl( const std::string& apiKey ) {
 	std::string url = provider.apiUrl;
 	String::replaceAll( url, "${model}", mCurModel.name );
 	String::replaceAll( url, "${api_key}", apiKey );
+	for ( const auto& env : provider.apiKeyEnvVars ) {
+		const char* value = getenv( env.c_str() );
+		if ( value )
+			String::replaceAll( url, "${" + env + "}", value );
+	}
 	return url;
 }
 
@@ -2695,13 +2825,13 @@ void LLMChatUI::toggleEnableChats( bool enabled ) {
 		toggleEnableChat( chat, enabled );
 }
 
-Drawable* LLMChatUI::findIcon( const std::string& name, const size_t iconSize ) {
+DrawablePtr LLMChatUI::findIcon( const std::string& name, const size_t iconSize ) {
 	if ( name.empty() )
-		return nullptr;
+		return {};
 	UIIcon* icon = getUISceneNode()->findIcon( name );
 	if ( icon )
-		return icon->getSize( iconSize );
-	return nullptr;
+		return icon->createDrawable( iconSize );
+	return {};
 }
 
 void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,
@@ -2932,7 +3062,7 @@ void LLMChatUI::addToolCallUpdate( const nlohmann::json& msg ) {
 	} );
 }
 
-void LLMChatUI::updateThinkingBubble( const std::string& chunk ) {
+void LLMChatUI::updateThinkingBubble( std::string chunk ) {
 	if ( chunk.empty() )
 		return;
 
@@ -3071,8 +3201,13 @@ void LLMChatUI::removeLastChat() {
 	}
 }
 
-void LLMChatUI::setProviders( LLMProviders&& providers ) {
+void LLMChatUI::setProviders( LLMProviders&& providers, bool refreshModels ) {
 	mProviders = std::move( providers );
+	if ( !refreshModels )
+		return;
+	fillModelDropDownList();
+	if ( mLocateModelTable && mLocateModelTable->getModel() )
+		loadSelectModel();
 }
 
 void LLMChatUI::showMsg( String msg ) {
@@ -3179,8 +3314,7 @@ void LLMChatUI::deleteOldConversations( int days ) {
 	std::string conversationsPath = plugin->getConversationsPath();
 	auto history = ChatHistory::getHistory( conversationsPath );
 
-	Int64 olderThanTime = std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() ) -
-						  ( 60 * 60 * 24 * days );
+	Int64 olderThanTime = Sys::getUnixTimestamp() - ( 60 * 60 * 24 * days );
 
 	for ( const auto& chat : history )
 		if ( !chat.locked && chat.file.getModificationTime() < olderThanTime )
@@ -3211,11 +3345,12 @@ void LLMChatUI::showAttachFile() {
 		ctx->getDirTree()->asyncMatchTree(
 			ProjectDirectoryTree::MatchType::Fuzzy, text, 100,
 			[this, text]( auto res ) {
-				mUISceneNode->runOnMainThread( [this, res] {
-					mLocateTable->setModel( res );
-					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-					mLocateTable->scrollToTop();
-					updateLocateBarColumns();
+				mLifetime.weakHandle().run( [res]( LLMChatUI* chat ) {
+					chat->mLocateTable->setModel( res );
+					chat->mLocateTable->getSelection().set(
+						chat->mLocateTable->getModel()->index( 0 ) );
+					chat->mLocateTable->scrollToTop();
+					chat->updateLocateBarColumns();
 				} );
 			},
 			ctx->getCurrentProject() );

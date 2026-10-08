@@ -20,7 +20,7 @@ UIViewPager::UIViewPager() :
 	mOrientation( UIOrientation::Horizontal ),
 	mDragging( false ),
 	mLocked( false ),
-	mDragResistance( PixelDensity::dpToPx( 8 ) ),
+	mDragResistance( 8 ),
 	mInitialDisplacement( 0 ),
 	mDisplacement( 0 ),
 	mChangePagePercent( 0.33f ),
@@ -298,8 +298,6 @@ std::string UIViewPager::getPropertyString( const PropertyDefinition* propertyDe
 			return String::fromFloat( mChangePagePercent );
 		case PropertyId::MaxEdgeResistance:
 			return String::fromFloat( mMaxEdgeResistance );
-		case PropertyId::PageTransitionDuration:
-			return mPageTransitionDuration.toString();
 		case PropertyId::TimingFunction:
 			return Ease::toString( mTimingFunction );
 		case PropertyId::PageLocked:
@@ -311,13 +309,9 @@ std::string UIViewPager::getPropertyString( const PropertyDefinition* propertyDe
 
 std::vector<PropertyId> UIViewPager::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = { PropertyId::Orientation,
-				   PropertyId::DragResistance,
-				   PropertyId::ChangePagePercent,
-				   PropertyId::MaxEdgeResistance,
-				   PropertyId::PageTransitionDuration,
-				   PropertyId::TimingFunction,
-				   PropertyId::PageLocked };
+	auto local = { PropertyId::Orientation,		  PropertyId::DragResistance,
+				   PropertyId::ChangePagePercent, PropertyId::MaxEdgeResistance,
+				   PropertyId::TimingFunction,	  PropertyId::PageLocked };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -327,16 +321,11 @@ bool UIViewPager::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::Orientation: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-
-			if ( "horizontal" == val )
-				setOrientation( UIOrientation::Horizontal );
-			else if ( "vertical" == val )
-				setOrientation( UIOrientation::Vertical );
+		case PropertyId::Orientation:
+			setOrientation( String::iequals( attribute.getValue(), "horizontal" )
+								? UIOrientation::Horizontal
+								: UIOrientation::Vertical );
 			break;
-		}
 		case PropertyId::DragResistance:
 			setDragResistance( lengthFromValueAsDp( attribute ) );
 			break;

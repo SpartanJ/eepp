@@ -2,7 +2,10 @@
 
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
+#include "llmmodelcatalog.hpp"
 #include "protocol.hpp"
+
+#include <mutex>
 
 namespace ecode {
 
@@ -37,7 +40,12 @@ class AIAssistantPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
+	bool hasSettingsPage() const override { return true; }
+
+	void registerSettings( SettingsPage& page ) override;
+
 	const LLMProviders& getProviders() { return mProviders; }
+
 	const ACPAgents& getAgents() { return mAgents; }
 
 	std::string getPluginStatePath() const;
@@ -64,6 +72,12 @@ class AIAssistantPlugin : public PluginBase {
 	AIAssistantConfig mConfig;
 	Uint32 mAIChatButtonPosCbId{ 0 };
 	std::string mConfigFileError;
+	std::mutex mModelCatalogMutex;
+	std::optional<LLMModelCatalog::Settings> mModelCatalogSettings;
+	std::shared_ptr<LLMModelCatalog> mModelCatalog;
+	std::shared_ptr<std::atomic_bool> mModelCatalogCancelled{
+		std::make_shared<std::atomic_bool>( false ) };
+	bool mModelCatalogRefreshStarted{ false };
 
 	AIAssistantPlugin( PluginManager* pluginManager, bool sync );
 
@@ -79,9 +93,15 @@ class AIAssistantPlugin : public PluginBase {
 
 	void onRegisterDocument( TextDocument* doc ) override;
 
+	void unregisterEditors() override;
+
 	void initUI();
 
 	void displayBrokenUserConfigFileWarning();
+
+	void refreshModelCatalogAsync();
+
+	void applyModelCatalog( LLMProviders providers );
 };
 
 } // namespace ecode

@@ -2,7 +2,7 @@
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/system/translator.hpp>
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -104,9 +104,9 @@ bool Translator::loadFromFile( const std::string& path, std::string lang ) {
 			Log::error( "Error description: %s", result.description() );
 			Log::error( "Error offset: %d", result.offset );
 		}
-	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+	} else if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string packPath( path );
-		Pack* pack = PackManager::instance()->exists( packPath );
+		Pack* pack = PackRegistry::instance()->exists( packPath );
 
 		if ( NULL != pack ) {
 			return loadFromPack( pack, packPath, lang );

@@ -1,4 +1,5 @@
 #include <eepp/graphics/fontsprite.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostream.hpp>
@@ -6,16 +7,31 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 
 namespace EE { namespace Graphics {
 
-FontSprite* FontSprite::New( const std::string fontName ) {
-	return eeNew( FontSprite, ( fontName ) );
+FontSpritePtr FontSprite::New( const std::string fontName ) {
+	FontSpritePtr font( eeNew( FontSprite, ( fontName ) ), ResourceDeleter<FontSprite>() );
+	defaultResourceScope().publishLocalFont( fontName, font );
+	return font;
 }
 
-FontSprite* FontSprite::New( const std::string fontName, const std::string& filename ) {
-	FontSprite* fontSprite = New( fontName );
+FontSpritePtr FontSprite::New( const std::string fontName, ResourceScope& resourceScope ) {
+	FontSpritePtr font( eeNew( FontSprite, ( fontName ) ), ResourceDeleter<FontSprite>() );
+	resourceScope.publishLocalFont( fontName, font );
+	return font;
+}
+
+FontSpritePtr FontSprite::New( const std::string fontName, const std::string& filename ) {
+	FontSpritePtr fontSprite = New( fontName );
+	fontSprite->loadFromFile( filename );
+	return fontSprite;
+}
+
+FontSpritePtr FontSprite::New( const std::string fontName, const std::string& filename,
+							   ResourceScope& resourceScope ) {
+	FontSpritePtr fontSprite = New( fontName, resourceScope );
 	fontSprite->loadFromFile( filename );
 	return fontSprite;
 }
@@ -42,9 +58,9 @@ bool FontSprite::loadFromFile( const std::string& filename, Color key, Uint32 fi
 		mFilePath = FileSystem::fileRemoveFileName( filename );
 		IOStreamFile stream( filename );
 		return loadFromStream( stream, key, firstChar, spacing );
-	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+	} else if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string path( filename );
-		Pack* pack = PackManager::instance()->exists( path );
+		Pack* pack = PackRegistry::instance()->exists( path );
 
 		if ( NULL != pack ) {
 			Log::info( "Loading font from pack: %s", path.c_str() );
@@ -136,7 +152,7 @@ bool FontSprite::loadFromStream( IOStream& stream, Color key, Uint32 firstChar, 
 
 	img.createMaskFromColor( Color::Fuchsia, 0 );
 
-	Texture* texture = TextureFactory::instance()->loadFromPixels(
+	TexturePtr texture = TextureFactory::instance()->loadFromPixels(
 		img.getPixelsPtr(), img.getWidth(), img.getHeight(), img.getChannels() );
 	mPages[mFontSize].texture = texture;
 	if ( NULL != texture ) {
@@ -232,7 +248,7 @@ Float FontSprite::getUnderlineThickness( unsigned int ) const {
 	return 0.f;
 }
 
-Texture* FontSprite::getTexture( unsigned int ) const {
+const TexturePtr& FontSprite::getTexture( unsigned int ) const {
 	return mPages[mFontSize].texture;
 }
 
@@ -252,9 +268,6 @@ FontSprite& FontSprite::operator=( const FontSprite& right ) {
 FontSprite::Page::~Page() {
 	for ( auto drawable : drawables )
 		eeDelete( drawable.second );
-
-	if ( NULL != texture && TextureFactory::existsSingleton() )
-		TextureFactory::instance()->remove( texture->getTextureId() );
 }
 
 }} // namespace EE::Graphics

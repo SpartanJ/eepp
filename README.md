@@ -1,224 +1,175 @@
+# eepp
 
-# eepp - Entropia Engine++
+**eepp is an open source, cross-platform C++ GUI framework for building desktop applications,
+tools, and rich graphical interfaces.**
 
-**eepp** is an open source cross-platform game and application development
-framework heavily focused on the development of rich graphical user interfaces.
+It provides a hardware-accelerated retained-mode UI toolkit with CSS styling, XML layouts,
+a comprehensive widget set, DPI-aware interfaces, data binding, rich text and HTML/Markdown
+rendering, animations, internationalization, and application infrastructure.
 
 [![Linux status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-linux-build-check.yml?branch=develop&label=Linux)](https://github.com/SpartanJ/eepp/actions?query=workflow%3ALinux)
 [![Windows status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-windows-build-check.yml?branch=develop&label=Windows)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AWindows)
 [![macOS status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-macos-build-check.yml?branch=develop&label=macOS)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AmacOS)
 [![iOS status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-ios-build-check.yml?branch=develop&label=iOS)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AiOS)
 [![Android status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-android-build-check.yml?branch=develop&label=Android)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AAndroid)
-
-## Features
-
-### Cross platform functionality
-
-* Official support for Linux, Windows, macOS, FreeBSD, Haiku, Android and iOS.
-
-* Exports to HTML5 using emscripten with some minor limitations.
-
-### UI Module
-
-* Base widgets to manage the app/game objects as nodes, with all basic input interaction events ( clicks, keypress, mouser over, focus, etc ).
-
-* Fully featured UI system, animation support, scaling, rotating, clipping, events, messages, etc.
-
-* Themes and skins/decorations support.
-
-* Pixel density support ( scaling of UI elements defined by the pixel density of the screen ).
-
-* All the basic widgets are implemented ( button, textbox, combobox, inputbox, menu, listbox, scrollbars, etc ).
-
-* Draw invalidation support. It can be used to make real apps, with low resource usage ( only redraws when is needed ).
-
-* Layout system similar to Android layouts ( LinearLayout, RelativeLayout, GridLayout ).
-
-* Advanced features as text selection, copy and paste, and key bindings.
-
-* Load and style layouts from XMLs
-
-* Styling with Cascading Style Sheets
-
-* HTML+CSS compatibility layer (ongoing effort for native HTML content rendering):
-  * Renders HTML documents natively using the `UIWebView` component. Also used by `UIMarkdownView` for Markdown rendering.
-  * Full CSS layout system covering block, inline, inline-block, flex (Flexbox Level 1), inline-flex, grid, inline-grid, table, list-item, and none display modes.
-  * Positioning: absolute, fixed, float, relative, and sticky.
-  * Rich text formatting with inline text spans, line wrapping, custom blocks, floats, and baseline alignment.
-  * CSS properties: backgrounds (color/image/layers), borders, box model (margin/padding), sizing constraints (min/max-width/height), `box-sizing`, overflow, `visibility`, `z-index`, text styling (color, font, decoration, alignment), and more.
-  * Document-scoped stylesheets, CSS viewport/media queries, and scoped `@font-face` font resources.
-  * Spec-compliant where implemented. Follows the CSS and HTML Living Standard specifications rather than custom behavior.
-
-### Graphics Module
-
-* Renderers for OpenGL 2 ( fixed-pipeline ), OpenGL 3 ( programmable-pipeline ), OpenGL ES 2, OpenGL ES 1, and OpenGL Core Profile.
-
-* Batch Renderer ( all the rendering is automatically batched by the engine ).
-
-* Fonts support ( TrueType, BMFont and XNA Fonts ).
-
-* Frame Buffer support.
-
-* Shaders support ( with automatic fixed pipeline shaders to programmable conversor ).
-
-* Vertex Buffer Object support.
-
-* Particle System.
-
-* Extendable Console.
-
-* Animated Sprites.
-
-* Texture Atlas support ( automatic creation and update of the texture atlas, editor included ).
-
-* Clipping Masks ( stencil, scissors, planes )
-
-* Nine Patch resizable bitmaps support.
-
-* Primitives drawables.
-
-* Many image formats supported ( included rasterized SVG ), compressed textures support ( direct upload to the GPU  when possible ).
-
-### Window Module
-
-* Backend based module, this means that you can easily create a backend for the window/input handling.
-
-* Currently supports SDL 2 as backend.
-
-* Clipboard support.
-
-* Hardware cursors.
-
-* Display Manager
-
-* Joystick support.
-
-### Audio Module
-
-* OpenAL audio engine with extendable file format support. Read and write support for OGG and Wav, and read support for MP3 and FLAC.
-
-### System Module
-
-* Provides all the basics stuffs for the full multi-threading support of the library, file formats support for packing, clocks, resource manager, translator, and much more.
-
-* Virtual File System class ( abstract assets providers into a single virtual file system, abstracting zip files and local file system into one for transparent load of resources, similar to [PhysicsFS](https://www.icculus.org/physfs/) ).
-
-### Core Module
-
-* Customizable Memory Manager. Used by default in debug mode to track memory leaks.
-
-* UTF8, UTF-16, UTF-32, Ansi, Wide Char support.
-
-* String class using UTF-32 chars internally.
-
-* Debug macros
-
-### Math Module
-
-* General purpose functions and templates ( vector, quad, polygon, etc ).
-
-* Interpolation classes with easing.
-
-* Some minor math utilities, include Mersenne Twister random number generator implementation, perlin noise and more.
-
-### Network Module
-
-* Web Requests with HTTP client, with **TLS support** ( provided by mbedtls or openssl ).
-
-* Asynchronous HTTP requests.
-
-* File Transfers with FTP client and FTPS client ( FTP with explicit TLS ).
-
-* TCP and UDP sockets.
-
-* HTTP Content-Encoding and Transfer-Encoding support.
-
-* HTTP Proxy Support.
-
-* HTTP Compressed response support.
-
-* Also HTTP resume/continue download support and automatic follow redirects.
-
-### Scene Module
-
-* Node based system for easy management of scenes.
-
-* Full control of node events ( clicks, mouse over, focus, etc ).
-
-* Event system.
-
-* Node Message system.
-
-* Programmable actions for nodes ( fade, rotate, move, scale, etc ).
-
-### Physics Module (optional)
-
-* Full OOP chipmunk physics wrapper.
-
-### Maps Module (optional)
-
-* Tiled Maps with software dynamic lights.
-
-* Full featured map editor.
-
-### Tools
-
-* Very simple UI Editor. Load layouts from an XML file and see the changes being made in real time.
-
-* Texture Atlas Editor. A very simple tool to allow the developer to create and edit texture atlases.
-
-* Map Editor: A advanced but simple map editor for the game engine. It lacks several features since I didn't have the time to work on it, this particular tool will probably die in favor of TMX map support in the near future ( but i'm not a fan of TMX maps, so there's no decision for the moment ).
-
-### General Features
-
-* Support for multi-threaded resource loading ( textures, sounds, fonts, etc ).
-
-## Documentation
-
-Documentation is located [here](https://cdn.ensoft.dev/eepp-docs/index.html). I'm currently working
-on improving it. About 50% of the project is currently documented so still needs
-a lot of work. Please check the code examples located in `src/examples` and you
-can also check out the test ( `src/test` ) and tools ( `src/tools` ).
-
-I'm putting my efforts on improving the documentation on the UI module since
-currently is the most important and complex module but lacks of proper
-documentation. If you have any question you can contact me anytime.
-
-## Getting the code
-
-The repository uses git submodules so you'll need to clone the repository and
-its submodules, in order to achieve this easily you can simply clone with:
-
-`git clone --recurse-submodules https://github.com/SpartanJ/eepp.git`
-
-## UI Screenshots
-
-### ecode - Code Editor
-
-[ecode](https://github.com/SpartanJ/ecode/) is a code editor inspired in [lite](https://github.com/rxi/lite).
-It's using the newest pure CSS theme based on the default [Plasma](https://kde.org/plasma-desktop)
-dark theme: [Breeze Dark](https://github.com/KDE/breeze).
+[![emscripten status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-emscripten-build-check.yml?branch=develop&label=emscripten)](https://github.com/SpartanJ/eepp/actions?query=workflow%3Aemscripten)
 
 ![ecode - Code Editor](https://cdn.ensoft.dev/eepp-demos/screenshots/ecode.png)
 
+*The [ecode](https://github.com/SpartanJ/ecode/) code editor is built on the eepp GUI.*
+
+## What eepp provides
+
+* **A complete C++ GUI toolkit.** Build real desktop applications with windows, menus, tabs,
+  splitters, lists, tables, trees, text inputs, dialogs, scrolling containers, and many other
+  reusable widgets.
+* **Hardware accelerated and retained-mode.** eepp owns its rendering stack and uses draw
+  invalidation, so unchanged interfaces do not need to be continuously redrawn.
+* **CSS styling and theming.** Style widget trees with selectors, pseudo-classes, custom
+  properties, transitions, animations, media queries, `@font-face`, and reusable themes.
+* **Declarative or programmatic UI.** Compose interfaces from XML layouts, C++, or a mix of
+  both, with reusable layout primitives and DPI-aware sizing.
+* **Rich text and document surfaces.** Text selection, clipboard integration, Unicode, the
+  `UICodeEditor`, Markdown rendering through `UIMarkdownView`, and native HTML/CSS rendering
+  through `UIWebView`.
+* **Model/view data controls.** Data-oriented widgets such as lists, tables, trees, and model-backed
+  selectors can use reusable data models, keeping application data separate from its presentation.
+* **Application infrastructure included.** Commands and key bindings, data binding,
+  internationalization, resource management, virtual filesystems, threading, networking,
+  filesystem APIs, and runtime UI inspection are part of the same framework.
+* **Cross-platform from one codebase.** Linux, Windows, macOS, FreeBSD, Haiku, Android, iOS,
+  and the web through Emscripten/WebAssembly.
+* **MIT licensed.**
+
+## GUI framework
+
+### Application UI
+
+The UI system is a retained-mode widget hierarchy with event handling, focus management,
+clipping, animations, transforms, messages, commands, key bindings, text selection, clipboard
+support, themes, and reusable application-level controls.
+
+Interfaces can be built directly in C++ or loaded from XML. The layout system includes
+`LinearLayout`, `RelativeLayout`, `GridLayout`, size policies, margins, padding, alignment,
+and pixel-density-aware units.
+
+Several data-oriented components follow a model/view architecture, allowing the same application
+data to be presented and manipulated independently from the widgets displaying it.
+
+### Styling and theming
+
+Widgets can be styled using eepp's CSS implementation. It supports the familiar model of
+selectors and pseudo-classes together with features such as custom properties, transitions,
+animations, media queries, `@font-face`, backgrounds, borders, box-model properties, text
+styling, and theme-specific extensions.
+
+The default Breeze-based theme is implemented in CSS and can be used as a reference for
+building complete application themes.
+
+### Rich text, Markdown, HTML and CSS
+
+`UIWebView` renders HTML documents natively on the eepp UI stack, and `UIMarkdownView` uses the
+same infrastructure for Markdown content. The HTML/CSS compatibility layer includes block and
+inline layout, Flexbox, Grid, tables, lists, absolute/fixed/relative/sticky positioning, floats,
+rich inline text, document-scoped stylesheets, viewport/media queries, and scoped font resources.
+
+Where implemented, the HTML/CSS layer follows the CSS and HTML Living Standard specifications
+rather than defining custom layout behavior.
+
+### Rendering and runtime
+
+The GUI is backed by eepp's graphics and windowing layers rather than platform-native widgets.
+Rendering is hardware accelerated, automatically batched, and supports draw invalidation to keep
+idle application resource usage low. The renderer supports OpenGL 2, OpenGL 3, OpenGL ES and
+OpenGL Core Profile backends, while SDL2 currently provides the main window/input backend.
+
+eepp also provides a terminal runtime that can render GUI applications inside compatible terminals
+using the Kitty graphics protocol. Applications can opt into it with EEPP_RUNTIME=terminal, using
+the same eepp UI rather than a separate terminal-specific interface.
+
+The runtime UI inspector can query and interact with live widget trees, which is useful for
+application debugging, automated validation, and development tooling.
+
+## Platforms
+
+Officially supported platforms include **Linux, Windows, macOS, FreeBSD, Haiku, Android and
+iOS**. Applications can also be exported to the web with **Emscripten/WebAssembly**, with some
+platform-specific limitations.
+
+## Framework foundations
+
+The GUI framework is built on a set of lower-level eepp modules. They are usable independently,
+but today they primarily provide the portable foundation for eepp applications.
+
+| Module | Provides |
+| --- | --- |
+| **Graphics** | GPU rendering, fonts, shaders, framebuffers, textures, image loading, clipping, drawables, texture atlases and batching. |
+| **Window** | SDL2-based windows and input, clipboard, cursors, display management and joystick support. |
+| **System / Core** | Threads, clocks, resources, localization, virtual filesystems, Unicode strings and core utilities. |
+| **Network** | HTTP/HTTPS, asynchronous requests, TCP/UDP, FTP/FTPS, proxies, redirects, compression and resume support. |
+| **Audio** | OpenAL/mojoAL-based audio with OGG, WAV, MP3 and FLAC support. |
+| **Terminal / eterm** | Reusable terminal emulator module and GUI terminal widget, used by applications such as ecode and the eterm terminal application. |
+| **Scene** | Node hierarchy, events, messages and programmable actions. |
+| **Physics / Maps** | Optional Chipmunk2D wrapper and tiled-map support inherited from eepp's game-framework origins. |
+
+## Applications and tools built with eepp
+
+### ecode - Code Editor
+
+[ecode](https://github.com/SpartanJ/ecode/) is a full-featured code editor and the largest
+real-world application built with eepp. Its interface, editor widgets, themes, terminals,
+settings UI, dialogs and application chrome are all built on the eepp GUI.
+
+### First-party applications in this repository
+
+* **[eproc](src/tools/eproc/)** - system monitor built with the eepp application and UI stack.
+* **[eterm](src/tools/eterm/)** - terminal emulator demonstrating tabs, splits, settings UI and
+  the reusable `eterm` terminal module.
+* **[eeiv](src/tools/eeiv/)** - image viewer implemented on the current eepp GUI stack.
+
+These applications are developed alongside the framework and serve as practical test beds for
+its desktop application APIs.
+
 ### UI Editor
 
-Editor that displays in real-time the changes on any layout and CSS to help speed up the development
-of user interfaces. In the screenshot is displaying some of the default widgets available in eepp.
+The UI Editor loads layouts and CSS and displays changes in real time, making it useful for
+iterating on eepp interfaces and themes.
 
 ![UI Editor](https://cdn.ensoft.dev/eepp-demos/screenshots/uieditor.png)
 
-### Texture Atlas Editor
+The project also includes graphics-oriented tools such as the Texture Atlas Editor and Map Editor,
+reflecting eepp's origins as a broader multimedia/game-development framework.
 
-Small tool, used to create and edit texture atlases.
+## Documentation
 
-![Texture Atlas Editor with 1.5x pixel density](https://cdn.ensoft.dev/eepp-demos/screenshots/taeditor.png)
+API documentation is available at [cdn.ensoft.dev/eepp-docs](https://cdn.ensoft.dev/eepp-docs/index.html).
+The repository also contains examples in `src/examples`, tests in `src/test`, tools in `src/tools`,
+and focused guides for the GUI framework:
 
-### Map Editor
+* [UI introduction](docs/articles/ui_introduction.md)
+* [UI data binding](docs/articles/ui_databinding.md)
+* [Runtime UI inspector](docs/articles/ui_inspector.md)
+* [CSS specification](docs/articles/css_specification.md)
 
-2D map editor using the default skinned theme (using a single texture atlas with 9-patch images).
+Contributions and pull requests are welcome. Before participating, please read the
+[contribution and community support guidelines](CONTRIBUTING.md) and the
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
-![Map Editor](https://cdn.ensoft.dev/eepp-demos/screenshots/eepp1.png)
+## Getting eepp
+
+### Nightly SDK builds
+
+Prebuilt **eepp SDKs** are automatically produced from the latest `develop` branch and are
+available from the [nightly release](https://github.com/SpartanJ/eepp/releases/tag/nightly).
+
+Nightly SDK packages are provided for several desktop platforms and toolchains, making it possible
+to start developing with eepp without building the framework and its dependencies from source.
+
+### From source
+
+The repository uses git submodules. Clone it together with its submodules with:
+
+`git clone --recurse-submodules https://github.com/SpartanJ/eepp.git`
 
 ## UI Layout XML example
 
@@ -245,7 +196,11 @@ the most basic widgets in a vertical linear layout display.
 </window>
 ```
 
-**UI introduction can be found [here](https://cdn.ensoft.dev/eepp-docs/page_uiintroduction.html)**.
+**UI introduction can be found [here](docs/articles/ui_introduction.md)**.
+
+**The UI data-binding guide can be found [here](docs/articles/ui_databinding.md).**
+
+**The runtime UI inspector guide can be found [here](docs/articles/ui_inspector.md).**
 
 ## UI Widgets with C++ example
 
@@ -343,7 +298,7 @@ Here is a small example on how the CSS looks like:
 }
 ```
 
-**The complete CSS specification can be found in the docs: [here](https://cdn.ensoft.dev/eepp-docs/page_cssspecification.html).**
+**The complete CSS specification can be found in the docs: [here](docs/articles/css_specification.md).**
 
 **You can also check how a pure CSS theme looks like in eepp: [here](https://github.com/SpartanJ/eepp/blob/develop/bin/assets/ui/breeze.css).**
 
@@ -607,78 +562,42 @@ script will try to symlink the eepp library into `bin`, if that fails it should 
 symlinked manually. Regarding the SDL2 library is not provided in the repository, so in order to run
 the demos you'll need to download the correct SDL2 library OS version and architecture.
 
-## Author comment
+## Project direction and history
 
-The library has been being developed for several years, it suffered many changes
-since its beginnings, I'm making any changes that I find necessary to improve
-it, so the API is still not totally stable (but close to be).
-It's being used in several applications oriented to publicity campaigns mostly
-developed for Android devices and Windows PCs.
+eepp began as **Entropia Engine++**, a general-purpose multimedia and game-development framework.
+Over time the project evolved around its strongest and most actively developed area: the GUI and
+application toolkit. Today eepp is developed primarily as a cross-platform C++ GUI framework,
+while the graphics, windowing, system, networking, audio, scene, physics and map modules remain
+available as the lower-level foundation inherited from that history.
 
-I personally never had the time to use it to develop a complex game with the
-library ( several frustrated projects ), but I made several UI oriented games
-for clients.
+The framework is used by real applications including ecode and the first-party tools developed in
+this repository. Those applications are also important test beds: new widgets, application APIs,
+styling features and runtime tooling are exercised in production-sized interfaces instead of only
+in isolated examples.
 
-The current project focus is on the UI module. And I'll continue working
-putting my focus on this.
+The API is mature but not completely frozen. eepp has been developed for many years, so some older
+areas of the codebase still use legacy C++ patterns. Modernization is done incrementally where it
+provides a clear benefit, while new code generally follows newer C++ practices.
 
-The plan is to provide an alternative UI toolkit fully hardware accelerated
-similar to the Android toolkit but simpler ( as in easy to use ) and also
-oriented to desktop apps.
+Ideas and experience have come from many projects and ecosystems over the years, including the
+Android UI toolkit, SFML, cocos2d-x, raylib, libGDX, Godot, XNA, LÖVE and others. eepp keeps its own
+implementation where doing so provides useful control over portability, rendering, UI behavior and
+application integration.
 
-Audio and Network modules were based the modules in SFML with several important
-differences mentioned above.
+### Current priorities
 
-I like to use what's well done and fits my needs, but since I have my personal
-views on how to implement some things I prefer to take the code, to have full
-control over it.
+* Keep expanding and refining the GUI widget set, layouts, CSS support and theming system.
+* Improve the HTML/CSS compatibility layer and rich-document components.
+* Improve GUI documentation, examples and developer tooling.
+* Continue using ecode, eproc, eterm, eeiv and other first-party applications to drive and validate
+  framework development.
+* Continue modernizing the codebase where it improves maintainability without unnecessary churn.
+* Evaluate scripting support after the core APIs are sufficiently stable.
+* Keep legacy game-oriented modules available where useful, while focusing new development effort
+  on the GUI and application framework.
 
-Also many ideas were/are taken from other projects. Some I can think about:
-*cocos2d-x*, *raylib*, *Android SDK*, *libGDX*, *Godot*, *XNA*, *LÖVE*, and many
-other projects.
-
-If all this sounds interesting to you for some crazy reason, contact me and let
-me know if I can help you to get into the library, and may be if you want, you
-can contribute to it in the future. This project needs *contributors* more than
-anything else.
-
-The current state of the library is decent. In terms of features should be in a
-similar position than the most used 2D game engines out there. But lacks of
-course of the support+community that you can get from *Godot* or *cocos2d-x* to
-mention a couple.
-
-The main idea of this library is to focus on a better general approach to
-develop heavily UI based apps and games than the other options, with cleaner
-code and implementation.
-
-The main reason I developed the library is for _fun_ and to _learn_ new
-technologies. I love spending time working on the library, but I know there's
-probably no real reason to develop something like this with the immense number
-of similar alternatives.
-
-Regarding the code quality: this project started very long time ago and suffered
-many modifications over time. A good chunk of the code base still uses old C++
-practices (for example: raw pointers, own implementation of thread, mutex, etc).
-Some of these things can be "modernized", but, others don't make much sense or
-overhauling them would take too much time to justify the effort. I'm working on
-"modernizing" some parts of the code, and new code usually tends to look more
-modern.
-
-### Plans/ideas for the future
-
-Keep improving the UI system, adding new widgets and layouts and improving the CSS support.
-
-Simplify and improve the UI widgets skinning/theming support.
-
-Improve/create documentation for the UI module.
-
-Add more examples and some tools.
-
-Add scripting support, but first I would like to stabilize the library, but I'm getting there.
-
-Add 2D skeletal animations support ( probably Spine2D, shouldn't be much work to implement ).
-
-Probably deprecate the Maps module, since I will focus my efforts on the UI system.
+Contributors are welcome, especially around the GUI framework, documentation, examples, platform
+support and developer tooling.
 
 ## Acknowledgements
 

@@ -25,23 +25,24 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 				"cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non "
 				"proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );
 
-	FontTrueType* fontTest = FontTrueType::New( "DejaVuSansMono" );
+	FontTrueType* fontTest = FontTrueType::New( "DejaVuSansMono" ).get();
 	fontTest->loadFromFile( "assets/fonts/DejaVuSansMono.ttf" );
 
-	FontTrueType* fontTest2 = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* fontTest2 = FontTrueType::New( "NotoSans-Regular" ).get();
 	fontTest2->loadFromFile( "assets/fonts/NotoSans-Regular.ttf" );
 
-	FontTrueType* fontEmoji = FontTrueType::New( "NotoEmoji-Regular" );
+	FontTrueType* fontEmoji = FontTrueType::New( "NotoEmoji-Regular" ).get();
 	fontEmoji->loadFromFile( "assets/fonts/NotoEmoji-Regular.ttf" );
 
-	FontTrueType* fontEmojiColor = FontTrueType::New( "NotoColorEmoji" );
+	FontTrueType* fontEmojiColor = FontTrueType::New( "NotoColorEmoji" ).get();
 	fontEmojiColor->loadFromFile( "assets/fonts/NotoColorEmoji.ttf" );
 
-	FontBMFont* fontBMFont = FontBMFont::New( "bmfont" );
+	FontBMFont* fontBMFont = FontBMFont::New( "bmfont" ).get();
 	fontBMFont->loadFromFile( "assets/fonts/bmfont.fnt" );
 
-	FontSprite* fontSprite = FontSprite::New(
-		"alagard" ); // Alagard - Hewett Tsoi ( https://www.dafont.com/alagard.font )
+	FontSprite* fontSprite =
+		FontSprite::New( "alagard" )
+			.get(); // Alagard - Hewett Tsoi ( https://www.dafont.com/alagard.font )
 	fontSprite->loadFromFile( "assets/fonts/custom_alagard.png", Color::Fuchsia, 32, -4 );
 
 	Text text;

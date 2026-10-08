@@ -3,14 +3,65 @@
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/flexlayouter.hpp>
 #include <eepp/ui/gridlayouter.hpp>
+#include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uilayouter.hpp>
 #include <eepp/ui/uilayoutermanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollablewidget.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextselectioncontroller.hpp>
 
 namespace EE { namespace UI {
+
+CSSUserSelect CSSUserSelectHelper::fromString( std::string_view value ) {
+	if ( String::iequals( value, "text" ) )
+		return CSSUserSelect::Text;
+	if ( String::iequals( value, "none" ) )
+		return CSSUserSelect::None;
+	if ( String::iequals( value, "contain" ) )
+		return CSSUserSelect::Contain;
+	if ( String::iequals( value, "all" ) )
+		return CSSUserSelect::All;
+	return CSSUserSelect::Auto;
+}
+
+std::string_view CSSUserSelectHelper::toString( CSSUserSelect value ) {
+	switch ( value ) {
+		case CSSUserSelect::Text:
+			return "text";
+		case CSSUserSelect::None:
+			return "none";
+		case CSSUserSelect::Contain:
+			return "contain";
+		case CSSUserSelect::All:
+			return "all";
+		default:
+			return "auto";
+	}
+}
+
+CSSUserSelect UIHTMLWidget::getUsedUserSelect() const {
+	if ( mUserSelect != CSSUserSelect::Auto )
+		return mUserSelect;
+	for ( Node* parent = getParent(); parent; parent = parent->getParent() ) {
+		if ( parent->isType( UI_TYPE_HTML_WIDGET ) ) {
+			auto used = parent->asType<UIHTMLWidget>()->getUsedUserSelect();
+			return used == CSSUserSelect::All || used == CSSUserSelect::None ? used
+																			 : CSSUserSelect::Text;
+		}
+	}
+	return CSSUserSelect::Text;
+}
+
+void UIHTMLWidget::setUserSelect( CSSUserSelect value ) {
+	if ( mUserSelect == value )
+		return;
+	mUserSelect = value;
+	if ( auto* controller = getTextSelectionControllerInTree() )
+		controller->refresh();
+}
 
 static bool isDataPropertyName( std::string_view name ) {
 	return String::istartsWith( String::trim( name ), "data-" );
@@ -40,16 +91,26 @@ static bool isAtomicInlineAutoDisplay( CSSDisplay display ) {
 		   display == CSSDisplay::InlineGrid;
 }
 
+static UIWidget* getHTMLContainingBlockParent( const UIWidget* widget ) {
+	Node* parent = widget->getParent();
+	while ( parent && parent->isWidget() && parent->isType( UI_TYPE_HTML_WIDGET ) &&
+			static_cast<UIHTMLWidget*>( parent )->isInline() )
+		parent = parent->getParent();
+	return parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
+}
+
+static bool hasDefiniteCSSHeight( UIWidget* widget ) {
+	if ( !widget || widget->getLayoutHeightPolicy() != SizePolicy::Fixed )
+		return false;
+
+	auto* style = widget->getUIStyle();
+	const auto* height = style ? style->getProperty( PropertyId::Height ) : nullptr;
+	return !( height && StyleSheetLength::isPercentage( height->value() ) );
+}
+
 static CSSBaselineAlignValue parseBaselineAlign( UIHTMLWidget* widget,
 												 const StyleSheetProperty& property ) {
-	std::string_view val = property.value();
-	auto isSpace = []( char c ) {
-		return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f';
-	};
-	while ( !val.empty() && isSpace( val.front() ) )
-		val.remove_prefix( 1 );
-	while ( !val.empty() && isSpace( val.back() ) )
-		val.remove_suffix( 1 );
+	std::string_view val = String::trim( std::string_view{ property.value() }, " \t\n\r\f\v" );
 	if ( val.empty() )
 		return {};
 
@@ -75,6 +136,72 @@ UIHTMLWidget* UIHTMLWidget::New() {
 	return eeNew( UIHTMLWidget, () );
 }
 
+bool UIHTMLWidget::resolvePercentageSize( UIWidget* widget ) {
+	if ( widget == nullptr || !( widget->getFlags() & UI_HTML_ELEMENT ) ||
+		 widget->getUIStyle() == nullptr )
+		return false;
+
+	const auto* width = widget->getUIStyle()->getProperty( PropertyId::Width );
+	const auto* height = widget->getUIStyle()->getProperty( PropertyId::Height );
+	const bool percentageWidth = width && StyleSheetLength::isPercentage( width->value() );
+	const bool percentageHeight = height && StyleSheetLength::isPercentage( height->value() );
+	if ( !percentageWidth && !percentageHeight )
+		return false;
+
+	UIWidget* containingBlock = getHTMLContainingBlockParent( widget );
+	if ( containingBlock == nullptr )
+		return false;
+
+	const Rectf contentOffset = containingBlock->getPixelsContentOffset();
+	const Sizef containingSize = containingBlock->getPixelsSize();
+	const Float contentWidth =
+		eemax( 0.f, containingSize.getWidth() - contentOffset.Left - contentOffset.Right );
+	const Float contentHeight =
+		eemax( 0.f, containingSize.getHeight() - contentOffset.Top - contentOffset.Bottom );
+	Sizef size = widget->getPixelsSize();
+	bool changed = false;
+
+	if ( percentageWidth ) {
+		if ( widget->getLayoutWidthPolicy() != SizePolicy::Fixed ) {
+			widget->setLayoutWidthPolicy( SizePolicy::Fixed );
+			changed = true;
+		}
+		Float resolved = widget->cssResolvedLengthToBorderBoxWidth(
+			widget->convertLength( width->asStyleSheetLength(), contentWidth ) );
+		if ( size.getWidth() != resolved ) {
+			size.setWidth( resolved );
+			changed = true;
+		}
+	}
+
+	if ( percentageHeight ) {
+		if ( hasDefiniteCSSHeight( containingBlock ) ) {
+			if ( widget->getLayoutHeightPolicy() != SizePolicy::Fixed ) {
+				widget->setLayoutHeightPolicy( SizePolicy::Fixed );
+				changed = true;
+			}
+			Float resolved = widget->cssResolvedLengthToBorderBoxHeight(
+				widget->convertLength( height->asStyleSheetLength(), contentHeight ) );
+			if ( size.getHeight() != resolved ) {
+				size.setHeight( resolved );
+				changed = true;
+			}
+		} else if ( widget->getLayoutHeightPolicy() != SizePolicy::WrapContent ) {
+			widget->setLayoutHeightPolicy( SizePolicy::WrapContent );
+			changed = true;
+		}
+	}
+
+	if ( size != widget->getPixelsSize() ) {
+		if ( widget->isType( UI_TYPE_HTML_WIDGET ) )
+			widget->asType<UIHTMLWidget>()->setInternalPixelsSize( size );
+		else
+			widget->setPixelsSize( size );
+	}
+
+	return changed;
+}
+
 UIHTMLWidget::UIHTMLWidget( const std::string& tag ) : UILayout( tag ) {
 	mFlags |= UI_HTML_ELEMENT;
 }
@@ -85,6 +212,8 @@ UIHTMLWidget::~UIHTMLWidget() {
 	eeSAFE_DELETE( mLayouter );
 	eeSAFE_DELETE( mFlexState );
 	eeSAFE_DELETE( mGridState );
+	eeSAFE_DELETE( mPaintOrderCache );
+	eeSAFE_DELETE( mHTMLPaintAncestors );
 }
 
 UILayouter* UIHTMLWidget::getLayouter() {
@@ -146,6 +275,7 @@ void UIHTMLWidget::setDisplay( CSSDisplay display ) {
 		}
 
 		onDisplayChange();
+		updatePaintOrderFlag();
 	}
 }
 
@@ -166,34 +296,24 @@ Float UIHTMLWidget::getBaseline() const {
 }
 
 Float UIHTMLWidget::getContainingBlockContentWidth() const {
-	Node* parent = getParent();
-	while ( parent && parent->isWidget() && parent->isType( UI_TYPE_HTML_WIDGET ) &&
-			static_cast<UIHTMLWidget*>( parent )->isInline() )
-		parent = parent->getParent();
+	UIWidget* parent = getHTMLContainingBlockParent( this );
 	if ( !parent )
 		return 0.f;
 
 	Float width = parent->getPixelsSize().getWidth();
-	if ( parent->isWidget() ) {
-		Rectf contentOffset = parent->asType<UIWidget>()->getPixelsContentOffset();
-		width -= contentOffset.Left + contentOffset.Right;
-	}
+	Rectf contentOffset = parent->getPixelsContentOffset();
+	width -= contentOffset.Left + contentOffset.Right;
 	return eemax( 0.f, width );
 }
 
 Float UIHTMLWidget::getContainingBlockContentHeight() const {
-	Node* parent = getParent();
-	while ( parent && parent->isWidget() && parent->isType( UI_TYPE_HTML_WIDGET ) &&
-			static_cast<UIHTMLWidget*>( parent )->isInline() )
-		parent = parent->getParent();
+	UIWidget* parent = getHTMLContainingBlockParent( this );
 	if ( !parent )
 		return 0.f;
 
 	Float height = parent->getPixelsSize().getHeight();
-	if ( parent->isWidget() ) {
-		Rectf contentOffset = parent->asType<UIWidget>()->getPixelsContentOffset();
-		height -= contentOffset.Top + contentOffset.Bottom;
-	}
+	Rectf contentOffset = parent->getPixelsContentOffset();
+	height -= contentOffset.Top + contentOffset.Bottom;
 	return eemax( 0.f, height );
 }
 
@@ -284,6 +404,8 @@ void UIHTMLWidget::setVisibility( CSSVisibility val ) {
 void UIHTMLWidget::setCSSPosition( CSSPosition position ) {
 	if ( mPosition != position ) {
 		mPosition = position;
+		if ( Node* parent = getParent(); parent && parent->isType( UI_TYPE_HTML_WIDGET ) )
+			parent->asType<UIHTMLWidget>()->updatePaintOrderFlag();
 		if ( position == CSSPosition::Absolute || position == CSSPosition::Fixed ) {
 			// Out-of-flow elements should not stretch to their containing block
 			// until updateOutOfFlowPosition() computes the correct size from CSS
@@ -302,6 +424,24 @@ void UIHTMLWidget::setCSSPosition( CSSPosition position ) {
 void UIHTMLWidget::setCSSFloat( CSSFloat cssFloat ) {
 	if ( mFloat != cssFloat ) {
 		mFloat = cssFloat;
+		if ( Node* parent = getParent(); parent && parent->isType( UI_TYPE_HTML_WIDGET ) )
+			parent->asType<UIHTMLWidget>()->updatePaintOrderFlag();
+		// A width:auto block normally fills its containing block, while a float uses the CSS
+		// shrink-to-fit width. Represent that used-width distinction with WrapContent so the
+		// floated box's own layouter cannot stretch it back after its parent measured it.
+		if ( mFloat != CSSFloat::None && getLayoutWidthPolicy() == SizePolicy::MatchParent )
+			setLayoutWidthPolicy( SizePolicy::WrapContent );
+		else if ( mFloat == CSSFloat::None && getLayoutWidthPolicy() == SizePolicy::WrapContent &&
+				  ( mDisplay == CSSDisplay::Block || mDisplay == CSSDisplay::ListItem ) &&
+				  ( getUIStyle() == nullptr ||
+					getUIStyle()->getProperty( PropertyId::Width ) == nullptr ) &&
+				  mPosition != CSSPosition::Absolute && mPosition != CSSPosition::Fixed )
+			setLayoutWidthPolicy( SizePolicy::MatchParent );
+
+		// Float changes the used display type (CSS 2.1 section 9.7), so an inline element must
+		// exchange InlineLayouter for BlockLayouter and vice versa when float is toggled.
+		eeSAFE_DELETE( mLayouter );
+		getLayouter();
 		notifyLayoutAttrChange(
 			toLayoutInvalidationFlags( LayoutInvalidationReason::Style ) |
 			toLayoutInvalidationFlags( LayoutInvalidationReason::FormattingContext ) |
@@ -321,13 +461,73 @@ void UIHTMLWidget::setCSSClear( CSSClear cssClear ) {
 	}
 }
 
-Rectf UIHTMLWidget::getNormalFlowLayoutPixelsMargin() const {
-	Rectf margin = getLayoutPixelsMargin();
+CSSFormattingRole UIHTMLWidget::getFormattingRole() const {
+	if ( mPosition == CSSPosition::Absolute )
+		return CSSFormattingRole::Absolute;
+	if ( mPosition == CSSPosition::Fixed )
+		return CSSFormattingRole::Fixed;
+	Node* parent = getParent();
+	if ( parent && parent->isType( UI_TYPE_HTML_WIDGET ) ) {
+		auto* htmlParent = parent->asType<UIHTMLWidget>();
+		if ( htmlParent->isFlex() )
+			return CSSFormattingRole::FlexItem;
+		if ( htmlParent->isGrid() )
+			return CSSFormattingRole::GridItem;
+	}
+	if ( mFloat != CSSFloat::None )
+		return CSSFormattingRole::Float;
+	if ( mDisplay == CSSDisplay::Inline )
+		return CSSFormattingRole::Inline;
+	if ( mDisplay == CSSDisplay::InlineBlock || mDisplay == CSSDisplay::InlineFlex ||
+		 mDisplay == CSSDisplay::InlineGrid )
+		return CSSFormattingRole::InlineBlock;
+	if ( mDisplay == CSSDisplay::Table )
+		return CSSFormattingRole::Table;
+	return CSSFormattingRole::NormalFlowBlock;
+}
+
+CSSUsedMargins UIHTMLWidget::resolveUsedMargins() const {
+	CSSUsedMargins used{ getLayoutPixelsMargin(), 0 };
+	if ( hasLayoutMarginLeftAuto() )
+		used.autoSides |= MarginAuto::Left;
+	if ( hasLayoutMarginRightAuto() )
+		used.autoSides |= MarginAuto::Right;
 	if ( hasLayoutMarginTopAuto() )
-		margin.Top = 0.f;
+		used.autoSides |= MarginAuto::Top;
 	if ( hasLayoutMarginBottomAuto() )
-		margin.Bottom = 0.f;
-	return margin;
+		used.autoSides |= MarginAuto::Bottom;
+
+	if ( used.autoSides & MarginAuto::Left )
+		used.value.Left = 0.f;
+	if ( used.autoSides & MarginAuto::Right )
+		used.value.Right = 0.f;
+	if ( used.autoSides & MarginAuto::Top )
+		used.value.Top = 0.f;
+	if ( used.autoSides & MarginAuto::Bottom )
+		used.value.Bottom = 0.f;
+
+	if ( getFormattingRole() != CSSFormattingRole::NormalFlowBlock ||
+		 !( used.autoSides & ( MarginAuto::Left | MarginAuto::Right ) ) )
+		return used;
+
+	Node* parent = getParent();
+	if ( !parent || !parent->isWidget() )
+		return used;
+	const UIWidget* containingBlock = parent->asType<UIWidget>();
+	const Rectf contentOffset = containingBlock->getPixelsContentOffset();
+	const Float available =
+		eemax( 0.f, containingBlock->getPixelsSize().getWidth() - contentOffset.Left -
+						contentOffset.Right - getPixelsSize().getWidth() - used.value.Left -
+						used.value.Right );
+	if ( ( used.autoSides & MarginAuto::Left ) && ( used.autoSides & MarginAuto::Right ) ) {
+		used.value.Left = available * 0.5f;
+		used.value.Right = available - used.value.Left;
+	} else if ( used.autoSides & MarginAuto::Left ) {
+		used.value.Left = available;
+	} else {
+		used.value.Right = available;
+	}
+	return used;
 }
 
 void UIHTMLWidget::setBaselineAlign( const CSSBaselineAlignValue& baselineAlign ) {
@@ -351,103 +551,359 @@ void UIHTMLWidget::setOffsets( const Rectf& offsets ) {
 }
 
 void UIHTMLWidget::setZIndex( int zIndex ) {
-	mZIndex = zIndex;
+	const CSSZIndex value{ zIndex, false };
+	if ( mZIndex == value )
+		return;
+	mZIndex = value;
 	Node* p = getParent();
 	if ( p && p->isType( UI_TYPE_HTML_WIDGET ) )
-		p->asType<UIHTMLWidget>()->updateZIndexSortFlag();
+		p->asType<UIHTMLWidget>()->updatePaintOrderFlag();
+}
+
+void UIHTMLWidget::setZIndexAuto() {
+	if ( mZIndex.isAuto )
+		return;
+	mZIndex = {};
+	Node* p = getParent();
+	if ( p && p->isType( UI_TYPE_HTML_WIDGET ) )
+		p->asType<UIHTMLWidget>()->updatePaintOrderFlag();
+}
+
+bool UIHTMLWidget::hasApplicableZIndex() const {
+	if ( mZIndex.isAuto )
+		return false;
+	if ( isCSSPositioned() )
+		return true;
+	Node* parent = getParent();
+	return parent && parent->isType( UI_TYPE_HTML_WIDGET ) &&
+		   ( parent->asType<UIHTMLWidget>()->isFlex() || parent->asType<UIHTMLWidget>()->isGrid() );
+}
+
+bool UIHTMLWidget::createsSupportedStackingGroup() const {
+	return mPosition == CSSPosition::Fixed || mPosition == CSSPosition::Sticky ||
+		   hasApplicableZIndex();
 }
 
 void UIHTMLWidget::setNeedsOrderSort( bool val ) {
-	mNeedsOrderSort = val;
+	if ( mNeedsOrderSort != val ) {
+		mNeedsOrderSort = val;
+		invalidatePaintOrder();
+	}
 }
 
-void UIHTMLWidget::updateZIndexSortFlag() {
-	bool needs = false;
-	for ( Node* child = getFirstChild(); child; child = child->getNextNode() ) {
-		if ( child->isType( UI_TYPE_HTML_WIDGET ) &&
-			 child->asType<UIHTMLWidget>()->getZIndex() != 0 ) {
-			needs = true;
-			break;
+void UIHTMLWidget::invalidatePaintOrder() {
+	for ( Node* node = this; node; node = node->getParent() ) {
+		if ( node->isType( UI_TYPE_HTML_WIDGET ) ) {
+			auto* widget = node->asType<UIHTMLWidget>();
+			if ( widget->mPaintOrderCache )
+				widget->mPaintOrderCache->dirty = true;
 		}
 	}
-	mNeedsZIndexSort = needs;
+}
+
+void UIHTMLWidget::updatePaintOrderFlag() {
+	bool needsPaintOrder = false;
+	bool hasStackingDescendant = false;
+	for ( Node* child = getFirstChild(); child; child = child->getNextNode() ) {
+		if ( !child->isType( UI_TYPE_HTML_WIDGET ) )
+			continue;
+		auto* htmlChild = child->asType<UIHTMLWidget>();
+		needsPaintOrder |=
+			( !isFlex() && !isGrid() && htmlChild->getCSSFloat() != CSSFloat::None ) ||
+			htmlChild->getCSSPosition() != CSSPosition::Static || htmlChild->hasApplicableZIndex();
+		hasStackingDescendant |= htmlChild->isCSSPositioned() ||
+								 htmlChild->createsSupportedStackingGroup() ||
+								 htmlChild->mHasStackingDescendant;
+	}
+	const bool stackingChanged = mHasStackingDescendant != hasStackingDescendant;
+	mNeedsPaintOrder = needsPaintOrder;
+	mHasStackingDescendant = hasStackingDescendant;
+	invalidatePaintOrder();
+	if ( stackingChanged ) {
+		Node* parent = getParent();
+		if ( parent && parent->isType( UI_TYPE_HTML_WIDGET ) )
+			parent->asType<UIHTMLWidget>()->updatePaintOrderFlag();
+	}
 }
 
 void UIHTMLWidget::onChildCountChange( Node* child, const bool& removed ) {
 	UILayout::onChildCountChange( child, removed );
 
-	if ( !removed )
-		updateZIndexSortFlag();
-	else if ( child->isType( UI_TYPE_HTML_WIDGET ) &&
-			  child->asType<UIHTMLWidget>()->getZIndex() != 0 )
-		updateZIndexSortFlag();
+	updatePaintOrderFlag();
 }
 
 void UIHTMLWidget::buildDrawOrderVector( SmallVector<Node*, 127>& out ) const {
-	bool flexSort = false;
-	bool directionReverse = false;
+	const auto& paintOrder = getPaintOrder();
+	out.insert( out.end(), paintOrder.begin(), paintOrder.end() );
+}
 
-	if ( isFlex() ) {
-		CSSFlexDirection dir = getFlexDirection();
-		directionReverse =
-			dir == CSSFlexDirection::RowReverse || dir == CSSFlexDirection::ColumnReverse;
-		flexSort = mNeedsOrderSort || directionReverse;
+static HTMLPaintCategory getPaintCategory( Node* node ) {
+	// This is the supported CSS 2 Appendix E subset. Inline fragments remain owned by RichText, so
+	// their background/text sub-phases cannot be split here without fragment-level paint records.
+	if ( !node->isType( UI_TYPE_HTML_WIDGET ) )
+		return HTMLPaintCategory::NormalFlow;
+	const auto* widget = node->asType<UIHTMLWidget>();
+	const bool positioned = widget->isCSSPositioned();
+	const bool applicableZIndex = widget->hasApplicableZIndex();
+	Node* parent = widget->getParent();
+	const bool flexOrGridItem =
+		parent && parent->isType( UI_TYPE_HTML_WIDGET ) &&
+		( parent->asType<UIHTMLWidget>()->isFlex() || parent->asType<UIHTMLWidget>()->isGrid() );
+	if ( applicableZIndex && widget->getZIndex() < 0 )
+		return HTMLPaintCategory::NegativePositioned;
+	if ( !positioned && !applicableZIndex && !flexOrGridItem &&
+		 widget->getCSSFloat() != CSSFloat::None )
+		return HTMLPaintCategory::Float;
+	if ( applicableZIndex && widget->getZIndex() > 0 )
+		return HTMLPaintCategory::PositivePositioned;
+	if ( positioned || applicableZIndex )
+		return HTMLPaintCategory::PositionedAutoOrZero;
+	return HTMLPaintCategory::NormalFlow;
+}
+
+bool UIHTMLWidget::isHTMLStackingScope() const {
+	if ( createsSupportedStackingGroup() )
+		return true;
+	for ( Node* parent = getParent(); parent; parent = parent->getParent() ) {
+		if ( parent->isType( UI_TYPE_HTML_WIDGET ) )
+			return false;
 	}
+	return true;
+}
 
+void UIHTMLWidget::buildCSSChildOrder( SmallVector<Node*, 16>& out ) const {
 	for ( Node* child = getFirstChild(); child; child = child->getNextNode() )
 		out.push_back( child );
-
-	if ( flexSort && mNeedsOrderSort ) {
+	if ( !isFlex() && !isGrid() )
+		return;
+	if ( mNeedsOrderSort ) {
 		std::stable_sort( out.begin(), out.end(), []( Node* a, Node* b ) {
-			int aOrder = ( a->isWidget() && a->isType( UI_TYPE_HTML_WIDGET ) )
-							 ? a->asType<UIHTMLWidget>()->getOrder()
-							 : 0;
-			int bOrder = ( b->isWidget() && b->isType( UI_TYPE_HTML_WIDGET ) )
-							 ? b->asType<UIHTMLWidget>()->getOrder()
-							 : 0;
+			const int aOrder =
+				a->isType( UI_TYPE_HTML_WIDGET ) ? a->asType<UIHTMLWidget>()->getOrder() : 0;
+			const int bOrder =
+				b->isType( UI_TYPE_HTML_WIDGET ) ? b->asType<UIHTMLWidget>()->getOrder() : 0;
 			return aOrder < bOrder;
-		} );
-	}
-
-	if ( flexSort && directionReverse )
-		std::reverse( out.begin(), out.end() );
-
-	if ( mNeedsZIndexSort ) {
-		std::stable_sort( out.begin(), out.end(), []( Node* a, Node* b ) {
-			int aZ =
-				( a->isType( UI_TYPE_HTML_WIDGET ) ) ? a->asType<UIHTMLWidget>()->getZIndex() : 0;
-			int bZ =
-				( b->isType( UI_TYPE_HTML_WIDGET ) ) ? b->asType<UIHTMLWidget>()->getZIndex() : 0;
-			return aZ < bZ;
 		} );
 	}
 }
 
-void UIHTMLWidget::drawChildren() {
-	bool needsSort = mNeedsOrderSort || mNeedsZIndexSort;
+void UIHTMLWidget::resetPromotedPaintState() const {
+	for ( Node* child = getFirstChild(); child; child = child->getNextNode() ) {
+		if ( !child->isType( UI_TYPE_HTML_WIDGET ) )
+			continue;
+		auto* widget = child->asType<UIHTMLWidget>();
+		widget->mHTMLPaintOwner = nullptr;
+		if ( widget->mHTMLPaintAncestors )
+			widget->mHTMLPaintAncestors->clear();
+		widget->mHasPromotedChild = false;
+		if ( widget->mPaintOrderCache )
+			widget->mPaintOrderCache->dirty = true;
+		widget->resetPromotedPaintState();
+	}
+}
 
-	if ( isFlex() ) {
-		CSSFlexDirection dir = getFlexDirection();
-		if ( dir == CSSFlexDirection::RowReverse || dir == CSSFlexDirection::ColumnReverse )
-			needsSort = true;
+void UIHTMLWidget::promoteHTMLPaintNode( UIHTMLWidget* widget ) const {
+	mHasActivePromotions = true;
+	widget->mHTMLPaintOwner = this;
+	if ( !widget->mHTMLPaintAncestors )
+		widget->mHTMLPaintAncestors = eeNew( UIHTMLPaintAncestorVector, () );
+	for ( Node* parent = widget->getParent(); parent && parent != this;
+		  parent = parent->getParent() ) {
+		if ( parent->isType( UI_TYPE_HTML_WIDGET ) )
+			widget->mHTMLPaintAncestors->push_back( parent->asType<UIHTMLWidget>() );
+	}
+	if ( widget->getParent()->isType( UI_TYPE_HTML_WIDGET ) )
+		widget->getParent()->asType<UIHTMLWidget>()->mHasPromotedChild = true;
+}
+
+void UIHTMLWidget::collectStackingScopeItems( UIHTMLWidget* container, SmallVector<Node*, 16>& out,
+											  bool directChildren ) const {
+	if ( container->isFlex() || container->isGrid() ) {
+		SmallVector<Node*, 16> children;
+		container->buildCSSChildOrder( children );
+		for ( Node* child : children )
+			collectStackingScopeChild( child, out, directChildren );
+		return;
+	}
+	for ( Node* child = container->getFirstChild(); child; child = child->getNextNode() )
+		collectStackingScopeChild( child, out, directChildren );
+}
+
+void UIHTMLWidget::collectStackingScopeChild( Node* child, SmallVector<Node*, 16>& out,
+											  bool directChildren ) const {
+	// A promoted positioned descendant must not escape a hidden ancestor's
+	// subtree. The normal node traversal stops at that ancestor, while this
+	// flattened paint list would otherwise visit and paint its descendants.
+	if ( !child->isVisible() )
+		return;
+	if ( directChildren )
+		out.push_back( child );
+	if ( !child->isType( UI_TYPE_HTML_WIDGET ) )
+		return;
+	auto* widget = child->asType<UIHTMLWidget>();
+	if ( widget->createsSupportedStackingGroup() ) {
+		if ( !directChildren ) {
+			out.push_back( widget );
+			promoteHTMLPaintNode( widget );
+		}
+		return;
+	}
+	if ( !directChildren && widget->isCSSPositioned() ) {
+		out.push_back( widget );
+		promoteHTMLPaintNode( widget );
+	}
+	collectStackingScopeItems( widget, out, false );
+}
+
+const SmallVector<Node*, 16>& UIHTMLWidget::getPaintOrder() const {
+	if ( !mPaintOrderCache )
+		mPaintOrderCache = eeNew( UIHTMLPaintOrderCache, () );
+	if ( !mPaintOrderCache->dirty )
+		return mPaintOrderCache->items;
+
+	auto& out = mPaintOrderCache->items;
+	out.clear();
+	const bool collectStacking = isHTMLStackingScope() && mHasStackingDescendant;
+	// A scope must clear its previous promotion metadata even when the last promoted descendant
+	// just stopped qualifying; otherwise its old parent can keep skipping the node indefinitely.
+	if ( mHasActivePromotions ) {
+		resetPromotedPaintState();
+		mHasActivePromotions = false;
+	}
+	if ( collectStacking ) {
+		collectStackingScopeItems( const_cast<UIHTMLWidget*>( this ), out, true );
+	} else {
+		buildCSSChildOrder( out );
 	}
 
-	if ( !needsSort ) {
+	if ( mNeedsPaintOrder || collectStacking ) {
+		std::stable_sort( out.begin(), out.end(), []( Node* a, Node* b ) {
+			const auto aCategory = getPaintCategory( a );
+			const auto bCategory = getPaintCategory( b );
+			if ( aCategory != bCategory )
+				return aCategory < bCategory;
+			if ( aCategory == HTMLPaintCategory::NegativePositioned ||
+				 aCategory == HTMLPaintCategory::PositivePositioned )
+				return a->asType<UIHTMLWidget>()->getZIndex() <
+					   b->asType<UIHTMLWidget>()->getZIndex();
+			return false;
+		} );
+	}
+
+	mPaintOrderCache->dirty = false;
+	++mPaintOrderCache->rebuildCount;
+	return out;
+}
+
+Uint32 UIHTMLWidget::getPaintOrderRebuildCount() const {
+	return mPaintOrderCache ? mPaintOrderCache->rebuildCount : 0;
+}
+
+std::vector<Node*> UIHTMLWidget::debugGetHTMLPaintOrder() const {
+	const auto& order = getPaintOrder();
+	return { order.begin(), order.end() };
+}
+
+std::vector<Node*> UIHTMLWidget::debugGetHTMLHitTestOrder() const {
+	const auto& order = getPaintOrder();
+	return { order.rbegin(), order.rend() };
+}
+
+void UIHTMLWidget::drawHTMLPaintNode( Node* node ) {
+	if ( !node->isType( UI_TYPE_HTML_WIDGET ) ||
+		 node->asType<UIHTMLWidget>()->mHTMLPaintOwner != this ) {
+		node->nodeDraw();
+		return;
+	}
+
+	auto* promoted = node->asType<UIHTMLWidget>();
+	eeASSERT( promoted->mHTMLPaintAncestors != nullptr );
+	const auto& ancestors = *promoted->mHTMLPaintAncestors;
+	for ( auto it = ancestors.rbegin(); it != ancestors.rend(); ++it ) {
+		auto* ancestor = *it;
+		ancestor->matrixSet();
+		ancestor->smartClipStart( ancestor->getClipType(),
+								  ancestor->isMeOrParentTreeScaledOrRotatedOrFrameBuffer() );
+	}
+	node->nodeDraw();
+	for ( auto* ancestor : ancestors ) {
+		ancestor->smartClipEnd( ancestor->getClipType(),
+								ancestor->isMeOrParentTreeScaledOrRotatedOrFrameBuffer() );
+		ancestor->matrixUnset();
+	}
+}
+
+bool UIHTMLWidget::containsHTMLPaintClipPoint( const Vector2f& point ) const {
+	if ( !isClipped() )
+		return true;
+	const Vector2f localPoint = convertToNodeSpace( point );
+	Rectf clipRect( Vector2f::Zero, getPixelsSize() );
+	switch ( getClipType() ) {
+		case ClipType::PaddingBox: {
+			const Rectf& padding = getPixelsPadding();
+			clipRect = Rectf( padding.Left, padding.Top,
+							  getPixelsSize().getWidth() - padding.Left - padding.Right,
+							  getPixelsSize().getHeight() - padding.Top - padding.Bottom );
+			break;
+		}
+		case ClipType::BorderBox: {
+			if ( mBorder ) {
+				const Rectf borderDiff = mBorder->getBorderBoxDiff();
+				clipRect = Rectf( borderDiff.Left, borderDiff.Top,
+								  getPixelsSize().getWidth() + borderDiff.Right,
+								  getPixelsSize().getHeight() + borderDiff.Bottom );
+			}
+			break;
+		}
+		case ClipType::ContentBox:
+		case ClipType::None:
+			break;
+	}
+	return clipRect.contains( localPoint );
+}
+
+bool UIHTMLWidget::canHitHTMLPaintNode( Node* node, const Vector2f& point ) const {
+	if ( !node->isType( UI_TYPE_HTML_WIDGET ) )
+		return true;
+	const auto* promoted = node->asType<UIHTMLWidget>();
+	if ( promoted->mHTMLPaintOwner != this || !promoted->mHTMLPaintAncestors )
+		return true;
+	for ( auto* ancestor : *promoted->mHTMLPaintAncestors ) {
+		if ( !ancestor->containsHTMLPaintClipPoint( point ) )
+			return false;
+	}
+	return true;
+}
+
+bool UIHTMLWidget::needsHTMLPaintTraversal() const {
+	if ( mNeedsOrderSort || mNeedsPaintOrder || mHasPromotedChild ||
+		 ( isHTMLStackingScope() && mHasStackingDescendant ) )
+		return true;
+	return false;
+}
+
+bool UIHTMLWidget::shouldSkipHTMLPaintNode( Node* node ) const {
+	return node->isType( UI_TYPE_HTML_WIDGET ) &&
+		   node->asType<UIHTMLWidget>()->mHTMLPaintOwner != nullptr &&
+		   node->asType<UIHTMLWidget>()->mHTMLPaintOwner != this;
+}
+
+void UIHTMLWidget::drawChildren() {
+	if ( !needsHTMLPaintTraversal() ) {
 		UILayout::drawChildren();
 		return;
 	}
 
-	SmallVector<Node*, 127> sortedChildren;
-	buildDrawOrderVector( sortedChildren );
-
-	for ( auto* child : sortedChildren ) {
+	for ( auto* child : getPaintOrder() ) {
+		if ( shouldSkipHTMLPaintNode( child ) )
+			continue;
 		if ( child->isVisible() )
-			child->nodeDraw();
+			drawHTMLPaintNode( child );
 	}
 }
 
 Node* UIHTMLWidget::overFind( const Vector2f& point ) {
-	if ( !mNeedsOrderSort && !mNeedsZIndexSort )
+	if ( !needsHTMLPaintTraversal() )
 		return UILayout::overFind( point );
 
 	Node* pOver = nullptr;
@@ -456,14 +912,14 @@ Node* UIHTMLWidget::overFind( const Vector2f& point ) {
 		updateWorldPolygon();
 
 		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
-			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-			mSceneNode->addMouseOverNode( this );
+			const auto& sortedChildren = getPaintOrder();
 
-			SmallVector<Node*, 127> sortedChildren;
-			buildDrawOrderVector( sortedChildren );
-
-			// Iterate last-to-first: highest z-index = topmost = hit first
+			// Drawing and hit-testing share one sequence; reverse it so the last painted node wins.
 			for ( auto it = sortedChildren.rbegin(); it != sortedChildren.rend(); ++it ) {
+				if ( shouldSkipHTMLPaintNode( *it ) )
+					continue;
+				if ( !canHitHTMLPaintNode( *it, point ) )
+					continue;
 				Node* childOver = ( *it )->overFind( point );
 				if ( childOver ) {
 					pOver = childOver;
@@ -555,6 +1011,8 @@ void UIHTMLWidget::setOrder( int val ) {
 	auto* fs = ensureFlexState();
 	if ( fs->order != val ) {
 		fs->order = val;
+		if ( Node* parent = getParent(); parent && parent->isType( UI_TYPE_HTML_WIDGET ) )
+			parent->asType<UIHTMLWidget>()->invalidatePaintOrder();
 		notifyLayoutAttrChange( LayoutInvalidation::ContainerLayout );
 	}
 }
@@ -690,6 +1148,7 @@ void UIHTMLWidget::setJustifySelf( CSSJustifySelf val ) {
 std::vector<PropertyId> UIHTMLWidget::getPropertiesImplemented() const {
 	auto props = UILayout::getPropertiesImplemented();
 	auto local = { PropertyId::Display,
+				   PropertyId::UserSelect,
 				   PropertyId::BoxSizing,
 				   PropertyId::Position,
 				   PropertyId::Float,
@@ -702,7 +1161,6 @@ std::vector<PropertyId> UIHTMLWidget::getPropertiesImplemented() const {
 				   PropertyId::AlignmentBaseline,
 				   PropertyId::FlexDirection,
 				   PropertyId::FlexWrap,
-				   PropertyId::FlexFlow,
 				   PropertyId::JustifyContent,
 				   PropertyId::AlignItems,
 				   PropertyId::AlignContent,
@@ -710,19 +1168,15 @@ std::vector<PropertyId> UIHTMLWidget::getPropertiesImplemented() const {
 				   PropertyId::FlexGrow,
 				   PropertyId::FlexShrink,
 				   PropertyId::FlexBasis,
-				   PropertyId::Flex,
 				   PropertyId::Order,
 				   PropertyId::ColumnGap,
 				   PropertyId::RowGap,
-				   PropertyId::Gap,
 				   PropertyId::GridTemplateRows,
 				   PropertyId::GridTemplateColumns,
 				   PropertyId::GridTemplateAreas,
-				   PropertyId::GridTemplate,
 				   PropertyId::GridAutoRows,
 				   PropertyId::GridAutoColumns,
 				   PropertyId::GridAutoFlow,
-				   PropertyId::Grid,
 				   PropertyId::GridRowStart,
 				   PropertyId::GridRowEnd,
 				   PropertyId::GridColumnStart,
@@ -737,11 +1191,13 @@ std::vector<PropertyId> UIHTMLWidget::getPropertiesImplemented() const {
 }
 
 std::string UIHTMLWidget::getPropertyString( const PropertyDefinition* propertyDef,
-											 const Uint32& state ) const {
+											 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::UserSelect:
+			return std::string( CSSUserSelectHelper::toString( mUserSelect ) );
 		case PropertyId::Display:
 			return CSSDisplayHelper::toString( mDisplay );
 		case PropertyId::BoxSizing:
@@ -761,7 +1217,7 @@ std::string UIHTMLWidget::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::Left:
 			return mLeftEq;
 		case PropertyId::ZIndex:
-			return String::toString( mZIndex );
+			return mZIndex.isAuto ? "auto" : String::toString( mZIndex.value );
 		case PropertyId::AlignmentBaseline:
 			return std::string( CSSBaselineAlignmentHelper::toString( mBaselineAlign ) );
 		case PropertyId::FlexDirection:
@@ -815,7 +1271,7 @@ std::string UIHTMLWidget::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::JustifySelf:
 			return CSSJustifySelfHelper::toString( getJustifySelf() );
 		default:
-			return UILayout::getPropertyString( propertyDef );
+			return UILayout::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
@@ -835,6 +1291,9 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 	};
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::UserSelect:
+			setUserSelect( CSSUserSelectHelper::fromString( attribute.asString() ) );
+			return true;
 		case PropertyId::Display: {
 			setDisplay( CSSDisplayHelper::fromString( attribute.asString() ) );
 			return true;
@@ -859,10 +1318,35 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setVisibility( CSSVisibilityHelper::fromString( attribute.asString() ) );
 			return true;
 		}
-		case PropertyId::Overflow: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-			mOverflowCreatesBlockFormattingContext = val != "visible";
+		case PropertyId::Overflow:
+			mOverflowCreatesBlockFormattingContext =
+				!String::iequals( attribute.getValue(), "visible" );
+			return UILayout::applyProperty( attribute );
+		case PropertyId::MarginTop:
+		case PropertyId::MarginRight:
+		case PropertyId::MarginBottom:
+		case PropertyId::MarginLeft: {
+			Uint8 marginBit = 0;
+			switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+				case PropertyId::MarginTop:
+					marginBit = 1 << 0;
+					break;
+				case PropertyId::MarginRight:
+					marginBit = 1 << 1;
+					break;
+				case PropertyId::MarginBottom:
+					marginBit = 1 << 2;
+					break;
+				case PropertyId::MarginLeft:
+					marginBit = 1 << 3;
+					break;
+				default:
+					break;
+			}
+			if ( StyleSheetLength::isPercentage( attribute.value() ) )
+				mPercentageMargins |= marginBit;
+			else
+				mPercentageMargins &= ~marginBit;
 			return UILayout::applyProperty( attribute );
 		}
 		case PropertyId::Width:
@@ -880,7 +1364,10 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			return applied;
 		}
 		case PropertyId::ZIndex: {
-			setZIndex( attribute.asInt() );
+			if ( String::trim( attribute.asString() ) == "auto" )
+				setZIndexAuto();
+			else
+				setZIndex( attribute.asInt() );
 			return true;
 		}
 		case PropertyId::Top: {
@@ -1108,11 +1595,19 @@ void UIHTMLWidget::updateOutOfFlowPosition() {
 	if ( !cb )
 		return;
 
-	Rectf cbContentOffset = cb->getPixelsContentOffset();
+	// CSS Positioned Layout: a non-inline positioned ancestor establishes the containing block
+	// from its padding box. Insets therefore start at the padding edge, not the content edge.
+	// getPixelsContentOffset() includes both border and padding, so subtract padding to recover the
+	// padding-box origin and exclude only borders from its dimensions.
+	const Rectf cbContentOffset = cb->getPixelsContentOffset();
+	const Rectf cbPadding = cb->getPixelsPadding();
+	const Rectf cbPaddingBoxOffset{
+		cbContentOffset.Left - cbPadding.Left, cbContentOffset.Top - cbPadding.Top,
+		cbContentOffset.Right - cbPadding.Right, cbContentOffset.Bottom - cbPadding.Bottom };
 	Float cbContentWidth =
-		cb->getPixelsSize().getWidth() - cbContentOffset.Left - cbContentOffset.Right;
+		cb->getPixelsSize().getWidth() - cbPaddingBoxOffset.Left - cbPaddingBoxOffset.Right;
 	Float cbContentHeight =
-		cb->getPixelsSize().getHeight() - cbContentOffset.Top - cbContentOffset.Bottom;
+		cb->getPixelsSize().getHeight() - cbPaddingBoxOffset.Top - cbPaddingBoxOffset.Bottom;
 
 	Rectf margin = getLayoutPixelsMargin();
 	Float childWidth = getPixelsSize().getWidth();
@@ -1127,12 +1622,32 @@ void UIHTMLWidget::updateOutOfFlowPosition() {
 	bool useBottom = mBottomEq != "auto";
 	bool useLeft = mLeftEq != "auto";
 	bool useRight = mRightEq != "auto";
+	auto resetAutoMarginUnlessBothInsetsApply = [this]( Float& marginValue, PropertyId property,
+														bool bothInsetsApply ) {
+		if ( bothInsetsApply || !getUIStyle() )
+			return;
+		const auto* marginProperty = getUIStyle()->getProperty( property );
+		if ( marginProperty && marginProperty->value() == "auto" )
+			marginValue = 0;
+	};
+	// CSS Positioned Layout: an auto margin on an axis only absorbs free space when both
+	// opposing insets participate in that axis's constraint equation. Otherwise it is zero.
+	resetAutoMarginUnlessBothInsetsApply( margin.Top, PropertyId::MarginTop, useTop && useBottom );
+	resetAutoMarginUnlessBothInsetsApply( margin.Bottom, PropertyId::MarginBottom,
+										  useTop && useBottom );
+	resetAutoMarginUnlessBothInsetsApply( margin.Left, PropertyId::MarginLeft,
+										  useLeft && useRight );
+	resetAutoMarginUnlessBothInsetsApply( margin.Right, PropertyId::MarginRight,
+										  useLeft && useRight );
 
 	// Per CSS §10.1: for absolutely positioned elements, percentage top/bottom
 	// resolves against the containing block's height. If the containing block
 	// does not have a definite height, the percentage computes to auto to
 	// prevent circular dependencies.
 	auto cbHasDefiniteHeight = [&]() {
+		if ( cb->isType( UI_TYPE_HTML_HTML ) && cb->getUISceneNode() &&
+			 cb->getUISceneNode()->getLayoutViewportPixelsSize().getHeight() > 0 )
+			return true;
 		if ( !cb->isLayout() )
 			return true;
 		auto* cbLayout = cb->asType<UILayout>();
@@ -1161,6 +1676,38 @@ void UIHTMLWidget::updateOutOfFlowPosition() {
 	if ( useBottom )
 		bottom =
 			lengthFromValue( mBottomEq, CSS::PropertyRelativeTarget::ContainingBlockHeight, 0 );
+
+	// CSS 2.2 §10.3.7/§10.6.4: when both insets and the size are definite, auto margins
+	// absorb the remaining space in the positioned constraint equation. Keep this pass-local;
+	// the same box may later participate under different insets or a different containing block.
+	auto solvePositionedAutoMargins = []( Float containingSize, Float startInset, Float endInset,
+										  Float boxSize, Float& startMargin, Float& endMargin,
+										  bool startAuto, bool endAuto ) {
+		if ( !startAuto && !endAuto )
+			return;
+		if ( startAuto )
+			startMargin = 0.f;
+		if ( endAuto )
+			endMargin = 0.f;
+		Float free = eemax( 0.f, containingSize - startInset - endInset - boxSize - startMargin -
+									 endMargin );
+		if ( startAuto && endAuto ) {
+			startMargin = free * 0.5f;
+			endMargin = free - startMargin;
+		} else if ( startAuto ) {
+			startMargin = free;
+		} else {
+			endMargin = free;
+		}
+	};
+	if ( useLeft && useRight && getLayoutWidthPolicy() == SizePolicy::Fixed )
+		solvePositionedAutoMargins( cbContentWidth, left, right, childWidth, margin.Left,
+									margin.Right, hasLayoutMarginLeftAuto(),
+									hasLayoutMarginRightAuto() );
+	if ( useTop && useBottom && getLayoutHeightPolicy() == SizePolicy::Fixed )
+		solvePositionedAutoMargins( cbContentHeight, top, bottom, childHeight, margin.Top,
+									margin.Bottom, hasLayoutMarginTopAuto(),
+									hasLayoutMarginBottomAuto() );
 
 	Float finalWidth = childWidth;
 	Float finalHeight = childHeight;
@@ -1192,7 +1739,7 @@ void UIHTMLWidget::updateOutOfFlowPosition() {
 	top += margin.Top;
 	left += margin.Left;
 
-	Vector2f cbPos( cbContentOffset.Left, cbContentOffset.Top );
+	Vector2f cbPos( cbPaddingBoxOffset.Left, cbPaddingBoxOffset.Top );
 	cbPos.x += left;
 	cbPos.y += top;
 
@@ -1300,7 +1847,37 @@ void UIHTMLWidget::updateScrollListeners() {
 
 void UIHTMLWidget::onParentChange() {
 	UILayout::onParentChange();
+	// Promotion is derived from ancestry. Reparenting can detach this subtree before its former
+	// stacking scope gets a chance to rebuild, so clear all non-owning scope metadata here.
+	mHTMLPaintOwner = nullptr;
+	if ( mHTMLPaintAncestors )
+		mHTMLPaintAncestors->clear();
+	mHasPromotedChild = false;
+	resetPromotedPaintState();
+	invalidatePaintOrder();
 	updateScrollListeners();
+}
+
+void UIHTMLWidget::onParentSizeChange( const Vector2f& sizeChange ) {
+	UILayout::onParentSizeChange( sizeChange );
+
+	if ( mPercentageMargins == 0 || !getUIStyle() )
+		return;
+
+	static constexpr PropertyId MarginProperties[] = {
+		PropertyId::MarginTop,
+		PropertyId::MarginRight,
+		PropertyId::MarginBottom,
+		PropertyId::MarginLeft,
+	};
+	for ( Uint32 i = 0; i < 4; ++i ) {
+		if ( !( mPercentageMargins & ( 1 << i ) ) )
+			continue;
+		PropertyId propertyId = MarginProperties[i];
+		const StyleSheetProperty* property = getUIStyle()->getProperty( propertyId );
+		if ( property )
+			applyProperty( *property );
+	}
 }
 
 void UIHTMLWidget::onPositionChange() {

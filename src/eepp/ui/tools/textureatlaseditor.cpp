@@ -384,7 +384,7 @@ void TextureAtlasEditor::fillTextureRegionList() {
 		mTextureRegionGrid->closeAllChildren();
 
 		for ( auto& it : res ) {
-			TextureRegion* tr = it.second;
+			TextureRegion* tr = it.second.get();
 
 			UITextureRegion::New()
 				->setTextureRegion( tr )
@@ -400,11 +400,13 @@ void TextureAtlasEditor::fillTextureRegionList() {
 
 void TextureAtlasEditor::onTextureRegionChange( const Event* Event ) {
 	if ( NULL != mTextureAtlasLoader && NULL != mTextureAtlasLoader->getTextureAtlas() ) {
-		mCurTextureRegion = Event->getNode()->isType( UI_TYPE_TEXTUREREGION )
-								? mTextureAtlasLoader->getTextureAtlas()->getByName(
-									  static_cast<UIWidget*>( Event->getNode() )->getTooltipText() )
-								: mTextureAtlasLoader->getTextureAtlas()->getByName(
-									  mTextureRegionList->getItemSelectedText() );
+		mCurTextureRegion =
+			( Event->getNode()->isType( UI_TYPE_TEXTUREREGION )
+				  ? mTextureAtlasLoader->getTextureAtlas()->getByName(
+						static_cast<UIWidget*>( Event->getNode() )->getTooltipText() )
+				  : mTextureAtlasLoader->getTextureAtlas()->getByName(
+						mTextureRegionList->getItemSelectedText() ) )
+				.get();
 
 		if ( Event->getNode()->isType( UI_TYPE_TEXTUREREGION ) )
 			mTextureRegionList->setSelected(
@@ -459,8 +461,6 @@ void TextureAtlasEditor::saveTextureAtlas( const Event* ) {
 }
 
 void TextureAtlasEditor::onTextureAtlasClose( const Event* ) {
-	if ( NULL != mTextureAtlasLoader && NULL != mTextureAtlasLoader->getTextureAtlas() )
-		TextureAtlasManager::instance()->remove( mTextureAtlasLoader->getTextureAtlas() );
 	eeSAFE_DELETE( mTextureAtlasLoader );
 	mTextureRegionList->clear();
 	mTextureRegionGrid->closeAllChildren();

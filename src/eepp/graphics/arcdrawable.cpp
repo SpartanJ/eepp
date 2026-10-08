@@ -31,6 +31,18 @@ ArcDrawable::ArcDrawable( const Float& radius, Uint32 segmentsCount, const Float
 	mSegmentsCount = mSegmentsCount > 360 ? 360 : mSegmentsCount;
 }
 
+DrawablePtr ArcDrawable::clone() const {
+	auto instance = makeResource<ArcDrawable>( mRadius, mSegmentsCount, mArcAngle, mArcStartAngle );
+	instance->mOffset = mOffset;
+	instance->mFillMode = mFillMode;
+	instance->mBlendMode = mBlendMode;
+	instance->mLineWidth = mLineWidth;
+	instance->mSmooth = mSmooth;
+	instance->mColor = mColor;
+	instance->mPosition = mPosition;
+	return instance;
+}
+
 Sizef ArcDrawable::getSize() {
 	return Sizef( mRadius * 2, mRadius * 2 );
 }

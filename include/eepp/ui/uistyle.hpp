@@ -5,11 +5,12 @@
 #include <eepp/math/ease.hpp>
 #include <eepp/ui/css/animationdefinition.hpp>
 #include <eepp/ui/css/elementdefinition.hpp>
+#include <eepp/ui/css/propertyidset.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
 #include <eepp/ui/uistate.hpp>
-#include <optional>
+#include <memory>
 
 namespace EE { namespace Graphics {
 class Font;
@@ -28,6 +29,11 @@ class EE_API UIStyle : public UIState {
   public:
 	static UIStyle* New( UIWidget* widget );
 
+	UIStyle( const UIStyle& ) = delete;
+	UIStyle& operator=( const UIStyle& ) = delete;
+	UIStyle( UIStyle&& ) = delete;
+	UIStyle& operator=( UIStyle&& ) = delete;
+
 	virtual ~UIStyle();
 
 	bool stateExists( const Uint32& state ) const;
@@ -36,7 +42,8 @@ class EE_API UIStyle : public UIState {
 
 	void onStateChange();
 
-	const CSS::StyleSheetProperty* getStatelessStyleSheetProperty( const Uint32& propertyId ) const;
+	const CSS::StyleSheetProperty*
+	getStatelessStyleSheetProperty( const CSS::PropertyId& propertyId ) const;
 
 	void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
 
@@ -56,6 +63,9 @@ class EE_API UIStyle : public UIState {
 
 	CSS::StyleSheetVariable getVariable( const std::string& variable );
 
+	/** Resolve a color variable without copying its stored text. */
+	Color getColorVariable( const std::string& variable, Color fallback );
+
 	bool getForceReapplyProperties() const;
 
 	void setForceReapplyProperties( bool forceReapplyProperties );
@@ -74,7 +84,7 @@ class EE_API UIStyle : public UIState {
 
 	UnorderedSet<UIWidget*>& getStructurallyVolatileChildren();
 
-	const CSS::StyleSheetProperty* getProperty( const CSS::PropertyId& id );
+	const CSS::StyleSheetProperty* getProperty( const CSS::PropertyId& id ) const;
 
 	bool hasProperty( const CSS::PropertyId& propertyId ) const;
 
@@ -93,19 +103,59 @@ class EE_API UIStyle : public UIState {
 
 	void applyVarValues( CSS::StyleSheetProperty* style );
 
+	/** @return Widgets whose styles are refreshed when this widget changes state. */
+	const UnorderedSet<UIWidget*>& getRelatedWidgets() const { return mRelatedWidgets; }
+
   protected:
+	class EE_API PropertyResolution {
+	  public:
+		PropertyResolution( const PropertyResolution& ) = delete;
+		PropertyResolution& operator=( const PropertyResolution& ) = delete;
+		PropertyResolution( PropertyResolution&& other ) noexcept;
+		PropertyResolution& operator=( PropertyResolution&& ) = delete;
+		~PropertyResolution();
+
+		const CSS::StyleSheetProperty* get() const { return mProperty; }
+
+	  private:
+		friend class UIStyle;
+		static constexpr Uint32 NoSlot = static_cast<Uint32>( -1 );
+
+		PropertyResolution( UIStyle* owner, const CSS::StyleSheetProperty* property,
+							Uint32 slot = NoSlot ) :
+			mOwner( owner ), mProperty( property ), mSlot( slot ) {}
+
+		void release();
+
+		UIStyle* mOwner;
+		const CSS::StyleSheetProperty* mProperty;
+		Uint32 mSlot;
+	};
+
 	UIWidget* mWidget;
 	std::shared_ptr<CSS::StyleSheetStyle> mElementStyle;
 	std::shared_ptr<CSS::ElementDefinition> mGlobalDefinition;
 	std::shared_ptr<CSS::ElementDefinition> mDefinition;
-	CSS::TransitionsMap mTransitions;
 	CSS::AnimationsMap mAnimations;
 	UnorderedSet<UIWidget*> mRelatedWidgets;
 	UnorderedSet<UIWidget*> mSubscribedWidgets;
 	UnorderedSet<UIWidget*> mStructurallyVolatileChildren;
 	Uint32 mStateDepthCounter{ 0 };
+	Uint32 mPropertyResolutionDepth{ 0 };
 	Uint64 mLoadedVersion{ 0 };
 	const CSS::StyleSheet* mLoadedStyleSheet{ nullptr };
+	/** Lazily allocated for styles that use substitutions. The common, non-reentrant resolution
+	 * needs no container allocation; nested slots are retained for later reuse. */
+	std::unique_ptr<CSS::StyleSheetProperty> mPropertyResolutionSlot;
+	SmallVector<std::unique_ptr<CSS::StyleSheetProperty>, 2> mNestedPropertyResolutionSlots;
+	struct PropertyFallback {
+		CSS::PropertyId propertyId;
+		Uint32 index;
+		const CSS::PropertyDefinition* definition;
+		std::string nativeValue;
+		bool inherited;
+	};
+	SmallVector<PropertyFallback, 0> mPropertyFallbacks;
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
@@ -117,7 +167,9 @@ class EE_API UIStyle : public UIState {
 
 	void applyLightDarkValue( std::string& newValue );
 
-	void setVariableFromValue( CSS::StyleSheetProperty* property, const std::string& value );
+	const CSS::StyleSheetVariable* getVariableRef( const std::string& variable );
+
+	void setVariableFromValue( CSS::StyleSheetProperty* property );
 
 	void updateState();
 
@@ -134,7 +186,18 @@ class EE_API UIStyle : public UIState {
 	void removeRelatedWidgets();
 
 	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
-								  std::shared_ptr<CSS::ElementDefinition> prevDefinition );
+								  std::shared_ptr<CSS::ElementDefinition> prevDefinition,
+								  bool captureFallback = true );
+
+	void capturePropertyFallback( const CSS::StyleSheetProperty& property );
+
+	bool isTransientProperty( CSS::PropertyId propertyId ) const;
+
+	bool restorePropertyFallbacks( CSS::PropertyId propertyId,
+								   std::shared_ptr<CSS::ElementDefinition> prevDefinition,
+								   Uint32 firstIndex = 0 );
+
+	void clearPropertyFallbacks( CSS::PropertyId propertyId );
 
 	void updateAnimationsPlayState();
 
@@ -147,11 +210,11 @@ class EE_API UIStyle : public UIState {
 	void removeAnimation( const CSS::PropertyDefinition* propertyDefinition,
 						  const Uint32& propertyIndex );
 
-	CSS::StyleSheetProperty* getLocalProperty( Uint32 propId );
+	CSS::StyleSheetProperty* getLocalProperty( CSS::PropertyId propId );
 
-	CSS::StyleSheetProperty*
-	getResolvedLocalProperty( Uint32 propId,
-							  std::optional<CSS::StyleSheetProperty>& resolvedProperty );
+	PropertyResolution resolveProperty( const CSS::StyleSheetProperty* property );
+
+	PropertyResolution getResolvedLocalProperty( CSS::PropertyId propId );
 
 	void addStructurallyVolatileWidgetFromParent();
 

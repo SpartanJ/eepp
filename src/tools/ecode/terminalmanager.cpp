@@ -131,12 +131,18 @@ void TerminalManager::loadTerminalColorSchemes() {
 		mTerminalCurrentColorScheme = mTerminalColorSchemes.begin()->first;
 }
 
-std::map<KeyBindings::Shortcut, std::string> TerminalManager::getTerminalKeybindings() {
+KeyBindings::ShortcutMap TerminalManager::getTerminalKeybindings() {
 	return {
+		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "terminal-find" },
+		{ { KEY_G, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "terminal-find-next" },
+		{ { KEY_G, KeyMod::getDefaultModifier() | KEYMOD_SHIFT | KEYMOD_ALT },
+		  "terminal-find-previous" },
 		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "create-new-terminal" },
-		{ { KEY_E, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		{ { KEY_E,
+			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
 		  UITerminal::getExclusiveModeToggleCommandName() },
-		{ { KEY_S, KEYMOD_LALT | KeyMod::getDefaultModifier() }, "terminal-rename" },
+		{ { KEY_S, KeyMod::getDefaultSecondaryModifier() | KeyMod::getDefaultModifier() },
+		  "terminal-rename" },
 	};
 }
 
@@ -170,7 +176,7 @@ void TerminalManager::setUseFrameBuffer( bool useFrameBuffer ) {
 
 void TerminalManager::configureTerminalShell() {
 	static const auto layout( R"xml(
-		<window layout_width="300dp" layout_height="150dp" window-flags="default|shadow" window-title='@string(shell_configuration, "Shell Configuration")'>
+		<window layout_width="300dp" layout_height="150dp" window-flags="default|shadow|modal" window-title='@string(shell_configuration, "Shell Configuration")'>
 		<vbox lw="mp" lh="mp" padding="4dp">
 			<vbox lw="mp" lh="0" lw8="1">
 				<TextView text='@string(configure_default_shell, "Configure default shell")' font-size="14dp" margin-bottom="8dp" />
@@ -265,7 +271,7 @@ void TerminalManager::configureTerminalScrollback() {
 
 void TerminalManager::configureTerminalWorkingDir() {
 	static const auto layout( R"xml(
-	<window layout_width="450dp" layout_height="154dp" window-flags="default|shadow"
+	<window layout_width="450dp" layout_height="154dp" window-flags="default|shadow|modal"
 		window-title='@string(terminal_working_dir_configuration, "Terminal Default Working Directory Configuration")'>
 		<vbox lw="mp" lh="wrap_content" padding="4dp">
 			<TextView text='@string(configure_terminal_default_working_dir, "Configure Terminal default working directory:")' font-size="14dp" margin-bottom="8dp" />
@@ -656,7 +662,7 @@ UITerminal* TerminalManager::createNewTerminal(
 	} );
 	term->setTitle( title );
 	auto csIt = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
-	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
+	term->getTerm()->setAllowMemoryTrimming( true );
 	term->getTerm()->setKeepAlive( !mApp->getConfig().term.closeTerminalTabOnExit );
 	term->getTerm()->pushEventCallback( [this, term]( const TerminalDisplay::Event& event ) {
 		if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
@@ -739,7 +745,6 @@ void TerminalManager::setKeybindings( UITerminal* term ) {
 	term->getKeyBindings().reset();
 	term->addKeyBinds( mApp->getRealLocalKeybindings() );
 	term->addKeyBinds( mApp->getRealSplitterKeybindings() );
-	term->addKeyBinds( mApp->getRealTerminalKeybindings() );
 	// Remove the keybinds that are problematic for a terminal
 	term->getKeyBindings().removeCommandsKeybind(
 		{ "open-file", "download-file-web", "open-folder", "debug-draw-highlight-toggle",
@@ -747,6 +752,9 @@ void TerminalManager::setKeybindings( UITerminal* term ) {
 		  "open-locatebar", "open-command-palette", "open-global-search", "menu-toggle",
 		  "console-toggle", "go-to-line", "editor-go-back", "editor-go-forward",
 		  "project-run-executable", "project-build-and-run" } );
+	// Terminal bindings must be installed last so they can intentionally reuse shortcuts removed
+	// from the editor/global context (for example mod+shift+f).
+	term->addKeyBinds( mApp->getRealTerminalKeybindings() );
 }
 
 } // namespace ecode

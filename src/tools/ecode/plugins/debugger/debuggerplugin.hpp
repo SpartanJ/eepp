@@ -6,6 +6,7 @@
 #include "config.hpp"
 #include "debuggerclientlistener.hpp"
 #include "models/breakpointsmodel.hpp"
+#include <eepp/scene/mainthreadlifetime.hpp>
 
 using namespace EE::UI::Models;
 using namespace EE::UI;
@@ -67,6 +68,12 @@ class DebuggerPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
+	bool hasSettingsPage() const override { return true; }
+
+	void registerSettings( SettingsPage& page ) override;
+
+	void onSaveState( IniFile* state ) override;
+
 	void onSaveProject( const std::string& projectFolder, const std::string& projectStatePath,
 						bool rewriteStateOnlyIfNeeded ) override;
 
@@ -84,12 +91,14 @@ class DebuggerPlugin : public PluginBase {
 
   protected:
 	friend class DebuggerClientListener;
+	MainThreadLifetime<DebuggerPlugin> mLifetime;
 
 	bool mInitialized{ false };
 	bool mFetchRegisters{ false };
 	bool mFetchGlobals{ false };
 	bool mChangingBreakpoint{ false };
 	bool mSilence{ true };
+	bool mLoadVSCodeLaunchConfig{ true };
 	bool mBrokenUserConfigFile{ false };
 	std::string mProjectPath;
 	std::string mConfigFileError;
@@ -138,6 +147,8 @@ class DebuggerPlugin : public PluginBase {
 	std::string mCurDebugger;
 	std::string mCurConfiguration;
 	std::vector<std::string> mRegisteredCommands;
+	UIIcon* mBreakpointIcon{ nullptr };
+	UIIcon* mStackFrameIcon{ nullptr };
 
 	class DebuggerPluginClient : public TextDocument::Client {
 	  public:
@@ -145,16 +156,27 @@ class DebuggerPlugin : public PluginBase {
 			mDoc( doc ), mParent( parent ) {}
 
 		virtual void onDocumentTextChanged( const DocumentContentChange& ) {}
+
 		virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& ) {}
+
 		virtual void onDocumentCursorChange( const TextPosition& ) {}
+
 		virtual void onDocumentSelectionChange( const TextRange& ) {}
+
 		virtual void onDocumentLineCountChange( const size_t&, const size_t& ) {}
+
 		virtual void onDocumentLineChanged( const Int64& ) {}
+
 		virtual void onDocumentSaved( TextDocument* ) {}
+
 		virtual void onDocumentClosed( TextDocument* doc ) { onDocumentReset( doc ); }
+
 		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) {}
+
 		virtual void onDocumentMoved( TextDocument* ) {}
+
 		virtual void onDocumentReset( TextDocument* ) {}
+
 		Client::Type getTextDocumentClientType() { return TextDocument::Client::Auxiliary; }
 
 		virtual void onDocumentLineMove( const Int64& fromLine, const Int64& toLine,
@@ -287,6 +309,8 @@ class DebuggerPlugin : public PluginBase {
 	bool resume( int threadId, bool singleThread = false );
 
 	virtual void onUnregisterDocument( TextDocument* doc ) override;
+
+	void unregisterEditors() override;
 
 	void onDocumentLineMove( TextDocument* doc, const Int64& fromLine, const Int64& toLine,
 							 const Int64& numLines );

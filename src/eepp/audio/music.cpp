@@ -5,7 +5,7 @@
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 
 namespace EE { namespace Audio {
 
@@ -25,10 +25,10 @@ bool Music::openFromFile( const std::string& filename ) {
 	stop();
 
 	if ( !FileSystem::fileExists( filename ) ) {
-		if ( PackManager::instance()->isFallbackToPacksActive() ) {
+		if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 			std::string tPath( filename );
 
-			Pack* tPack = PackManager::instance()->exists( tPath );
+			Pack* tPack = PackRegistry::instance()->exists( tPath );
 
 			if ( NULL != tPack ) {
 				return openFromPack( tPack, tPath );

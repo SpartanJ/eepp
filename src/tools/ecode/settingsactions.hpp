@@ -2,6 +2,7 @@
 #define SETTINGSACTIONS_HPP
 
 #include <eepp/ee.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 
 namespace ecode {
 
@@ -9,7 +10,7 @@ class App;
 
 class SettingsActions {
   public:
-	explicit SettingsActions( App* app ) : mApp( app ) {}
+	explicit SettingsActions( App* app );
 
 	void checkForUpdates( bool fromStartup = false );
 
@@ -17,33 +18,23 @@ class SettingsActions {
 
 	void ecodeSource();
 
-	void setLineBreakingColumn();
+	void setUIFontSize( const StyleSheetLength& size );
 
-	void setLineSpacing();
+	void setEditorFontSize( const StyleSheetLength& size );
 
-	void setCursorBlinkingTime();
+	void setTerminalFontSize( const StyleSheetLength& size );
 
-	void setIndentTabCharacter();
+	void setUIPanelFontSize( const StyleSheetLength& size );
 
-	void setFoldRefreshFreq();
-
-	void setUIScaleFactor();
-
-	void setUIFontSize();
-
-	void setEditorFontSize();
-
-	void setTerminalFontSize();
-
-	void setUIPanelFontSize();
+	void setScreenshotSavePath();
 
   private:
 	App* mApp{ nullptr };
+	MainThreadLifetime<SettingsActions> mLifetime;
 
 	String i18n( const std::string& key, const String& def );
 
 	void checkForUpdatesResponse( Http::Response&& response, bool fromStartup );
-
 };
 
 } // namespace ecode

@@ -5,15 +5,15 @@
 
 namespace EE { namespace Graphics {
 
-GlyphDrawable* GlyphDrawable::New( Texture* texture, const Rect& srcRect, const Sizef& destSize,
+GlyphDrawable* GlyphDrawable::New( TexturePtr texture, const Rect& srcRect, const Sizef& destSize,
 								   const std::string& resourceName ) {
-	return eeNew( GlyphDrawable, ( texture, srcRect, destSize, resourceName ) );
+	return eeNew( GlyphDrawable, ( std::move( texture ), srcRect, destSize, resourceName ) );
 }
 
-GlyphDrawable::GlyphDrawable( Texture* texture, const Rect& srcRect, const Sizef& destSize,
+GlyphDrawable::GlyphDrawable( TexturePtr texture, const Rect& srcRect, const Sizef& destSize,
 							  const std::string& resourceName ) :
 	DrawableResource( Drawable::GLYPH, resourceName ),
-	mTexture( texture ),
+	mTexture( std::move( texture ) ),
 	mSrcRect( srcRect.asFloat() ),
 	mDestSize( destSize ),
 	mAdvance( destSize.getWidth() ) {
@@ -36,6 +36,7 @@ void GlyphDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	BatchRenderer* BR = GlobalBatchRenderer::instance();
 	BR->setTexture( mTexture, mTexture->getCoordinateType() );
 	BR->setBlendMode( BlendMode::Alpha() );
+	BR->setSubpixelText( mGlyphRenderMode == GlyphRenderMode::Subpixel );
 	BR->quadsBegin();
 	BR->quadsSetColor( mColor );
 	BR->quadsSetTexCoord( mSrcRect.Left, mSrcRect.Top, mSrcRect.Left + mSrcRect.Right,
@@ -80,16 +81,21 @@ bool GlyphDrawable::isStateful() {
 	return false;
 }
 
-Texture* GlyphDrawable::getTexture() {
+DrawablePtr GlyphDrawable::clone() const {
+	auto instance = makeResource<GlyphDrawable>( mTexture, mSrcRect.asInt(), mDestSize, mName );
+	instance->setPixelDensity( mPixelDensity );
+	instance->setGlyphOffset( mGlyphOffset );
+	instance->setDrawMode( mDrawMode );
+	instance->setIsItalic( mIsItalic );
+	instance->setAdvance( mAdvance );
+	instance->setGlyphRenderMode( mGlyphRenderMode );
+	instance->setColor( mColor );
+	instance->setPosition( mPosition );
+	return instance;
+}
+
+const TexturePtr& GlyphDrawable::getTexture() const {
 	return mTexture;
-}
-
-const Rectf& GlyphDrawable::getSrcRect() const {
-	return mSrcRect;
-}
-
-const Sizef& GlyphDrawable::getDestSize() const {
-	return mDestSize;
 }
 
 Sizef GlyphDrawable::getSize() {
@@ -104,16 +110,8 @@ Sizef GlyphDrawable::getPixelsSize() {
 	return Sizef( mSrcRect.Right, mSrcRect.Bottom );
 }
 
-const Float& GlyphDrawable::getPixelDensity() const {
-	return mPixelDensity;
-}
-
 void GlyphDrawable::setPixelDensity( const Float& pixelDensity ) {
 	mPixelDensity = pixelDensity;
-}
-
-const Vector2f& GlyphDrawable::getGlyphOffset() const {
-	return mGlyphOffset;
 }
 
 void GlyphDrawable::setGlyphOffset( const Vector2f& glyphOffset ) {
@@ -132,12 +130,16 @@ void GlyphDrawable::setIsItalic( bool isItalic ) {
 	mIsItalic = isItalic;
 }
 
-const Float& GlyphDrawable::getAdvance() const {
-	return mAdvance;
-}
-
 void GlyphDrawable::setAdvance( Float advance ) {
 	mAdvance = advance;
+}
+
+GlyphRenderMode GlyphDrawable::getGlyphRenderMode() const {
+	return mGlyphRenderMode;
+}
+
+void GlyphDrawable::setGlyphRenderMode( GlyphRenderMode renderMode ) {
+	mGlyphRenderMode = renderMode;
 }
 
 }} // namespace EE::Graphics

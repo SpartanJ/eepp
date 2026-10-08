@@ -23,59 +23,63 @@ Compression::Status Compression::compress( IOStream& dst, IOStream& src, Compres
 										   const Config& config ) {
 	switch ( mode ) {
 		case MODE_BROTLI: {
+			// clang-format off
 /*
 			BrotliEncoderState* state = BrotliEncoderCreateInstance( nullptr, nullptr, nullptr );
 			if ( !state )
 				return Status::MEM_ERROR;
+			auto finish = [&state]( Status status ) {
+				BrotliEncoderDestroyInstance( state );
+				return status;
+			};
 
 			int quality =
 				config.brotli.quality == -1 ? BROTLI_DEFAULT_QUALITY : config.brotli.quality;
 			int windowBits =
 				config.brotli.windowBits == -1 ? BROTLI_DEFAULT_WINDOW : config.brotli.windowBits;
 
-			BrotliEncoderSetParameter( state, BROTLI_PARAM_QUALITY, quality );
-			BrotliEncoderSetParameter( state, BROTLI_PARAM_LGWIN, windowBits );
+			if ( !BrotliEncoderSetParameter( state, BROTLI_PARAM_QUALITY,
+										 static_cast<uint32_t>( quality ) ) ||
+				 !BrotliEncoderSetParameter( state, BROTLI_PARAM_LGWIN,
+										 static_cast<uint32_t>( windowBits ) ) )
+				return finish( Status::STREAM_ERROR );
 
 			src.seek( 0 );
 
 			char in[DEFLATE_CHUNK_SIZE];
 			char out[DEFLATE_CHUNK_SIZE];
 
-			bool isEof = false;
-
-			while ( !isEof ) {
+			bool isEof;
+			do {
 				size_t bytesRead = src.read( in, DEFLATE_CHUNK_SIZE );
 				isEof = src.tell() == src.getSize();
+				if ( bytesRead == 0 && !isEof )
+					return finish( Status::ERRNO );
 
 				const uint8_t* next_in = reinterpret_cast<const uint8_t*>( in );
 				size_t avail_in = bytesRead;
+				const BrotliEncoderOperation op =
+					isEof ? BROTLI_OPERATION_FINISH : BROTLI_OPERATION_PROCESS;
 
-				while ( avail_in > 0 || ( isEof && !BrotliEncoderIsFinished( state ) ) ) {
+				do {
 					uint8_t* next_out = reinterpret_cast<uint8_t*>( out );
 					size_t avail_out = DEFLATE_CHUNK_SIZE;
 
-					BrotliEncoderOperation op =
-						isEof ? BROTLI_OPERATION_FINISH : BROTLI_OPERATION_PROCESS;
-
 					if ( !BrotliEncoderCompressStream( state, op, &avail_in, &next_in, &avail_out,
-													   &next_out, nullptr ) ) {
-						BrotliEncoderDestroyInstance( state );
-						return Status::STREAM_ERROR;
+											   &next_out, nullptr ) ) {
+						return finish( Status::STREAM_ERROR );
 					}
 
 					size_t have = DEFLATE_CHUNK_SIZE - avail_out;
-					if ( have > 0 ) {
-						if ( dst.write( out, have ) != (ios_size)have ) {
-							BrotliEncoderDestroyInstance( state );
-							return Status::ERRNO;
-						}
-					}
-				}
-			}
+					if ( have > 0 && dst.write( out, have ) != static_cast<ios_size>( have ) )
+						return finish( Status::ERRNO );
+				} while ( avail_in > 0 || BrotliEncoderHasMoreOutput( state ) ||
+						  ( isEof && !BrotliEncoderIsFinished( state ) ) );
+			} while ( !isEof );
 
-			BrotliEncoderDestroyInstance( state );
-			return Status::OK;
+			return finish( Status::OK );
 */
+			// clang-format on
 			return Status::VERSION_ERROR;
 		}
 		case MODE_DEFLATE:
@@ -91,15 +95,18 @@ Compression::Status Compression::compress( IOStream& dst, IOStream& src, Compres
 			ret = deflateInit2( &strm, level, Z_DEFLATED, windowBits, 8, Z_DEFAULT_STRATEGY );
 			if ( ret != Z_OK )
 				return (Status)ret;
+			auto finish = [&strm]( Status status ) {
+				const int endStatus = deflateEnd( &strm );
+				return status == Status::OK && endStatus != Z_OK ? static_cast<Status>( endStatus )
+																 : status;
+			};
 
 			src.seek( 0 );
 
 			do {
 				strm.avail_in = src.read( in, DEFLATE_CHUNK_SIZE );
-				if ( strm.avail_in == 0 ) {
-					deflateEnd( &strm );
-					return Status::ERRNO;
-				}
+				if ( strm.avail_in == 0 )
+					return finish( Status::ERRNO );
 
 				flush = src.tell() == src.getSize() ? Z_FINISH : Z_NO_FLUSH;
 				strm.next_in = (unsigned char*)in;
@@ -111,20 +118,18 @@ Compression::Status Compression::compress( IOStream& dst, IOStream& src, Compres
 					ret = deflate( &strm, flush );
 
 					if ( ret == Z_STREAM_ERROR )
-						return Status::STREAM_ERROR;
+						return finish( Status::STREAM_ERROR );
 
 					have = DEFLATE_CHUNK_SIZE - strm.avail_out;
 
-					if ( dst.write( out, have ) != have ) {
-						deflateEnd( &strm );
-
-						return Status::ERRNO;
-					}
+					if ( dst.write( out, have ) != have )
+						return finish( Status::ERRNO );
 				} while ( strm.avail_out == 0 );
 
 				if ( strm.avail_in != 0 )
-					return Status::DATA_ERROR;
+					return finish( Status::DATA_ERROR );
 			} while ( flush != Z_FINISH );
+			return finish( Status::OK );
 		}
 	}
 
@@ -134,7 +139,8 @@ Compression::Status Compression::compress( IOStream& dst, IOStream& src, Compres
 int Compression::getMaxCompressedBufferSize( Uint64 srcSize, Mode mode, const Config& ) {
 	switch ( mode ) {
 		case MODE_BROTLI: {
-			// return BrotliEncoderMaxCompressedSize( srcSize );
+			// Once the encoder is vendored, return BrotliEncoderMaxCompressedSize( srcSize ) here,
+			// rejecting values that do not fit this API's int return type.
 			break;
 		}
 		case MODE_DEFLATE:

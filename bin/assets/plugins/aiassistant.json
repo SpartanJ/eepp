@@ -5,6 +5,24 @@
       "api_url": "https://api.anthropic.com/v1/messages",
       "models": [
         {
+          "display_name": "Claude Opus 5",
+          "name": "claude-opus-5",
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["low", "medium", "high", "xhigh", "max"] }]
+        },
+        {
+          "display_name": "Claude Sonnet 5",
+          "name": "claude-sonnet-5",
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["low", "medium", "high", "xhigh", "max"] }]
+        },
+        {
+          "display_name": "Claude Opus 4.8",
+          "name": "claude-opus-4-8",
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["low", "medium", "high", "xhigh", "max"] }]
+        },
+        {
           "display_name": "Claude Opus 4.6",
           "name": "claude-opus-4-6"
         },
@@ -65,6 +83,21 @@
       "api_url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       "models": [
         {
+          "name": "gemini-3.7-flash",
+          "display_name": "Gemini 3.7 Flash",
+          "max_tokens": 1000000,
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["low", "medium", "high"] }]
+        },
+        {
+          "name": "gemini-3.5-flash-lite",
+          "display_name": "Gemini 3.5 Flash Lite",
+          "max_tokens": 1000000,
+          "cheapest": true,
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["minimal", "low", "medium", "high"] }]
+        },
+        {
           "name": "gemini-2.5-flash-lite",
           "display_name": "Gemini 2.5 Flash Lite",
           "max_tokens": 1000000,
@@ -107,6 +140,21 @@
       "api_url": "https://api.mistral.ai/v1/chat/completions",
       "models": [
         {
+          "display_name": "Mistral Medium 3.5",
+          "max_tokens": 131000,
+          "name": "mistral-medium-latest",
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["none", "high"] }]
+        },
+        {
+          "display_name": "Mistral Small 4",
+          "max_tokens": 131000,
+          "name": "mistral-small-latest",
+          "cheapest": true,
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["none", "high"] }]
+        },
+        {
           "display_name": "codestral-latest",
           "max_tokens": 256000,
           "name": "codestral-latest"
@@ -144,6 +192,25 @@
       "api_url": "https://api.openai.com/v1/chat/completions",
       "display_name": "OpenAI",
       "models": [
+        {
+          "display_name": "GPT-5.6 Terra",
+          "name": "gpt-5.6-terra",
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["none", "low", "medium", "high", "xhigh", "max"] }]
+        },
+        {
+          "display_name": "GPT-5.6 Sol",
+          "name": "gpt-5.6-sol",
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["none", "low", "medium", "high", "xhigh", "max"] }]
+        },
+        {
+          "display_name": "GPT-5.6 Luna",
+          "name": "gpt-5.6-luna",
+          "cheapest": true,
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["none", "low", "medium", "high", "xhigh", "max"] }]
+        },
         {
           "max_tokens": 128000,
           "name": "gpt-4o"
@@ -238,6 +305,18 @@
       "api_url": "https://api.x.ai/v1/chat/completions",
       "display_name": "xAI",
       "models": [
+        {
+          "name": "grok-4.6",
+          "display_name": "Grok 4.6",
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["low", "medium", "high", "xhigh"] }]
+        },
+        {
+          "name": "grok-4.5",
+          "display_name": "Grok 4.5",
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["low", "medium", "high"] }]
+        },
         {
           "name": "grok-4-1-fast-non-reasoning-latest",
           "cheapest": true
@@ -454,7 +533,7 @@
         }
       ]
     },
-    "moonshot": {
+    "moonshotai": {
       "api_url": "https://api.moonshot.ai/v1/chat/completions",
       "display_name": "Moonshot",
       "models": [
@@ -497,7 +576,7 @@
       "fetch_models_url": "http://localhost:8080/api/tags",
       "open_api": true
     },
-    "together": {
+    "togetherai": {
       "api_url": "https://api.together.xyz/v1/chat/completions",
       "display_name": "Together AI",
       "models": [
@@ -532,7 +611,7 @@
         }
       ]
     },
-    "xiaomimimo": {
+    "xiaomi": {
       "api_url": "https://api.xiaomimimo.com/v1/chat/completions",
       "display_name": "Xiaomi MiMo",
       "models": [

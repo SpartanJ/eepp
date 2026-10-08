@@ -1,10 +1,15 @@
 #include "stackmodel.hpp"
+#include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
 namespace ecode {
 
-StackModel::StackModel( StackTraceInfo&& stack, UISceneNode* sceneNode ) :
-	mStack( std::move( stack ) ), mSceneNode( sceneNode ) {}
+StackModel::StackModel( StackTraceInfo&& stack, UISceneNode* sceneNode, std::string projectPath ) :
+	mStack( std::move( stack ) ),
+	mProjectPath( std::move( projectPath ) ),
+	mSceneNode( sceneNode ) {
+	FileSystem::dirAddSlashAtEnd( mProjectPath );
+}
 
 size_t StackModel::rowCount( const ModelIndex& ) const {
 	Lock l( mResourceLock );
@@ -45,7 +50,8 @@ Variant StackModel::data( const ModelIndex& modelIndex, ModelRole role ) const {
 						   : Variant();
 			case Columns::SourcePath:
 				return mStack.stackFrames[modelIndex.row()].source
-						   ? Variant( mStack.stackFrames[modelIndex.row()].source->path )
+						   ? Variant( displaySourcePath(
+								 mStack.stackFrames[modelIndex.row()].source->path ) )
 						   : Variant();
 			case Columns::Line:
 				return Variant( String::toString( mStack.stackFrames[modelIndex.row()].line ) );
@@ -88,6 +94,25 @@ void StackModel::setCurrentScopeId( int scope ) {
 		mCurrentScopeId = scope;
 		invalidate( Model::UpdateFlag::DontInvalidateIndexes );
 	}
+}
+
+void StackModel::setProjectPath( const std::string& projectPath ) {
+	std::string normalizedProjectPath( projectPath );
+	FileSystem::dirAddSlashAtEnd( normalizedProjectPath );
+	{
+		Lock l( mResourceLock );
+		if ( mProjectPath == normalizedProjectPath )
+			return;
+		mProjectPath = std::move( normalizedProjectPath );
+	}
+	invalidate();
+}
+
+const char* StackModel::displaySourcePath( const std::string& sourcePath ) const {
+	if ( mProjectPath.empty() || sourcePath.size() < mProjectPath.size() ||
+		 0 != sourcePath.compare( 0, mProjectPath.size(), mProjectPath ) )
+		return sourcePath.c_str();
+	return sourcePath.c_str() + mProjectPath.size();
 }
 
 } // namespace ecode

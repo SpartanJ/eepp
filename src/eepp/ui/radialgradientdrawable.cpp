@@ -18,6 +18,18 @@ RadialGradientDrawable* RadialGradientDrawable::NewRepeating() {
 RadialGradientDrawable::RadialGradientDrawable( Graphics::Drawable::Type drawableType ) :
 	Drawable( drawableType ) {}
 
+DrawablePtr RadialGradientDrawable::clone() const {
+	auto instance = makeResource<RadialGradientDrawable>( mDrawableType );
+	instance->mColorStops = mColorStops;
+	instance->mShape = mShape;
+	instance->mExtent = mExtent;
+	instance->mCenter = mCenter;
+	instance->mSize = mSize;
+	instance->mColor = mColor;
+	instance->mPosition = mPosition;
+	return instance;
+}
+
 Sizef RadialGradientDrawable::getSize() {
 	return mSize;
 }
@@ -74,7 +86,6 @@ void RadialGradientDrawable::draw( const Vector2f& position, const Sizef& size )
 
 	std::sort( stops.begin(), stops.end(),
 			   []( const ColorStop& a, const ColorStop& b ) { return a.value < b.value; } );
-
 
 	const int SEGMENTS = 48;
 	Float angleStep = 2.f * EE_PI / (Float)SEGMENTS;
@@ -133,16 +144,14 @@ void RadialGradientDrawable::draw( const Vector2f& position, const Sizef& size )
 				Float frac1 = ( clip1 - p0 ) / bw;
 				const Color& sc0 = stops[i].color;
 				const Color& sc1 = stops[i + 1].color;
-				Color cc0(
-					(Uint8)( (Float)sc0.r + frac0 * (Float)( sc1.r - sc0.r ) ),
-					(Uint8)( (Float)sc0.g + frac0 * (Float)( sc1.g - sc0.g ) ),
-					(Uint8)( (Float)sc0.b + frac0 * (Float)( sc1.b - sc0.b ) ),
-					(Uint8)( (Float)sc0.a + frac0 * (Float)( sc1.a - sc0.a ) ) );
-				Color cc1(
-					(Uint8)( (Float)sc0.r + frac1 * (Float)( sc1.r - sc0.r ) ),
-					(Uint8)( (Float)sc0.g + frac1 * (Float)( sc1.g - sc0.g ) ),
-					(Uint8)( (Float)sc0.b + frac1 * (Float)( sc1.b - sc0.b ) ),
-					(Uint8)( (Float)sc0.a + frac1 * (Float)( sc1.a - sc0.a ) ) );
+				Color cc0( (Uint8)( (Float)sc0.r + frac0 * (Float)( sc1.r - sc0.r ) ),
+						   (Uint8)( (Float)sc0.g + frac0 * (Float)( sc1.g - sc0.g ) ),
+						   (Uint8)( (Float)sc0.b + frac0 * (Float)( sc1.b - sc0.b ) ),
+						   (Uint8)( (Float)sc0.a + frac0 * (Float)( sc1.a - sc0.a ) ) );
+				Color cc1( (Uint8)( (Float)sc0.r + frac1 * (Float)( sc1.r - sc0.r ) ),
+						   (Uint8)( (Float)sc0.g + frac1 * (Float)( sc1.g - sc0.g ) ),
+						   (Uint8)( (Float)sc0.b + frac1 * (Float)( sc1.b - sc0.b ) ),
+						   (Uint8)( (Float)sc0.a + frac1 * (Float)( sc1.a - sc0.a ) ) );
 
 				Color fc0 = ( mColor.a == 255 ) ? cc0 : Color( cc0 ).blendAlpha( mColor.a );
 				Color fc1 = ( mColor.a == 255 ) ? cc1 : Color( cc1 ).blendAlpha( mColor.a );
@@ -175,9 +184,8 @@ void RadialGradientDrawable::draw( const Vector2f& position, const Sizef& size )
 				Float cj = cosVals[j], sj = sinVals[j];
 				Float cj1 = cosVals[j + 1], sj1 = sinVals[j + 1];
 
-				sBR->batchQuadFree( cx + r0 * cj + posX, cy + r0 * sj + posY,
-									cx + r1 * cj + posX, cy + r1 * sj + posY,
-									cx + r1 * cj1 + posX, cy + r1 * sj1 + posY,
+				sBR->batchQuadFree( cx + r0 * cj + posX, cy + r0 * sj + posY, cx + r1 * cj + posX,
+									cy + r1 * sj + posY, cx + r1 * cj1 + posX, cy + r1 * sj1 + posY,
 									cx + r0 * cj1 + posX, cy + r0 * sj1 + posY );
 			}
 		}

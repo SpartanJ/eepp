@@ -1,10 +1,15 @@
 #ifndef EE_GRAPHICSCSHADERPROGRAM_H
 #define EE_GRAPHICSCSHADERPROGRAM_H
 
+#include <eepp/core/string.hpp>
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/shader.hpp>
 
 namespace EE { namespace Graphics {
+
+class ShaderProgram;
+using ShaderProgramPtr = ResourcePtr<ShaderProgram>;
+using ShaderProgramWeakPtr = ResourceWeakPtr<ShaderProgram>;
 
 /** @brief The Shader Program Class.
 	@short Program is a GPU-executed program that is ready to be used for manipulating geometry and
@@ -15,40 +20,45 @@ other stage.
 class EE_API ShaderProgram {
   public:
 	/** Creates an empty shader program */
-	static ShaderProgram* New( const std::string& Name = "" );
+	static ShaderProgramPtr New( const std::string& Name = "" );
 
 	/** Creates a program shader with a vector of shaders and link them. */
-	static ShaderProgram* New( const std::vector<Shader*>& Shaders, const std::string& Name = "" );
+	static ShaderProgramPtr New( const std::vector<ShaderPtr>& Shaders,
+								 const std::string& Name = "" );
 
 	/** Creates a VertexShader from file and a Fragment Shader from file, and link them. */
-	static ShaderProgram* New( const std::string& VertexShaderFile,
-							   const std::string& FragmentShaderFile,
-							   const std::string& Name = "" );
+	static ShaderProgramPtr New( const std::string& VertexShaderFile,
+								 const std::string& FragmentShaderFile,
+								 const std::string& Name = "" );
 
 	/** Creates a VertexShader from memory and a Fragment Shader from memory, and link them. */
-	static ShaderProgram* New( const char* VertexShaderData, const Uint32& VertexShaderDataSize,
-							   const char* FragmentShaderData, const Uint32& FragmentShaderDataSize,
-							   const std::string& Name = "" );
+	static ShaderProgramPtr New( const char* VertexShaderData, const Uint32& VertexShaderDataSize,
+								 const char* FragmentShaderData,
+								 const Uint32& FragmentShaderDataSize,
+								 const std::string& Name = "" );
 
 	/** Creates the vertex shader and fragment shader from two files inside a pack */
-	static ShaderProgram* New( Pack* Pack, const std::string& VertexShaderPath,
-							   const std::string& FragmentShaderPath,
-							   const std::string& Name = "" );
+	static ShaderProgramPtr New( Pack* Pack, const std::string& VertexShaderPath,
+								 const std::string& FragmentShaderPath,
+								 const std::string& Name = "" );
 
 	/** Creates the vertex and fragment shader from an array of strings */
-	static ShaderProgram* New( const char** VertexShaderData, const Uint32& NumLinesVS,
-							   const char** FragmentShaderData, const Uint32& NumLinesFS,
-							   const std::string& Name = "" );
+	static ShaderProgramPtr New( const char** VertexShaderData, const Uint32& NumLinesVS,
+								 const char** FragmentShaderData, const Uint32& NumLinesFS,
+								 const std::string& Name = "" );
 
 	typedef std::function<void( ShaderProgram* )> ShaderProgramReloadCb;
 
 	virtual ~ShaderProgram();
 
 	/** Add a new shader */
-	void addShader( Shader* Shader );
+	void addShader( ShaderPtr shader );
 
 	/** Add a vector of shaders */
-	void addShaders( const std::vector<Shader*>& Shaders );
+	void addShaders( const std::vector<ShaderPtr>& shaders );
+
+	/** Bind a fragment output to a color number and source index before linking. */
+	bool bindFragDataLocationIndexed( Uint32 colorNumber, Uint32 index, const char* name );
 
 	virtual bool link();
 
@@ -151,23 +161,29 @@ class EE_API ShaderProgram {
 	bool mValid;
 	std::string mLinkLog;
 
-	std::vector<Shader*> mShaders;
+	std::vector<ShaderPtr> mShaders;
 	std::map<std::string, Int32> mUniformLocations;
 	std::map<std::string, Int32> mAttributeLocations;
+	struct FragmentOutputBinding {
+		Uint32 colorNumber;
+		Uint32 index;
+		std::string name;
+	};
+	std::vector<FragmentOutputBinding> mFragmentOutputBindings;
 
 	ShaderProgramReloadCb mReloadCb;
 
 	void init();
 
-	void addToManager( const std::string& Name );
+	void addToRegistry( const std::string& Name );
 
-	void removeFromManager();
+	void removeFromRegistry();
 
 	/** Creates an empty shader program */
 	ShaderProgram( const std::string& Name = "" );
 
 	/** Construct a program shader with a vector of shaders and link them. */
-	ShaderProgram( const std::vector<Shader*>& Shaders, const std::string& Name = "" );
+	ShaderProgram( const std::vector<ShaderPtr>& Shaders, const std::string& Name = "" );
 
 	/** Constructor that creates a VertexShader from file and a Fragment Shader from file, and link
 	 * them. */

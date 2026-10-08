@@ -336,12 +336,11 @@ class EE_API UINode : public Node {
 	 *
 	 * Enables background fill and sets the specified drawable at the given index.
 	 *
-	 * @param drawable Pointer to the Drawable to use.
-	 * @param ownIt If true, the node takes ownership of the drawable.
+	 * @param drawable Drawable instance to use.
 	 * @param index The layer index (0-based).
 	 * @return Pointer to this node for method chaining.
 	 */
-	UINode* setBackgroundDrawable( Drawable* drawable, bool ownIt = false, int index = 0 );
+	UINode* setBackgroundDrawable( DrawablePtr drawable, int index = 0 );
 
 	/**
 	 * @brief Sets a background drawable from a skin name.
@@ -521,12 +520,11 @@ class EE_API UINode : public Node {
 	 *
 	 * Enables foreground fill and sets the specified drawable at the given index.
 	 *
-	 * @param drawable Pointer to the Drawable to use.
-	 * @param ownIt If true, the node takes ownership of the drawable.
+	 * @param drawable Drawable instance to use.
 	 * @param index The layer index (0-based).
 	 * @return Pointer to this node for method chaining.
 	 */
-	UINode* setForegroundDrawable( Drawable* drawable, bool ownIt = false, int index = 0 );
+	UINode* setForegroundDrawable( DrawablePtr drawable, int index = 0 );
 
 	/**
 	 * @brief Sets a foreground drawable from a skin name.
@@ -767,7 +765,7 @@ class EE_API UINode : public Node {
 	 *
 	 * @return The flags as a Uint64 bitmask.
 	 */
-	const Uint64& getFlags() const;
+	inline const Uint64& getFlags() const { return mFlags; }
 
 	/**
 	 * @brief Sets multiple flags on the node.
@@ -852,12 +850,12 @@ class EE_API UINode : public Node {
 	void setThemeByName( const std::string& Theme );
 
 	/**
-	 * @brief Sets the theme for this node.
+	 * @brief Sets the borrowed theme used by this node.
 	 *
-	 * Applies the specified UITheme to this node, affecting its visual appearance
-	 * through skins and styles.
+	 * The node does not retain @p Theme. Its owner, normally the containing scene's UIThemeManager,
+	 * must keep the theme alive until this node switches themes or is destroyed.
 	 *
-	 * @param Theme Pointer to the UITheme to apply.
+	 * @param Theme Borrowed theme to apply, or null to use no explicit theme.
 	 */
 	virtual void setTheme( UITheme* Theme );
 
@@ -1141,6 +1139,9 @@ class EE_API UINode : public Node {
 	virtual Float convertLength( const CSS::StyleSheetLength& length,
 								 const Float& containerLength ) const;
 
+	/** Serializes a resolved pixel length for reapplication, including HTML px scaling. */
+	std::string pixelsLengthToString( Float pixels ) const;
+
 	/**
 	 * @brief Converts a CSS length to density-independent pixels (dp).
 	 *
@@ -1152,6 +1153,13 @@ class EE_API UINode : public Node {
 	 */
 	Float convertLengthAsDp( const CSS::StyleSheetLength& length,
 							 const Float& containerLength ) const;
+
+	inline Float lengthFromValue( const std::string& value,
+								  const CSS::PropertyRelativeTarget& relativeTarget,
+								  const Float& defaultValue, const Uint32& propertyIndex ) const {
+		return lengthFromValue( std::string_view{ value }, relativeTarget, defaultValue,
+								propertyIndex );
+	}
 
 	/**
 	 * @brief Evaluates a CSS length string to a pixel value.
@@ -1165,9 +1173,17 @@ class EE_API UINode : public Node {
 	 * @param propertyIndex The property index for multi-value properties (default: 0).
 	 * @return The computed length in pixels.
 	 */
-	Float lengthFromValue( const std::string& value,
+	Float lengthFromValue( std::string_view value,
 						   const CSS::PropertyRelativeTarget& relativeTarget,
 						   const Float& defaultValue = 0, const Uint32& propertyIndex = 0 ) const;
+
+	inline Float lengthFromValue( const char* value,
+								  const CSS::PropertyRelativeTarget& relativeTarget,
+								  const Float& defaultValue = 0,
+								  const Uint32& propertyIndex = 0 ) const {
+		return lengthFromValue( std::string_view{ value }, relativeTarget, defaultValue,
+								propertyIndex );
+	}
 
 	/**
 	 * @brief Evaluates a CSS property to a pixel value.
@@ -1503,7 +1519,13 @@ class EE_API UINode : public Node {
 	/** @brief Get a widget's computed absolute font size in pixels. */
 	Float getAbsoluteFontSize( const UIWidget* widget ) const;
 
+	/** Returns true if the node is currently being created, this state is not used by all node
+	 * types.
+	 */
 	bool isCreatingNode() const;
+
+	/** Forces a left mouse click event over the node */
+	void click();
 
   protected:
 	Vector2f mDpPos;

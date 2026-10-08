@@ -36,12 +36,38 @@ void UIMenuItem::setTheme( UITheme* Theme ) {
 	onThemeLoaded();
 }
 
+void UIMenuItem::activate() {
+	if ( !isEnabled() || nullptr == getParent() || !getParent()->isType( UI_TYPE_MENU ) )
+		return;
+
+	UIMenu* menu = getParent()->asType<UIMenu>();
+	Input* input = nullptr != getUISceneNode() ? getInput() : nullptr;
+	if ( ( nullptr == input || !input->isShiftPressed() ) &&
+		 ( !mOnShouldCloseCb || mOnShouldCloseCb( this ) ) ) {
+		menu->backpropagateHide();
+	}
+
+	Event itemEvent( this, Event::OnItemClicked );
+	menu->sendEvent( &itemEvent );
+}
+
 UIMenuItem* UIMenuItem::setShortcutText( const String& text ) {
+	mShortcut = {};
+	if ( !text.empty() && nullptr != getUISceneNode() )
+		mShortcut = KeyBindings::toShortcut( getInput(), text.toUtf8() );
 	if ( !text.empty() )
 		createShortcutView();
 	if ( mShortcutView )
 		mShortcutView->setText( text );
 	return this;
+}
+
+const KeyBindings::Shortcut& UIMenuItem::getShortcut() const {
+	if ( mShortcut.empty() && nullptr != mShortcutView && !mShortcutView->getText().empty() &&
+		 nullptr != getUISceneNode() ) {
+		mShortcut = KeyBindings::toShortcut( getInput(), mShortcutView->getText().toUtf8() );
+	}
+	return mShortcut;
 }
 
 UITextView* UIMenuItem::getShortcutView() const {
@@ -75,14 +101,6 @@ Uint32 UIMenuItem::onMouseLeave( const Vector2i& pos, const Uint32& flags ) {
 	return 1;
 }
 
-Uint32 UIMenuItem::onMouseClick( const Vector2i&, const Uint32& flags ) {
-	if ( !getInput()->isShiftPressed() && ( flags & EE_BUTTON_LMASK ) &&
-		 ( !mOnShouldCloseCb || mOnShouldCloseCb( this ) ) ) {
-		getParent()->asType<UIMenu>()->backpropagateHide();
-	}
-	return 1;
-}
-
 UIWidget* UIMenuItem::getExtraInnerWidget() const {
 	return mShortcutView;
 }
@@ -93,6 +111,15 @@ UIMenuItem::OnShouldCloseCb UIMenuItem::getOnShouldCloseCb() const {
 
 UIMenuItem* UIMenuItem::setOnShouldCloseCb( const OnShouldCloseCb& onShouldCloseCb ) {
 	mOnShouldCloseCb = onShouldCloseCb;
+	return this;
+}
+
+MenuRole UIMenuItem::getMenuRole() const {
+	return mMenuRole;
+}
+
+UIMenuItem* UIMenuItem::setMenuRole( MenuRole role ) {
+	mMenuRole = role;
 	return this;
 }
 

@@ -1,3 +1,4 @@
+#include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderergl.hpp>
 
@@ -60,6 +61,151 @@ RendererGL::RendererGL() {
 }
 
 RendererGL::~RendererGL() {}
+
+bool RendererGL::ensureSubpixelShader() {
+#ifndef EE_GLES1
+	if ( mSubpixelShader )
+		return true;
+	if ( mSubpixelShaderInitializationAttempted || !shadersSupported() )
+		return false;
+	mSubpixelShaderInitializationAttempted = true;
+	static const char vertexShader[] = R"(
+#version 120
+varying vec4 dgl_Color;
+varying vec2 dgl_TexCoord;
+void main() {
+	gl_Position = ftransform();
+	gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;
+	dgl_Color = gl_Color;
+	dgl_TexCoord = ( gl_TextureMatrix[0] * gl_MultiTexCoord0 ).xy;
+}
+)";
+	static const char fragmentShader[] = R"(
+#version 120
+uniform sampler2D textureUnit0;
+uniform vec3 dgl_TextureColorChannel;
+varying vec4 dgl_Color;
+varying vec2 dgl_TexCoord;
+void main() {
+	vec4 texel = texture2D( textureUnit0, dgl_TexCoord );
+	float coverage = dot( texel.rgb, dgl_TextureColorChannel );
+	gl_FragColor = vec4( dgl_Color.rgb, dgl_Color.a * coverage );
+}
+)";
+	mSubpixelShader = ShaderProgram::New( vertexShader, sizeof( vertexShader ) - 1, fragmentShader,
+										  sizeof( fragmentShader ) - 1, "eepp-subpixel-text" );
+	if ( mSubpixelShader && mSubpixelShader->isValid() ) {
+		Renderer::setShader( mSubpixelShader.get() );
+		mSubpixelChannelLoc = mSubpixelShader->getUniformLocation( "dgl_TextureColorChannel" );
+		mSubpixelShader->setUniform( "textureUnit0", 0 );
+		Renderer::setShader( mPreviousShader );
+	} else {
+		mSubpixelShader.reset();
+	}
+	return mSubpixelShader && mSubpixelChannelLoc != -1;
+#else
+	return false;
+#endif
+}
+
+bool RendererGL::ensureSubpixelDualSourceShader() {
+#ifndef EE_GLES1
+	if ( mSubpixelDualSourceShader )
+		return true;
+	if ( mSubpixelDualSourceShaderInitializationAttempted ||
+		 !isExtension( EEGL_ARB_blend_func_extended ) || !shadersSupported() )
+		return false;
+	mSubpixelDualSourceShaderInitializationAttempted = true;
+	static const char vertexShader[] = R"(
+#version 130
+varying vec4 dgl_Color;
+varying vec2 dgl_TexCoord;
+void main() {
+	gl_Position = ftransform();
+	gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;
+	dgl_Color = gl_Color;
+	dgl_TexCoord = ( gl_TextureMatrix[0] * gl_MultiTexCoord0 ).xy;
+}
+)";
+	static const char fragmentShader[] = R"(
+#version 130
+uniform sampler2D textureUnit0;
+varying vec4 dgl_Color;
+varying vec2 dgl_TexCoord;
+out vec4 dgl_FragColor;
+out vec4 dgl_FragCoverage;
+void main() {
+	vec3 coverage = texture2D( textureUnit0, dgl_TexCoord ).rgb;
+	float meanCoverage = dot( coverage, vec3( 1.0 / 3.0 ) );
+	dgl_FragColor = vec4( dgl_Color.rgb, dgl_Color.a * meanCoverage );
+	dgl_FragCoverage = vec4( dgl_Color.a * coverage, 0.0 );
+}
+)";
+	ShaderProgramPtr shader = ShaderProgram::New( "eepp-subpixel-dual-source-text" );
+	ShaderPtr vs( eeNew( VertexShader, ( vertexShader, sizeof( vertexShader ) - 1 ) ),
+				  ResourceDeleter<Shader>() );
+	ShaderPtr fs( eeNew( FragmentShader, ( fragmentShader, sizeof( fragmentShader ) - 1 ) ),
+				  ResourceDeleter<Shader>() );
+	if ( shader && vs->isValid() && fs->isValid() ) {
+		shader->addShader( std::move( vs ) );
+		shader->addShader( std::move( fs ) );
+		if ( shader->bindFragDataLocationIndexed( 0, 0, "dgl_FragColor" ) &&
+			 shader->bindFragDataLocationIndexed( 0, 1, "dgl_FragCoverage" ) && shader->link() ) {
+			mSubpixelDualSourceShader = std::move( shader );
+			Renderer::setShader( mSubpixelDualSourceShader.get() );
+			mSubpixelDualSourceShader->setUniform( "textureUnit0", 0 );
+			Renderer::setShader( mPreviousShader );
+		}
+	}
+	return !!mSubpixelDualSourceShader;
+#else
+	return false;
+#endif
+}
+
+bool RendererGL::drawSubpixelDualSourceArrays( unsigned int mode, int first, int count ) {
+	if ( !ensureSubpixelDualSourceShader() )
+		return false;
+	const BlendMode previousBlendMode = BlendMode::getPreBlendFunc();
+	Renderer::setShader( mSubpixelDualSourceShader.get() );
+	blendFuncSeparate( GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR, GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+	drawArrays( mode, first, count );
+	BlendMode::setMode( previousBlendMode, true );
+	Renderer::setShader( mPreviousShader );
+	return true;
+}
+
+void RendererGL::setShader( ShaderProgram* shader ) {
+	if ( !mUsingSubpixelShader )
+		mPreviousShader = shader;
+	Renderer::setShader( shader );
+}
+
+bool RendererGL::setTextureColorMode( Int32 mode ) {
+#ifdef EE_GLES1
+	return false;
+#else
+	if ( mode < 0 || mode > 4 )
+		return false;
+	if ( mode != 0 && !ensureSubpixelShader() )
+		return false;
+	if ( !mSubpixelShader || !mSubpixelShader->isValid() || mSubpixelChannelLoc == -1 )
+		return false;
+	if ( mode == 0 ) {
+		if ( mUsingSubpixelShader ) {
+			Renderer::setShader( mPreviousShader );
+			mUsingSubpixelShader = false;
+		}
+		return true;
+	}
+	if ( !mUsingSubpixelShader ) {
+		Renderer::setShader( mSubpixelShader.get() );
+		mUsingSubpixelShader = true;
+	}
+	mSubpixelShader->setUniform( mSubpixelChannelLoc, textureColorChannel( mode ) );
+	return true;
+#endif
+}
 
 GraphicsLibraryVersion RendererGL::version() {
 #ifndef EE_GLES1

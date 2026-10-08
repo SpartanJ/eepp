@@ -3,6 +3,7 @@
 
 #include "projectbuild.hpp"
 #include "uistatusbar.hpp"
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -40,7 +41,7 @@ class StatusBuildOutputController : public StatusBarElement {
 	StatusBuildOutputController( UISplitter* mainSplitter, UISceneNode* uiSceneNode,
 								 PluginContextProvider* pluginContext );
 
-	virtual ~StatusBuildOutputController() {};
+	virtual ~StatusBuildOutputController() { mLifetime.invalidate(); };
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
 				   const ProjectBuildOutputParser& outputParser = {}, bool isClean = false,
@@ -73,6 +74,7 @@ class StatusBuildOutputController : public StatusBarElement {
 	std::vector<PatternHolder> mPatternHolder;
 	std::string mCurLineBuffer;
 	bool mScrollLocked{ true };
+	MainThreadLifetime<StatusBuildOutputController> mLifetime;
 
 	void createContainer();
 

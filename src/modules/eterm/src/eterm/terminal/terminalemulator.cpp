@@ -34,17 +34,22 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 #include <eterm/terminal/boxdrawdata.hpp>
+#include <eterm/terminal/terminaldisplay.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
 
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/network/uri.hpp>
+#include <eepp/system/cpu.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/version.hpp>
 
 using namespace EE::Network;
 using namespace EE::System;
 
+#include <algorithm>
 #include <assert.h>
+#include <bit>
 #include <cmath>
 #include <ctype.h>
 #include <errno.h>
@@ -57,6 +62,13 @@ using namespace EE::System;
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <thread>
+
+#if defined( EE_ARCH_X86_64 )
+#include <immintrin.h>
+#elif defined( EE_ARCH_ARM64 )
+#include <arm_neon.h>
+#endif
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 // For malloc_trim, which is a GNU extension
@@ -66,6 +78,144 @@ extern "C" {
 #endif
 
 namespace eterm { namespace Terminal {
+
+namespace {
+
+constexpr Rune KittyGraphicsPlaceholder = 0x10EEEE;
+
+bool terminalDiagnosticsEnabled() {
+#ifdef EE_DEBUG
+	return true;
+#else
+	// Release builds stay quiet unless diagnostics are explicitly requested. This is cached because
+	// malformed or unsupported sequences can otherwise hit this path for every rendered cell.
+	static const char* setting = getenv( "ETERM_LOG_ERRORS" );
+	static const bool enabled =
+		setting != nullptr && setting[0] != '\0' && strcmp( setting, "0" ) != 0;
+	return enabled;
+#endif
+}
+
+void terminalDiagnostic( const char* format, ... ) {
+	if ( !terminalDiagnosticsEnabled() )
+		return;
+	va_list args;
+	va_start( args, format );
+	vfprintf( stderr, format, args );
+	va_end( args );
+}
+
+TerminalCursorMode blinkingCursorVariant( TerminalCursorMode mode ) {
+	switch ( mode ) {
+		case BlinkUnderline:
+		case SteadyUnderline:
+			return BlinkUnderline;
+		case BlinkBar:
+		case SteadyBar:
+			return BlinkBar;
+		case BlinkingBlock:
+		case BlinkingBlockDefault:
+		case SteadyBlock:
+			return BlinkingBlock;
+		case StExtension:
+			return StExtension;
+		case TerminalCursorMode::MAX_CURSOR:
+			return BlinkingBlock;
+	}
+	return BlinkingBlock;
+}
+
+} // namespace
+
+#if defined( EE_ARCH_X86_64 )
+#if defined( __GNUC__ ) || defined( __clang__ )
+__attribute__( ( target( "avx2" ) ) )
+#endif
+static int findKittyAPCControlAVX2( const char* data, int begin, int end ) {
+	const __m256i highThreeBitMask = _mm256_set1_epi8( static_cast<char>( 0xE0 ) );
+	const __m256i c1Prefix = _mm256_set1_epi8( static_cast<char>( 0x80 ) );
+	const __m256i bell = _mm256_set1_epi8( 0x07 );
+	const __m256i cancel = _mm256_set1_epi8( 0x18 );
+	const __m256i substitute = _mm256_set1_epi8( 0x1A );
+	const __m256i escape = _mm256_set1_epi8( 0x1B );
+	int offset = begin;
+	for ( ; offset + 32 <= end; offset += 32 ) {
+		const __m256i bytes =
+			_mm256_loadu_si256( reinterpret_cast<const __m256i*>( data + offset ) );
+		const __m256i c1 =
+			_mm256_cmpeq_epi8( _mm256_and_si256( bytes, highThreeBitMask ), c1Prefix );
+		const __m256i explicitControls = _mm256_or_si256(
+			_mm256_or_si256( _mm256_cmpeq_epi8( bytes, bell ), _mm256_cmpeq_epi8( bytes, cancel ) ),
+			_mm256_or_si256( _mm256_cmpeq_epi8( bytes, substitute ),
+							 _mm256_cmpeq_epi8( bytes, escape ) ) );
+		if ( _mm256_movemask_epi8( _mm256_or_si256( c1, explicitControls ) ) != 0 )
+			break;
+	}
+	while ( offset < end ) {
+		const unsigned char byte = static_cast<unsigned char>( data[offset] );
+		if ( byte == '\a' || byte == 030 || byte == 032 || byte == 033 ||
+			 ( byte >= 0x80 && byte <= 0x9F ) )
+			break;
+		++offset;
+	}
+	return offset;
+}
+
+#if defined( __GNUC__ ) || defined( __clang__ )
+__attribute__( ( target( "avx2" ) ) )
+#endif
+static int trailingNonSpaceWidthAVX2( Line line, int width, int minimumWidth ) {
+	const __m256i offsets = _mm256_set_epi32( 112, 96, 80, 64, 48, 32, 16, 0 );
+	const __m256i spaces = _mm256_set1_epi32( ' ' );
+	while ( width - minimumWidth >= 8 ) {
+		int start = width - 8;
+		const __m256i codepoints =
+			_mm256_i32gather_epi32( reinterpret_cast<const int*>( line + start ), offsets, 1 );
+		unsigned int nonSpaces =
+			( ~static_cast<unsigned int>( _mm256_movemask_ps(
+				_mm256_castsi256_ps( _mm256_cmpeq_epi32( codepoints, spaces ) ) ) ) ) &
+			0xFFu;
+		if ( nonSpaces != 0 )
+			return start + std::bit_width( nonSpaces );
+		width = start;
+	}
+	while ( width > minimumWidth && line[width - 1].u == ' ' )
+		--width;
+	return width;
+}
+#elif defined( EE_ARCH_ARM64 )
+static int trailingNonSpaceWidthNEON( Line line, int width, int minimumWidth ) {
+	const uint32x4_t spaces = vdupq_n_u32( ' ' );
+	while ( width - minimumWidth >= 4 ) {
+		int start = width - 4;
+		const uint32x4x4_t glyphs = vld4q_u32( reinterpret_cast<const uint32_t*>( line + start ) );
+		if ( vminvq_u32( vceqq_u32( glyphs.val[0], spaces ) ) != UINT32_MAX ) {
+			for ( int x = width - 1; x >= start; --x )
+				if ( line[x].u != ' ' )
+					return x + 1;
+		}
+		width = start;
+	}
+	while ( width > minimumWidth && line[width - 1].u == ' ' )
+		--width;
+	return width;
+}
+#endif
+
+static int findKittyAPCControl( const char* data, int begin, int end ) {
+#if defined( EE_ARCH_X86_64 )
+	if ( CPU::hasAVX2() )
+		return findKittyAPCControlAVX2( data, begin, end );
+#endif
+	while ( begin < end ) {
+		const unsigned char byte = static_cast<unsigned char>( data[begin] );
+		if ( byte == '\a' || byte == 030 || byte == 032 || byte == 033 ||
+			 ( byte >= 0x80 && byte <= 0x9F ) )
+			break;
+		++begin;
+	}
+	return begin;
+}
 
 /* identification sequence returned in DA and DECID */
 static const char* vtiden = "\033[?6c";
@@ -112,6 +262,46 @@ static const unsigned int tabspaces = 4;
 
 #define TRUECOLOR( r, g, b ) ( 1 << 24 | ( r ) << 16 | ( g ) << 8 | ( b ) )
 #define IS_TRUECOL( x ) ( 1 << 24 & ( x ) )
+
+static int kittyDiacriticIndex( Rune value ) {
+	static constexpr Rune values[] = {
+		0x0305,	 0x030D,  0x030E,  0x0310,	0x0312,	 0x033D,  0x033E,  0x033F,	0x0346,	 0x034A,
+		0x034B,	 0x034C,  0x0350,  0x0351,	0x0352,	 0x0357,  0x035B,  0x0363,	0x0364,	 0x0365,
+		0x0366,	 0x0367,  0x0368,  0x0369,	0x036A,	 0x036B,  0x036C,  0x036D,	0x036E,	 0x036F,
+		0x0483,	 0x0484,  0x0485,  0x0486,	0x0487,	 0x0592,  0x0593,  0x0594,	0x0595,	 0x0597,
+		0x0598,	 0x0599,  0x059C,  0x059D,	0x059E,	 0x059F,  0x05A0,  0x05A1,	0x05A8,	 0x05A9,
+		0x05AB,	 0x05AC,  0x05AF,  0x05C4,	0x0610,	 0x0611,  0x0612,  0x0613,	0x0614,	 0x0615,
+		0x0616,	 0x0617,  0x0657,  0x0658,	0x0659,	 0x065A,  0x065B,  0x065D,	0x065E,	 0x06D6,
+		0x06D7,	 0x06D8,  0x06D9,  0x06DA,	0x06DB,	 0x06DC,  0x06DF,  0x06E0,	0x06E1,	 0x06E2,
+		0x06E4,	 0x06E7,  0x06E8,  0x06EB,	0x06EC,	 0x0730,  0x0732,  0x0733,	0x0735,	 0x0736,
+		0x073A,	 0x073D,  0x073F,  0x0740,	0x0741,	 0x0743,  0x0745,  0x0747,	0x0749,	 0x074A,
+		0x07EB,	 0x07EC,  0x07ED,  0x07EE,	0x07EF,	 0x07F0,  0x07F1,  0x07F3,	0x0816,	 0x0817,
+		0x0818,	 0x0819,  0x081B,  0x081C,	0x081D,	 0x081E,  0x081F,  0x0820,	0x0821,	 0x0822,
+		0x0823,	 0x0825,  0x0826,  0x0827,	0x0829,	 0x082A,  0x082B,  0x082C,	0x082D,	 0x0951,
+		0x0953,	 0x0954,  0x0F82,  0x0F83,	0x0F86,	 0x0F87,  0x135D,  0x135E,	0x135F,	 0x17DD,
+		0x193A,	 0x1A17,  0x1A75,  0x1A76,	0x1A77,	 0x1A78,  0x1A79,  0x1A7A,	0x1A7B,	 0x1A7C,
+		0x1B6B,	 0x1B6D,  0x1B6E,  0x1B6F,	0x1B70,	 0x1B71,  0x1B72,  0x1B73,	0x1CD0,	 0x1CD1,
+		0x1CD2,	 0x1CDA,  0x1CDB,  0x1CE0,	0x1DC0,	 0x1DC1,  0x1DC3,  0x1DC4,	0x1DC5,	 0x1DC6,
+		0x1DC7,	 0x1DC8,  0x1DC9,  0x1DCB,	0x1DCC,	 0x1DD1,  0x1DD2,  0x1DD3,	0x1DD4,	 0x1DD5,
+		0x1DD6,	 0x1DD7,  0x1DD8,  0x1DD9,	0x1DDA,	 0x1DDB,  0x1DDC,  0x1DDD,	0x1DDE,	 0x1DDF,
+		0x1DE0,	 0x1DE1,  0x1DE2,  0x1DE3,	0x1DE4,	 0x1DE5,  0x1DE6,  0x1DFE,	0x20D0,	 0x20D1,
+		0x20D4,	 0x20D5,  0x20D6,  0x20D7,	0x20DB,	 0x20DC,  0x20E1,  0x20E7,	0x20E9,	 0x20F0,
+		0x2CEF,	 0x2CF0,  0x2CF1,  0x2DE0,	0x2DE1,	 0x2DE2,  0x2DE3,  0x2DE4,	0x2DE5,	 0x2DE6,
+		0x2DE7,	 0x2DE8,  0x2DE9,  0x2DEA,	0x2DEB,	 0x2DEC,  0x2DED,  0x2DEE,	0x2DEF,	 0x2DF0,
+		0x2DF1,	 0x2DF2,  0x2DF3,  0x2DF4,	0x2DF5,	 0x2DF6,  0x2DF7,  0x2DF8,	0x2DF9,	 0x2DFA,
+		0x2DFB,	 0x2DFC,  0x2DFD,  0x2DFE,	0x2DFF,	 0xA66F,  0xA67C,  0xA67D,	0xA6F0,	 0xA6F1,
+		0xA8E0,	 0xA8E1,  0xA8E2,  0xA8E3,	0xA8E4,	 0xA8E5,  0xA8E6,  0xA8E7,	0xA8E8,	 0xA8E9,
+		0xA8EA,	 0xA8EB,  0xA8EC,  0xA8ED,	0xA8EE,	 0xA8EF,  0xA8F0,  0xA8F1,	0xAAB0,	 0xAAB2,
+		0xAAB3,	 0xAAB7,  0xAAB8,  0xAABE,	0xAABF,	 0xAAC1,  0xFE20,  0xFE21,	0xFE22,	 0xFE23,
+		0xFE24,	 0xFE25,  0xFE26,  0x10A0F, 0x10A38, 0x1D185, 0x1D186, 0x1D187, 0x1D188, 0x1D189,
+		0x1D1AA, 0x1D1AB, 0x1D1AC, 0x1D1AD, 0x1D242, 0x1D243, 0x1D244,
+	};
+	for ( size_t i = 0; i < sizeof( values ) / sizeof( values[0] ); ++i ) {
+		if ( values[i] == value )
+			return static_cast<int>( i );
+	}
+	return -1;
+}
 
 /* Arbitrary sizes */
 #define UTF_INVALID 0xFFFD
@@ -382,11 +572,111 @@ int TerminalEmulator::tlinelen( int y ) const {
 
 int TerminalEmulator::tlinelen( Line line, int col ) const {
 	int i = col;
-	if ( line[i - 1].mode & ATTR_WRAP )
+	if ( i > 0 && ( line[i - 1].mode & ATTR_WRAP ) )
 		return i;
+	/* Scan backwards in 4-glyph steps while possible: the trailing-run check is
+	 * branch-light and the common cases are either a full-width wrapped line
+	 * or a short trailing space run, so this keeps the scan cheap without
+	 * changing semantics. */
+	while ( i >= 4 && line[i - 1].u == ' ' && line[i - 2].u == ' ' && line[i - 3].u == ' ' &&
+			line[i - 4].u == ' ' )
+		i -= 4;
 	while ( i > 0 && line[i - 1].u == ' ' )
 		--i;
 	return i;
+}
+
+void TerminalEmulator::setSearchQuery( TerminalSearchQuery query ) {
+	TerminalSearchMatch previousMatch;
+	const bool preserveCurrent =
+		query.requestId == mSearchQuery.requestId && mCurrentSearchMatch >= 0 &&
+		mCurrentSearchMatch < static_cast<Int32>( mSearch.matches().size() );
+	if ( preserveCurrent )
+		previousMatch = mSearch.matches()[mCurrentSearchMatch];
+	mSearchQuery = std::move( query );
+	mSearchDirty = false;
+	mSearchRefreshClock.restart();
+	mSearchRows.clear();
+	if ( !TerminalSearch::isQuerySearchable( mSearchQuery ) ) {
+		mSearch.search( mSearchRows, mSearchQuery );
+		mCurrentSearchMatch = -1;
+		redraw();
+		return;
+	}
+	if ( tisaltscr() ) {
+		mSearchRows.reserve( mTerm.row );
+		for ( int row = 0; row < mTerm.row; ++row ) {
+			const int length = tlinelen( mTerm.line[row], mTerm.col );
+			mSearchRows.push_back(
+				{ mTerm.line[row], TerminalBufferSource::AlternateScreen, row, mTerm.col, length,
+				  length > 0 && ( mTerm.line[row][length - 1].mode & ATTR_WRAP ) } );
+		}
+	} else {
+		mSearchRows.reserve( mTerm.histlen + mTerm.row );
+		for ( int row = -mTerm.histlen; row < mTerm.row; ++row ) {
+			Line line =
+				row < 0 ? mTerm.hist[( row + mTerm.histi + mTerm.histsize + 1 ) % mTerm.histsize]
+						: mTerm.line[row];
+			const int length = tlinelen( line, mTerm.col );
+			mSearchRows.push_back(
+				{ line,
+				  row < 0 ? TerminalBufferSource::MainHistory : TerminalBufferSource::MainScreen,
+				  row, mTerm.col, length, length > 0 && ( line[length - 1].mode & ATTR_WRAP ) } );
+		}
+	}
+	mSearch.search( mSearchRows, mSearchQuery );
+	mCurrentSearchMatch = mSearch.matches().empty() ? -1 : 0;
+	if ( preserveCurrent ) {
+		const auto& matches = mSearch.matches();
+		for ( size_t index = 0; index < matches.size(); ++index ) {
+			if ( matches[index].start.source == previousMatch.start.source &&
+				 matches[index].start.row == previousMatch.start.row &&
+				 matches[index].start.column == previousMatch.start.column ) {
+				mCurrentSearchMatch = static_cast<Int32>( index );
+				break;
+			}
+		}
+	}
+	if ( mCurrentSearchMatch >= 0 )
+		navigateSearch( 0 );
+	else
+		redraw();
+}
+
+void TerminalEmulator::navigateSearch( int direction ) {
+	const auto& matches = mSearch.matches();
+	if ( matches.empty() )
+		return;
+	if ( direction != 0 ) {
+		mCurrentSearchMatch =
+			( mCurrentSearchMatch + direction + static_cast<Int32>( matches.size() ) ) %
+			static_cast<Int32>( matches.size() );
+	}
+	const auto& match = matches[mCurrentSearchMatch];
+	if ( match.start.source == TerminalBufferSource::MainHistory ) {
+		TerminalArg scroll( eeclamp( static_cast<int>( -match.start.row ), 0, mTerm.histlen ) );
+		kscrollto( &scroll );
+	} else if ( match.start.source == TerminalBufferSource::MainScreen && mTerm.scr != 0 ) {
+		TerminalArg scroll( 0 );
+		kscrollto( &scroll );
+	}
+	redraw();
+}
+
+void TerminalEmulator::clearSearch() {
+	mSearchQuery = {};
+	mSearch.search( {}, mSearchQuery );
+	mCurrentSearchMatch = -1;
+	mSearchDirty = false;
+	redraw();
+}
+
+const std::vector<TerminalSearchMatch>& TerminalEmulator::getSearchMatches() const {
+	return mSearch.matches();
+}
+
+Int32 TerminalEmulator::getCurrentSearchMatch() const {
+	return mCurrentSearchMatch;
 }
 
 int TerminalEmulator::tiswrapped( int y ) {
@@ -657,28 +947,33 @@ size_t TerminalEmulator::ttyread( void ) {
 				mDataCb( mBuf + mBuflen, ret );
 
 			int old_scr = mTerm.scr;
-			int old_histi = mTerm.histi;
+			// Selection coordinates share the viewport's coordinate space. Translate them before
+			// the temporary live-screen switch so parser writes cannot mistake historical text for
+			// a live cell and clear the selection.
+			if ( old_scr > 0 )
+				selmove( -old_scr );
 			mTerm.scr = 0;
 
 			mBuflen += ret;
+			// Parsing must update the live screen at scr == 0, but that temporary viewport is not
+			// presentation state. In particular, DECRST 2026 can call draw() from inside twrite().
+			// Publishing there lets the asynchronous UI mistake the live-screen override for a user
+			// scroll and feed it back through the scrollbar before the viewport is restored below.
+			mPtyHistoryLinesPushed = 0;
+			mProcessingPtyInput = true;
 			written = twrite( mBuf, mBuflen, 0 );
+			mProcessingPtyInput = false;
 			mBuflen -= written;
 			/* keep any incomplete UTF-8 byte sequence for the next call */
 			if ( mBuflen > 0 )
 				memmove( mBuf, mBuf + written, mBuflen );
 
 			if ( old_scr > 0 ) {
-				int lines_pushed = 0;
-				if ( mTerm.histsize > 0 ) {
-					lines_pushed = ( mTerm.histi - old_histi + mTerm.histsize ) % mTerm.histsize;
-				}
+				const int lines_pushed = mPtyHistoryLinesPushed;
 				mTerm.scr = eemin( mTerm.histlen, old_scr + lines_pushed );
-				if ( lines_pushed > 0 ) {
-					mSel.ob.y += lines_pushed;
-					mSel.oe.y += lines_pushed;
-
+				selmove( mTerm.scr );
+				if ( mTerm.scr != old_scr )
 					onScrollPositionChange();
-				}
 			}
 
 			return ret;
@@ -735,7 +1030,9 @@ void TerminalEmulator::kscrollto( const TerminalArg* a ) {
 	int n = a->i;
 
 	if ( 0 <= n && n <= mTerm.histlen ) {
+		int delta = n - mTerm.scr;
 		mTerm.scr = n;
+		selmove( delta );
 		tfulldirt();
 		onScrollPositionChange();
 	}
@@ -762,13 +1059,21 @@ void TerminalEmulator::trimMemory() {
 }
 
 void TerminalEmulator::clearHistory() {
-	for ( int i = 0; i < mTerm.histcursize; ++i )
+	for ( int i = 0; i < mTerm.histcursize; ++i ) {
+		if ( mTerm.hist[i] && !mKittyPlaceholderMetadata.empty() ) {
+			for ( int column = 0; column < mTerm.col; ++column ) {
+				if ( mTerm.hist[i][column].u == KittyGraphicsPlaceholder )
+					mKittyPlaceholderMetadata.erase( &mTerm.hist[i][column] );
+			}
+		}
 		eeSAFE_FREE( mTerm.hist[i] );
+	}
 	eeSAFE_FREE( mTerm.hist );
 	mTerm.histcursize = 0;
 	mTerm.histi = 0;
 	mTerm.histlen = 0;
 	mTerm.max_width = 0;
+	mTerm.histcapacity = 0;
 	mTerm.scr = 0;
 	trimMemory();
 }
@@ -785,6 +1090,27 @@ void TerminalEmulator::setAllowMemoryTrimnming( bool allowMemoryTrimnming ) {
 	mAllowMemoryTrimnming = allowMemoryTrimnming;
 }
 
+void TerminalEmulator::setPresentationInterval( Time interval ) {
+	mPresentationInterval = interval > Time::Zero ? interval : Microseconds( 1000000.0 / 60.0 );
+}
+
+void TerminalEmulator::setDefaultCursorMode( TerminalCursorMode mode ) {
+	mDefaultCursorMode = mode;
+}
+
+void TerminalEmulator::notifyColorSchemeChanged() {
+	const int scheme = colorScheme();
+	if ( mColorSchemeNotifications && mColorScheme != 0 && scheme != mColorScheme )
+		reportColorScheme();
+	mColorScheme = scheme;
+}
+
+void TerminalEmulator::requestGraphicsResync() {
+	mKittyGraphics.resync();
+	mDirty = true;
+	draw();
+}
+
 Vector2i TerminalEmulator::getSize() const {
 	return { mTerm.col, mTerm.row };
 }
@@ -798,10 +1124,17 @@ bool TerminalEmulator::isScrolling() const {
 }
 
 void TerminalEmulator::ttywrite( const char* s, size_t n, int may_echo ) {
+	ttywriteInternal( s, n, may_echo, true );
+}
+
+void TerminalEmulator::ttywriteInternal( const char* s, size_t n, int may_echo,
+										 bool scrollToBottom ) {
 	const char* next;
 
-	TerminalArg arg = { (int)mTerm.scr };
-	kscrolldown( &arg );
+	if ( scrollToBottom ) {
+		TerminalArg arg = { (int)mTerm.scr };
+		kscrolldown( &arg );
+	}
 
 	if ( may_echo && IS_SET( MODE_ECHO ) )
 		twrite( s, (int)n, 1 );
@@ -824,6 +1157,154 @@ void TerminalEmulator::ttywrite( const char* s, size_t n, int may_echo ) {
 		n -= next - s;
 		s = next;
 	}
+}
+
+static Uint32 keyboardSanitizeMod( Uint32 mod ) {
+	return mod & KEYMOD_CTRL_SHIFT_ALT_META;
+}
+
+static bool isModifierKey( Keycode keycode ) {
+	switch ( keycode ) {
+		case KEY_LCTRL:
+		case KEY_LSHIFT:
+		case KEY_LALT:
+		case KEY_LGUI:
+		case KEY_RCTRL:
+		case KEY_RSHIFT:
+		case KEY_RALT:
+		case KEY_RGUI:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static char legacyControlCharacter( Scancode scancode ) {
+	if ( scancode >= SCANCODE_A && scancode <= SCANCODE_Z )
+		return static_cast<char>( scancode - SCANCODE_A + 1 );
+	if ( scancode == SCANCODE_LEFTBRACKET )
+		return 27;
+	if ( scancode == SCANCODE_SLASH )
+		return 28;
+	if ( scancode == SCANCODE_RIGHTBRACKET )
+		return 29;
+	return 0;
+}
+
+void TerminalEmulator::keyEvent( const KittyKeyEvent& event ) {
+	const Uint32 flags = activeKeyboardState().flags;
+	const Uint32 keycode = static_cast<Uint32>( event.keycode );
+	const bool reportAll =
+		flags & kittyKeyboardFlag( KittyKeyboardFlag::ReportAllKeysAsEscapeCodes );
+	const bool altGr = event.modifiers & KEYMOD_RALT;
+	const bool textProducingModifiers = ( event.modifiers & ( KEYMOD_LALT | KEYMOD_META ) ) == 0 &&
+										( altGr || ( event.modifiers & KEYMOD_CTRL ) == 0 );
+	// AltGr keydown can already carry the layout-produced character, but SDL still follows it with
+	// the authoritative text-input event. Always defer AltGr here so it is normalized as composed
+	// text instead of being emitted immediately as an Alt shortcut.
+	if ( reportAll && event.type != KittyKeyEventType::Release &&
+		 ( event.character == 0 || altGr ) && keycode >= 32 && keycode <= 126 &&
+		 textProducingModifiers ) {
+		mPendingTextKey = event;
+		mHasPendingTextKey = true;
+		return;
+	}
+	const auto enhanced = KittyKeyboardEncoder::encode( event, flags );
+	if ( enhanced.handled ) {
+		ttywriteInternal( enhanced.bytes.data(), enhanced.bytes.size(), 1,
+						  !isModifierKey( event.keycode ) );
+		mExpectedTextInput = enhanced.expectedText;
+		return;
+	}
+	if ( event.type == KittyKeyEventType::Release )
+		return;
+
+	if ( event.modifiers & KEYMOD_CTRL ) {
+		const char control = legacyControlCharacter( event.scancode );
+		if ( control ) {
+			ttywrite( &control, 1, 1 );
+			return;
+		}
+	}
+
+	const Uint32 modifiers = keyboardSanitizeMod( event.modifiers );
+	const auto dpy = mDpy.lock();
+	const bool appKeypad = dpy && dpy->getMode( MODE_APPKEYPAD );
+	const bool numLock = dpy && dpy->getMode( MODE_NUMLOCK );
+	const bool appCursor = dpy && dpy->getMode( MODE_APPCURSOR );
+	auto writeMapped = [this, modifiers, appKeypad, numLock, appCursor]( const auto& entries ) {
+		for ( const auto& entry : entries ) {
+			if ( entry.mask != KEYMOD_CTRL_SHIFT_ALT_META && entry.mask != modifiers )
+				continue;
+			if ( appKeypad ? entry.appkey < 0 : entry.appkey > 0 )
+				continue;
+			if ( numLock && entry.appkey == 2 )
+				continue;
+			if ( appCursor ? entry.appcursor < 0 : entry.appcursor > 0 )
+				continue;
+			if ( !entry.string.empty() ) {
+				ttywrite( entry.string.data(), entry.string.size(), 1 );
+				return true;
+			}
+			break;
+		}
+		return false;
+	};
+
+	const auto key = terminalKeyMap.KeyMap().find( event.keycode );
+	if ( key != terminalKeyMap.KeyMap().end() && writeMapped( key->second ) )
+		return;
+	const auto platform = terminalKeyMap.PlatformKeyMap().find( event.scancode );
+	if ( platform != terminalKeyMap.PlatformKeyMap().end() )
+		writeMapped( platform->second );
+}
+
+void TerminalEmulator::textInput( Uint32 codepoint ) {
+	if ( mHasPendingTextKey ) {
+		if ( mPendingTextKey.modifiers & KEYMOD_RALT ) {
+			// SDL's text event is the authoritative result of the AltGr layout level. Report that
+			// result as text, without turning the consumed AltGr (or its platform-synthetic Ctrl)
+			// into an application shortcut. Keep the physical scancode for base-layout reporting.
+			mPendingTextKey.keycode = static_cast<Keycode>( codepoint );
+			mPendingTextKey.modifiers &= ~( KEYMOD_RALT | KEYMOD_CTRL | KEYMOD_SHIFT );
+		}
+		mPendingTextKey.character = codepoint;
+		const auto encoded =
+			KittyKeyboardEncoder::encode( mPendingTextKey, activeKeyboardState().flags );
+		mHasPendingTextKey = false;
+		if ( encoded.handled ) {
+			ttywrite( encoded.bytes.data(), encoded.bytes.size(), 1 );
+			return;
+		}
+	}
+	if ( mExpectedTextInput ) {
+		const bool matches = mExpectedTextInput == codepoint;
+		mExpectedTextInput = 0;
+		if ( matches )
+			return;
+	}
+	const std::string enhanced =
+		KittyKeyboardEncoder::encodeText( codepoint, activeKeyboardState().flags );
+	if ( !enhanced.empty() ) {
+		ttywrite( enhanced.data(), enhanced.size(), 1 );
+		return;
+	}
+	String input;
+	input.push_back( codepoint );
+	const std::string utf8 = input.toUtf8();
+	ttywrite( utf8.data(), utf8.size(), 1 );
+}
+
+void TerminalEmulator::clearPendingKeyboardInput() {
+	mExpectedTextInput = 0;
+	mHasPendingTextKey = false;
+}
+
+void TerminalEmulator::reportFocus( bool focused ) {
+	if ( !focused )
+		clearPendingKeyboardInput();
+	if ( xgetmode( MODE_FOCUS ) )
+		ttywriteInternal( focused ? "\033[I" : "\033[O", 3, false, false );
 }
 
 void TerminalEmulator::ttywriteraw( const char* s, size_t n ) {
@@ -859,8 +1340,12 @@ void TerminalEmulator::tsetdirt( int top, int bot ) {
 	LIMIT( top, 0, mTerm.row - 1 );
 	LIMIT( bot, 0, mTerm.row - 1 );
 	mDirty = true;
+	if ( mAllDirty )
+		return;
 	for ( i = top; i <= bot; i++ )
 		mTerm.dirty[i] = 1;
+	if ( top == 0 && bot == mTerm.row - 1 )
+		mAllDirty = true;
 }
 
 void TerminalEmulator::tsetdirtattr( int attr ) {
@@ -895,6 +1380,9 @@ void TerminalEmulator::tcursor( int mode ) {
 void TerminalEmulator::treset( void ) {
 	uint i;
 
+	resetKittyKeyboardProtocol();
+	mColorSchemeNotifications = false;
+	mTerm.is_syncing = false;
 	mTerm.c = TerminalCursor{};
 	mTerm.c.attr = TerminalGlyph{};
 	mTerm.c.attr.u = ' ';
@@ -921,11 +1409,16 @@ void TerminalEmulator::treset( void ) {
 		tswapscreen();
 	}
 
-	xsetmode( 0, MODE_MOUSE | MODE_MOUSESGR | MODE_APPKEYPAD | MODE_APPCURSOR | MODE_FOCUS |
-					 MODE_BRCKTPASTE | MODE_MOUSEX10 | MODE_MOUSEMANY );
+	xsetmode( 0, MODE_MOUSE | MODE_MOUSESGR | MODE_MOUSESGR_PIXELS | MODE_APPKEYPAD |
+					 MODE_APPCURSOR | MODE_FOCUS | MODE_BRCKTPASTE | MODE_MOUSEX10 |
+					 MODE_MOUSEMANY );
+	// Preserve eterm's established behavior and xterm's default alternateScroll resource.
+	xsetmode( 1, MODE_ALTSCRROLL );
 	auto dpy = mDpy.lock();
-	if ( dpy )
+	if ( dpy ) {
 		dpy->setMode( MODE_VISIBLE, 1 );
+		dpy->setCursorMode( mDefaultCursorMode );
+	}
 }
 
 void TerminalEmulator::tnew( int col, int row, size_t historySize ) {
@@ -950,6 +1443,42 @@ void TerminalEmulator::tswapscreen( void ) {
 	tfulldirt();
 }
 
+KittyKeyboardState& TerminalEmulator::activeKeyboardState() {
+	return tisaltscr() ? mAlternateKeyboardState : mPrimaryKeyboardState;
+}
+
+void TerminalEmulator::resetKittyKeyboardProtocol() {
+	mPrimaryKeyboardState.reset();
+	mAlternateKeyboardState.reset();
+	clearPendingKeyboardInput();
+}
+
+bool TerminalEmulator::handleKittyKeyboardProtocol() {
+	if ( mCsiescseq.mode[0] != 'u' || ( mCsiescseq.priv != '?' && mCsiescseq.priv != '>' &&
+										mCsiescseq.priv != '<' && mCsiescseq.priv != '=' ) )
+		return false;
+
+	auto& state = activeKeyboardState();
+	const bool omitted = mCsiescseq.buf[1] == 'u';
+	if ( mCsiescseq.priv == '?' ) {
+		if ( omitted ) {
+			char response[24];
+			const int len = snprintf( response, sizeof( response ), "\033[?%uu", state.flags );
+			ttywrite( response, static_cast<size_t>( len ), 0 );
+		}
+	} else if ( mCsiescseq.priv == '>' ) {
+		if ( mCsiescseq.narg == 1 && mCsiescseq.arg[0] >= 0 )
+			state.push( static_cast<Uint32>( mCsiescseq.arg[0] ) );
+	} else if ( mCsiescseq.priv == '<' ) {
+		if ( mCsiescseq.narg == 1 && mCsiescseq.arg[0] >= 0 )
+			state.pop( omitted ? 1 : static_cast<size_t>( mCsiescseq.arg[0] ) );
+	} else if ( mCsiescseq.priv == '=' && mCsiescseq.narg <= 2 && mCsiescseq.arg[0] >= 0 ) {
+		const Uint32 mode = mCsiescseq.narg == 1 ? 1 : static_cast<Uint32>( mCsiescseq.arg[1] );
+		state.set( static_cast<Uint32>( mCsiescseq.arg[0] ), mode );
+	}
+	return true;
+}
+
 void TerminalEmulator::tscrolldown( int top, int n ) {
 	int i;
 	Line temp;
@@ -967,11 +1496,11 @@ void TerminalEmulator::tscrolldown( int top, int n ) {
 
 	if ( mTerm.scr == 0 )
 		selscroll( top, n );
+	mKittyGraphics.scrollScreen( top, mTerm.bot, n, false );
 }
 
 void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 	int i;
-	Line temp;
 
 	LIMIT( n, 0, mTerm.bot - top + 1 );
 
@@ -982,7 +1511,9 @@ void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 			mTerm.scr += n;
 
 		for ( i = 0; i < n; i++ )
-			historyPush( mTerm.line[top + i], mTerm.col );
+			historyStealPush( &mTerm.line[top + i], mTerm.col );
+		if ( mProcessingPtyInput )
+			mPtyHistoryLinesPushed += n;
 
 		if ( attop )
 			mTerm.scr = mTerm.histlen;
@@ -993,25 +1524,74 @@ void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 	tclearregion( 0, top, mTerm.col - 1, top + n - 1, copyhist != 0 );
 	tsetdirt( top + n, mTerm.bot );
 
-	for ( i = top; i <= mTerm.bot - n; i++ ) {
-		temp = mTerm.line[i];
-		mTerm.line[i] = mTerm.line[i + n];
-		mTerm.line[i + n] = temp;
+	/* Move the whole live region with a single rotation instead of swapping line
+	 * pointers one by one: this loop is the hot path when large amounts of output
+	 * stream through the terminal. The semantics match the original per-line
+	 * swap: the vacated bottom slots receive the pointers of the cleared top
+	 * rows (a rotation), so every slot keeps owning exactly one unique buffer.
+	 * The per-line dirty flags are gathered first because tsetdirt() above
+	 * already marked the rows that must be redrawn and the move below would
+	 * otherwise clobber that information for the rows being shifted. */
+	int shift = mTerm.bot - n - top + 1;
+	if ( shift > 0 ) {
+		std::rotate( &mTerm.line[top], &mTerm.line[top + n], &mTerm.line[mTerm.bot + 1] );
+
+		/* After a plain scroll every shifted-in row is either a cleared row (top
+		 * region) or an untouched row moving up; both keep their previous dirty
+		 * state except that the vacated bottom rows must be redrawn with the
+		 * cleared content. */
+		for ( i = mTerm.bot; i > mTerm.bot - n && i >= top; i-- )
+			mTerm.dirty[i] = 1;
 	}
+
+	/* A full-screen scroll dirties the cleared rows and every shifted row. Once
+	 * presentation is deferred, later scrolls in the same PTY burst can skip
+	 * repeatedly walking the complete dirty array. */
+	if ( top == 0 && mTerm.bot == mTerm.row - 1 )
+		mAllDirty = true;
 
 	if ( mTerm.scr == 0 )
 		selscroll( top, -n );
+	mKittyGraphics.scrollScreen( top, mTerm.bot, -n,
+								 copyhist && mTerm.histsize > 0 && !IS_SET( MODE_ALTSCREEN ) &&
+									 top == mTerm.top );
 
 	onScrollPositionChange();
+}
+
+void TerminalEmulator::historyUpdateMaxWidth( Line line, int col ) {
+	if ( mTerm.max_width >= col )
+		return;
+
+	if ( line[col - 1].mode & ATTR_WRAP ) {
+		mTerm.max_width = col;
+		return;
+	}
+
+	/* Only inspect cells that could extend the current maximum. This preserves
+	 * tlinelen() semantics for lines with trailing spaces without repeatedly
+	 * scanning the already-known prefix of short history lines. */
+	int width = col;
+#if defined( EE_ARCH_X86_64 )
+	if ( EE::System::CPU::hasAVX2() )
+		width = trailingNonSpaceWidthAVX2( line, width, mTerm.max_width );
+	else
+#elif defined( EE_ARCH_ARM64 )
+	if ( EE::System::CPU::hasNEON() )
+		width = trailingNonSpaceWidthNEON( line, width, mTerm.max_width );
+	else
+#endif
+		while ( width > mTerm.max_width && line[width - 1].u == ' ' )
+			--width;
+	if ( width > mTerm.max_width )
+		mTerm.max_width = width;
 }
 
 void TerminalEmulator::historyPush( Line line, int col ) {
 	if ( mTerm.histsize <= 0 )
 		return;
 
-	int width = tlinelen( line, col );
-	if ( width > mTerm.max_width )
-		mTerm.max_width = width;
+	historyUpdateMaxWidth( line, col );
 
 	mTerm.histi = ( mTerm.histi + 1 ) % mTerm.histsize;
 	if ( mTerm.histlen < mTerm.histsize ) {
@@ -1023,12 +1603,57 @@ void TerminalEmulator::historyPush( Line line, int col ) {
 				mTerm.hist[i] = nullptr;
 			mTerm.histcursize = newSize;
 		}
-	} else if ( mTerm.hist[mTerm.histi] ) {
-		eeSAFE_FREE( mTerm.hist[mTerm.histi] );
 	}
 
-	mTerm.hist[mTerm.histi] = (Line)eeMalloc( col * sizeof( TerminalGlyph ) );
-	memcpy( mTerm.hist[mTerm.histi], line, col * sizeof( TerminalGlyph ) );
+	Line* slot = &mTerm.hist[mTerm.histi];
+	/* All slots are (re)allocated together whenever the terminal width changes
+	 * (see tresize/historyReflow), so a single shared capacity is enough to know
+	 * when a slot can be recycled in place. This avoids a malloc+free pair for
+	 * every pushed line, which is the hot path when output scrolls quickly. */
+	if ( !*slot || mTerm.histcapacity < col ) {
+		eeSAFE_FREE( *slot );
+		mTerm.histcapacity = col;
+		*slot = (Line)eeMalloc( col * sizeof( TerminalGlyph ) );
+	}
+	memcpy( *slot, line, col * sizeof( TerminalGlyph ) );
+}
+
+void TerminalEmulator::historyStealPush( Line* lineSlot, int col ) {
+	if ( mTerm.histsize <= 0 )
+		return;
+
+	/* Inspect the line before its ownership moves into the history ring. */
+	historyUpdateMaxWidth( *lineSlot, col );
+
+	mTerm.histi = ( mTerm.histi + 1 ) % mTerm.histsize;
+	if ( mTerm.histlen < mTerm.histsize )
+		mTerm.histlen++;
+
+	if ( mTerm.histi >= (int)mTerm.histcursize ) {
+		int newSize = eemin( mTerm.histi + mTerm.row, mTerm.histsize );
+		mTerm.hist = (Line*)xrealloc( mTerm.hist, newSize * sizeof( Line ) );
+		for ( int i = mTerm.histcursize; i < newSize; i++ )
+			mTerm.hist[i] = nullptr;
+		mTerm.histcursize = newSize;
+	}
+
+	/* Zero-copy scroll: the screen row's buffer becomes the history entry and
+	 * the evicted history buffer becomes the screen row. Ownership trades
+	 * places; no bytes move. tscrollup() blanks the returned buffer right
+	 * after through tclearregion(), so no clearing happens here. This keeps a
+	 * single write pass per scrolled row instead of a copy plus a clear. */
+	Line* slot = &mTerm.hist[mTerm.histi];
+	Line recycled = *slot;
+	*slot = *lineSlot;
+	*lineSlot = recycled;
+
+	if ( !recycled || mTerm.histcapacity < col ) {
+		/* Fresh ring growth (null slot) or an undersized leftover buffer: the
+		 * screen row gets a brand-new buffer instead. */
+		eeSAFE_FREE( recycled );
+		*lineSlot = (Line)eeMalloc( col * sizeof( TerminalGlyph ) );
+		mTerm.histcapacity = col;
+	}
 }
 
 void TerminalEmulator::historyReflow( int old_col, int new_col ) {
@@ -1087,7 +1712,6 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 
 		if ( is_wrapped )
 			continue;
-
 		while ( logical_len > 0 ) {
 			TerminalGlyph* g = &logical[logical_len - 1];
 			if ( g->u == ' ' && g->bg == mDefaultBg && ( g->mode & ATTR_BOLD ) == 0 )
@@ -1107,7 +1731,17 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 
 		int cursor = 0;
 		while ( cursor < logical_len ) {
-			Line nl = (Line)eeMalloc( new_col * sizeof( TerminalGlyph ) );
+			Line nl;
+			if ( new_len < mTerm.histsize ) {
+				/* Fresh slot: allocate a new line buffer. */
+				nl = (Line)eeMalloc( new_col * sizeof( TerminalGlyph ) );
+			} else {
+				/* Destination ring already holds histsize lines: detach the oldest
+				 * one and reuse its buffer instead of free+malloc. */
+				int next = ( new_histi + 1 ) % mTerm.histsize;
+				nl = new_hist[next];
+				new_hist[next] = nullptr;
+			}
 			for ( j = 0; j < new_col; j++ ) {
 				nl[j] = mTerm.c.attr;
 				nl[j].u = ' ';
@@ -1151,12 +1785,21 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 			else
 				nl[new_col - 1].mode &= ~ATTR_WRAP;
 
+			/* Clear the rest of a reused buffer so no stale glyphs from the previous
+			 * reflow pass remain visible beyond the copied content. */
+			for ( j = copy_width; j < new_col; j++ ) {
+				nl[j] = mTerm.c.attr;
+				nl[j].u = ' ';
+				nl[j].mode = 0;
+			}
+
 			new_histi = ( new_histi + 1 ) % mTerm.histsize;
 			if ( new_len < mTerm.histsize ) {
 				new_len++;
-			} else {
-				eeSAFE_FREE( new_hist[new_histi] );
 			}
+			/* When the ring is full the buffer ownership was already resolved above
+			 * (oldest line detached and reused, or freshly allocated), so there is
+			 * nothing left to free here. */
 			new_hist[new_histi] = nl;
 
 			int current_width = ( cursor + copy_width < logical_len ) ? new_col : copy_width;
@@ -1180,6 +1823,7 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 	mTerm.histlen = new_len;
 	mTerm.histi = ( new_histi == -1 ) ? 0 : new_histi;
 	mTerm.max_width = new_max_width;
+	mTerm.histcapacity = new_col;
 }
 
 void TerminalEmulator::historyPopToScreen( int loaded, int col ) {
@@ -1195,6 +1839,11 @@ void TerminalEmulator::historyPopToScreen( int loaded, int col ) {
 	}
 	mTerm.histi = ( mTerm.histi - loaded + mTerm.histsize ) % mTerm.histsize;
 	mTerm.histlen -= loaded;
+	if ( mTerm.histlen == 0 ) {
+		mTerm.histcursize = 0;
+		mTerm.histcapacity = 0;
+		eeSAFE_FREE( mTerm.hist );
+	}
 }
 
 void TerminalEmulator::selmove( int n ) {
@@ -1238,27 +1887,25 @@ void TerminalEmulator::tnewline( int first_col ) {
 void TerminalEmulator::csiparse( void ) {
 	char *p = mCsiescseq.buf, *np;
 	long int v;
-	int sep = ';'; /* colon or semi-colon, but not both */
 
 	mCsiescseq.narg = 0;
-	if ( *p == '?' ) {
-		mCsiescseq.priv = 1;
+	if ( *p == '<' || *p == '=' || *p == '>' || *p == '?' ) {
+		mCsiescseq.priv = *p;
 		p++;
 	}
 
 	mCsiescseq.buf[mCsiescseq.len] = '\0';
-	while ( p < mCsiescseq.buf + mCsiescseq.len ) {
+	while ( p < mCsiescseq.buf + mCsiescseq.len && mCsiescseq.narg < ESC_ARG_SIZ ) {
 		np = NULL;
 		v = strtol( p, &np, 10 );
 		if ( np == p )
 			v = 0;
 		if ( v == LONG_MAX || v == LONG_MIN )
 			v = -1;
-		mCsiescseq.arg[mCsiescseq.narg++] = v;
+		mCsiescseq.arg[mCsiescseq.narg] = v;
 		p = np;
-		if ( sep == ';' && *p == ':' )
-			sep = ':'; /* allow override to colon once */
-		if ( *p != sep || mCsiescseq.narg == ESC_ARG_SIZ )
+		mCsiescseq.sep[mCsiescseq.narg++] = *p == ';' || *p == ':' ? *p : '\0';
+		if ( *p != ';' && *p != ':' )
 			break;
 		p++;
 	}
@@ -1316,6 +1963,8 @@ void TerminalEmulator::tsetchar( Rune u, TerminalGlyph* attr, int x, int y ) {
 		TLINE( y )[x - 1].mode &= ~ATTR_WIDE;
 	}
 
+	if ( TLINE( y )[x].u == KittyGraphicsPlaceholder )
+		mKittyPlaceholderMetadata.erase( &TLINE( y )[x] );
 	mTerm.dirty[y] = 1;
 	TLINE( y )[x] = *attr;
 	TLINE( y )[x].u = u;
@@ -1333,11 +1982,39 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2, bool skip_c
 		temp = x1, x1 = x2, x2 = temp;
 	if ( y1 > y2 )
 		temp = y1, y1 = y2, y2 = temp;
-
 	LIMIT( x1, 0, mTerm.col - 1 );
 	LIMIT( x2, 0, mTerm.col - 1 );
 	LIMIT( y1, 0, mTerm.row - 1 );
 	LIMIT( y2, 0, mTerm.row - 1 );
+	if ( !mKittyPlaceholderMetadata.empty() ) {
+		for ( int clearY = y1; clearY <= y2; ++clearY ) {
+			for ( int clearX = x1; clearX <= x2; ++clearX ) {
+				if ( TLINE( clearY )[clearX].u == KittyGraphicsPlaceholder )
+					mKittyPlaceholderMetadata.erase( &TLINE( clearY )[clearX] );
+			}
+		}
+	}
+
+	/*
+	 * Fast path for the common full-row clear performed while scrolling: no
+	 * selection can be affected and every cleared cell gets the exact same
+	 * glyph, so fill complete glyph objects instead of touching four scattered
+	 * members per cell and running a per-cell selected() check.
+	 */
+	if ( skip_clear && mSel.ob.x == -1 && x1 == 0 && x2 == mTerm.col - 1 ) {
+		static_assert( sizeof( TerminalGlyph ) == 16,
+					   "tclearregion fast path expects 16-byte glyphs" );
+		TerminalGlyph blank = mTerm.c.attr;
+		blank.mode = 0;
+		blank.u = ' ';
+		for ( y = y1; y <= y2; y++ ) {
+			gp = TLINE( y );
+			mTerm.dirty[y] = 1;
+			std::fill_n( gp, mTerm.col, blank );
+			mDirty = true;
+		}
+		return;
+	}
 
 	for ( y = y1; y <= y2; y++ ) {
 		mTerm.dirty[y] = 1;
@@ -1394,33 +2071,63 @@ void TerminalEmulator::tdeleteline( int n ) {
 		tscrollup( mTerm.c.y, n, 0 );
 }
 
-int32_t TerminalEmulator::tdefcolor( int* attr, int* npar, int l ) {
+int32_t TerminalEmulator::tdefcolor( int* attr, const char* separators, int* npar, int l ) {
 	int32_t idx = -1;
 	uint r, g, b;
+	if ( !attr || !npar || l < 0 || l > ESC_ARG_SIZ || *npar < 0 || *npar >= l ) {
+		terminalDiagnostic( "erresc(color): invalid parameter index\n" );
+		return idx;
+	}
+	const bool subparameters = separators && separators[*npar] == ':';
+	const int selector = *npar + 1;
 
-	switch ( attr[*npar + 1] ) {
+	if ( selector >= l ) {
+		terminalDiagnostic( "erresc(color): missing color type\n" );
+		return idx;
+	}
+
+	switch ( attr[selector] ) {
 		case 2: /* direct color in RGB space */
-			if ( *npar + 4 >= l ) {
-				fprintf( stderr, "erresc(38): Incorrect number of parameters (%d)\n", *npar );
+			if ( subparameters ) {
+				int end = selector;
+				while ( end < l - 1 && separators[end] == ':' )
+					++end;
+				const int componentCount = end - selector;
+				if ( componentCount != 3 && componentCount != 4 ) {
+					terminalDiagnostic( "erresc(color): invalid RGB subparameter count %d\n",
+										componentCount );
+					*npar = end;
+					break;
+				}
+				const int rgb = selector + ( componentCount == 4 ? 2 : 1 );
+				r = attr[rgb];
+				g = attr[rgb + 1];
+				b = attr[rgb + 2];
+				*npar = end;
+			} else if ( *npar + 4 < l ) {
+				r = attr[*npar + 2];
+				g = attr[*npar + 3];
+				b = attr[*npar + 4];
+				*npar += 4;
+			} else {
+				terminalDiagnostic( "erresc(color): incorrect number of RGB parameters (%d)\n",
+									*npar );
 				break;
 			}
-			r = attr[*npar + 2];
-			g = attr[*npar + 3];
-			b = attr[*npar + 4];
-			*npar += 4;
 			if ( !BETWEEN( r, 0, 255 ) || !BETWEEN( g, 0, 255 ) || !BETWEEN( b, 0, 255 ) )
-				fprintf( stderr, "erresc: bad rgb color (%u,%u,%u)\n", r, g, b );
+				terminalDiagnostic( "erresc: bad rgb color (%u,%u,%u)\n", r, g, b );
 			else
 				idx = TRUECOLOR( r, g, b );
 			break;
 		case 5: /* indexed color */
 			if ( *npar + 2 >= l ) {
-				fprintf( stderr, "erresc(38): Incorrect number of parameters (%d)\n", *npar );
+				terminalDiagnostic( "erresc(color): incorrect number of indexed parameters (%d)\n",
+									*npar );
 				break;
 			}
 			*npar += 2;
 			if ( !BETWEEN( attr[*npar], 0, 255 ) )
-				fprintf( stderr, "erresc: bad fgcolor %d\n", attr[*npar] );
+				terminalDiagnostic( "erresc: bad indexed color %d\n", attr[*npar] );
 			else
 				idx = attr[*npar];
 			break;
@@ -1429,14 +2136,18 @@ int32_t TerminalEmulator::tdefcolor( int* attr, int* npar, int l ) {
 		case 3: /* direct color in CMY space */
 		case 4: /* direct color in CMYK space */
 		default:
-			fprintf( stderr, "erresc(38): gfx attr %d unknown\n", attr[*npar] );
+			terminalDiagnostic( "erresc(color): color type %d unknown\n", attr[selector] );
+			if ( subparameters ) {
+				while ( *npar < l - 1 && separators[*npar] == ':' )
+					++*npar;
+			}
 			break;
 	}
 
 	return idx;
 }
 
-void TerminalEmulator::tsetattr( int* attr, int l ) {
+void TerminalEmulator::tsetattr( int* attr, int l, const char* separators ) {
 	// Check if this is a private sequence (should be ignored for SGR)
 	// Private sequences start with '?' and should not affect text attributes
 	if ( mCsiescseq.priv ) {
@@ -1455,6 +2166,7 @@ void TerminalEmulator::tsetattr( int* attr, int l ) {
 										ATTR_BLINK | ATTR_REVERSE | ATTR_INVISIBLE | ATTR_STRUCK );
 				mTerm.c.attr.fg = mDefaultFg;
 				mTerm.c.attr.bg = mDefaultBg;
+				mKittyUnderlineColor = 0;
 				break;
 			case 1:
 				mTerm.c.attr.mode |= ATTR_BOLD;
@@ -1504,24 +2216,25 @@ void TerminalEmulator::tsetattr( int* attr, int l ) {
 				mTerm.c.attr.mode &= ~ATTR_STRUCK;
 				break;
 			case 38:
-				if ( ( idx = tdefcolor( attr, &i, l ) ) >= 0 )
+				if ( ( idx = tdefcolor( attr, separators, &i, l ) ) >= 0 )
 					mTerm.c.attr.fg = idx;
 				break;
 			case 39: /* set foreground color to default */
 				mTerm.c.attr.fg = mDefaultFg;
 				break;
 			case 48:
-				if ( ( idx = tdefcolor( attr, &i, l ) ) >= 0 )
+				if ( ( idx = tdefcolor( attr, separators, &i, l ) ) >= 0 )
 					mTerm.c.attr.bg = idx;
 				break;
 			case 49: /* set background color to default */
 				mTerm.c.attr.bg = mDefaultBg;
 				break;
 			case 58:
-				/* This starts a sequence to change the color of
-				 * "underline" pixels. We don't support that and
-				 * instead eat up a following "5;n" or "2;r;g;b". */
-				tdefcolor( attr, &i, l );
+				if ( ( idx = tdefcolor( attr, separators, &i, l ) ) >= 0 )
+					mKittyUnderlineColor = idx;
+				break;
+			case 59:
+				mKittyUnderlineColor = 0;
 				break;
 			default:
 				if ( BETWEEN( attr[i], 30, 37 ) ) {
@@ -1533,8 +2246,9 @@ void TerminalEmulator::tsetattr( int* attr, int l ) {
 				} else if ( BETWEEN( attr[i], 100, 107 ) ) {
 					mTerm.c.attr.bg = attr[i] - 100 + 8;
 				} else {
-					fprintf( stderr, "erresc(default): gfx attr %d unknown\n", attr[i] );
-					csidump();
+					terminalDiagnostic( "erresc(default): gfx attr %d unknown\n", attr[i] );
+					if ( terminalDiagnosticsEnabled() )
+						csidump();
 				}
 				break;
 		}
@@ -1615,6 +2329,14 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 				case 1006: /* 1006: extended reporting mode */
 					xsetmode( set, MODE_MOUSESGR );
 					break;
+				case 1016: /* 1016: extended reporting in terminal-grid pixels */
+					xsetmode( set, MODE_MOUSESGR_PIXELS );
+					if ( set )
+						xsetmode( 1, MODE_MOUSESGR );
+					break;
+				case 1007: /* wheel sends cursor keys on the alternate screen */
+					xsetmode( set, MODE_ALTSCRROLL );
+					break;
 				case 1034:
 					xsetmode( set, MODE_8BIT );
 					break;
@@ -1632,7 +2354,10 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 						tclearregion( 0, 0, mTerm.col - 1, mTerm.row - 1 );
 					}
 					if ( set ^ alt ) /* set is always 1 or 0 */
+					{
 						tswapscreen();
+						mKittyGraphics.setAlternateScreen( set != 0 );
+					}
 					if ( *args != 1049 )
 						break;
 					/* FALLTHROUGH */
@@ -1654,19 +2379,23 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 				case 1039: /* ESC to Meta (not implemented) */
 					break;
 				case 2026: {
-					// IGNORE DECSET/DECRST 2026 for sync updates?
-					// (https://codeberg.org/dnkl/foot/pulls/461/files)
-					// mTerm.is_syncing = ( set == 1 );
-					/* if ( !mTerm.is_syncing ) {
-						// When syncing ends, we must perform the deferred draw
+					if ( set ) {
+						mTerm.is_syncing = true;
+						mSynchronizedUpdateClock.restart();
+					} else if ( mTerm.is_syncing ) {
+						mTerm.is_syncing = false;
+						// Publish the complete frame immediately instead of waiting for the next
+						// presentation deadline.
 						draw();
-					} */
+					}
 					break;
 				}
+				case 2031: /* Light/dark color-scheme change notifications. */
+					mColorSchemeNotifications = set;
+					mColorScheme = colorScheme();
+					break;
 				default:
-#ifdef EE_DEBUG
-					fprintf( stderr, "erresc: unknown private set/reset mode %d\n", *args );
-#endif
+					terminalDiagnostic( "erresc: unknown private set/reset mode %d\n", *args );
 					break;
 			}
 		} else {
@@ -1686,9 +2415,7 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 					MODBIT( mTerm.mode, set, MODE_CRLF );
 					break;
 				default:
-#ifdef EE_DEBUG
-					fprintf( stderr, "erresc: unknown set/reset mode %d\n", *args );
-#endif
+					terminalDiagnostic( "erresc: unknown set/reset mode %d\n", *args );
 					break;
 			}
 		}
@@ -1696,7 +2423,13 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 }
 
 void TerminalEmulator::handleDeviceAttributes() {
-	if ( mCsiescseq.priv ) {
+	if ( mCsiescseq.priv == '>' ) {
+		char buf[64];
+		const auto version = EE::Version::getVersion();
+		const int revision = version.major * 10000 + version.minor * 100 + version.patch;
+		const int len = snprintf( buf, sizeof( buf ), "\033[>0;%d;0c", revision );
+		ttywrite( buf, len, 0 );
+	} else if ( mCsiescseq.priv == '?' ) {
 		char buf[64];
 		int len;
 		// Private Device Attributes - respond with terminal capabilities
@@ -1719,7 +2452,7 @@ void TerminalEmulator::handleDeviceAttributes() {
 				// Unknown private DA query
 				break;
 		}
-	} else {
+	} else if ( !mCsiescseq.priv ) {
 		// Standard DA - respond with VT100 identification
 		ttywrite( vtiden, strlen( vtiden ), 0 );
 	}
@@ -1730,14 +2463,14 @@ void TerminalEmulator::csihandle( void ) {
 	int len;
 
 	std::shared_ptr<ITerminalDisplay> dpy{};
+	if ( handleKittyKeyboardProtocol() )
+		return;
 
 	switch ( mCsiescseq.mode[0] ) {
 		default:
 		unknown:
-#ifdef EE_DEBUG
-			fprintf( stderr, "erresc: unknown csi " );
+			terminalDiagnostic( "erresc: unknown csi " );
 			csidump();
-#endif
 			/* die(""); */
 			break;
 		case '@': /* ICH -- Insert <n> blank char */
@@ -1843,6 +2576,7 @@ void TerminalEmulator::csihandle( void ) {
 					// fallthrough
 				case 2: /* all */
 					tclearregion( 0, 0, mTerm.col - 1, mTerm.row - 1 );
+					mKittyGraphics.clearScreen();
 					break;
 				default:
 					goto unknown;
@@ -1874,7 +2608,9 @@ void TerminalEmulator::csihandle( void ) {
 			tinsertblankline( mCsiescseq.arg[0] );
 			break;
 		case 'l': /* RM -- Reset Mode */
-			tsetmode( mCsiescseq.priv, 0, mCsiescseq.arg, mCsiescseq.narg );
+			if ( mCsiescseq.priv && mCsiescseq.priv != '?' )
+				goto unknown;
+			tsetmode( mCsiescseq.priv == '?', 0, mCsiescseq.arg, mCsiescseq.narg );
 			break;
 		case 'M': /* DL -- Delete <n> lines */
 			DEFAULT( mCsiescseq.arg[0], 1 );
@@ -1897,41 +2633,19 @@ void TerminalEmulator::csihandle( void ) {
 			tmoveato( mTerm.c.x, mCsiescseq.arg[0] - 1 );
 			break;
 		case 'h': /* SM -- Set terminal mode */
-			tsetmode( mCsiescseq.priv, 1, mCsiescseq.arg, mCsiescseq.narg );
+			if ( mCsiescseq.priv && mCsiescseq.priv != '?' )
+				goto unknown;
+			tsetmode( mCsiescseq.priv == '?', 1, mCsiescseq.arg, mCsiescseq.narg );
 			break;
 		case 'm': /* SGR -- Terminal attribute (color) */
-			tsetattr( mCsiescseq.arg, mCsiescseq.narg );
-			break;
-		case '>': /* Private sequences */
-			switch ( mCsiescseq.mode[1] ) {
-				case '4': /* Extended underline styles ESC[>4;Nm */
-					// Extended underline styles - fallback to standard underline
-					/* DEFAULT( mCsiescseq.arg[0], 1 );
-					switch ( mCsiescseq.arg[0] ) {
-						case 0: // No underline - fallback to ESC[24m
-						{
-							int fallback_args[] = { 24 }; // Reset underline
-							tsetattr( fallback_args, 1 );
-						} break;
-						case 1: // Straight underline - fallback to ESC[4m
-						case 2: // Double underline
-						case 3: // Curly underline
-						case 4: // Dotted underline
-						case 5: // Dashed underline
-						{
-							int fallback_args[] = { 4 }; // Standard underline
-							tsetattr( fallback_args, 1 );
-						} break;
-						default:
-							goto unknown;
-					} */
-					break;
-				default:
-					goto unknown;
-			}
+			if ( mCsiescseq.priv == '>' )
+				break; // Extended underline styles are not rendered yet.
+			tsetattr( mCsiescseq.arg, mCsiescseq.narg, mCsiescseq.sep );
 			break;
 		case 'n': /* DSR – Device Status Report (cursor position) */
-			if ( mCsiescseq.arg[0] == 6 ) {
+			if ( mCsiescseq.priv == '?' && mCsiescseq.arg[0] == 996 ) {
+				reportColorScheme();
+			} else if ( !mCsiescseq.priv && mCsiescseq.arg[0] == 6 ) {
 				len = snprintf( buf, sizeof( buf ), "\033[%i;%iR", mTerm.c.y + 1, mTerm.c.x + 1 );
 				ttywrite( buf, len, 0 );
 			}
@@ -1959,23 +2673,42 @@ void TerminalEmulator::csihandle( void ) {
 		case ' ':
 			switch ( mCsiescseq.mode[1] ) {
 				case 'q': /* DECSCUSR -- Set Cursor Style */
-					if ( mCsiescseq.arg[0] < 0 ||
-						 mCsiescseq.arg[0] < TerminalCursorMode::MAX_CURSOR )
+					if ( mCsiescseq.priv || mCsiescseq.arg[0] < 0 ||
+						 mCsiescseq.arg[0] >= TerminalCursorMode::StExtension )
 						goto unknown;
 					dpy = mDpy.lock();
-					if ( dpy )
-						dpy->setCursorMode( (TerminalCursorMode)mCsiescseq.arg[0] );
+					if ( dpy ) {
+						const auto mode = static_cast<TerminalCursorMode>( mCsiescseq.arg[0] );
+						dpy->setCursorMode( mode == BlinkingBlock
+												? blinkingCursorVariant( mDefaultCursorMode )
+												: mode );
+					}
 					break;
 				default:
 					goto unknown;
 			}
 			break;
-		case '=': /* Progressive enhancement sequences */
-			/* Keyboard protocol ESC[=Nu */
-			/* Do nothing for the moment */
+		case 'q': /* XTVERSION -- Report terminal name and version */
+			if ( mCsiescseq.priv != '>' || mCsiescseq.arg[0] != 0 )
+				goto unknown;
+			len = snprintf( buf, sizeof( buf ), "\033P>|eterm %s\033\\",
+							EE::Version::getVersionName( false ).c_str() );
+			ttywrite( buf, len, 0 );
 			break;
 		case 't': /* Window manipulation */
 			switch ( mCsiescseq.arg[0] ) {
+				case 14: /* Report terminal grid size in pixels. */
+					len =
+						snprintf( buf, sizeof( buf ), "\033[4;%d;%dt", mPixelHeight, mPixelWidth );
+					ttywrite( buf, len, 0 );
+					break;
+				case 16: { /* Report terminal cell size in pixels. */
+					const int cellWidth = mTerm.col > 0 ? mPixelWidth / mTerm.col : 0;
+					const int cellHeight = mTerm.row > 0 ? mPixelHeight / mTerm.row : 0;
+					len = snprintf( buf, sizeof( buf ), "\033[6;%d;%dt", cellHeight, cellWidth );
+					ttywrite( buf, len, 0 );
+					break;
+				}
 				case 22: /* Save window title */
 					// Push current title to title stack
 					mTerm.title_stack.push_back( mTerm.title );
@@ -1997,16 +2730,12 @@ void TerminalEmulator::csihandle( void ) {
 					goto unknown;
 			}
 			break;
-		case '?':
-			/* Private mode queries - ignore or handle appropriately */
-			/* For XTQMODKEYS and similar queries, we should either:
-			   1. Ignore completely (do nothing)
-			   2. Send a proper response if required */
-			break;
 	}
 }
 
 void TerminalEmulator::csidump( void ) {
+	if ( !terminalDiagnosticsEnabled() )
+		return;
 	size_t i;
 	uint c;
 
@@ -2037,6 +2766,20 @@ void TerminalEmulator::strhandle( void ) {
 	int j, narg, par;
 
 	mTerm.esc &= ~( ESC_STR_END | ESC_STR );
+	if ( mStrescseq.discarded )
+		return;
+	if ( mStrescseq.type == '_' && mStrescseq.len > 0 && mStrescseq.buf[0] == 'G' ) {
+		auto result =
+			mKittyGraphics.handle( std::string_view{ mStrescseq.buf + 1, mStrescseq.len - 1 },
+								   Vector2i( mTerm.c.x, mTerm.c.y ) );
+		if ( !result.response.empty() )
+			write( result.response.data(), result.response.size() );
+		if ( result.changed )
+			mDirty = true;
+		if ( result.cursorMovement != Vector2i::Zero )
+			tmoveto( mTerm.c.x + result.cursorMovement.x, mTerm.c.y + result.cursorMovement.y );
+		return;
+	}
 	strparse();
 	par = ( narg = mStrescseq.narg ) ? atoi( mStrescseq.args[0] ) : 0;
 
@@ -2081,7 +2824,7 @@ void TerminalEmulator::strhandle( void ) {
 							setClipboard( dec );
 							xfree( dec );
 						} else {
-							fprintf( stderr, "erresc: invalid base64\n" );
+							terminalDiagnostic( "erresc: invalid base64\n" );
 						}
 					}
 					return;
@@ -2097,31 +2840,57 @@ void TerminalEmulator::strhandle( void ) {
 					if ( !strcmp( p, "?" ) ) {
 						osc_color_response( par, osc_table[j].idx, 0 );
 					} else if ( xsetcolorname( osc_table[j].idx, p ) ) {
-						fprintf( stderr, "erresc: invalid %s color: %s\n", osc_table[j].str, p );
+						terminalDiagnostic( "erresc: invalid %s color: %s\n", osc_table[j].str, p );
 					} else {
 						tfulldirt();
 					}
 					return;
-				case 4: /* color set */
-					if ( narg < 3 )
-						break;
-					p = mStrescseq.args[2];
-					/* FALLTHROUGH */
-				case 104: /* color reset, here p = NULL */
-					j = ( narg > 1 ) ? atoi( mStrescseq.args[1] ) : -1;
-					if ( resetColor( j, p ) ) {
-						if ( par == 104 && narg <= 1 )
-							return; /* color reset without parameter */
-						fprintf( stderr, "erresc: invalid color j=%d, p=%s\n", j,
-								 p ? p : "(null)" );
-					} else {
-						/*
-						 * TODO if defaultbg color is changed, borders
-						 * are dirty
-						 */
-						redraw();
+				case 4: { /* set or query palette colors */
+					bool changed = false;
+					for ( int arg = 1; arg + 1 < narg; arg += 2 ) {
+						p = mStrescseq.args[arg + 1];
+						if ( !String::fromString( j, std::string_view{ mStrescseq.args[arg] } ) ||
+							 j < 0 ) {
+							terminalDiagnostic( "erresc: invalid OSC 4 color index: %s\n",
+												mStrescseq.args[arg] );
+							continue;
+						}
+						if ( !strcmp( p, "?" ) ) {
+							osc_color_response( j, j, 1 );
+						} else if ( resetColor( j, p ) ) {
+							terminalDiagnostic( "erresc: invalid color j=%d, p=%s\n", j, p );
+						} else {
+							changed = true;
+						}
 					}
+					if ( changed )
+						redraw();
 					return;
+				}
+				case 104: { /* reset palette colors */
+					if ( narg <= 1 ) {
+						loadColors();
+						tfulldirt();
+						return;
+					}
+					bool changed = false;
+					for ( int arg = 1; arg < narg; ++arg ) {
+						if ( !String::fromString( j, std::string_view{ mStrescseq.args[arg] } ) ||
+							 j < 0 ) {
+							terminalDiagnostic( "erresc: invalid OSC 104 color index: %s\n",
+												mStrescseq.args[arg] );
+							continue;
+						}
+						if ( resetColor( j, nullptr ) ) {
+							terminalDiagnostic( "erresc: palette color %d not found\n", j );
+						} else {
+							changed = true;
+						}
+					}
+					if ( changed )
+						tfulldirt();
+					return;
+				}
 				case 110: /* reset dynamic VT100 text foreground color */
 				case 111: /* reset dynamic VT100 text background color */
 				case 112: /* reset dynamic text cursor color */
@@ -2130,7 +2899,7 @@ void TerminalEmulator::strhandle( void ) {
 					if ( ( j = par - 110 ) < 0 || j >= (int)LEN( osc_table ) )
 						break; /* shouldn't be possible */
 					if ( resetColor( osc_table[j].idx, NULL ) ) {
-						fprintf( stderr, "erresc: %s color not found\n", osc_table[j].str );
+						terminalDiagnostic( "erresc: %s color not found\n", osc_table[j].str );
 					} else {
 						tfulldirt();
 					}
@@ -2140,6 +2909,13 @@ void TerminalEmulator::strhandle( void ) {
 						mCurrentWorkingDirectory = URI( mStrescseq.args[1] ).getPath();
 					return;
 				}
+				case 8: /* Hyperlink: OSC 8 ; params ; URI ST */
+					// Hyperlink metadata is not stored in terminal cells yet. Recognize valid open
+					// and close markers so applications can emit OSC 8 without producing
+					// diagnostics.
+					if ( narg >= 3 )
+						return;
+					break;
 				case 133: {
 					if ( narg > 1 ) {
 						j = ( narg > 1 ) ? mStrescseq.args[1][0] : -1;
@@ -2186,10 +2962,8 @@ void TerminalEmulator::strhandle( void ) {
 			return;
 	}
 
-#ifdef EE_DEBUG
-	logError( "erresc: unknown str " );
+	terminalDiagnostic( "erresc: unknown str " );
 	strdump();
-#endif
 }
 
 void TerminalEmulator::strparse( void ) {
@@ -2213,6 +2987,8 @@ void TerminalEmulator::strparse( void ) {
 }
 
 void TerminalEmulator::strdump( void ) {
+	if ( !terminalDiagnosticsEnabled() )
+		return;
 	size_t i;
 	uint c;
 
@@ -2238,10 +3014,16 @@ void TerminalEmulator::strdump( void ) {
 }
 
 void TerminalEmulator::strreset( void ) {
-	auto old = mStrescseq.buf;
+	char* buffer = mStrescseq.buf;
+	size_t capacity = mStrescseq.siz;
+	constexpr size_t MaxRetainedStringCapacity = 128 * 1024;
+	if ( !buffer || capacity > MaxRetainedStringCapacity ) {
+		buffer = (char*)xrealloc( buffer, STR_BUF_SIZ );
+		capacity = STR_BUF_SIZ;
+	}
 	mStrescseq = STREscape{};
-	mStrescseq.buf = (char*)xrealloc( old, STR_BUF_SIZ );
-	mStrescseq.siz = STR_BUF_SIZ;
+	mStrescseq.buf = buffer;
+	mStrescseq.siz = capacity;
 }
 
 void TerminalEmulator::sendbreak( const TerminalArg* ) {
@@ -2329,7 +3111,7 @@ void TerminalEmulator::tdeftran( char ascii ) {
 	char* p;
 
 	if ( ( p = strchr( cs, ascii ) ) == NULL ) {
-		fprintf( stderr, "esc unhandled charset: ESC ( %c\n", ascii );
+		terminalDiagnostic( "esc unhandled charset: ESC ( %c\n", ascii );
 	} else {
 		mTerm.trantbl[mTerm.icharset] = vcs[p - cs];
 	}
@@ -2520,6 +3302,7 @@ int TerminalEmulator::eschandle( uchar ascii ) {
 			ttywrite( vtiden, strlen( vtiden ), 0 );
 			break;
 		case 'c': /* RIS -- Reset to initial state */
+			mKittyGraphics.reset();
 			treset();
 			resettitle();
 			loadColors();
@@ -2541,8 +3324,8 @@ int TerminalEmulator::eschandle( uchar ascii ) {
 				strhandle();
 			break;
 		default:
-			fprintf( stderr, "erresc: unknown sequence ESC 0x%02X '%c'\n", (uchar)ascii,
-					 isprint( ascii ) ? ascii : '.' );
+			terminalDiagnostic( "erresc: unknown sequence ESC 0x%02X '%c'\n", (uchar)ascii,
+								isprint( ascii ) ? ascii : '.' );
 			break;
 	}
 	return 1;
@@ -2588,6 +3371,35 @@ void TerminalEmulator::tputc( Rune u ) {
 	size_t len;
 	TerminalGlyph* gp;
 
+	/*
+	 * Fast path for plain printable ASCII while idle (no escape sequence in
+	 * progress, no special print/insert mode): the checks below are all
+	 * invariant for this class of input, so the glyph is written and the
+	 * cursor advanced directly. This is the hot loop when large amounts of
+	 * text stream through the terminal.
+	 */
+	if ( u >= ' ' && u < 127 && !mTerm.esc && !( mTerm.c.state & CURSOR_WRAPNEXT ) &&
+		 !IS_SET( MODE_PRINT ) && !IS_SET( MODE_INSERT ) && mTerm.c.x + 1 < mTerm.col &&
+		 mTerm.c.x < mTerm.col && mTerm.c.y < mTerm.row &&
+		 mTerm.trantbl[mTerm.charset] != CS_GRAPHIC0 ) {
+		gp = &TLINE( mTerm.c.y )[mTerm.c.x];
+		/* tsetchar() repairs both halves when overwriting a wide glyph. Keep that
+		 * uncommon case on the complete path. */
+		if ( !( gp->mode & ( ATTR_WIDE | ATTR_WDUMMY ) ) ) {
+			if ( selected( mTerm.c.x, mTerm.c.y ) )
+				selclear();
+			gp->u = u;
+			gp->mode = mTerm.c.attr.mode;
+			gp->fg = mTerm.c.attr.fg;
+			gp->bg = mTerm.c.attr.bg;
+			mDirty = true;
+			mTerm.dirty[mTerm.c.y] = 1;
+			mTerm.lastc = u;
+			mTerm.c.x++;
+			return;
+		}
+	}
+
 	control = ISCONTROL( u );
 	if ( u < 127 || !IS_SET( MODE_UTF8 ) ) {
 		c[0] = u;
@@ -2619,23 +3431,28 @@ void TerminalEmulator::tputc( Rune u ) {
 			goto check_control_code;
 		}
 
+		if ( mStrescseq.discarded )
+			return;
+
+		const bool kittyGraphics =
+			mStrescseq.type == '_' && mStrescseq.len > 0 && mStrescseq.buf[0] == 'G';
+		const size_t sequenceLimit =
+			kittyGraphics ? MAX_KITTY_GRAPHICS_APC_SIZE : MAX_GENERIC_STRING_SEQUENCE_SIZE;
+		if ( len > sequenceLimit - mStrescseq.len ) {
+			mStrescseq.discarded = true;
+			return;
+		}
+
 		if ( mStrescseq.len + len >= mStrescseq.siz ) {
-			/*
-			 * Here is a bug in terminals. If the user never sends
-			 * some code to stop the str or esc command, then st
-			 * will stop responding. But this is better than
-			 * silently failing with unknown characters. At least
-			 * then users will report back.
-			 *
-			 * In the case users ever get fixed, here is the code:
-			 */
-			/*
-			 * term.esc = 0;
-			 * strhandle();
-			 */
-			if ( mStrescseq.siz > ( SIZE_MAX - UTF_SIZ ) / 2 )
+			const size_t required = mStrescseq.len + len + 1;
+			size_t newSize = mStrescseq.siz;
+			while ( newSize < required && newSize < sequenceLimit )
+				newSize = eemin( newSize * 2, sequenceLimit );
+			if ( newSize < required ) {
+				mStrescseq.discarded = true;
 				return;
-			mStrescseq.siz *= 2;
+			}
+			mStrescseq.siz = newSize;
 			mStrescseq.buf = (char*)xrealloc( mStrescseq.buf, mStrescseq.siz );
 		}
 
@@ -2685,6 +3502,35 @@ check_control_code:
 		 */
 		return;
 	}
+	if ( mKittyPlaceholderCell.x >= 0 ) {
+		const int diacritic = kittyDiacriticIndex( u );
+		if ( diacritic >= 0 ) {
+			auto* placeholder = &mTerm.line[mKittyPlaceholderCell.y][mKittyPlaceholderCell.x];
+			auto metadata = mKittyPlaceholderMetadata.find( placeholder );
+			if ( metadata == mKittyPlaceholderMetadata.end() ) {
+				mKittyPlaceholderCell = Vector2i( -1, -1 );
+				return;
+			}
+			switch ( metadata->second.diacriticCount++ ) {
+				case 0:
+					metadata->second.row = static_cast<Uint16>( diacritic );
+					break;
+				case 1:
+					metadata->second.column = static_cast<Uint16>( diacritic );
+					break;
+				case 2:
+					if ( diacritic <= 255 )
+						metadata->second.imageIdMsb = static_cast<Uint8>( diacritic );
+					break;
+				default:
+					break;
+			}
+			mTerm.dirty[mKittyPlaceholderCell.y] = 1;
+			mDirty = true;
+			return;
+		}
+		mKittyPlaceholderCell = Vector2i( -1, -1 );
+	}
 	if ( selected( mTerm.c.x, mTerm.c.y ) )
 		selclear();
 
@@ -2705,6 +3551,15 @@ check_control_code:
 	}
 
 	tsetchar( u, &mTerm.c.attr, mTerm.c.x, mTerm.c.y );
+	if ( u == KittyGraphicsPlaceholder ) {
+		mKittyPlaceholderCell = Vector2i( mTerm.c.x, mTerm.c.y );
+		const Uint32 placementId = IS_TRUECOL( mKittyUnderlineColor )
+									   ? mKittyUnderlineColor & 0xFFFFFF
+								   : mKittyUnderlineColor <= 255 ? mKittyUnderlineColor
+																 : 0;
+		mKittyPlaceholderMetadata[&mTerm.line[mTerm.c.y][mTerm.c.x]] =
+			KittyPlaceholderMetadata{ placementId };
+	}
 	mTerm.lastc = u;
 
 	if ( width == 2 ) {
@@ -2731,6 +3586,38 @@ int TerminalEmulator::twrite( const char* buf, int buflen, int show_ctrl ) {
 	int n;
 
 	for ( n = 0; n < buflen; n += charsize ) {
+		/* Kitty control data and payload are ASCII transport bytes. Once ESC _ G has been
+		 * recognized, append ordinary bytes in bulk instead of routing every Base64 byte through
+		 * UTF-8 decoding and the terminal character state machine. Control bytes remain on the
+		 * normal path so fragmented ESC \\ termination and malformed strings retain their exact
+		 * behavior. */
+		if ( !show_ctrl && ( mTerm.esc & ESC_STR ) && mStrescseq.type == '_' &&
+			 mStrescseq.len > 0 && mStrescseq.buf[0] == 'G' ) {
+			const int end = findKittyAPCControl( buf, n, buflen );
+			const size_t bytes = static_cast<size_t>( end - n );
+			if ( bytes != 0 ) {
+				if ( !mStrescseq.discarded ) {
+					if ( mStrescseq.len > MAX_KITTY_GRAPHICS_APC_SIZE ||
+						 bytes > MAX_KITTY_GRAPHICS_APC_SIZE - mStrescseq.len ) {
+						mStrescseq.discarded = true;
+					} else {
+						const size_t required = mStrescseq.len + bytes + 1;
+						if ( required > mStrescseq.siz ) {
+							size_t capacity = mStrescseq.siz;
+							while ( capacity < required )
+								capacity = eemin( capacity * 2, MAX_KITTY_GRAPHICS_APC_SIZE + 1 );
+							mStrescseq.buf = (char*)xrealloc( mStrescseq.buf, capacity );
+							mStrescseq.siz = capacity;
+						}
+						std::memcpy( mStrescseq.buf + mStrescseq.len, buf + n, bytes );
+						mStrescseq.len += bytes;
+					}
+				}
+				n = end;
+				if ( n == buflen )
+					return buflen;
+			}
+		}
 		if ( IS_SET( MODE_UTF8 ) ) {
 			/* process a complete utf8 char */
 			charsize = utf8decode( buf + n, &u, buflen - n );
@@ -2763,9 +3650,39 @@ void TerminalEmulator::tresize( int col, int row ) {
 	int save_end = 0;
 	int loaded = 0;
 	bool is_alt = IS_SET( MODE_ALTSCREEN );
+	std::vector<KittyPlaceholderMetadata> primaryPlaceholderMetadata;
+	std::vector<KittyPlaceholderMetadata> alternatePlaceholderMetadata;
+	auto collectPlaceholderMetadata = [&]( Line line, int columns,
+										   std::vector<KittyPlaceholderMetadata>& output ) {
+		if ( !line )
+			return;
+		for ( int column = 0; column < columns; ++column ) {
+			if ( line[column].u != KittyGraphicsPlaceholder )
+				continue;
+			auto metadata = mKittyPlaceholderMetadata.find( &line[column] );
+			if ( metadata != mKittyPlaceholderMetadata.end() )
+				output.emplace_back( metadata->second );
+		}
+	};
+	if ( mTerm.col > 0 ) {
+		for ( int history = 0; history < mTerm.histlen; ++history ) {
+			const int index =
+				( mTerm.histi - mTerm.histlen + 1 + history + mTerm.histsize ) % mTerm.histsize;
+			collectPlaceholderMetadata( mTerm.hist[index], mTerm.col, primaryPlaceholderMetadata );
+		}
+		Line* primaryLines = is_alt ? mTerm.alt : mTerm.line;
+		Line* alternateLines = is_alt ? mTerm.line : mTerm.alt;
+		for ( int line = 0; line < mTerm.row; ++line ) {
+			collectPlaceholderMetadata( primaryLines[line], mTerm.col, primaryPlaceholderMetadata );
+			collectPlaceholderMetadata( alternateLines[line], mTerm.col,
+										alternatePlaceholderMetadata );
+		}
+	}
+	mKittyPlaceholderMetadata.clear();
+	mKittyPlaceholderCell = Vector2i( -1, -1 );
 
 	if ( col < 1 || row < 1 ) {
-		fprintf( stderr, "tresize: error resizing to %dx%d\n", col, row );
+		terminalDiagnostic( "tresize: error resizing to %dx%d\n", col, row );
 		return;
 	}
 
@@ -2859,6 +3776,7 @@ void TerminalEmulator::tresize( int col, int row ) {
 					}
 				}
 			}
+			mTerm.histcapacity = eemax( mTerm.histcapacity, col );
 			if ( has_sel ) {
 				if ( mSel.ob.x >= col )
 					mSel.ob.x = col - 1;
@@ -2872,6 +3790,7 @@ void TerminalEmulator::tresize( int col, int row ) {
 		eeSAFE_FREE( mTerm.line[i] );
 		eeSAFE_FREE( mTerm.alt[i] );
 	}
+	mAllDirty = true;
 	eeSAFE_FREE( mTerm.line );
 	eeSAFE_FREE( mTerm.alt );
 	eeSAFE_FREE( mTerm.dirty );
@@ -2942,6 +3861,32 @@ void TerminalEmulator::tresize( int col, int row ) {
 			eemax( mTerm.scr - mTerm.histlen, eemin( mTerm.scr + mTerm.row - 1, mSel.oe.y ) );
 		selnormalize();
 	}
+	auto restorePlaceholderMetadata = [&]( Line line, int columns,
+										   const std::vector<KittyPlaceholderMetadata>& metadata,
+										   size_t& index ) {
+		if ( !line )
+			return;
+		for ( int column = 0; column < columns && index < metadata.size(); ++column ) {
+			if ( line[column].u == KittyGraphicsPlaceholder )
+				mKittyPlaceholderMetadata[&line[column]] = metadata[index++];
+		}
+	};
+	size_t primaryMetadataIndex = 0;
+	for ( int history = 0; history < mTerm.histlen; ++history ) {
+		const int index =
+			( mTerm.histi - mTerm.histlen + 1 + history + mTerm.histsize ) % mTerm.histsize;
+		restorePlaceholderMetadata( mTerm.hist[index], mTerm.col, primaryPlaceholderMetadata,
+									primaryMetadataIndex );
+	}
+	Line* primaryLines = is_alt ? mTerm.alt : mTerm.line;
+	Line* alternateLines = is_alt ? mTerm.line : mTerm.alt;
+	size_t alternateMetadataIndex = 0;
+	for ( int line = 0; line < mTerm.row; ++line ) {
+		restorePlaceholderMetadata( primaryLines[line], mTerm.col, primaryPlaceholderMetadata,
+									primaryMetadataIndex );
+		restorePlaceholderMetadata( alternateLines[line], mTerm.col, alternatePlaceholderMetadata,
+									alternateMetadataIndex );
+	}
 
 	mDirty = true;
 	onScrollPositionChange();
@@ -2968,12 +3913,15 @@ void TerminalEmulator::drawregion( ITerminalDisplay& dpy, int x1, int y1, int x2
 	}
 
 	mDirty = false;
+	mAllDirty = false;
 }
 
 void TerminalEmulator::draw() {
-	// If a synchronized update is in progress, skip the physical render
-	// if ( mTerm.is_syncing )
-	// 	return;
+	// DEC private mode 2026 makes the bytes between DECSET and DECRST one presentation unit.
+	// PTY parsing can also temporarily force scr to zero while updating the live screen. Neither
+	// state is a stable presentation boundary, so no partial frame or viewport may reach the UI.
+	if ( mTerm.is_syncing || mProcessingPtyInput )
+		return;
 
 	int cx = mTerm.c.x /*, ocx = term.ocx, ocy = term.ocy*/;
 
@@ -2993,6 +3941,63 @@ void TerminalEmulator::draw() {
 			cx--;
 
 		drawregion( *dpy, 0, 0, mTerm.col, mTerm.row );
+		std::vector<TerminalGraphicsPlaceholderCell> placeholderCells;
+		const bool scanPlaceholders = mKittyGraphics.hasVirtualPlacements();
+		for ( int y = 0; scanPlaceholders && y < mTerm.row; ++y ) {
+			const TerminalGlyph* previous = nullptr;
+			Uint32 previousPlacementId = 0;
+			Uint32 previousRow = 0;
+			Uint32 previousColumn = 0;
+			Uint8 previousMsb = 0;
+			for ( int x = 0; x < mTerm.col; ++x ) {
+				const auto& glyph = TLINE( y )[x];
+				if ( glyph.u != KittyGraphicsPlaceholder ) {
+					previous = nullptr;
+					continue;
+				}
+				auto metadata = mKittyPlaceholderMetadata.find( &glyph );
+				if ( metadata == mKittyPlaceholderMetadata.end() ) {
+					previous = nullptr;
+					continue;
+				}
+				Uint32 row = metadata->second.row;
+				Uint32 column = metadata->second.column;
+				Uint8 msb = metadata->second.imageIdMsb;
+				const Uint32 placementId = metadata->second.placementId;
+				const bool sameColors =
+					previous && previous->fg == glyph.fg && previousPlacementId == placementId;
+				if ( metadata->second.diacriticCount == 0 && sameColors ) {
+					row = previousRow;
+					column = previousColumn + 1;
+					msb = previousMsb;
+				} else if ( metadata->second.diacriticCount == 1 && sameColors &&
+							row == previousRow ) {
+					column = previousColumn + 1;
+					msb = previousMsb;
+				} else if ( metadata->second.diacriticCount == 2 && sameColors &&
+							row == previousRow && column == previousColumn + 1 ) {
+					msb = previousMsb;
+				}
+				if ( row == UINT16_MAX || column == UINT16_MAX ) {
+					previous = nullptr;
+					continue;
+				}
+				const Uint32 lowImageId = IS_TRUECOL( glyph.fg ) ? glyph.fg & 0xFFFFFF
+										  : glyph.fg <= 255		 ? glyph.fg
+																 : 0;
+				placeholderCells.push_back( { lowImageId | ( static_cast<Uint32>( msb ) << 24 ),
+											  placementId, Vector2i( x, y ), row, column } );
+				previous = &glyph;
+				previousRow = row;
+				previousColumn = column;
+				previousMsb = msb;
+				previousPlacementId = placementId;
+			}
+		}
+		mKittyGraphics.setPlaceholderCells( std::move( placeholderCells ) );
+		auto graphicsUpdates = mKittyGraphics.takeUpdates();
+		if ( !graphicsUpdates.empty() || mKittyGraphics.hasPendingPresentation() )
+			dpy->drawGraphics( mKittyGraphics.takePresentation(), std::move( graphicsUpdates ) );
 
 		if ( mTerm.scr == 0 )
 			dpy->drawCursor( cx, mTerm.c.y, mTerm.line[mTerm.c.y][cx], mTerm.ocx, mTerm.ocy,
@@ -3002,6 +4007,7 @@ void TerminalEmulator::draw() {
 		mTerm.ocy = mTerm.c.y;
 
 		dpy->drawEnd();
+		mPresentationClock.restart();
 	}
 
 	// if (ocx != term.ocx || ocy != term.ocy)
@@ -3011,6 +4017,12 @@ void TerminalEmulator::draw() {
 void TerminalEmulator::redraw() {
 	tfulldirt();
 	draw();
+}
+
+void TerminalEmulator::reset() {
+	mKittyGraphics.reset();
+	treset();
+	redraw();
 }
 
 int TerminalEmulator::xsetcolorname( int x, const char* name ) {
@@ -3044,28 +4056,49 @@ void TerminalEmulator::osc_color_response( int num, int index, int is_osc4 ) {
 	unsigned char r, g, b;
 
 	if ( xgetcolor( is_osc4 ? num : index, &r, &g, &b ) ) {
-		fprintf( stderr, "erresc: failed to fetch %s color %d\n", is_osc4 ? "osc4" : "osc",
-				 is_osc4 ? num : index );
+		terminalDiagnostic( "erresc: failed to fetch %s color %d\n", is_osc4 ? "osc4" : "osc",
+							is_osc4 ? num : index );
 		return;
 	}
 
 	n = snprintf( buf, sizeof buf, "\033]%s%d;rgb:%02x%02x/%02x%02x/%02x%02x\007",
 				  is_osc4 ? "4;" : "", num, r, r, g, g, b, b );
 	if ( n < 0 || n >= (int)sizeof( buf ) ) {
-		fprintf( stderr, "error: %s while printing %s response\n",
-				 n < 0 ? "snprintf failed" : "truncation occurred", is_osc4 ? "osc4" : "osc" );
+		terminalDiagnostic( "error: %s while printing %s response\n",
+							n < 0 ? "snprintf failed" : "truncation occurred",
+							is_osc4 ? "osc4" : "osc" );
 	} else {
 		ttywrite( buf, n, 1 );
 	}
 }
 
-void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Vector2i& pos,
+int TerminalEmulator::colorScheme() {
+	unsigned char red, green, blue;
+	if ( xgetcolor( 259, &red, &green, &blue ) )
+		return 0;
+	// The protocol describes the OS preference, which eterm does not store separately. The active
+	// background is the useful equivalent for applications choosing contrasting colors.
+	return red * 299 + green * 587 + blue * 114 < 128000 ? 1 : 2;
+}
+
+void TerminalEmulator::reportColorScheme() {
+	const int scheme = colorScheme();
+	if ( !scheme )
+		return;
+	char buf[16];
+	const int len = snprintf( buf, sizeof( buf ), "\033[?997;%dn", scheme );
+	ttywrite( buf, len, 0 );
+}
+
+void TerminalEmulator::mousereport( const TerminalMouseEventType& type,
+									const Vector2i& cellPosition, const Vector2i& pixelPosition,
 									const Uint32& flags, const Uint32& mod ) {
+	const Vector2i& pos = xgetmode( MODE_MOUSESGR_PIXELS ) ? pixelPosition : cellPosition;
 	if ( !xgetmode( (TerminalWinMode)MODE_MOUSE ) && !xgetmode( MODE_MOUSESGR ) &&
 		 ( TerminalMouseEventType::MouseButtonDown == type ||
 		   TerminalMouseEventType::MouseButtonRelease == type ) ) {
 		/* If mouse mode is not enabled, we send arrow keys for scroll events */
-		if ( type == TerminalMouseEventType::MouseButtonDown &&
+		if ( type == TerminalMouseEventType::MouseButtonDown && xgetmode( MODE_ALTSCRROLL ) &&
 			 ( flags & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK ) ) && tisaltscr() ) {
 			char buf[64];
 			int len = 0;
@@ -3084,8 +4117,6 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 
 	int len, btn, code;
 	char buf[40];
-	static int ox, oy;
-
 	for ( btn = 1; btn <= 31 && !( flags & ( 1 << ( btn - 1 ) ) ); btn++ )
 		;
 
@@ -3111,7 +4142,7 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 	}
 
 	if ( type == TerminalMouseEventType::MouseMotion ) {
-		if ( pos.x == ox && pos.y == oy )
+		if ( pos == mLastMousePosition )
 			return;
 		if ( !xgetmode( MODE_MOUSEMOTION ) && !xgetmode( MODE_MOUSEMANY ) )
 			return;
@@ -3139,8 +4170,7 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 		code = 0;
 	}
 
-	ox = pos.x;
-	oy = pos.y;
+	mLastMousePosition = pos;
 
 	/* Encode btn into code. If no button is pressed for a motion event in
 	 * MODE_MOUSEMANY, then encode it as a release. */
@@ -3174,6 +4204,11 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 }
 
 void TerminalEmulator::setPtyAndProcess( PtyPtr&& pty, ProcPtr&& process ) {
+	mKittyGraphics.reset();
+	resetKittyKeyboardProtocol();
+	mKittyPlaceholderMetadata.clear();
+	mKittyPlaceholderCell = Vector2i( -1, -1 );
+	mBuflen = 0;
 	mStatus = STARTING;
 	mExitCode = 1;
 	mPty = std::move( pty );
@@ -3268,6 +4303,7 @@ void TerminalEmulator::onProcessExit( int exitCode ) {
 }
 
 void TerminalEmulator::onScrollPositionChange() {
+	mKittyGraphics.setViewport( mTerm.scr, mTerm.histlen, mTerm.row );
 	auto dpy = mDpy.lock();
 	if ( dpy )
 		dpy->onScrollPositionChange();
@@ -3318,25 +4354,38 @@ int TerminalEmulator::write( const char* buf, size_t buflen ) {
 }
 
 void TerminalEmulator::resize( int columns, int rows ) {
+	resize( columns, rows, mPixelWidth, mPixelHeight );
+}
+
+void TerminalEmulator::resize( int columns, int rows, int pixelWidth, int pixelHeight ) {
+	mPixelWidth = eemax( 0, pixelWidth );
+	mPixelHeight = eemax( 0, pixelHeight );
+	mKittyGraphics.setCellPixelSize( columns > 0 ? mPixelWidth / columns : 0,
+									 rows > 0 ? mPixelHeight / rows : 0 );
 	bool is_alt = IS_SET( MODE_ALTSCREEN );
 
 	// Alt doesn't need reflow, we can resize and redraw instantly which looks and feels better
 	if ( is_alt ) {
-		if ( !mPty->resize( columns, rows ) ) {
+		if ( !mPty->resize( columns, rows, mPixelWidth, mPixelHeight ) ) {
 			_die( "Failed to resize pty!" );
 			return;
 		}
 		tresize( columns, rows );
+		if ( !mSearchQuery.text.empty() )
+			setSearchQuery( mSearchQuery );
 		redraw();
 		return;
 	}
 
-	mTerm.is_syncing = true;
 	tresize( columns, rows );
+	if ( !mSearchQuery.text.empty() )
+		setSearchQuery( mSearchQuery );
 
 	redraw();
 	mPendingPtyColumns = columns;
 	mPendingPtyRows = rows;
+	mPendingPtyPixelWidth = mPixelWidth;
+	mPendingPtyPixelHeight = mPixelHeight;
 	mPendingPtyResize = true;
 	mPendingPtyResizeClock.restart();
 }
@@ -3344,13 +4393,21 @@ void TerminalEmulator::resize( int columns, int rows ) {
 #define MAX_TTY_READS ( 1024 )
 
 bool TerminalEmulator::update() {
+	if ( mKittyGraphics.updateAnimations() )
+		mDirty = true;
 	if ( mPendingPtyResize && mPendingPtyResizeClock.getElapsedTime() >= Milliseconds( 100 ) ) {
 		mPendingPtyResize = false;
 
-		if ( !mPty->resize( mPendingPtyColumns, mPendingPtyRows ) ) {
+		if ( !mPty->resize( mPendingPtyColumns, mPendingPtyRows, mPendingPtyPixelWidth,
+							mPendingPtyPixelHeight ) ) {
 			_die( "Failed to resize pty!" );
 		}
 
+		redraw();
+	}
+
+	// A client that fails to close a synchronized update must not freeze presentation forever.
+	if ( mTerm.is_syncing && mSynchronizedUpdateClock.getElapsedTime() >= Seconds( 1 ) ) {
 		mTerm.is_syncing = false;
 		redraw();
 	}
@@ -3364,22 +4421,58 @@ bool TerminalEmulator::update() {
 		return true;
 	}
 
-	int read = MAX_TTY_READS;
-	while ( ttyread() > 0 && --read )
-		;
+	int reads = 0;
+	Clock readBudgetClock;
+	bool presentationDeadlineReached = false;
+	while ( reads < MAX_TTY_READS && ttyread() > 0 ) {
+		++reads;
+		if ( mPresentationClock.getElapsedTime() >= mPresentationInterval ) {
+			presentationDeadlineReached = true;
+			break;
+		}
+		if ( readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) )
+			break;
+	}
+	bool readBudgetSaturated =
+		reads == MAX_TTY_READS || presentationDeadlineReached ||
+		( reads > 0 && readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) );
+	if ( reads > 0 && TerminalSearch::isQuerySearchable( mSearchQuery ) )
+		mSearchDirty = true;
+	if ( mSearchDirty &&
+		 ( !readBudgetSaturated || mSearchRefreshClock.getElapsedTime() >= Milliseconds( 100 ) ) )
+		setSearchQuery( mSearchQuery );
 
-	if ( read != MAX_TTY_READS || mDirty )
+	/* Keep presentation decoupled from every PTY read batch. Sustained output publishes on the
+	 * host frame deadline, while a drained/idle burst still publishes immediately. */
+	bool presentationDue = !readBudgetSaturated || presentationDeadlineReached;
+	if ( presentationDue && ( reads > 0 || mDirty ) )
 		draw();
 
 	mProcess->checkExitStatus();
 
-	if ( mProcess->hasExited() ) {
+	/* A process may exit while the kernel still has unread PTY output. Keep the
+	 * emulator running until a read slice reaches EOF; otherwise the time budget
+	 * can truncate the final output of fast-exiting producers. */
+	if ( mProcess->hasExited() && !readBudgetSaturated ) {
 		mExitCode = mProcess->getExitCode();
 		mStatus = TERMINATED;
+		// Publish process state together with the final drained frame before the ordered exit
+		// event.
+		redraw();
 		onProcessExit( mExitCode );
 	}
 
-	return read != 0;
+	/* A non-blocking read can temporarily catch up with a producer that was blocked writing to the
+	 * PTY. Do not enter the worker's 8 ms idle wait immediately after consuming data: give the
+	 * producer a scheduling opportunity and probe the PTY once more. This matters for high-volume
+	 * protocols such as Kitty graphics, where otherwise every transport chunk can pay one idle
+	 * interval after the receiver becomes faster than the sender's wakeup latency. */
+	if ( reads > 0 && !readBudgetSaturated ) {
+		std::this_thread::yield();
+		return false;
+	}
+
+	return !readBudgetSaturated;
 }
 
 Term::~Term() {

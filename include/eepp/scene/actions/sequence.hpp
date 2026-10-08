@@ -42,11 +42,14 @@ class EE_API Sequence : public Action {
 	virtual ~Sequence();
 
   protected:
-	std::vector<Action*> mSequence;
+	using ActionContainer = SmallVector<Action*, 4>;
+	ActionContainer mSequence;
 	Time mDuration;
 	Uint32 mCurPos;
 
 	Sequence( const std::vector<Action*> sequence );
+
+	Sequence( ActionContainer sequence );
 };
 
 }}} // namespace EE::Scene::Actions

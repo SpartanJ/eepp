@@ -2,8 +2,8 @@
 #define EE_UI_UIWIDGETCREATOR_HPP
 
 #include <eepp/core.hpp>
-#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
@@ -33,6 +33,8 @@ class EE_API UIWidgetCreator {
 	static const RegisteredWidgetCallbackMap& getRegisteredWidgets();
 
 	static std::vector<std::string> getWidgetNames();
+
+	static void loadHTMLBasicDefaults( CSS::StyleSheet& styleSheet, Uint32 marker );
 
 	static void loadHTMLBaseDefaults( CSS::StyleSheet& styleSheet, Uint32 marker );
 

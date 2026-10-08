@@ -2,7 +2,6 @@
 
 #include "acpclient.hpp"
 #include <eepp/system/threadpool.hpp>
-#include <eterm/terminal/terminalemulator.hpp>
 #include <eterm/ui/uiterminal.hpp>
 #include <functional>
 #include <memory>
@@ -60,7 +59,6 @@ class AgentSession {
 
 	struct TermData {
 		std::shared_ptr<TerminalDisplay> display;
-		std::shared_ptr<TerminalEmulator> emulator;
 		UITerminal* uiTerm{ nullptr };
 		std::string outputBuffer;
 		Uint32 eventCbId{ 0 };

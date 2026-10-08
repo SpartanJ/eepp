@@ -11,6 +11,8 @@ using namespace std::literals;
 namespace EE { namespace Graphics {
 
 class Font;
+using FontPtr = ResourcePtr<Font>;
+using FontWeakPtr = ResourceWeakPtr<Font>;
 
 struct EE_API Glyph {
 	Float advance{ 0 }; ///< Offset to move horizontally to the next character
@@ -19,7 +21,8 @@ struct EE_API Glyph {
 	Sizef size;		   ///< The glyph bitmap size on screen
 	int lsbDelta{ 0 }; //!< Left offset after forced autohint. Internally used by getKerning()
 	int rsbDelta{ 0 }; //!< Right offset after forced autohint. Internally used by getKerning()
-	Font* font{ nullptr }; ///< The glyph font
+	GlyphRenderMode renderMode{ GlyphRenderMode::Mask }; ///< Atlas texel compositing mode
+	Font* font{ nullptr };								 ///< The glyph font
 };
 
 enum class FontType { TTF, BMF, Sprite };
@@ -45,7 +48,7 @@ enum class FontAntialiasing { None, Grayscale, Subpixel };
 /** @brief Font interface class. */
 class EE_API Font {
   public:
-	enum Event { Load, Unload };
+	enum Event { Load, Unload, CacheClear };
 
 	typedef std::function<void( Uint32, Event, Font* )> FontEventCallback;
 
@@ -75,6 +78,9 @@ class EE_API Font {
 		return FontHinting::Full;
 	}
 
+	/** Applies EEPP_FONT_HINTING when it contains a supported value. */
+	static FontHinting fontHintingFromEnvironment( FontHinting fallback );
+
 	static std::string_view fontAntialiasingToString( FontAntialiasing aa ) {
 		switch ( aa ) {
 			case FontAntialiasing::None:
@@ -94,6 +100,9 @@ class EE_API Font {
 			return FontAntialiasing::Subpixel;
 		return FontAntialiasing::Grayscale;
 	}
+
+	/** Applies EEPP_FONT_ANTIALIASING when it contains a supported value. */
+	static FontAntialiasing fontAntialiasingFromEnvironment( FontAntialiasing fallback );
 
 	static inline Uint32 getHorizontalAlign( const Uint32& flags ) {
 		return flags & TEXT_HALIGN_MASK;
@@ -135,6 +144,12 @@ class EE_API Font {
 	virtual Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 							Float outlineThickness = 0 ) const = 0;
 
+	/** Returns the horizontal advance without requiring a renderable glyph texture. */
+	virtual Float getGlyphAdvance( Uint32 codePoint, unsigned int characterSize, bool bold = false,
+								   bool italic = false, Float outlineThickness = 0 ) const {
+		return getGlyph( codePoint, characterSize, bold, italic, outlineThickness ).advance;
+	}
+
 	/** @return The glyph drawable that represents the glyph in a texture. The glyph drawable
 	 * allocation is managed by the font. */
 	virtual GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
@@ -156,7 +171,7 @@ class EE_API Font {
 
 	virtual Float getUnderlineThickness( unsigned int characterSize ) const = 0;
 
-	virtual Texture* getTexture( unsigned int characterSize ) const = 0;
+	virtual const TexturePtr& getTexture( unsigned int characterSize ) const = 0;
 
 	virtual Uint32 getFontStyle() const;
 

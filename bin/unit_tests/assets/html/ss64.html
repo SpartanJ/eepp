@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<!-- saved from url=(0017)https://ss64.com/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;self&#39; cmp.inmobi.com; connect-src &#39;self&#39; cmp.inmobi.com api.cmp.inmobi.com; img-src &#39;self&#39; data:; style-src &#39;self&#39; &#39;unsafe-inline&#39;;base-uri &#39;self&#39;;form-action &#39;self&#39; www.google.com">
+<style>
+/* SS64.com */
+html {
+  font-size: 100%;
+  scroll-padding-top: 45px;
+}
+:root {
+  --link: #0715DE;
+  --link-dark: #0303E1; /*dark mode blu 0404FF*/
+  --link-active: #337FE8; /*lightblu*/
+  --btn-col: #F8F9FA; /*white*/
+  --btn-col-active: #01AF3F; /*grn*/
+  --btn-col-hov: #00CA70;
+  --btn-link: #0A22D0; /*blu*/
+  --txt-active: #1676F1; /*blue btn text*/
+  --txt-dark: #141414; /*body txt*/
+  --summary: #0C18D0; /*#0D0DCF*/
+  --font-monospace: Menlo, ui-monospace, Monaco, "Roboto Mono", "Oxygen Mono", "Ubuntu Mono", "Source Code Pro", "Fira Mono";
+}
+body {
+  background-color: #D9D9DE;transition: background-color 1s;
+  color: var(--txt-dark);
+  font-family: "Helvetica Neue", Helvetica, Arial, Oxygen-Sans, Roboto, Ubuntu, sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  margin: 15px;
+}
+
+p,ol,ul,h1,h2,h3,h4,dt,dd,table {
+  font-weight: 400;
+  line-height: 1.3rem;
+}
+
+p,hr,ol,ul,dd,dl,aside {
+  max-width: 1030px;
+}
+
+hr {
+  color: #FFF;
+  margin-left: 0;
+  text-align: left;
+}
+
+pre,tt,code,.code {
+  font-family: var(--font-monospace), monospace;
+}
+pre,tt,code {
+  font-size: 1rem;
+  color: #000;
+  line-height: 1.125rem;
+}
+
+code {color: #680000;}
+
+h1 {
+  clear:both;
+  font-size: 1.5rem;
+  line-height: 1.563rem;
+}
+
+h2 {
+  color: var(--txt-dark);
+  font-family: Charter, Palatino, Georgia, Serif;
+  font-size: 1.375rem;
+  line-height: 1.563rem;
+  margin: 1.9ex 0 0;
+}
+
+h3 {
+  color: var(--txt-dark);
+  font-size: 1.125rem;
+  line-height: 1.3rem;
+  font-weight: 700;
+}
+
+tr,td,input {
+  font-family: "Helvetica Neue", Helvetica, Arial, Oxygen-Sans, Roboto, Ubuntu, Sans-Serif;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+abbr {
+  border-bottom: 1px dotted var(--txt-dark);
+  text-decoration: none;
+}
+aside {
+  border-left: 6px solid var(--btn-col-active);
+  padding-left: 15px;
+}
+blockquote {margin-right:0;margin-left:40px;}
+i { color: #07572C;}
+i i { font-weight: bold;}
+
+.body {
+  font-family: "Helvetica Neue", Helvetica, Arial, Oxygen-Sans, Roboto, Ubuntu, sans-serif;
+  font-size: 1rem;
+}
+.highlight {
+  text-decoration: none;
+  color: #1F6A0A;
+}
+.gerontic {
+  color: #4D4D4D;
+}
+.quote {
+  color: #07572C;
+  font-family: Charter, Palatino, Georgia, FreeSerif, Serif;
+  font-style: italic;
+}
+.ix {
+  color: var(--txt-dark);
+  font-size: 1.125rem;
+  text-decoration: underline #888;
+  text-underline-offset: 0.15em;
+}
+
+/* Wrapper for search input */
+.wrapq {
+  width: 400px;
+  max-width: 100%;
+  position: relative;
+  box-sizing: border-box;
+  margin-left: 150px;
+  top: 2.7px;
+  transition: margin-left 0.7s, width 1s;
+}
+
+.wrapq input {
+  /*  background: rgba(255, 255, 255, 0.1);*/
+ /*  border: 1px solid blue;*/
+  border-radius: 50px;
+  height: 37.25px;
+  padding: 0.4rem 1rem;
+  padding-right: 4rem;
+  width: 100%;
+  text-decoration: none;
+  box-sizing: border-box;
+  font-size: 1.125rem;
+}
+.wrapq svg {
+  filter: drop-shadow(0.75px 0.75px 0 white);
+}
+.wrapq:hover svg {
+  filter: none;
+}
+
+/* Link - Visited - Hover - Focus - Active */
+a:link {color: var(--link); text-decoration: none;}
+a[href^="x-man-page"] {color: #af0606;}
+a:visited {color: #991BC1;text-decoration: none;}
+a:hover {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+a:active {
+  color: var(--link-active);
+  text-decoration: none;
+  border-bottom: 1px solid var(--link-active);
+}
+
+p a:active,pre a:active,table a:active{padding-bottom:2px;}
+
+a[href^="#"]:hover {
+  color: #439BEA;
+}
+
+summary:active {color: #105DBE;}
+
+#bl {
+  float: left;
+  max-width: 515px;
+  width: 50%;
+}
+
+#br {
+  font-size: 0.75rem;
+  float: left;
+  margin-bottom: 15px;
+  max-width: 515px;
+  text-align: right;
+  width: 50%;
+}
+
+/* Top Nav */
+#tnav {
+  background-color: #D9D9DE;
+  background: linear-gradient(180deg,rgba(217, 217, 222, 1) 0%, rgba(221, 221, 227, 1) 100%);
+  border-bottom: solid 1px #c8c8c8;
+  height: 45px;
+  width: 1030px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+#tnav > ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#tnav > ul > li {
+  display: block;
+  float: left;
+  margin: 0 .3em 0 0;
+  outline: none;
+  align-content: center;
+  text-align: center;
+}
+
+.space {line-height: 1.3em;} /* desktop=std space */
+
+@media (pointer: coarse) and (hover: none) {
+  /* mobile=extra line spacing */
+  .space { line-height: 2.1rem; }
+  .az { line-height: 2.1rem; }
+   td, p { line-height: 1.5rem;  font-size: 1.2rem;}
+   PRE .space{ line-height: 1.75em;  font-size: 1.2rem;}
+   H1 {font-size: 2rem;}
+   H2 {font-size: 1.75rem;}
+   #tnav { position: static;}
+}
+
+/* nav buttons
+   Link - Visited - Hover - Focus - Active
+*/
+.tbtn {
+  background-color: var(--btn-col);
+  border-color: gray;
+  border-radius: 0.5rem;
+  border-style: solid;
+  border-width: 1px;
+  box-shadow: 0px 1px 2px #00000030, 0px 6px 12px #00000015; /*float*/
+  /*box-shadow: 0 1px 0 0 rgba(255,255,255,0.6) inset;*/
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  font-family: Helvetica, Arial, Oxygen-Sans, Roboto, Ubuntu, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 400;
+  height: 40px;
+ /* text-decoration: none;*/
+  transition: background-color 0.25s;
+
+  width: 140px !important;
+  line-height: 40px !important /*after height*/
+}
+.tbtn a {display: block;text-decoration: none; border-radius: 7px;
+  background-color: var(--btn-col);
+  transition: background-color 0.25s;
+}
+.tbtn a:link { color: var(--btn-link); }
+.tbtn a:visited {color: var(--btn-link); }
+.tbtn a:hover {
+  background-color: var(--btn-col-hov);
+  color: var(--txt-dark);
+  transition: background-color 0.25s; /*, color 0.1s;*/
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4),0 1px 1px rgba(0,0,0,.2);
+}
+.tbtn:focus{
+  border: 1px solid #4B8DF8; outline: none;
+  color: #229231; /*dk green*/
+}
+.tbtn:active{
+  border: 1px solid #339046;
+  outline: none;
+  transition: background-color 0.25s;
+}
+.tbtn a:active{
+   background-color: var(--btn-col-active);  /*  26 darker on active*/
+}
+.tbtn a:hover:active{
+   box-shadow: none;  /*remove 3d effect*/
+}
+
+#tnav a {border-bottom: none;} /* hide anchor uline */
+
+/* arrow colors */
+.tbtn svg {fill: #0230E8;}
+.tbtn:hover svg {fill: #FFFEFE;}
+.tbtn:active svg {fill: #CCC;}
+
+/* Disabled nav buttons */
+.tflat {
+  color: var(--txt-dark);
+  border-color: gray;
+  border-radius: 8px;
+  border-style: solid;
+  border-width: 1px;
+  font-size: 1.1em;
+  font-family: Helvetica, Arial, Oxygen-Sans, Roboto, Ubuntu, sans-serif;
+  -webkit-touch-callout: none;
+    -webkit-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+   height: 40px;
+   line-height: 40px;
+   box-shadow: 0px 1px 2px #00000030, 0px 6px 12px #00000015; /*float*/
+   width: 140px !important;
+}
+
+#sherlock {
+  border: none;
+  border-radius: 0 40px 40px 0;
+  border-left: 1px solid #ADAEB1;
+  cursor: pointer;
+  aspect-ratio: 1;
+  height: 34.5px;
+  width: 64px;
+  position: absolute;
+  top: 1.3px;
+  background-color: #DAD9DF;
+  transition: background-color 0.2s ease-in, opacity 0.2s ease-in;
+  right: 1.2px; /* align with input */
+}
+#sherlock:hover {
+  opacity: 0.8;
+  background-color: #0FC252;
+  transition: background-color 0.2s ease-in, opacity 0.2s ease-in;
+}
+#sherlock:focus{outline: 2.5px solid #3974DC; border-left:none;}
+#sherlock:active {
+  opacity: 0.8;
+  outline: none;
+  background-color: #BDBDC6;
+  transition: background-color 0.1s ease-in, opacity 0.1s ease-in;
+}
+
+/* Colour the nav icons*/
+
+li a[href="../bash/"] {
+  background-color: #FFCC33;
+  color: black !important;
+  transition: background-color 0.25s;
+}
+li a[href="../nt/"] {background-color: #BDEBB0; transition: background-color 0.25s;}
+li a[href="../mac/"] {
+background: linear-gradient(to right, #ef5350, #f48fb1, #7e57c2, #2196f3, #26c6da, #43a047, #929b35, #f9a825, #ff5722);
+  background-color: var(--btn-col);transition: background-color 0.25s;
+  -webkit-background-clip: text;background-clip: text;
+  -webkit-text-fill-color: transparent; background-size: 27%;
+  }
+li a[href="../mac/"]:hover {
+  background: inherit;
+  background-color: var(--btn-col-hov);
+  color: var(--btn-link);
+  -webkit-text-fill-color:inherit;
+  transition: background-color 0.25s;
+}
+li a[href="../pg/"] {background-color: #DFDFFA; transition: background-color 0.25s;}
+li a[href="../ps/"] {background-color: #E8F5FF; transition: background-color 0.25s;}
+/* sql #FDD0FF */
+li a[href="../sql/"] {color: #af0000!important; transition: color 0.25s,background-color 0.25s;}
+li a[href="../sql/"]:hover {color: var(--btn-link)!important; transition: color 0.25s,background-color 0.25s;}
+
+li a[href="../vb/"] {background-color: #EAE772; transition: background-color 0.25s;}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+   body {
+   background-color: #BDBDC6;transition: background-color 1s;
+   }
+   .az tr {
+    border-bottom: 1pt solid #A6A6A6;
+   }
+   hr { color: #E8E8E8;}
+   #tnav { background-color: #BDBDC6;
+   background: linear-gradient(180deg,rgb(189, 189, 198) 0%, rgb(185, 185, 191) 100%);
+   border-bottom: solid 1px #ababab;
+   }
+   a:link, a:hover {color: var(--link-dark);}
+   a[href^="x-man-page"] {color: #af0606;}
+   a:visited {color: #7D129E;}
+   .highlight {color: #5D1701;}
+}
+
+/* Search box */
+#search {
+  margin-left: 50px;
+  width: 420px;
+}
+
+#qu {
+  border-top: 1px solid #7C7C7C;
+  border-left: 1px solid #ACB5BE;
+  border-right: 1px solid #ACB5BE;
+  border-bottom: 1px solid #ACB5BE;
+  border-radius: 40px;
+  box-shadow: inset #CCC 0px 1px 0px;
+  color: rgba(0, 0, 0, 0.81);
+  transition: border 0.33s ease-in;
+}
+
+#qu:focus {
+  border: 1px solid #005FCC;
+  border-bottom: 1.5px solid #005FCC;
+  box-shadow: 0px 0px 5px 0px #5F95EE;
+  outline: none;
+  transition: border 0.2s ease-out, box-shadow  0.2s;
+}
+
+/* TABLES */
+
+table {
+  border-collapse: collapse;
+  max-width: 990px;
+  margin-left:10px;
+}
+td, th{
+  padding: 4px 8px;
+  margin: 0;
+  vertical-align: top;
+  text-align: left;
+}
+td img{vertical-align: top;}
+th{
+  background-color: #91C0FC;transition: background-color 1s, color 2s;
+  font-weight: normal;
+  position: sticky;
+  top: 0; /* sticky */
+  z-index: 20; /*in front*/
+  height: 35px;
+}
+
+tr{border-bottom: 0.5px solid #969696;}
+thead tr { border-bottom: none; }
+
+tr:nth-child(even) td{ /* lighten alt rows DEDEE4 D1D1D8*/
+  background-color: #D6D6DB;
+}
+
+/* Sortable Tables */
+table.sortable th {
+  cursor: default;
+  color: blue;transition: background-color 1s, color 2s;
+}
+table.sortable th:not(.sorttable_sorted):not(.sorttable_sorted_reverse):not(.sorttable_nosort):after {
+    content: url("data:image/gif;base64,R0lGODlhFQAJAIABAAAAAAAAACH/C1hNUCBEYXRhWE1QPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS4wLWMwNjAgNjEuMTM0Nzc3LCAyMDEwLzAyLzEyLTE3OjMyOjAwICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjAxODAxMTc0MDcyMDY4MTE4OEM2REYyN0ExMDhBNDJFIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjdCNTAyODcwMEY4NjExRTBBMzkyQzAyM0E1RDk3RDc3IiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjdCNTAyODZGMEY4NjExRTBBMzkyQzAyM0E1RDk3RDc3IiB4bXA6Q3JlYXRvclRvb2w9IkFkb2JlIFBob3Rvc2hvcCBDUzUgTWFjaW50b3NoIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MDE4MDExNzQwNzIwNjgxMTg4QzZERjI3QTEwOEE0MkUiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6MDE4MDExNzQwNzIwNjgxMTg4QzZERjI3QTEwOEE0MkUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4B//79/Pv6+fj39vX08/Lx8O/u7ezr6uno5+bl5OPi4eDf3t3c29rZ2NfW1dTT0tHQz87NzMvKycjHxsXEw8LBwL++vby7urm4t7a1tLOysbCvrq2sq6qpqKempaSjoqGgn56dnJuamZiXlpWUk5KRkI+OjYyLiomIh4aFhIOCgYB/fn18e3p5eHd2dXRzcnFwb25tbGtqaWhnZmVkY2JhYF9eXVxbWllYV1ZVVFNSUVBPTk1MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAAAh+QQBAAABACwAAAAAFQAJAAACF4yPgMsJ2mJ4VDKKrd4GVz5lYPeMiVUAADs=");
+}
+
+thead th:first-child {
+   border-top-left-radius: 6px;
+   border-bottom-left-radius: 6px;
+}
+
+thead th:last-child {
+   border-top-right-radius: 6px;
+   border-bottom-right-radius: 6px;
+}
+
+#rowhover tr:hover td { background-color: #E0E0E6;}
+
+/* fit to window */
+@media (max-width: 1200px) {.wrapq  { margin-left: 50px; transition: margin-left 0.7s, width 0.5s;}}
+@media (max-width: 950px) {.wrapq  { margin-left: 25px; transition: margin-left 0.5s, width 0.5s;}}
+@media (max-width: 900px) {.wrapq {width: 300px;transition: width 0.5s;}
+#sherlock {width: 64px;transition: width 0.5s;}}
+@media (max-width: 800px) {.wrapq {width: 210px;transition: width 0.5s;}
+#sherlock {width: 50px;transition: width 0.5s;}
+}
+
+/* Dark */
+@media (prefers-color-scheme: dark) {
+   th{  background-color: #1166c0;color: whitesmoke; transition: background-color 1s, color 2s;}
+   table.sortable th { background-color: #1166c0;color: whitesmoke;transition: background-color 1s, color 2s;}
+   th a:link{color: #C7EDFC;}
+   th a:visited{color: #F7DDFF;}
+   tr:nth-child(even) td{ background-color: #BFBFCA;
+   } /*#C2C2CB CACAD2*/
+   /*#qu:focus{border-top: 1.5px solid #005FCC;
+   box-shadow: 0px 0px 4px 0px #4D90FE;}*/
+}
+
+/*  print styles */
+@media print{
+  .adsbygoogle {
+    display:none !important;
+  }
+  @page { margin: 0; }
+  body { margin: 0 25px; background-color: #FFF;}
+  @page {margin-top: 40px;margin-bottom: 50px;}
+  #qc-cmp2-persistent-link{display:none}
+  .tbtn, .tflat {box-shadow: none;}
+  .stripe {display: none;}
+}
+</style>
+<link rel="icon" href="https://ss64.com/favicon.ico" sizes="48x48">
+<link rel="icon" href="https://ss64.com/favicon.svg" sizes="any" type="image/svg+xml">
+<title>SS64 Command line reference</title>
+<link rel="canonical" href="https://ss64.com/">
+<meta name="Author" content="Simon Sheppard">
+<meta name="Description" content="Command line reference for Windows CMD, PowerShell, MacOS and Linux bash. Also includes SQL Server database commands.">
+<meta property="og:image" content="https://ss64.com/apple-touch-icon.png">
+<link rel="search" href="https://ss64.com/opensearch.xml" type="application/opensearchdescription+xml" title="SS64.com">
+<style>
+h1 {
+  color: var(--txt-dark);
+  font-size: 1rem;
+  line-height: 1.963rem;
+}
+#qu1144  {left: 1px;}
+
+.tnav {
+  height: 42px;
+  min-width: 280px;
+  max-width: 700px;
+}
+.tnav > ul {list-style: none; margin: 0; padding: 0;}
+.tnav > ul > li {
+  display: block;
+  float: left;
+  margin: 0 0.15em 15px;
+  outline: none;
+  align-content: center;
+  text-align: center;
+}
+
+.tnav a {border-bottom: none;} /* hide anchor uline */
+
+#qu:focus { box-shadow: 0px 0px 5px 0px #5F95EECC;}
+#logo{ font-family: Helvetica,Arial,sans-serif; font-size: 1.1em; margin:0;width: 140px;line-height: 40px;}
+li {
+  display: inline-block;
+  list-style: none;
+}
+
+.footer {color: #333; font-family: "Helvetica Neue", "Segoe UI Variable Static Text", Helvetica, Arial, sans-serif;
+font-size: 75%;
+display: inline-block}
+#search { margin-left:110px;transition: margin-left 0.5s; }
+#first {margin-bottom: -4px;}
+#first,#second {margin-left: 6.5%;}
+
+/* Colour the nav icons*/
+a[href$="/bash/"] {background-color: #FFCC33; color: black !important;}
+a[href$="/nt/"] {background-color: #BDEBB0;}
+a[href$="/ps/"] {background-color: #DFECFA;}
+a[href$="/mac/"] {
+background: linear-gradient(to right, #ef5350, #f48fb1, #7e57c2, #2196f3, #26c6da, #43a047, #929b35, #f9a825, #ff5722);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent; background-size: 27%;
+  }
+a[href$="/mac/"]:hover {
+  background: inherit;
+  background-color: #00CA70;
+  color: var(--btn-link);
+  -webkit-text-fill-color:inherit;
+}
+a[href$="/mac/"]:active {
+  background-color: var(--btn-col-active);
+}
+a[href$="/vb/"] {background-color: #EAE772;}
+
+/* fit to window */
+@media (max-width: 950px) {.wrapq  { margin-left: 50px; transition: margin-left 0.5s, width 0.5s;}}
+@media (max-width: 900px) {.wrapq {width: 400px; transition: width 0.5s;}
+#sherlock {width: 64px;transition: width 0.5s;}}
+
+@media (max-width: 800px) {.wrapq {width: 400px;transition: width 0.5s;}
+#sherlock {width: 64px;transition: width 0.5s;}}
+
+@media (max-width: 700px) {.wrapq {width: 300px;transition: width 0.5s;}
+#sherlock {width: 50px;transition: width 0.5s;}}
+
+@media (max-width: 550px) {.wrapq {width: 210px;transition: width 0.5s;}}
+@media (max-width: 450px) {.wrapq{ margin-left:0; width:185px;transition: margin-left 0.5s,width 0.5s;}}
+</style>
+<script async="" type="text/javascript" src="./ss64_files/choice.js"></script><script async="" src="./ss64_files/q.js"></script>
+<script async="" src="./ss64_files/menu.js"></script>
+</head>
+<body>
+<div id="searchnav" class="tnav">
+<ul>
+  <li id="logo">( &nbsp;SS64&nbsp; )</li>
+  <li><form action="https://www.google.com/search" method="get">
+<div class="wrapq">
+<input type="text" name="q" id="qu" maxlength="255" placeholder="Search" autofocus="" class="mousetrap" aria-label="Search text" inputmode="search" required="">
+<button id="sherlock" type="submit">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26" focusable="false" aria-hidden="true" style="display: inherit; width: 100%; height: 100%;">
+<path d="M11 2a9 9 0 105.641 16.01.966.966 0 00.152.197l3.5 3.5a1 1 0 101.414-1.414l-3.5-3.5a1 1 0 00-.197-.153A8.96 8.96 0 0020 11a9 9 0 00-9-9Zm0 2a7 7 0 110 14 7 7 0 010-14Z"></path></svg>
+</button>
+</div>
+<input type="hidden" name="sitesearch" value="ss64.com">
+<input type="hidden" name="udm" value="14">
+</form></li>
+</ul>
+</div>
+<h1>Command line reference.</h1>
+
+<div class="tnav" id="first">
+<ul>
+  <li class="tbtn"><a href="https://ss64.com/bash/">Linux</a></li>
+  <li class="tbtn"><a href="https://ss64.com/mac/">macOS</a></li>
+  <li class="tbtn"><a href="https://ss64.com/nt/">CMD</a></li>
+  <li class="tbtn"><a href="https://ss64.com/ps/">PowerShell</a></li>
+</ul>
+</div><br>
+
+<div class="tnav" id="second">
+<ul>
+  <li class="tbtn"><a href="https://ss64.com/ascii.html">ASCII</a></li>
+  <li class="tbtn"><a href="https://ss64.com/vb/">VBScript</a></li>
+  <li class="tbtn"><a href="https://ss64.com/tools/">Tools</a></li>
+  <li class="tbtn"><a href="https://ss64.com/pass/">Passwords</a></li>
+</ul>
+</div><br>
+<p class="footer"><a href="https://ss64.com/docs/" title="Recent changes, other links, donations and contact details.">About/contact</a>&nbsp;-&nbsp;Last&nbsp;update:&nbsp;July 18<sup>th</sup><br>
+Copyright&nbsp;© 1999-2026&nbsp;SS64.com, <a href="https://ss64.com/docs/copyright.html" title="Creative Commons License.">some rights reserved.</a></p>
+
+<iframe name="__tcfapiLocator" style="display: none;" src="./ss64_files/saved_resource.html"></iframe><iframe name="__gppLocator" style="display: none;" src="./ss64_files/saved_resource(1).html"></iframe></body></html>

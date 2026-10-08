@@ -4,7 +4,7 @@
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
-#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
 
 using namespace EE::UI;
@@ -12,7 +12,9 @@ using namespace eterm::Terminal;
 
 namespace eterm { namespace UI {
 
-class UITerminal : public UIWidget {
+class UITerminalFind;
+
+class UITerminal : public UITouchDraggableWidget {
   public:
 	static UITerminal* New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
 							const std::string& program = "",
@@ -52,6 +54,9 @@ class UITerminal : public UIWidget {
 
 	void setFont( Font* font );
 
+	/** Synchronizes terminal rendering policy from the service that owns its font. */
+	void syncFontRenderingConfig();
+
 	void setKeyBindings( const KeyBindings& keyBindings );
 
 	void addKeyBindingString( const std::string& shortcut, const std::string& command );
@@ -64,7 +69,7 @@ class UITerminal : public UIWidget {
 
 	void addKeyBindsString( const std::map<std::string, std::string>& binds );
 
-	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
+	void addKeyBinds( const KeyBindings::ShortcutMap& binds );
 
 	bool execute( const std::string& command );
 
@@ -125,10 +130,14 @@ class UITerminal : public UIWidget {
 	ScrollViewType mViewType{ ScrollViewType::Overlay };
 	ScrollBarMode mVScrollMode{ ScrollBarMode::Auto };
 	UIScrollBar* mVScroll{ nullptr };
-	int mScrollOffset;
+	int mScrollOffset{ 0 };
 	bool mScrollByBar{ false };
+	bool mPendingContentSizeChange{ false };
+	Uint64 mPendingScrollCommand{ 0 };
 	Clock mMouseClock;
 	std::shared_ptr<TerminalDisplay> mTerm;
+	Uint32 mTerminalEventCallbackId{ 0 };
+	UITerminalFind* mFindBar{ nullptr };
 
 	UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay );
 
@@ -148,6 +157,8 @@ class UITerminal : public UIWidget {
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
+
 	virtual void onPositionChange();
 
 	virtual void onSizeChange();
@@ -159,8 +170,10 @@ class UITerminal : public UIWidget {
 	virtual Uint32 onFocus( NodeFocusReason reason );
 
 	virtual Uint32 onFocusLoss();
+	virtual Uint32 onMessage( const NodeMessage* msg );
 
 	virtual void updateScroll();
+	void syncScrollOffset();
 
 	virtual void onContentSizeChange();
 
@@ -171,7 +184,7 @@ class UITerminal : public UIWidget {
 
 	virtual bool onCreateContextMenu( const Vector2i& position, const Uint32& flags );
 
-	Drawable* findIcon( const std::string& name );
+	DrawablePtr findIcon( const std::string& name );
 
 	void createDefaultContextMenuOptions( UIPopUpMenu* menu );
 
@@ -182,6 +195,14 @@ class UITerminal : public UIWidget {
 	virtual void updateScrollPosition();
 
 	virtual void onScrollChange();
+
+	virtual bool supportsScrollController() const;
+
+	virtual Vector2f getScrollControllerPosition() const;
+
+	virtual Vector2f getScrollControllerMaxPosition() const;
+
+	virtual void setScrollControllerPosition( const Vector2f& position );
 
 	void registerNewTerminal();
 };

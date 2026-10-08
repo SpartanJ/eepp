@@ -1,6 +1,7 @@
 #pragma once
 
 #include <eepp/core/string.hpp>
+#include <eepp/graphics/drawable.hpp>
 #include <eepp/ui/doc/textrange.hpp>
 #include <optional>
 #include <string>
@@ -19,6 +20,7 @@ class Font;
 namespace UI {
 
 class UISplitter;
+class UILayout;
 class UITabWidget;
 class UISceneNode;
 class UICodeEditor;
@@ -58,12 +60,18 @@ class ProjectDirectoryTree;
 struct TerminalConfig;
 class UIMainLayout;
 class UITreeViewFS;
+class StatusDebuggerController;
+class UIRightPanel;
 
 class PluginContextProvider {
   public:
 	virtual UIStatusBar* getStatusBar() const = 0;
 
 	virtual UISplitter* getMainSplitter() const = 0;
+
+	virtual UIRightPanel* getRightPanel() const = 0;
+
+	virtual StatusDebuggerController* getStatusDebuggerController() const = 0;
 
 	virtual UITreeViewFS* getProjectTreeView() const = 0;
 
@@ -113,9 +121,9 @@ class PluginContextProvider {
 
 	virtual ProjectDirectoryTree* getDirTree() const = 0;
 
-	virtual Drawable* findIcon( const std::string& name ) = 0;
+	virtual DrawablePtr findIcon( const std::string& name ) = 0;
 
-	virtual Drawable* findIcon( const std::string& name, const size_t iconSize ) = 0;
+	virtual DrawablePtr findIcon( const std::string& name, const size_t iconSize ) = 0;
 
 	virtual TerminalConfig& termConfig() = 0;
 
@@ -163,7 +171,8 @@ class PluginContextProvider {
 	virtual void loadDiffFromMemory( const std::string& content,
 									 const std::string& originalFilePath = "",
 									 const std::string& oldFilePath = "",
-									 const std::string& repoPath = "" ) = 0;
+									 const std::string& repoPath = "",
+									 bool interactiveFileHeaders = false ) = 0;
 
 	virtual void loadFolder( std::string path, bool forceNewWindow = false ) = 0;
 

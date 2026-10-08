@@ -134,6 +134,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
 
   protected:
+	virtual void onTextHintsChanged();
+
 	TextDocument mDoc;
 	Float mWaitCursorTime;
 	Vector2f mCurPos;
@@ -179,6 +181,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMessage( const NodeMessage* message );
+
 	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
@@ -196,6 +200,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	virtual void onFontChanged();
 
 	virtual void onFontStyleChanged();
+
+	virtual void onFontColorChanged();
 
 	void onThemeLoaded();
 
@@ -268,7 +274,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	UIMenuItem* menuAdd( UIPopUpMenu* menu, const String& translateString, const std::string& icon,
 						 const std::string& cmd );
 
-	Drawable* findIcon( const std::string& name );
+	DrawablePtr findIcon( const std::string& name );
 };
 
 }} // namespace EE::UI

@@ -8,7 +8,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/md5.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/system/regex.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
@@ -16,6 +16,8 @@
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/window/engine.hpp>
 
+#include <algorithm>
+#include <iterator>
 #include <set>
 
 using namespace std::literals;
@@ -30,6 +32,9 @@ namespace EE { namespace UI { namespace Doc {
 static constexpr char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
 
 static UnorderedSet<String::HashType> TEXT_DOCUMENT_COMMANDS = {};
+
+TextDocument::ScopedReadLock::ScopedReadLock( const TextDocument& document ) :
+	mLinesLock( document.mLinesMutex ), mDocumentLock( *document.mDocumentMutex ) {}
 
 bool TextDocument::fileMightBeBinary( const std::string& file ) {
 	static constexpr size_t MAX_READ = 4096;
@@ -297,10 +302,12 @@ bool TextDocument::fileMightBeBinary( const std::string& file ) {
 }
 
 bool TextDocument::isTextDocumentCommand( std::string_view cmd ) {
+	(void)getBuiltinCommands();
 	return TEXT_DOCUMENT_COMMANDS.contains( String::hash( cmd ) );
 }
 
 bool TextDocument::isTextDocumentCommand( String::HashType cmdHash ) {
+	(void)getBuiltinCommands();
 	return TEXT_DOCUMENT_COMMANDS.contains( cmdHash );
 }
 
@@ -331,8 +338,14 @@ TextDocument::~TextDocument() {
 		mHighlighter->setStopTokenizingAsync();
 
 	// TODO: Use a condition variable to wait the thread pool to finish
-	while ( !mStopFlags.empty() )
+	while ( true ) {
+		{
+			Lock l( mStopFlagsMutex );
+			if ( mStopFlags.empty() )
+				break;
+		}
 		Sys::sleep( Milliseconds( 0.1 ) );
+	}
 
 	if ( mLoading ) {
 		mLoading = false;
@@ -837,9 +850,9 @@ TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 	mLoading = true;
 	bool fileExists = FileSystem::fileExists( path );
 
-	if ( !fileExists && PackManager::instance()->isFallbackToPacksActive() ) {
+	if ( !fileExists && PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string pathFix( path );
-		Pack* pack = PackManager::instance()->exists( pathFix );
+		Pack* pack = PackRegistry::instance()->exists( pathFix );
 		if ( NULL != pack ) {
 			changeFilePath( pathFix, false );
 			return loadFromPack( pack, pathFix );
@@ -945,8 +958,8 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 	mLoadingAsync = true;
 
 	Http::getAsync(
-		[this, onLoaded = std::move( onLoaded ),
-		 uri = std::move( uri )]( const Http&, Http::Request&, Http::Response& response ) {
+		[this, onLoaded = std::move( onLoaded ), uri]( const Http&, Http::Request&,
+													   Http::Response& response ) {
 			if ( response.getStatus() <= Http::Response::Ok ) {
 				std::string path( URI::getTempPathFromURI( uri ) );
 				FileSystem::fileWrite( path, (const Uint8*)response.getBody().c_str(),
@@ -1372,12 +1385,19 @@ std::string TextDocument::getHashHexString() const {
 }
 
 String TextDocument::getText( const TextRange& range ) const {
+	String result;
+	getTextToBuffer( range, result );
+	return result;
+}
+
+void TextDocument::getTextToBuffer( const TextRange& range, String& buffer ) const {
 	Lock l( mLinesMutex );
 	Lock l2( *mDocumentMutex );
 
 	TextRange nrange = sanitizeRange( range.normalized() );
+	buffer.clear();
 	if ( !nrange.hasSelection() )
-		return String();
+		return;
 
 	Int64 startLine = nrange.start().line();
 	Int64 endLine = nrange.end().line();
@@ -1395,24 +1415,21 @@ String TextDocument::getText( const TextRange& range ) const {
 		totalSize += endCol;
 	}
 
-	String result;
-	result.reserve( totalSize );
+	buffer.reserve( totalSize );
 
 	if ( startLine == endLine ) {
-		result.append( mLines[startLine].getText(), startCol, endCol - startCol );
+		buffer.append( mLines[startLine].getText(), startCol, endCol - startCol );
 	} else {
-		result.append( mLines[startLine].getText(), startCol, mLines[startLine].size() - startCol );
+		buffer.append( mLines[startLine].getText(), startCol, mLines[startLine].size() - startCol );
 
 		for ( Int64 i = startLine + 1; i < endLine; ++i ) {
-			result.append( mLines[i].getText() );
+			buffer.append( mLines[i].getText() );
 		}
 
 		if ( endCol > 0 ) {
-			result.append( mLines[endLine].getText(), 0, endCol );
+			buffer.append( mLines[endLine].getText(), 0, endCol );
 		}
 	}
-
-	return result;
 }
 
 String TextDocument::getText() const {
@@ -1445,28 +1462,38 @@ String TextDocument::toString() {
 	return stream;
 }
 
-std::string TextDocument::toUtf8String() {
+void TextDocument::toUtf8String( std::string& stream ) {
 	Lock l( mLinesMutex );
 	Lock l2( *mDocumentMutex );
-	std::string stream;
-	std::size_t totalCodepoints = 0;
+	std::size_t utf8Size = 0;
 	for ( const auto& line : mLines )
-		totalCodepoints += line.size();
+		utf8Size += String::utf8EncodedLength( line.getText().getString(), line.getTextHints() );
 
-	// Heuristic reserve: Codepoints + 25% to account for UTF-8 expansion
-	stream.reserve( totalCodepoints + ( totalCodepoints >> 2 ) );
+	stream.clear();
+	stream.reserve( utf8Size );
 
-	for ( const auto& line : mLines ) {
-		const String& text = line.getText();
-		// Low-level conversion directly into the stream buffer
-		Utf32::toUtf8( text.begin(), text.end(), std::back_inserter( stream ) );
-	}
+	for ( const auto& line : mLines )
+		String::appendUtf8( line.getText().getString(), stream, line.getTextHints() );
+}
+
+std::string TextDocument::toUtf8String() {
+	std::string stream;
+	toUtf8String( stream );
 	return stream;
 }
 
 std::vector<std::string> TextDocument::getCommandList() const {
 	std::vector<std::string> cmds;
-	cmds.reserve( mCommands.size() + mRefCommands.size() );
+	cmds.reserve( getBuiltinCommands().size() + mCommands.size() + mRefCommands.size() +
+				  ( mSharedRefCommands ? mSharedRefCommands->size() : 0 ) );
+	for ( const auto& cmd : getBuiltinCommands() ) {
+		if ( !isDefaultCommandRemoved( cmd.first ) )
+			cmds.push_back( cmd.first );
+	}
+	if ( mSharedRefCommands ) {
+		for ( const auto& cmd : *mSharedRefCommands )
+			cmds.push_back( cmd.first );
+	}
 	for ( const auto& cmd : mRefCommands )
 		cmds.push_back( cmd.first );
 	for ( const auto& cmd : mCommands )
@@ -1563,29 +1590,59 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 	position = sanitizePosition( position );
 	size_t lineCount = linesCount();
 	Int64 linesAdd = 0;
+	Int64 lastInsertedLineLength = 0;
+	bool multiline = text.find( '\n' ) != String::InvalidPos;
 
 	{
 		Lock l( mLinesMutex );
-		String before = mLines[position.line()].substr( 0, position.column() );
-		String after = mLines[position.line()].substr( position.column() );
-		std::vector<String> lines = text.split( '\n', true );
-		linesAdd = eemax<Int64>( 0, static_cast<Int64>( lines.size() ) - 1 );
-		for ( auto i = 0; i < linesAdd; i++ )
-			lines[i] = lines[i] + "\n";
-		lines[0] = before + lines[0];
-		lines[lines.size() - 1] = lines[lines.size() - 1] + after;
+		if ( !multiline ) {
+			mLines[position.line()].insert( position.column(), text );
+			notifyLineChanged( position.line() );
+		} else {
+			{
+				Lock l2( *mDocumentMutex );
+				String before = mLines[position.line()].substr( 0, position.column() );
+				String after = mLines[position.line()].substr( position.column() );
+				String::View textView = text.view();
+				linesAdd =
+					static_cast<Int64>( std::count( textView.begin(), textView.end(), '\n' ) );
+				// Build the new document lines once and insert the complete range. Inserting each
+				// line separately repeatedly grows the vector and shifts its trailing elements.
+				SmallVector<TextDocumentLine, 8> lines;
+				lines.reserve( static_cast<size_t>( linesAdd ) );
 
-		mLines[position.line()] = TextDocumentLine( lines[0], mDocumentMutex );
-		notifyLineChanged( position.line() );
+				size_t lineStart = 0;
+				for ( Int64 i = 0; i <= linesAdd; ++i ) {
+					size_t newLine = textView.find( '\n', lineStart );
+					size_t lineEnd = newLine == String::InvalidPos ? textView.size() : newLine + 1;
+					if ( i == linesAdd )
+						lastInsertedLineLength = static_cast<Int64>( lineEnd - lineStart );
+					String line( textView.substr( lineStart, lineEnd - lineStart ) );
+					if ( i == 0 )
+						line.insert( 0, before );
+					if ( i == linesAdd )
+						line.append( after );
+					if ( i == 0 )
+						mLines[position.line()].setText( std::move( line ) );
+					else
+						lines.emplace_back( std::move( line ), mDocumentMutex );
+					lineStart = lineEnd;
+				}
 
-		for ( Int64 i = 1; i < (Int64)lines.size(); i++ ) {
-			mLines.insert( mLines.begin() + position.line() + i,
-						   TextDocumentLine( lines[i], mDocumentMutex ) );
-			notifyLineChanged( position.line() + i );
+				mLines.insert( mLines.begin() + position.line() + 1,
+							   std::make_move_iterator( lines.begin() ),
+							   std::make_move_iterator( lines.end() ) );
+			}
+			notifyLinesChanged( position.line(), position.line() + linesAdd );
 		}
 	}
 
-	TextPosition cursor = positionOffset( position, text.size() );
+	// The multiline construction above already knows the final line and column. Start from that
+	// line instead of walking every inserted line again, while still letting positionOffset() move
+	// the endpoint to a grapheme boundary when the inserted text joins the existing suffix.
+	TextPosition cursor =
+		multiline ? positionOffset( { position.line() + linesAdd, 0 }, lastInsertedLineLength )
+				  : positionOffset( position, text.size() );
 
 	mUndoStack.pushSelection( undoStack, cursorIdx, mSelection, time );
 	mUndoStack.pushRemove( undoStack, cursorIdx, { position, cursor }, time );
@@ -2489,7 +2546,7 @@ void TextDocument::moveToEndOfDoc() {
 void TextDocument::moveToStartOfContent() {
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		TextPosition start = getSelectionIndex( i ).start();
-		TextPosition indented = startOfContent( start );
+		TextPosition indented = startOfContent( endOfLine( start ) );
 		setSelection( i, indented.column() == start.column() ? TextPosition( start.line(), 0 )
 															 : indented );
 	}
@@ -2897,6 +2954,12 @@ void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skip
 }
 
 void TextDocument::indent() {
+	if ( mTabOutEnabled && mSelection.size() == 1 && !hasSelection() &&
+		 mTabOutChars.find( getCurrentChar() ) != String::InvalidPos ) {
+		moveToNextChar();
+		return;
+	}
+
 	if ( hasSelection() ) {
 		insertAtStartOfSelectedLines( getIndentString(), false );
 	} else {
@@ -3033,6 +3096,22 @@ void TextDocument::setAutoCloseBracketsPairs(
 	mAutoCloseBracketsPairs = autoCloseBracketsPairs;
 }
 
+bool TextDocument::getTabOutEnabled() const {
+	return mTabOutEnabled;
+}
+
+void TextDocument::setTabOutEnabled( bool enabled ) {
+	mTabOutEnabled = enabled;
+}
+
+const String& TextDocument::getTabOutChars() const {
+	return mTabOutChars;
+}
+
+void TextDocument::setTabOutChars( const String& chars ) {
+	mTabOutChars = chars;
+}
+
 bool TextDocument::isDirtyOnFileSystem() const {
 	return mDirtyOnFileSystem;
 }
@@ -3144,25 +3223,42 @@ bool TextDocument::isDirty() const {
 void TextDocument::execute( const std::string& command ) {
 	auto cmdIt = mCommands.find( command );
 	if ( cmdIt != mCommands.end() )
-		cmdIt->second();
+		return cmdIt->second();
+	auto builtinIt = getBuiltinCommands().find( command );
+	if ( builtinIt != getBuiltinCommands().end() && !isDefaultCommandRemoved( command ) )
+		builtinIt->second( this );
 }
 
 void TextDocument::execute( const std::string& command, Client* client ) {
 	auto cmdRefIt = mRefCommands.find( command );
 	if ( cmdRefIt != mRefCommands.end() )
 		return cmdRefIt->second( client );
+	if ( mSharedRefCommands ) {
+		auto sharedCmdIt = mSharedRefCommands->find( command );
+		if ( sharedCmdIt != mSharedRefCommands->end() )
+			return sharedCmdIt->second( client );
+	}
 	auto cmdIt = mCommands.find( command );
 	if ( cmdIt != mCommands.end() )
 		return cmdIt->second();
+	auto builtinIt = getBuiltinCommands().find( command );
+	if ( builtinIt != getBuiltinCommands().end() && !isDefaultCommandRemoved( command ) )
+		builtinIt->second( this );
 }
 
 void TextDocument::setCommands( const UnorderedMap<std::string, DocumentCommand>& cmds ) {
 	mCommands.insert( cmds.begin(), cmds.end() );
+	if ( mRemovedDefaultCommands ) {
+		for ( const auto& cmd : cmds )
+			mRemovedDefaultCommands->erase( cmd.first );
+	}
 }
 
 void TextDocument::setCommand( const std::string& command,
 							   const TextDocument::DocumentCommand& func ) {
 	mCommands[command] = func;
+	if ( mRemovedDefaultCommands )
+		mRemovedDefaultCommands->erase( command );
 }
 
 void TextDocument::setCommand( const std::string& command,
@@ -3170,13 +3266,43 @@ void TextDocument::setCommand( const std::string& command,
 	mRefCommands[command] = func;
 }
 
+void TextDocument::setSharedRefCommands(
+	std::shared_ptr<const TextDocument::DocumentRefCommands> commands ) {
+	mSharedRefCommands = std::move( commands );
+}
+
 bool TextDocument::hasCommand( const std::string& command ) {
 	return mCommands.find( command ) != mCommands.end() ||
-		   mRefCommands.find( command ) != mRefCommands.end();
+		   mRefCommands.find( command ) != mRefCommands.end() ||
+		   ( mSharedRefCommands &&
+			 mSharedRefCommands->find( command ) != mSharedRefCommands->end() ) ||
+		   ( getBuiltinCommands().find( command ) != getBuiltinCommands().end() &&
+			 !isDefaultCommandRemoved( command ) );
 }
 
 bool TextDocument::removeCommand( const std::string& command ) {
-	return mCommands.erase( command ) > 0 || mRefCommands.erase( command ) > 0;
+	if ( mCommands.erase( command ) > 0 ) {
+		if ( getBuiltinCommands().find( command ) != getBuiltinCommands().end() ) {
+			if ( !mRemovedDefaultCommands )
+				mRemovedDefaultCommands = std::make_unique<UnorderedSet<std::string>>();
+			mRemovedDefaultCommands->insert( command );
+		}
+		return true;
+	}
+	if ( mRefCommands.erase( command ) > 0 )
+		return true;
+	if ( getBuiltinCommands().find( command ) != getBuiltinCommands().end() &&
+		 !isDefaultCommandRemoved( command ) ) {
+		if ( !mRemovedDefaultCommands )
+			mRemovedDefaultCommands = std::make_unique<UnorderedSet<std::string>>();
+		mRemovedDefaultCommands->insert( command );
+		return true;
+	}
+	return false;
+}
+
+bool TextDocument::isDefaultCommandRemoved( const std::string& command ) const {
+	return mRemovedDefaultCommands && mRemovedDefaultCommands->contains( command );
 }
 
 static constexpr auto MAX_CAPTURES = 12;
@@ -3603,7 +3729,7 @@ TextDocument::SearchResult TextDocument::findLast( const String& text, TextPosit
 void TextDocument::stopActiveFindAll() {
 	Lock l( mStopFlagsMutex );
 	for ( const auto& stopFlag : mStopFlags )
-		*stopFlag.second.get() = true;
+		stopFlag.second->store( true, std::memory_order_relaxed );
 }
 
 bool TextDocument::isDoingTextInput() const {
@@ -3620,8 +3746,8 @@ TextDocument::SearchResults TextDocument::findAll( const String& text, bool case
 	SearchResults all;
 	TextDocument::SearchResult found;
 	TextPosition from = startOfDoc();
-	auto stopFlagUP = std::make_unique<bool>( false );
-	bool* stopFlag = stopFlagUP.get();
+	auto stopFlagUP = std::make_unique<std::atomic_bool>( false );
+	std::atomic_bool* stopFlag = stopFlagUP.get();
 	{
 		Lock l( mStopFlagsMutex );
 		mStopFlags.insert( { stopFlag, std::move( stopFlagUP ) } );
@@ -3636,7 +3762,8 @@ TextDocument::SearchResults TextDocument::findAll( const String& text, bool case
 				break;
 			from = found.result.end();
 			all.push_back( found );
-			if ( ( maxResults != 0 && all.size() >= maxResults ) || *stopFlag )
+			if ( ( maxResults != 0 && all.size() >= maxResults ) ||
+				 stopFlag->load( std::memory_order_relaxed ) )
 				break;
 		}
 	} while ( found.isValid() );
@@ -4364,6 +4491,14 @@ void TextDocument::notifyLineChanged( const Int64& lineIndex ) {
 	}
 }
 
+void TextDocument::notifyLinesChanged( const Int64& firstLine, const Int64& lastLine ) {
+	Lock l( mClientsMutex );
+	for ( Int64 lineIndex = firstLine; lineIndex <= lastLine; ++lineIndex ) {
+		for ( auto& client : mClients )
+			client->onDocumentLineChanged( lineIndex );
+	}
+}
+
 void TextDocument::notifyUndoRedo( const TextDocument::UndoRedo& eventType ) {
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
@@ -4816,85 +4951,105 @@ void TextDocument::clearIndentation() {
 	}
 }
 
-void TextDocument::initializeCommands() {
-	mCommands["reset-document"] = [this] { reset(); };
-	mCommands["save-doc"] = [this] { save(); };
-	mCommands["delete-to-previous-word"] = [this] { deleteToPreviousWord(); };
-	mCommands["delete-to-previous-char"] = [this] { deleteToPreviousChar(); };
-	mCommands["delete-to-next-word"] = [this] { deleteToNextWord(); };
-	mCommands["delete-to-next-char"] = [this] { deleteToNextChar(); };
-	mCommands["delete-current-line"] = [this] { deleteCurrentLine(); };
-	mCommands["delete-to-start-of-line"] = [this] { deleteToStartOfLine(); };
-	mCommands["delete-to-end-of-line"] = [this] { deleteToEndOfLine(); };
-	mCommands["delete-selection"] = [this] { deleteSelection(); };
-	mCommands["delete-word"] = [this] { deleteWord(); };
-	mCommands["delete-paragraph"] = [this] { deleteCurrentParagraph(); };
-	mCommands["move-to-previous-char"] = [this] { moveToPreviousChar(); };
-	mCommands["move-to-previous-word"] = [this] { moveToPreviousWord(); };
-	mCommands["move-to-next-char"] = [this] { moveToNextChar(); };
-	mCommands["move-to-next-word"] = [this] { moveToNextWord(); };
-	mCommands["move-to-previous-line"] = [this] { moveToPreviousLine(); };
-	mCommands["move-to-next-line"] = [this] { moveToNextLine(); };
-	mCommands["move-to-previous-page"] = [this] { moveToPreviousPage( mPageSize ); };
-	mCommands["move-to-next-page"] = [this] { moveToNextPage( mPageSize ); };
-	mCommands["move-to-start-of-doc"] = [this] { moveToStartOfDoc(); };
-	mCommands["move-to-end-of-doc"] = [this] { moveToEndOfDoc(); };
-	mCommands["move-to-start-of-line"] = [this] { moveToStartOfLine(); };
-	mCommands["move-to-end-of-line"] = [this] { moveToEndOfLine(); };
-	mCommands["move-to-start-of-content"] = [this] { moveToStartOfContent(); };
-	mCommands["move-to-previous-paragraph"] = [this] { moveToPreviousParagraph(); };
-	mCommands["move-to-next-paragraph"] = [this] { moveToNextParagraph(); };
-	mCommands["move-lines-up"] = [this] { moveLinesUp(); };
-	mCommands["move-lines-down"] = [this] { moveLinesDown(); };
-	mCommands["select-to-previous-char"] = [this] { selectToPreviousChar(); };
-	mCommands["select-to-previous-word"] = [this] { selectToPreviousWord(); };
-	mCommands["select-to-previous-line"] = [this] { selectToPreviousLine(); };
-	mCommands["select-to-next-char"] = [this] { selectToNextChar(); };
-	mCommands["select-to-next-word"] = [this] { selectToNextWord(); };
-	mCommands["select-to-next-line"] = [this] { selectToNextLine(); };
-	mCommands["select-word"] = [this] { selectWord(); };
-	mCommands["select-all-words"] = [this] { selectAllWords(); };
-	mCommands["select-line"] = [this] { selectLine(); };
-	mCommands["select-single-line"] = [this] { selectSingleLine(); };
-	mCommands["select-to-start-of-line"] = [this] { selectToStartOfLine(); };
-	mCommands["select-to-end-of-line"] = [this] { selectToEndOfLine(); };
-	mCommands["select-to-start-of-doc"] = [this] { selectToStartOfDoc(); };
-	mCommands["select-to-start-of-content"] = [this] { selectToStartOfContent(); };
-	mCommands["select-to-end-of-doc"] = [this] { selectToEndOfDoc(); };
-	mCommands["select-to-previous-page"] = [this] { selectToPreviousPage( mPageSize ); };
-	mCommands["select-to-next-page"] = [this] { selectToNextPage( mPageSize ); };
-	mCommands["select-paragraph"] = [this] { selectCurrentParagraph(); };
-	mCommands["select-all"] = [this] { selectAll(); };
-	mCommands["new-line"] = [this] { newLine(); };
-	mCommands["new-line-above"] = [this] { newLineAbove(); };
-	mCommands["indent"] = [this] { indent(); };
-	mCommands["unindent"] = [this] { unindent(); };
-	mCommands["undo"] = [this] { undo(); };
-	mCommands["redo"] = [this] { redo(); };
-	mCommands["toggle-line-comments"] = [this] { toggleLineComments(); };
-	mCommands["toggle-block-comments"] = [this] { toggleBlockComments(); };
-	mCommands["selection-to-upper"] = [this] { toUpperSelection(); };
-	mCommands["selection-to-lower"] = [this] { toLowerSelection(); };
-	mCommands["reset-cursor"] = [this] { resetSelection(); };
-	mCommands["add-cursor-above"] = [this] { addCursorAbove(); };
-	mCommands["add-cursor-below"] = [this] { addCursorBelow(); };
-	mCommands["cursor-undo"] = [this] { cursorUndo(); };
-	mCommands["select-all-matches"] = [this] { selectAllMatches(); };
-	mCommands["escape"] = [this] { escape(); };
-	mCommands["unescape"] = [this] { unescape(); };
-	mCommands["to-base64"] = [this] { toBase64(); };
-	mCommands["from-base64"] = [this] { fromBase64(); };
-	mCommands["trim-trailing-whitespace"] = [this] { trimTrailingWhitespace(); };
-	mCommands["join-lines"] = [this] { joinLines(); };
-	mCommands["duplicate-line-or-selection"] = [this] { duplicateLineOrSelection(); };
-	mCommands["convert-indentation-to-tabs"] = [this] { convertIndentationToTabs(); };
-	mCommands["convert-indentation-to-spaces"] = [this] { convertIndentationToSpaces(); };
-	mCommands["clear-indentation"] = [this] { clearIndentation(); };
-
-	if ( TEXT_DOCUMENT_COMMANDS.empty() ) {
-		for ( const auto& [cmd, _] : mCommands )
-			TEXT_DOCUMENT_COMMANDS.insert( String::hash( cmd ) );
+const UnorderedMap<std::string, TextDocument::BuiltinDocumentCommand>&
+TextDocument::getBuiltinCommands() {
+#define EE_TEXT_DOCUMENT_COMMAND( Name, Method )                    \
+	{                                                               \
+		Name, +[]( TextDocument* document ) { document->Method(); } \
 	}
+	static const UnorderedMap<std::string, BuiltinDocumentCommand> commands{
+		EE_TEXT_DOCUMENT_COMMAND( "reset-document", reset ),
+		EE_TEXT_DOCUMENT_COMMAND( "save-doc", save ),
+		EE_TEXT_DOCUMENT_COMMAND( "delete-to-previous-word", deleteToPreviousWord ),
+		EE_TEXT_DOCUMENT_COMMAND( "delete-to-previous-char", deleteToPreviousChar ),
+		EE_TEXT_DOCUMENT_COMMAND( "delete-to-next-word", deleteToNextWord ),
+		EE_TEXT_DOCUMENT_COMMAND( "delete-to-next-char", deleteToNextChar ),
+		EE_TEXT_DOCUMENT_COMMAND( "delete-current-line", deleteCurrentLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "delete-to-start-of-line", deleteToStartOfLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "delete-to-end-of-line", deleteToEndOfLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "delete-selection", deleteSelection ),
+		EE_TEXT_DOCUMENT_COMMAND( "delete-word", deleteWord ),
+		EE_TEXT_DOCUMENT_COMMAND( "delete-paragraph", deleteCurrentParagraph ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-previous-char", moveToPreviousChar ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-previous-word", moveToPreviousWord ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-next-char", moveToNextChar ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-next-word", moveToNextWord ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-previous-line", moveToPreviousLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-next-line", moveToNextLine ),
+		{ "move-to-previous-page",
+		  +[]( TextDocument* document ) { document->moveToPreviousPage( document->mPageSize ); } },
+		{ "move-to-next-page",
+		  +[]( TextDocument* document ) { document->moveToNextPage( document->mPageSize ); } },
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-start-of-doc", moveToStartOfDoc ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-end-of-doc", moveToEndOfDoc ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-start-of-line", moveToStartOfLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-end-of-line", moveToEndOfLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-start-of-content", moveToStartOfContent ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-previous-paragraph", moveToPreviousParagraph ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-to-next-paragraph", moveToNextParagraph ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-lines-up", moveLinesUp ),
+		EE_TEXT_DOCUMENT_COMMAND( "move-lines-down", moveLinesDown ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-to-previous-char", selectToPreviousChar ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-to-previous-word", selectToPreviousWord ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-to-previous-line", selectToPreviousLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-to-next-char", selectToNextChar ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-to-next-word", selectToNextWord ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-to-next-line", selectToNextLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-word", selectWord ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-all-words", selectAllWords ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-line", selectLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-single-line", selectSingleLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-to-start-of-line", selectToStartOfLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-to-end-of-line", selectToEndOfLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-to-start-of-doc", selectToStartOfDoc ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-to-start-of-content", selectToStartOfContent ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-to-end-of-doc", selectToEndOfDoc ),
+		{ "select-to-previous-page",
+		  +[]( TextDocument* document ) {
+			  document->selectToPreviousPage( document->mPageSize );
+		  } },
+		{ "select-to-next-page",
+		  +[]( TextDocument* document ) { document->selectToNextPage( document->mPageSize ); } },
+		EE_TEXT_DOCUMENT_COMMAND( "select-paragraph", selectCurrentParagraph ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-all", selectAll ),
+		EE_TEXT_DOCUMENT_COMMAND( "new-line", newLine ),
+		EE_TEXT_DOCUMENT_COMMAND( "new-line-above", newLineAbove ),
+		EE_TEXT_DOCUMENT_COMMAND( "indent", indent ),
+		EE_TEXT_DOCUMENT_COMMAND( "unindent", unindent ),
+		EE_TEXT_DOCUMENT_COMMAND( "undo", undo ),
+		EE_TEXT_DOCUMENT_COMMAND( "redo", redo ),
+		EE_TEXT_DOCUMENT_COMMAND( "toggle-line-comments", toggleLineComments ),
+		EE_TEXT_DOCUMENT_COMMAND( "toggle-block-comments", toggleBlockComments ),
+		EE_TEXT_DOCUMENT_COMMAND( "selection-to-upper", toUpperSelection ),
+		EE_TEXT_DOCUMENT_COMMAND( "selection-to-lower", toLowerSelection ),
+		EE_TEXT_DOCUMENT_COMMAND( "reset-cursor", resetSelection ),
+		EE_TEXT_DOCUMENT_COMMAND( "add-cursor-above", addCursorAbove ),
+		EE_TEXT_DOCUMENT_COMMAND( "add-cursor-below", addCursorBelow ),
+		EE_TEXT_DOCUMENT_COMMAND( "cursor-undo", cursorUndo ),
+		EE_TEXT_DOCUMENT_COMMAND( "select-all-matches", selectAllMatches ),
+		EE_TEXT_DOCUMENT_COMMAND( "escape", escape ),
+		EE_TEXT_DOCUMENT_COMMAND( "unescape", unescape ),
+		EE_TEXT_DOCUMENT_COMMAND( "to-base64", toBase64 ),
+		EE_TEXT_DOCUMENT_COMMAND( "from-base64", fromBase64 ),
+		EE_TEXT_DOCUMENT_COMMAND( "trim-trailing-whitespace", trimTrailingWhitespace ),
+		EE_TEXT_DOCUMENT_COMMAND( "join-lines", joinLines ),
+		EE_TEXT_DOCUMENT_COMMAND( "duplicate-line-or-selection", duplicateLineOrSelection ),
+		EE_TEXT_DOCUMENT_COMMAND( "convert-indentation-to-tabs", convertIndentationToTabs ),
+		EE_TEXT_DOCUMENT_COMMAND( "convert-indentation-to-spaces", convertIndentationToSpaces ),
+		EE_TEXT_DOCUMENT_COMMAND( "clear-indentation", clearIndentation ),
+	};
+#undef EE_TEXT_DOCUMENT_COMMAND
+	static const bool commandHashesInitialized = [] {
+		for ( const auto& [command, _] : commands )
+			TEXT_DOCUMENT_COMMANDS.insert( String::hash( command ) );
+		return true;
+	}();
+	(void)commandHashesInitialized;
+	return commands;
+}
+
+void TextDocument::initializeCommands() {
+	(void)getBuiltinCommands();
 }
 
 size_t TextDocument::getTopMostCursorIndex() {

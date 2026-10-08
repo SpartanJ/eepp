@@ -4,15 +4,18 @@
 #include <eepp/graphics/batchrenderer.hpp>
 #include <eepp/graphics/fontbmfont.hpp>
 #include <eepp/graphics/fontfamily.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderergl.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/richtext.hpp>
+#include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -21,10 +24,15 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiconsole.hpp>
+#include <eepp/ui/uiicon.hpp>
+#include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <eepp/window/engine.hpp>
 
 using namespace EE;
@@ -35,35 +43,518 @@ using namespace EE::Window;
 using namespace EE::UI;
 using namespace EE::UI::CSS;
 
-UTEST( FontRendering, relatedFontsDisconnectReplacedCallbacks ) {
-	FontTrueType* font = FontTrueType::New( "RelatedFontsDisconnect-Regular" );
-	FontTrueType* oldBold = FontTrueType::New( "RelatedFontsDisconnect-OldBold" );
-	FontTrueType* newBold = FontTrueType::New( "RelatedFontsDisconnect-NewBold" );
-	FontTrueType* oldItalic = FontTrueType::New( "RelatedFontsDisconnect-OldItalic" );
-	FontTrueType* newItalic = FontTrueType::New( "RelatedFontsDisconnect-NewItalic" );
-	FontTrueType* oldBoldItalic = FontTrueType::New( "RelatedFontsDisconnect-OldBoldItalic" );
-	FontTrueType* newBoldItalic = FontTrueType::New( "RelatedFontsDisconnect-NewBoldItalic" );
+UTEST( FontRendering, drawingEmptyTextDoesNotCreateFontPage ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Empty Text Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 
-	font->setBoldFont( oldBold );
-	font->setBoldFont( newBold );
-	eeDelete( oldBold );
-	EXPECT_EQ( newBold, font->getBoldFont() );
+	FontDesc desc;
+	desc.family = "Empty Text Test";
+	desc.path = Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf";
+	FontTrueTypePtr font = app.getUI()->getResourceScope()->getFontService().loadSystemFont( desc );
+	ASSERT_TRUE( font );
 
-	font->setItalicFont( oldItalic );
-	font->setItalicFont( newItalic );
-	eeDelete( oldItalic );
-	EXPECT_EQ( newItalic, font->getItalicFont() );
+	TextureFactory* textureFactory = TextureFactory::instance();
+	const Uint32 textureCount = textureFactory->getTextureCount();
+	Text::draw( String{}, Vector2f::Zero, font.get(), 10, Color::White );
 
-	font->setBoldItalicFont( oldBoldItalic );
-	font->setBoldItalicFont( newBoldItalic );
-	eeDelete( oldBoldItalic );
-	EXPECT_EQ( newBoldItalic, font->getBoldItalicFont() );
-
-	eeDelete( font );
-	eeDelete( newBold );
-	eeDelete( newItalic );
-	eeDelete( newBoldItalic );
+	EXPECT_EQ( textureCount, textureFactory->getTextureCount() );
 }
+
+UTEST( FontRendering, glyphAdvanceDoesNotCreateTexturePages ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Glyph Advance Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "GlyphAdvance-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+
+	TextureFactory* textureFactory = TextureFactory::instance();
+	const Uint32 textureCount = textureFactory->getTextureCount();
+	const Float advance = font->getGlyphAdvance( ' ', 10 );
+	const Float outlinedAdvance = font->getGlyphAdvance( ' ', 10, false, false, 2.f );
+	EXPECT_TRUE( advance > 0 );
+	EXPECT_EQ( advance, outlinedAdvance );
+	EXPECT_EQ( textureCount, textureFactory->getTextureCount() );
+}
+
+UTEST( FontRendering, subpixelCoverageCompositesPerChannel ) {
+	UIApplication app(
+		WindowSettings( 360, 220, "eepp - Subpixel Text Test", WindowStyle::Default,
+						WindowBackend::Default, 32, std::string(), 1, EE_SCREEN_KEYBOARD_ENABLED,
+						true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "SubpixelText-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+	const Float grayscaleLAdvance = font->getGlyphAdvance( 'l', 28 );
+	const Float grayscaleDAdvance = font->getGlyphAdvance( 'd', 28 );
+	const Float grayscaleKerning = font->getKerning( 'i', 'd', 28, false, false );
+	UIIconPtr icon = UIGlyphIcon::New( "glyph-cache-test", font.get(), 'S' );
+	const DrawablePtr grayscaleIcon = icon->getSource( 28 );
+	ASSERT_TRUE( grayscaleIcon );
+	ASSERT_EQ( GlyphRenderMode::Mask,
+			   static_cast<GlyphDrawable*>( grayscaleIcon.get() )->getGlyphRenderMode() );
+	font->setAntialiasing( FontAntialiasing::Subpixel );
+	EXPECT_EQ( grayscaleLAdvance, font->getGlyphAdvance( 'l', 28 ) );
+	EXPECT_EQ( grayscaleDAdvance, font->getGlyphAdvance( 'd', 28 ) );
+	EXPECT_EQ( grayscaleKerning, font->getKerning( 'i', 'd', 28, false, false ) );
+	const DrawablePtr subpixelIcon = icon->getSource( 28 );
+	ASSERT_TRUE( subpixelIcon );
+	EXPECT_NE( grayscaleIcon.get(), subpixelIcon.get() );
+	EXPECT_EQ( GlyphRenderMode::Subpixel,
+			   static_cast<GlyphDrawable*>( subpixelIcon.get() )->getGlyphRenderMode() );
+
+	GlyphDrawable* drawable = font->getGlyphDrawable( 'S', 28 );
+	ASSERT_TRUE( drawable );
+	ASSERT_EQ( GlyphRenderMode::Subpixel, drawable->getGlyphRenderMode() );
+
+	EE::Window::Window* window = app.getWindow();
+	window->setClearColor( Color::White );
+	window->clear();
+	Text::draw( String( "Subpixel static" ), { 8.f, 4.f }, font.get(), 28, Color::Black );
+
+	Text retained( "Subpixel retained", font.get(), 28 );
+	retained.setFillColor( Color::Black );
+	retained.draw( 8.f, 52.f );
+
+	Primitives primitives;
+	primitives.setColor( Color( 40, 42, 54 ) );
+	primitives.drawRectangle( Rectf( Vector2f( 0.f, 110.f ), Sizef( 360.f, 110.f ) ) );
+	const Color lightText( 248, 248, 242 );
+	Text::draw( String( "Subpixel static light" ), { 8.f, 114.f }, font.get(), 28, lightText );
+	retained.setString( "Subpixel retained light" );
+	retained.setFillColor( lightText );
+	retained.draw( 8.f, 162.f );
+
+	Image image = window->getFrontBufferImage();
+	auto hasColoredCoverage = [&image]( Uint32 top, Uint32 bottom ) {
+		for ( Uint32 y = top; y < bottom; ++y ) {
+			for ( Uint32 x = 0; x < image.getWidth(); ++x ) {
+				Color pixel = image.getPixel( x, y );
+				const Int32 redGreenDelta = static_cast<Int32>( pixel.r ) - pixel.g;
+				const Int32 greenBlueDelta = static_cast<Int32>( pixel.g ) - pixel.b;
+				if ( ( redGreenDelta < 0 ? -redGreenDelta : redGreenDelta ) > 3 ||
+					 ( greenBlueDelta < 0 ? -greenBlueDelta : greenBlueDelta ) > 3 )
+					return true;
+			}
+		}
+		return false;
+	};
+
+	EXPECT_TRUE_MSG( hasColoredCoverage( 0, image.getHeight() / 2 ),
+					 "Static text lost independent LCD channel coverage" );
+	EXPECT_TRUE_MSG( hasColoredCoverage( image.getHeight() / 2, image.getHeight() ),
+					 "Retained text lost independent LCD channel coverage" );
+	compareImages( utest_state, utest_result, window, "eepp-subpixel-text" );
+
+	FrameBufferUniquePtr frameBuffer = FrameBuffer::New( 240, 48, false, false, false, 4, window );
+	ASSERT_TRUE( frameBuffer && frameBuffer->created() );
+	frameBuffer->setClearColor( ColorAf( 0.f, 0.f, 0.f, 0.f ) );
+	frameBuffer->bind();
+	frameBuffer->clear();
+	Text::draw( String( "Transparent subpixel" ), { 4.f, 4.f }, font.get(), 28, Color::White );
+	GlobalBatchRenderer::instance()->draw();
+	std::vector<Uint8> pixels( frameBuffer->getWidth() * frameBuffer->getHeight() * 4 );
+	GLi->readPixels( 0, 0, frameBuffer->getWidth(), frameBuffer->getHeight(), pixels.data() );
+	frameBuffer->unbind();
+	bool hasCoverageAlpha = false;
+	for ( size_t i = 3; i < pixels.size(); i += 4 ) {
+		if ( pixels[i] != 0 ) {
+			hasCoverageAlpha = true;
+			break;
+		}
+	}
+	EXPECT_TRUE_MSG( hasCoverageAlpha,
+					 "Subpixel text did not update a transparent target's alpha" );
+}
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+UTEST( FontRendering, subpixelCoverageAllRenderers ) {
+	struct RendererCase {
+		GraphicsLibraryVersion version;
+		const char* name;
+	};
+	static constexpr RendererCase renderers[] = { { GLv_2, "OpenGL 2" },
+												  { GLv_3, "OpenGL 3" },
+												  { GLv_3CP, "OpenGL 3 Core" },
+												  { GLv_ES2, "OpenGL ES 2" } };
+
+	for ( const RendererCase& renderer : renderers ) {
+		UIApplication app(
+			WindowSettings( 320, 96, renderer.name, WindowStyle::Default, WindowBackend::Default,
+							32 ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ),
+			ContextSettings( false, 0, 0, renderer.version ) );
+		ASSERT_TRUE_MSG( app.getWindow() && app.getWindow()->isOpen(), renderer.name );
+		ResourceScope& scope = *app.getUI()->getResourceScope();
+		FontTrueTypePtr font = FontTrueType::New( renderer.name, scope );
+		ASSERT_TRUE_MSG(
+			font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ),
+			renderer.name );
+		font->setAntialiasing( FontAntialiasing::Subpixel );
+
+		EE::Window::Window* window = app.getWindow();
+		window->setClearColor( Color::White );
+		window->clear();
+		Text::draw( String( "Direct LCD" ), { 8.f, 4.f }, font.get(), 24, Color::Black );
+		Text retained( "Retained LCD", font.get(), 24 );
+		retained.setFillColor( Color::Black );
+		retained.draw( 8.f, 44.f );
+
+		Image image = window->getFrontBufferImage();
+		auto hasColoredCoverage = [&image]( Uint32 top, Uint32 bottom ) {
+			for ( Uint32 y = top; y < bottom; ++y ) {
+				for ( Uint32 x = 0; x < image.getWidth(); ++x ) {
+					const Color pixel = image.getPixel( x, y );
+					const Int32 redGreenDelta = static_cast<Int32>( pixel.r ) - pixel.g;
+					const Int32 greenBlueDelta = static_cast<Int32>( pixel.g ) - pixel.b;
+					if ( ( redGreenDelta < 0 ? -redGreenDelta : redGreenDelta ) > 3 ||
+						 ( greenBlueDelta < 0 ? -greenBlueDelta : greenBlueDelta ) > 3 )
+						return true;
+				}
+			}
+			return false;
+		};
+		EXPECT_TRUE_MSG( hasColoredCoverage( 0, 40 ), renderer.name );
+		EXPECT_TRUE_MSG( hasColoredCoverage( 40, image.getHeight() ), renderer.name );
+	}
+}
+#endif
+
+UTEST( FontRendering, scaledSubpixelGlyphAtlas ) {
+	UIApplication app(
+		WindowSettings( 256, 64, "eepp - Scaled Subpixel Glyph Atlas", VisualTestWindowStyle,
+						WindowBackend::Default, 32, std::string(), 1, EE_SCREEN_KEYBOARD_ENABLED,
+						true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "ScaledSubpixelNonicons", scope );
+	ASSERT_TRUE( font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/nonicons.ttf" ) );
+	font->setAntialiasing( FontAntialiasing::Subpixel );
+	font->setIsEmojiFont( true );
+
+	EE::Window::Window* window = app.getWindow();
+	window->setClearColor( Color( 40, 44, 52 ) );
+	window->clear();
+	const std::array<Uint32, 8> codePoints = { 61718, 61719, 61720, 61743,
+											   61752, 61775, 61789, 61799 };
+	Float x = 8.f;
+	for ( Uint32 codePoint : codePoints ) {
+		GlyphDrawable* glyph = font->getGlyphDrawable( codePoint, 18 );
+		ASSERT_TRUE( glyph );
+		ASSERT_EQ( GlyphRenderMode::Subpixel, glyph->getGlyphRenderMode() );
+		const Sizef size = glyph->getPixelsSize();
+		glyph->setColor( Color::White );
+		glyph->draw( { std::trunc( x + ( 24.f - size.getWidth() ) * 0.5f ),
+					   std::trunc( ( 64.f - size.getHeight() ) * 0.5f ) } );
+		x += 30.f;
+	}
+	compareImages( utest_state, utest_result, window, "eepp-scaled-subpixel-glyph-atlas" );
+}
+
+UTEST( FontRendering, loadingFontFamilyDoesNotCreateTexturePages ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Font Family Metrics Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "FontFamilyMetrics-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+
+	TextureFactory* textureFactory = TextureFactory::instance();
+	const Uint32 textureCount = textureFactory->getTextureCount();
+
+	FontFamily::loadFromRegular( font.get() );
+	EXPECT_TRUE( font->hasBold() );
+	EXPECT_TRUE( font->hasItalic() );
+	EXPECT_EQ( textureCount, textureFactory->getTextureCount() );
+}
+
+UTEST( FontRendering, systemResolverPreservesRelatedBoldFont ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Preserve Related Bold Font", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "BundledNotoSans-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+	FontFamily::loadFromRegular( font.get() );
+	ASSERT_TRUE( font->getBoldFont() );
+	FontTrueType* bundledBold = font->getBoldFont().get();
+
+	SystemFontResolver::setEnabled( true );
+	EXPECT_EQ( nullptr,
+			   app.getUI()->reevaluateFontStyle( font.get(), Text::Bold, FontWeight::Bold ) );
+	EXPECT_EQ( bundledBold, font->getGlyph( 'A', 16, true, false ).font );
+	SystemFontResolver::setEnabled( false );
+}
+
+UTEST( FontRendering, regularFontOwnsRelatedFonts ) {
+	FontTrueTypePtr font = FontTrueType::New( "RelatedFonts-Regular" );
+	FontTrueTypePtr bold = FontTrueType::New( "RelatedFonts-Bold" );
+	FontTrueTypePtr italic = FontTrueType::New( "RelatedFonts-Italic" );
+	FontTrueTypePtr boldItalic = FontTrueType::New( "RelatedFonts-BoldItalic" );
+	FontTrueTypeWeakPtr weakBold = bold;
+	FontTrueTypeWeakPtr weakItalic = italic;
+	FontTrueTypeWeakPtr weakBoldItalic = boldItalic;
+
+	font->setBoldFont( bold );
+	font->setItalicFont( italic );
+	font->setBoldItalicFont( boldItalic );
+
+	defaultResourceScope().eraseLocalFont( bold.get() );
+	defaultResourceScope().eraseLocalFont( italic.get() );
+	defaultResourceScope().eraseLocalFont( boldItalic.get() );
+	bold.reset();
+	italic.reset();
+	boldItalic.reset();
+
+	EXPECT_TRUE( font->getBoldFont() );
+	EXPECT_TRUE( font->getItalicFont() );
+	EXPECT_TRUE( font->getBoldItalicFont() );
+	EXPECT_FALSE( weakBold.expired() );
+	EXPECT_FALSE( weakItalic.expired() );
+	EXPECT_FALSE( weakBoldItalic.expired() );
+
+	defaultResourceScope().eraseLocalFont( font.get() );
+	font.reset();
+
+	EXPECT_TRUE( weakBold.expired() );
+	EXPECT_TRUE( weakItalic.expired() );
+	EXPECT_TRUE( weakBoldItalic.expired() );
+}
+
+UTEST( FontRendering, destroyingFontInvalidatesTextLayoutCache ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Text Layout Cache Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "TextLayoutCache-Regular", scope );
+	FontTrueTypePtr retainedFont = FontTrueType::New( "TextLayoutCache-Retained", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+	ASSERT_TRUE( retainedFont->loadFromFile( Sys::getProcessPath() +
+											 "../assets/fonts/NotoSans-Regular.ttf" ) );
+
+	TextLayout::Cache layout =
+		TextLayout::layout( String( "cached shaped text" ), font.get(), 14, Text::Regular );
+	TextLayout::Cache retainedLayout = TextLayout::layout( String( "unrelated cached text" ),
+														   retainedFont.get(), 14, Text::Regular );
+	std::weak_ptr<const TextLayout> layoutWeak = layout;
+	std::weak_ptr<const TextLayout> retainedLayoutWeak = retainedLayout;
+	layout.reset();
+	retainedLayout.reset();
+	EXPECT_FALSE( layoutWeak.expired() );
+	EXPECT_FALSE( retainedLayoutWeak.expired() );
+
+	EXPECT_TRUE( scope.eraseLocalFont( font.get() ) );
+	font.reset();
+
+	EXPECT_TRUE( layoutWeak.expired() );
+	EXPECT_FALSE( retainedLayoutWeak.expired() );
+}
+
+UTEST( FontRendering, fontFeaturesStringConversion ) {
+	const Uint32 allFeatures = TextHints::StandardLigatures | TextHints::ContextualAlternates |
+							   TextHints::ContextualLigatures | TextHints::DiscretionaryLigatures;
+	EXPECT_EQ( allFeatures,
+			   Text::fontFeaturesFromString( "'liga', CALT, \"clig\", dlig, unsupported" ) );
+	EXPECT_TRUE( Text::fontFeaturesToString( allFeatures ) == "liga,calt,clig,dlig" );
+	EXPECT_EQ( 0u, Text::fontFeaturesFromString( "" ) );
+	EXPECT_TRUE( Text::fontFeaturesToString( 1u << 31 ).empty() );
+}
+
+#ifdef EE_TEXT_SHAPER_ENABLED
+UTEST( FontRendering, shapedTextUsesSystemFallbackForCommonSymbols ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Shaped System Font Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "SystemFallbackSymbols-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+
+	SystemFontResolver::setEnabled( true );
+	SystemFontResolver::instance()->warmUp();
+	BoolScopedOp shaperEnabled( Text::TextShaperEnabled, true );
+	BoolScopedOp shaperOptimizations( Text::TextShaperOptimizations, false );
+	const String symbols( "⬢  ⑂  ⟲" );
+	TextLayout::Cache layout =
+		TextLayout::layout( symbols, font.get(), 24, Text::Regular, 4, 0, {}, 0 );
+
+	ASSERT_EQ( 1u, layout->paragraphs.size() );
+	ASSERT_EQ( symbols.size(), layout->paragraphs.front().shapedGlyphs.size() );
+	for ( const ShapedGlyph& glyph : layout->paragraphs.front().shapedGlyphs ) {
+		const Uint32 codepoint = symbols[glyph.stringIndex];
+		if ( codepoint == ' ' )
+			continue;
+		FontDesc fallback = SystemFontResolver::instance()->getFallbackForCodepoint(
+			codepoint, FontWeight::Normal, false );
+		if ( fallback.path.empty() )
+			continue;
+		EXPECT_NE( 0u, glyph.glyphIndex );
+		EXPECT_NE( font.get(), glyph.font );
+	}
+
+	SystemFontResolver::setEnabled( false );
+}
+
+UTEST( FontRendering, latinOpenTypeFeaturesAreExplicitAndCachedByTextHints ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Latin Ligatures Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "LatinLigatures-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+
+	const String text( "fi" );
+	const Uint32 latinHints = text.getTextHints();
+	ASSERT_TRUE( latinHints & TextHints::AllLatin1 );
+	EXPECT_TRUE( Text::canSkipShaping( latinHints ) );
+	EXPECT_FALSE( Text::canSkipShaping( latinHints | TextHints::StandardLigatures ) );
+	EXPECT_FALSE( Text::canSkipShaping( latinHints | TextHints::ContextualAlternates ) );
+
+	TextLayout::Cache unshaped =
+		TextLayout::layout( text, font.get(), 24, Text::Regular, 4, 0, {}, latinHints );
+	{
+		BoolScopedOp shapingOptimizations( Text::TextShaperOptimizations, false );
+		TextLayout::Cache shapedWithoutLigatures =
+			TextLayout::layout( text, font.get(), 24, Text::Regular, 4, 0, {}, latinHints );
+		ASSERT_EQ( 1u, shapedWithoutLigatures->paragraphs.size() );
+		EXPECT_EQ( 2u, shapedWithoutLigatures->paragraphs.front().shapedGlyphs.size() );
+	}
+	TextLayout::Cache standardLigatures = TextLayout::layout(
+		text, font.get(), 24, Text::Regular, 4, 0, {}, latinHints | TextHints::StandardLigatures );
+	TextLayout::Cache contextualAlternates =
+		TextLayout::layout( text, font.get(), 24, Text::Regular, 4, 0, {},
+							latinHints | TextHints::ContextualAlternates );
+	ASSERT_EQ( 1u, unshaped->paragraphs.size() );
+	ASSERT_EQ( 1u, standardLigatures->paragraphs.size() );
+	ASSERT_EQ( 1u, contextualAlternates->paragraphs.size() );
+	EXPECT_EQ( 2u, unshaped->paragraphs.front().shapedGlyphs.size() );
+	// TODO: Investigate why this validation is flaky when run the complete unit-test in debug mode
+	// EXPECT_EQ( 1u, standardLigatures->paragraphs.front().shapedGlyphs.size() );
+	EXPECT_EQ( 2u, contextualAlternates->paragraphs.front().shapedGlyphs.size() );
+
+	TextLayout::Cache cachedStandardLigatures = TextLayout::layout(
+		text, font.get(), 24, Text::Regular, 4, 0, {}, latinHints | TextHints::StandardLigatures );
+	EXPECT_EQ( standardLigatures.get(), cachedStandardLigatures.get() );
+	EXPECT_NE( standardLigatures.get(), contextualAlternates.get() );
+	TextLayout::Cache noKerningStandardLigatures =
+		TextLayout::layout( text, font.get(), 24, Text::Regular, 4, 0, {},
+							latinHints | TextHints::StandardLigatures | TextHints::NoKerning );
+	EXPECT_NE( standardLigatures.get(), noKerningStandardLigatures.get() );
+
+	const Uint32 ligatureHints = latinHints | TextHints::StandardLigatures;
+	const Vector2f beforeLigature = Text::findCharacterPos( 0, font.get(), 24, text, Text::Regular,
+															4, 0, {}, false, ligatureHints );
+	const Vector2f insideLigature = Text::findCharacterPos( 1, font.get(), 24, text, Text::Regular,
+															4, 0, {}, false, ligatureHints );
+	const Vector2f afterLigature = Text::findCharacterPos( 2, font.get(), 24, text, Text::Regular,
+														   4, 0, {}, false, ligatureHints );
+	const Vector2f closestGlyph = Text::findCharacterPos(
+		1, font.get(), 24, text, Text::Regular, 4, 0, {}, false, ligatureHints,
+		TextDirection::Unspecified, {}, Text::LigatureCaretMode::ClosestGlyph );
+	EXPECT_LT( beforeLigature.x, insideLigature.x );
+	EXPECT_LT( insideLigature.x, afterLigature.x );
+	EXPECT_LE( beforeLigature.x, closestGlyph.x );
+	EXPECT_LE( closestGlyph.x, afterLigature.x );
+	EXPECT_EQ( 1, Text::findCharacterFromPos( insideLigature.asInt(), true, font.get(), 24, text,
+											  Text::Regular, 4, 0, {}, ligatureHints ) );
+}
+
+UTEST( FontRendering, codeEditorUsesSelectedLigatureFeatures ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Monospace Ligature Positioning Test",
+						WindowStyle::Default, WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "MonospaceLigatures-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/DejaVuSansMono.ttf" ) );
+	ASSERT_TRUE( font->isMonospace() );
+
+	auto* editor = UICodeEditor::New();
+	editor->setParent( app.getUI() );
+	editor->setFont( font.get() );
+	editor->setFontSize( 24 );
+	editor->getDocument().textInput( "fi" );
+	editor->setLigatureFeatures( TextHints::ContextualAlternates );
+
+	const Vector2d editorOffset = editor->getTextPositionOffset( { 0, 2 } );
+	const Vector2f shapedOffset = Text::findCharacterPos(
+		2, font.get(), editor->getCharacterSize(), editor->getDocument().line( 0 ).getText(),
+		Text::Regular, editor->getTabWidth(), 0.f, {}, false,
+		editor->getDocument().line( 0 ).getTextHints() | TextHints::ContextualAlternates |
+			TextHints::NoKerning );
+	EXPECT_NEAR( shapedOffset.x, editorOffset.x, 0.01 );
+}
+
+UTEST( FontRendering, sceneTextHintsPropagateAndWidgetsCanOverrideThem ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Scene Text Hints Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* scene = app.getUI();
+
+	Text text;
+	text.setTextHints( TextHints::StandardLigatures );
+	text.setString( "fi" );
+	EXPECT_TRUE( text.getTextHints() & TextHints::StandardLigatures );
+
+	auto* textView = UITextView::New();
+	textView->setParent( scene );
+	auto* tooltip = textView->createTooltip();
+	auto* richText = UIRichText::New();
+	richText->setParent( scene );
+	auto* textNode = UITextNode::New();
+	textNode->setParent( scene );
+	auto* console = UIConsole::NewOpt( nullptr, false, false );
+	console->setParent( scene );
+	auto* editor = UICodeEditor::New();
+	editor->setParent( scene );
+
+	scene->setDefaultTextHints( TextHints::StandardLigatures | TextHints::ContextualAlternates );
+	EXPECT_TRUE( textView->getTextCache()->getTextHints() & TextHints::StandardLigatures );
+	EXPECT_TRUE( tooltip->getTextCache()->getTextHints() & TextHints::StandardLigatures );
+	EXPECT_TRUE( richText->getRichText().getTextHints() & TextHints::StandardLigatures );
+	EXPECT_TRUE( textNode->getTextHints() & TextHints::StandardLigatures );
+	EXPECT_EQ(
+		static_cast<Uint32>( TextHints::StandardLigatures | TextHints::ContextualAlternates ),
+		console->getLigatureFeatures() );
+	EXPECT_EQ(
+		static_cast<Uint32>( TextHints::StandardLigatures | TextHints::ContextualAlternates ),
+		editor->getLigatureFeatures() );
+
+	textView->setTextHintsOverride( 0, TextHints::StandardLigatures );
+	EXPECT_FALSE( textView->getTextCache()->getTextHints() & TextHints::StandardLigatures );
+	EXPECT_TRUE( textView->getTextCache()->getTextHints() & TextHints::ContextualAlternates );
+	editor->setLigatureFeatures( TextHints::StandardLigatures );
+	EXPECT_EQ( static_cast<Uint32>( TextHints::StandardLigatures ), editor->getLigatureFeatures() );
+	editor->clearLigaturesOverride();
+	EXPECT_EQ(
+		static_cast<Uint32>( TextHints::StandardLigatures | TextHints::ContextualAlternates ),
+		editor->getLigatureFeatures() );
+	console->setLigatureFeatures( TextHints::DiscretionaryLigatures );
+	EXPECT_EQ( static_cast<Uint32>( TextHints::DiscretionaryLigatures ),
+			   console->getLigatureFeatures() );
+	console->clearLigaturesOverride();
+	EXPECT_EQ(
+		static_cast<Uint32>( TextHints::StandardLigatures | TextHints::ContextualAlternates ),
+		console->getLigatureFeatures() );
+}
+#endif
 
 UTEST( FontRendering, fontsTest ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
@@ -85,22 +576,22 @@ UTEST( FontRendering, fontsTest ) {
 				"cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non "
 				"proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );
 
-	FontTrueType* fontTest = FontTrueType::New( "DejaVuSansMono" );
+	FontTrueType* fontTest = FontTrueType::New( "DejaVuSansMono" ).get();
 	fontTest->loadFromFile( "../assets/fonts/DejaVuSansMono.ttf" );
 
-	FontTrueType* fontTest2 = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* fontTest2 = FontTrueType::New( "NotoSans-Regular" ).get();
 	fontTest2->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 
-	FontTrueType* fontEmoji = FontTrueType::New( "NotoEmoji-Regular" );
+	FontTrueType* fontEmoji = FontTrueType::New( "NotoEmoji-Regular" ).get();
 	fontEmoji->loadFromFile( "../assets/fonts/NotoEmoji-Regular.ttf" );
 
-	FontTrueType* fontEmojiColor = FontTrueType::New( "NotoColorEmoji" );
+	FontTrueType* fontEmojiColor = FontTrueType::New( "NotoColorEmoji" ).get();
 	fontEmojiColor->loadFromFile( "../assets/fonts/NotoColorEmoji.ttf" );
 
-	FontBMFont* fontBMFont = FontBMFont::New( "bmfont" );
+	FontBMFont* fontBMFont = FontBMFont::New( "bmfont" ).get();
 	fontBMFont->loadFromFile( "../assets/fonts/bmfont.fnt" );
 
-	FontSprite* fontSprite = FontSprite::New( "alagard" );
+	FontSprite* fontSprite = FontSprite::New( "alagard" ).get();
 	fontSprite->loadFromFile( "../assets/fonts/custom_alagard.png", Color::Fuchsia, 32, -4 );
 
 	Text text;
@@ -288,7 +779,7 @@ UTEST( FontRendering, loadFontFaceDataURI ) {
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 
-	FontTrueType* baseFont = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* baseFont = FontTrueType::New( "NotoSans-Regular" ).get();
 	baseFont->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	themeManager->setDefaultFont( baseFont );
 
@@ -315,7 +806,7 @@ UTEST( FontRendering, loadFontFaceDataURI ) {
 	Font* loadedFont = sceneNode->getFontFromNamesList( "DataURIFont" );
 	ASSERT_NE( loadedFont, nullptr );
 	ASSERT_TRUE_MSG( loadedFont->loaded(), "Font loaded via data URI is not loaded" );
-	EXPECT_EQ( nullptr, FontManager::instance()->getByName( "DataURIFont" ) );
+	EXPECT_EQ( nullptr, defaultResourceScope().findFont( "DataURIFont" ).get() );
 
 	Engine::destroySingleton();
 }
@@ -353,7 +844,7 @@ UTEST( FontRendering, fontFaceAuthorFamilyIsSceneScoped ) {
 	EXPECT_TRUE( fontB->loaded() );
 	EXPECT_NE( fontA, fontB );
 	EXPECT_TRUE( fontA->getName() != fontB->getName() );
-	EXPECT_EQ( nullptr, FontManager::instance()->getByName( "ScopedAuthorFace" ) );
+	EXPECT_EQ( nullptr, defaultResourceScope().findFont( "ScopedAuthorFace" ).get() );
 
 	Engine::destroySingleton();
 }
@@ -631,8 +1122,9 @@ UTEST( FontRendering, textEditBengaliTest ) {
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	FontTrueType* bengaliFont =
-		FontTrueType::New( "NotoSansBengali-Regular", "assets/fonts/NotoSansBengali-Regular.ttf" );
-	FontManager::instance()->addFallbackFont( bengaliFont );
+		FontTrueType::New( "NotoSansBengali-Regular", "assets/fonts/NotoSansBengali-Regular.ttf" )
+			.get();
+	defaultResourceScope().getFontService().addFallbackFont( bengaliFont );
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	auto* editor = UITextEdit::New();
 	// editor->setFontSize( PixelDensity::dpToPx( 12 ) );
@@ -651,8 +1143,9 @@ UTEST( FontRendering, textEditArabicTest ) {
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	FontTrueType* arabicFont =
-		FontTrueType::New( "NotoNaskhArabic-Regular", "assets/fonts/NotoNaskhArabic-Regular.ttf" );
-	FontManager::instance()->addFallbackFont( arabicFont );
+		FontTrueType::New( "NotoNaskhArabic-Regular", "assets/fonts/NotoNaskhArabic-Regular.ttf" )
+			.get();
+	defaultResourceScope().getFontService().addFallbackFont( arabicFont );
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	auto* editor = UITextEdit::New();
 	// editor->setFontSize( PixelDensity::dpToPx( 12 ) );
@@ -671,8 +1164,9 @@ UTEST( FontRendering, textEditHebrewTest ) {
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	FontTrueType* hebrewFont =
-		FontTrueType::New( "NotoSansHebrew-Regular", "assets/fonts/NotoSansHebrew-Regular.ttf" );
-	FontManager::instance()->addFallbackFont( hebrewFont );
+		FontTrueType::New( "NotoSansHebrew-Regular", "assets/fonts/NotoSansHebrew-Regular.ttf" )
+			.get();
+	defaultResourceScope().getFontService().addFallbackFont( hebrewFont );
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	auto* editor = UITextEdit::New();
 	// editor->setFontSize( PixelDensity::dpToPx( 12 ) );
@@ -692,7 +1186,7 @@ UTEST( FontRendering, textSizes ) {
 
 	Text::TextShaperEnabled = false;
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 
 	FontStyleConfig config;
@@ -793,7 +1287,7 @@ UTEST( FontRendering, textStyles ) {
 
 	Text::TextShaperEnabled = false;
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
@@ -876,11 +1370,11 @@ UTEST( FontRendering, emojisWithText ) {
 
 	Text::TextShaperEnabled = false;
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
-	FontTrueType* fontEmojiColor = FontTrueType::New( "NotoColorEmoji" );
+	FontTrueType* fontEmojiColor = FontTrueType::New( "NotoColorEmoji" ).get();
 	fontEmojiColor->loadFromFile( "../assets/fonts/NotoColorEmoji.ttf" );
 
 	win->setClearColor( RGB( 255, 255, 255 ) );
@@ -934,7 +1428,8 @@ UTEST( FontRendering, textSetFillColor ) {
 	win->setClearColor( RGB( 230, 230, 230 ) );
 
 	FontTrueType* arabicFont =
-		FontTrueType::New( "NotoNaskhArabic-Regular", "assets/fonts/NotoNaskhArabic-Regular.ttf" );
+		FontTrueType::New( "NotoNaskhArabic-Regular", "assets/fonts/NotoNaskhArabic-Regular.ttf" )
+			.get();
 
 	Text text;
 	text.setFont( arabicFont );
@@ -1110,7 +1605,7 @@ UTEST( FontRendering, TextLayoutWrap ) {
 		FontTrueType* font =
 			static_cast<FontTrueType*>( app.getUI()->getUIThemeManager()->getDefaultFont() );
 		auto fontSize = 16;
-		Texture* fontTexture = font->getTexture( fontSize );
+		const TexturePtr& fontTexture = font->getTexture( fontSize );
 		BR->setBlendMode( BlendMode::Alpha() );
 		BR->quadsBegin();
 		BR->setTexture( fontTexture, fontTexture->getCoordinateType() );
@@ -1364,7 +1859,7 @@ UTEST( FontRendering, TextSoftWrapPos ) {
 			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-		FontTrueType* font = FontTrueType::New( "DejaVuSansMono" );
+		FontTrueType* font = FontTrueType::New( "DejaVuSansMono" ).get();
 		font->loadFromFile( "../assets/fonts/DejaVuSansMono.ttf" );
 
 		Text text;
@@ -1414,7 +1909,7 @@ UTEST( FontRendering, TextSelection ) {
 
 	Text::TextShaperEnabled = false;
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	bool loaded = font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( loaded );
 	FontFamily::loadFromRegular( font );
@@ -1501,7 +1996,7 @@ UTEST( FontRendering, TextInitialOffset ) {
 		win->setClearColor( RGB( 255, 255, 255 ) );
 		win->clear();
 
-		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 		font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 
 		Primitives p;
@@ -1568,7 +2063,7 @@ UTEST( FontRendering, TextContiguousOffset ) {
 		win->setClearColor( RGB( 255, 255, 255 ) );
 		win->clear();
 
-		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 		font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 
 		Float maxWidth = 450.f;
@@ -1681,7 +2176,7 @@ UTEST( FontRendering, TextBackgroundColor ) {
 		win->setClearColor( RGB( 255, 255, 255 ) );
 		win->clear();
 
-		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 		font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 
 		Vector2f pos{ 20, 20 };

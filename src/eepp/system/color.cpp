@@ -6,8 +6,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctype.h>
-#include <iomanip>
-#include <sstream>
 #include <string_view>
 
 namespace EE { namespace System {
@@ -106,10 +104,7 @@ static bool tryParseModernRgbRgba( std::string_view paramsStr, Color& outColor )
 }
 
 static bool parseHslHue( Float& out, std::string_view tok ) {
-	while ( !tok.empty() && ( tok.front() == ' ' || tok.front() == '\t' ) )
-		tok.remove_prefix( 1 );
-	while ( !tok.empty() && ( tok.back() == ' ' || tok.back() == '\t' ) )
-		tok.remove_suffix( 1 );
+	tok = String::trim( tok, " \t" );
 	if ( tok.empty() )
 		return false;
 	if ( tok.size() == 4 && ( std::strncmp( tok.data(), "none", 4 ) == 0 ||
@@ -133,10 +128,7 @@ static bool parseHslHue( Float& out, std::string_view tok ) {
 }
 
 static bool parseHslPercentOrNumber( Float& out, std::string_view tok ) {
-	while ( !tok.empty() && ( tok.front() == ' ' || tok.front() == '\t' ) )
-		tok.remove_prefix( 1 );
-	while ( !tok.empty() && ( tok.back() == ' ' || tok.back() == '\t' ) )
-		tok.remove_suffix( 1 );
+	tok = String::trim( tok, " \t" );
 	if ( tok.empty() )
 		return false;
 	if ( tok.size() == 4 && ( std::strncmp( tok.data(), "none", 4 ) == 0 ||
@@ -617,14 +609,21 @@ Color Color::div( int divisor, bool divAlpha ) {
 }
 
 std::string Color::toHexString( const bool& prependHashtag ) const {
-	std::stringstream stream;
+	static constexpr char hex[] = "0123456789abcdef";
+	const std::size_t offset = prependHashtag ? 1 : 0;
+	std::string result( offset + ( a == 255 ? 6 : 8 ), '0' );
 	if ( prependHashtag )
-		stream << "#";
-	stream << std::setfill( '0' ) << std::setw( sizeof( Color ) * 2 ) << std::hex << getValue();
-	std::string str = stream.str();
-	if ( this->a == 255 )
-		return str.substr( 0, prependHashtag ? 7 : 6 );
-	return str;
+		result[0] = '#';
+	const auto writeByte = [&]( std::size_t position, Uint8 value ) {
+		result[offset + position] = hex[value >> 4];
+		result[offset + position + 1] = hex[value & 0x0F];
+	};
+	writeByte( 0, r );
+	writeByte( 2, g );
+	writeByte( 4, b );
+	if ( a != 255 )
+		writeByte( 6, a );
+	return result;
 }
 
 std::string Color::toRgbaString() const {

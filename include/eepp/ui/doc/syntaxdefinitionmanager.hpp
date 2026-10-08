@@ -2,13 +2,22 @@
 #define EE_UI_DOC_SYNTAXSTYLEMANAGER_HPP
 
 #include <eepp/config.hpp>
-#include <eepp/system/iostream.hpp>
-#include <eepp/system/pack.hpp>
-#include <eepp/system/singleton.hpp>
+#include <eepp/core/containers.hpp>
+#include <eepp/system/lock.hpp>
+#include <eepp/system/mutex.hpp>
+#include <eepp/system/singletondeclarations.hpp>
 #include <eepp/ui/doc/hextlanguagetype.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <optional>
+#include <unordered_map>
 #include <vector>
+
+namespace EE { namespace System {
+
+class IOStream;
+class Pack;
+
+}} // namespace EE::System
 
 using namespace EE::System;
 
@@ -73,6 +82,11 @@ class EE_API SyntaxDefinitionManager {
 
 	std::vector<std::string> getExtensionsPatternsSupported() const;
 
+	/** Returns the literal filename extensions declared by syntax definitions.
+	 * Filename-only patterns and patterns that cannot be represented as extensions are omitted.
+	 */
+	std::vector<std::string> getFileExtensions() const;
+
 	const SyntaxDefinition* getPtrByLSPName( const std::string& name ) const;
 
 	bool loadFromStream( IOStream& stream, std::vector<std::string>* addedLangs );
@@ -120,6 +134,7 @@ class EE_API SyntaxDefinitionManager {
 	std::vector<std::shared_ptr<SyntaxDefinition>> mDefinitions;
 	std::vector<SyntaxPreDefinition> mPreDefinitions;
 	std::map<std::string, std::string> mPriorities;
+	mutable UnorderedMap<std::string, bool> mExtensionManyLanguagesCache;
 	FileAssociations mFileAssociations;
 	mutable Mutex mMutex;
 	mutable Mutex mFileAssociationsMutex;

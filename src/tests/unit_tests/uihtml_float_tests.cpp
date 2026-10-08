@@ -8,9 +8,12 @@
 #include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uisvg.hpp>
 #include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiwebview.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
 
@@ -26,7 +29,7 @@ static void init_float_test() {
 													  32, {}, 1, false, true ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 
@@ -56,6 +59,24 @@ UTEST( UIHTMLFloat, structure_FloatAndClearEnums ) {
 	EXPECT_EQ( (int)CSSClear::Right, (int)CSSClearHelper::fromString( "right" ) );
 	EXPECT_EQ( (int)CSSClear::Both, (int)CSSClearHelper::fromString( "both" ) );
 	EXPECT_EQ( (int)CSSClear::None, (int)CSSClearHelper::fromString( "garbage" ) );
+}
+
+UTEST( UIHTMLFloat, propagatedFloatTouchingActiveFloatMakesForwardProgress ) {
+	RichText richText;
+	richText.setMaxWidth( 200.f );
+	richText.setExternalFloatExclusions(
+		{ { Rectf( 0.f, 0.f, 100.f, 20.f ), RichText::InlineFloat::Left } } );
+
+	auto propagated = std::make_shared<std::vector<RichText::FloatExclusion>>();
+	propagated->push_back( { Rectf( -100.f, 20.f, 10.f, 30.f ), RichText::InlineFloat::Left } );
+	richText.addCustomSize( { 20.f, 10.f }, RichText::InlineFloat::None,
+							RichText::InlineClear::None, -1.f, {}, {}, false, false, propagated );
+
+	const Sizef size = richText.getSize();
+	EXPECT_TRUE( std::isfinite( size.getWidth() ) );
+	EXPECT_TRUE( std::isfinite( size.getHeight() ) );
+	EXPECT_GT( size.getWidth(), 0.f );
+	EXPECT_GT( size.getHeight(), 0.f );
 }
 
 UTEST( UIHTMLFloat, property_DefaultsAreNone ) {
@@ -104,6 +125,296 @@ UTEST( UIHTMLFloat, property_GetPropertyString ) {
 	EXPECT_TRUE( hasFloat );
 	EXPECT_TRUE( hasClear );
 	eeDelete( w );
+}
+
+UTEST( UIHTMLFloat, zIndexPreservesAutoAndApplicability ) {
+	auto* child = UIHTMLWidget::New();
+
+	EXPECT_TRUE( child->hasAutoZIndex() );
+	EXPECT_TRUE( child->getPropertyString( "z-index" ) == "auto" );
+	child->applyProperty( StyleSheetProperty( "z-index", "0" ) );
+	EXPECT_FALSE( child->hasAutoZIndex() );
+	EXPECT_EQ( child->getZIndex(), 0 );
+	EXPECT_FALSE( child->hasApplicableZIndex() );
+
+	child->setCSSPosition( CSSPosition::Relative );
+	EXPECT_TRUE( child->hasApplicableZIndex() );
+	EXPECT_TRUE( child->createsSupportedStackingGroup() );
+	child->applyProperty( StyleSheetProperty( "z-index", "-3" ) );
+	EXPECT_EQ( child->getZIndex(), -3 );
+	EXPECT_TRUE( child->getPropertyString( "z-index" ) == "-3" );
+	child->applyProperty( StyleSheetProperty( "z-index", "auto" ) );
+	EXPECT_TRUE( child->hasAutoZIndex() );
+	EXPECT_FALSE( child->createsSupportedStackingGroup() );
+
+	eeDelete( child );
+}
+
+UTEST( UIHTMLFloat, floatPaintsAndHitsAboveLaterNormalBlock ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	auto* parent = UIHTMLWidget::New();
+	parent->setParent( sceneNode->getRoot() );
+	parent->setPixelsSize( 300, 200 );
+	parent->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	auto* side = UIHTMLWidget::New();
+	side->setParent( parent );
+	side->setPixelsSize( 100, 100 );
+	side->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	side->setCSSFloat( CSSFloat::Right );
+
+	auto* sideLink = UIHTMLWidget::New();
+	sideLink->setParent( side );
+	sideLink->setPixelsSize( 100, 100 );
+	sideLink->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	auto* content = UIHTMLWidget::New();
+	content->setParent( parent );
+	content->setPixelsSize( 300, 200 );
+	content->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	SmallVector<Node*, 127> paintOrder;
+	parent->buildDrawOrderVector( paintOrder );
+	ASSERT_EQ( paintOrder.size(), 2u );
+	EXPECT_EQ( paintOrder[0], content );
+	EXPECT_EQ( paintOrder[1], side );
+	EXPECT_EQ( parent->getPaintOrderRebuildCount(), 1u );
+
+	paintOrder.clear();
+	parent->buildDrawOrderVector( paintOrder );
+	EXPECT_EQ( parent->getPaintOrderRebuildCount(), 1u );
+	EXPECT_EQ( parent->overFind( { 10, 10 } ), sideLink );
+	EXPECT_EQ( parent->getPaintOrderRebuildCount(), 1u );
+
+	side->setCSSFloat( CSSFloat::None );
+	paintOrder.clear();
+	parent->buildDrawOrderVector( paintOrder );
+	EXPECT_EQ( paintOrder[0], side );
+	EXPECT_EQ( paintOrder[1], content );
+	EXPECT_EQ( parent->getPaintOrderRebuildCount(), 2u );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, positionedDescendantParticipatesInRootStackingScope ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto makeBox = []( Node* parent ) {
+		auto* box = UIHTMLWidget::New();
+		box->setParent( parent );
+		box->setPixelsSize( 200, 150 );
+		box->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		return box;
+	};
+
+	auto* root = makeBox( sceneNode->getRoot() );
+	auto* section = makeBox( root );
+	auto* popup = makeBox( section );
+	popup->setCSSPosition( CSSPosition::Absolute );
+	popup->setZIndex( 10 );
+	auto* overlay = makeBox( root );
+	overlay->setCSSPosition( CSSPosition::Relative );
+	overlay->setZIndex( 5 );
+
+	auto paintOrder = root->debugGetHTMLPaintOrder();
+	ASSERT_EQ( paintOrder.size(), 3u );
+	EXPECT_EQ( paintOrder[0], section );
+	EXPECT_EQ( paintOrder[1], overlay );
+	EXPECT_EQ( paintOrder[2], popup );
+	EXPECT_TRUE( popup->isHTMLPaintPromoted() );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), popup );
+	section->setPixelsSize( 50, 50 );
+	section->setClipType( ClipType::ContentBox );
+	EXPECT_EQ( root->overFind( { 100, 100 } ), overlay );
+	section->setPixelsSize( 100, 100 );
+	section->setPadding( Rectf( 20, 20, 20, 20 ) );
+	section->setClipType( ClipType::PaddingBox );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), overlay );
+	EXPECT_EQ( root->overFind( { 30, 30 } ), popup );
+
+	popup->setZIndexAuto();
+	paintOrder = root->debugGetHTMLPaintOrder();
+	ASSERT_EQ( paintOrder.size(), 3u );
+	EXPECT_EQ( paintOrder[0], section );
+	EXPECT_EQ( paintOrder[1], popup );
+	EXPECT_EQ( paintOrder[2], overlay );
+	EXPECT_TRUE( popup->isHTMLPaintPromoted() );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), overlay );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, hiddenAncestorExcludesPromotedDescendant ) {
+	init_float_test();
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* root = UIHTMLWidget::New();
+	root->setParent( scene->getRoot() );
+	root->setPixelsSize( 300, 200 );
+	auto* hidden = UIHTMLWidget::New();
+	hidden->setParent( root );
+	hidden->setPixelsSize( 300, 200 );
+	auto* promoted = UIHTMLWidget::New();
+	promoted->setParent( hidden );
+	promoted->setPixelsSize( 200, 100 );
+	promoted->setCSSPosition( CSSPosition::Absolute );
+	promoted->setZIndex( 10 );
+	ASSERT_EQ( root->debugGetHTMLPaintOrder().size(), 2u );
+	hidden->setDisplay( CSSDisplay::None );
+	const auto hiddenOrder = root->debugGetHTMLPaintOrder();
+	EXPECT_TRUE( hiddenOrder.empty() );
+	EXPECT_FALSE( promoted->isHTMLPaintPromoted() );
+	EXPECT_NE( root->overFind( { 10, 10 } ), promoted );
+	hidden->setDisplay( CSSDisplay::Block );
+	EXPECT_EQ( root->debugGetHTMLPaintOrder().size(), 2u );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, directStackingGroupIsAtomic ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto makeGroup = []( Node* parent, int zIndex ) {
+		auto* group = UIHTMLWidget::New();
+		group->setParent( parent );
+		group->setPixelsSize( 200, 150 );
+		group->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		group->setCSSPosition( CSSPosition::Relative );
+		group->setZIndex( zIndex );
+		return group;
+	};
+
+	auto* root = UIHTMLWidget::New();
+	root->setParent( sceneNode->getRoot() );
+	root->setPixelsSize( 200, 150 );
+	auto* lowerGroup = makeGroup( root, 1 );
+	auto* highInsideLower = makeGroup( lowerGroup, 1000 );
+	auto* upperGroup = makeGroup( root, 2 );
+
+	const auto paintOrder = root->debugGetHTMLPaintOrder();
+	ASSERT_EQ( paintOrder.size(), 2u );
+	EXPECT_EQ( paintOrder[0], lowerGroup );
+	EXPECT_EQ( paintOrder[1], upperGroup );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), upperGroup );
+	EXPECT_FALSE( highInsideLower->isHTMLPaintPromoted() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, positionedDescendantPromotesThroughFloat ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto makeBox = []( Node* parent ) {
+		auto* box = UIHTMLWidget::New();
+		box->setParent( parent );
+		box->setPixelsSize( 200, 150 );
+		box->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		return box;
+	};
+
+	auto* root = makeBox( sceneNode->getRoot() );
+	auto* floated = makeBox( root );
+	floated->setCSSFloat( CSSFloat::Left );
+	auto* popup = makeBox( floated );
+	popup->setCSSPosition( CSSPosition::Absolute );
+	popup->setZIndex( 10 );
+	auto* overlay = makeBox( root );
+	overlay->setCSSPosition( CSSPosition::Relative );
+	overlay->setZIndex( 5 );
+
+	const auto paintOrder = root->debugGetHTMLPaintOrder();
+	ASSERT_EQ( paintOrder.size(), 3u );
+	EXPECT_EQ( paintOrder[0], floated );
+	EXPECT_EQ( paintOrder[1], overlay );
+	EXPECT_EQ( paintOrder[2], popup );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), popup );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, removingLastPromotionClearsSkipMetadata ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* root = UIHTMLWidget::New();
+	root->setParent( sceneNode->getRoot() );
+	root->setPixelsSize( 200, 150 );
+	auto* section = UIHTMLWidget::New();
+	section->setParent( root );
+	section->setPixelsSize( 200, 150 );
+	auto* popup = UIHTMLWidget::New();
+	popup->setParent( section );
+	popup->setPixelsSize( 200, 150 );
+	popup->setCSSPosition( CSSPosition::Absolute );
+	popup->setZIndex( 10 );
+
+	root->debugGetHTMLPaintOrder();
+	EXPECT_TRUE( popup->isHTMLPaintPromoted() );
+	popup->setZIndexAuto();
+	popup->setCSSPosition( CSSPosition::Static );
+	root->debugGetHTMLPaintOrder();
+	EXPECT_FALSE( popup->isHTMLPaintPromoted() );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), popup );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, nestedPositionedAutoParticipatesInAncestorPositionedPhase ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* root = UIHTMLWidget::New();
+	root->setParent( sceneNode->getRoot() );
+	root->setPixelsSize( 200, 150 );
+	auto* section = UIHTMLWidget::New();
+	section->setParent( root );
+	section->setPixelsSize( 200, 150 );
+	auto* positionedAuto = UIHTMLWidget::New();
+	positionedAuto->setParent( section );
+	positionedAuto->setPixelsSize( 200, 150 );
+	positionedAuto->setCSSPosition( CSSPosition::Relative );
+	auto* floated = UIHTMLWidget::New();
+	floated->setParent( root );
+	floated->setPixelsSize( 200, 150 );
+	floated->setCSSFloat( CSSFloat::Left );
+
+	const auto paintOrder = root->debugGetHTMLPaintOrder();
+	ASSERT_EQ( paintOrder.size(), 3u );
+	EXPECT_EQ( paintOrder[0], section );
+	EXPECT_EQ( paintOrder[1], floated );
+	EXPECT_EQ( paintOrder[2], positionedAuto );
+	EXPECT_TRUE( positionedAuto->isHTMLPaintPromoted() );
+	EXPECT_EQ( root->overFind( { 10, 10 } ), positionedAuto );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, reparentingPromotedSubtreeClearsOldScopeMetadata ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	auto* oldRoot = UIHTMLWidget::New();
+	oldRoot->setParent( sceneNode->getRoot() );
+	oldRoot->setPixelsSize( 200, 150 );
+	auto* section = UIHTMLWidget::New();
+	section->setParent( oldRoot );
+	auto* popup = UIHTMLWidget::New();
+	popup->setParent( section );
+	popup->setPixelsSize( 100, 100 );
+	popup->setCSSPosition( CSSPosition::Absolute );
+	popup->setZIndex( 10 );
+	auto* newRoot = UIHTMLWidget::New();
+	newRoot->setParent( sceneNode->getRoot() );
+	newRoot->setPixelsSize( 200, 150 );
+
+	oldRoot->debugGetHTMLPaintOrder();
+	EXPECT_TRUE( popup->isHTMLPaintPromoted() );
+	popup->setParent( newRoot );
+	oldRoot->debugGetHTMLPaintOrder();
+	const auto newOrder = newRoot->debugGetHTMLPaintOrder();
+	ASSERT_EQ( newOrder.size(), 1u );
+	EXPECT_EQ( newOrder[0], popup );
+	EXPECT_FALSE( popup->isHTMLPaintPromoted() );
+	EXPECT_EQ( newRoot->overFind( { 10, 10 } ), popup );
+
+	Engine::destroySingleton();
 }
 
 UTEST( UIHTMLFloat, richtext_NoFloatLayout_NoChange ) {
@@ -614,6 +925,234 @@ UTEST( UIHTMLFloat, floatedListItemsShrinkToFitBlockAnchors ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIHTMLFloat, ss64BlockAnchorsAndSvgAtPixelDensity2 ) {
+	init_float_test();
+	PixelDensity::setPixelDensity( 2.f );
+	Engine::instance()->getCurrentWindow()->setSize( 475, 900 );
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	std::string html;
+	ASSERT_TRUE( FileSystem::fileGet( "assets/html/ss64.html", html ) );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->updateDirtyLayouts();
+	SceneManager::instance()->update();
+
+	auto buttons = sceneNode->getRoot()->querySelectorAll( ".tbtn" );
+	auto anchors = sceneNode->getRoot()->querySelectorAll( ".tbtn a" );
+	auto worldRect = []( UIWidget* widget ) {
+		Vector2f position = widget->getPixelsPosition();
+		widget->nodeToWorldTranslation( position );
+		return Rectf( position, widget->getPixelsSize() );
+	};
+	ASSERT_EQ( buttons.size(), (size_t)8 );
+	ASSERT_EQ( anchors.size(), buttons.size() );
+	for ( size_t i = 0; i < buttons.size(); ++i ) {
+		auto* anchor = anchors[i]->asType<UIRichText>();
+		EXPECT_NEAR( anchor->getLineHeightPx(), 80.f, 1.f );
+		EXPECT_NEAR( anchor->getPixelsSize().getHeight(), 80.f, 1.f );
+		EXPECT_NEAR( anchor->getPixelsSize().getHeight() + 4.f,
+					 buttons[i]->getPixelsSize().getHeight(), 1.f );
+		for ( size_t j = 0; j < i; ++j )
+			EXPECT_FALSE( worldRect( buttons[i] ).intersect( worldRect( buttons[j] ) ) );
+	}
+	auto* svg = sceneNode->getRoot()->querySelector( "#sherlock svg" )->asType<UISvg>();
+	auto* input = sceneNode->getRoot()->querySelector( "#qu" );
+	auto* searchButton = sceneNode->getRoot()->querySelector( "#sherlock" );
+	ASSERT_TRUE( input != nullptr );
+	ASSERT_TRUE( searchButton != nullptr );
+	ASSERT_TRUE( svg != nullptr );
+	EXPECT_EQ( searchButton->getCursor(), Cursor::Hand );
+	EXPECT_EQ( svg->getCursor(), Cursor::Hand );
+	EXPECT_NEAR( input->getPixelsSize().getHeight(), 74.5f, 1.f );
+	EXPECT_NEAR( searchButton->getPixelsSize().getHeight(), 69.f, 1.f );
+	EXPECT_LE( searchButton->getPixelsPosition().y + searchButton->getPixelsSize().getHeight(),
+			   input->getPixelsPosition().y + input->getPixelsSize().getHeight() );
+	EXPECT_EQ( svg->getLayoutHeightPolicy(), SizePolicy::Fixed );
+	EXPECT_NEAR( svg->getPixelsSize().getHeight(), 59.f, 1.f );
+	for ( int i = 0; i < 500 && svg->getDrawable() == nullptr; ++i ) {
+		SceneManager::instance()->update();
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+	ASSERT_TRUE( svg->getDrawable() != nullptr );
+	EXPECT_NEAR( svg->getDrawable()->getPixelsSize().getWidth(), svg->getPixelsSize().getWidth(),
+				 1.f );
+	EXPECT_NEAR( svg->getDrawable()->getPixelsSize().getHeight(), svg->getPixelsSize().getHeight(),
+				 1.f );
+	auto* footer = sceneNode->getRoot()->querySelector( ".footer" )->asType<UIRichText>();
+	ASSERT_TRUE( footer != nullptr );
+	for ( auto* button : buttons ) {
+		EXPECT_FALSE( worldRect( footer ).intersect( worldRect( button ) ) );
+	}
+	Engine::destroySingleton();
+	PixelDensity::setPixelDensity( 1.f );
+}
+
+UTEST( UIHTMLFloat, ss64NarrowViewportFloatsDoNotOverlapAtPixelDensity1 ) {
+	init_float_test();
+	auto* window = Engine::instance()->getCurrentWindow();
+	ASSERT_TRUE( window != nullptr );
+	window->setSize( 400, 600 );
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	std::string html;
+	ASSERT_TRUE( FileSystem::fileGet( "assets/html/ss64.html", html ) );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	sceneNode->updateDirtyLayouts();
+	SceneManager::instance()->update();
+
+	auto buttons = sceneNode->getRoot()->querySelectorAll( ".tbtn" );
+	ASSERT_EQ( buttons.size(), (size_t)8 );
+	auto worldRect = []( UIWidget* widget ) {
+		Vector2f position = widget->getPixelsPosition();
+		widget->nodeToWorldTranslation( position );
+		return Rectf( position, widget->getPixelsSize() );
+	};
+	for ( size_t i = 0; i < buttons.size(); ++i ) {
+		for ( size_t j = 0; j < i; ++j )
+			EXPECT_FALSE( worldRect( buttons[i] ).intersect( worldRect( buttons[j] ) ) );
+	}
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, ss64DeferredStyleSheetPreservesDocumentSourceOrder ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->setThreadPool( ThreadPool::createShared( 1 ) );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html>
+		<head>
+			<link rel="stylesheet" href="ss64_deferred_cascade.css" defer="25" />
+			<style>
+				h1 { font-size: 1rem; }
+				li a[href="../bash/"] { background-color: #FFCC33; }
+			</style>
+		</head>
+		<body>
+			<div id="external-css-loaded"></div>
+			<h1 id="heading">Command line reference.</h1>
+			<ul><li><a id="linux" href="../bash/">Linux</a></li></ul>
+		</body>
+		</html>
+	)html" ) );
+
+	auto* heading = sceneNode->getRoot()->find( "heading" )->asType<UIRichText>();
+	auto* linux = sceneNode->getRoot()->find( "linux" )->asType<UIRichText>();
+	auto* loaded = sceneNode->getRoot()->find( "external-css-loaded" )->asType<UIWidget>();
+	ASSERT_TRUE( heading != nullptr );
+	ASSERT_TRUE( linux != nullptr );
+	ASSERT_TRUE( loaded != nullptr );
+	const Uint32 inlineHeadingFontSize = heading->getFontSize();
+	const Color inlineLinuxBackground = linux->getBackgroundColor();
+
+	for ( int i = 0; i < 500 && loaded->getPixelsSize().getHeight() < 36.f; ++i ) {
+		SceneManager::instance()->update();
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+
+	ASSERT_NEAR( loaded->getPixelsSize().getHeight(), 37.f, 1.f );
+	EXPECT_EQ( heading->getFontSize(), inlineHeadingFontSize );
+	EXPECT_TRUE( linux->getBackgroundColor() == inlineLinuxBackground );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, ss64DeferredStyleSheetRelayoutsFooter ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	sceneNode->setThreadPool( ThreadPool::createShared( 1 ) );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 1280, 650 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	documentScene->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
+	documentScene->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html>
+		<head>
+			<link rel="stylesheet" href="ss64_deferred_cascade.css" defer="250" />
+			<style>
+				body { margin: 15px; }
+				h1 { clear: both; font-size: 1rem; }
+				.tnav { height: 42px; max-width: 700px; }
+				.tnav > ul { list-style: none; margin: 0; padding: 0; }
+				.tnav > ul > li {
+					display: block; float: left; margin: 0 0.15em 15px; text-align: center;
+				}
+				.footer { display: inline-block; font-size: 75%; }
+				#first, #second { margin-left: 6.5%; }
+				li a[href="../bash/"] { background-color: #FFCC33; }
+			</style>
+		</head>
+		<body>
+			<div id="external-css-loaded"></div>
+			<h1 id="heading">Command line reference.</h1>
+			<div class="tnav" id="first"><ul>
+				<li class="tbtn"><a href="../bash/">Linux</a></li>
+				<li class="tbtn"><a href="../mac/">macOS</a></li>
+				<li class="tbtn"><a href="../nt/">CMD</a></li>
+				<li class="tbtn"><a href="../ps/">PowerShell</a></li>
+			</ul></div><br />
+			<div class="tnav" id="second"><ul>
+				<li class="tbtn"><a href="../ascii.html">ASCII</a></li>
+				<li class="tbtn"><a href="../vb/">VBScript</a></li>
+				<li class="tbtn"><a href="../tools/">Tools</a></li>
+				<li class="tbtn"><a href="../pass/">Passwords</a></li>
+			</ul></div><br />
+			<p class="footer" id="footer">About/contact - Last update<br />Copyright</p>
+		</body>
+		</html>
+	)html" ),
+										 webView->getDocumentContainer(),
+										 String::hash( "ss64-deferred-footer" ) );
+	webView->refreshDocumentLayout();
+
+	auto* loaded = documentScene->getRoot()->find( "external-css-loaded" )->asType<UIWidget>();
+	auto* heading = documentScene->getRoot()->find( "heading" )->asType<UIWidget>();
+	auto* footer = documentScene->getRoot()->find( "footer" )->asType<UIWidget>();
+	ASSERT_TRUE( loaded != nullptr );
+	ASSERT_TRUE( heading != nullptr );
+	ASSERT_TRUE( footer != nullptr );
+
+	for ( int i = 0; i < 500 && loaded->getPixelsSize().getHeight() < 36.f; ++i ) {
+		SceneManager::instance()->update();
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+	ASSERT_NEAR( loaded->getPixelsSize().getHeight(), 37.f, 1.f );
+	EXPECT_NEAR( footer->getPixelsPosition().x, heading->getPixelsPosition().x, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, percentageMarginReResolvesWhenContainingBlockGetsWidth ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<html><body><div id="target" style="margin-left: 6.5%;"></div></body></html>
+	)html" ) );
+
+	auto* body = sceneNode->getRoot()->querySelector( "body" )->asType<UIWidget>();
+	auto* target = sceneNode->getRoot()->find( "target" )->asType<UIWidget>();
+	ASSERT_TRUE( body != nullptr );
+	ASSERT_TRUE( target != nullptr );
+	const StyleSheetProperty* marginLeft =
+		target->getUIStyle()->getProperty( PropertyId::MarginLeft );
+	ASSERT_TRUE( marginLeft != nullptr );
+
+	body->setPixelsSize( 0.f, body->getPixelsSize().getHeight() );
+	target->applyProperty( *marginLeft );
+	EXPECT_NEAR( target->getLayoutPixelsMargin().Left, 0.f, 0.01f );
+
+	body->setPixelsSize( 1000.f, body->getPixelsSize().getHeight() );
+	EXPECT_NEAR( target->getLayoutPixelsMargin().Left, 65.f, 0.01f );
+
+	Engine::destroySingleton();
+}
+
 UTEST( UIHTMLFloat, autoHorizontalMarginsCenterBlockInsideFloat ) {
 	init_float_test();
 	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
@@ -638,6 +1177,94 @@ UTEST( UIHTMLFloat, autoHorizontalMarginsCenterBlockInsideFloat ) {
 	Float arrowCenter = arrowPos.x + arrow->getPixelsSize().getWidth() / 2.f;
 
 	EXPECT_NEAR( midcolCenter, arrowCenter, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLFloat, autoWidthFloatsShrinkToFitRedditVoteColumn ) {
+	init_float_test();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( R"html(
+		<body style="margin:0">
+			<div id="link" style="width:800px">
+				<p></p>
+				<span id="rank" style="float:left;margin-top:15px;overflow:hidden;
+					font:16px arial;text-align:right">25</span>
+				<div id="midcol" style="float:left;margin:0 7px;overflow:hidden;
+					font-size:13px;font-weight:bold">
+					<div id="up" style="display:block;width:15px;height:14px;
+						margin:2px auto 0"></div>
+					<div style="text-align:center">&#8226;</div>
+					<div id="down" style="display:block;width:15px;height:14px;
+						margin:2px auto 0"></div>
+				</div>
+			</div>
+			<span id="flair" style="display:inline-block;height:16px;line-height:16px;
+				overflow:hidden;padding:0 4px">
+				<span>Humor </span><span id="emoji" style="display:inline-block;width:15px;
+					height:15px;vertical-align:middle"></span>
+			</span>
+		</body>
+	)html" ) );
+	sceneNode->updateDirtyLayouts();
+
+	auto* link = sceneNode->find<UIWidget>( "link" );
+	auto* rank = sceneNode->find<UIWidget>( "rank" );
+	auto* midcol = sceneNode->find<UIWidget>( "midcol" );
+	auto* up = sceneNode->find<UIWidget>( "up" );
+	auto* down = sceneNode->find<UIWidget>( "down" );
+	auto* flair = sceneNode->find<UIWidget>( "flair" );
+	auto* emoji = sceneNode->find<UIWidget>( "emoji" );
+	ASSERT_TRUE( link != nullptr );
+	ASSERT_TRUE( rank != nullptr );
+	ASSERT_TRUE( midcol != nullptr );
+	ASSERT_TRUE( up != nullptr );
+	ASSERT_TRUE( down != nullptr );
+	ASSERT_TRUE( flair != nullptr );
+	ASSERT_TRUE( emoji != nullptr );
+
+	const Vector2f linkPos = link->convertToWorldSpace( { 0, 0 } );
+	const Vector2f rankPos = rank->convertToWorldSpace( { 0, 0 } );
+	const Vector2f midcolPos = midcol->convertToWorldSpace( { 0, 0 } );
+	const Vector2f upPos = up->convertToWorldSpace( { 0, 0 } );
+	const Vector2f downPos = down->convertToWorldSpace( { 0, 0 } );
+
+	EXPECT_GT( rank->getPixelsSize().getWidth(), 0.f );
+	EXPECT_GT( rank->asType<UIRichText>()->getRichTextPtr()->getSize().getWidth(), 0.f );
+	EXPECT_FALSE( rank->asType<UIRichText>()->getRichText().getLines().empty() );
+	EXPECT_LT( rank->getPixelsSize().getWidth(), 40.f );
+	EXPECT_LT( midcol->getPixelsSize().getWidth(), 40.f );
+	EXPECT_NEAR( rankPos.x, linkPos.x, 1.f );
+	EXPECT_NEAR( midcolPos.x, rankPos.x + rank->getPixelsSize().getWidth() + 7.f, 1.f );
+	EXPECT_NEAR( upPos.x + up->getPixelsSize().getWidth() / 2.f,
+				 midcolPos.x + midcol->getPixelsSize().getWidth() / 2.f, 1.f );
+	EXPECT_NEAR( downPos.x, upPos.x, 1.f );
+	const Vector2f flairPos = flair->convertToWorldSpace( { 0, 0 } );
+	const Vector2f emojiPos = emoji->convertToWorldSpace( { 0, 0 } );
+	EXPECT_GE( emojiPos.y, flairPos.y - 0.01f );
+	// Font metrics can leave a subpixel overflow for CSS vertical-align: middle (Chromium does
+	// too); one physical pixel keeps this a containment check rather than an exact-raster check.
+	EXPECT_LE( emojiPos.y + emoji->getPixelsSize().getHeight(),
+			   flairPos.y + flair->getPixelsSize().getHeight() + 1.f );
+
+	auto* window = Engine::instance()->getCurrentWindow();
+	window->setClearColor( Color::White );
+	window->clear();
+	SceneManager::instance()->draw();
+	window->display();
+	Image framebuffer = window->getFrontBufferImage();
+	bool rankPainted = false;
+	for ( int y = (int)rankPos.y; y < (int)( rankPos.y + rank->getPixelsSize().getHeight() );
+		  ++y ) {
+		for ( int x = (int)rankPos.x; x < (int)( rankPos.x + rank->getPixelsSize().getWidth() );
+			  ++x ) {
+			Color pixel = framebuffer.getPixel( x, y );
+			if ( pixel.r < 245 || pixel.g < 245 || pixel.b < 245 )
+				rankPainted = true;
+		}
+	}
+	EXPECT_TRUE( rankPainted );
 
 	Engine::destroySingleton();
 }
@@ -1161,7 +1788,7 @@ UTEST( UIHTMLFloat, floatNotAffectedByTextAlignCenter ) {
 									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
 

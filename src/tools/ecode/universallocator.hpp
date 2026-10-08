@@ -6,6 +6,7 @@
 #include "projectdirectorytree.hpp"
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ee.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <tuple>
 #include <unordered_map>
 
@@ -18,11 +19,14 @@ class OpenDocumentsModel;
 class UniversalLocator {
   public:
 	struct LocatorProvider {
+		using ModelReadyFn = std::function<void( std::shared_ptr<Model> )>;
+		using ModelFn = std::function<void( const String&, ModelReadyFn )>;
+
 		LocatorProvider(
 			String&& symbol, String&& description, std::function<bool( const String& )> switchFn,
 			std::function<void( const Variant& var, const ModelEvent* modelEvent )> openFn,
 			std::function<bool( const String& )> pressEnterFn = nullptr, bool projectNeeded = true,
-			bool spaceOptional = false ) :
+			bool spaceOptional = false, ModelFn modelFn = nullptr ) :
 			symbol( std::move( symbol ) ),
 			symbolTrigger( this->symbol + " " ),
 			description( std::move( description ) ),
@@ -30,7 +34,8 @@ class UniversalLocator {
 			openFn( std::move( openFn ) ),
 			pressEnterFn( std::move( pressEnterFn ) ),
 			projectNeeded( projectNeeded ),
-			spaceOptional( spaceOptional ) {}
+			spaceOptional( spaceOptional ),
+			modelFn( std::move( modelFn ) ) {}
 
 		bool matches( const String& txt ) const {
 			return String::startsWith( txt, symbolTrigger ) ||
@@ -49,6 +54,8 @@ class UniversalLocator {
 		std::function<bool( const String& )> pressEnterFn{ nullptr };
 		bool projectNeeded{ true };
 		bool spaceOptional{ false };
+		ModelFn modelFn;
+		Uint64 id{ 0 };
 	};
 
 	UniversalLocator( UICodeEditorSplitter* editorSplitter, UISceneNode* sceneNode, App* app );
@@ -91,12 +98,20 @@ class UniversalLocator {
 
 	void showCalculator();
 
+	/** Registers a locator provider and returns its opaque ownership handle, or zero when the
+	 * provider is invalid or its symbol is already registered. */
+	Uint64 registerLocatorProvider( LocatorProvider provider );
+
+	/** Unregisters the locator provider associated with @p providerId. */
+	bool unregisterLocatorProvider( Uint64 providerId );
+
   protected:
 	UILocateBar* mLocateBarLayout{ nullptr };
 	UITableView* mLocateTable{ nullptr };
 	UITextInput* mLocateInput{ nullptr };
 	UICodeEditorSplitter* mSplitter{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
+	MainThreadLifetime<UniversalLocator> mLifetime;
 	std::shared_ptr<LSPSymbolInfoModel> mWorkspaceSymbolModel{ nullptr };
 	std::string mWorkspaceSymbolQuery;
 	App* mApp{ nullptr };
@@ -107,6 +122,9 @@ class UniversalLocator {
 	std::shared_ptr<OpenDocumentsModel> mOpenDocumentsModel{ nullptr };
 	PluginIDType mQueryWorkspaceLastId;
 	std::vector<LocatorProvider> mLocatorProviders;
+	mutable Mutex mLocatorProvidersMutex;
+	Uint64 mLastLocatorProviderId{ 0 };
+	Uint64 mLocatorModelGeneration{ 0 };
 	std::unordered_map<std::string, double> mCalculatorVariables;
 	std::vector<std::tuple<std::string, std::string, std::string>> mCalculatorHistory;
 

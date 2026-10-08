@@ -1,10 +1,11 @@
 #include "utest.hpp"
 
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/thread.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 #include <dirent.h>
@@ -35,7 +36,13 @@ static std::size_t getOpenFileDescriptorCount() {
 #endif
 
 UTEST( SystemFontResolver, singletonLifecycle ) {
+	SystemFontResolver::destroySingleton();
+	SystemFontResolver::setEnabled( false );
+
+	UTEST_PRINT_STEP( "Enabling creates singleton" );
 	SystemFontResolver::setEnabled( true );
+	EXPECT_TRUE( SystemFontResolver::existsSingleton() != nullptr );
+
 	UTEST_PRINT_STEP( "Create singleton" );
 	auto* resolver = SystemFontResolver::createSingleton();
 	EXPECT_TRUE( resolver != nullptr );
@@ -52,6 +59,81 @@ UTEST( SystemFontResolver, singletonLifecycle ) {
 
 	SystemFontResolver::destroySingleton();
 	SystemFontResolver::setEnabled( false );
+}
+
+UTEST( SystemFontResolver, workerWarmUp ) {
+	SystemFontResolver::setEnabled( true );
+	auto* resolver = SystemFontResolver::instance();
+
+	Thread warmUpThread( [resolver] { resolver->warmUp(); } );
+	warmUpThread.launch();
+	warmUpThread.wait();
+
+	EXPECT_FALSE( resolver->isLoading() );
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_HAIKU
+	EXPECT_FALSE( resolver->isFontListPopulated() );
+	EXPECT_FALSE( resolver->resolveGeneric( GenericFamily::SansSerif, FontWeight::Normal, false )
+					  .path.empty() );
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	EXPECT_FALSE( resolver->enumerate().empty() );
+#endif
+
+	SystemFontResolver::setEnabled( false );
+	SystemFontResolver::destroySingleton();
+}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_HAIKU
+UTEST( SystemFontResolver, nativeRenderingDoesNotEnumerate ) {
+	SystemFontResolver::setEnabled( true );
+	auto* resolver = SystemFontResolver::instance();
+	resolver->invalidateCache();
+
+	resolver->warmUp();
+	EXPECT_FALSE( resolver->isFontListPopulated() );
+
+	FontDesc sans = resolver->resolveGeneric( GenericFamily::SansSerif, FontWeight::Normal, false );
+	EXPECT_FALSE( sans.path.empty() );
+	FontQuery query;
+	query.family = sans.family;
+	EXPECT_FALSE( resolver->resolve( query ).path.empty() );
+	EXPECT_FALSE( resolver->resolveGeneric( GenericFamily::Monospace, FontWeight::Normal, false )
+					  .path.empty() );
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+	EXPECT_FALSE(
+		resolver->getFallbackForCodepoint( 0x65E5, FontWeight::Normal, false ).path.empty() );
+#else
+	resolver->getFallbackForCodepoint( 0x65E5, FontWeight::Normal, false );
+#endif
+	EXPECT_FALSE( resolver->isFontListPopulated() );
+
+	EXPECT_FALSE( resolver->enumerate().empty() );
+	EXPECT_TRUE( resolver->isFontListPopulated() );
+
+	SystemFontResolver::setEnabled( false );
+	SystemFontResolver::destroySingleton();
+}
+#endif
+
+UTEST( SystemFontResolver, fallbackWaitsForConcurrentWarmUp ) {
+	SystemFontResolver::setEnabled( true );
+	auto* resolver = SystemFontResolver::instance();
+	resolver->invalidateCache();
+
+	Thread warmUpThread( [resolver] { resolver->warmUp(); } );
+	warmUpThread.launch();
+	FontDesc fallback = resolver->getFallbackForCodepoint( 'A', FontWeight::Normal, false );
+	warmUpThread.wait();
+
+	EXPECT_FALSE( resolver->isLoading() );
+	EXPECT_FALSE( fallback.path.empty() );
+	EXPECT_FALSE( resolver->enumerate().empty() );
+
+	SystemFontResolver::setEnabled( false );
+	SystemFontResolver::destroySingleton();
 }
 
 UTEST( SystemFontResolver, genericFamilyFromName ) {
@@ -83,8 +165,9 @@ UTEST( SystemFontResolver, enumerate ) {
 	const auto& fonts = resolver->enumerate();
 	UTEST_PRINT_INFO( String::format( "Enumerated %zu system fonts", fonts.size() ).c_str() );
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
-	EXPECT_TRUE_MSG( fonts.size() > 0, "Fontconfig should find fonts on Linux/BSD" );
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
+	EXPECT_TRUE_MSG( fonts.size() > 0, "Fontconfig should find fonts on Linux/BSD/Haiku" );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	EXPECT_TRUE_MSG( fonts.size() > 0, "DirectWrite should find fonts on Windows" );
 #elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
@@ -128,8 +211,27 @@ UTEST( SystemFontResolver, findVerdana ) {
 	query.weight = FontWeight::Normal;
 	query.italic = false;
 	FontDesc desc = resolver->resolve( query );
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	auto verdanaFaces = resolver->enumerateFamily( "Verdana" );
+	if ( !verdanaFaces.empty() ) {
+		EXPECT_FALSE( desc.path.empty() );
+		EXPECT_STDSTREQ( "Verdana", desc.family );
+		EXPECT_TRUE_MSG(
+			desc.path.find( "Verdana" ) != std::string::npos,
+			( "Verdana must not resolve through a substituted CoreText family: " + desc.path )
+				.c_str() );
+		for ( const FontDesc& face : verdanaFaces ) {
+			FontTrueTypePtr font = defaultResourceScope().getFontService().loadSystemFont( face );
+			EXPECT_TRUE_MSG(
+				font && font->loaded(),
+				( "CoreText face index must load the selected Verdana face: " + face.getFileKey() )
+					.c_str() );
+		}
+	}
+#endif
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
-	EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS
+	EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
 	if ( resolver->enumerate().size() > 0 ) {
 		if ( !desc.path.empty() ) {
 			EXPECT_STDSTREQ( "Verdana", desc.family );
@@ -548,12 +650,12 @@ UTEST( FontTrueType_faceIndex, loadWithDefaultFaceIndex ) {
 	std::string fontPath = getFontsDir() + "DejaVuSansMono.ttf";
 	ASSERT_TRUE( FileSystem::fileExists( fontPath ) );
 
-	FontTrueType* font = FontTrueType::New( "Test-faceIndex-default" );
+	FontTrueType* font = FontTrueType::New( "Test-faceIndex-default" ).get();
 	bool loaded = font->loadFromFile( fontPath );
 	ASSERT_TRUE( loaded );
 	EXPECT_TRUE( font->loaded() );
 
-	eeDelete( font );
+	defaultResourceScope().eraseLocalFont( font );
 }
 
 UTEST( FontTrueType_faceIndex, newWithFaceIndex ) {
@@ -562,11 +664,11 @@ UTEST( FontTrueType_faceIndex, newWithFaceIndex ) {
 	std::string fontPath = getFontsDir() + "DejaVuSansMono.ttf";
 	ASSERT_TRUE( FileSystem::fileExists( fontPath ) );
 
-	FontTrueType* font = FontTrueType::New( "Test-faceIndex-explicit", fontPath, 0 );
+	FontTrueType* font = FontTrueType::New( "Test-faceIndex-explicit", fontPath, 0 ).get();
 	ASSERT_TRUE( font != nullptr );
 	EXPECT_TRUE( font->loaded() );
 
-	eeDelete( font );
+	defaultResourceScope().eraseLocalFont( font );
 }
 
 UTEST( FontTrueType_faceIndex, loadFromMemoryFaceIndex ) {
@@ -578,10 +680,10 @@ UTEST( FontTrueType_faceIndex, loadFromMemoryFaceIndex ) {
 	ScopedBuffer buf;
 	FileSystem::fileGet( fontPath, buf );
 
-	FontTrueType* font = FontTrueType::New( "Test-faceIndex-memory" );
+	FontTrueType* font = FontTrueType::New( "Test-faceIndex-memory" ).get();
 	bool loaded = font->loadFromMemory( buf.get(), buf.length(), true, 0 );
 	ASSERT_TRUE( loaded );
 	EXPECT_TRUE( font->loaded() );
 
-	eeDelete( font );
+	defaultResourceScope().eraseLocalFont( font );
 }

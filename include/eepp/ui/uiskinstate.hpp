@@ -2,6 +2,7 @@
 #define EE_UI_UISKINSTATE_HPP
 
 #include <eepp/ui/uistate.hpp>
+#include <eepp/graphics/resource.hpp>
 #include <map>
 
 namespace EE { namespace UI {
@@ -10,7 +11,7 @@ class UISkin;
 
 class EE_API UISkinState : public UIState {
   public:
-	static UISkinState* New( UISkin* skin );
+	static UISkinState* New( ResourcePtr<UISkin> skin );
 
 	virtual ~UISkinState();
 
@@ -28,11 +29,11 @@ class EE_API UISkinState : public UIState {
 	bool hasStateColor( const Uint32& state ) const;
 
   protected:
-	UISkin* mSkin;
+	ResourcePtr<UISkin> mSkin;
 	std::map<Uint32, Color> mColors;
 	Color mCurrentColor;
 
-	explicit UISkinState( UISkin* Skin );
+	explicit UISkinState( ResourcePtr<UISkin> skin );
 
 	void updateState();
 

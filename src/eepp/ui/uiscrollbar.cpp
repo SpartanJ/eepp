@@ -128,9 +128,9 @@ void UIScrollBar::onAutoSize() {
 	UISkin* tSkin = mSlider->getBackSlider()->getSkin();
 
 	if ( NULL != tSkin ) {
-		size = tSkin->getSize();
+		size = PixelDensity::pxToDp( tSkin->getPixelsSize() );
 
-		setMinSize( PixelDensity::pxToDp( size ) );
+		setMinSize( size );
 
 		if ( mFlags & UI_AUTO_SIZE ) {
 			if ( mSlider->isVertical() ) {
@@ -145,9 +145,9 @@ void UIScrollBar::onAutoSize() {
 		tSkin = mSlider->getSliderButton()->getSkin();
 
 		if ( NULL != tSkin ) {
-			size = tSkin->getSize();
+			size = PixelDensity::pxToDp( tSkin->getPixelsSize() );
 
-			setMinSize( PixelDensity::pxToDp( size ) );
+			setMinSize( size );
 
 			if ( mFlags & UI_AUTO_SIZE ) {
 				if ( mSlider->isVertical() ) {
@@ -160,7 +160,7 @@ void UIScrollBar::onAutoSize() {
 	}
 
 	if ( mWidthPolicy == SizePolicy::WrapContent || mHeightPolicy == SizePolicy::WrapContent ) {
-		size = PixelDensity::dpToPx( mSlider->getSize() ) + mPaddingPx;
+		size = mSlider->getPixelsSize() + mPaddingPx;
 
 		if ( mScrollBarStyle == TwoButtons ) {
 			if ( mSlider->isVertical() ) {
@@ -404,16 +404,11 @@ bool UIScrollBar::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::Orientation: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-
-			if ( "horizontal" == val )
-				setOrientation( UIOrientation::Horizontal );
-			else if ( "vertical" == val )
-				setOrientation( UIOrientation::Vertical );
+		case PropertyId::Orientation:
+			setOrientation( String::iequals( attribute.getValue(), "horizontal" )
+								? UIOrientation::Horizontal
+								: UIOrientation::Vertical );
 			break;
-		}
 		case PropertyId::MinValue:
 			setMinValue( attribute.asFloat() );
 			break;
@@ -430,14 +425,12 @@ bool UIScrollBar::applyProperty( const StyleSheetProperty& attribute ) {
 			setPageStep( attribute.asFloat() );
 			break;
 		case PropertyId::ScrollBarStyle: {
-			std::string val = attribute.asString();
-			String::toLowerInPlace( val );
-
-			if ( "no-buttons" == val || "nobuttons" == val ) {
+			const std::string& val = attribute.getValue();
+			if ( String::iequals( val, "no-buttons" ) || String::iequals( val, "nobuttons" ) )
 				setScrollBarStyle( NoButtons );
-			} else if ( "two-buttons" == val || "twobuttons" == val ) {
+			else if ( String::iequals( val, "two-buttons" ) ||
+					  String::iequals( val, "twobuttons" ) )
 				setScrollBarStyle( TwoButtons );
-			}
 			break;
 		}
 		case PropertyId::BackgroundExpand:

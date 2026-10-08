@@ -112,8 +112,26 @@ class EE_API String {
 	/** Escape string sequence */
 	static String escape( const String& str );
 
+	/** Escape byte string sequence */
+	static std::string escape( std::string_view str );
+
+	static std::string escape( const std::string& str ) {
+		return escape( std::string_view{ str } );
+	}
+
+	static std::string escape( const char* str ) { return escape( std::string_view{ str } ); }
+
 	/** Unescape string sequence */
 	static String unescape( const String& str );
+
+	/** Unescape byte string sequence */
+	static std::string unescape( std::string_view str );
+
+	static std::string unescape( const std::string& str ) {
+		return unescape( std::string_view{ str } );
+	}
+
+	static std::string unescape( const char* str ) { return unescape( std::string_view{ str } ); }
 
 	/** @return string hash */
 	static String::HashType hash( const std::string& str );
@@ -566,6 +584,13 @@ class EE_API String {
 
 	template <typename... Args>
 	static std::string format( std::string_view format, Args&&... args ) {
+		std::string result;
+		formatTo( result, format, std::forward<Args>( args )... );
+		return result;
+	}
+
+	template <typename... Args>
+	static void formatTo( std::string& result, std::string_view format, Args&&... args ) {
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-security"
@@ -578,18 +603,22 @@ class EE_API String {
 			std::snprintf( nullptr, 0, format.data(),
 						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 
-		if ( reqSize < 0 )
-			return "";
+		if ( reqSize < 0 ) {
+			result.clear();
+			return;
+		}
 
 		std::size_t bufSize = static_cast<std::size_t>( reqSize ) + 1;
-		std::string result( bufSize, '\0' );
+		result.resize( bufSize );
 
 		int writtenChars =
 			std::snprintf( &result[0], bufSize, format.data(),
 						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 
-		if ( writtenChars < 0 )
-			return "";
+		if ( writtenChars < 0 ) {
+			result.clear();
+			return;
+		}
 
 		if ( static_cast<std::size_t>( writtenChars ) < bufSize ) {
 			result.resize( static_cast<std::size_t>( writtenChars ) );
@@ -602,7 +631,6 @@ class EE_API String {
 #elif defined( __GNUC__ )
 #pragma GCC diagnostic pop
 #endif
-		return result;
 	}
 
 	/** Format a char buffer */
@@ -734,6 +762,11 @@ class EE_API String {
 	**/
 	String( const String& str );
 
+	/** @brief Move constructor
+	** @param str Instance to move
+	**/
+	String( String&& str ) noexcept;
+
 	/** @brief Copy constructor
 	** @param str Instance to copy
 	**/
@@ -768,6 +801,15 @@ class EE_API String {
 
 	/** Convert the string to a UTF-8 string */
 	std::string toUtf8() const;
+
+	/** Convert the string to UTF-8, reusing the output buffer capacity. */
+	void toUtf8( std::string& output ) const;
+
+	/** Return the UTF-8 size of a UTF-32 string. Text hints can avoid rescanning known ASCII. */
+	static std::size_t utf8EncodedLength( View string, Uint32 textHints = 0 );
+
+	/** Append a UTF-32 string as UTF-8. Text hints can enable faster known-safe paths. */
+	static void appendUtf8( View string, std::string& output, Uint32 textHints = 0 );
 
 	/** Convert the string to a UTF-16 string */
 	std::basic_string<char16_t> toUtf16() const;
@@ -992,6 +1034,9 @@ class EE_API String {
 	String& assign( const String& str, std::size_t pos, std::size_t n );
 
 	String& assign( const char* s );
+
+	/** Assigns UTF-8 text while retaining the current UTF-32 storage capacity. */
+	String& assignUtf8( std::string_view utf8String );
 
 	String& assign( std::size_t n, StringBaseType c );
 
@@ -1350,6 +1395,12 @@ struct TextHints {
 		AllAscii = 1 << 0,
 		AllLatin1 = 1 << 1,
 		NoKerning = 1 << 2,
+		StandardLigatures = 1 << 3,
+		ContextualAlternates = 1 << 4,
+		ContextualLigatures = 1 << 5,
+		DiscretionaryLigatures = 1 << 6,
+		OpenTypeFeatures = StandardLigatures | ContextualAlternates | ContextualLigatures |
+			DiscretionaryLigatures,
 	};
 };
 

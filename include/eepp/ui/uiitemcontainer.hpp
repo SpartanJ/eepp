@@ -72,9 +72,6 @@ template <class TContainer> Node* UIItemContainer<TContainer>::overFind( const V
 		updateWorldPolygon();
 
 		if ( mWorldBounds.contains( Point ) && mPoly.pointInside( Point ) ) {
-			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-			mSceneNode->addMouseOverNode( this );
-
 			for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {
 				if ( NULL != tParent->mItems[i] ) {
 					Node* ChildOver = tParent->mItems[i]->overFind( Point );

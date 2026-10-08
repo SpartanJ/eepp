@@ -4,25 +4,57 @@
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include "git.hpp"
+#include "gitdiff.hpp"
+#include "githistorymodel.hpp"
+#include <eepp/scene/eventconnection.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/ui/models/model.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
+#include <eepp/ui/tools/uimergeview.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <optional>
 
 using namespace EE::UI::Models;
 using namespace EE::UI;
+using namespace EE::Scene;
 
 namespace EE::UI {
 class UITreeView;
 class UIDropDownList;
+class UIDropDownModelList;
 class UIStackWidget;
 class UIListBoxItem;
 class UIMenu;
+class UITextView;
+class UISplitter;
 } // namespace EE::UI
 
 namespace ecode {
 
 class Git;
 class GitBranchModel;
+
+class GitHistoryRefModel : public Model {
+  public:
+	explicit GitHistoryRefModel( std::shared_ptr<GitBranchModel> source, String headLabel );
+
+	size_t rowCount( const ModelIndex& = {} ) const override { return mSourceIndexes.size() + 1; }
+
+	size_t columnCount( const ModelIndex& = {} ) const override { return 1; }
+
+	ModelIndex index( int row, int column, const ModelIndex& parent = {} ) const override;
+
+	Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const override;
+
+	std::string revision( size_t index ) const;
+
+	bool isRevision( size_t index, std::string_view revision ) const;
+
+  private:
+	std::shared_ptr<GitBranchModel> mSource;
+	std::vector<ModelIndex> mSourceIndexes;
+	String mHeadLabel;
+};
 
 static constexpr const char* GIT_EMPTY = "";
 static constexpr const char* GIT_SUCCESS = "success";
@@ -37,7 +69,7 @@ static constexpr const char* GIT_STASH_TOOLTIP_CLASS = "git-stash-tooltip";
 class GitPlugin : public PluginBase {
   public:
 	static PluginDefinition Definition() {
-		return { "git", "Git", "Git integration", GitPlugin::New, { 0, 1, 5 }, GitPlugin::NewSync };
+		return { "git", "Git", "Git integration", GitPlugin::New, { 0, 2, 0 }, GitPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -52,11 +84,21 @@ class GitPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
+	bool hasSettingsPage() const override { return true; }
+
+	void registerSettings( SettingsPage& page ) override;
+
+	void onSaveState( IniFile* state ) override;
+
 	void onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) override;
+
+	FileSystemListenerOptions getFileSystemListenerOptions() const override;
 
 	void onRegister( UICodeEditor* ) override;
 
 	void onUnregister( UICodeEditor* ) override;
+
+	void unregisterEditors() override;
 
 	bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu, const Vector2i& position,
 							  const Uint32& flags ) override;
@@ -78,7 +120,9 @@ class GitPlugin : public PluginBase {
 	bool isSilent() const { return mSilent; }
 
   protected:
-	std::unique_ptr<Git> mGit;
+	MainThreadLifetime<GitPlugin> mLifetime;
+
+	std::shared_ptr<Git> mGit;
 	std::unordered_map<std::string, std::string> mGitBranches;
 	Git::Status mGitStatus;
 	std::vector<std::pair<std::string, std::string>> mRepos;
@@ -88,12 +132,15 @@ class GitPlugin : public PluginBase {
 	std::string mHighlightStyleColor;
 
 	Time mRefreshFreq{ Seconds( 5 ) };
+	Time mDiffGutterDebounceDelay{ Milliseconds( 750 ) };
 	bool mGitFound{ false };
 	bool mTooltipInfoShowing{ false };
 	bool mStatusBarDisplayBranch{ true };
 	bool mStatusBarDisplayModifications{ true };
 	bool mStatusRecurseSubmodules{ true };
 	bool mFileTreeHighlightChanges{ true };
+	static constexpr bool DEFAULT_DIFF_GUTTER_ENABLED = false;
+	bool mDiffGutterEnabled{ DEFAULT_DIFF_GUTTER_ENABLED };
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
 	bool mInitialized{ false };
@@ -109,15 +156,100 @@ class GitPlugin : public PluginBase {
 	UIPushButton* mStatusButton{ nullptr };
 	UITreeView* mBranchesTree{ nullptr };
 	UITreeView* mStatusTree{ nullptr };
+	UITreeView* mHistoryTree{ nullptr };
+	UIDropDownModelList* mHistoryRefDropDown{ nullptr };
+	std::shared_ptr<GitHistoryRefModel> mHistoryRefModel;
+	std::shared_ptr<GitHistoryModel> mHistoryModel;
 	UIDropDownList* mPanelSwicher{ nullptr };
 	UIDropDownList* mRepoDropDown{ nullptr };
 	UIStackWidget* mStackWidget{ nullptr };
-	std::vector<UIWidget*> mStackMap;
+	SmallVector<UIWidget*, 4> mStackMap;
 	UIWidget* mGitContentView{ nullptr };
 	UIWidget* mGitNoContentView{ nullptr };
+	UIWidget* mConflictStateBar{ nullptr };
+	UITextView* mConflictStateText{ nullptr };
 	UILoader* mLoader{ nullptr };
 	std::atomic<int> mRunningUpdateBranches{ 0 };
+	std::atomic<int> mRunningHistoryRequests{ 0 };
+	std::atomic<Uint64> mHistoryGeneration{ 0 };
+	std::string mHistoryRepo;
+	std::string mHistoryRevision{ "HEAD" };
+	bool mUpdatingHistoryRefs{ false };
+	bool mHistoryLoaded{ false };
+	struct CommitDetailsState {
+		UIWidget* view{ nullptr };
+		UITextView* subject{ nullptr };
+		UITextView* author{ nullptr };
+		UITextView* dateEmail{ nullptr };
+		UITextView* message{ nullptr };
+		UITextView* status{ nullptr };
+		UIPushButton* messageToggle{ nullptr };
+		UIPushButton* gitHub{ nullptr };
+		UIWidget* diffContainer{ nullptr };
+		Tools::UIMultiDiffView* diff{ nullptr };
+		std::string messageBody;
+		std::string url;
+		Git::Commit commit;
+		std::string repo;
+		std::atomic<Uint64> generation{ 0 };
+		std::shared_ptr<std::atomic_bool> diffPreparationCancelled;
+		EventConnection closeConnection;
+		bool messageExpanded{ false };
+		bool workingTree{ false };
+
+		void openCommitDetails( GitPlugin& plugin, const Git::Commit& commit, bool detached,
+								bool workingTree = false );
+
+		void loadCommitFiles( GitPlugin& plugin, bool detached );
+
+		void cancelDiffPreparation() {
+			if ( diffPreparationCancelled )
+				diffPreparationCancelled->store( true, std::memory_order_relaxed );
+			diffPreparationCancelled.reset();
+		}
+
+		void reset() {
+			cancelDiffPreparation();
+			++generation;
+			view = nullptr;
+			subject = nullptr;
+			author = nullptr;
+			dateEmail = nullptr;
+			message = nullptr;
+			status = nullptr;
+			messageToggle = nullptr;
+			gitHub = nullptr;
+			diffContainer = nullptr;
+			diff = nullptr;
+			messageBody.clear();
+			url.clear();
+			commit = {};
+			repo.clear();
+			messageExpanded = false;
+			workingTree = false;
+		}
+	};
+	struct DetachedHistoryState {
+		UISplitter* view{ nullptr };
+		UITreeView* tree{ nullptr };
+		UIWidget* detailsHost{ nullptr };
+		EventConnection closeConnection;
+		std::string focusHash;
+		CommitDetailsState details;
+
+		void reset() {
+			view = nullptr;
+			tree = nullptr;
+			detailsHost = nullptr;
+			focusHash.clear();
+			details.reset();
+		}
+	};
+	CommitDetailsState mCommitDetails;
+	DetachedHistoryState mDetachedHistory;
 	std::atomic<int> mRunningUpdateStatus{ 0 };
+	std::atomic<bool> mPendingForcedStatusUpdate{ false };
+	std::shared_ptr<std::atomic<int>> mRunningAsyncTasks{ std::make_shared<std::atomic<int>>( 0 ) };
 	Clock mLastBranchesUpdate;
 	Mutex mGitBranchMutex;
 	Mutex mGitStatusMutex;
@@ -125,6 +257,18 @@ class GitPlugin : public PluginBase {
 	Mutex mRepoMutex;
 	Mutex mReposMutex;
 	String mLastCommitMsg;
+	struct GitConflictSession {
+		std::string repoPath;
+		std::vector<std::string> files;
+		size_t currentFile{ 0 };
+		Uint64 generation{ 0 };
+		Git::GitOperation operation{ Git::GitOperation::None };
+	};
+	UnorderedMap<std::string, std::unique_ptr<GitConflictSession>> mConflictSessions;
+	std::string mActiveConflictRepo;
+	Tools::UIMergeView* mConflictView{ nullptr };
+	EventConnection mConflictViewCloseConnection;
+	Uint64 mConflictGeneration{ 0 };
 	Uint32 mRepositionCbId{ 0 };
 
 	struct CustomTokenizer {
@@ -135,6 +279,28 @@ class GitPlugin : public PluginBase {
 	std::optional<SyntaxDefinition> mTooltipCustomSyntaxDef;
 	Uint32 mModelChangedId{ 0 };
 	Uint32 mModelStylerId{ 0 };
+
+	enum class GitBaselineState : Uint8 { Pending, Loading, Loaded, Unavailable };
+
+	struct GitDocumentDiff {
+		std::string path;
+		std::string repoPath;
+		std::shared_ptr<const std::string> baseline;
+		std::vector<GitLineDecoration> lines;
+		Uint64 generation{ 0 };
+		Uint64 baselineGeneration{ 0 };
+		GitBaselineState baselineState{ GitBaselineState::Pending };
+		bool deletedAtEOF{ false };
+		bool diffRunning{ false };
+		bool diffPending{ false };
+		Uint32 identity{ 0 };
+	};
+	UnorderedMap<TextDocument*, GitDocumentDiff> mDocumentDiffs;
+	std::string mDiffSnapshotBuffer;
+	Uint32 mNextDocumentDiffIdentity{ 0 };
+	Color mDiffAddedColor{ 0, 150, 32, 80 };
+	Color mDiffModifiedColor{ 220, 170, 0, 80 };
+	Color mDiffDeletedColor{ 180, 0, 32, 80 };
 
 	GitPlugin( PluginManager* pluginManager, bool sync );
 
@@ -148,7 +314,49 @@ class GitPlugin : public PluginBase {
 
 	void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& listeners ) override;
 
+	void onDocumentLoaded( TextDocument* doc ) override;
+
+	void onDocumentChanged( UICodeEditor*, TextDocument* oldDoc ) override;
+
+	void onUnregisterDocument( TextDocument* doc ) override;
+
+	void onRegisterEditor( UICodeEditor* editor ) override;
+
+	void onUnregisterEditor( UICodeEditor* editor ) override;
+
+	void drawGutter( UICodeEditor* editor, const Int64& index, const Vector2f& screenStart,
+					 const Float& lineHeight, const Float& gutterWidth,
+					 const Float& fontSize ) override;
+
+	void minimapDrawBefore( UICodeEditor* editor, const DocumentLineRange& docLineRange,
+							const DocumentViewLineRange& docViewRange, const Vector2f& linePos,
+							const Vector2f& lineSize, const Float& charWidth,
+							const Float& gutterWidth,
+							const DrawTextRangesFn& drawTextRanges ) override;
+
 	Color getVarColor( const std::string& var );
+
+	void updateDiffGutterColors();
+
+	const Color& getDiffGutterColor( GitLineChange change, bool deleted = false ) const;
+
+	void initializeDiffGutter();
+
+	void ensureDocumentDiff( TextDocument* doc );
+
+	void loadDocumentDiffBaseline( TextDocument* doc );
+
+	void scheduleDocumentDiff( TextDocument* doc );
+
+	bool isDocumentAddedInGit( const GitDocumentDiff& state );
+
+	void resolveAddedDocumentDiffs();
+
+	void resetDocumentDiff( TextDocument* doc, GitDocumentDiff& state );
+
+	void invalidateAllDocumentDiffBaselines();
+
+	void redrawDocumentDiff( TextDocument* doc );
 
 	void blame( UICodeEditor* editor );
 
@@ -170,13 +378,20 @@ class GitPlugin : public PluginBase {
 
 	void branchCreate();
 
-	void commit( const std::string& repoPath );
+	void commit( const std::string& repoPath, bool mergeCommit = false );
 
 	void stage( const std::vector<std::string>& files );
 
 	void unstage( const std::vector<std::string>& files );
 
+	void deleteUntrackedFiles( std::vector<std::string> files );
+
+	enum class FileOperation { Stage, Unstage, Discard, RestoreHead };
+
+	void runFileOperation( std::vector<std::string> files, FileOperation operation );
+
 	void discard( const std::vector<std::string>& files );
+	void discardConflicts( const std::vector<std::string>& files );
 
 	void discard( const std::string& file );
 
@@ -184,7 +399,30 @@ class GitPlugin : public PluginBase {
 
 	void diff( const std::string& file, Git::GitStatusType status );
 
+	void diff( std::vector<Git::DiffFile> files );
+
 	void openFile( const std::string& file );
+
+	void openConflictResolver( const std::string& file );
+
+	void loadConflictResolverView( std::shared_ptr<Doc::TextDocument> resultDocument,
+								   Git::ConflictFile conflict, std::string repository,
+								   std::vector<std::string> files, size_t currentFile,
+								   Git::GitOperation operation, Uint64 generation );
+
+	void recreateConflict();
+
+	void saveAndStageConflict();
+
+	void openAdjacentConflict( bool next );
+
+	void continueConflictOperation();
+
+	void abortConflictOperation();
+
+	void acceptConflictSide( const std::string& file, bool stage2 );
+
+	void runAsyncTask( std::function<void()> task );
 
 	void updateStatus( bool force = false );
 
@@ -196,13 +434,53 @@ class GitPlugin : public PluginBase {
 
 	void updateBranches( bool force = false );
 
+	void ensureHistoryLoaded();
+
+	void updateHistoryHeader();
+
+	void updateHistoryRefs( const std::shared_ptr<GitBranchModel>& model );
+
+	void reloadHistory();
+
+	void invalidateHistory();
+
+	void loadHistoryPage( GitHistoryModel::Node* node, Git::HistoryQuery query, bool append );
+
+	void activateHistoryIndex( const ModelIndex& index, bool expand );
+
+	void openCommitDetails( const Git::Commit& commit );
+
+	void openWorkingTreeDetails( bool detached );
+
+	void showGitHistory( const Git::Commit* commit = nullptr );
+
+	void focusDetachedHistory();
+
+	void openHistoryMenu( const ModelIndex& index, bool showHistoryAction );
+
+	void addTag( const Git::Commit& commit );
+
+	void createBranchAtCommit( const Git::Commit& commit );
+
+	void revertCommit( const Git::Commit& commit );
+
+	bool canStartGitOperation();
+
+	void openDetachedCommitDetails( const Git::Commit& commit );
+
+	void ensureDetachedCommitDetailsHost();
+
+	std::string detachedHistoryTitle();
+
+	void updateDetachedHistoryTitle();
+
 	void buildSidePanelTab();
 
 	void updateBranchesUI( std::shared_ptr<GitBranchModel> );
 
 	void openBranchMenu( const Git::Branch& branch );
 
-	void openFileStatusMenu( const Git::DiffFile& file );
+	void openFileStatusMenu( std::vector<Git::DiffFile> files );
 
 	void stashPush( const std::vector<std::string>& files, const std::string& repoPath );
 
@@ -212,7 +490,14 @@ class GitPlugin : public PluginBase {
 
 	void runAsync( std::function<Git::Result()> fn, bool updateStatus, bool updateBranches,
 				   bool displaySuccessMsg = false, bool updateBranchesOnError = false,
-				   bool updateStatusOnError = false );
+				   bool updateStatusOnError = false, bool historyChanged = false );
+	void runMergeLikeAsync( std::function<Git::Result( Git& )> fn, const std::string& repoPath );
+
+	GitConflictSession* conflictSession( const std::string& repoPath );
+
+	GitConflictSession* activeConflictSession();
+
+	bool updateConflictSessions( UnorderedMap<std::string, Git::ConflictState>& conflictStates );
 
 	void menuAdd( UIMenu* menu, const std::string& cmd, const std::string& text,
 				  const std::string& icon = "",

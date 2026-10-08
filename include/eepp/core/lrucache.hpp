@@ -68,6 +68,17 @@ class DynamicLRU {
 		mCacheMap.clear();
 	}
 
+	template <typename Predicate> void eraseIf( Predicate predicate ) {
+		for ( auto it = mCacheList.begin(); it != mCacheList.end(); ) {
+			if ( predicate( it->first, it->second ) ) {
+				mCacheMap.erase( it->first );
+				it = mCacheList.erase( it );
+			} else {
+				++it;
+			}
+		}
+	}
+
 	[[nodiscard]] std::size_t size() const { return mCacheList.size(); }
 };
 
@@ -164,6 +175,19 @@ class StaticLRU {
 		std::fill( next_.begin(), next_.end(), NONE );
 		head_ = tail_ = NONE;
 		used_ = 0;
+	}
+
+	template <typename Predicate> void eraseIf( Predicate predicate ) {
+		std::vector<std::pair<KeyT, ValueT>> retained;
+		retained.reserve( used_ );
+		for ( std::uint16_t idx = head_; idx < N; idx = next_[idx] ) {
+			if ( !predicate( keys_[idx], vals_[idx] ) )
+				retained.emplace_back( std::move( keys_[idx] ), std::move( vals_[idx] ) );
+		}
+
+		clear();
+		for ( auto it = retained.rbegin(); it != retained.rend(); ++it )
+			put( std::move( it->first ), std::move( it->second ) );
 	}
 
 	[[nodiscard]] std::size_t size() const noexcept { return used_; }
@@ -283,6 +307,9 @@ class LRUCache {
 	std::optional<ValueT> get( KeyParamT key ) { return impl_.get( key ); }
 	void put( KeyT key, ValueT value ) { impl_.put( std::move( key ), std::move( value ) ); }
 	void clear() { impl_.clear(); }
+	template <typename Predicate> void eraseIf( Predicate predicate ) {
+		impl_.eraseIf( std::move( predicate ) );
+	}
 
 	static constexpr std::size_t capacity() { return Capacity; }
 	[[nodiscard]] std::size_t size() const { return impl_.size(); }

@@ -19,6 +19,8 @@ class EE_API FrameBufferFBO : public FrameBuffer {
 
 	void bind();
 
+	void bindAsReadTarget();
+
 	void unbind();
 
 	void resize( const Uint32& Width, const Uint32& Height );
@@ -42,11 +44,12 @@ class EE_API FrameBufferFBO : public FrameBuffer {
 	Int32 mLastCB;
 	Int32 mLastDB;
 	Int32 mLastSB;
+	bool mCreated;
 
 	bool create( const Uint32& Width, const Uint32& Height );
 
-	bool create( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool useColorBuffer,
-				 bool DepthBuffer, const Uint32& channels );
+	bool create( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer,
+				 bool useColorBuffer, const Uint32& channels );
 
 	void bindFrameBuffer();
 

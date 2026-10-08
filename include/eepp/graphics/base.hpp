@@ -1,7 +1,7 @@
 #ifndef EE_GRAPHICS_BASE
 #define EE_GRAPHICS_BASE
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
 
 #include <eepp/math/math.hpp>
 #include <eepp/math/rect.hpp>

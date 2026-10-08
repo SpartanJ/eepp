@@ -2,8 +2,10 @@
 #define EE_UI_DOC_TEXTRANGE_HPP
 
 #include <algorithm>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/graphics/textselectionrange.hpp>
 #include <eepp/ui/doc/textposition.hpp>
+#include <vector>
 
 using namespace EE::Graphics;
 
@@ -146,13 +148,15 @@ class EE_API TextRange {
 	static TextSelectionRange convertToOffset( const StringType& text, const TextRange& range );
 };
 
-class EE_API TextRanges : public std::vector<TextRange> {
+class EE_API TextRanges : public SmallVector<TextRange, 2> {
   public:
 	TextRanges();
 
 	TextRanges( const std::vector<TextRange>& ranges );
 
-	TextRanges( const TextRange& ranges );
+	TextRanges( std::initializer_list<TextRange> ranges );
+
+	TextRanges( const TextRange& range );
 
 	bool isSorted() const;
 

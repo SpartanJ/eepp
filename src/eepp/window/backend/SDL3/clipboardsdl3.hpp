@@ -27,6 +27,17 @@ class EE_API ClipboardSDL : public Clipboard {
 
 	void setPrimarySelectionText( const std::string& text );
 
+	bool setData( DataCallback callback, CleanupCallback cleanup,
+				  const std::vector<std::string>& mimeTypes );
+
+	bool clearData();
+
+	Data getData( const std::string& mimeType );
+
+	std::vector<std::string> getMimeTypes();
+
+	bool hasData( const std::string& mimeType ) const;
+
   protected:
 	friend class WindowSDL;
 

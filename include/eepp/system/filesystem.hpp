@@ -1,9 +1,11 @@
 #ifndef EE_SYSTEM_FILESYSTEM_HPP
 #define EE_SYSTEM_FILESYSTEM_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/string.hpp>
 #include <eepp/system/fileinfo.hpp>
 #include <eepp/system/scopedbuffer.hpp>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -78,6 +80,11 @@ class EE_API FileSystem {
 
 	/** Deletes a file from the file system. */
 	static bool fileRemove( const std::string& filepath );
+
+	/** Recursively deletes a directory and all of its contents.
+	 * @return True if the directory was removed or did not exist, false on error.
+	 */
+	static bool dirRemoveAll( const std::string& path );
 
 	/** Moves a file or folder to the destination path
 	 * @param fromPath The path of the file or folder to move

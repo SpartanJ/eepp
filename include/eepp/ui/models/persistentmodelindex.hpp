@@ -18,7 +18,7 @@ class PersistentHandle {
 	ModelIndex mIndex;
 };
 
-class PersistentModelIndex {
+class EE_API PersistentModelIndex {
   public:
 	PersistentModelIndex() {}
 	PersistentModelIndex( ModelIndex const& );

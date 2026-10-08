@@ -135,6 +135,14 @@ class EE_API UITooltip : public UIWidget {
 
 	bool isWordWrap() const;
 
+	void setTextHintsOverride( Uint32 value, Uint32 mask = TextHints::OpenTypeFeatures );
+
+	void clearTextHintsOverride();
+
+	Uint32 getTextHints() const;
+
+	virtual void onTextHintsChanged();
+
   protected:
 	Text* mTextCache{ nullptr };
 	UIFontStyleConfig mStyleConfig;
@@ -145,6 +153,8 @@ class EE_API UITooltip : public UIWidget {
 	TextTransform::Value mTextTransform{ TextTransform::None };
 	bool mDontAutoHideOnMouseMove{ false };
 	bool mUsingCustomStyling{ false };
+	Uint32 mTextHintsOverride{ 0 };
+	Uint32 mTextHintsOverrideMask{ 0 };
 
 	UITooltip();
 

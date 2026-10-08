@@ -6,6 +6,7 @@
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/window/engine.hpp>
 
 #ifndef INDEX_ALREADY_EXISTS
 #define INDEX_ALREADY_EXISTS eeINDEX_NOT_FOUND
@@ -17,12 +18,17 @@ namespace EE { namespace UI { namespace Models {
 
 FileSystemModel::Node::Node( const std::string& rootPath, FileSystemModel& model,
 							 const std::shared_ptr<ThreadPool>& threadPool ) :
-	mInfo( FileSystem::getRealPath( rootPath ) ) {
+	mModel( &model ), mInfo( FileSystem::getRealPath( rootPath ) ) {
 	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
 	mMimeType = "";
 	mHash = String::hash( mName );
 	mDisplayName = mName;
+	{
+		Lock l( model.mResourceLock );
+		mId = model.mNextNodeId++;
+		model.mAliveNodes.insert( this );
+	}
 	if ( threadPool ) {
 		mQueuedForTraversal = true;
 		threadPool->run( [this, &model]() {
@@ -35,13 +41,19 @@ FileSystemModel::Node::Node( const std::string& rootPath, FileSystemModel& model
 	}
 }
 
-FileSystemModel::Node::Node( FileInfo&& info, FileSystemModel::Node* parent ) :
-	mParent( parent ), mInfo( info ) {
+FileSystemModel::Node::Node( FileInfo&& info, FileSystemModel::Node* parent,
+							 const FileSystemModel& model ) :
+	mParent( parent ), mModel( &model ), mInfo( info ) {
 	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
 	mHash = String::hash( mName );
 	mDisplayName = mName;
 	updateMimeType();
+	{
+		Lock l( model.mResourceLock );
+		mId = model.mNextNodeId++;
+		model.mAliveNodes.insert( this );
+	}
 }
 
 const std::string& FileSystemModel::Node::fullPath() const {
@@ -110,6 +122,10 @@ FileSystemModel::Node::~Node() {
 	while ( mIsTraversing )
 		Sys::sleep( Milliseconds( 1 ) );
 	cleanChildren();
+	if ( mModel ) {
+		Lock l( mModel->mResourceLock );
+		mModel->mAliveNodes.erase( this );
+	}
 }
 
 FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& childName,
@@ -129,7 +145,7 @@ FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& ch
 		if ( node->mParent == this && node->mHash == hash )
 			return nullptr;
 
-	return eeNew( Node, ( std::move( file ), this ) );
+	return eeNew( Node, ( std::move( file ), this, model ) );
 }
 
 void FileSystemModel::Node::rename( const FileInfo& file ) {
@@ -159,7 +175,7 @@ ModelIndex FileSystemModel::Node::index( const FileSystemModel& model, int colum
 		return {};
 	for ( size_t row = 0; row < mParent->mChildren.size(); ++row ) {
 		if ( mParent->mChildren[row] == this )
-			return model.createIndex( row, column, const_cast<Node*>( this ) );
+			return model.createIndex( row, column, const_cast<Node*>( this ), mId );
 	}
 	eeASSERT( false );
 	return {};
@@ -227,7 +243,7 @@ bool FileSystemModel::Node::refresh( const FileSystemModel& model ) {
 			if ( node->info().isDirectory() && node->mHasTraversed )
 				node->refresh( model );
 		} else {
-			newChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
+			newChildren.emplace_back( eeNew( Node, ( std::move( file ), this, model ) ) );
 		}
 	}
 
@@ -276,7 +292,7 @@ bool FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 				if ( displayCfg.fileIsVisibleFn &&
 					 !displayCfg.fileIsVisibleFn( file.getFilepath() ) )
 					continue;
-				newChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
+				newChildren.emplace_back( eeNew( Node, ( std::move( file ), this, model ) ) );
 			} else {
 				accepted = false;
 				size_t psize = patterns.size();
@@ -298,7 +314,7 @@ bool FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 				}
 
 				if ( accepted )
-					newChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
+					newChildren.emplace_back( eeNew( Node, ( std::move( file ), this, model ) ) );
 			}
 		}
 	}
@@ -370,6 +386,7 @@ FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemM
 	mThreadPool( threadPool ) {
 	mRoot = std::make_unique<Node>( mRootPath, *this, threadPool );
 	mInitOK = true;
+	FileSystem::dirAddSlashAtEnd( mRealRootPath );
 	setupColumnNames( translator );
 	invalidate();
 }
@@ -387,12 +404,31 @@ const std::string& FileSystemModel::getRootPath() const {
 void FileSystemModel::setRootPath( const std::string& rootPath ) {
 	mRootPath = rootPath;
 	mRealRootPath = FileSystem::getRealPath( mRootPath );
+	FileSystem::dirAddSlashAtEnd( mRealRootPath );
 	update();
 }
 
 FileSystemModel::Node* FileSystemModel::getNodeFromPath( std::string path, bool folderNode,
 														 bool invalidateTree ) {
+	// A configured root can be an alias of its canonical path (for example, /var maps to
+	// /private/var on macOS). Translate that prefix first so a moved or deleted leaf, which can no
+	// longer be resolved by realpath(), still maps to the canonical paths stored by the model.
+	const bool rootMatches =
+		!mRootPath.empty() &&
+		( path == mRootPath ||
+		  ( String::startsWith( path, mRootPath ) &&
+			( mRootPath.back() == '/' || mRootPath.back() == '\\' ||
+			  ( path.size() > mRootPath.size() &&
+				( path[mRootPath.size()] == '/' || path[mRootPath.size()] == '\\' ) ) ) ) );
+	if ( mRootPath != mRealRootPath && rootMatches )
+		path.replace( 0, mRootPath.size(), mRealRootPath );
 	path = FileSystem::getRealPath( path );
+	// The canonical root is stored with a trailing slash, while realpath() returns the
+	// directory itself without one. Root-level file events need this parent node.
+	if ( !mRealRootPath.empty() &&
+		 ( path == mRealRootPath || ( path.size() + 1 == mRealRootPath.size() &&
+									  String::startsWith( mRealRootPath, path ) ) ) )
+		return mRoot.get();
 	if ( folderNode && !FileSystem::isDirectory( path ) )
 		path = FileSystem::fileRemoveFileName( path );
 	if ( String::startsWith( path, mRealRootPath ) )
@@ -428,7 +464,9 @@ FileSystemModel::Node* FileSystemModel::getNodeFromPath( std::string path, bool 
 
 std::string_view FileSystemModel::getNodeRelativePath( const Node* node ) const {
 	auto rp = std::string_view{ node->fullPath() };
-	if ( mRootPath.size() < rp.size() )
+	if ( mRealRootPath.size() < rp.size() && String::startsWith( rp, mRealRootPath ) )
+		return rp.substr( mRealRootPath.size() );
+	if ( mRootPath.size() < rp.size() && String::startsWith( rp, mRootPath ) )
 		return rp.substr( mRootPath.size() );
 	return rp;
 }
@@ -438,6 +476,13 @@ void FileSystemModel::reload() {
 }
 
 void FileSystemModel::refresh() {
+	// NOTE: refresh() mutates the node tree (deletes stale nodes) on the
+	// calling thread, which may be a worker. The resource lock protects the
+	// mutation itself, but readers that dereference nodes without holding the
+	// lock (data(), rowCount(), index(), ...) can race with the deletion: the
+	// live-node registry is crash hardening, not full thread safety. Fully
+	// closing this race requires applying structural changes on the main
+	// thread or locking every access.
 	{
 		Lock l( resourceMutex() );
 		mRoot->refresh( *this );
@@ -451,26 +496,65 @@ void FileSystemModel::update() {
 }
 
 const FileSystemModel::Node& FileSystemModel::node( const ModelIndex& index ) const {
-	return nodeRef( index );
-}
-
-FileSystemModel::Node& FileSystemModel::nodeRef( const ModelIndex& index ) const {
-	if ( !index.isValid() )
-		return *mRoot;
-	Node* node = static_cast<Node*>( index.internalData() );
+	// Unchecked accessor: the index must be valid (or the root {}), and its
+	// node must still be alive. Callers that cannot guarantee this must use
+	// nodePtr() and handle null. Violating the precondition is undefined
+	// behavior (the debug assert fires; release dereferences the pointer).
+	Node* node = nodeRef( index );
+	eeASSERT( node != nullptr );
 	return *node;
 }
 
+const FileSystemModel::Node* FileSystemModel::nodePtr( const ModelIndex& index ) const {
+	return nodeRef( index );
+}
+
+FileSystemModel::Node* FileSystemModel::nodeRef( const ModelIndex& index ) const {
+	// An invalid index is the root; only a valid-looking index whose node is
+	// gone (deleted by a background refresh, or its address reused by a newer
+	// node) resolves to null.
+	if ( !index.isValid() )
+		return mRoot.get();
+	Node* node = static_cast<Node*>( index.internalData() );
+	// A stale index (node already deleted by a background refresh, or its
+	// address reused by a newer node) must not be dereferenced. The address +
+	// generation check rejects both cases; the next model update drops the
+	// stale index from the views. The check runs under the resource lock, but
+	// the returned pointer is used after the lock is released: a concurrent
+	// refresh() can still delete the node in between (see refresh()).
+	if ( !isNodeAlive( node, index.internalId() ) )
+		return nullptr;
+	return node;
+}
+
+bool FileSystemModel::isNodeAlive( const Node* node, Uint64 id ) const {
+	Lock l( mResourceLock );
+	return mAliveNodes.find( node ) != mAliveNodes.end() && node->mId == id;
+}
+
+bool FileSystemModel::isValid( const ModelIndex& index ) const {
+	if ( !index.isValid() )
+		return false;
+	Lock l( mResourceLock );
+	const Node* node = static_cast<const Node*>( index.internalData() );
+	if ( mAliveNodes.find( node ) == mAliveNodes.end() ||
+		 node->mId != static_cast<Uint64>( index.internalId() ) )
+		return false;
+	return Model::isValid( index );
+}
+
 size_t FileSystemModel::rowCount( const ModelIndex& index ) const {
-	Node& node = const_cast<Node&>( this->node( index ) );
-	if ( node.mIsTraversing )
+	Node* node = nodeRef( index );
+	if ( !node )
 		return 0;
-	bool isThreaded = mThreadPool && &node == mRoot.get();
-	bool res = node.refreshIfNeeded( *this, isThreaded ? mThreadPool : nullptr );
+	if ( node->mIsTraversing )
+		return 0;
+	bool isThreaded = mThreadPool && node == mRoot.get();
+	bool res = node->refreshIfNeeded( *this, isThreaded ? mThreadPool : nullptr );
 	if ( isThreaded && res )
 		return 0;
-	if ( node.info().isDirectory() )
-		return node.mChildren.size();
+	if ( node->info().isDirectory() )
+		return node->mChildren.size();
 	return 0;
 }
 
@@ -479,10 +563,12 @@ size_t FileSystemModel::columnCount( const ModelIndex& ) const {
 }
 
 bool FileSystemModel::hasChildren( const ModelIndex& index ) const {
-	Node& node = const_cast<Node&>( this->node( index ) );
-	if ( node.mInfoDirty )
-		node.fetchData( node.fullPath() );
-	return node.mInfo.isDirectory();
+	Node* node = nodeRef( index );
+	if ( !node )
+		return false;
+	if ( node->mInfoDirty )
+		node->fetchData( node->fullPath() );
+	return node->mInfo.isDirectory();
 }
 
 std::string FileSystemModel::columnName( const size_t& column ) const {
@@ -508,34 +594,37 @@ static std::string permissionString( const FileInfo& info ) {
 Variant FileSystemModel::data( const ModelIndex& index, ModelRole role ) const {
 	eeASSERT( index.isValid() );
 
-	auto& node = this->nodeRef( index );
+	Node* node = nodeRef( index );
+	if ( !node )
+		return {};
 
 	switch ( role ) {
 		case ModelRole::Custom: {
-			return Variant( node.info().getFilepath().c_str() );
+			return Variant( node->info().getFilepath().c_str() );
 		}
 		case ModelRole::Sort: {
 			switch ( index.column() ) {
 				case Column::Icon:
-					return node.info().isDirectory() ? 0 : 1;
+					return node->info().isDirectory() ? 0 : 1;
 				case Column::Name:
-					return Variant( node.getName().c_str() );
+					return Variant( node->getName().c_str() );
 				case Column::Size:
-					return node.info().getSize();
+					return node->info().getSize();
 				case Column::Owner:
-					return node.info().getOwnerId();
+					return node->info().getOwnerId();
 				case Column::Group:
-					return node.info().getGroupId();
+					return node->info().getGroupId();
 				case Column::Permissions:
-					return Variant( permissionString( node.info() ) );
+					return Variant( permissionString( node->info() ) );
 				case Column::ModificationTime:
-					return node.info().getModificationTime();
+					return node->info().getModificationTime();
 				case Column::Inode:
-					return node.info().getInode();
+					return node->info().getInode();
 				case Column::Path:
-					return Variant( node.info().getFilepath().c_str() );
+					return Variant( node->info().getFilepath().c_str() );
 				case Column::SymlinkTarget:
-					return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant( "" );
+					return node->info().isLink() ? Variant( node->info().linksTo() )
+												 : Variant( "" );
 				default:
 					eeASSERT( false );
 			}
@@ -544,33 +633,34 @@ Variant FileSystemModel::data( const ModelIndex& index, ModelRole role ) const {
 		case ModelRole::Display: {
 			switch ( index.column() ) {
 				case Column::Icon:
-					return iconFor( node, index );
+					return iconFor( *node, index );
 				case Column::Name:
-					return Variant( &node.getDisplayName() );
+					return Variant( &node->getDisplayName() );
 				case Column::Size:
-					return Variant( FileSystem::sizeToString( node.info().getSize() ) );
+					return Variant( FileSystem::sizeToString( node->info().getSize() ) );
 				case Column::Owner:
-					return Variant( String::toString( node.info().getOwnerId() ) );
+					return Variant( String::toString( node->info().getOwnerId() ) );
 				case Column::Group:
-					return Variant( String::toString( node.info().getGroupId() ) );
+					return Variant( String::toString( node->info().getGroupId() ) );
 				case Column::Permissions:
-					return Variant( permissionString( node.info() ) );
+					return Variant( permissionString( node->info() ) );
 				case Column::ModificationTime:
-					return Variant( Sys::epochToString( node.info().getModificationTime() ) );
+					return Variant( Sys::epochToString( node->info().getModificationTime() ) );
 				case Column::Inode:
-					return Variant( String::toString( node.info().getInode() ) );
+					return Variant( String::toString( node->info().getInode() ) );
 				case Column::Path:
-					return Variant( node.info().getFilepath().c_str() );
+					return Variant( node->info().getFilepath().c_str() );
 				case Column::SymlinkTarget:
-					return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant( "" );
+					return node->info().isLink() ? Variant( node->info().linksTo() )
+												 : Variant( "" );
 			}
 			break;
 		}
 		case ModelRole::Icon: {
-			return iconFor( node, index );
+			return iconFor( *node, index );
 		}
 		case ModelRole::Class: {
-			return stylizeModel( index, &node );
+			return stylizeModel( index, node );
 		}
 		default: {
 		}
@@ -582,26 +672,29 @@ Variant FileSystemModel::data( const ModelIndex& index, ModelRole role ) const {
 ModelIndex FileSystemModel::parentIndex( const ModelIndex& index ) const {
 	if ( !index.isValid() )
 		return {};
-	auto& node = this->node( index );
-	if ( !node.getParent() ) {
-		eeASSERT( &node == mRoot.get() );
+	Node* node = nodeRef( index );
+	if ( !node )
+		return {};
+	if ( !node->getParent() ) {
+		eeASSERT( node == mRoot.get() );
 		return {};
 	}
-	return node.getParent()->index( *this, index.column() );
+	return node->getParent()->index( *this, index.column() );
 }
 
 ModelIndex FileSystemModel::index( int row, int column, const ModelIndex& parent ) const {
 	if ( row < 0 || column < 0 )
 		return {};
-	auto& node = this->node( parent );
-	bool isThreaded = mThreadPool && &node == mRoot.get();
-	bool res =
-		const_cast<Node&>( node ).refreshIfNeeded( *this, isThreaded ? mThreadPool : nullptr );
+	Node* node = nodeRef( parent );
+	if ( !node )
+		return {};
+	bool isThreaded = mThreadPool && node == mRoot.get();
+	bool res = node->refreshIfNeeded( *this, isThreaded ? mThreadPool : nullptr );
 	if ( isThreaded && res )
 		return {};
-	if ( static_cast<size_t>( row ) >= node.mChildren.size() )
+	if ( static_cast<size_t>( row ) >= node->mChildren.size() )
 		return {};
-	return createIndex( row, column, node.mChildren[row] );
+	return createIndex( row, column, node->mChildren[row], node->mChildren[row]->mId );
 }
 
 UIIcon* FileSystemModel::iconFor( const Node& node, const ModelIndex& index ) const {
@@ -641,11 +734,14 @@ void FileSystemModel::setPreviouslySelectedIndex( const ModelIndex& previouslySe
 	mPreviouslySelectedIndex = previouslySelectedIndex;
 }
 
-size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
+size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file,
+									  const Node* excludedNode ) {
 	std::vector<FileInfo> files;
 	files.reserve( parent->mChildren.size() + 1 );
 
 	for ( Node* nodeFile : parent->mChildren ) {
+		if ( nodeFile == excludedNode )
+			continue;
 		files.emplace_back( nodeFile->info() );
 
 		if ( nodeFile->info().getFileName() == file.getFileName() )
@@ -676,12 +772,14 @@ size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
 	return pos;
 }
 
-bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
+bool FileSystemModel::handleFileEventLocked( const FileEvent& event,
+											 const FileInfo* preparedFile ) {
 	switch ( event.type ) {
 		case FileSystemEventType::Add: {
-			FileInfo file( event.directory + event.filename, false );
+			FileInfo file =
+				preparedFile ? *preparedFile : FileInfo( event.directory + event.filename, false );
 
-			if ( !file.exists() )
+			if ( !preparedFile && !file.exists() )
 				return false;
 
 			if ( ( getMode() == Mode::DirectoriesOnly && !file.isDirectory() ) ||
@@ -701,11 +799,6 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			if ( childNodeExists )
 				return false;
 
-			Node* childNode = parent->createChild( file.getFileName(), *this );
-
-			if ( childNode == nullptr || childNode->getName().empty() )
-				return false;
-
 			size_t pos = getFileIndex( parent, file );
 
 			const auto& displayCfg = getDisplayConfig();
@@ -715,6 +808,15 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 			if ( pos == INDEX_ALREADY_EXISTS )
 				return false;
+
+			// The listener can provide metadata captured on its worker thread. Construct the node
+			// from that snapshot instead of probing the path again on the UI thread.
+			Node* childNode = eeNew( Node, ( FileInfo( file ), parent, *this ) );
+
+			if ( childNode == nullptr || childNode->getName().empty() ) {
+				eeDelete( childNode );
+				return false;
+			}
 
 			beginInsertRows( parent->index( *this, 0 ), pos, pos );
 
@@ -727,17 +829,23 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 				}
 			}
 
-			endInsertRows();
-
 			forEachView( [&]( UIAbstractView* view ) {
 				std::vector<ModelIndex> newIndexes;
 				view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
 					Node* curNode = static_cast<Node*>( selectedIndex.internalData() );
+					if ( !isNodeAlive( curNode, selectedIndex.internalId() ) ) {
+						// Stale selection entry (node deleted by a background
+						// refresh): keep it untouched, the next model update
+						// drops it. Never dereference freed memory.
+						newIndexes.emplace_back( selectedIndex );
+						return;
+					}
 					if ( curNode->getParent() == parent ) {
 						if ( selectedIndex.row() >= (Int64)pos ) {
-							newIndexes.emplace_back( this->index( selectedIndex.row() + 1,
-																  selectedIndex.column(),
-																  selectedIndex.parent() ) );
+							newIndexes.emplace_back(
+								createIndex( static_cast<int>( selectedIndex.row() + 1 ),
+											 static_cast<int>( selectedIndex.column() ), curNode,
+											 curNode->mId ) );
 						} else {
 							newIndexes.emplace_back( selectedIndex );
 						}
@@ -748,10 +856,13 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 				view->getSelection().set( newIndexes, false );
 			} );
 
+			endInsertRows();
+
 			break;
 		}
 		case FileSystemEventType::Delete: {
-			FileInfo file( event.directory + event.filename, false );
+			FileInfo file =
+				preparedFile ? *preparedFile : FileInfo( event.directory + event.filename, false );
 
 			auto* child = getNodeFromPath( file.getFilepath(), file.isDirectory(), false );
 			if ( !child )
@@ -768,21 +879,37 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			Int64 pos = index.row();
 
 			forEachView( [&]( UIAbstractView* view ) {
-				view->getSelection().removeAllMatching( [&]( auto& selectionIndex ) {
+				std::vector<ModelIndex> keptIndexes;
+				view->getSelection().forEachIndex( [&]( const ModelIndex& selectionIndex ) {
 					Node* node = static_cast<Node*>( index.internalData() );
 					Node* nodeSelected = static_cast<Node*>( selectionIndex.internalData() );
-					return selectionIndex.internalData() == index.internalData() ||
-						   ( node->childCount() > 0 && nodeSelected->inParentTree( node ) );
+					// Drop stale entries without dereferencing them.
+					if ( !isNodeAlive( nodeSelected, selectionIndex.internalId() ) )
+						return;
+					if ( selectionIndex.internalData() != index.internalData() &&
+						 !( node->childCount() > 0 && nodeSelected->inParentTree( node ) ) )
+						keptIndexes.emplace_back( selectionIndex );
 				} );
+				// A model-driven cleanup must not emit user callbacks while this operation retains
+				// nodes.
+				view->getSelection().set( keptIndexes, false );
 			} );
 
-			if ( beginDeleteRows( index.parent(), index.row(), index.row() ) ) {
-				{
-					Lock l( mResourceLock );
-					eeDelete( parent->mChildren[index.row()] );
-					parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+			// Use the already resolved index. Re-querying rowCount(parent) here can traverse a lazy
+			// parent and delete child before this operation finishes using it.
+			if ( !beginDeleteRows( index ) )
+				return false;
+			auto notifyDescendantsDeleted = [&]( auto&& notify, const Node* node ) -> void {
+				for ( const Node* childNode : node->mChildren ) {
+					notifyIndexDeleted( childNode );
+					notify( notify, childNode );
 				}
-				endDeleteRows();
+			};
+			notifyDescendantsDeleted( notifyDescendantsDeleted, child );
+			{
+				Lock l( mResourceLock );
+				eeDelete( parent->mChildren[index.row()] );
+				parent->mChildren.erase( parent->mChildren.begin() + index.row() );
 			}
 
 			forEachView( [&]( UIAbstractView* view ) {
@@ -791,13 +918,18 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 					if ( !selectedIndex.isValid() )
 						return;
 					Node* curNode = static_cast<Node*>( selectedIndex.internalData() );
+					if ( !isNodeAlive( curNode, selectedIndex.internalId() ) ) {
+						newIndexes.emplace_back( selectedIndex );
+						return;
+					}
 					if ( curNode->getParent() == parent ) {
 						if ( selectedIndex.row() >= (Int64)pos ) {
-							auto newIndex =
-								this->index( selectedIndex.row() - 1, selectedIndex.column(),
-											 selectedIndex.parent() );
-							if ( newIndex.isValid() )
-								newIndexes.emplace_back( newIndex );
+							if ( selectedIndex.row() > 0 ) {
+								newIndexes.emplace_back(
+									createIndex( static_cast<int>( selectedIndex.row() - 1 ),
+												 static_cast<int>( selectedIndex.column() ),
+												 curNode, curNode->mId ) );
+							}
 						} else {
 							newIndexes.emplace_back( selectedIndex );
 						}
@@ -809,109 +941,111 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 				view->getSelection().set( newIndexes, false );
 			} );
 
+			endDeleteRows();
+
 			break;
 		}
 		case FileSystemEventType::Moved: {
-			FileInfo file( event.directory + event.filename, false );
+			FileInfo file =
+				preparedFile ? *preparedFile : FileInfo( event.directory + event.filename, false );
+			const std::string oldFilePath = FileSystem::isRelativePath( event.oldFilename )
+												? event.directory + event.oldFilename
+												: event.oldFilename;
 
-			if ( !file.exists() )
+			if ( !preparedFile && !file.exists() )
 				return false;
 
-			auto* node = getNodeFromPath( event.directory + event.oldFilename, false, false );
+			auto* node = getNodeFromPath( oldFilePath, false, false );
 			if ( !node ) {
 				return handleFileEventLocked(
-					{ FileSystemEventType::Add, event.directory, event.filename } );
+					{ FileSystemEventType::Add, event.directory, event.filename }, preparedFile );
 			}
 
 			ModelIndex index = node->index( *this, 0 );
 			if ( !index.isValid() )
 				return false;
+			ModelIndex sourceParentIndex = index.parent();
 
-			Node* parent = node->mParent;
-			if ( !parent )
+			Node* sourceParent = node->mParent;
+			if ( !sourceParent )
 				return false;
 
 			if ( ( getMode() == Mode::DirectoriesOnly && !file.isDirectory() ) )
 				return false;
 
 			if ( !node->info().isHidden() && getDisplayConfig().ignoreHidden && file.isHidden() ) {
-				return handleFileEventLocked(
-					{ FileSystemEventType::Delete, event.directory, event.oldFilename } );
+				return handleFileEventLocked( { FileSystemEventType::Delete, "", oldFilePath } );
 			}
 
 			const auto& displayCfg = getDisplayConfig();
 
 			if ( displayCfg.fileIsVisibleFn && !displayCfg.fileIsVisibleFn( file.getFilepath() ) ) {
-				return handleFileEventLocked(
-					{ FileSystemEventType::Delete, event.directory, event.oldFilename } );
+				return handleFileEventLocked( { FileSystemEventType::Delete, "", oldFilePath } );
 			}
 
-			Node* childNode = parent->mChildren[index.row()];
-			{
-				Lock l( mResourceLock );
-				childNode->rename( file );
-				parent->mChildren.erase( parent->mChildren.begin() + index.row() );
-			}
-
-			size_t pos = getFileIndex( node->getParent(), file );
+			Node* targetParent = getNodeFromPath(
+				file.isDirectory() ? FileSystem::removeLastFolderFromPath( file.getDirectoryPath() )
+								   : file.getDirectoryPath(),
+				true, false );
+			// Keep unopened branches lazy. The node only needs to disappear from its old,
+			// materialized parent; a later traversal of the destination will discover it.
+			if ( !targetParent )
+				return handleFileEventLocked( { FileSystemEventType::Delete, "", oldFilePath } );
 
 			// Don't add the file if already exists (if moved an old file to another old
 			// file)
-			if ( pos == INDEX_ALREADY_EXISTS ) {
-				eeDelete( childNode );
-				return false;
-			}
+			Node* targetChild = targetParent->findChildName( file.getFileName(), *this );
+			if ( targetChild && targetChild != node )
+				return handleFileEventLocked( { FileSystemEventType::Delete, "", oldFilePath } );
 
-			std::map<UIAbstractView*, std::vector<ModelIndex>> keptSelections;
-			std::map<UIAbstractView*, std::vector<std::string>> prevSelections;
-			std::map<UIAbstractView*, std::vector<ModelIndex>> prevSelectionsModelIndex;
+			UnorderedMap<UIAbstractView*, std::vector<ModelIndex>> selections;
 
 			forEachView( [&]( UIAbstractView* view ) {
 				view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
-					Node* curNode = static_cast<Node*>( selectedIndex.internalData() );
-					if ( curNode->mParent == parent ) {
-						prevSelectionsModelIndex[view].emplace_back( selectedIndex );
-						prevSelections[view].emplace_back(
-							( curNode->getName() == event.oldFilename ) ? event.filename
-																		: curNode->getName() );
-					} else {
-						keptSelections[view].emplace_back( selectedIndex );
-					}
+					selections[view].emplace_back( selectedIndex );
 				} );
 			} );
 
-			beginMoveRows( index.parent(), index.row(), index.row(), index.parent(), pos );
+			Node* childNode = sourceParent->mChildren[index.row()];
+			size_t pos = getFileIndex( targetParent, file, childNode );
+			eeASSERT( pos != INDEX_ALREADY_EXISTS );
+			beginMoveRows( sourceParentIndex, index.row(), index.row(),
+						   targetParent->index( *this, 0 ), pos );
 
 			{
 				Lock l( mResourceLock );
-				if ( pos >= parent->mChildren.size() ) {
-					parent->mChildren.emplace_back( childNode );
+				sourceParent->mChildren.erase( sourceParent->mChildren.begin() + index.row() );
+				childNode->rename( file );
+				childNode->mParent = targetParent;
+			}
+
+			{
+				Lock l( mResourceLock );
+				if ( pos >= targetParent->mChildren.size() ) {
+					targetParent->mChildren.emplace_back( childNode );
 				} else {
-					parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
+					targetParent->mChildren.insert( targetParent->mChildren.begin() + pos,
+													childNode );
 				}
 			}
 
-			endMoveRows();
-
 			forEachView( [&]( UIAbstractView* view ) {
-				std::vector<std::string> names = prevSelections[view];
-				std::vector<ModelIndex> newIndexes = keptSelections[view];
-				int i = 0;
-				for ( const auto& name : names ) {
-					Int64 row = -1;
-					{
-						Lock l( mResourceLock );
-						row = parent->findChildRowFromName( name, *this );
+				std::vector<ModelIndex> newIndexes;
+				newIndexes.reserve( selections[view].size() );
+				for ( const ModelIndex& selectedIndex : selections[view] ) {
+					Node* selectedNode = static_cast<Node*>( selectedIndex.internalData() );
+					if ( !isNodeAlive( selectedNode, selectedIndex.internalId() ) ) {
+						newIndexes.emplace_back( selectedIndex );
+						continue;
 					}
-					if ( row >= 0 ) {
-						newIndexes.emplace_back(
-							this->index( row, prevSelectionsModelIndex[view][i].column(),
-										 prevSelectionsModelIndex[view][i].parent() ) );
-					}
-					++i;
+					ModelIndex newIndex = selectedNode->index( *this, selectedIndex.column() );
+					if ( newIndex.isValid() )
+						newIndexes.emplace_back( std::move( newIndex ) );
 				}
 				view->getSelection().set( newIndexes, false );
 			} );
+
+			endMoveRows();
 			break;
 		}
 		case FileSystemEventType::Modified: {
@@ -941,15 +1075,29 @@ void FileSystemModel::setupColumnNames( Translator* translator ) {
 }
 
 bool FileSystemModel::handleFileEvent( const FileEvent& event ) {
+	return handleFileEvent( event, nullptr );
+}
+
+bool FileSystemModel::handleFileEvent( const FileEvent& event, const FileInfo& file ) {
+	return handleFileEvent( event, &file );
+}
+
+bool FileSystemModel::handleFileEvent( const FileEvent& event, const FileInfo* preparedFile ) {
 	if ( !mInitOK )
 		return false;
+
+	// Views are UI objects: this must run on the main thread. ecode's
+	// FileSystemListener dispatches watcher events to the main thread; direct
+	// callers are responsible for the same requirement. Without an Engine no
+	// view can exist, so the check is skipped.
+	eeASSERT( !Engine::existsSingleton() || Engine::isMainThread() );
 
 	bool ret;
 
 	{
 		Lock l( resourceMutex() );
 
-		ret = handleFileEventLocked( event );
+		ret = handleFileEventLocked( event, preparedFile );
 	}
 
 	if ( ret )

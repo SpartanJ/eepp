@@ -1,6 +1,15 @@
 #pragma once
 
 #include <nlohmann/json.hpp>
+#include <string>
+#include <string_view>
+
+/**
+ * Converts JSONC with trailing commas into input accepted by a strict JSON parser.
+ * Removes a comma when the next token, ignoring whitespace and comments, is a closing object or
+ * array delimiter. Comments, string contents, and every other character are preserved.
+ */
+std::string json_strip_trailing_commas( std::string_view contents );
 
 template <typename T> static constexpr nlohmann::detail::value_t json_get_value_type() {
 	if constexpr ( std::is_same_v<T, std::string> ) {

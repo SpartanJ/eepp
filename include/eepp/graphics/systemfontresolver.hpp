@@ -2,6 +2,8 @@
 #define EE_GRAPHICS_SYSTEMFONTRESOLVER_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/containers.hpp>
+#include <eepp/core/string.hpp>
 #include <eepp/graphics/base.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/singleton.hpp>
@@ -108,13 +110,21 @@ class EE_API SystemFontResolver {
 
 	FontDesc getFallbackForCodepoint( Uint32 codepoint, FontWeight weight, bool italic );
 
-	bool fontContainsCodepoint( const std::string& path, Uint32 codepoint );
+	/** Pre-resolve the native fonts needed by normal rendering. Full system-font enumeration
+	 * remains lazy until enumerate() or enumerateFamily() is called. */
+	void warmUp() const;
+
+	bool fontContainsCodepoint( const std::string& path, Uint32 codepoint, Uint32 faceIndex = 0 );
 
 	void invalidateCache();
 
 	void ensureFontListPopulated() const;
 
 	bool isLoading() const { return mFontListLoading; }
+
+	bool isFontListPopulated() const {
+		return mFontListPopulated.load( std::memory_order_acquire );
+	}
 
 	std::vector<FontDesc> enumerate();
 
@@ -142,11 +152,19 @@ class EE_API SystemFontResolver {
 
 	void populateGenericFallbacks() const;
 
+	FontDesc matchFont( const FontQuery& query ) const;
+
+	FontDesc matchGenericFont( GenericFamily generic, FontWeight weight, bool italic ) const;
+
+	FontDesc resolveGenericCached( GenericFamily generic, FontWeight weight, bool italic ) const;
+
+	FontDesc matchFallbackForCodepoint( Uint32 codepoint, FontWeight weight, bool italic ) const;
+
 	static int scoreMatch( const FontQuery& query, const FontDesc& candidate );
 
 	mutable System::Mutex mMutex;
 	mutable std::vector<FontDesc> mFontList;
-	mutable bool mFontListPopulated{ false };
+	mutable std::atomic<bool> mFontListPopulated{ false };
 	mutable std::atomic<bool> mFontListLoading{ false };
 
 	static Uint64 makeCacheKey( const std::string& normFamily, FontWeight weight,
@@ -156,7 +174,7 @@ class EE_API SystemFontResolver {
 
 	mutable UnorderedMap<Uint32, FontDesc> mGenericCache;
 
-	mutable UnorderedMap<Uint32, std::string> mCodepointFallbackCache;
+	mutable UnorderedMap<Uint32, FontDesc> mCodepointFallbackCache;
 
 	struct GenericEntry {
 		GenericFamily generic;
@@ -164,7 +182,7 @@ class EE_API SystemFontResolver {
 	};
 	mutable std::vector<GenericEntry> mGenericFallbacks;
 
-	static bool sEnabled;
+	static std::atomic<bool> sEnabled;
 };
 
 }} // namespace EE::Graphics

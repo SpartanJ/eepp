@@ -16,7 +16,7 @@ namespace EE { namespace Scene {
 class EE_API KeyEvent : public Event {
   public:
 	KeyEvent( Node* node, const Uint32& eventNum, const Keycode& keyCode, const Scancode& scancode,
-			  const Uint32& chr, const Uint32& mod );
+			  const Uint32& chr, const Uint32& mod, bool repeat = false );
 
 	KeyEvent( const KeyEvent& event );
 
@@ -30,6 +30,8 @@ class EE_API KeyEvent : public Event {
 
 	const Uint32& getMod() const;
 
+	bool isRepeat() const;
+
 	/** The modifier key mask only for CTRL ALT SHIFT and META (no caps, num, etc) */
 	Uint32 getSanitizedMod() const;
 
@@ -38,6 +40,7 @@ class EE_API KeyEvent : public Event {
 	Scancode mScancode{ Scancode::SCANCODE_UNKNOWN };
 	String::StringBaseType mChar{ 0 };
 	Uint32 mMod{ 0 };
+	bool mRepeat{ false };
 };
 
 class EE_API TextInputEvent : public Event {

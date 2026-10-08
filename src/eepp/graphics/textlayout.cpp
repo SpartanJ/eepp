@@ -13,7 +13,12 @@
 
 namespace EE::Graphics {
 
-using LRULayoutCache = LRUCache<8192, Uint64, TextLayout::Cache>;
+struct LayoutCacheEntry {
+	Font* sourceFont{ nullptr };
+	TextLayout::Cache layout;
+};
+
+using LRULayoutCache = LRUCache<8192, Uint64, LayoutCacheEntry>;
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 
@@ -144,7 +149,7 @@ static void segmentString( TextLayout& result, String::View input, Callable cb,
 template <typename Callable>
 static void shapeAndRun( TextLayout& result, const String& string, FontTrueType* font,
 						 Uint32 characterSize, Uint32 style, Float outlineThickness,
-						 TextDirection baseDirection, Callable cb ) {
+						 Uint32 textDrawHints, TextDirection baseDirection, Callable cb ) {
 	String::View input = string.view();
 	hb_buffer_t* hbBuffer = getThreadLocalHbBuffer();
 
@@ -173,17 +178,28 @@ static void shapeAndRun( TextLayout& result, const String& string, FontTrueType*
 				hb_buffer_guess_segment_properties( hbBuffer );
 				hb_segment_properties_t props;
 				hb_buffer_get_segment_properties( hbBuffer, &props );
-				std::uint32_t featuresEnabled = !isSimpleScript( segment.script ) ? 1 : 0;
+				const bool complexShapingFeaturesEnabled = !isSimpleScript( segment.script );
+				const auto featureEnabled = [complexShapingFeaturesEnabled,
+											 textDrawHints]( Uint32 textHint ) -> std::uint32_t {
+					return static_cast<std::uint32_t>( complexShapingFeaturesEnabled ||
+													   ( textDrawHints & textHint ) );
+				};
 
 				// We use our own kerning algo
 				const hb_feature_t features[] = {
-					hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), featuresEnabled,
+					hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), complexShapingFeaturesEnabled,
 								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-					hb_feature_t{ HB_TAG( 'l', 'i', 'g', 'a' ), featuresEnabled,
+					hb_feature_t{ HB_TAG( 'l', 'i', 'g', 'a' ),
+								  featureEnabled( TextHints::StandardLigatures ),
 								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-					hb_feature_t{ HB_TAG( 'c', 'l', 'i', 'g' ), featuresEnabled,
+					hb_feature_t{ HB_TAG( 'c', 'l', 'i', 'g' ),
+								  featureEnabled( TextHints::ContextualLigatures ),
 								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-					hb_feature_t{ HB_TAG( 'd', 'l', 'i', 'g' ), featuresEnabled,
+					hb_feature_t{ HB_TAG( 'd', 'l', 'i', 'g' ),
+								  featureEnabled( TextHints::DiscretionaryLigatures ),
+								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+					hb_feature_t{ HB_TAG( 'c', 'a', 'l', 't' ),
+								  featureEnabled( TextHints::ContextualAlternates ),
 								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
 				};
 
@@ -221,13 +237,16 @@ static void shapeAndRun( TextLayout& result, const String& string, FontTrueType*
 static inline Uint64 textLayoutHash( const String::View& string, Font* font,
 									 const Uint32& characterSize, const Uint32& style,
 									 const Uint32& tabWidth, const Float& outlineThickness,
-									 std::optional<Float> tabOffset, TextDirection direction,
-									 LineWrapMode wrapMode, Uint32 wrapWidth, bool keepIndentation,
+									 std::optional<Float> tabOffset, Uint32 textDrawHints,
+									 TextDirection direction, LineWrapMode wrapMode,
+									 Uint32 wrapWidth, bool keepIndentation,
 									 Float initialXOffset ) {
 	return hashCombine( std::hash<String::View>()( string ), std::hash<Font*>()( font ),
 						std::hash<Uint32>()( characterSize ), std::hash<Uint32>()( style ),
 						std::hash<Uint32>()( tabWidth ), std::hash<Float>()( outlineThickness ),
 						std::hash<std::optional<Float>>()( tabOffset ),
+						std::hash<Uint32>()( textDrawHints & ( TextHints::NoKerning |
+															   TextHints::OpenTypeFeatures ) ),
 						std::hash<std::underlying_type_t<TextDirection>>()(
 							static_cast<std::underlying_type_t<TextDirection>>( direction ) ),
 						std::hash<std::underlying_type_t<LineWrapMode>>()(
@@ -236,15 +255,30 @@ static inline Uint64 textLayoutHash( const String::View& string, Font* font,
 						std::hash<Float>()( initialXOffset ) );
 }
 
-static LRULayoutCache& getLayoutCache( bool invalidate = false ) {
+static LRULayoutCache& getLayoutCache( bool invalidate = false, Font* font = nullptr ) {
 	static LRULayoutCache sLayoutCache;
-	if ( invalidate )
-		sLayoutCache.clear();
+	if ( invalidate ) {
+		if ( !font ) {
+			sLayoutCache.clear();
+		} else {
+			sLayoutCache.eraseIf( [font]( Uint64, const LayoutCacheEntry& entry ) {
+				if ( !entry.layout || entry.sourceFont == font )
+					return true;
+				for ( const ShapedTextParagraph& paragraph : entry.layout->paragraphs ) {
+					for ( const ShapedGlyph& glyph : paragraph.shapedGlyphs ) {
+						if ( glyph.font == font )
+							return true;
+					}
+				}
+				return false;
+			} );
+		}
+	}
 	return sLayoutCache;
 }
 
-void TextLayout::clearLayoutCache() {
-	getLayoutCache( true );
+void TextLayout::clearLayoutCache( Font* font ) {
+	getLayoutCache( true, font );
 }
 
 TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
@@ -265,18 +299,18 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 	Uint64 hash = 0;
 	if ( !Text::canSkipShaping( textDrawHints ) ) {
 		hash = textLayoutHash( string, font, characterSize, style, tabWidth, outlineThickness,
-							   tabOffset, baseDirection, wrapMode, wrapWidth, keepIndentation,
-							   initialXOffset );
+							   tabOffset, textDrawHints, baseDirection, wrapMode, wrapWidth,
+							   keepIndentation, initialXOffset );
 
 		auto cacheHit = getLayoutCache().get( hash );
 		if ( cacheHit.has_value() )
-			return *cacheHit;
+			return cacheHit->layout;
 	}
 
 	bool bold = ( style & Text::Bold ) != 0;
 	bool italic = ( style & Text::Italic ) != 0;
 	Uint32 spaceGlyphIndex = 0;
-	Float hspace = font->getGlyph( ' ', characterSize, bold, italic, outlineThickness ).advance;
+	Float hspace = font->getGlyphAdvance( ' ', characterSize, bold, italic, outlineThickness );
 	Float vspace = font->getLineSpacing( characterSize );
 	Vector2f pen{ initialXOffset, 0 };
 	Float maxWidth = 0;
@@ -300,7 +334,8 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 		 !Text::canSkipShaping( textDrawHints ) ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( font );
 		shapeAndRun(
-			result, string, rFont, characterSize, style, outlineThickness, baseDirection,
+			result, string, rFont, characterSize, style, outlineThickness, textDrawHints,
+			baseDirection,
 			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t* glyphPos, Uint32 glyphCount,
 				 const hb_segment_properties_t& props, const TextSegment& segment,
 				 TextShapeRun& run ) {
@@ -523,7 +558,7 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 					characterSize, style, tabWidth, outlineThickness, hspace );
 	}
 
-	getLayoutCache().put( hash, resultPtr );
+	getLayoutCache().put( hash, { font, resultPtr } );
 	return resultPtr;
 }
 

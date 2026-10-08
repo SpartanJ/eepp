@@ -26,6 +26,8 @@ class LSPDocumentClient : public TextDocument::Client, public FoldRangeProvider 
 
 	~LSPDocumentClient();
 
+	void detach();
+
 	virtual void onDocumentLoaded( TextDocument* );
 	virtual void onDocumentTextChanged( const DocumentContentChange& change );
 	virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& eventType );
@@ -86,6 +88,7 @@ class LSPDocumentClient : public TextDocument::Client, public FoldRangeProvider 
 	bool mWaitingSemanticTokensResponse{ false };
 	bool mProcessingSemanticTokensResponse{ false };
 	bool mShutdown{ false };
+	bool mDetached{ false };
 	bool mFirstHighlight{ true };
 	bool mAlreadyRequestedFoldingRanges{ false };
 

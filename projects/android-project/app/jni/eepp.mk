@@ -113,12 +113,28 @@ LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= freetype libpng libwebp md4c pcre2 oniguruma harfbuzz sheenbidi gumbo-parser brotli
+LOCAL_STATIC_LIBRARIES	:= simdutf freetype libpng libwebp md4c pcre2 oniguruma harfbuzz sheenbidi gumbo-parser brotli
 
 LOCAL_SHARED_LIBRARIES	:= SDL2
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** EEPP ***************
+
+#*************** SIMDUTF ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)/simdutf
+
+LOCAL_MODULE			:= simdutf
+
+LOCAL_CPPFLAGS			:= -std=c++20
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)
+
+LOCAL_SRC_FILES			:= simdutf.cpp
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** SIMDUTF ***************
 
 #*************** CHIPMUNK ***************
 include $(CLEAR_VARS)

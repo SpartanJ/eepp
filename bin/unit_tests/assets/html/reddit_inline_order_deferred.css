@@ -1,0 +1,20 @@
+.entry .buttons {
+	display: block;
+}
+
+.entry .float-marker {
+	float: left;
+	height: 1px;
+	width: 1px;
+}
+
+.entry .buttons li {
+	display: inline-block;
+	border: none;
+	padding: 0 4px;
+	white-space: nowrap;
+}
+
+.entry .buttons li a {
+	display: inline;
+}

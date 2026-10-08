@@ -5,6 +5,7 @@
 #include <thirdparty/fast_float/include/fast_float/fast_float.h>
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
 #include <thirdparty/fts_fuzzy_match/fts_fuzzy_match.h>
+#include <thirdparty/simdutf/simdutf.h>
 #include <thirdparty/utf8cpp/utf8.h>
 
 #include <algorithm>
@@ -53,6 +54,41 @@
 #endif
 
 namespace EE {
+
+static constexpr std::size_t SimdUtfConversionThreshold = 32;
+
+static bool hasUtf8Bom( std::string_view string ) {
+	return string.size() >= 3 && static_cast<Uint8>( string[0] ) == 0xEF &&
+		   static_cast<Uint8>( string[1] ) == 0xBB && static_cast<Uint8>( string[2] ) == 0xBF;
+}
+
+static void decodeUtf8( std::string_view input, String::StringType& output, bool skipBom ) {
+	if ( skipBom && hasUtf8Bom( input ) )
+		input.remove_prefix( 3 );
+
+	output.clear();
+	if ( input.empty() )
+		return;
+
+	if ( input.size() < SimdUtfConversionThreshold ) {
+		output.reserve( input.size() + 1 );
+		Utf8::toUtf32( input.begin(), input.end(), std::back_inserter( output ) );
+		return;
+	}
+
+	// UTF-32 cannot contain more code units than the UTF-8 input contains bytes.
+	output.resize( input.size() );
+	const std::size_t written =
+		simdutf::convert_utf8_to_utf32( input.data(), input.size(), output.data() );
+	if ( written != 0 ) {
+		output.resize( written );
+		return;
+	}
+
+	// Preserve the existing permissive behavior for malformed UTF-8.
+	output.clear();
+	Utf8::toUtf32( input.begin(), input.end(), std::back_inserter( output ) );
+}
 
 template <typename T> static bool _fromString( T& t, std::string_view s, int base = 10 ) {
 	const char* begin = s.data();
@@ -614,9 +650,10 @@ Int64 String::BMH::find( std::string_view haystack, std::string_view needle,
 	return find( haystack, needle, haystackOffset, occ, caseInsensitive );
 }
 
-String String::escape( const String& str ) {
-	String output;
-	for ( size_t i = 0; i < str.size(); i++ ) {
+template <typename Output, typename Input> static Output escapeStringSequence( const Input& str ) {
+	Output output;
+	output.reserve( str.size() );
+	for ( size_t i = 0; i < str.size(); ++i ) {
 		switch ( str[i] ) {
 			case '\r':
 				output += "\\r";
@@ -646,6 +683,14 @@ String String::escape( const String& str ) {
 		}
 	}
 	return output;
+}
+
+String String::escape( const String& str ) {
+	return escapeStringSequence<String>( str );
+}
+
+std::string String::escape( std::string_view str ) {
+	return escapeStringSequence<std::string>( str );
 }
 
 String String::unescape( const String& str ) {
@@ -766,6 +811,63 @@ String String::unescape( const String& str ) {
 		}
 
 		lastWasEscape = str[i] == '\\';
+	}
+	return output;
+}
+
+std::string String::unescape( std::string_view str ) {
+	std::string output;
+	output.reserve( str.size() );
+	for ( size_t i = 0; i < str.size(); ++i ) {
+		if ( str[i] != '\\' || i + 1 >= str.size() ) {
+			output += str[i];
+			continue;
+		}
+
+		const char escaped = str[++i];
+		switch ( escaped ) {
+			case '\\':
+			case '\'':
+			case '"':
+			case '?':
+				output += escaped;
+				break;
+			case 'r':
+				output += '\r';
+				break;
+			case 't':
+				output += '\t';
+				break;
+			case 'n':
+				output += '\n';
+				break;
+			case 'a':
+				output += '\a';
+				break;
+			case 'b':
+				output += '\b';
+				break;
+			case 'f':
+				output += '\f';
+				break;
+			case 'v':
+				output += '\v';
+				break;
+			default:
+				if ( escaped < '0' || escaped > '7' ) {
+					output += '\\';
+					output += escaped;
+					break;
+				}
+				unsigned char value = static_cast<unsigned char>( escaped - '0' );
+				for ( int digit = 1;
+					  digit < 3 && i + 1 < str.size() && str[i + 1] >= '0' && str[i + 1] <= '7';
+					  ++digit ) {
+					value = static_cast<unsigned char>( value * 8 + str[++i] - '0' );
+				}
+				output += static_cast<char>( value );
+				break;
+		}
 	}
 	return output;
 }
@@ -1139,53 +1241,71 @@ std::string String::join( const std::vector<const char*>& strArray, const Int8& 
 
 std::string String::lTrim( const std::string& str, char character ) {
 	std::string::size_type pos1 = str.find_first_not_of( character );
-	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( pos1 );
 }
 
 std::string String::rTrim( const std::string& str, char character ) {
 	std::string::size_type pos1 = str.find_last_not_of( character );
-	return ( pos1 == std::string::npos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 std::string String::trim( const std::string& str, char character ) {
 	std::string::size_type pos1 = str.find_first_not_of( character );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == std::string::npos )
+		return {};
 	std::string::size_type pos2 = str.find_last_not_of( character );
-	return str.substr( pos1 == std::string::npos ? 0 : pos1,
-					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 std::string_view String::lTrim( const std::string_view& str, char character ) {
 	std::string::size_type pos1 = str.find_first_not_of( character );
-	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( pos1 );
 }
 
 std::string_view String::rTrim( const std::string_view& str, char character ) {
 	std::string::size_type pos1 = str.find_last_not_of( character );
-	return ( pos1 == std::string::npos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 std::string_view String::trim( const std::string_view& str, char character ) {
 	std::string::size_type pos1 = str.find_first_not_of( character );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == std::string::npos )
+		return {};
 	std::string::size_type pos2 = str.find_last_not_of( character );
-	return str.substr( pos1 == std::string::npos ? 0 : pos1,
-					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 String::View String::lTrim( const String::View& str, char character ) {
 	String::View::size_type pos1 = str.find_first_not_of( character );
-	return ( pos1 == String::View::npos ) ? str : str.substr( pos1 );
+	if ( pos1 == String::View::npos )
+		return {};
+	return str.substr( pos1 );
 }
 
 String::View String::rTrim( const String::View& str, char character ) {
 	String::View::size_type pos1 = str.find_last_not_of( character );
-	return ( pos1 == String::View::npos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == String::View::npos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 String::View String::trim( const String::View& str, char character ) {
 	String::View::size_type pos1 = str.find_first_not_of( character );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == String::View::npos )
+		return {};
 	String::View::size_type pos2 = str.find_last_not_of( character );
-	return str.substr( pos1 == String::View::npos ? 0 : pos1,
-					   pos2 == String::View::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 void String::trimInPlace( std::string& str, char character ) {
@@ -1196,19 +1316,25 @@ void String::trimInPlace( std::string& str, char character ) {
 
 String String::lTrim( const String& str, char character ) {
 	StringType::size_type pos1 = str.find_first_not_of( character );
-	return ( pos1 == String::InvalidPos ) ? str : str.substr( pos1 );
+	if ( pos1 == String::InvalidPos )
+		return {};
+	return str.substr( pos1 );
 }
 
 String String::rTrim( const String& str, char character ) {
 	StringType::size_type pos1 = str.find_last_not_of( character );
-	return ( pos1 == String::InvalidPos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == String::InvalidPos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 String String::trim( const String& str, char character ) {
 	StringType::size_type pos1 = str.find_first_not_of( character );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == String::InvalidPos )
+		return {};
 	StringType::size_type pos2 = str.find_last_not_of( character );
-	return str.substr( pos1 == String::InvalidPos ? 0 : pos1,
-					   pos2 == String::InvalidPos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 void String::trimInPlace( String& str, char character ) {
@@ -1217,53 +1343,71 @@ void String::trimInPlace( String& str, char character ) {
 
 std::string String::lTrim( const std::string& str, std::string_view characters ) {
 	std::string::size_type pos1 = str.find_first_not_of( characters );
-	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( pos1 );
 }
 
 std::string String::rTrim( const std::string& str, std::string_view characters ) {
 	std::string::size_type pos1 = str.find_last_not_of( characters );
-	return ( pos1 == std::string::npos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 std::string String::trim( const std::string& str, std::string_view characters ) {
 	std::string::size_type pos1 = str.find_first_not_of( characters );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == std::string::npos )
+		return {};
 	std::string::size_type pos2 = str.find_last_not_of( characters );
-	return str.substr( pos1 == std::string::npos ? 0 : pos1,
-					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 std::string_view String::lTrim( const std::string_view& str, std::string_view characters ) {
 	std::string::size_type pos1 = str.find_first_not_of( characters );
-	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( pos1 );
 }
 
 std::string_view String::rTrim( const std::string_view& str, std::string_view characters ) {
 	std::string::size_type pos1 = str.find_last_not_of( characters );
-	return ( pos1 == std::string::npos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == std::string::npos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 std::string_view String::trim( const std::string_view& str, std::string_view characters ) {
 	std::string::size_type pos1 = str.find_first_not_of( characters );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == std::string::npos )
+		return {};
 	std::string::size_type pos2 = str.find_last_not_of( characters );
-	return str.substr( pos1 == std::string::npos ? 0 : pos1,
-					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 String::View String::lTrim( const String::View& str, String::View characters ) {
 	String::View::size_type pos1 = str.find_first_not_of( characters );
-	return ( pos1 == String::View::npos ) ? str : str.substr( pos1 );
+	if ( pos1 == String::View::npos )
+		return {};
+	return str.substr( pos1 );
 }
 
 String::View String::rTrim( const String::View& str, String::View characters ) {
 	String::View::size_type pos1 = str.find_last_not_of( characters );
-	return ( pos1 == String::View::npos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == String::View::npos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 String::View String::trim( const String::View& str, String::View characters ) {
 	String::View::size_type pos1 = str.find_first_not_of( characters );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == String::View::npos )
+		return {};
 	String::View::size_type pos2 = str.find_last_not_of( characters );
-	return str.substr( pos1 == String::View::npos ? 0 : pos1,
-					   pos2 == String::View::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 void String::trimInPlace( std::string& str, std::string_view characters ) {
@@ -1272,19 +1416,25 @@ void String::trimInPlace( std::string& str, std::string_view characters ) {
 
 String String::lTrim( const String& str, std::string_view characters ) {
 	StringType::size_type pos1 = str.find_first_not_of( characters );
-	return ( pos1 == String::InvalidPos ) ? str : str.substr( pos1 );
+	if ( pos1 == String::InvalidPos )
+		return {};
+	return str.substr( pos1 );
 }
 
 String String::rTrim( const String& str, std::string_view characters ) {
 	StringType::size_type pos1 = str.find_last_not_of( characters );
-	return ( pos1 == String::InvalidPos ) ? str : str.substr( 0, pos1 + 1 );
+	if ( pos1 == String::InvalidPos )
+		return {};
+	return str.substr( 0, pos1 + 1 );
 }
 
 String String::trim( const String& str, std::string_view characters ) {
 	StringType::size_type pos1 = str.find_first_not_of( characters );
+	// A string made only of separators has nothing left once trimmed.
+	if ( pos1 == String::InvalidPos )
+		return {};
 	StringType::size_type pos2 = str.find_last_not_of( characters );
-	return str.substr( pos1 == String::InvalidPos ? 0 : pos1,
-					   pos2 == String::InvalidPos ? str.length() - 1 : pos2 - pos1 + 1 );
+	return str.substr( pos1, pos2 - pos1 + 1 );
 }
 
 void String::trimInPlace( String& str, std::string_view characters ) {
@@ -1871,70 +2021,27 @@ String::String( StringBaseType utf32Char ) {
 String::String( size_t count, StringBaseType utf32Char ) : mString( count, utf32Char ) {}
 
 String::String( const char* utf8String ) {
-	if ( utf8String ) {
-		std::size_t length = strlen( utf8String );
-
-		if ( length > 0 ) {
-			mString.reserve( length + 1 );
-
-			Utf8::toUtf32( utf8String, utf8String + length, std::back_inserter( mString ) );
-		}
-	}
+	if ( utf8String )
+		decodeUtf8( utf8String, mString, false );
 }
 
 String::String( const char* utf8String, const size_t& utf8StringSize ) {
-	if ( utf8String && utf8StringSize > 0 ) {
-		mString.reserve( utf8StringSize + 1 );
-
-		int skip = 0;
-		// Skip BOM
-		if ( utf8StringSize >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
-			 (char)0xbf == utf8String[2] ) {
-			skip = 3;
-		}
-
-		Utf8::toUtf32( utf8String + skip, utf8String + utf8StringSize,
-					   std::back_inserter( mString ) );
-	}
+	if ( utf8String )
+		decodeUtf8( std::string_view{ utf8String, utf8StringSize }, mString, true );
 }
 
 String::String( const std::string& utf8String ) {
-	mString.reserve( utf8String.length() + 1 );
-
-	int skip = 0;
-	// Skip BOM
-	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
-		 (char)0xbf == utf8String[2] ) {
-		skip = 3;
-	}
-
-	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
+	decodeUtf8( utf8String, mString, true );
 }
 
 String::String( const std::basic_string<char8_t>& utf8String ) {
-	mString.reserve( utf8String.length() + 1 );
-
-	int skip = 0;
-	// Skip BOM
-	if ( utf8String.size() >= 3 && (char8_t)0xef == utf8String[0] &&
-		 (char8_t)0xbb == utf8String[1] && (char8_t)0xbf == utf8String[2] ) {
-		skip = 3;
-	}
-
-	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
+	decodeUtf8(
+		std::string_view{ reinterpret_cast<const char*>( utf8String.data() ), utf8String.size() },
+		mString, true );
 }
 
 String::String( const std::string_view& utf8String ) {
-	mString.reserve( utf8String.length() + 1 );
-
-	int skip = 0;
-	// Skip BOM
-	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
-		 (char)0xbf == utf8String[2] ) {
-		skip = 3;
-	}
-
-	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
+	decodeUtf8( utf8String, mString, true );
 }
 
 #ifndef EE_NO_WIDECHAR
@@ -1967,6 +2074,8 @@ String::String( const StringType& utf32String ) : mString( utf32String ) {}
 
 String::String( const String& str ) : mString( str.mString ) {}
 
+String::String( String&& str ) noexcept : mString( std::move( str.mString ) ) {}
+
 String::String( const String::View& utf32String ) : mString( utf32String ) {}
 
 String String::fromUtf16( const char* utf16String, const size_t& utf16StringSize,
@@ -1996,37 +2105,11 @@ String String::fromLatin1( const char* str, const size_t& stringSize ) {
 }
 
 String String::fromUtf8( const std::string& utf8String ) {
-	String::StringType utf32;
-
-	// Skip BOM
-	int skip = 0;
-	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
-		 (char)0xbf == utf8String[2] ) {
-		skip = 3;
-	}
-
-	utf32.reserve( utf8String.length() + 1 );
-
-	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( utf32 ) );
-
-	return String( utf32 );
+	return String( utf8String );
 }
 
 String String::fromUtf8( const std::string_view& utf8String ) {
-	String::StringType utf32;
-
-	// Skip BOM
-	int skip = 0;
-	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
-		 (char)0xbf == utf8String[2] ) {
-		skip = 3;
-	}
-
-	utf32.reserve( utf8String.length() + 1 );
-
-	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( utf32 ) );
-
-	return String( utf32 );
+	return String( utf8String );
 }
 
 #define iscont( p ) ( ( *( p ) & 0xC0 ) == 0x80 )
@@ -2044,12 +2127,18 @@ static inline size_t utf8_length( const char* s, const char* e ) {
 	return i;
 }
 
+static inline size_t utf8LengthImpl( const char* data, std::size_t size ) {
+	if ( size >= SimdUtfConversionThreshold )
+		return simdutf::count_utf8( data, size );
+	return utf8_length( data, data + size );
+}
+
 size_t String::utf8Length( const std::string& utf8String ) {
-	return utf8_length( utf8String.c_str(), utf8String.c_str() + utf8String.length() );
+	return utf8LengthImpl( utf8String.data(), utf8String.size() );
 }
 
 size_t String::utf8Length( const std::string_view& utf8String ) {
-	return utf8_length( utf8String.data(), utf8String.data() + utf8String.length() );
+	return utf8LengthImpl( utf8String.data(), utf8String.size() );
 }
 
 Uint32 String::utf8Next( char*& utf8String ) {
@@ -2112,14 +2201,51 @@ std::wstring String::toWideString() const {
 #endif
 
 std::string String::toUtf8() const {
-	// Prepare the output string
 	std::string output;
-	output.reserve( mString.length() + 1 );
-
-	// Convert
-	Utf32::toUtf8( mString.begin(), mString.end(), std::back_inserter( output ) );
-
+	toUtf8( output );
 	return output;
+}
+
+void String::toUtf8( std::string& output ) const {
+	output.clear();
+	appendUtf8( mString, output );
+}
+
+std::size_t String::utf8EncodedLength( View string, Uint32 textHints ) {
+	if ( textHints & TextHints::AllAscii )
+		return string.size();
+	return simdutf::utf8_length_from_utf32( string.data(), string.size() );
+}
+
+void String::appendUtf8( View string, std::string& output, Uint32 textHints ) {
+	static constexpr std::size_t SimdThreshold = 32;
+	if ( textHints & TextHints::AllAscii ) {
+		const std::size_t initialSize = output.size();
+		output.resize( initialSize + string.size() );
+		char* destination = output.data() + initialSize;
+		for ( std::size_t i = 0; i < string.size(); ++i )
+			destination[i] = static_cast<char>( string[i] );
+		return;
+	}
+
+	if ( string.size() < SimdThreshold ) {
+		output.reserve( output.size() + string.size() );
+		Utf32::toUtf8( string.begin(), string.end(), std::back_inserter( output ) );
+		return;
+	}
+
+	const std::size_t initialSize = output.size();
+	const std::size_t outputSize = utf8EncodedLength( string, textHints );
+	output.resize( initialSize + outputSize );
+	char* destination = output.data() + initialSize;
+	const std::size_t written =
+		simdutf::convert_utf32_to_utf8( string.data(), string.size(), destination );
+	if ( written == outputSize )
+		return;
+
+	// Preserve conversion for malformed UTF-32 without penalizing valid text.
+	output.resize( initialSize );
+	Utf32::toUtf8( string.begin(), string.end(), std::back_inserter( output ) );
 }
 
 std::basic_string<char16_t> String::toUtf16() const {
@@ -2316,6 +2442,11 @@ String& String::assign( const char* s ) {
 
 	mString.assign( tmp.mString );
 
+	return *this;
+}
+
+String& String::assignUtf8( std::string_view utf8String ) {
+	decodeUtf8( utf8String, mString, false );
 	return *this;
 }
 
@@ -2603,6 +2734,10 @@ size_t String::toUtf32( std::string_view utf8str, String::StringBaseType* buffer
 
 void String::readBySeparator( std::string_view buf,
 							  std::function<void( std::string_view )> onSepChunkRead, char sep ) {
+	// An empty buffer holds no chunks, so the callback is never handed a spurious empty one.
+	if ( buf.empty() )
+		return;
+
 	auto lastNL = 0;
 	auto nextNL = buf.find_first_of( sep );
 	if ( nextNL != std::string_view::npos ) {
@@ -2623,6 +2758,10 @@ void String::readBySeparator( std::string_view buf,
 void String::readBySeparatorStoppable( std::string_view buf,
 									   std::function<bool( std::string_view )> onSepChunkRead,
 									   char sep ) {
+	// An empty buffer holds no chunks, so the callback is never handed a spurious empty one.
+	if ( buf.empty() )
+		return;
+
 	auto lastNL = 0;
 	auto nextNL = buf.find_first_of( sep );
 	if ( nextNL != std::string_view::npos ) {

@@ -12,8 +12,10 @@
 #include <eepp/ui/uiwindow.hpp>
 
 #include <array>
+#include <condition_variable>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <nlohmann/json.hpp>
 #include <string>
 
@@ -298,6 +300,8 @@ class PluginManager {
 
 	const std::string& getPluginsPath() const;
 
+	const std::string& getConfigPath() const;
+
 	const std::map<std::string, bool>& getPluginsEnabled() const;
 
 	void onNewEditor( UICodeEditor* editor );
@@ -363,6 +367,8 @@ class PluginManager {
 
 	bool isClosing() const;
 
+	void beginShutdown();
+
 	PluginContextProvider* getPluginContext() const { return mPluginContext; }
 
 	void forEachPlugin( std::function<void( Plugin* )> fn );
@@ -391,8 +397,11 @@ class PluginManager {
 	Mutex mPluginsFSSubsMutex;
 	SubscribedPlugins mSubscribedPlugins;
 	OnLoadFileCb mLoadFileFn;
-	Uint64 mFileSystemListenerCb{ 0 };
 	UnorderedSet<Plugin*> mPluginsFSSubs;
+	UnorderedMap<Plugin*, Uint64> mPluginFSListenerIds;
+	std::mutex mPendingUnloadsMutex;
+	std::condition_variable mPendingUnloadsCondition;
+	size_t mPendingUnloads{ 0 };
 	bool mClosing{ false };
 	bool mPluginReloadEnabled{ false };
 	bool mPluginsDisabled{ false };
@@ -408,6 +417,10 @@ class PluginManager {
 	void subscribeFileSystemListener();
 
 	void unsubscribeFileSystemListener();
+
+	void registerFileSystemListener( Plugin* plugin );
+
+	void unloadPlugin( Plugin* plugin );
 };
 
 class PluginsModel : public Model {

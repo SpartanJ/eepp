@@ -202,6 +202,19 @@ bool FileSystem::fileRemove( const std::string& filepath ) {
 #endif
 }
 
+bool FileSystem::dirRemoveAll( const std::string& path ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::filesystem::path normalizedPath( String( path ).toWideString() );
+#else
+	std::filesystem::path normalizedPath( path );
+#endif
+	if ( normalizedPath.has_relative_path() && !normalizedPath.has_filename() )
+		normalizedPath = normalizedPath.parent_path();
+	std::error_code error;
+	std::filesystem::remove_all( normalizedPath, error );
+	return !error;
+}
+
 bool FileSystem::fileHide( const std::string& filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return SetFileAttributesW( (LPCWSTR)String( filepath ).toWideString().c_str(),
@@ -383,13 +396,17 @@ std::string FileSystem::getRealPath( const std::string& path ) {
 	std::string realPath;
 #ifdef EE_PLATFORM_POSIX
 	char dir[PATH_MAX];
-	realpath( path.c_str(), &dir[0] );
-	realPath = std::string( dir );
+	if ( realpath( path.c_str(), &dir[0] ) )
+		realPath = std::string( dir );
+	else
+		realPath = path;
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	wchar_t dir[_MAX_PATH + 1];
-	GetFullPathNameW( String::fromUtf8( path ).toWideString().c_str(), _MAX_PATH, &dir[0],
-					  nullptr );
-	realPath = String( dir ).toUtf8();
+	if ( GetFullPathNameW( String::fromUtf8( path ).toWideString().c_str(), _MAX_PATH, &dir[0],
+						   nullptr ) )
+		realPath = String( dir ).toUtf8();
+	else
+		realPath = path;
 #else
 #warning FileSystem::getRealPath() not implemented on this platform.
 #endif
@@ -638,12 +655,8 @@ std::string FileSystem::sizeToString( const Int64& Size ) {
 
 bool FileSystem::changeWorkingDirectory( const std::string& path ) {
 	int res;
-#ifdef EE_COMPILER_MSVC
-#ifdef UNICODE
-	res = _wchdir( String::fromUtf8( path ).toWideString().c_str() );
-#else
-	res = _chdir( String::fromUtf8( path ).toAnsiString().c_str() );
-#endif
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	res = SetCurrentDirectoryW( String::fromUtf8( path ).toWideString().c_str() ) ? 0 : -1;
 #else
 	res = chdir( path.c_str() );
 #endif
@@ -651,19 +664,19 @@ bool FileSystem::changeWorkingDirectory( const std::string& path ) {
 }
 
 std::string FileSystem::getCurrentWorkingDirectory() {
-#ifdef EE_COMPILER_MSVC
-#if defined( UNICODE ) && !defined( EE_NO_WIDECHAR )
-	wchar_t dir[_MAX_PATH];
-	return ( 0 != GetCurrentDirectoryW( _MAX_PATH, dir ) ) ? String( dir ).toUtf8() : std::string();
-#else
-	char dir[_MAX_PATH];
-	return ( 0 != GetCurrentDirectory( _MAX_PATH, dir ) ) ? String( dir, std::locale() ).toUtf8()
-														  : std::string();
-#endif
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	DWORD size = GetCurrentDirectoryW( 0, nullptr );
+	if ( size == 0 )
+		return {};
+	std::wstring dir( size, 0 );
+	DWORD length = GetCurrentDirectoryW( size, &dir[0] );
+	if ( length == 0 || length >= size )
+		return {};
+	dir.resize( length );
+	return String( dir ).toUtf8();
 #else
 	char dir[PATH_MAX + 1];
-	getcwd( dir, PATH_MAX + 1 );
-	return std::string( dir );
+	return getcwd( dir, PATH_MAX + 1 ) != nullptr ? std::string( dir ) : std::string();
 #endif
 }
 

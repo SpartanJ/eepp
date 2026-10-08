@@ -1,6 +1,10 @@
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/uimenuitem.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitableheadercolumn.hpp>
+#include <eepp/window/input.hpp>
 
 namespace EE { namespace UI {
 
@@ -31,7 +35,7 @@ Uint32 UITableHeaderColumn::onCalculateDrag( const Vector2f& position, const Uin
 		}
 		Vector2f pos( eefloor( position.x ), eefloor( position.y ) );
 		if ( mDragPoint != pos && std::abs( mDragPoint.x - pos.x ) > 1.f ) {
-			Sizef dragDiff( ( Float )( mDragPoint.x - pos.x ), 0 );
+			Sizef dragDiff( (Float)( mDragPoint.x - pos.x ), 0 );
 			if ( onDrag( pos, flags, dragDiff ) ) {
 				mDragPoint = pos;
 				eventDispatcher->setNodeDragging( this );
@@ -58,10 +62,16 @@ Uint32 UITableHeaderColumn::onMouseDown( const Vector2i& position, const Uint32&
 	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 	if ( NULL != getEventDispatcher() && !getEventDispatcher()->isNodeDragging() &&
 		 !( getEventDispatcher()->getLastPressTrigger() & mDragButton ) &&
-		 ( flags & mDragButton ) && isDragEnabled() && !isDragging() &&
-		 localPos.x >= mSize.getWidth() - mView->getDragBorderDistance() ) {
-		setFocus();
-		startDragging( position.asFloat() );
+		 ( flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
+		if ( localPos.x >= mSize.getWidth() - mView->getDragBorderDistance() ) {
+			mDragMode = DragMode::Resize;
+			setFocus();
+			startDragging( position.asFloat() );
+		} else if ( mView->isColumnReorderingEnabled() ) {
+			mDragMode = DragMode::ReorderPending;
+			mReorderGrabX = localPos.x;
+			mReorderPressPos = position.asFloat();
+		}
 	}
 	pushState( UIState::StatePressed );
 	return Node::onMouseDown( position, flags );
@@ -70,6 +80,7 @@ Uint32 UITableHeaderColumn::onMouseDown( const Vector2i& position, const Uint32&
 Uint32 UITableHeaderColumn::onMouseClick( const Vector2i& position, const Uint32& flags ) {
 	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 	if ( ( flags & EE_BUTTON_LMASK ) && !isDragging() &&
+		 !getEventDispatcher()->justFinishDragging() &&
 		 localPos.x < mSize.getWidth() - mView->getDragBorderDistance() ) {
 		mView->onSortColumn( mColIndex );
 		return 1;
@@ -77,11 +88,108 @@ Uint32 UITableHeaderColumn::onMouseClick( const Vector2i& position, const Uint32
 	return UIPushButton::onMouseClick( position, flags );
 }
 
+Uint32 UITableHeaderColumn::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( flags & mDragButton && mDragMode == DragMode::ReorderPending )
+		mDragMode = DragMode::None;
+	if ( ( flags & EE_BUTTON_RMASK ) && mView->isColumnWidthModeMenuEnabled() &&
+		 mView->getModel() ) {
+		auto* menu = UIPopUpMenu::New();
+		const Model* model = mView->getModel();
+		const size_t columnCount = model->columnCount();
+		const auto columnLabel = [this, model]( size_t column ) {
+			std::string label = model->columnName( column );
+			if ( label.empty() )
+				label = String::format( i18n( "uitable_column_number", "Column %zu" ).toUtf8(),
+										column + 1 );
+			return label;
+		};
+		bool hasColumnVisibilityItems = false;
+		bool hasHiddenColumnItems = false;
+
+		if ( mView->visibleColumnCount() > 1 ) {
+			const std::string title =
+				String::format( i18n( "uitable_hide_column", "Hide Column '%s'" ).toUtf8(),
+								columnLabel( mColIndex ).c_str() );
+			menu->add( title )->setId( "hide-column" )->setData( mColIndex );
+			hasColumnVisibilityItems = true;
+		}
+
+		for ( size_t col = 0; col < columnCount; ++col ) {
+			if ( !mView->isColumnHidden( col ) )
+				continue;
+			if ( hasColumnVisibilityItems && !hasHiddenColumnItems )
+				menu->addSeparator();
+			const std::string title =
+				String::format( i18n( "uitable_show_column", "Show Column '%s'" ).toUtf8(),
+								columnLabel( col ).c_str() );
+			menu->add( title )->setId( "show-column" )->setData( col );
+			hasColumnVisibilityItems = true;
+			hasHiddenColumnItems = true;
+		}
+
+		if ( hasColumnVisibilityItems )
+			menu->addSeparator();
+
+		menu->addRadioButton( i18n( "uitable_fit_columns_to_view", "Fit Columns to View" ),
+							  mView->getColumnWidthMode() ==
+								  UIAbstractTableView::ColumnWidthMode::Percentage )
+			->setId( "percentage" );
+		menu->addRadioButton( i18n( "uitable_free_column_widths", "Free Column Widths" ),
+							  mView->getColumnWidthMode() ==
+								  UIAbstractTableView::ColumnWidthMode::Pixels )
+			->setId( "pixels" );
+		menu->on( Event::OnItemClicked, [view = mView, columnCount]( const Event* event ) {
+			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+				return;
+
+			const auto* item = event->getNode();
+			const std::string id( item->getId() );
+			const size_t column = static_cast<size_t>( item->getData() );
+			if ( id == "hide-column" ) {
+				if ( column < columnCount && view->visibleColumnCount() > 1 ) {
+					if ( view->getMainColumn() == column ) {
+						for ( size_t next = 0; next < columnCount; ++next ) {
+							if ( next != column && !view->isColumnHidden( next ) ) {
+								view->setMainColumn( next );
+								break;
+							}
+						}
+					}
+					view->setColumnHidden( column, true );
+				}
+			} else if ( id == "show-column" ) {
+				if ( column < columnCount )
+					view->setColumnHidden( column, false );
+			} else if ( id == "percentage" ) {
+				view->setColumnWidthMode( UIAbstractTableView::ColumnWidthMode::Percentage );
+			} else if ( id == "pixels" ) {
+				view->setAutoColumnsWidth( false );
+				view->setColumnWidthMode( UIAbstractTableView::ColumnWidthMode::Pixels );
+			}
+		} );
+		if ( mView->mOnHeaderContextMenuCb )
+			mView->mOnHeaderContextMenuCb( menu, mColIndex );
+		menu->setCloseOnHide( true );
+		menu->showAtScreenPosition( position.asFloat() );
+	}
+	return UIPushButton::onMouseUp( position, flags );
+}
+
 Uint32 UITableHeaderColumn::onDrag( const Vector2f& position, const Uint32&,
 									const Sizef& dragDiff ) {
+	if ( mDragMode == DragMode::Reorder ) {
+		Vector2f headerPos( mView->mHeader->convertToNodeSpace( position ) );
+		const Float left = headerPos.x - mReorderGrabX;
+		mView->reorderColumnAt( mColIndex, left + mSize.getWidth() * 0.5f );
+		setPixelsPosition( left, getPixelsPosition().y );
+		return 1;
+	}
+	if ( mDragMode != DragMode::Resize )
+		return 0;
 	Vector2f localPos( convertToNodeSpace( position ) );
 	if ( isDragging() || localPos.x >= mSize.getWidth() - mView->getDragBorderDistance() ) {
-		setPixelsSize( mSize.x - dragDiff.x, mSize.getHeight() );
+		const Float width = eemax( mSize.x - dragDiff.x, mView->columnData( mColIndex ).minWidth );
+		setPixelsSize( width, mSize.getHeight() );
 		if ( mSize.getWidth() != mView->columnData( mColIndex ).width ) {
 			mView->columnData( mColIndex ).setWidth( mSize.getWidth(), true );
 			mView->updateHeaderSize();
@@ -93,12 +201,22 @@ Uint32 UITableHeaderColumn::onDrag( const Vector2f& position, const Uint32&,
 }
 
 Uint32 UITableHeaderColumn::onMouseLeave( const Vector2i& position, const Uint32& flags ) {
+	if ( mDragMode == DragMode::ReorderPending && getInput() &&
+		 ( getInput()->getPressTrigger() & mDragButton ) ) {
+		mDragMode = DragMode::Reorder;
+		startDragging( mReorderPressPos );
+	}
 	if ( !isDragging() )
 		getUISceneNode()->setCursor( Cursor::Arrow );
 	return UIPushButton::onMouseLeave( position, flags );
 }
 
 Uint32 UITableHeaderColumn::onMouseMove( const Vector2i& position, const Uint32& flags ) {
+	if ( mDragMode == DragMode::ReorderPending && ( flags & mDragButton ) &&
+		 std::abs( position.x - mReorderPressPos.x ) >= mView->getDragBorderDistance() ) {
+		mDragMode = DragMode::Reorder;
+		startDragging( mReorderPressPos );
+	}
 	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 	if ( isDragging() || localPos.x >= mSize.getWidth() - mView->getDragBorderDistance() ) {
 		getUISceneNode()->setCursor( Cursor::SizeWE );
@@ -117,9 +235,14 @@ Uint32 UITableHeaderColumn::onMouseDoubleClick( const Vector2i& position, const 
 
 Uint32 UITableHeaderColumn::onDragStop( const Vector2i& pos, const Uint32& flags ) {
 	getUISceneNode()->setCursor( Cursor::Arrow );
-	mView->columnData( mColIndex ).setWidth( mSize.getWidth(), true );
-	mView->updateHeaderSize();
-	mView->onColumnSizeChange( mColIndex, true );
+	if ( mDragMode == DragMode::Resize ) {
+		mView->columnData( mColIndex ).setWidth( mSize.getWidth(), true );
+		mView->updateHeaderSize();
+		mView->onColumnSizeChange( mColIndex, true );
+	} else if ( mDragMode == DragMode::Reorder ) {
+		mView->mHeader->updateLayout();
+	}
+	mDragMode = DragMode::None;
 	return UIPushButton::onDragStop( pos, flags );
 }
 

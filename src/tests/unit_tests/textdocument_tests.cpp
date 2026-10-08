@@ -1,10 +1,304 @@
 #include "utest.hpp"
+#include <algorithm>
+#include <atomic>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
+#include <thread>
 
 using namespace EE::UI::Doc;
 using namespace EE::System;
+
+UTEST( TextDocument, BuiltinCommandsRemainAvailableWithoutPerDocumentClosures ) {
+	TextDocument doc;
+	doc.textInput( "content" );
+	EXPECT_TRUE( doc.hasCommand( "select-all" ) );
+	EXPECT_TRUE( doc.hasCommand( "delete-selection" ) );
+
+	doc.execute( "select-all" );
+	doc.execute( "delete-selection" );
+	EXPECT_TRUE( doc.isEmpty() );
+
+	auto commands = doc.getCommandList();
+	EXPECT_TRUE( std::find( commands.begin(), commands.end(), "undo" ) != commands.end() );
+}
+
+UTEST( TextDocument, RemovingBuiltinCommandIsLocalToDocument ) {
+	TextDocument first;
+	TextDocument second;
+	EXPECT_TRUE( first.removeCommand( "undo" ) );
+	EXPECT_FALSE( first.hasCommand( "undo" ) );
+	EXPECT_TRUE( second.hasCommand( "undo" ) );
+}
+
+UTEST( TextRanges, keepsCommonSelectionsInline ) {
+	TextRanges ranges;
+	EXPECT_TRUE( ranges.is_small() );
+
+	ranges.emplace_back( TextPosition{ 0, 0 }, TextPosition{ 0, 1 } );
+	ranges.emplace_back( TextPosition{ 1, 0 }, TextPosition{ 1, 1 } );
+	EXPECT_EQ( 2u, ranges.size() );
+	EXPECT_TRUE( ranges.is_small() );
+
+	TextRanges copy = ranges;
+	EXPECT_TRUE( ranges == copy );
+	EXPECT_TRUE( copy.is_small() );
+
+	ranges.emplace_back( TextPosition{ 2, 0 }, TextPosition{ 2, 1 } );
+	EXPECT_EQ( 3u, ranges.size() );
+	EXPECT_FALSE( ranges.is_small() );
+}
+
+UTEST( TextDocument, insertSingleLineAtDifferentPositions ) {
+	TextDocument doc;
+
+	TextPosition cursor = doc.insert( 0, { 0, 0 }, "abcd" );
+	EXPECT_EQ( 0, cursor.line() );
+	EXPECT_EQ( 4, cursor.column() );
+	EXPECT_STRINGEQ( "abcd", doc.getText() );
+	EXPECT_STRINGEQ( "abcd\n", doc.line( 0 ).getText() );
+	EXPECT_EQ( 1u, doc.linesCount() );
+
+	cursor = doc.insert( 0, { 0, 0 }, "start-" );
+	EXPECT_EQ( 0, cursor.line() );
+	EXPECT_EQ( 6, cursor.column() );
+	EXPECT_STRINGEQ( "start-abcd", doc.getText() );
+
+	cursor = doc.insert( 0, { 0, 8 }, "middle-" );
+	EXPECT_EQ( 0, cursor.line() );
+	EXPECT_EQ( 15, cursor.column() );
+	EXPECT_STRINGEQ( "start-abmiddle-cd", doc.getText() );
+
+	cursor = doc.insert( 0, { 0, 17 }, "-end" );
+	EXPECT_EQ( 0, cursor.line() );
+	EXPECT_EQ( 21, cursor.column() );
+	EXPECT_STRINGEQ( "start-abmiddle-cd-end", doc.getText() );
+	EXPECT_STRINGEQ( "start-abmiddle-cd-end\n", doc.line( 0 ).getText() );
+	EXPECT_EQ( 1u, doc.linesCount() );
+}
+
+UTEST( TextDocument, toUtf8StringReusesOutputStorage ) {
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "alpha\nbeta" );
+
+	std::string output( 4096, 'x' );
+	output.reserve( 8192 );
+	const size_t capacity = output.capacity();
+	doc.toUtf8String( output );
+
+	EXPECT_TRUE( output == doc.toUtf8String() );
+	EXPECT_EQ( capacity, output.capacity() );
+}
+
+UTEST( TextDocument, insertNewLinesIntoEmptyDocument ) {
+	{
+		TextDocument doc;
+		TextPosition cursor = doc.insert( 0, { 0, 0 }, "alpha\nbeta" );
+		EXPECT_EQ( 1, cursor.line() );
+		EXPECT_EQ( 4, cursor.column() );
+		EXPECT_EQ( 2u, doc.linesCount() );
+		EXPECT_STRINGEQ( "alpha\nbeta", doc.getText() );
+		EXPECT_STRINGEQ( "alpha\n", doc.line( 0 ).getText() );
+		EXPECT_STRINGEQ( "beta\n", doc.line( 1 ).getText() );
+	}
+
+	{
+		TextDocument doc;
+		TextPosition cursor = doc.insert( 0, { 0, 0 }, "\nleading" );
+		EXPECT_EQ( 1, cursor.line() );
+		EXPECT_EQ( 7, cursor.column() );
+		EXPECT_EQ( 2u, doc.linesCount() );
+		EXPECT_STRINGEQ( "\nleading", doc.getText() );
+		EXPECT_STRINGEQ( "\n", doc.line( 0 ).getText() );
+		EXPECT_STRINGEQ( "leading\n", doc.line( 1 ).getText() );
+	}
+
+	{
+		TextDocument doc;
+		TextPosition cursor = doc.insert( 0, { 0, 0 }, "trailing\n" );
+		EXPECT_EQ( 1, cursor.line() );
+		EXPECT_EQ( 0, cursor.column() );
+		EXPECT_EQ( 2u, doc.linesCount() );
+		EXPECT_STRINGEQ( "trailing\n", doc.getText() );
+		EXPECT_STRINGEQ( "trailing\n", doc.line( 0 ).getText() );
+		EXPECT_STRINGEQ( "\n", doc.line( 1 ).getText() );
+	}
+
+	{
+		TextDocument doc;
+		TextPosition cursor = doc.insert( 0, { 0, 0 }, "a\n\nb" );
+		EXPECT_EQ( 2, cursor.line() );
+		EXPECT_EQ( 1, cursor.column() );
+		EXPECT_EQ( 3u, doc.linesCount() );
+		EXPECT_STRINGEQ( "a\n\nb", doc.getText() );
+		EXPECT_STRINGEQ( "a\n", doc.line( 0 ).getText() );
+		EXPECT_STRINGEQ( "\n", doc.line( 1 ).getText() );
+		EXPECT_STRINGEQ( "b\n", doc.line( 2 ).getText() );
+	}
+}
+
+UTEST( TextDocument, insertIntoExistingLines ) {
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "first\nsecond\nthird" );
+
+	TextPosition cursor = doc.insert( 0, { 1, 3 }, "!" );
+	EXPECT_EQ( 1, cursor.line() );
+	EXPECT_EQ( 4, cursor.column() );
+	EXPECT_EQ( 3u, doc.linesCount() );
+	EXPECT_STRINGEQ( "first\nsec!ond\nthird", doc.getText() );
+	EXPECT_STRINGEQ( "sec!ond\n", doc.line( 1 ).getText() );
+
+	cursor = doc.insert( 0, { 1, 4 }, "X\nY" );
+	EXPECT_EQ( 2, cursor.line() );
+	EXPECT_EQ( 1, cursor.column() );
+	EXPECT_EQ( 4u, doc.linesCount() );
+	EXPECT_STRINGEQ( "first\nsec!X\nYond\nthird", doc.getText() );
+	EXPECT_STRINGEQ( "sec!X\n", doc.line( 1 ).getText() );
+	EXPECT_STRINGEQ( "Yond\n", doc.line( 2 ).getText() );
+
+	cursor = doc.insert( 0, { 2, 0 }, "\n" );
+	EXPECT_EQ( 3, cursor.line() );
+	EXPECT_EQ( 0, cursor.column() );
+	EXPECT_EQ( 5u, doc.linesCount() );
+	EXPECT_STRINGEQ( "first\nsec!X\n\nYond\nthird", doc.getText() );
+	EXPECT_STRINGEQ( "\n", doc.line( 2 ).getText() );
+	EXPECT_STRINGEQ( "Yond\n", doc.line( 3 ).getText() );
+}
+
+UTEST( TextDocument, insertLargeMultilineBlock ) {
+	constexpr size_t insertedLineCount = 8192;
+	String text;
+	text.reserve( insertedLineCount * 4 + 4 );
+	for ( size_t i = 0; i < insertedLineCount; ++i )
+		text.append( "row\n" );
+	text.append( "last" );
+
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "head\nmiddle\ntail" );
+	TextPosition cursor = doc.insert( 0, { 1, 3 }, text );
+
+	EXPECT_EQ( insertedLineCount + 1, static_cast<size_t>( cursor.line() ) );
+	EXPECT_EQ( 4, cursor.column() );
+	EXPECT_EQ( insertedLineCount + 3, doc.linesCount() );
+	EXPECT_STRINGEQ( "midrow\n", doc.line( 1 ).getText() );
+	EXPECT_STRINGEQ( "row\n", doc.line( insertedLineCount ).getText() );
+	EXPECT_STRINGEQ( "lastdle\n", doc.line( insertedLineCount + 1 ).getText() );
+	EXPECT_STRINGEQ( "tail\n", doc.line( insertedLineCount + 2 ).getText() );
+}
+
+UTEST( TextDocument, findAllCanBeCancelledConcurrently ) {
+	constexpr size_t lineCount = 65536;
+	String text;
+	text.reserve( lineCount * 48 );
+	for ( size_t i = 0; i < lineCount; ++i )
+		text.append( "needle xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n" );
+
+	TextDocument doc;
+	doc.textInput( text );
+	TextDocument::SearchResults results;
+	std::atomic_bool started{ false };
+	std::atomic_bool finished{ false };
+	std::thread worker( [&] {
+		started.store( true, std::memory_order_release );
+		results = doc.findAll( "needle" );
+		finished.store( true, std::memory_order_release );
+	} );
+
+	while ( !started.load( std::memory_order_acquire ) )
+		Sys::sleep( Milliseconds( 0.1 ) );
+	while ( !finished.load( std::memory_order_acquire ) ) {
+		doc.stopActiveFindAll();
+		Sys::sleep( Milliseconds( 0.1 ) );
+	}
+	worker.join();
+
+	EXPECT_TRUE( results.size() <= lineCount );
+	EXPECT_TRUE( results.empty() || results.isSorted() );
+	for ( const auto& result : results )
+		EXPECT_TRUE( result.isValid() );
+}
+
+UTEST( TextDocument, multilineInsertCursorEndsBeforeExistingSuffix ) {
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "prefix-suffix" );
+
+	TextPosition cursor =
+		doc.insert( 0, { 0, 7 }, String::fromUtf8( std::string_view{ "alpha\nβeta\n" } ) );
+
+	EXPECT_EQ( 2, cursor.line() );
+	EXPECT_EQ( 0, cursor.column() );
+	EXPECT_STRINGEQ( "prefix-alpha\nβeta\nsuffix", doc.getText() );
+
+	cursor = doc.insert( 0, cursor, String::fromUtf8( std::string_view{ "γ\nδ" } ) );
+	EXPECT_EQ( 3, cursor.line() );
+	EXPECT_EQ( 1, cursor.column() );
+	EXPECT_STRINGEQ( "prefix-alpha\nβeta\nγ\nδsuffix", doc.getText() );
+
+	TextDocument graphemeDoc;
+	graphemeDoc.insert( 0, { 0, 0 },
+						String::fromUtf8( std::string_view{ "prefix-\u0301suffix" } ) );
+	cursor = graphemeDoc.insert( 0, { 0, 7 }, "line\nA" );
+	EXPECT_EQ( 1, cursor.line() );
+	EXPECT_EQ( 2, cursor.column() );
+	EXPECT_STRINGEQ( "prefix-line\nA\u0301suffix", graphemeDoc.getText() );
+}
+
+UTEST( TextDocument, lineHashRemainsStableAndTracksMutations ) {
+	TextDocumentLine emptyLine( "", nullptr );
+	EXPECT_EQ( String( "" ).getHash(), emptyLine.getHash() );
+
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, String::fromUtf8( std::string_view{ "alpha\nβeta" } ) );
+
+	String firstLine( "alpha\n" );
+	String secondLine( String::fromUtf8( std::string_view{ "βeta\n" } ) );
+	EXPECT_EQ( firstLine.getHash(), doc.getLineHash( 0 ) );
+	EXPECT_EQ( secondLine.getHash(), doc.getLineHash( 1 ) );
+	EXPECT_EQ( secondLine.getHash(), doc.getLineHash( 1 ) );
+
+	doc.insert( 0, { 1, 1 }, "!" );
+	secondLine.insert( 1, "!" );
+	EXPECT_EQ( secondLine.getHash(), doc.getLineHash( 1 ) );
+
+	auto lines = doc.getLines();
+	ASSERT_EQ( size_t{ 2 }, lines.size() );
+	EXPECT_EQ( doc.getLineHash( 0 ), lines[0].getHash() );
+	EXPECT_EQ( doc.getLineHash( 1 ), lines[1].getHash() );
+	TextDocumentLine assigned( "", nullptr );
+	assigned = lines[0];
+	EXPECT_EQ( firstLine.getHash(), assigned.getHash() );
+
+	TextDocumentLine moved( std::move( lines[1] ) );
+	EXPECT_EQ( secondLine.getHash(), moved.getHash() );
+}
+
+UTEST( TextDocument, insertEmptyTextDoesNothing ) {
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "content" );
+
+	TextPosition cursor = doc.insert( 0, { 0, 3 }, "" );
+	EXPECT_EQ( 0, cursor.line() );
+	EXPECT_EQ( 3, cursor.column() );
+	EXPECT_EQ( 1u, doc.linesCount() );
+	EXPECT_STRINGEQ( "content", doc.getText() );
+	EXPECT_STRINGEQ( "content\n", doc.line( 0 ).getText() );
+}
+
+UTEST( TextDocument, getTextToBuffer ) {
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "first line\nsecond line\nthird line" );
+	String buffer( "previous contents that should be replaced" );
+
+	doc.getTextToBuffer( { { 0, 6 }, { 0, 10 } }, buffer );
+	EXPECT_STRINGEQ( "line", buffer );
+
+	doc.getTextToBuffer( { { 2, 5 }, { 0, 6 } }, buffer );
+	EXPECT_STRINGEQ( "line\nsecond line\nthird", buffer );
+	EXPECT_STRINGEQ( doc.getText( { { 0, 6 }, { 2, 5 } } ), buffer );
+
+	doc.getTextToBuffer( { { 1, 3 }, { 1, 3 } }, buffer );
+	EXPECT_TRUE( buffer.empty() );
+}
 
 UTEST( TextDocument, multicursor ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
@@ -143,6 +437,92 @@ UTEST( TextDocument, newLineNormal ) {
 	EXPECT_STRINGEQ( "\t\tif ( true )\n", doc.line( 0 ).getText() );
 	EXPECT_STRINGEQ( "\t\t\n", doc.line( 1 ).getText() );
 	EXPECT_STDSTREQ( TextPosition( 1, 2 ).toString(), doc.getSelection().start().toString() );
+}
+
+UTEST( TextDocument, indentTabsOutOfTrailingCharactersWithSingleCursor ) {
+	static constexpr char trailingCharacters[] = ")]}'\":;>,";
+
+	for ( const char trailingCharacter : trailingCharacters ) {
+		if ( trailingCharacter == '\0' )
+			break;
+
+		TextDocument doc;
+		doc.setIndentType( TextDocument::IndentType::IndentTabs );
+		doc.setTabOutEnabled( true );
+		doc.insert( 0, { 0, 0 }, String( trailingCharacter ) );
+		doc.setSelection( { 0, 0 } );
+		doc.indent();
+
+		EXPECT_STRINGEQ( String( trailingCharacter ) + "\n", doc.line( 0 ).getText() );
+		EXPECT_STDSTREQ( TextPosition( 0, 1 ).toString(), doc.getSelection().start().toString() );
+	}
+}
+
+UTEST( TextDocument, indentFallsBackToExistingBehavior ) {
+	TextDocument doc;
+	doc.setIndentType( TextDocument::IndentType::IndentTabs );
+	doc.setTabOutEnabled( true );
+	doc.insert( 0, { 0, 0 }, ") ordinary" );
+
+	// A non-trailing character still inserts indentation.
+	doc.setSelection( { 0, 2 } );
+	doc.indent();
+	EXPECT_STRINGEQ( ") \tordinary\n", doc.line( 0 ).getText() );
+
+	// A selection still indents the selected line, even before a trailing character.
+	doc.setSelection( { { 0, 0 }, { 0, 1 } } );
+	doc.indent();
+	EXPECT_STRINGEQ( "\t) \tordinary\n", doc.line( 0 ).getText() );
+}
+
+UTEST( TextDocument, indentDoesNotTabOutWithMultipleCursors ) {
+	TextDocument doc;
+	doc.setIndentType( TextDocument::IndentType::IndentTabs );
+	doc.setTabOutEnabled( true );
+	doc.insert( 0, { 0, 0 }, ")\n}" );
+	doc.resetSelection( TextRanges( std::vector<TextRange>{ TextRange( { 0, 0 }, { 0, 0 } ),
+															TextRange( { 1, 0 }, { 1, 0 } ) } ) );
+	doc.indent();
+
+	EXPECT_STRINGEQ( "\t)\n", doc.line( 0 ).getText() );
+	EXPECT_STRINGEQ( "\t}\n", doc.line( 1 ).getText() );
+}
+
+UTEST( TextDocument, indentTabOutIsOptionalAndConfigurable ) {
+	TextDocument doc;
+	doc.setIndentType( TextDocument::IndentType::IndentTabs );
+	doc.insert( 0, { 0, 0 }, ")x" );
+	doc.setSelection( { 0, 0 } );
+
+	// Disabled by default.
+	doc.indent();
+	EXPECT_STRINGEQ( "\t)x\n", doc.line( 0 ).getText() );
+
+	// A custom set replaces the defaults.
+	doc.setTabOutEnabled( true );
+	doc.setTabOutChars( "x" );
+	doc.setSelection( { 0, 2 } );
+	doc.indent();
+	EXPECT_STDSTREQ( TextPosition( 0, 3 ).toString(), doc.getSelection().start().toString() );
+}
+
+UTEST( TextDocument, moveToStartOfContent ) {
+	TextDocument doc;
+	doc.insert( 0, { 0, 0 }, "    content" );
+
+	doc.setSelection( { 0, 8 } );
+	doc.moveToStartOfContent();
+	EXPECT_STDSTREQ( TextPosition( 0, 4 ).toString(), doc.getSelection().start().toString() );
+
+	doc.moveToStartOfContent();
+	EXPECT_STDSTREQ( TextPosition( 0, 0 ).toString(), doc.getSelection().start().toString() );
+
+	doc.moveToStartOfContent();
+	EXPECT_STDSTREQ( TextPosition( 0, 4 ).toString(), doc.getSelection().start().toString() );
+
+	doc.setSelection( { 0, 2 } );
+	doc.moveToStartOfContent();
+	EXPECT_STDSTREQ( TextPosition( 0, 4 ).toString(), doc.getSelection().start().toString() );
 }
 
 UTEST( TextDocument, autoCloseBrackets ) {

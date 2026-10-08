@@ -1,6 +1,7 @@
 #ifndef EE_SCENEACTION_HPP
 #define EE_SCENEACTION_HPP
 
+#include <cstddef>
 #include <eepp/core.hpp>
 #include <eepp/system/time.hpp>
 using namespace EE::System;
@@ -20,6 +21,18 @@ class EE_API Action {
 	Action() = default;
 
 	virtual ~Action();
+
+	/** Allocates actions from a shared size-class pool. Existing Action factories and ownership
+	 * semantics are unchanged; completed slots are recycled by operator delete. */
+	static void* operator new( std::size_t size );
+
+	static void operator delete( void* ptr ) noexcept;
+
+	static void operator delete( void* ptr, std::size_t size ) noexcept;
+
+	static void* operator new( std::size_t, void* place ) noexcept { return place; }
+
+	static void operator delete( void*, void* ) noexcept {}
 
 	/** Starts the action. */
 	virtual void start() = 0;
@@ -91,7 +104,12 @@ class EE_API Action {
 
   protected:
 	friend class Node;
-	typedef UnorderedMap<ActionType, UnorderedMap<Uint32, ActionCallback>> ActionCallbackMap;
+	struct ActionCallbackEntry {
+		ActionType type;
+		Uint32 id;
+		ActionCallback callback;
+	};
+	using ActionCallbackMap = SmallVector<ActionCallbackEntry, 2>;
 
 	Node* mNode{ nullptr };
 	Action::UniqueID mId{ 0 };

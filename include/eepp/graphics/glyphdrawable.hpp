@@ -9,9 +9,11 @@ namespace EE { namespace Graphics {
 
 class VertexBuffer;
 
+enum class GlyphRenderMode : Uint8 { Mask, Subpixel, Color };
+
 class EE_API GlyphDrawable : public DrawableResource {
   public:
-	static GlyphDrawable* New( Texture* texture, const Rect& srcRect, const Sizef& destSize = {},
+	static GlyphDrawable* New( TexturePtr texture, const Rect& srcRect, const Sizef& destSize = {},
 							   const std::string& resourceName = "" );
 
 	enum class DrawMode {
@@ -21,7 +23,7 @@ class EE_API GlyphDrawable : public DrawableResource {
 				   ///< italic skew
 	};
 
-	GlyphDrawable( Texture* texture, const Rect& srcRect, const Sizef& destSize = {},
+	GlyphDrawable( TexturePtr texture, const Rect& srcRect, const Sizef& destSize = {},
 				   const std::string& resourceName = "" );
 
 	virtual void draw();
@@ -35,24 +37,26 @@ class EE_API GlyphDrawable : public DrawableResource {
 
 	virtual bool isStateful();
 
+	DrawablePtr clone() const;
+
 	/** @return The texture instance used by the GlyphDrawable. */
-	Texture* getTexture();
+	const TexturePtr& getTexture() const;
 
 	/** @return The Texture sector that represents the GlyphDrawable */
-	const Rectf& getSrcRect() const;
+	inline const Rectf& getSrcRect() const { return mSrcRect; }
 
-	const Sizef& getDestSize() const;
+	inline const Sizef& getDestSize() const { return mDestSize; }
 
 	/** @return This is the same as Destination Size but with the values rounded as integers. */
 	Sizef getSize();
 
 	Sizef getPixelsSize();
 
-	const Float& getPixelDensity() const;
+	inline const Float& getPixelDensity() const { return mPixelDensity; }
 
 	void setPixelDensity( const Float& pixelDensity );
 
-	const Vector2f& getGlyphOffset() const;
+	inline const Vector2f& getGlyphOffset() const { return mGlyphOffset; }
 
 	void setGlyphOffset( const Vector2f& glyphOffset );
 
@@ -60,22 +64,27 @@ class EE_API GlyphDrawable : public DrawableResource {
 
 	void setDrawMode( const DrawMode& drawMode );
 
-	bool isItalic() const { return mIsItalic; }
+	inline bool isItalic() const { return mIsItalic; }
 
 	void setIsItalic( bool isItalic );
 
-	const Float& getAdvance() const;
+	inline const Float& getAdvance() const { return mAdvance; }
 
 	void setAdvance( Float advance );
 
+	GlyphRenderMode getGlyphRenderMode() const;
+
+	void setGlyphRenderMode( GlyphRenderMode renderMode );
+
   protected:
-	Texture* mTexture;
+	TexturePtr mTexture;
 	Rectf mSrcRect;
 	Sizef mDestSize;
 	Float mPixelDensity;
 	Vector2f mGlyphOffset;
 	DrawMode mDrawMode{ DrawMode::Image };
 	Float mAdvance{ 0 };
+	GlyphRenderMode mGlyphRenderMode{ GlyphRenderMode::Mask };
 	bool mIsItalic{ false };
 };
 

@@ -44,13 +44,6 @@ std::string LineWrap::fromLineWrapType( LineWrapType type ) {
 	}
 }
 
-Float LineWrap::computeOffsets( const String::View& string, const FontStyleConfig& fontStyle,
-								Uint32 tabWidth, Float maxWidth, bool tabStops ) {
-	return LineWrap::computeOffsets( string, fontStyle.Font, fontStyle.CharacterSize,
-									 fontStyle.Style, fontStyle.OutlineThickness, tabWidth,
-									 maxWidth, tabStops );
-}
-
 Float LineWrap::computeOffsets( const String::View& string, Font* font, Uint32 characterSize,
 								Uint32 fontStyle, Float outlineThickness, Uint32 tabWidth,
 								Float maxWidth, bool tabStops ) {
@@ -243,10 +236,6 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 	}
 
 	return info;
-}
-
-bool LineWrap::isWrapChar( String::StringBaseType ch ) {
-	return ch == ' ' || ch == '.' || ch == '-' || ch == ',';
 }
 
 LineWrapInfo LineWrap::computeLineBreaks( const String::View& string, Font* font,

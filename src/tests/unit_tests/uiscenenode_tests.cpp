@@ -2,15 +2,28 @@
 
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/texturefactory.hpp>
+#include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
+#include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uifiledialog.hpp>
+#include <eepp/ui/uiiconthememanager.hpp>
+#include <eepp/ui/uilayout.hpp>
+#include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/cursor.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
+#include <eepp/window/runtime.hpp>
+#include <thread>
 
 using namespace EE;
 using namespace EE::Graphics;
@@ -18,22 +31,473 @@ using namespace EE::Window;
 using namespace EE::Scene;
 using namespace EE::UI;
 
-static UISceneNode* init_test_scene_node() {
-	FontTrueType* font = nullptr;
+UTEST( UISceneNode, CssPointerCursorUsesHandCursor ) {
+	EXPECT_EQ( Cursor::fromName( "pointer" ), Cursor::Hand );
+	EXPECT_EQ( Cursor::fromName( "POINTER" ), Cursor::Hand );
+	EXPECT_STREQ( Cursor::toName( Cursor::Hand ), "hand" );
+	EXPECT_STREQ( Cursor::toName( Cursor::Arrow ), "arrow" );
+}
+
+UTEST( UISceneNode, MouseOverAncestryUsesCommittedOverNode ) {
+	UIApplication app(
+		WindowSettings{ 320, 240, "Mouse Over Ancestry" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	auto* scene = app.getUI();
+	auto* parent = UIWidget::New();
+	parent->setPixelsSize( 200, 100 );
+	parent->setParent( scene->getRoot() );
+	auto* firstChild = UIWidget::New();
+	firstChild->setPixelsSize( 80, 80 );
+	firstChild->setParent( parent );
+	auto* secondChild = UIWidget::New();
+	secondChild->setPixelsPosition( 100, 0 );
+	secondChild->setPixelsSize( 80, 80 );
+	secondChild->setParent( parent );
+	scene->flushDirtyStyleAndLayout();
+
+	Input* input = app.getWindow()->getInput();
+	input->setMousePos( firstChild->convertToWorldSpace( { 20.f, 20.f } ).asInt() );
+	SceneManager::instance()->update();
+
+	EXPECT_EQ( scene->getEventDispatcher()->getMouseOverNode(), firstChild );
+	EXPECT_TRUE( firstChild->isMouseOverMeOrChildren() );
+	EXPECT_TRUE( firstChild->isMouseOver() );
+	EXPECT_TRUE( parent->isMouseOverMeOrChildren() );
+	EXPECT_TRUE( parent->isMouseOver() );
+	EXPECT_FALSE( secondChild->isMouseOverMeOrChildren() );
+	EXPECT_FALSE( secondChild->isMouseOver() );
+
+	const Vector2i secondChildPosition = secondChild->convertToWorldSpace( { 20.f, 20.f } ).asInt();
+	EXPECT_EQ( scene->overFind( secondChildPosition.asFloat() ), secondChild );
+	EXPECT_EQ( scene->getEventDispatcher()->getMouseOverNode(), firstChild );
+	EXPECT_TRUE( firstChild->isMouseOverMeOrChildren() );
+	EXPECT_TRUE( firstChild->isMouseOver() );
+	EXPECT_FALSE( secondChild->isMouseOverMeOrChildren() );
+	EXPECT_FALSE( secondChild->isMouseOver() );
+
+	input->setMousePos( secondChildPosition );
+	SceneManager::instance()->update();
+
+	EXPECT_EQ( scene->getEventDispatcher()->getMouseOverNode(), secondChild );
+	EXPECT_FALSE( firstChild->isMouseOverMeOrChildren() );
+	EXPECT_FALSE( firstChild->isMouseOver() );
+	EXPECT_TRUE( secondChild->isMouseOverMeOrChildren() );
+	EXPECT_TRUE( secondChild->isMouseOver() );
+	EXPECT_TRUE( parent->isMouseOverMeOrChildren() );
+	EXPECT_TRUE( parent->isMouseOver() );
+
+	input->setMousePos( { 280, 180 } );
+	SceneManager::instance()->update();
+
+	EXPECT_FALSE( firstChild->isMouseOverMeOrChildren() );
+	EXPECT_FALSE( firstChild->isMouseOver() );
+	EXPECT_FALSE( secondChild->isMouseOverMeOrChildren() );
+	EXPECT_FALSE( secondChild->isMouseOver() );
+	EXPECT_FALSE( parent->isMouseOverMeOrChildren() );
+	EXPECT_FALSE( parent->isMouseOver() );
+}
+
+UTEST( UISceneNode, ScopedContextBindsNodesAndRestoresNestedScene ) {
+	auto* engine = Engine::instance();
+	auto* window = engine->getCurrentWindow();
+	if ( !window ) {
+		window =
+			engine->createWindow( WindowSettings( 320, 240, "UI Context Test", WindowStyle::Default,
+												  WindowBackend::Default, 32, {}, 1, false, true ),
+								  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	}
+
+	auto* sceneA = UISceneNode::New( window );
+	auto* sceneB = UISceneNode::New( window );
+	auto* sceneManager = SceneManager::instance();
+	sceneManager->add( sceneA );
+	sceneManager->add( sceneB );
+	sceneManager->setCurrentUISceneNode( sceneA );
+
+	{
+		auto contextA = sceneA->makeCurrent();
+		EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+		auto* nodeA = UIWidget::New();
+		EXPECT_EQ( nodeA->getUISceneNode(), sceneA );
+
+		{
+			auto contextB = sceneB->makeCurrent();
+			EXPECT_EQ( sceneManager->getUISceneNode(), sceneB );
+			auto* nodeB = UIWidget::New();
+			EXPECT_EQ( nodeB->getUISceneNode(), sceneB );
+		}
+
+		EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+	}
+
+	EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+	sceneManager->remove( sceneB );
+	sceneManager->remove( sceneA );
+	eeDelete( sceneB );
+	eeDelete( sceneA );
+}
+
+UTEST( UISceneNode, AsyncResourceCallbacksBindOwnerSceneAndRestorePreviousScene ) {
+	auto* engine = Engine::instance();
+	auto* window = engine->getCurrentWindow();
+	if ( !window ) {
+		window = engine->createWindow( WindowSettings( 320, 240, "Async Resource Context Test",
+													   WindowStyle::Default, WindowBackend::Default,
+													   32, {}, 1, false, true ),
+									   ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	}
+
+	auto* sceneA = UISceneNode::New( window );
+	auto* sceneB = UISceneNode::New( window );
+	auto* sceneManager = SceneManager::instance();
+	sceneManager->add( sceneA );
+	sceneManager->add( sceneB );
+	sceneManager->setCurrentUISceneNode( sceneA );
+
+	auto state = sceneB->getAsyncResourceLoadState();
+	const Uint64 generation = state->generation.load( std::memory_order_acquire );
+	bool immediateBound = false;
+	bool queuedBound = false;
+	{
+		auto context = sceneA->makeCurrent();
+		UISceneNode::runAsyncResourceOnMainThread( state, generation, [&]( UISceneNode* owner ) {
+			immediateBound = owner == sceneB && sceneManager->getUISceneNode() == sceneB;
+		} );
+		EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+
+		std::thread producer( [&] {
+			UISceneNode::runAsyncResourceOnMainThread(
+				state, generation, [&]( UISceneNode* owner ) {
+					queuedBound = owner == sceneB && sceneManager->getUISceneNode() == sceneB;
+				} );
+		} );
+		producer.join();
+		sceneA->update( Time::Zero );
+		EXPECT_EQ( sceneManager->getUISceneNode(), sceneA );
+	}
+
+	EXPECT_TRUE( immediateBound );
+	EXPECT_TRUE( queuedBound );
+	sceneManager->remove( sceneB );
+	sceneManager->remove( sceneA );
+	eeDelete( sceneB );
+	eeDelete( sceneA );
+}
+
+class TestUIApplication : public UIApplication {
+  public:
+	using UIApplication::UIApplication;
+	void tickOnce() { tick(); }
+};
+
+UTEST( UIApplication, ClosesWindowWithVisibleModalDialog ) {
+	TestUIApplication app(
+		WindowSettings( 320, 240, "Modal shutdown", WindowStyle::Default, WindowBackend::Default,
+						32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getUI() != nullptr );
+	app.getUI()->getUIThemeManager()->setDefaultEffectsEnabled( false );
+	auto* dialog = UIMessageBox::New( UIMessageBox::OK_CANCEL, "Close?" );
+	dialog->show();
+	app.getUI()->update( Milliseconds( 16 ) );
+	ASSERT_TRUE( dialog->getModalWidget() != nullptr );
+	app.getWindow()->close();
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 0u );
+	EXPECT_TRUE( app.getUI() == nullptr );
+}
+
+UTEST( UIApplication, RoutesNativeMouseWheelExactlyOnceToTargetWindow ) {
+	TestUIApplication app( WindowSettings( 320, 240, "Primary Wheel Routing", WindowStyle::Default,
+										   WindowBackend::Default, 32, {}, 1, false, true ),
+						   UIApplication::Settings(
+							   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f, true ),
+						   ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getWindow() != nullptr );
+	auto* secondaryUI =
+		app.createWindow( WindowSettings( 240, 180, "Secondary Wheel Routing", WindowStyle::Default,
+										  WindowBackend::Default, 32, {}, 1, false, true ),
+						  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( secondaryUI != nullptr );
+
+	auto* primaryInput = app.getWindow()->getInput();
+	auto* secondaryInput = secondaryUI->getWindow()->getInput();
+	const Uint32 targetWindowId = secondaryUI->getWindow()->getWindowID();
+	int primaryWheelEvents = 0;
+	int secondaryWheelEvents = 0;
+	Vector2f secondaryWheelOffset;
+	Uint32 receivedWindowId = 0;
+	const Uint32 primaryCallback = primaryInput->pushCallback( [&]( InputEvent* event ) {
+		if ( event->Type == InputEvent::MouseWheel )
+			++primaryWheelEvents;
+	} );
+	const Uint32 secondaryCallback = secondaryInput->pushCallback( [&]( InputEvent* event ) {
+		if ( event->Type == InputEvent::MouseWheel ) {
+			++secondaryWheelEvents;
+			secondaryWheelOffset = { event->wheel.x, event->wheel.y };
+			receivedWindowId = event->WinID;
+		}
+	} );
+
+	InputEvent event{};
+	event.Type = InputEvent::MouseWheel;
+	event.WinID = targetWindowId;
+	event.wheel.x = 0.f;
+	event.wheel.y = -1.f;
+	event.wheel.direction = InputEvent::WheelEvent::Normal;
+	ASSERT_TRUE( primaryInput->pushEvent( event ) );
+	Engine::instance()->updateInput();
+
+	EXPECT_EQ( primaryWheelEvents, 0 );
+	EXPECT_EQ( secondaryWheelEvents, 1 );
+	EXPECT_EQ( receivedWindowId, targetWindowId );
+	EXPECT_EQ( secondaryWheelOffset.x, 0.f );
+	EXPECT_EQ( secondaryWheelOffset.y, -1.f );
+	primaryInput->popCallback( primaryCallback );
+	secondaryInput->popCallback( secondaryCallback );
+}
+
+UTEST( UIApplication, CreatesSecondaryWindowWithoutChangingAmbientScene ) {
+	TestUIApplication app(
+		WindowSettings( 320, 240, "Primary UI Context", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f,
+								 true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getWindow() != nullptr );
+	ASSERT_TRUE( app.getUI() != nullptr );
+	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.5f );
+	ASSERT_TRUE( app.getUI()->getUIIconThemeManager()->getCurrentTheme() != nullptr );
+	EXPECT_TRUE( app.getUI()->getUIIconThemeManager()->findIcon( "go-up" ) != nullptr );
+	EXPECT_EQ( app.getQuitPolicy(), UIApplication::QuitPolicy::OnPrimaryWindowClosed );
+	if ( Runtime::mode() == RuntimeMode::Terminal ) {
+		auto* inApplicationWindow = UIWindow::NewInApplicationWindow(
+			app, WindowSettings( 240, 180, "Terminal In-Application Window" ),
+			UIWindow::RELATIVE_LAYOUT, UIWindow::StyleConfig(), ContextSettings(), true );
+		ASSERT_TRUE( inApplicationWindow != nullptr );
+		EXPECT_EQ( app.getWindowCount(), 1u );
+		EXPECT_EQ( inApplicationWindow->getUISceneNode(), app.getUI() );
+		EXPECT_TRUE( inApplicationWindow->isModal() );
+		EXPECT_FALSE( inApplicationWindow->getWinFlags() & UI_WIN_NO_DECORATION );
+		return;
+	}
+
+	auto* primaryWindow = app.getWindow();
+	auto* secondaryUI =
+		app.createWindow( WindowSettings( 240, 180, "Secondary UI Context", WindowStyle::Default,
+										  WindowBackend::Default, 32, {}, 1, false, true ),
+						  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( secondaryUI != nullptr );
+	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.5f );
+	EXPECT_EQ( app.getWindowCount(), 2u );
+	EXPECT_EQ( app.getUI( secondaryUI->getWindow() ), secondaryUI );
+	EXPECT_EQ( secondaryUI->getUIIconThemeManager()->getCurrentTheme(),
+			   app.getUI()->getUIIconThemeManager()->getCurrentTheme() );
+	EXPECT_EQ( Engine::instance()->getCurrentWindow(), primaryWindow );
+	EXPECT_EQ( SceneManager::instance()->getUISceneNode(), app.getUI() );
+	TextureFactory::instance()->setCurrentTexture( 123, 0 );
+	Engine::instance()->setCurrentWindow( secondaryUI->getWindow() );
+	EXPECT_EQ( TextureFactory::instance()->getCurrentTexture( 0 ), -1 );
+	Engine::instance()->setCurrentWindow( primaryWindow );
+
+	{
+		auto context = secondaryUI->makeCurrent();
+		auto* widget = UIWidget::New();
+		EXPECT_EQ( widget->getUISceneNode(), secondaryUI );
+
+		auto* textInput = UITextInput::New();
+		textInput->setParent( secondaryUI->getRoot() );
+		textInput->setFocus();
+		InputEvent textEvent;
+		textEvent.Type = InputEvent::TextInput;
+		textEvent.WinID = secondaryUI->getWindow()->getWindowID();
+		textEvent.text.text = 'x';
+		textEvent.text.timestamp = 1;
+		secondaryUI->getWindow()->getInput()->beginInputFrame();
+		primaryWindow->getInput()->processEventForWindow( &textEvent );
+		secondaryUI->getWindow()->getInput()->endInputFrame();
+		EXPECT_STDSTREQ( textInput->getText().toUtf8(), "x" );
+	}
+
+	EXPECT_EQ( SceneManager::instance()->getUISceneNode(), app.getUI() );
+
+	const Vector2i primaryPosition = primaryWindow->getPosition();
+	const Sizei primaryScreenSize = primaryWindow->getSizeInScreenCoordinates();
+	auto* fileDialog = UIFileDialog::NewInApplicationWindow(
+		app,
+		WindowSettings( 640, 400, "File Dialog UI Context",
+						WindowStyle::Titlebar | WindowStyle::Resize, WindowBackend::Default, 32, {},
+						1, false, true ),
+		UIFileDialog::DefaultFlags, "*", FileSystem::getCurrentWorkingDirectory(),
+		ContextSettings( false, 0, 0, GLv_default, true, false ), true,
+		UIWindow::ApplicationWindowPosition::CenteredOnPrimary );
+	ASSERT_TRUE( fileDialog != nullptr );
+	EXPECT_EQ( app.getWindowCount(), 3u );
+	EXPECT_NE( fileDialog->getUISceneNode(), app.getUI() );
+	EXPECT_NE( fileDialog->getUISceneNode(), secondaryUI );
+	EXPECT_TRUE( fileDialog->getWinFlags() & UI_WIN_NO_DECORATION );
+	EXPECT_EQ( fileDialog->getLayoutWidthPolicy(), SizePolicy::MatchParent );
+	EXPECT_EQ( fileDialog->getLayoutHeightPolicy(), SizePolicy::MatchParent );
+	EXPECT_EQ( Engine::instance()->getCurrentWindow(), primaryWindow );
+	EXPECT_EQ( SceneManager::instance()->getUISceneNode(), app.getUI() );
+	EXPECT_TRUE( fileDialog->getParent()->isType( UI_TYPE_RELATIVE_LAYOUT ) );
+	const Sizei dialogWindowSize =
+		fileDialog->getUISceneNode()->getWindow()->getSizeInScreenCoordinates();
+	const Sizef dialogMinimumSizePx = PixelDensity::dpToPx( fileDialog->getMinWindowSize() );
+	const Float dialogWindowScale = fileDialog->getUISceneNode()->getWindow()->getScale();
+	EXPECT_TRUE( dialogWindowSize.getWidth() >=
+				 eeceil( dialogMinimumSizePx.getWidth() / dialogWindowScale ) );
+	EXPECT_TRUE( dialogWindowSize.getHeight() >=
+				 eeceil( dialogMinimumSizePx.getHeight() / dialogWindowScale ) );
+	const Vector2i dialogPosition = fileDialog->getUISceneNode()->getWindow()->getPosition();
+	const Vector2i primaryCenter( primaryPosition.x + primaryScreenSize.getWidth() / 2,
+								  primaryPosition.y + primaryScreenSize.getHeight() / 2 );
+	auto* displayManager = Engine::instance()->getDisplayManager();
+	for ( int i = 0; i < displayManager->getDisplayCount(); ++i ) {
+		auto* display = displayManager->getDisplayIndex( i );
+		if ( nullptr == display || !display->getBounds().contains( primaryCenter ) )
+			continue;
+		const Rect usableBounds = display->getUsableBounds();
+		const Rect border = fileDialog->getUISceneNode()->getWindow()->getBorderSize();
+		if ( dialogWindowSize.getWidth() + border.Left + border.Right <= usableBounds.getWidth() ) {
+			EXPECT_TRUE( dialogPosition.x - border.Left >= usableBounds.Left );
+			EXPECT_TRUE( dialogPosition.x + dialogWindowSize.getWidth() + border.Right <=
+						 usableBounds.Right );
+		}
+		if ( dialogWindowSize.getHeight() + border.Top + border.Bottom <=
+			 usableBounds.getHeight() ) {
+			EXPECT_TRUE( dialogPosition.y - border.Top >= usableBounds.Top );
+			EXPECT_TRUE( dialogPosition.y + dialogWindowSize.getHeight() + border.Bottom <=
+						 usableBounds.Bottom );
+		}
+		break;
+	}
+
+	auto* primaryFont = app.getUI()->getUIThemeManager()->getDefaultFont();
+	ASSERT_TRUE( primaryFont != nullptr );
+	fileDialog->getUISceneNode()->getWindow()->close();
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 2u );
+	EXPECT_EQ( app.getUI()->getUIThemeManager()->getDefaultFont(), primaryFont );
+	auto* genericWindow = UIWindow::NewInApplicationWindow(
+		app,
+		WindowSettings( 400, 240, "Generic UI Window", WindowStyle::Default, WindowBackend::Default,
+						32, {}, 1, false, true ),
+		UIWindow::RELATIVE_LAYOUT, UIWindow::StyleConfig(),
+		ContextSettings( false, 0, 0, GLv_default, true, false ), true );
+	ASSERT_TRUE( genericWindow != nullptr );
+	EXPECT_EQ( app.getWindowCount(), 3u );
+	genericWindow->getUISceneNode()->getWindow()->close();
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 2u );
+	auto* messageBox = UIMessageBox::NewInApplicationWindow(
+		app,
+		WindowSettings( 400, 180, "Message Box UI Context", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIMessageBox::OK, "Native modal message", UI_MESSAGE_BOX_DEFAULT_FLAGS,
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( messageBox != nullptr );
+	EXPECT_EQ( app.getWindowCount(), 3u );
+	EXPECT_FALSE( messageBox->isModal() );
+	EXPECT_TRUE( messageBox->getModalWidget() == nullptr );
+	const Sizei messageBoxWindowSize =
+		messageBox->getUISceneNode()->getWindow()->getSizeInScreenCoordinates();
+	const Uint32 messageBoxWindowId = messageBox->getUISceneNode()->getWindow()->getWindowID();
+	EXPECT_EQ( messageBoxWindowSize.getWidth(), 400 );
+	EXPECT_EQ( messageBoxWindowSize.getHeight(), 180 );
+	bool messageBoxConfirmed = false;
+	messageBox->on( Event::OnConfirm,
+					[&messageBoxConfirmed]( const Event* ) { messageBoxConfirmed = true; } );
+	messageBox->getUISceneNode()->getUIThemeManager()->setDefaultEffectsEnabled( true );
+	messageBox->getEventDispatcher()->sendMsg( messageBox->getButtonOK(), NodeMessage::MouseClick,
+											   EE_BUTTON_LMASK );
+	EXPECT_TRUE( messageBoxConfirmed );
+	EXPECT_FALSE( messageBox->getUISceneNode()->getWindow()->isVisible() );
+	for ( int i = 0; i < 20 && app.getWindowCount() == 3u; ++i ) {
+		Sys::sleep( Milliseconds( 5 ) );
+		app.tickOnce();
+	}
+	EXPECT_EQ( app.getWindowCount(), 2u );
+	EXPECT_TRUE( Engine::instance()->getWindowID( messageBoxWindowId ) == nullptr );
+
+	auto* reopenedDialog = UIFileDialog::NewInApplicationWindow(
+		app,
+		WindowSettings( 640, 400, "Reopened File Dialog", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIFileDialog::DefaultFlags, "*", FileSystem::getCurrentWorkingDirectory(),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( reopenedDialog != nullptr );
+	EXPECT_EQ( app.getWindowCount(), 3u );
+	EXPECT_EQ( reopenedDialog->getUISceneNode()->getUIThemeManager()->getDefaultFont(),
+			   primaryFont );
+
+	primaryWindow->close();
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 0u );
+}
+
+UTEST( Node, DescendantWorldBoundsRefreshAfterDirtyAncestorMoves ) {
+	Node* parent = Node::New();
+	Node* child = Node::New();
+	Node* descendant = Node::New();
+	child->setParent( parent );
+	descendant->setParent( child );
+	child->setPosition( 10.f, 0.f );
+	descendant->setPosition( 5.f, 0.f );
+	descendant->setSize( 10.f, 10.f );
+
+	EXPECT_EQ( 15.f, descendant->getWorldBounds().Left );
+	child->setPosition( 20.f, 0.f );
+	EXPECT_EQ( 25.f, descendant->getScreenRect().Left );
+	EXPECT_EQ( 25.f, descendant->getWorldBounds().Left );
+
+	eeDelete( parent );
+}
+
+static void init_test_scene_node( UISceneNode* sceneNode ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-	font = FontTrueType::New( "NotoSans-Regular" );
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	FontFamily::loadFromRegular( font );
-	FontTrueType* monoFont = FontTrueType::New( "monospace" );
+	FontTrueType* monoFont = FontTrueType::New( "monospace" ).get();
 	monoFont->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
-	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
 	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
 	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
 	themeManager->applyDefaultTheme( sceneNode->getRoot() );
+}
+
+static UISceneNode* init_test_scene_node() {
+	UISceneNode* sceneNode = UISceneNode::New();
+	init_test_scene_node( sceneNode );
 	return sceneNode;
 }
+
+class InvalidationTestSceneNode : public UISceneNode {
+  public:
+	static InvalidationTestSceneNode* New() { return eeNew( InvalidationTestSceneNode, () ); }
+
+	size_t pendingStyleCount() const { return mDirtyStyle.size(); }
+
+	size_t pendingStyleStateCount() const { return mDirtyStyleState.size(); }
+
+	size_t pendingStyleStateAnimationCount() const { return mDirtyStyleStateCSSAnimations.size(); }
+
+	size_t pendingLayoutCount() const { return mDirtyLayouts.size(); }
+
+	size_t processedStyleRootCount() const { return mDirtyStylesSnapshot.size(); }
+
+	UIWidget* processedStyleRoot( size_t index ) const { return mDirtyStylesSnapshot[index].first; }
+
+	bool processedStyleRootDisablesAnimations( size_t index ) const {
+		return mDirtyStylesSnapshot[index].second;
+	}
+
+  protected:
+	InvalidationTestSceneNode() : UISceneNode() {}
+};
 
 UTEST( UISceneNode, ViewportMetricsAreIndependentFromSceneExtent ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Scene Viewport Metrics Test",
@@ -363,4 +827,245 @@ UTEST( UISceneNode, NestedSceneInvalidationPropagatesToHostScene ) {
 	EXPECT_TRUE( hostScene->invalidated() );
 
 	Engine::destroySingleton();
+}
+
+UTEST( UISceneNode, StyleStateUpdateAllowsWidgetCreation ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Style State Widget Creation Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_scene_node();
+	UIFileDialog* dialog = UIFileDialog::New();
+	dialog->setParent( sceneNode->getRoot() );
+
+	// Applying the select-button state creates its UIImage icon. The new widget invalidates style
+	// state while the current dirty-state pass is still being processed.
+	sceneNode->flushDirtyStyleAndLayout();
+
+	EXPECT_TRUE( dialog->getButtonOpen() != nullptr );
+
+	Engine::destroySingleton();
+}
+
+class InvalidationTestLayout : public UILayout {
+  public:
+	InvalidationTestLayout() : UILayout( "invalidation-test" ) {}
+
+	void updateLayout() override {
+		lastReasons = mCurrentLayoutReasons;
+		mDirtyLayout = false;
+	}
+
+	LayoutInvalidationFlags lastReasons{ 0 };
+};
+
+UTEST( UISceneNode, LeafLayoutInvalidationPreservesSiblingRootsAndDescendantReasons ) {
+	Engine::instance()->createWindow( WindowSettings( 320, 240, "Leaf Layout Invalidation",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	auto* sceneNode = InvalidationTestSceneNode::New();
+	init_test_scene_node( sceneNode );
+	auto* first = eeNew( InvalidationTestLayout, () );
+	first->setParent( sceneNode->getRoot() );
+	auto* second = eeNew( InvalidationTestLayout, () );
+	second->setParent( sceneNode->getRoot() );
+	sceneNode->flushDirtyStyleAndLayout();
+
+	sceneNode->invalidateLayout( first, LayoutInvalidation::Self );
+	sceneNode->invalidateLayout( second, LayoutInvalidation::TextFormatting );
+	EXPECT_EQ( size_t{ 2 }, sceneNode->pendingLayoutCount() );
+	sceneNode->updateDirtyLayouts();
+	EXPECT_EQ( LayoutInvalidation::Self, first->lastReasons );
+	EXPECT_EQ( LayoutInvalidation::TextFormatting, second->lastReasons );
+
+	// Once a leaf gains a child, ancestor coalescing must still retain the child's reasons.
+	auto* child = eeNew( InvalidationTestLayout, () );
+	child->setParent( first );
+	sceneNode->flushDirtyStyleAndLayout();
+	sceneNode->invalidateLayout( child, LayoutInvalidation::TextFormatting );
+	sceneNode->invalidateLayout( second, LayoutInvalidation::Self );
+	sceneNode->invalidateLayout( first, LayoutInvalidation::Document );
+	EXPECT_EQ( size_t{ 2 }, sceneNode->pendingLayoutCount() );
+	sceneNode->updateDirtyLayouts();
+	EXPECT_EQ( LayoutInvalidation::TextFormatting | LayoutInvalidation::Document,
+			   first->lastReasons );
+	EXPECT_EQ( LayoutInvalidation::Self, second->lastReasons );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UISceneNode, StyleInvalidationCoalescesAtProcessingTime ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Deferred Style Invalidation Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	auto* sceneNode = InvalidationTestSceneNode::New();
+	init_test_scene_node( sceneNode );
+	sceneNode->flushDirtyStyleAndLayout();
+
+	UIWidget* parent = UIWidget::New();
+	parent->setParent( sceneNode->getRoot() );
+	sceneNode->flushDirtyStyleAndLayout();
+
+	constexpr size_t childCount = 2048;
+	UIWidget* firstChild = nullptr;
+	for ( size_t i = 0; i < childCount; ++i ) {
+		UIWidget* child = UIWidget::New();
+		child->setParent( parent );
+		if ( !firstChild )
+			firstChild = child;
+	}
+
+	EXPECT_EQ( childCount, sceneNode->pendingStyleCount() );
+	EXPECT_EQ( childCount, sceneNode->pendingStyleStateCount() );
+
+	sceneNode->invalidateStyle( parent );
+	sceneNode->invalidateStyleState( parent, true );
+	EXPECT_EQ( childCount + 1, sceneNode->pendingStyleCount() );
+	EXPECT_EQ( childCount + 1, sceneNode->pendingStyleStateCount() );
+
+	sceneNode->updateDirtyStyles();
+	EXPECT_EQ( size_t{ 1 }, sceneNode->processedStyleRootCount() );
+	EXPECT_EQ( parent, sceneNode->processedStyleRoot( 0 ) );
+	EXPECT_EQ( size_t{ 0 }, sceneNode->pendingStyleCount() );
+
+	sceneNode->updateDirtyStyleStates();
+	EXPECT_EQ( size_t{ 1 }, sceneNode->processedStyleRootCount() );
+	EXPECT_EQ( parent, sceneNode->processedStyleRoot( 0 ) );
+	EXPECT_TRUE( sceneNode->processedStyleRootDisablesAnimations( 0 ) );
+	EXPECT_EQ( size_t{ 0 }, sceneNode->pendingStyleStateCount() );
+
+	// The existing ancestor fast path still avoids queueing descendants when the parent arrives
+	// first, and the parent's animation policy governs the recursive state update.
+	sceneNode->invalidateStyle( parent );
+	sceneNode->invalidateStyle( firstChild );
+	sceneNode->invalidateStyleState( parent, false );
+	sceneNode->invalidateStyleState( firstChild, true );
+	EXPECT_EQ( size_t{ 1 }, sceneNode->pendingStyleCount() );
+	EXPECT_EQ( size_t{ 1 }, sceneNode->pendingStyleStateCount() );
+	sceneNode->updateDirtyStyles();
+	EXPECT_EQ( parent, sceneNode->processedStyleRoot( 0 ) );
+	sceneNode->updateDirtyStyleStates();
+	EXPECT_EQ( parent, sceneNode->processedStyleRoot( 0 ) );
+	EXPECT_FALSE( sceneNode->processedStyleRootDisablesAnimations( 0 ) );
+
+	// Reparenting an already-dirty widget under a dirty parent can leave both entries queued. The
+	// current tree must decide which root gets processed.
+	UIWidget* reparentTarget = UIWidget::New();
+	reparentTarget->setParent( sceneNode->getRoot() );
+	sceneNode->flushDirtyStyleAndLayout();
+	sceneNode->invalidateStyle( firstChild );
+	sceneNode->invalidateStyleState( firstChild );
+	sceneNode->invalidateStyle( reparentTarget );
+	sceneNode->invalidateStyleState( reparentTarget, true );
+	firstChild->setParent( reparentTarget );
+	sceneNode->updateDirtyStyles();
+	EXPECT_EQ( size_t{ 1 }, sceneNode->processedStyleRootCount() );
+	EXPECT_EQ( reparentTarget, sceneNode->processedStyleRoot( 0 ) );
+	sceneNode->updateDirtyStyleStates();
+	EXPECT_EQ( size_t{ 1 }, sceneNode->processedStyleRootCount() );
+	EXPECT_EQ( reparentTarget, sceneNode->processedStyleRoot( 0 ) );
+	EXPECT_TRUE( sceneNode->processedStyleRootDisablesAnimations( 0 ) );
+
+	UIWidget* deletedWidget = UIWidget::New();
+	deletedWidget->setParent( sceneNode->getRoot() );
+	sceneNode->flushDirtyStyleAndLayout();
+	sceneNode->invalidateStyleState( deletedWidget, true );
+	EXPECT_EQ( size_t{ 1 }, sceneNode->pendingStyleStateAnimationCount() );
+	eeDelete( deletedWidget );
+	EXPECT_EQ( size_t{ 0 }, sceneNode->pendingStyleStateCount() );
+	EXPECT_EQ( size_t{ 0 }, sceneNode->pendingStyleStateAnimationCount() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWindow, ShadowSurvivesRepeatedTranslucentDraws ) {
+	for ( Float density : { 1.f, 1.5f } ) {
+		UIApplication app( WindowSettings( 320, 240, "Window shadow opacity", WindowStyle::Default,
+										   WindowBackend::Default, 32, {}, 1, false, true ),
+						   UIApplication::Settings(
+							   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), density ) );
+		auto* scene = app.getUI();
+		scene->getUIThemeManager()->setDefaultEffectsEnabled( false );
+		scene->loadLayoutFromString( R"xml(
+			<window id="shadow-test" x="30dp" y="30dp" width="60dp" height="40dp"
+				window-flags="borderless|shadow" background-color="white"
+				window-shadow-color="#00000080" window-shadow-size="8dp"
+				window-shadow-offset="0dp 0dp" />
+		)xml" );
+		scene->flushDirtyStyleAndLayout();
+		scene->getRoot()->setBackgroundColor( Color::White );
+		auto* window = scene->find( "shadow-test" )->asType<UIWindow>();
+		window->setVisible( true );
+		const auto* shadowColor = CSS::StyleSheetSpecification::instance()->getProperty(
+			CSS::PropertyId::WindowShadowColor );
+		// Exercise fade-in and fade-out frames without timer or inspector-driven redraws.
+		for ( Uint8 alpha : { 16, 64, 128, 192, 255, 128, 255 } ) {
+			window->setAlpha( alpha );
+			app.getWindow()->clear();
+			scene->draw();
+			EXPECT_STDSTREQ( "#00000080", window->getPropertyString( shadowColor ) );
+		}
+		auto pixels = app.getWindow()->getFrontBufferImage();
+		const auto bounds = window->getWorldBounds();
+		const auto y = static_cast<unsigned int>( bounds.getCenter().y );
+		const auto nearX = static_cast<unsigned int>( bounds.Left - PixelDensity::dpToPx( 4.f ) );
+		const auto farX = static_cast<unsigned int>( bounds.Left - PixelDensity::dpToPx( 16.f ) );
+		EXPECT_LT( pixels.getPixel( nearX, y ).r, pixels.getPixel( farX, y ).r );
+	}
+}
+
+UTEST( UIWindow, ModalWindowStopsKeyBindingsFromReachingScene ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "Modal Key Binding Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+
+	UISceneNode* sceneNode = init_test_scene_node();
+	int executedCommands = 0;
+	sceneNode->setKeyBindingCommand( "global-command",
+									 [&executedCommands] { executedCommands++; } );
+	sceneNode->addKeyBinding( { KEY_F, KEYMOD_LMETA | KEYMOD_LSHIFT }, "global-command" );
+
+	UIWindow* window = UIWindow::New();
+	window->setParent( sceneNode->getRoot() );
+	sceneNode->getEventDispatcher()->setFocusNode( window->getContainer() );
+
+	sceneNode->getEventDispatcher()->sendKeyDown( KEY_F, SCANCODE_UNKNOWN, 0,
+												  KEYMOD_LMETA | KEYMOD_LSHIFT );
+	EXPECT_EQ( executedCommands, 1 );
+
+	window->setWindowFlags( window->getWinFlags() | UI_WIN_MODAL );
+	sceneNode->getEventDispatcher()->sendKeyDown( KEY_F, SCANCODE_UNKNOWN, 0,
+												  KEYMOD_LMETA | KEYMOD_LSHIFT );
+	EXPECT_EQ( executedCommands, 1 );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UISceneNode, CookieJarIsPrivateByDefaultAndReplaceable ) {
+	UIApplication app(
+		WindowSettings{ 320, 240, "Shared cookie jars" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	auto* first = app.getUI();
+	auto* second = UISceneNode::New();
+	ASSERT_TRUE( &first->getCookieManager() != &second->getCookieManager() );
+	first->getCookieManager().storeCookiesFromHeader( "example.com", "private=value" );
+	EXPECT_TRUE( second->getCookieManager().getCookieHeader( "example.com" ).empty() );
+
+	auto shared = std::make_shared<CookieManager>();
+	first->setCookieManager( shared );
+	second->setCookieManager( shared );
+	EXPECT_TRUE( &first->getCookieManager() == shared.get() );
+	EXPECT_TRUE( &second->getCookieManager() == shared.get() );
+	first->getCookieManager().storeCookiesFromHeader( "example.com", "shared=value" );
+	EXPECT_TRUE( second->getCookieManager().getCookieHeader( "example.com" ) == "shared=value" );
+	first->setCookieManager( nullptr );
+	EXPECT_TRUE( &first->getCookieManager() != shared.get() );
+	EXPECT_TRUE( first->getCookieManager().getCookieHeader( "example.com" ).empty() );
+	EXPECT_TRUE( second->getCookieManager().getCookieHeader( "example.com" ) == "shared=value" );
+	eeDelete( second );
 }

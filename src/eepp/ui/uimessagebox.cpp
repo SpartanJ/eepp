@@ -1,3 +1,4 @@
+#include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uilayout.hpp>
@@ -16,6 +17,17 @@ namespace EE { namespace UI {
 UIMessageBox* UIMessageBox::New( const Type& type, const String& message,
 								 const Uint32& windowFlags ) {
 	return eeNew( UIMessageBox, ( type, message, windowFlags ) );
+}
+
+UIMessageBox* UIMessageBox::NewInApplicationWindow(
+	UIApplication& application, const EE::Window::WindowSettings& windowSettings, const Type& type,
+	const String& message, const Uint32& windowFlags,
+	const EE::Window::ContextSettings& contextSettings, bool modal,
+	ApplicationWindowPosition position ) {
+	return static_cast<UIMessageBox*>( createInApplicationWindow(
+		application, windowSettings,
+		[type, message, windowFlags] { return New( type, message, windowFlags ); }, contextSettings,
+		modal, position ) );
 }
 
 UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint32& windowFlags ) :
@@ -52,7 +64,7 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		mTextEdit = UITextEdit::New();
 		mTextEdit->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
-			->setSize( PixelDensity::dpToPx( Vector2f{ 400, 100 } ) )
+			->setSize( Vector2f{ 600, 200 } )
 			->setParent( vlay );
 		mTextEdit->getDocument().setCommand( "complete-edit",
 											 [this] { sendCommonEvent( Event::OnConfirm ); } );
@@ -62,14 +74,14 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		mDropDownList = UIDropDownList::New();
 		mDropDownList->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
-			->setSize( PixelDensity::dpToPx( Vector2f{ 200, 18 } ) )
+			->setSize( Vector2f{ 200, 18 } )
 			->setParent( vlay );
 		mDropDownList->setPopUpToRoot( true );
 	} else if ( mMsgBoxType == COMBOBOX ) {
 		mComboBox = UIComboBox::New();
 		mComboBox->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
-			->setSize( PixelDensity::dpToPx( Vector2f{ 200, 18 } ) )
+			->setSize( Vector2f{ 200, 18 } )
 			->setParent( vlay );
 		mComboBox->getDropDownList()->setPopUpToRoot( true );
 		mComboBox->getDropDownList()->getDocument().setCommand(
@@ -155,16 +167,17 @@ void UIMessageBox::setTheme( UITheme* theme ) {
 	mButtonCancel->setTheme( theme );
 
 	if ( i18n( "msg_box_retry", "Retry" ) != mButtonOK->getText() ) {
-		Drawable* okIcon = getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) );
-		Drawable* cancelIcon =
+		DrawablePtr okIcon =
+			getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) );
+		DrawablePtr cancelIcon =
 			getUISceneNode()->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) );
 
 		if ( NULL != okIcon ) {
-			mButtonOK->setIcon( okIcon );
+			mButtonOK->setIcon( std::move( okIcon ) );
 		}
 
 		if ( NULL != cancelIcon ) {
-			mButtonCancel->setIcon( cancelIcon );
+			mButtonCancel->setIcon( std::move( cancelIcon ) );
 		}
 	}
 
@@ -205,7 +218,7 @@ UIPushButton* UIMessageBox::getButtonCancel() const {
 }
 
 Uint32 UIMessageBox::onKeyUp( const KeyEvent& event ) {
-	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut &&
+	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut.key &&
 		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
 		sendCommonEvent( Event::OnDiscard );
 		closeWindow();

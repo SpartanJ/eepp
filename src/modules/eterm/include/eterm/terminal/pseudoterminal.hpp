@@ -55,7 +55,7 @@ class PseudoTerminal final : public IPseudoTerminal {
 	virtual int getNumColumns() const override;
 	virtual int getNumRows() const override;
 
-	virtual bool resize( int columns, int rows ) override;
+	virtual bool resize( int columns, int rows, int pixelWidth, int pixelHeight ) override;
 	virtual int write( const char* s, size_t n ) override;
 	virtual int read( char* buf, size_t n, bool block = false ) override;
 

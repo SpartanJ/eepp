@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCTIMER_H
 #define EE_SYSTEMCTIMER_H
 
-#include <chrono>
+#include <eepp/config.hpp>
 #include <eepp/system/time.hpp>
 
 namespace EE { namespace System {
@@ -25,11 +25,7 @@ class EE_API Clock {
 	Time getElapsedTimeAndReset();
 
   private:
-	using ClockImpl =
-		std::conditional_t<std::chrono::high_resolution_clock::is_steady,
-						   std::chrono::high_resolution_clock, std::chrono::steady_clock>;
-
-	ClockImpl::time_point mRefPoint{ ClockImpl::now() }; //!< Time of last reset
+	Int64 mRefPoint{ 0 }; //!< Time of last reset in microseconds
 };
 
 }} // namespace EE::System

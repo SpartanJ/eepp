@@ -1,5 +1,6 @@
 #include "lspclientplugin.hpp"
 #include "../../notificationcenter.hpp"
+#include "../../settingspage.hpp"
 #include "../../version.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -26,10 +27,73 @@ using json = nlohmann::json;
 
 namespace ecode {
 
+void LSPClientPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addText( "hover-delay", "/config/hover_delay", i18n( "lsp_hover_delay", "Hover Delay" ),
+				  i18n( "lsp_hover_delay_desc",
+						"Time to wait before showing language server information while hovering." ),
+				  mHoverDelay.toString(), []( const std::string& text ) {
+					  Time value;
+					  return SettingsPage::parseNonNegativeSettingsTime( text, value );
+				  } );
+	page.addText( "server-close-after-idle-time", "/config/server_close_after_idle_time",
+				  i18n( "lsp_server_close_after_idle_time", "Server Close After Idle Time" ),
+				  i18n( "lsp_server_close_after_idle_time_desc",
+						"Time to keep an unused language server running before closing it." ),
+				  mClientManager.getLSPDecayTime().toString(), []( const std::string& text ) {
+					  Time value;
+					  return SettingsPage::parseNonNegativeSettingsTime( text, value );
+				  } );
+	page.addBool( "silent", "/config/silent", i18n( "lsp_silent", "Silent Language Server Logs" ),
+				  i18n( "lsp_silent_desc", "Hide non-critical language server log messages." ),
+				  mSilence );
+	page.addBool(
+		"trim-logs", "/config/trim_logs", i18n( "lsp_trim_logs", "Trim Language Server Logs" ),
+		i18n( "lsp_trim_logs_desc", "Limit each language server log line to 1 KiB." ), mTrimLogs );
+	page.addBool( "semantic-highlighting", "/config/semantic_highlighting",
+				  i18n( "lsp_semantic_highlighting", "Semantic Highlighting" ),
+				  i18n( "lsp_semantic_highlighting_desc",
+						"Use semantic tokens provided by language servers when available." ),
+				  mSemanticHighlighting );
+	page.addStringList(
+		"disable-semantic-highlighting-lang", "/config/disable_semantic_highlighting_lang",
+		i18n( "lsp_disable_semantic_highlighting_lang", "Disable Semantic Highlighting Languages" ),
+		i18n( "lsp_disable_semantic_highlighting_lang_desc",
+			  "Comma-separated language identifiers where semantic highlighting is disabled." ) );
+	page.addBool( "breadcrumb-navigation", "/config/breadcrumb_navigation",
+				  i18n( "lsp_breadcrumb_navigation", "Breadcrumb Navigation" ),
+				  i18n( "lsp_breadcrumb_navigation_desc",
+						"Display language-aware breadcrumb navigation above the editor." ),
+				  mBreadcrumb );
+	page.addText(
+		"breadcrumb-height", "/config/breadcrumb_height",
+		i18n( "lsp_breadcrumb_height", "Breadcrumb Height" ),
+		i18n( "lsp_breadcrumb_height_desc", "Height of the editor breadcrumb using a CSS length." ),
+		mBreadcrumbHeight.toString(),
+		[]( const std::string& text ) { return StyleSheetLength::isLength( text ); } );
+}
+
 static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
 	return hashCombine( String::hash( "LSPClientPlugin::onMouseMove-" ),
 						reinterpret_cast<Action::UniqueID>( editor ) );
 }
+
+static constexpr const char* LSPDocumentCommands[] = {
+	"lsp-go-to-definition",
+	"lsp-go-to-declaration",
+	"lsp-go-to-implementation",
+	"lsp-go-to-type-definition",
+	"lsp-switch-header-source",
+	"lsp-symbol-info",
+	"lsp-symbol-references",
+	"lsp-memory-usage",
+	"lsp-symbol-code-action",
+	"lsp-rename-symbol-under-cursor",
+	"lsp-refresh-semantic-highlighting",
+	"lsp-format-range",
+	"lsp-plugin-restart",
+	"lsp-show-document-symbols",
+};
 
 static json getURIAndPositionJSON( UICodeEditor* editor ) {
 	json data;
@@ -236,7 +300,7 @@ Plugin* LSPClientPlugin::NewSync( PluginManager* pluginManager ) {
 }
 
 LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
-	Plugin( pluginManager ) {
+	Plugin( pluginManager ), mLifetime( this, getUISceneNode() ) {
 	if ( sync ) {
 		load( pluginManager );
 	} else {
@@ -247,28 +311,13 @@ LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
 LSPClientPlugin::~LSPClientPlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
-	mManager->unsubscribeMessages( this );
-	unsubscribeFileSystemListener();
-	{
-		Lock l( mDocMutex );
-		for ( const auto& editor : mEditors ) {
-			UICodeEditor* codeEditor = editor.first;
-			for ( auto& kb : mKeyBindings ) {
-				codeEditor->getKeyBindings().removeCommandKeybind( kb.first );
-				if ( codeEditor->hasDocument() )
-					codeEditor->getDocument().removeCommand( kb.first );
-			}
-			for ( auto listener : editor.second )
-				codeEditor->removeEventListener( listener );
-			if ( mBreadcrumb )
-				codeEditor->unregisterTopSpace( this );
-			codeEditor->unregisterPlugin( this );
-			if ( mManager->getSplitter()->editorExists( codeEditor ) )
-				codeEditor->removeActionsByTag( getMouseMoveHash( codeEditor ) );
-		}
-		if ( nullptr == mManager->getSplitter() )
-			return;
-	}
+}
+
+void LSPClientPlugin::unregisterEditors() {
+	mLifetime.invalidate();
+	while ( !mEditors.empty() )
+		mEditors.begin()->first->unregisterPlugin( this );
+	mClientManager.detachDocuments();
 }
 
 void LSPClientPlugin::update( UICodeEditor* ) {
@@ -361,9 +410,11 @@ PluginRequestHandle LSPClientPlugin::processDocumentFormatting( const PluginMess
 
 	auto ret = server.server->documentFormatting(
 		server.uri, msg.asJSON()["options"],
-		[this, server]( const PluginIDType&, const std::vector<LSPTextEdit>& edits ) {
-			mManager->getSplitter()->getUISceneNode()->runOnMainThread(
-				[this, server, edits] { processDocumentFormattingResponse( server.uri, edits ); } );
+		[lifetime = mLifetime.weakHandle(), server]( const PluginIDType&,
+													 const std::vector<LSPTextEdit>& edits ) {
+			lifetime.run( [server, edits]( LSPClientPlugin* plugin ) {
+				plugin->processDocumentFormattingResponse( server.uri, edits );
+			} );
 		} );
 
 	return ret;
@@ -632,7 +683,8 @@ bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 
 	Input* input = editor->getInput();
 	Uint32 mod = input->getSanitizedModState();
-	if ( mod != ( KEYMOD_LALT | KeyMod::getDefaultModifier() ) || ( flags & EE_BUTTON_LMASK ) == 0 )
+	if ( mod != ( KeyMod::getDefaultSecondaryModifier() | KeyMod::getDefaultModifier() ) ||
+		 ( flags & EE_BUTTON_LMASK ) == 0 )
 		return false;
 
 	auto docPos = editor->resolveScreenPosition( pos.asFloat() );
@@ -874,6 +926,7 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 			break;
 		}
 		case ecode::PluginMessageType::UIReady: {
+			mLifetime.setDispatcher( getUISceneNode() );
 			if ( mBrokenUserConfigFile )
 				displayBrokenUserConfigFileWarning();
 			break;
@@ -1105,21 +1158,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 
 	if ( j.contains( "keybindings" ) ) {
 		auto& kb = j["keybindings"];
-		auto list = { "lsp-go-to-definition",
-					  "lsp-go-to-declaration",
-					  "lsp-go-to-implementation",
-					  "lsp-go-to-type-definition",
-					  "lsp-switch-header-source",
-					  "lsp-symbol-info",
-					  "lsp-symbol-references",
-					  "lsp-memory-usage",
-					  "lsp-symbol-code-action",
-					  "lsp-rename-symbol-under-cursor",
-					  "lsp-refresh-semantic-highlighting",
-					  "lsp-format-range",
-					  "lsp-plugin-restart",
-					  "lsp-show-document-symbols" };
-		for ( const auto& key : list ) {
+		for ( const auto* key : LSPDocumentCommands ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
 					mKeyBindings[key] = kb[key];
@@ -1473,7 +1512,10 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 				static_cast<UICodeEditor*>( client )->getDocumentRef() );
 		} );
 
-		doc.setCommand( "lsp-plugin-restart", [this] { mManager->reload( getId() ); } );
+		doc.setCommand( "lsp-plugin-restart", [lifetime = mLifetime.weakHandle()] {
+			lifetime.run(
+				[]( LSPClientPlugin* plugin ) { plugin->mManager->reload( plugin->getId() ); } );
+		} );
 
 		doc.setCommand( "lsp-show-document-symbols", [this]( TextDocument::Client* client ) {
 			showDocumentSymbols( static_cast<UICodeEditor*>( client ) );
@@ -1551,7 +1593,7 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 	for ( auto& kb : mKeyBindings )
 		editor->getKeyBindings().removeCommandKeybind( kb.first );
 
-	if ( mShuttingDown )
+	if ( mShuttingDown && !mUnregistering )
 		return;
 
 	editor->removeActionsByTag( getMouseMoveHash( editor ) );
@@ -1576,8 +1618,8 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 		}
 
 		if ( editor->hasDocument() )
-			for ( auto& kb : mKeyBindings )
-				editor->getDocument().removeCommand( kb.first );
+			for ( const auto* command : LSPDocumentCommands )
+				editor->getDocument().removeCommand( command );
 
 		{
 			Lock lds( mDocSymbolsMutex );
@@ -1963,33 +2005,35 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 		return;
 
 	pos.x += drawn.getWidth();
+	Float textHeight = drawn.getHeight();
 	if ( mDrawSepIcon == nullptr )
 		mDrawSepIcon = getUISceneNode()->findIcon( "chevron-right" );
-	Float textHeight = drawn.getHeight();
+	Drawable* separatorDrawable =
+		mDrawSepIcon
+			? mDrawSepIcon->getSource( PixelDensity::dpToPxI( drawn.getHeight() * 0.5f ) ).get()
+			: nullptr;
 
 	const auto& symbolsInfo = symbolsInfoIt->second;
 
 	for ( const auto& info : symbolsInfo ) {
-		if ( mDrawSepIcon ) {
+		if ( separatorDrawable ) {
 			pos.x += eefloor( PixelDensity::dpToPx( 8 ) );
-			Float iconSize = PixelDensity::dpToPxI( drawn.getHeight() * 0.5f );
-			auto iconDrawable = mDrawSepIcon->getSize( iconSize );
-			Color c = iconDrawable->getColor();
-			iconDrawable->setColor( textColor );
-			Float iconHeight = iconDrawable->getPixelsSize().getHeight();
+			Color c = separatorDrawable->getColor();
+			separatorDrawable->setColor( textColor );
+			Float iconHeight = separatorDrawable->getPixelsSize().getHeight();
 			Vector2f iconPos( { pos.x, screenStart.y + textOffsetY +
 										   eefloor( ( textHeight - iconHeight ) * 0.5f ) } );
-			iconDrawable->draw( iconPos );
-			pos.x +=
-				iconDrawable->getPixelsSize().getWidth() + eefloor( PixelDensity::dpToPx( 8 ) );
-			iconDrawable->setColor( c );
+			separatorDrawable->draw( iconPos );
+			pos.x += separatorDrawable->getPixelsSize().getWidth() +
+					 eefloor( PixelDensity::dpToPx( 8 ) );
+			separatorDrawable->setColor( c );
 		} else {
 			pos.x += eefloor( PixelDensity::dpToPx( 16 ) );
 		}
 
-		UIIcon* iconKind = getUISceneNode()->findIcon( info.icon );
-		if ( iconKind ) {
-			auto iconDrawable = iconKind->getSize( fontSize );
+		UIIcon* icon = getUISceneNode()->findIcon( info.icon );
+		Drawable* iconDrawable = icon ? icon->getSource( (int)fontSize ).get() : nullptr;
+		if ( iconDrawable ) {
 			Color c = iconDrawable->getColor();
 			iconDrawable->setColor( textColor );
 			Float iconHeight = iconDrawable->getPixelsSize().getHeight();

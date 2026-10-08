@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
@@ -272,7 +271,7 @@ void UIListBox::setRowHeight() {
 			fontSize =
 				fontStyleConfig.getFont()->getFontHeight( fontStyleConfig.getFontCharacterSize() );
 
-		mRowHeight = PixelDensity::pxToDp( fontSize ) + PixelDensity::dpToPx( 4 );
+		mRowHeight = PixelDensity::pxToDp( fontSize ) + 4;
 	}
 
 	if ( tOldRowHeight != mRowHeight ) {
@@ -1076,22 +1075,22 @@ bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {
 			setRowHeight( attribute.asDpDimensionI( this ) );
 			break;
 		case PropertyId::VScrollMode: {
-			std::string val = attribute.asString();
-			if ( "auto" == val )
+			const std::string& val = attribute.getValue();
+			if ( String::iequals( val, "auto" ) )
 				setVerticalScrollMode( ScrollBarMode::Auto );
-			else if ( "on" == val )
+			else if ( String::iequals( val, "on" ) )
 				setVerticalScrollMode( ScrollBarMode::AlwaysOn );
-			else if ( "off" == val )
+			else if ( String::iequals( val, "off" ) )
 				setVerticalScrollMode( ScrollBarMode::AlwaysOff );
 			break;
 		}
 		case PropertyId::HScrollMode: {
-			std::string val = attribute.asString();
-			if ( "auto" == val )
+			const std::string& val = attribute.getValue();
+			if ( String::iequals( val, "auto" ) )
 				setHorizontalScrollMode( ScrollBarMode::Auto );
-			else if ( "on" == val )
+			else if ( String::iequals( val, "on" ) )
 				setHorizontalScrollMode( ScrollBarMode::AlwaysOn );
-			else if ( "off" == val )
+			else if ( String::iequals( val, "off" ) )
 				setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
 			break;
 		}

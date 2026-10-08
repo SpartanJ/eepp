@@ -1,5 +1,4 @@
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/scene/actions/actions.hpp>
@@ -244,7 +243,8 @@ const String& UITextView::getText() const {
 UITextView* UITextView::setText( const String& text ) {
 	if ( mString != text ) {
 		mString = text;
-		mTextDrawHints = mString.getTextHints();
+		mTextDrawHints = mString.getTextHints() | getTextHints();
+		mTextCache.setTextHints( getTextHints() );
 		mTextCache.setString( mString );
 
 		recalculate();
@@ -258,7 +258,8 @@ UITextView* UITextView::setText( const String& text ) {
 UITextView* UITextView::setText( String&& text ) {
 	if ( mString != text ) {
 		mString = std::move( text );
-		mTextDrawHints = mString.getTextHints();
+		mTextDrawHints = mString.getTextHints() | getTextHints();
+		mTextCache.setTextHints( getTextHints() );
 		mTextCache.setString( mString );
 
 		recalculate();
@@ -267,6 +268,33 @@ UITextView* UITextView::setText( String&& text ) {
 	}
 
 	return this;
+}
+
+void UITextView::setTextHintsOverride( Uint32 value, Uint32 mask ) {
+	mask &= TextHints::OpenTypeFeatures;
+	value &= mask;
+	if ( mTextHintsOverride != value || mTextHintsOverrideMask != mask ) {
+		mTextHintsOverride = value;
+		mTextHintsOverrideMask = mask;
+		onTextHintsChanged();
+	}
+}
+
+void UITextView::clearTextHintsOverride() {
+	setTextHintsOverride( 0, 0 );
+}
+
+Uint32 UITextView::getTextHints() const {
+	return UISceneNode::resolveTextHints( getDefaultTextHints(), mTextHintsOverride,
+										  mTextHintsOverrideMask );
+}
+
+void UITextView::onTextHintsChanged() {
+	mTextDrawHints = mString.getTextHints() | getTextHints();
+	mTextCache.setTextHints( getTextHints() );
+	recalculate();
+	notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
+	invalidateDraw();
 }
 
 const Color& UITextView::getFontColor() const {
@@ -278,6 +306,7 @@ UITextView* UITextView::setFontColor( const Color& color ) {
 		mFontStyleConfig.FontColor = color;
 		Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
 		mTextCache.setFillColor( newColor );
+		onFontColorChanged();
 		invalidateDraw();
 	}
 
@@ -499,6 +528,8 @@ void UITextView::onFontStyleChanged() {
 	invalidateDraw();
 }
 
+void UITextView::onFontColorChanged() {}
+
 void UITextView::onAlphaChange() {
 	Color color( getFontColor() );
 	Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
@@ -621,7 +652,7 @@ void UITextView::drawSelection( Text& textCache ) {
 			mSelRectsCache.clear();
 			mLastSelCurInit = selCurInit();
 			mLastSelCurEnd = selCurEnd();
-			mSelRectsCache = mTextCache.getSelectionRects( { selCurInit(), selCurEnd() } );
+			mSelRectsCache = textCache.getSelectionRects( { selCurInit(), selCurEnd() } );
 		}
 
 		if ( !mSelRectsCache.empty() ) {
@@ -707,6 +738,11 @@ void UITextView::onAlignChange() {
 }
 
 void UITextView::onSelectionChange() {
+	if ( mUsingCustomStyling ) {
+		invalidateDraw();
+		return;
+	}
+
 	mTextCache.invalidateColors();
 
 	if ( selCurInit() != selCurEnd() ) {
@@ -881,7 +917,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontWeight:
 			return Text::fontWeightToString( mFontStyleConfig.Weight );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
+			return pixelsLengthToString( getOutlineThickness() );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::Wordwrap:

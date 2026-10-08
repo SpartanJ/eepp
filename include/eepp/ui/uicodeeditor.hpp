@@ -3,6 +3,7 @@
 
 #include <eepp/core/small_vector.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/ui/doc/documentview.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
@@ -10,11 +11,12 @@
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/mouseshortcut.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
-#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <unordered_map>
 #include <unordered_set>
 
 using namespace EE::Graphics;
+using namespace EE::Scene;
 using namespace EE::UI::Doc;
 
 namespace EE { namespace Graphics {
@@ -29,7 +31,6 @@ class UIDocFindReplace;
 
 class UIIcon;
 class UICodeEditor;
-class UIWindow;
 class UIScrollBar;
 class UILoader;
 class UIPopUpMenu;
@@ -45,37 +46,61 @@ class UICodeEditorPlugin {
   public:
 	typedef std::function<void( UICodeEditorPlugin*, const Uint32& )> OnReadyCb;
 	virtual std::string getId() = 0;
+
 	virtual std::string getTitle() = 0;
+
 	virtual std::string getDescription() = 0;
+
 	virtual bool isReady() const = 0;
-	virtual bool hasGUIConfig() { return false; }
+
 	virtual bool hasFileConfig() { return false; }
-	virtual UIWindow* getGUIConfig() { return nullptr; }
+
 	virtual std::string getFileConfigPath() { return ""; }
 
 	virtual ~UICodeEditorPlugin() {}
 
 	virtual void onRegister( UICodeEditor* ) = 0;
+
 	virtual void onUnregister( UICodeEditor* ) = 0;
+
 	virtual bool onKeyDown( UICodeEditor*, const KeyEvent& ) { return false; }
+
 	virtual bool onKeyUp( UICodeEditor*, const KeyEvent& ) { return false; }
+
 	virtual bool onTextInput( UICodeEditor*, const TextInputEvent& ) { return false; }
+
 	virtual void update( UICodeEditor* ) {}
+
 	virtual void preDraw( UICodeEditor*, const Vector2f& /*startScroll*/,
 						  const Float& /*lineHeight*/, const TextPosition& /*cursor*/ ) {}
+
 	virtual void postDraw( UICodeEditor*, const Vector2f& /*startScroll*/,
 						   const Float& /*lineHeight*/, const TextPosition& /*cursor*/ ) {}
+
 	virtual void onFocus( UICodeEditor* ) {}
+
 	virtual void onFocusLoss( UICodeEditor* ) {}
+
 	virtual bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
 	virtual bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
 	virtual bool onMouseUp( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
+	virtual bool onMouseWheel( UICodeEditor*, const Vector2i&, const Vector2f&, bool ) {
+		return false;
+	}
+
 	virtual bool onMouseClick( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
 	virtual bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& ) {
 		return false;
 	}
+
 	virtual bool onMouseOver( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
 	virtual bool onMouseLeave( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
 	virtual bool onCreateContextMenu( UICodeEditor*, UIPopUpMenu* /*menu*/,
 									  const Vector2i& /*position*/, const Uint32& /*flags*/ ) {
 		return false;
@@ -142,6 +167,7 @@ class EE_API DocEvent : public Event {
   public:
 	DocEvent( Node* node, TextDocument* doc, const Uint32& eventType ) :
 		Event( node, eventType ), doc( doc ) {}
+
 	TextDocument* getDoc() const { return doc; }
 
   protected:
@@ -165,7 +191,9 @@ class EE_API DocSyntaxDefEvent : public DocEvent {
 	DocSyntaxDefEvent( Node* node, TextDocument* doc, const Uint32& eventType,
 					   const std::string& oldLang, const std::string& newLang ) :
 		DocEvent( node, doc, eventType ), oldLang( oldLang ), newLang( newLang ) {}
+
 	const std::string& getOldLang() const { return oldLang; }
+
 	const std::string& getNewLang() const { return newLang; }
 
   protected:
@@ -173,7 +201,7 @@ class EE_API DocSyntaxDefEvent : public DocEvent {
 	std::string newLang;
 };
 
-class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
+class EE_API UICodeEditor : public UITouchDraggableWidget, public TextDocument::Client {
   public:
 	struct MinimapConfig {
 		Float width{ 100 }; // dp width
@@ -195,7 +223,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	static UICodeEditor* NewOpt( const bool& autoRegisterBaseCommands,
 								 const bool& autoRegisterBaseKeybindings );
 
-	static const std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
+	static std::shared_ptr<const KeyBindings> getDefaultKeybindings();
 
 	static const MouseBindings::ShortcutMap getDefaultMousebindings();
 
@@ -383,8 +411,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void addKeyBindsString( const std::map<std::string, std::string>& binds,
 							const bool& allowLocked = false );
 
-	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds,
-					  const bool& allowLocked = false );
+	void addKeyBinds( const KeyBindings::ShortcutMap& binds, const bool& allowLocked = false );
 
 	const bool& getHighlightCurrentLine() const;
 
@@ -535,10 +562,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void unregisterPlugin( UICodeEditorPlugin* plugin );
 
-	virtual Vector2d getTextPositionOffset( const TextPosition& pos,
-											std::optional<Float> lineHeight = {},
-											bool allowVisualLineEnd = false,
-											bool visualizeNewLine = false ) const;
+	virtual Vector2d getTextPositionOffset(
+		const TextPosition& pos, std::optional<Float> lineHeight = {},
+		bool allowVisualLineEnd = false, bool visualizeNewLine = false,
+		Text::LigatureCaretMode ligatureCaretMode = Text::LigatureCaretMode::Interpolate ) const;
 
 	Vector2d getTextPositionOffsetSanitized( TextPosition pos,
 											 std::optional<Float> lineHeight = {} ) const;
@@ -768,13 +795,13 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setShowFoldingRegion( bool showFoldingRegion );
 
-	Drawable* getFoldDrawable() const;
+	const DrawablePtr& getFoldDrawable() const;
 
-	void setFoldDrawable( Drawable* foldDrawable );
+	void setFoldDrawable( DrawablePtr foldDrawable );
 
-	Drawable* getFoldedDrawable() const;
+	const DrawablePtr& getFoldedDrawable() const;
 
-	void setFoldedDrawable( Drawable* foldedDrawable );
+	void setFoldedDrawable( DrawablePtr foldedDrawable );
 
 	bool getFoldsAlwaysVisible() const;
 
@@ -841,6 +868,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool isKerningEnabled() const;
 
+	void setLigatureFeatures( Uint32 features );
+
+	Uint32 getLigatureFeatures() const;
+
+	void clearLigaturesOverride();
+
+	virtual void onTextHintsChanged();
+
 	void setTextDirection( TextDirection direction );
 
 	TextDirection getTextDirection() const;
@@ -861,7 +896,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setDynamicTheming( bool set );
 
+	const Tools::UIDocFindReplace* getFindReplace() const { return mFindReplace; }
+
   protected:
+	static std::shared_ptr<const TextDocument::DocumentRefCommands> getDefaultEditorCommands();
+
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
 		Float offset{ 0.f };
@@ -869,7 +908,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
 	std::shared_ptr<Doc::TextDocument> mDoc;
+	MainThreadLifetime<UICodeEditor> mAsyncLifetime;
 	bool mDirtyEditor{ false };
+	bool mAutoRegisterBaseCommands{ true };
 	bool mDirtyScroll{ false };
 	bool mCursorVisible{ false };
 	bool mMouseDown{ false };
@@ -909,6 +950,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mAllowSelectingTextFromGutter{ true };
 	bool mTabStops{ false };
 	bool mKerningEnabled{ false };
+	bool mLigaturesOverride{ false };
 	bool mDisableScrollInvalidation{ false };
 	bool mDynamicTheming{ false };
 	bool mUpdatingScrollBar{ false };
@@ -917,7 +959,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Time mBlinkTime;
 	Time mFoldsRefreshTime;
 	Uint32 mTabWidth;
-	std::atomic<size_t> mHighlightWordProcessing{ false };
+	Uint32 mLigatureFeatures{ 0 };
 	TextRange mLinkPosition;
 	String mLink;
 	Vector2f mScroll;
@@ -965,6 +1007,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Mutex mHighlightWordCacheMutex;
 	TextRange mHighlightTextRange;
 	TextRange mPreviewColorRange;
+	String mMouseOverColorBuffer;
 	std::vector<UICodeEditorPlugin*> mPlugins;
 	UILoader* mLoader{ nullptr };
 	Float mGlyphWidth{ 0 };
@@ -999,12 +1042,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	UIIcon* mFileLockIcon{ nullptr };
 	std::string mFileLockIconName{ "file-lock-fill" };
 	LineWrapType mLineWrapType{ LineWrapType::Viewport };
-	Drawable* mFoldDrawable{ nullptr };
-	Drawable* mFoldedDrawable{ nullptr };
+	DrawablePtr mFoldDrawable;
+	DrawablePtr mFoldedDrawable;
 	String::HashType mTagFoldRange{ 0 };
 	Uint32 mTabIndentCharacter{ 187 /*'»'*/ };
 	CharacterAlignment mTabIndentAlignment{ CharacterAlignment::Center };
-	std::vector<SyntaxTokenPosition> mTokens;
+	SmallVector<SyntaxTokenPosition, 4> mTokens;
 	TextDirection mTextDirection{ TextDirection::LeftToRight };
 
 	UICodeEditor( const bool& autoRegisterBaseCommands = true,
@@ -1046,6 +1089,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
 
 	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
@@ -1147,6 +1192,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Uint32 onMessage( const NodeMessage* msg );
 
+	virtual bool supportsScrollController() const;
+
+	virtual Vector2f getScrollControllerPosition() const;
+
+	virtual Vector2f getScrollControllerMaxPosition() const;
+
+	virtual void setScrollControllerPosition( const Vector2f& position );
+
 	void checkMouseOverColor( const Vector2i& position );
 
 	String checkMouseOverLink( const Vector2i& position, bool checkModifiers = true );
@@ -1157,7 +1210,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void updateGlyphWidth();
 
-	Drawable* findIcon( const std::string& name );
+	DrawablePtr findIcon( const std::string& name );
 
 	void createDefaultContextMenuOptions( UIPopUpMenu* menu );
 
@@ -1230,7 +1283,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void addCursorsFromCurrentToMousePosition();
 
 	inline Uint32 getWidgetTextDrawHints() const {
-		return mKerningEnabled ? 0 : TextHints::NoKerning;
+		const Uint32 ligatureFeatures = mLigaturesOverride
+											? mLigatureFeatures
+											: getDefaultTextHints() & TextHints::OpenTypeFeatures;
+		return ( mKerningEnabled ? 0 : TextHints::NoKerning ) |
+			   ( ligatureFeatures & TextHints::OpenTypeFeatures );
 	}
 
 	bool setInternalFontSize( const Float& size );

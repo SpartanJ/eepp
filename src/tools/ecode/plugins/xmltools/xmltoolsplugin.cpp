@@ -1,4 +1,5 @@
 #include "xmltoolsplugin.hpp"
+#include "../../settingspage.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
@@ -7,6 +8,20 @@
 using json = nlohmann::json;
 
 namespace ecode {
+
+void XMLToolsPlugin::registerSettings( SettingsPage& page ) {
+	page.addGroup( i18n( "general", "General" ) );
+	page.addBool( "highlight-match", "/config/highlight_match",
+				  i18n( "xmltools_highlight_match", "Highlight Matching Tags" ),
+				  i18n( "xmltools_highlight_match_desc",
+						"Highlight the matching XML or HTML tag at the cursor." ),
+				  true );
+	page.addBool( "auto-edit-match", "/config/auto_edit_match",
+				  i18n( "xmltools_auto_edit_match", "Edit Matching Tags" ),
+				  i18n( "xmltools_auto_edit_match_desc",
+						"Update the matching tag automatically while editing." ),
+				  true );
+}
 
 Plugin* XMLToolsPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( XMLToolsPlugin, ( pluginManager, false ) );
@@ -28,11 +43,6 @@ XMLToolsPlugin::XMLToolsPlugin( PluginManager* pluginManager, bool sync ) :
 XMLToolsPlugin::~XMLToolsPlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
-	{
-		Lock l( mClientsMutex );
-		for ( const auto& client : mClients )
-			client.first->unregisterClient( client.second.get() );
-	}
 }
 
 bool XMLToolsPlugin::getHighlightMatch() const {
@@ -107,8 +117,20 @@ void XMLToolsPlugin::onRegisterDocument( TextDocument* doc ) {
 
 void XMLToolsPlugin::onUnregisterDocument( TextDocument* doc ) {
 	Lock l( mClientsMutex );
-	doc->unregisterClient( mClients[doc].get() );
-	mClients.erase( doc );
+	auto client = mClients.find( doc );
+	if ( client != mClients.end() ) {
+		doc->unregisterClient( client->second.get() );
+		mClients.erase( client );
+	}
+	PluginBase::onUnregisterDocument( doc );
+}
+
+void XMLToolsPlugin::unregisterEditors() {
+	PluginBase::unregisterEditors();
+	Lock l( mClientsMutex );
+	for ( const auto& client : mClients )
+		client.first->unregisterClient( client.second.get() );
+	mClients.clear();
 }
 
 bool XMLToolsPlugin::isOverMatch( TextDocument* doc, const Int64& index ) const {
@@ -253,7 +275,7 @@ void XMLToolsPlugin::XMLToolsClient::updateMatch( const TextRange& sel ) {
 	const auto& line = mDoc->line( mDoc->getSelection().start().line() ).getText();
 	if ( mDoc->getSelection().start().column() >= (Int64)line.size() )
 		return clearMatch();
-	auto def = mDoc->getHighlighter()->getSyntaxDefinitionFromTextPosition( sel.start() );
+	const auto& def = mDoc->getHighlighter()->getSyntaxDefinitionFromTextPosition( sel.start() );
 	if ( !def.getAutoCloseXMLTags() ) // getAutoCloseXMLTags means that it supports XML element tags
 		return clearMatch();
 	TextRange range = mDoc->getWordRangeInPosition( sel.start(), false );

@@ -5,19 +5,21 @@
 namespace EE { namespace Scene {
 
 KeyEvent::KeyEvent( Node* node, const Uint32& eventNum, const Keycode& keyCode,
-					const Scancode& scancode, const Uint32& chr, const Uint32& mod ) :
+					const Scancode& scancode, const Uint32& chr, const Uint32& mod, bool repeat ) :
 	Event( node, eventNum ),
 	mKeyCode( keyCode ),
 	mScancode( scancode ),
 	mChar( chr ),
-	mMod( mod ) {}
+	mMod( mod ),
+	mRepeat( repeat ) {}
 
 KeyEvent::KeyEvent( const KeyEvent& event ) :
 	Event( event.getNode(), event.getType() ),
 	mKeyCode( event.getKeyCode() ),
 	mScancode( event.getScancode() ),
 	mChar( event.getChar() ),
-	mMod( event.getMod() ) {}
+	mMod( event.getMod() ),
+	mRepeat( event.isRepeat() ) {}
 
 KeyEvent::~KeyEvent() {}
 
@@ -35,6 +37,10 @@ const String::StringBaseType& KeyEvent::getChar() const {
 
 const Uint32& KeyEvent::getMod() const {
 	return mMod;
+}
+
+bool KeyEvent::isRepeat() const {
+	return mRepeat;
 }
 
 Uint32 KeyEvent::getSanitizedMod() const {

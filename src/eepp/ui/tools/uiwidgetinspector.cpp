@@ -148,11 +148,11 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	UIPushButton* button = cont->find<UIPushButton>( "pick_widget" );
 
 	if ( button->getIcon() == nullptr ) {
-		Drawable* cursorPointer = button->getUISceneNode()->findIconDrawable(
+		DrawablePtr cursorPointer = button->getUISceneNode()->findIconDrawable(
 			"cursor-pointer", PixelDensity::dpToPx( 16 ) );
 
 		if ( cursorPointer )
-			button->setIcon( cursorPointer, true );
+			button->setIcon( std::move( cursorPointer ) );
 	}
 
 	button->on( Event::MouseClick, [sceneNode, nodeTree, computedView]( const Event* event ) {

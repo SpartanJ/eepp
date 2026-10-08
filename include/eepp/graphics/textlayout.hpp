@@ -48,7 +48,16 @@ class EE_API TextLayout {
 						 LineWrapMode lineWrapMode = LineWrapMode::NoWrap, Uint32 wrapWidth = 0,
 						 bool keepIndentation = false, Float initialXOffset = 0 );
 
-	static void clearLayoutCache();
+	/**
+	 * Removes entries from the shared text-layout LRU cache.
+	 *
+	 * @param font Optional borrowed font identity. When provided, only layouts requested with this
+	 * font or containing shaped glyphs produced by this font are evicted. Passing nullptr clears
+	 * the entire cache. Font destruction uses selective eviction before its borrowed pointers
+	 * become invalid.
+	 */
+	static void clearLayoutCache( Font* font = nullptr );
+
   protected:
 	static void wrapLayout( const String::View& string, TextLayout&, LineWrapMode lineWrapMode,
 							Float wrapWidth, Float vspace, bool keepIndentation, Font* font,

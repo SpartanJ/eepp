@@ -5,6 +5,7 @@
 #include <atomic>
 #include <memory>
 
+#include <eepp/core/containers.hpp>
 #include <eepp/system/fileinfo.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/translator.hpp>
@@ -82,7 +83,7 @@ class EE_API FileSystemModel : public Model {
 		Node( const std::string& rootPath, FileSystemModel& model,
 			  const std::shared_ptr<ThreadPool>& threadPool = {} );
 
-		Node( FileInfo&& info, Node* parent );
+		Node( FileInfo&& info, Node* parent, const FileSystemModel& model );
 
 		const std::string& getName() const { return mName; }
 
@@ -137,6 +138,8 @@ class EE_API FileSystemModel : public Model {
 		String mDisplayName;
 		std::string mMimeType;
 		Node* mParent{ nullptr };
+		const FileSystemModel* mModel{ nullptr };
+		Uint64 mId{ 0 };
 		FileInfo mInfo;
 		std::vector<Node*> mChildren;
 		bool mHasTraversed{ false };
@@ -181,6 +184,14 @@ class EE_API FileSystemModel : public Model {
 	void update();
 
 	const Node& node( const ModelIndex& index ) const;
+
+	/**
+	 * @brief Returns the node for a valid index, or nullptr for a stale index
+	 * (node deleted by a background refresh). An invalid index resolves to the
+	 * root.
+	 */
+	const Node* nodePtr( const ModelIndex& index ) const;
+
 	virtual size_t treeColumn() const { return Column::Name; }
 	virtual size_t rowCount( const ModelIndex& = ModelIndex() ) const;
 	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const;
@@ -203,7 +214,25 @@ class EE_API FileSystemModel : public Model {
 
 	void setPreviouslySelectedIndex( const ModelIndex& previouslySelectedIndex );
 
+	/**
+	 * @brief Processes a filesystem event (add/delete/move/modified).
+	 *
+	 * Must be called from the main thread when views are attached: the method
+	 * mutates view selections and metadata. ecode's FileSystemListener
+	 * dispatches watcher events to the main thread before calling this; direct
+	 * callers are responsible for the same requirement.
+	 */
 	bool handleFileEvent( const FileEvent& event );
+
+	/**
+	 * @brief Processes a filesystem event using metadata captured when the event was received.
+	 *
+	 * This avoids querying the filesystem from the main thread and preserves the state observed by
+	 * an asynchronous listener even if a later event changes the path before this event is applied.
+	 */
+	bool handleFileEvent( const FileEvent& event, const FileInfo& file );
+
+	virtual bool isValid( const ModelIndex& index ) const;
 
 	virtual bool classModelRoleEnabled() { return true; }
 
@@ -222,15 +251,22 @@ class EE_API FileSystemModel : public Model {
 
 	ModelIndex mPreviouslySelectedIndex{};
 
-	Node& nodeRef( const ModelIndex& index ) const;
+	Node* nodeRef( const ModelIndex& index ) const;
+
+	bool isNodeAlive( const Node* node, Uint64 id ) const;
+
+	mutable UnorderedSet<const Node*> mAliveNodes;
+	mutable Uint64 mNextNodeId{ 1 };
 
 	FileSystemModel( const std::string& rootPath, const Mode& mode,
 					 const DisplayConfig& displayConfig, Translator* translator,
 					 std::shared_ptr<ThreadPool> threadPool );
 
-	size_t getFileIndex( Node* parent, const FileInfo& file );
+	size_t getFileIndex( Node* parent, const FileInfo& file, const Node* excludedNode = nullptr );
 
-	bool handleFileEventLocked( const FileEvent& event );
+	bool handleFileEventLocked( const FileEvent& event, const FileInfo* preparedFile = nullptr );
+
+	bool handleFileEvent( const FileEvent& event, const FileInfo* preparedFile );
 
 	void setupColumnNames( Translator* translator );
 };

@@ -163,11 +163,17 @@ class EE_API RichText : public Drawable {
 
 	Uint32 getTabWidth() const { return mTabWidth; }
 
+	void setTextHints( Uint32 textHints );
+
+	Uint32 getTextHints() const { return mTextHints; }
+
 	bool setExternalFloatExclusions( const std::vector<FloatExclusion>& exclusions );
 
 	const std::vector<FloatExclusion>& getExternalFloatExclusions() const {
 		return mExternalFloatExclusions;
 	}
+
+	const std::vector<FloatExclusion>& getLocalFloatExclusions();
 
 	/** @return The minimum intrinsic width of the text block. */
 	Float getMinIntrinsicWidth();
@@ -188,10 +194,12 @@ class EE_API RichText : public Drawable {
 	void addCustomSize( const Sizef& size, InlineFloat floatType = InlineFloat::None,
 						InlineClear clearType = InlineClear::None, Float baseline = -1.f,
 						const BaselineAlignValue& baselineAlign = {}, InlineSource source = {},
-						bool isBlock = false, bool isBlockFormattingContext = false );
+						bool isBlock = false, bool isBlockFormattingContext = false,
+						std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats = {},
+						const Rectf& margin = Rectf::Zero );
 
 	/** @brief Adds a virtual line break that is not associated with a DOM text character. */
-	void addLineBreak();
+	void addLineBreak( bool forceEmptyLine = false, Float lineHeight = 0.f );
 
 	virtual void draw( const Float& X, const Float& Y, const Vector2f& scale = Vector2f::One,
 					   const Float& rotation = 0, BlendMode effect = BlendMode::Alpha(),
@@ -224,15 +232,18 @@ class EE_API RichText : public Drawable {
 		std::shared_ptr<Drawable> drawable;
 		Rectf margin;
 		Rectf padding;
+		Rectf formattingMargin;
 		Float lineHeight{ 0 };
 		BaselineAlignValue baselineAlign;
 		bool suppressBackground{ false };
-		Float baseline{ 0 };
+		Float baseline{ 0 }; // Natural baseline from the content box's top, also for text runs.
 		InlineFloat floatType{ InlineFloat::None };
 		InlineClear clearType{ InlineClear::None };
 		bool isLineBreak{ false };
+		bool forceEmptyLine{ false };
 		bool isBlock{ false };
 		bool isBlockFormattingContext{ false };
+		std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats;
 		InlinePath inlinePath;
 		Vector2f position; // Local position relative to RichText origin
 		Sizef size;
@@ -244,6 +255,7 @@ class EE_API RichText : public Drawable {
 	/** @brief Structure representing a rendered paragraph (line). */
 	struct RenderParagraph {
 		std::vector<RenderSpan> spans;
+		bool forcedEmptyLine{ false };
 		Float y{ 0 };
 		Float height{ 0 };
 		Float maxAscent{ 0 };
@@ -268,6 +280,13 @@ class EE_API RichText : public Drawable {
 
 	/** @brief Sets the text selection range. */
 	void setSelection( TextSelectionRange range );
+
+	/** Excludes character intervals from the painted and copied selection. */
+	void setSelectionExclusions( SmallVector<TextSelectionRange, 4> exclusions );
+
+	const SmallVector<TextSelectionRange, 4>& getSelectionExclusions() const {
+		return mSelectionExclusions;
+	}
 
 	/** @return The current text selection range. */
 	TextSelectionRange getSelection() const { return mSelection; }
@@ -299,9 +318,15 @@ class EE_API RichText : public Drawable {
 	/** @return The current selection as a string. */
 	String getSelectionString() const;
 
+	/** @return A character interval as a string, honoring selection exclusions. */
+	String getSelectionString( TextSelectionRange range ) const;
+
 	/** Tries to update the layout if has been invalidated. This is automatically called before
 	 * draw. */
 	void updateLayout();
+
+	/** Changes whenever the retained inline fragments are replaced or cleared. */
+	Uint32 getInlineFragmentsGeneration() const { return mInlineFragmentsGeneration; }
 
 	/** Invalidates the current layout */
 	void invalidateLayout();
@@ -343,12 +368,15 @@ class EE_API RichText : public Drawable {
 			InlineSource source;
 			std::shared_ptr<Drawable> drawable;
 			Sizef size;
+			Rectf formattingMargin;
 			Float baseline{ 0 };
 			InlineFloat floatType{ InlineFloat::None };
 			InlineClear clearType{ InlineClear::None };
 			bool isLineBreak{ false };
+			bool forceEmptyLine{ false };
 			bool isBlock{ false };
 			bool isBlockFormattingContext{ false };
+			std::shared_ptr<const std::vector<FloatExclusion>> propagatedFloats;
 			BaselineAlignValue baselineAlign;
 		};
 
@@ -383,6 +411,7 @@ class EE_API RichText : public Drawable {
 		size_t lineIndex{ 0 };
 		Rectf bounds;
 		Rectf paintBounds;
+		Rectf formattingMargin;
 		Int64 startCharIndex{ 0 };
 		Int64 endCharIndex{ 0 };
 		std::shared_ptr<Text> text;
@@ -454,9 +483,15 @@ class EE_API RichText : public Drawable {
 	RenderSpan::InlinePath mInlinePath; // Path into the inline tree for the stack-based builder
 	std::vector<InlineFragment> mInlineFragments;
 	std::vector<FloatExclusion> mExternalFloatExclusions;
+	std::vector<FloatExclusion> mLocalFloatExclusions;
 	std::vector<RenderParagraph> mLines;
 	FontStyleConfig mDefaultStyle;
 	TextSelectionRange mSelection{ 0, 0 };
+	SmallVector<TextSelectionRange, 4> mSelectionExclusions;
+
+	SmallVector<TextSelectionRange, 4> getSelectedSegments() const;
+
+	SmallVector<TextSelectionRange, 4> getSelectedSegments( TextSelectionRange range ) const;
 	Color mSelectionColor{ Color::White };
 	Color mSelectionBackColor{ 0, 0, 255, 150 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
@@ -469,6 +504,8 @@ class EE_API RichText : public Drawable {
 	bool mLineWrap{ true };
 	WhiteSpaceWrapMode mWhiteSpaceWrapMode{ WhiteSpaceWrapMode::Normal };
 	Uint32 mTabWidth{ 8 };
+	Uint32 mTextHints{ 0 };
+	Uint32 mInlineFragmentsGeneration{ 0 };
 };
 
 }} // namespace EE::Graphics

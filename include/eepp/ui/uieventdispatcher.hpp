@@ -15,6 +15,8 @@ class EE_API UIEventDispatcher : public EventDispatcher {
 	bool justGainedFocus() const;
 
   protected:
+	void onMouseOverNodeChange( Node* node );
+
 	bool mJustGainedFocus{ false };
 	bool mJustLostFocus{ false };
 

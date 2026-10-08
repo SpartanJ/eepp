@@ -33,6 +33,17 @@ void ClipboardSDL::setText( const std::string& text ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	sContent = text;
 	emscripten_browser_clipboard::copy( text );
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	// SDL2's Windows backend retries reads when another process owns the clipboard, but not
+	// writes. Clipboard ownership is transient, so mirror the read-side retry policy here.
+	static constexpr int MAX_ATTEMPTS = 3;
+	for ( int attempt = 0; attempt < MAX_ATTEMPTS; ++attempt ) {
+		if ( SDL_SetClipboardText( text.c_str() ) == 0 )
+			return;
+		if ( attempt + 1 < MAX_ATTEMPTS )
+			SDL_Delay( 10 );
+	}
+	Log::warning( "Failed to set clipboard text: %s", SDL_GetError() );
 #else
 	SDL_SetClipboardText( text.c_str() );
 #endif

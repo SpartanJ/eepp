@@ -4,54 +4,10 @@ struct Person {
 	std::uint64_t id;
 	std::string name;
 	std::string surname;
+	bool operator==( const Person& other ) const = default;
 };
 
-class PeopleModel : public Model {
-  public:
-	PeopleModel( const std::vector<Person>& people, std::string filterStr = "" ) : mData( people ) {
-		filter( String::toLower( filterStr ) );
-	}
-	size_t rowCount( const ModelIndex& ) const override { return mData.size(); }
-	size_t columnCount( const ModelIndex& ) const override { return 1; }
-	std::string columnName( const size_t& ) const override { return ""; }
-
-	ModelIndex index( int row, int column,
-					  const ModelIndex& parent = ModelIndex() ) const override {
-		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
-			return {};
-		return Model::index( row, column, parent );
-	}
-
-	Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const override {
-		if ( role == ModelRole::Display )
-			return Variant(
-				String::format( "%s, %s", getPerson( index ).surname, getPerson( index ).name ) );
-		return {};
-	}
-
-	void filter( const std::string& filterStr ) {
-		if ( filterStr.empty() )
-			return;
-		std::vector<Person> data;
-		for ( auto& people : mData )
-			if ( String::startsWith( String::toLower( people.surname ), filterStr ) )
-				data.emplace_back( std::move( people ) );
-		mData = std::move( data );
-		invalidate( Model::UpdateFlag::DontInvalidateIndexes );
-	}
-
-	void setPeople( const std::vector<Person>& people ) {
-		mData = people;
-		invalidate( Model::UpdateFlag::DontInvalidateIndexes );
-	}
-
-	const Person& getPerson( const ModelIndex& index ) const { return mData[index.row()]; }
-
-  protected:
-	std::vector<Person> mData;
-};
-
-// Reference https://eugenkiss.github.io/7guis/tasks#crud
+// Reference https://eugenkiss.github.io/7guis/tasks/#crud
 EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 640, 480, "eepp - 7GUIs - CRUD" } );
 	UIWidget* vbox = app.getUI()->loadLayoutFromString( R"xml(
@@ -80,96 +36,84 @@ EE_MAIN_FUNC int main( int, char** ) {
 		</hbox>
 	</vbox>
 	)xml" );
-	std::vector<Person> people{
+	auto listView = vbox->find<UIListView>( "list" );
+	auto filterInput = vbox->find<UITextInput>( "filter" );
+	auto nameInput = vbox->find<UITextInput>( "name" );
+	auto surnameInput = vbox->find<UITextInput>( "surname" );
+	auto createButton = vbox->find<UIPushButton>( "create" );
+	auto updateButton = vbox->find<UIPushButton>( "update" );
+	auto deleteButton = vbox->find<UIPushButton>( "delete" );
+
+	ObservableVector<Person> people( {
 		{ 1, "Hans", "Emil" },
 		{ 2, "Max", "Mustermann" },
 		{ 3, "Roman", "Tisch" },
-	};
-	std::uint64_t nextId = people.back().id + 1;
-	auto listView = vbox->find<UIListView>( "list" );
-	auto filterView = vbox->find<UITextInput>( "filter" );
-	auto nameView = vbox->find<UITextInput>( "name" );
-	auto surnameView = vbox->find<UITextInput>( "surname" );
-	auto createBut = vbox->find<UIPushButton>( "create" );
-	auto updateBut = vbox->find<UIPushButton>( "update" );
-	auto deleteBut = vbox->find<UIPushButton>( "delete" );
-	auto model = std::make_shared<PeopleModel>( people );
+	} );
+	std::uint64_t nextId = people[people.size() - 1].id + 1;
+	auto model =
+		ObservableListModel<Person>::create( people, []( const Person& person, ModelRole role ) {
+			return role == ModelRole::Display
+					   ? Variant( String::format( "%s, %s", person.surname, person.name ) )
+					   : Variant{};
+		} );
 	listView->setModel( model );
-	const auto updateModel = [&people, filterView, &model]( bool updatePeople, bool updateFilter ) {
-		if ( updatePeople || updateFilter )
-			model->setPeople( people );
-		if ( updateFilter )
-			model->filter( filterView->getText().toUtf8() );
+
+	UIProperty<std::string> filter( filterInput );
+	UIProperty<std::string> name( nameInput );
+	UIProperty<std::string> surname( surnameInput );
+	const auto clearInputs = [&] {
+		name = "";
+		surname = "";
 	};
-	const auto updateButs = [createBut, updateBut, deleteBut, listView]() {
-		createBut->setEnabled( !listView->getSelection().first().isValid() );
-		updateBut->setEnabled( listView->getSelection().first().isValid() );
-		deleteBut->setEnabled( listView->getSelection().first().isValid() );
-	};
-	const auto& clearInputs = [nameView, surnameView]() {
-		nameView->setText( "" );
-		surnameView->setText( "" );
-	};
-	const auto updateSelection = [&updateButs, listView, nameView, surnameView, &clearInputs]() {
-		updateButs();
-		if ( listView->getSelection().first().isValid() ) {
-			auto selPerson = static_cast<PeopleModel*>( listView->getModel() )
-								 ->getPerson( listView->getSelection().first() );
-			nameView->setText( selPerson.name );
-			surnameView->setText( selPerson.surname );
+
+	ObservableValue<bool> hasSelection( false );
+	auto updateButtonEnabled = bindReadOnlyValue( hasSelection, updateButton, "enabled" );
+	auto deleteButtonEnabled = bindReadOnlyValue( hasSelection, deleteButton, "enabled" );
+	listView->on( Event::OnSelectionChanged, [&]( const Event* ) {
+		auto selected = listView->getSelection().first();
+		hasSelection = selected.isValid();
+		if ( const Person* person = model->at( selected ) ) {
+			name = person->name;
+			surname = person->surname;
 		} else {
 			clearInputs();
 		}
-	};
-	listView->on( Event::OnSelectionChanged, [&updateSelection]( auto ) { updateSelection(); } );
-	filterView->on( Event::OnTextChanged,
-					[&updateModel, listView, &clearInputs, &updateButs, &model]( auto ) {
-						updateModel( true, true );
-						updateButs();
-						clearInputs();
-						listView->getSelection().clear( model->rowCount( {} ) == 0 );
-						if ( model->rowCount( {} ) > 0 )
-							listView->setSelection( model->index( 0, 0 ) );
-					} );
-	createBut->onClick( [&]( auto ) {
-		if ( nameView->getText().empty() || surnameView->getText().empty() ) {
+	} );
+
+	auto filterConnection = filter.observe( [&]( const std::string& prefix ) {
+		if ( prefix.empty() ) {
+			model->clearFilter();
+		} else {
+			model->setFilter( [prefix]( const Person& person ) {
+				return String::istartsWith( person.surname, prefix );
+			} );
+		}
+		if ( model->rowCount() > 0 )
+			listView->setSelection( model->index( 0 ) );
+	} );
+
+	createButton->onClick( [&]( const MouseEvent* ) {
+		if ( name.get().empty() || surname.get().empty() ) {
 			UIMessageBox::New( UIMessageBox::OK, "Complete name and surname" )->showWhenReady();
 			return;
 		}
-		people.emplace_back(
-			Person{ nextId++, nameView->getText().toUtf8(), surnameView->getText().toUtf8() } );
+		people.pushBack( { nextId++, name.get(), surname.get() } );
 		clearInputs();
-		updateModel( true, false );
-		filterView->setText( "" );
+		filter = "";
 	} );
-	const auto getSelectedPersonIt = [&]() -> std::vector<Person>::iterator {
-		auto p = static_cast<PeopleModel*>( listView->getModel() )
-					 ->getPerson( listView->getSelection().first() );
-		return std::find_if( people.begin(), people.end(),
-							 [&p]( const Person& person ) { return p.id == person.id; } );
-	};
-	updateBut->onClick( [&]( auto ) {
-		auto found = getSelectedPersonIt();
-		if ( found != people.end() ) {
-			found->name = nameView->getText().toUtf8();
-			found->surname = surnameView->getText().toUtf8();
-			clearInputs();
-			updateModel( true, true );
-		}
+	updateButton->onClick( [&]( const MouseEvent* ) {
+		auto row = model->sourceRow( listView->getSelection().first() );
+		if ( row )
+			people.set( *row, { people[*row].id, name.get(), surname.get() } );
+		clearInputs();
 	} );
-	deleteBut->onClick( [&]( auto ) {
-		if ( !listView->getSelection().first().isValid() ) {
-			UIMessageBox::New( UIMessageBox::OK, "Select a person from the list" )->showWhenReady();
-			return;
-		}
-		auto found = getSelectedPersonIt();
-		if ( found != people.end() ) {
-			people.erase( found );
-			clearInputs();
-			updateModel( true, false );
-			filterView->setText( "" );
-		}
+	deleteButton->onClick( [&]( const MouseEvent* ) {
+		auto row = model->sourceRow( listView->getSelection().first() );
+		if ( row )
+			people.erase( *row );
+		clearInputs();
+		filter = "";
 	} );
-	updateButs();
+
 	return app.run();
 }

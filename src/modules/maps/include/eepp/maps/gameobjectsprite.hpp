@@ -3,16 +3,13 @@
 
 #include <eepp/maps/base.hpp>
 #include <eepp/maps/gameobject.hpp>
-
-namespace EE { namespace Graphics {
-class Sprite;
-}} // namespace EE::Graphics
+#include <eepp/graphics/sprite.hpp>
 
 namespace EE { namespace Maps {
 
 class EE_MAPS_API GameObjectSprite : public GameObject {
   public:
-	GameObjectSprite( const Uint32& Flags, MapLayer* Layer, Graphics::Sprite* Sprite = NULL );
+	GameObjectSprite( const Uint32& Flags, MapLayer* Layer, Graphics::SpritePtr sprite = {} );
 
 	virtual ~GameObjectSprite();
 
@@ -30,9 +27,9 @@ class EE_MAPS_API GameObjectSprite : public GameObject {
 
 	virtual Sizei getSize();
 
-	Graphics::Sprite* getSprite() const;
+	const Graphics::SpritePtr& getSprite() const;
 
-	void setSprite( Graphics::Sprite* sprite );
+	void setSprite( Graphics::SpritePtr sprite );
 
 	virtual Uint32 getType() const;
 
@@ -45,7 +42,7 @@ class EE_MAPS_API GameObjectSprite : public GameObject {
 	virtual void setDataId( Uint32 Id );
 
   protected:
-	Graphics::Sprite* mSprite;
+	Graphics::SpritePtr mSprite;
 	Vector2i mTilePos;
 };
 

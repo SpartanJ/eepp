@@ -63,6 +63,7 @@ void FlexLayouter::collectFlexItems( SmallVector<FlexItem, 16>& items ) {
 
 		FlexItem item;
 		item.widget = widget;
+		UIHTMLWidget::resolvePercentageSize( widget );
 		item.collapsed = isCollapsed;
 		readItemStyle( widget, item );
 
@@ -472,8 +473,10 @@ void FlexLayouter::measureFlexItems( const Axis& mainAxis, const Axis& crossAxis
 				const auto* minW = item.widget->getUIStyle()->getProperty( PropertyId::MinWidth );
 				if ( minW ) {
 					Float explicitMin = item.widget->cssWidthPropertyToBorderBoxWidth( *minW );
-					if ( explicitMin > item.minMainSize )
-						item.minMainSize = explicitMin;
+					// An explicit minimum replaces the automatic content minimum. In
+					// particular, min-width: 0 must permit a flex item to shrink below
+					// the min-content width of an image or other descendant.
+					item.minMainSize = explicitMin;
 				}
 				const auto* maxW = item.widget->getUIStyle()->getProperty( PropertyId::MaxWidth );
 				if ( maxW )
@@ -513,8 +516,7 @@ void FlexLayouter::measureFlexItems( const Axis& mainAxis, const Axis& crossAxis
 				const auto* minH = item.widget->getUIStyle()->getProperty( PropertyId::MinHeight );
 				if ( minH ) {
 					Float explicitMin = item.widget->cssHeightPropertyToBorderBoxHeight( *minH );
-					if ( explicitMin > item.minMainSize )
-						item.minMainSize = explicitMin;
+					item.minMainSize = explicitMin;
 				}
 				const auto* maxH = item.widget->getUIStyle()->getProperty( PropertyId::MaxHeight );
 				if ( maxH )
@@ -1223,8 +1225,8 @@ void FlexLayouter::updateLayout() {
 		return;
 
 	RichText* richText = widget->isType( UI_TYPE_RICHTEXT )
-									   ? widget->asType<UIRichText>()->getRichTextPtr()
-									   : nullptr;
+							 ? widget->asType<UIRichText>()->getRichTextPtr()
+							 : nullptr;
 	bool preserveFloatConstrainedBFCWidth =
 		widget->establishesBlockFormattingContext() &&
 		widget->getLayoutWidthPolicy() == SizePolicy::MatchParent && richText != nullptr &&
@@ -1284,15 +1286,11 @@ void FlexLayouter::updateLayout() {
 	Float containerMainSize = mainAxis.horizontal ? containerWidth : containerHeight;
 	Float containerCrossSize = crossAxis.horizontal ? containerWidth : containerHeight;
 
-	if ( widthPolicy != SizePolicy::Fixed && mainAxis.horizontal )
-		containerMainSize -= totalPaddingMain;
-	if ( heightPolicy != SizePolicy::Fixed && !mainAxis.horizontal )
-		containerMainSize -= totalPaddingMain;
-
-	if ( widthPolicy != SizePolicy::Fixed && crossAxis.horizontal )
-		containerCrossSize -= totalPaddingCross;
-	if ( heightPolicy != SizePolicy::Fixed && !crossAxis.horizontal )
-		containerCrossSize -= totalPaddingCross;
+	// Flex lines use the content box on both axes, including when the
+	// container has an explicit width or height. The outer dimensions above
+	// already include padding after CSS box-sizing resolution.
+	containerMainSize -= totalPaddingMain;
+	containerCrossSize -= totalPaddingCross;
 
 	if ( containerMainSize < 0.f )
 		containerMainSize = 0.f;
@@ -1387,6 +1385,7 @@ void FlexLayouter::updateLayout() {
 	bool indefiniteMainSize = ( mainAxis.horizontal && widthPolicy == SizePolicy::WrapContent ) ||
 							  ( !mainAxis.horizontal && heightPolicy == SizePolicy::WrapContent );
 
+	mMeasuringItems = true;
 	measureFlexItems( mainAxis, crossAxis, containerCrossSize, containerWidth, containerHeight,
 					  containerPadding, indefiniteMainSize, indefiniteCrossSize );
 
@@ -1410,6 +1409,7 @@ void FlexLayouter::updateLayout() {
 		alignMainAxis( line, containerMainSize, mColumnGap );
 		resolveCrossSizes( line, crossAxis, mainAxis );
 	}
+	mMeasuringItems = false;
 
 	alignCrossAxis( lines, containerCrossSize, mRowGap, crossAxis );
 

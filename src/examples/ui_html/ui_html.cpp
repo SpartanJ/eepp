@@ -1,13 +1,70 @@
 #include <eepp/ee.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 
 #include <args/args.hxx>
 #include <iostream>
+#include <unordered_map>
+
+using namespace EE::UI::Tools;
+
+static std::string normalizeBrowserAddress( std::string address ) {
+	String::trimInPlace( address );
+	if ( address.empty() || address.find( "://" ) != std::string::npos )
+		return address;
+
+	// Default user-entered addresses to HTTPS while preserving local CLI file inputs.
+	if ( String::startsWith( address, "//" ) ) {
+		address.insert( 0, "https:" );
+	} else if ( FileSystem::isRelativePath( address ) && !String::startsWith( address, "./" ) &&
+				!String::startsWith( address, "../" ) && !FileSystem::fileExists( address ) ) {
+		address.insert( 0, "https://" );
+	}
+	return address;
+}
+
+struct BrowserTabs : UITabWidgetSplitter::Client {
+	UITabWidgetSplitter* splitter{ nullptr };
+	UITextInput* urlBar{ nullptr };
+	UIPushButton* backBtn{ nullptr };
+	UIPushButton* fwdBtn{ nullptr };
+
+	UIWebView* current() const {
+		return splitter && splitter->getCurWidget() ? splitter->getCurWidget()->asType<UIWebView>()
+													: nullptr;
+	}
+
+	UITabWidget* currentTabWidget() const {
+		return splitter ? splitter->tabWidgetFromWidget( current() ) : nullptr;
+	}
+
+	void cycleTab( bool next ) const {
+		auto* tabs = currentTabWidget();
+		if ( !tabs || tabs->getTabCount() == 0 )
+			return;
+		const auto count = tabs->getTabCount();
+		const auto index = tabs->getTabSelectedIndex();
+		tabs->setTabSelected( next ? ( index + 1 ) % count : ( index + count - 1 ) % count );
+	}
+
+	void updateNavigation() const {
+		UIWebView* view = current();
+		backBtn->setEnabled( view && view->canGoBack() );
+		fwdBtn->setEnabled( view && view->canGoForward() );
+	}
+
+	void onTabCreated( UITab*, UIWidget* ) override {}
+
+	void onWidgetFocusChange( UIWidget* widget ) override {
+		auto* view = widget->asType<UIWebView>();
+		urlBar->setText( view->getCurrentURI().toString() );
+		updateNavigation();
+	}
+};
 
 EE_MAIN_FUNC int main( int argc, char** argv ) {
 	std::shared_ptr<ThreadPool> threadPool(
 		ThreadPool::createShared( eemax<int>( 4, Sys::getCPUCount() ) ) );
 	Http::setThreadPool( threadPool );
-	SystemFontResolver::setEnabled( true );
 
 	args::ArgumentParser parser( "eepp HTML Example" );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
@@ -25,6 +82,23 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	args::ValueFlag<Float> pixelDensityConf( parser, "pixel-density",
 											 "Set default application pixel density",
 											 { 'd', "pixel-density" } );
+	const std::unordered_map<std::string, FontHinting> fontHintingMap{
+		{ "none", FontHinting::None },
+		{ "slight", FontHinting::Slight },
+		{ "full", FontHinting::Full },
+	};
+	args::MapFlag<std::string, FontHinting> fontHinting(
+		parser, "font-hinting", "Font hinting mode (accepted values: none, slight, full)",
+		{ "font-hinting" }, fontHintingMap, FontHinting::Full );
+	const std::unordered_map<std::string, FontAntialiasing> fontAntialiasingMap{
+		{ "none", FontAntialiasing::None },
+		{ "grayscale", FontAntialiasing::Grayscale },
+		{ "subpixel", FontAntialiasing::Subpixel },
+	};
+	args::MapFlag<std::string, FontAntialiasing> fontAntialiasing(
+		parser, "font-antialiasing",
+		"Font antialiasing mode (accepted values: none, grayscale, subpixel)",
+		{ "font-antialiasing" }, fontAntialiasingMap, FontAntialiasing::Grayscale );
 
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
@@ -41,16 +115,20 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		return EXIT_FAILURE;
 	}
 
+	UIApplication::Settings appSettings( {}, pixelDensityConf ? pixelDensityConf.Get() : 0.f );
+	appSettings.fontHinting = fontHinting.Get();
+	appSettings.fontAntialiasing = fontAntialiasing.Get();
+
 	UIApplication app(
 		WindowSettings{ 1280, 720, "eepp - UI HTML Example", WindowStyle::Default,
 						WindowBackend::Default, 32, Sys::getProcessPath() + "assets/icon/ee.png" },
-		UIApplication::Settings( {}, pixelDensityConf ? pixelDensityConf.Get() : 0.f ),
+		appSettings,
 		ContextSettings( false,
 						 benchmarkMode.Get() ? 0 : ContextSettings::FrameRateLimitScreenRefreshRate,
 						 4 ) );
 
 	Log::instance()->setLogLevelThreshold( LogLevel::Debug );
-	Log::instance()->setLogToStdOut( true );
+	Log::instance()->setLogToStdOut( !Runtime::isOffscreen() );
 	Log::instance()->setLiveWrite( true );
 
 	Http::setDefaultUserAgent( "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like "
@@ -63,11 +141,15 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	auto ui = app.getUI();
 	ui->setThreadPool( threadPool );
 
-	FontTrueType* remixIconFont = FontTrueType::New( "icon", "assets/fonts/remixicon.ttf" );
-	FontTrueType* noniconsFont = FontTrueType::New( "nonicons", "assets/fonts/nonicons.ttf" );
-	FontTrueType* codIconFont = FontTrueType::New( "codicon", "assets/fonts/codicon.ttf" );
+	ResourceScope& resourceScope = *ui->getResourceScope();
+	FontTrueTypePtr remixIconFont =
+		FontTrueType::New( "icon", "assets/fonts/remixicon.ttf", resourceScope );
+	FontTrueTypePtr noniconsFont =
+		FontTrueType::New( "nonicons", "assets/fonts/nonicons.ttf", resourceScope );
+	FontTrueTypePtr codIconFont =
+		FontTrueType::New( "codicon", "assets/fonts/codicon.ttf", resourceScope );
 	ui->getUIIconThemeManager()->setCurrentTheme(
-		IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont ) );
+		IconManager::init( "icons", remixIconFont.get(), noniconsFont.get(), codIconFont.get() ) );
 
 	ui->setColorSchemePreference(
 		!prefersColorScheme.Get().empty()
@@ -78,6 +160,8 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 
 	auto vbox = ui->loadLayoutFromString( R"xml(
 	<style>
+		#tabs_host TabWidget { max-tab-width: 200dp; }
+		#tabs_host Tab > Tab::Text { text-overflow: ellipsis; }
 		PushButton.webview_ui {
 			border-top-color: transparent;
 			border-right-color: transparent;
@@ -92,7 +176,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		}
 	</style>
 	<vbox layout_width="match_parent" layout_height="match_parent">
-		<hbox layout_width="match_parent" layout_height="wrap_content">
+		<hbox layout_width="match_parent" layout_height="wrap_content" padding="1dp 4dp 1dp 4dp">
 			<PushButton lw="26dp" id="backbtn" class="webview_ui" text="@string(back, Back)"
 				icon="icon(arrow-left-s, 22dp)"
 				text-as-fallback="true" />
@@ -102,33 +186,157 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			<PushButton lw="26dp" id="refreshbtn"  class="webview_ui" text="@string(refresh, Refresh)"
 				icon="icon(refresh, 18dp)"
 				text-as-fallback="true" />
+			<PushButton lw="26dp" id="newtabbtn" class="webview_ui" text="New Tab"
+				icon="icon(add, 18dp)" text-as-fallback="true" />
 			<TextInput id="url_bar" layout_width="0" layout_weight="1"
 				hint="@string(enter_address, Enter Address)" />
 		</hbox>
-		<WebView id="webview" layout_width="match_parent" layout_height="0" layout_weight="1" />
+		<vbox id="tabs_host" layout_width="match_parent" layout_height="0" layout_weight="1" />
 	</vbox>
 	)xml",
 										  nullptr, app.getStyleSheetDefaultMarker() );
-
-	UIWebView* webView = vbox->find( "webview" )->asType<UIWebView>();
-	webView->setStyleSheetDefaultMarker( app.getStyleSheetDefaultMarker() );
 
 	auto urlBar = ui->find( "url_bar" )->asType<UITextInput>();
 	auto backBtn = ui->find( "backbtn" )->asType<UIPushButton>();
 	auto fwdBtn = ui->find( "fwdbtn" )->asType<UIPushButton>();
 	auto refreshBtn = ui->find( "refreshbtn" )->asType<UIPushButton>();
+	auto newTabBtn = ui->find( "newtabbtn" )->asType<UIPushButton>();
 
-	auto updateNavButtons = [webView, backBtn, fwdBtn]() {
-		backBtn->setEnabled( webView->canGoBack() );
-		fwdBtn->setEnabled( webView->canGoForward() );
+	const std::string configPath = Sys::getConfigPath( "eepp-ui-html" );
+	const std::string cookiePath =
+		configPath.empty() ? std::string() : configPath + FileSystem::getOSSlash() + "cookies.txt";
+	auto cookies = std::make_shared<CookieManager>();
+	if ( !cookiePath.empty() )
+		cookies->loadFromFile( cookiePath );
+	auto saveCookies = [&]() {
+		if ( !cookiePath.empty() &&
+			 ( FileSystem::isDirectory( configPath ) ||
+			   FileSystem::makeDir( configPath, true, 0700 ) ) &&
+			 !cookies->saveToFile( cookiePath ) )
+			Log::error( "Could not save UI HTML cookies to %s", cookiePath.c_str() );
+	};
+	auto cache = WebResourceCache::New();
+	const auto cachePartition = cache->createPartition();
+	BrowserTabs browser;
+	browser.urlBar = urlBar;
+	browser.backBtn = backBtn;
+	browser.fwdBtn = fwdBtn;
+	std::unique_ptr<UITabWidgetSplitter> splitter( UITabWidgetSplitter::New( &browser, ui ) );
+	splitter->setShowTabBarWhenSplit( true );
+	browser.splitter = splitter.get();
+	splitter->setOnTabWidgetCreateCb( [&browser, &splitter]( UITabWidget* tabWidget ) {
+		tabWidget->on( Event::OnTabClosed, [&browser, &splitter]( const Event* ) {
+			if ( !browser.current() )
+				splitter->setCurrentWidget( splitter->getSomeWidget() );
+			if ( !browser.current() ) {
+				browser.urlBar->setText( "" );
+				browser.updateNavigation();
+			}
+		} );
+	} );
+	splitter->createTabWidget( vbox->find( "tabs_host" ) );
+
+	std::function<void( UIWebView* )> configureNavigation;
+	auto newTab = [&]( bool focus = true ) {
+		auto* view = UIWebView::New();
+		view->setStyleSheetDefaultMarker( app.getStyleSheetDefaultMarker() );
+		view->setCookieManager( cookies );
+		view->setWebResourceCache( cache, cachePartition );
+		view->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		auto* target = browser.current() ? splitter->tabWidgetFromWidget( browser.current() )
+										 : splitter->getFirstTabWidget();
+		splitter->createWidgetInTabWidget( target, view, "New Tab", focus );
+		view->onNavigationStarted( [&browser, view]( const URI& uri ) {
+			if ( browser.current() == view )
+				browser.urlBar->setText( uri.toString() );
+		} );
+		view->on( Event::OnCreateContextMenu, [view, cookies, cache, ui,
+											   &saveCookies]( const Event* event ) {
+			auto* context = static_cast<const ContextMenuEvent*>( event );
+			auto* menu = context->getMenu();
+			std::string linkHref;
+			for ( const Node* node = context->getTarget(); node; node = node->getParent() ) {
+				if ( node->isType( UI_TYPE_TEXTSPAN ) ) {
+					auto* span = node->asConstType<UITextSpan>();
+					if ( span->getElementTag() == "a" ) {
+						auto* link = static_cast<const UIAnchorSpan*>( span );
+						if ( !link->getHref().empty() )
+							linkHref = view->getDocumentSceneNode()
+										   ->solveRelativePath( URI( link->getHref() ) )
+										   .toString();
+						break;
+					}
+				}
+				if ( node == view->getDocumentContainer() )
+					break;
+			}
+			if ( !linkHref.empty() )
+				menu->add( "Open Link in New Tab" )->setId( "open-link-new-tab" );
+			menu->addSeparator();
+			auto* clearDomain = menu->add( "Clear Domain Cookies" );
+			clearDomain->setId( "clear-domain-cookies" );
+			clearDomain->setEnabled( !view->getCurrentURI().getAuthority().empty() );
+			menu->add( "Clear All Cookies" )->setId( "clear-all-cookies" );
+			menu->add( "Inspect" )->setId( "inspect" );
+			menu->on( Event::OnItemClicked,
+					  [view, cookies, cache, ui, &saveCookies,
+					   linkHref = std::move( linkHref )]( const Event* itemEvent ) {
+						  const auto& id = itemEvent->getNode()->getId();
+						  if ( id == "open-link-new-tab" ) {
+							  NavigationRequest request{ URI( linkHref ) };
+							  request.target = NavigationRequest::Target::NewTab;
+							  view->getDocumentSceneNode()->navigate( request );
+						  } else if ( id == "clear-domain-cookies" ) {
+							  cookies->clearDomain( view->getCurrentURI().getAuthority() );
+							  cache->clear();
+							  saveCookies();
+							  view->refresh();
+						  } else if ( id == "clear-all-cookies" ) {
+							  cookies->clear();
+							  cache->clear();
+							  saveCookies();
+							  view->refresh();
+						  } else if ( id == "inspect" ) {
+							  UIWidgetInspector::create( ui );
+						  }
+					  } );
+		} );
+		configureNavigation( view );
+		return view;
 	};
 
-	webView->onNavigationStarted(
-		[urlBar]( const URI& uri ) { urlBar->setText( uri.toString() ); } );
-	webView->onNavigationCompleted(
-		[webView, updateNavButtons, urlBar, useHNDark]( const URI& uri ) {
-			updateNavButtons();
-			urlBar->setText( uri.toString() );
+	configureNavigation = [useHNDark, &browser, &splitter, &newTab]( UIWebView* webView ) {
+		webView->on( Event::OnLinkOpenRequested, [&newTab]( const Event* event ) {
+			auto* request = static_cast<const UIWebView::LinkOpenEvent*>( event );
+			auto* view = newTab( false );
+			view->loadURI( request->uri );
+			request->accept();
+		} );
+		webView->on( Event::OnFaviconChanged, [webView, &splitter]( const Event* event ) {
+			if ( auto* tab = splitter->getTabFromWidget( webView ) ) {
+				const auto& icon = static_cast<const UIWebView::FaviconEvent*>( event )->icon;
+				tab->setIcon( icon ? TextureDrawable::New( icon ) : DrawablePtr{} );
+				if ( icon )
+					tab->getIcon()->setSize( 16, 16 );
+			}
+		} );
+		webView->on( Event::OnTitleChanged, [webView, &splitter]( const Event* event ) {
+			const auto& title = static_cast<const UIWebView::TitleEvent*>( event )->title;
+			if ( auto* tab = splitter->getTabFromWidget( webView ) ) {
+				const URI& uri = webView->getCurrentURI();
+				tab->setText( title.empty() ? ( uri.getAuthority().empty() ? uri.toString()
+																		   : uri.getAuthority() )
+											: title );
+			}
+		} );
+		webView->onNavigationCompleted( [webView, &browser, &splitter,
+										 useHNDark]( const URI& uri ) {
+			if ( auto* tab = splitter->getTabFromWidget( webView ) )
+				tab->setText( uri.getAuthority().empty() ? uri.toString() : uri.getAuthority() );
+			if ( browser.current() == webView ) {
+				browser.updateNavigation();
+				browser.urlBar->setText( uri.toString() );
+			}
 
 			if ( useHNDark && uri.getAuthority() == "news.ycombinator.com" ) {
 				static const std::string_view HN_DARK = R"css(
@@ -167,35 +375,103 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 					webView->getDocumentSceneNode()->combineStyleSheet( parser.getStyleSheet() );
 			}
 		} );
+	};
 
-	backBtn->onClick( [webView, updateNavButtons]( const MouseEvent* ) {
-		webView->goHistoryBack();
-		updateNavButtons();
+	ui->setKeyBindingCommand( "go-back", [&browser] {
+		if ( auto* view = browser.current() ) {
+			view->goHistoryBack();
+			browser.updateNavigation();
+		}
 	} );
 
-	fwdBtn->onClick( [webView, updateNavButtons]( const MouseEvent* ) {
-		webView->goHistoryForward();
-		updateNavButtons();
+	ui->setKeyBindingCommand( "go-forward", [&browser] {
+		if ( auto* view = browser.current() ) {
+			view->goHistoryForward();
+			browser.updateNavigation();
+		}
 	} );
 
-	refreshBtn->onClick( [webView]( const MouseEvent* ) { webView->refresh(); } );
+	ui->setKeyBindingCommand( "reload", [&browser] {
+		if ( auto* view = browser.current() )
+			view->refresh();
+	} );
 
-	updateNavButtons();
+	ui->setKeyBindingCommand( "focus-address-bar", [urlBar] {
+		urlBar->setFocus();
+		urlBar->getDocument().selectAll();
+	} );
+	ui->setKeyBindingCommand( "new-tab", [&newTab, ui] {
+		newTab();
+		ui->executeKeyBindingCommand( "focus-address-bar" );
+	} );
+	ui->setKeyBindingCommand( "close-tab", [&browser, &splitter] {
+		if ( auto* view = browser.current() ) {
+			if ( splitter->tryTabClose( view, UITabWidget::FocusTabBehavior::Default ) )
+				splitter->closeTab( view, UITabWidget::FocusTabBehavior::Default );
+		}
+	} );
+	ui->setKeyBindingCommand( "next-tab", [&browser] { browser.cycleTab( true ); } );
+	ui->setKeyBindingCommand( "previous-tab", [&browser] { browser.cycleTab( false ); } );
+	ui->setKeyBindingCommand( "switch-to-last-tab", [&browser] {
+		if ( auto* tabs = browser.currentTabWidget(); tabs && tabs->getTabCount() )
+			tabs->setTabSelected( tabs->getTabCount() - 1 );
+	} );
 
-	urlBar->on( Event::OnPressEnter,
-				[webView, urlBar]( auto ) { webView->loadURI( urlBar->getText().toUtf8() ); } );
+	for ( Uint32 i = 1; i <= 9; ++i ) {
+		const auto command = String::format( "switch-to-tab-%u", i );
+		ui->setKeyBindingCommand( command, [&browser, i] {
+			if ( auto* tabs = browser.currentTabWidget() )
+				tabs->setTabSelected( i - 1 );
+		} );
+		ui->getKeyBindings().addKeybindString( String::format( "mod+%u", i ), command );
+	}
+	ui->getKeyBindings().addKeybindsString( {
+		{ "mod+0", "switch-to-last-tab" },
+		{ "mod+t", "new-tab" },
+		{ "mod+w", "close-tab" },
+		{ "mod+tab", "next-tab" },
+		{ "mod+shift+tab", "previous-tab" },
+		{ "ctrl+pagedown", "next-tab" },
+		{ "ctrl+pageup", "previous-tab" },
+		{ "mod+l", "focus-address-bar" },
+		{ "alt+d", "focus-address-bar" },
+		{ "f6", "focus-address-bar" },
+		{ "mod+r", "reload" },
+		{ "f5", "reload" },
+		{ "alt+left", "go-back" },
+		{ "alt+right", "go-forward" },
+	} );
 
-	webView->loadURI( !url.Get().empty() ? url.Get() : "https://news.ycombinator.com" );
+	backBtn->onClick( [ui]( const MouseEvent* ) { ui->executeKeyBindingCommand( "go-back" ); } );
+	fwdBtn->onClick( [ui]( const MouseEvent* ) { ui->executeKeyBindingCommand( "go-forward" ); } );
+	refreshBtn->onClick( [ui]( const MouseEvent* ) { ui->executeKeyBindingCommand( "reload" ); } );
+	newTabBtn->onClick( [ui]( const MouseEvent* ) { ui->executeKeyBindingCommand( "new-tab" ); } );
 
-	win->getInput()->pushCallback( [webView]( InputEvent* event ) {
+	urlBar->on( Event::OnPressEnter, [&browser, urlBar]( auto ) {
+		if ( auto* view = browser.current() ) {
+			auto address = normalizeBrowserAddress( urlBar->getText().toUtf8() );
+			if ( !address.empty() )
+				view->loadURI( address );
+		}
+	} );
+
+	auto* firstView = newTab();
+	firstView->loadURI( normalizeBrowserAddress(
+		!url.Get().empty() ? url.Get() : "https://news.ycombinator.com" ) );
+	browser.updateNavigation();
+
+	win->getInput()->pushCallback( [&browser]( InputEvent* event ) {
+		UIWebView* view = browser.current();
+		if ( !view )
+			return;
 		switch ( event->Type ) {
 			case InputEvent::FileDropped: {
 				std::string file( event->file.file );
-				webView->loadURI( "file://" + file );
+				view->loadURI( "file://" + file );
 				break;
 			}
 			case InputEvent::TextDropped: {
-				webView->loadURI( event->textdrop.text );
+				view->loadURI( event->textdrop.text );
 				break;
 			}
 			default:
@@ -222,7 +498,10 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 						TextHints::AllAscii );
 			app.getWindow()->display();
 		} );
+		saveCookies();
 		return EXIT_SUCCESS;
 	}
-	return app.run();
+	int result = app.run();
+	saveCookies();
+	return result;
 }

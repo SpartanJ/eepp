@@ -20,7 +20,11 @@ class EE_API UITableHeaderColumn : public UIPushButton {
   protected:
 	UIAbstractTableView* mView;
 	size_t mColIndex;
-	mutable UIImage* mImage{nullptr};
+	mutable UIImage* mImage{ nullptr };
+	enum class DragMode : Uint8 { None, Resize, ReorderPending, Reorder };
+	DragMode mDragMode{ DragMode::None };
+	Float mReorderGrabX{ 0 };
+	Vector2f mReorderPressPos;
 
 	Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 
@@ -33,6 +37,8 @@ class EE_API UITableHeaderColumn : public UIPushButton {
 	Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
 	Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+
+	Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
 	Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 

@@ -6,13 +6,20 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/blocklayouter.hpp>
 #include <eepp/ui/border.hpp>
+#include <eepp/ui/charts/chartaxis.hpp>
+#include <eepp/ui/charts/chartreduction.hpp>
+#include <eepp/ui/charts/modelxydatasource.hpp>
+#include <eepp/ui/charts/uichart.hpp>
+#include <eepp/ui/charts/xydatasource.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/animationdefinition.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
 #include <eepp/ui/css/elementdefinition.hpp>
+#include <eepp/ui/css/idnamemap.hpp>
 #include <eepp/ui/css/keyframesdefinition.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/css/propertyids.hpp>
 #include <eepp/ui/css/propertyidset.hpp>
 #include <eepp/ui/css/propertyspecification.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
@@ -31,6 +38,14 @@
 #include <eepp/ui/css/timingfunction.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
 #include <eepp/ui/csslayouttypes.hpp>
+#include <eepp/ui/databinding/uibindinggroup.hpp>
+#include <eepp/ui/databinding/uicommand.hpp>
+#include <eepp/ui/databinding/uidatabind.hpp>
+#include <eepp/ui/databinding/uiobservedelivery.hpp>
+#include <eepp/ui/databinding/uiproperty.hpp>
+#include <eepp/ui/databinding/uivaluebinding.hpp>
+#include <eepp/ui/databinding/uivalueconverter.hpp>
+#include <eepp/ui/databinding/uivaluevalidation.hpp>
 #include <eepp/ui/doc/documentview.hpp>
 #include <eepp/ui/doc/foldrangeservice.hpp>
 #include <eepp/ui/doc/foldrangetype.hpp>
@@ -47,9 +62,14 @@
 #include <eepp/ui/doc/textposition.hpp>
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/textundostack.hpp>
+#include <eepp/ui/drawableresolver.hpp>
+#include <eepp/ui/flexlayouter.hpp>
+#include <eepp/ui/gridlayouter.hpp>
 #include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/inlinelayouter.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
+#include <eepp/ui/layoutinvalidation.hpp>
+#include <eepp/ui/lineargradientdrawable.hpp>
 #include <eepp/ui/models/csspropertiesmodel.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/models/itemlistmodel.hpp>
@@ -58,6 +78,7 @@
 #include <eepp/ui/models/modelindex.hpp>
 #include <eepp/ui/models/modelrole.hpp>
 #include <eepp/ui/models/modelselection.hpp>
+#include <eepp/ui/models/observablelistmodel.hpp>
 #include <eepp/ui/models/persistentmodelindex.hpp>
 #include <eepp/ui/models/sortingproxymodel.hpp>
 #include <eepp/ui/models/stringmapmodel.hpp>
@@ -65,6 +86,7 @@
 #include <eepp/ui/models/widgettreemodel.hpp>
 #include <eepp/ui/mouseshortcut.hpp>
 #include <eepp/ui/nonelayouter.hpp>
+#include <eepp/ui/radialgradientdrawable.hpp>
 #include <eepp/ui/splitdirection.hpp>
 #include <eepp/ui/tablelayouter.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
@@ -76,21 +98,27 @@
 #include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
+#include <eepp/ui/tools/uisettingspanel.hpp>
+#include <eepp/ui/tools/uitabwidgetsplitter.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uibackgrounddrawable.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
+#include <eepp/ui/uicalendar.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uiclip.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uiconsole.hpp>
-#include <eepp/ui/uidatabind.hpp>
+#include <eepp/ui/uidatepicker.hpp>
+#include <eepp/ui/uidatetimeedit.hpp>
+#include <eepp/ui/uidatetimepicker.hpp>
 #include <eepp/ui/uidropdown.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uifiledialog.hpp>
+#include <eepp/ui/uiflowlayout.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/uihelper.hpp>
@@ -99,6 +127,7 @@
 #include <eepp/ui/uihtmlimage.hpp>
 #include <eepp/ui/uihtmlinput.hpp>
 #include <eepp/ui/uihtmllistitem.hpp>
+#include <eepp/ui/uihtmlliststyle.hpp>
 #include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uihtmltextarea.hpp>
 #include <eepp/ui/uihtmltextinput.hpp>
@@ -125,6 +154,7 @@
 #include <eepp/ui/uimenuseparator.hpp>
 #include <eepp/ui/uimenusubmenu.hpp>
 #include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uimodelcreator.hpp>
 #include <eepp/ui/uimultimodelview.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
@@ -132,7 +162,6 @@
 #include <eepp/ui/uiplacementutils.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
-#include <eepp/ui/uiproperty.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
@@ -141,6 +170,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollablewidget.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uiscrollcontroller.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uiskin.hpp>
@@ -149,7 +179,6 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
-#include <eepp/ui/uistacklayout.hpp>
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uistate.hpp>
 #include <eepp/ui/uistyle.hpp>
@@ -168,6 +197,7 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uitimepicker.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uitreeview.hpp>
@@ -179,6 +209,7 @@
 #include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/undostack.hpp>
+#include <eepp/ui/webresourcecache.hpp>
 #include <eepp/ui/widgetcommandexecuter.hpp>
 
 #endif

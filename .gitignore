@@ -28,6 +28,7 @@ src/thirdparty/SDL3-*
 bin/ee*
 bin/eepp-*
 bin/ecode*
+bin/eproc*
 ee.tag
 log.log
 /external_projects*.lua
@@ -74,6 +75,9 @@ ecode.dmg
 /bin/unit_tests/eepp*
 /bin/unit_tests/lib*
 /bin/unit_tests/output/*
+/projects/linux/sdk/
+/projects/macos/sdk/
+/projects/windows/sdk/
 /projects/linux/ecode/polyfill-glibc
 /bin/crashes/*
 /bin/config/*
@@ -83,3 +87,6 @@ ecode.dmg
 /projects/android-project/.project
 /projects/android-project/app/.project
 /design/
+/projects/haiku/ecode/ecode.app/*
+
+/.eepp-dev/

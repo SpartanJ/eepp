@@ -8,6 +8,9 @@
 #include <eepp/window/joystickmanager.hpp>
 #include <eepp/window/window.hpp>
 
+#include <deque>
+#include <mutex>
+
 using namespace EE::Graphics;
 
 namespace EE { namespace Window {
@@ -23,6 +26,12 @@ class EE_API Input {
 
 	/** Update the Input */
 	virtual void update() = 0;
+
+	/** Clears transient input state, advances the event-frame ID, and drains injected events. */
+	void beginInputFrame();
+
+	/** Emits the end-of-event-processing notification for this input frame. */
+	void endInputFrame();
 
 	/** If timeout is zero waits indefinitely for the next available event otherwise waits until the
 	 * specified timeout for the next available event.
@@ -224,6 +233,10 @@ class EE_API Input {
 	/** Send an input event to the window */
 	void sendEvent( InputEvent* Event );
 
+	/** Injects an input event through the backend event translation path and routes it according to
+	 * InputEvent::WinID. */
+	virtual bool pushEvent( const InputEvent& event );
+
 	/** @return The joystick manager */
 	JoystickManager* getJoystickManager() const;
 
@@ -247,6 +260,16 @@ class EE_API Input {
 
 	/** Process an input event. Called by the input update. */
 	void processEvent( InputEvent* Event );
+
+	/** Routes an input event to the Input instance identified by InputEvent::WinID, then processes
+	 * it. Events without a window ID are processed by this instance. */
+	void processEventForWindow( InputEvent* Event );
+
+	/** Queues an event from any producer thread for processing during the next normal update cycle.
+	 * If the bounded queue is full, an older mouse-motion event can be discarded to make room.
+	 * @return True if the event was queued.
+	 */
+	bool enqueueEvent( InputEvent event );
 
 	/** @return An id of the current event update processed ( */
 	const Uint64& getEventsSentId() const;
@@ -301,10 +324,15 @@ class EE_API Input {
 	Clock mLastMouseEvent;
 
 	std::map<Uint32, InputCallback> mCallbacks;
+	std::mutex mInjectedEventsMutex;
+	std::deque<InputEvent> mInjectedEvents;
 
 	InputFinger* getFingerId( const Int64& fingerId );
 
 	void resetFingerWasDown();
+
+	/** Processes all events injected by producer threads. Called by backend update cycles. */
+	void drainQueuedEvents();
 };
 
 }} // namespace EE::Window

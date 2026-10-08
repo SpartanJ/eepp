@@ -2,12 +2,10 @@
 
 #ifdef EE_BACKEND_SDL3
 
-#include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/shaderprogramregistry.hpp>
 #include <eepp/graphics/texturefactory.hpp>
-#include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/window/backend/SDL3/clipboardsdl3.hpp>
@@ -18,6 +16,8 @@
 #include <eepp/window/backend/SDL3/wminfo.hpp>
 #include <eepp/window/backend/backendhelper.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/runtime.hpp>
+#include <eepp/window/terminal/terminalruntime.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include <eepp/window/backend/SDL3/displaymanagersdl3.hpp>
@@ -38,6 +38,7 @@ WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
 }
 
 WindowSDL::~WindowSDL() {
+	shutdownRuntimeRenderTarget();
 	destroySDLResources();
 }
 
@@ -71,6 +72,13 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.WindowConfig = Settings;
 	mWindow.ContextConfig = Context;
 
+#if defined( EE_X11_PLATFORM )
+	// Unmapped GLX windows do not provide reliable front-buffer storage. Keep hidden windows
+	// double-buffered so rendering and readback use the drawable's back buffer.
+	if ( mWindow.WindowConfig.Style & WindowStyle::Hidden )
+		mWindow.ContextConfig.DoubleBuffering = true;
+#endif
+
 	if ( !SDL_WasInit( SDL_INIT_VIDEO ) && !SDL_Init( SDL_INIT_VIDEO ) ) {
 		Log::error( "Unable to initialize SDL: %s", SDL_GetError() );
 
@@ -98,8 +106,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.WindowConfig.Height = mWindow.DesktopResolution.getHeight();
 	}
 
-	mWindow.Flags = SDL_WINDOW_OPENGL |
-					( ( !mWindow.WindowConfig.DisableHiDPI ? SDL_WINDOW_HIGH_PIXEL_DENSITY : 0 ) );
+	mWindow.Flags =
+		SDL_WINDOW_OPENGL |
+		( ( mWindow.WindowConfig.Style & WindowStyle::Hidden ) ? SDL_WINDOW_HIDDEN : 0 ) |
+		( ( !mWindow.WindowConfig.DisableHiDPI ? SDL_WINDOW_HIGH_PIXEL_DENSITY : 0 ) );
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
 		mWindow.Flags |= SDL_WINDOW_RESIZABLE;
@@ -124,8 +134,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 #if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_IOS && \
 	EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	mWindow.WindowConfig.Width *= mWindow.WindowConfig.PixelDensity;
-	mWindow.WindowConfig.Height *= mWindow.WindowConfig.PixelDensity;
+	if ( mWindow.WindowConfig.PixelDensity > 0 ) {
+		mWindow.WindowConfig.Width *= mWindow.WindowConfig.PixelDensity;
+		mWindow.WindowConfig.Height *= mWindow.WindowConfig.PixelDensity;
+	}
 #endif
 
 	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Title.c_str(), mWindow.WindowConfig.Width,
@@ -178,19 +190,16 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	}
 #endif
 
+	// Sharing window contexts is independent from supporting an auxiliary context on a worker
+	// thread. Platforms without threaded GL contexts still need shared object namespaces for
+	// resources used by multiple native windows.
+	SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT,
+						 mWindow.ContextConfig.SharedGLContext ? 1 : 0 );
 #ifdef SDL3_THREADED_GLCONTEXT
-	if ( mWindow.ContextConfig.SharedGLContext ) {
-		SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1 );
-
+	if ( mWindow.ContextConfig.SharedGLContext )
 		mGLContextThread = SDL_GL_CreateContext( mSDLWindow );
-		mGLContext = SDL_GL_CreateContext( mSDLWindow );
-	} else {
-		mGLContext = SDL_GL_CreateContext( mSDLWindow );
-	}
-#else
-	mGLContext = SDL_GL_CreateContext( mSDLWindow );
-	mWindow.ContextConfig.SharedGLContext = false;
 #endif
+	mGLContext = SDL_GL_CreateContext( mSDLWindow );
 
 	if ( nullptr == mGLContext
 #ifdef SDL3_THREADED_GLCONTEXT
@@ -245,6 +254,9 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	setup2D( false );
 
+	if ( !initializeRuntimeRenderTarget() )
+		return false;
+
 	mWindow.Created = true;
 
 	if ( "" != mWindow.WindowConfig.Icon ) {
@@ -261,6 +273,9 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	Backend::BackendHelper::setUserTheme( (HWND)getWindowHandler() );
 #endif
 
+	if ( mWindow.WindowConfig.Style & WindowStyle::Hidden )
+		SDL_HideWindow( mSDLWindow );
+
 	logSuccessfulInit( getVersion() );
 
 	return true;
@@ -275,7 +290,8 @@ void WindowSDL::makeCurrent() {
 }
 
 void WindowSDL::close() {
-	destroySDLResources();
+	if ( !getDeferNativeResourceDestructionOnClose() )
+		destroySDLResources();
 	Window::close();
 }
 
@@ -315,11 +331,9 @@ int WindowSDL::getCurrentDisplayIndex() const {
 }
 
 std::string WindowSDL::getVersion() {
-	int major = SDL_MAJOR_VERSION;
-	int minor = SDL_MINOR_VERSION;
-	int patch = SDL_MICRO_VERSION;
-
-	return String::format( "SDL %d.%d.%d", major, minor, patch );
+	int ver = SDL_GetVersion();
+	return String::format( "SDL %d.%d.%d", SDL_VERSIONNUM_MAJOR( ver ), SDL_VERSIONNUM_MINOR( ver ),
+						   SDL_VERSIONNUM_MICRO( ver ) );
 }
 
 void WindowSDL::setGLConfig() {
@@ -374,26 +388,36 @@ void WindowSDL::setTitle( const std::string& title ) {
 }
 
 bool WindowSDL::isActive() const {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return TerminalRuntime::instance().isFocused();
 	Uint64 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( ( flags & SDL_WINDOW_INPUT_FOCUS ) && ( flags & SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
 bool WindowSDL::isVisible() const {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return true;
 	Uint64 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( !( flags & SDL_WINDOW_HIDDEN ) && !( flags & SDL_WINDOW_MINIMIZED ) );
 }
 
 bool WindowSDL::hasFocus() const {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return TerminalRuntime::instance().isFocused();
 	Uint64 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( flags & ( SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
 bool WindowSDL::hasInputFocus() const {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return TerminalRuntime::instance().isFocused();
 	Uint64 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( flags & SDL_WINDOW_INPUT_FOCUS );
 }
 
 bool WindowSDL::hasMouseFocus() const {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return TerminalRuntime::instance().isFocused();
 	Uint64 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( flags & SDL_WINDOW_MOUSE_FOCUS );
 }
@@ -412,6 +436,7 @@ void WindowSDL::onWindowResize( Uint32 width, Uint32 height ) {
 		mLastWindowedSize = Sizei( width, height );
 
 	mDefaultView.reset( Rectf( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) );
+	resizeRuntimeRenderTarget( width, height );
 
 	setup2D( false );
 
@@ -486,6 +511,22 @@ void WindowSDL::setSize( Uint32 width, Uint32 height, bool windowed ) {
 	mCursorManager->reload();
 
 	sendVideoResizeCb();
+}
+
+void WindowSDL::setMinimumSize( Uint32 width, Uint32 height ) {
+	SDL_SetWindowMinimumSize( mSDLWindow, static_cast<int>( width ), static_cast<int>( height ) );
+}
+
+bool WindowSDL::setModalFor( Window* parent ) {
+	auto* parentWindow = dynamic_cast<WindowSDL*>( parent );
+	if ( nullptr == parent ) {
+		if ( !SDL_SetWindowModal( mSDLWindow, false ) )
+			return false;
+		return SDL_SetWindowParent( mSDLWindow, nullptr );
+	}
+	if ( nullptr == parentWindow || !SDL_SetWindowParent( mSDLWindow, parentWindow->mSDLWindow ) )
+		return false;
+	return SDL_SetWindowModal( mSDLWindow, true );
 }
 
 void WindowSDL::swapBuffers() {
@@ -577,6 +618,8 @@ void WindowSDL::minimize() {
 }
 
 void WindowSDL::maximize() {
+	if ( Runtime::isOffscreen() )
+		return;
 	SDL_MaximizeWindow( mSDLWindow );
 }
 

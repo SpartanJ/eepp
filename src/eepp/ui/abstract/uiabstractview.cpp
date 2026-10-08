@@ -1,5 +1,8 @@
+#include <algorithm>
 #include <eepp/system/thread.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uimodelcreator.hpp>
 #include <eepp/window/engine.hpp>
 
 namespace EE { namespace UI { namespace Abstract {
@@ -10,9 +13,13 @@ UIAbstractView::UIAbstractView( const std::string& tag ) :
 	UIScrollableWidget( tag ), mSelection( this ) {}
 
 UIAbstractView::~UIAbstractView() {
-	eeSAFE_DELETE( mEditingDelegate );
+	// Unregister first so the view leaves the model's view set before its
+	// members are torn down. This is defense-in-depth only: view callbacks are
+	// safe because model events run on the main thread, not because of this
+	// ordering.
 	if ( mModel )
 		mModel->unregisterView( this );
+	eeSAFE_DELETE( mEditingDelegate );
 }
 
 UIAbstractView::SelectionKind UIAbstractView::getSelectionKind() const {
@@ -137,6 +144,19 @@ void UIAbstractView::modelUpdate( unsigned flags ) {
 	}
 }
 
+void UIAbstractView::onModelIndexDeleted( const void* internalData ) {
+	auto indexes = getSelection().indexes();
+	auto firstRemoved =
+		std::remove_if( indexes.begin(), indexes.end(), [internalData]( const ModelIndex& index ) {
+			return index.internalData() == internalData;
+		} );
+	if ( firstRemoved == indexes.end() )
+		return;
+	indexes.erase( firstRemoved, indexes.end() );
+	// Model-driven deletion must not invoke user selection callbacks re-entrantly.
+	getSelection().set( indexes, false );
+}
+
 void UIAbstractView::onModelUpdate( unsigned flags ) {
 	mPendingUpdateFlags.fetch_or( flags );
 	if ( !Engine::instance()->isMainThread() ) {
@@ -215,6 +235,66 @@ void UIAbstractView::stopEditing() {
 	}
 	if ( recoverFocus )
 		setFocus();
+}
+
+bool UIAbstractView::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Editable:
+			setEditable( attribute.asBool() );
+			break;
+		case PropertyId::SelectionType: {
+			setSelectionType( String::iequals( attribute.getValue(), "cell" )
+								  ? SelectionType::Cell
+								  : SelectionType::Row );
+			break;
+		}
+		case PropertyId::SelectionKind: {
+			setSelectionKind( String::iequals( attribute.getValue(), "multiple" )
+								  ? SelectionKind::Multiple
+								  : SelectionKind::Single );
+			break;
+		}
+		case PropertyId::TableModel: {
+			const std::string& val = attribute.asString();
+			if ( !val.empty() ) {
+				auto model = UIModelCreator::createFromName( val, this );
+				if ( model )
+					setModel( std::move( model ) );
+			}
+			break;
+		}
+		default:
+			return UIScrollableWidget::applyProperty( attribute );
+	}
+
+	return true;
+}
+
+std::string UIAbstractView::getPropertyString( const PropertyDefinition* propertyDef,
+											   const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Editable:
+			return isEditable() ? "true" : "false";
+		case PropertyId::SelectionType:
+			return isCellSelection() ? "cell" : "row";
+		case PropertyId::SelectionKind:
+			return mSelectionKind == SelectionKind::Multiple ? "multiple" : "single";
+		default:
+			return UIScrollableWidget::getPropertyString( propertyDef, propertyIndex );
+	}
+}
+
+std::vector<PropertyId> UIAbstractView::getPropertiesImplemented() const {
+	auto props = UIScrollableWidget::getPropertiesImplemented();
+	props.insert( props.end(), { PropertyId::Editable, PropertyId::SelectionType,
+								 PropertyId::SelectionKind, PropertyId::TableModel } );
+	return props;
 }
 
 }}} // namespace EE::UI::Abstract

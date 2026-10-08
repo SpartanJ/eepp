@@ -41,7 +41,7 @@ void MapObjectLayer::draw( const Vector2f& Offset ) {
 		( *it )->draw();
 	}
 
-	Texture* Tex = mMap->getBlankTileTexture();
+	const TexturePtr& Tex = mMap->getBlankTileTexture();
 
 	if ( mMap->getShowBlocked() && NULL != Tex ) {
 		Color Col( 255, 0, 0, 200 );

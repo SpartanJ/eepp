@@ -51,6 +51,12 @@ class EE_API WindowSDL : public Window {
 
 	void setSize( Uint32 width, Uint32 height, bool windowed );
 
+	/** @copydoc EE::Window::Window::setMinimumSize() */
+	void setMinimumSize( Uint32 width, Uint32 height );
+
+	/** @copydoc EE::Window::Window::setModalFor() */
+	bool setModalFor( Window* parent );
+
 	std::vector<DisplayMode> getDisplayModes() const;
 
 	void setGamma( Float Red, Float Green, Float Blue );

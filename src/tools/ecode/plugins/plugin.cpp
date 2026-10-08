@@ -27,6 +27,17 @@ bool Plugin::isShuttingDown() const {
 	return mShuttingDown;
 }
 
+void Plugin::shutdown() {
+	if ( mShuttingDown.exchange( true ) )
+		return;
+	waitUntilLoaded();
+	unsubscribeFileSystemListener();
+	mManager->unsubscribeMessages( this );
+	mUnregistering = true;
+	unregisterEditors();
+	mUnregistering = false;
+}
+
 bool Plugin::hasFileConfig() {
 	return !mConfigPath.empty();
 }
@@ -64,9 +75,9 @@ UIIcon* Plugin::findIcon( const std::string& iconName ) {
 	return getManager()->getUISceneNode()->findIcon( iconName );
 }
 
-Drawable* Plugin::iconDrawable( const std::string& iconName, Float dpSize ) {
+DrawablePtr Plugin::iconDrawable( const std::string& iconName, Float dpSize ) {
 	UIIcon* icon = findIcon( iconName );
-	return icon ? icon->getSize( PixelDensity::dpToPx( dpSize ) ) : nullptr;
+	return icon ? icon->createDrawable( PixelDensity::dpToPx( dpSize ) ) : DrawablePtr{};
 }
 
 void Plugin::showMessage( LSPMessageType type, const std::string& message,
@@ -108,6 +119,16 @@ void Plugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 					"are the same.",
 					getTitle().c_str(), mConfigPath.c_str() );
 	}
+}
+
+FileSystemListenerOptions Plugin::getFileSystemListenerOptions() const {
+	FileSystemListenerOptions options;
+	FileSystemListenerFilter filter;
+	filter.eventTypes = fileEventTypeMask( FileSystemEventType::Modified );
+	filter.path = mConfigPath;
+	filter.pathMatch = FileEventPathMatch::Exact;
+	options.filters.emplace_back( std::move( filter ) );
+	return options;
 }
 
 void Plugin::setReady( Time loadTime ) {
@@ -239,13 +260,6 @@ void Plugin::createListView( UICodeEditor* editor, std::shared_ptr<Model> model,
 
 PluginBase::~PluginBase() {
 	mShuttingDown = true;
-	unsubscribeFileSystemListener();
-
-	for ( auto editor : mEditors ) {
-		for ( auto listener : editor.second )
-			editor.first->removeEventListener( listener );
-		editor.first->unregisterPlugin( this );
-	}
 }
 
 void PluginBase::onRegister( UICodeEditor* editor ) {
@@ -296,7 +310,7 @@ void PluginBase::onRegister( UICodeEditor* editor ) {
 
 void PluginBase::onUnregister( UICodeEditor* editor ) {
 	onBeforeUnregister( editor );
-	if ( mShuttingDown )
+	if ( mShuttingDown && !mUnregistering )
 		return;
 	Lock l( mMutex );
 	TextDocument* doc = mEditorDocs[editor];
@@ -330,6 +344,11 @@ void PluginBase::onRegisterEditor( UICodeEditor* editor ) {
 void PluginBase::onUnregisterDocument( TextDocument* doc ) {
 	for ( auto& kb : mKeyBindings )
 		doc->removeCommand( kb.first );
+}
+
+void PluginBase::unregisterEditors() {
+	while ( !mEditors.empty() )
+		mEditors.begin()->first->unregisterPlugin( this );
 }
 
 } // namespace ecode

@@ -42,7 +42,7 @@ class EE_MAPS_API GameObjectTextureRegion : public GameObject {
 	virtual void setDataId( Uint32 Id );
 
   protected:
-	Graphics::TextureRegion* mTextureRegion;
+	TextureRegionPtr mTextureRegion;
 	Vector2f mPos;
 	Vector2i mTilePos;
 };

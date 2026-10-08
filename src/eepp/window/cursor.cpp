@@ -63,7 +63,7 @@ Cursor::Type Cursor::fromName( std::string name ) {
 	String::toLowerInPlace( name );
 	if ( "arrow" == name )
 		return Arrow;
-	if ( "hand" == name )
+	if ( "hand" == name || "pointer" == name )
 		return Hand;
 	if ( "ibream" == name )
 		return IBeam;
@@ -86,6 +86,37 @@ Cursor::Type Cursor::fromName( std::string name ) {
 	if ( "nocursor" == name )
 		return NoCursor;
 	return Arrow;
+}
+
+const char* Cursor::toName( Cursor::Type cursor ) {
+	switch ( cursor ) {
+		case Hand:
+			return "hand";
+		case IBeam:
+			return "ibeam";
+		case Wait:
+			return "wait";
+		case Crosshair:
+			return "crosshair";
+		case WaitArrow:
+			return "waitarrow";
+		case SizeNWSE:
+			return "sizenwse";
+		case SizeNESW:
+			return "sizenesw";
+		case SizeWE:
+			return "sizewe";
+		case SizeNS:
+			return "sizens";
+		case SizeAll:
+			return "sizeall";
+		case NoCursor:
+			return "nocursor";
+		case Arrow:
+		case CursorCount:
+			return "arrow";
+	}
+	return "arrow";
 }
 
 const String::HashType& Cursor::getId() const {

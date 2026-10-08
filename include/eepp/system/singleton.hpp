@@ -2,9 +2,12 @@
 #define EE_SYSTEMSINGLETON_H
 
 #include <atomic>
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/memorymanager.hpp>
+#include <eepp/core/noncopyable.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/mutex.hpp>
+#include <eepp/system/singletondeclarations.hpp>
 
 /** Internally we gonna use the macro singleton because it works with the engine compiled as dynamic
  * libraries.
@@ -20,20 +23,6 @@
  * - Expand SINGLETON_DECLARE_IMPLEMENTATION exactly once in a .cpp file. Expanding it in a header
  *   creates one internal-linkage singleton per translation unit.
  */
-
-#define SINGLETON_DECLARE_HEADERS( T ) \
-  public:                              \
-	static T* createSingleton();       \
-                                       \
-	static T* existsSingleton();       \
-                                       \
-	static bool isShuttingDown();      \
-                                       \
-	static T* instance();              \
-                                       \
-	static void destroySingleton();    \
-                                       \
-	static void detachSingleton();
 
 #define SINGLETON_DECLARE_IMPLEMENTATION( T )                           \
                                                                         \

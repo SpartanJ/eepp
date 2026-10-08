@@ -3,6 +3,8 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/packerhelper.hpp>
+#include <eepp/graphics/resourcescope.hpp>
+#include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/system/iostream.hpp>
@@ -11,8 +13,6 @@
 namespace EE { namespace Graphics {
 
 using namespace Private;
-
-class TextureAtlas;
 
 /** @brief The Texture Atlas Loader loads any previously created Texture Atlas. */
 class EE_API TextureAtlasLoader {
@@ -146,13 +146,13 @@ class EE_API TextureAtlasLoader {
 	 * 0 to GetTexturesLoadedCount(). Usually a texture atlas corresponds to only one texture, so
 	 * the texture index is 0.
 	 */
-	Texture* getTexture( const Uint32& texnum = 0 ) const;
+	const TexturePtr& getTexture( const Uint32& texnum = 0 ) const;
 
 	/** @return The number of textures linked to the texture atlas. */
 	Uint32 getTexturesLoadedCount();
 
 	/** @return The texture atlas instance pointer ( NULL if the atlas isn't loaded yet ). */
-	TextureAtlas* getTextureAtlas() const;
+	const TextureAtlasPtr& getTextureAtlas() const;
 
 	/** Sets a load notification callback. */
 	void setLoadCallback( GLLoadCallback LoadCallback );
@@ -161,6 +161,11 @@ class EE_API TextureAtlasLoader {
 
 	void setTextureFilter( const Texture::Filter& textureFilter );
 
+	/** Sets the semantic texture lookup boundary used by subsequent loads. */
+	void setResourceScope( ResourceScopePtr resourceScope );
+
+	const ResourceScopePtr& getResourceScope() const;
+
   protected:
 	std::string mTextureAtlasPath;
 	bool mThreaded;
@@ -168,13 +173,15 @@ class EE_API TextureAtlasLoader {
 	Pack* mPack;
 	bool mSkipResourceLoad;
 	std::atomic<bool> mIsLoading;
-	TextureAtlas* mTextureAtlas;
+	TextureAtlasPtr mTextureAtlas;
 	GLLoadCallback mLoadCallback;
-	std::vector<Texture*> mTexturesLoaded;
+	ResourceScopePtr mResourceScope;
+	std::vector<TexturePtr> mTexturesLoaded;
 
 	struct sTempTexAtlas {
 		sTextureHdr Texture;
 		std::vector<sTextureRegionHdr> TextureRegions;
+		TexturePtr LoadedTexture;
 	};
 
 	sTextureAtlasHdr mTexGrHdr;

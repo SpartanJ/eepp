@@ -14,7 +14,7 @@ using namespace EE::System;
 using namespace EE::Graphics;
 using namespace EE::Window;
 
-static constexpr Uint32 VisualTestWindowStyle = WindowStyle::Borderless;
+static constexpr Uint32 VisualTestWindowStyle = WindowStyle::Borderless | WindowStyle::Hidden;
 
 static void compareImages( utest_state_s& utest_state, int* utest_result, EE::Window::Window* win,
 						   const std::string& imageName,
@@ -22,7 +22,8 @@ static void compareImages( utest_state_s& utest_state, int* utest_result, EE::Wi
 						   int allowedNumDifferentPixels = 0 ) {
 	auto saveType = Image::SaveType::WEBP;
 	auto saveExt( Image::saveTypeToExtension( saveType ) );
-	std::string expectedImagePath( "assets/" + imagesFolder + "/" + imageName + "." + saveExt );
+	std::string expectedImagePath( Sys::getProcessPath() + "assets/" + imagesFolder + "/" +
+								   imageName + "." + saveExt );
 
 	Image::FormatConfiguration fconf;
 	fconf.webpSaveLossless( true );
@@ -40,9 +41,13 @@ static void compareImages( utest_state_s& utest_state, int* utest_result, EE::Wi
 	EXPECT_EQ_MSG( expectedImage.getWidth(), actualImage.getWidth(), "Images width not equal" );
 	EXPECT_EQ_MSG( expectedImage.getHeight(), actualImage.getHeight(), "Images height not equal" );
 
-	Image::DiffResult result = actualImage.diff( expectedImage );
+	constexpr float diffThreshold = 2.3f;
+	const Color diffColor( 255, 0, 255, 255 );
+	Image::DiffResult result = actualImage.diff( expectedImage, diffThreshold, diffColor, false );
 	EXPECT_LE( result.numDifferentPixels, allowedNumDifferentPixels );
 	if ( imageSizeMismatch || result.numDifferentPixels > allowedNumDifferentPixels ) {
+		Image::DiffResult visualResult =
+			actualImage.diff( expectedImage, diffThreshold, diffColor, true );
 		auto saveExt( Image::saveTypeToExtension( saveType ) );
 		std::string withTextShaper =
 			Text::TextShaperEnabled
@@ -112,11 +117,11 @@ static void compareImages( utest_state_s& utest_state, int* utest_result, EE::Wi
 			"output/" + imageName + "_actual_output" + withTextShaper + "." + saveExt;
 		actualImage.saveToFile( actualImagePath, saveType );
 		std::cerr << "Actual image saved to: " << actualImagePath << std::endl;
-		if ( result.diffImage ) {
+		if ( visualResult.diffImage ) {
 			std::string diffImagePath =
 				"output/" + imageName + "_diff_output" + withTextShaper + "." + saveExt;
-			result.diffImage->setImageFormatConfiguration( fconf );
-			result.diffImage->saveToFile( diffImagePath, saveType );
+			visualResult.diffImage->setImageFormatConfiguration( fconf );
+			visualResult.diffImage->saveToFile( diffImagePath, saveType );
 			std::cerr << "Visual diff saved to: " << diffImagePath << std::endl;
 		}
 	}

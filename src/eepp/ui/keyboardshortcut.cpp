@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/window/input.hpp>
 
@@ -13,14 +14,40 @@ KeyBindings::Shortcut KeyBindings::sanitizeShortcut( const KeyBindings::Shortcut
 		sanitized.mod |= KEYMOD_SHIFT;
 	if ( shortcut.mod & KEYMOD_META )
 		sanitized.mod |= KEYMOD_META;
-	if ( shortcut.mod & KEYMOD_LALT )
+	const Uint32 alt = shortcut.mod & KEYMOD_ALT;
+	if ( alt == KEYMOD_ALT )
 		sanitized.mod |= KEYMOD_LALT;
-	if ( shortcut.mod & KEYMOD_RALT )
-		sanitized.mod |= KEYMOD_RALT;
+	else
+		sanitized.mod |= alt;
 	return sanitized;
 }
 
-KeyBindings::KeyBindings( const Window::Input* input ) : mInput( input ) {}
+std::vector<KeyBindings::Shortcut>
+KeyBindings::getOrderedShortcuts( const KeyBindings::ShortcutMap& bindings ) {
+	std::vector<Shortcut> shortcuts;
+	shortcuts.reserve( bindings.size() );
+	for ( const auto& binding : bindings )
+		shortcuts.emplace_back( binding.first );
+	std::sort( shortcuts.begin(), shortcuts.end() );
+	return shortcuts;
+}
+
+std::shared_ptr<KeyBindings::Storage> KeyBindings::getEmptyStorage() {
+	static auto storage = std::make_shared<Storage>();
+	return storage;
+}
+
+KeyBindings::KeyBindings( const Window::Input* input ) :
+	mInput( input ), mStorage( getEmptyStorage() ) {}
+
+void KeyBindings::setKeybinds( const KeyBindings& bindings ) {
+	mStorage = bindings.mStorage;
+}
+
+void KeyBindings::ensureUniqueStorage() {
+	if ( mStorage.use_count() != 1 )
+		mStorage = std::make_shared<Storage>( *mStorage );
+}
 
 void KeyBindings::addKeybindsString( const std::map<std::string, std::string>& binds ) {
 	for ( auto& bind : binds ) {
@@ -28,9 +55,9 @@ void KeyBindings::addKeybindsString( const std::map<std::string, std::string>& b
 	}
 }
 
-void KeyBindings::addKeybinds( const std::map<KeyBindings::Shortcut, std::string>& binds ) {
-	for ( auto& bind : binds ) {
-		addKeybind( bind.first, bind.second );
+void KeyBindings::addKeybinds( const KeyBindings::ShortcutMap& binds ) {
+	for ( const auto& shortcut : getOrderedShortcuts( binds ) ) {
+		addKeybind( shortcut, binds.find( shortcut )->second );
 	}
 }
 
@@ -41,20 +68,15 @@ void KeyBindings::addKeybindsStringUnordered(
 	}
 }
 
-void KeyBindings::addKeybindsUnordered(
-	const std::unordered_map<KeyBindings::Shortcut, std::string>& binds ) {
-	for ( auto& bind : binds ) {
-		addKeybind( bind.first, bind.second );
-	}
-}
-
 void KeyBindings::addKeybindString( const std::string& key, const std::string& command ) {
 	addKeybind( getShortcutFromString( key ), command );
 }
 
 void KeyBindings::addKeybind( const KeyBindings::Shortcut& key, const std::string& command ) {
-	mShortcuts[sanitizeShortcut( key )] = command;
-	mKeybindingsInvert[command] = sanitizeShortcut( key );
+	ensureUniqueStorage();
+	auto shortcut = sanitizeShortcut( key );
+	mStorage->shortcuts[shortcut] = command;
+	mStorage->keybindingsInvert[command] = shortcut;
 }
 
 void KeyBindings::replaceKeybindString( const std::string& keys, const std::string& command ) {
@@ -62,18 +84,19 @@ void KeyBindings::replaceKeybindString( const std::string& keys, const std::stri
 }
 
 void KeyBindings::replaceKeybind( const KeyBindings::Shortcut& keys, const std::string& command ) {
+	ensureUniqueStorage();
 	bool erased;
 	do {
 		erased = false;
-		auto it = mShortcuts.find( sanitizeShortcut( keys ) );
-		if ( it != mShortcuts.end() ) {
-			mShortcuts.erase( it );
-			mKeybindingsInvert.erase( it->second );
+		auto it = mStorage->shortcuts.find( sanitizeShortcut( keys ) );
+		if ( it != mStorage->shortcuts.end() ) {
+			mStorage->shortcuts.erase( it );
+			mStorage->keybindingsInvert.erase( it->second );
 			erased = true;
 		}
 	} while ( erased );
-	mShortcuts[sanitizeShortcut( keys )] = command;
-	mKeybindingsInvert[command] = sanitizeShortcut( keys );
+	mStorage->shortcuts[sanitizeShortcut( keys )] = command;
+	mStorage->keybindingsInvert[command] = sanitizeShortcut( keys );
 }
 
 KeyBindings::Shortcut KeyBindings::toShortcut( const Window::Input* input,
@@ -101,9 +124,10 @@ KeyBindings::Shortcut KeyBindings::getShortcutFromString( const std::string& key
 }
 
 void KeyBindings::removeKeybind( const KeyBindings::Shortcut& keys ) {
-	auto it = mShortcuts.find( keys.toUint64() );
-	if ( it != mShortcuts.end() ) {
-		mShortcuts.erase( it );
+	ensureUniqueStorage();
+	auto it = mStorage->shortcuts.find( keys );
+	if ( it != mStorage->shortcuts.end() ) {
+		mStorage->shortcuts.erase( it );
 	}
 }
 
@@ -112,25 +136,26 @@ void KeyBindings::removeKeybind( const std::string& kb ) {
 }
 
 bool KeyBindings::existsKeybind( const KeyBindings::Shortcut& keys ) {
-	return mShortcuts.find( keys.toUint64() ) != mShortcuts.end();
+	return mStorage->shortcuts.find( keys ) != mStorage->shortcuts.end();
 }
 
 bool KeyBindings::hasCommand( const std::string& command ) {
-	return mKeybindingsInvert.find( command ) != mKeybindingsInvert.end();
+	return mStorage->keybindingsInvert.find( command ) != mStorage->keybindingsInvert.end();
 }
 
 KeyBindings::Shortcut KeyBindings::getShortcutFromCommand( const std::string& cmd ) const {
-	auto it = mKeybindingsInvert.find( cmd );
-	if ( it != mKeybindingsInvert.end() )
+	auto it = mStorage->keybindingsInvert.find( cmd );
+	if ( it != mStorage->keybindingsInvert.end() )
 		return it->second;
 	return {};
 }
 
 void KeyBindings::removeCommandKeybind( const std::string& command ) {
-	auto kbIt = mKeybindingsInvert.find( command );
-	if ( kbIt != mKeybindingsInvert.end() ) {
+	ensureUniqueStorage();
+	auto kbIt = mStorage->keybindingsInvert.find( command );
+	if ( kbIt != mStorage->keybindingsInvert.end() ) {
 		removeKeybind( kbIt->second );
-		mKeybindingsInvert.erase( command );
+		mStorage->keybindingsInvert.erase( command );
 	}
 }
 
@@ -140,8 +165,8 @@ void KeyBindings::removeCommandsKeybind( const std::vector<std::string>& command
 }
 
 std::string KeyBindings::getCommandFromKeyBind( const KeyBindings::Shortcut& keys ) {
-	auto it = mShortcuts.find( sanitizeShortcut( keys ) );
-	if ( it != mShortcuts.end() ) {
+	auto it = mStorage->shortcuts.find( sanitizeShortcut( keys ) );
+	if ( it != mStorage->shortcuts.end() ) {
 		return it->second;
 	}
 	return "";
@@ -149,6 +174,7 @@ std::string KeyBindings::getCommandFromKeyBind( const KeyBindings::Shortcut& key
 
 std::string KeyBindings::keybindFormat( std::string str ) {
 	if ( !str.empty() ) {
+		String::replace( str, "mod2", KeyMod::getDefaultSecondaryModifierString() );
 		String::replace( str, "mod", KeyMod::getDefaultModifierString() );
 		str[0] = std::toupper( str[0] );
 		size_t found = str.find_first_of( '+' );
@@ -164,41 +190,44 @@ std::string KeyBindings::keybindFormat( std::string str ) {
 }
 
 std::string KeyBindings::getCommandKeybindString( const std::string& command ) const {
-	auto it = mKeybindingsInvert.find( command );
-	if ( it == mKeybindingsInvert.end() )
+	auto it = mStorage->keybindingsInvert.find( command );
+	if ( it == mStorage->keybindingsInvert.end() )
 		return "";
-	return keybindFormat( getShortcutString( Shortcut( it->second ) ) );
+	return keybindFormat( getShortcutString( it->second ) );
 }
 
 void KeyBindings::reset() {
-	mShortcuts.clear();
-	mKeybindingsInvert.clear();
+	mStorage = getEmptyStorage();
 }
 
 const KeyBindings::ShortcutMap& KeyBindings::getShortcutMap() const {
-	return mShortcuts;
+	return mStorage->shortcuts;
 }
 
-const std::map<std::string, Uint64>& KeyBindings::getKeybindings() const {
-	return mKeybindingsInvert;
+const std::map<std::string, KeyBindings::Shortcut>& KeyBindings::getKeybindings() const {
+	return mStorage->keybindingsInvert;
 }
 
 std::string KeyBindings::fromShortcut( const Window::Input* input, KeyBindings::Shortcut shortcut,
 									   bool format ) {
+	shortcut = sanitizeShortcut( shortcut );
 	std::vector<std::string> mods;
 	std::string keyname( String::toLower( input->getKeyName( shortcut.key ) ) );
 	const auto& MOD_MAP = KeyMod::getModMap();
 	if ( shortcut.mod & MOD_MAP.at( "mod" ) )
 		mods.emplace_back( "mod" );
-	if ( ( shortcut.mod & KEYMOD_CTRL ) && KEYMOD_CTRL != MOD_MAP.at( "mod" ) )
+	if ( shortcut.mod & MOD_MAP.at( "mod2" ) )
+		mods.emplace_back( "mod2" );
+	const Uint32 abstractMods = MOD_MAP.at( "mod" ) | MOD_MAP.at( "mod2" );
+	if ( ( shortcut.mod & KEYMOD_CTRL ) && !( KEYMOD_CTRL & abstractMods ) )
 		mods.emplace_back( "ctrl" );
-	if ( ( shortcut.mod & KEYMOD_SHIFT ) && KEYMOD_SHIFT != MOD_MAP.at( "mod" ) )
+	if ( ( shortcut.mod & KEYMOD_SHIFT ) && !( KEYMOD_SHIFT & abstractMods ) )
 		mods.emplace_back( "shift" );
-	if ( ( shortcut.mod & KEYMOD_LALT ) && KEYMOD_LALT != MOD_MAP.at( "mod" ) )
+	if ( ( shortcut.mod & KEYMOD_LALT ) && !( KEYMOD_LALT & abstractMods ) )
 		mods.emplace_back( "alt" );
-	if ( ( shortcut.mod & KEYMOD_RALT ) && KEYMOD_RALT != MOD_MAP.at( "mod" ) )
+	if ( ( shortcut.mod & KEYMOD_RALT ) && !( KEYMOD_RALT & abstractMods ) )
 		mods.emplace_back( "altgr" );
-	if ( ( shortcut.mod & KEYMOD_META ) && KEYMOD_META != MOD_MAP.at( "mod" ) )
+	if ( ( shortcut.mod & KEYMOD_META ) && !( KEYMOD_META & abstractMods ) )
 		mods.emplace_back( "meta" );
 	if ( mods.empty() )
 		return format ? keybindFormat( keyname ) : keyname;

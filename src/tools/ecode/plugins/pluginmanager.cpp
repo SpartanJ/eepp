@@ -23,16 +23,25 @@ PluginManager::PluginManager( const std::string& resourcesPath, const std::strin
 	mLoadFileFn( loadFileCb ) {}
 
 PluginManager::~PluginManager() {
-	mClosing = true;
+	beginShutdown();
 	for ( auto& plugin : mPlugins ) {
 		Log::debug( "PluginManager: unloading plugin %s", plugin.second->getTitle() );
-		eeDelete( plugin.second );
+		unloadPlugin( plugin.second );
 	}
-	unsubscribeFileSystemListener();
+	std::unique_lock<std::mutex> lock( mPendingUnloadsMutex );
+	mPendingUnloadsCondition.wait( lock, [this] { return mPendingUnloads == 0; } );
 }
 
 bool PluginManager::isClosing() const {
 	return mClosing;
+}
+
+void PluginManager::beginShutdown() {
+	if ( mClosing )
+		return;
+	mClosing = true;
+	mPluginReloadEnabled = false;
+	unsubscribeFileSystemListener();
 }
 
 void PluginManager::registerPlugin( const PluginDefinition& def ) {
@@ -55,6 +64,8 @@ Plugin* ecode::PluginManager::get( const std::string& id ) {
 }
 
 bool PluginManager::setEnabled( const std::string& id, bool enable, bool sync ) {
+	if ( mClosing )
+		return false;
 	mPluginsEnabled[id] = enable;
 	Plugin* plugin = get( id );
 	if ( enable && plugin == nullptr && hasDefinition( id ) ) {
@@ -69,12 +80,8 @@ bool PluginManager::setEnabled( const std::string& id, bool enable, bool sync ) 
 	}
 	if ( !enable && plugin != nullptr ) {
 		Log::debug( "PluginManager: unloading plugin %s", mDefinitions[id].name );
-		mThreadPool->run( [plugin]() { eeDelete( plugin ); } );
-		{
-			Lock l( mSubscribedPluginsMutex );
-			mSubscribedPlugins.erase( id );
-		}
 		mPlugins.erase( id );
+		unloadPlugin( plugin );
 	}
 	return false;
 }
@@ -84,6 +91,8 @@ bool PluginManager::isEnabled( const std::string& id ) const {
 }
 
 bool PluginManager::reload( const std::string& id ) {
+	if ( mClosing )
+		return false;
 	if ( !isPluginReloadEnabled() ) {
 		Log::warning( "PluginManager: tried to reload a plugin but plugin reload is not enabled." );
 		return false;
@@ -105,6 +114,10 @@ const std::string& PluginManager::getResourcesPath() const {
 
 const std::string& PluginManager::getPluginsPath() const {
 	return mPluginsPath;
+}
+
+const std::string& PluginManager::getConfigPath() const {
+	return mConfigPath;
 }
 
 const std::map<std::string, bool>& PluginManager::getPluginsEnabled() const {
@@ -164,6 +177,10 @@ void PluginManager::setWorkspaceFolder( const std::string& workspaceFolder ) {
 	mWorkspaceFolder = workspaceFolder;
 	json data{ { "folder", mWorkspaceFolder } };
 	sendBroadcast( PluginMessageType::WorkspaceFolderChanged, PluginMessageFormat::JSON, &data );
+	// Workspace-scoped plugin filters are snapshots. Re-register after plugins
+	// receive the workspace notification and update their own paths.
+	unsubscribeFileSystemListener();
+	subscribeFileSystemListener();
 }
 
 PluginRequestHandle PluginManager::sendRequest( PluginMessageType type, PluginMessageFormat format,
@@ -291,6 +308,7 @@ void PluginManager::setMainSplitter( UISplitter* splitter ) {
 void PluginManager::setFileSystemListener( FileSystemListener* listener ) {
 	if ( listener == mFileSystemListener )
 		return;
+	unsubscribeFileSystemListener();
 	mFileSystemListener = listener;
 	sendBroadcast( PluginMessageType::FileSystemListenerReady, PluginMessageFormat::Empty,
 				   nullptr );
@@ -298,34 +316,107 @@ void PluginManager::setFileSystemListener( FileSystemListener* listener ) {
 }
 
 void PluginManager::subscribeFileSystemListener( Plugin* plugin ) {
-	Lock l( mPluginsFSSubsMutex );
-	mPluginsFSSubs.insert( plugin );
+	{
+		Lock l( mPluginsFSSubsMutex );
+		if ( !mPluginsFSSubs.insert( plugin ).second )
+			return;
+	}
+	registerFileSystemListener( plugin );
 }
 
 void PluginManager::unsubscribeFileSystemListener( Plugin* plugin ) {
-	Lock l( mPluginsFSSubsMutex );
-	mPluginsFSSubs.erase( plugin );
+	Uint64 listenerId{ 0 };
+	{
+		Lock l( mPluginsFSSubsMutex );
+		mPluginsFSSubs.erase( plugin );
+		auto it = mPluginFSListenerIds.find( plugin );
+		if ( it != mPluginFSListenerIds.end() ) {
+			listenerId = it->second;
+			mPluginFSListenerIds.erase( it );
+		}
+	}
+	if ( listenerId != 0 && mFileSystemListener )
+		mFileSystemListener->removeListener( listenerId );
 }
 
 void PluginManager::subscribeFileSystemListener() {
-	if ( mFileSystemListenerCb != 0 || mFileSystemListener == nullptr )
+	if ( mFileSystemListener == nullptr )
 		return;
-
-	mFileSystemListenerCb =
-		mFileSystemListener->addListener( [this]( const FileEvent& ev, const FileInfo& file ) {
-			UnorderedSet<Plugin*> plugins;
-			{
-				Lock l( mPluginsFSSubsMutex );
-				plugins = mPluginsFSSubs;
-			}
-			for ( Plugin* plugin : plugins )
-				plugin->onFileSystemEvent( ev, file );
-		} );
+	UnorderedSet<Plugin*> plugins;
+	{
+		Lock l( mPluginsFSSubsMutex );
+		plugins = mPluginsFSSubs;
+	}
+	for ( Plugin* plugin : plugins )
+		registerFileSystemListener( plugin );
 }
 
 void PluginManager::unsubscribeFileSystemListener() {
-	if ( mFileSystemListenerCb != 0 && mFileSystemListener )
-		mFileSystemListener->removeListener( mFileSystemListenerCb );
+	std::vector<Uint64> listenerIds;
+	{
+		Lock l( mPluginsFSSubsMutex );
+		listenerIds.reserve( mPluginFSListenerIds.size() );
+		for ( const auto& listener : mPluginFSListenerIds )
+			listenerIds.emplace_back( listener.second );
+		mPluginFSListenerIds.clear();
+	}
+	if ( mFileSystemListener ) {
+		for ( Uint64 listenerId : listenerIds )
+			mFileSystemListener->removeListener( listenerId );
+	}
+}
+
+void PluginManager::registerFileSystemListener( Plugin* plugin ) {
+	if ( mFileSystemListener == nullptr )
+		return;
+	{
+		Lock l( mPluginsFSSubsMutex );
+		if ( mPluginsFSSubs.find( plugin ) == mPluginsFSSubs.end() ||
+			 mPluginFSListenerIds.find( plugin ) != mPluginFSListenerIds.end() )
+			return;
+	}
+	const Uint64 listenerId = mFileSystemListener->addListener(
+		[plugin]( const FileEvent& ev, const FileInfo& file ) {
+			plugin->onFileSystemEvent( ev, file );
+		},
+		plugin->getFileSystemListenerOptions() );
+	bool removeListener{ false };
+	{
+		Lock l( mPluginsFSSubsMutex );
+		if ( mPluginsFSSubs.find( plugin ) != mPluginsFSSubs.end() )
+			mPluginFSListenerIds[plugin] = listenerId;
+		else
+			removeListener = true;
+	}
+	if ( removeListener )
+		mFileSystemListener->removeListener( listenerId );
+}
+
+void PluginManager::unloadPlugin( Plugin* plugin ) {
+	// Complete all application-facing teardown while virtual dispatch still reaches the complete
+	// plugin type. The destructor below may run on a worker and must only release owned resources.
+	unsubscribeFileSystemListener( plugin );
+	{
+		Lock l( mSubscribedPluginsMutex );
+		mSubscribedPlugins.erase( plugin->getId() );
+	}
+	plugin->shutdown();
+	if ( mClosing ) {
+		eeDelete( plugin );
+		return;
+	}
+	{
+		std::lock_guard<std::mutex> lock( mPendingUnloadsMutex );
+		++mPendingUnloads;
+	}
+	mThreadPool->run( [this, plugin] {
+		eeDelete( plugin );
+		{
+			std::lock_guard<std::mutex> lock( mPendingUnloadsMutex );
+			--mPendingUnloads;
+		}
+		mPendingUnloadsCondition.notify_one();
+	} );
 }
 
 void PluginManager::sendBroadcast( const PluginMessageType& notification,

@@ -7,20 +7,17 @@
 namespace EE { namespace Physics {
 
 ShapeCircleSprite* ShapeCircleSprite::New( Physics::Body* body, cpFloat radius, cVect offset,
-										   Sprite* Sprite, bool AutoDeleteSprite ) {
-	return eeNew( ShapeCircleSprite, ( body, radius, offset, Sprite, AutoDeleteSprite ) );
+										   SpritePtr sprite ) {
+	return eeNew( ShapeCircleSprite, ( body, radius, offset, std::move( sprite ) ) );
 }
 
 ShapeCircleSprite::ShapeCircleSprite( Physics::Body* body, cpFloat radius, cVect offset,
-									  Sprite* Sprite, bool AutoDeleteSprite ) :
-	ShapeCircle( body, radius, offset ), mSprite( Sprite ), mSpriteAutoDelete( AutoDeleteSprite ) {
+									  SpritePtr sprite ) :
+	ShapeCircle( body, radius, offset ), mSprite( std::move( sprite ) ) {
 	offsetSet();
 }
 
-ShapeCircleSprite::~ShapeCircleSprite() {
-	if ( mSpriteAutoDelete )
-		eeSAFE_DELETE( mSprite );
-}
+ShapeCircleSprite::~ShapeCircleSprite() {}
 
 void ShapeCircleSprite::draw( Space* space ) {
 	cVect Pos = getBody()->getPos();
@@ -36,7 +33,7 @@ void ShapeCircleSprite::offsetSet() {
 								  -ShapeCircle::getRadius() + ShapeCircle::getOffset().y ) );
 }
 
-Sprite* ShapeCircleSprite::getSprite() const {
+const SpritePtr& ShapeCircleSprite::getSprite() const {
 	return mSprite;
 }
 

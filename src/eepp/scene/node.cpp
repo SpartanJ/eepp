@@ -3,9 +3,12 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/scene/action.hpp>
 #include <eepp/scene/actionmanager.hpp>
+#include <eepp/scene/eventconnectionstate.hpp>
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/engine.hpp>
 
 namespace EE { namespace Scene {
@@ -29,8 +32,7 @@ Node::Node() :
 	mNodeFlags( NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY ),
 	mBlend( BlendMode::Alpha() ),
 	mVisible( true ),
-	mEnabled( true ),
-	mNumCallBacks( 0 ) {}
+	mEnabled( true ) {}
 
 Node::~Node() {
 	if ( !SceneManager::instance()->isShuttingDown() && NULL != mSceneNode ) {
@@ -39,9 +41,6 @@ Node::~Node() {
 
 		if ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE )
 			mSceneNode->unsubscribeScheduledUpdate( this );
-
-		if ( isMouseOverMeOrChildren() )
-			mSceneNode->removeMouseOverNode( this );
 	}
 
 	childDeleteAll();
@@ -227,6 +226,16 @@ void Node::unsubscribeScheduledUpdate() {
 
 Node* Node::setParent( Node* parent ) {
 	eeASSERT( NULL != parent );
+#ifdef EE_DEBUG
+	if ( isUINode() && parent->isUINode() ) {
+		auto* childScene = asType<UI::UINode>()->getUISceneNode();
+		auto* parentScene = parent->asType<UI::UINode>()->getUISceneNode();
+		// Same-window scene rebinding is an existing supported mechanism for embedded documents.
+		// Cross-window rebinding cannot safely migrate input and native-window dependencies.
+		eeASSERT( !childScene || !parentScene || childScene == parentScene ||
+				  childScene->getWindow() == parentScene->getWindow() );
+	}
+#endif
 
 	if ( parent == mParentNode )
 		return this;
@@ -279,8 +288,6 @@ void Node::update( const Time& time ) {
 		childLoop->update( time );
 		childLoop = childLoop->mNext;
 	}
-
-	writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
 }
 
 void Node::sendMouseEvent( const Uint32& event, const Vector2i& pos, const Uint32& flags ) {
@@ -375,7 +382,17 @@ Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	return 1;
 }
 
-Uint32 Node::onMouseWheel( const Vector2f&, bool ) {
+Uint32 Node::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	if ( !hasEventsOfType( Event::MouseWheel ) )
+		return 0;
+
+	const Vector2i position =
+		getEventDispatcher() ? getEventDispatcher()->getMousePos() : Vector2i::Zero;
+	MouseWheelEvent event( this, position, offset, flipped );
+	sendEvent( &event );
+
+	// A registered listener consumes the wheel event. Overrides can intentionally avoid calling
+	// this implementation to handle the wheel without dispatching the generic event callback.
 	return 1;
 }
 
@@ -533,6 +550,8 @@ Uint32 Node::forceTextInput( const TextInputEvent& event ) {
 }
 
 const Vector2f& Node::getScreenPos() const {
+	if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
+		const_cast<Node*>( this )->updateScreenPos();
 	return mScreenPos;
 }
 
@@ -949,9 +968,6 @@ Node* Node::overFind( const Vector2f& point ) {
 		updateWorldPolygon();
 
 		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
-			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-			mSceneNode->addMouseOverNode( this );
-
 			Node* child = mChildLast;
 
 			while ( NULL != child ) {
@@ -1107,13 +1123,20 @@ void Node::updateCenter() {
 }
 
 Uint32 Node::addEventListener( const Uint32& eventType, const EventCallback& callback ) {
-	mEvents[eventType][++mNumCallBacks] = callback;
-	return mNumCallBacks;
+	if ( !mEventConnectionState )
+		mEventConnectionState = std::make_shared<EventConnectionState>();
+	return mEventConnectionState->add( eventType, callback );
 }
 
 Uint32 Node::on( const Uint32& eventType, const EventCallback& callback ) {
-	mEvents[eventType][++mNumCallBacks] = callback;
-	return mNumCallBacks;
+	return addEventListener( eventType, callback );
+}
+
+EventConnection Node::connect( const Uint32& eventType, EventCallback callback ) {
+	if ( !mEventConnectionState )
+		mEventConnectionState = std::make_shared<EventConnectionState>();
+	auto callbackId = mEventConnectionState->add( eventType, std::move( callback ) );
+	return EventConnection( mEventConnectionState, eventType, callbackId );
 }
 
 Uint32 Node::onClick( const std::function<void( const MouseEvent* )>& callback,
@@ -1135,49 +1158,47 @@ Uint32 Node::onDoubleClick( const std::function<void( const MouseEvent* )>& call
 }
 
 bool Node::hasEventsOfType( const Uint32& eventType ) const {
-	return mEvents.find( eventType ) != mEvents.end();
+	return mEventConnectionState &&
+		   mEventConnectionState->events.find( eventType ) != mEventConnectionState->events.end();
 }
 
 void Node::removeEventsOfType( const Uint32& eventType ) {
-	auto it = mEvents.find( eventType );
-	if ( it != mEvents.end() )
-		mEvents.erase( it );
+	if ( mEventConnectionState )
+		mEventConnectionState->events.erase( eventType );
 }
 
 void Node::removeEventListener( const Uint32& callbackId ) {
-	EventsMap::iterator it;
-	for ( it = mEvents.begin(); it != mEvents.end(); ++it ) {
-		auto& event = it->second;
-		if ( event.erase( callbackId ) > 0 )
-			break;
-	}
+	if ( mEventConnectionState )
+		mEventConnectionState->remove( callbackId );
 }
 
 void Node::removeEventListener( const std::vector<Uint32>& callbacksIds ) {
-	for ( auto& event : mEvents ) {
-		auto& events = event.second;
+	if ( !mEventConnectionState )
+		return;
+	for ( auto& event : mEventConnectionState->events ) {
+		auto& listeners = event.second;
 		for ( auto& cbId : callbacksIds ) {
-			auto it = events.find( cbId );
-			if ( it != events.end() ) {
-				events.erase( it );
-			}
+			auto listener =
+				std::lower_bound( listeners.begin(), listeners.end(), cbId,
+								  []( const EventConnectionState::EventListener& listener,
+									  Uint32 id ) { return listener.id < id; } );
+			if ( listener != listeners.end() && listener->id == cbId )
+				listeners.erase( listener );
 		}
 	}
 }
 
 void Node::clearEventListener() {
-	mEvents.clear();
+	if ( mEventConnectionState )
+		mEventConnectionState->events.clear();
 }
 
 void Node::sendEvent( const Event* event ) {
-	if ( 0 != mEvents.count( event->getType() ) ) {
-		auto eventMap = mEvents[event->getType()];
-		if ( eventMap.begin() != eventMap.end() ) {
-			std::map<Uint32, EventCallback>::iterator it;
-			for ( it = eventMap.begin(); it != eventMap.end(); ++it ) {
-				const_cast<Event*>( event )->mCallbackId = it->first;
-				it->second( event );
-			}
+	if ( mEventConnectionState && 0 != mEventConnectionState->events.count( event->getType() ) ) {
+		auto listeners = mEventConnectionState->events[event->getType()];
+		for ( const auto& listener : listeners ) {
+			const_cast<Event*>( event )->mCallbackId = listener.id;
+			listener.callback( event );
 		}
 	}
 }
@@ -1189,6 +1210,12 @@ void Node::onParentChange() {
 void Node::updateScreenPos() {
 	if ( !( mNodeFlags & NODE_FLAG_POSITION_DIRTY ) )
 		return;
+
+	// Keep the dirty-tree invariant intact when a descendant is queried before its ancestors are
+	// drawn. Once this node becomes position-clean, every ancestor must also be position-clean;
+	// otherwise a later ancestor move can early-out in setDirty() without reaching this node.
+	if ( mParentNode && ( mParentNode->mNodeFlags & NODE_FLAG_POSITION_DIRTY ) )
+		mParentNode->updateScreenPos();
 
 	Vector2f Pos( mPosition );
 
@@ -1524,6 +1551,10 @@ std::vector<Action*> Node::getActions() {
 
 std::vector<Action*> Node::getActionsByTag( const Action::UniqueID& tag ) {
 	return getActionManager()->getActionsByTagFromTarget( this, tag );
+}
+
+void Node::getActionsByTag( const Action::UniqueID& tag, SmallVector<Action*, 4>& actions ) {
+	getActionManager()->getActionsByTagFromTarget( this, tag, actions );
 }
 
 void Node::clearActions() {

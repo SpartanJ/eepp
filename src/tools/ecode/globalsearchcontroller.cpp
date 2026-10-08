@@ -7,7 +7,10 @@ static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
 
 GlobalSearchController::GlobalSearchController( UICodeEditorSplitter* editorSplitter,
 												UISceneNode* sceneNode, App* app ) :
-	mSplitter( editorSplitter ), mUISceneNode( sceneNode ), mApp( app ) {
+	mSplitter( editorSplitter ),
+	mUISceneNode( sceneNode ),
+	mLifetime( this, sceneNode ),
+	mApp( app ) {
 	mApp->getPluginManager()->subscribeMessages(
 		"GlobalSearchController", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 			return processMessage( msg );
@@ -601,10 +604,13 @@ void GlobalSearchController::showGlobalSearch( bool searchReplace,
 		mGlobalSearchLayout->findByClass( "replace_box" )->setVisible( searchReplace );
 		mGlobalSearchBarLayout->find( "buffer_only_mode" )->setVisible( searchReplace );
 		if ( wasReplaceTree ) {
-			updateGlobalSearchBarResults( mGlobalSearchTreeReplace->getSearchStr(),
-										  std::static_pointer_cast<ProjectSearch::ResultModel>(
-											  mGlobalSearchTreeReplace->getModelShared() ),
-										  searchReplace, escapeSequenceChk->isChecked() );
+			// The replace tree has no model until its asynchronous search completes.
+			auto model = std::static_pointer_cast<ProjectSearch::ResultModel>(
+				mGlobalSearchTreeReplace->getModelShared() );
+			if ( model ) {
+				updateGlobalSearchBarResults( mGlobalSearchTreeReplace->getSearchStr(), model,
+											  searchReplace, escapeSequenceChk->isChecked() );
+			}
 		}
 	}
 	if ( mGlobalSearchWhereInput && pathFilters )
@@ -697,6 +703,8 @@ void GlobalSearchController::toggleGlobalSearchBar() {
 void GlobalSearchController::updateGlobalSearchBarResults(
 	const std::string& search, std::shared_ptr<ProjectSearch::ResultModel> model,
 	bool searchReplace, bool isEscaped ) {
+	if ( !model )
+		return;
 	updateGlobalSearchBar();
 	mGlobalSearchTree->hExtLanguageType = mApp->getProjectConfig().hExtLanguageType;
 	mGlobalSearchTree->setSearchStr( search );
@@ -826,20 +834,22 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 		 filter]( const ProjectSearch::ConsolidatedResult& res ) {
 			Log::info( "Global search for \"%s\" took %s", search.c_str(),
 					   clock.getElapsedTime().toString() );
-			mUISceneNode->runOnMainThread( [this, res = std::move( res ), search, searchReplace,
-											searchAgain, escapeSequence, searchType, filter] {
-				mLastSearchConfig = std::move( res.first );
+			mLifetime.weakHandle().run( [res = std::move( res ), search, searchReplace, searchAgain,
+										 escapeSequence, searchType,
+										 filter]( GlobalSearchController* controller ) mutable {
+				controller->mLastSearchConfig = std::move( res.first );
 				auto model = ProjectSearch::asModel( res.second );
 				model->setOpType( searchType );
-				updateGlobalSearchHistory( model, search, filter, searchReplace, searchAgain,
-										   escapeSequence );
-				updateGlobalSearchBarResults( search, model, searchReplace, escapeSequence );
-				auto* loader = mGlobalSearchLayout->getParent()->find( "loader" );
+				controller->updateGlobalSearchHistory( model, search, filter, searchReplace,
+													   searchAgain, escapeSequence );
+				controller->updateGlobalSearchBarResults( search, model, searchReplace,
+														  escapeSequence );
+				auto* loader = controller->mGlobalSearchLayout->getParent()->find( "loader" );
 				if ( loader ) {
 					loader->setVisible( false );
 					loader->close();
 				}
-				mCurSearch = nullptr;
+				controller->mCurSearch = nullptr;
 			} );
 		},
 		caseSensitive, wholeWord, searchType, filters, mApp->getCurrentProject(), openDocs );
@@ -946,12 +956,12 @@ PluginRequestHandle GlobalSearchController::processMessage( const PluginMessage&
 		sample.line.substr( sample.position.start().column(),
 							sample.position.end().column() - sample.position.start().column() );
 
-	mUISceneNode->runOnMainThread( [this, search, model] {
-		showGlobalSearch( false );
-		mGlobalSearchInput->setText( search );
-		mGlobalSearchWhereInput->setText( "" );
-		updateGlobalSearchHistory( model, search, "", false, false, false );
-		updateGlobalSearchBarResults( search, model, false, false );
+	mLifetime.weakHandle().run( [search, model]( GlobalSearchController* controller ) {
+		controller->showGlobalSearch( false );
+		controller->mGlobalSearchInput->setText( search );
+		controller->mGlobalSearchWhereInput->setText( "" );
+		controller->updateGlobalSearchHistory( model, search, "", false, false, false );
+		controller->updateGlobalSearchBarResults( search, model, false, false );
 	} );
 
 	return {};

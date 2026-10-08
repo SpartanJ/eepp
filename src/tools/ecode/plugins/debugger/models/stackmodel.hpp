@@ -19,7 +19,7 @@ class StackModel : public Model {
   public:
 	enum Columns { ID, Name, SourceName, SourcePath, Line, Column };
 
-	StackModel( StackTraceInfo&& stack, UISceneNode* sceneNode );
+	StackModel( StackTraceInfo&& stack, UISceneNode* sceneNode, std::string projectPath = {} );
 
 	virtual size_t rowCount( const ModelIndex& ) const;
 
@@ -37,10 +37,15 @@ class StackModel : public Model {
 
 	void setCurrentScopeId( int scope );
 
+	void setProjectPath( const std::string& projectPath );
+
   protected:
 	StackTraceInfo mStack;
+	std::string mProjectPath;
 	UISceneNode* mSceneNode{ nullptr };
 	int mCurrentScopeId{ 0 };
+
+	const char* displaySourcePath( const std::string& sourcePath ) const;
 };
 
 } // namespace ecode

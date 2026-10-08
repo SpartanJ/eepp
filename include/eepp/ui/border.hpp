@@ -17,10 +17,13 @@ class UINode;
 
 enum class BorderType : Uint32 { Inside, Outside, Outline };
 
+enum class BorderStyle : Uint32 { None, Hidden, Dotted, Dashed, Solid };
+
 struct EE_API Border {
 	int width = 0;
 	Color color;
 	Color realColor;
+	BorderStyle style{ BorderStyle::Solid };
 };
 
 struct EE_API BorderRadiuses {
@@ -41,7 +44,15 @@ struct EE_API Borders {
 
 	static BorderType toBorderType( const std::string& borderType );
 
+	static std::string fromBorderStyle( BorderStyle borderStyle );
+
+	static BorderStyle toBorderStyle( const std::string& borderStyle );
+
 	static Sizef radiusFromString( const UINode* node, const std::string& val );
+
+	/** Resolves overlapping corner curves with the single proportional scale factor required by
+	 * CSS Backgrounds and Borders. The input radii are not modified. */
+	static BorderRadiuses normalizeRadiuses( const BorderRadiuses& radius, const Sizef& size );
 
 	/** Creates the border geometry into the VertexBuffer provided. The VertexBuffer must be a
 	 * a EE::Graphics::PrimitiveType::PRIMITIVE_TRIANGLE_STRIP with VERTEX_FLAGS_PRIMITIVE flags. */

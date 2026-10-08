@@ -40,6 +40,16 @@ std::string CSSDisplayHelper::toString( CSSDisplay display ) {
 };
 
 CSSDisplay CSSDisplayHelper::fromString( std::string_view val ) {
+	static constexpr std::string_view VendorPrefixes[] = { "-webkit-", "-moz-", "-ms-", "-o-" };
+	if ( !val.empty() && val.front() == '-' ) {
+		for ( std::string_view prefix : VendorPrefixes ) {
+			if ( val.size() > prefix.size() && val.substr( 0, prefix.size() ) == prefix ) {
+				val.remove_prefix( prefix.size() );
+				break;
+			}
+		}
+	}
+
 	CSSDisplay display = CSSDisplay::Block;
 	if ( val == "inline" )
 		display = CSSDisplay::Inline;

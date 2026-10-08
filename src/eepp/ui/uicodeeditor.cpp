@@ -1,10 +1,11 @@
 #include "eepp/ui/uistyle.hpp"
 #include <algorithm>
-#include <eepp/graphics/fontmanager.hpp>
+#include <cmath>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/scene/actions/close.hpp>
 #include <eepp/scene/actions/scale.hpp>
 #include <eepp/scene/actions/sequence.hpp>
@@ -49,7 +50,7 @@ UICodeEditor* UICodeEditor::NewOpt( const bool& autoRegisterBaseCommands,
 	return eeNew( UICodeEditor, ( autoRegisterBaseCommands, autoRegisterBaseKeybindings ) );
 }
 
-const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybindings() {
+static KeyBindings::ShortcutMap createDefaultCodeEditorKeybindings() {
 	return {
 		{ { KEY_BACKSPACE, KeyMod::getDefaultModifier() }, "delete-to-previous-word" },
 		{ { KEY_BACKSPACE, KEYMOD_SHIFT }, "delete-to-previous-char" },
@@ -114,13 +115,15 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{ { KEY_0, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "font-size-reset" },
 		{ { KEY_KP_DIVIDE, KeyMod::getDefaultModifier() }, "toggle-line-comments" },
 		{ { KEY_KP_DIVIDE, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "toggle-block-comments" },
-		{ { KEY_UP, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "selection-to-upper" },
-		{ { KEY_DOWN, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "selection-to-lower" },
+		{ { KEY_UP, KEYMOD_CTRL | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
+		  "selection-to-upper" },
+		{ { KEY_DOWN, KEYMOD_CTRL | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
+		  "selection-to-lower" },
 		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
 		{ { KEY_D, KeyMod::getDefaultModifier() }, "select-word" },
 		{ { KEY_D, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-all-words" },
-		{ { KEY_UP, KEYMOD_LALT }, "add-cursor-above" },
-		{ { KEY_DOWN, KEYMOD_LALT }, "add-cursor-below" },
+		{ { KEY_UP, KeyMod::getDefaultSecondaryModifier() }, "add-cursor-above" },
+		{ { KEY_DOWN, KeyMod::getDefaultSecondaryModifier() }, "add-cursor-below" },
 		{ { KEY_ESCAPE }, "reset-cursor" },
 		{ { KEY_U, KeyMod::getDefaultModifier() }, "cursor-undo" },
 		{ { KEY_A, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-all-matches" },
@@ -128,19 +131,46 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 	};
 }
 
+std::shared_ptr<const KeyBindings> UICodeEditor::getDefaultKeybindings() {
+	struct Cache {
+		Mutex mutex;
+		Uint32 defaultModifier{ 0 };
+		Uint32 secondaryModifier{ 0 };
+		std::shared_ptr<const KeyBindings> bindings;
+	};
+	static Cache cache;
+
+	const Uint32 defaultModifier = KeyMod::getDefaultModifier();
+	const Uint32 secondaryModifier = KeyMod::getDefaultSecondaryModifier();
+	Lock lock( cache.mutex );
+	if ( !cache.bindings || cache.defaultModifier != defaultModifier ||
+		 cache.secondaryModifier != secondaryModifier ) {
+		auto bindings = std::make_shared<KeyBindings>( nullptr );
+		bindings->addKeybinds( createDefaultCodeEditorKeybindings() );
+		cache.bindings = std::move( bindings );
+		cache.defaultModifier = defaultModifier;
+		cache.secondaryModifier = secondaryModifier;
+	}
+	return cache.bindings;
+}
+
 const MouseBindings::ShortcutMap UICodeEditor::getDefaultMousebindings() {
 	return { { { MouseAction::Down, EE_BUTTON_LMASK, KeyMod::getDefaultModifier() },
 			   "add-cursor-at-mouse-position" },
-			 { { MouseAction::Down, EE_BUTTON_LMASK, KEYMOD_SHIFT | KEYMOD_LALT },
+			 { { MouseAction::Down, EE_BUTTON_LMASK,
+				 KEYMOD_SHIFT | KeyMod::getDefaultSecondaryModifier() },
 			   "add-cursors-from-current-to-mouse-position" } };
 }
 
 UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands,
 							const bool& autoRegisterBaseKeybindings ) :
-	UIWidget( elementTag ),
-	mFont( FontManager::instance()->getByName( "monospace" ) ),
+	UITouchDraggableWidget( elementTag ),
+	mFont( getUISceneNode()->getResourceScope()->findFont( "monospace" ).get() ),
 	mDoc( std::make_shared<TextDocument>() ),
-	mDocView( mDoc, mFontStyleConfig, { .tabStops = mTabStops } ),
+	mAsyncLifetime( this, this ),
+	mAutoRegisterBaseCommands( autoRegisterBaseCommands ),
+	mDocView( mDoc, mFontStyleConfig,
+			  { .textHints = TextHints::NoKerning, .tabStops = mTabStops } ),
 	mBlinkTime( Seconds( 0.5f ) ),
 	mFoldsRefreshTime( Seconds( 2.f ) ),
 	mTabWidth( 4 ),
@@ -180,13 +210,17 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 
 	mFontStyleConfig.Font = mFont;
 
-	setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
+	auto* themeManager = getUISceneNode()->getUIThemeManager();
+	auto* theme = themeManager->getDefaultTheme();
+	// Match UITextView's theme default and whole-pixel character size.
+	setFontSize( static_cast<Uint32>( theme ? theme->getDefaultFontSize()
+											: themeManager->getDefaultFontSize() ) );
 
 	setClipType( ClipType::ContentBox );
 	mDoc->registerClient( this );
 	subscribeScheduledUpdate();
 
-	if ( autoRegisterBaseCommands )
+	if ( mAutoRegisterBaseCommands )
 		registerCommands();
 	if ( autoRegisterBaseKeybindings )
 		registerKeybindings();
@@ -197,6 +231,8 @@ UICodeEditor::UICodeEditor( const bool& autoRegisterBaseCommands,
 	UICodeEditor( "codeeditor", autoRegisterBaseCommands, autoRegisterBaseKeybindings ) {}
 
 UICodeEditor::~UICodeEditor() {
+	mAsyncLifetime.invalidate();
+
 	if ( getUISceneNode()->hasThreadPool() ) {
 		Uint64 tag = reinterpret_cast<Uint64>( this );
 		getUISceneNode()->getThreadPool()->removeWithTag( tag );
@@ -212,11 +248,6 @@ UICodeEditor::~UICodeEditor() {
 
 	// Remember to stop all the async find jobs
 	mDoc->stopActiveFindAll();
-
-	// TODO: Use a condition variable to wait the thread pool to finish
-	// Wait to end all the async find jobs
-	while ( mHighlightWordProcessing )
-		Sys::sleep( Milliseconds( 0.1 ) );
 
 	mDocView.setDocument( nullptr );
 	std::size_t clientsOfTypeCount = mDoc->clientOfTypeCount( TextDocument::Client::Type::Core );
@@ -241,7 +272,7 @@ Uint32 UICodeEditor::getType() const {
 }
 
 bool UICodeEditor::isType( const Uint32& type ) const {
-	return type == getType() || UIWidget::isType( type );
+	return type == getType() || UITouchDraggableWidget::isType( type );
 }
 
 void UICodeEditor::setTheme( UITheme* Theme ) {
@@ -411,7 +442,8 @@ void UICodeEditor::draw() {
 	}
 
 	if ( hasFocus() && getUISceneNode()->getWindow()->getIME().isEditing() ) {
-		auto offset = getTextPositionOffset( cursor, lineHeight );
+		auto offset = getTextPositionOffset( cursor, lineHeight, false, false,
+											 Text::LigatureCaretMode::ClosestGlyph );
 		Vector2f cursorPos( startScroll.x + offset.x, startScroll.y + offset.y );
 		FontStyleConfig config( mFontStyleConfig );
 		config.FontColor = mFontStyleConfig.getFontSelectedColor();
@@ -454,7 +486,9 @@ void UICodeEditor::draw() {
 		clipSmartDisable();
 }
 
-void UICodeEditor::scheduledUpdate( const Time& ) {
+void UICodeEditor::scheduledUpdate( const Time& time ) {
+	UITouchDraggableWidget::scheduledUpdate( time );
+
 	if ( mDisableCursorBlinkingAfterAMinuteOfInactivity &&
 		 mLastActivity.getElapsedTime() > Seconds( 60 ) ) {
 		if ( !mCursorVisible ) {
@@ -531,32 +565,33 @@ bool UICodeEditor::loadAsyncFromFile(
 	bool wasLocked = isLocked();
 	if ( !wasLocked )
 		setLocked( true );
+	const auto lifetime = mAsyncLifetime.weakHandle();
+	auto document = mDoc;
 	bool ret = mDoc->loadAsyncFromFile(
-		path, pool, [this, onLoaded, wasLocked]( TextDocument*, bool success ) {
-			if ( !success ) {
-				runOnMainThread( [this, onLoaded, wasLocked, success] {
-					if ( !wasLocked )
-						setLocked( false );
+		path, pool, [lifetime, document, onLoaded, wasLocked]( TextDocument*, bool success ) {
+			lifetime.run( [lifetime, onLoaded, wasLocked, document,
+						   success]( UICodeEditor* editor ) {
+				if ( editor->mDoc != document ) {
 					if ( onLoaded )
-						onLoaded( mDoc, success );
-				} );
-				return;
-			}
-			if ( mMinimapEnabled && getUISceneNode()->hasThreadPool() ) {
-				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool(), [this] {
-					runOnMainThread( [this] { invalidateDraw(); } );
-				} );
-			}
-
-			if ( mDocView.isWrapEnabled() )
-				mDocView.setPendingReconstruction( true );
-
-			runOnMainThread( [this, onLoaded, wasLocked, success] {
+						onLoaded( document, success );
+					return;
+				}
 				if ( !wasLocked )
-					setLocked( false );
-				onDocumentLoaded();
+					editor->setLocked( false );
+				if ( success ) {
+					if ( editor->mMinimapEnabled && editor->getUISceneNode()->hasThreadPool() ) {
+						editor->mDoc->getHighlighter()->tokenizeAsync(
+							editor->getUISceneNode()->getThreadPool(), [lifetime] {
+								lifetime.run(
+									[]( UICodeEditor* editor ) { editor->invalidateDraw(); } );
+							} );
+					}
+					if ( editor->mDocView.isWrapEnabled() )
+						editor->mDocView.setPendingReconstruction( true );
+					editor->onDocumentLoaded();
+				}
 				if ( onLoaded )
-					onLoaded( mDoc, success );
+					onLoaded( editor->mDoc, success );
 			} );
 		} );
 	if ( !ret && !wasLocked )
@@ -579,27 +614,36 @@ bool UICodeEditor::loadAsyncFromURL(
 	bool wasLocked = isLocked();
 	if ( !wasLocked )
 		setLocked( true );
+	const auto lifetime = mAsyncLifetime.weakHandle();
+	auto document = mDoc;
 	bool ret = mDoc->loadAsyncFromURL(
 		url, headers,
-		[this, onLoaded, wasLocked]( TextDocument*, bool success ) {
-			if ( mMinimapEnabled && getUISceneNode()->hasThreadPool() )
-				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool(), [this] {
-					runOnMainThread( [this] { invalidateDraw(); } );
+		[lifetime, document, onLoaded, wasLocked]( TextDocument*, bool success ) {
+			lifetime.run(
+				[lifetime, document, success, onLoaded, wasLocked]( UICodeEditor* editor ) {
+					if ( editor->mDoc != document ) {
+						if ( onLoaded )
+							onLoaded( document, success );
+						return;
+					}
+					if ( editor->mMinimapEnabled && editor->getUISceneNode()->hasThreadPool() )
+						editor->mDoc->getHighlighter()->tokenizeAsync(
+							editor->getUISceneNode()->getThreadPool(), [lifetime] {
+								lifetime.run(
+									[]( UICodeEditor* editor ) { editor->invalidateDraw(); } );
+							} );
+					if ( !wasLocked )
+						editor->setLocked( false );
+					editor->onDocumentLoaded();
+					if ( onLoaded )
+						onLoaded( editor->mDoc, success );
 				} );
-
-			runOnMainThread( [this, success, onLoaded, wasLocked] {
-				if ( !wasLocked )
-					setLocked( false );
-				onDocumentLoaded();
-				if ( onLoaded )
-					onLoaded( mDoc, success );
-			} );
 		},
-		[this]( const Http&, const Http::Request&, const Http::Response&,
-				const Http::Request::Status& status, size_t /*totalBytes*/,
-				size_t /*currentBytes*/ ) {
+		[lifetime]( const Http&, const Http::Request&, const Http::Response&,
+					const Http::Request::Status& status, size_t /*totalBytes*/,
+					size_t /*currentBytes*/ ) {
 			if ( status == Http::Request::ContentReceived ) {
-				runOnMainThread( [this] { invalidateDraw(); } );
+				lifetime.run( []( UICodeEditor* editor ) { editor->invalidateDraw(); } );
 			}
 			return true;
 		} );
@@ -726,6 +770,9 @@ void UICodeEditor::onFoldRegionsUpdated( size_t oldCount, size_t newCount ) {
 Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
 	if ( msg->getMsg() == NodeMessage::MouseDown ) {
 		return 1;
+	} else if ( msg->getMsg() == NodeMessage::MouseUp && ( msg->getFlags() & EE_BUTTON_RMASK ) ) {
+		// The editor handles its own context menu in onMouseUp().
+		return 1;
 	} else if ( msg->getMsg() == NodeMessage::Focus ) {
 		if ( msg->getSender() == mVScrollBar || msg->getSender() == mHScrollBar ||
 			 mVScrollBar->isParentOf( msg->getSender() ) ||
@@ -733,7 +780,23 @@ Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
 			setFocus();
 		}
 	}
-	return UIWidget::onMessage( msg );
+	return UITouchDraggableWidget::onMessage( msg );
+}
+
+bool UICodeEditor::supportsScrollController() const {
+	return true;
+}
+
+Vector2f UICodeEditor::getScrollControllerPosition() const {
+	return mScroll;
+}
+
+Vector2f UICodeEditor::getScrollControllerMaxPosition() const {
+	return getMaxScroll();
+}
+
+void UICodeEditor::setScrollControllerPosition( const Vector2f& position ) {
+	setScroll( position );
 }
 
 void UICodeEditor::disableEditorFeatures( bool useDefaultStyle ) {
@@ -870,15 +933,17 @@ void UICodeEditor::setMouseWheelScroll( const Float& mouseWheelScroll ) {
 }
 
 void UICodeEditor::setLineNumberPaddingLeft( const Float& dpLeft ) {
-	if ( dpLeft != mLineNumberPaddingLeft ) {
-		mLineNumberPaddingLeft = dpLeft;
+	Float pxLeft = PixelDensity::dpToPx( dpLeft );
+	if ( pxLeft != mLineNumberPaddingLeft ) {
+		mLineNumberPaddingLeft = pxLeft;
 		invalidateDraw();
 	}
 }
 
 void UICodeEditor::setLineNumberPaddingRight( const Float& dpRight ) {
-	if ( dpRight != mLineNumberPaddingRight ) {
-		mLineNumberPaddingRight = dpRight;
+	Float pxRight = PixelDensity::dpToPx( dpRight );
+	if ( pxRight != mLineNumberPaddingRight ) {
+		mLineNumberPaddingRight = pxRight;
 		invalidateDraw();
 	}
 }
@@ -1025,6 +1090,8 @@ void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 		if ( clientsOfTypeCount == 1 || useCount == 1 )
 			onDocumentClosed( mDoc.get() );
 		mDoc = doc;
+		if ( mAutoRegisterBaseCommands )
+			mDoc->setSharedRefCommands( getDefaultEditorCommands() );
 		mDoc->registerClient( this );
 		mDocView.setDocument( doc );
 		onDocumentChanged( oldDocURI );
@@ -1134,12 +1201,12 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 		if ( plugin->onTextInput( this, event ) )
 			return 1;
 
-	return 0;
+	return 1;
 }
 
 void UICodeEditor::updateIMELocation() {
-	if ( mDoc->isLoading() || mDoc->getActiveClient() != this || !Engine::isMainThread() ||
-		 mDocView.isFolded( mDoc->getSelection( true ).start().line() ) )
+	if ( !hasFocus() || mDoc->isLoading() || mDoc->getActiveClient() != this ||
+		 !Engine::isMainThread() || mDocView.isFolded( mDoc->getSelection( true ).start().line() ) )
 		return;
 	Rectf r( getScreenPosition( mDoc->getSelection( true ).start() ) );
 	getUISceneNode()->getWindow()->getIME().setLocation( r.asInt() );
@@ -1151,7 +1218,7 @@ void UICodeEditor::drawLockedIcon( const Vector2f start ) {
 	if ( mFileLockIcon == nullptr )
 		return;
 
-	Drawable* fileLockIcon = mFileLockIcon->getSize( PixelDensity::dpToPxI( 16 ) );
+	Drawable* fileLockIcon = mFileLockIcon->getSource( PixelDensity::dpToPxI( 16 ) ).get();
 	if ( fileLockIcon == nullptr )
 		return;
 
@@ -1598,7 +1665,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		mMouseDown = true;
 		Input* input = getInput();
 		input->captureMouse( true );
-		setFocus();
+		setFocus( NodeFocusReason::Click );
 
 		auto textScreenPos( resolveScreenPosition( position.asFloat() ) );
 		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
@@ -1843,23 +1910,11 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	} else if ( flags & EE_BUTTON_WDMASK ) {
 		if ( getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-shrink" );
-		} else if ( input->isModState( KEYMOD_SHIFT ) ) {
-			setScrollX( mScroll.x + mMouseWheelScroll );
-		} else {
-			setScrollY( mScroll.y + mMouseWheelScroll );
 		}
 	} else if ( flags & EE_BUTTON_WUMASK ) {
 		if ( getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-grow" );
-		} else if ( input->isModState( KEYMOD_SHIFT ) ) {
-			setScrollX( mScroll.x - mMouseWheelScroll );
-		} else {
-			setScrollY( mScroll.y - mMouseWheelScroll );
 		}
-	} else if ( flags & EE_BUTTON_WRMASK ) {
-		setScrollX( mScroll.x + mMouseWheelScroll );
-	} else if ( flags & EE_BUTTON_WLMASK ) {
-		setScrollX( mScroll.x - mMouseWheelScroll );
 	} else if ( !minimapHover && ( flags & EE_BUTTON_RMASK ) ) {
 		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 		if ( localPos.x >= mPaddingPx.Left + getGutterWidth() && localPos.y >= mPluginsTopSpace )
@@ -1868,6 +1923,37 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		return UIWidget::onMouseUp( position, flags );
 
 	return UIWidget::onMouseUp( position, flags );
+}
+
+Uint32 UICodeEditor::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	const Vector2i position =
+		getEventDispatcher() ? getEventDispatcher()->getMousePos() : Vector2i::Zero;
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onMouseWheel( this, position, offset, flipped ) )
+			return 1;
+
+	Input* input = getInput();
+	if ( input->isKeyModPressed() )
+		return 1;
+
+	Vector2f delta;
+	Float durationScale = 1.f;
+	if ( input->isModState( KEYMOD_SHIFT ) && offset.y != 0.f ) {
+		const Float factor = getWheelScrollFactor( offset.y );
+		delta.x = -factor * mMouseWheelScroll;
+		durationScale = std::abs( factor );
+	} else {
+		if ( offset.y != 0.f ) {
+			const Float factor = getWheelScrollFactor( offset.y );
+			delta.y = -factor * mMouseWheelScroll;
+			durationScale = std::abs( factor );
+		} else if ( offset.x != 0.f ) {
+			const Float factor = getWheelScrollFactor( offset.x );
+			delta.x = factor * mMouseWheelScroll;
+			durationScale = std::abs( factor );
+		}
+	}
+	return scrollBy( delta, durationScale ) ? 1 : 0;
 }
 
 Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags ) {
@@ -2039,7 +2125,8 @@ void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHei
 							   const TextPosition& cursor ) {
 	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() &&
 		 !mDocView.isFolded( cursor.line(), true ) ) {
-		auto offset = getTextPositionOffset( cursor, lineHeight );
+		auto offset = getTextPositionOffset( cursor, lineHeight, false, false,
+											 Text::LigatureCaretMode::ClosestGlyph );
 		Vector2f cursorPos( startScroll.x + offset.x, startScroll.y + offset.y + getLineOffset() );
 		Primitives primitives;
 		primitives.setColor( Color( mCaretColor ).blendAlpha( mAlpha ) );
@@ -2169,8 +2256,14 @@ void UICodeEditor::updateScrollBar() {
 		bool showHScroll =
 			mLongestLineWidth > viewPortWidth &&
 			( !mDocView.isWrapEnabled() || mLineWrapType == LineWrapType::LineBreakingColumn );
+		bool wasVisible = mHScrollBar->isVisible();
 		mHScrollBar->setEnabled( showHScroll );
 		mHScrollBar->setVisible( showHScroll );
+
+		if ( wasVisible != showHScroll ) {
+			// Must be updated because the horizontal scrollbar affects the visible lines count
+			notVisibleLineCount = (Int64)getTotalVisibleLines() - (Int64)getViewPortLineCount().y;
+		}
 	}
 
 	mVScrollBar->setPixelsPosition( mSize.getWidth() - mVScrollBar->getPixelsSize().getWidth(),
@@ -2189,6 +2282,8 @@ void UICodeEditor::updateScrollBar() {
 
 	setScrollY( mScroll.y );
 	mUpdatingScrollBar = false;
+
+	onAutoSize();
 }
 
 void UICodeEditor::goToLine( const TextPosition& position, bool centered, bool forceExactPosition,
@@ -2284,10 +2379,41 @@ void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& change ) 
 	mDocView.updateCache( change.range.start().line(), change.range.start().line(), 0 );
 
 	if ( !change.text.empty() && !mDocView.isWrapEnabled() ) {
-		auto range = findLongestLineInRange( change.range );
-		if ( range.second > mLongestLineWidth ) {
-			mLongestLineIndex = range.first;
-			mLongestLineWidth = range.second;
+		static constexpr Int64 MAX_SYNCHRONOUS_LONGEST_LINE_SCAN = 64;
+		static constexpr std::size_t MAX_SYNCHRONOUS_LONGEST_LINE_LENGTH = 4096;
+		bool largeChange = change.text.size() > MAX_SYNCHRONOUS_LONGEST_LINE_LENGTH ||
+						   change.range.end().line() - change.range.start().line() + 1 >
+							   MAX_SYNCHRONOUS_LONGEST_LINE_SCAN;
+		if ( !largeChange ) {
+			for ( Int64 line = change.range.start().line(); line <= change.range.end().line();
+				  ++line ) {
+				if ( mDoc->getLineLength( line ) > MAX_SYNCHRONOUS_LONGEST_LINE_LENGTH ) {
+					largeChange = true;
+					break;
+				}
+			}
+		}
+		if ( !largeChange ) {
+			Int64 insertedLines = 1;
+			for ( auto chr : change.text ) {
+				if ( chr == '\n' && ++insertedLines > MAX_SYNCHRONOUS_LONGEST_LINE_SCAN ) {
+					largeChange = true;
+					break;
+				}
+			}
+		}
+		if ( !largeChange ) {
+			auto range = findLongestLineInRange( change.range );
+			if ( range.second > mLongestLineWidth ) {
+				mLongestLineIndex = range.first;
+				mLongestLineWidth = range.second;
+			}
+		} else {
+			// Unbounded synchronous measurement makes large pastes and document loads block on
+			// too many lines or one extremely long line, including in editors that are currently
+			// hidden. Reuse the existing debounced full-document update; visible editors will
+			// measure once after the change.
+			invalidateLongestLineWidth();
 		}
 	} else {
 		invalidateLongestLineWidth();
@@ -2388,7 +2514,8 @@ void UICodeEditor::onDocumentLineMove( const Int64& fromLine, const Int64& toLin
 		}
 	}
 
-	if ( !mFont || mFont->isMonospace() || mLinesWidthCache.empty() )
+	if ( !mFont || ( mFont->isMonospace() && getLigatureFeatures() == 0 ) ||
+		 mLinesWidthCache.empty() )
 		return;
 
 	Int64 linesCount = mDoc->linesCount();
@@ -2556,6 +2683,8 @@ void UICodeEditor::showMinimap( bool showMinimap ) {
 }
 
 bool UICodeEditor::setScrollX( const Float& val, bool emitEvent ) {
+	if ( !mApplyingScrollController )
+		stopScrollController();
 	Float oldVal = mScroll.x;
 	mScroll.x = eefloor( eeclamp<Float>( val, 0.f, getMaxScroll().x ) );
 	if ( oldVal != mScroll.x ) {
@@ -2571,6 +2700,8 @@ bool UICodeEditor::setScrollX( const Float& val, bool emitEvent ) {
 }
 
 bool UICodeEditor::setScrollY( const Float& val, bool emitEvent ) {
+	if ( !mApplyingScrollController )
+		stopScrollController();
 	Float oldVal = mScroll.y;
 	mScroll.y = eefloor( eeclamp<Float>( val, 0, getMaxScroll().y ) );
 	if ( oldVal != mScroll.y ) {
@@ -2587,8 +2718,8 @@ bool UICodeEditor::setScrollY( const Float& val, bool emitEvent ) {
 
 Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 											  std::optional<Float> lineHeight,
-											  bool allowVisualLineEnd,
-											  bool visualizeNewLine ) const {
+											  bool allowVisualLineEnd, bool visualizeNewLine,
+											  Text::LigatureCaretMode ligatureCaretMode ) const {
 	double lh = lineHeight ? *lineHeight : getLineHeight();
 	if ( mDocView.isWrappedLine( position.line() ) ) {
 		auto info = mDocView.getVisibleLineRange( position, allowVisualLineEnd );
@@ -2609,7 +2740,7 @@ Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 					partialLine, mFontStyleConfig.Style, mTabWidth,
 					mFontStyleConfig.OutlineThickness, mTabStops ? 0 : std::optional<Float>(),
 					false, mDoc->line( position.line() ).getTextHints() | getWidgetTextDrawHints(),
-					mTextDirection )
+					mTextDirection, {}, ligatureCaretMode )
 					.x;
 			if ( visualizeNewLine && allowVisualLineEnd &&
 				 position.column() == (Int64)mDoc->line( position.line() ).getText().size() - 1 )
@@ -2644,7 +2775,7 @@ Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 				mDoc->line( position.line() ).getText(), mFontStyleConfig.Style, mTabWidth,
 				mFontStyleConfig.OutlineThickness, mTabStops ? 0 : std::optional<Float>(), false,
 				mDoc->line( position.line() ).getTextHints() | getWidgetTextDrawHints(),
-				mTextDirection )
+				mTextDirection, {}, ligatureCaretMode )
 				.x;
 		if ( visualizeNewLine && isLastChar )
 			x += getGlyphWidth();
@@ -2827,8 +2958,7 @@ void UICodeEditor::addKeyBindsString( const std::map<std::string, std::string>& 
 	}
 }
 
-void UICodeEditor::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds,
-								const bool& allowLocked ) {
+void UICodeEditor::addKeyBinds( const KeyBindings::ShortcutMap& binds, const bool& allowLocked ) {
 	mKeyBindings.addKeybinds( binds );
 	for ( const auto& bind : binds ) {
 		if ( allowLocked ) {
@@ -3112,7 +3242,7 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		default:
-			return UIWidget::applyProperty( attribute );
+			return UITouchDraggableWidget::applyProperty( attribute );
 	}
 
 	return true;
@@ -3148,7 +3278,7 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::FontWeight:
 			return Text::fontWeightToString( mFontStyleConfig.Weight );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
+			return pixelsLengthToString( getOutlineThickness() );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::TextSelection:
@@ -3166,12 +3296,12 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::Text:
 			return mDoc->getLineTextUtf8( 0 );
 		default:
-			return UIWidget::getPropertyString( propertyDef, propertyIndex );
+			return UITouchDraggableWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
 std::vector<PropertyId> UICodeEditor::getPropertiesImplemented() const {
-	auto props = UIWidget::getPropertiesImplemented();
+	auto props = UITouchDraggableWidget::getPropertiesImplemented();
 	auto local = { PropertyId::Locked,
 				   PropertyId::Color,
 				   PropertyId::TextShadowColor,
@@ -3533,11 +3663,9 @@ void UICodeEditor::updateGlyphWidth() {
 		invalidateLineWrapMaxWidth( false );
 }
 
-Drawable* UICodeEditor::findIcon( const std::string& name ) {
+DrawablePtr UICodeEditor::findIcon( const std::string& name ) {
 	UIIcon* icon = getUISceneNode()->findIcon( name );
-	if ( icon )
-		return icon->getSize( mMenuIconSize );
-	return nullptr;
+	return icon ? icon->createDrawable( mMenuIconSize ) : DrawablePtr{};
 }
 
 const bool& UICodeEditor::getColorPreview() const {
@@ -3627,14 +3755,14 @@ void UICodeEditor::moveToStartOfContent() {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition start = mDoc->getSelectionIndex( i ).start();
 		auto info = mDocView.getVisibleLineRange( start );
+		TextPosition contentStart = mDoc->startOfContent( mDoc->endOfLine( start ) );
 		if ( info.range.start().column() != 0 ) {
-			mDoc->setSelection( i, info.range.start() != start ? info.range.start()
-															   : mDoc->startOfContent( start ) );
+			mDoc->setSelection( i,
+								info.range.start() != start ? info.range.start() : contentStart );
 		} else {
-			TextPosition indented = mDoc->startOfContent( mDoc->getSelectionIndex( i ).start() );
-			mDoc->setSelection( i, indented.column() == start.column()
+			mDoc->setSelection( i, contentStart.column() == start.column()
 									   ? TextPosition( start.line(), 0 )
-									   : indented );
+									   : contentStart );
 		}
 	}
 	mDoc->mergeSelection();
@@ -3844,6 +3972,16 @@ const TextSearchParams& UICodeEditor::getHighlightWord() const {
 }
 
 void UICodeEditor::updateHighlightWordCache() {
+	struct HighlightSearchJob {
+		HighlightSearchJob( std::shared_ptr<TextDocument> searchedDocument,
+							TextSearchParams searchedParams ) :
+			document( std::move( searchedDocument ) ), params( std::move( searchedParams ) ) {}
+
+		const std::shared_ptr<TextDocument> document;
+		const TextSearchParams params;
+		TextRanges ranges;
+	};
+
 	if ( mHighlightWord.isEmpty() )
 		return;
 
@@ -3852,33 +3990,43 @@ void UICodeEditor::updateHighlightWordCache() {
 		removeActionsByTag( tag );
 		runOnMainThread(
 			[this, tag]() {
-				getUISceneNode()->getThreadPool()->removeWithTag( tag );
-				getUISceneNode()->getThreadPool()->run(
-					[this]() {
-						if ( mDoc->isRunningTransaction() )
+				auto threadPool = getUISceneNode()->getThreadPool();
+				threadPool->removeWithTag( tag );
+				auto search = std::make_shared<HighlightSearchJob>( mDoc, mHighlightWord );
+				const auto lifetime = mAsyncLifetime.weakHandle();
+				threadPool->run(
+					[search, lifetime]() {
+						if ( search->document->isRunningTransaction() )
 							return;
 						Clock docSearch;
-						mHighlightWordProcessing++;
-						mDoc->stopActiveFindAll();
+						search->document->stopActiveFindAll();
 
-						auto wordCache = mDoc->findAll(
-							mHighlightWord.escapeSequences ? String::unescape( mHighlightWord.text )
-														   : mHighlightWord.text,
-							mHighlightWord.caseSensitive, mHighlightWord.wholeWord,
-							mHighlightWord.type, mHighlightWord.range );
-
-						{
-							Lock l( mHighlightWordCacheMutex );
-							mHighlightWordCache = wordCache.ranges();
-						}
+						const String searchedText = search->params.escapeSequences
+														? String::unescape( search->params.text )
+														: search->params.text;
+						search->ranges = search->document
+											 ->findAll( searchedText, search->params.caseSensitive,
+														search->params.wholeWord,
+														search->params.type, search->params.range )
+											 .ranges();
 
 						Log::info( "Document search triggered in document: \"%s\", searched for "
 								   "\"%s\" and took %.2f ms",
-								   mDoc->getFilename().c_str(),
-								   mHighlightWord.text.toUtf8().c_str(),
+								   search->document->getFilename(), search->params.text.toUtf8(),
 								   docSearch.getElapsedTime().asMilliseconds() );
+
+						lifetime.run( [search]( UICodeEditor* editor ) {
+							if ( editor->mDoc != search->document ||
+								 editor->mHighlightWord != search->params )
+								return;
+							{
+								Lock l( editor->mHighlightWordCacheMutex );
+								editor->mHighlightWordCache = std::move( search->ranges );
+							}
+							editor->invalidateDraw();
+						} );
 					},
-					[this]( const auto& ) { mHighlightWordProcessing--; }, tag );
+					{}, tag );
 			},
 			Milliseconds( 16 ), tag );
 	} else {
@@ -4335,23 +4483,28 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 								subText,
 								{ position.x + start * getGlyphWidth(), position.y + lineOffset },
 								fontStyle, mTabWidth,
-								getChunkHints ? String::getTextHints( subText ) : drawHints,
+								getChunkHints
+									? String::getTextHints( subText ) | getWidgetTextDrawHints()
+									: drawHints,
 								mTextDirection, whitespaceDisplayConfig );
 							if ( minimumCharsToCoverScreen == end )
 								break;
 						}
 					} else {
 						String::View subText( text.substr( 0, eemin( curCharsWidth, maxWidth ) ) );
-						size = Text::draw(
-							subText, { position.x, position.y + lineOffset }, fontStyle, mTabWidth,
-							getChunkHints ? String::getTextHints( subText ) : drawHints,
-							mTextDirection, whitespaceDisplayConfig );
+						size = Text::draw( subText, { position.x, position.y + lineOffset },
+										   fontStyle, mTabWidth,
+										   getChunkHints ? String::getTextHints( subText ) |
+															   getWidgetTextDrawHints()
+														 : drawHints,
+										   mTextDirection, whitespaceDisplayConfig );
 					}
 				} else {
-					size = Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
-									   mTabWidth,
-									   getChunkHints ? String::getTextHints( text ) : drawHints,
-									   mTextDirection, whitespaceDisplayConfig );
+					size = Text::draw(
+						text, { position.x, position.y + lineOffset }, fontStyle, mTabWidth,
+						getChunkHints ? String::getTextHints( text ) | getWidgetTextDrawHints()
+									  : drawHints,
+						mTextDirection, whitespaceDisplayConfig );
 				}
 
 				if ( !isMonospace )
@@ -4598,7 +4751,8 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 							: mLineNumberFontColor,
 						mFontStyleConfig.Style, mFontStyleConfig.OutlineThickness,
 						mFontStyleConfig.OutlineColor, mFontStyleConfig.ShadowColor,
-						mFontStyleConfig.ShadowOffset, 4, TextHints::AllAscii );
+						mFontStyleConfig.ShadowOffset, 4,
+						TextHints::AllAscii | getWidgetTextDrawHints() );
 		}
 
 		if ( foldVisible && mDoc->getFoldRangeService().isFoldingRegionInLine( i ) ) {
@@ -4610,7 +4764,7 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 
 			if ( mFoldsAlwaysVisible || mFoldsVisible || currentLineHasFold ) {
 				if ( ( isFolded && mFoldedDrawable ) || ( !isFolded && mFoldedDrawable ) ) {
-					Drawable* drawable = isFolded ? mFoldedDrawable : mFoldDrawable;
+					Drawable* drawable = ( isFolded ? mFoldedDrawable : mFoldDrawable ).get();
 					GlyphDrawable::DrawMode oldMode;
 
 					if ( drawable->getDrawableType() == Drawable::Type::GLYPH ) {
@@ -4666,7 +4820,7 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 						.asFloat();
 
 				Text::draw( String( (String::StringBaseType)0x2026 /* … */ ), offset, fontStyle,
-							mTabWidth );
+							mTabWidth, getWidgetTextDrawHints() );
 
 				primitives.setColor( mLineBreakColumnColor );
 				primitives.drawLine(
@@ -4762,85 +4916,81 @@ void UICodeEditor::drawLineEndings( const DocumentLineRange& lineRange, const Ve
 	}
 }
 
-void UICodeEditor::registerCommands() {
-	mDoc->setCommand( "move-to-previous-line", [this] { moveToPreviousLine(); } );
-	mDoc->setCommand( "move-to-next-line", [this] { moveToNextLine(); } );
-	mDoc->setCommand( "move-to-previous-page", [this] { moveToPreviousPage(); } );
-	mDoc->setCommand( "move-to-next-page", [this] { moveToNextPage(); } );
-	mDoc->setCommand( "move-to-start-of-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->moveToStartOfLine();
-	} );
-	mDoc->setCommand( "move-to-end-of-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->moveToEndOfLine();
-	} );
-	mDoc->setCommand( "move-to-start-of-content", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->moveToStartOfContent();
-	} );
-	mDoc->setCommand( "select-to-previous-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->selectToPreviousLine();
-	} );
-	mDoc->setCommand( "select-to-next-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->selectToNextLine();
-	} );
-	mDoc->setCommand( "select-to-start-of-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->selectToStartOfLine();
-	} );
-	mDoc->setCommand( "select-to-end-of-line", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->selectToEndOfLine();
-	} );
-	mDoc->setCommand( "select-to-start-of-content", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->selectToStartOfContent();
-	} );
-	mDoc->setCommand( "move-scroll-up", [this] { moveScrollUp(); } );
-	mDoc->setCommand( "move-scroll-down", [this] { moveScrollDown(); } );
-	mDoc->setCommand( "jump-lines-up", [this] { jumpLinesUp(); } );
-	mDoc->setCommand( "jump-lines-down", [this] { jumpLinesDown(); } );
-	mDoc->setCommand( "indent", [this] { indent(); } );
-	mDoc->setCommand( "unindent", [this] { unindent(); } );
-	mDoc->setCommand( "copy", [this] { copy(); } );
-	mDoc->setCommand( "cut", [this] { cut(); } );
-	mDoc->setCommand( "paste", [this] { paste(); } );
-	mDoc->setCommand( "font-size-grow", [this] { fontSizeGrow(); } );
-	mDoc->setCommand( "font-size-shrink", [this] { fontSizeShrink(); } );
-	mDoc->setCommand( "font-size-reset", [this] { fontSizeReset(); } );
-	mDoc->setCommand( "lock", [this] { setLocked( true ); } );
-	mDoc->setCommand( "unlock", [this] { setLocked( false ); } );
-	mDoc->setCommand( "lock-toggle", [this] { setLocked( !isLocked() ); } );
-	mDoc->setCommand( "open-containing-folder", [this] { openContainingFolder(); } );
-	mDoc->setCommand( "copy-containing-folder-path", [this] { copyContainingFolderPath(); } );
-	mDoc->setCommand( "copy-file-path", [this] { copyFilePath(); } );
-	mDoc->setCommand( "copy-file-path-and-position", [this] { copyFilePath( true ); } );
-	mDoc->setCommand( "find-replace", [this] { showFindReplace(); } );
-	mDoc->setCommand( "open-context-menu", [this] { createContextMenu(); } );
-	mDoc->setCommand( "add-cursor-at-mouse-position", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->addCursorAtMousePosition();
-	} );
-	mDoc->setCommand( "add-cursors-from-current-to-mouse-position", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->addCursorsFromCurrentToMousePosition();
-	} );
-	mDoc->setCommand( "toggle-fold", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->toggleFoldUnfold();
-	} );
-	mDoc->setCommand( "fold-all",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->foldAll(); } );
-	mDoc->setCommand( "unfold-all",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->unfoldAll(); } );
-	mDoc->setCommand( "fold",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->fold(); } );
-	mDoc->setCommand( "unfold",
-					  []( Client* client ) { static_cast<UICodeEditor*>( client )->unfold(); } );
-	mDoc->setCommand( "open-hover-url", []( Client* client ) {
-		UICodeEditor* editor = static_cast<UICodeEditor*>( client );
-		if ( !editor->mLink.empty() )
-			Engine::instance()->openURI( editor->mLink );
-	} );
-	mDoc->setCommand( "add-cursor-above", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->addCursorAbove();
-	} );
-	mDoc->setCommand( "add-cursor-below", []( Client* client ) {
-		static_cast<UICodeEditor*>( client )->addCursorBelow();
-	} );
+std::shared_ptr<const TextDocument::DocumentRefCommands> UICodeEditor::getDefaultEditorCommands() {
+#define EE_CODE_EDITOR_COMMAND( Name, Method )                                         \
+	{                                                                                  \
+		Name, []( Client* client ) { static_cast<UICodeEditor*>( client )->Method(); } \
+	}
+	static const auto commands = std::make_shared<const TextDocument::DocumentRefCommands>(
+		TextDocument::DocumentRefCommands{
+			EE_CODE_EDITOR_COMMAND( "move-to-previous-line", moveToPreviousLine ),
+			EE_CODE_EDITOR_COMMAND( "move-to-next-line", moveToNextLine ),
+			EE_CODE_EDITOR_COMMAND( "move-to-previous-page", moveToPreviousPage ),
+			EE_CODE_EDITOR_COMMAND( "move-to-next-page", moveToNextPage ),
+			EE_CODE_EDITOR_COMMAND( "move-to-start-of-line", moveToStartOfLine ),
+			EE_CODE_EDITOR_COMMAND( "move-to-end-of-line", moveToEndOfLine ),
+			EE_CODE_EDITOR_COMMAND( "move-to-start-of-content", moveToStartOfContent ),
+			EE_CODE_EDITOR_COMMAND( "select-to-previous-line", selectToPreviousLine ),
+			EE_CODE_EDITOR_COMMAND( "select-to-next-line", selectToNextLine ),
+			EE_CODE_EDITOR_COMMAND( "select-to-start-of-line", selectToStartOfLine ),
+			EE_CODE_EDITOR_COMMAND( "select-to-end-of-line", selectToEndOfLine ),
+			EE_CODE_EDITOR_COMMAND( "select-to-start-of-content", selectToStartOfContent ),
+			EE_CODE_EDITOR_COMMAND( "move-scroll-up", moveScrollUp ),
+			EE_CODE_EDITOR_COMMAND( "move-scroll-down", moveScrollDown ),
+			EE_CODE_EDITOR_COMMAND( "jump-lines-up", jumpLinesUp ),
+			EE_CODE_EDITOR_COMMAND( "jump-lines-down", jumpLinesDown ),
+			EE_CODE_EDITOR_COMMAND( "indent", indent ),
+			EE_CODE_EDITOR_COMMAND( "unindent", unindent ),
+			EE_CODE_EDITOR_COMMAND( "copy", copy ),
+			EE_CODE_EDITOR_COMMAND( "cut", cut ),
+			EE_CODE_EDITOR_COMMAND( "paste", paste ),
+			EE_CODE_EDITOR_COMMAND( "font-size-grow", fontSizeGrow ),
+			EE_CODE_EDITOR_COMMAND( "font-size-shrink", fontSizeShrink ),
+			EE_CODE_EDITOR_COMMAND( "font-size-reset", fontSizeReset ),
+			{ "lock",
+			  []( Client* client ) { static_cast<UICodeEditor*>( client )->setLocked( true ); } },
+			{ "unlock",
+			  []( Client* client ) { static_cast<UICodeEditor*>( client )->setLocked( false ); } },
+			{ "lock-toggle",
+			  []( Client* client ) {
+				  auto* editor = static_cast<UICodeEditor*>( client );
+				  editor->setLocked( !editor->isLocked() );
+			  } },
+			EE_CODE_EDITOR_COMMAND( "open-containing-folder", openContainingFolder ),
+			EE_CODE_EDITOR_COMMAND( "copy-containing-folder-path", copyContainingFolderPath ),
+			EE_CODE_EDITOR_COMMAND( "copy-file-path", copyFilePath ),
+			{ "copy-file-path-and-position",
+			  []( Client* client ) {
+				  static_cast<UICodeEditor*>( client )->copyFilePath( true );
+			  } },
+			EE_CODE_EDITOR_COMMAND( "open-context-menu", createContextMenu ),
+			EE_CODE_EDITOR_COMMAND( "add-cursor-at-mouse-position", addCursorAtMousePosition ),
+			EE_CODE_EDITOR_COMMAND( "add-cursors-from-current-to-mouse-position",
+									addCursorsFromCurrentToMousePosition ),
+			EE_CODE_EDITOR_COMMAND( "toggle-fold", toggleFoldUnfold ),
+			EE_CODE_EDITOR_COMMAND( "fold-all", foldAll ),
+			EE_CODE_EDITOR_COMMAND( "unfold-all", unfoldAll ),
+			EE_CODE_EDITOR_COMMAND( "fold", fold ),
+			EE_CODE_EDITOR_COMMAND( "unfold", unfold ),
+			{ "open-hover-url",
+			  []( Client* client ) {
+				  auto* editor = static_cast<UICodeEditor*>( client );
+				  if ( !editor->mLink.empty() )
+					  Engine::instance()->openURI( editor->mLink );
+			  } },
+			EE_CODE_EDITOR_COMMAND( "add-cursor-above", addCursorAbove ),
+			EE_CODE_EDITOR_COMMAND( "add-cursor-below", addCursorBelow ),
+		} );
+#undef EE_CODE_EDITOR_COMMAND
+	return commands;
+}
 
+void UICodeEditor::registerCommands() {
+	mDoc->setSharedRefCommands( getDefaultEditorCommands() );
+	// This is the only default editor command bound to a specific editor instance.
+	mDoc->setCommand( "find-replace", [this] { showFindReplace(); } );
+
+	mUnlockedCmd.reserve( 8 );
 	mUnlockedCmd.insert( { "copy", "select-all", "open-containing-folder",
 						   "copy-containing-folder-path", "copy-file-path",
 						   "copy-file-path-and-position", "open-context-menu", "find-replace" } );
@@ -4853,8 +5003,13 @@ void UICodeEditor::showFindReplace() {
 
 	if ( !mFindReplaceEnabled )
 		return;
-	if ( nullptr == mFindReplace )
+	if ( nullptr == mFindReplace ) {
 		mFindReplace = UIDocFindReplace::New( this, mDoc );
+		mFindReplace->on( Event::OnVisibleChange, [this]( auto ) {
+			sendCommonEvent( mFindReplace->isVisible() ? Event::OnShowFindReplace
+													   : Event::OnHideFindReplace );
+		} );
+	}
 	mFindReplace->setReplaceDisabled( mLocked );
 	mFindReplace->show();
 
@@ -4867,7 +5022,9 @@ Tools::UIDocFindReplace* UICodeEditor::getFindReplace() {
 }
 
 void UICodeEditor::registerKeybindings() {
-	mKeyBindings.addKeybinds( getDefaultKeybindings() );
+	// Bindings use copy-on-write storage, so unmodified editors share both lookup maps and only
+	// allocate their own copy if an editor-specific binding is changed.
+	mKeyBindings.setKeybinds( *getDefaultKeybindings() );
 	mMouseBindings.addMousebinds( getDefaultMousebindings() );
 }
 
@@ -4900,21 +5057,22 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 		if ( !end.isValid() )
 			return;
 		TextRange wordPos = { { start.line(), start.column() - 1 }, end };
-		String word = mDoc->getText( wordPos );
+		mDoc->getTextToBuffer( wordPos, mMouseOverColorBuffer );
+		String& word = mMouseOverColorBuffer;
 		bool found = false;
 		if ( word[0] == '#' && ( word.size() == 7 || word.size() == 9 ) ) {
 			if ( checkHexa( word ) )
 				found = true;
 		} else {
 			wordPos = { start, end };
-			word = mDoc->getText( wordPos );
+			mDoc->getTextToBuffer( wordPos, word );
 			if ( end.column() < (Int64)line.size() && line[end.column()] == '(' &&
 				 ( "rgb" == word || "rgba" == word || "hsl" == word || "hsv" == word ||
 				   "hsla" == word || "hsva" == word ) ) {
 				const String& text = mDoc->line( start.line() ).getText();
 				size_t endFun = String::findCloseBracket( text, end.column(), '(', ')' );
 				if ( endFun != std::string::npos ) {
-					word = word + text.substr( end.column(), endFun - end.column() + 1 );
+					word.append( text, end.column(), endFun - end.column() + 1 );
 					if ( word.find( "--" ) == String::InvalidPos ) {
 						found = true;
 						wordPos = { wordPos.start(), { wordPos.end().line(), (Int64)endFun + 1 } };
@@ -5114,6 +5272,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 	Float lineY = rect.Top;
 
 	const auto* batchSyntaxType = &SYNTAX_NORMAL;
+	auto colorSyntaxType = *batchSyntaxType;
 	Color color = mColorScheme.getSyntaxStyle( *batchSyntaxType ).color;
 	color.a *= 0.5f;
 	Float batchWidth = 0;
@@ -5121,22 +5280,24 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 	Float minimapCutoffX = rect.Left + rect.getWidth();
 	Float widthScale = charSpacing / getGlyphWidth();
 	Int64 maxVisibleColumn = eeceil( rect.getWidth() / charSpacing );
-	auto flushBatch = [this, &color, &batchSyntaxType, &batchStart, &batchWidth, &lineY, &BR,
-					   &charHeight]( const SyntaxStyleType& type ) {
-		Color oldColor = color;
-		color = mColorScheme.getSyntaxStyle( *batchSyntaxType ).color;
-		if ( color != Color::Transparent ) {
-			color.a *= 0.5f;
-		} else {
-			color = oldColor;
+	auto flushBatch = [&]() {
+		if ( colorSyntaxType != *batchSyntaxType ) {
+			Color newColor = mColorScheme.getSyntaxStyle( *batchSyntaxType ).color;
+
+			if ( newColor != Color::Transparent ) {
+				newColor.a *= 0.5f;
+				color = newColor;
+			}
+
+			colorSyntaxType = *batchSyntaxType;
 		}
 
-		if ( batchWidth > 0 ) {
-			BR->quadsSetColor( color.blendAlpha( mAlpha ) );
-			BR->batchQuad( { { batchStart, lineY }, { batchWidth, charHeight } } );
-		}
+		if ( batchWidth <= 0 )
+			return;
 
-		batchSyntaxType = &type;
+		BR->quadsSetColor( color.blendAlpha( mAlpha ) );
+		BR->batchQuad( { { batchStart, lineY }, { batchWidth, charHeight } } );
+
 		batchStart += batchWidth;
 		batchWidth = 0;
 	};
@@ -5305,7 +5466,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 					continue;
 
 				if ( *batchSyntaxType != token.type ) {
-					flushBatch( *batchSyntaxType );
+					flushBatch();
 					batchSyntaxType = &token.type;
 				}
 
@@ -5320,10 +5481,17 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 						for ( auto i = pos; i < maxPos; i++ ) {
 							String::StringBaseType ch = text[i];
 							if ( ch == ' ' || ch == '\n' ) {
-								flushBatch( token.type );
+								flushBatch();
+								batchSyntaxType = &token.type;
 								batchStart += charSpacing;
+								while ( i + 1 < maxPos &&
+										( text[i + 1] == ' ' || text[i + 1] == '\n' ) ) {
+									++i;
+									batchStart += charSpacing;
+								}
 							} else if ( ch == '\t' ) {
-								flushBatch( token.type );
+								flushBatch();
+								batchSyntaxType = &token.type;
 								batchStart += charSpacing * mMinimapConfig.tabWidth;
 							} else {
 								batchWidth += charSpacing;
@@ -5337,7 +5505,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 					if ( pos == nextLineCol ) {
 
 						if ( curVisualIndex >= minimapStartLine ) {
-							flushBatch( token.type );
+							flushBatch();
+							batchSyntaxType = &token.type;
 							lineY += lineSpacing;
 						}
 
@@ -5368,7 +5537,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 			Int64 tokenPos = 0;
 			for ( const auto& token : tokens ) {
 				if ( *batchSyntaxType != token.type ) {
-					flushBatch( *batchSyntaxType );
+					flushBatch();
 					batchSyntaxType = &token.type;
 				}
 
@@ -5377,26 +5546,40 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 
 				while ( pos < end ) {
 					String::StringBaseType ch = text[pos];
+
 					if ( ch == ' ' || ch == '\n' ) {
-						flushBatch( token.type );
-						batchStart += charSpacing;
-					} else if ( ch == '\t' ) {
-						flushBatch( token.type );
-						batchStart += charSpacing * mMinimapConfig.tabWidth;
-					} else if ( batchStart + batchWidth > minimapCutoffX ) {
-						flushBatch( token.type );
-						break;
-					} else {
-						batchWidth += charSpacing;
+						flushBatch();
+
+						do {
+							batchStart += charSpacing;
+							++pos;
+						} while ( pos < end && ( text[pos] == ' ' || text[pos] == '\n' ) );
+
+						continue;
 					}
-					pos++;
-				};
+
+					if ( ch == '\t' ) {
+						flushBatch();
+						batchStart += charSpacing * mMinimapConfig.tabWidth;
+						++pos;
+						continue;
+					}
+
+					if ( batchStart + batchWidth > minimapCutoffX ) {
+						flushBatch();
+						break;
+					}
+
+					batchWidth += charSpacing;
+					++pos;
+				}
 
 				tokenPos += token.len;
 			}
 		}
 
-		flushBatch( SYNTAX_NORMAL );
+		flushBatch();
+		batchSyntaxType = &SYNTAX_NORMAL;
 
 		if ( !wrappedLine )
 			lineY += lineSpacing;
@@ -5462,20 +5645,20 @@ void UICodeEditor::setShowFoldingRegion( bool showFoldingRegion ) {
 	}
 }
 
-Drawable* UICodeEditor::getFoldDrawable() const {
+const DrawablePtr& UICodeEditor::getFoldDrawable() const {
 	return mFoldDrawable;
 }
 
-void UICodeEditor::setFoldDrawable( Drawable* foldDrawable ) {
-	mFoldDrawable = foldDrawable;
+void UICodeEditor::setFoldDrawable( DrawablePtr foldDrawable ) {
+	mFoldDrawable = std::move( foldDrawable );
 }
 
-Drawable* UICodeEditor::getFoldedDrawable() const {
+const DrawablePtr& UICodeEditor::getFoldedDrawable() const {
 	return mFoldedDrawable;
 }
 
-void UICodeEditor::setFoldedDrawable( Drawable* foldedDrawable ) {
-	mFoldedDrawable = foldedDrawable;
+void UICodeEditor::setFoldedDrawable( DrawablePtr foldedDrawable ) {
+	mFoldedDrawable = std::move( foldedDrawable );
 }
 
 bool UICodeEditor::getFoldsAlwaysVisible() const {
@@ -5652,7 +5835,8 @@ void UICodeEditor::refreshTag() {
 }
 
 bool UICodeEditor::isNotMonospace() const {
-	return ( mFont && !mFont->isMonospace() ) || Text::TextShaperEnabled;
+	return getLigatureFeatures() != 0 || ( mFont && !mFont->isMonospace() ) ||
+		   Text::TextShaperEnabled;
 }
 
 void UICodeEditor::updateMouseCursor( const Vector2f& position ) {
@@ -5681,11 +5865,12 @@ void UICodeEditor::setTabIndentAlignment( CharacterAlignment alignment ) {
 }
 
 bool UICodeEditor::isMonospaceLine( Int64 lineIndex ) const {
-	return mFont && ( ( mFont->isMonospace() &&
-						( !Text::TextShaperEnabled || mDoc->line( lineIndex ).isAscii() ) ) ||
-					  ( mFont->getType() == FontType::TTF &&
-						static_cast<FontTrueType*>( mFont )->isIdentifiedAsMonospace() &&
-						mDoc->line( lineIndex ).isAscii() ) );
+	return getLigatureFeatures() == 0 && mFont &&
+		   ( ( mFont->isMonospace() &&
+			   ( !Text::TextShaperEnabled || mDoc->line( lineIndex ).isAscii() ) ) ||
+			 ( mFont->getType() == FontType::TTF &&
+			   static_cast<FontTrueType*>( mFont )->isIdentifiedAsMonospace() &&
+			   mDoc->line( lineIndex ).isAscii() ) );
 }
 
 Float UICodeEditor::editorWidth() const {
@@ -5739,12 +5924,42 @@ void UICodeEditor::setTabStops( bool enabled ) {
 void UICodeEditor::setKerningEnabled( bool enabled ) {
 	if ( mKerningEnabled != enabled ) {
 		mKerningEnabled = enabled;
+		mDocView.setTextHints( getWidgetTextDrawHints() );
+		mLinesWidthCache.clear();
+		invalidateLongestLineWidth();
 		invalidateDraw();
 	}
 }
 
 bool UICodeEditor::isKerningEnabled() const {
 	return mKerningEnabled;
+}
+
+void UICodeEditor::setLigatureFeatures( Uint32 features ) {
+	features &= TextHints::OpenTypeFeatures;
+	if ( !mLigaturesOverride || mLigatureFeatures != features ) {
+		mLigaturesOverride = true;
+		mLigatureFeatures = features;
+		onTextHintsChanged();
+	}
+}
+
+Uint32 UICodeEditor::getLigatureFeatures() const {
+	return getWidgetTextDrawHints() & TextHints::OpenTypeFeatures;
+}
+
+void UICodeEditor::clearLigaturesOverride() {
+	if ( mLigaturesOverride ) {
+		mLigaturesOverride = false;
+		onTextHintsChanged();
+	}
+}
+
+void UICodeEditor::onTextHintsChanged() {
+	mDocView.setTextHints( getWidgetTextDrawHints() );
+	mLinesWidthCache.clear();
+	invalidateLongestLineWidth();
+	invalidateDraw();
 }
 
 void UICodeEditor::setTextDirection( TextDirection direction ) {
@@ -5761,7 +5976,7 @@ TextDirection UICodeEditor::getTextDirection() const {
 void UICodeEditor::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
-	UIWidget::loadFromXmlNode( node );
+	UITouchDraggableWidget::loadFromXmlNode( node );
 
 	std::string text;
 	bool hasElementChildren = false;
@@ -5808,10 +6023,13 @@ void UICodeEditor::loadFromXmlNode( const pugi::xml_node& node ) {
 
 void UICodeEditor::onAutoSize() {
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		auto visibleLineCount = getDocumentView().getVisibleLinesCount();
+		auto visibleLineCount = getTotalVisibleLines();
 		Float lineHeight = getLineHeight();
-		Float height = lineHeight * visibleLineCount + getPixelsPadding().Top +
-					   getPixelsPadding().Bottom + getTotalTopSpace();
+		Float height = std::ceil( lineHeight * visibleLineCount + mPaddingPx.Top +
+								  mPaddingPx.Bottom + getTotalTopSpace() );
+		if ( mHorizontalScrollBarEnabled && mHScrollBar->isVisible() ) {
+			height += std::ceil( mHScrollBar->getPixelsSize().getHeight() );
+		}
 		setPixelsSize( getPixelsSize().getWidth(), height );
 	}
 }

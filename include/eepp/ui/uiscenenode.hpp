@@ -1,6 +1,7 @@
 #ifndef EE_UISCENENODE_HPP
 #define EE_UISCENENODE_HPP
 
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/network/cookiemanager.hpp>
 #include <eepp/network/uri.hpp>
@@ -9,8 +10,11 @@
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
+#include <eepp/ui/drawableresolver.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/layoutinvalidation.hpp>
+#include <eepp/ui/webresourcecache.hpp>
+#include <eepp/window/engine.hpp>
 
 #include <atomic>
 #include <functional>
@@ -20,6 +24,7 @@ using namespace EE::Network;
 
 namespace EE { namespace Graphics {
 class Font;
+using FontPtr = ResourcePtr<Font>;
 }} // namespace EE::Graphics
 
 namespace EE { namespace Window {
@@ -39,14 +44,43 @@ class UIIcon;
 class UIRoot;
 
 struct NavigationRequest {
+	enum class Target : Uint8 { Current, NewTab };
+
 	URI uri;
 	std::string method{ "GET" };
 	std::string body;
 	std::map<std::string, std::string> extraHeaders;
+	const Node* source{ nullptr };
+	Uint32 mouseButtons{ 0 };
+	Uint32 modifiers{ 0 };
+	Target target{ Target::Current };
 };
 
 class EE_API UISceneNode : public SceneNode {
   public:
+	/** Scoped binding of a UI scene and its native graphics context. Restores both previous
+	 * bindings when destroyed. Context objects are movable but cannot be copied. */
+	class EE_API Context {
+	  public:
+		explicit Context( UISceneNode* scene );
+
+		~Context();
+
+		Context( const Context& ) = delete;
+		Context& operator=( const Context& ) = delete;
+
+		Context( Context&& other ) noexcept;
+		Context& operator=( Context&& ) = delete;
+
+	  private:
+		UISceneNode* mPreviousScene{ nullptr };
+		EE::Window::Engine::WindowContext mWindowContext;
+		bool mActive{ true };
+	};
+
+	/** Makes this scene and its native window current for the returned scope. */
+	Context makeCurrent();
+
 	/**
 	 * @brief Creates a new UISceneNode instance.
 	 *
@@ -54,9 +88,14 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * @param window Pointer to the window to associate with this UI scene node.
 	 *               If NULL, uses the current window from Engine.
+	 * @param importDefaultResources Whether the scene scope automatically imports the catalog from
+	 *                               Graphics::defaultResourceScope(). Keep this enabled for normal
+	 *                               application scenes. Disable it for intentionally isolated
+	 * scenes that must only resolve local or explicitly imported resources.
 	 * @return Pointer to the newly created UISceneNode instance.
 	 */
-	static UISceneNode* New( EE::Window::Window* window = NULL );
+	static UISceneNode* New( EE::Window::Window* window = NULL,
+							 bool importDefaultResources = true );
 
 	/**
 	 * @brief Destroys the UISceneNode and cleans up resources.
@@ -125,6 +164,19 @@ class EE_API UISceneNode : public SceneNode {
 	const Sizef& getViewportPixelsSize() const;
 
 	/**
+	 * @brief Sets the node whose world bounds delimit the visible portion of this scene.
+	 *
+	 * Embedded scenes can have an extent larger than their host viewport. Binding the visible
+	 * bounds to the host's clipping node lets render culling use that viewport while preserving the
+	 * full scene extent for layout and scrolling. The node must outlive this scene or clear the
+	 * binding before it is destroyed.
+	 */
+	void setVisibleBoundsNode( Node* node );
+
+	/** @return The visible world bounds used for render culling. */
+	const Rectf& getVisibleWorldBounds();
+
+	/**
 	 * @brief Sets the layout viewport size used by the scene root as the initial containing block.
 	 *
 	 * Embedded document scenes can have a scroll extent larger than the CSS/layout viewport. This
@@ -152,9 +204,9 @@ class EE_API UISceneNode : public SceneNode {
 	 * @brief Binds an embedded scene to host-scene services without copying document state.
 	 *
 	 * Copies only shared platform/configuration services: dispatcher, DPI/window pointer,
-	 * thread pool, color/contrast preferences, and default font/theme pointers. Stylesheets,
-	 * URI, referer, cookies, navigation callbacks, actions, roots, and dirty queues remain owned
-	 * by this scene.
+	 * thread pool, color/contrast and font-rendering preferences, and default font/theme pointers.
+	 * Stylesheets, URI, referer, cookies, navigation callbacks, actions, roots, resource scope, and
+	 * dirty queues remain owned by this scene.
 	 */
 	void initializeEmbeddedFromHost( UISceneNode* hostScene );
 
@@ -398,9 +450,11 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param forceReloadStyle If true, forces immediate style reload (default: true).
 	 * @param baseURI If the resource was loaded from an URI, pass the URI in order to solve
 	 * relative paths in CSS
+	 * @param sourceOrder Reserved document order for a stylesheet loaded asynchronously.
 	 */
 	void combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle = true,
-							URI baseURI = {} );
+							URI baseURI = {},
+							std::optional<CSS::StyleSheet::SourceOrder> sourceOrder = {} );
 
 	/**
 	 * @brief Combines an inline stylesheet with the existing one.
@@ -412,9 +466,11 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param marker Marker to associate with the new styles.
 	 * @param baseURI If the resource was loaded from an URI, pass the URI in order to solve
 	 * relative paths in CSS
+	 * @param sourceOrder Reserved document order for a stylesheet loaded asynchronously.
 	 */
 	void combineStyleSheet( const std::string& inlineStyleSheet, bool forceReloadStyle = true,
-							const Uint32& marker = 0, URI baseURI = {} );
+							const Uint32& marker = 0, URI baseURI = {},
+							std::optional<CSS::StyleSheet::SourceOrder> sourceOrder = {} );
 
 	/**
 	 * @brief Gets the reference to the current stylesheet.
@@ -464,7 +520,8 @@ class EE_API UISceneNode : public SceneNode {
 	 * have its CSS re-applied during the next update cycle.
 	 *
 	 * @param widget Pointer to the UIWidget to invalidate.
-	 * @param tryReinsert If true, attempts to reposition the widget in the dirty set.
+	 * @param tryReinsert If true, re-evaluates the dirty-ancestor relationship for an already
+	 * queued widget after reparenting. Descendant entries are coalesced during processing.
 	 */
 	void invalidateStyle( UIWidget* widget, bool tryReinsert = false );
 
@@ -476,7 +533,9 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * @param widget Pointer to the UIWidget to invalidate.
 	 * @param disableCSSAnimations If true, disables CSS animations during the update.
-	 * @param tryReinsert If true, attempts to reposition the widget in the dirty set.
+	 * @param tryReinsert If true, re-evaluates the dirty-ancestor relationship and animation policy
+	 * for an already queued widget after reparenting. Descendant entries are coalesced during
+	 * processing.
 	 */
 	void invalidateStyleState( UIWidget* widget, bool disableCSSAnimations = false,
 							   bool tryReinsert = false );
@@ -563,7 +622,13 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param drawableSize The desired size of the drawable in pixels.
 	 * @return Pointer to the Drawable, or nullptr if not found.
 	 */
-	Drawable* findIconDrawable( const std::string& iconName, const size_t& drawableSize );
+	DrawablePtr findIconDrawable( const std::string& iconName, const size_t& drawableSize );
+
+	/** @return This scene's drawable resolver. */
+	DrawableResolver& getDrawableResolver();
+
+	/** @return This scene's drawable resolver. */
+	const DrawableResolver& getDrawableResolver() const;
 
 	/**
 	 * @brief Gets the keybindings manager.
@@ -633,7 +698,7 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * @param binds Map of KeyBindings::Shortcut to command strings.
 	 */
-	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
+	void addKeyBinds( const KeyBindings::ShortcutMap& binds );
 
 	typedef std::function<void()> KeyBindingCommand;
 
@@ -647,6 +712,7 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param func The function to call when the command is executed.
 	 */
 	void setKeyBindingCommand( const std::string& command, KeyBindingCommand func );
+	void removeKeyBindingCommand( const std::string& command );
 
 	/**
 	 * @brief Executes a keybinding command.
@@ -672,6 +738,9 @@ class EE_API UISceneNode : public SceneNode {
 	 * @return The ColorSchemePreference (Light or Dark).
 	 */
 	ColorSchemePreference getColorSchemePreference() const;
+
+	//! Updates the macOS titlebar from the active theme after changing the color scheme or style.
+	void updateWindowTitleBarColor();
 
 	/**
 	 * @brief Sets the color scheme preference from extended preference.
@@ -709,6 +778,26 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param contrastPreference The ContrastPreference.
 	 */
 	void setContrastPreference( const ContrastPreference& contrastPreference );
+
+	/** Sets the OpenType feature hints inherited by text-producing widgets in this scene. */
+	void setDefaultTextHints( Uint32 textHints );
+
+	Uint32 getDefaultTextHints() const;
+
+	/**
+	 * @brief Sets the default smooth-scrolling policy for this UI scene hierarchy.
+	 *
+	 * Embedded UI scenes inherit the value from their root host scene. New scrollable widgets
+	 * snapshot this value when they are created and can override it individually. When applyNow is
+	 * true, all existing scrollable widgets in the hierarchy are updated too.
+	 */
+	UISceneNode* setSmoothScrollEnabled( bool enabled, bool applyNow = false );
+
+	/** @return The smooth-scrolling default inherited from the root host UI scene. */
+	bool isSmoothScrollEnabled() const;
+
+	static Uint32 resolveTextHints( Uint32 defaultHints, Uint32 overrideValue,
+									Uint32 overrideMask );
 
 	/**
 	 * @brief Gets the maximum invalidation depth.
@@ -770,12 +859,27 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	void setThreadPool( const std::shared_ptr<ThreadPool>& threadPool );
 
+	/** @return The Graphics resource lookup and ownership boundary of this scene. */
+	const Graphics::ResourceScopePtr& getResourceScope() const;
+
 	/**
-	 * @brief Sets the theme for the entire UI scene.
+	 * @brief Replaces this scene's resource boundary, allowing intentional sharing between scenes.
 	 *
-	 * Applies the theme to the root widget and all children.
+	 * Scenes created with default-resource importing enabled also import the default catalog into
+	 * the replacement scope. Scenes created with it disabled leave the replacement scope unchanged.
+	 */
+	UISceneNode* setResourceScope( Graphics::ResourceScopePtr resourceScope );
+
+	/**
+	 * @brief Applies a borrowed theme to the widgets in this UI scene.
 	 *
-	 * @param theme Pointer to the UITheme to set.
+	 * Each affected widget stores a non-owning `UITheme*`; this function does not retain @p theme.
+	 * The theme must therefore outlive every widget using it. Normally callers establish that
+	 * lifetime first by adding the corresponding `UIThemePtr` to this scene's UIThemeManager or by
+	 * setting it as the manager's default theme.
+	 *
+	 * @param theme Borrowed theme to apply recursively. May be null to clear explicit widget
+	 * themes.
 	 */
 	void setTheme( UITheme* theme );
 
@@ -799,7 +903,8 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param marker Marker for style association.
 	 * @return Vector of root widgets created.
 	 */
-	std::vector<UIWidget*> loadNode( pugi::xml_node node, Node* parent, const Uint32& marker = 0 );
+	SmallVector<UIWidget*, 8> loadNode( pugi::xml_node node, Node* parent,
+										const Uint32& marker = 0 );
 
 	/** Sets the document / scene URI used to resolve paths of inner elements */
 	void setURI( const URI& uri );
@@ -820,8 +925,19 @@ class EE_API UISceneNode : public SceneNode {
 	/** Sets a callback to intercept navigate() calls. Return true to handle the request,
 	 * false to fall through to the URL interceptor and default handling. */
 	void setNavigationInterceptorCb( std::function<bool( const NavigationRequest& request )> cb ) {
-		mNavigationInterceptorCb = cb;
+		mNavigationInterceptorCb = std::move( cb );
 	};
+
+	/** Registers an interceptor for requests originating in root's subtree. Interceptors run from
+	 * the source's nearest scope outward, before the scene-wide callback. Pass an empty callback
+	 * to unregister; the owner must unregister before root is destroyed or when it moves scenes.
+	 * Registration requires root to be this scene or a descendant. Unregistration also accepts
+	 * roots that have already left the scene's tree.
+	 * Each scope supports one callback. Requests without a source use the scene-wide callback.
+	 * Returns true on registration/replacement or removal, and false for an invalid root or
+	 * when attempting to remove a scope that is not registered. */
+	bool setNavigationInterceptorCb( const Node* root,
+									 std::function<bool( const NavigationRequest& request )> cb );
 
 	/**
 	 * Solves a relative path with no scheme or authority into a complete URI.
@@ -832,9 +948,29 @@ class EE_API UISceneNode : public SceneNode {
 	/** @return The document referer */
 	URI getReferer() const { return mReferer; };
 
-	const Network::CookieManager& getCookieManager() const { return mCookieManager; }
+	const CookieManager& getCookieManager() const { return *mCookieManager; }
 
-	Network::CookieManager& getCookieManager() { return mCookieManager; }
+	CookieManager& getCookieManager() { return *mCookieManager; }
+
+	/** Share one cookie jar across document scenes. Passing nullptr creates a fresh private jar. */
+	void setCookieManager( std::shared_ptr<CookieManager> manager ) {
+		mCookieManager = manager ? std::move( manager ) : std::make_shared<CookieManager>();
+	}
+
+	const WebResourceCachePtr& getWebResourceCache() const { return mWebResourceCache; }
+
+	UISceneNode* setWebResourceCache( WebResourceCachePtr cache, CachePartitionId partition = 0 );
+
+	DocumentSessionId getDocumentSessionId() const { return mDocumentSessionId; }
+
+	Uint64 beginDocumentNavigation( const URI& uri );
+
+	Uint64 getDocumentGeneration() const;
+
+	void requestWebResource( WebResourceRequest request, WebResourceCache::Callback callback );
+
+	Graphics::TexturePtr requestWebTexture( WebResourceRequest request,
+											WebResourceCache::Callback callback = {} );
 
 	void invalidateAsyncResourceLoads();
 
@@ -853,6 +989,8 @@ class EE_API UISceneNode : public SceneNode {
 	void loadFontStyleVariants( Font* font, const std::string& family ) const;
 
 	Uint32 getCurrentMarker() const { return mCurrentMarker; }
+
+	void loadHTMLBasicCSS();
 
 	void loadHTMLBaseCSS();
 
@@ -896,23 +1034,34 @@ class EE_API UISceneNode : public SceneNode {
 	bool mIsLoading{ false };
 	bool mUpdatingLayouts{ false };
 	bool mStyleDuringLoad{ false };
+	Uint32 mPendingHTTPStyleSheetLoads{ 0 };
+	bool mHTTPStyleSheetChanged{ false };
 	UIThemeManager* mUIThemeManager{ nullptr };
 	UIIconThemeManager* mUIIconThemeManager{ nullptr };
-	std::vector<Font*> mFontFaces;
+	std::vector<Graphics::FontPtr> mFontFaces;
 	UnorderedMap<std::string, Font*> mFontFaceAliases;
 	UnorderedMap<Font*, std::string> mFontFaceFamilies;
 	std::shared_ptr<AsyncResourceLoadState> mAsyncResourceLoadState;
+	bool mImportDefaultResources{ true };
+	Graphics::ResourceScopePtr mResourceScope;
+	DrawableResolver mDrawableResolver;
+	WebResourceCachePtr mWebResourceCache;
+	DocumentSessionId mDocumentSessionId{ 0 };
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
 	UnorderedSet<UIWidget*> mDirtyStyle;
 	UnorderedSet<UIWidget*> mDirtyStyleState;
 	UnorderedMap<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
+	// Shared snapshot storage for style and style-state processing. The bool is ignored by the
+	// style pass and stores the disable-animations flag for the style-state pass.
+	SmallVector<std::pair<UIWidget*, bool>, 64> mDirtyStylesSnapshot;
 	UnorderedSet<UILayout*> mDirtyLayouts;
 	SmallVector<UILayout*, 64> mDirtyLayoutsSnapshot;
 	std::vector<std::pair<Float, std::string>> mTimes;
 	std::vector<UISceneNode*> mChildUISceneNodes;
 	ColorSchemePreference mColorSchemePreference{ ColorSchemePreference::Dark };
 	ContrastPreference mContrastPreference{ ContrastPreference::NoPreference };
+	Uint32 mDefaultTextHints{ 0 };
 	Uint32 mMaxInvalidationDepth{ 3 };
 	Node* mCurParent{ nullptr };
 	UISceneNode* mHostUISceneNode{ nullptr };
@@ -920,15 +1069,19 @@ class EE_API UISceneNode : public SceneNode {
 	Uint32 mCurrentMarker{ 0 };
 	Sizef mViewportPixelsSize;
 	bool mHasViewportPixelsSize{ false };
+	Node* mVisibleBoundsNode{ nullptr };
 	Sizef mLayoutViewportPixelsSize;
 	bool mHasLayoutViewportPixelsSize{ false };
 	bool mFollowParentSize{ true };
+	bool mSmoothScrollEnabled{ false };
 	bool mOwnsEventDispatcher{ true };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	URI mURI;
 	URI mReferer;
 	std::function<bool( const NavigationRequest& request )> mNavigationInterceptorCb;
-	Network::CookieManager mCookieManager;
+	UnorderedMap<const Node*, std::function<bool( const NavigationRequest& )>>
+		mScopedNavigationInterceptors;
+	std::shared_ptr<CookieManager> mCookieManager{ std::make_shared<CookieManager>() };
 
 	/**
 	 * @brief Protected constructor.
@@ -936,8 +1089,9 @@ class EE_API UISceneNode : public SceneNode {
 	 * Creates a UISceneNode with optional window association.
 	 *
 	 * @param window Pointer to the window, or NULL for default.
+	 * @param importDefaultResources Whether the scene scope imports the default resource catalog.
 	 */
-	explicit UISceneNode( EE::Window::Window* window = NULL );
+	explicit UISceneNode( EE::Window::Window* window = NULL, bool importDefaultResources = true );
 
 	/**
 	 * @brief Handles node resize.
@@ -1109,8 +1263,14 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * @param uri URI to load
 	 * @param defer Defer some specific time the CSS load (0 to just load it asynchronously)
+	 * @param sourceOrder Document order reserved when the stylesheet link was encountered.
 	 */
-	void loadCSS( URI uri, std::optional<Time> defer = {} );
+	void loadCSS( URI uri, std::optional<Time> defer, CSS::StyleSheet::SourceOrder sourceOrder );
+
+	void combineHTTPStyleSheet( const std::string& css, const std::string& url, URI baseURI,
+								CSS::StyleSheet::SourceOrder sourceOrder );
+
+	void finishHTTPStyleSheetLoad();
 
 	/**
 	 * @brief Loads glyph icons from @glyph-icon rules.
@@ -1151,11 +1311,13 @@ class EE_API UISceneNode : public SceneNode {
 	void resetTooltips( Node* node );
 
 	/**
-	 * @brief Applies a theme to a node and its subtree.
+	 * @brief Applies a borrowed theme to the widgets below a node.
 	 *
-	 * Recursively applies the specified UITheme to all widgets in the subtree.
+	 * Each affected widget stores a non-owning pointer. This function does not retain @p theme; an
+	 * owner such as this scene's UIThemeManager must keep it alive for the complete period in which
+	 * the subtree uses it.
 	 *
-	 * @param theme Pointer to the UITheme to apply.
+	 * @param theme Borrowed theme to apply. May be null to clear explicit widget themes.
 	 * @param to The root node of the subtree to theme.
 	 */
 	void setTheme( UITheme* theme, Node* to );

@@ -6,13 +6,14 @@
 #include <eepp/system/inifile.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/window/window.hpp>
 
 #include <eterm/terminal/terminaltypes.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
-#include <nlohmann/json_fwd.hpp>
+#include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 
 using namespace EE;
 using namespace EE::Math;
@@ -71,6 +72,7 @@ struct UIConfig {
 	bool nativeFileDialogs{ false };
 	bool imagesQuickPreview{ false };
 	bool editorFontInInputFields{ true };
+	bool smoothScroll{ false };
 	PanelPosition panelPosition{ PanelPosition::Left };
 	std::string sansSerifFont;
 	std::string monospaceFont;
@@ -81,6 +83,7 @@ struct UIConfig {
 	std::string language;
 	FontHinting fontHinting{ FontHinting::Full };
 	FontAntialiasing fontAntialiasing{ FontAntialiasing::Grayscale };
+	Uint32 fontFeatures{ 0 };
 };
 
 struct WindowStateConfig {
@@ -90,16 +93,24 @@ struct WindowStateConfig {
 	bool maximized{ false };
 	std::string panelPartition;
 	std::string statusBarPartition;
+	std::string rightPanelPartition{ "75%" };
 	int displayIndex{ 0 };
 	Vector2i position{ -1, -1 };
 	Uint32 lastRunVersion{ 0 };
 	std::vector<std::string> sidePanelTabsOrder;
 };
 
+struct ScreenshotConfig {
+	std::string savePath;
+	std::string filenamePattern{ "ecode-%Y-%m-%d-%H-%M-%S.png" };
+	std::string saveFormat{ "png" };
+};
+
 struct CodeEditorConfig {
 	std::string colorScheme{ "ecode" };
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	StyleSheetLength lineSpacing{ 0, StyleSheetLength::Dp };
+	Uint32 fontFeatures{ 0 };
 	bool showLineNumbers{ true };
 	bool showWhiteSpaces{ true };
 	bool showLineEndings{ false };
@@ -122,6 +133,7 @@ struct CodeEditorConfig {
 	UITabWidget::TabJumpMode tabJumpMode{ UITabWidget::TabJumpMode::Linear };
 	NewTabPosition::Position newTabPosition{ NewTabPosition::Last };
 	std::string customDateFormat{ "%d.%m.%Y %H:%M:%S" };
+	UIDiffView::ViewMode diffViewMode{ UIDiffView::ViewMode::Unified };
 
 	bool singleClickNavigation{ false };
 	bool syncProjectTreeWithEditor{ true };
@@ -130,7 +142,7 @@ struct CodeEditorConfig {
 	bool autoReloadOnDiskChange{ false };
 	bool codeFoldingEnabled{ true };
 	bool codeFoldingAlwaysVisible{ false };
-	LineWrapMode wrapMode{ LineWrapMode::NoWrap };
+	LineWrapMode wrapMode{ LineWrapMode::Word };
 	LineWrapType wrapType{ LineWrapType::Viewport };
 	bool wrapKeepIndentation{ true };
 	std::string autoCloseBrackets{ "" };
@@ -147,8 +159,10 @@ struct DocumentConfig {
 	bool writeUnicodeBOM{ false };
 	bool indentSpaces{ false };
 	bool tabStops{ true };
+	bool tabOutEnabled{ false };
 	TextFormat::LineEnding lineEndings{ TextFormat::LineEnding::LF };
 	TextDocument::AutoIndentConfig autoIndent{ TextDocument::AutoIndentConfig::Smart };
+	std::string tabOutChars{ ")]}'\":;>," };
 	int indentWidth{ 4 };
 	int tabWidth{ 4 };
 	int lineBreakingColumn{ 100 };
@@ -284,7 +298,7 @@ struct SessionSnapshotFile {
 
 struct TabWidgetData {
 	UIWidget* widget{ nullptr };
-	Drawable* icon{ nullptr };
+	DrawablePtr icon;
 	std::string title;
 };
 
@@ -296,6 +310,7 @@ struct TabWidgetCbs {
 class AppConfig {
   public:
 	WindowStateConfig windowState;
+	ScreenshotConfig screenshot;
 	ContextSettings context;
 	CodeEditorConfig editor;
 	DocumentConfig doc;
@@ -326,11 +341,11 @@ class AppConfig {
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, const ProjectConfig& docConfig,
 					  const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
-					  bool sessionSnapshot, PluginManager* );
+					  bool sessionSnapshot, bool showHiddenFiles, PluginManager* );
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, ProjectConfig& docConfig, ecode::App* app,
-					  bool sessionSnapshot, PluginManager* pluginManager );
+					  bool sessionSnapshot, bool& showHiddenFiles, PluginManager* pluginManager );
 
 	void addTabWidgetType( const std::string& type, TabWidgetCbs tabWidget ) {
 		Lock l( tabWidgetTypesMutex );

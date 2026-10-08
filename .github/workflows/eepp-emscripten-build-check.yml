@@ -1,0 +1,37 @@
+name: Emscripten
+
+on: [push, pull_request]
+
+env:
+  EM_VERSION: 4.0.1
+  EM_CACHE_FOLDER: emsdk-cache
+
+jobs:
+  Emscripten:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.ref }}
+        fetch-depth: 2
+    - name: Checkout submodules
+      run: |
+        git submodule update --init --recursive
+    - name: Install Premake
+      run: |
+        wget https://cdn.ensoft.dev/eepp-assets/premake-5.0.0-beta6-linux.tar.gz
+        tar xvzf premake-5.0.0-beta6-linux.tar.gz
+    - name: Cache Emscripten system libraries
+      uses: actions/cache@v5
+      with:
+        path: ${{ env.EM_CACHE_FOLDER }}
+        key: emscripten-${{ env.EM_VERSION }}-${{ runner.os }}
+    - name: Setup Emscripten
+      uses: emscripten-core/setup-emsdk@v15
+      with:
+        version: ${{ env.EM_VERSION }}
+        actions-cache-folder: ${{ env.EM_CACHE_FOLDER }}
+    - name: Build
+      run: |
+        projects/emscripten/make.sh config=release_wasm32

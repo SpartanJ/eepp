@@ -1,6 +1,10 @@
+#include <cmath>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
 
 namespace EE { namespace UI {
 
@@ -302,6 +306,8 @@ void UIScrollView::updateScroll() {
 
 void UIScrollView::onValueChangeCb( const Event* ) {
 	updateScroll();
+	if ( !mApplyingScrollController )
+		stopScrollController();
 }
 
 void UIScrollView::onScrollViewSizeChange( const Event* ) {
@@ -445,22 +451,47 @@ bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 Uint32 UIScrollView::onMessage( const NodeMessage* Msg ) {
-	switch ( Msg->getMsg() ) {
-		case NodeMessage::MouseUp: {
-			if ( mScrollView && mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() &&
-				 isTouchOverAllowedChildren() && Msg->getSender()->isUINode() &&
-				 !Msg->getSender()->asType<UINode>()->isScrollable() ) {
-				if ( Msg->getFlags() & EE_BUTTON_WUMASK ) {
-					mVScroll->setValue( mVScroll->getValue() - mVScroll->getClickStep() );
-					return 1;
-				} else if ( Msg->getFlags() & EE_BUTTON_WDMASK ) {
-					mVScroll->setValue( mVScroll->getValue() + mVScroll->getClickStep() );
-					return 1;
-				}
-			}
-		}
-	}
 	return UITouchDraggableWidget::onMessage( Msg );
+}
+
+Uint32 UIScrollView::onMouseWheel( const Vector2f& offset, bool ) {
+	if ( !mScrollView || !mVScroll->isEnabled() || !isTouchOverAllowedChildren() )
+		return 0;
+
+	if ( offset.y == 0.f )
+		return 0;
+
+	const Vector2f maxPosition( getScrollControllerMaxPosition() );
+	const Float factor = getWheelScrollFactor( offset.y );
+	const Float delta = -factor * mVScroll->getClickStep() * maxPosition.y;
+	return scrollBy( { 0.f, delta }, std::abs( factor ) ) ? 1 : 0;
+}
+
+bool UIScrollView::supportsScrollController() const {
+	return true;
+}
+
+Vector2f UIScrollView::getScrollControllerPosition() const {
+	const Vector2f maxPosition( getScrollControllerMaxPosition() );
+	return { mHScroll->isEnabled() ? mHScroll->getValue() * maxPosition.x : 0.f,
+			 mVScroll->isEnabled() ? mVScroll->getValue() * maxPosition.y : 0.f };
+}
+
+Vector2f UIScrollView::getScrollControllerMaxPosition() const {
+	if ( !mScrollView )
+		return Vector2f::Zero;
+	return { eemax( 0.f, mScrollView->getPixelsSize().x - mContainer->getPixelsSize().x ),
+			 eemax( 0.f, mScrollView->getPixelsSize().y - mContainer->getPixelsSize().y ) };
+}
+
+void UIScrollView::setScrollControllerPosition( const Vector2f& position ) {
+	const Vector2f maxPosition( getScrollControllerMaxPosition() );
+	mHScroll->setValue( maxPosition.x > 0.f ? position.x / maxPosition.x : 0.f );
+	mVScroll->setValue( maxPosition.y > 0.f ? position.y / maxPosition.y : 0.f );
+}
+
+void UIScrollView::setEnableDefaultKeybindings( bool enable ) {
+	mDefaultKeybindings = enable;
 }
 
 bool UIScrollView::isAutoSetClipStep() const {
@@ -480,7 +511,16 @@ void UIScrollView::setAnchorScroll( bool anchor ) {
 }
 
 Uint32 UIScrollView::onKeyDown( const KeyEvent& event ) {
-	if ( !mDefaultKeybindings || event.getSanitizedMod() )
+	const auto mod = event.getSanitizedMod();
+	if ( mDefaultKeybindings && event.getKeyCode() == Window::KEY_SPACE &&
+		 ( mod & ~KEYMOD_SHIFT ) == 0 ) {
+		// Active text input gets priority through onTextInput's normal bubbling path.
+		if ( getUISceneNode()->getWindow()->isTextInputActive() )
+			return UITouchDraggableWidget::onKeyDown( event );
+		scrollByViewport( mod & KEYMOD_SHIFT ? -1.f : 1.f );
+		return 1;
+	}
+	if ( !mDefaultKeybindings || mod )
 		return UITouchDraggableWidget::onKeyDown( event );
 
 	if ( event.getKeyCode() == Window::KEY_UP ) {
@@ -490,10 +530,10 @@ Uint32 UIScrollView::onKeyDown( const KeyEvent& event ) {
 		mVScroll->setValue( mVScroll->getValue() + mVScroll->getClickStep() );
 		return 1;
 	} else if ( event.getKeyCode() == Window::KEY_PAGEDOWN ) {
-		mVScroll->setValue( mVScroll->getValue() + mVScroll->getPageStep() );
+		scrollByViewport( 1.f );
 		return 1;
 	} else if ( event.getKeyCode() == Window::KEY_PAGEUP ) {
-		mVScroll->setValue( mVScroll->getValue() - mVScroll->getPageStep() );
+		scrollByViewport( -1.f );
 		return 1;
 	} else if ( event.getKeyCode() == Window::KEY_HOME ) {
 		mVScroll->setValue( mVScroll->getMinValue() );
@@ -504,6 +544,22 @@ Uint32 UIScrollView::onKeyDown( const KeyEvent& event ) {
 	}
 
 	return UITouchDraggableWidget::onKeyDown( event );
+}
+
+Uint32 UIScrollView::onTextInput( const TextInputEvent& event ) {
+	if ( mDefaultKeybindings && event.getChar() == ' ' && event.isValid( getInput() ) ) {
+		scrollByViewport( getInput()->isShiftPressed() ? -1.f : 1.f );
+		return 1;
+	}
+	return UITouchDraggableWidget::onTextInput( event );
+}
+
+void UIScrollView::scrollByViewport( Float direction ) {
+	const Float range = getScrollControllerMaxPosition().y;
+	if ( mVScroll->isEnabled() && range > 0.f ) {
+		mVScroll->setValue( mVScroll->getValue() +
+							direction * mContainer->getPixelsSize().getHeight() / range );
+	}
 }
 
 }} // namespace EE::UI

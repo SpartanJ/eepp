@@ -1,9 +1,10 @@
 #ifndef EE_SYSTEM_MD5_HPP
 #define EE_SYSTEM_MD5_HPP
 
-#include <eepp/core.hpp>
-#include <eepp/system/iostream.hpp>
 #include <array>
+#include <eepp/config.hpp>
+#include <eepp/core/string.hpp>
+#include <eepp/system/iostream.hpp>
 
 namespace EE { namespace System {
 

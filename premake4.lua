@@ -43,6 +43,10 @@ function newclangtoolchain(toolchain)
 	}
 end
 
+function is_clang()
+	return _OPTIONS.platform == "clang" or os.is_real("macosx") or os.is_real("ios")
+end
+
 newplatform {
 	name = "clang",
 	description = "Clang",
@@ -147,6 +151,13 @@ newclangtoolchain {
 	cppflags = "-m64 -arch x86_64"
 }
 
+-- FreeBSD builds use clang: default the platform toolchain to clang so the
+-- generated makefiles never fall back to gcc and is_clang() reports the truth
+-- (LTO and linker flags depend on it). An explicit --platform still wins.
+if os.is("bsd") and not _OPTIONS.platform then
+	_OPTIONS.platform = "clang"
+end
+
 if _OPTIONS.platform then
 	-- overwrite the native platform with the options::platform
 	premake.gcc.platforms['Native'] = premake.gcc.platforms[_OPTIONS.platform]
@@ -182,6 +193,7 @@ newoption {
     description = "Set the shared data directory (default: /usr/share/ecode)",
 }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
+newoption { trigger = "with-lto", description = "Enables Link-Time Optimization for release builds." }
 
 function explode(div,str)
 	if (div=='') then return false end
@@ -421,7 +433,7 @@ function build_base_cpp_configuration( package_name )
 	if not is_vs() then
 		buildoptions{ "-std=c++20" }
 	else
-		buildoptions{ "/std:c++20", "/utf-8" }
+		buildoptions{ "/std:c++20", "/utf-8", "/Zc:preprocessor" }
 	end
 
 	set_ios_config()
@@ -479,7 +491,7 @@ function fix_shared_lib_linking_path( package_name, libname )
 	if ( "4.4-beta5" == _PREMAKE_VERSION or "HEAD" == _PREMAKE_VERSION ) and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
 		if os.is("macosx") then
 			linkoptions { "-install_name " .. libname .. ".dylib" }
-		elseif os.is("linux") or os.is("freebsd") or os.is("haiku") then
+		elseif os.is("linux") or os.is("bsd") or os.is("haiku") then
 			linkoptions { "-Wl,-soname=\"" .. libname .. ".so" .. "\"" }
 		end
 	end
@@ -509,9 +521,14 @@ function popen( executable_path )
 end
 
 function build_link_configuration( package_name, use_ee_icon )
+	configuration {}
 	includedirs { "include" }
 
 	local extension = "";
+
+	if package_name ~= "eepp" and package_name ~= "eepp-static" then
+		files { "src/eepp/core/memorymanagerglobal.cpp" }
+	end
 
 	if package_name == "eepp" then
 		defines { "EE_EXPORTS" }
@@ -522,7 +539,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	if not is_vs() then
 		buildoptions{ "-std=c++20" }
 	else
-		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj", "/Zc:preprocessor" }
 	end
 
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
@@ -581,6 +598,10 @@ function build_link_configuration( package_name, use_ee_icon )
 				linkoptions { "-Wl,-R\\\\$$$ORIGIN" }
 			end
 		end
+	end
+
+	if os.is_real("macosx") then
+		linkoptions { "-weak_framework UniformTypeIdentifiers" }
 	end
 
 	if _OPTIONS["with-mold-linker"] then
@@ -654,7 +675,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 
 	configuration "emscripten"
-		linkoptions { "-s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2" }
+		linkoptions { "-s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2 -s ENVIRONMENT=worker,web -s EXPORTED_RUNTIME_METHODS=ccall" }
 		buildoptions { "-s USE_SDL=2" }
 		buildoptions { "-s USE_PTHREADS=1" }
 		linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
@@ -686,8 +707,8 @@ function generate_os_links()
 	elseif os.is_real("mingw64") then
 		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
 	elseif os.is_real("macosx") then
-		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework", "CoreText.framework" } )
-	elseif os.is_real("freebsd") then
+		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
+	elseif os.is_real("bsd") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.is_real("haiku") then
 		multiple_insert( os_links, { "GL", "network" } )
@@ -696,7 +717,7 @@ function generate_os_links()
 	end
 
 	if _OPTIONS["without-mojoal"] then
-		if os.is_real("linux") or os.is_real("freebsd") or os.is_real("haiku") or os.is_real("emscripten") then
+		if os.is_real("linux") or os.is_real("bsd") or os.is_real("haiku") or os.is_real("emscripten") then
 			multiple_insert( os_links, { "openal" } )
 		elseif os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 			if os_ishost("msys") then
@@ -726,7 +747,8 @@ function parse_args()
 	if _OPTIONS["thread-sanitizer"] then
 		buildoptions { "-fsanitize=thread" }
 		linkoptions { "-fsanitize=thread" }
-		if not os.is_real("macosx") then
+		-- clang links its own sanitizer runtimes, -ltsan is gcc only.
+		if not is_clang() then
 			links { "tsan" }
 		end
 	end
@@ -734,13 +756,31 @@ function parse_args()
 	if _OPTIONS["address-sanitizer"] then
 		buildoptions { "-fsanitize=address" }
 		linkoptions { "-fsanitize=address" }
-		if not os.is_real("macosx") then
+		-- clang links its own sanitizer runtimes, -lasan is gcc only.
+		if not is_clang() then
 			links { "asan" }
 		end
 	end
 
 	if _OPTIONS["time-trace"] then
 		buildoptions { "-ftime-trace" }
+	end
+
+	if _OPTIONS["with-lto"] and not os.is_real("emscripten") then
+		configuration "release"
+
+		if is_vs() then
+			buildoptions { "/GL" }
+			linkoptions { "/LTCG" }
+		elseif is_clang() then
+			buildoptions { "-flto=thin" }
+			linkoptions { "-flto=thin" }
+		else
+			buildoptions { "-flto=auto" }
+			linkoptions { "-flto=auto" }
+		end
+
+		configuration {}
 	end
 end
 
@@ -766,6 +806,7 @@ function add_static_links()
 	end
 
 	links { "SOIL2-static",
+			"simdutf-static",
 			"libzip-static",
 			"jpeg-compressor-static",
 			"zlib-static",
@@ -907,7 +948,7 @@ function set_ios_config()
 	end
 end
 
-function backend_is( name, libname )
+function initialize_backends()
 	if not _OPTIONS["with-backend"] then
 		_OPTIONS["with-backend"] = "SDL2"
 	end
@@ -915,6 +956,10 @@ function backend_is( name, libname )
 	if next(backends) == nil then
 		backends = string.explode(_OPTIONS["with-backend"],",")
 	end
+end
+
+function backend_is( name, libname )
+	initialize_backends()
 
 	local backend_sel = table.contains( backends, name )
 
@@ -1064,7 +1109,7 @@ function build_eepp( build_name )
 	if not is_vs() then
 		buildoptions{ "-std=c++20" }
 	else
-		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj", "/Zc:preprocessor" }
 	end
 
 	if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") then
@@ -1143,6 +1188,14 @@ solution "eepp"
 
 	generate_os_links()
 	parse_args()
+	initialize_backends()
+
+	if os.is_real("bsd") then
+		-- The ports gcc searched /usr/local by default, clang (the default
+		-- toolchain on FreeBSD) must be pointed to the ports tree explicitly.
+		includedirs { "/usr/local/include" }
+		libdirs { "/usr/local/lib" }
+	end
 
 	if os.is_real("macosx") then
 		defines { "GL_SILENCE_DEPRECATION" }
@@ -1191,6 +1244,14 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		files { "src/thirdparty/pugixml/*.cpp" }
 		build_base_cpp_configuration( "pugixml" )
+
+	project "simdutf-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/simdutf/simdutf.cpp" }
+		includedirs { "src/thirdparty/simdutf" }
+		build_base_cpp_configuration( "simdutf" )
 
 	project "zlib-static"
 		kind "StaticLib"
@@ -1552,6 +1613,9 @@ solution "eepp"
 		else
 			buildoptions{ "/std:c++20" }
 		end
+		if os.is_real("mingw32") or os.is_real("mingw64") then
+			links { "winpthread" }
+		end
 		build_base_cpp_configuration( "eepp-physics-static" )
 
 	project "eepp-physics"
@@ -1605,6 +1669,22 @@ solution "eepp"
 		end
 		build_base_cpp_configuration( "languages-syntax-highlighting" )
 
+	if os.is_real("macosx") then
+	project "eepp-macos-helper-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src" }
+		files { "src/eepp/ui/platform/macos/macosmenubar.mm",
+				"src/eepp/window/platform/macos/platformhelper.mm",
+				"src/eepp/system/fileassociation_macos.mm" }
+		buildoptions { "-x objective-c++" }
+		if not is_vs() then
+			buildoptions{ "-std=c++20" }
+		end
+		build_base_cpp_configuration( "eepp-macos-helper" )
+	end
+
 	-- Library
 	if not _OPTIONS["disable-static-build"] then
 	project "eepp-static"
@@ -1621,6 +1701,11 @@ solution "eepp"
 		build_eepp( "eepp" )
 		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp" )
 		postsymlinklib("../../libs/" .. os.get_real() .. "/", "../../bin/unit_tests/", "eepp" )
+		-- Bind calls between libeepp's own functions directly instead of through the PLT. ELF
+		-- only: Mach-O and PE already bind them directly.
+		if os.is_real("linux") or os.is_real("bsd") or os.is_real("haiku") then
+			linkoptions { "-Wl,-Bsymbolic-functions" }
+		end
 
 	-- Examples
 	project "eepp-external-shader"
@@ -1679,6 +1764,12 @@ solution "eepp"
 		files { "src/examples/ui_custom_widget/*.cpp" }
 		build_link_configuration( "eepp-ui-custom-widget", true )
 
+	project "eepp-ui-charts"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_charts/*.cpp" }
+		build_link_configuration( "eepp-ui-charts", true )
+
 	project "eepp-ui-hello-world"
 		set_kind()
 		language "C++"
@@ -1691,6 +1782,18 @@ solution "eepp"
 		files { "src/examples/ui_application_hello_world/*.cpp" }
 		build_link_configuration( "eepp-ui-application-hello-world", true )
 
+	project "eepp-ui-application-multi-window"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_application_multi_window/*.cpp" }
+		build_link_configuration( "eepp-ui-application-multi-window", true )
+
+	project "eepp-ui-date-time-picker"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_date_time_picker/*.cpp" }
+		build_link_configuration( "eepp-ui-date-time-picker", true )
+
 	project "eepp-ui-font-picker"
 		set_kind()
 		language "C++"
@@ -1702,6 +1805,18 @@ solution "eepp"
 		language "C++"
 		files { "src/examples/ui_dropdownmodellist/*.cpp" }
 		build_link_configuration( "eepp-ui-dropdownmodellist", true )
+
+	project "eepp-ui-data-handling"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_data_handling/*.cpp" }
+		build_link_configuration( "eepp-ui-data-handling", true )
+
+	project "eepp-ui-data-collections"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_data_collections/*.cpp" }
+		build_link_configuration( "eepp-ui-data-collections", true )
 
 	project "eepp-ui-richtext"
 		set_kind()
@@ -1805,30 +1920,6 @@ solution "eepp"
 		files { "src/tools/uieditor/*.cpp" }
 		build_link_configuration( "eepp-UIEditor", true )
 
-	if os.is("macosx") then
-	project "ecode-macos-helper-static"
-		kind "StaticLib"
-		language "C++"
-		files { "src/tools/ecode/macos/*.m" }
-		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
-
-		configuration "debug"
-			defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
-			flags { "Symbols" }
-			buildoptions{ "-Wall" }
-			buildoptions{ "-g3" }
-			targetname ( "ecode-macos-helper-static-debug" )
-
-		configuration "release"
-			defines { "NDEBUG" }
-			flags { "OptimizeSpeed" }
-			if _OPTIONS["with-debug-symbols"] then
-				flags { "Symbols" }
-			end
-			buildoptions{ "-O3" }
-			targetname ( "ecode-macos-helper-static" )
-	end
-
 	project "ecode"
 		set_kind()
 		language "C++"
@@ -1844,11 +1935,12 @@ solution "eepp"
 		end
 		if os.is("macosx") then
 			links { "CoreFoundation.framework", "CoreServices.framework", "Cocoa.framework" }
-			links { "ecode-macos-helper-static" }
+		end
+		if os.is_real("linux") or os.is_real("bsd") then
+			-- libutil provides openpty(3) on Linux and FreeBSD.
+			links { "util" }
 		end
 		if os.is_real("linux") then
-			links { "util" }
-
 			if os_findlib("dw") then
 				links { "dw" }
 				defines { "EE_BACKWARD_HAS_DW" }
@@ -1880,10 +1972,17 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/eterm/**.cpp" }
-		links { "eterm-static" }
-		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
-		if os.is_real("linux") then
+		links { "efsw-static", "eterm-static" }
+		includedirs { "src/thirdparty/efsw/include", "src/modules/eterm/include/", "src/thirdparty" }
+		if os.is_real("linux") or os.is_real("bsd") then
+			-- libutil provides openpty(3) on Linux and FreeBSD.
 			links { "util" }
+		end
+		if not os.is("windows") and not os.is("haiku") then
+			links { "pthread" }
+		end
+		if os.is("macosx") then
+			links { "CoreFoundation.framework", "CoreServices.framework" }
 		end
 		if os.is("haiku") then
 			links { "bsd" }
@@ -1903,6 +2002,65 @@ solution "eepp"
 		includedirs { "src/thirdparty" }
 		files { "src/tools/texturepacker/*.cpp" }
 		build_link_configuration( "eepp-TexturePacker", true )
+
+	project "eeiv"
+		kind "WindowedApp"
+		language "C++"
+		files { "src/tools/eeiv/*.cpp" }
+		if os.is("windows") and not is_vs() then
+			if os.is64bit() then
+				linkoptions { "../../bin/assets/icon/eeiv.x64.res" }
+			else
+				linkoptions { "../../bin/assets/icon/eeiv.res" }
+			end
+		end
+		build_link_configuration( "eeiv", false )
+
+	project "eproc"
+		set_kind()
+		language "C++"
+		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
+		if os.is("windows") and not is_vs() then
+			if os.is64bit() then
+				linkoptions { "../../bin/assets/icon/eproc.x64.res" }
+			else
+				linkoptions { "../../bin/assets/icon/eproc.res" }
+			end
+		end
+		files {
+			"src/tools/eproc/appconfig.cpp",
+			"src/tools/eproc/eproc.cpp",
+			"src/tools/eproc/gui_window_tracker.cpp",
+			"src/tools/eproc/process_collector.cpp",
+			"src/tools/eproc/process_info.cpp",
+			"src/tools/eproc/process_model.cpp",
+			"src/tools/eproc/process_table_state.cpp",
+			"src/tools/eproc/settingspanel.cpp",
+			"src/tools/eproc/window_icon.cpp",
+		}
+		if os.is_real("linux") then
+			files {
+				"src/tools/eproc/platform/linux/gpu_reader_nvidia.cpp",
+				"src/tools/eproc/platform/linux/gpu_reader_drm.cpp",
+				"src/tools/eproc/platform/linux/process_collector_linux.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp",
+				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
+			}
+		end
+		if os.is("windows") then
+			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp" }
+			links { "psapi", "advapi32" }
+		end
+		if os.is("macosx") then
+			files { "src/tools/eproc/platform/macos/process_collector_macos.cpp",
+				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+		end
+		if os.is("bsd") then
+			files { "src/tools/eproc/platform/freebsd/process_collector_freebsd.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp" }
+		end
+		build_link_configuration( "eproc", false )
 
 	-- Tests
 	project "eepp-test"
@@ -1931,12 +2089,49 @@ solution "eepp"
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
 		targetdir("./bin/unit_tests")
+		defines { "EE_UNIT_TESTS" }
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
 		language "C++"
+		if not os.is("windows") and not os.is("haiku") then
+			links { "pthread" }
+		end
+		if os.is("haiku") then
+			links { "bsd", "network" }
+		end
+		if os.is("macosx") then
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+			files { "src/tools/eproc/process_collector.cpp",
+				"src/tools/eproc/platform/macos/process_collector_macos.cpp",
+				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
+		end
+		if os.is_real("bsd") then
+			-- libutil provides openpty(3) on FreeBSD.
+			links { "util" }
+		end
 		files { "src/tests/unit_tests/*.cpp",
-				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp" }
+				"src/tools/eproc/process_info.cpp",
+				"src/tools/eproc/process_model.cpp",
+				"src/tools/eproc/process_table_state.cpp",
+				"src/tools/eproc/window_icon.cpp",
+				"src/tools/ecode/ignorematcher.cpp",
+				"src/tools/ecode/jsonhelper.cpp",
+				"src/tools/ecode/projectdirectorytree.cpp",
+				"src/tools/ecode/plugins/git/git.cpp",
+				"src/tools/ecode/plugins/git/gitdiff.cpp",
+				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
+				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
 		eepp_module_backward_add( false )
+
+		configuration { "linux" }
+			files { "src/tools/eproc/process_collector.cpp",
+				"src/tools/eproc/platform/linux/process_collector_linux.cpp",
+				"src/tools/eproc/platform/linux/gpu_reader_nvidia.cpp",
+				"src/tools/eproc/platform/linux/gpu_reader_drm.cpp",
+				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
+				"src/tools/eproc/platform/posix/process_icon_resolver.cpp" }
+		configuration {}
+
 		build_link_configuration( "eepp-unit_tests", true )
 
 if os.isfile("external_projects.lua") then

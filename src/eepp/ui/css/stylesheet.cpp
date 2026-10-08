@@ -120,21 +120,25 @@ void StyleSheet::setSelectorSpecificity( const Int64& specificity ) {
 
 StyleSheet StyleSheet::getAllWithMarker( const Uint32& marker ) const {
 	StyleSheet style;
-	std::vector<std::shared_ptr<StyleSheetStyle>> hits;
 	for ( auto node : mNodes ) {
-		if ( node->getMarker() == marker )
-			style.addStyle( node );
+		if ( node->getMarker() == marker ) {
+			const SourcePosition& position = mStyleSourceOrder.at( node.get() );
+			style.addStyle( node, position.styleSheet, position.rule );
+		}
 	}
+	style.mNextStyleSourceOrder = mNextStyleSourceOrder;
 	return style;
 }
 
 StyleSheet StyleSheet::getAllWithMarkers() const {
 	StyleSheet style;
-	std::vector<std::shared_ptr<StyleSheetStyle>> hits;
 	for ( auto node : mNodes ) {
-		if ( node->getMarker() != 0 )
-			style.addStyle( node );
+		if ( node->getMarker() != 0 ) {
+			const SourcePosition& position = mStyleSourceOrder.at( node.get() );
+			style.addStyle( node, position.styleSheet, position.rule );
+		}
 	}
+	style.mNextStyleSourceOrder = mNextStyleSourceOrder;
 	return style;
 }
 
@@ -225,12 +229,21 @@ bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
 }
 
 void StyleSheet::addStyle( std::shared_ptr<StyleSheetStyle> node ) {
+	addStyle( std::move( node ), reserveSourceOrder(), 0 );
+}
+
+void StyleSheet::addStyle( std::shared_ptr<StyleSheetStyle> node, SourceOrder sourceOrder,
+						   Uint32 ruleOrder ) {
 	if ( addStyleToNodeIndex( node.get() ) ) {
-		mStyleSourceOrder[node.get()] = mNextStyleSourceOrder++;
+		mStyleSourceOrder[node.get()] = { sourceOrder, ruleOrder };
 		mNodes.push_back( node );
 	}
 	addMediaQueryList( node->getMediaQueryList() );
 	mVersion++;
+}
+
+StyleSheet::SourceOrder StyleSheet::reserveSourceOrder() {
+	return mNextStyleSourceOrder++;
 }
 
 bool StyleSheet::isEmpty() const {
@@ -259,9 +272,13 @@ std::string StyleSheet::print() {
 }
 
 void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
-	for ( auto& style : styleSheet.getStyles() ) {
-		addStyle( style );
-	}
+	combineStyleSheet( styleSheet, reserveSourceOrder() );
+}
+
+void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet, SourceOrder sourceOrder ) {
+	Uint32 ruleOrder = 0;
+	for ( auto& style : styleSheet.getStyles() )
+		addStyle( style, sourceOrder, ruleOrder++ );
 
 	addKeyframes( styleSheet.getKeyframes() );
 }
@@ -269,11 +286,20 @@ void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
 // This is based on the RmlUi implementation.
 std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* element,
 																 const bool& applyPseudo ) const {
+	// Raw text inherits its element parent's text style; it is not an element targeted by CSS.
+	// Giving it a widget background would paint over glyphs drawn by the parent rich-text stream.
+	if ( element->isTextNode() )
+		return nullptr;
+
 	static StyleSheetStyleVector applicableNodes;
 	applicableNodes.clear();
 
 	const std::string& tag = element->getElementTag();
 	const std::string& id = element->getId();
+	// Anonymous HTML control content ignores author CSS but retains the existing UA defaults,
+	// which loadHTMLDefaults marks with negative specificity in the document stylesheet.
+	const bool privateDefaults = element->getFlags() & UI_IGNORE_GLOBAL_CSS;
+	const bool applyPseudoClasses = applyPseudo;
 
 	std::array<size_t, 4> nodeHash;
 	int numHashes = 2;
@@ -292,7 +318,9 @@ std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* eleme
 		if ( itNodes != mNodeIndex.end() ) {
 			const StyleSheetStyleVector& nodes = itNodes->second;
 			for ( StyleSheetStyle* node : nodes ) {
-				if ( node->isMediaValid() && node->getSelector().select( element, applyPseudo ) ) {
+				if ( ( !privateDefaults || node->getSelector().getSpecificity() < 0 ) &&
+					 node->isMediaValid() &&
+					 node->getSelector().select( element, applyPseudoClasses ) ) {
 					applicableNodes.push_back( node );
 				}
 			}
@@ -304,7 +332,8 @@ std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* eleme
 		if ( itNodes == mClassNodeIndex.end() )
 			continue;
 		for ( StyleSheetStyle* node : itNodes->second ) {
-			if ( node->isMediaValid() && node->getSelector().select( element, applyPseudo ) )
+			if ( ( !privateDefaults || node->getSelector().getSpecificity() < 0 ) &&
+				 node->isMediaValid() && node->getSelector().select( element, applyPseudoClasses ) )
 				applicableNodes.push_back( node );
 		}
 	}

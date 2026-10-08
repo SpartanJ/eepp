@@ -191,7 +191,7 @@ static std::vector<TextRange> findFoldingRangesMarkdown( TextDocument* doc ) {
 		String::View trimmed = String::trim( lineText.view() );
 
 		if ( inCodeBlock ) {
-			if ( String::startsWith( trimmed, "```" ) ) {
+			if ( String::startsWith( trimmed, codeFence.view() ) ) {
 				// Ensure there's content to fold between start and end
 				if ( codeBlockStart != -1 && codeBlockStart <= static_cast<Int64>( lineIdx ) - 1 ) {
 					regions.emplace_back( TextPosition( codeBlockStart, 0 ), // Start at opening ```
@@ -203,7 +203,7 @@ static std::vector<TextRange> findFoldingRangesMarkdown( TextDocument* doc ) {
 			}
 			// Continue to next line if still in code block
 		} else {
-			if ( String::startsWith( trimmed, "```" ) ) {
+			if ( String::startsWith( trimmed, codeFence.view() ) ) {
 				// Check if the line contains a closing ``` on the same line.
 				// We search starting from index 3 (after the opening ```).
 				bool isSingleLineBlock =
@@ -214,7 +214,7 @@ static std::vector<TextRange> findFoldingRangesMarkdown( TextDocument* doc ) {
 					inCodeBlock = true;
 					codeBlockStart = static_cast<Int64>( lineIdx );
 				}
-			} else if ( String::startsWith( trimmed, "#" ) ) {
+			} else if ( !trimmed.empty() && trimmed.front() == U'#' ) {
 				// Check if it's a valid heading
 				size_t hashCount = 0;
 				while ( hashCount < trimmed.size() && trimmed[hashCount] == '#' )

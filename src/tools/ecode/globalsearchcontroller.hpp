@@ -5,6 +5,7 @@
 #include "plugins/pluginmanager.hpp"
 #include "projectsearch.hpp"
 #include <eepp/ee.hpp>
+#include <eepp/scene/mainthreadlifetime.hpp>
 
 namespace ecode {
 
@@ -68,6 +69,7 @@ class GlobalSearchController {
   protected:
 	UICodeEditorSplitter* mSplitter{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
+	MainThreadLifetime<GlobalSearchController> mLifetime;
 	App* mApp{ nullptr };
 
 	UIGlobalSearchBar* mGlobalSearchBarLayout{ nullptr };

@@ -12,6 +12,42 @@ class RichText;
 namespace EE { namespace UI {
 
 class UILayouter;
+class UIHTMLWidget;
+
+enum class CSSUserSelect : Uint8 { Auto, Text, None, Contain, All };
+
+struct EE_API CSSUserSelectHelper {
+	static CSSUserSelect fromString( std::string_view value );
+
+	static std::string_view toString( CSSUserSelect value );
+};
+
+enum class CSSFormattingRole : Uint8 {
+	Inline,
+	InlineBlock,
+	NormalFlowBlock,
+	Float,
+	Absolute,
+	Fixed,
+	FlexItem,
+	GridItem,
+	Table
+};
+
+struct CSSUsedMargins {
+	Rectf value;
+	Uint8 autoSides{ 0 };
+};
+
+struct CSSZIndex {
+	int value{ 0 };
+	bool isAuto{ true };
+
+	bool operator==( const CSSZIndex& other ) const {
+		return value == other.value && isAuto == other.isAuto;
+	}
+	bool operator!=( const CSSZIndex& other ) const { return !( *this == other ); }
+};
 
 struct UIHTMLWidgetFlexState {
 	CSSFlexDirection direction{ CSSFlexDirection::Row };
@@ -45,9 +81,30 @@ struct UIHTMLWidgetGridState {
 	CSSJustifySelf justifySelf{ CSSJustifySelf::Auto };
 };
 
+enum class HTMLPaintCategory : Uint8 {
+	NegativePositioned,
+	NormalFlow,
+	Float,
+	PositionedAutoOrZero,
+	PositivePositioned,
+};
+
+struct UIHTMLPaintOrderCache {
+	SmallVector<Node*, 16> items;
+	Uint32 rebuildCount{ 0 };
+	bool dirty{ true };
+};
+
+using UIHTMLPaintAncestorVector = SmallVector<UIHTMLWidget*, 8>;
+
 class EE_API UIHTMLWidget : public UILayout {
   public:
 	static UIHTMLWidget* New();
+
+	/** Re-resolves percentage width/height for an HTML element once its containing block has a
+	 * used size. This also supports HTML-backed widgets such as UISvg that do not derive from
+	 * UIHTMLWidget. Returns true when the used size or size policy changed. */
+	static bool resolvePercentageSize( UIWidget* widget );
 
 	UIHTMLWidget( const std::string& tag = "htmlwidget" );
 
@@ -66,6 +123,12 @@ class EE_API UIHTMLWidget : public UILayout {
 	virtual void onDisplayChange();
 
 	CSSDisplay getDisplay() const { return mDisplay; }
+
+	CSSUserSelect getUserSelect() const { return mUserSelect; }
+
+	void setUserSelect( CSSUserSelect value );
+
+	CSSUserSelect getUsedUserSelect() const;
 
 	void setDisplay( CSSDisplay display );
 
@@ -93,7 +156,13 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	void setBoxSizing( CSSBoxSizing boxSizing );
 
-	Rectf getNormalFlowLayoutPixelsMargin() const;
+	CSSFormattingRole getFormattingRole() const;
+
+	/** Returns stack-local used margins for the current formatting role. This never mutates the
+	 * computed/resolved margins stored by UIWidget. Flex, grid, and positioned layout retain their
+	 * module-specific auto-margin distribution; callers in those contexts receive zero for auto
+	 * sides until the owning layouter solves them. */
+	CSSUsedMargins resolveUsedMargins() const;
 
 	const CSSBaselineAlignValue& getBaselineAlign() const { return mBaselineAlign; }
 
@@ -103,9 +172,21 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	void setOffsets( const Rectf& offsets );
 
-	int getZIndex() const { return mZIndex; }
+	const CSSZIndex& getCSSZIndex() const { return mZIndex; }
+
+	bool hasAutoZIndex() const { return mZIndex.isAuto; }
+
+	int getZIndex() const { return mZIndex.value; }
 
 	void setZIndex( int zIndex );
+
+	void setZIndexAuto();
+
+	bool isCSSPositioned() const { return mPosition != CSSPosition::Static; }
+
+	bool hasApplicableZIndex() const;
+
+	bool createsSupportedStackingGroup() const;
 
 	bool getNeedsOrderSort() const { return mNeedsOrderSort; }
 
@@ -268,7 +349,7 @@ class EE_API UIHTMLWidget : public UILayout {
 	using UIWidget::getPropertyString;
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& state = 0 ) const;
+										   const Uint32& propertyIndex = 0 ) const;
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
@@ -280,9 +361,15 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	virtual void onChildCountChange( Node* child, const bool& removed );
 
-	void updateZIndexSortFlag();
-
 	void buildDrawOrderVector( SmallVector<Node*, 127>& out ) const;
+
+	Uint32 getPaintOrderRebuildCount() const;
+
+	std::vector<Node*> debugGetHTMLPaintOrder() const;
+
+	std::vector<Node*> debugGetHTMLHitTestOrder() const;
+
+	bool isHTMLPaintPromoted() const { return mHTMLPaintOwner != nullptr; }
 
 	Float getBaseline() const;
 
@@ -304,6 +391,8 @@ class EE_API UIHTMLWidget : public UILayout {
 	void updateCSSContentBoxFixedSize();
 
 	virtual void onParentChange();
+
+	virtual void onParentSizeChange( const Vector2f& sizeChange );
 
 	virtual void onPositionChange();
 
@@ -348,6 +437,7 @@ class EE_API UIHTMLWidget : public UILayout {
 
   protected:
 	CSSDisplay mDisplay{ CSSDisplay::Block };
+	CSSUserSelect mUserSelect{ CSSUserSelect::Auto };
 	CSSPosition mPosition{ CSSPosition::Static };
 	CSSFloat mFloat{ CSSFloat::None };
 	CSSClear mClear{ CSSClear::None };
@@ -359,13 +449,20 @@ class EE_API UIHTMLWidget : public UILayout {
 	std::string mBottomEq{ "auto" };
 	std::string mLeftEq{ "auto" };
 	Rectf mOffsets{ 0, 0, 0, 0 };
-	int mZIndex{ 0 };
+	CSSZIndex mZIndex;
 	bool mOverflowCreatesBlockFormattingContext{ false };
 	bool mNeedsOrderSort{ false };
-	bool mNeedsZIndexSort{ false };
+	bool mNeedsPaintOrder{ false };
+	bool mHasStackingDescendant{ false };
+	mutable bool mHasPromotedChild{ false };
+	mutable bool mHasActivePromotions{ false };
+	Uint8 mPercentageMargins{ 0 };
 	UILayouter* mLayouter{ nullptr };
 	UIHTMLWidgetFlexState* mFlexState{ nullptr };
 	UIHTMLWidgetGridState* mGridState{ nullptr };
+	mutable UIHTMLPaintOrderCache* mPaintOrderCache{ nullptr };
+	mutable const UIHTMLWidget* mHTMLPaintOwner{ nullptr };
+	mutable UIHTMLPaintAncestorVector* mHTMLPaintAncestors{ nullptr };
 	UnorderedMap<std::string, StyleSheetProperty> mDataProperties;
 
 	Uint32 mScrollCb{ 0 };
@@ -375,6 +472,22 @@ class EE_API UIHTMLWidget : public UILayout {
 
 	void updateScrollListeners();
 	void onScrollTargetPositionChange();
+	void invalidatePaintOrder();
+	void updatePaintOrderFlag();
+	const SmallVector<Node*, 16>& getPaintOrder() const;
+	bool isHTMLStackingScope() const;
+	void buildCSSChildOrder( SmallVector<Node*, 16>& out ) const;
+	void resetPromotedPaintState() const;
+	void collectStackingScopeItems( UIHTMLWidget* container, SmallVector<Node*, 16>& out,
+									bool directChildren ) const;
+	void collectStackingScopeChild( Node* child, SmallVector<Node*, 16>& out,
+									bool directChildren ) const;
+	void promoteHTMLPaintNode( UIHTMLWidget* widget ) const;
+	void drawHTMLPaintNode( Node* node );
+	bool containsHTMLPaintClipPoint( const Vector2f& point ) const;
+	bool canHitHTMLPaintNode( Node* node, const Vector2f& point ) const;
+	bool needsHTMLPaintTraversal() const;
+	bool shouldSkipHTMLPaintNode( Node* node ) const;
 };
 
 }} // namespace EE::UI

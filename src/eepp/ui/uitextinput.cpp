@@ -1,8 +1,8 @@
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiicon.hpp>
@@ -41,6 +41,7 @@ UITextInput::UITextInput( const std::string& tag ) :
 	mMouseDown( false ),
 	mKeyBindings( getInput() ) {
 	mHintCache = Text::New();
+	mHintCache->setTextHints( getTextHints() );
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
@@ -229,7 +230,9 @@ void UITextInput::alignFix() {
 	UITextView::alignFix();
 
 	if ( mAllowEditing /* && Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT */ ) {
-		Float tW = getVisibleTextCache().findCharacterPos( selCurInit() ).x;
+		Float tW = getVisibleTextCache()
+					   .findCharacterPos( selCurInit(), Text::LigatureCaretMode::ClosestGlyph )
+					   .x;
 		mCurPos.x = tW;
 		mCurPos.y = 0;
 
@@ -291,6 +294,12 @@ void UITextInput::autoPadding() {
 UITextInput* UITextInput::setAllowEditing( const bool& allow ) {
 	if ( allow != mAllowEditing ) {
 		mAllowEditing = allow;
+		sendCommonEvent( Event::OnAllowEditingChange );
+		// Attribute selectors can style the input and its children from allow-editing.
+		if ( getUISceneNode() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
 		invalidateDraw();
 	}
 	return this;
@@ -321,6 +330,7 @@ UITextInput* UITextInput::setMode( TextInputMode mode ) {
 		if ( mMode == TextInputMode::Password ) {
 			if ( !mPassCache ) {
 				mPassCache = Text::New();
+				mPassCache->setTextHints( getTextHints() );
 				updateFontStyleConfig();
 			}
 			updatePass();
@@ -328,6 +338,14 @@ UITextInput* UITextInput::setMode( TextInputMode mode ) {
 		invalidateDraw();
 	}
 	return this;
+}
+
+void UITextInput::onTextHintsChanged() {
+	UITextView::onTextHintsChanged();
+	if ( mHintCache )
+		mHintCache->setTextHints( getTextHints() );
+	if ( mPassCache )
+		mPassCache->setTextHints( getTextHints() );
 }
 
 UITextInput::TextInputMode UITextInput::getMode() const {
@@ -394,6 +412,11 @@ void UITextInput::onFontStyleChanged() {
 	invalidateDraw();
 }
 
+void UITextInput::onFontColorChanged() {
+	if ( mPassCache )
+		mPassCache->setFillColor( mTextCache.getFillColor() );
+}
+
 Text& UITextInput::getVisibleTextCache() {
 	if ( mMode == TextInputMode::Password && mPassCache )
 		return *mPassCache;
@@ -433,6 +456,13 @@ Uint32 UITextInput::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 	return UITextView::onMouseUp( position, flags );
 }
 
+Uint32 UITextInput::onMessage( const NodeMessage* message ) {
+	// The input owns its right-click behavior, including the choice to disable its menu.
+	if ( message->getMsg() == NodeMessage::MouseUp && ( message->getFlags() & EE_BUTTON_RMASK ) )
+		return 1;
+	return UITextView::onMessage( message );
+}
+
 Uint32 UITextInput::onMouseClick( const Vector2i& position, const Uint32& flags ) {
 	UITextView::onMouseClick( position, flags );
 	if ( ( flags & EE_BUTTON_LMASK ) &&
@@ -455,7 +485,9 @@ Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags
 }
 
 Uint32 UITextInput::onMouseOver( const Vector2i& position, const Uint32& flags ) {
-	if ( NULL != mSceneNode )
+	// Mouse-over also bubbles from children; keep the cursor selected for the hovered child.
+	auto* dispatcher = getEventDispatcher();
+	if ( mSceneNode && dispatcher && dispatcher->getMouseOverNode() == this )
 		mSceneNode->setCursor( Cursor::IBeam );
 
 	return UITextView::onMouseOver( position, flags );
@@ -578,7 +610,7 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::HintFontStyle:
 			return Text::styleFlagToString( getHintFontStyle() );
 		case PropertyId::HintStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getHintOutlineThickness() ), "px" );
+			return pixelsLengthToString( getHintOutlineThickness() );
 		case PropertyId::HintStrokeColor:
 			return getHintOutlineColor().toHexString();
 		case PropertyId::HintDisplay:
@@ -649,13 +681,16 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setHintFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::HintFontFamily:
-			setHintFont( FontManager::instance()->getByName( attribute.value() ) );
+			setHintFont(
+				getUISceneNode()
+					? getUISceneNode()->getResourceScope()->findFont( attribute.value() ).get()
+					: nullptr );
 			break;
 		case PropertyId::HintFontStyle:
 			setHintFontStyle( attribute.asFontStyle() );
 			break;
 		case PropertyId::HintStrokeWidth:
-			setHintOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
+			setHintOutlineThickness( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::HintStrokeColor:
 			setHintOutlineColor( attribute.asColor() );
@@ -926,7 +961,7 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 }
 
 void UITextInput::updateIMELocation() {
-	if ( mDoc.getActiveClient() != this || !Engine::isMainThread() )
+	if ( !hasFocus() || mDoc.getActiveClient() != this || !Engine::isMainThread() )
 		return;
 	Vector2f cursor( eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
 					 mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
@@ -979,11 +1014,9 @@ void UITextInput::setEscapePastedText( bool escapePastedText ) {
 	mEscapePastedText = escapePastedText;
 }
 
-Drawable* UITextInput::findIcon( const std::string& name ) {
+DrawablePtr UITextInput::findIcon( const std::string& name ) {
 	UIIcon* icon = getUISceneNode()->findIcon( name );
-	if ( icon )
-		return icon->getSize( mMenuIconSize );
-	return nullptr;
+	return icon ? icon->createDrawable( mMenuIconSize ) : DrawablePtr{};
 }
 
 UIMenuItem* UITextInput::menuAdd( UIPopUpMenu* menu, const String& translateString,

@@ -2,6 +2,7 @@
 #define EE_UICUIMESSAGEBOX_HPP
 
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/window.hpp>
 
 namespace EE { namespace UI {
 
@@ -11,6 +12,7 @@ class UILayout;
 class UIPushButton;
 class UIDropDownList;
 class UIComboBox;
+class UIApplication;
 
 #define UI_MESSAGE_BOX_DEFAULT_FLAGS                                          \
 	UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_MODAL | \
@@ -22,6 +24,16 @@ class EE_API UIMessageBox : public UIWindow {
 
 	static UIMessageBox* New( const Type& type, const String& message,
 							  const Uint32& windowFlags = UI_MESSAGE_BOX_DEFAULT_FLAGS );
+
+	/** Creates an eepp message box in a separate native UIApplication window. On Emscripten and in
+	 * terminal runtime it creates a decorated in-application message box instead. */
+	static UIMessageBox* NewInApplicationWindow(
+		UIApplication& application, const EE::Window::WindowSettings& windowSettings,
+		const Type& type, const String& message,
+		const Uint32& windowFlags = UI_MESSAGE_BOX_DEFAULT_FLAGS,
+		const EE::Window::ContextSettings& contextSettings = EE::Window::ContextSettings(),
+		bool modal = true,
+		ApplicationWindowPosition position = ApplicationWindowPosition::WindowManager );
 
 	virtual ~UIMessageBox();
 
@@ -69,7 +81,6 @@ class EE_API UIMessageBox : public UIWindow {
 	virtual Uint32 onKeyUp( const KeyEvent& event );
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
-
 };
 
 }} // namespace EE::UI

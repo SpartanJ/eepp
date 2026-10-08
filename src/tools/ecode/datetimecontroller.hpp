@@ -20,12 +20,12 @@ class DateTimeController {
 
 	void registerCommands( TextDocument& doc );
 
-  private:
-	PluginContextProvider* mContext{ nullptr };
-
 	static bool isValidDateFormat( const std::string& format );
 
 	static std::string formatCurrentDate( const std::string& format );
+
+  private:
+	PluginContextProvider* mContext{ nullptr };
 
 	void insertDate( const std::string& format );
 

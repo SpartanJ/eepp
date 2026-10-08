@@ -14,8 +14,8 @@ class EE_API FontFamily {
 								 const std::string& ext,
 								 const std::vector<std::string_view>& names );
 
-	static FontTrueType* setFont( FontTrueType* font, const std::string& fontpath,
-								  const std::string_view& fontType );
+	static void setFont( FontTrueType* font, const std::string& fontpath,
+						 const std::string_view& fontType );
 };
 
 }} // namespace EE::Graphics

@@ -7,6 +7,7 @@
 #include <eepp/graphics/scopedtexture.hpp>
 #include <eepp/graphics/stbi_iocb.hpp>
 #include <eepp/graphics/texture.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/math/polygon2.hpp>
 #include <eepp/system/thread.hpp>
@@ -16,6 +17,16 @@ using namespace EE::Window;
 using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
+
+DrawablePtr Texture::clone() const {
+	TexturePtr texture = TextureFactory::instance()->getTexture( getTextureId() );
+	if ( !texture )
+		return {};
+	TextureDrawablePtr instance = TextureDrawable::New( std::move( texture ) );
+	instance->setColor( mColor );
+	instance->setPosition( mPosition );
+	return instance;
+}
 
 Uint32 Texture::getMaximumSize() {
 	static bool checked = false;
@@ -519,10 +530,18 @@ void Texture::update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x
 
 		{
 			ScopedTexture saver( mTexture );
+			const bool tightlyPackedThreeChannelRows =
+				( pf == Image::PixelFormat::PIXEL_FORMAT_RGB ||
+				  pf == Image::PixelFormat::PIXEL_FORMAT_BGR ) &&
+				( static_cast<size_t>( width ) * 3 ) % 4 != 0;
+			if ( tightlyPackedThreeChannelRows )
+				glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 
 			glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height,
 							 (unsigned int)convertPixelFormatToGLFormat( pf ), GL_UNSIGNED_BYTE,
 							 pixels );
+			if ( tightlyPackedThreeChannelRows )
+				glPixelStorei( GL_UNPACK_ALIGNMENT, 4 );
 
 			if ( hasLocalCopy() ) {
 				Image image( pixels, width, height, mChannels );
@@ -919,7 +938,7 @@ void Texture::draw( const Vector2f& position, const Sizef& size ) {
 			  size.y );
 }
 
-std::pair<std::vector<Texture*>, int> Texture::loadGif( IOStream& stream ) {
+std::pair<std::vector<TexturePtr>, int> Texture::loadGif( IOStream& stream ) {
 	stbi_io_callbacks callbacks;
 	callbacks.read = &IOCb::read;
 	callbacks.skip = &IOCb::skip;
@@ -929,7 +948,7 @@ std::pair<std::vector<Texture*>, int> Texture::loadGif( IOStream& stream ) {
 	if ( type != STBI_gif )
 		return {};
 	stream.seek( 0 );
-	std::vector<Texture*> gif;
+	std::vector<TexturePtr> gif;
 	ScopedBuffer buf( stream.getSize() );
 	stream.read( (char*)buf.get(), buf.size() );
 	int width, height, frames, comp;

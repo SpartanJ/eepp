@@ -153,12 +153,18 @@ class EE_API UIConsole : public UIWidget,
 
 	TextDocument& getDoc();
 
+	void setLigatureFeatures( Uint32 features );
+	Uint32 getLigatureFeatures() const;
+	void clearLigaturesOverride();
+	Uint32 getTextHints() const;
+	virtual void onTextHintsChanged();
+
 	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
 
   protected:
 	struct TextCache {
 		Text text;
-		String::HashType hash;
+		String::HashType hash{ 0 };
 	};
 	struct CommandLogCache {
 		String log;
@@ -171,6 +177,7 @@ class EE_API UIConsole : public UIWidget,
 	std::vector<TextCache> mTextCache;
 	UIFontStyleConfig mFontStyleConfig;
 	Uint32 mMaxLogLines{ 8192 };
+	Uint32 mLigatureFeatures{ 0 };
 	TextDocument mDoc;
 	KeyBindings mKeyBindings;
 	TextRange mSelection;
@@ -192,6 +199,7 @@ class EE_API UIConsole : public UIWidget,
 	Clock mBlinkTimer;
 	Time mBlinkTime{ Seconds( 0.f ) };
 	bool mCursorVisible{ true };
+	bool mLigaturesOverride{ false };
 	int mLastLogPos{ 0 };
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 	Float mQuakeModeHeightPercent{ 0.5f };
@@ -228,6 +236,8 @@ class EE_API UIConsole : public UIWidget,
 	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
 
 	virtual Uint32 onFocus( NodeFocusReason reason );
 
@@ -278,6 +288,8 @@ class EE_API UIConsole : public UIWidget,
 	void cut();
 
 	void paste();
+
+	bool scrollByLines( Int32 lines );
 
 	void createDefaultCommands();
 
@@ -343,7 +355,7 @@ class EE_API UIConsole : public UIWidget,
 	UIMenuItem* menuAdd( UIPopUpMenu* menu, const String& translateString, const std::string& icon,
 						 const std::string& cmd );
 
-	Drawable* findIcon( const std::string& name );
+	DrawablePtr findIcon( const std::string& name );
 
 	void copySelection();
 

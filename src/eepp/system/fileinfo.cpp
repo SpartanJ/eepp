@@ -15,6 +15,10 @@
 #include <limits.h>
 #include <stdlib.h>
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#include <windows.h>
+#endif
+
 #ifdef EE_COMPILER_MSVC
 #ifndef S_ISDIR
 #define S_ISDIR( f ) ( ( f ) & _S_IFDIR )
@@ -42,6 +46,43 @@
 
 namespace EE { namespace System {
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+static void getWindowsFileIdentity( const std::string& filePath, Uint64& device, Uint64& inode,
+									Uint64& linkCount ) {
+	wchar_t stackPath[512];
+	const int pathLength = static_cast<int>( filePath.size() );
+	const int wideLength =
+		MultiByteToWideChar( CP_UTF8, 0, filePath.data(), pathLength, nullptr, 0 );
+	if ( wideLength <= 0 )
+		return;
+
+	std::wstring heapPath;
+	wchar_t* widePath = stackPath;
+	if ( static_cast<size_t>( wideLength + 1 ) > sizeof( stackPath ) / sizeof( *stackPath ) ) {
+		heapPath.resize( wideLength + 1 );
+		widePath = heapPath.data();
+	}
+	if ( MultiByteToWideChar( CP_UTF8, 0, filePath.data(), pathLength, widePath, wideLength ) !=
+		 wideLength )
+		return;
+	widePath[wideLength] = L'\0';
+
+	HANDLE handle = CreateFileW( widePath, FILE_READ_ATTRIBUTES,
+								 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
+								 OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr );
+	if ( handle == INVALID_HANDLE_VALUE )
+		return;
+
+	BY_HANDLE_FILE_INFORMATION info;
+	if ( GetFileInformationByHandle( handle, &info ) ) {
+		device = info.dwVolumeSerialNumber;
+		inode = static_cast<Uint64>( info.nFileIndexHigh ) << 32 | info.nFileIndexLow;
+		linkCount = info.nNumberOfLinks;
+	}
+	CloseHandle( handle );
+}
+#endif
+
 bool FileInfo::exists( const std::string& filePath ) {
 	FileInfo fi( filePath );
 	return fi.exists();
@@ -53,11 +94,7 @@ bool FileInfo::isLink( const std::string& filePath ) {
 }
 
 bool FileInfo::inodeSupported() {
-#if EE_PLATFORM != EE_PLATFORM_WIN
 	return true;
-#else
-	return false;
-#endif
 }
 
 FileInfo::FileInfo() :
@@ -97,7 +134,9 @@ FileInfo::FileInfo( const FileInfo& other ) :
 	mOwnerId( other.mOwnerId ),
 	mGroupId( other.mGroupId ),
 	mPermissions( other.mPermissions ),
-	mInode( other.mInode ) {}
+	mInode( other.mInode ),
+	mDevice( other.mDevice ),
+	mLinkCount( other.mLinkCount ) {}
 
 void FileInfo::getInfo() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -129,6 +168,11 @@ void FileInfo::getInfo() {
 		mGroupId = st.st_gid;
 		mPermissions = st.st_mode;
 		mInode = st.st_ino;
+		mDevice = st.st_dev;
+		mLinkCount = st.st_nlink;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		getWindowsFileIdentity( std::string( fp ), mDevice, mInode, mLinkCount );
+#endif
 	}
 
 	if ( isDirectory() )
@@ -153,6 +197,11 @@ void FileInfo::getRealInfo() {
 		mGroupId = st.st_gid;
 		mPermissions = st.st_mode;
 		mInode = st.st_ino;
+		mDevice = st.st_dev;
+		mLinkCount = st.st_nlink;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		getWindowsFileIdentity( mFilepath, mDevice, mInode, mLinkCount );
+#endif
 	}
 
 	if ( isDirectory() )
@@ -197,6 +246,14 @@ const Uint64& FileInfo::getInode() const {
 	return mInode;
 }
 
+const Uint64& FileInfo::getDevice() const {
+	return mDevice;
+}
+
+const Uint64& FileInfo::getLinkCount() const {
+	return mLinkCount;
+}
+
 bool FileInfo::isUninitialized() const {
 	return mModificationTime == 0;
 }
@@ -208,7 +265,8 @@ std::string FileInfo::getExtension( const bool& lowerExt ) const {
 bool FileInfo::operator==( const FileInfo& Other ) const {
 	return ( mModificationTime == Other.mModificationTime && mSize == Other.mSize &&
 			 mOwnerId == Other.mOwnerId && mGroupId == Other.mGroupId &&
-			 mPermissions == Other.mPermissions && mInode == Other.mInode );
+			 mPermissions == Other.mPermissions && mDevice == Other.mDevice &&
+			 mInode == Other.mInode );
 }
 
 bool FileInfo::isDirectory() const {
@@ -286,6 +344,8 @@ FileInfo& FileInfo::operator=( const FileInfo& other ) {
 	this->mOwnerId = other.mOwnerId;
 	this->mPermissions = other.mPermissions;
 	this->mInode = other.mInode;
+	this->mDevice = other.mDevice;
+	this->mLinkCount = other.mLinkCount;
 	return *this;
 }
 
@@ -299,7 +359,7 @@ bool FileInfo::isExecutable() const {
 }
 
 bool FileInfo::sameInode( const FileInfo& other ) const {
-	return inodeSupported() && mInode == other.mInode;
+	return inodeSupported() && mInode != 0 && mDevice == other.mDevice && mInode == other.mInode;
 }
 
 bool FileInfo::operator!=( const FileInfo& other ) const {

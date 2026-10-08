@@ -3,6 +3,7 @@
 
 #include <eepp/scene/actions/runnable.hpp>
 #include <eepp/scene/event.hpp>
+#include <eepp/scene/eventconnection.hpp>
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/scene/mouseevent.hpp>
@@ -61,7 +62,6 @@ enum NodeFlags {
 	NODE_FLAG_MOUSEOVER = ( 1 << 7 ),
 	NODE_FLAG_HAS_FOCUS = ( 1 << 8 ),
 	NODE_FLAG_SELECTED = ( 1 << 9 ),
-	NODE_FLAG_MOUSEOVER_ME_OR_CHILD = ( 1 << 10 ),
 	NODE_FLAG_DRAGGING = ( 1 << 11 ),
 	NODE_FLAG_SKIN_OWNER = ( 1 << 12 ),
 	NODE_FLAG_TOUCH_DRAGGING = ( 1 << 13 ),
@@ -632,12 +632,22 @@ class EE_API Node : public Transformable {
 	inline bool isMouseOver() const { return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER ); }
 
 	/**
-	 * @brief Checks if the mouse is over this node or any of its children.
+	 * @brief Checks if this node is the current mouse-over target or one of its ancestors.
+	 *
+	 * This reflects the event dispatcher's last completed hit test and remains valid between scene
+	 * updates.
 	 *
 	 * @return True if the mouse is over this node or any descendant, false otherwise.
 	 */
 	inline bool isMouseOverMeOrChildren() const {
-		return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER_ME_OR_CHILD );
+		EventDispatcher* dispatcher = getEventDispatcher();
+		Node* overNode = dispatcher ? dispatcher->getMouseOverNode() : nullptr;
+		while ( overNode ) {
+			if ( overNode == this )
+				return true;
+			overNode = overNode->mParentNode;
+		}
+		return false;
 	}
 
 	/**
@@ -699,6 +709,22 @@ class EE_API Node : public Transformable {
 	 * @return A unique callback identifier.
 	 */
 	Uint32 on( const Uint32& eventType, const EventCallback& callback );
+
+	/**
+	 * @brief Connects an event listener whose lifetime is controlled by the returned handle.
+	 *
+	 * Destroying or disconnecting the handle removes the listener. If this node is destroyed
+	 * first, the handle safely becomes disconnected. Unlike on() and addEventListener(), this API
+	 * transfers listener ownership to an EventConnection instead of exposing a numeric callback ID.
+	 * Expiry does not notify the observer; connect separately to UIWidget::OnClose when
+	 * widget-close cleanup is required. The connection and event registry must be used on this
+	 * node's owning thread.
+	 *
+	 * @param eventType The event type constant.
+	 * @param callback The function to call when the event occurs.
+	 * @return A move-only connection that owns the registered listener.
+	 */
+	EventConnection connect( const Uint32& eventType, EventCallback callback );
 
 	/**
 	 * @brief Adds a mouse click event listener.
@@ -1346,6 +1372,9 @@ class EE_API Node : public Transformable {
 	 */
 	std::vector<Action*> getActionsByTag( const Action::UniqueID& tag );
 
+	/** Appends matching actions to inline-capable storage without allocating in the common case. */
+	void getActionsByTag( const Action::UniqueID& tag, SmallVector<Action*, 4>& actions );
+
 	/**
 	 * @brief Removes all actions from this node.
 	 *
@@ -1932,9 +1961,6 @@ class EE_API Node : public Transformable {
 	void clipSmartDisable();
 
   protected:
-	/** @brief Map of event type to callback ID to callback function. */
-	typedef UnorderedMap<Uint32, std::map<Uint32, EventCallback>> EventsMap;
-
 	/** @brief Forward declaration for EventDispatcher. */
 	friend class EventDispatcher;
 	friend class EE::UI::UISceneNode;
@@ -1956,11 +1982,10 @@ class EE_API Node : public Transformable {
 	BlendMode mBlend{ BlendMode::Alpha() };
 	bool mVisible{ true };
 	bool mEnabled{ true };
-	Uint32 mNumCallBacks{ 0 };
 	mutable Polygon2f mPoly;
 	mutable Rectf mWorldBounds;
 	Vector2f mCenter;
-	EventsMap mEvents;
+	std::shared_ptr<EventConnectionState> mEventConnectionState;
 	OriginPoint mRotationOriginPoint;
 	OriginPoint mScaleOriginPoint;
 
@@ -2108,8 +2133,10 @@ class EE_API Node : public Transformable {
 	/**
 	 * @brief Handles mouse wheel scroll events.
 	 *
-	 * Called when the mouse wheel is scrolled. Default implementation returns 1
-	 * to stop propagation but does not forward the event.
+	 * Called when the mouse wheel is scrolled. The default implementation dispatches an
+	 * Event::MouseWheel callback and consumes the event when a listener is registered; otherwise it
+	 * returns 0 so the event can bubble to an ancestor. Overrides decide whether to invoke the base
+	 * implementation, consistently with the other input event handlers.
 	 *
 	 * @param offset Scroll offset vector.
 	 * @param flipped Whether the scroll direction is flipped (e.g., on Mac).

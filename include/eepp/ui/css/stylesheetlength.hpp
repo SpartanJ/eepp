@@ -58,12 +58,21 @@ class EE_API StyleSheetLength {
 
 	static StyleSheetLength fromString( const std::string& str, const Float& defaultValue = 0,
 										bool pxAsDp = false );
+	static StyleSheetLength fromString( std::string_view str, const Float& defaultValue = 0,
+										bool pxAsDp = false );
+	static StyleSheetLength fromString( const char* str, const Float& defaultValue = 0,
+										bool pxAsDp = false ) {
+		return fromString( std::string_view{ str }, defaultValue, pxAsDp );
+	}
 
 	StyleSheetLength();
 
 	StyleSheetLength( const Float& val, const Unit& unit );
 
 	StyleSheetLength( const std::string& val, const Float& defaultValue = 0 );
+	StyleSheetLength( std::string_view val, const Float& defaultValue = 0 );
+	StyleSheetLength( const char* val, const Float& defaultValue = 0 ) :
+		StyleSheetLength( std::string_view{ val }, defaultValue ) {}
 
 	StyleSheetLength( const StyleSheetLength& val );
 
@@ -98,7 +107,7 @@ class EE_API StyleSheetLength {
   protected:
 	static bool isFunctionString( std::string_view str );
 
-	static bool parseFunction( const std::string& str, Unit& outUnit, Arguments& outArgs );
+	static bool parseFunction( std::string_view str, Unit& outUnit, Arguments& outArgs );
 
 	Float resolveFunction( const Float& parentSize, const Sizef& viewSize, const Float& displayDpi,
 						   const Float& elFontSize, const Float& globalFontSize,

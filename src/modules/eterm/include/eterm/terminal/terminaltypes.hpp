@@ -115,6 +115,8 @@ enum TerminalWinMode {
 	MODE_MOUSEMANY = 1 << 15,
 	MODE_BRCKTPASTE = 1 << 16,
 	MODE_NUMLOCK = 1 << 17,
+	MODE_ALTSCRROLL = 1 << 18,
+	MODE_MOUSESGR_PIXELS = 1 << 19,
 	MODE_MOUSE = MODE_MOUSEBTN | MODE_MOUSEMOTION | MODE_MOUSEX10 | MODE_MOUSEMANY,
 };
 
@@ -133,6 +135,8 @@ enum TerminalGlyphAttribute {
 	ATTR_WDUMMY = 1 << 10,
 	ATTR_BOXDRAW = 1 << 11,
 	ATTR_EMOJI = 1 << 12,
+	ATTR_SEARCH_MATCH = 1 << 13,
+	ATTR_SEARCH_ACTIVE = 1 << 14,
 	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
 };
 
@@ -150,10 +154,10 @@ typedef unsigned short ushort;
 typedef uint_least32_t Rune;
 
 struct TerminalGlyph {
-	Rune u{ 0 };	  /* character code */
-	ushort mode{ 0 }; /* attribute flags */
-	uint32_t fg{ 0 }; /* foreground  */
-	uint32_t bg{ 0 }; /* background  */
+	Rune u{ 0 };		/* character code */
+	uint32_t mode{ 0 }; /* attribute flags */
+	uint32_t fg{ 0 };	/* foreground  */
+	uint32_t bg{ 0 };	/* background  */
 
 	bool operator==( const TerminalGlyph& r ) {
 		return u == r.u && mode == r.mode && fg == r.fg && bg == r.bg;

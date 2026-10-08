@@ -1,4 +1,4 @@
-#include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/maps/gameobjecttextureregion.hpp>
 #include <eepp/maps/maplightmanager.hpp>
 #include <eepp/maps/tilemap.hpp>
@@ -9,7 +9,8 @@ namespace EE { namespace Maps {
 GameObjectTextureRegion::GameObjectTextureRegion( const Uint32& Flags, MapLayer* Layer,
 												  Graphics::TextureRegion* TextureRegion,
 												  const Vector2f& Pos ) :
-	GameObject( Flags, Layer ), mTextureRegion( TextureRegion ), mPos( Pos ) {
+	GameObject( Flags, Layer ), mPos( Pos ) {
+	setTextureRegion( TextureRegion );
 	assignTilePos();
 }
 
@@ -44,7 +45,8 @@ void GameObjectTextureRegion::draw() {
 						getRenderModeFromFlags() );
 				} else {
 					mTextureRegion->draw( mPos.x, mPos.y, *LM->getTileColor( Tile ), getRotation(),
-										  Vector2f::One, BlendMode::Alpha(), getRenderModeFromFlags() );
+										  Vector2f::One, BlendMode::Alpha(),
+										  getRenderModeFromFlags() );
 				}
 			} else {
 				if ( LM->isByVertex() ) {
@@ -99,11 +101,13 @@ Sizei GameObjectTextureRegion::getSize() {
 }
 
 Graphics::TextureRegion* GameObjectTextureRegion::getTextureRegion() const {
-	return mTextureRegion;
+	return mTextureRegion.get();
 }
 
 void GameObjectTextureRegion::setTextureRegion( Graphics::TextureRegion* TextureRegion ) {
-	mTextureRegion = TextureRegion;
+	mTextureRegion =
+		TextureRegion ? std::static_pointer_cast<Graphics::TextureRegion>( TextureRegion->clone() )
+					  : TextureRegionPtr{};
 }
 
 Uint32 GameObjectTextureRegion::getDataId() {
@@ -111,7 +115,10 @@ Uint32 GameObjectTextureRegion::getDataId() {
 }
 
 void GameObjectTextureRegion::setDataId( Uint32 Id ) {
-	setTextureRegion( TextureAtlasManager::instance()->getTextureRegionById( Id ) );
+	DrawablePtr drawable = defaultResourceScope().findDrawable( Id );
+	setTextureRegion( drawable && drawable->getDrawableType() == Drawable::TEXTUREREGION
+						  ? static_cast<TextureRegion*>( drawable.get() )
+						  : nullptr );
 }
 
 }} // namespace EE::Maps

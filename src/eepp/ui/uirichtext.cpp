@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cmath>
 #include <eepp/core/debug.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/scene/scenemanager.hpp>
@@ -10,12 +9,14 @@
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uihtmlinput.hpp>
 #include <eepp/ui/uilayouter.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextnode.hpp>
+#include <eepp/ui/uitextselectioncontroller.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -172,6 +173,18 @@ bool UIHTMLHtml::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Width:
 		case PropertyId::Height:
 			return false; // Ignore width and height set from CSS
+		case PropertyId::MinHeight: {
+			Float containingBlockHeight =
+				getUISceneNode() ? getUISceneNode()->getLayoutViewportPixelsSize().getHeight() : 0;
+			if ( containingBlockHeight <= 0 && getParent() )
+				containingBlockHeight =
+					getParent()->isUINode()
+						? getParent()->asType<UINode>()->getPixelsSize().getHeight()
+						: getParent()->getSize().getHeight();
+			setMinHeight(
+				convertLengthAsDp( attribute.asStyleSheetLength(), containingBlockHeight ) );
+			return true;
+		}
 		default:
 			break;
 	}
@@ -275,23 +288,27 @@ void UIHTMLBody::updateLayout() {
 }
 
 void UIHTMLBody::setDocumentViewportMinHeight( const Float& height ) {
-	if ( mDocumentViewportMinHeight == height )
-		return;
 	mDocumentViewportMinHeight = height;
+	// The local min-height can be percentage-based and therefore change when the html
+	// containing block is resized even if the viewport minimum itself did not change.
 	updateDocumentMinHeight();
-}
-
-void UIHTMLBody::setDocumentCanvasMinHeight( const Float& height ) {
-	setDocumentContentMinHeight( height );
 }
 
 Float UIHTMLBody::getLocalMinHeight() const {
 	if ( !getParent() )
 		return 0;
 
-	Float parentHeight = getParent()->isUINode()
-							 ? getParent()->asType<UINode>()->getPixelsSize().getHeight()
-							 : getParent()->getSize().getHeight();
+	Float parentHeight;
+	if ( getParent()->isType( UI_TYPE_HTML_HTML ) && getUISceneNode() &&
+		 getUISceneNode()->getLayoutViewportPixelsSize().getHeight() > 0 ) {
+		// The root body's containing block is the initial containing block (the viewport),
+		// not an html box that may already include scrollable overflow.
+		parentHeight = getUISceneNode()->getLayoutViewportPixelsSize().getHeight();
+	} else {
+		parentHeight = getParent()->isUINode()
+						   ? getParent()->asType<UINode>()->getPixelsSize().getHeight()
+						   : getParent()->getSize().getHeight();
+	}
 
 	return convertLengthAsDp( mMinHeightLocal, parentHeight );
 }
@@ -409,7 +426,8 @@ UIRichText* UIRichText::NewWithTag( const std::string& tag ) {
 }
 
 UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
-	mFlags |= UI_HTML_ELEMENT | UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION;
+	mFlags |= UI_HTML_ELEMENT | UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION |
+			  UI_TEXT_SELECTION_ENABLED;
 
 	UISceneNode* sceneNode =
 		getUISceneNode() ? getUISceneNode() : SceneManager::instance()->getUISceneNode();
@@ -430,12 +448,48 @@ UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
 
 	mRichText.getFontStyleConfig().FontColor = Color::Black;
 	mRichText.setTabWidth( mTabSize );
+	mRichText.setTextHints( getTextHints() );
 
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 }
 
+UIRichText::~UIRichText() {
+	if ( mDocumentSelectionController )
+		mDocumentSelectionController->onOwnerWillBeDestroyed( this );
+}
+
 const RichText& UIRichText::getRichText() {
 	return mRichText;
+}
+
+const RichText& UIRichText::getRichText() const {
+	return mRichText;
+}
+
+void UIRichText::setTextHintsOverride( Uint32 value, Uint32 mask ) {
+	mask &= TextHints::OpenTypeFeatures;
+	value &= mask;
+	if ( mTextHintsOverride != value || mTextHintsOverrideMask != mask ) {
+		mTextHintsOverride = value;
+		mTextHintsOverrideMask = mask;
+		onTextHintsChanged();
+	}
+}
+
+void UIRichText::clearTextHintsOverride() {
+	setTextHintsOverride( 0, 0 );
+}
+
+Uint32 UIRichText::getTextHints() const {
+	return UISceneNode::resolveTextHints( getDefaultTextHints(), mTextHintsOverride,
+										  mTextHintsOverrideMask );
+}
+
+void UIRichText::onTextHintsChanged() {
+	mRichText.setTextHints( getTextHints() );
+	notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
+	notifyLayoutAttrChangeParent( LayoutInvalidation::ParentReplacedFormatting );
+	invalidateDraw();
 }
 
 void UIRichText::draw() {
@@ -627,7 +681,7 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 			return String::fromFloat( getFontShadowOffset().x ) + " " +
 				   String::fromFloat( getFontShadowOffset().y );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
+			return pixelsLengthToString( getOutlineThickness() );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::SelectionColor:
@@ -1514,6 +1568,8 @@ static Float getAtomicInlineBoxBaseline( UIWidget* widget, const Sizef& widgetSi
 	Float fallbackBaseline = widgetSize.getHeight() + margin.Top + margin.Bottom;
 	if ( !widget->isType( UI_TYPE_HTML_WIDGET ) )
 		return fallbackBaseline;
+	if ( widget->isType( UI_TYPE_HTML_INPUT ) )
+		return margin.Top + widget->asType<UIHTMLInput>()->getReplacedElementBaseline();
 
 	auto* htmlWidget = widget->asType<UIHTMLWidget>();
 	auto* rt = htmlWidget->getRichTextPtr();
@@ -1672,42 +1728,42 @@ static Drawable* getInlineBorderDrawable( UIWidget* widget ) {
 			   : nullptr;
 }
 
-void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
-	UILayout::countRichTextRebuild();
-	richText.clear();
-	if ( container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN ) ) {
-		auto* uiRt = static_cast<UIRichText*>( container );
-		richText.setLineHeight( uiRt->getLineHeightPx() );
-		richText.setTextIndent( uiRt->getTextIndentPx() );
-		richText.setLineWrap( uiRt->getLineWrap() );
-		richText.setTabWidth( uiRt->getTabSize() );
-		richText.setWhiteSpaceWrapMode(
-			toRichTextWhiteSpaceWrapMode( uiRt->getWhiteSpaceCollapse() ) );
+bool UIRichText::isAssigningInlineFragments( const UIWidget* child ) {
+	for ( Node* parent = child->getParent(); parent && parent->isType( UI_TYPE_HTML_WIDGET );
+		  parent = parent->getParent() ) {
+		auto* owner = parent->asType<UIHTMLWidget>();
+		if ( auto* layouter = owner->getLayouter();
+			 layouter && layouter->isPositioningInlineFragments() )
+			return true;
+		if ( !owner->isInline() )
+			break;
 	}
-	UIRichText* containerRichText =
-		container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN )
-			? container->asType<UIRichText>()
-			: nullptr;
-	bool lastSpanEndsWithSpace = false;
+	return false;
+}
+
+Float UIRichText::getLayoutMaxWidth( UILayout* container, IntrinsicMode mode ) {
+	if ( mode != IntrinsicMode::None )
+		return 0.f;
 	Float maxWidth = 0;
 	bool isInlineBlockTextSpan =
 		container->isType( UI_TYPE_TEXTSPAN ) && container->asType<UITextSpan>()->isInlineBlock();
+	bool isShrinkToFitFloat = container->isType( UI_TYPE_HTML_WIDGET ) &&
+							  container->asType<UIHTMLWidget>()->getCSSFloat() != CSSFloat::None &&
+							  container->getLayoutWidthPolicy() == SizePolicy::WrapContent;
 	Node* parentNode = container->getParent();
 	bool parentIsFlexOrGrid = parentNode && parentNode->isType( UI_TYPE_HTML_WIDGET ) &&
 							  ( parentNode->asType<UIHTMLWidget>()->isFlex() ||
 								parentNode->asType<UIHTMLWidget>()->isGrid() );
-	if ( isInlineBlockTextSpan && mode == IntrinsicMode::None &&
-		 container->getLayoutWidthPolicy() != SizePolicy::WrapContent &&
+	if ( isInlineBlockTextSpan && container->getLayoutWidthPolicy() != SizePolicy::WrapContent &&
 		 container->getPixelsSize().getWidth() > 0 ) {
 		maxWidth = container->getPixelsSize().getWidth() -
 				   container->getPixelsContentOffset().Left -
 				   container->getPixelsContentOffset().Right;
-	} else if ( isInlineBlockTextSpan && mode == IntrinsicMode::None &&
+	} else if ( ( isInlineBlockTextSpan || isShrinkToFitFloat ) &&
 				container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 		maxWidth = 0;
 	} else if ( parentIsFlexOrGrid &&
-				container->getLayoutWidthPolicy() == SizePolicy::WrapContent &&
-				mode == IntrinsicMode::None ) {
+				container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 		maxWidth = 0;
 	} else if ( container->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 		maxWidth = container->getMatchParentWidth() - container->getPixelsContentOffset().Left -
@@ -1729,15 +1785,31 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 			mw = 0.f;
 	}
 
-	if ( mode == IntrinsicMode::None ) {
-		if ( !container->getMaxWidthEq().empty() && ( maxWidth == 0 || mw < maxWidth ) ) {
-			richText.setMaxWidth( mw );
-		} else {
-			richText.setMaxWidth( maxWidth );
-		}
-	} else {
-		richText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
+	return !container->getMaxWidthEq().empty() && ( maxWidth == 0 || mw < maxWidth ) ? mw
+																					 : maxWidth;
+}
+
+void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
+	UILayout::countRichTextRebuild();
+	TextSelectionRange selection = richText.getSelection();
+	SmallVector<TextSelectionRange, 4> selectionExclusions = richText.getSelectionExclusions();
+	richText.clear();
+	if ( container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN ) ) {
+		auto* uiRt = static_cast<UIRichText*>( container );
+		richText.setLineHeight( uiRt->getLineHeightPx() );
+		richText.setTextIndent( uiRt->getTextIndentPx() );
+		richText.setLineWrap( uiRt->getLineWrap() );
+		richText.setTabWidth( uiRt->getTabSize() );
+		richText.setWhiteSpaceWrapMode(
+			toRichTextWhiteSpaceWrapMode( uiRt->getWhiteSpaceCollapse() ) );
 	}
+	UIRichText* containerRichText =
+		container->isType( UI_TYPE_RICHTEXT ) || container->isType( UI_TYPE_TEXTSPAN )
+			? container->asType<UIRichText>()
+			: nullptr;
+	bool lastSpanEndsWithSpace = false;
+	Node* parentNode = container->getParent();
+	richText.setMaxWidth( getLayoutMaxWidth( container, mode ) );
 
 	auto getEffectiveTextTransform = []( Node* node ) -> TextTransform::Value {
 		while ( node ) {
@@ -1781,6 +1853,15 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 	}
 
 	int inlineBoxDepth = 0;
+	bool hasPreviousNormalFlowBlock = false;
+	Float previousBlockBottomMargin = 0.f;
+	auto collapseMargins = []( Float first, Float second ) {
+		if ( first >= 0.f && second >= 0.f )
+			return eemax( first, second );
+		if ( first <= 0.f && second <= 0.f )
+			return eemin( first, second );
+		return first + second;
+	};
 	auto processNode = [&]( Node* node, auto& processNodeRef ) -> void {
 		// Helper: walk up through inline ancestors to find the logical prev/next widget
 		auto findLogicalPrev = []( Node* n ) -> Node* {
@@ -1868,6 +1949,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 				textNode->setLayoutCharCount( 0 );
 				return;
 			}
+			hasPreviousNormalFlowBlock = false;
 
 			textNode->setLayoutCharCount( text.length() );
 
@@ -1904,6 +1986,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 			return;
 
 		UIWidget* widget = node->asType<UIWidget>();
+		UIHTMLWidget::resolvePercentageSize( widget );
 
 		// Skip <head> - it must not participate in layout
 		if ( widget->isType( UI_TYPE_HTML_HEAD ) )
@@ -1911,7 +1994,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 
 		bool handled = false;
 
-		if ( widget->isType( UI_TYPE_HTML_WIDGET ) && widget->asType<UIHTMLWidget>()->isInline() &&
+		if ( widget->isType( UI_TYPE_TEXTSPAN ) && widget->asType<UITextSpan>()->isInline() &&
 			 widget->asType<UIHTMLWidget>()->getCSSFloat() == CSSFloat::None &&
 			 !widget->asType<UIHTMLWidget>()->isOutOfFlow() ) {
 			UITextSpan* span = widget->asType<UITextSpan>();
@@ -2005,16 +2088,16 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 
 		if ( !handled ) {
 			if ( widget->isType( UI_TYPE_BR ) ) {
-				richText.addSpan(
-					"\n", widget->asType<UILineBreak>()->getRichText().getFontStyleConfig() );
+				const FontStyleConfig& style =
+					widget->asType<UILineBreak>()->getRichText().getFontStyleConfig();
+				Float breakLineHeight =
+					style.Font ? style.Font->getFontHeight( style.CharacterSize ) : 0.f;
+				richText.addLineBreak( true, breakLineHeight );
 				lastSpanEndsWithSpace = false;
 			} else {
-				if ( widget->hasLayoutMarginAuto() )
-					widget->updateLayoutMarginAuto();
-				Rectf margin =
-					widget->isType( UI_TYPE_HTML_WIDGET )
-						? widget->asType<UIHTMLWidget>()->getNormalFlowLayoutPixelsMargin()
-						: widget->getLayoutPixelsMargin();
+				Rectf margin = widget->isType( UI_TYPE_HTML_WIDGET )
+								   ? widget->asType<UIHTMLWidget>()->resolveUsedMargins().value
+								   : widget->getLayoutPixelsMargin();
 				bool isBlock = widget->getLayoutWidthPolicy() == SizePolicy::MatchParent;
 				if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
 					CSSDisplay display = widget->asType<UIHTMLWidget>()->getDisplay();
@@ -2054,7 +2137,8 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 						 widget->getUIStyle() ) {
 						const StyleSheetProperty* wprop =
 							widget->getUIStyle()->getProperty( PropertyId::Width );
-						if ( wprop && StyleSheetLength::isPercentage( wprop->value() ) ) {
+						if ( wprop && StyleSheetLength::isPercentage( wprop->value() ) &&
+							 !( widget->getFlags() & UI_HTML_ELEMENT ) ) {
 							Float width = widget->cssWidthPropertyToBorderBoxWidth( *wprop );
 							widget->setPixelsSize( { width, widget->getPixelsSize().getHeight() } );
 						}
@@ -2063,7 +2147,8 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 						 widget->getUIStyle() ) {
 						const StyleSheetProperty* hprop =
 							widget->getUIStyle()->getProperty( PropertyId::Height );
-						if ( hprop && StyleSheetLength::isPercentage( hprop->value() ) ) {
+						if ( hprop && StyleSheetLength::isPercentage( hprop->value() ) &&
+							 !( widget->getFlags() & UI_HTML_ELEMENT ) ) {
 							Float height = widget->cssHeightPropertyToBorderBoxHeight( *hprop );
 							widget->setPixelsSize( { widget->getPixelsSize().getWidth(), height } );
 						}
@@ -2098,7 +2183,7 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 				bool isFloating = floatType != CSSFloat::None;
 				bool isNormalFlowBlock = isBlock && !isFloating;
 				bool isBlockFormattingContext =
-					isNormalFlowBlock && widget->isType( UI_TYPE_HTML_WIDGET ) &&
+					!isFloating && widget->isType( UI_TYPE_HTML_WIDGET ) &&
 					widget->asType<UIHTMLWidget>()->establishesBlockFormattingContext();
 				bool shrinkToFitFloat =
 					isFloating && widget->getLayoutWidthPolicy() == SizePolicy::MatchParent;
@@ -2125,13 +2210,45 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 					w = shrinkWidth;
 				}
 
-				Sizef customSize( w + margin.Left + margin.Right,
-								  size.getHeight() + margin.Top + margin.Bottom );
+				Rectf formattingMargin = margin;
+				if ( isNormalFlowBlock && hasPreviousNormalFlowBlock ) {
+					Float collapsed = collapseMargins( previousBlockBottomMargin, margin.Top );
+					formattingMargin.Top = collapsed - previousBlockBottomMargin;
+				}
+				Sizef customSize( w + formattingMargin.Left + formattingMargin.Right,
+								  size.getHeight() + formattingMargin.Top +
+									  formattingMargin.Bottom );
+				std::shared_ptr<std::vector<RichText::FloatExclusion>> propagatedFloats;
+				if ( widget->isType( UI_TYPE_HTML_WIDGET ) ) {
+					auto* htmlWidget = widget->asType<UIHTMLWidget>();
+					if ( !htmlWidget->establishesBlockFormattingContext() &&
+						 htmlWidget->getRichTextPtr() ) {
+						const auto& localFloats =
+							htmlWidget->getRichTextPtr()->getLocalFloatExclusions();
+						if ( !localFloats.empty() ) {
+							propagatedFloats =
+								std::make_shared<std::vector<RichText::FloatExclusion>>(
+									localFloats );
+							const Rectf contentOffset = widget->getPixelsContentOffset();
+							for ( auto& exclusion : *propagatedFloats )
+								exclusion.rect.move( { margin.Left + contentOffset.Left,
+													   margin.Top + contentOffset.Top } );
+						}
+					}
+				}
 				richText.addCustomSize(
 					customSize, toRichTextFloat( floatType ), toRichTextClear( clearType ),
 					getAtomicInlineBoxBaseline( widget, size, margin ),
 					toRichTextBaselineAlign( getWidgetBaselineAlign( widget ) ),
-					toRichTextWidgetSource( widget ), isNormalFlowBlock, isBlockFormattingContext );
+					toRichTextWidgetSource( widget ), isNormalFlowBlock, isBlockFormattingContext,
+					std::move( propagatedFloats ), formattingMargin );
+
+				if ( isNormalFlowBlock ) {
+					hasPreviousNormalFlowBlock = true;
+					previousBlockBottomMargin = margin.Bottom;
+				} else if ( !isFloating ) {
+					hasPreviousNormalFlowBlock = false;
+				}
 
 				if ( widget->isType( UI_TYPE_TEXTSPAN ) &&
 					 widget->asType<UITextSpan>()->isInlineBlock() &&
@@ -2163,8 +2280,11 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 		// UIRichText::draw(): isFlex()/isGrid() includes inline display variants, but these
 		// ownership exits are only valid for block-level flex/grid containers.
 		CSSDisplay display = htmlContainer->getDisplay();
-		if ( display == CSSDisplay::Flex || display == CSSDisplay::Grid )
+		if ( display == CSSDisplay::Flex || display == CSSDisplay::Grid ) {
+			richText.setSelection( selection );
+			richText.setSelectionExclusions( std::move( selectionExclusions ) );
 			return;
+		}
 	}
 
 	Node* child = container->getFirstChild();
@@ -2175,6 +2295,8 @@ void UIRichText::rebuildRichText( UILayout* container, RichText& richText, Intri
 			processNode( child, processNode );
 		child = child->getNextNode();
 	}
+	richText.setSelection( selection );
+	richText.setSelectionExclusions( std::move( selectionExclusions ) );
 }
 
 void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
@@ -2255,10 +2377,16 @@ Float UIRichText::getMaxIntrinsicWidth() const {
 Uint32 UIRichText::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
-			bool packing = isPacking();
-			if ( packing )
-				return 1;
 			auto reasons = layoutInvalidationFromMessage( Msg );
+			bool packing = isPacking();
+			if ( packing ) {
+				// An active measurement absorbs notifications, but its retained inline stream
+				// must still observe content changes made by callbacks during that measurement.
+				if ( reasons &
+					 toLayoutInvalidationFlags( LayoutInvalidationReason::IntrinsicSize ) )
+					invalidateIntrinsicSize();
+				return 1;
+			}
 
 			// PaintOnly invalidations must not trigger layout.
 			if ( reasons && ( reasons & ~toLayoutInvalidationFlags(
@@ -2350,6 +2478,34 @@ bool UIRichText::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
+bool UIRichText::isTextSelectionOwner() const {
+	if ( !isVisible() || getDisplay() == CSSDisplay::None || getDisplay() == CSSDisplay::Flex ||
+		 getDisplay() == CSSDisplay::Grid || mRichText.getCharacterCount() == 0 )
+		return false;
+	if ( isType( UI_TYPE_TEXTSPAN ) && asConstType<UITextSpan>()->isInline() ) {
+		Node* parent = getParent();
+		if ( !parent || !parent->isType( UI_TYPE_HTML_WIDGET ) )
+			return false;
+		auto display = parent->asType<UIHTMLWidget>()->getDisplay();
+		return display == CSSDisplay::Flex || display == CSSDisplay::Grid;
+	}
+	return true;
+}
+
+Int64 UIRichText::getTextCharacterCount() const {
+	return mRichText.getCharacterCount();
+}
+
+Int64 UIRichText::findTextCharacterFromWorldPosition( const Vector2f& worldPos ) const {
+	Vector2f nodePos( worldPos );
+	worldToNode( nodePos );
+	nodePos = PixelDensity::dpToPx( nodePos ) - Vector2f( mPaddingPx.Left, mPaddingPx.Top );
+	nodePos.x = eemax( 0.f, nodePos.x );
+	nodePos.y = eemax( 0.f, nodePos.y );
+	return std::clamp( mRichText.findCharacterFromPos( nodePos.asInt() ), (Int64)0,
+					   mRichText.getCharacterCount() );
+}
+
 void UIRichText::onLayoutUpdate() {
 	LayoutInvalidationFlags deferred = mDeferredLayoutReasons;
 	mDeferredLayoutReasons = 0;
@@ -2367,11 +2523,15 @@ void UIRichText::onLayoutUpdate() {
 }
 
 void UIRichText::setTextSelectionEnabled( bool active ) {
+	if ( active == isTextSelectionEnabled() )
+		return;
 	if ( active ) {
 		mFlags |= UI_TEXT_SELECTION_ENABLED;
 	} else {
 		mFlags &= ~UI_TEXT_SELECTION_ENABLED;
 	}
+	if ( auto* controller = getTextSelectionControllerInTree() )
+		controller->refresh();
 }
 
 const Color& UIRichText::getSelectionBackColor() const {
@@ -2397,9 +2557,21 @@ std::pair<Int64, Int64> UIRichText::getTextSelectionRange() const {
 }
 
 void UIRichText::setTextSelectionRange( TextSelectionRange range ) {
+	mRichText.setSelectionExclusions( {} );
 	selCurInit( std::clamp( range.start, (Int64)0, mRichText.getCharacterCount() ) );
 	selCurEnd( std::clamp( range.end, (Int64)0, mRichText.getCharacterCount() ) );
 	onSelectionChange();
+}
+
+void UIRichText::setTextSelectionExclusions( SmallVector<TextSelectionRange, 4> exclusions ) {
+	const auto& current = mRichText.getSelectionExclusions();
+	if ( current.size() == exclusions.size() &&
+		 std::equal(
+			 current.begin(), current.end(), exclusions.begin(),
+			 []( const auto& a, const auto& b ) { return a.start == b.start && a.end == b.end; } ) )
+		return;
+	mRichText.setSelectionExclusions( std::move( exclusions ) );
+	invalidateDraw();
 }
 
 String UIRichText::getSelectionString() const {
@@ -2407,16 +2579,14 @@ String UIRichText::getSelectionString() const {
 }
 
 Uint32 UIRichText::onMouseDown( const Vector2i& position, const Uint32& flags ) {
+	if ( auto* controller = getTextSelectionControllerInTree() ) {
+		controller->onMouseDown( this, position, flags );
+		return UIHTMLWidget::onMouseDown( position, flags );
+	}
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
 		 ( getEventDispatcher()->getMouseDownNode() == this ||
 		   inParentTreeOf( getEventDispatcher()->getMouseDownNode() ) ) ) {
-		Vector2f nodePos( Vector2f( position.x, position.y ) );
-		worldToNode( nodePos );
-		nodePos = PixelDensity::dpToPx( nodePos ) - Vector2f( mPaddingPx.Left, mPaddingPx.Top );
-		nodePos.x = eemax( 0.f, nodePos.x );
-		nodePos.y = eemax( 0.f, nodePos.y );
-
-		Int64 curPos = mRichText.findCharacterFromPos( nodePos.asInt() );
+		Int64 curPos = findTextCharacterFromWorldPosition( position.asFloat() );
 
 		if ( -1 != curPos ) {
 			if ( !mSelecting ) {
@@ -2436,6 +2606,10 @@ Uint32 UIRichText::onMouseDown( const Vector2i& position, const Uint32& flags ) 
 }
 
 Uint32 UIRichText::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( auto* controller = getTextSelectionControllerInTree() ) {
+		controller->onMouseUp( position, flags );
+		return UIHTMLWidget::onMouseUp( position, flags );
+	}
 	if ( isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) ) {
 		mSelecting = false;
 	}
@@ -2444,16 +2618,30 @@ Uint32 UIRichText::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 }
 
 Uint32 UIRichText::onMouseDoubleClick( const Vector2i& position, const Uint32& flags ) {
+	if ( auto* controller = getTextSelectionControllerInTree() ) {
+		if ( controller->onMouseDoubleClick( this, position, flags ) )
+			return 1;
+	}
 	return UIHTMLWidget::onMouseDoubleClick( position, flags );
 }
 
 Uint32 UIRichText::onFocusLoss() {
 	UIHTMLWidget::onFocusLoss();
+	if ( getTextSelectionControllerInTree() )
+		return 1;
 
 	selCurEnd( selCurInit() );
 	onSelectionChange();
 
 	return 1;
+}
+
+Uint32 UIRichText::onKeyDown( const KeyEvent& event ) {
+	if ( auto* controller = getTextSelectionControllerInTree() ) {
+		if ( controller->onKeyDown( event ) )
+			return 1;
+	}
+	return UIHTMLWidget::onKeyDown( event );
 }
 
 void UIRichText::onSelectionChange() {

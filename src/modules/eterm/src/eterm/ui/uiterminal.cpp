@@ -1,3 +1,5 @@
+#include <cmath>
+#include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
@@ -8,6 +10,7 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eterm/ui/uiterminal.hpp>
+#include <eterm/ui/uiterminalfind.hpp>
 
 using namespace EE::Scene;
 
@@ -30,14 +33,17 @@ UITerminal* UITerminal::New( const std::shared_ptr<TerminalDisplay>& terminalDis
 	return eeNew( UITerminal, ( terminalDisplay ) );
 }
 
-UITerminal::~UITerminal() {}
+UITerminal::~UITerminal() {
+	if ( mTerm && mTerminalEventCallbackId )
+		mTerm->popEventCallback( mTerminalEventCallbackId );
+}
 
 Uint32 UITerminal::getType() const {
 	return UI_TYPE_TERMINAL;
 }
 
 bool UITerminal::isType( const Uint32& type ) const {
-	return getType() == type || UIWidget::isType( type );
+	return getType() == type || UITouchDraggableWidget::isType( type );
 }
 
 void UITerminal::draw() {
@@ -50,41 +56,48 @@ void UITerminal::draw() {
 void UITerminal::registerNewTerminal() {
 	if ( !mTerm )
 		return;
-	mTerm->pushEventCallback( [this]( const TerminalDisplay::Event& event ) {
-		switch ( event.type ) {
-			case TerminalDisplay::EventType::TITLE: {
-				if ( !mIsCustomTitle && mTitle != event.eventData ) {
-					mTitle = event.eventData;
-					sendTextEvent( Event::OnTitleChange, mTitle );
+	mTerminalEventCallbackId =
+		mTerm->pushEventCallback( [this]( const TerminalDisplay::Event& event ) {
+			switch ( event.type ) {
+				case TerminalDisplay::EventType::TITLE: {
+					if ( !mIsCustomTitle && mTitle != event.eventData ) {
+						mTitle = event.eventData;
+						sendTextEvent( Event::OnTitleChange, mTitle );
+					}
+					break;
 				}
-				break;
+				case TerminalDisplay::EventType::HISTORY_LENGTH_CHANGE: {
+					if ( !mTerm->isAltScr() )
+						onContentSizeChange();
+					break;
+				}
+				case TerminalDisplay::EventType::SCROLL_HISTORY: {
+					updateScrollPosition();
+					break;
+				}
+				default: {
+				}
 			}
-			case TerminalDisplay::EventType::HISTORY_LENGTH_CHANGE: {
-				if ( !mTerm->getTerminal()->tisaltscr() )
-					onContentSizeChange();
-				break;
-			}
-			case TerminalDisplay::EventType::SCROLL_HISTORY: {
-				updateScrollPosition();
-				break;
-			}
-			default: {
-			}
-		}
-	} );
+		} );
 }
 
 UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay ) :
-	UIWidget( "terminal" ),
+	UITouchDraggableWidget( "terminal" ),
 	mKeyBindings( getInput() ),
 	mVScroll( UIScrollBar::NewVertical() ),
 	mTerm( terminalDisplay ) {
+	setClipType( ClipType::ContentBox );
 	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
 	if ( !terminalDisplay )
 		return;
+	syncFontRenderingConfig();
 	registerNewTerminal();
 	mVScroll->setParent( this );
-	mVScroll->on( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
+	mVScroll->on( Event::OnValueChange, [this]( const Event* ) {
+		updateScroll();
+		if ( !mApplyingScrollController )
+			stopScrollController();
+	} );
 
 	setCommand( "terminal-scroll-up-screen",
 				[this] { mTerm->action( TerminalShortcutAction::SCROLLUP_SCREEN ); } );
@@ -106,14 +119,21 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	setCommand( "terminal-paste-selection",
 				[this] { mTerm->action( TerminalShortcutAction::PASTE_SELECTION ); } );
 	setCommand( "terminal-copy", [this] { mTerm->action( TerminalShortcutAction::COPY ); } );
+	mFindBar = UITerminalFind::New( this );
+	setCommand( "terminal-find", [this] { mFindBar->show(); } );
+	setCommand( "terminal-find-next", [this] { mTerm->navigateSearch( 1 ); } );
+	setCommand( "terminal-find-previous", [this] { mTerm->navigateSearch( -1 ); } );
+	setCommand( "terminal-find-close", [this] { mFindBar->hide(); } );
+	mKeyBindings.addKeybind( { KEY_V, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-paste" );
+	mKeyBindings.addKeybind( { KEY_C, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-copy" );
 	setCommand( "terminal-open-link",
-				[this] { Engine::instance()->openURI( mTerm->getTerminal()->getSelection() ); } );
+				[this] { Engine::instance()->openURI( mTerm->getSelection() ); } );
 	subscribeScheduledUpdate();
 }
 
 int UITerminal::getContentSize() const {
-	if ( mTerm && mTerm->getTerminal() )
-		return mTerm->getTerminal()->getHistorySize() + mTerm->getTerminal()->getNumRows();
+	if ( mTerm )
+		return mTerm->scrollSize() + mTerm->rowCount();
 	return 0;
 }
 
@@ -137,9 +157,18 @@ void UITerminal::onContentSizeChange() {
 	mVScroll->setPixelsSize( mVScroll->getPixelsSize().getWidth(),
 							 getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 
+	// Changing the page step resizes the thumb and therefore changes the mouse-to-value mapping.
+	// Keep both the thumb and its range stable while an asynchronous drag scroll is in flight.
+	if ( mVScroll->isDragging() || mScrollByBar ) {
+		mPendingContentSizeChange = true;
+		return;
+	}
+	mPendingContentSizeChange = false;
 	updateScrollPosition();
 	mVScroll->setPageStep( contentSize > 0 ? ( visibleArea / (Float)contentSize ) : 1.f );
-	updateScroll();
+	// This is a worker-to-UI state synchronization, not a user scroll. Feeding it back through
+	// onScrollChange() queues a stale absolute position if the worker advances in the meantime.
+	syncScrollOffset();
 }
 
 const ScrollBarMode& UITerminal::getVerticalScrollMode() const {
@@ -177,15 +206,22 @@ void UITerminal::onPaddingChange() {
 }
 
 int UITerminal::getVisibleArea() const {
-	return ( mTerm && mTerm->getTerminal() ) ? mTerm->getTerminal()->getNumRows() : 0;
+	return mTerm ? mTerm->rowCount() : 0;
 }
 
 void UITerminal::updateScrollPosition() {
-	if ( mTerm && mTerm->getTerminal() ) {
-		int historySize = mTerm->getTerminal()->getHistorySize();
-		Float val = historySize > 0 ? ( 1.f - mTerm->getTerminal()->scrollPos() / (Float)historySize ) : 1.f;
-		mVScroll->setValue( val, false );
+	if ( !mTerm || mVScroll->isDragging() )
+		return;
+	if ( mScrollByBar ) {
+		if ( mPendingScrollCommand != 0 &&
+			 mTerm->lastAppliedScrollCommand() < mPendingScrollCommand )
+			return;
+		mScrollByBar = false;
+		mPendingScrollCommand = 0;
 	}
+	int historySize = mTerm->scrollSize();
+	Float val = historySize > 0 ? ( 1.f - mTerm->scrollPosition() / (Float)historySize ) : 1.f;
+	mVScroll->setValue( val, false );
 }
 
 int UITerminal::getScrollableArea() const {
@@ -195,23 +231,27 @@ int UITerminal::getScrollableArea() const {
 }
 
 void UITerminal::updateScroll() {
-	int totalScroll = getScrollableArea();
 	int initScroll( mScrollOffset );
-	mScrollOffset = 0;
-
-	if ( mVScroll->isVisible() && totalScroll > 0 )
-		mScrollOffset = totalScroll * mVScroll->getValue();
+	syncScrollOffset();
 
 	if ( initScroll != mScrollOffset )
 		onScrollChange();
 }
 
+void UITerminal::syncScrollOffset() {
+	int totalScroll = getScrollableArea();
+	mScrollOffset = 0;
+
+	if ( mVScroll->isVisible() && totalScroll > 0 )
+		mScrollOffset = totalScroll * mVScroll->getValue();
+}
+
 void UITerminal::onScrollChange() {
-	if ( !mTerm || !mTerm->getTerminal() )
+	if ( !mTerm )
 		return;
 	int scrollTo = ( getScrollableArea() - mScrollOffset );
-	TerminalArg arg( scrollTo );
-	mTerm->getTerminal()->kscrollto( &arg );
+	mPendingScrollCommand = mTerm->scrollTo( scrollTo );
+	mScrollByBar = mPendingScrollCommand != 0;
 }
 
 void UITerminal::setVerticalScrollMode( const ScrollBarMode& Mode ) {
@@ -237,12 +277,12 @@ std::string UITerminal::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::ScrollBarMode:
 			return getScrollViewType() == ScrollViewType::Overlay ? "overlay" : "outside";
 		default:
-			return UIWidget::getPropertyString( propertyDef, propertyIndex );
+			return UITouchDraggableWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
 std::vector<PropertyId> UITerminal::getPropertiesImplemented() const {
-	auto props = UIWidget::getPropertiesImplemented();
+	auto props = UITouchDraggableWidget::getPropertiesImplemented();
 	auto local = { PropertyId::VScrollMode, PropertyId::ScrollBarStyle, PropertyId::ScrollBarMode };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
@@ -304,7 +344,7 @@ bool UITerminal::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		default:
-			return UIWidget::applyProperty( attribute );
+			return UITouchDraggableWidget::applyProperty( attribute );
 	}
 
 	return true;
@@ -314,21 +354,29 @@ const std::shared_ptr<TerminalDisplay>& UITerminal::getTerm() const {
 	return mTerm;
 }
 
-void UITerminal::scheduledUpdate( const Time& ) {
+void UITerminal::scheduledUpdate( const Time& time ) {
+	UITouchDraggableWidget::scheduledUpdate( time );
 	if ( !mTerm )
 		return;
+	auto terminal = mTerm;
 
 	auto mousePos = getInput()->getRelativeMousePos();
 	bool mouseOutsideBounds =
 		mousePos.y < 0 || mousePos.y > getUISceneNode()->getWindow()->getSize().getHeight();
-	mTerm->update( isMouseOverMeOrChildren() && !mouseOutsideBounds );
+	terminal->update( isMouseOverMeOrChildren() && !mouseOutsideBounds );
+	if ( mFindBar && mFindBar->isVisible() )
+		mFindBar->refreshStatus();
+	if ( !mVScroll->isDragging() && ( mScrollByBar || mPendingContentSizeChange ) ) {
+		updateScrollPosition();
+		if ( !mScrollByBar && mPendingContentSizeChange )
+			onContentSizeChange();
+	}
 
-	if ( mTerm->isDirty() && isVisible() )
+	if ( terminal->isDirty() && isVisible() )
 		invalidateDraw();
 
 	if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
-		mVScroll->setVisible( !mTerm->getTerminal()->tisaltscr() )
-			->setEnabled( !mTerm->getTerminal()->tisaltscr() );
+		mVScroll->setVisible( !terminal->isAltScr() )->setEnabled( !terminal->isAltScr() );
 	} else if ( ScrollBarMode::Auto == mVScrollMode ) {
 		if ( mViewType == ScrollViewType::Overlay && mMouseClock.getElapsedTime() > Seconds( 1 ) &&
 			 !mVScroll->isDragging() )
@@ -366,6 +414,19 @@ Font* UITerminal::getFont() const {
 
 void UITerminal::setFont( Font* font ) {
 	mTerm->setFont( font );
+	syncFontRenderingConfig();
+}
+
+void UITerminal::syncFontRenderingConfig() {
+	if ( !mTerm || !getUISceneNode() || !getUISceneNode()->getResourceScope() )
+		return;
+	const FontService* fontService = nullptr;
+	if ( mTerm->getFont() && mTerm->getFont()->getType() == FontType::TTF )
+		fontService = static_cast<FontTrueType*>( mTerm->getFont() )->getFontService();
+	if ( !fontService )
+		fontService = &getUISceneNode()->getResourceScope()->getFontService();
+	mTerm->setFontHinting( fontService->getHinting() );
+	mTerm->setFontAntialiasing( fontService->getAntialiasing() );
 }
 
 void UITerminal::setKeyBindings( const KeyBindings& keyBindings ) {
@@ -395,7 +456,7 @@ void UITerminal::addKeyBindsString( const std::map<std::string, std::string>& bi
 	mKeyBindings.addKeybindsString( binds );
 }
 
-void UITerminal::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds ) {
+void UITerminal::addKeyBinds( const KeyBindings::ShortcutMap& binds ) {
 	mKeyBindings.addKeybinds( binds );
 }
 
@@ -460,24 +521,27 @@ Uint32 UITerminal::onKeyDown( const KeyEvent& event ) {
 		std::string cmd =
 			mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 		if ( !cmd.empty() && ( !mExclusiveMode || cmd == getExclusiveModeToggleCommandName() ) ) {
+			mTerm->suppressKeyUp( event.getScancode() );
 			execute( cmd );
 			return 1;
 		}
 	}
 
-	mTerm->onKeyDown( event.getKeyCode(), event.getChar(), event.getMod(), event.getScancode() );
+	mTerm->onKeyDown( event.getKeyCode(), event.getChar(), event.getMod(), event.getScancode(),
+					  event.isRepeat() );
 	return 1;
 }
 
-Uint32 UITerminal::onKeyUp( const KeyEvent& ) {
+Uint32 UITerminal::onKeyUp( const KeyEvent& event ) {
+	if ( mTerm )
+		mTerm->onKeyUp( event.getKeyCode(), event.getChar(), event.getMod(), event.getScancode() );
 	return 1;
 }
 
 Uint32 UITerminal::onMouseMove( const Vector2i& position, const Uint32& flags ) {
 	if ( mViewType == ScrollViewType::Overlay && ScrollBarMode::Auto == mVScrollMode ) {
 		mMouseClock.restart();
-		bool visible = !mTerm->getTerminal()->tisaltscr() && getContentSize() > getVisibleArea() &&
-					   !mTerm->getTerminal()->hasSelection();
+		bool visible = !mTerm->isAltScr() && getContentSize() > getVisibleArea();
 		mVScroll->setVisible( visible )->setEnabled( visible );
 	}
 
@@ -502,12 +566,65 @@ Uint32 UITerminal::onMouseDoubleClick( const Vector2i& position, const Uint32& f
 }
 
 Uint32 UITerminal::onMouseUp( const Vector2i& position, const Uint32& flags ) {
-	if ( flags & EE_BUTTON_RMASK ) {
+	if ( ( flags & EE_BUTTON_RMASK ) && !mTerm->isAppCapturingMouse() ) {
 		onCreateContextMenu( position, flags );
 		return 1;
 	}
+	const Uint32 modifiers = getInput()->getSanitizedModState();
+	if ( ( modifiers == 0 || modifiers == KEYMOD_SHIFT ) && supportsScrollController() &&
+		 ( flags & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK | EE_BUTTON_WLMASK | EE_BUTTON_WRMASK ) ) )
+		return 1;
 	mTerm->onMouseUp( position, flags );
 	return 1;
+}
+
+Uint32 UITerminal::onMouseWheel( const Vector2f& offset, bool ) {
+	const Uint32 modifiers = getInput()->getSanitizedModState();
+	if ( modifiers != 0 && modifiers != KEYMOD_SHIFT )
+		return 1;
+	if ( offset.y == 0.f )
+		return 0;
+
+	const Float rows =
+		modifiers == KEYMOD_SHIFT ? getVisibleArea() : ( mTerm ? mTerm->getClickStep() : 1.f );
+	const Float multiplier = rows * mTerm->getLineHeight();
+	const Float factor = getWheelScrollFactor( offset.y );
+	return scrollBy( { 0.f, -factor * multiplier }, std::abs( factor ) ) ? 1 : 0;
+}
+
+bool UITerminal::supportsScrollController() const {
+	return true;
+}
+
+Vector2f UITerminal::getScrollControllerPosition() const {
+	const int scrollableArea = eemax( 0, getScrollableArea() );
+	const Float lineHeight = mTerm ? mTerm->getLineHeight() : 0.f;
+	return { 0.f, mTerm ? eeclamp( static_cast<Float>( scrollableArea ) -
+									   static_cast<Float>( mTerm->scrollPosition() ),
+								   0.f, static_cast<Float>( scrollableArea ) ) *
+							  lineHeight
+						: 0.f };
+}
+
+Vector2f UITerminal::getScrollControllerMaxPosition() const {
+	return { 0.f, static_cast<Float>( eemax( 0, getScrollableArea() ) ) *
+					  ( mTerm ? mTerm->getLineHeight() : 0.f ) };
+}
+
+void UITerminal::setScrollControllerPosition( const Vector2f& position ) {
+	const int scrollableArea = getScrollableArea();
+	const Float lineHeight = mTerm ? mTerm->getLineHeight() : 0.f;
+	if ( scrollableArea <= 0 || lineHeight <= 0.f )
+		return;
+
+	const int scrollOffset = static_cast<int>(
+		eefloor( eeclamp( position.y / lineHeight, 0.f, static_cast<Float>( scrollableArea ) ) ) );
+	if ( scrollOffset == mScrollOffset )
+		return;
+
+	mScrollOffset = scrollOffset;
+	mVScroll->setValue( static_cast<Float>( mScrollOffset ) / scrollableArea, false );
+	onScrollChange();
 }
 
 void UITerminal::onPositionChange() {
@@ -523,6 +640,8 @@ void UITerminal::onSizeChange() {
 			  ( mViewType == ScrollViewType::Outside ? mVScroll->getPixelsSize().getWidth() : 0.f ),
 		  mPaddingPx.Bottom } );
 	onContentSizeChange();
+	if ( mFindBar && mFindBar->isVisible() )
+		mFindBar->updatePosition();
 	UIWidget::onSizeChange();
 }
 
@@ -537,17 +656,32 @@ Uint32 UITerminal::onFocus( NodeFocusReason reason ) {
 
 Uint32 UITerminal::onFocusLoss() {
 	getUISceneNode()->getWindow()->stopTextInput();
-	mTerm->setFocus( false );
+	Node* focusNode = getEventDispatcher()->getFocusNode();
+	const bool scrollBarFocus = focusNode == mVScroll || mVScroll->isParentOf( focusNode );
+	if ( !scrollBarFocus ) {
+		mTerm->clearSuppressedKeys();
+		mTerm->setFocus( false );
+	}
 	invalidateDraw();
 	return UIWidget::onFocusLoss();
+}
+
+Uint32 UITerminal::onMessage( const NodeMessage* msg ) {
+	if ( msg->getMsg() == NodeMessage::Focus &&
+		 ( msg->getSender() == mVScroll || mVScroll->isParentOf( msg->getSender() ) ) ) {
+		// The scrollbar is part of the terminal. Keep keyboard/PTY focus on the terminal instead
+		// of reporting a transient focus-out/focus-in pair to the application.
+		setFocus();
+	}
+	return UITouchDraggableWidget::onMessage( msg );
 }
 
 void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
 
-	if ( mTerm->getTerminal()->hasSelection() ) {
-		auto sel( mTerm->getTerminal()->getSelection() );
+	if ( mTerm->hasSelection() ) {
+		auto sel( mTerm->getSelection() );
 
 		if ( LuaPattern::hasMatches( sel, LuaPattern::getURIPattern() ) ) {
 			menuAdd( menu, i18n( "uiterminal_open_link", "Open Link" ), "earth",
@@ -556,16 +690,16 @@ void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	}
 
 	menuAdd( menu, i18n( "uiterminal_copy", "Copy" ), "copy", "terminal-copy" )
-		->setEnabled( mTerm->getTerminal() && mTerm->getTerminal()->hasSelection() );
+		->setEnabled( mTerm->hasSelection() );
 	menuAdd( menu, i18n( "uiterminal_paste", "Paste" ), "paste", "terminal-paste" )
 		->setEnabled( !getUISceneNode()->getWindow()->getClipboard()->getText().empty() );
+	menu->addSeparator();
+	menuAdd( menu, i18n( "uiterminal_find", "Find..." ), "search", "terminal-find" );
 }
 
-Drawable* UITerminal::findIcon( const std::string& name ) {
+DrawablePtr UITerminal::findIcon( const std::string& name ) {
 	UIIcon* icon = getUISceneNode()->findIcon( name );
-	if ( icon )
-		return icon->getSize( mMenuIconSize );
-	return nullptr;
+	return icon ? icon->createDrawable( mMenuIconSize ) : DrawablePtr{};
 }
 
 UIMenuItem* UITerminal::menuAdd( UIPopUpMenu* menu, const String& translateString,
@@ -613,10 +747,15 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 
 void UITerminal::restart() {
 	auto win = SceneManager::instance()->getUISceneNode()->getWindow();
+	if ( mTerm && mTerminalEventCallbackId )
+		mTerm->popEventCallback( mTerminalEventCallbackId );
 	mTerm = TerminalDisplay::create( win, mTerm->getFont(), mTerm->getFontSize(), mTerm->getSize(),
 									 mTerm->getProgram(), mTerm->getArgs(), mTerm->getWorkingDir(),
 									 mTerm->getHistorySize(), nullptr, mTerm->useFrameBuffer(),
 									 mTerm->getKeepAlive(), mTerm->getEnv() );
+	mTerminalEventCallbackId = 0;
+	registerNewTerminal();
+	syncFontRenderingConfig();
 }
 
 }} // namespace eterm::UI

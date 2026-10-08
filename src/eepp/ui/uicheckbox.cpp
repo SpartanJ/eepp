@@ -84,9 +84,9 @@ void UICheckBox::onThemeLoaded() {
 void UICheckBox::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( getSize().getWidth() == 0 ) {
-			setInternalPixelsWidth( (int)mTextCache.getTextWidth() +
-									mActiveButton->getPixelsSize().getWidth() + mTextSeparation +
-									mPaddingPx.Left + mPaddingPx.Right );
+			setInternalPixelsWidth(
+				(int)mTextCache.getTextWidth() + mActiveButton->getPixelsSize().getWidth() +
+				PixelDensity::dpToPx( mTextSeparation ) + mPaddingPx.Left + mPaddingPx.Right );
 		}
 
 		if ( getSize().getHeight() == 0 ) {
@@ -239,7 +239,6 @@ std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Selected:
-		case PropertyId::Checked:
 		case PropertyId::Value:
 			return isChecked() ? "true" : "false";
 		case PropertyId::CheckMode:
@@ -270,7 +269,6 @@ bool UICheckBox::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Selected:
-		case PropertyId::Checked:
 		case PropertyId::Value:
 			setChecked( attribute.asBool() );
 			break;

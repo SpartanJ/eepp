@@ -4,7 +4,9 @@
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
+#include <eepp/system/singleton.hpp>
+#include <eepp/ui/doc/hextlanguagetype.hpp>
 #include <eepp/ui/doc/languages/c.hpp>
 #include <eepp/ui/doc/languages/configfile.hpp>
 #include <eepp/ui/doc/languages/cpp.hpp>
@@ -18,6 +20,7 @@
 #include <eepp/ui/doc/languages/xml.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
+#include <cctype>
 #include <nlohmann/json.hpp>
 #include <unordered_set>
 
@@ -565,12 +568,14 @@ SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle )
 	syntaxStyle.mLanguageIndex = mDefinitions.size();
 	syntaxStyle.compile();
 	mDefinitions.emplace_back( std::make_shared<SyntaxDefinition>( std::move( syntaxStyle ) ) );
+	mExtensionManyLanguagesCache.clear();
 	return *mDefinitions.back().get();
 }
 
 void SyntaxDefinitionManager::addPreDefinition( SyntaxPreDefinition&& preDefinition ) {
 	Lock l( mMutex );
 	mPreDefinitions.emplace_back( std::move( preDefinition ) );
+	mExtensionManyLanguagesCache.clear();
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::getPlainDefinition() const {
@@ -700,6 +705,60 @@ std::vector<std::string> SyntaxDefinitionManager::getExtensionsPatternsSupported
 		vexts.emplace_back( std::move( ext ) );
 	std::sort( vexts.begin(), vexts.end() );
 	return vexts;
+}
+
+static std::vector<std::string> fileExtensionsFromPattern( std::string_view pattern ) {
+	if ( pattern.size() < 4 || !pattern.starts_with( "%." ) || pattern.back() != '$' )
+		return {};
+	pattern.remove_prefix( 2 );
+	pattern.remove_suffix( 1 );
+	std::vector<std::string> extensions( 1 );
+	for ( size_t i = 0; i < pattern.size(); ++i ) {
+		char character = pattern[i];
+		if ( character == '%' ) {
+			if ( ++i >= pattern.size() || std::isalnum( static_cast<unsigned char>( pattern[i] ) ) )
+				return {};
+			character = pattern[i];
+		} else if ( !std::isalnum( static_cast<unsigned char>( character ) ) && character != '_' ) {
+			return {};
+		}
+		for ( auto& extension : extensions )
+			extension += character;
+		if ( i + 1 < pattern.size() && pattern[i + 1] == '?' ) {
+			const auto variants = extensions.size();
+			for ( size_t variant = 0; variant < variants; ++variant ) {
+				auto withoutOptional = extensions[variant];
+				withoutOptional.pop_back();
+				extensions.emplace_back( std::move( withoutOptional ) );
+			}
+			++i;
+		}
+	}
+	return extensions;
+}
+
+std::vector<std::string> SyntaxDefinitionManager::getFileExtensions() const {
+	Lock l( mMutex );
+	std::unordered_set<std::string> extensions;
+	auto addPatterns = [&extensions]( const auto& definition ) {
+		for ( const auto& pattern : definition.getFiles() ) {
+			for ( auto& extension : fileExtensionsFromPattern( pattern ) ) {
+				String::toLowerInPlace( extension );
+				extensions.emplace( std::move( extension ) );
+			}
+		}
+	};
+	for ( const auto& definition : mDefinitions )
+		addPatterns( *definition );
+	for ( const auto& definition : mPreDefinitions )
+		addPatterns( definition );
+
+	std::vector<std::string> sortedExtensions;
+	sortedExtensions.reserve( extensions.size() );
+	for ( auto& extension : extensions )
+		sortedExtensions.emplace_back( std::move( extension ) );
+	std::sort( sortedExtensions.begin(), sortedExtensions.end() );
+	return sortedExtensions;
 }
 
 const SyntaxDefinition* SyntaxDefinitionManager::getPtrByLSPName( const std::string& name ) const {
@@ -1102,6 +1161,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 						Lock l( mMutex );
 						mDefinitions[pos.value()] =
 							std::make_shared<SyntaxDefinition>( std::move( res ) );
+						mExtensionManyLanguagesCache.clear();
 					} else {
 						if ( addedLangs )
 							addedLangs->push_back( res.getLanguageName() );
@@ -1109,6 +1169,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 						res.mLanguageIndex = mDefinitions.size();
 						mDefinitions.emplace_back(
 							std::make_shared<SyntaxDefinition>( std::move( res ) ) );
+						mExtensionManyLanguagesCache.clear();
 					}
 				}
 			}
@@ -1123,6 +1184,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 					Lock l( mMutex );
 					mDefinitions[pos.value()] =
 						std::make_shared<SyntaxDefinition>( std::move( res ) );
+					mExtensionManyLanguagesCache.clear();
 				} else {
 					if ( addedLangs )
 						addedLangs->push_back( res.getLanguageName() );
@@ -1130,6 +1192,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 					res.mLanguageIndex = mDefinitions.size();
 					mDefinitions.emplace_back(
 						std::make_shared<SyntaxDefinition>( std::move( res ) ) );
+					mExtensionManyLanguagesCache.clear();
 				}
 			}
 		}
@@ -1150,10 +1213,10 @@ bool SyntaxDefinitionManager::loadFromFile( const std::string& fpath ) {
 		IOStreamFile IOS( fpath );
 
 		return loadFromStream( IOS );
-	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+	} else if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string tgPath( fpath );
 
-		Pack* tPack = PackManager::instance()->exists( tgPath );
+		Pack* tPack = PackRegistry::instance()->exists( tgPath );
 
 		if ( NULL != tPack ) {
 			return loadFromPack( tPack, tgPath );
@@ -1257,55 +1320,52 @@ bool SyntaxDefinitionManager::extensionCanRepresentManyLanguages( std::string ex
 	if ( extension[0] != '.' )
 		extension = '.' + extension;
 
-	std::unordered_set<std::string> count;
-	{
-		Lock l( mMutex );
-		for ( const auto& definition : mDefinitions ) {
-			for ( const auto& ext : definition->getFiles() ) {
-				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
-					 String::endsWith( ext, "$" ) ) {
-					LuaPattern words( ext );
-					int start, end;
-					if ( words.find( extension, start, end ) ) {
-						count.insert( definition->getLanguageName() );
-						if ( count.size() > 1 )
-							return true;
-						break;
-					}
-				} else if ( extension == ext ) {
-					count.insert( definition->getLanguageName() );
-					if ( count.size() > 1 )
-						return true;
-					break;
-				}
+	Lock l( mMutex );
+	if ( auto it = mExtensionManyLanguagesCache.find( extension );
+		 it != mExtensionManyLanguagesCache.end() )
+		return it->second;
+
+	auto supportsExtension = [&extension]( const std::vector<std::string>& files ) {
+		for ( const auto& ext : files ) {
+			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+				 String::endsWith( ext, "$" ) ) {
+				LuaPattern pattern( ext );
+				int start, end;
+				if ( pattern.find( extension, start, end ) )
+					return true;
+			} else if ( extension == ext ) {
+				return true;
 			}
+		}
+		return false;
+	};
+
+	const std::string* matchedLanguage = nullptr;
+	auto foundDifferentLanguage = [&matchedLanguage]( const std::string& language ) {
+		if ( !matchedLanguage ) {
+			matchedLanguage = &language;
+			return false;
+		}
+		return *matchedLanguage != language;
+	};
+
+	for ( const auto& definition : mDefinitions ) {
+		if ( supportsExtension( definition->getFiles() ) &&
+			 foundDifferentLanguage( definition->getLanguageName() ) ) {
+			mExtensionManyLanguagesCache.emplace( extension, true );
+			return true;
 		}
 	}
 
-	{
-		Lock l( mMutex );
-		for ( const auto& preDefinition : mPreDefinitions ) {
-			for ( const auto& ext : preDefinition.getFiles() ) {
-				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
-					 String::endsWith( ext, "$" ) ) {
-					LuaPattern words( ext );
-					int start, end;
-					if ( words.find( extension, start, end ) ) {
-						count.insert( preDefinition.getLanguageName() );
-						if ( count.size() > 1 )
-							return true;
-						break;
-					}
-				} else if ( extension == ext ) {
-					count.insert( preDefinition.getLanguageName() );
-					if ( count.size() > 1 )
-						return true;
-					break;
-				}
-			}
+	for ( const auto& preDefinition : mPreDefinitions ) {
+		if ( supportsExtension( preDefinition.getFiles() ) &&
+			 foundDifferentLanguage( preDefinition.getLanguageName() ) ) {
+			mExtensionManyLanguagesCache.emplace( extension, true );
+			return true;
 		}
 	}
 
+	mExtensionManyLanguagesCache.emplace( std::move( extension ), false );
 	return false;
 }
 

@@ -5,6 +5,7 @@
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include "snippetparser.hpp"
+#include "usersnippetstore.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/mutex.hpp>
@@ -22,6 +23,8 @@ class AutoCompletePlugin : public Plugin {
   public:
 	class Suggestion {
 	  public:
+		enum class Source { LocalSymbol, LSP, UserSnippet, SnippetChoice };
+
 		LSPCompletionItemKind kind{ LSPCompletionItemKind::Text };
 		std::string text;
 		std::string detail;
@@ -30,7 +33,11 @@ class AutoCompletePlugin : public Plugin {
 		std::string insertText;
 		LSPInsertTextFormat insertTextFormat{ LSPInsertTextFormat::PlainText };
 		double score{ 0 };
+		int sourcePriority{ 0 };
 		LSPMarkupContent documentation;
+		size_t identityHash{ 0 };
+		std::string matchedPrefix;
+		Source source{ Source::LocalSymbol };
 
 		void setScore( const double& score ) const {
 			const_cast<Suggestion*>( this )->score = score;
@@ -48,11 +55,16 @@ class AutoCompletePlugin : public Plugin {
 			range( range ),
 			insertText( std::move( insertText ) ),
 			insertTextFormat( insertTextFormat ),
-			documentation( doc ) {};
+			documentation( std::move( doc ) ),
+			source( Source::LSP ) {};
 
 		bool operator<( const Suggestion& other ) const { return getCmpStr() < other.getCmpStr(); }
 
-		bool operator==( const Suggestion& other ) const { return text == other.text; }
+		bool operator==( const Suggestion& other ) const {
+			if ( source == Source::UserSnippet || other.source == Source::UserSnippet )
+				return source == other.source && identityHash == other.identityHash;
+			return text == other.text;
+		}
 
 	  protected:
 		const std::string* getCmpStr() const { return !sortText.empty() ? &sortText : &text; }
@@ -83,19 +95,40 @@ class AutoCompletePlugin : public Plugin {
 
 	bool isReady() const override { return true; }
 
+	bool hasSettingsPage() const override { return true; }
+
+	void registerSettings( SettingsPage& page ) override;
+
 	void onRegister( UICodeEditor* ) override;
+
 	void onUnregister( UICodeEditor* ) override;
+
 	bool onKeyDown( UICodeEditor*, const KeyEvent& ) override;
+
 	bool onTextInput( UICodeEditor*, const TextInputEvent& ) override;
+
 	void update( UICodeEditor* ) override;
+
 	void postDraw( UICodeEditor*, const Vector2f& startScroll, const Float& lineHeight,
 				   const TextPosition& cursor ) override;
+
 	void drawBeforeLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
 							 const Float& ) override;
+
 	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& ) override;
-	bool onMouseUp( UICodeEditor*, const Vector2i&, const Uint32& ) override;
+
+	bool onMouseWheel( UICodeEditor*, const Vector2i&, const Vector2f&, bool ) override;
+
 	bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& ) override;
+
 	bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& ) override;
+
+	void onFileSystemEvent( const FileEvent&, const FileInfo& ) override;
+
+	FileSystemListenerOptions getFileSystemListenerOptions() const override;
+
+	void onLoadProject( const std::string& projectFolder,
+						const std::string& projectStatePath ) override;
 
 	const Rectf& getBoxPadding() const;
 
@@ -178,12 +211,28 @@ class AutoCompletePlugin : public Plugin {
 	size_t mMaxLabelCharacters{ 100 };
 	String::HashType mConfigHash{ 0 };
 	std::unordered_map<std::string, std::string> mKeyBindings;
-	UnorderedMap<std::string, KeyBindings::Shortcut> mShortcuts;
+	struct Shortcuts {
+		KeyBindings::Shortcut closeSuggestion;
+		KeyBindings::Shortcut prevSuggestion;
+		KeyBindings::Shortcut nextSuggestion;
+		KeyBindings::Shortcut firstSuggestion;
+		KeyBindings::Shortcut lastSuggestion;
+		KeyBindings::Shortcut prevSuggestionPage;
+		KeyBindings::Shortcut nextSuggestionPage;
+		KeyBindings::Shortcut pickSuggestion;
+		KeyBindings::Shortcut pickSuggestionAlt;
+		KeyBindings::Shortcut pickSuggestionAlt2;
+		KeyBindings::Shortcut updateSuggestions;
+		KeyBindings::Shortcut closeSignatureHelp;
+		KeyBindings::Shortcut prevSignatureHelp;
+		KeyBindings::Shortcut nextSignatureHelp;
+	} mShortcuts;
 	std::string mMaxSuggestionDocumentationWidth{ "100%" };
 	std::string mMaxSignatureHelperWidth{ "90%" };
 	bool mSignatureHelpMultiLine{ true };
 	bool mSuggestionDocumentation{ true };
 	bool mSignatureHelpDocumentation{ true };
+	bool mLoadVSCodeSnippets{ true };
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
@@ -216,23 +265,60 @@ class AutoCompletePlugin : public Plugin {
 	UnorderedMap<TextDocument*, std::unique_ptr<SnippetDocumentClient>> mSnippetClients;
 	bool mChangingSnippetSelection{ false };
 	bool mSnippetChoiceSuggestions{ false };
+	UserSnippetStore mUserSnippetStore;
+	Mutex mSnippetLoadMutex;
+	std::string mUserSnippetsPath;
+	std::string mSnippetWorkspaceFolder;
+	std::string mVSCodeSnippetsPath;
+	std::string mEcodeSnippetsPath;
+	std::string mSnippetEventPathBuffer;
+	std::atomic<Uint64> mSnippetWorkspaceGeneration{ 0 };
+	std::atomic<Uint32> mSnippetJobs{ 0 };
+	Uint64 mSnippetLocatorProviderId{ 0 };
 
 	explicit AutoCompletePlugin( PluginManager* pluginManager, bool sync );
 
 	void load( PluginManager* pluginManager );
 
+	void unregisterEditors() override;
+
 	void resetSuggestions( UICodeEditor* editor );
 
 	void updateSuggestions( const std::string& symbol, UICodeEditor* editor );
 
-	SymbolsList getDocumentSymbols( TextDocument* );
+	SymbolsList getDocumentSymbols( const std::shared_ptr<TextDocument>& doc );
 
-	void updateDocCache( TextDocument* doc );
+	void updateDocCache( std::shared_ptr<TextDocument> doc );
 
 	std::string getPartialSymbol( TextDocument* doc );
 
 	void runUpdateSuggestions( const std::string& symbol, const SymbolsList& symbols,
 							   UICodeEditor* editor, bool fromDocCache );
+
+	SymbolsList getUserSnippetSuggestions( UICodeEditor* editor, const std::string& symbol,
+										   size_t maxResults ) const;
+
+	std::string getUserSnippetInput( UICodeEditor* editor ) const;
+
+	void loadSnippetDirectory( const std::string& path, UserSnippetSource source,
+							   bool languageFiles );
+
+	void loadSnippetFile( const std::string& path, UserSnippetSource source, bool languageFiles );
+
+	void setSnippetWorkspaceFolder( std::string workspaceFolder );
+
+	void scheduleSnippetFileUpdate( std::string path, UserSnippetSource source, bool languageFiles,
+									bool remove );
+
+	void registerSnippetLocatorProvider();
+
+	void unregisterSnippetLocatorProvider();
+
+	void insertSnippet( UICodeEditor* editor, std::string_view body,
+						const Suggestion* suggestion = nullptr );
+
+	SnippetParser::VariableMap snippetVariables( TextDocument& doc, const TextRange& selection,
+												 size_t cursorIndex ) const;
 
 	void updateLangCache( const std::string& langName );
 

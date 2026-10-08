@@ -6,6 +6,10 @@
 #include <eepp/math/rect.hpp>
 #include <eepp/ui/csslayouttypes.hpp>
 
+namespace EE { namespace Graphics {
+class Text;
+}} // namespace EE::Graphics
+
 namespace EE { namespace UI {
 
 class EE_API UIHTMLListStyle {
@@ -15,6 +19,11 @@ class EE_API UIHTMLListStyle {
 	static bool isTextMarker( CSSListStyleType type );
 
 	static String getTextMarkerString( CSSListStyleType type, int index );
+
+	static void syncTextMarkerColor( Graphics::Text& marker, const Color& color );
+
+	static Vector2f getTextMarkerPosition( const Vector2f& screenPos, const Rectf& paddingPx,
+										   Float textWidth, Float fontSize );
 
 	static void drawPrimitiveMarker( CSSListStyleType type, const Vector2f& screenPos,
 									 const Rectf& paddingPx,

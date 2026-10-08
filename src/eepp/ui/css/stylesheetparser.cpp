@@ -8,7 +8,7 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/keyframesdefinition.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
@@ -44,9 +44,9 @@ bool StyleSheetParser::loadFromStream( IOStream& stream ) {
 
 bool StyleSheetParser::loadFromFile( const std::string& filename ) {
 	if ( !FileSystem::fileExists( filename ) &&
-		 PackManager::instance()->isFallbackToPacksActive() ) {
+		 PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string path( filename );
-		Pack* pack = PackManager::instance()->exists( path );
+		Pack* pack = PackRegistry::instance()->exists( path );
 
 		if ( NULL != pack ) {
 			return loadFromPack( pack, path );
@@ -135,6 +135,17 @@ bool StyleSheetParser::parse( std::string& css, std::vector<std::string>& import
 					} else if ( String::startsWith( trimBuf, "@keyframes" ) ||
 								String::startsWith( trimBuf, "@-webkit-keyframes" ) ) {
 						keyframesParse( css, rs, pos, buffer );
+					} else if ( !String::startsWith( trimBuf, "@font-face" ) &&
+								!String::startsWith( trimBuf, "@glyph-icon" ) ) {
+						// Unsupported block at-rules must not leak their nested contents into the
+						// top-level rule stream. We cannot preserve their conditional or cascade
+						// semantics, so skip the complete balanced block.
+						std::size_t closePos = String::findCloseBracket( css, pos - 1, '{', '}' );
+						if ( closePos != std::string::npos ) {
+							rs = ReadingSelector;
+							pos = closePos + 1;
+							buffer.clear();
+						}
 					}
 				}
 
@@ -175,8 +186,16 @@ int StyleSheetParser::readSelector( const std::string& css, ReadState& rs, std::
 		if ( css[pos] != '\n' && css[pos] != '\r' && css[pos] != '\t' )
 			buffer += css[pos];
 
-		if ( css[pos] == ';' && String::startsWith( buffer, "@import" ) ) {
-			return initialPos;
+		if ( css[pos] == ';' ) {
+			std::string_view statement = String::trim( std::string_view{ buffer } );
+			if ( String::startsWith( statement, "@import" ) )
+				return initialPos;
+			if ( !statement.empty() && statement.front() == '@' ) {
+				// Statement at-rules (for example @charset) end here. Do not let them become
+				// part of the selector preceding the next block.
+				buffer.clear();
+				initialPos = pos + 1;
+			}
 		}
 
 		pos++;
@@ -275,8 +294,8 @@ std::string StyleSheetParser::importCSS( std::string path,
 		importedList.push_back( path );
 		return std::string( reinterpret_cast<const char*>( buffer.get() ) );
 	} else {
-		if ( PackManager::instance()->isFallbackToPacksActive() ) {
-			Pack* pack = PackManager::instance()->exists( path );
+		if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
+			Pack* pack = PackRegistry::instance()->exists( path );
 
 			if ( std::find( importedList.begin(), importedList.end(), path ) ==
 				 importedList.end() ) {

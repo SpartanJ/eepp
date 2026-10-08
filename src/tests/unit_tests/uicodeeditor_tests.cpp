@@ -1,4 +1,5 @@
-#include "utest.h"
+#include "utest.hpp"
+#include <atomic>
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -6,6 +7,7 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 #include "../../tools/ecode/keybindingshelper.cpp"
 
@@ -14,6 +16,274 @@ using namespace EE::UI;
 using namespace EE::UI::Doc;
 using namespace EE::Scene;
 using namespace EE::System;
+
+class TestableCodeEditor : public UICodeEditor {
+  public:
+	TestableCodeEditor() : UICodeEditor() {}
+
+	bool isLongestLineWidthDirtyForTest() const { return mLongestLineWidthDirty; }
+
+	void clearLongestLineWidthDirtyForTest() { mLongestLineWidthDirty = false; }
+
+	TextRanges getHighlightWordCacheForTest() {
+		Lock l( mHighlightWordCacheMutex );
+		return mHighlightWordCache;
+	}
+
+	void clearHighlightWordCacheForTest() {
+		Lock l( mHighlightWordCacheMutex );
+		mHighlightWordCache.clear();
+	}
+};
+
+template <typename Predicate>
+static bool waitForCondition( Predicate&& predicate, const Time& timeout = Seconds( 10 ) ) {
+	Clock clock;
+	while ( !predicate() && clock.getElapsedTime() < timeout )
+		Sys::sleep( Milliseconds( 1 ) );
+	return predicate();
+}
+
+static bool waitForThreadPool( const std::shared_ptr<ThreadPool>& threadPool ) {
+	auto completed = std::make_shared<std::atomic_bool>( false );
+	threadPool->run( [completed] { completed->store( true, std::memory_order_release ); } );
+	return waitForCondition( [completed] { return completed->load( std::memory_order_acquire ); } );
+}
+
+static void dispatchDebouncedEditorWork() {
+	Sys::sleep( Milliseconds( 20 ) );
+	SceneManager::instance()->update();
+}
+
+static String makeLargeMarkdownDocument() {
+	constexpr size_t blockCount = 16384;
+	String text;
+	text.reserve( blockCount * 80 );
+	for ( size_t i = 0; i < blockCount; ++i ) {
+		text.append( "## Heading\nInline `code` and ``span``.\n```cpp\nvalue\n```\n" );
+	}
+	text.append( "unique-final-token\n" );
+	return text;
+}
+
+UTEST( SyntaxColorScheme, CopiesShareStorageAndDetachOnMutation ) {
+	auto defaults = SyntaxColorScheme::getDefaultDark();
+	auto copy = defaults;
+	EXPECT_TRUE( &defaults.getSyntaxStyle( SyntaxStyleTypes::Keyword ) ==
+				 &copy.getSyntaxStyle( SyntaxStyleTypes::Keyword ) );
+
+	const auto defaultKeyword = defaults.getSyntaxStyle( SyntaxStyleTypes::Keyword ).color;
+	copy.setSyntaxStyle( SyntaxStyleTypes::Keyword, SyntaxColorScheme::Style{ Color::Red } );
+	EXPECT_TRUE( copy.getSyntaxStyle( SyntaxStyleTypes::Keyword ).color == Color::Red );
+	EXPECT_TRUE( defaults.getSyntaxStyle( SyntaxStyleTypes::Keyword ).color == defaultKeyword );
+	EXPECT_TRUE( &defaults.getSyntaxStyle( SyntaxStyleTypes::Keyword ) !=
+				 &copy.getSyntaxStyle( SyntaxStyleTypes::Keyword ) );
+}
+
+UTEST( SyntaxDefinitionManager, ManyLanguageExtensionCacheInvalidatesOnAdd ) {
+	auto* manager = SyntaxDefinitionManager::instance();
+	const std::string extension( ".eepp-many-languages-cache-test" );
+	const std::string preDefinitionExtension( ".eepp-many-languages-predefinition-cache-test" );
+
+	EXPECT_FALSE( manager->extensionCanRepresentManyLanguages( extension ) );
+	manager->add( { "EEPP Cache Test A", { extension }, {} } );
+	EXPECT_FALSE( manager->extensionCanRepresentManyLanguages( extension ) );
+	manager->add( { "EEPP Cache Test B", { extension }, {} } );
+	EXPECT_TRUE( manager->extensionCanRepresentManyLanguages( extension ) );
+	EXPECT_TRUE( manager->extensionCanRepresentManyLanguages( extension ) );
+
+	manager->add( { "EEPP Cache Test C", { preDefinitionExtension }, {} } );
+	EXPECT_FALSE( manager->extensionCanRepresentManyLanguages( preDefinitionExtension ) );
+	manager->addPreDefinition( { "EEPP Cache Test PreDefinition",
+								 []() -> SyntaxDefinition& {
+									 return SyntaxDefinitionManager::instance()->add(
+										 { "EEPP Cache Test PreDefinition", {}, {} } );
+								 },
+								 { preDefinitionExtension } } );
+	EXPECT_TRUE( manager->extensionCanRepresentManyLanguages( preDefinitionExtension ) );
+}
+
+UTEST( MainThreadLifetime, InvalidatedCallbacksDoNotRun ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - main thread lifetime test" } );
+	int owner = 42;
+	MainThreadLifetime<int> lifetime( &owner, app.getUI() );
+	auto weak = lifetime.weakHandle();
+	bool called = false;
+	weak.run( [&called]( int* ) { called = true; } );
+	lifetime.invalidate();
+	SceneManager::instance()->update();
+	EXPECT_FALSE( called );
+}
+
+UTEST( MainThreadLifetime, LiveCallbacksReceiveOwner ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - main thread lifetime test" } );
+	int owner = 42;
+	MainThreadLifetime<int> lifetime( &owner, app.getUI() );
+	int value = 0;
+	lifetime.weakHandle().run( [&value]( int* object ) { value = *object; } );
+	SceneManager::instance()->update();
+	EXPECT_EQ( 42, value );
+}
+
+UTEST( MainThreadLifetime, DispatcherCanBeAttachedAfterConstruction ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - deferred dispatcher test" } );
+	int owner = 42;
+	MainThreadLifetime<int> lifetime( &owner, nullptr );
+	bool called = false;
+	lifetime.weakHandle().run( [&called]( int* ) { called = true; } );
+	SceneManager::instance()->update();
+	EXPECT_FALSE( called );
+
+	lifetime.setDispatcher( app.getUI() );
+	lifetime.weakHandle().run( [&called]( int* ) { called = true; } );
+	SceneManager::instance()->update();
+	EXPECT_TRUE( called );
+}
+
+UTEST( UICodeEditor, DefersLongestLineMeasurementForLargeChanges ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - deferred longest line test" } );
+	auto* editor = eeNew( TestableCodeEditor, () );
+	editor->setPixelsSize( 160, 80 );
+	editor->setParent( app.getUI()->getRoot() );
+	editor->setFindLongestLineWidthUpdateFrequency( Time::Zero );
+	app.getUI()->flushDirtyStyleAndLayout();
+	editor->setLineWrapMode( LineWrapMode::NoWrap );
+	EXPECT_EQ( LineWrapMode::NoWrap, editor->getLineWrapMode() );
+	editor->clearLongestLineWidthDirtyForTest();
+
+	String text;
+	for ( size_t i = 0; i < 64; ++i )
+		text += i == 32 ? String( 256, 'x' ) + "\n" : "short\n";
+	editor->getDocument().textInput( text );
+
+	EXPECT_TRUE( editor->isLongestLineWidthDirtyForTest() );
+
+	editor->clearLongestLineWidthDirtyForTest();
+	editor->getDocument().insert( 0, { 0, 0 }, "!" );
+	EXPECT_FALSE( editor->isLongestLineWidthDirtyForTest() );
+
+	editor->getDocument().reset();
+	editor->clearLongestLineWidthDirtyForTest();
+	editor->getDocument().textInput( String( 4097, 'x' ) );
+	EXPECT_TRUE( editor->isLongestLineWidthDirtyForTest() );
+
+	editor->clearLongestLineWidthDirtyForTest();
+	editor->getDocument().insert( 0, { 0, 0 }, "!" );
+	EXPECT_TRUE( editor->isLongestLineWidthDirtyForTest() );
+
+	eeDelete( editor );
+}
+
+UTEST( UICodeEditor, AsyncHighlightRejectsStaleResultsAfterLargePaste ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - async highlight test" } );
+	auto threadPool = ThreadPool::createShared( 1 );
+	app.getUI()->setThreadPool( threadPool );
+	auto* editor = eeNew( TestableCodeEditor, () );
+	editor->setParent( app.getUI()->getRoot() );
+	editor->getDocument().textInput( makeLargeMarkdownDocument() );
+
+	editor->clearHighlightWordCacheForTest();
+	editor->setHighlightWord( { "`" } );
+	dispatchDebouncedEditorWork();
+	ASSERT_TRUE( waitForThreadPool( threadPool ) );
+
+	// The old result is already queued for the main thread. Changing the query before pumping that
+	// callback must make the result stale and leave the cache untouched.
+	editor->setHighlightWord( { "unique-final-token" } );
+	SceneManager::instance()->update();
+	EXPECT_TRUE( editor->getHighlightWordCacheForTest().empty() );
+
+	dispatchDebouncedEditorWork();
+	ASSERT_TRUE( waitForThreadPool( threadPool ) );
+	SceneManager::instance()->update();
+	auto ranges = editor->getHighlightWordCacheForTest();
+	ASSERT_EQ( size_t{ 1 }, ranges.size() );
+
+	// Reproduce the #956 workload: a fresh multiline paste followed by rapid literal backtick
+	// queries while an earlier highlight scan can still be publishing its result.
+	for ( size_t i = 0; i < 4; ++i ) {
+		editor->setHighlightWord( { "`" } );
+		dispatchDebouncedEditorWork();
+		editor->setHighlightWord( { "``" } );
+		editor->setHighlightWord( { "```" } );
+		dispatchDebouncedEditorWork();
+		ASSERT_TRUE( waitForThreadPool( threadPool ) );
+		SceneManager::instance()->update();
+	}
+
+	EXPECT_STDSTREQ( "```", editor->getHighlightWord().text.toUtf8() );
+	auto expected = editor->getDocument().findAll( "```" ).ranges();
+	EXPECT_TRUE( expected == editor->getHighlightWordCacheForTest() );
+
+	eeDelete( editor );
+	app.getUI()->setThreadPool( nullptr );
+	threadPool.reset();
+}
+
+UTEST( UICodeEditor, AsyncHighlightSurvivesEditorDestruction ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - async highlight destruction test" } );
+	auto threadPool = ThreadPool::createShared( 1 );
+	app.getUI()->setThreadPool( threadPool );
+	std::atomic_bool blockerStarted{ false };
+	std::atomic_bool releaseBlocker{ false };
+	threadPool->run( [&] {
+		blockerStarted.store( true, std::memory_order_release );
+		while ( !releaseBlocker.load( std::memory_order_acquire ) )
+			Sys::sleep( Milliseconds( 1 ) );
+	} );
+	const bool started =
+		waitForCondition( [&] { return blockerStarted.load( std::memory_order_acquire ); } );
+	if ( !started )
+		releaseBlocker.store( true, std::memory_order_release );
+	ASSERT_TRUE( started );
+
+	auto* editor = eeNew( TestableCodeEditor, () );
+	editor->setParent( app.getUI()->getRoot() );
+	editor->getDocument().textInput( makeLargeMarkdownDocument() );
+
+	editor->setHighlightWord( { "missing-highlight-value" } );
+	dispatchDebouncedEditorWork();
+	const Uint64 tag = reinterpret_cast<Uint64>( editor );
+	const bool searchQueued = threadPool->existsTagInQueue( tag );
+	releaseBlocker.store( true, std::memory_order_release );
+	ASSERT_TRUE( searchQueued );
+	ASSERT_TRUE( waitForCondition( [&] { return !threadPool->existsTagInQueue( tag ); } ) );
+	eeDelete( editor );
+
+	app.getUI()->setThreadPool( nullptr );
+	threadPool.reset();
+	SceneManager::instance()->update();
+}
+
+UTEST( UICodeEditor, DefaultKeybindingCacheTracksConfiguredModifiers ) {
+	const Uint32 originalDefaultModifier = KeyMod::getDefaultModifier();
+	const Uint32 originalSecondaryModifier = KeyMod::getDefaultSecondaryModifier();
+
+	auto defaultBindings = UICodeEditor::getDefaultKeybindings();
+	const auto& defaultShortcutMap = defaultBindings->getShortcutMap();
+	auto copy = defaultShortcutMap.find( KeyBindings::Shortcut{ KEY_C, originalDefaultModifier } );
+	EXPECT_TRUE( copy != defaultShortcutMap.end() );
+	if ( copy != defaultShortcutMap.end() )
+		EXPECT_STREQ( "copy", copy->second.c_str() );
+
+	KeyMod::setDefaultModifier( KEYMOD_LALT );
+	KeyMod::setDefaultSecondaryModifier( KEYMOD_META );
+	auto reconfiguredBindings = UICodeEditor::getDefaultKeybindings();
+	const auto& reconfiguredShortcutMap = reconfiguredBindings->getShortcutMap();
+	copy = reconfiguredShortcutMap.find( KeyBindings::Shortcut{ KEY_C, KEYMOD_LALT } );
+	EXPECT_TRUE( copy != reconfiguredShortcutMap.end() );
+	if ( copy != reconfiguredShortcutMap.end() )
+		EXPECT_STREQ( "copy", copy->second.c_str() );
+
+	KeyMod::setDefaultModifier( originalDefaultModifier );
+	KeyMod::setDefaultSecondaryModifier( originalSecondaryModifier );
+	auto restoredBindings = UICodeEditor::getDefaultKeybindings();
+	const auto& restoredShortcutMap = restoredBindings->getShortcutMap();
+	copy = restoredShortcutMap.find( KeyBindings::Shortcut{ KEY_C, originalDefaultModifier } );
+	EXPECT_TRUE( copy != restoredShortcutMap.end() );
+	if ( copy != restoredShortcutMap.end() )
+		EXPECT_STREQ( "copy", copy->second.c_str() );
+}
 
 static const std::string userCode = R"objcpp(#import "common.h"
 #import <cmath>
@@ -128,7 +398,7 @@ UTEST( KeybindingsHelper, PreservesUserShortcutWhenAddingBinding ) {
 
 	std::unordered_map<std::string, std::string> keybindings;
 	std::unordered_map<std::string, std::string> invertedKeybindings;
-	const std::map<KeyBindings::Shortcut, std::string> defaultKeybindings{
+	const KeyBindings::ShortcutMap defaultKeybindings{
 		{ { KEY_D, KeyMod::getDefaultModifier() }, "select-word" },
 		{ { KEY_X, KeyMod::getDefaultModifier() }, "cut" },
 	};
@@ -167,7 +437,7 @@ UTEST( KeybindingsHelper, RestoresMissingCommandWhenShortcutIsFree ) {
 
 	std::unordered_map<std::string, std::string> keybindings;
 	std::unordered_map<std::string, std::string> invertedKeybindings;
-	const std::map<KeyBindings::Shortcut, std::string> defaultKeybindings{
+	const KeyBindings::ShortcutMap defaultKeybindings{
 		{ { KEY_D, KeyMod::getDefaultModifier() }, "select-word" },
 		{ { KEY_X, KeyMod::getDefaultModifier() }, "cut" },
 	};

@@ -1,4 +1,3 @@
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/system/log.hpp>
@@ -9,6 +8,14 @@
 #include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
+
+namespace {
+
+bool hasVisibleText( const String& text ) {
+	return !String::trim( text.view(), String::View{ U" \t\n\r\f\v" } ).empty();
+}
+
+} // namespace
 
 UITooltip* UITooltip::New() {
 	return eeNew( UITooltip, () );
@@ -64,6 +71,7 @@ UITooltip::UITooltip() :
 	UIWidget( "tooltip" ), mAlignOffset( 0.f, 0.f ), mTooltipTime( Time::Zero ), mTooltipOf() {
 
 	mTextCache = Text::New();
+	mTextCache->setTextHints( getTextHints() );
 	mEnabled = false;
 
 	setFlags( UI_NODE_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
@@ -126,6 +134,11 @@ void UITooltip::autoPadding() {
 }
 
 void UITooltip::show() {
+	if ( !hasVisibleText( mTextCache->getString() ) ) {
+		clearActions();
+		setVisible( false );
+		return;
+	}
 	if ( !isVisible() || 0 == mAlpha ) {
 		setVisible( true );
 
@@ -155,7 +168,7 @@ void UITooltip::hide() {
 }
 
 void UITooltip::draw() {
-	if ( mVisible && 0.f != mAlpha && mTextCache->getString().size() > 0 ) {
+	if ( mVisible && 0.f != mAlpha && hasVisibleText( mTextCache->getString() ) ) {
 		UINode::draw();
 
 		if ( mTextCache->getTextWidth() ) {
@@ -192,6 +205,10 @@ const String& UITooltip::getText() {
 void UITooltip::setText( const String& text ) {
 	mStringBuffer = text;
 	mTextCache->setString( text );
+	if ( !hasVisibleText( text ) ) {
+		clearActions();
+		setVisible( false );
+	}
 	autoPadding();
 	autoWrap();
 	onAutoSize();
@@ -496,7 +513,7 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontWeight:
 			return Text::fontWeightToString( mStyleConfig.Weight );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
+			return pixelsLengthToString( getOutlineThickness() );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::Wordwrap:
@@ -577,6 +594,7 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TextTransform:
 			if ( !mUsingCustomStyling )
 				setTextTransform( TextTransform::fromString( attribute.asString() ) );
+			break;
 		case PropertyId::Color:
 			if ( !mUsingCustomStyling )
 				setFontColor( attribute.asColor() );
@@ -634,7 +652,7 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::TextStrokeWidth:
 			if ( !mUsingCustomStyling )
-				setOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
+				setOutlineThickness( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::TextStrokeColor:
 			if ( !mUsingCustomStyling )
@@ -710,6 +728,32 @@ void UITooltip::setWordWrap( bool set ) {
 
 bool UITooltip::isWordWrap() const {
 	return mFlags & UI_WORD_WRAP;
+}
+
+void UITooltip::setTextHintsOverride( Uint32 value, Uint32 mask ) {
+	mask &= TextHints::OpenTypeFeatures;
+	value &= mask;
+	if ( mTextHintsOverride != value || mTextHintsOverrideMask != mask ) {
+		mTextHintsOverride = value;
+		mTextHintsOverrideMask = mask;
+		onTextHintsChanged();
+	}
+}
+
+void UITooltip::clearTextHintsOverride() {
+	setTextHintsOverride( 0, 0 );
+}
+
+Uint32 UITooltip::getTextHints() const {
+	return UISceneNode::resolveTextHints( getDefaultTextHints(), mTextHintsOverride,
+										  mTextHintsOverrideMask );
+}
+
+void UITooltip::onTextHintsChanged() {
+	if ( mTextCache )
+		mTextCache->setTextHints( getTextHints() );
+	onAutoSize();
+	invalidateDraw();
 }
 
 }} // namespace EE::UI

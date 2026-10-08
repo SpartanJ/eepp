@@ -1,6 +1,7 @@
 #ifndef EE_SYSTEM_LOG_H
 #define EE_SYSTEM_LOG_H
 
+#include <eepp/core/string.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/singleton.hpp>
@@ -87,8 +88,7 @@ class EE_API Log : protected Mutex {
 	}
 
 	/** @brief Writes a formatted string to the log */
-	template <typename... Args>
-	void writef( std::string_view format, Args&&... args ) {
+	template <typename... Args> void writef( std::string_view format, Args&&... args ) {
 		auto result = String::format(
 			format, FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 		write( result );

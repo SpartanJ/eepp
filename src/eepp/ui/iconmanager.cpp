@@ -6,10 +6,11 @@ namespace EE { namespace UI {
 
 using IconPair = std::pair<const char*, Uint32>;
 
-UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* remixIconFont,
-								FontTrueType* noniconFont, FontTrueType* codIconFont ) {
+ResourcePtr<UIIconTheme> IconManager::init( const std::string& iconThemeName,
+											FontTrueType* remixIconFont, FontTrueType* noniconFont,
+											FontTrueType* codIconFont ) {
 
-	UIIconTheme* iconTheme = UIIconTheme::New( iconThemeName );
+	auto iconTheme = UIIconTheme::New( iconThemeName );
 
 	if ( remixIconFont && remixIconFont->loaded() ) {
 		remixIconFont->setIsEmojiFont( true );
@@ -97,6 +98,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "filetype-pic", 0xF3C5 },
 				  { "filetype-pvr", 0xF3C5 },
 				  { "filetype-pkm", 0xF3C5 },
+				  { "filetype-webp", 0xF3C5 },
 				  { "filetype-mp3", 0xEF83 },
 				  { "filetype-ogg", 0xEF83 },
 				  { "filetype-wav", 0xEF83 },
@@ -246,6 +248,10 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "symbol-key", 0xea93 },
 				  { "symbol-null", 0xea8f },
 				  { "collapse-all", 0xeac5 },
+				  { "split-horizontal", 0xeb56 },
+				  { "layout", 0xebeb },
+				  { "github", 0xea84 },
+				  { "unfold", 0xeb73 },
 				  { "chevron-down", 0xeab4 },
 				  { "chevron-right", 0xeab6 },
 				  { "lightbulb-autofix", 0xeb13 },
@@ -255,6 +261,8 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "error", 0xea87 },
 				  { "search-fuzzy", 0xec0d },
 				  { "source-control", 0xea68 },
+				  { "history", 0xea82 },
+				  { "git-commit", 0xeafc },
 				  { "repo", 0xea62 },
 				  { "repo-pull", 0xeb40 },
 				  { "repo-push", 0xeb41 },
@@ -266,6 +274,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "git-stash-apply", 0xec27 },
 				  { "git-stash-pop", 0xec28 },
 				  { "git-merge", 0xeafe },
+				  { "git-branch-staged-changes", 0xec6d },
 				  { "diff-single", 0xec22 },
 				  { "remove", 0xeb3b },
 				  { "tag", 0xea66 },
@@ -303,6 +312,12 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "link", 0xeb15 },
 				  { "agent", 0xec67 },
 				  { "diff", 0xeae1 },
+				  { "arrow-both", 0xea99 },
+				  { "arrow-left", 0xea9b },
+				  { "arrow-right", 0xea9c },
+				  { "arrow-circle-left", 0xebfd },
+				  { "arrow-circle-right", 0xebfe },
+				  { "discard", 0xeae2 },
 
 			  } ) {
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );

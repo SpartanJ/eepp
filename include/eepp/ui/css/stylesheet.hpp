@@ -11,6 +11,8 @@ namespace EE { namespace UI { namespace CSS {
 
 class EE_API StyleSheet {
   public:
+	using SourceOrder = Uint32;
+
 	StyleSheet();
 
 	void clear();
@@ -22,6 +24,10 @@ class EE_API StyleSheet {
 	std::string print();
 
 	void combineStyleSheet( const StyleSheet& styleSheet );
+
+	void combineStyleSheet( const StyleSheet& styleSheet, SourceOrder sourceOrder );
+
+	SourceOrder reserveSourceOrder();
 
 	std::shared_ptr<ElementDefinition> getElementStyles( UIWidget* element,
 														 const bool& applyPseudo = false ) const;
@@ -78,6 +84,18 @@ class EE_API StyleSheet {
 	StyleSheet& operator=( const StyleSheet& other );
 
   protected:
+	struct SourcePosition {
+		SourceOrder styleSheet{ 0 };
+		Uint32 rule{ 0 };
+
+		bool operator<( const SourcePosition& other ) const {
+			if ( styleSheet != other.styleSheet )
+				return styleSheet < other.styleSheet;
+			return rule < other.rule;
+		}
+	};
+	static_assert( sizeof( SourcePosition ) == sizeof( Uint64 ) );
+
 	Uint64 mVersion{ 1 };
 	Uint32 mMarker{ 0 };
 	std::vector<std::shared_ptr<StyleSheetStyle>> mNodes;
@@ -87,8 +105,8 @@ class EE_API StyleSheet {
 	UnorderedMap<String::HashType, StyleSheetStyleVector> mClassNodeIndex;
 	// Candidate buckets are independent, so retain insertion order explicitly for equal
 	// specificity.
-	UnorderedMap<const StyleSheetStyle*, size_t> mStyleSourceOrder;
-	size_t mNextStyleSourceOrder{ 0 };
+	UnorderedMap<const StyleSheetStyle*, SourcePosition> mStyleSourceOrder;
+	SourceOrder mNextStyleSourceOrder{ 0 };
 	MediaQueryList::vector mMediaQueryList;
 	KeyframesDefinitionMap mKeyframesMap;
 	using ElementDefinitionCache = UnorderedMap<size_t, std::shared_ptr<ElementDefinition>>;
@@ -99,6 +117,9 @@ class EE_API StyleSheet {
 	void addMediaQueryList( MediaQueryList::ptr list );
 
 	bool addStyleToNodeIndex( StyleSheetStyle* style );
+
+	void addStyle( std::shared_ptr<StyleSheetStyle> node, SourceOrder sourceOrder,
+				   Uint32 ruleOrder );
 };
 
 }}} // namespace EE::UI::CSS

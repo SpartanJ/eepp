@@ -25,6 +25,8 @@ class LSPClientServerManager {
 	// sync
 	void tryRunServer( const std::shared_ptr<TextDocument>& doc );
 
+	void detachDocuments();
+
 	size_t clientCount() const;
 
 	size_t lspCount() const;

@@ -12,11 +12,9 @@ PrimitiveDrawable::PrimitiveDrawable( Type drawableType ) :
 	mLineWidth( 1.f ),
 	mNeedsUpdate( true ),
 	mRecreateVertexBuffer( true ),
-	mVertexBuffer( NULL ) {}
+	mVertexBuffer( nullptr ) {}
 
-PrimitiveDrawable::~PrimitiveDrawable() {
-	eeSAFE_DELETE( mVertexBuffer );
-}
+PrimitiveDrawable::~PrimitiveDrawable() = default;
 
 void PrimitiveDrawable::draw( const Vector2f& position, const Sizef& ) {
 	if ( mPosition != position ) {
@@ -109,7 +107,7 @@ void PrimitiveDrawable::onPositionChange() {
 
 void PrimitiveDrawable::prepareVertexBuffer( const PrimitiveType& drawableType ) {
 	if ( mRecreateVertexBuffer ) {
-		eeSAFE_DELETE( mVertexBuffer );
+		mVertexBuffer.reset();
 		mVertexBuffer = VertexBuffer::NewVertexArray( VERTEX_FLAGS_PRIMITIVE, drawableType );
 		mRecreateVertexBuffer = false;
 	}

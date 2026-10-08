@@ -1,6 +1,7 @@
 #ifndef EE_MATHPOLIGON2_H
 #define EE_MATHPOLIGON2_H
 
+#include <eepp/core/small_vector.hpp>
 #include <eepp/math/line2.hpp>
 #include <eepp/math/quad2.hpp>
 #include <eepp/math/rect.hpp>
@@ -105,7 +106,7 @@ template <typename T> class Polygon2 {
 	Uint32 closestPoint( const Vector2<T>& to, T* distance = NULL );
 
   private:
-	std::vector<Vector2<T>> Vector;
+	SmallVector<Vector2<T>, 4> Vector;
 	Vector2<T> Position;
 };
 

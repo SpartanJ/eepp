@@ -1,11 +1,28 @@
 #include <SOIL2/src/SOIL2/SOIL2.h>
+#include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/renderer/renderergl.hpp>
 #include <eepp/graphics/renderer/renderergl3.hpp>
 #include <eepp/graphics/renderer/renderergl3cp.hpp>
 #include <eepp/graphics/renderer/renderergles2.hpp>
+#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/sys.hpp>
+
+#ifdef EE_GLES1_LATE_INCLUDE
+#if EE_PLATFORM == EE_PLATFORM_IOS
+#include <OpenGLES/ES1/gl.h>
+#include <OpenGLES/ES1/glext.h>
+#else
+#include <GLES/gl.h>
+
+#ifndef GL_GLEXT_PROTOTYPES
+#define GL_GLEXT_PROTOTYPES
+#endif
+
+#include <GLES/glext.h>
+#endif
+#endif
 
 namespace EE { namespace Graphics {
 
@@ -260,6 +277,9 @@ void Renderer::init() {
 		writeExtension( EEGL_EXT_blend_func_separate, GLEW_EXT_blend_func_separate );
 		writeExtension( EEGL_EXT_blend_minmax, GLEW_EXT_blend_minmax );
 		writeExtension( EEGL_EXT_blend_subtract, GLEW_EXT_blend_subtract );
+		writeExtension( EEGL_ARB_blend_func_extended,
+						GLEW_ARB_blend_func_extended || GLEW_VERSION_3_3 );
+		writeExtension( EEGL_EXT_blend_func_extended, GLEW_EXT_blend_func_extended );
 	} else
 #endif
 	{
@@ -296,6 +316,13 @@ void Renderer::init() {
 						glVersion >= 140 || isExtension( "GL_EXT_blend_minmax" ) );
 		writeExtension( EEGL_EXT_blend_subtract,
 						glVersion >= 140 || isExtension( "GL_EXT_blend_subtract" ) );
+		writeExtension( EEGL_ARB_blend_func_extended,
+						!is_es &&
+							( glVersion >= 330 || isExtension( "GL_ARB_blend_func_extended" ) ) );
+		writeExtension( EEGL_EXT_blend_func_extended,
+						is_es && ( isExtension( "GL_EXT_blend_func_extended" ) ||
+								   isExtension( "GL_WEBGL_blend_func_extended" ) ||
+								   isExtension( "WEBGL_blend_func_extended" ) ) );
 	}
 
 	// NVIDIA added support for GL_OES_compressed_ETC1_RGB8_texture in desktop GPUs
@@ -387,6 +414,14 @@ bool Renderer::pointSpriteSupported() {
 #endif
 }
 
+void Renderer::configurePointSprite() {
+	if ( GLv_3CP != version() && GLv_3 != version() && GLv_ES2 != version() ) {
+#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
+		glTexEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
+#endif
+	}
+}
+
 bool Renderer::shadersSupported() {
 #ifdef EE_GLES
 	return ( GLv_ES2 == version() || GLv_3 == version() || GLv_3CP == version() );
@@ -450,6 +485,21 @@ void Renderer::enable( unsigned int cap ) {
 	glEnable( cap );
 }
 
+void Renderer::onContextChanged() {
+	if ( TextureFactory::existsSingleton() )
+		TextureFactory::instance()->invalidateTextureBindings();
+
+	BlendMode::setMode( BlendMode::getPreBlendFunc(), true );
+	lineSmooth();
+	polygonSmooth();
+	polygonMode();
+	multisample( isMultisample() );
+	colorMask( mColorMask[0], mColorMask[1], mColorMask[2], mColorMask[3] );
+	const float lineWidth = mLineWidth;
+	mLineWidth = -1.f;
+	this->lineWidth( lineWidth );
+}
+
 const char* Renderer::getString( unsigned int name ) {
 	return (const char*)glGetString( name );
 }
@@ -474,6 +524,42 @@ void Renderer::polygonMode( unsigned int face, unsigned int mode ) {
 
 void Renderer::drawArrays( unsigned int mode, int first, int count ) {
 	glDrawArrays( mode, first, count );
+}
+
+bool Renderer::drawSubpixelArrays( unsigned int mode, int first, int count ) {
+	if ( drawSubpixelDualSourceArrays( mode, first, count ) )
+		return true;
+
+	if ( !setTextureColorMode( 1 ) )
+		return false;
+
+	Uint8 previousColorMask[4];
+	getColorMask( previousColorMask );
+	for ( Int32 channel = 0; channel < 3; ++channel ) {
+		setTextureColorMode( channel + 1 );
+		colorMask( channel == 0 && previousColorMask[0], channel == 1 && previousColorMask[1],
+				   channel == 2 && previousColorMask[2], 0 );
+		drawArrays( mode, first, count );
+	}
+	setTextureColorMode( 4 );
+	colorMask( 0, 0, 0, previousColorMask[3] );
+	drawArrays( mode, first, count );
+	setTextureColorMode( 0 );
+	colorMask( previousColorMask[0], previousColorMask[1], previousColorMask[2],
+			   previousColorMask[3] );
+	return true;
+}
+
+bool Renderer::drawSubpixelDualSourceArrays( unsigned int, int, int ) {
+	return false;
+}
+
+bool Renderer::drawSubpixelFallbackArrays( unsigned int mode, int first, int count ) {
+	if ( !setTextureColorMode( 4 ) )
+		return false;
+	drawArrays( mode, first, count );
+	setTextureColorMode( 0 );
+	return true;
 }
 
 void Renderer::drawElements( unsigned int mode, int count, unsigned int type,
@@ -534,6 +620,29 @@ void Renderer::blendEquationSeparate( unsigned int modeRGB, unsigned int modeAlp
 		eeglBlendEquationSeparate( modeRGB, modeAlpha );
 }
 
+bool Renderer::bindFragDataLocationIndexed( unsigned int program, unsigned int colorNumber,
+											unsigned int index, const char* name ) {
+#ifndef EE_GLES
+	static pglBindFragDataLocationIndexed bindFragDataLocationIndexed = NULL;
+	if ( NULL == bindFragDataLocationIndexed )
+		bindFragDataLocationIndexed =
+			(pglBindFragDataLocationIndexed)getProcAddress( "glBindFragDataLocationIndexed" );
+	if ( NULL != bindFragDataLocationIndexed ) {
+		bindFragDataLocationIndexed( program, colorNumber, index, name );
+		return true;
+	}
+#endif
+	static pglBindFragDataLocationIndexed bindFragDataLocationIndexedEXT = NULL;
+	if ( NULL == bindFragDataLocationIndexedEXT )
+		bindFragDataLocationIndexedEXT =
+			(pglBindFragDataLocationIndexed)getProcAddress( "glBindFragDataLocationIndexedEXT" );
+	if ( NULL != bindFragDataLocationIndexedEXT ) {
+		bindFragDataLocationIndexedEXT( program, colorNumber, index, name );
+		return true;
+	}
+	return false;
+}
+
 void Renderer::blitFrameBuffer( int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0,
 								int dstX1, int dstY1, unsigned int mask, unsigned int filter ) {
 	static pglBlitFramebufferEXT eeglBlitFramebufferEXT = NULL;
@@ -554,6 +663,19 @@ void Renderer::setShader( ShaderProgram* Shader ) {
 		useProgram( 0 );
 	}
 #endif
+}
+
+bool Renderer::setTextureColorMode( Int32 ) {
+	return false;
+}
+
+const Vector3ff& Renderer::textureColorChannel( Int32 mode ) {
+	static const Vector3ff channels[] = { { 0.f, 0.f, 0.f },
+										  { 1.f, 0.f, 0.f },
+										  { 0.f, 1.f, 0.f },
+										  { 0.f, 0.f, 1.f },
+										  { 1.f / 3.f, 1.f / 3.f, 1.f / 3.f } };
+	return channels[mode];
 }
 
 bool Renderer::isLineSmooth() {
@@ -743,11 +865,15 @@ void Renderer::stencilMask( unsigned int mask ) {
 }
 
 void Renderer::colorMask( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha ) {
+	mColorMask[0] = red;
+	mColorMask[1] = green;
+	mColorMask[2] = blue;
+	mColorMask[3] = alpha;
 	glColorMask( red, green, blue, alpha );
 }
 
-const int& Renderer::quadVertex() const {
-	return mQuadVertex;
+void Renderer::getColorMask( Uint8 mask[4] ) const {
+	std::copy( std::begin( mColorMask ), std::end( mColorMask ), mask );
 }
 
 ClippingMask* Renderer::getClippingMask() const {
@@ -775,6 +901,29 @@ void* Renderer::getProcAddress( std::string proc ) {
 
 void Renderer::readPixels( int x, int y, unsigned int width, unsigned int height, void* pixels ) {
 	glReadPixels( x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
+}
+
+bool Renderer::readPixels( int x, int y, unsigned int width, unsigned int height,
+						   PixelFormat pixelFormat, void* pixels, size_t stride ) {
+	const unsigned int channels = pixelFormat == PixelFormat::RGB24 ? 3 : 4;
+	const size_t rowBytes = static_cast<size_t>( width ) * channels;
+	if ( nullptr == pixels || stride < rowBytes )
+		return false;
+	GLint packAlignment;
+	glGetIntegerv( GL_PACK_ALIGNMENT, &packAlignment );
+	if ( packAlignment != 1 )
+		pixelStorei( GL_PACK_ALIGNMENT, 1 );
+	const GLenum format = pixelFormat == PixelFormat::RGB24 ? GL_RGB : GL_RGBA;
+	if ( stride == rowBytes ) {
+		glReadPixels( x, y, width, height, format, GL_UNSIGNED_BYTE, pixels );
+	} else {
+		Uint8* output = static_cast<Uint8*>( pixels );
+		for ( unsigned int row = 0; row < height; ++row )
+			glReadPixels( x, y + row, width, 1, format, GL_UNSIGNED_BYTE, output + row * stride );
+	}
+	if ( packAlignment != 1 )
+		pixelStorei( GL_PACK_ALIGNMENT, packAlignment );
+	return true;
 }
 
 Color Renderer::readPixel( int x, int y ) {
@@ -1168,10 +1317,6 @@ void Renderer::genVertexArrays( int n, unsigned int* arrays ) {
 	if ( NULL != eeglGenVertexArrays )
 		eeglGenVertexArrays( n, arrays );
 #endif
-}
-
-const bool& Renderer::quadsSupported() const {
-	return mQuadsSupported;
 }
 
 void Renderer::waitForIdle() {

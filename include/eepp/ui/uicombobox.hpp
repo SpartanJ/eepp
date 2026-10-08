@@ -21,7 +21,7 @@ class EE_API UIComboBox : public UIWidget {
 
 	UIDropDownList* getDropDownList() const { return mDropDownList; }
 
-	UINode* getButton() const { return mButton; }
+	UIWidget* getButton() const { return mButton; }
 
 	const String& getText();
 
@@ -38,7 +38,7 @@ class EE_API UIComboBox : public UIWidget {
 
   protected:
 	UIDropDownList* mDropDownList;
-	UINode* mButton;
+	UIWidget* mButton;
 
 	UIComboBox();
 

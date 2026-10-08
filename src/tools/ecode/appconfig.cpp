@@ -2,6 +2,7 @@
 #include "ecode.hpp"
 #include "plugins/plugin.hpp"
 #include "plugins/pluginmanager.hpp"
+#include "uimarkdownpreview.hpp"
 #include "version.hpp"
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -118,15 +119,27 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.size.setHeight( iniState.getValueI( "window", "height", defWinSize.getHeight() ) );
 	windowState.maximized = iniState.getValueB( "window", "maximized", false );
 	windowState.pixelDensity = iniState.getValueF( "window", "pixeldensity" );
-	windowState.winIcon = ini.getValue( "window", "winicon", resPath + "icon/ecode.png" );
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	const char* windowIcon = "icon/ecode-macos.png";
+#else
+	const char* windowIcon = "icon/ecode.png";
+#endif
+	windowState.winIcon = ini.getValue( "window", "winicon", resPath + windowIcon );
 	windowState.panelPartition = iniState.getValue( "window", "panel_partition", "15%" );
 	windowState.statusBarPartition = iniState.getValue( "window", "status_bar_partition", "85%" );
+	windowState.rightPanelPartition = iniState.getValue( "window", "right_panel_partition", "75%" );
 	windowState.displayIndex = iniState.getValueI( "window", "display_index", 0 );
 	windowState.position.x = iniState.getValueI( "window", "x", -1 );
 	windowState.position.y = iniState.getValueI( "window", "y", -1 );
 	windowState.lastRunVersion = iniState.getValueU( "editor", "last_run_version", 0 );
 	windowState.sidePanelTabsOrder =
 		String::split( iniState.getValue( "ui", "side_panel_tabs_order", "" ), ',' );
+	screenshot.savePath = ini.getValue( "screenshots", "save_path", "" );
+	screenshot.filenamePattern =
+		ini.getValue( "screenshots", "filename_pattern", "ecode-%Y-%m-%d-%H-%M-%S.png" );
+	screenshot.saveFormat = ini.getValue( "screenshots", "save_format", "png" );
+	if ( Image::extensionToSaveType( screenshot.saveFormat ) == Image::SaveType::Unknown )
+		screenshot.saveFormat = "png";
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
 	editor.showLineEndings = ini.getValueB( "editor", "show_line_endings", false );
@@ -138,6 +151,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.horizontalScrollbar = ini.getValueB( "editor", "horizontal_scrollbar", true );
 	editor.openDocumentsInMainSplit =
 		ini.getValueB( "editor", "open_documents_in_main_split", false );
+	editor.fontFeatures =
+		Graphics::Text::fontFeaturesFromString( ini.getValue( "editor", "font_features" ) );
 	ui.fontSize = ini.getValue( "ui", "font_size", "11dp" );
 	ui.panelFontSize = ini.getValue( "ui", "panel_font_size", "11dp" );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
@@ -148,6 +163,10 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.openProjectInNewWindow = ini.getValueB( "ui", "open_project_in_new_window", false );
 	ui.nativeFileDialogs = ini.getValueB( "ui", "native_file_dialogs", false );
 	ui.imagesQuickPreview = ini.getValueB( "ui", "images_quick_preview", false );
+	ui.smoothScroll =
+		ini.getValueB( "ui", "smooth_scroll",
+					   ini.getValueB( "editor", "smooth_scroll",
+									  ini.getValueB( "terminal", "smooth_scroll", false ) ) );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.sansSerifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
@@ -162,6 +181,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		FontTrueType::fontHintingFromString( ini.getValue( "ui", "font_hinting", "full" ) );
 	ui.fontAntialiasing = FontTrueType::fontAntialiasingFromString(
 		ini.getValue( "ui", "font_antialiasing", "grayscale" ) );
+	ui.fontFeatures =
+		Graphics::Text::fontFeaturesFromString( ini.getValue( "ui", "font_features" ) );
 	ui.editorFontInInputFields = ini.getValueB( "ui", "editor_font_in_input_fields", true );
 
 	doc.trimTrailingWhitespaces = ini.getValueB( "document", "trim_trailing_whitespaces", false );
@@ -173,6 +194,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
 	doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
 	doc.tabStops = ini.getValueB( "document", "tab_stops", true );
+	doc.tabOutEnabled = ini.getValueB( "document", "tab_out_enabled", false );
+	doc.tabOutChars = ini.getValue( "document", "tab_out_chars", ")]}'\":;>," );
 	doc.lineEndings =
 		TextFormat::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
 	editor.newTabPosition =
@@ -201,6 +224,9 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		ini.getValueB( "editor", "restore_editor_selection_on_focus", true );
 	editor.tabJumpMode =
 		UITabWidget::tabJumpModefromString( ini.getValue( "editor", "tab_jump_mode", "linear" ) );
+	editor.diffViewMode = ini.getValue( "editor", "diff_view_mode", "unified" ) == "side_by_side"
+							  ? UIDiffView::ViewMode::SideBySide
+							  : UIDiffView::ViewMode::Unified;
 
 	editor.singleClickNavigation = ini.getValueB( "editor", "single_click_tree_navigation", false );
 	editor.syncProjectTreeWithEditor =
@@ -212,7 +238,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.linesRelativePosition = ini.getValueB( "editor", "lines_relative_position", false );
 	editor.autoReloadOnDiskChange = ini.getValueB( "editor", "auto_reload_on_disk_change", false );
 
-	editor.wrapMode = LineWrap::toLineWrapMode( ini.getValue( "editor", "wrap_mode", "nowrap" ) );
+	editor.wrapMode = LineWrap::toLineWrapMode( ini.getValue( "editor", "wrap_mode", "word" ) );
 	editor.wrapType = LineWrap::toLineWrapType( ini.getValue( "editor", "wrap_type", "viewport" ) );
 	editor.wrapKeepIndentation = ini.getValueB( "editor", "wrap_keep_indentation", true );
 
@@ -325,6 +351,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValueF( "window", "pixeldensity", windowState.pixelDensity );
 	iniState.setValue( "window", "panel_partition", panelPartition );
 	iniState.setValue( "window", "status_bar_partition", statusBarPartition );
+	iniState.setValue( "window", "right_panel_partition", windowState.rightPanelPartition );
 	iniState.setValueI( "window", "display_index", windowState.displayIndex );
 	iniState.setValueI( "window", "x", windowState.position.x );
 	iniState.setValueI( "window", "y", windowState.position.y );
@@ -342,6 +369,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "vertical_scrollbar", editor.verticalScrollbar );
 	ini.setValueB( "editor", "horizontal_scrollbar", editor.horizontalScrollbar );
 	ini.setValueB( "editor", "open_documents_in_main_split", editor.openDocumentsInMainSplit );
+	ini.setValue( "editor", "font_features",
+				  Graphics::Text::fontFeaturesToString( editor.fontFeatures ) );
 	ini.setValue( "editor", "font_size", editor.fontSize.toString() );
 
 	ini.setValue( "ui", "font_size", ui.fontSize.toString() );
@@ -355,6 +384,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "ui", "open_project_in_new_window", ui.openProjectInNewWindow );
 	ini.setValueB( "ui", "native_file_dialogs", ui.nativeFileDialogs );
 	ini.setValueB( "ui", "images_quick_preview", ui.imagesQuickPreview );
+	ini.setValueB( "ui", "smooth_scroll", ui.smoothScroll );
+	ini.deleteValue( "editor", "smooth_scroll" );
+	ini.deleteValue( "terminal", "smooth_scroll" );
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.sansSerifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
@@ -366,6 +398,10 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "font_hinting", FontTrueType::fontHintingToString( ui.fontHinting ) );
 	ini.setValue( "ui", "font_antialiasing",
 				  FontTrueType::fontAntialiasingToString( ui.fontAntialiasing ) );
+	ini.setValue( "ui", "font_features", Graphics::Text::fontFeaturesToString( ui.fontFeatures ) );
+	ini.setValue( "screenshots", "save_path", screenshot.savePath );
+	ini.setValue( "screenshots", "filename_pattern", screenshot.filenamePattern );
+	ini.setValue( "screenshots", "save_format", screenshot.saveFormat );
 	ini.setValueB( "ui", "editor_font_in_input_fields", ui.editorFontInInputFields );
 	iniState.setValue( "ui", "side_panel_tabs_order",
 					   String::join( windowState.sidePanelTabsOrder, ',' ) );
@@ -377,6 +413,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "document", "write_bom", doc.writeUnicodeBOM );
 	ini.setValueI( "document", "indent_width", doc.indentWidth );
 	ini.setValueB( "document", "tab_stops", doc.tabStops );
+	ini.setValueB( "document", "tab_out_enabled", doc.tabOutEnabled );
+	ini.setValue( "document", "tab_out_chars", doc.tabOutChars );
 	ini.setValueB( "document", "indent_spaces", doc.indentSpaces );
 	ini.setValue( "document", "line_endings", TextFormat::lineEndingToString( doc.lineEndings ) );
 	ini.setValueI( "document", "tab_width", doc.tabWidth );
@@ -397,6 +435,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 				  UITabWidget::tabJumpModeToString( editor.tabJumpMode ) );
 	ini.setValue( "editor", "new_tab_position", NewTabPosition::toString( editor.newTabPosition ) );
 	ini.setValue( "editor", "custom_date_format", editor.customDateFormat );
+	ini.setValue( "editor", "diff_view_mode",
+				  editor.diffViewMode == UIDiffView::ViewMode::SideBySide ? "side_by_side"
+																		  : "unified" );
 	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickNavigation );
 	ini.setValueB( "editor", "sync_project_tree_with_editor", editor.syncProjectTreeWithEditor );
 	ini.setValueB( "editor", "auto_close_xml_tags", editor.autoCloseXMLTags );
@@ -451,7 +492,6 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 				  term.scrollBarMode == ScrollBarMode::Auto
 					  ? "auto"sv
 					  : ( term.scrollBarMode == ScrollBarMode::AlwaysOn ? "on"sv : "off" ) );
-
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",
 				  Renderer::graphicsLibraryVersionToString( context.Version ) );
@@ -557,6 +597,16 @@ json AppConfig::saveNode( Node* node ) {
 				f["type"] = "audio_player";
 				f["path"] = ap->getFilePath();
 				files.emplace_back( f );
+			} else if ( ownedWidget->isWidget() &&
+						ownedWidget->asType<UIWidget>()->hasClass( "markdown-preview" ) ) {
+				auto* preview = ownedWidget->asType<UIMarkdownPreview>();
+				if ( preview->getMarkdownView()->getDocumentPath().empty() )
+					continue;
+				json f;
+				f["type"] = "markdown_preview";
+				f["path"] = preview->getMarkdownView()->getDocumentPath();
+				f["source_path"] = preview->getSourcePath();
+				files.emplace_back( std::move( f ) );
 			} else if ( node->isWidget() ) {
 				UIWidget* widget = ownedWidget->asType<UIWidget>();
 				if ( widget->getClasses().size() == 1 ) {
@@ -581,7 +631,8 @@ json AppConfig::saveNode( Node* node ) {
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, const ProjectConfig& docConfig,
 							 const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
-							 bool sessionSnapshot, PluginManager* pluginManager ) {
+							 bool sessionSnapshot, bool showHiddenFiles,
+							 PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	if ( !FileSystem::fileExists( projectsPath ) )
@@ -590,6 +641,7 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	std::string projectCfgPath( projectsPath + hash.toHexString() + ".cfg" );
 	IniFile cfg( projectCfgPath, false );
 	cfg.setValue( "path", "folder_path", projectFolder );
+	cfg.setValueB( "project_tree", "show_hidden_files", showHiddenFiles );
 	cfg.setValueB( "document", "use_global_settings", docConfig.useGlobalSettings );
 	cfg.setValue( "document", "h_ext_language_type",
 				  HExtLanguageTypeHelper::toString( docConfig.hExtLanguageType ) );
@@ -717,6 +769,7 @@ void AppConfig::editorLoadedCounter( ecode::App* app ) {
 	editorsToLoad--;
 	if ( editorsToLoad <= 0 ) {
 		app->getUISceneNode()->runOnMainThread( [app] {
+			app->bindMarkdownPreviewSources();
 			if ( !app->getFileToOpen().empty() ) {
 				app->loadFileDelayed();
 			} else {
@@ -828,6 +881,23 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 			} else if ( file["type"] == "audio_player" ) {
 				if ( file.contains( "path" ) && file["path"].is_string() )
 					app->loadAudioFromPath( file["path"].get<std::string>(), false );
+			} else if ( file["type"] == "markdown_preview" ) {
+				if ( !file.contains( "path" ) || !file["path"].is_string() ||
+					 file["path"].get_ref<const std::string&>().empty() )
+					continue;
+				const auto& path = file["path"].get_ref<const std::string&>();
+				const auto& sourcePath =
+					file.contains( "source_path" ) && file["source_path"].is_string()
+						? file["source_path"].get_ref<const std::string&>()
+						: path;
+				app->createMarkdownPreview( curTabWidget, path, sourcePath,
+											editorSplitter->findEditorFromPath( sourcePath ),
+											false );
+				editorSplitter->removeUnusedTab( curTabWidget, true, false );
+				if ( curTabWidget->getTabCount() == totalToLoad ) {
+					curTabWidget->setTabSelected(
+						eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+				}
 			} else {
 				auto found = tabWidgetTypes.find( file["type"] );
 				if ( found != tabWidgetTypes.end() ) {
@@ -838,7 +908,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 					editorSplitter->removeUnusedTab( curTabWidget, true, false );
 
 					if ( icon )
-						tab->setIcon( icon );
+						tab->setIcon( std::move( icon ) );
 
 					if ( curTabWidget->getTabCount() == totalToLoad )
 						curTabWidget->setTabSelected(
@@ -858,20 +928,23 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 		UITabWidget* tabWidget = splitter->getLastWidget()->asType<UITabWidget>();
 		loadDocuments( editorSplitter, j["last"], tabWidget, app, sessionSnapshotFiles );
 
-		splitter->setSplitPartition( StyleSheetLength( j["split"] ) );
+		splitter->setSplitPartition( StyleSheetLength( j["split"].get<std::string>() ) );
 	}
 }
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, ProjectConfig& docConfig,
-							 ecode::App* app, bool sessionSnapshot, PluginManager* pluginManager ) {
+							 ecode::App* app, bool sessionSnapshot, bool& showHiddenFiles,
+							 PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
 	std::string projectCfgPath( projectsPath + hash.toHexString() + ".cfg" );
+	showHiddenFiles = false;
 	if ( !FileSystem::fileExists( projectCfgPath ) )
 		return;
 	IniFile cfg( projectCfgPath );
+	showHiddenFiles = cfg.getValueB( "project_tree", "show_hidden_files", false );
 
 	docConfig.useGlobalSettings = cfg.getValueB( "document", "use_global_settings", true );
 
@@ -956,6 +1029,7 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 			editorsToLoad = countTotalEditors( j );
 			if ( editorsToLoad <= 0 ) {
 				app->getUISceneNode()->runOnMainThread( [app] {
+					app->bindMarkdownPreviewSources();
 					if ( !app->getFileToOpen().empty() ) {
 						app->loadFileDelayed();
 					}

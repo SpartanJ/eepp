@@ -1,5 +1,6 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/ui/uihtmlliststyle.hpp>
 
 namespace EE { namespace UI {
@@ -48,6 +49,17 @@ String UIHTMLListStyle::getTextMarkerString( CSSListStyleType type, int index ) 
 		default:
 			return {};
 	}
+}
+
+void UIHTMLListStyle::syncTextMarkerColor( Graphics::Text& marker, const Color& color ) {
+	if ( marker.getFillColor() != color )
+		marker.setFillColor( color );
+}
+
+Vector2f UIHTMLListStyle::getTextMarkerPosition( const Vector2f& screenPos, const Rectf& paddingPx,
+												 Float textWidth, Float fontSize ) {
+	return { std::floor( screenPos.x + paddingPx.Left - textWidth - 0.25f * fontSize ),
+			 std::floor( screenPos.y + paddingPx.Top ) };
 }
 
 void UIHTMLListStyle::drawPrimitiveMarker( CSSListStyleType type, const Vector2f& screenPos,

@@ -1,3 +1,4 @@
+#include <cmath>
 #include <eepp/graphics/font.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uihtmltextinput.hpp>
@@ -87,9 +88,30 @@ void UIHTMLTextInput::onAutoSize() {
 		}
 	}
 
-	UITextInput::onAutoSize();
+	// HTML input hosts own the CSS border and padding and deliberately remove the anonymous
+	// native control's skin. Size the single editable line from the font's baseline metrics.
+	// Font line spacing may include a large optional line gap, which is useful for flowing text
+	// but is not part of a replaced control's intrinsic content height.
+	if ( mHeightPolicy == SizePolicy::WrapContent && getFont() ) {
+		setInternalPixelsHeight( getIntrinsicContentHeight() );
+	} else {
+		UITextInput::onAutoSize();
+	}
 
 	mPacking = false;
+}
+
+Float UIHTMLTextInput::getIntrinsicContentHeight() const {
+	if ( !getFont() )
+		return 0.f;
+	return std::ceil( getFont()->getAscent( getFontSize() ) +
+					  getFont()->getDescent( getFontSize() ) );
+}
+
+Float UIHTMLTextInput::getTextBaseline() const {
+	if ( !getFont() )
+		return getPixelsSize().getHeight();
+	return getRealAlignOffset().y + getFont()->getAscent( getFontSize() );
 }
 
 Uint32 UIHTMLTextInput::getHtmlSize() const {

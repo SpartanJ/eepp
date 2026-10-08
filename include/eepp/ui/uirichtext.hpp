@@ -8,6 +8,8 @@
 
 namespace EE { namespace UI {
 
+class UITextSelectionController;
+
 class EE_API UIRichText : public UIHTMLWidget {
   public:
 	enum class IntrinsicMode { None, Min, Max };
@@ -31,6 +33,12 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	static void rebuildRichText( UILayout* container, RichText& richText,
 								 IntrinsicMode mode = IntrinsicMode::None );
+
+	/** Whether the nearest inline formatting owner is assigning this child's fragment bounds. */
+	static bool isAssigningInlineFragments( const UIWidget* child );
+
+	/** Resolves the wrapping constraint independently of constructing the inline content stream. */
+	static Float getLayoutMaxWidth( UILayout* container, IntrinsicMode mode = IntrinsicMode::None );
 
 	static void setUseCodeEditorForPreCodeBlocks( bool enabled );
 
@@ -68,6 +76,8 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	static UIRichText* NewBlockquote() { return UIRichText::NewWithTag( "blockquote" ); };
 
+	virtual ~UIRichText();
+
 	virtual Uint32 getType() const { return UI_TYPE_RICHTEXT; }
 
 	virtual bool isType( const Uint32& type ) const {
@@ -90,6 +100,8 @@ class EE_API UIRichText : public UIHTMLWidget {
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
 	const Graphics::RichText& getRichText();
+
+	const Graphics::RichText& getRichText() const;
 
 	Graphics::Font* getFont() const;
 
@@ -163,6 +175,12 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	bool isTextSelectionEnabled() const;
 
+	bool isTextSelectionOwner() const;
+
+	Int64 getTextCharacterCount() const;
+
+	Int64 findTextCharacterFromWorldPosition( const Vector2f& worldPos ) const;
+
 	void setTextSelectionEnabled( bool active );
 
 	const TextTransform::Value& getTextTransform() const;
@@ -181,11 +199,25 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	void setTextSelectionRange( TextSelectionRange range );
 
+	void setTextSelectionExclusions( SmallVector<TextSelectionRange, 4> exclusions );
+
 	String getSelectionString() const;
 
 	virtual RichText* getRichTextPtr() { return &mRichText; }
 
+	void setTextHintsOverride( Uint32 value, Uint32 mask = TextHints::OpenTypeFeatures );
+
+	void clearTextHintsOverride();
+
+	Uint32 getTextHints() const;
+
+	virtual void onTextHintsChanged();
+
   protected:
+	friend class UITextSelectionController;
+	// Registered only while this owner is cached by a document selection controller. The
+	// destructor uses it before mRichText is destroyed, unlike UIWidget::OnClose.
+	UITextSelectionController* mDocumentSelectionController{ nullptr };
 	RichText mRichText;
 	Int64 mSelCurInit{ 0 };
 	Int64 mSelCurEnd{ 0 };
@@ -197,6 +229,8 @@ class EE_API UIRichText : public UIHTMLWidget {
 	mutable Float mTextIndentPxCache{ 0 };
 	mutable bool mTextIndentPxDirty{ true };
 	Uint32 mTabSize{ 8 };
+	Uint32 mTextHintsOverride{ 0 };
+	Uint32 mTextHintsOverrideMask{ 0 };
 	WhiteSpaceCollapse mWhiteSpaceCollapse{ WhiteSpaceCollapse::Collapse };
 	bool mLineWrap{ true };
 	TextTransform::Value mTextTransform{ TextTransform::None };
@@ -210,6 +244,8 @@ class EE_API UIRichText : public UIHTMLWidget {
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 	virtual Uint32 onFocusLoss();
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	virtual void onSizeChange();
 	virtual void onPaddingChange();
@@ -247,7 +283,6 @@ class EE_API UIHTMLBody : public UIRichText {
 	bool applyProperty( const StyleSheetProperty& attribute );
 	virtual void updateLayout();
 	void setDocumentViewportMinHeight( const Float& height );
-	void setDocumentCanvasMinHeight( const Float& height );
 
   protected:
 	bool mPropagatedBackground{ false };

@@ -15,9 +15,9 @@ class EE_API StyleSheetSelector {
 
 	explicit StyleSheetSelector( const std::string& selectorName );
 
-	const std::string& getName() const;
+	inline const std::string& getName() const { return mName; }
 
-	const Int64& getSpecificity() const;
+	inline const Int64& getSpecificity() const { return mSpecificity; }
 
 	void setSpecificity( const Int64& specificity );
 
@@ -27,7 +27,11 @@ class EE_API StyleSheetSelector {
 
 	bool hasPseudoClasses() const;
 
-	std::vector<UIWidget*> getRelatedElements( UIWidget* element, bool applyPseudo = true ) const;
+	/** @return The elements other than the subject whose pseudo-class state can change whether
+	 * this selector matches element: the union of the tracked compounds over every matching
+	 * path, each element once. Empty when the selector does not match. */
+	SmallVector<UIWidget*, 8> getRelatedElements( UIWidget* element,
+												  bool applyPseudo = true ) const;
 
 	bool isStructurallyVolatile() const;
 

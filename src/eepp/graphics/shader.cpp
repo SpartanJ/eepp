@@ -6,7 +6,7 @@
 #include <eepp/graphics/shader.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -39,8 +39,8 @@ Shader::Shader( const Uint32& Type, const std::string& Filename ) {
 		std::string tPath = Filename;
 		Pack* tPack = NULL;
 
-		if ( PackManager::instance()->isFallbackToPacksActive() &&
-			 NULL != ( tPack = PackManager::instance()->exists( tPath ) ) ) {
+		if ( PackRegistry::instance()->isFallbackToPacksActive() &&
+			 NULL != ( tPack = PackRegistry::instance()->exists( tPath ) ) ) {
 			ScopedBuffer buffer;
 
 			tPack->extractFileToMemory( tPath, buffer );

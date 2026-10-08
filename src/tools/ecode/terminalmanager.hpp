@@ -34,7 +34,7 @@ class TerminalManager {
 
 	void loadTerminalColorSchemes();
 
-	static std::map<KeyBindings::Shortcut, std::string> getTerminalKeybindings();
+	static KeyBindings::ShortcutMap getTerminalKeybindings();
 
 	const std::string& getTerminalColorSchemesPath() const;
 

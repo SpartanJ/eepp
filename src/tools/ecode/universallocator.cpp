@@ -185,6 +185,7 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 									App* app ) :
 	mSplitter( editorSplitter ),
 	mUISceneNode( sceneNode ),
+	mLifetime( this, sceneNode ),
 	mApp( app ),
 	mCommandPalette( mApp->getThreadPool() ) {
 
@@ -431,6 +432,7 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 }
 
 void UniversalLocator::hideLocateBar() {
+	++mLocatorModelGeneration;
 	mLocateBarLayout->setVisible( false );
 	mLocateTable->setVisible( false );
 	mApp->getStatusBar()->updateState();
@@ -465,11 +467,12 @@ void UniversalLocator::updateFilesTable( bool useGlob ) {
 					: ProjectDirectoryTree::MatchType::Fuzzy,
 			text, LOCATEBAR_MAX_RESULTS,
 			[this, text]( auto res ) {
-				mUISceneNode->runOnMainThread( [this, res] {
-					mLocateTable->setModel( res );
-					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-					mLocateTable->scrollToTop();
-					updateLocateBarSync();
+				mLifetime.weakHandle().run( [res]( UniversalLocator* locator ) {
+					locator->mLocateTable->setModel( res );
+					locator->mLocateTable->getSelection().set(
+						locator->mLocateTable->getModel()->index( 0 ) );
+					locator->mLocateTable->scrollToTop();
+					locator->updateLocateBarSync();
 				} );
 			},
 			mApp->getCurrentProject() );
@@ -499,11 +502,12 @@ void UniversalLocator::updateCommandPaletteTable() {
 
 	if ( txt.size() > 1 ) {
 		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ).trim(), 10000, [this]( auto res ) {
-			mUISceneNode->runOnMainThread( [this, res] {
-				mLocateTable->setModel( res );
-				if ( mLocateTable->getModel()->hasChildren() )
-					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-				mLocateTable->scrollToTop();
+			mLifetime.weakHandle().run( [res]( UniversalLocator* locator ) {
+				locator->mLocateTable->setModel( res );
+				if ( locator->mLocateTable->getModel()->hasChildren() )
+					locator->mLocateTable->getSelection().set(
+						locator->mLocateTable->getModel()->index( 0 ) );
+				locator->mLocateTable->scrollToTop();
 			} );
 		} );
 	} else if ( mCommandPalette.getCurModel() ) {
@@ -535,6 +539,7 @@ void UniversalLocator::goToLine() {
 }
 
 bool UniversalLocator::isCommand( const std::string& filename ) {
+	Lock lock( mLocatorProvidersMutex );
 	const auto isLocator = [this]( const std::string& filename ) {
 		return std::find_if( mLocatorProviders.begin(), mLocatorProviders.end(),
 							 [&filename]( const LocatorProvider& provider ) {
@@ -546,6 +551,7 @@ bool UniversalLocator::isCommand( const std::string& filename ) {
 }
 
 std::optional<UniversalLocator::LocatorProvider> UniversalLocator::getLocator( const String& txt ) {
+	Lock lock( mLocatorProvidersMutex );
 	for ( const auto& locator : mLocatorProviders )
 		if ( locator.matches( txt ) )
 			return locator;
@@ -554,6 +560,7 @@ std::optional<UniversalLocator::LocatorProvider> UniversalLocator::getLocator( c
 
 bool UniversalLocator::isLocator( const String& txt ) {
 	if ( !txt.empty() ) {
+		Lock lock( mLocatorProvidersMutex );
 		for ( const auto& locator : mLocatorProviders )
 			if ( locator.matches( txt ) )
 				return true;
@@ -564,8 +571,28 @@ bool UniversalLocator::isLocator( const String& txt ) {
 bool UniversalLocator::tryLocator( const String& txt ) {
 	if ( txt.empty() )
 		return false;
-	for ( const auto& locator : mLocatorProviders ) {
-		if ( locator.matches( txt ) && locator.switchFn( txt ) )
+	auto locator = getLocator( txt );
+	if ( locator ) {
+		if ( locator->modelFn ) {
+			String query( txt.substr( locator->triggerSize( txt ) ) );
+			query.trim();
+			const Uint64 generation = ++mLocatorModelGeneration;
+			locator->modelFn( query, [this, generation]( std::shared_ptr<Model> model ) {
+				mLifetime.weakHandle().run(
+					[generation, model = std::move( model )]( UniversalLocator* locator ) {
+						if ( generation != locator->mLocatorModelGeneration ||
+							 !locator->mLocateBarLayout->isVisible() )
+							return;
+						locator->mLocateTable->setModel( model );
+						if ( model && model->hasChildren() )
+							locator->mLocateTable->getSelection().set( model->index( 0 ) );
+						locator->mLocateTable->scrollToTop();
+						locator->updateLocateBarSync();
+					} );
+			} );
+			return true;
+		}
+		if ( locator->switchFn && locator->switchFn( txt ) )
 			return true;
 	}
 	return false;
@@ -573,21 +600,47 @@ bool UniversalLocator::tryLocator( const String& txt ) {
 
 bool UniversalLocator::openLocator( const String& txt, const Variant& vName,
 									const ModelEvent* modelEvent ) {
-	for ( const auto& locator : mLocatorProviders ) {
-		if ( locator.matches( txt ) && locator.openFn ) {
-			locator.openFn( vName, modelEvent );
-			return true;
-		}
+	auto locator = getLocator( txt );
+	if ( locator && locator->openFn ) {
+		locator->openFn( vName, modelEvent );
+		return true;
 	}
 	return false;
 }
 
 bool UniversalLocator::pressEnterLocator( const String& txt ) {
-	for ( const auto& locator : mLocatorProviders ) {
-		if ( locator.matches( txt ) && locator.pressEnterFn && locator.pressEnterFn( txt ) )
-			return true;
-	}
+	auto locator = getLocator( txt );
+	if ( locator && locator->pressEnterFn && locator->pressEnterFn( txt ) )
+		return true;
 	return false;
+}
+
+Uint64 UniversalLocator::registerLocatorProvider( LocatorProvider provider ) {
+	if ( provider.symbol.empty() || ( !provider.switchFn && !provider.modelFn ) )
+		return 0;
+	Lock lock( mLocatorProvidersMutex );
+	if ( std::find_if( mLocatorProviders.begin(), mLocatorProviders.end(),
+					   [&provider]( const LocatorProvider& current ) {
+						   return current.symbol == provider.symbol;
+					   } ) != mLocatorProviders.end() )
+		return 0;
+	provider.id = ++mLastLocatorProviderId;
+	mLocatorProviders.emplace_back( std::move( provider ) );
+	return mLastLocatorProviderId;
+}
+
+bool UniversalLocator::unregisterLocatorProvider( Uint64 providerId ) {
+	if ( providerId == 0 )
+		return false;
+	Lock lock( mLocatorProvidersMutex );
+	auto provider = std::find_if(
+		mLocatorProviders.begin(), mLocatorProviders.end(),
+		[providerId]( const LocatorProvider& current ) { return current.id == providerId; } );
+	if ( provider == mLocatorProviders.end() )
+		return false;
+	mLocatorProviders.erase( provider );
+	++mLocatorModelGeneration;
+	return true;
 }
 
 void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInput ) {
@@ -1184,17 +1237,17 @@ void UniversalLocator::requestWorkspaceSymbol() {
 }
 
 void UniversalLocator::updateWorkspaceSymbol( const LSPSymbolInformationList& res ) {
-	mUISceneNode->runOnMainThread( [this, res] {
-		if ( !mWorkspaceSymbolModel ) {
-			mWorkspaceSymbolModel =
-				LSPSymbolInfoModel::create( mApp->getUISceneNode(), mWorkspaceSymbolQuery, res );
+	mLifetime.weakHandle().run( [res]( UniversalLocator* locator ) {
+		if ( !locator->mWorkspaceSymbolModel ) {
+			locator->mWorkspaceSymbolModel = LSPSymbolInfoModel::create(
+				locator->mApp->getUISceneNode(), locator->mWorkspaceSymbolQuery, res );
 		} else {
-			mWorkspaceSymbolModel->setQuery( mWorkspaceSymbolQuery );
-			mWorkspaceSymbolModel->append( res );
+			locator->mWorkspaceSymbolModel->setQuery( locator->mWorkspaceSymbolQuery );
+			locator->mWorkspaceSymbolModel->append( res );
 		}
-		mLocateTable->setModel( mWorkspaceSymbolModel );
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-		mLocateTable->scrollToTop();
+		locator->mLocateTable->setModel( locator->mWorkspaceSymbolModel );
+		locator->mLocateTable->getSelection().set( locator->mLocateTable->getModel()->index( 0 ) );
+		locator->mLocateTable->scrollToTop();
 	} );
 }
 
@@ -1245,10 +1298,11 @@ void UniversalLocator::updateDocumentSymbol( const LSPSymbolInformationList& res
 	} else {
 		asyncFuzzyMatchTextDocumentSymbol( res, mCurDocQuery, 100, [this]( const auto model ) {
 			mTextDocumentSymbolModel = model;
-			mUISceneNode->runOnMainThread( [this] {
-				mLocateTable->setModel( mTextDocumentSymbolModel );
-				mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-				mLocateTable->scrollToTop();
+			mLifetime.weakHandle().run( []( UniversalLocator* locator ) {
+				locator->mLocateTable->setModel( locator->mTextDocumentSymbolModel );
+				locator->mLocateTable->getSelection().set(
+					locator->mLocateTable->getModel()->index( 0 ) );
+				locator->mLocateTable->scrollToTop();
 			} );
 		} );
 	}
@@ -1287,6 +1341,7 @@ std::vector<ProjectDirectoryTree::CommandInfo> UniversalLocator::getLocatorComma
 	std::vector<ProjectDirectoryTree::CommandInfo> vec;
 	UIIcon* icon = mUISceneNode->findIcon( "chevron-right" );
 	bool isOpenFolder = !mApp->getCurrentProject().empty();
+	Lock lock( mLocatorProvidersMutex );
 	for ( const auto& locator : mLocatorProviders ) {
 		if ( !isOpenFolder && locator.projectNeeded )
 			continue;

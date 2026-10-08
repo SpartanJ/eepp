@@ -1,4 +1,5 @@
 #include "git.hpp"
+#include <eepp/core/containers.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
@@ -8,6 +9,8 @@
 #include <eepp/system/sys.hpp>
 
 #include <algorithm>
+#include <charconv>
+#include <cstdio>
 
 using namespace EE;
 using namespace EE::System;
@@ -16,7 +19,355 @@ using namespace std::literals;
 
 namespace ecode {
 
+static bool parseHistoryTimestamp( std::string_view value, int64_t& timestamp ) {
+	const char* end = value.data() + value.size();
+	auto result = std::from_chars( value.data(), end, timestamp );
+	return result.ec == std::errc{} && result.ptr == end;
+}
+
+Git::HistoryPage Git::history( const HistoryQuery& query, const std::string& projectDir ) const {
+	HistoryPage page;
+	if ( query.limit == 0 || query.limit > 1000 ||
+		 ( query.revision.empty() && query.continuation.empty() ) ) {
+		page.returnCode = EXIT_FAILURE;
+		page.result = "Invalid Git history query";
+		return page;
+	}
+	std::vector<std::string> args{ "log",
+								   "--first-parent",
+								   String::format( "--max-count=%zu", query.limit + 1 ),
+								   "-z",
+								   "--format=%H%x00%h%x00%P%x00%an%x00%ae%x00%at%x00%ct%x00%B",
+								   query.continuation.empty() ? query.revision
+															  : query.continuation };
+	if ( !query.exclusions.empty() ) {
+		args.emplace_back( "--not" );
+		args.insert( args.end(), query.exclusions.begin(), query.exclusions.end() );
+	}
+	page.returnCode = git( args, projectDir, page.result );
+	if ( page.fail() ) {
+		std::string head;
+		if ( query.revision == "HEAD" && query.continuation.empty() &&
+			 git( { "rev-parse", "--verify", "HEAD" }, projectDir, head ) != EXIT_SUCCESS ) {
+			page.returnCode = EXIT_SUCCESS;
+			page.result.clear();
+		}
+		return page;
+	}
+	constexpr size_t FieldCount = 8;
+	size_t offset = 0;
+	while ( offset < page.result.size() ) {
+		std::string_view fields[FieldCount];
+		for ( size_t field = 0; field < FieldCount; ++field ) {
+			const size_t end = page.result.find( '\0', offset );
+			if ( end == std::string::npos ) {
+				page.returnCode = EXIT_FAILURE;
+				page.commits.clear();
+				page.result = "Invalid NUL-framed git log output";
+				return page;
+			}
+			fields[field] = std::string_view( page.result ).substr( offset, end - offset );
+			offset = end + 1;
+		}
+		if ( offset < page.result.size() && page.result[offset] == '\0' )
+			++offset;
+		Commit commit;
+		commit.hash = fields[0];
+		commit.shortHash = fields[1];
+		size_t parentOffset = 0;
+		while ( parentOffset < fields[2].size() ) {
+			const size_t separator = fields[2].find( ' ', parentOffset );
+			commit.parents.emplace_back( fields[2].substr(
+				parentOffset, separator == std::string_view::npos ? fields[2].size() - parentOffset
+																  : separator - parentOffset ) );
+			if ( separator == std::string_view::npos )
+				break;
+			parentOffset = separator + 1;
+		}
+		commit.authorName = fields[3];
+		commit.authorEmail = fields[4];
+		commit.message = fields[7];
+		while ( !commit.message.empty() &&
+				( commit.message.back() == '\n' || commit.message.back() == '\r' ) )
+			commit.message.pop_back();
+		const size_t subjectEnd = commit.message.find_first_of( "\r\n" );
+		commit.subject = commit.message.substr( 0, subjectEnd );
+		if ( !parseHistoryTimestamp( fields[5], commit.authorTime ) ||
+			 !parseHistoryTimestamp( fields[6], commit.commitTime ) ) {
+			page.returnCode = EXIT_FAILURE;
+			page.commits.clear();
+			page.result = "Invalid timestamp in git log output";
+			return page;
+		}
+		page.commits.emplace_back( std::move( commit ) );
+	}
+	page.result.clear();
+	page.hasMore = page.commits.size() > query.limit;
+	if ( page.hasMore )
+		page.commits.resize( query.limit );
+	return page;
+}
+
+Git::CommitFiles Git::commitFiles( const Commit& commit, const std::string& projectDir ) const {
+	CommitFiles result;
+	if ( commit.hash.empty() ) {
+		result.returnCode = EXIT_FAILURE;
+		result.result = "Invalid commit";
+		return result;
+	}
+	std::vector<std::string> args;
+	if ( commit.parents.empty() ) {
+		args = { "diff-tree", "--root", "--no-commit-id", "--name-status", "-r", "-z", "-M",
+				 commit.hash, "--" };
+	} else {
+		args = { "diff", "--name-status", "-z", "-M", commit.parents[0], commit.hash, "--" };
+	}
+	result.returnCode = git( args, projectDir, result.result );
+	if ( result.fail() )
+		return result;
+
+	size_t offset = 0;
+	auto nextField = [&result, &offset]( std::string_view& field ) {
+		if ( offset >= result.result.size() )
+			return false;
+		const size_t end = result.result.find( '\0', offset );
+		if ( end == std::string::npos )
+			return false;
+		field = std::string_view( result.result ).substr( offset, end - offset );
+		offset = end + 1;
+		return true;
+	};
+	while ( offset < result.result.size() ) {
+		std::string_view status;
+		std::string_view path;
+		if ( !nextField( status ) || !nextField( path ) || status.empty() ) {
+			result.returnCode = EXIT_FAILURE;
+			result.files.clear();
+			result.result = "Invalid NUL-framed git diff output";
+			return result;
+		}
+		CommitFile file;
+		file.status = status;
+		if ( status[0] == 'R' || status[0] == 'C' ) {
+			std::string_view newPath;
+			if ( !nextField( newPath ) ) {
+				result.returnCode = EXIT_FAILURE;
+				result.files.clear();
+				result.result = "Invalid renamed path in git diff output";
+				return result;
+			}
+			file.oldPath = path;
+			file.path = newPath;
+		} else {
+			file.path = path;
+		}
+		result.files.emplace_back( std::move( file ) );
+	}
+	std::string numstat;
+	if ( commit.parents.empty() ) {
+		args = { "diff-tree", "--root", "--no-commit-id", "--numstat", "-r",
+				 "-z",		  "-M",		commit.hash,	  "--" };
+	} else {
+		args = { "diff", "--numstat", "-z", "-M", commit.parents[0], commit.hash, "--" };
+	}
+	result.returnCode = git( args, projectDir, numstat );
+	if ( result.fail() ) {
+		result.result = std::move( numstat );
+		result.files.clear();
+		return result;
+	}
+	offset = 0;
+	while ( offset < numstat.size() ) {
+		const size_t end = numstat.find( '\0', offset );
+		if ( end == std::string::npos ) {
+			result.returnCode = EXIT_FAILURE;
+			result.result = "Invalid NUL-framed git numstat output";
+			result.files.clear();
+			return result;
+		}
+		const std::string_view record( numstat.data() + offset, end - offset );
+		offset = end + 1;
+		const size_t firstTab = record.find( '\t' );
+		const size_t secondTab =
+			firstTab == std::string_view::npos ? firstTab : record.find( '\t', firstTab + 1 );
+		if ( firstTab == std::string_view::npos || secondTab == std::string_view::npos ) {
+			result.returnCode = EXIT_FAILURE;
+			result.result = "Invalid git numstat record";
+			result.files.clear();
+			return result;
+		}
+		std::string_view path = record.substr( secondTab + 1 );
+		std::string_view oldPath;
+		if ( path.empty() ) {
+			const size_t oldEnd = numstat.find( '\0', offset );
+			if ( oldEnd == std::string::npos ) {
+				result.returnCode = EXIT_FAILURE;
+				result.result = "Invalid renamed path in git numstat output";
+				result.files.clear();
+				return result;
+			}
+			oldPath = std::string_view( numstat ).substr( offset, oldEnd - offset );
+			offset = oldEnd + 1;
+			const size_t newEnd = numstat.find( '\0', offset );
+			if ( newEnd == std::string::npos ) {
+				result.returnCode = EXIT_FAILURE;
+				result.result = "Invalid renamed path in git numstat output";
+				result.files.clear();
+				return result;
+			}
+			path = std::string_view( numstat ).substr( offset, newEnd - offset );
+			offset = newEnd + 1;
+		}
+		auto file = std::find_if( result.files.begin(), result.files.end(),
+								  [path, oldPath]( const CommitFile& candidate ) {
+									  return candidate.path == path &&
+											 ( oldPath.empty() || candidate.oldPath == oldPath );
+								  } );
+		if ( file == result.files.end() )
+			continue;
+		const std::string_view inserted = record.substr( 0, firstTab );
+		const std::string_view deleted = record.substr( firstTab + 1, secondTab - firstTab - 1 );
+		file->isBinary = inserted == "-" || deleted == "-";
+		auto parseCount = []( std::string_view value, int& count ) {
+			const char* end = value.data() + value.size();
+			auto parsed = std::from_chars( value.data(), end, count );
+			return parsed.ec == std::errc{} && parsed.ptr == end;
+		};
+		if ( !file->isBinary &&
+			 ( !parseCount( inserted, file->inserts ) || !parseCount( deleted, file->deletes ) ) ) {
+			result.returnCode = EXIT_FAILURE;
+			result.result = "Invalid line count in git numstat output";
+			result.files.clear();
+			return result;
+		}
+	}
+	std::string message;
+	result.returnCode = git( { "show", "-s", "--format=%B", commit.hash }, projectDir, message );
+	if ( result.fail() ) {
+		result.result = std::move( message );
+		result.files.clear();
+		return result;
+	}
+	while ( !message.empty() && ( message.back() == '\n' || message.back() == '\r' ) )
+		message.pop_back();
+	result.message = std::move( message );
+	std::string patch;
+	if ( commit.parents.empty() ) {
+		args = { "show", "--format=", "--no-ext-diff", "--no-color", "-M", commit.hash };
+	} else {
+		args = { "diff", "--no-ext-diff", "--no-color", "-M", commit.parents[0], commit.hash };
+	}
+	result.returnCode = git( args, projectDir, patch );
+	if ( result.fail() ) {
+		result.result = std::move( patch );
+		result.files.clear();
+		return result;
+	}
+	result.patch = std::move( patch );
+	std::string remote;
+	if ( git( { "remote", "get-url", "origin" }, projectDir, remote ) == EXIT_SUCCESS ) {
+		String::trimInPlace( remote, " \t\r\n" );
+		const size_t host = remote.find( "github.com" );
+		if ( host != std::string::npos ) {
+			size_t pathStart = host + std::string_view( "github.com" ).size();
+			while ( pathStart < remote.size() &&
+					( remote[pathStart] == '/' || remote[pathStart] == ':' ) )
+				++pathStart;
+			std::string path = remote.substr( pathStart );
+			while ( !path.empty() && path.back() == '/' )
+				path.pop_back();
+			if ( String::endsWith( path, ".git" ) )
+				path.resize( path.size() - 4 );
+			if ( !path.empty() )
+				result.commitURL = "https://github.com/" + path + "/commit/" + commit.hash;
+		}
+	}
+	result.result.clear();
+	return result;
+}
+
+Git::CommitFiles Git::workingTreeFiles( const std::string& projectDir ) {
+	CommitFiles result;
+	Status current = status( false, projectDir );
+	for ( const auto& [_, files] : current.files ) {
+		for ( const auto& file : files ) {
+			auto found = std::find_if(
+				result.files.begin(), result.files.end(),
+				[&file]( const CommitFile& item ) { return item.path == file.file; } );
+			if ( found == result.files.end() ) {
+				CommitFile item;
+				item.path = file.file;
+				item.status = std::string( 1, static_cast<char>( file.report.symbol ) );
+				item.inserts = file.inserts;
+				item.deletes = file.deletes;
+				item.isBinary = file.isBinary;
+				result.files.emplace_back( std::move( item ) );
+			} else {
+				found->inserts += file.inserts;
+				found->deletes += file.deletes;
+				found->isBinary |= file.isBinary;
+			}
+		}
+	}
+
+	result.returnCode = git( { "diff", "--no-ext-diff", "--no-color", "-M", "HEAD", "--" },
+							 projectDir, result.patch );
+	if ( result.fail() ) {
+		result.patch.clear();
+		result.returnCode =
+			git( { "diff", "--no-ext-diff", "--no-color", "-M", "--" }, projectDir, result.patch );
+	}
+	if ( result.fail() ) {
+		result.result = std::move( result.patch );
+		return result;
+	}
+
+	for ( const auto& file : result.files ) {
+		auto statusFile =
+			std::find_if( current.files.begin(), current.files.end(), [&file]( const auto& repo ) {
+				return std::any_of( repo.second.begin(), repo.second.end(),
+									[&]( const DiffFile& item ) {
+										return item.file == file.path &&
+											   item.report.type == GitStatusType::Untracked;
+									} );
+			} );
+		if ( statusFile == current.files.end() )
+			continue;
+		auto patch = diffUntracked( file.path, projectDir );
+		if ( patch.success() ) {
+			if ( !result.patch.empty() && result.patch.back() != '\n' )
+				result.patch += '\n';
+			result.patch += patch.result;
+		}
+	}
+	result.result.clear();
+	return result;
+}
+
+Git::Result Git::commitDiff( const Commit& commit, const CommitFile& file,
+							 const std::string& projectDir ) const {
+	Result result;
+	if ( commit.hash.empty() || file.path.empty() ) {
+		result.returnCode = EXIT_FAILURE;
+		result.result = "Invalid commit diff query";
+		return result;
+	}
+	std::vector<std::string> args;
+	if ( commit.parents.empty() ) {
+		args = { "show", "--format=", "--no-ext-diff", "--no-color", "-M", commit.hash, "--" };
+	} else {
+		args = { "diff", "--no-ext-diff", "--no-color", "-M", commit.parents[0], commit.hash,
+				 "--" };
+	}
+	if ( !file.oldPath.empty() )
+		args.emplace_back( file.oldPath );
+	args.emplace_back( file.path );
+	result.returnCode = git( args, projectDir, result.result );
+	return result;
+}
+
 static constexpr auto sNotCommittedYetHash = "0000000000000000000000000000000000000000";
+static constexpr std::string_view sAsciiWhitespace = " \t\r\n";
 
 Git::Blame::Blame( const std::string& error ) : error( error ), line( 0 ) {}
 
@@ -39,6 +390,16 @@ Git::Git( const std::string& projectDir, const std::string& gitPath ) : mGitPath
 }
 
 int Git::git( const std::string& args, const std::string& projectDir, std::string& buf ) const {
+	return git( Process::parseArgs( args ), projectDir, buf );
+}
+
+int Git::git( const std::vector<std::string>& args, const std::string& projectDir,
+			  std::string& buf ) const {
+	return git( args, projectDir, buf, {} );
+}
+
+int Git::git( const std::vector<std::string>& args, const std::string& projectDir, std::string& buf,
+			  std::string_view input ) const {
 	Clock clock;
 	buf.clear();
 	Process p;
@@ -49,15 +410,291 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 					projectDir.empty() ? mProjectPath : projectDir ) ) {
 		return EXIT_FAILURE;
 	}
-	p.readAllStdOut( buf );
 	int retCode = 0;
-	p.join( &retCode );
+	if ( !input.empty() ) {
+		size_t written = 0;
+		while ( written < input.size() ) {
+			const size_t count = p.write( input.substr( written ) );
+			if ( count == 0 )
+				break;
+			written += count;
+		}
+		p.join( &retCode );
+		p.readAllStdOut( buf );
+	} else {
+		p.readAllStdOut( buf );
+		p.join( &retCode );
+	}
 	if ( !mSilent || retCode != EXIT_SUCCESS ) {
+		const std::string joinedArgs = String::join( args );
 		Log::instance()->writef( retCode != EXIT_SUCCESS ? LogLevel::Info : LogLevel::Debug,
 								 "GitPlugin cmd in %s (%d): %s %s",
-								 clock.getElapsedTime().toString(), retCode, mGitPath, args );
+								 clock.getElapsedTime().toString(), retCode, mGitPath, joinedArgs );
 	}
 	return retCode;
+}
+
+Git::ConflictState Git::parseUnmergedIndex( const std::string& output ) {
+	ConflictState state;
+	UnorderedMap<std::string, size_t> fileIndices;
+	size_t recordStart = 0;
+	while ( recordStart < output.size() ) {
+		const size_t recordEnd = output.find( '\0', recordStart );
+		const size_t end = recordEnd == std::string::npos ? output.size() : recordEnd;
+		const std::string_view record( output.data() + recordStart, end - recordStart );
+		const size_t space = record.find( ' ' );
+		const size_t secondSpace =
+			space == std::string_view::npos ? space : record.find( ' ', space + 1 );
+		const size_t tab = secondSpace == std::string_view::npos
+							   ? secondSpace
+							   : record.find( '\t', secondSpace + 1 );
+		if ( space == std::string_view::npos || secondSpace == std::string_view::npos ||
+			 tab == std::string_view::npos || tab <= secondSpace + 1 ) {
+			state.error = "Invalid git ls-files --unmerged output";
+			return state;
+		}
+
+		ConflictStage conflictStage;
+		try {
+			conflictStage.mode = static_cast<Uint32>(
+				std::stoul( std::string( record.substr( 0, space ) ), nullptr, 8 ) );
+			conflictStage.stage = static_cast<Uint8>( std::stoul(
+				std::string( record.substr( secondSpace + 1, tab - secondSpace - 1 ) ) ) );
+		} catch ( const std::exception& ) {
+			state.error = "Invalid mode or stage in git ls-files --unmerged output";
+			return state;
+		}
+		conflictStage.objectId = std::string( record.substr( space + 1, secondSpace - space - 1 ) );
+		std::string path( record.substr( tab + 1 ) );
+		auto [it, inserted] = fileIndices.emplace( path, state.files.size() );
+		if ( inserted )
+			state.files.emplace_back( ConflictFile{ std::move( path ) } );
+		auto& file = state.files[it->second];
+		switch ( conflictStage.stage ) {
+			case 1:
+				file.base = std::move( conflictStage );
+				break;
+			case 2:
+				file.stage2 = std::move( conflictStage );
+				break;
+			case 3:
+				file.stage3 = std::move( conflictStage );
+				break;
+			default:
+				state.error = "Invalid index stage in git ls-files --unmerged output";
+				return state;
+		}
+		recordStart = end + 1;
+	}
+	return state;
+}
+
+Git::GitOperation Git::operation( const std::string& projectDir ) const {
+	const auto hasRef = [this, &projectDir]( const char* ref ) {
+		std::string output;
+		return git( { "rev-parse", "-q", "--verify", ref }, projectDir, output ) == EXIT_SUCCESS;
+	};
+	if ( hasRef( "MERGE_HEAD" ) )
+		return GitOperation::Merge;
+	if ( hasRef( "CHERRY_PICK_HEAD" ) )
+		return GitOperation::CherryPick;
+	if ( hasRef( "REVERT_HEAD" ) )
+		return GitOperation::Revert;
+
+	const auto hasGitPath = [this, &projectDir]( const char* name ) {
+		std::string output;
+		if ( git( { "rev-parse", "--git-path", name }, projectDir, output ) != EXIT_SUCCESS )
+			return false;
+		String::trimInPlace( output, sAsciiWhitespace );
+		const bool absolute =
+			!output.empty() && ( output.front() == '/' || output.front() == '\\' ||
+								 ( output.size() > 1 && output[1] == ':' ) );
+		if ( !absolute ) {
+			const std::string& repo = projectDir.empty() ? mProjectPath : projectDir;
+			output = repo + ( !repo.empty() && repo.back() == '/' ? "" : "/" ) + output;
+		}
+		return FileSystem::fileExists( output ) || FileSystem::isDirectory( output );
+	};
+	if ( hasGitPath( "rebase-merge" ) || hasGitPath( "rebase-apply" ) )
+		return GitOperation::Rebase;
+	if ( hasGitPath( "MERGE_AUTOSTASH" ) )
+		return GitOperation::StashApply;
+	return GitOperation::None;
+}
+
+Git::ConflictState Git::conflictState( const std::string& projectDir, bool loadContents ) const {
+	std::string output;
+	const int ret = git( { "ls-files", "--unmerged", "--stage", "-z" }, projectDir, output );
+	ConflictState state = parseUnmergedIndex( output );
+	state.operation = operation( projectDir );
+	if ( ret != EXIT_SUCCESS ) {
+		state.error = std::move( output );
+		state.files.clear();
+		return state;
+	}
+	const std::string& repo = projectDir.empty() ? mProjectPath : projectDir;
+	for ( auto& file : state.files ) {
+		file.workingTreeExists = FileSystem::fileExists(
+			repo + ( !repo.empty() && repo.back() == '/' ? "" : "/" ) + file.path );
+		if ( !loadContents )
+			continue;
+		for ( auto* stage : { &file.base, &file.stage2, &file.stage3 } ) {
+			if ( !stage->has_value() )
+				continue;
+			std::string contents;
+			if ( git( { "cat-file", "blob", ( *stage )->objectId }, projectDir, contents ) !=
+				 EXIT_SUCCESS ) {
+				state.error = std::move( contents );
+				return state;
+			}
+			( *stage )->contents = std::move( contents );
+			file.binary = file.binary || ( *stage )->contents.find( '\0' ) != std::string::npos;
+		}
+	}
+	return state;
+}
+
+Git::Result Git::resolveConflict( const std::string& path, bool remove,
+								  const std::string& projectDir ) const {
+	Result result;
+	result.returnCode = git( remove ? std::vector<std::string>{ "rm", "--", path }
+									: std::vector<std::string>{ "add", "--", path },
+							 projectDir, result.result );
+	return result;
+}
+
+Git::Result Git::acceptConflictStage( const std::string& path, bool stage2, bool present,
+									  const std::string& projectDir ) const {
+	if ( !present )
+		return resolveConflict( path, true, projectDir );
+	Result result;
+	result.returnCode = git( { "checkout", stage2 ? "--ours" : "--theirs", "--", path }, projectDir,
+							 result.result );
+	if ( result.success() )
+		return resolveConflict( path, false, projectDir );
+	return result;
+}
+
+Git::Result Git::restoreConflictStages( const ConflictFile& conflict,
+										const std::string& projectDir ) const {
+	Result result;
+	const ConflictStage* firstStage = conflict.base		? &*conflict.base
+									  : conflict.stage2 ? &*conflict.stage2
+									  : conflict.stage3 ? &*conflict.stage3
+														: nullptr;
+	if ( !firstStage ) {
+		result.returnCode = EXIT_FAILURE;
+		return result;
+	}
+
+	std::string indexInfo;
+	indexInfo.reserve( conflict.path.size() * 4 + 512 );
+	indexInfo += "0 ";
+	indexInfo.append( firstStage->objectId.size(), '0' );
+	indexInfo += '\t';
+	indexInfo += conflict.path;
+	indexInfo += '\0';
+	for ( const auto* stage : { &conflict.base, &conflict.stage2, &conflict.stage3 } ) {
+		if ( !stage->has_value() )
+			continue;
+		char header[128];
+		const int length = std::snprintf( header, sizeof( header ), "%06o %s %u\t",
+										  ( *stage )->mode, ( *stage )->objectId.c_str(),
+										  static_cast<unsigned int>( ( *stage )->stage ) );
+		if ( length <= 0 || static_cast<size_t>( length ) >= sizeof( header ) ) {
+			result.returnCode = EXIT_FAILURE;
+			return result;
+		}
+		indexInfo.append( header, static_cast<size_t>( length ) );
+		indexInfo += conflict.path;
+		indexInfo += '\0';
+	}
+	result.returnCode =
+		git( { "update-index", "-z", "--index-info" }, projectDir, result.result, indexInfo );
+	return result;
+}
+
+Git::Result Git::preparedMergeMessage( const std::string& projectDir ) const {
+	Result result;
+	std::string path;
+	result.returnCode = git( { "rev-parse", "--path-format=absolute", "--git-path", "MERGE_MSG" },
+							 projectDir, path );
+	String::trimInPlace( path, sAsciiWhitespace );
+	if ( result.success() && FileSystem::fileGet( path, result.result ) )
+		return result;
+
+	std::string gitDir;
+	result.returnCode =
+		git( std::vector<std::string>{ "rev-parse", "--absolute-git-dir" }, projectDir, gitDir );
+	String::trimInPlace( gitDir, sAsciiWhitespace );
+	if ( result.success() ) {
+		FileSystem::dirAddSlashAtEnd( gitDir );
+		path = gitDir + "MERGE_MSG";
+		if ( FileSystem::fileGet( path, result.result ) )
+			return result;
+	}
+
+	std::string mergeName;
+	result.returnCode = git( std::vector<std::string>{ "name-rev", "--name-only", "--no-undefined",
+													   "--refs=refs/heads/*",
+													   "--refs=refs/remotes/*", "MERGE_HEAD" },
+							 projectDir, mergeName );
+	String::trimInPlace( mergeName, sAsciiWhitespace );
+	if ( result.fail() || mergeName.empty() ) {
+		result.returnCode = git( std::vector<std::string>{ "rev-parse", "--short", "MERGE_HEAD" },
+								 projectDir, mergeName );
+		String::trimInPlace( mergeName, sAsciiWhitespace );
+	}
+	if ( result.success() && !mergeName.empty() ) {
+		result.result = "Merge '" + mergeName + "'";
+		return result;
+	}
+
+	// MERGE_HEAD was already verified when the operation state was detected. Keep the commit
+	// workflow usable even when the tool that initiated the merge did not create MERGE_MSG.
+	result.returnCode = EXIT_SUCCESS;
+	result.result = "Merge";
+	return result;
+}
+
+static std::vector<std::string> operationArgs( Git::GitOperation operation, bool abort ) {
+	const char* action = abort ? "--abort" : "--continue";
+	switch ( operation ) {
+		case Git::GitOperation::Merge:
+			return { "-c", "core.editor=true", "merge", action };
+		case Git::GitOperation::Rebase:
+			return { "-c", "core.editor=true", "rebase", action };
+		case Git::GitOperation::CherryPick:
+			return { "-c", "core.editor=true", "cherry-pick", action };
+		case Git::GitOperation::Revert:
+			return { "-c", "core.editor=true", "revert", action };
+		case Git::GitOperation::None:
+		case Git::GitOperation::StashApply:
+			return {};
+	}
+	return {};
+}
+
+Git::Result Git::continueOperation( GitOperation operation, const std::string& projectDir ) const {
+	Result result;
+	auto args = operationArgs( operation, false );
+	if ( args.empty() ) {
+		result.returnCode = EXIT_FAILURE;
+		return result;
+	}
+	result.returnCode = git( args, projectDir, result.result );
+	return result;
+}
+
+Git::Result Git::abortOperation( GitOperation operation, const std::string& projectDir ) const {
+	Result result;
+	auto args = operationArgs( operation, true );
+	if ( args.empty() ) {
+		result.returnCode = EXIT_FAILURE;
+		return result;
+	}
+	result.returnCode = git( args, projectDir, result.result );
+	return result;
 }
 
 void Git::gitSubmodules( const std::string& args, const std::string& projectDir,
@@ -68,7 +705,7 @@ void Git::gitSubmodules( const std::string& args, const std::string& projectDir,
 bool Git::isGitRepo( const std::string& projectDir ) {
 	std::string buf;
 	git( "rev-parse --is-inside-work-tree", projectDir, buf );
-	String::trimInPlace( buf );
+	String::trimInPlace( buf, sAsciiWhitespace );
 	return "true" == buf;
 }
 
@@ -137,7 +774,7 @@ std::string Git::setSafeDirectory( const std::string& projectDir ) const {
 }
 
 Git::Result Git::pull( const std::string& projectDir ) {
-	return gitSimple( "pull", projectDir );
+	return gitSimple( "pull --prune", projectDir );
 }
 
 Git::Result Git::push( const std::string& projectDir ) {
@@ -174,32 +811,16 @@ Git::CheckoutResult Git::checkout( const std::string& branch,
 Git::CheckoutResult Git::checkoutAndCreateLocalBranch( const std::string& remoteBranch,
 													   const std::string& newBranch,
 													   const std::string& projectDir ) const {
-	std::string newBranchName =
-		newBranch.empty() ? ( remoteBranch.find_last_of( '/' ) != std::string::npos
-								  ? remoteBranch.substr( remoteBranch.find_last_of( '/' ) + 1 )
-								  : remoteBranch )
-						  : newBranch;
+	const size_t separator = remoteBranch.find( '/' );
 	Git::CheckoutResult res;
-	std::string buf;
-	int retCode =
-		git( String::format( "branch --no-track %s refs/remotes/%s", newBranchName, remoteBranch ),
-			 projectDir, buf );
-	if ( retCode != EXIT_SUCCESS ) {
-		res.returnCode = retCode;
-		res.result = buf;
-		return res;
-	}
-
-	retCode = git( String::format( "branch --set-upstream-to=refs/remotes/%s %s", remoteBranch,
-								   newBranchName ),
-				   projectDir, buf );
-	if ( retCode != EXIT_SUCCESS ) {
-		res.returnCode = retCode;
-		res.result = buf;
-		return res;
-	}
-
-	return checkout( newBranchName, projectDir );
+	res.branch = newBranch.empty()
+					 ? ( separator != std::string::npos ? remoteBranch.substr( separator + 1 )
+														: remoteBranch )
+					 : newBranch;
+	res.returnCode =
+		git( { "checkout", "--track", "-b", res.branch, "refs/remotes/" + remoteBranch },
+			 projectDir, res.result );
+	return res;
 }
 
 static std::string asList( std::vector<std::string>& files ) {
@@ -225,6 +846,15 @@ Git::Result Git::restore( const std::string& file, const std::string& projectDir
 	return gitSimple( String::format( "restore \"%s\"", file ), projectDir );
 }
 
+Git::Result Git::restoreHead( const std::vector<std::string>& files,
+							  const std::string& projectDir ) {
+	Result result;
+	std::vector<std::string> args{ "restore", "--source=HEAD", "--staged", "--worktree", "--" };
+	args.insert( args.end(), files.begin(), files.end() );
+	result.returnCode = git( args, projectDir, result.result );
+	return result;
+}
+
 Git::Result Git::reset( std::vector<std::string> files, const std::string& projectDir ) {
 	return gitSimple( String::format( "reset -q HEAD -- %s", asList( files ) ), projectDir );
 }
@@ -240,6 +870,8 @@ Git::Result Git::diff( DiffMode mode, const std::string& projectDir ) {
 			modeTxt = "--staged";
 			break;
 		}
+		case DiffChanged:
+			break;
 	}
 	return gitSimple( String::format( "diff %s", modeTxt ), projectDir );
 }
@@ -247,6 +879,30 @@ Git::Result Git::diff( DiffMode mode, const std::string& projectDir ) {
 Git::Result Git::diff( const std::string& file, bool isStaged, const std::string& projectDir ) {
 	return gitSimple( String::format( "diff%s \"%s\"", isStaged ? " --staged" : "", file ),
 					  projectDir );
+}
+
+Git::Result Git::diffUntracked( const std::string& file, const std::string& projectDir ) {
+	const std::string emptyFilePath =
+		Sys::getTempPath() + ".ecode-git-empty-" + String::randString( 16 );
+	if ( !FileSystem::fileWrite( emptyFilePath, "" ) )
+		return { "Could not create temporary file for untracked file diff.", EXIT_FAILURE };
+
+	auto result = gitSimple(
+		String::format( "diff --no-index -- \"%s\" \"%s\"", emptyFilePath, file ), projectDir );
+	FileSystem::fileRemove( emptyFilePath );
+
+	// git diff --no-index returns 1 when differences were found.
+	if ( result.returnCode == 1 && !result.result.empty() ) {
+		result.returnCode = 0;
+		const auto oldFileHeader = result.result.find( "\n--- " );
+		if ( oldFileHeader != std::string::npos ) {
+			const auto headerEnd = result.result.find( '\n', oldFileHeader + 1 );
+			if ( headerEnd != std::string::npos )
+				result.result.replace( oldFileHeader + 1, headerEnd - oldFileHeader - 1,
+									   "--- /dev/null" );
+		}
+	}
+	return result;
 }
 
 Git::Result Git::showFile( const std::string& file, const std::string& ref,
@@ -268,6 +924,70 @@ Git::Result Git::createBranch( const std::string& branchName, bool _checkout,
 	return res;
 }
 
+Git::Result Git::createBranchAt( const std::string& branchName, const std::string& revision,
+								 const std::string& projectDir ) {
+	return gitSimple( String::format( "branch --no-track %s %s", branchName, revision ),
+					  projectDir );
+}
+
+Git::Result Git::createTag( const std::string& name, const std::string& revision,
+							const std::string& message, const std::string& projectDir ) {
+	std::vector<std::string> args{ "tag" };
+	if ( !message.empty() ) {
+		args.emplace_back( "-a" );
+		args.emplace_back( "-m" );
+		args.emplace_back( message );
+	}
+	args.emplace_back( name );
+	args.emplace_back( revision );
+	Result result;
+	result.returnCode = git( args, projectDir, result.result );
+	return result;
+}
+
+Git::Result Git::pushTag( const std::string& name, const std::string& remote,
+						  const std::string& projectDir ) {
+	Result result;
+	result.returnCode = git( { "push", remote, "refs/tags/" + name + ":refs/tags/" + name },
+							 projectDir, result.result );
+	return result;
+}
+
+Git::Result Git::deleteTag( const std::string& name, const std::string& projectDir ) {
+	Result result;
+	result.returnCode = git( { "tag", "-d", name }, projectDir, result.result );
+	return result;
+}
+
+Git::Result Git::deleteRemoteBranch( const std::string& remote, const std::string& branch,
+									 const std::string& projectDir ) {
+	Result result;
+	result.returnCode = git( { "push", remote, "--delete", branch }, projectDir, result.result );
+	if ( result.success() ) {
+		std::string cleanupResult;
+		result.returnCode = git( { "update-ref", "-d", "refs/remotes/" + remote + "/" + branch },
+								 projectDir, cleanupResult );
+		result.result.append( cleanupResult );
+	}
+	return result;
+}
+
+Git::Result Git::cherryPick( const std::string& revision, const std::string& projectDir ) {
+	Result result;
+	result.returnCode = git( { "cherry-pick", revision }, projectDir, result.result );
+	return result;
+}
+
+Git::Result Git::revert( const std::string& revision, bool commit, const std::string& projectDir ) {
+	Result result;
+	std::vector<std::string> args{ "revert" };
+	if ( !commit )
+		args.emplace_back( "--no-commit" );
+	args.emplace_back( revision );
+	result.returnCode = git( args, projectDir, result.result );
+	return result;
+}
+
 Git::Result Git::renameBranch( const std::string& branch, const std::string& newName,
 							   const std::string& projectDir ) {
 	return gitSimple( String::format( "branch -M %s %s", branch, newName ), projectDir );
@@ -284,7 +1004,7 @@ Git::Result Git::mergeBranch( const std::string& branch, bool fastForward,
 }
 
 Git::Result Git::commit( const std::string& commitMsg, bool amend, bool byPassCommitHook,
-						 const std::string& projectDir ) {
+						 const std::string& projectDir, bool cleanupComments ) {
 	auto tmpPath = Sys::getTempPath() + ".ecode-git-commit-" + String::randString( 16 );
 	if ( !FileSystem::fileWrite( tmpPath, commitMsg ) ) {
 		Git::Result res;
@@ -300,9 +1020,9 @@ Git::Result Git::commit( const std::string& commitMsg, bool amend, bool byPassCo
 	if ( byPassCommitHook )
 		opts += " --no-verify";
 
-	int retCode = git(
-		String::format( "commit %s --cleanup=whitespace --allow-empty --file=%s", opts, tmpPath ),
-		projectDir, buf );
+	int retCode = git( String::format( "commit %s --cleanup=%s --allow-empty --file=%s", opts,
+									   cleanupComments ? "strip" : "whitespace", tmpPath ),
+					   projectDir, buf );
 	FileSystem::fileRemove( tmpPath );
 	Git::Result res;
 	res.returnCode = retCode;
@@ -334,7 +1054,7 @@ Git::CountResult Git::branchHistoryPosition( const std::string& localBranch,
 	Git::CountResult res;
 	res.returnCode = retCode;
 	if ( res.success() ) {
-		String::trimInPlace( buf );
+		String::trimInPlace( buf, sAsciiWhitespace );
 		auto results = String::split( buf, '\t' );
 		if ( results.size() == 2 ) {
 			Int64 behind = 0;
@@ -418,7 +1138,7 @@ Git::Branch parseLocalBranch( const std::string_view& raw ) {
 
 static Git::Branch parseRemoteBranch( std::string_view raw ) {
 	auto split = String::split( raw, '\t', true );
-	if ( split.size() < 4 )
+	if ( split.size() < 4 || ( split.size() > 5 && !split[5].empty() ) )
 		return {};
 	std::string name( std::string{ split[1] } );
 	std::string remote( std::string{ split[1] } );
@@ -446,7 +1166,7 @@ static Git::Branch parseTag( std::string_view raw ) {
 std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_view filterBranch,
 													 const std::string& projectDir ) {
 	// clang-format off
-	std::string args( "for-each-ref --format '%(refname)	%(refname:short)	%(upstream:short)	%(objectname)	%(upstream:track,nobracket)' --sort=v:refname" );
+	std::string args( "for-each-ref --format '%(refname)	%(refname:short)	%(upstream:short)	%(objectname)	%(upstream:track,nobracket)	%(symref)	%(refname:lstrip=3)' --sort=v:refname" );
 	// clang-format on
 
 	if ( filterBranch.empty() ) {
@@ -461,6 +1181,8 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 	}
 
 	std::vector<Branch> branches;
+	// These views refer to buf and are used before it goes out of scope.
+	SmallVector<std::string_view, 16> remoteBranchNames;
 	std::string buf;
 
 	if ( EXIT_SUCCESS == git( args, projectDir, buf ) ) {
@@ -474,14 +1196,26 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 					branches.emplace_back( std::move( parsedBranch ) );
 			} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
 				auto parsedBranch = parseRemoteBranch( branch );
-				if ( !parsedBranch.isEmpty() )
+				if ( !parsedBranch.isEmpty() ) {
+					remoteBranchNames.emplace_back( branch.substr( branch.rfind( '\t' ) + 1 ) );
 					branches.emplace_back( std::move( parsedBranch ) );
+				}
 			} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {
 				auto parsedBranch = parseTag( branch );
 				if ( !parsedBranch.isEmpty() )
 					branches.emplace_back( std::move( parsedBranch ) );
 			}
 		} );
+		if ( ref & RefType::Remote ) {
+			for ( auto& branch : branches ) {
+				if ( branch.type == RefType::Head ) {
+					branch.localOnly =
+						branch.remote.empty() &&
+						std::find( remoteBranchNames.begin(), remoteBranchNames.end(),
+								   branch.name ) == remoteBranchNames.end();
+				}
+			}
+		}
 	}
 
 	if ( ( ref & RefType::Stash ) &&
@@ -562,6 +1296,19 @@ std::string Git::repoPath( const std::string& file ) {
 			return mProjectPath + subRepo;
 	}
 	return mProjectPath;
+}
+
+static void appendDecodedGitPath( std::string& decoded, std::string_view path ) {
+	if ( path.size() < 2 || path.front() != '"' || path.back() != '"' ) {
+		decoded.append( path );
+		return;
+	}
+
+	auto unescaped = String::unescape( path.substr( 1, path.size() - 2 ) );
+	if ( decoded.empty() )
+		decoded = std::move( unescaped );
+	else
+		decoded += unescaped;
 }
 
 Git::Result Git::gitSimple( const std::string& cmd, const std::string& projectDir ) {
@@ -645,7 +1392,8 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 						file = file.substr( rranges[1].start, rranges[1].end - rranges[1].start );
 				}
 
-				std::string filePath = subModulePath + file;
+				std::string filePath{ subModulePath };
+				appendDecodedGitPath( filePath, file );
 				auto repo = repoName( filePath, false, projectDir );
 				auto repoIt = s.files.find( repo );
 				bool found = false;
@@ -682,8 +1430,8 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	}
 
 	auto parseNumStat = [&s, &buf, &projectDir, this, &subModulePattern]( bool isStaged ) {
-		std::string ptrn( "([-%d]+)%s+([-%d]+)%s+(.+)" );
-		LuaPattern pattern( ptrn );
+		LuaPattern pattern( "([-%d]+)%s+([-%d]+)%s+(.+)" );
+		LuaPattern renamePattern( "(.*)%{.*%s=>%s(.*)%}(.*)" );
 		std::string subModulePath = "";
 		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
 			PatternMatcher::Range matches[4];
@@ -705,14 +1453,40 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				}
 
 				if ( isBinary || ( inserts || deletes ) ) {
-					std::string rptrn( "(.*)%{.*%s->%s(.*)%}" );
-					LuaPattern pattern( rptrn );
-					if ( pattern.matches( file.data(), 0, matches, file.size() ) ) {
+					auto matchesStatusPath = [&]( std::string_view candidate ) {
+						std::string path{ subModulePath };
+						appendDecodedGitPath( path, candidate );
+						auto repo = s.files.find( repoName( path, false, projectDir ) );
+						return repo != s.files.end() &&
+							   std::any_of( repo->second.begin(), repo->second.end(),
+											[isStaged, &path]( const DiffFile& statusFile ) {
+												return statusFile.file == path &&
+													   ( statusFile.report.type ==
+														 GitStatusType::Staged ) == isStaged;
+											} );
+					};
+					if ( renamePattern.matches( file.data(), 0, matches, file.size() ) ) {
 						file = file.substr( matches[1].start, matches[1].end - matches[1].start ) +
-							   file.substr( matches[2].start, matches[2].end - matches[2].start );
+							   file.substr( matches[2].start, matches[2].end - matches[2].start ) +
+							   file.substr( matches[3].start, matches[3].end - matches[3].start );
+					} else if ( file.find( " => " ) != std::string::npos &&
+								!matchesStatusPath( file ) ) {
+						bool matched = false;
+						for ( size_t arrow = file.find( " => " ); arrow != std::string::npos;
+							  arrow = file.find( " => ", arrow + 4 ) ) {
+							if ( matchesStatusPath(
+									 std::string_view( file ).substr( arrow + 4 ) ) ) {
+								file.erase( 0, arrow + 4 );
+								matched = true;
+								break;
+							}
+						}
+						if ( !matched )
+							return;
 					}
 
-					auto filePath = subModulePath + file;
+					std::string filePath{ subModulePath };
+					appendDecodedGitPath( filePath, file );
 					auto repo = repoName( filePath, false, projectDir );
 					auto repoIt = s.files.find( repo );
 					GitStatusReport status = { GitStatus::NotSet, GitStatusType::Untracked,

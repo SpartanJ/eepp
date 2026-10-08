@@ -1,27 +1,26 @@
-#include <eepp/graphics/fontmanager.hpp>
-#include <eepp/graphics/framebuffermanager.hpp>
+#include <eepp/graphics/framebufferregistry.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/resourcescope.hpp>
+#include <eepp/graphics/shaderprogramregistry.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/textlayout.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
-#include <eepp/graphics/vertexbuffermanager.hpp>
+#include <eepp/graphics/vertexbufferregistry.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/luapattern.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <eepp/system/parsermatcher.hpp>
 #include <eepp/system/regex.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/tools/uiinspectorserver.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/backend.hpp>
@@ -32,6 +31,9 @@
 #include <eepp/window/backend/SDL3/platformhelpersdl3.hpp>
 #endif
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/runtime.hpp>
+#include <eepp/window/terminal/terminalruntime.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <eepp/system/zip.hpp>
@@ -50,7 +52,59 @@
 
 #endif
 
+using namespace EE::Graphics;
+
 namespace EE { namespace Window {
+
+Engine::WindowContext::WindowContext( Engine* engine, EE::Window::Window* window ) :
+	mEngine( engine ), mPreviousWindow( engine->getCurrentWindow() ) {
+	mEngine->setCurrentWindow( window );
+}
+
+Engine::WindowContext::~WindowContext() {
+	if ( mActive )
+		mEngine->setCurrentWindow( mPreviousWindow );
+}
+
+Engine::WindowContext::WindowContext( WindowContext&& other ) noexcept :
+	mEngine( other.mEngine ), mPreviousWindow( other.mPreviousWindow ), mActive( other.mActive ) {
+	other.mActive = false;
+}
+
+namespace {
+
+void configureRuntimeVideoDriver() {
+	if ( Runtime::mode() == RuntimeMode::Headless ) {
+		Sys::setEnv( "SDL_VIDEODRIVER", "offscreen" );
+		Sys::setEnv( "SDL_VIDEO_DRIVER", "offscreen" );
+		return;
+	}
+
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_WIN || \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
+	if ( Runtime::mode() == RuntimeMode::Terminal ) {
+		// Terminal mode still needs a real OpenGL context host. These native SDL drivers are the
+		// supported OpenGL paths on their platforms, while the offscreen driver is unavailable or
+		// unusable there.
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+		constexpr char nativeVideoDriver[] = "cocoa";
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+		constexpr char nativeVideoDriver[] = "windows";
+#else
+		constexpr char nativeVideoDriver[] = "haiku";
+#endif
+		Sys::setEnv( "SDL_VIDEODRIVER", nativeVideoDriver );
+		Sys::setEnv( "SDL_VIDEO_DRIVER", nativeVideoDriver );
+	}
+#else
+	if ( Runtime::mode() != RuntimeMode::Terminal )
+		return;
+	Sys::setEnv( "SDL_VIDEODRIVER", "offscreen" );
+	Sys::setEnv( "SDL_VIDEO_DRIVER", "offscreen" );
+#endif
+}
+
+} // namespace
 
 static UintPtr sMainThreadId{ 0 };
 
@@ -62,7 +116,11 @@ Engine::Engine() :
 	mSharedGLContext( true ),
 	mPlatformHelper( NULL ),
 	mZip( NULL ),
-	mDisplayManager( NULL ) {
+	mDisplayManager( NULL ),
+	mGlobalResourceCatalog( ResourceCatalog::New() ),
+	mDefaultResourceScope( ResourceScope::New() ) {
+	configureRuntimeVideoDriver();
+	mDefaultResourceScope->importCatalog( mGlobalResourceCatalog );
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	mZip = Zip::New();
 	mZip->open( getPlatformHelper()->getApkPath() );
@@ -70,7 +128,6 @@ Engine::Engine() :
 	FileSystem::changeWorkingDirectory( getPlatformHelper()->getExternalStoragePath() );
 #endif
 
-	TextureAtlasManager::createSingleton();
 	UISceneNode::openAsyncResourceMainThreadQueue();
 }
 
@@ -102,15 +159,17 @@ Engine::~Engine() {
 
 	Doc::SyntaxDefinitionManager::destroySingleton();
 
-	NinePatchManager::destroySingleton();
+	for ( auto& window : mWindows )
+		window.second->shutdownRuntimeRenderTarget();
 
-	FontManager::destroySingleton();
+	Graphics::Private::FrameBufferRegistry::destroySingleton();
 
-	TextureAtlasManager::destroySingleton();
+	Graphics::Private::VertexBufferRegistry::destroySingleton();
 
-	Graphics::Private::FrameBufferManager::destroySingleton();
-
-	Graphics::Private::VertexBufferManager::destroySingleton();
+	// Catalogs are the final intentional texture owners. Clear them while the factory and current
+	// graphics context are still available for deferred release collection.
+	mDefaultResourceScope.reset();
+	mGlobalResourceCatalog.reset();
 
 	if ( TextureFactory* textureFactory = TextureFactory::existsSingleton() )
 		textureFactory->collectReleasedTextures();
@@ -119,11 +178,11 @@ Engine::~Engine() {
 
 	// Shader and renderer destructors issue GL commands. Programs must go first while GLi and the
 	// current window context are still valid.
-	ShaderProgramManager::destroySingleton();
+	ShaderProgramRegistry::destroySingleton();
 
 	Graphics::Renderer::destroySingleton();
 
-	PackManager::destroySingleton();
+	PackRegistry::destroySingleton();
 
 #ifdef EE_SSL_SUPPORT
 	Network::SSL::SSLSocket::end();
@@ -151,6 +210,14 @@ Engine::~Engine() {
 	ParserMatcherManager::destroySingleton();
 
 	Log::destroySingleton();
+}
+
+std::shared_ptr<ResourceCatalog> Engine::getGlobalResourceCatalog() const {
+	return mGlobalResourceCatalog;
+}
+
+std::shared_ptr<ResourceScope> Engine::getDefaultResourceScope() const {
+	return mDefaultResourceScope;
 }
 
 void Engine::destroy() {
@@ -219,6 +286,29 @@ EE::Window::Window* Engine::createDefaultWindow( const WindowSettings& Settings,
 }
 
 EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettings Context ) {
+	const bool firstWindow = mWindows.empty();
+	if ( Runtime::mode() == RuntimeMode::Terminal && !mWindows.empty() ) {
+		Log::error( "Terminal runtime currently supports one top-level Window" );
+		return nullptr;
+	}
+	if ( Runtime::mode() == RuntimeMode::Terminal ) {
+		TerminalRuntime& terminal = TerminalRuntime::instance();
+		if ( !terminal.initialize() )
+			return nullptr;
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_WIN || \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
+		// Terminal mode presents through Kitty, not through the native window manager. Keep the
+		// native context host hidden and avoid asking the native window manager to enter
+		// fullscreen.
+		Settings.Style |= WindowStyle::Hidden;
+		Settings.Style &= ~( WindowStyle::Fullscreen | WindowStyle::UseDesktopResolution );
+#endif
+		const Sizei terminalSize = terminal.pixelSize();
+		if ( terminalSize.x > 0 && terminalSize.y > 0 ) {
+			Settings.Width = terminalSize.x;
+			Settings.Height = terminalSize.y;
+		}
+	}
 	EE::Window::Window* window = NULL;
 
 	if ( NULL != mWindow ) {
@@ -237,26 +327,35 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 	if ( NULL == window ) {
 		window = createDefaultWindow( Settings, Context );
 	}
+	if ( NULL == window ) {
+		if ( Runtime::mode() == RuntimeMode::Terminal )
+			TerminalRuntime::instance().shutdown();
+		return nullptr;
+	}
 
 	setCurrentWindow( window );
 
 	mWindows.insert( { mWindow->getWindowID(), mWindow } );
 
-	if ( Settings.PixelDensity > 0 )
-		PixelDensity::setPixelDensity( Settings.PixelDensity );
+	if ( firstWindow ) {
+		const Float density = Settings.PixelDensity > 0
+								  ? Settings.PixelDensity
+								  : PixelDensity::getEnvironmentPixelDensity();
+		if ( density > 0 )
+			PixelDensity::setPixelDensity( density );
+	}
 
 	return window;
 }
 
 void Engine::destroyWindow( EE::Window::Window* window ) {
+	UIInspectorServer::notifyWindowDestroyed( window );
 	mWindows.erase( window->getWindowID() );
 
 	if ( window == mWindow ) {
-		if ( mWindows.size() > 0 ) {
-			mWindow = mWindows.begin()->second;
-		} else {
-			mWindow = NULL;
-		}
+		mWindow = NULL;
+		if ( !mWindows.empty() )
+			setCurrentWindow( mWindows.begin()->second );
 	}
 
 	eeSAFE_DELETE( window );
@@ -284,16 +383,39 @@ EE::Window::Window* Engine::getWindowID( const Uint32& winID ) {
 	return nullptr;
 }
 
+void Engine::updateInput() {
+	if ( !mWindow )
+		return;
+	for ( auto& window : mWindows ) {
+		if ( window.second != mWindow )
+			window.second->getInput()->beginInputFrame();
+	}
+	mWindow->getInput()->update();
+	for ( auto& window : mWindows ) {
+		if ( window.second != mWindow )
+			window.second->getInput()->endInputFrame();
+	}
+}
+
 EE::Window::Window* Engine::getCurrentWindow() const {
 	return mWindow;
 }
 
 void Engine::setCurrentWindow( EE::Window::Window* window ) {
-	if ( NULL != window && window != mWindow ) {
+	if ( window != mWindow ) {
 		mWindow = window;
-
-		mWindow->setCurrent();
+		if ( mWindow ) {
+			mWindow->setCurrent();
+			// Renderer state caches are shared by all windows, while the OpenGL bindings and state
+			// they mirror belong to each context. Reapply that cached state to the new context.
+			if ( Renderer::existsSingleton() )
+				Renderer::instance()->onContextChanged();
+		}
 	}
+}
+
+Engine::WindowContext Engine::makeWindowCurrent( EE::Window::Window* window ) {
+	return WindowContext( this, window );
 }
 
 Uint32 Engine::getWindowCount() const {
@@ -423,7 +545,7 @@ void Engine::disableSharedGLContext() {
 }
 
 bool Engine::isSharedGLContextEnabled() {
-	return mSharedGLContext && mWindow->isThreadedGLContext();
+	return mSharedGLContext && mWindow && mWindow->isThreadedGLContext();
 }
 
 bool Engine::isThreaded() {

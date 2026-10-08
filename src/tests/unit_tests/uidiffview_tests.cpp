@@ -1,11 +1,17 @@
 #include "utest.h"
+#include <atomic>
 #include <eepp/graphics/image.hpp>
+#include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uiselectbutton.hpp>
+#include <thread>
 
 using namespace EE;
 using namespace EE::UI;
@@ -14,11 +20,13 @@ using namespace EE::UI::Tools;
 UTEST( UIDiffView, LoadFromStringsAndVerifyDiffLines ) {
 	UIApplication app( WindowSettings{ 800, 600, "eepp - unit tests" } );
 	UIDiffView* diffView = UIDiffView::New();
+	EXPECT_TRUE( diffView->findAllByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER ).empty() );
 
 	std::string oldText = "line 1\nline 2\nline 3\nline 4";
 	std::string newText = "line 1\nline 2 changed\nline 3\nline 4 added\nline 5";
 
 	diffView->loadFromStrings( oldText, newText );
+	EXPECT_TRUE( diffView->findAllByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER ).empty() );
 
 	const auto& lines = diffView->getDiffLines();
 
@@ -103,6 +111,112 @@ UTEST( UIDiffView, LoadFromPatchAndVerifyCleanText ) {
 	eeDelete( diffView );
 }
 
+UTEST( UIDiffView, MultiFileViewerUsesRequestedViewMode ) {
+	UIApplication app( WindowSettings{ 800, 600, "eepp - unit tests" } );
+	std::string patchText = R"patch(diff --git a/first.txt b/first.txt
+--- a/first.txt
++++ b/first.txt
+@@ -1 +1 @@
+-old
++new
+diff --git a/second.txt b/second.txt
+--- a/second.txt
++++ b/second.txt
+@@ -1 +1 @@
+-before
++after
+)patch";
+
+	auto* viewer = UIMultiDiffView::New( patchText, "", UIDiffView::ViewMode::SideBySide, true );
+	const auto& diffViews = viewer->getDiffViews();
+	ASSERT_EQ( size_t{ 2 }, diffViews.size() );
+	EXPECT_EQ( size_t{ 2 }, viewer->getFileCount() );
+	EXPECT_EQ( size_t{ 2 }, viewer->getAddedLines() );
+	EXPECT_EQ( size_t{ 2 }, viewer->getRemovedLines() );
+	EXPECT_TRUE( viewer->isToolbarVisible() );
+	for ( const auto* diffView : diffViews ) {
+		EXPECT_EQ( UIDiffView::ViewMode::SideBySide, diffView->getViewMode() );
+		EXPECT_FALSE( diffView->isViewModeToggleVisible() );
+		EXPECT_FALSE( diffView->isCompleteViewToggleVisible() );
+		EXPECT_TRUE( diffView->isInteractiveFileHeader() );
+	}
+
+	viewer->setViewMode( UIDiffView::ViewMode::Unified );
+	viewer->setCollapsed( true );
+	EXPECT_EQ( UIDiffView::ViewMode::Unified, viewer->getViewMode() );
+	EXPECT_TRUE( viewer->isCollapsed() );
+	for ( const auto* diffView : diffViews ) {
+		EXPECT_EQ( UIDiffView::ViewMode::Unified, diffView->getViewMode() );
+		EXPECT_TRUE( diffView->isCollapsed() );
+		EXPECT_TRUE( diffView->getViewLines().empty() );
+	}
+	viewer->setCollapsed( false );
+	for ( const auto* diffView : diffViews ) {
+		EXPECT_FALSE( diffView->isCollapsed() );
+		EXPECT_FALSE( diffView->getViewLines().empty() );
+	}
+
+	eeDelete( viewer );
+}
+
+UTEST( UIDiffView, PreparedMultiFileDiffBuildsViewer ) {
+	std::string patchText = R"patch(diff --git a/first.txt b/first.txt
+--- a/first.txt
++++ b/first.txt
+@@ -1 +1 @@
+-old
++new
+diff --git a/second.txt b/second.txt
+--- a/second.txt
++++ b/second.txt
+@@ -1 +1 @@
+-before
++after
+)patch";
+
+	std::shared_ptr<UIDiffView::PreparedMultiFileDiff> prepared;
+	std::thread worker(
+		[&prepared, &patchText] { prepared = UIDiffView::prepareMultiFileDiff( patchText ); } );
+	worker.join();
+	ASSERT_TRUE( prepared );
+	UIApplication app( WindowSettings{ 800, 600, "eepp - unit tests" } );
+	auto* viewer = UIDiffView::NewMultiFileDiffViewer( std::move( prepared ), "",
+													   UIDiffView::ViewMode::SideBySide );
+	ASSERT_TRUE( viewer );
+	auto diffViews = viewer->findAllByType<UIDiffView>( UI_TYPE_DIFF_VIEW );
+	ASSERT_EQ( size_t{ 2 }, diffViews.size() );
+	EXPECT_TRUE( diffViews[0]->getFileName().toUtf8() == "first.txt" );
+	EXPECT_TRUE( diffViews[1]->getFileName().toUtf8() == "second.txt" );
+	EXPECT_EQ( UIDiffView::ViewMode::SideBySide, diffViews[0]->getViewMode() );
+
+	eeDelete( viewer );
+}
+
+UTEST( UIDiffView, PreparedMultiFileDiffHonorsCancellation ) {
+	auto cancelled = std::make_shared<std::atomic_bool>( true );
+	EXPECT_FALSE( UIDiffView::prepareMultiFileDiff( "diff --git a/a b/a\n", cancelled ) );
+}
+
+UTEST( UIDiffView, MultiFileViewerHandlesLargePatches ) {
+	UIApplication app( WindowSettings{ 800, 600, "eepp - unit tests" } );
+	app.getUI()->flushDirtyStyleAndLayout();
+	constexpr size_t fileCount = 128;
+	std::string patchText;
+	patchText.reserve( fileCount * 160 );
+	for ( size_t i = 0; i < fileCount; ++i ) {
+		const std::string fileName( "file" + std::to_string( i ) + ".txt" );
+		patchText += "diff --git a/" + fileName + " b/" + fileName + "\n--- a/" + fileName +
+					 "\n+++ b/" + fileName + "\n@@ -1 +1 @@\n-old\n+new\n";
+	}
+
+	auto* viewer = UIMultiDiffView::New( patchText );
+	EXPECT_EQ( fileCount, viewer->getDiffViews().size() );
+	EXPECT_TRUE( viewer->findAllByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER ).empty() );
+	EXPECT_FALSE( viewer->getUISceneNode()->isLoading() );
+
+	eeDelete( viewer );
+}
+
 UTEST( UIDiffView, LoadFromFileImageDiffUsesImageViewers ) {
 	UIApplication app( WindowSettings{ 800, 600, "eepp - unit tests" } );
 
@@ -114,16 +228,56 @@ UTEST( UIDiffView, LoadFromFileImageDiffUsesImageViewers ) {
 	ASSERT_TRUE( newImage.saveToFile( newImagePath, Graphics::Image::SaveType::PNG ) );
 
 	UIDiffView* diffView = UIDiffView::New();
+	diffView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	diffView->setPixelsSize( 400, 200 );
 	diffView->loadFromFile( oldImagePath, newImagePath );
 
 	EXPECT_TRUE( diffView->isImageDiff() );
 	EXPECT_TRUE( diffView->getLeftImageViewer()->isVisible() );
 	EXPECT_TRUE( diffView->getRightImageViewer()->isVisible() );
+	EXPECT_EQ( size_t{ 2 }, diffView->findAllByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER ).size() );
 	EXPECT_FALSE( diffView->getEditor()->isVisible() );
 	EXPECT_FALSE( diffView->getLeftEditor()->isVisible() );
 	EXPECT_FALSE( diffView->getRightEditor()->isVisible() );
 	EXPECT_TRUE( diffView->getFileName().toUtf8() == "eepp-uidiffview-new.png" );
+
+	auto toggles = diffView->findAllByType<UISelectButton>( UI_TYPE_SELECTBUTTON );
+	ASSERT_EQ( size_t{ 2 }, toggles.size() );
+	auto* modeToggle = toggles[0];
+	auto* completeToggle = toggles[1];
+	modeToggle->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	modeToggle->setPixelsSize( 100, 24 );
+	for ( auto mode : { UIDiffView::ViewMode::Unified, UIDiffView::ViewMode::SideBySide,
+						UIDiffView::ViewMode::Unified } ) {
+		app.getUI()->flushDirtyStyleAndLayout();
+		const Vector2f clickPos = modeToggle->convertToWorldSpace( { 50, 12 } );
+		auto* hit = diffView->overFind( clickPos );
+		ASSERT_EQ( modeToggle, hit );
+		app.getUI()->getEventDispatcher()->sendMouseClick( hit, clickPos.asInt(), EE_BUTTON_LMASK );
+		EXPECT_EQ( mode, diffView->getViewMode() );
+		EXPECT_EQ( mode != UIDiffView::ViewMode::Unified, modeToggle->isSelected() );
+		EXPECT_EQ( completeToggle, diffView->getLastChild() );
+		EXPECT_EQ( modeToggle, completeToggle->getPrevNode() );
+		EXPECT_EQ( mode == UIDiffView::ViewMode::SideBySide,
+				   diffView->getLeftImageViewer()->isVisible() );
+		EXPECT_EQ( mode == UIDiffView::ViewMode::SideBySide,
+				   diffView->getRightImageViewer()->isVisible() );
+		const auto viewers = diffView->findAllByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER );
+		ASSERT_EQ( size_t{ 3 }, viewers.size() );
+		EXPECT_EQ( mode == UIDiffView::ViewMode::Unified, viewers[2]->isVisible() );
+		EXPECT_TRUE( viewers[2]->hasImage() );
+	}
+
+	diffView->loadFromStrings( "old", "new" );
+	completeToggle->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	completeToggle->setPixelsSize( 80, 24 );
+	app.getUI()->flushDirtyStyleAndLayout();
+	const Vector2f clickPos = completeToggle->convertToWorldSpace( { 40, 12 } );
+	auto* hit = diffView->overFind( clickPos );
+	ASSERT_EQ( completeToggle, hit );
+	app.getUI()->getEventDispatcher()->sendMouseClick( hit, clickPos.asInt(), EE_BUTTON_LMASK );
+	EXPECT_TRUE( diffView->isCompleteView() );
+	EXPECT_FALSE( completeToggle->isSelected() );
 
 	eeDelete( diffView );
 	FileSystem::fileRemove( oldImagePath );

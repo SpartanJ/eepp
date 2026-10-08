@@ -3,7 +3,9 @@
 
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -18,6 +20,31 @@ namespace ecode {
 
 class Git {
   public:
+	enum class GitOperation : uint8_t { None, Merge, Rebase, CherryPick, Revert, StashApply };
+
+	struct ConflictStage {
+		std::string objectId;
+		std::string contents;
+		uint32_t mode{ 0 };
+		uint8_t stage{ 0 };
+	};
+
+	struct ConflictFile {
+		std::string path;
+		std::optional<ConflictStage> base;
+		std::optional<ConflictStage> stage2;
+		std::optional<ConflictStage> stage3;
+		bool workingTreeExists{ false };
+		bool binary{ false };
+	};
+
+	struct ConflictState {
+		std::vector<ConflictFile> files;
+		GitOperation operation{ GitOperation::None };
+		std::string error;
+
+		bool hasConflicts() const { return !files.empty(); }
+	};
 	struct Blame {
 		Blame( const std::string& error );
 
@@ -174,6 +201,48 @@ class Git {
 		bool fail() const { return !success(); }
 	};
 
+	struct Commit {
+		std::string hash;
+		std::string shortHash;
+		std::vector<std::string> parents;
+		std::string subject;
+		std::string message;
+		std::string authorName;
+		std::string authorEmail;
+		int64_t authorTime{ 0 };
+		int64_t commitTime{ 0 };
+
+		bool isMerge() const { return parents.size() > 1; }
+	};
+
+	struct HistoryQuery {
+		std::string revision{ "HEAD" };
+		std::vector<std::string> exclusions;
+		std::string continuation;
+		size_t limit{ 200 };
+	};
+
+	struct HistoryPage : public Result {
+		std::vector<Commit> commits;
+		bool hasMore{ false };
+	};
+
+	struct CommitFile {
+		std::string status;
+		int inserts{ 0 };
+		int deletes{ 0 };
+		bool isBinary{ false };
+		std::string path;
+		std::string oldPath;
+	};
+
+	struct CommitFiles : public Result {
+		std::vector<CommitFile> files;
+		std::string message;
+		std::string patch;
+		std::string commitURL;
+	};
+
 	struct CheckoutResult : public Result {
 		std::string branch;
 	};
@@ -231,17 +300,47 @@ class Git {
 		int64_t behind{ 0 };
 
 		bool gone{ false };
+		/** No matching branch exists in the fetched remote refs. */
+		bool localOnly{ false };
 
 		const char* typeStr() const { return refTypeToString( type ); }
 
 		bool isEmpty() const { return name.empty(); }
 	};
 
-	enum DiffMode { DiffHead, DiffStaged };
+	enum DiffMode { DiffHead, DiffStaged, DiffChanged };
 
 	Git( const std::string& projectDir = "", const std::string& gitPath = "" );
 
 	int git( const std::string& args, const std::string& projectDir, std::string& buf ) const;
+
+	int git( const std::vector<std::string>& args, const std::string& projectDir,
+			 std::string& buf ) const;
+
+	int git( const std::vector<std::string>& args, const std::string& projectDir, std::string& buf,
+			 std::string_view input ) const;
+
+	static ConflictState parseUnmergedIndex( const std::string& output );
+
+	ConflictState conflictState( const std::string& projectDir = "",
+								 bool loadContents = true ) const;
+
+	GitOperation operation( const std::string& projectDir = "" ) const;
+
+	Result resolveConflict( const std::string& path, bool remove,
+							const std::string& projectDir = "" ) const;
+
+	Result acceptConflictStage( const std::string& path, bool stage2, bool present,
+								const std::string& projectDir = "" ) const;
+
+	Result restoreConflictStages( const ConflictFile& conflict,
+								  const std::string& projectDir = "" ) const;
+
+	Result preparedMergeMessage( const std::string& projectDir = "" ) const;
+
+	Result continueOperation( GitOperation operation, const std::string& projectDir = "" ) const;
+
+	Result abortOperation( GitOperation operation, const std::string& projectDir = "" ) const;
 
 	void gitSubmodules( const std::string& args, const std::string& projectDir, std::string& buf );
 
@@ -262,6 +361,7 @@ class Git {
 	Result restore( std::vector<std::string> files, const std::string& projectDir = "" );
 
 	Result restore( const std::string& file, const std::string& projectDir = "" );
+	Result restoreHead( const std::vector<std::string>& files, const std::string& projectDir = "" );
 
 	Result reset( std::vector<std::string> files, const std::string& projectDir = "" );
 
@@ -269,11 +369,31 @@ class Git {
 
 	Result diff( const std::string& file, bool isStaged, const std::string& projectDir = "" );
 
+	Result diffUntracked( const std::string& file, const std::string& projectDir = "" );
+
 	Result showFile( const std::string& file, const std::string& ref,
 					 const std::string& projectDir = "" );
 
 	Result createBranch( const std::string& branchName, bool checkout = false,
 						 const std::string& projectDir = "" );
+
+	Result createBranchAt( const std::string& branchName, const std::string& revision,
+						   const std::string& projectDir = "" );
+
+	Result createTag( const std::string& name, const std::string& revision,
+					  const std::string& message = "", const std::string& projectDir = "" );
+
+	Result pushTag( const std::string& name, const std::string& remote,
+					const std::string& projectDir = "" );
+
+	Result deleteTag( const std::string& name, const std::string& projectDir = "" );
+
+	Result deleteRemoteBranch( const std::string& remote, const std::string& branch,
+							   const std::string& projectDir = "" );
+
+	Result cherryPick( const std::string& revision, const std::string& projectDir = "" );
+
+	Result revert( const std::string& revision, bool commit, const std::string& projectDir = "" );
 
 	Result renameBranch( const std::string& branch, const std::string& newName,
 						 const std::string& projectDir = "" );
@@ -284,7 +404,7 @@ class Git {
 						const std::string& projectDir = "" );
 
 	Result commit( const std::string& commitMsg, bool amend, bool byPassCommitHook,
-				   const std::string& projectDir = "" );
+				   const std::string& projectDir = "", bool cleanupComments = false );
 
 	Result fetch( const std::string& projectDir = "" );
 
@@ -364,6 +484,15 @@ class Git {
 					   const std::string& projectDir = "" );
 
 	Result stashDrop( const std::string& stashId, const std::string& projectDir = "" );
+
+	HistoryPage history( const HistoryQuery& query, const std::string& projectDir = "" ) const;
+
+	CommitFiles commitFiles( const Commit& commit, const std::string& projectDir = "" ) const;
+
+	CommitFiles workingTreeFiles( const std::string& projectDir = "" );
+
+	Result commitDiff( const Commit& commit, const CommitFile& file,
+					   const std::string& projectDir = "" ) const;
 
   protected:
 	std::string mGitPath;

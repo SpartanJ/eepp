@@ -2,6 +2,8 @@
 const GLchar * EEGLES2_SHADER_CLIPPED_FS = R"(#define MAX_CLIP_PLANES 6
 uniform				sampler2D	textureUnit0;
 uniform				int			dgl_TexActive;
+uniform				int			dgl_TextureColorMode;
+uniform				vec3		dgl_TextureColorChannel;
 #ifndef GL_ES
 uniform				int			dgl_ClippingEnabled;
 uniform				int			dgl_ClipEnabled[ MAX_CLIP_PLANES ];
@@ -26,10 +28,16 @@ void main(void)
 					discard;
 		}
 	}
-	if ( 1 == dgl_TexActive )
-		gl_FragColor = dgl_Color * texture2D( textureUnit0, dgl_TexCoord[ 0 ].xy );
+	if ( 1 == dgl_TexActive ) {
+		vec4 texel = texture2D( textureUnit0, dgl_TexCoord[ 0 ].xy );
+		if ( 0 == dgl_TextureColorMode )
+			gl_FragColor = dgl_Color * texel;
+		else {
+			float coverage = dot( texel.rgb, dgl_TextureColorChannel );
+			gl_FragColor = vec4( dgl_Color.rgb, dgl_Color.a * coverage );
+		}
+	}
 	else
 		gl_FragColor = dgl_Color;
 }
 )";
-

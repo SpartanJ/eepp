@@ -5,6 +5,7 @@
 #include <eepp/ui/css/propertyidset.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
+#include <eepp/ui/css/transitiondefinition.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -12,13 +13,17 @@ class EE_API ElementDefinition : NonCopyable {
   public:
 	ElementDefinition( const StyleSheetStyleVector& styleSheetStyles );
 
-	StyleSheetProperty* getProperty( const Uint32& id );
+	StyleSheetProperty* getProperty( const PropertyId& id );
+
+	StyleSheetProperty* getPropertyByNameHash( const String::HashType& id );
 
 	const PropertyIdSet& getPropertyIds() const;
 
 	const StyleSheetProperties& getProperties() const;
 
 	const std::vector<const CSS::StyleSheetProperty*>& getTransitionProperties() const;
+
+	const ComputedTransitions& getTransitions() const;
 
 	const std::vector<const CSS::StyleSheetProperty*>& getAnimationProperties() const;
 
@@ -36,6 +41,7 @@ class EE_API ElementDefinition : NonCopyable {
 	StyleSheetVariables mVariables;
 	PropertyIdSet mPropertyIds;
 	std::vector<const CSS::StyleSheetProperty*> mTransitionProperties;
+	ComputedTransitions mTransitions;
 	std::vector<const CSS::StyleSheetProperty*> mAnimationProperties;
 	bool mStructurallyVolatile;
 

@@ -64,6 +64,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	void collapseAll( const ModelIndex& index = {} );
 
+	virtual void selectAll();
+
 	UIIcon* getExpandIcon() const;
 
 	void setExpandedIcon( UIIcon* expandIcon );
@@ -116,6 +118,15 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	void clearViewMetadata();
 
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
+
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+	virtual void setTableFlags( Uint32 flags );
+
   protected:
 	enum class IterationDecision {
 		Continue,
@@ -156,14 +167,14 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual void onColumnSizeChange( const size_t& colIndex, bool fromUserInteraction = false );
 
+	virtual void onModelIndexDeleted( const void* internalData );
+
 	virtual UIWidget* updateCell( const Vector2<Int64>& posIndex, const ModelIndex& index,
 								  const size_t& indentLevel, const Float& yOffset );
 
 	virtual UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
-
-	virtual void onSortColumn( const size_t& colIndex );
 
 	void setAllExpanded( const ModelIndex& index = {}, bool expanded = true );
 

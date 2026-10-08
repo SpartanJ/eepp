@@ -18,6 +18,22 @@ TriangleDrawable::TriangleDrawable( const Vector2f& position, const Sizef& size 
 	mPosition = position;
 }
 
+DrawablePtr TriangleDrawable::clone() const {
+	auto instance = makeResource<TriangleDrawable>( mPosition, mSize );
+	instance->mTriangle = mTriangle;
+	instance->mComputedTriangle = mComputedTriangle;
+	instance->mColors[0] = mColors[0];
+	instance->mColors[1] = mColors[1];
+	instance->mColors[2] = mColors[2];
+	instance->mCustomColors = mCustomColors;
+	instance->mFillMode = mFillMode;
+	instance->mBlendMode = mBlendMode;
+	instance->mLineWidth = mLineWidth;
+	instance->mSmooth = mSmooth;
+	instance->mColor = mColor;
+	return instance;
+}
+
 Sizef TriangleDrawable::getSize() {
 	return mTriangle.getSize();
 }

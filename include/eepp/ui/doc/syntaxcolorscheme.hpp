@@ -2,9 +2,15 @@
 #define EE_UI_DOC_SYNTAXCOLORSCHEME_HPP
 
 #include <eepp/system/color.hpp>
-#include <eepp/system/iostream.hpp>
-#include <eepp/system/pack.hpp>
+#include <memory>
 #include <vector>
+
+namespace EE { namespace System {
+
+class IOStream;
+class Pack;
+
+}} // namespace EE::System
 
 using namespace EE::System;
 
@@ -312,10 +318,16 @@ class EE_API SyntaxColorScheme {
 	void setName( const std::string& name );
 
   protected:
-	std::string mName;
-	UnorderedMap<SyntaxStyleType, Style> mSyntaxColors;
-	UnorderedMap<SyntaxStyleType, Style> mEditorColors;
+	struct Storage {
+		std::string name;
+		UnorderedMap<SyntaxStyleType, Style> syntaxColors;
+		UnorderedMap<SyntaxStyleType, Style> editorColors;
+	};
+
+	std::shared_ptr<Storage> mStorage;
 	mutable UnorderedMap<SyntaxStyleType, Style> mStyleCache;
+
+	void ensureUniqueStorage();
 
 	template <typename SyntaxStyleType>
 	const SyntaxColorScheme::Style& getSyntaxStyleFromCache( const SyntaxStyleType& type ) const;

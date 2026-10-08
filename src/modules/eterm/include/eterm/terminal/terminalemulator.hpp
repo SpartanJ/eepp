@@ -41,6 +41,9 @@
 #include <eterm/system/iprocess.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
+#include <eterm/terminal/kittygraphicsprotocol.hpp>
+#include <eterm/terminal/kittykeyboardprotocol.hpp>
+#include <eterm/terminal/terminalsearch.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 #include <memory>
 #include <stdint.h>
@@ -55,21 +58,30 @@ using namespace eterm::System;
 namespace eterm { namespace Terminal {
 
 constexpr int ESC_BUF_SIZ = 512;
-constexpr int ESC_ARG_SIZ = 16;
+constexpr int ESC_ARG_SIZ = 32;
 constexpr int STR_BUF_SIZ = ESC_BUF_SIZ;
 constexpr int STR_ARG_SIZ = ESC_ARG_SIZ;
+// Kitty recommends small chunks, but unchunked direct transmissions are valid and common in
+// simple clients. Keep this independently bounded while allowing useful image-sized APCs.
+constexpr size_t MAX_KITTY_GRAPHICS_APC_SIZE = 16 * 1024 * 1024;
+constexpr size_t MAX_GENERIC_STRING_SEQUENCE_SIZE = 1024 * 1024;
 
 /* Internal representation of the screen */
 struct Term {
-	int row{ 0 };				   /* nb row */
-	int col{ 0 };				   /* nb col */
-	Line* line{ nullptr };		   /* screen */
-	Line* alt{ nullptr };		   /* alternate screen */
-	Line* hist{ nullptr };		   /* history buffer */
-	int histcursize{ 0 };		   /* history current size */
-	int histsize{ 0 };			   /* history max size */
-	int histi{ 0 };				   /* history index */
-	int histlen{ 0 };			   /* history valid length */
+	int row{ 0 };		   /* nb row */
+	int col{ 0 };		   /* nb col */
+	Line* line{ nullptr }; /* screen */
+	Line* alt{ nullptr };  /* alternate screen */
+	Line* hist{ nullptr }; /* history buffer */
+	int histcursize{ 0 };  /* history current size */
+	int histsize{ 0 };	   /* history max size */
+	int histi{ 0 };		   /* history index */
+	int histlen{ 0 };	   /* history valid length */
+	/* Allocation width of each history line. All slots are (re)allocated together
+	 * on every resize/reflow, so a single shared capacity is enough to know when a
+	 * recycled ring-buffer slot can be overwritten in place instead of being freed
+	 * and reallocated for every pushed line (hot path on fast-scrolling output). */
+	int histcapacity{ 0 };
 	int max_width{ 0 };			   /* max width of lines in history */
 	int scr{ 0 };				   /* scroll back */
 	int* dirty{ nullptr };		   /* dirtyness of lines */
@@ -99,6 +111,9 @@ struct CSIEscape {
 	size_t len;			   /* raw string length */
 	char priv;
 	int arg[ESC_ARG_SIZ];
+	/* Separator following each argument. ECMA-48 uses ';' between parameters and ':'
+	 * between subparameters, so preserving it is required for modern SGR colors. */
+	char sep[ESC_ARG_SIZ];
 	int narg; /* nb of args */
 	char mode[2];
 };
@@ -111,7 +126,8 @@ struct STREscape {
 	size_t siz; /* allocation size */
 	size_t len; /* raw string length */
 	char* args[STR_ARG_SIZ];
-	int narg; /* nb of args */
+	int narg;		/* nb of args */
+	bool discarded; /* oversized sequence: consume input through its terminator without storing */
 };
 
 enum class PromptState {
@@ -148,7 +164,12 @@ class TerminalEmulator final {
 
 	void resize( int columns, int rows );
 
+	void resize( int columns, int rows, int pixelWidth, int pixelHeight );
+
 	void redraw();
+
+	/** Worker-owned terminal state reset (RIS semantics without replacing the PTY/process). */
+	void reset();
 
 	void logError( const char* err );
 
@@ -209,8 +230,8 @@ class TerminalEmulator final {
 
 	std::string getSelection() const;
 
-	void mousereport( const TerminalMouseEventType& type, const Vector2i& pos, const Uint32& flags,
-					  const Uint32& mod );
+	void mousereport( const TerminalMouseEventType& type, const Vector2i& cellPosition,
+					  const Vector2i& pixelPosition, const Uint32& flags, const Uint32& mod );
 
 	const bool& isDirty() const { return mDirty; }
 
@@ -226,6 +247,14 @@ class TerminalEmulator final {
 
 	void ttywrite( const char* s, size_t n, int may_echo );
 
+	void keyEvent( const KittyKeyEvent& event );
+
+	void textInput( Uint32 codepoint );
+
+	void clearPendingKeyboardInput();
+
+	void reportFocus( bool focused );
+
 	int tisaltscr();
 
 	int scrollSize() const;
@@ -239,6 +268,17 @@ class TerminalEmulator final {
 	bool getAllowMemoryTrimnming() const;
 
 	void setAllowMemoryTrimnming( bool allowMemoryTrimnming );
+
+	/** Worker-only maximum interval between snapshots while PTY reads remain saturated. */
+	void setPresentationInterval( Time interval );
+
+	/** Set the user-configured cursor style restored by DECSCUSR parameter 7. */
+	void setDefaultCursorMode( TerminalCursorMode mode );
+
+	/** Worker-only notification that the display palette changed. */
+	void notifyColorSchemeChanged();
+
+	void requestGraphicsResync();
 
 	Vector2i getSize() const;
 
@@ -260,6 +300,18 @@ class TerminalEmulator final {
 
 	int getTerminalMode() const { return mTerm.mode; }
 
+	void setSearchQuery( TerminalSearchQuery query );
+
+	void navigateSearch( int direction );
+
+	void clearSearch();
+
+	const std::vector<TerminalSearchMatch>& getSearchMatches() const;
+
+	Int32 getCurrentSearchMatch() const;
+
+	Uint64 getSearchRequestId() const { return mSearchQuery.requestId; }
+
   private:
 	DpyPtr mDpy;
 	PtyPtr mPty;
@@ -268,21 +320,37 @@ class TerminalEmulator final {
 	bool mPendingPtyResize{ false };
 	int mPendingPtyColumns{ 0 };
 	int mPendingPtyRows{ 0 };
+	int mPendingPtyPixelWidth{ 0 };
+	int mPendingPtyPixelHeight{ 0 };
+	int mPixelWidth{ 0 };
+	int mPixelHeight{ 0 };
 	Clock mPendingPtyResizeClock;
 
 	bool mDirty{ true };
+	bool mAllDirty{ true };
+	bool mProcessingPtyInput{ false };
+	int mPtyHistoryLinesPushed{ 0 };
+	Clock mPresentationClock;
+	Time mPresentationInterval{ Microseconds( 1000000.0 / 60.0 ) };
+	Clock mSynchronizedUpdateClock;
 	bool mAllowMemoryTrimnming{ false };
 	int mExitCode;
 
 	enum { STARTING = 0, RUNNING, TERMINATED } mStatus;
 
-	char mBuf[8192];
+	char mBuf[4 * 8192];
 	int mBuflen;
 
 	Term mTerm;
 	TerminalSelection mSel;
 	CSIEscape mCsiescseq;
 	STREscape mStrescseq;
+	KittyGraphicsProtocol mKittyGraphics;
+	KittyKeyboardState mPrimaryKeyboardState;
+	KittyKeyboardState mAlternateKeyboardState;
+	KittyKeyEvent mPendingTextKey;
+	Uint32 mExpectedTextInput{ 0 };
+	bool mHasPendingTextKey{ false };
 
 	uint32_t mDefaultFg;
 	uint32_t mDefaultBg;
@@ -291,11 +359,31 @@ class TerminalEmulator final {
 
 	int mAllowAltScreen;
 	int mAllowWindowOps;
+	TerminalCursorMode mDefaultCursorMode{ SteadyUnderline };
+	bool mColorSchemeNotifications{ false };
+	int mColorScheme{ 0 };
 
 	std::string mCurrentWorkingDirectory;
+	Vector2i mLastMousePosition{ -1, -1 };
 	PromptState mPromptState{ PromptState::Unknown };
 	PromptStateChangedCb mPromptStateChangedCb;
 	DataCb mDataCb;
+	Vector2i mKittyPlaceholderCell{ -1, -1 };
+	struct KittyPlaceholderMetadata {
+		Uint32 placementId{ 0 };
+		Uint16 row{ UINT16_MAX };
+		Uint16 column{ UINT16_MAX };
+		Uint8 imageIdMsb{ 0 };
+		Uint8 diacriticCount{ 0 };
+	};
+	std::unordered_map<const TerminalGlyph*, KittyPlaceholderMetadata> mKittyPlaceholderMetadata;
+	Uint32 mKittyUnderlineColor{ 0 };
+	TerminalSearch mSearch;
+	TerminalSearchQuery mSearchQuery;
+	std::vector<TerminalSearchRowView> mSearchRows;
+	Int32 mCurrentSearchMatch{ -1 };
+	Clock mSearchRefreshClock;
+	bool mSearchDirty{ false };
 
 	void setClipboard( const char* str );
 
@@ -308,6 +396,10 @@ class TerminalEmulator final {
 
 	void csidump();
 	void csihandle();
+	bool handleKittyKeyboardProtocol();
+	KittyKeyboardState& activeKeyboardState();
+	void ttywriteInternal( const char* s, size_t n, int may_echo, bool scrollToBottom );
+	void resetKittyKeyboardProtocol();
 	void csiparse();
 	void csireset();
 
@@ -339,10 +431,15 @@ class TerminalEmulator final {
 	void treset();
 	void tscrollup( int, int, int );
 	void tscrolldown( int, int );
+	void historyUpdateMaxWidth( Line line, int col );
 	void historyPush( Line line, int col );
+	/* Zero-copy variant: trades buffer ownership between the screen row and the
+	 * recycled history slot. The caller must blank the returned screen row
+	 * afterwards (tscrollup does this via tclearregion). */
+	void historyStealPush( Line* lineSlot, int col );
 	void historyReflow( int old_col, int new_col );
 	void historyPopToScreen( int loaded, int col );
-	void tsetattr( int*, int );
+	void tsetattr( int*, int, const char* );
 	void tsetchar( Rune, TerminalGlyph*, int, int );
 	void tsetdirt( int, int );
 	void tsetscroll( int, int );
@@ -353,7 +450,7 @@ class TerminalEmulator final {
 	void tcontrolcode( uchar );
 	void tdectest( char );
 	void tdefutf8( char );
-	int32_t tdefcolor( int*, int*, int );
+	int32_t tdefcolor( int*, const char*, int*, int );
 	void tdeftran( char );
 	void tstrsequence( uchar );
 
@@ -393,6 +490,8 @@ class TerminalEmulator final {
 	int xgetcolor( int x, unsigned char* r, unsigned char* g, unsigned char* b );
 	void osc_color_response( int num, int index, int is_osc4 );
 	void handleDeviceAttributes();
+	int colorScheme();
+	void reportColorScheme();
 
 	void trimMemory();
 

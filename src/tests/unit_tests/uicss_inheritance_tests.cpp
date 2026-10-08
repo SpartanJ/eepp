@@ -1,25 +1,32 @@
 #include "utest.hpp"
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/resourcescope.hpp>
 #include <eepp/scene/node.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
+#include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetpropertyanimation.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitabwidget.hpp>
+#include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/input.hpp>
 
@@ -28,6 +35,117 @@ using namespace EE::UI;
 using namespace EE::UI::CSS;
 using namespace EE::Scene;
 using namespace EE::Graphics;
+
+namespace {
+
+class ResolutionStorageTestStyle : public UIStyle {
+  public:
+	ResolutionStorageTestStyle() : UIStyle( nullptr ) {}
+
+	struct Probe {
+		const StyleSheetProperty* firstAddress{};
+		const StyleSheetProperty* nestedAddress{};
+		const StyleSheetProperty* reusedAddress{};
+		std::string firstValueBeforeNested;
+		std::string firstValueAfterNested;
+		std::string nestedValue;
+	};
+
+	Probe probe( const StyleSheetProperty& first, const StyleSheetProperty& nested ) {
+		Probe probe;
+		{
+			auto firstResolution = resolveProperty( &first );
+			probe.firstAddress = firstResolution.get();
+			probe.firstValueBeforeNested = firstResolution.get()->getValue();
+			{
+				auto nestedResolution = resolveProperty( &nested );
+				probe.nestedAddress = nestedResolution.get();
+				probe.nestedValue = nestedResolution.get()->getValue();
+			}
+			probe.firstValueAfterNested = firstResolution.get()->getValue();
+		}
+		{
+			auto reusedResolution = resolveProperty( &first );
+			probe.reusedAddress = reusedResolution.get();
+		}
+		return probe;
+	}
+};
+
+} // namespace
+
+UTEST( CSSParser, UnknownPropertiesKeepDistinctNameHashes ) {
+	StyleSheetProperty first( "data-first", "one" );
+	StyleSheetProperty second( "data-second", "two" );
+
+	EXPECT_TRUE( first.getPropertyDefinition() == nullptr );
+	EXPECT_TRUE( second.getPropertyDefinition() == nullptr );
+	EXPECT_EQ( first.getId(), String::hash( "data-first" ) );
+	EXPECT_EQ( second.getId(), String::hash( "data-second" ) );
+	EXPECT_NE( first.getId(), second.getId() );
+	EXPECT_TRUE( first.getPropertyId() == PropertyId::Invalid );
+	EXPECT_TRUE( first.getShorthandId() == ShorthandId::Invalid );
+}
+
+UTEST( CSSParser, DefinitionBackedPropertiesUseCanonicalDefinitionName ) {
+	auto* definition =
+		StyleSheetSpecification::instance()->getProperty( PropertyId::BackgroundColor );
+	ASSERT_TRUE( nullptr != definition );
+	StyleSheetProperty property( definition, "#010203" );
+
+	EXPECT_FALSE( property.isEmpty() );
+	EXPECT_STDSTREQ( definition->getName(), property.getName() );
+	EXPECT_EQ( definition->getId(), property.getNameHash() );
+}
+
+UTEST( CSSParser, CommentsPreserveDeclarationContext ) {
+	StyleSheetPropertiesParser parser( R"css(
+		color /* before colon */ : red;
+		margin: 1px /* between values */ 2px;
+		font-family: "A/* literal */B";
+		/* between declarations */ width: 140px;
+		line-height: 40px !important /* final declaration without semicolon */
+	)css" );
+	const auto& properties = parser.getProperties();
+
+	auto lineHeight = properties.find(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::LineHeight )->getId() );
+	auto color = properties.find(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::Color )->getId() );
+	auto marginTop = properties.find(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::MarginTop )->getId() );
+	auto marginRight = properties.find(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::MarginRight )->getId() );
+	auto fontFamily = properties.find(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::FontFamily )->getId() );
+	auto width = properties.find(
+		StyleSheetSpecification::instance()->getProperty( PropertyId::Width )->getId() );
+
+	ASSERT_TRUE( lineHeight != properties.end() );
+	ASSERT_TRUE( color != properties.end() );
+	ASSERT_TRUE( marginTop != properties.end() );
+	ASSERT_TRUE( marginRight != properties.end() );
+	ASSERT_TRUE( fontFamily != properties.end() );
+	ASSERT_TRUE( width != properties.end() );
+	EXPECT_TRUE( lineHeight->second.getValue() == "40px" );
+	EXPECT_TRUE( color->second.getValue() == "red" );
+	EXPECT_TRUE( marginTop->second.getValue() == "1px" );
+	EXPECT_TRUE( marginRight->second.getValue() == "2px" );
+	EXPECT_TRUE( fontFamily->second.getValue().find( "/* literal */" ) != std::string::npos );
+	EXPECT_TRUE( width->second.getValue() == "140px" );
+}
+
+UTEST( CSSParser, StatementAtRuleDoesNotConsumeFollowingRule ) {
+	StyleSheetParser parser;
+	ASSERT_TRUE( parser.loadFromString( std::string_view{ R"css(
+		@charset "UTF-8";
+		:root { --color-bg: #0c0c0c; }
+	)css" } ) );
+
+	auto rootStyle = parser.getStyleSheet().getStyleFromSelector( ":root" );
+	ASSERT_TRUE( rootStyle != nullptr );
+	EXPECT_TRUE( rootStyle->getVariableByName( "--color-bg" ).getValue() == "#0c0c0c" );
+}
 
 UTEST( CSSInheritance, HtmlXmlLoadingInheritance ) {
 	UIApplication app(
@@ -423,6 +541,40 @@ UTEST( CSSVariables, StyleSheetPropertyNeedsValueSubstitution ) {
 					  .needsValueSubstitution() );
 }
 
+UTEST( CSSVariables, ResolutionStorageIsReentrantAndReusable ) {
+	ResolutionStorageTestStyle style;
+	style.setStyleSheetVariable( StyleSheetVariable( "--first", "#123456" ) );
+	style.setStyleSheetVariable( StyleSheetVariable( "--nested", "#ABCDEF" ) );
+
+	const auto probe = style.probe( StyleSheetProperty( "color", "var(--first)" ),
+									StyleSheetProperty( "background-color", "var(--nested)" ) );
+
+	EXPECT_TRUE( nullptr != probe.firstAddress );
+	EXPECT_TRUE( nullptr != probe.nestedAddress );
+	EXPECT_NE( probe.firstAddress, probe.nestedAddress );
+	EXPECT_EQ( probe.firstAddress, probe.reusedAddress );
+	EXPECT_STDSTREQ( "#123456", probe.firstValueBeforeNested );
+	EXPECT_STDSTREQ( "#123456", probe.firstValueAfterNested );
+	EXPECT_STDSTREQ( "#ABCDEF", probe.nestedValue );
+}
+
+UTEST( CSSVariables, StyleSheetPropertyReusesVariableCacheStorage ) {
+	StyleSheetProperty property( "color", "var(--a-variable-name-long-enough-to-allocate)" );
+	auto firstCache = property.getVarCache();
+	ASSERT_EQ( 1u, firstCache.size() );
+	const auto* cacheAddress = &*firstCache.begin();
+	const auto* variableStorage = firstCache.begin()->variableList.data();
+
+	property.setValue( "#123456" );
+	EXPECT_TRUE( property.getVarCache().empty() );
+
+	property.setValue( "var(--a-variable-name-long-enough-to-allocate)" );
+	auto reusedCache = property.getVarCache();
+	ASSERT_EQ( 1u, reusedCache.size() );
+	EXPECT_EQ( cacheAddress, &*reusedCache.begin() );
+	EXPECT_EQ( variableStorage, reusedCache.begin()->variableList.data() );
+}
+
 UTEST( CSSVariables, StyleAttributeVarOnRichTextAndTextSpan ) {
 	UIApplication app(
 		WindowSettings( 800, 600, "eepp - CSS Style Attribute Var Test", WindowStyle::Default,
@@ -575,6 +727,405 @@ UTEST( CSSVariables, ParentStateChildOpacityReverts ) {
 	EXPECT_EQ( child->getAlpha(), 255.f );
 	parent->popState( UIState::StateSelected );
 	EXPECT_EQ( child->getAlpha(), 0.f );
+}
+
+UTEST( CSSVariables, NativeFallbackSurvivesMultipleStates ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Native Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#child:selected { opacity: 0.5; }
+		#child:pressed { opacity: 0.25; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+	for ( int cycle = 0; cycle < 32; ++cycle ) {
+		child->pushState( UIState::StateSelected );
+		EXPECT_EQ( child->getAlpha(), 127.5f );
+		child->pushState( UIState::StatePressed );
+		EXPECT_EQ( child->getAlpha(), 63.75f );
+		child->popState( UIState::StatePressed );
+		EXPECT_EQ( child->getAlpha(), 127.5f );
+		child->popState( UIState::StateSelected );
+		EXPECT_EQ( child->getAlpha(), 255.f );
+		EXPECT_FALSE( child->getUIStyle()->hasLocalProperty( PropertyId::Opacity ) );
+	}
+}
+
+UTEST( CSSVariables, NativeFallbackFirstAppearsOutsideNormalState ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Late Native Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#child:selected { opacity: 0.5; }
+		#child:pressed { background-color: blue; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	const Color nativeBackground = child->getBackgroundColor();
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	child->pushState( UIState::StatePressed );
+	EXPECT_TRUE( child->getBackgroundColor() == Color::Blue );
+	child->popState( UIState::StatePressed );
+	EXPECT_TRUE( child->getBackgroundColor() == nativeBackground );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+}
+
+UTEST( CSSVariables, InlineLowerWinnerSurvivesStateRollback ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Inline State Rollback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>#child:selected { opacity: 0.5 !important; }</style>
+	<div id="child" style="opacity: 0.75;"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_EQ( child->getAlpha(), 191.25f );
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 191.25f );
+	EXPECT_TRUE( child->getUIStyle()->hasLocalProperty( PropertyId::Opacity ) );
+}
+
+UTEST( CSSVariables, VariableLowerWinnerUpdatesWhileOverridden ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Variable State Rollback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		:root { --base-opacity: 0.75; }
+		#child { opacity: var(--base-opacity); }
+		#child:selected { opacity: 0.5; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_EQ( child->getAlpha(), 191.25f );
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	app.getUI()->combineStyleSheet( ":root { --base-opacity: 0.25; }" );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 63.75f );
+}
+
+UTEST( CSSVariables, LightDarkLowerWinnerUpdatesWhileOverridden ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Light Dark State Rollback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* sceneNode = app.getUI();
+	sceneNode->setColorSchemePreference( ColorSchemePreference::Light );
+	UIWidget* root = sceneNode->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#child { opacity: light-dark(0.75, 0.25); }
+		#child:selected { opacity: 0.5; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_EQ( child->getAlpha(), 191.25f );
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	sceneNode->setColorSchemePreference( ColorSchemePreference::Dark );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 63.75f );
+}
+
+UTEST( CSSVariables, StylesheetReloadUsesNewLowerWinner ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Reload State Rollback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* sceneNode = app.getUI();
+	sceneNode->setStyleSheet( R"css(
+		#child { opacity: 0.75; }
+		#child:selected { opacity: 0.5; }
+	)css" );
+	UIWidget* child = UIWidget::New();
+	child->setId( "child" );
+	child->setParent( sceneNode->getRoot() );
+	sceneNode->update( Time::Zero );
+	EXPECT_EQ( child->getAlpha(), 191.25f );
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	sceneNode->setStyleSheet( R"css(
+		#child { opacity: 0.25; }
+		#child:selected { opacity: 0.5; }
+	)css" );
+	sceneNode->update( Time::Zero );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 63.75f );
+}
+
+UTEST( CSSVariables, NativeFallbackSurvivesLowerRuleReloads ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Reload Native Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* sceneNode = app.getUI();
+	sceneNode->setStyleSheet( "#child:selected { opacity: 0.5; }" );
+	UIWidget* child = UIWidget::New();
+	child->setId( "child" );
+	child->setParent( sceneNode->getRoot() );
+	sceneNode->update( Time::Zero );
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	sceneNode->setStyleSheet( "#child { opacity: 0.25; } #child:selected { opacity: 0.5; }" );
+	sceneNode->update( Time::Zero );
+	sceneNode->setStyleSheet( "#child:selected { opacity: 0.5; }" );
+	sceneNode->update( Time::Zero );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+}
+
+UTEST( CSSVariables, InheritedFallbackUsesCurrentParentValue ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Inherited Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<html>
+	<head><style>
+		#parent { color: white; }
+		#child:selected { color: red; }
+	</style></head>
+	<body><div id="parent"><span id="child">Text</span></div></body>
+</html>
+	)html" );
+	UIWidget* parent = root->querySelector( "#parent" );
+	UITextSpan* child = root->querySelector( "#child" )->asType<UITextSpan>();
+	EXPECT_TRUE( parent != nullptr );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_TRUE( child->getFontColor() == Color::White );
+	child->pushState( UIState::StateSelected );
+	EXPECT_TRUE( child->getFontColor() == Color::Red );
+	parent->setStyleSheetInlineProperty( "color", "#00ff00" );
+	parent->reloadStyle( true, false, true, true );
+	child->popState( UIState::StateSelected );
+	EXPECT_TRUE( child->getFontColor() == Color( "#00ff00" ) );
+}
+
+UTEST( CSSVariables, InheritedFallbackRestoresWhenSourceDisappears ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Inherited Source Removal Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* sceneNode = app.getUI();
+	sceneNode->setStyleSheet( "#parent { color: white; } #child:selected { color: red; }" );
+	UIWidget* root = sceneNode->loadLayoutFromString(
+		"<html><body><div id=\"parent\"><span id=\"child\">Text</span></div></body></html>" );
+	UITextSpan* child = root->querySelector( "#child" )->asType<UITextSpan>();
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_TRUE( child->getFontColor() == Color::White );
+	child->pushState( UIState::StateSelected );
+	EXPECT_TRUE( child->getFontColor() == Color::Red );
+	sceneNode->setStyleSheet( "#child:selected { color: red; }" );
+	sceneNode->update( Time::Zero );
+	child->popState( UIState::StateSelected );
+	EXPECT_TRUE( child->getFontColor() == Color::White );
+}
+
+UTEST( CSSVariables, VolatileNativeFallbackRestores ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Volatile Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>#parent:selected > #child { opacity: 0.5; }</style>
+	<div id="parent"><div id="child"></div></div>
+</vbox>
+	)html" );
+	UIWidget* parent = root->querySelector( "#parent" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( parent != nullptr );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+	parent->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	parent->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+}
+
+UTEST( CSSVariables, SiblingStateNativeFallbackRestores ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Sibling Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>#source:selected + #child { opacity: 0.5; }</style>
+	<div id="source"></div><div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* source = root->querySelector( "#source" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( source != nullptr );
+	EXPECT_TRUE( child != nullptr );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+	source->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	source->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getAlpha(), 255.f );
+}
+
+UTEST( CSSVariables, IndexedNativeFallbackRestoresEachLayer ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Indexed Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>#child:selected { background-tint: red, blue; }</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	child->setBackgroundTint( Color( "#112233" ), 0 );
+	child->setBackgroundTint( Color( "#445566" ), 1 );
+	EXPECT_STDSTREQ( "#112233", child->getBackgroundTint( 0 ).toHexString() );
+	EXPECT_STDSTREQ( "#445566", child->getBackgroundTint( 1 ).toHexString() );
+	for ( int cycle = 0; cycle < 8; ++cycle ) {
+		child->pushState( UIState::StateSelected );
+		EXPECT_TRUE( child->getBackgroundTint( 0 ) == Color::Red );
+		EXPECT_TRUE( child->getBackgroundTint( 1 ) == Color::Blue );
+		child->popState( UIState::StateSelected );
+		EXPECT_TRUE( child->getBackgroundTint( 0 ) == Color( "#112233" ) );
+		const std::string secondTint = child->getBackgroundTint( 1 ).toHexString();
+		EXPECT_STDSTREQ( Color( "#445566" ).toHexString(), secondTint );
+		EXPECT_FALSE( child->getUIStyle()->hasLocalProperty( PropertyId::BackgroundTint ) );
+	}
+}
+
+UTEST( CSSVariables, IndexedFallbackRestoresLayerWhileAnotherStateRemains ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Indexed State Rollback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#child:selected { background-tint: red, blue; }
+		#child:pressed { background-tint: green; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	const Color originalTint( "#445566" );
+	child->setBackgroundTint( originalTint, 1 );
+	child->pushState( UIState::StateSelected );
+	EXPECT_TRUE( child->getBackgroundTint( 1 ) == Color::Blue );
+	child->pushState( UIState::StatePressed );
+	child->popState( UIState::StateSelected );
+	EXPECT_TRUE( child->getBackgroundTint( 0 ) == Color::Green );
+	EXPECT_TRUE( child->getBackgroundTint( 1 ) == originalTint );
+	child->popState( UIState::StatePressed );
+	EXPECT_TRUE( child->getBackgroundTint( 1 ) == originalTint );
+}
+
+UTEST( CSSVariables, IndexedFallbackRestoresUncoveredLayer ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Partial Indexed Fallback Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#child { background-tint: #112233; }
+		#child:selected { background-tint: red, blue; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	child->setBackgroundTint( Color( "#445566" ), 1 );
+	child->pushState( UIState::StateSelected );
+	EXPECT_TRUE( child->getBackgroundTint( 0 ) == Color::Red );
+	EXPECT_TRUE( child->getBackgroundTint( 1 ) == Color::Blue );
+	child->popState( UIState::StateSelected );
+	EXPECT_TRUE( child->getBackgroundTint( 0 ) == Color( "#112233" ) );
+	EXPECT_TRUE( child->getBackgroundTint( 1 ) == Color( "#445566" ) );
+}
+
+UTEST( CSSVariables, HTMLTableIndexedPropertyGetterForwardsIndex ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Table Indexed Getter Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UIWidget* root = app.getUI()->loadLayoutFromString( R"html(
+<html><body><table id="table"><tr><td id="cell">Text</td></tr></table></body></html>
+	)html" );
+	const PropertyDefinition* tint =
+		StyleSheetSpecification::instance()->getProperty( PropertyId::BackgroundTint );
+	for ( const char* selector : { "#table", "#cell" } ) {
+		UIWidget* widget = root->querySelector( selector );
+		EXPECT_TRUE( widget != nullptr );
+		widget->setBackgroundTint( Color( "#112233" ), 0 );
+		widget->setBackgroundTint( Color( "#445566" ), 1 );
+		EXPECT_STDSTREQ( "#445566", widget->getPropertyString( tint, 1 ) );
+	}
+}
+
+UTEST( CSSVariables, NativeFallbackTransitionsInBothDirections ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Native Fallback Transition Test",
+						WindowStyle::Default, WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* sceneNode = app.getUI();
+	UIWidget* root = sceneNode->loadLayoutFromString( R"html(
+<vbox id="root">
+	<style>
+		#child { transition: opacity 0.1s; }
+		#child:selected { opacity: 0.5; }
+	</style>
+	<div id="child"></div>
+</vbox>
+	)html" );
+	UIWidget* child = root->querySelector( "#child" );
+	EXPECT_TRUE( child != nullptr );
+	const PropertyDefinition* opacity =
+		StyleSheetSpecification::instance()->getProperty( PropertyId::Opacity );
+	child->pushState( UIState::StateSelected );
+	EXPECT_EQ( child->getActionsByTag( opacity->getId() ).size(), 1UL );
+	sceneNode->update( Seconds( 0.2f ) );
+	EXPECT_EQ( child->getAlpha(), 127.5f );
+	child->popState( UIState::StateSelected );
+	EXPECT_EQ( child->getActionsByTag( opacity->getId() ).size(), 1UL );
+	sceneNode->update( Seconds( 0.2f ) );
+	EXPECT_EQ( child->getAlpha(), 255.f );
 }
 
 UTEST( CSSVariables, ParentStateChildOpacityTransitionReverts ) {
@@ -1234,6 +1785,32 @@ UTEST( CSSVariables, VarInRgbViaIntermediateVar ) {
 	EXPECT_EQ( 191, result.a ); // 0.75 * 255 = 191
 }
 
+UTEST( CSSMediaQuery, NegatedFeatureExpression ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - Negated Media Feature Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	MediaFeatures features;
+	features.prefersColorScheme = "dark";
+	features.prefersContrast = "no-preference";
+	auto darkNormal =
+		MediaQuery::parse( "(prefers-color-scheme: dark) and (not (prefers-contrast: more))" );
+	ASSERT_TRUE( darkNormal != nullptr );
+	EXPECT_TRUE( darkNormal->check( features ) );
+
+	features.prefersContrast = "more";
+	EXPECT_FALSE( darkNormal->check( features ) );
+
+	auto lightHigh =
+		MediaQuery::parse( "(not (prefers-color-scheme: dark)) and (prefers-contrast: more)" );
+	ASSERT_TRUE( lightHigh != nullptr );
+	features.prefersColorScheme = "light";
+	EXPECT_TRUE( lightHigh->check( features ) );
+	features.prefersColorScheme = "dark";
+	EXPECT_FALSE( lightHigh->check( features ) );
+}
+
 UTEST( CSSVariables, LightDarkBasic ) {
 	// Light scheme: picks first parameter of light-dark()
 	UIApplication lightApp(
@@ -1528,4 +2105,48 @@ UTEST( CSSFunctions, NotAFunctionReturnsDefault ) {
 	auto len = StyleSheetLength::fromString( "notaclamp(10px, 50px, 100px)" );
 	EXPECT_EQ( StyleSheetLength::Unit::Px, len.getUnit() );
 	EXPECT_EQ( 0, len.getValue() );
+}
+
+UTEST( CSSUnits, StrokeRoundTripAndTransitionAtHighDensity ) {
+	UIApplication app( WindowSettings( 800, 600, "eepp - CSS Units Test", WindowStyle::Default,
+									   WindowBackend::Default, 32, {}, 1, false, true ),
+					   UIApplication::Settings( System::Sys::getProcessPath() + ".." +
+													System::FileSystem::getOSSlash(),
+												1 ) );
+	const Float previousDensity = PixelDensity::getPixelDensity();
+	PixelDensity::setPixelDensity( 2.f );
+	auto* definition =
+		StyleSheetSpecification::instance()->getProperty( PropertyId::TextStrokeWidth );
+	UIWidget* widgets[] = { UITextView::New(),	UITextSpan::New(), UIRichText::New(),
+							UITooltip::New(),	UIConsole::New(),  UICodeEditor::New(),
+							UITextInput::New(), UITextEdit::New() };
+	for ( auto* widget : widgets ) {
+		widget->setParent( app.getUI() );
+		definition = StyleSheetSpecification::instance()->getProperty(
+			widget->isType( UI_TYPE_TEXTINPUT ) || widget->isType( UI_TYPE_TEXTEDIT )
+				? PropertyId::HintStrokeWidth
+				: PropertyId::TextStrokeWidth );
+		for ( bool html : { false, true } ) {
+			if ( html )
+				widget->setFlags( UI_HTML_ELEMENT );
+			else
+				widget->unsetFlags( UI_HTML_ELEMENT );
+			for ( const char* source : { "2px", "2dp" } ) {
+				widget->applyProperty( StyleSheetProperty( definition, source ) );
+				const Float expected = html || std::string_view( source ) == "2dp" ? 4.f : 2.f;
+				std::string serialized = widget->getPropertyString( definition );
+				EXPECT_EQ( widget->lengthFromValue( serialized, PropertyRelativeTarget::None, 0 ),
+						   expected );
+				widget->applyProperty( StyleSheetProperty( definition, serialized ) );
+				EXPECT_TRUE( widget->getPropertyString( definition ) == serialized );
+				StyleSheetPropertyAnimation::tweenProperty( widget, 0.5f, definition, serialized,
+															"6dp", Ease::Interpolation::Linear, {},
+															0, false );
+				EXPECT_EQ( widget->lengthFromValue( widget->getPropertyString( definition ),
+													PropertyRelativeTarget::None, 0 ),
+						   ( expected + 12.f ) / 2.f );
+			}
+		}
+	}
+	PixelDensity::setPixelDensity( previousDensity );
 }

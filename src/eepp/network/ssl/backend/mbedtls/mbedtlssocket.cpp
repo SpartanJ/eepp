@@ -5,7 +5,7 @@
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
-#include <eepp/system/packmanager.hpp>
+#include <eepp/system/packregistry.hpp>
 #include <mbedtls/error.h>
 
 namespace EE { namespace Network { namespace SSL {
@@ -20,10 +20,10 @@ bool MbedTLSSocket::init() {
 
 	if ( FileSystem::fileExists( SSLSocket::CertificatesPath ) ) {
 		FileSystem::fileGet( SSLSocket::CertificatesPath, data );
-	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+	} else if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 		std::string tPath( SSLSocket::CertificatesPath );
 
-		Pack* tPack = PackManager::instance()->exists( tPath );
+		Pack* tPack = PackRegistry::instance()->exists( tPath );
 
 		if ( NULL != tPack ) {
 			tPack->extractFileToMemory( tPath, data );

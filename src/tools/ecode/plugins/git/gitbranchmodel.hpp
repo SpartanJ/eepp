@@ -25,11 +25,12 @@ class GitBranchModel : public Model {
 
 	static size_t hashBranches( const std::vector<Git::Branch>& branches );
 
-	enum Column { Name, Remote, Type, LastCommit };
+	enum Column { Name, Remote, Type, LastCommit, HistoryDisplay };
 
 	struct BranchData {
 		std::string branch;
 		std::vector<Git::Branch> data;
+		std::vector<String> historyDisplay;
 	};
 
 	std::string refTypeToString( Git::RefType type ) const;
@@ -40,7 +41,7 @@ class GitBranchModel : public Model {
 
 	size_t rowCount( const ModelIndex& index ) const;
 
-	size_t columnCount( const ModelIndex& ) const { return 4; }
+	size_t columnCount( const ModelIndex& ) const { return 5; }
 
 	ModelIndex parentIndex( const ModelIndex& index ) const;
 
@@ -57,6 +58,8 @@ class GitBranchModel : public Model {
 	size_t getHash() const { return mHash; }
 
 	Git::Branch branch( const ModelIndex& index ) const;
+
+	const Git::Branch& branchRef( const ModelIndex& index ) const;
 
 	std::optional<Git::Branch> branch( const std::string& name ) const;
 

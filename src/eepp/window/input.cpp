@@ -31,6 +31,18 @@ Input::~Input() {
 	eeSAFE_DELETE( mJoystickManager );
 }
 
+void Input::beginInputFrame() {
+	cleanStates();
+	++mEventsSentId;
+	drainQueuedEvents();
+}
+
+void Input::endInputFrame() {
+	InputEvent endProcessingEvent;
+	endProcessingEvent.Type = InputEvent::EventsSent;
+	processEvent( &endProcessingEvent );
+}
+
 void Input::cleanStates() {
 	memset( mScancodeUp, 0, EE_KEYS_SPACE );
 
@@ -47,6 +59,12 @@ void Input::sendEvent( InputEvent* Event ) {
 		  ++i ) {
 		i->second( Event );
 	}
+}
+
+bool Input::pushEvent( const InputEvent& event ) {
+	InputEvent eventCopy( event );
+	processEventForWindow( &eventCopy );
+	return true;
 }
 
 void Input::processEvent( InputEvent* Event ) {
@@ -227,6 +245,41 @@ void Input::processEvent( InputEvent* Event ) {
 	}
 
 	sendEvent( Event );
+}
+
+void Input::processEventForWindow( InputEvent* Event ) {
+	if ( Event->WinID == 0 || Event->WinID == mWindow->getWindowID() ) {
+		processEvent( Event );
+	} else if ( auto* window = Engine::instance()->getWindowID( Event->WinID ) ) {
+		window->getInput()->processEvent( Event );
+	} else {
+		processEvent( Event );
+	}
+}
+
+bool Input::enqueueEvent( InputEvent event ) {
+	static constexpr size_t MaxInjectedEvents = 4096;
+	std::lock_guard<std::mutex> lock( mInjectedEventsMutex );
+	if ( mInjectedEvents.size() >= MaxInjectedEvents ) {
+		auto motion = std::find_if(
+			mInjectedEvents.begin(), mInjectedEvents.end(),
+			[]( const InputEvent& queued ) { return queued.Type == InputEvent::MouseMotion; } );
+		if ( motion == mInjectedEvents.end() )
+			return false;
+		mInjectedEvents.erase( motion );
+	}
+	mInjectedEvents.emplace_back( std::move( event ) );
+	return true;
+}
+
+void Input::drainQueuedEvents() {
+	std::deque<InputEvent> events;
+	{
+		std::lock_guard<std::mutex> lock( mInjectedEventsMutex );
+		events.swap( mInjectedEvents );
+	}
+	for ( InputEvent& event : events )
+		processEvent( &event );
 }
 
 InputFinger* Input::getFingerId( const Int64& fingerId ) {

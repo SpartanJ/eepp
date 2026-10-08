@@ -1,4 +1,4 @@
-#include <eepp/graphics/fontmanager.hpp>
+#include <algorithm>
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/stylesheetpropertyanimation.hpp>
@@ -7,7 +7,6 @@
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
-#include <optional>
 
 using namespace EE::UI::CSS;
 using namespace EE::Scene;
@@ -16,18 +15,6 @@ namespace EE { namespace UI {
 
 UIStyle* UIStyle::New( UIWidget* widget ) {
 	return eeNew( UIStyle, ( widget ) );
-}
-
-static const StyleSheetProperty&
-resolveInheritedProperty( UIStyle* inheritedStyle, StyleSheetProperty* inheritedProperty,
-						  std::optional<StyleSheetProperty>& resolvedProperty ) {
-	if ( inheritedStyle && inheritedProperty->needsValueSubstitution() ) {
-		resolvedProperty.emplace( *inheritedProperty );
-		inheritedStyle->applyVarValues( &*resolvedProperty );
-		return *resolvedProperty;
-	}
-
-	return *inheritedProperty;
 }
 
 UIStyle::UIStyle( UIWidget* widget ) :
@@ -45,6 +32,27 @@ UIStyle::~UIStyle() {
 	removeStructurallyVolatileWidgetFromParent();
 	removeRelatedWidgets();
 	unsubscribeNonCacheableStyles();
+}
+
+UIStyle::PropertyResolution::PropertyResolution( PropertyResolution&& other ) noexcept :
+	mOwner( other.mOwner ), mProperty( other.mProperty ), mSlot( other.mSlot ) {
+	other.mOwner = nullptr;
+	other.mProperty = nullptr;
+	other.mSlot = NoSlot;
+}
+
+UIStyle::PropertyResolution::~PropertyResolution() {
+	release();
+}
+
+void UIStyle::PropertyResolution::release() {
+	if ( nullptr == mOwner || NoSlot == mSlot )
+		return;
+	eeASSERT( mOwner->mPropertyResolutionDepth == mSlot + 1 );
+	--mOwner->mPropertyResolutionDepth;
+	mOwner = nullptr;
+	mProperty = nullptr;
+	mSlot = NoSlot;
 }
 
 bool UIStyle::stateExists( const EE::Uint32& ) const {
@@ -75,6 +83,12 @@ void UIStyle::setStyleSheetVariable( const StyleSheetVariable& variable ) {
 
 void UIStyle::resetGlobalDefinition( bool force ) {
 	const auto& stylesheet = mWidget->getUISceneNode()->getStyleSheet();
+	if ( mWidget->getFlags() & UI_IGNORE_GLOBAL_CSS ) {
+		mGlobalDefinition = nullptr;
+		mLoadedStyleSheet = &stylesheet;
+		mLoadedVersion = stylesheet.getVersion();
+		return;
+	}
 
 	if ( !force && &stylesheet == mLoadedStyleSheet && stylesheet.getVersion() == mLoadedVersion )
 		return;
@@ -113,10 +127,8 @@ void UIStyle::applyInheritedProperties() {
 			UIStyle* inheritedStyle = nullptr;
 			auto inheritedProp = getInheritedProperty( propId, &inheritedStyle );
 			if ( inheritedProp ) {
-				std::optional<StyleSheetProperty> resolvedProperty;
-				const auto& propertyToApply =
-					resolveInheritedProperty( inheritedStyle, inheritedProp, resolvedProperty );
-				mWidget->applyProperty( propertyToApply );
+				auto resolvedProperty = inheritedStyle->resolveProperty( inheritedProp );
+				mWidget->applyProperty( *resolvedProperty.get() );
 			}
 		}
 	}
@@ -130,20 +142,19 @@ void UIStyle::setStyleSheetProperties( const CSS::StyleSheetProperties& properti
 }
 
 bool UIStyle::hasTransition( const std::string& propertyName ) {
-	return mTransitions.find( propertyName ) != mTransitions.end() ||
-		   mTransitions.find( "all" ) != mTransitions.end();
+	return mDefinition && mDefinition->getTransitions().get( String::hashToLower(
+							  propertyName.c_str(), static_cast<Int64>( propertyName.size() ) ) );
 }
 
 StyleSheetPropertyAnimation* UIStyle::getAnimation( const PropertyDefinition* propertyDef ) {
-	std::vector<Action*> actions = mWidget->getActionsByTag( propertyDef->getId() );
-	if ( !actions.empty() ) {
-		for ( auto& action : actions ) {
-			if ( action->getId() == StyleSheetPropertyAnimation::ID ) {
-				StyleSheetPropertyAnimation* animation =
-					static_cast<StyleSheetPropertyAnimation*>( action );
-				if ( animation->getAnimationOrigin() == AnimationOrigin::Animation ) {
-					return animation;
-				}
+	SmallVector<Action*, 4> actions;
+	mWidget->getActionsByTag( propertyDef->getId(), actions );
+	for ( auto* action : actions ) {
+		if ( action->getId() == StyleSheetPropertyAnimation::ID ) {
+			StyleSheetPropertyAnimation* animation =
+				static_cast<StyleSheetPropertyAnimation*>( action );
+			if ( animation->getAnimationOrigin() == AnimationOrigin::Animation ) {
+				return animation;
 			}
 		}
 	}
@@ -155,15 +166,20 @@ bool UIStyle::hasAnimation( const PropertyDefinition* propertyDef ) {
 }
 
 TransitionDefinition UIStyle::getTransition( const std::string& propertyName ) {
-	auto propertyTransitionIt = mTransitions.find( propertyName );
-
-	if ( propertyTransitionIt != mTransitions.end() ) {
-		return propertyTransitionIt->second;
-	} else if ( ( propertyTransitionIt = mTransitions.find( "all" ) ) != mTransitions.end() ) {
-		return propertyTransitionIt->second;
-	}
-
-	return TransitionDefinition();
+	TransitionDefinition transition;
+	if ( !mDefinition )
+		return transition;
+	const auto* computed = mDefinition->getTransitions().get(
+		String::hashToLower( propertyName.c_str(), static_cast<Int64>( propertyName.size() ) ) );
+	if ( !computed )
+		return transition;
+	transition.property = propertyName;
+	transition.timingFunction = computed->timingFunction;
+	transition.timingFunctionParameters.assign( computed->timingFunctionParameters.begin(),
+												computed->timingFunctionParameters.end() );
+	transition.delay = computed->delay;
+	transition.duration = computed->duration;
+	return transition;
 }
 
 const bool& UIStyle::isChangingState() const {
@@ -171,36 +187,51 @@ const bool& UIStyle::isChangingState() const {
 }
 
 StyleSheetVariable UIStyle::getVariable( const std::string& variable ) {
+	const StyleSheetVariable* resolved = getVariableRef( variable );
+	return resolved ? *resolved : StyleSheetVariable();
+}
+
+Color UIStyle::getColorVariable( const std::string& variable, Color fallback ) {
+	const StyleSheetVariable* resolved = getVariableRef( variable );
+	return resolved ? Color::fromString( resolved->getValue() ) : fallback;
+}
+
+const StyleSheetVariable* UIStyle::getVariableRef( const std::string& variable ) {
 	if ( NULL != mWidget && NULL != mWidget->getUISceneNode() )
 		resetGlobalDefinition();
 
-	StyleSheetVariable localVariable =
-		mElementStyle ? mElementStyle->getVariableByName( variable ) : StyleSheetVariable();
+	const auto nameHash = String::hash( variable );
+	const StyleSheetVariable* localVariable = nullptr;
+	if ( mElementStyle ) {
+		auto it = mElementStyle->getVariables().find( nameHash );
+		if ( it != mElementStyle->getVariables().end() )
+			localVariable = &it->second;
+	}
 
 	if ( NULL != mGlobalDefinition ) {
-		auto it = mGlobalDefinition->getVariables().find( String::hash( variable ) );
+		auto it = mGlobalDefinition->getVariables().find( nameHash );
 
 		if ( it != mGlobalDefinition->getVariables().end() ) {
-			if ( localVariable.isEmpty() ||
-				 it->second.getSpecificity() > localVariable.getSpecificity() )
-				return it->second;
+			if ( nullptr == localVariable ||
+				 it->second.getSpecificity() > localVariable->getSpecificity() )
+				return &it->second;
 		}
 	}
 
-	if ( !localVariable.isEmpty() )
+	if ( nullptr != localVariable )
 		return localVariable;
 
-	Node* parentWidget = mWidget->getParentWidget();
+	Node* parentWidget = mWidget ? mWidget->getParentWidget() : nullptr;
 
 	if ( NULL != parentWidget ) {
 		UIStyle* style = parentWidget->asType<UIWidget>()->getUIStyle();
 
 		if ( NULL != style ) {
-			return style->getVariable( variable );
+			return style->getVariableRef( variable );
 		}
 	}
 
-	return StyleSheetVariable();
+	return nullptr;
 }
 
 bool UIStyle::getForceReapplyProperties() const {
@@ -224,11 +255,10 @@ bool UIStyle::isStructurallyVolatile() const {
 }
 
 void UIStyle::reloadFontFamily() {
-	if ( mDefinition && mDefinition->getPropertyIds().contains( (Uint32)PropertyId::FontFamily ) ) {
-		auto propIt = mDefinition->getProperties().find( (Uint32)PropertyId::FontFamily );
-		if ( propIt != mDefinition->getProperties().end() ) {
-			applyStyleSheetProperty( propIt->second, nullptr );
-		}
+	if ( mDefinition && mDefinition->getPropertyIds().contains( PropertyId::FontFamily ) ) {
+		StyleSheetProperty* fontProp = mDefinition->getProperty( PropertyId::FontFamily );
+		if ( fontProp )
+			applyStyleSheetProperty( *fontProp, nullptr );
 	}
 }
 
@@ -246,8 +276,8 @@ UnorderedSet<UIWidget*>& UIStyle::getStructurallyVolatileChildren() {
 	return mStructurallyVolatileChildren;
 }
 
-const CSS::StyleSheetProperty* UIStyle::getProperty( const CSS::PropertyId& id ) {
-	const auto* gProp = mGlobalDefinition ? mGlobalDefinition->getProperty( (Uint32)id ) : nullptr;
+const CSS::StyleSheetProperty* UIStyle::getProperty( const CSS::PropertyId& id ) const {
+	const auto* gProp = mGlobalDefinition ? mGlobalDefinition->getProperty( id ) : nullptr;
 	const auto* elProp = mElementStyle ? mElementStyle->getPropertyById( id ) : nullptr;
 	if ( elProp && gProp )
 		return elProp->getSpecificity() > gProp->getSpecificity() ? elProp : gProp;
@@ -255,13 +285,13 @@ const CSS::StyleSheetProperty* UIStyle::getProperty( const CSS::PropertyId& id )
 }
 
 bool UIStyle::hasProperty( const CSS::PropertyId& propertyId ) const {
-	return ( mGlobalDefinition && mGlobalDefinition->getProperty( (Uint32)propertyId ) ) ||
+	return ( mGlobalDefinition && mGlobalDefinition->getProperty( propertyId ) ) ||
 		   ( mElementStyle && mElementStyle->getPropertyById( propertyId ) );
 }
 
 bool UIStyle::hasLocalProperty( PropertyId propId ) const {
 	return ( mElementStyle && mElementStyle->getPropertyById( propId ) ) ||
-		   ( mDefinition && mDefinition->getProperty( (Uint32)propId ) );
+		   ( mDefinition && mDefinition->getProperty( propId ) );
 }
 
 CSS::StyleSheetProperty* UIStyle::getInheritedProperty( CSS::PropertyId propId,
@@ -274,7 +304,7 @@ CSS::StyleSheetProperty* UIStyle::getInheritedProperty( CSS::PropertyId propId,
 		UIWidget* parent = parentNode->asType<UIWidget>();
 		UIStyle* parentStyle = parent->getUIStyle();
 		if ( parentStyle ) {
-			auto prop = parentStyle->getLocalProperty( (Uint32)propId );
+			auto prop = parentStyle->getLocalProperty( propId );
 			if ( prop ) {
 				if ( ownerStyle )
 					*ownerStyle = parentStyle;
@@ -325,22 +355,22 @@ void UIStyle::applyLightDarkValue( std::string& value ) {
 	};
 }
 
-void UIStyle::setVariableFromValue( StyleSheetProperty* property, const std::string& value ) {
+void UIStyle::setVariableFromValue( StyleSheetProperty* property ) {
 	if ( property->getVarCache().empty() && !property->isLightDarkValue() )
 		return;
 
-	std::string newValue( value );
+	std::string& value = property->mutableValue();
 	static constexpr int maxDepth = 16;
 
 	for ( int depth = 0; depth < maxDepth; depth++ ) {
 		bool changed = false;
 		if ( !property->getVarCache().empty() ) {
-			auto varCacheCopy = property->getVarCache();
-			for ( auto& var : varCacheCopy ) {
-				for ( auto& val : var.variableList ) {
-					StyleSheetVariable variable( getVariable( val ) );
-					if ( !variable.isEmpty() ) {
-						String::replaceAll( newValue, var.definition, variable.getValue() );
+			const auto varCache = property->getVarCache();
+			for ( const auto& var : varCache ) {
+				for ( const auto& val : var.variableList ) {
+					const StyleSheetVariable* variable = getVariableRef( val );
+					if ( nullptr != variable ) {
+						String::replaceAll( value, var.definition, variable->getValue() );
 						changed = true;
 						break;
 					}
@@ -348,12 +378,12 @@ void UIStyle::setVariableFromValue( StyleSheetProperty* property, const std::str
 			}
 		}
 		if ( property->isLightDarkValue() ) {
-			applyLightDarkValue( newValue );
+			applyLightDarkValue( value );
 			changed = true;
 		}
 		if ( !changed )
 			break;
-		property->setValue( newValue );
+		property->setValue( value );
 		if ( property->getVarCache().empty() && !property->isLightDarkValue() )
 			break;
 	}
@@ -368,10 +398,10 @@ void UIStyle::applyVarValues( StyleSheetProperty* property ) {
 			 property->getPropertyIndexCount() > 0 ) {
 			for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
 				StyleSheetProperty* realProperty = property->getPropertyIndexRef( i );
-				setVariableFromValue( realProperty, realProperty->getValue() );
+				setVariableFromValue( realProperty );
 			}
 		} else {
-			setVariableFromValue( property, property->getValue() );
+			setVariableFromValue( property );
 		}
 	}
 }
@@ -401,7 +431,7 @@ void UIStyle::onStateChange() {
 					const PropertyIdSet propertiesInBothDefinitions =
 						( mDefinition->getPropertyIds() & newDefinition->getPropertyIds() );
 
-					for ( Uint32 id : propertiesInBothDefinitions ) {
+					for ( PropertyId id : propertiesInBothDefinitions ) {
 						const StyleSheetProperty* p0 = mDefinition->getProperty( id );
 						const StyleSheetProperty* p1 = newDefinition->getProperty( id );
 						if ( nullptr != p0 && nullptr != p1 && *p0 == *p1 )
@@ -415,8 +445,10 @@ void UIStyle::onStateChange() {
 			// Local raw values can stay unchanged while their resolved var()/light-dark() value
 			// changes after a stylesheet update, so include them after definition pruning.
 			for ( const auto& localProperty : mElementStyle->getProperties() ) {
-				if ( localProperty.second.needsValueSubstitution() )
-					changedProperties.insert( localProperty.first );
+				if ( localProperty.second.needsValueSubstitution() &&
+					 localProperty.second.getPropertyDefinition() )
+					changedProperties.insert(
+						localProperty.second.getPropertyDefinition()->getPropertyId() );
 			}
 		}
 
@@ -426,27 +458,24 @@ void UIStyle::onStateChange() {
 
 		mWidget->beginAttributesTransaction();
 
-		if ( nullptr != mDefinition && !mDefinition->getTransitionProperties().empty() ) {
-			mTransitions = TransitionDefinition::parseTransitionProperties(
-				mDefinition->getTransitionProperties() );
-		}
-
-		for ( auto prop : changedProperties ) {
-			std::optional<StyleSheetProperty> resolvedProperty;
-			StyleSheetProperty* property = getResolvedLocalProperty( prop, resolvedProperty );
+		for ( PropertyId prop : changedProperties ) {
+			auto resolvedProperty = getResolvedLocalProperty( prop );
+			const StyleSheetProperty* property = resolvedProperty.get();
 
 			if ( nullptr == property || NULL == property->getPropertyDefinition() ) {
 				const auto def = StyleSheetSpecification::instance()->getProperty( prop );
+				if ( restorePropertyFallbacks( prop, prevDefinition ) ) {
+					continue;
+				}
 				if ( def && def->isInherited() ) {
 					UIStyle* inheritedStyle = nullptr;
 					StyleSheetProperty* inheritedProp =
-						getInheritedProperty( static_cast<PropertyId>( prop ), &inheritedStyle );
+						getInheritedProperty( prop, &inheritedStyle );
 					if ( inheritedProp ) {
-						std::optional<StyleSheetProperty> resolvedInheritedProperty;
-						const auto& inheritedPropertyToApply = resolveInheritedProperty(
-							inheritedStyle, inheritedProp, resolvedInheritedProperty );
-						mWidget->applyProperty( inheritedPropertyToApply );
-						mWidget->propagateInheritedProperty( inheritedPropertyToApply );
+						auto resolvedInheritedProperty =
+							inheritedStyle->resolveProperty( inheritedProp );
+						mWidget->applyProperty( *resolvedInheritedProperty.get() );
+						mWidget->propagateInheritedProperty( *resolvedInheritedProperty.get() );
 					}
 				}
 				continue;
@@ -456,8 +485,7 @@ void UIStyle::onStateChange() {
 			if ( property->getValue() == "inherit" &&
 				 !property->getPropertyDefinition()->isIndexed() ) {
 				UIStyle* inheritedStyle = nullptr;
-				StyleSheetProperty* inheritedProp =
-					getInheritedProperty( static_cast<PropertyId>( prop ), &inheritedStyle );
+				StyleSheetProperty* inheritedProp = getInheritedProperty( prop, &inheritedStyle );
 				if ( inheritedProp ) {
 					if ( property->getPropertyDefinition()->getPropertyId() ==
 						 PropertyId::FontSize ) {
@@ -473,20 +501,37 @@ void UIStyle::onStateChange() {
 							mWidget->propagateInheritedProperty( resolved );
 						}
 					} else {
-						std::optional<StyleSheetProperty> resolvedInheritedProperty;
-						const auto& inheritedPropertyToApply = resolveInheritedProperty(
-							inheritedStyle, inheritedProp, resolvedInheritedProperty );
-						mWidget->applyProperty( inheritedPropertyToApply );
-						mWidget->propagateInheritedProperty( inheritedPropertyToApply );
+						auto resolvedInheritedProperty =
+							inheritedStyle->resolveProperty( inheritedProp );
+						mWidget->applyProperty( *resolvedInheritedProperty.get() );
+						mWidget->propagateInheritedProperty( *resolvedInheritedProperty.get() );
 					}
 				}
 			} else {
+				const bool transient = isTransientProperty( prop );
 				if ( property->getPropertyDefinition()->isIndexed() ) {
-					for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
-						applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition );
+					// Capture every layer before applying any of them. An earlier layer can
+					// change the widget's indexed backing storage.
+					if ( transient ) {
+						for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
+							capturePropertyFallback( property->getPropertyIndex( i ) );
+						}
 					}
+					for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
+						applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition,
+												 false );
+					}
+					// A shorter transient declaration can leave higher indexes without a
+					// winner even while another state remains active.
+					restorePropertyFallbacks(
+						prop, prevDefinition,
+						static_cast<Uint32>( property->getPropertyIndexCount() ) );
+					if ( !transient )
+						clearPropertyFallbacks( prop );
 				} else {
 					applyStyleSheetProperty( *property, prevDefinition );
+					if ( !transient )
+						clearPropertyFallbacks( prop );
 				}
 
 				if ( property->getPropertyDefinition()->isInherited() )
@@ -516,30 +561,126 @@ void UIStyle::onStateChange() {
 }
 
 const StyleSheetProperty*
-UIStyle::getStatelessStyleSheetProperty( const Uint32& propertyId ) const {
-	if ( 0 == propertyId )
+UIStyle::getStatelessStyleSheetProperty( const PropertyId& propertyId ) const {
+	if ( propertyId == PropertyId::Invalid )
 		return nullptr;
 
-	if ( !mElementStyle->getSelector().hasPseudoClasses() ) {
-		const StyleSheetProperty* property = mElementStyle->getPropertyById( propertyId );
-
-		if ( property )
-			return property;
-	}
+	const StyleSheetProperty* winner = !mElementStyle->getSelector().hasPseudoClasses()
+										   ? mElementStyle->getPropertyById( propertyId )
+										   : nullptr;
 
 	if ( nullptr == mDefinition )
-		return nullptr;
+		return winner;
 
 	for ( auto style : mDefinition->getStyles() ) {
 		if ( style->getSelector().isCacheable() && !style->getSelector().hasPseudoClasses() ) {
 			const StyleSheetProperty* property = style->getPropertyById( propertyId );
-
-			if ( property )
-				return property;
+			if ( property && ( !winner || property->getSpecificity() >= winner->getSpecificity() ) )
+				winner = property;
 		}
 	}
 
-	return nullptr;
+	return winner;
+}
+
+void UIStyle::capturePropertyFallback( const StyleSheetProperty& property ) {
+	const PropertyDefinition* definition = property.getPropertyDefinition();
+	if ( nullptr == definition )
+		return;
+	const StyleSheetProperty* stateless =
+		getStatelessStyleSheetProperty( property.getPropertyId() );
+	if ( stateless &&
+		 ( !definition->isIndexed() || property.getIndex() < stateless->getPropertyIndexCount() ) )
+		return;
+
+	for ( const auto& fallback : mPropertyFallbacks ) {
+		if ( fallback.propertyId == property.getPropertyId() &&
+			 fallback.index == property.getIndex() )
+			return;
+	}
+
+	const bool inherited =
+		definition->isInherited() && getInheritedProperty( property.getPropertyId() );
+	// Keep a serialized value in case the inherited declaration disappears before rollback.
+	std::string value = mWidget->getPropertyString( definition, property.getIndex() );
+	if ( inherited || !value.empty() ) {
+		mPropertyFallbacks.push_back( { property.getPropertyId(), property.getIndex(), definition,
+										std::move( value ), inherited } );
+	}
+}
+
+bool UIStyle::isTransientProperty( PropertyId propertyId ) const {
+	const StyleSheetProperty* local =
+		mElementStyle ? mElementStyle->getPropertyById( propertyId ) : nullptr;
+	const StyleSheetProperty* winner =
+		mDefinition ? mDefinition->getProperty( propertyId ) : nullptr;
+	if ( nullptr == winner || ( local && local->getSpecificity() >= winner->getSpecificity() ) )
+		return false;
+	if ( winner->isVolatile() )
+		return true;
+	if ( mCurrentState == UIState::StateFlagNormal )
+		return false;
+
+	const StyleSheetProperty* sourceProperty = nullptr;
+	const StyleSheetStyle* sourceStyle = nullptr;
+	for ( const auto* style : mDefinition->getStyles() ) {
+		const StyleSheetProperty* candidate = style->getPropertyById( propertyId );
+		if ( candidate && ( !sourceProperty ||
+							candidate->getSpecificity() >= sourceProperty->getSpecificity() ) ) {
+			sourceProperty = candidate;
+			sourceStyle = style;
+		}
+	}
+	return sourceStyle && sourceStyle->getSelector().hasPseudoClasses();
+}
+
+bool UIStyle::restorePropertyFallbacks( PropertyId propertyId,
+										std::shared_ptr<ElementDefinition> prevDefinition,
+										Uint32 firstIndex ) {
+	bool restored = false;
+	for ( const auto& fallback : mPropertyFallbacks ) {
+		if ( fallback.propertyId != propertyId || fallback.index < firstIndex )
+			continue;
+
+		if ( fallback.inherited ) {
+			UIStyle* ownerStyle = nullptr;
+			StyleSheetProperty* inherited = getInheritedProperty( propertyId, &ownerStyle );
+			if ( inherited ) {
+				auto resolved = ownerStyle->resolveProperty( inherited );
+				StyleSheetProperty value( *resolved.get() );
+				value.setVolatile( false );
+				applyStyleSheetProperty( value, prevDefinition, false );
+				mWidget->propagateInheritedProperty( value );
+			} else if ( !fallback.nativeValue.empty() ) {
+				StyleSheetProperty value( fallback.definition, fallback.nativeValue,
+										  fallback.index );
+				applyStyleSheetProperty( value, prevDefinition, false );
+				mWidget->propagateInheritedProperty( value );
+			}
+		} else {
+			StyleSheetProperty value( fallback.definition, fallback.nativeValue, fallback.index );
+			applyStyleSheetProperty( value, prevDefinition, false );
+		}
+		restored = true;
+	}
+	if ( restored ) {
+		mPropertyFallbacks.erase(
+			std::remove_if( mPropertyFallbacks.begin(), mPropertyFallbacks.end(),
+							[propertyId, firstIndex]( const PropertyFallback& fallback ) {
+								return fallback.propertyId == propertyId &&
+									   fallback.index >= firstIndex;
+							} ),
+			mPropertyFallbacks.end() );
+	}
+	return restored;
+}
+
+void UIStyle::clearPropertyFallbacks( PropertyId propertyId ) {
+	mPropertyFallbacks.erase( std::remove_if( mPropertyFallbacks.begin(), mPropertyFallbacks.end(),
+											  [propertyId]( const PropertyFallback& fallback ) {
+												  return fallback.propertyId == propertyId;
+											  } ),
+							  mPropertyFallbacks.end() );
 }
 
 void UIStyle::updateState() {
@@ -563,8 +704,7 @@ void UIStyle::subscribeNonCacheableStyles() {
 		return;
 	for ( auto& style : mGlobalDefinition->getStyles() ) {
 		if ( !style->getSelector().isCacheable() ) {
-			std::vector<UIWidget*> elements =
-				style->getSelector().getRelatedElements( mWidget, false );
+			auto elements = style->getSelector().getRelatedElements( mWidget, false );
 
 			if ( !elements.empty() ) {
 				for ( auto& element : elements ) {
@@ -606,31 +746,15 @@ void UIStyle::removeRelatedWidgets() {
 }
 
 void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& originalProperty,
-									   std::shared_ptr<ElementDefinition> prevDefinition ) {
-	const StyleSheetProperty* property = &originalProperty;
-	std::optional<StyleSheetProperty> resolvedProperty;
-	if ( originalProperty.needsValueSubstitution() ) {
-		resolvedProperty.emplace( originalProperty );
-		applyVarValues( &*resolvedProperty );
-		property = &*resolvedProperty;
-	}
+									   std::shared_ptr<ElementDefinition> prevDefinition,
+									   bool captureFallback ) {
+	auto resolvedProperty = resolveProperty( &originalProperty );
+	const StyleSheetProperty* property = resolvedProperty.get();
 
 	const PropertyDefinition* propertyDefinition = property->getPropertyDefinition();
 
-	// Save default value if possible and not available.
-	if ( mCurrentState != UIState::StateFlagNormal ||
-		 ( mCurrentState == UIState::StateFlagNormal && property->isVolatile() ) ) {
-		const StyleSheetProperty* oldAttribute =
-			getStatelessStyleSheetProperty( property->getId() );
-		if ( nullptr == oldAttribute && getPreviousState() == UIState::StateFlagNormal ) {
-			std::string value(
-				mWidget->getPropertyString( propertyDefinition, property->getIndex() ) );
-			if ( !value.empty() ) {
-				setStyleSheetProperty( StyleSheetProperty( propertyDefinition, value,
-														   property->getIndex(), true, true ) );
-			}
-		}
-	}
+	if ( captureFallback && isTransientProperty( property->getPropertyId() ) )
+		capturePropertyFallback( *property );
 
 	if ( !mDisableAnimations && !mFirstState && !mWidget->isSceneNodeLoading() &&
 		 NULL != propertyDefinition &&
@@ -643,32 +767,31 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& originalPropert
 		if ( !startValue.empty() ) {
 			// Get the real start value
 			if ( nullptr != prevDefinition ) {
-				auto prevProp = prevDefinition->getProperty( property->getId() );
+				auto prevProp = prevDefinition->getProperty( property->getPropertyId() );
 				if ( nullptr != prevProp ) {
-					StyleSheetProperty* curProperty = prevProp;
-					std::optional<StyleSheetProperty> resolvedPrevProperty;
-					if ( prevProp->needsValueSubstitution() ) {
-						resolvedPrevProperty.emplace( *prevProp );
-						curProperty = &*resolvedPrevProperty;
-					}
+					auto resolvedPrevProperty = resolveProperty( prevProp );
+					const StyleSheetProperty* curProperty = resolvedPrevProperty.get();
 					if ( propertyDefinition->isIndexed() &&
 						 property->getIndex() < curProperty->getPropertyIndexCount() ) {
-						StyleSheetProperty* indexedProperty =
-							curProperty->getPropertyIndexRef( property->getIndex() );
-						applyVarValues( indexedProperty );
-						startValue = indexedProperty->getValue();
+						startValue =
+							curProperty->getPropertyIndex( property->getIndex() ).getValue();
 					} else {
-						applyVarValues( curProperty );
 						startValue = curProperty->getValue();
 					}
 				}
 			}
 
-			TransitionDefinition transitionInfo( getTransition( property->getName() ) );
+			const ComputedTransitionDefinition* transitionInfo =
+				mDefinition ? mDefinition->getTransitions().get( propertyDefinition->getId() )
+							: nullptr;
+			if ( nullptr == transitionInfo ) {
+				mWidget->applyProperty( *property );
+				return;
+			}
 
-			std::vector<Action*> previousTransitions =
-				mWidget->getActionsByTag( propertyDefinition->getId() );
-			std::vector<Action*> removeTransitions;
+			SmallVector<Action*, 4> previousTransitions;
+			mWidget->getActionsByTag( propertyDefinition->getId(), previousTransitions );
+			SmallVector<Action*, 4> removeTransitions;
 			StyleSheetPropertyAnimation* prevTransition = NULL;
 
 			if ( !previousTransitions.empty() ) {
@@ -702,9 +825,9 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& originalPropert
 					currentProgress = eemin( 1.f, currentProgress );
 					if ( 0.f != currentProgress ) {
 						elapsed = Milliseconds( ( 1.f - currentProgress ) *
-												transitionInfo.getDuration().asMilliseconds() );
+												transitionInfo->duration.asMilliseconds() );
 					} else {
-						elapsed = transitionInfo.getDuration();
+						elapsed = transitionInfo->duration;
 					}
 					startValue = prevTransition->getEndValue();
 				} else if ( startValue == prevTransition->getEndValue() ) {
@@ -718,9 +841,8 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& originalPropert
 
 			StyleSheetPropertyAnimation* newTransition = StyleSheetPropertyAnimation::New(
 				propertyDefinition, startValue, property->getValue(), property->getIndex(),
-				transitionInfo.getDuration(), transitionInfo.getDelay(),
-				transitionInfo.getTimingFunction(), transitionInfo.getTimingFunctionParameters(),
-				AnimationOrigin::Transition );
+				transitionInfo->duration, transitionInfo->delay, transitionInfo->timingFunction,
+				transitionInfo->timingFunctionParameters, AnimationOrigin::Transition );
 			newTransition->setElapsed( elapsed );
 			newTransition->setTag( propertyDefinition->getId() );
 			mWidget->runAction( newTransition );
@@ -736,24 +858,26 @@ void UIStyle::updateAnimations() {
 	if ( nullptr == mDefinition )
 		return;
 
-	bool isDifferent = false;
-	CSS::AnimationsMap animations;
-
-	if ( !mDefinition->getAnimationProperties().empty() ) {
-		animations =
-			AnimationDefinition::parseAnimationProperties( mDefinition->getAnimationProperties() );
-		if ( animations.size() == mAnimations.size() ) {
-			for ( auto& animation : animations ) {
-				auto animIt = mAnimations.find( animation.second.getName() );
-				if ( animIt == mAnimations.end() || animIt->second != animation.second ) {
-					isDifferent = true;
-					break;
-				}
-			}
-		} else {
-			isDifferent = true;
+	if ( mDefinition->getAnimationProperties().empty() ) {
+		if ( !mAnimations.empty() ) {
+			mAnimations.clear();
+			removeAllAnimations();
 		}
-	} else if ( !mAnimations.empty() && mDefinition->getAnimationProperties().empty() ) {
+		return;
+	}
+
+	bool isDifferent = false;
+	CSS::AnimationsMap animations =
+		AnimationDefinition::parseAnimationProperties( mDefinition->getAnimationProperties() );
+	if ( animations.size() == mAnimations.size() ) {
+		for ( auto& animation : animations ) {
+			auto animIt = mAnimations.find( animation.second.getName() );
+			if ( animIt == mAnimations.end() || animIt->second != animation.second ) {
+				isDifferent = true;
+				break;
+			}
+		}
+	} else {
 		isDifferent = true;
 	}
 
@@ -763,7 +887,7 @@ void UIStyle::updateAnimations() {
 		removeAllAnimations();
 
 		startAnimations( animations );
-	} else if ( !mDefinition->getAnimationProperties().empty() ) {
+	} else {
 		updateAnimationsPlayState();
 	}
 }
@@ -835,7 +959,8 @@ void UIStyle::startAnimations( const CSS::AnimationsMap& animations ) {
 
 				if ( StyleSheetPropertyAnimation::animationSupported( propDef->getType() ) ) {
 					if ( propDef->isIndexed() ) {
-						StyleSheetProperty* prop = mDefinition->getProperty( propDef->getId() );
+						StyleSheetProperty* prop =
+							mDefinition->getProperty( propDef->getPropertyId() );
 						if ( nullptr != prop ) {
 							for ( size_t i = 0; i < prop->getPropertyIndexCount(); i++ ) {
 								removeAnimation( propDef, i );
@@ -919,26 +1044,47 @@ void UIStyle::removeAnimation( const PropertyDefinition* propertyDefinition,
 	}
 }
 
-StyleSheetProperty* UIStyle::getLocalProperty( Uint32 propId ) {
+StyleSheetProperty* UIStyle::getLocalProperty( PropertyId propId ) {
 	StyleSheetProperty* defProperty = mDefinition ? mDefinition->getProperty( propId ) : nullptr;
-	StyleSheetProperty* elemProperty =
-		mElementStyle ? mElementStyle->getPropertyById( propId ) : nullptr;
+	StyleSheetProperty* elemProperty = nullptr;
+	if ( mElementStyle ) {
+		const auto* def = StyleSheetSpecification::instance()->getProperty( propId );
+		if ( def )
+			elemProperty = mElementStyle->getPropertyById( def->getPropertyId() );
+	}
 	if ( defProperty && elemProperty )
 		return defProperty->getSpecificity() > elemProperty->getSpecificity() ? defProperty
 																			  : elemProperty;
 	return defProperty ? defProperty : elemProperty;
 }
 
-StyleSheetProperty*
-UIStyle::getResolvedLocalProperty( Uint32 propId,
-								   std::optional<StyleSheetProperty>& resolvedProperty ) {
-	StyleSheetProperty* property = getLocalProperty( propId );
-	if ( property && property->needsValueSubstitution() ) {
-		resolvedProperty.emplace( *property );
-		applyVarValues( &*resolvedProperty );
-		return &*resolvedProperty;
+UIStyle::PropertyResolution UIStyle::resolveProperty( const StyleSheetProperty* property ) {
+	if ( nullptr == property || !property->needsValueSubstitution() )
+		return PropertyResolution{ nullptr, property };
+
+	const Uint32 slotIndex = mPropertyResolutionDepth;
+	StyleSheetProperty* slot;
+	if ( 0 == slotIndex ) {
+		if ( !mPropertyResolutionSlot )
+			mPropertyResolutionSlot = std::make_unique<StyleSheetProperty>();
+		slot = mPropertyResolutionSlot.get();
+	} else {
+		const Uint32 nestedSlotIndex = slotIndex - 1;
+		if ( nestedSlotIndex >= mNestedPropertyResolutionSlots.size() )
+			mNestedPropertyResolutionSlots.emplace_back( std::make_unique<StyleSheetProperty>() );
+		slot = mNestedPropertyResolutionSlots[nestedSlotIndex].get();
 	}
-	return property;
+
+	++mPropertyResolutionDepth;
+	PropertyResolution resolution{ this, slot, slotIndex };
+	if ( !slot->hasSameResolutionSource( *property ) )
+		*slot = *property;
+	applyVarValues( slot );
+	return resolution;
+}
+
+UIStyle::PropertyResolution UIStyle::getResolvedLocalProperty( PropertyId propId ) {
+	return resolveProperty( getLocalProperty( propId ) );
 }
 
 void UIStyle::addStructurallyVolatileWidgetFromParent() {

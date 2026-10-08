@@ -1,5 +1,4 @@
 #include <eepp/core/debug.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
@@ -10,9 +9,11 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextnode.hpp>
+#include <eepp/ui/uitextselectioncontroller.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/window/input.hpp>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -71,6 +72,18 @@ bool UITextSpan::isInlineBlock() const {
 	return mDisplay == CSSDisplay::InlineBlock && !isOutOfFlow();
 }
 
+void UITextSpan::onSizeChange() {
+	if ( isInline() && UIRichText::isAssigningInlineFragments( this ) ) {
+		// CSS inline fragment bounds are results of the owning formatting pass, not new
+		// intrinsic content inputs. Keep size events/drawing current without feeding those
+		// bounds back into the stream. Callback-created text/style changes still emit their
+		// own formatting invalidations while the owner is measuring.
+		UIWidget::onSizeChange( false );
+	} else {
+		UIRichText::onSizeChange();
+	}
+}
+
 void UITextSpan::onDisplayChange() {
 	bool nowInline = isInline();
 	if ( nowInline && getFontBackgroundColor() == Color::Transparent ) {
@@ -112,6 +125,19 @@ void UITextSpan::draw() {
 	if ( !isInline() || parentIsBlockFlexOrGrid ) {
 		UIRichText::draw();
 	}
+}
+
+void UITextSpan::drawBackground() {
+	// Inline backgrounds are fragmented and painted by the owning RichText. Painting the node's
+	// background as well happens after its parent's text and covers the inline foreground.
+	if ( !isInline() )
+		UIRichText::drawBackground();
+}
+
+void UITextSpan::drawBorder() {
+	// Inline borders follow the same single-paint-owner rule as inline backgrounds.
+	if ( !isInline() )
+		UIRichText::drawBorder();
 }
 
 bool UITextSpan::applyProperty( const StyleSheetProperty& attribute ) {
@@ -212,7 +238,7 @@ std::string UITextSpan::getPropertyString( const PropertyDefinition* propertyDef
 			return String::fromFloat( getFontShadowOffset().x ) + " " +
 				   String::fromFloat( getFontShadowOffset().y );
 		case PropertyId::TextStrokeWidth:
-			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
+			return pixelsLengthToString( getOutlineThickness() );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::TextDecoration:
@@ -524,6 +550,12 @@ void UITextSpan::loadFromXmlNode( const pugi::xml_node& node ) {
 	if ( hasElements ) {
 		for ( pugi::xml_node child = node.first_child(); child; child = child.next_sibling() ) {
 			if ( child.type() == pugi::node_element ) {
+				// Unknown HTML elements are represented by UITextSpan. Keep script elements and
+				// their potentially very large data payloads out of the render tree even when
+				// they are nested below one of those custom elements.
+				if ( String::iequals( child.name(), "script" ) )
+					continue;
+
 				UIWidget* widget = UIWidgetCreator::createFromName( child.name() );
 
 				if ( widget == nullptr )
@@ -707,9 +739,6 @@ Node* UITextSpan::overFind( const Vector2f& point ) {
 			}
 
 			if ( hit ) {
-				writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-				mSceneNode->addMouseOverNode( this );
-
 				Node* child = mChildLast;
 
 				while ( NULL != child ) {
@@ -744,8 +773,18 @@ UIAnchorSpan::UIAnchorSpan( const std::string& tag ) : UITextSpan( tag ) {
 Uint32 UIAnchorSpan::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseClick: {
-			if ( !mHref.empty() && ( Msg->getFlags() & EE_BUTTON_LMASK ) )
-				getUISceneNode()->openURL( mHref );
+			if ( auto* controller = getTextSelectionControllerInTree() ) {
+				// A document drag can finish over a link and still produce a MouseClick.
+				if ( controller->consumeSuppressedClick() )
+					return 1;
+			}
+			if ( !mHref.empty() && ( Msg->getFlags() & ( EE_BUTTON_LMASK | EE_BUTTON_MMASK ) ) ) {
+				NavigationRequest request{ URI( mHref ) };
+				request.source = this;
+				request.mouseButtons = Msg->getFlags();
+				request.modifiers = getInput() ? getInput()->getModState() : 0;
+				getUISceneNode()->navigate( request );
+			}
 			return 1;
 		}
 	}

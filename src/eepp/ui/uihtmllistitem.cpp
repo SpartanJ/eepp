@@ -40,15 +40,14 @@ void UIHTMLListItem::draw() {
 	if ( mVisible && 0.f != mAlpha && mDisplay == CSSDisplay::ListItem ) {
 		const FontStyleConfig& style = mRichText.getFontStyleConfig();
 		Float fontSize = style.CharacterSize;
-		Float offset = 0.25f * fontSize;
-		Float lineTop = mScreenPos.y + mPaddingPx.Top;
 
 		if ( UIHTMLListStyle::isPrimitiveMarker( mListStyleType ) ) {
 			UIHTMLListStyle::drawPrimitiveMarker( mListStyleType, mScreenPos, mPaddingPx, style );
 		} else if ( mListMarkerText && !mListMarkerText->getString().empty() ) {
-			Float markerX =
-				mScreenPos.x + mPaddingPx.Left - mListMarkerText->getTextWidth() - offset;
-			mListMarkerText->draw( markerX, lineTop, Vector2f::One, 0.f, getBlendMode() );
+			UIHTMLListStyle::syncTextMarkerColor( *mListMarkerText, style.FontColor );
+			const Vector2f markerPos = UIHTMLListStyle::getTextMarkerPosition(
+				mScreenPos, mPaddingPx, mListMarkerText->getTextWidth(), fontSize );
+			mListMarkerText->draw( markerPos.x, markerPos.y, Vector2f::One, 0.f, getBlendMode() );
 		}
 	}
 }

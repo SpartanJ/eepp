@@ -10,7 +10,9 @@
 #include <eepp/system/log.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/models/sortingproxymodel.hpp>
+#include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uifiledialog.hpp>
+#include <eepp/window/runtime.hpp>
 
 #include <nlohmann/json.hpp>
 
@@ -44,6 +46,33 @@ struct NativeFileDialogHandler {
 UIFileDialog* UIFileDialog::New( Uint32 dialogFlags, const std::string& defaultFilePattern,
 								 const std::string& defaultDirectory ) {
 	return eeNew( UIFileDialog, ( dialogFlags, defaultFilePattern, defaultDirectory ) );
+}
+
+UIFileDialog* UIFileDialog::NewInApplicationWindow(
+	UIApplication& application, const WindowSettings& windowSettings, Uint32 dialogFlags,
+	const std::string& defaultFilePattern, const std::string& defaultDirectory,
+	const ContextSettings& contextSettings, bool modal, ApplicationWindowPosition position ) {
+	dialogFlags &= ~UIFileDialog::UseNativeFileDialog;
+	WindowSettings dialogWindowSettings( windowSettings );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	if ( Runtime::mode() != RuntimeMode::Terminal ) {
+		// WindowSettings dimensions are screen coordinates, while the file dialog minimum is in dp.
+		// Create the native host at its final minimum size so the window manager never positions a
+		// smaller window that is immediately enlarged after the dialog has been laid out.
+		dialogWindowSettings.Width =
+			eemax( dialogWindowSettings.Width,
+				   static_cast<Uint32>( PixelDensity::dpToPxI( FDLG_MIN_WIDTH ) ) );
+		dialogWindowSettings.Height =
+			eemax( dialogWindowSettings.Height,
+				   static_cast<Uint32>( PixelDensity::dpToPxI( FDLG_MIN_HEIGHT ) ) );
+	}
+#endif
+	return static_cast<UIFileDialog*>( createInApplicationWindow(
+		application, dialogWindowSettings,
+		[dialogFlags, defaultFilePattern, defaultDirectory] {
+			return New( dialogFlags, defaultFilePattern, defaultDirectory );
+		},
+		contextSettings, modal, position ) );
 }
 
 UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePattern,
@@ -110,7 +139,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 
 	mPath = UITextInput::New();
 	mPath->setText( mCurPath )
-		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
 	mPath->on( Event::OnPressEnter, [this]( auto event ) { onPressEnter( event ); } );
@@ -176,7 +205,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 
 	mMultiView = UIMultiModelView::New();
 	mMultiView->setParent( linearLayout );
-	mMultiView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
+	mMultiView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed )
 		->setLayoutWeight( 1 )
 		->setLayoutMargin( Rectf( 0, 0, 0, 4 ) );
 	mMultiView->on( Event::KeyDown, [this]( const Event* event ) {
@@ -245,7 +274,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setEnabled( false );
 
 	mFile = UITextInput::New();
-	mFile->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
+	mFile->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::MatchParent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
 	mFile->setLayoutMargin( Rectf( 0, 0, 4, 0 ) );
@@ -278,7 +307,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setEnabled( false );
 
 	mFiletype = UIDropDownList::New();
-	mFiletype->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+	mFiletype->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
 	mFiletype->setPopUpToRoot( true );
@@ -341,31 +370,31 @@ void UIFileDialog::setTheme( UITheme* Theme ) {
 	mFile->setTheme( Theme );
 	mFiletype->setTheme( Theme );
 
-	Drawable* icon = getUISceneNode()->findIconDrawable( "go-up", PixelDensity::dpToPxI( 16 ) );
+	DrawablePtr icon = getUISceneNode()->findIconDrawable( "go-up", PixelDensity::dpToPxI( 16 ) );
 	if ( icon ) {
 		mButtonUp->setText( "" );
-		mButtonUp->setIcon( icon );
+		mButtonUp->setIcon( std::move( icon ) );
 		mButtonUp->setTooltipText( i18n( "uifiledialog_go_up", "Up" ) );
 	}
 
 	icon = getUISceneNode()->findIconDrawable( "folder-add", PixelDensity::dpToPxI( 16 ) );
 	if ( icon ) {
 		mButtonNewFolder->setText( "" );
-		mButtonNewFolder->setIcon( icon );
+		mButtonNewFolder->setIcon( std::move( icon ) );
 		mButtonNewFolder->setTooltipText( i18n( "uifiledialog_new_folder", "New Folder" ) );
 	}
 
 	icon = getUISceneNode()->findIconDrawable( "list-view", PixelDensity::dpToPxI( 16 ) );
 	if ( icon ) {
 		mButtonListView->setText( "" );
-		mButtonListView->setIcon( icon );
+		mButtonListView->setIcon( std::move( icon ) );
 		mButtonListView->setTooltipText( i18n( "uifiledialog_list", "List" ) );
 	}
 
 	icon = getUISceneNode()->findIconDrawable( "table-view", PixelDensity::dpToPxI( 16 ) );
 	if ( icon ) {
 		mButtonTableView->setText( "" );
-		mButtonTableView->setIcon( icon );
+		mButtonTableView->setIcon( std::move( icon ) );
 		mButtonTableView->setTooltipText( i18n( "uifiledialog_table", "Table" ) );
 	}
 
@@ -476,8 +505,8 @@ std::vector<const FileSystemModel::Node*> UIFileDialog::getSelectionNodes() cons
 	std::vector<const FileSystemModel::Node*> nodes;
 	nodes.reserve( localIndexes.size() );
 	for ( const auto& localIndex : localIndexes ) {
-		const FileSystemModel::Node& node = mModel->node( localIndex );
-		nodes.push_back( &node );
+		if ( const auto* node = mModel->nodePtr( localIndex ) )
+			nodes.push_back( node );
 	}
 	return nodes;
 }

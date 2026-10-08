@@ -5,15 +5,16 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/window/inputevent.hpp>
 #include <eepp/window/keycodes.hpp>
 #include <eepp/window/window.hpp>
 #include <eterm/system/iprocessfactory.hpp>
-#include <eterm/terminal/iterminaldisplay.hpp>
 #include <eterm/terminal/terminalcolorscheme.hpp>
-#include <eterm/terminal/terminalemulator.hpp>
+#include <eterm/terminal/terminalsession.hpp>
 
+#include <bitset>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -29,6 +30,8 @@ class VertexBuffer;
 }} // namespace EE::Graphics
 
 namespace eterm { namespace Terminal {
+
+class KittyGraphicsRenderer;
 
 enum class TerminalShortcutAction {
 	PASTE,
@@ -127,7 +130,7 @@ class TerminalKeyMap {
 
 extern TerminalKeyMap terminalKeyMap;
 
-class TerminalDisplay : public ITerminalDisplay {
+class TerminalDisplay {
   public:
 	enum class EventType {
 		TITLE,
@@ -135,6 +138,10 @@ class TerminalDisplay : public ITerminalDisplay {
 		SCROLL_HISTORY,
 		HISTORY_LENGTH_CHANGE,
 		PROCESS_EXIT,
+		BELL,
+		CLIPBOARD,
+		RESTART_FAILURE,
+		WORKER_ERROR,
 		UNKNOWN
 	};
 
@@ -144,11 +151,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	};
 
 	typedef std::function<void( const TerminalDisplay::Event& event )> EventFunc;
-
-	static std::shared_ptr<TerminalDisplay>
-	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
-			std::shared_ptr<TerminalEmulator>&& terminalEmulator,
-			const bool& useFrameBuffer = false );
+	using DataFunc = std::function<void( const char*, size_t )>;
+	using PromptStateChangedFunc = std::function<void( PromptState, std::string_view )>;
 
 	static std::shared_ptr<TerminalDisplay>
 	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
@@ -157,25 +161,20 @@ class TerminalDisplay : public ITerminalDisplay {
 			IProcessFactory* processFactory = nullptr, bool useFrameBuffer = false,
 			bool keepAlive = true, const std::unordered_map<std::string, std::string>& env = {} );
 
-	virtual ~TerminalDisplay();
+	~TerminalDisplay();
 
-	virtual void resetColors();
-	virtual int resetColor( const Uint32& index, const char* name );
-	virtual bool getColor( const Uint32& index, unsigned char* r, unsigned char* g,
-						   unsigned char* b );
+	void resetColors();
+	int resetColor( const Uint32& index, const char* name );
+	bool getColor( const Uint32& index, unsigned char* r, unsigned char* g, unsigned char* b );
 
-	virtual void setTitle( const char* title );
-	virtual void setIconTitle( const char* title );
+	void setClipboard( const char* text );
+	const char* getClipboard() const;
 
-	virtual void setClipboard( const char* text );
-	virtual const char* getClipboard() const;
+	bool update( bool isMouseOverMe = true );
 
-	virtual bool drawBegin( Uint32 columns, Uint32 rows );
-	virtual void drawLine( Line line, int x1, int y, int x2 );
-	virtual void drawCursor( int cx, int cy, TerminalGlyph g, int ox, int oy, TerminalGlyph og );
-	virtual void drawEnd();
+	Sizei getCellPixelSize() const;
 
-	virtual bool update( bool isMouseOverMe = true );
+	Sizei getGridPixelSize() const;
 
 	void executeFile( const std::string& cmd );
 
@@ -187,26 +186,43 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void draw();
 
-	virtual void onMouseDoubleClick( const Vector2i& pos, const Uint32& flags );
+	void onMouseDoubleClick( const Vector2i& pos, const Uint32& flags );
 
-	virtual void onMouseMove( const Vector2i& pos, const Uint32& flags );
+	void onMouseMove( const Vector2i& pos, const Uint32& flags );
 
-	virtual void onMouseDown( const Vector2i& pos, const Uint32& flags );
+	void onMouseDown( const Vector2i& pos, const Uint32& flags );
 
-	virtual void onMouseUp( const Vector2i& pos, const Uint32& flags );
+	void onMouseUp( const Vector2i& pos, const Uint32& flags );
 
-	virtual void onTextInput( const Uint32& chr );
+	void onTextInput( const Uint32& chr );
 
-	virtual void onTextEditing( const String& text, const Int32& start, const Int32& length );
+	void onTextEditing( const String& text, const Int32& start, const Int32& length );
 
-	virtual void onKeyDown( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
-							const Scancode& scancode );
+	void onKeyDown( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
+					const Scancode& scancode, bool repeat = false );
+
+	void onKeyUp( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
+				  const Scancode& scancode );
+
+	void suppressKeyUp( const Scancode& scancode );
+
+	void clearSuppressedKeys();
 
 	bool isRegisteredShortcut( const Keycode& keyCode, const Uint32& mod ) const;
 
 	Font* getFont() const;
 
 	void setFont( Font* font );
+
+	FontHinting getFontHinting() const;
+
+	/** Updates the externally-owned font hinting policy and invalidates cached terminal glyphs. */
+	void setFontHinting( FontHinting fontHinting );
+
+	FontAntialiasing getFontAntialiasing() const;
+
+	/** Updates the externally-owned antialiasing policy and selects the matching draw path. */
+	void setFontAntialiasing( FontAntialiasing fontAntialiasing );
 
 	const Float& getFontSize() const;
 
@@ -240,13 +256,53 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void setPadding( const Rectf& padding );
 
-	const std::shared_ptr<TerminalEmulator>& getTerminal() const;
+	const std::shared_ptr<TerminalSession>& getSession() const;
 
-	virtual void attach( TerminalEmulator* terminal );
+	void setSearchQuery( TerminalSearchQuery query );
+
+	void navigateSearch( int direction );
+
+	void clearSearch();
+
+	Uint32 getSearchMatchCount() const;
+
+	Int32 getCurrentSearchMatch() const;
+
+	bool getVisibleCurrentSearchMatch( Vector2i& start, Vector2i& end ) const;
+
+	Uint64 getSearchRequestId() const;
+
+	std::string getSelection();
+
+	bool hasSelection() const;
+
+	TerminalSelectionMode getSelectionMode() const;
+
+	int getProcessId() const;
+
+	int getExitCode() const;
+
+	void terminate();
+
+	void setAllowMemoryTrimming( bool allow );
+
+	void setDataCallback( DataFunc callback );
+
+	void setPromptStateChangedCallback( PromptStateChangedFunc callback );
+
+	void setCursorMode( TerminalCursorMode mode );
+
+	TerminalCursorMode getCursorMode() const;
 
 	int scrollSize() const;
 
 	int rowCount() const;
+
+	int scrollPosition() const;
+
+	Uint64 scrollTo( int position );
+
+	Uint64 lastAppliedScrollCommand() const;
 
 	Uint32 pushEventCallback( const EventFunc& func );
 
@@ -284,12 +340,15 @@ class TerminalDisplay : public ITerminalDisplay {
 
   protected:
 	EE::Window::Window* mWindow;
-	std::vector<TerminalGlyph> mBuffer;
 	std::vector<Color> mColors;
-	std::shared_ptr<TerminalEmulator> mTerminal;
+	std::shared_ptr<TerminalSession> mSession;
+	std::shared_ptr<const TerminalSnapshot> mSnapshot;
+	std::unique_ptr<KittyGraphicsRenderer> mGraphicsRenderer;
 	mutable std::string mClipboardUtf8;
-	Uint32 mNumCallBacks;
+	Uint32 mNumCallBacks{ 0 };
 	std::map<Uint32, EventFunc> mCallbacks;
+	DataFunc mDataCallback;
+	PromptStateChangedFunc mPromptStateChangedCallback;
 
 	Font* mFont{ nullptr };
 	Float mFontSize{ 12 };
@@ -297,6 +356,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	Vector2f mPosition;
 	Sizef mSize;
 	std::vector<bool> mDirtyLines;
+	std::bitset<SCANCODES_NUM> mSuppressedKeyUps;
 	bool mDirty{ true };
 	bool mDirtyCursor{ true };
 	bool mDrawing{ false };
@@ -311,16 +371,25 @@ class TerminalDisplay : public ITerminalDisplay {
 	bool mAlreadyClickedMButton{ false };
 	bool mKeepAlive{ true };
 	bool mDraggingSel{ false };
+	bool mSelectionOverridesMouseCapture{ false };
+	int mMode{ MODE_VISIBLE | MODE_FOCUSED };
+	TerminalCursorMode mCursorMode{ SteadyUnderline };
 	Clock mClock;
 	Clock mLastDoubleClick;
 	Uint32 mColumns{ 0 };
 	Uint32 mRows{ 0 };
 	Uint32 mClickStep{ 5 };
-	FrameBuffer* mFrameBuffer{ nullptr };
-	VertexBuffer* mVBBackground{ nullptr };
-	VertexBuffer* mVBForeground{ nullptr };
-	std::vector<VertexBuffer*> mVBStyles;
+	Uint64 mSnapshotGeneration{ 0 };
+	Uint64 mLastAppliedGraphicsSequence{ 0 };
+	bool mGraphicsResyncPending{ false };
+	FontHinting mFontHinting{ FontHinting::Full };
+	FontAntialiasing mFontAntialiasing{ FontAntialiasing::Grayscale };
+	FrameBufferUniquePtr mFrameBuffer;
+	VertexBufferUniquePtr mVBBackground;
+	VertexBufferUniquePtr mVBForeground;
+	std::vector<VertexBufferUniquePtr> mVBStyles;
 	TerminalColorScheme mColorScheme;
+	TerminalColorScheme mInitialColorScheme;
 	Uint32 mQuadVertex{ 6 };
 	Primitives mPrimitives;
 	Vector2u mCurGridPos;
@@ -341,11 +410,19 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	Vector2i positionToGrid( const Vector2i& pos );
 
+	Vector2i positionToPixel( const Vector2i& pos ) const;
+
 	void onSizeChange();
 
-	virtual void onProcessExit( int exitCode );
+	void onProcessExit( int exitCode );
 
-	virtual void onScrollPositionChange();
+	void consumeSnapshot();
+
+	void drainGraphicsUpdates();
+
+	void drainSessionEvents();
+
+	TerminalColorPalette makeColorPalette() const;
 
 	void sendEvent( const TerminalDisplay::Event& event );
 
@@ -355,9 +432,9 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void drawFrameBuffer();
 
-	void createVBO( VertexBuffer** vbo, bool usesTexCoords );
+	void createVBO( VertexBufferUniquePtr& vbo, bool usesTexCoords );
 
-	VertexBuffer* createRowVBO( bool usesTexCoords );
+	VertexBufferUniquePtr createRowVBO( bool usesTexCoords );
 
 	void initVBOs();
 

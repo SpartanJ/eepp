@@ -1,7 +1,7 @@
 #ifndef EE_NETWORKCSOCKETSELECTOR_HPP
 #define EE_NETWORKCSOCKETSELECTOR_HPP
 
-#include <eepp/core.hpp>
+#include <eepp/config.hpp>
 #include <eepp/system/time.hpp>
 using namespace EE::System;
 
@@ -51,6 +51,8 @@ class EE_API SocketSelector {
 	**  ready, use the isReady function.
 	**  If you use a timeout and no socket is ready before the timeout
 	**  is over, the function returns false.
+	**  An empty selector waits for the timeout and returns false, or returns
+	**  immediately when the timeout is infinite, since nothing could become ready.
 	**  @param timeout Maximum time to wait, (use Time::Zero for infinity)
 	**  @return True if there are sockets ready, false otherwise
 	**  @see IsReady */
@@ -149,9 +151,8 @@ while (running) {
 			 }
 		 } else {
 			 // The listener socket is not ready, test all other sockets (the clients)
-			 for (std::vector<TcpSocket*>::iterator it = clients.begin(); it != clients.end(); ++it) {
-				 TcpSocket& client = **it;
-				 if (selector.isReady(client)) {
+			 for (std::vector<TcpSocket*>::iterator it = clients.begin(); it != clients.end(); ++it)
+{ TcpSocket& client = **it; if (selector.isReady(client)) {
 					 // The client has sent some data, we can receive it
 					 Packet packet;
 					 if (client.Receive(packet) == Socket::Done) {

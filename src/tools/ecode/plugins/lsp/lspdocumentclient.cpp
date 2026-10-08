@@ -40,17 +40,27 @@ void LSPDocumentClient::setupFoldRangeService() {
 }
 
 LSPDocumentClient::~LSPDocumentClient() {
-	mDoc->getFoldRangeService().setProvider( nullptr );
-	mDoc->unregisterClient( this );
+	detach();
+	while ( mRunningSemanticTokens || mProcessingSemanticTokensResponse )
+		Sys::sleep( Milliseconds( 0.1f ) );
 	mDoc = nullptr;
+}
+
+void LSPDocumentClient::detach() {
+	if ( mDetached )
+		return;
+	mDetached = true;
+	mShutdown = true;
+	if ( mDoc ) {
+		if ( mDoc->getFoldRangeService().getProvider() == this )
+			mDoc->getFoldRangeService().setProvider( nullptr );
+		mDoc->unregisterClient( this );
+	}
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( nullptr != sceneNode && 0 != mTag )
 		sceneNode->removeActionsByTag( mTag );
 	if ( nullptr != sceneNode && 0 != mTagSemanticTokens )
 		sceneNode->removeActionsByTag( mTagSemanticTokens );
-	mShutdown = true;
-	while ( mRunningSemanticTokens || mProcessingSemanticTokensResponse )
-		Sys::sleep( Milliseconds( 0.1f ) );
 }
 
 bool LSPDocumentClient::tryRequestFoldRanges( bool requestFolds ) {

@@ -50,7 +50,7 @@ class EETest : private Thread {
 	Uint32 lasttick;
 
 	std::vector<ResourceId> TN;
-	std::vector<Texture*> TNP;
+	std::vector<TexturePtr> TNP;
 
 	std::vector<TextureRegion*> Tiles;
 	std::vector<ParticleSystem> PS;
@@ -97,7 +97,7 @@ class EETest : private Thread {
 	Interpolation2d WP;
 	Int32 PartsNum;
 	ResourceId Cursor[1];
-	Texture* CursorP[1];
+	TexturePtr CursorP[1];
 	std::string mInfo;
 
 	bool MultiViewportMode;
@@ -108,8 +108,8 @@ class EETest : private Thread {
 
 	View Views[2];
 
-	ShaderProgram* mShaderProgram;
-	ShaderProgram* mBlur;
+	ShaderProgramPtr mShaderProgram;
+	ShaderProgramPtr mBlur;
 
 	Float mBlurFactor;
 	bool mUseShaders;
@@ -123,6 +123,7 @@ class EETest : private Thread {
 	String mBuddha;
 
 	ResourceLoader mResLoad;
+	std::vector<TexturePtr> mLoadedTextures;
 	void onTextureLoaded( ResourceLoader* ObjLoaded );
 
 	void createUI();
@@ -139,8 +140,8 @@ class EETest : private Thread {
 	TextureAtlasLoader* mTGL;
 	Sprite mMonster;
 
-	FrameBuffer* mFBO;
-	VertexBuffer* mVBO;
+	FrameBufferUniquePtr mFBO;
+	VertexBufferUniquePtr mVBO;
 
 	Clock mFTE;
 	Translator mTranslator;
@@ -224,10 +225,10 @@ class EETest : private Thread {
 
 	std::vector<physicDemo> mDemo;
 	Uint32 mCurDemo;
-	Sprite* mBoxSprite;
-	Sprite* mCircleSprite;
+	SpritePtr mBoxSprite;
+	SpritePtr mCircleSprite;
 
-	UITheme* mTheme;
+	UIThemePtr mTheme;
 	UISceneNode* mSceneNode;
 
 	bool mTerrainUp;
