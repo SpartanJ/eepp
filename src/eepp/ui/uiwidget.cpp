@@ -113,6 +113,14 @@ UIWidget::UIWidget( const std::string& tag ) :
 UIWidget::UIWidget() : UIWidget( "widget" ) {}
 
 UIWidget::~UIWidget() {
+	// Invalidate the entire subtree before OnClose handlers can delete children themselves.
+	// Dirty-style cleanup still runs after those callbacks, as it did before accessibility.
+	if ( !SceneManager::instance()->isShuttingDown() && mUISceneNode ) {
+		if ( auto* manager =
+				 static_cast<const UISceneNode*>( mUISceneNode )->getAccessibilityManager() )
+			const_cast<AccessibilityManager*>( manager )->onWidgetDelete( this );
+	}
+	mNodeFlags |= NODE_FLAG_DESTROYING;
 	onClose();
 
 	if ( mUISceneNode && mUISceneNode->getUIEventDispatcher() &&
@@ -222,8 +230,12 @@ AccessibilityProperties& UIWidget::ensureAccessibilityProperties() {
 void UIWidget::notifyAccessibilityEvent( AccessibilityEvent event ) {
 	if ( !mUISceneNode || !mUISceneNode->hasActiveAccessibilityClients() )
 		return;
+	if ( isDestroying() )
+		return;
 	auto manager = mUISceneNode->getAccessibilityManager();
 	UIWidget* target = AccessibilityWidgetResolver::getEventTarget( this, event );
+	if ( !target )
+		return;
 	while ( target && !target->isAccessibilityElement() ) {
 		Node* parent = target->getParent();
 		target = parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
@@ -544,10 +556,6 @@ UITooltip* UIWidget::createTooltip() {
 
 void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 	UINode::onChildCountChange( child, removed );
-	if ( removed && child && child->isWidget() && mUISceneNode &&
-		 mUISceneNode->hasActiveAccessibilityClients() )
-		mUISceneNode->getAccessibilityManager()->onWidgetRemovedFromParent(
-			child->asType<UIWidget>() );
 
 	if ( removed && child->isWidget() ) {
 		UIWidget* widget = child->asType<UIWidget>();
@@ -868,7 +876,6 @@ void UIWidget::onParentSizeChange( const Vector2f& sizeChange ) {
 void UIWidget::onPositionChange() {
 	updateAnchorsDistances();
 	UINode::onPositionChange();
-	notifyAccessibilityEvent( AccessibilityEvent::BoundsChanged );
 }
 
 void UIWidget::onVisibilityChange() {
@@ -903,7 +910,6 @@ void UIWidget::onSizeChange( bool notifyLayout ) {
 	if ( mForeground != NULL )
 		mForeground->invalidate();
 
-	notifyAccessibilityEvent( AccessibilityEvent::BoundsChanged );
 	if ( notifyLayout )
 		notifyLayoutAttrChange( LayoutInvalidation::Self );
 }

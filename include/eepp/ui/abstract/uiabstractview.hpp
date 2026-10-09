@@ -98,6 +98,12 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	bool isEditing() const;
 
+	/** The active cell editor widget, if any. */
+	UIWidget* getEditWidget() const { return mEditWidget; }
+
+	/** The model index currently being edited. */
+	const ModelIndex& getEditIndex() const { return mEditIndex; }
+
 	Uint32 getEditTriggers() const;
 
 	void setEditTriggers( Uint32 editTriggers );
@@ -163,6 +169,8 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 	std::atomic<unsigned> mPendingUpdateFlags{ 0 };
 
 	virtual void editingWidgetDidChange( const ModelIndex& ) {}
+
+	void releaseEditWidget();
 };
 
 }}} // namespace EE::UI::Abstract

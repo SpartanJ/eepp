@@ -527,8 +527,9 @@ class EE_API UISceneNode : public SceneNode {
 	AccessibilityPolicy getAccessibilityPolicy() const;
 
 	bool hasActiveAccessibilityClients() const {
-		return mHostUISceneNode ? mHostUISceneNode->hasActiveAccessibilityClients()
-								: ( mAccessibilityState & AccessibilityClientActive ) != 0;
+		return !( mNodeFlags & NODE_FLAG_CLOSE ) &&
+			   ( mHostUISceneNode ? mHostUISceneNode->hasActiveAccessibilityClients()
+								  : ( mAccessibilityState & AccessibilityClientActive ) != 0 );
 	}
 
 	/**

@@ -7,8 +7,10 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/engine.hpp>
 
 namespace EE { namespace Scene {
@@ -674,6 +676,14 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 }
 
 void Node::childRemove( Node* node ) {
+	// Capture the old semantic index before unlinking. Destroying widgets were already
+	// invalidated as a subtree and must not be accessed through their destroyed UIWidget part.
+	if ( node->isWidget() && !node->isDestroying() ) {
+		auto* widget = node->asType<UI::UIWidget>();
+		auto* scene = widget->getUISceneNode();
+		if ( scene && scene->hasActiveAccessibilityClients() )
+			scene->getAccessibilityManager()->onWidgetRemovedFromParent( widget );
+	}
 	if ( node == mChild ) {
 		mChild = mChild->mNext;
 

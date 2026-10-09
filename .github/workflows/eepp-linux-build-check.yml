@@ -99,6 +99,14 @@ jobs:
           /usr/bin/python3 projects/scripts/benchmark_accessibility_inactive.py --json \
           > bin/unit_tests/output/accessibility-inactive-benchmark.json
         cat bin/unit_tests/output/accessibility-inactive-benchmark.json
+    - name: Native AT-SPI Regression Tests
+      timeout-minutes: 2
+      run: |
+        mkdir -p bin/unit_tests/output
+        env -u AT_SPI_BUS_ADDRESS dbus-run-session -- projects/scripts/xvfb-run-eepp \
+          /usr/bin/python3 projects/scripts/test_atspi.py --hidden --close-primary \
+          > bin/unit_tests/output/atspi-regressions.log
+        cat bin/unit_tests/output/atspi-regressions.log
     - name: AT-SPI Benchmark
       timeout-minutes: 5
       run: |

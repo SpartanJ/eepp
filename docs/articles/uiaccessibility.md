@@ -70,6 +70,12 @@ separate accessibility tree.
 
 Model-backed list, table, and tree rows are represented as virtual accessible nodes, so they do not
 need to be materialized as `UIWidget` objects merely for accessibility.
+While a cell is being edited, its editor widget is exposed as the only child of the virtual row
+(lists and trees) or cell (tables) it edits, and keyboard focus is reported on the editor.
+
+Text editing support currently covers `UITextInput` and `UITextEdit`, including caret and selection
+queries/actions and native change notifications. `UICodeEditor` and an end-to-end screen-reader
+workflow in ecode are not part of this initial foundation.
 
 ## Accessible names and descriptions
 
@@ -136,8 +142,10 @@ Standard widgets notify the accessibility manager when relevant UI state changes
 - enabled and visible state;
 - checked, selected, and expanded state;
 - widget creation and destruction;
-- model and child hierarchy changes;
-- bounds and layout changes.
+- model and child hierarchy changes.
+
+Bounds are queried on demand. Routine position and size changes do not emit per-widget native
+layout notifications; this avoids event floods while scrolling or running layout.
 
 Applications using the standard widget APIs receive these notifications automatically. A custom
 control that changes semantic state outside the standard paths may notify its scene accessibility
@@ -180,6 +188,8 @@ These commands need an active AT-SPI session bus and a usable graphical session.
 Pass `--hidden` to `test_atspi.py` to keep all example windows hidden. Add `--multi-window` to
 validate secondary-window closure, or `--close-primary` to validate that the surviving window
 continues responding after the primary window is destroyed.
+The `--close-primary` validation also closes the remaining window with its AT-SPI client still
+connected and checks that the application exits cleanly.
 
 ### macOS
 
@@ -212,6 +222,18 @@ and destruction.
 Native accessibility backends are query-centered and create provider objects lazily. When no
 native client has interacted with the application, widget notifications take a cached inactive
 fast path and avoid resolving accessibility data or walking the widget hierarchy.
+
+Model child counts and individual child queries do not instantiate every accessible row. Queried
+rows retain identities across insertion and removal, and model sibling indexes are resolved
+without enumerating every preceding row. A client explicitly requesting all children still pays
+for that enumeration; the logical model is not restricted to its visible viewport.
+
+Linux tracks querying clients by their accessibility-bus connection and becomes inactive when
+those connections disappear. Windows requires window-specific client activity rather than global
+UIA listeners alone. macOS does not provide equivalent per-client disconnect tracking, so after a
+native query its observation flag remains enabled for the application's lifetime.
+Windows can also retain the observation flag for a previously queried window while global UIA
+listeners remain connected: the global listening API does not identify which window they use.
 
 Use `EEPP_DISABLE_ACCESSIBILITY=1` as the disabled baseline when investigating a suspected
 regression. Always profile optimized release binaries without AddressSanitizer. Accessibility work

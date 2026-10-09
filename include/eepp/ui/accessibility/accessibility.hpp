@@ -68,6 +68,7 @@ enum class AccessibilityState : Uint64 {
 	Expanded = 1ull << 9,
 	Active = 1ull << 10,
 	Protected = 1ull << 11,
+	MultiLine = 1ull << 12,
 };
 
 inline AccessibilityState operator|( AccessibilityState left, AccessibilityState right ) {

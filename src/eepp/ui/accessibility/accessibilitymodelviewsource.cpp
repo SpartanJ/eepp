@@ -17,6 +17,7 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
   public:
 	AccessibilityModelViewSource( AccessibilityManager& manager, AccessibilitySourceId sourceId,
 								  Abstract::UIAbstractTableView* view ) :
+		mManager( manager ),
 		mSourceId( sourceId ),
 		mView( view ),
 		mHost( manager.getNodeRef( view ) ),
@@ -59,6 +60,15 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 		if ( auto cell = mView->getCellFromIndex( index ) ) {
 			info.bounds = cell->getWorldBounds();
 			info.boundsValid = true;
+			if ( !cell->hasVisibility() || !info.bounds.intersect( mView->getWorldBounds() ) ) {
+				info.states = static_cast<AccessibilityState>(
+					static_cast<Uint64>( info.states ) &
+					~static_cast<Uint64>( AccessibilityState::Showing ) );
+			}
+		} else {
+			info.states = static_cast<AccessibilityState>(
+				static_cast<Uint64>( info.states ) &
+				~static_cast<Uint64>( AccessibilityState::Showing ) );
 		}
 		return info;
 	}
@@ -75,21 +85,24 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 
 	size_t getChildCount( Uint64 id ) const override {
 		auto found = mNodes.find( id );
-		if ( found == mNodes.end() || !found->second.index.isValid() || found->second.cell ||
-			 mIsList )
+		if ( found == mNodes.end() || !found->second.index.isValid() )
 			return 0;
-		if ( mIsTree )
+		if ( hostsEditor( found->second ) )
+			return 1;
+		if ( found->second.cell || mIsList || mIsTree )
 			return 0;
 		return visibleColumnCount();
 	}
 
 	AccessibilityNodeRef getChild( Uint64 id, size_t child ) override {
 		auto found = mNodes.find( id );
-		if ( found == mNodes.end() || !found->second.index.isValid() || found->second.cell )
+		if ( found == mNodes.end() || !found->second.index.isValid() )
+			return {};
+		if ( hostsEditor( found->second ) )
+			return child == 0 ? mManager.getNodeRef( exposedEditor() ) : AccessibilityNodeRef{};
+		if ( found->second.cell || mIsList || mIsTree )
 			return {};
 		ModelIndex index = found->second.index;
-		if ( mIsTree )
-			return {};
 		int column = visibleColumnAt( child );
 		return column >= 0 ? refFor( index.siblingAtColumn( column ), true )
 						   : AccessibilityNodeRef{};
@@ -117,12 +130,73 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 	}
 
 	AccessibilityNodeRef hitTest( const Math::Vector2f& position ) override {
-		for ( const auto& entry : mNodes ) {
-			auto info = getInfo( entry.first );
-			if ( info.boundsValid && info.bounds.contains( position ) )
-				return { mSourceId, entry.first };
+		// The view's hit test visits only realized widgets, never every historically queried row.
+		auto* editor = exposedEditor();
+		for ( auto* node = mView->overFind( position ); node && node != mView;
+			  node = node->getParent() ) {
+			if ( node == editor )
+				return mManager.getNodeRef( editor );
+			if ( node->isType( UI_TYPE_TABLECELL ) ) {
+				auto index = static_cast<UITableCell*>( node )->getCurIndex();
+				if ( mIsList || mIsTree )
+					index = index.siblingAtColumn( mView->getMainColumn() );
+				return refFor( index, !mIsList && !mIsTree );
+			}
 		}
 		return mHost;
+	}
+
+	AccessibilityNodeRef getEmbeddedWidgetParent( const UIWidget* widget ) override {
+		const auto* editor = exposedEditor();
+		if ( !editor || editor != widget )
+			return {};
+		const ModelIndex& index = mView->getEditIndex();
+		return mIsList || mIsTree ? refFor( index.siblingAtColumn( mView->getMainColumn() ), false )
+								  : refFor( index, true );
+	}
+
+	Int32 getIndexInParent( Uint64 id ) const override {
+		auto found = mNodes.find( id );
+		if ( found == mNodes.end() || !found->second.index.isValid() )
+			return -1;
+		const ModelIndex index = found->second.index;
+		if ( found->second.cell ) {
+			for ( size_t child = 0, count = visibleColumnCount(); child < count; ++child ) {
+				if ( visibleColumnAt( child ) == index.column() )
+					return static_cast<Int32>( child );
+			}
+			return -1;
+		}
+		if ( !mIsTree )
+			return index.row();
+		refreshVisibleTree();
+		if ( mVisibleTreePositions.empty() ) {
+			mVisibleTreePositions.reserve( mVisibleTreeIndexes.size() );
+			for ( size_t child = 0; child < mVisibleTreeIndexes.size(); ++child )
+				mVisibleTreePositions.emplace( mVisibleTreeIndexes[child],
+											   static_cast<Int32>( child ) );
+		}
+		auto position = mVisibleTreePositions.find( index );
+		return position == mVisibleTreePositions.end() ? -1 : position->second;
+	}
+
+	bool getSelectedChildren( std::vector<AccessibilityNodeRef>& selected ) const override {
+		if ( mView->getSelection().size() <= 1 ) {
+			auto row = mView->getSelection().first().siblingAtColumn( mView->getMainColumn() );
+			if ( row.isValid() )
+				selected.emplace_back( refFor( row, false ) );
+			return true;
+		}
+		auto indexes = mView->getSelection().indexes();
+		selected.reserve( indexes.size() );
+		UnorderedSet<ModelIndex> rows;
+		rows.reserve( indexes.size() );
+		for ( const auto& index : indexes ) {
+			auto row = index.siblingAtColumn( mView->getMainColumn() );
+			if ( row.isValid() && rows.emplace( row ).second )
+				selected.emplace_back( refFor( row, false ) );
+		}
+		return true;
 	}
 
 	bool performAction( Uint64 id, const AccessibilityActionRequest& request ) override {
@@ -149,11 +223,27 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 		return false;
 	}
 
-	void invalidate() override { mVisibleTreeIndexesValid = false; }
+	void invalidate() override {
+		mVisibleTreeIndexesValid = false;
+		// Persistent indexes follow inserted/removed rows, but ordinary ModelIndex keys do not.
+		// Re-key only queried nodes, preserving their identities and pruning removed rows.
+		mItemIds.clear();
+		mCellIds.clear();
+		for ( auto it = mNodes.begin(); it != mNodes.end(); ) {
+			if ( !it->second.index.isValid() ) {
+				it = mNodes.erase( it );
+				continue;
+			}
+			auto& ids = it->second.cell ? mCellIds : mItemIds;
+			ids.emplace( ModelIndex( it->second.index ), it->first );
+			++it;
+		}
+	}
 
 	void reset() override {
 		mVisibleTreeIndexesValid = false;
 		mVisibleTreeIndexes.clear();
+		mVisibleTreePositions.clear();
 		mItemIds.clear();
 		mCellIds.clear();
 		mNodes.clear();
@@ -164,6 +254,26 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 		Models::PersistentModelIndex index;
 		bool cell{ false };
 	};
+
+	/** The cell editor, when it is a live, exposed accessibility element. */
+	UIWidget* exposedEditor() const {
+		auto* editor = mView->getEditWidget();
+		return editor && mView->getEditIndex().isValid() && !editor->isDestroying() &&
+					   !editor->isClosing() && editor->isAccessibilityElement() &&
+					   !editor->isAccessibilityHidden()
+				   ? editor
+				   : nullptr;
+	}
+
+	bool hostsEditor( const NodeInfo& node ) const {
+		if ( !exposedEditor() )
+			return false;
+		const ModelIndex& edit = mView->getEditIndex();
+		if ( mIsList || mIsTree )
+			return !node.cell &&
+				   ModelIndex( node.index ) == edit.siblingAtColumn( mView->getMainColumn() );
+		return node.cell && ModelIndex( node.index ) == edit;
+	}
 
 	AccessibilityNodeRef refFor( const ModelIndex& index, bool cell ) const {
 		if ( !index.isValid() )
@@ -197,20 +307,23 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 		if ( mVisibleTreeIndexesValid )
 			return;
 		mVisibleTreeIndexes = static_cast<UITreeView*>( mView )->getVisibleModelIndexes();
+		mVisibleTreePositions.clear();
 		mVisibleTreeIndexesValid = true;
 	}
 
+	AccessibilityManager& mManager;
 	AccessibilitySourceId mSourceId;
 	Abstract::UIAbstractTableView* mView;
 	AccessibilityNodeRef mHost;
 	bool mIsList;
 	bool mIsTree;
+	mutable bool mVisibleTreeIndexesValid{ false };
 	mutable Uint64 mNextId{ 1 };
 	mutable UnorderedMap<ModelIndex, Uint64> mItemIds;
 	mutable UnorderedMap<ModelIndex, Uint64> mCellIds;
 	mutable UnorderedMap<Uint64, NodeInfo> mNodes;
 	mutable std::vector<ModelIndex> mVisibleTreeIndexes;
-	mutable bool mVisibleTreeIndexesValid{ false };
+	mutable UnorderedMap<ModelIndex, Int32> mVisibleTreePositions;
 };
 
 } // namespace

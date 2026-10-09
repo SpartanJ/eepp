@@ -14,6 +14,8 @@
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_FREEBSD
 
+#include <cerrno>
+#include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
 
@@ -67,6 +69,9 @@ class DBusLibrary {
 	using BusGet = DBusConnection* ( * )( int, DBusError* );
 	using BusRegister = int ( * )( DBusConnection*, DBusError* );
 	using BusGetUniqueName = const char* ( * )( DBusConnection* );
+	using BusAddMatch = void ( * )( DBusConnection*, const char*, DBusError* );
+	using ConnectionAddFilter = int ( * )( DBusConnection*, DBusMessageFunction, void*,
+										   void ( * )( void* ) );
 	using ConnectionOpenPrivate = DBusConnection* ( * )( const char*, DBusError* );
 	using ConnectionClose = void ( * )( DBusConnection* );
 	using ConnectionUnref = void ( * )( DBusConnection* );
@@ -74,6 +79,7 @@ class DBusLibrary {
 	using ConnectionGetDispatchStatus = DBusDispatchStatus ( * )( DBusConnection* );
 	using ConnectionDispatch = DBusDispatchStatus ( * )( DBusConnection* );
 	using ConnectionGetUnixFd = int ( * )( DBusConnection*, int* );
+	using ConnectionGetOutgoingSize = long ( * )( DBusConnection* );
 	using ConnectionRegisterObjectPath = int ( * )( DBusConnection*, const char*,
 													const DBusObjectPathVTable*, void* );
 	using ConnectionRegisterFallback = ConnectionRegisterObjectPath;
@@ -92,6 +98,7 @@ class DBusLibrary {
 	using MessageIterInit = int ( * )( DBusMessage*, DBusMessageIter* );
 	using MessageIterGetBasic = void ( * )( DBusMessageIter*, void* );
 	using MessageIterNext = int ( * )( DBusMessageIter* );
+	using MessageIterGetArgType = int ( * )( DBusMessageIter* );
 	using MessageIterRecurse = void ( * )( DBusMessageIter*, DBusMessageIter* );
 	using MessageIterAppendBasic = int ( * )( DBusMessageIter*, int, const void* );
 	using MessageIterOpenContainer = int ( * )( DBusMessageIter*, int, const char*,
@@ -111,6 +118,8 @@ class DBusLibrary {
 		return loadSymbol( busGet, "dbus_bus_get" ) &&
 			   loadSymbol( busRegister, "dbus_bus_register" ) &&
 			   loadSymbol( busGetUniqueName, "dbus_bus_get_unique_name" ) &&
+			   loadSymbol( busAddMatch, "dbus_bus_add_match" ) &&
+			   loadSymbol( connectionAddFilter, "dbus_connection_add_filter" ) &&
 			   loadSymbol( connectionOpenPrivate, "dbus_connection_open_private" ) &&
 			   loadSymbol( connectionClose, "dbus_connection_close" ) &&
 			   loadSymbol( connectionUnref, "dbus_connection_unref" ) &&
@@ -118,6 +127,7 @@ class DBusLibrary {
 			   loadSymbol( connectionGetDispatchStatus, "dbus_connection_get_dispatch_status" ) &&
 			   loadSymbol( connectionDispatch, "dbus_connection_dispatch" ) &&
 			   loadSymbol( connectionGetUnixFd, "dbus_connection_get_unix_fd" ) &&
+			   loadSymbol( connectionGetOutgoingSize, "dbus_connection_get_outgoing_size" ) &&
 			   loadSymbol( connectionRegisterObjectPath, "dbus_connection_register_object_path" ) &&
 			   loadSymbol( connectionRegisterFallback, "dbus_connection_register_fallback" ) &&
 			   loadSymbol( connectionSend, "dbus_connection_send" ) &&
@@ -131,11 +141,13 @@ class DBusLibrary {
 			   loadSymbol( messageGetInterface, "dbus_message_get_interface" ) &&
 			   loadSymbol( messageGetMember, "dbus_message_get_member" ) &&
 			   loadSymbol( messageGetType, "dbus_message_get_type" ) &&
+			   loadSymbol( messageGetSender, "dbus_message_get_sender" ) &&
 			   loadSymbol( messageGetArgs, "dbus_message_get_args" ) &&
 			   loadSymbol( messageIterInitAppend, "dbus_message_iter_init_append" ) &&
 			   loadSymbol( messageIterInit, "dbus_message_iter_init" ) &&
 			   loadSymbol( messageIterGetBasic, "dbus_message_iter_get_basic" ) &&
 			   loadSymbol( messageIterNext, "dbus_message_iter_next" ) &&
+			   loadSymbol( messageIterGetArgType, "dbus_message_iter_get_arg_type" ) &&
 			   loadSymbol( messageIterRecurse, "dbus_message_iter_recurse" ) &&
 			   loadSymbol( messageIterAppendBasic, "dbus_message_iter_append_basic" ) &&
 			   loadSymbol( messageIterOpenContainer, "dbus_message_iter_open_container" ) &&
@@ -146,6 +158,8 @@ class DBusLibrary {
 	BusGet busGet{};
 	BusRegister busRegister{};
 	BusGetUniqueName busGetUniqueName{};
+	BusAddMatch busAddMatch{};
+	ConnectionAddFilter connectionAddFilter{};
 	ConnectionOpenPrivate connectionOpenPrivate{};
 	ConnectionClose connectionClose{};
 	ConnectionUnref connectionUnref{};
@@ -153,6 +167,7 @@ class DBusLibrary {
 	ConnectionGetDispatchStatus connectionGetDispatchStatus{};
 	ConnectionDispatch connectionDispatch{};
 	ConnectionGetUnixFd connectionGetUnixFd{};
+	ConnectionGetOutgoingSize connectionGetOutgoingSize{};
 	ConnectionRegisterObjectPath connectionRegisterObjectPath{};
 	ConnectionRegisterFallback connectionRegisterFallback{};
 	ConnectionSend connectionSend{};
@@ -164,12 +179,14 @@ class DBusLibrary {
 	MessageGetString messageGetPath{};
 	MessageGetString messageGetInterface{};
 	MessageGetString messageGetMember{};
+	MessageGetString messageGetSender{};
 	MessageGetType messageGetType{};
 	MessageGetArgs messageGetArgs{};
 	MessageIterInitAppend messageIterInitAppend{};
 	MessageIterInit messageIterInit{};
 	MessageIterGetBasic messageIterGetBasic{};
 	MessageIterNext messageIterNext{};
+	MessageIterGetArgType messageIterGetArgType{};
 	MessageIterRecurse messageIterRecurse{};
 	MessageIterAppendBasic messageIterAppendBasic{};
 	MessageIterOpenContainer messageIterOpenContainer{};
@@ -223,9 +240,17 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		}
 		mDBus.messageUnref( reply );
 		if ( mConnection ) {
+			mDBus.connectionAddFilter( mConnection, &AtSpiApplication::clientDisconnected, this,
+									   nullptr );
+			mDBus.busAddMatch(
+				mConnection,
+				"type='signal',interface='org.freedesktop.DBus',member='NameOwnerChanged'",
+				nullptr );
 			registerApplication();
 			if ( mConnection && mDBus.connectionGetUnixFd( mConnection, &mConnectionFd ) &&
 				 pipe( mWakePipe ) == 0 ) {
+				for ( int fd : mWakePipe )
+					fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK );
 				mRunning.store( true, std::memory_order_release );
 				mIOThread = std::thread( &AtSpiApplication::waitForMessages, this );
 			}
@@ -273,10 +298,22 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		mPendingWindowAdds.erase(
 			std::remove( mPendingWindowAdds.begin(), mPendingWindowAdds.end(), &manager ),
 			mPendingWindowAdds.end() );
+		mPendingTexts.erase( std::remove_if( mPendingTexts.begin(), mPendingTexts.end(),
+											 [&manager]( const PendingText& text ) {
+												 return text.manager == &manager;
+											 } ),
+							 mPendingTexts.end() );
 		for ( auto it = mManagers.begin(); it != mManagers.end(); ++it ) {
 			if ( it->second != &manager )
 				continue;
 			const Int32 index = static_cast<Int32>( it - mManagers.begin() );
+			const auto prefix = std::string( NodePathPrefix ) + String::toString( it->first ) + "/";
+			for ( auto text = mTextSnapshots.begin(); text != mTextSnapshots.end(); ) {
+				if ( text->first.compare( 0, prefix.size(), prefix ) == 0 )
+					text = mTextSnapshots.erase( text );
+				else
+					++text;
+			}
 			if ( isAvailable() && hasActiveClients() )
 				sendWindowChanged( manager, false, index );
 			mManagers.erase( it );
@@ -301,6 +338,15 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 	void update() {
 		if ( !mInitialized.load( std::memory_order_acquire ) || !mConnection )
 			return;
+		flushPendingTexts();
+		// Signals queued by widget updates must leave the connection even when no client sends
+		// another query. Otherwise typing notifications wait indefinitely in libdbus's queue.
+		if ( mOutgoingPending ) {
+			mDBus.connectionReadWrite( mConnection, 0 );
+			mOutgoingPending = mDBus.connectionGetOutgoingSize( mConnection ) > 0;
+			if ( mDBus.connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains )
+				mDispatchRequested.store( true, std::memory_order_release );
+		}
 		if ( !mPendingWindowAdds.empty() ) {
 			for ( auto* manager : mPendingWindowAdds ) {
 				for ( size_t i = 0; i < mManagers.size(); ++i ) {
@@ -325,23 +371,60 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		// connectionReadWrite() can move multiple requests from the socket into libdbus. Once the
 		// socket is drained, poll() will not wake us for requests that remain in libdbus's internal
 		// dispatch queue. Preserve the bounded per-update work without stranding that backlog.
-		if ( mDBus.connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains )
+		if ( mDBus.connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains ) {
 			mDispatchRequested.store( true, std::memory_order_release );
+			Window::Input::wakeUpEventLoop();
+		} else {
+			const char drained = 1;
+			const ssize_t written = write( mWakePipe[1], &drained, sizeof( drained ) );
+			(void)written;
+		}
 	}
 
 	void onEvent( AccessibilityManager& manager, const AccessibilityPendingEvent& event ) {
-		if ( !isAvailable() || !hasActiveClients() )
+		if ( !isAvailable() )
 			return;
 		ScopedManager scopedManager( *this, &manager );
-		if ( event.type == AccessibilityEvent::Destroyed && !event.related.isValid() )
+		if ( event.type == AccessibilityEvent::Destroyed && !event.related.isValid() ) {
+			if ( !mTextSnapshots.empty() )
+				mTextSnapshots.erase( pathFromRef( event.ref ) );
+			mPendingTexts.erase( std::remove_if( mPendingTexts.begin(), mPendingTexts.end(),
+												 [&]( const PendingText& text ) {
+													 return text.manager == &manager &&
+															text.ref == event.ref;
+												 } ),
+								 mPendingTexts.end() );
+			return;
+		}
+		if ( !hasActiveClients() )
 			return;
 		AccessibilityNodeInfo info;
 		if ( event.type == AccessibilityEvent::FocusChanged ||
 			 event.type == AccessibilityEvent::SelectionChanged ||
 			 event.type == AccessibilityEvent::StateChanged ||
 			 event.type == AccessibilityEvent::EnabledChanged ||
-			 event.type == AccessibilityEvent::VisibilityChanged )
-			info = manager.getNodeInfo( event.ref, false );
+			 event.type == AccessibilityEvent::VisibilityChanged ||
+			 event.type == AccessibilityEvent::ValueChanged )
+			info = manager.getNodeInfo( event.ref, false, false );
+		if ( info.text.valid ) {
+			// Diff text once per frame: a multi-cursor edit or replace-all emits one change per
+			// edited range, and each diff copies and scans the whole document.
+			if ( event.type == AccessibilityEvent::ValueChanged ||
+				 event.type == AccessibilityEvent::SelectionChanged ) {
+				queueText( manager, event.ref, event.type == AccessibilityEvent::ValueChanged );
+				return;
+			}
+			if ( event.type == AccessibilityEvent::FocusChanged &&
+				 hasState( info.states, AccessibilityState::Focused ) )
+				rememberText( event.ref, manager.getNodeInfo( event.ref ) );
+		}
+		if ( event.type == AccessibilityEvent::EnabledChanged ) {
+			sendObjectEvent( event.ref, "StateChanged", "sensitive",
+							 hasState( info.states, AccessibilityState::Enabled ) );
+		} else if ( event.type == AccessibilityEvent::VisibilityChanged ) {
+			sendObjectEvent( event.ref, "StateChanged", "showing",
+							 hasState( info.states, AccessibilityState::Showing ) );
+		}
 		const char* signal = "PropertyChange";
 		const char* detail = "accessible-state";
 		if ( event.type == AccessibilityEvent::FocusChanged ) {
@@ -470,16 +553,169 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 	std::string mRegistryBusName{ "org.a11y.atspi.Registry" };
 	std::string mRegistryPath{ RootPath };
 	Int32 mApplicationId{};
+	bool mOutgoingPending{};
+	struct TextSnapshot {
+		String value;
+		AccessibilityTextInfo text;
+	};
+	UnorderedMap<std::string, TextSnapshot> mTextSnapshots;
+	UnorderedSet<std::string> mClients;
+
+	struct PendingText {
+		AccessibilityManager* manager;
+		AccessibilityNodeRef ref;
+		bool valueChanged;
+	};
+	std::vector<PendingText> mPendingTexts;
+
+	/** Records the client's view of a text. A snapshot is replaced only when the client has just
+	 * read the current contents and no unsent change would otherwise be diffed away. */
+	void rememberText( AccessibilityNodeRef ref, const AccessibilityNodeInfo& info,
+					   bool replace = false ) {
+		if ( !info.text.valid )
+			return;
+		auto path = pathFromRef( ref );
+		auto found = mTextSnapshots.find( path );
+		if ( found == mTextSnapshots.end() )
+			mTextSnapshots.emplace( std::move( path ), TextSnapshot{ info.value, info.text } );
+		else if ( replace && !hasPendingText( ref ) )
+			found->second = TextSnapshot{ info.value, info.text };
+	}
+
+	bool hasPendingText( AccessibilityNodeRef ref ) const {
+		for ( const auto& text : mPendingTexts ) {
+			if ( text.manager == mManager && text.ref == ref )
+				return true;
+		}
+		return false;
+	}
+
+	void queueText( AccessibilityManager& manager, AccessibilityNodeRef ref, bool valueChanged ) {
+		for ( auto& text : mPendingTexts ) {
+			if ( text.manager == &manager && text.ref == ref ) {
+				text.valueChanged |= valueChanged;
+				return;
+			}
+		}
+		mPendingTexts.push_back( { &manager, ref, valueChanged } );
+		Window::Input::wakeUpEventLoop();
+	}
+
+	void flushPendingTexts() {
+		if ( mPendingTexts.empty() )
+			return;
+		auto pending = std::move( mPendingTexts );
+		mPendingTexts.clear();
+		if ( !hasActiveClients() )
+			return;
+		for ( const auto& text : pending ) {
+			if ( !text.manager->isValid( text.ref ) )
+				continue;
+			ScopedManager scopedManager( *this, text.manager );
+			if ( text.valueChanged )
+				sendTextChanged( text.ref );
+			else
+				sendTextSelection( text.ref, text.manager->getTextInfo( text.ref ) );
+		}
+	}
+
+	void sendObjectEvent( AccessibilityNodeRef ref, const char* signal, const char* detail,
+						  Int32 offset, Int32 length = 0, const String& text = {} ) {
+		auto path = pathFromRef( ref );
+		auto* message =
+			mDBus.messageNewSignal( path.c_str(), "org.a11y.atspi.Event.Object", signal );
+		if ( !message )
+			return;
+		DBusMessageIter iter;
+		DBusMessageIter variant;
+		mDBus.messageIterInitAppend( message, &iter );
+		appendBasic( iter, 's', &detail );
+		appendBasic( iter, 'i', &offset );
+		appendBasic( iter, 'i', &length );
+		auto utf8 = text.toUtf8();
+		const char* value = utf8.c_str();
+		mDBus.messageIterOpenContainer( &iter, 'v', "s", &variant );
+		appendBasic( variant, 's', &value );
+		mDBus.messageIterCloseContainer( &iter, &variant );
+		appendEventProperties( iter );
+		send( message );
+	}
+
+	void sendTextSelection( AccessibilityNodeRef ref, const AccessibilityTextInfo& text ) {
+		auto found = mTextSnapshots.find( pathFromRef( ref ) );
+		if ( found == mTextSnapshots.end() ) {
+			rememberText( ref, getNodeInfo( ref ) );
+			found = mTextSnapshots.find( pathFromRef( ref ) );
+		}
+		if ( found == mTextSnapshots.end() )
+			return;
+		auto& previous = found->second.text;
+		if ( previous.caretOffset != text.caretOffset )
+			sendObjectEvent( ref, "TextCaretMoved", "", text.caretOffset );
+		if ( previous.selectionStart != text.selectionStart ||
+			 previous.selectionEnd != text.selectionEnd )
+			sendObjectEvent( ref, "TextSelectionChanged", "", 0 );
+		previous = text;
+	}
+
+	void sendTextChanged( AccessibilityNodeRef ref ) {
+		auto info = getNodeInfo( ref );
+		auto path = pathFromRef( ref );
+		auto found = mTextSnapshots.find( path );
+		if ( found == mTextSnapshots.end() ) {
+			// A client which has not queried or focused this text has no old contents to diff.
+			rememberText( ref, info );
+			return;
+		}
+		auto& previous = found->second.value;
+		size_t prefix = 0;
+		while ( prefix < previous.size() && prefix < info.value.size() &&
+				previous[prefix] == info.value[prefix] )
+			++prefix;
+		size_t suffix = 0;
+		while ( suffix < previous.size() - prefix && suffix < info.value.size() - prefix &&
+				previous[previous.size() - suffix - 1] ==
+					info.value[info.value.size() - suffix - 1] )
+			++suffix;
+		const size_t removed = previous.size() - prefix - suffix;
+		const size_t inserted = info.value.size() - prefix - suffix;
+		if ( removed ) {
+			sendObjectEvent( ref, "TextChanged", "delete", prefix, removed,
+							 previous.substr( prefix, removed ) );
+		}
+		if ( inserted ) {
+			sendObjectEvent( ref, "TextChanged", "insert", prefix, inserted,
+							 info.value.substr( prefix, inserted ) );
+		}
+		previous = std::move( info.value );
+		sendTextSelection( ref, info.text );
+	}
+
 	void initializationFinished() { mInitialized.store( true, std::memory_order_release ); }
 
 	void waitForMessages() {
+		bool dispatchPending = false;
 		while ( mRunning.load( std::memory_order_acquire ) ) {
-			pollfd descriptors[2]{ { mConnectionFd, POLLIN, 0 }, { mWakePipe[0], POLLIN, 0 } };
-			if ( poll( descriptors, 2, -1 ) <= 0 || descriptors[1].revents & POLLIN ||
-				 descriptors[0].revents & ( POLLERR | POLLHUP | POLLNVAL ) )
+			// A readable socket stays readable until the UI thread drains it. Do not poll it
+			// again while dispatch is pending: only the drain/stop pipe can re-arm this watcher.
+			pollfd descriptors[2]{ { dispatchPending ? -1 : mConnectionFd, POLLIN, 0 },
+								   { mWakePipe[0], POLLIN, 0 } };
+			const int ready = poll( descriptors, 2, -1 );
+			if ( ready < 0 && errno == EINTR )
+				continue;
+			if ( ready <= 0 || descriptors[0].revents & ( POLLERR | POLLHUP | POLLNVAL ) )
 				break;
-			if ( !( descriptors[0].revents & POLLIN ) ||
-				 mDispatchRequested.exchange( true, std::memory_order_acq_rel ) )
+			if ( descriptors[1].revents & POLLIN ) {
+				char wake[64];
+				const ssize_t consumed = read( mWakePipe[0], wake, sizeof( wake ) );
+				(void)consumed;
+				dispatchPending = mDispatchRequested.load( std::memory_order_acquire );
+				continue;
+			}
+			if ( !( descriptors[0].revents & POLLIN ) )
+				continue;
+			dispatchPending = true;
+			if ( mDispatchRequested.exchange( true, std::memory_order_acq_rel ) )
 				continue;
 			// UIApplication waits on its first live window, not necessarily the queried scene.
 			// SDL windows share the event loop, so wake it without retaining an Input pointer that
@@ -496,9 +732,10 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		const bool registryPropertySet =
 			interface && member &&
 			std::strcmp( interface, "org.freedesktop.DBus.Properties" ) == 0 &&
-			std::strcmp( member, "Set" ) == 0;
+			std::strcmp( member, "Set" ) == 0 &&
+			std::strcmp( backend->mDBus.messageGetPath( message ), RootPath ) == 0;
 		if ( !registryPropertySet )
-			backend->activate();
+			backend->activate( message );
 		if ( backend->handleMessage( message ) != 0 ) {
 			backend->sendError( message, "org.freedesktop.DBus.Error.UnknownMethod",
 								"Unsupported accessibility method or property" );
@@ -506,7 +743,42 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		return 0;
 	}
 
-	void activate() { mHasActiveClients.store( true, std::memory_order_release ); }
+	void activate( DBusMessage* message ) {
+		const char* sender = mDBus.messageGetSender( message );
+		// Registry bookkeeping is not evidence of an assistive client. Its bus connection
+		// normally outlives every screen reader and would otherwise pin the active flag forever.
+		if ( !sender || mRegistryBusName == sender )
+			return;
+		mClients.emplace( sender );
+		mHasActiveClients.store( !mClients.empty(), std::memory_order_release );
+	}
+
+	static DBusHandlerResult clientDisconnected( DBusConnection*, DBusMessage* message,
+												 void* userData ) {
+		auto* application = static_cast<AtSpiApplication*>( userData );
+		const char* interface = application->mDBus.messageGetInterface( message );
+		const char* member = application->mDBus.messageGetMember( message );
+		const char* sender = application->mDBus.messageGetSender( message );
+		if ( !interface || !member || std::strcmp( interface, "org.freedesktop.DBus" ) != 0 ||
+			 std::strcmp( member, "NameOwnerChanged" ) != 0 || !sender ||
+			 std::strcmp( sender, "org.freedesktop.DBus" ) != 0 )
+			return 1;
+		const char* name = nullptr;
+		const char* oldOwner = nullptr;
+		const char* newOwner = nullptr;
+		if ( application->mDBus.messageGetArgs( message, nullptr, 's', &name, 's', &oldOwner, 's',
+												&newOwner, 0 ) &&
+			 name && newOwner && !*newOwner ) {
+			application->mClients.erase( name );
+			const bool active = !application->mClients.empty();
+			if ( !active ) {
+				application->mTextSnapshots.clear();
+				application->mPendingTexts.clear();
+			}
+			application->mHasActiveClients.store( active, std::memory_order_release );
+		}
+		return 1;
+	}
 
 	AccessibilityNodeRef refFromPath( const char* path ) {
 		if ( !path )
@@ -557,8 +829,8 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 
 	AccessibilityNodeInfo getNodeInfo( AccessibilityNodeRef ref, bool includeValue = true ) const {
 		if ( ref != ApplicationRef ) {
-			auto info =
-				mManager ? mManager->getNodeInfo( ref, includeValue ) : AccessibilityNodeInfo{};
+			auto info = mManager ? mManager->getNodeInfo( ref, includeValue, includeValue )
+								 : AccessibilityNodeInfo{};
 			if ( isSceneRoot( ref ) )
 				info.role = AccessibilityRole::Window;
 			return info;
@@ -606,6 +878,9 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 				return 69;
 			case AccessibilityRole::Dialog:
 				return 16;
+			case AccessibilityRole::Group:
+			case AccessibilityRole::TabPanel:
+				return 39;
 			case AccessibilityRole::Button:
 				return 43;
 			case AccessibilityRole::CheckBox:
@@ -668,6 +943,9 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 				return "window";
 			case AccessibilityRole::Dialog:
 				return "dialog";
+			case AccessibilityRole::Group:
+			case AccessibilityRole::TabPanel:
+				return "panel";
 			case AccessibilityRole::Button:
 				return "push button";
 			case AccessibilityRole::CheckBox:
@@ -736,7 +1014,8 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 
 	AccessibilityActions nativeActions( AccessibilityActions actions ) const {
 		return actions & ~( accessibilityActionMask( AccessibilityAction::SetValue ) |
-							accessibilityActionMask( AccessibilityAction::SetText ) );
+							accessibilityActionMask( AccessibilityAction::SetText ) |
+							accessibilityActionMask( AccessibilityAction::SetTextSelection ) );
 	}
 
 	const char* actionName( AccessibilityAction action ) const {
@@ -763,12 +1042,30 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 				return "collapse";
 			case AccessibilityAction::ScrollTo:
 				return "scroll to";
+			case AccessibilityAction::SetTextSelection:
+				return "set text selection";
 		}
 		return "";
 	}
 
 	void appendBasic( DBusMessageIter& iter, int type, const void* value ) {
 		mDBus.messageIterAppendBasic( &iter, type, value );
+	}
+
+	bool readPropertySet( DBusMessage* request, const char*& interface, const char*& property,
+						  DBusMessageIter& variant ) {
+		DBusMessageIter iter;
+		if ( !mDBus.messageIterInit( request, &iter ) ||
+			 mDBus.messageIterGetArgType( &iter ) != 's' )
+			return false;
+		mDBus.messageIterGetBasic( &iter, &interface );
+		if ( !mDBus.messageIterNext( &iter ) || mDBus.messageIterGetArgType( &iter ) != 's' )
+			return false;
+		mDBus.messageIterGetBasic( &iter, &property );
+		if ( !mDBus.messageIterNext( &iter ) || mDBus.messageIterGetArgType( &iter ) != 'v' )
+			return false;
+		mDBus.messageIterRecurse( &iter, &variant );
+		return interface && property;
 	}
 
 	void appendRef( DBusMessageIter& iter, AccessibilityNodeRef ref ) {
@@ -832,23 +1129,41 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		mDBus.messageIterCloseContainer( &iter, &array );
 	}
 
-	void appendStates( DBusMessageIter& iter, AccessibilityState states ) {
+	void appendStates( DBusMessageIter& iter, const AccessibilityNodeInfo& info ) {
 		Uint32 words[2]{};
 		auto addState = [&words]( bool enabled, Uint32 state ) {
 			if ( enabled )
 				words[state / 32] |= 1u << ( state % 32 );
 		};
-		Uint64 stateBits = static_cast<Uint64>( states );
+		Uint64 stateBits = static_cast<Uint64>( info.states );
 		addState( stateBits & static_cast<Uint64>( AccessibilityState::Active ), 1 );
 		addState( stateBits & static_cast<Uint64>( AccessibilityState::Checked ), 4 );
 		addState( stateBits & static_cast<Uint64>( AccessibilityState::Editable ), 7 );
 		addState( stateBits & static_cast<Uint64>( AccessibilityState::Enabled ), 8 );
-		addState( stateBits & static_cast<Uint64>( AccessibilityState::Expanded ), 9 );
+		addState( info.actions & ( accessibilityActionMask( AccessibilityAction::Expand ) |
+								   accessibilityActionMask( AccessibilityAction::Collapse ) ),
+				  9 );
+		addState( stateBits & static_cast<Uint64>( AccessibilityState::Expanded ), 10 );
 		addState( stateBits & static_cast<Uint64>( AccessibilityState::Focusable ), 11 );
 		addState( stateBits & static_cast<Uint64>( AccessibilityState::Focused ), 12 );
 		addState( stateBits & static_cast<Uint64>( AccessibilityState::Selected ), 23 );
+		addState( stateBits & static_cast<Uint64>( AccessibilityState::Enabled ), 24 );
 		addState( stateBits & static_cast<Uint64>( AccessibilityState::Showing ), 25 );
 		addState( stateBits & static_cast<Uint64>( AccessibilityState::Visible ), 30 );
+		addState( info.actions & accessibilityActionMask( AccessibilityAction::Select ), 22 );
+		addState( info.role == AccessibilityRole::CheckBox ||
+					  info.role == AccessibilityRole::RadioButton ||
+					  info.role == AccessibilityRole::CheckMenuItem ||
+					  info.role == AccessibilityRole::RadioMenuItem,
+				  41 );
+		addState( stateBits & static_cast<Uint64>( AccessibilityState::ReadOnly ), 43 );
+		addState( info.role == AccessibilityRole::TextBox &&
+					  hasState( info.states, AccessibilityState::MultiLine ),
+				  17 );
+		addState( info.role == AccessibilityRole::TextBox &&
+					  !hasState( info.states, AccessibilityState::MultiLine ),
+				  26 );
+		addState( info.text.valid, 38 );
 		DBusMessageIter array;
 		mDBus.messageIterOpenContainer( &iter, 'a', "u", &array );
 		appendBasic( array, 'u', &words[0] );
@@ -864,15 +1179,7 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 			}
 			return -1;
 		}
-		auto parent = getParent( ref );
-		if ( !parent.isValid() || !mManager )
-			return -1;
-		auto children = mManager->getChildren( parent );
-		for ( size_t i = 0; i < children.size(); ++i ) {
-			if ( children[i] == ref )
-				return static_cast<Int32>( i );
-		}
-		return -1;
+		return mManager ? mManager->getIndexInParent( ref ) : -1;
 	}
 
 	void sendWindowChanged( AccessibilityManager& manager, bool added, Int32 index ) {
@@ -902,6 +1209,10 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 			return;
 		mDBus.connectionSend( mConnection, reply, nullptr );
 		mDBus.messageUnref( reply );
+		if ( !mOutgoingPending ) {
+			mOutgoingPending = true;
+			Window::Input::wakeUpEventLoop();
+		}
 	}
 
 	void sendBasic( DBusMessage* request, int type, const void* value ) {
@@ -929,7 +1240,7 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		} else if ( coordinateType == 2 ) {
 			auto parent = getParent( ref );
 			if ( parent.isValid() ) {
-				auto parentBounds = getNodeInfo( parent ).bounds;
+				auto parentBounds = getNodeInfo( parent, false ).bounds;
 				bounds.move( Math::Vector2f( -parentBounds.Left, -parentBounds.Top ) );
 			}
 		}
@@ -1031,12 +1342,15 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		if ( std::strcmp( interface, "org.a11y.atspi.Accessible" ) == 0 ) {
 			if ( std::strcmp( member, "GetRole" ) == 0 ) {
 				auto info = getNodeInfo( ref, false );
-				Uint32 value = role( info.role );
+				Uint32 value =
+					hasState( info.states, AccessibilityState::Protected ) ? 40 : role( info.role );
 				sendBasic( request, 'u', &value );
 			} else if ( std::strcmp( member, "GetRoleName" ) == 0 ||
 						std::strcmp( member, "GetLocalizedRoleName" ) == 0 ) {
 				auto info = getNodeInfo( ref, false );
-				const char* value = roleName( info.role );
+				const char* value = hasState( info.states, AccessibilityState::Protected )
+										? "password text"
+										: roleName( info.role );
 				sendBasic( request, 's', &value );
 			} else if ( std::strcmp( member, "GetChildAtIndex" ) == 0 ) {
 				Int32 index = -1;
@@ -1091,7 +1405,7 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 				DBusMessage* reply = mDBus.messageNewMethodReturn( request );
 				DBusMessageIter iter;
 				mDBus.messageIterInitAppend( reply, &iter );
-				appendStates( iter, info.states );
+				appendStates( iter, info );
 				send( reply );
 			} else if ( std::strcmp( member, "GetAttributes" ) == 0 ) {
 				DBusMessage* reply = mDBus.messageNewMethodReturn( request );
@@ -1175,6 +1489,10 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 						x -= position.x;
 						y -= position.y;
 					}
+				} else if ( coordinateType == 2 ) {
+					auto parent = getNodeInfo( getParent( ref ), false );
+					x += static_cast<Int32>( parent.bounds.Left );
+					y += static_cast<Int32>( parent.bounds.Top );
 				}
 				DBusMessage* reply = mDBus.messageNewMethodReturn( request );
 				DBusMessageIter iter;
@@ -1277,6 +1595,7 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 			auto info = getNodeInfo( ref, true );
 			if ( !info.text.valid )
 				return 1;
+			rememberText( ref, info, std::strcmp( member, "GetText" ) == 0 );
 			const Int32 characterCount = static_cast<Int32>( info.value.size() );
 			if ( std::strcmp( member, "GetText" ) == 0 ) {
 				Int32 start = 0;
@@ -1305,6 +1624,13 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 						--start;
 					end = std::max( 0, std::min( offset, characterCount ) );
 					while ( end < characterCount && !isSpace( end ) )
+						++end;
+				} else if ( granularity == 3 || granularity == 4 ) {
+					while ( start > 0 && info.value[start - 1] != '\n' )
+						--start;
+					while ( end < characterCount && info.value[end] != '\n' )
+						++end;
+					if ( end < characterCount )
 						++end;
 				} else {
 					start = 0;
@@ -1359,7 +1685,33 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 				appendBasic( iter, 'i', &info.text.selectionEnd );
 				send( reply );
 			} else if ( std::strcmp( member, "SetCaretOffset" ) == 0 ) {
-				int success = false;
+				Int32 offset = -1;
+				mDBus.messageGetArgs( request, nullptr, 'i', &offset, 0 );
+				int success =
+					offset >= 0 && offset <= characterCount && mManager &&
+					mManager->performAction( ref, { AccessibilityAction::SetTextSelection,
+													String( String::toString( offset ) + ":" +
+															String::toString( offset ) ) } );
+				sendBasic( request, 'b', &success );
+			} else if ( std::strcmp( member, "SetSelection" ) == 0 ||
+						std::strcmp( member, "AddSelection" ) == 0 ||
+						std::strcmp( member, "RemoveSelection" ) == 0 ) {
+				Int32 selection = 0;
+				Int32 start = info.text.caretOffset;
+				Int32 end = start;
+				bool valid =
+					std::strcmp( member, "AddSelection" ) == 0
+						? mDBus.messageGetArgs( request, nullptr, 'i', &start, 'i', &end, 0 )
+					: std::strcmp( member, "SetSelection" ) == 0
+						? mDBus.messageGetArgs( request, nullptr, 'i', &selection, 'i', &start, 'i',
+												&end, 0 )
+						: mDBus.messageGetArgs( request, nullptr, 'i', &selection, 0 );
+				int success =
+					valid && selection == 0 && start >= 0 && end >= start &&
+					end <= characterCount && mManager &&
+					mManager->performAction( ref, { AccessibilityAction::SetTextSelection,
+													String( String::toString( start ) + ":" +
+															String::toString( end ) ) } );
 				sendBasic( request, 'b', &success );
 			} else {
 				return 1;
@@ -1375,6 +1727,7 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 			const char* contents = nullptr;
 			if ( !mDBus.messageGetArgs( request, nullptr, 's', &contents, 0 ) )
 				return 1;
+			rememberText( ref, info, true );
 			int success =
 				mManager &&
 				mManager->performAction(
@@ -1405,6 +1758,9 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 			AccessibilityNodeInfo info;
 			if ( needsInfo )
 				info = getNodeInfo( ref, includeValue );
+			if ( mManager && std::strcmp( requestedInterface, "org.a11y.atspi.Text" ) == 0 &&
+				 std::strcmp( property, "CaretOffset" ) == 0 )
+				info.text = mManager->getTextInfo( ref );
 			DBusMessage* reply = mDBus.messageNewMethodReturn( request );
 			DBusMessageIter iter;
 			DBusMessageIter variant;
@@ -1495,41 +1851,27 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		}
 		if ( std::strcmp( interface, "org.freedesktop.DBus.Properties" ) == 0 &&
 			 std::strcmp( member, "Set" ) == 0 && ref == ApplicationRef ) {
-			DBusMessageIter iter;
 			DBusMessageIter variant;
 			const char* requestedInterface = nullptr;
 			const char* property = nullptr;
-			if ( !mDBus.messageIterInit( request, &iter ) )
-				return 1;
-			mDBus.messageIterGetBasic( &iter, &requestedInterface );
-			if ( !mDBus.messageIterNext( &iter ) )
-				return 1;
-			mDBus.messageIterGetBasic( &iter, &property );
-			if ( !mDBus.messageIterNext( &iter ) || !requestedInterface || !property ||
+			if ( !readPropertySet( request, requestedInterface, property, variant ) ||
+				 mDBus.messageIterGetArgType( &variant ) != 'i' ||
 				 std::strcmp( requestedInterface, "org.a11y.atspi.Application" ) != 0 ||
 				 std::strcmp( property, "Id" ) != 0 )
 				return 1;
-			mDBus.messageIterRecurse( &iter, &variant );
 			mDBus.messageIterGetBasic( &variant, &mApplicationId );
 			send( mDBus.messageNewMethodReturn( request ) );
 			return 0;
 		}
 		if ( std::strcmp( interface, "org.freedesktop.DBus.Properties" ) == 0 &&
 			 std::strcmp( member, "Set" ) == 0 ) {
-			DBusMessageIter iter;
 			DBusMessageIter variant;
 			const char* requestedInterface = nullptr;
 			const char* property = nullptr;
 			double value = 0;
-			if ( !mDBus.messageIterInit( request, &iter ) )
+			if ( !readPropertySet( request, requestedInterface, property, variant ) ||
+				 mDBus.messageIterGetArgType( &variant ) != 'd' )
 				return 1;
-			mDBus.messageIterGetBasic( &iter, &requestedInterface );
-			if ( !mDBus.messageIterNext( &iter ) )
-				return 1;
-			mDBus.messageIterGetBasic( &iter, &property );
-			if ( !mDBus.messageIterNext( &iter ) )
-				return 1;
-			mDBus.messageIterRecurse( &iter, &variant );
 			mDBus.messageIterGetBasic( &variant, &value );
 			if ( !requestedInterface || !property ||
 				 std::strcmp( requestedInterface, "org.a11y.atspi.Value" ) != 0 ||

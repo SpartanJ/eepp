@@ -31,13 +31,23 @@ class EE_API AccessibilityManager {
 
 	AccessibilityNodeInfo getNodeInfo( AccessibilityNodeRef ref, bool includeValue = true ) const;
 
+	/** Native metadata queries may also omit document-offset calculation. */
+	AccessibilityNodeInfo getNodeInfo( AccessibilityNodeRef ref, bool includeValue,
+									   bool includeTextOffsets ) const;
+
 	AccessibilityNodeRef getParent( AccessibilityNodeRef ref );
+
+	Int32 getIndexInParent( AccessibilityNodeRef ref );
+
+	AccessibilityTextInfo getTextInfo( AccessibilityNodeRef ref ) const;
 
 	size_t getChildCount( AccessibilityNodeRef ref );
 
 	AccessibilityNodeRef getChild( AccessibilityNodeRef ref, size_t index );
 
 	const std::vector<AccessibilityNodeRef>& getChildren( AccessibilityNodeRef ref );
+
+	std::vector<AccessibilityNodeRef> getSelectedChildren( AccessibilityNodeRef ref );
 
 	AccessibilityNodeRef hitTest( const Math::Vector2f& screenPosition );
 
@@ -69,7 +79,8 @@ class EE_API AccessibilityManager {
 
 	void onWidgetRemovedFromParent( UIWidget* widget );
 
-	void onWidgetAccessibilitySourceDelete( UIWidget* widget );
+	/** Returns whether the widget owned a model source that has now been released. */
+	bool onWidgetAccessibilitySourceDelete( UIWidget* widget );
 
 	void onWidgetDelete( UIWidget* widget );
 
@@ -101,6 +112,11 @@ class EE_API AccessibilityManager {
 	AccessibilitySource* sourceFor( UIWidget* widget );
 
 	void invalidateChildren();
+
+	AccessibilityNodeRef getWidgetParent( UIWidget* widget );
+
+	/** Returns whether any identity or model source in the subtree was released. */
+	bool removeSubtreeIdentities( Scene::Node* node );
 };
 
 }} // namespace EE::UI

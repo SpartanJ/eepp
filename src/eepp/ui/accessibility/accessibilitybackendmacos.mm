@@ -300,7 +300,7 @@ class MacAccessibilityState : public std::enable_shared_from_this<MacAccessibili
 	NSUInteger indexOfChild( AccessibilityNodeRef parent, id child );
 	NSArray* selectedChildrenFor( AccessibilityNodeRef ref );
 	AccessibilityNodeRef parentFor( AccessibilityNodeRef ref );
-	AccessibilityNodeInfo infoFor( AccessibilityNodeRef ref ) const;
+	AccessibilityNodeInfo infoFor( AccessibilityNodeRef ref, bool includeValue = false ) const;
 	AccessibilityNodeRef hitTest( NSPoint point );
 	AccessibilityNodeRef focused() const;
 	bool perform( AccessibilityNodeRef ref, AccessibilityAction action, const String& value = {} );
@@ -357,6 +357,8 @@ class MacAccessibilityState : public std::enable_shared_from_this<MacAccessibili
 - (void)configureWithState:(const std::shared_ptr<MacAccessibilityState>&)state
 					   ref:(AccessibilityNodeRef)ref;
 - (void)invalidate;
+
+- (AccessibilityNodeRef)nativeNodeRef;
 @end
 
 void MacAccessibilityState::invalidate() {
@@ -376,7 +378,7 @@ EEPPMacAccessibilityElement* MacAccessibilityState::elementFor( AccessibilityNod
 	auto found = mElements.find( key );
 	if ( found != mElements.end() )
 		return found->second;
-	const auto info = mManager->getNodeInfo( ref );
+	const auto info = mManager->getNodeInfo( ref, false, false );
 	EEPPMacAccessibilityElement* element = [EEPPMacAccessibilityElement
 		accessibilityElementWithRole:nativeRole( info.role )
 							   frame:frameFor( info )
@@ -443,8 +445,10 @@ void MacAccessibilityState::evictInvalidElements() {
 	}
 }
 
-AccessibilityNodeInfo MacAccessibilityState::infoFor( AccessibilityNodeRef ref ) const {
-	return isValid( ref ) ? mManager->getNodeInfo( ref ) : AccessibilityNodeInfo();
+AccessibilityNodeInfo MacAccessibilityState::infoFor( AccessibilityNodeRef ref,
+													  bool includeValue ) const {
+	return isValid( ref ) ? mManager->getNodeInfo( ref, includeValue, includeValue )
+						  : AccessibilityNodeInfo();
 }
 
 NSArray* MacAccessibilityState::childrenFor( AccessibilityNodeRef ref ) {
@@ -463,13 +467,13 @@ NSArray* MacAccessibilityState::childrenFor( AccessibilityNodeRef ref, NSUIntege
 											 NSUInteger maxCount ) {
 	if ( !isValid( ref ) || maxCount == 0 )
 		return @[];
-	const auto& children = mManager->getChildren( ref );
-	if ( index >= children.size() )
+	const auto count = mManager->getChildCount( ref );
+	if ( index >= count )
 		return @[];
-	const NSUInteger end = index + std::min<NSUInteger>( maxCount, children.size() - index );
+	const NSUInteger end = index + std::min<NSUInteger>( maxCount, count - index );
 	NSMutableArray* result = [[NSMutableArray alloc] initWithCapacity:end - index];
 	for ( NSUInteger childIndex = index; childIndex < end; ++childIndex ) {
-		if ( auto element = elementFor( children[childIndex] ) )
+		if ( auto element = elementFor( mManager->getChild( ref, childIndex ) ) )
 			[result addObject:element];
 	}
 	return EE_OBJC_AUTORELEASE( result );
@@ -480,26 +484,23 @@ NSUInteger MacAccessibilityState::childCountFor( AccessibilityNodeRef ref ) {
 }
 
 NSUInteger MacAccessibilityState::indexOfChild( AccessibilityNodeRef parent, id child ) {
-	if ( !isValid( parent ) || !child )
+	if ( !isValid( parent ) || ![child isKindOfClass:[EEPPMacAccessibilityElement class]] )
 		return NSNotFound;
-	const auto& children = mManager->getChildren( parent );
-	for ( NSUInteger index = 0; index < children.size(); ++index ) {
-		if ( cachedElementFor( children[index] ) == child )
-			return index;
-	}
-	return NSNotFound;
+	const auto ref = [(EEPPMacAccessibilityElement*)child nativeNodeRef];
+	if ( mManager->getParent( ref ) != parent )
+		return NSNotFound;
+	const auto index = mManager->getIndexInParent( ref );
+	return index >= 0 ? static_cast<NSUInteger>( index ) : NSNotFound;
 }
 
 NSArray* MacAccessibilityState::selectedChildrenFor( AccessibilityNodeRef ref ) {
 	if ( !isValid( ref ) )
 		return nil;
-	const auto& children = mManager->getChildren( ref );
+	const auto children = mManager->getSelectedChildren( ref );
 	NSMutableArray* result = [[NSMutableArray alloc] init];
 	for ( const auto& child : children ) {
-		if ( hasState( mManager->getNodeInfo( child ).states, AccessibilityState::Selected ) ) {
-			if ( auto element = elementFor( child ) )
-				[result addObject:element];
-		}
+		if ( auto element = elementFor( child ) )
+			[result addObject:element];
 	}
 	return EE_OBJC_AUTORELEASE( result );
 }
@@ -776,7 +777,16 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 
 - (AccessibilityNodeInfo)nodeInfo {
 	auto state = [self accessibilityState];
-	return state ? state->infoFor( _ref ) : AccessibilityNodeInfo();
+	return state ? state->infoFor( _ref, true ) : AccessibilityNodeInfo();
+}
+
+- (AccessibilityNodeRef)nativeNodeRef {
+	return _ref;
+}
+
+- (AccessibilityNodeInfo)nodeInfoWithoutValue {
+	auto state = [self accessibilityState];
+	return state ? state->infoFor( _ref, false ) : AccessibilityNodeInfo();
 }
 
 - (BOOL)isAccessibilityElement {
@@ -795,7 +805,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 
 - (NSRect)accessibilityFrame {
 	auto state = [self accessibilityState];
-	return state ? state->frameFor( [self nodeInfo] ) : NSZeroRect;
+	return state ? state->frameFor( [self nodeInfoWithoutValue] ) : NSZeroRect;
 }
 
 - (NSPoint)accessibilityActivationPoint {
@@ -828,7 +838,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (NSAccessibilitySubrole)accessibilitySubrole {
-	return nativeSubrole( [self nodeInfo] );
+	return nativeSubrole( [self nodeInfoWithoutValue] );
 }
 
 - (NSString*)accessibilityRoleDescription {
@@ -837,11 +847,14 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (NSString*)accessibilityLabel {
-	const auto info = [self nodeInfo];
-	if ( info.role == AccessibilityRole::Label || info.role == AccessibilityRole::Text ||
-		 ( info.name == info.value &&
-		   ( info.role == AccessibilityRole::ListItem || info.role == AccessibilityRole::Row ||
-			 info.role == AccessibilityRole::TreeItem ) ) )
+	const auto info = [self nodeInfoWithoutValue];
+	if ( info.role == AccessibilityRole::Label || info.role == AccessibilityRole::Text )
+		return nil;
+	// Items whose name repeats their value are announced once, through accessibilityValue. Only
+	// these roles need the value, so metadata queries for every other role stay value-free.
+	if ( ( info.role == AccessibilityRole::ListItem || info.role == AccessibilityRole::Row ||
+		   info.role == AccessibilityRole::TreeItem ) &&
+		 info.name == [self nodeInfo].value )
 		return nil;
 	const String& name = info.name;
 	return name.empty() ? nil : toNSString( name );
@@ -852,7 +865,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (NSString*)accessibilityHelp {
-	const String description = [self nodeInfo].description;
+	const String description = [self nodeInfoWithoutValue].description;
 	return description.empty() ? nil : toNSString( description );
 }
 
@@ -883,29 +896,29 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (id)accessibilityMinValue {
-	const auto info = [self nodeInfo];
+	const auto info = [self nodeInfoWithoutValue];
 	return info.range.valid ? @( info.range.minimum ) : nil;
 }
 
 - (id)accessibilityMaxValue {
-	const auto info = [self nodeInfo];
+	const auto info = [self nodeInfoWithoutValue];
 	return info.range.valid ? @( info.range.maximum ) : nil;
 }
 
 - (BOOL)isAccessibilityFocused {
-	return hasState( [self nodeInfo].states, AccessibilityState::Focused );
+	return hasState( [self nodeInfoWithoutValue].states, AccessibilityState::Focused );
 }
 
 - (BOOL)isAccessibilitySelected {
-	return hasState( [self nodeInfo].states, AccessibilityState::Selected );
+	return hasState( [self nodeInfoWithoutValue].states, AccessibilityState::Selected );
 }
 
 - (BOOL)isAccessibilityExpanded {
-	return hasState( [self nodeInfo].states, AccessibilityState::Expanded );
+	return hasState( [self nodeInfoWithoutValue].states, AccessibilityState::Expanded );
 }
 
 - (BOOL)isAccessibilityEnabled {
-	return hasState( [self nodeInfo].states, AccessibilityState::Enabled );
+	return hasState( [self nodeInfoWithoutValue].states, AccessibilityState::Enabled );
 }
 
 - (BOOL)isAccessibilityHidden {
@@ -935,7 +948,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (NSArray*)accessibilityRows {
-	const auto role = [self nodeInfo].role;
+	const auto role = [self nodeInfoWithoutValue].role;
 	return role == AccessibilityRole::Table || role == AccessibilityRole::List ||
 				   role == AccessibilityRole::Tree
 			   ? self.accessibilityChildren
@@ -947,7 +960,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (NSArray*)accessibilitySelectedRows {
-	const auto role = [self nodeInfo].role;
+	const auto role = [self nodeInfoWithoutValue].role;
 	return role == AccessibilityRole::Table || role == AccessibilityRole::List ||
 				   role == AccessibilityRole::Tree
 			   ? self.accessibilitySelectedChildren
@@ -976,11 +989,11 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (BOOL)isAccessibilityProtectedContent {
-	return hasState( [self nodeInfo].states, AccessibilityState::Protected );
+	return hasState( [self nodeInfoWithoutValue].states, AccessibilityState::Protected );
 }
 
 - (NSArray*)accessibilityActionNames {
-	const auto info = [self nodeInfo];
+	const auto info = [self nodeInfoWithoutValue];
 	const auto actions = info.actions;
 	const bool selectUsesPress = info.role == AccessibilityRole::RadioButton ||
 								 info.role == AccessibilityRole::RadioMenuItem ||
@@ -1027,7 +1040,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 - (void)accessibilityPerformAction:(NSAccessibilityActionName)action {
 	if ( [action isEqualToString:NSAccessibilityPressAction] ||
 		 [action isEqualToString:NSAccessibilityConfirmAction] ) {
-		const auto info = [self nodeInfo];
+		const auto info = [self nodeInfoWithoutValue];
 		if ( hasAction( info.actions, AccessibilityAction::Press ) )
 			[self performAccessibilityAction:AccessibilityAction::Press];
 		else if ( hasAction( info.actions, AccessibilityAction::Toggle ) )
@@ -1035,14 +1048,14 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		else if ( hasAction( info.actions, AccessibilityAction::Select ) )
 			[self performAccessibilityAction:AccessibilityAction::Select];
 	} else if ( [action isEqualToString:NSAccessibilityPickAction] ) {
-		if ( hasAction( [self nodeInfo].actions, AccessibilityAction::Select ) )
+		if ( hasAction( [self nodeInfoWithoutValue].actions, AccessibilityAction::Select ) )
 			[self performAccessibilityAction:AccessibilityAction::Select];
 	} else if ( [action isEqualToString:NSAccessibilityIncrementAction] ) {
 		[self performAccessibilityAction:AccessibilityAction::Increment];
 	} else if ( [action isEqualToString:NSAccessibilityDecrementAction] ) {
 		[self performAccessibilityAction:AccessibilityAction::Decrement];
 	} else if ( [action isEqualToString:NSAccessibilityShowMenuAction] ) {
-		const auto info = [self nodeInfo];
+		const auto info = [self nodeInfoWithoutValue];
 		const auto next = hasState( info.states, AccessibilityState::Expanded )
 							  ? AccessibilityAction::Collapse
 							  : AccessibilityAction::Expand;
@@ -1057,7 +1070,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (BOOL)accessibilityPerformPress {
-	const auto info = [self nodeInfo];
+	const auto info = [self nodeInfoWithoutValue];
 	if ( hasAction( info.actions, AccessibilityAction::Press ) )
 		return [self performAccessibilityAction:AccessibilityAction::Press];
 	if ( hasAction( info.actions, AccessibilityAction::Toggle ) )
@@ -1076,7 +1089,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (BOOL)accessibilityPerformShowMenu {
-	const auto info = [self nodeInfo];
+	const auto info = [self nodeInfoWithoutValue];
 	return [self performAccessibilityAction:( hasState( info.states, AccessibilityState::Expanded )
 												  ? AccessibilityAction::Collapse
 												  : AccessibilityAction::Expand )];
@@ -1163,7 +1176,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 	auto state = [self accessibilityState];
 	if ( !state )
 		return;
-	const auto info = state->infoFor( _ref );
+	const auto info = state->infoFor( _ref, true );
 	NSString* nativeText = toNSString( info.value );
 	if ( !info.text.valid || !validRange( range, nativeText ) ||
 		 !hasAction( info.actions, AccessibilityAction::SetTextSelection ) )
@@ -1183,7 +1196,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 	auto state = [self accessibilityState];
 	if ( !state || !replacement )
 		return;
-	const auto info = state->infoFor( _ref );
+	const auto info = state->infoFor( _ref, true );
 	if ( !info.text.valid || !hasAction( info.actions, AccessibilityAction::SetText ) )
 		return;
 	NSMutableString* updated = [toNSString( info.value ) mutableCopy];
@@ -1230,7 +1243,6 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 	auto state = [self accessibilityState];
 	if ( !state || !state->isValid( _ref ) )
 		return nil;
-	const auto info = state->infoFor( _ref );
 	if ( [attribute isEqualToString:NSAccessibilityRoleAttribute] )
 		return self.accessibilityRole;
 	if ( [attribute isEqualToString:NSAccessibilitySubroleAttribute] )
@@ -1280,7 +1292,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 	if ( [attribute isEqualToString:NSAccessibilitySelectedRowsAttribute] )
 		return self.accessibilitySelectedRows;
 	if ( [attribute isEqualToString:NSAccessibilityRowCountAttribute] )
-		return @( self.accessibilityRows.count );
+		return @( state->childCountFor( _ref ) );
 	if ( [attribute isEqualToString:NSAccessibilityIndexAttribute] )
 		return @( self.accessibilityIndex );
 	if ( [attribute isEqualToString:NSAccessibilityParentAttribute] )
@@ -1295,8 +1307,9 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		return [NSValue valueWithPoint:self.accessibilityFrame.origin];
 	if ( [attribute isEqualToString:NSAccessibilitySizeAttribute] )
 		return [NSValue valueWithSize:self.accessibilityFrame.size];
+	const auto info = state->infoFor( _ref, true );
 	if ( info.text.valid ) {
-		const String text = info.value;
+		const String& text = info.value;
 		NSString* string = toNSString( text );
 		const NSRange selected = textRange( info, text );
 		if ( [attribute isEqualToString:NSAccessibilitySelectedTextAttribute] )
@@ -1693,15 +1706,18 @@ class MacAccessibilityRegistry {
 			return;
 		}
 		if ( event.type == AccessibilityEvent::Destroyed ) {
-			EEPPMacAccessibilityElement* destroyed = related ? related : target;
-			if ( destroyed )
-				NSAccessibilityPostNotification( destroyed,
-												 NSAccessibilityUIElementDestroyedNotification );
-			if ( relatedRef.isValid() )
-				state->evict( relatedRef );
-			else
-				state->evict( event.ref );
-			if ( target && target != destroyed )
+			const auto destroyedRef = relatedRef.isValid() ? relatedRef : event.ref;
+			// Removing an edge during reparenting does not destroy the accessible element. Never
+			// substitute the parent when a removed child has no cached native wrapper, either.
+			if ( !state->isValid( destroyedRef ) ) {
+				EEPPMacAccessibilityElement* destroyed = relatedRef.isValid() ? related : target;
+				if ( destroyed ) {
+					NSAccessibilityPostNotification(
+						destroyed, NSAccessibilityUIElementDestroyedNotification );
+				}
+				state->evict( destroyedRef );
+			}
+			if ( relatedRef.isValid() && target )
 				NSAccessibilityPostNotification( target, NSAccessibilityLayoutChangedNotification );
 		} else if ( event.type == AccessibilityEvent::StateChanged ) {
 			if ( target ) {

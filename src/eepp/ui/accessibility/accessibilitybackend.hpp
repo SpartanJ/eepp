@@ -24,6 +24,9 @@ class AccessibilityBackend {
 
 	/** Evicts native wrappers for a model source whose identity is no longer valid. */
 	virtual void onSourceInvalidated( AccessibilitySourceId ) {}
+
+	/** Prunes removed nodes while preserving wrappers for surviving persistent indexes. */
+	virtual void onSourceChanged( AccessibilitySourceId ) {}
 };
 
 std::unique_ptr<AccessibilityBackend> createAccessibilityBackend( AccessibilityManager& manager );

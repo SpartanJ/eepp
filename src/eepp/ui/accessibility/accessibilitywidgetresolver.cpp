@@ -1,3 +1,6 @@
+#include <eepp/scene/eventdispatcher.hpp>
+#include <eepp/ui/abstract/uiabstractview.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicombobox.hpp>
@@ -48,8 +51,17 @@ AccessibilityState baseState( const UIWidget* widget ) {
 		state |= AccessibilityState::Enabled;
 	if ( widget->isTabFocusable() )
 		state |= AccessibilityState::Focusable;
-	if ( widget->hasFocus() )
-		state |= AccessibilityState::Focused;
+	auto* dispatcher = widget->getEventDispatcher();
+	auto* focused = dispatcher ? dispatcher->getFocusNode() : nullptr;
+	// Only the projected focus owner is focused; its ancestors merely contain the focus.
+	if ( focused && ( widget == focused || widget->isParentOf( focused ) ) ) {
+		const auto* scene = widget->getUISceneNode();
+		const auto* manager = scene ? scene->getAccessibilityManager() : nullptr;
+		const auto* managerScene = manager ? manager->getSceneNode() : scene;
+		if ( AccessibilityWidgetResolver::getFocusOwner(
+				 focused, managerScene ? managerScene->getRoot() : nullptr ) == widget )
+			state |= AccessibilityState::Focused;
+	}
 	if ( widget->isVisible() )
 		state |= AccessibilityState::Visible;
 	if ( widget->hasVisibility() )
@@ -206,13 +218,21 @@ AccessibilityRangeInfo AccessibilityWidgetResolver::getRange( const UIWidget* wi
 }
 
 AccessibilityTextInfo AccessibilityWidgetResolver::getText( const UIWidget* widget ) {
-	if ( widget->isType( UI_TYPE_TEXTEDIT ) )
-		return getDocumentText( static_cast<const UITextEdit*>( widget )->getDocument() );
+	return getText( widget, true );
+}
+
+AccessibilityTextInfo AccessibilityWidgetResolver::getText( const UIWidget* widget,
+															bool includeOffsets ) {
+	if ( widget->isType( UI_TYPE_TEXTEDIT ) ) {
+		return includeOffsets
+				   ? getDocumentText( static_cast<const UITextEdit*>( widget )->getDocument() )
+				   : AccessibilityTextInfo{ 0, 0, 0, true };
+	}
 	if ( widget->isType( UI_TYPE_TEXTINPUT ) ) {
 		const auto* input = static_cast<const UITextInput*>( widget );
-		return input->getMode() == UITextInput::TextInputMode::Password
-				   ? AccessibilityTextInfo{}
-				   : getDocumentText( input->getDocument() );
+		return input->getMode() == UITextInput::TextInputMode::Password ? AccessibilityTextInfo{}
+			   : includeOffsets ? getDocumentText( input->getDocument() )
+								: AccessibilityTextInfo{ 0, 0, 0, true };
 	}
 	return {};
 }
@@ -223,8 +243,10 @@ AccessibilityState AccessibilityWidgetResolver::getState( const UIWidget* widget
 		 static_cast<const UIMenuCheckBox*>( widget )->isActive() )
 		state |= AccessibilityState::Checked;
 	if ( widget->isType( UI_TYPE_MENURADIOBUTTON ) &&
-		 static_cast<const UIMenuRadioButton*>( widget )->isActive() )
+		 static_cast<const UIMenuRadioButton*>( widget )->isActive() ) {
 		state |= AccessibilityState::Selected;
+		state |= AccessibilityState::Checked;
+	}
 	if ( widget->isType( UI_TYPE_CHECKBOX ) &&
 		 static_cast<const UICheckBox*>( widget )->isChecked() )
 		state |= AccessibilityState::Checked;
@@ -240,6 +262,7 @@ AccessibilityState AccessibilityWidgetResolver::getState( const UIWidget* widget
 		 isComboBoxExpanded( static_cast<const UIComboBox*>( widget ) ) )
 		state |= AccessibilityState::Expanded;
 	if ( widget->isType( UI_TYPE_TEXTEDIT ) ) {
+		state |= AccessibilityState::MultiLine;
 		state |= static_cast<const UITextEdit*>( widget )->isLocked()
 					 ? AccessibilityState::ReadOnly
 					 : AccessibilityState::Editable;
@@ -301,8 +324,56 @@ AccessibilityActions AccessibilityWidgetResolver::getActions( const UIWidget* wi
 	return actions;
 }
 
+UIWidget* AccessibilityWidgetResolver::getOwningModelView( const Node* node ) {
+	for ( auto* parent = node->getParent(); parent; parent = parent->getParent() ) {
+		if ( !parent->isWidget() || !parent->isType( UI_TYPE_ABSTRACTTABLEVIEW ) )
+			continue;
+		auto* view = parent->asType<UIWidget>();
+		// The active cell editor is a real widget embedded below its virtual row or cell.
+		const auto* editor = static_cast<const Abstract::UIAbstractView*>( view )->getEditWidget();
+		if ( editor && ( editor == node || editor->isParentOf( node ) ) )
+			return nullptr;
+		return view;
+	}
+	return nullptr;
+}
+
+UIWidget* AccessibilityWidgetResolver::getFocusOwner( Node* focused, const UIWidget* sceneRoot ) {
+	UIWidget* element = nullptr;
+	// Semantic boundaries hide implementation children (for example a spin box's input).
+	// Project focus through exactly the same boundaries as getChildren() and hitTest().
+	for ( auto* node = focused; node; node = node->getParent() ) {
+		if ( node->isDestroying() )
+			return nullptr;
+		if ( !node->isWidget() )
+			continue;
+		auto* widget = node->asType<UIWidget>();
+		if ( widget->isAccessibilityHidden() )
+			element = nullptr;
+		else if ( widget->isType( UI_TYPE_ABSTRACTTABLEVIEW ) ) {
+			// Recycled cell widgets are represented by the view; its cell editor is not.
+			if ( !element || getOwningModelView( element ) == widget )
+				element = widget;
+		} else if ( !element && widget != sceneRoot && widget->isAccessibilityElement() )
+			element = widget;
+	}
+	return element;
+}
+
 UIWidget* AccessibilityWidgetResolver::getEventTarget( UIWidget* widget,
 													   AccessibilityEvent event ) {
+	const Node* top = widget;
+	for ( auto* parent = widget->getParent(); parent; parent = parent->getParent() ) {
+		if ( parent->isDestroying() )
+			return nullptr;
+		top = parent;
+	}
+	// Detached widgets (for example an editor configured before it is parented) are not part of
+	// any accessible tree yet; notifying them would only register orphan identities.
+	if ( !top->isSceneNode() )
+		return nullptr;
+	if ( auto* view = getOwningModelView( widget ) )
+		return event == AccessibilityEvent::FocusChanged ? view : nullptr;
 	if ( event == AccessibilityEvent::StateChanged && widget->isType( UI_TYPE_DROPDOWN ) ) {
 		auto* parent = widget->getParent();
 		if ( parent && parent->isType( UI_TYPE_COMBOBOX ) )

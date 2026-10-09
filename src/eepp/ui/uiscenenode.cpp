@@ -216,6 +216,15 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 UISceneNode::~UISceneNode() {
 	mNodeFlags |= NODE_FLAG_CLOSE;
 	onClose();
+	// Native backends must detach while their scene and semantic root are still alive.
+	// Descendant destructors must not rediscover or register a half-destroyed ancestor.
+	if ( mHostUISceneNode ) {
+		// This scene is already closing, so ask the host for the manager it shares.
+		if ( auto* manager = mHostUISceneNode->getAccessibilityManager() )
+			manager->onSubtreeRemoved( mRoot );
+	}
+	mAccessibilityManager.reset();
+	mAccessibilityState &= ~AccessibilityClientActive;
 	if ( mAsyncResourceLoadState ) {
 		mAsyncResourceLoadState->owner.store( nullptr, std::memory_order_release );
 		mAsyncResourceLoadState->alive.store( false, std::memory_order_release );
@@ -236,6 +245,7 @@ UISceneNode::~UISceneNode() {
 	// We need to ensure that the children are destroyed before the thread pool,
 	// since its children could be consuming it and need to uninitialize gracefully.
 	childDeleteAll();
+	mRoot = nullptr;
 
 	if ( mOwnsEventDispatcher ) {
 		eeSAFE_DELETE( mEventDispatcher );
@@ -1339,7 +1349,7 @@ void UISceneNode::update( const Time& elapsed ) {
 
 void UISceneNode::onWidgetDelete( Node* node ) {
 	auto* manager = static_cast<const UISceneNode*>( this )->getAccessibilityManager();
-	if ( manager && node->isWidget() ) {
+	if ( manager && node->isWidget() && !node->isDestroying() ) {
 		const_cast<AccessibilityManager*>( manager )->onWidgetDelete( node->asType<UIWidget>() );
 	}
 	if ( node->isWidget() ) {
@@ -1389,6 +1399,8 @@ UIWidget* UISceneNode::getRoot() const {
 }
 
 AccessibilityManager* UISceneNode::getAccessibilityManager() {
+	if ( mNodeFlags & NODE_FLAG_CLOSE )
+		return nullptr;
 	if ( mHostUISceneNode )
 		return mHostUISceneNode->getAccessibilityManager();
 	if ( !mAccessibilityManager )
@@ -1397,6 +1409,9 @@ AccessibilityManager* UISceneNode::getAccessibilityManager() {
 }
 
 const AccessibilityManager* UISceneNode::getAccessibilityManager() const {
+	// Match the mutable accessor: a closing scene's widgets must not reach any manager.
+	if ( mNodeFlags & NODE_FLAG_CLOSE )
+		return nullptr;
 	return mHostUISceneNode ? mHostUISceneNode->getAccessibilityManager()
 							: mAccessibilityManager.get();
 }

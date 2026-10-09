@@ -62,6 +62,7 @@ enum NodeFlags {
 	NODE_FLAG_MOUSEOVER = ( 1 << 7 ),
 	NODE_FLAG_HAS_FOCUS = ( 1 << 8 ),
 	NODE_FLAG_SELECTED = ( 1 << 9 ),
+	NODE_FLAG_DESTROYING = ( 1 << 10 ),
 	NODE_FLAG_DRAGGING = ( 1 << 11 ),
 	NODE_FLAG_SKIN_OWNER = ( 1 << 12 ),
 	NODE_FLAG_TOUCH_DRAGGING = ( 1 << 13 ),
@@ -1811,6 +1812,9 @@ class EE_API Node : public Transformable {
 	 * @return True if the close flag is set (node will be removed), false otherwise.
 	 */
 	inline bool isClosing() const { return 0 != ( mNodeFlags & NODE_FLAG_CLOSE ); }
+
+	/** Widget teardown has started; its accessibility subtree has already been invalidated. */
+	inline bool isDestroying() const { return 0 != ( mNodeFlags & NODE_FLAG_DESTROYING ); }
 
 	/**
 	 * @brief Checks if the node is marked for closure or any node in its parent tree.

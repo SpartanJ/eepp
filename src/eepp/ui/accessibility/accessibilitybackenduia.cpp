@@ -99,7 +99,16 @@ class UIAutomationProviderContext final
 	  public:
 		using Callback = std::function<HRESULT( AccessibilityManager&, T& )>;
 
-		explicit TypedPendingRequest( Callback callback ) : mCallback( std::move( callback ) ) {}
+		explicit TypedPendingRequest( Callback callback, IUnknown* owner ) :
+			mCallback( std::move( callback ) ), mOwner( owner ) {
+			if ( mOwner )
+				mOwner->AddRef();
+		}
+
+		~TypedPendingRequest() override {
+			if ( mOwner )
+				mOwner->Release();
+		}
 
 		void execute( AccessibilityManager& manager ) override {
 			if ( !begin() )
@@ -126,6 +135,7 @@ class UIAutomationProviderContext final
 	  private:
 		Callback mCallback;
 		T mValue{};
+		IUnknown* mOwner{};
 	};
 
   public:
@@ -150,13 +160,17 @@ class UIAutomationProviderContext final
 	AccessibilityNodeRef rootRef() const { return mRootRef; }
 
 	void updateClientState() {
-		mClientsListening.store( UiaClientsAreListening(), std::memory_order_release );
+		const bool listening = UiaClientsAreListening();
+		mClientsListening.store( listening, std::memory_order_release );
+		if ( !listening && mAdvisedEventCount.load( std::memory_order_acquire ) == 0 )
+			mClientObserved.store( false, std::memory_order_release );
 	}
 
 	bool hasActiveClients() const {
-		return isAlive() && ( mClientsListening.load( std::memory_order_acquire ) ||
-							  mAdvisedEventCount.load( std::memory_order_acquire ) != 0 ||
-							  mClientObserved.load( std::memory_order_acquire ) );
+		// A listener elsewhere on the desktop is not evidence that it uses this window.
+		return isAlive() && ( mAdvisedEventCount.load( std::memory_order_acquire ) != 0 ||
+							  ( mClientsListening.load( std::memory_order_acquire ) &&
+								mClientObserved.load( std::memory_order_acquire ) ) );
 	}
 
 	void clientObserved() {
@@ -174,7 +188,8 @@ class UIAutomationProviderContext final
 		}
 	}
 
-	template <typename T, typename Callback> HRESULT invoke( T& value, Callback&& callback ) {
+	template <typename T, typename Callback>
+	HRESULT invoke( T& value, Callback&& callback, IUnknown* owner = nullptr ) {
 		if ( !isAlive() )
 			return UIA_E_ELEMENTNOTAVAILABLE;
 		if ( GetCurrentThreadId() == mUIThread ) {
@@ -185,7 +200,7 @@ class UIAutomationProviderContext final
 
 		using Request = TypedPendingRequest<T>;
 		auto request = std::make_shared<Request>(
-			typename Request::Callback{ std::forward<Callback>( callback ) } );
+			typename Request::Callback{ std::forward<Callback>( callback ) }, owner );
 		{
 			std::lock_guard<std::mutex> lock( mPendingMutex );
 			if ( !isAlive() )
@@ -229,6 +244,10 @@ class UIAutomationProviderContext final
 
 	void invalidateSource( AccessibilitySourceId sourceId );
 
+	void pruneSource( AccessibilitySourceId sourceId );
+
+	void disconnectInvalidatedProviders();
+
 	void detach();
 
   private:
@@ -255,6 +274,7 @@ class UIAutomationProviderContext final
 	std::mutex mProviderMutex;
 	std::unordered_map<AccessibilitySourceId, std::unordered_map<Uint64, UIAutomationProvider*>>
 		mProviders;
+	std::vector<UIAutomationProvider*> mInvalidatedProviders;
 	std::mutex mPendingMutex;
 	std::vector<std::shared_ptr<PendingRequest>> mPendingRequests;
 };
@@ -883,7 +903,7 @@ class UIAutomationTextRange final : public ITextRangeProvider {
 		const Int32 start = utf16ToCodePoint( snapshot.source, current.first );
 		const Int32 end = utf16ToCodePoint( snapshot.source, current.second );
 		bool ignored{};
-		return mContext->invoke(
+		return invoke(
 			ignored, [this, start, end]( AccessibilityManager& manager, bool& ) -> HRESULT {
 				if ( !manager.isValid( mRef ) )
 					return UIA_E_ELEMENTNOTAVAILABLE;
@@ -907,14 +927,12 @@ class UIAutomationTextRange final : public ITextRangeProvider {
 		if ( !hasAction( snapshot.actions, AccessibilityAction::ScrollTo ) )
 			return UIA_E_NOTSUPPORTED;
 		bool ignored{};
-		return mContext->invoke(
-			ignored, [this]( AccessibilityManager& manager, bool& ) -> HRESULT {
-				if ( !manager.isValid( mRef ) )
-					return UIA_E_ELEMENTNOTAVAILABLE;
-				return manager.performAction( mRef, { AccessibilityAction::ScrollTo, {} } )
-						   ? S_OK
-						   : E_FAIL;
-			} );
+		return invoke( ignored, [this]( AccessibilityManager& manager, bool& ) -> HRESULT {
+			if ( !manager.isValid( mRef ) )
+				return UIA_E_ELEMENTNOTAVAILABLE;
+			return manager.performAction( mRef, { AccessibilityAction::ScrollTo, {} } ) ? S_OK
+																						: E_FAIL;
+		} );
 	}
 
 	HRESULT STDMETHODCALLTYPE GetChildren( SAFEARRAY** children ) override {
@@ -931,6 +949,12 @@ class UIAutomationTextRange final : public ITextRangeProvider {
 
   private:
 	~UIAutomationTextRange() = default;
+
+	template <typename T, typename Callback> HRESULT invoke( T& value, Callback&& callback ) const {
+		return mContext->invoke(
+			value, std::forward<Callback>( callback ),
+			static_cast<ITextRangeProvider*>( const_cast<UIAutomationTextRange*>( this ) ) );
+	}
 
 	HRESULT currentSnapshot( TextSnapshot& snapshot ) const {
 		return textSnapshot( mContext, mRef, snapshot );
@@ -997,8 +1021,19 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 		} else if ( interfaceId == __uuidof( IRawElementProviderAdviseEvents ) && mRoot ) {
 			*object = static_cast<IRawElementProviderAdviseEvents*>( this );
 		} else {
+			// COM probes for marshalling/agility must not enqueue a UI-thread query.
+			if ( interfaceId != __uuidof( IInvokeProvider ) &&
+				 interfaceId != __uuidof( IToggleProvider ) &&
+				 interfaceId != __uuidof( ISelectionProvider ) &&
+				 interfaceId != __uuidof( ISelectionItemProvider ) &&
+				 interfaceId != __uuidof( IValueProvider ) &&
+				 interfaceId != __uuidof( IRangeValueProvider ) &&
+				 interfaceId != __uuidof( IExpandCollapseProvider ) &&
+				 interfaceId != __uuidof( IScrollItemProvider ) &&
+				 interfaceId != __uuidof( ITextProvider ) )
+				return E_NOINTERFACE;
 			AccessibilityNodeInfo nodeInfo;
-			if ( FAILED( info( nodeInfo ) ) )
+			if ( FAILED( info( nodeInfo, false ) ) )
 				return E_NOINTERFACE;
 			if ( interfaceId == __uuidof( IInvokeProvider ) &&
 				 hasAction( nodeInfo.actions, AccessibilityAction::Press ) )
@@ -1099,7 +1134,8 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 			return E_INVALIDARG;
 		VariantInit( value );
 		AccessibilityNodeInfo nodeInfo;
-		const HRESULT result = info( nodeInfo );
+		const HRESULT result = info( nodeInfo, propertyId == UIA_ValueValuePropertyId ||
+												   propertyId == UIA_RangeValueValuePropertyId );
 		if ( FAILED( result ) )
 			return result;
 		if ( propertyId == UIA_NamePropertyId )
@@ -1243,37 +1279,34 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 			return E_INVALIDARG;
 		*provider = nullptr;
 		NavigationResult navigation;
-		const HRESULT result = mContext->invoke(
-			navigation,
-			[this, direction]( AccessibilityManager& manager,
-							   NavigationResult& output ) -> HRESULT {
-				if ( !manager.isValid( mRef ) )
-					return UIA_E_ELEMENTNOTAVAILABLE;
-				if ( direction == NavigateDirection_Parent ) {
-					output.target = manager.getParent( mRef );
-				} else if ( direction == NavigateDirection_FirstChild ) {
-					output.target = manager.getChild( mRef, 0 );
-				} else if ( direction == NavigateDirection_LastChild ) {
-					const size_t count = manager.getChildCount( mRef );
-					if ( count > 0 )
-						output.target = manager.getChild( mRef, count - 1 );
-				} else {
-					const AccessibilityNodeRef parent = manager.getParent( mRef );
-					if ( !parent.isValid() )
+		const HRESULT result =
+			invoke( navigation,
+					[this, direction]( AccessibilityManager& manager,
+									   NavigationResult& output ) -> HRESULT {
+						if ( !manager.isValid( mRef ) )
+							return UIA_E_ELEMENTNOTAVAILABLE;
+						if ( direction == NavigateDirection_Parent ) {
+							output.target = manager.getParent( mRef );
+						} else if ( direction == NavigateDirection_FirstChild ) {
+							output.target = manager.getChild( mRef, 0 );
+						} else if ( direction == NavigateDirection_LastChild ) {
+							const size_t count = manager.getChildCount( mRef );
+							if ( count > 0 )
+								output.target = manager.getChild( mRef, count - 1 );
+						} else {
+							const AccessibilityNodeRef parent = manager.getParent( mRef );
+							if ( !parent.isValid() )
+								return S_OK;
+							const size_t count = manager.getChildCount( parent );
+							const Int32 index = manager.getIndexInParent( mRef );
+							if ( index >= 0 && direction == NavigateDirection_NextSibling &&
+								 static_cast<size_t>( index + 1 ) < count )
+								output.target = manager.getChild( parent, index + 1 );
+							else if ( direction == NavigateDirection_PreviousSibling && index > 0 )
+								output.target = manager.getChild( parent, index - 1 );
+						}
 						return S_OK;
-					const size_t count = manager.getChildCount( parent );
-					for ( size_t index = 0; index < count; ++index ) {
-						if ( manager.getChild( parent, index ) != mRef )
-							continue;
-						if ( direction == NavigateDirection_NextSibling && index + 1 < count )
-							output.target = manager.getChild( parent, index + 1 );
-						else if ( direction == NavigateDirection_PreviousSibling && index > 0 )
-							output.target = manager.getChild( parent, index - 1 );
-						break;
-					}
-				}
-				return S_OK;
-			} );
+					} );
 		if ( FAILED( result ) )
 			return result;
 		if ( navigation.target.isValid() )
@@ -1299,11 +1332,11 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 			return E_INVALIDARG;
 		*rectangle = {};
 		GeometryResult geometry;
-		const HRESULT result = mContext->invoke(
+		const HRESULT result = invoke(
 			geometry, [this]( AccessibilityManager& manager, GeometryResult& output ) -> HRESULT {
 				if ( !manager.isValid( mRef ) )
 					return UIA_E_ELEMENTNOTAVAILABLE;
-				const auto nodeInfo = manager.getNodeInfo( mRef, false );
+				const auto nodeInfo = manager.getNodeInfo( mRef, false, false );
 				output.bounds = nodeInfo.bounds;
 				output.boundsValid = nodeInfo.boundsValid;
 				const HWND nativeWindow = mContext->window();
@@ -1354,7 +1387,7 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 			return E_INVALIDARG;
 		*provider = nullptr;
 		NavigationResult hit;
-		const HRESULT result = mContext->invoke(
+		const HRESULT result = invoke(
 			hit,
 			[this, x, y]( AccessibilityManager& manager, NavigationResult& output ) -> HRESULT {
 				if ( !manager.isValid( mRef ) )
@@ -1381,7 +1414,7 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 			return E_INVALIDARG;
 		*provider = nullptr;
 		AccessibilityNodeRef focused;
-		const HRESULT result = mContext->invoke(
+		const HRESULT result = invoke(
 			focused,
 			[this]( AccessibilityManager& manager, AccessibilityNodeRef& output ) -> HRESULT {
 				if ( !manager.isValid( mRef ) )
@@ -1418,7 +1451,7 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 		if ( !state )
 			return E_INVALIDARG;
 		AccessibilityNodeInfo nodeInfo;
-		const HRESULT result = info( nodeInfo );
+		const HRESULT result = info( nodeInfo, false );
 		if ( FAILED( result ) )
 			return result;
 		*state = hasState( nodeInfo.states, AccessibilityState::Checked ) ? ToggleState_On
@@ -1457,24 +1490,17 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 		}
 		std::vector<AccessibilityNodeRef> selected;
 		const HRESULT result =
-			mContext->invoke( selected,
-							  [this]( AccessibilityManager& manager,
-									  std::vector<AccessibilityNodeRef>& output ) -> HRESULT {
-								  if ( !manager.isValid( mRef ) )
-									  return UIA_E_ELEMENTNOTAVAILABLE;
-								  const auto containerInfo = manager.getNodeInfo( mRef, false );
-								  if ( !isSelectionContainerRole( containerInfo.role ) )
-									  return UIA_E_INVALIDOPERATION;
-								  const size_t childCount = manager.getChildCount( mRef );
-								  for ( size_t index = 0; index < childCount; ++index ) {
-									  const AccessibilityNodeRef child =
-										  manager.getChild( mRef, index );
-									  if ( hasState( manager.getNodeInfo( child, false ).states,
-													 AccessibilityState::Selected ) )
-										  output.emplace_back( child );
-								  }
-								  return S_OK;
-							  } );
+			invoke( selected,
+					[this]( AccessibilityManager& manager,
+							std::vector<AccessibilityNodeRef>& output ) -> HRESULT {
+						if ( !manager.isValid( mRef ) )
+							return UIA_E_ELEMENTNOTAVAILABLE;
+						const auto containerInfo = manager.getNodeInfo( mRef, false, false );
+						if ( !isSelectionContainerRole( containerInfo.role ) )
+							return UIA_E_INVALIDOPERATION;
+						output = manager.getSelectedChildren( mRef );
+						return S_OK;
+					} );
 		if ( FAILED( result ) )
 			return result;
 		SAFEARRAY* array =
@@ -1524,7 +1550,7 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 		if ( !selected )
 			return E_INVALIDARG;
 		AccessibilityNodeInfo nodeInfo;
-		const HRESULT result = info( nodeInfo );
+		const HRESULT result = info( nodeInfo, false );
 		if ( FAILED( result ) )
 			return result;
 		*selected = hasState( nodeInfo.states, AccessibilityState::Selected ) ? TRUE : FALSE;
@@ -1537,7 +1563,7 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 			return E_INVALIDARG;
 		*provider = nullptr;
 		AccessibilityNodeRef parent;
-		const HRESULT result = mContext->invoke(
+		const HRESULT result = invoke(
 			parent,
 			[this]( AccessibilityManager& manager, AccessibilityNodeRef& output ) -> HRESULT {
 				if ( !manager.isValid( mRef ) )
@@ -1553,21 +1579,23 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 	}
 
 	HRESULT STDMETHODCALLTYPE SetValue( LPCWSTR value ) override {
-		const String text( value ? value : L"" );
+		String text( value ? value : L"" );
 		bool ignored{};
-		return mContext->invoke(
-			ignored, [this, text]( AccessibilityManager& manager, bool& ) -> HRESULT {
-				if ( !manager.isValid( mRef ) )
-					return UIA_E_ELEMENTNOTAVAILABLE;
-				const auto nodeInfo = manager.getNodeInfo( mRef, false );
-				if ( !hasState( nodeInfo.states, AccessibilityState::Enabled ) )
-					return UIA_E_ELEMENTNOTENABLED;
-				if ( !hasAction( nodeInfo.actions, AccessibilityAction::SetText ) )
-					return UIA_E_INVALIDOPERATION;
-				return manager.performAction( mRef, { AccessibilityAction::SetText, text } )
-						   ? S_OK
-						   : E_FAIL;
-			} );
+		return invoke( ignored,
+					   [this, text = std::move( text )]( AccessibilityManager& manager,
+														 bool& ) mutable -> HRESULT {
+						   if ( !manager.isValid( mRef ) )
+							   return UIA_E_ELEMENTNOTAVAILABLE;
+						   const auto nodeInfo = manager.getNodeInfo( mRef, false, false );
+						   if ( !hasState( nodeInfo.states, AccessibilityState::Enabled ) )
+							   return UIA_E_ELEMENTNOTENABLED;
+						   if ( !hasAction( nodeInfo.actions, AccessibilityAction::SetText ) )
+							   return UIA_E_INVALIDOPERATION;
+						   return manager.performAction(
+									  mRef, { AccessibilityAction::SetText, std::move( text ) } )
+									  ? S_OK
+									  : E_FAIL;
+					   } );
 	}
 
 	HRESULT STDMETHODCALLTYPE get_Value( BSTR* value ) override {
@@ -1623,23 +1651,22 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 		if ( !std::isfinite( value ) )
 			return E_INVALIDARG;
 		bool ignored{};
-		return mContext->invoke(
-			ignored, [this, value]( AccessibilityManager& manager, bool& ) -> HRESULT {
-				if ( !manager.isValid( mRef ) )
-					return UIA_E_ELEMENTNOTAVAILABLE;
-				const auto nodeInfo = manager.getNodeInfo( mRef, false );
-				if ( !hasState( nodeInfo.states, AccessibilityState::Enabled ) )
-					return UIA_E_ELEMENTNOTENABLED;
-				if ( !nodeInfo.range.valid ||
-					 !hasAction( nodeInfo.actions, AccessibilityAction::SetValue ) )
-					return UIA_E_INVALIDOPERATION;
-				if ( value < nodeInfo.range.minimum || value > nodeInfo.range.maximum )
-					return E_INVALIDARG;
-				return manager.performAction( mRef, { AccessibilityAction::SetValue,
-													  String( String::toString( value ) ) } )
-						   ? S_OK
-						   : E_FAIL;
-			} );
+		return invoke( ignored, [this, value]( AccessibilityManager& manager, bool& ) -> HRESULT {
+			if ( !manager.isValid( mRef ) )
+				return UIA_E_ELEMENTNOTAVAILABLE;
+			const auto nodeInfo = manager.getNodeInfo( mRef, false, false );
+			if ( !hasState( nodeInfo.states, AccessibilityState::Enabled ) )
+				return UIA_E_ELEMENTNOTENABLED;
+			if ( !nodeInfo.range.valid ||
+				 !hasAction( nodeInfo.actions, AccessibilityAction::SetValue ) )
+				return UIA_E_INVALIDOPERATION;
+			if ( value < nodeInfo.range.minimum || value > nodeInfo.range.maximum )
+				return E_INVALIDARG;
+			return manager.performAction( mRef, { AccessibilityAction::SetValue,
+												  String( String::toString( value ) ) } )
+					   ? S_OK
+					   : E_FAIL;
+		} );
 	}
 
 	HRESULT STDMETHODCALLTYPE get_Value( double* value ) override {
@@ -1746,16 +1773,26 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 	get_SupportedTextSelection( SupportedTextSelection* selection ) override {
 		if ( !selection )
 			return E_INVALIDARG;
-		TextSnapshot snapshot;
-		const HRESULT result = textSnapshot( mContext, mRef, snapshot );
+		AccessibilityNodeInfo nodeInfo;
+		const HRESULT result = info( nodeInfo, false );
 		if ( FAILED( result ) )
 			return result;
+		if ( !nodeInfo.text.valid || hasState( nodeInfo.states, AccessibilityState::Protected ) )
+			return UIA_E_NOTSUPPORTED;
 		*selection = SupportedTextSelection_Single;
 		return S_OK;
 	}
 
   private:
 	~UIAutomationProvider() = default;
+
+	template <typename T, typename Callback> HRESULT invoke( T& value, Callback&& callback ) const {
+		// The request, not the waiting caller, owns this reference. A timeout may return while
+		// the UI thread is still executing its callback; raw [this] captures must remain alive.
+		return mContext->invoke(
+			value, std::forward<Callback>( callback ),
+			static_cast<IRawElementProviderSimple*>( const_cast<UIAutomationProvider*>( this ) ) );
+	}
 
 	bool unavailable() const {
 		return mDetached.load( std::memory_order_acquire ) || !mContext || !mContext->isAlive();
@@ -1764,38 +1801,37 @@ class UIAutomationProvider final : public IRawElementProviderSimple,
 	HRESULT info( AccessibilityNodeInfo& nodeInfo, bool includeValue = true ) const {
 		if ( unavailable() )
 			return UIA_E_ELEMENTNOTAVAILABLE;
-		return mContext->invoke( nodeInfo,
-								 [this, includeValue]( AccessibilityManager& manager,
-													   AccessibilityNodeInfo& output ) -> HRESULT {
-									 if ( !manager.isValid( mRef ) )
-										 return UIA_E_ELEMENTNOTAVAILABLE;
-									 output = manager.getNodeInfo( mRef, includeValue );
-									 return S_OK;
-								 } );
+		return invoke( nodeInfo,
+					   [this, includeValue]( AccessibilityManager& manager,
+											 AccessibilityNodeInfo& output ) -> HRESULT {
+						   if ( !manager.isValid( mRef ) )
+							   return UIA_E_ELEMENTNOTAVAILABLE;
+						   output = manager.getNodeInfo( mRef, includeValue, includeValue );
+						   return S_OK;
+					   } );
 	}
 
 	HRESULT perform( AccessibilityAction action ) {
 		if ( unavailable() )
 			return UIA_E_ELEMENTNOTAVAILABLE;
 		bool ignored{};
-		return mContext->invoke(
-			ignored, [this, action]( AccessibilityManager& manager, bool& ) -> HRESULT {
-				if ( !manager.isValid( mRef ) )
+		return invoke( ignored, [this, action]( AccessibilityManager& manager, bool& ) -> HRESULT {
+			if ( !manager.isValid( mRef ) )
+				return UIA_E_ELEMENTNOTAVAILABLE;
+			const auto nodeInfo = manager.getNodeInfo( mRef, false, false );
+			if ( !hasState( nodeInfo.states, AccessibilityState::Enabled ) )
+				return UIA_E_ELEMENTNOTENABLED;
+			if ( !hasAction( nodeInfo.actions, action ) )
+				return UIA_E_INVALIDOPERATION;
+			if ( action == AccessibilityAction::Focus ) {
+				const HWND nativeWindow = mContext->window();
+				if ( !nativeWindow || !IsWindow( nativeWindow ) )
 					return UIA_E_ELEMENTNOTAVAILABLE;
-				const auto nodeInfo = manager.getNodeInfo( mRef, false );
-				if ( !hasState( nodeInfo.states, AccessibilityState::Enabled ) )
-					return UIA_E_ELEMENTNOTENABLED;
-				if ( !hasAction( nodeInfo.actions, action ) )
-					return UIA_E_INVALIDOPERATION;
-				if ( action == AccessibilityAction::Focus ) {
-					const HWND nativeWindow = mContext->window();
-					if ( !nativeWindow || !IsWindow( nativeWindow ) )
-						return UIA_E_ELEMENTNOTAVAILABLE;
-					SetForegroundWindow( nativeWindow );
-					::SetFocus( nativeWindow );
-				}
-				return manager.performAction( mRef, { action, {} } ) ? S_OK : E_FAIL;
-			} );
+				SetForegroundWindow( nativeWindow );
+				::SetFocus( nativeWindow );
+			}
+			return manager.performAction( mRef, { action, {} } ) ? S_OK : E_FAIL;
+		} );
 	}
 
 	HRESULT rangeValue( double* value, double AccessibilityRangeInfo::* member ) {
@@ -1838,6 +1874,9 @@ UIAutomationProvider* UIAutomationProviderContext::provider( AccessibilityNodeRe
 	if ( !ref.isValid() || !isAlive() )
 		return nullptr;
 	std::lock_guard<std::mutex> lock( mProviderMutex );
+	// Teardown may have cleared the cache while this caller was waiting for its lock.
+	if ( !isAlive() )
+		return nullptr;
 	auto& sourceProviders = mProviders[ref.source];
 	auto found = sourceProviders.find( ref.id );
 	if ( found != sourceProviders.end() ) {
@@ -1865,9 +1904,11 @@ void UIAutomationProviderContext::invalidateProvider( AccessibilityNodeRef ref )
 		if ( source->second.empty() )
 			mProviders.erase( source );
 	}
-	UiaDisconnectProvider( static_cast<IRawElementProviderSimple*>( providerToDetach ) );
 	providerToDetach->detach();
-	providerToDetach->Release();
+	{
+		std::lock_guard<std::mutex> lock( mProviderMutex );
+		mInvalidatedProviders.emplace_back( providerToDetach );
+	}
 }
 
 void UIAutomationProviderContext::invalidateSource( AccessibilitySourceId sourceId ) {
@@ -1883,10 +1924,44 @@ void UIAutomationProviderContext::invalidateSource( AccessibilitySourceId source
 		mProviders.erase( source );
 	}
 	for ( auto provider : providers ) {
-		UiaDisconnectProvider( static_cast<IRawElementProviderSimple*>( provider ) );
 		provider->detach();
+	}
+	std::lock_guard<std::mutex> lock( mProviderMutex );
+	mInvalidatedProviders.insert( mInvalidatedProviders.end(), providers.begin(), providers.end() );
+}
+
+void UIAutomationProviderContext::disconnectInvalidatedProviders() {
+	std::vector<UIAutomationProvider*> providers;
+	{
+		std::lock_guard<std::mutex> lock( mProviderMutex );
+		providers.swap( mInvalidatedProviders );
+	}
+	// Outgoing COM calls can re-enter an STA. Run these only after widget destruction finishes;
+	// the detached providers already reject queries and retain their original cache reference.
+	for ( auto* provider : providers ) {
+		UiaDisconnectProvider( static_cast<IRawElementProviderSimple*>( provider ) );
 		provider->Release();
 	}
+}
+
+void UIAutomationProviderContext::pruneSource( AccessibilitySourceId sourceId ) {
+	if ( !mManager || !isAlive() )
+		return;
+	std::lock_guard<std::mutex> lock( mProviderMutex );
+	auto source = mProviders.find( sourceId );
+	if ( source == mProviders.end() )
+		return;
+	for ( auto it = source->second.begin(); it != source->second.end(); ) {
+		if ( mManager->isValid( { sourceId, it->first } ) ) {
+			++it;
+			continue;
+		}
+		it->second->detach();
+		mInvalidatedProviders.emplace_back( it->second );
+		it = source->second.erase( it );
+	}
+	if ( source->second.empty() )
+		mProviders.erase( source );
 }
 
 void UIAutomationProviderContext::detach() {
@@ -1895,6 +1970,7 @@ void UIAutomationProviderContext::detach() {
 		return;
 	mWindow.store( nullptr, std::memory_order_release );
 	mManager = nullptr;
+	disconnectInvalidatedProviders();
 
 	std::vector<std::shared_ptr<PendingRequest>> pending;
 	{
@@ -1937,6 +2013,11 @@ class UIAutomationAccessibilityBackend final : public AccessibilityBackend {
 	void onSourceInvalidated( AccessibilitySourceId sourceId ) override {
 		if ( mContext )
 			mContext->invalidateSource( sourceId );
+	}
+
+	void onSourceChanged( AccessibilitySourceId sourceId ) override {
+		if ( mContext )
+			mContext->pruneSource( sourceId );
 	}
 
   private:
@@ -2037,6 +2118,8 @@ void UIAutomationAccessibilityBackend::windowDestroyed() {
 }
 
 void UIAutomationAccessibilityBackend::update() {
+	if ( mContext )
+		mContext->disconnectInvalidatedProviders();
 	if ( !isAvailable() ) {
 		mPendingEvents.clear();
 		return;
@@ -2048,17 +2131,28 @@ void UIAutomationAccessibilityBackend::update() {
 	}
 	auto pendingEvents = std::move( mPendingEvents );
 	mPendingEvents.clear();
-	for ( const auto& event : pendingEvents )
-		raiseEvent( event );
+	bool focusChanged = false;
+	for ( const auto& event : pendingEvents ) {
+		if ( event.type == AccessibilityEvent::FocusChanged )
+			focusChanged = true;
+		else
+			raiseEvent( event );
+	}
+	if ( focusChanged ) {
+		auto focused = mManager.getKeyboardFocusedNode();
+		if ( focused.isValid() )
+			raiseEvent( { focused, {}, -1, AccessibilityEvent::FocusChanged } );
+	}
 }
 
 void UIAutomationAccessibilityBackend::onEvent( const AccessibilityPendingEvent& event ) {
 	if ( !mContext )
 		return;
-	if ( event.type == AccessibilityEvent::Destroyed ) {
-		mContext->invalidateProvider( event.related.isValid() ? event.related : event.ref );
-		if ( !event.related.isValid() )
-			return;
+	if ( event.type == AccessibilityEvent::Destroyed && !event.related.isValid() ) {
+		// A related-node event removes a tree edge, not necessarily the widget. Same-scene
+		// reparenting preserves its identity; only final subtree invalidation detaches providers.
+		mContext->invalidateProvider( event.ref );
+		return;
 	}
 	if ( !mContext->hasActiveClients() )
 		return;
@@ -2091,7 +2185,7 @@ void UIAutomationAccessibilityBackend::raiseEvent( const AccessibilityPendingEve
 	} else if ( event.type == AccessibilityEvent::DescriptionChanged ) {
 		raisePropertyChanged( UIA_HelpTextPropertyId );
 	} else if ( event.type == AccessibilityEvent::ValueChanged ) {
-		const auto info = mManager.getNodeInfo( event.ref );
+		const auto info = mManager.getNodeInfo( event.ref, false, false );
 		raisePropertyChanged( info.range.valid ? UIA_RangeValueValuePropertyId
 											   : UIA_ValueValuePropertyId );
 		if ( info.text.valid )
@@ -2102,7 +2196,7 @@ void UIAutomationAccessibilityBackend::raiseEvent( const AccessibilityPendingEve
 	} else if ( event.type == AccessibilityEvent::VisibilityChanged ) {
 		raisePropertyChanged( UIA_IsOffscreenPropertyId );
 	} else if ( event.type == AccessibilityEvent::StateChanged ) {
-		auto info = mManager.getNodeInfo( event.ref );
+		auto info = mManager.getNodeInfo( event.ref, false, false );
 		if ( info.role != AccessibilityRole::CheckBox &&
 			 info.role != AccessibilityRole::CheckMenuItem &&
 			 info.role != AccessibilityRole::RadioButton &&
@@ -2110,7 +2204,7 @@ void UIAutomationAccessibilityBackend::raiseEvent( const AccessibilityPendingEve
 			 info.role != AccessibilityRole::ComboBox &&
 			 info.role != AccessibilityRole::TreeItem ) {
 			const AccessibilityNodeRef parent = mManager.getParent( event.ref );
-			const auto parentInfo = mManager.getNodeInfo( parent );
+			const auto parentInfo = mManager.getNodeInfo( parent, false, false );
 			if ( parentInfo.role == AccessibilityRole::ComboBox ) {
 				nativeProvider->Release();
 				nativeProvider = mContext->provider( parent );
@@ -2145,20 +2239,15 @@ void UIAutomationAccessibilityBackend::raiseEvent( const AccessibilityPendingEve
 		UiaRaiseAutomationEvent( static_cast<IRawElementProviderSimple*>( nativeProvider ),
 								 UIA_AutomationFocusChangedEventId );
 	} else if ( event.type == AccessibilityEvent::SelectionChanged ) {
-		const auto info = mManager.getNodeInfo( event.ref );
+		const auto info = mManager.getNodeInfo( event.ref, false, false );
 		if ( info.text.valid )
 			UiaRaiseAutomationEvent( static_cast<IRawElementProviderSimple*>( nativeProvider ),
 									 UIA_Text_TextSelectionChangedEventId );
 		else if ( isSelectionContainerRole( info.role ) ) {
 			AccessibilityNodeRef selected;
-			const auto& children = mManager.getChildren( event.ref );
-			for ( const auto& child : children ) {
-				const auto childInfo = mManager.getNodeInfo( child, false );
-				if ( hasState( childInfo.states, AccessibilityState::Selected ) ) {
-					selected = child;
-					break;
-				}
-			}
+			const auto children = mManager.getSelectedChildren( event.ref );
+			if ( !children.empty() )
+				selected = children.front();
 			if ( selected.isValid() ) {
 				nativeProvider->Release();
 				nativeProvider = mContext->provider( selected );

@@ -117,6 +117,10 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			}
 		}
 		const auto readinessUs = clock.getElapsedTime().asMicroseconds();
+		if ( manager->hasActiveNativeClients() ) {
+			std::cerr << "Inactive accessibility benchmark requires no attached native clients\n";
+			return EXIT_FAILURE;
+		}
 		clock.restart();
 		for ( size_t i = 0; i < benchmarkIterations; ++i )
 			status->setText( i & 1 ? "Ready" : "Idle" );

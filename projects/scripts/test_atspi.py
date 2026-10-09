@@ -2,13 +2,23 @@
 
 import argparse
 import subprocess
-import threading
 import time
 
 import gi
 
 gi.require_version("Atspi", "2.0")
 from gi.repository import Atspi, GLib
+
+
+def pause(seconds):
+	# libatspi's cache and event dispatch share state with synchronous queries. Keep both on
+	# one thread; running event_main concurrently with these queries can corrupt the client.
+	context = GLib.MainContext.default()
+	while context.pending():
+		context.iteration(False)
+	time.sleep(seconds)
+	while context.pending():
+		context.iteration(False)
 
 
 def wait_for_application(name, timeout, process_id=None):
@@ -27,7 +37,7 @@ def wait_for_application(name, timeout, process_id=None):
 					return application
 			except Exception:
 				continue
-		time.sleep(0.1)
+		pause(0.1)
 	raise RuntimeError(f'accessibility application "{name}" was not found')
 
 
@@ -60,7 +70,7 @@ def wait_for_nodes(application, names, timeout=2):
 			return nodes
 		if time.monotonic() >= deadline:
 			raise RuntimeError(f"accessibility tree did not expose {names}, got {sorted(available)}")
-		time.sleep(0.05)
+		pause(0.05)
 
 
 def action_index(node, name):
@@ -77,8 +87,12 @@ def check(condition, message):
 
 def start_discovery_listener():
 	discovered_process_ids = set()
+	text_events = []
 
 	def on_children_changed(event):
+		if event.type.startswith("object:text-"):
+			text_events.append((event.type, event.detail1, event.detail2, event.any_data))
+			return
 		application = event.any_data
 		try:
 			if application:
@@ -91,19 +105,19 @@ def start_discovery_listener():
 		listener.register("object:children-changed:add"),
 		"could not register the AT-SPI application discovery listener",
 	)
-	thread = threading.Thread(target=Atspi.event_main, daemon=True)
-	thread.start()
-	return listener, discovered_process_ids, thread
+	for event in ("object:text-changed", "object:text-caret-moved", "object:text-selection-changed"):
+		check(listener.register(event), f"could not register {event}")
+	return listener, discovered_process_ids, text_events
 
 
 def wait_for_window_count(application, count, timeout=2):
 	deadline = time.monotonic() + timeout
 	while application.get_child_count() != count and time.monotonic() < deadline:
-		time.sleep(0.05)
+		pause(0.05)
 	check(application.get_child_count() == count, f"expected {count} application windows")
 
 
-def validate(application, multi_window=False, close_primary=False, process_id=None):
+def validate(application, multi_window=False, close_primary=False, process_id=None, text_events=None):
 	required_nodes = ["Project name", "Enable autosave"]
 	if multi_window:
 		required_nodes.append("Secondary accessibility window")
@@ -123,6 +137,11 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 
 	project_name = find_named(nodes, "Project name")
 	check(project_name.get_role_name() == "entry", "Project name must be an entry")
+	states = project_name.get_state_set()
+	check(states.contains(Atspi.StateType.SENSITIVE), "enabled input must be sensitive")
+	check(states.contains(Atspi.StateType.SINGLE_LINE), "input must be single-line")
+	password = find_named(nodes, "Account password")
+	check(password.get_role() == Atspi.Role.PASSWORD_TEXT, "password must use the protected role")
 	check(project_name.get_accessible_id(), "Project name must expose a stable accessible ID")
 	locale = project_name.get_object_locale()
 	check(locale == "C", f"Project name locale query failed: {locale!r}")
@@ -154,11 +173,40 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 		Atspi.Text.get_text(project_name, 0, -1) == "eepp2",
 		"Project name replacement was not visible",
 	)
+	check(Atspi.Text.set_caret_offset(project_name, 2), "setting the caret failed")
+	check(project_name.get_caret_offset() == 2, "caret offset did not change")
+	check(Atspi.Text.add_selection(project_name, 1, 4), "adding a text selection failed")
+	check(Atspi.Text.set_selection(project_name, 0, 0, 3), "setting a text selection failed")
+	selection = Atspi.Text.get_selection(project_name, 0)
+	check((selection.start_offset, selection.end_offset) == (0, 3), "selection offsets are wrong")
+	check(Atspi.Text.remove_selection(project_name, 0), "removing a text selection failed")
+	check(project_name.get_n_selections() == 0, "selection was not removed")
+	if text_events is not None:
+		deadline = time.monotonic() + 2
+		while time.monotonic() < deadline and not any(
+			event[0] == "object:text-changed:insert" and event[1:4] == (4, 1, "2")
+			for event in text_events
+		):
+			pause(0.01)
+		check(any(event[0] == "object:text-changed:insert" and event[1:4] == (4, 1, "2")
+			for event in text_events), f"missing text insertion event: {text_events}")
+		check(any(event[0] == "object:text-caret-moved" and event[1] == 2
+			for event in text_events), "missing caret event")
+		check(any(event[0] == "object:text-selection-changed" for event in text_events),
+			"missing text selection event")
+	description = find_named(nodes, "Description")
+	check(description.get_state_set().contains(Atspi.StateType.MULTI_LINE), "edit must be multiline")
+	check(Atspi.EditableText.set_text_contents(description, "first\nsecond\nthird"),
+		"multiline replacement failed")
+	line = Atspi.Text.get_string_at_offset(description, 8, Atspi.TextGranularity.LINE)
+	check((line.content, line.start_offset, line.end_offset) == ("second\n", 6, 13),
+		f"line granularity returned the wrong range: {line}")
 
 	checkbox = find_named(nodes, "Enable autosave")
 	check(checkbox.get_role_name() == "check box", "autosave must be a check box")
+	check(checkbox.get_state_set().contains(Atspi.StateType.CHECKABLE), "checkbox must be checkable")
 	check(checkbox.do_action(action_index(checkbox, "toggle")), "checkbox toggle failed")
-	time.sleep(0.05)
+	pause(0.05)
 	check(
 		checkbox.get_state_set().contains(Atspi.StateType.CHECKED),
 		"checkbox did not expose its checked state",
@@ -167,16 +215,27 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 	radio = find_named(nodes, "Light Theme")
 	check(radio.get_role_name() == "radio button", "theme must be a radio button")
 	check(radio.do_action(action_index(radio, "select")), "radio selection failed")
-	time.sleep(0.05)
+	pause(0.05)
 	states = radio.get_state_set()
 	check(states.contains(Atspi.StateType.CHECKED), "radio did not expose checked state")
 	check(states.contains(Atspi.StateType.SELECTED), "radio did not expose selected state")
+	check(states.contains(Atspi.StateType.SELECTABLE), "radio must be selectable")
+
+	language = find_named(nodes, "Language")
+	check(language.get_state_set().contains(Atspi.StateType.EXPANDABLE), "combo must be expandable")
+	check(language.do_action(action_index(language, "expand")), "combo expansion failed")
+	pause(0.05)
+	check(language.get_state_set().contains(Atspi.StateType.EXPANDED), "combo must report expanded")
+	check(language.do_action(action_index(language, "collapse")), "combo collapse failed")
 
 	spin = find_named(nodes, "Retry count")
 	check(spin.get_role_name() == "spin button", "Retry count must be a spin button")
 	check(spin.get_current_value() == 3, "Retry count must initially equal 3")
 	check(spin.get_minimum_value() == 0, "Retry count minimum must equal 0")
 	check(spin.get_maximum_value() == 10, "Retry count maximum must equal 10")
+	check(spin.grab_focus(), "spin focus action failed")
+	pause(0.05)
+	check(spin.get_state_set().contains(Atspi.StateType.FOCUSED), "spin must report internal input focus")
 
 	find_named(nodes, "Colors")
 	find_named(nodes, "Projects")
@@ -213,6 +272,8 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 			# that the I/O thread still wakes the application after the previous Input is destroyed.
 			extents = remaining.get_extents(Atspi.CoordType.SCREEN)
 			check(extents.width > 0 and extents.height > 0, "surviving window stopped responding")
+			close_last = find_named(descendants(application), "Close secondary window")
+			check(close_last.do_action(action_index(close_last, "click")), "last window close failed")
 	print(f"AT-SPI validation passed: {len(nodes)} nodes")
 
 
@@ -230,10 +291,10 @@ def main():
 
 	process = None
 	discovery_listener = None
-	discovery_thread = None
+	text_events = None
 	try:
 		if not args.no_launch:
-			discovery_listener, discovered_process_ids, discovery_thread = start_discovery_listener()
+			discovery_listener, discovered_process_ids, text_events = start_discovery_listener()
 			command = [args.executable]
 			if args.hidden:
 				command.append("--hidden")
@@ -250,7 +311,7 @@ def main():
 		if process is not None:
 			deadline = time.monotonic() + args.timeout
 			while process.pid not in discovered_process_ids and time.monotonic() < deadline:
-				time.sleep(0.05)
+				pause(0.05)
 			check(
 				process.pid in discovered_process_ids,
 				"the newly launched application was not announced through AT-SPI",
@@ -260,18 +321,20 @@ def main():
 			args.multi_window or args.close_primary,
 			args.close_primary,
 			process.pid if process is not None else args.process_id,
+			text_events,
 		)
+		if process is not None and args.close_primary:
+			check(process.wait(timeout=3) == 0, "native backend teardown crashed on last-window closure")
 	finally:
 		if discovery_listener:
 			try:
-				discovery_listener.deregister("object:children-changed:add")
+				for event in ("object:children-changed:add", "object:text-changed",
+					"object:text-caret-moved", "object:text-selection-changed"):
+					discovery_listener.deregister(event)
 			except GLib.Error:
 				# A closed bus must not mask the original failure or skip child-process cleanup.
 				pass
-			Atspi.event_quit()
-		if discovery_thread:
-			discovery_thread.join(timeout=1)
-		if process:
+		if process and process.poll() is None:
 			process.terminate()
 			try:
 				process.wait(timeout=1)

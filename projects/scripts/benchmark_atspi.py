@@ -12,6 +12,8 @@ import gi
 gi.require_version("Atspi", "2.0")
 from gi.repository import Atspi
 
+from test_atspi import pause
+
 
 def check(condition, message):
 	if not condition:
@@ -56,7 +58,7 @@ def find_application(name, process_id, timeout):
 					return application
 			except Exception:
 				continue
-		time.sleep(0.01)
+		pause(0.01)
 	raise RuntimeError(f'accessibility application "{name}" was not discovered')
 
 
@@ -192,9 +194,12 @@ def run_sample(args, item_count, target_process_id, model_changed, model_change_
 			mutate.do_action(action_index(mutate, "click")),
 			"benchmark model replacement action failed",
 		)
-		check(model_changed.wait(args.timeout), "model replacement event was not received")
+		deadline = time.monotonic() + args.timeout
+		while not model_changed.is_set() and time.monotonic() < deadline:
+			pause(0.001)
+		check(model_changed.is_set(), "model replacement event was not received")
 		while benchmark_list.get_child_count() != item_count and time.monotonic() - start < args.timeout:
-			time.sleep(0.001)
+			pause(0.001)
 		mutation_ms = (time.perf_counter() - start) * 1000
 		first_item = benchmark_list.get_child_at_index(0)
 		check(first_item.get_name() == "Updated benchmark item 0", "model replacement stayed stale")
@@ -272,8 +277,6 @@ def main():
 
 	listener = Atspi.EventListener.new(on_model_changed)
 	check(listener.register("object:model-changed"), "could not register model-change listener")
-	event_thread = threading.Thread(target=Atspi.event_main, daemon=True)
-	event_thread.start()
 
 	try:
 		results = []
@@ -319,8 +322,6 @@ def main():
 			print(f"AT-SPI benchmark passed: worst normalized growth {scaling_ratio:.2f}x")
 	finally:
 		listener.deregister("object:model-changed")
-		Atspi.event_quit()
-		event_thread.join(timeout=1)
 
 
 if __name__ == "__main__":

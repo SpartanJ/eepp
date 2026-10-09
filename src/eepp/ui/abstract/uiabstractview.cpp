@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <eepp/system/thread.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uimodelcreator.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/engine.hpp>
 
 namespace EE { namespace UI { namespace Abstract {
@@ -201,10 +203,8 @@ void UIAbstractView::beginEditing( const ModelIndex& index, UIWidget* editedWidg
 		 !onCreateEditingDelegate || !editedWidget )
 		return;
 
-	if ( mEditWidget ) {
-		mEditWidget->setVisible( false )->setEnabled( false )->close();
-		mEditWidget = nullptr;
-	}
+	if ( mEditWidget )
+		releaseEditWidget();
 	eeSAFE_DELETE( mEditingDelegate );
 
 	mEditIndex = index;
@@ -231,14 +231,24 @@ void UIAbstractView::beginEditing( const ModelIndex& index, UIWidget* editedWidg
 
 void UIAbstractView::stopEditing() {
 	bool recoverFocus = false;
-	mEditIndex = {};
+	// Release the editor while its edit index still locates its accessible parent.
 	if ( mEditWidget ) {
 		recoverFocus = mEditWidget->hasFocusWithin();
-		mEditWidget->setVisible( false )->setEnabled( false )->close();
-		mEditWidget = nullptr;
+		releaseEditWidget();
 	}
+	mEditIndex = {};
 	if ( recoverFocus )
 		setFocus();
+}
+
+void UIAbstractView::releaseEditWidget() {
+	mEditWidget->setVisible( false )->setEnabled( false );
+	// The editor is exposed below its virtual row or cell only while it is the active editor.
+	// Remove it from that tree before it becomes an ordinary recycled implementation child.
+	if ( mUISceneNode && mUISceneNode->hasActiveAccessibilityClients() )
+		mUISceneNode->getAccessibilityManager()->onSubtreeRemoved( mEditWidget );
+	mEditWidget->close();
+	mEditWidget = nullptr;
 }
 
 bool UIAbstractView::applyProperty( const StyleSheetProperty& attribute ) {

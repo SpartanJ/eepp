@@ -33,6 +33,367 @@ using namespace EE::System;
 using namespace EE::UI;
 using namespace EE::Window;
 
+namespace {
+
+UIApplication::Settings accessibilityTestSettings() {
+	UIApplication::Settings settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 );
+	settings.accessibilityPolicy = AccessibilityPolicy::Disabled;
+	return settings;
+}
+
+WindowSettings accessibilityTestWindow() {
+	return WindowSettings( 320, 240, "Accessibility Regression Test", WindowStyle::Default,
+						   WindowBackend::Default, 32, {}, 1, false, true );
+}
+
+class AccessibilityRowsModel : public Model {
+  public:
+	explicit AccessibilityRowsModel( size_t rows = 4 ) {
+		for ( size_t index = 0; index < rows; ++index )
+			mRows.emplace_back( static_cast<int>( index + 1 ) * 10 );
+	}
+
+	size_t rowCount( const ModelIndex& = {} ) const override { return mRows.size(); }
+
+	size_t columnCount( const ModelIndex& = {} ) const override { return 1; }
+
+	Variant data( const ModelIndex& index, ModelRole = ModelRole::Display ) const override {
+		return mRows[index.row()];
+	}
+
+	size_t persistentCount() const { return mPersistentHandles.size(); }
+
+	void insertAt( int row, int value ) {
+		beginInsertRows( {}, row, row );
+		mRows.insert( mRows.begin() + row, value );
+		endInsertRows();
+		invalidate( Model::DontInvalidateIndexes );
+	}
+
+	void removeAt( int row ) {
+		if ( beginDeleteRows( {}, row, row ) ) {
+			mRows.erase( mRows.begin() + row );
+			endDeleteRows();
+			invalidate( Model::DontInvalidateIndexes );
+		}
+	}
+
+  private:
+	std::vector<int> mRows;
+};
+
+class AccessibilityTreeModel : public AccessibilityRowsModel {
+  public:
+	AccessibilityTreeModel() : AccessibilityRowsModel( 32 ) {}
+
+	size_t rowCount( const ModelIndex& parent = {} ) const override {
+		if ( !parent.isValid() )
+			return AccessibilityRowsModel::rowCount();
+		return parent.internalData() == nullptr && parent.row() == 0 ? 1 : 0;
+	}
+
+	ModelIndex index( int row, int column = 0, const ModelIndex& parent = {} ) const override {
+		return createIndex( row, column, parent.isValid() ? this : nullptr );
+	}
+
+	ModelIndex parentIndex( const ModelIndex& index ) const override {
+		return index.internalData() != nullptr ? this->index( 0 ) : ModelIndex{};
+	}
+};
+
+} // namespace
+
+UTEST( Accessibility, CompositeFocusProjectsToAnExposedElement ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* group = UIWidget::New();
+	group->setAccessibilityRole( AccessibilityRole::Group );
+	group->setParent( scene->getRoot() );
+	auto* spin = UISpinBox::New();
+	spin->setParent( group );
+	spin->getTextInput()->setFocus();
+	auto ref = manager->getNodeRef( spin );
+	EXPECT_TRUE( manager->getKeyboardFocusedNode() == ref );
+	EXPECT_TRUE( static_cast<Uint64>( manager->getNodeInfo( ref ).states ) &
+				 static_cast<Uint64>( AccessibilityState::Focused ) );
+	auto* button = UIPushButton::New();
+	button->setParent( group );
+	button->setFocus();
+	EXPECT_TRUE( manager->getKeyboardFocusedNode() == manager->getNodeRef( button ) );
+}
+
+UTEST( Accessibility, OnlyTheFocusOwnerReportsFocusedState ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* group = UIWidget::New();
+	group->setAccessibilityRole( AccessibilityRole::Group );
+	group->setParent( scene->getRoot() );
+	auto* spin = UISpinBox::New();
+	spin->setParent( group );
+	spin->getTextInput()->setFocus();
+	auto isFocused = [manager]( AccessibilityNodeRef ref ) {
+		return ( static_cast<Uint64>( manager->getNodeInfo( ref ).states ) &
+				 static_cast<Uint64>( AccessibilityState::Focused ) ) != 0;
+	};
+	// Containing the focus is not having it: ancestors must not claim the focused state.
+	EXPECT_TRUE( isFocused( manager->getNodeRef( spin ) ) );
+	EXPECT_FALSE( isFocused( manager->getNodeRef( group ) ) );
+	EXPECT_FALSE( isFocused( manager->getRoot() ) );
+}
+
+UTEST( Accessibility, DeletingUnqueriedWidgetEmitsNoEvents ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto root = manager->getRoot();
+	auto* seen = UIPushButton::New();
+	seen->setParent( app.getUI()->getRoot() );
+	// Created before any client was listening, so no Created event announced it.
+	auto* unseen = UIPushButton::New();
+	unseen->setParent( app.getUI()->getRoot() );
+	manager->onNativeClientObserved();
+	ASSERT_TRUE( manager->isValid( manager->getNodeRef( seen ) ) );
+	manager->clearPendingEvents();
+	eeDelete( unseen );
+	// No client knows this widget, so its deletion must neither allocate an identity for it nor
+	// report a tree change.
+	EXPECT_TRUE( manager->getPendingEvents().empty() );
+	EXPECT_EQ( manager->getChildCount( root ), 1u );
+	// A known sibling is still reported, exactly once.
+	eeDelete( seen );
+	size_t destroyed = 0;
+	for ( const auto& event : manager->getPendingEvents() )
+		destroyed += event.type == AccessibilityEvent::Destroyed && event.related.isValid();
+	EXPECT_EQ( destroyed, 1u );
+}
+
+UTEST( Accessibility, ClosingNestedSceneNotifiesItsHostOnce ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	manager->onNativeClientObserved();
+	auto root = manager->getRoot();
+	auto* nested = UISceneNode::New( app.getWindow() );
+	nested->setParent( scene->getRoot() );
+	auto* first = UIPushButton::New();
+	first->setParent( nested->getRoot() );
+	auto* second = UIPushButton::New();
+	second->setParent( nested->getRoot() );
+	auto firstRef = manager->getNodeRef( first );
+	auto secondRef = manager->getNodeRef( second );
+	bool closingSceneHidesManager = false;
+	first->addEventListener( Event::OnClose, [&]( const Event* ) {
+		const auto* closing = static_cast<const UISceneNode*>( nested );
+		closingSceneHidesManager = closing->getAccessibilityManager() == nullptr &&
+								   nested->getAccessibilityManager() == nullptr;
+	} );
+	manager->clearPendingEvents();
+	eeDelete( nested );
+	EXPECT_TRUE( closingSceneHidesManager );
+	// The host learns about the removal once; descendant destructors of the closing scene must
+	// not reach its manager again.
+	size_t childrenChanged = 0;
+	bool firstDestroyed = false;
+	bool secondDestroyed = false;
+	for ( const auto& event : manager->getPendingEvents() ) {
+		if ( event.type == AccessibilityEvent::ChildrenChanged ) {
+			EXPECT_TRUE( event.ref == root );
+			++childrenChanged;
+		} else if ( event.type == AccessibilityEvent::Destroyed ) {
+			EXPECT_FALSE( event.related.isValid() );
+			firstDestroyed |= event.ref == firstRef;
+			secondDestroyed |= event.ref == secondRef;
+		}
+	}
+	EXPECT_EQ( childrenChanged, 1u );
+	EXPECT_TRUE( firstDestroyed );
+	EXPECT_TRUE( secondDestroyed );
+	EXPECT_EQ( manager->getChildCount( root ), 0u );
+}
+
+UTEST( Accessibility, CellEditorIsExposedBelowItsVirtualRow ) {
+	class EditableRowsModel final : public AccessibilityRowsModel {
+	  public:
+		bool isEditable( const ModelIndex& ) const override { return true; }
+	};
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	manager->onNativeClientObserved();
+	auto model = std::make_shared<EditableRowsModel>();
+	auto* list = UIListView::New();
+	list->setParent( app.getUI()->getRoot() );
+	list->setModel( model );
+	list->setEditable( true );
+	list->onCreateEditingDelegate = []( const ModelIndex& ) -> ModelEditingDelegate* {
+		return StringModelEditingDelegate::New();
+	};
+	auto* cell = UIWidget::New();
+	cell->setParent( list );
+	auto host = manager->getNodeRef( list );
+	auto row = manager->getChild( host, 1 );
+	ASSERT_TRUE( manager->isValid( row ) );
+	EXPECT_EQ( manager->getChildCount( row ), 0u );
+
+	list->beginEditing( model->index( 1 ), cell );
+	ASSERT_NE( list->getEditWidget(), nullptr );
+	auto editor = manager->getNodeRef( list->getEditWidget() );
+	ASSERT_EQ( manager->getChildCount( row ), 1u );
+	EXPECT_TRUE( manager->getChild( row, 0 ) == editor );
+	EXPECT_TRUE( manager->getParent( editor ) == row );
+	EXPECT_EQ( manager->getIndexInParent( editor ), 0 );
+	EXPECT_TRUE( manager->getKeyboardFocusedNode() == editor );
+	EXPECT_EQ( manager->getNodeInfo( editor ).role, AccessibilityRole::TextBox );
+
+	manager->clearPendingEvents();
+	list->stopEditing();
+	EXPECT_FALSE( manager->isValid( editor ) );
+	EXPECT_EQ( manager->getChildCount( row ), 0u );
+	bool rowChanged = false;
+	for ( const auto& event : manager->getPendingEvents() )
+		rowChanged |= event.type == AccessibilityEvent::ChildrenChanged && event.ref == row;
+	EXPECT_TRUE( rowChanged );
+}
+
+UTEST( Accessibility, RepeatedStateAndStructuralEventsKeepTheirOrder ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	manager->update();
+	auto root = manager->getRoot();
+	auto* checkbox = UICheckBox::New();
+	checkbox->setParent( app.getUI()->getRoot() );
+	auto ref = manager->getNodeRef( checkbox );
+	manager->clearPendingEvents();
+	manager->notify( root, AccessibilityEvent::Created, ref, 0 );
+	manager->notify( root, AccessibilityEvent::Destroyed, ref, 0 );
+	manager->notify( root, AccessibilityEvent::Created, ref, 0 );
+	manager->notify( ref, AccessibilityEvent::StateChanged );
+	manager->notify( ref, AccessibilityEvent::StateChanged );
+	const auto& events = manager->getPendingEvents();
+	ASSERT_EQ( events.size(), 5u );
+	EXPECT_EQ( events[0].type, AccessibilityEvent::Created );
+	EXPECT_EQ( events[1].type, AccessibilityEvent::Destroyed );
+	EXPECT_EQ( events[2].type, AccessibilityEvent::Created );
+	EXPECT_EQ( events[3].type, AccessibilityEvent::StateChanged );
+	EXPECT_EQ( events[4].type, AccessibilityEvent::StateChanged );
+	manager->notify( ref, AccessibilityEvent::ModelChanged );
+	manager->notify( ref, AccessibilityEvent::ModelChanged );
+	EXPECT_EQ( events.size(), 6u );
+	EXPECT_EQ( events.back().type, AccessibilityEvent::ModelChanged );
+}
+
+UTEST( Accessibility, DeletingUnqueriedContainerInvalidatesItsQueriedDescendants ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto root = manager->getRoot();
+	auto* container = UIWidget::New();
+	container->setParent( app.getUI()->getRoot() );
+	auto* group = UIWidget::New();
+	group->setAccessibilityRole( AccessibilityRole::Group );
+	group->setParent( container );
+	auto* button = UIPushButton::New();
+	button->setParent( group );
+	auto groupRef = manager->getNodeRef( group );
+	auto buttonRef = manager->getNodeRef( button );
+	manager->clearPendingEvents();
+	eeDelete( container );
+	EXPECT_FALSE( manager->isValid( groupRef ) );
+	EXPECT_FALSE( manager->isValid( buttonRef ) );
+	EXPECT_EQ( manager->getChildCount( root ), 0u );
+	for ( const auto& event : manager->getPendingEvents() ) {
+		if ( event.related.isValid() )
+			EXPECT_TRUE( manager->isValid( event.ref ) );
+	}
+}
+
+UTEST( Accessibility, ModelQueriesAreLazyAndIdentitiesFollowInsertedRows ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto model = std::make_shared<AccessibilityRowsModel>( 100000 );
+	auto* table = UITableView::New();
+	table->setParent( app.getUI()->getRoot() );
+	table->setModel( model );
+	auto host = manager->getNodeRef( table );
+	EXPECT_EQ( manager->getChildCount( host ), 100000u );
+	EXPECT_EQ( model->persistentCount(), 0u );
+	// Exercise the view's real notification path while keeping this test independent of an OS
+	// screen reader. Native observation enables the scene's notification gate only.
+	manager->onNativeClientObserved();
+	table->getSelection().set( model->index( 99999, 0 ) );
+	auto selected = manager->getSelectedChildren( host );
+	ASSERT_EQ( selected.size(), 1u );
+	EXPECT_EQ( model->persistentCount(), 1u );
+	auto last = manager->getChild( host, 99999 );
+	EXPECT_TRUE( selected.front() == last );
+	EXPECT_EQ( model->persistentCount(), 1u );
+	EXPECT_EQ( manager->getIndexInParent( last ), 99999 );
+	EXPECT_TRUE( manager->getNodeInfo( last ).name == String( "1000000" ) );
+
+	auto third = manager->getChild( host, 2 );
+	model->insertAt( 1, 15 );
+	EXPECT_TRUE( manager->getChild( host, 3 ) == third );
+	EXPECT_TRUE( manager->getChild( host, 2 ) != third );
+	EXPECT_EQ( manager->getIndexInParent( third ), 3 );
+	EXPECT_TRUE( manager->getNodeInfo( third ).name == String( "30" ) );
+	model->removeAt( 0 );
+	EXPECT_TRUE( manager->getChild( host, 2 ) == third );
+	EXPECT_EQ( manager->getIndexInParent( third ), 2 );
+	model->removeAt( 2 );
+	EXPECT_FALSE( manager->isValid( third ) );
+}
+
+UTEST( Accessibility, CollapsedRowsDoNotMaterializeTheirFormerSiblings ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	manager->onNativeClientObserved();
+	auto model = std::make_shared<AccessibilityTreeModel>();
+	auto* tree = UITreeView::New();
+	tree->setParent( app.getUI()->getRoot() );
+	tree->setModel( model );
+	auto host = manager->getNodeRef( tree );
+	tree->setExpanded( model->index( 0 ), true );
+	EXPECT_EQ( manager->getChildCount( host ), 33u );
+	EXPECT_EQ( model->persistentCount(), 0u );
+	auto leaf = manager->getChild( host, 1 );
+	EXPECT_EQ( manager->getIndexInParent( leaf ), 1 );
+	EXPECT_EQ( model->persistentCount(), 1u );
+	tree->setExpanded( model->index( 0 ), false );
+	EXPECT_EQ( manager->getIndexInParent( leaf ), -1 );
+	EXPECT_EQ( model->persistentCount(), 1u );
+}
+
+UTEST( Accessibility, CloseCallbacksCannotRetainDeletedDescendantIdentities ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto* container = UIWidget::New();
+	container->setParent( app.getUI()->getRoot() );
+	auto* button = UIPushButton::New();
+	button->setParent( container );
+	auto ref = manager->getNodeRef( button );
+	bool invalidatedBeforeCallback = false;
+	bool cannotRecreateIdentities = false;
+	container->addEventListener( Event::OnClose, [&]( const Event* ) {
+		invalidatedBeforeCallback = !manager->isValid( ref );
+		cannotRecreateIdentities = !manager->getNodeRef( button ).isValid() &&
+								   manager->getChildren( manager->getRoot() ).empty();
+		eeDelete( button );
+	} );
+	eeDelete( container );
+	EXPECT_TRUE( invalidatedBeforeCallback );
+	EXPECT_TRUE( cannotRecreateIdentities );
+	EXPECT_FALSE( manager->isValid( ref ) );
+}
+
 UTEST( Accessibility, DeletingNodeCanRegisterPreviouslyUnqueriedParent ) {
 	UIApplication::Settings settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 );
 	settings.accessibilityPolicy = AccessibilityPolicy::Disabled;
@@ -559,7 +920,7 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	EXPECT_TRUE( manager->getNodeInfo( buttonRef ).name == String( "Save project" ) );
 	manager->notify( buttonRef, AccessibilityEvent::NameChanged );
 	manager->notify( buttonRef, AccessibilityEvent::NameChanged );
-	EXPECT_EQ( manager->getPendingEvents().size(), 1u );
+	EXPECT_EQ( manager->getPendingEvents().size(), 2u );
 
 	eeDelete( button );
 	EXPECT_FALSE( manager->isValid( buttonRef ) );
