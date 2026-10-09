@@ -329,6 +329,13 @@ void UISceneNode::onParentChange() {
 
 	initializeEmbeddedFromHost( mHostUISceneNode );
 
+	if ( mHostUISceneNode && hasActiveAccessibilityClients() ) {
+		// A populated embedded scene can move without reparenting any of its widgets. Refresh
+		// the host hierarchy even when their accessibility identities keep the same owner.
+		auto* manager = getAccessibilityManager();
+		manager->notify( manager->getRoot(), AccessibilityEvent::ChildrenChanged );
+	}
+
 	setDirty();
 	updateParentSizeListener();
 }
@@ -491,6 +498,16 @@ void UISceneNode::updateHostUISceneNode() {
 
 	if ( mHostUISceneNode == hostScene )
 		return;
+
+	auto* previousManager = static_cast<const UISceneNode*>( this )->getAccessibilityManager();
+	auto* nextManager =
+		hostScene ? static_cast<const UISceneNode*>( hostScene )->getAccessibilityManager()
+				  : nullptr;
+	if ( previousManager && previousManager != nextManager && mRoot ) {
+		// Embedded descendants keep this local scene pointer while its host changes. Invalidate
+		// their old-owner identities before updating the host used by getAccessibilityManager().
+		const_cast<AccessibilityManager*>( previousManager )->onSubtreeRemoved( mRoot );
+	}
 
 	if ( mHostUISceneNode )
 		mHostUISceneNode->unregisterChildUISceneNode( this );
@@ -1321,8 +1338,10 @@ void UISceneNode::update( const Time& elapsed ) {
 }
 
 void UISceneNode::onWidgetDelete( Node* node ) {
-	if ( mAccessibilityManager && node->isWidget() )
-		mAccessibilityManager->onWidgetDelete( node->asType<UIWidget>() );
+	auto* manager = static_cast<const UISceneNode*>( this )->getAccessibilityManager();
+	if ( manager && node->isWidget() ) {
+		const_cast<AccessibilityManager*>( manager )->onWidgetDelete( node->asType<UIWidget>() );
+	}
 	if ( node->isWidget() ) {
 		UIWidget* widget = node->asType<UIWidget>();
 

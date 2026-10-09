@@ -58,6 +58,10 @@ void InputSDL::waitEvent( const Time& timeout ) {
 }
 
 void InputSDL::wakeUp() {
+	wakeUpEventLoop();
+}
+
+void InputSDL::wakeUpEventLoop() {
 	SDL_Event event{};
 	event.type = SDL_USEREVENT;
 	event.user.data1 = &WakeEventMarker;

@@ -5,6 +5,10 @@
 #include <eepp/ui/accessibility/accessibility.hpp>
 #include <memory>
 
+namespace EE { namespace Scene {
+class Node;
+}} // namespace EE::Scene
+
 namespace EE { namespace UI {
 
 class UISceneNode;
@@ -68,6 +72,9 @@ class EE_API AccessibilityManager {
 	void onWidgetAccessibilitySourceDelete( UIWidget* widget );
 
 	void onWidgetDelete( UIWidget* widget );
+
+	/** Invalidates registered identities before a subtree changes accessibility owners. */
+	void onSubtreeRemoved( Scene::Node* node );
 
   private:
 	static constexpr AccessibilitySourceId WidgetSource = 1;

@@ -8,7 +8,7 @@ import time
 import gi
 
 gi.require_version("Atspi", "2.0")
-from gi.repository import Atspi
+from gi.repository import Atspi, GLib
 
 
 def wait_for_application(name, timeout, process_id=None):
@@ -135,12 +135,13 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 	project_extents = project_name.get_extents(Atspi.CoordType.SCREEN)
 	check(project_extents.width > 0 and project_extents.height > 0, "Project name extents are empty")
 	window = application.get_child_at_index(0)
-	hit = window.get_accessible_at_point(
-		project_extents.x + project_extents.width // 2,
-		project_extents.y + project_extents.height // 2,
-		Atspi.CoordType.SCREEN,
-	)
-	check(hit is not None, "visible window component hit test failed")
+	if window.get_state_set().contains(Atspi.StateType.SHOWING):
+		hit = window.get_accessible_at_point(
+			project_extents.x + project_extents.width // 2,
+			project_extents.y + project_extents.height // 2,
+			Atspi.CoordType.SCREEN,
+		)
+		check(hit is not None, "visible window component hit test failed")
 	check(project_name.get_character_count() == 4, "Project name character count must equal 4")
 	check(Atspi.Text.get_text(project_name, 0, -1) == "eepp", "Project name text query failed")
 	check(project_name.get_text_attributes(0) is not None, "Project name text attributes query failed")
@@ -208,6 +209,10 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 				remaining.get_name() == "eepp - Accessibility Secondary",
 				"secondary window did not become the surviving application root",
 			)
+			# Component extents require a live request, unlike a potentially cached name. Verify
+			# that the I/O thread still wakes the application after the previous Input is destroyed.
+			extents = remaining.get_extents(Atspi.CoordType.SCREEN)
+			check(extents.width > 0 and extents.height > 0, "surviving window stopped responding")
 	print(f"AT-SPI validation passed: {len(nodes)} nodes")
 
 
@@ -218,6 +223,7 @@ def main():
 	parser.add_argument("--no-launch", action="store_true")
 	parser.add_argument("--multi-window", action="store_true")
 	parser.add_argument("--close-primary", action="store_true")
+	parser.add_argument("--hidden", action="store_true", help="keep all example windows hidden")
 	parser.add_argument("--timeout", type=float, default=5.0)
 	parser.add_argument("--process-id", type=int)
 	args = parser.parse_args()
@@ -229,6 +235,8 @@ def main():
 		if not args.no_launch:
 			discovery_listener, discovered_process_ids, discovery_thread = start_discovery_listener()
 			command = [args.executable]
+			if args.hidden:
+				command.append("--hidden")
 			if args.multi_window or args.close_primary:
 				command.append("--multi-window")
 			if args.close_primary:
@@ -255,7 +263,11 @@ def main():
 		)
 	finally:
 		if discovery_listener:
-			discovery_listener.deregister("object:children-changed:add")
+			try:
+				discovery_listener.deregister("object:children-changed:add")
+			except GLib.Error:
+				# A closed bus must not mask the original failure or skip child-process cleanup.
+				pass
 			Atspi.event_quit()
 		if discovery_thread:
 			discovery_thread.join(timeout=1)

@@ -106,7 +106,8 @@ AccessibilityNodeRef AccessibilityManager::getRoot() {
 }
 
 AccessibilityNodeRef AccessibilityManager::getNodeRef( UIWidget* widget ) {
-	if ( !widget || widget->getUISceneNode() != mScene )
+	const auto* scene = widget ? widget->getUISceneNode() : nullptr;
+	if ( !scene || ( scene != mScene && scene->getAccessibilityManager() != this ) )
 		return {};
 	auto found = mWidgetIds.find( widget );
 	if ( found != mWidgetIds.end() )
@@ -392,9 +393,20 @@ void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
 			semanticIndexOf( parentWidget, widget, currentIndex, index );
 		notify( parent, AccessibilityEvent::Destroyed, ref, index );
 	}
-	mWidgets.erase( found->second );
-	mWidgetIds.erase( found );
+	// getParent() and native destruction notifications can register more widgets, invalidating
+	// dense-map iterators. Keep the copied identity and erase by key instead.
+	mWidgets.erase( ref.id );
+	mWidgetIds.erase( widget );
 	notify( ref, AccessibilityEvent::Destroyed );
+}
+
+void AccessibilityManager::onSubtreeRemoved( Scene::Node* node ) {
+	// A child's destruction notification may register its semantic parent. Remove children first
+	// so those lazily registered parents are also invalidated before the ownership change.
+	for ( auto* child = node->getFirstChild(); child; child = child->getNextNode() )
+		onSubtreeRemoved( child );
+	if ( node->isWidget() )
+		onWidgetDelete( node->asType<UIWidget>() );
 }
 
 void AccessibilityManager::invalidateChildren() {

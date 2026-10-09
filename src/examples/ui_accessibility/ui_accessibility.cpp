@@ -11,6 +11,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	bool benchmark = false;
 	bool benchmarkVisible = false;
 	bool benchmarkInactive = false;
+	bool hidden = false;
 	size_t benchmarkItems = 1000;
 	size_t benchmarkIterations = 100000;
 	for ( int i = 1; i < argc; ++i ) {
@@ -19,6 +20,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		benchmark |= std::string_view( argv[i] ) == "--benchmark";
 		benchmarkVisible |= std::string_view( argv[i] ) == "--benchmark-visible";
 		benchmarkInactive |= std::string_view( argv[i] ) == "--benchmark-inactive";
+		hidden |= std::string_view( argv[i] ) == "--hidden";
 		if ( std::string_view( argv[i] ) == "--benchmark-items" && i + 1 < argc )
 			benchmarkItems = std::max<size_t>( 1, std::strtoull( argv[++i], nullptr, 10 ) );
 		if ( std::string_view( argv[i] ) == "--benchmark-iterations" && i + 1 < argc )
@@ -26,12 +28,10 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	}
 	UIApplication::Settings settings;
 	settings.threadPool = ThreadPool::createShared( 1 );
-	UIApplication app(
-		{ 1280, 720, "eepp - Accessibility",
-		  static_cast<Uint32>( ( benchmark && !benchmarkVisible ) || benchmarkInactive
+	const Uint32 windowStyle = hidden || ( benchmark && !benchmarkVisible ) || benchmarkInactive
 								   ? WindowStyle::Default | WindowStyle::Hidden
-								   : WindowStyle::Default ) },
-		settings );
+								   : WindowStyle::Default;
+	UIApplication app( { 1280, 720, "eepp - Accessibility", windowStyle }, settings );
 	multiWindow |= closePrimary;
 	if ( closePrimary )
 		app.setQuitPolicy( UIApplication::QuitPolicy::OnLastWindowClosed );
@@ -151,8 +151,8 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	content->find<UIPushButton>( "toggle-visible" )->onClick( [mutableControl]( auto ) {
 		mutableControl->setVisible( !mutableControl->isVisible() );
 	} );
-	content->find<UIPushButton>( "open-window" )->onClick( [&app]( auto ) {
-		auto* extra = app.createWindow( { 400, 180, "eepp - Accessibility Dynamic" } );
+	content->find<UIPushButton>( "open-window" )->onClick( [&app, windowStyle]( auto ) {
+		auto* extra = app.createWindow( { 400, 180, "eepp - Accessibility Dynamic", windowStyle } );
 		if ( !extra )
 			return;
 		auto* extraContent = extra->loadLayoutFromString( R"xml(
@@ -198,7 +198,8 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	}
 	if ( multiWindow ) {
 		auto* primaryWindow = app.getWindow();
-		auto* secondary = app.createWindow( { 480, 240, "eepp - Accessibility Secondary" } );
+		auto* secondary =
+			app.createWindow( { 480, 240, "eepp - Accessibility Secondary", windowStyle } );
 		if ( secondary ) {
 			auto* secondaryContent = secondary->loadLayoutFromString( R"xml(
 				<vbox lw="mp" lh="mp" padding="16dp">

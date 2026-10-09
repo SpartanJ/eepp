@@ -177,6 +177,10 @@ python3 projects/scripts/benchmark_atspi.py --executable bin/eepp-ui-accessibili
 
 These commands need an active AT-SPI session bus and a usable graphical session.
 
+Pass `--hidden` to `test_atspi.py` to keep all example windows hidden. Add `--multi-window` to
+validate secondary-window closure, or `--close-primary` to validate that the surviving window
+continues responding after the primary window is destroyed.
+
 ### macOS
 
 Use VoiceOver and Accessibility Inspector. The repository's native semantic and lifecycle harness

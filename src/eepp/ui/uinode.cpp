@@ -11,6 +11,7 @@
 #include <eepp/scene/actions/scale.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uihtmlwidget.hpp>
@@ -1799,7 +1800,23 @@ Uint32 UINode::onFocusLoss() {
 }
 
 void UINode::onSceneChange() {
+	const auto* previousManager =
+		mUISceneNode && isWidget()
+			? static_cast<const UISceneNode*>( mUISceneNode )->getAccessibilityManager()
+			: nullptr;
 	Node::onSceneChange();
+	if ( previousManager && mUISceneNode != mSceneNode ) {
+		const auto* nextManager =
+			mSceneNode && mSceneNode->isUISceneNode()
+				? static_cast<const UISceneNode*>( mSceneNode )->getAccessibilityManager()
+				: nullptr;
+		if ( previousManager != nextManager ) {
+			// Rebind descendants first: their removal can resolve (and register) this parent. Erase
+			// its old identity afterwards, before replacing its local scene pointer.
+			const_cast<AccessibilityManager*>( previousManager )
+				->onWidgetDelete( asType<UIWidget>() );
+		}
+	}
 	if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
 		mUISceneNode = static_cast<UISceneNode*>( mSceneNode );
 	}

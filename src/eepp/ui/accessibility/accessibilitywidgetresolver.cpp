@@ -32,7 +32,8 @@ namespace EE { namespace UI {
 namespace {
 
 bool isRoot( const UIWidget* widget ) {
-	return widget->getUISceneNode() && widget == widget->getUISceneNode()->getRoot();
+	return widget->getUISceneNode() && !widget->getUISceneNode()->getParent() &&
+		   widget == widget->getUISceneNode()->getRoot();
 }
 
 bool isComboBoxExpanded( const UIComboBox* widget ) {

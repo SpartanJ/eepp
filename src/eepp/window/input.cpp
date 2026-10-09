@@ -1,3 +1,5 @@
+#include <eepp/window/backend/SDL2/inputsdl2.hpp>
+#include <eepp/window/backend/SDL3/inputsdl3.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 
@@ -29,6 +31,14 @@ Input::Input( EE::Window::Window* window, JoystickManager* joystickmanager ) :
 
 Input::~Input() {
 	eeSAFE_DELETE( mJoystickManager );
+}
+
+void Input::wakeUpEventLoop() {
+#if defined( EE_BACKEND_SDL3 )
+	Backend::SDL3::InputSDL::wakeUpEventLoop();
+#elif defined( EE_BACKEND_SDL2 )
+	Backend::SDL2::InputSDL::wakeUpEventLoop();
+#endif
 }
 
 void Input::beginInputFrame() {

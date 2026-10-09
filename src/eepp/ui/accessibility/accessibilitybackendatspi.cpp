@@ -64,10 +64,10 @@ struct DBusObjectPathVTable {
 
 class DBusLibrary {
   public:
-	using BusGet = DBusConnection* (*)( int, DBusError* );
+	using BusGet = DBusConnection* ( * )( int, DBusError* );
 	using BusRegister = int ( * )( DBusConnection*, DBusError* );
-	using BusGetUniqueName = const char* (*)( DBusConnection* );
-	using ConnectionOpenPrivate = DBusConnection* (*)( const char*, DBusError* );
+	using BusGetUniqueName = const char* ( * )( DBusConnection* );
+	using ConnectionOpenPrivate = DBusConnection* ( * )( const char*, DBusError* );
 	using ConnectionClose = void ( * )( DBusConnection* );
 	using ConnectionUnref = void ( * )( DBusConnection* );
 	using ConnectionReadWrite = int ( * )( DBusConnection*, int );
@@ -78,16 +78,16 @@ class DBusLibrary {
 													const DBusObjectPathVTable*, void* );
 	using ConnectionRegisterFallback = ConnectionRegisterObjectPath;
 	using ConnectionSend = int ( * )( DBusConnection*, DBusMessage*, Uint32* );
-	using ConnectionSendWithReplyAndBlock = DBusMessage* (*)( DBusConnection*, DBusMessage*, int,
-															  DBusError* );
-	using MessageNewMethodCall = DBusMessage* (*)( const char*, const char*, const char*,
-												   const char* );
+	using ConnectionSendWithReplyAndBlock = DBusMessage* ( * )( DBusConnection*, DBusMessage*, int,
+																DBusError* );
+	using MessageNewMethodCall = DBusMessage* ( * )( const char*, const char*, const char*,
+													 const char* );
 	using MessageGetArgs = int ( * )( DBusMessage*, DBusError*, int, ... );
-	using MessageGetString = const char* (*)( DBusMessage* );
+	using MessageGetString = const char* ( * )( DBusMessage* );
 	using MessageGetType = int ( * )( DBusMessage* );
-	using MessageNewMethodReturn = DBusMessage* (*)( DBusMessage* );
-	using MessageNewError = DBusMessage* (*)( DBusMessage*, const char*, const char* );
-	using MessageNewSignal = DBusMessage* (*)( const char*, const char*, const char* );
+	using MessageNewMethodReturn = DBusMessage* ( * )( DBusMessage* );
+	using MessageNewError = DBusMessage* ( * )( DBusMessage*, const char*, const char* );
+	using MessageNewSignal = DBusMessage* ( * )( const char*, const char*, const char* );
 	using MessageIterInitAppend = void ( * )( DBusMessage*, DBusMessageIter* );
 	using MessageIterInit = int ( * )( DBusMessage*, DBusMessageIter* );
 	using MessageIterGetBasic = void ( * )( DBusMessageIter*, void* );
@@ -262,12 +262,9 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		}
 		const Uint64 id = mNextManagerId++;
 		mManagers.emplace_back( id, &manager );
-		if ( !mWakeInput.load( std::memory_order_acquire ) && manager.getSceneNode() &&
-			 manager.getSceneNode()->getWindow() ) {
-			mWakeInput.store( manager.getSceneNode()->getWindow()->getInput(),
-							  std::memory_order_release );
-		}
-		if ( mConnection && hasActiveClients() )
+		// initialize() may still be constructing the connection on the scene's ThreadPool.
+		// Acquire its completion flag before reading any of the published D-Bus state.
+		if ( isAvailable() && hasActiveClients() )
 			mPendingWindowAdds.push_back( &manager );
 		return id;
 	}
@@ -280,7 +277,7 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 			if ( it->second != &manager )
 				continue;
 			const Int32 index = static_cast<Int32>( it - mManagers.begin() );
-			if ( mConnection && hasActiveClients() )
+			if ( isAvailable() && hasActiveClients() )
 				sendWindowChanged( manager, false, index );
 			mManagers.erase( it );
 			break;
@@ -290,11 +287,6 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		if ( mPrimaryManager.load( std::memory_order_acquire ) == &manager ) {
 			auto* primaryManager = mManagers.empty() ? nullptr : mManagers.begin()->second;
 			mPrimaryManager.store( primaryManager, std::memory_order_release );
-			mWakeInput.store( primaryManager && primaryManager->getSceneNode() &&
-									  primaryManager->getSceneNode()->getWindow()
-								  ? primaryManager->getSceneNode()->getWindow()->getInput()
-								  : nullptr,
-							  std::memory_order_release );
 		}
 	}
 
@@ -338,7 +330,7 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 	}
 
 	void onEvent( AccessibilityManager& manager, const AccessibilityPendingEvent& event ) {
-		if ( !mConnection )
+		if ( !isAvailable() || !hasActiveClients() )
 			return;
 		ScopedManager scopedManager( *this, &manager );
 		if ( event.type == AccessibilityEvent::Destroyed && !event.related.isValid() )
@@ -461,7 +453,6 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 
 	AccessibilityManager* mManager{};
 	std::atomic<AccessibilityManager*> mPrimaryManager{};
-	std::atomic<Window::Input*> mWakeInput{};
 	String mName;
 	std::vector<std::pair<Uint64, AccessibilityManager*>> mManagers;
 	std::vector<AccessibilityManager*> mPendingWindowAdds;
@@ -490,12 +481,10 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 			if ( !( descriptors[0].revents & POLLIN ) ||
 				 mDispatchRequested.exchange( true, std::memory_order_acq_rel ) )
 				continue;
-			// UIApplication waits on its first live window. The current query manager can point to
-			// a secondary window, whose input wake-up would not release that wait and would
-			// serialize accessibility requests behind the frame timeout.
-			auto* input = mWakeInput.load( std::memory_order_acquire );
-			if ( input )
-				input->wakeUp();
+			// UIApplication waits on its first live window, not necessarily the queried scene.
+			// SDL windows share the event loop, so wake it without retaining an Input pointer that
+			// the main thread could delete when that window closes.
+			Window::Input::wakeUpEventLoop();
 		}
 	}
 

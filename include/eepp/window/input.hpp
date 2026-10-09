@@ -41,6 +41,9 @@ class EE_API Input {
 	/** Wakes a thread currently blocked in waitEvent(). */
 	virtual void wakeUp() = 0;
 
+	/** Wakes the backend's shared event loop without retaining a window-owned Input object. */
+	static void wakeUpEventLoop();
+
 	/** @return If the mouse and keyboard are grabbed. */
 	virtual bool grabInput() = 0;
 

@@ -1,7 +1,10 @@
 #include "utest.h"
 
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/models/itemlistmodel.hpp>
 #include <eepp/ui/models/stringmapmodel.hpp>
@@ -22,10 +25,239 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitreeview.hpp>
 
+#include <cstdlib>
+#include <future>
+
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
 using namespace EE::Window;
+
+UTEST( Accessibility, DeletingNodeCanRegisterPreviouslyUnqueriedParent ) {
+	UIApplication::Settings settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 );
+	settings.accessibilityPolicy = AccessibilityPolicy::Disabled;
+	UIApplication app( WindowSettings( 320, 240, "Accessibility Lazy Parent Test",
+									   WindowStyle::Default, WindowBackend::Default, 32, {}, 1,
+									   false, true ),
+					   settings );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto* button = UIPushButton::New();
+	button->setParent( app.getUI()->getRoot() );
+	auto ref = manager->getNodeRef( button );
+	ASSERT_TRUE( manager->isValid( ref ) );
+
+	// Only the button was queried. Deletion must tolerate getParent() registering the root
+	// and reallocating the dense identity map before it erases the button.
+	eeDelete( button );
+	EXPECT_FALSE( manager->isValid( ref ) );
+	EXPECT_TRUE( manager->isValid( manager->getRoot() ) );
+}
+
+UTEST( Accessibility, NestedSceneProjectionAndDeletionUseHostManager ) {
+	UIApplication::Settings settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 );
+	settings.accessibilityPolicy = AccessibilityPolicy::Disabled;
+	UIApplication app( WindowSettings( 320, 240, "Accessibility Nested Scene Test",
+									   WindowStyle::Default, WindowBackend::Default, 32, {}, 1,
+									   false, true ),
+					   settings );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto root = manager->getRoot();
+	auto* nested = UISceneNode::New( app.getWindow() );
+	nested->setParent( scene->getRoot() );
+	auto* button = UIPushButton::New();
+	button->setText( "Nested button" );
+	button->setParent( nested->getRoot() );
+	auto buttonRef = manager->getNodeRef( button );
+	ASSERT_TRUE( manager->isValid( buttonRef ) );
+	EXPECT_TRUE( nested->getAccessibilityManager() == manager );
+	EXPECT_EQ( nested->getRoot()->getAccessibilityRole(), AccessibilityRole::None );
+	EXPECT_EQ( manager->getChildCount( root ), 1u );
+	EXPECT_TRUE( manager->getChild( root, 0 ) == buttonRef );
+	EXPECT_TRUE( manager->getParent( buttonRef ) == root );
+	EXPECT_TRUE( manager->getNodeInfo( buttonRef ).name == String( "Nested button" ) );
+	button->setFocus();
+	EXPECT_TRUE( manager->getKeyboardFocusedNode() == buttonRef );
+
+	auto* table = UITableView::New();
+	table->setParent( nested->getRoot() );
+	table->setModel(
+		ItemPairListOwnerModel<std::string, std::string>::create( { { "Name", "Value" } } ) );
+	auto tableRef = manager->getNodeRef( table );
+	auto rowRef = manager->getChild( tableRef, 0 );
+	ASSERT_TRUE( manager->isValid( rowRef ) );
+
+	eeDelete( nested );
+	EXPECT_FALSE( manager->isValid( buttonRef ) );
+	EXPECT_FALSE( manager->isValid( tableRef ) );
+	EXPECT_FALSE( manager->isValid( rowRef ) );
+	EXPECT_EQ( manager->getChildCount( root ), 0u );
+}
+
+UTEST( Accessibility, SceneRebindingInvalidatesWidgetAndModelSubtree ) {
+	UIApplication::Settings settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 );
+	settings.accessibilityPolicy = AccessibilityPolicy::Disabled;
+	UIApplication app( WindowSettings( 320, 240, "Accessibility Scene Rebinding Test",
+									   WindowStyle::Default, WindowBackend::Default, 32, {}, 1,
+									   false, true ),
+					   settings );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* sceneA = app.getUI();
+	auto* sceneB = UISceneNode::New( app.getWindow() );
+	Scene::SceneManager::instance()->add( sceneB );
+	sceneB->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+	auto* managerA = sceneA->getAccessibilityManager();
+	auto* managerB = sceneB->getAccessibilityManager();
+	auto rootA = managerA->getRoot();
+	auto rootB = managerB->getRoot();
+	auto* container = UIWidget::New();
+	container->setAccessibilityRole( AccessibilityRole::Group );
+	container->setParent( sceneA->getRoot() );
+	auto* button = UIPushButton::New();
+	button->setParent( container );
+	auto* table = UITableView::New();
+	table->setParent( container );
+	table->setModel(
+		ItemPairListOwnerModel<std::string, std::string>::create( { { "Name", "Value" } } ) );
+	auto buttonRefA = managerA->getNodeRef( button );
+	auto containerRefA = managerA->getNodeRef( container );
+	auto tableRefA = managerA->getNodeRef( table );
+	auto rowRefA = managerA->getChild( tableRefA, 0 );
+	ASSERT_TRUE( managerA->isValid( rowRefA ) );
+
+	container->setParent( sceneB->getRoot() );
+	EXPECT_FALSE( managerA->isValid( buttonRefA ) );
+	EXPECT_FALSE( managerA->isValid( containerRefA ) );
+	EXPECT_FALSE( managerA->isValid( tableRefA ) );
+	EXPECT_FALSE( managerA->isValid( rowRefA ) );
+	EXPECT_FALSE( managerA->getNodeRef( button ).isValid() );
+	EXPECT_EQ( managerA->getChildCount( rootA ), 0u );
+	auto buttonRefB = managerB->getNodeRef( button );
+	auto containerRefB = managerB->getNodeRef( container );
+	auto tableRefB = managerB->getNodeRef( table );
+	auto rowRefB = managerB->getChild( tableRefB, 0 );
+	EXPECT_TRUE( managerB->isValid( buttonRefB ) );
+	EXPECT_TRUE( managerB->isValid( rowRefB ) );
+	EXPECT_EQ( managerB->getChildCount( rootB ), 1u );
+	EXPECT_TRUE( managerB->getChild( rootB, 0 ) == containerRefB );
+	EXPECT_EQ( managerB->getChildCount( containerRefB ), 2u );
+
+	eeDelete( container );
+	EXPECT_FALSE( managerA->isValid( buttonRefA ) );
+	EXPECT_FALSE( managerA->isValid( rowRefA ) );
+	EXPECT_FALSE( managerB->isValid( buttonRefB ) );
+	EXPECT_FALSE( managerB->isValid( containerRefB ) );
+	EXPECT_FALSE( managerB->isValid( rowRefB ) );
+}
+
+UTEST( Accessibility, NestedSceneRebindingInvalidatesPreviousHost ) {
+	UIApplication::Settings settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 );
+	settings.accessibilityPolicy = AccessibilityPolicy::Disabled;
+	UIApplication app( WindowSettings( 320, 240, "Accessibility Nested Rebinding Test",
+									   WindowStyle::Default, WindowBackend::Default, 32, {}, 1,
+									   false, true ),
+					   settings );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* sceneA = app.getUI();
+	auto* sceneB = UISceneNode::New( app.getWindow() );
+	Scene::SceneManager::instance()->add( sceneB );
+	sceneB->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+	auto* managerA = sceneA->getAccessibilityManager();
+	auto* managerB = sceneB->getAccessibilityManager();
+	auto* nested = UISceneNode::New( app.getWindow() );
+	nested->setParent( sceneA->getRoot() );
+	auto* group = UIWidget::New();
+	group->setAccessibilityRole( AccessibilityRole::Group );
+	group->setParent( nested->getRoot() );
+	auto* button = UIPushButton::New();
+	button->setParent( group );
+	auto refA = managerA->getNodeRef( button );
+	auto groupRefA = managerA->getNodeRef( group );
+	ASSERT_TRUE( managerA->isValid( refA ) );
+
+	// The local UISceneNode remains the same; only its host accessibility owner changes.
+	nested->setParent( sceneB->getRoot() );
+	EXPECT_TRUE( button->getUISceneNode() == nested );
+	EXPECT_TRUE( nested->getAccessibilityManager() == managerB );
+	EXPECT_FALSE( managerA->isValid( refA ) );
+	EXPECT_FALSE( managerA->isValid( groupRefA ) );
+	auto refB = managerB->getNodeRef( button );
+	ASSERT_TRUE( managerB->isValid( refB ) );
+	eeDelete( nested );
+	EXPECT_FALSE( managerB->isValid( refB ) );
+}
+
+UTEST( Accessibility, RebindingWithinHostPreservesIdentity ) {
+	UIApplication::Settings settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 );
+	settings.accessibilityPolicy = AccessibilityPolicy::Disabled;
+	UIApplication app( WindowSettings( 320, 240, "Accessibility Shared Owner Test",
+									   WindowStyle::Default, WindowBackend::Default, 32, {}, 1,
+									   false, true ),
+					   settings );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* nested = UISceneNode::New( app.getWindow() );
+	nested->setParent( scene->getRoot() );
+	auto* button = UIPushButton::New();
+	button->setParent( scene->getRoot() );
+	auto ref = manager->getNodeRef( button );
+	button->setParent( nested->getRoot() );
+	EXPECT_TRUE( manager->isValid( ref ) );
+	EXPECT_TRUE( manager->getNodeRef( button ) == ref );
+	button->setParent( scene->getRoot() );
+	EXPECT_TRUE( manager->getNodeRef( button ) == ref );
+	eeDelete( button );
+	EXPECT_FALSE( manager->isValid( ref ) );
+}
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_FREEBSD
+UTEST( Accessibility, QueuedNativeInitializationOutlivesRemovedWindows ) {
+	if ( std::getenv( "EEPP_DISABLE_ACCESSIBILITY" ) )
+		UTEST_SKIP( "Native accessibility is disabled by the environment" );
+	auto pool = ThreadPool::createShared( 1 );
+	std::promise<void> release;
+	auto ready = release.get_future().share();
+	pool->run( [ready] { ready.wait(); } );
+	{
+		// Keep initialization queued until both window-owned scenes and Inputs are destroyed.
+		// Release the worker even when an assertion returns early from this test.
+		ScopedOp unblock( nullptr, [&release] { release.set_value(); } );
+		UIApplication::Settings settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(),
+										  1 );
+		settings.accessibilityPolicy = AccessibilityPolicy::Enabled;
+		settings.enableSystemFonts = false;
+		settings.threadPool = pool;
+		UIApplication app( WindowSettings( 320, 240, "Accessibility Queued Init Test",
+										   WindowStyle::Default, WindowBackend::Default, 32, {}, 1,
+										   false, true ),
+						   settings );
+		ASSERT_NE( app.getUI(), nullptr );
+		auto* manager = app.getUI()->getAccessibilityManager();
+		manager->update();
+		EXPECT_FALSE( manager->isBackendInitializationComplete() );
+		auto* button = UIPushButton::New();
+		auto ref = manager->getNodeRef( button );
+		manager->notify( ref, AccessibilityEvent::ValueChanged );
+		eeDelete( button );
+		EXPECT_FALSE( manager->isValid( ref ) );
+		auto* secondary = app.createWindow(
+			WindowSettings( 320, 240, "Accessibility Queued Secondary", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ) );
+		ASSERT_NE( secondary, nullptr );
+		secondary->getAccessibilityManager()->update();
+		EXPECT_FALSE( secondary->getAccessibilityManager()->isBackendInitializationComplete() );
+	}
+	std::promise<void> finished;
+	auto completion = finished.get_future();
+	pool->run( [&finished] { finished.set_value(); } );
+	EXPECT_TRUE( completion.wait_for( std::chrono::seconds( 5 ) ) == std::future_status::ready );
+	// Join before destroying the callback's promise, including on a failed timeout assertion.
+	pool.reset();
+}
+#endif
 
 UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	UIApplication app(

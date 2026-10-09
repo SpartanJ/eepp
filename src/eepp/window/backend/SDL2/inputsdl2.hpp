@@ -20,6 +20,8 @@ class EE_API InputSDL : public Input {
 
 	void wakeUp();
 
+	static void wakeUpEventLoop();
+
 	bool grabInput();
 
 	void grabInput( const bool& Grab );
