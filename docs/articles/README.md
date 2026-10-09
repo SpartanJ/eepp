@@ -13,6 +13,7 @@ supported behavior; class headers and current source code remain the reference f
 | Inspect or automate a running UI | [Runtime UI inspector](ui_inspector.md) | [Application UI authoring](ui_authoring.md) for a layout debugging workflow |
 | Bind application data or commands to widgets | [UI data binding](ui_databinding.md) | [Application UI authoring](ui_authoring.md) for screen structure |
 | Make native widgets accessible | [UI accessibility](uiaccessibility.md) | [Application UI authoring](ui_authoring.md) for screen structure |
+| Work on the accessibility implementation | [UI accessibility architecture](uiaccessibilityarchitecture.md) | [UI accessibility](uiaccessibility.md) for the application-facing behavior |
 | Add an interactive chart | [UI charts](ui_charts.md) | [Application UI authoring](ui_authoring.md) for placement and sizing |
 | Work on `eterm` Kitty support | [Keyboard protocol](eterm_kitty_keyboard.md), [graphics protocol](eterm_kitty_graphics.md) | The corresponding `src/modules/eterm/` implementation and tests |
 

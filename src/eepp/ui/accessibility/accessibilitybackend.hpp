@@ -8,6 +8,14 @@ namespace EE { namespace UI {
 
 class AccessibilityManager;
 
+inline bool hasState( AccessibilityState states, AccessibilityState state ) {
+	return ( static_cast<Uint64>( states ) & static_cast<Uint64>( state ) ) != 0;
+}
+
+inline bool hasAction( AccessibilityActions actions, AccessibilityAction action ) {
+	return ( actions & accessibilityActionMask( action ) ) != 0;
+}
+
 class AccessibilityBackend {
   public:
 	virtual ~AccessibilityBackend() = default;

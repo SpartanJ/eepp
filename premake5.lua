@@ -2170,6 +2170,11 @@ workspace "eepp"
 			files { "src/tests/windows_accessibility/*.cpp" }
 			links { "uiautomationcore", "ole32", "oleaut32" }
 			build_link_configuration( "eepp-windows-accessibility-tests", true )
+			-- MinGW: the harness uses wmain, and CLSID_CUIAutomation lives in libuuid.
+			filter "action:gmake*"
+				links { "uuid" }
+				linkoptions { "-municode" }
+			filter {}
 	end
 
 if os.isfile("external_projects.lua") then

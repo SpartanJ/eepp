@@ -1722,6 +1722,13 @@ void UISceneNode::onSizeChange() {
 	SceneNode::onSizeChange();
 
 	mRoot->setPixelsSize( getRootPixelsSize() );
+
+	// Widgets do not report their own bounds changes (clients query bounds on demand). A window
+	// resize is the one layout change worth announcing, once, on the window's root.
+	if ( !mHostUISceneNode && hasActiveAccessibilityClients() ) {
+		if ( auto* manager = getAccessibilityManager() )
+			manager->notify( manager->getRoot(), AccessibilityEvent::BoundsChanged );
+	}
 }
 
 const Sizef& UISceneNode::getRootPixelsSize() const {

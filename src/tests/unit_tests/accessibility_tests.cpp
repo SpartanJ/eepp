@@ -260,6 +260,27 @@ UTEST( Accessibility, CellEditorIsExposedBelowItsVirtualRow ) {
 	EXPECT_TRUE( rowChanged );
 }
 
+UTEST( Accessibility, SceneResizeAnnouncesOneLayoutChange ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* button = UIPushButton::New();
+	button->setParent( scene->getRoot() );
+	manager->onNativeClientObserved();
+	manager->clearPendingEvents();
+	scene->setPixelsSize( scene->getPixelsSize() + Sizef( 16, 16 ) );
+	// Widgets moved by the relayout stay silent; the window root reports the change once.
+	size_t bounds = 0;
+	for ( const auto& event : manager->getPendingEvents() ) {
+		if ( event.type == AccessibilityEvent::BoundsChanged ) {
+			EXPECT_TRUE( event.ref == manager->getRoot() );
+			++bounds;
+		}
+	}
+	EXPECT_EQ( bounds, 1u );
+}
+
 UTEST( Accessibility, RepeatedStateAndStructuralEventsKeepTheirOrder ) {
 	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
 	ASSERT_NE( app.getUI(), nullptr );

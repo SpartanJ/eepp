@@ -13,6 +13,8 @@ The native backends are:
 Other platforms currently use the null backend. Accessibility does not change how widgets are
 rendered and does not require the application to redraw continuously.
 
+To work on the implementation itself, see [UI accessibility architecture](uiaccessibilityarchitecture.md).
+
 ## Enabling accessibility
 
 Native accessibility is enabled by default on supported platforms. Applications using

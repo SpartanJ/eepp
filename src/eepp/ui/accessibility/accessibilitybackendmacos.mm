@@ -42,14 +42,6 @@ static bool isMainThread() {
 	return [NSThread isMainThread];
 }
 
-static bool hasState( AccessibilityState states, AccessibilityState state ) {
-	return ( static_cast<Uint64>( states ) & static_cast<Uint64>( state ) ) != 0;
-}
-
-static bool hasAction( AccessibilityActions actions, AccessibilityAction action ) {
-	return ( actions & accessibilityActionMask( action ) ) != 0;
-}
-
 static double numericValue( const String& value, bool& valid ) {
 	double number = 0;
 	valid = String::fromString( number, value.toUtf8() );
@@ -1889,6 +1881,18 @@ class MacAccessibilityBackend final : public AccessibilityBackend {
 					pending = event;
 					return;
 				}
+			}
+		}
+		// AppKit notifications carry no state: clients re-query the element when they arrive. One
+		// user action can produce several identical events in a frame (setting a text selection
+		// does), so post each such notification at most once per element and update. Created and
+		// Destroyed are structural and keep every occurrence, in order.
+		if ( event.type != AccessibilityEvent::Created &&
+			 event.type != AccessibilityEvent::Destroyed ) {
+			for ( const auto& pending : mPendingEvents ) {
+				if ( pending.type == event.type && pending.ref == event.ref &&
+					 pending.related == event.related )
+					return;
 			}
 		}
 		mPendingEvents.emplace_back( event );
