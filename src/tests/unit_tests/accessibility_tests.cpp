@@ -281,6 +281,27 @@ UTEST( Accessibility, SceneResizeAnnouncesOneLayoutChange ) {
 	EXPECT_EQ( bounds, 1u );
 }
 
+UTEST( Accessibility, UnchangedAccessibilityPropertiesStaySilent ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* button = UIPushButton::New();
+	button->setParent( scene->getRoot() );
+	manager->onNativeClientObserved();
+	button->setAccessibilityLabel( "Save" );
+	button->setAccessibilityDescription( "Saves the item" );
+	button->setAccessibilityHidden( true );
+	button->setAccessibilityRole( AccessibilityRole::Group );
+	manager->clearPendingEvents();
+	// Restyling re-applies the same values; none of them may reach the client again.
+	button->applyProperty( CSS::StyleSheetProperty( "aria-label", "Save" ) );
+	button->applyProperty( CSS::StyleSheetProperty( "aria-description", "Saves the item" ) );
+	button->applyProperty( CSS::StyleSheetProperty( "aria-hidden", "true" ) );
+	button->setAccessibilityRole( AccessibilityRole::Group );
+	EXPECT_EQ( manager->getPendingEvents().size(), 0u );
+}
+
 UTEST( Accessibility, RepeatedStateAndStructuralEventsKeepTheirOrder ) {
 	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
 	ASSERT_NE( app.getUI(), nullptr );

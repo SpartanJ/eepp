@@ -135,9 +135,10 @@ materializing a whole child list.
    view) or drops it (implementation children, detached widgets).
 4. `AccessibilityManager::notify()` invalidates caches, appends the event to the frame's queue and
    hands it to the backend immediately through `AccessibilityBackend::onEvent()`.
-5. The backend emits the native notification, either right away (AT-SPI, UIA) or on the next
-   `update()` (macOS, and AT-SPI text diffs). The manager's queue is cleared at the end of every
-   `AccessibilityManager::update()`.
+5. The backend emits the native notification. AT-SPI emits D-Bus signals right away, except text
+   changes, which are diffed once per frame. UIA and macOS queue the event and raise it from their
+   next `update()`, on the UI thread and outside any widget or model callback. The manager's queue
+   is cleared at the end of every `AccessibilityManager::update()`.
 
 ## Rules the implementation relies on
 
@@ -184,8 +185,14 @@ Widget destruction is where most of the dangerous bugs were.
 sequence that happened. Only adjacent query-again hints (`ModelChanged`, `ChildrenChanged`,
 `BoundsChanged`) with identical arguments are coalesced. Never coalesce state or structural
 events: dropping the second half of add/remove/add or on/off/on leaves clients with stale state.
-Backends that need batching do it themselves (AT-SPI diffs text once per frame, macOS keeps only
-the last focus change).
+Backends that need batching do it themselves, per frame:
+
+- AT-SPI diffs each changed text once.
+- UIA raises one focus change, for the final keyboard focus.
+- macOS keeps only the last focus change, and posts every other non-structural notification at
+  most once per (event, element, related element). AppKit notifications carry no state, so a
+  repeat adds nothing. It uses a hash set beside the ordered queue, so a burst stays linear.
+  `Created` and `Destroyed` are never de-duplicated.
 
 ### 4. Threading
 

@@ -4,7 +4,6 @@
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/math/rect.hpp>
-#include <vector>
 
 namespace EE { namespace UI {
 
@@ -102,8 +101,6 @@ constexpr AccessibilityActions accessibilityActionMask( AccessibilityAction acti
 	return 1u << static_cast<Uint32>( action );
 }
 
-enum class AccessibilityRelation : Uint8 { LabelledBy, DescribedBy, Controls, ControlledBy };
-
 enum class AccessibilityEvent : Uint8 {
 	Created,
 	Destroyed,
@@ -133,11 +130,6 @@ struct AccessibilityNodeRef {
 	bool operator!=( const AccessibilityNodeRef& other ) const { return !( *this == other ); }
 };
 
-struct AccessibilityRelationInfo {
-	AccessibilityRelation relation;
-	AccessibilityNodeRef target;
-};
-
 struct AccessibilityRangeInfo {
 	double minimum{ 0 };
 	double maximum{ 0 };
@@ -164,7 +156,6 @@ struct AccessibilityNodeInfo {
 	AccessibilityTextInfo text;
 	Math::Rectf bounds;
 	bool boundsValid{ false };
-	std::vector<AccessibilityRelationInfo> relations;
 };
 
 struct AccessibilityActionRequest {

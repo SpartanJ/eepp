@@ -79,9 +79,10 @@ void SceneManager::draw( EE::Window::Window* window ) {
 void SceneManager::update( const Time& elapsed ) {
 	// A scene update can create another native window (including through an accessibility action),
 	// which appends to mSceneNodes and may reallocate the vector. Keep the current pass stable and
-	// let newly-created scenes participate in the next update.
+	// let newly-created scenes participate in the next update. A scene removed during the pass
+	// shrinks the vector, so bound by the live size as well.
 	const size_t sceneCount = mSceneNodes.size();
-	for ( size_t i = 0; i < sceneCount; ++i ) {
+	for ( size_t i = 0; i < sceneCount && i < mSceneNodes.size(); ++i ) {
 		auto* sceneNode = mSceneNodes[i];
 		if ( sceneNode->isUISceneNode() ) {
 			auto context = sceneNode->asType<UISceneNode>()->makeCurrent();

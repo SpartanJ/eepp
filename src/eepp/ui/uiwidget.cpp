@@ -195,7 +195,12 @@ bool UIWidget::isAccessibilityHidden() const {
 	return mAccessibilityProperties && mAccessibilityProperties->hidden;
 }
 
+// Setters return early on unchanged values: CSS re-applies these properties on restyle, and a
+// no-op must neither allocate the properties block nor notify clients.
 UIWidget* UIWidget::setAccessibilityRole( AccessibilityRole role ) {
+	if ( mAccessibilityProperties && mAccessibilityProperties->roleSet &&
+		 mAccessibilityProperties->role == role )
+		return this;
 	auto& properties = ensureAccessibilityProperties();
 	properties.role = role;
 	properties.roleSet = true;
@@ -204,18 +209,25 @@ UIWidget* UIWidget::setAccessibilityRole( AccessibilityRole role ) {
 }
 
 UIWidget* UIWidget::setAccessibilityLabel( const String& label ) {
+	if ( mAccessibilityProperties ? mAccessibilityProperties->label == label : label.empty() )
+		return this;
 	ensureAccessibilityProperties().label = label;
 	notifyAccessibilityEvent( AccessibilityEvent::NameChanged );
 	return this;
 }
 
 UIWidget* UIWidget::setAccessibilityDescription( const String& description ) {
+	if ( mAccessibilityProperties ? mAccessibilityProperties->description == description
+								  : description.empty() )
+		return this;
 	ensureAccessibilityProperties().description = description;
 	notifyAccessibilityEvent( AccessibilityEvent::DescriptionChanged );
 	return this;
 }
 
 UIWidget* UIWidget::setAccessibilityHidden( bool hidden ) {
+	if ( isAccessibilityHidden() == hidden )
+		return this;
 	ensureAccessibilityProperties().hidden = hidden;
 	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 	return this;

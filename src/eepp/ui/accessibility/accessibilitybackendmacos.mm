@@ -4,6 +4,7 @@
 #undef BSD
 
 #include "accessibilitybackend.hpp"
+#include <eepp/core/containers.hpp>
 
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -179,15 +180,6 @@ static NSRange textRange( const AccessibilityNodeInfo& info, const String& value
 
 static bool validRange( NSRange range, NSString* string ) {
 	return range.location <= string.length && range.length <= string.length - range.location;
-}
-
-static NSArray* arrayWithObjects( const std::vector<id>& objects ) {
-	NSMutableArray* result = [[NSMutableArray alloc] initWithCapacity:objects.size()];
-	for ( id object : objects ) {
-		if ( object )
-			[result addObject:object];
-	}
-	return EE_OBJC_AUTORELEASE( result );
 }
 
 static void addAccessibilityChild( NSView* view, id child ) {
@@ -967,19 +959,6 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 	return parent.isValid() ? state->indexOfChild( parent, self ) : NSNotFound;
 }
 
-- (NSArray*)accessibilityLinkedUIElements {
-	auto state = [self accessibilityState];
-	if ( !state )
-		return nil;
-	const auto info = state->infoFor( _ref );
-	std::vector<id> related;
-	for ( const auto& relation : info.relations ) {
-		if ( auto element = state->elementFor( relation.target ) )
-			related.emplace_back( element );
-	}
-	return arrayWithObjects( related );
-}
-
 - (BOOL)isAccessibilityProtectedContent {
 	return hasState( [self nodeInfoWithoutValue].states, AccessibilityState::Protected );
 }
@@ -1293,8 +1272,6 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		return self.accessibilityWindow;
 	if ( [attribute isEqualToString:NSAccessibilityTopLevelUIElementAttribute] )
 		return self.accessibilityTopLevelUIElement;
-	if ( [attribute isEqualToString:NSAccessibilityLinkedUIElementsAttribute] )
-		return self.accessibilityLinkedUIElements;
 	if ( [attribute isEqualToString:NSAccessibilityPositionAttribute] )
 		return [NSValue valueWithPoint:self.accessibilityFrame.origin];
 	if ( [attribute isEqualToString:NSAccessibilitySizeAttribute] )
@@ -1375,8 +1352,6 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 	if ( info.role == AccessibilityRole::Row || info.role == AccessibilityRole::ListItem ||
 		 info.role == AccessibilityRole::TreeItem || info.role == AccessibilityRole::Cell )
 		[names addObject:NSAccessibilityIndexAttribute];
-	if ( !info.relations.empty() )
-		[names addObject:NSAccessibilityLinkedUIElementsAttribute];
 	if ( info.range.valid )
 		[names addObjectsFromArray:@[
 			NSAccessibilityMinValueAttribute, NSAccessibilityMaxValueAttribute
@@ -1866,6 +1841,8 @@ class MacAccessibilityBackend final : public AccessibilityBackend {
 		for ( const auto& event : mPendingEvents )
 			MacAccessibilityRegistry::instance().onEvent( mState, event );
 		mPendingEvents.clear();
+		mPendingEventKeys.clear();
+		mPendingFocusIndex = NoPendingFocus;
 		MacAccessibilityRegistry::instance().update();
 	}
 
@@ -1876,24 +1853,20 @@ class MacAccessibilityBackend final : public AccessibilityBackend {
 		// only from the next main-thread scene update. Focus is process-global, so one final-state
 		// notification per update is sufficient even when both the old and new widget report it.
 		if ( event.type == AccessibilityEvent::FocusChanged ) {
-			for ( auto& pending : mPendingEvents ) {
-				if ( pending.type == AccessibilityEvent::FocusChanged ) {
-					pending = event;
-					return;
-				}
+			if ( mPendingFocusIndex != NoPendingFocus ) {
+				mPendingEvents[mPendingFocusIndex] = event;
+				return;
 			}
-		}
-		// AppKit notifications carry no state: clients re-query the element when they arrive. One
-		// user action can produce several identical events in a frame (setting a text selection
-		// does), so post each such notification at most once per element and update. Created and
-		// Destroyed are structural and keep every occurrence, in order.
-		if ( event.type != AccessibilityEvent::Created &&
-			 event.type != AccessibilityEvent::Destroyed ) {
-			for ( const auto& pending : mPendingEvents ) {
-				if ( pending.type == event.type && pending.ref == event.ref &&
-					 pending.related == event.related )
-					return;
-			}
+			mPendingFocusIndex = mPendingEvents.size();
+		} else if ( event.type != AccessibilityEvent::Created &&
+					event.type != AccessibilityEvent::Destroyed ) {
+			// AppKit notifications carry no state: clients re-query the element when they arrive.
+			// One user action can produce several identical events in a frame (setting a text
+			// selection does), so post each such notification at most once per element and
+			// update. Created and Destroyed are structural and keep every occurrence, in order.
+			if ( !mPendingEventKeys.insert( { { event.ref, event.related, event.type }, true } )
+					  .second )
+				return;
 		}
 		mPendingEvents.emplace_back( event );
 	}
@@ -1906,8 +1879,33 @@ class MacAccessibilityBackend final : public AccessibilityBackend {
 	}
 
   private:
+	struct PendingEventKey {
+		AccessibilityNodeRef ref;
+		AccessibilityNodeRef related;
+		AccessibilityEvent type;
+
+		bool operator==( const PendingEventKey& other ) const {
+			return type == other.type && ref == other.ref && related == other.related;
+		}
+	};
+
+	struct PendingEventKeyHash {
+		size_t operator()( const PendingEventKey& key ) const {
+			return hashCombine( std::hash<Uint64>()( key.ref.source ),
+								std::hash<Uint64>()( key.ref.id ),
+								std::hash<Uint64>()( key.related.source ),
+								std::hash<Uint64>()( key.related.id ),
+								static_cast<size_t>( key.type ) );
+		}
+	};
+
+	static constexpr size_t NoPendingFocus = static_cast<size_t>( -1 );
+
 	std::shared_ptr<MacAccessibilityState> mState;
+	// Delivery order lives in mPendingEvents; the key set only answers "already queued?" in O(1).
 	std::vector<AccessibilityPendingEvent> mPendingEvents;
+	UnorderedMap<PendingEventKey, bool, PendingEventKeyHash> mPendingEventKeys;
+	size_t mPendingFocusIndex{ NoPendingFocus };
 };
 
 namespace EE { namespace UI {

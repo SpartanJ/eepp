@@ -129,7 +129,6 @@ class AccessibilityPropertiesModel final : public Model {
 								String::toString( info.bounds.Top ) + ", " +
 								String::toString( info.bounds.Right ) + ", " +
 								String::toString( info.bounds.Bottom ) },
-				{ "Relations", String::toString( static_cast<Uint64>( info.relations.size() ) ) },
 			};
 			if ( info.role != AccessibilityRole::None && info.name.empty() && info.value.empty() )
 				mData.emplace_back( "Warning", "Exposed element has no accessible name or value." );
