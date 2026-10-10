@@ -30,6 +30,11 @@ using namespace EE::UI;
 #define EE_OBJC_AUTORELEASE( object ) [object autorelease]
 #endif
 
+// AppKit has no NSAccessibility names for the menu item command attributes; these are the values
+// of kAXMenuItemCmdCharAttribute and kAXMenuItemCmdModifiersAttribute (HIServices).
+static NSString* const MenuItemCmdCharAttribute = @"AXMenuItemCmdChar";
+static NSString* const MenuItemCmdModifiersAttribute = @"AXMenuItemCmdModifiers";
+
 static NSString* toNSString( const String& string ) {
 	const std::string utf8 = string.toUtf8();
 	return utf8.empty() ? @"" : [NSString stringWithUTF8String:utf8.c_str()];
@@ -1305,13 +1310,13 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		return self.accessibilityLabel;
 	if ( [attribute isEqualToString:NSAccessibilityHelpAttribute] )
 		return self.accessibilityHelp;
-	if ( [attribute isEqualToString:NSAccessibilityMenuItemCmdCharAttribute] ) {
+	if ( [attribute isEqualToString:MenuItemCmdCharAttribute] ) {
 		const auto shortcut = [self nodeInfoWithoutValue].shortcut;
 		if ( String::utf8Length( shortcut.key ) != 1 )
 			return nil;
 		return toNSString( shortcut.key ).uppercaseString;
 	}
-	if ( [attribute isEqualToString:NSAccessibilityMenuItemCmdModifiersAttribute] ) {
+	if ( [attribute isEqualToString:MenuItemCmdModifiersAttribute] ) {
 		const auto modifiers = [self nodeInfoWithoutValue].shortcut.modifiers;
 		// kAXMenuItemModifier*: Shift 1, Option 2, Control 4, NoCommand 8 (Command is implied).
 		NSInteger flags = 0;
@@ -1423,9 +1428,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 	if ( !info.description.empty() )
 		[names addObject:NSAccessibilityHelpAttribute];
 	if ( String::utf8Length( info.shortcut.key ) == 1 )
-		[names addObjectsFromArray:@[
-			NSAccessibilityMenuItemCmdCharAttribute, NSAccessibilityMenuItemCmdModifiersAttribute
-		]];
+		[names addObjectsFromArray:@[ MenuItemCmdCharAttribute, MenuItemCmdModifiersAttribute ]];
 	const bool hasBooleanValue = info.role == AccessibilityRole::CheckBox ||
 								 info.role == AccessibilityRole::RadioButton ||
 								 info.role == AccessibilityRole::CheckMenuItem ||
