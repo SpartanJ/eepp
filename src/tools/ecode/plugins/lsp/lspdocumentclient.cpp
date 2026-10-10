@@ -84,7 +84,9 @@ void LSPDocumentClient::onDocumentTextChanged( const DocumentContentChange& chan
 	++mVersion;
 	// If several change event are being fired, the thread pool can't guaranteed that it will be
 	// executed in FIFO. Se we accumulate the events in a queue and fire them in correct order.
-	mServer->queueAndProcess( mDoc->getURI(), mVersion, { change } );
+	DocumentContentChanges changes;
+	changes.push_back( change );
+	mServer->queueAndProcess( mDoc->getURI(), mVersion, std::move( changes ) );
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
 }

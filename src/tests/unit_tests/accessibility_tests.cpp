@@ -1,27 +1,36 @@
 #include "utest.h"
 
+#include "../../eepp/ui/accessibility/accessibilitybackend.hpp"
+
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
+#include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/models/itemlistmodel.hpp>
+#include <eepp/ui/models/persistentmodelindex.hpp>
 #include <eepp/ui/models/stringmapmodel.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uimenu.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitreeview.hpp>
 
@@ -307,6 +316,8 @@ UTEST( Accessibility, RepeatedStateAndStructuralEventsKeepTheirOrder ) {
 	ASSERT_NE( app.getUI(), nullptr );
 	auto* manager = app.getUI()->getAccessibilityManager();
 	manager->update();
+	// Events are recorded only for a client that can receive them.
+	manager->onNativeClientObserved();
 	auto root = manager->getRoot();
 	auto* checkbox = UICheckBox::New();
 	checkbox->setParent( app.getUI()->getRoot() );
@@ -671,6 +682,8 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	if ( !scene )
 		UTEST_SKIP( "UIApplication initialization failed: a usable graphical display is required" );
 	auto manager = scene->getAccessibilityManager();
+	// Events are recorded only for a client that can receive them.
+	manager->onNativeClientObserved();
 
 	UIWidget* ignoredContainer = UIWidget::New();
 	ignoredContainer->setParent( scene->getRoot() );
@@ -957,9 +970,10 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	}
 	EXPECT_TRUE( removedEventFound );
 
-	manager->clearPendingEvents();
 	button->setAccessibilityLabel( "Save project" );
 	EXPECT_TRUE( manager->getNodeInfo( buttonRef ).name == String( "Save project" ) );
+	// Repeated state notifications are never coalesced.
+	manager->clearPendingEvents();
 	manager->notify( buttonRef, AccessibilityEvent::NameChanged );
 	manager->notify( buttonRef, AccessibilityEvent::NameChanged );
 	EXPECT_EQ( manager->getPendingEvents().size(), 2u );
@@ -1071,4 +1085,1012 @@ UTEST( Accessibility, TableCellsFollowVisibleColumnOrder ) {
 	EXPECT_TRUE( table->moveColumn( 0, 0 ) );
 	EXPECT_TRUE( manager->getChild( rowRef, 0 ) == nameRef );
 	EXPECT_TRUE( manager->getChild( rowRef, 1 ) == valueRef );
+}
+
+UTEST( Accessibility, CodeEditorIsExposedAsEditableText ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* editor = UICodeEditor::New();
+	editor->setParent( scene->getRoot() );
+	editor->getDocument().textInput( "int main" );
+	auto ref = manager->getNodeRef( editor );
+	auto info = manager->getNodeInfo( ref );
+	EXPECT_EQ( info.role, AccessibilityRole::TextBox );
+	EXPECT_TRUE( info.value == String( "int main" ) );
+	EXPECT_TRUE( info.text.valid );
+	EXPECT_TRUE( ( static_cast<Uint64>( info.states ) &
+				   static_cast<Uint64>( AccessibilityState::MultiLine ) ) != 0 );
+	// SetText edits the document in place, so it stays undoable.
+	EXPECT_TRUE( manager->performAction( ref, { AccessibilityAction::SetText, "return 0;" } ) );
+	EXPECT_TRUE( editor->getDocument().getText() == String( "return 0;" ) );
+	EXPECT_TRUE( editor->getDocument().hasUndo() );
+	EXPECT_TRUE( manager->performAction( ref, { AccessibilityAction::SetTextSelection, "0:6" } ) );
+	EXPECT_EQ( manager->getNodeInfo( ref ).text.selectionEnd, 6 );
+
+	manager->onNativeClientObserved();
+	manager->clearPendingEvents();
+	editor->getDocument().textInput( "x" );
+	bool valueChanged = false;
+	for ( const auto& event : manager->getPendingEvents() )
+		valueChanged |= event.ref == ref && event.type == AccessibilityEvent::ValueChanged;
+	EXPECT_TRUE( valueChanged );
+
+	editor->setLocked( true );
+	info = manager->getNodeInfo( ref );
+	EXPECT_TRUE( ( static_cast<Uint64>( info.states ) &
+				   static_cast<Uint64>( AccessibilityState::ReadOnly ) ) != 0 );
+	EXPECT_FALSE( info.actions & accessibilityActionMask( AccessibilityAction::SetText ) );
+}
+
+UTEST( Accessibility, TooltipNamesIconOnlyControls ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* iconButton = UIPushButton::New();
+	iconButton->setParent( scene->getRoot() );
+	iconButton->setTooltipText( "Save" );
+	auto iconRef = manager->getNodeRef( iconButton );
+	EXPECT_TRUE( manager->getNodeInfo( iconRef ).name == String( "Save" ) );
+	EXPECT_TRUE( manager->getNodeInfo( iconRef ).description.empty() );
+
+	auto* textButton = UIPushButton::New();
+	textButton->setParent( scene->getRoot() );
+	textButton->setText( "Build" );
+	textButton->setTooltipText( "Builds the project" );
+	auto textRef = manager->getNodeRef( textButton );
+	EXPECT_TRUE( manager->getNodeInfo( textRef ).name == String( "Build" ) );
+	EXPECT_TRUE( manager->getNodeInfo( textRef ).description == String( "Builds the project" ) );
+
+	manager->onNativeClientObserved();
+	manager->clearPendingEvents();
+	iconButton->setTooltipText( "Save all" );
+	iconButton->setTooltipText( "Save all" );
+	size_t nameChanges = 0;
+	for ( const auto& event : manager->getPendingEvents() )
+		nameChanges += event.ref == iconRef && event.type == AccessibilityEvent::NameChanged;
+	EXPECT_EQ( nameChanges, 1u );
+}
+
+UTEST( Accessibility, LabelledByAndDescribedByResolveFromTheScene ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* label = UITextView::New();
+	label->setParent( scene->getRoot() );
+	label->setId( "user-label" );
+	label->setText( "User name" );
+	auto* hint = UITextView::New();
+	hint->setParent( scene->getRoot() );
+	hint->setId( "user-hint" );
+	hint->setText( "Your login" );
+	auto* input = UITextInput::New();
+	input->setParent( scene->getRoot() );
+	input->applyProperty( CSS::StyleSheetProperty( "aria-labelledby", "user-label" ) );
+	input->applyProperty( CSS::StyleSheetProperty( "aria-describedby", "user-hint" ) );
+	auto ref = manager->getNodeRef( input );
+	EXPECT_TRUE( manager->getNodeInfo( ref ).name == String( "User name" ) );
+	EXPECT_TRUE( manager->getNodeInfo( ref ).description == String( "Your login" ) );
+	// A missing target falls back to the widget's own name.
+	input->setAccessibilityLabelledBy( "missing" );
+	input->setAccessibilityLabel( "Login" );
+	EXPECT_TRUE( manager->getNodeInfo( ref ).name == String( "Login" ) );
+	// Mutual references cannot recurse.
+	label->setAccessibilityLabelledBy( "loop-input" );
+	input->setId( "loop-input" );
+	input->setAccessibilityLabelledBy( "user-label" );
+	EXPECT_TRUE( manager->getNodeInfo( ref ).name == String( "User name" ) );
+}
+
+UTEST( Accessibility, AnnouncementsAndLiveRegionsCoalescePerFrame ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	// Dormant: nothing is queued without a client.
+	scene->announceForAccessibility( "Build finished" );
+	EXPECT_EQ( manager->getPendingAnnouncements().size(), 0u );
+
+	manager->onNativeClientObserved();
+	scene->announceForAccessibility( "Build finished" );
+	scene->announceForAccessibility( "" );
+	scene->announceForAccessibility( "Ignored", AccessibilityLive::Off );
+	ASSERT_EQ( manager->getPendingAnnouncements().size(), 1u );
+	EXPECT_TRUE( manager->getPendingAnnouncements()[0].message == String( "Build finished" ) );
+	manager->clearPendingEvents();
+
+	auto* status = UILinearLayout::NewVertical();
+	status->setParent( scene->getRoot() );
+	status->applyProperty( CSS::StyleSheetProperty( "aria-live", "assertive" ) );
+	auto* text = UITextView::New();
+	text->setParent( status );
+	text->setText( "Indexing 1%" );
+	text->setText( "Indexing 2%" );
+	ASSERT_EQ( manager->getPendingAnnouncements().size(), 1u );
+	EXPECT_TRUE( manager->getPendingAnnouncements()[0].message == String( "Indexing 2%" ) );
+	EXPECT_EQ( manager->getPendingAnnouncements()[0].priority, AccessibilityLive::Assertive );
+
+	// Widgets outside a live region stay silent.
+	manager->clearPendingEvents();
+	auto* plain = UITextView::New();
+	plain->setParent( scene->getRoot() );
+	plain->setText( "Not live" );
+	EXPECT_EQ( manager->getPendingAnnouncements().size(), 0u );
+
+	// Content hidden from accessibility stays silent, whether the hiding is on the changed
+	// widget or on an ancestor of the live region.
+	auto* hiddenText = UITextView::New();
+	hiddenText->setParent( status );
+	hiddenText->applyProperty( CSS::StyleSheetProperty( "aria-hidden", "true" ) );
+	hiddenText->setText( "Hidden detail" );
+	EXPECT_EQ( manager->getPendingAnnouncements().size(), 0u );
+	auto* hiddenHost = UILinearLayout::NewVertical();
+	hiddenHost->setParent( scene->getRoot() );
+	hiddenHost->applyProperty( CSS::StyleSheetProperty( "aria-hidden", "true" ) );
+	status->setParent( hiddenHost );
+	manager->clearPendingEvents();
+	text->setText( "Indexing 3%" );
+	EXPECT_EQ( manager->getPendingAnnouncements().size(), 0u );
+}
+
+UTEST( Accessibility, MenuItemExposesItsShortcut ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* menu = UIPopUpMenu::New();
+	menu->setParent( scene->getRoot() );
+	auto* save = menu->add( "Save", {}, "ctrl+shift+s" );
+	auto* plain = menu->add( "About" );
+	auto info = manager->getNodeInfo( manager->getNodeRef( save ) );
+	EXPECT_FALSE( info.shortcut.empty() );
+	EXPECT_TRUE( String::toLower( info.shortcut.key ) == "s" );
+	EXPECT_EQ( info.shortcut.modifiers,
+			   AccessibilityShortcut::Control | AccessibilityShortcut::Shift );
+	EXPECT_TRUE( manager->getNodeInfo( manager->getNodeRef( plain ) ).shortcut.empty() );
+}
+
+UTEST( Accessibility, ScrollToBringsScrollViewContentIntoView ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* scrollView = UIScrollView::New();
+	scrollView->setParent( scene->getRoot() );
+	scrollView->setPixelsSize( 100, 100 );
+	auto* content = UILinearLayout::NewVertical();
+	content->setParent( scrollView );
+	content->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
+	content->setPixelsSize( 80, 0 );
+	UIPushButton* last = nullptr;
+	for ( int i = 0; i < 20; ++i ) {
+		last = UIPushButton::New();
+		last->setParent( content );
+		last->setText( "Item " + String::toString( i ) );
+		last->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		last->setPixelsSize( 80, 30 );
+	}
+	scene->update( Time::Zero );
+	auto ref = manager->getNodeRef( last );
+	auto info = manager->getNodeInfo( ref );
+	ASSERT_TRUE( info.actions & accessibilityActionMask( AccessibilityAction::ScrollTo ) );
+	const auto viewBounds = scrollView->getWorldBounds();
+	EXPECT_FALSE( viewBounds.contains( last->getWorldBounds() ) );
+	EXPECT_TRUE( manager->performAction( ref, { AccessibilityAction::ScrollTo, {} } ) );
+	EXPECT_GT( scrollView->getVerticalScrollBar()->getValue(), 0.f );
+	const auto bounds = last->getWorldBounds();
+	EXPECT_GE( bounds.Top, viewBounds.Top - 1.f );
+	EXPECT_LE( bounds.Bottom, viewBounds.Bottom + 1.f );
+	// Widgets outside any scroll view do not offer the action.
+	auto* outside = UIPushButton::New();
+	outside->setParent( scene->getRoot() );
+	EXPECT_FALSE( manager->getNodeInfo( manager->getNodeRef( outside ) ).actions &
+				  accessibilityActionMask( AccessibilityAction::ScrollTo ) );
+}
+
+UTEST( Accessibility, AuditReportsUnnamedControlsAndBrokenRelations ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* unnamed = UIPushButton::New();
+	unnamed->setParent( scene->getRoot() );
+	auto* tooltipNamed = UIPushButton::New();
+	tooltipNamed->setParent( scene->getRoot() );
+	tooltipNamed->setTooltipText( "Open" );
+	auto* broken = UITextInput::New();
+	broken->setParent( scene->getRoot() );
+	broken->setAccessibilityLabelledBy( "nowhere" );
+	auto* hidden = UIPushButton::New();
+	hidden->setParent( scene->getRoot() );
+	hidden->setAccessibilityHidden( true );
+
+	auto issues = AccessibilityWidgetResolver::audit( scene->getRoot() );
+	bool unnamedReported = false;
+	bool brokenReported = false;
+	for ( const auto& issue : issues ) {
+		EXPECT_TRUE( issue.widget != tooltipNamed );
+		EXPECT_TRUE( issue.widget != hidden );
+		unnamedReported |= issue.widget == unnamed;
+		brokenReported |= issue.widget == broken;
+	}
+	EXPECT_TRUE( unnamedReported );
+	EXPECT_TRUE( brokenReported );
+}
+
+UTEST( Accessibility, LeafControlsHideTheirImplementationChildren ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* button = UIPushButton::New();
+	button->setParent( scene->getRoot() );
+	button->setText( "Save" );
+	auto buttonRef = manager->getNodeRef( button );
+	// The button's text view is its name, not a child label.
+	EXPECT_EQ( manager->getChildCount( buttonRef ), 0u );
+	EXPECT_TRUE( manager->getNodeInfo( buttonRef ).name == String( "Save" ) );
+
+	auto* menu = UIPopUpMenu::New();
+	menu->setParent( scene->getRoot() );
+	auto* item = menu->add( "Open", {}, "ctrl+o" );
+	auto itemRef = manager->getNodeRef( item );
+	EXPECT_EQ( manager->getChildCount( itemRef ), 0u );
+	EXPECT_FALSE( manager->getNodeInfo( itemRef ).shortcut.empty() );
+
+	// Changing the inner text reports a name change on the button itself.
+	manager->onNativeClientObserved();
+	manager->clearPendingEvents();
+	button->setText( "Save all" );
+	bool buttonRenamed = false;
+	for ( const auto& event : manager->getPendingEvents() ) {
+		EXPECT_TRUE( event.ref == buttonRef || event.type != AccessibilityEvent::NameChanged );
+		buttonRenamed |= event.ref == buttonRef && event.type == AccessibilityEvent::NameChanged;
+	}
+	EXPECT_TRUE( buttonRenamed );
+	EXPECT_TRUE( AccessibilityWidgetResolver::getLeafOwner( button->getTextView() ) == button );
+
+	// Containers still expose their element children.
+	auto* group = UILinearLayout::NewVertical();
+	group->setParent( scene->getRoot() );
+	group->setAccessibilityRole( AccessibilityRole::Group );
+	auto* label = UITextView::New();
+	label->setParent( group );
+	label->setText( "Label" );
+	EXPECT_EQ( manager->getChildCount( manager->getNodeRef( group ) ), 1u );
+}
+
+UTEST( Accessibility, RangedTextQueriesMatchTheDocument ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* editor = UICodeEditor::New();
+	editor->setParent( scene->getRoot() );
+	editor->getDocument().textInput( "first\nsecond\nthird" );
+	auto ref = manager->getNodeRef( editor );
+	const String value = manager->getNodeInfo( ref ).value;
+	ASSERT_EQ( manager->getTextLength( ref ), static_cast<Int32>( value.size() ) );
+	EXPECT_EQ( manager->getTextLength( ref ), 18 );
+	EXPECT_TRUE( manager->getTextRange( ref, 6, 13 ) == String( "second\n" ) );
+	EXPECT_TRUE( manager->getTextRange( ref, 13, 99 ) == String( "third" ) );
+	EXPECT_TRUE( manager->getTextRange( ref, 4, 4 ).empty() );
+	Int32 start = -1;
+	Int32 end = -1;
+	ASSERT_TRUE( manager->getTextLineBounds( ref, 8, start, end ) );
+	EXPECT_EQ( start, 6 );
+	EXPECT_EQ( end, 13 );
+	// The last line's newline is not part of the exposed text.
+	ASSERT_TRUE( manager->getTextLineBounds( ref, 18, start, end ) );
+	EXPECT_EQ( start, 13 );
+	EXPECT_EQ( end, 18 );
+
+	// Revisions change with the text, including wholesale resets, and only then.
+	const auto revision = manager->getTextRevision( ref );
+	EXPECT_TRUE( revision.isValid() );
+	EXPECT_TRUE( manager->getTextRevision( ref ) == revision );
+	editor->getDocument().textInput( "!" );
+	const auto edited = manager->getTextRevision( ref );
+	EXPECT_TRUE( edited != revision );
+	editor->getDocument().reset();
+	EXPECT_TRUE( manager->getTextRevision( ref ) != edited );
+	EXPECT_EQ( manager->getTextLength( ref ), 0 );
+
+	// Password inputs never expose their text.
+	auto* password = UITextInput::New();
+	password->setParent( scene->getRoot() );
+	password->setText( "secret" );
+	password->setMode( UITextInput::TextInputMode::Password );
+	auto passwordRef = manager->getNodeRef( password );
+	EXPECT_EQ( manager->getTextLength( passwordRef ), 0 );
+	EXPECT_TRUE( manager->getTextRange( passwordRef, 0, 6 ).empty() );
+	EXPECT_FALSE( manager->getTextRevision( passwordRef ).isValid() );
+}
+
+UTEST( Accessibility, DocumentRemovalsExposeTheRemovedTextDuringNotification ) {
+	Doc::TextDocument document;
+	document.textInput( "hello world" );
+	struct Seen {
+		String inserted;
+		String removed;
+	};
+	std::vector<Seen> seen;
+	class Recorder : public Doc::TextDocument::Client {
+	  public:
+		Recorder( Doc::TextDocument& document, std::vector<Seen>& seen ) :
+			mDocument( document ), mSeen( seen ) {}
+
+		void onDocumentTextChanged( const Doc::DocumentContentChange& change ) override {
+			// An edit made from a callback is notified while the outer one is still in progress.
+			if ( nestedEdit ) {
+				nestedEdit = false;
+				mDocument.insert( 0, mDocument.endOfDoc(), "!" );
+			}
+			mSeen.push_back( { change.text, mDocument.getNotifiedRemovedText() } );
+		}
+
+		void onDocumentUndoRedo( const Doc::TextDocument::UndoRedo& ) override {}
+
+		void onDocumentCursorChange( const Doc::TextPosition& ) override {}
+
+		void onDocumentSelectionChange( const Doc::TextRange& ) override {}
+
+		void onDocumentLineCountChange( const size_t&, const size_t& ) override {}
+
+		void onDocumentLineChanged( const Int64& ) override {}
+
+		void onDocumentSaved( Doc::TextDocument* ) override {}
+
+		void onDocumentClosed( Doc::TextDocument* ) override {}
+
+		void onDocumentDirtyOnFileSystem( Doc::TextDocument* ) override {}
+
+		void onDocumentMoved( Doc::TextDocument* ) override {}
+
+		void onDocumentReset( Doc::TextDocument* ) override {}
+
+		Type getTextDocumentClientType() override { return Type::Auxiliary; }
+
+		bool nestedEdit{ false };
+
+	  private:
+		Doc::TextDocument& mDocument;
+		std::vector<Seen>& mSeen;
+	} recorder( document, seen );
+	document.registerClient( &recorder );
+	document.remove( 0, { { 0, 5 }, { 0, 11 } } );
+	ASSERT_EQ( seen.size(), 1u );
+	EXPECT_TRUE( seen[0].removed == String( " world" ) );
+	EXPECT_TRUE( seen[0].inserted.empty() );
+	EXPECT_TRUE( document.getText() == String( "hello" ) );
+	// Outside a notification there is nothing to report.
+	EXPECT_TRUE( document.getNotifiedRemovedText().empty() );
+
+	// A nested insertion sees no removed text, and the outer removal sees its own afterwards.
+	seen.clear();
+	recorder.nestedEdit = true;
+	document.remove( 0, { { 0, 0 }, { 0, 2 } } );
+	document.unregisterClient( &recorder );
+	ASSERT_EQ( seen.size(), 2u );
+	EXPECT_TRUE( seen[0].inserted == String( "!" ) );
+	EXPECT_TRUE( seen[0].removed.empty() );
+	EXPECT_TRUE( seen[1].removed == String( "he" ) );
+	EXPECT_TRUE( document.getText() == String( "llo!" ) );
+}
+
+namespace {
+
+/** Records what the manager delivers. While ignoring, it rejects text changes the way a backend
+ * does when it has nothing to report them to. */
+class RecordingBackend : public AccessibilityBackend {
+  public:
+	bool ignoring{ false };
+	std::vector<AccessibilityTextChange> changes;
+	std::vector<String> announcements;
+
+	std::vector<AccessibilityPendingEvent> events;
+	bool active{ true };
+
+	bool isAvailable() const override { return true; }
+
+	bool hasActiveClients() const override { return active; }
+
+	void onEvent( const AccessibilityPendingEvent& event ) override { events.push_back( event ); }
+
+	bool onTextChanged( AccessibilityNodeRef, const AccessibilityTextChange& change ) override {
+		if ( ignoring )
+			return false;
+		changes.push_back( change );
+		return true;
+	}
+
+	void announce( const String& message, AccessibilityLive ) override {
+		announcements.push_back( message );
+	}
+};
+
+bool hasPendingEvent( const AccessibilityManager* manager, AccessibilityNodeRef ref,
+					  AccessibilityEvent event ) {
+	for ( const auto& pending : manager->getPendingEvents() ) {
+		if ( pending.ref == ref && pending.type == event )
+			return true;
+	}
+	return false;
+}
+
+} // namespace
+
+UTEST( Accessibility, IgnoredTextChangesDoNotConsumeTheFrameBudget ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	auto* input = UITextInput::New();
+	input->setParent( scene->getRoot() );
+	input->setText( "eepp" );
+	manager->update();
+	recorder->changes.clear();
+
+	// The ignored replacement includes a whole-text reset; it must not silence later edits.
+	recorder->ignoring = true;
+	input->setText( "replaced" );
+	recorder->ignoring = false;
+	ASSERT_TRUE( recorder->changes.empty() );
+	for ( int i = 0; i < 6; ++i )
+		input->getDocument().textInput( "!" );
+	// The frame still has its full budget: four exact edits, then one whole-text change that
+	// covers the rest of the frame.
+	ASSERT_EQ( recorder->changes.size(), 5u );
+	for ( size_t i = 0; i < 4; ++i ) {
+		EXPECT_EQ( recorder->changes[i].offset, static_cast<Int32>( 8 + i ) );
+		EXPECT_TRUE( recorder->changes[i].inserted == String( "!" ) );
+	}
+	EXPECT_TRUE( recorder->changes[4].isWholeText() );
+
+	// The budget resets every frame.
+	manager->update();
+	recorder->changes.clear();
+	input->getDocument().textInput( "?" );
+	ASSERT_EQ( recorder->changes.size(), 1u );
+	EXPECT_FALSE( recorder->changes[0].isWholeText() );
+}
+
+UTEST( Accessibility, QueuedLiveAnnouncementsAreRevalidatedOnDelivery ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	auto* status = UILinearLayout::NewVertical();
+	status->setParent( scene->getRoot() );
+	status->applyProperty( CSS::StyleSheetProperty( "aria-live", "polite" ) );
+	auto* text = UITextView::New();
+	text->setParent( status );
+	text->setText( "Saved" );
+	manager->update();
+	ASSERT_EQ( recorder->announcements.size(), 1u );
+
+	// Hidden after the change was queued, before delivery.
+	text->setText( "Saving" );
+	status->setAccessibilityHidden( true );
+	manager->update();
+	EXPECT_EQ( recorder->announcements.size(), 1u );
+
+	// Gone before delivery.
+	status->setAccessibilityHidden( false );
+	text->setText( "Saved again" );
+	eeDelete( text );
+	manager->update();
+	EXPECT_EQ( recorder->announcements.size(), 1u );
+}
+
+UTEST( Accessibility, RelationTargetChangesNotifyDependents ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	manager->onNativeClientObserved();
+	auto* label = UITextView::New();
+	label->setParent( scene->getRoot() );
+	label->setId( "name_label" );
+	label->setText( "Name" );
+	auto* hint = UITextView::New();
+	hint->setParent( scene->getRoot() );
+	hint->setId( "name_hint" );
+	hint->setText( "Your full name" );
+	auto* input = UITextInput::New();
+	input->setParent( scene->getRoot() );
+	input->applyProperty( CSS::StyleSheetProperty( "aria-labelledby", "name_label" ) );
+	input->applyProperty( CSS::StyleSheetProperty( "aria-describedby", "name_hint" ) );
+	const auto ref = manager->getNodeRef( input );
+	// A client reads the input, caching its name and description.
+	EXPECT_TRUE( manager->getNodeInfo( ref ).name == String( "Name" ) );
+	manager->clearPendingEvents();
+
+	label->setText( "Full name" );
+	EXPECT_TRUE( hasPendingEvent( manager, ref, AccessibilityEvent::NameChanged ) );
+	EXPECT_FALSE( hasPendingEvent( manager, ref, AccessibilityEvent::DescriptionChanged ) );
+	EXPECT_TRUE( manager->getNodeInfo( ref ).name == String( "Full name" ) );
+	manager->clearPendingEvents();
+
+	hint->setText( "As on your passport" );
+	EXPECT_TRUE( hasPendingEvent( manager, ref, AccessibilityEvent::DescriptionChanged ) );
+	EXPECT_FALSE( hasPendingEvent( manager, ref, AccessibilityEvent::NameChanged ) );
+	manager->clearPendingEvents();
+
+	// Renaming the target's id breaks the relation; removing it does too.
+	label->setId( "other_label" );
+	EXPECT_TRUE( hasPendingEvent( manager, ref, AccessibilityEvent::NameChanged ) );
+	manager->clearPendingEvents();
+	eeDelete( hint );
+	EXPECT_TRUE( hasPendingEvent( manager, ref, AccessibilityEvent::DescriptionChanged ) );
+	manager->clearPendingEvents();
+
+	// Unrelated widgets with ids do not touch the input.
+	auto* other = UITextView::New();
+	other->setParent( scene->getRoot() );
+	other->setId( "unrelated" );
+	other->setText( "Other" );
+	EXPECT_FALSE( hasPendingEvent( manager, ref, AccessibilityEvent::NameChanged ) );
+}
+
+UTEST( Accessibility, SuppressedTextChangesStayWithinTheirWindow ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* secondary = app.createWindow(
+		WindowSettings( 320, 240, "Accessibility Shared Document", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
+	ASSERT_NE( secondary, nullptr );
+	// One document shown in both windows.
+	auto document = std::make_shared<Doc::TextDocument>();
+	document->textInput( "eepp" );
+	UISceneNode* scenes[2] = { app.getUI(), secondary };
+	AccessibilityManager* managers[2]{};
+	RecordingBackend* recorders[2]{};
+	AccessibilityNodeRef refs[2];
+	UICodeEditor* editors[2]{};
+	auto addEditor = [&]( size_t i ) {
+		editors[i] = UICodeEditor::New();
+		editors[i]->setParent( scenes[i]->getRoot() );
+		editors[i]->setDocument( document );
+		refs[i] = managers[i]->getNodeRef( editors[i] );
+	};
+	for ( size_t i = 0; i < 2; ++i ) {
+		managers[i] = scenes[i]->getAccessibilityManager();
+		auto backend = std::make_unique<RecordingBackend>();
+		recorders[i] = backend.get();
+		managers[i]->setBackend( std::move( backend ) );
+		managers[i]->onNativeClientObserved();
+		addEditor( i );
+	}
+	// Node refs are manager-local and each manager allocates its own sequence. Recreate the
+	// editor of the window that is behind until both editors get the same ref, the case where a
+	// shared identity would collide. Ids are never reused, so each retry advances that sequence.
+	for ( int attempt = 0; attempt < 64 && !( refs[0] == refs[1] ); ++attempt ) {
+		const size_t behind = refs[0].id < refs[1].id ? 0 : 1;
+		eeDelete( editors[behind] );
+		addEditor( behind );
+	}
+	ASSERT_TRUE( refs[0] == refs[1] );
+	for ( size_t i = 0; i < 2; ++i ) {
+		managers[i]->update();
+		recorders[i]->changes.clear();
+	}
+
+	// A client replaces the text through the first window, which reports the change itself.
+	managers[0]->setSuppressedTextChanges( refs[0] );
+	EXPECT_TRUE( managers[0]->performAction( refs[0], { AccessibilityAction::SetText, "eepp2" } ) );
+	managers[0]->setSuppressedTextChanges( {} );
+	EXPECT_TRUE( recorders[0]->changes.empty() );
+	// The second window's editor changed too and must say so.
+	ASSERT_EQ( recorders[1]->changes.size(), 2u );
+	EXPECT_TRUE( recorders[1]->changes[0].removed == String( "eepp" ) );
+	EXPECT_TRUE( recorders[1]->changes[1].inserted == String( "eepp2" ) );
+
+	// Suppression ended, and it consumed none of the first window's budget.
+	for ( int i = 0; i < 4; ++i )
+		document->textInput( "!" );
+	EXPECT_EQ( recorders[0]->changes.size(), 4u );
+	for ( const auto& change : recorders[0]->changes )
+		EXPECT_FALSE( change.isWholeText() );
+}
+
+UTEST( Accessibility, ExactRemovalRecordsCarryTheRemovedText ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	auto* editor = UICodeEditor::New();
+	editor->setParent( app.getUI()->getRoot() );
+	auto& document = editor->getDocument();
+	document.textInput( "hello" );
+	auto nextFrame = [&] {
+		manager->update();
+		recorder->changes.clear();
+	};
+	nextFrame();
+
+	document.deleteToPreviousChar();
+	ASSERT_EQ( recorder->changes.size(), 1u );
+	EXPECT_EQ( recorder->changes[0].offset, 4 );
+	EXPECT_TRUE( recorder->changes[0].removed == String( "o" ) );
+	EXPECT_TRUE( recorder->changes[0].inserted.empty() );
+	nextFrame();
+
+	// The quick typing and the deletion form one undo group: undo reinserts "o", then removes
+	// "hello"; redo replays both in the original order.
+	document.undo();
+	ASSERT_EQ( recorder->changes.size(), 2u );
+	EXPECT_TRUE( recorder->changes[0].inserted == String( "o" ) );
+	EXPECT_TRUE( recorder->changes[0].removed.empty() );
+	EXPECT_EQ( recorder->changes[1].offset, 0 );
+	EXPECT_TRUE( recorder->changes[1].removed == String( "hello" ) );
+	EXPECT_TRUE( document.isEmpty() );
+	nextFrame();
+	document.redo();
+	ASSERT_EQ( recorder->changes.size(), 2u );
+	EXPECT_TRUE( recorder->changes[0].inserted == String( "hello" ) );
+	EXPECT_TRUE( recorder->changes[1].removed == String( "o" ) );
+	EXPECT_TRUE( document.getText() == String( "hell" ) );
+	nextFrame();
+
+	// A replacement is a removal followed by an insertion.
+	document.setSelection( { { 0, 0 }, { 0, 4 } } );
+	document.textInput( "J" );
+	ASSERT_EQ( recorder->changes.size(), 2u );
+	EXPECT_TRUE( recorder->changes[0].removed == String( "hell" ) );
+	EXPECT_TRUE( recorder->changes[1].inserted == String( "J" ) );
+	EXPECT_TRUE( document.getText() == String( "J" ) );
+}
+
+namespace {
+
+/** Reads the node back from inside each name and description notification, the way a synchronous
+ * native observer would. */
+class ObservingBackend : public AccessibilityBackend {
+  public:
+	explicit ObservingBackend( AccessibilityManager& manager ) : mManager( manager ) {}
+
+	std::vector<std::pair<AccessibilityEvent, String>> observed;
+
+	bool isAvailable() const override { return true; }
+
+	bool hasActiveClients() const override { return true; }
+
+	void onEvent( const AccessibilityPendingEvent& event ) override {
+		if ( event.type == AccessibilityEvent::NameChanged )
+			observed.emplace_back( event.type, mManager.getNodeInfo( event.ref ).name );
+		else if ( event.type == AccessibilityEvent::DescriptionChanged )
+			observed.emplace_back( event.type, mManager.getNodeInfo( event.ref ).description );
+	}
+
+  private:
+	AccessibilityManager& mManager;
+};
+
+} // namespace
+
+UTEST( Accessibility, IdChangesNotifyOnlyRememberedRelationTargets ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto backend = std::make_unique<ObservingBackend>( *manager );
+	auto* observer = backend.get();
+	manager->setBackend( std::move( backend ) );
+	scene->update( Time::Zero );
+	ASSERT_TRUE( scene->hasActiveAccessibilityClients() );
+	// Ids longer than any small-string buffer.
+	const std::string labelId( "field_label_" + std::string( 64, 'l' ) );
+	const std::string hintId( "field_hint_" + std::string( 64, 'h' ) );
+	const std::string movedId( "moved_" + std::string( 64, 'm' ) );
+	const std::string unrelatedId( "unrelated_" + std::string( 64, 'u' ) );
+	auto* label = UITextView::New();
+	label->setParent( scene->getRoot() );
+	label->setId( labelId );
+	label->setText( "Name" );
+	auto* hint = UITextView::New();
+	hint->setParent( scene->getRoot() );
+	hint->setId( hintId );
+	hint->setText( "Hint" );
+	auto* unrelated = UIWidget::New();
+	unrelated->setParent( scene->getRoot() );
+	unrelated->setId( unrelatedId );
+	auto* input = UITextInput::New();
+	input->setParent( scene->getRoot() );
+	input->setAccessibilityLabelledBy( labelId );
+	input->setAccessibilityDescribedBy( hintId );
+	const auto ref = manager->getNodeRef( input );
+	const auto info = manager->getNodeInfo( ref );
+	EXPECT_TRUE( info.name == String( "Name" ) );
+	EXPECT_TRUE( info.description == String( "Hint" ) );
+	EXPECT_TRUE( manager->isRelationTarget( String::hash( labelId ) ) );
+	EXPECT_TRUE( manager->isRelationTarget( String::hash( hintId ) ) );
+	EXPECT_FALSE( manager->isRelationTarget( String::hash( unrelatedId ) ) );
+	observer->observed.clear();
+
+	// An unreferenced long id changes without notifying anyone.
+	unrelated->setId( unrelatedId + "_renamed" );
+	unrelated->setId( unrelatedId );
+	EXPECT_TRUE( observer->observed.empty() );
+
+	// The observer reads the relation after the rename, not before it.
+	label->setId( movedId );
+	ASSERT_EQ( observer->observed.size(), 1u );
+	EXPECT_EQ( observer->observed[0].first, AccessibilityEvent::NameChanged );
+	EXPECT_FALSE( observer->observed[0].second == String( "Name" ) );
+	EXPECT_TRUE( observer->observed[0].second == manager->getNodeInfo( ref ).name );
+	observer->observed.clear();
+
+	// A missing target becoming available again renames the input through the new id.
+	label->setId( labelId );
+	ASSERT_EQ( observer->observed.size(), 1u );
+	EXPECT_EQ( observer->observed[0].first, AccessibilityEvent::NameChanged );
+	EXPECT_TRUE( observer->observed[0].second == String( "Name" ) );
+	observer->observed.clear();
+
+	hint->setId( movedId );
+	ASSERT_EQ( observer->observed.size(), 1u );
+	EXPECT_EQ( observer->observed[0].first, AccessibilityEvent::DescriptionChanged );
+	EXPECT_FALSE( observer->observed[0].second == String( "Hint" ) );
+	observer->observed.clear();
+	hint->setId( hintId );
+	ASSERT_EQ( observer->observed.size(), 1u );
+	EXPECT_TRUE( observer->observed[0].second == String( "Hint" ) );
+}
+
+UTEST( Accessibility, RootOnlyDeletionStillNotifiesRelationDependents ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* root = scene->getRoot();
+	auto* label = UITextView::New();
+	label->setParent( root );
+	label->setId( "root_label" );
+	label->setText( "Window name" );
+	auto* hint = UITextView::New();
+	hint->setParent( root );
+	hint->setId( "root_hint" );
+	hint->setText( "Window hint" );
+	root->setAccessibilityLabelledBy( "root_label" );
+	root->setAccessibilityDescribedBy( "root_hint" );
+	auto* manager = scene->getAccessibilityManager();
+	manager->onNativeClientObserved();
+	// The client reads only the root: it is the single widget with an identity.
+	const auto ref = manager->getNodeRef( root );
+	EXPECT_TRUE( manager->getNodeInfo( ref ).name == String( "Window name" ) );
+	manager->clearPendingEvents();
+
+	eeDelete( label );
+	EXPECT_TRUE( hasPendingEvent( manager, ref, AccessibilityEvent::NameChanged ) );
+	manager->clearPendingEvents();
+	eeDelete( hint );
+	EXPECT_TRUE( hasPendingEvent( manager, ref, AccessibilityEvent::DescriptionChanged ) );
+}
+
+UTEST( Accessibility, SceneLifecycleNeverCreatesAManager ) {
+	auto hasManager = []( const UISceneNode* scene ) {
+		return scene->getAccessibilityManager() != nullptr;
+	};
+	for ( auto policy : { AccessibilityPolicy::Disabled, AccessibilityPolicy::Auto } ) {
+		auto settings = accessibilityTestSettings();
+		settings.accessibilityPolicy = policy;
+		UIApplication app( accessibilityTestWindow(), settings );
+		ASSERT_NE( app.getUI(), nullptr );
+		auto* host = app.getUI();
+		auto* secondHost = app.createWindow( accessibilityTestWindow() );
+		ASSERT_NE( secondHost, nullptr );
+		// Neither host has been updated yet, so neither has a manager.
+		ASSERT_FALSE( hasManager( host ) );
+		ASSERT_FALSE( hasManager( secondHost ) );
+
+		// Two nesting levels, populated, moved to another host and destroyed.
+		auto* nested = UISceneNode::New( app.getWindow() );
+		nested->setParent( host->getRoot() );
+		auto* inner = UISceneNode::New( app.getWindow() );
+		inner->setParent( nested->getRoot() );
+		for ( auto* scene : { nested, inner } ) {
+			auto* widget = UIWidget::New();
+			widget->setParent( scene->getRoot() );
+			eeDelete( widget );
+			UIPushButton::New()->setParent( scene->getRoot() );
+		}
+		EXPECT_FALSE( hasManager( host ) );
+		nested->setParent( secondHost->getRoot() );
+		EXPECT_FALSE( hasManager( host ) );
+		EXPECT_FALSE( hasManager( secondHost ) );
+		eeDelete( inner );
+		eeDelete( nested );
+		EXPECT_FALSE( hasManager( host ) );
+		EXPECT_FALSE( hasManager( secondHost ) );
+
+		// A Disabled host never gets one, not even from its own updates.
+		host->update( Time::Zero );
+		EXPECT_EQ( hasManager( host ), policy != AccessibilityPolicy::Disabled );
+	}
+}
+
+UTEST( Accessibility, DisconnectedClientsOnlyInvalidateOnRemoval ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	scene->update( Time::Zero );
+	ASSERT_TRUE( scene->hasActiveAccessibilityClients() );
+	auto* group = UIWidget::New();
+	group->setParent( scene->getRoot() );
+	auto* button = UIPushButton::New();
+	button->setParent( group );
+	auto* edited = UIPushButton::New();
+	edited->setParent( group );
+	// The client knows the buttons, not their parent.
+	const auto buttonRef = manager->getNodeRef( button );
+	const auto editedRef = manager->getNodeRef( edited );
+
+	recorder->active = false;
+	scene->update( Time::Zero );
+	ASSERT_FALSE( scene->hasActiveAccessibilityClients() );
+	recorder->events.clear();
+	eeDelete( button );
+	manager->onSubtreeRemoved( edited );
+	// Identities are gone and the backend detached their wrappers...
+	EXPECT_FALSE( manager->isValid( buttonRef ) );
+	EXPECT_FALSE( manager->isValid( editedRef ) );
+	ASSERT_EQ( recorder->events.size(), 2u );
+	for ( const auto& event : recorder->events ) {
+		EXPECT_EQ( event.type, AccessibilityEvent::Destroyed );
+		EXPECT_FALSE( event.related.isValid() );
+	}
+	// ...but nothing was queued for a client, and the parent was not resolved to announce it.
+	EXPECT_TRUE( manager->getPendingEvents().empty() );
+
+	// A reconnecting client starts from a consistent tree.
+	recorder->active = true;
+	scene->update( Time::Zero );
+	const auto groupRef = manager->getNodeRef( group );
+	ASSERT_EQ( manager->getChildCount( groupRef ), 1u );
+	EXPECT_TRUE( manager->getChild( groupRef, 0 ) == manager->getNodeRef( edited ) );
+	EXPECT_FALSE( manager->getNodeRef( edited ) == editedRef );
+}
+
+UTEST( Accessibility, SpinBoxExposesOnlyItselfWithoutHidingItsInput ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* spin = UISpinBox::New();
+	spin->setParent( scene->getRoot() );
+	spin->setPixelsSize( 120, 32 );
+	spin->setMinValue( 0 );
+	spin->setMaxValue( 10 );
+	spin->setValue( 4 );
+	spin->setAccessibilityLabel( "Copies" );
+	scene->update( Time::Zero );
+	// The leaf role hides the input; it needs no accessibility metadata of its own.
+	EXPECT_FALSE( spin->getTextInput()->isAccessibilityHidden() );
+	const auto ref = manager->getNodeRef( spin );
+	const auto info = manager->getNodeInfo( ref );
+	EXPECT_EQ( info.role, AccessibilityRole::SpinButton );
+	EXPECT_TRUE( info.name == String( "Copies" ) );
+	EXPECT_TRUE( info.range.valid );
+	EXPECT_EQ( info.range.maximum, 10. );
+	EXPECT_EQ( std::stod( info.value.toUtf8() ), 4. );
+	EXPECT_EQ( manager->getChildCount( ref ), 0u );
+	EXPECT_TRUE( manager->hitTest( spin->getTextInput()->getWorldBounds().getCenter() ) == ref );
+	spin->getTextInput()->setFocus();
+	EXPECT_TRUE( manager->getKeyboardFocusedNode() == ref );
+}
+
+UTEST( Accessibility, AriaPropertiesSurviveUntilAClientAttaches ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	// Ids longer than the inline string capacity.
+	const std::string labelId( "accessibility-relation-label-with-a-long-identifier" );
+	const std::string hintId( "accessibility-relation-hint-with-a-long-identifier" );
+	auto* label = UITextView::New();
+	label->setParent( scene->getRoot() );
+	label->setId( labelId );
+	label->setText( "Destination" );
+	auto* hint = UITextView::New();
+	hint->setParent( scene->getRoot() );
+	hint->setId( hintId );
+	hint->setText( "Where files are copied" );
+	auto* input = UITextInput::New();
+	input->setParent( scene->getRoot() );
+	auto* status = UITextView::New();
+	status->setParent( scene->getRoot() );
+	auto* button = UIPushButton::New();
+	button->setParent( scene->getRoot() );
+
+	// Set while no client exists.
+	input->applyProperty( CSS::StyleSheetProperty( "aria-labelledby", labelId ) );
+	input->applyProperty( CSS::StyleSheetProperty( "aria-describedby", hintId ) );
+	status->applyProperty( CSS::StyleSheetProperty( "aria-live", "ASSERTIVE" ) );
+	button->applyProperty( CSS::StyleSheetProperty( "aria-label", "@string(copy_now, Copy now)" ) );
+	EXPECT_TRUE( input->getAccessibilityLabelledBy() == labelId );
+	EXPECT_EQ( status->getAccessibilityLive(), AccessibilityLive::Assertive );
+	status->applyProperty( CSS::StyleSheetProperty( "aria-live", "Polite" ) );
+	EXPECT_EQ( status->getAccessibilityLive(), AccessibilityLive::Polite );
+
+	// A client attaching later reads all of it.
+	manager->onNativeClientObserved();
+	auto info = manager->getNodeInfo( manager->getNodeRef( input ) );
+	EXPECT_TRUE( info.name == String( "Destination" ) );
+	EXPECT_TRUE( info.description == String( "Where files are copied" ) );
+	EXPECT_TRUE( manager->getNodeInfo( manager->getNodeRef( button ) ).name ==
+				 String( "Copy now" ) );
+
+	// Reapplying unchanged values reports nothing.
+	manager->clearPendingEvents();
+	input->applyProperty( CSS::StyleSheetProperty( "aria-labelledby", labelId ) );
+	input->applyProperty( CSS::StyleSheetProperty( "aria-describedby", hintId ) );
+	button->applyProperty( CSS::StyleSheetProperty( "aria-label", "@string(copy_now, Copy now)" ) );
+	status->applyProperty( CSS::StyleSheetProperty( "aria-live", "polite" ) );
+	EXPECT_TRUE( manager->getPendingEvents().empty() );
+
+	// Resetting to empty removes the metadata.
+	input->applyProperty( CSS::StyleSheetProperty( "aria-labelledby", "" ) );
+	button->applyProperty( CSS::StyleSheetProperty( "aria-label", "" ) );
+	status->applyProperty( CSS::StyleSheetProperty( "aria-live", "off" ) );
+	EXPECT_TRUE( input->getAccessibilityLabelledBy().empty() );
+	EXPECT_EQ( status->getAccessibilityLive(), AccessibilityLive::Off );
+	EXPECT_TRUE( manager->getNodeInfo( manager->getNodeRef( button ) ).name.empty() );
+}
+
+UTEST( Accessibility, DisconnectReleasesQueriedRowsAndReconnectsFresh ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	scene->update( Time::Zero );
+	auto model = std::make_shared<AccessibilityRowsModel>( 6 );
+	auto* list = UIListView::New();
+	list->setParent( scene->getRoot() );
+	list->setModel( model );
+	const auto listRef = manager->getNodeRef( list );
+	ASSERT_EQ( manager->getChildCount( listRef ), 6u );
+	for ( size_t row = 0; row < 6; ++row )
+		manager->getChild( listRef, row );
+	const auto staleRow = manager->getChild( listRef, 3 );
+	ASSERT_TRUE( manager->isValid( staleRow ) );
+	// A registration made outside accessibility, sharing row 3's handle.
+	Models::PersistentModelIndex probe( model->index( 3 ) );
+	EXPECT_EQ( model->persistentCount(), 6u );
+
+	recorder->active = false;
+	scene->update( Time::Zero );
+	// The client's rows are gone and their handles released; the probe's survives.
+	EXPECT_FALSE( manager->isValid( staleRow ) );
+	EXPECT_EQ( model->persistentCount(), 1u );
+	model->insertAt( 0, 5 );
+	EXPECT_EQ( probe.row(), 4 );
+
+	recorder->active = true;
+	scene->update( Time::Zero );
+	ASSERT_EQ( manager->getChildCount( listRef ), 7u );
+	const auto freshRow = manager->getChild( listRef, 4 );
+	EXPECT_TRUE( manager->isValid( freshRow ) );
+	EXPECT_FALSE( freshRow == staleRow );
+	EXPECT_TRUE( manager->getNodeInfo( freshRow ).name == String( "40" ) );
+	EXPECT_FALSE( manager->isValid( staleRow ) );
 }

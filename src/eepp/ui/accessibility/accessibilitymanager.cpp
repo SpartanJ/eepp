@@ -5,14 +5,25 @@
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/accessibility/accessibilitysource.hpp>
 #include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
+#include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
+#include <algorithm>
 #include <cstdlib>
 
 namespace EE { namespace UI {
 
 namespace {
+
+/** Depth-first walk; `visitor` returns false to skip a node's children. */
+template <typename NodeType, typename Visitor>
+void visitNodes( NodeType* node, const Visitor& visitor ) {
+	if ( !visitor( node ) )
+		return;
+	for ( auto* child = node->getFirstChild(); child; child = child->getNextNode() )
+		visitNodes( static_cast<NodeType*>( child ), visitor );
+}
 
 bool isModelViewImplementationChild( const Node* node ) {
 	return AccessibilityWidgetResolver::getOwningModelView( node ) != nullptr;
@@ -191,8 +202,14 @@ AccessibilityNodeInfo AccessibilityManager::getNodeInfo( AccessibilityNodeRef re
 	AccessibilityNodeInfo info;
 	if ( auto widget = resolve( ref ) ) {
 		info.role = widget->getAccessibilityRole();
+		// A client now holds a name or description that depends on another widget.
+		if ( !widget->getAccessibilityLabelledBy().empty() )
+			mRelationTargets.insert( String::hash( widget->getAccessibilityLabelledBy() ) );
+		if ( !widget->getAccessibilityDescribedBy().empty() )
+			mRelationTargets.insert( String::hash( widget->getAccessibilityDescribedBy() ) );
 		info.name = widget->getAccessibilityName();
 		info.description = widget->getAccessibilityDescription();
+		info.shortcut = AccessibilityWidgetResolver::getShortcut( widget );
 		if ( includeValue )
 			info.value = widget->getAccessibilityValue();
 		info.range = widget->getAccessibilityRange();
@@ -238,6 +255,71 @@ AccessibilityTextInfo AccessibilityManager::getTextInfo( AccessibilityNodeRef re
 	if ( auto* widget = resolve( ref ) )
 		return AccessibilityWidgetResolver::getText( widget );
 	return {};
+}
+
+Int32 AccessibilityManager::getTextLength( AccessibilityNodeRef ref ) const {
+	auto* widget = resolve( ref );
+	return widget ? AccessibilityWidgetResolver::getTextLength( widget ) : 0;
+}
+
+String AccessibilityManager::getTextRange( AccessibilityNodeRef ref, Int32 start,
+										   Int32 end ) const {
+	auto* widget = resolve( ref );
+	return widget ? AccessibilityWidgetResolver::getTextRange( widget, start, end ) : String();
+}
+
+bool AccessibilityManager::getTextLineBounds( AccessibilityNodeRef ref, Int32 offset, Int32& start,
+											  Int32& end ) const {
+	auto* widget = resolve( ref );
+	return widget && AccessibilityWidgetResolver::getTextLineBounds( widget, offset, start, end );
+}
+
+AccessibilityTextRevision AccessibilityManager::getTextRevision( AccessibilityNodeRef ref ) const {
+	auto* widget = resolve( ref );
+	return widget ? AccessibilityWidgetResolver::getTextRevision( widget )
+				  : AccessibilityTextRevision{};
+}
+
+void AccessibilityManager::onTextChanged( UIWidget* widget,
+										  const Doc::DocumentContentChange* change ) {
+	if ( !mBackend || !mScene || !mScene->hasActiveAccessibilityClients() || !widget ||
+		 !widget->isAccessibilityElement() ||
+		 AccessibilityWidgetResolver::getEventTarget( widget, AccessibilityEvent::ValueChanged ) !=
+			 widget )
+		return;
+	const auto* document = AccessibilityWidgetResolver::getTextDocument( widget );
+	if ( !document )
+		return;
+	const auto ref = getNodeRef( widget );
+	if ( ref == mSuppressedTextRef )
+		return;
+	auto counter = std::find_if( mTextChangeCounts.begin(), mTextChangeCounts.end(),
+								 [&ref]( const auto& entry ) { return entry.first == ref; } );
+	if ( counter == mTextChangeCounts.end() ) {
+		mTextChangeCounts.emplace_back( ref, 0 );
+		counter = mTextChangeCounts.end() - 1;
+	}
+	// Once this frame's edits collapsed into a whole-text change, that change covers the rest.
+	if ( counter->second > MaxExactTextChangesPerFrame )
+		return;
+	const auto previousCount = counter->second;
+	AccessibilityTextChange textChange;
+	if ( change && ++counter->second <= MaxExactTextChangesPerFrame ) {
+		textChange.offset = AccessibilityWidgetResolver::getTextOffset(
+			*document, change->range.normalized().start() );
+		textChange.removed = document->getNotifiedRemovedText();
+		textChange.inserted = change->text;
+	} else {
+		counter->second = MaxExactTextChangesPerFrame + 1;
+	}
+	// An ignored change (no client listening, for example) must not consume the budget, or
+	// later edits would be dropped while nothing covers them.
+	if ( !mBackend->onTextChanged( ref, textChange ) )
+		counter->second = previousCount;
+}
+
+void AccessibilityManager::setSuppressedTextChanges( AccessibilityNodeRef ref ) {
+	mSuppressedTextRef = ref;
 }
 
 Int32 AccessibilityManager::getIndexInParent( AccessibilityNodeRef ref ) {
@@ -318,6 +400,8 @@ AccessibilityManager::getChildren( AccessibilityNodeRef ref ) {
 			cache.children.emplace_back( source->getRootChild( i ) );
 		return cache.children;
 	}
+	if ( AccessibilityWidgetResolver::isLeafRole( widget->getAccessibilityRole() ) )
+		return cache.children;
 	cache.children.reserve( countSemanticChildren( widget ) );
 	collectSemanticChildren( widget, cache.children, *this );
 	return cache.children;
@@ -374,7 +458,19 @@ bool AccessibilityManager::hasActiveNativeClients() const {
 
 void AccessibilityManager::onNativeClientObserved() {
 	if ( mScene )
-		mScene->mAccessibilityState |= UISceneNode::AccessibilityClientActive;
+		mScene->setAccessibilityClientActive( true );
+}
+
+void AccessibilityManager::onClientsDisconnected() {
+	// Queried rows hold persistent model registrations, which the model updates on every row
+	// insert, delete and move. Without a client nothing reads them.
+	for ( auto& source : mSources ) {
+		if ( mBackend )
+			mBackend->onSourceInvalidated( source.first );
+		source.second->reset();
+	}
+	mRelationTargets.clear();
+	invalidateChildren();
 }
 
 void AccessibilityManager::update() {
@@ -385,10 +481,27 @@ void AccessibilityManager::update() {
 		mBackend =
 			disabled ? createNullAccessibilityBackend() : createAccessibilityBackend( *this );
 	}
+	mTextChangeCounts.clear();
 	if ( mBackend ) {
 		mBackend->update();
 		mPendingEvents.clear();
+		// Announcements follow the frame's events, so focus and state reach the client first.
+		for ( const auto& announcement : mPendingAnnouncements ) {
+			// A live region may have been hidden or removed since its change was queued.
+			if ( announcement.source.isValid() ) {
+				const auto* source = resolve( announcement.source );
+				if ( !source || !source->hasVisibility() ||
+					 AccessibilityWidgetResolver::isHiddenFromAccessibility( source ) )
+					continue;
+			}
+			mBackend->announce( announcement.message, announcement.priority );
+		}
 	}
+	mPendingAnnouncements.clear();
+}
+
+void AccessibilityManager::setBackend( std::unique_ptr<AccessibilityBackend> backend ) {
+	mBackend = std::move( backend );
 }
 
 UISceneNode* AccessibilityManager::getSceneNode() const {
@@ -424,6 +537,14 @@ void AccessibilityManager::notify( AccessibilityNodeRef ref, AccessibilityEvent 
 			}
 		}
 	}
+	// Without a client nothing can be delivered: queueing would only grow the vector until the
+	// next update() discards it. Identity invalidation (Destroyed without a related node) still
+	// reaches the backend, which detaches native wrappers and per-node state on it.
+	if ( !hasActiveClients() ) {
+		if ( mBackend && event == AccessibilityEvent::Destroyed && !related.isValid() )
+			mBackend->onEvent( { ref, related, index, event } );
+		return;
+	}
 	// Only adjacent query-again hints may be coalesced. They carry no historical state; source
 	// invalidation above must still run for every mutation. State transitions and structural
 	// sequences such as add/remove/add must always retain their original dispatch order.
@@ -446,10 +567,98 @@ const std::vector<AccessibilityPendingEvent>& AccessibilityManager::getPendingEv
 
 void AccessibilityManager::clearPendingEvents() {
 	mPendingEvents.clear();
+	mPendingAnnouncements.clear();
+}
+
+void AccessibilityManager::announce( const String& message, AccessibilityLive priority ) {
+	if ( message.empty() || priority == AccessibilityLive::Off || !mScene ||
+		 !mScene->hasActiveAccessibilityClients() )
+		return;
+	mPendingAnnouncements.push_back( { message, priority, {} } );
+}
+
+void AccessibilityManager::onLiveRegionChanged( UIWidget* widget, AccessibilityLive priority ) {
+	if ( !widget || priority == AccessibilityLive::Off || !widget->hasVisibility() )
+		return;
+	String message = widget->getAccessibilityValue();
+	if ( message.empty() )
+		message = widget->getAccessibilityName();
+	const auto ref = getNodeRef( widget );
+	auto pending = std::find_if( mPendingAnnouncements.begin(), mPendingAnnouncements.end(),
+								 [&ref]( const auto& item ) { return item.source == ref; } );
+	if ( pending != mPendingAnnouncements.end() ) {
+		if ( message.empty() ) {
+			mPendingAnnouncements.erase( pending );
+		} else {
+			pending->message = std::move( message );
+			pending->priority = priority;
+		}
+	} else if ( !message.empty() ) {
+		mPendingAnnouncements.push_back( { std::move( message ), priority, ref } );
+	}
+}
+
+const std::vector<AccessibilityAnnouncement>&
+AccessibilityManager::getPendingAnnouncements() const {
+	return mPendingAnnouncements;
+}
+
+bool AccessibilityManager::isRelationTarget( String::HashType idHash ) const {
+	return !mRelationTargets.empty() && mScene && mScene->hasActiveAccessibilityClients() &&
+		   mRelationTargets.find( idHash ) != mRelationTargets.end();
+}
+
+void AccessibilityManager::onRelationTargetChanged( const std::string& id,
+													const Scene::Node* excluded ) {
+	if ( id.empty() || !isRelationTarget( String::hash( id ) ) )
+		return;
+	auto notifyDependent = [this]( UIWidget* widget, AccessibilityEvent event ) {
+		if ( widget->isAccessibilityHidden() )
+			return;
+		auto* target = AccessibilityWidgetResolver::getEventTarget( widget, event );
+		if ( target && target->isAccessibilityElement() )
+			notify( getNodeRef( target ), event );
+	};
+	// Relations are rare and resolved by id from the scene root, so scan the scene.
+	if ( mScene->getRoot() )
+		visitNodes( static_cast<Scene::Node*>( mScene->getRoot() ), [&]( Scene::Node* node ) {
+			if ( node == excluded )
+				return false;
+			if ( node->isWidget() ) {
+				auto* widget = node->asType<UIWidget>();
+				if ( widget->getAccessibilityLabelledBy() == id )
+					notifyDependent( widget, AccessibilityEvent::NameChanged );
+				if ( widget->getAccessibilityDescribedBy() == id )
+					notifyDependent( widget, AccessibilityEvent::DescriptionChanged );
+			}
+			return true;
+		} );
+}
+
+void AccessibilityManager::onRelationSubtreeChanged( const Scene::Node* subtree, bool removed ) {
+	if ( !subtree || mRelationTargets.empty() || !mScene ||
+		 !mScene->hasActiveAccessibilityClients() )
+		return;
+	std::vector<std::string> ids;
+	visitNodes( subtree, [&]( const Scene::Node* node ) {
+		if ( !node->getId().empty() &&
+			 mRelationTargets.find( node->getIdHash() ) != mRelationTargets.end() )
+			ids.push_back( node->getId() );
+		return true;
+	} );
+	for ( const auto& id : ids )
+		onRelationTargetChanged( id, removed ? subtree : nullptr );
 }
 
 void AccessibilityManager::onWidgetParentChange( UIWidget* widget ) {
-	if ( !widget || !widget->isAccessibilityElement() || widget->isAccessibilityHidden() )
+	if ( !widget )
+		return;
+	// An arriving label renames the controls it labels, whatever its own exposure.
+	onRelationSubtreeChanged( widget, false );
+	if ( !widget->isAccessibilityElement() || widget->isAccessibilityHidden() )
+		return;
+	// Children of a leaf control (a button's text view) are not part of the tree.
+	if ( AccessibilityWidgetResolver::getLeafOwner( widget ) )
 		return;
 	// Model sources, not recycled cell widgets, own the accessible children of a view.
 	if ( isModelViewImplementationChild( widget ) )
@@ -471,6 +680,7 @@ void AccessibilityManager::onWidgetParentChange( UIWidget* widget ) {
 }
 
 void AccessibilityManager::onWidgetRemovedFromParent( UIWidget* widget ) {
+	onRelationSubtreeChanged( widget, true );
 	if ( isModelViewImplementationChild( widget ) )
 		return;
 	auto found = mWidgetIds.find( widget );
@@ -504,21 +714,26 @@ bool AccessibilityManager::onWidgetAccessibilitySourceDelete( UIWidget* widget )
 void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
 	if ( mWidgetIds.empty() && mWidgetSources.empty() )
 		return;
+	// Native roots can exist without any client or queried descendants. Keep that dormant case
+	// constant-time, before any ancestor walk: the scene root is never inside another widget's
+	// subtree, so a deleted non-root widget holds nothing to invalidate. It may still be a
+	// relation target of the root a client has read, which must be renamed.
+	if ( mWidgetSources.empty() && mWidgetIds.size() == 1 && widget != mScene->getRoot() &&
+		 mWidgetIds.find( mScene->getRoot() ) != mWidgetIds.end() &&
+		 ( mRelationTargets.empty() || !hasActiveClients() ) )
+		return;
 	for ( auto* parent = widget->getParent(); parent; parent = parent->getParent() ) {
 		if ( parent->isDestroying() )
 			return;
 	}
+	// The subtree is still intact here; its children are destroyed after this widget.
+	onRelationSubtreeChanged( widget, true );
 	if ( isModelViewImplementationChild( widget ) ) {
 		removeSubtreeIdentities( widget );
 		return;
 	}
 	auto found = mWidgetIds.find( widget );
 	if ( found == mWidgetIds.end() ) {
-		// Native roots can exist without any client or queried descendants. Keep that dormant
-		// case constant-time, including destruction of large unqueried widget hierarchies.
-		if ( mWidgetSources.empty() && mWidgetIds.size() == 1 &&
-			 mWidgetIds.find( mScene->getRoot() ) != mWidgetIds.end() )
-			return;
 		// Only a subtree holding identities a client may have cached changes the tree it knows.
 		if ( !removeSubtreeIdentities( widget ) )
 			return;
@@ -531,14 +746,20 @@ void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
 		return;
 	}
 	AccessibilityNodeRef ref{ WidgetSource, found->second };
-	auto parent = getParent( ref );
-	if ( parent.isValid() ) {
+	if ( hasActiveClients() ) {
+		auto parent = getParent( ref );
+		if ( parent.isValid() ) {
+			invalidateChildren();
+			Int32 index = -1;
+			size_t currentIndex = 0;
+			if ( auto parentWidget = resolve( parent ) )
+				semanticIndexOf( parentWidget, widget, currentIndex, index );
+			notify( parent, AccessibilityEvent::Destroyed, ref, index );
+		}
+	} else {
+		// No client to tell: do not register the parent or compute its index just to announce
+		// this removal. Cached children still drop the widget.
 		invalidateChildren();
-		Int32 index = -1;
-		size_t currentIndex = 0;
-		if ( auto parentWidget = resolve( parent ) )
-			semanticIndexOf( parentWidget, widget, currentIndex, index );
-		notify( parent, AccessibilityEvent::Destroyed, ref, index );
 	}
 	// getParent() and native destruction notifications can register more widgets, invalidating
 	// dense-map iterators. Keep the copied identity and erase by key instead.
@@ -549,7 +770,7 @@ void AccessibilityManager::onSubtreeRemoved( Scene::Node* node ) {
 	if ( !node || !removeSubtreeIdentities( node ) )
 		return;
 	invalidateChildren();
-	if ( node->isWidget() ) {
+	if ( node->isWidget() && hasActiveClients() ) {
 		auto parent = getWidgetParent( node->asType<UIWidget>() );
 		if ( parent.isValid() )
 			notify( parent, AccessibilityEvent::ChildrenChanged );
@@ -576,6 +797,10 @@ bool AccessibilityManager::removeSubtreeIdentities( Scene::Node* node ) {
 	mWidgets.erase( ref.id );
 	notify( ref, AccessibilityEvent::Destroyed );
 	return true;
+}
+
+bool AccessibilityManager::hasActiveClients() const {
+	return mScene && mScene->hasActiveAccessibilityClients();
 }
 
 void AccessibilityManager::invalidateChildren() {

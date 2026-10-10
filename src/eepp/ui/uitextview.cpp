@@ -515,8 +515,7 @@ void UITextView::onSizeChange() {
 void UITextView::onTextChanged() {
 	sendCommonEvent( Event::OnTextChanged );
 	sendCommonEvent( Event::OnValueChange );
-	notifyAccessibilityEvent( isType( UI_TYPE_TEXTINPUT ) ? AccessibilityEvent::ValueChanged
-														  : AccessibilityEvent::NameChanged );
+	notifyAccessibilityEvent( AccessibilityEvent::NameChanged );
 	invalidateDraw();
 }
 

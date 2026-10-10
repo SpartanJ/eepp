@@ -1,6 +1,13 @@
 #include "accessibilitybackend.hpp"
 
+#include <cstdlib>
+
 namespace EE { namespace UI {
+
+bool isAccessibilityTraceEnabled() {
+	static const bool enabled = std::getenv( "EEPP_ACCESSIBILITY_TRACE" ) != nullptr;
+	return enabled;
+}
 
 class NullAccessibilityBackend final : public AccessibilityBackend {
   public:

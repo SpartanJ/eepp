@@ -13,8 +13,8 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 		return;
 	ScopedManager scopedManager( *this, &manager );
 	if ( event.type == AccessibilityEvent::Destroyed && !event.related.isValid() ) {
-		if ( !mTextSnapshots.empty() )
-			mTextSnapshots.erase( pathFromRef( event.ref ) );
+		if ( !mTextStates.empty() )
+			mTextStates.erase( pathFromRef( event.ref ) );
 		mPendingTexts.erase( std::remove_if( mPendingTexts.begin(), mPendingTexts.end(),
 											 [&]( const PendingText& text ) {
 												 return text.manager == &manager &&
@@ -34,16 +34,17 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 		 event.type == AccessibilityEvent::ValueChanged )
 		info = manager.getNodeInfo( event.ref, false, false );
 	if ( info.text.valid ) {
-		// Diff text once per frame: a multi-cursor edit or replace-all emits one change per
-		// edited range, and each diff copies and scans the whole document.
-		if ( event.type == AccessibilityEvent::ValueChanged ||
-			 event.type == AccessibilityEvent::SelectionChanged ) {
-			queueText( manager, event.ref, event.type == AccessibilityEvent::ValueChanged );
+		// Contents changes arrive as exact records through onTextChanged(). Caret and selection
+		// changes are compared once per frame: one edit can move them several times.
+		if ( event.type == AccessibilityEvent::ValueChanged )
+			return;
+		if ( event.type == AccessibilityEvent::SelectionChanged ) {
+			queueText( manager, event.ref, false );
 			return;
 		}
 		if ( event.type == AccessibilityEvent::FocusChanged &&
 			 hasState( info.states, AccessibilityState::Focused ) )
-			rememberText( event.ref, manager.getNodeInfo( event.ref ) );
+			rememberText( event.ref, manager.getTextInfo( event.ref ) );
 	}
 	if ( event.type == AccessibilityEvent::EnabledChanged ) {
 		sendObjectEvent( event.ref, "StateChanged", "sensitive",
@@ -140,35 +141,61 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 	send( message );
 }
 
-void AtSpiApplication::rememberText( AccessibilityNodeRef ref, const AccessibilityNodeInfo& info,
-									 bool replace ) {
-	if ( !info.text.valid )
+void AtSpiApplication::announce( AccessibilityManager& manager, const String& message,
+								 AccessibilityLive priority ) {
+	if ( !isAvailable() || !hasActiveClients() )
 		return;
-	auto path = pathFromRef( ref );
-	auto found = mTextSnapshots.find( path );
-	if ( found == mTextSnapshots.end() )
-		mTextSnapshots.emplace( std::move( path ), TextSnapshot{ info.value, info.text } );
-	else if ( replace && !hasPendingText( ref ) )
-		found->second = TextSnapshot{ info.value, info.text };
+	ScopedManager scopedManager( *this, &manager );
+	// object:announcement (at-spi2-core 2.46): detail1 is the AtspiLive politeness, 1 polite and
+	// 2 assertive. Clients without support ignore the signal.
+	sendObjectEvent( manager.getRoot(), "Announcement", "",
+					 priority == AccessibilityLive::Assertive ? 2 : 1, 0, message );
 }
 
-bool AtSpiApplication::hasPendingText( AccessibilityNodeRef ref ) const {
-	for ( const auto& text : mPendingTexts ) {
-		if ( text.manager == mManager && text.ref == ref )
-			return true;
+AtSpiApplication::TextState& AtSpiApplication::rememberText( AccessibilityNodeRef ref,
+															 const AccessibilityTextInfo& text ) {
+	auto path = pathFromRef( ref );
+	auto found = mTextStates.find( path );
+	if ( found != mTextStates.end() )
+		return found->second;
+	// Counting characters scans line sizes only; the contents are never copied.
+	return mTextStates
+		.emplace( std::move( path ),
+				  TextState{ text, mManager ? mManager->getTextLength( ref ) : -1 } )
+		.first->second;
+}
+
+bool AtSpiApplication::onTextChanged( AccessibilityManager& manager, AccessibilityNodeRef ref,
+									  const AccessibilityTextChange& change ) {
+	if ( !isAvailable() || !hasActiveClients() )
+		return false;
+	if ( change.isWholeText() ) {
+		queueText( manager, ref, true );
+		return true;
 	}
-	return false;
+	ScopedManager scopedManager( *this, &manager );
+	if ( !change.removed.empty() )
+		sendObjectEvent( ref, "TextChanged", "delete", change.offset,
+						 static_cast<Int32>( change.removed.size() ), change.removed );
+	if ( !change.inserted.empty() )
+		sendObjectEvent( ref, "TextChanged", "insert", change.offset,
+						 static_cast<Int32>( change.inserted.size() ), change.inserted );
+	auto found = mTextStates.find( pathFromRef( ref ) );
+	if ( found != mTextStates.end() && found->second.length >= 0 )
+		found->second.length += static_cast<Int32>( change.inserted.size() ) -
+								static_cast<Int32>( change.removed.size() );
+	return true;
 }
 
 void AtSpiApplication::queueText( AccessibilityManager& manager, AccessibilityNodeRef ref,
-								  bool valueChanged ) {
+								  bool wholeText ) {
 	for ( auto& text : mPendingTexts ) {
 		if ( text.manager == &manager && text.ref == ref ) {
-			text.valueChanged |= valueChanged;
+			text.wholeText |= wholeText;
 			return;
 		}
 	}
-	mPendingTexts.push_back( { &manager, ref, valueChanged } );
+	mPendingTexts.push_back( { &manager, ref, wholeText } );
 	Window::Input::wakeUpEventLoop();
 }
 
@@ -183,10 +210,9 @@ void AtSpiApplication::flushPendingTexts() {
 		if ( !text.manager->isValid( text.ref ) )
 			continue;
 		ScopedManager scopedManager( *this, text.manager );
-		if ( text.valueChanged )
-			sendTextChanged( text.ref );
-		else
-			sendTextSelection( text.ref, text.manager->getTextInfo( text.ref ) );
+		if ( text.wholeText )
+			sendTextReplaced( text.ref );
+		sendTextSelection( text.ref, text.manager->getTextInfo( text.ref ) );
 	}
 }
 
@@ -214,13 +240,13 @@ void AtSpiApplication::sendObjectEvent( AccessibilityNodeRef ref, const char* si
 
 void AtSpiApplication::sendTextSelection( AccessibilityNodeRef ref,
 										  const AccessibilityTextInfo& text ) {
-	auto found = mTextSnapshots.find( pathFromRef( ref ) );
-	if ( found == mTextSnapshots.end() ) {
-		rememberText( ref, getNodeInfo( ref ) );
-		found = mTextSnapshots.find( pathFromRef( ref ) );
-	}
-	if ( found == mTextSnapshots.end() )
+	auto path = pathFromRef( ref );
+	auto found = mTextStates.find( path );
+	if ( found == mTextStates.end() ) {
+		// A client that never looked at this text has no caret position to compare against.
+		rememberText( ref, text );
 		return;
+	}
 	auto& previous = found->second.text;
 	if ( previous.caretOffset != text.caretOffset )
 		sendObjectEvent( ref, "TextCaretMoved", "", text.caretOffset );
@@ -230,36 +256,44 @@ void AtSpiApplication::sendTextSelection( AccessibilityNodeRef ref,
 	previous = text;
 }
 
-void AtSpiApplication::sendTextChanged( AccessibilityNodeRef ref ) {
-	auto info = getNodeInfo( ref );
-	auto path = pathFromRef( ref );
-	auto found = mTextSnapshots.find( path );
-	if ( found == mTextSnapshots.end() ) {
-		// A client which has not queried or focused this text has no old contents to diff.
-		rememberText( ref, info );
+void AtSpiApplication::sendTextReplaced( AccessibilityNodeRef ref ) {
+	// Short texts (form fields) carry their new contents; a document's would only flood speech.
+	static constexpr Int32 MaxReplacedTextReported = 4096;
+	const Int32 length = mManager ? mManager->getTextLength( ref ) : 0;
+	auto found = mTextStates.find( pathFromRef( ref ) );
+	if ( found == mTextStates.end() )
 		return;
-	}
-	auto& previous = found->second.value;
+	if ( found->second.length > 0 )
+		sendObjectEvent( ref, "TextChanged", "delete", 0, found->second.length );
+	if ( length > 0 )
+		sendObjectEvent( ref, "TextChanged", "insert", 0, length,
+						 length <= MaxReplacedTextReported
+							 ? mManager->getTextRange( ref, 0, length )
+							 : String() );
+	found->second.length = length;
+}
+
+void AtSpiApplication::sendTextDiff( AccessibilityNodeRef ref, const String& previous,
+									 const String& current ) {
 	size_t prefix = 0;
-	while ( prefix < previous.size() && prefix < info.value.size() &&
-			previous[prefix] == info.value[prefix] )
+	while ( prefix < previous.size() && prefix < current.size() &&
+			previous[prefix] == current[prefix] )
 		++prefix;
 	size_t suffix = 0;
-	while ( suffix < previous.size() - prefix && suffix < info.value.size() - prefix &&
-			previous[previous.size() - suffix - 1] == info.value[info.value.size() - suffix - 1] )
+	while ( suffix < previous.size() - prefix && suffix < current.size() - prefix &&
+			previous[previous.size() - suffix - 1] == current[current.size() - suffix - 1] )
 		++suffix;
 	const size_t removed = previous.size() - prefix - suffix;
-	const size_t inserted = info.value.size() - prefix - suffix;
-	if ( removed ) {
+	const size_t inserted = current.size() - prefix - suffix;
+	if ( removed )
 		sendObjectEvent( ref, "TextChanged", "delete", prefix, removed,
 						 previous.substr( prefix, removed ) );
-	}
-	if ( inserted ) {
+	if ( inserted )
 		sendObjectEvent( ref, "TextChanged", "insert", prefix, inserted,
-						 info.value.substr( prefix, inserted ) );
-	}
-	previous = std::move( info.value );
-	sendTextSelection( ref, info.text );
+						 current.substr( prefix, inserted ) );
+	auto found = mTextStates.find( pathFromRef( ref ) );
+	if ( found != mTextStates.end() )
+		found->second.length = static_cast<Int32>( current.size() );
 }
 
 void AtSpiApplication::sendWindowChanged( AccessibilityManager& manager, bool added, Int32 index ) {

@@ -1,4 +1,6 @@
+#include "accessibility/accessibilitybackend.hpp"
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
 #include <eepp/core/small_vector.hpp>
 #include <eepp/core/string.hpp>
@@ -220,11 +222,11 @@ UISceneNode::~UISceneNode() {
 	// Descendant destructors must not rediscover or register a half-destroyed ancestor.
 	if ( mHostUISceneNode ) {
 		// This scene is already closing, so ask the host for the manager it shares.
-		if ( auto* manager = mHostUISceneNode->getAccessibilityManager() )
+		if ( auto* manager = mHostUISceneNode->getExistingAccessibilityManager() )
 			manager->onSubtreeRemoved( mRoot );
 	}
 	mAccessibilityManager.reset();
-	mAccessibilityState &= ~AccessibilityClientActive;
+	setAccessibilityClientActive( false );
 	if ( mAsyncResourceLoadState ) {
 		mAsyncResourceLoadState->owner.store( nullptr, std::memory_order_release );
 		mAsyncResourceLoadState->alive.store( false, std::memory_order_release );
@@ -509,14 +511,12 @@ void UISceneNode::updateHostUISceneNode() {
 	if ( mHostUISceneNode == hostScene )
 		return;
 
-	auto* previousManager = static_cast<const UISceneNode*>( this )->getAccessibilityManager();
-	auto* nextManager =
-		hostScene ? static_cast<const UISceneNode*>( hostScene )->getAccessibilityManager()
-				  : nullptr;
+	auto* previousManager = getExistingAccessibilityManager();
+	auto* nextManager = hostScene ? hostScene->getExistingAccessibilityManager() : nullptr;
 	if ( previousManager && previousManager != nextManager && mRoot ) {
 		// Embedded descendants keep this local scene pointer while its host changes. Invalidate
 		// their old-owner identities before updating the host used by getAccessibilityManager().
-		const_cast<AccessibilityManager*>( previousManager )->onSubtreeRemoved( mRoot );
+		previousManager->onSubtreeRemoved( mRoot );
 	}
 
 	if ( mHostUISceneNode )
@@ -526,7 +526,7 @@ void UISceneNode::updateHostUISceneNode() {
 
 	if ( mHostUISceneNode ) {
 		mAccessibilityManager.reset();
-		mAccessibilityState &= AccessibilityPolicyMask;
+		setAccessibilityClientActive( false );
 		mHostUISceneNode->registerChildUISceneNode( this );
 	}
 }
@@ -1291,10 +1291,7 @@ void UISceneNode::update( const Time& elapsed ) {
 		mAccessibilityManager = std::make_unique<AccessibilityManager>( this );
 	if ( mAccessibilityManager ) {
 		mAccessibilityManager->update();
-		if ( mAccessibilityManager->hasActiveNativeClients() )
-			mAccessibilityState |= AccessibilityClientActive;
-		else
-			mAccessibilityState &= ~AccessibilityClientActive;
+		setAccessibilityClientActive( mAccessibilityManager->hasActiveNativeClients() );
 	}
 
 	drainAsyncResourceMainThreadQueue();
@@ -1348,10 +1345,9 @@ void UISceneNode::update( const Time& elapsed ) {
 }
 
 void UISceneNode::onWidgetDelete( Node* node ) {
-	auto* manager = static_cast<const UISceneNode*>( this )->getAccessibilityManager();
-	if ( manager && node->isWidget() && !node->isDestroying() ) {
-		const_cast<AccessibilityManager*>( manager )->onWidgetDelete( node->asType<UIWidget>() );
-	}
+	auto* manager = getExistingAccessibilityManager();
+	if ( manager && node->isWidget() && !node->isDestroying() )
+		manager->onWidgetDelete( node->asType<UIWidget>() );
 	if ( node->isWidget() ) {
 		UIWidget* widget = node->asType<UIWidget>();
 
@@ -1409,10 +1405,31 @@ AccessibilityManager* UISceneNode::getAccessibilityManager() {
 }
 
 const AccessibilityManager* UISceneNode::getAccessibilityManager() const {
+	return getExistingAccessibilityManager();
+}
+
+void UISceneNode::setAccessibilityClientActive( bool active ) {
+	if ( ( ( mAccessibilityState & AccessibilityClientActive ) != 0 ) == active )
+		return;
+	if ( active ) {
+		mAccessibilityState |= AccessibilityClientActive;
+		UIWidget::sAccessibilityActiveScenes.fetch_add( 1, std::memory_order_relaxed );
+	} else {
+		mAccessibilityState &= ~AccessibilityClientActive;
+		UIWidget::sAccessibilityActiveScenes.fetch_sub( 1, std::memory_order_relaxed );
+		if ( mAccessibilityManager )
+			mAccessibilityManager->onClientsDisconnected();
+	}
+	if ( isAccessibilityTraceEnabled() )
+		std::fprintf( stderr, "eepp accessibility: scene %p client %s\n",
+					  static_cast<void*>( this ), active ? "active" : "inactive" );
+}
+
+AccessibilityManager* UISceneNode::getExistingAccessibilityManager() const {
 	// Match the mutable accessor: a closing scene's widgets must not reach any manager.
 	if ( mNodeFlags & NODE_FLAG_CLOSE )
 		return nullptr;
-	return mHostUISceneNode ? mHostUISceneNode->getAccessibilityManager()
+	return mHostUISceneNode ? mHostUISceneNode->getExistingAccessibilityManager()
 							: mAccessibilityManager.get();
 }
 
@@ -1424,8 +1441,16 @@ UISceneNode* UISceneNode::setAccessibilityPolicy( AccessibilityPolicy policy ) {
 	if ( getAccessibilityPolicy() == policy )
 		return this;
 	mAccessibilityManager.reset();
+	setAccessibilityClientActive( false );
 	mAccessibilityState = static_cast<Uint8>( policy );
 	return this;
+}
+
+void UISceneNode::announceForAccessibility( const String& message, AccessibilityLive priority ) {
+	if ( !hasActiveAccessibilityClients() )
+		return;
+	if ( auto* manager = getAccessibilityManager() )
+		manager->announce( message, priority );
 }
 
 AccessibilityPolicy UISceneNode::getAccessibilityPolicy() const {

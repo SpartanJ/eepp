@@ -1,5 +1,6 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
+#include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/models/csspropertiesmodel.hpp>
 #include <eepp/ui/models/widgettreemodel.hpp>
@@ -109,15 +110,23 @@ class AccessibilityPropertiesModel final : public Model {
 				{ AccessibilityAction::SetText, "SetText" },
 				{ AccessibilityAction::Expand, "Expand" },
 				{ AccessibilityAction::Collapse, "Collapse" },
+				{ AccessibilityAction::ScrollTo, "ScrollTo" },
+				{ AccessibilityAction::SetTextSelection, "SetTextSelection" },
 			};
 			for ( const auto& action : ActionNames )
 				appendAccessibilityFlag( actions, action.second,
 										 accessibilityActionMask( action.first ), info.actions );
+			static constexpr const char* LiveNames[] = { "Off", "Polite", "Assertive" };
 			mData = {
-				{ "Role", mWidget->getElementTag() },
+				{ "Role", std::string( AccessibilityWidgetResolver::getRoleName( info.role ) ) +
+							  " (" + mWidget->getElementTag() + ")" },
 				{ "Name", info.name.toUtf8() },
 				{ "Description", info.description.toUtf8() },
 				{ "Value", info.value.toUtf8() },
+				{ "Shortcut", info.shortcut.text },
+				{ "Labelled By", mWidget->getAccessibilityLabelledBy() },
+				{ "Described By", mWidget->getAccessibilityDescribedBy() },
+				{ "Live", LiveNames[static_cast<int>( mWidget->getAccessibilityLive() )] },
 				{ "States", states },
 				{ "Actions", actions },
 				{ "Source", String::toString( ref.source ) },
@@ -140,6 +149,68 @@ class AccessibilityPropertiesModel final : public Model {
 	Scene::EventConnectionList mConnections;
 	std::vector<std::pair<std::string, std::string>> mData;
 };
+
+/** Lists the problems found by AccessibilityWidgetResolver::audit(). */
+class AccessibilityAuditModel final : public Model {
+  public:
+	static std::shared_ptr<AccessibilityAuditModel> create() {
+		return std::make_shared<AccessibilityAuditModel>();
+	}
+
+	size_t rowCount( const ModelIndex& ) const override { return mIssues.size(); }
+
+	size_t columnCount( const ModelIndex& ) const override { return 2; }
+
+	std::string columnName( const size_t& column ) const override {
+		return column == 0 ? "Widget" : "Issue";
+	}
+
+	Variant data( const ModelIndex& index, ModelRole role ) const override {
+		if ( role != ModelRole::Display || index.row() < 0 ||
+			 index.row() >= static_cast<Int64>( mIssues.size() ) )
+			return {};
+		const auto& issue = mIssues[index.row()];
+		return index.column() == 0 ? Variant( issue.label ) : Variant( issue.message );
+	}
+
+	void run( const UIWidget* root ) {
+		mIssues.clear();
+		for ( auto& issue : AccessibilityWidgetResolver::audit( root ) ) {
+			std::string label( issue.widget->getElementTag() );
+			if ( !issue.widget->getId().empty() )
+				label += "#" + issue.widget->getId();
+			mIssues.push_back( { issue.widget, std::move( label ), issue.message.toUtf8() } );
+		}
+		if ( mIssues.empty() )
+			mIssues.push_back( { nullptr, "", "No issues found." } );
+		invalidate();
+	}
+
+	/** The audited widget of a row. The pointer is only compared, never dereferenced, until it is
+	 * found again in the live tree. */
+	const UIWidget* widgetAt( Int64 row ) const {
+		return row >= 0 && row < static_cast<Int64>( mIssues.size() ) ? mIssues[row].widget
+																	  : nullptr;
+	}
+
+  private:
+	struct Row {
+		const UIWidget* widget;
+		std::string label;
+		std::string message;
+	};
+	std::vector<Row> mIssues;
+};
+
+bool containsNode( const Node* root, const Node* target ) {
+	if ( root == target )
+		return true;
+	for ( const Node* child = root->getFirstChild(); child; child = child->getNextNode() ) {
+		if ( containsNode( child, target ) )
+			return true;
+	}
+	return false;
+}
 
 } // namespace
 
@@ -193,9 +264,14 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 				<TableView id="widget_inspector_computed" class="computed" lw="mp" lh="mp" />
 				<CodeEditor id="widget_inspector_style" lw="mp" lh="mp" />
 				<TableView id="widget_inspector_accessibility" class="computed" lw="mp" lh="mp" />
+				<vbox id="widget_inspector_audit" lw="mp" lh="mp">
+					<PushButton id="widget_inspector_audit_run" lh="18dp" text="@string(run_accessibility_audit, Run Audit)" />
+					<TableView id="widget_inspector_audit_issues" class="computed" lw="mp" lh="fixed" lw8="1" />
+				</vbox>
 				<Tab id="widget_inspector_tab_computed" text="@string(computed, Computed)" owns="widget_inspector_computed" />
 				<Tab id="widget_inspector_tab_style" text="@string(style, Style)" owns="widget_inspector_style" />
 				<Tab text="Accessibility" owns="widget_inspector_accessibility" />
+				<Tab text="@string(accessibility_audit, Audit)" owns="widget_inspector_audit" />
 			</TabWidget>
 		</Splitter>
 	</vbox>
@@ -245,6 +321,25 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	accessibilityView->setHeadersVisible( true );
 	auto accessibilityModel = AccessibilityPropertiesModel::create();
 	accessibilityView->setModel( accessibilityModel );
+
+	UITableView* auditView = cont->find<UITableView>( "widget_inspector_audit_issues" );
+	auditView->setAutoColumnsWidth( true );
+	auditView->setHeadersVisible( true );
+	auto auditModel = AccessibilityAuditModel::create();
+	auditView->setModel( auditModel );
+	cont->find( "widget_inspector_audit_run" )
+		->on( Event::MouseClick, [sceneNode, auditModel]( const Event* event ) {
+			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
+				auditModel->run( sceneNode->getRoot() );
+		} );
+	auditView->setOnSelection( [sceneNode, nodeTree, auditModel]( const ModelIndex& index ) {
+		const UIWidget* widget = auditModel->widgetAt( index.row() );
+		// The tree may have changed since the audit ran: select only widgets still in it.
+		if ( !widget || !containsNode( sceneNode->getRoot(), widget ) )
+			return;
+		auto* treeModel = static_cast<WidgetTreeModel*>( nodeTree->getModel() );
+		nodeTree->setSelection( treeModel->getModelIndex( widget ) );
+	} );
 
 	UITableView* computedView = cont->find<UITableView>( "widget_inspector_computed" );
 	computedView->setAutoColumnsWidth( true );

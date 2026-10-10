@@ -59,6 +59,15 @@ inline UINT accessibilityDispatchMessage() {
 
 class UIAutomationProvider;
 
+/** A text element's contents at one revision, converted once and shared by every range query
+ * until the text changes. Immutable, so UIA threads may read it while the UI thread replaces it. */
+struct TextContents {
+	/** UTF-16 of the exposed text, the base for code-point offsets. */
+	std::u16string source;
+	/** What UIA sees: `source` with CRLF line endings. */
+	std::u16string text;
+};
+
 class UIAutomationProviderContext final
 	: public std::enable_shared_from_this<UIAutomationProviderContext> {
   private:
@@ -266,6 +275,10 @@ class UIAutomationProviderContext final
 
 	void detach();
 
+	/** UI thread only: the element's contents at its current revision, from a small cache. */
+	std::shared_ptr<const TextContents> textContents( AccessibilityManager& manager,
+													  AccessibilityNodeRef ref );
+
   private:
 	void removePendingRequest( PendingRequest* request ) {
 		std::lock_guard<std::mutex> lock( mPendingMutex );
@@ -286,6 +299,9 @@ class UIAutomationProviderContext final
 	std::atomic<bool> mAlive{ true };
 	std::atomic<bool> mClientsListening{ false };
 	std::atomic<bool> mClientObserved{ false };
+	/** Set, under mProviderMutex, whenever mInvalidatedProviders gains entries: the per-update
+	 * drain skips the lock while there is nothing to release. */
+	std::atomic<bool> mHasInvalidatedProviders{ false };
 	std::atomic<long> mAdvisedEventCount{ 0 };
 	std::mutex mProviderMutex;
 	std::unordered_map<AccessibilitySourceId, std::unordered_map<Uint64, UIAutomationProvider*>>
@@ -293,6 +309,15 @@ class UIAutomationProviderContext final
 	std::vector<UIAutomationProvider*> mInvalidatedProviders;
 	std::mutex mPendingMutex;
 	std::vector<std::shared_ptr<PendingRequest>> mPendingRequests;
+	struct CachedTextContents {
+		AccessibilityNodeRef ref;
+		AccessibilityTextRevision revision;
+		std::shared_ptr<const TextContents> contents;
+	};
+	/** A handful of entries covers the focused editor and the fields around it. */
+	static constexpr size_t TextCacheSize = 4;
+	std::vector<CachedTextContents> mTextCache;
+	size_t mNextTextCacheEntry{ 0 };
 };
 
 struct NavigationResult {
@@ -307,13 +332,16 @@ struct GeometryResult {
 };
 
 struct TextSnapshot {
-	String source;
-	std::u16string text;
+	std::shared_ptr<const TextContents> contents;
 	AccessibilityActions actions{};
 	int selectionStart{};
 	int selectionEnd{};
 	Math::Rectf bounds;
 	bool boundsValid{ false };
+
+	const std::u16string& source() const { return contents->source; }
+
+	const std::u16string& text() const { return contents->text; }
 };
 
 // Role, VARIANT and runtime id helpers: accessibilitybackenduiaprovider.cpp
@@ -334,9 +362,15 @@ SAFEARRAY* safeArrayFromInts( const std::vector<int>& values );
 
 size_t nextSourceCodePoint( const std::u16string& text, size_t index );
 
+size_t codePointToUTF16( const std::u16string& source, Int32 offset );
+
 size_t codePointToUTF16( const String& string, Int32 offset );
 
+Int32 utf16ToCodePoint( const std::u16string& source, size_t offset );
+
 Int32 utf16ToCodePoint( const String& string, size_t offset );
+
+std::u16string normalizedUTF16( const std::u16string& source );
 
 std::u16string normalizedUTF16( const String& string );
 

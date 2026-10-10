@@ -3,6 +3,7 @@
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uimenu.hpp>
@@ -14,6 +15,7 @@
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uispinbox.hpp>
@@ -26,6 +28,7 @@
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 
 #include <algorithm>
@@ -77,18 +80,90 @@ AccessibilityActions baseActions( const UIWidget* widget ) {
 	return widget->isTabFocusable() ? accessibilityActionMask( AccessibilityAction::Focus ) : 0;
 }
 
+/** The nearest scroll view whose scrolled content contains the widget. */
+UIScrollView* scrollViewFor( const UIWidget* widget ) {
+	for ( auto* parent = widget->getParent(); parent; parent = parent->getParent() ) {
+		if ( parent->isType( UI_TYPE_SCROLLVIEW ) ) {
+			auto* view = parent->asType<UIScrollView>();
+			if ( view->getScrollView() && view->getScrollView()->isParentOf( widget ) )
+				return view;
+		}
+	}
+	return nullptr;
+}
+
+/** Start offsets of every line of one document version, plus the total length. Offset and
+ * position conversions become an index lookup or a binary search instead of a walk over every
+ * line (each line's size takes the document mutex). Rebuilt once per text revision. */
+class LineIndex {
+  public:
+	const std::vector<Int64>& starts( const Doc::TextDocument& document ) {
+		if ( document.getUUID() != mDocument || document.getModificationId() != mModification ||
+			 mStarts.empty() ) {
+			mDocument = document.getUUID();
+			mModification = document.getModificationId();
+			const size_t lines = document.linesCount();
+			mStarts.resize( lines + 1 );
+			mStarts[0] = 0;
+			for ( size_t line = 0; line < lines; ++line )
+				mStarts[line + 1] =
+					mStarts[line] + static_cast<Int64>( document.line( line ).size() );
+		}
+		return mStarts;
+	}
+
+	bool matches( const Doc::TextDocument& document ) const {
+		return document.getUUID() == mDocument && document.getModificationId() == mModification &&
+			   !mStarts.empty();
+	}
+
+  private:
+	System::UUID mDocument{ 0, 0 };
+	Uint64 mModification{ 0 };
+	std::vector<Int64> mStarts;
+};
+
+/** UI thread only. Two entries let a client alternate between an editor and a field. */
+const std::vector<Int64>& lineStarts( const Doc::TextDocument& document ) {
+	static LineIndex indexes[2];
+	static size_t next = 0;
+	for ( auto& index : indexes ) {
+		if ( index.matches( document ) )
+			return index.starts( document );
+	}
+	auto& index = indexes[next];
+	next = ( next + 1 ) % 2;
+	return index.starts( document );
+}
+
 Int32 documentOffset( const Doc::TextDocument& document, const Doc::TextPosition& position ) {
 	if ( !position.isValid() )
 		return 0;
-	Int64 offset = 0;
-	for ( Int64 line = 0;
-		  line < position.line() && line < static_cast<Int64>( document.linesCount() ); ++line )
-		offset += static_cast<Int64>( document.line( static_cast<size_t>( line ) ).size() );
-	offset += position.column();
-	return static_cast<Int32>( std::max<Int64>( 0, offset ) );
+	const auto& starts = lineStarts( document );
+	const size_t line =
+		std::min( static_cast<size_t>( std::max<Int64>( 0, position.line() ) ), starts.size() - 1 );
+	return static_cast<Int32>( std::max<Int64>( 0, starts[line] + position.column() ) );
+}
+
+Doc::TextPosition documentPosition( const Doc::TextDocument& document, Int32 offset ) {
+	const auto& starts = lineStarts( document );
+	if ( starts.size() < 2 )
+		return { 0, 0 };
+	const Int64 target = std::max<Int32>( 0, offset );
+	// The last line whose start is at or before the offset; past the end clamps to the last line.
+	const size_t lines = starts.size() - 1;
+	size_t line = static_cast<size_t>( std::upper_bound( starts.begin(), starts.end(), target ) -
+									   starts.begin() ) -
+				  1;
+	line = std::min( line, lines - 1 );
+	const Int64 length = starts[line + 1] - starts[line];
+	return { static_cast<Int64>( line ), std::min( target - starts[line], length ) };
 }
 
 AccessibilityTextInfo getDocumentText( const Doc::TextDocument& document ) {
+	// A document loading on a worker thread is still being filled in.
+	if ( document.isLoading() )
+		return { 0, 0, 0, true };
 	auto selection = document.getSelection( true );
 	return { documentOffset( document, document.getSelection().end() ),
 			 documentOffset( document, selection.start() ),
@@ -99,19 +174,6 @@ bool parseSelection( const String& value, Int32& start, Int32& end ) {
 	auto parts = String::split( value, ':' );
 	return parts.size() == 2 && String::fromString( start, parts[0].toUtf8() ) &&
 		   String::fromString( end, parts[1].toUtf8() );
-}
-
-Doc::TextPosition documentPosition( const Doc::TextDocument& document, Int32 offset ) {
-	Int64 remaining = std::max<Int32>( 0, offset );
-	for ( size_t line = 0; line < document.linesCount(); ++line ) {
-		const Int64 length = static_cast<Int64>( document.line( line ).size() );
-		if ( line + 1 == document.linesCount() )
-			return { static_cast<Int64>( line ), std::min( remaining, length ) };
-		if ( remaining < length )
-			return { static_cast<Int64>( line ), remaining };
-		remaining -= length;
-	}
-	return { 0, 0 };
 }
 
 } // namespace
@@ -146,7 +208,7 @@ AccessibilityRole AccessibilityWidgetResolver::getRole( const UIWidget* widget )
 		role = AccessibilityRole::TabList;
 	else if ( widget->isType( UI_TYPE_COMBOBOX ) )
 		role = AccessibilityRole::ComboBox;
-	else if ( widget->isType( UI_TYPE_TEXTEDIT ) )
+	else if ( widget->isType( UI_TYPE_CODEEDITOR ) )
 		role = AccessibilityRole::TextBox;
 	else if ( widget->isType( UI_TYPE_TEXTINPUT ) )
 		role = AccessibilityRole::TextBox;
@@ -165,7 +227,45 @@ AccessibilityRole AccessibilityWidgetResolver::getRole( const UIWidget* widget )
 	return widget->resolveAccessibilityRole( role );
 }
 
-String AccessibilityWidgetResolver::getName( const UIWidget* widget ) {
+bool AccessibilityWidgetResolver::isLeafRole( AccessibilityRole role ) {
+	switch ( role ) {
+		case AccessibilityRole::Button:
+		case AccessibilityRole::CheckBox:
+		case AccessibilityRole::RadioButton:
+		case AccessibilityRole::Label:
+		case AccessibilityRole::Text:
+		case AccessibilityRole::Image:
+		case AccessibilityRole::Slider:
+		case AccessibilityRole::SpinButton:
+		case AccessibilityRole::ProgressBar:
+		case AccessibilityRole::Tab:
+		case AccessibilityRole::MenuItem:
+		case AccessibilityRole::CheckMenuItem:
+		case AccessibilityRole::RadioMenuItem:
+			return true;
+		default:
+			return false;
+	}
+}
+
+UIWidget* AccessibilityWidgetResolver::getLeafOwner( const Node* node ) {
+	UIWidget* owner = nullptr;
+	for ( auto* parent = node->getParent(); parent; parent = parent->getParent() ) {
+		if ( parent->isWidget() && isLeafRole( getRole( parent->asType<UIWidget>() ) ) )
+			owner = parent->asType<UIWidget>();
+	}
+	return owner;
+}
+
+bool AccessibilityWidgetResolver::isHiddenFromAccessibility( const UIWidget* widget ) {
+	for ( const Node* node = widget; node; node = node->getParent() ) {
+		if ( node->isWidget() && static_cast<const UIWidget*>( node )->isAccessibilityHidden() )
+			return true;
+	}
+	return false;
+}
+
+String AccessibilityWidgetResolver::getOwnName( const UIWidget* widget ) {
 	String name;
 	if ( isRoot( widget ) && widget->getUISceneNode()->getWindow() )
 		name = String::fromUtf8( widget->getUISceneNode()->getWindow()->getTitle() );
@@ -174,18 +274,147 @@ String AccessibilityWidgetResolver::getName( const UIWidget* widget ) {
 	else if ( widget->isType( UI_TYPE_TEXTVIEW ) && !widget->isType( UI_TYPE_TEXTINPUT ) &&
 			  !widget->isType( UI_TYPE_TEXTEDIT ) )
 		name = static_cast<const UITextView*>( widget )->getText();
-	return widget->resolveAccessibilityName( name );
+	else if ( widget->isType( UI_TYPE_CODEEDITOR ) &&
+			  static_cast<const UICodeEditor*>( widget )->getDocument().hasFilepath() )
+		name = String::fromUtf8(
+			static_cast<const UICodeEditor*>( widget )->getDocument().getFilename() );
+	name = widget->resolveAccessibilityName( name );
+	// Icon-only buttons usually carry their meaning in the tooltip.
+	return name.empty() ? widget->getTooltipText() : name;
+}
+
+namespace {
+
+/** Resolves an aria-labelledby / aria-describedby id from the widget's scene root. */
+const UIWidget* findRelated( const UIWidget* widget, const std::string& id ) {
+	if ( id.empty() || !widget->getUISceneNode() || !widget->getUISceneNode()->getRoot() )
+		return nullptr;
+	Node* node = widget->getUISceneNode()->getRoot()->find( id );
+	return node && node != widget && node->isWidget() ? node->asType<UIWidget>() : nullptr;
+}
+
+} // namespace
+
+const char* AccessibilityWidgetResolver::getRoleName( AccessibilityRole role ) {
+	switch ( role ) {
+		case AccessibilityRole::None:
+			return "None";
+		case AccessibilityRole::Application:
+			return "Application";
+		case AccessibilityRole::Window:
+			return "Window";
+		case AccessibilityRole::Dialog:
+			return "Dialog";
+		case AccessibilityRole::Group:
+			return "Group";
+		case AccessibilityRole::Button:
+			return "Button";
+		case AccessibilityRole::CheckBox:
+			return "CheckBox";
+		case AccessibilityRole::RadioButton:
+			return "RadioButton";
+		case AccessibilityRole::Label:
+			return "Label";
+		case AccessibilityRole::Text:
+			return "Text";
+		case AccessibilityRole::TextBox:
+			return "TextBox";
+		case AccessibilityRole::Image:
+			return "Image";
+		case AccessibilityRole::ComboBox:
+			return "ComboBox";
+		case AccessibilityRole::Slider:
+			return "Slider";
+		case AccessibilityRole::SpinButton:
+			return "SpinButton";
+		case AccessibilityRole::ProgressBar:
+			return "ProgressBar";
+		case AccessibilityRole::TabList:
+			return "TabList";
+		case AccessibilityRole::Tab:
+			return "Tab";
+		case AccessibilityRole::TabPanel:
+			return "TabPanel";
+		case AccessibilityRole::MenuBar:
+			return "MenuBar";
+		case AccessibilityRole::Menu:
+			return "Menu";
+		case AccessibilityRole::MenuItem:
+			return "MenuItem";
+		case AccessibilityRole::CheckMenuItem:
+			return "CheckMenuItem";
+		case AccessibilityRole::RadioMenuItem:
+			return "RadioMenuItem";
+		case AccessibilityRole::List:
+			return "List";
+		case AccessibilityRole::ListItem:
+			return "ListItem";
+		case AccessibilityRole::Table:
+			return "Table";
+		case AccessibilityRole::Row:
+			return "Row";
+		case AccessibilityRole::Cell:
+			return "Cell";
+		case AccessibilityRole::Tree:
+			return "Tree";
+		case AccessibilityRole::TreeItem:
+			return "TreeItem";
+	}
+	return "Unknown";
+}
+
+String AccessibilityWidgetResolver::getName( const UIWidget* widget ) {
+	if ( const auto* label = findRelated( widget, widget->getAccessibilityLabelledBy() ) ) {
+		String name = getOwnName( label );
+		if ( !name.empty() )
+			return name;
+	}
+	return getOwnName( widget );
 }
 
 String AccessibilityWidgetResolver::getDescription( const UIWidget* widget ) {
-	return widget->resolveAccessibilityDescription();
+	if ( const auto* description = findRelated( widget, widget->getAccessibilityDescribedBy() ) ) {
+		String text = getOwnName( description );
+		if ( !text.empty() )
+			return text;
+	}
+	String description = widget->resolveAccessibilityDescription();
+	if ( !description.empty() )
+		return description;
+	// A tooltip that did not become the name still explains the control.
+	const String tooltip = widget->getTooltipText();
+	return tooltip.empty() || tooltip == getOwnName( widget ) ? String() : tooltip;
+}
+
+AccessibilityShortcut AccessibilityWidgetResolver::getShortcut( const UIWidget* widget ) {
+	AccessibilityShortcut result;
+	if ( !widget->isType( UI_TYPE_MENUITEM ) )
+		return result;
+	const auto* item = static_cast<const UIMenuItem*>( widget );
+	const auto* view = item->getShortcutView();
+	if ( !view || view->getText().empty() )
+		return result;
+	result.text = view->getText().toUtf8();
+	const auto& shortcut = item->getShortcut();
+	if ( shortcut.key == KEY_UNKNOWN || !widget->getInput() )
+		return result;
+	result.key = widget->getInput()->getKeyName( shortcut.key );
+	if ( shortcut.mod & KEYMOD_CTRL )
+		result.modifiers |= AccessibilityShortcut::Control;
+	if ( shortcut.mod & KEYMOD_SHIFT )
+		result.modifiers |= AccessibilityShortcut::Shift;
+	if ( shortcut.mod & KEYMOD_ALT )
+		result.modifiers |= AccessibilityShortcut::Alt;
+	if ( shortcut.mod & KEYMOD_META )
+		result.modifiers |= AccessibilityShortcut::Meta;
+	return result;
 }
 
 String AccessibilityWidgetResolver::getValue( const UIWidget* widget ) {
 	if ( widget->isType( UI_TYPE_COMBOBOX ) )
 		return static_cast<const UIComboBox*>( widget )->getDropDownList()->getText();
-	if ( widget->isType( UI_TYPE_TEXTEDIT ) )
-		return static_cast<const UITextEdit*>( widget )->getText();
+	if ( widget->isType( UI_TYPE_CODEEDITOR ) )
+		return static_cast<const UICodeEditor*>( widget )->getDocument().getText();
 	if ( widget->isType( UI_TYPE_TEXTINPUT ) ) {
 		auto input = static_cast<const UITextInput*>( widget );
 		return input->getMode() == UITextInput::TextInputMode::Password ? String()
@@ -221,11 +450,68 @@ AccessibilityTextInfo AccessibilityWidgetResolver::getText( const UIWidget* widg
 	return getText( widget, true );
 }
 
+const Doc::TextDocument* AccessibilityWidgetResolver::getTextDocument( const UIWidget* widget ) {
+	const Doc::TextDocument* document = nullptr;
+	if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
+		document = &static_cast<const UICodeEditor*>( widget )->getDocument();
+	} else if ( widget->isType( UI_TYPE_TEXTINPUT ) ) {
+		const auto* input = static_cast<const UITextInput*>( widget );
+		if ( input->getMode() != UITextInput::TextInputMode::Password )
+			document = &input->getDocument();
+	}
+	// A document loading on a worker thread is still being filled in.
+	return document && !document->isLoading() ? document : nullptr;
+}
+
+Int32 AccessibilityWidgetResolver::getTextLength( const UIWidget* widget ) {
+	const auto* document = getTextDocument( widget );
+	if ( !document )
+		return 0;
+	// The exposed text stops before the last line's newline, like TextDocument::getText().
+	return static_cast<Int32>( std::max<Int64>( 0, lineStarts( *document ).back() - 1 ) );
+}
+
+String AccessibilityWidgetResolver::getTextRange( const UIWidget* widget, Int32 start, Int32 end ) {
+	const auto* document = getTextDocument( widget );
+	if ( !document || end <= start )
+		return {};
+	return document->getText(
+		{ documentPosition( *document, start ), documentPosition( *document, end ) } );
+}
+
+bool AccessibilityWidgetResolver::getTextLineBounds( const UIWidget* widget, Int32 offset,
+													 Int32& start, Int32& end ) {
+	const auto* document = getTextDocument( widget );
+	if ( !document || document->linesCount() == 0 )
+		return false;
+	const auto position = documentPosition( *document, offset );
+	start = static_cast<Int32>( std::max<Int64>( 0, offset - position.column() ) );
+	const Int64 lineLength = static_cast<Int64>( document->line( position.line() ).size() );
+	const bool lastLine = position.line() + 1 == static_cast<Int64>( document->linesCount() );
+	// The last line's newline is not part of the exposed text.
+	end =
+		start + static_cast<Int32>( lastLine ? std::max<Int64>( 0, lineLength - 1 ) : lineLength );
+	return true;
+}
+
+AccessibilityTextRevision AccessibilityWidgetResolver::getTextRevision( const UIWidget* widget ) {
+	const auto* document = getTextDocument( widget );
+	return document
+			   ? AccessibilityTextRevision{ document->getUUID().high(), document->getUUID().low(),
+											document->getModificationId() }
+			   : AccessibilityTextRevision{};
+}
+
+Int32 AccessibilityWidgetResolver::getTextOffset( const Doc::TextDocument& document,
+												  const Doc::TextPosition& position ) {
+	return documentOffset( document, position );
+}
+
 AccessibilityTextInfo AccessibilityWidgetResolver::getText( const UIWidget* widget,
 															bool includeOffsets ) {
-	if ( widget->isType( UI_TYPE_TEXTEDIT ) ) {
+	if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
 		return includeOffsets
-				   ? getDocumentText( static_cast<const UITextEdit*>( widget )->getDocument() )
+				   ? getDocumentText( static_cast<const UICodeEditor*>( widget )->getDocument() )
 				   : AccessibilityTextInfo{ 0, 0, 0, true };
 	}
 	if ( widget->isType( UI_TYPE_TEXTINPUT ) ) {
@@ -261,9 +547,9 @@ AccessibilityState AccessibilityWidgetResolver::getState( const UIWidget* widget
 	if ( widget->isType( UI_TYPE_COMBOBOX ) &&
 		 isComboBoxExpanded( static_cast<const UIComboBox*>( widget ) ) )
 		state |= AccessibilityState::Expanded;
-	if ( widget->isType( UI_TYPE_TEXTEDIT ) ) {
+	if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
 		state |= AccessibilityState::MultiLine;
-		state |= static_cast<const UITextEdit*>( widget )->isLocked()
+		state |= static_cast<const UICodeEditor*>( widget )->isLocked()
 					 ? AccessibilityState::ReadOnly
 					 : AccessibilityState::Editable;
 	} else if ( widget->isType( UI_TYPE_TEXTINPUT ) ) {
@@ -278,11 +564,14 @@ AccessibilityState AccessibilityWidgetResolver::getState( const UIWidget* widget
 }
 
 AccessibilityActions AccessibilityWidgetResolver::getActions( const UIWidget* widget ) {
+	// Anything inside a scroll view, labels included, can be brought into view.
+	const AccessibilityActions scroll =
+		scrollViewFor( widget ) ? accessibilityActionMask( AccessibilityAction::ScrollTo ) : 0;
 	if ( isRoot( widget ) ||
 		 ( widget->isType( UI_TYPE_TEXTVIEW ) && !widget->isType( UI_TYPE_CHECKBOX ) &&
 		   !widget->isType( UI_TYPE_RADIOBUTTON ) && !widget->isType( UI_TYPE_TEXTINPUT ) ) )
-		return 0;
-	auto actions = baseActions( widget );
+		return scroll;
+	auto actions = baseActions( widget ) | scroll;
 	if ( widget->isType( UI_TYPE_MENUCHECKBOX ) ) {
 		actions |= accessibilityActionMask( AccessibilityAction::Toggle );
 	} else if ( widget->isType( UI_TYPE_MENURADIOBUTTON ) ) {
@@ -298,8 +587,8 @@ AccessibilityActions AccessibilityWidgetResolver::getActions( const UIWidget* wi
 		actions |= accessibilityActionMask( AccessibilityAction::Toggle );
 	if ( widget->isType( UI_TYPE_RADIOBUTTON ) )
 		actions |= accessibilityActionMask( AccessibilityAction::Select );
-	if ( widget->isType( UI_TYPE_TEXTEDIT ) &&
-		 !static_cast<const UITextEdit*>( widget )->isLocked() )
+	if ( widget->isType( UI_TYPE_CODEEDITOR ) &&
+		 !static_cast<const UICodeEditor*>( widget )->isLocked() )
 		actions |= accessibilityActionMask( AccessibilityAction::SetText );
 	else if ( widget->isType( UI_TYPE_TEXTINPUT ) &&
 			  static_cast<const UITextInput*>( widget )->isEditingAllowed() )
@@ -308,8 +597,8 @@ AccessibilityActions AccessibilityWidgetResolver::getActions( const UIWidget* wi
 		   static_cast<const UITextInput*>( widget )->isEditingAllowed() &&
 		   static_cast<const UITextInput*>( widget )->getMode() !=
 			   UITextInput::TextInputMode::Password ) ||
-		 ( widget->isType( UI_TYPE_TEXTEDIT ) &&
-		   !static_cast<const UITextEdit*>( widget )->isLocked() ) )
+		 ( widget->isType( UI_TYPE_CODEEDITOR ) &&
+		   !static_cast<const UICodeEditor*>( widget )->isLocked() ) )
 		actions |= accessibilityActionMask( AccessibilityAction::SetTextSelection );
 	if ( widget->isType( UI_TYPE_COMBOBOX ) ) {
 		actions |=
@@ -356,6 +645,9 @@ UIWidget* AccessibilityWidgetResolver::getFocusOwner( Node* focused, const UIWid
 				element = widget;
 		} else if ( !element && widget != sceneRoot && widget->isAccessibilityElement() )
 			element = widget;
+		else if ( element && widget != element && isLeafRole( getRole( widget ) ) )
+			// A leaf control does not expose its children; it owns their focus.
+			element = widget;
 	}
 	return element;
 }
@@ -374,12 +666,59 @@ UIWidget* AccessibilityWidgetResolver::getEventTarget( UIWidget* widget,
 		return nullptr;
 	if ( auto* view = getOwningModelView( widget ) )
 		return event == AccessibilityEvent::FocusChanged ? view : nullptr;
+	if ( auto* leaf = getLeafOwner( widget ) ) {
+		// A leaf control's text view changing its text is the control's name changing. Structural
+		// events stay invisible: the control has no exposed children.
+		return event == AccessibilityEvent::ChildrenChanged ? nullptr : leaf;
+	}
 	if ( event == AccessibilityEvent::StateChanged && widget->isType( UI_TYPE_DROPDOWN ) ) {
 		auto* parent = widget->getParent();
 		if ( parent && parent->isType( UI_TYPE_COMBOBOX ) )
 			return parent->asType<UIWidget>();
 	}
 	return widget;
+}
+
+namespace {
+
+void auditWidget( const UIWidget* widget, std::vector<AccessibilityIssue>& issues ) {
+	// Recycled model-view cells are exposed through the view's virtual rows, not as widgets.
+	if ( widget->isAccessibilityHidden() || !widget->isVisible() ||
+		 AccessibilityWidgetResolver::getOwningModelView( widget ) )
+		return;
+	const auto role = AccessibilityWidgetResolver::getRole( widget );
+	if ( role != AccessibilityRole::None && role != AccessibilityRole::Application &&
+		 role != AccessibilityRole::Label && widget->isTabFocusable() &&
+		 AccessibilityWidgetResolver::getName( widget ).empty() &&
+		 AccessibilityWidgetResolver::getValue( widget ).empty() )
+		issues.push_back( { widget, "Focusable control has no accessible name (set aria-label, "
+									"aria-labelledby or a tooltip)." } );
+	if ( !widget->getAccessibilityLabelledBy().empty() &&
+		 !findRelated( widget, widget->getAccessibilityLabelledBy() ) )
+		issues.push_back( { widget, "aria-labelledby \"" +
+										String( widget->getAccessibilityLabelledBy() ) +
+										"\" does not match any widget." } );
+	if ( !widget->getAccessibilityDescribedBy().empty() &&
+		 !findRelated( widget, widget->getAccessibilityDescribedBy() ) )
+		issues.push_back( { widget, "aria-describedby \"" +
+										String( widget->getAccessibilityDescribedBy() ) +
+										"\" does not match any widget." } );
+	// A leaf control's children are implementation details that no client can reach.
+	if ( AccessibilityWidgetResolver::isLeafRole( role ) )
+		return;
+	for ( const Node* child = widget->getFirstChild(); child; child = child->getNextNode() ) {
+		if ( child->isWidget() )
+			auditWidget( static_cast<const UIWidget*>( child ), issues );
+	}
+}
+
+} // namespace
+
+std::vector<AccessibilityIssue> AccessibilityWidgetResolver::audit( const UIWidget* root ) {
+	std::vector<AccessibilityIssue> issues;
+	if ( root )
+		auditWidget( root, issues );
+	return issues;
 }
 
 bool AccessibilityWidgetResolver::performAction( UIWidget* widget,
@@ -389,6 +728,13 @@ bool AccessibilityWidgetResolver::performAction( UIWidget* widget,
 	if ( request.action == AccessibilityAction::Focus ) {
 		widget->setFocus( NodeFocusReason::Unknown );
 		return true;
+	}
+	if ( request.action == AccessibilityAction::ScrollTo ) {
+		// Bring the widget into view through every enclosing scroll view, innermost first.
+		bool scrolled = false;
+		for ( auto* view = scrollViewFor( widget ); view; view = scrollViewFor( view ) )
+			scrolled |= view->scrollIntoView( widget );
+		return scrolled;
 	}
 	if ( request.action == AccessibilityAction::Toggle && widget->isType( UI_TYPE_MENUCHECKBOX ) ) {
 		static_cast<UIMenuCheckBox*>( widget )->activate();
@@ -436,14 +782,22 @@ bool AccessibilityWidgetResolver::performAction( UIWidget* widget,
 		static_cast<UITextEdit*>( widget )->setText( request.value );
 		return true;
 	}
+	if ( request.action == AccessibilityAction::SetText && widget->isType( UI_TYPE_CODEEDITOR ) ) {
+		// A code editor keeps its document (file path, undo history): replace its contents as
+		// one undoable edit instead of resetting it.
+		auto& document = static_cast<UICodeEditor*>( widget )->getDocument();
+		document.selectAll();
+		document.replaceSelection( request.value );
+		return true;
+	}
 	if ( request.action == AccessibilityAction::SetTextSelection &&
-		 ( widget->isType( UI_TYPE_TEXTINPUT ) || widget->isType( UI_TYPE_TEXTEDIT ) ) ) {
+		 ( widget->isType( UI_TYPE_TEXTINPUT ) || widget->isType( UI_TYPE_CODEEDITOR ) ) ) {
 		Int32 start = 0;
 		Int32 end = 0;
 		if ( !parseSelection( request.value, start, end ) )
 			return false;
-		auto& document = widget->isType( UI_TYPE_TEXTEDIT )
-							 ? static_cast<UITextEdit*>( widget )->getDocument()
+		auto& document = widget->isType( UI_TYPE_CODEEDITOR )
+							 ? static_cast<UICodeEditor*>( widget )->getDocument()
 							 : static_cast<UITextInput*>( widget )->getDocument();
 		document.setSelection( documentPosition( document, start ),
 							   documentPosition( document, end ) );

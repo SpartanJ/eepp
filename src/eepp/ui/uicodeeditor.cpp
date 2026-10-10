@@ -272,7 +272,7 @@ Uint32 UICodeEditor::getType() const {
 }
 
 bool UICodeEditor::isType( const Uint32& type ) const {
-	return type == getType() || UITouchDraggableWidget::isType( type );
+	return type == UICodeEditor::getType() || UITouchDraggableWidget::isType( type );
 }
 
 void UICodeEditor::setTheme( UITheme* Theme ) {
@@ -718,6 +718,7 @@ void UICodeEditor::invalidateLineWrapMaxWidth( bool force ) {
 void UICodeEditor::onDocumentReloaded( TextDocument* ) {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentReloaded );
 	sendEvent( &event );
+	notifyAccessibilityWholeTextChanged();
 	invalidateDraw();
 	invalidateLongestLineWidth();
 	invalidateLineWrapMaxWidth( true );
@@ -728,6 +729,7 @@ void UICodeEditor::onDocumentReloaded( TextDocument* ) {
 void UICodeEditor::onDocumentLoaded() {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
 	sendEvent( &event );
+	notifyAccessibilityWholeTextChanged();
 	invalidateEditor();
 	invalidateDraw();
 	invalidateLongestLineWidth();
@@ -739,6 +741,7 @@ void UICodeEditor::onDocumentLoaded() {
 void UICodeEditor::onDocumentReset( TextDocument* ) {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentReset );
 	sendEvent( &event );
+	notifyAccessibilityWholeTextChanged();
 	mDocView.clear();
 	mLinesWidthCache.clear();
 	mColorBoxesCache.clear();
@@ -753,6 +756,7 @@ void UICodeEditor::onDocumentReset( TextDocument* ) {
 void UICodeEditor::onDocumentChanged( URI oldDocURI ) {
 	if ( mFindReplace )
 		mFindReplace->setDoc( mDoc );
+	notifyAccessibilityWholeTextChanged();
 	DocChangedEvent event( this, mDoc.get(), Event::OnDocumentChanged, oldDocURI );
 	sendEvent( &event );
 }
@@ -2422,8 +2426,8 @@ void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& change ) 
 	findRegionsDelayed();
 	checkMatchingBrackets();
 	sendCommonEvent( Event::OnTextChanged );
-	if ( isType( UI_TYPE_TEXTEDIT ) )
-		notifyAccessibilityEvent( AccessibilityEvent::ValueChanged );
+	notifyAccessibilityTextChanged( &change );
+	notifyAccessibilityEvent( AccessibilityEvent::ValueChanged );
 }
 
 void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {
@@ -2444,6 +2448,7 @@ void UICodeEditor::onDocumentSelectionChange( const Doc::TextRange& ) {
 	resetCursor();
 	invalidateDraw();
 	sendCommonEvent( Event::OnSelectionChanged );
+	notifyAccessibilityEvent( AccessibilityEvent::SelectionChanged );
 }
 
 void UICodeEditor::onDocumentLineCountChange( const size_t& lastCount, const size_t& newCount ) {

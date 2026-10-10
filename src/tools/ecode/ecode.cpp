@@ -1026,7 +1026,10 @@ void App::onFileDropped( std::string file, bool openBinaryAsDocument ) {
 	bool doesntNeedEmptyEditor =
 		( Image::isImageExtension( file ) && FileSystem::fileExtension( file ) != "svg" ) ||
 		SoundFileFactory::isKnownFileExtension( file );
-	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
+	// Only reuse document editors. Other code editors (a commit message box, a dialog input) must
+	// not receive the dropped file.
+	if ( node && node->isType( UI_TYPE_CODEEDITOR ) &&
+		 mSplitter->editorExists( node->asType<UICodeEditor>() ) ) {
 		codeEditor = node->asType<UICodeEditor>();
 		if ( ( codeEditor->getDocument().isLoading() || codeEditor->getDocument().hasFilepath() ||
 			   !codeEditor->getDocument().isEmpty() ) &&

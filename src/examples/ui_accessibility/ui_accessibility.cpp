@@ -41,7 +41,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			<TextView text="Accessibility settings" font-size="22dp" />
 			<TextInput id="project-name" aria-label="Project name" text="eepp" lw="mp" />
 			<TextInput id="account-password" aria-label="Account password" text="secret" input-mode="password" lw="mp" />
-			<TextEdit id="description" aria-label="Description" aria-description="Multiline editor. Press Mod Tab to move to the next control." text="Accessible UI" lw="mp" lh="80dp" />
+			<TextEdit id="description" aria-label="Description" aria-description="Multiline editor. Press Control Tab to move to the next control." text="Accessible UI" lw="mp" lh="80dp" />
 			<CheckBox id="autosave" aria-label="Enable autosave" text="Enable autosave" />
 			<RadioButton id="light-theme" aria-label="Light Theme" text="Light theme" />
 			<RadioButton id="dark-theme" aria-label="Dark Theme" text="Dark theme" />
@@ -74,8 +74,13 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 				<PushButton id="mutable-control" text="Mutable control" />
 				<PushButton id="toggle-enabled" text="Toggle mutable enabled" />
 				<PushButton id="toggle-visible" text="Toggle mutable visibility" />
+				<PushButton id="refresh-status" icon="icon(refresh, 12dp)" tooltip="Refresh status" />
 			</hbox>
-			<TextView id="status" text="Ready" />
+			<hbox lw="mp" lh="wc">
+				<PushButton id="append-description" text="Append description line" />
+				<PushButton id="reset-project-name" text="Reset project name" />
+			</hbox>
+			<TextView id="status" text="Ready" aria-live="polite" />
 		</vbox>
 	)xml" );
 	content->setAccessibilityLabel( "Accessibility settings" );
@@ -133,6 +138,21 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	}
 	content->find<UIPushButton>( "save" )->onClick(
 		[status]( auto ) { status->setText( "Settings saved" ); } );
+	// Icon-only: its accessible name comes from the tooltip. The status line is a live region.
+	content->find<UIPushButton>( "refresh-status" )->onClick( [status]( auto ) {
+		status->setText( "Status refreshed" );
+	} );
+	// An application-side edit is reported as an exact change record; a replaced text is
+	// reported as a whole-text change.
+	auto description = content->find<UITextEdit>( "description" );
+	content->find<UIPushButton>( "append-description" )->onClick( [description]( auto ) {
+		auto& document = description->getDocument();
+		document.insert( 0, document.endOfDoc(), "\nappended" );
+	} );
+	auto projectName = content->find<UITextInput>( "project-name" );
+	content->find<UIPushButton>( "reset-project-name" )->onClick( [projectName]( auto ) {
+		projectName->setText( "eepp" );
+	} );
 	content->find<UIPushButton>( "inspect" )->onClick( [scene]( auto ) {
 		EE::UI::Tools::UIWidgetInspector::create( scene );
 	} );

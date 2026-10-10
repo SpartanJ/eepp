@@ -185,7 +185,7 @@ static json toJson( const std::vector<LSPWorkspaceFolder>& l ) {
 	return result;
 }
 
-static json toJson( const std::vector<DocumentContentChange>& changes ) {
+static json toJson( const DocumentContentChanges& changes ) {
 	json result;
 	for ( const auto& change : changes ) {
 		result.push_back(
@@ -1689,14 +1689,14 @@ LSPClientServer::LSPRequestHandle LSPClientServer::didSave( TextDocument* doc ) 
 
 LSPClientServer::LSPRequestHandle
 LSPClientServer::didChange( const URI& document, int version, const std::string& text,
-							const std::vector<DocumentContentChange>& change ) {
+							const DocumentContentChanges& change ) {
 	auto params = textDocumentParams( document, version );
 	params["contentChanges"] = !text.empty() ? json{ json{ MEMBER_TEXT, text } } : toJson( change );
 	return send( newRequest( "textDocument/didChange", params ) );
 }
 
 LSPClientServer::LSPRequestHandle
-LSPClientServer::didChange( TextDocument* doc, const std::vector<DocumentContentChange>& change ) {
+LSPClientServer::didChange( TextDocument* doc, const DocumentContentChanges& change ) {
 	Lock l( mClientsMutex );
 	auto it = mClients.find( doc );
 	if ( it != mClients.end() )
@@ -1706,11 +1706,11 @@ LSPClientServer::didChange( TextDocument* doc, const std::vector<DocumentContent
 }
 
 void LSPClientServer::queueAndProcess( const URI& document, int version,
-									   const std::vector<DocumentContentChange>& change ) {
+									   DocumentContentChanges&& change ) {
 	bool shouldStartWorker = false;
 	{
 		Lock l( mDidChangeMutex );
-		mDidChangeQueue.push( { document, version, change } );
+		mDidChangeQueue.push( { document, version, std::move( change ) } );
 		if ( !mIsProcessingQueue ) {
 			mIsProcessingQueue = true;
 			shouldStartWorker = true;
@@ -1731,7 +1731,7 @@ void LSPClientServer::processDidChangeQueue() {
 				mIsProcessingQueue = false;
 				break;
 			}
-			change = mDidChangeQueue.front();
+			change = std::move( mDidChangeQueue.front() );
 			mDidChangeQueue.pop();
 		}
 		// Process outside the lock to avoid blocking

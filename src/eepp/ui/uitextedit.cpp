@@ -86,11 +86,6 @@ void UITextEdit::setText( const String& text ) {
 	invalidateLongestLineWidth();
 }
 
-void UITextEdit::onDocumentSelectionChange( const Doc::TextRange& range ) {
-	UICodeEditor::onDocumentSelectionChange( range );
-	notifyAccessibilityEvent( AccessibilityEvent::SelectionChanged );
-}
-
 void UITextEdit::setWordWrap( bool enabled ) {
 	if ( enabled )
 		setFlags( UI_WORD_WRAP );

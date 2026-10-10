@@ -15,7 +15,10 @@ size_t nextSourceCodePoint( const std::u16string& text, size_t index ) {
 }
 
 size_t codePointToUTF16( const String& string, Int32 offset ) {
-	const auto source = string.toUtf16();
+	return codePointToUTF16( string.toUtf16(), offset );
+}
+
+size_t codePointToUTF16( const std::u16string& source, Int32 offset ) {
 	const size_t wanted = offset > 0 ? static_cast<size_t>( offset ) : 0;
 	size_t sourceIndex = 0;
 	size_t displayIndex = 0;
@@ -31,7 +34,10 @@ size_t codePointToUTF16( const String& string, Int32 offset ) {
 }
 
 Int32 utf16ToCodePoint( const String& string, size_t offset ) {
-	const auto source = string.toUtf16();
+	return utf16ToCodePoint( string.toUtf16(), offset );
+}
+
+Int32 utf16ToCodePoint( const std::u16string& source, size_t offset ) {
 	size_t sourceIndex = 0;
 	size_t displayIndex = 0;
 	Int32 codePoints = 0;
@@ -51,7 +57,10 @@ Int32 utf16ToCodePoint( const String& string, size_t offset ) {
 }
 
 std::u16string normalizedUTF16( const String& string ) {
-	const auto source = string.toUtf16();
+	return normalizedUTF16( string.toUtf16() );
+}
+
+std::u16string normalizedUTF16( const std::u16string& source ) {
 	std::u16string result;
 	result.reserve( source.size() );
 	for ( size_t index = 0; index < source.size(); ++index ) {
@@ -62,6 +71,36 @@ std::u16string normalizedUTF16( const String& string ) {
 	return result;
 }
 
+std::shared_ptr<const TextContents>
+UIAutomationProviderContext::textContents( AccessibilityManager& manager,
+										   AccessibilityNodeRef ref ) {
+	const auto revision = manager.getTextRevision( ref );
+	if ( !revision.isValid() )
+		return nullptr;
+	for ( const auto& entry : mTextCache ) {
+		if ( entry.ref == ref && entry.revision == revision )
+			return entry.contents;
+	}
+	auto contents = std::make_shared<TextContents>();
+	contents->source = manager.getTextRange( ref, 0, manager.getTextLength( ref ) ).toUtf16();
+	contents->text = normalizedUTF16( contents->source );
+	CachedTextContents entry{ ref, revision, std::move( contents ) };
+	for ( auto& cached : mTextCache ) {
+		if ( cached.ref == ref ) {
+			cached = std::move( entry );
+			return cached.contents;
+		}
+	}
+	if ( mTextCache.size() < TextCacheSize ) {
+		mTextCache.push_back( std::move( entry ) );
+		return mTextCache.back().contents;
+	}
+	auto& replaced = mTextCache[mNextTextCacheEntry];
+	mNextTextCacheEntry = ( mNextTextCacheEntry + 1 ) % TextCacheSize;
+	replaced = std::move( entry );
+	return replaced.contents;
+}
+
 HRESULT textSnapshot( const std::shared_ptr<UIAutomationProviderContext>& context,
 					  AccessibilityNodeRef ref, TextSnapshot& snapshot ) {
 	if ( !context || !context->isAlive() )
@@ -70,16 +109,18 @@ HRESULT textSnapshot( const std::shared_ptr<UIAutomationProviderContext>& contex
 		snapshot, [=]( AccessibilityManager& manager, TextSnapshot& output ) -> HRESULT {
 			if ( !manager.isValid( ref ) )
 				return UIA_E_ELEMENTNOTAVAILABLE;
-			const auto info = manager.getNodeInfo( ref );
+			const auto info = manager.getNodeInfo( ref, false, true );
 			if ( !info.text.valid || hasState( info.states, AccessibilityState::Protected ) )
 				return UIA_E_INVALIDOPERATION;
-			output.source = info.value;
-			output.text = normalizedUTF16( info.value );
+			// The contents are copied only when the text changed since the last query.
+			output.contents = context->textContents( manager, ref );
+			if ( !output.contents )
+				return UIA_E_INVALIDOPERATION;
 			output.actions = info.actions;
 			output.selectionStart = static_cast<int>( codePointToUTF16(
-				info.value, std::min( info.text.selectionStart, info.text.selectionEnd ) ) );
+				output.source(), std::min( info.text.selectionStart, info.text.selectionEnd ) ) );
 			output.selectionEnd = static_cast<int>( codePointToUTF16(
-				info.value, std::max( info.text.selectionStart, info.text.selectionEnd ) ) );
+				output.source(), std::max( info.text.selectionStart, info.text.selectionEnd ) ) );
 			output.bounds = info.bounds;
 			output.boundsValid = info.boundsValid;
 			return S_OK;
@@ -234,7 +275,7 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::Clone( ITextRangeProvider** ran
 	const HRESULT result = currentSnapshot( snapshot );
 	if ( FAILED( result ) )
 		return result;
-	auto endpoints = normalizedEndpoints( snapshot.text.size() );
+	auto endpoints = normalizedEndpoints( snapshot.text().size() );
 	*range = new UIAutomationTextRange( mContext, mRef, endpoints.first, endpoints.second );
 	return S_OK;
 }
@@ -274,8 +315,8 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::ExpandToEnclosingUnit( TextUnit
 	const HRESULT result = currentSnapshot( snapshot );
 	if ( FAILED( result ) )
 		return result;
-	const auto current = normalizedEndpoints( snapshot.text.size() );
-	const auto expanded = enclosingTextUnit( snapshot.text, current.first, unit );
+	const auto current = normalizedEndpoints( snapshot.text().size() );
+	const auto expanded = enclosingTextUnit( snapshot.text(), current.first, unit );
 	setEndpoints( static_cast<int>( expanded.first ), static_cast<int>( expanded.second ) );
 	return S_OK;
 }
@@ -299,7 +340,7 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::FindText( BSTR text, BOOL backw
 	const HRESULT result = currentSnapshot( snapshot );
 	if ( FAILED( result ) )
 		return result;
-	const auto current = normalizedEndpoints( snapshot.text.size() );
+	const auto current = normalizedEndpoints( snapshot.text().size() );
 	const size_t rangeStart = static_cast<size_t>( current.first );
 	const size_t rangeEnd = static_cast<size_t>( current.second );
 	std::u16string needle( reinterpret_cast<const char16_t*>( text ), SysStringLen( text ) );
@@ -314,7 +355,7 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::FindText( BSTR text, BOOL backw
 	if ( backward ) {
 		for ( size_t candidate = rangeEnd; candidate-- > rangeStart; ) {
 			if ( candidate + needle.size() <= rangeEnd &&
-				 std::equal( needle.begin(), needle.end(), snapshot.text.begin() + candidate,
+				 std::equal( needle.begin(), needle.end(), snapshot.text().begin() + candidate,
 							 equal ) ) {
 				found = candidate;
 				break;
@@ -322,7 +363,7 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::FindText( BSTR text, BOOL backw
 		}
 	} else {
 		for ( size_t candidate = rangeStart; candidate + needle.size() <= rangeEnd; ++candidate ) {
-			if ( std::equal( needle.begin(), needle.end(), snapshot.text.begin() + candidate,
+			if ( std::equal( needle.begin(), needle.end(), snapshot.text().begin() + candidate,
 							 equal ) ) {
 				found = candidate;
 				break;
@@ -353,7 +394,7 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::GetBoundingRectangles( SAFEARRA
 	const HRESULT result = currentSnapshot( snapshot );
 	if ( FAILED( result ) )
 		return result;
-	const auto current = normalizedEndpoints( snapshot.text.size() );
+	const auto current = normalizedEndpoints( snapshot.text().size() );
 	const bool hasRectangle = current.first != current.second && snapshot.boundsValid &&
 							  IsWindowVisible( mContext->window() ) &&
 							  !IsIconic( mContext->window() );
@@ -386,13 +427,13 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::GetText( int maxLength, BSTR* t
 	const HRESULT result = currentSnapshot( snapshot );
 	if ( FAILED( result ) )
 		return result;
-	const auto current = normalizedEndpoints( snapshot.text.size() );
+	const auto current = normalizedEndpoints( snapshot.text().size() );
 	size_t length = current.second - current.first;
 	if ( maxLength >= 0 )
 		length = std::min( length, static_cast<size_t>( maxLength ) );
-	*text =
-		SysAllocStringLen( reinterpret_cast<const wchar_t*>( snapshot.text.data() + current.first ),
-						   static_cast<UINT>( length ) );
+	*text = SysAllocStringLen(
+		reinterpret_cast<const wchar_t*>( snapshot.text().data() + current.first ),
+		static_cast<UINT>( length ) );
 	return *text ? S_OK : E_OUTOFMEMORY;
 }
 
@@ -404,13 +445,13 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::Move( TextUnit unit, int count,
 	const HRESULT result = currentSnapshot( snapshot );
 	if ( FAILED( result ) )
 		return result;
-	const auto current = normalizedEndpoints( snapshot.text.size() );
+	const auto current = normalizedEndpoints( snapshot.text().size() );
 	int actual{};
-	const size_t start = moveTextEndpoint( snapshot.text, current.first, unit, count, actual );
+	const size_t start = moveTextEndpoint( snapshot.text(), current.first, unit, count, actual );
 	if ( current.first == current.second )
 		setEndpoints( static_cast<int>( start ), static_cast<int>( start ) );
 	else {
-		const auto expanded = enclosingTextUnit( snapshot.text, start, unit );
+		const auto expanded = enclosingTextUnit( snapshot.text(), start, unit );
 		setEndpoints( static_cast<int>( expanded.first ), static_cast<int>( expanded.second ) );
 	}
 	*moved = actual;
@@ -426,11 +467,12 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::MoveEndpointByUnit(
 	const HRESULT result = currentSnapshot( snapshot );
 	if ( FAILED( result ) )
 		return result;
-	auto current = normalizedEndpoints( snapshot.text.size() );
+	auto current = normalizedEndpoints( snapshot.text().size() );
 	int actual{};
 	const size_t target = moveTextEndpoint(
-		snapshot.text, endpoint == TextPatternRangeEndpoint_Start ? current.first : current.second,
-		unit, count, actual );
+		snapshot.text(),
+		endpoint == TextPatternRangeEndpoint_Start ? current.first : current.second, unit, count,
+		actual );
 	if ( endpoint == TextPatternRangeEndpoint_Start ) {
 		current.first = static_cast<int>( target );
 		if ( current.first > current.second )
@@ -477,9 +519,9 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::Select() {
 		return result;
 	if ( !hasAction( snapshot.actions, AccessibilityAction::SetTextSelection ) )
 		return UIA_E_INVALIDOPERATION;
-	const auto current = normalizedEndpoints( snapshot.text.size() );
-	const Int32 start = utf16ToCodePoint( snapshot.source, current.first );
-	const Int32 end = utf16ToCodePoint( snapshot.source, current.second );
+	const auto current = normalizedEndpoints( snapshot.text().size() );
+	const Int32 start = utf16ToCodePoint( snapshot.source(), current.first );
+	const Int32 end = utf16ToCodePoint( snapshot.source(), current.second );
 	bool ignored{};
 	return invoke( ignored, [this, start, end]( AccessibilityManager& manager, bool& ) -> HRESULT {
 		if ( !manager.isValid( mRef ) )

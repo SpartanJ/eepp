@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <cstdio>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/input.hpp>
@@ -48,11 +49,10 @@ void AtSpiApplication::initialize() {
 	}
 	mDBus.messageUnref( reply );
 	if ( mConnection ) {
+		// Client disconnections are watched per client (watchClient()), not with a bus-wide
+		// NameOwnerChanged match that would wake us for every application on the bus.
 		mDBus.connectionAddFilter( mConnection, &AtSpiApplication::clientDisconnected, this,
 								   nullptr );
-		mDBus.busAddMatch(
-			mConnection, "type='signal',interface='org.freedesktop.DBus',member='NameOwnerChanged'",
-			nullptr );
 		registerApplication();
 		if ( mConnection && mDBus.connectionGetUnixFd( mConnection, &mConnectionFd ) &&
 			 pipe( mWakePipe ) == 0 ) {
@@ -114,12 +114,14 @@ void AtSpiApplication::unregisterManager( AccessibilityManager& manager ) {
 		if ( it->second != &manager )
 			continue;
 		const Int32 index = static_cast<Int32>( it - mManagers.begin() );
-		const auto prefix = std::string( NodePathPrefix ) + String::toString( it->first ) + "/";
-		for ( auto text = mTextSnapshots.begin(); text != mTextSnapshots.end(); ) {
-			if ( text->first.compare( 0, prefix.size(), prefix ) == 0 )
-				text = mTextSnapshots.erase( text );
-			else
-				++text;
+		if ( !mTextStates.empty() ) {
+			const auto prefix = std::string( NodePathPrefix ) + String::toString( it->first ) + "/";
+			for ( auto text = mTextStates.begin(); text != mTextStates.end(); ) {
+				if ( text->first.compare( 0, prefix.size(), prefix ) == 0 )
+					text = mTextStates.erase( text );
+				else
+					++text;
+			}
 		}
 		if ( isAvailable() && hasActiveClients() )
 			sendWindowChanged( manager, false, index );
@@ -232,18 +234,87 @@ void AtSpiApplication::activate( DBusMessage* message ) {
 	const char* sender = mDBus.messageGetSender( message );
 	// Registry bookkeeping is not evidence of an assistive client. Its bus connection
 	// normally outlives every screen reader and would otherwise pin the active flag forever.
-	if ( !sender || mRegistryBusName == sender )
+	if ( !sender || mRegistryBusName == sender || !mClients.emplace( sender ).second )
 		return;
-	mClients.emplace( sender );
-	mHasActiveClients.store( !mClients.empty(), std::memory_order_release );
+	mHasActiveClients.store( true, std::memory_order_release );
+	if ( isAccessibilityTraceEnabled() ) {
+		const char* member = mDBus.messageGetMember( message );
+		std::fprintf( stderr, "eepp accessibility: AT-SPI client %s connected (first call %s)\n",
+					  sender, member ? member : "?" );
+	}
+	watchClient( sender );
+}
+
+namespace {
+
+std::string clientMatchRule( const char* name ) {
+	return std::string( "type='signal',sender='org.freedesktop.DBus',"
+						"interface='org.freedesktop.DBus',member='NameOwnerChanged',arg0='" ) +
+		   name + "'";
+}
+
+} // namespace
+
+void AtSpiApplication::watchClient( const char* name ) {
+	// Neither request blocks: without an error argument libdbus queues the AddMatch instead of
+	// waiting for its reply, and the NameHasOwner reply arrives through clientDisconnected().
+	// The bus daemon handles one connection's requests in order, so the check runs after the
+	// match is installed: a client that already left is reported by the check, and one that
+	// leaves later by the match.
+	mDBus.busAddMatch( mConnection, clientMatchRule( name ).c_str(), nullptr );
+	DBusMessage* check = mDBus.messageNewMethodCall(
+		"org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameHasOwner" );
+	if ( !check )
+		return;
+	DBusMessageIter iter;
+	mDBus.messageIterInitAppend( check, &iter );
+	appendBasic( iter, 's', &name );
+	Uint32 serial = 0;
+	if ( mDBus.connectionSend( mConnection, check, &serial ) )
+		mClientChecks.emplace( serial, name );
+	mDBus.messageUnref( check );
+	if ( !mOutgoingPending ) {
+		mOutgoingPending = true;
+		Window::Input::wakeUpEventLoop();
+	}
+}
+
+void AtSpiApplication::clientGone( const char* name ) {
+	auto found = mClients.find( name );
+	if ( found == mClients.end() )
+		return;
+	if ( isAccessibilityTraceEnabled() )
+		std::fprintf( stderr, "eepp accessibility: AT-SPI client %s disconnected\n", name );
+	mDBus.busRemoveMatch( mConnection, clientMatchRule( name ).c_str(), nullptr );
+	mClients.erase( found );
+	const bool active = !mClients.empty();
+	if ( !active ) {
+		mTextStates.clear();
+		mPendingTexts.clear();
+	}
+	mHasActiveClients.store( active, std::memory_order_release );
 }
 
 DBusHandlerResult AtSpiApplication::clientDisconnected( DBusConnection*, DBusMessage* message,
 														void* userData ) {
 	auto* application = static_cast<AtSpiApplication*>( userData );
-	const char* interface = application->mDBus.messageGetInterface( message );
-	const char* member = application->mDBus.messageGetMember( message );
-	const char* sender = application->mDBus.messageGetSender( message );
+	auto& dbus = application->mDBus;
+	const int type = dbus.messageGetType( message );
+	if ( type == DBusMessageTypeMethodReturn || type == DBusMessageTypeError ) {
+		// The reply to a watchClient() NameHasOwner check.
+		auto check = application->mClientChecks.find( dbus.messageGetReplySerial( message ) );
+		if ( check == application->mClientChecks.end() )
+			return 1;
+		Uint32 hasOwner = 1;
+		if ( type == DBusMessageTypeMethodReturn &&
+			 dbus.messageGetArgs( message, nullptr, 'b', &hasOwner, 0 ) && !hasOwner )
+			application->clientGone( check->second.c_str() );
+		application->mClientChecks.erase( check );
+		return 0;
+	}
+	const char* interface = dbus.messageGetInterface( message );
+	const char* member = dbus.messageGetMember( message );
+	const char* sender = dbus.messageGetSender( message );
 	if ( !interface || !member || std::strcmp( interface, "org.freedesktop.DBus" ) != 0 ||
 		 std::strcmp( member, "NameOwnerChanged" ) != 0 || !sender ||
 		 std::strcmp( sender, "org.freedesktop.DBus" ) != 0 )
@@ -251,17 +322,9 @@ DBusHandlerResult AtSpiApplication::clientDisconnected( DBusConnection*, DBusMes
 	const char* name = nullptr;
 	const char* oldOwner = nullptr;
 	const char* newOwner = nullptr;
-	if ( application->mDBus.messageGetArgs( message, nullptr, 's', &name, 's', &oldOwner, 's',
-											&newOwner, 0 ) &&
-		 name && newOwner && !*newOwner ) {
-		application->mClients.erase( name );
-		const bool active = !application->mClients.empty();
-		if ( !active ) {
-			application->mTextSnapshots.clear();
-			application->mPendingTexts.clear();
-		}
-		application->mHasActiveClients.store( active, std::memory_order_release );
-	}
+	if ( dbus.messageGetArgs( message, nullptr, 's', &name, 's', &oldOwner, 's', &newOwner, 0 ) &&
+		 name && newOwner && !*newOwner )
+		application->clientGone( name );
 	return 1;
 }
 
@@ -353,7 +416,11 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 				scene->getThreadPool()->run(
 					[application = mApplication] { application->initialize(); } );
 			} else {
-				mApplication->initialize();
+				// Without a pool, run the D-Bus round trips on a detached thread that shares
+				// ownership: tearing the backend down never waits for their timeouts, and when
+				// the thread holds the last reference the application is destroyed there, which
+				// joins only the I/O thread.
+				std::thread( [application = mApplication] { application->initialize(); } ).detach();
 			}
 		} else {
 			mApplication->registerManager( manager );
@@ -381,6 +448,15 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 	void onEvent( const AccessibilityPendingEvent& event ) {
 		if ( mApplication )
 			mApplication->onEvent( mManager, event );
+	}
+
+	bool onTextChanged( AccessibilityNodeRef ref, const AccessibilityTextChange& change ) override {
+		return mApplication && mApplication->onTextChanged( mManager, ref, change );
+	}
+
+	void announce( const String& message, AccessibilityLive priority ) override {
+		if ( mApplication )
+			mApplication->announce( mManager, message, priority );
 	}
 
   private:

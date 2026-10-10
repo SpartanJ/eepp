@@ -417,6 +417,14 @@ void UITextInput::onFontColorChanged() {
 		mPassCache->setFillColor( mTextCache.getFillColor() );
 }
 
+void UITextInput::onTextChanged() {
+	// An input's text is its value, not its name.
+	sendCommonEvent( Event::OnTextChanged );
+	sendCommonEvent( Event::OnValueChange );
+	notifyAccessibilityEvent( AccessibilityEvent::ValueChanged );
+	invalidateDraw();
+}
+
 Text& UITextInput::getVisibleTextCache() {
 	if ( mMode == TextInputMode::Password && mPassCache )
 		return *mPassCache;
@@ -524,7 +532,9 @@ Int32 UITextInput::selCurEnd() {
 	return mDoc.getSelection().end().column();
 }
 
-void UITextInput::onDocumentTextChanged( const DocumentContentChange& ) {
+void UITextInput::onDocumentTextChanged( const DocumentContentChange& change ) {
+	// The edit record must precede the ValueChanged that UITextView::setText() reports below.
+	notifyAccessibilityTextChanged( &change );
 	Vector2f offSet = mRealAlignOffset;
 
 	const String& text = mDoc.line( 0 ).getText();

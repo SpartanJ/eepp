@@ -31,6 +31,7 @@
 
 namespace EE { namespace UI { namespace AtSpi {
 
+constexpr int DBusMessageTypeMethodReturn = 2;
 constexpr int DBusMessageTypeError = 3;
 
 struct DBusConnection;
@@ -75,6 +76,7 @@ class DBusLibrary {
 	using BusRegister = int ( * )( DBusConnection*, DBusError* );
 	using BusGetUniqueName = const char* ( * )( DBusConnection* );
 	using BusAddMatch = void ( * )( DBusConnection*, const char*, DBusError* );
+	using BusRemoveMatch = BusAddMatch;
 	using ConnectionAddFilter = int ( * )( DBusConnection*, DBusMessageFunction, void*,
 										   void ( * )( void* ) );
 	using ConnectionOpenPrivate = DBusConnection* ( * )( const char*, DBusError* );
@@ -96,6 +98,7 @@ class DBusLibrary {
 	using MessageGetArgs = int ( * )( DBusMessage*, DBusError*, int, ... );
 	using MessageGetString = const char* ( * )( DBusMessage* );
 	using MessageGetType = int ( * )( DBusMessage* );
+	using MessageGetReplySerial = Uint32 ( * )( DBusMessage* );
 	using MessageNewMethodReturn = DBusMessage* ( * )( DBusMessage* );
 	using MessageNewError = DBusMessage* ( * )( DBusMessage*, const char*, const char* );
 	using MessageNewSignal = DBusMessage* ( * )( const char*, const char*, const char* );
@@ -124,6 +127,7 @@ class DBusLibrary {
 			   loadSymbol( busRegister, "dbus_bus_register" ) &&
 			   loadSymbol( busGetUniqueName, "dbus_bus_get_unique_name" ) &&
 			   loadSymbol( busAddMatch, "dbus_bus_add_match" ) &&
+			   loadSymbol( busRemoveMatch, "dbus_bus_remove_match" ) &&
 			   loadSymbol( connectionAddFilter, "dbus_connection_add_filter" ) &&
 			   loadSymbol( connectionOpenPrivate, "dbus_connection_open_private" ) &&
 			   loadSymbol( connectionClose, "dbus_connection_close" ) &&
@@ -146,6 +150,7 @@ class DBusLibrary {
 			   loadSymbol( messageGetInterface, "dbus_message_get_interface" ) &&
 			   loadSymbol( messageGetMember, "dbus_message_get_member" ) &&
 			   loadSymbol( messageGetType, "dbus_message_get_type" ) &&
+			   loadSymbol( messageGetReplySerial, "dbus_message_get_reply_serial" ) &&
 			   loadSymbol( messageGetSender, "dbus_message_get_sender" ) &&
 			   loadSymbol( messageGetArgs, "dbus_message_get_args" ) &&
 			   loadSymbol( messageIterInitAppend, "dbus_message_iter_init_append" ) &&
@@ -164,6 +169,7 @@ class DBusLibrary {
 	BusRegister busRegister{};
 	BusGetUniqueName busGetUniqueName{};
 	BusAddMatch busAddMatch{};
+	BusRemoveMatch busRemoveMatch{};
 	ConnectionAddFilter connectionAddFilter{};
 	ConnectionOpenPrivate connectionOpenPrivate{};
 	ConnectionClose connectionClose{};
@@ -186,6 +192,7 @@ class DBusLibrary {
 	MessageGetString messageGetMember{};
 	MessageGetString messageGetSender{};
 	MessageGetType messageGetType{};
+	MessageGetReplySerial messageGetReplySerial{};
 	MessageGetArgs messageGetArgs{};
 	MessageIterInitAppend messageIterInitAppend{};
 	MessageIterInit messageIterInit{};
@@ -233,6 +240,12 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 
 	void onEvent( AccessibilityManager& manager, const AccessibilityPendingEvent& event );
 
+	bool onTextChanged( AccessibilityManager& manager, AccessibilityNodeRef ref,
+						const AccessibilityTextChange& change );
+
+	void announce( AccessibilityManager& manager, const String& message,
+				   AccessibilityLive priority );
+
   private:
 	static constexpr const char* RootPath = "/org/a11y/atspi/accessible/root";
 	static constexpr const char* CachePath = "/org/a11y/atspi/cache";
@@ -274,17 +287,22 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 	std::string mRegistryPath{ RootPath };
 	Int32 mApplicationId{};
 	bool mOutgoingPending{};
-	struct TextSnapshot {
-		String value;
+	/** What a client last saw of a text: its caret and selection, to report their changes, and
+	 * its length as of the last change event, to describe a whole-text replacement. Queries never
+	 * update the length. No contents are kept: edits arrive as exact change records. */
+	struct TextState {
 		AccessibilityTextInfo text;
+		Int32 length{ -1 };
 	};
-	UnorderedMap<std::string, TextSnapshot> mTextSnapshots;
+	UnorderedMap<std::string, TextState> mTextStates;
 	UnorderedSet<std::string> mClients;
+	/** NameHasOwner checks sent when a client was first seen, by reply serial. */
+	UnorderedMap<Uint32, std::string> mClientChecks;
 
 	struct PendingText {
 		AccessibilityManager* manager;
 		AccessibilityNodeRef ref;
-		bool valueChanged;
+		bool wholeText;
 	};
 	std::vector<PendingText> mPendingTexts;
 
@@ -297,6 +315,11 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 	static DBusHandlerResult handleMessage( DBusConnection*, DBusMessage* message, void* userData );
 
 	void activate( DBusMessage* message );
+
+	/** Watches only this client's disconnection; see the definition for the ordering argument. */
+	void watchClient( const char* name );
+
+	void clientGone( const char* name );
 
 	static DBusHandlerResult clientDisconnected( DBusConnection*, DBusMessage* message,
 												 void* userData );
@@ -313,14 +336,10 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 
 	// Manager events and text change notifications: accessibilitybackendatspievents.cpp
 
-	/** Records the client's view of a text. A snapshot is replaced only when the client has just
-	 * read the current contents and no unsent change would otherwise be diffed away. */
-	void rememberText( AccessibilityNodeRef ref, const AccessibilityNodeInfo& info,
-					   bool replace = false );
+	/** Starts tracking a text the client is looking at; returns its state. */
+	TextState& rememberText( AccessibilityNodeRef ref, const AccessibilityTextInfo& text );
 
-	bool hasPendingText( AccessibilityNodeRef ref ) const;
-
-	void queueText( AccessibilityManager& manager, AccessibilityNodeRef ref, bool valueChanged );
+	void queueText( AccessibilityManager& manager, AccessibilityNodeRef ref, bool wholeText );
 
 	void flushPendingTexts();
 
@@ -329,7 +348,11 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 
 	void sendTextSelection( AccessibilityNodeRef ref, const AccessibilityTextInfo& text );
 
-	void sendTextChanged( AccessibilityNodeRef ref );
+	/** Reports a whole-text replacement: delete everything the client knew, insert the rest. */
+	void sendTextReplaced( AccessibilityNodeRef ref );
+
+	/** Reports the replacement of `previous` by `current` as its minimal delete and insert. */
+	void sendTextDiff( AccessibilityNodeRef ref, const String& previous, const String& current );
 
 	void sendWindowChanged( AccessibilityManager& manager, bool added, Int32 index );
 
@@ -367,6 +390,10 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 	AccessibilityActions nativeActions( AccessibilityActions actions ) const;
 
 	const char* actionName( AccessibilityAction action ) const;
+
+	/** The Action key binding ("mnemonic;sequence;accelerator") of the activating action. */
+	std::string actionKeyBinding( const AccessibilityNodeInfo& info,
+								  AccessibilityAction action ) const;
 
 	void appendBasic( DBusMessageIter& iter, int type, const void* value ) {
 		mDBus.messageIterAppendBasic( &iter, type, value );

@@ -396,6 +396,9 @@ void TextDocument::reset() {
 		mLines.clear();
 		mLines.emplace_back( String( "\n" ), mDocumentMutex );
 	}
+	// Every content change bumps the modification id, wholesale replacements included, so it can
+	// identify a version of the text (LSP responses, accessibility text caches).
+	mModificationId++;
 
 	{
 		Lock l( mSyntaxDefinitionMutex );
@@ -519,6 +522,7 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 	{
 		Lock l( mLinesMutex );
 		mLines.clear();
+		mModificationId++;
 	}
 
 	MD5::Context md5Ctx;
@@ -1727,8 +1731,9 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	}
 
 	TextRange originalRange = range;
+	String removedText( getText( range ) );
 	mUndoStack.pushSelection( undoStack, cursorIdx, mSelection, time );
-	mUndoStack.pushInsert( undoStack, getText( range ), cursorIdx, range.start(), time );
+	mUndoStack.pushInsert( undoStack, removedText, cursorIdx, range.start(), time );
 
 	Int64 linesRemoved = 0;
 	bool deletedAcrossNewLine = false;
@@ -1853,7 +1858,7 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 								-linesRemoved );
 	}
 
-	notifyTextChanged( { originalRange, "" } );
+	notifyTextChanged( { originalRange, "" }, &removedText );
 	notifyLineChanged( range.start().line() );
 
 	return linesRemoved;
@@ -3965,6 +3970,7 @@ std::vector<TextDocumentLine> TextDocument::getLines() const {
 
 void TextDocument::setLines( std::vector<TextDocumentLine>&& lines ) {
 	mLines = std::move( lines );
+	mModificationId++;
 }
 
 std::string TextDocument::serializeUndoRedo( bool inverted ) {
@@ -4396,11 +4402,21 @@ void TextDocument::setNonWordChars( const String& nonWordChars ) {
 	mNonWordChars = nonWordChars;
 }
 
-void TextDocument::notifyTextChanged( const DocumentContentChange& change ) {
+void TextDocument::notifyTextChanged( const DocumentContentChange& change, const String* removed ) {
 	Lock l( mClientsMutex );
+	// Set under the clients lock, which serializes notifications. A client can edit the document
+	// from its callback: restore the outer edit's removed text once that nested one returns.
+	const String* outerRemoved = mNotifiedRemovedText;
+	mNotifiedRemovedText = removed;
 	for ( auto& client : mClients ) {
 		client->onDocumentTextChanged( change );
 	}
+	mNotifiedRemovedText = outerRemoved;
+}
+
+const String& TextDocument::getNotifiedRemovedText() const {
+	static const String empty;
+	return mNotifiedRemovedText ? *mNotifiedRemovedText : empty;
 }
 
 void TextDocument::notifyCursorChanged( TextPosition selection ) {

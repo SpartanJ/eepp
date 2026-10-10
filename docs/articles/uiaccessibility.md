@@ -75,9 +75,26 @@ need to be materialized as `UIWidget` objects merely for accessibility.
 While a cell is being edited, its editor widget is exposed as the only child of the virtual row
 (lists and trees) or cell (tables) it edits, and keyboard focus is reported on the editor.
 
-Text editing support currently covers `UITextInput` and `UITextEdit`, including caret and selection
-queries/actions and native change notifications. `UICodeEditor` and an end-to-end screen-reader
-workflow in ecode are not part of this initial foundation.
+Text editing support covers `UITextInput`, `UITextEdit` and `UICodeEditor`, including caret and
+selection queries/actions and native change notifications. A code editor with a file is named after
+that file unless it has a label. Setting its text through an assistive client replaces the document
+contents as one undoable edit, so the file path and undo history are kept.
+
+Text queries read only the range a client asks for, through a line index that is rebuilt once per
+edit, so moving the caret in a large file does not copy the file. Edits reach Linux clients as exact
+insert and delete records taken from the document. A wholesale replacement (a reset, a reload, or
+many edits in one frame, such as replace-all) is reported once as "everything removed, everything
+inserted". Windows and macOS need UTF-16 offsets, so they convert the text once per edit and reuse
+that copy for every query until the next edit.
+
+Controls whose content is their own name, value and state (buttons, check boxes, radio buttons,
+labels, tabs, menu items, sliders, spin boxes, progress bars and images) do not expose their
+internal widgets, so a button's text is read once, as its name, and not again as a child label.
+
+Menu items expose their keyboard shortcut (AT-SPI key binding, UIA `AcceleratorKey`, macOS menu
+command character and modifiers). Any widget inside a `UIScrollView` offers a scroll-into-view
+action, which scrolls every enclosing scroll view the least distance needed. The same behavior is
+available to applications as `UIScrollView::scrollIntoView( node )`.
 
 ## Accessible names and descriptions
 
@@ -90,8 +107,25 @@ Use `aria-label` when a widget's visible content does not provide a useful name.
 
 <TextEdit id="description"
           aria-label="Description"
-          aria-description="Multiline editor. Press Mod Tab to move to the next control." />
+          aria-description="Multiline editor. Press Control Tab to move to the next control." />
 ```
+
+When the name is visible elsewhere, point at it instead of repeating it. `aria-labelledby` names a
+widget after the widget with that id, and `aria-describedby` uses another widget's text as the
+description. Both ids are resolved from the scene root. When the referenced widget's text changes,
+or it is added, removed or given another id, assistive clients are told that the dependent widget's
+name or description changed:
+
+```xml
+<TextView id="user-label" text="User name" />
+<TextInput aria-labelledby="user-label" aria-describedby="user-hint" />
+<TextView id="user-hint" text="The name you sign in with" />
+```
+
+Names resolve in this order: `aria-labelledby`, `aria-label`, the widget's own text (button text,
+label text, window title, code editor file name), then its tooltip. An icon-only button with a
+tooltip is therefore named by the tooltip. A tooltip that did not become the name is used as the
+description when no other description is set.
 
 Use `aria-hidden="true"` for decorative or redundant widgets that should not appear in the native
 accessibility hierarchy:
@@ -107,7 +141,11 @@ These properties are also available through C++:
 widget->setAccessibilityLabel( "Project name" );
 widget->setAccessibilityDescription( "Enter the project display name." );
 widget->setAccessibilityHidden( false );
+widget->setAccessibilityLabelledBy( "user-label" );
+widget->setAccessibilityDescribedBy( "user-hint" );
 ```
+
+Setting a property to its current value does nothing, so re-applying styles is free.
 
 Prefer a concise label that identifies the control. A description should add information rather
 than repeat the label or visible text.
@@ -147,7 +185,35 @@ Standard widgets notify the accessibility manager when relevant UI state changes
 - model and child hierarchy changes.
 
 Bounds are queried on demand. Routine position and size changes do not emit per-widget native
-layout notifications; this avoids event floods while scrolling or running layout.
+layout notifications; this avoids event floods while scrolling or running layout. A window resize is
+announced once, on the window root.
+
+### Announcements and live regions
+
+Use an announcement for an event the user should hear without moving focus, such as a finished
+build:
+
+```cpp
+sceneNode->announceForAccessibility( "Build finished" );
+sceneNode->announceForAccessibility( "Build failed", AccessibilityLive::Assertive );
+```
+
+`Polite` waits until the screen reader finishes speaking; `Assertive` interrupts it. Announcements
+use UIA notifications (Windows 10 1709 and later), the AT-SPI `object:announcement` signal
+(at-spi2-core 2.46 and later, read by Orca) and `NSAccessibilityAnnouncementRequestedNotification`
+on macOS. Older systems ignore them.
+
+For text that changes in place, such as a status bar, mark it as a live region instead:
+
+```xml
+<TextView id="status" text="Ready" aria-live="polite" />
+```
+
+Name and value changes of a widget inside a live region (`polite` or `assertive`) are announced,
+unless the widget or one of its ancestors is `aria-hidden`.
+Several changes to the same widget in one frame produce one announcement with the final text, so a
+progress label updated every frame does not flood the screen reader. Both APIs are free while no
+assistive client is active.
 
 Applications using the standard widget APIs receive these notifications automatically. A custom
 control that changes semantic state outside the standard paths may notify its scene accessibility
@@ -162,9 +228,9 @@ destroyed.
 Accessible controls should be keyboard focusable and have a logical focus order. Standard Tab and
 Shift+Tab navigation moves between controls.
 
-Multiline text editors reserve Tab for inserting indentation. Use Mod+Tab to move to the next
-focusable widget and Mod+Shift+Tab to move to the previous one. `Mod` means Command on macOS and
-Control on other desktop platforms.
+Multiline text editors reserve Tab for inserting indentation. Use Control+Tab to move to the next
+focusable widget and Control+Shift+Tab to move to the previous one. This matches AppKit on macOS,
+where Command+Tab is reserved for switching applications.
 
 Screen readers may provide an additional browse or navigation mode. Their commands and speech
 settings are controlled by the screen reader and are separate from eepp's keyboard focus handling.
@@ -172,8 +238,14 @@ settings are controlled by the screen reader and are separate from eepp's keyboa
 ## Testing an application
 
 The `eepp-ui-accessibility` example contains representative controls, model-backed views, dynamic
-metadata, and multiple native windows. Build and run the optimized release target before using a
-platform accessibility tool.
+metadata, a live region, and multiple native windows. Build and run the optimized release target
+before using a platform accessibility tool.
+
+The widget inspector (`UIWidgetInspector`) has an Accessibility tab with the selected widget's
+resolved role, name, description, value, shortcut, relations, states and actions, and an Audit tab
+that lists focusable controls without an accessible name and `aria-labelledby` /
+`aria-describedby` ids that match nothing. Selecting an issue selects the widget in the tree. The
+same check is available to tests as `AccessibilityWidgetResolver::audit( root )`.
 
 ### Linux
 
@@ -222,8 +294,13 @@ and destruction.
 ## Performance behavior
 
 Native accessibility backends are query-centered and create provider objects lazily. When no
-native client has interacted with the application, widget notifications take a cached inactive
-fast path and avoid resolving accessibility data or walking the widget hierarchy.
+native client has interacted with the application, widget notifications take an inline inactive
+fast path: one atomic load, no call, no allocation, and no accessibility data resolved. Editing
+text, building widgets (spin boxes included), deleting widget hierarchies and updating models
+allocate no more than they would without accessibility, as measured by C++ `new` on the UI thread
+(see the architecture guide's benchmark notes). When the last client disconnects, rows it
+queried are released, so model updates stop paying for them; a client connecting later starts
+fresh.
 
 Model child counts and individual child queries do not instantiate every accessible row. Queried
 rows retain identities across insertion and removal, and model sibling indexes are resolved
@@ -245,7 +322,10 @@ must not depend on rendering, and native queries or notifications must never sta
 
 The first implementation focuses on the semantics used by standard eepp desktop widgets. Native
 platform APIs contain additional advanced interfaces that are not yet exposed uniformly, including
-some rich-document formatting, complex table metadata, and container-specific scrolling APIs.
+some rich-document formatting, complex table metadata, and container scroll patterns (scroll
+position and paging, as opposed to scrolling an element into view). HTML content (`UIRichText`,
+headings, links, lists) is not yet exposed as semantic elements. Relations are used to compute names
+and descriptions but are not published as native relation sets.
 
 Do not advertise a native pattern or capability unless its required behavior is implemented.
 Assistive technologies can still navigate the semantic hierarchy and operate the supported

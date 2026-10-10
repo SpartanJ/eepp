@@ -270,6 +270,28 @@ const char* AtSpiApplication::actionName( AccessibilityAction action ) const {
 	return "";
 }
 
+std::string AtSpiApplication::actionKeyBinding( const AccessibilityNodeInfo& info,
+												AccessibilityAction action ) const {
+	if ( info.shortcut.key.empty() ||
+		 ( action != AccessibilityAction::Press && action != AccessibilityAction::Toggle &&
+		   action != AccessibilityAction::Select ) )
+		return {};
+	// Only the accelerator part is known; it uses GTK accelerator syntax ("<Control>s").
+	std::string binding( ";;" );
+	const auto modifiers = info.shortcut.modifiers;
+	if ( modifiers & AccessibilityShortcut::Control )
+		binding += "<Control>";
+	if ( modifiers & AccessibilityShortcut::Shift )
+		binding += "<Shift>";
+	if ( modifiers & AccessibilityShortcut::Alt )
+		binding += "<Alt>";
+	if ( modifiers & AccessibilityShortcut::Meta )
+		binding += "<Super>";
+	const auto& key = info.shortcut.key;
+	binding += key.size() == 1 ? String::toLower( key ) : key;
+	return binding;
+}
+
 bool AtSpiApplication::readPropertySet( DBusMessage* request, const char*& interface,
 										const char*& property, DBusMessageIter& variant ) {
 	DBusMessageIter iter;

@@ -135,10 +135,47 @@ materializing a whole child list.
    view) or drops it (implementation children, detached widgets).
 4. `AccessibilityManager::notify()` invalidates caches, appends the event to the frame's queue and
    hands it to the backend immediately through `AccessibilityBackend::onEvent()`.
-5. The backend emits the native notification. AT-SPI emits D-Bus signals right away, except text
-   changes, which are diffed once per frame. UIA and macOS queue the event and raise it from their
-   next `update()`, on the UI thread and outside any widget or model callback. The manager's queue
-   is cleared at the end of every `AccessibilityManager::update()`.
+5. The backend emits the native notification. AT-SPI emits D-Bus signals right away (caret and
+   selection changes are compared once per frame). UIA and macOS queue the event and raise it from
+   their next `update()`, on the UI thread and outside any widget or model callback. The manager's
+   queue is cleared at the end of every `AccessibilityManager::update()`.
+
+Text edits take an extra step before their `ValueChanged`. `UICodeEditor` and `UITextInput` pass
+the document's `DocumentContentChange` (range and inserted text) to
+`UIWidget::notifyAccessibilityTextChanged()`. The removed text is not part of the change record,
+so consumers that queue records (LSP clients) never copy it: the manager reads it, while the
+document is still notifying, from `TextDocument::getNotifiedRemovedText()`. `AccessibilityManager::onTextChanged()` turns the
+first four per element and frame into exact `AccessibilityTextChange` records (code-point offset,
+removed, inserted). After that, and for resets, loads, reloads and document swaps, it sends one
+whole-text change for the rest of the frame, so a replace-all costs one notification.
+`AccessibilityBackend::onTextChanged()` receives them; AT-SPI turns exact ones into `text-changed`
+signals immediately and a whole-text one into delete-all plus insert-all at its next update. A
+backend returns false for a change it ignores, and an ignored change does not count toward the
+frame's four. AT-SPI's `SetTextContents` reports its replacement as one minimal diff, so it
+suppresses the element's records through `AccessibilityManager::setSuppressedTextChanges()` while
+the action runs. Node refs are manager-local, so an editor in another window sharing the document
+still reports the change.
+
+Announcements take a parallel path. `UISceneNode::announceForAccessibility()` and live regions (a
+`NameChanged` or `ValueChanged` from a widget with an `aria-live` ancestor and no `aria-hidden`
+one) append to `AccessibilityManager`'s announcement queue. A live-region entry remembers its
+source widget, and a later change from the same widget in the same frame replaces its text instead
+of queueing another entry. `AccessibilityManager::update()` hands the queue to
+`AccessibilityBackend::announce()` after the backend's own `update()`, so the frame's focus and
+state changes reach the client first. Live-region entries are checked again at delivery and
+dropped when their source was destroyed, hidden or made `aria-hidden` in the meantime.
+
+Names and descriptions that come from `aria-labelledby` / `aria-describedby` depend on another
+widget. When a client reads such a widget's info, the manager remembers the referenced id (ids,
+not pointers, so no entry can dangle). A name change of a widget with a remembered id, an id
+change, or the arrival, removal or deletion of a subtree containing one, makes the manager scan
+the scene for dependents and notify `NameChanged` or `DescriptionChanged` for them. While no
+client has read a dependent, the check is one lookup in an empty set. `UIWidget::setId()` asks
+`AccessibilityManager::isRelationTarget()` (an allocation-free hash lookup) before renaming, and
+keeps a copy of the old id only when it is remembered. Dependents are notified after the id has
+changed, for the old id and then the new one (which may complete a relation that pointed at a
+missing widget), so a backend that reads the node from inside the notification sees the new
+relation.
 
 ## Rules the implementation relies on
 
@@ -148,17 +185,46 @@ These are the invariants that past bugs came from. Keep them when changing the c
 
 Applications without an assistive client must pay close to nothing.
 
-- `UIWidget::notifyAccessibilityEvent()` first checks `UISceneNode::hasActiveAccessibilityClients()`,
-  a cached bit (`AccessibilityClientActive`). Nothing else runs while it is clear.
+- `UIWidget::notifyAccessibilityEvent()`, `notifyAccessibilityTextChanged()` and
+  `notifyAccessibilityWholeTextChanged()` are inline. They test one process-wide counter of root
+  scenes with an active client (`UIWidget::isAccessibilityActive()`, a relaxed atomic load) and
+  only then call the out-of-line `deliver*()` implementation, which checks the scene's own bit
+  (`UISceneNode::hasActiveAccessibilityClients()`, `AccessibilityClientActive`). Callers that
+  compute a payload before notifying test `isAccessibilityActive()` first. Pick the event by
+  overriding, not by checking the type at the call site: `UITextView::onTextChanged()` reports
+  `NameChanged` and `UITextInput` overrides it to report `ValueChanged`. Release code for a dormant
+  `UITextView::onTextChanged()` is one load, one test and a jump.
 - The bit is set when a backend reports a client (`hasActiveNativeClients()`, refreshed in
-  `UISceneNode::update()`) or when a native query arrives (`onNativeClientObserved()`).
+  `UISceneNode::update()`) or when a native query arrives (`onNativeClientObserved()`). Every
+  change goes through `UISceneNode::setAccessibilityClientActive()`, which keeps the process-wide
+  counter in sync and, when the last client goes away, calls
+  `AccessibilityManager::onClientsDisconnected()` (see [rule 6](#6-what-survives-a-disconnection)).
 - Backends decide what "active" means. AT-SPI tracks client bus names and clears the bit when they
   disconnect. UIA requires window-specific activity. macOS has no disconnect signal, so the bit
   stays set after the first query.
+- Without a client, `AccessibilityManager::notify()` queues nothing: only identity invalidation
+  (`Destroyed` without a related node) still reaches the backend, which detaches native wrappers
+  on it. Removing a widget a disconnected client had seen invalidates its identity without
+  resolving or registering its parent to announce the removal. While only the scene root has an
+  identity, deleting any other widget returns before walking its ancestors, unless a client is
+  active and has read a relation (`aria-labelledby`, `aria-describedby`) whose target may be in
+  the deleted subtree.
+- Lifecycle bookkeeping never creates a manager: destruction, scene and host changes use
+  `UISceneNode::getExistingAccessibilityManager()`, and the const `getAccessibilityManager()` does
+  not create one at any nesting level.
 - Do not add per-frame or per-layout work that runs before this check. Bounds are queried on
   demand; there is deliberately no per-widget bounds notification.
+- `UISceneNode::announceForAccessibility()` returns before doing anything while no client is
+  active, but a caller that formats its message first still pays for that formatting.
 
-`benchmark_accessibility_inactive.py` guards this path in CI.
+`benchmark_accessibility_inactive.py` compares the enabled and environment-disabled backends of the
+same build: both run the same compiled-in hooks, so it cannot show costs they share.
+`benchmark_accessibility_dormant.py` measures those directly and can compare against the same
+benchmark built against another tree (`--compare LABEL=PATH`), such as an exported develop
+revision. Its allocation counts and bytes cover ordinary C++ `new`/`new[]` on the measuring thread
+only: not `malloc`, other threads or background work such as AT-SPI initialization. "No more
+allocations than without accessibility" means exactly that measurement. A run passes only when
+every sample exits cleanly and reports every expected measurement, guarded scenarios included.
 
 ### 2. Teardown happens once, top-down
 
@@ -187,7 +253,8 @@ sequence that happened. Only adjacent query-again hints (`ModelChanged`, `Childr
 events: dropping the second half of add/remove/add or on/off/on leaves clients with stale state.
 Backends that need batching do it themselves, per frame:
 
-- AT-SPI diffs each changed text once.
+- AT-SPI compares each text's caret and selection once, and reports a whole-text replacement
+  once.
 - UIA raises one focus change, for the final keyboard focus.
 - macOS keeps only the last focus change, and posts every other non-structural notification at
   most once per (event, element, related element). AppKit notifications carry no state, so a
@@ -213,7 +280,28 @@ The manager, the resolver and every widget are UI-thread only.
 - Never walk the whole widget tree or the whole model per event or per query. Prefer the event
   dispatcher's focus node, `getIndexInParent()` and source lookups over scanning children.
 - Building `AccessibilityNodeInfo` with the value copies the text of a text widget; request it only
-  where the value is needed.
+  where the value is needed. Text interfaces use `getTextLength()`, `getTextRange()` and
+  `getTextLineBounds()`, which read only what they return. Offsets convert through a line index of
+  the document (`lineStarts()` in the resolver), keyed by `getTextRevision()`: the document's UUID
+  and modification id, which every content change bumps. Backends that need a converted copy
+  (UTF-16 for UIA and AppKit) cache it per revision.
+- Leaf controls (`AccessibilityWidgetResolver::isLeafRole()`) have no exposed children. Events and
+  focus from inside one are reported on the control (`getLeafOwner()`), so the inner widgets never
+  get identities.
+
+### 6. What survives a disconnection
+
+When a scene's last client disconnects, `onClientsDisconnected()` resets every model-view source:
+queried rows are dropped together with their persistent model registrations, and backends detach
+their native wrappers (`onSourceInvalidated()`). Without that, the model would keep updating one
+persistent handle per queried row on every insert, delete and move for as long as it lives.
+Identities are never reused, so a reconnecting client starts from fresh row identities and a stale
+one stays invalid. Widget identities and metadata (labels, relations, live regions) are kept.
+
+The model only drops a persistent handle when all its registrations are released
+(`PersistentModelIndex::release()`); handles other consumers registered are unaffected. A queried
+row's registration is released when its node is dropped, so pruned, reset and destroyed sources do
+not leave handles behind either.
 
 ## Backends
 
@@ -223,11 +311,17 @@ One `AtSpi::AtSpiApplication` is shared by all windows of the process and owns a
 connection to the accessibility bus. libdbus is loaded at runtime (`DBusLibrary`), so there is no
 build-time D-Bus dependency. Object paths encode `/org/eepp/a11y/<manager>/<source>/<id>`.
 
+A peer other than the registry that calls the application becomes a client. Its disconnection is
+watched with a `NameOwnerChanged` match on its own unique name, not a bus-wide match that would
+wake the application for every program joining or leaving the bus. A non-blocking `NameHasOwner`
+check sent after the match covers a client that left before the match was installed: the bus
+processes both requests in order.
+
 | File | Contents |
 | --- | --- |
 | `accessibilitybackendatspi.hpp` | `DBusLibrary` and the `AtSpiApplication` declaration, with members grouped by implementing file. |
 | `accessibilitybackendatspi.cpp` | Connection setup and registry embedding, I/O thread, per-frame dispatch, client tracking, `AtSpiAccessibilityBackend`. |
-| `accessibilitybackendatspievents.cpp` | Manager events to `org.a11y.atspi.Event.*` signals; text snapshots and once-per-frame text diffs (`text-changed`, `text-caret-moved`, `text-selection-changed`). |
+| `accessibilitybackendatspievents.cpp` | Manager events to `org.a11y.atspi.Event.*` signals; text change records to `text-changed`, and once-per-frame caret and selection comparison (`text-caret-moved`, `text-selection-changed`). Keeps no text contents. |
 | `accessibilitybackendatspitree.cpp` | Path/ref conversion, navigation, role and state mapping, action names, D-Bus marshalling helpers. |
 | `accessibilitybackendatspimethods.cpp` | Incoming calls: `handleMessage()` routes to one handler per interface (`Accessible`, `Component`, `Action`, `Text`, `EditableText`, `Application`, `Properties`, `Cache`). |
 
@@ -267,6 +361,11 @@ every backend: `role()` and `roleName()` in `accessibilitybackendatspitree.cpp`,
 AT-SPI `appendStates()` / `actionName()`, UIA patterns in the provider's `QueryInterface()` and
 `GetPatternProvider()`, macOS action names and attributes.
 
+**Announce something.** Call `UISceneNode::announceForAccessibility()`, or mark the widget that
+changes with `aria-live`. A backend implements `AccessibilityBackend::announce()`; AT-SPI emits
+`Announcement` on the root object, UIA calls `UiaRaiseNotificationEvent` (looked up at runtime),
+macOS posts `NSAccessibilityAnnouncementRequestedNotification` on the window.
+
 **Answer a new AT-SPI method.** Add it to the matching `handle<Interface>()` in
 `accessibilitybackendatspimethods.cpp`. Return `1` for "not handled" so the dispatcher replies with
 `UnknownMethod`.
@@ -284,22 +383,42 @@ or wrong.
 | macOS backend semantics | `src/tests/unit_tests/accessibility_macos_tests.mm` | macOS unit tests. |
 | AT-SPI end to end | `projects/scripts/test_atspi.py` (default, `--multi-window`, `--close-primary`) and `benchmark_atspi.py` | Linux CI, inside `dbus-run-session` and Xvfb. |
 | Inactive overhead | `projects/scripts/benchmark_accessibility_inactive.py` | Linux CI. |
+| Dormant allocations and costs | `src/benchmarks/accessibility_dormant_benchmark.cpp` (`eepp-benchmarks --filter='AccessibilityDormant.*'`), summarized by `projects/scripts/benchmark_accessibility_dormant.py [--compare LABEL=PATH]` | Locally, Release builds. Allocation counts are deterministic and asserted where they guard a fix; times are indicative. |
 | UIA end to end | `src/tests/windows_accessibility/main.cpp` (`eepp-windows-accessibility-tests`) | Windows CI. Under Wine it builds and finds the window, but Wine's UIA client lacks several APIs, so most checks report `E_NOTIMPL`. |
 | NSAccessibility end to end | `projects/scripts/test_macos_accessibility.swift`; `benchmark_macos_accessibility.swift` locally | macOS CI. |
 
 Useful tools:
 
-- the runtime inspector's *Accessibility* tab shows exactly what a widget projects;
+- the runtime inspector's *Accessibility* tab shows exactly what a widget projects, and its *Audit*
+  tab (`AccessibilityWidgetResolver::audit()`) lists unnamed focusable controls and broken
+  `aria-labelledby` / `aria-describedby` ids;
 - `EEPP_DISABLE_ACCESSIBILITY=1` runs with the null backend, the baseline for performance and
   behavior comparisons;
 - Accerciser (Linux), Accessibility Inspector (macOS) and Inspect / Accessibility Insights
   (Windows) show the native tree;
 - to run the AT-SPI scripts without touching your desktop session, wrap them in
-  `dbus-run-session` as CI does.
+  `dbus-run-session` as CI does;
+- `EEPP_ACCESSIBILITY_TRACE=1` prints client activity transitions, and AT-SPI client connections
+  and disconnections, to stderr. It shows what activates an application that has no screen reader
+  running.
 
 ## Known limitations
 
 - Enumerating all children of a model view is O(rows).
 - macOS cannot detect that a client went away, so its active bit stays set after the first query.
-- `UICodeEditor` is not exposed; only `UITextInput` and `UITextEdit` provide text.
+  Any process that queries one of the application's accessibility elements (not only screen
+  readers) activates it for the rest of its life.
+- Windows refreshes `UiaClientsAreListening()` on every scene update; a cheaper cadence needs
+  native validation that listener changes are still observed promptly.
+- Linux connects to the accessibility bus at startup, whether or not a client will ever attach,
+  so applications are discoverable by tools started later and by clients that never set the
+  `org.a11y.Status` flags. Gating the connection on those flags (as Qt does when no X11 root
+  window atom publishes the bus) would trade that discovery for startup work; it is a policy
+  choice, not a transparent optimization. Initialization runs off the UI thread: on the scene's
+  thread pool, or on a detached thread when the scene has none. Either way the task shares
+  ownership of the AT-SPI application, so tearing the backend down never waits for pending D-Bus
+  calls or their timeouts; whichever owner releases it last destroys it.
+- The line index is rebuilt in full after each edit (about 3 ms for a 100,000-line document),
+  paid only while a client is querying that document.
+- HTML content (`UIRichText`, headings, links, lists) is not exposed as semantic elements.
 - Only one cell editor (the view's active editor) is exposed inside a model view.

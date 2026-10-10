@@ -8,6 +8,7 @@
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitextedit.hpp>
 
 #include "../../tools/ecode/keybindingshelper.cpp"
 
@@ -138,6 +139,18 @@ UTEST( MainThreadLifetime, DispatcherCanBeAttachedAfterConstruction ) {
 	lifetime.weakHandle().run( [&called]( int* ) { called = true; } );
 	SceneManager::instance()->update();
 	EXPECT_TRUE( called );
+}
+
+UTEST( UICodeEditor, SubclassesReportTheCodeEditorType ) {
+	UIApplication app( WindowSettings{ 320, 240, "eepp - code editor type test" } );
+	// isType() must not dispatch to the subclass's getType(): a text edit is a code editor.
+	auto* textEdit = UITextEdit::New();
+	textEdit->setParent( app.getUI()->getRoot() );
+	EXPECT_TRUE( textEdit->isType( UI_TYPE_TEXTEDIT ) );
+	EXPECT_TRUE( textEdit->isType( UI_TYPE_CODEEDITOR ) );
+	auto* subclass = eeNew( TestableCodeEditor, () );
+	subclass->setParent( app.getUI()->getRoot() );
+	EXPECT_TRUE( subclass->isType( UI_TYPE_CODEEDITOR ) );
 }
 
 UTEST( UICodeEditor, DefersLongestLineMeasurementForLargeChanges ) {

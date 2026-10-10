@@ -303,10 +303,12 @@ DBusHandlerResult AtSpiApplication::handleAction( DBusMessage* request, Accessib
 			auto action = actionAt( actions, index );
 			const char* name = actionName( action );
 			const char* empty = "";
+			const std::string bindingStorage = actionKeyBinding( info, action );
+			const char* binding = bindingStorage.c_str();
 			mDBus.messageIterOpenContainer( &array, 'r', nullptr, &structure );
 			appendBasic( structure, 's', &name );
 			appendBasic( structure, 's', &empty );
-			appendBasic( structure, 's', &empty );
+			appendBasic( structure, 's', &binding );
 			mDBus.messageIterCloseContainer( &array, &structure );
 		}
 		mDBus.messageIterCloseContainer( &iter, &array );
@@ -324,8 +326,11 @@ DBusHandlerResult AtSpiApplication::handleAction( DBusMessage* request, Accessib
 					std::strcmp( member, "GetLocalizedName" ) == 0 ) {
 			const char* name = actionName( action );
 			sendBasic( request, 's', &name );
-		} else if ( std::strcmp( member, "GetDescription" ) == 0 ||
-					std::strcmp( member, "GetKeyBinding" ) == 0 ) {
+		} else if ( std::strcmp( member, "GetKeyBinding" ) == 0 ) {
+			const std::string bindingStorage = actionKeyBinding( info, action );
+			const char* binding = bindingStorage.c_str();
+			sendBasic( request, 's', &binding );
+		} else if ( std::strcmp( member, "GetDescription" ) == 0 ) {
 			const char* empty = "";
 			sendBasic( request, 's', &empty );
 		} else {
@@ -337,64 +342,82 @@ DBusHandlerResult AtSpiApplication::handleAction( DBusMessage* request, Accessib
 
 DBusHandlerResult AtSpiApplication::handleText( DBusMessage* request, AccessibilityNodeRef ref,
 												const char* member ) {
-	auto info = getNodeInfo( ref, true );
-	if ( !info.text.valid )
+	// Every method reads only the range it reports: copying a large document per query would
+	// make each caret movement cost the whole file.
+	auto info = getNodeInfo( ref, false );
+	if ( !info.text.valid || !mManager )
 		return 1;
-	rememberText( ref, info, std::strcmp( member, "GetText" ) == 0 );
-	const Int32 characterCount = static_cast<Int32>( info.value.size() );
+	info.text = mManager->getTextInfo( ref );
+	// Answer with the current length, but keep the remembered one: it is what change events
+	// told the client, and a queued whole-text replacement must delete exactly that.
+	rememberText( ref, info.text );
+	const Int32 characterCount = mManager->getTextLength( ref );
 	if ( std::strcmp( member, "GetText" ) == 0 ) {
 		Int32 start = 0;
 		Int32 end = -1;
 		mDBus.messageGetArgs( request, nullptr, 'i', &start, 'i', &end, 0 );
 		start = std::max( 0, std::min( start, characterCount ) );
 		end = end < 0 ? characterCount : std::max( start, std::min( end, characterCount ) );
-		std::string textStorage = info.value.substr( start, end - start ).toUtf8();
+		std::string textStorage = mManager->getTextRange( ref, start, end ).toUtf8();
 		const char* text = textStorage.c_str();
 		sendBasic( request, 's', &text );
 	} else if ( std::strcmp( member, "GetStringAtOffset" ) == 0 ) {
 		Int32 offset = 0;
 		Uint32 granularity = 0;
 		mDBus.messageGetArgs( request, nullptr, 'i', &offset, 'u', &granularity, 0 );
-		Int32 start = std::max( 0, std::min( offset, characterCount ) );
-		Int32 end = start;
-		if ( granularity == 0 && start < characterCount ) {
-			end = start + 1;
-		} else if ( granularity == 1 ) {
-			auto isSpace = [&info]( Int32 index ) {
-				auto character = info.value[index];
-				return character == ' ' || character == '\t' || character == '\n' ||
-					   character == '\r';
-			};
-			while ( start > 0 && !isSpace( start - 1 ) )
-				--start;
-			end = std::max( 0, std::min( offset, characterCount ) );
-			while ( end < characterCount && !isSpace( end ) )
-				++end;
-		} else if ( granularity == 3 || granularity == 4 ) {
-			while ( start > 0 && info.value[start - 1] != '\n' )
-				--start;
-			while ( end < characterCount && info.value[end] != '\n' )
-				++end;
-			if ( end < characterCount )
-				++end;
+		offset = std::max( 0, std::min( offset, characterCount ) );
+		Int32 start = offset;
+		Int32 end = offset;
+		String text;
+		if ( granularity == 0 ) {
+			if ( offset < characterCount )
+				end = offset + 1;
+			text = mManager->getTextRange( ref, start, end );
+		} else if ( granularity == 1 || granularity == 3 || granularity == 4 ) {
+			// Lines and paragraphs are the same here. Words never cross a newline, so both are
+			// found within the line containing the offset.
+			Int32 lineStart = 0;
+			Int32 lineEnd = 0;
+			mManager->getTextLineBounds( ref, offset, lineStart, lineEnd );
+			const String line = mManager->getTextRange( ref, lineStart, lineEnd );
+			if ( granularity == 1 ) {
+				auto isSpace = [&line, lineStart]( Int32 index ) {
+					auto character = line[index - lineStart];
+					return character == ' ' || character == '\t' || character == '\n' ||
+						   character == '\r';
+				};
+				while ( start > lineStart && !isSpace( start - 1 ) )
+					--start;
+				while ( end < lineEnd && !isSpace( end ) )
+					++end;
+				text = line.substr( start - lineStart, end - start );
+			} else {
+				start = lineStart;
+				end = lineEnd;
+				text = line;
+			}
 		} else {
 			start = 0;
 			end = characterCount;
+			text = mManager->getTextRange( ref, start, end );
 		}
-		std::string textStorage = info.value.substr( start, end - start ).toUtf8();
-		const char* text = textStorage.c_str();
+		std::string textStorage = text.toUtf8();
+		const char* textValue = textStorage.c_str();
 		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
 		DBusMessageIter iter;
 		mDBus.messageIterInitAppend( reply, &iter );
-		appendBasic( iter, 's', &text );
+		appendBasic( iter, 's', &textValue );
 		appendBasic( iter, 'i', &start );
 		appendBasic( iter, 'i', &end );
 		send( reply );
 	} else if ( std::strcmp( member, "GetCharacterAtOffset" ) == 0 ) {
 		Int32 offset = 0;
 		mDBus.messageGetArgs( request, nullptr, 'i', &offset, 0 );
-		Int32 character = offset >= 0 && offset < characterCount ? info.value[offset] : 0;
-		sendBasic( request, 'i', &character );
+		const String character = offset >= 0 && offset < characterCount
+									 ? mManager->getTextRange( ref, offset, offset + 1 )
+									 : String();
+		Int32 value = character.empty() ? 0 : static_cast<Int32>( character[0] );
+		sendBasic( request, 'i', &value );
 	} else if ( std::strcmp( member, "GetAttributes" ) == 0 ) {
 		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
 		DBusMessageIter iter;
@@ -464,18 +487,23 @@ DBusHandlerResult AtSpiApplication::handleText( DBusMessage* request, Accessibil
 DBusHandlerResult AtSpiApplication::handleEditableText( DBusMessage* request,
 														AccessibilityNodeRef ref,
 														const char* member ) {
-	auto info = getNodeInfo( ref, true );
+	auto info = getNodeInfo( ref, false );
 	if ( !info.text.valid || !hasState( info.states, AccessibilityState::Editable ) ||
-		 std::strcmp( member, "SetTextContents" ) != 0 )
+		 std::strcmp( member, "SetTextContents" ) != 0 || !mManager )
 		return 1;
 	const char* contents = nullptr;
 	if ( !mDBus.messageGetArgs( request, nullptr, 's', &contents, 0 ) )
 		return 1;
-	rememberText( ref, info, true );
-	int success =
-		mManager && mManager->performAction(
-						ref, { AccessibilityAction::SetText,
-							   String::fromUtf8( std::string_view( contents ? contents : "" ) ) } );
+	// The client sent the whole new text, so copying the old one costs no more than the request.
+	// Report the replacement as its minimal diff instead of the reset and insert it performs.
+	rememberText( ref, mManager->getTextInfo( ref ) );
+	const String previous = mManager->getTextRange( ref, 0, mManager->getTextLength( ref ) );
+	const String current = String::fromUtf8( std::string_view( contents ? contents : "" ) );
+	mManager->setSuppressedTextChanges( ref );
+	int success = mManager->performAction( ref, { AccessibilityAction::SetText, current } );
+	mManager->setSuppressedTextChanges( {} );
+	if ( success )
+		sendTextDiff( ref, previous, current );
 	sendBasic( request, 'b', &success );
 	return 0;
 }
@@ -487,10 +515,8 @@ DBusHandlerResult AtSpiApplication::handlePropertiesGet( DBusMessage* request,
 	if ( !mDBus.messageGetArgs( request, nullptr, 's', &requestedInterface, 's', &property, 0 ) ||
 		 !requestedInterface || !property )
 		return 1;
-	const bool includeValue = ( std::strcmp( requestedInterface, "org.a11y.atspi.Text" ) == 0 &&
-								std::strcmp( property, "CharacterCount" ) == 0 ) ||
-							  ( std::strcmp( requestedInterface, "org.a11y.atspi.Value" ) == 0 &&
-								std::strcmp( property, "CurrentValue" ) == 0 );
+	const bool includeValue = std::strcmp( requestedInterface, "org.a11y.atspi.Value" ) == 0 &&
+							  std::strcmp( property, "CurrentValue" ) == 0;
 	const bool needsInfo = std::strcmp( requestedInterface, "org.a11y.atspi.Action" ) == 0 ||
 						   std::strcmp( requestedInterface, "org.a11y.atspi.Text" ) == 0 ||
 						   std::strcmp( requestedInterface, "org.a11y.atspi.Value" ) == 0 ||
@@ -515,7 +541,7 @@ DBusHandlerResult AtSpiApplication::handlePropertiesGet( DBusMessage* request,
 				( std::strcmp( property, "CharacterCount" ) == 0 ||
 				  std::strcmp( property, "CaretOffset" ) == 0 ) ) {
 		Int32 value = std::strcmp( property, "CharacterCount" ) == 0
-						  ? static_cast<Int32>( info.value.size() )
+						  ? ( mManager ? mManager->getTextLength( ref ) : 0 )
 						  : info.text.caretOffset;
 		mDBus.messageIterOpenContainer( &iter, 'v', "i", &variant );
 		appendBasic( variant, 'i', &value );

@@ -10,6 +10,14 @@ PersistentModelIndex::PersistentModelIndex( ModelIndex const& index ) {
 	mHandle = model->registerPersistentIndex( index );
 }
 
+void PersistentModelIndex::release() {
+	auto handle = mHandle.lock();
+	mHandle.reset();
+	// An expired handle was already dropped with its row or its model.
+	if ( handle && handle->mIndex.model() )
+		const_cast<Model*>( handle->mIndex.model() )->releasePersistentIndex( handle );
+}
+
 int PersistentModelIndex::row() const {
 	if ( !hasValidHandle() )
 		return -1;

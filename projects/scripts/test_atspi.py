@@ -90,7 +90,7 @@ def start_discovery_listener():
 	text_events = []
 
 	def on_children_changed(event):
-		if event.type.startswith("object:text-"):
+		if event.type.startswith("object:text-") or event.type == "object:announcement":
 			text_events.append((event.type, event.detail1, event.detail2, event.any_data))
 			return
 		application = event.any_data
@@ -105,7 +105,8 @@ def start_discovery_listener():
 		listener.register("object:children-changed:add"),
 		"could not register the AT-SPI application discovery listener",
 	)
-	for event in ("object:text-changed", "object:text-caret-moved", "object:text-selection-changed"):
+	for event in ("object:text-changed", "object:text-caret-moved", "object:text-selection-changed",
+			"object:announcement"):
 		check(listener.register(event), f"could not register {event}")
 	return listener, discovered_process_ids, text_events
 
@@ -201,6 +202,44 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 	line = Atspi.Text.get_string_at_offset(description, 8, Atspi.TextGranularity.LINE)
 	check((line.content, line.start_offset, line.end_offset) == ("second\n", 6, 13),
 		f"line granularity returned the wrong range: {line}")
+	last_line = Atspi.Text.get_string_at_offset(description, 15, Atspi.TextGranularity.LINE)
+	check((last_line.content, last_line.start_offset, last_line.end_offset) == ("third", 13, 18),
+		f"last line must exclude the final newline: {last_line}")
+	word = Atspi.Text.get_string_at_offset(description, 8, Atspi.TextGranularity.WORD)
+	check((word.content, word.start_offset, word.end_offset) == ("second", 6, 12),
+		f"word granularity returned the wrong range: {word}")
+	check(description.get_character_count() == 18, "multiline character count must equal 18")
+	check(Atspi.Text.get_character_at_offset(description, 6) == ord("s"),
+		"character at offset returned the wrong character")
+
+	if text_events is not None:
+		# An application edit arrives as one exact insertion, not as a diff of the whole text.
+		append = find_named(nodes, "Append description line")
+		del text_events[:]
+		check(append.do_action(action_index(append, "click")), "append action failed")
+		def appended():
+			return [event for event in text_events if event[0] == "object:text-changed:insert"]
+		deadline = time.monotonic() + 2
+		while time.monotonic() < deadline and not appended():
+			pause(0.01)
+		check(appended() == [("object:text-changed:insert", 18, 9, "\nappended")],
+			f"application edit was not reported exactly: {text_events}")
+		check(Atspi.Text.get_text(description, 18, -1) == "\nappended", "appended text query failed")
+
+		# Replacing a field's text reports the old contents removed and the new ones inserted.
+		reset = find_named(nodes, "Reset project name")
+		del text_events[:]
+		check(reset.do_action(action_index(reset, "click")), "reset action failed")
+		def replaced():
+			return [(event[0], event[1], event[2]) for event in text_events
+				if event[0].startswith("object:text-changed")]
+		deadline = time.monotonic() + 2
+		while time.monotonic() < deadline and len(replaced()) < 2:
+			pause(0.01)
+		check(replaced() == [("object:text-changed:delete", 0, 5),
+			("object:text-changed:insert", 0, 4)],
+			f"text replacement was not reported as delete and insert: {text_events}")
+		check(Atspi.Text.get_text(project_name, 0, -1) == "eepp", "reset text query failed")
 
 	checkbox = find_named(nodes, "Enable autosave")
 	check(checkbox.get_role_name() == "check box", "autosave must be a check box")
@@ -239,6 +278,22 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 
 	find_named(nodes, "Colors")
 	find_named(nodes, "Projects")
+
+	# An icon-only button is named by its tooltip; the status line it updates is a live region.
+	refresh = find_named(nodes, "Refresh status")
+	check(refresh.get_role() == Atspi.Role.PUSH_BUTTON,
+		"icon-only button must be named by its tooltip")
+	check(refresh.do_action(action_index(refresh, "click")), "refresh action failed")
+	if text_events is not None:
+		def announced():
+			return any(event[0] == "object:announcement" and event[3] == "Status refreshed"
+				for event in text_events)
+		deadline = time.monotonic() + 2
+		while time.monotonic() < deadline and not announced():
+			pause(0.01)
+		check(announced(), "live region change was not announced: "
+			f"{[event for event in text_events if event[0] == 'object:announcement']}")
+
 	if multi_window:
 		find_named(nodes, "Secondary accessibility window")
 		open_window = find_named(nodes, "Open accessibility window")

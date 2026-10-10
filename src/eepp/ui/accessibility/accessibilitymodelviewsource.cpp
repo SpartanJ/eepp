@@ -250,7 +250,29 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 	}
 
   private:
+	/** A queried row or cell. It owns the persistent registration made for it, so dropping
+	 * the node lets the model drop the handle instead of updating it on every row operation. */
 	struct NodeInfo {
+		NodeInfo( const ModelIndex& modelIndex, bool cell ) : index( modelIndex ), cell( cell ) {}
+
+		NodeInfo( NodeInfo&& ) = default;
+
+		NodeInfo& operator=( NodeInfo&& other ) {
+			if ( this != &other ) {
+				index.release();
+				index = std::move( other.index );
+				cell = other.cell;
+			}
+			return *this;
+		}
+
+		NodeInfo( const NodeInfo& ) = delete;
+
+		NodeInfo& operator=( const NodeInfo& ) = delete;
+
+		// A moved-from index holds no handle, so releasing it does nothing.
+		~NodeInfo() { index.release(); }
+
 		Models::PersistentModelIndex index;
 		bool cell{ false };
 	};
@@ -284,7 +306,7 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 			return { mSourceId, found->second };
 		Uint64 id = mNextId++;
 		ids.emplace( index, id );
-		mNodes.emplace( id, NodeInfo{ Models::PersistentModelIndex( index ), cell } );
+		mNodes.emplace( id, NodeInfo( index, cell ) );
 		return { mSourceId, id };
 	}
 

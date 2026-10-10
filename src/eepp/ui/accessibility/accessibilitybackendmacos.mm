@@ -133,12 +133,10 @@ static NSAccessibilitySubrole nativeSubrole( const AccessibilityNodeInfo& info )
 	}
 }
 
-static std::u16string utf16String( const String& string ) {
-	return string.toUtf16();
-}
+// AppKit text offsets are UTF-16 code units; eepp's are code points. The helpers below work on a
+// UTF-16 copy that MacAccessibilityState::textFor() caches per text revision.
 
-static NSUInteger codePointToUTF16( const String& string, Int32 offset ) {
-	const auto text = utf16String( string );
+static NSUInteger codePointToUTF16( const std::u16string& text, Int32 offset ) {
 	NSUInteger codePoints = 0;
 	NSUInteger utf16Offset = 0;
 	const NSUInteger wanted = offset > 0 ? static_cast<NSUInteger>( offset ) : 0;
@@ -154,8 +152,7 @@ static NSUInteger codePointToUTF16( const String& string, Int32 offset ) {
 	return utf16Offset;
 }
 
-static Int32 utf16ToCodePoint( const String& string, NSUInteger offset ) {
-	const auto text = utf16String( string );
+static Int32 utf16ToCodePoint( const std::u16string& text, NSUInteger offset ) {
 	NSUInteger index = 0;
 	Int32 codePoints = 0;
 	while ( index < text.size() && index < offset ) {
@@ -170,16 +167,37 @@ static Int32 utf16ToCodePoint( const String& string, NSUInteger offset ) {
 	return codePoints;
 }
 
-static NSRange textRange( const AccessibilityNodeInfo& info, const String& value ) {
-	if ( !info.text.valid )
+static Int32 utf16ToCodePoint( const String& string, NSUInteger offset ) {
+	return utf16ToCodePoint( string.toUtf16(), offset );
+}
+
+static NSRange textRange( const AccessibilityTextInfo& info, const std::u16string& text ) {
+	if ( !info.valid )
 		return NSMakeRange( 0, 0 );
-	const NSUInteger start = codePointToUTF16( value, info.text.selectionStart );
-	const NSUInteger end = codePointToUTF16( value, info.text.selectionEnd );
+	const NSUInteger start = codePointToUTF16( text, info.selectionStart );
+	const NSUInteger end = codePointToUTF16( text, info.selectionEnd );
 	return NSMakeRange( start, end >= start ? end - start : 0 );
 }
 
 static bool validRange( NSRange range, NSString* string ) {
 	return range.location <= string.length && range.length <= string.length - range.location;
+}
+
+static bool validRange( NSRange range, const std::u16string& text ) {
+	return range.location <= text.size() && range.length <= text.size() - range.location;
+}
+
+/** Builds an NSString from part of the cached UTF-16 text, copying only that part. */
+static NSString* toNSString( const std::u16string& text, NSRange range ) {
+	return validRange( range, text )
+			   ? [NSString stringWithCharacters:reinterpret_cast<const unichar*>( text.data() +
+																				  range.location )
+										 length:range.length]
+			   : nil;
+}
+
+static NSString* toNSString( const std::u16string& text ) {
+	return toNSString( text, NSMakeRange( 0, text.size() ) );
 }
 
 static void addAccessibilityChild( NSView* view, id child ) {
@@ -285,6 +303,15 @@ class MacAccessibilityState : public std::enable_shared_from_this<MacAccessibili
 	NSArray* selectedChildrenFor( AccessibilityNodeRef ref );
 	AccessibilityNodeRef parentFor( AccessibilityNodeRef ref );
 	AccessibilityNodeInfo infoFor( AccessibilityNodeRef ref, bool includeValue = false ) const;
+
+	/** Caret and selection of a text element, in code points. */
+	AccessibilityTextInfo textInfoFor( AccessibilityNodeRef ref ) const {
+		return isValid( ref ) ? mManager->getTextInfo( ref ) : AccessibilityTextInfo();
+	}
+
+	/** A text element's contents in UTF-16, cached until its text revision changes; nullptr for
+	 * other elements and for protected text. */
+	std::shared_ptr<const std::u16string> textFor( AccessibilityNodeRef ref );
 	AccessibilityNodeRef hitTest( NSPoint point );
 	AccessibilityNodeRef focused() const;
 	bool perform( AccessibilityNodeRef ref, AccessibilityAction action, const String& value = {} );
@@ -315,6 +342,15 @@ class MacAccessibilityState : public std::enable_shared_from_this<MacAccessibili
 
   private:
 	AccessibilityManager* mManager{ nullptr };
+	struct CachedText {
+		AccessibilityNodeRef ref;
+		AccessibilityTextRevision revision;
+		std::shared_ptr<const std::u16string> text;
+	};
+	/** A handful of entries covers the focused editor and the fields around it. */
+	static constexpr size_t TextCacheSize = 4;
+	std::vector<CachedText> mTextCache;
+	size_t mNextTextCacheEntry{ 0 };
 	NSWindow* mNativeWindow{ nil };
 	std::string mWindowIdentifier;
 	AccessibilityNodeRef mRoot;
@@ -433,6 +469,36 @@ AccessibilityNodeInfo MacAccessibilityState::infoFor( AccessibilityNodeRef ref,
 													  bool includeValue ) const {
 	return isValid( ref ) ? mManager->getNodeInfo( ref, includeValue, includeValue )
 						  : AccessibilityNodeInfo();
+}
+
+std::shared_ptr<const std::u16string> MacAccessibilityState::textFor( AccessibilityNodeRef ref ) {
+	if ( !isValid( ref ) )
+		return nullptr;
+	const auto revision = mManager->getTextRevision( ref );
+	if ( !revision.isValid() )
+		return nullptr;
+	for ( const auto& entry : mTextCache ) {
+		if ( entry.ref == ref && entry.revision == revision )
+			return entry.text;
+	}
+	CachedText entry{
+		ref, revision,
+		std::make_shared<std::u16string>(
+			mManager->getTextRange( ref, 0, mManager->getTextLength( ref ) ).toUtf16() ) };
+	for ( auto& cached : mTextCache ) {
+		if ( cached.ref == ref ) {
+			cached = std::move( entry );
+			return cached.text;
+		}
+	}
+	if ( mTextCache.size() < TextCacheSize ) {
+		mTextCache.push_back( std::move( entry ) );
+		return mTextCache.back().text;
+	}
+	auto& replaced = mTextCache[mNextTextCacheEntry];
+	mNextTextCacheEntry = ( mNextTextCacheEntry + 1 ) % TextCacheSize;
+	replaced = std::move( entry );
+	return replaced.text;
 }
 
 NSArray* MacAccessibilityState::childrenFor( AccessibilityNodeRef ref ) {
@@ -773,6 +839,17 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 	return state ? state->infoFor( _ref, false ) : AccessibilityNodeInfo();
 }
 
+/** The cached UTF-16 contents of a text element; nullptr otherwise. */
+- (std::shared_ptr<const std::u16string>)textContents {
+	auto state = [self accessibilityState];
+	return state ? state->textFor( _ref ) : nullptr;
+}
+
+- (AccessibilityTextInfo)textSelection {
+	auto state = [self accessibilityState];
+	return state ? state->textInfoFor( _ref ) : AccessibilityTextInfo();
+}
+
 - (BOOL)isAccessibilityElement {
 	auto state = [self accessibilityState];
 	if ( !state )
@@ -859,6 +936,9 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (id)accessibilityValue {
+	// A text element's value comes from the cached contents, not a fresh copy per query.
+	if ( auto text = [self textContents] )
+		return text->empty() ? nil : toNSString( *text );
 	const auto info = [self nodeInfo];
 	if ( info.role == AccessibilityRole::Label || info.role == AccessibilityRole::Text )
 		return info.name.empty() ? nil : toNSString( info.name );
@@ -1147,13 +1227,13 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 	auto state = [self accessibilityState];
 	if ( !state )
 		return;
-	const auto info = state->infoFor( _ref, true );
-	NSString* nativeText = toNSString( info.value );
-	if ( !info.text.valid || !validRange( range, nativeText ) ||
+	const auto info = state->infoFor( _ref, false );
+	auto text = state->textFor( _ref );
+	if ( !text || !validRange( range, *text ) ||
 		 !hasAction( info.actions, AccessibilityAction::SetTextSelection ) )
 		return;
-	const Int32 start = utf16ToCodePoint( info.value, range.location );
-	const Int32 end = utf16ToCodePoint( info.value, NSMaxRange( range ) );
+	const Int32 start = utf16ToCodePoint( *text, range.location );
+	const Int32 end = utf16ToCodePoint( *text, NSMaxRange( range ) );
 	state->perform( _ref, AccessibilityAction::SetTextSelection,
 					String( std::to_string( start ) + ":" + std::to_string( end ) ) );
 }
@@ -1167,11 +1247,12 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 	auto state = [self accessibilityState];
 	if ( !state || !replacement )
 		return;
-	const auto info = state->infoFor( _ref, true );
-	if ( !info.text.valid || !hasAction( info.actions, AccessibilityAction::SetText ) )
+	const auto info = state->infoFor( _ref, false );
+	auto text = state->textFor( _ref );
+	if ( !text || !hasAction( info.actions, AccessibilityAction::SetText ) )
 		return;
-	NSMutableString* updated = [toNSString( info.value ) mutableCopy];
-	const NSRange selected = textRange( info, info.value );
+	NSMutableString* updated = [toNSString( *text ) mutableCopy];
+	const NSRange selected = textRange( state->textInfoFor( _ref ), *text );
 	if ( !validRange( selected, updated ) ) {
 		EE_OBJC_RELEASE( updated );
 		return;
@@ -1224,6 +1305,26 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		return self.accessibilityLabel;
 	if ( [attribute isEqualToString:NSAccessibilityHelpAttribute] )
 		return self.accessibilityHelp;
+	if ( [attribute isEqualToString:NSAccessibilityMenuItemCmdCharAttribute] ) {
+		const auto shortcut = [self nodeInfoWithoutValue].shortcut;
+		if ( String::utf8Length( shortcut.key ) != 1 )
+			return nil;
+		return toNSString( shortcut.key ).uppercaseString;
+	}
+	if ( [attribute isEqualToString:NSAccessibilityMenuItemCmdModifiersAttribute] ) {
+		const auto modifiers = [self nodeInfoWithoutValue].shortcut.modifiers;
+		// kAXMenuItemModifier*: Shift 1, Option 2, Control 4, NoCommand 8 (Command is implied).
+		NSInteger flags = 0;
+		if ( modifiers & AccessibilityShortcut::Shift )
+			flags |= 1;
+		if ( modifiers & AccessibilityShortcut::Alt )
+			flags |= 2;
+		if ( modifiers & AccessibilityShortcut::Control )
+			flags |= 4;
+		if ( !( modifiers & AccessibilityShortcut::Meta ) )
+			flags |= 8;
+		return @( flags );
+	}
 	if ( [attribute isEqualToString:NSAccessibilityTitleAttribute] )
 		return self.accessibilityTitle;
 	if ( [attribute isEqualToString:NSAccessibilityValueAttribute] )
@@ -1276,21 +1377,18 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		return [NSValue valueWithPoint:self.accessibilityFrame.origin];
 	if ( [attribute isEqualToString:NSAccessibilitySizeAttribute] )
 		return [NSValue valueWithSize:self.accessibilityFrame.size];
-	const auto info = state->infoFor( _ref, true );
-	if ( info.text.valid ) {
-		const String& text = info.value;
-		NSString* string = toNSString( text );
-		const NSRange selected = textRange( info, text );
+	if ( auto text = state->textFor( _ref ) ) {
+		const NSRange selected = textRange( state->textInfoFor( _ref ), *text );
 		if ( [attribute isEqualToString:NSAccessibilitySelectedTextAttribute] )
-			return [string substringWithRange:selected];
+			return toNSString( *text, selected );
 		if ( [attribute isEqualToString:NSAccessibilitySelectedTextRangeAttribute] )
 			return [NSValue valueWithRange:selected];
 		if ( [attribute isEqualToString:NSAccessibilitySelectedTextRangesAttribute] )
 			return @[ [NSValue valueWithRange:selected] ];
 		if ( [attribute isEqualToString:NSAccessibilityNumberOfCharactersAttribute] )
-			return @( string.length );
+			return @( text->size() );
 		if ( [attribute isEqualToString:NSAccessibilityVisibleCharacterRangeAttribute] )
-			return [NSValue valueWithRange:NSMakeRange( 0, string.length )];
+			return [NSValue valueWithRange:NSMakeRange( 0, text->size() )];
 		if ( [attribute isEqualToString:NSAccessibilityInsertionPointLineNumberAttribute] )
 			return @( self.accessibilityInsertionPointLineNumber );
 	}
@@ -1324,6 +1422,10 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		[names addObject:NSAccessibilityDescriptionAttribute];
 	if ( !info.description.empty() )
 		[names addObject:NSAccessibilityHelpAttribute];
+	if ( String::utf8Length( info.shortcut.key ) == 1 )
+		[names addObjectsFromArray:@[
+			NSAccessibilityMenuItemCmdCharAttribute, NSAccessibilityMenuItemCmdModifiersAttribute
+		]];
 	const bool hasBooleanValue = info.role == AccessibilityRole::CheckBox ||
 								 info.role == AccessibilityRole::RadioButton ||
 								 info.role == AccessibilityRole::CheckMenuItem ||
@@ -1411,34 +1513,29 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (NSString*)accessibilitySelectedText {
-	const auto info = [self nodeInfo];
-	if ( !info.text.valid )
-		return nil;
-	NSString* string = toNSString( info.value );
-	const NSRange selected = textRange( info, info.value );
-	return validRange( selected, string ) ? [string substringWithRange:selected] : nil;
+	auto text = [self textContents];
+	return text ? toNSString( *text, textRange( [self textSelection], *text ) ) : nil;
 }
 
 - (NSArray<NSValue*>*)accessibilitySelectedTextRanges {
-	const auto info = [self nodeInfo];
-	return info.text.valid ? @[ [NSValue valueWithRange:textRange( info, info.value )] ] : nil;
+	auto text = [self textContents];
+	return text ? @[ [NSValue valueWithRange:textRange( [self textSelection], *text )] ] : nil;
 }
 
 - (NSInteger)accessibilityNumberOfCharacters {
-	const auto info = [self nodeInfo];
-	return info.text.valid ? static_cast<NSInteger>( toNSString( info.value ).length ) : 0;
+	auto text = [self textContents];
+	return text ? static_cast<NSInteger>( text->size() ) : 0;
 }
 
 - (NSInteger)accessibilityInsertionPointLineNumber {
-	const auto info = [self nodeInfo];
-	return info.text.valid
-			   ? [self accessibilityLineForIndex:static_cast<NSInteger>( codePointToUTF16(
-													 info.value, info.text.caretOffset ) )]
-			   : NSNotFound;
+	auto text = [self textContents];
+	return text ? [self accessibilityLineForIndex:static_cast<NSInteger>( codePointToUTF16(
+													  *text, [self textSelection].caretOffset ) )]
+				: NSNotFound;
 }
 
 - (NSArray*)accessibilityParameterizedAttributeNames {
-	if ( ![self nodeInfo].text.valid )
+	if ( ![self textContents] )
 		return @[];
 	return @[
 		NSAccessibilityStringForRangeParameterizedAttribute,
@@ -1452,10 +1549,9 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 
 - (id)accessibilityAttributeValue:(NSAccessibilityParameterizedAttributeName)attribute
 					 forParameter:(id)parameter {
-	const auto info = [self nodeInfo];
-	if ( !info.text.valid )
+	auto text = [self textContents];
+	if ( !text )
 		return nil;
-	NSString* string = toNSString( info.value );
 	if ( [attribute isEqualToString:NSAccessibilityStringForRangeParameterizedAttribute] ||
 		 [attribute
 			 isEqualToString:NSAccessibilityAttributedStringForRangeParameterizedAttribute] ||
@@ -1464,22 +1560,21 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 			return nil;
 		NSRange range;
 		[parameter getValue:&range];
-		if ( !validRange( range, string ) )
+		if ( !validRange( range, *text ) )
 			return nil;
 		if ( [attribute isEqualToString:NSAccessibilityStringForRangeParameterizedAttribute] )
-			return [string substringWithRange:range];
+			return toNSString( *text, range );
 		if ( [attribute
 				 isEqualToString:NSAccessibilityAttributedStringForRangeParameterizedAttribute] )
 			return EE_OBJC_AUTORELEASE(
-				[[NSAttributedString alloc] initWithString:[string substringWithRange:range]] );
+				[[NSAttributedString alloc] initWithString:toNSString( *text, range )] );
 		return [NSValue valueWithRect:self.accessibilityFrame];
 	}
 	if ( [attribute isEqualToString:NSAccessibilityRangeForIndexParameterizedAttribute] &&
 		 [parameter respondsToSelector:@selector( unsignedIntegerValue )] ) {
-		const NSUInteger index = [parameter unsignedIntegerValue];
-		if ( index >= string.length )
-			return nil;
-		return [NSValue valueWithRange:[string rangeOfComposedCharacterSequenceAtIndex:index]];
+		const NSRange range = [self
+			accessibilityRangeForIndex:static_cast<NSInteger>( [parameter unsignedIntegerValue] )];
+		return range.location == NSNotFound ? nil : [NSValue valueWithRange:range];
 	}
 	if ( [attribute isEqualToString:NSAccessibilityLineForIndexParameterizedAttribute] &&
 		 [parameter respondsToSelector:@selector( integerValue )] )
@@ -1491,30 +1586,35 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (NSRange)accessibilitySelectedTextRange {
-	const auto info = [self nodeInfo];
-	return textRange( info, info.value );
+	auto text = [self textContents];
+	return text ? textRange( [self textSelection], *text ) : NSMakeRange( 0, 0 );
 }
 
 - (NSRange)accessibilityVisibleCharacterRange {
-	const auto info = [self nodeInfo];
-	return info.text.valid ? NSMakeRange( 0, toNSString( info.value ).length )
-						   : NSMakeRange( 0, 0 );
+	auto text = [self textContents];
+	return text ? NSMakeRange( 0, text->size() ) : NSMakeRange( 0, 0 );
 }
 
 - (NSRange)accessibilityRangeForIndex:(NSInteger)index {
-	const auto info = [self nodeInfo];
-	NSString* string = toNSString( info.value );
-	return index >= 0 && static_cast<NSUInteger>( index ) < string.length
-			   ? [string rangeOfComposedCharacterSequenceAtIndex:static_cast<NSUInteger>( index )]
-			   : NSMakeRange( NSNotFound, 0 );
+	auto text = [self textContents];
+	if ( !text || index < 0 || static_cast<size_t>( index ) >= text->size() )
+		return NSMakeRange( NSNotFound, 0 );
+	// A composed sequence can be arbitrarily long (a base followed by many combining marks), so
+	// query the whole cached text. Wrapping it without copying keeps the query free of allocations
+	// proportional to the document; the cache entry outlives the string, which is released here.
+	NSString* string = [[NSString alloc]
+		initWithCharactersNoCopy:const_cast<unichar*>(
+									 reinterpret_cast<const unichar*>( text->data() ) )
+						  length:text->size()
+					freeWhenDone:NO];
+	const NSRange range = [string rangeOfComposedCharacterSequenceAtIndex:index];
+	EE_OBJC_RELEASE( string );
+	return range;
 }
 
 - (NSString*)accessibilityStringForRange:(NSRange)range {
-	const auto info = [self nodeInfo];
-	if ( !info.text.valid )
-		return nil;
-	NSString* string = toNSString( info.value );
-	return validRange( range, string ) ? [string substringWithRange:range] : nil;
+	auto text = [self textContents];
+	return text ? toNSString( *text, range ) : nil;
 }
 
 - (NSAttributedString*)accessibilityAttributedStringForRange:(NSRange)range {
@@ -1523,38 +1623,27 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (NSInteger)accessibilityLineForIndex:(NSInteger)index {
-	const auto info = [self nodeInfo];
-	NSString* string = toNSString( info.value );
-	if ( !info.text.valid || index < 0 || static_cast<NSUInteger>( index ) > string.length )
+	auto text = [self textContents];
+	if ( !text || index < 0 || static_cast<size_t>( index ) > text->size() )
 		return NSNotFound;
-	NSInteger line = 0;
-	for ( NSInteger offset = 0; offset < index; ++offset ) {
-		if ( [string characterAtIndex:static_cast<NSUInteger>( offset )] == '\n' )
-			++line;
-	}
-	return line;
+	return static_cast<NSInteger>( std::count( text->begin(), text->begin() + index, u'\n' ) );
 }
 
 - (NSRange)accessibilityRangeForLine:(NSInteger)wantedLine {
-	const auto info = [self nodeInfo];
-	NSString* string = toNSString( info.value );
-	if ( !info.text.valid || wantedLine < 0 )
+	auto text = [self textContents];
+	if ( !text || wantedLine < 0 )
 		return NSMakeRange( NSNotFound, 0 );
-	NSUInteger start = 0;
-	for ( NSInteger line = 0; start <= string.length; ++line ) {
-		NSUInteger lineStart = 0;
-		NSUInteger lineEnd = 0;
-		[string getLineStart:&lineStart
-						 end:&lineEnd
-				 contentsEnd:nil
-					forRange:NSMakeRange( start, 0 )];
-		if ( line == wantedLine )
-			return NSMakeRange( lineStart, lineEnd - lineStart );
-		if ( lineEnd <= start )
-			break;
-		start = lineEnd;
+	// Lines end after their newline; text ending in a newline has an empty last line.
+	size_t start = 0;
+	for ( NSInteger line = 0; line < wantedLine; ++line ) {
+		const size_t newline = text->find( u'\n', start );
+		if ( newline == std::u16string::npos )
+			return NSMakeRange( NSNotFound, 0 );
+		start = newline + 1;
 	}
-	return NSMakeRange( NSNotFound, 0 );
+	const size_t newline = text->find( u'\n', start );
+	const size_t end = newline == std::u16string::npos ? text->size() : newline + 1;
+	return NSMakeRange( start, end - start );
 }
 
 - (NSRect)accessibilityFrameForRange:(NSRange)range {
@@ -1869,6 +1958,21 @@ class MacAccessibilityBackend final : public AccessibilityBackend {
 				return;
 		}
 		mPendingEvents.emplace_back( event );
+	}
+
+	void announce( const String& message, AccessibilityLive priority ) override {
+		// Called from the manager's update() on the main thread, outside eepp locks.
+		NSWindow* window = mState && mState->hasActiveClient() ? mState->nativeWindow() : nil;
+		if ( !window )
+			return;
+		NSDictionary* userInfo = @{
+			NSAccessibilityAnnouncementKey : toNSString( message ),
+			NSAccessibilityPriorityKey :
+				@( priority == AccessibilityLive::Assertive ? NSAccessibilityPriorityHigh
+															: NSAccessibilityPriorityMedium )
+		};
+		NSAccessibilityPostNotificationWithUserInfo(
+			window, NSAccessibilityAnnouncementRequestedNotification, userInfo );
 	}
 
 	void onSourceInvalidated( AccessibilitySourceId source ) override {

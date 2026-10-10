@@ -490,6 +490,30 @@ void UIScrollView::setScrollControllerPosition( const Vector2f& position ) {
 	mVScroll->setValue( maxPosition.y > 0.f ? position.y / maxPosition.y : 0.f );
 }
 
+bool UIScrollView::scrollIntoView( const Node* node ) {
+	if ( !node || !mScrollView || !mScrollView->isParentOf( node ) )
+		return false;
+	const Vector2f maxPosition( getScrollControllerMaxPosition() );
+	if ( maxPosition.x <= 0.f && maxPosition.y <= 0.f )
+		return true;
+	const Vector2f start(
+		mScrollView->convertToNodeSpace( node->convertToWorldSpace( Vector2f::Zero ) ) );
+	const Sizef size( node->getPixelsSize() );
+	const Sizef viewport( mContainer->getPixelsSize() );
+	const auto fit = []( Float current, Float begin, Float length, Float view ) {
+		if ( begin < current || length > view )
+			return begin;
+		return begin + length > current + view ? begin + length - view : current;
+	};
+	Vector2f position( getScrollControllerPosition() );
+	position.x = eeclamp( fit( position.x, start.x, size.getWidth(), viewport.getWidth() ), 0.f,
+						  maxPosition.x );
+	position.y = eeclamp( fit( position.y, start.y, size.getHeight(), viewport.getHeight() ), 0.f,
+						  maxPosition.y );
+	setScrollControllerPosition( position );
+	return true;
+}
+
 void UIScrollView::setEnableDefaultKeybindings( bool enable ) {
 	mDefaultKeybindings = enable;
 }

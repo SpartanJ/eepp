@@ -1800,6 +1800,8 @@ Uint32 UINode::onFocusLoss() {
 }
 
 void UINode::onSceneChange() {
+	// The const accessor never creates a manager: moving between scenes must not initialize
+	// accessibility.
 	const auto* previousManager =
 		mUISceneNode && isWidget()
 			? static_cast<const UISceneNode*>( mUISceneNode )->getAccessibilityManager()

@@ -31,6 +31,10 @@ class EE_API UUID {
 
 	bool isInitialized() const;
 
+	uint64_t high() const { return mHigh; }
+
+	uint64_t low() const { return mLow; }
+
 	bool operator==( const UUID& other ) const {
 		return mHigh == other.mHigh && mLow == other.mLow;
 	}

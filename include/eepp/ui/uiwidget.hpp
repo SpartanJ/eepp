@@ -2,6 +2,7 @@
 #define EE_UIUIWIDGET_HPP
 
 #include <algorithm>
+#include <atomic>
 #include <eepp/core/small_vector.hpp>
 #include <eepp/ui/accessibility/accessibility.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
@@ -26,6 +27,9 @@ class UITooltip;
 class UIStyle;
 class AccessibilityWidgetResolver;
 struct AccessibilityProperties;
+namespace Doc {
+struct DocumentContentChange;
+}
 class UIWidget;
 class UITextSelectionController;
 
@@ -107,6 +111,23 @@ class EE_API UIWidget : public UINode {
 	UIWidget* setAccessibilityDescription( const String& description );
 
 	UIWidget* setAccessibilityHidden( bool hidden );
+
+	/** Names this widget after the widget with the given id (aria-labelledby). It takes
+	 * precedence over the accessibility label. The id is resolved from the scene root. */
+	UIWidget* setAccessibilityLabelledBy( const std::string& id );
+
+	const std::string& getAccessibilityLabelledBy() const;
+
+	/** Describes this widget with the text of the widget with the given id (aria-describedby). */
+	UIWidget* setAccessibilityDescribedBy( const std::string& id );
+
+	const std::string& getAccessibilityDescribedBy() const;
+
+	/** Marks this widget as a live region (aria-live): name and value changes inside it are
+	 * announced to assistive clients without moving focus. */
+	UIWidget* setAccessibilityLive( AccessibilityLive live );
+
+	AccessibilityLive getAccessibilityLive() const;
 
 	virtual UITextSelectionController* getTextSelectionController();
 
@@ -285,7 +306,7 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return The tooltip text string.
 	 */
-	String getTooltipText();
+	String getTooltipText() const;
 
 	/**
 	 * @brief Updates the distances to parent borders for anchoring.
@@ -1967,9 +1988,41 @@ class EE_API UIWidget : public UINode {
 
 	String resolveAccessibilityDescription() const;
 
-	void notifyAccessibilityEvent( AccessibilityEvent event );
+	/** Whether any scene in the process has an active accessibility client. Notifications test
+	 * it inline, so while no client is attached anywhere they cost one relaxed load and no call.
+	 * Callers that compute an event or payload test it first. */
+	static bool isAccessibilityActive() {
+		return sAccessibilityActiveScenes.load( std::memory_order_relaxed ) != 0;
+	}
+
+	void notifyAccessibilityEvent( AccessibilityEvent event ) {
+		if ( isAccessibilityActive() )
+			deliverAccessibilityEvent( event );
+	}
+
+	/** Reports an edit of this text widget's document; nullptr when the whole text changed. */
+	void notifyAccessibilityTextChanged( const Doc::DocumentContentChange* change ) {
+		if ( isAccessibilityActive() )
+			deliverAccessibilityTextChanged( change );
+	}
+
+	/** A reset, load or document swap: the whole text changed, and with it the value. */
+	void notifyAccessibilityWholeTextChanged() {
+		if ( isAccessibilityActive() )
+			deliverAccessibilityWholeTextChanged();
+	}
 
 	void detachAccessibilitySource();
+
+  private:
+	/** Root scenes whose accessibility client is active; maintained by UISceneNode. */
+	static std::atomic<Uint32> sAccessibilityActiveScenes;
+
+	void deliverAccessibilityEvent( AccessibilityEvent event );
+
+	void deliverAccessibilityTextChanged( const Doc::DocumentContentChange* change );
+
+	void deliverAccessibilityWholeTextChanged();
 };
 
 }} // namespace EE::UI

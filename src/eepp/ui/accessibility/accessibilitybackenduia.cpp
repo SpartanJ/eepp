@@ -42,6 +42,7 @@ void UIAutomationProviderContext::invalidateProvider( AccessibilityNodeRef ref )
 	{
 		std::lock_guard<std::mutex> lock( mProviderMutex );
 		mInvalidatedProviders.emplace_back( providerToDetach );
+		mHasInvalidatedProviders.store( true, std::memory_order_release );
 	}
 }
 
@@ -62,13 +63,19 @@ void UIAutomationProviderContext::invalidateSource( AccessibilitySourceId source
 	}
 	std::lock_guard<std::mutex> lock( mProviderMutex );
 	mInvalidatedProviders.insert( mInvalidatedProviders.end(), providers.begin(), providers.end() );
+	mHasInvalidatedProviders.store( true, std::memory_order_release );
 }
 
 void UIAutomationProviderContext::disconnectInvalidatedProviders() {
+	// Producers set the flag under the lock after appending, so a provider queued after this
+	// check is drained by the next update.
+	if ( !mHasInvalidatedProviders.load( std::memory_order_acquire ) )
+		return;
 	std::vector<UIAutomationProvider*> providers;
 	{
 		std::lock_guard<std::mutex> lock( mProviderMutex );
 		providers.swap( mInvalidatedProviders );
+		mHasInvalidatedProviders.store( false, std::memory_order_relaxed );
 	}
 	// Outgoing COM calls can re-enter an STA. Run these only after widget destruction finishes;
 	// the detached providers already reject queries and retain their original cache reference.
@@ -92,6 +99,7 @@ void UIAutomationProviderContext::pruneSource( AccessibilitySourceId sourceId ) 
 		}
 		it->second->detach();
 		mInvalidatedProviders.emplace_back( it->second );
+		mHasInvalidatedProviders.store( true, std::memory_order_release );
 		it = source->second.erase( it );
 	}
 	if ( source->second.empty() )
@@ -151,6 +159,8 @@ class UIAutomationAccessibilityBackend final : public AccessibilityBackend {
 	void update() override;
 
 	void onEvent( const AccessibilityPendingEvent& event ) override;
+
+	void announce( const String& message, AccessibilityLive priority ) override;
 
 	void onSourceInvalidated( AccessibilitySourceId sourceId ) override {
 		if ( mContext )
@@ -299,6 +309,48 @@ void UIAutomationAccessibilityBackend::onEvent( const AccessibilityPendingEvent&
 	if ( !mContext->hasActiveClients() )
 		return;
 	mPendingEvents.emplace_back( event );
+}
+
+namespace {
+
+// UiaRaiseNotificationEvent exists from Windows 10 1709. Resolve it at runtime so the library
+// still loads on older systems and with SDK headers that predate it.
+using RaiseNotificationEventFunction = HRESULT( WINAPI* )( IRawElementProviderSimple*, int, int,
+														   BSTR, BSTR );
+
+RaiseNotificationEventFunction raiseNotificationEventFunction() {
+	static const auto function = []() -> RaiseNotificationEventFunction {
+		HMODULE module = GetModuleHandleW( L"uiautomationcore.dll" );
+		return module ? reinterpret_cast<RaiseNotificationEventFunction>( reinterpret_cast<void*>(
+							GetProcAddress( module, "UiaRaiseNotificationEvent" ) ) )
+					  : nullptr;
+	}();
+	return function;
+}
+
+} // namespace
+
+void UIAutomationAccessibilityBackend::announce( const String& message,
+												 AccessibilityLive priority ) {
+	auto raise = raiseNotificationEventFunction();
+	if ( !raise || !mContext || !mContext->hasActiveClients() )
+		return;
+	UIAutomationProvider* root = mContext->provider( mManager.getRoot() );
+	if ( !root )
+		return;
+	// NotificationKind_Other = 4; NotificationProcessing_ImportantAll = 0 for assertive and
+	// NotificationProcessing_MostRecent = 3 for polite, so a stream of updates speaks the latest.
+	constexpr int NotificationKindOther = 4;
+	const int processing = priority == AccessibilityLive::Assertive ? 0 : 3;
+	const auto wide = message.toWideString();
+	BSTR display = SysAllocStringLen( wide.data(), static_cast<UINT>( wide.size() ) );
+	BSTR activity = SysAllocString( L"eepp.announcement" );
+	if ( display && activity )
+		raise( static_cast<IRawElementProviderSimple*>( root ), NotificationKindOther, processing,
+			   display, activity );
+	SysFreeString( display );
+	SysFreeString( activity );
+	root->Release();
 }
 
 void UIAutomationAccessibilityBackend::raiseEvent( const AccessibilityPendingEvent& event ) {

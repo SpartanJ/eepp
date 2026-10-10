@@ -526,6 +526,11 @@ class EE_API UISceneNode : public SceneNode {
 
 	AccessibilityPolicy getAccessibilityPolicy() const;
 
+	/** Asks assistive clients to speak a message (for example "Build finished") without moving
+	 * focus. Costs nothing while no client is active. */
+	void announceForAccessibility( const String& message,
+								   AccessibilityLive priority = AccessibilityLive::Polite );
+
 	bool hasActiveAccessibilityClients() const {
 		return !( mNodeFlags & NODE_FLAG_CLOSE ) &&
 			   ( mHostUISceneNode ? mHostUISceneNode->hasActiveAccessibilityClients()
@@ -1328,6 +1333,15 @@ class EE_API UISceneNode : public SceneNode {
 	void onWidgetDelete( Node* node );
 
 	void onWidgetAccessibilitySourceDelete( UIWidget* widget );
+
+	/** The manager this scene's widgets report to, or nullptr when none exists yet. Never creates
+	 * one: lifecycle bookkeeping (destruction, scene and host changes) must not initialize
+	 * accessibility. */
+	AccessibilityManager* getExistingAccessibilityManager() const;
+
+	/** Sets this root scene's client-active state and keeps the process-wide count that widget
+	 * notifications test inline in sync with it. */
+	void setAccessibilityClientActive( bool active );
 
 	/**
 	 * @brief Recursively resets tooltips for a node and its children.

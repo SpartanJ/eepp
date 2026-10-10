@@ -775,6 +775,12 @@ class EE_API TextDocument {
 
 	std::string toUtf8String();
 
+	/** The text removed by the edit being notified: valid only during
+	 * Client::onDocumentTextChanged(), and empty for insertions. Clients that need it later must
+	 * copy it. Change records do not carry it, so consumers that queue them (such as LSP clients)
+	 * never copy text they do not use. */
+	const String& getNotifiedRemovedText() const;
+
   protected:
 	friend class TextUndoStack;
 	friend class FoldRangeService;
@@ -794,6 +800,8 @@ class EE_API TextDocument {
 	Mutex mClientsMutex;
 	mutable Mutex mLinesMutex;
 	mutable std::shared_ptr<Mutex> mDocumentMutex;
+	/** The removed text of the change being notified; see getNotifiedRemovedText(). */
+	const String* mNotifiedRemovedText{ nullptr };
 	TextFormat::Encoding mEncoding{ TextFormat::Encoding::UTF8 };
 	TextFormat::LineEnding mLineEnding{ TextFormat::LineEnding::LF };
 	std::atomic<bool> mLoading{ false };
@@ -855,7 +863,7 @@ class EE_API TextDocument {
 
 	void notifyDocumentReset();
 
-	void notifyTextChanged( const DocumentContentChange& );
+	void notifyTextChanged( const DocumentContentChange&, const String* removed = nullptr );
 
 	void notifyCursorChanged( TextPosition selection = TextPosition() );
 

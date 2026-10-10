@@ -241,6 +241,10 @@ HRESULT STDMETHODCALLTYPE UIAutomationProvider::GetPropertyValue( PROPERTYID pro
 		return setBstr( value, nodeInfo.name );
 	if ( propertyId == UIA_HelpTextPropertyId )
 		return setBstr( value, nodeInfo.description );
+	if ( propertyId == UIA_AcceleratorKeyPropertyId )
+		return nodeInfo.shortcut.empty()
+				   ? S_OK
+				   : setBstr( value, String::fromUtf8( nodeInfo.shortcut.text ) );
 	if ( propertyId == UIA_ControlTypePropertyId ) {
 		value->vt = VT_I4;
 		value->lVal = controlType( nodeInfo.role );
@@ -757,7 +761,7 @@ HRESULT STDMETHODCALLTYPE UIAutomationProvider::GetVisibleRanges( SAFEARRAY** ra
 	if ( !array )
 		return E_OUTOFMEMORY;
 	ITextRangeProvider* range =
-		new UIAutomationTextRange( mContext, mRef, 0, static_cast<int>( snapshot.text.size() ) );
+		new UIAutomationTextRange( mContext, mRef, 0, static_cast<int>( snapshot.text().size() ) );
 	LONG index = 0;
 	IUnknown* unknown = range;
 	const HRESULT putResult = SafeArrayPutElement( array, &index, unknown );
@@ -796,8 +800,8 @@ HRESULT STDMETHODCALLTYPE UIAutomationProvider::RangeFromPoint( UiaPoint point,
 	const double width = snapshot.bounds.getWidth();
 	double ratio = width > 0 ? ( point.x - left ) / width : 0;
 	ratio = std::max( 0.0, std::min( ratio, 1.0 ) );
-	size_t offset = static_cast<size_t>( ratio * snapshot.text.size() );
-	if ( offset < snapshot.text.size() && isLowSurrogate( snapshot.text[offset] ) )
+	size_t offset = static_cast<size_t>( ratio * snapshot.text().size() );
+	if ( offset < snapshot.text().size() && isLowSurrogate( snapshot.text()[offset] ) )
 		--offset;
 	*range = new UIAutomationTextRange( mContext, mRef, static_cast<int>( offset ),
 										static_cast<int>( offset ) );
@@ -813,7 +817,7 @@ HRESULT STDMETHODCALLTYPE UIAutomationProvider::get_DocumentRange( ITextRangePro
 	if ( FAILED( result ) )
 		return result;
 	*range =
-		new UIAutomationTextRange( mContext, mRef, 0, static_cast<int>( snapshot.text.size() ) );
+		new UIAutomationTextRange( mContext, mRef, 0, static_cast<int>( snapshot.text().size() ) );
 	return S_OK;
 }
 
