@@ -38,9 +38,6 @@ class EE_API Input {
 	 */
 	virtual void waitEvent( const Time& timeout = Time::Zero ) = 0;
 
-	/** Wakes a thread currently blocked in waitEvent(). */
-	virtual void wakeUp() = 0;
-
 	/** Wakes the backend's shared event loop without retaining a window-owned Input object. */
 	static void wakeUpEventLoop();
 

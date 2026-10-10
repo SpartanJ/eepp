@@ -192,17 +192,18 @@ struct AccessibilityTextChange {
 };
 
 struct AccessibilityNodeInfo {
-	AccessibilityRole role{ AccessibilityRole::None };
 	String name;
 	String description;
 	String value;
 	/** Keyboard shortcut that activates the element. */
 	AccessibilityShortcut shortcut;
 	AccessibilityState states{ AccessibilityState::None };
-	AccessibilityActions actions{ 0 };
 	AccessibilityRangeInfo range;
 	AccessibilityTextInfo text;
 	Math::Rectf bounds;
+	// The small fields share one tail word instead of padding three; built per client query.
+	AccessibilityActions actions{ 0 };
+	AccessibilityRole role{ AccessibilityRole::None };
 	bool boundsValid{ false };
 };
 

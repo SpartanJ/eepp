@@ -15,6 +15,21 @@
 
 namespace EE { namespace Scene {
 
+namespace {
+
+// Reorders unlink and relink without onParentChange(). Report the arrival only after the
+// new sibling links are in place; ordinary setParent() keeps its existing notification.
+void notifyAccessibilityReorder( Node* node ) {
+	if ( !node->isWidget() || node->isDestroying() )
+		return;
+	auto* widget = node->asType<UI::UIWidget>();
+	auto* scene = widget->getUISceneNode();
+	if ( scene && scene->hasActiveAccessibilityClients() )
+		scene->getAccessibilityManager()->onWidgetParentChange( widget );
+}
+
+} // namespace
+
 Node* Node::New() {
 	return eeNew( Node, () );
 }
@@ -435,6 +450,7 @@ Node* Node::toFront() {
 	if ( NULL != mParentNode && mParentNode->mChildLast != this ) {
 		mParentNode->childRemove( this );
 		mParentNode->childAdd( this );
+		notifyAccessibilityReorder( this );
 	}
 	return this;
 }
@@ -626,12 +642,38 @@ void Node::childAdd( Node* node ) {
 
 void Node::childAddAt( Node* node, Uint32 index ) {
 	eeASSERT( NULL != node );
+	const bool reparenting = node->mParentNode != this;
+#ifdef EE_DEBUG
+	if ( node->isUINode() && isUINode() ) {
+		auto* childScene = node->asType<UI::UINode>()->getUISceneNode();
+		auto* parentScene = asType<UI::UINode>()->getUISceneNode();
+		// Preserve setParent()'s same-window scene-rebinding restriction for indexed insertion.
+		eeASSERT( !childScene || !parentScene || childScene == parentScene ||
+				  childScene->getWindow() == parentScene->getWindow() );
+	}
+#endif
+	if ( !reparenting ) {
+		// Detect no-ops before unlinking. Stop at the requested index, so moving to index zero
+		// stays constant-time even when the child is near the end of a large list.
+		Node* child = mChild;
+		Uint32 position = 0;
+		while ( child && child != node && position < index ) {
+			child = child->mNext;
+			++position;
+		}
+		if ( child == node && ( position == index || node == mChildLast ) )
+			return;
+	}
 
-	node->setParent( this );
-	childRemove( node );
+	// Reparent directly at the requested index, not via setParent()'s intermediate append.
+	if ( node->mParentNode )
+		node->mParentNode->childRemove( node );
 	node->mParentNode = this;
-	node->mSceneNode = node->findSceneNode();
+	if ( reparenting )
+		node->updateDrawInvalidator();
 
+	// Source-removal callbacks can reorder or delete destination siblings. Locate the insertion
+	// slot after they return rather than keeping a sibling pointer across those callbacks.
 	Node* nodeLoop = mChild;
 
 	if ( nodeLoop == NULL ) {
@@ -671,8 +713,16 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 	}
 
 	eeASSERT( !( NULL == mChildLast && NULL != mChild ) );
-
+	if ( !reparenting )
+		notifyAccessibilityReorder( node );
 	onChildCountChange( node, false );
+	if ( reparenting ) {
+		// Match setParent()'s lifecycle, but let scene and parent hooks see the final index.
+		node->setDirty();
+		if ( node->mSceneNode != node->findSceneNode() )
+			node->onSceneChange();
+		node->onParentChange();
+	}
 }
 
 void Node::childRemove( Node* node ) {

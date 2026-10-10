@@ -7,6 +7,52 @@
 
 namespace EE { namespace UI { namespace AtSpi {
 
+namespace {
+
+bool refLess( AccessibilityNodeRef left, AccessibilityNodeRef right ) {
+	return left.source < right.source || ( left.source == right.source && left.id < right.id );
+}
+
+} // namespace
+
+const std::vector<AccessibilityNodeRef>&
+AtSpiApplication::rememberSelection( AccessibilityNodeRef ref ) {
+	auto path = pathFromRef( ref );
+	auto found = mSelections.find( path );
+	if ( found != mSelections.end() )
+		return found->second;
+	// Initialize once when a client first queries the container. Subsequent selection events
+	// keep the snapshot current; state reads must not enumerate and sort it again.
+	auto selected = mManager->getSelectedChildren( ref );
+	std::sort( selected.begin(), selected.end(), refLess );
+	return mSelections.emplace( std::move( path ), std::move( selected ) ).first->second;
+}
+
+void AtSpiApplication::sendSelectionChanged( AccessibilityNodeRef ref ) {
+	auto found = mSelections.find( pathFromRef( ref ) );
+	// An unqueried container only needs the query-again hint. Do not materialize selected
+	// rows or allocate a snapshot that no client has asked to retain.
+	if ( found == mSelections.end() ) {
+		sendObjectEvent( ref, "SelectionChanged", "", 0 );
+		return;
+	}
+	auto selected = mManager->getSelectedChildren( ref );
+	std::sort( selected.begin(), selected.end(), refLess );
+	auto& previous = found->second;
+	// Diff only selected refs, never materialize every row just to update selected state.
+	for ( const auto child : previous ) {
+		if ( mManager->isValid( child ) &&
+			 !std::binary_search( selected.begin(), selected.end(), child, refLess ) )
+			sendObjectEvent( child, "StateChanged", "selected", 0 );
+	}
+	for ( const auto child : selected ) {
+		if ( !std::binary_search( previous.begin(), previous.end(), child, refLess ) )
+			sendObjectEvent( child, "StateChanged", "selected", 1 );
+	}
+	previous = std::move( selected );
+	sendObjectEvent( ref, "SelectionChanged", "", 0 );
+}
+
 void AtSpiApplication::onEvent( AccessibilityManager& manager,
 								const AccessibilityPendingEvent& event ) {
 	if ( !isAvailable() )
@@ -15,6 +61,8 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 	if ( event.type == AccessibilityEvent::Destroyed && !event.related.isValid() ) {
 		if ( !mTextStates.empty() )
 			mTextStates.erase( pathFromRef( event.ref ) );
+		if ( !mSelections.empty() )
+			mSelections.erase( pathFromRef( event.ref ) );
 		mPendingTexts.erase( std::remove_if( mPendingTexts.begin(), mPendingTexts.end(),
 											 [&]( const PendingText& text ) {
 												 return text.manager == &manager &&
@@ -25,6 +73,18 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 	}
 	if ( !hasActiveClients() )
 		return;
+	// Structural mutations can remove a selected child without a separate selection event.
+	// Queries must then rebuild the snapshot from the new semantic membership.
+	if ( !mSelections.empty() && ( event.type == AccessibilityEvent::ModelChanged ||
+								   event.type == AccessibilityEvent::ChildrenChanged ||
+								   event.type == AccessibilityEvent::Created ||
+								   event.type == AccessibilityEvent::Destroyed ) )
+		mSelections.erase( pathFromRef( event.ref ) );
+	if ( event.type == AccessibilityEvent::SelectionChanged &&
+		 isSelectionContainerRole( manager.getNodeRole( event.ref ) ) ) {
+		sendSelectionChanged( event.ref );
+		return;
+	}
 	AccessibilityNodeInfo info;
 	if ( event.type == AccessibilityEvent::FocusChanged ||
 		 event.type == AccessibilityEvent::SelectionChanged ||
@@ -45,6 +105,14 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 		if ( event.type == AccessibilityEvent::FocusChanged &&
 			 hasState( info.states, AccessibilityState::Focused ) )
 			rememberText( event.ref, manager.getTextInfo( event.ref ) );
+	}
+	if ( event.type == AccessibilityEvent::SelectionChanged && !mSelections.empty() ) {
+		// Some widgets report selection on the child itself (for example selectable tabs).
+		// Its selected-state event below remains unchanged; discard any parent's cached answer
+		// rather than serving its old selection if no container event follows.
+		const auto parent = getParent( event.ref );
+		if ( isSelectionContainerRole( manager.getNodeRole( parent ) ) )
+			mSelections.erase( pathFromRef( parent ) );
 	}
 	if ( event.type == AccessibilityEvent::EnabledChanged ) {
 		sendObjectEvent( event.ref, "StateChanged", "sensitive",

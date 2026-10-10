@@ -193,6 +193,45 @@ relation.
 
 These are the invariants that past bugs came from. Keep them when changing the code.
 
+Native calls and backend updates use an allocation-free `AccessibilityManager::ScopedDispatch`.
+If an action, model callback or notification requests a different accessibility policy, the scene
+defers that change until the beginning of its next non-reentrant update. The last request wins;
+a later explicit request outside dispatch supersedes it. The first deferred request wakes the
+event loop, including when no widget needs repainting. The current manager and backend remain
+alive until the native call has replied. Reentrant scene updates do not recursively dispatch
+the same backend. Changing policy outside accessibility dispatch remains immediate.
+
+Hit testing descends exposed containers such as groups and windows; only leaf controls and
+model views stop traversal into implementation children. When a transparent layout is moved,
+the manager invalidates both semantic parents and reports the layout's exposed descendants,
+preserving their identities within one scene. Their indices are found with one parent scan.
+A widget appended right after the previously added one takes the next index without a scan,
+so populating a container with a client attached stays linear. Property changes (name, value,
+state and similar) of a widget without an identity are not reported: no client was handed it,
+and registering it there would make its later move out of the scene root announce a removal.
+Sibling reorders (`toFront()`, `toBack()` and `toPosition()`) report removal at the old
+semantic index and arrival after relinking at the new index. They preserve element identities,
+including exposed descendants of transparent layouts, without duplicating ordinary reparenting.
+Indexed insertion into a different parent links directly at the requested position before the
+scene/parent-change hooks run; it never announces a transient append. Moving a child to its
+current position (or appending a child already last) emits no structural events.
+The final insertion position is resolved after source-removal callbacks, which may themselves
+reorder the destination; no destination sibling pointer is retained across those callbacks.
+
+Role/state-only queries skip names, values, text offsets and relation tracking. Model sources
+answer these queries without fetching model display data. AT-SPI selection snapshots are
+initialized by the first container state/selection query or selected-row state query, then
+maintained by selection events and cleared on model/tree invalidation (including structural
+add/remove and child-only selection events).
+Repeated `IsChildSelected` and selected-row `GetState` calls reuse
+the snapshot; they do not re-enumerate or sort the selection. An unqueried selection container
+emits only `selection-changed`, without materializing selected rows or allocating a snapshot.
+Custom widgets must emit `SelectionChanged` on the container or child whenever their
+`Selected` state changes: queries reuse the snapshot rather than polling for silent changes.
+Reading an unselected row's state does not initialize its container's snapshot. If the
+selection later moves to that row before a selection query, clients receive the container hint
+but no per-row selected-state events, and must refresh cached row states on that hint.
+
 ### 1. The dormant fast path
 
 Applications without an assistive client must pay close to nothing.
@@ -335,7 +374,15 @@ processes both requests in order.
 | `accessibilitybackendatspi.cpp` | Connection setup and registry embedding, I/O thread, per-frame dispatch, client tracking, `AtSpiAccessibilityBackend`. |
 | `accessibilitybackendatspievents.cpp` | Manager events to `org.a11y.atspi.Event.*` signals; text change records to `text-changed`, and once-per-frame caret and selection comparison (`text-caret-moved`, `text-selection-changed`). Keeps no text contents. |
 | `accessibilitybackendatspitree.cpp` | Path/ref conversion, navigation, role and state mapping, action names, D-Bus marshalling helpers. |
-| `accessibilitybackendatspimethods.cpp` | Incoming calls: `handleMessage()` routes to one handler per interface (`Accessible`, `Component`, `Action`, `Text`, `EditableText`, `Application`, `Properties`, `Cache`). |
+| `accessibilitybackendatspimethods.cpp` | Incoming calls: `handleMessage()` routes to one handler per interface (`Accessible`, `Component`, `Action`, `Selection`, `Text`, `EditableText`, `Application`, `Properties`, `Cache`). |
+
+List, table, tree and tab-list selection changes emit `object:selection-changed` on the
+container, not `state-changed:selected` on the container. Queried selections retain only sorted
+selected refs, so selection changes can clear the previous items' selected state and set the
+new items' state without materializing the whole model. That state is dropped on model changes,
+window removal and client disconnection. The AT-SPI Selection interface exposes selected-child
+queries and single-child selection; clear/select-all/deselect operations currently return false,
+because those operations are not part of the engine's accessibility action API.
 
 ### UI Automation (Windows)
 

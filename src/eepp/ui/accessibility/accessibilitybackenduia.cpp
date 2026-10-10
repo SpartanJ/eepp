@@ -233,6 +233,7 @@ LRESULT CALLBACK UIAutomationAccessibilityBackend::windowSubclassProcedure(
 	if ( !backend || subclassId != backend->mSubclassId )
 		return DefSubclassProc( window, message, wParam, lParam );
 	if ( message == accessibilityDispatchMessage() ) {
+		AccessibilityManager::ScopedDispatch dispatch( backend->mManager );
 		if ( backend->mContext ) {
 			backend->mContext->dispatchPendingRequests();
 			backend->update();

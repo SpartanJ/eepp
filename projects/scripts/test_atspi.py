@@ -88,8 +88,12 @@ def check(condition, message):
 def start_discovery_listener():
 	discovered_process_ids = set()
 	text_events = []
+	selection_events = []
 
 	def on_children_changed(event):
+		if event.type == "object:selection-changed" or event.type == "object:state-changed:selected":
+			selection_events.append((event.type, event.source.get_name(), event.detail1))
+			return
 		if event.type.startswith("object:text-") or event.type == "object:announcement":
 			text_events.append((event.type, event.detail1, event.detail2, event.any_data))
 			return
@@ -106,9 +110,9 @@ def start_discovery_listener():
 		"could not register the AT-SPI application discovery listener",
 	)
 	for event in ("object:text-changed", "object:text-caret-moved", "object:text-selection-changed",
-			"object:announcement"):
+			"object:announcement", "object:selection-changed", "object:state-changed:selected"):
 		check(listener.register(event), f"could not register {event}")
-	return listener, discovered_process_ids, text_events
+	return listener, discovered_process_ids, text_events, selection_events
 
 
 def wait_for_window_count(application, count, timeout=2):
@@ -118,7 +122,8 @@ def wait_for_window_count(application, count, timeout=2):
 	check(application.get_child_count() == count, f"expected {count} application windows")
 
 
-def validate(application, multi_window=False, close_primary=False, process_id=None, text_events=None):
+def validate(application, multi_window=False, close_primary=False, process_id=None, text_events=None,
+		selection_events=None, policy_reset=False):
 	required_nodes = ["Project name", "Enable autosave"]
 	if multi_window:
 		required_nodes.append("Secondary accessibility window")
@@ -276,8 +281,72 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 	pause(0.05)
 	check(spin.get_state_set().contains(Atspi.StateType.FOCUSED), "spin must report internal input focus")
 
-	find_named(nodes, "Colors")
-	find_named(nodes, "Projects")
+	colors = find_named(nodes, "Colors")
+	check("Selection" in colors.get_interfaces(), "list must expose the Selection interface")
+	check(colors.select_child(1), "list selection action failed")
+	pause(0.05)
+	check(colors.get_n_selected_children() == 1, "list must report one selected child")
+	check(colors.get_selected_child(0).get_name() == "Green", "list selected-child query failed")
+	green = colors.get_child_at_index(1)
+	check(green.get_state_set().contains(Atspi.StateType.SELECTED), "selected row state is missing")
+	# Repeated scalar/state reads must reuse the selection baseline. The next change must
+	# still report both the old and new selected rows, rather than overwriting that baseline.
+	for _ in range(3):
+		check(colors.is_child_selected(1), "repeated selected-child query failed")
+		green.clear_cache()
+		check(green.get_state_set().contains(Atspi.StateType.SELECTED),
+			"repeated selected-row state query failed")
+	if selection_events is not None:
+		selection_events.clear()
+	check(colors.select_child(2), "second list selection action failed")
+	pause(0.1)
+	check(colors.is_child_selected(2), "new list selection state is missing")
+	check(not colors.is_child_selected(1), "old list selection state stayed set")
+	check(colors.get_selected_child(0).get_name() == "Blue", "selection did not follow new row")
+	if selection_events is not None:
+		check(("object:selection-changed", "Colors", 0) in selection_events,
+			f"container selection event missing: {selection_events}")
+		check(("object:state-changed:selected", "Green", 0) in selection_events,
+			f"old selected row was not cleared: {selection_events}")
+		check(("object:state-changed:selected", "Blue", 1) in selection_events,
+			f"new selected row was not announced: {selection_events}")
+	# Tabs report selected state on their individual widgets as well as on the container.
+	tabs = next(node for node in nodes if node.get_role() == Atspi.Role.PAGE_TAB_LIST)
+	check(tabs.get_n_selected_children() == 1, "tab selection baseline is missing")
+	advanced = find_named(nodes, "Advanced")
+	check(advanced.do_action(action_index(advanced, "select")), "tab selection action failed")
+	pause(0.1)
+	check(tabs.get_n_selected_children() == 1, "tab selection count is stale")
+	check(tabs.get_selected_child(0).get_name() == "Advanced", "tab selection snapshot is stale")
+	general = find_named(nodes, "General")
+	check(general.do_action(action_index(general, "select")), "tab selection reset failed")
+	pause(0.1)
+	check(tabs.get_selected_child(0).get_name() == "General", "tab selection snapshot did not reset")
+	projects = find_named(nodes, "Projects")
+	if selection_events is not None:
+		selection_events.clear()
+	# The table's Selection interface has not been queried yet. Selecting a row via Action
+	# sends the container hint, without allocating a previous-selection snapshot or row events.
+	project = projects.get_child_at_index(1)
+	check(project.do_action(action_index(project, "select")), "unqueried table selection failed")
+	pause(0.1)
+	if selection_events is not None:
+		check(("object:selection-changed", "Projects", 0) in selection_events,
+			f"unqueried container selection event missing: {selection_events}")
+		check(not any(event[0] == "object:state-changed:selected" for event in selection_events),
+			f"unqueried container emitted selected-row changes: {selection_events}")
+	check(projects.get_n_selected_children() == 1, "first table selection query failed")
+	check(projects.get_selected_child(0).get_name() == "ecode", "first table selection snapshot is stale")
+	check(projects.select_child(0), "queried table selection failed")
+	pause(0.1)
+	check(projects.is_child_selected(0) and not projects.is_child_selected(1),
+		"queried table selection snapshot did not update")
+	check(projects.get_selected_child(0).get_name() == "eepp", "updated table selection snapshot is stale")
+	if selection_events is not None:
+		check(("object:state-changed:selected", "ecode", 0) in selection_events,
+			f"queried table's old selected row was not cleared: {selection_events}")
+		check(("object:state-changed:selected", "eepp", 1) in selection_events,
+			f"queried table's new selected row was not announced: {selection_events}")
 
 	# An icon-only button is named by its tooltip; the status line it updates is a live region.
 	refresh = find_named(nodes, "Refresh status")
@@ -329,6 +398,9 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 			check(extents.width > 0 and extents.height > 0, "surviving window stopped responding")
 			close_last = find_named(descendants(application), "Close secondary window")
 			check(close_last.do_action(action_index(close_last, "click")), "last window close failed")
+	if policy_reset:
+		check(Atspi.EditableText.set_text_contents(project_name, "disable accessibility"),
+			"policy reset during native SetTextContents did not finish its reply")
 	print(f"AT-SPI validation passed: {len(nodes)} nodes")
 
 
@@ -340,6 +412,7 @@ def main():
 	parser.add_argument("--multi-window", action="store_true")
 	parser.add_argument("--close-primary", action="store_true")
 	parser.add_argument("--hidden", action="store_true", help="keep all example windows hidden")
+	parser.add_argument("--policy-reset", action="store_true", help="disable backend inside SetTextContents")
 	parser.add_argument("--timeout", type=float, default=5.0)
 	parser.add_argument("--process-id", type=int)
 	args = parser.parse_args()
@@ -347,12 +420,15 @@ def main():
 	process = None
 	discovery_listener = None
 	text_events = None
+	selection_events = None
 	try:
 		if not args.no_launch:
-			discovery_listener, discovered_process_ids, text_events = start_discovery_listener()
+			discovery_listener, discovered_process_ids, text_events, selection_events = start_discovery_listener()
 			command = [args.executable]
 			if args.hidden:
 				command.append("--hidden")
+			if args.policy_reset:
+				command.append("--test-policy-reset")
 			if args.multi_window or args.close_primary:
 				command.append("--multi-window")
 			if args.close_primary:
@@ -377,14 +453,17 @@ def main():
 			args.close_primary,
 			process.pid if process is not None else args.process_id,
 			text_events,
+			selection_events,
+			args.policy_reset,
 		)
-		if process is not None and args.close_primary:
+		if process is not None and (args.close_primary or args.policy_reset):
 			check(process.wait(timeout=3) == 0, "native backend teardown crashed on last-window closure")
 	finally:
 		if discovery_listener:
 			try:
 				for event in ("object:children-changed:add", "object:text-changed",
-					"object:text-caret-moved", "object:text-selection-changed"):
+					"object:text-caret-moved", "object:text-selection-changed", "object:announcement",
+					"object:selection-changed", "object:state-changed:selected"):
 					discovery_listener.deregister(event)
 			except GLib.Error:
 				# A closed bus must not mask the original failure or skip child-process cleanup.

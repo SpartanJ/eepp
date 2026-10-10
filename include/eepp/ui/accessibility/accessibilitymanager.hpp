@@ -31,7 +31,16 @@ class EE_API AccessibilityManager {
 
 	AccessibilityNodeRef getNodeRef( UIWidget* widget );
 
+	/** The widget's identity if one was handed out, without registering one. Clients only hold
+	 * handed-out identities, so property changes of other widgets need no notification. */
+	AccessibilityNodeRef findNodeRef( UIWidget* widget ) const;
+
 	bool isValid( AccessibilityNodeRef ref ) const;
+
+	/** Scalar queries avoid constructing names, values, text offsets or relation caches. */
+	AccessibilityRole getNodeRole( AccessibilityNodeRef ref ) const;
+
+	AccessibilityState getNodeState( AccessibilityNodeRef ref ) const;
 
 	AccessibilityNodeInfo getNodeInfo( AccessibilityNodeRef ref, bool includeValue = true ) const;
 
@@ -148,7 +157,29 @@ class EE_API AccessibilityManager {
 	/** Invalidates registered identities before a subtree changes accessibility owners. */
 	void onSubtreeRemoved( Scene::Node* node );
 
+	/** A callback may request a policy change, but cannot destroy its own native call stack.
+	 * Native backends use this allocation-free scope around incoming calls. The scene applies
+	 * the last request at the beginning of a later, non-reentrant update. */
+	class ScopedDispatch {
+	  public:
+		explicit ScopedDispatch( AccessibilityManager& manager ) :
+			mDepth( manager.mDispatchDepth ) {
+			++mDepth;
+		}
+
+		~ScopedDispatch() { --mDepth; }
+
+		ScopedDispatch( const ScopedDispatch& ) = delete;
+
+		ScopedDispatch& operator=( const ScopedDispatch& ) = delete;
+
+	  private:
+		Uint32& mDepth;
+	};
+
   private:
+	friend class UISceneNode;
+
 	static constexpr AccessibilitySourceId WidgetSource = 1;
 	UISceneNode* mScene;
 	std::unique_ptr<AccessibilityBackend> mBackend;
@@ -173,7 +204,23 @@ class EE_API AccessibilityManager {
 		AccessibilityNodeRef parent;
 	};
 	ChildrenCacheEntry mChildrenCache[2];
+	/** The last exposed widget reported as added, its semantic parent and index. A widget
+	 * added right after it takes the next index without rescanning its siblings, so populating
+	 * a container stays linear. Shares the children cache's validity: invalidateChildren()
+	 * clears it, and only a change under another parent restores it. */
+	AccessibilityNodeRef mLastAddedParent;
+	UIWidget* mLastAddedWidget{ nullptr };
+	Int32 mLastAddedIndex{ -1 };
 	Uint8 mMostRecentlyUsedChildrenCache{};
+	/** Last policy requested during native dispatch; replacing the backend must wait until
+	 * its current call stack has unwound. These fields fit the manager's existing tail padding. */
+	AccessibilityPolicy mDeferredPolicy{ AccessibilityPolicy::Auto };
+	/** Whether a callback queued a policy request, including one that cancels an earlier request
+	 * by restoring the current policy. Cleared when the scene applies or supersedes it. */
+	bool mHasDeferredPolicy{ false };
+	/** Nesting count of guarded queries, actions, notifications and backend updates. Nonzero
+	 * prevents policy-driven destruction and recursive backend dispatch from user callbacks. */
+	Uint32 mDispatchDepth{};
 
 	UIWidget* resolve( AccessibilityNodeRef ref ) const;
 
@@ -184,6 +231,9 @@ class EE_API AccessibilityManager {
 	void invalidateChildren();
 
 	AccessibilityNodeRef getWidgetParent( UIWidget* widget );
+
+	/** Reports the exposed roots of an arriving/departing transparent subtree. */
+	void onSemanticSubtreeChange( UIWidget* widget, bool removed );
 
 	/** Returns whether any identity or model source in the subtree was released. */
 	bool removeSubtreeIdentities( Scene::Node* node );

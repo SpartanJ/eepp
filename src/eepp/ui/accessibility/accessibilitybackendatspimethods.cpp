@@ -18,8 +18,9 @@ DBusHandlerResult AtSpiApplication::handleMessage( DBusMessage* request ) {
 	if ( path && std::strcmp( path, CachePath ) == 0 )
 		return handleCache( request, interface, member );
 	auto ref = refFromPath( path );
-	if ( !isValid( ref ) )
+	if ( !isValid( ref ) || !mManager )
 		return 1;
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
 	if ( std::strcmp( interface, "org.a11y.atspi.Accessible" ) == 0 )
 		return handleAccessible( request, ref, member );
 	if ( std::strcmp( interface, "org.a11y.atspi.Application" ) == 0 )
@@ -28,6 +29,8 @@ DBusHandlerResult AtSpiApplication::handleMessage( DBusMessage* request ) {
 		return handleComponent( request, ref, member );
 	if ( std::strcmp( interface, "org.a11y.atspi.Action" ) == 0 )
 		return handleAction( request, ref, member );
+	if ( std::strcmp( interface, "org.a11y.atspi.Selection" ) == 0 )
+		return handleSelection( request, ref, member );
 	if ( std::strcmp( interface, "org.a11y.atspi.Text" ) == 0 )
 		return handleText( request, ref, member );
 	if ( std::strcmp( interface, "org.a11y.atspi.EditableText" ) == 0 )
@@ -143,6 +146,13 @@ DBusHandlerResult AtSpiApplication::handleAccessible( DBusMessage* request,
 		send( reply );
 	} else if ( std::strcmp( member, "GetState" ) == 0 ) {
 		auto info = getNodeInfo( ref, false );
+		if ( isSelectionContainerRole( info.role ) ) {
+			rememberSelection( ref );
+		} else if ( hasState( info.states, AccessibilityState::Selected ) ) {
+			const auto parent = getParent( ref );
+			if ( isSelectionContainerRole( mManager->getNodeRole( parent ) ) )
+				rememberSelection( parent );
+		}
 		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
 		DBusMessageIter iter;
 		mDBus.messageIterInitAppend( reply, &iter );
@@ -186,6 +196,54 @@ DBusHandlerResult AtSpiApplication::handleApplication( DBusMessage* request,
 	} else if ( std::strcmp( member, "GetApplicationBusAddress" ) == 0 ) {
 		const char* address = "";
 		sendBasic( request, 's', &address );
+	} else {
+		return 1;
+	}
+	return 0;
+}
+
+DBusHandlerResult AtSpiApplication::handleSelection( DBusMessage* request, AccessibilityNodeRef ref,
+													 const char* member ) {
+	if ( !isSelectionContainerRole( mManager->getNodeRole( ref ) ) )
+		return 1;
+	Int32 index = -1;
+	if ( std::strcmp( member, "GetSelectedChild" ) == 0 ) {
+		if ( !mDBus.messageGetArgs( request, nullptr, 'i', &index, 0 ) )
+			return 1;
+		const auto& selected = rememberSelection( ref );
+		if ( index < 0 || static_cast<size_t>( index ) >= selected.size() ) {
+			sendError( request, "org.freedesktop.DBus.Error.InvalidArgs",
+					   "Invalid selection index" );
+			return 0;
+		}
+		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessageIter iter;
+		mDBus.messageIterInitAppend( reply, &iter );
+		appendRef( iter, selected[index] );
+		send( reply );
+	} else if ( std::strcmp( member, "IsChildSelected" ) == 0 ||
+				std::strcmp( member, "SelectChild" ) == 0 ) {
+		if ( !mDBus.messageGetArgs( request, nullptr, 'i', &index, 0 ) )
+			return 1;
+		const auto child = index >= 0 ? getChild( ref, index ) : AccessibilityNodeRef{};
+		// Establish the old selection before an action emits its change; reads reuse this
+		// snapshot rather than rebuilding it after every IsChildSelected request.
+		rememberSelection( ref );
+		int success = 0;
+		if ( child.isValid() ) {
+			if ( std::strcmp( member, "SelectChild" ) == 0 )
+				success = mManager->performAction( child, { AccessibilityAction::Select } );
+			else
+				success = hasState( mManager->getNodeState( child ), AccessibilityState::Selected );
+		}
+		sendBasic( request, 'b', &success );
+	} else if ( std::strcmp( member, "ClearSelection" ) == 0 ||
+				std::strcmp( member, "SelectAll" ) == 0 ||
+				std::strcmp( member, "DeselectSelectedChild" ) == 0 ||
+				std::strcmp( member, "DeselectChild" ) == 0 ) {
+		// The engine's accessibility actions currently support single-item selection only.
+		int success = 0;
+		sendBasic( request, 'b', &success );
 	} else {
 		return 1;
 	}
@@ -537,6 +595,12 @@ DBusHandlerResult AtSpiApplication::handlePropertiesGet( DBusMessage* request,
 		Int32 value = static_cast<Int32>( __builtin_popcount( nativeActions( info.actions ) ) );
 		mDBus.messageIterOpenContainer( &iter, 'v', "i", &variant );
 		appendBasic( variant, 'i', &value );
+	} else if ( std::strcmp( requestedInterface, "org.a11y.atspi.Selection" ) == 0 &&
+				std::strcmp( property, "NSelectedChildren" ) == 0 &&
+				isSelectionContainerRole( mManager->getNodeRole( ref ) ) ) {
+		Int32 count = static_cast<Int32>( rememberSelection( ref ).size() );
+		mDBus.messageIterOpenContainer( &iter, 'v', "i", &variant );
+		appendBasic( variant, 'i', &count );
 	} else if ( std::strcmp( requestedInterface, "org.a11y.atspi.Text" ) == 0 && info.text.valid &&
 				( std::strcmp( property, "CharacterCount" ) == 0 ||
 				  std::strcmp( property, "CaretOffset" ) == 0 ) ) {

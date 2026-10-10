@@ -18,6 +18,11 @@ class EE_API AccessibilitySource {
 
 	virtual AccessibilityNodeInfo getInfo( Uint64 id ) const = 0;
 
+	/** Sources may answer scalar queries without copying model display data. */
+	virtual AccessibilityRole getRole( Uint64 id ) const { return getInfo( id ).role; }
+
+	virtual AccessibilityState getState( Uint64 id ) const { return getInfo( id ).states; }
+
 	virtual AccessibilityNodeRef getParent( Uint64 id ) const = 0;
 
 	virtual size_t getChildCount( Uint64 id ) const = 0;

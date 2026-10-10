@@ -343,6 +343,10 @@ void AtSpiApplication::appendInterfaces( DBusMessageIter& iter, AccessibilityNod
 	const char* component = "org.a11y.atspi.Component";
 	appendBasic( array, 's', &accessible );
 	appendBasic( array, 's', &component );
+	if ( isSelectionContainerRole( info.role ) ) {
+		const char* selection = "org.a11y.atspi.Selection";
+		appendBasic( array, 's', &selection );
+	}
 	if ( nativeActions( info.actions ) ) {
 		const char* action = "org.a11y.atspi.Action";
 		appendBasic( array, 's', &action );

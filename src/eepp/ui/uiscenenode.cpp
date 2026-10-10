@@ -36,6 +36,7 @@
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
 #include <eepp/window/platformhelper.hpp>
 #include <eepp/window/window.hpp>
 #include <mutex>
@@ -1285,10 +1286,25 @@ void UISceneNode::flushDirtyStyleAndLayout() {
 
 void UISceneNode::update( const Time& elapsed ) {
 	auto context = makeCurrent();
+	// Native accessibility calls can invoke user callbacks that change policy. Resetting their
+	// manager immediately would destroy the backend while it is still executing or replying.
+	// Apply the last deferred request at the next update, after dispatch has unwound; an update
+	// re-entered from a callback leaves it pending because the dispatch nesting count is nonzero.
+	if ( mAccessibilityManager && mAccessibilityManager->mHasDeferredPolicy &&
+		 mAccessibilityManager->mDispatchDepth == 0 ) {
+		const auto policy = mAccessibilityManager->mDeferredPolicy;
+		mAccessibilityManager->mHasDeferredPolicy = false;
+		setAccessibilityPolicy( policy );
+	}
 
+	// Only root scenes own native backends; nested scenes use their host's manager. Create it
+	// lazily for Auto/Enabled policies, so Disabled scenes do not initialize native integration.
 	if ( !mHostUISceneNode && !mAccessibilityManager &&
 		 getAccessibilityPolicy() != AccessibilityPolicy::Disabled )
 		mAccessibilityManager = std::make_unique<AccessibilityManager>( this );
+	// Service native requests/queued notifications before the ordinary widget update. A manager
+	// explicitly created by a query may also exist under Disabled policy (with a null backend).
+	// Refresh the scene's cached activity bit, which keeps dormant widget notification hooks cheap.
 	if ( mAccessibilityManager ) {
 		mAccessibilityManager->update();
 		setAccessibilityClientActive( mAccessibilityManager->hasActiveNativeClients() );
@@ -1438,6 +1454,19 @@ UISceneNode* UISceneNode::setAccessibilityPolicy( AccessibilityPolicy policy ) {
 		mHostUISceneNode->setAccessibilityPolicy( policy );
 		return this;
 	}
+	if ( mAccessibilityManager && mAccessibilityManager->mDispatchDepth != 0 ) {
+		mAccessibilityManager->mDeferredPolicy = policy;
+		// A policy-only callback need not dirty the scene. Ensure an event-driven application
+		// gets another update instead of sleeping indefinitely with the reset pending.
+		if ( !mAccessibilityManager->mHasDeferredPolicy )
+			Window::Input::wakeUpEventLoop();
+		mAccessibilityManager->mHasDeferredPolicy = true;
+		return this;
+	}
+	// An explicit request outside dispatch supersedes an earlier deferred request, even when
+	// it keeps the current policy and needs no backend replacement.
+	if ( mAccessibilityManager )
+		mAccessibilityManager->mHasDeferredPolicy = false;
 	if ( getAccessibilityPolicy() == policy )
 		return this;
 	mAccessibilityManager.reset();

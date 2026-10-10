@@ -18,12 +18,15 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
 void testProviderSelectionTeardown();
 
 void testProviderTextRangeIdentity();
+
+void testProviderPolicyChangeDuringDispatch();
 
 namespace {
 
@@ -580,9 +583,15 @@ int wmain( int argc, wchar_t** argv ) {
 		GetModuleFileNameW( nullptr, module, MAX_PATH );
 		harnessPath = module;
 	}
+	bool providersOnly = false;
+	for ( int index = 1; index < argc; ++index )
+		providersOnly |= std::wstring_view( argv[index] ) == L"--providers-only";
+	const bool explicitExample = argc > 1 && std::wstring_view( argv[1] ) != L"--providers-only";
+	// Provider tests create UIApplication instances, which change the process working
+	// directory. Resolve the caller's relative path before running any of those tests.
 	const std::filesystem::path example =
-		argc > 1 ? std::filesystem::path( argv[1] )
-				 : harnessPath.parent_path().parent_path() / L"eepp-ui-accessibility.exe";
+		explicitExample ? std::filesystem::absolute( std::filesystem::path( argv[1] ) )
+						: harnessPath.parent_path().parent_path() / L"eepp-ui-accessibility.exe";
 	const std::filesystem::path outputPath =
 		harnessPath.parent_path() / L"output" / L"windows_accessibility_results.json";
 	std::vector<Result> results;
@@ -620,7 +629,14 @@ int wmain( int argc, wchar_t** argv ) {
 	try {
 		record( "provider selection teardown", testProviderSelectionTeardown );
 		record( "provider text range window identity", testProviderTextRangeIdentity );
-		if ( argc > 1 && std::wstring( argv[1] ) == L"--providers-only" ) {
+		record( "provider policy change during dispatch", testProviderPolicyChangeDuringDispatch );
+		// A supplied example path can be validated together with the provider regressions on
+		// systems without full UIA client support, without launching a visible example window.
+		if ( !providersOnly || explicitExample ) {
+			require( std::filesystem::is_regular_file( example ),
+					 "example executable does not exist: " + narrow( example.wstring() ) );
+		}
+		if ( providersOnly ) {
 			CoUninitialize();
 			writeResults( outputPath, results, queryLatency, processId );
 			return std::all_of( results.begin(), results.end(),
@@ -628,8 +644,6 @@ int wmain( int argc, wchar_t** argv ) {
 					   ? EXIT_SUCCESS
 					   : EXIT_FAILURE;
 		}
-		require( std::filesystem::is_regular_file( example ),
-				 "example executable does not exist: " + narrow( example.wstring() ) );
 		std::wstring command = L"\"" + example.wstring() + L"\" --multi-window";
 		STARTUPINFOW startup{};
 		startup.cb = sizeof( startup );

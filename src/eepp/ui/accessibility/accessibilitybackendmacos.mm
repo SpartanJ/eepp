@@ -399,6 +399,7 @@ void MacAccessibilityState::invalidate() {
 EEPPMacAccessibilityElement* MacAccessibilityState::elementFor( AccessibilityNodeRef ref ) {
 	if ( !isValid( ref ) )
 		return nil;
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
 	const NodeKey key{ ref.source, ref.id };
 	auto found = mElements.find( key );
 	if ( found != mElements.end() )
@@ -472,8 +473,10 @@ void MacAccessibilityState::evictInvalidElements() {
 
 AccessibilityNodeInfo MacAccessibilityState::infoFor( AccessibilityNodeRef ref,
 													  bool includeValue ) const {
-	return isValid( ref ) ? mManager->getNodeInfo( ref, includeValue, includeValue )
-						  : AccessibilityNodeInfo();
+	if ( !isValid( ref ) )
+		return {};
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
+	return mManager->getNodeInfo( ref, includeValue, includeValue );
 }
 
 std::shared_ptr<const std::u16string> MacAccessibilityState::textFor( AccessibilityNodeRef ref ) {
@@ -509,6 +512,7 @@ std::shared_ptr<const std::u16string> MacAccessibilityState::textFor( Accessibil
 NSArray* MacAccessibilityState::childrenFor( AccessibilityNodeRef ref ) {
 	if ( !isValid( ref ) )
 		return nil;
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
 	const auto& children = mManager->getChildren( ref );
 	NSMutableArray* result = [[NSMutableArray alloc] initWithCapacity:children.size()];
 	for ( const auto& child : children ) {
@@ -522,6 +526,7 @@ NSArray* MacAccessibilityState::childrenFor( AccessibilityNodeRef ref, NSUIntege
 											 NSUInteger maxCount ) {
 	if ( !isValid( ref ) || maxCount == 0 )
 		return @[];
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
 	const auto count = mManager->getChildCount( ref );
 	if ( index >= count )
 		return @[];
@@ -535,12 +540,16 @@ NSArray* MacAccessibilityState::childrenFor( AccessibilityNodeRef ref, NSUIntege
 }
 
 NSUInteger MacAccessibilityState::childCountFor( AccessibilityNodeRef ref ) {
-	return isValid( ref ) ? mManager->getChildCount( ref ) : 0;
+	if ( !isValid( ref ) )
+		return 0;
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
+	return mManager->getChildCount( ref );
 }
 
 NSUInteger MacAccessibilityState::indexOfChild( AccessibilityNodeRef parent, id child ) {
 	if ( !isValid( parent ) || ![child isKindOfClass:[EEPPMacAccessibilityElement class]] )
 		return NSNotFound;
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
 	const auto ref = [(EEPPMacAccessibilityElement*)child nativeNodeRef];
 	if ( mManager->getParent( ref ) != parent )
 		return NSNotFound;
@@ -551,6 +560,7 @@ NSUInteger MacAccessibilityState::indexOfChild( AccessibilityNodeRef parent, id 
 NSArray* MacAccessibilityState::selectedChildrenFor( AccessibilityNodeRef ref ) {
 	if ( !isValid( ref ) )
 		return nil;
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
 	const auto children = mManager->getSelectedChildren( ref );
 	NSMutableArray* result = [[NSMutableArray alloc] init];
 	for ( const auto& child : children ) {
@@ -561,13 +571,17 @@ NSArray* MacAccessibilityState::selectedChildrenFor( AccessibilityNodeRef ref ) 
 }
 
 AccessibilityNodeRef MacAccessibilityState::parentFor( AccessibilityNodeRef ref ) {
-	return isValid( ref ) ? mManager->getParent( ref ) : AccessibilityNodeRef{};
+	if ( !isValid( ref ) )
+		return {};
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
+	return mManager->getParent( ref );
 }
 
 AccessibilityNodeRef MacAccessibilityState::hitTest( NSPoint point ) {
 	if ( !manager() || !mNativeWindow || ![mNativeWindow isVisible] ||
 		 [mNativeWindow isMiniaturized] )
 		return {};
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
 	const NSRect content = [mNativeWindow contentRectForFrameRect:[mNativeWindow frame]];
 	if ( !NSPointInRect( point, content ) )
 		return {};
@@ -588,6 +602,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 									 const String& value ) {
 	if ( !isValid( ref ) )
 		return false;
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
 	if ( action == AccessibilityAction::Focus && mNativeWindow && ![mNativeWindow isKeyWindow] )
 		[mNativeWindow makeKeyAndOrderFront:nil];
 	return mManager->performAction( ref, { action, value } );
@@ -1998,11 +2013,10 @@ class MacAccessibilityBackend final : public AccessibilityBackend {
 
 	struct PendingEventKeyHash {
 		size_t operator()( const PendingEventKey& key ) const {
-			return hashCombine( std::hash<Uint64>()( key.ref.source ),
-								std::hash<Uint64>()( key.ref.id ),
-								std::hash<Uint64>()( key.related.source ),
-								std::hash<Uint64>()( key.related.id ),
-								static_cast<size_t>( key.type ) );
+			return hashCombine(
+				std::hash<Uint64>()( key.ref.source ), std::hash<Uint64>()( key.ref.id ),
+				std::hash<Uint64>()( key.related.source ), std::hash<Uint64>()( key.related.id ),
+				static_cast<size_t>( key.type ) );
 		}
 	};
 

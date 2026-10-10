@@ -312,7 +312,19 @@ void UIWidget::deliverAccessibilityEvent( AccessibilityEvent event ) {
 		}
 		if ( !target )
 			target = mUISceneNode->getRoot();
-		manager->notify( manager->getNodeRef( target ), event );
+		// A property change of a widget no client was handed needs no identity. Widgets are
+		// often labelled before they are parented; registering them then would also make their
+		// reparenting announce a removal from a parent the client never saw them in.
+		const bool propertyChange = event == AccessibilityEvent::NameChanged ||
+									event == AccessibilityEvent::DescriptionChanged ||
+									event == AccessibilityEvent::ValueChanged ||
+									event == AccessibilityEvent::StateChanged ||
+									event == AccessibilityEvent::EnabledChanged ||
+									event == AccessibilityEvent::BoundsChanged;
+		const auto ref =
+			propertyChange ? manager->findNodeRef( target ) : manager->getNodeRef( target );
+		if ( ref.isValid() )
+			manager->notify( ref, event );
 	}
 	if ( target && ( event == AccessibilityEvent::NameChanged ||
 					 event == AccessibilityEvent::ValueChanged ) ) {

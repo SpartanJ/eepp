@@ -29,6 +29,18 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 		return found != mNodes.end() && found->second.index.isValid();
 	}
 
+	AccessibilityRole getRole( Uint64 id ) const override {
+		auto found = mNodes.find( id );
+		return found != mNodes.end() && found->second.index.isValid() ? roleFor( found->second )
+																	  : AccessibilityRole::None;
+	}
+
+	AccessibilityState getState( Uint64 id ) const override {
+		auto found = mNodes.find( id );
+		return found != mNodes.end() && found->second.index.isValid() ? stateFor( found->second )
+																	  : AccessibilityState::None;
+	}
+
 	AccessibilityNodeInfo getInfo( Uint64 id ) const override {
 		AccessibilityNodeInfo info;
 		auto found = mNodes.find( id );
@@ -36,44 +48,11 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 			return info;
 		const auto& node = found->second;
 		ModelIndex index = node.index;
-		info.role = node.cell ? AccessibilityRole::Cell
-					: mIsList ? AccessibilityRole::ListItem
-					: mIsTree ? AccessibilityRole::TreeItem
-							  : AccessibilityRole::Row;
+		info.role = roleFor( node );
 		info.value = index.data().toString();
 		info.name =
 			node.cell ? String( mView->getModel()->columnName( index.column() ) ) : info.value;
-		if ( mView->isEnabled() )
-			info.states |= AccessibilityState::Enabled;
-		if ( mView->isVisible() )
-			info.states |= AccessibilityState::Visible;
-		if ( mView->hasVisibility() )
-			info.states |= AccessibilityState::Showing;
-		if ( mView->getSelection().contains( index ) ||
-			 ( !mIsTree && !node.cell && mView->getSelection().containsRow( index.row() ) ) )
-			info.states |= AccessibilityState::Selected;
-		info.actions = accessibilityActionMask( AccessibilityAction::Select ) |
-					   accessibilityActionMask( AccessibilityAction::ScrollTo );
-		if ( mIsTree && !node.cell && mView->getModel()->rowCount( index ) > 0 ) {
-			bool expanded = static_cast<UITreeView*>( mView )->isExpanded( index );
-			if ( expanded )
-				info.states |= AccessibilityState::Expanded;
-			info.actions |= accessibilityActionMask( expanded ? AccessibilityAction::Collapse
-															  : AccessibilityAction::Expand );
-		}
-		if ( auto cell = mView->getCellFromIndex( index ) ) {
-			info.bounds = cell->getWorldBounds();
-			info.boundsValid = true;
-			if ( !cell->hasVisibility() || !info.bounds.intersect( mView->getWorldBounds() ) ) {
-				info.states = static_cast<AccessibilityState>(
-					static_cast<Uint64>( info.states ) &
-					~static_cast<Uint64>( AccessibilityState::Showing ) );
-			}
-		} else {
-			info.states = static_cast<AccessibilityState>(
-				static_cast<Uint64>( info.states ) &
-				~static_cast<Uint64>( AccessibilityState::Showing ) );
-		}
+		info.states = stateFor( node, &info );
 		return info;
 	}
 
@@ -282,6 +261,54 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 		Models::PersistentModelIndex index;
 		bool cell{ false };
 	};
+
+	AccessibilityRole roleFor( const NodeInfo& node ) const {
+		return node.cell ? AccessibilityRole::Cell
+			   : mIsList ? AccessibilityRole::ListItem
+			   : mIsTree ? AccessibilityRole::TreeItem
+						 : AccessibilityRole::Row;
+	}
+
+	// Shared by full metadata and state-only reads. Never request model display data or
+	// construct its strings; bounds and expansion still determine the same native state.
+	AccessibilityState stateFor( const NodeInfo& node,
+								 AccessibilityNodeInfo* info = nullptr ) const {
+		AccessibilityState states{ AccessibilityState::None };
+		ModelIndex index = node.index;
+		if ( mView->isEnabled() )
+			states |= AccessibilityState::Enabled;
+		if ( mView->isVisible() )
+			states |= AccessibilityState::Visible;
+		if ( mView->hasVisibility() )
+			states |= AccessibilityState::Showing;
+		if ( mView->getSelection().contains( index ) ||
+			 ( !mIsTree && !node.cell && mView->getSelection().containsRow( index.row() ) ) )
+			states |= AccessibilityState::Selected;
+		if ( info ) {
+			info->actions = accessibilityActionMask( AccessibilityAction::Select ) |
+							accessibilityActionMask( AccessibilityAction::ScrollTo );
+		}
+		if ( mIsTree && !node.cell && mView->getModel()->rowCount( index ) > 0 ) {
+			bool expanded = static_cast<UITreeView*>( mView )->isExpanded( index );
+			if ( expanded )
+				states |= AccessibilityState::Expanded;
+			if ( info ) {
+				info->actions |= accessibilityActionMask( expanded ? AccessibilityAction::Collapse
+																   : AccessibilityAction::Expand );
+			}
+		}
+		if ( auto cell = mView->getCellFromIndex( index ) ) {
+			const auto bounds = cell->getWorldBounds();
+			if ( info ) {
+				info->bounds = bounds;
+				info->boundsValid = true;
+			}
+			if ( cell->hasVisibility() && bounds.intersect( mView->getWorldBounds() ) )
+				return states;
+		}
+		return static_cast<AccessibilityState>(
+			static_cast<Uint64>( states ) & ~static_cast<Uint64>( AccessibilityState::Showing ) );
+	}
 
 	/** The cell editor, when it is a live, exposed accessibility element. */
 	UIWidget* exposedEditor() const {

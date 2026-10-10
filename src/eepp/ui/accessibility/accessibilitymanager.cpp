@@ -89,6 +89,21 @@ bool semanticIndexOf( Node* parent, UIWidget* target, size_t& currentIndex, Int3
 	return false;
 }
 
+// Whether `node`, the last child of its parent, follows `earlier` in document order. Changing
+// such a node cannot shift the semantic index of `earlier`.
+bool isLastAfter( const Node* node, const Node* earlier ) {
+	if ( node->getNextNode() )
+		return false;
+	const Node* parent = node->getParent();
+	for ( const Node* ancestor = earlier; ancestor; ancestor = ancestor->getParent() ) {
+		if ( ancestor == node )
+			return false;
+		if ( ancestor == parent )
+			return true;
+	}
+	return false;
+}
+
 UIWidget* hitSemanticWidget( Node* parent, const Math::Vector2f& point ) {
 	for ( Node* node = parent->getLastChild(); node; node = node->getPrevNode() ) {
 		if ( node->isDestroying() )
@@ -97,12 +112,17 @@ UIWidget* hitSemanticWidget( Node* parent, const Math::Vector2f& point ) {
 		if ( widget && ( widget->isAccessibilityHidden() || !widget->hasVisibility() ||
 						 !widget->getWorldBounds().contains( point ) ) )
 			continue;
-		// An accessible widget is a semantic boundary: getChildren() does not expose its
-		// implementation children, so hit testing must not return one of those hidden descendants.
-		if ( widget && widget->isAccessibilityElement() )
+		// Only leaves and model views hide their implementation children. Exposed containers
+		// (groups, windows, etc.) still expose descendants and must hit-test those first.
+		const bool exposed = widget && widget->isAccessibilityElement();
+		if ( exposed &&
+			 ( AccessibilityWidgetResolver::isLeafRole( widget->getAccessibilityRole() ) ||
+			   widget->isType( UI_TYPE_ABSTRACTTABLEVIEW ) ) )
 			return widget;
 		if ( auto child = hitSemanticWidget( node, point ) )
 			return child;
+		if ( exposed )
+			return widget;
 	}
 	return nullptr;
 }
@@ -153,6 +173,12 @@ AccessibilityNodeRef AccessibilityManager::getNodeRef( UIWidget* widget ) {
 	return { WidgetSource, id };
 }
 
+AccessibilityNodeRef AccessibilityManager::findNodeRef( UIWidget* widget ) const {
+	auto found = mWidgetIds.find( widget );
+	return found != mWidgetIds.end() ? AccessibilityNodeRef{ WidgetSource, found->second }
+									 : AccessibilityNodeRef{};
+}
+
 UIWidget* AccessibilityManager::resolve( AccessibilityNodeRef ref ) const {
 	if ( ref.source != WidgetSource )
 		return nullptr;
@@ -194,6 +220,22 @@ bool AccessibilityManager::isValid( AccessibilityNodeRef ref ) const {
 AccessibilityNodeInfo AccessibilityManager::getNodeInfo( AccessibilityNodeRef ref,
 														 bool includeValue ) const {
 	return getNodeInfo( ref, includeValue, true );
+}
+
+AccessibilityRole AccessibilityManager::getNodeRole( AccessibilityNodeRef ref ) const {
+	if ( auto* widget = resolve( ref ) )
+		return widget->getAccessibilityRole();
+	if ( auto* source = resolveSource( ref ) )
+		return source->getRole( ref.id );
+	return AccessibilityRole::None;
+}
+
+AccessibilityState AccessibilityManager::getNodeState( AccessibilityNodeRef ref ) const {
+	if ( auto* widget = resolve( ref ) )
+		return widget->getAccessibilityState();
+	if ( auto* source = resolveSource( ref ) )
+		return source->getState( ref.id );
+	return AccessibilityState::None;
 }
 
 AccessibilityNodeInfo AccessibilityManager::getNodeInfo( AccessibilityNodeRef ref,
@@ -420,9 +462,10 @@ AccessibilityManager::getSelectedChildren( AccessibilityNodeRef ref ) {
 	auto* source = sourceFor( resolve( ref ) );
 	if ( source && source->getSelectedChildren( selected ) )
 		return selected;
+	// Only the state is needed: building each child's node info would copy its name and text,
+	// and record its relation targets as if a client had read them.
 	for ( const auto& child : getChildren( ref ) ) {
-		if ( static_cast<Uint64>( getNodeInfo( child, false, false ).states ) &
-			 static_cast<Uint64>( AccessibilityState::Selected ) )
+		if ( hasState( getNodeState( child ), AccessibilityState::Selected ) )
 			selected.emplace_back( child );
 	}
 	return selected;
@@ -438,6 +481,7 @@ AccessibilityNodeRef AccessibilityManager::getKeyboardFocusedNode() {
 
 bool AccessibilityManager::performAction( AccessibilityNodeRef ref,
 										  const AccessibilityActionRequest& request ) {
+	ScopedDispatch dispatch( *this );
 	if ( auto source = resolveSource( ref ) )
 		return source->performAction( ref.id, request );
 	auto widget = resolve( ref );
@@ -474,6 +518,11 @@ void AccessibilityManager::onClientsDisconnected() {
 }
 
 void AccessibilityManager::update() {
+	// User callbacks can re-enter the scene loop. Never recursively drain native requests or
+	// mutate a backend's event queue while it is already dispatching one of those callbacks.
+	if ( mDispatchDepth != 0 )
+		return;
+	ScopedDispatch dispatch( *this );
 	if ( !mBackend ) {
 		const bool disabled =
 			std::getenv( "EEPP_DISABLE_ACCESSIBILITY" ) ||
@@ -510,6 +559,7 @@ UISceneNode* AccessibilityManager::getSceneNode() const {
 
 void AccessibilityManager::notify( AccessibilityNodeRef ref, AccessibilityEvent event,
 								   AccessibilityNodeRef related, Int32 index ) {
+	ScopedDispatch dispatch( *this );
 	if ( !isValid( ref ) && event != AccessibilityEvent::Destroyed )
 		return;
 	if ( event == AccessibilityEvent::ChildrenChanged ||
@@ -655,49 +705,92 @@ void AccessibilityManager::onWidgetParentChange( UIWidget* widget ) {
 		return;
 	// An arriving label renames the controls it labels, whatever its own exposure.
 	onRelationSubtreeChanged( widget, false );
-	if ( !widget->isAccessibilityElement() ||
-		 AccessibilityWidgetResolver::isHiddenFromAccessibility( widget ) )
-		return;
-	// Children of a leaf control (a button's text view) are not part of the tree.
-	if ( AccessibilityWidgetResolver::getLeafOwner( widget ) )
-		return;
-	// Model sources, not recycled cell widgets, own the accessible children of a view.
-	if ( isModelViewImplementationChild( widget ) )
-		return;
-	auto ref = getNodeRef( widget );
-	auto parent = getParent( ref );
-	if ( !parent.isValid() )
-		return;
-	invalidateChildren();
-	Int32 index = -1;
-	const size_t childCount = getChildCount( parent );
-	for ( size_t i = 0; i < childCount; ++i ) {
-		if ( getChild( parent, i ) == ref ) {
-			index = static_cast<Int32>( i );
-			break;
-		}
-	}
-	notify( parent, AccessibilityEvent::Created, ref, index );
+	onSemanticSubtreeChange( widget, false );
 }
 
 void AccessibilityManager::onWidgetRemovedFromParent( UIWidget* widget ) {
 	onRelationSubtreeChanged( widget, true );
-	if ( isModelViewImplementationChild( widget ) )
+	onSemanticSubtreeChange( widget, true );
+}
+
+void AccessibilityManager::onSemanticSubtreeChange( UIWidget* widget, bool removed ) {
+	if ( !widget || !hasActiveClients() || isModelViewImplementationChild( widget ) ||
+		 AccessibilityWidgetResolver::getLeafOwner( widget ) ||
+		 AccessibilityWidgetResolver::isHiddenFromAccessibility( widget ) )
 		return;
-	if ( AccessibilityWidgetResolver::isHiddenFromAccessibility( widget ) )
-		return;
-	auto found = mWidgetIds.find( widget );
-	if ( found == mWidgetIds.end() )
-		return;
-	AccessibilityNodeRef ref{ WidgetSource, found->second };
-	auto parent = getParent( ref );
-	if ( parent.isValid() ) {
-		invalidateChildren();
-		Int32 index = -1;
-		size_t currentIndex = 0;
-		if ( auto* parentWidget = resolve( parent ) )
-			semanticIndexOf( parentWidget, widget, currentIndex, index );
-		notify( parent, AccessibilityEvent::Destroyed, ref, index );
+	// The previous addition's index survives an append right after it, and any change under
+	// another semantic parent: widgets are created under the scene root, then reparented.
+	auto* lastAdded = mLastAddedWidget;
+	const auto lastAddedIndex = mLastAddedIndex;
+	const auto lastAddedParent = mLastAddedParent;
+	invalidateChildren();
+	// Moving a layout does not move its descendants individually. Report its semantic roots,
+	// not the unexposed layout, and retain their identities when moving within this manager.
+	Int32 index = -1;
+	bool first = true;
+	AccessibilityNodeRef parent;
+	visitNodes( widget, [&]( Node* node ) {
+		if ( node->isDestroying() )
+			return false;
+		if ( !node->isWidget() )
+			return true;
+		auto* child = node->asType<UIWidget>();
+		if ( child->isAccessibilityHidden() )
+			return false;
+		if ( !child->isAccessibilityElement() )
+			return true;
+		if ( !first && index >= 0 )
+			++index;
+		AccessibilityNodeRef ref;
+		if ( removed ) {
+			// Constructors temporarily attach their implementation widgets to the scene root.
+			// Do not register/announce such unseen nodes just because they are then reparented.
+			const auto found = mWidgetIds.find( child );
+			if ( found == mWidgetIds.end() )
+				return false;
+			ref = { WidgetSource, found->second };
+		} else {
+			ref = getNodeRef( child );
+		}
+		if ( first ) {
+			// Resolve the parent lazily: an empty transparent layout needs no new identity.
+			parent = getWidgetParent( widget );
+			if ( !removed && child == widget && lastAdded && widget->getPrevNode() == lastAdded &&
+				 parent == lastAddedParent ) {
+				// Appending right after the previous addition, with no change to this parent
+				// since (it would have cleared the hint): the index follows the previous one.
+				index = lastAddedIndex + 1;
+			} else {
+				size_t currentIndex = 0;
+				if ( auto* parentWidget = resolve( parent ) )
+					semanticIndexOf( parentWidget, child, currentIndex, index );
+			}
+			first = false;
+		}
+		// The semantic roots of one subtree are contiguous siblings. Scan the parent once,
+		// not once per descendant, when a layout with many controls is moved.
+		if ( parent.isValid() ) {
+			notify( parent, removed ? AccessibilityEvent::Destroyed : AccessibilityEvent::Created,
+					ref, index );
+		}
+		return false;
+	} );
+	// Only a widget reported as its own single root can be followed by a sibling at the next
+	// index. Otherwise keep the previous hint when this change cannot have shifted it: under
+	// another parent, or after it (a new widget leaving its temporary place under the root).
+	// The remembered widget is alive while it holds an identity.
+	if ( !removed && parent.isValid() && index >= 0 && widget->isAccessibilityElement() ) {
+		mLastAddedWidget = widget;
+		mLastAddedIndex = index;
+		mLastAddedParent = parent;
+	} else if ( lastAdded && mWidgetIds.find( lastAdded ) != mWidgetIds.end() ) {
+		if ( first )
+			parent = getWidgetParent( widget );
+		if ( parent != lastAddedParent || isLastAfter( widget, lastAdded ) ) {
+			mLastAddedWidget = lastAdded;
+			mLastAddedIndex = lastAddedIndex;
+			mLastAddedParent = lastAddedParent;
+		}
 	}
 }
 
@@ -815,6 +908,7 @@ bool AccessibilityManager::hasActiveClients() const {
 }
 
 void AccessibilityManager::invalidateChildren() {
+	mLastAddedWidget = nullptr;
 	for ( auto& cache : mChildrenCache ) {
 		cache.parent = {};
 		cache.children.clear();

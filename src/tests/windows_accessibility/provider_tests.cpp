@@ -1,3 +1,4 @@
+#include "../../eepp/ui/accessibility/accessibilitybackend.hpp"
 #include "../../eepp/ui/accessibility/accessibilitybackenduia.hpp"
 
 #include <eepp/scene/scenemanager.hpp>
@@ -5,8 +6,10 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uilistview.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uitextinput.hpp>
 
+#include <future>
 #include <stdexcept>
 
 using namespace EE;
@@ -137,4 +140,58 @@ void testProviderTextRangeIdentity() {
 									  TextPatternRangeEndpoint_End, &comparison ) == S_OK &&
 				 comparison == 0,
 			 "same-element endpoint movement did not update the range" );
+}
+
+void testProviderPolicyChangeDuringDispatch() {
+	bool completed = false;
+	UIApplication app( testWindow(), testSettings() );
+	require( app.getUI() != nullptr, "hidden test window could not be created" );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto context = std::make_shared<UIAutomationProviderContext>(
+		*manager, reinterpret_cast<HWND>( app.getWindow()->getWindowHandler() ), 1 );
+	class DispatchBackend : public AccessibilityBackend {
+	  public:
+		DispatchBackend( std::shared_ptr<UIAutomationProviderContext> context, bool& completed ) :
+			context( std::move( context ) ), completed( completed ) {}
+
+		~DispatchBackend() override { context->detach(); }
+
+		bool isAvailable() const override { return context->isAlive(); }
+
+		void onEvent( const AccessibilityPendingEvent& ) override {}
+
+		void update() override {
+			context->dispatchPendingRequests();
+			completed = context->isAlive();
+		}
+
+	  private:
+		std::shared_ptr<UIAutomationProviderContext> context;
+		bool& completed;
+	};
+	manager->setBackend( std::make_unique<DispatchBackend>( context, completed ) );
+	auto* button = UIPushButton::New();
+	button->setParent( scene->getRoot() );
+	button->onClick(
+		[scene]( auto ) { scene->setAccessibilityPolicy( AccessibilityPolicy::Enabled ); } );
+	std::unique_ptr<UIAutomationProvider, ReleaseCOM> provider(
+		context->provider( manager->getNodeRef( button ) ) );
+	require( provider != nullptr, "invoke provider could not be created" );
+	auto request = std::async( std::launch::async, [&provider] { return provider->Invoke(); } );
+	MSG message{};
+	const auto deadline = GetTickCount64() + 1000;
+	while ( !PeekMessageW( &message, context->window(), accessibilityDispatchMessage(),
+						   accessibilityDispatchMessage(), PM_REMOVE ) &&
+			GetTickCount64() < deadline )
+		Sleep( 1 );
+	require( message.message == accessibilityDispatchMessage(), "invoke did not queue a request" );
+	manager->update();
+	require( request.get() == S_OK, "queued invoke failed during policy change" );
+	require( completed && context->isAlive(), "dispatch destroyed its own backend" );
+	scene->update( Time::Zero );
+	require( !context->isAlive(), "deferred policy change did not detach the old context" );
+	require( scene->getAccessibilityPolicy() == AccessibilityPolicy::Enabled,
+			 "deferred policy change was not applied" );
+	scene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
 }

@@ -521,7 +521,9 @@ class EE_API UISceneNode : public SceneNode {
 
 	const AccessibilityManager* getAccessibilityManager() const;
 
-	/** Selects native accessibility for this root scene. Nested scenes delegate to their host. */
+	/** Selects native accessibility for this root scene. Nested scenes delegate to their host.
+	 * Changes requested inside an accessibility callback take effect on the next scene update,
+	 * after the current native request has finished. */
 	UISceneNode* setAccessibilityPolicy( AccessibilityPolicy policy );
 
 	AccessibilityPolicy getAccessibilityPolicy() const;

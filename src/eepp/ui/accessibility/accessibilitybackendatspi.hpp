@@ -34,6 +34,11 @@ namespace EE { namespace UI { namespace AtSpi {
 constexpr int DBusMessageTypeMethodReturn = 2;
 constexpr int DBusMessageTypeError = 3;
 
+inline bool isSelectionContainerRole( AccessibilityRole role ) {
+	return role == AccessibilityRole::List || role == AccessibilityRole::Table ||
+		   role == AccessibilityRole::Tree || role == AccessibilityRole::TabList;
+}
+
 struct DBusConnection;
 struct DBusMessage;
 struct DBusError;
@@ -295,6 +300,8 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 		Int32 length{ -1 };
 	};
 	UnorderedMap<std::string, TextState> mTextStates;
+	/** Sorted selected refs a client last saw, only for queried selection containers. */
+	UnorderedMap<std::string, std::vector<AccessibilityNodeRef>> mSelections;
 	UnorderedSet<std::string> mClients;
 	/** NameHasOwner checks sent when a client was first seen, by reply serial. */
 	UnorderedMap<Uint32, std::string> mClientChecks;
@@ -347,6 +354,11 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 						  Int32 offset, Int32 length = 0, const String& text = {} );
 
 	void sendTextSelection( AccessibilityNodeRef ref, const AccessibilityTextInfo& text );
+
+	/** Reuses an event-maintained snapshot, initializing it only on the first client query. */
+	const std::vector<AccessibilityNodeRef>& rememberSelection( AccessibilityNodeRef ref );
+
+	void sendSelectionChanged( AccessibilityNodeRef ref );
 
 	/** Reports a whole-text replacement: delete everything the client knew, insert the rest. */
 	void sendTextReplaced( AccessibilityNodeRef ref );
@@ -439,6 +451,9 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 
 	DBusHandlerResult handleAction( DBusMessage* request, AccessibilityNodeRef ref,
 									const char* member );
+
+	DBusHandlerResult handleSelection( DBusMessage* request, AccessibilityNodeRef ref,
+									   const char* member );
 
 	DBusHandlerResult handleText( DBusMessage* request, AccessibilityNodeRef ref,
 								  const char* member );

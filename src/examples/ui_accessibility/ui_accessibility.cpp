@@ -12,6 +12,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	bool benchmarkVisible = false;
 	bool benchmarkInactive = false;
 	bool hidden = false;
+	bool testPolicyReset = false;
 	size_t benchmarkItems = 1000;
 	size_t benchmarkIterations = 100000;
 	for ( int i = 1; i < argc; ++i ) {
@@ -21,6 +22,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		benchmarkVisible |= std::string_view( argv[i] ) == "--benchmark-visible";
 		benchmarkInactive |= std::string_view( argv[i] ) == "--benchmark-inactive";
 		hidden |= std::string_view( argv[i] ) == "--hidden";
+		testPolicyReset |= std::string_view( argv[i] ) == "--test-policy-reset";
 		if ( std::string_view( argv[i] ) == "--benchmark-items" && i + 1 < argc )
 			benchmarkItems = std::max<size_t>( 1, std::strtoull( argv[++i], nullptr, 10 ) );
 		if ( std::string_view( argv[i] ) == "--benchmark-iterations" && i + 1 < argc )
@@ -240,5 +242,17 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		}
 	}
 	content->find( "project-name" )->setFocus();
+	if ( testPolicyReset ) {
+		auto* input = content->find<UITextInput>( "project-name" );
+		input->on( Event::OnTextChanged, [scene, input, &app]( const Event* ) {
+			if ( input->getText() != "disable accessibility" )
+				return;
+			// Regression fixture: the native SetTextContents call must finish before its own
+			// manager/backend can be removed. Then close through the normal application loop.
+			scene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+			scene->runOnMainThread( [&app] { app.closeWindow( app.getWindow() ); },
+									Milliseconds( 50 ) );
+		} );
+	}
 	return app.run();
 }

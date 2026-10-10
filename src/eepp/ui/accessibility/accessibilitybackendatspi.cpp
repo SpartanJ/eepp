@@ -30,11 +30,15 @@ void AtSpiApplication::initialize() {
 		return initializationFinished();
 	DBusMessage* request =
 		mDBus.messageNewMethodCall( "org.a11y.Bus", "/org/a11y/bus", "org.a11y.Bus", "GetAddress" );
-	if ( !request )
+	if ( !request ) {
+		mDBus.connectionUnref( sessionBus );
 		return initializationFinished();
+	}
 	DBusMessage* reply =
 		mDBus.connectionSendWithReplyAndBlock( sessionBus, request, 1000, nullptr );
 	mDBus.messageUnref( request );
+	// busGet() returns an owned reference to a shared connection. Release, never close it.
+	mDBus.connectionUnref( sessionBus );
 	if ( !reply )
 		return initializationFinished();
 	const char* address = nullptr;
@@ -114,13 +118,19 @@ void AtSpiApplication::unregisterManager( AccessibilityManager& manager ) {
 		if ( it->second != &manager )
 			continue;
 		const Int32 index = static_cast<Int32>( it - mManagers.begin() );
-		if ( !mTextStates.empty() ) {
+		if ( !mTextStates.empty() || !mSelections.empty() ) {
 			const auto prefix = std::string( NodePathPrefix ) + String::toString( it->first ) + "/";
 			for ( auto text = mTextStates.begin(); text != mTextStates.end(); ) {
 				if ( text->first.compare( 0, prefix.size(), prefix ) == 0 )
 					text = mTextStates.erase( text );
 				else
 					++text;
+			}
+			for ( auto selection = mSelections.begin(); selection != mSelections.end(); ) {
+				if ( selection->first.compare( 0, prefix.size(), prefix ) == 0 )
+					selection = mSelections.erase( selection );
+				else
+					++selection;
 			}
 		}
 		if ( isAvailable() && hasActiveClients() )
@@ -290,6 +300,7 @@ void AtSpiApplication::clientGone( const char* name ) {
 	const bool active = !mClients.empty();
 	if ( !active ) {
 		mTextStates.clear();
+		mSelections.clear();
 		mPendingTexts.clear();
 	}
 	mHasActiveClients.store( active, std::memory_order_release );

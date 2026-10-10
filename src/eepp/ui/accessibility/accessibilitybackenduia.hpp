@@ -138,6 +138,7 @@ class UIAutomationProviderContext final
 		void execute( AccessibilityManager& manager ) override {
 			if ( !begin() )
 				return;
+			AccessibilityManager::ScopedDispatch dispatch( manager );
 			T value{};
 			const HRESULT result = mCallback( manager, value );
 			{
@@ -220,6 +221,7 @@ class UIAutomationProviderContext final
 		if ( GetCurrentThreadId() == mUIThread ) {
 			if ( !mManager )
 				return UIA_E_ELEMENTNOTAVAILABLE;
+			AccessibilityManager::ScopedDispatch dispatch( *mManager );
 			return callback( *mManager, value );
 		}
 
