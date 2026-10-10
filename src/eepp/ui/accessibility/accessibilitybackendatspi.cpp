@@ -450,6 +450,8 @@ class AtSpiAccessibilityBackend final : public AccessibilityBackend {
 			mApplication->onEvent( mManager, event );
 	}
 
+	bool supportsTextChanges() const override { return true; }
+
 	bool onTextChanged( AccessibilityNodeRef ref, const AccessibilityTextChange& change ) override {
 		return mApplication && mApplication->onTextChanged( mManager, ref, change );
 	}

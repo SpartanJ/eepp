@@ -34,6 +34,10 @@ class AccessibilityBackend {
 
 	virtual void onEvent( const AccessibilityPendingEvent& event ) = 0;
 
+	/** Opt in before the manager computes offsets or copies edit payloads. Backends using only
+	 * ValueChanged notifications do not need document edit records. */
+	virtual bool supportsTextChanges() const { return false; }
+
 	/** An edit of a text element, delivered synchronously before its ValueChanged event.
 	 * Returns false when the change was ignored, so it does not count toward the frame's budget
 	 * of exact changes. Changes the manager suppresses never arrive here. */

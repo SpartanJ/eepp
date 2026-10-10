@@ -658,11 +658,13 @@ UIWidget* AccessibilityWidgetResolver::getEventTarget( UIWidget* widget,
 	for ( auto* parent = widget->getParent(); parent; parent = parent->getParent() ) {
 		if ( parent->isDestroying() )
 			return nullptr;
+		if ( parent->isWidget() && parent->asType<UIWidget>()->isAccessibilityHidden() )
+			return nullptr;
 		top = parent;
 	}
 	// Detached widgets (for example an editor configured before it is parented) are not part of
 	// any accessible tree yet; notifying them would only register orphan identities.
-	if ( !top->isSceneNode() )
+	if ( !top->isSceneNode() || widget->isAccessibilityHidden() )
 		return nullptr;
 	if ( auto* view = getOwningModelView( widget ) )
 		return event == AccessibilityEvent::FocusChanged ? view : nullptr;

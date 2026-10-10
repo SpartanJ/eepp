@@ -282,8 +282,8 @@ AccessibilityTextRevision AccessibilityManager::getTextRevision( AccessibilityNo
 
 void AccessibilityManager::onTextChanged( UIWidget* widget,
 										  const Doc::DocumentContentChange* change ) {
-	if ( !mBackend || !mScene || !mScene->hasActiveAccessibilityClients() || !widget ||
-		 !widget->isAccessibilityElement() ||
+	if ( !mBackend || !mScene || !mScene->hasActiveAccessibilityClients() ||
+		 !mBackend->supportsTextChanges() || !widget || !widget->isAccessibilityElement() ||
 		 AccessibilityWidgetResolver::getEventTarget( widget, AccessibilityEvent::ValueChanged ) !=
 			 widget )
 		return;
@@ -655,7 +655,8 @@ void AccessibilityManager::onWidgetParentChange( UIWidget* widget ) {
 		return;
 	// An arriving label renames the controls it labels, whatever its own exposure.
 	onRelationSubtreeChanged( widget, false );
-	if ( !widget->isAccessibilityElement() || widget->isAccessibilityHidden() )
+	if ( !widget->isAccessibilityElement() ||
+		 AccessibilityWidgetResolver::isHiddenFromAccessibility( widget ) )
 		return;
 	// Children of a leaf control (a button's text view) are not part of the tree.
 	if ( AccessibilityWidgetResolver::getLeafOwner( widget ) )
@@ -682,6 +683,8 @@ void AccessibilityManager::onWidgetParentChange( UIWidget* widget ) {
 void AccessibilityManager::onWidgetRemovedFromParent( UIWidget* widget ) {
 	onRelationSubtreeChanged( widget, true );
 	if ( isModelViewImplementationChild( widget ) )
+		return;
+	if ( AccessibilityWidgetResolver::isHiddenFromAccessibility( widget ) )
 		return;
 	auto found = mWidgetIds.find( widget );
 	if ( found == mWidgetIds.end() )
@@ -732,6 +735,13 @@ void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
 		removeSubtreeIdentities( widget );
 		return;
 	}
+	if ( hasActiveClients() && AccessibilityWidgetResolver::isHiddenFromAccessibility( widget ) ) {
+		// A client may retain identities queried before the subtree was hidden. Evict those,
+		// but do not announce a child removal from a parent that no longer exposes the child.
+		removeSubtreeIdentities( widget );
+		invalidateChildren();
+		return;
+	}
 	auto found = mWidgetIds.find( widget );
 	if ( found == mWidgetIds.end() ) {
 		// Only a subtree holding identities a client may have cached changes the tree it knows.
@@ -770,7 +780,8 @@ void AccessibilityManager::onSubtreeRemoved( Scene::Node* node ) {
 	if ( !node || !removeSubtreeIdentities( node ) )
 		return;
 	invalidateChildren();
-	if ( node->isWidget() && hasActiveClients() ) {
+	if ( node->isWidget() && hasActiveClients() &&
+		 !AccessibilityWidgetResolver::isHiddenFromAccessibility( node->asType<UIWidget>() ) ) {
 		auto parent = getWidgetParent( node->asType<UIWidget>() );
 		if ( parent.isValid() )
 			notify( parent, AccessibilityEvent::ChildrenChanged );

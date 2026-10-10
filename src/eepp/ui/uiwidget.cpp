@@ -235,7 +235,18 @@ UIWidget* UIWidget::setAccessibilityHidden( bool hidden ) {
 	if ( isAccessibilityHidden() == hidden )
 		return this;
 	ensureAccessibilityProperties().hidden = hidden;
-	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
+	// Both hiding and exposing a subtree change its parent's children. The subtree itself may
+	// no longer be reachable, and changes inside an already hidden parent stay silent.
+	if ( isAccessibilityActive() && mUISceneNode &&
+		 mUISceneNode->hasActiveAccessibilityClients() ) {
+		auto* parent = getParent();
+		if ( parent && parent->isWidget() ) {
+			parent->asType<UIWidget>()->notifyAccessibilityEvent(
+				AccessibilityEvent::ChildrenChanged );
+		} else {
+			notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
+		}
+	}
 	return this;
 }
 
@@ -289,16 +300,22 @@ void UIWidget::deliverAccessibilityEvent( AccessibilityEvent event ) {
 		return;
 	auto manager = mUISceneNode->getAccessibilityManager();
 	UIWidget* target = AccessibilityWidgetResolver::getEventTarget( this, event );
-	if ( !target )
+	// Hidden labels still update relations below. Other unexposed implementation widgets and
+	// detached widgets keep their usual silent path.
+	if ( !target && ( event != AccessibilityEvent::NameChanged ||
+					  !AccessibilityWidgetResolver::isHiddenFromAccessibility( this ) ) )
 		return;
-	while ( target && !target->isAccessibilityElement() ) {
-		Node* parent = target->getParent();
-		target = parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
+	if ( target ) {
+		while ( target && !target->isAccessibilityElement() ) {
+			Node* parent = target->getParent();
+			target = parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
+		}
+		if ( !target )
+			target = mUISceneNode->getRoot();
+		manager->notify( manager->getNodeRef( target ), event );
 	}
-	if ( !target )
-		target = mUISceneNode->getRoot();
-	manager->notify( manager->getNodeRef( target ), event );
-	if ( event == AccessibilityEvent::NameChanged || event == AccessibilityEvent::ValueChanged ) {
+	if ( target && ( event == AccessibilityEvent::NameChanged ||
+					 event == AccessibilityEvent::ValueChanged ) ) {
 		// The nearest live region speaks, unless the change is hidden from accessibility by the
 		// widget itself or any ancestor, including ancestors of the live region.
 		auto live = AccessibilityLive::Off;
@@ -861,16 +878,35 @@ Node* UIWidget::setId( const std::string& id ) {
 	if ( isAccessibilityActive() && mUISceneNode && mUISceneNode->hasActiveAccessibilityClients() &&
 		 id != getId() ) {
 		auto* manager = mUISceneNode->getAccessibilityManager();
+		auto* owner = manager->getSceneNode();
 		// Dependents are notified after the change, so they resolve the new relation. Keep the
 		// old id for that only when a client may have read a relation through it.
 		std::string previousId;
 		if ( manager->isRelationTarget( getIdHash() ) )
 			previousId = getId();
 		Node::setId( id );
-		if ( !previousId.empty() )
-			manager->onRelationTargetChanged( previousId );
-		// The new id may complete a relation that pointed at a missing target.
-		manager->onRelationTargetChanged( id );
+		// OnIdChange runs user callbacks synchronously: the manager may have been destroyed or
+		// the widget may have moved to another scene. Never retain it across that callback.
+		manager = mUISceneNode ? mUISceneNode->getExistingAccessibilityManager() : nullptr;
+		if ( !previousId.empty() ) {
+			if ( manager && manager->getSceneNode() == owner ) {
+				manager->onRelationTargetChanged( previousId );
+			} else {
+				// The old scene may also have been deleted. Find it among live scenes before
+				// dereferencing it; a reparent must update dependents left in the old window.
+				SceneManager::instance()->forEachSceneNode( [&]( SceneNode* scene ) {
+					if ( scene == owner ) {
+						if ( auto* existing = owner->getExistingAccessibilityManager() )
+							existing->onRelationTargetChanged( previousId );
+					}
+				} );
+			}
+		}
+		// The new id may complete a relation in the widget's current scene.
+		if ( mUISceneNode ) {
+			if ( auto* existing = mUISceneNode->getExistingAccessibilityManager() )
+				existing->onRelationTargetChanged( getId() );
+		}
 	} else {
 		Node::setId( id );
 	}

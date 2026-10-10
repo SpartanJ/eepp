@@ -128,7 +128,9 @@ tooltip is therefore named by the tooltip. A tooltip that did not become the nam
 description when no other description is set.
 
 Use `aria-hidden="true"` for decorative or redundant widgets that should not appear in the native
-accessibility hierarchy:
+accessibility hierarchy. It excludes the whole subtree and silences its native change events.
+Hidden labels still update visible controls that reference them with `aria-labelledby` or
+`aria-describedby`:
 
 ```xml
 <Image src="decorative-separator"

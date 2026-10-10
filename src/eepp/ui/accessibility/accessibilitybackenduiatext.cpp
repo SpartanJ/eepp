@@ -285,7 +285,7 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::Compare( ITextRangeProvider* ra
 		return E_INVALIDARG;
 	*same = FALSE;
 	auto other = dynamic_cast<UIAutomationTextRange*>( range );
-	if ( !other || other->mRef != mRef )
+	if ( !other || other->mContext != mContext || other->mRef != mRef )
 		return S_OK;
 	const auto ours = endpoints();
 	const auto theirs = other->endpoints();
@@ -299,7 +299,7 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::CompareEndpoints(
 	if ( !targetRange || !comparison )
 		return E_INVALIDARG;
 	auto other = dynamic_cast<UIAutomationTextRange*>( targetRange );
-	if ( !other || other->mRef != mRef )
+	if ( !other || other->mContext != mContext || other->mRef != mRef )
 		return E_INVALIDARG;
 	const auto ours = endpoints();
 	const auto theirs = other->endpoints();
@@ -493,7 +493,7 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::MoveEndpointByRange(
 	if ( !targetRange )
 		return E_INVALIDARG;
 	auto other = dynamic_cast<UIAutomationTextRange*>( targetRange );
-	if ( !other || other->mRef != mRef )
+	if ( !other || other->mContext != mContext || other->mRef != mRef )
 		return E_INVALIDARG;
 	auto current = endpoints();
 	const auto target = other->endpoints();

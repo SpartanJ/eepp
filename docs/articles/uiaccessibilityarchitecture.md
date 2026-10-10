@@ -83,7 +83,10 @@ Ids are never reused, so a stale reference held by a client simply stops resolvi
 A widget is an accessible element when its resolved role is not `None`
 (`UIWidget::isAccessibilityElement()`). Containers with role `None` are transparent: their
 element descendants are reported as children of the nearest element ancestor. A widget marked
-hidden (`aria-hidden`) hides its whole subtree.
+hidden (`aria-hidden`) hides its whole subtree. Native events and exact text-edit records from
+that subtree are silent; hiding or exposing it refreshes its exposed parent's children. Hidden
+labels can still update visible controls that reference them. Virtual model rows inherit their
+view's enabled and visibility states, and reject actions while the view is disabled.
 
 `AccessibilityWidgetResolver` derives semantics from the widget type (`isType()` chains) unless
 the application overrode them through the widget's accessibility properties. It is the single
@@ -144,7 +147,10 @@ Text edits take an extra step before their `ValueChanged`. `UICodeEditor` and `U
 the document's `DocumentContentChange` (range and inserted text) to
 `UIWidget::notifyAccessibilityTextChanged()`. The removed text is not part of the change record,
 so consumers that queue records (LSP clients) never copy it: the manager reads it, while the
-document is still notifying, from `TextDocument::getNotifiedRemovedText()`. `AccessibilityManager::onTextChanged()` turns the
+document is still notifying, from `TextDocument::getNotifiedRemovedText()`. The manager first checks
+`AccessibilityBackend::supportsTextChanges()`: only AT-SPI opts in. UIA and macOS use their queued
+`ValueChanged` notifications, so their edits build no exact-edit records, copy no edit text and
+calculate no document offsets here. `AccessibilityManager::onTextChanged()` turns the
 first four per element and frame into exact `AccessibilityTextChange` records (code-point offset,
 removed, inserted). After that, and for resets, loads, reloads and document swaps, it sends one
 whole-text change for the rest of the frame, so a replace-all costs one notification.
@@ -155,6 +161,10 @@ frame's four. AT-SPI's `SetTextContents` reports its replacement as one minimal 
 suppresses the element's records through `AccessibilityManager::setSuppressedTextChanges()` while
 the action runs. Node refs are manager-local, so an editor in another window sharing the document
 still reports the change.
+
+The `unused_text_edit_records` allocation guard tests the UIA/macOS-style backend with an active
+client: building unused records must allocate zero bytes. This is a record-path measurement, not
+a claim that the document edit or its ordinary widget events allocate nothing.
 
 Announcements take a parallel path. `UISceneNode::announceForAccessibility()` and live regions (a
 `NameChanged` or `ValueChanged` from a widget with an `aria-live` ancestor and no `aria-hidden`
@@ -172,7 +182,9 @@ change, or the arrival, removal or deletion of a subtree containing one, makes t
 the scene for dependents and notify `NameChanged` or `DescriptionChanged` for them. While no
 client has read a dependent, the check is one lookup in an empty set. `UIWidget::setId()` asks
 `AccessibilityManager::isRelationTarget()` (an allocation-free hash lookup) before renaming, and
-keeps a copy of the old id only when it is remembered. Dependents are notified after the id has
+keeps a copy of the old id only when it is remembered. Since `OnIdChange` callbacks can destroy the
+manager or reparent the widget, it reacquires the current manager after the callback; dependents
+left in a surviving old scene are also notified. Dependents are notified after the id has
 changed, for the old id and then the new one (which may complete a relation that pointed at a
 missing widget), so a backend that reads the node from inside the notification sees the new
 relation.
@@ -384,7 +396,8 @@ or wrong.
 | AT-SPI end to end | `projects/scripts/test_atspi.py` (default, `--multi-window`, `--close-primary`) and `benchmark_atspi.py` | Linux CI, inside `dbus-run-session` and Xvfb. |
 | Inactive overhead | `projects/scripts/benchmark_accessibility_inactive.py` | Linux CI. |
 | Dormant allocations and costs | `src/benchmarks/accessibility_dormant_benchmark.cpp` (`eepp-benchmarks --filter='AccessibilityDormant.*'`), summarized by `projects/scripts/benchmark_accessibility_dormant.py [--compare LABEL=PATH]` | Locally, Release builds. Allocation counts are deterministic and asserted where they guard a fix; times are indicative. |
-| UIA end to end | `src/tests/windows_accessibility/main.cpp` (`eepp-windows-accessibility-tests`) | Windows CI. Under Wine it builds and finds the window, but Wine's UIA client lacks several APIs, so most checks report `E_NOTIMPL`. |
+| UIA provider regressions | `src/tests/windows_accessibility/provider_tests.cpp` (`eepp-windows-accessibility-tests --providers-only`) | Windows and Wine, using hidden windows; teardown and cross-window range identity are tested without system UIA client APIs. |
+| UIA end to end | `src/tests/windows_accessibility/main.cpp` (`eepp-windows-accessibility-tests`) | Windows CI, including the provider regressions. Under Wine it builds and finds the window, but Wine's UIA client lacks several APIs, so most end-to-end checks report `E_NOTIMPL`. |
 | NSAccessibility end to end | `projects/scripts/test_macos_accessibility.swift`; `benchmark_macos_accessibility.swift` locally | macOS CI. |
 
 Useful tools:

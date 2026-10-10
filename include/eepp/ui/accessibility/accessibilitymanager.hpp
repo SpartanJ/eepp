@@ -58,8 +58,9 @@ class EE_API AccessibilityManager {
 	AccessibilityTextRevision getTextRevision( AccessibilityNodeRef ref ) const;
 
 	/** Reports an edit of a text widget's document, or nullptr when its whole text was replaced.
-	 * The first few edits per widget and frame are forwarded exactly; later ones collapse into a
-	 * single whole-text change, so a replace-all costs one notification. */
+	 * Only backends requesting edit records receive them. The first few edits per widget and
+	 * frame are forwarded exactly; later ones collapse into a single whole-text change, so a
+	 * replace-all costs one notification. */
 	void onTextChanged( UIWidget* widget, const Doc::DocumentContentChange* change );
 
 	/** While set, text changes of this element are not forwarded: the caller reports them itself

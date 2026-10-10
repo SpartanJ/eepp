@@ -2167,8 +2167,13 @@ workspace "eepp"
 			kind "ConsoleApp"
 			targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
 			language "C++"
-			files { "src/tests/windows_accessibility/*.cpp" }
-			links { "uiautomationcore", "ole32", "oleaut32" }
+			-- Compile the private providers into the harness for deterministic teardown and
+			-- cross-window identity tests without requiring the system's UIA client APIs.
+			files { "src/tests/windows_accessibility/*.cpp",
+				"src/eepp/ui/accessibility/accessibilitybackenduia.cpp",
+				"src/eepp/ui/accessibility/accessibilitybackenduiaprovider.cpp",
+				"src/eepp/ui/accessibility/accessibilitybackenduiatext.cpp" }
+			links { "uiautomationcore", "ole32", "oleaut32", "comctl32" }
 			build_link_configuration( "eepp-windows-accessibility-tests", true )
 			-- MinGW: the harness uses wmain, and CLSID_CUIAutomation lives in libuuid.
 			filter "action:gmake*"

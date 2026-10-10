@@ -21,6 +21,10 @@
 #include <thread>
 #include <vector>
 
+void testProviderSelectionTeardown();
+
+void testProviderTextRangeIdentity();
+
 namespace {
 
 using Clock = std::chrono::steady_clock;
@@ -614,6 +618,16 @@ int wmain( int argc, wchar_t** argv ) {
 	}
 
 	try {
+		record( "provider selection teardown", testProviderSelectionTeardown );
+		record( "provider text range window identity", testProviderTextRangeIdentity );
+		if ( argc > 1 && std::wstring( argv[1] ) == L"--providers-only" ) {
+			CoUninitialize();
+			writeResults( outputPath, results, queryLatency, processId );
+			return std::all_of( results.begin(), results.end(),
+								[]( const Result& result ) { return result.passed; } )
+					   ? EXIT_SUCCESS
+					   : EXIT_FAILURE;
+		}
 		require( std::filesystem::is_regular_file( example ),
 				 "example executable does not exist: " + narrow( example.wstring() ) );
 		std::wstring command = L"\"" + example.wstring() + L"\" --multi-window";

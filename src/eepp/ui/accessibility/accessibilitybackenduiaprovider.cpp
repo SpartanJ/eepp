@@ -594,6 +594,10 @@ HRESULT STDMETHODCALLTYPE UIAutomationProvider::GetSelection( SAFEARRAY** select
 		return E_OUTOFMEMORY;
 	for ( LONG index = 0; index < static_cast<LONG>( selected.size() ); ++index ) {
 		UIAutomationProvider* item = mContext->provider( selected[static_cast<size_t>( index )] );
+		if ( !item ) {
+			SafeArrayDestroy( array );
+			return UIA_E_ELEMENTNOTAVAILABLE;
+		}
 		IUnknown* unknown = static_cast<IRawElementProviderSimple*>( item );
 		const HRESULT putResult = SafeArrayPutElement( array, &index, unknown );
 		item->Release();

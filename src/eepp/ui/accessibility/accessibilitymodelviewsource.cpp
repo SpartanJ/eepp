@@ -43,8 +43,12 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 		info.value = index.data().toString();
 		info.name =
 			node.cell ? String( mView->getModel()->columnName( index.column() ) ) : info.value;
-		info.states =
-			AccessibilityState::Enabled | AccessibilityState::Visible | AccessibilityState::Showing;
+		if ( mView->isEnabled() )
+			info.states |= AccessibilityState::Enabled;
+		if ( mView->isVisible() )
+			info.states |= AccessibilityState::Visible;
+		if ( mView->hasVisibility() )
+			info.states |= AccessibilityState::Showing;
 		if ( mView->getSelection().contains( index ) ||
 			 ( !mIsTree && !node.cell && mView->getSelection().containsRow( index.row() ) ) )
 			info.states |= AccessibilityState::Selected;
@@ -200,6 +204,8 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 	}
 
 	bool performAction( Uint64 id, const AccessibilityActionRequest& request ) override {
+		if ( !mView->isEnabled() )
+			return false;
 		auto found = mNodes.find( id );
 		if ( found == mNodes.end() || !found->second.index.isValid() )
 			return false;

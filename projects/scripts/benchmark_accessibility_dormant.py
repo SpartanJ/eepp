@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Dormant-path accessibility benchmark: allocations, bytes and time with no client attached.
+"""Accessibility allocation benchmarks: primarily dormant costs with no client attached.
 
 Runs the AccessibilityDormant benchmarks from eepp-benchmarks (a Release build) several times and
 reports the median of each measurement. Each --compare LABEL=PATH runs the same benchmark source
@@ -10,6 +10,8 @@ Allocation counts and bytes cover ordinary C++ new/new[] on the measuring thread
 other threads or background work) and are deterministic; times are indicative only. A run passes
 only when every sample exits cleanly and reports every expected measurement, guarded scenarios
 included. A compared build whose run fails still reports its measurements.
+An additional active-client guard checks that backends not requesting exact text edits allocate
+nothing to construct unused records; it does not measure document editing itself.
 """
 
 import argparse
@@ -37,8 +39,9 @@ COMMON = {
 	"widget_notifications": ("allocations", "bytes", "ms"),
 }
 # Only builds with accessibility support (not EE_BENCH_NO_ACCESSIBILITY) report these, including
-# the guarded after-disconnect and unreferenced id scenarios.
+# the guarded unused-text-record, after-disconnect and unreferenced id scenarios.
 ACCESSIBILITY = {
+	"unused_text_edit_records": ("allocations", "bytes", "ms"),
 	"first_update_without_thread_pool": ("allocations", "bytes", "ms"),
 	"later_update_without_thread_pool": ("allocations", "bytes", "ms"),
 	"readiness_ms": ("value", "backend_available"),

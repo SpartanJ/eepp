@@ -424,9 +424,36 @@ class SwitchableBackend : public AccessibilityBackend {
 
 } // namespace
 
+UTEST( AccessibilityDormant, BackendsWithoutExactTextChangesAllocateNoEditRecords ) {
+	UIApplication app( benchmarkWindow(), benchmarkSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto backend = std::make_unique<SwitchableBackend>();
+	backend->active = true;
+	manager->setBackend( std::move( backend ) );
+	scene->update( Time::Zero );
+	ASSERT_TRUE( scene->hasActiveAccessibilityClients() );
+	auto* input = UITextInput::New();
+	input->setParent( scene->getRoot() );
+	input->setText( String( std::string( 10000, 'x' ) ) );
+	// Model the UIA/macOS path: an actual client is active, but the backend uses ValueChanged
+	// instead of document edit records. Only record construction is measured, not the edit or
+	// its ordinary UI events. A long insertion would force a heap copy if the preflight regressed.
+	DocumentContentChange change{ { { 0, 0 }, { 0, 0 } }, String( std::string( 10000, 'y' ) ) };
+	static constexpr int Edits = 2000;
+	const auto records = measure( [&] {
+		for ( int i = 0; i < Edits; ++i )
+			manager->onTextChanged( input, &change );
+	} );
+	report( "unused_text_edit_records", records, Edits );
+	EXPECT_EQ( records.allocations, 0u );
+	EXPECT_EQ( records.bytes, 0u );
+}
+
 UTEST( AccessibilityDormant, InitializationWithoutThreadPool ) {
-	// Without a scene thread pool the native backend initializes on the UI thread during the
-	// first scene update. That update is measured against a later one.
+	// Without a scene thread pool the first update still schedules native initialization off
+	// thread. Measure that UI-thread scheduling against a later update; readiness is separate.
 	UIApplication app( benchmarkWindow(), benchmarkSettings() );
 	ASSERT_NE( app.getUI(), nullptr );
 	ASSERT_FALSE( app.getUI()->hasThreadPool() );
