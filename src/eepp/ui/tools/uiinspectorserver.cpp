@@ -681,7 +681,7 @@ struct UIInspectorServer::Impl {
 		json scenes = json::array();
 		std::map<std::string, json> newWindows;
 		std::map<std::string, json> newScenes;
-		Window::Engine::instance()->forEachWindow( [&]( Window::Window* window ) {
+		EE::Window::Engine::instance()->forEachWindow( [&]( EE::Window::Window* window ) {
 			auto size = window->getSize();
 			auto pos = window->getPosition();
 			json entry = { { "handle", inspector.windowHandle( window ) },
