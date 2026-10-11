@@ -489,7 +489,7 @@ void UIHTMLImage::onDrawableResourceChange() {
 bool UIHTMLImage::loadFileDrawable( const Network::URI& uri ) {
 	UISceneNode* scene = getUISceneNode();
 	if ( !scene || !scene->getThreadPool() ||
-		 !Window::Engine::instance()->isSharedGLContextEnabled() )
+		 !EE::Window::Engine::instance()->isSharedGLContextEnabled() )
 		return false;
 	Uint64 loadId = ++mRemoteImageLoadId;
 	std::string filePath = uri.getFSPath();

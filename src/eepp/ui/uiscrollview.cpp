@@ -536,8 +536,7 @@ void UIScrollView::setAnchorScroll( bool anchor ) {
 
 Uint32 UIScrollView::onKeyDown( const KeyEvent& event ) {
 	const auto mod = event.getSanitizedMod();
-	if ( mDefaultKeybindings && event.getKeyCode() == Window::KEY_SPACE &&
-		 ( mod & ~KEYMOD_SHIFT ) == 0 ) {
+	if ( mDefaultKeybindings && event.getKeyCode() == KEY_SPACE && ( mod & ~KEYMOD_SHIFT ) == 0 ) {
 		// Active text input gets priority through onTextInput's normal bubbling path.
 		if ( getUISceneNode()->getWindow()->isTextInputActive() )
 			return UITouchDraggableWidget::onKeyDown( event );
@@ -547,22 +546,22 @@ Uint32 UIScrollView::onKeyDown( const KeyEvent& event ) {
 	if ( !mDefaultKeybindings || mod )
 		return UITouchDraggableWidget::onKeyDown( event );
 
-	if ( event.getKeyCode() == Window::KEY_UP ) {
+	if ( event.getKeyCode() == KEY_UP ) {
 		mVScroll->setValue( mVScroll->getValue() - mVScroll->getClickStep() );
 		return 1;
-	} else if ( event.getKeyCode() == Window::KEY_DOWN ) {
+	} else if ( event.getKeyCode() == KEY_DOWN ) {
 		mVScroll->setValue( mVScroll->getValue() + mVScroll->getClickStep() );
 		return 1;
-	} else if ( event.getKeyCode() == Window::KEY_PAGEDOWN ) {
+	} else if ( event.getKeyCode() == KEY_PAGEDOWN ) {
 		scrollByViewport( 1.f );
 		return 1;
-	} else if ( event.getKeyCode() == Window::KEY_PAGEUP ) {
+	} else if ( event.getKeyCode() == KEY_PAGEUP ) {
 		scrollByViewport( -1.f );
 		return 1;
-	} else if ( event.getKeyCode() == Window::KEY_HOME ) {
+	} else if ( event.getKeyCode() == KEY_HOME ) {
 		mVScroll->setValue( mVScroll->getMinValue() );
 		return 1;
-	} else if ( event.getKeyCode() == Window::KEY_END ) {
+	} else if ( event.getKeyCode() == KEY_END ) {
 		mVScroll->setValue( mVScroll->getMaxValue() );
 		return 1;
 	}

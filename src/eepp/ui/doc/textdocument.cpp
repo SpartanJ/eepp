@@ -423,11 +423,11 @@ void TextDocument::resetSelection() {
 
 String shiftJISToUTF32( const std::string_view& shiftJISString ) {
 	String string;
-	auto* ret = Window::Engine::instance()->getPlatformHelper()->iconv(
+	auto* ret = EE::Window::Engine::instance()->getPlatformHelper()->iconv(
 		"UTF-32LE", "SHIFT-JIS", shiftJISString.data(), shiftJISString.size() );
 	if ( ret ) {
 		string = String( reinterpret_cast<String::StringBaseType*>( ret ) );
-		Window::Engine::instance()->getPlatformHelper()->iconvFree( ret );
+		EE::Window::Engine::instance()->getPlatformHelper()->iconvFree( ret );
 	}
 	return string;
 }
@@ -1138,12 +1138,12 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 				break;
 			}
 			case TextFormat::Encoding::Shift_JIS: {
-				auto* ret = Window::Engine::instance()->getPlatformHelper()->iconv(
+				auto* ret = EE::Window::Engine::instance()->getPlatformHelper()->iconv(
 					"SHIFT-JIS", "UTF-8", text.c_str(), text.size() );
 				auto len = strlen( ret );
 				stream.write( ret, len );
 				MD5::update( md5Ctx, ret, len );
-				Window::Engine::instance()->getPlatformHelper()->iconvFree( ret );
+				EE::Window::Engine::instance()->getPlatformHelper()->iconvFree( ret );
 				break;
 			}
 			case TextFormat::Encoding::UTF8: {

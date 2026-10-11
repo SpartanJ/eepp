@@ -58,7 +58,7 @@ void UIEventDispatcher::checkTabPress( Uint32 KeyCode, Uint32 mod ) {
 	eeASSERT( NULL != mFocusNode );
 	if ( KeyCode == KEY_TAB ) {
 		mod = Input::sanitizeMod( mod );
-		Window::Window* win = mFocusNode->getSceneNode()->getWindow();
+		EE::Window::Window* win = mFocusNode->getSceneNode()->getWindow();
 		if ( mFocusNode->isWidget() && NULL != win && !mJustGainedFocus ) {
 			Uint32 tabMod = 0;
 			if ( ( mFocusNode->asType<UIWidget>()->getFlags() & UI_USES_TAB_MOD ) != 0 ) {

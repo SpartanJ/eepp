@@ -1851,17 +1851,17 @@ Uint32 UIDiffView::onKeyDown( const KeyEvent& event ) {
 	};
 
 	if ( !event.getSanitizedMod() ) {
-		if ( event.getKeyCode() == Window::KEY_PAGEDOWN ) {
+		if ( event.getKeyCode() == KEY_PAGEDOWN ) {
 			moveLinesOffset( editor->getViewPortLineCount().y );
-		} else if ( event.getKeyCode() == Window::KEY_PAGEUP ) {
+		} else if ( event.getKeyCode() == KEY_PAGEUP ) {
 			moveLinesOffset( -editor->getViewPortLineCount().y );
-		} else if ( event.getKeyCode() == Window::KEY_DOWN ) {
+		} else if ( event.getKeyCode() == KEY_DOWN ) {
 			moveLinesOffset( 1 );
-		} else if ( event.getKeyCode() == Window::KEY_UP ) {
+		} else if ( event.getKeyCode() == KEY_UP ) {
 			moveLinesOffset( -1 );
-		} else if ( event.getKeyCode() == Window::KEY_HOME ) {
+		} else if ( event.getKeyCode() == KEY_HOME ) {
 			editor->scrollToVisibleIndex( 0, false, true );
-		} else if ( event.getKeyCode() == Window::KEY_END ) {
+		} else if ( event.getKeyCode() == KEY_END ) {
 			editor->scrollToVisibleIndex( (Int64)editor->getTotalVisibleLines(), false, true );
 		}
 	}

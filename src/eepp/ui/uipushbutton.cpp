@@ -499,7 +499,7 @@ void UIPushButton::onAlignChange() {
 }
 
 Uint32 UIPushButton::onKeyDown( const KeyEvent& event ) {
-	if ( event.getKeyCode() == KEY_RETURN || event.getKeyCode() == Window::KEY_KP_ENTER ) {
+	if ( event.getKeyCode() == KEY_RETURN || event.getKeyCode() == KEY_KP_ENTER ) {
 		NodeMessage Msg( this, NodeMessage::MouseClick, EE_BUTTON_LMASK );
 		messagePost( &Msg );
 		onMouseClick( Vector2i( 0, 0 ), EE_BUTTON_LMASK );
