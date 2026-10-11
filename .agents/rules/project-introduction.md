@@ -37,6 +37,7 @@ When working on this project, rely on the following resources to understand exis
         inspector and use `projects/scripts/eepp-inspect.py` to inspect live widget trees,
         geometry, CSS, focus, and nested WebView scenes, capture screenshots, and automate input.
         Use it when visual or interaction behavior needs runtime verification.
+    *   UI direction, RTL support, or logical `start`/`end` layout properties: `ui_rtl.md`.
     *   UI data binding or charts: `ui_databinding.md` or `ui_charts.md`, respectively.
     *   `eterm` Kitty protocol work: `eterm_kitty_keyboard.md` and
         `eterm_kitty_graphics.md` for the corresponding supported behavior.

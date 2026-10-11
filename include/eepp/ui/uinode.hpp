@@ -7,6 +7,7 @@
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/uiclip.hpp>
+#include <eepp/ui/uidirection.hpp>
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uiskinstate.hpp>
@@ -319,6 +320,97 @@ class EE_API UINode : public Node {
 	 * @return Pointer to this node for method chaining.
 	 */
 	UINode* setGravity( Uint32 hvalign );
+
+	/**
+	 * @brief Sets the horizontal alignment (gravity) using a physical or logical value.
+	 *
+	 * Left, Right and Center behave exactly as setHorizontalAlign(). Start and End are logical:
+	 * they resolve against the node's effective UI direction and are re-resolved automatically
+	 * when the direction changes. Physical setters (setHorizontalAlign(), setGravity(),
+	 * resetFlags(), unsetFlags() with horizontal alignment bits, and setFlags() with
+	 * UI_HALIGN_CENTER or UI_HALIGN_RIGHT) replace a logical alignment. UI_HALIGN_LEFT is zero,
+	 * so setFlags( UI_HALIGN_LEFT ) cannot be detected and keeps a logical alignment; use
+	 * setHorizontalAlign( UI_HALIGN_LEFT ) to force physical left.
+	 *
+	 * Nodes default to the logical Start alignment, which is physical left in left-to-right
+	 * contexts and therefore identical to the historical default.
+	 */
+	UINode* setHorizontalAlignment( UIHorizontalAlignment alignment );
+
+	/** @return The horizontal alignment, preserving Start/End when it was set logically. */
+	UIHorizontalAlignment getHorizontalAlignment() const;
+
+	/**
+	 * @brief Returns the effective UI direction of this node.
+	 *
+	 * The effective direction is the node's own direction override if it has one, otherwise the
+	 * direction of its nearest UINode ancestor. Scene roots default to left-to-right. The value
+	 * is cached, so it is cheap to query from layout and draw code.
+	 */
+	UIDirection getDirection() const {
+		return ( mDirectionState & DirectionEffectiveRTL ) ? UIDirection::RightToLeft
+														   : UIDirection::LeftToRight;
+	}
+
+	/** @return The direction specified on this node, or Inherit when it follows its parent. */
+	UIDirectionValue getDirectionOverride() const {
+		return static_cast<UIDirectionValue>( mDirectionState & DirectionSpecifiedMask );
+	}
+
+	/** @return True if this node specifies its own direction. */
+	bool hasDirectionOverride() const {
+		return getDirectionOverride() != UIDirectionValue::Inherit;
+	}
+
+	/**
+	 * @brief Overrides the UI direction of this node and of every descendant that inherits it.
+	 *
+	 * Changing the direction at runtime re-resolves logical alignments, logical box edges and
+	 * logical layout relations, and invalidates the affected layouts without reloading styles.
+	 */
+	UINode* setDirection( UIDirection direction );
+
+	/** @brief Sets the specified direction value. Inherit removes the override. */
+	UINode* setDirectionOverride( UIDirectionValue direction );
+
+	/** @brief Removes the direction override so the node inherits its parent's direction. */
+	UINode* clearDirectionOverride();
+
+	/** @return True if the effective direction is right-to-left. */
+	bool isRTL() const { return ( mDirectionState & DirectionEffectiveRTL ) != 0; }
+
+	/** @return True if the effective direction is left-to-right. */
+	bool isLTR() const { return ( mDirectionState & DirectionEffectiveRTL ) == 0; }
+
+	/**
+	 * @return True if the effective direction comes from an explicit override on this node or
+	 * one of its ancestors, false when it is the implicit scene default.
+	 */
+	bool isDirectionExplicit() const {
+		return ( mDirectionState & DirectionEffectiveExplicit ) != 0;
+	}
+
+	/**
+	 * @brief Base paragraph direction that text rendered by this node should use by default.
+	 *
+	 * Explicitly directed subtrees use their UI direction as the strong base direction. Nodes
+	 * that never received a direction keep TextDirection::Unspecified (first-strong-character
+	 * detection), which is the historical behavior of left-to-right applications.
+	 */
+	TextDirection getTextBaseDirection() const;
+
+	/**
+	 * @brief Mirrors the node rendering horizontally while its effective direction is RTL.
+	 *
+	 * Intended for semantic directional affordances such as submenu chevrons, tree disclosure
+	 * arrows and back/forward glyphs. It is opt-in: arbitrary images never mirror. Mirroring is
+	 * implemented as a negative horizontal scale around the node center, so it also applies to
+	 * hit testing. Do not combine it with scale animations on the same node.
+	 */
+	UINode* setMirrorOnRTL( bool mirror );
+
+	/** @return True if the node mirrors itself in right-to-left contexts. */
+	bool isMirroredOnRTL() const { return ( mDirectionState & DirectionMirrorRequested ) != 0; }
 
 	/**
 	 * @brief Enables or disables background fill and returns the background drawable.
@@ -1548,6 +1640,24 @@ class EE_API UINode : public Node {
 	std::string mMinHeightEq;
 	std::string mMaxWidthEq;
 	std::string mMaxHeightEq;
+	static constexpr Uint8 DirectionSpecifiedMask = 0x3;
+	static constexpr Uint8 DirectionEffectiveRTL = 1 << 2;
+	static constexpr Uint8 DirectionEffectiveExplicit = 1 << 3;
+	static constexpr Uint8 DirectionMirrorRequested = 1 << 4;
+	static constexpr Uint8 DirectionMirrorApplied = 1 << 5;
+	static constexpr Uint8 DirectionPropagationPending = 1 << 6;
+	static constexpr Uint8 DirectionEffectiveMask =
+		DirectionEffectiveRTL | DirectionEffectiveExplicit;
+	static constexpr Uint8 LogicalAlignSlotBits = 2;
+	static constexpr Uint8 LogicalAlignSlotMask = ( 1 << LogicalAlignSlotBits ) - 1;
+
+	// Bits 0-1: specified UIDirectionValue; bit 2: effective RTL; bit 3: effective direction is
+	// explicit; bit 4: mirror on RTL requested; bit 5: mirror currently applied; bit 6: direction
+	// propagation is in progress, so a reentrant reparent must refresh its inherited state.
+	Uint8 mDirectionState{ 0 };
+	// Three 2-bit LogicalAlignSlot values: 0 = physical, 1 = start, 2 = end. Every slot defaults
+	// to start, which resolves to the historical physical left alignment in LTR contexts.
+	Uint8 mLogicalAlign{ 0x15 };
 
 	/**
 	 * @brief Default constructor.
@@ -1614,6 +1724,55 @@ class EE_API UINode : public Node {
 	 * invalidates the node for redraw.
 	 */
 	virtual void onAlignChange();
+
+	/**
+	 * @brief Called after the effective UI direction (or its explicit origin) changed.
+	 *
+	 * Logical alignments have already been re-resolved when this hook runs. The default
+	 * implementation only invalidates the node drawing; widgets override it to refresh
+	 * direction-sensitive layout and text. Overrides must call the base implementation.
+	 */
+	virtual void onDirectionChanged();
+
+	/** Direction inheritance normally follows the node tree. Owned popups can use their
+	 * trigger as the semantic parent while retaining their rendering parent. */
+	virtual Node* getDirectionParent() const { return mParentNode; }
+
+	/**
+	 * @brief Re-resolves the logical state owned by this node after a direction change.
+	 *
+	 * Internal hook executed before onDirectionChanged(). UINode resolves its logical
+	 * horizontal alignment; UIWidget extends it with layout gravity, text alignment and
+	 * flow-relative box edges.
+	 */
+	virtual void updateLogicalDirectionState();
+
+	/** @return True if the effective direction differs from the implicit LTR scene default. */
+	bool hasNonDefaultDirection() const {
+		return ( mDirectionState & DirectionEffectiveMask ) != 0;
+	}
+
+	/** @brief Logical alignment slots stored in mLogicalAlign. */
+	enum class LogicalAlignSlot : Uint8 { Gravity = 0, LayoutGravity = 1, TextAlign = 2 };
+
+	UIHorizontalAlignment getLogicalAlignSlot( LogicalAlignSlot slot ) const;
+
+	/** Stores Start/End for a slot, or marks it physical for any other alignment. */
+	void setLogicalAlignSlot( LogicalAlignSlot slot, UIHorizontalAlignment alignment );
+
+	/**
+	 * Re-resolves a logical slot against the current direction. The current physical bits must
+	 * match the slot's resolution in either direction; otherwise the bits were changed by code
+	 * that bypassed the alignment API, the slot becomes physical, and false is returned.
+	 * @return True if the slot is logical and @p physical holds its resolved bits.
+	 */
+	bool resolveLogicalAlignSlot( LogicalAlignSlot slot, Uint32& physical );
+
+	/** Recomputes the cached effective direction and notifies the subtree if it changed. */
+	void refreshEffectiveDirection();
+
+	/** Propagates an effective direction change through the descendants of @p node. */
+	static void propagateDirectionToChildren( Node* node );
 
 	/**
 	 * @brief Draws the node's skin.
@@ -1777,6 +1936,16 @@ class EE_API UINode : public Node {
 	 * if the new scene is a UISceneNode.
 	 */
 	virtual void onSceneChange();
+
+	/** Refreshes inherited UI direction before parent-change handling. */
+	virtual void onParentTreeChange();
+
+	/** Includes explicitness because implicit and explicit LTR have different text directions. */
+	virtual Uint32 getParentTreeContext() const {
+		return ( mDirectionState & DirectionEffectiveMask ) |
+			   ( ( mDirectionState & DirectionPropagationPending ) ? ParentTreeContextUnstable
+																   : 0 );
+	}
 
 	/**
 	 * @brief Draws droppable hovering feedback.

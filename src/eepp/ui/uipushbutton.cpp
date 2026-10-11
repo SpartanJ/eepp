@@ -162,15 +162,25 @@ void UIPushButton::onAutoSize() {
 				getTextView()->setMaxWidthEq( String::format( "%.0fdp", mw ) );
 			}
 			if ( getTextView()->getTextWidth() > getTextView()->getSize().getWidth() )
-				getTextView()->setHorizontalAlign( UI_HALIGN_LEFT );
+				getTextView()->setHorizontalAlignment( UIHorizontalAlignment::Start );
 		}
 
 		setInternalPixelsWidth( size.getWidth() );
 	}
 }
 
-Vector2f UIPushButton::calcLayoutSize( const std::array<UIWidget*, 3>& widgets,
+std::array<UIWidget*, 3>
+UIPushButton::inlineOrder( const std::array<UIWidget*, 3>& widgets ) const {
+	// InnerWidgetOrientation names a logical sequence (e.g. icon before text). In right-to-left
+	// contexts the sequence starts at the right, so the physical packing order is reversed.
+	if ( !isRTL() )
+		return widgets;
+	return { widgets[2], widgets[1], widgets[0] };
+}
+
+Vector2f UIPushButton::calcLayoutSize( const std::array<UIWidget*, 3>& logicalWidgets,
 									   const Rectf& padding ) const {
+	const std::array<UIWidget*, 3> widgets = inlineOrder( logicalWidgets );
 	Vector2f totSize{ padding.Left, padding.Top + padding.Bottom };
 	UIWidget* widget;
 	for ( size_t i = 0; i < widgets.size(); i++ ) {
@@ -191,7 +201,9 @@ Vector2f UIPushButton::calcLayoutSize( const std::array<UIWidget*, 3>& widgets,
 	return totSize;
 }
 
-Vector2f UIPushButton::packLayout( const std::array<UIWidget*, 3>& widgets, const Rectf& padding ) {
+Vector2f UIPushButton::packLayout( const std::array<UIWidget*, 3>& logicalWidgets,
+								   const Rectf& padding ) {
+	const std::array<UIWidget*, 3> widgets = inlineOrder( logicalWidgets );
 	if ( mExpandTextView && mTextBox && mTextBox->isVisible() ) {
 		Float availableWidth = mSize.getWidth() - padding.Left - padding.Right;
 		Float usedWidth = 0;
@@ -361,6 +373,11 @@ void UIPushButton::onPaddingChange() {
 
 void UIPushButton::onLayoutUpdate() {}
 
+void UIPushButton::onDirectionChanged() {
+	UIWidget::onDirectionChanged();
+	onSizeChange();
+}
+
 void UIPushButton::onSizeChange() {
 	onAutoSize();
 
@@ -520,6 +537,7 @@ UIWidget* UIPushButton::getExtraInnerWidget() const {
 }
 
 UIWidget* UIPushButton::setTextAlign( const Uint32& align ) {
+	setLogicalAlignSlot( LogicalAlignSlot::Gravity, UIHorizontalAlignment::Left );
 	mFlags &= ~( UI_HALIGN_CENTER | UI_HALIGN_RIGHT );
 	mFlags |= align;
 	onAlignChange();
@@ -601,10 +619,7 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 			return String::format( "%ddp", mIconMinSize.getWidth() ) + " " +
 				   String::format( "%ddp", mIconMinSize.getHeight() );
 		case PropertyId::TextAlign:
-			return Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_CENTER
-					   ? "center"
-					   : ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT ? "right"
-																					 : "left" );
+			return UIHorizontalAlignmentHelper::toString( getTextAlignment() );
 		case PropertyId::TextAsFallback:
 			return mTextAsFallback ? "true" : "false";
 		case PropertyId::Tint: {
@@ -684,10 +699,10 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( iconF ) {
 				setIcon( iconF->createDrawable(
 					eemax<size_t>( mSize.getHeight() - mPaddingPx.Top - mPadding.Bottom,
-									   PixelDensity::dpToPxI( 16 ) ) ) );
+								   PixelDensity::dpToPxI( 16 ) ) ) );
 			} else if ( DrawablePtr icon = StyleSheetSpecification::instance()
-										->getDrawableImageParser()
-										.createDrawable( val, getPixelsSize(), this ) ) {
+											   ->getDrawableImageParser()
+											   .createDrawable( val, getPixelsSize(), this ) ) {
 				setIcon( std::move( icon ) );
 			}
 			break;
@@ -695,16 +710,9 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::MinIconSize:
 			setIconMinimumSize( attribute.asDpDimensionSizei() );
 			break;
-		case PropertyId::TextAlign: {
-			std::string align = String::toLower( attribute.value() );
-			if ( align == "center" )
-				setTextAlign( UI_HALIGN_CENTER );
-			else if ( align == "left" )
-				setTextAlign( UI_HALIGN_LEFT );
-			else if ( align == "right" )
-				setTextAlign( UI_HALIGN_RIGHT );
+		case PropertyId::TextAlign:
+			applyTextAlignProperty( attribute );
 			break;
-		}
 		case PropertyId::TextAsFallback:
 			setTextAsFallback( attribute.asBool() );
 			break;

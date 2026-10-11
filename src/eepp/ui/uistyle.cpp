@@ -482,7 +482,9 @@ void UIStyle::onStateChange() {
 			}
 
 			// Resolve "inherit" keyword to parent's value
-			if ( property->getValue() == "inherit" &&
+			// Direction inheritance is cached by UINode; preserve the specified inherit value
+			// instead of turning it into a fixed override copied from an ancestor's stylesheet.
+			if ( prop != PropertyId::Direction && property->getValue() == "inherit" &&
 				 !property->getPropertyDefinition()->isIndexed() ) {
 				UIStyle* inheritedStyle = nullptr;
 				StyleSheetProperty* inheritedProp = getInheritedProperty( prop, &inheritedStyle );
@@ -541,6 +543,10 @@ void UIStyle::onStateChange() {
 
 		updateAnimations();
 
+		// Even unchanged serialized values can acquire a different cascade priority. Logical
+		// and physical properties share computed edges, so refresh their winners as a group.
+		mWidget->refreshLogicalBoxProperties();
+
 		mWidget->endAttributesTransaction();
 	}
 
@@ -558,6 +564,44 @@ void UIStyle::onStateChange() {
 
 	mChangingState = false;
 	mFirstState = false;
+}
+
+bool UIStyle::declarationWins( const StyleSheetProperty& candidate,
+							   const StyleSheetProperty& other ) {
+	if ( candidate.getSpecificity() != other.getSpecificity() )
+		return candidate.getSpecificity() > other.getSpecificity();
+
+	const auto* candidateSource = getLocalProperty( candidate.getPropertyId() );
+	const auto* otherSource = getLocalProperty( other.getPropertyId() );
+	if ( candidateSource && otherSource ) {
+		const bool candidateInline =
+			mElementStyle &&
+			candidateSource == mElementStyle->getPropertyById( candidate.getPropertyId() );
+		const bool otherInline =
+			mElementStyle && otherSource == mElementStyle->getPropertyById( other.getPropertyId() );
+		if ( candidateInline != otherInline )
+			return candidateInline;
+		if ( !candidateInline && mDefinition ) {
+			// Definitions retain matched rules in cascade order, including source positions
+			// reserved before asynchronous loads finish. Parsing timestamps cannot express it.
+			const auto& styles = mDefinition->getStyles();
+			auto sourceIndex = [&]( const StyleSheetProperty* source ) {
+				for ( size_t i = styles.size(); i > 0; --i ) {
+					const auto* property =
+						styles[i - 1]->getPropertyById( source->getPropertyId() );
+					if ( property && property->getSpecificity() == source->getSpecificity() &&
+						 property->getDeclarationOrder() == source->getDeclarationOrder() )
+						return i;
+				}
+				return size_t( 0 );
+			};
+			const size_t candidateIndex = sourceIndex( candidateSource );
+			const size_t otherIndex = sourceIndex( otherSource );
+			if ( candidateIndex != otherIndex )
+				return candidateIndex > otherIndex;
+		}
+	}
+	return candidate.getDeclarationOrder() > other.getDeclarationOrder();
 }
 
 const StyleSheetProperty*

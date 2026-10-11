@@ -47,7 +47,9 @@ void UIMenuBar::setCurrentMenu( UIPopUpMenu* currentMenu ) {
 }
 
 void UIMenuBar::positionMenu( UISelectButton* button, UIPopUpMenu* menu ) {
-	Vector2f pos( 0, button->getSize().getHeight() );
+	// Menus hang from the inline-start edge of their button.
+	Vector2f pos( isRTL() ? button->getSize().getWidth() - menu->getSize().getWidth() : 0,
+				  button->getSize().getHeight() );
 	button->nodeToWorld( pos );
 	menu->setParent( getWindowContainer() );
 	menu->getParent()->worldToNode( pos );
@@ -290,6 +292,18 @@ void UIMenuBar::refreshButtons() {
 		}
 	}
 
+	// The first menu is at the inline-start edge: buttons progress leftwards in RTL.
+	if ( isRTL() ) {
+		Float xpos = getPixelsSize().getWidth() - getPixelsPadding().Right;
+		for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
+			UISelectButton* pbut = it->first;
+			xpos -= pbut->getPixelsSize().getWidth();
+			pbut->setPixelsPosition( eefloor( xpos ), ycenter );
+			xpos -= pbut->getLayoutPixelsMargin().Left;
+		}
+		return;
+	}
+
 	Uint32 xpos = getPixelsPadding().Left;
 
 	for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
@@ -378,6 +392,17 @@ Uint32 UIMenuBar::onMessage( const NodeMessage* msg ) {
 		}
 	}
 	return 0;
+}
+
+void UIMenuBar::onDirectionChanged() {
+	UIWidget::onDirectionChanged();
+	refreshButtons();
+}
+
+void UIMenuBar::onSizeChange() {
+	UIWidget::onSizeChange();
+	if ( isRTL() )
+		refreshButtons();
 }
 
 void UIMenuBar::onParentChange() {

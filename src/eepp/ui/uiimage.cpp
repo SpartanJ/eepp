@@ -480,16 +480,9 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::TextAlign: {
-			std::string align = String::toLower( attribute.value() );
-			if ( align == "center" )
-				setHorizontalAlign( UI_HALIGN_CENTER );
-			else if ( align == "left" )
-				setHorizontalAlign( UI_HALIGN_LEFT );
-			else if ( align == "right" )
-				setHorizontalAlign( UI_HALIGN_RIGHT );
+		case PropertyId::TextAlign:
+			applyTextAlignProperty( attribute );
 			break;
-		}
 		case PropertyId::Src: {
 			if ( attribute.getValue().empty() )
 				return true;

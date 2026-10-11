@@ -144,13 +144,18 @@ void StyleSheetPropertiesParser::addProperty( std::string name, std::string valu
 		std::vector<StyleSheetProperty> properties =
 			StyleSheetSpecification::instance()->getShorthand( name )->parse( value );
 
-		for ( auto& property : properties )
+		// Longhands expanded from one shorthand share the declaration's cascade order.
+		const Uint64 order = StyleSheetProperty::nextDeclarationOrder();
+		for ( auto& property : properties ) {
+			property.setDeclarationOrder( order );
 			mProperties[property.getId()] = std::move( property );
+		}
 	} else {
 		if ( String::startsWith( name, "--" ) ) {
 			mVariables[String::hash( name )] = StyleSheetVariable( name, value );
 		} else {
 			StyleSheetProperty property( name, value );
+			property.assignNextDeclarationOrder();
 			mProperties[property.getId()] = std::move( property );
 		}
 	}

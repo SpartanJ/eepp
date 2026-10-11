@@ -152,7 +152,8 @@ UIListBoxItem* UIListBox::createListBoxItem( const String& Name ) {
 	UIListBoxItem* tItem = UIListBoxItem::NewWithTag( mTag + "::item" );
 	tItem->setParent( mContainer );
 	tItem->setTheme( mTheme );
-	tItem->setHorizontalAlign( UI_HALIGN_LEFT )->setVerticalAlign( UI_VALIGN_CENTER );
+	tItem->setHorizontalAlignment( UIHorizontalAlignment::Start )
+		->setVerticalAlign( UI_VALIGN_CENTER );
 	tItem->setText( Name );
 
 	return tItem;

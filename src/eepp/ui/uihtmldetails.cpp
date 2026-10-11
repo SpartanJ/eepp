@@ -203,7 +203,7 @@ UIHTMLSummary::UIHTMLSummary() : UIRichText( "summary" ) {
 	mDisplay = CSSDisplay::ListItem;
 	setFlags( UI_CREATING_NODE );
 	setStyleSheetProperty( StyleSheetProperty( "cursor", "pointer" ) );
-	setStyleSheetProperty( StyleSheetProperty( "padding-left", "20dp" ) );
+	setStyleSheetProperty( StyleSheetProperty( "padding-inline-start", "20dp" ) );
 	setStyleSheetProperty( StyleSheetProperty( "list-style-type", "disclosure-closed" ) );
 	unsetFlags( UI_CREATING_NODE );
 	setFlags( UI_TAB_FOCUSABLE );
@@ -223,13 +223,15 @@ void UIHTMLSummary::draw() {
 		const CSSListStyleType markerType = getDisclosureMarkerType();
 		if ( UIHTMLListStyle::isPrimitiveMarker( markerType ) ) {
 			UIHTMLListStyle::drawPrimitiveMarker( markerType, mScreenPos, mPaddingPx,
-												  mRichText.getFontStyleConfig() );
+												  mRichText.getFontStyleConfig(), isRTL(),
+												  getPixelsSize().getWidth() );
 		} else if ( mListMarkerText && !mListMarkerText->getString().empty() ) {
 			const FontStyleConfig& style = mRichText.getFontStyleConfig();
 			UIHTMLListStyle::syncTextMarkerColor( *mListMarkerText, style.FontColor );
 			const Float fontSize = style.CharacterSize;
 			const Vector2f markerPos = UIHTMLListStyle::getTextMarkerPosition(
-				mScreenPos, mPaddingPx, mListMarkerText->getTextWidth(), fontSize );
+				mScreenPos, mPaddingPx, mListMarkerText->getTextWidth(), fontSize, isRTL(),
+				getPixelsSize().getWidth() );
 			mListMarkerText->draw( markerPos.x, markerPos.y, Vector2f::One, 0.f, getBlendMode() );
 		}
 	}
@@ -275,6 +277,7 @@ bool UIHTMLSummary::applyProperty( const StyleSheetProperty& attribute ) {
 			setListStyleType( CSSListStyleTypeHelper::fromString( attribute.value() ) );
 			return true;
 		case PropertyId::PaddingLeft:
+		case PropertyId::PaddingInlineStart:
 			if ( !isCreatingNode() && !mApplyingDefaultListStylePadding &&
 				 attribute.getSpecificity() != 0 )
 				mUsingDefaultListStylePadding = false;
@@ -347,7 +350,7 @@ void UIHTMLSummary::syncDefaultListStylePadding() {
 
 	mApplyingDefaultListStylePadding = true;
 	setStyleSheetProperty( StyleSheetProperty(
-		"padding-left", mListStyleType == CSSListStyleType::None ? "0dp" : "20dp" ) );
+		"padding-inline-start", mListStyleType == CSSListStyleType::None ? "0dp" : "20dp" ) );
 	mApplyingDefaultListStylePadding = false;
 }
 

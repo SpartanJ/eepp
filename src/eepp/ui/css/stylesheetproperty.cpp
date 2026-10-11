@@ -1,3 +1,4 @@
+#include <atomic>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/text.hpp>
@@ -24,10 +25,10 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 										const std::string& value, const Uint32& index,
 										bool trimValue, bool cachedProperty ) :
 	mNameHash( definition->getId() ),
+	mIndex( index ),
 	mValue( trimValue ? String::trim( value ) : value ),
 	mValueHash( String::hash( mValue ) ),
 	mSpecificity( 0 ),
-	mIndex( index ),
 	mVolatile( false ),
 	mImportant( false ),
 	mIsVarValue( false ),
@@ -45,10 +46,10 @@ StyleSheetProperty::StyleSheetProperty( bool isVolatile, const PropertyDefinitio
 										const std::string& value, const Int64& /*specificity*/,
 										const Uint32& index ) :
 	mNameHash( definition->getId() ),
+	mIndex( index ),
 	mValue( String::trim( value ) ),
 	mValueHash( String::hash( mValue ) ),
 	mSpecificity( 0 ),
-	mIndex( index ),
 	mVolatile( isVolatile ),
 	mImportant( false ),
 	mIsVarValue( false ),
@@ -64,10 +65,10 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 										const Uint32& index ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
+	mIndex( index ),
 	mValue( trimValue ? String::trim( value ) : value ),
 	mValueHash( String::hash( mValue ) ),
 	mSpecificity( specificity ),
-	mIndex( index ),
 	mVolatile( false ),
 	mImportant( false ),
 	mIsVarValue( false ),
@@ -91,10 +92,10 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 										const Uint32& index ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
+	mIndex( index ),
 	mValue( String::trim( value ) ),
 	mValueHash( String::hash( mValue ) ),
 	mSpecificity( specificity ),
-	mIndex( index ),
 	mVolatile( isVolatile ),
 	mImportant( false ),
 	mIsVarValue( false ),
@@ -194,8 +195,8 @@ bool StyleSheetProperty::hasSameResolutionSource( const StyleSheetProperty& prop
 	if ( mName != property.mName || mNameHash != property.mNameHash || mValue != property.mValue ||
 		 mValueHash != property.mValueHash || mSpecificity != property.mSpecificity ||
 		 mIndex != property.mIndex || mVolatile != property.mVolatile ||
-		 mImportant != property.mImportant || mIsVarValue != property.mIsVarValue ||
-		 mIsLightDarkValue != property.mIsLightDarkValue ||
+		 mDeclarationOrder != property.mDeclarationOrder || mImportant != property.mImportant ||
+		 mIsVarValue != property.mIsVarValue || mIsLightDarkValue != property.mIsLightDarkValue ||
 		 mCachedProperty != property.mCachedProperty ||
 		 mPropertyDefinition != property.mPropertyDefinition ||
 		 mShorthandDefinition != property.mShorthandDefinition ||
@@ -609,6 +610,19 @@ StyleSheetProperty* StyleSheetProperty::getPropertyIndexRef( const Uint32& index
 
 const Uint32& StyleSheetProperty::getIndex() const {
 	return mIndex;
+}
+
+Uint64 StyleSheetProperty::nextDeclarationOrder() {
+	// Declarations can be parsed from worker threads (async stylesheet loading). Only the
+	// relative order matters, so relaxed ordering is enough. The counter starts at 1 because
+	// zero marks declarations with an unknown order. Every parsed declaration and XML attribute
+	// consumes a value for the whole process lifetime, so the field is 59 bits wide: even
+	// long-running sessions that keep re-rendering documents cannot exhaust it. It still
+	// saturates instead of wrapping, which would degrade ties to "first applied" rather than
+	// invert them.
+	static std::atomic<Uint64> sNextOrder{ 1 };
+	Uint64 order = sNextOrder.fetch_add( 1, std::memory_order_relaxed );
+	return order > MaxDeclarationOrder ? MaxDeclarationOrder : order;
 }
 
 static bool isWholeQuotedString( const std::string& value ) {

@@ -114,7 +114,13 @@ class EE_API UIMenu : public UIWidget {
 	UIWidget* mOwnerNode;
 	Sizei mIconMinSize;
 	UIMenu* mCurrentSubMenu{ nullptr };
+	EventConnection mOwnerDirectionConnection;
+	EventConnection mOwnerCloseConnection;
 	Clock mInactiveTime;
+
+	virtual Node* getDirectionParent() const {
+		return mOwnerNode ? mOwnerNode : UIWidget::getDirectionParent();
+	}
 
 	virtual void onSizeChange();
 

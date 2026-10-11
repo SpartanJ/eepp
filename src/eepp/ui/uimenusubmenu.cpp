@@ -18,6 +18,7 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mArrow = UIWidget::NewWithTag( getElementTag() + "::arrow" );
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
+	mArrow->setMirrorOnRTL( true );
 	applyDefaultTheme();
 	mArrow->on( Event::OnSizeChange, [this]( const Event* ) { onSizeChange(); } );
 	mArrow->on( Event::OnMarginChange, [this]( const Event* ) { onSizeChange(); } );
@@ -64,8 +65,14 @@ void UIMenuSubMenu::onStateChange() {
 }
 
 void UIMenuSubMenu::onLayoutUpdate() {
-	mArrow->setPosition(
-		getSize().getWidth() - mArrow->getSize().getWidth() - mArrow->getLayoutMargin().Right, 0 );
+	// The arrow sits at the inline-end edge and points toward the side the submenu opens.
+	if ( isRTL() ) {
+		mArrow->setPosition( mArrow->getLayoutMargin().Left, 0 );
+	} else {
+		mArrow->setPosition( getSize().getWidth() - mArrow->getSize().getWidth() -
+								 mArrow->getLayoutMargin().Right,
+							 0 );
+	}
 	mArrow->centerVertical();
 }
 
@@ -104,7 +111,10 @@ void UIMenuSubMenu::showSubMenu() {
 	mSubMenu->setParent( menu->getParent() );
 	Vector2f pos = getPixelsPosition();
 	nodeToWorldTranslation( pos );
-	pos.x += mSize.getWidth() + menu->getPixelsPadding().Right;
+	if ( isRTL() )
+		pos.x -= mSubMenu->getPixelsSize().getWidth() + menu->getPixelsPadding().Left;
+	else
+		pos.x += mSize.getWidth() + menu->getPixelsPadding().Right;
 	UIMenu::findBestMenuPos( pos, mSubMenu, menu, this );
 	mSubMenu->getParent()->worldToNode( pos );
 	mSubMenu->setPosition( pos );

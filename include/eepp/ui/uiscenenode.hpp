@@ -13,6 +13,7 @@
 #include <eepp/ui/drawableresolver.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/layoutinvalidation.hpp>
+#include <eepp/ui/uidirection.hpp>
 #include <eepp/ui/webresourcecache.hpp>
 #include <eepp/window/engine.hpp>
 
@@ -512,6 +513,15 @@ class EE_API UISceneNode : public SceneNode {
 	 * @return Pointer to the root UIWidget.
 	 */
 	UIWidget* getRoot() const;
+
+	/**
+	 * @brief Sets the UI direction of the scene root. Every widget that does not override its
+	 * direction inherits it. Equivalent to getRoot()->setDirection( direction ).
+	 */
+	void setDirection( UIDirection direction );
+
+	/** @return The effective UI direction of the scene root. */
+	UIDirection getDirection() const;
 
 	/**
 	 * @brief Invalidates the style of a widget.

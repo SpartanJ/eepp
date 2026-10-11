@@ -72,7 +72,7 @@ MarkdownView blockquote {
 
 MarkdownView ul,
 MarkdownView ol {
-	padding-left: 21dp;
+	padding-inline-start: 21dp;
 }
 
 MarkdownView ul ul,
@@ -278,7 +278,7 @@ TableView::cell::icon,
 TreeView::cell::icon,
 TreeView::cell::expander,
 ListView::cell::icon {
-	margin-right: 4dp;
+	margin-inline-end: 4dp;
 }
 
 CheckBox,
@@ -357,7 +357,7 @@ ListView {
 }
 
 ListBox::item {
-	padding-left: 4dp;
+	padding-inline-start: 4dp;
 	background-color: transparent;
 	background-image: linear-gradient( to right, var(--list-back), var(--separator) ), linear-gradient( to right, var(--separator), var(--list-back) );
 	background-size: 50% 1dp, 50% 1dp;
@@ -372,7 +372,7 @@ ListView::row {
 }
 
 ListView::cell {
-	padding-left: 4dp;
+	padding-inline-start: 4dp;
 	min-icon-size: 16dp 16dp;
 }
 
@@ -395,7 +395,7 @@ ListView::row:selected {
 
 DropDownList::ListBox::item,
 ComboBox::DropDownList::ListBox::item {
-	padding-left: 4dp;
+	padding-inline-start: 4dp;
 	background-color: transparent;
 	color: var(--font);
 	tint: var(--font);
@@ -622,7 +622,7 @@ ProgressBar::filler {
 
 TabWidget {
 	tab-height: 24dp;
-	gravity: left|bottom;
+	gravity: start|bottom;
 }
 
 TabWidget::TabBar {
@@ -694,7 +694,7 @@ Tab::close {
 	foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
 	foreground-tint: var(--tab-close);
 	foreground-size: 10dp 10dp;
-	margin-right: 4dp;
+	margin-inline-end: 4dp;
 	transition: all 0.15s;
 }
 
@@ -870,7 +870,7 @@ Menu::CheckBox,
 Menu::Separator,
 Menu::SubMenu,
 Menu::RadioButton {
-	padding-left: 6dp;
+	padding-inline-start: 6dp;
 	padding-top: 2dp;
 	padding-bottom: 2dp;
 	background-color: transparent;
@@ -887,15 +887,15 @@ Menu::Item::text,
 Menu::CheckBox::text,
 Menu::SubMenu::text,
 Menu::RadioButton::text {
-	padding-right: 8dp;
+	padding-inline-end: 8dp;
 	color: var(--menu-font);
 }
 
 Menu::Item::shortcut,
 Menu::CheckBox::shortcut,
 Menu::RadioButton::shortcut {
-	padding-left: 48dp;
-	padding-right: 8dp;
+	padding-inline-start: 48dp;
+	padding-inline-end: 8dp;
 	color: var(--menu-font);
 }
 
@@ -943,7 +943,7 @@ Menu::Separator {
 Menu::SubMenu::Arrow {
 	width: 16dp;
 	height: 16dp;
-	margin-right: 1dp;
+	margin-inline-end: 1dp;
 	foreground-image: poly(line, var(--icon), "5dp 3dp, 10dp 8dp", 1dp), poly(line, var(--icon), "5dp 13dp, 10dp 8dp", 1dp);
 }
 
@@ -955,7 +955,7 @@ Menu::Item::icon,
 Menu::SubMenu::icon,
 Menu::CheckBox::icon,
 Menu::RadioButton::icon {
-	margin-right: 4dp;
+	margin-inline-end: 4dp;
 	tint: var(--font);
 }
 
@@ -1028,7 +1028,7 @@ listview::header::column {
 	color: var(--font);
 	padding: 2dp 6dp 2dp 6dp;
 	transition: all 0.125s;
-	text-align: left;
+	text-align: start;
 }
 
 tableview::rowheader::row,

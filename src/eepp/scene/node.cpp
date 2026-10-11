@@ -7,8 +7,6 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <eepp/ui/uinode.hpp>
-#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/engine.hpp>
 
 namespace EE { namespace Scene {
@@ -226,19 +224,15 @@ void Node::unsubscribeScheduledUpdate() {
 
 Node* Node::setParent( Node* parent ) {
 	eeASSERT( NULL != parent );
-#ifdef EE_DEBUG
-	if ( isUINode() && parent->isUINode() ) {
-		auto* childScene = asType<UI::UINode>()->getUISceneNode();
-		auto* parentScene = parent->asType<UI::UINode>()->getUISceneNode();
-		// Same-window scene rebinding is an existing supported mechanism for embedded documents.
-		// Cross-window rebinding cannot safely migrate input and native-window dependencies.
-		eeASSERT( !childScene || !parentScene || childScene == parentScene ||
-				  childScene->getWindow() == parentScene->getWindow() );
-	}
-#endif
 
 	if ( parent == mParentNode )
 		return this;
+
+	const bool hadParent = mParentNode != nullptr;
+	const bool checkContext =
+		mChild != nullptr || ( mNodeFlags & NODE_FLAG_PROVIDES_PARENT_TREE_CONTEXT );
+	const Uint32 previousContext =
+		checkContext && hadParent ? mParentNode->getParentTreeContext() : 0;
 
 	if ( NULL != mParentNode )
 		mParentNode->childRemove( this );
@@ -255,6 +249,13 @@ Node* Node::setParent( Node* parent ) {
 	if ( mSceneNode != findSceneNode() )
 		onSceneChange();
 
+	// Ordinary leaves need no context lookup because they cannot trigger a subtree walk.
+	// Initial attachment must refresh a detached subtree's potentially stale inherited state.
+	const Uint32 nextContext = checkContext && hadParent ? parent->getParentTreeContext() : 0;
+	if ( !checkContext || !hadParent || previousContext != nextContext ||
+		 ( ( previousContext | nextContext ) & ParentTreeContextUnstable ) ) {
+		onParentTreeChange();
+	}
 	onParentChange();
 
 	return this;
@@ -1205,6 +1206,28 @@ void Node::sendEvent( const Event* event ) {
 
 void Node::onParentChange() {
 	invalidateDraw();
+}
+
+void Node::onParentTreeChange() {
+	if ( isSceneNode() )
+		return;
+	Node* child = mChild;
+	while ( child ) {
+		child->onParentTreeChange();
+		child = child->mNext;
+	}
+}
+
+Uint32 Node::getParentTreeContext() const {
+	if ( isSceneNode() )
+		return 0;
+	const Node* node = mParentNode;
+	while ( node && !node->isSceneNode() ) {
+		if ( node->mNodeFlags & NODE_FLAG_PROVIDES_PARENT_TREE_CONTEXT )
+			return node->getParentTreeContext();
+		node = node->mParentNode;
+	}
+	return 0;
 }
 
 void Node::updateScreenPos() {

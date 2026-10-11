@@ -74,7 +74,8 @@ void UIRelativeLayout::fixChildPos( UIWidget* widget ) {
 		 widget->getParent() == widget->getLayoutPositionPolicyWidget()->getParent() ) {
 		UIWidget* of = widget->getLayoutPositionPolicyWidget();
 
-		switch ( widget->getLayoutPositionPolicy() ) {
+		// Logical StartOf/EndOf resolve against the widget direction.
+		switch ( widget->getResolvedLayoutPositionPolicy() ) {
 			case PositionPolicy::LeftOf:
 				pos.x = of->getPosition().x - widget->getSize().getWidth() -
 						widget->getLayoutMargin().Right - of->getLayoutMargin().Left;

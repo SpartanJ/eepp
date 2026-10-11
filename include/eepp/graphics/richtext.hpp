@@ -143,6 +143,20 @@ class EE_API RichText : public Drawable {
 	/** @return The text alignment. */
 	Uint32 getAlign() const { return mAlign; }
 
+	/**
+	 * @brief Sets the paragraph base direction.
+	 *
+	 * The base direction is used to shape every text run and, when it is right-to-left, line
+	 * boxes are filled from the right: inline items are visually reordered per line following
+	 * the UAX #9 reordering rule (L2) applied at inline-item granularity, so consecutive
+	 * left-to-right items keep their relative order. Unspecified keeps first-strong detection
+	 * per run and left-to-right line filling, the historical behavior.
+	 */
+	void setBaseDirection( TextDirection direction );
+
+	/** @return The paragraph base direction. */
+	TextDirection getBaseDirection() const { return mBaseDirection; }
+
 	/** @brief Sets the maximum width for wrapping. If 0, wrapping is disabled. */
 	void setMaxWidth( Float width );
 
@@ -502,6 +516,7 @@ class EE_API RichText : public Drawable {
 	Float mLineHeight{ 0 };
 	Float mTextIndent{ 0 };
 	bool mLineWrap{ true };
+	TextDirection mBaseDirection{ TextDirection::Unspecified };
 	WhiteSpaceWrapMode mWhiteSpaceWrapMode{ WhiteSpaceWrapMode::Normal };
 	Uint32 mTabWidth{ 8 };
 	Uint32 mTextHints{ 0 };

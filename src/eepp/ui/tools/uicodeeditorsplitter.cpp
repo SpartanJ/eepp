@@ -1938,7 +1938,7 @@ void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 					// Keep the surviving subtree out of closeSplitter()'s recursive bookkeeping.
 					remainingNode->detach();
 					closeSplitter( splitter );
-					eeASSERT( parent->getChildCount() == 0 );
+					// The parent can also contain the scene root or the deferred closing splitter.
 					remainingNode->setParent( parent );
 					if ( remainingNode->isWidget() )
 						remainingNode->asType<UIWidget>()->setLayoutSizePolicy(

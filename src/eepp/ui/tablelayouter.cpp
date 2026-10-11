@@ -502,6 +502,15 @@ void TableLayouter::updateLayout() {
 	Float bodyHeight = 0;
 	Float footerHeight = 0;
 
+	// CSS Tables §3.2: column order follows the table's inline direction, so in RTL the first
+	// column is at the right. Cells are placed left to right and mirrored within the column grid.
+	const bool rtl = mContainer->isRTL();
+	Float gridWidth = mCellspacing;
+	if ( rtl ) {
+		for ( Uint32 col = 0; col < maxCols && col < mColWidths.size(); ++col )
+			gridWidth += mColWidths[col] + mCellspacing;
+	}
+
 	size_t rowCount = mRows.size();
 	for ( size_t r = 0; r < rowCount; ++r ) {
 		Float rowHeight = 0;
@@ -543,7 +552,6 @@ void TableLayouter::updateLayout() {
 		colIndex = 0;
 		for ( Uint32 c = 0; c < columnCount; ++c ) {
 			UIHTMLTableCell* cell = mCells[start + c];
-			cell->setPixelsPosition( currentX, 0 );
 			cell->mWidthPolicy = SizePolicy::Fixed;
 			cell->mHeightPolicy = SizePolicy::Fixed;
 			Uint32 cellColspan = cell->getColSpan();
@@ -554,6 +562,7 @@ void TableLayouter::updateLayout() {
 			if ( cellColspan > 1 )
 				cellWidth += ( cellColspan - 1 ) * mCellspacing;
 			cell->setInternalPixelsSize( { cellWidth, rowHeight } );
+			cell->setPixelsPosition( rtl ? gridWidth - currentX - cellWidth : currentX, 0 );
 			currentX += cellWidth + mCellspacing;
 			colIndex += cellColspan;
 		}

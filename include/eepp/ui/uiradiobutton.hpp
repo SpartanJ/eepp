@@ -66,6 +66,8 @@ class EE_API UIRadioButton : public UITextView {
 
 	virtual void onPaddingChange();
 
+	virtual void onDirectionChanged();
+
 	virtual void alignFix();
 };
 

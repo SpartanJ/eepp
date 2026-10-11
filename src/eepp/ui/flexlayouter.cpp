@@ -76,11 +76,15 @@ void FlexLayouter::collectFlexItems( SmallVector<FlexItem, 16>& items ) {
 }
 
 FlexLayouter::Axis FlexLayouter::getMainAxis( CSSFlexDirection direction ) const {
+	// CSS Flexbox §2/§5.1: row follows the inline axis, so its main-start is the inline-start
+	// edge (the right edge in RTL). `reversed` means that the main axis starts at the physical
+	// right (row) or bottom (column) edge.
+	const bool rtl = mContainer->isRTL();
 	switch ( direction ) {
 		case CSSFlexDirection::Row:
-			return { true, false };
+			return { true, rtl };
 		case CSSFlexDirection::RowReverse:
-			return { true, true };
+			return { true, !rtl };
 		case CSSFlexDirection::Column:
 			return { false, false };
 		case CSSFlexDirection::ColumnReverse:
@@ -96,9 +100,42 @@ FlexLayouter::Axis FlexLayouter::getCrossAxis( CSSFlexDirection direction ) cons
 			return { false, false };
 		case CSSFlexDirection::Column:
 		case CSSFlexDirection::ColumnReverse:
-			return { true, false };
+			// Columns use the inline axis as cross axis: cross-start is inline-start.
+			return { true, mContainer->isRTL() };
 	}
 	return { false, false };
+}
+
+void FlexLayouter::assignItemMargins( FlexItem& item, const Rectf& margin, const Axis& mainAxis,
+									  const Axis& crossAxis ) const {
+	UIWidget* widget = item.widget;
+	const bool leftAuto = widget->hasLayoutMarginLeftAuto();
+	const bool rightAuto = widget->hasLayoutMarginRightAuto();
+	const bool topAuto = widget->hasLayoutMarginTopAuto();
+	const bool bottomAuto = widget->hasLayoutMarginBottomAuto();
+	if ( mainAxis.horizontal ) {
+		item.hasAutoMarginMainStart = mainAxis.reversed ? rightAuto : leftAuto;
+		item.hasAutoMarginMainEnd = mainAxis.reversed ? leftAuto : rightAuto;
+		item.marginMainStart =
+			item.hasAutoMarginMainStart ? 0.f : ( mainAxis.reversed ? margin.Right : margin.Left );
+		item.marginMainEnd =
+			item.hasAutoMarginMainEnd ? 0.f : ( mainAxis.reversed ? margin.Left : margin.Right );
+		item.marginCrossStart = margin.Top;
+		item.marginCrossEnd = margin.Bottom;
+		item.hasAutoMarginCrossStart = topAuto;
+		item.hasAutoMarginCrossEnd = bottomAuto;
+	} else {
+		item.hasAutoMarginMainStart = mainAxis.reversed ? bottomAuto : topAuto;
+		item.hasAutoMarginMainEnd = mainAxis.reversed ? topAuto : bottomAuto;
+		item.marginMainStart =
+			item.hasAutoMarginMainStart ? 0.f : ( mainAxis.reversed ? margin.Bottom : margin.Top );
+		item.marginMainEnd =
+			item.hasAutoMarginMainEnd ? 0.f : ( mainAxis.reversed ? margin.Top : margin.Bottom );
+		item.marginCrossStart = crossAxis.reversed ? margin.Right : margin.Left;
+		item.marginCrossEnd = crossAxis.reversed ? margin.Left : margin.Right;
+		item.hasAutoMarginCrossStart = crossAxis.reversed ? rightAuto : leftAuto;
+		item.hasAutoMarginCrossEnd = crossAxis.reversed ? leftAuto : rightAuto;
+	}
 }
 
 namespace {
@@ -321,10 +358,10 @@ void FlexLayouter::measureFlexItems( const Axis& mainAxis, const Axis& crossAxis
 		// Re-resolve any percentage margins against the flex container's width.
 		if ( item.widget->getUIStyle() ) {
 			const StyleSheetProperty* props[4] = {
-				item.widget->getUIStyle()->getProperty( PropertyId::MarginTop ),
-				item.widget->getUIStyle()->getProperty( PropertyId::MarginRight ),
-				item.widget->getUIStyle()->getProperty( PropertyId::MarginBottom ),
-				item.widget->getUIStyle()->getProperty( PropertyId::MarginLeft ),
+				item.widget->getBoxEdgeProperty( PropertyId::MarginTop ),
+				item.widget->getBoxEdgeProperty( PropertyId::MarginRight ),
+				item.widget->getBoxEdgeProperty( PropertyId::MarginBottom ),
+				item.widget->getBoxEdgeProperty( PropertyId::MarginLeft ),
 			};
 			Float sides[4] = { margin.Top, margin.Right, margin.Bottom, margin.Left };
 			for ( int i = 0; i < 4; i++ ) {
@@ -342,25 +379,7 @@ void FlexLayouter::measureFlexItems( const Axis& mainAxis, const Axis& crossAxis
 			margin.Bottom = sides[2];
 			margin.Left = sides[3];
 		}
-		if ( mainAxis.horizontal ) {
-			item.hasAutoMarginMainStart = item.widget->hasLayoutMarginLeftAuto();
-			item.hasAutoMarginMainEnd = item.widget->hasLayoutMarginRightAuto();
-			item.marginMainStart = item.hasAutoMarginMainStart ? 0.f : margin.Left;
-			item.marginMainEnd = item.hasAutoMarginMainEnd ? 0.f : margin.Right;
-			item.marginCrossStart = margin.Top;
-			item.marginCrossEnd = margin.Bottom;
-			item.hasAutoMarginCrossStart = item.widget->hasLayoutMarginTopAuto();
-			item.hasAutoMarginCrossEnd = item.widget->hasLayoutMarginBottomAuto();
-		} else {
-			item.hasAutoMarginMainStart = item.widget->hasLayoutMarginTopAuto();
-			item.hasAutoMarginMainEnd = item.widget->hasLayoutMarginBottomAuto();
-			item.marginMainStart = item.hasAutoMarginMainStart ? 0.f : margin.Top;
-			item.marginMainEnd = item.hasAutoMarginMainEnd ? 0.f : margin.Bottom;
-			item.marginCrossStart = margin.Left;
-			item.marginCrossEnd = margin.Right;
-			item.hasAutoMarginCrossStart = item.widget->hasLayoutMarginLeftAuto();
-			item.hasAutoMarginCrossEnd = item.widget->hasLayoutMarginRightAuto();
-		}
+		assignItemMargins( item, margin, mainAxis, crossAxis );
 
 		// Zero out cross-axis auto margins since they absorb free space during
 		// cross-axis alignment and should not contribute to line cross sizing.
@@ -1134,6 +1153,13 @@ void FlexLayouter::applyLayout( const SmallVector<FlexLine, 8>& lines, const Axi
 	Float contentW = 0.f;
 	Float contentH = 0.f;
 
+	// Axis positions are relative to their start edge. A reversed axis starts at the physical
+	// right/bottom edge (row-reverse, column-reverse, a row in RTL, or the cross axis of a column
+	// in RTL), so its items are placed from that edge. Content extents are measured from the
+	// start edge, which keeps them independent of the placement side.
+	const bool horizontalFromRight =
+		mainAxis.horizontal ? mainAxis.reversed : crossAxis.horizontal && crossAxis.reversed;
+
 	for ( const auto& line : lines ) {
 		for ( size_t idx : line.itemIndices ) {
 			auto& item = mItems[idx];
@@ -1149,7 +1175,9 @@ void FlexLayouter::applyLayout( const SmallVector<FlexLine, 8>& lines, const Axi
 					Float y = mainAxis.reversed
 								  ? containerHeight - containerPadding.Bottom - item.mainPos
 								  : containerPadding.Top + item.mainPos;
-					Float x = containerPadding.Left + item.crossPos;
+					Float x = crossAxis.reversed
+								  ? containerWidth - containerPadding.Right - item.crossPos
+								  : containerPadding.Left + item.crossPos;
 					item.widget->setPixelsPosition( x, y );
 				}
 				continue;
@@ -1166,8 +1194,7 @@ void FlexLayouter::applyLayout( const SmallVector<FlexLine, 8>& lines, const Axi
 				widgetY = containerPadding.Top + item.crossPos;
 				widgetW = item.targetMainSize;
 				widgetH = item.crossSize;
-				contentW = eemax( contentW,
-								  widgetX + widgetW + item.marginMainEnd - containerPadding.Left );
+				contentW = eemax( contentW, item.mainPos + widgetW + item.marginMainEnd );
 				contentH = eemax( contentH,
 								  widgetY + widgetH + item.marginCrossEnd - containerPadding.Top );
 			} else {
@@ -1177,11 +1204,14 @@ void FlexLayouter::applyLayout( const SmallVector<FlexLine, 8>& lines, const Axi
 				} else {
 					widgetY = containerPadding.Top + item.mainPos;
 				}
-				widgetX = containerPadding.Left + item.crossPos;
 				widgetW = item.crossSize;
 				widgetH = item.targetMainSize;
-				contentW = eemax( contentW,
-								  widgetX + widgetW + item.marginCrossEnd - containerPadding.Left );
+				if ( crossAxis.reversed ) {
+					widgetX = containerWidth - containerPadding.Right - item.crossPos - widgetW;
+				} else {
+					widgetX = containerPadding.Left + item.crossPos;
+				}
+				contentW = eemax( contentW, item.crossPos + widgetW + item.marginCrossEnd );
 				contentH = eemax( contentH,
 								  widgetY + widgetH + item.marginMainEnd - containerPadding.Top );
 			}
@@ -1211,6 +1241,15 @@ void FlexLayouter::applyLayout( const SmallVector<FlexLine, 8>& lines, const Axi
 
 	if ( heightPolicy == SizePolicy::WrapContent )
 		totH = containerPadding.Top + contentH + containerPadding.Bottom;
+
+	// Items placed from the right edge were positioned against the provisional container width.
+	if ( horizontalFromRight && totW != containerWidth ) {
+		const Float shift = totW - containerWidth;
+		for ( const auto& item : mItems ) {
+			Vector2f pos( item.widget->getPixelsPosition() );
+			item.widget->setPixelsPosition( pos.x + shift, pos.y );
+		}
+	}
 
 	mContainer->setInternalPixelsWidth( totW );
 	mContainer->setInternalPixelsHeight( totH );
@@ -1520,10 +1559,10 @@ void FlexLayouter::computeIntrinsicWidths() {
 		// Re-resolve percentage margins against flex container's inline size
 		if ( item.widget->getUIStyle() ) {
 			const StyleSheetProperty* props[4] = {
-				item.widget->getUIStyle()->getProperty( PropertyId::MarginTop ),
-				item.widget->getUIStyle()->getProperty( PropertyId::MarginRight ),
-				item.widget->getUIStyle()->getProperty( PropertyId::MarginBottom ),
-				item.widget->getUIStyle()->getProperty( PropertyId::MarginLeft ),
+				item.widget->getBoxEdgeProperty( PropertyId::MarginTop ),
+				item.widget->getBoxEdgeProperty( PropertyId::MarginRight ),
+				item.widget->getBoxEdgeProperty( PropertyId::MarginBottom ),
+				item.widget->getBoxEdgeProperty( PropertyId::MarginLeft ),
 			};
 			Float sides[4] = { margin.Top, margin.Right, margin.Bottom, margin.Left };
 			for ( int i = 0; i < 4; i++ ) {
@@ -1542,21 +1581,7 @@ void FlexLayouter::computeIntrinsicWidths() {
 			margin.Left = sides[3];
 		}
 
-		if ( mainAxis.horizontal ) {
-			item.hasAutoMarginMainStart = item.widget->hasLayoutMarginLeftAuto();
-			item.hasAutoMarginMainEnd = item.widget->hasLayoutMarginRightAuto();
-			item.marginMainStart = item.hasAutoMarginMainStart ? 0.f : margin.Left;
-			item.marginMainEnd = item.hasAutoMarginMainEnd ? 0.f : margin.Right;
-			item.marginCrossStart = margin.Top;
-			item.marginCrossEnd = margin.Bottom;
-		} else {
-			item.hasAutoMarginMainStart = item.widget->hasLayoutMarginTopAuto();
-			item.hasAutoMarginMainEnd = item.widget->hasLayoutMarginBottomAuto();
-			item.marginMainStart = item.hasAutoMarginMainStart ? 0.f : margin.Top;
-			item.marginMainEnd = item.hasAutoMarginMainEnd ? 0.f : margin.Bottom;
-			item.marginCrossStart = margin.Left;
-			item.marginCrossEnd = margin.Right;
-		}
+		assignItemMargins( item, margin, mainAxis, getCrossAxis( mDirection ) );
 	}
 
 	const Rectf containerPadding = mContainer->getPixelsContentOffset();

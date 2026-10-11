@@ -901,7 +901,26 @@ void UIWindow::fixChildrenSize() {
 		}
 	}
 
+	// Custom window chrome mirrors in RTL: the button group moves to the left edge with the
+	// close button outermost. Native decorations follow the platform instead.
+	if ( isRTL() ) {
+		const Float decorationWidth = mWindowDecoration->getPixelsSize().getWidth();
+		for ( UIWidget* button : { mButtonClose, mButtonMaximize, mButtonMinimize } ) {
+			if ( NULL != button ) {
+				button->setPixelsPosition( decorationWidth - button->getPixelsPosition().x -
+											   button->getPixelsSize().getWidth(),
+										   button->getPixelsPosition().y );
+			}
+		}
+	}
+
 	fixTitleSize();
+}
+
+void UIWindow::onDirectionChanged() {
+	UIWidget::onDirectionChanged();
+	if ( NULL != mWindowDecoration )
+		fixChildrenSize();
 }
 
 Uint32 UIWindow::onMessage( const NodeMessage* Msg ) {
@@ -1313,7 +1332,7 @@ UIWindow* UIWindow::setTitle( const String& text ) {
 		mTitle->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		mTitle->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mTitle->setParent( this );
-		mTitle->setHorizontalAlign( getHorizontalAlign() );
+		mTitle->setHorizontalAlignment( getHorizontalAlignment() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
 		mTitle->setEnabled( false );
 		mTitle->setClipType( ClipType::ContentBox );

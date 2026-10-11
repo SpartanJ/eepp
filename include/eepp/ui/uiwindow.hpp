@@ -308,6 +308,8 @@ class EE_API UIWindow : public UIWidget {
 
 	void fixChildrenSize();
 
+	virtual void onDirectionChanged();
+
 	void doResize( const NodeMessage* Msg );
 
 	void decideResizeType( Node* node );

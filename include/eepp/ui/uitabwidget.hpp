@@ -304,6 +304,10 @@ class EE_API UITabWidget : public UIWidget {
 
 	void updateScrollBar();
 
+	Float getTabsExtent() const;
+
+	virtual void onDirectionChanged();
+
 	void updateScroll( bool updateFocus = false );
 
 	void updateTabSelected( FocusTabBehavior tabBehavior );

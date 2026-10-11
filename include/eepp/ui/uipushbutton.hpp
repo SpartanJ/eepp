@@ -135,6 +135,10 @@ class EE_API UIPushButton : public UIWidget {
 
 	Vector2f calcLayoutSize( const std::array<UIWidget*, 3>& widgets, const Rectf& padding ) const;
 
+	std::array<UIWidget*, 3> inlineOrder( const std::array<UIWidget*, 3>& widgets ) const;
+
+	virtual void onDirectionChanged();
+
 	bool mustBeVisible() const;
 };
 

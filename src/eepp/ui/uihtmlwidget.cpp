@@ -1326,6 +1326,10 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::MarginRight:
 		case PropertyId::MarginBottom:
 		case PropertyId::MarginLeft: {
+			// A winning flow-relative declaration owns the edge; the losing physical value must
+			// not update the percentage bookkeeping either.
+			if ( isPhysicalEdgeOverriddenByLogical( attribute ) )
+				return true;
 			Uint8 marginBit = 0;
 			switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 				case PropertyId::MarginTop:
@@ -1359,6 +1363,8 @@ bool UIHTMLWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::BorderRightWidth:
 		case PropertyId::BorderTopWidth:
 		case PropertyId::BorderBottomWidth: {
+			if ( isPhysicalEdgeOverriddenByLogical( attribute ) )
+				return true;
 			bool applied = UILayout::applyProperty( attribute );
 			updateCSSContentBoxFixedSize();
 			return applied;
@@ -1626,7 +1632,7 @@ void UIHTMLWidget::updateOutOfFlowPosition() {
 														bool bothInsetsApply ) {
 		if ( bothInsetsApply || !getUIStyle() )
 			return;
-		const auto* marginProperty = getUIStyle()->getProperty( property );
+		const auto* marginProperty = getBoxEdgeProperty( property );
 		if ( marginProperty && marginProperty->value() == "auto" )
 			marginValue = 0;
 	};
@@ -1874,9 +1880,13 @@ void UIHTMLWidget::onParentSizeChange( const Vector2f& sizeChange ) {
 		if ( !( mPercentageMargins & ( 1 << i ) ) )
 			continue;
 		PropertyId propertyId = MarginProperties[i];
-		const StyleSheetProperty* property = getUIStyle()->getProperty( propertyId );
-		if ( property )
+		const StyleSheetProperty* property = getBoxEdgeProperty( propertyId );
+		if ( property && property->getPropertyId() != propertyId ) {
+			// A flow-relative declaration owns this edge.
+			resolveLogicalBoxEdges();
+		} else if ( property ) {
 			applyProperty( *property );
+		}
 	}
 }
 

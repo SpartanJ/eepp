@@ -250,37 +250,19 @@ const bool& UIRadioButton::isActive() const {
 }
 
 void UIRadioButton::onPaddingChange() {
-	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
-	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
 	alignFix();
 	UITextView::onPaddingChange();
 }
 
+void UIRadioButton::onDirectionChanged() {
+	UITextView::onDirectionChanged();
+	alignFix();
+}
+
 void UIRadioButton::alignFix() {
 	UITextView::alignFix();
-
-	mActiveButton->centerVertical();
-	mInactiveButton->centerVertical();
-
-	switch ( Font::getHorizontalAlign( getFlags() ) ) {
-		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right -
-													 mTextCache.getTextWidth() -
-													 mActiveButton->getPixelsSize().getWidth() +
-													 PixelDensity::dpToPx( mTextSeparation ) ) /
-												   2.f ) ) +
-								 mActiveButton->getPixelsSize().getWidth() +
-								 PixelDensity::dpToPx( mTextSeparation );
-			break;
-		case UI_HALIGN_RIGHT:
-			mRealAlignOffset.x = ( (Float)mSize.x - mPaddingPx.Left - mPaddingPx.Right -
-								   (Float)mTextCache.getTextWidth() );
-			break;
-		case UI_HALIGN_LEFT:
-			mRealAlignOffset.x =
-				mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
-			break;
-	}
+	alignWithInlineStartIndicator( mActiveButton, mInactiveButton,
+								   PixelDensity::dpToPx( mTextSeparation ) );
 }
 
 UIWidget* UIRadioButton::getActiveButton() const {

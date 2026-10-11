@@ -42,6 +42,7 @@ UITextInput::UITextInput( const std::string& tag ) :
 	mKeyBindings( getInput() ) {
 	mHintCache = Text::New();
 	mHintCache->setTextHints( getTextHints() );
+	mHintCache->setDirection( getTextBaseDirection() );
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
@@ -396,6 +397,11 @@ void UITextInput::updateFontStyleConfig() {
 		mPassCache->setOutlineColor( mFontStyleConfig.getOutlineColor() );
 		mPassCache->setOutlineThickness( mFontStyleConfig.getOutlineThickness() );
 	}
+}
+
+void UITextInput::onDirectionChanged() {
+	UITextView::onDirectionChanged();
+	mHintCache->setDirection( getTextBaseDirection() );
 }
 
 void UITextInput::onFontChanged() {

@@ -86,6 +86,10 @@ class EE_API UIMenuBar : public UIWidget {
 
 	virtual void onParentChange();
 
+	virtual void onDirectionChanged();
+
+	virtual void onSizeChange();
+
 	virtual void onPaddingChange();
 
 	bool isPopUpMenuChild( Node* node );

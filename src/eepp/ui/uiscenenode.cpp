@@ -1341,6 +1341,15 @@ UIWidget* UISceneNode::getRoot() const {
 	return mRoot;
 }
 
+void UISceneNode::setDirection( UIDirection direction ) {
+	if ( mRoot )
+		mRoot->setDirection( direction );
+}
+
+UIDirection UISceneNode::getDirection() const {
+	return mRoot ? mRoot->getDirection() : UIDirection::LeftToRight;
+}
+
 template <typename DirtyContainer>
 static bool hasDirtyWidgetAncestor( const UIWidget* node, const DirtyContainer& dirty ) {
 	Node* parent = node->getParent();

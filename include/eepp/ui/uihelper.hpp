@@ -162,7 +162,9 @@ enum class UIOrientation : Uint32 { Vertical, Horizontal };
 
 enum class SizePolicy : Uint32 { Fixed, MatchParent, WrapContent };
 
-enum class PositionPolicy : Uint32 { None, LeftOf, RightOf, TopOf, BottomOf };
+// LeftOf/RightOf are physical. StartOf/EndOf are logical and resolve against the widget's UI
+// direction. They are appended to keep the numeric values of the physical policies stable.
+enum class PositionPolicy : Uint32 { None, LeftOf, RightOf, TopOf, BottomOf, StartOf, EndOf };
 
 enum class UIScaleType : Uint32 { None, Expand, FitInside };
 

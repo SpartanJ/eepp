@@ -23,6 +23,8 @@ class StyleSheet;
 
 namespace EE { namespace UI {
 
+using namespace EE::UI::CSS;
+
 class UIWidget;
 
 class EE_API UIStyle : public UIState {
@@ -42,26 +44,25 @@ class EE_API UIStyle : public UIState {
 
 	void onStateChange();
 
-	const CSS::StyleSheetProperty*
-	getStatelessStyleSheetProperty( const CSS::PropertyId& propertyId ) const;
+	const StyleSheetProperty* getStatelessStyleSheetProperty( const PropertyId& propertyId ) const;
 
-	void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
+	void setStyleSheetProperties( const StyleSheetProperties& properties );
 
-	void setStyleSheetProperty( const CSS::StyleSheetProperty& property );
+	void setStyleSheetProperty( const StyleSheetProperty& property );
 
-	void setStyleSheetVariable( const CSS::StyleSheetVariable& variable );
+	void setStyleSheetVariable( const StyleSheetVariable& variable );
 
 	bool hasTransition( const std::string& propertyName );
 
-	CSS::StyleSheetPropertyAnimation* getAnimation( const CSS::PropertyDefinition* propertyDef );
+	StyleSheetPropertyAnimation* getAnimation( const PropertyDefinition* propertyDef );
 
-	bool hasAnimation( const CSS::PropertyDefinition* propertyDef );
+	bool hasAnimation( const PropertyDefinition* propertyDef );
 
-	CSS::TransitionDefinition getTransition( const std::string& propertyName );
+	TransitionDefinition getTransition( const std::string& propertyName );
 
 	const bool& isChangingState() const;
 
-	CSS::StyleSheetVariable getVariable( const std::string& variable );
+	StyleSheetVariable getVariable( const std::string& variable );
 
 	/** Resolve a color variable without copying its stored text. */
 	Color getColorVariable( const std::string& variable, Color fallback );
@@ -84,14 +85,14 @@ class EE_API UIStyle : public UIState {
 
 	UnorderedSet<UIWidget*>& getStructurallyVolatileChildren();
 
-	const CSS::StyleSheetProperty* getProperty( const CSS::PropertyId& id ) const;
+	const StyleSheetProperty* getProperty( const PropertyId& id ) const;
 
-	bool hasProperty( const CSS::PropertyId& propertyId ) const;
+	bool hasProperty( const PropertyId& propertyId ) const;
 
-	bool hasLocalProperty( CSS::PropertyId propId ) const;
+	bool hasLocalProperty( PropertyId propId ) const;
 
-	CSS::StyleSheetProperty* getInheritedProperty( CSS::PropertyId propId,
-												   UIStyle** ownerStyle = nullptr ) const;
+	StyleSheetProperty* getInheritedProperty( PropertyId propId,
+											  UIStyle** ownerStyle = nullptr ) const;
 
 	void resetGlobalDefinition( bool force = false );
 
@@ -99,9 +100,21 @@ class EE_API UIStyle : public UIState {
 
 	void applyInheritedProperties();
 
-	const std::shared_ptr<CSS::ElementDefinition> getDefinition() const { return mDefinition; }
+	const std::shared_ptr<ElementDefinition> getDefinition() const { return mDefinition; }
 
-	void applyVarValues( CSS::StyleSheetProperty* style );
+	void applyVarValues( StyleSheetProperty* style );
+
+	/**
+	 * @return The declaration that currently wins the cascade for @p propId in the widget's
+	 * current state (element style or matched rules), without var() substitution.
+	 */
+	const StyleSheetProperty* getCascadedProperty( PropertyId propId ) {
+		return getLocalProperty( propId );
+	}
+
+	/** Compares declarations of different IDs that map to the same computed edge. Rule order
+	 * follows stylesheet attachment order; declaration order only breaks ties within a rule. */
+	bool declarationWins( const StyleSheetProperty& candidate, const StyleSheetProperty& other );
 
 	/** @return Widgets whose styles are refreshed when this widget changes state. */
 	const UnorderedSet<UIWidget*>& getRelatedWidgets() const { return mRelatedWidgets; }
@@ -115,43 +128,43 @@ class EE_API UIStyle : public UIState {
 		PropertyResolution& operator=( PropertyResolution&& ) = delete;
 		~PropertyResolution();
 
-		const CSS::StyleSheetProperty* get() const { return mProperty; }
+		const StyleSheetProperty* get() const { return mProperty; }
 
 	  private:
 		friend class UIStyle;
 		static constexpr Uint32 NoSlot = static_cast<Uint32>( -1 );
 
-		PropertyResolution( UIStyle* owner, const CSS::StyleSheetProperty* property,
+		PropertyResolution( UIStyle* owner, const StyleSheetProperty* property,
 							Uint32 slot = NoSlot ) :
 			mOwner( owner ), mProperty( property ), mSlot( slot ) {}
 
 		void release();
 
 		UIStyle* mOwner;
-		const CSS::StyleSheetProperty* mProperty;
+		const StyleSheetProperty* mProperty;
 		Uint32 mSlot;
 	};
 
 	UIWidget* mWidget;
-	std::shared_ptr<CSS::StyleSheetStyle> mElementStyle;
-	std::shared_ptr<CSS::ElementDefinition> mGlobalDefinition;
-	std::shared_ptr<CSS::ElementDefinition> mDefinition;
-	CSS::AnimationsMap mAnimations;
+	std::shared_ptr<StyleSheetStyle> mElementStyle;
+	std::shared_ptr<ElementDefinition> mGlobalDefinition;
+	std::shared_ptr<ElementDefinition> mDefinition;
+	AnimationsMap mAnimations;
 	UnorderedSet<UIWidget*> mRelatedWidgets;
 	UnorderedSet<UIWidget*> mSubscribedWidgets;
 	UnorderedSet<UIWidget*> mStructurallyVolatileChildren;
 	Uint32 mStateDepthCounter{ 0 };
 	Uint32 mPropertyResolutionDepth{ 0 };
 	Uint64 mLoadedVersion{ 0 };
-	const CSS::StyleSheet* mLoadedStyleSheet{ nullptr };
+	const StyleSheet* mLoadedStyleSheet{ nullptr };
 	/** Lazily allocated for styles that use substitutions. The common, non-reentrant resolution
 	 * needs no container allocation; nested slots are retained for later reuse. */
-	std::unique_ptr<CSS::StyleSheetProperty> mPropertyResolutionSlot;
-	SmallVector<std::unique_ptr<CSS::StyleSheetProperty>, 2> mNestedPropertyResolutionSlots;
+	std::unique_ptr<StyleSheetProperty> mPropertyResolutionSlot;
+	SmallVector<std::unique_ptr<StyleSheetProperty>, 2> mNestedPropertyResolutionSlots;
 	struct PropertyFallback {
-		CSS::PropertyId propertyId;
+		PropertyId propertyId;
 		Uint32 index;
-		const CSS::PropertyDefinition* definition;
+		const PropertyDefinition* definition;
 		std::string nativeValue;
 		bool inherited;
 	};
@@ -163,13 +176,13 @@ class EE_API UIStyle : public UIState {
 
 	explicit UIStyle( UIWidget* widget );
 
-	void applyLightDarkValues( CSS::StyleSheetProperty* style );
+	void applyLightDarkValues( StyleSheetProperty* style );
 
 	void applyLightDarkValue( std::string& newValue );
 
-	const CSS::StyleSheetVariable* getVariableRef( const std::string& variable );
+	const StyleSheetVariable* getVariableRef( const std::string& variable );
 
-	void setVariableFromValue( CSS::StyleSheetProperty* property );
+	void setVariableFromValue( StyleSheetProperty* property );
 
 	void updateState();
 
@@ -185,36 +198,36 @@ class EE_API UIStyle : public UIState {
 
 	void removeRelatedWidgets();
 
-	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
-								  std::shared_ptr<CSS::ElementDefinition> prevDefinition,
+	void applyStyleSheetProperty( const StyleSheetProperty& property,
+								  std::shared_ptr<ElementDefinition> prevDefinition,
 								  bool captureFallback = true );
 
-	void capturePropertyFallback( const CSS::StyleSheetProperty& property );
+	void capturePropertyFallback( const StyleSheetProperty& property );
 
-	bool isTransientProperty( CSS::PropertyId propertyId ) const;
+	bool isTransientProperty( PropertyId propertyId ) const;
 
-	bool restorePropertyFallbacks( CSS::PropertyId propertyId,
-								   std::shared_ptr<CSS::ElementDefinition> prevDefinition,
+	bool restorePropertyFallbacks( PropertyId propertyId,
+								   std::shared_ptr<ElementDefinition> prevDefinition,
 								   Uint32 firstIndex = 0 );
 
-	void clearPropertyFallbacks( CSS::PropertyId propertyId );
+	void clearPropertyFallbacks( PropertyId propertyId );
 
 	void updateAnimationsPlayState();
 
 	void updateAnimations();
 
-	void startAnimations( const CSS::AnimationsMap& animations );
+	void startAnimations( const AnimationsMap& animations );
 
 	void removeAllAnimations();
 
-	void removeAnimation( const CSS::PropertyDefinition* propertyDefinition,
+	void removeAnimation( const PropertyDefinition* propertyDefinition,
 						  const Uint32& propertyIndex );
 
-	CSS::StyleSheetProperty* getLocalProperty( CSS::PropertyId propId );
+	StyleSheetProperty* getLocalProperty( PropertyId propId );
 
-	PropertyResolution resolveProperty( const CSS::StyleSheetProperty* property );
+	PropertyResolution resolveProperty( const StyleSheetProperty* property );
 
-	PropertyResolution getResolvedLocalProperty( CSS::PropertyId propId );
+	PropertyResolution getResolvedLocalProperty( PropertyId propId );
 
 	void addStructurallyVolatileWidgetFromParent();
 

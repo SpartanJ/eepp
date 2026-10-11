@@ -42,7 +42,8 @@ UINode::UINode() :
 	mBorder( NULL ),
 	mSkinColor( Color::White ),
 	mUISceneNode( SceneManager::instance()->getUISceneNode() ) {
-	mNodeFlags |= NODE_FLAG_UINODE | NODE_FLAG_OVER_FIND_ALLOWED;
+	mNodeFlags |=
+		NODE_FLAG_UINODE | NODE_FLAG_OVER_FIND_ALLOWED | NODE_FLAG_PROVIDES_PARENT_TREE_CONTEXT;
 
 	if ( NULL != mUISceneNode && NULL != mUISceneNode->getRoot() )
 		setParent( (Node*)mUISceneNode->getRoot() );
@@ -686,6 +687,7 @@ Uint32 UINode::getHorizontalAlign() const {
 }
 
 UINode* UINode::setHorizontalAlign( Uint32 halign ) {
+	setLogicalAlignSlot( LogicalAlignSlot::Gravity, UIHorizontalAlignment::Left );
 	mFlags &= ~UI_HALIGN_MASK;
 	mFlags |= halign & UI_HALIGN_MASK;
 
@@ -706,6 +708,7 @@ UINode* UINode::setVerticalAlign( Uint32 valign ) {
 }
 
 UINode* UINode::setGravity( Uint32 hvalign ) {
+	setLogicalAlignSlot( LogicalAlignSlot::Gravity, UIHorizontalAlignment::Left );
 	mFlags &= ~( UI_VALIGN_MASK | UI_HALIGN_MASK );
 	mFlags |= ( hvalign & ( UI_VALIGN_MASK | UI_HALIGN_MASK ) );
 
@@ -989,6 +992,11 @@ UINode* UINode::setFlags( const Uint64& flags ) {
 
 	mFlags |= flags;
 
+	// Setting physical alignment bits replaces a logical (start/end) alignment. UI_HALIGN_LEFT
+	// is zero and therefore undetectable here; setHorizontalAlign() handles it.
+	if ( Font::getHorizontalAlign( flags ) )
+		setLogicalAlignSlot( LogicalAlignSlot::Gravity, UIHorizontalAlignment::Left );
+
 	if ( Font::getHorizontalAlign( flags ) || Font::getVerticalAlign( flags ) ) {
 		onAlignChange();
 	}
@@ -997,6 +1005,8 @@ UINode* UINode::setFlags( const Uint64& flags ) {
 }
 
 UINode* UINode::unsetFlags( const Uint64& flags ) {
+	if ( flags & UI_HALIGN_MASK )
+		setLogicalAlignSlot( LogicalAlignSlot::Gravity, UIHorizontalAlignment::Left );
 	if ( mFlags & flags )
 		mFlags &= ~flags;
 
@@ -1008,6 +1018,7 @@ UINode* UINode::unsetFlags( const Uint64& flags ) {
 }
 
 UINode* UINode::resetFlags( Uint64 newFlags ) {
+	setLogicalAlignSlot( LogicalAlignSlot::Gravity, UIHorizontalAlignment::Left );
 	mFlags = newFlags;
 	return this;
 }
@@ -1320,6 +1331,166 @@ void UINode::onEnabledChange() {
 
 void UINode::onAlignChange() {
 	invalidateDraw();
+}
+
+UINode* UINode::setHorizontalAlignment( UIHorizontalAlignment alignment ) {
+	const Uint32 physical = resolveHorizontalAlignment( alignment, getDirection() );
+	const bool changed = ( mFlags & UI_HALIGN_MASK ) != physical;
+	setLogicalAlignSlot( LogicalAlignSlot::Gravity, alignment );
+	mFlags &= ~UI_HALIGN_MASK;
+	mFlags |= physical;
+	if ( changed )
+		onAlignChange();
+	return this;
+}
+
+UIHorizontalAlignment UINode::getHorizontalAlignment() const {
+	UIHorizontalAlignment logical = getLogicalAlignSlot( LogicalAlignSlot::Gravity );
+	return isLogicalAlignment( logical ) ? logical : horizontalAlignmentFromFlags( mFlags );
+}
+
+UIHorizontalAlignment UINode::getLogicalAlignSlot( LogicalAlignSlot slot ) const {
+	const Uint8 shift = static_cast<Uint8>( slot ) * LogicalAlignSlotBits;
+	switch ( ( mLogicalAlign >> shift ) & LogicalAlignSlotMask ) {
+		case 1:
+			return UIHorizontalAlignment::Start;
+		case 2:
+			return UIHorizontalAlignment::End;
+		default:
+			return UIHorizontalAlignment::Left;
+	}
+}
+
+void UINode::setLogicalAlignSlot( LogicalAlignSlot slot, UIHorizontalAlignment alignment ) {
+	const Uint8 shift = static_cast<Uint8>( slot ) * LogicalAlignSlotBits;
+	Uint8 value = 0;
+	if ( alignment == UIHorizontalAlignment::Start )
+		value = 1;
+	else if ( alignment == UIHorizontalAlignment::End )
+		value = 2;
+	mLogicalAlign = ( mLogicalAlign & ~( LogicalAlignSlotMask << shift ) ) | ( value << shift );
+}
+
+bool UINode::resolveLogicalAlignSlot( LogicalAlignSlot slot, Uint32& physical ) {
+	const UIHorizontalAlignment logical = getLogicalAlignSlot( slot );
+	if ( !isLogicalAlignment( logical ) )
+		return false;
+	const Uint32 current = physical & UI_HALIGN_MASK;
+	if ( current != resolveHorizontalAlignment( logical, UIDirection::LeftToRight ) &&
+		 current != resolveHorizontalAlignment( logical, UIDirection::RightToLeft ) ) {
+		setLogicalAlignSlot( slot, UIHorizontalAlignment::Left );
+		return false;
+	}
+	physical = resolveHorizontalAlignment( logical, getDirection() );
+	return true;
+}
+
+UINode* UINode::setDirection( UIDirection direction ) {
+	return setDirectionOverride( direction == UIDirection::RightToLeft
+									 ? UIDirectionValue::RightToLeft
+									 : UIDirectionValue::LeftToRight );
+}
+
+UINode* UINode::setDirectionOverride( UIDirectionValue direction ) {
+	if ( getDirectionOverride() == direction )
+		return this;
+	mDirectionState = ( mDirectionState & ~DirectionSpecifiedMask ) |
+					  ( static_cast<Uint8>( direction ) & DirectionSpecifiedMask );
+	refreshEffectiveDirection();
+	return this;
+}
+
+UINode* UINode::clearDirectionOverride() {
+	return setDirectionOverride( UIDirectionValue::Inherit );
+}
+
+TextDirection UINode::getTextBaseDirection() const {
+	return isDirectionExplicit() ? toTextDirection( getDirection() ) : TextDirection::Unspecified;
+}
+
+UINode* UINode::setMirrorOnRTL( bool mirror ) {
+	if ( mirror == isMirroredOnRTL() )
+		return this;
+	if ( mirror )
+		mDirectionState |= DirectionMirrorRequested;
+	else
+		mDirectionState &= ~DirectionMirrorRequested;
+	updateLogicalDirectionState();
+	return this;
+}
+
+void UINode::updateLogicalDirectionState() {
+	Uint32 halign = mFlags & UI_HALIGN_MASK;
+	if ( resolveLogicalAlignSlot( LogicalAlignSlot::Gravity, halign ) &&
+		 halign != ( mFlags & UI_HALIGN_MASK ) ) {
+		mFlags = ( mFlags & ~UI_HALIGN_MASK ) | halign;
+		onAlignChange();
+	}
+
+	const bool wantMirror = isMirroredOnRTL() && isRTL();
+	if ( wantMirror != ( ( mDirectionState & DirectionMirrorApplied ) != 0 ) ) {
+		if ( wantMirror )
+			mDirectionState |= DirectionMirrorApplied;
+		else
+			mDirectionState &= ~DirectionMirrorApplied;
+		setScale( Vector2f( -getScale().x, getScale().y ) );
+	}
+}
+
+void UINode::onDirectionChanged() {
+	invalidateDraw();
+	sendCommonEvent( Event::OnDirectionChange );
+}
+
+void UINode::refreshEffectiveDirection() {
+	Uint8 effective = 0;
+	switch ( getDirectionOverride() ) {
+		case UIDirectionValue::RightToLeft:
+			effective = DirectionEffectiveRTL | DirectionEffectiveExplicit;
+			break;
+		case UIDirectionValue::LeftToRight:
+			effective = DirectionEffectiveExplicit;
+			break;
+		case UIDirectionValue::Inherit:
+		default: {
+			// Direction does not cross scene boundaries: a nested document scene starts from
+			// its own default, as a browser document does inside its embedder.
+			Node* parent = getDirectionParent();
+			while ( parent && !parent->isSceneNode() ) {
+				if ( parent->isUINode() ) {
+					effective = parent->asType<UINode>()->mDirectionState & DirectionEffectiveMask;
+					break;
+				}
+				parent = parent->getParent();
+			}
+			break;
+		}
+	}
+
+	if ( ( mDirectionState & DirectionEffectiveMask ) == effective )
+		return;
+
+	const bool propagationPending = ( mDirectionState & DirectionPropagationPending ) != 0;
+	mDirectionState =
+		( mDirectionState & ~DirectionEffectiveMask ) | effective | DirectionPropagationPending;
+	updateLogicalDirectionState();
+	onDirectionChanged();
+	propagateDirectionToChildren( this );
+	if ( !propagationPending )
+		mDirectionState &= ~DirectionPropagationPending;
+}
+
+void UINode::propagateDirectionToChildren( Node* node ) {
+	Node* child = node->getFirstChild();
+	while ( child ) {
+		if ( child->isUINode() ) {
+			// Children with their own override keep their direction and stop the propagation.
+			child->asType<UINode>()->refreshEffectiveDirection();
+		} else if ( !child->isSceneNode() ) {
+			propagateDirectionToChildren( child );
+		}
+		child = child->getNextNode();
+	}
 }
 
 void UINode::pushState( const Uint32& State, bool emitEvent ) {
@@ -1799,10 +1970,23 @@ Uint32 UINode::onFocusLoss() {
 }
 
 void UINode::onSceneChange() {
+#ifdef EE_DEBUG
+	UISceneNode* previousScene = mUISceneNode;
+#endif
 	Node::onSceneChange();
 	if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
 		mUISceneNode = static_cast<UISceneNode*>( mSceneNode );
 	}
+#ifdef EE_DEBUG
+	// Same-window scene rebinding is an existing supported mechanism for embedded documents.
+	// Cross-window rebinding cannot safely migrate input and native-window dependencies.
+	eeASSERT( !previousScene || !mUISceneNode || previousScene == mUISceneNode ||
+			  previousScene->getWindow() == mUISceneNode->getWindow() );
+#endif
+}
+
+void UINode::onParentTreeChange() {
+	refreshEffectiveDirection();
 }
 
 Float UINode::convertLength( const CSS::StyleSheetLength& length,
@@ -1829,7 +2013,7 @@ Float UINode::convertLength( const CSS::StyleSheetLength& length,
 		elFontSize = getAbsoluteFontSize( asConstType<UIWidget>() );
 	}
 
-	Graphics::Font* font = nullptr;
+	Font* font = nullptr;
 	if ( getUISceneNode() && getUISceneNode()->getUIThemeManager() )
 		font = getUISceneNode()->getUIThemeManager()->getDefaultFont();
 

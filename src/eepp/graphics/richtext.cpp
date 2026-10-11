@@ -4,6 +4,11 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/richtext.hpp>
+#include <eepp/graphics/textlayout.hpp>
+
+#ifdef EE_TEXT_SHAPER_ENABLED
+#include <SheenBidi/SheenBidi.h>
+#endif
 
 namespace EE { namespace Graphics {
 
@@ -527,6 +532,18 @@ static void setInlineItemTextTabWidth( std::vector<RichText::InlineItem>& items,
 	}
 }
 
+static void setInlineItemTextDirection( std::vector<RichText::InlineItem>& items,
+										TextDirection direction ) {
+	for ( auto& item : items ) {
+		if ( item.isTextRun() ) {
+			if ( item.asTextRun().text )
+				item.asTextRun().text->setDirection( direction );
+		} else if ( item.isBox() ) {
+			setInlineItemTextDirection( item.asBox().children, direction );
+		}
+	}
+}
+
 static void setInlineItemTextHints( std::vector<RichText::InlineItem>& items, Uint32 textHints ) {
 	for ( auto& item : items ) {
 		if ( item.isTextRun() ) {
@@ -940,7 +957,8 @@ class RichTextInlineLayouter {
 										Float maxLayoutWidth, Float textIndent, Uint32 align,
 										Float forcedLineHeight, const FontStyleConfig& defaultStyle,
 										bool lineWrap,
-										RichText::WhiteSpaceWrapMode whiteSpaceWrapMode ) {
+										RichText::WhiteSpaceWrapMode whiteSpaceWrapMode,
+										bool rtl = false ) {
 		LayoutResult result;
 		result.lines.push_back( RichText::RenderParagraph() );
 
@@ -1076,8 +1094,16 @@ class RichTextInlineLayouter {
 		}
 
 		Float curY = 0;
-		for ( auto& line : result.lines ) {
+		for ( size_t lineIndex = 0; lineIndex < result.lines.size(); ++lineIndex ) {
+			auto& line = result.lines[lineIndex];
 			line.y = curY;
+			if ( rtl ) {
+				// The first line starts after text-indent. Mirroring the whole line box keeps the
+				// indentation on the inline-start (right) side.
+				const Float indent = lineIndex == 0 ? textIndent : 0.f;
+				applyRightToLeftLineOrder( line, 0.f, indent + line.width );
+				line.width += indent;
+			}
 			Float xOffset = horizontalAlignmentOffset( line, maxLayoutWidth, align );
 			alignLineSpans( line, xOffset, defaultStyle, forcedLineHeight, false, inlineItems );
 			curY += line.height;
@@ -1094,7 +1120,7 @@ class RichTextInlineLayouter {
 					  const FontStyleConfig& defaultStyle,
 					  const std::vector<RichText::FloatExclusion>& externalFloatExclusions,
 					  std::vector<RichText::FloatExclusion>& localFloatExclusions, bool lineWrap,
-					  RichText::WhiteSpaceWrapMode whiteSpaceWrapMode ) {
+					  RichText::WhiteSpaceWrapMode whiteSpaceWrapMode, bool rtl = false ) {
 		LayoutResult result;
 		result.lines.push_back( RichText::RenderParagraph() );
 
@@ -1485,6 +1511,15 @@ class RichTextInlineLayouter {
 			if ( line.y > accumY )
 				accumY = line.y;
 			line.y = accumY;
+
+			if ( rtl ) {
+				// Lines placed between floats only mirror within their in-flow content extent,
+				// so they never move into the area excluded by a float.
+				Float start = 0.f;
+				Float end = 0.f;
+				if ( getInFlowExtent( line, start, end ) )
+					applyRightToLeftLineOrder( line, start, end );
+			}
 
 			Float xOffset = horizontalAlignmentOffset( line, maxLayoutWidth, align );
 			alignLineSpans( line, xOffset, defaultStyle, forcedLineHeight, true, inlineItems );
@@ -1984,6 +2019,7 @@ class RichTextInlineLayouter {
 		renderSpanText->setStyleConfig( renderStyle );
 		renderSpanText->setTabWidth( payload.text->getTabWidth() );
 		renderSpanText->setTextHints( payload.text->getTextHints() & TextHints::OpenTypeFeatures );
+		renderSpanText->setDirection( payload.text->getDirection() );
 
 		Float height = getTextVisualLineHeight( payload.text, payload.lineHeight );
 		Float lineHeight = getTextRunLineHeight( payload.text, payload.lineHeight );
@@ -2056,6 +2092,124 @@ class RichTextInlineLayouter {
 
 		curX += metrics.size.getWidth();
 		line.width += metrics.size.getWidth();
+	}
+
+	static bool getInFlowExtent( const RichText::RenderParagraph& line, Float& start, Float& end ) {
+		bool found = false;
+		for ( const auto& span : line.spans ) {
+			if ( span.floatType != RichText::InlineFloat::None )
+				continue;
+			const Float spanEnd = span.position.x + span.size.getWidth();
+			if ( !found ) {
+				start = span.position.x;
+				end = spanEnd;
+				found = true;
+			} else {
+				start = std::min( start, span.position.x );
+				end = std::max( end, spanEnd );
+			}
+		}
+		return found;
+	}
+
+	// Resolve the inline stream with the same bidi engine used by TextLayout. Numbers are weak
+	// types with even resolved levels, not neutral objects. Resolve context across style spans
+	// before applying L2; a formatting boundary must not reverse a numeric sequence. Placement
+	// still operates at inline-item granularity; text inside a mixed item owns its own shaping.
+	static void applyRightToLeftLineOrder( RichText::RenderParagraph& line, Float regionStart,
+										   Float regionEnd ) {
+		const size_t count = line.spans.size();
+		if ( count == 0 )
+			return;
+		SmallVector<Uint8, 32> levels( count, 1 );
+#ifdef EE_TEXT_SHAPER_ENABLED
+		SmallVector<String::StringBaseType, 64> characters;
+		SmallVector<size_t, 32> offsets;
+		for ( const auto& span : line.spans ) {
+			offsets.push_back( characters.size() );
+			if ( span.floatType != RichText::InlineFloat::None )
+				continue;
+			if ( span.type == RichText::RenderSpan::Type::Text && span.text ) {
+				for ( const auto ch : span.text->getString() )
+					characters.push_back( ch );
+			} else {
+				characters.push_back( U'\uFFFC' );
+			}
+		}
+		if ( !characters.empty() ) {
+			const SBCodepointSequence sequence{ SBStringEncodingUTF32, characters.data(),
+												characters.size() };
+			const auto algorithm = SBAlgorithmCreate( &sequence );
+			const auto paragraph = SBAlgorithmCreateParagraph( algorithm, 0, characters.size(), 1 );
+			if ( paragraph ) {
+				const SBLevel* resolved = SBParagraphGetLevelsPtr( paragraph );
+				const size_t paragraphLength = SBParagraphGetLength( paragraph );
+				for ( size_t i = 0; i < count; ++i ) {
+					const size_t end = i + 1 < count ? offsets[i + 1] : characters.size();
+					if ( offsets[i] >= end || offsets[i] >= paragraphLength )
+						continue;
+					levels[i] = resolved[offsets[i]];
+					for ( size_t j = offsets[i]; j < end && j < paragraphLength; ++j ) {
+						const auto type = SBCodepointGetBidiType( characters[j] );
+						if ( type == SBBidiTypeL || type == SBBidiTypeR || type == SBBidiTypeAL ||
+							 type == SBBidiTypeEN || type == SBBidiTypeAN ) {
+							levels[i] = resolved[j];
+							break;
+						}
+					}
+				}
+				SBParagraphRelease( paragraph );
+			}
+			SBAlgorithmRelease( algorithm );
+		}
+#else
+		// Without the optional shaping backend retain simple directional item placement.
+		for ( size_t i = 0; i < count; ++i ) {
+			const auto& span = line.spans[i];
+			if ( !span.text )
+				continue;
+			const auto direction =
+				TextLayout::getFirstStrongDirection( span.text->getString().view() );
+			if ( direction == TextDirection::LeftToRight )
+				levels[i] = 2;
+			else if ( direction == TextDirection::Unspecified ) {
+				for ( const auto ch : span.text->getString() ) {
+					if ( ch >= U'0' && ch <= U'9' ) {
+						levels[i] = 2;
+						break;
+					}
+				}
+			}
+		}
+#endif
+		Uint8 highestLevel = 1;
+		for ( const auto level : levels )
+			highestLevel = std::max( highestLevel, level );
+		for ( int level = highestLevel; level >= 1; --level ) {
+			size_t i = 0;
+			while ( i < count ) {
+				if ( levels[i] < level || line.spans[i].floatType != RichText::InlineFloat::None ) {
+					++i;
+					continue;
+				}
+				size_t end = i;
+				Float startX = line.spans[i].position.x;
+				Float endX = startX + line.spans[i].size.getWidth();
+				while ( end + 1 < count && levels[end + 1] >= level &&
+						line.spans[end + 1].floatType == RichText::InlineFloat::None ) {
+					++end;
+					startX = std::min( startX, line.spans[end].position.x );
+					endX = std::max( endX,
+									 line.spans[end].position.x + line.spans[end].size.getWidth() );
+				}
+				const Float axis = level == 1 ? regionStart + regionEnd : startX + endX;
+				for ( size_t k = i; k <= end; ++k ) {
+					auto& span = line.spans[k];
+					span.position.x = axis - span.position.x - span.size.getWidth();
+				}
+				i = end + 1;
+			}
+		}
 	}
 
 	static bool lineHasInFlowContent( const RichText::RenderParagraph& line ) {
@@ -2211,6 +2365,7 @@ void RichText::addSpanImpl( TextType&& text, const FontStyleConfig& style, const
 	setTextString( *span, std::forward<TextType>( text ) );
 	span->setStyleConfig( style );
 	span->setTabWidth( mTabWidth );
+	span->setDirection( mBaseDirection );
 
 	InlineItem item;
 	InlineItem::Box box;
@@ -2352,6 +2507,7 @@ void RichText::addInlineTextImpl( TextType&& text, const FontStyleConfig& style,
 	run.text->setStyleConfig( style );
 	run.text->setTabWidth( mTabWidth );
 	run.text->setTextHints( mTextHints );
+	run.text->setDirection( mBaseDirection );
 	run.source = source;
 	run.margin = margin;
 	run.padding = padding;
@@ -2456,6 +2612,14 @@ void RichText::setAlign( Uint32 align ) {
 	}
 }
 
+void RichText::setBaseDirection( TextDirection direction ) {
+	if ( mBaseDirection != direction ) {
+		mBaseDirection = direction;
+		setInlineItemTextDirection( mInlineItems, direction );
+		invalidateLayout();
+	}
+}
+
 void RichText::setMaxWidth( Float width ) {
 	if ( mMaxWidth != width ) {
 		mMaxWidth = width;
@@ -2525,9 +2689,9 @@ void RichText::updateLayout() {
 
 	// ─── Inline layouter fast path: no floats or clears ─────────────
 	if ( !hasFloats ) {
-		auto result = RichTextInlineLayouter::layoutNoFloats( mInlineItems, mMaxWidth, mTextIndent,
-															  mAlign, mLineHeight, mDefaultStyle,
-															  mLineWrap, mWhiteSpaceWrapMode );
+		auto result = RichTextInlineLayouter::layoutNoFloats(
+			mInlineItems, mMaxWidth, mTextIndent, mAlign, mLineHeight, mDefaultStyle, mLineWrap,
+			mWhiteSpaceWrapMode, mBaseDirection == TextDirection::RightToLeft );
 		mLines = std::move( result.lines );
 		mLocalFloatExclusions.clear();
 		mSize = result.size;
@@ -2539,7 +2703,8 @@ void RichText::updateLayout() {
 
 	auto result = RichTextInlineLayouter::layoutWithFloats(
 		mInlineItems, mMaxWidth, mTextIndent, mAlign, mLineHeight, mDefaultStyle,
-		mExternalFloatExclusions, mLocalFloatExclusions, mLineWrap, mWhiteSpaceWrapMode );
+		mExternalFloatExclusions, mLocalFloatExclusions, mLineWrap, mWhiteSpaceWrapMode,
+		mBaseDirection == TextDirection::RightToLeft );
 	mLines = std::move( result.lines );
 	mSize = result.size;
 	mTotalCharacterCount = result.totalCharacterCount;

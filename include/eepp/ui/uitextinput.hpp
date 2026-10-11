@@ -199,6 +199,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual void onFontChanged();
 
+	virtual void onDirectionChanged();
+
 	virtual void onFontStyleChanged();
 
 	virtual void onFontColorChanged();

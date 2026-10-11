@@ -103,11 +103,11 @@ mark { background-color: yellow; }
 a, a:link { text-decoration: none; cursor: arrow; }
 a:hover { text-decoration: underline; cursor: hand; }
 
-ul { padding-left: 40dp; list-style-type: disc; }
-ol { padding-left: 40dp; list-style-type: decimal; }
-dd { margin-left: 40dp; }
+ul { padding-inline-start: 40dp; list-style-type: disc; }
+ol { padding-inline-start: 40dp; list-style-type: decimal; }
+dd { margin-inline-start: 40dp; }
 
-summary { cursor: pointer; padding-left: 20dp; list-style-type: disclosure-closed; }
+summary { cursor: pointer; padding-inline-start: 20dp; list-style-type: disclosure-closed; }
 
 form { margin-top: 0em; margin-bottom: 1em; }
 )css";
