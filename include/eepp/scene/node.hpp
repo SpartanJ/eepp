@@ -62,7 +62,7 @@ enum NodeFlags {
 	NODE_FLAG_MOUSEOVER = ( 1 << 7 ),
 	NODE_FLAG_HAS_FOCUS = ( 1 << 8 ),
 	NODE_FLAG_SELECTED = ( 1 << 9 ),
-	NODE_FLAG_DESTROYING = ( 1 << 10 ),
+	NODE_FLAG_PROVIDES_PARENT_TREE_CONTEXT = ( 1 << 10 ),
 	NODE_FLAG_DRAGGING = ( 1 << 11 ),
 	NODE_FLAG_SKIN_OWNER = ( 1 << 12 ),
 	NODE_FLAG_TOUCH_DRAGGING = ( 1 << 13 ),
@@ -1814,7 +1814,7 @@ class EE_API Node : public Transformable {
 	inline bool isClosing() const { return 0 != ( mNodeFlags & NODE_FLAG_CLOSE ); }
 
 	/** Widget teardown has started; its accessibility subtree has already been invalidated. */
-	inline bool isDestroying() const { return 0 != ( mNodeFlags & NODE_FLAG_DESTROYING ); }
+	inline bool isDestroying() const { return mDestroying; }
 
 	/**
 	 * @brief Checks if the node is marked for closure or any node in its parent tree.
@@ -1986,6 +1986,8 @@ class EE_API Node : public Transformable {
 	BlendMode mBlend{ BlendMode::Alpha() };
 	bool mVisible{ true };
 	bool mEnabled{ true };
+	// Keep teardown state separate from the full node flag word; this uses existing padding.
+	bool mDestroying{ false };
 	mutable Polygon2f mPoly;
 	mutable Rectf mWorldBounds;
 	Vector2f mCenter;
@@ -2215,6 +2217,29 @@ class EE_API Node : public Transformable {
 	 * Invalidates the node to trigger layout updates. Called during re-parenting.
 	 */
 	virtual void onParentChange();
+
+	/**
+	 * @brief Refreshes state inherited from the parent tree during re-parenting.
+	 *
+	 * Called before onParentChange() when the inherited context changes, independently of
+	 * whether its override calls the base. Initial attachment and leaves without their own context
+	 * are always notified.
+	 * The default implementation propagates to children within this scene. Derived classes
+	 * may handle descendant propagation themselves and stop it when inherited state is unchanged.
+	 */
+	virtual void onParentTreeChange();
+
+	/** A context with pending descendant updates must never suppress a tree notification. */
+	static constexpr Uint32 ParentTreeContextUnstable = 1u << 31;
+
+	/**
+	 * @return Opaque state inherited by descendants, used to skip unchanged parent-tree updates.
+	 * The default implementation finds the nearest context provider within this scene, or returns
+	 * zero for the scene default. Providers must set NODE_FLAG_PROVIDES_PARENT_TREE_CONTEXT and
+	 * override this getter with all state refreshed by onParentTreeChange(). Include
+	 * ParentTreeContextUnstable while descendants may still hold the previous context.
+	 */
+	virtual Uint32 getParentTreeContext() const;
 
 	/**
 	 * @brief Updates the world polygon and bounds cache.

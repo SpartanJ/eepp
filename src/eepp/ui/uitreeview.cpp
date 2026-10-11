@@ -237,7 +237,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->setClipType( mDisableCellClipping ? ClipType::None : ClipType::ContentBox );
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-	widget->setTextAlign( UI_HALIGN_LEFT );
+	widget->setTextAlignment( UIHorizontalAlignment::Start );
 	widget->setCurIndex( index );
 	bindNavigationClick( widget );
 	if ( index.column() == (Int64)getModel()->treeColumn() ) {
@@ -1012,7 +1012,11 @@ Rectf UITreeViewCell::calculatePadding() const {
 		autoPadding.Left = mPaddingPx.Left;
 	if ( mPaddingPx.Right > autoPadding.Right )
 		autoPadding.Right = mPaddingPx.Right;
-	autoPadding.Left += mIndent;
+	// Indentation grows from the inline-start edge.
+	if ( isRTL() )
+		autoPadding.Right += mIndent;
+	else
+		autoPadding.Left += mIndent;
 	return autoPadding;
 }
 
@@ -1029,6 +1033,8 @@ UITreeViewCell::UITreeViewCell( const std::function<UITextView*( UIPushButton* )
 	mInnerWidgetOrientation = InnerWidgetOrientation::WidgetIconTextBox;
 	auto cb = [this]( const Event* ) { updateLayout(); };
 	mImage = UIImage::NewWithTag( mTag + "::expander" );
+	// Disclosure arrows point toward the inline-end side; mirror them in RTL.
+	mImage->setMirrorOnRTL( true );
 	mImage->setScaleType( UIScaleType::FitInside )
 		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
 		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )

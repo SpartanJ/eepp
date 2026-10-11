@@ -176,6 +176,25 @@ class EE_API StyleSheetProperty {
 
 	const Uint32& getIndex() const;
 
+	/**
+	 * @return The cascade order of the declaration: declarations parsed later have a higher
+	 * value. Zero means unknown (programmatic declarations). Used to break specificity ties
+	 * between properties with different IDs that resolve to the same computed value, such as
+	 * `margin-left` and `margin-inline-start` in a left-to-right context.
+	 */
+	Uint64 getDeclarationOrder() const { return mDeclarationOrder; }
+
+	void setDeclarationOrder( Uint64 order ) { mDeclarationOrder = order & MaxDeclarationOrder; }
+
+	/** Assigns the next process-wide declaration order to this property. */
+	void assignNextDeclarationOrder() { setDeclarationOrder( nextDeclarationOrder() ); }
+
+	/** @return A new process-wide declaration order value (saturates at the field capacity). */
+	static Uint64 nextDeclarationOrder();
+
+	/** Largest declaration order the 59-bit field can store. */
+	static constexpr Uint64 MaxDeclarationOrder = ( Uint64( 1 ) << 59 ) - 1;
+
 	Float asDpDimension( UINode* node, const std::string& defaultValue = "" ) const;
 
 	int asDpDimensionI( UINode* node, const std::string& defaultValue = "" ) const;
@@ -217,15 +236,19 @@ class EE_API StyleSheetProperty {
 
 	std::string mName;
 	String::HashType mNameHash{ 0 };
+	// Reuse the padding after the 32-bit hash so the 64-bit flags/order do not grow the object.
+	Uint32 mIndex{ 0 };
 	std::string mValue;
 	String::HashType mValueHash{ 0 };
 	Int64 mSpecificity{ 0 };
-	Uint32 mIndex{ 0 };
-	bool mVolatile : 1 { false };
-	bool mImportant : 1 { false };
-	bool mIsVarValue : 1 { false };
-	bool mIsLightDarkValue : 1 { false };
-	bool mCachedProperty : 1 { false };
+	// Flags share one 64-bit storage unit with the declaration order. All bit-fields use the
+	// same underlying type so every supported ABI packs them together.
+	Uint64 mVolatile : 1 { false };
+	Uint64 mImportant : 1 { false };
+	Uint64 mIsVarValue : 1 { false };
+	Uint64 mIsLightDarkValue : 1 { false };
+	Uint64 mCachedProperty : 1 { false };
+	Uint64 mDeclarationOrder : 59 { 0 };
 	const PropertyDefinition* mPropertyDefinition{ nullptr };
 	const ShorthandDefinition* mShorthandDefinition{ nullptr };
 	std::vector<StyleSheetProperty> mIndexedProperty;

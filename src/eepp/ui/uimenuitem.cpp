@@ -128,7 +128,8 @@ void UIMenuItem::createShortcutView() {
 		return;
 	mShortcutView = UITextView::NewWithTag( mTag + "::shortcut" );
 	mShortcutView->setParent( this )->setVisible( true )->setEnabled( false );
-	mShortcutView->setFlags( UI_AUTO_SIZE | UI_HALIGN_RIGHT );
+	mShortcutView->setFlags( UI_AUTO_SIZE );
+	mShortcutView->setHorizontalAlignment( UIHorizontalAlignment::End );
 	auto cb = [this]( const Event* ) { onSizeChange(); };
 	mShortcutView->on( Event::OnPaddingChange, cb );
 	mShortcutView->on( Event::OnMarginChange, cb );
@@ -139,9 +140,14 @@ void UIMenuItem::refreshShortcut() {
 	if ( mShortcutView == nullptr )
 		return;
 
-	mShortcutView->setPosition( getSize().getWidth() - mShortcutView->getSize().getWidth() -
-									mShortcutView->getLayoutMargin().Right,
-								0 );
+	// The shortcut belongs to the inline-end edge of the item.
+	if ( isRTL() ) {
+		mShortcutView->setPosition( mShortcutView->getLayoutMargin().Left, 0 );
+	} else {
+		mShortcutView->setPosition( getSize().getWidth() - mShortcutView->getSize().getWidth() -
+										mShortcutView->getLayoutMargin().Right,
+									0 );
+	}
 	mShortcutView->centerVertical();
 }
 

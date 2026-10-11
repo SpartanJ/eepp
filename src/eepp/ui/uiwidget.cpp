@@ -112,6 +112,11 @@ UIWidget::UIWidget( const std::string& tag ) :
 
 	createStyle();
 
+	// UINode resolved its own direction state while attaching to the scene root, before this
+	// class existed. Resolve the widget-level logical state now (only RTL scenes pay for it).
+	if ( hasNonDefaultDirection() )
+		updateLogicalDirectionState();
+
 	if ( NULL != mUISceneNode && !isSceneNodeLoading() && !isLoadingState() ) {
 		mUISceneNode->invalidateStyle( this );
 		mUISceneNode->invalidateStyleState( this, true );
@@ -127,7 +132,7 @@ UIWidget::~UIWidget() {
 		if ( auto* manager = mUISceneNode->getExistingAccessibilityManager() )
 			manager->onWidgetDelete( this );
 	}
-	mNodeFlags |= NODE_FLAG_DESTROYING;
+	mDestroying = true;
 	onClose();
 
 	if ( mUISceneNode && mUISceneNode->getUIEventDispatcher() &&
@@ -616,12 +621,300 @@ Uint32 UIWidget::getLayoutGravity() const {
 }
 
 UIWidget* UIWidget::setLayoutGravity( const Uint32& layoutGravity ) {
+	// This legacy setter is physical, including its zero-valued left component. Callers that
+	// want to retain logical start/end must use setLayoutHorizontalAlignment().
+	setLogicalAlignSlot( LogicalAlignSlot::LayoutGravity, UIHorizontalAlignment::Left );
+
 	if ( mLayoutGravity != layoutGravity ) {
 		mLayoutGravity = layoutGravity;
 		notifyLayoutAttrChange( LayoutInvalidation::Self );
 	}
 
 	return this;
+}
+
+UIWidget* UIWidget::setLayoutHorizontalAlignment( UIHorizontalAlignment alignment ) {
+	setLogicalAlignSlot( LogicalAlignSlot::LayoutGravity, alignment );
+	const Uint32 gravity = ( mLayoutGravity & ~UI_HALIGN_MASK ) |
+						   resolveHorizontalAlignment( alignment, getDirection() );
+	if ( mLayoutGravity != gravity ) {
+		mLayoutGravity = gravity;
+		notifyLayoutAttrChange( LayoutInvalidation::Self );
+	}
+	return this;
+}
+
+UIHorizontalAlignment UIWidget::getLayoutHorizontalAlignment() const {
+	UIHorizontalAlignment logical = getLogicalAlignSlot( LogicalAlignSlot::LayoutGravity );
+	return isLogicalAlignment( logical ) ? logical : horizontalAlignmentFromFlags( mLayoutGravity );
+}
+
+bool UIWidget::applyTextAlignProperty( const StyleSheetProperty& property ) {
+	UIHorizontalAlignment alignment;
+	if ( !UIHorizontalAlignmentHelper::fromString( String::trim( property.value() ), alignment ) )
+		return false;
+	setTextAlignment( alignment );
+	return true;
+}
+
+UIWidget* UIWidget::setTextAlignment( UIHorizontalAlignment alignment ) {
+	setHorizontalAlignment( alignment );
+	return this;
+}
+
+UIHorizontalAlignment UIWidget::getTextAlignment() const {
+	return getHorizontalAlignment();
+}
+
+void UIWidget::updateLogicalDirectionState() {
+	UINode::updateLogicalDirectionState();
+
+	Uint32 halign = mLayoutGravity & UI_HALIGN_MASK;
+	if ( resolveLogicalAlignSlot( LogicalAlignSlot::LayoutGravity, halign ) &&
+		 halign != ( mLayoutGravity & UI_HALIGN_MASK ) ) {
+		mLayoutGravity = ( mLayoutGravity & ~UI_HALIGN_MASK ) | halign;
+		notifyLayoutAttrChange( LayoutInvalidation::Self );
+	}
+
+	if ( mLogicalBox )
+		resolveLogicalBoxEdges();
+}
+
+namespace {
+
+// Logical declaration slots: margin-inline-start, margin-inline-end, padding-inline-start,
+// padding-inline-end. Physical edge slots: margin-left, margin-right, padding-left,
+// padding-right. Group 0 is margin and group 1 is padding in both cases.
+constexpr PropertyId sPhysicalEdgeIds[4] = { PropertyId::MarginLeft, PropertyId::MarginRight,
+											 PropertyId::PaddingLeft, PropertyId::PaddingRight };
+constexpr PropertyId sLogicalEdgeIds[4] = {
+	PropertyId::MarginInlineStart, PropertyId::MarginInlineEnd, PropertyId::PaddingInlineStart,
+	PropertyId::PaddingInlineEnd };
+
+int logicalBoxSlot( PropertyId id ) {
+	switch ( id ) {
+		case PropertyId::MarginInlineStart:
+			return 0;
+		case PropertyId::MarginInlineEnd:
+			return 1;
+		case PropertyId::PaddingInlineStart:
+			return 2;
+		case PropertyId::PaddingInlineEnd:
+			return 3;
+		default:
+			return -1;
+	}
+}
+
+int physicalEdgeSlot( PropertyId id ) {
+	switch ( id ) {
+		case PropertyId::MarginLeft:
+			return 0;
+		case PropertyId::MarginRight:
+			return 1;
+		case PropertyId::PaddingLeft:
+			return 2;
+		case PropertyId::PaddingRight:
+			return 3;
+		default:
+			return -1;
+	}
+}
+
+// Logical slot that maps to a physical edge slot: start maps to left in LTR and right in RTL.
+int logicalSlotForEdge( int edge, bool rtl ) {
+	const int group = edge & ~1;
+	const bool isLeft = ( edge & 1 ) == 0;
+	return group + ( isLeft != rtl ? 0 : 1 );
+}
+
+// CSS cascade between declarations of different properties that resolve to the same computed
+// value: higher specificity wins and, on a tie, the declaration that appears later wins.
+bool declarationWins( UIStyle* style, const StyleSheetProperty& candidate,
+					  const StyleSheetProperty& other ) {
+	if ( style )
+		return style->declarationWins( candidate, other );
+	if ( candidate.getSpecificity() != other.getSpecificity() )
+		return candidate.getSpecificity() > other.getSpecificity();
+	return candidate.getDeclarationOrder() > other.getDeclarationOrder();
+}
+
+} // namespace
+
+struct UIWidget::LogicalBoxEdges {
+	// Styles already own their declarations. Only direct applications and intermediate animation
+	// values need widget-owned copies; never retain pointers into replaceable style definitions.
+	std::unique_ptr<StyleSheetProperty> ownedDeclarations[4];
+	// Native dp value of each physical edge before a logical declaration claimed it, restored
+	// when the claim moves to the opposite edge and no physical declaration remains. Auto margins
+	// need a separate flag because their numeric value may have been assigned by layout.
+	Float fallbacks[4]{};
+	Uint8 claimed{ 0 };
+	Uint8 styled{ 0 };
+	Uint8 fallbackAuto{ 0 };
+
+	const StyleSheetProperty* getDeclaration( UIStyle* style, int slot ) const {
+		if ( ownedDeclarations[slot] )
+			return ownedDeclarations[slot].get();
+		return style && ( styled & ( 1 << slot ) )
+				   ? style->getCascadedProperty( sLogicalEdgeIds[slot] )
+				   : nullptr;
+	}
+};
+
+void UIWidget::applyLogicalBoxProperty( const StyleSheetProperty& property ) {
+	const int slot = logicalBoxSlot( property.getPropertyId() );
+	if ( slot < 0 )
+		return;
+	const auto* cascaded =
+		mStyle ? mStyle->getCascadedProperty( property.getPropertyId() ) : nullptr;
+	if ( mStyle && mStyle->isChangingState() && !cascaded ) {
+		// Rollback restores absence, not a declaration containing the old physical value.
+		if ( mLogicalBox ) {
+			mLogicalBox->ownedDeclarations[slot].reset();
+			mLogicalBox->styled &= ~( 1 << slot );
+			resolveLogicalBoxEdges();
+		}
+		return;
+	}
+	if ( !mLogicalBox )
+		mLogicalBox = std::make_unique<LogicalBoxEdges>();
+	auto& owned = mLogicalBox->ownedDeclarations[slot];
+	if ( cascaded && cascaded->getSpecificity() == property.getSpecificity() &&
+		 cascaded->getDeclarationOrder() == property.getDeclarationOrder() &&
+		 ( cascaded->value() == property.value() ||
+		   ( mStyle->isChangingState() && cascaded->needsValueSubstitution() ) ) ) {
+		// State application can supply a substituted value. Keep its original style declaration
+		// so direction changes can resolve variables again without duplicating the property.
+		owned.reset();
+	} else if ( owned ) {
+		*owned = property;
+	} else {
+		owned = std::make_unique<StyleSheetProperty>( property );
+	}
+	if ( cascaded )
+		mLogicalBox->styled |= 1 << slot;
+	resolveLogicalBoxEdges();
+}
+
+bool UIWidget::isPhysicalEdgeOverriddenByLogical( const StyleSheetProperty& property ) {
+	if ( !mLogicalBox || mApplyingLogicalEdge )
+		return false;
+	const int edge = physicalEdgeSlot( property.getPropertyId() );
+	if ( edge < 0 )
+		return false;
+	const auto* logical =
+		mLogicalBox->getDeclaration( mStyle, logicalSlotForEdge( edge, isRTL() ) );
+	if ( logical && declarationWins( mStyle, *logical, property ) )
+		return true;
+	// The physical declaration wins: it owns the edge from now on.
+	mLogicalBox->claimed &= ~( 1 << edge );
+	return false;
+}
+
+void UIWidget::resolveLogicalBoxEdges() {
+	if ( !mLogicalBox )
+		return;
+	const bool rtl = isRTL();
+	auto applyEdge = [this]( int edge, const std::string& value, Int64 specificity ) {
+		StyleSheetProperty edgeProperty(
+			StyleSheetSpecification::instance()->getProperty( sPhysicalEdgeIds[edge] ), value );
+		edgeProperty.setSpecificity( specificity );
+		const bool applying = mApplyingLogicalEdge;
+		mApplyingLogicalEdge = true;
+		applyProperty( edgeProperty );
+		mApplyingLogicalEdge = applying;
+	};
+
+	for ( int edge = 0; edge < 4; edge++ ) {
+		const auto* logical =
+			mLogicalBox->getDeclaration( mStyle, logicalSlotForEdge( edge, rtl ) );
+		const StyleSheetProperty* physical =
+			mStyle ? mStyle->getCascadedProperty( sPhysicalEdgeIds[edge] ) : nullptr;
+		const Uint8 bit = 1 << edge;
+
+		if ( logical && ( !physical || declarationWins( mStyle, *logical, *physical ) ) ) {
+			if ( !( mLogicalBox->claimed & bit ) ) {
+				mLogicalBox->claimed |= bit;
+				const Rectf& values = edge < 2 ? getLayoutMargin() : getPadding();
+				mLogicalBox->fallbacks[edge] = ( edge & 1 ) == 0 ? values.Left : values.Right;
+				if ( edge < 2 &&
+					 ( mMarginAuto & ( edge == 0 ? MarginAuto::Left : MarginAuto::Right ) ) ) {
+					mLogicalBox->fallbackAuto |= bit;
+				} else {
+					mLogicalBox->fallbackAuto &= ~bit;
+				}
+			}
+			if ( logical->needsValueSubstitution() && mStyle ) {
+				StyleSheetProperty resolved( *logical );
+				mStyle->applyVarValues( &resolved );
+				applyEdge( edge, resolved.value(), logical->getSpecificity() );
+			} else {
+				applyEdge( edge, logical->value(), logical->getSpecificity() );
+			}
+		} else if ( mLogicalBox->claimed & bit ) {
+			// The logical declaration moved to the opposite edge (direction change): restore the
+			// physical declaration of this edge or the value it had before being claimed.
+			mLogicalBox->claimed &= ~bit;
+			if ( physical && physical->needsValueSubstitution() && mStyle ) {
+				StyleSheetProperty resolved( *physical );
+				mStyle->applyVarValues( &resolved );
+				applyEdge( edge, resolved.value(), physical->getSpecificity() );
+			} else if ( physical ) {
+				applyEdge( edge, physical->value(), physical->getSpecificity() );
+			} else {
+				applyEdge( edge,
+						   ( mLogicalBox->fallbackAuto & bit )
+							   ? "auto"
+							   : String::fromFloat( mLogicalBox->fallbacks[edge], "dp" ),
+						   0 );
+			}
+		}
+	}
+	// A removed state-only declaration must not leave even the small edge block allocated.
+	if ( !mLogicalBox->styled && !mLogicalBox->claimed &&
+		 std::none_of( std::begin( mLogicalBox->ownedDeclarations ),
+					   std::end( mLogicalBox->ownedDeclarations ),
+					   []( const auto& property ) { return property != nullptr; } ) ) {
+		mLogicalBox.reset();
+	}
+}
+
+void UIWidget::refreshLogicalBoxProperties() {
+	if ( !mLogicalBox || !mStyle )
+		return;
+	for ( int slot = 0; slot < 4; ++slot ) {
+		const auto* property = mStyle->getCascadedProperty( sLogicalEdgeIds[slot] );
+		if ( property ) {
+			mLogicalBox->ownedDeclarations[slot].reset();
+			mLogicalBox->styled |= 1 << slot;
+		} else if ( mLogicalBox->styled & ( 1 << slot ) ) {
+			mLogicalBox->ownedDeclarations[slot].reset();
+			mLogicalBox->styled &= ~( 1 << slot );
+		}
+	}
+	resolveLogicalBoxEdges();
+}
+
+const StyleSheetProperty* UIWidget::getBoxEdgeProperty( PropertyId physicalProperty ) const {
+	if ( mLogicalBox ) {
+		const int edge = physicalEdgeSlot( physicalProperty );
+		if ( edge >= 0 && ( mLogicalBox->claimed & ( 1 << edge ) ) ) {
+			const auto* logical =
+				mLogicalBox->getDeclaration( mStyle, logicalSlotForEdge( edge, isRTL() ) );
+			if ( logical )
+				return logical;
+		}
+	}
+	return mStyle ? mStyle->getProperty( physicalProperty ) : nullptr;
+}
+
+void UIWidget::onDirectionChanged() {
+	UINode::onDirectionChanged();
+	// Direction can change the horizontal placement of this widget's children (horizontal flow,
+	// logical gravity of children) and of this widget inside its parent (logical relations).
+	notifyLayoutAttrChange( LayoutInvalidation::ContainerLayout );
+	notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 }
 
 const SizePolicy& UIWidget::getLayoutWidthPolicy() const {
@@ -688,6 +981,17 @@ UIWidget* UIWidget::getLayoutPositionPolicyWidget() const {
 
 PositionPolicy UIWidget::getLayoutPositionPolicy() const {
 	return mLayoutPositionPolicy;
+}
+
+PositionPolicy UIWidget::getResolvedLayoutPositionPolicy() const {
+	switch ( mLayoutPositionPolicy ) {
+		case PositionPolicy::StartOf:
+			return isRTL() ? PositionPolicy::RightOf : PositionPolicy::LeftOf;
+		case PositionPolicy::EndOf:
+			return isRTL() ? PositionPolicy::LeftOf : PositionPolicy::RightOf;
+		default:
+			return mLayoutPositionPolicy;
+	}
 }
 
 UITooltip* UIWidget::createTooltip() {
@@ -2111,6 +2415,12 @@ std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
 			 PropertyId::PaddingTop,
 			 PropertyId::PaddingRight,
 			 PropertyId::PaddingBottom,
+			 PropertyId::MarginInlineStart,
+			 PropertyId::MarginInlineEnd,
+			 PropertyId::PaddingInlineStart,
+			 PropertyId::PaddingInlineEnd,
+			 PropertyId::Direction,
+			 PropertyId::MirrorOnRTL,
 			 PropertyId::BackgroundColor,
 			 PropertyId::BackgroundTint,
 			 PropertyId::ForegroundColor,
@@ -2214,6 +2524,20 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::fromFloat( getPadding().Right, "dp" );
 		case PropertyId::PaddingBottom:
 			return String::fromFloat( getPadding().Bottom, "dp" );
+		case PropertyId::MarginInlineStart:
+			return String::fromFloat( isRTL() ? getLayoutMargin().Right : getLayoutMargin().Left,
+									  "dp" );
+		case PropertyId::MarginInlineEnd:
+			return String::fromFloat( isRTL() ? getLayoutMargin().Left : getLayoutMargin().Right,
+									  "dp" );
+		case PropertyId::PaddingInlineStart:
+			return String::fromFloat( isRTL() ? getPadding().Right : getPadding().Left, "dp" );
+		case PropertyId::PaddingInlineEnd:
+			return String::fromFloat( isRTL() ? getPadding().Left : getPadding().Right, "dp" );
+		case PropertyId::Direction:
+			return UIDirectionHelper::toString( getDirectionOverride() );
+		case PropertyId::MirrorOnRTL:
+			return isMirroredOnRTL() ? "true" : "false";
 		case PropertyId::BackgroundColor:
 			return getBackgroundColor().toHexString();
 		case PropertyId::BackgroundTint:
@@ -2597,39 +2921,16 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setSkinColor( attribute.asColor() );
 			break;
 		case PropertyId::Gravity: {
-			std::string gravity = attribute.asString();
-			String::toLowerInPlace( gravity );
-			std::vector<std::string> strings = String::split( gravity, '|' );
-
-			if ( strings.empty() ) {
-				strings = String::split( gravity, ' ' );
-			}
-
-			if ( !strings.empty() ) {
-				for ( std::size_t i = 0; i < strings.size(); i++ ) {
-					std::string cur = strings[i];
-					String::toLowerInPlace( cur );
-
-					if ( "left" == cur )
-						setHorizontalAlign( UI_HALIGN_LEFT );
-					else if ( "right" == cur )
-						setHorizontalAlign( UI_HALIGN_RIGHT );
-					else if ( "center_horizontal" == cur )
-						setHorizontalAlign( UI_HALIGN_CENTER );
-					else if ( "top" == cur )
-						setVerticalAlign( UI_VALIGN_TOP );
-					else if ( "bottom" == cur )
-						setVerticalAlign( UI_VALIGN_BOTTOM );
-					else if ( "center_vertical" == cur ) {
-						setVerticalAlign( UI_VALIGN_CENTER );
-					} else if ( "center" == cur ) {
-						setHorizontalAlign( UI_HALIGN_CENTER );
-						setVerticalAlign( UI_VALIGN_CENTER );
-					}
-				}
-
+			UIHorizontalAlignment horizontal;
+			bool hasHorizontal, hasVertical;
+			Uint32 gravity =
+				parseGravity( attribute.value(), horizontal, hasHorizontal, hasVertical );
+			if ( hasHorizontal )
+				setHorizontalAlignment( horizontal );
+			if ( hasVertical )
+				setVerticalAlign( Font::getVerticalAlign( gravity ) );
+			if ( hasHorizontal || hasVertical )
 				notifyLayoutAttrChange( LayoutInvalidation::Self );
-			}
 			break;
 		}
 		case PropertyId::Flags: {
@@ -2661,6 +2962,8 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::MarginLeft: {
+			if ( isPhysicalEdgeOverriddenByLogical( attribute ) )
+				break;
 			if ( attribute.asString() == "auto" ) {
 				mMarginAuto |= MarginAuto::Left;
 				calculateAutoMargin();
@@ -2671,6 +2974,8 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::MarginRight: {
+			if ( isPhysicalEdgeOverriddenByLogical( attribute ) )
+				break;
 			if ( attribute.asString() == "auto" ) {
 				mMarginAuto |= MarginAuto::Right;
 				calculateAutoMargin();
@@ -2700,6 +3005,18 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			}
 			break;
 		}
+		case PropertyId::Direction:
+			setDirectionOverride( UIDirectionHelper::fromString( attribute.value() ) );
+			break;
+		case PropertyId::MirrorOnRTL:
+			setMirrorOnRTL( attribute.asBool() );
+			break;
+		case PropertyId::MarginInlineStart:
+		case PropertyId::MarginInlineEnd:
+		case PropertyId::PaddingInlineStart:
+		case PropertyId::PaddingInlineEnd:
+			applyLogicalBoxProperty( attribute );
+			break;
 		case PropertyId::Tooltip: {
 			String text = getTranslatorString( attribute.value() );
 			setTooltipText( text );
@@ -2733,33 +3050,21 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setLayoutWeight( attribute.asFloat() );
 			break;
 		case PropertyId::LayoutGravity: {
-			std::string gravityStr = attribute.asString();
-			String::toLowerInPlace( gravityStr );
-			std::vector<std::string> strings = String::split( gravityStr, '|' );
-			Uint32 gravity = 0;
-			if ( strings.size() ) {
-				for ( std::size_t i = 0; i < strings.size(); i++ ) {
-					std::string cur = strings[i];
-					String::toLowerInPlace( cur );
-
-					if ( "left" == cur )
-						gravity |= UI_HALIGN_LEFT;
-					else if ( "right" == cur )
-						gravity |= UI_HALIGN_RIGHT;
-					else if ( "center_horizontal" == cur )
-						gravity |= UI_HALIGN_CENTER;
-					else if ( "top" == cur )
-						gravity |= UI_VALIGN_TOP;
-					else if ( "bottom" == cur )
-						gravity |= UI_VALIGN_BOTTOM;
-					else if ( "center_vertical" == cur ) {
-						gravity |= UI_VALIGN_CENTER;
-					} else if ( "center" == cur ) {
-						gravity |= UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-					}
+			UIHorizontalAlignment horizontal;
+			bool hasHorizontal, hasVertical;
+			Uint32 gravity =
+				parseGravity( attribute.value(), horizontal, hasHorizontal, hasVertical );
+			if ( hasHorizontal || hasVertical ) {
+				// An omitted horizontal component keeps the default logical start.
+				if ( !hasHorizontal ) {
+					horizontal = UIHorizontalAlignment::Start;
+					gravity |= resolveHorizontalAlignment( horizontal, getDirection() );
 				}
-
-				setLayoutGravity( gravity );
+				setLogicalAlignSlot( LogicalAlignSlot::LayoutGravity, horizontal );
+				if ( mLayoutGravity != gravity ) {
+					mLayoutGravity = gravity;
+					notifyLayoutAttrChange( LayoutInvalidation::Self );
+				}
 			}
 			break;
 		}
@@ -2812,10 +3117,16 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::LayoutToBottomOf:
 		case PropertyId::LayoutToLeftOf:
 		case PropertyId::LayoutToRightOf:
-		case PropertyId::LayoutToTopOf: {
+		case PropertyId::LayoutToTopOf:
+		case PropertyId::LayoutToStartOf:
+		case PropertyId::LayoutToEndOf: {
 			PositionPolicy rule = PositionPolicy::None;
 			PropertyId layoutId = attribute.getPropertyDefinition()->getPropertyId();
-			if ( layoutId == PropertyId::LayoutToLeftOf )
+			if ( layoutId == PropertyId::LayoutToStartOf )
+				rule = PositionPolicy::StartOf;
+			else if ( layoutId == PropertyId::LayoutToEndOf )
+				rule = PositionPolicy::EndOf;
+			else if ( layoutId == PropertyId::LayoutToLeftOf )
 				rule = PositionPolicy::LeftOf;
 			else if ( layoutId == PropertyId::LayoutToRightOf )
 				rule = PositionPolicy::RightOf;
@@ -2853,9 +3164,13 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setBlendMode( attribute.asBlendMode() );
 			break;
 		case PropertyId::PaddingLeft:
+			if ( isPhysicalEdgeOverriddenByLogical( attribute ) )
+				break;
 			setPaddingLeft( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::PaddingRight:
+			if ( isPhysicalEdgeOverriddenByLogical( attribute ) )
+				break;
 			setPaddingRight( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::PaddingTop:
@@ -3038,11 +3353,15 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 		Int64 specificity =
 			( mFlags & UI_HTML_ELEMENT ) ? 0 : StyleSheetSelectorRule::SpecificityInline;
 		StyleSheetProperty prop( ait->name(), ait->value(), false, specificity );
+		// Attributes cascade in document order when they map to the same computed value
+		// (for example margin-left and margin-inline-start).
+		prop.assignNextDeclarationOrder();
 
 		if ( prop.getShorthandDefinition() != NULL ) {
 			auto properties = prop.getShorthandDefinition()->parse( ait->value() );
 
 			for ( auto& property : properties ) {
+				property.setDeclarationOrder( prop.getDeclarationOrder() );
 				if ( NULL != mStyle )
 					mStyle->setStyleSheetProperty( property );
 				applyProperty( property );
@@ -3081,10 +3400,13 @@ std::string UIWidget::getLayoutHeightPolicyString() const {
 	return String::fromFloat( getSize().getHeight(), "dp" );
 }
 
-static std::string getGravityStringFromUint( const Uint32& gravity ) {
+static std::string getGravityStringFromUint( const Uint32& gravity,
+											 UIHorizontalAlignment logical ) {
 	std::vector<std::string> gravec;
 
-	if ( Font::getHorizontalAlign( gravity ) == UI_HALIGN_RIGHT ) {
+	if ( isLogicalAlignment( logical ) ) {
+		gravec.push_back( UIHorizontalAlignmentHelper::toString( logical ) );
+	} else if ( Font::getHorizontalAlign( gravity ) == UI_HALIGN_RIGHT ) {
 		gravec.push_back( "right" );
 	} else if ( Font::getHorizontalAlign( gravity ) == UI_HALIGN_CENTER ) {
 		gravec.push_back( "center_horizontal" );
@@ -3104,11 +3426,50 @@ static std::string getGravityStringFromUint( const Uint32& gravity ) {
 }
 
 std::string UIWidget::getLayoutGravityString() const {
-	return getGravityStringFromUint( getLayoutGravity() );
+	return getGravityStringFromUint( getLayoutGravity(), getLayoutHorizontalAlignment() );
 }
 
 std::string UIWidget::getGravityString() const {
-	return getGravityStringFromUint( getHorizontalAlign() | getVerticalAlign() );
+	return getGravityStringFromUint( getHorizontalAlign() | getVerticalAlign(),
+									 getHorizontalAlignment() );
+}
+
+Uint32 UIWidget::parseGravity( std::string_view gravityStr, UIHorizontalAlignment& horizontal,
+							   bool& hasHorizontal, bool& hasVertical ) const {
+	Uint32 gravity = 0;
+	horizontal = UIHorizontalAlignment::Left;
+	hasHorizontal = false;
+	hasVertical = false;
+	size_t start = 0;
+	while ( start <= gravityStr.size() ) {
+		size_t end = gravityStr.find( '|', start );
+		if ( end == std::string_view::npos )
+			end = gravityStr.size();
+		std::string_view token = String::trim( gravityStr.substr( start, end - start ) );
+		start = end + 1;
+		UIHorizontalAlignment align;
+		if ( String::iequals( token, "center" ) ) {
+			horizontal = UIHorizontalAlignment::Center;
+			gravity = ( gravity & ~( UI_HALIGN_MASK | UI_VALIGN_MASK ) ) | UI_HALIGN_CENTER |
+					  UI_VALIGN_CENTER;
+			hasHorizontal = hasVertical = true;
+		} else if ( UIHorizontalAlignmentHelper::fromString( token, align ) ) {
+			horizontal = align;
+			gravity =
+				( gravity & ~UI_HALIGN_MASK ) | resolveHorizontalAlignment( align, getDirection() );
+			hasHorizontal = true;
+		} else if ( String::iequals( token, "top" ) ) {
+			gravity = ( gravity & ~UI_VALIGN_MASK ) | UI_VALIGN_TOP;
+			hasVertical = true;
+		} else if ( String::iequals( token, "bottom" ) ) {
+			gravity = ( gravity & ~UI_VALIGN_MASK ) | UI_VALIGN_BOTTOM;
+			hasVertical = true;
+		} else if ( String::iequals( token, "center_vertical" ) ) {
+			gravity = ( gravity & ~UI_VALIGN_MASK ) | UI_VALIGN_CENTER;
+			hasVertical = true;
+		}
+	}
+	return gravity;
 }
 
 std::string UIWidget::getFlagsString() const {

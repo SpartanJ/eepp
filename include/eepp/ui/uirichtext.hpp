@@ -151,6 +151,11 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	UIRichText* setTextAlign( const Uint32& align );
 
+	/** Sets the paragraph alignment. Start and End follow the widget direction. */
+	virtual UIWidget* setTextAlignment( UIHorizontalAlignment alignment );
+
+	virtual UIHorizontalAlignment getTextAlignment() const;
+
 	WhiteSpaceCollapse getWhiteSpaceCollapse() const;
 
 	void setWhiteSpaceCollapse( WhiteSpaceCollapse collapse );
@@ -215,6 +220,13 @@ class EE_API UIRichText : public UIHTMLWidget {
 
   protected:
 	friend class UITextSelectionController;
+
+	virtual void updateLogicalDirectionState();
+
+	virtual void onDirectionChanged();
+
+	void applyTextAlign( Uint32 align );
+
 	// Registered only while this owner is cached by a document selection controller. The
 	// destructor uses it before mRichText is destroyed, unlike UIWidget::OnClose.
 	UITextSelectionController* mDocumentSelectionController{ nullptr };

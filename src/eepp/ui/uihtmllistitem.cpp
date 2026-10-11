@@ -42,11 +42,13 @@ void UIHTMLListItem::draw() {
 		Float fontSize = style.CharacterSize;
 
 		if ( UIHTMLListStyle::isPrimitiveMarker( mListStyleType ) ) {
-			UIHTMLListStyle::drawPrimitiveMarker( mListStyleType, mScreenPos, mPaddingPx, style );
+			UIHTMLListStyle::drawPrimitiveMarker( mListStyleType, mScreenPos, mPaddingPx, style,
+												  isRTL(), getPixelsSize().getWidth() );
 		} else if ( mListMarkerText && !mListMarkerText->getString().empty() ) {
 			UIHTMLListStyle::syncTextMarkerColor( *mListMarkerText, style.FontColor );
 			const Vector2f markerPos = UIHTMLListStyle::getTextMarkerPosition(
-				mScreenPos, mPaddingPx, mListMarkerText->getTextWidth(), fontSize );
+				mScreenPos, mPaddingPx, mListMarkerText->getTextWidth(), fontSize, isRTL(),
+				getPixelsSize().getWidth() );
 			mListMarkerText->draw( markerPos.x, markerPos.y, Vector2f::One, 0.f, getBlendMode() );
 		}
 	}

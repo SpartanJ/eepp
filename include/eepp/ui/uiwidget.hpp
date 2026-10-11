@@ -10,6 +10,7 @@
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/layoutinvalidation.hpp>
 #include <eepp/ui/uinode.hpp>
+#include <memory>
 
 namespace pugi {
 class xml_node;
@@ -501,6 +502,32 @@ class EE_API UIWidget : public UINode {
 	UIWidget* setLayoutGravity( const Uint32& layoutGravity );
 
 	/**
+	 * @brief Sets the horizontal component of the layout gravity.
+	 *
+	 * Start and End are logical and follow the widget's effective direction (Start is the
+	 * physical left in LTR and the physical right in RTL). Left, Right and Center are physical.
+	 * The vertical component of the layout gravity is preserved.
+	 *
+	 * The layout gravity defaults to Start. The physical setLayoutGravity() setter replaces
+	 * logical horizontal layout gravity, including when its left component is zero.
+	 */
+	UIWidget* setLayoutHorizontalAlignment( UIHorizontalAlignment alignment );
+
+	/** @return The horizontal layout gravity, preserving Start/End when set logically. */
+	UIHorizontalAlignment getLayoutHorizontalAlignment() const;
+
+	/**
+	 * @brief Sets the text alignment using a physical or logical value.
+	 *
+	 * By default text alignment is the widget's horizontal alignment (gravity). Widgets that
+	 * keep a separate text alignment, such as UIRichText, override it.
+	 */
+	virtual UIWidget* setTextAlignment( UIHorizontalAlignment alignment );
+
+	/** @return The text alignment, preserving Start/End when set logically. */
+	virtual UIHorizontalAlignment getTextAlignment() const;
+
+	/**
 	 * @brief Gets the width size policy for this widget.
 	 *
 	 * Size policies control how the widget resizes:
@@ -561,9 +588,8 @@ class EE_API UIWidget : public UINode {
 	 * @brief Sets the position policy for relative positioning.
 	 *
 	 * Position policies allow positioning this widget relative to another widget:
-	 * - PositionPolicy::Above, Below, LeftOf, RightOf
-	 * - PositionPolicy::AlignLeft, AlignRight, AlignTop, AlignBottom
-	 * - PositionPolicy::CenterIn
+	 * - PositionPolicy::LeftOf, RightOf, TopOf, BottomOf (physical)
+	 * - PositionPolicy::StartOf, EndOf (logical, resolved against the widget direction)
 	 *
 	 * @param layoutPositionPolicy The position policy to apply.
 	 * @param of The reference widget for positioning.
@@ -589,6 +615,23 @@ class EE_API UIWidget : public UINode {
 	 * @return The position policy.
 	 */
 	PositionPolicy getLayoutPositionPolicy() const;
+
+	/**
+	 * @return The position policy with logical StartOf/EndOf resolved to LeftOf/RightOf for the
+	 * widget's effective direction.
+	 */
+	PositionPolicy getResolvedLayoutPositionPolicy() const;
+
+	/**
+	 * @brief Returns the declaration that determines a physical horizontal box edge.
+	 *
+	 * For MarginLeft, MarginRight, PaddingLeft and PaddingRight this is either the physical
+	 * declaration or the flow-relative (margin-inline-*, padding-inline-*) declaration that
+	 * resolves to that edge and wins the cascade. For other properties it is the cascaded
+	 * declaration. Layout code that needs the declared value (for example to re-resolve
+	 * percentages) must use this instead of reading the physical property directly.
+	 */
+	const StyleSheetProperty* getBoxEdgeProperty( PropertyId physicalProperty ) const;
 
 	/**
 	 * @brief Gets the minimum intrinsic width of the widget.
@@ -1580,7 +1623,13 @@ class EE_API UIWidget : public UINode {
 	friend class UIEventDispatcher;
 	friend class UILayout;
 	friend class AccessibilityWidgetResolver;
+	friend class UIStyle;
 
+	// Keep byte-sized members first so they can reuse UINode's tail padding.
+	mutable bool mIntrinsicWidthsDirty{ true };
+	Uint8 mCursor{ static_cast<Uint8>( Cursor::Arrow ) };
+	Uint8 mMarginAuto{ 0 };
+	bool mApplyingLogicalEdge{ false };
 	std::string mTag;
 	UITheme* mTheme;
 	UIStyle* mStyle;
@@ -1607,10 +1656,34 @@ class EE_API UIWidget : public UINode {
 	String mTooltipText;
 	mutable Float mMinIntrinsicWidth{ 0 };
 	mutable Float mMaxIntrinsicWidth{ 0 };
-	mutable bool mIntrinsicWidthsDirty{ true };
-	Uint8 mCursor{ static_cast<Uint8>( Cursor::Arrow ) };
-	Uint8 mMarginAuto{ 0 };
 	AccessibilityProperties* mAccessibilityProperties{ nullptr };
+	// Flow-relative box declarations, allocated only by widgets that use them.
+	struct LogicalBoxEdges;
+	std::unique_ptr<LogicalBoxEdges> mLogicalBox;
+
+	virtual void updateLogicalDirectionState();
+
+	virtual void onDirectionChanged();
+
+	/**
+	 * @return True if a flow-relative declaration currently owns the physical edge set by
+	 * @p property and wins the cascade against it, in which case @p property must not be
+	 * applied. Subclasses that intercept physical margin/padding properties must check it first.
+	 */
+	bool isPhysicalEdgeOverriddenByLogical( const StyleSheetProperty& property );
+
+	void applyLogicalBoxProperty( const StyleSheetProperty& property );
+
+	/** Applies a text-align declaration (left, right, center, start or end). */
+	bool applyTextAlignProperty( const StyleSheetProperty& property );
+
+	void resolveLogicalBoxEdges();
+
+	void refreshLogicalBoxProperties();
+
+	/** Parses a gravity list ("start|center_vertical"), returning physical bits. */
+	Uint32 parseGravity( std::string_view gravity, UIHorizontalAlignment& horizontal,
+						 bool& hasHorizontal, bool& hasVertical ) const;
 
 	void calculateAutoMargin();
 	void rebuildClassHashes();

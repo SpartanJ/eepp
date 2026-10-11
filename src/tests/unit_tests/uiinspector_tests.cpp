@@ -570,11 +570,17 @@ UTEST( UIInspector, WebViewSecondaryWindowAndDeferredBatch ) {
 										  WindowBackend::Default, 32, {}, 1, false, true ),
 						  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	ASSERT_TRUE( secondary != nullptr );
-	auto* button = UIWidget::New();
-	button->setId( "secondary-button" );
-	button->setPixelsPosition( 30, 30 );
-	button->setPixelsSize( 100, 50 );
-	button->setParent( secondary->getRoot() );
+	UIWidget* button = nullptr;
+	{
+		// Widgets must be created in their destination window's scene: cross-window rebinding
+		// is not supported.
+		auto context = secondary->makeCurrent();
+		button = UIWidget::New();
+		button->setId( "secondary-button" );
+		button->setPixelsPosition( 30, 30 );
+		button->setPixelsSize( 100, 50 );
+		button->setParent( secondary->getRoot() );
+	}
 	int clicks = 0;
 	button->onClick( [&]( const MouseEvent* ) { ++clicks; } );
 	mainScene->flushDirtyStyleAndLayout();

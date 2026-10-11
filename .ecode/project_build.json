@@ -435,6 +435,12 @@
         "command": "${project_root}/bin/eepp-ui-accessibility-debug",
         "name": "eepp-ui-accessibility-debug",
         "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-rtl-debug",
+        "name": "eepp-ui-rtl-debug",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {

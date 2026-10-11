@@ -985,6 +985,16 @@ The exact supported property set is documented in
 
 ---
 
+### Direction
+
+The HTML `dir` attribute (`ltr`/`rtl`) and the CSS `direction` property set the element
+direction, which inherits through the document. Right-to-left paragraphs fill their lines from
+the right and reorder inline items per line (UAX #9 reordering at inline-item granularity);
+`text-align` defaults to `start`; list markers and `ul`/`ol`/`dd`/`summary` indentation use the
+inline-start side; Flexbox rows and Grid columns start at the inline-start edge. `float` and other
+physical properties stay physical. `dir="auto"` and `unicode-bidi` are not modeled. See
+[UI direction and RTL](ui_rtl.md).
+
 ## 24. Text selection is document-wide
 
 `UIWebView` and `UIMarkdownView` both provide a `UITextSelectionController`.

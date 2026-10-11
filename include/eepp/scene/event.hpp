@@ -141,6 +141,7 @@ class EE_API Event {
 		OnFaviconChanged,
 		OnAllowEditingChange,
 		OnFocusedDateChange,
+		OnDirectionChange,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

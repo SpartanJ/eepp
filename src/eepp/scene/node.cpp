@@ -243,19 +243,15 @@ void Node::unsubscribeScheduledUpdate() {
 
 Node* Node::setParent( Node* parent ) {
 	eeASSERT( NULL != parent );
-#ifdef EE_DEBUG
-	if ( isUINode() && parent->isUINode() ) {
-		auto* childScene = asType<UI::UINode>()->getUISceneNode();
-		auto* parentScene = parent->asType<UI::UINode>()->getUISceneNode();
-		// Same-window scene rebinding is an existing supported mechanism for embedded documents.
-		// Cross-window rebinding cannot safely migrate input and native-window dependencies.
-		eeASSERT( !childScene || !parentScene || childScene == parentScene ||
-				  childScene->getWindow() == parentScene->getWindow() );
-	}
-#endif
 
 	if ( parent == mParentNode )
 		return this;
+
+	const bool hadParent = mParentNode != nullptr;
+	const bool checkContext =
+		mChild != nullptr || ( mNodeFlags & NODE_FLAG_PROVIDES_PARENT_TREE_CONTEXT );
+	const Uint32 previousContext =
+		checkContext && hadParent ? mParentNode->getParentTreeContext() : 0;
 
 	if ( NULL != mParentNode )
 		mParentNode->childRemove( this );
@@ -272,6 +268,13 @@ Node* Node::setParent( Node* parent ) {
 	if ( mSceneNode != findSceneNode() )
 		onSceneChange();
 
+	// Ordinary leaves need no context lookup because they cannot trigger a subtree walk.
+	// Initial attachment must refresh a detached subtree's potentially stale inherited state.
+	const Uint32 nextContext = checkContext && hadParent ? parent->getParentTreeContext() : 0;
+	if ( !checkContext || !hadParent || previousContext != nextContext ||
+		 ( ( previousContext | nextContext ) & ParentTreeContextUnstable ) ) {
+		onParentTreeChange();
+	}
 	onParentChange();
 
 	return this;
@@ -665,6 +668,13 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 			return;
 	}
 
+	const bool hadParent = node->mParentNode != nullptr;
+	const bool checkContext =
+		reparenting && ( node->mChild != nullptr ||
+						 ( node->mNodeFlags & NODE_FLAG_PROVIDES_PARENT_TREE_CONTEXT ) );
+	const Uint32 previousContext =
+		checkContext && hadParent ? node->mParentNode->getParentTreeContext() : 0;
+
 	// Reparent directly at the requested index, not via setParent()'s intermediate append.
 	if ( node->mParentNode )
 		node->mParentNode->childRemove( node );
@@ -721,6 +731,13 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 		node->setDirty();
 		if ( node->mSceneNode != node->findSceneNode() )
 			node->onSceneChange();
+		// Indexed insertion must refresh inherited state just like setParent(), but only after
+		// the final sibling links and scene binding are in place.
+		const Uint32 nextContext = checkContext && hadParent ? getParentTreeContext() : 0;
+		if ( !checkContext || !hadParent || previousContext != nextContext ||
+			 ( ( previousContext | nextContext ) & ParentTreeContextUnstable ) ) {
+			node->onParentTreeChange();
+		}
 		node->onParentChange();
 	}
 }
@@ -1265,6 +1282,28 @@ void Node::sendEvent( const Event* event ) {
 
 void Node::onParentChange() {
 	invalidateDraw();
+}
+
+void Node::onParentTreeChange() {
+	if ( isSceneNode() )
+		return;
+	Node* child = mChild;
+	while ( child ) {
+		child->onParentTreeChange();
+		child = child->mNext;
+	}
+}
+
+Uint32 Node::getParentTreeContext() const {
+	if ( isSceneNode() )
+		return 0;
+	const Node* node = mParentNode;
+	while ( node && !node->isSceneNode() ) {
+		if ( node->mNodeFlags & NODE_FLAG_PROVIDES_PARENT_TREE_CONTEXT )
+			return node->getParentTreeContext();
+		node = node->mParentNode;
+	}
+	return 0;
 }
 
 void Node::updateScreenPos() {

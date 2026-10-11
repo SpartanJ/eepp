@@ -16,7 +16,8 @@ UIFlowLayout::UIFlowLayout() : UIFlowLayout( "flowlayout" ) {}
 UIFlowLayout::UIFlowLayout( const std::string& tag ) : UILayout( tag ) {
 	mFlags |= UI_OWNS_CHILDREN_POSITION;
 	setClipType( ClipType::ContentBox );
-	setGravity( UI_HALIGN_LEFT | UI_VALIGN_TOP );
+	setHorizontalAlignment( UIHorizontalAlignment::Start );
+	setVerticalAlign( UI_VALIGN_TOP );
 	listenParent();
 }
 
@@ -278,18 +279,47 @@ void UIFlowLayout::updateLayout() {
 	}
 	totHeight += mPaddingPx.Bottom;
 
+	// Resolve the shrink-wrapped width before aligning rows, otherwise RTL start alignment
+	// places children against the provisional parent width, outside the final content box.
+	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent &&
+		 ( ( lineCount == 1 && !mLines[0].nodes.empty() ) ||
+		   ( lineCount == 2 && mLines[1].nodes.empty() ) ) ) {
+		const Float contentWidth = mLines[0].width + mPaddingPx.Right;
+		if ( contentWidth < getPixelsSize().getWidth() ) {
+			setInternalPixelsWidth( contentWidth );
+			notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
+		}
+	}
+
+	// Each row is an inline flow: in right-to-left contexts its first item is placed at the
+	// row's right end. Mirror the margin boxes inside the row's content extent so physical
+	// margins stay on their physical sides.
+	const bool rtl = isRTL();
+
 	curLine = 0;
 	for ( Uint32 i = 0; i < lineCount; ++i ) {
 		const auto& line = mLines[i];
 		Float xDisplacement = 0.f;
 		Float yDisplacement = 0.f;
 
+		if ( rtl ) {
+			const Float axis = mPaddingPx.Left + line.width;
+			for ( const auto& widget : line.nodes ) {
+				const Rectf& margin = widget->getLayoutPixelsMargin();
+				Float marginBoxX = widget->getPixelsPosition().x - eeceil( margin.Left );
+				Float marginBoxW = eeceil( margin.Left ) + widget->getPixelsSize().getWidth() +
+								   eeceil( margin.Right );
+				widget->setPixelsPosition( axis - marginBoxX - marginBoxW + eeceil( margin.Left ),
+										   widget->getPixelsPosition().y );
+			}
+		}
+
 		switch ( Font::getHorizontalAlign( getHorizontalAlign() ) ) {
 			case UI_HALIGN_CENTER:
 				xDisplacement = eeceil( ( getPixelsSize().getWidth() - line.width ) * 0.5f );
 				break;
 			case UI_HALIGN_RIGHT:
-				xDisplacement = getPixelsSize().getWidth() - line.width;
+				xDisplacement = getPixelsSize().getWidth() - mPaddingPx.Right - line.width;
 				break;
 			case UI_HALIGN_LEFT:
 			default:
@@ -348,13 +378,6 @@ void UIFlowLayout::updateLayout() {
 
 		maxY += line.maxY;
 		curLine++;
-	}
-
-	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent && curX < mSize.getWidth() &&
-		 ( ( lineCount == 1 && !mLines[0].nodes.empty() ) ||
-		   ( lineCount == 2 && mLines[1].nodes.empty() ) ) ) {
-		setInternalPixelsWidth( curX );
-		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentChildChange );
 	}
 
 	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent ) {

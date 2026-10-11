@@ -51,25 +51,35 @@ String UIHTMLListStyle::getTextMarkerString( CSSListStyleType type, int index ) 
 	}
 }
 
-void UIHTMLListStyle::syncTextMarkerColor( Graphics::Text& marker, const Color& color ) {
+void UIHTMLListStyle::syncTextMarkerColor( Text& marker, const Color& color ) {
 	if ( marker.getFillColor() != color )
 		marker.setFillColor( color );
 }
 
 Vector2f UIHTMLListStyle::getTextMarkerPosition( const Vector2f& screenPos, const Rectf& paddingPx,
-												 Float textWidth, Float fontSize ) {
+												 Float textWidth, Float fontSize, bool rtl,
+												 Float boxWidth ) {
+	if ( rtl ) {
+		return { std::floor( screenPos.x + boxWidth - paddingPx.Right + 0.25f * fontSize ),
+				 std::floor( screenPos.y + paddingPx.Top ) };
+	}
 	return { std::floor( screenPos.x + paddingPx.Left - textWidth - 0.25f * fontSize ),
 			 std::floor( screenPos.y + paddingPx.Top ) };
 }
 
 void UIHTMLListStyle::drawPrimitiveMarker( CSSListStyleType type, const Vector2f& screenPos,
-										   const Rectf& paddingPx,
-										   const Graphics::FontStyleConfig& style ) {
+										   const Rectf& paddingPx, const FontStyleConfig& style,
+										   bool rtl, Float boxWidth ) {
+	// Geometry is computed against the left content edge and reflected onto the right content
+	// edge for RTL, keeping the same distance between marker and content.
+	const Float startLeft = screenPos.x + paddingPx.Left;
+	const Float startRight = screenPos.x + boxWidth - paddingPx.Right;
+	auto mx = [&]( Float x ) { return rtl ? startRight + startLeft - x : x; };
 	Float fontSize = style.CharacterSize;
 	Float offset = 0.25f * fontSize;
 	Float lineHeight = style.Font ? style.Font->getLineSpacing( (unsigned int)fontSize ) : fontSize;
 	Float lineTop = screenPos.y + paddingPx.Top;
-	Graphics::Primitives p;
+	Primitives p;
 	p.setColor( style.FontColor );
 
 	switch ( type ) {
@@ -77,8 +87,8 @@ void UIHTMLListStyle::drawPrimitiveMarker( CSSListStyleType type, const Vector2f
 			Float radius = fontSize * 0.22f;
 			Float markerX = std::floor( screenPos.x + paddingPx.Left - radius * 2.f - offset );
 			Float markerY = std::floor( lineTop + ( lineHeight - radius * 2.f ) * 0.5f + radius );
-			p.setFillMode( Graphics::PrimitiveFillMode::DRAW_FILL );
-			p.drawCircle( { markerX, markerY }, radius );
+			p.setFillMode( PrimitiveFillMode::DRAW_FILL );
+			p.drawCircle( { mx( markerX ), markerY }, radius );
 			break;
 		}
 		case CSSListStyleType::Circle: {
@@ -86,37 +96,38 @@ void UIHTMLListStyle::drawPrimitiveMarker( CSSListStyleType type, const Vector2f
 			Float lineWidth = fontSize * 0.04f;
 			Float markerX = std::floor( screenPos.x + paddingPx.Left - radius * 2.f - offset );
 			Float markerY = std::floor( lineTop + ( lineHeight - radius * 2.f ) * 0.5f + radius );
-			p.setFillMode( Graphics::PrimitiveFillMode::DRAW_LINE );
+			p.setFillMode( PrimitiveFillMode::DRAW_LINE );
 			p.setLineWidth( lineWidth );
-			p.drawCircle( { markerX, markerY }, radius );
+			p.drawCircle( { mx( markerX ), markerY }, radius );
 			break;
 		}
 		case CSSListStyleType::Square: {
 			Float size = fontSize * 0.38f;
 			Float markerX = std::floor( screenPos.x + paddingPx.Left - size - fontSize * 0.5 );
 			Float markerY = std::floor( lineTop + ( lineHeight - size ) * 0.5f );
-			p.setFillMode( Graphics::PrimitiveFillMode::DRAW_FILL );
-			p.drawRectangle( Rectf( markerX, markerY, markerX + size, markerY + size ) );
+			p.setFillMode( PrimitiveFillMode::DRAW_FILL );
+			const Float left = rtl ? mx( markerX + size ) : markerX;
+			p.drawRectangle( Rectf( left, markerY, left + size, markerY + size ) );
 			break;
 		}
 		case CSSListStyleType::DisclosureClosed: {
 			Float size = fontSize * 0.48f;
 			Float cx = std::floor( screenPos.x + paddingPx.Left - fontSize * 0.8f );
 			Float cy = std::floor( lineTop + lineHeight * 0.5f );
-			p.setFillMode( Graphics::PrimitiveFillMode::DRAW_FILL );
-			p.drawTriangle( Triangle2f( { cx - size * 0.35f, cy - size * 0.5f },
-										{ cx - size * 0.35f, cy + size * 0.5f },
-										{ cx + size * 0.35f, cy } ) );
+			p.setFillMode( PrimitiveFillMode::DRAW_FILL );
+			p.drawTriangle( Triangle2f( { mx( cx - size * 0.35f ), cy - size * 0.5f },
+										{ mx( cx - size * 0.35f ), cy + size * 0.5f },
+										{ mx( cx + size * 0.35f ), cy } ) );
 			break;
 		}
 		case CSSListStyleType::DisclosureOpen: {
 			Float size = fontSize * 0.52f;
 			Float cx = std::floor( screenPos.x + paddingPx.Left - fontSize * 0.8f );
 			Float cy = std::floor( lineTop + lineHeight * 0.5f );
-			p.setFillMode( Graphics::PrimitiveFillMode::DRAW_FILL );
-			p.drawTriangle( Triangle2f( { cx - size * 0.5f, cy - size * 0.25f },
-										{ cx + size * 0.5f, cy - size * 0.25f },
-										{ cx, cy + size * 0.45f } ) );
+			p.setFillMode( PrimitiveFillMode::DRAW_FILL );
+			p.drawTriangle( Triangle2f( { mx( cx - size * 0.5f ), cy - size * 0.25f },
+										{ mx( cx + size * 0.5f ), cy - size * 0.25f },
+										{ mx( cx ), cy + size * 0.45f } ) );
 			break;
 		}
 		default:

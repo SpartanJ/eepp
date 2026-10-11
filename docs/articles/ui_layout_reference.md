@@ -111,13 +111,15 @@ A newly constructed `UIWidget` starts with:
 
 ```text
 layout weight   = 0
-layout gravity  = unset / 0
+layout gravity  = start|top (horizontal start resolves to left in LTR, right in RTL)
 width policy    = WrapContent
 height policy   = WrapContent
 position policy = None
 ```
 
-Specific widgets may override their own defaults.
+Specific widgets may override their own defaults. Horizontal alignment and layout gravity accept
+logical `start`/`end` in addition to physical `left`/`right`; see
+[UI direction and RTL](ui_rtl.md).
 
 Do not assume every widget behaves identically under `wrap_content`; intrinsic sizing is
 widget-specific.

@@ -57,7 +57,7 @@ static bool hasReusableInlineContent( const std::vector<RichText::InlineItem>& i
 				return false;
 			if ( box.source.type == RichText::InlineSourceType::Widget ) {
 				auto* span = static_cast<UIWidget*>( box.source.ptr );
-				if ( auto* style = span->getUIStyle() ) {
+				if ( span->getUIStyle() ) {
 					// A percentage may resolve to zero before the containing width is established.
 					// Such inline spacing must be resolved again on later measurements. Length
 					// functions can also contain percentages, so retain their rebuild path.
@@ -65,7 +65,7 @@ static bool hasReusableInlineContent( const std::vector<RichText::InlineItem>& i
 											PropertyId::MarginTop, PropertyId::MarginBottom,
 											PropertyId::PaddingLeft, PropertyId::PaddingRight,
 											PropertyId::PaddingTop, PropertyId::PaddingBottom } ) {
-						const auto* value = style->getProperty( property );
+						const auto* value = span->getBoxEdgeProperty( property );
 						if ( value && ( StyleSheetLength::isPercentage( value->value() ) ||
 										value->value().find( '(' ) != std::string::npos ) )
 							return false;

@@ -317,7 +317,11 @@ void UILinearLayout::packHorizontal() {
 	Float maxY = 0;
 	auto [freeSize, totalWeight] = getTotalUsedSize();
 
-	Node* child = mChild;
+	// A horizontal linear layout is an inline row: in right-to-left contexts its first child is
+	// placed at the right. Traverse in reverse to preserve node order and physical margins,
+	// then move the occupied row to the right content edge after resolving the final width.
+	const bool rtl = isRTL();
+	Node* child = rtl ? mChildLast : mChild;
 
 	while ( NULL != child ) {
 		if ( child->isWidget() && child->isVisible() ) {
@@ -370,7 +374,7 @@ void UILinearLayout::packHorizontal() {
 			}
 		}
 
-		child = child->getNextNode();
+		child = rtl ? child->getPrevNode() : child->getNextNode();
 	}
 
 	maxY += mPaddingPx.Top + mPaddingPx.Bottom;
@@ -386,6 +390,19 @@ void UILinearLayout::packHorizontal() {
 		int w = getMatchParentWidth();
 		if ( w != (int)getPixelsSize().getWidth() )
 			setInternalPixelsWidth( w );
+	}
+
+	if ( rtl ) {
+		const Float occupiedEnd =
+			curX - ( getLayoutWidthPolicy() == SizePolicy::WrapContent ? mPaddingPx.Right : 0.f );
+		const Float shift = getPixelsSize().getWidth() - mPaddingPx.Right - occupiedEnd;
+		for ( Node* node = mChild; node; node = node->getNextNode() ) {
+			if ( node->isWidget() && node->isVisible() ) {
+				UIWidget* widget = node->asType<UIWidget>();
+				const Vector2f position = widget->getPixelsPosition();
+				widget->setPixelsPosition( position.x + shift, position.y );
+			}
+		}
 	}
 
 	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent ) {

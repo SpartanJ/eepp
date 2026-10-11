@@ -61,7 +61,7 @@ void UIMenu::onPaddingChange() {
 UIMenuItem* UIMenu::createMenuItem( const String& text, DrawablePtr icon,
 									const String& shortcutText ) {
 	UIMenuItem* widget = UIMenuItem::New();
-	widget->setHorizontalAlign( UI_HALIGN_LEFT );
+	widget->setHorizontalAlignment( UIHorizontalAlignment::Start );
 	widget->setParent( this );
 	widget->setIconMinimumSize( mIconMinSize );
 	widget->setIcon( std::move( icon ) );
@@ -79,7 +79,7 @@ UIMenuItem* UIMenu::add( const String& text, DrawablePtr icon, const String& sho
 UIMenuCheckBox* UIMenu::createMenuCheckBox( const String& text, const bool& active,
 											const String& shortcutText ) {
 	UIMenuCheckBox* widget = UIMenuCheckBox::New();
-	widget->setHorizontalAlign( UI_HALIGN_LEFT );
+	widget->setHorizontalAlignment( UIHorizontalAlignment::Start );
 	widget->setParent( this );
 	widget->setIconMinimumSize( mIconMinSize );
 	widget->setText( text );
@@ -98,7 +98,7 @@ UIMenuCheckBox* UIMenu::addCheckBox( const String& text, const bool& active,
 
 UIMenuRadioButton* UIMenu::createMenuRadioButton( const String& text, const bool& active ) {
 	UIMenuRadioButton* widget = UIMenuRadioButton::New();
-	widget->setHorizontalAlign( UI_HALIGN_LEFT );
+	widget->setHorizontalAlignment( UIHorizontalAlignment::Start );
 	widget->setParent( this );
 	widget->setIconMinimumSize( mIconMinSize );
 	widget->setText( text );
@@ -115,7 +115,7 @@ UIMenuRadioButton* UIMenu::addRadioButton( const String& text, const bool& activ
 
 UIMenuSubMenu* UIMenu::createSubMenu( const String& text, DrawablePtr icon, UIMenu* subMenu ) {
 	UIMenuSubMenu* menu = UIMenuSubMenu::New();
-	menu->setHorizontalAlign( UI_HALIGN_LEFT );
+	menu->setHorizontalAlignment( UIHorizontalAlignment::Start );
 	menu->setParent( this );
 	menu->setIconMinimumSize( mIconMinSize );
 	menu->setIcon( std::move( icon ) );
@@ -544,20 +544,24 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& event ) {
 			prevSel();
 			break;
 		case KEY_RIGHT:
-			if ( nullptr != mItemSelected && mItemSelected->isType( UI_TYPE_MENUSUBMENU ) )
-				mItemSelected->asType<UIMenuSubMenu>()->showSubMenu();
-			else if ( getOwnerNode() && getOwnerNode()->getParent() &&
-					  getOwnerNode()->getParent()->isType( UI_TYPE_MENUBAR ) )
-				getOwnerNode()->getParent()->asType<UIMenuBar>()->showNextMenu();
+		case KEY_LEFT: {
+			// Arrow keys are visual: the key pointing to the inline-end side (right in LTR, left
+			// in RTL) opens submenus and moves to the next menu of a menu bar.
+			const bool towardEnd = ( event.getKeyCode() == KEY_RIGHT ) == isLTR();
+			Node* ownerParent = getOwnerNode() ? getOwnerNode()->getParent() : nullptr;
+			if ( towardEnd ) {
+				if ( nullptr != mItemSelected && mItemSelected->isType( UI_TYPE_MENUSUBMENU ) )
+					mItemSelected->asType<UIMenuSubMenu>()->showSubMenu();
+				else if ( ownerParent && ownerParent->isType( UI_TYPE_MENUBAR ) )
+					ownerParent->asType<UIMenuBar>()->showNextMenu();
+			} else {
+				if ( ownerParent && ownerParent->isType( UI_TYPE_MENUBAR ) )
+					ownerParent->asType<UIMenuBar>()->showPrevMenu();
+				else if ( ownerParent && ownerParent->isType( UI_TYPE_MENU ) )
+					hide();
+			}
 			break;
-		case KEY_LEFT:
-			if ( getOwnerNode() && getOwnerNode()->getParent() &&
-				 getOwnerNode()->getParent()->isType( UI_TYPE_MENUBAR ) )
-				getOwnerNode()->getParent()->asType<UIMenuBar>()->showPrevMenu();
-			else if ( getOwnerNode() && getOwnerNode()->getParent() &&
-					  getOwnerNode()->getParent()->isType( UI_TYPE_MENU ) )
-				hide();
-			break;
+		}
 		case KEY_ESCAPE:
 			hide();
 			break;
@@ -678,7 +682,18 @@ UINode* UIMenu::getOwnerNode() const {
 }
 
 void UIMenu::setOwnerNode( UIWidget* ownerNode ) {
+	if ( mOwnerNode == ownerNode )
+		return;
+	mOwnerDirectionConnection.disconnect();
+	mOwnerCloseConnection.disconnect();
 	mOwnerNode = ownerNode;
+	if ( ownerNode ) {
+		mOwnerDirectionConnection = ownerNode->connect(
+			Event::OnDirectionChange, [this]( const Event* ) { refreshEffectiveDirection(); } );
+		mOwnerCloseConnection = ownerNode->connect(
+			Event::OnClose, [this]( const Event* ) { setOwnerNode( nullptr ); } );
+	}
+	refreshEffectiveDirection();
 }
 
 void UIMenu::setIconMinimumSize( const Sizei& minIconSize ) {
@@ -740,7 +755,6 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIWidget* menu, UIMenu* parent, UIM
 	// Cascading menus also avoid overlapping the previous menu in the chain.
 	Rectf qScreen( 0.f, 0.f, sceneNode->getPixelsSize().getWidth(),
 				   sceneNode->getPixelsSize().getHeight() );
-	Rectf qPos( pos, menu->getPixelsSize() );
 	Rectf qPrevMenu;
 	bool clipMenu = parent->getOwnerNode() && parent->getOwnerNode()->getParent() &&
 					parent->getOwnerNode()->getParent()->isType( UI_TYPE_MENU );
@@ -762,56 +776,47 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIWidget* menu, UIMenu* parent, UIM
 	Rectf qParent( pPos.x, pPos.y, pPos.x + parent->getPixelsSize().getWidth(),
 				   pPos.y + parent->getPixelsSize().getHeight() );
 
-	pos.x = qParent.Right;
-	pos.y = sPos.y;
-	qPos.Left = pos.x;
-	qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-	qPos.Top = pos.y;
-	qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+	// Submenus open toward the inline-end side: right in LTR, left in RTL. Direction only defines
+	// the preferred side; the opposite side is used when the preferred one does not fit.
+	const Float menuW = menu->getPixelsSize().getWidth();
+	const Float menuH = menu->getPixelsSize().getHeight();
+	const bool preferLeft = subMenu->isRTL();
+	const Float preferredX = preferLeft ? qParent.Left - menuW : qParent.Right;
+	const Float alternateX = preferLeft ? qParent.Right : qParent.Left - menuW;
+	const Float topY = sPos.y;
+	const Float bottomY = sPos.y + subMenu->getPixelsSize().getHeight() - menuH;
+	auto fits = [&]( Float x, Float y ) {
+		Rectf rect( Vector2f( x, y ), Sizef( menuW, menuH ) );
+		return qScreen.contains( rect ) && ( !clipMenu || !qPrevMenu.overlap( rect ) );
+	};
 
-	if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
-		pos.y = sPos.y + subMenu->getPixelsSize().getHeight() - menu->getPixelsSize().getHeight();
-		qPos.Top = pos.y;
-		qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-		if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
-			pos.x = qParent.Left - menu->getPixelsSize().getWidth();
-			pos.y = sPos.y;
-			qPos.Left = pos.x;
-			qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-			qPos.Top = pos.y;
-			qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-			if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
-				pos.y = sPos.y + subMenu->getPixelsSize().getHeight() -
-						menu->getPixelsSize().getHeight();
-				qPos.Top = pos.y;
-				qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-				if ( !qScreen.contains( qPos ) ) {
-					if ( menu->getPixelsSize().getHeight() <= qScreen.getHeight() ) {
-						pos = { pos.x, eefloor( ( qScreen.getHeight() -
-												  menu->getPixelsSize().getHeight() ) *
-												0.5f ) };
-					} else {
-						pos = { pos.x, 0 };
-					}
-				}
-
-				if ( pos.x < 0 )
-					pos.x = 0;
-				if ( pos.y < 0 )
-					pos.y = 0;
-
-				qPos.Left = qParent.Right;
-				qPos.Top = pos.y;
-				qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
-				qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-				if ( qScreen.contains( qPos ) && ( !clipMenu || !qPrevMenu.overlap( qPos ) ) ) {
-					pos.x = qPos.Left;
-				}
-			}
+	const Vector2f candidates[] = { { preferredX, topY },
+									{ preferredX, bottomY },
+									{ alternateX, topY },
+									{ alternateX, bottomY } };
+	for ( const auto& candidate : candidates ) {
+		if ( fits( candidate.x, candidate.y ) ) {
+			pos = candidate;
+			return;
 		}
 	}
+
+	pos = { alternateX, bottomY };
+	if ( !qScreen.contains( Rectf( pos, Sizef( menuW, menuH ) ) ) ) {
+		if ( menuH <= qScreen.getHeight() ) {
+			pos.y = eefloor( ( qScreen.getHeight() - menuH ) * 0.5f );
+		} else {
+			pos.y = 0;
+		}
+	}
+
+	if ( pos.x < 0 )
+		pos.x = 0;
+	if ( pos.y < 0 )
+		pos.y = 0;
+
+	if ( fits( preferredX, pos.y ) )
+		pos.x = preferredX;
 }
 
 }} // namespace EE::UI

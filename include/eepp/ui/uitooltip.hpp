@@ -160,6 +160,8 @@ class EE_API UITooltip : public UIWidget {
 
 	virtual void onAlignChange();
 
+	virtual void onDirectionChanged();
+
 	virtual void onAlphaChange();
 
 	virtual void onSizeChange();

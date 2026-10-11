@@ -57,6 +57,9 @@ UITextView::UITextView( const std::string& tag ) :
 		setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 	}
 
+	if ( hasNonDefaultDirection() )
+		mTextCache.setDirection( getTextBaseDirection() );
+
 	applyDefaultTheme();
 }
 
@@ -738,6 +741,52 @@ void UITextView::onAlignChange() {
 	alignFix();
 }
 
+void UITextView::alignWithInlineStartIndicator( UIWidget* active, UIWidget* inactive,
+												Float separationPx ) {
+	const bool rtl = isRTL();
+	const Float indicatorW = active->getPixelsSize().getWidth();
+	for ( UIWidget* indicator : { active, inactive } ) {
+		indicator->setPixelsPosition( rtl ? mSize.x - mPaddingPx.Right -
+												indicator->getPixelsSize().getWidth()
+										  : mPaddingPx.Left,
+									  indicator->getPixelsPosition().y );
+		indicator->centerVertical();
+	}
+
+	// Compute the left-to-right offset with the mirrored alignment and mirror it back, so the
+	// text keeps its position relative to the indicator in both directions.
+	const Float contentW = mSize.x - mPaddingPx.Left - mPaddingPx.Right;
+	const Float textW = mTextCache.getTextWidth();
+	Uint32 halign = Font::getHorizontalAlign( getFlags() );
+	if ( rtl )
+		halign = mirrorHorizontalAlignFlags( halign );
+	Float offset = 0;
+	switch ( halign ) {
+		case UI_HALIGN_CENTER:
+			offset = (Float)( (Int32)( ( contentW - textW - indicatorW + separationPx ) / 2.f ) ) +
+					 indicatorW + separationPx;
+			break;
+		case UI_HALIGN_RIGHT:
+			offset = contentW - textW;
+			break;
+		case UI_HALIGN_LEFT:
+		default:
+			offset = indicatorW + separationPx;
+			break;
+	}
+	mRealAlignOffset.x = rtl ? contentW - offset - textW : offset;
+}
+
+void UITextView::onDirectionChanged() {
+	UIWidget::onDirectionChanged();
+	// Use the UI direction as the base paragraph direction of the label.
+	if ( mTextCache.getDirection() != getTextBaseDirection() ) {
+		mTextCache.setDirection( getTextBaseDirection() );
+		recalculate();
+		invalidateDraw();
+	}
+}
+
 void UITextView::onSelectionChange() {
 	if ( mUsingCustomStyling ) {
 		invalidateDraw();
@@ -865,16 +914,9 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( !mUsingCustomStyling )
 				setTextSelectionEnabled( attribute.asBool() );
 			break;
-		case PropertyId::TextAlign: {
-			std::string align = String::toLower( attribute.value() );
-			if ( align == "center" )
-				setTextAlign( UI_HALIGN_CENTER );
-			else if ( align == "left" )
-				setTextAlign( UI_HALIGN_LEFT );
-			else if ( align == "right" )
-				setTextAlign( UI_HALIGN_RIGHT );
+		case PropertyId::TextAlign:
+			applyTextAlignProperty( attribute );
 			break;
-		}
 		case PropertyId::TextOverflow:
 			setTextOverflow( attribute.value() );
 			break;
@@ -926,10 +968,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::TextSelection:
 			return isTextSelectionEnabled() ? "true" : "false";
 		case PropertyId::TextAlign:
-			return Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_CENTER
-					   ? "center"
-					   : ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT ? "right"
-																					 : "left" );
+			return UIHorizontalAlignmentHelper::toString( getTextAlignment() );
 		case PropertyId::TextOverflow:
 			return mTextOverflow;
 		default:
@@ -953,6 +992,7 @@ std::vector<PropertyId> UITextView::getPropertiesImplemented() const {
 }
 
 void UITextView::setTextAlign( const Uint32& align ) {
+	setLogicalAlignSlot( LogicalAlignSlot::Gravity, UIHorizontalAlignment::Left );
 	mFlags &= ~( UI_HALIGN_CENTER | UI_HALIGN_RIGHT );
 	mFlags |= align;
 	onAlignChange();

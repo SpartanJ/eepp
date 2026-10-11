@@ -42,6 +42,16 @@ but the layout model depends on the type of UI being styled.
 
 * CSS files should always be UTF-8 encoded.
 
+### Flow-relative box properties
+
+`margin-inline-start`, `margin-inline-end`, `padding-inline-start` and `padding-inline-end` stay
+distinct declarations until they are resolved against the element direction. When a logical and a
+physical declaration resolve to the same physical edge (for example `margin-left` and
+`margin-inline-start` in `ltr`), the normal cascade decides: higher specificity wins and, with equal
+specificity, the declaration that appears later wins. When the direction changes, the logical value
+moves to the opposite edge and the edge it leaves returns to its physical declaration. The
+`margin` and `padding` shorthands remain physical.
+
 ## CSS Selectors
 
 CSS selectors define the elements to which a set of CSS rules apply.
@@ -661,6 +671,32 @@ editing, while [value](#value) retains ISO serialization.
 
 ---
 
+### direction
+
+Sets the UI direction of an element and of every descendant that does not set its own direction.
+The direction decides how logical values resolve: `start`/`end` alignments and gravities,
+`margin-inline-*`/`padding-inline-*`, `layout-to-start-of`/`layout-to-end-of`, the progression of
+horizontal LinearLayout, FlowLayout, Flexbox rows and CSS Grid columns, and the side of
+directional parts of standard controls (check box indicators, menu shortcuts and submenu arrows,
+tabs, tree indentation). Physical properties such as `margin-left`, `left` or `right` never change
+meaning. The element direction is also the default base direction of its text. The HTML `dir`
+attribute maps to this property; `dir="auto"` is currently treated as `inherit`.
+
+eepp implements inheritance in the widget tree: the effective direction also follows directions
+set from C++ (`UIWidget::setDirection`, `UISceneNode::setDirection`) and changes at runtime without
+reloading styles. Directions do not cross document scenes: a `UIWebView` document starts as `ltr`.
+
+* Applicable to: Any element
+* Data Type: [string](#string-data-type)
+* Value List:
+  * `ltr`: Left-to-right.
+  * `rtl`: Right-to-left.
+  * `inherit`: Use the parent's direction (default).
+* Default value: `inherit` (scene roots are `ltr`)
+* Aliases: `dir`
+
+---
+
 ### disabled
 
 Disables an HTML input when the attribute/property is present, including an empty value.
@@ -978,19 +1014,23 @@ text on a TextView). Vertical and horizontal can be set by using `|` as a separa
   do anything.
 * Data Type: [string-list](#string-list-data-type)
 * Value List:
-  * `left`
-  * `right`
+  * `left`: Physical left in every direction.
+  * `right`: Physical right in every direction.
+  * `start`: Inline-start edge: left in `ltr`, right in `rtl` (see [direction](#direction)).
+  * `end`: Inline-end edge: right in `ltr`, left in `rtl`.
   * `center_horizontal`
   * `top`
   * `bottom`
   * `center_vertical`
   * `center`: shorthand of `center_horizontal|center_vertical`
-* Default value: Varies on each widget implementation.
+* Default value: Varies on each widget implementation. Widgets that do not set an explicit
+  alignment default to `start`, which is `left` in left-to-right contexts.
 * Syntax:
 
 ```CSS
 gravity: center;
 gravity: left;
+gravity: start|center_vertical;
 gravity: left|top;
 gravity: center_horizontal|bottom;
 ```
@@ -1273,12 +1313,16 @@ XML attribute (for those who are familiar with).
 * Value List:
   * `left`: Push element to the left of its container.
   * `right`: Push element to the right of its container.
+  * `start`: Push element to the inline-start edge of its container (left in `ltr`, right in
+    `rtl`).
+  * `end`: Push element to the inline-end edge of its container (right in `ltr`, left in `rtl`).
   * `center_horizontal`: Push element to the horizontal center of its container.
   * `top`: Push element to the top of its container.
   * `bottom`: Push element to the bottom of its container.
   * `center_vertical`: Place element in the vertical center of its container.
   * `center`: shorthand of `center_horizontal|center_vertical`
-* Default value: `left|top`
+* Default value: `start|top` (equivalent to `left|top` in left-to-right contexts). An omitted
+  horizontal component is `start`.
 * Aliases: `layout_gravity`, `lg`
 
 ---
@@ -1334,6 +1378,32 @@ left margin of this element and right margin of anchor element.
 * Data Type: [string](#string-data-type) (anchor element ID)
 * Default value: _No value_
 * Aliases: `layout_to_right_of`
+
+---
+
+### layout-to-start-of
+
+Logical counterpart of [layout-to-left-of](#layout-to-left-of)/[layout-to-right-of](#layout-to-right-of):
+positions this element on the inline-start side of the given anchor element ID. It resolves to
+`layout-to-left-of` in `ltr` and to `layout-to-right-of` in `rtl`, using the element's
+[direction](#direction), and follows runtime direction changes.
+
+* Applicable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
+* Data Type: [string](#string-data-type) (anchor element ID)
+* Default value: _No value_
+* Aliases: `layout_to_start_of`
+
+---
+
+### layout-to-end-of
+
+Positions this element on the inline-end side of the given anchor element ID. It resolves to
+`layout-to-right-of` in `ltr` and to `layout-to-left-of` in `rtl`.
+
+* Applicable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
+* Data Type: [string](#string-data-type) (anchor element ID)
+* Default value: _No value_
+* Aliases: `layout_to_end_of`
 
 ---
 
@@ -1483,6 +1553,34 @@ Sets the column index that should be prioritized to occupy as much space as poss
 Read [margin-bottom](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-bottom) documentation.
 
 * Aliases: `layout_marginBottom`
+
+---
+
+### margin-inline
+
+Shorthand of [margin-inline-start](#margin-inline-start) and [margin-inline-end](#margin-inline-end).
+One value sets both edges; two values set start and end. Read
+[margin-inline](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-inline) documentation.
+
+---
+
+### margin-inline-end
+
+Flow-relative margin of the inline-end edge: the right margin in `ltr`, the left margin in `rtl`.
+Read [margin-inline-end](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-inline-end)
+documentation. See [Flow-relative box properties](#flow-relative-box-properties).
+
+* Aliases: `margin-end`, `margin_end`, `layout_marginEnd`
+
+---
+
+### margin-inline-start
+
+Flow-relative margin of the inline-start edge: the left margin in `ltr`, the right margin in `rtl`.
+Read [margin-inline-start](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-inline-start)
+documentation. See [Flow-relative box properties](#flow-relative-box-properties).
+
+* Aliases: `margin-start`, `margin_start`, `layout_marginStart`
 
 ---
 
@@ -1794,6 +1892,19 @@ Sets the movement speed in displaced length per second of the progress bar fille
 
 ---
 
+### mirror-on-rtl
+
+Mirrors the element rendering horizontally while its effective [direction](#direction) is `rtl`.
+Use it for semantic directional affordances such as back/forward or "next" chevrons. Mirroring is
+opt-in so arbitrary images never mirror. It is implemented as a negative horizontal scale around
+the element center (hit testing follows it); do not combine it with `scale` on the same element.
+
+* Applicable to: Any element
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
 ### mode
 
 Sets the shared editor mode: `date`, `time`, or `datetime`. The picker classes initialize
@@ -1862,6 +1973,33 @@ The owned element will be automatically resized to the tab widget container size
 ### padding-bottom
 
 Read [padding-bottom](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-bottom) documentation.
+
+---
+
+### padding-inline
+
+Shorthand of [padding-inline-start](#padding-inline-start) and
+[padding-inline-end](#padding-inline-end). One value sets both edges; two values set start and end.
+
+---
+
+### padding-inline-end
+
+Flow-relative padding of the inline-end edge: the right padding in `ltr`, the left padding in
+`rtl`. Read [padding-inline-end](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-inline-end)
+documentation. See [Flow-relative box properties](#flow-relative-box-properties).
+
+* Aliases: `padding-end`, `padding_end`
+
+---
+
+### padding-inline-start
+
+Flow-relative padding of the inline-start edge: the left padding in `ltr`, the right padding in
+`rtl`. Read [padding-inline-start](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-inline-start)
+documentation. See [Flow-relative box properties](#flow-relative-box-properties).
+
+* Aliases: `padding-start`, `padding_start`
 
 ---
 
@@ -2566,6 +2704,9 @@ code implementation, but it's available as an option.
 ### text-align
 
 Read [text-align](https://developer.mozilla.org/en-US/docs/Web/CSS/text-align) documentation.
+Supported values are `left`, `right`, `center`, `start` and `end`. `left` and `right` are
+physical; `start` and `end` follow the element [direction](#direction). Text widgets default to
+`start`.
 
 ---
 

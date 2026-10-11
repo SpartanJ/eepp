@@ -451,6 +451,11 @@ UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
 	mRichText.setTextHints( getTextHints() );
 
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+
+	if ( hasNonDefaultDirection() ) {
+		updateLogicalDirectionState();
+		mRichText.setBaseDirection( getTextBaseDirection() );
+	}
 }
 
 UIRichText::~UIRichText() {
@@ -602,16 +607,9 @@ bool UIRichText::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TextSelection:
 			setTextSelectionEnabled( attribute.asBool() );
 			break;
-		case PropertyId::TextAlign: {
-			std::string align = String::toLower( attribute.value() );
-			if ( align == "center" )
-				setTextAlign( TEXT_ALIGN_CENTER );
-			else if ( align == "left" )
-				setTextAlign( TEXT_ALIGN_LEFT );
-			else if ( align == "right" )
-				setTextAlign( TEXT_ALIGN_RIGHT );
+		case PropertyId::TextAlign:
+			applyTextAlignProperty( attribute );
 			break;
-		}
 		case PropertyId::LineHeight:
 			setLineHeightEq( attribute.value() );
 			break;
@@ -691,9 +689,7 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::TextSelection:
 			return isTextSelectionEnabled() ? "true" : "false";
 		case PropertyId::TextAlign:
-			return getTextAlign() == TEXT_ALIGN_CENTER
-					   ? "center"
-					   : ( getTextAlign() == TEXT_ALIGN_RIGHT ? "right" : "left" );
+			return UIHorizontalAlignmentHelper::toString( getTextAlignment() );
 		case PropertyId::LineHeight:
 			return mLineHeightEq.empty() ? "normal" : mLineHeightEq;
 		case PropertyId::TextIndent:
@@ -922,13 +918,45 @@ Uint32 UIRichText::getTextAlign() const {
 }
 
 UIRichText* UIRichText::setTextAlign( const Uint32& align ) {
+	setLogicalAlignSlot( LogicalAlignSlot::TextAlign, UIHorizontalAlignment::Left );
+	applyTextAlign( align );
+	return this;
+}
+
+void UIRichText::applyTextAlign( Uint32 align ) {
 	if ( mRichText.getAlign() != align ) {
 		mRichText.setAlign( align );
 
 		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentReplacedFormatting );
 	}
+}
+
+UIWidget* UIRichText::setTextAlignment( UIHorizontalAlignment alignment ) {
+	setLogicalAlignSlot( LogicalAlignSlot::TextAlign, alignment );
+	applyTextAlign( resolveHorizontalAlignment( alignment, getDirection() ) );
 	return this;
+}
+
+UIHorizontalAlignment UIRichText::getTextAlignment() const {
+	UIHorizontalAlignment logical = getLogicalAlignSlot( LogicalAlignSlot::TextAlign );
+	return isLogicalAlignment( logical ) ? logical
+										 : horizontalAlignmentFromFlags( mRichText.getAlign() );
+}
+
+void UIRichText::updateLogicalDirectionState() {
+	UIHTMLWidget::updateLogicalDirectionState();
+	Uint32 align = mRichText.getAlign();
+	if ( resolveLogicalAlignSlot( LogicalAlignSlot::TextAlign, align ) )
+		applyTextAlign( ( mRichText.getAlign() & ~TEXT_HALIGN_MASK ) | align );
+}
+
+void UIRichText::onDirectionChanged() {
+	UIHTMLWidget::onDirectionChanged();
+	// The paragraph base direction drives line placement and bidi reordering of inline items.
+	mRichText.setBaseDirection( getTextBaseDirection() );
+	notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
+	notifyLayoutAttrChangeParent( LayoutInvalidation::ParentReplacedFormatting );
 }
 
 UIRichText::WhiteSpaceCollapse UIRichText::getWhiteSpaceCollapse() const {

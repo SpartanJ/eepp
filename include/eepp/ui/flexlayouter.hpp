@@ -109,6 +109,14 @@ class EE_API FlexLayouter : public UILayouter {
 
 	Axis getCrossAxis( CSSFlexDirection direction ) const;
 
+	/**
+	 * Maps the item's physical margins to the flex axes. The main/cross start edges are the
+	 * physical edges where the axes begin, which depend on the flex direction and, for
+	 * horizontal axes, on the container's UI direction.
+	 */
+	void assignItemMargins( FlexItem& item, const Rectf& margin, const Axis& mainAxis,
+							const Axis& crossAxis ) const;
+
 	Float resolveFlexBasis( UIWidget* child, CSSFlexDirection direction, Float flexBasisValue,
 							bool flexBasisAuto, const Axis& mainAxis,
 							bool flexBasisContent = false );

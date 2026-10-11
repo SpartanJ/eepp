@@ -1136,7 +1136,7 @@ UIWidget* UIAbstractTableView::setupCell( UITableCell* widget, UIWidget* rowWidg
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->setClipType( ClipType::ContentBox );
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-	widget->setTextAlign( UI_HALIGN_LEFT );
+	widget->setTextAlignment( UIHorizontalAlignment::Start );
 	widget->setCurIndex( index );
 	bindNavigationClick( widget );
 

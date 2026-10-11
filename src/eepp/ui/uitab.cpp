@@ -60,20 +60,29 @@ Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff 
 	if ( mFlags & UI_DRAG_VERTICAL )
 		newPos = tabW->getTabBar()->convertToNodeSpace( newPos );
 
+	// Swap with the visually adjacent tab once the dragged tab crosses its middle. The previous
+	// tab is on the inline-start side: left in LTR, right in RTL.
 	Uint32 index = tabW->getTabIndex( this );
+	const bool rtl = tabW->isRTL();
+	auto crossesStartSide = [&]( UITab* tab ) {
+		Float tabMiddle = tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f;
+		return rtl ? newPos.x + mSize.getWidth() > tabMiddle : newPos.x < tabMiddle;
+	};
+	auto crossesEndSide = [&]( UITab* tab ) {
+		Float tabMiddle = tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f;
+		return rtl ? newPos.x < tabMiddle : newPos.x + mSize.getWidth() > tabMiddle;
+	};
 	bool swapped = false;
 	if ( index > 0 ) {
 		UITab* tab = tabW->getTab( index - 1 );
-		Float tabMiddle = tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f;
-		if ( tab && newPos.x < tabMiddle ) {
+		if ( tab && crossesStartSide( tab ) ) {
 			tabW->swapTabs( this, tab );
 			swapped = true;
 		}
 	}
 	if ( !swapped && index + 1 < tabW->getTabCount() ) {
 		UITab* tab = tabW->getTab( index + 1 );
-		Float tabMiddle = tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f;
-		if ( tab && newPos.x + mSize.getWidth() > tabMiddle )
+		if ( tab && crossesEndSide( tab ) )
 			tabW->swapTabs( tab, this );
 	}
 
@@ -280,7 +289,7 @@ void UITab::onAutoSize() {
 	}
 
 	if ( getTextView()->getTextWidth() > getTextView()->getSize().getWidth() )
-		getTextView()->setHorizontalAlign( UI_HALIGN_LEFT );
+		getTextView()->setHorizontalAlignment( UIHorizontalAlignment::Start );
 }
 
 std::string UITab::getPropertyString( const PropertyDefinition* propertyDef,

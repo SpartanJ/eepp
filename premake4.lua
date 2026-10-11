@@ -1778,6 +1778,12 @@ solution "eepp"
 		files { "src/examples/ui_hello_world/*.cpp" }
 		build_link_configuration( "eepp-ui-hello-world", true )
 
+	project "eepp-ui-rtl"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_rtl/*.cpp" }
+		build_link_configuration( "eepp-ui-rtl", true )
+
 	project "eepp-ui-application-hello-world"
 		set_kind()
 		language "C++"

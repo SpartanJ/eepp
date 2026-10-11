@@ -203,6 +203,15 @@ class EE_API UITextView : public UIWidget {
 
 	virtual void onAlignChange();
 
+	virtual void onDirectionChanged();
+
+	/**
+	 * Lays out an indicator (check box, radio button) placed at the inline-start side of the
+	 * text: physical left in LTR, physical right in RTL. The text is placed after the indicator
+	 * and aligned with the widget's horizontal alignment inside the remaining space.
+	 */
+	void alignWithInlineStartIndicator( UIWidget* active, UIWidget* inactive, Float separationPx );
+
 	virtual void onSelectionChange();
 
 	virtual Text& getVisibleTextCache();

@@ -159,10 +159,7 @@ void UITabWidget::setContainerSize() {
 	} else {
 		mTabBar->setVisible( true );
 		mTabBar->setEnabled( true );
-		Float totalTabsWidth = mTabs.empty() ? 0
-											 : mTabs.back()->getPixelsPosition().x +
-												   mTabs.back()->getPixelsSize().getWidth() +
-												   mPaddingPx.Left + mPaddingPx.Right;
+		Float totalTabsWidth = getTabsExtent() + mPaddingPx.Left + mPaddingPx.Right;
 		Float totalSize = totalTabsWidth > mSize.getWidth() ? totalTabsWidth : mSize.getWidth();
 		mTabBar->setPixelsSize( totalSize - mPaddingPx.Left - mPaddingPx.Right,
 								PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
@@ -445,7 +442,17 @@ void UITabWidget::posTabs() {
 		tabsWidth -= mStyleConfig.TabSeparation;
 	}
 
-	switch ( Font::getHorizontalAlign( mFlags ) ) {
+	// Tab 0 sits at the inline-start edge. In RTL the strip is laid out as its LTR mirror image:
+	// offsets are computed with the mirrored alignment and every tab is reflected inside the
+	// strip, which is at least as wide as all the tabs so overflow scrolls toward the left.
+	const bool rtl = isRTL();
+	const Float stripWidth = eemax<Float>(
+		getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right, (Float)tabsWidth );
+	Uint32 halign = Font::getHorizontalAlign( mFlags );
+	if ( rtl )
+		halign = mirrorHorizontalAlignFlags( halign );
+
+	switch ( halign ) {
 		case UI_HALIGN_LEFT:
 			alignOffset = 0;
 			break;
@@ -474,7 +481,12 @@ void UITabWidget::posTabs() {
 		}
 
 		if ( !mTabs[i]->isDragging() ) {
-			mTabs[i]->setPixelsPosition( alignOffset + x, y );
+			if ( rtl ) {
+				mTabs[i]->setPixelsPosition(
+					stripWidth - ( alignOffset + x ) - mTabs[i]->getPixelsSize().getWidth(), y );
+			} else {
+				mTabs[i]->setPixelsPosition( alignOffset + x, y );
+			}
 		}
 
 		x += mTabs[i]->getPixelsSize().getWidth() + mStyleConfig.TabSeparation;
@@ -1232,6 +1244,25 @@ UIWidget* UITabWidget::getContainerNode() const {
 	return mNodeContainer;
 }
 
+Float UITabWidget::getTabsExtent() const {
+	// Rightmost edge of the tab strip content. In LTR it is the end of the last tab; in RTL the
+	// last tab is the leftmost one, so take the rightmost tab edge instead.
+	if ( !isRTL() ) {
+		return mTabs.empty()
+				   ? 0
+				   : mTabs.back()->getPixelsPosition().x + mTabs.back()->getPixelsSize().getWidth();
+	}
+	Float extent = 0;
+	for ( const UITab* tab : mTabs )
+		extent = eemax( extent, tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() );
+	return extent;
+}
+
+void UITabWidget::onDirectionChanged() {
+	UIWidget::onDirectionChanged();
+	orderTabs();
+}
+
 void UITabWidget::updateScrollBar() {
 	mTabScroll->setPixelsSize(
 		{ getPixelsSize().getWidth(), mTabScroll->getPixelsSize().getHeight() } );
@@ -1239,9 +1270,7 @@ void UITabWidget::updateScrollBar() {
 		{ -mTabBar->getPixelsPosition().x,
 		  mTabBar->getPixelsSize().getHeight() - mTabScroll->getPixelsSize().getHeight() } );
 
-	Float totalSize = mTabs.empty() ? 0
-									: mTabs.back()->getPixelsPosition().x +
-										  mTabs.back()->getPixelsSize().getWidth();
+	Float totalSize = getTabsExtent();
 	mTabScroll->setVisible( totalSize > getPixelsSize().getWidth() );
 
 	if ( mTabScroll->isVisible() ) {
@@ -1270,13 +1299,15 @@ void UITabWidget::updateScroll( bool updateFocus ) {
 								? getTabIndex( mFocusHistory.at( mFocusHistory.size() - 2 ) )
 								: getTabIndex( mFocusHistory.back() );
 
-			Float x = mTabSelectedIndex > pIndex
-						  ? eeclamp( mTabSelected->getPixelsPosition().x +
-										 mTabSelected->getPixelsSize().getWidth() -
-										 mTabScroll->getPixelsSize().getWidth(),
-									 0.f, mTabScroll->getMaxValue() )
-						  : eeclamp( mTabSelected->getPixelsPosition().x, 0.f,
-									 mTabScroll->getMaxValue() );
+			// Moving toward the inline-end side reveals the tab against the visible end edge.
+			const bool towardEnd =
+				isRTL() ? mTabSelectedIndex < pIndex : mTabSelectedIndex > pIndex;
+			Float x = towardEnd ? eeclamp( mTabSelected->getPixelsPosition().x +
+											   mTabSelected->getPixelsSize().getWidth() -
+											   mTabScroll->getPixelsSize().getWidth(),
+										   0.f, mTabScroll->getMaxValue() )
+								: eeclamp( mTabSelected->getPixelsPosition().x, 0.f,
+										   mTabScroll->getMaxValue() );
 
 			mTabScroll->setValue( x );
 		}

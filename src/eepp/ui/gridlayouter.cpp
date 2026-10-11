@@ -898,6 +898,15 @@ void GridLayouter::applyLayout() {
 	if ( gridWidget )
 		containerJItems = gridWidget->getJustifyItems();
 
+	// CSS Grid §7.1/§10: column lines are numbered from the inline-start edge, so in RTL the
+	// first column is at the right and auto-placement progresses leftwards. Tracks, gaps and
+	// justify-content offsets are computed from the start edge and every grid area is mirrored
+	// within the content box. Logical self-alignment (start/end) follows the inline direction;
+	// margins stay physical.
+	const bool rtl = mContainer->isRTL();
+	const Float contentBoxLeft = padLeft;
+	const Float contentBoxWidth = mContainer->getPixelsSize().getWidth() - padLeft - padRight;
+
 	// Position items with alignment
 	for ( auto& item : mItems ) {
 		if ( item.isTextNode )
@@ -926,6 +935,8 @@ void GridLayouter::applyLayout() {
 			cellW += static_cast<Float>( ce - cs - 1 ) * colGapX;
 		if ( re > rs + 1 )
 			cellH += static_cast<Float>( re - rs - 1 ) * rowGapY;
+		if ( rtl )
+			cellX = contentBoxLeft + contentBoxWidth - ( cellX - contentBoxLeft ) - cellW;
 
 		// Determine effective alignment
 		CSSJustifySelf js = item.justifySelf;
@@ -974,12 +985,14 @@ void GridLayouter::applyLayout() {
 			Float iw = item.widget->getPixelsSize().getWidth();
 			finalW = iw;
 			finalX += ( areaW - iw ) * 0.5f;
-		} else if ( js == CSSJustifySelf::End || js == CSSJustifySelf::FlexEnd ) {
+		} else {
+			// Start-like values align to the inline-start edge and end-like values to the
+			// inline-end edge; in RTL the inline-start edge is the right side of the area.
+			const bool endAligned = js == CSSJustifySelf::End || js == CSSJustifySelf::FlexEnd;
 			Float iw = item.widget->getPixelsSize().getWidth();
 			finalW = iw;
-			finalX += areaW - iw;
-		} else {
-			finalW = item.widget->getPixelsSize().getWidth();
+			if ( endAligned != rtl )
+				finalX += areaW - iw;
 		}
 
 		if ( autoTop || autoBottom ) {

@@ -78,6 +78,10 @@ UTEST( UICodeEditorSplitter, EditorMovedBetweenSplitsKeepsFocusTracking ) {
 
 	transferTabTo( tabB, tabWidgetA );
 
+	EXPECT_EQ( splitter->getTabWidgets().size(), size_t{ 1 } );
+	EXPECT_EQ( tabWidgetA->getTabCount(), Uint32{ 2 } );
+	EXPECT_TRUE( app.getUI()->getRoot()->getParent() == app.getUI() );
+
 	editorA->setFocus();
 	EXPECT_EQ( splitter->getCurEditor(), editorA );
 

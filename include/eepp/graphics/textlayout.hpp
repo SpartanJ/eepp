@@ -58,6 +58,14 @@ class EE_API TextLayout {
 	 */
 	static void clearLayoutCache( Font* font = nullptr );
 
+	/**
+	 * @return The direction of the first strong bidirectional character of @p string
+	 * (Unicode bidi classes L, R and AL), or TextDirection::Unspecified if it only contains
+	 * neutral and weak characters (spaces, punctuation, digits). This is the paragraph direction
+	 * detection rule of UAX #9 (P2/P3) and of HTML dir=auto.
+	 */
+	static TextDirection getFirstStrongDirection( const String::View& string );
+
   protected:
 	static void wrapLayout( const String::View& string, TextLayout&, LineWrapMode lineWrapMode,
 							Float wrapWidth, Float vspace, bool keepIndentation, Font* font,

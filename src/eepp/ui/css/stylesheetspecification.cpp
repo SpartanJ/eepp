@@ -801,6 +801,45 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( PropertyId::JustifySelf, "justify-self", "auto" )
 		.setType( PropertyType::String );
 	registerProperty( PropertyId::Defer, "defer", "0" ).setType( PropertyType::Bool );
+	// CSS defines direction as inherited. eepp implements that inheritance natively in the
+	// widget tree (UINode keeps a cached effective direction that follows its ancestors, including
+	// direction set from C++), so the CSS cascade must not copy the value into descendants as if
+	// each of them had declared it. The HTML `dir` attribute maps to this property as a
+	// presentational hint.
+	registerProperty( PropertyId::Direction, "direction", "" )
+		.addAlias( "dir" )
+		.setType( PropertyType::String );
+	// Flow-relative (logical) box longhands. They stay distinct declarations until they are
+	// resolved against the widget direction, so they cascade against their physical counterparts.
+	registerProperty( PropertyId::MarginInlineStart, "margin-inline-start", "0px" )
+		.setType( PropertyType::NumberLength )
+		.addAlias( "margin-start" )
+		.addAlias( "margin_start" )
+		.addAlias( "layout_marginstart" )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
+	registerProperty( PropertyId::MarginInlineEnd, "margin-inline-end", "0px" )
+		.setType( PropertyType::NumberLength )
+		.addAlias( "margin-end" )
+		.addAlias( "margin_end" )
+		.addAlias( "layout_marginend" )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
+	registerProperty( PropertyId::PaddingInlineStart, "padding-inline-start", "" )
+		.setType( PropertyType::NumberLength )
+		.addAlias( "padding-start" )
+		.addAlias( "padding_start" )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
+	registerProperty( PropertyId::PaddingInlineEnd, "padding-inline-end", "" )
+		.setType( PropertyType::NumberLength )
+		.addAlias( "padding-end" )
+		.addAlias( "padding_end" )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
+	registerProperty( PropertyId::LayoutToStartOf, "layout-to-start-of", "" )
+		.addAlias( "layout_to_start_of" );
+	registerProperty( PropertyId::LayoutToEndOf, "layout-to-end-of", "" )
+		.addAlias( "layout_to_end_of" );
+	// Opt-in horizontal mirroring for semantic directional affordances (back/forward glyphs).
+	registerProperty( PropertyId::MirrorOnRTL, "mirror-on-rtl", "false" )
+		.setType( PropertyType::Bool );
 
 	// Shorthands
 	registerShorthand( ShorthandId::Margin, "margin",
@@ -901,6 +940,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 					   "vector2" );
 	registerShorthand( ShorthandId::PlaceContent, "place-content",
 					   { "align-content", "justify-content" }, "vector2" );
+	registerShorthand( ShorthandId::MarginInline, "margin-inline",
+					   { "margin-inline-start", "margin-inline-end" }, "vector2" );
+	registerShorthand( ShorthandId::PaddingInline, "padding-inline",
+					   { "padding-inline-start", "padding-inline-end" }, "vector2" );
 
 	validateBuiltinRegistrations();
 }

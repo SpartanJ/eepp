@@ -505,13 +505,17 @@ UTEST( Accessibility, CloseCallbacksCannotRetainDeletedDescendantIdentities ) {
 	auto ref = manager->getNodeRef( button );
 	bool invalidatedBeforeCallback = false;
 	bool cannotRecreateIdentities = false;
+	bool destroyingDuringCallback = false;
+	EXPECT_FALSE( container->isDestroying() );
 	container->addEventListener( Event::OnClose, [&]( const Event* ) {
+		destroyingDuringCallback = container->isDestroying();
 		invalidatedBeforeCallback = !manager->isValid( ref );
 		cannotRecreateIdentities = !manager->getNodeRef( button ).isValid() &&
 								   manager->getChildren( manager->getRoot() ).empty();
 		eeDelete( button );
 	} );
 	eeDelete( container );
+	EXPECT_TRUE( destroyingDuringCallback );
 	EXPECT_TRUE( invalidatedBeforeCallback );
 	EXPECT_TRUE( cannotRecreateIdentities );
 	EXPECT_FALSE( manager->isValid( ref ) );

@@ -71,6 +71,7 @@ UITooltip::UITooltip() :
 	UIWidget( "tooltip" ), mAlignOffset( 0.f, 0.f ), mTooltipTime( Time::Zero ), mTooltipOf() {
 
 	mTextCache = Text::New();
+	mTextCache->setDirection( getTextBaseDirection() );
 	mTextCache->setTextHints( getTextHints() );
 	mEnabled = false;
 
@@ -319,6 +320,16 @@ void UITooltip::onSizeChange() {
 	UINode::onSizeChange();
 }
 
+void UITooltip::onDirectionChanged() {
+	UIWidget::onDirectionChanged();
+	if ( mTextCache && mTextCache->getDirection() != getTextBaseDirection() ) {
+		mTextCache->setDirection( getTextBaseDirection() );
+		autoWrap();
+		onAutoSize();
+		autoAlign();
+	}
+}
+
 void UITooltip::onTextChanged() {
 	sendCommonEvent( Event::OnTextChanged );
 	invalidateDraw();
@@ -519,10 +530,7 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::Wordwrap:
 			return mFlags & UI_WORD_WRAP ? "true" : "false";
 		case PropertyId::TextAlign:
-			return Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_CENTER
-					   ? "center"
-					   : ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT ? "right"
-																					 : "left" );
+			return UIHorizontalAlignmentHelper::toString( getTextAlignment() );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -658,16 +666,9 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( !mUsingCustomStyling )
 				setOutlineColor( attribute.asColor() );
 			break;
-		case PropertyId::TextAlign: {
-			std::string align = String::toLower( attribute.value() );
-			if ( align == "center" )
-				setHorizontalAlign( UI_HALIGN_CENTER );
-			else if ( align == "left" )
-				setHorizontalAlign( UI_HALIGN_LEFT );
-			else if ( align == "right" )
-				setHorizontalAlign( UI_HALIGN_RIGHT );
+		case PropertyId::TextAlign:
+			applyTextAlignProperty( attribute );
 			break;
-		}
 		default:
 			return UIWidget::applyProperty( attribute );
 	}

@@ -43,18 +43,18 @@ Menu::Item,
 Menu::CheckBox,
 Menu::Separator,
 Menu::SubMenu {
-	padding-left: 4dp;
+	padding-inline-start: 4dp;
 }
 
 Menu::Item::text,
 Menu::CheckBox::text,
 Menu::Separator::text,
 Menu::SubMenu::text {
-	padding-right: 4dp;
+	padding-inline-end: 4dp;
 }
 
 Menu::SubMenu::arrow {
-	margin-right: 1dp;
+	margin-inline-end: 1dp;
 }
 
 Menu:hover,
@@ -98,7 +98,7 @@ ListView {
 }
 
 ListView::cell {
-	padding-left: 4dp;
+	padding-inline-start: 4dp;
 }
 
 ListView::row {
@@ -113,7 +113,7 @@ Tooltip {
 Menu::Item::shortcut,
 Menu::CheckBox::shortcut,
 Menu::RadioButton::shortcut {
-	margin-right: 8dp;
+	margin-inline-end: 8dp;
 }
 
 
