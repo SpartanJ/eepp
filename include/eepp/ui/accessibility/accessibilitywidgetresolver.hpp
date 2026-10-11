@@ -15,6 +15,7 @@ class TextPosition;
 namespace EE { namespace UI {
 
 class UIWidget;
+class AccessibilityTextIndex;
 
 struct AccessibilityIssue {
 	const UIWidget* widget{ nullptr };
@@ -70,7 +71,8 @@ class EE_API AccessibilityWidgetResolver {
 
 	static AccessibilityTextRevision getTextRevision( const UIWidget* widget );
 
-	/** The code-point offset of a document position. */
+	/** Standalone code-point offset calculation, without retaining a document cache (O(lines)).
+	 * Native widget queries use their manager's optional incremental index instead. */
 	static Int32 getTextOffset( const Doc::TextDocument& document,
 								const Doc::TextPosition& position );
 
@@ -97,6 +99,10 @@ class EE_API AccessibilityWidgetResolver {
 	static std::vector<AccessibilityIssue> audit( const UIWidget* root );
 
   private:
+	/** Uses the scene owner's optional per-document index, never a process-global text cache. */
+	static AccessibilityTextIndex* textIndexFor( const UIWidget* widget,
+												 const Doc::TextDocument& document );
+
 	/** The widget's own name: its label, else its native text, else its tooltip. Relations are
 	 * not followed, so a labelled-by target that is itself labelled by another cannot loop. */
 	static String getOwnName( const UIWidget* widget );

@@ -6,6 +6,7 @@
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_FREEBSD
 
 #include "accessibilitybackend.hpp"
+#include "accessibilitydispatchprofile.hpp"
 #include <atomic>
 #include <cstring>
 #include <eepp/core/containers.hpp>
@@ -279,6 +280,7 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 	std::vector<AccessibilityManager*> mPendingWindowAdds;
 	Uint64 mNextManagerId{ 1 };
 	DBusLibrary mDBus;
+	std::unique_ptr<AccessibilityDispatchProfile> mProfile;
 	DBusConnection* mConnection{};
 	int mConnectionFd{ -1 };
 	int mWakePipe[2]{ -1, -1 };

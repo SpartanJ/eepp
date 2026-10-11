@@ -21,7 +21,7 @@ import statistics
 import subprocess
 import sys
 
-LINE = re.compile(r"^ACCESSIBILITY_DORMANT (\S+) ?(.*)$")
+LINE = re.compile(r"^ACCESSIBILITY_(?:DORMANT|ACTIVE) (\S+) ?(.*)$")
 FIELD = re.compile(r"(\w+)=([-\d.]+)")
 
 # Every build must report these; a run missing any of them did not measure what it claims.
@@ -52,6 +52,28 @@ ACCESSIBILITY = {
 	"set_id_active_referenced": ("allocations", "bytes", "ms"),
 }
 
+ACTIVE_TEXT = {
+	**{
+		f"text_{kind}_{lines}": ("allocations", "bytes", "ms")
+		for lines in (10000, 100000, 1000000)
+		for kind in ("edits", "queries_after_edit", "warm_queries")
+	},
+	"text_index_updates": ("allocations", "bytes", "ms"),
+	"text_index_work": ("line_reads", "rebuilds"),
+	"child_count_materialized": ("allocations", "bytes", "ms"),
+	"child_count_scalar": ("allocations", "bytes", "ms"),
+	**{
+		f"model_rows_{kind}_{rows}": ("allocations", "bytes", "ms")
+		for rows in (100, 10000, 100000)
+		for kind in ("queried", "mutation", "disconnected")
+	},
+}
+# Original accessibility builds can run semantic queries without the new private index helper.
+ACTIVE_COMMON = {
+	name: keys for name, keys in ACTIVE_TEXT.items()
+	if name not in {"text_index_updates", "text_index_work"}
+}
+
 
 def parse(stdout):
 	sample = {}
@@ -80,13 +102,13 @@ def missing(sample, expected):
 	)
 
 
-def run(executable, samples, timeout, expected):
+def run(executable, samples, timeout, expected, active_text=False):
 	"""Returns the median of every measurement and the reasons the run did not pass, if any."""
 	results = {}
 	failures = []
 	for index in range(samples):
 		completed = subprocess.run(
-			[executable, "--filter=AccessibilityDormant.*"],
+			[executable, "--filter=AccessibilityActive.*" if active_text else "--filter=AccessibilityDormant.*"],
 			capture_output=True,
 			text=True,
 			timeout=timeout,
@@ -115,6 +137,8 @@ def main():
 	parser.add_argument("--samples", type=int, default=3)
 	parser.add_argument("--timeout", type=float, default=300)
 	parser.add_argument("--json", action="store_true")
+	parser.add_argument("--active-text", action="store_true",
+		help="measure active text indexing, child counts and queried model rows instead of dormant costs")
 	args = parser.parse_args()
 
 	if args.samples < 1:
@@ -133,8 +157,11 @@ def main():
 	failures = {}
 	for label, path in builds:
 		# The current build must measure everything; a compared tree may lack accessibility.
-		expected = {**COMMON, **ACCESSIBILITY} if label == "current" else COMMON
-		output[label], failures[label] = run(path, args.samples, args.timeout, expected)
+		if args.active_text:
+			expected = ACTIVE_TEXT if label == "current" else ACTIVE_COMMON
+		else:
+			expected = {**COMMON, **ACCESSIBILITY} if label == "current" else COMMON
+		output[label], failures[label] = run(path, args.samples, args.timeout, expected, args.active_text)
 	passed = {label: not failures[label] for label in failures}
 	if args.json:
 		print(json.dumps({"results": output, "guards_passed": passed, "failures": failures},

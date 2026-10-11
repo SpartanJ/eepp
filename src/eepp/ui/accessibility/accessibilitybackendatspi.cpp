@@ -17,6 +17,7 @@ namespace EE { namespace UI { namespace AtSpi {
 
 AtSpiApplication::AtSpiApplication( AccessibilityManager& manager ) :
 	mManager( &manager ), mPrimaryManager( &manager ) {
+	mProfile = AccessibilityDispatchProfile::create( "atspi" );
 	registerManager( manager );
 	if ( manager.getSceneNode() && manager.getSceneNode()->getWindow() )
 		mName = String::fromUtf8( manager.getSceneNode()->getWindow()->getTitle() );
@@ -149,6 +150,8 @@ void AtSpiApplication::unregisterManager( AccessibilityManager& manager ) {
 void AtSpiApplication::update() {
 	if ( !mInitialized.load( std::memory_order_acquire ) || !mConnection )
 		return;
+	const auto profileStart = mProfile ? AccessibilityDispatchProfile::Clock::now()
+									   : AccessibilityDispatchProfile::Clock::time_point{};
 	flushPendingTexts();
 	// Signals queued by widget updates must leave the connection even when no client sends
 	// another query. Otherwise typing notifications wait indefinitely in libdbus's queue.
@@ -169,19 +172,42 @@ void AtSpiApplication::update() {
 		}
 		mPendingWindowAdds.clear();
 	}
-	if ( !mDispatchRequested.exchange( false, std::memory_order_acq_rel ) )
+	if ( !mDispatchRequested.exchange( false, std::memory_order_acq_rel ) ) {
+		if ( mProfile )
+			mProfile->batch( 0, profileStart, 0, false );
 		return;
+	}
 	mDBus.connectionReadWrite( mConnection, 0 );
 	constexpr size_t MaxMessagesPerUpdate = 256;
-	for ( size_t i = 0; i < MaxMessagesPerUpdate &&
-						mDBus.connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains;
-		  ++i )
+	constexpr auto DispatchBudget = std::chrono::milliseconds( 2 );
+	const auto dispatchStart = std::chrono::steady_clock::now();
+	size_t messages = 0;
+	double maximumMessage = 0;
+	while ( messages < MaxMessagesPerUpdate &&
+			mDBus.connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains ) {
+		const auto messageStart = mProfile ? AccessibilityDispatchProfile::Clock::now()
+										   : AccessibilityDispatchProfile::Clock::time_point{};
 		mDBus.connectionDispatch( mConnection );
+		++messages;
+		if ( mProfile ) {
+			maximumMessage = std::max( maximumMessage,
+									   AccessibilityDispatchProfile::microseconds( messageStart ) );
+		}
+		// Always make progress, but do not drain a costly request burst in one dispatch. A
+		// single synchronous callback can exceed the budget; this is not a whole-frame cap,
+		// since the application connection is also serviced by other live scenes' updates.
+		if ( std::chrono::steady_clock::now() - dispatchStart >= DispatchBudget )
+			break;
+	}
 	mDBus.connectionReadWrite( mConnection, 0 );
 	// connectionReadWrite() can move multiple requests from the socket into libdbus. Once the
 	// socket is drained, poll() will not wake us for requests that remain in libdbus's internal
 	// dispatch queue. Preserve the bounded per-update work without stranding that backlog.
-	if ( mDBus.connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains ) {
+	const bool backlog =
+		mDBus.connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains;
+	if ( mProfile )
+		mProfile->batch( messages, profileStart, maximumMessage, backlog );
+	if ( backlog ) {
 		mDispatchRequested.store( true, std::memory_order_release );
 		Window::Input::wakeUpEventLoop();
 	} else {

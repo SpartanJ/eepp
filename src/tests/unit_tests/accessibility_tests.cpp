@@ -1503,6 +1503,7 @@ class RecordingBackend : public AccessibilityBackend {
 	std::vector<AccessibilityPendingEvent> events;
 	bool active{ true };
 	bool exactTextChanges{ true };
+	std::function<void()> textQuery;
 
 	bool isAvailable() const override { return true; }
 
@@ -1516,6 +1517,8 @@ class RecordingBackend : public AccessibilityBackend {
 		if ( ignoring )
 			return false;
 		changes.push_back( change );
+		if ( textQuery )
+			textQuery();
 		return true;
 	}
 
@@ -2432,6 +2435,155 @@ UTEST( Accessibility, IgnoredTextChangesDoNotConsumeTheFrameBudget ) {
 	input->getDocument().textInput( "?" );
 	ASSERT_EQ( recorder->changes.size(), 1u );
 	EXPECT_FALSE( recorder->changes[0].isWholeText() );
+}
+
+UTEST( Accessibility, QueriedTextIndexesSurviveMutedAndCoalescedEdits ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	auto* editor = UICodeEditor::New();
+	auto& document = editor->getDocument();
+	document.textInput( "first\nsecond\nthird" );
+	const auto ref = manager->getNodeRef( editor );
+	EXPECT_EQ( manager->getTextLength( ref ), 18 );
+	// The index must advance on Windows/macOS too, before supportsTextChanges() returns false.
+	recorder->exactTextChanges = false;
+	document.insert( 0, { 0, 0 }, "a\nb\n" );
+	EXPECT_EQ( manager->getTextLength( ref ), 22 );
+	EXPECT_TRUE( manager->getTextRange( ref, 4, 9 ) == String( "first" ) );
+	recorder->exactTextChanges = true;
+	manager->setSuppressedTextChanges( ref );
+	document.insert( 0, { 0, 0 }, "suppressed\n" );
+	EXPECT_EQ( manager->getTextLength( ref ), 33 );
+	manager->setSuppressedTextChanges( {} );
+	manager->update();
+	// More edits than the exact-event budget still update the queried index.
+	for ( size_t edit = 0; edit < 8; ++edit )
+		document.insert( 0, { 0, 0 }, "x\n" );
+	EXPECT_EQ( manager->getTextLength( ref ), 49 );
+	EXPECT_TRUE( manager->getTextRange( ref, 16, 26 ) == String( "suppressed" ) );
+	recorder->ignoring = true;
+	document.insert( 0, { 0, 0 }, "ignored\n" );
+	EXPECT_EQ( manager->getTextLength( ref ), 57 );
+	EXPECT_TRUE( manager->getTextRange( ref, 0, 7 ) == String( "ignored" ) );
+}
+
+UTEST( Accessibility, NestedTextCallbacksUseWholeTextInsteadOfOutOfOrderDeltas ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	auto* editor = UICodeEditor::New();
+	auto& document = editor->getDocument();
+	document.textInput( "original" );
+	const auto ref = manager->getNodeRef( editor );
+	EXPECT_EQ( manager->getTextLength( ref ), 8 );
+	manager->update();
+	recorder->changes.clear();
+	bool nested = false;
+	editor->on( Event::OnTextChanged, [&]( const Event* ) {
+		if ( !nested ) {
+			nested = true;
+			document.insert( 0, { 0, 0 }, "inner\n" );
+		}
+	} );
+	document.insert( 0, { 0, 0 }, "outer\n" );
+	// Common event callbacks run before the editor forwards its document change. Reporting
+	// inner then outer as exact insertions at zero would give clients outer+inner, not inner+outer.
+	ASSERT_EQ( recorder->changes.size(), 1u );
+	EXPECT_TRUE( recorder->changes[0].isWholeText() );
+	EXPECT_TRUE( manager->getTextRange( ref, 0, manager->getTextLength( ref ) ) ==
+				 String( "inner\nouter\noriginal" ) );
+	manager->update();
+	recorder->changes.clear();
+	document.insert( 0, { 0, 0 }, "x" );
+	ASSERT_EQ( recorder->changes.size(), 1u );
+	EXPECT_FALSE( recorder->changes[0].isWholeText() );
+	EXPECT_TRUE( recorder->changes[0].inserted == String( "x" ) );
+}
+
+UTEST( Accessibility, SharedTextAmbiguitySurvivesQueriesUntilTheFrameBoundary ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	auto document = std::make_shared<Doc::TextDocument>();
+	document->textInput( "original" );
+	auto* first = UICodeEditor::New();
+	auto* second = UICodeEditor::New();
+	first->setDocument( document );
+	second->setDocument( document );
+	const auto firstRef = manager->getNodeRef( first );
+	const auto secondRef = manager->getNodeRef( second );
+	EXPECT_EQ( manager->getTextLength( firstRef ), 8 );
+	EXPECT_EQ( manager->getTextLength( secondRef ), 8 );
+	manager->update();
+	recorder->changes.clear();
+	// Native callbacks may read text immediately after a whole-text hint. Rebuilding the
+	// shared index must not allow the other editor to report the reordered edits as exact.
+	recorder->textQuery = [&] {
+		manager->getTextLength( firstRef );
+		manager->getTextLength( secondRef );
+	};
+	bool nested = false;
+	auto edit = [&]( const Event* ) {
+		if ( !nested ) {
+			nested = true;
+			document->insert( 0, { 0, 0 }, "inner\n" );
+		}
+	};
+	first->on( Event::OnTextChanged, edit );
+	second->on( Event::OnTextChanged, edit );
+	document->insert( 0, { 0, 0 }, "outer\n" );
+	ASSERT_EQ( recorder->changes.size(), 2u );
+	for ( const auto& change : recorder->changes )
+		EXPECT_TRUE( change.isWholeText() );
+	manager->update();
+	recorder->changes.clear();
+	document->insert( 0, { 0, 0 }, "x" );
+	ASSERT_EQ( recorder->changes.size(), 2u );
+	for ( const auto& change : recorder->changes )
+		EXPECT_FALSE( change.isWholeText() );
+}
+
+UTEST( Accessibility, ChildCountsDoNotCreateDescendantIdentities ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto* group = UIWidget::New();
+	group->setAccessibilityRole( AccessibilityRole::Group );
+	auto* first = UIPushButton::New();
+	first->setParent( group );
+	auto* plain = UINode::New();
+	plain->setParent( group );
+	auto* transparent = UIWidget::New();
+	transparent->setParent( plain );
+	auto* second = UIPushButton::New();
+	second->setParent( transparent );
+	auto* hidden = UIPushButton::New();
+	hidden->setParent( group );
+	hidden->setAccessibilityHidden( true );
+	manager->setBackend( std::make_unique<RecordingBackend>() );
+	manager->onNativeClientObserved();
+	const auto ref = manager->getNodeRef( group );
+	EXPECT_EQ( manager->getChildCount( ref ), 2u );
+	EXPECT_FALSE( manager->findNodeRef( first ).isValid() );
+	EXPECT_FALSE( manager->findNodeRef( second ).isValid() );
+	EXPECT_EQ( manager->getChildren( ref ).size(), 2u );
+	EXPECT_EQ( manager->getChildCount( ref ), 2u );
+	EXPECT_TRUE( manager->findNodeRef( first ).isValid() );
+	group->setAccessibilityRole( AccessibilityRole::Button );
+	EXPECT_EQ( manager->getChildCount( ref ), 0u );
 }
 
 UTEST( Accessibility, QueuedLiveAnnouncementsAreRevalidatedOnDelivery ) {

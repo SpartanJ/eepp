@@ -1,5 +1,6 @@
 #include "accessibilitybackend.hpp"
 #include "accessibilitymodelviewsource.hpp"
+#include "accessibilitytextindex.hpp"
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
@@ -299,6 +300,14 @@ AccessibilityTextInfo AccessibilityManager::getTextInfo( AccessibilityNodeRef re
 	return {};
 }
 
+AccessibilityTextIndex&
+AccessibilityManager::textIndexFor( const UIWidget* widget,
+									const Doc::TextDocument& document ) const {
+	if ( !mTextIndexes )
+		mTextIndexes = std::make_unique<AccessibilityTextIndexes>();
+	return mTextIndexes->forWidget( widget, document );
+}
+
 Int32 AccessibilityManager::getTextLength( AccessibilityNodeRef ref ) const {
 	auto* widget = resolve( ref );
 	return widget ? AccessibilityWidgetResolver::getTextLength( widget ) : 0;
@@ -324,17 +333,34 @@ AccessibilityTextRevision AccessibilityManager::getTextRevision( AccessibilityNo
 
 void AccessibilityManager::onTextChanged( UIWidget* widget,
 										  const Doc::DocumentContentChange* change ) {
-	if ( !mBackend || !mScene || !mScene->hasActiveAccessibilityClients() ||
-		 !mBackend->supportsTextChanges() || !widget || !widget->isAccessibilityElement() ||
+	if ( !mScene || !mScene->hasActiveAccessibilityClients() || !widget )
+		return;
+	if ( !mTextIndexes && ( !mBackend || !mBackend->supportsTextChanges() ) )
+		return;
+	// Index maintenance is independent of native edit support, suppression, rejection and the
+	// frame budget. A queried document must remain current even when no edit event is sent.
+	const auto* document = AccessibilityWidgetResolver::getTextDocument( widget );
+	bool exactChange = true;
+	if ( mTextIndexes ) {
+		if ( document )
+			exactChange = mTextIndexes->changed( widget, *document, change );
+		else
+			mTextIndexes->detach( widget );
+	}
+	mHasAmbiguousTextChanges |= !exactChange;
+	if ( !mBackend || !mBackend->supportsTextChanges() || !widget->isAccessibilityElement() ||
 		 AccessibilityWidgetResolver::getEventTarget( widget, AccessibilityEvent::ValueChanged ) !=
 			 widget )
 		return;
-	const auto* document = AccessibilityWidgetResolver::getTextDocument( widget );
 	if ( !document )
 		return;
 	const auto ref = getNodeRef( widget );
 	if ( ref == mSuppressedTextRef )
 		return;
+	// Nested common-event callbacks can forward a later edit before the outer edit. Never send
+	// out-of-order exact deltas; the existing whole-text path covers the final state this frame.
+	if ( !exactChange )
+		change = nullptr;
 	auto counter = std::find_if( mTextChangeCounts.begin(), mTextChangeCounts.end(),
 								 [&ref]( const auto& entry ) { return entry.first == ref; } );
 	if ( counter == mTextChangeCounts.end() ) {
@@ -347,8 +373,8 @@ void AccessibilityManager::onTextChanged( UIWidget* widget,
 	const auto previousCount = counter->second;
 	AccessibilityTextChange textChange;
 	if ( change && ++counter->second <= MaxExactTextChangesPerFrame ) {
-		textChange.offset = AccessibilityWidgetResolver::getTextOffset(
-			*document, change->range.normalized().start() );
+		textChange.offset =
+			textIndexFor( widget, *document ).offset( change->range.normalized().start() );
 		textChange.removed = document->getNotifiedRemovedText();
 		textChange.inserted = change->text;
 	} else {
@@ -392,9 +418,23 @@ Int32 AccessibilityManager::getIndexInParent( AccessibilityNodeRef ref ) {
 size_t AccessibilityManager::getChildCount( AccessibilityNodeRef ref ) {
 	if ( auto* source = resolveSource( ref ) )
 		return source->getChildCount( ref.id );
-	if ( auto* source = sourceFor( resolve( ref ) ) )
+	auto* widget = resolve( ref );
+	if ( auto* source = sourceFor( widget ) )
 		return source->getRootChildCount();
-	return getChildren( ref ).size();
+	if ( !widget )
+		return 0;
+	if ( hasActiveNativeClients() ) {
+		for ( Uint8 i = 0; i < 2; ++i ) {
+			if ( mChildrenCache[i].parent == ref ) {
+				mMostRecentlyUsedChildrenCache = i;
+				return mChildrenCache[i].children.size();
+			}
+		}
+	}
+	if ( AccessibilityWidgetResolver::isLeafRole( widget->getAccessibilityRole() ) )
+		return 0;
+	// Count queries must not assign identities to children a client has not requested.
+	return countSemanticChildren( widget );
 }
 
 AccessibilityNodeRef AccessibilityManager::getChild( AccessibilityNodeRef ref, size_t index ) {
@@ -506,6 +546,7 @@ void AccessibilityManager::onNativeClientObserved() {
 }
 
 void AccessibilityManager::onClientsDisconnected() {
+	mTextIndexes.reset();
 	// Queried rows hold persistent model registrations, which the model updates on every row
 	// insert, delete and move. Without a client nothing reads them.
 	for ( auto& source : mSources ) {
@@ -531,6 +572,11 @@ void AccessibilityManager::update() {
 			disabled ? createNullAccessibilityBackend() : createAccessibilityBackend( *this );
 	}
 	mTextChangeCounts.clear();
+	if ( mHasAmbiguousTextChanges ) {
+		if ( mTextIndexes )
+			mTextIndexes->clearEditAmbiguity();
+		mHasAmbiguousTextChanges = false;
+	}
 	if ( mBackend ) {
 		mBackend->update();
 		mPendingEvents.clear();
@@ -808,7 +854,10 @@ bool AccessibilityManager::onWidgetAccessibilitySourceDelete( UIWidget* widget )
 }
 
 void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
-	if ( mWidgetIds.empty() && mWidgetSources.empty() )
+	if ( mTextIndexes )
+		mTextIndexes->detach( widget );
+	if ( mWidgetIds.empty() && mWidgetSources.empty() &&
+		 ( !mTextIndexes || mTextIndexes->size() == 0 ) )
 		return;
 	// Native roots can exist without any client or queried descendants. Keep that dormant case
 	// constant-time, before any ancestor walk: the scene root is never inside another widget's
@@ -882,7 +931,8 @@ void AccessibilityManager::onSubtreeRemoved( Scene::Node* node ) {
 }
 
 bool AccessibilityManager::removeSubtreeIdentities( Scene::Node* node ) {
-	if ( mWidgetIds.empty() && mWidgetSources.empty() )
+	if ( mWidgetIds.empty() && mWidgetSources.empty() &&
+		 ( !mTextIndexes || mTextIndexes->size() == 0 ) )
 		return false;
 	// Invalidate descendants while the top-level widget is still alive. Later descendant
 	// destructors find no identity and never walk back into a destroyed UIWidget parent.
@@ -892,6 +942,8 @@ bool AccessibilityManager::removeSubtreeIdentities( Scene::Node* node ) {
 	if ( !node->isWidget() )
 		return removed;
 	auto* widget = node->asType<UIWidget>();
+	if ( mTextIndexes )
+		mTextIndexes->detach( widget );
 	removed |= onWidgetAccessibilitySourceDelete( widget );
 	auto found = mWidgetIds.find( widget );
 	if ( found == mWidgetIds.end() )

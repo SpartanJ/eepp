@@ -11,6 +11,7 @@ class Node;
 
 namespace EE { namespace UI { namespace Doc {
 struct DocumentContentChange;
+class TextDocument;
 }}} // namespace EE::UI::Doc
 
 namespace EE { namespace UI {
@@ -19,6 +20,8 @@ class UISceneNode;
 class UIWidget;
 class AccessibilityBackend;
 class AccessibilitySource;
+class AccessibilityTextIndex;
+class AccessibilityTextIndexes;
 
 /** Resolves accessibility information directly from the live UI tree. */
 class EE_API AccessibilityManager {
@@ -179,10 +182,14 @@ class EE_API AccessibilityManager {
 
   private:
 	friend class UISceneNode;
+	friend class AccessibilityWidgetResolver;
 
 	static constexpr AccessibilitySourceId WidgetSource = 1;
 	UISceneNode* mScene;
 	std::unique_ptr<AccessibilityBackend> mBackend;
+	/** Allocated only by a text query/event that needs offsets. Shared documents use one index
+	 * in this manager; ordinary edits update existing indexes even when native edits are muted. */
+	mutable std::unique_ptr<AccessibilityTextIndexes> mTextIndexes;
 	Uint64 mNextId{ 1 };
 	UnorderedMap<UIWidget*, Uint64> mWidgetIds;
 	UnorderedMap<Uint64, UIWidget*> mWidgets;
@@ -218,11 +225,17 @@ class EE_API AccessibilityManager {
 	/** Whether a callback queued a policy request, including one that cancels an earlier request
 	 * by restoring the current policy. Cleared when the scene applies or supersedes it. */
 	bool mHasDeferredPolicy{ false };
+	/** An indexed document received ambiguous edits this frame. Only a frame boundary clears
+	 * this, not a query/rebuild, so every editor sharing it uses the same safe fallback. */
+	bool mHasAmbiguousTextChanges{ false };
 	/** Nesting count of guarded queries, actions, notifications and backend updates. Nonzero
 	 * prevents policy-driven destruction and recursive backend dispatch from user callbacks. */
 	Uint32 mDispatchDepth{};
 
 	UIWidget* resolve( AccessibilityNodeRef ref ) const;
+
+	AccessibilityTextIndex& textIndexFor( const UIWidget* widget,
+										  const Doc::TextDocument& document ) const;
 
 	AccessibilitySource* resolveSource( AccessibilityNodeRef ref ) const;
 

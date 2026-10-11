@@ -10,6 +10,7 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uispinbox.hpp>
@@ -21,6 +22,10 @@
 	__has_include( <eepp/ui/accessibility/accessibilitymanager.hpp> )
 #define EE_BENCH_HAS_ACCESSIBILITY 1
 #include "../eepp/ui/accessibility/accessibilitybackend.hpp"
+#if __has_include( "../eepp/ui/accessibility/accessibilitytextindex.hpp" )
+#define EE_BENCH_HAS_TEXT_INDEX 1
+#include "../eepp/ui/accessibility/accessibilitytextindex.hpp"
+#endif
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #endif
 
@@ -109,10 +114,11 @@ template <typename Work> Measurement measure( const Work& work ) {
 	return result;
 }
 
-void report( const char* name, const Measurement& measurement, Uint64 operations ) {
-	std::printf( "ACCESSIBILITY_DORMANT %s allocations=%llu bytes=%llu ms=%.3f "
+void report( const char* name, const Measurement& measurement, Uint64 operations,
+			 const char* mode = "DORMANT" ) {
+	std::printf( "ACCESSIBILITY_%s %s allocations=%llu bytes=%llu ms=%.3f "
 				 "allocations_per_op=%.2f bytes_per_op=%.1f\n",
-				 name, static_cast<unsigned long long>( measurement.allocations ),
+				 mode, name, static_cast<unsigned long long>( measurement.allocations ),
 				 static_cast<unsigned long long>( measurement.bytes ), measurement.milliseconds,
 				 operations ? static_cast<double>( measurement.allocations ) / operations : 0.0,
 				 operations ? static_cast<double>( measurement.bytes ) / operations : 0.0 );
@@ -561,6 +567,166 @@ UTEST( AccessibilityDormant, IdChangesWithAnActiveClient ) {
 		}
 	} );
 	report( "set_id_active_referenced", referenced, Renames );
+}
+
+UTEST( AccessibilityActive, IncrementalTextOffsets ) {
+	// A semantic-query benchmark, not a claim about real screen-reader latency. Document edits
+	// occur outside each timed query, so indexing work and ordinary editor work stay separate.
+	UIApplication app( benchmarkWindow(), benchmarkSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto backend = std::make_unique<SwitchableBackend>();
+	backend->active = true;
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	for ( size_t lines : { 10000, 100000, 1000000 } ) {
+		auto* editor = UICodeEditor::New();
+		auto& document = editor->getDocument();
+		std::string text;
+		text.reserve( lines * 2 );
+		for ( size_t line = 0; line < lines; ++line )
+			text += "a\n";
+		document.loadFromMemory( reinterpret_cast<const Uint8*>( text.data() ), text.size() );
+		const auto ref = manager->getNodeRef( editor );
+		document.setSelection( { static_cast<Int64>( lines - 1 ), 0 } );
+		manager->getTextInfo( ref );
+		Measurement queries;
+		Measurement edits;
+		static constexpr size_t Edits = 100;
+		for ( size_t edit = 0; edit < Edits; ++edit ) {
+			const auto insertion = measure(
+				[&] { document.insert( 0, { static_cast<Int64>( lines - 1 ), 0 }, "x" ); } );
+			edits.allocations += insertion.allocations;
+			edits.bytes += insertion.bytes;
+			edits.milliseconds += insertion.milliseconds;
+			const auto query = measure( [&] {
+				volatile auto value = manager->getTextInfo( ref );
+				(void)value;
+			} );
+			queries.allocations += query.allocations;
+			queries.bytes += query.bytes;
+			queries.milliseconds += query.milliseconds;
+			manager->clearPendingEvents();
+		}
+		const auto suffix = std::to_string( lines );
+		report( ( "text_edits_" + suffix ).c_str(), edits, Edits, "ACTIVE" );
+		report( ( "text_queries_after_edit_" + suffix ).c_str(), queries, Edits, "ACTIVE" );
+		EXPECT_EQ( queries.allocations, 0u );
+		static constexpr size_t Queries = 10000;
+		const auto warm = measure( [&] {
+			for ( size_t query = 0; query < Queries; ++query ) {
+				volatile auto value = manager->getTextInfo( ref );
+				(void)value;
+			}
+		} );
+		report( ( "text_warm_queries_" + suffix ).c_str(), warm, Queries, "ACTIVE" );
+		EXPECT_EQ( warm.allocations, 0u );
+		delete editor;
+	}
+}
+
+#if defined( EE_BENCH_HAS_TEXT_INDEX )
+UTEST( AccessibilityActive, TextIndexUpdatesAllocateNothing ) {
+	TextDocument document;
+	std::string text;
+	static constexpr size_t Lines = 100000;
+	for ( size_t line = 0; line < Lines; ++line )
+		text += "a\n";
+	document.loadFromMemory( reinterpret_cast<const Uint8*>( text.data() ), text.size() );
+	AccessibilityTextIndex index;
+	index.ensure( document );
+	const DocumentContentChange change{ { { Lines - 1, 0 }, { Lines - 1, 0 } }, "x" };
+	const auto reads = index.lineReads();
+	Measurement updates;
+	static constexpr size_t Edits = 100;
+	for ( size_t edit = 0; edit < Edits; ++edit ) {
+		document.insert( 0, { Lines - 1, 0 }, "x" );
+		const auto update = measure( [&] {
+			index.changed( document, &change );
+			index.ensure( document );
+		} );
+		updates.allocations += update.allocations;
+		updates.bytes += update.bytes;
+		updates.milliseconds += update.milliseconds;
+	}
+	report( "text_index_updates", updates, Edits, "ACTIVE" );
+	std::printf( "ACCESSIBILITY_ACTIVE text_index_work line_reads=%zu rebuilds=%zu\n",
+				 index.lineReads() - reads, index.rebuilds() );
+	EXPECT_EQ( updates.allocations, 0u );
+	EXPECT_EQ( index.lineReads() - reads, Edits );
+	EXPECT_EQ( index.rebuilds(), 1u );
+}
+#endif
+
+UTEST( AccessibilityActive, ChildCountAvoidsIdentityMaterialization ) {
+	UIApplication app( benchmarkWindow(), benchmarkSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto backend = std::make_unique<SwitchableBackend>();
+	auto* switchable = backend.get();
+	manager->setBackend( std::move( backend ) );
+	UIWidget* containers[] = { UIWidget::New(), UIWidget::New() };
+	static constexpr size_t Children = 4000;
+	for ( auto* container : containers ) {
+		container->setAccessibilityRole( AccessibilityRole::Group );
+		for ( size_t child = 0; child < Children; ++child )
+			UIPushButton::New()->setParent( container );
+	}
+	const auto fullRef = manager->getNodeRef( containers[0] );
+	const auto countRef = manager->getNodeRef( containers[1] );
+	// Attach after construction so both containers start cold, without identities assigned by
+	// their creation events. The measured calls must still run with an active client.
+	switchable->active = true;
+	manager->onNativeClientObserved();
+	const auto materialized =
+		measure( [&] { EXPECT_EQ( manager->getChildren( fullRef ).size(), Children ); } );
+	report( "child_count_materialized", materialized, 1, "ACTIVE" );
+	const auto counted =
+		measure( [&] { EXPECT_EQ( manager->getChildCount( countRef ), Children ); } );
+	report( "child_count_scalar", counted, 1, "ACTIVE" );
+	EXPECT_EQ( counted.allocations, 0u );
+}
+
+UTEST( AccessibilityActive, HistoricallyQueriedModelRows ) {
+	UIApplication app( benchmarkWindow(), benchmarkSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto backend = std::make_unique<SwitchableBackend>();
+	auto* switchable = backend.get();
+	manager->setBackend( std::move( backend ) );
+	for ( size_t rows : { 100, 10000, 100000 } ) {
+		auto* list = UIListView::New();
+		list->setPixelsSize( 400, 400 );
+		auto model = std::make_shared<RowsModel>( rows );
+		list->setModel( model );
+		app.getUI()->update( Time::Zero );
+		switchable->active = true;
+		app.getUI()->update( Time::Zero );
+		const auto ref = manager->getNodeRef( list );
+		const auto queried = measure( [&] {
+			for ( size_t row = 0; row < rows; ++row )
+				manager->getChild( ref, row );
+		} );
+		const auto last = manager->getChild( ref, rows - 1 );
+		const auto mutation = measure( [&] {
+			model->insertRow( 0 );
+			model->removeRow( 0 );
+		} );
+		EXPECT_TRUE( manager->getChild( ref, rows - 1 ) == last );
+		const auto suffix = std::to_string( rows );
+		report( ( "model_rows_queried_" + suffix ).c_str(), queried, rows, "ACTIVE" );
+		report( ( "model_rows_mutation_" + suffix ).c_str(), mutation, 2, "ACTIVE" );
+		switchable->active = false;
+		app.getUI()->update( Time::Zero );
+		EXPECT_FALSE( manager->isValid( last ) );
+		const auto disconnected = measure( [&] {
+			model->insertRow( 0 );
+			model->removeRow( 0 );
+		} );
+		report( ( "model_rows_disconnected_" + suffix ).c_str(), disconnected, 2, "ACTIVE" );
+		EXPECT_EQ( disconnected.allocations, 0u );
+		delete list;
+	}
 }
 
 #endif

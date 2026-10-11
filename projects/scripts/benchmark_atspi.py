@@ -10,7 +10,7 @@ import time
 import gi
 
 gi.require_version("Atspi", "2.0")
-from gi.repository import Atspi
+from gi.repository import Atspi, Gio, GLib
 
 from test_atspi import pause
 
@@ -92,6 +92,100 @@ def action_index(node, name):
 		if Atspi.Action.get_localized_name(node, index) == name:
 			return index
 	raise RuntimeError(f'action "{name}" was not exposed by "{node.get_name()}"')
+
+
+def request_burst(process_id, item_count, args):
+	"""Bypass libatspi's synchronous cache to pressure the actual D-Bus dispatch queue.
+
+	Interleave a costly primary-window enumeration and a secondary-window query. Every reply
+	must arrive and contain the complete children, including when the event loop was idle.
+	Returned time is client wall time, not application UI-thread time; use the opt-in native
+	dispatch profiler for the latter. The caller owns and cleans up the example process.
+	"""
+	session = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+	address = session.call_sync(
+		"org.a11y.Bus", "/org/a11y/bus", "org.a11y.Bus", "GetAddress",
+		None, None, Gio.DBusCallFlags.NONE, 2000, None,
+	).unpack()[0]
+	bus = Gio.DBusConnection.new_for_address_sync(
+		address, Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT
+		| Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION, None, None,
+	)
+	try:
+		def call(ref, interface, method, parameters=None):
+			return bus.call_sync(
+				ref[0], ref[1], interface, method, parameters, None,
+				Gio.DBusCallFlags.NONE, int(args.timeout * 1000), None,
+			).unpack()[0]
+
+		def children(ref):
+			return call(ref, "org.a11y.atspi.Accessible", "GetChildren")
+
+		application = None
+		for ref in children(("org.a11y.atspi.Registry", "/org/a11y/atspi/accessible/root")):
+			pid = call(
+				("org.freedesktop.DBus", "/org/freedesktop/DBus"),
+				"org.freedesktop.DBus", "GetConnectionUnixProcessID",
+				GLib.Variant("(s)", (ref[0],)),
+			)
+			if pid == process_id:
+				application = ref
+				break
+		check(application is not None, "burst target process was not registered")
+		windows = children(application)
+		check(len(windows) == 2, "burst must cover both application windows")
+		model = None
+		for ref in children(windows[0]):
+			name = call(
+				ref, "org.freedesktop.DBus.Properties", "Get",
+				GLib.Variant("(ss)", ("org.a11y.atspi.Accessible", "Name")),
+			)
+			if name == "Benchmark items":
+				model = ref
+				break
+		check(model is not None, "burst benchmark model was not found")
+		targets = [(model, item_count), (windows[1], len(children(windows[1])))]
+		loop = GLib.MainLoop()
+		completed = 0
+		errors = []
+		measurements = Measurements()
+
+		def received(connection, result, data):
+			nonlocal completed
+			expected, start = data
+			try:
+				response = connection.call_finish(result)
+				check(response.get_child_value(0).n_children() == expected,
+					"burst reply contained incomplete children")
+			except (GLib.Error, RuntimeError) as error:
+				errors.append(str(error))
+			measurements.calls.append(("burst", (time.perf_counter() - start) * 1000))
+			completed += 1
+			if completed == args.burst_requests:
+				loop.quit()
+
+		def timed_out():
+			errors.append("burst reply deadline exceeded")
+			loop.quit()
+			return GLib.SOURCE_REMOVE
+
+		deadline = GLib.timeout_add(int(args.timeout * 1000) + 1000, timed_out)
+		start = time.perf_counter()
+		for index in range(args.burst_requests):
+			ref, expected = targets[index % len(targets)]
+			bus.call(
+				ref[0], ref[1], "org.a11y.atspi.Accessible", "GetChildren", None, None,
+				Gio.DBusCallFlags.NONE, int(args.timeout * 1000), None, received,
+				(expected, time.perf_counter()),
+			)
+		loop.run()
+		if completed == args.burst_requests:
+			GLib.source_remove(deadline)
+		check(not errors and completed == args.burst_requests,
+			f"burst failed: {completed}/{args.burst_requests} replies, {errors}")
+		return {"wall_ms": (time.perf_counter() - start) * 1000, **measurements.summary()}
+	finally:
+		bus.close_sync(None)
 
 
 def run_sample(args, item_count, target_process_id, model_changed, model_change_count):
@@ -205,6 +299,16 @@ def run_sample(args, item_count, target_process_id, model_changed, model_change_
 		check(first_item.get_name() == "Updated benchmark item 0", "model replacement stayed stale")
 		check(model_change_count[0] == 1, "model-change burst was not coalesced")
 
+		burst = None
+		if args.burst_requests:
+			open_window = find_named(nodes, "Open accessibility window")
+			check(open_window.do_action(action_index(open_window, "click")),
+				"could not open secondary burst window")
+			deadline = time.monotonic() + args.timeout
+			while application.get_child_count() != 2 and time.monotonic() < deadline:
+				pause(0.01)
+			burst = request_burst(process.pid, item_count, args)
+
 		return {
 			"nodes": len(nodes),
 			"item_count": item_count,
@@ -213,6 +317,7 @@ def run_sample(args, item_count, target_process_id, model_changed, model_change_
 			"property_batch_ms": property_batch_ms,
 			"mutation_ms": mutation_ms,
 			"model_change_events": model_change_count[0],
+			**({"burst": burst} if burst else {}),
 			**measurements.summary(),
 		}
 	finally:
@@ -229,8 +334,13 @@ def run_sample(args, item_count, target_process_id, model_changed, model_change_
 def median_result(samples):
 	result = {"item_count": samples[0]["item_count"], "iterations": len(samples)}
 	for key in samples[0]:
-		if key not in {"item_count", "model_change_events"}:
+		if key not in {"item_count", "model_change_events", "burst"}:
 			result[key] = statistics.median(sample[key] for sample in samples)
+	if "burst" in samples[0]:
+		result["burst"] = {
+			key: statistics.median(sample["burst"][key] for sample in samples)
+			for key in samples[0]["burst"]
+		}
 	result["model_change_events"] = max(sample["model_change_events"] for sample in samples)
 	result["traversal_ms_per_1k"] = result["traversal_ms"] * 1000 / result["nodes"]
 	result["mutation_ms_per_1k"] = result["mutation_ms"] * 1000 / result["item_count"]
@@ -251,6 +361,8 @@ def main():
 	parser.add_argument("--sample-size", type=int, default=100)
 	parser.add_argument("--item-counts", default="250,1000,4000")
 	parser.add_argument("--iterations", type=int, default=3)
+	parser.add_argument("--burst-requests", type=int, default=0,
+		help="optional concurrent requests across two windows (0 disables; no timing CI gate)")
 	parser.add_argument("--max-discovery-ms", type=float, default=2000)
 	parser.add_argument("--max-traversal-ms-per-1k", type=float, default=2000)
 	parser.add_argument("--max-property-batch-ms", type=float, default=500)
@@ -261,6 +373,9 @@ def main():
 	parser.add_argument("--json", action="store_true")
 	args = parser.parse_args()
 	check(args.iterations > 0, "iterations must be positive")
+	check(args.burst_requests == 0 or args.burst_requests >= 2,
+		"burst requests must be 0 or at least 2")
+	check(args.timeout > 0, "timeout must be positive")
 	item_counts = parse_item_counts(args.item_counts)
 
 	model_changed = threading.Event()

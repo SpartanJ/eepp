@@ -126,8 +126,8 @@ agree. Ancestors that merely contain the focus are not `Focused`.
 
 Queries always run on the UI thread (see [Threading](#threading)). Use the cheapest query that
 answers the question: `getNodeInfo( ref, false, false )` skips copying the value and computing
-text offsets, which matters for large text documents; `getChild()` and `getIndexInParent()` avoid
-materializing a whole child list.
+text offsets, which matters for large text documents. Ordinary `getChildCount()` does not materialize
+identities; model-source `getChild()` and `getIndexInParent()` avoid enumerating all rows.
 
 ### Events (eepp to client)
 
@@ -147,8 +147,9 @@ Text edits take an extra step before their `ValueChanged`. `UICodeEditor` and `U
 the document's `DocumentContentChange` (range and inserted text) to
 `UIWidget::notifyAccessibilityTextChanged()`. The removed text is not part of the change record,
 so consumers that queue records (LSP clients) never copy it: the manager reads it, while the
-document is still notifying, from `TextDocument::getNotifiedRemovedText()`. The manager first checks
-`AccessibilityBackend::supportsTextChanges()`: only AT-SPI opts in. UIA and macOS use their queued
+document is still notifying, from `TextDocument::getNotifiedRemovedText()`. The manager first maintains
+an existing optional text index, independently of event support, suppression and the frame budget.
+Then it checks `AccessibilityBackend::supportsTextChanges()`: only AT-SPI opts in. UIA and macOS use their queued
 `ValueChanged` notifications, so their edits build no exact-edit records, copy no edit text and
 calculate no document offsets here. `AccessibilityManager::onTextChanged()` turns the
 first four per element and frame into exact `AccessibilityTextChange` records (code-point offset,
@@ -328,7 +329,11 @@ Backends that need batching do it themselves, per frame:
 The manager, the resolver and every widget are UI-thread only.
 
 - **AT-SPI**: an I/O thread only `poll()`s the D-Bus socket and wakes the event loop. Messages are
-  read and dispatched on the UI thread in `AtSpiApplication::update()`, at most 256 per frame.
+  read and dispatched on the UI thread in `AtSpiApplication::update()`, at most 256 per dispatch,
+  stopping after a callback when 2 ms has elapsed. Remaining messages preserve the pending flag
+  and wake the idle event loop. At least one callback runs; a single synchronous query may exceed
+  the budget. This is not a frame-time guarantee: each live scene may service the shared connection,
+  and text notifications, outgoing writes and window announcements occur outside the message budget.
 - **UIA**: COM calls arrive on arbitrary threads. Every provider method goes through
   `UIAutomationProviderContext::invoke()`, which runs the callback directly on the UI thread or
   posts a window message and waits up to `ProviderCallTimeoutMilliseconds`. The pending request
@@ -343,17 +348,53 @@ The manager, the resolver and every widget are UI-thread only.
   dispatcher's focus node, `getIndexInParent()` and source lookups over scanning children.
 - Building `AccessibilityNodeInfo` with the value copies the text of a text widget; request it only
   where the value is needed. Text interfaces use `getTextLength()`, `getTextRange()` and
-  `getTextLineBounds()`, which read only what they return. Offsets convert through a line index of
-  the document (`lineStarts()` in the resolver), keyed by `getTextRevision()`: the document's UUID
-  and modification id, which every content change bumps. Backends that need a converted copy
+  `getTextLineBounds()`, which read only what they return. Offsets convert through the manager's
+  optional `AccessibilityTextIndex`, keyed by document UUID and revision. Backends that need a converted copy
   (UTF-16 for UIA and AppKit) cache it per revision.
 - Leaf controls (`AccessibilityWidgetResolver::isLeafRole()`) have no exposed children. Events and
   focus from inside one are reported on the control (`getLeafOwner()`), so the inner widgets never
   get identities.
+- Ordinary widget child counts traverse semantic children without assigning identities or building
+  a child vector. A matching materialized children cache supplies its size directly. Model sources
+  retain their specialized count paths; a cold ordinary count is still O(semantic descendants).
+
+### Optional text indexing
+
+The first query requiring offsets/length, or an exact native edit requiring an offset, creates an
+index. Merely attaching a client or sending metadata-only queries does not. Multiple editors of the
+same document in a manager share it; different windows have independent stores. No fields, cache,
+observer or new bookkeeping are added to `TextDocument` or to each widget.
+
+Each stored line length includes its newline; the final synthetic newline is excluded from exposed
+text length. Lengths and sums use 64-bit integers; public offsets saturate to `Int32`. Blocks contain
+256 lines and a compact Fenwick prefix-sum tree of block totals, so conversions examine at most one
+block plus O(log(block count)) totals. A simple scan of block totals was measured and rejected because
+it made warm queries near EOF scale with document size.
+On the measured 64-bit build the index is 104 bytes, its store is 24 bytes, and each manager gains
+one optional pointer (8 bytes). Active metadata requires 8 bytes per line plus 8 bytes per block,
+subject to vector capacity; it is released with the last binding or the client disconnect.
+
+An ordinary edit reads one affected line length and updates block totals without allocation. A
+structural edit splices flat line metadata and rebuilds block totals, reading only affected document
+lines: metadata shifting is O(lines), not a fresh document scan. Initial creation and lazy recovery
+are O(lines), using `getLineLength()` rather than fetching full line objects. Large insertions
+(over 64k code points), whole-text resets, missed/nested revisions and ambiguous edit shapes invalidate
+lazily. Revision increments precede mutation, so duplicate/same-revision callbacks validate affected
+post-edit lengths instead of assuming that the revision means the edit has finished.
+When callbacks forward nested edits out of order or skip an indexed revision, every editor sharing
+that document uses the existing whole-text event fallback for the remainder of the frame. Rebuilding
+lengths from a re-entrant query cannot make those event deltas trustworthy; the manager clears this
+ambiguity only at the frame boundary. Ordinary contiguous edits still use exact records normally.
+
+Existing indexes are maintained before backend edit-support checks, suppressed changes and exact-edit
+limits. Widget deletion/identity removal, document switches and the last client disconnect release
+bindings. The store retains UUIDs and widget identities, not document pointers or owning references;
+widget pointers are never dereferenced there. Worker loads recover through the main-thread deferred
+whole-text notification and revision validation, not worker-side cache mutation.
 
 ### 6. What survives a disconnection
 
-When a scene's last client disconnects, `onClientsDisconnected()` resets every model-view source:
+When a scene's last client disconnects, `onClientsDisconnected()` releases text indexes and resets every model-view source:
 queried rows are dropped together with their persistent model registrations, and backends detach
 their native wrappers (`onSourceInvalidated()`). Without that, the model would keep updating one
 persistent handle per queried row on every insert, delete and move for as long as it lives.
@@ -472,10 +513,93 @@ Useful tools:
 - `EEPP_ACCESSIBILITY_TRACE=1` prints client activity transitions, and AT-SPI client connections
   and disconnections, to stderr. It shows what activates an application that has no screen reader
   running.
+- `EEPP_ACCESSIBILITY_PROFILE=1` enables optional UI-thread dispatch measurements for AT-SPI and
+  queued UIA requests. `EEPP_A11Y_PROFILE` reports cumulative work, message/batch maxima, counts and
+  AT-SPI backlog batches, logarithmically and on new maxima. Durations are UI-thread wall time (including
+  scheduling/preemption), not CPU counters. It does not measure application frames,
+  AppKit callbacks, direct UI-thread UIA calls or category-level costs. Console output and timing have
+  overhead, so compare instrumented runs against instrumented runs. Without the flag there is no
+  profiling allocation or clock read; the AT-SPI message budget reads the clock only during dispatch.
+
+### Reproducing the active performance checks
+
+Use `.ecode/project_build.json`'s Linux Release Ninja configuration, no ASAN, and the host display.
+Wait for competing builds or CPU work to finish; discard runs that overlap it. Never use local Xvfb
+for performance comparisons. All windows below are hidden by their benchmark modes.
+
+```sh
+premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 ninja
+ninja -C make/linux release
+python3 projects/scripts/benchmark_accessibility_dormant.py --active-text --samples 5 --json
+a11y_runtime_dir=$(mktemp -d /tmp/eepp-a11y-runtime.XXXXXX)
+env -u AT_SPI_BUS_ADDRESS XDG_RUNTIME_DIR="$a11y_runtime_dir" \
+  dbus-run-session -- env EEPP_ACCESSIBILITY_PROFILE=1 \
+  /usr/bin/python3 projects/scripts/benchmark_atspi.py --item-counts 1000 \
+  --iterations 1 --burst-requests 200 --json
+```
+
+The private session and runtime directory prevent the native probe from reusing the desktop's
+accessibility-bus socket or confusing an already running copy with the benchmark process.
+
+The active text cases use a mock active backend to isolate semantic indexing, not a screen reader.
+They separate edit work, post-edit queries, warm queries, direct index updates and cold child counts.
+They also materialize 100, 10k and 100k model rows, preserve a retained row's identity through an
+insert/delete pair, and require zero allocation for the same mutations after disconnect. These
+include model-core persistent-index maintenance, not only the accessibility source's own work.
+Guards check allocations and lines read, not host-specific microsecond thresholds. Allocations cover
+ordinary C++ `new/new[]` on the measuring thread only, not `malloc`, native libraries or other threads.
+The optional native burst interleaves full model enumerations and secondary-window queries, requires
+every complete reply and reports client round-trip latency separately from native UI-thread profiling.
+Its timing is informational, not a new CI threshold.
+
+On a Ryzen 9 3900X (24 logical CPUs, 62 GiB RAM, GCC 16.2.1), Release SDL3 without ASAN,
+the five-sample semantic-text median was 0.10–0.13 µs per post-edit query at 10k/100k/1M lines,
+and about 0.06–0.08 µs per warm query. A 100k-line index read exactly one line per ordinary edit;
+100 direct updates and all measured queries allocated zero bytes. These are mock-backend indexing
+measurements, not end-to-end screen-reader timings. A 4k-child cold count eliminated the temporary
+442,368 bytes allocated by the old count-via-children implementation.
+The dormant allocation measurements match the pre-change branch (`1e0ed08d2`) in every reported
+scenario except first initialization: the manager/index-store and native profiler pointers add
+16 bytes there, with no additional allocation. Widgets and documents do not grow. This is not a
+fresh whole-branch `develop` comparison or proof of zero CPU overhead; it isolates this patch's
+allocation changes. Native discovery/background allocations are outside the UI-thread counter.
+
+A separately warmed 200-request/1k-row AT-SPI probe, with competing CPU activity checked and rejected,
+measured maximum UI-thread dispatch batches of 13.39 ms with the old count-only scheduling policy
+and 2.40 ms with the 2 ms budget. Both returned every reply; client wall times were about 202/197 ms.
+That is one instrumented sample per policy, not a frame-time percentile or a throughput guarantee.
+The finishing callback may overrun the budget, as intended. The count-only comparison used the same
+optimized code with a nonbinding time budget, isolating scheduling from the other improvements.
+Multi-window flood correctness is separately exercised by the benchmark's optional burst mode.
+
+A final three-sample quiet-host run also measured the long-lived model cases. Materializing 100k
+rows took about 14.5 ms and allocated 46.4 MB cumulatively; an insert/delete pair with those rows
+retained took about 15.2 ms and allocated 53.1 MB cumulatively, including model-core handle
+relocation and source re-keying. These byte counts are allocation volume, not retained memory/RSS.
+After disconnect the same pair allocated zero bytes and took about 0.003 ms. This is a confirmed
+active-path scalability limit, not fixed by dispatch scheduling or by the text-index patch.
+
+### Native-host follow-up measurements
+
+Do not infer NVDA/VoiceOver performance from Linux or Wine. On Windows, record 10k/100k/1M-line
+typing, caret movement near EOF, selections and retained text ranges with NVDA and UIA automation.
+On macOS, repeat with VoiceOver and AXUIElement clients. Measure per-method UI-thread tails, cache
+misses, allocations/RSS and application frame times, distinguishing offset indexing from UTF-16 work.
+Windows `textSnapshot()` still obtains full revision-cached source and CRLF-normalized buffers through
+`textContents()` and scans code points to translate selection offsets. AppKit text/range accessors
+still use the full revision-cached UTF-16 `textFor()` result. A caret-only query can therefore need a
+full snapshot after an edit; a warm snapshot can still involve linear UTF-16 offset translation.
+These paths remain deliberately unchanged pending real native-client measurements and Unicode/CRLF
+conformance checks. UIA queue budgeting, listener-poll cadence and macOS's sticky active state likewise
+need native-host evidence; queued UIA dispatch profiling is available for that investigation.
 
 ## Known limitations
 
 - Enumerating all children of a model view is O(rows).
+- Retaining many queried model rows makes insert/delete maintenance O(queried rows), including
+  model-core persistent-handle relocation and source re-keying. The AT-SPI request budget does not
+  bound those ordinary widget/model callbacks. Pruning retained row identities blindly would break
+  clients; measure native-client retention before changing that identity contract.
 - macOS cannot detect that a client went away, so its active bit stays set after the first query.
   Any process that queries one of the application's accessibility elements (not only screen
   readers) activates it for the rest of its life.
@@ -489,7 +613,7 @@ Useful tools:
   thread pool, or on a detached thread when the scene has none. Either way the task shares
   ownership of the AT-SPI application, so tearing the backend down never waits for pending D-Bus
   calls or their timeouts; whichever owner releases it last destroys it.
-- The line index is rebuilt in full after each edit (about 3 ms for a 100,000-line document),
-  paid only while a client is querying that document.
+- Text-index structural shifts and lazy rebuilds remain O(lines). Native UTF-16 snapshot cache
+  misses remain O(document size), and the AT-SPI time budget cannot interrupt one expensive query.
 - HTML content (`UIRichText`, headings, links, lists) is not exposed as semantic elements.
 - Only one cell editor (the view's active editor) is exposed inside a model view.

@@ -1,3 +1,4 @@
+#include "accessibilitytextindex.hpp"
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
@@ -92,83 +93,54 @@ UIScrollView* scrollViewFor( const UIWidget* widget ) {
 	return nullptr;
 }
 
-/** Start offsets of every line of one document version, plus the total length. Offset and
- * position conversions become an index lookup or a binary search instead of a walk over every
- * line (each line's size takes the document mutex). Rebuilt once per text revision. */
-class LineIndex {
-  public:
-	const std::vector<Int64>& starts( const Doc::TextDocument& document ) {
-		if ( document.getUUID() != mDocument || document.getModificationId() != mModification ||
-			 mStarts.empty() ) {
-			mDocument = document.getUUID();
-			mModification = document.getModificationId();
-			const size_t lines = document.linesCount();
-			mStarts.resize( lines + 1 );
-			mStarts[0] = 0;
-			for ( size_t line = 0; line < lines; ++line ) {
-				mStarts[line + 1] =
-					mStarts[line] + static_cast<Int64>( document.line( line ).size() );
-			}
-		}
-		return mStarts;
-	}
-
-	bool matches( const Doc::TextDocument& document ) const {
-		return document.getUUID() == mDocument && document.getModificationId() == mModification &&
-			   !mStarts.empty();
-	}
-
-  private:
-	System::UUID mDocument{ 0, 0 };
-	Uint64 mModification{ 0 };
-	std::vector<Int64> mStarts;
-};
-
-/** UI thread only. Two entries let a client alternate between an editor and a field. */
-const std::vector<Int64>& lineStarts( const Doc::TextDocument& document ) {
-	static LineIndex indexes[2];
-	static size_t next = 0;
-	for ( auto& index : indexes ) {
-		if ( index.matches( document ) )
-			return index.starts( document );
-	}
-	auto& index = indexes[next];
-	next = ( next + 1 ) % 2;
-	return index.starts( document );
-}
-
-Int32 documentOffset( const Doc::TextDocument& document, const Doc::TextPosition& position ) {
+/** Standalone calls without a scene use an allocation-free walk. Native queries use the
+ * owner's optional index; no process-global document cache survives a client disconnect. */
+Int32 documentOffset( const Doc::TextDocument& document, const Doc::TextPosition& position,
+					  const AccessibilityTextIndex* index = nullptr ) {
+	if ( index )
+		return index->offset( position );
 	if ( !position.isValid() )
 		return 0;
-	const auto& starts = lineStarts( document );
-	const size_t line =
-		std::min( static_cast<size_t>( std::max<Int64>( 0, position.line() ) ), starts.size() - 1 );
-	return static_cast<Int32>( std::max<Int64>( 0, starts[line] + position.column() ) );
+	const size_t lines = document.linesCount();
+	Int64 offset = 0;
+	for ( size_t line = 0; line < std::min<size_t>( position.line(), lines ); ++line )
+		offset += static_cast<Int64>( document.getLineLength( line ) );
+	return AccessibilityTextIndex::clampOffset( offset + position.column() );
 }
 
-Doc::TextPosition documentPosition( const Doc::TextDocument& document, Int32 offset ) {
-	const auto& starts = lineStarts( document );
-	if ( starts.size() < 2 )
+Doc::TextPosition documentPosition( const Doc::TextDocument& document, Int32 offset,
+									const AccessibilityTextIndex* index ) {
+	if ( index )
+		return index->position( offset );
+	const size_t lines = document.linesCount();
+	if ( !lines )
 		return { 0, 0 };
-	const Int64 target = std::max<Int32>( 0, offset );
-	// The last line whose start is at or before the offset; past the end clamps to the last line.
-	const size_t lines = starts.size() - 1;
-	size_t line = static_cast<size_t>( std::upper_bound( starts.begin(), starts.end(), target ) -
-									   starts.begin() ) -
-				  1;
-	line = std::min( line, lines - 1 );
-	const Int64 length = starts[line + 1] - starts[line];
-	return { static_cast<Int64>( line ), std::min( target - starts[line], length ) };
+	Int64 remaining = std::max<Int32>( 0, offset );
+	for ( size_t line = 0; line < lines; ++line ) {
+		const Int64 length = static_cast<Int64>( document.getLineLength( line ) );
+		if ( remaining < length || line + 1 == lines )
+			return { static_cast<Int64>( line ), std::min( remaining, length ) };
+		remaining -= length;
+	}
+	return { 0, 0 };
 }
 
-AccessibilityTextInfo getDocumentText( const Doc::TextDocument& document ) {
+AccessibilityTextInfo getDocumentText( const Doc::TextDocument& document,
+									   const AccessibilityTextIndex* index ) {
 	// A document loading on a worker thread is still being filled in.
 	if ( document.isLoading() )
 		return { 0, 0, 0, true };
+
 	auto selection = document.getSelection( true );
-	return { documentOffset( document, document.getSelection().end() ),
-			 documentOffset( document, selection.start() ),
-			 documentOffset( document, selection.end() ), true };
+	const auto caret = document.getSelection().end();
+	const Int32 start = documentOffset( document, selection.start(), index );
+	const Int32 end = selection.start() == selection.end()
+						  ? start
+						  : documentOffset( document, selection.end(), index );
+	return { caret == selection.end()	  ? end
+			 : caret == selection.start() ? start
+										  : documentOffset( document, caret, index ),
+			 start, end, true };
 }
 
 bool parseSelection( const String& value, Int32& start, Int32& end ) {
@@ -471,15 +443,31 @@ Int32 AccessibilityWidgetResolver::getTextLength( const UIWidget* widget ) {
 	if ( !document )
 		return 0;
 	// The exposed text stops before the last line's newline, like TextDocument::getText().
-	return static_cast<Int32>( std::max<Int64>( 0, lineStarts( *document ).back() - 1 ) );
+	if ( const auto* index = textIndexFor( widget, *document ) )
+		return index->length();
+	Int64 length = 0;
+	for ( size_t line = 0, count = document->linesCount(); line < count; ++line )
+		length += static_cast<Int64>( document->getLineLength( line ) );
+	return AccessibilityTextIndex::clampOffset( length - 1 );
+}
+
+AccessibilityTextIndex*
+AccessibilityWidgetResolver::textIndexFor( const UIWidget* widget,
+										   const Doc::TextDocument& document ) {
+	if ( document.isLoading() )
+		return nullptr;
+	auto* scene = widget->getUISceneNode();
+	auto* manager = scene ? scene->getAccessibilityManager() : nullptr;
+	return manager ? &manager->textIndexFor( widget, document ) : nullptr;
 }
 
 String AccessibilityWidgetResolver::getTextRange( const UIWidget* widget, Int32 start, Int32 end ) {
 	const auto* document = getTextDocument( widget );
 	if ( !document || end <= start )
 		return {};
-	return document->getText(
-		{ documentPosition( *document, start ), documentPosition( *document, end ) } );
+	const auto* index = textIndexFor( widget, *document );
+	return document->getText( { documentPosition( *document, start, index ),
+								documentPosition( *document, end, index ) } );
 }
 
 bool AccessibilityWidgetResolver::getTextLineBounds( const UIWidget* widget, Int32 offset,
@@ -487,13 +475,15 @@ bool AccessibilityWidgetResolver::getTextLineBounds( const UIWidget* widget, Int
 	const auto* document = getTextDocument( widget );
 	if ( !document || document->linesCount() == 0 )
 		return false;
-	const auto position = documentPosition( *document, offset );
-	start = static_cast<Int32>( std::max<Int64>( 0, offset - position.column() ) );
-	const Int64 lineLength = static_cast<Int64>( document->line( position.line() ).size() );
+	const auto* index = textIndexFor( widget, *document );
+	const auto position = documentPosition( *document, offset, index );
+	start = documentOffset( *document, { position.line(), 0 }, index );
+	const Int64 lineLength = static_cast<Int64>( document->getLineLength( position.line() ) );
 	const bool lastLine = position.line() + 1 == static_cast<Int64>( document->linesCount() );
 	// The last line's newline is not part of the exposed text.
-	end =
-		start + static_cast<Int32>( lastLine ? std::max<Int64>( 0, lineLength - 1 ) : lineLength );
+	end = AccessibilityTextIndex::clampOffset(
+		static_cast<Int64>( start ) +
+		( lastLine ? std::max<Int64>( 0, lineLength - 1 ) : lineLength ) );
 	return true;
 }
 
@@ -513,14 +503,15 @@ Int32 AccessibilityWidgetResolver::getTextOffset( const Doc::TextDocument& docum
 AccessibilityTextInfo AccessibilityWidgetResolver::getText( const UIWidget* widget,
 															bool includeOffsets ) {
 	if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
-		return includeOffsets
-				   ? getDocumentText( static_cast<const UICodeEditor*>( widget )->getDocument() )
-				   : AccessibilityTextInfo{ 0, 0, 0, true };
+		const auto& document = static_cast<const UICodeEditor*>( widget )->getDocument();
+		return includeOffsets ? getDocumentText( document, textIndexFor( widget, document ) )
+							  : AccessibilityTextInfo{ 0, 0, 0, true };
 	}
 	if ( widget->isType( UI_TYPE_TEXTINPUT ) ) {
 		const auto* input = static_cast<const UITextInput*>( widget );
 		return input->getMode() == UITextInput::TextInputMode::Password ? AccessibilityTextInfo{}
-			   : includeOffsets ? getDocumentText( input->getDocument() )
+			   : includeOffsets ? getDocumentText( input->getDocument(),
+												   textIndexFor( widget, input->getDocument() ) )
 								: AccessibilityTextInfo{ 0, 0, 0, true };
 	}
 	return {};
@@ -809,8 +800,9 @@ bool AccessibilityWidgetResolver::performAction( UIWidget* widget,
 		auto& document = widget->isType( UI_TYPE_CODEEDITOR )
 							 ? static_cast<UICodeEditor*>( widget )->getDocument()
 							 : static_cast<UITextInput*>( widget )->getDocument();
-		document.setSelection( documentPosition( document, start ),
-							   documentPosition( document, end ) );
+		const auto* index = textIndexFor( widget, document );
+		document.setSelection( documentPosition( document, start, index ),
+							   documentPosition( document, end, index ) );
 		return true;
 	}
 	if ( ( request.action == AccessibilityAction::Expand ||

@@ -6,6 +6,7 @@
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
 #include "accessibilitybackend.hpp"
+#include "accessibilitydispatchprofile.hpp"
 
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -170,7 +171,8 @@ class UIAutomationProviderContext final
 		mWindow( window ),
 		mUIThread( GetCurrentThreadId() ),
 		mRuntimeScope( runtimeScope ),
-		mRootRef( manager.getRoot() ) {}
+		mRootRef( manager.getRoot() ),
+		mProfile( AccessibilityDispatchProfile::create( "uia" ) ) {}
 
 	~UIAutomationProviderContext() { detach(); }
 
@@ -259,12 +261,23 @@ class UIAutomationProviderContext final
 			pending.swap( mPendingRequests );
 		}
 		AccessibilityManager* manager = mManager;
+		const auto profileStart = mProfile ? AccessibilityDispatchProfile::Clock::now()
+										   : AccessibilityDispatchProfile::Clock::time_point{};
+		double maximumMessage = 0;
 		for ( const auto& request : pending ) {
+			const auto requestStart = mProfile ? AccessibilityDispatchProfile::Clock::now()
+											   : AccessibilityDispatchProfile::Clock::time_point{};
 			if ( manager && isAlive() )
 				request->execute( *manager );
 			else
 				request->cancel( UIA_E_ELEMENTNOTAVAILABLE );
+			if ( mProfile ) {
+				maximumMessage = std::max(
+					maximumMessage, AccessibilityDispatchProfile::microseconds( requestStart ) );
+			}
 		}
+		if ( mProfile && !pending.empty() )
+			mProfile->batch( pending.size(), profileStart, maximumMessage, false );
 	}
 
 	void invalidateProvider( AccessibilityNodeRef ref );
@@ -311,6 +324,7 @@ class UIAutomationProviderContext final
 	std::vector<UIAutomationProvider*> mInvalidatedProviders;
 	std::mutex mPendingMutex;
 	std::vector<std::shared_ptr<PendingRequest>> mPendingRequests;
+	std::unique_ptr<AccessibilityDispatchProfile> mProfile;
 	struct CachedTextContents {
 		AccessibilityNodeRef ref;
 		AccessibilityTextRevision revision;
