@@ -377,7 +377,11 @@ subject to vector capacity; it is released with the last binding or the client d
 An ordinary edit reads one affected line length and updates block totals without allocation. A
 structural edit splices flat line metadata and rebuilds block totals, reading only affected document
 lines: metadata shifting is O(lines), not a fresh document scan. Initial creation and lazy recovery
-are O(lines), using `getLineLength()` rather than fetching full line objects. Large insertions
+are O(lines), using `TextDocument::getLineLengths()` to fill the existing length buffer under one
+scoped read lock. Both the line container and shared line contents are locked once, with no
+per-line mutex calls or text copies. The modification id is returned inside that scope; no
+document state or dormant-edit work is added. Ordinary incremental edits still read one line.
+Large insertions
 (over 64k code points), whole-text resets, missed/nested revisions and ambiguous edit shapes invalidate
 lazily. Revision increments precede mutation, so duplicate/same-revision callbacks validate affected
 post-edit lengths instead of assuming that the revision means the edit has finished.
@@ -391,6 +395,12 @@ limits. Widget deletion/identity removal, document switches and the last client 
 bindings. The store retains UUIDs and widget identities, not document pointers or owning references;
 widget pointers are never dereferenced there. Worker loads recover through the main-thread deferred
 whole-text notification and revision validation, not worker-side cache mutation.
+
+The Inspector's Accessibility table requests the value without text offsets: it never displays
+caret/selection offsets, so inspecting an editor does not create an unused index. Explicit offset
+queries without native clients still recover lazily on revision changes; they do not enable native
+notifications or bypass the dormant widget gates. No current tooling consumer needs continuous
+offset-index maintenance without a native client, so no additional observer or usage flag is added.
 
 ### 6. What survives a disconnection
 
@@ -531,6 +541,7 @@ for performance comparisons. All windows below are hidden by their benchmark mod
 premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 ninja
 ninja -C make/linux release
 python3 projects/scripts/benchmark_accessibility_dormant.py --active-text --samples 5 --json
+python3 projects/scripts/benchmark_accessibility_dormant.py --cold-text --samples 5 --json
 a11y_runtime_dir=$(mktemp -d /tmp/eepp-a11y-runtime.XXXXXX)
 env -u AT_SPI_BUS_ADDRESS XDG_RUNTIME_DIR="$a11y_runtime_dir" \
   dbus-run-session -- env EEPP_ACCESSIBILITY_PROFILE=1 \
@@ -551,6 +562,33 @@ ordinary C++ `new/new[]` on the measuring thread only, not `malloc`, native libr
 The optional native burst interleaves full model enumerations and secondary-window queries, requires
 every complete reply and reports client round-trip latency separately from native UI-thread profiling.
 Its timing is informational, not a new CI threshold.
+
+The separate cold-text mode prepares 10k/100k/1M-line editors without clients, text queries or focus,
+then attaches a mock backend implementing AT-SPI's exact-edit preparation and focus-time semantic
+queries. It measures the first edit at the beginning and near EOF, and first focus, against the next
+warm operation. These timings include ordinary editor/focus work but exclude D-Bus/native transport.
+Exact edit records and offsets must still be correct; the mode does not suppress unqueried text events.
+Its Inspector regression selects and edits an editor through the real Inspector table, then verifies
+that the first explicit offset query is still cold. That guard fails if Inspector requests unused
+offsets, while the following warm query must allocate nothing. No timing threshold is enforced.
+
+On the same Release host, five cold-text samples per implementation accepted without competing CPU
+work measured the following before and after replacing per-line locks with a bulk read-lock scope:
+
+| Lines | First edit at start (before → after) | First edit near EOF (before → after) | First focus (before → after) | Allocated bytes on first use (unchanged) |
+| --- | --- | --- | --- | --- |
+| 10k | 0.294 → 0.050 ms | 0.281 → 0.038 ms | 0.437 → 0.203 ms | about 80.5 kB |
+| 100k | 2.850 → 0.381 ms | 2.850 → 0.391 ms | 2.847 → 0.396 ms | about 803 kB |
+| 1M | 29.228 → 5.707 ms | 29.210 → 5.715 ms | 29.264 → 5.800 ms | about 8.03 MB |
+
+Warm edits took 0.002–0.014 ms and warm focus took 0.026–0.036 ms, including ordinary editor/focus
+work. These are mock-backend semantic-path medians, not real screen-reader/frame-time measurements.
+The single lock scope removes the dominant synchronization cost, but initial index creation remains
+O(lines) on the UI thread, even when the first edit is at the start. The AT-SPI message budget does
+not bound ordinary document-notification work.
+Exact events for unqueried text remain enabled: dropping them would change the contract for clients
+that subscribe without fetching text first. A strictly bounded cold-start latency would need a
+separate follow-up; the remaining scan is not hidden by the warmed-query benchmark.
 
 On a Ryzen 9 3900X (24 logical CPUs, 62 GiB RAM, GCC 16.2.1), Release SDL3 without ASAN,
 the five-sample semantic-text median was 0.10–0.13 µs per post-edit query at 10k/100k/1M lines,

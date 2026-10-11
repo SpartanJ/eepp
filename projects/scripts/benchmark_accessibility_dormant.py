@@ -12,6 +12,7 @@ only when every sample exits cleanly and reports every expected measurement, gua
 included. A compared build whose run fails still reports its measurements.
 An additional active-client guard checks that backends not requesting exact text edits allocate
 nothing to construct unused records; it does not measure document editing itself.
+Use --active-text for warmed semantic queries or --cold-text for first-use text and Inspector checks.
 """
 
 import argparse
@@ -74,6 +75,17 @@ ACTIVE_COMMON = {
 	if name not in {"text_index_updates", "text_index_work"}
 }
 
+COLD_TEXT = {
+	**{
+		f"text_{temperature}_{kind}_{lines}": ("allocations", "bytes", "ms")
+		for lines in (10000, 100000, 1000000)
+		for kind in ("begin", "end", "focus")
+		for temperature in ("cold", "warm")
+	},
+	"inspector_first_requested_offsets": ("allocations", "bytes", "ms"),
+	"inspector_warm_requested_offsets": ("allocations", "bytes", "ms"),
+}
+
 
 def parse(stdout):
 	sample = {}
@@ -102,13 +114,13 @@ def missing(sample, expected):
 	)
 
 
-def run(executable, samples, timeout, expected, active_text=False):
+def run(executable, samples, timeout, expected, test_filter):
 	"""Returns the median of every measurement and the reasons the run did not pass, if any."""
 	results = {}
 	failures = []
 	for index in range(samples):
 		completed = subprocess.run(
-			[executable, "--filter=AccessibilityActive.*" if active_text else "--filter=AccessibilityDormant.*"],
+			[executable, f"--filter={test_filter}"],
 			capture_output=True,
 			text=True,
 			timeout=timeout,
@@ -137,8 +149,11 @@ def main():
 	parser.add_argument("--samples", type=int, default=3)
 	parser.add_argument("--timeout", type=float, default=300)
 	parser.add_argument("--json", action="store_true")
-	parser.add_argument("--active-text", action="store_true",
+	mode = parser.add_mutually_exclusive_group()
+	mode.add_argument("--active-text", action="store_true",
 		help="measure active text indexing, child counts and queried model rows instead of dormant costs")
+	mode.add_argument("--cold-text", action="store_true",
+		help="measure unqueried first edits, first focus and Inspector offset-index laziness")
 	args = parser.parse_args()
 
 	if args.samples < 1:
@@ -157,11 +172,16 @@ def main():
 	failures = {}
 	for label, path in builds:
 		# The current build must measure everything; a compared tree may lack accessibility.
-		if args.active_text:
+		if args.cold_text:
+			expected = COLD_TEXT
+			test_filter = "AccessibilityCold.*"
+		elif args.active_text:
 			expected = ACTIVE_TEXT if label == "current" else ACTIVE_COMMON
+			test_filter = "AccessibilityActive.*"
 		else:
 			expected = {**COMMON, **ACCESSIBILITY} if label == "current" else COMMON
-		output[label], failures[label] = run(path, args.samples, args.timeout, expected, args.active_text)
+			test_filter = "AccessibilityDormant.*"
+		output[label], failures[label] = run(path, args.samples, args.timeout, expected, test_filter)
 	passed = {label: not failures[label] for label in failures}
 	if args.json:
 		print(json.dumps({"results": output, "guards_passed": passed, "failures": failures},

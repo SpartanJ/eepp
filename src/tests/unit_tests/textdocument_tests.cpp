@@ -90,6 +90,40 @@ UTEST( TextDocument, toUtf8StringReusesOutputStorage ) {
 	EXPECT_EQ( capacity, output.capacity() );
 }
 
+UTEST( TextDocument, LineLengthsReuseOutputStorageAndReportRevision ) {
+	TextDocument doc;
+	std::vector<Int64> lengths( 8, -1 );
+	lengths.reserve( 16 );
+	const auto* storage = lengths.data();
+	const size_t capacity = lengths.capacity();
+	EXPECT_EQ( doc.getLineLengths( lengths ), doc.getModificationId() );
+	ASSERT_EQ( lengths.size(), 1u );
+	EXPECT_EQ( lengths[0], 1 ); // The empty document still has its sentinel newline.
+
+	doc.insert( 0, { 0, 0 },
+				String::fromUtf8( std::string_view{ "A😀é\n日本語\n🧑‍💻" } ) );
+	{
+		// Bulk queries are safe in a callback that already holds the document locks.
+		TextDocument::ScopedReadLock lock( doc );
+		EXPECT_EQ( doc.getLineLengths( lengths ), doc.getModificationId() );
+	}
+	ASSERT_EQ( lengths.size(), 3u );
+	EXPECT_EQ( lengths[0], 5 );
+	EXPECT_EQ( lengths[1], 4 );
+	EXPECT_EQ( lengths[2], 4 );
+	for ( size_t line = 0; line < lengths.size(); ++line )
+		EXPECT_EQ( lengths[line], static_cast<Int64>( doc.getLineLength( line ) ) );
+	EXPECT_TRUE( lengths.data() == storage );
+	EXPECT_EQ( lengths.capacity(), capacity );
+
+	doc.reset();
+	EXPECT_EQ( doc.getLineLengths( lengths ), doc.getModificationId() );
+	ASSERT_EQ( lengths.size(), 1u );
+	EXPECT_EQ( lengths[0], 1 );
+	EXPECT_TRUE( lengths.data() == storage );
+	EXPECT_EQ( lengths.capacity(), capacity );
+}
+
 UTEST( TextDocument, insertNewLinesIntoEmptyDocument ) {
 	{
 		TextDocument doc;

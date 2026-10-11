@@ -79,7 +79,9 @@ class AccessibilityPropertiesModel final : public Model {
 		if ( mWidget ) {
 			auto manager = mWidget->getUISceneNode()->getAccessibilityManager();
 			auto ref = manager->getNodeRef( mWidget );
-			auto info = manager->getNodeInfo( ref );
+			// This table displays the value, not caret/selection offsets. Requesting unused
+			// offsets creates a document-sized index and rebuilds it on every dormant edit.
+			auto info = manager->getNodeInfo( ref, true, false );
 			auto parent = manager->getParent( ref );
 			std::string states;
 			static constexpr std::pair<AccessibilityState, const char*> StateNames[] = {

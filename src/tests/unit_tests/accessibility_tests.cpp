@@ -13,6 +13,8 @@
 #include <eepp/ui/models/itemlistmodel.hpp>
 #include <eepp/ui/models/persistentmodelindex.hpp>
 #include <eepp/ui/models/stringmapmodel.hpp>
+#include <eepp/ui/models/widgettreemodel.hpp>
+#include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -36,6 +38,7 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitreeview.hpp>
+#include <eepp/ui/uiwindow.hpp>
 
 #include <cstdlib>
 #include <future>
@@ -2470,6 +2473,66 @@ UTEST( Accessibility, QueriedTextIndexesSurviveMutedAndCoalescedEdits ) {
 	document.insert( 0, { 0, 0 }, "ignored\n" );
 	EXPECT_EQ( manager->getTextLength( ref ), 57 );
 	EXPECT_TRUE( manager->getTextRange( ref, 0, 7 ) == String( "ignored" ) );
+}
+
+UTEST( Accessibility, UnqueriedEditorsReportTheirFirstExactChange ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	UICodeEditor* editors[] = { UICodeEditor::New(), UICodeEditor::New() };
+	for ( auto* editor : editors )
+		editor->getDocument().textInput( "first\nsecond\nthird" );
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	// No getNodeInfo(), offset query or focus event has warmed either editor's index.
+	editors[0]->getDocument().insert( 0, { 0, 0 }, "x" );
+	editors[1]->getDocument().insert( 0, { 2, 0 }, "y" );
+	ASSERT_EQ( recorder->changes.size(), 2u );
+	EXPECT_FALSE( recorder->changes[0].isWholeText() );
+	EXPECT_FALSE( recorder->changes[1].isWholeText() );
+	EXPECT_EQ( recorder->changes[0].offset, 0 );
+	EXPECT_EQ( recorder->changes[1].offset, 13 );
+	EXPECT_TRUE( recorder->changes[0].inserted == String( "x" ) );
+	EXPECT_TRUE( recorder->changes[1].inserted == String( "y" ) );
+	for ( auto* editor : editors )
+		EXPECT_EQ( manager->getTextLength( manager->getNodeRef( editor ) ), 19 );
+}
+
+UTEST( Accessibility, InspectorPropertiesUpdateWithoutNativeClients ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* editor = UICodeEditor::New();
+	editor->setAccessibilityLabel( "Source" );
+	editor->getDocument().textInput( "hello\nworld" );
+	auto* inspector = Tools::UIWidgetInspector::create( scene );
+	ASSERT_NE( inspector, nullptr );
+	auto* tree = inspector->find<UITreeView>( "widget_inspector_nodetree" );
+	auto* table = inspector->find<UITableView>( "widget_inspector_accessibility" );
+	ASSERT_NE( tree, nullptr );
+	ASSERT_NE( table, nullptr );
+	auto* treeModel = static_cast<Models::WidgetTreeModel*>( tree->getModel() );
+	tree->setSelection( treeModel->getModelIndex( editor ) );
+	auto property = [&]( const char* name ) {
+		auto* model = table->getModel();
+		for ( size_t row = 0; row < model->rowCount(); ++row ) {
+			if ( model->data( model->index( row, 0 ), ModelRole::Display ).toString() == name )
+				return model->data( model->index( row, 1 ), ModelRole::Display ).toString();
+		}
+		return std::string();
+	};
+	EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
+	EXPECT_TRUE( property( "Name" ) == "Source" );
+	EXPECT_TRUE( property( "Value" ) == "hello\nworld" );
+	EXPECT_TRUE( property( "Role" ) == "TextBox (" + editor->getElementTag() + ")" );
+	editor->getDocument().insert( 0, { 1, 0 }, "new " );
+	EXPECT_TRUE( property( "Value" ) == "hello\nnew world" );
+	EXPECT_FALSE( property( "Stable ID" ).empty() );
+	EXPECT_FALSE( property( "Bounds" ).empty() );
+	EXPECT_TRUE( property( "Caret" ).empty() );
+	EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
 }
 
 UTEST( Accessibility, NestedTextCallbacksUseWholeTextInsteadOfOutOfOrderDeltas ) {

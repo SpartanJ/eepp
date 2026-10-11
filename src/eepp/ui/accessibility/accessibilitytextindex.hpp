@@ -26,10 +26,8 @@ class AccessibilityTextIndex {
 			 mRevision == document.getModificationId() )
 			return;
 		mDocument = document.getUUID();
-		mRevision = document.getModificationId();
-		mLengths.resize( document.linesCount() );
-		for ( size_t line = 0; line < mLengths.size(); ++line )
-			mLengths[line] = static_cast<Int64>( document.getLineLength( line ) );
+		// Cold initialization scans every line; acquire the document locks once, not per line.
+		mRevision = document.getLineLengths( mLengths );
 		mLineReads += mLengths.size();
 		++mRebuilds;
 		rebuildBlocks();

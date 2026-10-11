@@ -191,6 +191,9 @@ class EE_API TextDocumentLine {
 	Uint32 getTextHints() const { return mFlags.load( std::memory_order_acquire ) & ~HashValid; }
 
   protected:
+	// The owning document can read storage directly while holding its scoped read lock.
+	friend class TextDocument;
+
 	static constexpr Uint32 HashValid = 1u << 31;
 	String mText;
 	mutable std::atomic<String::HashType> mHash{ 0 };

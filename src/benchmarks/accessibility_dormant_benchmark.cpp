@@ -6,6 +6,8 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/models/model.hpp>
+#include <eepp/ui/models/widgettreemodel.hpp>
+#include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uilistview.hpp>
@@ -16,6 +18,8 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uitreeview.hpp>
+#include <eepp/ui/uiwindow.hpp>
 
 // Define EE_BENCH_NO_ACCESSIBILITY when building against a tree without accessibility support.
 #if !defined( EE_BENCH_NO_ACCESSIBILITY ) && \
@@ -428,6 +432,40 @@ class SwitchableBackend : public AccessibilityBackend {
 	void onEvent( const AccessibilityPendingEvent& ) override {}
 };
 
+/** Models AT-SPI's exact-edit preparation and its focus-time offset/length queries. No D-Bus
+ * calls or native allocations are measured: these isolate the actual manager's cold path. */
+class ColdTextBackend : public SwitchableBackend {
+  public:
+	explicit ColdTextBackend( AccessibilityManager& manager ) : manager( manager ) {}
+
+	bool supportsTextChanges() const override { return true; }
+
+	bool onTextChanged( AccessibilityNodeRef, const AccessibilityTextChange& change ) override {
+		++edits;
+		offset = change.offset;
+		wholeText = change.isWholeText();
+		return true;
+	}
+
+	void onEvent( const AccessibilityPendingEvent& event ) override {
+		if ( event.type != AccessibilityEvent::FocusChanged )
+			return;
+		const auto info = manager.getNodeInfo( event.ref, false, false );
+		if ( !info.text.valid || !( static_cast<Uint64>( info.states ) &
+									static_cast<Uint64>( AccessibilityState::Focused ) ) )
+			return;
+		++focusQueries;
+		offset = manager.getTextInfo( event.ref ).caretOffset;
+		manager.getTextLength( event.ref );
+	}
+
+	AccessibilityManager& manager;
+	size_t edits{};
+	size_t focusQueries{};
+	Int32 offset{};
+	bool wholeText{ false };
+};
+
 } // namespace
 
 UTEST( AccessibilityDormant, BackendsWithoutExactTextChangesAllocateNoEditRecords ) {
@@ -623,6 +661,106 @@ UTEST( AccessibilityActive, IncrementalTextOffsets ) {
 		EXPECT_EQ( warm.allocations, 0u );
 		delete editor;
 	}
+}
+
+UTEST( AccessibilityCold, FirstEditAndFocus ) {
+	UIApplication app( benchmarkWindow(), benchmarkSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto backend = std::make_unique<ColdTextBackend>( *manager );
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	for ( size_t lines : { 10000, 100000, 1000000 } ) {
+		std::string text;
+		text.reserve( lines * 2 );
+		for ( size_t line = 0; line < lines; ++line )
+			text += "a\n";
+		for ( const auto* kind : { "begin", "end", "focus" } ) {
+			// Prepare without native clients, queries or focus events: nothing may warm the index.
+			recorder->active = false;
+			scene->update( Time::Zero );
+			auto* editor = UICodeEditor::New();
+			auto& document = editor->getDocument();
+			document.loadFromMemory( reinterpret_cast<const Uint8*>( text.data() ), text.size() );
+			const TextPosition position{
+				std::string_view( kind ) == "begin" ? 0 : static_cast<Int64>( lines - 1 ), 0 };
+			document.setSelection( position );
+			const auto ref = manager->getNodeRef( editor );
+			recorder->edits = recorder->focusQueries = 0;
+			recorder->active = true;
+			scene->update( Time::Zero );
+			const bool focus = std::string_view( kind ) == "focus";
+			auto operation = [&] {
+				if ( focus )
+					editor->setFocus();
+				else
+					document.insert( 0, position, "x" );
+			};
+			const auto cold = measure( operation );
+			EXPECT_EQ( recorder->offset, static_cast<Int32>( position.line() * 2 ) );
+			if ( focus ) {
+				EXPECT_EQ( recorder->focusQueries, 1u );
+				scene->getRoot()->setFocus();
+			} else {
+				EXPECT_EQ( recorder->edits, 1u );
+				EXPECT_FALSE( recorder->wholeText );
+			}
+			manager->update();
+			const auto warm = measure( operation );
+			if ( focus ) {
+				EXPECT_EQ( recorder->focusQueries, 2u );
+			} else {
+				EXPECT_EQ( recorder->edits, 2u );
+				EXPECT_FALSE( recorder->wholeText );
+			}
+			const auto suffix = std::string( kind ) + "_" + std::to_string( lines );
+			report( ( "text_cold_" + suffix ).c_str(), cold, 1, "ACTIVE" );
+			report( ( "text_warm_" + suffix ).c_str(), warm, 1, "ACTIVE" );
+			// This documents the intentional first-use allocation, without a timing threshold.
+			EXPECT_GE( cold.bytes, lines * sizeof( Int64 ) );
+			const auto query = measure( [&] { manager->getTextInfo( ref ); } );
+			EXPECT_EQ( query.allocations, 0u );
+			delete editor;
+		}
+	}
+}
+
+UTEST( AccessibilityCold, InspectorDoesNotCreateUnusedTextIndexes ) {
+	UIApplication app( benchmarkWindow(), benchmarkSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	manager->setBackend( std::make_unique<SwitchableBackend>() );
+	scene->update( Time::Zero );
+	auto* editor = UICodeEditor::New();
+	static constexpr size_t Lines = 100000;
+	std::string text;
+	text.reserve( Lines * 2 );
+	for ( size_t line = 0; line < Lines; ++line )
+		text += "a\n";
+	auto& document = editor->getDocument();
+	document.loadFromMemory( reinterpret_cast<const Uint8*>( text.data() ), text.size() );
+	document.setSelection( { Lines - 1, 0 } );
+	auto* inspector = Tools::UIWidgetInspector::create( scene );
+	ASSERT_NE( inspector, nullptr );
+	auto* tree = inspector->find<UITreeView>( "widget_inspector_nodetree" );
+	ASSERT_NE( tree, nullptr );
+	auto* model = static_cast<WidgetTreeModel*>( tree->getModel() );
+	tree->setSelection( model->getModelIndex( editor ) );
+	// The real Inspector refreshes on each edit, but never displays caret/selection offsets.
+	// Native clients remain inactive: index creation here would force another rebuild per edit.
+	document.insert( 0, { Lines - 1, 0 }, "x" );
+	ASSERT_FALSE( scene->hasActiveAccessibilityClients() );
+	const auto ref = manager->getNodeRef( editor );
+	const auto firstOffsets = measure( [&] { manager->getTextInfo( ref ); } );
+	report( "inspector_first_requested_offsets", firstOffsets, 1, "ACTIVE" );
+	// If Inspector already created/rebuilt the index, this is a warm zero-allocation query and
+	// the assertion fails. No production diagnostics API is needed to observe that distinction.
+	EXPECT_GE( firstOffsets.bytes, Lines * sizeof( Int64 ) );
+	const auto warmOffsets = measure( [&] { manager->getTextInfo( ref ); } );
+	report( "inspector_warm_requested_offsets", warmOffsets, 1, "ACTIVE" );
+	EXPECT_EQ( warmOffsets.allocations, 0u );
 }
 
 #if defined( EE_BENCH_HAS_TEXT_INDEX )

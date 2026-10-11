@@ -2096,6 +2096,14 @@ std::size_t TextDocument::getLineLength( Int64 line ) const {
 	return line >= (Int64)mLines.size() ? 0 : mLines[line].size();
 }
 
+Uint64 TextDocument::getLineLengths( std::vector<Int64>& lengths ) const {
+	ScopedReadLock lock( *this );
+	lengths.resize( mLines.size() );
+	for ( size_t line = 0; line < mLines.size(); ++line )
+		lengths[line] = static_cast<Int64>( mLines[line].mText.size() );
+	return mModificationId;
+}
+
 void TextDocument::safeLineOp( Int64 line, std::function<void( TextDocumentLine& )> op ) {
 	Lock l( mLinesMutex );
 	static TextDocumentLine safeLine = TextDocumentLine( "", nullptr );
