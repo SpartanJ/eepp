@@ -30,8 +30,6 @@ using namespace EE::Window;
 
 namespace EE { namespace UI {
 
-std::atomic<Uint32> UIWidget::sAccessibilityActiveScenes{ 0 };
-
 // Allocated only for widgets that set accessibility metadata. The one-byte fields are grouped
 // after the strings: 136 bytes instead of 144 with the role first (x86_64 libstdc++).
 struct AccessibilityProperties {
@@ -128,18 +126,28 @@ UIWidget::UIWidget() : UIWidget( "widget" ) {}
 UIWidget::~UIWidget() {
 	// Invalidate the entire subtree before OnClose handlers can delete children themselves.
 	// Dirty-style cleanup still runs after those callbacks, as it did before accessibility.
-	if ( !SceneManager::instance()->isShuttingDown() && mUISceneNode ) {
-		if ( auto* manager = mUISceneNode->getExistingAccessibilityManager() )
-			manager->onWidgetDelete( this );
+	// The scene outlives its widgets (its dispatcher is also used below), including at shutdown.
+	// Closing scenes resolve no manager. Check retained state before the shutdown query so
+	// unqueried widgets do not add shutdown or invalidation calls to the ordinary destructor path.
+	// A destroying widget already invalidated its descendants before running OnClose. Skip
+	// their shared manager lookup too; invalidateWidget() rejects this same case later on.
+	if ( mUISceneNode && ( !mParentNode || !mParentNode->isDestroying() ) ) {
+		if ( auto* manager = mUISceneNode->getExistingAccessibilityManager();
+			 manager && manager->needsWidgetInvalidation( this ) &&
+			 !SceneManager::isShuttingDown() )
+			manager->invalidateWidget( this );
 	}
 	mDestroying = true;
 	onClose();
 
-	if ( mUISceneNode && mUISceneNode->getUIEventDispatcher() &&
-		 mUISceneNode->getUIEventDispatcher()->getNodeDragging() == this )
-		mUISceneNode->getUIEventDispatcher()->setNodeDragging( nullptr );
+	// Resolve after OnClose, whose callbacks may change the dispatcher state.
+	if ( mUISceneNode ) {
+		auto* dispatcher = mUISceneNode->getUIEventDispatcher();
+		if ( dispatcher && dispatcher->getNodeDragging() == this )
+			dispatcher->setNodeDragging( nullptr );
+	}
 
-	if ( !SceneManager::instance()->isShuttingDown() && NULL != mUISceneNode )
+	if ( !SceneManager::isShuttingDown() && NULL != mUISceneNode )
 		mUISceneNode->onWidgetDelete( this );
 
 	eeSAFE_DELETE( mStyle );
@@ -214,7 +222,7 @@ UIWidget* UIWidget::setAccessibilityRole( AccessibilityRole role ) {
 		 mAccessibilityProperties->role == role )
 		return this;
 	const bool active =
-		isAccessibilityActive() && mUISceneNode && mUISceneNode->hasActiveAccessibilityClients();
+		Accessibility::isActive() && mUISceneNode && mUISceneNode->hasActiveAccessibilityClients();
 	const bool wasElement = active && isAccessibilityElement();
 	auto& properties = ensureAccessibilityProperties();
 	properties.role = role;
@@ -258,7 +266,7 @@ UIWidget* UIWidget::setAccessibilityHidden( bool hidden ) {
 	ensureAccessibilityProperties().hidden = hidden;
 	// Both hiding and exposing a subtree change its parent's children. The subtree itself may
 	// no longer be reachable, and changes inside an already hidden parent stay silent.
-	if ( isAccessibilityActive() && mUISceneNode &&
+	if ( Accessibility::isActive() && mUISceneNode &&
 		 mUISceneNode->hasActiveAccessibilityClients() ) {
 		auto* parent = getParent();
 		if ( parent && parent->isWidget() ) {
@@ -1215,8 +1223,8 @@ Node* UIWidget::setId( const std::string& id ) {
 	// Relations resolve by id: a renamed widget stops labelling one set of controls and starts
 	// labelling another. The activity test comes first; the comparison only serves that
 	// notification.
-	if ( isAccessibilityActive() && mUISceneNode && mUISceneNode->hasActiveAccessibilityClients() &&
-		 id != getId() ) {
+	if ( Accessibility::isActive() && mUISceneNode &&
+		 mUISceneNode->hasActiveAccessibilityClients() && id != getId() ) {
 		auto* manager = mUISceneNode->getAccessibilityManager();
 		auto* owner = manager->getSceneNode();
 		// Dependents are notified after the change, so they resolve the new relation. Keep the
@@ -2185,8 +2193,6 @@ void UIWidget::onParentChange() {
 		getUISceneNode()->invalidateStyle( this, true );
 		getUISceneNode()->invalidateStyleState( this, true, true );
 	}
-	if ( isAccessibilityActive() && mUISceneNode && mUISceneNode->hasActiveAccessibilityClients() )
-		mUISceneNode->getAccessibilityManager()->onWidgetParentChange( this );
 }
 
 void UIWidget::onClassChange() {

@@ -520,7 +520,9 @@ class EE_API UISceneNode : public SceneNode {
 	/** Lazily creates and returns the live accessibility query resolver. */
 	AccessibilityManager* getAccessibilityManager();
 
-	const AccessibilityManager* getAccessibilityManager() const;
+	const AccessibilityManager* getAccessibilityManager() const {
+		return getExistingAccessibilityManager();
+	}
 
 	/** Selects native accessibility for this root scene. Nested scenes delegate to their host.
 	 * Changes requested inside an accessibility callback take effect on the next scene update,
@@ -1349,7 +1351,13 @@ class EE_API UISceneNode : public SceneNode {
 	/** The manager this scene's widgets report to, or nullptr when none exists yet. Never creates
 	 * one: lifecycle bookkeeping (destruction, scene and host changes) must not initialize
 	 * accessibility. */
-	AccessibilityManager* getExistingAccessibilityManager() const;
+	AccessibilityManager* getExistingAccessibilityManager() const {
+		// Match the mutable accessor: a closing scene's widgets must not reach any manager.
+		if ( mNodeFlags & NODE_FLAG_CLOSE )
+			return nullptr;
+		return mHostUISceneNode ? mHostUISceneNode->getExistingAccessibilityManager()
+								: mAccessibilityManager.get();
+	}
 
 	/** Sets this root scene's client-active state and keeps the process-wide count that widget
 	 * notifications test inline in sync with it. */

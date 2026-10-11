@@ -172,7 +172,10 @@ void AtSpiApplication::update() {
 		}
 		mPendingWindowAdds.clear();
 	}
-	if ( !mDispatchRequested.exchange( false, std::memory_order_acq_rel ) ) {
+	// The I/O thread publishes and wakes pending dispatch. Avoid a locked exchange on every
+	// idle update; an arrival after this load is serviced by the next awakened update.
+	if ( !mDispatchRequested.load( std::memory_order_acquire ) ||
+		 !mDispatchRequested.exchange( false, std::memory_order_acq_rel ) ) {
 		if ( mProfile )
 			mProfile->batch( 0, profileStart, 0, false );
 		return;

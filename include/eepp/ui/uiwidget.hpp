@@ -2,7 +2,6 @@
 #define EE_UIUIWIDGET_HPP
 
 #include <algorithm>
-#include <atomic>
 #include <eepp/core/small_vector.hpp>
 #include <eepp/ui/accessibility/accessibility.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
@@ -2061,36 +2060,26 @@ class EE_API UIWidget : public UINode {
 
 	String resolveAccessibilityDescription() const;
 
-	/** Whether any scene in the process has an active accessibility client. Notifications test
-	 * it inline, so while no client is attached anywhere they cost one relaxed load and no call.
-	 * Callers that compute an event or payload test it first. */
-	static bool isAccessibilityActive() {
-		return sAccessibilityActiveScenes.load( std::memory_order_relaxed ) != 0;
-	}
-
 	void notifyAccessibilityEvent( AccessibilityEvent event ) {
-		if ( isAccessibilityActive() )
+		if ( Accessibility::isActive() )
 			deliverAccessibilityEvent( event );
 	}
 
 	/** Reports an edit of this text widget's document; nullptr when the whole text changed. */
 	void notifyAccessibilityTextChanged( const Doc::DocumentContentChange* change ) {
-		if ( isAccessibilityActive() )
+		if ( Accessibility::isActive() )
 			deliverAccessibilityTextChanged( change );
 	}
 
 	/** A reset, load or document swap: the whole text changed, and with it the value. */
 	void notifyAccessibilityWholeTextChanged() {
-		if ( isAccessibilityActive() )
+		if ( Accessibility::isActive() )
 			deliverAccessibilityWholeTextChanged();
 	}
 
 	void detachAccessibilitySource();
 
   private:
-	/** Root scenes whose accessibility client is active; maintained by UISceneNode. */
-	static std::atomic<Uint32> sAccessibilityActiveScenes;
-
 	void deliverAccessibilityEvent( AccessibilityEvent event );
 
 	void deliverAccessibilityTextChanged( const Doc::DocumentContentChange* change );

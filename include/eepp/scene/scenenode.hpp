@@ -1,6 +1,7 @@
 #ifndef EE_SCENENODE_HPP
 #define EE_SCENENODE_HPP
 
+#include <atomic>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/scene/node.hpp>
 #include <eepp/system/translator.hpp>
@@ -17,6 +18,19 @@ namespace EE { namespace Scene {
 
 class EE_API SceneNode : public Node {
   public:
+	using NodeParentChangeCallback = void ( * )( Node* node, bool removed );
+
+	/** Optional process-wide hierarchy observer. Removals precede unlinking; arrivals follow
+	 * final links, scene binding and parent hooks. The callback does not own the node.
+	 * Set or clear on the scene thread; nullptr disables reporting without allocating. */
+	static void setNodeParentChangeCallback( NodeParentChangeCallback callback );
+
+	/** Internal hierarchy dispatch: a null observer costs one relaxed load and no call. */
+	static void notifyNodeParentChange( Node* node, bool removed ) {
+		if ( auto callback = sNodeParentChangeCallback.load( std::memory_order_relaxed ) )
+			callback( node, removed );
+	}
+
 	/**
 	 * @brief Creates a new SceneNode instance.
 	 *
@@ -426,6 +440,8 @@ class EE_API SceneNode : public Node {
 	UnorderedSet<Node*> mScheduledUpdate;
 	UnorderedSet<Node*> mScheduledUpdateRemove;
 	Float mDPI;
+
+	static std::atomic<NodeParentChangeCallback> sNodeParentChangeCallback;
 
 	virtual void onSizeChange();
 

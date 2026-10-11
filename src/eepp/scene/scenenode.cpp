@@ -10,6 +10,12 @@
 
 namespace EE { namespace Scene {
 
+std::atomic<SceneNode::NodeParentChangeCallback> SceneNode::sNodeParentChangeCallback{ nullptr };
+
+void SceneNode::setNodeParentChangeCallback( NodeParentChangeCallback callback ) {
+	sNodeParentChangeCallback.store( callback, std::memory_order_relaxed );
+}
+
 SceneNode* SceneNode::New( EE::Window::Window* window ) {
 	return eeNew( SceneNode, ( window ) );
 }

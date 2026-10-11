@@ -7,33 +7,9 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <eepp/ui/accessibility/accessibilitymanager.hpp>
-#include <eepp/ui/uinode.hpp>
-#include <eepp/ui/uiscenenode.hpp>
-#include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/engine.hpp>
 
 namespace EE { namespace Scene {
-
-namespace {
-
-// Removal is reported before unlinking; arrivals after final links and inherited state are ready.
-// Widget reparenting reports its own arrival; plain nodes and reorders have no widget hook.
-// Embedded scenes have their own host-transition notifications and must not duplicate them here.
-void notifyAccessibilityParentChange( Node* node, bool removed = false ) {
-	if ( node->isDestroying() || node->isSceneNode() ||
-		 ( !node->isWidget() && !node->getFirstChild() ) )
-		return;
-	auto* nodeScene = node->getSceneNode();
-	auto* scene = node->isWidget() ? node->asType<UI::UIWidget>()->getUISceneNode()
-				  : nodeScene && nodeScene->isUISceneNode()
-					  ? static_cast<UI::UISceneNode*>( nodeScene )
-					  : nullptr;
-	if ( scene && scene->hasActiveAccessibilityClients() )
-		scene->getAccessibilityManager()->onNodeParentChange( node, removed );
-}
-
-} // namespace
 
 Node* Node::New() {
 	return eeNew( Node, () );
@@ -281,6 +257,7 @@ Node* Node::setParent( Node* parent ) {
 		onParentTreeChange();
 	}
 	onParentChange();
+	SceneNode::notifyNodeParentChange( this, false );
 
 	return this;
 }
@@ -458,7 +435,7 @@ Node* Node::toFront() {
 	if ( NULL != mParentNode && mParentNode->mChildLast != this ) {
 		mParentNode->childRemove( this );
 		mParentNode->childAdd( this );
-		notifyAccessibilityParentChange( this );
+		SceneNode::notifyNodeParentChange( this, false );
 	}
 	return this;
 }
@@ -651,15 +628,6 @@ void Node::childAdd( Node* node ) {
 void Node::childAddAt( Node* node, Uint32 index ) {
 	eeASSERT( NULL != node );
 	const bool reparenting = node->mParentNode != this;
-#ifdef EE_DEBUG
-	if ( node->isUINode() && isUINode() ) {
-		auto* childScene = node->asType<UI::UINode>()->getUISceneNode();
-		auto* parentScene = asType<UI::UINode>()->getUISceneNode();
-		// Preserve setParent()'s same-window scene-rebinding restriction for indexed insertion.
-		eeASSERT( !childScene || !parentScene || childScene == parentScene ||
-				  childScene->getWindow() == parentScene->getWindow() );
-	}
-#endif
 	if ( !reparenting ) {
 		// Detect no-ops before unlinking. Stop at the requested index, so moving to index zero
 		// stays constant-time even when the child is near the end of a large list.
@@ -729,11 +697,12 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 
 	eeASSERT( !( NULL == mChildLast && NULL != mChild ) );
 	if ( !reparenting )
-		notifyAccessibilityParentChange( node );
+		SceneNode::notifyNodeParentChange( node, false );
 	onChildCountChange( node, false );
 	if ( reparenting ) {
 		// Match setParent()'s lifecycle, but let scene and parent hooks see the final index.
 		node->setDirty();
+		// Scene-specific rebinding constraints belong to onSceneChange(), as in setParent().
 		if ( node->mSceneNode != node->findSceneNode() )
 			node->onSceneChange();
 		// Indexed insertion must refresh inherited state just like setParent(), but only after
@@ -744,13 +713,14 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 			node->onParentTreeChange();
 		}
 		node->onParentChange();
+		SceneNode::notifyNodeParentChange( node, false );
 	}
 }
 
 void Node::childRemove( Node* node ) {
-	// Capture the old semantic index before unlinking. Destroying widgets were already
-	// invalidated as a subtree and must not be accessed through their destroyed UIWidget part.
-	notifyAccessibilityParentChange( node, true );
+	// Observers capture the old hierarchy before unlinking. With no observer, this is one
+	// relaxed load without a call, allocation or dependency on higher-level node types.
+	SceneNode::notifyNodeParentChange( node, true );
 	if ( node == mChild ) {
 		mChild = mChild->mNext;
 
@@ -1282,10 +1252,6 @@ void Node::sendEvent( const Event* event ) {
 
 void Node::onParentChange() {
 	invalidateDraw();
-	// UIWidget reports its arrival from its own hook. Plain nodes also move semantic subtrees,
-	// but have no widget hook; report once after their direction and final links are current.
-	if ( !isWidget() && mChild )
-		notifyAccessibilityParentChange( this );
 }
 
 void Node::onParentTreeChange() {

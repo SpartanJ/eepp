@@ -3,6 +3,7 @@
 
 #include <eepp/core/containers.hpp>
 #include <eepp/ui/accessibility/accessibility.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <memory>
 
 namespace EE { namespace Scene {
@@ -159,7 +160,13 @@ class EE_API AccessibilityManager {
 	/** Returns whether the widget owned a model source that has now been released. */
 	bool onWidgetAccessibilitySourceDelete( UIWidget* widget );
 
-	void onWidgetDelete( UIWidget* widget );
+	/** Empty and native-root-only managers skip invalidation inline, without a tree walk.
+	 * Explicit semantic queries can retain descendants/text indexes without a native client:
+	 * those still require invalidation. Active root relations also require the full path. */
+	void onWidgetDelete( UIWidget* widget ) {
+		if ( needsWidgetInvalidation( widget ) )
+			invalidateWidget( widget );
+	}
 
 	/** Invalidates registered identities before a subtree changes accessibility owners. */
 	void onSubtreeRemoved( Scene::Node* node );
@@ -187,6 +194,23 @@ class EE_API AccessibilityManager {
   private:
 	friend class UISceneNode;
 	friend class AccessibilityWidgetResolver;
+	friend class UIWidget;
+
+	/** Shared by normal invalidation and destruction, which checks this before querying shutdown
+	 * state. Do not use client activity alone: explicit semantic queries can retain identities. */
+	bool needsWidgetInvalidation( UIWidget* widget ) const {
+		if ( !mTextIndexes && mWidgetSources.empty() ) {
+			if ( mWidgetIds.empty() )
+				return false;
+			if ( mWidgetIds.size() == 1 &&
+				 ( mRelationTargets.empty() || !mScene->hasActiveAccessibilityClients() ) ) {
+				const auto* root = mScene->getRoot();
+				if ( widget != root && mWidgetIds.begin()->first == root )
+					return false;
+			}
+		}
+		return true;
+	}
 
 	static constexpr AccessibilitySourceId WidgetSource = 1;
 	UISceneNode* mScene;
@@ -254,6 +278,8 @@ class EE_API AccessibilityManager {
 
 	/** Returns whether any identity or model source in the subtree was released. */
 	bool removeSubtreeIdentities( Scene::Node* node );
+
+	void invalidateWidget( UIWidget* widget );
 
 	/** Whether a client can receive events: without one, only invalidation runs. */
 	bool hasActiveClients() const;

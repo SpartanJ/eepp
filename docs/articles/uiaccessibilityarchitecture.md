@@ -250,10 +250,10 @@ Applications without an assistive client must pay close to nothing.
 
 - `UIWidget::notifyAccessibilityEvent()`, `notifyAccessibilityTextChanged()` and
   `notifyAccessibilityWholeTextChanged()` are inline. They test one process-wide counter of root
-  scenes with an active client (`UIWidget::isAccessibilityActive()`, a relaxed atomic load) and
+  scenes with an active client (`Accessibility::isActive()`, a relaxed atomic load) and
   only then call the out-of-line `deliver*()` implementation, which checks the scene's own bit
   (`UISceneNode::hasActiveAccessibilityClients()`, `AccessibilityClientActive`). Callers that
-  compute a payload before notifying test `isAccessibilityActive()` first. Pick the event by
+  compute a payload before notifying test `Accessibility::isActive()` first. Pick the event by
   overriding, not by checking the type at the call site: `UITextView::onTextChanged()` reports
   `NameChanged` and `UITextInput` overrides it to report `ValueChanged`. Release code for a dormant
   `UITextView::onTextChanged()` is one load, one test and a jump.
@@ -274,7 +274,15 @@ Applications without an assistive client must pay close to nothing.
   the deleted subtree.
 - Lifecycle bookkeeping never creates a manager: destruction, scene and host changes use
   `UISceneNode::getExistingAccessibilityManager()`, and the const `getAccessibilityManager()` does
-  not create one at any nesting level.
+  not create one at any nesting level. Widget destruction checks retained state inline before
+  querying shutdown state or calling the invalidation code. Empty and root-only managers skip that
+  work; identities retained by explicit Inspector queries still need invalidation, even without
+  native clients. Descendants of an already-destroying widget skip the manager lookup because
+  the ancestor invalidated their identities before running its close callbacks.
+  Core hierarchy changes use an optional, allocation-free `SceneNode` observer: accessibility
+  installs its bridge when the first scene becomes active and removes it when the last goes idle.
+  A null observer costs one relaxed load and no call. `Node` has no UI or accessibility dependency;
+  the bridge resolves UI scenes only while at least one native client is active.
 - Do not add per-frame or per-layout work that runs before this check. Bounds are queried on
   demand; there is deliberately no per-widget bounds notification.
 - `UISceneNode::announceForAccessibility()` returns before doing anything while no client is

@@ -66,8 +66,14 @@ using AsyncResourceMainThreadQueue = SmallVector<PendingAsyncResourceMainThread,
 AsyncResourceMainThreadQueue sAsyncResourceMainThreadQueue;
 std::atomic<AsyncResourceMainThreadQueueState> sAsyncResourceMainThreadQueueState{
 	AsyncResourceMainThreadQueueState::Closed };
+// Only a hint for the lock-free idle path: the queue itself remains mutex-protected. Every
+// write is under that mutex, so draining cannot clear a concurrent producer's pending work.
+std::atomic<bool> sAsyncResourceMainThreadPending{};
 
 void drainAsyncResourceMainThreadQueue() {
+	if ( !sAsyncResourceMainThreadPending.load( std::memory_order_acquire ) )
+		return;
+
 	AsyncResourceMainThreadQueue pending;
 	{
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
@@ -75,6 +81,7 @@ void drainAsyncResourceMainThreadQueue() {
 			 AsyncResourceMainThreadQueueState::Open )
 			return;
 		pending.swap( sAsyncResourceMainThreadQueue );
+		sAsyncResourceMainThreadPending.store( false, std::memory_order_relaxed );
 	}
 
 	AsyncResourceMainThreadQueue delayed;
@@ -100,6 +107,7 @@ void drainAsyncResourceMainThreadQueue() {
 			 AsyncResourceMainThreadQueueState::Closed ) {
 			for ( auto& item : delayed )
 				sAsyncResourceMainThreadQueue.emplace_back( std::move( item ) );
+			sAsyncResourceMainThreadPending.store( true, std::memory_order_release );
 		}
 	}
 }
@@ -1361,11 +1369,14 @@ void UISceneNode::update( const Time& elapsed ) {
 }
 
 void UISceneNode::onWidgetDelete( Node* node ) {
-	auto* manager = getExistingAccessibilityManager();
-	if ( manager && node->isWidget() && !node->isDestroying() )
-		manager->onWidgetDelete( node->asType<UIWidget>() );
 	if ( node->isWidget() ) {
 		UIWidget* widget = node->asType<UIWidget>();
+		// UIWidget already invalidated its subtree before setting the destroying flag. Do not
+		// look up its manager again from the later dirty-state cleanup.
+		if ( !node->isDestroying() ) {
+			if ( auto* manager = getExistingAccessibilityManager() )
+				manager->onWidgetDelete( widget );
+		}
 
 		if ( node->isLayout() ) {
 			mDirtyLayouts.erase( node->asType<UILayout>() );
@@ -1420,33 +1431,22 @@ AccessibilityManager* UISceneNode::getAccessibilityManager() {
 	return mAccessibilityManager.get();
 }
 
-const AccessibilityManager* UISceneNode::getAccessibilityManager() const {
-	return getExistingAccessibilityManager();
-}
-
 void UISceneNode::setAccessibilityClientActive( bool active ) {
 	if ( ( ( mAccessibilityState & AccessibilityClientActive ) != 0 ) == active )
 		return;
 	if ( active ) {
 		mAccessibilityState |= AccessibilityClientActive;
-		UIWidget::sAccessibilityActiveScenes.fetch_add( 1, std::memory_order_relaxed );
 	} else {
 		mAccessibilityState &= ~AccessibilityClientActive;
-		UIWidget::sAccessibilityActiveScenes.fetch_sub( 1, std::memory_order_relaxed );
+	}
+	Accessibility::onSceneClientActivityChanged( active );
+	if ( !active ) {
 		if ( mAccessibilityManager )
 			mAccessibilityManager->onClientsDisconnected();
 	}
 	if ( isAccessibilityTraceEnabled() )
 		std::fprintf( stderr, "eepp accessibility: scene %p client %s\n",
 					  static_cast<void*>( this ), active ? "active" : "inactive" );
-}
-
-AccessibilityManager* UISceneNode::getExistingAccessibilityManager() const {
-	// Match the mutable accessor: a closing scene's widgets must not reach any manager.
-	if ( mNodeFlags & NODE_FLAG_CLOSE )
-		return nullptr;
-	return mHostUISceneNode ? mHostUISceneNode->getExistingAccessibilityManager()
-							: mAccessibilityManager.get();
 }
 
 UISceneNode* UISceneNode::setAccessibilityPolicy( AccessibilityPolicy policy ) {
@@ -1514,12 +1514,15 @@ void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 	if ( node->isClosing() )
 		return;
 
-	bool alreadyExists = ( mDirtyStyle.count( node ) > 0 );
-	if ( alreadyExists && !tryReinsert )
-		return;
+	// An empty set needs neither a membership lookup nor a walk through the widget's ancestors.
+	if ( !mDirtyStyle.empty() ) {
+		bool alreadyExists = ( mDirtyStyle.count( node ) > 0 );
+		if ( alreadyExists && !tryReinsert )
+			return;
 
-	if ( hasDirtyWidgetAncestor( node, mDirtyStyle ) )
-		return;
+		if ( hasDirtyWidgetAncestor( node, mDirtyStyle ) )
+			return;
+	}
 
 	mDirtyStyle.insert( node );
 }
@@ -1531,12 +1534,14 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 	if ( node->isClosing() )
 		return;
 
-	bool alreadyExists = mDirtyStyleState.count( node ) > 0;
-	if ( alreadyExists && !tryReinsert )
-		return;
+	if ( !mDirtyStyleState.empty() ) {
+		bool alreadyExists = mDirtyStyleState.count( node ) > 0;
+		if ( alreadyExists && !tryReinsert )
+			return;
 
-	if ( hasDirtyWidgetAncestor( node, mDirtyStyleState ) )
-		return;
+		if ( hasDirtyWidgetAncestor( node, mDirtyStyleState ) )
+			return;
+	}
 
 	mDirtyStyleState.insert( node );
 	mDirtyStyleStateCSSAnimations[node] = disableCSSAnimations;
@@ -2539,6 +2544,7 @@ void UISceneNode::runAsyncResourceOnMainThread(
 			   isAsyncResourceLoadCurrent( resourceState, generation ) ) ) {
 			sAsyncResourceMainThreadQueue.push_back(
 				{ resourceState, generation, std::move( func ), delay, Clock() } );
+			sAsyncResourceMainThreadPending.store( true, std::memory_order_release );
 		}
 	}
 }
@@ -2548,6 +2554,7 @@ void UISceneNode::openAsyncResourceMainThreadQueue() {
 	{
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
 		stale.swap( sAsyncResourceMainThreadQueue );
+		sAsyncResourceMainThreadPending.store( false, std::memory_order_relaxed );
 		sAsyncResourceMainThreadQueueState.store( AsyncResourceMainThreadQueueState::Open,
 												  std::memory_order_release );
 	}
@@ -2566,6 +2573,7 @@ void UISceneNode::finishAsyncResourceMainThreadQueueShutdown() {
 		sAsyncResourceMainThreadQueueState.store( AsyncResourceMainThreadQueueState::Closed,
 												  std::memory_order_release );
 		pending.swap( sAsyncResourceMainThreadQueue );
+		sAsyncResourceMainThreadPending.store( false, std::memory_order_relaxed );
 	}
 }
 

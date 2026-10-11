@@ -3492,6 +3492,78 @@ UTEST( Accessibility, SceneLifecycleNeverCreatesAManager ) {
 	}
 }
 
+UTEST( Accessibility, ProcessActivityTracksIndependentScenes ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	EXPECT_FALSE( Accessibility::isActive() );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	manager->onNativeClientObserved();
+	EXPECT_TRUE( Accessibility::isActive() );
+	auto* otherScene = UISceneNode::New( app.getWindow() );
+	otherScene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+	auto* otherManager = otherScene->getAccessibilityManager();
+	otherManager->onNativeClientObserved();
+	otherManager->onNativeClientObserved();
+	// Clearing one scene must not disable hierarchy reporting for the other window.
+	app.getUI()->update( Time::Zero );
+	EXPECT_FALSE( app.getUI()->hasActiveAccessibilityClients() );
+	EXPECT_TRUE( Accessibility::isActive() );
+	auto* button = UIPushButton::New();
+	button->setParent( otherScene->getRoot() );
+	EXPECT_FALSE( otherManager->getPendingEvents().empty() );
+	eeDelete( otherScene );
+	EXPECT_FALSE( Accessibility::isActive() );
+	manager->onNativeClientObserved();
+	EXPECT_TRUE( Accessibility::isActive() );
+	app.getUI()->update( Time::Zero );
+	EXPECT_FALSE( Accessibility::isActive() );
+}
+
+UTEST( Accessibility, DormantDeletionInvalidatesExplicitSemanticQueries ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	ASSERT_FALSE( scene->hasActiveAccessibilityClients() );
+	for ( bool registerRoot : { false, true } ) {
+		if ( registerRoot )
+			manager->getRoot();
+		auto* group = UIWidget::New();
+		group->setParent( scene->getRoot() );
+		auto* button = UIPushButton::New();
+		button->setParent( group );
+		// A sole identity need not be the native root. An unqueried ancestor must still
+		// invalidate it, even though no screen reader has ever connected.
+		const auto buttonRef = manager->getNodeRef( button );
+		// An unrelated manager's teardown must not skip cleanup of this retained identity.
+		auto* otherScene = UISceneNode::New( app.getWindow() );
+		otherScene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+		otherScene->getAccessibilityManager()->getRoot();
+		eeDelete( otherScene );
+		auto* unqueried = UIWidget::New();
+		unqueried->setParent( scene->getRoot() );
+		eeDelete( unqueried );
+		EXPECT_TRUE( manager->isValid( buttonRef ) );
+		manager->onSubtreeRemoved( group );
+		EXPECT_FALSE( manager->isValid( buttonRef ) );
+		const auto reboundRef = manager->getNodeRef( button );
+		EXPECT_TRUE( manager->isValid( reboundRef ) );
+		eeDelete( group );
+		EXPECT_FALSE( manager->isValid( reboundRef ) );
+		EXPECT_TRUE( manager->getPendingEvents().empty() );
+
+		// Inspector text queries also retain an index without enabling native notifications.
+		auto* editor = UICodeEditor::New();
+		editor->setParent( scene->getRoot() );
+		editor->getDocument().textInput( "First\nSecond" );
+		const auto editorRef = manager->getNodeRef( editor );
+		EXPECT_TRUE( manager->getNodeInfo( editorRef ).value == String( "First\nSecond" ) );
+		eeDelete( editor );
+		EXPECT_FALSE( manager->isValid( editorRef ) );
+		EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
+	}
+}
+
 UTEST( Accessibility, DisconnectedClientsOnlyInvalidateOnRemoval ) {
 	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
 	ASSERT_NE( app.getUI(), nullptr );

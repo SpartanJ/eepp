@@ -1,11 +1,27 @@
 #ifndef EE_UI_ACCESSIBILITY_ACCESSIBILITY_HPP
 #define EE_UI_ACCESSIBILITY_ACCESSIBILITY_HPP
 
+#include <atomic>
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/math/rect.hpp>
 
 namespace EE { namespace UI {
+
+/** Process-wide native-client activity, independent of any node or widget. */
+class EE_API Accessibility {
+  public:
+	/** Notifications test this inline: no clients means one relaxed load and no call.
+	 * Callers that compute an event or payload test it before preparing that data. */
+	static bool isActive() { return sActiveScenes.load( std::memory_order_relaxed ) != 0; }
+
+	/** Scene lifecycle bookkeeping, called only when a root scene's activity actually changes.
+	 * Counts scenes rather than a boolean so closing one window cannot disable another. */
+	static void onSceneClientActivityChanged( bool active );
+
+  private:
+	static std::atomic<Uint32> sActiveScenes;
+};
 
 using AccessibilitySourceId = Uint64;
 

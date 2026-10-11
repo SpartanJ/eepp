@@ -865,7 +865,7 @@ bool AccessibilityManager::onWidgetAccessibilitySourceDelete( UIWidget* widget )
 	return true;
 }
 
-void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
+void AccessibilityManager::invalidateWidget( UIWidget* widget ) {
 	if ( mTextIndexes )
 		mTextIndexes->detach( widget );
 	if ( mWidgetIds.empty() && mWidgetSources.empty() &&
@@ -931,7 +931,10 @@ void AccessibilityManager::onWidgetDelete( UIWidget* widget ) {
 }
 
 void AccessibilityManager::onSubtreeRemoved( Scene::Node* node ) {
-	if ( !node || !removeSubtreeIdentities( node ) )
+	// Embedded scenes use this path before deleting their root. An unqueried subtree cannot
+	// contain the manager's native root; avoid visiting every descendant just to establish that.
+	if ( !node || ( node->isWidget() && !needsWidgetInvalidation( node->asType<UIWidget>() ) ) ||
+		 !removeSubtreeIdentities( node ) )
 		return;
 	invalidateChildren();
 	if ( node->isWidget() && hasActiveClients() &&
