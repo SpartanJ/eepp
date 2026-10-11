@@ -1,3 +1,9 @@
+#include <eepp/config.hpp>
+
+// These allocation benchmarks require Release: their global new/delete overrides cannot coexist
+// with the debug memory manager's overrides. Keep debug tracking and the other benchmarks intact.
+#ifndef EE_MEMORY_MANAGER
+
 #include "../tests/unit_tests/utest.hpp"
 
 #include <eepp/scene/scenemanager.hpp>
@@ -995,3 +1001,5 @@ UTEST( AccessibilityActive, HistoricallyQueriedModelRows ) {
 }
 
 #endif
+
+#endif // EE_MEMORY_MANAGER
