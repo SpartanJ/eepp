@@ -155,9 +155,10 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 		refreshVisibleTree();
 		if ( mVisibleTreePositions.empty() ) {
 			mVisibleTreePositions.reserve( mVisibleTreeIndexes.size() );
-			for ( size_t child = 0; child < mVisibleTreeIndexes.size(); ++child )
+			for ( size_t child = 0; child < mVisibleTreeIndexes.size(); ++child ) {
 				mVisibleTreePositions.emplace( mVisibleTreeIndexes[child],
 											   static_cast<Int32>( child ) );
+			}
 		}
 		auto position = mVisibleTreePositions.find( index );
 		return position == mVisibleTreePositions.end() ? -1 : position->second;
@@ -221,6 +222,15 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 			}
 			auto& ids = it->second.cell ? mCellIds : mItemIds;
 			ids.emplace( ModelIndex( it->second.index ), it->first );
+			if ( mIsTree && !it->second.cell ) {
+				const bool expanded = expandedFor( it->second.index );
+				if ( expanded != it->second.expanded ) {
+					// Only queried rows have state clients can cache. No model-wide traversal or
+					// identity allocation is needed for keyboard, action or bulk expansion changes.
+					it->second.expanded = expanded;
+					mManager.notify( { mSourceId, it->first }, AccessibilityEvent::StateChanged );
+				}
+			}
 			++it;
 		}
 	}
@@ -238,7 +248,8 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 	/** A queried row or cell. It owns the persistent registration made for it, so dropping
 	 * the node lets the model drop the handle instead of updating it on every row operation. */
 	struct NodeInfo {
-		NodeInfo( const ModelIndex& modelIndex, bool cell ) : index( modelIndex ), cell( cell ) {}
+		NodeInfo( const ModelIndex& modelIndex, bool cell, bool expanded ) :
+			index( modelIndex ), cell( cell ), expanded( expanded ) {}
 
 		NodeInfo( NodeInfo&& ) = default;
 
@@ -247,6 +258,7 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 				index.release();
 				index = std::move( other.index );
 				cell = other.cell;
+				expanded = other.expanded;
 			}
 			return *this;
 		}
@@ -260,6 +272,8 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 
 		Models::PersistentModelIndex index;
 		bool cell{ false };
+		/** Last reported expansion state; occupies the existing flags' alignment padding. */
+		bool expanded{ false };
 	};
 
 	AccessibilityRole roleFor( const NodeInfo& node ) const {
@@ -267,6 +281,11 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 			   : mIsList ? AccessibilityRole::ListItem
 			   : mIsTree ? AccessibilityRole::TreeItem
 						 : AccessibilityRole::Row;
+	}
+
+	bool expandedFor( const ModelIndex& index ) const {
+		return mIsTree && mView->getModel()->rowCount( index ) > 0 &&
+			   static_cast<UITreeView*>( mView )->isExpanded( index );
 	}
 
 	// Shared by full metadata and state-only reads. Never request model display data or
@@ -324,9 +343,10 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 		if ( !exposedEditor() )
 			return false;
 		const ModelIndex& edit = mView->getEditIndex();
-		if ( mIsList || mIsTree )
+		if ( mIsList || mIsTree ) {
 			return !node.cell &&
 				   ModelIndex( node.index ) == edit.siblingAtColumn( mView->getMainColumn() );
+		}
 		return node.cell && ModelIndex( node.index ) == edit;
 	}
 
@@ -339,7 +359,7 @@ class AccessibilityModelViewSource final : public AccessibilitySource {
 			return { mSourceId, found->second };
 		Uint64 id = mNextId++;
 		ids.emplace( index, id );
-		mNodes.emplace( id, NodeInfo( index, cell ) );
+		mNodes.emplace( id, NodeInfo( index, cell, expandedFor( index ) ) );
 		return { mSourceId, id };
 	}
 

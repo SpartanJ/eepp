@@ -105,9 +105,10 @@ class LineIndex {
 			const size_t lines = document.linesCount();
 			mStarts.resize( lines + 1 );
 			mStarts[0] = 0;
-			for ( size_t line = 0; line < lines; ++line )
+			for ( size_t line = 0; line < lines; ++line ) {
 				mStarts[line + 1] =
 					mStarts[line] + static_cast<Int64>( document.line( line ).size() );
+			}
 		}
 		return mStarts;
 	}
@@ -275,9 +276,10 @@ String AccessibilityWidgetResolver::getOwnName( const UIWidget* widget ) {
 			  !widget->isType( UI_TYPE_TEXTEDIT ) )
 		name = static_cast<const UITextView*>( widget )->getText();
 	else if ( widget->isType( UI_TYPE_CODEEDITOR ) &&
-			  static_cast<const UICodeEditor*>( widget )->getDocument().hasFilepath() )
+			  static_cast<const UICodeEditor*>( widget )->getDocument().hasFilepath() ) {
 		name = String::fromUtf8(
 			static_cast<const UICodeEditor*>( widget )->getDocument().getFilename() );
+	}
 	name = widget->resolveAccessibilityName( name );
 	// Icon-only buttons usually carry their meaning in the tooltip.
 	return name.empty() ? widget->getTooltipText() : name;
@@ -424,9 +426,10 @@ String AccessibilityWidgetResolver::getValue( const UIWidget* widget ) {
 		return String( String::toString( static_cast<const UISlider*>( widget )->getValue() ) );
 	if ( widget->isType( UI_TYPE_SPINBOX ) )
 		return String( String::toString( static_cast<const UISpinBox*>( widget )->getValue() ) );
-	if ( widget->isType( UI_TYPE_PROGRESSBAR ) )
+	if ( widget->isType( UI_TYPE_PROGRESSBAR ) ) {
 		return String(
 			String::toString( static_cast<const UIProgressBar*>( widget )->getProgress() ) );
+	}
 	return {};
 }
 
@@ -606,10 +609,11 @@ AccessibilityActions AccessibilityWidgetResolver::getActions( const UIWidget* wi
 										 ? AccessibilityAction::Collapse
 										 : AccessibilityAction::Expand );
 	}
-	if ( widget->isType( UI_TYPE_SLIDER ) || widget->isType( UI_TYPE_SPINBOX ) )
+	if ( widget->isType( UI_TYPE_SLIDER ) || widget->isType( UI_TYPE_SPINBOX ) ) {
 		actions |= accessibilityActionMask( AccessibilityAction::Increment ) |
 				   accessibilityActionMask( AccessibilityAction::Decrement ) |
 				   accessibilityActionMask( AccessibilityAction::SetValue );
+	}
 	return actions;
 }
 
@@ -645,9 +649,10 @@ UIWidget* AccessibilityWidgetResolver::getFocusOwner( Node* focused, const UIWid
 				element = widget;
 		} else if ( !element && widget != sceneRoot && widget->isAccessibilityElement() )
 			element = widget;
-		else if ( element && widget != element && isLeafRole( getRole( widget ) ) )
+		else if ( element && widget != element && isLeafRole( getRole( widget ) ) ) {
 			// A leaf control does not expose its children; it owns their focus.
 			element = widget;
+		}
 	}
 	return element;
 }
@@ -692,19 +697,22 @@ void auditWidget( const UIWidget* widget, std::vector<AccessibilityIssue>& issue
 	if ( role != AccessibilityRole::None && role != AccessibilityRole::Application &&
 		 role != AccessibilityRole::Label && widget->isTabFocusable() &&
 		 AccessibilityWidgetResolver::getName( widget ).empty() &&
-		 AccessibilityWidgetResolver::getValue( widget ).empty() )
+		 AccessibilityWidgetResolver::getValue( widget ).empty() ) {
 		issues.push_back( { widget, "Focusable control has no accessible name (set aria-label, "
 									"aria-labelledby or a tooltip)." } );
+	}
 	if ( !widget->getAccessibilityLabelledBy().empty() &&
-		 !findRelated( widget, widget->getAccessibilityLabelledBy() ) )
+		 !findRelated( widget, widget->getAccessibilityLabelledBy() ) ) {
 		issues.push_back( { widget, "aria-labelledby \"" +
 										String( widget->getAccessibilityLabelledBy() ) +
 										"\" does not match any widget." } );
+	}
 	if ( !widget->getAccessibilityDescribedBy().empty() &&
-		 !findRelated( widget, widget->getAccessibilityDescribedBy() ) )
+		 !findRelated( widget, widget->getAccessibilityDescribedBy() ) ) {
 		issues.push_back( { widget, "aria-describedby \"" +
 										String( widget->getAccessibilityDescribedBy() ) +
 										"\" does not match any widget." } );
+	}
 	// A leaf control's children are implementation details that no client can reach.
 	if ( AccessibilityWidgetResolver::isLeafRole( role ) )
 		return;

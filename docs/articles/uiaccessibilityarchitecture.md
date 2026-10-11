@@ -219,8 +219,19 @@ The final insertion position is resolved after source-removal callbacks, which m
 reorder the destination; no destination sibling pointer is retained across those callbacks.
 
 Role/state-only queries skip names, values, text offsets and relation tracking. Model sources
-answer these queries without fetching model display data. AT-SPI selection snapshots are
-initialized by the first container state/selection query or selected-row state query, then
+answer these queries without fetching model display data. Native AT-SPI role queries, UIA
+identity/role/state properties, and macOS role and focused/selected/expanded/enabled accessors
+use these scalar paths without recording relation targets; full metadata reads still record them.
+Changing a widget between transparent and exposed roles refreshes its semantic parent's children.
+Column visibility and main-column changes invalidate virtual view children, even though events
+from implementation header/cell widgets are suppressed. Tree sources remember expansion state
+only for queried rows and report changed rows on structural invalidation, including keyboard,
+accessibility-action and bulk expansion. AT-SPI forwards these as `state-changed:expanded`, UIA
+as expand/collapse property changes, and macOS as row-expanded/row-collapsed notifications.
+No rows are materialized solely to announce expansion.
+
+AT-SPI selection snapshots are initialized by the first container state/selection query or
+selected-row state query, then
 maintained by selection events and cleared on model/tree invalidation (including structural
 add/remove and child-only selection events).
 Repeated `IsChildSelected` and selected-row `GetState` calls reuse

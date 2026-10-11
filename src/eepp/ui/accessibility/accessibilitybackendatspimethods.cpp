@@ -84,18 +84,19 @@ DBusHandlerResult AtSpiApplication::handleCache( DBusMessage* request, const cha
 DBusHandlerResult AtSpiApplication::handleAccessible( DBusMessage* request,
 													  AccessibilityNodeRef ref,
 													  const char* member ) {
-	if ( std::strcmp( member, "GetRole" ) == 0 ) {
-		auto info = getNodeInfo( ref, false );
-		Uint32 value =
-			hasState( info.states, AccessibilityState::Protected ) ? 40 : role( info.role );
-		sendBasic( request, 'u', &value );
-	} else if ( std::strcmp( member, "GetRoleName" ) == 0 ||
-				std::strcmp( member, "GetLocalizedRoleName" ) == 0 ) {
-		auto info = getNodeInfo( ref, false );
-		const char* value = hasState( info.states, AccessibilityState::Protected )
-								? "password text"
-								: roleName( info.role );
-		sendBasic( request, 's', &value );
+	if ( std::strcmp( member, "GetRole" ) == 0 || std::strcmp( member, "GetRoleName" ) == 0 ||
+		 std::strcmp( member, "GetLocalizedRoleName" ) == 0 ) {
+		const auto nodeRole = getNodeRole( ref );
+		const bool protectedText =
+			ref != ApplicationRef && mManager &&
+			hasState( mManager->getNodeState( ref ), AccessibilityState::Protected );
+		if ( std::strcmp( member, "GetRole" ) == 0 ) {
+			Uint32 value = protectedText ? 40 : role( nodeRole );
+			sendBasic( request, 'u', &value );
+		} else {
+			const char* value = protectedText ? "password text" : roleName( nodeRole );
+			sendBasic( request, 's', &value );
+		}
 	} else if ( std::strcmp( member, "GetChildAtIndex" ) == 0 ) {
 		Int32 index = -1;
 		mDBus.messageGetArgs( request, nullptr, 'i', &index, 0 );

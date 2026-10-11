@@ -230,10 +230,10 @@ size_t moveTextEndpoint( const std::u16string& text, size_t offset, TextUnit uni
 	const int direction = count > 0 ? 1 : -1;
 	for ( int step = 0; step < std::abs( count ); ++step ) {
 		size_t target = offset;
-		if ( unit == TextUnit_Character )
+		if ( unit == TextUnit_Character ) {
 			target = direction > 0 ? nextCharacterBoundary( text, offset )
 								   : previousCharacterBoundary( text, offset );
-		else if ( direction > 0 ) {
+		} else if ( direction > 0 ) {
 			const auto bounds = enclosingTextUnit( text, offset, unit );
 			target = bounds.second;
 		} else if ( offset > 0 ) {
@@ -370,9 +370,10 @@ HRESULT STDMETHODCALLTYPE UIAutomationTextRange::FindText( BSTR text, BOOL backw
 			}
 		}
 	}
-	if ( found != std::u16string::npos )
+	if ( found != std::u16string::npos ) {
 		*range = new UIAutomationTextRange( mContext, mRef, static_cast<int>( found ),
 											static_cast<int>( found + needle.size() ) );
+	}
 	return S_OK;
 }
 

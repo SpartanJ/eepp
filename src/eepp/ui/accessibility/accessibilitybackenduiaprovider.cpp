@@ -199,30 +199,30 @@ HRESULT STDMETHODCALLTYPE UIAutomationProvider::GetPatternProvider( PATTERNID pa
 		return E_INVALIDARG;
 	*provider = nullptr;
 	HRESULT result = E_NOINTERFACE;
-	if ( patternId == UIA_InvokePatternId )
+	if ( patternId == UIA_InvokePatternId ) {
 		result =
 			QueryInterface( __uuidof( IInvokeProvider ), reinterpret_cast<void**>( provider ) );
-	else if ( patternId == UIA_TogglePatternId )
+	} else if ( patternId == UIA_TogglePatternId ) {
 		result =
 			QueryInterface( __uuidof( IToggleProvider ), reinterpret_cast<void**>( provider ) );
-	else if ( patternId == UIA_SelectionPatternId )
+	} else if ( patternId == UIA_SelectionPatternId ) {
 		result =
 			QueryInterface( __uuidof( ISelectionProvider ), reinterpret_cast<void**>( provider ) );
-	else if ( patternId == UIA_SelectionItemPatternId )
+	} else if ( patternId == UIA_SelectionItemPatternId ) {
 		result = QueryInterface( __uuidof( ISelectionItemProvider ),
 								 reinterpret_cast<void**>( provider ) );
-	else if ( patternId == UIA_ValuePatternId )
+	} else if ( patternId == UIA_ValuePatternId )
 		result = QueryInterface( __uuidof( IValueProvider ), reinterpret_cast<void**>( provider ) );
-	else if ( patternId == UIA_RangeValuePatternId )
+	else if ( patternId == UIA_RangeValuePatternId ) {
 		result =
 			QueryInterface( __uuidof( IRangeValueProvider ), reinterpret_cast<void**>( provider ) );
-	else if ( patternId == UIA_ExpandCollapsePatternId )
+	} else if ( patternId == UIA_ExpandCollapsePatternId ) {
 		result = QueryInterface( __uuidof( IExpandCollapseProvider ),
 								 reinterpret_cast<void**>( provider ) );
-	else if ( patternId == UIA_ScrollItemPatternId )
+	} else if ( patternId == UIA_ScrollItemPatternId ) {
 		result =
 			QueryInterface( __uuidof( IScrollItemProvider ), reinterpret_cast<void**>( provider ) );
-	else if ( patternId == UIA_TextPatternId )
+	} else if ( patternId == UIA_TextPatternId )
 		result = QueryInterface( __uuidof( ITextProvider ), reinterpret_cast<void**>( provider ) );
 	return result == E_NOINTERFACE ? S_OK : result;
 }
@@ -232,19 +232,63 @@ HRESULT STDMETHODCALLTYPE UIAutomationProvider::GetPropertyValue( PROPERTYID pro
 	if ( !value )
 		return E_INVALIDARG;
 	VariantInit( value );
+	if ( unavailable() )
+		return UIA_E_ELEMENTNOTAVAILABLE;
+	// Scalar/identity properties must not read model display data, copy text, or mark name
+	// relations as queried. They still validate on the UI thread through the normal invoke path.
+	enum class Query { Metadata, Identity, Role, State };
+	Query query = Query::Metadata;
+	switch ( propertyId ) {
+		case UIA_AutomationIdPropertyId:
+		case UIA_FrameworkIdPropertyId:
+		case UIA_ClassNamePropertyId:
+		case UIA_ProcessIdPropertyId:
+		case UIA_NativeWindowHandlePropertyId:
+			query = Query::Identity;
+			break;
+		case UIA_ControlTypePropertyId:
+		case UIA_IsControlElementPropertyId:
+		case UIA_IsContentElementPropertyId:
+		case UIA_SelectionCanSelectMultiplePropertyId:
+		case UIA_SelectionIsSelectionRequiredPropertyId:
+			query = Query::Role;
+			break;
+		case UIA_IsEnabledPropertyId:
+		case UIA_HasKeyboardFocusPropertyId:
+		case UIA_IsKeyboardFocusablePropertyId:
+		case UIA_IsOffscreenPropertyId:
+		case UIA_IsPasswordPropertyId:
+			query = Query::State;
+			break;
+		default:
+			break;
+	}
 	AccessibilityNodeInfo nodeInfo;
-	const HRESULT result = info( nodeInfo, propertyId == UIA_ValueValuePropertyId ||
-											   propertyId == UIA_RangeValueValuePropertyId );
+	const HRESULT result = query == Query::Metadata
+							   ? info( nodeInfo, propertyId == UIA_ValueValuePropertyId ||
+													 propertyId == UIA_RangeValueValuePropertyId )
+							   : invoke( nodeInfo,
+										 [this, query]( AccessibilityManager& manager,
+														AccessibilityNodeInfo& output ) -> HRESULT {
+											 if ( !manager.isValid( mRef ) )
+												 return UIA_E_ELEMENTNOTAVAILABLE;
+											 if ( query == Query::Role )
+												 output.role = manager.getNodeRole( mRef );
+											 else if ( query == Query::State )
+												 output.states = manager.getNodeState( mRef );
+											 return S_OK;
+										 } );
 	if ( FAILED( result ) )
 		return result;
 	if ( propertyId == UIA_NamePropertyId )
 		return setBstr( value, nodeInfo.name );
 	if ( propertyId == UIA_HelpTextPropertyId )
 		return setBstr( value, nodeInfo.description );
-	if ( propertyId == UIA_AcceleratorKeyPropertyId )
+	if ( propertyId == UIA_AcceleratorKeyPropertyId ) {
 		return nodeInfo.shortcut.empty()
 				   ? S_OK
 				   : setBstr( value, String::fromUtf8( nodeInfo.shortcut.text ) );
+	}
 	if ( propertyId == UIA_ControlTypePropertyId ) {
 		value->vt = VT_I4;
 		value->lVal = controlType( nodeInfo.role );
@@ -402,9 +446,10 @@ HRESULT STDMETHODCALLTYPE UIAutomationProvider::Navigate( NavigateDirection dire
 		} );
 	if ( FAILED( result ) )
 		return result;
-	if ( navigation.target.isValid() )
+	if ( navigation.target.isValid() ) {
 		*provider =
 			static_cast<IRawElementProviderFragment*>( mContext->provider( navigation.target ) );
+	}
 	return S_OK;
 }
 

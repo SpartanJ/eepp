@@ -95,9 +95,10 @@ class AccessibilityPropertiesModel final : public Model {
 				{ AccessibilityState::Showing, "Showing" },
 				{ AccessibilityState::Expanded, "Expanded" },
 			};
-			for ( const auto& state : StateNames )
+			for ( const auto& state : StateNames ) {
 				appendAccessibilityFlag( states, state.second, static_cast<Uint64>( state.first ),
 										 static_cast<Uint64>( info.states ) );
+			}
 			std::string actions;
 			static constexpr std::pair<AccessibilityAction, const char*> ActionNames[] = {
 				{ AccessibilityAction::Focus, "Focus" },
@@ -113,9 +114,10 @@ class AccessibilityPropertiesModel final : public Model {
 				{ AccessibilityAction::ScrollTo, "ScrollTo" },
 				{ AccessibilityAction::SetTextSelection, "SetTextSelection" },
 			};
-			for ( const auto& action : ActionNames )
+			for ( const auto& action : ActionNames ) {
 				appendAccessibilityFlag( actions, action.second,
 										 accessibilityActionMask( action.first ), info.actions );
+			}
 			static constexpr const char* LiveNames[] = { "Off", "Polite", "Assertive" };
 			mData = {
 				{ "Role", std::string( AccessibilityWidgetResolver::getRoleName( info.role ) ) +

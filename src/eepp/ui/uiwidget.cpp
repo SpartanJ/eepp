@@ -207,10 +207,25 @@ UIWidget* UIWidget::setAccessibilityRole( AccessibilityRole role ) {
 	if ( mAccessibilityProperties && mAccessibilityProperties->roleSet &&
 		 mAccessibilityProperties->role == role )
 		return this;
+	const bool active =
+		isAccessibilityActive() && mUISceneNode && mUISceneNode->hasActiveAccessibilityClients();
+	const bool wasElement = active && isAccessibilityElement();
 	auto& properties = ensureAccessibilityProperties();
 	properties.role = role;
 	properties.roleSet = true;
-	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
+	if ( active && wasElement != isAccessibilityElement() ) {
+		// Exposing a transparent widget replaces its flattened children in its semantic parent.
+		// Refresh that parent, not the newly exposed widget that clients have not discovered yet.
+		auto* parent = getParent();
+		while ( parent && !parent->isWidget() )
+			parent = parent->getParent();
+		if ( parent ) {
+			parent->asType<UIWidget>()->notifyAccessibilityEvent(
+				AccessibilityEvent::ChildrenChanged );
+		}
+	} else {
+		notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
+	}
 	return this;
 }
 

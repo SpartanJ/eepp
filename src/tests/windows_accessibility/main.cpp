@@ -28,6 +28,8 @@ void testProviderTextRangeIdentity();
 
 void testProviderPolicyChangeDuringDispatch();
 
+void testProviderScalarQueries();
+
 namespace {
 
 using Clock = std::chrono::steady_clock;
@@ -344,10 +346,10 @@ std::string jsonEscape( const std::string& string ) {
 				output << "\\t";
 				break;
 			default:
-				if ( value < 0x20 )
+				if ( value < 0x20 ) {
 					output << "\\u" << std::hex << std::setw( 4 ) << std::setfill( '0' )
 						   << static_cast<int>( value ) << std::dec;
-				else
+				} else
 					output << value;
 		}
 	}
@@ -630,6 +632,7 @@ int wmain( int argc, wchar_t** argv ) {
 		record( "provider selection teardown", testProviderSelectionTeardown );
 		record( "provider text range window identity", testProviderTextRangeIdentity );
 		record( "provider policy change during dispatch", testProviderPolicyChangeDuringDispatch );
+		record( "provider scalar queries", testProviderScalarQueries );
 		// A supplied example path can be validated together with the provider regressions on
 		// systems without full UIA client support, without launching a visible example window.
 		if ( !providersOnly || explicitExample ) {
@@ -936,7 +939,7 @@ int wmain( int argc, wchar_t** argv ) {
 						"missing selection-item event" );
 				expect( automationEvent( UIA_LayoutInvalidatedEventId ),
 						"missing layout invalidated event" );
-				if ( nativeFocusAvailable )
+				if ( nativeFocusAvailable ) {
 					require( eventRecorder->waitFor(
 								 focusMarker,
 								 []( const ObservedEvent& event ) {
@@ -944,6 +947,7 @@ int wmain( int argc, wchar_t** argv ) {
 								 },
 								 std::chrono::seconds( 5 ) ),
 							 "missing focus changed event" );
+				}
 				expect(
 					[]( const ObservedEvent& event ) {
 						return event.kind == ObservedEventKind::Structure &&

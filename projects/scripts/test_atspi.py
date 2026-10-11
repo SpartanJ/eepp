@@ -91,7 +91,8 @@ def start_discovery_listener():
 	selection_events = []
 
 	def on_children_changed(event):
-		if event.type == "object:selection-changed" or event.type == "object:state-changed:selected":
+		if event.type in ("object:selection-changed", "object:state-changed:selected",
+				"object:state-changed:expanded"):
 			selection_events.append((event.type, event.source.get_name(), event.detail1))
 			return
 		if event.type.startswith("object:text-") or event.type == "object:announcement":
@@ -110,7 +111,8 @@ def start_discovery_listener():
 		"could not register the AT-SPI application discovery listener",
 	)
 	for event in ("object:text-changed", "object:text-caret-moved", "object:text-selection-changed",
-			"object:announcement", "object:selection-changed", "object:state-changed:selected"):
+			"object:announcement", "object:selection-changed", "object:state-changed:selected",
+			"object:state-changed:expanded"):
 		check(listener.register(event), f"could not register {event}")
 	return listener, discovered_process_ids, text_events, selection_events
 
@@ -347,6 +349,21 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 			f"queried table's old selected row was not cleared: {selection_events}")
 		check(("object:state-changed:selected", "eepp", 1) in selection_events,
 			f"queried table's new selected row was not announced: {selection_events}")
+		# Launched fixtures include a tree; --no-launch still accepts the ordinary example.
+		# Expanding a queried virtual row must send its transition, not just a tree hint.
+		tree = find_named(nodes, "Expansion regression tree")
+		branch = tree.get_child_at_index(0)
+		check(branch.get_role() == Atspi.Role.TREE_ITEM, "branch must be a tree item")
+		check(branch.get_state_set().contains(Atspi.StateType.EXPANDABLE), "branch must be expandable")
+		for action, expanded in (("expand", 1), ("collapse", 0)):
+			selection_events.clear()
+			check(branch.do_action(action_index(branch, action)), f"tree {action} action failed")
+			pause(0.1)
+			branch.clear_cache()
+			check(branch.get_state_set().contains(Atspi.StateType.EXPANDED) == bool(expanded),
+				f"tree {action} state is incorrect")
+			check(("object:state-changed:expanded", "Tree branch", expanded) in selection_events,
+				f"tree {action} state event is missing: {selection_events}")
 
 	# An icon-only button is named by its tooltip; the status line it updates is a live region.
 	refresh = find_named(nodes, "Refresh status")
@@ -424,7 +441,7 @@ def main():
 	try:
 		if not args.no_launch:
 			discovery_listener, discovered_process_ids, text_events, selection_events = start_discovery_listener()
-			command = [args.executable]
+			command = [args.executable, "--test-tree"]
 			if args.hidden:
 				command.append("--hidden")
 			if args.policy_reset:
@@ -463,7 +480,8 @@ def main():
 			try:
 				for event in ("object:children-changed:add", "object:text-changed",
 					"object:text-caret-moved", "object:text-selection-changed", "object:announcement",
-					"object:selection-changed", "object:state-changed:selected"):
+					"object:selection-changed", "object:state-changed:selected",
+					"object:state-changed:expanded"):
 					discovery_listener.deregister(event)
 			except GLib.Error:
 				# A closed bus must not mask the original failure or skip child-process cleanup.

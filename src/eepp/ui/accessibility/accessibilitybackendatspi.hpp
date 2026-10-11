@@ -385,6 +385,9 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 
 	AccessibilityNodeInfo getNodeInfo( AccessibilityNodeRef ref, bool includeValue = true ) const;
 
+	/** Scalar roles preserve the application/window projection without reading names or values. */
+	AccessibilityRole getNodeRole( AccessibilityNodeRef ref ) const;
+
 	AccessibilityNodeRef getParent( AccessibilityNodeRef ref );
 
 	size_t getChildCount( AccessibilityNodeRef ref );

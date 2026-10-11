@@ -813,13 +813,21 @@ void UIAbstractTableView::setColumnHidden( const size_t& column, bool hidden ) {
 	if ( columnData( column ).visible != !hidden ) {
 		columnData( column ).visible = !hidden;
 		createOrUpdateColumns( false );
+		// Header/cell widgets are implementation details; their visibility events are suppressed.
+		// Refresh the view's virtual cells and native clients' cached children explicitly.
+		notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 	}
 }
 
 void UIAbstractTableView::setColumnsHidden( const std::vector<size_t>& columns, bool hidden ) {
-	for ( auto col : columns )
+	bool changed = false;
+	for ( auto col : columns ) {
+		changed |= columnData( col ).visible != !hidden;
 		columnData( col ).visible = !hidden;
+	}
 	createOrUpdateColumns( false );
+	if ( changed )
+		notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 }
 
 void UIAbstractTableView::setColumnReorderingEnabled( bool enabled ) {
@@ -1677,6 +1685,7 @@ void UIAbstractTableView::setMainColumn( const size_t& mainColumn ) {
 	if ( mMainColumn != mainColumn ) {
 		mMainColumn = mainColumn;
 		createOrUpdateColumns( false );
+		notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 	}
 }
 

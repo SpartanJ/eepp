@@ -48,6 +48,14 @@ Uint64 AtSpiApplication::currentManagerId() const {
 	return 0;
 }
 
+AccessibilityRole AtSpiApplication::getNodeRole( AccessibilityNodeRef ref ) const {
+	if ( ref == ApplicationRef )
+		return AccessibilityRole::Application;
+	if ( isSceneRoot( ref ) )
+		return AccessibilityRole::Window;
+	return mManager ? mManager->getNodeRole( ref ) : AccessibilityRole::None;
+}
+
 AccessibilityNodeInfo AtSpiApplication::getNodeInfo( AccessibilityNodeRef ref,
 													 bool includeValue ) const {
 	if ( ref != ApplicationRef ) {

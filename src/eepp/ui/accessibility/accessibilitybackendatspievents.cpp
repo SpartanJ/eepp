@@ -142,7 +142,8 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 			 info.role == AccessibilityRole::CheckMenuItem ||
 			 info.role == AccessibilityRole::RadioMenuItem )
 			detail = "checked";
-		else if ( info.role == AccessibilityRole::ComboBox )
+		else if ( info.role == AccessibilityRole::ComboBox ||
+				  info.role == AccessibilityRole::TreeItem )
 			detail = "expanded";
 		else
 			return;
@@ -242,16 +243,19 @@ bool AtSpiApplication::onTextChanged( AccessibilityManager& manager, Accessibili
 		return true;
 	}
 	ScopedManager scopedManager( *this, &manager );
-	if ( !change.removed.empty() )
+	if ( !change.removed.empty() ) {
 		sendObjectEvent( ref, "TextChanged", "delete", change.offset,
 						 static_cast<Int32>( change.removed.size() ), change.removed );
-	if ( !change.inserted.empty() )
+	}
+	if ( !change.inserted.empty() ) {
 		sendObjectEvent( ref, "TextChanged", "insert", change.offset,
 						 static_cast<Int32>( change.inserted.size() ), change.inserted );
+	}
 	auto found = mTextStates.find( pathFromRef( ref ) );
-	if ( found != mTextStates.end() && found->second.length >= 0 )
+	if ( found != mTextStates.end() && found->second.length >= 0 ) {
 		found->second.length += static_cast<Int32>( change.inserted.size() ) -
 								static_cast<Int32>( change.removed.size() );
+	}
 	return true;
 }
 
@@ -333,11 +337,12 @@ void AtSpiApplication::sendTextReplaced( AccessibilityNodeRef ref ) {
 		return;
 	if ( found->second.length > 0 )
 		sendObjectEvent( ref, "TextChanged", "delete", 0, found->second.length );
-	if ( length > 0 )
+	if ( length > 0 ) {
 		sendObjectEvent( ref, "TextChanged", "insert", 0, length,
 						 length <= MaxReplacedTextReported
 							 ? mManager->getTextRange( ref, 0, length )
 							 : String() );
+	}
 	found->second.length = length;
 }
 
@@ -353,12 +358,14 @@ void AtSpiApplication::sendTextDiff( AccessibilityNodeRef ref, const String& pre
 		++suffix;
 	const size_t removed = previous.size() - prefix - suffix;
 	const size_t inserted = current.size() - prefix - suffix;
-	if ( removed )
+	if ( removed ) {
 		sendObjectEvent( ref, "TextChanged", "delete", prefix, removed,
 						 previous.substr( prefix, removed ) );
-	if ( inserted )
+	}
+	if ( inserted ) {
 		sendObjectEvent( ref, "TextChanged", "insert", prefix, inserted,
 						 current.substr( prefix, inserted ) );
+	}
 	auto found = mTextStates.find( pathFromRef( ref ) );
 	if ( found != mTextStates.end() )
 		found->second.length = static_cast<Int32>( current.size() );

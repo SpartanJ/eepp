@@ -990,9 +990,10 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	eeDelete( button );
 	EXPECT_FALSE( manager->isValid( buttonRef ) );
 	bool destroyedEventFound = false;
-	for ( const auto& event : manager->getPendingEvents() )
+	for ( const auto& event : manager->getPendingEvents() ) {
 		destroyedEventFound |=
 			event.ref == buttonRef && event.type == AccessibilityEvent::Destroyed;
+	}
 	EXPECT_TRUE( destroyedEventFound );
 }
 
@@ -2032,6 +2033,124 @@ UTEST( Accessibility, ScalarQueriesDoNotTrackUnreadRelations ) {
 	for ( const auto& event : manager->getPendingEvents() )
 		dependentNotified |= event.ref == ref && event.type == AccessibilityEvent::NameChanged;
 	EXPECT_TRUE( dependentNotified );
+}
+
+UTEST( Accessibility, RoleExposureChangesNotifyTheSemanticParent ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	manager->setBackend( std::make_unique<RecordingBackend>() );
+	manager->onNativeClientObserved();
+	const auto root = manager->getRoot();
+	auto* layout = UILinearLayout::NewVertical();
+	auto* container = UIWidget::New();
+	container->setParent( layout );
+	auto* button = UIPushButton::New();
+	button->setParent( container );
+	const auto buttonRef = manager->getNodeRef( button );
+	ASSERT_TRUE( manager->getChild( root, 0 ) == buttonRef );
+	manager->clearPendingEvents();
+	container->setAccessibilityRole( AccessibilityRole::Group );
+	EXPECT_TRUE( hasPendingEvent( manager, root, AccessibilityEvent::ChildrenChanged ) );
+	const auto containerRef = manager->getNodeRef( container );
+	EXPECT_TRUE( manager->getChild( root, 0 ) == containerRef );
+	EXPECT_TRUE( manager->getChild( containerRef, 0 ) == buttonRef );
+	manager->clearPendingEvents();
+	container->setAccessibilityRole( AccessibilityRole::None );
+	EXPECT_TRUE( hasPendingEvent( manager, root, AccessibilityEvent::ChildrenChanged ) );
+	EXPECT_TRUE( manager->getChild( root, 0 ) == buttonRef );
+	// Exposed-to-exposed changes affect the container's own children, not its membership.
+	container->setAccessibilityRole( AccessibilityRole::Group );
+	manager->clearPendingEvents();
+	container->setAccessibilityRole( AccessibilityRole::Button );
+	EXPECT_TRUE( hasPendingEvent( manager, containerRef, AccessibilityEvent::ChildrenChanged ) );
+	EXPECT_EQ( manager->getChildCount( containerRef ), 0u );
+}
+
+UTEST( Accessibility, ColumnVisibilityInvalidatesCachedVirtualChildren ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	manager->setBackend( std::make_unique<RecordingBackend>() );
+	manager->onNativeClientObserved();
+	auto* table = UITableView::New();
+	// Use a two-column model so cached cells can disagree with a fresh child count.
+	class ColumnsModel : public AccessibilityRowsModel {
+	  public:
+		size_t columnCount( const ModelIndex& = {} ) const override { return 2; }
+	};
+	table->setModel( std::make_shared<ColumnsModel>() );
+	const auto tableRef = manager->getNodeRef( table );
+	const auto row = manager->getChild( tableRef, 0 );
+	ASSERT_EQ( manager->getChildren( row ).size(), 2u );
+	const auto firstCell = manager->getChild( row, 0 );
+	const auto secondCell = manager->getChild( row, 1 );
+	manager->clearPendingEvents();
+	table->setColumnHidden( 1, true );
+	EXPECT_TRUE( hasPendingEvent( manager, tableRef, AccessibilityEvent::ChildrenChanged ) );
+	EXPECT_EQ( manager->getChildCount( row ), 1u );
+	ASSERT_EQ( manager->getChildren( row ).size(), 1u );
+	EXPECT_TRUE( manager->getChild( row, 0 ) == firstCell );
+	manager->clearPendingEvents();
+	table->setColumnsHidden( { 1 }, false );
+	EXPECT_TRUE( hasPendingEvent( manager, tableRef, AccessibilityEvent::ChildrenChanged ) );
+	ASSERT_EQ( manager->getChildren( row ).size(), 2u );
+	EXPECT_TRUE( manager->getChild( row, 1 ) == secondCell );
+	manager->clearPendingEvents();
+	table->setColumnHidden( 1, false );
+	table->setColumnsHidden( { 0, 1 }, false );
+	EXPECT_TRUE( manager->getPendingEvents().empty() );
+}
+
+UTEST( Accessibility, TreeExpansionNotifiesOnlyQueriedRowsWhoseStateChanged ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	auto* tree = UITreeView::New();
+	auto model = std::make_shared<AccessibilityTreeModel>();
+	tree->setModel( model );
+	const auto treeRef = manager->getNodeRef( tree );
+	const auto row = manager->getChild( treeRef, 0 );
+	const auto expectStateChange = [&]( bool expanded ) {
+		int stateEvents = 0;
+		for ( const auto& event : manager->getPendingEvents() ) {
+			if ( event.type == AccessibilityEvent::StateChanged ) {
+				EXPECT_TRUE( event.ref == row );
+				++stateEvents;
+			}
+		}
+		EXPECT_EQ( stateEvents, 1 );
+		EXPECT_EQ( ( static_cast<Uint64>( manager->getNodeState( row ) ) &
+					 static_cast<Uint64>( AccessibilityState::Expanded ) ) != 0,
+				   expanded );
+		EXPECT_TRUE( hasPendingEvent( manager, treeRef, AccessibilityEvent::ChildrenChanged ) );
+		manager->clearPendingEvents();
+	};
+	manager->clearPendingEvents();
+	EXPECT_TRUE( manager->performAction( row, { AccessibilityAction::Expand } ) );
+	expectStateChange( true );
+	EXPECT_TRUE( manager->performAction( row, { AccessibilityAction::Collapse } ) );
+	expectStateChange( false );
+	// Keyboard/mouse callbacks use onOpenTreeModelIndex; both go through the same invalidation.
+	tree->setExpanded( model->index( 0 ), true );
+	expectStateChange( true );
+	tree->setExpanded( model->index( 0 ), true );
+	EXPECT_FALSE( hasPendingEvent( manager, row, AccessibilityEvent::StateChanged ) );
+	manager->clearPendingEvents();
+	tree->collapseAll();
+	expectStateChange( false );
+	tree->expandAll();
+	expectStateChange( true );
+	// Never create row identities just to report expansion while no client is connected.
+	recorder->active = false;
+	app.getUI()->update( Time::Zero );
+	tree->collapseAll();
+	EXPECT_TRUE( manager->getPendingEvents().empty() );
+	EXPECT_FALSE( manager->isValid( row ) );
 }
 
 UTEST( Accessibility, VirtualScalarQueriesSkipModelDisplayData ) {

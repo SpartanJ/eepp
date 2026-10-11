@@ -215,9 +215,10 @@ UIAutomationAccessibilityBackend::UIAutomationAccessibilityBackend(
 }
 
 UIAutomationAccessibilityBackend::~UIAutomationAccessibilityBackend() {
-	if ( mSubclassInstalled && mWindow && IsWindow( mWindow ) )
+	if ( mSubclassInstalled && mWindow && IsWindow( mWindow ) ) {
 		RemoveWindowSubclass( mWindow, &UIAutomationAccessibilityBackend::windowSubclassProcedure,
 							  mSubclassId );
+	}
 	mSubclassInstalled = false;
 	if ( mContext )
 		mContext->detach();
@@ -346,9 +347,10 @@ void UIAutomationAccessibilityBackend::announce( const String& message,
 	const auto wide = message.toWideString();
 	BSTR display = SysAllocStringLen( wide.data(), static_cast<UINT>( wide.size() ) );
 	BSTR activity = SysAllocString( L"eepp.announcement" );
-	if ( display && activity )
+	if ( display && activity ) {
 		raise( static_cast<IRawElementProviderSimple*>( root ), NotificationKindOther, processing,
 			   display, activity );
+	}
 	SysFreeString( display );
 	SysFreeString( activity );
 	root->Release();
@@ -383,9 +385,10 @@ void UIAutomationAccessibilityBackend::raiseEvent( const AccessibilityPendingEve
 		const auto info = mManager.getNodeInfo( event.ref, false, false );
 		raisePropertyChanged( info.range.valid ? UIA_RangeValueValuePropertyId
 											   : UIA_ValueValuePropertyId );
-		if ( info.text.valid )
+		if ( info.text.valid ) {
 			UiaRaiseAutomationEvent( static_cast<IRawElementProviderSimple*>( nativeProvider ),
 									 UIA_Text_TextChangedEventId );
+		}
 	} else if ( event.type == AccessibilityEvent::EnabledChanged ) {
 		raisePropertyChanged( UIA_IsEnabledPropertyId );
 	} else if ( event.type == AccessibilityEvent::VisibilityChanged ) {
@@ -435,10 +438,10 @@ void UIAutomationAccessibilityBackend::raiseEvent( const AccessibilityPendingEve
 								 UIA_AutomationFocusChangedEventId );
 	} else if ( event.type == AccessibilityEvent::SelectionChanged ) {
 		const auto info = mManager.getNodeInfo( event.ref, false, false );
-		if ( info.text.valid )
+		if ( info.text.valid ) {
 			UiaRaiseAutomationEvent( static_cast<IRawElementProviderSimple*>( nativeProvider ),
 									 UIA_Text_TextSelectionChangedEventId );
-		else if ( isSelectionContainerRole( info.role ) ) {
+		} else if ( isSelectionContainerRole( info.role ) ) {
 			AccessibilityNodeRef selected;
 			const auto children = mManager.getSelectedChildren( event.ref );
 			if ( !children.empty() )

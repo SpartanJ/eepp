@@ -8,6 +8,7 @@
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uitextview.hpp>
 
 #include <future>
 #include <stdexcept>
@@ -194,4 +195,73 @@ void testProviderPolicyChangeDuringDispatch() {
 	require( scene->getAccessibilityPolicy() == AccessibilityPolicy::Enabled,
 			 "deferred policy change was not applied" );
 	scene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+}
+
+void testProviderScalarQueries() {
+	UIApplication app( testWindow(), testSettings() );
+	require( app.getUI() != nullptr, "hidden test window could not be created" );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	class CountingModel : public TeardownModel {
+	  public:
+		Variant data( const ModelIndex& index,
+					  ModelRole role = ModelRole::Display ) const override {
+			++reads;
+			return TeardownModel::data( index, role );
+		}
+
+		mutable size_t reads{};
+	};
+	auto* list = UIListView::New();
+	auto model = std::make_shared<CountingModel>();
+	list->setModel( model );
+	auto context = std::make_shared<UIAutomationProviderContext>( *manager, nullptr, 1 );
+	const auto row = manager->getChild( manager->getNodeRef( list ), 0 );
+	std::unique_ptr<UIAutomationProvider, ReleaseCOM> provider( context->provider( row ) );
+	require( provider != nullptr, "virtual row provider could not be created" );
+	model->reads = 0;
+	const PROPERTYID properties[] = {
+		UIA_AutomationIdPropertyId,		   UIA_FrameworkIdPropertyId,
+		UIA_ClassNamePropertyId,		   UIA_ProcessIdPropertyId,
+		UIA_ControlTypePropertyId,		   UIA_IsEnabledPropertyId,
+		UIA_IsKeyboardFocusablePropertyId, UIA_HasKeyboardFocusPropertyId,
+		UIA_IsControlElementPropertyId,	   UIA_IsContentElementPropertyId,
+		UIA_IsOffscreenPropertyId,		   UIA_IsPasswordPropertyId };
+	for ( const auto property : properties ) {
+		VARIANT value;
+		VariantInit( &value );
+		const HRESULT result = provider->GetPropertyValue( property, &value );
+		const bool populated = value.vt != VT_EMPTY;
+		VariantClear( &value );
+		require( result == S_OK && populated, "scalar property query failed" );
+	}
+	require( model->reads == 0, "scalar queries fetched model display data" );
+	VARIANT name;
+	VariantInit( &name );
+	const HRESULT result = provider->GetPropertyValue( UIA_NamePropertyId, &name );
+	VariantClear( &name );
+	require( result == S_OK && model->reads > 0, "name query did not fetch model display data" );
+
+	auto* label = UITextView::New();
+	label->setId( "scalar-provider-label" );
+	label->setText( "Scalar label" );
+	auto* button = UIPushButton::New();
+	button->setAccessibilityLabelledBy( label->getId() );
+	std::unique_ptr<UIAutomationProvider, ReleaseCOM> buttonProvider(
+		context->provider( manager->getNodeRef( button ) ) );
+	require( buttonProvider != nullptr, "labelled button provider could not be created" );
+	manager->onNativeClientObserved();
+	for ( const auto property : properties ) {
+		VARIANT value;
+		VariantInit( &value );
+		const HRESULT result = buttonProvider->GetPropertyValue( property, &value );
+		VariantClear( &value );
+		require( result == S_OK, "button scalar property query failed" );
+	}
+	require( !manager->isRelationTarget( label->getIdHash() ),
+			 "scalar queries tracked an unread label relation" );
+	VariantInit( &name );
+	const HRESULT nameResult = buttonProvider->GetPropertyValue( UIA_NamePropertyId, &name );
+	VariantClear( &name );
+	require( nameResult == S_OK && manager->isRelationTarget( label->getIdHash() ),
+			 "name query did not track its label relation" );
 }

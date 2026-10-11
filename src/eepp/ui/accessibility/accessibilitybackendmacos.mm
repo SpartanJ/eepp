@@ -309,6 +309,10 @@ class MacAccessibilityState : public std::enable_shared_from_this<MacAccessibili
 	AccessibilityNodeRef parentFor( AccessibilityNodeRef ref );
 	AccessibilityNodeInfo infoFor( AccessibilityNodeRef ref, bool includeValue = false ) const;
 
+	AccessibilityRole roleFor( AccessibilityNodeRef ref ) const;
+
+	AccessibilityState stateFor( AccessibilityNodeRef ref ) const;
+
 	/** Caret and selection of a text element, in code points. */
 	AccessibilityTextInfo textInfoFor( AccessibilityNodeRef ref ) const {
 		return isValid( ref ) ? mManager->getTextInfo( ref ) : AccessibilityTextInfo();
@@ -444,9 +448,10 @@ void MacAccessibilityState::evictSource( AccessibilitySourceId source ) {
 			// NSAccessibilityPostNotification() may synchronously query its target. The manager
 			// detaches model-view sources while their concrete view is still fully alive, then the
 			// wrapper is invalidated immediately after AppKit accepts the destruction event.
-			if ( hasActiveClient() )
+			if ( hasActiveClient() ) {
 				NSAccessibilityPostNotification( it->second,
 												 NSAccessibilityUIElementDestroyedNotification );
+			}
 			[it->second invalidate];
 			[mRetainedElements removeObject:it->second];
 			it = mElements.erase( it );
@@ -460,9 +465,10 @@ void MacAccessibilityState::evictInvalidElements() {
 		return;
 	for ( auto it = mElements.begin(); it != mElements.end(); ) {
 		if ( !mManager->isValid( { it->first.source, it->first.id } ) ) {
-			if ( hasActiveClient() )
+			if ( hasActiveClient() ) {
 				NSAccessibilityPostNotification( it->second,
 												 NSAccessibilityUIElementDestroyedNotification );
+			}
 			[it->second invalidate];
 			[mRetainedElements removeObject:it->second];
 			it = mElements.erase( it );
@@ -477,6 +483,20 @@ AccessibilityNodeInfo MacAccessibilityState::infoFor( AccessibilityNodeRef ref,
 		return {};
 	AccessibilityManager::ScopedDispatch dispatch( *mManager );
 	return mManager->getNodeInfo( ref, includeValue, includeValue );
+}
+
+AccessibilityRole MacAccessibilityState::roleFor( AccessibilityNodeRef ref ) const {
+	if ( !isValid( ref ) )
+		return AccessibilityRole::None;
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
+	return mManager->getNodeRole( ref );
+}
+
+AccessibilityState MacAccessibilityState::stateFor( AccessibilityNodeRef ref ) const {
+	if ( !isValid( ref ) )
+		return AccessibilityState::None;
+	AccessibilityManager::ScopedDispatch dispatch( *mManager );
+	return mManager->getNodeState( ref );
 }
 
 std::shared_ptr<const std::u16string> MacAccessibilityState::textFor( AccessibilityNodeRef ref ) {
@@ -915,7 +935,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 
 - (NSAccessibilityRole)accessibilityRole {
 	auto state = [self accessibilityState];
-	return state && state->isValid( _ref ) ? nativeRole( state->infoFor( _ref ).role ) : nil;
+	return state && state->isValid( _ref ) ? nativeRole( state->roleFor( _ref ) ) : nil;
 }
 
 - (NSAccessibilitySubrole)accessibilitySubrole {
@@ -964,9 +984,10 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		return info.name.empty() ? nil : toNSString( info.name );
 	if ( info.role == AccessibilityRole::CheckBox || info.role == AccessibilityRole::RadioButton ||
 		 info.role == AccessibilityRole::CheckMenuItem ||
-		 info.role == AccessibilityRole::RadioMenuItem )
+		 info.role == AccessibilityRole::RadioMenuItem ) {
 		return @( hasState( info.states, AccessibilityState::Checked ) ||
 				  hasState( info.states, AccessibilityState::Selected ) );
+	}
 	if ( info.range.valid ) {
 		bool valid = false;
 		const double value = numericValue( info.value, valid );
@@ -990,19 +1011,23 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 }
 
 - (BOOL)isAccessibilityFocused {
-	return hasState( [self nodeInfoWithoutValue].states, AccessibilityState::Focused );
+	auto state = [self accessibilityState];
+	return state && hasState( state->stateFor( _ref ), AccessibilityState::Focused );
 }
 
 - (BOOL)isAccessibilitySelected {
-	return hasState( [self nodeInfoWithoutValue].states, AccessibilityState::Selected );
+	auto state = [self accessibilityState];
+	return state && hasState( state->stateFor( _ref ), AccessibilityState::Selected );
 }
 
 - (BOOL)isAccessibilityExpanded {
-	return hasState( [self nodeInfoWithoutValue].states, AccessibilityState::Expanded );
+	auto state = [self accessibilityState];
+	return state && hasState( state->stateFor( _ref ), AccessibilityState::Expanded );
 }
 
 - (BOOL)isAccessibilityEnabled {
-	return hasState( [self nodeInfoWithoutValue].states, AccessibilityState::Enabled );
+	auto state = [self accessibilityState];
+	return state && hasState( state->stateFor( _ref ), AccessibilityState::Enabled );
 }
 
 - (BOOL)isAccessibilityHidden {
@@ -1177,12 +1202,14 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		return hasAction( info.actions, AccessibilityAction::Focus );
 	if ( [attribute isEqualToString:NSAccessibilitySelectedAttribute] )
 		return hasAction( info.actions, AccessibilityAction::Select );
-	if ( [attribute isEqualToString:NSAccessibilityExpandedAttribute] )
+	if ( [attribute isEqualToString:NSAccessibilityExpandedAttribute] ) {
 		return hasAction( info.actions, AccessibilityAction::Expand ) ||
 			   hasAction( info.actions, AccessibilityAction::Collapse );
-	if ( [attribute isEqualToString:NSAccessibilityValueAttribute] )
+	}
+	if ( [attribute isEqualToString:NSAccessibilityValueAttribute] ) {
 		return hasAction( info.actions, AccessibilityAction::SetValue ) ||
 			   hasAction( info.actions, AccessibilityAction::SetText );
+	}
 	if ( [attribute isEqualToString:NSAccessibilitySelectedTextRangeAttribute] ||
 		 [attribute isEqualToString:NSAccessibilitySelectedTextRangesAttribute] )
 		return hasAction( info.actions, AccessibilityAction::SetTextSelection );
@@ -1238,9 +1265,10 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		nativeValue = value;
 	else if ( [value respondsToSelector:@selector( stringValue )] )
 		nativeValue = [value stringValue];
-	if ( nativeValue )
+	if ( nativeValue ) {
 		state->perform( _ref, action,
 						String::fromUtf8( std::string( nativeValue.UTF8String ?: "" ) ) );
+	}
 }
 
 - (void)setAccessibilitySelectedTextRange:(NSRange)range {
@@ -1472,10 +1500,11 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 	if ( info.role == AccessibilityRole::Row || info.role == AccessibilityRole::ListItem ||
 		 info.role == AccessibilityRole::TreeItem || info.role == AccessibilityRole::Cell )
 		[names addObject:NSAccessibilityIndexAttribute];
-	if ( info.range.valid )
+	if ( info.range.valid ) {
 		[names addObjectsFromArray:@[
 			NSAccessibilityMinValueAttribute, NSAccessibilityMaxValueAttribute
 		]];
+	}
 	if ( hasState( info.states, AccessibilityState::Protected ) )
 		[names addObject:NSAccessibilityContainsProtectedContentAttribute];
 	if ( info.text.valid ) {
@@ -1583,9 +1612,10 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		if ( [attribute isEqualToString:NSAccessibilityStringForRangeParameterizedAttribute] )
 			return toNSString( *text, range );
 		if ( [attribute
-				 isEqualToString:NSAccessibilityAttributedStringForRangeParameterizedAttribute] )
+				 isEqualToString:NSAccessibilityAttributedStringForRangeParameterizedAttribute] ) {
 			return EE_OBJC_AUTORELEASE(
 				[[NSAttributedString alloc] initWithString:toNSString( *text, range )] );
+		}
 		return [NSValue valueWithRect:self.accessibilityFrame];
 	}
 	if ( [attribute isEqualToString:NSAccessibilityRangeForIndexParameterizedAttribute] &&
@@ -1733,9 +1763,10 @@ class MacAccessibilityRegistry {
 		// path. Disconnect every native wrapper before AppKit can synchronously query a
 		// destruction notification and re-enter that dead scene tree.
 		state->invalidate();
-		if ( observed && element )
+		if ( observed && element ) {
 			NSAccessibilityPostNotification( element,
 											 NSAccessibilityUIElementDestroyedNotification );
+		}
 		if ( nativeWindow )
 			removeAccessibilityChild( [nativeWindow contentView], element );
 		for ( size_t i = 0; i < mStates.size(); ++i ) {
@@ -1774,9 +1805,10 @@ class MacAccessibilityRegistry {
 			postWindowChanges( syncApplication( true ) );
 			const auto focusedRef = state->focused();
 			id focusedElement = focusedRef.isValid() ? state->elementFor( focusedRef ) : nil;
-			if ( focusedElement )
+			if ( focusedElement ) {
 				NSAccessibilityPostNotification(
 					focusedElement, NSAccessibilityFocusedUIElementChangedNotification );
+			}
 			return;
 		}
 		if ( event.type == AccessibilityEvent::Destroyed ) {
@@ -1798,14 +1830,15 @@ class MacAccessibilityRegistry {
 				const auto info = state->infoFor( event.ref );
 				if ( info.role == AccessibilityRole::TreeItem &&
 					 ( hasAction( info.actions, AccessibilityAction::Expand ) ||
-					   hasAction( info.actions, AccessibilityAction::Collapse ) ) )
+					   hasAction( info.actions, AccessibilityAction::Collapse ) ) ) {
 					NSAccessibilityPostNotification(
 						target, hasState( info.states, AccessibilityState::Expanded )
 									? NSAccessibilityRowExpandedNotification
 									: NSAccessibilityRowCollapsedNotification );
-				else
+				} else {
 					NSAccessibilityPostNotification( target,
 													 NSAccessibilityValueChangedNotification );
+				}
 			}
 		} else if ( event.type == AccessibilityEvent::ValueChanged ||
 					event.type == AccessibilityEvent::EnabledChanged ) {
@@ -1913,9 +1946,10 @@ class MacAccessibilityRegistry {
 			return;
 		if ( changes.main )
 			NSAccessibilityPostNotification( NSApp, NSAccessibilityMainWindowChangedNotification );
-		if ( changes.focused )
+		if ( changes.focused ) {
 			NSAccessibilityPostNotification( NSApp,
 											 NSAccessibilityFocusedWindowChangedNotification );
+		}
 	}
 
 	std::vector<std::shared_ptr<MacAccessibilityState>> mStates;

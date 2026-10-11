@@ -1,6 +1,8 @@
 #include <eepp/ee.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
+#include <eepp/ui/models/stringmapmodel.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
+#include <eepp/ui/uitreeview.hpp>
 
 #include <cstdlib>
 #include <iostream>
@@ -13,6 +15,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	bool benchmarkInactive = false;
 	bool hidden = false;
 	bool testPolicyReset = false;
+	bool testTree = false;
 	size_t benchmarkItems = 1000;
 	size_t benchmarkIterations = 100000;
 	for ( int i = 1; i < argc; ++i ) {
@@ -23,6 +26,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		benchmarkInactive |= std::string_view( argv[i] ) == "--benchmark-inactive";
 		hidden |= std::string_view( argv[i] ) == "--hidden";
 		testPolicyReset |= std::string_view( argv[i] ) == "--test-policy-reset";
+		testTree |= std::string_view( argv[i] ) == "--test-tree";
 		if ( std::string_view( argv[i] ) == "--benchmark-items" && i + 1 < argc )
 			benchmarkItems = std::max<size_t>( 1, std::strtoull( argv[++i], nullptr, 10 ) );
 		if ( std::string_view( argv[i] ) == "--benchmark-iterations" && i + 1 < argc )
@@ -108,6 +112,16 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	tableModel->setColumnName( 0, "Project" );
 	tableModel->setColumnName( 1, "Status" );
 	table->setModel( tableModel );
+	if ( testTree ) {
+		// Opt-in native regression fixture: keep the ordinary example's layout unchanged.
+		auto* tree = UITreeView::New();
+		tree->setAccessibilityLabel( "Expansion regression tree" );
+		tree->setParent( content );
+		tree->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
+		tree->setSize( 320, 60 );
+		tree->setModel( Models::StringMapModel<std::string>::create(
+			{ { "Tree branch", { "Tree child" } } } ) );
+	}
 
 	auto status = content->find<UITextView>( "status" );
 	if ( benchmarkInactive ) {
