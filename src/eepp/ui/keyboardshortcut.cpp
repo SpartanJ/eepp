@@ -37,7 +37,7 @@ std::shared_ptr<KeyBindings::Storage> KeyBindings::getEmptyStorage() {
 	return storage;
 }
 
-KeyBindings::KeyBindings( const Window::Input* input ) :
+KeyBindings::KeyBindings( const EE::Window::Input* input ) :
 	mInput( input ), mStorage( getEmptyStorage() ) {}
 
 void KeyBindings::setKeybinds( const KeyBindings& bindings ) {
@@ -99,7 +99,7 @@ void KeyBindings::replaceKeybind( const KeyBindings::Shortcut& keys, const std::
 	mStorage->keybindingsInvert[command] = sanitizeShortcut( keys );
 }
 
-KeyBindings::Shortcut KeyBindings::toShortcut( const Window::Input* input,
+KeyBindings::Shortcut KeyBindings::toShortcut( const EE::Window::Input* input,
 											   const std::string& keys ) {
 	Shortcut shortcut;
 	Uint32 mod = 0;
@@ -208,8 +208,8 @@ const std::map<std::string, KeyBindings::Shortcut>& KeyBindings::getKeybindings(
 	return mStorage->keybindingsInvert;
 }
 
-std::string KeyBindings::fromShortcut( const Window::Input* input, KeyBindings::Shortcut shortcut,
-									   bool format ) {
+std::string KeyBindings::fromShortcut( const EE::Window::Input* input,
+									   KeyBindings::Shortcut shortcut, bool format ) {
 	shortcut = sanitizeShortcut( shortcut );
 	std::vector<std::string> mods;
 	std::string keyname( String::toLower( input->getKeyName( shortcut.key ) ) );
