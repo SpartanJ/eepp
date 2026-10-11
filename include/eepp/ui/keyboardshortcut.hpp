@@ -57,12 +57,12 @@ class EE_API KeyBindings {
 
 	static std::string keybindFormat( std::string str );
 
-	static Shortcut toShortcut( const Window::Input* input, const std::string& keys );
+	static Shortcut toShortcut( const EE::Window::Input* input, const std::string& keys );
 
-	static std::string fromShortcut( const Window::Input* input, KeyBindings::Shortcut shortcut,
+	static std::string fromShortcut( const EE::Window::Input* input, KeyBindings::Shortcut shortcut,
 									 bool format = false );
 
-	KeyBindings( const Window::Input* input );
+	KeyBindings( const EE::Window::Input* input );
 
 	/** Shares @p bindings storage while keeping this instance's input source. */
 	void setKeybinds( const KeyBindings& bindings );
@@ -117,7 +117,7 @@ class EE_API KeyBindings {
 		std::map<std::string, Shortcut> keybindingsInvert;
 	};
 
-	const Window::Input* mInput;
+	const EE::Window::Input* mInput;
 	std::shared_ptr<Storage> mStorage;
 
 	static std::shared_ptr<Storage> getEmptyStorage();
