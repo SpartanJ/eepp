@@ -42,6 +42,7 @@
 
 #include <cstdlib>
 #include <future>
+#include <thread>
 
 using namespace EE;
 using namespace EE::System;
@@ -59,6 +60,21 @@ UIApplication::Settings accessibilityTestSettings() {
 WindowSettings accessibilityTestWindow() {
 	return WindowSettings( 320, 240, "Accessibility Regression Test", WindowStyle::Default,
 						   WindowBackend::Default, 32, {}, 1, false, true );
+}
+
+Models::ModelIndex inspectorPropertyIndex( UITableView* table, const char* name ) {
+	auto* model = table->getModel();
+	for ( size_t row = 0; row < model->rowCount(); ++row ) {
+		if ( model->data( model->index( row, 0 ), ModelRole::Display ).asStdStringView() == name )
+			return model->index( row, 1 );
+	}
+	return {};
+}
+
+std::string inspectorProperty( UITableView* table, const char* name ) {
+	const auto index = inspectorPropertyIndex( table, name );
+	return index.isValid() ? table->getModel()->data( index, ModelRole::Display ).toString()
+						   : std::string();
 }
 
 class AccessibilityRowsModel : public Model {
@@ -2515,14 +2531,10 @@ UTEST( Accessibility, InspectorPropertiesUpdateWithoutNativeClients ) {
 	ASSERT_NE( table, nullptr );
 	auto* treeModel = static_cast<Models::WidgetTreeModel*>( tree->getModel() );
 	tree->setSelection( treeModel->getModelIndex( editor ) );
-	auto property = [&]( const char* name ) {
-		auto* model = table->getModel();
-		for ( size_t row = 0; row < model->rowCount(); ++row ) {
-			if ( model->data( model->index( row, 0 ), ModelRole::Display ).toString() == name )
-				return model->data( model->index( row, 1 ), ModelRole::Display ).toString();
-		}
-		return std::string();
-	};
+	auto property = [&]( const char* name ) { return inspectorProperty( table, name ); };
+	EXPECT_FALSE( table->getAutoColumnsWidth() );
+	EXPECT_TRUE( table->getColumnsWidthPercentage() == std::vector<Float>( { 35.f, 65.f } ) );
+	EXPECT_NE( inspector->find<UIPushButton>( "widget_inspector_accessibility_copy" ), nullptr );
 	EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
 	EXPECT_TRUE( property( "Name" ) == "Source" );
 	EXPECT_TRUE( property( "Value" ) == "hello\nworld" );
@@ -2532,6 +2544,150 @@ UTEST( Accessibility, InspectorPropertiesUpdateWithoutNativeClients ) {
 	EXPECT_FALSE( property( "Stable ID" ).empty() );
 	EXPECT_FALSE( property( "Bounds" ).empty() );
 	EXPECT_TRUE( property( "Caret" ).empty() );
+	EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
+}
+
+UTEST( Accessibility, InspectorValuePreviewIsBoundedWithoutChangingNativeValues ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* editor = UICodeEditor::New();
+	auto* input = UITextInput::New();
+	auto* inspector = Tools::UIWidgetInspector::create( scene );
+	ASSERT_NE( inspector, nullptr );
+	auto* tree = inspector->find<UITreeView>( "widget_inspector_nodetree" );
+	auto* table = inspector->find<UITableView>( "widget_inspector_accessibility" );
+	ASSERT_NE( tree, nullptr );
+	ASSERT_NE( table, nullptr );
+	auto* treeModel = static_cast<Models::WidgetTreeModel*>( tree->getModel() );
+	tree->setSelection( treeModel->getModelIndex( editor ) );
+	const std::string large( 100000, 'a' );
+	editor->getDocument().textInput( large );
+	const std::string expected = std::string( 1024, 'a' ) + " … [truncated]";
+	EXPECT_TRUE( inspectorProperty( table, "Value (preview)" ) == expected );
+	EXPECT_FALSE( inspectorPropertyIndex( table, "Value" ).isValid() );
+	auto* manager = scene->getAccessibilityManager();
+	EXPECT_TRUE( manager->getNodeInfo( manager->getNodeRef( editor ), true, false ).value ==
+				 String( large ) );
+	const auto previewIndex = inspectorPropertyIndex( table, "Value (preview)" );
+	const auto* cached =
+		table->getModel()->data( previewIndex, ModelRole::Display ).asStdStringView().data();
+	editor->sendCommonEvent( Event::OnPositionChange );
+	EXPECT_EQ( table->getModel()->data( previewIndex, ModelRole::Display ).asStdStringView().data(),
+			   cached );
+	editor->setEnabled( false );
+	EXPECT_TRUE( inspectorProperty( table, "States" ).find( "Enabled" ) == std::string::npos );
+	EXPECT_TRUE( inspectorProperty( table, "Value (preview)" ) == expected );
+	editor->getDocument().reset();
+	EXPECT_TRUE( inspectorProperty( table, "Value" ).empty() );
+	EXPECT_FALSE( inspectorPropertyIndex( table, "Value (preview)" ).isValid() );
+	// The document adds a synthetic final newline; it is not part of the accessible value.
+	editor->getDocument().textInput( std::string( 1024, 'b' ) );
+	EXPECT_TRUE( inspectorProperty( table, "Value" ) == std::string( 1024, 'b' ) );
+	editor->getDocument().textInput( "c" );
+	EXPECT_TRUE( inspectorProperty( table, "Value (preview)" ) ==
+				 std::string( 1024, 'b' ) + " … [truncated]" );
+	editor->getDocument().reset();
+	editor->getDocument().textInput( "literal … [truncated]" );
+	EXPECT_TRUE( inspectorProperty( table, "Value" ) == "literal … [truncated]" );
+	EXPECT_FALSE( inspectorPropertyIndex( table, "Value (preview)" ).isValid() );
+	std::string multiline;
+	for ( size_t line = 0; line < 2000; ++line )
+		multiline += "x\n";
+	editor->getDocument().loadFromMemory( reinterpret_cast<const Uint8*>( multiline.data() ),
+										  multiline.size() );
+	// The low-level memory loader does not publish OnDocumentLoaded; the editor/file-load
+	// lifecycle does, after all lines have been installed.
+	editor->sendCommonEvent( Event::OnDocumentLoaded );
+	EXPECT_TRUE( inspectorProperty( table, "Value (preview)" ) ==
+				 multiline.substr( 0, 1024 ) + " … [truncated]" );
+	// The limit counts Unicode code points rather than bytes, preserving a multibyte boundary.
+	const auto unicode = std::string( 1023, 'a' ) + "😀z";
+	input->setText( unicode );
+	tree->setSelection( treeModel->getModelIndex( input ) );
+	EXPECT_TRUE( inspectorProperty( table, "Value (preview)" ) ==
+				 std::string( 1023, 'a' ) + "😀 … [truncated]" );
+	EXPECT_TRUE( manager->getNodeInfo( manager->getNodeRef( input ), true, false ).value ==
+				 String( unicode ) );
+	input->setMode( UITextInput::TextInputMode::Password );
+	input->sendCommonEvent( Event::OnFocus );
+	EXPECT_TRUE( inspectorProperty( table, "Value" ).empty() );
+	EXPECT_FALSE( inspectorPropertyIndex( table, "Value (preview)" ).isValid() );
+	input->setMode( UITextInput::TextInputMode::Normal );
+	input->sendCommonEvent( Event::OnFocusLoss );
+	EXPECT_TRUE( inspectorProperty( table, "Value (preview)" ) ==
+				 std::string( 1023, 'a' ) + "😀 … [truncated]" );
+	EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
+}
+
+UTEST( Accessibility, InspectorValueTracksDocumentIdentityAndWorkerNotifications ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto first = std::make_shared<Doc::TextDocument>();
+	auto second = std::make_shared<Doc::TextDocument>();
+	first->textInput( "first document" );
+	second->textInput( "second document" );
+	ASSERT_EQ( first->getModificationId(), second->getModificationId() );
+	auto* editor = UICodeEditor::New();
+	editor->setDocument( first );
+	auto* inspector = Tools::UIWidgetInspector::create( scene );
+	ASSERT_NE( inspector, nullptr );
+	auto* tree = inspector->find<UITreeView>( "widget_inspector_nodetree" );
+	auto* table = inspector->find<UITableView>( "widget_inspector_accessibility" );
+	ASSERT_NE( tree, nullptr );
+	ASSERT_NE( table, nullptr );
+	auto* treeModel = static_cast<Models::WidgetTreeModel*>( tree->getModel() );
+	tree->setSelection( treeModel->getModelIndex( editor ) );
+	EXPECT_TRUE( inspectorProperty( table, "Value" ) == "first document" );
+	editor->setDocument( second );
+	EXPECT_TRUE( inspectorProperty( table, "Value" ) == "second document" );
+	editor->getDocument().setLines(
+		{ Doc::TextDocumentLine( String( "replacement\n" ), nullptr ) } );
+	// setLines() changes the revision without an editor event; the next non-text refresh
+	// must not blindly reuse the preview solely because it was not a text event.
+	editor->sendCommonEvent( Event::OnSelectionChanged );
+	EXPECT_TRUE( inspectorProperty( table, "Value" ) == "replacement" );
+	// A loader may temporarily leave no lines. Do not call endOfDoc() or retain a cached
+	// preview of incomplete contents; a later non-text event must recover the ready value.
+	editor->getDocument().setLines( {} );
+	editor->sendCommonEvent( Event::OnSelectionChanged );
+	EXPECT_TRUE( inspectorProperty( table, "Value" ).empty() );
+	auto* copy = inspector->find<UIPushButton>( "widget_inspector_accessibility_copy" );
+	ASSERT_NE( copy, nullptr );
+	// An incomplete document must return before full extraction or clipboard access.
+	Scene::MouseEvent click( copy, Event::MouseClick, {}, EE_BUTTON_LMASK );
+	copy->sendEvent( &click );
+	editor->getDocument().setLines(
+		{ Doc::TextDocumentLine( String( "replacement\n" ), nullptr ) } );
+	editor->sendCommonEvent( Event::OnSelectionChanged );
+	EXPECT_TRUE( inspectorProperty( table, "Value" ) == "replacement" );
+	size_t updates = 0;
+	bool mainThread = true;
+	table->getModel()->setOnUpdate( [&] {
+		++updates;
+		mainThread = mainThread && Engine::instance()->isMainThread();
+	} );
+	std::thread worker( [&] { editor->sendCommonEvent( Event::OnDocumentLoaded ); } );
+	worker.join();
+	EXPECT_EQ( updates, 0u );
+	scene->update( Time::Zero );
+	EXPECT_GT( updates, 0u );
+	EXPECT_TRUE( mainThread );
+	EXPECT_TRUE( inspectorProperty( table, "Value" ) == "replacement" );
+	std::thread delayed( [&] { editor->sendCommonEvent( Event::OnDocumentReloaded ); } );
+	delayed.join();
+	tree->setSelection( treeModel->getModelIndex( scene->getRoot() ) );
+	updates = 0;
+	scene->update( Time::Zero );
+	EXPECT_EQ( updates, 0u );
+	table->getModel()->setOnUpdate( {} );
+	// An action already queued on the editor must also tolerate destruction of the Inspector.
+	tree->setSelection( treeModel->getModelIndex( editor ) );
+	std::thread closing( [&] { editor->sendCommonEvent( Event::OnDocumentLoaded ); } );
+	closing.join();
+	inspector->closeWindow();
+	scene->update( Time::Zero );
 	EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
 }
 

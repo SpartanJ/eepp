@@ -13,6 +13,7 @@ included. A compared build whose run fails still reports its measurements.
 An additional active-client guard checks that backends not requesting exact text edits allocate
 nothing to construct unused records; it does not measure document editing itself.
 Use --active-text for warmed semantic queries or --cold-text for first-use text and Inspector checks.
+Use --inspector for bounded Value-preview refresh and table-read costs without native clients.
 """
 
 import argparse
@@ -86,6 +87,18 @@ COLD_TEXT = {
 	"inspector_warm_requested_offsets": ("allocations", "bytes", "ms"),
 }
 
+INSPECTOR = {
+	**{
+		f"inspector_{kind}_{size}": ("allocations", "bytes", "ms")
+		for size in (100000, 1000000, 10000000)
+		for kind in ("unselected", "unselected_edits", "selection", "geometry", "focus", "text",
+			"fixed_width_selection", "value_reads", "edits")
+	},
+	**{f"inspector_refreshes_{size}": ("per_edit",) for size in (100000, 1000000, 10000000)},
+	"inspector_prefix_long_line": ("allocations", "bytes", "ms"),
+	"inspector_prefix_empty_lines": ("allocations", "bytes", "ms"),
+}
+
 
 def parse(stdout):
 	sample = {}
@@ -154,6 +167,8 @@ def main():
 		help="measure active text indexing, child counts and queried model rows instead of dormant costs")
 	mode.add_argument("--cold-text", action="store_true",
 		help="measure unqueried first edits, first focus and Inspector offset-index laziness")
+	mode.add_argument("--inspector", action="store_true",
+		help="measure Inspector Value-preview refreshes and table reads without native clients")
 	args = parser.parse_args()
 
 	if args.samples < 1:
@@ -172,7 +187,10 @@ def main():
 	failures = {}
 	for label, path in builds:
 		# The current build must measure everything; a compared tree may lack accessibility.
-		if args.cold_text:
+		if args.inspector:
+			expected = INSPECTOR
+			test_filter = "AccessibilityInspector.*"
+		elif args.cold_text:
 			expected = COLD_TEXT
 			test_filter = "AccessibilityCold.*"
 		elif args.active_text:

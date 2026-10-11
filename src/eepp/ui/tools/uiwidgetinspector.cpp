@@ -10,11 +10,15 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitableview.hpp>
+#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/clipboard.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 
+#include <algorithm>
+#include <array>
 #include <vector>
 
 using namespace EE::Window;
@@ -33,7 +37,9 @@ void appendAccessibilityFlag( std::string& output, const char* label, Uint64 val
 	}
 }
 
-class AccessibilityPropertiesModel final : public Model {
+class AccessibilityPropertiesModel final
+	: public Model,
+	  public std::enable_shared_from_this<AccessibilityPropertiesModel> {
   public:
 	static std::shared_ptr<AccessibilityPropertiesModel> create() {
 		return std::make_shared<AccessibilityPropertiesModel>();
@@ -51,37 +57,142 @@ class AccessibilityPropertiesModel final : public Model {
 		if ( role != ModelRole::Display || index.row() < 0 ||
 			 index.row() >= static_cast<Int64>( mData.size() ) )
 			return {};
-		return index.column() == 0 ? Variant( mData[index.row()].first )
-								   : Variant( mData[index.row()].second );
+		// Like other borrowed model strings, these remain valid until model invalidation.
+		return Variant::fromRef( index.column() == 0 ? mData[index.row()].first
+													 : mData[index.row()].second );
 	}
 
 	void setWidget( UIWidget* widget ) {
 		mConnections.clear();
 		mWidget = widget;
+		mValueDocument = UUID( false );
 		refresh();
 		if ( !mWidget )
 			return;
 		static constexpr Uint32 Events[] = {
-			Event::OnTextChanged,		Event::OnValueChange,	Event::OnSelectionChanged,
-			Event::OnEnabledChange,		Event::OnVisibleChange, Event::OnPositionChange,
-			Event::OnSizeChange,		Event::OnFocus,			Event::OnFocusLoss,
-			Event::OnChildCountChanged,
+			Event::OnTextChanged,		Event::OnValueChange,	  Event::OnSelectionChanged,
+			Event::OnEnabledChange,		Event::OnVisibleChange,	  Event::OnPositionChange,
+			Event::OnSizeChange,		Event::OnFocus,			  Event::OnFocusLoss,
+			Event::OnChildCountChanged, Event::OnDocumentChanged, Event::OnDocumentLoaded,
+			Event::OnDocumentReloaded,	Event::OnDocumentReset,
 		};
-		for ( auto event : Events )
-			mConnections += mWidget->connect( event, [this]( const Event* ) { refresh(); } );
+		const auto weak = weak_from_this();
+		for ( auto event : Events ) {
+			mConnections += mWidget->connect( event, [weak]( const Event* event ) {
+				if ( !Engine::instance()->isMainThread() ) {
+					// Document reset/load events can originate on a worker. The action belongs to
+					// the widget, and neither it nor the model is kept alive by the callback.
+					auto* widget = event->getNode()->asType<UIWidget>();
+					widget->runOnMainThread( [weak, widget] {
+						if ( auto model = weak.lock(); model && model->mWidget == widget )
+							model->refresh();
+					} );
+					return;
+				}
+				if ( auto model = weak.lock() ) {
+					const auto type = event->getType();
+					model->refresh(
+						type == Event::OnTextChanged || type == Event::OnValueChange ||
+						type == Event::OnDocumentChanged || type == Event::OnDocumentLoaded ||
+						type == Event::OnDocumentReloaded || type == Event::OnDocumentReset );
+				}
+			} );
+		}
 		mConnections +=
 			mWidget->connect( Event::OnClose, [this]( const Event* ) { setWidget( nullptr ); } );
 	}
 
+	void copyFullValue() const {
+		if ( !mWidget )
+			return;
+		// Full-document allocation is deliberate only for this explicit user action.
+		String value;
+		if ( mWidget->isType( UI_TYPE_CODEEDITOR ) ) {
+			const auto& document = static_cast<UICodeEditor*>( mWidget )->getDocument();
+			Doc::TextDocument::ScopedReadLock lock( document );
+			if ( document.isLoading() || document.linesCount() == 0 )
+				return;
+			value = document.getText();
+		} else {
+			value = mWidget->getAccessibilityValue();
+		}
+		mWidget->getUISceneNode()->getWindow()->getClipboard()->setText( value.toUtf8() );
+	}
+
   private:
-	void refresh() {
+	static constexpr size_t ValueRow = 3;
+	static constexpr size_t PreviewLength = 1024;
+
+	static std::string valuePreview( String::View value, bool& truncated ) {
+		truncated = value.size() > PreviewLength;
+		std::string result;
+		String::appendUtf8( value.substr( 0, PreviewLength ), result );
+		if ( truncated )
+			result += " … [truncated]";
+		return result;
+	}
+
+	std::string editorValuePreview( const Doc::TextDocument& document, bool& truncated ) {
+		Doc::TextDocument::ScopedReadLock lock( document );
+		// Worker loads temporarily clear/fill the lines and may keep the same revision while
+		// filling them. Never cache a partial value or call endOfDoc() on a zero-line snapshot.
+		if ( document.isLoading() || document.linesCount() == 0 ) {
+			mValueDocument = UUID( false );
+			truncated = false;
+			return {};
+		}
+		const auto end = document.endOfDoc();
+		// A bounded 4100-byte stack buffer avoids a UTF-32 heap temporary on every edit.
+		std::array<String::StringBaseType, PreviewLength + 1> value;
+		size_t size = 0;
+		// Read at most 1025 code points, not whole lines or a document-sized text index. The
+		// extra point determines truncation; the document's synthetic final newline is excluded.
+		for ( Int64 line = 0; line <= end.line() && size <= PreviewLength; ++line ) {
+			const auto& text = document.line( line ).getText();
+			const size_t length = line == end.line() ? end.column() : text.size();
+			const auto count = eemin( length, value.size() - size );
+			std::copy_n( text.data(), count, value.data() + size );
+			size += count;
+		}
+		mValueDocument = document.getUUID();
+		mValueRevision = document.getModificationId();
+		return valuePreview( String::View( value.data(), size ), truncated );
+	}
+
+	void refresh( bool refreshValue = true ) {
+		auto* editor = mWidget && mWidget->isType( UI_TYPE_CODEEDITOR )
+						   ? static_cast<UICodeEditor*>( mWidget )
+						   : nullptr;
+		// Only editor values are cached. Scalar controls stay cheap, and text inputs are checked
+		// every time so a password-mode switch cannot expose a previously cached plain value.
+		const bool reuseValue = editor && !refreshValue && mData.size() > ValueRow &&
+								!editor->getDocument().isLoading() &&
+								mValueDocument == editor->getDocument().getUUID() &&
+								mValueRevision == editor->getDocument().getModificationId();
+		std::string value;
+		bool truncated = false;
+		if ( reuseValue ) {
+			truncated = mData[ValueRow].first == "Value (preview)";
+			value = std::move( mData[ValueRow].second );
+		}
 		mData.clear();
 		if ( mWidget ) {
 			auto manager = mWidget->getUISceneNode()->getAccessibilityManager();
 			auto ref = manager->getNodeRef( mWidget );
-			// This table displays the value, not caret/selection offsets. Requesting unused
-			// offsets creates a document-sized index and rebuilds it on every dormant edit.
-			auto info = manager->getNodeInfo( ref, true, false );
+			// Neither full values nor caret/selection offsets are displayed here. Requesting
+			// either would copy a document or create a document-sized index just for this table.
+			auto info = manager->getNodeInfo( ref, false, false );
+			if ( !reuseValue ) {
+				if ( editor ) {
+					value = editorValuePreview( editor->getDocument(), truncated );
+				} else if ( mWidget->isType( UI_TYPE_TEXTINPUT ) ) {
+					auto* input = static_cast<UITextInput*>( mWidget );
+					if ( input->getMode() != UITextInput::TextInputMode::Password )
+						value = valuePreview( input->getText().view(), truncated );
+				} else {
+					value = valuePreview( mWidget->getAccessibilityValue().view(), truncated );
+				}
+			}
 			auto parent = manager->getParent( ref );
 			std::string states;
 			static constexpr std::pair<AccessibilityState, const char*> StateNames[] = {
@@ -126,7 +237,7 @@ class AccessibilityPropertiesModel final : public Model {
 							  " (" + mWidget->getElementTag() + ")" },
 				{ "Name", info.name.toUtf8() },
 				{ "Description", info.description.toUtf8() },
-				{ "Value", info.value.toUtf8() },
+				{ "Value", {} },
 				{ "Shortcut", info.shortcut.text },
 				{ "Labelled By", mWidget->getAccessibilityLabelledBy() },
 				{ "Described By", mWidget->getAccessibilityDescribedBy() },
@@ -143,8 +254,14 @@ class AccessibilityPropertiesModel final : public Model {
 								String::toString( info.bounds.Right ) + ", " +
 								String::toString( info.bounds.Bottom ) },
 			};
-			if ( info.role != AccessibilityRole::None && info.name.empty() && info.value.empty() )
+			// Move the preview instead of copying it through the const initializer-list entries.
+			mData[ValueRow].second = std::move( value );
+			if ( truncated )
+				mData[ValueRow].first = "Value (preview)";
+			if ( info.role != AccessibilityRole::None && info.name.empty() &&
+				 mData[ValueRow].second.empty() ) {
 				mData.emplace_back( "Warning", "Exposed element has no accessible name or value." );
+			}
 		}
 		invalidate();
 	}
@@ -152,6 +269,8 @@ class AccessibilityPropertiesModel final : public Model {
 	UIWidget* mWidget{ nullptr };
 	Scene::EventConnectionList mConnections;
 	std::vector<std::pair<std::string, std::string>> mData;
+	UUID mValueDocument{ false };
+	Uint64 mValueRevision{};
 };
 
 /** Lists the problems found by AccessibilityWidgetResolver::audit(). */
@@ -267,14 +386,17 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			<TabWidget lw="fixed" lh="mp">
 				<TableView id="widget_inspector_computed" class="computed" lw="mp" lh="mp" />
 				<CodeEditor id="widget_inspector_style" lw="mp" lh="mp" />
-				<TableView id="widget_inspector_accessibility" class="computed" lw="mp" lh="mp" />
+				<vbox id="widget_inspector_accessibility_panel" lw="mp" lh="mp">
+					<PushButton id="widget_inspector_accessibility_copy" lh="18dp" text="Copy full value" tooltip="Copy the complete accessible value; large documents may take time." />
+					<TableView id="widget_inspector_accessibility" class="computed" lw="mp" lh="fixed" lw8="1" />
+				</vbox>
 				<vbox id="widget_inspector_audit" lw="mp" lh="mp">
 					<PushButton id="widget_inspector_audit_run" lh="18dp" text="@string(run_accessibility_audit, Run Audit)" />
 					<TableView id="widget_inspector_audit_issues" class="computed" lw="mp" lh="fixed" lw8="1" />
 				</vbox>
 				<Tab id="widget_inspector_tab_computed" text="@string(computed, Computed)" owns="widget_inspector_computed" />
 				<Tab id="widget_inspector_tab_style" text="@string(style, Style)" owns="widget_inspector_style" />
-				<Tab text="Accessibility" owns="widget_inspector_accessibility" />
+				<Tab text="Accessibility" owns="widget_inspector_accessibility_panel" />
 				<Tab text="@string(accessibility_audit, Audit)" owns="widget_inspector_audit" />
 			</TabWidget>
 		</Splitter>
@@ -321,10 +443,18 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 									  ? SyntaxColorScheme::getDefaultDark()
 									  : SyntaxColorScheme::getDefaultLight() );
 	UITableView* accessibilityView = cont->find<UITableView>( "widget_inspector_accessibility" );
-	accessibilityView->setAutoColumnsWidth( true );
+	// This table can inspect a document: never measure Value text to choose column widths.
+	accessibilityView->setAutoColumnsWidth( false );
 	accessibilityView->setHeadersVisible( true );
 	auto accessibilityModel = AccessibilityPropertiesModel::create();
 	accessibilityView->setModel( accessibilityModel );
+	accessibilityView->setColumnWidthMode( UITableView::ColumnWidthMode::Percentage, false );
+	accessibilityView->setColumnsWidthPercentage( { 35.f, 65.f } );
+	cont->find( "widget_inspector_accessibility_copy" )
+		->on( Event::MouseClick, [accessibilityModel]( const Event* event ) {
+			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
+				accessibilityModel->copyFullValue();
+		} );
 
 	UITableView* auditView = cont->find<UITableView>( "widget_inspector_audit_issues" );
 	auditView->setAutoColumnsWidth( true );

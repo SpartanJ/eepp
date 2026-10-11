@@ -311,7 +311,10 @@ class EE_API TextDocument {
 	std::size_t getLineLength( Int64 ) const;
 
 	/** Fill code-point lengths (including stored newlines) under one read-lock scope, reusing
-	 * the output buffer. Returns the modification id read with those lengths. */
+	 * the output buffer. Returns the modification id read with those lengths.
+	 * Ordinary edits are owned by the UI thread: their revision increments precede mutation,
+	 * so this is not an atomic revision/content snapshot of concurrent edits. Consumers must
+	 * invalidate cached lengths after asynchronous loads. */
 	Uint64 getLineLengths( std::vector<Int64>& lengths ) const;
 
 	void safeLineOp( Int64 line, std::function<void( TextDocumentLine& )> op );

@@ -249,6 +249,13 @@ that lists focusable controls without an accessible name and `aria-labelledby` /
 `aria-describedby` ids that match nothing. Selecting an issue selects the widget in the tree. The
 same check is available to tests as `AccessibilityWidgetResolver::audit( root )`.
 
+The Accessibility table uses proportional column widths and previews the first 1,024 code points
+of a value. Longer values are labelled **Value (preview)** with a truncation marker. Editor previews
+are read directly from a bounded document prefix and reused on non-text events while the document's
+identity and revision are unchanged. **Copy full value** explicitly copies the complete accessible
+value to the clipboard; large documents may take time. Password inputs expose no value. These
+Inspector-only limits do not truncate the text or values exposed to native accessibility clients.
+
 ### Linux
 
 Use Orca for a screen-reader pass. Accerciser and desktop accessibility inspectors can inspect the

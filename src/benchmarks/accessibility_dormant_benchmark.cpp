@@ -16,6 +16,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uispinbox.hpp>
+#include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitreeview.hpp>
@@ -723,6 +724,132 @@ UTEST( AccessibilityCold, FirstEditAndFocus ) {
 			EXPECT_EQ( query.allocations, 0u );
 			delete editor;
 		}
+	}
+}
+
+UTEST( AccessibilityInspector, ValueCopies ) {
+	UIApplication app( benchmarkWindow(), benchmarkSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	manager->setBackend( std::make_unique<SwitchableBackend>() );
+	scene->update( Time::Zero );
+	auto* editor = UICodeEditor::New();
+	auto* inspector = Tools::UIWidgetInspector::create( scene );
+	ASSERT_NE( inspector, nullptr );
+	auto* tree = inspector->find<UITreeView>( "widget_inspector_nodetree" );
+	auto* table = inspector->find<UITableView>( "widget_inspector_accessibility" );
+	ASSERT_NE( tree, nullptr );
+	ASSERT_NE( table, nullptr );
+	auto* treeModel = static_cast<WidgetTreeModel*>( tree->getModel() );
+	// Keep a sample short enough to find quiet windows on a live desktop. Independent samples
+	// provide the median; allocation counts remain exact even with only three repetitions.
+	static constexpr size_t Operations = 3;
+	for ( size_t bytes : { 100000, 1000000, 10000000 } ) {
+		// Fixed-width ASCII lines exercise previews across line boundaries, without charging
+		// unrelated editor long-line layout to the Inspector.
+		std::string text( bytes, 'a' );
+		for ( size_t offset = 99; offset < bytes; offset += 100 )
+			text[offset] = '\n';
+		auto& document = editor->getDocument();
+		tree->setSelection( treeModel->getModelIndex( scene->getRoot() ) );
+		document.loadFromMemory( reinterpret_cast<const Uint8*>( text.data() ), text.size() );
+		document.setSelection( { 0, 0 } );
+		const auto suffix = std::to_string( bytes );
+		auto reportEvents = [&]( const char* name, Uint32 event, bool guard = false ) {
+			const auto measured = measure( [&] {
+				for ( size_t operation = 0; operation < Operations; ++operation )
+					editor->sendCommonEvent( event );
+			} );
+			report( ( std::string( name ) + suffix ).c_str(), measured, Operations, "ACTIVE" );
+			if ( guard ) {
+				// Hardware-independent bound: refreshing metadata must not copy a large document.
+				EXPECT_LT( measured.bytes / Operations, 65536u );
+			}
+		};
+		auto measureEdits = [&] {
+			return measure( [&] {
+				for ( size_t operation = 0; operation < Operations; ++operation )
+					document.textInput( "x" );
+			} );
+		};
+		reportEvents( "inspector_unselected_", Event::OnSelectionChanged );
+		report( ( "inspector_unselected_edits_" + suffix ).c_str(), measureEdits(), Operations,
+				"ACTIVE" );
+		// Restore identical contents/caret before comparing observed and unobserved edits.
+		document.loadFromMemory( reinterpret_cast<const Uint8*>( text.data() ), text.size() );
+		document.setSelection( { 0, 0 } );
+		tree->setSelection( treeModel->getModelIndex( editor ) );
+		reportEvents( "inspector_selection_", Event::OnSelectionChanged, true );
+		reportEvents( "inspector_geometry_", Event::OnPositionChange, true );
+		reportEvents( "inspector_focus_", Event::OnFocus, true );
+		reportEvents( "inspector_text_", Event::OnTextChanged, true );
+		// Retain the historical control measurement without re-enabling automatic sizing in
+		// the production Inspector, which now uses proportional columns.
+		const bool autoColumnsWidth = table->getAutoColumnsWidth();
+		table->setAutoColumnsWidth( false );
+		reportEvents( "inspector_fixed_width_selection_", Event::OnSelectionChanged, true );
+		table->setAutoColumnsWidth( autoColumnsWidth );
+		auto* model = table->getModel();
+		ModelIndex valueIndex;
+		for ( size_t row = 0; row < model->rowCount(); ++row ) {
+			if ( model->data( model->index( row, 0 ), ModelRole::Display ).toString() ==
+				 "Value (preview)" ) {
+				valueIndex = model->index( row, 1 );
+			}
+		}
+		ASSERT_TRUE( valueIndex.isValid() );
+		const auto expected = text.substr( 0, 1024 ) + " … [truncated]";
+		const auto reads = measure( [&] {
+			for ( size_t operation = 0; operation < Operations; ++operation ) {
+				auto value = model->data( valueIndex, ModelRole::Display );
+				EXPECT_TRUE( value.asStdStringView() == expected );
+			}
+		} );
+		report( ( "inspector_value_reads_" + suffix ).c_str(), reads, Operations, "ACTIVE" );
+		EXPECT_EQ( reads.allocations, 0u );
+		// Actual edits include their selection notifications; synthetic events above isolate
+		// the Inspector's own cost without charging document editing to the table.
+		size_t refreshes = 0;
+		model->setOnUpdate( [&] { ++refreshes; } );
+		const auto edits = measureEdits();
+		report( ( "inspector_edits_" + suffix ).c_str(), edits, Operations, "ACTIVE" );
+		EXPECT_LT( edits.bytes / Operations, 131072u );
+		model->setOnUpdate( {} );
+		std::printf( "ACCESSIBILITY_ACTIVE inspector_refreshes_%zu per_edit=%.3f\n", bytes,
+					 static_cast<double>( refreshes ) / Operations );
+		EXPECT_TRUE( model->data( model->index( valueIndex.row(), 1 ), ModelRole::Display )
+						 .asStdStringView() == std::string( Operations, 'x' ) +
+												   text.substr( 0, 1024 - Operations ) +
+												   " … [truncated]" );
+		EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
+	}
+	// Source extraction must be bounded too: truncating after copying one huge line would
+	// escape the ordinary 100-byte-line fixtures above. Empty lines exercise the loop bound.
+	for ( bool longLine : { true, false } ) {
+		std::string text( longLine ? 10000000 : 100000, longLine ? 'a' : '\n' );
+		tree->setSelection( treeModel->getModelIndex( scene->getRoot() ) );
+		editor->getDocument().loadFromMemory( reinterpret_cast<const Uint8*>( text.data() ),
+											  text.size() );
+		// Selection also refreshes the separate Computed CSS panel, whose text property is
+		// the editor's full first line. Exclude that pre-existing path from this prefix guard.
+		tree->setSelection( treeModel->getModelIndex( editor ) );
+		const auto refreshed = measure( [&] { editor->sendCommonEvent( Event::OnTextChanged ); } );
+		report( longLine ? "inspector_prefix_long_line" : "inspector_prefix_empty_lines", refreshed,
+				1, "ACTIVE" );
+		EXPECT_LT( refreshed.bytes, 65536u );
+		auto* model = table->getModel();
+		bool found = false;
+		for ( size_t row = 0; row < model->rowCount(); ++row ) {
+			if ( model->data( model->index( row, 0 ), ModelRole::Display ).asStdStringView() ==
+				 "Value (preview)" ) {
+				found = true;
+				EXPECT_TRUE(
+					model->data( model->index( row, 1 ), ModelRole::Display ).asStdStringView() ==
+					text.substr( 0, 1024 ) + " … [truncated]" );
+			}
+		}
+		EXPECT_TRUE( found );
 	}
 }
 

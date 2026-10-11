@@ -381,6 +381,10 @@ are O(lines), using `TextDocument::getLineLengths()` to fill the existing length
 scoped read lock. Both the line container and shared line contents are locked once, with no
 per-line mutex calls or text copies. The modification id is returned inside that scope; no
 document state or dormant-edit work is added. Ordinary incremental edits still read one line.
+This is not an atomic revision/content transaction for concurrent ordinary edits: their revision
+increments precede acquisition of the mutation locks. Ordinary editing is UI-thread-owned; caches
+continue to invalidate after asynchronous loads rather than treating the returned revision as
+proof that an independently running edit has completed.
 Large insertions
 (over 64k code points), whole-text resets, missed/nested revisions and ambiguous edit shapes invalidate
 lazily. Revision increments precede mutation, so duplicate/same-revision callbacks validate affected
@@ -396,11 +400,22 @@ bindings. The store retains UUIDs and widget identities, not document pointers o
 widget pointers are never dereferenced there. Worker loads recover through the main-thread deferred
 whole-text notification and revision validation, not worker-side cache mutation.
 
-The Inspector's Accessibility table requests the value without text offsets: it never displays
-caret/selection offsets, so inspecting an editor does not create an unused index. Explicit offset
-queries without native clients still recover lazily on revision changes; they do not enable native
-notifications or bypass the dormant widget gates. No current tooling consumer needs continuous
-offset-index maintenance without a native client, so no additional observer or usage flag is added.
+Explicit offset queries without native clients still recover lazily on revision changes; they do
+not enable native notifications or bypass the dormant widget gates. No current tooling consumer needs
+continuous offset-index maintenance without a native client, so no additional observer or usage flag is added.
+
+The Inspector's Accessibility table requests metadata without full values or text offsets. Its editor
+Value preview reads only a bounded prefix under the document read lock, without constructing a text
+index; that table's column sizing never measures the full document. Non-text refreshes reuse the
+preview only while the document UUID/revision match and no load is in progress. Text and document lifecycle
+events invalidate it; incomplete loading snapshots are not cached. Text inputs are rechecked on
+every event so switching to password mode cannot reuse cached plaintext.
+
+Worker-originated Inspector refreshes use widget-owned main-thread actions holding a weak model
+reference and verifying the selected widget. Model strings are borrowed until invalidation rather
+than copied for every cell read. These are explicit tooling queries, not native-client activity;
+native backends still expose full values. Full accessible-value extraction in the Inspector is
+reserved for the user's **Copy full value** action, which skips incomplete/loading documents.
 
 ### 6. What survives a disconnection
 
