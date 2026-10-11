@@ -2065,6 +2065,25 @@ UTEST( Accessibility, RoleExposureChangesNotifyTheSemanticParent ) {
 	container->setAccessibilityRole( AccessibilityRole::Button );
 	EXPECT_TRUE( hasPendingEvent( manager, containerRef, AccessibilityEvent::ChildrenChanged ) );
 	EXPECT_EQ( manager->getChildCount( containerRef ), 0u );
+	// Plain nodes between a widget and its exposed ancestor are transparent: the group whose
+	// children change is notified, not the scene root, even through an unexposed widget.
+	auto* group = UIWidget::New();
+	group->setAccessibilityRole( AccessibilityRole::Group );
+	auto* plain = UINode::New();
+	plain->setParent( group );
+	auto* transparent = UIWidget::New();
+	transparent->setParent( plain );
+	auto* nested = UIWidget::New();
+	nested->setParent( transparent );
+	auto* nestedButton = UIPushButton::New();
+	nestedButton->setParent( nested );
+	const auto groupRef = manager->getNodeRef( group );
+	ASSERT_TRUE( manager->getChild( groupRef, 0 ) == manager->getNodeRef( nestedButton ) );
+	manager->clearPendingEvents();
+	nested->setAccessibilityRole( AccessibilityRole::Group );
+	EXPECT_TRUE( hasPendingEvent( manager, groupRef, AccessibilityEvent::ChildrenChanged ) );
+	EXPECT_FALSE( hasPendingEvent( manager, root, AccessibilityEvent::ChildrenChanged ) );
+	EXPECT_TRUE( manager->getChild( groupRef, 0 ) == manager->getNodeRef( nested ) );
 }
 
 UTEST( Accessibility, ColumnVisibilityInvalidatesCachedVirtualChildren ) {
@@ -2099,6 +2118,20 @@ UTEST( Accessibility, ColumnVisibilityInvalidatesCachedVirtualChildren ) {
 	manager->clearPendingEvents();
 	table->setColumnHidden( 1, false );
 	table->setColumnsHidden( { 0, 1 }, false );
+	EXPECT_TRUE( manager->getPendingEvents().empty() );
+	// Replacing the visible set also refreshes cached cells, keeping surviving identities.
+	table->setColumnsVisible( { 0 } );
+	EXPECT_TRUE( hasPendingEvent( manager, tableRef, AccessibilityEvent::ChildrenChanged ) );
+	EXPECT_EQ( manager->getChildCount( row ), 1u );
+	ASSERT_EQ( manager->getChildren( row ).size(), 1u );
+	EXPECT_TRUE( manager->getChild( row, 0 ) == firstCell );
+	manager->clearPendingEvents();
+	table->setColumnsVisible( { 0, 1 } );
+	EXPECT_TRUE( hasPendingEvent( manager, tableRef, AccessibilityEvent::ChildrenChanged ) );
+	ASSERT_EQ( manager->getChildren( row ).size(), 2u );
+	EXPECT_TRUE( manager->getChild( row, 1 ) == secondCell );
+	manager->clearPendingEvents();
+	table->setColumnsVisible( { 0, 1 } );
 	EXPECT_TRUE( manager->getPendingEvents().empty() );
 }
 

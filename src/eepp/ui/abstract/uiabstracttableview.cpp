@@ -965,6 +965,9 @@ void UIAbstractTableView::setColumnsVisible( const std::vector<size_t>& columns 
 		mMainColumn = columns[0];
 
 	createOrUpdateColumns( true );
+	// Unchanged column sets returned above. Like the other column setters, refresh the view's
+	// virtual cells and native clients' cached children.
+	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 }
 
 UITableRow* UIAbstractTableView::createRow() {

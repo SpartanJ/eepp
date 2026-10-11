@@ -322,8 +322,12 @@ void UIWidget::deliverAccessibilityEvent( AccessibilityEvent event ) {
 		return;
 	if ( target ) {
 		while ( target && !target->isAccessibilityElement() ) {
+			// Plain nodes are transparent, as in the manager's semantic parent lookup: keep
+			// walking to the nearest exposed widget instead of falling back to the scene root.
 			Node* parent = target->getParent();
-			target = parent && parent->isWidget() ? parent->asType<UIWidget>() : nullptr;
+			while ( parent && !parent->isWidget() )
+				parent = parent->getParent();
+			target = parent ? parent->asType<UIWidget>() : nullptr;
 		}
 		if ( !target )
 			target = mUISceneNode->getRoot();
