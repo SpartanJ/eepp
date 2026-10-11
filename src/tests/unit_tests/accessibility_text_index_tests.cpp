@@ -7,6 +7,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <future>
 #include <random>
+#include <utility>
 
 using namespace EE;
 using namespace EE::UI;
@@ -30,7 +31,9 @@ class IndexClient : public TextDocument::Client {
 			++earlyQueries;
 		}
 		if ( nested ) {
-			auto edit = std::move( nested );
+			// A moved-from std::function can retain a small callable in libc++. Clear the
+			// one-shot callback before invoking it so a nested edit cannot invoke it again.
+			auto edit = std::exchange( nested, nullptr );
 			edit();
 		}
 		index.changed( document, &change );
@@ -213,8 +216,14 @@ UTEST( AccessibilityTextIndex, DuplicateEarlyAndNestedCallbacksStayCorrect ) {
 	document.insert( 0, { 0, 0 }, "before\n" );
 	EXPECT_TRUE( matchesReference( document, index ) );
 	EXPECT_EQ( client.earlyQueries, 1u );
-	client.nested = [&] { document.insert( 0, { 0, 0 }, "nested\n" ); };
+	size_t nestedEdits = 0;
+	client.nested = [&] {
+		++nestedEdits;
+		document.insert( 0, { 0, 0 }, "nested\n" );
+	};
 	document.insert( 0, { 0, 0 }, "outer\n" );
+	EXPECT_EQ( nestedEdits, 1u );
+	EXPECT_FALSE( static_cast<bool>( client.nested ) );
 	EXPECT_TRUE( matchesReference( document, index ) );
 }
 
