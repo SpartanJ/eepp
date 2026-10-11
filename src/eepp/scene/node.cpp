@@ -17,15 +17,20 @@ namespace EE { namespace Scene {
 
 namespace {
 
-// Reorders unlink and relink without onParentChange(). Report the arrival only after the
-// new sibling links are in place; ordinary setParent() keeps its existing notification.
-void notifyAccessibilityReorder( Node* node ) {
-	if ( !node->isWidget() || node->isDestroying() )
+// Removal is reported before unlinking; arrivals after final links and inherited state are ready.
+// Widget reparenting reports its own arrival; plain nodes and reorders have no widget hook.
+// Embedded scenes have their own host-transition notifications and must not duplicate them here.
+void notifyAccessibilityParentChange( Node* node, bool removed = false ) {
+	if ( node->isDestroying() || node->isSceneNode() ||
+		 ( !node->isWidget() && !node->getFirstChild() ) )
 		return;
-	auto* widget = node->asType<UI::UIWidget>();
-	auto* scene = widget->getUISceneNode();
+	auto* nodeScene = node->getSceneNode();
+	auto* scene = node->isWidget() ? node->asType<UI::UIWidget>()->getUISceneNode()
+				  : nodeScene && nodeScene->isUISceneNode()
+					  ? static_cast<UI::UISceneNode*>( nodeScene )
+					  : nullptr;
 	if ( scene && scene->hasActiveAccessibilityClients() )
-		scene->getAccessibilityManager()->onWidgetParentChange( widget );
+		scene->getAccessibilityManager()->onNodeParentChange( node, removed );
 }
 
 } // namespace
@@ -453,7 +458,7 @@ Node* Node::toFront() {
 	if ( NULL != mParentNode && mParentNode->mChildLast != this ) {
 		mParentNode->childRemove( this );
 		mParentNode->childAdd( this );
-		notifyAccessibilityReorder( this );
+		notifyAccessibilityParentChange( this );
 	}
 	return this;
 }
@@ -724,7 +729,7 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 
 	eeASSERT( !( NULL == mChildLast && NULL != mChild ) );
 	if ( !reparenting )
-		notifyAccessibilityReorder( node );
+		notifyAccessibilityParentChange( node );
 	onChildCountChange( node, false );
 	if ( reparenting ) {
 		// Match setParent()'s lifecycle, but let scene and parent hooks see the final index.
@@ -745,12 +750,7 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 void Node::childRemove( Node* node ) {
 	// Capture the old semantic index before unlinking. Destroying widgets were already
 	// invalidated as a subtree and must not be accessed through their destroyed UIWidget part.
-	if ( node->isWidget() && !node->isDestroying() ) {
-		auto* widget = node->asType<UI::UIWidget>();
-		auto* scene = widget->getUISceneNode();
-		if ( scene && scene->hasActiveAccessibilityClients() )
-			scene->getAccessibilityManager()->onWidgetRemovedFromParent( widget );
-	}
+	notifyAccessibilityParentChange( node, true );
 	if ( node == mChild ) {
 		mChild = mChild->mNext;
 
@@ -1282,6 +1282,10 @@ void Node::sendEvent( const Event* event ) {
 
 void Node::onParentChange() {
 	invalidateDraw();
+	// UIWidget reports its arrival from its own hook. Plain nodes also move semantic subtrees,
+	// but have no widget hook; report once after their direction and final links are current.
+	if ( !isWidget() && mChild )
+		notifyAccessibilityParentChange( this );
 }
 
 void Node::onParentTreeChange() {

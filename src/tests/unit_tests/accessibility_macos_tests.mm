@@ -43,6 +43,63 @@ NSObject<NSAccessibility>* semanticRootForWindow( NSWindow* window ) {
 
 } // namespace
 
+UTEST( AccessibilityMacOS, PasswordModeTransitionsRevalidateRetainedTextElements ) {
+	UIApplication app( WindowSettings( 320, 240, "eepp - Password Accessibility Test",
+									   WindowStyle::Default | WindowStyle::Hidden ),
+					   UIApplication::Settings( Sys::getProcessPath() ) );
+	if ( !app.getUI() )
+		UTEST_SKIP( "a logged-in macOS graphical session is required" );
+	auto* scene = app.getUI();
+	auto* input = UITextInput::NewPassword();
+	input->setText( "secret" );
+	input->setParent( scene->getRoot() );
+	auto* manager = scene->getAccessibilityManager();
+	manager->update();
+	NSWindow* window = reinterpret_cast<NSWindow*>( scene->getWindow()->getWindowHandler() );
+	ASSERT_TRUE( window != nil );
+	NSObject<NSAccessibility>* root = semanticRootForWindow( window );
+	ASSERT_TRUE( root != nil );
+	NSArray* children = root.accessibilityChildren;
+	ASSERT_EQ( children.count, 1u );
+	NSObject<NSAccessibility>* element = children.firstObject;
+	const auto ref = manager->getNodeRef( input );
+	EXPECT_TRUE(
+		[element.accessibilitySubrole isEqualToString:NSAccessibilitySecureTextFieldSubrole] );
+	EXPECT_TRUE( element.isAccessibilityProtectedContent );
+	EXPECT_TRUE( element.accessibilityValue == nil );
+	EXPECT_TRUE( [element accessibilityStringForRange:NSMakeRange( 0, 6 )] == nil );
+	input->setMode( UITextInput::TextInputMode::Normal );
+	scene->update( Time::Zero );
+	EXPECT_TRUE( manager->getNodeRef( input ) == ref );
+	EXPECT_TRUE( root.accessibilityChildren.firstObject == element );
+	EXPECT_FALSE(
+		[element.accessibilitySubrole isEqualToString:NSAccessibilitySecureTextFieldSubrole] );
+	EXPECT_FALSE( element.isAccessibilityProtectedContent );
+	EXPECT_TRUE( [element.accessibilityValue isEqualToString:@"secret"] );
+	EXPECT_TRUE(
+		[[element accessibilityStringForRange:NSMakeRange( 0, 6 )] isEqualToString:@"secret"] );
+	EXPECT_TRUE( [[[element accessibilityAttributedStringForRange:NSMakeRange( 0, 6 )] string]
+		isEqualToString:@"secret"] );
+	element.accessibilitySelectedTextRange = NSMakeRange( 0, 6 );
+	EXPECT_TRUE( [element.accessibilitySelectedText isEqualToString:@"secret"] );
+	// The document revision has not changed. Protection must override the warm UTF-16 cache.
+	input->setMode( UITextInput::TextInputMode::Password );
+	scene->update( Time::Zero );
+	EXPECT_TRUE( manager->getNodeRef( input ) == ref );
+	EXPECT_TRUE( root.accessibilityChildren.firstObject == element );
+	EXPECT_TRUE(
+		[element.accessibilitySubrole isEqualToString:NSAccessibilitySecureTextFieldSubrole] );
+	EXPECT_TRUE( element.isAccessibilityProtectedContent );
+	EXPECT_TRUE( element.accessibilityValue == nil );
+	EXPECT_TRUE( element.accessibilitySelectedText == nil );
+	EXPECT_EQ( element.accessibilityNumberOfCharacters, 0 );
+	EXPECT_TRUE( [element accessibilityStringForRange:NSMakeRange( 0, 6 )] == nil );
+	EXPECT_TRUE( [element accessibilityAttributedStringForRange:NSMakeRange( 0, 6 )] == nil );
+	EXPECT_TRUE(
+		[element accessibilityAttributeValue:NSAccessibilityStringForRangeParameterizedAttribute
+								forParameter:[NSValue valueWithRange:NSMakeRange( 0, 6 )]] == nil );
+}
+
 UTEST( AccessibilityMacOS, ApplicationWindowBridgeIdentityActionTextAndLifecycle ) {
 	AccessibilityTestApplication app( WindowSettings( 320, 240, "eepp - macOS Accessibility Test" ),
 									  UIApplication::Settings( Sys::getProcessPath() ) );

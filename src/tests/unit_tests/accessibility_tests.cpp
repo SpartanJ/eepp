@@ -1603,6 +1603,201 @@ bool hasPendingEvent( const AccessibilityManager* manager, AccessibilityNodeRef 
 
 } // namespace
 
+UTEST( Accessibility, DirectionChangesPreserveSemanticIdentityAndGeometry ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* row = UILinearLayout::NewHorizontal();
+	row->setAccessibilityRole( AccessibilityRole::Group );
+	row->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	row->setPixelsSize( 280, 60 );
+	row->setParent( scene->getRoot() );
+	auto* button = UIPushButton::New();
+	button->setText( "Save" );
+	button->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	button->setPixelsSize( 60, 40 );
+	button->setParent( row );
+	auto* checkbox = UICheckBox::New();
+	checkbox->setText( "Autosave" );
+	checkbox->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	checkbox->setPixelsSize( 80, 40 );
+	checkbox->setParent( row );
+	checkbox->setChecked( true );
+	auto* manager = scene->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	button->setFocus();
+	scene->update( Time::Zero );
+	row->updateLayout();
+	const auto rowRef = manager->getNodeRef( row );
+	const auto buttonRef = manager->getNodeRef( button );
+	const auto checkboxRef = manager->getNodeRef( checkbox );
+	const auto children = manager->getChildren( rowRef );
+	const auto buttonInfo = manager->getNodeInfo( buttonRef );
+	const auto checkboxInfo = manager->getNodeInfo( checkboxRef );
+	const auto firstBounds = buttonInfo.bounds;
+	EXPECT_LT( firstBounds.Left, checkboxInfo.bounds.Left );
+	for ( auto direction : { UIDirection::RightToLeft, UIDirection::LeftToRight } ) {
+		recorder->events.clear();
+		scene->setDirection( direction );
+		scene->update( Time::Zero );
+		row->updateLayout();
+		EXPECT_TRUE( manager->isValid( buttonRef ) && manager->isValid( checkboxRef ) );
+		EXPECT_TRUE( manager->getNodeRef( button ) == buttonRef );
+		EXPECT_TRUE( manager->getNodeRef( checkbox ) == checkboxRef );
+		EXPECT_TRUE( manager->getParent( buttonRef ) == rowRef );
+		EXPECT_TRUE( manager->getChildren( rowRef ) == children );
+		EXPECT_TRUE( manager->getKeyboardFocusedNode() == buttonRef );
+		const auto currentButton = manager->getNodeInfo( buttonRef );
+		const auto currentCheckbox = manager->getNodeInfo( checkboxRef );
+		EXPECT_EQ( currentButton.role, buttonInfo.role );
+		EXPECT_TRUE( currentButton.name == buttonInfo.name );
+		EXPECT_EQ( currentButton.states, buttonInfo.states );
+		EXPECT_EQ( currentButton.actions, buttonInfo.actions );
+		EXPECT_EQ( currentCheckbox.role, checkboxInfo.role );
+		EXPECT_TRUE( currentCheckbox.name == checkboxInfo.name );
+		EXPECT_EQ( currentCheckbox.states, checkboxInfo.states );
+		EXPECT_EQ( currentCheckbox.actions, checkboxInfo.actions );
+		EXPECT_TRUE( currentButton.bounds == button->getWorldBounds() );
+		EXPECT_TRUE( currentCheckbox.bounds == checkbox->getWorldBounds() );
+		if ( direction == UIDirection::RightToLeft ) {
+			EXPECT_GT( currentButton.bounds.Left, currentCheckbox.bounds.Left );
+		} else {
+			EXPECT_TRUE( currentButton.bounds == firstBounds );
+		}
+		for ( const auto& event : recorder->events ) {
+			EXPECT_TRUE( event.type != AccessibilityEvent::Created &&
+						 event.type != AccessibilityEvent::Destroyed &&
+						 event.type != AccessibilityEvent::ChildrenChanged &&
+						 event.type != AccessibilityEvent::ModelChanged );
+		}
+	}
+}
+
+UTEST( Accessibility, DirectedReparentingPreservesFocusSelectionAndEventOrder ) {
+	class IndexedGroup : public UIWidget {
+	  public:
+		IndexedGroup() : UIWidget( "widget" ) {}
+
+		using Node::childAddAt;
+	};
+
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* ltr = eeNew( IndexedGroup, () );
+	ltr->setAccessibilityRole( AccessibilityRole::Group );
+	ltr->setDirection( UIDirection::LeftToRight );
+	auto* rtl = eeNew( IndexedGroup, () );
+	rtl->setAccessibilityRole( AccessibilityRole::Group );
+	rtl->setDirection( UIDirection::RightToLeft );
+	auto* bridge = Node::New();
+	bridge->setParent( ltr );
+	auto* button = UISelectButton::New();
+	button->setText( "Selected control" );
+	button->setParent( ltr );
+	button->select();
+	auto* manager = scene->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	button->setFocus();
+	const auto ref = manager->getNodeRef( button );
+	const auto ltrRef = manager->getNodeRef( ltr );
+	const auto rtlRef = manager->getNodeRef( rtl );
+	const auto info = manager->getNodeInfo( ref );
+	const auto move = [&]( Node* node, Node* destination, IndexedGroup* semanticParent,
+						   UIDirection direction, bool indexed = false ) {
+		const auto oldParent = manager->getParent( ref );
+		// Prime both children caches so a missed event cannot be hidden by a fresh traversal.
+		manager->getChildren( ltrRef );
+		manager->getChildren( rtlRef );
+		recorder->events.clear();
+		if ( indexed ) {
+			semanticParent->childAddAt( node, 0 );
+		} else {
+			node->setParent( destination );
+		}
+		EXPECT_EQ( button->getDirection(), direction );
+		EXPECT_TRUE( manager->isValid( ref ) );
+		EXPECT_TRUE( manager->getNodeRef( button ) == ref );
+		const auto newParent = manager->getNodeRef( semanticParent );
+		EXPECT_TRUE( manager->getParent( ref ) == newParent );
+		EXPECT_EQ( manager->getChildCount( oldParent ), 0u );
+		EXPECT_EQ( manager->getChildCount( newParent ), 1u );
+		EXPECT_TRUE( manager->getChild( newParent, 0 ) == ref );
+		EXPECT_TRUE( manager->getKeyboardFocusedNode() == ref );
+		EXPECT_TRUE( button->isSelected() );
+		const auto movedInfo = manager->getNodeInfo( ref );
+		EXPECT_EQ( movedInfo.role, info.role );
+		EXPECT_TRUE( movedInfo.name == info.name );
+		EXPECT_EQ( movedInfo.states, info.states );
+		EXPECT_EQ( movedInfo.actions, info.actions );
+		SmallVector<AccessibilityPendingEvent, 2> structural;
+		for ( const auto& event : recorder->events ) {
+			if ( event.type == AccessibilityEvent::Created ||
+				 event.type == AccessibilityEvent::Destroyed ) {
+				structural.push_back( event );
+			}
+		}
+		ASSERT_EQ( structural.size(), 2u );
+		EXPECT_EQ( structural[0].type, AccessibilityEvent::Destroyed );
+		EXPECT_TRUE( structural[0].ref == oldParent && structural[0].related == ref );
+		EXPECT_EQ( structural[0].index, 0 );
+		EXPECT_EQ( structural[1].type, AccessibilityEvent::Created );
+		EXPECT_TRUE( structural[1].ref == newParent && structural[1].related == ref );
+		EXPECT_EQ( structural[1].index, 0 );
+	};
+	move( button, rtl, rtl, UIDirection::RightToLeft );
+	move( button, bridge, ltr, UIDirection::LeftToRight );
+	// Moving a transparent plain-node subtree must notify for its semantic roots too.
+	move( bridge, rtl, rtl, UIDirection::RightToLeft );
+	move( bridge, ltr, ltr, UIDirection::LeftToRight );
+	move( bridge, rtl, rtl, UIDirection::RightToLeft, true );
+	move( bridge, ltr, ltr, UIDirection::LeftToRight, true );
+}
+
+UTEST( Accessibility, HitTestingFollowsMirroredLayoutGeometry ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* row = UILinearLayout::NewHorizontal();
+	row->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	row->setPixelsSize( 280, 60 );
+	auto* first = UIPushButton::New();
+	first->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	first->setPixelsSize( 140, 40 );
+	first->setParent( row );
+	auto* second = UIPushButton::New();
+	second->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	second->setPixelsSize( 140, 40 );
+	second->setParent( row );
+	auto* manager = scene->getAccessibilityManager();
+	manager->setBackend( std::make_unique<RecordingBackend>() );
+	manager->onNativeClientObserved();
+	scene->update( Time::Zero );
+	row->updateLayout();
+	const auto firstRef = manager->getNodeRef( first );
+	const auto secondRef = manager->getNodeRef( second );
+	const auto leftPoint = first->getWorldBounds().getCenter();
+	const auto rightPoint = second->getWorldBounds().getCenter();
+	EXPECT_TRUE( manager->hitTest( leftPoint ) == firstRef );
+	EXPECT_TRUE( manager->hitTest( rightPoint ) == secondRef );
+	scene->setDirection( UIDirection::RightToLeft );
+	scene->update( Time::Zero );
+	row->updateLayout();
+	EXPECT_TRUE( manager->hitTest( leftPoint ) == secondRef );
+	EXPECT_TRUE( manager->hitTest( rightPoint ) == firstRef );
+	scene->setDirection( UIDirection::LeftToRight );
+	scene->update( Time::Zero );
+	row->updateLayout();
+	EXPECT_TRUE( manager->hitTest( leftPoint ) == firstRef );
+	EXPECT_TRUE( manager->hitTest( rightPoint ) == secondRef );
+}
+
 UTEST( Accessibility, BackendsWithoutTextChangesSkipEditRecords ) {
 	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
 	ASSERT_NE( app.getUI(), nullptr );

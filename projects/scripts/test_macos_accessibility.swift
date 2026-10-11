@@ -313,7 +313,7 @@ func run() throws {
 	process.executableURL = executableURL
 	// This mode also selects QuitPolicy::OnLastWindowClosed, which is required to exercise
 	// primary-window removal while the secondary window remains alive.
-	process.arguments = ["--close-primary"]
+	process.arguments = ["--close-primary", "--test-password-mode"]
 	var environment = ProcessInfo.processInfo.environment
 	let executableDirectory = executableURL.deletingLastPathComponent().path
 	if let existing = environment["DYLD_LIBRARY_PATH"], !existing.isEmpty {
@@ -519,6 +519,71 @@ func run() throws {
 	try check(
 		stringAttribute(password, kAXValueAttribute as CFString) == nil,
 		"password field exposed its value")
+	guard let passwordToggle = findElement(
+		in: primary, role: kAXButtonRole, name: "Toggle password mode")
+	else {
+		try fail("could not find password-mode toggle fixture")
+	}
+	let passwordIdentifier = stringAttribute(password, kAXIdentifierAttribute as CFString)
+	// Keep this AX reference throughout both transitions, including after warming its text cache.
+	let retainedPassword = password
+	let passwordRange = try rangeValue(location: 0, length: 6)
+	func checkProtectedPassword() throws {
+		try check(
+			stringAttribute(retainedPassword, kAXSubroleAttribute as CFString)
+				== kAXSecureTextFieldSubrole,
+			"retained password element lost AXSecureTextField protection")
+		try check(
+			stringAttribute(retainedPassword, kAXValueAttribute as CFString) == nil
+				&& stringAttribute(retainedPassword, kAXSelectedTextAttribute as CFString) == nil,
+			"retained password element exposed plaintext")
+		for attribute in [
+			kAXStringForRangeParameterizedAttribute, kAXAttributedStringForRangeParameterizedAttribute,
+		] {
+			var value: CFTypeRef?
+			let error = AXUIElementCopyParameterizedAttributeValue(
+				retainedPassword, attribute as CFString, passwordRange, &value)
+			try check(error != .success || value == nil, "password exposed \(attribute)")
+		}
+	}
+	try checkProtectedPassword()
+	try observe(observer, password, kAXValueChangedNotification as CFString, recorder)
+	for secure in [false, true] {
+		let eventStart = recorder.events.count
+		try perform(passwordToggle, kAXPressAction as CFString)
+		let _: Bool = try waitFor("password-mode value notification", timeout: arguments.timeout) {
+			recorder.contains(
+				kAXValueChangedNotification as CFString, target: retainedPassword, since: eventStart)
+				? true : nil
+		}
+		try check(
+			stringAttribute(retainedPassword, kAXIdentifierAttribute as CFString) == passwordIdentifier,
+			"password-mode transition changed the element identity")
+		guard let currentPassword = findElement(
+			in: primary, role: kAXTextFieldRole, name: "Account password")
+		else {
+			try fail("password-mode transition removed the field")
+		}
+		try check(CFEqual(currentPassword, retainedPassword), "password reference was replaced")
+		if secure {
+			try checkProtectedPassword()
+		} else {
+			try check(
+				stringAttribute(retainedPassword, kAXSubroleAttribute as CFString)
+					!= kAXSecureTextFieldSubrole,
+				"normal field retained its secure subrole")
+			try check(
+				stringAttribute(retainedPassword, kAXValueAttribute as CFString) == "secret",
+				"normal field did not expose its value")
+			let text = try parameterizedAttribute(
+				retainedPassword, kAXStringForRangeParameterizedAttribute as CFString, passwordRange)
+			try check((text as? String) == "secret", "normal field text range was incorrect")
+			try setAttribute(retainedPassword, kAXSelectedTextRangeAttribute as CFString, passwordRange)
+			try check(
+				stringAttribute(retainedPassword, kAXSelectedTextAttribute as CFString) == "secret",
+				"normal field selected text was incorrect")
+		}
+	}
 
 	guard let lightTheme = findElement(
 		in: primary, role: kAXRadioButtonRole, name: "Light Theme")

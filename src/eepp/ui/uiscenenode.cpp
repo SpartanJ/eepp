@@ -1459,7 +1459,7 @@ UISceneNode* UISceneNode::setAccessibilityPolicy( AccessibilityPolicy policy ) {
 		// A policy-only callback need not dirty the scene. Ensure an event-driven application
 		// gets another update instead of sleeping indefinitely with the reset pending.
 		if ( !mAccessibilityManager->mHasDeferredPolicy )
-			Window::Input::wakeUpEventLoop();
+			EE::Window::Input::wakeUpEventLoop();
 		mAccessibilityManager->mHasDeferredPolicy = true;
 		return this;
 	}

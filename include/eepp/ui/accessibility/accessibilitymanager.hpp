@@ -152,6 +152,10 @@ class EE_API AccessibilityManager {
 
 	void onWidgetRemovedFromParent( UIWidget* widget );
 
+	/** Reports a reparent/reorder edge for the exposed roots of a widget or plain-node subtree.
+	 * Removal is reported while the old parent links are intact; arrival after final relinking. */
+	void onNodeParentChange( Scene::Node* node, bool removed );
+
 	/** Returns whether the widget owned a model source that has now been released. */
 	bool onWidgetAccessibilitySourceDelete( UIWidget* widget );
 
@@ -243,10 +247,10 @@ class EE_API AccessibilityManager {
 
 	void invalidateChildren();
 
-	AccessibilityNodeRef getWidgetParent( UIWidget* widget );
+	AccessibilityNodeRef getWidgetParent( Scene::Node* node );
 
 	/** Reports the exposed roots of an arriving/departing transparent subtree. */
-	void onSemanticSubtreeChange( UIWidget* widget, bool removed );
+	void onSemanticSubtreeChange( Scene::Node* node, bool removed );
 
 	/** Returns whether any identity or model source in the subtree was released. */
 	bool removeSubtreeIdentities( Scene::Node* node );

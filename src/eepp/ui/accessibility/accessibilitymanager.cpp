@@ -272,18 +272,19 @@ AccessibilityNodeRef AccessibilityManager::getParent( AccessibilityNodeRef ref )
 	return getWidgetParent( resolve( ref ) );
 }
 
-AccessibilityNodeRef AccessibilityManager::getWidgetParent( UIWidget* widget ) {
+AccessibilityNodeRef AccessibilityManager::getWidgetParent( Scene::Node* node ) {
 	// Resolves the semantic parent without registering the widget itself, so callers handling a
 	// widget no client has seen do not allocate an identity only to tear it down again.
-	if ( !widget || widget == mScene->getRoot() )
+	if ( !node || node == mScene->getRoot() )
 		return {};
+	auto* widget = node->isWidget() ? node->asType<UIWidget>() : nullptr;
 	// A cell editor hangs below the virtual row or cell it edits, not below its cell widget.
-	if ( auto* source = sourceFor( editedModelView( widget ) ) ) {
+	if ( auto* source = sourceFor( widget ? editedModelView( widget ) : nullptr ) ) {
 		auto host = source->getEmbeddedWidgetParent( widget );
 		if ( host.isValid() )
 			return host;
 	}
-	for ( Node* parent = widget->getParent(); parent; parent = parent->getParent() ) {
+	for ( Node* parent = node->getParent(); parent; parent = parent->getParent() ) {
 		if ( parent->isDestroying() )
 			return {};
 		if ( parent == mScene->getRoot() )
@@ -747,23 +748,33 @@ void AccessibilityManager::onRelationSubtreeChanged( const Scene::Node* subtree,
 }
 
 void AccessibilityManager::onWidgetParentChange( UIWidget* widget ) {
-	if ( !widget )
-		return;
-	// An arriving label renames the controls it labels, whatever its own exposure.
-	onRelationSubtreeChanged( widget, false );
-	onSemanticSubtreeChange( widget, false );
+	onNodeParentChange( widget, false );
 }
 
 void AccessibilityManager::onWidgetRemovedFromParent( UIWidget* widget ) {
-	onRelationSubtreeChanged( widget, true );
-	onSemanticSubtreeChange( widget, true );
+	onNodeParentChange( widget, true );
 }
 
-void AccessibilityManager::onSemanticSubtreeChange( UIWidget* widget, bool removed ) {
-	if ( !widget || !hasActiveClients() || isModelViewImplementationChild( widget ) ||
-		 AccessibilityWidgetResolver::getLeafOwner( widget ) ||
-		 AccessibilityWidgetResolver::isHiddenFromAccessibility( widget ) )
+void AccessibilityManager::onNodeParentChange( Scene::Node* node, bool removed ) {
+	if ( !node || !hasActiveClients() )
 		return;
+	// Relation targets are independent of their own exposure, including below plain nodes.
+	onRelationSubtreeChanged( node, removed );
+	onSemanticSubtreeChange( node, removed );
+}
+
+void AccessibilityManager::onSemanticSubtreeChange( Scene::Node* subtree, bool removed ) {
+	if ( !subtree || !hasActiveClients() || isModelViewImplementationChild( subtree ) ||
+		 AccessibilityWidgetResolver::getLeafOwner( subtree ) )
+		return;
+	Node* visibilityNode = subtree;
+	while ( visibilityNode && !visibilityNode->isWidget() )
+		visibilityNode = visibilityNode->getParent();
+	if ( visibilityNode && AccessibilityWidgetResolver::isHiddenFromAccessibility(
+							   visibilityNode->asType<UIWidget>() ) ) {
+		return;
+	}
+	auto* widget = subtree->isWidget() ? subtree->asType<UIWidget>() : nullptr;
 	// The previous addition's index survives an append right after it, and any change under
 	// another semantic parent: widgets are created under the scene root, then reparented.
 	auto* lastAdded = mLastAddedWidget;
@@ -775,7 +786,7 @@ void AccessibilityManager::onSemanticSubtreeChange( UIWidget* widget, bool remov
 	Int32 index = -1;
 	bool first = true;
 	AccessibilityNodeRef parent;
-	visitNodes( widget, [&]( Node* node ) {
+	visitNodes( subtree, [&]( Node* node ) {
 		if ( node->isDestroying() )
 			return false;
 		if ( !node->isWidget() )
@@ -800,7 +811,7 @@ void AccessibilityManager::onSemanticSubtreeChange( UIWidget* widget, bool remov
 		}
 		if ( first ) {
 			// Resolve the parent lazily: an empty transparent layout needs no new identity.
-			parent = getWidgetParent( widget );
+			parent = getWidgetParent( subtree );
 			if ( !removed && child == widget && lastAdded && widget->getPrevNode() == lastAdded &&
 				 parent == lastAddedParent ) {
 				// Appending right after the previous addition, with no change to this parent
@@ -825,14 +836,15 @@ void AccessibilityManager::onSemanticSubtreeChange( UIWidget* widget, bool remov
 	// index. Otherwise keep the previous hint when this change cannot have shifted it: under
 	// another parent, or after it (a new widget leaving its temporary place under the root).
 	// The remembered widget is alive while it holds an identity.
-	if ( !removed && parent.isValid() && index >= 0 && widget->isAccessibilityElement() ) {
+	if ( !removed && parent.isValid() && index >= 0 && widget &&
+		 widget->isAccessibilityElement() ) {
 		mLastAddedWidget = widget;
 		mLastAddedIndex = index;
 		mLastAddedParent = parent;
 	} else if ( lastAdded && mWidgetIds.find( lastAdded ) != mWidgetIds.end() ) {
 		if ( first )
-			parent = getWidgetParent( widget );
-		if ( parent != lastAddedParent || isLastAfter( widget, lastAdded ) ) {
+			parent = getWidgetParent( subtree );
+		if ( parent != lastAddedParent || isLastAfter( subtree, lastAdded ) ) {
 			mLastAddedWidget = lastAdded;
 			mLastAddedIndex = lastAddedIndex;
 			mLastAddedParent = lastAddedParent;

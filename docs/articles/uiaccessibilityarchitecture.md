@@ -203,8 +203,8 @@ alive until the native call has replied. Reentrant scene updates do not recursiv
 the same backend. Changing policy outside accessibility dispatch remains immediate.
 
 Hit testing descends exposed containers such as groups and windows; only leaf controls and
-model views stop traversal into implementation children. When a transparent layout is moved,
-the manager invalidates both semantic parents and reports the layout's exposed descendants,
+model views stop traversal into implementation children. When a transparent layout or plain-node
+subtree is moved, the manager invalidates both semantic parents and reports its exposed descendants,
 preserving their identities within one scene. Their indices are found with one parent scan.
 A widget appended right after the previously added one takes the next index without a scan,
 so populating a container with a client attached stays linear. Property changes (name, value,
