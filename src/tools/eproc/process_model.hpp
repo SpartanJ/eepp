@@ -83,7 +83,13 @@ class ProcessModel : public Model {
 					  const ModelIndex& parent = ModelIndex() ) const override;
 
 	/** Replaces the snapshot and notifies the views. UI thread only. */
-	void applySnapshot( std::vector<ProcessInfo>&& processes, const SystemInfo& sysInfo );
+	void applySnapshot( std::vector<ProcessInfo>&& processes, const SystemInfo& sysInfo,
+						bool familyMemoryReady = true,
+						const std::vector<ProportionalMemorySample>& memory = {} );
+
+	/** Applies completed, PID-sorted startup PSS samples to matching live incarnations without
+	 *  advancing CPU/performance history or aging ended processes. UI thread only. */
+	void applyProportionalMemory( const std::vector<ProportionalMemorySample>& memory );
 
 	void setFilter( FilterMode mode );
 
@@ -130,6 +136,9 @@ class ProcessModel : public Model {
 	explicit ProcessModel( UISceneNode* ui );
 
 	void applyFilters();
+
+	static bool mergeProportionalMemory( std::vector<ProcessInfo>& processes,
+										 const std::vector<ProportionalMemorySample>& memory );
 
 	void buildFamilyMemory( std::vector<ProcessInfo>& processes );
 

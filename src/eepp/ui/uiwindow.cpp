@@ -251,7 +251,8 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 
 UIWindow::~UIWindow() {
 	mClosing = true;
-	if ( NULL != getUISceneNode() && !SceneManager::instance()->isShuttingDown() ) {
+	if ( NULL != getUISceneNode() && !getUISceneNode()->isClosing() &&
+		 !SceneManager::instance()->isShuttingDown() ) {
 		if ( NULL != mModalNode ) {
 			mModalNode->setEnabled( false );
 			mModalNode->setVisible( false );
@@ -520,7 +521,9 @@ void UIWindow::drawHighlightInvalidation() {
 void UIWindow::drawShadow() {
 	UIWidget::matrixSet();
 	Primitives p;
-	Color shadowColor( mShadowColor.blendAlpha( getAlpha() ) );
+	// Opacity changes per frame; preserve the configured color across window fades.
+	Color shadowColor( mShadowColor );
+	shadowColor.blendAlpha( getAlpha() );
 	Float shadowSize = convertLength( mShadowSize, mSize.getWidth() );
 	Rectf windowRect( mScreenPos, mSize );
 	p.setColor( shadowColor );

@@ -2,6 +2,7 @@
 #define EPROC_PROCESS_COLLECTOR_HPP
 
 #include "process_info.hpp"
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -26,6 +27,12 @@ struct SystemInfo {
 	Int64 getUsedSwapKB() const { return totalSwap - freeSwap; }
 };
 
+struct ProportionalMemorySample {
+	Int64 pid{ 0 };
+	Int64 startTime{ 0 };
+	Int64 valueKB{ -1 };
+};
+
 class ProcessCollector {
   public:
 	virtual ~ProcessCollector() = default;
@@ -35,6 +42,17 @@ class ProcessCollector {
 	 *  usage is derived from the delta against the previous sample held by the instance.
 	 *  @return true on success. */
 	virtual bool collect( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo ) = 0;
+
+	using InitialSnapshotCallback = std::function<void( std::vector<ProcessInfo>&&, SystemInfo&& )>;
+
+	/** Startup snapshot. Platforms may publish the base snapshot before expensive accounting
+	 *  completes. In that case processes/system data move into publishBase and the completed,
+	 *  PID-sorted memory samples are returned separately. All callbacks run on the owner thread. */
+	virtual bool collectInitial( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo,
+								 const InitialSnapshotCallback& = {},
+								 std::vector<ProportionalMemorySample>* = nullptr ) {
+		return collect( processes, sysInfo );
+	}
 
 	/** Enables the optional, more expensive proportional-memory reading where available. */
 	virtual void setCollectProportionalMemory( bool ) {}

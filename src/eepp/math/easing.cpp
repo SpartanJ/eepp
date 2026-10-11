@@ -1,5 +1,6 @@
 #include <eepp/math/easing.hpp>
-#include <cstddef>
+#include <algorithm>
+#include <cmath>
 
 namespace EE { namespace Math { namespace easing {
 
@@ -40,60 +41,34 @@ easingCbFunc easingCb[] = { linearInterpolation,
 /**
  * https://github.com/gre/bezier-easing
  * BezierEasing - use bezier curve for transition easing function
- * by Gaëtan Renaudeau 2014 - 2015 – MIT License
+ * by Gaëtan Renaudeau 2014 - 2026 – MIT License
  */
-#define NEWTON_ITERATIONS 4
-#define NEWTON_MIN_SLOPE 0.001
-#define SUBDIVISION_PRECISION 0.0000001
-#define SUBDIVISION_MAX_ITERATIONS 10
-#define kSplineTableSize 11
-#define kSampleStepSize ( 1.0 / ( kSplineTableSize - 1.0 ) )
 
-double A( double aA1, double aA2 ) {
-	return 1.0 - 3.0 * aA2 + 3.0 * aA1;
-}
-double B( double aA1, double aA2 ) {
-	return 3.0 * aA2 - 6.0 * aA1;
-}
-double C( double aA1 ) {
-	return 3.0 * aA1;
-}
-
-// Returns x(t) given t, x1, and x2, or y(t) given t, y1, and y2.
-double calcBezier( double aT, double aA1, double aA2 ) {
-	return ( ( A( aA1, aA2 ) * aT + B( aA1, aA2 ) ) * aT + C( aA1 ) ) * aT;
-}
-
-// Returns dx/dt given t, x1, and x2, or dy/dt given t, y1, and y2.
-double getSlope( double aT, double aA1, double aA2 ) {
-	return 3.0 * A( aA1, aA2 ) * aT * aT + 2.0 * B( aA1, aA2 ) * aT + C( aA1 );
-}
-
-double binarySubdivide( double aX, double aA, double aB, double mX1, double mX2 ) {
-	double currentX, currentT;
-	std::size_t i = 0;
-	do {
-		currentT = aA + ( aB - aA ) / 2.0;
-		currentX = calcBezier( currentT, mX1, mX2 ) - aX;
-		if ( currentX > 0.0 ) {
-			aB = currentT;
-		} else {
-			aA = currentT;
-		}
-	} while ( eeabs( currentX ) > SUBDIVISION_PRECISION && ++i < SUBDIVISION_MAX_ITERATIONS );
-	return currentT;
-}
-
-double newtonRaphsonIterate( double aX, double aGuessT, double mX1, double mX2 ) {
-	for ( std::size_t i = 0; i < NEWTON_ITERATIONS; ++i ) {
-		double currentSlope = getSlope( aGuessT, mX1, mX2 );
-		if ( currentSlope == 0.0 ) {
-			return aGuessT;
-		}
-		double currentX = calcBezier( aGuessT, mX1, mX2 ) - aX;
-		aGuessT -= currentX / currentSlope;
+// Solves x(t) = ((2a * t + 3b) * t + 3c) * t = x for t, with x in (0, 1):
+// u = 1/t is the largest real root of x·u³ − 3c·u² − 3b·u − 2a = 0
+static double solveTForX( double x, double a, double b, double c ) {
+	double j = 1 / std::max( c, std::sqrt( x ) );
+	double k = x * j;
+	double l = k * j;
+	double s = c * j;
+	double q = b * l;
+	double m = s * s + q;
+	double h = -s * ( s * s + 1.5 * q ) - a * k * l;
+	double D = h * h - m * m * m;
+	double v;
+	if ( m == 0 || D > 1e-12 * h * h ) {
+		// one real root (Cardano)
+		double U = -std::cbrt( h < 0 ? h - std::sqrt( D ) : h + std::sqrt( D ) );
+		v = U + m / U;
+		// triple root (m = h = 0) gives NaN
+		if ( std::isnan( v ) )
+			v = 0;
+	} else {
+		// three real roots, take the largest
+		double r = std::sqrt( m );
+		v = 2 * r * std::cos( std::acos( std::max( -1.0, std::min( 1.0, -h / ( m * r ) ) ) ) / 3 );
 	}
-	return aGuessT;
+	return std::min( 1.0, k / ( v + s ) );
 }
 
 double cubicBezierInterpolation( double x1, double y1, double x2, double y2, double t ) {
@@ -103,41 +78,17 @@ double cubicBezierInterpolation( double x1, double y1, double x2, double y2, dou
 	if ( x1 == y1 && x2 == y2 )
 		return t;
 
-	// Precompute samples table
-	double sampleValues[kSplineTableSize];
-	for ( std::size_t i = 0; i < kSplineTableSize; ++i )
-		sampleValues[i] = calcBezier( i * kSampleStepSize, x1, x2 );
-
-	auto getTForX = [&sampleValues, x1, x2]( double aX ) {
-		double intervalStart = 0.0;
-		std::size_t currentSample = 1;
-		double lastSample = kSplineTableSize - 1;
-
-		for ( ; currentSample != lastSample && sampleValues[currentSample] <= aX;
-			  ++currentSample ) {
-			intervalStart += kSampleStepSize;
-		}
-		--currentSample;
-
-		// Interpolate to provide an initial guess for t
-		double dist = ( aX - sampleValues[currentSample] ) /
-					  ( sampleValues[currentSample + 1] - sampleValues[currentSample] );
-		double guessForT = intervalStart + dist * kSampleStepSize;
-
-		double initialSlope = getSlope( guessForT, x1, x2 );
-		if ( initialSlope >= NEWTON_MIN_SLOPE ) {
-			return newtonRaphsonIterate( aX, guessForT, x1, x2 );
-		} else if ( initialSlope == 0.0 ) {
-			return guessForT;
-		} else {
-			return binarySubdivide( aX, intervalStart, intervalStart + kSampleStepSize, x1, x2 );
-		}
-	};
-
-	// Because JavaScript number are imprecise, we should guarantee the extremes are right.
-	if ( t == 0 || t == 1 )
+	// t outside (0, 1) saturates to 0 / 1, NaN stays NaN
+	if ( std::isnan( t ) )
 		return t;
-	return calcBezier( getTForX( t ), y1, y2 );
+	if ( t <= 0 )
+		return 0;
+	if ( t >= 1 )
+		return 1;
+
+	// x(t) = ((2a * t + 3b) * t + 3c) * t with a = (3x1 - 3x2 + 1) / 2, b = x2 - 2x1, c = x1
+	double u = solveTForX( t, ( 3 * x1 - 3 * x2 + 1 ) / 2, x2 - 2 * x1, x1 );
+	return ( ( ( 3 * y1 - 3 * y2 + 1 ) * u + 3 * ( y2 - 2 * y1 ) ) * u + 3 * y1 ) * u;
 }
 
 }}} // namespace EE::Math::easing

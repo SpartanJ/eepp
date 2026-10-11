@@ -210,6 +210,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 }
 
 UISceneNode::~UISceneNode() {
+	mNodeFlags |= NODE_FLAG_CLOSE;
 	onClose();
 	if ( mAsyncResourceLoadState ) {
 		mAsyncResourceLoadState->owner.store( nullptr, std::memory_order_release );

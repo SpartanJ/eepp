@@ -16,6 +16,10 @@ class ProcessCollectorLinux : public ProcessCollector {
 
 	bool collect( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo ) override;
 
+	bool collectInitial( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo,
+						 const InitialSnapshotCallback& publishBase = {},
+						 std::vector<ProportionalMemorySample>* memory = nullptr ) override;
+
 	void setCollectProportionalMemory( bool enabled ) override {
 		mCollectProportionalMemory = enabled;
 	}
@@ -23,6 +27,8 @@ class ProcessCollectorLinux : public ProcessCollector {
 	bool supportsProgramsOnly() const override { return true; }
 
   private:
+	friend struct ProcessCollectorLinuxTestAccess;
+
 	// Cached per-uid identity, since passwd lookups can hit NSS.
 	struct UserInfo {
 		std::string name;
@@ -48,7 +54,8 @@ class ProcessCollectorLinux : public ProcessCollector {
 	struct PssEntry {
 		Int64 value{ -1 };
 		long long startTime{ 0 };
-		Uint32 seenPass{ 0 };
+		// Last pass observing this incarnation, even when PSS collection is disabled.
+		Uint32 alivePass{ 0 };
 	};
 
 	// KiB per memory page (e.g. 4 for a 4096-byte page size)
@@ -88,6 +95,8 @@ class ProcessCollectorLinux : public ProcessCollector {
 	void readSystemMemory( SystemInfo& sysInfo );
 	void readSystemUptime( SystemInfo& sysInfo );
 	void resolveUser( ProcessInfo& proc );
+	void collectProcessPss( ProcessInfo& proc );
+
 	void pruneCaches();
 
 	/** Cached passwd lookup for a uid (name + login-shell capability). */

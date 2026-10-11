@@ -289,6 +289,31 @@ ModelIndex ProcessModel::index( int row, int column, const ModelIndex& ) const {
 	return createIndex( row, column );
 }
 
+bool ProcessModel::mergeProportionalMemory( std::vector<ProcessInfo>& processes,
+											const std::vector<ProportionalMemorySample>& memory ) {
+	bool updated = false;
+	for ( auto& process : processes ) {
+		if ( process.status == ProcessStatus::Ended )
+			continue;
+		const auto sample =
+			std::lower_bound( memory.begin(), memory.end(), process.pid,
+							  []( const auto& sample, Int64 pid ) { return sample.pid < pid; } );
+		if ( sample != memory.end() && sample->pid == process.pid &&
+			 sample->startTime == process.startTime ) {
+			process.vmPSS = sample->valueKB;
+			updated = true;
+		}
+	}
+	return updated;
+}
+
+void ProcessModel::applyProportionalMemory( const std::vector<ProportionalMemorySample>& memory ) {
+	if ( !mergeProportionalMemory( mProcesses, memory ) )
+		return;
+	buildFamilyMemory( mProcesses );
+	onModelUpdate();
+}
+
 void ProcessModel::buildFamilyMemory( std::vector<ProcessInfo>& processes ) {
 	const size_t count = processes.size();
 	mFamilyRowForPid.clear();
@@ -299,6 +324,8 @@ void ProcessModel::buildFamilyMemory( std::vector<ProcessInfo>& processes ) {
 	mFamilyQueue.reserve( count );
 	for ( size_t row = 0; row < count; ++row ) {
 		auto& process = processes[row];
+		if ( process.status == ProcessStatus::Ended )
+			continue;
 		mFamilyRowForPid.emplace( process.pid, static_cast<int>( row ) );
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 		// Zombies have no address space, so smaps_rollup is unavailable but their PSS is zero.
@@ -309,7 +336,8 @@ void ProcessModel::buildFamilyMemory( std::vector<ProcessInfo>& processes ) {
 	}
 	for ( size_t row = 0; row < count; ++row ) {
 		const auto& process = processes[row];
-		if ( process.parentPid <= 0 || process.parentPid == process.pid )
+		if ( process.status == ProcessStatus::Ended || process.parentPid <= 0 ||
+			 process.parentPid == process.pid )
 			continue;
 		auto parent = mFamilyRowForPid.find( process.parentPid );
 		if ( parent == mFamilyRowForPid.end() )
@@ -318,7 +346,7 @@ void ProcessModel::buildFamilyMemory( std::vector<ProcessInfo>& processes ) {
 		++mFamilyPendingChildren[parent->second];
 	}
 	for ( size_t row = 0; row < count; ++row ) {
-		if ( mFamilyPendingChildren[row] == 0 )
+		if ( processes[row].status != ProcessStatus::Ended && mFamilyPendingChildren[row] == 0 )
 			mFamilyQueue.push_back( row );
 	}
 	for ( size_t head = 0; head < mFamilyQueue.size(); ++head ) {
@@ -339,9 +367,19 @@ void ProcessModel::buildFamilyMemory( std::vector<ProcessInfo>& processes ) {
 	}
 }
 
-void ProcessModel::applySnapshot( std::vector<ProcessInfo>&& processes,
-								  const SystemInfo& sysInfo ) {
-	buildFamilyMemory( processes );
+void ProcessModel::applySnapshot( std::vector<ProcessInfo>&& processes, const SystemInfo& sysInfo,
+								  bool familyMemoryReady,
+								  const std::vector<ProportionalMemorySample>& memory ) {
+	if ( !memory.empty() )
+		mergeProportionalMemory( processes, memory );
+	if ( familyMemoryReady ) {
+		buildFamilyMemory( processes );
+	} else {
+		// A base snapshot is usable immediately, but partial family totals (including zero-RSS
+		// members) stay blank until the startup accounting scan has completed.
+		for ( auto& process : processes )
+			process.familyMemoryKB = -1;
+	}
 	// Keep processes that disappeared from the latest snapshot for one more update. This mirrors
 	// ksysguard's Ended state and is especially useful when a process exits between two refreshes:
 	// its last known row remains visible, but is marked as ended by the view.

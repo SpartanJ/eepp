@@ -80,6 +80,10 @@ class EE_API UIWebView : public UIScrollView {
 
 	virtual const UITextSelectionController* getTextSelectionController() const;
 
+	/** Loads an embedded <html> child into the isolated document scene. Relative document
+	 * resources use the containing scene's URI. Other children are not loaded as host widgets. */
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
+
 	void loadURI( URI uri );
 
 	void loadURI( URI uri, const std::string& method, const std::string& body,
@@ -181,7 +185,11 @@ class EE_API UIWebView : public UIScrollView {
 	virtual void onScrollViewSizeChange( const Event* event );
 
 	void loadDocumentData( URI url, std::string data );
+
 	void loadDocumentData( URI url, std::string data, Uint64 generation );
+
+	void loadDocumentData( URI url, std::string data, Uint64 generation, bool documentIsXML );
+
 	void
 	loadDocumentAsync( const URI& url, const std::string& method = "GET",
 					   const std::string& body = "",

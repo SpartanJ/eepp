@@ -245,7 +245,7 @@
         "working_dir": "${project_root}/bin"
       },
       {
-        "args": "-u",
+        "args": "",
         "command": "${project_root}/bin/eepp-UIEditor-debug",
         "name": "eepp-UIEditor-debug",
         "working_dir": "${project_root}/bin"

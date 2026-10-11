@@ -161,6 +161,7 @@ UIWebView* UIWebView::New() {
 }
 
 UIWebView::UIWebView() : UIScrollView( "webview" ) {
+	mFlags |= UI_LOADS_ITS_CHILDREN;
 	mTextSelectionController.setHost( this );
 	mNavigationLoadState = std::make_shared<NavigationLoadState>();
 	mNavigationLoadState->owner = this;
@@ -243,6 +244,33 @@ UITextSelectionController* UIWebView::getTextSelectionController() {
 
 const UITextSelectionController* UIWebView::getTextSelectionController() const {
 	return &mTextSelectionController;
+}
+
+void UIWebView::loadFromXmlNode( const pugi::xml_node& node ) {
+	UIScrollView::loadFromXmlNode( node );
+	for ( auto child : node.children() ) {
+		if ( !String::iequals( child.name(), "html" ) )
+			continue;
+		struct HTMLWriter : pugi::xml_writer {
+			std::string data;
+
+			void write( const void* buffer, size_t size ) override {
+				data.append( static_cast<const char*>( buffer ), size );
+			}
+		};
+		HTMLWriter writer;
+		child.print( writer, "", pugi::format_raw );
+		const Uint64 generation = beginNavigationLoad();
+		mIsLoading = true;
+		mTitle.clear();
+		URI uri = getUISceneNode()->getURI();
+		NavigationEvent event( this, Event::OnNavigationStarted, uri, true );
+		sendEvent( &event );
+		// This subtree is already XML. Re-parsing it as HTML would turn CSS CDATA into raw text
+		// and leave escaped entities in style/script elements undecoded.
+		loadDocumentData( std::move( uri ), std::move( writer.data ), generation, true );
+		return;
+	}
 }
 
 Uint32 UIWebView::onKeyDown( const KeyEvent& event ) {
@@ -409,6 +437,11 @@ void UIWebView::loadDocumentData( URI url, std::string data ) {
 }
 
 void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation ) {
+	loadDocumentData( std::move( url ), std::move( data ), generation, false );
+}
+
+void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation,
+								  bool documentIsXML ) {
 	if ( !isNavigationLoadCurrent( generation ) )
 		return;
 
@@ -421,8 +454,8 @@ void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation )
 	}
 
 	std::weak_ptr<NavigationLoadState> loadState( mNavigationLoadState );
-	ensureMainThread( [loadState, generation, url = std::move( url ),
-					   data = std::move( data )]() mutable {
+	ensureMainThread( [loadState, generation, url = std::move( url ), data = std::move( data ),
+					   documentIsXML]() mutable {
 		UIWebView* self = resolveNavigationLoad( loadState, generation );
 		if ( !self )
 			return;
@@ -444,7 +477,8 @@ void UIWebView::loadDocumentData( URI url, std::string data, Uint64 generation )
 		ui->getStyleSheet().removeAllWithoutMarker( self->mStyleSheetDefaultMarker );
 		ui->setURIFromURL( url );
 
-		std::string documentXML = Tools::HTMLFormatter::HTMLtoXML( data );
+		std::string documentXML =
+			documentIsXML ? std::move( data ) : Tools::HTMLFormatter::HTMLtoXML( data );
 		pugi::xml_document metadataDocument;
 		if ( metadataDocument.load_string( documentXML.c_str() ) ) {
 			self->mTitle = String::trim( std::string_view(

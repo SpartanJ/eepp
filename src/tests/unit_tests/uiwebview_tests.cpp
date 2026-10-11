@@ -102,6 +102,80 @@ static bool readHttpRequestHeaders( TcpSocket& client, std::string* headers = nu
 	return true;
 }
 
+UTEST( UIWebView, EmbeddedHTMLKeepsStylesAndResourcesInDocumentScene ) {
+	UIApplication app(
+		WindowSettings( 640, 480, "Embedded HTML", WindowStyle::Default, WindowBackend::Default, 32,
+						{}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	auto* scene = app.getUI();
+	ASSERT_TRUE( scene != nullptr );
+	const std::string cssPath = Sys::getTempPath() + "eepp_embedded_webview.css";
+	ASSERT_TRUE( FileSystem::fileWrite( cssPath, "#resource-proof { color: #123456; }" ) );
+	std::string uriPath = Sys::getTempPath() + "eepp_embedded_layout.xml";
+	String::replaceAll( uriPath, "\\", "/" );
+	if ( uriPath.front() != '/' )
+		uriPath.insert( uriPath.begin(), '/' );
+	URI baseURI;
+	baseURI.setScheme( "file" );
+	baseURI.setPath( uriPath );
+	scene->setURIFromURL( baseURI );
+	scene->combineStyleSheet( "p { color: #ff0000; } #host-label { color: #112233; }" );
+	scene->loadLayoutFromString( R"xml(
+		<TextView id="host-label" text="Host label" />
+		<webview id="embedded-a" width="240dp" height="160dp">
+			<!-- XML children belong to the document, including its stylesheet. -->
+			<html><head><title>Embedded &amp; isolated</title>
+				<style><![CDATA[
+					p { color: #0000ff; } #host-label { color: #abcdef; }
+					#embedded-text > b { color: #010203; }
+				]]></style>
+				<link rel="stylesheet" href="eepp_embedded_webview.css" />
+			</head><body>
+				<p id="embedded-text">Before <b id="embedded-bold">bold</b> after &amp; end</p>
+				<p id="resource-proof">Relative stylesheet</p>
+			</body></html>
+		</webview>
+		<webview id="embedded-b" y="180dp" width="240dp" height="160dp">
+			<html><head><style>p { color: #00ff00; }</style></head>
+			<body><p id="sibling-text">Sibling document</p></body></html>
+		</webview>
+	)xml" );
+	for ( int i = 0; i < 8; ++i )
+		scene->update( Milliseconds( 16 ) );
+	scene->flushDirtyStyleAndLayout();
+	auto* viewA = scene->find( "embedded-a" )->asType<UIWebView>();
+	auto* viewB = scene->find( "embedded-b" )->asType<UIWebView>();
+	auto* documentA = viewA->getDocumentSceneNode();
+	auto* documentB = viewB->getDocumentSceneNode();
+	ASSERT_TRUE( documentA->find( "embedded-text" ) != nullptr );
+	ASSERT_TRUE( documentB->find( "sibling-text" ) != nullptr );
+	EXPECT_TRUE( scene->find( "embedded-text" ) == nullptr );
+	EXPECT_TRUE( documentA->find( "sibling-text" ) == nullptr );
+	EXPECT_TRUE( viewA->loadsItsChildren() );
+	EXPECT_STDSTREQ( "Embedded & isolated", viewA->getTitle() );
+	const auto* color =
+		CSS::StyleSheetSpecification::instance()->getProperty( CSS::PropertyId::Color );
+	EXPECT_STDSTREQ( "#112233",
+					 scene->find( "host-label" )->asType<UIWidget>()->getPropertyString( color ) );
+	EXPECT_STDSTREQ(
+		"#0000ff",
+		documentA->find( "embedded-text" )->asType<UIWidget>()->getPropertyString( color ) );
+	EXPECT_STDSTREQ(
+		"#123456",
+		documentA->find( "resource-proof" )->asType<UIWidget>()->getPropertyString( color ) );
+	EXPECT_STDSTREQ(
+		"#010203",
+		documentA->find( "embedded-bold" )->asType<UIWidget>()->getPropertyString( color ) );
+	EXPECT_STDSTREQ(
+		"#00ff00",
+		documentB->find( "sibling-text" )->asType<UIWidget>()->getPropertyString( color ) );
+	EXPECT_STDSTREQ( scene->getURI().toString(), documentA->getURI().toString() );
+	EXPECT_GT( documentA->find( "embedded-text" )->getWorldBounds().getWidth(), 0.f );
+	EXPECT_EQ( SceneManager::instance()->count(), 1u );
+	FileSystem::fileRemove( cssPath );
+}
+
 UTEST( UIWebView, EmitsParsedDocumentTitle ) {
 	auto* window = Engine::instance()->createWindow(
 		WindowSettings( 320, 240, "UIWebView Title Test", WindowStyle::Default,
