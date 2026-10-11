@@ -1724,6 +1724,50 @@ UTEST( FontRendering, LineWrapInfo ) {
 	runTest( "assets/textfiles/quota.uext" );
 }
 
+UTEST( FontRendering, repeatedTooltipTextRestoresMarkdownBeforeHighlighting ) {
+	UIApplication app(
+		WindowSettings( 400, 200, "eepp - Repeated Tooltip Highlighting", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* host = UIWidget::New();
+	host->setParent( app.getUI()->getRoot() );
+	auto* tooltip = host->createTooltip();
+	tooltip->setWordWrap( true );
+	tooltip->setMaxWidthEq( "50vw" );
+	tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
+	tooltip->setUsingCustomStyling( true );
+	const String source( "```cpp\nconst int answer = 42;\n```" );
+	const auto& syntax = SyntaxDefinitionManager::instance()->getByLanguageName( "Markdown" );
+	const auto colors = SyntaxColorScheme::getDefaultDark();
+	Text* text = tooltip->getTextCache();
+	ASSERT_NE( text->getFont(), nullptr );
+
+	const auto highlight = [&] {
+		SyntaxTokenizer::tokenizeText( syntax, colors, text, 0, 0xFFFFFFFF, true, "\n\t " );
+		tooltip->notifyTextChangedFromTextCache();
+	};
+	const auto render = [&] {
+		app.getWindow()->clear();
+		text->draw( 8.f, 8.f );
+		return app.getWindow()->getFrontBufferImage();
+	};
+
+	host->setTooltipText( source );
+	highlight();
+	ASSERT_TRUE( text->getString() == String( "const int answer = 42;" ) );
+	const Image first = render();
+
+	// LSP repeats the same response while hovering inside a symbol. Its tokenizer has
+	// removed the fences, so the text cache must be restored before highlighting again.
+	tooltip->setPixelsPosition( Vector2f( 12.f, 12.f ) );
+	host->setTooltipText( source );
+	EXPECT_TRUE( text->getString() == source );
+	highlight();
+	EXPECT_TRUE( text->getString() == String( "const int answer = 42;" ) );
+	const Image second = render();
+	EXPECT_EQ( second.diff( first, 0.f, Color::Transparent, false ).numDifferentPixels, 0u );
+}
+
 UTEST( FontRendering, TextHardWrap ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 	std::string string;

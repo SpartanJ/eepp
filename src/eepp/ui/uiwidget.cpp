@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <eepp/graphics/text.hpp>
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
@@ -835,14 +836,18 @@ Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 UIWidget* UIWidget::setTooltipText( const String& text ) {
-	if ( mTooltipText == text )
-		return this;
-	mTooltipText = text;
-	if ( mTooltip )
+	const bool textChanged = mTooltipText != text;
+	if ( textChanged )
+		mTooltipText = text;
+	// Syntax highlighting can replace the cache's source (e.g. remove Markdown fences).
+	// Repeated hover responses must restore that source before it is highlighted again.
+	if ( mTooltip && ( textChanged || mTooltip->getTextCache()->getString() != text ) )
 		mTooltip->setText( text );
-	// The tooltip is the fallback accessible name, or the description of a named widget.
-	notifyAccessibilityEvent( AccessibilityEvent::NameChanged );
-	notifyAccessibilityEvent( AccessibilityEvent::DescriptionChanged );
+	if ( textChanged ) {
+		// The tooltip is the fallback accessible name, or the description of a named widget.
+		notifyAccessibilityEvent( AccessibilityEvent::NameChanged );
+		notifyAccessibilityEvent( AccessibilityEvent::DescriptionChanged );
+	}
 	return this;
 }
 
