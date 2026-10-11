@@ -16,6 +16,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	bool hidden = false;
 	bool testPolicyReset = false;
 	bool testTree = false;
+	bool testPasswordMode = false;
 	size_t benchmarkItems = 1000;
 	size_t benchmarkIterations = 100000;
 	for ( int i = 1; i < argc; ++i ) {
@@ -27,6 +28,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		hidden |= std::string_view( argv[i] ) == "--hidden";
 		testPolicyReset |= std::string_view( argv[i] ) == "--test-policy-reset";
 		testTree |= std::string_view( argv[i] ) == "--test-tree";
+		testPasswordMode |= std::string_view( argv[i] ) == "--test-password-mode";
 		if ( std::string_view( argv[i] ) == "--benchmark-items" && i + 1 < argc )
 			benchmarkItems = std::max<size_t>( 1, std::strtoull( argv[++i], nullptr, 10 ) );
 		if ( std::string_view( argv[i] ) == "--benchmark-iterations" && i + 1 < argc )
@@ -169,6 +171,18 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	content->find<UIPushButton>( "reset-project-name" )->onClick( [projectName]( auto ) {
 		projectName->setText( "eepp" );
 	} );
+	if ( testPasswordMode ) {
+		// Opt-in native regression fixture: switching modes does not edit the document.
+		auto* password = content->find<UITextInput>( "account-password" );
+		auto* toggle = UIPushButton::New();
+		toggle->setText( "Toggle password mode" );
+		toggle->setParent( content );
+		toggle->onClick( [password]( auto ) {
+			password->setMode( password->getMode() == UITextInput::TextInputMode::Password
+								   ? UITextInput::TextInputMode::Normal
+								   : UITextInput::TextInputMode::Password );
+		} );
+	}
 	content->find<UIPushButton>( "inspect" )->onClick( [scene]( auto ) {
 		EE::UI::Tools::UIWidgetInspector::create( scene );
 	} );

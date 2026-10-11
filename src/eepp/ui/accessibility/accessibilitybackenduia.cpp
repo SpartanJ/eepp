@@ -394,32 +394,38 @@ void UIAutomationAccessibilityBackend::raiseEvent( const AccessibilityPendingEve
 	} else if ( event.type == AccessibilityEvent::VisibilityChanged ) {
 		raisePropertyChanged( UIA_IsOffscreenPropertyId );
 	} else if ( event.type == AccessibilityEvent::StateChanged ) {
-		auto info = mManager.getNodeInfo( event.ref, false, false );
-		if ( info.role != AccessibilityRole::CheckBox &&
-			 info.role != AccessibilityRole::CheckMenuItem &&
-			 info.role != AccessibilityRole::RadioButton &&
-			 info.role != AccessibilityRole::RadioMenuItem &&
-			 info.role != AccessibilityRole::ComboBox &&
-			 info.role != AccessibilityRole::TreeItem ) {
-			const AccessibilityNodeRef parent = mManager.getParent( event.ref );
-			const auto parentInfo = mManager.getNodeInfo( parent, false, false );
-			if ( parentInfo.role == AccessibilityRole::ComboBox ) {
-				nativeProvider->Release();
-				nativeProvider = mContext->provider( parent );
-				if ( !nativeProvider )
-					return;
-				info = parentInfo;
+		if ( mManager.getNodeRole( event.ref ) == AccessibilityRole::TextBox ) {
+			// Password mode changes without a document edit; invalidate the client's cached
+			// protection property independently of text/value change notifications.
+			raisePropertyChanged( UIA_IsPasswordPropertyId );
+		} else {
+			auto info = mManager.getNodeInfo( event.ref, false, false );
+			if ( info.role != AccessibilityRole::CheckBox &&
+				 info.role != AccessibilityRole::CheckMenuItem &&
+				 info.role != AccessibilityRole::RadioButton &&
+				 info.role != AccessibilityRole::RadioMenuItem &&
+				 info.role != AccessibilityRole::ComboBox &&
+				 info.role != AccessibilityRole::TreeItem ) {
+				const AccessibilityNodeRef parent = mManager.getParent( event.ref );
+				const auto parentInfo = mManager.getNodeInfo( parent, false, false );
+				if ( parentInfo.role == AccessibilityRole::ComboBox ) {
+					nativeProvider->Release();
+					nativeProvider = mContext->provider( parent );
+					if ( !nativeProvider )
+						return;
+					info = parentInfo;
+				}
 			}
+			if ( info.role == AccessibilityRole::CheckBox ||
+				 info.role == AccessibilityRole::CheckMenuItem )
+				raisePropertyChanged( UIA_ToggleToggleStatePropertyId );
+			else if ( info.role == AccessibilityRole::RadioButton ||
+					  info.role == AccessibilityRole::RadioMenuItem )
+				raisePropertyChanged( UIA_SelectionItemIsSelectedPropertyId );
+			else if ( info.role == AccessibilityRole::ComboBox ||
+					  info.role == AccessibilityRole::TreeItem )
+				raisePropertyChanged( UIA_ExpandCollapseExpandCollapseStatePropertyId );
 		}
-		if ( info.role == AccessibilityRole::CheckBox ||
-			 info.role == AccessibilityRole::CheckMenuItem )
-			raisePropertyChanged( UIA_ToggleToggleStatePropertyId );
-		else if ( info.role == AccessibilityRole::RadioButton ||
-				  info.role == AccessibilityRole::RadioMenuItem )
-			raisePropertyChanged( UIA_SelectionItemIsSelectedPropertyId );
-		else if ( info.role == AccessibilityRole::ComboBox ||
-				  info.role == AccessibilityRole::TreeItem )
-			raisePropertyChanged( UIA_ExpandCollapseExpandCollapseStatePropertyId );
 	} else if ( event.type == AccessibilityEvent::Created ||
 				event.type == AccessibilityEvent::Destroyed ) {
 		const auto runtimeId = runtimeIdValues( mContext->runtimeScope(), event.related );

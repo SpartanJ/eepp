@@ -80,9 +80,11 @@ selection queries/actions and native change notifications. A code editor with a 
 that file unless it has a label. Setting its text through an assistive client replaces the document
 contents as one undoable edit, so the file path and undo history are kept.
 
-Text queries read only the range a client asks for, through a line index that is rebuilt once per
-edit, so moving the caret in a large file does not copy the file. Edits reach Linux clients as exact
-insert and delete records taken from the document. A wholesale replacement (a reset, a reload, or
+Text queries read only the range a client asks for, through a lazily created line index. Single-line
+edits update it incrementally; line insertions and removals update affected lengths and rebuild
+block totals. Resets and missed changes invalidate it for a lazy rebuild. Moving the caret in a
+large file does not copy the file. Edits reach Linux clients as exact insert and delete records
+taken from the document. A wholesale replacement (a reset, a reload, or
 many edits in one frame, such as replace-all) is reported once as "everything removed, everything
 inserted". Windows and macOS need UTF-16 offsets, so they convert the text once per edit and reuse
 that copy for every query until the next edit.

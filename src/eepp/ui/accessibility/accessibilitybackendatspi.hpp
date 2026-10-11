@@ -352,6 +352,8 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 
 	void flushPendingTexts();
 
+	void forgetText( AccessibilityManager& manager, AccessibilityNodeRef ref );
+
 	void sendObjectEvent( AccessibilityNodeRef ref, const char* signal, const char* detail,
 						  Int32 offset, Int32 length = 0, const String& text = {} );
 

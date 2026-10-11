@@ -39,6 +39,7 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/clipboard.hpp>
 
 #include <cstdlib>
 #include <future>
@@ -61,6 +62,47 @@ WindowSettings accessibilityTestWindow() {
 	return WindowSettings( 320, 240, "Accessibility Regression Test", WindowStyle::Default,
 						   WindowBackend::Default, 32, {}, 1, false, true );
 }
+
+// A protected-member pointer accesses the real Window without casting it to a test subclass.
+// Keep clipboard substitution private to these tests; no system clipboard data is read or changed.
+class WindowClipboardAccess : public EE::Window::Window {
+  public:
+	static Clipboard*& slot( EE::Window::Window* window ) {
+		return window->*&WindowClipboardAccess::mClipboard;
+	}
+};
+
+class InspectorTestClipboard : public Clipboard {
+  public:
+	explicit InspectorTestClipboard( EE::Window::Window* window ) :
+		Clipboard( window ), mPrevious( WindowClipboardAccess::slot( window ) ) {
+		WindowClipboardAccess::slot( window ) = this;
+	}
+
+	~InspectorTestClipboard() override { WindowClipboardAccess::slot( mWindow ) = mPrevious; }
+
+	InspectorTestClipboard( const InspectorTestClipboard& ) = delete;
+
+	InspectorTestClipboard& operator=( const InspectorTestClipboard& ) = delete;
+
+	std::string getText() override { return text; }
+
+	String getWideText() override { return String::fromUtf8( text ); }
+
+	void setText( const std::string& value ) override {
+		text = value;
+		++writes;
+	}
+
+	std::string text;
+	size_t writes{};
+
+  protected:
+	void init() override {}
+
+  private:
+	Clipboard* mPrevious;
+};
 
 Models::ModelIndex inspectorPropertyIndex( UITableView* table, const char* name ) {
 	auto* model = table->getModel();
@@ -2610,14 +2652,99 @@ UTEST( Accessibility, InspectorValuePreviewIsBoundedWithoutChangingNativeValues 
 	EXPECT_TRUE( manager->getNodeInfo( manager->getNodeRef( input ), true, false ).value ==
 				 String( unicode ) );
 	input->setMode( UITextInput::TextInputMode::Password );
-	input->sendCommonEvent( Event::OnFocus );
 	EXPECT_TRUE( inspectorProperty( table, "Value" ).empty() );
 	EXPECT_FALSE( inspectorPropertyIndex( table, "Value (preview)" ).isValid() );
 	input->setMode( UITextInput::TextInputMode::Normal );
-	input->sendCommonEvent( Event::OnFocusLoss );
 	EXPECT_TRUE( inspectorProperty( table, "Value (preview)" ) ==
 				 std::string( 1023, 'a' ) + "😀 … [truncated]" );
 	EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
+}
+
+UTEST( Accessibility, InspectorCopiesTheFullValueWithoutCopyingPasswordContents ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	InspectorTestClipboard clipboard( app.getWindow() );
+	auto* scene = app.getUI();
+	auto* editor = UICodeEditor::New();
+	const auto contents = std::string( 2048, 'a' ) + "\n😀\n" + std::string( 2048, 'b' );
+	editor->getDocument().textInput( contents );
+	auto* input = UITextInput::New();
+	input->setText( contents );
+	auto* inspector = Tools::UIWidgetInspector::create( scene );
+	ASSERT_NE( inspector, nullptr );
+	auto* tree = inspector->find<UITreeView>( "widget_inspector_nodetree" );
+	auto* table = inspector->find<UITableView>( "widget_inspector_accessibility" );
+	auto* copy = inspector->find<UIPushButton>( "widget_inspector_accessibility_copy" );
+	ASSERT_NE( tree, nullptr );
+	ASSERT_NE( table, nullptr );
+	ASSERT_NE( copy, nullptr );
+	auto* treeModel = static_cast<Models::WidgetTreeModel*>( tree->getModel() );
+	tree->setSelection( treeModel->getModelIndex( editor ) );
+	EXPECT_TRUE( inspectorPropertyIndex( table, "Value (preview)" ).isValid() );
+	EXPECT_EQ( clipboard.writes, 0u );
+	Scene::MouseEvent click( copy, Event::MouseClick, {}, EE_BUTTON_LMASK );
+	copy->sendEvent( &click );
+	EXPECT_TRUE( clipboard.text == contents );
+	EXPECT_EQ( clipboard.writes, 1u );
+	tree->setSelection( treeModel->getModelIndex( input ) );
+	copy->sendEvent( &click );
+	EXPECT_TRUE( clipboard.text == input->getText().toUtf8() );
+	EXPECT_EQ( clipboard.writes, 2u );
+	input->setMode( UITextInput::TextInputMode::Password );
+	copy->sendEvent( &click );
+	EXPECT_TRUE( clipboard.text.empty() );
+	EXPECT_EQ( clipboard.writes, 3u );
+	input->setMode( UITextInput::TextInputMode::Normal );
+	copy->sendEvent( &click );
+	EXPECT_TRUE( clipboard.text == input->getText().toUtf8() );
+	EXPECT_EQ( clipboard.writes, 4u );
+	EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
+}
+
+UTEST( Accessibility, PasswordModeChangesNotifyValueAndProtectionWithoutEditingText ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* input = UITextInput::New();
+	input->setText( "secret" );
+	auto* manager = scene->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->update();
+	manager->onNativeClientObserved();
+	const auto ref = manager->getNodeRef( input );
+	const auto revision = input->getDocument().getModificationId();
+	size_t valueEvents = 0;
+	size_t textEvents = 0;
+	input->on( Event::OnValueChange, [&]( const auto* ) { ++valueEvents; } );
+	input->on( Event::OnTextChanged, [&]( const auto* ) { ++textEvents; } );
+	recorder->events.clear();
+	input->setMode( UITextInput::TextInputMode::Password );
+	EXPECT_EQ( valueEvents, 1u );
+	EXPECT_EQ( textEvents, 0u );
+	ASSERT_EQ( recorder->events.size(), 2u );
+	EXPECT_EQ( recorder->events[0].type, AccessibilityEvent::StateChanged );
+	EXPECT_EQ( recorder->events[1].type, AccessibilityEvent::ValueChanged );
+	EXPECT_TRUE( recorder->events[0].ref == ref );
+	EXPECT_TRUE( hasState( manager->getNodeState( ref ), AccessibilityState::Protected ) );
+	EXPECT_TRUE( manager->getNodeInfo( ref ).value.empty() );
+	EXPECT_FALSE( manager->getTextInfo( ref ).valid );
+	recorder->events.clear();
+	input->setMode( UITextInput::TextInputMode::Password );
+	EXPECT_EQ( valueEvents, 1u );
+	EXPECT_TRUE( recorder->events.empty() );
+	input->setMode( UITextInput::TextInputMode::Normal );
+	EXPECT_EQ( valueEvents, 2u );
+	EXPECT_EQ( textEvents, 0u );
+	ASSERT_EQ( recorder->events.size(), 2u );
+	EXPECT_EQ( recorder->events[0].type, AccessibilityEvent::StateChanged );
+	EXPECT_EQ( recorder->events[1].type, AccessibilityEvent::ValueChanged );
+	EXPECT_FALSE( hasState( manager->getNodeState( ref ), AccessibilityState::Protected ) );
+	EXPECT_TRUE( manager->getNodeInfo( ref ).value == "secret" );
+	EXPECT_TRUE( manager->getTextInfo( ref ).valid );
+	EXPECT_EQ( input->getDocument().getModificationId(), revision );
+	EXPECT_TRUE( recorder->changes.empty() );
 }
 
 UTEST( Accessibility, InspectorValueTracksDocumentIdentityAndWorkerNotifications ) {

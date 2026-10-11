@@ -89,8 +89,14 @@ def start_discovery_listener():
 	discovered_process_ids = set()
 	text_events = []
 	selection_events = []
+	role_events = []
 
 	def on_children_changed(event):
+		if event.type == "object:property-change:accessible-role":
+			# libatspi does not marshal the uint32 variant into any_data. It invalidates the
+			# cached role instead; reading it here verifies the client sees the new mode.
+			role_events.append((event.source.get_name(), int(event.source.get_role())))
+			return
 		if event.type in ("object:selection-changed", "object:state-changed:selected",
 				"object:state-changed:expanded"):
 			selection_events.append((event.type, event.source.get_name(), event.detail1))
@@ -112,9 +118,9 @@ def start_discovery_listener():
 	)
 	for event in ("object:text-changed", "object:text-caret-moved", "object:text-selection-changed",
 			"object:announcement", "object:selection-changed", "object:state-changed:selected",
-			"object:state-changed:expanded"):
+			"object:state-changed:expanded", "object:property-change:accessible-role"):
 		check(listener.register(event), f"could not register {event}")
-	return listener, discovered_process_ids, text_events, selection_events
+	return listener, discovered_process_ids, text_events, selection_events, role_events
 
 
 def wait_for_window_count(application, count, timeout=2):
@@ -125,7 +131,7 @@ def wait_for_window_count(application, count, timeout=2):
 
 
 def validate(application, multi_window=False, close_primary=False, process_id=None, text_events=None,
-		selection_events=None, policy_reset=False):
+		selection_events=None, policy_reset=False, role_events=None):
 	required_nodes = ["Project name", "Enable autosave"]
 	if multi_window:
 		required_nodes.append("Secondary accessibility window")
@@ -150,6 +156,26 @@ def validate(application, multi_window=False, close_primary=False, process_id=No
 	check(states.contains(Atspi.StateType.SINGLE_LINE), "input must be single-line")
 	password = find_named(nodes, "Account password")
 	check(password.get_role() == Atspi.Role.PASSWORD_TEXT, "password must use the protected role")
+	if role_events is not None:
+		toggle = find_named(nodes, "Toggle password mode")
+		for role in (Atspi.Role.ENTRY, Atspi.Role.PASSWORD_TEXT):
+			role_events.clear()
+			check(toggle.do_action(action_index(toggle, "click")), "password mode toggle failed")
+			deadline = time.monotonic() + 2
+			while ("Account password", int(role)) not in role_events and time.monotonic() < deadline:
+				pause(0.01)
+			check(("Account password", int(role)) in role_events,
+				f"password mode did not update the role through a change event: {role_events}")
+			check(password.get_role() == role, "password role cache did not follow the mode change")
+			try:
+				text = Atspi.Text.get_text(password, 0, -1)
+			except GLib.Error:
+				# Protected inputs stop exposing Text; a previously retained interface must
+				# not allow reading their contents after the transition either.
+				check(role == Atspi.Role.PASSWORD_TEXT, "normal input text query failed")
+				text = ""
+			check(text == ("secret" if role == Atspi.Role.ENTRY else ""),
+				"password mode exposed the wrong text")
 	check(project_name.get_accessible_id(), "Project name must expose a stable accessible ID")
 	locale = project_name.get_object_locale()
 	check(locale == "C", f"Project name locale query failed: {locale!r}")
@@ -438,10 +464,11 @@ def main():
 	discovery_listener = None
 	text_events = None
 	selection_events = None
+	role_events = None
 	try:
 		if not args.no_launch:
-			discovery_listener, discovered_process_ids, text_events, selection_events = start_discovery_listener()
-			command = [args.executable, "--test-tree"]
+			discovery_listener, discovered_process_ids, text_events, selection_events, role_events = start_discovery_listener()
+			command = [args.executable, "--test-tree", "--test-password-mode"]
 			if args.hidden:
 				command.append("--hidden")
 			if args.policy_reset:
@@ -472,6 +499,7 @@ def main():
 			text_events,
 			selection_events,
 			args.policy_reset,
+			role_events,
 		)
 		if process is not None and (args.close_primary or args.policy_reset):
 			check(process.wait(timeout=3) == 0, "native backend teardown crashed on last-window closure")
@@ -481,7 +509,7 @@ def main():
 				for event in ("object:children-changed:add", "object:text-changed",
 					"object:text-caret-moved", "object:text-selection-changed", "object:announcement",
 					"object:selection-changed", "object:state-changed:selected",
-					"object:state-changed:expanded"):
+					"object:state-changed:expanded", "object:property-change:accessible-role"):
 					discovery_listener.deregister(event)
 			except GLib.Error:
 				# A closed bus must not mask the original failure or skip child-process cleanup.

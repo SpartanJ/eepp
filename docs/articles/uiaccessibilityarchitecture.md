@@ -409,7 +409,9 @@ Value preview reads only a bounded prefix under the document read lock, without 
 index; that table's column sizing never measures the full document. Non-text refreshes reuse the
 preview only while the document UUID/revision match and no load is in progress. Text and document lifecycle
 events invalidate it; incomplete loading snapshots are not cached. Text inputs are rechecked on
-every event so switching to password mode cannot reuse cached plaintext.
+every event rather than reusing cached plaintext. `UITextInput::setMode()` publishes a value event
+even without native clients, so switching to password mode clears the preview immediately; its
+gated native state/value notifications also invalidate the client's protection metadata.
 
 Worker-originated Inspector refreshes use widget-owned main-thread actions holding a weak model
 reference and verifying the selected widget. Model strings are borrowed until invalidation rather

@@ -261,6 +261,7 @@ class EventSubscriptions {
 			UIA_ValueValuePropertyId,
 			UIA_RangeValueValuePropertyId,
 			UIA_IsEnabledPropertyId,
+			UIA_IsPasswordPropertyId,
 			UIA_IsOffscreenPropertyId,
 			UIA_HasKeyboardFocusPropertyId,
 			UIA_ToggleToggleStatePropertyId,
@@ -647,7 +648,8 @@ int wmain( int argc, wchar_t** argv ) {
 					   ? EXIT_SUCCESS
 					   : EXIT_FAILURE;
 		}
-		std::wstring command = L"\"" + example.wstring() + L"\" --multi-window";
+		std::wstring command =
+			L"\"" + example.wstring() + L"\" --multi-window --test-password-mode";
 		STARTUPINFOW startup{};
 		startup.cb = sizeof( startup );
 		std::wstring workingDirectory = example.parent_path().wstring();
@@ -780,6 +782,55 @@ int wmain( int argc, wchar_t** argv ) {
 					reinterpret_cast<void**>( forbidden.put() ) );
 				require( FAILED( textResult ) || !forbidden,
 						 "password field exposes TextPattern content" );
+			} );
+
+			record( "password mode change notifications", [&] {
+				auto password = findByName( automation.get(), primary.get(), L"Account password" );
+				const auto passwordId = runtimeId( password.get() );
+				auto toggle =
+					findByName( automation.get(), primary.get(), L"Toggle password mode" );
+				auto invoke = pattern<IUIAutomationInvokePattern>(
+					toggle.get(), UIA_InvokePatternId, __uuidof( IUIAutomationInvokePattern ),
+					"Invoke" );
+				ComPtr<IUIAutomationTextRange> previousRange;
+				for ( const BOOL expected : { FALSE, TRUE } ) {
+					const size_t marker = eventRecorder->marker();
+					requireResult( invoke->Invoke(), "toggle password mode" );
+					require( eventRecorder->waitFor(
+								 marker,
+								 [&]( const ObservedEvent& event ) {
+									 return event.kind == ObservedEventKind::Property &&
+											event.propertyId == UIA_IsPasswordPropertyId &&
+											event.sender &&
+											runtimeId( event.sender.get() ) == passwordId;
+								 },
+								 std::chrono::seconds( 5 ) ),
+							 "missing password protection property event" );
+					BOOL actual{};
+					requireResult( password->get_CurrentIsPassword( &actual ),
+								   "CurrentIsPassword" );
+					require( actual == expected, "password mode did not update protection" );
+					if ( !expected ) {
+						auto text = pattern<IUIAutomationTextPattern>(
+							password.get(), UIA_TextPatternId, __uuidof( IUIAutomationTextPattern ),
+							"Text" );
+						requireResult( text->get_DocumentRange( previousRange.put() ),
+									   "DocumentRange" );
+						BSTR contents{};
+						requireResult( previousRange->GetText( -1, &contents ),
+									   "TextRange.GetText" );
+						const std::wstring value( contents ? contents : L"" );
+						SysFreeString( contents );
+						require( value == L"secret", "normal input text was not restored" );
+					} else {
+						BSTR contents{};
+						const HRESULT result = previousRange->GetText( -1, &contents );
+						const bool empty = !contents || SysStringLen( contents ) == 0;
+						SysFreeString( contents );
+						require( FAILED( result ) || empty,
+								 "an existing text range exposed password contents" );
+					}
+				}
 			} );
 
 			record( "range value validation", [&] {

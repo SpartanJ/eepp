@@ -336,6 +336,11 @@ UITextInput* UITextInput::setMode( TextInputMode mode ) {
 			updatePass();
 		}
 		invalidateDraw();
+		// The document did not change, but its exposed value and protection did. Tooling must
+		// refresh even without a native client so a password transition hides stale plaintext.
+		sendCommonEvent( Event::OnValueChange );
+		notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
+		notifyAccessibilityEvent( AccessibilityEvent::ValueChanged );
 	}
 	return this;
 }

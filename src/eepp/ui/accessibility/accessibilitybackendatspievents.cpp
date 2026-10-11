@@ -59,16 +59,9 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 		return;
 	ScopedManager scopedManager( *this, &manager );
 	if ( event.type == AccessibilityEvent::Destroyed && !event.related.isValid() ) {
-		if ( !mTextStates.empty() )
-			mTextStates.erase( pathFromRef( event.ref ) );
+		forgetText( manager, event.ref );
 		if ( !mSelections.empty() )
 			mSelections.erase( pathFromRef( event.ref ) );
-		mPendingTexts.erase( std::remove_if( mPendingTexts.begin(), mPendingTexts.end(),
-											 [&]( const PendingText& text ) {
-												 return text.manager == &manager &&
-														text.ref == event.ref;
-											 } ),
-							 mPendingTexts.end() );
 		return;
 	}
 	if ( !hasActiveClients() )
@@ -86,13 +79,17 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 		return;
 	}
 	AccessibilityNodeInfo info;
-	if ( event.type == AccessibilityEvent::FocusChanged ||
-		 event.type == AccessibilityEvent::SelectionChanged ||
-		 event.type == AccessibilityEvent::StateChanged ||
-		 event.type == AccessibilityEvent::EnabledChanged ||
-		 event.type == AccessibilityEvent::VisibilityChanged ||
-		 event.type == AccessibilityEvent::ValueChanged )
+	if ( event.type == AccessibilityEvent::StateChanged ) {
+		// State notifications need no names, values, or text offsets.
+		info.role = manager.getNodeRole( event.ref );
+		info.states = manager.getNodeState( event.ref );
+	} else if ( event.type == AccessibilityEvent::FocusChanged ||
+				event.type == AccessibilityEvent::SelectionChanged ||
+				event.type == AccessibilityEvent::EnabledChanged ||
+				event.type == AccessibilityEvent::VisibilityChanged ||
+				event.type == AccessibilityEvent::ValueChanged ) {
 		info = manager.getNodeInfo( event.ref, false, false );
+	}
 	if ( info.text.valid ) {
 		// Contents changes arrive as exact records through onTextChanged(). Caret and selection
 		// changes are compared once per frame: one edit can move them several times.
@@ -137,10 +134,16 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 		detail = "accessible-value";
 	} else if ( event.type == AccessibilityEvent::StateChanged ) {
 		signal = "StateChanged";
-		if ( info.role == AccessibilityRole::CheckBox ||
-			 info.role == AccessibilityRole::RadioButton ||
-			 info.role == AccessibilityRole::CheckMenuItem ||
-			 info.role == AccessibilityRole::RadioMenuItem )
+		if ( info.role == AccessibilityRole::TextBox ) {
+			// AT-SPI expresses password protection through PASSWORD_TEXT, not a state bit.
+			// Forget queued text/caret work and the old length when the exposed mode changes.
+			forgetText( manager, event.ref );
+			signal = "PropertyChange";
+			detail = "accessible-role";
+		} else if ( info.role == AccessibilityRole::CheckBox ||
+					info.role == AccessibilityRole::RadioButton ||
+					info.role == AccessibilityRole::CheckMenuItem ||
+					info.role == AccessibilityRole::RadioMenuItem )
 			detail = "checked";
 		else if ( info.role == AccessibilityRole::ComboBox ||
 				  info.role == AccessibilityRole::TreeItem )
@@ -200,6 +203,12 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 	if ( childrenChanged ) {
 		mDBus.messageIterOpenContainer( &iter, 'v', "(so)", &variant );
 		appendRef( variant, event.related );
+	} else if ( event.type == AccessibilityEvent::StateChanged &&
+				info.role == AccessibilityRole::TextBox ) {
+		Uint32 nativeRole =
+			hasState( info.states, AccessibilityState::Protected ) ? 40 : role( info.role );
+		mDBus.messageIterOpenContainer( &iter, 'v', "u", &variant );
+		appendBasic( variant, 'u', &nativeRole );
 	} else {
 		const char* empty = "";
 		mDBus.messageIterOpenContainer( &iter, 'v', "s", &variant );
@@ -257,6 +266,16 @@ bool AtSpiApplication::onTextChanged( AccessibilityManager& manager, Accessibili
 								static_cast<Int32>( change.removed.size() );
 	}
 	return true;
+}
+
+void AtSpiApplication::forgetText( AccessibilityManager& manager, AccessibilityNodeRef ref ) {
+	if ( !mTextStates.empty() )
+		mTextStates.erase( pathFromRef( ref ) );
+	mPendingTexts.erase( std::remove_if( mPendingTexts.begin(), mPendingTexts.end(),
+										 [&]( const PendingText& text ) {
+											 return text.manager == &manager && text.ref == ref;
+										 } ),
+						 mPendingTexts.end() );
 }
 
 void AtSpiApplication::queueText( AccessibilityManager& manager, AccessibilityNodeRef ref,
