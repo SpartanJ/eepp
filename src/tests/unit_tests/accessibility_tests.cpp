@@ -3564,6 +3564,152 @@ UTEST( Accessibility, DormantDeletionInvalidatesExplicitSemanticQueries ) {
 	}
 }
 
+UTEST( Accessibility, DormantReparentingPreservesOnlySameOwnerReferences ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto* first = UIWidget::New();
+	first->setAccessibilityRole( AccessibilityRole::Group );
+	auto* second = UIWidget::New();
+	second->setAccessibilityRole( AccessibilityRole::Group );
+	auto* carrier = Node::New();
+	carrier->setParent( first );
+	auto* subtree = UIWidget::New();
+	subtree->setAccessibilityRole( AccessibilityRole::Group );
+	subtree->setParent( carrier );
+	auto* button = UIPushButton::New();
+	button->setText( "Move me" );
+	button->setParent( subtree );
+	auto* editor = UICodeEditor::New();
+	editor->setParent( subtree );
+	editor->getDocument().textInput( "First\nSecond" );
+	const auto subtreeRef = manager->getNodeRef( subtree );
+	const auto buttonRef = manager->getNodeRef( button );
+	const auto editorRef = manager->getNodeRef( editor );
+	const auto firstRef = manager->getNodeRef( first );
+	const auto secondRef = manager->getNodeRef( second );
+	EXPECT_TRUE( manager->getTextInfo( editorRef ).valid );
+	EXPECT_TRUE( manager->getParent( subtreeRef ) == firstRef );
+	EXPECT_EQ( manager->getChildren( firstRef ).size(), 1u );
+	EXPECT_FALSE( Accessibility::isActive() );
+
+	carrier->setParent( second );
+	EXPECT_TRUE( manager->getNodeRef( subtree ) == subtreeRef );
+	EXPECT_TRUE( manager->getNodeRef( button ) == buttonRef );
+	EXPECT_TRUE( manager->getNodeRef( editor ) == editorRef );
+	EXPECT_TRUE( manager->getParent( subtreeRef ) == secondRef );
+	EXPECT_TRUE( manager->getChildren( firstRef ).empty() );
+	EXPECT_TRUE( manager->getChild( secondRef, 0 ) == subtreeRef );
+	subtree->setParent( first );
+	EXPECT_TRUE( manager->getParent( subtreeRef ) == firstRef );
+	EXPECT_TRUE( manager->getChildren( secondRef ).empty() );
+	subtree->setParent( carrier );
+	EXPECT_TRUE( manager->getParent( subtreeRef ) == secondRef );
+	EXPECT_TRUE( manager->getNodeRef( button ) == buttonRef );
+
+	// Moving between scenes sharing a window is supported; their semantic managers differ.
+	auto* otherScene = UISceneNode::New( app.getWindow() );
+	otherScene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+	auto* otherManager = otherScene->getAccessibilityManager();
+	carrier->setParent( otherScene->getRoot() );
+	EXPECT_FALSE( manager->isValid( subtreeRef ) );
+	EXPECT_FALSE( manager->isValid( buttonRef ) );
+	EXPECT_FALSE( manager->isValid( editorRef ) );
+	EXPECT_FALSE( manager->getTextInfo( editorRef ).valid );
+	EXPECT_TRUE( manager->getChildren( secondRef ).empty() );
+	EXPECT_EQ( button->getUISceneNode(), otherScene );
+	EXPECT_EQ( editor->getUISceneNode(), otherScene );
+	const auto otherSubtreeRef = otherManager->getNodeRef( subtree );
+	const auto otherButtonRef = otherManager->getNodeRef( button );
+	const auto otherEditorRef = otherManager->getNodeRef( editor );
+	EXPECT_TRUE( otherManager->isValid( otherSubtreeRef ) );
+	EXPECT_TRUE( otherManager->isValid( otherButtonRef ) );
+	EXPECT_TRUE( otherManager->getParent( otherButtonRef ) == otherSubtreeRef );
+	EXPECT_TRUE( otherManager->getTextInfo( otherEditorRef ).valid );
+	EXPECT_TRUE( otherManager->getNodeInfo( otherEditorRef ).value == String( "First\nSecond" ) );
+
+	carrier->setParent( first );
+	EXPECT_FALSE( otherManager->isValid( otherSubtreeRef ) );
+	EXPECT_FALSE( otherManager->isValid( otherButtonRef ) );
+	EXPECT_FALSE( otherManager->isValid( otherEditorRef ) );
+	const auto returnedRef = manager->getNodeRef( subtree );
+	EXPECT_TRUE( manager->isValid( returnedRef ) );
+	EXPECT_FALSE( returnedRef == subtreeRef );
+	EXPECT_TRUE( manager->getParent( returnedRef ) == firstRef );
+	EXPECT_TRUE( manager->getNodeInfo( manager->getNodeRef( button ) ).name ==
+				 String( "Move me" ) );
+	EXPECT_TRUE( manager->getPendingEvents().empty() );
+	EXPECT_TRUE( otherManager->getPendingEvents().empty() );
+	EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
+	EXPECT_FALSE( otherScene->hasActiveAccessibilityClients() );
+	eeDelete( otherScene );
+}
+
+UTEST( Accessibility, IndexedInsertionHandlesDestinationChildCountReentrancy ) {
+	class IndexedGroup : public UIWidget {
+	  public:
+		IndexedGroup() : UIWidget( "group" ) { setAccessibilityRole( AccessibilityRole::Group ); }
+
+		using Node::childAddAt;
+	};
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	auto* source = UIWidget::New();
+	source->setAccessibilityRole( AccessibilityRole::Group );
+	auto* destination = eeNew( IndexedGroup, () );
+	auto* first = UIPushButton::New();
+	first->setParent( destination );
+	UIPushButton::New()->setParent( destination );
+	UIPushButton::New()->setParent( destination );
+	auto* incoming = UIPushButton::New();
+	incoming->setParent( source );
+	const auto sourceRef = manager->getNodeRef( source );
+	const auto destinationRef = manager->getNodeRef( destination );
+	const auto incomingRef = manager->getNodeRef( incoming );
+	manager->getChildren( sourceRef );
+	manager->getChildren( destinationRef );
+	bool callbackRan = false;
+	const auto listener = destination->on( Event::OnChildCountChanged, [&]( const Event* event ) {
+		const auto* change = event->asChildCountChangedEvent();
+		if ( !change->removed() && change->child() == incoming ) {
+			callbackRan = true;
+			// This moves the inserted child from index 1 to index 0 before its arrival is reported.
+			first->toFront();
+		}
+	} );
+	recorder->events.clear();
+	manager->clearPendingEvents();
+	destination->childAddAt( incoming, 1 );
+	destination->removeEventListener( listener );
+	EXPECT_TRUE( callbackRan );
+	EXPECT_EQ( destination->getFirstChild(), incoming );
+	EXPECT_EQ( destination->getLastChild(), first );
+	EXPECT_TRUE( manager->getNodeRef( incoming ) == incomingRef );
+	EXPECT_TRUE( manager->getParent( incomingRef ) == destinationRef );
+	EXPECT_TRUE( manager->getChildren( sourceRef ).empty() );
+	EXPECT_TRUE( manager->getChild( destinationRef, 0 ) == incomingRef );
+	SmallVector<AccessibilityPendingEvent, 2> structural;
+	for ( const auto& event : recorder->events ) {
+		if ( event.related == incomingRef && ( event.type == AccessibilityEvent::Created ||
+											   event.type == AccessibilityEvent::Destroyed ) ) {
+			structural.push_back( event );
+		}
+	}
+	ASSERT_EQ( structural.size(), 2u );
+	EXPECT_EQ( structural[0].type, AccessibilityEvent::Destroyed );
+	EXPECT_TRUE( structural[0].ref == sourceRef );
+	EXPECT_EQ( structural[0].index, 0 );
+	EXPECT_EQ( structural[1].type, AccessibilityEvent::Created );
+	EXPECT_TRUE( structural[1].ref == destinationRef );
+	EXPECT_EQ( structural[1].index, 0 );
+}
+
 UTEST( Accessibility, DisconnectedClientsOnlyInvalidateOnRemoval ) {
 	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
 	ASSERT_NE( app.getUI(), nullptr );
