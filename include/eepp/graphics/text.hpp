@@ -49,7 +49,7 @@ class EE_API Text {
 	}
 
 	static inline Float tabAdvance( Float spaceHorizontalAdvance, Uint32 tabLength,
-							 std::optional<Float> tabOffset ) {
+									std::optional<Float> tabOffset ) {
 		Float advance = spaceHorizontalAdvance * tabLength;
 		if ( tabOffset ) {
 			Float offset = fmodf( *tabOffset, advance );
@@ -452,6 +452,8 @@ class EE_API Text {
 
 	void ensureColorUpdate();
 
+	template <typename Callable> void forEachShapedGlyphQuad( Callable cb ) const;
+
 	/** Force to cache the width of the current text */
 	void cacheWidth();
 
@@ -461,8 +463,6 @@ class EE_API Text {
 	void addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,
 					   const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness,
 					   Int32 centerDiffX );
-
-	Uint32 getTotalVertices();
 
 	/** Cache the with of the current text */
 	void updateWidthCache();

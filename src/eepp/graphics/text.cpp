@@ -862,10 +862,10 @@ Vector2f Text::findCharacterPos( std::size_t index, LigatureCaretMode ligatureCa
 		index = mString.size();
 
 	if ( mLineWrapMode == LineWrapMode::NoWrap || mMaxWrapWidth <= 0 ) {
-		return Text::findCharacterPos(
-			index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mString,
-			mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, true,
-			mTextHints, TextDirection::Unspecified, mInitialOffset, ligatureCaretMode );
+		return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
+									   mString, mFontStyleConfig.Style, mTabWidth,
+									   mFontStyleConfig.OutlineThickness, {}, true, mTextHints,
+									   mDirection, mInitialOffset, ligatureCaretMode );
 	}
 
 #ifdef EE_TEXT_SHAPER_ENABLED
@@ -874,8 +874,8 @@ Vector2f Text::findCharacterPos( std::size_t index, LigatureCaretMode ligatureCa
 		return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
 									   mString, mFontStyleConfig.Style, mTabWidth,
 									   mFontStyleConfig.OutlineThickness, {}, true, mTextHints,
-									   TextDirection::Unspecified, mLineWrapMode, mMaxWrapWidth,
-									   mInitialOffset, ligatureCaretMode );
+									   mDirection, mLineWrapMode, mMaxWrapWidth, mInitialOffset,
+									   ligatureCaretMode );
 	}
 #endif
 
@@ -923,8 +923,7 @@ Vector2f Text::findCharacterPos( std::size_t index, LigatureCaretMode ligatureCa
 	Vector2f pos = Text::findCharacterPos(
 		index - startIdx, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, strWrapper,
 		mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, true, mTextHints,
-		TextDirection::Unspecified, lineIndex == 0 ? mInitialOffset : Vector2f::Zero,
-		ligatureCaretMode );
+		mDirection, lineIndex == 0 ? mInitialOffset : Vector2f::Zero, ligatureCaretMode );
 
 	return Vector2f( pos.x + centerDiffX, y );
 }
@@ -937,7 +936,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest ) cons
 		return Text::findCharacterFromPos(
 			pos, returnNearest, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mString,
 			mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, mTextHints,
-			TextDirection::Unspecified, mInitialOffset );
+			mDirection, mInitialOffset );
 	}
 
 #ifdef EE_TEXT_SHAPER_ENABLED
@@ -946,7 +945,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest ) cons
 		return Text::findCharacterFromPos(
 			pos, returnNearest, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mString,
 			mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, mTextHints,
-			TextDirection::Unspecified, mLineWrapMode, mMaxWrapWidth, mInitialOffset );
+			mDirection, mLineWrapMode, mMaxWrapWidth, mInitialOffset );
 	}
 #endif
 
@@ -1221,8 +1220,19 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 		// We only need to add initialOffset.y for the vertical shift
 
 		if ( index == string.size() && hasGlyphs ) {
-			const auto& lastGlyph = allowNewLine ? layout->paragraphs.back().shapedGlyphs.back()
-												 : layout->paragraphs.front().shapedGlyphs.back();
+			const auto& glyphs = allowNewLine ? layout->paragraphs.back().shapedGlyphs
+											  : layout->paragraphs.front().shapedGlyphs;
+			const auto& lastGlyph = glyphs.back();
+			if ( layout->isRTL() ) {
+				// The logical end of a right-to-left paragraph is the left end of its last line.
+				const ShapedGlyph* leftmost = &lastGlyph;
+				for ( const auto& glyph : glyphs ) {
+					if ( glyph.position.y == lastGlyph.position.y &&
+						 glyph.position.x < leftmost->position.x )
+						leftmost = &glyph;
+				}
+				return ( leftmost->position + Vector2f{ 0, initialOffset.y } ).trunc();
+			}
 			return ( lastGlyph.position + lastGlyph.advance + Vector2f{ 0, initialOffset.y } )
 				.trunc();
 		}
@@ -1910,8 +1920,15 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		return;
 	}
 
-	if ( mColors.empty() )
+	// Never read past the per-vertex color array.
+	if ( colors.size() < numvert ) {
+		if ( rotation != 0.0f || scale != 1.0f ) {
+			GLi->popMatrix();
+		} else {
+			GLi->translatef( -drawX, -drawY, 0 );
+		}
 		return;
+	}
 
 	const TexturePtr& texture = mFontStyleConfig.Font->getTexture( mFontStyleConfig.CharacterSize );
 	if ( !texture )
@@ -1922,17 +1939,22 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 
 	Uint32 alloc = numvert * sizeof( VertexCoords );
 
-	if ( 0 != mFontStyleConfig.OutlineThickness ) {
+	// Outline glyphs are emitted only for glyphs with visible outline bounds, so the outline
+	// geometry has its own vertex count.
+	const unsigned int numOutlineVert = mOutlineVertices.size();
+	if ( 0 != mFontStyleConfig.OutlineThickness && numOutlineVert > 0 &&
+		 outlineColors.size() >= numOutlineVert ) {
+		const Uint32 outlineAlloc = numOutlineVert * sizeof( VertexCoords );
 		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0,
 						   reinterpret_cast<const char*>( outlineColors.data() ),
 						   outlineColors.size() * sizeof( Color ) );
 		GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
-							  reinterpret_cast<char*>( &mOutlineVertices[0] ), alloc );
+							  reinterpret_cast<char*>( &mOutlineVertices[0] ), outlineAlloc );
 		GLi->vertexPointer( 2, GL_FP, sizeof( VertexCoords ),
 							reinterpret_cast<char*>( &mOutlineVertices[0] ) + sizeof( Float ) * 2,
-							alloc );
+							outlineAlloc );
 
-		drawTextVertexRanges( mOutlineRenderModes, numvert, allowSubpixel );
+		drawTextVertexRanges( mOutlineRenderModes, numOutlineVert, allowSubpixel );
 	}
 
 	GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const char*>( colors.data() ),
@@ -2478,20 +2500,22 @@ void Text::ensureGeometryUpdate() {
 }
 
 void Text::ensureColorUpdate() {
+	// Colors are per vertex, so they must match the generated geometry exactly. Shaped text does
+	// not map one quad to each non-space character: clusters, ligatures, marks, zero-sized glyphs
+	// and fallback fonts change the glyph count. A shorter color array would make the draw read
+	// past its end for the last (visually rightmost) glyphs.
+	ensureGeometryUpdate();
+
+	if ( mColors.size() != mVertices.size() ||
+		 ( 0 != mFontStyleConfig.OutlineThickness &&
+		   mOutlineColors.size() != mOutlineVertices.size() ) )
+		mColorsNeedUpdate = true;
+
 	if ( mColorsNeedUpdate ) {
-		Uint32 tv = getTotalVertices();
+		mColors.assign( mVertices.size(), mFontStyleConfig.FontColor );
 
-		if ( mColors.size() < tv )
-			mColors.resize( tv, mFontStyleConfig.FontColor );
-
-		mColors.assign( tv, mFontStyleConfig.FontColor );
-
-		if ( 0 != mFontStyleConfig.OutlineThickness ) {
-			if ( mOutlineColors.size() < tv )
-				mOutlineColors.resize( tv, mFontStyleConfig.OutlineColor );
-
-			mOutlineColors.assign( tv, mFontStyleConfig.OutlineColor );
-		}
+		if ( 0 != mFontStyleConfig.OutlineThickness )
+			mOutlineColors.assign( mOutlineVertices.size(), mFontStyleConfig.OutlineColor );
 
 		mColorsNeedUpdate = false;
 
@@ -2578,6 +2602,36 @@ bool Text::hasSameFontStyleConfig( const FontStyleConfig& styleConfig ) {
 	return mFontStyleConfig == styleConfig;
 }
 
+#ifdef EE_TEXT_SHAPER_ENABLED
+// Visits every shaped glyph that ensureGeometryUpdate() turns into a fill quad, passing its
+// string index and the index of its first vertex. Keep the layout parameters and visibility test
+// in sync with ensureGeometryUpdate().
+template <typename Callable> void Text::forEachShapedGlyphQuad( Callable cb ) const {
+	FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
+	auto layout =
+		TextLayout::layout( mString, rFont, mFontStyleConfig.CharacterSize, mFontStyleConfig.Style,
+							mTabWidth, mFontStyleConfig.OutlineThickness, {}, mTextHints,
+							mDirection, mLineWrapMode, mMaxWrapWidth, false, mInitialOffset.x );
+	const bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
+	const bool italic = ( mFontStyleConfig.Style & Italic ) != 0;
+	const size_t quadVertex = GLi->quadVertex();
+	size_t vIdx = 0;
+	for ( const ShapedTextParagraph& sp : layout->paragraphs ) {
+		for ( const ShapedGlyph& sg : sp.shapedGlyphs ) {
+			if ( mString[sg.stringIndex] == '\t' )
+				continue;
+			Glyph glyph = sg.font->getGlyphByIndex(
+				sg.glyphIndex, mFontStyleConfig.CharacterSize, bold, italic, 0,
+				rFont->getPage( mFontStyleConfig.CharacterSize ) );
+			if ( glyph.bounds.Right > 0 && glyph.bounds.Bottom > 0 ) {
+				cb( sg.stringIndex, vIdx );
+				vIdx += quadVertex;
+			}
+		}
+	}
+}
+#endif
+
 void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 	if ( mString.empty() )
 		return;
@@ -2603,34 +2657,14 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 #ifdef EE_TEXT_SHAPER_ENABLED
 		if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
 			 !canSkipShaping( mTextHints ) ) {
-			FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
-			auto layout = TextLayout::layout(
-				mString, rFont, mFontStyleConfig.CharacterSize, mFontStyleConfig.Style, mTabWidth,
-				mFontStyleConfig.OutlineThickness, {}, mTextHints, mDirection );
-			size_t vIdx = 0;
-			bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
-			bool italic = ( mFontStyleConfig.Style & Italic ) != 0;
-
-			for ( const ShapedTextParagraph& sp : layout->paragraphs ) {
-				for ( const ShapedGlyph& sg : sp.shapedGlyphs ) {
-					if ( mString[sg.stringIndex] == '\t' )
-						continue;
-
-					Glyph glyph = sg.font->getGlyphByIndex(
-						sg.glyphIndex, mFontStyleConfig.CharacterSize, bold, italic,
-						mFontStyleConfig.OutlineThickness,
-						rFont->getPage( mFontStyleConfig.CharacterSize ) );
-
-					if ( glyph.bounds.Right > 0 && glyph.bounds.Bottom > 0 ) {
-						if ( vIdx + GLi->quadVertex() <= mColors.size() && sg.stringIndex >= from &&
-							 sg.stringIndex <= to ) {
-							for ( int i = 0; i < GLi->quadVertex(); ++i )
-								mColors[vIdx + i] = color;
-						}
-						vIdx += GLi->quadVertex();
-					}
+			const size_t quadVertex = GLi->quadVertex();
+			forEachShapedGlyphQuad( [&]( Uint32 stringIndex, size_t vIdx ) {
+				if ( vIdx + quadVertex <= mColors.size() && stringIndex >= from &&
+					 stringIndex <= to ) {
+					for ( size_t i = 0; i < quadVertex; ++i )
+						mColors[vIdx + i] = color;
 				}
-			}
+			} );
 
 			mColorsNeedUpdate = false;
 			return;
@@ -2733,38 +2767,16 @@ void Text::setFillColor( const std::vector<Color>& colors ) {
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
 		 !canSkipShaping( mTextHints ) ) {
-		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
-		auto layout = TextLayout::layout(
-			mString, rFont, mFontStyleConfig.CharacterSize, mFontStyleConfig.Style, mTabWidth,
-			mFontStyleConfig.OutlineThickness, {}, mTextHints, mDirection );
-		size_t vIdx = 0;
-		bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
-		bool italic = ( mFontStyleConfig.Style & Italic ) != 0;
-
-		for ( const ShapedTextParagraph& sp : layout->paragraphs ) {
-			for ( const ShapedGlyph& sg : sp.shapedGlyphs ) {
-				if ( mString[sg.stringIndex] == '\t' )
-					continue;
-
-				Glyph glyph =
-					sg.font->getGlyphByIndex( sg.glyphIndex, mFontStyleConfig.CharacterSize, bold,
-											  italic, mFontStyleConfig.OutlineThickness,
-											  rFont->getPage( mFontStyleConfig.CharacterSize ) );
-
-				if ( glyph.bounds.Right > 0 && glyph.bounds.Bottom > 0 ) {
-					if ( vIdx + GLi->quadVertex() <= mColors.size() &&
-						 sg.stringIndex < colors.size() ) {
-						Color color = colors[sg.stringIndex];
-						if ( mContainsColorEmoji &&
-							 Font::isEmojiCodePoint( mString[sg.stringIndex] ) )
-							color = Color( 255, 255, 255, color.a );
-						for ( int i = 0; i < GLi->quadVertex(); ++i )
-							mColors[vIdx + i] = color;
-						vIdx += GLi->quadVertex();
-					}
-				}
-			}
-		}
+		const size_t quadVertex = GLi->quadVertex();
+		forEachShapedGlyphQuad( [&]( Uint32 stringIndex, size_t vIdx ) {
+			if ( vIdx + quadVertex > mColors.size() || stringIndex >= colors.size() )
+				return;
+			Color color = colors[stringIndex];
+			if ( mContainsColorEmoji && Font::isEmojiCodePoint( mString[stringIndex] ) )
+				color = Color( 255, 255, 255, color.a );
+			for ( size_t i = 0; i < quadVertex; ++i )
+				mColors[vIdx + i] = color;
+		} );
 
 		mColorsNeedUpdate = false;
 		return;
@@ -2959,45 +2971,6 @@ void Text::addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,
 		vc.position.y = position.y + top - outlineThickness;
 		vertices.push_back( vc );
 	}
-}
-
-Uint32 Text::getTotalVertices() {
-	bool underlined = ( mFontStyleConfig.Style & Underlined ) != 0;
-	bool strikeThrough = ( mFontStyleConfig.Style & StrikeThrough ) != 0;
-	size_t sv = mString.size() * GLi->quadVertex();
-	Uint32 skipped = 0;
-	bool lineHasChars = false;
-
-	for ( const auto& ch : mString ) {
-		lineHasChars = true;
-
-		if ( ' ' == ch )
-			skipped++;
-		else if ( '\n' == ch || '\t' == ch || '\r' == ch ) {
-			lineHasChars = false;
-			skipped++;
-
-			if ( '\n' == ch ) {
-				if ( underlined )
-					skipped--;
-
-				if ( strikeThrough )
-					skipped--;
-			}
-		}
-	}
-
-	if ( lineHasChars ) {
-		if ( underlined )
-			skipped--;
-
-		if ( strikeThrough )
-			skipped--;
-	}
-
-	sv -= skipped * GLi->quadVertex();
-
-	return sv;
 }
 
 void Text::setDirection( TextDirection direction ) {

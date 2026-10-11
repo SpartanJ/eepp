@@ -393,8 +393,11 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 						sg.advance = { currentGlyph.advance, 0 };
 						sg.direction = (TextDirection)segment.direction;
 						sg.script = (LangScript)props.script;
-						sg.position.x = pen.x + ( glyphPos[i].x_offset / 64.f );
-						sg.position.y = pen.y - ( glyphPos[i].y_offset / 64.f );
+						// Snap to the pixel grid like complex-script glyphs do. The pen can be
+						// fractional after a complex-script run (HarfBuzz advances are 26.6 fixed
+						// point), and mask glyphs drawn at fractional positions are blurred.
+						sg.position.x = std::round( pen.x + ( glyphPos[i].x_offset / 64.f ) );
+						sg.position.y = std::round( pen.y - ( glyphPos[i].y_offset / 64.f ) );
 						curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
 
 						pen.x += currentGlyph.advance;
@@ -709,6 +712,35 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 
 		yShift += ( sp.wrapInfo.wraps.size() - startWrapsCount ) * vspace;
 	}
+}
+
+TextDirection TextLayout::getFirstStrongDirection( const String::View& string ) {
+	for ( const auto& ch : string ) {
+#ifdef EE_TEXT_SHAPER_ENABLED
+		switch ( SBCodepointGetBidiType( static_cast<SBCodepoint>( ch ) ) ) {
+			case SBBidiTypeL:
+				return TextDirection::LeftToRight;
+			case SBBidiTypeR:
+			case SBBidiTypeAL:
+				return TextDirection::RightToLeft;
+			default:
+				break;
+		}
+#else
+		// Without the bidi database, approximate with the right-to-left script blocks (Hebrew,
+		// Arabic, Syriac, Thaana, NKo, Samaritan, Mandaic, presentation forms and the
+		// supplementary RTL blocks) and treat other letters as left-to-right.
+		if ( ( ch >= 0x0590 && ch <= 0x08FF ) || ( ch >= 0xFB1D && ch <= 0xFDFF ) ||
+			 ( ch >= 0xFE70 && ch <= 0xFEFF ) || ( ch >= 0x10800 && ch <= 0x10FFF ) ||
+			 ( ch >= 0x1E800 && ch <= 0x1EFFF ) )
+			return TextDirection::RightToLeft;
+		if ( ( ch >= 'A' && ch <= 'Z' ) || ( ch >= 'a' && ch <= 'z' ) ||
+			 ( ch >= 0x00C0 && ch < 0x0590 && ch != 0x00D7 && ch != 0x00F7 ) ||
+			 ( ch >= 0x0900 && ch < 0x2000 ) || ( ch >= 0x3040 && ch < 0xFB1D ) )
+			return TextDirection::LeftToRight;
+#endif
+	}
+	return TextDirection::Unspecified;
 }
 
 } // namespace EE::Graphics
