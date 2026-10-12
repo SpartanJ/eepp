@@ -35,6 +35,10 @@ using namespace EE::UI;
 static NSString* const MenuItemCmdCharAttribute = @"AXMenuItemCmdChar";
 static NSString* const MenuItemCmdModifiersAttribute = @"AXMenuItemCmdModifiers";
 
+// Older AppKit SDKs expose the navigation-order method but not its named attribute constant.
+// Use the native AX name without importing a symbol unavailable on older deployment targets.
+static NSString* const ChildrenInNavigationOrderAttribute = @"AXChildrenInNavigationOrder";
+
 static NSString* toNSString( const String& string ) {
 	const std::string utf8 = string.toUtf8();
 	return utf8.empty() ? @"" : [NSString stringWithUTF8String:utf8.c_str()];
@@ -763,7 +767,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 - (NSUInteger)accessibilityArrayAttributeCount:(NSAccessibilityAttributeName)attribute {
 	if ( ![attribute isEqualToString:NSAccessibilityChildrenAttribute] &&
 		 ![attribute isEqualToString:NSAccessibilityVisibleChildrenAttribute] &&
-		 ![attribute isEqualToString:NSAccessibilityChildrenInNavigationOrderAttribute] )
+		 ![attribute isEqualToString:ChildrenInNavigationOrderAttribute] )
 		return 0;
 	auto state = [self accessibilityState];
 	return state ? state->childCountFor( state->root() ) : 0;
@@ -774,7 +778,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 									 maxCount:(NSUInteger)maxCount {
 	if ( ![attribute isEqualToString:NSAccessibilityChildrenAttribute] &&
 		 ![attribute isEqualToString:NSAccessibilityVisibleChildrenAttribute] &&
-		 ![attribute isEqualToString:NSAccessibilityChildrenInNavigationOrderAttribute] )
+		 ![attribute isEqualToString:ChildrenInNavigationOrderAttribute] )
 		return @[];
 	auto state = [self accessibilityState];
 	return state ? state->childrenFor( state->root(), index, maxCount ) : @[];
@@ -785,7 +789,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		return self.accessibilityChildren;
 	if ( [attribute isEqualToString:NSAccessibilityVisibleChildrenAttribute] )
 		return self.accessibilityVisibleChildren;
-	if ( [attribute isEqualToString:NSAccessibilityChildrenInNavigationOrderAttribute] )
+	if ( [attribute isEqualToString:ChildrenInNavigationOrderAttribute] )
 		return self.accessibilityChildrenInNavigationOrder;
 	if ( [attribute isEqualToString:NSAccessibilityParentAttribute] )
 		return self.accessibilityParent;
@@ -823,7 +827,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		NSAccessibilityIdentifierAttribute, NSAccessibilityPositionAttribute,
 		NSAccessibilitySizeAttribute, NSAccessibilityParentAttribute,
 		NSAccessibilityChildrenAttribute, NSAccessibilityVisibleChildrenAttribute,
-		NSAccessibilityChildrenInNavigationOrderAttribute, NSAccessibilityWindowAttribute,
+		ChildrenInNavigationOrderAttribute, NSAccessibilityWindowAttribute,
 		NSAccessibilityTopLevelUIElementAttribute, NSAccessibilityFocusedUIElementAttribute,
 		NSAccessibilityEnabledAttribute, NSAccessibilityHiddenAttribute
 	];
@@ -1399,7 +1403,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		return self.accessibilityChildren;
 	if ( [attribute isEqualToString:NSAccessibilityVisibleChildrenAttribute] )
 		return self.accessibilityVisibleChildren;
-	if ( [attribute isEqualToString:NSAccessibilityChildrenInNavigationOrderAttribute] )
+	if ( [attribute isEqualToString:ChildrenInNavigationOrderAttribute] )
 		return self.accessibilityChildrenInNavigationOrder;
 	if ( [attribute isEqualToString:NSAccessibilityContentsAttribute] )
 		return self.accessibilityContents;
@@ -1452,7 +1456,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 		NSAccessibilityRoleAttribute, NSAccessibilityRoleDescriptionAttribute,
 		NSAccessibilityIdentifierAttribute, NSAccessibilityEnabledAttribute,
 		NSAccessibilityFocusedAttribute, NSAccessibilityChildrenAttribute,
-		NSAccessibilityVisibleChildrenAttribute, NSAccessibilityChildrenInNavigationOrderAttribute,
+		NSAccessibilityVisibleChildrenAttribute, ChildrenInNavigationOrderAttribute,
 		NSAccessibilityContentsAttribute, NSAccessibilityParentAttribute,
 		NSAccessibilityWindowAttribute, NSAccessibilityTopLevelUIElementAttribute,
 		NSAccessibilityPositionAttribute, NSAccessibilitySizeAttribute,
@@ -1526,7 +1530,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 - (NSUInteger)accessibilityArrayAttributeCount:(NSAccessibilityAttributeName)attribute {
 	if ( ![attribute isEqualToString:NSAccessibilityChildrenAttribute] &&
 		 ![attribute isEqualToString:NSAccessibilityVisibleChildrenAttribute] &&
-		 ![attribute isEqualToString:NSAccessibilityChildrenInNavigationOrderAttribute] &&
+		 ![attribute isEqualToString:ChildrenInNavigationOrderAttribute] &&
 		 ![attribute isEqualToString:NSAccessibilityRowsAttribute] &&
 		 ![attribute isEqualToString:NSAccessibilityVisibleRowsAttribute] )
 		return 0;
@@ -1539,7 +1543,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 									 maxCount:(NSUInteger)maxCount {
 	if ( ![attribute isEqualToString:NSAccessibilityChildrenAttribute] &&
 		 ![attribute isEqualToString:NSAccessibilityVisibleChildrenAttribute] &&
-		 ![attribute isEqualToString:NSAccessibilityChildrenInNavigationOrderAttribute] &&
+		 ![attribute isEqualToString:ChildrenInNavigationOrderAttribute] &&
 		 ![attribute isEqualToString:NSAccessibilityRowsAttribute] &&
 		 ![attribute isEqualToString:NSAccessibilityVisibleRowsAttribute] )
 		return @[];

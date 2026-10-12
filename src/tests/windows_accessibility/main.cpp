@@ -30,6 +30,8 @@ void testProviderPolicyChangeDuringDispatch();
 
 void testProviderScalarQueries();
 
+void testProviderEventAdviceABI();
+
 namespace {
 
 using Clock = std::chrono::steady_clock;
@@ -630,6 +632,7 @@ int wmain( int argc, wchar_t** argv ) {
 	}
 
 	try {
+		record( "provider event advice ABI", testProviderEventAdviceABI );
 		record( "provider selection teardown", testProviderSelectionTeardown );
 		record( "provider text range window identity", testProviderTextRangeIdentity );
 		record( "provider policy change during dispatch", testProviderPolicyChangeDuringDispatch );

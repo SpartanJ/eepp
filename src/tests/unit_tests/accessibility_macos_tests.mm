@@ -158,7 +158,17 @@ UTEST( AccessibilityMacOS, ApplicationWindowBridgeIdentityActionTextAndLifecycle
 	NSArray* children = [windowRoot accessibilityChildren];
 	EXPECT_TRUE( children != nil );
 	EXPECT_EQ( children.count, 5u );
+	// Use the native AX name so this also builds with SDKs predating the AppKit constant.
+	NSString* navigationOrder = @"AXChildrenInNavigationOrder";
+	EXPECT_TRUE( [[windowRoot accessibilityAttributeNames] containsObject:navigationOrder] );
+	EXPECT_EQ( [windowRoot accessibilityArrayAttributeCount:navigationOrder], children.count );
+	EXPECT_TRUE(
+		[[windowRoot accessibilityAttributeValue:navigationOrder] isEqualToArray:children] );
+	EXPECT_TRUE( [[windowRoot accessibilityArrayAttributeValues:navigationOrder index:1 maxCount:2]
+		isEqualToArray:[children subarrayWithRange:NSMakeRange( 1, 2 )]] );
 	NSObject<NSAccessibility>* element = children.firstObject;
+	EXPECT_TRUE( [[element accessibilityAttributeNames] containsObject:navigationOrder] );
+	EXPECT_EQ( [element accessibilityArrayAttributeCount:navigationOrder], 0u );
 	NSObject<NSAccessibility>* sameElement = [windowRoot.accessibilityChildren firstObject];
 	EXPECT_TRUE( element == sameElement );
 	EXPECT_TRUE( [element.accessibilityRole isEqualToString:NSAccessibilityButtonRole] );

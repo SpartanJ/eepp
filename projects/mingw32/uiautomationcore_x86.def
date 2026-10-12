@@ -1,0 +1,10 @@
+LIBRARY UIAutomationCore.dll
+EXPORTS
+  UiaClientsAreListening@0
+  UiaDisconnectProvider@4
+  UiaGetReservedNotSupportedValue@4
+  UiaHostProviderFromHwnd@8
+  UiaRaiseAutomationEvent@8
+  UiaRaiseAutomationPropertyChangedEvent@40
+  UiaRaiseStructureChangedEvent@16
+  UiaReturnRawElementProvider@16

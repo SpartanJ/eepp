@@ -623,10 +623,12 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	filter { "options:windows-mingw-build", "architecture:x86" }
 		syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/i686-w64-mingw32/lib/", "/usr/i686-w64-mingw32/sys-root/mingw/lib/" }
+		syslibdirs { "libs/windows/x86/thirdparty" }
 
 	filter { "options:windows-mingw-build", "architecture:x86_64" }
 		if not is_arm64_arch() then
 			syslibdirs { "src/thirdparty/" .. get_sdl_version_dir() .."/x86_64-w64-mingw32/lib/", "/usr/x86_64-w64-mingw32/sys-root/mingw/lib/" }
+			syslibdirs { "libs/windows/x86_64/thirdparty" }
 		end
 
 	filter { "options:windows-mingw-build", "options:arch=arm64" }

@@ -100,6 +100,7 @@ else
   export CC=x86_64-w64-mingw32-gcc
   export CXX=x86_64-w64-mingw32-g++
 fi
+bash ./build_uiautomation.sh "$ARCH" "$CC" || exit 1
 fi
 
 cd ../../make/windows/ || exit

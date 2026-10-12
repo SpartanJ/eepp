@@ -34,6 +34,28 @@
 #include <uiautomationcore.h>
 #include <uiautomationcoreapi.h>
 
+// Older MinGW-w64 headers (including Ubuntu 24.04's v11) omit these Windows declarations.
+// Keep the native COM ABI; the MinGW build script supplies a missing import library as well.
+#ifndef __IRawElementProviderAdviseEvents_INTERFACE_DEFINED__
+#define __IRawElementProviderAdviseEvents_INTERFACE_DEFINED__
+MIDL_INTERFACE( "a407b27b-0f6d-4427-9292-473c7bf93258" )
+IRawElementProviderAdviseEvents : public IUnknown {
+  public:
+	virtual HRESULT STDMETHODCALLTYPE AdviseEventAdded( EVENTID, SAFEARRAY* ) = 0;
+
+	virtual HRESULT STDMETHODCALLTYPE AdviseEventRemoved( EVENTID, SAFEARRAY* ) = 0;
+};
+#ifdef __CRT_UUID_DECL
+__CRT_UUID_DECL( IRawElementProviderAdviseEvents, 0xa407b27b, 0x0f6d, 0x4427, 0x92, 0x92, 0x47,
+				 0x3c, 0x7b, 0xf9, 0x32, 0x58 )
+#endif
+#endif
+
+#if defined( __MINGW32__ )
+// An identical redeclaration is also valid with newer MinGW headers that already expose it.
+extern "C" BOOL WINAPI UiaClientsAreListening( void );
+#endif
+
 /**
  * Windows UI Automation accessibility backend.
  *

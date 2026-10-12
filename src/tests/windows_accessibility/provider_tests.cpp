@@ -68,6 +68,37 @@ class TeardownModel : public Model {
 
 } // namespace
 
+void testProviderEventAdviceABI() {
+	UIApplication app( testWindow(), testSettings() );
+	require( app.getUI() != nullptr, "hidden test window could not be created" );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	auto context = std::make_shared<UIAutomationProviderContext>( *manager, nullptr, 1 );
+	std::unique_ptr<UIAutomationProvider, ReleaseCOM> root(
+		context->provider( manager->getRoot() ) );
+	require( root != nullptr, "root provider could not be created" );
+	const IID adviceId{
+		0xa407b27b, 0x0f6d, 0x4427, { 0x92, 0x92, 0x47, 0x3c, 0x7b, 0xf9, 0x32, 0x58 } };
+	require( IsEqualIID( adviceId, __uuidof( IRawElementProviderAdviseEvents ) ),
+			 "event advice interface UUID does not match the Windows ABI" );
+	IRawElementProviderAdviseEvents* rawAdvice{};
+	const HRESULT result = root->QueryInterface( adviceId, reinterpret_cast<void**>( &rawAdvice ) );
+	std::unique_ptr<IRawElementProviderAdviseEvents, ReleaseCOM> advice( rawAdvice );
+	require( result == S_OK && advice != nullptr, "event advice interface query failed" );
+	context->updateClientState(); // Also exercises the UIAutomationCore import on old SDKs.
+	require( !context->hasActiveClients(), "unobserved context unexpectedly active" );
+	for ( int i = 0; i < 2; ++i ) {
+		require( advice->AdviseEventAdded( UIA_AutomationFocusChangedEventId, nullptr ) == S_OK,
+				 "event advice registration failed" );
+	}
+	require( context->hasActiveClients(), "event advice did not activate the context" );
+	require( advice->AdviseEventRemoved( UIA_AutomationFocusChangedEventId, nullptr ) == S_OK,
+			 "first event advice removal failed" );
+	require( context->hasActiveClients(), "event advice lost the remaining subscription" );
+	require( advice->AdviseEventRemoved( UIA_AutomationFocusChangedEventId, nullptr ) == S_OK,
+			 "last event advice removal failed" );
+	require( !context->hasActiveClients(), "balanced event advice left the context active" );
+}
+
 void testProviderSelectionTeardown() {
 	UIApplication app( testWindow(), testSettings() );
 	require( app.getUI() != nullptr, "hidden test window could not be created" );
