@@ -25,6 +25,7 @@ UITextEdit::UITextEdit( const std::string& tag ) : UICodeEditor( tag, true, true
 	mFont = NULL;
 	mHorizontalScrollBarEnabled = true;
 	mKerningEnabled = true;
+	mFlags |= UI_USES_TAB_MOD;
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 

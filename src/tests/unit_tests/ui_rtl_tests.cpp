@@ -69,6 +69,8 @@ class ParentChangeWidgetProbe : public UIWidget {
   public:
 	ParentChangeWidgetProbe() : UIWidget( "parent-change-probe" ) {}
 
+	using Node::childAddAt;
+
 	int parentTreeChanges{ 0 };
 	UIDirection observedDirection{ UIDirection::LeftToRight };
 
@@ -1106,6 +1108,40 @@ UTEST( UIDirection, matchingParentContextsSkipLeafRefresh ) {
 	child->setParent( second );
 	EXPECT_EQ( notifications, child->parentTreeChanges );
 	EXPECT_TRUE( child->observedDirection == UIDirection::RightToLeft );
+}
+
+UTEST( UIDirection, indexedReparentingRefreshesInheritedContextBeforeParentCallbacks ) {
+	UIApplication app( rtlWindowSettings(), rtlTestSettings() );
+	auto* ltr = eeNew( ParentChangeWidgetProbe, () );
+	ltr->setParent( app.getUI()->getRoot() );
+	auto* rtl = eeNew( ParentChangeWidgetProbe, () );
+	rtl->setParent( app.getUI()->getRoot() );
+	rtl->setDirection( UIDirection::RightToLeft );
+	auto* moved = eeNew( ParentChangeWidgetProbe, () );
+	moved->setParent( ltr );
+	auto* nested = fixedWidget( moved, 10, 10 );
+	rtl->childAddAt( moved, 0 );
+	EXPECT_TRUE( moved->observedDirection == UIDirection::RightToLeft );
+	EXPECT_TRUE( nested->isRTL() );
+	EXPECT_FALSE( moved->isDestroying() );
+	const int notifications = moved->parentTreeChanges;
+	rtl->childAddAt( moved, 0 );
+	EXPECT_EQ( notifications, moved->parentTreeChanges );
+	ltr->childAddAt( moved, 0 );
+	EXPECT_TRUE( moved->observedDirection == UIDirection::LeftToRight );
+	EXPECT_TRUE( nested->isLTR() );
+
+	// Plain scene nodes must propagate the inherited context to their UI descendants too.
+	auto* bridge = eeNew( ParentChangeNodeProbe, () );
+	bridge->setParent( ltr );
+	bridge->observedChild = fixedWidget( bridge, 10, 10 );
+	rtl->childAddAt( bridge, 0 );
+	EXPECT_TRUE( bridge->observedDirection == UIDirection::RightToLeft );
+	EXPECT_TRUE( bridge->observedChild->isRTL() );
+	bridge->detach();
+	ltr->childAddAt( bridge, 0 );
+	EXPECT_TRUE( bridge->observedDirection == UIDirection::LeftToRight );
+	EXPECT_TRUE( bridge->observedChild->isLTR() );
 }
 
 UTEST( UIDirection, detachedSubtreeRefreshesOnAttachmentToDefaultContext ) {

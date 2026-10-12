@@ -65,7 +65,7 @@ UIPushButton::UIPushButton( const std::string& tag ) : UIPushButton( tag, nullpt
 UIPushButton::UIPushButton( const std::string& tag,
 							const std::function<UITextView*( UIPushButton* )>& newTextViewCb ) :
 	UIWidget( tag ), mIcon( NULL ), mTextBox( NULL ) {
-	mFlags |= ( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
+	mFlags |= ( UI_TAB_FOCUSABLE | UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
 	auto cb = [this]( const Event* ) {
 		if ( mTextBox->getLayoutWidthPolicy() != SizePolicy::Fixed )

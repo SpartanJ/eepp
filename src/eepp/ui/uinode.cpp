@@ -1974,9 +1974,13 @@ void UINode::onSceneChange() {
 	UISceneNode* previousScene = mUISceneNode;
 #endif
 	Node::onSceneChange();
-	if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
-		mUISceneNode = static_cast<UISceneNode*>( mSceneNode );
-	}
+	auto* nextScene = mSceneNode && mSceneNode->isUISceneNode()
+						  ? static_cast<UISceneNode*>( mSceneNode )
+						  : nullptr;
+	if ( mUISceneNode != mSceneNode )
+		onUISceneNodeChange( nextScene );
+	if ( nextScene )
+		mUISceneNode = nextScene;
 #ifdef EE_DEBUG
 	// Same-window scene rebinding is an existing supported mechanism for embedded documents.
 	// Cross-window rebinding cannot safely migrate input and native-window dependencies.
@@ -1984,6 +1988,8 @@ void UINode::onSceneChange() {
 			  previousScene->getWindow() == mUISceneNode->getWindow() );
 #endif
 }
+
+void UINode::onUISceneNodeChange( UISceneNode* ) {}
 
 void UINode::onParentTreeChange() {
 	refreshEffectiveDirection();

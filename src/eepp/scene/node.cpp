@@ -257,6 +257,7 @@ Node* Node::setParent( Node* parent ) {
 		onParentTreeChange();
 	}
 	onParentChange();
+	SceneNode::notifyNodeParentChange( this, false );
 
 	return this;
 }
@@ -434,6 +435,7 @@ Node* Node::toFront() {
 	if ( NULL != mParentNode && mParentNode->mChildLast != this ) {
 		mParentNode->childRemove( this );
 		mParentNode->childAdd( this );
+		SceneNode::notifyNodeParentChange( this, false );
 	}
 	return this;
 }
@@ -625,12 +627,36 @@ void Node::childAdd( Node* node ) {
 
 void Node::childAddAt( Node* node, Uint32 index ) {
 	eeASSERT( NULL != node );
+	const bool reparenting = node->mParentNode != this;
+	if ( !reparenting ) {
+		// Detect no-ops before unlinking. Stop at the requested index, so moving to index zero
+		// stays constant-time even when the child is near the end of a large list.
+		Node* child = mChild;
+		Uint32 position = 0;
+		while ( child && child != node && position < index ) {
+			child = child->mNext;
+			++position;
+		}
+		if ( child == node && ( position == index || node == mChildLast ) )
+			return;
+	}
 
-	node->setParent( this );
-	childRemove( node );
+	const bool hadParent = node->mParentNode != nullptr;
+	const bool checkContext =
+		reparenting && ( node->mChild != nullptr ||
+						 ( node->mNodeFlags & NODE_FLAG_PROVIDES_PARENT_TREE_CONTEXT ) );
+	const Uint32 previousContext =
+		checkContext && hadParent ? node->mParentNode->getParentTreeContext() : 0;
+
+	// Reparent directly at the requested index, not via setParent()'s intermediate append.
+	if ( node->mParentNode )
+		node->mParentNode->childRemove( node );
 	node->mParentNode = this;
-	node->mSceneNode = node->findSceneNode();
+	if ( reparenting )
+		node->updateDrawInvalidator();
 
+	// Source-removal callbacks can reorder or delete destination siblings. Locate the insertion
+	// slot after they return rather than keeping a sibling pointer across those callbacks.
 	Node* nodeLoop = mChild;
 
 	if ( nodeLoop == NULL ) {
@@ -670,11 +696,31 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 	}
 
 	eeASSERT( !( NULL == mChildLast && NULL != mChild ) );
-
+	if ( !reparenting )
+		SceneNode::notifyNodeParentChange( node, false );
 	onChildCountChange( node, false );
+	if ( reparenting ) {
+		// Match setParent()'s lifecycle, but let scene and parent hooks see the final index.
+		node->setDirty();
+		// Scene-specific rebinding constraints belong to onSceneChange(), as in setParent().
+		if ( node->mSceneNode != node->findSceneNode() )
+			node->onSceneChange();
+		// Indexed insertion must refresh inherited state just like setParent(), but only after
+		// the final sibling links and scene binding are in place.
+		const Uint32 nextContext = checkContext && hadParent ? getParentTreeContext() : 0;
+		if ( !checkContext || !hadParent || previousContext != nextContext ||
+			 ( ( previousContext | nextContext ) & ParentTreeContextUnstable ) ) {
+			node->onParentTreeChange();
+		}
+		node->onParentChange();
+		SceneNode::notifyNodeParentChange( node, false );
+	}
 }
 
 void Node::childRemove( Node* node ) {
+	// Observers capture the old hierarchy before unlinking. With no observer, this is one
+	// relaxed load without a call, allocation or dependency on higher-level node types.
+	SceneNode::notifyNodeParentChange( node, true );
 	if ( node == mChild ) {
 		mChild = mChild->mNext;
 

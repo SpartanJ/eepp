@@ -155,9 +155,13 @@ void UIProgressBar::onPaddingChange() {
 }
 
 void UIProgressBar::setProgress( Float Val ) {
-	mProgress = eeclamp( Val, 0.f, mTotalSteps );
+	const Float progress = eeclamp( Val, 0.f, mTotalSteps );
+	if ( progress == mProgress )
+		return;
+	mProgress = progress;
 
 	onValueChange();
+	notifyAccessibilityEvent( AccessibilityEvent::ValueChanged );
 	updateTextBox();
 }
 

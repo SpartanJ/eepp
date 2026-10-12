@@ -1,5 +1,7 @@
 #include "utest.hpp"
 
+#include <array>
+#include <chrono>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/texturefactory.hpp>
@@ -7,6 +9,8 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/threadpool.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uifiledialog.hpp>
@@ -184,6 +188,133 @@ UTEST( UISceneNode, AsyncResourceCallbacksBindOwnerSceneAndRestorePreviousScene 
 	eeDelete( sceneA );
 }
 
+UTEST( UISceneNode, AsyncResourceEnqueueDuringDrainSurvivesTheNextIdleCheck ) {
+	UIApplication app( WindowSettings( 320, 240, "Async Resource Drain", WindowStyle::Default,
+									   WindowBackend::Default, 32, {}, 1, false, true ) );
+	auto* scene = app.getUI();
+	scene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+	auto state = scene->getAsyncResourceLoadState();
+	const auto generation = state->generation.load( std::memory_order_acquire );
+	int delivered = 0;
+	scene->update( Time::Zero );
+
+	std::thread producer( [&] {
+		UISceneNode::runAsyncResourceOnMainThread( state, generation, [&]( UISceneNode* ) {
+			++delivered;
+			// Queue from a worker after the drain swapped out its current batch.
+			std::thread nested( [&] {
+				UISceneNode::runAsyncResourceOnMainThread( state, generation,
+														   [&]( UISceneNode* ) { ++delivered; } );
+			} );
+			nested.join();
+		} );
+	} );
+	producer.join();
+	scene->update( Time::Zero );
+	EXPECT_EQ( delivered, 1 );
+	scene->update( Time::Zero );
+	EXPECT_EQ( delivered, 2 );
+	scene->update( Time::Zero );
+	EXPECT_EQ( delivered, 2 );
+}
+
+UTEST( UISceneNode, AsyncResourceConcurrentProducersDeliverExactlyOnce ) {
+	UIApplication app( WindowSettings( 320, 240, "Async Resource Producers", WindowStyle::Default,
+									   WindowBackend::Default, 32, {}, 1, false, true ) );
+	auto* scene = app.getUI();
+	scene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+	auto state = scene->getAsyncResourceLoadState();
+	const auto generation = state->generation.load( std::memory_order_acquire );
+	constexpr size_t producerCount = 4;
+	constexpr size_t deliveriesPerProducer = 128;
+	std::array<int, producerCount * deliveriesPerProducer> delivered{};
+	std::atomic<size_t> completed{};
+	std::array<std::thread, producerCount> producers;
+	for ( size_t producer = 0; producer < producerCount; ++producer ) {
+		producers[producer] = std::thread( [&, producer] {
+			for ( size_t i = 0; i < deliveriesPerProducer; ++i ) {
+				const size_t index = producer * deliveriesPerProducer + i;
+				UISceneNode::runAsyncResourceOnMainThread(
+					state, generation, [&, index]( UISceneNode* ) { ++delivered[index]; } );
+				std::this_thread::yield();
+			}
+			completed.fetch_add( 1, std::memory_order_release );
+		} );
+	}
+	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
+	while ( completed.load( std::memory_order_acquire ) != producerCount &&
+			std::chrono::steady_clock::now() < deadline ) {
+		scene->update( Time::Zero );
+		std::this_thread::yield();
+	}
+	for ( auto& producer : producers )
+		producer.join();
+	scene->update( Time::Zero );
+	scene->update( Time::Zero );
+	for ( const auto count : delivered )
+		EXPECT_EQ( count, 1 );
+}
+
+UTEST( UISceneNode, AsyncResourceDelayedWorkRemainsPendingAndInvalidationReleasesIt ) {
+	UIApplication app( WindowSettings( 320, 240, "Async Resource Delays", WindowStyle::Default,
+									   WindowBackend::Default, 32, {}, 1, false, true ) );
+	auto* scene = app.getUI();
+	scene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+	auto state = scene->getAsyncResourceLoadState();
+	const auto generation = state->generation.load( std::memory_order_acquire );
+	int delivered = 0;
+	auto retained = std::make_shared<int>( 1 );
+	std::weak_ptr<int> weak = retained;
+	UISceneNode::runAsyncResourceOnMainThread(
+		state, generation,
+		[retained = std::move( retained ), &delivered]( UISceneNode* ) { ++delivered; },
+		Seconds( 60 ) );
+	scene->update( Time::Zero );
+	scene->update( Time::Zero );
+	EXPECT_EQ( delivered, 0 );
+	EXPECT_FALSE( weak.expired() );
+	scene->invalidateAsyncResourceLoads();
+	scene->update( Time::Zero );
+	EXPECT_TRUE( weak.expired() );
+	EXPECT_EQ( delivered, 0 );
+
+	const auto currentGeneration = state->generation.load( std::memory_order_acquire );
+	UISceneNode::runAsyncResourceOnMainThread(
+		state, currentGeneration, [&]( UISceneNode* ) { ++delivered; }, Milliseconds( 20 ) );
+	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
+	while ( !delivered && std::chrono::steady_clock::now() < deadline ) {
+		scene->update( Time::Zero );
+		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	}
+	EXPECT_EQ( delivered, 1 );
+	scene->update( Time::Zero );
+	EXPECT_EQ( delivered, 1 );
+}
+
+UTEST( UISceneNode, WidgetDeletionUsesDraggingStateAfterCloseCallbacks ) {
+	UIApplication app( WindowSettings( 320, 240, "Widget Dragging Teardown", WindowStyle::Default,
+									   WindowBackend::Default, 32, {}, 1, false, true ) );
+	auto* scene = app.getUI();
+	scene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+	auto* dispatcher = scene->getEventDispatcher();
+	auto* widget = UIWidget::New();
+	dispatcher->setNodeDragging( widget );
+	eeDelete( widget );
+	EXPECT_TRUE( dispatcher->getNodeDragging() == nullptr );
+
+	auto* survivor = UIWidget::New();
+	widget = UIWidget::New();
+	dispatcher->setNodeDragging( widget );
+	widget->addEventListener( Event::OnClose, [dispatcher, survivor]( const Event* ) {
+		dispatcher->setNodeDragging( nullptr );
+		dispatcher->setNodeDragging( survivor );
+	} );
+	eeDelete( widget );
+	EXPECT_EQ( dispatcher->getNodeDragging(), survivor );
+	eeDelete( survivor );
+	EXPECT_TRUE( dispatcher->getNodeDragging() == nullptr );
+}
+
 class TestUIApplication : public UIApplication {
   public:
 	using UIApplication::UIApplication;
@@ -259,14 +390,24 @@ UTEST( UIApplication, RoutesNativeMouseWheelExactlyOnceToTargetWindow ) {
 }
 
 UTEST( UIApplication, CreatesSecondaryWindowWithoutChangingAmbientScene ) {
-	TestUIApplication app(
-		WindowSettings( 320, 240, "Primary UI Context", WindowStyle::Default,
-						WindowBackend::Default, 32, {}, 1, false, true ),
-		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f,
-								 true ),
-		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	auto threadPool = System::ThreadPool::createShared( 1 );
+	UIApplication::Settings settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f,
+									  true );
+	settings.threadPool = threadPool;
+	settings.accessibilityPolicy = AccessibilityPolicy::Disabled;
+	TestUIApplication app( WindowSettings( 320, 240, "Primary UI Context", WindowStyle::Default,
+										   WindowBackend::Default, 32, {}, 1, false, true ),
+						   settings, ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	ASSERT_TRUE( app.getWindow() != nullptr );
 	ASSERT_TRUE( app.getUI() != nullptr );
+	EXPECT_TRUE( app.getUI()->getThreadPool() == threadPool );
+	EXPECT_EQ( app.getUI()->getAccessibilityPolicy(), AccessibilityPolicy::Disabled );
+	app.tickOnce();
+	EXPECT_TRUE( static_cast<const UISceneNode*>( app.getUI() )->getAccessibilityManager() ==
+				 nullptr );
+	app.getUI()->getAccessibilityManager()->update();
+	EXPECT_FALSE( app.getUI()->getAccessibilityManager()->isBackendAvailable() );
+	EXPECT_TRUE( app.getUI()->getAccessibilityManager()->isBackendInitializationComplete() );
 	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.5f );
 	ASSERT_TRUE( app.getUI()->getUIIconThemeManager()->getCurrentTheme() != nullptr );
 	EXPECT_TRUE( app.getUI()->getUIIconThemeManager()->findIcon( "go-up" ) != nullptr );
@@ -289,6 +430,8 @@ UTEST( UIApplication, CreatesSecondaryWindowWithoutChangingAmbientScene ) {
 										  WindowBackend::Default, 32, {}, 1, false, true ),
 						  ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	ASSERT_TRUE( secondaryUI != nullptr );
+	EXPECT_TRUE( secondaryUI->getThreadPool() == threadPool );
+	EXPECT_EQ( secondaryUI->getAccessibilityPolicy(), AccessibilityPolicy::Disabled );
 	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.5f );
 	EXPECT_EQ( app.getWindowCount(), 2u );
 	EXPECT_EQ( app.getUI( secondaryUI->getWindow() ), secondaryUI );
@@ -665,6 +808,8 @@ UTEST( UISceneNode, NestedSceneOwnsDescendantSceneAndStyles ) {
 
 	UISceneNode* nestedScene = UISceneNode::New();
 	nestedScene->setParent( hostWidget );
+	AccessibilityManager* hostAccessibility = hostScene->getAccessibilityManager();
+	EXPECT_TRUE( nestedScene->getAccessibilityManager() == hostAccessibility );
 	UIWidget* nestedWidget = UIWidget::New();
 	nestedWidget->setClass( "shared-name" );
 	nestedWidget->setParent( nestedScene->getRoot() );

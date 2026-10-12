@@ -8,6 +8,7 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/translator.hpp>
+#include <eepp/ui/accessibility/accessibility.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/drawableresolver.hpp>
@@ -43,6 +44,7 @@ class UIWindow;
 class UILayout;
 class UIIcon;
 class UIRoot;
+class AccessibilityManager;
 
 struct NavigationRequest {
 	enum class Target : Uint8 { Current, NewTab };
@@ -93,10 +95,11 @@ class EE_API UISceneNode : public SceneNode {
 	 *                               Graphics::defaultResourceScope(). Keep this enabled for normal
 	 *                               application scenes. Disable it for intentionally isolated
 	 * scenes that must only resolve local or explicitly imported resources.
+	 * @param threadPool Shared worker pool used for asynchronous scene services.
 	 * @return Pointer to the newly created UISceneNode instance.
 	 */
-	static UISceneNode* New( EE::Window::Window* window = NULL,
-							 bool importDefaultResources = true );
+	static UISceneNode* New( EE::Window::Window* window = NULL, bool importDefaultResources = true,
+							 std::shared_ptr<ThreadPool> threadPool = nullptr );
 
 	/**
 	 * @brief Destroys the UISceneNode and cleans up resources.
@@ -513,6 +516,31 @@ class EE_API UISceneNode : public SceneNode {
 	 * @return Pointer to the root UIWidget.
 	 */
 	UIWidget* getRoot() const;
+
+	/** Lazily creates and returns the live accessibility query resolver. */
+	AccessibilityManager* getAccessibilityManager();
+
+	const AccessibilityManager* getAccessibilityManager() const {
+		return getExistingAccessibilityManager();
+	}
+
+	/** Selects native accessibility for this root scene. Nested scenes delegate to their host.
+	 * Changes requested inside an accessibility callback take effect on the next scene update,
+	 * after the current native request has finished. */
+	UISceneNode* setAccessibilityPolicy( AccessibilityPolicy policy );
+
+	AccessibilityPolicy getAccessibilityPolicy() const;
+
+	/** Asks assistive clients to speak a message (for example "Build finished") without moving
+	 * focus. Costs nothing while no client is active. */
+	void announceForAccessibility( const String& message,
+								   AccessibilityLive priority = AccessibilityLive::Polite );
+
+	bool hasActiveAccessibilityClients() const {
+		return !( mNodeFlags & NODE_FLAG_CLOSE ) &&
+			   ( mHostUISceneNode ? mHostUISceneNode->hasActiveAccessibilityClients()
+								  : ( mAccessibilityState & AccessibilityClientActive ) != 0 );
+	}
 
 	/**
 	 * @brief Sets the UI direction of the scene root. Every widget that does not override its
@@ -1026,6 +1054,7 @@ class EE_API UISceneNode : public SceneNode {
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
+	friend class EE::UI::AccessibilityManager;
 	friend class EE::Window::Engine;
 
 	// Engine lifecycle boundary for process-static main-thread resource deliveries. Shutdown first
@@ -1036,14 +1065,18 @@ class EE_API UISceneNode : public SceneNode {
 	static void finishAsyncResourceMainThreadQueueShutdown();
 
 	UIRoot* mRoot{ nullptr };
+	std::unique_ptr<AccessibilityManager> mAccessibilityManager;
 	Sizef mDpSize;
 	Uint32 mFlags;
 	Translator mTranslator;
 	std::vector<UIWindow*> mWindowsList;
 	CSS::StyleSheet mStyleSheet;
+	static constexpr Uint8 AccessibilityPolicyMask = 0x03;
+	static constexpr Uint8 AccessibilityClientActive = 0x04;
 	bool mIsLoading{ false };
 	bool mUpdatingLayouts{ false };
 	bool mStyleDuringLoad{ false };
+	Uint8 mAccessibilityState{ static_cast<Uint8>( AccessibilityPolicy::Auto ) };
 	Uint32 mPendingHTTPStyleSheetLoads{ 0 };
 	bool mHTTPStyleSheetChanged{ false };
 	UIThemeManager* mUIThemeManager{ nullptr };
@@ -1100,8 +1133,10 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * @param window Pointer to the window, or NULL for default.
 	 * @param importDefaultResources Whether the scene scope imports the default resource catalog.
+	 * @param threadPool Shared worker pool used for asynchronous scene services.
 	 */
-	explicit UISceneNode( EE::Window::Window* window = NULL, bool importDefaultResources = true );
+	explicit UISceneNode( EE::Window::Window* window = NULL, bool importDefaultResources = true,
+						  std::shared_ptr<ThreadPool> threadPool = nullptr );
 
 	/**
 	 * @brief Handles node resize.
@@ -1310,6 +1345,23 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param node The node that was deleted.
 	 */
 	void onWidgetDelete( Node* node );
+
+	void onWidgetAccessibilitySourceDelete( UIWidget* widget );
+
+	/** The manager this scene's widgets report to, or nullptr when none exists yet. Never creates
+	 * one: lifecycle bookkeeping (destruction, scene and host changes) must not initialize
+	 * accessibility. */
+	AccessibilityManager* getExistingAccessibilityManager() const {
+		// Match the mutable accessor: a closing scene's widgets must not reach any manager.
+		if ( mNodeFlags & NODE_FLAG_CLOSE )
+			return nullptr;
+		return mHostUISceneNode ? mHostUISceneNode->getExistingAccessibilityManager()
+								: mAccessibilityManager.get();
+	}
+
+	/** Sets this root scene's client-active state and keeps the process-wide count that widget
+	 * notifications test inline in sync with it. */
+	void setAccessibilityClientActive( bool active );
 
 	/**
 	 * @brief Recursively resets tooltips for a node and its children.

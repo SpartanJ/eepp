@@ -1,6 +1,9 @@
 #include <algorithm>
+#include <eepp/graphics/text.hpp>
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
+#include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
@@ -26,6 +29,19 @@
 using namespace EE::Window;
 
 namespace EE { namespace UI {
+
+// Allocated only for widgets that set accessibility metadata. The one-byte fields are grouped
+// after the strings: 136 bytes instead of 144 with the role first (x86_64 libstdc++).
+struct AccessibilityProperties {
+	String label;
+	String description;
+	std::string labelledBy;
+	std::string describedBy;
+	AccessibilityRole role{ AccessibilityRole::None };
+	AccessibilityLive live{ AccessibilityLive::Off };
+	bool roleSet{ false };
+	bool hidden{ false };
+};
 
 Uint32 UIWidget::getDefaultTextHints() const {
 	const UISceneNode* sceneNode = getUISceneNode();
@@ -90,7 +106,7 @@ UIWidget::UIWidget( const std::string& tag ) :
 	mLayoutPositionPolicyWidget( NULL ),
 	mAttributesTransactionCount( 0 ) {
 	mNodeFlags |= NODE_FLAG_WIDGET;
-	mFlags |= UI_TAB_FOCUSABLE | UI_TOOLTIP_ENABLED;
+	mFlags |= UI_TOOLTIP_ENABLED;
 
 	createStyle();
 
@@ -108,16 +124,292 @@ UIWidget::UIWidget( const std::string& tag ) :
 UIWidget::UIWidget() : UIWidget( "widget" ) {}
 
 UIWidget::~UIWidget() {
+	// Invalidate the entire subtree before OnClose handlers can delete children themselves.
+	// Dirty-style cleanup still runs after those callbacks, as it did before accessibility.
+	// The scene outlives its widgets (its dispatcher is also used below), including at shutdown.
+	// Closing scenes resolve no manager. Check retained state before the shutdown query so
+	// unqueried widgets do not add shutdown or invalidation calls to the ordinary destructor path.
+	// A destroying widget already invalidated its descendants before running OnClose. Skip
+	// their shared manager lookup too; invalidateWidget() rejects this same case later on.
+	if ( mUISceneNode && ( !mParentNode || !mParentNode->isDestroying() ) ) {
+		if ( auto* manager = mUISceneNode->getExistingAccessibilityManager();
+			 manager && manager->needsWidgetInvalidation( this ) &&
+			 !SceneManager::isShuttingDown() )
+			manager->invalidateWidget( this );
+	}
+	mDestroying = true;
 	onClose();
 
-	if ( mUISceneNode && mUISceneNode->getUIEventDispatcher() &&
-		 mUISceneNode->getUIEventDispatcher()->getNodeDragging() == this )
-		mUISceneNode->getUIEventDispatcher()->setNodeDragging( nullptr );
+	// Resolve after OnClose, whose callbacks may change the dispatcher state.
+	if ( mUISceneNode ) {
+		auto* dispatcher = mUISceneNode->getUIEventDispatcher();
+		if ( dispatcher && dispatcher->getNodeDragging() == this )
+			dispatcher->setNodeDragging( nullptr );
+	}
 
-	if ( !SceneManager::instance()->isShuttingDown() && NULL != mUISceneNode )
+	if ( !SceneManager::isShuttingDown() && NULL != mUISceneNode )
 		mUISceneNode->onWidgetDelete( this );
+
 	eeSAFE_DELETE( mStyle );
 	eeSAFE_DELETE( mTooltip );
+	eeSAFE_DELETE( mAccessibilityProperties );
+}
+
+AccessibilityRole UIWidget::getAccessibilityRole() const {
+	return AccessibilityWidgetResolver::getRole( this );
+}
+
+AccessibilityRole UIWidget::resolveAccessibilityRole( AccessibilityRole defaultRole ) const {
+	if ( mAccessibilityProperties ) {
+		if ( mAccessibilityProperties->hidden )
+			return AccessibilityRole::None;
+		if ( mAccessibilityProperties->roleSet )
+			return mAccessibilityProperties->role;
+	}
+	return defaultRole;
+}
+
+String UIWidget::getAccessibilityName() const {
+	return AccessibilityWidgetResolver::getName( this );
+}
+
+String UIWidget::getAccessibilityDescription() const {
+	return AccessibilityWidgetResolver::getDescription( this );
+}
+
+String UIWidget::getAccessibilityValue() const {
+	return AccessibilityWidgetResolver::getValue( this );
+}
+
+AccessibilityRangeInfo UIWidget::getAccessibilityRange() const {
+	return AccessibilityWidgetResolver::getRange( this );
+}
+
+AccessibilityState UIWidget::getAccessibilityState() const {
+	return AccessibilityWidgetResolver::getState( this );
+}
+
+AccessibilityActions UIWidget::getAccessibilityActions() const {
+	return AccessibilityWidgetResolver::getActions( this );
+}
+
+bool UIWidget::performAccessibilityAction( const AccessibilityActionRequest& request ) {
+	return AccessibilityWidgetResolver::performAction( this, request );
+}
+
+String UIWidget::resolveAccessibilityName( const String& defaultName ) const {
+	return mAccessibilityProperties && !mAccessibilityProperties->label.empty()
+			   ? mAccessibilityProperties->label
+			   : defaultName;
+}
+
+String UIWidget::resolveAccessibilityDescription() const {
+	return mAccessibilityProperties ? mAccessibilityProperties->description : String();
+}
+
+bool UIWidget::isAccessibilityElement() const {
+	return getAccessibilityRole() != AccessibilityRole::None;
+}
+
+bool UIWidget::isAccessibilityHidden() const {
+	return mAccessibilityProperties && mAccessibilityProperties->hidden;
+}
+
+// Setters return early on unchanged values: CSS re-applies these properties on restyle, and a
+// no-op must neither allocate the properties block nor notify clients.
+UIWidget* UIWidget::setAccessibilityRole( AccessibilityRole role ) {
+	if ( mAccessibilityProperties && mAccessibilityProperties->roleSet &&
+		 mAccessibilityProperties->role == role )
+		return this;
+	const bool active =
+		Accessibility::isActive() && mUISceneNode && mUISceneNode->hasActiveAccessibilityClients();
+	const bool wasElement = active && isAccessibilityElement();
+	auto& properties = ensureAccessibilityProperties();
+	properties.role = role;
+	properties.roleSet = true;
+	if ( active && wasElement != isAccessibilityElement() ) {
+		// Exposing a transparent widget replaces its flattened children in its semantic parent.
+		// Refresh that parent, not the newly exposed widget that clients have not discovered yet.
+		auto* parent = getParent();
+		while ( parent && !parent->isWidget() )
+			parent = parent->getParent();
+		if ( parent ) {
+			parent->asType<UIWidget>()->notifyAccessibilityEvent(
+				AccessibilityEvent::ChildrenChanged );
+		}
+	} else {
+		notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
+	}
+	return this;
+}
+
+UIWidget* UIWidget::setAccessibilityLabel( const String& label ) {
+	if ( mAccessibilityProperties ? mAccessibilityProperties->label == label : label.empty() )
+		return this;
+	ensureAccessibilityProperties().label = label;
+	notifyAccessibilityEvent( AccessibilityEvent::NameChanged );
+	return this;
+}
+
+UIWidget* UIWidget::setAccessibilityDescription( const String& description ) {
+	if ( mAccessibilityProperties ? mAccessibilityProperties->description == description
+								  : description.empty() )
+		return this;
+	ensureAccessibilityProperties().description = description;
+	notifyAccessibilityEvent( AccessibilityEvent::DescriptionChanged );
+	return this;
+}
+
+UIWidget* UIWidget::setAccessibilityHidden( bool hidden ) {
+	if ( isAccessibilityHidden() == hidden )
+		return this;
+	ensureAccessibilityProperties().hidden = hidden;
+	// Both hiding and exposing a subtree change its parent's children. The subtree itself may
+	// no longer be reachable, and changes inside an already hidden parent stay silent.
+	if ( Accessibility::isActive() && mUISceneNode &&
+		 mUISceneNode->hasActiveAccessibilityClients() ) {
+		auto* parent = getParent();
+		if ( parent && parent->isWidget() ) {
+			parent->asType<UIWidget>()->notifyAccessibilityEvent(
+				AccessibilityEvent::ChildrenChanged );
+		} else {
+			notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
+		}
+	}
+	return this;
+}
+
+UIWidget* UIWidget::setAccessibilityLabelledBy( const std::string& id ) {
+	if ( getAccessibilityLabelledBy() == id )
+		return this;
+	ensureAccessibilityProperties().labelledBy = id;
+	notifyAccessibilityEvent( AccessibilityEvent::NameChanged );
+	return this;
+}
+
+const std::string& UIWidget::getAccessibilityLabelledBy() const {
+	static const std::string empty;
+	return mAccessibilityProperties ? mAccessibilityProperties->labelledBy : empty;
+}
+
+UIWidget* UIWidget::setAccessibilityDescribedBy( const std::string& id ) {
+	if ( getAccessibilityDescribedBy() == id )
+		return this;
+	ensureAccessibilityProperties().describedBy = id;
+	notifyAccessibilityEvent( AccessibilityEvent::DescriptionChanged );
+	return this;
+}
+
+const std::string& UIWidget::getAccessibilityDescribedBy() const {
+	static const std::string empty;
+	return mAccessibilityProperties ? mAccessibilityProperties->describedBy : empty;
+}
+
+UIWidget* UIWidget::setAccessibilityLive( AccessibilityLive live ) {
+	if ( getAccessibilityLive() == live )
+		return this;
+	ensureAccessibilityProperties().live = live;
+	return this;
+}
+
+AccessibilityLive UIWidget::getAccessibilityLive() const {
+	return mAccessibilityProperties ? mAccessibilityProperties->live : AccessibilityLive::Off;
+}
+
+AccessibilityProperties& UIWidget::ensureAccessibilityProperties() {
+	if ( !mAccessibilityProperties )
+		mAccessibilityProperties = eeNew( AccessibilityProperties, () );
+	return *mAccessibilityProperties;
+}
+
+void UIWidget::deliverAccessibilityEvent( AccessibilityEvent event ) {
+	if ( !mUISceneNode || !mUISceneNode->hasActiveAccessibilityClients() )
+		return;
+	if ( isDestroying() )
+		return;
+	auto manager = mUISceneNode->getAccessibilityManager();
+	UIWidget* target = AccessibilityWidgetResolver::getEventTarget( this, event );
+	// Hidden labels still update relations below. Other unexposed implementation widgets and
+	// detached widgets keep their usual silent path.
+	if ( !target && ( event != AccessibilityEvent::NameChanged ||
+					  !AccessibilityWidgetResolver::isHiddenFromAccessibility( this ) ) )
+		return;
+	if ( target ) {
+		while ( target && !target->isAccessibilityElement() ) {
+			// Plain nodes are transparent, as in the manager's semantic parent lookup: keep
+			// walking to the nearest exposed widget instead of falling back to the scene root.
+			Node* parent = target->getParent();
+			while ( parent && !parent->isWidget() )
+				parent = parent->getParent();
+			target = parent ? parent->asType<UIWidget>() : nullptr;
+		}
+		if ( !target )
+			target = mUISceneNode->getRoot();
+		// A property change of a widget no client was handed needs no identity. Widgets are
+		// often labelled before they are parented; registering them then would also make their
+		// reparenting announce a removal from a parent the client never saw them in.
+		const bool propertyChange = event == AccessibilityEvent::NameChanged ||
+									event == AccessibilityEvent::DescriptionChanged ||
+									event == AccessibilityEvent::ValueChanged ||
+									event == AccessibilityEvent::StateChanged ||
+									event == AccessibilityEvent::EnabledChanged ||
+									event == AccessibilityEvent::BoundsChanged;
+		const auto ref =
+			propertyChange ? manager->findNodeRef( target ) : manager->getNodeRef( target );
+		if ( ref.isValid() )
+			manager->notify( ref, event );
+	}
+	if ( target && ( event == AccessibilityEvent::NameChanged ||
+					 event == AccessibilityEvent::ValueChanged ) ) {
+		// The nearest live region speaks, unless the change is hidden from accessibility by the
+		// widget itself or any ancestor, including ancestors of the live region.
+		auto live = AccessibilityLive::Off;
+		for ( const Node* node = this; node; node = node->getParent() ) {
+			if ( !node->isWidget() )
+				continue;
+			const auto* widget = static_cast<const UIWidget*>( node );
+			if ( widget->isAccessibilityHidden() ) {
+				live = AccessibilityLive::Off;
+				break;
+			}
+			if ( live == AccessibilityLive::Off )
+				live = widget->getAccessibilityLive();
+		}
+		if ( live != AccessibilityLive::Off )
+			manager->onLiveRegionChanged( target, live );
+	}
+	// Widgets labelled or described by this one (or by the control it belongs to) change too,
+	// even when this one is hidden: a hidden label still names its controls.
+	if ( event == AccessibilityEvent::NameChanged ) {
+		for ( const Node* node = this; node; node = node->getParent() ) {
+			manager->onRelationTargetChanged( node->getId() );
+			if ( node == target )
+				break;
+		}
+	}
+}
+
+void UIWidget::deliverAccessibilityTextChanged( const Doc::DocumentContentChange* change ) {
+	// Documents also load and reset on worker threads; the manager is UI-thread only.
+	if ( !mUISceneNode || !mUISceneNode->hasActiveAccessibilityClients() || isDestroying() ||
+		 !Engine::isMainThread() )
+		return;
+	if ( auto* manager = mUISceneNode->getAccessibilityManager() )
+		manager->onTextChanged( this, change );
+}
+
+void UIWidget::deliverAccessibilityWholeTextChanged() {
+	if ( !mUISceneNode || !mUISceneNode->hasActiveAccessibilityClients() )
+		return;
+	ensureMainThread( [this] {
+		notifyAccessibilityTextChanged( nullptr );
+		notifyAccessibilityEvent( AccessibilityEvent::ValueChanged );
+	} );
+}
+
+void UIWidget::detachAccessibilitySource() {
+	if ( mUISceneNode )
+		mUISceneNode->onWidgetAccessibilitySourceDelete( this );
 }
 
 void UIWidget::updateAnchorsDistances() {
@@ -856,9 +1148,18 @@ Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 UIWidget* UIWidget::setTooltipText( const String& text ) {
-	mTooltipText = text;
-	if ( mTooltip )
+	const bool textChanged = mTooltipText != text;
+	if ( textChanged )
+		mTooltipText = text;
+	// Syntax highlighting can replace the cache's source (e.g. remove Markdown fences).
+	// Repeated hover responses must restore that source before it is highlighted again.
+	if ( mTooltip && ( textChanged || mTooltip->getTextCache()->getString() != text ) )
 		mTooltip->setText( text );
+	if ( textChanged ) {
+		// The tooltip is the fallback accessible name, or the description of a named widget.
+		notifyAccessibilityEvent( AccessibilityEvent::NameChanged );
+		notifyAccessibilityEvent( AccessibilityEvent::DescriptionChanged );
+	}
 	return this;
 }
 
@@ -868,7 +1169,7 @@ UIWidget* UIWidget::setTooltipTextIfNotEmpty( const String& text ) {
 	return this;
 }
 
-String UIWidget::getTooltipText() {
+String UIWidget::getTooltipText() const {
 	return mTooltipText;
 }
 
@@ -919,7 +1220,44 @@ UINode* UIWidget::setThemeSkin( UITheme* Theme, const std::string& skinName ) {
 }
 
 Node* UIWidget::setId( const std::string& id ) {
-	Node::setId( id );
+	// Relations resolve by id: a renamed widget stops labelling one set of controls and starts
+	// labelling another. The activity test comes first; the comparison only serves that
+	// notification.
+	if ( Accessibility::isActive() && mUISceneNode &&
+		 mUISceneNode->hasActiveAccessibilityClients() && id != getId() ) {
+		auto* manager = mUISceneNode->getAccessibilityManager();
+		auto* owner = manager->getSceneNode();
+		// Dependents are notified after the change, so they resolve the new relation. Keep the
+		// old id for that only when a client may have read a relation through it.
+		std::string previousId;
+		if ( manager->isRelationTarget( getIdHash() ) )
+			previousId = getId();
+		Node::setId( id );
+		// OnIdChange runs user callbacks synchronously: the manager may have been destroyed or
+		// the widget may have moved to another scene. Never retain it across that callback.
+		manager = mUISceneNode ? mUISceneNode->getExistingAccessibilityManager() : nullptr;
+		if ( !previousId.empty() ) {
+			if ( manager && manager->getSceneNode() == owner ) {
+				manager->onRelationTargetChanged( previousId );
+			} else {
+				// The old scene may also have been deleted. Find it among live scenes before
+				// dereferencing it; a reparent must update dependents left in the old window.
+				SceneManager::instance()->forEachSceneNode( [&]( SceneNode* scene ) {
+					if ( scene == owner ) {
+						if ( auto* existing = owner->getExistingAccessibilityManager() )
+							existing->onRelationTargetChanged( previousId );
+					}
+				} );
+			}
+		}
+		// The new id may complete a relation in the widget's current scene.
+		if ( mUISceneNode ) {
+			if ( auto* existing = mUISceneNode->getExistingAccessibilityManager() )
+				existing->onRelationTargetChanged( getId() );
+		}
+	} else {
+		Node::setId( id );
+	}
 
 	if ( !isSceneNodeLoading() && !isLoadingState() ) {
 		getUISceneNode()->invalidateStyle( this );
@@ -1053,6 +1391,12 @@ void UIWidget::onVisibilityChange() {
 	notifyLayoutAttrChangeParent(
 		toLayoutInvalidationFlags( LayoutInvalidationReason::NormalFlowChild ) );
 	UINode::onVisibilityChange();
+	notifyAccessibilityEvent( AccessibilityEvent::VisibilityChanged );
+}
+
+void UIWidget::onEnabledChange() {
+	UINode::onEnabledChange();
+	notifyAccessibilityEvent( AccessibilityEvent::EnabledChanged );
 }
 
 void UIWidget::onSizeChange() {
@@ -1548,6 +1892,14 @@ UIWidget* UIWidget::setClass( std::string&& cls ) {
 }
 
 UIWidget* UIWidget::setClasses( const std::vector<std::string>& classes ) {
+	return setClasses( SmallVector<std::string, 1>( classes.begin(), classes.end() ) );
+}
+
+UIWidget* UIWidget::setClasses( std::initializer_list<std::string> classes ) {
+	return setClasses( SmallVector<std::string, 1>( classes.begin(), classes.end() ) );
+}
+
+UIWidget* UIWidget::setClasses( const SmallVector<std::string, 1>& classes ) {
 	if ( mClasses != classes ) {
 		mClasses = classes;
 		rebuildClassHashes();
@@ -1692,7 +2044,7 @@ void UIWidget::setElementTag( const std::string& tag ) {
 	}
 }
 
-const std::vector<std::string>& UIWidget::getClasses() const {
+const SmallVector<std::string, 1>& UIWidget::getClasses() const {
 	return mClasses;
 }
 
@@ -1764,7 +2116,9 @@ Uint32 UIWidget::onFocus( NodeFocusReason reason ) {
 		parent = parent->getParent();
 	}
 
-	return UINode::onFocus( reason );
+	auto result = UINode::onFocus( reason );
+	notifyAccessibilityEvent( AccessibilityEvent::FocusChanged );
+	return result;
 }
 
 Uint32 UIWidget::onFocusLoss() {
@@ -1780,7 +2134,9 @@ Uint32 UIWidget::onFocusLoss() {
 		parent = parent->getParent();
 	}
 
-	return UINode::onFocusLoss();
+	auto result = UINode::onFocusLoss();
+	notifyAccessibilityEvent( AccessibilityEvent::FocusChanged );
+	return result;
 }
 
 UIStyle* UIWidget::getUIStyle() const {
@@ -1831,6 +2187,20 @@ void UIWidget::onMarginChange() {
 }
 
 void UIWidget::onThemeLoaded() {}
+
+void UIWidget::onUISceneNodeChange( UISceneNode* scene ) {
+	// Lifecycle bookkeeping never creates a manager, even with accessibility disabled.
+	auto* previousManager =
+		mUISceneNode ? mUISceneNode->getExistingAccessibilityManager() : nullptr;
+	if ( !previousManager )
+		return;
+	auto* nextManager = scene ? scene->getExistingAccessibilityManager() : nullptr;
+	if ( previousManager != nextManager ) {
+		// Descendants have rebound and can have registered this parent during their removal.
+		// Erase its old identity afterwards, while its local scene pointer still names that owner.
+		previousManager->onWidgetDelete( this );
+	}
+}
 
 void UIWidget::onParentChange() {
 	if ( !isSceneNodeLoading() && !isLoadingState() ) {
@@ -2087,6 +2457,12 @@ std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
 			 PropertyId::Cursor,
 			 PropertyId::Visible,
 			 PropertyId::Enabled,
+			 PropertyId::AccessibilityLabel,
+			 PropertyId::AccessibilityDescription,
+			 PropertyId::AccessibilityHidden,
+			 PropertyId::AccessibilityLabelledBy,
+			 PropertyId::AccessibilityDescribedBy,
+			 PropertyId::AccessibilityLive,
 			 PropertyId::Theme,
 			 PropertyId::Skin,
 			 PropertyId::Flags,
@@ -2668,6 +3044,28 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 				mTooltip->setStringBuffer( text );
 			break;
 		}
+		case PropertyId::AccessibilityLabel:
+			setAccessibilityLabel( getTranslatorString( attribute.value() ) );
+			break;
+		case PropertyId::AccessibilityDescription:
+			setAccessibilityDescription( getTranslatorString( attribute.value() ) );
+			break;
+		case PropertyId::AccessibilityHidden:
+			setAccessibilityHidden( attribute.asBool() );
+			break;
+		// The setters compare before storing, so an unchanged id is never copied.
+		case PropertyId::AccessibilityLabelledBy:
+			setAccessibilityLabelledBy( attribute.value() );
+			break;
+		case PropertyId::AccessibilityDescribedBy:
+			setAccessibilityDescribedBy( attribute.value() );
+			break;
+		case PropertyId::AccessibilityLive:
+			setAccessibilityLive(
+				String::iequals( attribute.value(), "assertive" ) ? AccessibilityLive::Assertive
+				: String::iequals( attribute.value(), "polite" )  ? AccessibilityLive::Polite
+																  : AccessibilityLive::Off );
+			break;
 		case PropertyId::LayoutWeight:
 			setLayoutWeight( attribute.asFloat() );
 			break;
@@ -3163,12 +3561,12 @@ UIWidget* UIWidget::getPrevWidget() const {
 	while ( NULL != child ) {
 		if ( child->isVisible() && child->isEnabled() && child->isWidget() ) {
 			possible = child->asType<UIWidget>();
+			// Reverse the forward pre-order traversal: the last descendant precedes its parent.
+			found = possible->getPrevWidget();
+			if ( found )
+				return found;
 			if ( possible->isTabFocusable() ) {
 				return possible;
-			}
-			found = possible->getNextWidget();
-			if ( found ) {
-				return found;
 			}
 		}
 		child = child->getPrevNode();
@@ -3214,10 +3612,6 @@ String UIWidget::i18n( const std::string& str, const String& defaultValue ) {
 }
 
 UIWidget* UIWidget::getPrevTabWidget() const {
-	UIWidget* widget = getPrevWidget();
-	if ( widget ) {
-		return widget;
-	}
 	UIWidget* found = NULL;
 	UIWidget* possible = NULL;
 	const Node* start = this;
@@ -3228,19 +3622,22 @@ UIWidget* UIWidget::getPrevTabWidget() const {
 			while ( next ) {
 				if ( next->isVisible() && next->isEnabled() && next->isWidget() ) {
 					possible = next->asType<UIWidget>();
-					if ( possible->isTabFocusable() ) {
-						return possible;
-					}
 					found = possible->getPrevWidget();
 					if ( found ) {
 						return found;
 					}
+					if ( possible->isTabFocusable() )
+						return possible;
 				}
 				next = next->getPrevNode();
 			}
 			if ( start->getParent() == container && container->getFirstWidget() ) {
-				return container->asType<UIWidget>()->getPrevTabWidget();
+				return container->asType<UIWidget>()->getPrevWidget();
 			}
+			auto* parent = start->getParent();
+			if ( parent && parent != container && parent->isWidget() && parent->isVisible() &&
+				 parent->isEnabled() && parent->asType<UIWidget>()->isTabFocusable() )
+				return parent->asType<UIWidget>();
 		}
 		start = start->getParent();
 	}
@@ -3282,7 +3679,7 @@ UIWidget* UIWidget::getNextTabWidget() const {
 }
 
 void UIWidget::onFocusPrevWidget() {
-	if ( !isTabStop() ) {
+	if ( !isTabStop() || ( mFlags & UI_USES_TAB_MOD ) ) {
 		Node* node = getPrevTabWidget();
 		if ( NULL != node ) {
 			node->setFocus( NodeFocusReason::Tab );
@@ -3294,7 +3691,7 @@ void UIWidget::onFocusPrevWidget() {
 }
 
 void UIWidget::onFocusNextWidget() {
-	if ( !isTabStop() ) {
+	if ( !isTabStop() || ( mFlags & UI_USES_TAB_MOD ) ) {
 		Node* node = getNextTabWidget();
 		if ( NULL != node ) {
 			node->setFocus( NodeFocusReason::Tab );

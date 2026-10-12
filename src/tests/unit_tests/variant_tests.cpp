@@ -51,7 +51,8 @@ UTEST( Variant, ownedStdStringLifecycle ) {
 	EXPECT_EQ( moveAssigned.asStdString().data(), movedData );
 	EXPECT_TRUE( moveAssigned.asStdString() == longString );
 
-	copyAssigned = copyAssigned;
+	Variant* copySelf = &copyAssigned;
+	copyAssigned = *copySelf;
 	EXPECT_TRUE( copyAssigned.asStdString() == longString );
 	Variant* self = &moveAssigned;
 	moveAssigned = std::move( *self );

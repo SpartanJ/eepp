@@ -859,6 +859,7 @@ UITab* UITabWidget::setTabSelected( UITab* tab ) {
 		orderTabs();
 
 		sendCommonEvent( Event::OnTabSelected );
+		notifyAccessibilityEvent( AccessibilityEvent::SelectionChanged );
 	}
 
 	updateScroll( true );

@@ -1937,6 +1937,10 @@ class EE_API UINode : public Node {
 	 */
 	virtual void onSceneChange();
 
+	/** Called after descendants rebind, before mUISceneNode changes. The next UI scene may be
+	 * nullptr when entering a non-UI scene. Derived classes can release old scene-owned state. */
+	virtual void onUISceneNodeChange( UISceneNode* scene );
+
 	/** Refreshes inherited UI direction before parent-change handling. */
 	virtual void onParentTreeChange();
 

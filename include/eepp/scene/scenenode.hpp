@@ -1,6 +1,7 @@
 #ifndef EE_SCENENODE_HPP
 #define EE_SCENENODE_HPP
 
+#include <atomic>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/scene/node.hpp>
 #include <eepp/system/translator.hpp>
@@ -12,6 +13,10 @@ using namespace EE::Graphics;
 namespace EE { namespace Window {
 class Window;
 }} // namespace EE::Window
+
+namespace EE { namespace UI {
+class Accessibility;
+}} // namespace EE::UI
 
 namespace EE { namespace Scene {
 
@@ -454,6 +459,25 @@ class EE_API SceneNode : public Node {
 	void drawFrameBuffer();
 
 	Sizei getFrameBufferSize();
+
+  private:
+	friend class EE::UI::Accessibility;
+
+	using NodeParentChangeCallback = void ( * )( Node* node, bool removed );
+
+	/** Internal single-slot bridge, not an application observer API. UI registers it and Node
+	 * dispatches it through friendship, without Scene depending on UI headers. Removals precede
+	 * unlinking; arrivals follow final links, scene binding and parent hooks. The callback does
+	 * not own the node. Set or clear on the scene thread; nullptr disables reporting. */
+	static void setNodeParentChangeCallback( NodeParentChangeCallback callback );
+
+	/** A null observer costs one relaxed load and no call or allocation. */
+	static void notifyNodeParentChange( Node* node, bool removed ) {
+		if ( auto callback = sNodeParentChangeCallback.load( std::memory_order_relaxed ) )
+			callback( node, removed );
+	}
+
+	static std::atomic<NodeParentChangeCallback> sNodeParentChangeCallback;
 };
 
 }} // namespace EE::Scene

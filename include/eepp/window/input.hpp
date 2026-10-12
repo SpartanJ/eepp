@@ -38,6 +38,9 @@ class EE_API Input {
 	 */
 	virtual void waitEvent( const Time& timeout = Time::Zero ) = 0;
 
+	/** Wakes the backend's shared event loop without retaining a window-owned Input object. */
+	static void wakeUpEventLoop();
+
 	/** @return If the mouse and keyboard are grabbed. */
 	virtual bool grabInput() = 0;
 

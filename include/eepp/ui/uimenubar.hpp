@@ -84,6 +84,8 @@ class EE_API UIMenuBar : public UIWidget {
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
 	virtual void onParentChange();
 
 	virtual void onDirectionChanged();

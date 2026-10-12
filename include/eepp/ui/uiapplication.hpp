@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/font.hpp>
 #include <eepp/system/clock.hpp>
+#include <eepp/ui/accessibility/accessibility.hpp>
 #include <eepp/window/window.hpp>
 
 #include <memory>
@@ -10,6 +11,10 @@
 #include <vector>
 
 using namespace EE::Window;
+
+namespace EE { namespace System {
+class ThreadPool;
+}} // namespace EE::System
 
 namespace EE { namespace UI {
 
@@ -38,7 +43,8 @@ class EE_API UIApplication {
 		Settings( std::optional<std::string> basePath, std::optional<Float> pixelDensity = {},
 				  bool loadBaseResources = true, Font* baseFont = nullptr,
 				  std::optional<std::string> baseStyleSheetPath = {}, Font* emojiFont = nullptr,
-				  Font* fallbackFont = nullptr );
+				  Font* fallbackFont = nullptr,
+				  std::shared_ptr<System::ThreadPool> threadPool = nullptr );
 
 		//! By default it will use the current process path as the base path. This will set the
 		//! default working directory.
@@ -51,6 +57,8 @@ class EE_API UIApplication {
 		//! Loads the bundled icon fonts and initializes IconManager when base resources are
 		//! enabled.
 		bool loadIconResources{ true };
+		//! Controls native accessibility for every application-owned UI scene.
+		AccessibilityPolicy accessibilityPolicy{ AccessibilityPolicy::Auto };
 		//! The default base font for the UI. If not provided it will load NotoSans-Regular ( will
 		//! look at "assets/fonts/NotoSans-Regular.ttf" )
 		Font* baseFont{ nullptr };
@@ -74,6 +82,8 @@ class EE_API UIApplication {
 		//! Enables system font fallback and warms the system font list on a background thread. If
 		//! not set, UIApplication::systemFontsEnabledByDefault() is used.
 		std::optional<bool> enableSystemFonts;
+		//! Optional worker pool shared by the primary and secondary UI scenes.
+		std::shared_ptr<System::ThreadPool> threadPool;
 	};
 
 	UIApplication( const WindowSettings& windowSettings, const Settings& appSettings = Settings(),

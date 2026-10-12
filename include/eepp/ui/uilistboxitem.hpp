@@ -37,6 +37,8 @@ class EE_API UIListBoxItem : public UITextView {
 
 	virtual void onStateChange();
 
+	virtual void onFocusPrevWidget();
+
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );

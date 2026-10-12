@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import os
+from pathlib import Path
+import statistics
+import subprocess
+import sys
+import time
+
+
+def check(condition, message):
+	if not condition:
+		raise RuntimeError(message)
+
+
+def run_sample(args, disabled):
+	environment = os.environ.copy()
+	if sys.platform == "darwin":
+		executable_directory = str(Path(args.executable).resolve().parent)
+		current_library_path = environment.get("DYLD_LIBRARY_PATH")
+		environment["DYLD_LIBRARY_PATH"] = (
+			executable_directory
+			if not current_library_path
+			else executable_directory + os.pathsep + current_library_path
+		)
+	if disabled:
+		environment["EEPP_DISABLE_ACCESSIBILITY"] = "1"
+	else:
+		environment.pop("EEPP_DISABLE_ACCESSIBILITY", None)
+	start = time.perf_counter()
+	completed = subprocess.run(
+		[
+			args.executable,
+			"--benchmark-inactive",
+			"--benchmark-iterations",
+			str(args.iterations),
+		],
+		check=True,
+		capture_output=True,
+		text=True,
+		timeout=args.timeout,
+		env=environment,
+	)
+	wall_ms = (time.perf_counter() - start) * 1000
+	result = json.loads(completed.stdout)
+	result["wall_ms"] = wall_ms
+	result["initialization_ms"] = result.pop("initialization_us") / 1000
+	result["readiness_ms"] = result.pop("readiness_us") / 1000
+	result["notifications_ms"] = result.pop("notifications_us") / 1000
+	return result
+
+
+def median_sample(samples):
+	return {
+		key: statistics.median(sample[key] for sample in samples)
+		for key in samples[0]
+	}
+
+
+def collect_samples(args, first_index, count, enabled_samples, disabled_samples):
+	for index in range(first_index, first_index + count):
+		# Reverse each adjacent pair so neither mode consistently benefits from running second.
+		modes = (True, False) if index % 2 == 0 else (False, True)
+		for disabled in modes:
+			result = run_sample(args, disabled)
+			(disabled_samples if disabled else enabled_samples).append(result)
+
+
+def summarize(enabled_samples, disabled_samples):
+	enabled = median_sample(enabled_samples)
+	disabled = median_sample(disabled_samples)
+	check(disabled["notifications_ms"] > 0, "disabled notification measurement was zero")
+	check(disabled["wall_ms"] > 0, "disabled wall-time measurement was zero")
+	return {
+		"disabled": disabled,
+		"enabled": enabled,
+		"raw_disabled": disabled_samples,
+		"raw_enabled": enabled_samples,
+		"notification_ratio": enabled["notifications_ms"] / disabled["notifications_ms"],
+		"wall_ratio": enabled["wall_ms"] / disabled["wall_ms"],
+	}
+
+
+def main():
+	parser = argparse.ArgumentParser(description="Benchmark inactive accessibility overhead")
+	parser.add_argument("--executable", default="bin/eepp-ui-accessibility")
+	parser.add_argument("--iterations", type=int, default=100000)
+	parser.add_argument("--samples", type=int, default=5)
+	parser.add_argument("--confirmation-samples", type=int, default=10)
+	parser.add_argument("--timeout", type=float, default=10)
+	parser.add_argument("--max-initialization-ms", type=float, default=250)
+	parser.add_argument("--max-notification-ratio", type=float, default=1.01)
+	parser.add_argument("--max-wall-ratio", type=float, default=1.25)
+	parser.add_argument("--json", action="store_true")
+	args = parser.parse_args()
+	check(args.iterations > 0 and args.samples > 0, "iterations and samples must be positive")
+	check(args.confirmation_samples >= 0, "confirmation samples must not be negative")
+
+	enabled_samples = []
+	disabled_samples = []
+	collect_samples(args, 0, args.samples, enabled_samples, disabled_samples)
+	output = summarize(enabled_samples, disabled_samples)
+	if (
+		output["notification_ratio"] > args.max_notification_ratio
+		or output["wall_ratio"] > args.max_wall_ratio
+	) and args.confirmation_samples:
+		collect_samples(
+			args,
+			args.samples,
+			args.confirmation_samples,
+			enabled_samples,
+			disabled_samples,
+		)
+		output = summarize(enabled_samples, disabled_samples)
+
+	enabled = output["enabled"]
+	failed = (
+		enabled["initialization_ms"] > args.max_initialization_ms
+		or output["notification_ratio"] > args.max_notification_ratio
+		or output["wall_ratio"] > args.max_wall_ratio
+	)
+	if failed:
+		print(json.dumps(output, sort_keys=True), file=sys.stderr)
+	check(
+		enabled["initialization_ms"] <= args.max_initialization_ms,
+		"inactive native backend initialization exceeded threshold",
+	)
+	check(
+		output["notification_ratio"] <= args.max_notification_ratio,
+		"inactive accessibility notification overhead exceeded threshold",
+	)
+	check(
+		output["wall_ratio"] <= args.max_wall_ratio,
+		"inactive accessibility wall-time overhead exceeded threshold",
+	)
+	if args.json:
+		print(json.dumps(output, sort_keys=True))
+	else:
+		print(
+			"Inactive accessibility benchmark passed: "
+			f"initialization {enabled['initialization_ms']:.3f}ms, "
+			f"notifications {enabled['notifications_ms']:.3f}ms "
+			f"({output['notification_ratio']:.3f}x disabled), "
+			f"wall {output['wall_ratio']:.3f}x disabled"
+		)
+
+
+if __name__ == "__main__":
+	main()

@@ -40,6 +40,7 @@ UITextInput::UITextInput( const std::string& tag ) :
 	mAllowFloat( false ),
 	mMouseDown( false ),
 	mKeyBindings( getInput() ) {
+	setTabFocusable();
 	mHintCache = Text::New();
 	mHintCache->setTextHints( getTextHints() );
 	mHintCache->setDirection( getTextBaseDirection() );
@@ -337,6 +338,11 @@ UITextInput* UITextInput::setMode( TextInputMode mode ) {
 			updatePass();
 		}
 		invalidateDraw();
+		// The document did not change, but its exposed value and protection did. Tooling must
+		// refresh even without a native client so a password transition hides stale plaintext.
+		sendCommonEvent( Event::OnValueChange );
+		notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
+		notifyAccessibilityEvent( AccessibilityEvent::ValueChanged );
 	}
 	return this;
 }
@@ -421,6 +427,14 @@ void UITextInput::onFontStyleChanged() {
 void UITextInput::onFontColorChanged() {
 	if ( mPassCache )
 		mPassCache->setFillColor( mTextCache.getFillColor() );
+}
+
+void UITextInput::onTextChanged() {
+	// An input's text is its value, not its name.
+	sendCommonEvent( Event::OnTextChanged );
+	sendCommonEvent( Event::OnValueChange );
+	notifyAccessibilityEvent( AccessibilityEvent::ValueChanged );
+	invalidateDraw();
 }
 
 Text& UITextInput::getVisibleTextCache() {
@@ -530,7 +544,9 @@ Int32 UITextInput::selCurEnd() {
 	return mDoc.getSelection().end().column();
 }
 
-void UITextInput::onDocumentTextChanged( const DocumentContentChange& ) {
+void UITextInput::onDocumentTextChanged( const DocumentContentChange& change ) {
+	// The edit record must precede the ValueChanged that UITextView::setText() reports below.
+	notifyAccessibilityTextChanged( &change );
 	Vector2f offSet = mRealAlignOffset;
 
 	const String& text = mDoc.line( 0 ).getText();
@@ -559,6 +575,7 @@ void UITextInput::onDocumentCursorChange( const TextPosition& ) {
 
 void UITextInput::onDocumentSelectionChange( const TextRange& ) {
 	onSelectionChange();
+	notifyAccessibilityEvent( AccessibilityEvent::SelectionChanged );
 }
 
 void UITextInput::onDocumentLineCountChange( const size_t&, const size_t& ) {}
@@ -997,6 +1014,10 @@ bool UITextInput::floatingPointAllowed() const {
 }
 
 TextDocument& UITextInput::getDocument() {
+	return mDoc;
+}
+
+const TextDocument& UITextInput::getDocument() const {
 	return mDoc;
 }
 

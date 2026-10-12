@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <eepp/core/small_vector.hpp>
+#include <eepp/ui/accessibility/accessibility.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
@@ -24,6 +25,11 @@ namespace EE { namespace UI {
 
 class UITooltip;
 class UIStyle;
+class AccessibilityWidgetResolver;
+struct AccessibilityProperties;
+namespace Doc {
+struct DocumentContentChange;
+}
 class UIWidget;
 class UITextSelectionController;
 
@@ -77,6 +83,52 @@ class EE_API UIWidget : public UINode {
 	static UIWidget* NewWithTag( const std::string& tag );
 
 	virtual ~UIWidget();
+
+	/** Override selectively for custom semantics; defaults use AccessibilityWidgetResolver. */
+	virtual AccessibilityRole getAccessibilityRole() const;
+
+	virtual String getAccessibilityName() const;
+
+	virtual String getAccessibilityDescription() const;
+
+	virtual String getAccessibilityValue() const;
+
+	virtual AccessibilityRangeInfo getAccessibilityRange() const;
+
+	virtual AccessibilityState getAccessibilityState() const;
+
+	virtual AccessibilityActions getAccessibilityActions() const;
+
+	virtual bool performAccessibilityAction( const AccessibilityActionRequest& request );
+
+	bool isAccessibilityElement() const;
+
+	bool isAccessibilityHidden() const;
+
+	UIWidget* setAccessibilityRole( AccessibilityRole role );
+
+	UIWidget* setAccessibilityLabel( const String& label );
+
+	UIWidget* setAccessibilityDescription( const String& description );
+
+	UIWidget* setAccessibilityHidden( bool hidden );
+
+	/** Names this widget after the widget with the given id (aria-labelledby). It takes
+	 * precedence over the accessibility label. The id is resolved from the scene root. */
+	UIWidget* setAccessibilityLabelledBy( const std::string& id );
+
+	const std::string& getAccessibilityLabelledBy() const;
+
+	/** Describes this widget with the text of the widget with the given id (aria-describedby). */
+	UIWidget* setAccessibilityDescribedBy( const std::string& id );
+
+	const std::string& getAccessibilityDescribedBy() const;
+
+	/** Marks this widget as a live region (aria-live): name and value changes inside it are
+	 * announced to assistive clients without moving focus. */
+	UIWidget* setAccessibilityLive( AccessibilityLive live );
+
+	AccessibilityLive getAccessibilityLive() const;
 
 	virtual UITextSelectionController* getTextSelectionController();
 
@@ -255,7 +307,7 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return The tooltip text string.
 	 */
-	String getTooltipText();
+	String getTooltipText() const;
 
 	/**
 	 * @brief Updates the distances to parent borders for anchoring.
@@ -842,7 +894,7 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return Vector of CSS class strings.
 	 */
-	inline const std::vector<std::string>& getStyleSheetClasses() const { return mClasses; }
+	inline const SmallVector<std::string, 1>& getStyleSheetClasses() const { return mClasses; }
 
 	/** @return Number of sorted unique CSS class hashes cached by this widget. */
 	inline Uint32 getClassHashCount() const { return static_cast<Uint32>( mClassHashes.size() ); }
@@ -992,6 +1044,10 @@ class EE_API UIWidget : public UINode {
 	 */
 	UIWidget* setClasses( const std::vector<std::string>& classes );
 
+	UIWidget* setClasses( const SmallVector<std::string, 1>& classes );
+
+	UIWidget* setClasses( std::initializer_list<std::string> classes );
+
 	/**
 	 * @brief Adds a CSS class.
 	 *
@@ -1067,7 +1123,7 @@ class EE_API UIWidget : public UINode {
 	 *
 	 * @return Vector of CSS class strings.
 	 */
-	const std::vector<std::string>& getClasses() const;
+	const SmallVector<std::string, 1>& getClasses() const;
 
 	/**
 	 * @brief Gets the CSS element tag.
@@ -1358,7 +1414,9 @@ class EE_API UIWidget : public UINode {
 	/**
 	 * @brief Sets this widget as tab focusable.
 	 *
-	 * Makes this widget able to receive focus via tab navigation.
+	 * Makes this widget able to receive focus via tab navigation. UIWidget is not tabbable by
+	 * default; interactive subclasses opt in. This does not change programmatic or mouse focus,
+	 * nor whether the widget appears in the accessibility tree.
 	 */
 	void setTabFocusable();
 
@@ -1566,6 +1624,7 @@ class EE_API UIWidget : public UINode {
 	friend class UISceneNode;
 	friend class UIEventDispatcher;
 	friend class UILayout;
+	friend class AccessibilityWidgetResolver;
 	friend class UIStyle;
 
 	// Keep byte-sized members first so they can reuse UINode's tail padding.
@@ -1594,11 +1653,12 @@ class EE_API UIWidget : public UINode {
 	LayoutInvalidationFlags mPendingParentLayoutReasons{ 0 };
 	Uint32 mPseudoClasses{ 0 };
 	std::string mSkinName;
-	std::vector<std::string> mClasses;
+	SmallVector<std::string, 1> mClasses;
 	SmallVector<String::HashType, 1> mClassHashes;
 	String mTooltipText;
 	mutable Float mMinIntrinsicWidth{ 0 };
 	mutable Float mMaxIntrinsicWidth{ 0 };
+	AccessibilityProperties* mAccessibilityProperties{ nullptr };
 	// Flow-relative box declarations, allocated only by widgets that use them.
 	struct LogicalBoxEdges;
 	std::unique_ptr<LogicalBoxEdges> mLogicalBox;
@@ -1742,6 +1802,8 @@ class EE_API UIWidget : public UINode {
 	 */
 	virtual void onVisibilityChange();
 
+	virtual void onEnabledChange();
+
 	/**
 	 * @brief Handles size change events.
 	 *
@@ -1808,6 +1870,9 @@ class EE_API UIWidget : public UINode {
 	 * implement custom handling of theme loading.
 	 */
 	virtual void onThemeLoaded();
+
+	/** Invalidates old accessibility identities before committing a different UI scene owner. */
+	virtual void onUISceneNodeChange( UISceneNode* scene );
 
 	/**
 	 * @brief Handles parent change events.
@@ -1992,6 +2057,40 @@ class EE_API UIWidget : public UINode {
 	void reloadFontFamily();
 
 	UIWidget* setLayoutMarginAuto( Uint32 dir, bool isAuto );
+
+	AccessibilityProperties& ensureAccessibilityProperties();
+
+	AccessibilityRole resolveAccessibilityRole( AccessibilityRole defaultRole ) const;
+
+	String resolveAccessibilityName( const String& defaultName = String() ) const;
+
+	String resolveAccessibilityDescription() const;
+
+	void notifyAccessibilityEvent( AccessibilityEvent event ) {
+		if ( Accessibility::isActive() )
+			deliverAccessibilityEvent( event );
+	}
+
+	/** Reports an edit of this text widget's document; nullptr when the whole text changed. */
+	void notifyAccessibilityTextChanged( const Doc::DocumentContentChange* change ) {
+		if ( Accessibility::isActive() )
+			deliverAccessibilityTextChanged( change );
+	}
+
+	/** A reset, load or document swap: the whole text changed, and with it the value. */
+	void notifyAccessibilityWholeTextChanged() {
+		if ( Accessibility::isActive() )
+			deliverAccessibilityWholeTextChanged();
+	}
+
+	void detachAccessibilitySource();
+
+  private:
+	void deliverAccessibilityEvent( AccessibilityEvent event );
+
+	void deliverAccessibilityTextChanged( const Doc::DocumentContentChange* change );
+
+	void deliverAccessibilityWholeTextChanged();
 };
 
 }} // namespace EE::UI

@@ -57,6 +57,11 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 
 	bool areDefaultKeybindingsEnabled() const { return mDefaultKeybindings; }
 
+	/** Scrolls the least distance that makes a descendant of the content fully visible (or its
+	 * top-left corner, when it is larger than the viewport). Returns false when the node is not
+	 * part of this view's content. */
+	bool scrollIntoView( const Node* node );
+
   protected:
 	ScrollViewType mViewType;
 	ScrollBarMode mVScrollMode;

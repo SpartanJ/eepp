@@ -181,15 +181,25 @@ std::weak_ptr<PersistentHandle> Model::registerPersistentIndex( ModelIndex const
 	auto it = mPersistentHandles.find( index );
 	// Easy modo: we already have a handle for this model index.
 	if ( it != mPersistentHandles.end() ) {
+		++it->second->mRegistrations;
 		return it->second;
 	}
 
 	// Hard modo: create a new persistent handle.
 	auto handle = std::make_shared<PersistentHandle>( index );
+	handle->mRegistrations = 1;
 	std::weak_ptr<PersistentHandle> weak_handle = handle;
 	mPersistentHandles[index] = std::move( handle );
 
 	return weak_handle;
+}
+
+void Model::releasePersistentIndex( const std::shared_ptr<PersistentHandle>& handle ) {
+	if ( !handle || handle->mRegistrations == 0 || --handle->mRegistrations > 0 )
+		return;
+	auto it = mPersistentHandles.find( handle->mIndex );
+	if ( it != mPersistentHandles.end() && it->second == handle )
+		mPersistentHandles.erase( it );
 }
 
 template <bool IsRow>
@@ -308,7 +318,7 @@ void Model::handleInsert( Operation const& operation ) {
 			int newColumn = isRow ? entry.first.column() : entry.first.column() + offset;
 			indexChanges.emplace_back( entry.first,
 									   createIndex( newRow, newColumn, entry.first.internalData(),
-												entry.first.internalId() ) );
+													entry.first.internalId() ) );
 		}
 	}
 
@@ -337,7 +347,7 @@ void Model::handleDelete( Operation const& operation ) {
 			int newColumn = isRow ? entry.first.column() : entry.first.column() - offset;
 			indexChanges.emplace_back( entry.first,
 									   createIndex( newRow, newColumn, entry.first.internalData(),
-												entry.first.internalId() ) );
+													entry.first.internalId() ) );
 		}
 	}
 

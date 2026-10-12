@@ -15,6 +15,7 @@ UIRadioButton::UIRadioButton() :
 	mInactiveButton( NULL ),
 	mActive( false ),
 	mTextSeparation( 4 ) {
+	setTabFocusable();
 	auto cb = [this]( const Event* ) { onAutoSize(); };
 
 	mActiveButton = UIWidget::NewWithTag( "radiobutton::active" );
@@ -138,6 +139,7 @@ void UIRadioButton::switchState() {
 }
 
 void UIRadioButton::setActive( const bool& active ) {
+	const bool wasActive = mActive;
 	if ( !active ) {
 		if ( checkActives() ) {
 			mActiveButton->setVisible( false );
@@ -180,6 +182,9 @@ void UIRadioButton::setActive( const bool& active ) {
 			tChild = tChild->getNextNode();
 		}
 	}
+
+	if ( wasActive != mActive )
+		notifyAccessibilityEvent( AccessibilityEvent::StateChanged );
 }
 
 bool UIRadioButton::checkActives() {
@@ -323,7 +328,7 @@ bool UIRadioButton::applyProperty( const StyleSheetProperty& attribute ) {
 
 Uint32 UIRadioButton::onKeyDown( const KeyEvent& Event ) {
 	if ( Event.getKeyCode() == KEY_SPACE ) {
-		if ( Sys::getTicks() - mLastTick > 250 ) {
+		if ( mLastTick == 0 || Sys::getTicks() - mLastTick > 250 ) {
 			mLastTick = Sys::getTicks();
 
 			setActive( true );

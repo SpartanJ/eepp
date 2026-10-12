@@ -112,6 +112,7 @@ UIMenuRadioButton* UIMenuRadioButton::setActive( const bool& active ) {
 	}
 
 	onValueChange();
+	notifyAccessibilityEvent( AccessibilityEvent::SelectionChanged );
 	return this;
 }
 

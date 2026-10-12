@@ -91,7 +91,11 @@ UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	} );
 }
 
-UIAbstractTableView::~UIAbstractTableView() {}
+UIAbstractTableView::~UIAbstractTableView() {
+	// Tree views detach earlier, while members used by their accessibility source are alive. Keep
+	// this idempotent fallback for table views and custom subclasses.
+	detachAccessibilitySource();
+}
 
 Uint32 UIAbstractTableView::getType() const {
 	return UI_TYPE_ABSTRACTTABLEVIEW;
@@ -809,13 +813,21 @@ void UIAbstractTableView::setColumnHidden( const size_t& column, bool hidden ) {
 	if ( columnData( column ).visible != !hidden ) {
 		columnData( column ).visible = !hidden;
 		createOrUpdateColumns( false );
+		// Header/cell widgets are implementation details; their visibility events are suppressed.
+		// Refresh the view's virtual cells and native clients' cached children explicitly.
+		notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 	}
 }
 
 void UIAbstractTableView::setColumnsHidden( const std::vector<size_t>& columns, bool hidden ) {
-	for ( auto col : columns )
+	bool changed = false;
+	for ( auto col : columns ) {
+		changed |= columnData( col ).visible != !hidden;
 		columnData( col ).visible = !hidden;
+	}
 	createOrUpdateColumns( false );
+	if ( changed )
+		notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 }
 
 void UIAbstractTableView::setColumnReorderingEnabled( bool enabled ) {
@@ -871,6 +883,7 @@ void UIAbstractTableView::applyColumnOrder() {
 	}
 	mHeader->updateLayout();
 	invalidateDraw();
+	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 }
 
 void UIAbstractTableView::reorderColumnAt( size_t column, Float centerX ) {
@@ -952,6 +965,9 @@ void UIAbstractTableView::setColumnsVisible( const std::vector<size_t>& columns 
 		mMainColumn = columns[0];
 
 	createOrUpdateColumns( true );
+	// Unchanged column sets returned above. Like the other column setters, refresh the view's
+	// virtual cells and native clients' cached children.
+	notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 }
 
 UITableRow* UIAbstractTableView::createRow() {
@@ -1255,12 +1271,17 @@ void UIAbstractTableView::setSelection( const ModelIndex& index, bool scrollToSe
 		if ( openModelIndexTree )
 			onOpenMenuModelIndex( index );
 		getSelection().set( index );
-		if ( scrollToSelection ) {
-			auto rowHeight = getRowHeight();
-			scrollToPosition( { { mScrollOffset.x, getHeaderHeight() + index.row() * rowHeight },
-								{ columnData( index.column() ).width, rowHeight } } );
-		}
+		if ( scrollToSelection )
+			scrollToIndex( index );
 	}
+}
+
+void UIAbstractTableView::scrollToIndex( const ModelIndex& index ) {
+	if ( !getModel() || !getModel()->isValid( index ) )
+		return;
+	auto rowHeight = getRowHeight();
+	scrollToPosition( { { mScrollOffset.x, getHeaderHeight() + index.row() * rowHeight },
+						{ columnData( index.column() ).width, rowHeight } } );
 }
 
 const size_t& UIAbstractTableView::getIconSize() const {
@@ -1667,6 +1688,7 @@ void UIAbstractTableView::setMainColumn( const size_t& mainColumn ) {
 	if ( mMainColumn != mainColumn ) {
 		mMainColumn = mainColumn;
 		createOrUpdateColumns( false );
+		notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 	}
 }
 

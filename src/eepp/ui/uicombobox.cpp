@@ -17,8 +17,10 @@ UIComboBox::UIComboBox() : UIWidget( "combobox" ), mDropDownList( NULL ), mButto
 	mDropDownList->setTextSelectionEnabled( true );
 	mDropDownList->on( Event::OnPaddingChange, [this]( const Event* ) { onPaddingChange(); } );
 	mDropDownList->on( Event::OnSizeChange, [this]( const Event* ) { onSizeChange(); } );
-	mDropDownList->on( Event::OnValueChange,
-					   [this]( const Event* ) { sendCommonEvent( Event::OnValueChange ); } );
+	mDropDownList->on( Event::OnValueChange, [this]( const Event* ) {
+		sendCommonEvent( Event::OnValueChange );
+		notifyAccessibilityEvent( AccessibilityEvent::ValueChanged );
+	} );
 	mButton = UIWidget::NewWithTag( "combobox::button" );
 	mButton->setParent( this );
 	mButton->setVisible( true );
@@ -60,7 +62,7 @@ void UIComboBox::setTheme( UITheme* Theme ) {
 	onThemeLoaded();
 }
 
-UIListBox* UIComboBox::getListBox() {
+UIListBox* UIComboBox::getListBox() const {
 	return mDropDownList->getListBox();
 }
 
@@ -144,6 +146,7 @@ bool UIComboBox::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Focusable:
 		case PropertyId::Color:
 		case PropertyId::TextShadowColor:
 		case PropertyId::TextShadowOffset:
@@ -197,6 +200,7 @@ std::string UIComboBox::getPropertyString( const PropertyDefinition* propertyDef
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Focusable:
 		case PropertyId::Color:
 		case PropertyId::TextShadowColor:
 		case PropertyId::TextShadowOffset:

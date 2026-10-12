@@ -791,6 +791,13 @@ Uint32 UIAnchorSpan::onMessage( const NodeMessage* Msg ) {
 	return UITextSpan::onMessage( Msg );
 }
 
+void UIAnchorSpan::loadFromXmlNode( const pugi::xml_node& node ) {
+	// The markup default precedes author focusable properties; setHref() preserves that policy.
+	if ( !std::string_view( node.attribute( "href" ).value() ).empty() )
+		setTabFocusable();
+	UITextSpan::loadFromXmlNode( node );
+}
+
 bool UIAnchorSpan::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;
@@ -824,7 +831,10 @@ const std::string& UIAnchorSpan::getHref() const {
 Uint32 UIAnchorSpan::onKeyDown( const KeyEvent& event ) {
 	if ( event.getKeyCode() == KEY_KP_ENTER || event.getKeyCode() == KEY_RETURN ) {
 		if ( !mHref.empty() ) {
-			getUISceneNode()->openURL( mHref );
+			NavigationRequest request{ URI( mHref ) };
+			request.source = this;
+			request.modifiers = event.getMod();
+			getUISceneNode()->navigate( request );
 			return 1;
 		}
 	}

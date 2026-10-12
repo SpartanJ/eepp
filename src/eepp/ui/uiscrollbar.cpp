@@ -58,6 +58,8 @@ UIScrollBar::UIScrollBar( const std::string& tag, const UIOrientation& orientati
 	mSlider->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mSlider->setOrientation( orientation );
 	mSlider->setParent( this );
+	// Embedded scrollbars are implementation parts, not additional sequential focus targets.
+	mSlider->unsetTabFocusable();
 	mSlider->setAllowHalfSliderOut( false );
 	mSlider->setExpandBackground( false );
 	mSlider->on( Event::OnValueChange, [this]( auto event ) { onValueChangeCb( event ); } );

@@ -13,6 +13,8 @@ supported behavior; class headers and current source code remain the reference f
 | Support right-to-left languages or logical `start`/`end` layouts | [UI direction and RTL](ui_rtl.md) | [CSS specification](css_specification.md#direction) for `direction` and flow-relative properties |
 | Inspect or automate a running UI | [Runtime UI inspector](ui_inspector.md) | [Application UI authoring](ui_authoring.md) for a layout debugging workflow |
 | Bind application data or commands to widgets | [UI data binding](ui_databinding.md) | [Application UI authoring](ui_authoring.md) for screen structure |
+| Make native widgets accessible | [UI accessibility](ui_accessibility.md) | [Application UI authoring](ui_authoring.md) for screen structure |
+| Work on the accessibility implementation | [UI accessibility architecture](ui_accessibility_architecture.md) | [UI accessibility](ui_accessibility.md) for the application-facing behavior |
 | Add an interactive chart | [UI charts](ui_charts.md) | [Application UI authoring](ui_authoring.md) for placement and sizing |
 | Work on `eterm` Kitty support | [Keyboard protocol](eterm_kitty_keyboard.md), [graphics protocol](eterm_kitty_graphics.md) | The corresponding `src/modules/eterm/` implementation and tests |
 

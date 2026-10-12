@@ -1813,6 +1813,9 @@ class EE_API Node : public Transformable {
 	 */
 	inline bool isClosing() const { return 0 != ( mNodeFlags & NODE_FLAG_CLOSE ); }
 
+	/** Widget teardown has started; its accessibility subtree has already been invalidated. */
+	inline bool isDestroying() const { return mDestroying; }
+
 	/**
 	 * @brief Checks if the node is marked for closure or any node in its parent tree.
 	 *
@@ -1983,6 +1986,8 @@ class EE_API Node : public Transformable {
 	BlendMode mBlend{ BlendMode::Alpha() };
 	bool mVisible{ true };
 	bool mEnabled{ true };
+	// Keep teardown state separate from the full node flag word; this uses existing padding.
+	bool mDestroying{ false };
 	mutable Polygon2f mPoly;
 	mutable Rectf mWorldBounds;
 	Vector2f mCenter;

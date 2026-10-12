@@ -3,6 +3,9 @@
 
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
+#include <eepp/ui/accessibility/accessibility.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
+#include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/blocklayouter.hpp>
 #include <eepp/ui/border.hpp>

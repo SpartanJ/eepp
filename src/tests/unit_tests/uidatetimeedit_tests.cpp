@@ -73,7 +73,8 @@ class TestableCalendar : public UICalendar {
 UIApplication testApp() {
 	// Keep app teardown within each test, before process-static text caches are destroyed.
 	return UIApplication(
-		WindowSettings{ 640, 480, "eepp - date time edit tests" },
+		WindowSettings( 640, 480, "eepp - date time edit tests", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 }
 

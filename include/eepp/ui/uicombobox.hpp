@@ -17,7 +17,7 @@ class EE_API UIComboBox : public UIWidget {
 
 	virtual void setTheme( UITheme* Theme );
 
-	UIListBox* getListBox();
+	UIListBox* getListBox() const;
 
 	UIDropDownList* getDropDownList() const { return mDropDownList; }
 

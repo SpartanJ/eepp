@@ -1,0 +1,443 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import statistics
+import subprocess
+import threading
+import time
+
+import gi
+
+gi.require_version("Atspi", "2.0")
+from gi.repository import Atspi, Gio, GLib
+
+from test_atspi import pause
+
+
+def check(condition, message):
+	if not condition:
+		raise RuntimeError(message)
+
+
+class Measurements:
+	def __init__(self):
+		self.calls = []
+
+	def call(self, name, function):
+		start = time.perf_counter()
+		result = function()
+		self.calls.append((name, (time.perf_counter() - start) * 1000))
+		return result
+
+	def summary(self):
+		durations = sorted(duration for _, duration in self.calls)
+		if not durations:
+			return {"calls": 0, "median_ms": 0, "p95_ms": 0, "maximum_ms": 0}
+		p95_index = min(len(durations) - 1, int(len(durations) * 0.95))
+		return {
+			"calls": len(durations),
+			"median_ms": statistics.median(durations),
+			"p95_ms": durations[p95_index],
+			"maximum_ms": durations[-1],
+		}
+
+
+def find_application(name, process_id, timeout):
+	deadline = time.monotonic() + timeout
+	while time.monotonic() < deadline:
+		desktop = Atspi.get_desktop(0)
+		for index in range(desktop.get_child_count() - 1, -1, -1):
+			application = desktop.get_child_at_index(index)
+			try:
+				if (
+					application
+					and application.get_name() == name
+					and application.get_process_id() == process_id
+				):
+					return application
+			except Exception:
+				continue
+		pause(0.01)
+	raise RuntimeError(f'accessibility application "{name}" was not discovered')
+
+
+def traverse(root, measurements):
+	nodes = []
+	pending = [root]
+	while pending:
+		node = pending.pop()
+		nodes.append(node)
+		measurements.call("name", node.get_name)
+		measurements.call("role", node.get_role_name)
+		count = measurements.call("child-count", node.get_child_count)
+		for index in range(count - 1, -1, -1):
+			child = measurements.call(
+				"child-at-index", lambda node=node, index=index: node.get_child_at_index(index)
+			)
+			if child:
+				pending.append(child)
+	return nodes
+
+
+def find_named(nodes, name):
+	for node in nodes:
+		if node.get_name() == name:
+			return node
+	raise RuntimeError(f'accessibility node "{name}" was not found')
+
+
+def action_index(node, name):
+	for index in range(node.get_n_actions()):
+		if Atspi.Action.get_localized_name(node, index) == name:
+			return index
+	raise RuntimeError(f'action "{name}" was not exposed by "{node.get_name()}"')
+
+
+def request_burst(process_id, item_count, args):
+	"""Bypass libatspi's synchronous cache to pressure the actual D-Bus dispatch queue.
+
+	Interleave a costly primary-window enumeration and a secondary-window query. Every reply
+	must arrive and contain the complete children, including when the event loop was idle.
+	Returned time is client wall time, not application UI-thread time; use the opt-in native
+	dispatch profiler for the latter. The caller owns and cleans up the example process.
+	"""
+	session = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+	address = session.call_sync(
+		"org.a11y.Bus", "/org/a11y/bus", "org.a11y.Bus", "GetAddress",
+		None, None, Gio.DBusCallFlags.NONE, 2000, None,
+	).unpack()[0]
+	bus = Gio.DBusConnection.new_for_address_sync(
+		address, Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT
+		| Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION, None, None,
+	)
+	try:
+		def call(ref, interface, method, parameters=None):
+			return bus.call_sync(
+				ref[0], ref[1], interface, method, parameters, None,
+				Gio.DBusCallFlags.NONE, int(args.timeout * 1000), None,
+			).unpack()[0]
+
+		def children(ref):
+			return call(ref, "org.a11y.atspi.Accessible", "GetChildren")
+
+		application = None
+		for ref in children(("org.a11y.atspi.Registry", "/org/a11y/atspi/accessible/root")):
+			pid = call(
+				("org.freedesktop.DBus", "/org/freedesktop/DBus"),
+				"org.freedesktop.DBus", "GetConnectionUnixProcessID",
+				GLib.Variant("(s)", (ref[0],)),
+			)
+			if pid == process_id:
+				application = ref
+				break
+		check(application is not None, "burst target process was not registered")
+		windows = children(application)
+		check(len(windows) == 2, "burst must cover both application windows")
+		model = None
+		for ref in children(windows[0]):
+			name = call(
+				ref, "org.freedesktop.DBus.Properties", "Get",
+				GLib.Variant("(ss)", ("org.a11y.atspi.Accessible", "Name")),
+			)
+			if name == "Benchmark items":
+				model = ref
+				break
+		check(model is not None, "burst benchmark model was not found")
+		targets = [(model, item_count), (windows[1], len(children(windows[1])))]
+		loop = GLib.MainLoop()
+		completed = 0
+		errors = []
+		measurements = Measurements()
+
+		def received(connection, result, data):
+			nonlocal completed
+			expected, start = data
+			try:
+				response = connection.call_finish(result)
+				check(response.get_child_value(0).n_children() == expected,
+					"burst reply contained incomplete children")
+			except (GLib.Error, RuntimeError) as error:
+				errors.append(str(error))
+			measurements.calls.append(("burst", (time.perf_counter() - start) * 1000))
+			completed += 1
+			if completed == args.burst_requests:
+				loop.quit()
+
+		def timed_out():
+			errors.append("burst reply deadline exceeded")
+			loop.quit()
+			return GLib.SOURCE_REMOVE
+
+		deadline = GLib.timeout_add(int(args.timeout * 1000) + 1000, timed_out)
+		start = time.perf_counter()
+		for index in range(args.burst_requests):
+			ref, expected = targets[index % len(targets)]
+			bus.call(
+				ref[0], ref[1], "org.a11y.atspi.Accessible", "GetChildren", None, None,
+				Gio.DBusCallFlags.NONE, int(args.timeout * 1000), None, received,
+				(expected, time.perf_counter()),
+			)
+		loop.run()
+		if completed == args.burst_requests:
+			GLib.source_remove(deadline)
+		check(not errors and completed == args.burst_requests,
+			f"burst failed: {completed}/{args.burst_requests} replies, {errors}")
+		return {"wall_ms": (time.perf_counter() - start) * 1000, **measurements.summary()}
+	finally:
+		bus.close_sync(None)
+
+
+def run_sample(args, item_count, target_process_id, model_changed, model_change_count):
+	process = None
+	try:
+		start = time.perf_counter()
+		process = subprocess.Popen(
+			[args.executable, "--benchmark", "--benchmark-items", str(item_count)],
+			stdout=subprocess.DEVNULL,
+		)
+		target_process_id[0] = process.pid
+		application = find_application(args.application, process.pid, args.timeout)
+		discovery_ms = (time.perf_counter() - start) * 1000
+
+		measurements = Measurements()
+		start = time.perf_counter()
+		nodes = traverse(application, measurements)
+		traversal_ms = (time.perf_counter() - start) * 1000
+		check(len(nodes) >= item_count + 50, f"benchmark tree is incomplete: {len(nodes)} nodes")
+		find_named(nodes, "Benchmark depth leaf")
+		benchmark_list = find_named(nodes, "Benchmark items")
+		check(
+			benchmark_list.get_child_count() == item_count,
+			f"benchmark list must expose {item_count} items",
+		)
+
+		start = time.perf_counter()
+		for node in nodes[: min(args.sample_size, len(nodes))]:
+			measurements.call("description", node.get_description)
+			measurements.call("state", node.get_state_set)
+			measurements.call("attributes", node.get_attributes)
+			measurements.call("extents", lambda node=node: node.get_extents(Atspi.CoordType.SCREEN))
+		property_batch_ms = (time.perf_counter() - start) * 1000
+
+		project_name = find_named(nodes, "Project name")
+		check(
+			measurements.call("text-character-count", project_name.get_character_count) == 4,
+			"text character count query failed",
+		)
+		check(
+			measurements.call(
+				"text-content", lambda: Atspi.Text.get_text(project_name, 0, -1)
+			) == "eepp",
+			"text content query failed",
+		)
+		check(
+			measurements.call(
+				"editable-text", lambda: Atspi.EditableText.set_text_contents(project_name, "eepp2")
+			),
+			"editable text action failed",
+		)
+		check(
+			measurements.call(
+				"focus", lambda: project_name.do_action(action_index(project_name, "focus"))
+			),
+			"focus action failed",
+		)
+
+		checkbox = find_named(nodes, "Enable autosave")
+		check(
+			measurements.call(
+				"toggle", lambda: checkbox.do_action(action_index(checkbox, "toggle"))
+			),
+			"toggle action failed",
+		)
+		check(
+			measurements.call("toggle-state", checkbox.get_state_set).contains(
+				Atspi.StateType.CHECKED
+			),
+			"toggle state query failed",
+		)
+
+		spin = find_named(nodes, "Retry count")
+		check(measurements.call("range-value", spin.get_current_value) == 3, "range value query failed")
+		check(
+			measurements.call(
+				"set-range-value", lambda: Atspi.Value.set_current_value(spin, 4)
+			),
+			"range value action failed",
+		)
+
+		window = measurements.call("application-window", lambda: application.get_child_at_index(0))
+		window_extents = measurements.call(
+			"window-extents", lambda: window.get_extents(Atspi.CoordType.SCREEN)
+		)
+		measurements.call(
+			"component-hit-test",
+			lambda: window.get_accessible_at_point(
+				window_extents.x + window_extents.width // 2,
+				window_extents.y + window_extents.height // 2,
+				Atspi.CoordType.SCREEN,
+			),
+		)
+
+		mutate = find_named(nodes, "Replace benchmark model")
+		model_changed.clear()
+		model_change_count[0] = 0
+		start = time.perf_counter()
+		check(
+			mutate.do_action(action_index(mutate, "click")),
+			"benchmark model replacement action failed",
+		)
+		deadline = time.monotonic() + args.timeout
+		while not model_changed.is_set() and time.monotonic() < deadline:
+			pause(0.001)
+		check(model_changed.is_set(), "model replacement event was not received")
+		while benchmark_list.get_child_count() != item_count and time.monotonic() - start < args.timeout:
+			pause(0.001)
+		mutation_ms = (time.perf_counter() - start) * 1000
+		first_item = benchmark_list.get_child_at_index(0)
+		check(first_item.get_name() == "Updated benchmark item 0", "model replacement stayed stale")
+		check(model_change_count[0] == 1, "model-change burst was not coalesced")
+
+		burst = None
+		if args.burst_requests:
+			open_window = find_named(nodes, "Open accessibility window")
+			check(open_window.do_action(action_index(open_window, "click")),
+				"could not open secondary burst window")
+			deadline = time.monotonic() + args.timeout
+			while application.get_child_count() != 2 and time.monotonic() < deadline:
+				pause(0.01)
+			burst = request_burst(process.pid, item_count, args)
+
+		return {
+			"nodes": len(nodes),
+			"item_count": item_count,
+			"discovery_ms": discovery_ms,
+			"traversal_ms": traversal_ms,
+			"property_batch_ms": property_batch_ms,
+			"mutation_ms": mutation_ms,
+			"model_change_events": model_change_count[0],
+			**({"burst": burst} if burst else {}),
+			**measurements.summary(),
+		}
+	finally:
+		target_process_id[0] = None
+		if process:
+			process.terminate()
+			try:
+				process.wait(timeout=1)
+			except subprocess.TimeoutExpired:
+				process.kill()
+				process.wait()
+
+
+def median_result(samples):
+	result = {"item_count": samples[0]["item_count"], "iterations": len(samples)}
+	for key in samples[0]:
+		if key not in {"item_count", "model_change_events", "burst"}:
+			result[key] = statistics.median(sample[key] for sample in samples)
+	if "burst" in samples[0]:
+		result["burst"] = {
+			key: statistics.median(sample["burst"][key] for sample in samples)
+			for key in samples[0]["burst"]
+		}
+	result["model_change_events"] = max(sample["model_change_events"] for sample in samples)
+	result["traversal_ms_per_1k"] = result["traversal_ms"] * 1000 / result["nodes"]
+	result["mutation_ms_per_1k"] = result["mutation_ms"] * 1000 / result["item_count"]
+	return result
+
+
+def parse_item_counts(value):
+	counts = sorted(set(int(count) for count in value.split(",")))
+	check(counts and counts[0] > 0, "item counts must be positive")
+	return counts
+
+
+def main():
+	parser = argparse.ArgumentParser(description="Benchmark eepp's AT-SPI query path")
+	parser.add_argument("--application", default="eepp - Accessibility")
+	parser.add_argument("--executable", default="bin/eepp-ui-accessibility")
+	parser.add_argument("--timeout", type=float, default=5.0)
+	parser.add_argument("--sample-size", type=int, default=100)
+	parser.add_argument("--item-counts", default="250,1000,4000")
+	parser.add_argument("--iterations", type=int, default=3)
+	parser.add_argument("--burst-requests", type=int, default=0,
+		help="optional concurrent requests across two windows (0 disables; no timing CI gate)")
+	parser.add_argument("--max-discovery-ms", type=float, default=2000)
+	parser.add_argument("--max-traversal-ms-per-1k", type=float, default=2000)
+	parser.add_argument("--max-property-batch-ms", type=float, default=500)
+	parser.add_argument("--max-mutation-ms-per-1k", type=float, default=1000)
+	parser.add_argument("--max-request-ms", type=float, default=250)
+	parser.add_argument("--max-p95-ms", type=float, default=5)
+	parser.add_argument("--max-scaling-ratio", type=float, default=2.5)
+	parser.add_argument("--json", action="store_true")
+	args = parser.parse_args()
+	check(args.iterations > 0, "iterations must be positive")
+	check(args.burst_requests == 0 or args.burst_requests >= 2,
+		"burst requests must be 0 or at least 2")
+	check(args.timeout > 0, "timeout must be positive")
+	item_counts = parse_item_counts(args.item_counts)
+
+	model_changed = threading.Event()
+	model_change_count = [0]
+	target_process_id = [None]
+
+	def on_model_changed(event):
+		try:
+			if event.source.get_process_id() == target_process_id[0]:
+				model_change_count[0] += 1
+				model_changed.set()
+		except Exception:
+			pass
+
+	listener = Atspi.EventListener.new(on_model_changed)
+	check(listener.register("object:model-changed"), "could not register model-change listener")
+
+	try:
+		results = []
+		for item_count in item_counts:
+			samples = [
+				run_sample(
+					args, item_count, target_process_id, model_changed, model_change_count
+				)
+				for _ in range(args.iterations)
+			]
+			results.append(median_result(samples))
+
+		for result in results:
+			check(result["discovery_ms"] <= args.max_discovery_ms, "application discovery exceeded threshold")
+			check(
+				result["traversal_ms_per_1k"] <= args.max_traversal_ms_per_1k,
+				"normalized tree traversal exceeded threshold",
+			)
+			check(result["property_batch_ms"] <= args.max_property_batch_ms, "property batch exceeded threshold")
+			check(
+				result["mutation_ms_per_1k"] <= args.max_mutation_ms_per_1k,
+				"normalized model mutation exceeded threshold",
+			)
+			check(result["maximum_ms"] <= args.max_request_ms, "an individual accessibility request exceeded threshold")
+			check(result["p95_ms"] <= args.max_p95_ms, "p95 accessibility request latency exceeded threshold")
+
+		baseline_cost = results[0]["traversal_ms_per_1k"]
+		scaling_ratio = max(
+			result["traversal_ms_per_1k"] / baseline_cost for result in results[1:]
+		) if len(results) > 1 else 1
+		check(scaling_ratio <= args.max_scaling_ratio, "tree traversal scaling became nonlinear")
+		output = {"worst_scaling_ratio": scaling_ratio, "samples": results}
+		if args.json:
+			print(json.dumps(output, sort_keys=True))
+		else:
+			for result in results:
+				print(
+					f"{result['item_count']} items: {result['nodes']:.0f} nodes, "
+					f"traversal {result['traversal_ms']:.1f}ms "
+					f"({result['traversal_ms_per_1k']:.1f}ms/1k), "
+					f"p95 {result['p95_ms']:.3f}ms, maximum {result['maximum_ms']:.3f}ms"
+				)
+			print(f"AT-SPI benchmark passed: worst normalized growth {scaling_ratio:.2f}x")
+	finally:
+		listener.deregister("object:model-changed")
+
+
+if __name__ == "__main__":
+	main()

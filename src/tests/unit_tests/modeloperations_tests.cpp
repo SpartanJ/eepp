@@ -211,6 +211,36 @@ UTEST( ModelInsert, persistentIndexesShiftWithoutIdentityCollisions ) {
 	ASSERT_EQ( third.data().asInt(), 30 );
 }
 
+UTEST( ModelInsert, releasedPersistentIndexesKeepSharedHandles ) {
+	PersistentRowsModel model( false );
+	// Two registrations of one row share its handle; a third tracks another row.
+	PersistentModelIndex first( model.index( 1 ) );
+	PersistentModelIndex second( model.index( 1 ) );
+	PersistentModelIndex other( model.index( 2 ) );
+	PersistentModelIndex copyOfSecond( second );
+
+	// Releasing one registration keeps the handle for the other.
+	first.release();
+	EXPECT_FALSE( first.hasValidHandle() );
+	model.insertAt( 0, 5 );
+	EXPECT_EQ( second.row(), 2 );
+	EXPECT_EQ( second.data().asInt(), 20 );
+
+	// Releasing the last one drops it: copies stop tracking, other rows are unaffected.
+	second.release();
+	EXPECT_FALSE( copyOfSecond.hasValidHandle() );
+	model.insertAt( 0, 1 );
+	EXPECT_EQ( other.row(), 4 );
+	EXPECT_EQ( other.data().asInt(), 30 );
+
+	// Releasing twice, or after the row is gone, does nothing.
+	second.release();
+	PersistentModelIndex deleted( model.index( 0 ) );
+	model.deleteAt( 0 );
+	deleted.release();
+	EXPECT_EQ( other.row(), 3 );
+}
+
 UTEST( ModelInsert, persistentIndexesPreserveInternalIds ) {
 	PersistentRowsModel model( true );
 	PersistentModelIndex tracked( model.index( 2 ) );

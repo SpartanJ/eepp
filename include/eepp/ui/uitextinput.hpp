@@ -105,6 +105,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	TextDocument& getDocument();
 
+	const TextDocument& getDocument() const;
+
 	KeyBindings& getKeyBindings();
 
 	size_t getMenuIconSize() const;
@@ -205,6 +207,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual void onFontColorChanged();
 
+	virtual void onTextChanged();
+
 	void onThemeLoaded();
 
 	virtual void onCursorPosChange();
@@ -245,7 +249,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual void onDocumentMoved( TextDocument* );
 
-	virtual void onDocumentReset( TextDocument* ) {}
+	virtual void onDocumentReset( TextDocument* ) { notifyAccessibilityTextChanged( nullptr ); }
 
 	void onDocumentClosed( TextDocument* ) {};
 

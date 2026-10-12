@@ -40,6 +40,8 @@ class EE_API UITreeView : public UIAbstractTableView {
   public:
 	static UITreeView* New();
 
+	virtual ~UITreeView();
+
 	Uint32 getType() const;
 
 	bool isType( const Uint32& type ) const;
@@ -55,6 +57,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual Node* overFind( const Vector2f& point );
 
 	bool isExpanded( const ModelIndex& index ) const;
+
+	std::vector<ModelIndex> getVisibleModelIndexes() const;
 
 	void setExpanded( const std::vector<ModelIndex>& index, bool expanded );
 

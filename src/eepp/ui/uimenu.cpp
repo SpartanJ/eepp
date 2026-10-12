@@ -564,7 +564,9 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& event ) {
 		}
 		case KEY_ESCAPE:
 			hide();
-			break;
+			if ( mOwnerNode && mOwnerNode->hasVisibility() && mOwnerNode->isEnabled() )
+				mOwnerNode->setFocus();
+			return 1;
 		case KEY_KP_ENTER:
 		case KEY_RETURN:
 			if ( nullptr != mItemSelected && nullptr != getEventDispatcher() ) {

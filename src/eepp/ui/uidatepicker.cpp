@@ -20,6 +20,8 @@ UIDatePicker::UIDatePicker( DateTimeEditMode mode, const std::string& tag ) :
 	UIDateTimeEdit( mode, tag ), mEditorRightPadding( getPadding().Right ) {
 	setClipType( ClipType::BorderBox );
 	mCalendarButton = UIPushButton::NewWithTag( tag + "::button" );
+	// F4 / Alt+Down opens the calendar from the editor's single Tab entry.
+	mCalendarButton->unsetTabFocusable();
 	// The editor owns the button's hit area; its CSS image must not collapse to an empty label.
 	mCalendarButton->unsetFlags( UI_AUTO_SIZE );
 	mCalendarButton->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );

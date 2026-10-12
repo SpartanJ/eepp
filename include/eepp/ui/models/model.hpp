@@ -134,6 +134,9 @@ class EE_API Model {
 
 	std::weak_ptr<PersistentHandle> registerPersistentIndex( ModelIndex const& );
 
+	/** Releases one registration of the handle; the handle is dropped when none remain. */
+	void releasePersistentIndex( const std::shared_ptr<PersistentHandle>& handle );
+
 	void beginInsertRows( ModelIndex const& parent, int first, int last );
 	void beginInsertColumns( ModelIndex const& parent, int first, int last );
 	void beginMoveRows( ModelIndex const& sourceParent, int first, int last,

@@ -1,4 +1,6 @@
+#include "accessibility/accessibilitybackend.hpp"
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
 #include <eepp/core/small_vector.hpp>
 #include <eepp/core/string.hpp>
@@ -17,6 +19,7 @@
 #include <eepp/system/regex.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
+#include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
@@ -33,6 +36,7 @@
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
 #include <eepp/window/platformhelper.hpp>
 #include <eepp/window/window.hpp>
 #include <mutex>
@@ -62,8 +66,14 @@ using AsyncResourceMainThreadQueue = SmallVector<PendingAsyncResourceMainThread,
 AsyncResourceMainThreadQueue sAsyncResourceMainThreadQueue;
 std::atomic<AsyncResourceMainThreadQueueState> sAsyncResourceMainThreadQueueState{
 	AsyncResourceMainThreadQueueState::Closed };
+// Only a hint for the lock-free idle path: the queue itself remains mutex-protected. Every
+// write is under that mutex, so draining cannot clear a concurrent producer's pending work.
+std::atomic<bool> sAsyncResourceMainThreadPending{};
 
 void drainAsyncResourceMainThreadQueue() {
+	if ( !sAsyncResourceMainThreadPending.load( std::memory_order_acquire ) )
+		return;
+
 	AsyncResourceMainThreadQueue pending;
 	{
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
@@ -71,6 +81,7 @@ void drainAsyncResourceMainThreadQueue() {
 			 AsyncResourceMainThreadQueueState::Open )
 			return;
 		pending.swap( sAsyncResourceMainThreadQueue );
+		sAsyncResourceMainThreadPending.store( false, std::memory_order_relaxed );
 	}
 
 	AsyncResourceMainThreadQueue delayed;
@@ -96,6 +107,7 @@ void drainAsyncResourceMainThreadQueue() {
 			 AsyncResourceMainThreadQueueState::Closed ) {
 			for ( auto& item : delayed )
 				sAsyncResourceMainThreadQueue.emplace_back( std::move( item ) );
+			sAsyncResourceMainThreadPending.store( true, std::memory_order_release );
 		}
 	}
 }
@@ -139,8 +151,9 @@ static void refreshWebViewDocumentLayoutAfterStyleChange( UIWidget* root ) {
 	}
 }
 
-UISceneNode* UISceneNode::New( EE::Window::Window* window, bool importDefaultResources ) {
-	return eeNew( UISceneNode, ( window, importDefaultResources ) );
+UISceneNode* UISceneNode::New( EE::Window::Window* window, bool importDefaultResources,
+							   std::shared_ptr<ThreadPool> threadPool ) {
+	return eeNew( UISceneNode, ( window, importDefaultResources, std::move( threadPool ) ) );
 }
 
 UISceneNode::Context::Context( UISceneNode* scene ) :
@@ -165,7 +178,8 @@ UISceneNode::Context UISceneNode::makeCurrent() {
 	return Context( this );
 }
 
-UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResources ) :
+UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResources,
+						  std::shared_ptr<ThreadPool> threadPool ) :
 	SceneNode( window ),
 	mRoot( NULL ),
 	mIsLoading( false ),
@@ -177,7 +191,8 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 	mResourceScope( ResourceScope::New() ),
 	mDrawableResolver( *this ),
 	mWebResourceCache( WebResourceCache::New() ),
-	mKeyBindings( mWindow->getInput() ) {
+	mKeyBindings( mWindow->getInput() ),
+	mThreadPool( std::move( threadPool ) ) {
 	auto context = makeCurrent();
 	if ( mImportDefaultResources )
 		mResourceScope->importCatalog( defaultResourceScope().getLocalCatalog() );
@@ -212,6 +227,15 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 UISceneNode::~UISceneNode() {
 	mNodeFlags |= NODE_FLAG_CLOSE;
 	onClose();
+	// Native backends must detach while their scene and semantic root are still alive.
+	// Descendant destructors must not rediscover or register a half-destroyed ancestor.
+	if ( mHostUISceneNode ) {
+		// This scene is already closing, so ask the host for the manager it shares.
+		if ( auto* manager = mHostUISceneNode->getExistingAccessibilityManager() )
+			manager->onSubtreeRemoved( mRoot );
+	}
+	mAccessibilityManager.reset();
+	setAccessibilityClientActive( false );
 	if ( mAsyncResourceLoadState ) {
 		mAsyncResourceLoadState->owner.store( nullptr, std::memory_order_release );
 		mAsyncResourceLoadState->alive.store( false, std::memory_order_release );
@@ -232,6 +256,7 @@ UISceneNode::~UISceneNode() {
 	// We need to ensure that the children are destroyed before the thread pool,
 	// since its children could be consuming it and need to uninitialize gracefully.
 	childDeleteAll();
+	mRoot = nullptr;
 
 	if ( mOwnsEventDispatcher ) {
 		eeSAFE_DELETE( mEventDispatcher );
@@ -324,6 +349,13 @@ void UISceneNode::onParentChange() {
 	}
 
 	initializeEmbeddedFromHost( mHostUISceneNode );
+
+	if ( mHostUISceneNode && hasActiveAccessibilityClients() ) {
+		// A populated embedded scene can move without reparenting any of its widgets. Refresh
+		// the host hierarchy even when their accessibility identities keep the same owner.
+		auto* manager = getAccessibilityManager();
+		manager->notify( manager->getRoot(), AccessibilityEvent::ChildrenChanged );
+	}
 
 	setDirty();
 	updateParentSizeListener();
@@ -488,13 +520,24 @@ void UISceneNode::updateHostUISceneNode() {
 	if ( mHostUISceneNode == hostScene )
 		return;
 
+	auto* previousManager = getExistingAccessibilityManager();
+	auto* nextManager = hostScene ? hostScene->getExistingAccessibilityManager() : nullptr;
+	if ( previousManager && previousManager != nextManager && mRoot ) {
+		// Embedded descendants keep this local scene pointer while its host changes. Invalidate
+		// their old-owner identities before updating the host used by getAccessibilityManager().
+		previousManager->onSubtreeRemoved( mRoot );
+	}
+
 	if ( mHostUISceneNode )
 		mHostUISceneNode->unregisterChildUISceneNode( this );
 
 	mHostUISceneNode = hostScene;
 
-	if ( mHostUISceneNode )
+	if ( mHostUISceneNode ) {
+		mAccessibilityManager.reset();
+		setAccessibilityClientActive( false );
 		mHostUISceneNode->registerChildUISceneNode( this );
+	}
 }
 
 void UISceneNode::registerChildUISceneNode( UISceneNode* sceneNode ) {
@@ -1251,6 +1294,29 @@ void UISceneNode::flushDirtyStyleAndLayout() {
 
 void UISceneNode::update( const Time& elapsed ) {
 	auto context = makeCurrent();
+	// Native accessibility calls can invoke user callbacks that change policy. Resetting their
+	// manager immediately would destroy the backend while it is still executing or replying.
+	// Apply the last deferred request at the next update, after dispatch has unwound; an update
+	// re-entered from a callback leaves it pending because the dispatch nesting count is nonzero.
+	if ( mAccessibilityManager && mAccessibilityManager->mHasDeferredPolicy &&
+		 mAccessibilityManager->mDispatchDepth == 0 ) {
+		const auto policy = mAccessibilityManager->mDeferredPolicy;
+		mAccessibilityManager->mHasDeferredPolicy = false;
+		setAccessibilityPolicy( policy );
+	}
+
+	// Only root scenes own native backends; nested scenes use their host's manager. Create it
+	// lazily for Auto/Enabled policies, so Disabled scenes do not initialize native integration.
+	if ( !mHostUISceneNode && !mAccessibilityManager &&
+		 getAccessibilityPolicy() != AccessibilityPolicy::Disabled )
+		mAccessibilityManager = std::make_unique<AccessibilityManager>( this );
+	// Service native requests/queued notifications before the ordinary widget update. A manager
+	// explicitly created by a query may also exist under Disabled policy (with a null backend).
+	// Refresh the scene's cached activity bit, which keeps dormant widget notification hooks cheap.
+	if ( mAccessibilityManager ) {
+		mAccessibilityManager->update();
+		setAccessibilityClientActive( mAccessibilityManager->hasActiveNativeClients() );
+	}
 
 	drainAsyncResourceMainThreadQueue();
 
@@ -1305,6 +1371,12 @@ void UISceneNode::update( const Time& elapsed ) {
 void UISceneNode::onWidgetDelete( Node* node ) {
 	if ( node->isWidget() ) {
 		UIWidget* widget = node->asType<UIWidget>();
+		// UIWidget already invalidated its subtree before setting the destroying flag. Do not
+		// look up its manager again from the later dirty-state cleanup.
+		if ( !node->isDestroying() ) {
+			if ( auto* manager = getExistingAccessibilityManager() )
+				manager->onWidgetDelete( widget );
+		}
 
 		if ( node->isLayout() ) {
 			mDirtyLayouts.erase( node->asType<UILayout>() );
@@ -1314,6 +1386,14 @@ void UISceneNode::onWidgetDelete( Node* node ) {
 
 		mDirtyStyleState.erase( widget );
 		mDirtyStyleStateCSSAnimations.erase( widget );
+	}
+}
+
+void UISceneNode::onWidgetAccessibilitySourceDelete( UIWidget* widget ) {
+	if ( mHostUISceneNode ) {
+		mHostUISceneNode->onWidgetAccessibilitySourceDelete( widget );
+	} else if ( mAccessibilityManager ) {
+		mAccessibilityManager->onWidgetAccessibilitySourceDelete( widget );
 	}
 }
 
@@ -1339,6 +1419,73 @@ void UISceneNode::setTheme( UITheme* theme, Node* to ) {
 
 UIWidget* UISceneNode::getRoot() const {
 	return mRoot;
+}
+
+AccessibilityManager* UISceneNode::getAccessibilityManager() {
+	if ( mNodeFlags & NODE_FLAG_CLOSE )
+		return nullptr;
+	if ( mHostUISceneNode )
+		return mHostUISceneNode->getAccessibilityManager();
+	if ( !mAccessibilityManager )
+		mAccessibilityManager = std::make_unique<AccessibilityManager>( this );
+	return mAccessibilityManager.get();
+}
+
+void UISceneNode::setAccessibilityClientActive( bool active ) {
+	if ( ( ( mAccessibilityState & AccessibilityClientActive ) != 0 ) == active )
+		return;
+	if ( active ) {
+		mAccessibilityState |= AccessibilityClientActive;
+	} else {
+		mAccessibilityState &= ~AccessibilityClientActive;
+	}
+	Accessibility::onSceneClientActivityChanged( active );
+	if ( !active ) {
+		if ( mAccessibilityManager )
+			mAccessibilityManager->onClientsDisconnected();
+	}
+	if ( isAccessibilityTraceEnabled() )
+		std::fprintf( stderr, "eepp accessibility: scene %p client %s\n",
+					  static_cast<void*>( this ), active ? "active" : "inactive" );
+}
+
+UISceneNode* UISceneNode::setAccessibilityPolicy( AccessibilityPolicy policy ) {
+	if ( mHostUISceneNode ) {
+		mHostUISceneNode->setAccessibilityPolicy( policy );
+		return this;
+	}
+	if ( mAccessibilityManager && mAccessibilityManager->mDispatchDepth != 0 ) {
+		mAccessibilityManager->mDeferredPolicy = policy;
+		// A policy-only callback need not dirty the scene. Ensure an event-driven application
+		// gets another update instead of sleeping indefinitely with the reset pending.
+		if ( !mAccessibilityManager->mHasDeferredPolicy )
+			EE::Window::Input::wakeUpEventLoop();
+		mAccessibilityManager->mHasDeferredPolicy = true;
+		return this;
+	}
+	// An explicit request outside dispatch supersedes an earlier deferred request, even when
+	// it keeps the current policy and needs no backend replacement.
+	if ( mAccessibilityManager )
+		mAccessibilityManager->mHasDeferredPolicy = false;
+	if ( getAccessibilityPolicy() == policy )
+		return this;
+	mAccessibilityManager.reset();
+	setAccessibilityClientActive( false );
+	mAccessibilityState = static_cast<Uint8>( policy );
+	return this;
+}
+
+void UISceneNode::announceForAccessibility( const String& message, AccessibilityLive priority ) {
+	if ( !hasActiveAccessibilityClients() )
+		return;
+	if ( auto* manager = getAccessibilityManager() )
+		manager->announce( message, priority );
+}
+
+AccessibilityPolicy UISceneNode::getAccessibilityPolicy() const {
+	return mHostUISceneNode
+			   ? mHostUISceneNode->getAccessibilityPolicy()
+			   : static_cast<AccessibilityPolicy>( mAccessibilityState & AccessibilityPolicyMask );
 }
 
 void UISceneNode::setDirection( UIDirection direction ) {
@@ -1367,12 +1514,15 @@ void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 	if ( node->isClosing() )
 		return;
 
-	bool alreadyExists = ( mDirtyStyle.count( node ) > 0 );
-	if ( alreadyExists && !tryReinsert )
-		return;
+	// An empty set needs neither a membership lookup nor a walk through the widget's ancestors.
+	if ( !mDirtyStyle.empty() ) {
+		bool alreadyExists = ( mDirtyStyle.count( node ) > 0 );
+		if ( alreadyExists && !tryReinsert )
+			return;
 
-	if ( hasDirtyWidgetAncestor( node, mDirtyStyle ) )
-		return;
+		if ( hasDirtyWidgetAncestor( node, mDirtyStyle ) )
+			return;
+	}
 
 	mDirtyStyle.insert( node );
 }
@@ -1384,12 +1534,14 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 	if ( node->isClosing() )
 		return;
 
-	bool alreadyExists = mDirtyStyleState.count( node ) > 0;
-	if ( alreadyExists && !tryReinsert )
-		return;
+	if ( !mDirtyStyleState.empty() ) {
+		bool alreadyExists = mDirtyStyleState.count( node ) > 0;
+		if ( alreadyExists && !tryReinsert )
+			return;
 
-	if ( hasDirtyWidgetAncestor( node, mDirtyStyleState ) )
-		return;
+		if ( hasDirtyWidgetAncestor( node, mDirtyStyleState ) )
+			return;
+	}
 
 	mDirtyStyleState.insert( node );
 	mDirtyStyleStateCSSAnimations[node] = disableCSSAnimations;
@@ -1638,6 +1790,13 @@ void UISceneNode::onSizeChange() {
 	SceneNode::onSizeChange();
 
 	mRoot->setPixelsSize( getRootPixelsSize() );
+
+	// Widgets do not report their own bounds changes (clients query bounds on demand). A window
+	// resize is the one layout change worth announcing, once, on the window's root.
+	if ( !mHostUISceneNode && hasActiveAccessibilityClients() ) {
+		if ( auto* manager = getAccessibilityManager() )
+			manager->notify( manager->getRoot(), AccessibilityEvent::BoundsChanged );
+	}
 }
 
 const Sizef& UISceneNode::getRootPixelsSize() const {
@@ -2385,6 +2544,7 @@ void UISceneNode::runAsyncResourceOnMainThread(
 			   isAsyncResourceLoadCurrent( resourceState, generation ) ) ) {
 			sAsyncResourceMainThreadQueue.push_back(
 				{ resourceState, generation, std::move( func ), delay, Clock() } );
+			sAsyncResourceMainThreadPending.store( true, std::memory_order_release );
 		}
 	}
 }
@@ -2394,6 +2554,7 @@ void UISceneNode::openAsyncResourceMainThreadQueue() {
 	{
 		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
 		stale.swap( sAsyncResourceMainThreadQueue );
+		sAsyncResourceMainThreadPending.store( false, std::memory_order_relaxed );
 		sAsyncResourceMainThreadQueueState.store( AsyncResourceMainThreadQueueState::Open,
 												  std::memory_order_release );
 	}
@@ -2412,6 +2573,7 @@ void UISceneNode::finishAsyncResourceMainThreadQueueShutdown() {
 		sAsyncResourceMainThreadQueueState.store( AsyncResourceMainThreadQueueState::Closed,
 												  std::memory_order_release );
 		pending.swap( sAsyncResourceMainThreadQueue );
+		sAsyncResourceMainThreadPending.store( false, std::memory_order_relaxed );
 	}
 }
 

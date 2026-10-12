@@ -6,6 +6,7 @@
 #include "lspdocumentclient.hpp"
 #include "lspprotocol.hpp"
 #include <atomic>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
@@ -23,6 +24,10 @@ using namespace EE::UI;
 using namespace EE::UI::Doc;
 
 namespace ecode {
+
+/** didChange content changes. Edits arrive one at a time, so a single change stays inline and
+ * queueing it allocates no vector storage. */
+using DocumentContentChanges = SmallVector<DocumentContentChange, 1>;
 
 class LSPClientServerManager;
 
@@ -125,13 +130,11 @@ class LSPClientServer {
 	LSPRequestHandle didClose( const URI& document );
 
 	LSPRequestHandle didChange( const URI& document, int version, const std::string& text,
-								const std::vector<DocumentContentChange>& change = {} );
+								const DocumentContentChanges& change = {} );
 
-	LSPRequestHandle didChange( TextDocument* doc,
-								const std::vector<DocumentContentChange>& change = {} );
+	LSPRequestHandle didChange( TextDocument* doc, const DocumentContentChanges& change = {} );
 
-	void queueAndProcess( const URI& document, int version,
-						  const std::vector<DocumentContentChange>& change = {} );
+	void queueAndProcess( const URI& document, int version, DocumentContentChanges&& change );
 
 	void processDidChangeQueue();
 
@@ -306,7 +309,7 @@ class LSPClientServer {
 	struct DidChangeQueue {
 		URI uri;
 		IdType version;
-		std::vector<DocumentContentChange> change;
+		DocumentContentChanges change;
 	};
 	std::queue<DidChangeQueue> mDidChangeQueue;
 	Mutex mDidChangeMutex;

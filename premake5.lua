@@ -667,9 +667,9 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.istarget("windows") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32" } )
 	elseif os.istarget("mingw32") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid", "dwrite" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32" } )
 	elseif os.istarget("macosx") then
 		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
 	elseif os.istarget("bsd") then
@@ -1013,6 +1013,7 @@ function build_eepp( build_name )
 			"src/eepp/scene/*.cpp",
 			"src/eepp/scene/actions/*.cpp",
 			"src/eepp/ui/*.cpp",
+			"src/eepp/ui/accessibility/*.cpp",
 			"src/eepp/ui/abstract/*.cpp",
 			"src/eepp/ui/models/*.cpp",
 			"src/eepp/ui/css/*.cpp",
@@ -1711,6 +1712,7 @@ workspace "eepp"
 		incdirs { "include", "src" }
 		files { "src/eepp/ui/platform/macos/macosmenubar.mm",
 				"src/eepp/window/platform/macos/platformhelper.mm",
+				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm",
 				"src/eepp/system/fileassociation_macos.mm" }
 		buildoptions { "-x objective-c++" }
 		build_base_cpp_configuration( "eepp-macos-helper" )
@@ -1830,6 +1832,12 @@ workspace "eepp"
 		language "C++"
 		files { "src/examples/ui_application_multi_window/*.cpp" }
 		build_link_configuration( "eepp-ui-application-multi-window", true )
+
+	project "eepp-ui-accessibility"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_accessibility/*.cpp" }
+		build_link_configuration( "eepp-ui-accessibility", true )
 
 	project "eepp-ui-date-time-picker"
 		set_kind()
@@ -2131,6 +2139,10 @@ workspace "eepp"
 				"src/tools/ecode/plugins/git/gitdiff.cpp",
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
+		if os.istarget("macosx") then
+			files { "src/tests/unit_tests/accessibility_macos_tests.mm" }
+			links { "Cocoa.framework" }
+		end
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 		filter "system:macosx"
@@ -2155,6 +2167,26 @@ workspace "eepp"
 		filter {}
 
 		build_link_configuration( "eepp-unit_tests", true )
+
+	if os.istarget("windows") then
+		project "eepp-windows-accessibility-tests"
+			kind "ConsoleApp"
+			targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
+			language "C++"
+			-- Compile the private providers into the harness for deterministic teardown and
+			-- cross-window identity tests without requiring the system's UIA client APIs.
+			files { "src/tests/windows_accessibility/*.cpp",
+				"src/eepp/ui/accessibility/accessibilitybackenduia.cpp",
+				"src/eepp/ui/accessibility/accessibilitybackenduiaprovider.cpp",
+				"src/eepp/ui/accessibility/accessibilitybackenduiatext.cpp" }
+			links { "uiautomationcore", "ole32", "oleaut32", "comctl32" }
+			build_link_configuration( "eepp-windows-accessibility-tests", true )
+			-- MinGW: the harness uses wmain, and CLSID_CUIAutomation lives in libuuid.
+			filter "action:gmake*"
+				links { "uuid" }
+				linkoptions { "-municode" }
+			filter {}
+	end
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

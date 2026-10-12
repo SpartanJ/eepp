@@ -200,6 +200,8 @@ the most basic widgets in a vertical linear layout display.
 
 **The UI data-binding guide can be found [here](docs/articles/ui_databinding.md).**
 
+**The UI accessibility guide can be found [here](docs/articles/ui_accessibility.md).**
+
 **The runtime UI inspector guide can be found [here](docs/articles/ui_inspector.md).**
 
 ## UI Widgets with C++ example
