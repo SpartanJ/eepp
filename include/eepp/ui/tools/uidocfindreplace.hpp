@@ -2,9 +2,9 @@
 #define EE_UI_TOOLS_UIDOCFINDREPLACE_HPP
 
 #include <eepp/ui/base.hpp>
+#include <eepp/ui/databinding/uidatabind.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
-#include <eepp/ui/databinding/uidatabind.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uitextinput.hpp>
@@ -30,8 +30,8 @@ class EE_API UIDocFindReplace : public UILinearLayout, public WidgetCommandExecu
 	UIDocFindReplace( const UIDocFindReplace& ) = delete;
 	UIDocFindReplace& operator=( const UIDocFindReplace& ) = delete;
 
-	UIDocFindReplace( UIDocFindReplace&& ) = default;
-	UIDocFindReplace& operator=( UIDocFindReplace&& ) = default;
+	UIDocFindReplace( UIDocFindReplace&& ) = delete;
+	UIDocFindReplace& operator=( UIDocFindReplace&& ) = delete;
 
 	const std::shared_ptr<Doc::TextDocument>& getDoc() const;
 

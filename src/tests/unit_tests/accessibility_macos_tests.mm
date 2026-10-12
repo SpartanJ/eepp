@@ -95,9 +95,13 @@ UTEST( AccessibilityMacOS, PasswordModeTransitionsRevalidateRetainedTextElements
 	EXPECT_EQ( element.accessibilityNumberOfCharacters, 0 );
 	EXPECT_TRUE( [element accessibilityStringForRange:NSMakeRange( 0, 6 )] == nil );
 	EXPECT_TRUE( [element accessibilityAttributedStringForRange:NSMakeRange( 0, 6 )] == nil );
+	// Verify the legacy parameterized API still protects password text.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	EXPECT_TRUE(
 		[element accessibilityAttributeValue:NSAccessibilityStringForRangeParameterizedAttribute
 								forParameter:[NSValue valueWithRange:NSMakeRange( 0, 6 )]] == nil );
+#pragma clang diagnostic pop
 }
 
 UTEST( AccessibilityMacOS, ApplicationWindowBridgeIdentityActionTextAndLifecycle ) {
