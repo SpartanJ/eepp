@@ -52,7 +52,7 @@ class EE_API UICheckBox : public UITextView {
 	UIWidget* mInactiveButton;
 	bool mChecked;
 	CheckMode mCheckMode{ CheckMode::TextAndButton };
-	Uint32 mLastTick;
+	Uint32 mLastTick{ 0 };
 	Int32 mTextSeparation;
 
 	UICheckBox();

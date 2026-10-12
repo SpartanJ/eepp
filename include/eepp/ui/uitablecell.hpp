@@ -43,7 +43,7 @@ class EE_API UITableCell : public UIPushButton {
 		onThemeLoaded();
 	}
 
-	virtual void updateCell( Model* ){};
+	virtual void updateCell( Model* ) {};
 
   protected:
 	ModelIndex mCurIndex;
@@ -53,6 +53,9 @@ class EE_API UITableCell : public UIPushButton {
 	UITableCell( const std::string& tag,
 				 const std::function<UITextView*( UIPushButton* )>& newTextViewCb = nullptr ) :
 		UIPushButton( tag, newTextViewCb ) {
+		// Recycled cells are navigated through their model view; embedded editors opt in
+		// separately.
+		unsetTabFocusable();
 		applyDefaultTheme();
 	}
 

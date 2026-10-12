@@ -50,11 +50,37 @@ bool isComboBoxExpanded( const UIComboBox* widget ) {
 	return popup->isVisible() && popup->isEnabled();
 }
 
+// Composite controls expose one semantic element, while their embedded editor owns keyboard
+// input and sequential focus. Keep native focus actions aligned with that functional target.
+const UIWidget* keyboardFocusTarget( const UIWidget* widget ) {
+	if ( widget->isType( UI_TYPE_SPINBOX ) )
+		return static_cast<const UISpinBox*>( widget )->getTextInput();
+	if ( widget->isType( UI_TYPE_COMBOBOX ) )
+		return static_cast<const UIComboBox*>( widget )->getDropDownList();
+	return widget;
+}
+
+bool keyboardFocusable( const UIWidget* widget ) {
+	if ( keyboardFocusTarget( widget )->isTabFocusable() )
+		return true;
+	// Arrow-navigated composite members remain keyboard-focusable without joining the Tab ring.
+	if ( widget->isType( UI_TYPE_MENU ) )
+		return true;
+	if ( widget->isType( UI_TYPE_MENUITEM ) )
+		return widget->getParent() && widget->getParent()->isType( UI_TYPE_MENU );
+	if ( widget->isType( UI_TYPE_LISTBOXITEM ) ) {
+		const auto* parent = widget->getParent();
+		const auto* owner = parent ? parent->getParent() : nullptr;
+		return owner && owner->isType( UI_TYPE_LISTBOX );
+	}
+	return false;
+}
+
 AccessibilityState baseState( const UIWidget* widget ) {
 	AccessibilityState state = AccessibilityState::None;
 	if ( widget->isEnabled() )
 		state |= AccessibilityState::Enabled;
-	if ( widget->isTabFocusable() )
+	if ( keyboardFocusable( widget ) )
 		state |= AccessibilityState::Focusable;
 	auto* dispatcher = widget->getEventDispatcher();
 	auto* focused = dispatcher ? dispatcher->getFocusNode() : nullptr;
@@ -79,7 +105,7 @@ AccessibilityState baseState( const UIWidget* widget ) {
 }
 
 AccessibilityActions baseActions( const UIWidget* widget ) {
-	return widget->isTabFocusable() ? accessibilityActionMask( AccessibilityAction::Focus ) : 0;
+	return keyboardFocusable( widget ) ? accessibilityActionMask( AccessibilityAction::Focus ) : 0;
 }
 
 /** The nearest scroll view whose scrolled content contains the widget. */
@@ -581,7 +607,8 @@ AccessibilityActions AccessibilityWidgetResolver::getActions( const UIWidget* wi
 		scrollViewFor( widget ) ? accessibilityActionMask( AccessibilityAction::ScrollTo ) : 0;
 	if ( isRoot( widget ) ||
 		 ( widget->isType( UI_TYPE_TEXTVIEW ) && !widget->isType( UI_TYPE_CHECKBOX ) &&
-		   !widget->isType( UI_TYPE_RADIOBUTTON ) && !widget->isType( UI_TYPE_TEXTINPUT ) ) )
+		   !widget->isType( UI_TYPE_RADIOBUTTON ) && !widget->isType( UI_TYPE_TEXTINPUT ) &&
+		   !widget->isType( UI_TYPE_LISTBOXITEM ) ) )
 		return scroll;
 	auto actions = baseActions( widget ) | scroll;
 	if ( widget->isType( UI_TYPE_MENUCHECKBOX ) ) {
@@ -744,7 +771,8 @@ bool AccessibilityWidgetResolver::performAction( UIWidget* widget,
 	if ( !( widget->getAccessibilityActions() & accessibilityActionMask( request.action ) ) )
 		return false;
 	if ( request.action == AccessibilityAction::Focus ) {
-		widget->setFocus( NodeFocusReason::Unknown );
+		const_cast<UIWidget*>( keyboardFocusTarget( widget ) )
+			->setFocus( NodeFocusReason::Unknown );
 		return true;
 	}
 	if ( request.action == AccessibilityAction::ScrollTo ) {

@@ -41,7 +41,7 @@ class EE_API UIRadioButton : public UITextView {
 	UIWidget* mActiveButton;
 	UIWidget* mInactiveButton;
 	bool mActive;
-	Uint32 mLastTick;
+	Uint32 mLastTick{ 0 };
 	Int32 mTextSeparation;
 
 	UIRadioButton();

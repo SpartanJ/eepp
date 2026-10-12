@@ -51,6 +51,14 @@ UISpinBox::UISpinBox() :
 
 UISpinBox::~UISpinBox() {}
 
+Uint32 UISpinBox::onKeyDown( const KeyEvent& event ) {
+	if ( event.getKeyCode() == KEY_UP || event.getKeyCode() == KEY_DOWN ) {
+		addValue( event.getKeyCode() == KEY_UP ? mClickStep : -mClickStep );
+		return 1;
+	}
+	return UIWidget::onKeyDown( event );
+}
+
 Uint32 UISpinBox::getType() const {
 	return UI_TYPE_SPINBOX;
 }
@@ -295,6 +303,7 @@ std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::ClickStep:
 			return String::fromDouble( getClickStep() );
 		case PropertyId::Text:
+		case PropertyId::Focusable:
 		case PropertyId::AllowEditing:
 		case PropertyId::MaxLength:
 		case PropertyId::Numeric:
@@ -388,6 +397,7 @@ bool UISpinBox::applyProperty( const StyleSheetProperty& attribute ) {
 			setClickStep( attribute.asFloat() );
 			break;
 		case PropertyId::Text:
+		case PropertyId::Focusable:
 		case PropertyId::AllowEditing:
 		case PropertyId::MaxLength:
 		case PropertyId::Numeric:

@@ -106,7 +106,7 @@ UIWidget::UIWidget( const std::string& tag ) :
 	mLayoutPositionPolicyWidget( NULL ),
 	mAttributesTransactionCount( 0 ) {
 	mNodeFlags |= NODE_FLAG_WIDGET;
-	mFlags |= UI_TAB_FOCUSABLE | UI_TOOLTIP_ENABLED;
+	mFlags |= UI_TOOLTIP_ENABLED;
 
 	createStyle();
 
@@ -3561,12 +3561,12 @@ UIWidget* UIWidget::getPrevWidget() const {
 	while ( NULL != child ) {
 		if ( child->isVisible() && child->isEnabled() && child->isWidget() ) {
 			possible = child->asType<UIWidget>();
+			// Reverse the forward pre-order traversal: the last descendant precedes its parent.
+			found = possible->getPrevWidget();
+			if ( found )
+				return found;
 			if ( possible->isTabFocusable() ) {
 				return possible;
-			}
-			found = possible->getNextWidget();
-			if ( found ) {
-				return found;
 			}
 		}
 		child = child->getPrevNode();
@@ -3612,10 +3612,6 @@ String UIWidget::i18n( const std::string& str, const String& defaultValue ) {
 }
 
 UIWidget* UIWidget::getPrevTabWidget() const {
-	UIWidget* widget = getPrevWidget();
-	if ( widget ) {
-		return widget;
-	}
 	UIWidget* found = NULL;
 	UIWidget* possible = NULL;
 	const Node* start = this;
@@ -3626,19 +3622,22 @@ UIWidget* UIWidget::getPrevTabWidget() const {
 			while ( next ) {
 				if ( next->isVisible() && next->isEnabled() && next->isWidget() ) {
 					possible = next->asType<UIWidget>();
-					if ( possible->isTabFocusable() ) {
-						return possible;
-					}
 					found = possible->getPrevWidget();
 					if ( found ) {
 						return found;
 					}
+					if ( possible->isTabFocusable() )
+						return possible;
 				}
 				next = next->getPrevNode();
 			}
 			if ( start->getParent() == container && container->getFirstWidget() ) {
-				return container->asType<UIWidget>()->getPrevTabWidget();
+				return container->asType<UIWidget>()->getPrevWidget();
 			}
+			auto* parent = start->getParent();
+			if ( parent && parent != container && parent->isWidget() && parent->isVisible() &&
+				 parent->isEnabled() && parent->asType<UIWidget>()->isTabFocusable() )
+				return parent->asType<UIWidget>();
 		}
 		start = start->getParent();
 	}

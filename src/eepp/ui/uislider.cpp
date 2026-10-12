@@ -44,8 +44,9 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 	mValue( 0.f ),
 	mClickStep( 0.1f ),
 	mPageStep( 0 ),
-	mOnPosChange( false ) {
-	mFlags |= UI_SCROLLABLE;
+	mOnPosChange( false ),
+	mLastTickMove( 0 ) {
+	mFlags |= UI_TAB_FOCUSABLE | UI_SCROLLABLE;
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
 		mBackSlider = UIWidget::NewWithTag( mTag + "::hback" );
@@ -413,7 +414,7 @@ bool UISlider::isVertical() const {
 }
 
 Uint32 UISlider::onKeyDown( const KeyEvent& Event ) {
-	if ( Sys::getTicks() - mLastTickMove > 100 ) {
+	if ( mLastTickMove == 0 || Sys::getTicks() - mLastTickMove > 100 ) {
 		if ( Event.getKeyCode() == KEY_DOWN ) {
 			mLastTickMove = Sys::getTicks();
 

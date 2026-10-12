@@ -173,7 +173,16 @@ void UIDropDown::onWidgetClear( const Event* ) {
 void UIDropDown::onItemKeyDown( const Event* Event ) {
 	const KeyEvent* KEvent = reinterpret_cast<const KeyEvent*>( Event );
 
-	if ( KEvent->getKeyCode() == KEY_RETURN )
+	const auto mod = KEvent->getSanitizedMod();
+	if ( KEvent->getKeyCode() == KEY_TAB && ( mod == 0 || mod == KEYMOD_SHIFT ) ) {
+		auto* popup = getPopUpWidget();
+		if ( popup && popup->isVisible() && popup->isEnabled() ) {
+			// Restore the entry before the dispatcher's Tab pass. The popup may live at the
+			// scene root, whose sibling order is unrelated to the field's position in the form.
+			hide();
+			setFocus();
+		}
+	} else if ( KEvent->getKeyCode() == KEY_RETURN )
 		onItemClicked( Event );
 	else if ( KEvent->getKeyCode() == KEY_ESCAPE ) {
 		hide();
@@ -237,6 +246,17 @@ Uint32 UIDropDown::onMouseLeave( const Vector2i& position, const Uint32& flags )
 }
 
 Uint32 UIDropDown::onKeyDown( const KeyEvent& Event ) {
+	if ( Event.getKeyCode() == KEY_F4 ||
+		 ( Event.getKeyCode() == KEY_DOWN && ( Event.getSanitizedMod() & KEYMOD_ALT ) ) ) {
+		auto* popup = getPopUpWidget();
+		if ( popup && popup->isVisible() && popup->isEnabled() ) {
+			hide();
+			setFocus();
+		} else {
+			showList();
+		}
+		return 1;
+	}
 	return UITextInput::onKeyDown( Event );
 }
 

@@ -92,6 +92,10 @@ Uint32 UIDropDownList::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 UIDropDownList::onKeyDown( const KeyEvent& Event ) {
+	// Opening the popup must not first move the list selection with Alt+Down.
+	if ( Event.getKeyCode() == KEY_F4 ||
+		 ( Event.getKeyCode() == KEY_DOWN && ( Event.getSanitizedMod() & KEYMOD_ALT ) ) )
+		return UIDropDown::onKeyDown( Event );
 	if ( NULL != mListBox )
 		mListBox->onKeyDown( Event );
 

@@ -1612,7 +1612,7 @@ namespace {
 
 class CustomAccessibilityWidget : public UIWidget {
   public:
-	CustomAccessibilityWidget() : UIWidget( "custom-accessibility" ) {}
+	CustomAccessibilityWidget() : UIWidget( "custom-accessibility" ) { setTabFocusable(); }
 
 	AccessibilityRole semanticRole{ AccessibilityRole::Button };
 	unsigned presses{};

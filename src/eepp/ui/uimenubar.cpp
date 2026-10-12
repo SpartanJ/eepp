@@ -328,6 +328,21 @@ bool UIMenuBar::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
+Uint32 UIMenuBar::onKeyDown( const KeyEvent& event ) {
+	if ( event.getKeyCode() == KEY_RETURN || event.getKeyCode() == KEY_KP_ENTER ||
+		 event.getKeyCode() == KEY_SPACE || event.getKeyCode() == KEY_DOWN ) {
+		for ( size_t i = 0; i < mButtons.size(); ++i ) {
+			if ( event.getNode() == mButtons[i].first && mButtons[i].second ) {
+				// Key-up is delivered to the popup after focus moves; clear the button's press now.
+				mButtons[i].first->popState( UIState::StatePressed );
+				showMenu( i );
+				return 1;
+			}
+		}
+	}
+	return UIWidget::onKeyDown( event );
+}
+
 Uint32 UIMenuBar::onMessage( const NodeMessage* msg ) {
 	switch ( msg->getMsg() ) {
 		case NodeMessage::MouseUp:

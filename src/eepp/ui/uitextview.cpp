@@ -1107,6 +1107,14 @@ UIAnchor::UIAnchor( const std::string& tag ) : UITextView( tag ) {
 		EE_BUTTON_LEFT );
 }
 
+void UIAnchor::loadFromXmlNode( const pugi::xml_node& node ) {
+	// Configure the default before author CSS/XML overrides. Runtime href changes deliberately
+	// leave the flag untouched, so explicit application focus policies are never overwritten.
+	if ( !std::string_view( node.attribute( "href" ).value() ).empty() )
+		setTabFocusable();
+	UITextView::loadFromXmlNode( node );
+}
+
 bool UIAnchor::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

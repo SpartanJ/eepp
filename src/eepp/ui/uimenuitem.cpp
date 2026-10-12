@@ -11,6 +11,8 @@ UIMenuItem* UIMenuItem::New() {
 }
 
 UIMenuItem::UIMenuItem( const std::string& tag ) : UIPushButton( tag ), mShortcutView( NULL ) {
+	// Popup menus use arrow-key navigation rather than the surrounding page's Tab ring.
+	unsetTabFocusable();
 	getIcon();
 	unsetFlags( UI_AUTO_SIZE );
 	setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );

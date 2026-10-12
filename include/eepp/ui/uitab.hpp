@@ -68,6 +68,8 @@ class EE_API UITab : public UISelectButton {
 
 	virtual Uint32 onMessage( const NodeMessage* message );
 
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
 	virtual void onStateChange();
 
 	virtual void onAutoSize();

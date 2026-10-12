@@ -1414,7 +1414,9 @@ class EE_API UIWidget : public UINode {
 	/**
 	 * @brief Sets this widget as tab focusable.
 	 *
-	 * Makes this widget able to receive focus via tab navigation.
+	 * Makes this widget able to receive focus via tab navigation. UIWidget is not tabbable by
+	 * default; interactive subclasses opt in. This does not change programmatic or mouse focus,
+	 * nor whether the widget appears in the accessibility tree.
 	 */
 	void setTabFocusable();
 

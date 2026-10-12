@@ -40,6 +40,7 @@ UITextInput::UITextInput( const std::string& tag ) :
 	mAllowFloat( false ),
 	mMouseDown( false ),
 	mKeyBindings( getInput() ) {
+	setTabFocusable();
 	mHintCache = Text::New();
 	mHintCache->setTextHints( getTextHints() );
 	mHintCache->setDirection( getTextBaseDirection() );

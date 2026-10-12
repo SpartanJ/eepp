@@ -17,6 +17,7 @@ UICheckBox::UICheckBox() : UICheckBox( "checkbox" ) {}
 
 UICheckBox::UICheckBox( const std::string& tag ) :
 	UITextView( tag ), mChecked( false ), mTextSeparation( 4 ) {
+	setTabFocusable();
 	auto cb = [this]( const Event* ) { onAutoSize(); };
 
 	mActiveButton = UIWidget::NewWithTag( tag + "::active" );
@@ -274,7 +275,7 @@ Uint32 UICheckBox::onKeyDown( const KeyEvent& event ) {
 	UITextView::onKeyDown( event );
 
 	if ( event.getKeyCode() == KEY_SPACE ) {
-		if ( Sys::getTicks() - mLastTick > 250 ) {
+		if ( mLastTick == 0 || Sys::getTicks() - mLastTick > 250 ) {
 			mLastTick = Sys::getTicks();
 
 			setChecked( !mChecked );

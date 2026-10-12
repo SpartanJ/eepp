@@ -31,6 +31,7 @@ UICalendar* UICalendar::New() {
 }
 
 UICalendar::UICalendar() : UIWidget( "calendar" ), mLocale( DateTimeLocale::system() ) {
+	setTabFocusable();
 	mDisplayedMonth = CalendarDate::today();
 	if ( !mDisplayedMonth.isValid() )
 		mDisplayedMonth = { 1970, 1, 1 };
@@ -315,6 +316,7 @@ void UICalendar::buildUI() {
 		->setParent( mMainLayout );
 	for ( size_t i = 0; i < mDayCells.size(); ++i ) {
 		auto* button = UIPushButton::NewWithTag( "calendar::day" );
+		button->unsetTabFocusable();
 		button->setTextAlign( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
 		button->setParent( mDayGrid );
 		mConnections += button->connect( Event::KeyDown, [this]( const Event* event ) {
@@ -338,6 +340,7 @@ void UICalendar::buildUI() {
 		->setParent( mMainLayout );
 	for ( size_t i = 0; i < mOptionCells.size(); ++i ) {
 		auto* button = UIPushButton::NewWithTag( "calendar::day" );
+		button->unsetTabFocusable();
 		button->setTextAlign( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
 		button->setParent( mOptionGrid );
 		mConnections += button->connect( Event::MouseClick, [this, i]( const Event* event ) {

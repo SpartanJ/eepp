@@ -38,7 +38,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mVisibleFirst( 0 ),
 	mVisibleLast( 0 ),
 	mSmoothScroll( true ) {
-	setFlags( UI_AUTO_PADDING | UI_LOADS_ITS_CHILDREN );
+	setFlags( UI_TAB_FOCUSABLE | UI_AUTO_PADDING | UI_LOADS_ITS_CHILDREN );
 
 	auto cb = [this]( const Event* ) { containerResize(); };
 
@@ -48,6 +48,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mContainer->setVisible( true );
 	mContainer->setEnabled( true );
 	mContainer->setFlags( mFlags );
+	mContainer->unsetFlags( UI_TAB_FOCUSABLE );
 	mContainer->setPosition( 0, 0 );
 	mContainer->setClipType( ClipType::ContentBox );
 

@@ -231,6 +231,8 @@ class EE_API UIAnchor : public UITextView {
 
 	static UIAnchor* NewA();
 
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
+
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,

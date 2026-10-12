@@ -31,6 +31,22 @@ UIListBoxItem::~UIListBoxItem() {
 	}
 }
 
+void UIListBoxItem::onFocusPrevWidget() {
+	// Arrow navigation can focus a non-tabbable row. Leave the composite in one Shift+Tab,
+	// rather than visiting the list's own entry again. Explicitly tabbable custom rows retain
+	// normal sequential navigation.
+	auto* owner = getParent() ? getParent()->getParent() : nullptr;
+	if ( !isTabFocusable() && ( !isTabStop() || ( mFlags & UI_USES_TAB_MOD ) ) && owner &&
+		 owner->isType( UI_TYPE_LISTBOX ) ) {
+		if ( auto* previous = owner->asType<UIListBox>()->getPrevTabWidget() ) {
+			previous->setFocus( NodeFocusReason::Tab );
+			sendCommonEvent( Event::OnTabNavigate );
+		}
+		return;
+	}
+	UITextView::onFocusPrevWidget();
+}
+
 Uint32 UIListBoxItem::getType() const {
 	return UI_TYPE_LISTBOXITEM;
 }

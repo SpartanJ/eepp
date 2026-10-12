@@ -41,7 +41,7 @@ UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& a
 					  const unsigned int& maxLogLines ) :
 	UIWidget( "console" ), mKeyBindings( getInput() ) {
 	setFlags( UI_AUTO_PADDING );
-	mFlags |= UI_TAB_STOP | UI_SCROLLABLE | UI_TEXT_SELECTION_ENABLED;
+	mFlags |= UI_TAB_FOCUSABLE | UI_TAB_STOP | UI_SCROLLABLE | UI_TEXT_SELECTION_ENABLED;
 	setClipType( ClipType::ContentBox );
 
 	setBackgroundColor( 0x201F1FEE );

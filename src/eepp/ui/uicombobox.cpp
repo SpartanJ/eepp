@@ -146,6 +146,7 @@ bool UIComboBox::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Focusable:
 		case PropertyId::Color:
 		case PropertyId::TextShadowColor:
 		case PropertyId::TextShadowOffset:
@@ -199,6 +200,7 @@ std::string UIComboBox::getPropertyString( const PropertyDefinition* propertyDef
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Focusable:
 		case PropertyId::Color:
 		case PropertyId::TextShadowColor:
 		case PropertyId::TextShadowOffset:

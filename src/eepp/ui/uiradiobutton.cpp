@@ -15,6 +15,7 @@ UIRadioButton::UIRadioButton() :
 	mInactiveButton( NULL ),
 	mActive( false ),
 	mTextSeparation( 4 ) {
+	setTabFocusable();
 	auto cb = [this]( const Event* ) { onAutoSize(); };
 
 	mActiveButton = UIWidget::NewWithTag( "radiobutton::active" );
@@ -327,7 +328,7 @@ bool UIRadioButton::applyProperty( const StyleSheetProperty& attribute ) {
 
 Uint32 UIRadioButton::onKeyDown( const KeyEvent& Event ) {
 	if ( Event.getKeyCode() == KEY_SPACE ) {
-		if ( Sys::getTicks() - mLastTick > 250 ) {
+		if ( mLastTick == 0 || Sys::getTicks() - mLastTick > 250 ) {
 			mLastTick = Sys::getTicks();
 
 			setActive( true );

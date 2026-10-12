@@ -28,6 +28,8 @@ class EE_API UISpinBox : public UIWidget {
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
 	void addValue( const double& value );
 
 	virtual UISpinBox* setMinValue( const double& minVal );

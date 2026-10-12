@@ -371,6 +371,17 @@ bool UITab::onCreateContextMenu( const Vector2i& position, const Uint32& flags )
 	return true;
 }
 
+Uint32 UITab::onKeyDown( const KeyEvent& event ) {
+	if ( event.getKeyCode() == KEY_RETURN || event.getKeyCode() == KEY_KP_ENTER ||
+		 event.getKeyCode() == KEY_SPACE ) {
+		if ( auto* tabs = getTabWidget() ) {
+			tabs->setTabSelected( this );
+			return 1;
+		}
+	}
+	return UISelectButton::onKeyDown( event );
+}
+
 Uint32 UITab::onMessage( const NodeMessage* message ) {
 	UITabWidget* tTabW = getTabWidget();
 	if ( !tTabW || !mEnabled || !mVisible )

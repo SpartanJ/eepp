@@ -242,6 +242,51 @@ destroyed.
 Accessible controls should be keyboard focusable and have a logical focus order. Standard Tab and
 Shift+Tab navigation moves between controls.
 
+`UIWidget` and informational/structural widgets are **not tabbable by default**. Buttons,
+checkboxes, radios, text editors, sliders and list/model views opt in. Static labels, images,
+progress indicators and layouts still retain their accessibility semantics; Tab eligibility is
+not accessibility visibility and does not prevent mouse or programmatic focus.
+
+Migration: custom interactive `UIWidget` subclasses must call `setTabFocusable()` in their
+constructor, or declare `focusable="true"` in XML / `focusable: true` in CSS. Explicit
+`focusable=false` and `unsetTabFocusable()` remain supported. Non-tabbable containers remain
+traversable, so their interactive descendants are reachable in both directions.
+
+Composite defaults use the working keyboard target:
+
+- Spinboxes and combos enter through their embedded text input/dropdown, not the outer host.
+  Native accessibility Focus actions target that editor, preserving existing semantic identities
+  and focus projection. Spinbox Up/Down keys adjust the value from that editor.
+- Dropdowns and date pickers open their popup with F4 or Alt+Down; Escape returns to the editor.
+  Tab/Shift+Tab leave a dropdown popup relative to its field, not its temporary scene-root
+  position. The date picker's calendar button is not an additional Tab stop.
+- Lists enter through the list itself; rows and recycled model cells are not individual stops.
+  A live cell editor can still receive focus. Table header buttons retain their existing keyboard
+  sorting entry until the view has an equivalent header-navigation interface.
+- A calendar enters through its root and navigates dates with its existing arrow and paging keys.
+  Day/month/year cells are not stops. Previous/title/next/Today buttons remain reachable, preserving
+  operations not completely covered by the root's key commands.
+- Tabs and radio buttons remain individually tabbable. Roving tablists/radio groups are deferred;
+  inactive members must remain keyboard-reachable until those patterns are implemented.
+- Menu-bar buttons remain tabbable; popup items use the menu's arrow navigation instead of joining
+  the ordinary Tab ring.
+
+Arrow-navigated list rows and popup menus/menu items retain native `Focusable` state and Focus
+actions even though they are not Tab stops. Sequential eligibility is not general keyboard
+focusability.
+
+Scrollbars and scroll/document/viewer containers do not automatically enter Tab order. Opt a
+keyboard-operable reading region in explicitly with `focusable=true`. For a standalone scrollbar,
+opt in its `getSlider()` target, not both host and slider; that target already handles arrows and
+PageUp/PageDown. Overflow, image loading and pager locking do not dynamically alter these defaults.
+
+Links loaded from XML/HTML opt in when their initial `href` is nonempty, before author focusable
+properties are applied. Enter/keypad Enter activates span links through the same navigation
+interception path as mouse clicks. Runtime `setHref()` deliberately preserves the focus flag:
+applications creating links programmatically, or removing/readding destinations, should explicitly
+set/unset Tab focus as appropriate. Automatic runtime recomputation is deferred because it cannot
+distinguish an author override from a default without additional bookkeeping.
+
 Multiline text editors reserve Tab for inserting indentation. Use Control+Tab to move to the next
 focusable widget and Control+Shift+Tab to move to the previous one. This matches AppKit on macOS,
 where Command+Tab is reserved for switching applications.

@@ -184,7 +184,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ) {
 	mWidthPolicy = SizePolicy::Fixed;
 	mHeightPolicy = SizePolicy::Fixed;
-	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDREN_POSITION | UI_SCROLLABLE;
+	mFlags |= UI_TAB_FOCUSABLE | UI_TAB_STOP | UI_OWNS_CHILDREN_POSITION | UI_SCROLLABLE;
 	setTextSelection( true );
 	setColorScheme( SyntaxColorScheme::getDefaultDark() );
 	refreshTag();

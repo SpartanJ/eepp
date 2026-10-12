@@ -12,7 +12,9 @@ namespace EE { namespace UI { namespace Abstract {
 static constexpr String::HashType OnModelUpdateTag = String::hash( "onModelUpdate" );
 
 UIAbstractView::UIAbstractView( const std::string& tag ) :
-	UIScrollableWidget( tag ), mSelection( this ) {}
+	UIScrollableWidget( tag ), mSelection( this ) {
+	setTabFocusable();
+}
 
 UIAbstractView::~UIAbstractView() {
 	// Unregister first so the view leaves the model's view set before its

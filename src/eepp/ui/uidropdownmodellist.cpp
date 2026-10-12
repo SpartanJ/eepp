@@ -138,6 +138,9 @@ Uint32 UIDropDownModelList::onMouseUp( const Vector2i& Pos, const Uint32& Flags 
 }
 
 Uint32 UIDropDownModelList::onKeyDown( const KeyEvent& Event ) {
+	if ( Event.getKeyCode() == KEY_F4 ||
+		 ( Event.getKeyCode() == KEY_DOWN && ( Event.getSanitizedMod() & KEYMOD_ALT ) ) )
+		return UIDropDown::onKeyDown( Event );
 	if ( NULL != mListView )
 		mListView->onKeyDown( Event );
 
