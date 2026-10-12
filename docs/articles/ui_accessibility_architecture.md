@@ -2,7 +2,7 @@
 
 This article is for people working on eepp's accessibility implementation. For the application
 facing API (roles, labels, policies and testing an application) read
-[UI accessibility](uiaccessibility.md) first.
+[UI accessibility](ui_accessibility.md) first.
 
 The implementation has two halves:
 
