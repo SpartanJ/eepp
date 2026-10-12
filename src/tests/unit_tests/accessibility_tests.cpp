@@ -1065,23 +1065,37 @@ UTEST( Accessibility, LiveProjectionIdentityActionsAndInvalidation ) {
 	dynamicButton->setText( "Dynamic" );
 	manager->clearPendingEvents();
 	dynamicButton->setParent( ignoredContainer );
-	manager->onWidgetParentChange( dynamicButton );
 	auto dynamicButtonRef = manager->getNodeRef( dynamicButton );
-	bool createdEventFound = false;
-	for ( const auto& event : manager->getPendingEvents() ) {
-		createdEventFound |= event.ref == root && event.related == dynamicButtonRef &&
-							 event.type == AccessibilityEvent::Created && event.index >= 0;
+	size_t createdEvents = 0;
+	Int32 dynamicIndex = -1;
+	const auto childrenAfterInsertion = manager->getChildren( root );
+	for ( size_t index = 0; index < childrenAfterInsertion.size(); ++index ) {
+		if ( childrenAfterInsertion[index] == dynamicButtonRef )
+			dynamicIndex = static_cast<Int32>( index );
 	}
-	EXPECT_TRUE( createdEventFound );
+	ASSERT_GE( dynamicIndex, 0 );
+	for ( const auto& event : manager->getPendingEvents() ) {
+		if ( event.related == dynamicButtonRef ) {
+			EXPECT_TRUE( event.ref == root );
+			EXPECT_EQ( event.type, AccessibilityEvent::Created );
+			EXPECT_EQ( event.index, dynamicIndex );
+			++createdEvents;
+		}
+	}
+	EXPECT_EQ( createdEvents, 1u );
 
 	manager->clearPendingEvents();
 	eeDelete( dynamicButton );
-	bool removedEventFound = false;
+	size_t removedEvents = 0;
 	for ( const auto& event : manager->getPendingEvents() ) {
-		removedEventFound |= event.ref == root && event.related == dynamicButtonRef &&
-							 event.type == AccessibilityEvent::Destroyed && event.index >= 0;
+		if ( event.related == dynamicButtonRef ) {
+			EXPECT_TRUE( event.ref == root );
+			EXPECT_EQ( event.type, AccessibilityEvent::Destroyed );
+			EXPECT_EQ( event.index, dynamicIndex );
+			++removedEvents;
+		}
 	}
-	EXPECT_TRUE( removedEventFound );
+	EXPECT_EQ( removedEvents, 1u );
 
 	button->setAccessibilityLabel( "Save project" );
 	EXPECT_TRUE( manager->getNodeInfo( buttonRef ).name == String( "Save project" ) );
@@ -1596,6 +1610,59 @@ UTEST( Accessibility, DocumentRemovalsExposeTheRemovedTextDuringNotification ) {
 
 namespace {
 
+class CustomAccessibilityWidget : public UIWidget {
+  public:
+	CustomAccessibilityWidget() : UIWidget( "custom-accessibility" ) {}
+
+	AccessibilityRole semanticRole{ AccessibilityRole::Button };
+	unsigned presses{};
+	bool named{ true };
+	bool valued{ true };
+	bool advertisePress{ true };
+	bool inheritActions{ true };
+
+	AccessibilityRole getAccessibilityRole() const override {
+		return resolveAccessibilityRole( semanticRole );
+	}
+
+	String getAccessibilityName() const override {
+		return named ? String( "Custom control" ) : UIWidget::getAccessibilityName();
+	}
+
+	String getAccessibilityDescription() const override { return "Custom description"; }
+
+	String getAccessibilityValue() const override { return valued ? String( "7" ) : String(); }
+
+	AccessibilityRangeInfo getAccessibilityRange() const override {
+		return { 0., 10., 1., 2., true };
+	}
+
+	AccessibilityState getAccessibilityState() const override {
+		return UIWidget::getAccessibilityState() | AccessibilityState::Selected;
+	}
+
+	AccessibilityActions getAccessibilityActions() const override {
+		return ( inheritActions ? UIWidget::getAccessibilityActions() : 0 ) |
+			   ( advertisePress ? accessibilityActionMask( AccessibilityAction::Press ) : 0 );
+	}
+
+	bool performAccessibilityAction( const AccessibilityActionRequest& request ) override {
+		if ( request.action == AccessibilityAction::Press && advertisePress ) {
+			++presses;
+			return true;
+		}
+		return UIWidget::performAccessibilityAction( request );
+	}
+};
+
+// Inspect the real base member without casting a standard control to a test subclass.
+class AccessibilityMetadataAccess : public UIWidget {
+  public:
+	static bool hasMetadata( const UIWidget* widget ) {
+		return ( widget->*&AccessibilityMetadataAccess::mAccessibilityProperties ) != nullptr;
+	}
+};
+
 /** Records what the manager delivers. While ignoring, it rejects text changes the way a backend
  * does when it has nothing to report them to. */
 class RecordingBackend : public AccessibilityBackend {
@@ -1641,6 +1708,164 @@ bool hasPendingEvent( const AccessibilityManager* manager, AccessibilityNodeRef 
 }
 
 } // namespace
+
+UTEST( Accessibility, CustomWidgetsExposeVirtualSemanticsAndActions ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* custom = eeNew( CustomAccessibilityWidget, () );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	const auto ref = manager->getNodeRef( custom );
+	const auto info = manager->getNodeInfo( ref );
+	EXPECT_FALSE( custom->isType( UI_TYPE_PUSHBUTTON ) );
+	EXPECT_EQ( info.role, AccessibilityRole::Button );
+	EXPECT_TRUE( info.name == String( "Custom control" ) );
+	EXPECT_TRUE( info.description == String( "Custom description" ) );
+	EXPECT_TRUE( info.value == String( "7" ) );
+	EXPECT_TRUE( info.range.valid );
+	EXPECT_EQ( info.range.minimum, 0. );
+	EXPECT_EQ( info.range.maximum, 10. );
+	EXPECT_EQ( info.range.smallChange, 1. );
+	EXPECT_EQ( info.range.largeChange, 2. );
+	EXPECT_EQ( info.states, custom->getAccessibilityState() );
+	EXPECT_EQ( info.actions, custom->getAccessibilityActions() );
+	EXPECT_FALSE( info.text.valid );
+	EXPECT_EQ( manager->getNodeRole( ref ), info.role );
+	EXPECT_EQ( manager->getNodeState( ref ), info.states );
+	EXPECT_TRUE( manager->getNodeInfo( ref, false ).value.empty() );
+	EXPECT_TRUE( manager->performAction( ref, { AccessibilityAction::Press, {} } ) );
+	EXPECT_EQ( custom->presses, 1u );
+	// The override advertises Press, but retains default Focus and its action implementation.
+	EXPECT_TRUE( manager->performAction( ref, { AccessibilityAction::Focus, {} } ) );
+	EXPECT_TRUE( manager->getKeyboardFocusedNode() == ref );
+	custom->inheritActions = false;
+	EXPECT_EQ( manager->getNodeInfo( ref ).actions,
+			   accessibilityActionMask( AccessibilityAction::Press ) );
+	EXPECT_FALSE( manager->performAction( ref, { AccessibilityAction::Focus, {} } ) );
+	custom->inheritActions = true;
+	custom->advertisePress = false;
+	EXPECT_FALSE( manager->getNodeInfo( ref ).actions &
+				  accessibilityActionMask( AccessibilityAction::Press ) );
+	EXPECT_FALSE( manager->performAction( ref, { AccessibilityAction::Press, {} } ) );
+	EXPECT_EQ( custom->presses, 1u );
+	custom->advertisePress = true;
+	custom->setEnabled( false );
+	EXPECT_FALSE( manager->performAction( ref, { AccessibilityAction::Press, {} } ) );
+	EXPECT_EQ( custom->presses, 1u );
+	EXPECT_EQ( manager->getNodeState( ref ), custom->getAccessibilityState() );
+
+	EXPECT_TRUE( AccessibilityWidgetResolver::audit( custom ).empty() );
+	custom->named = false;
+	custom->valued = false;
+	EXPECT_EQ( AccessibilityWidgetResolver::audit( custom ).size(), 1u );
+	custom->named = true;
+	EXPECT_TRUE( AccessibilityWidgetResolver::audit( custom ).empty() );
+	custom->named = false;
+	custom->valued = true;
+	EXPECT_TRUE( AccessibilityWidgetResolver::audit( custom ).empty() );
+}
+
+UTEST( Accessibility, RelationTargetsUseCustomNamesWithoutFollowingRelationChains ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* custom = eeNew( CustomAccessibilityWidget, () );
+	custom->setId( "custom-name" );
+	auto* linked = UITextView::New();
+	linked->setId( "linked-name" );
+	linked->setText( "Linked name" );
+	// Both a relation chain and a cycle must retain the existing one-hop naming rule.
+	custom->setAccessibilityLabelledBy( linked->getId() );
+	linked->setAccessibilityLabelledBy( custom->getId() );
+	auto* input = UITextInput::New();
+	input->setAccessibilityLabelledBy( custom->getId() );
+	input->setAccessibilityDescribedBy( custom->getId() );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	const auto ref = manager->getNodeRef( input );
+	auto info = manager->getNodeInfo( ref );
+	EXPECT_TRUE( info.name == String( "Custom control" ) );
+	EXPECT_TRUE( info.description == String( "Custom control" ) );
+
+	custom->named = false;
+	custom->setAccessibilityLabel( "Own name" );
+	EXPECT_TRUE( custom->getAccessibilityName() == String( "Linked name" ) );
+	info = manager->getNodeInfo( ref );
+	EXPECT_TRUE( info.name == String( "Own name" ) );
+	EXPECT_TRUE( info.description == String( "Own name" ) );
+	EXPECT_TRUE( custom->getAccessibilityName() == String( "Linked name" ) );
+}
+
+UTEST( Accessibility, CustomLeafRolesProjectHierarchyFocusAndEvents ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* scene = app.getUI();
+	auto* custom = eeNew( CustomAccessibilityWidget, () );
+	custom->setPixelsPosition( { 20, 20 } );
+	custom->setPixelsSize( { 120, 80 } );
+	auto* child = UIPushButton::New();
+	child->setParent( custom );
+	child->setPixelsSize( { 30, 20 } );
+	auto* manager = scene->getAccessibilityManager();
+	auto backend = std::make_unique<RecordingBackend>();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	const auto ref = manager->getNodeRef( custom );
+	EXPECT_EQ( manager->getChildCount( ref ), 0u );
+	EXPECT_TRUE( manager->getChildren( ref ).empty() );
+	EXPECT_EQ( AccessibilityWidgetResolver::getLeafOwner( child ), custom );
+	EXPECT_EQ(
+		AccessibilityWidgetResolver::getEventTarget( child, AccessibilityEvent::NameChanged ),
+		custom );
+	EXPECT_TRUE( AccessibilityWidgetResolver::audit( custom ).empty() );
+	child->setFocus();
+	EXPECT_TRUE( manager->getKeyboardFocusedNode() == ref );
+	EXPECT_TRUE( static_cast<Uint64>( manager->getNodeState( ref ) ) &
+				 static_cast<Uint64>( AccessibilityState::Focused ) );
+	const auto bounds = child->getWorldBounds();
+	EXPECT_TRUE( manager->hitTest( { ( bounds.Left + bounds.Right ) / 2,
+									 ( bounds.Top + bounds.Bottom ) / 2 } ) == ref );
+	manager->clearPendingEvents();
+	child->setText( "Implementation text" );
+	EXPECT_TRUE( hasPendingEvent( manager, ref, AccessibilityEvent::NameChanged ) );
+}
+
+UTEST( Accessibility, CustomContainerRolesPreserveSemanticChildren ) {
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	ASSERT_NE( app.getUI(), nullptr );
+	auto* custom = eeNew( CustomAccessibilityWidget, () );
+	custom->semanticRole = AccessibilityRole::Group;
+	auto* child = UIPushButton::New();
+	child->setText( "Child" );
+	child->setParent( custom );
+	auto* manager = app.getUI()->getAccessibilityManager();
+	const auto ref = manager->getNodeRef( custom );
+	const auto childRef = manager->getNodeRef( child );
+	EXPECT_EQ( manager->getNodeRole( ref ), AccessibilityRole::Group );
+	EXPECT_EQ( manager->getChildCount( ref ), 1u );
+	EXPECT_TRUE( manager->getChild( ref, 0 ) == childRef );
+	EXPECT_TRUE( manager->getParent( childRef ) == ref );
+	EXPECT_EQ( AccessibilityWidgetResolver::getLeafOwner( child ), nullptr );
+	child->setFocus();
+	EXPECT_TRUE( manager->getKeyboardFocusedNode() == childRef );
+	EXPECT_FALSE( static_cast<Uint64>( manager->getNodeState( ref ) ) &
+				  static_cast<Uint64>( AccessibilityState::Focused ) );
+}
+
+UTEST( Accessibility, CustomWidgetConstructionKeepsAccessibilityDormant ) {
+	for ( auto policy : { AccessibilityPolicy::Disabled, AccessibilityPolicy::Auto } ) {
+		auto settings = accessibilityTestSettings();
+		settings.accessibilityPolicy = policy;
+		UIApplication app( accessibilityTestWindow(), settings );
+		ASSERT_NE( app.getUI(), nullptr );
+		const auto* scene = app.getUI();
+		ASSERT_EQ( scene->getAccessibilityManager(), nullptr );
+		const UIWidget* widgets[] = { eeNew( CustomAccessibilityWidget, () ), UIWidget::New(),
+									  UIPushButton::New(), UISpinBox::New(), UITextInput::New() };
+		for ( auto* widget : widgets )
+			EXPECT_FALSE( AccessibilityMetadataAccess::hasMetadata( widget ) );
+		EXPECT_EQ( scene->getAccessibilityManager(), nullptr );
+		EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
+		EXPECT_FALSE( Accessibility::isActive() );
+	}
+}
 
 UTEST( Accessibility, DirectionChangesPreserveSemanticIdentityAndGeometry ) {
 	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
@@ -2590,7 +2815,12 @@ UTEST( Accessibility, HiddenSubtreesDoNotEmitNativeOrTextEvents ) {
 	// Removals still evict previously queried identities, but cannot name an exposed parent
 	// as losing children that were never in its tree.
 	const auto inputRef = manager->getNodeRef( input );
-	manager->onWidgetRemovedFromParent( input );
+	// Exercise actual reparenting within the hidden subtree, not an injected removal callback.
+	input->setParent( label );
+	EXPECT_TRUE( manager->isValid( inputRef ) );
+	EXPECT_TRUE( manager->getNodeRef( input ) == inputRef );
+	EXPECT_TRUE( recorder->events.empty() );
+	EXPECT_TRUE( manager->getPendingEvents().empty() );
 	eeDelete( inserted );
 	eeDelete( input );
 	EXPECT_FALSE( manager->isValid( inputRef ) );

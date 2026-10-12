@@ -84,21 +84,22 @@ class EE_API UIWidget : public UINode {
 
 	virtual ~UIWidget();
 
-	AccessibilityRole getAccessibilityRole() const;
+	/** Override selectively for custom semantics; defaults use AccessibilityWidgetResolver. */
+	virtual AccessibilityRole getAccessibilityRole() const;
 
-	String getAccessibilityName() const;
+	virtual String getAccessibilityName() const;
 
-	String getAccessibilityDescription() const;
+	virtual String getAccessibilityDescription() const;
 
-	String getAccessibilityValue() const;
+	virtual String getAccessibilityValue() const;
 
-	AccessibilityRangeInfo getAccessibilityRange() const;
+	virtual AccessibilityRangeInfo getAccessibilityRange() const;
 
-	AccessibilityState getAccessibilityState() const;
+	virtual AccessibilityState getAccessibilityState() const;
 
-	AccessibilityActions getAccessibilityActions() const;
+	virtual AccessibilityActions getAccessibilityActions() const;
 
-	bool performAccessibilityAction( const AccessibilityActionRequest& request );
+	virtual bool performAccessibilityAction( const AccessibilityActionRequest& request );
 
 	bool isAccessibilityElement() const;
 

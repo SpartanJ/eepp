@@ -747,14 +747,6 @@ void AccessibilityManager::onRelationSubtreeChanged( const Scene::Node* subtree,
 		onRelationTargetChanged( id, removed ? subtree : nullptr );
 }
 
-void AccessibilityManager::onWidgetParentChange( UIWidget* widget ) {
-	onNodeParentChange( widget, false );
-}
-
-void AccessibilityManager::onWidgetRemovedFromParent( UIWidget* widget ) {
-	onNodeParentChange( widget, true );
-}
-
 void AccessibilityManager::onNodeParentChange( Scene::Node* node, bool removed ) {
 	if ( !node || !hasActiveClients() )
 		return;

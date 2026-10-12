@@ -149,10 +149,6 @@ class EE_API AccessibilityManager {
 	 * it, except those inside the subtree when it is going away. */
 	void onRelationSubtreeChanged( const Scene::Node* subtree, bool removed );
 
-	void onWidgetParentChange( UIWidget* widget );
-
-	void onWidgetRemovedFromParent( UIWidget* widget );
-
 	/** Reports a reparent/reorder edge for the exposed roots of a widget or plain-node subtree.
 	 * Removal is reported while the old parent links are intact; arrival after final relinking. */
 	void onNodeParentChange( Scene::Node* node, bool removed );

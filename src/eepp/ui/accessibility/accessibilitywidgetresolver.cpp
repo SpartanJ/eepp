@@ -33,6 +33,7 @@
 #include <eepp/window/window.hpp>
 
 #include <algorithm>
+#include <utility>
 
 namespace EE { namespace UI {
 
@@ -70,7 +71,7 @@ AccessibilityState baseState( const UIWidget* widget ) {
 		state |= AccessibilityState::Visible;
 	if ( widget->hasVisibility() )
 		state |= AccessibilityState::Showing;
-	auto role = AccessibilityWidgetResolver::getRole( widget );
+	auto role = widget->getAccessibilityRole();
 	if ( ( role == AccessibilityRole::Application || role == AccessibilityRole::Window ) &&
 		 widget->getUISceneNode() && widget->getUISceneNode()->getWindow()->hasInputFocus() )
 		state |= AccessibilityState::Active;
@@ -224,7 +225,8 @@ bool AccessibilityWidgetResolver::isLeafRole( AccessibilityRole role ) {
 UIWidget* AccessibilityWidgetResolver::getLeafOwner( const Node* node ) {
 	UIWidget* owner = nullptr;
 	for ( auto* parent = node->getParent(); parent; parent = parent->getParent() ) {
-		if ( parent->isWidget() && isLeafRole( getRole( parent->asType<UIWidget>() ) ) )
+		if ( parent->isWidget() &&
+			 isLeafRole( parent->asType<UIWidget>()->getAccessibilityRole() ) )
 			owner = parent->asType<UIWidget>();
 	}
 	return owner;
@@ -258,6 +260,20 @@ String AccessibilityWidgetResolver::getOwnName( const UIWidget* widget ) {
 }
 
 namespace {
+
+// Relation targets contribute their own name, not another relation's name. Keep that one-hop
+// rule when invoking a custom name override that delegates to UIWidget's default implementation.
+// This is scoped query context, not retained widget state; nested calls and exceptions restore it.
+thread_local const UIWidget* sRelatedNameTarget{};
+
+String relatedName( const UIWidget* widget ) {
+	struct Scope {
+		const UIWidget* previous;
+
+		~Scope() { sRelatedNameTarget = previous; }
+	} scope{ std::exchange( sRelatedNameTarget, widget ) };
+	return widget->getAccessibilityName();
+}
 
 /** Resolves an aria-labelledby / aria-describedby id from the widget's scene root. */
 const UIWidget* findRelated( const UIWidget* widget, const std::string& id ) {
@@ -338,8 +354,10 @@ const char* AccessibilityWidgetResolver::getRoleName( AccessibilityRole role ) {
 }
 
 String AccessibilityWidgetResolver::getName( const UIWidget* widget ) {
+	if ( widget == sRelatedNameTarget )
+		return getOwnName( widget );
 	if ( const auto* label = findRelated( widget, widget->getAccessibilityLabelledBy() ) ) {
-		String name = getOwnName( label );
+		String name = relatedName( label );
 		if ( !name.empty() )
 			return name;
 	}
@@ -348,7 +366,7 @@ String AccessibilityWidgetResolver::getName( const UIWidget* widget ) {
 
 String AccessibilityWidgetResolver::getDescription( const UIWidget* widget ) {
 	if ( const auto* description = findRelated( widget, widget->getAccessibilityDescribedBy() ) ) {
-		String text = getOwnName( description );
+		String text = relatedName( description );
 		if ( !text.empty() )
 			return text;
 	}
@@ -640,7 +658,7 @@ UIWidget* AccessibilityWidgetResolver::getFocusOwner( Node* focused, const UIWid
 				element = widget;
 		} else if ( !element && widget != sceneRoot && widget->isAccessibilityElement() )
 			element = widget;
-		else if ( element && widget != element && isLeafRole( getRole( widget ) ) ) {
+		else if ( element && widget != element && isLeafRole( widget->getAccessibilityRole() ) ) {
 			// A leaf control does not expose its children; it owns their focus.
 			element = widget;
 		}
@@ -684,11 +702,10 @@ void auditWidget( const UIWidget* widget, std::vector<AccessibilityIssue>& issue
 	if ( widget->isAccessibilityHidden() || !widget->isVisible() ||
 		 AccessibilityWidgetResolver::getOwningModelView( widget ) )
 		return;
-	const auto role = AccessibilityWidgetResolver::getRole( widget );
+	const auto role = widget->getAccessibilityRole();
 	if ( role != AccessibilityRole::None && role != AccessibilityRole::Application &&
 		 role != AccessibilityRole::Label && widget->isTabFocusable() &&
-		 AccessibilityWidgetResolver::getName( widget ).empty() &&
-		 AccessibilityWidgetResolver::getValue( widget ).empty() ) {
+		 widget->getAccessibilityName().empty() && widget->getAccessibilityValue().empty() ) {
 		issues.push_back( { widget, "Focusable control has no accessible name (set aria-label, "
 									"aria-labelledby or a tooltip)." } );
 	}
@@ -724,7 +741,7 @@ std::vector<AccessibilityIssue> AccessibilityWidgetResolver::audit( const UIWidg
 
 bool AccessibilityWidgetResolver::performAction( UIWidget* widget,
 												 const AccessibilityActionRequest& request ) {
-	if ( !( getActions( widget ) & accessibilityActionMask( request.action ) ) )
+	if ( !( widget->getAccessibilityActions() & accessibilityActionMask( request.action ) ) )
 		return false;
 	if ( request.action == AccessibilityAction::Focus ) {
 		widget->setFocus( NodeFocusReason::Unknown );

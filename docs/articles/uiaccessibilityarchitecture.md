@@ -202,6 +202,11 @@ event loop, including when no widget needs repainting. The current manager and b
 alive until the native call has replied. Reentrant scene updates do not recursively dispatch
 the same backend. Changing policy outside accessibility dispatch remains immediate.
 
+Hierarchy changes cross from Scene to UI through a private, single-slot `SceneNode` bridge.
+Only the internal `Accessibility` participant registers it, and `Node` dispatches it through
+friendship. Registration, dispatch and storage are not an application extension API. The bridge
+keeps Scene independent of UI headers and costs one relaxed load when no client is active.
+
 Hit testing descends exposed containers such as groups and windows; only leaf controls and
 model views stop traversal into implementation children. When a transparent layout or plain-node
 subtree is moved, the manager invalidates both semantic parents and reports its exposed descendants,
@@ -497,6 +502,17 @@ range or text to `accessibilitywidgetresolver.cpp`. Call `notifyAccessibilityEve
 widget where its semantic state changes (for example `StateChanged` when it is checked). If it
 contains implementation children, make sure they resolve to the widget (role `None`, hidden, or
 routed in `getEventTarget()`), and add a unit test in `accessibility_tests.cpp`.
+
+**Expose a custom widget.** Selectively override `UIWidget`'s virtual role, name, description,
+value, range, state, actions or action-execution methods. Their defaults still use the central
+resolver. Effective semantic consumers (including leaf ownership, focus projection and auditing)
+use the virtual methods; default resolver implementations must not call their own corresponding
+virtual entry point, which would recurse. The default action handler can query virtual actions
+because it is a different extension point. Model-backed nodes still use `AccessibilitySource`.
+Relation targets also use the effective virtual name. A stack-restored, thread-local query context
+keeps the existing one-hop own-name rule when a target's override calls the base implementation,
+so default relation chains and cycles do not recurse. It retains no widget state between queries
+and allocates nothing.
 
 **Add a role.** Add it to `AccessibilityRole` (`accessibility.hpp`), map it in the resolver, then in
 every backend: `role()` and `roleName()` in `accessibilitybackendatspitree.cpp`, `controlType()` in

@@ -172,9 +172,19 @@ An explicit `AccessibilityRole::None` can keep a custom widget out of the semant
 `setAccessibilityHidden( true )` when the widget and its accessible descendants should be hidden
 from assistive technology.
 
-Custom widgets should use the normal eepp state and action mechanisms whenever possible. Native
-backends query the shared accessibility resolver; platform-specific accessibility behavior should
-not be implemented inside individual widget classes.
+Custom widgets can selectively override `UIWidget`'s virtual accessibility methods: role, name,
+description, value, range, state, actions and action execution. The default implementations remain
+in the central resolver; existing standard controls need no additional overrides. The manager and
+native backends use the effective widget semantics, including overridden leaf roles for hierarchy
+and focus projection.
+
+For example, a custom button can override `getAccessibilityRole()`, advertise `Press` from
+`getAccessibilityActions()`, and handle it in `performAccessibilityAction()`. It need not derive
+from `UIPushButton`. Calling the base implementation retains standard state or actions when useful;
+the default action handler checks the effective action mask, including custom overrides.
+
+Custom widgets should use the normal eepp state, action and notification mechanisms whenever
+possible. Platform-specific accessibility behavior should not be implemented inside widget classes.
 
 ## Dynamic state and notifications
 
