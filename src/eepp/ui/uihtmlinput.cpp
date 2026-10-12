@@ -206,6 +206,13 @@ bool UIHTMLInput::applyProperty( const StyleSheetProperty& attribute ) {
 	PropertyId id = attribute.getPropertyDefinition()->getPropertyId();
 
 	switch ( id ) {
+		case PropertyId::Focusable:
+			// Tab eligibility belongs to the anonymous control, not a second stop on the host.
+			// Retain the author policy for controls recreated by a type change, including hidden.
+			mImplementationProperties[id] = attribute;
+			if ( mChildWidget )
+				applyImplementationProperty( attribute );
+			return true;
 		case PropertyId::Height:
 			mHasSpecifiedHeight = !attribute.value().empty() &&
 								  !String::iequals( String::trim( attribute.value() ), "auto" );
@@ -275,7 +282,8 @@ std::string UIHTMLInput::getPropertyString( const PropertyDefinition* propertyDe
 
 	if ( auto it = mImplementationProperties.find( propertyDef->getPropertyId() );
 		 it != mImplementationProperties.end() &&
-		 ( propertyDef->getPropertyId() == PropertyId::Min ||
+		 ( ( propertyDef->getPropertyId() == PropertyId::Focusable && !mChildWidget ) ||
+		   propertyDef->getPropertyId() == PropertyId::Min ||
 		   propertyDef->getPropertyId() == PropertyId::Max ||
 		   propertyDef->getPropertyId() == PropertyId::Step ||
 		   propertyDef->getPropertyId() == PropertyId::Required ||

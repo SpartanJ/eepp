@@ -257,6 +257,8 @@ Composite defaults use the working keyboard target:
 - Spinboxes and combos enter through their embedded text input/dropdown, not the outer host.
   Native accessibility Focus actions target that editor, preserving existing semantic identities
   and focus projection. Spinbox Up/Down keys adjust the value from that editor.
+- HTML inputs forward explicit XML/CSS `focusable` policies to their anonymous native control,
+  preserving the policy when the input type changes. The HTML host is not a second Tab stop.
 - Dropdowns and date pickers open their popup with F4 or Alt+Down; Escape returns to the editor.
   Tab/Shift+Tab leave a dropdown popup relative to its field, not its temporary scene-root
   position. The date picker's calendar button is not an additional Tab stop.

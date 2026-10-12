@@ -530,6 +530,71 @@ UTEST( TabFocus, HTMLInputsExposeOnlyTheirInteractiveNativeChild ) {
 	EXPECT_FALSE( hidden->isVisible() );
 }
 
+UTEST( TabFocus, HTMLInputFocusOverridesFollowTheNativeControl ) {
+	auto app = focusApp();
+	auto* scene = app.getUI();
+	auto* input = UIHTMLInput::New();
+	const StyleSheetProperty focusable( "focusable", "false" );
+	ASSERT_TRUE( input->applyProperty( focusable ) );
+	for ( const char* type : { "text", "password", "number", "checkbox", "radio", "date", "time",
+							   "datetime-local", "button", "hidden", "text" } ) {
+		input->setInputType( type );
+		scene->update( Time::Zero ); // Remove the old anonymous control after a type change.
+		EXPECT_FALSE( input->isTabFocusable() );
+		EXPECT_EQ( tabbableCount( input ), 0u );
+		EXPECT_TRUE( input->getPropertyString( focusable.getPropertyDefinition() ) == "false" );
+	}
+	input->setInputType( "hidden" );
+	ASSERT_TRUE( input->getChildWidget() == nullptr );
+	ASSERT_TRUE( input->applyProperty( StyleSheetProperty( "focusable", "true" ) ) );
+	EXPECT_TRUE( input->getPropertyString( focusable.getPropertyDefinition() ) == "true" );
+	for ( const char* type : { "text", "number", "date", "checkbox" } ) {
+		input->setInputType( type );
+		scene->update( Time::Zero );
+		EXPECT_FALSE( input->isTabFocusable() );
+		EXPECT_EQ( tabbableCount( input ), 1u );
+		EXPECT_TRUE( input->getPropertyString( focusable.getPropertyDefinition() ) == "true" );
+	}
+
+	scene->loadLayoutFromString( R"xml(
+		<style>.skip-html-input { focusable: false; }</style>
+		<vbox>
+			<pushbutton id="html-before" />
+			<input id="html-off" type="text" focusable="false" />
+			<input id="html-off-before-type" focusable="false" type="number" />
+			<input id="html-on" type="number" focusable="true" />
+			<input id="html-css-off" type="text" class="skip-html-input" />
+			<pushbutton id="html-after" />
+		</vbox>)xml" );
+	scene->update( Time::Zero );
+	for ( const char* id : { "html-off", "html-off-before-type", "html-css-off" } ) {
+		auto* off = scene->find<UIHTMLInput>( id );
+		ASSERT_TRUE( off != nullptr );
+		EXPECT_EQ( tabbableCount( off ), 0u );
+		off->setInputType( "password" );
+		scene->update( Time::Zero );
+		EXPECT_EQ( tabbableCount( off ), 0u );
+	}
+	auto* on = scene->find<UIHTMLInput>( "html-on" );
+	ASSERT_TRUE( on != nullptr );
+	EXPECT_FALSE( on->isTabFocusable() );
+	EXPECT_EQ( tabbableCount( on ), 1u );
+	auto* before = scene->find<UIPushButton>( "html-before" );
+	auto* after = scene->find<UIPushButton>( "html-after" );
+	ASSERT_TRUE( before != nullptr );
+	ASSERT_TRUE( after != nullptr );
+	auto* target = on->getChildWidget()->asType<UISpinBox>()->getTextInput();
+	before->setFocus();
+	FocusDispatcherAccess::key( scene, KEY_TAB );
+	EXPECT_TRUE( target->hasFocus() );
+	FocusDispatcherAccess::key( scene, KEY_TAB );
+	EXPECT_TRUE( after->hasFocus() );
+	FocusDispatcherAccess::key( scene, KEY_TAB, KEYMOD_SHIFT );
+	EXPECT_TRUE( target->hasFocus() );
+	FocusDispatcherAccess::key( scene, KEY_TAB, KEYMOD_SHIFT );
+	EXPECT_TRUE( before->hasFocus() );
+}
+
 UTEST( TabFocus, ModelViewsDoNotTabThroughRecycledCells ) {
 	auto app = focusApp();
 	for ( auto* view : { static_cast<UITableView*>( UIListView::New() ), UITableView::New() } ) {
