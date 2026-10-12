@@ -1868,6 +1868,9 @@ class EE_API UIWidget : public UINode {
 	 */
 	virtual void onThemeLoaded();
 
+	/** Invalidates old accessibility identities before committing a different UI scene owner. */
+	virtual void onUISceneNodeChange( UISceneNode* scene );
+
 	/**
 	 * @brief Handles parent change events.
 	 *

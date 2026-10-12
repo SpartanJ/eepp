@@ -585,6 +585,35 @@ UTEST( Accessibility, NestedSceneProjectionAndDeletionUseHostManager ) {
 }
 
 UTEST( Accessibility, SceneRebindingInvalidatesWidgetAndModelSubtree ) {
+	class RebindingWidget : public UIWidget {
+	  public:
+		RebindingWidget() : UIWidget( "group" ) {}
+
+		AccessibilityManager* previousManager{};
+		UIWidget* child{};
+		AccessibilityNodeRef ref;
+		AccessibilityNodeRef childRef;
+		UISceneNode* previousSceneSeen{};
+		UISceneNode* nextSceneSeen{};
+		UISceneNode* childSceneSeen{};
+		bool childInvalidatedFirst{};
+		bool ownIdentityValidBeforeCleanup{};
+		bool ownIdentityInvalidAfterCleanup{};
+
+	  protected:
+		void onUISceneNodeChange( UISceneNode* scene ) override {
+			previousSceneSeen = getUISceneNode();
+			nextSceneSeen = scene;
+			if ( previousManager ) {
+				childSceneSeen = child->getUISceneNode();
+				childInvalidatedFirst = !previousManager->isValid( childRef );
+				ownIdentityValidBeforeCleanup = previousManager->isValid( ref );
+			}
+			UIWidget::onUISceneNodeChange( scene );
+			if ( previousManager )
+				ownIdentityInvalidAfterCleanup = !previousManager->isValid( ref );
+		}
+	};
 	UIApplication::Settings settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 );
 	settings.accessibilityPolicy = AccessibilityPolicy::Disabled;
 	UIApplication app( WindowSettings( 320, 240, "Accessibility Scene Rebinding Test",
@@ -600,7 +629,7 @@ UTEST( Accessibility, SceneRebindingInvalidatesWidgetAndModelSubtree ) {
 	auto* managerB = sceneB->getAccessibilityManager();
 	auto rootA = managerA->getRoot();
 	auto rootB = managerB->getRoot();
-	auto* container = UIWidget::New();
+	auto* container = eeNew( RebindingWidget, () );
 	container->setAccessibilityRole( AccessibilityRole::Group );
 	container->setParent( sceneA->getRoot() );
 	auto* button = UIPushButton::New();
@@ -614,8 +643,18 @@ UTEST( Accessibility, SceneRebindingInvalidatesWidgetAndModelSubtree ) {
 	auto tableRefA = managerA->getNodeRef( table );
 	auto rowRefA = managerA->getChild( tableRefA, 0 );
 	ASSERT_TRUE( managerA->isValid( rowRefA ) );
+	container->previousManager = managerA;
+	container->child = button;
+	container->ref = containerRefA;
+	container->childRef = buttonRefA;
 
 	container->setParent( sceneB->getRoot() );
+	EXPECT_EQ( container->previousSceneSeen, sceneA );
+	EXPECT_EQ( container->nextSceneSeen, sceneB );
+	EXPECT_EQ( container->childSceneSeen, sceneB );
+	EXPECT_TRUE( container->childInvalidatedFirst );
+	EXPECT_TRUE( container->ownIdentityValidBeforeCleanup );
+	EXPECT_TRUE( container->ownIdentityInvalidAfterCleanup );
 	EXPECT_FALSE( managerA->isValid( buttonRefA ) );
 	EXPECT_FALSE( managerA->isValid( containerRefA ) );
 	EXPECT_FALSE( managerA->isValid( tableRefA ) );

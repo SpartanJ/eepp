@@ -2188,6 +2188,20 @@ void UIWidget::onMarginChange() {
 
 void UIWidget::onThemeLoaded() {}
 
+void UIWidget::onUISceneNodeChange( UISceneNode* scene ) {
+	// Lifecycle bookkeeping never creates a manager, even with accessibility disabled.
+	auto* previousManager =
+		mUISceneNode ? mUISceneNode->getExistingAccessibilityManager() : nullptr;
+	if ( !previousManager )
+		return;
+	auto* nextManager = scene ? scene->getExistingAccessibilityManager() : nullptr;
+	if ( previousManager != nextManager ) {
+		// Descendants have rebound and can have registered this parent during their removal.
+		// Erase its old identity afterwards, while its local scene pointer still names that owner.
+		previousManager->onWidgetDelete( this );
+	}
+}
+
 void UIWidget::onParentChange() {
 	if ( !isSceneNodeLoading() && !isLoadingState() ) {
 		getUISceneNode()->invalidateStyle( this, true );

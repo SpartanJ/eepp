@@ -11,7 +11,6 @@
 #include <eepp/scene/actions/scale.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uihtmlwidget.hpp>
@@ -1971,31 +1970,17 @@ Uint32 UINode::onFocusLoss() {
 }
 
 void UINode::onSceneChange() {
-	// The const accessor never creates a manager: moving between scenes must not initialize
-	// accessibility.
-	const auto* previousManager =
-		mUISceneNode && isWidget()
-			? static_cast<const UISceneNode*>( mUISceneNode )->getAccessibilityManager()
-			: nullptr;
 #ifdef EE_DEBUG
 	UISceneNode* previousScene = mUISceneNode;
 #endif
 	Node::onSceneChange();
-	if ( previousManager && mUISceneNode != mSceneNode ) {
-		const auto* nextManager =
-			mSceneNode && mSceneNode->isUISceneNode()
-				? static_cast<const UISceneNode*>( mSceneNode )->getAccessibilityManager()
-				: nullptr;
-		if ( previousManager != nextManager ) {
-			// Rebind descendants first: their removal can resolve (and register) this parent. Erase
-			// its old identity afterwards, before replacing its local scene pointer.
-			const_cast<AccessibilityManager*>( previousManager )
-				->onWidgetDelete( asType<UIWidget>() );
-		}
-	}
-	if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
-		mUISceneNode = static_cast<UISceneNode*>( mSceneNode );
-	}
+	auto* nextScene = mSceneNode && mSceneNode->isUISceneNode()
+						  ? static_cast<UISceneNode*>( mSceneNode )
+						  : nullptr;
+	if ( mUISceneNode != mSceneNode )
+		onUISceneNodeChange( nextScene );
+	if ( nextScene )
+		mUISceneNode = nextScene;
 #ifdef EE_DEBUG
 	// Same-window scene rebinding is an existing supported mechanism for embedded documents.
 	// Cross-window rebinding cannot safely migrate input and native-window dependencies.
@@ -2003,6 +1988,8 @@ void UINode::onSceneChange() {
 			  previousScene->getWindow() == mUISceneNode->getWindow() );
 #endif
 }
+
+void UINode::onUISceneNodeChange( UISceneNode* ) {}
 
 void UINode::onParentTreeChange() {
 	refreshEffectiveDirection();
