@@ -79,6 +79,10 @@ static NSAccessibilityRole nativeRole( AccessibilityRole role ) {
 			return NSAccessibilityStaticTextRole;
 		case AccessibilityRole::TextBox:
 			return NSAccessibilityTextFieldRole;
+		case AccessibilityRole::Link:
+			return NSAccessibilityLinkRole;
+		case AccessibilityRole::Heading:
+			return @"AXHeading";
 		case AccessibilityRole::Image:
 			return NSAccessibilityImageRole;
 		case AccessibilityRole::ComboBox:
@@ -984,6 +988,8 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 	if ( auto text = [self textContents] )
 		return text->empty() ? nil : toNSString( *text );
 	const auto info = [self nodeInfo];
+	if ( info.role == AccessibilityRole::Heading )
+		return @( info.headingLevel );
 	if ( info.role == AccessibilityRole::Label || info.role == AccessibilityRole::Text )
 		return info.name.empty() ? nil : toNSString( info.name );
 	if ( info.role == AccessibilityRole::CheckBox || info.role == AccessibilityRole::RadioButton ||
@@ -1484,7 +1490,7 @@ bool MacAccessibilityState::perform( AccessibilityNodeRef ref, AccessibilityActi
 									  !hasState( info.states, AccessibilityState::Protected );
 	if ( !info.value.empty() || info.range.valid || hasBooleanValue || hasEditableTextValue ||
 		 info.role == AccessibilityRole::ComboBox || info.role == AccessibilityRole::Label ||
-		 info.role == AccessibilityRole::Text )
+		 info.role == AccessibilityRole::Text || info.role == AccessibilityRole::Heading )
 		[names addObject:NSAccessibilityValueAttribute];
 	if ( hasAction( info.actions, AccessibilityAction::Select ) ||
 		 info.role == AccessibilityRole::Row || info.role == AccessibilityRole::ListItem ||
@@ -1880,6 +1886,13 @@ class MacAccessibilityRegistry {
 			}
 		} else if ( target ) {
 			NSAccessibilityPostNotification( target, NSAccessibilityLayoutChangedNotification );
+			if ( event.type == AccessibilityEvent::ChildrenChanged ) {
+				const auto role = state->roleFor( event.ref );
+				if ( role == AccessibilityRole::Heading || role == AccessibilityRole::Link ) {
+					NSAccessibilityPostNotification( target,
+													 NSAccessibilityTitleChangedNotification );
+				}
+			}
 		}
 	}
 

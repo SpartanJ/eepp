@@ -379,6 +379,8 @@ void UIAutomationAccessibilityBackend::raiseEvent( const AccessibilityPendingEve
 
 	if ( event.type == AccessibilityEvent::NameChanged ) {
 		raisePropertyChanged( UIA_NamePropertyId );
+	} else if ( event.type == AccessibilityEvent::RoleChanged ) {
+		raisePropertyChanged( UIA_ControlTypePropertyId );
 	} else if ( event.type == AccessibilityEvent::DescriptionChanged ) {
 		raisePropertyChanged( UIA_HelpTextPropertyId );
 	} else if ( event.type == AccessibilityEvent::ValueChanged ) {
@@ -438,6 +440,9 @@ void UIAutomationAccessibilityBackend::raiseEvent( const AccessibilityPendingEve
 				event.type == AccessibilityEvent::ModelChanged ) {
 		UiaRaiseStructureChangedEvent( static_cast<IRawElementProviderSimple*>( nativeProvider ),
 									   StructureChangeType_ChildrenInvalidated, nullptr, 0 );
+		const auto role = mManager.getNodeRole( event.ref );
+		if ( role == AccessibilityRole::Heading || role == AccessibilityRole::Link )
+			raisePropertyChanged( UIA_NamePropertyId );
 	} else if ( event.type == AccessibilityEvent::FocusChanged ) {
 		raisePropertyChanged( UIA_HasKeyboardFocusPropertyId );
 		UiaRaiseAutomationEvent( static_cast<IRawElementProviderSimple*>( nativeProvider ),

@@ -122,6 +122,10 @@ Uint32 AtSpiApplication::role( AccessibilityRole role ) const {
 			return 29;
 		case AccessibilityRole::TextBox:
 			return 79;
+		case AccessibilityRole::Link:
+			return 88;
+		case AccessibilityRole::Heading:
+			return 83;
 		case AccessibilityRole::Image:
 			return 27;
 		case AccessibilityRole::ComboBox:
@@ -188,6 +192,10 @@ const char* AtSpiApplication::roleName( AccessibilityRole role ) const {
 			return "text";
 		case AccessibilityRole::TextBox:
 			return "entry";
+		case AccessibilityRole::Link:
+			return "link";
+		case AccessibilityRole::Heading:
+			return "heading";
 		case AccessibilityRole::Image:
 			return "image";
 		case AccessibilityRole::ComboBox:
@@ -351,7 +359,8 @@ void AtSpiApplication::appendInterfaces( DBusMessageIter& iter, AccessibilityNod
 	const char* component = "org.a11y.atspi.Component";
 	appendBasic( array, 's', &accessible );
 	appendBasic( array, 's', &component );
-	if ( isSelectionContainerRole( info.role ) ) {
+	if ( isSelectionContainerRole( info.role ) &&
+		 hasState( info.states, AccessibilityState::SelectionContainer ) ) {
 		const char* selection = "org.a11y.atspi.Selection";
 		appendBasic( array, 's', &selection );
 	}

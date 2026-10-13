@@ -5,10 +5,12 @@
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uitextspan.hpp>
 
 #define FileInfo AppleFileInfo
 #define Rect AppleRect
@@ -42,6 +44,46 @@ NSObject<NSAccessibility>* semanticRootForWindow( NSWindow* window ) {
 }
 
 } // namespace
+
+UTEST( AccessibilityMacOS, HTMLHeadingsLinksAndListsExposeNativeSemantics ) {
+	UIApplication app( WindowSettings( 320, 240, "eepp - HTML Accessibility Test",
+									   WindowStyle::Default | WindowStyle::Hidden ),
+					   UIApplication::Settings( Sys::getProcessPath() ) );
+	if ( !app.getUI() )
+		UTEST_SKIP( "a logged-in macOS graphical session is required" );
+	auto* scene = app.getUI();
+	scene->loadLayoutFromString(
+		R"xml(<richtext><h2>HTML heading</h2><a id="link" href="relative.html">HTML link</a><ul><li>HTML item</li></ul></richtext>)xml" );
+	scene->getAccessibilityManager()->update();
+	NSWindow* window = reinterpret_cast<NSWindow*>( scene->getWindow()->getWindowHandler() );
+	NSObject<NSAccessibility>* root = semanticRootForWindow( window );
+	ASSERT_TRUE( root != nil );
+	NSArray* children = root.accessibilityChildren;
+	ASSERT_EQ( children.count, 3u );
+	NSObject<NSAccessibility>* heading = children[0];
+	EXPECT_TRUE( [heading.accessibilityRole isEqualToString:@"AXHeading"] );
+	EXPECT_TRUE( [heading.accessibilityLabel isEqualToString:@"HTML heading"] );
+	EXPECT_TRUE( [heading.accessibilityValue isEqual:@2] );
+	EXPECT_TRUE(
+		[[heading accessibilityAttributeNames] containsObject:NSAccessibilityValueAttribute] );
+	NSObject<NSAccessibility>* link = children[1];
+	EXPECT_TRUE( [link.accessibilityRole isEqualToString:NSAccessibilityLinkRole] );
+	EXPECT_TRUE( [link.accessibilityLabel isEqualToString:@"HTML link"] );
+	int activations = 0;
+	scene->setNavigationInterceptorCb( [&]( const NavigationRequest& ) {
+		++activations;
+		return true;
+	} );
+	EXPECT_TRUE( [link accessibilityPerformPress] );
+	EXPECT_EQ( activations, 1 );
+	scene->find<UIAnchorSpan>( "link" )->setHref( "" );
+	EXPECT_TRUE( [link.accessibilityRole isEqualToString:NSAccessibilityStaticTextRole] );
+	EXPECT_FALSE( [link accessibilityPerformPress] );
+	EXPECT_EQ( activations, 1 );
+	NSObject<NSAccessibility>* list = children[2];
+	EXPECT_TRUE( [list.accessibilityRole isEqualToString:NSAccessibilityListRole] );
+	EXPECT_EQ( list.accessibilityChildren.count, 1u );
+}
 
 UTEST( AccessibilityMacOS, PasswordModeTransitionsRevalidateRetainedTextElements ) {
 	UIApplication app( WindowSettings( 320, 240, "eepp - Password Accessibility Test",

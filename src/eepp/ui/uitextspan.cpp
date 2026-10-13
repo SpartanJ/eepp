@@ -1,6 +1,7 @@
 #include <eepp/core/debug.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uicheckbox.hpp>
@@ -274,8 +275,12 @@ const String& UITextSpan::getText() const {
 
 UITextSpan* UITextSpan::setText( const String& text ) {
 	if ( mText != text ) {
+		const auto previousRole =
+			Accessibility::isActive() ? getAccessibilityRole() : AccessibilityRole::None;
 		mText = text;
 		onTextChanged();
+		if ( Accessibility::isActive() )
+			AccessibilityWidgetResolver::onHTMLTextChanged( this, previousRole );
 		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 		invalidateDraw();
 	}
@@ -770,6 +775,25 @@ UIAnchorSpan::UIAnchorSpan( const std::string& tag ) : UITextSpan( tag ) {
 	mState |= UIState::StateFlagLink;
 }
 
+Uint32 UIAnchorSpan::getType() const {
+	return UI_TYPE_ANCHORSPAN;
+}
+
+bool UIAnchorSpan::isType( const Uint32& type ) const {
+	return type == UI_TYPE_ANCHORSPAN || UITextSpan::isType( type );
+}
+
+bool UIAnchorSpan::activateLink( Uint32 modifiers, Uint32 mouseButtons ) {
+	if ( mHref.empty() || !getUISceneNode() )
+		return false;
+	NavigationRequest request{ URI( mHref ) };
+	request.source = this;
+	request.modifiers = modifiers;
+	request.mouseButtons = mouseButtons;
+	getUISceneNode()->navigate( request );
+	return true;
+}
+
 Uint32 UIAnchorSpan::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseClick: {
@@ -779,11 +803,7 @@ Uint32 UIAnchorSpan::onMessage( const NodeMessage* Msg ) {
 					return 1;
 			}
 			if ( !mHref.empty() && ( Msg->getFlags() & ( EE_BUTTON_LMASK | EE_BUTTON_MMASK ) ) ) {
-				NavigationRequest request{ URI( mHref ) };
-				request.source = this;
-				request.mouseButtons = Msg->getFlags();
-				request.modifiers = getInput() ? getInput()->getModState() : 0;
-				getUISceneNode()->navigate( request );
+				activateLink( getInput() ? getInput()->getModState() : 0, Msg->getFlags() );
 			}
 			return 1;
 		}
@@ -820,7 +840,11 @@ bool UIAnchorSpan::applyProperty( const StyleSheetProperty& attribute ) {
 
 void UIAnchorSpan::setHref( const std::string& href ) {
 	if ( href != mHref ) {
+		const auto previousRole =
+			Accessibility::isActive() ? getAccessibilityRole() : AccessibilityRole::None;
 		mHref = href;
+		if ( Accessibility::isActive() )
+			AccessibilityWidgetResolver::onHTMLTextChanged( this, previousRole );
 	}
 }
 
@@ -830,11 +854,7 @@ const std::string& UIAnchorSpan::getHref() const {
 
 Uint32 UIAnchorSpan::onKeyDown( const KeyEvent& event ) {
 	if ( event.getKeyCode() == KEY_KP_ENTER || event.getKeyCode() == KEY_RETURN ) {
-		if ( !mHref.empty() ) {
-			NavigationRequest request{ URI( mHref ) };
-			request.source = this;
-			request.modifiers = event.getMod();
-			getUISceneNode()->navigate( request );
+		if ( activateLink( event.getMod() ) ) {
 			return 1;
 		}
 	}

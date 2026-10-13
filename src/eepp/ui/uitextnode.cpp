@@ -1,4 +1,5 @@
 #include <eepp/graphics/text.hpp>
+#include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
@@ -107,13 +108,17 @@ const String& UITextNode::getText() const {
 
 void UITextNode::setText( const String& text ) {
 	if ( mText != text ) {
+		const auto previousRole =
+			Accessibility::isActive() ? getAccessibilityRole() : AccessibilityRole::None;
 		mText = text;
+		if ( Accessibility::isActive() )
+			AccessibilityWidgetResolver::onHTMLTextChanged( this, previousRole );
 		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 	}
 }
 
 bool UITextNode::isWhitespaceOnly() const {
-	for ( char c : mText ) {
+	for ( auto c : mText ) {
 		if ( c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '\v' )
 			return false;
 	}

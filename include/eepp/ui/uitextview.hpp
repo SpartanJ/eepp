@@ -231,6 +231,13 @@ class EE_API UIAnchor : public UITextView {
 
 	static UIAnchor* NewA();
 
+	virtual Uint32 getType() const;
+
+	virtual bool isType( const Uint32& type ) const;
+
+	/** Uses the same URL-opening behavior as mouse/keyboard activation. */
+	bool activateLink();
+
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );

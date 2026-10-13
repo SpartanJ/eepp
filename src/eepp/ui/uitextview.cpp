@@ -1099,12 +1099,22 @@ UIAnchor* UIAnchor::NewA() {
 }
 
 UIAnchor::UIAnchor( const std::string& tag ) : UITextView( tag ) {
-	onClick(
-		[this]( const MouseEvent* ) {
-			if ( !mHref.empty() )
-				getUISceneNode()->openURL( mHref );
-		},
-		EE_BUTTON_LEFT );
+	onClick( [this]( const MouseEvent* ) { activateLink(); }, EE_BUTTON_LEFT );
+}
+
+Uint32 UIAnchor::getType() const {
+	return UI_TYPE_ANCHOR;
+}
+
+bool UIAnchor::isType( const Uint32& type ) const {
+	return type == UI_TYPE_ANCHOR || UITextView::isType( type );
+}
+
+bool UIAnchor::activateLink() {
+	if ( mHref.empty() || !getUISceneNode() )
+		return false;
+	getUISceneNode()->openURL( mHref );
+	return true;
 }
 
 void UIAnchor::loadFromXmlNode( const pugi::xml_node& node ) {
@@ -1134,6 +1144,8 @@ bool UIAnchor::applyProperty( const StyleSheetProperty& attribute ) {
 void UIAnchor::setHref( const std::string& href ) {
 	if ( href != mHref ) {
 		mHref = href;
+		notifyAccessibilityEvent( AccessibilityEvent::RoleChanged );
+		notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
 	}
 }
 
@@ -1143,8 +1155,7 @@ const std::string& UIAnchor::getHref() const {
 
 Uint32 UIAnchor::onKeyDown( const KeyEvent& event ) {
 	if ( event.getKeyCode() == KEY_KP_ENTER || event.getKeyCode() == KEY_RETURN ) {
-		if ( !mHref.empty() ) {
-			getUISceneNode()->openURL( mHref );
+		if ( activateLink() ) {
 			return 1;
 		}
 	}

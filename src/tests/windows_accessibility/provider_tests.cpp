@@ -7,7 +7,9 @@
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextview.hpp>
 
 #include <future>
@@ -226,6 +228,66 @@ void testProviderPolicyChangeDuringDispatch() {
 	require( scene->getAccessibilityPolicy() == AccessibilityPolicy::Enabled,
 			 "deferred policy change was not applied" );
 	scene->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+}
+
+void testProviderHTMLSemantics() {
+	UIApplication app( testWindow(), testSettings() );
+	require( app.getUI() != nullptr, "hidden test window could not be created" );
+	auto* scene = app.getUI();
+	scene->loadLayoutFromString(
+		R"xml(<richtext><h2 id="heading">Heading</h2><a id="link" href="relative.html">Link</a><ul id="list"><li>Item</li></ul></richtext>)xml" );
+	auto* manager = scene->getAccessibilityManager();
+	auto context = std::make_shared<UIAutomationProviderContext>( *manager, nullptr, 1 );
+	std::unique_ptr<UIAutomationProvider, ReleaseCOM> heading(
+		context->provider( manager->getNodeRef( scene->find<UIRichText>( "heading" ) ) ) );
+	require( heading != nullptr, "HTML heading provider missing" );
+	VARIANT level;
+	VariantInit( &level );
+	const HRESULT levelResult = heading->GetPropertyValue( UIA_HeadingLevelPropertyId, &level );
+	const bool validLevel = level.vt == VT_I4 && level.lVal == 80052;
+	VariantClear( &level );
+	require( levelResult == S_OK && validLevel, "HTML UIA heading level is wrong" );
+	auto* anchor = scene->find<UIAnchorSpan>( "link" );
+	std::unique_ptr<UIAutomationProvider, ReleaseCOM> link(
+		context->provider( manager->getNodeRef( anchor ) ) );
+	require( link != nullptr, "HTML link provider missing" );
+	VARIANT role;
+	VariantInit( &role );
+	const HRESULT roleResult = link->GetPropertyValue( UIA_ControlTypePropertyId, &role );
+	const bool validRole = role.vt == VT_I4 && role.lVal == UIA_HyperlinkControlTypeId;
+	VariantClear( &role );
+	require( roleResult == S_OK && validRole, "HTML UIA hyperlink role is wrong" );
+	IInvokeProvider* rawInvoke{};
+	const HRESULT invokeResult =
+		link->QueryInterface( __uuidof( IInvokeProvider ), reinterpret_cast<void**>( &rawInvoke ) );
+	std::unique_ptr<IInvokeProvider, ReleaseCOM> invoke( rawInvoke );
+	require( invokeResult == S_OK && invoke != nullptr, "HTML link did not expose Invoke" );
+	int activations = 0;
+	scene->setNavigationInterceptorCb( [&]( const NavigationRequest& request ) {
+		++activations;
+		require( request.source == anchor && request.uri.toString() == "relative.html",
+				 "HTML link did not use the navigation path" );
+		return true;
+	} );
+	require( invoke->Invoke() == S_OK && activations == 1, "HTML link Invoke failed" );
+	anchor->setHref( "" );
+	VariantInit( &role );
+	const HRESULT plainResult = link->GetPropertyValue( UIA_ControlTypePropertyId, &role );
+	const bool plainRole = role.vt == VT_I4 && role.lVal == UIA_TextControlTypeId;
+	VariantClear( &role );
+	require( plainResult == S_OK && plainRole, "retained HTML link did not change its role" );
+	require( invoke->Invoke() != S_OK && activations == 1,
+			 "retained Invoke activated an anchor without href" );
+	std::unique_ptr<UIAutomationProvider, ReleaseCOM> list(
+		context->provider( manager->getNodeRef( scene->find<UIRichText>( "list" ) ) ) );
+	require( list != nullptr, "HTML list provider missing" );
+	ISelectionProvider* selection{};
+	const HRESULT selectionResult = list->QueryInterface( __uuidof( ISelectionProvider ),
+														  reinterpret_cast<void**>( &selection ) );
+	if ( selection )
+		selection->Release();
+	require( selectionResult == E_NOINTERFACE && selection == nullptr,
+			 "non-interactive HTML list advertised Selection" );
 }
 
 void testProviderScalarQueries() {

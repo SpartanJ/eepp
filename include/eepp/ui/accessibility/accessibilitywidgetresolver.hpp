@@ -2,6 +2,7 @@
 #define EE_UI_ACCESSIBILITY_ACCESSIBILITYWIDGETRESOLVER_HPP
 
 #include <eepp/ui/accessibility/accessibility.hpp>
+#include <optional>
 
 namespace EE { namespace Scene {
 class Node;
@@ -26,6 +27,12 @@ struct AccessibilityIssue {
 class EE_API AccessibilityWidgetResolver {
   public:
 	static AccessibilityRole getRole( const UIWidget* widget );
+
+	static Uint8 getHeadingLevel( const UIWidget* widget );
+
+	/** Updates queried HTML text and named ancestors. Called only after the activity gate. */
+	static void onHTMLTextChanged( UIWidget* widget,
+								   std::optional<AccessibilityRole> previousRole = std::nullopt );
 
 	/** A readable role name for tools and logs, for example "CheckBox". */
 	static const char* getRoleName( AccessibilityRole role );

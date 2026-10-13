@@ -388,16 +388,37 @@ must not depend on rendering, and native queries or notifications must never sta
 
 ## Current scope
 
+### Basic HTML semantics
+
+HTML and Markdown content rendered by eepp now exposes source text, `h1`–`h6` headings with their
+levels, anchors with nonempty `href`, and `ul`/`ol` lists with their `li` items. Images with nonempty
+alternative text expose that text. Anonymous form controls retain their native widget semantics.
+
+Ordinary block and formatting wrappers are transparent. Text is exposed through the text nodes
+and spans that own it, rather than copying each enclosing paragraph's flattened rendering. Headings
+and links have names derived from their visible textual contents; they remain containers so nested
+links and controls are reachable. Input values, including passwords, never contribute to those
+names. `aria-hidden` content is excluded from traversal and descendant-name calculation.
+
+Link Press/Invoke actions use the existing navigation path, including WebView/Markdown interception
+and relative URI resolution. Merely focusing a link never activates it. Focus on a passive text or
+image fragment inside a link is reported on the link; embedded interactive controls keep their own
+focus. Runtime `setHref()` continues to preserve the application's explicit Tab-focus policy.
+
+This is basic object navigation, not a complete browser/document accessibility implementation.
+Static HTML text is exposed by name/value; it does not advertise unimplemented Text/Hypertext
+interfaces, document-wide cursor navigation, formatting ranges or cross-element text selection.
+HTML lists are not selectable model views and do not advertise native Selection patterns.
+
 The first implementation focuses on the semantics used by standard eepp desktop widgets. Native
 platform APIs contain additional advanced interfaces that are not yet exposed uniformly, including
 some rich-document formatting, complex table metadata, and container scroll patterns (scroll
-position and paging, as opposed to scrolling an element into view). HTML content (`UIRichText`,
-headings, links, lists) is not yet exposed as semantic elements. Relations are used to compute names
-and descriptions but are not published as native relation sets.
+position and paging, as opposed to scrolling an element into view). Relations are used to compute
+names and descriptions but are not published as native relation sets.
 
 Do not advertise a native pattern or capability unless its required behavior is implemented.
 Assistive technologies can still navigate the semantic hierarchy and operate the supported
 controls when an optional advanced pattern is absent.
 
-The implementation currently targets Linux, macOS, and Windows desktop applications. Mobile and
+The implementation currently targets Linux/FreeBSD, macOS, and Windows desktop applications. Mobile and
 web accessibility bridges are outside the current scope.

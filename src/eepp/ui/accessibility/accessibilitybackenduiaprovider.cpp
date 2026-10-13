@@ -18,7 +18,10 @@ CONTROLTYPEID controlType( AccessibilityRole role ) {
 			return UIA_RadioButtonControlTypeId;
 		case AccessibilityRole::Label:
 		case AccessibilityRole::Text:
+		case AccessibilityRole::Heading:
 			return UIA_TextControlTypeId;
+		case AccessibilityRole::Link:
+			return UIA_HyperlinkControlTypeId;
 		case AccessibilityRole::TextBox:
 			return UIA_EditControlTypeId;
 		case AccessibilityRole::Image:
@@ -146,7 +149,8 @@ HRESULT STDMETHODCALLTYPE UIAutomationProvider::QueryInterface( REFIID interface
 				  hasAction( nodeInfo.actions, AccessibilityAction::Toggle ) )
 			*object = static_cast<IToggleProvider*>( this );
 		else if ( interfaceId == __uuidof( ISelectionProvider ) &&
-				  isSelectionContainerRole( nodeInfo.role ) )
+				  isSelectionContainerRole( nodeInfo.role ) &&
+				  hasState( nodeInfo.states, AccessibilityState::SelectionContainer ) )
 			*object = static_cast<ISelectionProvider*>( this );
 		else if ( interfaceId == __uuidof( ISelectionItemProvider ) &&
 				  ( hasAction( nodeInfo.actions, AccessibilityAction::Select ) ||
@@ -236,9 +240,12 @@ HRESULT STDMETHODCALLTYPE UIAutomationProvider::GetPropertyValue( PROPERTYID pro
 		return UIA_E_ELEMENTNOTAVAILABLE;
 	// Scalar/identity properties must not read model display data, copy text, or mark name
 	// relations as queried. They still validate on the UI thread through the normal invoke path.
-	enum class Query { Metadata, Identity, Role, State };
+	enum class Query { Metadata, Identity, Role, State, Heading };
 	Query query = Query::Metadata;
 	switch ( propertyId ) {
+		case UIA_HeadingLevelPropertyId:
+			query = Query::Heading;
+			break;
 		case UIA_AutomationIdPropertyId:
 		case UIA_FrameworkIdPropertyId:
 		case UIA_ClassNamePropertyId:
@@ -276,6 +283,9 @@ HRESULT STDMETHODCALLTYPE UIAutomationProvider::GetPropertyValue( PROPERTYID pro
 												 output.role = manager.getNodeRole( mRef );
 											 else if ( query == Query::State )
 												 output.states = manager.getNodeState( mRef );
+											 else if ( query == Query::Heading )
+												 output.headingLevel =
+													 manager.getNodeHeadingLevel( mRef );
 											 return S_OK;
 										 } );
 	if ( FAILED( result ) )
@@ -289,7 +299,11 @@ HRESULT STDMETHODCALLTYPE UIAutomationProvider::GetPropertyValue( PROPERTYID pro
 				   ? S_OK
 				   : setBstr( value, String::fromUtf8( nodeInfo.shortcut.text ) );
 	}
-	if ( propertyId == UIA_ControlTypePropertyId ) {
+	if ( propertyId == UIA_HeadingLevelPropertyId ) {
+		// UIA heading IDs are HeadingLevel_None (80050), then HeadingLevel1..9 in order.
+		value->vt = VT_I4;
+		value->lVal = 80050 + nodeInfo.headingLevel;
+	} else if ( propertyId == UIA_ControlTypePropertyId ) {
 		value->vt = VT_I4;
 		value->lVal = controlType( nodeInfo.role );
 	} else if ( propertyId == UIA_IsEnabledPropertyId ) {

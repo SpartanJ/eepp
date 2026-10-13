@@ -17,6 +17,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	bool testPolicyReset = false;
 	bool testTree = false;
 	bool testPasswordMode = false;
+	bool testHTML = false;
 	size_t benchmarkItems = 1000;
 	size_t benchmarkIterations = 100000;
 	for ( int i = 1; i < argc; ++i ) {
@@ -29,6 +30,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		testPolicyReset |= std::string_view( argv[i] ) == "--test-policy-reset";
 		testTree |= std::string_view( argv[i] ) == "--test-tree";
 		testPasswordMode |= std::string_view( argv[i] ) == "--test-password-mode";
+		testHTML |= std::string_view( argv[i] ) == "--test-html";
 		if ( std::string_view( argv[i] ) == "--benchmark-items" && i + 1 < argc )
 			benchmarkItems = std::max<size_t>( 1, std::strtoull( argv[++i], nullptr, 10 ) );
 		if ( std::string_view( argv[i] ) == "--benchmark-iterations" && i + 1 < argc )
@@ -126,6 +128,27 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	}
 
 	auto status = content->find<UITextView>( "status" );
+	if ( testHTML ) {
+		auto* html = scene->loadLayoutFromString( R"xml(<richtext id="html-semantics">
+			<h2>HTML heading</h2>
+			<p>HTML paragraph <a id="html-link" href="relative.html">HTML link</a></p>
+			<ul id="html-list"><li>HTML first item</li><li>HTML second item</li></ul>
+		</richtext>)xml",
+												  content );
+		scene->setNavigationInterceptorCb( html, [status]( const NavigationRequest& ) {
+			status->setText( "HTML link activated" );
+			return true;
+		} );
+		auto* link = html->find<UIAnchorSpan>( "html-link" );
+		auto* unlink = UIPushButton::New();
+		unlink->setParent( content );
+		unlink->setText( "HTML unlink" );
+		unlink->onClick( [link]( const MouseEvent* ) { link->setHref( "" ); } );
+		auto* relink = UIPushButton::New();
+		relink->setParent( content );
+		relink->setText( "HTML relink" );
+		relink->onClick( [link]( const MouseEvent* ) { link->setHref( "relative.html" ); } );
+	}
 	if ( benchmarkInactive ) {
 		auto manager = scene->getAccessibilityManager();
 		Clock clock;

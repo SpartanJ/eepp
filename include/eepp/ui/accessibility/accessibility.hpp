@@ -67,6 +67,8 @@ enum class AccessibilityRole : Uint8 {
 	Cell,
 	Tree,
 	TreeItem,
+	Link,
+	Heading,
 };
 
 enum class AccessibilityState : Uint64 {
@@ -84,6 +86,8 @@ enum class AccessibilityState : Uint64 {
 	Active = 1ull << 10,
 	Protected = 1ull << 11,
 	MultiLine = 1ull << 12,
+	/** Offers selection of children, unlike a non-interactive HTML list. */
+	SelectionContainer = 1ull << 13,
 };
 
 inline AccessibilityState operator|( AccessibilityState left, AccessibilityState right ) {
@@ -135,6 +139,7 @@ enum class AccessibilityEvent : Uint8 {
 	VisibilityChanged,
 	SelectionChanged,
 	BoundsChanged,
+	RoleChanged,
 };
 
 /** A keyboard shortcut, both as displayed and decomposed for native APIs that want their own
@@ -221,6 +226,8 @@ struct AccessibilityNodeInfo {
 	AccessibilityActions actions{ 0 };
 	AccessibilityRole role{ AccessibilityRole::None };
 	bool boundsValid{ false };
+	/** 1..6 for HTML headings; zero when unspecified. Uses existing tail padding. */
+	Uint8 headingLevel{ 0 };
 };
 
 struct AccessibilityAnnouncement {

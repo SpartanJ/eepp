@@ -32,6 +32,8 @@ void testProviderScalarQueries();
 
 void testProviderEventAdviceABI();
 
+void testProviderHTMLSemantics();
+
 namespace {
 
 using Clock = std::chrono::steady_clock;
@@ -257,6 +259,9 @@ class EventSubscriptions {
 	}
 
 	void subscribe() {
+		// MinGW SDKs disagree on Subtree/SubTree spelling; compose the standard scope flags.
+		constexpr auto subtreeScope = static_cast<TreeScope>(
+			TreeScope_Element | TreeScope_Children | TreeScope_Descendants );
 		PROPERTYID properties[] = {
 			UIA_NamePropertyId,
 			UIA_HelpTextPropertyId,
@@ -271,7 +276,7 @@ class EventSubscriptions {
 			UIA_ExpandCollapseExpandCollapseStatePropertyId,
 		};
 		requireResult( mAutomation->AddPropertyChangedEventHandlerNativeArray(
-						   mRoot, TreeScope_Subtree, nullptr, mRecorder, properties,
+						   mRoot, subtreeScope, nullptr, mRecorder, properties,
 						   static_cast<int>( std::size( properties ) ) ),
 					   "AddPropertyChangedEventHandler" );
 		mProperties = true;
@@ -279,14 +284,14 @@ class EventSubscriptions {
 			UIA_Text_TextChangedEventId, UIA_Text_TextSelectionChangedEventId,
 			UIA_SelectionItem_ElementSelectedEventId, UIA_LayoutInvalidatedEventId };
 		for ( EVENTID eventId : events ) {
-			requireResult( mAutomation->AddAutomationEventHandler(
-							   eventId, mRoot, TreeScope_Subtree, nullptr, mRecorder ),
+			requireResult( mAutomation->AddAutomationEventHandler( eventId, mRoot, subtreeScope,
+																   nullptr, mRecorder ),
 						   "AddAutomationEventHandler" );
 			mAutomationEvents.emplace_back( eventId );
 		}
-		requireResult( mAutomation->AddStructureChangedEventHandler( mRoot, TreeScope_Subtree,
-																	 nullptr, mRecorder ),
-					   "AddStructureChangedEventHandler" );
+		requireResult(
+			mAutomation->AddStructureChangedEventHandler( mRoot, subtreeScope, nullptr, mRecorder ),
+			"AddStructureChangedEventHandler" );
 		mStructure = true;
 		requireResult( mAutomation->AddFocusChangedEventHandler( nullptr, mRecorder ),
 					   "AddFocusChangedEventHandler" );
@@ -633,6 +638,7 @@ int wmain( int argc, wchar_t** argv ) {
 
 	try {
 		record( "provider event advice ABI", testProviderEventAdviceABI );
+		record( "provider HTML semantics", testProviderHTMLSemantics );
 		record( "provider selection teardown", testProviderSelectionTeardown );
 		record( "provider text range window identity", testProviderTextRangeIdentity );
 		record( "provider policy change during dispatch", testProviderPolicyChangeDuringDispatch );

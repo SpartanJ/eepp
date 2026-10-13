@@ -159,6 +159,10 @@ AccessibilityRole UIWidget::getAccessibilityRole() const {
 	return AccessibilityWidgetResolver::getRole( this );
 }
 
+Uint8 UIWidget::getAccessibilityHeadingLevel() const {
+	return AccessibilityWidgetResolver::getHeadingLevel( this );
+}
+
 AccessibilityRole UIWidget::resolveAccessibilityRole( AccessibilityRole defaultRole ) const {
 	if ( mAccessibilityProperties ) {
 		if ( mAccessibilityProperties->hidden )
@@ -335,7 +339,8 @@ void UIWidget::deliverAccessibilityEvent( AccessibilityEvent event ) {
 					  !AccessibilityWidgetResolver::isHiddenFromAccessibility( this ) ) )
 		return;
 	if ( target ) {
-		while ( target && !target->isAccessibilityElement() ) {
+		while ( target && !target->isAccessibilityElement() &&
+				event != AccessibilityEvent::RoleChanged ) {
 			// Plain nodes are transparent, as in the manager's semantic parent lookup: keep
 			// walking to the nearest exposed widget instead of falling back to the scene root.
 			Node* parent = target->getParent();
@@ -352,6 +357,7 @@ void UIWidget::deliverAccessibilityEvent( AccessibilityEvent event ) {
 									event == AccessibilityEvent::DescriptionChanged ||
 									event == AccessibilityEvent::ValueChanged ||
 									event == AccessibilityEvent::StateChanged ||
+									event == AccessibilityEvent::RoleChanged ||
 									event == AccessibilityEvent::EnabledChanged ||
 									event == AccessibilityEvent::BoundsChanged;
 		const auto ref =

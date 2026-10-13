@@ -178,6 +178,13 @@ class EE_API UIAnchorSpan : public UITextSpan {
   public:
 	static UIAnchorSpan* New();
 
+	virtual Uint32 getType() const;
+
+	virtual bool isType( const Uint32& type ) const;
+
+	/** Activates through the scene's navigation/interception path. */
+	bool activateLink( Uint32 modifiers = 0, Uint32 mouseButtons = 0 );
+
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );

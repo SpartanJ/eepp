@@ -6,6 +6,7 @@
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
+#include <eepp/ui/uihtmlimage.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimenubar.hpp>
@@ -15,6 +16,7 @@
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
+#include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
@@ -25,6 +27,8 @@
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uitextnode.hpp>
+#include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -38,6 +42,41 @@
 namespace EE { namespace UI {
 
 namespace {
+
+// Source text, not the layout's flattened RichText (which can include the same descendants
+// several times). Never read native input values while naming a heading or link.
+void appendHTMLText( const Node* node, String& text, bool root = false ) {
+	if ( node->isDestroying() )
+		return;
+	if ( node->isWidget() ) {
+		const auto* widget = static_cast<const UIWidget*>( node );
+		if ( !root && ( !widget->hasVisibility() || widget->isAccessibilityHidden() ) )
+			return;
+		if ( widget->isType( UI_TYPE_TEXTNODE ) ) {
+			text += static_cast<const UITextNode*>( widget )->getText();
+			return;
+		}
+		if ( widget->isType( UI_TYPE_TEXTSPAN ) )
+			text += static_cast<const UITextSpan*>( widget )->getText();
+		else if ( widget->isType( UI_TYPE_HTML_IMAGE ) ) {
+			text += String::fromUtf8( static_cast<const UIHTMLImage*>( widget )->getAlt() );
+			return;
+		} else if ( !widget->isType( UI_TYPE_RICHTEXT ) )
+			return;
+		if ( widget->isType( UI_TYPE_BR ) )
+			text += '\n';
+	}
+	for ( auto* child = node->getFirstChild(); child; child = child->getNextNode() )
+		appendHTMLText( child, text );
+}
+
+bool hasHref( const UIWidget* widget ) {
+	if ( widget->isType( UI_TYPE_ANCHORSPAN ) )
+		return !static_cast<const UIAnchorSpan*>( widget )->getHref().empty();
+	if ( widget->isType( UI_TYPE_ANCHOR ) )
+		return !static_cast<const UIAnchor*>( widget )->getHref().empty();
+	return false;
+}
 
 bool isRoot( const UIWidget* widget ) {
 	return widget->getUISceneNode() && !widget->getUISceneNode()->getParent() &&
@@ -80,6 +119,8 @@ AccessibilityState baseState( const UIWidget* widget ) {
 	AccessibilityState state = AccessibilityState::None;
 	if ( widget->isEnabled() )
 		state |= AccessibilityState::Enabled;
+	if ( widget->isType( UI_TYPE_ABSTRACTTABLEVIEW ) || widget->isType( UI_TYPE_TABWIDGET ) )
+		state |= AccessibilityState::SelectionContainer;
 	if ( keyboardFocusable( widget ) )
 		state |= AccessibilityState::Focusable;
 	auto* dispatcher = widget->getEventDispatcher();
@@ -224,7 +265,76 @@ AccessibilityRole AccessibilityWidgetResolver::getRole( const UIWidget* widget )
 		role = AccessibilityRole::Button;
 	else if ( widget->isType( UI_TYPE_TEXTVIEW ) )
 		role = AccessibilityRole::Label;
+	else if ( widget->isType( UI_TYPE_TEXTNODE ) ) {
+		if ( !static_cast<const UITextNode*>( widget )->isWhitespaceOnly() )
+			role = AccessibilityRole::Text;
+	} else if ( widget->isType( UI_TYPE_RICHTEXT ) ) {
+		const auto& tag = widget->getStyleSheetTag();
+		if ( getHeadingLevel( widget ) )
+			role = AccessibilityRole::Heading;
+		else if ( tag == "ul" || tag == "ol" )
+			role = AccessibilityRole::List;
+		else if ( widget->isType( UI_TYPE_HTML_LIST_ITEM ) )
+			role = AccessibilityRole::ListItem;
+		else if ( widget->isType( UI_TYPE_TEXTSPAN ) &&
+				  !static_cast<const UITextSpan*>( widget )->getText().empty() )
+			role = widget->getFirstChild() ? AccessibilityRole::Group : AccessibilityRole::Text;
+	} else if ( widget->isType( UI_TYPE_HTML_IMAGE ) &&
+				!static_cast<const UIHTMLImage*>( widget )->getAlt().empty() )
+		role = AccessibilityRole::Image;
+	if ( hasHref( widget ) )
+		role = AccessibilityRole::Link;
 	return widget->resolveAccessibilityRole( role );
+}
+
+Uint8 AccessibilityWidgetResolver::getHeadingLevel( const UIWidget* widget ) {
+	if ( !widget->isType( UI_TYPE_RICHTEXT ) )
+		return 0;
+	const auto& tag = widget->getStyleSheetTag();
+	return tag.size() == 2 && tag[0] == 'h' && tag[1] >= '1' && tag[1] <= '6' ? tag[1] - '0' : 0;
+}
+
+void AccessibilityWidgetResolver::onHTMLTextChanged(
+	UIWidget* widget, std::optional<AccessibilityRole> previousRole ) {
+	const auto* scene = widget->getUISceneNode();
+	if ( !scene || !scene->hasActiveAccessibilityClients() )
+		return;
+	if ( widget->isDestroying() )
+		return;
+	const auto role = widget->getAccessibilityRole();
+	const bool structural = !previousRole;
+	if ( structural && widget->isType( UI_TYPE_TEXTSPAN ) &&
+		 ( role == AccessibilityRole::Text || role == AccessibilityRole::Group ) &&
+		 widget->getChildCount() <= 1 ) {
+		// An own-text span changes from a leaf to a container at its first child, and back
+		// at its last removal. Explicit author roles still take precedence.
+		previousRole = widget->resolveAccessibilityRole(
+			widget->getFirstChild() ? AccessibilityRole::Text : AccessibilityRole::Group );
+	}
+	if ( previousRole && *previousRole != role )
+		widget->notifyAccessibilityEvent( AccessibilityEvent::RoleChanged );
+	widget->notifyAccessibilityEvent( AccessibilityEvent::NameChanged );
+	// Empty/whitespace text and spans are transparent. Refresh the flattened semantic parent
+	// when their content changes; retained identities of still-exposed text stay unchanged.
+	if ( auto* parent = widget->getParent();
+		 parent && ( structural || ( previousRole && *previousRole != role ) ) ) {
+		while ( parent && !parent->isWidget() )
+			parent = parent->getParent();
+		if ( parent ) {
+			parent->asType<UIWidget>()->notifyAccessibilityEvent(
+				AccessibilityEvent::ChildrenChanged );
+		}
+	}
+	for ( auto* parent = widget->getParent(); parent; parent = parent->getParent() ) {
+		if ( parent->isDestroying() )
+			break;
+		if ( !parent->isWidget() )
+			continue;
+		auto* ancestor = parent->asType<UIWidget>();
+		const auto role = ancestor->getAccessibilityRole();
+		if ( role == AccessibilityRole::Heading || role == AccessibilityRole::Link )
+			ancestor->notifyAccessibilityEvent( AccessibilityEvent::NameChanged );
+	}
 }
 
 bool AccessibilityWidgetResolver::isLeafRole( AccessibilityRole role ) {
@@ -279,6 +389,16 @@ String AccessibilityWidgetResolver::getOwnName( const UIWidget* widget ) {
 			  static_cast<const UICodeEditor*>( widget )->getDocument().hasFilepath() ) {
 		name = String::fromUtf8(
 			static_cast<const UICodeEditor*>( widget )->getDocument().getFilename() );
+	} else if ( widget->isType( UI_TYPE_TEXTNODE ) )
+		name = static_cast<const UITextNode*>( widget )->getText();
+	else if ( widget->isType( UI_TYPE_HTML_IMAGE ) )
+		name = String::fromUtf8( static_cast<const UIHTMLImage*>( widget )->getAlt() );
+	else if ( widget->isType( UI_TYPE_RICHTEXT ) ) {
+		const auto role = widget->getAccessibilityRole();
+		if ( role == AccessibilityRole::Link || role == AccessibilityRole::Heading )
+			appendHTMLText( widget, name, true );
+		else if ( widget->isType( UI_TYPE_TEXTSPAN ) )
+			name = static_cast<const UITextSpan*>( widget )->getText();
 	}
 	name = widget->resolveAccessibilityName( name );
 	// Icon-only buttons usually carry their meaning in the tooltip.
@@ -375,6 +495,10 @@ const char* AccessibilityWidgetResolver::getRoleName( AccessibilityRole role ) {
 			return "Tree";
 		case AccessibilityRole::TreeItem:
 			return "TreeItem";
+		case AccessibilityRole::Link:
+			return "Link";
+		case AccessibilityRole::Heading:
+			return "Heading";
 	}
 	return "Unknown";
 }
@@ -608,9 +732,11 @@ AccessibilityActions AccessibilityWidgetResolver::getActions( const UIWidget* wi
 	if ( isRoot( widget ) ||
 		 ( widget->isType( UI_TYPE_TEXTVIEW ) && !widget->isType( UI_TYPE_CHECKBOX ) &&
 		   !widget->isType( UI_TYPE_RADIOBUTTON ) && !widget->isType( UI_TYPE_TEXTINPUT ) &&
-		   !widget->isType( UI_TYPE_LISTBOXITEM ) ) )
+		   !widget->isType( UI_TYPE_LISTBOXITEM ) && !widget->isType( UI_TYPE_ANCHOR ) ) )
 		return scroll;
 	auto actions = baseActions( widget ) | scroll;
+	if ( hasHref( widget ) )
+		actions |= accessibilityActionMask( AccessibilityAction::Press );
 	if ( widget->isType( UI_TYPE_MENUCHECKBOX ) ) {
 		actions |= accessibilityActionMask( AccessibilityAction::Toggle );
 	} else if ( widget->isType( UI_TYPE_MENURADIOBUTTON ) ) {
@@ -685,9 +811,20 @@ UIWidget* AccessibilityWidgetResolver::getFocusOwner( Node* focused, const UIWid
 				element = widget;
 		} else if ( !element && widget != sceneRoot && widget->isAccessibilityElement() )
 			element = widget;
-		else if ( element && widget != element && isLeafRole( widget->getAccessibilityRole() ) ) {
-			// A leaf control does not expose its children; it owns their focus.
-			element = widget;
+		else if ( element && widget != element ) {
+			const auto role = widget->getAccessibilityRole();
+			if ( isLeafRole( role ) ) {
+				// A leaf control does not expose its children; it owns their focus.
+				element = widget;
+			} else if ( role == AccessibilityRole::Link && !keyboardFocusable( element ) ) {
+				// Clicking a passive fragment focuses the link, without hiding its semantic
+				// children or stealing focus from an embedded interactive control.
+				const auto childRole = element->getAccessibilityRole();
+				if ( childRole == AccessibilityRole::Text ||
+					 childRole == AccessibilityRole::Label ||
+					 childRole == AccessibilityRole::Image )
+					element = widget;
+			}
 		}
 	}
 	return element;
@@ -707,6 +844,11 @@ UIWidget* AccessibilityWidgetResolver::getEventTarget( UIWidget* widget,
 	// any accessible tree yet; notifying them would only register orphan identities.
 	if ( !top->isSceneNode() || widget->isAccessibilityHidden() )
 		return nullptr;
+	if ( event == AccessibilityEvent::FocusChanged ) {
+		auto* owner = getFocusOwner( widget, widget->getUISceneNode()->getRoot() );
+		if ( owner && owner->getAccessibilityRole() == AccessibilityRole::Link )
+			return owner;
+	}
 	if ( auto* view = getOwningModelView( widget ) )
 		return event == AccessibilityEvent::FocusChanged ? view : nullptr;
 	if ( auto* leaf = getLeafOwner( widget ) ) {
@@ -782,6 +924,10 @@ bool AccessibilityWidgetResolver::performAction( UIWidget* widget,
 			scrolled |= view->scrollIntoView( widget );
 		return scrolled;
 	}
+	if ( request.action == AccessibilityAction::Press && widget->isType( UI_TYPE_ANCHORSPAN ) )
+		return static_cast<UIAnchorSpan*>( widget )->activateLink();
+	if ( request.action == AccessibilityAction::Press && widget->isType( UI_TYPE_ANCHOR ) )
+		return static_cast<UIAnchor*>( widget )->activateLink();
 	if ( request.action == AccessibilityAction::Toggle && widget->isType( UI_TYPE_MENUCHECKBOX ) ) {
 		static_cast<UIMenuCheckBox*>( widget )->activate();
 		return true;

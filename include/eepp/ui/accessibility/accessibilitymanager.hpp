@@ -44,6 +44,8 @@ class EE_API AccessibilityManager {
 	/** Scalar queries avoid constructing names, values, text offsets or relation caches. */
 	AccessibilityRole getNodeRole( AccessibilityNodeRef ref ) const;
 
+	Uint8 getNodeHeadingLevel( AccessibilityNodeRef ref ) const;
+
 	AccessibilityState getNodeState( AccessibilityNodeRef ref ) const;
 
 	AccessibilityNodeInfo getNodeInfo( AccessibilityNodeRef ref, bool includeValue = true ) const;

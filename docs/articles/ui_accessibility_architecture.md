@@ -503,7 +503,7 @@ widget where its semantic state changes (for example `StateChanged` when it is c
 contains implementation children, make sure they resolve to the widget (role `None`, hidden, or
 routed in `getEventTarget()`), and add a unit test in `accessibility_tests.cpp`.
 
-**Expose a custom widget.** Selectively override `UIWidget`'s virtual role, name, description,
+**Expose a custom widget.** Selectively override `UIWidget`'s virtual role, heading level, name, description,
 value, range, state, actions or action-execution methods. Their defaults still use the central
 resolver. Effective semantic consumers (including leaf ownership, focus projection and auditing)
 use the virtual methods; default resolver implementations must not call their own corresponding
@@ -513,6 +513,19 @@ Relation targets also use the effective virtual name. A stack-restored, thread-l
 keeps the existing one-hop own-name rule when a target's override calls the base implementation,
 so default relation chains and cycles do not recurse. It retains no widget state between queries
 and allocates nothing.
+
+HTML source text is resolved without building the layout's flattened `RichText` or a document cache.
+Block and formatting wrappers are transparent; links/headings are non-leaf semantic containers.
+Their names concatenate textual descendants while excluding hidden content and native input
+values. Text, href and alt mutations notify queried elements and their named ancestors only after
+the native-client activity gate. `RoleChanged` preserves a retained element's identity when its
+implicit role changes. Heading depth uses existing `AccessibilityNodeInfo` tail padding and is also
+available through the scalar `getNodeHeadingLevel()` query.
+
+Selection capability is explicit through `AccessibilityState::SelectionContainer`, not inferred
+from a list role alone. Built-in model views and tab widgets provide it through the resolver;
+custom selection containers should include it in their effective state. Non-interactive HTML lists
+retain list semantics but do not advertise AT-SPI Selection or UIA SelectionProvider.
 
 **Add a role.** Add it to `AccessibilityRole` (`accessibility.hpp`), map it in the resolver, then in
 every backend: `role()` and `roleName()` in `accessibilitybackendatspitree.cpp`, `controlType()` in
@@ -694,5 +707,6 @@ need native-host evidence; queued UIA dispatch profiling is available for that i
   calls or their timeouts; whichever owner releases it last destroys it.
 - Text-index structural shifts and lazy rebuilds remain O(lines). Native UTF-16 snapshot cache
   misses remain O(document size), and the AT-SPI time budget cannot interrupt one expensive query.
-- HTML content (`UIRichText`, headings, links, lists) is not exposed as semantic elements.
+- HTML object semantics cover source text, headings/levels, links, lists/items and image alt text,
+  but not document-wide Text/Hypertext interfaces, rich formatting or cross-element text selection.
 - Only one cell editor (the view's active editor) is exposed inside a model view.

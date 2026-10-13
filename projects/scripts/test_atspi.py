@@ -131,11 +131,37 @@ def wait_for_window_count(application, count, timeout=2):
 
 
 def validate(application, multi_window=False, close_primary=False, process_id=None, text_events=None,
-		selection_events=None, policy_reset=False, role_events=None):
+		selection_events=None, policy_reset=False, role_events=None, test_html=False):
 	required_nodes = ["Project name", "Enable autosave"]
+	if test_html:
+		required_nodes.extend(["HTML heading", "HTML link"])
 	if multi_window:
 		required_nodes.append("Secondary accessibility window")
 	nodes = wait_for_nodes(application, required_nodes)
+	if any(node.get_name() == "HTML link" for node in nodes):
+		heading = next(node for node in nodes
+			if node.get_role() == Atspi.Role.HEADING and node.get_name() == "HTML heading")
+		check(heading.get_attributes().get("level") == "2", "HTML heading level was not exposed")
+		link = find_named(nodes, "HTML link")
+		check(link.get_role() == Atspi.Role.LINK, "HTML anchor must have link semantics")
+		item_text = find_named(nodes, "HTML first item")
+		item = item_text.get_parent()
+		check(item.get_role() == Atspi.Role.LIST_ITEM, "HTML li must have list-item semantics")
+		html_list = item.get_parent()
+		check(html_list.get_role() == Atspi.Role.LIST, "HTML ul must have list semantics")
+		check(html_list.get_child_count() == 2, "HTML list items were duplicated or missing")
+		check(not any("Selection" in interface for interface in html_list.get_interfaces()),
+			"non-interactive HTML list advertised Selection")
+		check(Atspi.Action.do_action(link, action_index(link, "click")), "HTML link activation failed")
+		wait_for_nodes(application, ["HTML link activated"])
+		unlink = find_named(nodes, "HTML unlink")
+		relink = find_named(nodes, "HTML relink")
+		for button, expected_role in ((unlink, Atspi.Role.LABEL), (relink, Atspi.Role.LINK)):
+			check(button.do_action(action_index(button, "click")), "HTML href toggle failed")
+			deadline = time.monotonic() + 2
+			while link.get_role() != expected_role and time.monotonic() < deadline:
+				pause(0.01)
+			check(link.get_role() == expected_role, "retained HTML link role cache stayed stale")
 	check(len(nodes) >= 20, f"expected a complete accessibility tree, got {len(nodes)} nodes")
 	check(application.get_role_name() == "application", "root must be an application")
 	expected_windows = 2 if multi_window else 1
@@ -468,7 +494,7 @@ def main():
 	try:
 		if not args.no_launch:
 			discovery_listener, discovered_process_ids, text_events, selection_events, role_events = start_discovery_listener()
-			command = [args.executable, "--test-tree", "--test-password-mode"]
+			command = [args.executable, "--test-tree", "--test-password-mode", "--test-html"]
 			if args.hidden:
 				command.append("--hidden")
 			if args.policy_reset:
@@ -500,6 +526,7 @@ def main():
 			selection_events,
 			args.policy_reset,
 			role_events,
+			not args.no_launch,
 		)
 		if process is not None and (args.close_primary or args.policy_reset):
 			check(process.wait(timeout=3) == 0, "native backend teardown crashed on last-window closure")

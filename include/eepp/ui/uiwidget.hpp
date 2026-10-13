@@ -87,6 +87,9 @@ class EE_API UIWidget : public UINode {
 	/** Override selectively for custom semantics; defaults use AccessibilityWidgetResolver. */
 	virtual AccessibilityRole getAccessibilityRole() const;
 
+	/** Heading depth, or zero when unspecified. Default resolves h1..h6 without stored metadata. */
+	virtual Uint8 getAccessibilityHeadingLevel() const;
+
 	virtual String getAccessibilityName() const;
 
 	virtual String getAccessibilityDescription() const;

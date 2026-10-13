@@ -147,7 +147,8 @@ DBusHandlerResult AtSpiApplication::handleAccessible( DBusMessage* request,
 		send( reply );
 	} else if ( std::strcmp( member, "GetState" ) == 0 ) {
 		auto info = getNodeInfo( ref, false );
-		if ( isSelectionContainerRole( info.role ) ) {
+		if ( isSelectionContainerRole( info.role ) &&
+			 hasState( info.states, AccessibilityState::SelectionContainer ) ) {
 			rememberSelection( ref );
 		} else if ( hasState( info.states, AccessibilityState::Selected ) ) {
 			const auto parent = getParent( ref );
@@ -165,6 +166,17 @@ DBusHandlerResult AtSpiApplication::handleAccessible( DBusMessage* request,
 		DBusMessageIter attributes;
 		mDBus.messageIterInitAppend( reply, &iter );
 		mDBus.messageIterOpenContainer( &iter, 'a', "{ss}", &attributes );
+		const auto headingLevel = mManager ? mManager->getNodeHeadingLevel( ref ) : 0;
+		if ( headingLevel ) {
+			DBusMessageIter entry;
+			mDBus.messageIterOpenContainer( &attributes, 'e', nullptr, &entry );
+			const char* key = "level";
+			const std::string level = String::toString( headingLevel );
+			const char* value = level.c_str();
+			appendBasic( entry, 's', &key );
+			appendBasic( entry, 's', &value );
+			mDBus.messageIterCloseContainer( &attributes, &entry );
+		}
 		mDBus.messageIterCloseContainer( &iter, &attributes );
 		send( reply );
 	} else if ( std::strcmp( member, "GetRelationSet" ) == 0 ) {
@@ -205,7 +217,8 @@ DBusHandlerResult AtSpiApplication::handleApplication( DBusMessage* request,
 
 DBusHandlerResult AtSpiApplication::handleSelection( DBusMessage* request, AccessibilityNodeRef ref,
 													 const char* member ) {
-	if ( !isSelectionContainerRole( mManager->getNodeRole( ref ) ) )
+	if ( !isSelectionContainerRole( mManager->getNodeRole( ref ) ) ||
+		 !hasState( mManager->getNodeState( ref ), AccessibilityState::SelectionContainer ) )
 		return 1;
 	Int32 index = -1;
 	if ( std::strcmp( member, "GetSelectedChild" ) == 0 ) {
@@ -598,7 +611,9 @@ DBusHandlerResult AtSpiApplication::handlePropertiesGet( DBusMessage* request,
 		appendBasic( variant, 'i', &value );
 	} else if ( std::strcmp( requestedInterface, "org.a11y.atspi.Selection" ) == 0 &&
 				std::strcmp( property, "NSelectedChildren" ) == 0 &&
-				isSelectionContainerRole( mManager->getNodeRole( ref ) ) ) {
+				isSelectionContainerRole( mManager->getNodeRole( ref ) ) &&
+				hasState( mManager->getNodeState( ref ),
+						  AccessibilityState::SelectionContainer ) ) {
 		Int32 count = static_cast<Int32>( rememberSelection( ref ).size() );
 		mDBus.messageIterOpenContainer( &iter, 'v', "i", &variant );
 		appendBasic( variant, 'i', &count );

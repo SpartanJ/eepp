@@ -5,6 +5,7 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/scopedop.hpp>
+#include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
@@ -1268,6 +1269,8 @@ void UIRichText::onChildCountChange( Node* child, const bool& removed ) {
 
 	notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 	notifyLayoutAttrChangeParent( LayoutInvalidation::ParentReplacedFormatting );
+	if ( Accessibility::isActive() && !isDestroying() )
+		AccessibilityWidgetResolver::onHTMLTextChanged( this );
 }
 
 void UIRichText::onFontChanged() {

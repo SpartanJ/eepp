@@ -1,3 +1,4 @@
+#include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/uihtmlimage.hpp>
 #define PUGIXML_HEADER_ONLY
 #include <eepp/graphics/pixeldensity.hpp>
@@ -569,7 +570,11 @@ const std::string& UIHTMLImage::getAlt() const {
 
 UIHTMLImage* UIHTMLImage::setAlt( const std::string& alt ) {
 	if ( mAlt != alt ) {
+		const auto previousRole =
+			Accessibility::isActive() ? getAccessibilityRole() : AccessibilityRole::None;
 		mAlt = alt;
+		if ( Accessibility::isActive() )
+			AccessibilityWidgetResolver::onHTMLTextChanged( this, previousRole );
 		invalidateDraw();
 	}
 	return this;

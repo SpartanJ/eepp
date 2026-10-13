@@ -239,12 +239,28 @@ AccessibilityState AccessibilityManager::getNodeState( AccessibilityNodeRef ref 
 	return AccessibilityState::None;
 }
 
+Uint8 AccessibilityManager::getNodeHeadingLevel( AccessibilityNodeRef ref ) const {
+	if ( auto* widget = resolve( ref ) ) {
+		return widget->getAccessibilityRole() == AccessibilityRole::Heading
+				   ? widget->getAccessibilityHeadingLevel()
+				   : 0;
+	}
+	if ( auto* source = resolveSource( ref ) ) {
+		return source->getRole( ref.id ) == AccessibilityRole::Heading
+				   ? source->getInfo( ref.id ).headingLevel
+				   : 0;
+	}
+	return 0;
+}
+
 AccessibilityNodeInfo AccessibilityManager::getNodeInfo( AccessibilityNodeRef ref,
 														 bool includeValue,
 														 bool includeTextOffsets ) const {
 	AccessibilityNodeInfo info;
 	if ( auto widget = resolve( ref ) ) {
 		info.role = widget->getAccessibilityRole();
+		if ( info.role == AccessibilityRole::Heading )
+			info.headingLevel = widget->getAccessibilityHeadingLevel();
 		// A client now holds a name or description that depends on another widget.
 		if ( !widget->getAccessibilityLabelledBy().empty() )
 			mRelationTargets.insert( String::hash( widget->getAccessibilityLabelledBy() ) );

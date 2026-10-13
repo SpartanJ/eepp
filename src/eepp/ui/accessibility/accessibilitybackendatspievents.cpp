@@ -66,6 +66,11 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 	}
 	if ( !hasActiveClients() )
 		return;
+	if ( event.type == AccessibilityEvent::ChildrenChanged ) {
+		const auto role = manager.getNodeRole( event.ref );
+		if ( role == AccessibilityRole::Heading || role == AccessibilityRole::Link )
+			onEvent( manager, { event.ref, {}, -1, AccessibilityEvent::NameChanged } );
+	}
 	// Structural mutations can remove a selected child without a separate selection event.
 	// Queries must then rebuild the snapshot from the new semantic membership.
 	if ( !mSelections.empty() && ( event.type == AccessibilityEvent::ModelChanged ||
@@ -79,7 +84,8 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 		return;
 	}
 	AccessibilityNodeInfo info;
-	if ( event.type == AccessibilityEvent::StateChanged ) {
+	if ( event.type == AccessibilityEvent::StateChanged ||
+		 event.type == AccessibilityEvent::RoleChanged ) {
 		// State notifications need no names, values, or text offsets.
 		info.role = manager.getNodeRole( event.ref );
 		info.states = manager.getNodeState( event.ref );
@@ -132,6 +138,8 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 		detail = "accessible-description";
 	} else if ( event.type == AccessibilityEvent::ValueChanged ) {
 		detail = "accessible-value";
+	} else if ( event.type == AccessibilityEvent::RoleChanged ) {
+		detail = "accessible-role";
 	} else if ( event.type == AccessibilityEvent::StateChanged ) {
 		signal = "StateChanged";
 		if ( info.role == AccessibilityRole::TextBox ) {
@@ -203,8 +211,9 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 	if ( childrenChanged ) {
 		mDBus.messageIterOpenContainer( &iter, 'v', "(so)", &variant );
 		appendRef( variant, event.related );
-	} else if ( event.type == AccessibilityEvent::StateChanged &&
-				info.role == AccessibilityRole::TextBox ) {
+	} else if ( event.type == AccessibilityEvent::RoleChanged ||
+				( event.type == AccessibilityEvent::StateChanged &&
+				  info.role == AccessibilityRole::TextBox ) ) {
 		Uint32 nativeRole =
 			hasState( info.states, AccessibilityState::Protected ) ? 40 : role( info.role );
 		mDBus.messageIterOpenContainer( &iter, 'v', "u", &variant );
