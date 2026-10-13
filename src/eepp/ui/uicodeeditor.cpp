@@ -5004,12 +5004,9 @@ void UICodeEditor::registerCommands() {
 }
 
 void UICodeEditor::showFindReplace() {
-	UISceneNode* curSceneNode = SceneManager::instance()->getUISceneNode();
-	if ( mUISceneNode != curSceneNode )
-		SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
-
 	if ( !mFindReplaceEnabled )
 		return;
+	auto context = mUISceneNode->makeCurrent();
 	if ( nullptr == mFindReplace ) {
 		mFindReplace = UIDocFindReplace::New( this, mDoc );
 		mFindReplace->on( Event::OnVisibleChange, [this]( auto ) {
@@ -5019,9 +5016,6 @@ void UICodeEditor::showFindReplace() {
 	}
 	mFindReplace->setReplaceDisabled( mLocked );
 	mFindReplace->show();
-
-	if ( mUISceneNode != curSceneNode )
-		SceneManager::instance()->setCurrentUISceneNode( curSceneNode );
 }
 
 Tools::UIDocFindReplace* UICodeEditor::getFindReplace() {

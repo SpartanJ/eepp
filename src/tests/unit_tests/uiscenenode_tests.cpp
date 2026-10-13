@@ -29,7 +29,9 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/runtime.hpp>
+#include <memory>
 #include <thread>
+#include <type_traits>
 
 using namespace EE;
 using namespace EE::Graphics;
@@ -118,7 +120,7 @@ UTEST( UISceneNode, ScopedContextBindsNodesAndRestoresNestedScene ) {
 	auto* sceneManager = SceneManager::instance();
 	sceneManager->add( sceneA );
 	sceneManager->add( sceneB );
-	sceneManager->setCurrentUISceneNode( sceneA );
+	sceneManager->setCurrentSceneNode( sceneA );
 
 	{
 		auto contextA = sceneA->makeCurrent();
@@ -143,6 +145,176 @@ UTEST( UISceneNode, ScopedContextBindsNodesAndRestoresNestedScene ) {
 	eeDelete( sceneA );
 }
 
+UTEST( SceneNode, ScopedContextSupportsMixedScenesAndMovedGuards ) {
+	static_assert( std::is_same_v<SceneNode::Context, UISceneNode::Context> );
+	UIApplication app(
+		WindowSettings( 320, 240, "Mixed Scene Context", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getWindow() != nullptr );
+	auto* manager = SceneManager::instance();
+	auto* engine = Engine::instance();
+	SceneNode plainScene( app.getWindow() );
+	EXPECT_EQ( manager->getCurrentSceneNode(), app.getUI() );
+
+	{
+		// Bind a UI scene through the base API.
+		SceneNode* baseScene = app.getUI();
+		auto uiContext = baseScene->makeCurrent();
+		EXPECT_EQ( manager->getCurrentSceneNode(), baseScene );
+		{
+			auto plainContext = plainScene.makeCurrent();
+			EXPECT_EQ( manager->getCurrentSceneNode(), &plainScene );
+			EXPECT_TRUE( manager->getUISceneNode() == nullptr );
+			EXPECT_EQ( manager->getUISceneNode( app.getWindow() ), app.getUI() );
+			auto orphanWidget = std::unique_ptr<UIWidget>( UIWidget::New() );
+			EXPECT_TRUE( orphanWidget->getUISceneNode() == nullptr );
+			EXPECT_TRUE( orphanWidget->getParent() == nullptr );
+
+			{
+				auto movedContext = std::move( plainContext );
+				auto nestedScene =
+					std::unique_ptr<UISceneNode>( UISceneNode::New( app.getWindow() ) );
+				EXPECT_EQ( nestedScene->getRoot()->getUISceneNode(), nestedScene.get() );
+				EXPECT_EQ( manager->getCurrentSceneNode(), &plainScene );
+				{
+					// Explicit binding also works before registration with the manager.
+					auto nestedContext = nestedScene->makeCurrent();
+					EXPECT_EQ( manager->getCurrentSceneNode(), nestedScene.get() );
+					EXPECT_EQ( manager->getUISceneNode(), nestedScene.get() );
+					auto* nestedWidget = UIWidget::New();
+					EXPECT_EQ( nestedWidget->getUISceneNode(), nestedScene.get() );
+				}
+				EXPECT_EQ( manager->getCurrentSceneNode(), &plainScene );
+			}
+			EXPECT_EQ( manager->getCurrentSceneNode(), baseScene );
+		}
+		// The moved-from guard must not restore the scope a second time.
+		EXPECT_EQ( manager->getCurrentSceneNode(), baseScene );
+	}
+	EXPECT_EQ( manager->getCurrentSceneNode(), app.getUI() );
+	EXPECT_EQ( engine->getCurrentWindow(), app.getWindow() );
+}
+
+class ContextTestSceneNode : public SceneNode {
+  public:
+	explicit ContextTestSceneNode( EE::Window::Window* window ) : SceneNode( window ) {
+		setEventDispatcher( EventDispatcher::New( this ) );
+	}
+
+	void draw() {
+		drawBound = hasCurrentContext();
+		++drawCount;
+	}
+
+	void update( const Time& ) { updateBound = hasCurrentContext(); }
+
+	Uint32 onTextInput( const TextInputEvent& ) {
+		inputBound = hasCurrentContext();
+		return 1;
+	}
+
+	Uint32 onTextEditing( const TextEditingEvent& ) {
+		editingBound = hasCurrentContext();
+		return 1;
+	}
+
+	bool drawBound{ false };
+	bool updateBound{ false };
+	bool inputBound{ false };
+	bool editingBound{ false };
+	int drawCount{ 0 };
+
+  private:
+	bool hasCurrentContext() {
+		return SceneManager::instance()->getCurrentSceneNode() == this &&
+			   Engine::instance()->getCurrentWindow() == getWindow();
+	}
+};
+
+UTEST( SceneManager, PersistentBindingDoesNotFallBackAfterRemoval ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "Persistent Scene Binding", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getWindow() != nullptr );
+	auto* manager = SceneManager::instance();
+	EXPECT_EQ( manager->getCurrentSceneNode(), app.getUI() );
+	EXPECT_EQ( manager->setCurrentSceneNode( nullptr ), app.getUI() );
+	EXPECT_TRUE( manager->getUISceneNode() == nullptr );
+
+	SceneNode plainScene( app.getWindow() );
+	manager->add( &plainScene );
+	EXPECT_EQ( manager->getCurrentSceneNode(), &plainScene );
+	EXPECT_TRUE( manager->getUISceneNode() == nullptr );
+	EXPECT_EQ( manager->getUISceneNode( app.getWindow() ), app.getUI() );
+	ASSERT_TRUE( manager->remove( &plainScene ) );
+	EXPECT_TRUE( manager->getCurrentSceneNode() == nullptr );
+	EXPECT_TRUE( manager->getUISceneNode() == nullptr );
+	manager->setCurrentSceneNode( app.getUI() );
+}
+
+UTEST( SceneNode, ManagerAndInputBindPlainSceneWindowAndRestoreAmbientContext ) {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		UTEST_SKIP( "Terminal runtime supports only one native window" );
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	UTEST_SKIP( "Emscripten supports only one native window" );
+#endif
+	UIApplication app(
+		WindowSettings( 320, 240, "Scene Context Routing", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getWindow() != nullptr );
+	auto* secondaryUI =
+		app.createWindow( WindowSettings( 240, 180, "Secondary Scene Context", WindowStyle::Default,
+										  WindowBackend::Default, 32, {}, 1, false, true ),
+						  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( secondaryUI != nullptr );
+	auto* manager = SceneManager::instance();
+	auto* engine = Engine::instance();
+	ContextTestSceneNode plainScene( secondaryUI->getWindow() );
+	manager->add( &plainScene );
+	{
+		auto ambientContext = app.getUI()->makeCurrent();
+		manager->update( Time::Zero );
+		EXPECT_TRUE( plainScene.updateBound );
+		EXPECT_EQ( manager->getCurrentSceneNode(), app.getUI() );
+		EXPECT_EQ( engine->getCurrentWindow(), app.getWindow() );
+		manager->draw( app.getWindow() );
+		EXPECT_EQ( plainScene.drawCount, 0 );
+		manager->draw( secondaryUI->getWindow() );
+		EXPECT_TRUE( plainScene.drawBound );
+		EXPECT_EQ( plainScene.drawCount, 1 );
+		manager->draw();
+		EXPECT_EQ( plainScene.drawCount, 2 );
+		EXPECT_EQ( manager->getCurrentSceneNode(), app.getUI() );
+		EXPECT_EQ( engine->getCurrentWindow(), app.getWindow() );
+
+		InputEvent event{};
+		event.Type = InputEvent::TextInput;
+		event.WinID = secondaryUI->getWindow()->getWindowID();
+		event.text.text = 'x';
+		app.getWindow()->getInput()->processEventForWindow( &event );
+		EXPECT_TRUE( plainScene.inputBound );
+		EXPECT_EQ( manager->getCurrentSceneNode(), app.getUI() );
+		EXPECT_EQ( engine->getCurrentWindow(), app.getWindow() );
+
+		event.Type = InputEvent::TextEditing;
+		event.textediting.text = "x";
+		event.textediting.start = 0;
+		event.textediting.length = 1;
+		app.getWindow()->getInput()->processEventForWindow( &event );
+		EXPECT_TRUE( plainScene.editingBound );
+		EXPECT_EQ( manager->getCurrentSceneNode(), app.getUI() );
+		EXPECT_EQ( engine->getCurrentWindow(), app.getWindow() );
+	}
+	manager->remove( &plainScene );
+	EXPECT_EQ( manager->getCurrentSceneNode(), app.getUI() );
+}
+
 UTEST( UISceneNode, AsyncResourceCallbacksBindOwnerSceneAndRestorePreviousScene ) {
 	auto* engine = Engine::instance();
 	auto* window = engine->getCurrentWindow();
@@ -158,7 +330,7 @@ UTEST( UISceneNode, AsyncResourceCallbacksBindOwnerSceneAndRestorePreviousScene 
 	auto* sceneManager = SceneManager::instance();
 	sceneManager->add( sceneA );
 	sceneManager->add( sceneB );
-	sceneManager->setCurrentUISceneNode( sceneA );
+	sceneManager->setCurrentSceneNode( sceneA );
 
 	auto state = sceneB->getAsyncResourceLoadState();
 	const Uint64 generation = state->generation.load( std::memory_order_acquire );
@@ -322,6 +494,39 @@ class TestUIApplication : public UIApplication {
 	using UIApplication::UIApplication;
 	void tickOnce() { tick(); }
 };
+
+UTEST( UIApplication, ClosingCurrentWindowSelectsSurvivingScene ) {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		UTEST_SKIP( "Terminal runtime supports only one native window" );
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	UTEST_SKIP( "Emscripten supports only one native window" );
+#endif
+	TestUIApplication app(
+		WindowSettings( 320, 240, "Closing Current Scene", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getWindow() != nullptr );
+	auto* secondaryUI =
+		app.createWindow( WindowSettings( 240, 180, "Surviving Scene", WindowStyle::Default,
+										  WindowBackend::Default, 32, {}, 1, false, true ),
+						  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( secondaryUI != nullptr );
+	app.setQuitPolicy( UIApplication::QuitPolicy::OnLastWindowClosed );
+	app.closeWindow( app.getWindow() );
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 1u );
+	EXPECT_EQ( SceneManager::instance()->getCurrentSceneNode(), secondaryUI );
+	EXPECT_EQ( SceneManager::instance()->getUISceneNode(), secondaryUI );
+	EXPECT_EQ( Engine::instance()->getCurrentWindow(), secondaryUI->getWindow() );
+	auto* widget = UIWidget::New();
+	EXPECT_EQ( widget->getUISceneNode(), secondaryUI );
+	app.closeWindow( secondaryUI->getWindow() );
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 0u );
+	EXPECT_TRUE( SceneManager::instance()->getCurrentSceneNode() == nullptr );
+	EXPECT_TRUE( SceneManager::instance()->getUISceneNode() == nullptr );
+}
 
 UTEST( UIApplication, ClosesWindowWithVisibleModalDialog ) {
 	TestUIApplication app(
@@ -608,7 +813,7 @@ static void init_test_scene_node( UISceneNode* sceneNode ) {
 	FontTrueType* monoFont = FontTrueType::New( "monospace" ).get();
 	monoFont->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	SceneManager::instance()->add( sceneNode );
-	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
+	SceneManager::instance()->setCurrentSceneNode( sceneNode );
 	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
 	themeManager->applyDefaultTheme( sceneNode->getRoot() );

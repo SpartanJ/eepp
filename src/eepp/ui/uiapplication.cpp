@@ -115,6 +115,7 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	uiFontService.setHinting( appSettings.fontHinting );
 	uiFontService.setAntialiasing( appSettings.fontAntialiasing );
 	SceneManager::instance()->add( mUISceneNode );
+	SceneManager::instance()->setCurrentSceneNode( mUISceneNode );
 	mWindows.push_back( { mWindow, mUISceneNode, true, false } );
 
 	if ( !appSettings.loadBaseResources )
@@ -354,8 +355,13 @@ void UIApplication::processPendingWindowDestruction() {
 		const bool wasPrimary = it->primary;
 		const bool retainFinalContext = mWindows.size() == 1;
 		Engine::instance()->setCurrentWindow( window );
+		const bool wasCurrent =
+			SceneManager::instance()->getCurrentSceneNode() &&
+			SceneManager::instance()->getCurrentSceneNode()->getWindow() == window;
 		SceneManager::instance()->destroyScenes( window );
 		it = mWindows.erase( it );
+		if ( wasCurrent && !mWindows.empty() )
+			SceneManager::instance()->setCurrentSceneNode( mWindows.front().ui );
 		// The engine needs one GL context alive while its shared GPU resources are released during
 		// shutdown. A closed final window no longer participates in the application loop, but its
 		// native resources remain engine-owned until Engine destruction.

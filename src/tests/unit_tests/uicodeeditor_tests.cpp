@@ -5,6 +5,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -17,6 +18,45 @@ using namespace EE::UI;
 using namespace EE::UI::Doc;
 using namespace EE::Scene;
 using namespace EE::System;
+
+UTEST( UICodeEditor, FindReplaceBindsOwnerAndRestoresPlainScene ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "Find Replace Scene Context", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getWindow() != nullptr );
+	UICodeEditor* editor;
+	{
+		auto context = app.getUI()->makeCurrent();
+		editor = UICodeEditor::New();
+	}
+	SceneNode plainScene( app.getWindow() );
+	auto* manager = SceneManager::instance();
+	{
+		auto context = plainScene.makeCurrent();
+		editor->setFindReplaceEnabled( false );
+		editor->showFindReplace();
+		EXPECT_TRUE( editor->getFindReplace() == nullptr );
+		EXPECT_EQ( manager->getCurrentSceneNode(), &plainScene );
+		EXPECT_TRUE( manager->getUISceneNode() == nullptr );
+
+		editor->setFindReplaceEnabled( true );
+		bool shownInOwnerScene = false;
+		auto showConnection = editor->connect( Event::OnShowFindReplace, [&]( const Event* ) {
+			shownInOwnerScene = manager->getCurrentSceneNode() == app.getUI();
+		} );
+		editor->showFindReplace();
+		ASSERT_TRUE( editor->getFindReplace() != nullptr );
+		EXPECT_EQ( editor->getFindReplace()->getUISceneNode(), app.getUI() );
+		// Find/replace queues its initial show until its layout has completed an update.
+		app.getUI()->update( Time::Zero );
+		EXPECT_TRUE( shownInOwnerScene );
+		EXPECT_EQ( manager->getCurrentSceneNode(), &plainScene );
+		EXPECT_TRUE( manager->getUISceneNode() == nullptr );
+	}
+	EXPECT_EQ( manager->getCurrentSceneNode(), app.getUI() );
+}
 
 class TestableCodeEditor : public UICodeEditor {
   public:

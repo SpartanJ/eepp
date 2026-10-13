@@ -2780,7 +2780,7 @@ static UISceneNode* init_test_inline_block() {
 	monoFont->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
-	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
+	SceneManager::instance()->setCurrentSceneNode( sceneNode );
 	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
 	themeManager->applyDefaultTheme( sceneNode->getRoot() );
@@ -7958,7 +7958,7 @@ UTEST( UIHTML, RonStonerDeferredImagesUpdateDocumentHeight ) {
 
 	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
-	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
+	SceneManager::instance()->setCurrentSceneNode( sceneNode );
 	sceneNode->setThreadPool( threadPool );
 	sceneNode->getUIThemeManager()->setDefaultFont( font );
 
@@ -8066,7 +8066,7 @@ UTEST( UIHTML, NewsBlurStoryArchiveLayoutStabilizes ) {
 
 	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
-	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
+	SceneManager::instance()->setCurrentSceneNode( sceneNode );
 	sceneNode->getUIThemeManager()->setDefaultFont( font );
 
 	UIWebView* webView = UIWebView::New();

@@ -6,6 +6,7 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/window/cursor.hpp>
+#include <eepp/window/engine.hpp>
 #include <unordered_set>
 
 using namespace EE::Graphics;
@@ -22,6 +23,30 @@ namespace EE { namespace Scene {
 
 class EE_API SceneNode : public Node {
   public:
+	/** Scoped binding of a scene and its native graphics context on the application thread.
+	 * Restores both previous bindings on destruction. The scenes and windows must outlive the
+	 * scope. Context objects are movable but cannot be copied. */
+	class EE_API Context {
+	  public:
+		explicit Context( SceneNode* scene );
+
+		~Context();
+
+		Context( const Context& ) = delete;
+		Context& operator=( const Context& ) = delete;
+
+		Context( Context&& other ) noexcept;
+		Context& operator=( Context&& ) = delete;
+
+	  private:
+		SceneNode* mPreviousScene{ nullptr };
+		Engine::WindowContext mWindowContext;
+		bool mActive{ true };
+	};
+
+	/** Makes this scene and its native window current for the returned scope. */
+	Context makeCurrent();
+
 	/**
 	 * @brief Creates a new SceneNode instance.
 	 *
