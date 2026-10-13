@@ -51,6 +51,15 @@ void UILayout::onLayoutUpdate() {
 	sendCommonEvent( Event::OnLayoutUpdate );
 }
 
+void UILayout::onUISceneNodeChange( UISceneNode* scene ) {
+	UIWidget::onUISceneNodeChange( scene );
+	// The old scene no longer owns this pending pass. Preserve its reasons in the new scene
+	// rather than leaving mDirtyLayout set with no queue entry to process it. A dirty ancestor
+	// may have coalesced this layout's old entry, so use its flag instead of queue membership.
+	if ( scene && mDirtyLayout )
+		scene->invalidateLayout( this, mDirtyReasons );
+}
+
 const Sizef& UILayout::getSize() const {
 	if ( mDirtyLayout )
 		const_cast<UILayout*>( this )->updateLayout();

@@ -2195,6 +2195,11 @@ void UIWidget::onMarginChange() {
 void UIWidget::onThemeLoaded() {}
 
 void UIWidget::onUISceneNodeChange( UISceneNode* scene ) {
+	// Dirty queues belong to the local scene, even when embedded scenes share an accessibility
+	// manager. Otherwise deletion in the new scene leaves stale pointers queued in the old one.
+	if ( mUISceneNode )
+		mUISceneNode->removeWidgetFromDirtyQueues( this );
+
 	// Lifecycle bookkeeping never creates a manager, even with accessibility disabled.
 	auto* previousManager =
 		mUISceneNode ? mUISceneNode->getExistingAccessibilityManager() : nullptr;

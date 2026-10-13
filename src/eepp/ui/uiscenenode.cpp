@@ -1378,15 +1378,16 @@ void UISceneNode::onWidgetDelete( Node* node ) {
 				manager->onWidgetDelete( widget );
 		}
 
-		if ( node->isLayout() ) {
-			mDirtyLayouts.erase( node->asType<UILayout>() );
-		}
-
-		mDirtyStyle.erase( widget );
-
-		mDirtyStyleState.erase( widget );
-		mDirtyStyleStateCSSAnimations.erase( widget );
+		removeWidgetFromDirtyQueues( widget );
 	}
+}
+
+void UISceneNode::removeWidgetFromDirtyQueues( UIWidget* widget ) {
+	if ( widget->isLayout() )
+		mDirtyLayouts.erase( widget->asType<UILayout>() );
+	mDirtyStyle.erase( widget );
+	mDirtyStyleState.erase( widget );
+	mDirtyStyleStateCSSAnimations.erase( widget );
 }
 
 void UISceneNode::onWidgetAccessibilitySourceDelete( UIWidget* widget ) {

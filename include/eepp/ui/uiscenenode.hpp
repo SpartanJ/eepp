@@ -1346,6 +1346,10 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	void onWidgetDelete( Node* node );
 
+	/** Removes this scene's queued widget work without invalidating accessibility identities.
+	 * Used on deletion and before a widget changes its owning UI scene. */
+	void removeWidgetFromDirtyQueues( UIWidget* widget );
+
 	void onWidgetAccessibilitySourceDelete( UIWidget* widget );
 
 	/** The manager this scene's widgets report to, or nullptr when none exists yet. Never creates

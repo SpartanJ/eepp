@@ -14,6 +14,7 @@
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uifiledialog.hpp>
+#include <eepp/ui/uihtmlinput.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uimessagebox.hpp>
@@ -21,6 +22,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/cursor.hpp>
@@ -630,6 +632,18 @@ class InvalidationTestSceneNode : public UISceneNode {
 
 	size_t pendingLayoutCount() const { return mDirtyLayouts.size(); }
 
+	bool hasPendingLayout( UILayout* layout ) const { return mDirtyLayouts.count( layout ) != 0; }
+
+	bool hasPendingStyle( UIWidget* widget ) const { return mDirtyStyle.count( widget ) != 0; }
+
+	bool hasPendingStyleState( UIWidget* widget ) const {
+		return mDirtyStyleState.count( widget ) != 0;
+	}
+
+	bool hasPendingStyleStateAnimations( UIWidget* widget ) const {
+		return mDirtyStyleStateCSSAnimations.count( widget ) != 0;
+	}
+
 	size_t processedStyleRootCount() const { return mDirtyStylesSnapshot.size(); }
 
 	UIWidget* processedStyleRoot( size_t index ) const { return mDirtyStylesSnapshot[index].first; }
@@ -1004,6 +1018,117 @@ class InvalidationTestLayout : public UILayout {
 
 	LayoutInvalidationFlags lastReasons{ 0 };
 };
+
+UTEST( UISceneNode, WebViewDeletionDoesNotLeaveHostLayoutWork ) {
+	Engine::instance()->createWindow( WindowSettings( 320, 240, "WebView Dirty Queue Ownership",
+													  WindowStyle::Default | WindowStyle::Hidden,
+													  WindowBackend::Default, 32, {}, 1, false,
+													  true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	auto* host = InvalidationTestSceneNode::New();
+	init_test_scene_node( host );
+	host->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+	host->flushDirtyStyleAndLayout();
+
+	auto* webView = UIWebView::New();
+	auto* document = webView->getDocumentSceneNode()->getRoot()->findByTag( "webview::doc" );
+	ASSERT_TRUE( document != nullptr );
+	ASSERT_TRUE( document->isLayout() );
+	auto* layout = document->asType<UILayout>();
+	EXPECT_EQ( layout->getUISceneNode(), webView->getDocumentSceneNode() );
+	EXPECT_FALSE( host->hasPendingLayout( layout ) );
+	EXPECT_FALSE( host->hasPendingStyle( layout ) );
+	EXPECT_FALSE( host->hasPendingStyleState( layout ) );
+	EXPECT_FALSE( host->hasPendingStyleStateAnimations( layout ) );
+
+	eeDelete( webView );
+	// Compare queue membership only: the document pointer is no longer dereferenceable.
+	const bool staleLayout = host->hasPendingLayout( layout );
+	EXPECT_FALSE( staleLayout );
+	EXPECT_FALSE( host->hasPendingStyle( layout ) );
+	EXPECT_FALSE( host->hasPendingStyleState( layout ) );
+	EXPECT_FALSE( host->hasPendingStyleStateAnimations( layout ) );
+	// Keep the ownership failure readable when deliberately testing without the fix.
+	if ( !staleLayout ) {
+		auto* input = UIHTMLInput::New();
+		EXPECT_EQ( input->getUISceneNode(), host );
+		EXPECT_TRUE( input->getChildWidget() != nullptr );
+		host->flushDirtyStyleAndLayout();
+	}
+
+	Engine::destroySingleton();
+}
+
+UTEST( UISceneNode, DirtyLayoutAndStyleWorkFollowsSceneRebinding ) {
+	Engine::instance()->createWindow( WindowSettings( 320, 240, "Dirty Queue Scene Rebinding",
+													  WindowStyle::Default | WindowStyle::Hidden,
+													  WindowBackend::Default, 32, {}, 1, false,
+													  true ),
+									  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	auto* host = InvalidationTestSceneNode::New();
+	init_test_scene_node( host );
+	host->setAccessibilityPolicy( AccessibilityPolicy::Disabled );
+	auto* embedded = InvalidationTestSceneNode::New();
+	embedded->setParent( host->getRoot() );
+	host->setStyleSheet( "* { opacity: 1; }" );
+	auto* layout = eeNew( InvalidationTestLayout, () );
+	auto* child = UIWidget::New();
+	child->setParent( layout );
+	host->flushDirtyStyleAndLayout();
+	embedded->flushDirtyStyleAndLayout();
+
+	layout->setLayoutDirty( LayoutInvalidation::TextFormatting );
+	host->invalidateStyle( layout );
+	host->invalidateStyleState( layout, true );
+	host->invalidateStyle( child );
+	host->invalidateStyleState( child, true );
+	EXPECT_TRUE( host->hasPendingLayout( layout ) );
+	layout->setParent( embedded->getRoot() );
+	EXPECT_EQ( layout->getUISceneNode(), embedded );
+	EXPECT_FALSE( host->hasPendingLayout( layout ) );
+	EXPECT_FALSE( host->hasPendingStyle( layout ) );
+	EXPECT_FALSE( host->hasPendingStyleState( layout ) );
+	EXPECT_FALSE( host->hasPendingStyleStateAnimations( layout ) );
+	EXPECT_FALSE( host->hasPendingStyle( child ) );
+	EXPECT_FALSE( host->hasPendingStyleState( child ) );
+	EXPECT_FALSE( host->hasPendingStyleStateAnimations( child ) );
+	EXPECT_TRUE( embedded->hasPendingLayout( layout ) );
+	EXPECT_TRUE( embedded->hasPendingStyle( layout ) );
+	EXPECT_TRUE( embedded->hasPendingStyleState( layout ) );
+	EXPECT_TRUE( embedded->hasPendingStyleStateAnimations( layout ) );
+
+	embedded->flushDirtyStyleAndLayout();
+	EXPECT_TRUE( layout->lastReasons & LayoutInvalidation::TextFormatting );
+	EXPECT_FALSE( layout->isLayoutDirty() );
+	layout->setLayoutDirty( LayoutInvalidation::TextFormatting );
+	layout->setParent( host->getRoot() );
+	EXPECT_FALSE( embedded->hasPendingLayout( layout ) );
+	EXPECT_FALSE( embedded->hasPendingStyle( layout ) );
+	EXPECT_FALSE( embedded->hasPendingStyleState( layout ) );
+	EXPECT_TRUE( host->hasPendingLayout( layout ) );
+	host->updateDirtyLayouts();
+	EXPECT_TRUE( layout->lastReasons & LayoutInvalidation::TextFormatting );
+	EXPECT_FALSE( layout->isLayoutDirty() );
+
+	// Coalescing into a dirty parent must not strand a child moved into another scene.
+	auto* parent = eeNew( InvalidationTestLayout, () );
+	layout->setParent( parent );
+	host->flushDirtyStyleAndLayout();
+	layout->setLayoutDirty( LayoutInvalidation::TextFormatting );
+	parent->setLayoutDirty( LayoutInvalidation::Self );
+	EXPECT_FALSE( host->hasPendingLayout( layout ) );
+	EXPECT_TRUE( layout->isLayoutDirty() );
+	layout->setParent( embedded->getRoot() );
+	EXPECT_TRUE( embedded->hasPendingLayout( layout ) );
+	embedded->updateDirtyLayouts();
+	EXPECT_TRUE( layout->lastReasons & LayoutInvalidation::TextFormatting );
+	EXPECT_FALSE( layout->isLayoutDirty() );
+	eeDelete( layout );
+	host->flushDirtyStyleAndLayout();
+	embedded->flushDirtyStyleAndLayout();
+
+	Engine::destroySingleton();
+}
 
 UTEST( UISceneNode, LeafLayoutInvalidationPreservesSiblingRootsAndDescendantReasons ) {
 	Engine::instance()->createWindow( WindowSettings( 320, 240, "Leaf Layout Invalidation",

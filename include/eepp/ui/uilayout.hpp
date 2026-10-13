@@ -79,6 +79,8 @@ class EE_API UILayout : public UIWidget {
 
 	virtual void onLayoutUpdate();
 
+	virtual void onUISceneNodeChange( UISceneNode* scene );
+
 	virtual void tryUpdateLayout();
 
 	virtual void updateLayoutTree();
