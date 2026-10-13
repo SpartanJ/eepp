@@ -16,6 +16,8 @@ supported behavior; class headers and current source code remain the reference f
 | Make native widgets accessible | [UI accessibility](ui_accessibility.md) | [Application UI authoring](ui_authoring.md) for screen structure |
 | Work on the accessibility implementation | [UI accessibility architecture](ui_accessibility_architecture.md) | [UI accessibility](ui_accessibility.md) for the application-facing behavior |
 | Add an interactive chart | [UI charts](ui_charts.md) | [Application UI authoring](ui_authoring.md) for placement and sizing |
+| Run async work: tasks, results, executors, cancellation | [Async core](async_core.md) | `include/eepp/core/task.hpp` and the other headers it lists |
+| Read or write files through URIs (local, packs, SFTP), watch directories | [Virtual file system](vfs.md) | [Async core](async_core.md), the `src/modules/vfs/include/eepp/vfs/` headers |
 | Work on `eterm` Kitty support | [Keyboard protocol](eterm_kitty_keyboard.md), [graphics protocol](eterm_kitty_graphics.md) | The corresponding `src/modules/eterm/` implementation and tests |
 
 Native application widgets and HTML documents have different layout behavior. Start with

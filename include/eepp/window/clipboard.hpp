@@ -57,6 +57,22 @@ class EE_API Clipboard {
 	/** @return Whether clipboard data is available for a MIME type. SDL3 backend only. */
 	virtual bool hasData( const std::string& mimeType ) const { return false; }
 
+	/**
+	 * Offers fixed data in several MIME types, in order of preference: a convenience over
+	 * setData() for content that is already known. The data is copied and kept until the offer is
+	 * replaced or cleared. To keep the content pasteable as text, also offer it under
+	 * getTextMimeTypes(). Only implemented by the SDL3 backend.
+	 * @return False if the backend does not support clipboard data.
+	 */
+	bool setMimeData( std::vector<std::pair<std::string, std::string>> dataByMimeType );
+
+	/** @return getData() as a string (empty if the MIME type is not available). */
+	std::string getDataString( const std::string& mimeType );
+
+	/** @return The MIME types that text is requested as across platforms (UTF-8 text first),
+	 * for offers made with setData() / setMimeData() that must also be readable as text. */
+	static const std::vector<std::string>& getTextMimeTypes();
+
   protected:
 	friend class Window;
 

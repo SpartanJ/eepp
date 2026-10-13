@@ -17,7 +17,7 @@
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
 #include <eepp/system/packregistry.hpp>
-#include <eepp/system/virtualfilesystem.hpp>
+#include <eepp/system/packfileindex.hpp>
 using namespace EE::Graphics;
 
 #include <eepp/scene/scenemanager.hpp>
@@ -866,12 +866,12 @@ bool TileMap::loadFromStream( IOStream& IOS ) {
 					if ( !defaultResourceScope().findAtlas( sgname ) ) {
 						TextureAtlasLoader* tgl = eeNew( TextureAtlasLoader, () );
 
-						if ( !VirtualFileSystem::instance()->fileExists( TextureAtlases[i] ) &&
+						if ( !PackFileIndex::instance()->fileExists( TextureAtlases[i] ) &&
 							 !FileSystem::fileExists( TextureAtlases[i] ) ) {
 							std::string path( FileSystem::fileRemoveFileName( mPath ) );
 
 							if ( FileSystem::fileExists( path + TextureAtlases[i] ) ||
-								 VirtualFileSystem::instance()->fileExists( path +
+								 PackFileIndex::instance()->fileExists( path +
 																			TextureAtlases[i] ) ) {
 								TextureAtlases[i] = path + TextureAtlases[i];
 							}

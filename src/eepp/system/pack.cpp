@@ -1,6 +1,6 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packregistry.hpp>
-#include <eepp/system/virtualfilesystem.hpp>
+#include <eepp/system/packfileindex.hpp>
 
 namespace EE { namespace System {
 
@@ -17,11 +17,11 @@ bool Pack::isOpen() const {
 }
 
 void Pack::onPackOpened() {
-	VirtualFileSystem::instance()->onResourceAdd( this );
+	PackFileIndex::instance()->onResourceAdd( this );
 }
 
 void Pack::onPackClosed() {
-	VirtualFileSystem::instance()->onResourceRemove( this );
+	PackFileIndex::instance()->onResourceRemove( this );
 }
 
 }} // namespace EE::System

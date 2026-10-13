@@ -382,11 +382,10 @@ void UIAbstractTableView::resetColumnData() {
 	if ( !model )
 		return;
 	size_t count = model->columnCount();
-	for ( size_t i = 0; i < count; i++ ) {
-		ColumnData& col = columnData( i );
-		col.minWidth = 0;
-		col.maxWidth = 0;
-	}
+	// minWidth comes from the header text (which the model may change); maxWidth is set by the
+	// application (setColumnMaxWidth) and must survive model updates.
+	for ( size_t i = 0; i < count; i++ )
+		columnData( i ).minWidth = 0;
 }
 
 void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
@@ -461,6 +460,9 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 				}
 				if ( col.widget )
 					colWidth = eemax( colWidth, col.widget->getPixelsSize().getWidth() );
+				// Capped columns leave the rest of their content width to the main column.
+				if ( col.maxWidth != 0 )
+					colWidth = eemin( colWidth, eemax( col.maxWidth, col.minWidth ) );
 				usedWidth += colWidth;
 				col.setWidth( colWidth );
 			}

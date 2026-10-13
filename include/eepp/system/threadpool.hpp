@@ -4,8 +4,9 @@
 #include <atomic>
 #include <condition_variable>
 #include <deque>
+#include <eepp/core/executor.hpp>
 #include <eepp/core/noncopyable.hpp>
-#include <eepp/core/small_function.hpp>
+#include <eepp/core/task.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/thread.hpp>
@@ -15,7 +16,7 @@
 
 namespace EE { namespace System {
 
-class EE_API ThreadPool : NonCopyable {
+class EE_API ThreadPool : NonCopyable, public Executor {
   public:
 	static std::shared_ptr<ThreadPool> createShared( Uint32 numThreads,
 													 bool terminateOnClose = false );
@@ -29,9 +30,31 @@ class EE_API ThreadPool : NonCopyable {
 
 	virtual ~ThreadPool();
 
-	Uint64 run( SmallFunction<48> func,
+	/** Queues func. Work items are move-only, so closures may own move-only state. */
+	Uint64 run( Executor::Function func,
 				const std::function<void( const Uint64& )>& doneCallback = {},
 				const Uint64& tag = 0 );
+
+	/** Executor interface: queues the function like run(). */
+	void execute( Executor::Function func ) override;
+
+	/** Queues fn and returns a task resolved with its return value on the worker thread.
+	 * If the pool is shutting down the work is dropped and the task becomes abandoned. */
+	template <typename F> auto submit( F&& fn ) -> Task<std::invoke_result_t<std::decay_t<F>&>> {
+		using Fn = std::decay_t<F>;
+		using R = std::invoke_result_t<Fn&>;
+		TaskSource<R> source;
+		Task<R> task = source.task();
+		run( [fn = Fn( std::forward<F>( fn ) ), source = std::move( source )]() mutable {
+			if constexpr ( std::is_void_v<R> ) {
+				fn();
+				source.resolve();
+			} else {
+				source.resolve( fn() );
+			}
+		} );
+		return task;
+	}
 
 	Uint32 numThreads() const;
 
@@ -50,7 +73,7 @@ class EE_API ThreadPool : NonCopyable {
   private:
 	struct Work {
 		Uint64 id{ 0 };
-		const SmallFunction<48> func;
+		Executor::Function func;
 		const std::function<void( const Uint64& )> callback;
 		Uint64 tag{ 0 };
 	};

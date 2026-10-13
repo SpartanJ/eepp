@@ -1,8 +1,10 @@
 #include "utest.hpp"
 #include <eepp/network/uri.hpp>
+#include <eepp/system/filesystem.hpp>
 
 using namespace EE;
 using namespace EE::Network;
+using namespace EE::System;
 
 UTEST( URI, parseAbsolute ) {
 	URI uri( "https://example.com/path/to/resource?q=hello#section" );
@@ -223,3 +225,99 @@ UTEST( URI, schemeCaseInsensitive ) {
 	EXPECT_STDSTREQ( "example.com", uri.getHost() );
 	EXPECT_STDSTREQ( "/Path", uri.getPath() );
 }
+
+UTEST( URI, coreTypeAndNetworkAliasAreTheSame ) {
+	static_assert( std::is_same_v<EE::URI, EE::Network::URI> );
+	EE::URI a( "sftp://host/a" );
+	EE::Network::URI b = a;
+	EXPECT_TRUE( a == b );
+	EXPECT_EQ( std::hash<EE::URI>()( a ), std::hash<EE::Network::URI>()( b ) );
+}
+
+UTEST( URI, explicitPortIsDistinguishableFromSchemeDefault ) {
+	URI implicitPort( "sftp://host/path" );
+	EXPECT_EQ( 22u, implicitPort.getPort() );
+	EXPECT_EQ( 0u, implicitPort.getSpecifiedPort() );
+
+	URI explicitDefault( "sftp://host:22/path" );
+	EXPECT_EQ( 22u, explicitDefault.getSpecifiedPort() );
+
+	URI explicitOther( "sftp://user@host:2222/path" );
+	EXPECT_EQ( 2222u, explicitOther.getSpecifiedPort() );
+	EXPECT_STDSTREQ( "user", explicitOther.getUserInfo() );
+	EXPECT_STDSTREQ( "sftp://user@host:2222/path", explicitOther.toString() );
+
+	URI moved( std::move( explicitOther ) );
+	EXPECT_EQ( 2222u, moved.getSpecifiedPort() );
+	URI assigned;
+	assigned = std::move( moved );
+	EXPECT_EQ( 2222u, assigned.getSpecifiedPort() );
+
+	URI set( "sftp://host/x" );
+	set.setPort( 22 );
+	EXPECT_EQ( 22u, set.getSpecifiedPort() );
+}
+
+UTEST( URI, parentAndAppendedSegmentsAreVerbatim ) {
+	URI base( "sftp://host/home/user" );
+	URI child = base.withAppendedSegment( "a #b?c%20" );
+	EXPECT_STDSTREQ( "/home/user/a #b?c%20", child.getPath() );
+	EXPECT_TRUE( child.getQuery().empty() );
+	EXPECT_TRUE( child.getFragment().empty() );
+	EXPECT_TRUE( child.getParent() == base );
+	EXPECT_STDSTREQ( "/", URI( "sftp://host/a" ).getParent().getPath() );
+	EXPECT_STDSTREQ( "/", URI( "sftp://host/" ).getParent().getPath() );
+	EXPECT_STDSTREQ( "/a", URI( "sftp://host/a/b/" ).getParent().getPath() );
+	EXPECT_STDSTREQ( "/x", URI( "res:///" ).withAppendedSegment( "x" ).getPath() );
+
+	// The encoded form round-trips through the parser.
+	URI reparsed( child.toString() );
+	EXPECT_STDSTREQ( child.getPath(), reparsed.getPath() );
+}
+
+UTEST( URI, isSameOrChildOf ) {
+	URI root( "sftp://host/home/user" );
+	EXPECT_TRUE( URI( "sftp://host/home/user" ).isSameOrChildOf( root ) );
+	EXPECT_TRUE( URI( "sftp://host/home/user/x/y" ).isSameOrChildOf( root ) );
+	EXPECT_FALSE( URI( "sftp://host/home/username" ).isSameOrChildOf( root ) );
+	EXPECT_FALSE( URI( "sftp://other/home/user/x" ).isSameOrChildOf( root ) );
+	EXPECT_FALSE( URI( "file:///home/user/x" ).isSameOrChildOf( root ) );
+	EXPECT_TRUE( URI( "sftp://host/anything" ).isSameOrChildOf( URI( "sftp://host/" ) ) );
+}
+
+UTEST( URI, fromFSPathPreservesSpecialCharacters ) {
+	std::string dir = FileSystem::getCurrentWorkingDirectory();
+	FileSystem::dirAddSlashAtEnd( dir );
+	std::string native = dir + "weird #name?x%41.txt";
+	URI uri = URI::fromFSPath( native );
+	EXPECT_STDSTREQ( "file", uri.getScheme() );
+	EXPECT_STDSTREQ( native, uri.getFSPath() );
+	URI reparsed( uri.toString() );
+	EXPECT_STDSTREQ( native, reparsed.getFSPath() );
+
+	// Relative paths are anchored to the working directory.
+	EXPECT_STDSTREQ( dir + "rel.txt", URI::fromFSPath( "rel.txt" ).getFSPath() );
+}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+UTEST( URI, fromFSPathWindowsDrivesAndUNC ) {
+	URI drive = URI::fromFSPath( "C:\\Users\\me\\file.txt" );
+	EXPECT_STDSTREQ( "/c:/Users/me/file.txt", drive.getPath() );
+	EXPECT_STDSTREQ( "C:\\Users\\me\\file.txt", drive.getFSPath() );
+	EXPECT_STDSTREQ( "/c:/", URI::fromFSPath( "C:" ).getPath() );
+	EXPECT_STDSTREQ( "/c:/", URI::fromFSPath( "C:\\Users" ).getParent().getPath() );
+
+	URI unc = URI::fromFSPath( "\\\\server\\share\\dir\\f.txt" );
+	EXPECT_STDSTREQ( "server", unc.getHost() );
+	EXPECT_STDSTREQ( "/share/dir/f.txt", unc.getPath() );
+	EXPECT_STDSTREQ( "\\\\server\\share\\dir\\f.txt", unc.getFSPath() );
+}
+#else
+UTEST( URI, fromFSPathPosixRoot ) {
+	URI root = URI::fromFSPath( "/" );
+	EXPECT_STDSTREQ( "/", root.getPath() );
+	EXPECT_STDSTREQ( "file:///", root.toString() );
+	EXPECT_STDSTREQ( "/", root.getParent().getPath() );
+	EXPECT_STDSTREQ( "/tmp/\xc3\xa1rbol", URI::fromFSPath( "/tmp/\xc3\xa1rbol" ).getFSPath() );
+}
+#endif

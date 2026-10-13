@@ -23,6 +23,17 @@ not `eTerm`. Its implementation lives under `src/modules/eterm/`.
 `eeiv` is the repository's image viewer. Its application entry point is
 `src/tools/eeiv/eeiv.cpp`.
 
+## 5. eefm (File Manager)
+
+`eefm` is the repository's file manager, a Dolphin-like application built on the `eepp-vfs`
+module (`src/modules/vfs/`). Its implementation lives under `src/tools/eefm/`: `app.cpp` (window,
+layout, state, shortcuts), `panes.cpp` (split panes, tabs, navigation, status and filter bars),
+`fileops.cpp` (context menus, clipboard, drag and drop, transfers), `fileview.cpp` (drag-enabled
+table view), `placespanel.cpp` / `places.cpp`, and desktop integration in `mime.cpp`, `apps.cpp`
+and `trash.cpp`. Browsing and file operations must go through the VFS so local, packed and remote
+(`sftp://`) locations behave the same; only desktop integration (trash, mounted devices, MIME
+database, launching applications) may use local platform APIs. See `docs/articles/vfs.md`.
+
 ## Documentation & Code References
 
 When working on this project, rely on the following resources to understand existing implementations:

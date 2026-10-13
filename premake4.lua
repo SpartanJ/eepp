@@ -193,6 +193,7 @@ newoption {
     description = "Set the shared data directory (default: /usr/share/ecode)",
 }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
+newoption { trigger = "without-vfs-sftp", description = "Disables sftp:// support in the eepp-vfs module (otherwise the vendored libssh2 is built)." }
 newoption { trigger = "with-lto", description = "Enables Link-Time Optimization for release builds." }
 
 function explode(div,str)
@@ -1060,6 +1061,33 @@ function eepp_module_physics_add()
 	includedirs { "src/modules/physics/include/", "src/modules/physics/src/" }
 end
 
+function vfs_sftp_enabled()
+	-- Enabled by default; emscripten has no raw sockets or processes for SSH.
+	return _OPTIONS["without-vfs-sftp"] == nil and not os.is_real("emscripten")
+end
+
+function eepp_module_vfs_add()
+	links { "eepp-vfs-static", "efsw-static" }
+	includedirs { "src/modules/vfs/include/", "src/thirdparty/efsw/include" }
+	-- The ssh_config evaluator (always built) resolves host names through Winsock.
+	if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
+		links { "ws2_32" }
+	end
+	if vfs_sftp_enabled() then
+		defines { "EE_VFS_SFTP" }
+		links { "libssh2-static" }
+		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
+			-- Like mbedtls below: eepp.dll does not export the zlib that libssh2 uses.
+			links { "zlib-static", "ws2_32", "crypt32", "bcrypt" }
+			-- libssh2 calls mbedtls directly. ELF and Mach-O builds of eepp export it, so linking a
+			-- second copy would duplicate (and interpose) its globals; eepp.dll does not export it.
+			if not _OPTIONS["with-openssl"] then
+				links { "mbedtls-static" }
+			end
+		end
+	end
+end
+
 function eepp_module_backward_add( ecode_mode )
 	files { "src/modules/backward/src/backward.cpp" }
 	if ecode_mode then
@@ -1659,6 +1687,70 @@ solution "eepp"
 		end
 		build_base_cpp_configuration( "eterm" )
 
+	if vfs_sftp_enabled() then
+	project "libssh2-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		includedirs { "src/thirdparty/libssh2/include", "src/thirdparty/libssh2/src" }
+		files { "src/thirdparty/libssh2/src/*.c" }
+		defines { "HAVE_CONFIG_H", "LIBSSH2_HAVE_ZLIB" }
+		if _OPTIONS["with-openssl"] then
+			defines { "LIBSSH2_OPENSSL" }
+		else
+			defines { "LIBSSH2_MBEDTLS" }
+			-- mbedTLS has no Ed25519/X25519: Monocypher provides them (mbedtls_ed25519.c).
+			includedirs { "src/thirdparty/mbedtls/include", "src/thirdparty/monocypher" }
+			files { "src/thirdparty/monocypher/*.c" }
+		end
+		build_base_configuration( "libssh2" )
+	end
+
+	-- Remote file watching helper consumed by the eepp-vfs sftp:// watch backend. It only depends on
+	-- efsw and is normally deployed on the remote host.
+	project "efsw-agent"
+		kind "ConsoleApp"
+		language "C++"
+		targetdir("./bin/")
+		includedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
+		files { "src/thirdparty/efsw/src/agent/*.cpp" }
+		links { "efsw-static" }
+		if not is_vs() then
+			buildoptions{ "-std=c++20" }
+		end
+		if not os.is("windows") and not os.is("haiku") then
+			links { "pthread" }
+		end
+		if ( os.is_real("mingw32") or os.is_real("mingw64") ) or ( os.is("windows") and not is_vs() ) then
+			links { "winpthread" }
+		end
+		if os.is_real("macosx") then
+			links { "CoreFoundation.framework", "CoreServices.framework" }
+		end
+		build_base_cpp_configuration( "efsw-agent" )
+
+	project "eepp-vfs-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src/modules/vfs/include/", "src/modules/vfs/src/", "src/thirdparty/efsw/include" }
+		files { "src/modules/vfs/src/**.cpp" }
+		if vfs_sftp_enabled() then
+			defines { "EE_VFS_SFTP" }
+			includedirs { "src/thirdparty/libssh2/include" }
+		else
+			excludes { "src/modules/vfs/src/eepp/vfs/sftp/**.cpp" }
+		end
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
+		if not is_vs() then
+			buildoptions{ "-std=c++20" }
+		else
+			buildoptions{ "/std:c++20" }
+		end
+		build_base_cpp_configuration( "eepp-vfs" )
+
 	project "languages-syntax-highlighting-static"
 		kind "StaticLib"
 		language "C++"
@@ -2035,6 +2127,17 @@ solution "eepp"
 		end
 		build_link_configuration( "eeiv", false )
 
+	project "eefm"
+		set_kind()
+		language "C++"
+		includedirs { "src/thirdparty" }
+		files { "src/tools/eefm/*.cpp" }
+		eepp_module_vfs_add()
+		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
+			links { "shell32" } -- Recycle Bin (SHFileOperationW)
+		end
+		build_link_configuration( "eefm", true )
+
 	project "eproc"
 		set_kind()
 		language "C++"
@@ -2103,6 +2206,7 @@ solution "eepp"
 		language "C++"
 		files { "src/benchmarks/*.cpp" }
 		includedirs { "src/thirdparty" }
+		eepp_module_vfs_add()
 		build_link_configuration( "eepp-benchmarks", true )
 
 	project "eepp-unit_tests"
@@ -2144,6 +2248,7 @@ solution "eepp"
 			files { "src/tests/unit_tests/accessibility_macos_tests.mm" }
 			links { "Cocoa.framework" }
 		end
+		eepp_module_vfs_add()
 		eepp_module_backward_add( false )
 
 		configuration { "linux" }

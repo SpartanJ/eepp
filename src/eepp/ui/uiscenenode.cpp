@@ -18,7 +18,7 @@
 #include <eepp/system/packregistry.hpp>
 #include <eepp/system/regex.hpp>
 #include <eepp/system/sys.hpp>
-#include <eepp/system/virtualfilesystem.hpp>
+#include <eepp/system/packfileindex.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
@@ -2073,11 +2073,11 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 						} );
 				}
 			} );
-		} else if ( VFS::instance()->fileExists( path ) ) {
+		} else if ( PackFileIndex::instance()->fileExists( path ) ) {
 			FontTrueTypePtr font = FontTrueType::New(
 				makeInternalFontName( authorFamily, fontStyle, fontWeight ), *mResourceScope );
 
-			IOStream* stream = VFS::instance()->getFileFromPath( path );
+			IOStream* stream = PackFileIndex::instance()->getFileFromPath( path );
 			if ( font->loadFromStream( *stream ) ) {
 				registerLoadedFont( font );
 			} else
@@ -2215,8 +2215,8 @@ void UISceneNode::loadCSS( URI uri, std::optional<Time> defer,
 					[]( UISceneNode* scene ) { scene->finishHTTPStyleSheetLoad(); } );
 			}
 		} );
-	} else if ( VFS::instance()->fileExists( uri.getPath() ) ) {
-		IOStream* stream = VFS::instance()->getFileFromPath( uri.getPath() );
+	} else if ( PackFileIndex::instance()->fileExists( uri.getPath() ) ) {
+		IOStream* stream = PackFileIndex::instance()->getFileFromPath( uri.getPath() );
 		CSS::StyleSheetParser parser;
 		if ( parser.loadFromStream( *stream ) ) {
 			parser.getStyleSheet().setMarker( String::hash( url ) );

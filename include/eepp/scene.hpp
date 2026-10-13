@@ -29,6 +29,7 @@
 #include <eepp/scene/eventconnection.hpp>
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/keyevent.hpp>
+#include <eepp/scene/mainthreadexecutor.hpp>
 #include <eepp/scene/mouseevent.hpp>
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/nodefocusreason.hpp>

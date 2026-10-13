@@ -60,7 +60,15 @@ bool Zip::open( const std::string& path ) {
 
 bool Zip::close() {
 	if ( 0 == checkPack() ) {
-		zip_close( mZip );
+		// zip_close() writes the pending changes. When that fails the archive is left allocated
+		// (and unchanged on disk): release it and report the failure.
+		bool written = zip_close( mZip ) == 0;
+
+		if ( !written ) {
+			// Without pending changes zip_close() only frees the archive.
+			zip_unchange_all( mZip );
+			zip_close( mZip );
+		}
 
 		mIsOpen = false;
 
@@ -70,7 +78,7 @@ bool Zip::close() {
 
 		onPackClosed();
 
-		return true;
+		return written;
 	}
 
 	return false;
@@ -92,10 +100,10 @@ bool Zip::addFile( const Uint8* data, const Uint32& dataSize, const std::string&
 			Int32 Result = (Int32)zip_add( mZip, inpack.c_str(), zs );
 
 			std::string path = mZipPath;
-			close();
+			bool written = close();
 			open( path );
 
-			if ( -1 != Result )
+			if ( -1 != Result && written )
 				return true;
 		} else
 			zip_source_free( zs );
@@ -138,7 +146,7 @@ bool Zip::eraseFiles( const std::vector<std::string>& paths ) {
 		}
 	}
 
-	return false;
+	return true;
 }
 
 bool Zip::extractFile( const std::string& path, const std::string& dest ) {
