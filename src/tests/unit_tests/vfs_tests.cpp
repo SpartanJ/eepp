@@ -12,6 +12,10 @@
 #include <mutex>
 #include <thread>
 
+#if EE_PLATFORM != EE_PLATFORM_WIN
+#include <unistd.h> // symlink
+#endif
+
 using namespace EE;
 using namespace EE::VFS;
 using EE::System::FileSystem;
