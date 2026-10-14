@@ -470,7 +470,7 @@ function get_architecture()
 	return "x86_64"
 end
 
-function build_link_configuration( package_name, use_ee_icon )
+function build_link_configuration( package_name, use_ee_icon, use_sdl_main )
 	filter {}
 	incdirs { "include" }
 	local extension = "";
@@ -613,6 +613,11 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 		if table.contains( backends, "SDL3" ) then
 			links { "SDL3" }
+			if package_name ~= "eepp" and package_name ~= "eepp-static" and use_sdl_main ~= false then
+				-- SDL3 provides main/WinMain through a header instead of SDL2main.lib.
+				files { "src/eepp/main/sdl3_main.cpp" }
+				incdirs { "src/thirdparty/" .. get_sdl_version_dir() .. "/include" }
+			end
 		end
 
 	filter { "options:windows-vc-build", "options:arch=arm64" }
@@ -2215,7 +2220,8 @@ workspace "eepp"
 				"src/eepp/ui/accessibility/accessibilitybackenduiaprovider.cpp",
 				"src/eepp/ui/accessibility/accessibilitybackenduiatext.cpp" }
 			links { "uiautomationcore", "ole32", "oleaut32", "comctl32" }
-			build_link_configuration( "eepp-windows-accessibility-tests", true )
+			-- This harness supplies its own native wmain instead of eepp's SDL_main.
+			build_link_configuration( "eepp-windows-accessibility-tests", true, false )
 			-- MinGW: the harness uses wmain, and CLSID_CUIAutomation lives in libuuid.
 			filter "action:gmake*"
 				links { "uuid" }

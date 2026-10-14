@@ -46,6 +46,11 @@ Add `include/` to your include path and link against the libraries in
 - The optional modules (`eepp-maps`, `eepp-physics`) and the `eterm` /
   `languages-syntax-highlighting` static libraries are also provided.
 
+For MSVC applications, include `<SDL3/SDL_main.h>` in exactly one source file and link
+`SDL3.lib` alongside eepp, using the matching SDL3 development headers and import library.
+SDL3 supplies the console/GUI startup wrappers through that header; there is no `SDL3main.lib`.
+The repository's Premake 4 and Premake 5 projects add this startup code automatically.
+
 Start with the documentation in `docs/articles/` and the sources of the shipped
 examples (available in the repository under `src/examples/`) to learn the API.
 
