@@ -372,6 +372,10 @@ static Sizei gridSizeFromTermDimensions( Font* font, const Float& fontSize,
 	auto clipColumns =
 		(int)std::floor( std::max( 1.0f, pixelsSize.getWidth() / spaceCharAdvanceX ) );
 	auto clipRows = (int)std::floor( std::max( 1.0f, pixelsSize.getHeight() / fontHeight ) );
+	// Terminal widgets can start with a zero or placeholder size before layout. A one-row
+	// PTY makes ps warn during fish startup; keep a usable default until the view is laid out.
+	if ( clipColumns < 2 || clipRows < 2 )
+		return { 80, 24 };
 	return { clipColumns, clipRows };
 }
 

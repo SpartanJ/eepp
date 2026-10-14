@@ -13,6 +13,7 @@
 #include <eepp/window/input.hpp>
 #include <eepp/window/inputevent.hpp>
 #include <eterm/system/iprocess.hpp>
+#include <eterm/system/processfactory.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
@@ -83,6 +84,26 @@ class MockProcess : public IProcess {
 	int pid() override { return 123; }
 };
 
+class SizingProcessFactory : public ProcessFactory {
+  public:
+	int columns{ 0 };
+	int rows{ 0 };
+
+	std::unique_ptr<IProcess>
+	createWithPseudoTerminal( const std::string&, const std::vector<std::string>&,
+							  const std::string&, int numColumns, int numRows,
+							  std::unique_ptr<IPseudoTerminal>& outPseudoTerminal,
+							  const std::unordered_map<std::string, std::string>& ) override {
+		columns = numColumns;
+		rows = numRows;
+		auto pty = std::make_unique<MockPty>();
+		pty->mCols = columns;
+		pty->mRows = rows;
+		outPseudoTerminal = std::move( pty );
+		return std::make_unique<MockProcess>();
+	}
+};
+
 static std::shared_ptr<const TerminalSnapshot>
 waitForSnapshot( const std::shared_ptr<TerminalSession>& session,
 				 const std::function<bool( const TerminalSnapshot& )>& predicate,
@@ -95,6 +116,74 @@ waitForSnapshot( const std::shared_ptr<TerminalSession>& session,
 		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
 	}
 	return nullptr;
+}
+
+UTEST( eterm_display, startup_uses_default_grid_before_layout ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm startup dimensions", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto* font = app.getUI()->getUIThemeManager()->getDefaultFont();
+	SizingProcessFactory factory;
+	for ( const Sizef& size :
+		  { Sizef{ 0, 0 }, Sizef{ 16, 16 }, Sizef{ 640, 0 }, Sizef{ 0, 480 } } ) {
+		auto display = TerminalDisplay::create( app.getWindow(), font, 12, size, "shell", {}, "",
+												100, &factory, false );
+		ASSERT_TRUE( display != nullptr );
+		EXPECT_EQ( 80, factory.columns );
+		EXPECT_EQ( 24, factory.rows );
+		ASSERT_TRUE(
+			waitForSnapshot( display->getSession(), []( const TerminalSnapshot& snapshot ) {
+				return snapshot.columns == 80 && snapshot.rows == 24;
+			} ) != nullptr );
+		display->update( false );
+		EXPECT_EQ( 24, display->rowCount() );
+	}
+}
+
+UTEST( eterm_display, startup_uses_grid_from_available_pixels ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm startup dimensions", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto* font = app.getUI()->getUIThemeManager()->getDefaultFont();
+	const Float cellWidth = font->getGlyph( 'A', 12, false, false ).advance;
+	const Float cellHeight = font->getFontHeight( 12 );
+	SizingProcessFactory factory;
+	auto display =
+		TerminalDisplay::create( app.getWindow(), font, 12, { cellWidth * 100, cellHeight * 30 },
+								 "shell", {}, "", 100, &factory, false );
+	ASSERT_TRUE( display != nullptr );
+	EXPECT_EQ( 100, factory.columns );
+	EXPECT_EQ( 30, factory.rows );
+}
+
+UTEST( eterm_display, placeholder_grid_resizes_after_layout ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm layout dimensions", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto* font = app.getUI()->getUIThemeManager()->getDefaultFont();
+	SizingProcessFactory factory;
+	auto display = TerminalDisplay::create( app.getWindow(), font, 12, { 16, 16 }, "shell", {}, "",
+											100, &factory, false );
+	ASSERT_TRUE( display != nullptr );
+	ASSERT_TRUE( waitForSnapshot( display->getSession(), []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 80 && snapshot.rows == 24;
+				 } ) != nullptr );
+	display->update( false );
+
+	const Float cellWidth = font->getGlyph( 'A', 12, false, false ).advance;
+	const Float cellHeight = font->getFontHeight( 12 );
+	display->setSize( { cellWidth * 100, cellHeight * 30 } );
+	ASSERT_TRUE( waitForSnapshot( display->getSession(), []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 100 && snapshot.rows == 30;
+				 } ) != nullptr );
+	display->update( false );
+	EXPECT_EQ( 30, display->rowCount() );
+
+	// Collapsed or not-yet-laid-out views must not send a one-row resize to the shell either.
+	display->setSize( { 0, 0 } );
+	ASSERT_TRUE( waitForSnapshot( display->getSession(), []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 80 && snapshot.rows == 24;
+				 } ) != nullptr );
 }
 
 class SelectionTestDisplay : public TerminalDisplay {
