@@ -44,6 +44,12 @@ class EE_API FreedesktopIconLookup {
 
 	~FreedesktopIconLookup();
 
+	// Owns its themes. Deleted explicitly: MSVC instantiates the implicit copies of exported
+	// classes, which cannot copy the unique_ptr list.
+	FreedesktopIconLookup( const FreedesktopIconLookup& ) = delete;
+
+	FreedesktopIconLookup& operator=( const FreedesktopIconLookup& ) = delete;
+
 	/** False when no theme (not even hicolor) was found. */
 	bool isValid() const;
 
