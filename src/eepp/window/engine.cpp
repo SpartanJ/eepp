@@ -24,9 +24,10 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/backend.hpp>
+#if defined( EE_SDL_VERSION_2 )
 #include <eepp/window/backend/SDL2/backendsdl2.hpp>
 #include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
-#if defined( EE_SDL_VERSION_3 )
+#elif defined( EE_SDL_VERSION_3 )
 #include <eepp/window/backend/SDL3/backendsdl3.hpp>
 #include <eepp/window/backend/SDL3/platformhelpersdl3.hpp>
 #endif
