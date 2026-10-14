@@ -19,19 +19,29 @@ class MimeDatabase {
   public:
 	static MimeDatabase& instance();
 
-	/** MIME type of an entry ("inode/directory" for directories). */
-	std::string typeOf( const EE::VFS::FileInfo& info );
+	/** MIME type of an entry ("inode/directory" for directories). The tables are immutable once
+	 * loaded, so the reference stays valid. */
+	const std::string& typeOf( const EE::VFS::FileInfo& info );
 
-	std::string typeForName( const std::string& name );
+	/** MIME type of a file name (not a path). */
+	const std::string& typeForName( const std::string& name );
 
 	/** Human readable description ("Markdown document"). */
 	std::string description( const std::string& mime, const std::string& name = {} );
 
-	/** Description of an entry, cached by extension: cheap enough for sorting. */
+	/** Description of an entry, cached by type: cheap enough for sorting. */
 	std::string describe( const EE::VFS::FileInfo& info );
 
-	/** Name of the theme icon for an entry. */
+	/** Name of eefm's glyph icon for an entry (the fallback icon set). */
 	std::string iconName( const EE::VFS::FileInfo& info );
+
+	/** Freedesktop icon names for a type, most specific first: the shared-mime-info icon, the
+	 * type's own name ("text-x-python"), its parents', its generic icon and the media's generic
+	 * icon ("text-x-generic"). Folders are "folder". */
+	std::vector<std::string> iconNames( const std::string& mime );
+
+	/** iconNames() of an entry, cached by type (never evicted: the types are a closed set). */
+	const std::vector<std::string>& iconNames( const EE::VFS::FileInfo& info );
 
 	/** The type and its parents (text/markdown -> text/plain), most specific first. */
 	std::vector<std::string> withParents( const std::string& mime );
@@ -57,8 +67,13 @@ class MimeDatabase {
 	/** Other glob patterns, checked last. */
 	std::vector<std::pair<std::string, Glob>> mPatterns;
 	std::unordered_map<std::string, std::vector<std::string>> mParents;
+	/** Type -> description; empty when the type has none (not looked up again). */
 	std::unordered_map<std::string, std::string> mDescriptions;
-	std::unordered_map<std::string, std::string> mDescriptionByExtension;
+	/** shared-mime-info icons and generic-icons: type -> icon name. */
+	std::unordered_map<std::string, std::string> mIcons;
+	std::unordered_map<std::string, std::string> mGenericIcons;
+	/** iconNames() by type. Node based: references to the values stay valid. */
+	std::unordered_map<std::string, std::vector<std::string>> mIconNamesByType;
 };
 
 } // namespace eefm

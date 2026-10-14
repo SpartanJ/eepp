@@ -65,8 +65,8 @@ void showError( UISceneNode* ui, const String& message ) {
 
 #ifdef EE_VFS_SFTP
 
-Task<VFS::SSHHostKeyDecision> SSHPrompts::verify( const VFS::SSHHostKeyInfo& info ) {
-	auto source = std::make_shared<TaskSource<VFS::SSHHostKeyDecision>>();
+Task<SSHHostKeyDecision> SSHPrompts::verify( const SSHHostKeyInfo& info ) {
+	auto source = std::make_shared<TaskSource<SSHHostKeyDecision>>();
 	auto task = source->task();
 	UISceneNode* ui = mUI;
 	// If the executor drops this (shutdown) the source is abandoned and the key rejected.
@@ -80,15 +80,15 @@ Task<VFS::SSHHostKeyDecision> SSHPrompts::verify( const VFS::SSHHostKeyInfo& inf
 			info.fingerprint.c_str(), info.knownHostsFile.c_str() );
 		confirm( ui, ui->i18n( "eefm_host_key_title", "Unknown Host Key" ), message,
 				 [source]( bool accept ) {
-					 source->resolve( accept ? VFS::SSHHostKeyDecision::AcceptAndSave
-											 : VFS::SSHHostKeyDecision::Reject );
+					 source->resolve( accept ? SSHHostKeyDecision::AcceptAndSave
+											 : SSHHostKeyDecision::Reject );
 				 } );
 	} );
 	return task;
 }
 
 Task<std::optional<std::vector<std::string>>>
-SSHPrompts::request( const VFS::SSHAuthenticationRequest& request ) {
+SSHPrompts::request( const SSHAuthenticationRequest& request ) {
 	using Answers = std::optional<std::vector<std::string>>;
 	auto source = std::make_shared<TaskSource<Answers>>();
 	auto task = source->task();

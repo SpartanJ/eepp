@@ -16,6 +16,7 @@ namespace eefm {
 
 using namespace EE;
 using namespace EE::UI;
+using namespace EE::VFS;
 
 /** Modal text prompt. done( nullopt ) when cancelled. UI thread only. */
 void promptText( UISceneNode* ui, const String& title, const String& message,
@@ -31,14 +32,14 @@ void showError( UISceneNode* ui, const String& message );
 #ifdef EE_VFS_SFTP
 /** SSH host key and credential prompts backed by message boxes. The VFS calls them from the SSH
  * I/O thread; dialogs are always created on the UI thread through the executor. */
-class SSHPrompts : public VFS::SSHHostKeyVerifier, public VFS::SSHAuthenticationHandler {
+class SSHPrompts : public SSHHostKeyVerifier, public SSHAuthenticationHandler {
   public:
 	SSHPrompts( UISceneNode* ui, Executor& uiExecutor ) : mUI( ui ), mExecutor( uiExecutor ) {}
 
-	Task<VFS::SSHHostKeyDecision> verify( const VFS::SSHHostKeyInfo& info ) override;
+	Task<SSHHostKeyDecision> verify( const SSHHostKeyInfo& info ) override;
 
 	Task<std::optional<std::vector<std::string>>>
-	request( const VFS::SSHAuthenticationRequest& request ) override;
+	request( const SSHAuthenticationRequest& request ) override;
 
   private:
 	UISceneNode* mUI;

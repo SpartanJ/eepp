@@ -1072,6 +1072,12 @@ treeview.selection_type_cell treeview::row:hover {
 	background-color: transparent;
 }
 
+tableview::rubberband {
+	background-color: rgba( var(--primary), 0.3 );
+	border-width: 1dp;
+	border-color: var(--primary);
+}
+
 tableview.selection_type_cell tableview::row:selected,
 treeview.selection_type_cell treeview::row:selected {
 	background-color: transparent;

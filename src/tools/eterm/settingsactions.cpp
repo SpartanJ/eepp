@@ -36,8 +36,11 @@ void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {
 		dialog->setSelectedFont( currentPath );
 	if ( !fallbackFont ) {
 		auto selection = dialog->getSelection();
-		selection.size =
-			static_cast<Uint32>( uiFont ? mApp->config->font.uiSize : mApp->config->font.size );
+		selection.size = static_cast<Uint32>(
+			!uiFont ? mApp->config->font.size
+			: mApp->config->font.uiSize > 0
+				? mApp->config->font.uiSize
+				: PixelDensity::pxToDp( mApp->scene->getUIThemeManager()->getDefaultFontSize() ) );
 		dialog->setSelection( selection );
 	}
 	dialog->setOnFontPicked( [this, uiFont, fallbackFont]( const UIFontSelection& selection ) {
@@ -49,9 +52,7 @@ void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {
 			if ( font->loadFromFile( selection.font.path ) ) {
 				mApp->config->font.uiPath = selection.font.path;
 				mApp->config->font.uiSize = selection.size;
-				mApp->scene->getUIThemeManager()->setDefaultFont( font.get() );
-				mApp->scene->getUIThemeManager()->setDefaultFontSize( mApp->config->font.uiSize );
-				mApp->scene->getRoot()->reloadStyle( true, true, true, true, true );
+				applyUIFont( font.get(), mApp->config->font.uiSize );
 			}
 		} else if ( fallbackFont ) {
 			auto font = FontTrueType::New( "eterm-fallback-font", resourceScope );
@@ -80,8 +81,7 @@ void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {
 
 void SettingsActions::setUIFontSize( Float size ) {
 	mApp->config->font.uiSize = size;
-	mApp->scene->getUIThemeManager()->setDefaultFontSize( size );
-	mApp->scene->getRoot()->reloadStyle( true, true, true, true, true );
+	applyUIFont( nullptr, size );
 	mApp->savePreferences();
 }
 
@@ -91,6 +91,43 @@ void SettingsActions::setTerminalFontSize( Float size ) {
 	mApp->forEachTerminal(
 		[this]( UITerminal* terminal ) { terminal->setFontSize( mApp->terminalFontSize ); } );
 	mApp->savePreferences();
+}
+
+void SettingsActions::applyUIFont( Font* font, Float sizeDp ) {
+	// The theme decides the size (and font) of new text; existing text views that do not get them
+	// from the stylesheet are updated in place (as ecode does).
+	const Float size = PixelDensity::dpToPx( sizeDp );
+	UIThemeManager* manager = mApp->scene->getUIThemeManager();
+	manager->setDefaultFontSize( size );
+	if ( manager->getDefaultTheme() )
+		manager->getDefaultTheme()->setDefaultFontSize( size );
+	if ( font ) {
+		manager->setDefaultFont( font );
+		if ( manager->getDefaultTheme() )
+			manager->getDefaultTheme()->setDefaultFont( font );
+	}
+	mApp->scene->forEachNode( [font, size]( Node* node ) {
+		if ( !node->isType( UI_TYPE_TEXTVIEW ) )
+			return;
+		UITextView* text = node->asType<UITextView>();
+		const UIStyle* style = text->getUIStyle();
+		if ( !style || !style->hasProperty( PropertyId::FontSize ) )
+			text->setFontSize( size );
+		if ( font && ( !style || !style->hasProperty( PropertyId::FontFamily ) ) )
+			text->setFont( font );
+	} );
+}
+
+void SettingsActions::applyFontRendering() {
+	// The base UI fonts live in the default resource scope (UIApplication creates them there),
+	// the scene's own fonts in the scene's scope: both, as UIApplication does at startup.
+	for ( FontService* service : { &defaultResourceScope().getFontService(),
+								   &mApp->scene->getResourceScope()->getFontService() } ) {
+		service->setHinting( mApp->config->font.hinting );
+		service->setAntialiasing( mApp->config->font.antialiasing );
+	}
+	mApp->forEachTerminal( []( UITerminal* terminal ) { terminal->syncFontRenderingConfig(); } );
+	mApp->scene->getRoot()->invalidateDraw();
 }
 
 } // namespace eterm

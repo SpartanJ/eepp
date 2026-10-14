@@ -1,11 +1,15 @@
+#include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uitableview.hpp>
+#include <eepp/window/input.hpp>
 
+#include <algorithm>
 #include <cmath>
+#include <optional>
 #include <string_view>
 
 namespace EE { namespace UI {
@@ -53,6 +57,12 @@ void UITableView::drawChildren() {
 			UITableRow* rowNode = updateRow( realRowIndex, rowIndex, yOffset );
 			rowNode->setChildrenVisibility( false, false );
 			realColIndex = 0;
+			if ( mFocusSelectionDirty && !hasFocusWithin() ) {
+				// Something else took the focus meanwhile (a context menu opened by the click
+				// that selected): it keeps it.
+				mFocusSelectionDirty = false;
+			}
+			bool focusRow = mFocusSelectionDirty && rowIndex.row() == getSelection().first().row();
 			for ( size_t colIndex : columnOrder ) {
 				auto& colData = columnData( colIndex );
 				if ( !colData.visible || ( xOffset + colData.width ) - mScrollOffset.x < 0 ) {
@@ -63,9 +73,15 @@ void UITableView::drawChildren() {
 				if ( xOffset - mScrollOffset.x > mSize.getWidth() )
 					break;
 				xOffset += colData.width;
-				updateCell( { realColIndex, realRowIndex },
-							getModel()->index( rowIndex.row(), colIndex, rowIndex.parent() ), 0,
-							yOffset );
+				UIWidget* cell = updateCell(
+					{ realColIndex, realRowIndex },
+					getModel()->index( rowIndex.row(), colIndex, rowIndex.parent() ), 0, yOffset );
+				// The selected row's first visible cell takes the focus (see setFocusOnSelection).
+				if ( focusRow && cell ) {
+					cell->setFocus();
+					mFocusSelectionDirty = false;
+					focusRow = false;
+				}
 				realColIndex++;
 			}
 			rowNode->nodeDraw();
@@ -76,6 +92,8 @@ void UITableView::drawChildren() {
 			realRowIndex++;
 		}
 	}
+	if ( mRubberBand && mRubberBand->isVisible() )
+		mRubberBand->nodeDraw();
 	if ( mHeader && mHeader->isVisible() )
 		mHeader->nodeDraw();
 	if ( mRowHeader && mRowHeader->isVisible() )
@@ -196,6 +214,49 @@ void UITableView::onColumnSizeChange( const size_t& colIndex, bool fromUserInter
 }
 
 Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
+	// Shift + Up / Down / Page Up / Page Down / Home / End extend the selection from its anchor.
+	Uint32 mod = event.getSanitizedMod();
+	if ( ( mod & KEYMOD_SHIFT ) && !( mod & ( KEYMOD_CTRL | KEYMOD_ALT | KEYMOD_META ) ) &&
+		 mSelectionKind == SelectionKind::Multiple && isRowSelection() && getModel() &&
+		 !isEditing() && getItemCount() > 0 ) {
+		Int64 rows = static_cast<Int64>( getItemCount() );
+		ModelIndex cursor = mSelectionCursor.isValid() && getModel()->isValid( mSelectionCursor )
+								? mSelectionCursor
+								: getSelection().first();
+		Int64 row = cursor.isValid() ? cursor.row() : 0;
+		Int64 page =
+			std::max<Int64>( 1, eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1 );
+		std::optional<Int64> target;
+		switch ( event.getKeyCode() ) {
+			case KEY_UP:
+				target = row - 1;
+				break;
+			case KEY_DOWN:
+				target = row + 1;
+				break;
+			case KEY_PAGEUP:
+				target = row - page;
+				break;
+			case KEY_PAGEDOWN:
+				target = row + page;
+				break;
+			case KEY_HOME:
+				target = 0;
+				break;
+			case KEY_END:
+				target = rows - 1;
+				break;
+			default:
+				break;
+		}
+		if ( target ) {
+			ModelIndex index = getModel()->index( std::clamp<Int64>( *target, 0, rows - 1 ),
+												  cursor.isValid() ? cursor.column() : 0 );
+			extendSelectionTo( index );
+			scrollToIndex( index );
+			return 1;
+		}
+	}
 	bool isJump = ( event.getKeyCode() == KEY_LEFT || event.getKeyCode() == KEY_RIGHT ||
 					event.getKeyCode() == KEY_UP || event.getKeyCode() == KEY_DOWN ) &&
 				  ( event.getSanitizedMod() & KeyMod::getDefaultModifier() );
@@ -379,6 +440,180 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 	return UIAbstractTableView::onKeyDown( event );
 }
 
+bool UITableView::getFocusOnSelection() const {
+	return mFocusOnSelection;
+}
+
+void UITableView::setFocusOnSelection( bool focusOnSelection ) {
+	mFocusOnSelection = focusOnSelection;
+	if ( !mFocusOnSelection )
+		mFocusSelectionDirty = false;
+}
+
+void UITableView::setTableFlags( Uint32 flags ) {
+	UIAbstractTableView::setTableFlags( flags );
+	setFocusOnSelection( flags & TableFlagFocusOnSelection );
+	setRubberBandSelection( flags & TableFlagRubberBandSelection );
+}
+
+bool UITableView::getRubberBandSelection() const {
+	return mRubberBandSelection;
+}
+
+void UITableView::setRubberBandSelection( bool enabled ) {
+	mRubberBandSelection = enabled;
+	if ( enabled )
+		mTableFlags |= TableFlagRubberBandSelection;
+	else
+		mTableFlags &= ~TableFlagRubberBandSelection;
+	if ( !enabled )
+		endRubberBand();
+}
+
+Uint32 UITableView::onMouseDown( const Vector2i& position, const Uint32& flags ) {
+	// Presses reach the view itself only on its empty area (rows, header and scroll bars are
+	// children).
+	// Only the initial press: eepp keeps sending presses to whatever is under the pointer while
+	// the button is held (a band dragged from another table must not start one here).
+	EventDispatcher* dispatcher = getEventDispatcher();
+	if ( ( flags & EE_BUTTON_LMASK ) && !mRubberBandPressed && dispatcher &&
+		 dispatcher->justPressTriggered( EE_BUTTON_LMASK ) ) {
+		mRubberBandDragged = false;
+		if ( mRubberBandSelection && mSelectionKind == SelectionKind::Multiple &&
+			 isRowSelection() && getModel() && !isEditing() ) {
+			Vector2f local( convertToNodeSpace( position.asFloat() ) );
+			if ( local.y >= getHeaderHeight() ) {
+				mRubberBandPressed = true;
+				mRubberBandStart = local + mScrollOffset;
+				Uint32 mod = getInput()->getSanitizedModState();
+				mRubberBandBase.clear();
+				if ( mod & ( KeyMod::getDefaultModifier() | KEYMOD_SHIFT ) )
+					mRubberBandBase = getSelection().indexes();
+				subscribeScheduledUpdate();
+			}
+		}
+	}
+	return UIAbstractTableView::onMouseDown( position, flags );
+}
+
+void UITableView::scheduledUpdate( const Time& time ) {
+	UIAbstractTableView::scheduledUpdate( time );
+	if ( !mRubberBandPressed )
+		return;
+	EventDispatcher* dispatcher = getEventDispatcher();
+	if ( !dispatcher || !( dispatcher->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+		endRubberBand();
+		return;
+	}
+	Vector2f local( convertToNodeSpace( dispatcher->getMousePosf() ) );
+	if ( !mRubberBandDragged ) {
+		Vector2f moved = local + mScrollOffset - mRubberBandStart;
+		if ( std::abs( moved.x ) < PixelDensity::dpToPx( 4 ) &&
+			 std::abs( moved.y ) < PixelDensity::dpToPx( 4 ) )
+			return;
+		mRubberBandDragged = true;
+	}
+	// Past the top (below the header) or the bottom edge: scroll toward the pointer.
+	Float scrollable = getScrollableArea().getHeight();
+	if ( scrollable > 0 && mVScroll ) {
+		Float top = getHeaderHeight();
+		Float bottom = getPixelsSize().getHeight();
+		Float delta = 0;
+		if ( local.y < top )
+			delta = local.y - top;
+		else if ( local.y > bottom )
+			delta = local.y - bottom;
+		if ( delta != 0 )
+			mVScroll->setValue(
+				std::clamp( ( mScrollOffset.y + delta * 0.5f ) / scrollable, 0.f, 1.f ) );
+	}
+	updateRubberBand( local );
+}
+
+void UITableView::updateRubberBand( const Vector2f& localPosition ) {
+	if ( !getModel() )
+		return;
+	Vector2f current = localPosition + mScrollOffset;
+	Vector2f min( std::min( mRubberBandStart.x, current.x ),
+				  std::min( mRubberBandStart.y, current.y ) );
+	Vector2f max( std::max( mRubberBandStart.x, current.x ),
+				  std::max( mRubberBandStart.y, current.y ) );
+	// Rows touched by the band (row y in content coordinates starts below the header).
+	Float header = getHeaderHeight();
+	Float rowHeight = getRowHeight();
+	Int64 count = static_cast<Int64>( getItemCount() );
+	Int64 first = -1;
+	Int64 last = -1;
+	if ( count > 0 && rowHeight > 0 && max.y >= header ) {
+		first = std::max<Int64>( 0, static_cast<Int64>( ( min.y - header ) / rowHeight ) );
+		last = std::min<Int64>( count - 1, static_cast<Int64>( ( max.y - header ) / rowHeight ) );
+		if ( first > last )
+			first = last = -1;
+	}
+	// This runs every frame while the button is held: the selection (and its notifications) only
+	// changes when the band covers other rows.
+	bool selectionChanged = first != mRubberBandFirst || last != mRubberBandLast;
+	if ( selectionChanged ) {
+		mRubberBandFirst = first;
+		mRubberBandLast = last;
+		std::vector<ModelIndex> selection( mRubberBandBase );
+		if ( first >= 0 ) {
+			selection.reserve( selection.size() + ( last - first + 1 ) );
+			for ( Int64 row = first; row <= last; ++row ) {
+				ModelIndex index = getModel()->index( row );
+				if ( mRubberBandBase.empty() ||
+					 std::find( mRubberBandBase.begin(), mRubberBandBase.end(), index ) ==
+						 mRubberBandBase.end() )
+					selection.push_back( index );
+			}
+		}
+		if ( selection.empty() )
+			getSelection().clear();
+		else
+			getSelection().set( selection );
+	}
+
+	if ( !mRubberBand ) {
+		mRubberBand = UIWidget::NewWithTag( mTag + "::rubberband" );
+		mRubberBand->setParent( this );
+		mRubberBand->setEnabled( false );
+	}
+	// Drawn within the rows area: the band (in view coordinates) intersected with it.
+	Float left = std::max( min.x - mScrollOffset.x, 0.f );
+	Float top = std::max( min.y - mScrollOffset.y, header );
+	Float right = std::min( max.x - mScrollOffset.x, getPixelsSize().getWidth() );
+	Float bottom = std::min( max.y - mScrollOffset.y, getPixelsSize().getHeight() );
+	Vector2f position( left, top );
+	Sizef size( std::max( left, right ) - left, std::max( top, bottom ) - top );
+	if ( !selectionChanged && mRubberBand->isVisible() &&
+		 mRubberBand->getPixelsPosition() == position && mRubberBand->getPixelsSize() == size )
+		return;
+	mRubberBand->setPixelsPosition( position );
+	mRubberBand->setPixelsSize( size );
+	mRubberBand->setVisible( true );
+	invalidateDraw();
+}
+
+void UITableView::endRubberBand() {
+	mRubberBandPressed = false;
+	mRubberBandBase.clear();
+	mRubberBandFirst = mRubberBandLast = -2;
+	if ( mRubberBand && mRubberBand->isVisible() ) {
+		mRubberBand->setVisible( false );
+		invalidateDraw();
+	}
+	if ( isSubscribedForScheduledUpdate() )
+		unsubscribeScheduledUpdate();
+}
+
+void UITableView::onModelSelectionChange() {
+	UIAbstractTableView::onModelSelectionChange();
+	// Only while the table has the keyboard: a selection changed by code must not take the focus
+	// from elsewhere.
+	if ( mFocusOnSelection && !getSelection().isEmpty() && hasFocusWithin() )
+		mFocusSelectionDirty = true;
+}
+
 ModelIndex UITableView::findRowWithText( const std::string& text, const bool& caseSensitive,
 										 FindRowWithTextMatchKind matchKind ) const {
 	const Model* model = getModel();
@@ -388,9 +623,7 @@ ModelIndex UITableView::findRowWithText( const std::string& text, const bool& ca
 		return {};
 	size_t rc = model->rowCount();
 	for ( size_t i = 0; i < rc; i++ ) {
-		ModelIndex index = model->index(
-			i, model->keyColumn() != -1 ? model->keyColumn()
-										: ( model->treeColumn() >= 0 ? model->treeColumn() : 0 ) );
+		ModelIndex index = model->index( i, model->searchColumn() );
 		Variant var = model->data( index );
 		if ( var.isValid() ) {
 			std::string convertedValue;

@@ -11,8 +11,10 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <shellapi.h>
+// windows.h first: shellapi.h depends on it.
 #include <windows.h>
+
+#include <shellapi.h>
 #elif defined( EE_PLATFORM_POSIX )
 #include <fcntl.h>
 #include <sys/stat.h>

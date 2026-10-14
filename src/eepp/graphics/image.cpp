@@ -319,33 +319,64 @@ static bool svg_test( const std::string& path ) {
 	return FileSystem::fileExtension( path ) == "svg";
 }
 
+/** True if the data is an SVG document: an <svg> root element, optionally preceded by a BOM,
+ * whitespace, XML declarations, processing instructions, comments and a DOCTYPE (Inkscape files
+ * often start with a comment). */
+static bool svg_test_text( const char* data, size_t size ) {
+	size_t pos = 0;
+	auto startsWith = [&]( std::string_view text ) {
+		return size - pos >= text.size() && std::string_view( data + pos, text.size() ) == text;
+	};
+	auto skipPast = [&]( std::string_view end ) {
+		std::string_view rest( data + pos, size - pos );
+		size_t found = rest.find( end );
+		if ( found == std::string_view::npos )
+			return false;
+		pos += found + end.size();
+		return true;
+	};
+	if ( startsWith( "\xEF\xBB\xBF" ) )
+		pos += 3;
+	while ( pos < size ) {
+		char c = data[pos];
+		if ( c == ' ' || c == '\t' || c == '\r' || c == '\n' ) {
+			++pos;
+		} else if ( startsWith( "<?" ) ) {
+			if ( !skipPast( "?>" ) )
+				return false;
+		} else if ( startsWith( "<!--" ) ) {
+			if ( !skipPast( "-->" ) )
+				return false;
+		} else if ( startsWith( "<!DOCTYPE" ) || startsWith( "<!doctype" ) ) {
+			if ( !skipPast( ">" ) )
+				return false;
+		} else {
+			// The root element: "<svg" followed by a delimiter (or a namespace prefix "<svg:svg").
+			if ( !startsWith( "<svg" ) || size - pos < 5 )
+				return false;
+			char next = data[pos + 4];
+			return next == ' ' || next == '>' || next == '\t' || next == '\r' || next == '\n' ||
+				   next == '/' || next == ':';
+		}
+	}
+	return false;
+}
+
 static bool svg_test_from_memory( const Uint8* imageData, const unsigned int& imageDataSize ) {
-	return imageDataSize > 5 &&
-		   ( ( imageData[0] == '<' && imageData[1] == 's' && imageData[2] == 'v' &&
-			   imageData[3] == 'g' ) ||
-			 ( imageData[0] == '<' && imageData[1] == '?' && imageData[2] == 'x' &&
-			   imageData[3] == 'm' && imageData[4] == 'l' ) );
+	// The prolog (declarations, comments) is short: the root element is within the first 4 KiB.
+	return imageData && imageDataSize > 5 &&
+		   svg_test_text( reinterpret_cast<const char*>( imageData ),
+						  std::min<size_t>( imageDataSize, 4096 ) );
 }
 
 static bool svg_test_from_stream( IOStream& stream ) {
-	if ( stream.isOpen() ) {
-		std::string str;
-		str.resize( 5 );
-
-		stream.seek( 0 );
-
-		stream.read( (char*)&str[0], 5 );
-
-		String::toLowerInPlace( str );
-
-		if ( ( str[0] == '<' && str[1] == 's' && str[2] == 'v' && str[3] == 'g' ) ||
-			 ( str[0] == '<' && str[1] == '?' && str[2] == 'x' && str[3] == 'm' &&
-			   str[4] == 'l' ) ) {
-			return true;
-		}
-	}
-
-	return false;
+	if ( !stream.isOpen() )
+		return false;
+	std::string str;
+	str.resize( std::min<size_t>( 4096, stream.getSize() ) );
+	stream.seek( 0 );
+	size_t read = stream.read( &str[0], str.size() );
+	return read > 5 && svg_test_text( str.data(), read );
 }
 
 struct ImageInfo {

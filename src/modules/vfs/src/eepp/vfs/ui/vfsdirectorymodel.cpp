@@ -576,6 +576,22 @@ std::string VFSDirectoryModel::typeOf( const FileInfo& info ) const {
 // Directory item counts
 // ---------------------------------------------------------------------------------------------
 
+void VFSDirectoryModel::setCountDirectoryItems( bool count ) {
+	if ( mConfig.countDirectoryItems == count )
+		return;
+	mConfig.countDirectoryItems = count;
+	if ( !count ) {
+		mItemCounts.clear();
+		mCountQueue.clear();
+		mCountQueued.clear();
+	} else {
+		for ( const auto& entry : mEntries )
+			queueItemCount( entry );
+		pumpItemCounts();
+	}
+	invalidate( Model::UpdateFlag::DontInvalidateIndexes );
+}
+
 std::optional<Uint64> VFSDirectoryModel::itemCountOf( const FileInfo& info ) const {
 	auto it = mItemCounts.find( info.name );
 	if ( it == mItemCounts.end() )
@@ -632,7 +648,8 @@ void VFSDirectoryModel::pumpItemCounts() {
 void VFSDirectoryModel::onItemCounted( const std::string& name, VFSResult<ItemCount>&& count ) {
 	if ( mCountsInFlight > 0 )
 		--mCountsInFlight;
-	if ( count )
+	// Counting may have been turned off while this one ran.
+	if ( count && mConfig.countDirectoryItems )
 		mItemCounts[name] = count.value();
 	pumpItemCounts();
 	// Many counts finish in the same frame: refresh the view once for all of them.
@@ -791,6 +808,23 @@ std::string VFSDirectoryModel::permissionsToString( const FileInfo& info ) {
 	if ( *perms & 01000 )
 		out[9] = ( *perms & 0001 ) ? 't' : 'T';
 	return out;
+}
+
+bool VFSDirectoryModel::isEditable( const ModelIndex& index ) const {
+	return mOnRename && index.column() == Name && index.row() >= 0 &&
+		   static_cast<size_t>( index.row() ) < rowCount();
+}
+
+void VFSDirectoryModel::setData( const ModelIndex& index, const Variant& data ) {
+	if ( !isEditable( index ) )
+		return;
+	const FileInfo& info = entry( static_cast<size_t>( index.row() ) );
+	std::string name = data.toString();
+	if ( name.empty() || name == info.name )
+		return;
+	// Copy: the handler may refresh the listing, which replaces the entries.
+	FileInfo entryCopy = info;
+	mOnRename( entryCopy, name );
 }
 
 Variant VFSDirectoryModel::data( const ModelIndex& index, ModelRole role ) const {

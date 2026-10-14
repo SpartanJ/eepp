@@ -2,6 +2,8 @@
 #define EEFM_PLACESPANEL_HPP
 
 #include "places.hpp"
+#include <eepp/ui/uiicon.hpp>
+#include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <functional>
 #include <optional>
@@ -46,6 +48,12 @@ class PlacesPanel : public UILinearLayout {
 	std::function<void( const Entry& )> onContextMenu;
 
 	std::function<void( const Entry& )> onFilesDropped;
+
+	/** Icon of a place (default: the theme icon named by Place::icon). */
+	std::function<UIIcon*( const Place& )> iconProvider;
+
+	/** Re-reads the rows' icons (after icons finished loading). */
+	void refreshIcons();
 
 	/** Right click on a section header. */
 	std::function<void( PlaceSection )> onSectionMenu;
@@ -96,8 +104,12 @@ class PlacesPanel : public UILinearLayout {
 
 	void setSlot( std::optional<Slot> slot );
 
+	UIIcon* iconOf( const Place& place ) const;
+
 	std::vector<Entry> mEntries;
 	std::vector<UIWidget*> mRows;
+	/** Per row: its image and the icon it shows. */
+	std::vector<std::pair<UIImage*, UIIcon*>> mIcons;
 	std::optional<Slot> mSlot;
 	/** Row of the place being dragged. */
 	std::optional<size_t> mDraggedRow;

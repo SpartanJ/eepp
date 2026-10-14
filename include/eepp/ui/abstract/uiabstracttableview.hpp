@@ -36,6 +36,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 		TableFlagExpandersAsIcons = ( 1 << 7 ),
 		TableFlagFocusOnSelection = ( 1 << 8 ),
 		TableFlagDisableClipping = ( 1 << 9 ),
+		/** Dragging from the empty area selects rows with a rectangle (UITableView, multiple
+		 * selection only). */
+		TableFlagRubberBandSelection = ( 1 << 10 ),
 	};
 
 	static const Uint32 UITABLE_DEFAULT_FLAGS =
@@ -82,6 +85,11 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual std::vector<ModelIndex> getSelectionRange( const ModelIndex& start,
 													   const ModelIndex& end ) const;
+
+	/** Selects the rows from the selection anchor to index (Shift+click, Shift+arrows). The
+	 * anchor is where the last plain selection (a click, a key, Ctrl+click) happened, so
+	 * extending repeatedly grows or shrinks the range around it. Multiple selection only. */
+	void extendSelectionTo( const ModelIndex& index );
 
 	const Float& getDragBorderDistance() const;
 
@@ -228,6 +236,13 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	void resetSearchText();
 
   protected:
+	/** Where range selections start, and where the last one ended. */
+	ModelIndex mSelectionAnchor;
+	ModelIndex mSelectionCursor;
+	bool mExtendingSelection{ false };
+
+	virtual void onModelSelectionChange();
+
 	friend class EE::UI::UITableHeaderColumn;
 	friend class EE::UI::UIDropDownModelList;
 

@@ -1,4 +1,5 @@
 #include "mime.hpp"
+#include <algorithm>
 #include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
@@ -175,6 +176,17 @@ void MimeDatabase::load() {
 				}
 			}
 		}
+		for ( auto [file, map] : { std::make_pair( "mime/icons", &mIcons ),
+								   std::make_pair( "mime/generic-icons", &mGenericIcons ) } ) {
+			std::string icons;
+			if ( !FileSystem::fileGet( base + file, icons ) )
+				continue;
+			for ( const auto& line : String::split( icons, '\n' ) ) {
+				size_t colon = line.find( ':' );
+				if ( colon != std::string::npos && colon > 0 && colon + 1 < line.size() )
+					( *map )[line.substr( 0, colon )] = line.substr( colon + 1 );
+			}
+		}
 		std::string subclasses;
 		if ( FileSystem::fileGet( base + "mime/subclasses", subclasses ) ) {
 			for ( const auto& line : String::split( subclasses, '\n' ) ) {
@@ -187,7 +199,8 @@ void MimeDatabase::load() {
 #endif
 }
 
-std::string MimeDatabase::typeForName( const std::string& name ) {
+const std::string& MimeDatabase::typeForName( const std::string& name ) {
+	static const std::string unknown( "application/octet-stream" );
 	std::lock_guard<std::mutex> lock( mMutex );
 	load();
 	auto exact = mNames.find( name );
@@ -204,12 +217,13 @@ std::string MimeDatabase::typeForName( const std::string& name ) {
 	for ( const auto& pattern : mPatterns )
 		if ( String::globMatch( name, pattern.first, true ) )
 			return pattern.second.mime;
-	return "application/octet-stream";
+	return unknown;
 }
 
-std::string MimeDatabase::typeOf( const VFS::FileInfo& info ) {
+const std::string& MimeDatabase::typeOf( const EE::VFS::FileInfo& info ) {
+	static const std::string directory( "inode/directory" );
 	if ( info.isDirectory() )
-		return "inode/directory";
+		return directory;
 	return typeForName( info.name );
 }
 
@@ -236,23 +250,25 @@ std::string MimeDatabase::description( const std::string& mime, const std::strin
 		std::lock_guard<std::mutex> lock( mMutex );
 		load();
 		auto found = mDescriptions.find( mime );
-		if ( found != mDescriptions.end() )
+		if ( found != mDescriptions.end() && !found->second.empty() )
 			return found->second;
 		std::string text;
 		if ( mime == "inode/directory" )
 			text = "Folder";
-		for ( size_t i = 0; text.empty() && i < mDataDirs.size(); ++i ) {
+		// Unknown types are remembered too (empty): not read from disk again.
+		bool known = found != mDescriptions.end();
+		for ( size_t i = 0; !known && text.empty() && i < mDataDirs.size(); ++i ) {
 			std::string base = mDataDirs[i];
 			FileSystem::dirAddSlashAtEnd( base );
 			text = readComment( base + "mime/" + mime + ".xml" );
 		}
-		for ( size_t i = 0; text.empty() && i < std::size( BuiltinTypes ); ++i )
+		for ( size_t i = 0; !known && text.empty() && i < std::size( BuiltinTypes ); ++i )
 			if ( mime == BuiltinTypes[i].mime )
 				text = BuiltinTypes[i].description;
-		if ( !text.empty() ) {
+		if ( !known )
 			mDescriptions[mime] = text;
+		if ( !text.empty() )
 			return text;
-		}
 	}
 	std::string extension = lowerExtension( name );
 	if ( !extension.empty() )
@@ -260,29 +276,61 @@ std::string MimeDatabase::description( const std::string& mime, const std::strin
 	return "File";
 }
 
-std::string MimeDatabase::describe( const VFS::FileInfo& info ) {
+std::string MimeDatabase::describe( const EE::VFS::FileInfo& info ) {
 	if ( info.isDirectory() )
 		return "Folder";
-	std::string extension = lowerExtension( info.name );
-	std::string key = extension.empty() ? "\n" + info.name : extension;
-	{
-		std::lock_guard<std::mutex> lock( mMutex );
-		auto found = mDescriptionByExtension.find( key );
-		if ( found != mDescriptionByExtension.end() )
-			return found->second;
-	}
-	std::string text = description( typeOf( info ), info.name );
-	std::lock_guard<std::mutex> lock( mMutex );
-	if ( mDescriptionByExtension.size() > 4096 )
-		mDescriptionByExtension.clear();
-	mDescriptionByExtension[key] = text;
-	return text;
+	// The type decides (not the extension: "CMakeLists.txt" is not a text file); description()
+	// caches by type.
+	return description( typeOf( info ), info.name );
 }
 
-std::string MimeDatabase::iconName( const VFS::FileInfo& info ) {
+std::vector<std::string> MimeDatabase::iconNames( const std::string& mime ) {
+	if ( mime == "inode/directory" )
+		return { "folder" };
+	std::vector<std::string> types = withParents( mime );
+	std::vector<std::string> names;
+	auto add = [&]( std::string name ) {
+		if ( !name.empty() && std::find( names.begin(), names.end(), name ) == names.end() )
+			names.push_back( std::move( name ) );
+	};
+	std::lock_guard<std::mutex> lock( mMutex );
+	for ( const auto& type : types ) {
+		auto icon = mIcons.find( type );
+		if ( icon != mIcons.end() )
+			add( icon->second );
+		std::string name = type;
+		String::replaceAll( name, "/", "-" );
+		add( name );
+	}
+	for ( const auto& type : types ) {
+		auto generic = mGenericIcons.find( type );
+		if ( generic != mGenericIcons.end() )
+			add( generic->second );
+	}
+	std::string media = mime.substr( 0, mime.find( '/' ) );
+	add( media + "-x-generic" );
+	add( "unknown" );
+	add( "text-x-generic" );
+	return names;
+}
+
+const std::vector<std::string>& MimeDatabase::iconNames( const EE::VFS::FileInfo& info ) {
+	const std::string& mime = typeOf( info );
+	{
+		std::lock_guard<std::mutex> lock( mMutex );
+		auto found = mIconNamesByType.find( mime );
+		if ( found != mIconNamesByType.end() )
+			return found->second;
+	}
+	std::vector<std::string> names = iconNames( mime );
+	std::lock_guard<std::mutex> lock( mMutex );
+	return mIconNamesByType.emplace( mime, std::move( names ) ).first->second;
+}
+
+std::string MimeDatabase::iconName( const EE::VFS::FileInfo& info ) {
 	if ( info.isDirectory() )
 		return "mime-folder";
-	std::string mime = typeOf( info );
+	const std::string& mime = typeOf( info );
 	if ( mime == "application/pdf" )
 		return "mime-pdf";
 	if ( mime == "text/markdown" )

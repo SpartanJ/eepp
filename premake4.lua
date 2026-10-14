@@ -707,11 +707,11 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.is_real("windows") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32", "shell32" } )
 	elseif os.is_real("mingw32") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32", "shell32" } )
 	elseif os.is_real("mingw64") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32", "shell32" } )
 	elseif os.is_real("macosx") then
 		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
 	elseif os.is_real("bsd") then
@@ -1171,6 +1171,7 @@ function build_eepp( build_name )
 			"src/eepp/scene/*.cpp",
 			"src/eepp/scene/actions/*.cpp",
 			"src/eepp/ui/*.cpp",
+			"src/eepp/ui/icons/*.cpp",
 			"src/eepp/ui/accessibility/*.cpp",
 			"src/eepp/ui/abstract/*.cpp",
 			"src/eepp/ui/models/*.cpp",
@@ -1776,7 +1777,8 @@ solution "eepp"
 		files { "src/eepp/ui/platform/macos/macosmenubar.mm",
 				"src/eepp/window/platform/macos/platformhelper.mm",
 				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm",
-				"src/eepp/system/fileassociation_macos.mm" }
+				"src/eepp/system/fileassociation_macos.mm",
+				"src/eepp/ui/icons/systemiconsmacos.mm" }
 		buildoptions { "-x objective-c++" }
 		if not is_vs() then
 			buildoptions{ "-std=c++20" }
@@ -2130,8 +2132,9 @@ solution "eepp"
 	project "eefm"
 		set_kind()
 		language "C++"
-		includedirs { "src/thirdparty" }
+		includedirs { "src/thirdparty", "src/modules/eterm/include/" }
 		files { "src/tools/eefm/*.cpp" }
+		links { "eterm-static" }
 		eepp_module_vfs_add()
 		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 			links { "shell32" } -- Recycle Bin (SHFileOperationW)

@@ -1,6 +1,7 @@
 #include "fileview.hpp"
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/nodemessage.hpp>
+#include <eepp/ui/models/modeleditingdelegate.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitablerow.hpp>
@@ -9,6 +10,8 @@
 #include <eepp/window/window.hpp>
 
 using namespace EE::Scene;
+using namespace EE::UI::Doc;
+using namespace EE::UI::Models;
 using namespace EE::Window;
 
 namespace eefm {
@@ -177,7 +180,49 @@ FileTableView* FileTableView::New() {
 	return eeNew( FileTableView, () );
 }
 
-FileTableView::FileTableView() : UITableView() {}
+FileTableView::FileTableView() : UITableView() {
+	// Renaming is in place, started by beginRename() (F2, the context menu); double clicks open.
+	setEditable( true );
+	setEditTriggers( EditTrigger::None );
+	onCreateEditingDelegate = [this]( const ModelIndex& index ) -> ModelEditingDelegate* {
+		auto* delegate = StringModelEditingDelegate::New();
+		bool folder = isFolderRow && index.row() >= 0 && isFolderRow( index.row() );
+		delegate->onWillBeginEditing = [delegate, folder] {
+			// As Dolphin: the name without its extension is selected, ready to type over.
+			auto* input = delegate->getWidget()->asType<UITextInput>();
+			const String& text = input->getText();
+			size_t dot = folder ? String::InvalidPos : text.rfind( '.' );
+			if ( dot != String::InvalidPos && dot > 0 )
+				input->getDocument().setSelection(
+					TextRange( { 0, 0 }, { 0, static_cast<Int64>( dot ) } ) );
+		};
+		return delegate;
+	};
+}
+
+void FileTableView::beginRename( size_t row ) {
+	if ( !getModel() || row >= getModel()->rowCount() )
+		return;
+	ModelIndex index = getModel()->index( row, getModel()->searchColumn() );
+	getSelection().set( getModel()->index( row ) );
+	scrollToIndex( index );
+	// The row's cells exist once it is laid out (after scrolling).
+	runOnMainThread( [this, index] {
+		UITableCell* cell = getCellFromIndex( index );
+		if ( !cell )
+			return;
+		beginEditing( index, cell );
+		// The editor covers the name only (the icon stays), its text where the name was.
+		UIWidget* editor = getEditWidget();
+		if ( editor && cell->getTextView() ) {
+			Float x = std::max( 0.f, cell->getTextView()->getPixelsPosition().x -
+										 editor->getPixelsPadding().Left );
+			editor->setPixelsPosition( x, 0 );
+			editor->setPixelsSize( cell->getPixelsSize().getWidth() - x,
+								   cell->getPixelsSize().getHeight() );
+		}
+	} );
+}
 
 UIWidget* FileTableView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
 	// Same tag as the stock cells, so theme rules for tableview::cell apply.
@@ -214,7 +259,21 @@ Uint32 FileTableView::onMessage( const NodeMessage* msg ) {
 	return UITableView::onMessage( msg );
 }
 
+Uint32 FileTableView::onKeyDown( const KeyEvent& event ) {
+	// Escape clears the selection (as Dolphin); with nothing selected it is left to others.
+	if ( event.getKeyCode() == KEY_ESCAPE && !isEditing() &&
+		 !( event.getMod() & ( KEYMOD_CTRL | KEYMOD_SHIFT | KEYMOD_ALT | KEYMOD_META ) ) &&
+		 !getSelection().isEmpty() ) {
+		getSelection().clear();
+		return 1;
+	}
+	return UITableView::onKeyDown( event );
+}
+
 Uint32 FileTableView::onMouseClick( const Vector2i& position, const Uint32& flags ) {
+	// The release of a rubber band selection is not a click on the empty area.
+	if ( rubberBandDragged() )
+		return UITableView::onMouseClick( position, flags );
 	// Clicks that reach the view itself landed on the empty area below the rows.
 	if ( flags & EE_BUTTON_RMASK ) {
 		getSelection().clear();

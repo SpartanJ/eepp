@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "icons.hpp"
+#include "mime.hpp"
 
 #include <args/args.hxx>
 #include <iostream>
@@ -170,6 +171,8 @@ tab::icon,
 }
 .pane_status_bar {
 	padding: 3dp 4dp;
+	/* Same as the table above it, so the status pill sits inside the view (Dolphin). */
+	background-color: var(--list-back);
 }
 .pane_status {
 	border-width: 1dp;
@@ -231,6 +234,26 @@ tableview::cell {
 tableview::row {
 	opacity: 1;
 }
+/* Alternating rows, as eproc and Dolphin. */
+tableview::row:nth-child(even) {
+	background-color: var(--list-back-alt);
+}
+tableview::row:nth-child(even):hover {
+	background-color: var(--item-hover);
+}
+tableview::row:nth-child(even):selected {
+	background-color: var(--primary);
+}
+/* Secondary columns are dimmed, like the places headers (selected rows keep the theme's
+   selected text color: that rule is more specific). */
+tableview::cell.vfs_size,
+tableview::cell.vfs_modified,
+tableview::cell.vfs_type,
+tableview::cell.vfs_permissions,
+tableview::cell.vfs_owner,
+tableview::cell.vfs_group {
+	color: var(--font-hint);
+}
 tableview::cell.vfs_size {
 	text-align: right;
 }
@@ -252,9 +275,11 @@ tableview::cell.dragged {
 		<widget layout_width="0" layout_weight="1" layout_height="1dp" />
 		<PushButton id="app_menu" class="tool" icon="app-menu" tooltip="Menu" />
 	</hbox>
-	<Splitter id="main_splitter" layout_width="match_parent" layout_height="0" layout_weight="1" orientation="horizontal" splitter-partition="185dp">
+	<Splitter id="terminal_splitter" layout_width="match_parent" layout_height="0" layout_weight="1" orientation="vertical" splitter-partition="70%">
+	<Splitter id="main_splitter" layout_width="match_parent" layout_height="match_parent" orientation="horizontal" splitter-partition="185dp">
 		<ScrollView id="places_scroll" layout_width="0" layout_height="match_parent" min-width="120dp" />
 		<Splitter id="pane_splitter" layout_width="0" layout_height="match_parent" orientation="horizontal" splitter-partition="50%" />
+	</Splitter>
 	</Splitter>
 	<widget id="parking" layout_width="0" layout_height="0" visible="false" enabled="false" />
 </vbox>
@@ -317,22 +342,57 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 		width = std::max( 640, mState["window"].value( "width", width ) );
 		height = std::max( 400, mState["window"].value( "height", height ) );
 	}
+	mConfig = std::make_unique<AppConfig>( mConfigDir );
+	mConfig->load();
 	WindowSettings ws( width, height, "eefm", WindowStyle::Default, WindowBackend::Default, 32,
 					   Sys::getProcessPath() + "assets/icon/ee.png" );
-	mApp = std::make_unique<UIApplication>( ws );
+	UIApplication::Settings appSettings;
+	if ( mConfig->window.pixelDensity > 0 )
+		appSettings.pixelDensity = mConfig->window.pixelDensity;
+	appSettings.fontHinting = mConfig->font.hinting;
+	appSettings.fontAntialiasing = mConfig->font.antialiasing;
+	FontTrueTypePtr uiFont;
+	if ( !mConfig->font.uiPath.empty() && FileSystem::fileExists( mConfig->font.uiPath ) ) {
+		uiFont = FontTrueType::New( "eefm-ui-font" );
+		if ( uiFont->loadFromFile( mConfig->font.uiPath ) )
+			appSettings.baseFont = uiFont.get();
+	}
+	mApp = std::make_unique<UIApplication>(
+		ws, appSettings,
+		ContextSettings( mConfig->window.vsync, static_cast<Int32>( mConfig->window.maxFPS ),
+						 mConfig->window.multisamples, mConfig->window.rendererVersion ) );
 	mUI = mApp->getUI();
 	if ( !mUI )
 		return false;
+	mUI->setColorSchemePreference( mConfig->theme.uiColorScheme );
+	mUI->updateWindowTitleBarColor();
+	if ( mConfig->font.uiSize > 0 )
+		applyUIFont( appSettings.baseFont, mConfig->font.uiSize );
+	mUI->setSmoothScrollEnabled( mConfig->files.smoothScroll );
+	if ( !mConfig->font.fallbackPath.empty() ) {
+		auto fallback = FontTrueType::New( "eefm-fallback-font", *mUI->getResourceScope() );
+		if ( fallback->loadFromFile( mConfig->font.fallbackPath ) )
+			mUI->getResourceScope()->getFontService().addFallbackFont( std::move( fallback ) );
+	}
 	if ( mState.contains( "window" ) && mState["window"].value( "maximized", false ) )
 		mApp->getWindow()->maximize();
 	loadIcons( mUI, Sys::getProcessPath() + "assets/" );
 
 	mExecutor = std::make_unique<MainThreadExecutor>( mUI );
 	mPool = ThreadPool::createShared( 2 );
+	// Theme detection and icon loading run on the pool: startup does not wait for them.
+	mSystemIcons = UISystemIconTheme::New( *mPool, *mExecutor );
+	mSystemIcons->setOnIconsLoaded( [this] {
+		for ( int i = 0; i < 2; ++i )
+			if ( auto* tab = currentTab( pane( i ) ) )
+				tab->view->invalidateDraw();
+		if ( mPlacesPanel )
+			mPlacesPanel->refreshIcons();
+	} );
 	mVFS = &VirtualFileSystem::instance();
 #ifdef EE_VFS_SFTP
 	mSSHPrompts = std::make_shared<SSHPrompts>( mUI, *mExecutor );
-	if ( auto sftp = std::dynamic_pointer_cast<VFS::SFTPProvider>( mVFS->provider( "sftp" ) ) ) {
+	if ( auto sftp = std::dynamic_pointer_cast<SFTPProvider>( mVFS->provider( "sftp" ) ) ) {
 		sftp->setHostKeyVerifier( mSSHPrompts );
 		sftp->setAuthenticationHandler( mSSHPrompts );
 	}
@@ -342,6 +402,9 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	mToolbar = mUI->find<UIWidget>( "toolbar" );
 	mMenuButton = mUI->find<UIWidget>( "app_menu" );
 	mMainSplitter = mUI->find<UISplitter>( "main_splitter" );
+	mTerminalSplitter = mUI->find<UISplitter>( "terminal_splitter" );
+	if ( mState.contains( "terminal_partition" ) && mState["terminal_partition"].is_string() )
+		mTerminalPartition = mState["terminal_partition"].get<std::string>();
 	mPaneSplitter = mUI->find<UISplitter>( "pane_splitter" );
 	mPlacesScroll = mUI->find<UIWidget>( "places_scroll" );
 	mParking = mUI->find<UIWidget>( "parking" );
@@ -350,6 +413,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	mPlaces = std::make_unique<Places>( mConfigDir + "places.json" );
 	mPlaces->load();
 	mPlacesPanel = PlacesPanel::New();
+	mPlacesPanel->iconProvider = [this]( const Place& place ) { return placeIcon( place ); };
 	mPlacesPanel->setParent( mPlacesScroll );
 	mPlacesPanel->onActivate = [this]( const PlacesPanel::Entry& entry, bool newTab ) {
 		if ( newTab )
@@ -420,28 +484,34 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 
 	mApp->getWindow()->getInput()->pushCallback( [this]( InputEvent* event ) {
 		if ( event->Type == InputEvent::FileDropped ) {
-			// Files dropped from other applications are copied into the pane under the pointer.
-			int target = mActivePane;
-			Vector2f mouse = mUI->getEventDispatcher()->getMousePosf();
-			for ( int i = 0; i < 2; ++i ) {
-				Pane& p = pane( i );
-				if ( p.root->getParent() == mPaneSplitter &&
-					 p.root->getScreenRect().contains( mouse ) )
-					target = i;
+			// Files dropped from other applications: gathered, then copied in one transfer once
+			// the events of this frame were delivered (a drop sends one event per file).
+			std::string file( event->file.file );
+			if ( FileSystem::fileExtension( file ) == "lnk" ) {
+				std::string target = Sys::getShortcutTarget( file );
+				if ( !target.empty() && FileSystem::fileExists( target ) )
+					file = target;
 			}
-			if ( auto* tab = currentTab( pane( target ) ) )
-				transferFiles( { URI::fromFSPath( event->file.file ) }, tab->model->uri(), false,
-							   target );
+			mDroppedFiles.push_back( URI::fromFSPath( file ) );
+			if ( event->file.hasPosition )
+				mDropPosition = Vector2f( event->file.x, event->file.y );
+		} else if ( event->Type == InputEvent::EventsSent ) {
+			if ( !mDroppedFiles.empty() )
+				dropExternalFiles();
 		} else if ( event->Type == InputEvent::MouseButtonDown ) {
 			// Any press inside a pane (or its location bar) makes it the active one. Widgets
 			// handle their own clicks, so this is tracked at the window level.
+			// The widget under the pointer must belong to the pane: menus and dialogs drawn over
+			// it are not the pane.
 			Vector2f mouse( event->button.x, event->button.y );
+			Node* over = mUI->overFind( mouse );
 			for ( int i = 0; i < 2; ++i ) {
 				Pane& p = pane( i );
-				if ( ( p.root->getParent() == mPaneSplitter &&
-					   p.root->getScreenRect().contains( mouse ) ) ||
-					 ( p.location.box->isVisible() &&
-					   p.location.box->getScreenRect().contains( mouse ) ) ) {
+				if ( over && ( ( p.root->getParent() == mPaneSplitter &&
+								 ( p.root == over || p.root->inParentTreeOf( over ) ) ) ||
+							   ( p.location.box->isVisible() &&
+								 ( p.location.box == over ||
+								   p.location.box->inParentTreeOf( over ) ) ) ) ) {
 					if ( i != mActivePane )
 						setActivePane( i );
 					break;
@@ -459,6 +529,38 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	mApp->getWindow()->setCloseRequestCallback( [this]( EE::Window::Window* ) {
 		saveState();
 		return true;
+	} );
+
+	// The keyboard belongs to the files: a click on a pane's bars or empty areas focuses the
+	// container under the pointer, which would swallow the keys (typing, arrows, Enter). Hand
+	// it to that pane's files on the next frame. Buttons and text fields keep it.
+	mUI->getEventDispatcher()->addFocusEventCallback( [this]( const Uint32&, Node* focus, Node* ) {
+		// Focus falls back to the scene (or the UI root) when the focused dialog or menu closes:
+		// the active pane's files take it back.
+		if ( focus && ( !focus->isWidget() || focus == mUI->getRoot() ) ) {
+			mUI->runOnMainThread( [this, focus] {
+				if ( mUI->getEventDispatcher()->getFocusNode() == focus )
+					if ( auto* tab = currentTab() )
+						tab->view->setFocus();
+			} );
+			return;
+		}
+		if ( !focus || !focus->isWidget() || focus->isType( UI_TYPE_PUSHBUTTON ) ||
+			 focus->isType( UI_TYPE_TEXTINPUT ) )
+			return;
+		for ( int i = 0; i < 2; ++i ) {
+			auto* tab = currentTab( pane( i ) );
+			if ( !tab || !pane( i ).root->inParentTreeOf( focus ) || tab->view == focus ||
+				 tab->view->inParentTreeOf( focus ) )
+				continue;
+			mUI->runOnMainThread( [this, i, focus] {
+				auto* current = currentTab( pane( i ) );
+				// Only if nothing else took the focus meanwhile (focus is not dereferenced).
+				if ( current && mUI->getEventDispatcher()->getFocusNode() == focus )
+					current->view->setFocus();
+			} );
+			return;
+		}
 	} );
 
 	registerShortcuts();
@@ -504,6 +606,8 @@ void App::saveState() {
 		state["window"]["width"] = mState["window"].value( "width", 1400 );
 		state["window"]["height"] = mState["window"].value( "height", 820 );
 	}
+	rememberTerminalSize();
+	state["terminal_partition"] = mTerminalPartition;
 	state["split"] = mSplit;
 	state["places_visible"] = mPlacesVisible;
 	state["filter_bar"] = mFilterBarVisible;
@@ -512,7 +616,6 @@ void App::saveState() {
 	state["filter_mode"] = mFilterMode == VFSDirectoryModel::NameFilterMode::PlainText ? "text"
 						   : mFilterMode == VFSDirectoryModel::NameFilterMode::RegEx   ? "regex"
 																					   : "glob";
-	state["active_pane"] = mActivePane;
 	if ( mPlacesVisible )
 		state["places_width"] = PixelDensity::pxToDp( mPlacesScroll->getPixelsSize().getWidth() );
 	else if ( mState.contains( "places_width" ) )
@@ -636,7 +739,11 @@ void App::restoreTabs( const std::vector<std::string>& locations, bool forceSpli
 		if ( pane( i ).tabList.empty() )
 			openTab( pane( i ), home );
 	setSplit( mSplit );
-	setActivePane( mSplit ? std::clamp( mState.value( "active_pane", 0 ), 0, 1 ) : 0 );
+	// Start on the left pane, with the keyboard there too: restoring tabs focuses the views it
+	// selects (the right pane's last), and the highlight alone does not move the focus.
+	setActivePane( 0 );
+	if ( auto* tab = currentTab( pane( 0 ) ) )
+		tab->view->setFocus();
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -740,17 +847,37 @@ void App::showAppMenu() {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->add( mUI->i18n( "eefm_new_tab", "New Tab" ), icon( "action-new-tab" ), "Ctrl+T" )
 		->setId( "new-tab" );
+	if ( currentTab() && currentTab()->model->uri().getScheme() == "file" )
+		menu->add( mUI->i18n( "eefm_open_terminal", "Open Terminal" ), icon( "action-terminal" ),
+				   "Shift+F4" )
+			->setId( "open-terminal" );
 	menu->addSeparator();
 	menu->addCheckBox( mUI->i18n( "eefm_show_hidden", "Show Hidden Files" ), mShowHidden, "Ctrl+H" )
 		->setId( "hidden" );
 	menu->addCheckBox( mUI->i18n( "eefm_split_view", "Split View" ), mSplit, "F3" )
 		->setId( "split" );
-	menu->addCheckBox( mUI->i18n( "eefm_show_places", "Show Places Panel" ), mPlacesVisible, "F9" )
+	// As Dolphin: the panels are in a submenu.
+	UIPopUpMenu* panels = UIPopUpMenu::New();
+	panels->addCheckBox( mUI->i18n( "eefm_panel_places", "Places" ), mPlacesVisible, "F9" )
 		->setId( "places" );
+	panels->addCheckBox( mUI->i18n( "eefm_panel_terminal", "Terminal" ), isTerminalVisible(), "F4" )
+		->setId( "terminal" );
+	panels->on( Event::OnItemClicked, [this]( const Event* event ) {
+		std::string id( event->getNode()->getId() );
+		if ( id == "places" )
+			setPlacesVisible( !mPlacesVisible );
+		else if ( id == "terminal" )
+			toggleTerminal();
+	} );
+	menu->addSubMenu( mUI->i18n( "eefm_show_panels", "Show Panels" ), icon( "places-panel" ),
+					  panels );
 	menu->addCheckBox( mUI->i18n( "eefm_show_filter_bar", "Show Filter Bar" ), mFilterBarVisible,
 					   "Ctrl+I" )
 		->setId( "filter" );
 	menu->addSeparator();
+	menu->add( mUI->i18n( "eefm_configure", "Configure eefm..." ), icon( "settings" ),
+			   "Ctrl+Shift+," )
+		->setId( "settings" );
 	menu->add( mUI->i18n( "eefm_quit", "Quit" ), icon( "quit" ), "Ctrl+Q" )->setId( "quit" );
 	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		std::string id( event->getNode()->getId() );
@@ -766,6 +893,11 @@ void App::showAppMenu() {
 			setPlacesVisible( !mPlacesVisible );
 		} else if ( id == "filter" ) {
 			setFilterBarVisible( !mFilterBarVisible );
+		} else if ( id == "settings" ) {
+			showSettings();
+		} else if ( id == "open-terminal" ) {
+			if ( auto* tab = currentTab() )
+				openTerminalHere( tab );
 		} else if ( id == "quit" ) {
 			quit();
 		}
@@ -864,6 +996,8 @@ void App::registerShortcuts() {
 		"properties", fileCommand( onTab( [this]( FileTab* tab ) { showProperties( tab ); } ) ) );
 	mUI->setKeyBindingCommand( "terminal",
 							   onTab( [this]( FileTab* tab ) { openTerminalHere( tab ); } ) );
+	mUI->setKeyBindingCommand( "toggle-terminal", [this] { toggleTerminal(); } );
+	mUI->setKeyBindingCommand( "settings", [this] { showSettings(); } );
 	mUI->setKeyBindingCommand( "quit", [this] { quit(); } );
 	mUI->setKeyBindingCommand( "debug-widget-tree-view",
 							   [this] { Tools::UIWidgetInspector::create( mUI ); } );
@@ -897,6 +1031,8 @@ void App::registerShortcuts() {
 		{ "f2", "rename" },
 		{ "alt+return", "properties" },
 		{ "shift+f4", "terminal" },
+		{ "f4", "toggle-terminal" },
+		{ "mod+shift+,", "settings" },
 		{ "mod+q", "quit" },
 		{ "mod+shift+f11", "debug-widget-tree-view" },
 	} );
@@ -945,8 +1081,7 @@ void App::refreshDeviceUsage() {
 		if ( device.section != PlaceSection::Devices )
 			continue;
 		URI uri = device.uri;
-		mVFS->spaceInfo( uri ).thenOn( *mExecutor, [this,
-													uri]( VFSResult<EE::VFS::SpaceInfo>&& space ) {
+		mVFS->spaceInfo( uri ).thenOn( *mExecutor, [this, uri]( VFSResult<SpaceInfo>&& space ) {
 			if ( !space || space.value().capacity == 0 )
 				return;
 			const auto& info = space.value();
@@ -1199,6 +1334,92 @@ void App::showPlaceDialog( std::optional<size_t> index, Place initial ) {
 			nameInput->getDocument().selectAll();
 		}
 	} );
+}
+
+UIIcon* App::fileIcon( const FileInfo& info ) {
+	// Runs on every cell update: the icon depends only on the type, so it is resolved once per
+	// type (typeOf returns a reference: no allocation on the way).
+	auto& mime = MimeDatabase::instance();
+	const std::string& type = mime.typeOf( info );
+	auto found = mFileIcons.find( type );
+	if ( found == mFileIcons.end() ) {
+		UIIcon* icon = mUI->findIcon( mime.iconName( info ) );
+		if ( !icon )
+			icon = mUI->findIcon( info.isDirectory() ? "folder" : "file" );
+#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_MACOS
+		if ( mConfig->files.systemIcons )
+			icon = mSystemIcons->getFileIcon( info.name, info.isDirectory(), mime.iconNames( info ),
+											  icon );
+#endif
+		found = mFileIcons.emplace( type, icon ).first;
+	}
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS
+	// The shell's icons go by extension, not by type: only the fallback is cached here (the
+	// theme caches the shell's per extension).
+	if ( mConfig->files.systemIcons ) {
+		return mSystemIcons->getFileIcon( info.name, info.isDirectory(), mime.iconNames( info ),
+										  found->second );
+	}
+#endif
+	return found->second;
+}
+
+UIIcon* App::placeIcon( const Place& place ) {
+	// eefm's place icons and the standard (freedesktop) names that show the same thing.
+	static const std::unordered_map<std::string, std::vector<std::string>> names{
+		{ "place-home", { "user-home" } },
+		{ "place-desktop", { "user-desktop" } },
+		{ "place-documents", { "folder-documents" } },
+		{ "place-downloads", { "folder-download" } },
+		{ "place-music", { "folder-music" } },
+		{ "place-pictures", { "folder-pictures" } },
+		{ "place-videos", { "folder-videos" } },
+		{ "place-trash", { "user-trash" } },
+		{ "place-folder", { "folder" } },
+		{ "place-remote", { "folder-remote", "network-server" } },
+		{ "place-network", { "network-workgroup", "folder-remote" } },
+		{ "device-drive", { "drive-harddisk" } },
+		{ "device-root", { "drive-harddisk-root", "drive-harddisk" } },
+		{ "device-usb", { "drive-removable-media-usb", "drive-removable-media" } },
+		{ "device-phone", { "phone", "smartphone" } },
+		{ "action-add-place", { "starred", "bookmarks" } },
+	};
+	UIIcon* fallback = mUI->findIcon( place.icon );
+	if ( !mConfig->files.systemIcons )
+		return fallback;
+	auto found = names.find( place.icon );
+	if ( found == names.end() )
+		return fallback;
+	// Local places ask for their path: Windows and macOS show special folder and drive icons.
+	if ( place.uri.getScheme() == "file" && !place.trash )
+		return mSystemIcons->getPathIcon( place.uri.getFSPath(), found->second, fallback );
+	return mSystemIcons->getIcon( found->second, fallback );
+}
+
+void App::dropExternalFiles() {
+	std::vector<URI> files = std::move( mDroppedFiles );
+	mDroppedFiles.clear();
+	// Where it was dropped (the backend may not report it: then the pointer).
+	Vector2f position = mDropPosition ? *mDropPosition : mUI->getEventDispatcher()->getMousePosf();
+	mDropPosition.reset();
+	Node* over = mUI->overFind( position );
+	int target = mActivePane;
+	for ( int i = 0; i < 2; ++i ) {
+		Pane& p = pane( i );
+		if ( over && p.root->getParent() == mPaneSplitter &&
+			 ( p.root == over || p.root->inParentTreeOf( over ) ) )
+			target = i;
+	}
+	auto* tab = currentTab( pane( target ) );
+	if ( !tab )
+		return;
+	// Onto a folder: into it (as drops between panes); anywhere else: the pane's folder.
+	URI destination = tab->model->uri();
+	if ( auto row = tab->view->rowOf( over );
+		 row && *row < tab->model->rowCount() && tab->model->entry( *row ).isDirectory() )
+		destination = tab->model->entryURI( *row );
+	setActivePane( target );
+	transferFiles( files, destination, false, target );
 }
 
 DrawablePtr App::icon( const std::string& name, int sizeDp ) const {

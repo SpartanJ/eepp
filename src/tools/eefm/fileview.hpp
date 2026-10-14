@@ -48,6 +48,9 @@ class FileTableView : public UITableView {
 	/** Context menu requested over the empty area. */
 	std::function<void()> onBackgroundMenu;
 
+	/** Starts renaming row in place (an editor over its name; the model renames on Enter). */
+	void beginRename( size_t row );
+
 	/** @return The row of a widget inside this view (cells or rows), if any. */
 	std::optional<size_t> rowOf( Node* node ) const;
 
@@ -59,6 +62,8 @@ class FileTableView : public UITableView {
 	Uint32 onMessage( const NodeMessage* msg ) override;
 
 	Uint32 onMouseClick( const Vector2i& position, const Uint32& flags ) override;
+
+	Uint32 onKeyDown( const KeyEvent& event ) override;
 };
 
 } // namespace eefm

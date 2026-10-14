@@ -42,6 +42,8 @@ UISpinBox::UISpinBox() :
 
 	mInput->setAllowOnlyNumbers( true, false );
 	mInput->on( Event::OnBufferChange, [this]( auto event ) { onBufferChange( event ); } );
+	mCommitOnEnterCb = mInput->on( Event::OnPressEnter, [this]( auto ) { commitText(); } );
+	mCommitOnFocusLossCb = mInput->on( Event::OnFocusLoss, [this]( auto ) { commitText(); } );
 	double val = mValue;
 	mValue += 1;
 	setValue( val );
@@ -49,7 +51,11 @@ UISpinBox::UISpinBox() :
 	applyDefaultTheme();
 }
 
-UISpinBox::~UISpinBox() {}
+UISpinBox::~UISpinBox() {
+	// The input outlives this (children are deleted by Node) and loses the focus when deleted.
+	mInput->removeEventListener( mCommitOnEnterCb );
+	mInput->removeEventListener( mCommitOnFocusLossCb );
+}
 
 Uint32 UISpinBox::onKeyDown( const KeyEvent& event ) {
 	if ( event.getKeyCode() == KEY_UP || event.getKeyCode() == KEY_DOWN ) {
@@ -193,22 +199,29 @@ void UISpinBox::onBufferChange( const Event* ) {
 	if ( mModifyingVal )
 		return;
 
-	if ( mInput->getText().empty() ) {
-		setValue( 0 );
+	// While typing, the text is left as typed: a partial value ("1" on the way to "14", or an
+	// empty text) may be out of range. Only valid values apply; commitText fixes the rest.
+	if ( mInput->getText().empty() )
+		return;
+
+	if ( '.' == mInput->getText()[mInput->getText().size() - 1] ) {
+		Uint32 pos = (Uint32)mInput->getText().find_first_of( "." );
+
+		if ( pos != mInput->getText().size() - 1 )
+			mInput->setText( mInput->getText().substr( 0, mInput->getText().size() - 1 ) );
 	} else {
 		double val = mValue;
-
-		if ( '.' == mInput->getText()[mInput->getText().size() - 1] ) {
-			Uint32 pos = (Uint32)mInput->getText().find_first_of( "." );
-
-			if ( pos != mInput->getText().size() - 1 )
-				mInput->setText( mInput->getText().substr( 0, mInput->getText().size() - 1 ) );
-		} else {
-			bool res = String::fromString( val, mInput->getText() );
-			if ( res && val != mValue )
-				setValue( val );
-		}
+		bool res = String::fromString( val, mInput->getText() );
+		if ( res && val != mValue && val >= mMinValue && val <= mMaxValue )
+			setValue( val );
 	}
+}
+
+void UISpinBox::commitText() {
+	double val = mValue;
+	if ( !mInput->getText().empty() )
+		String::fromString( val, mInput->getText() );
+	setValue( val );
 }
 
 void UISpinBox::onSizeChange() {

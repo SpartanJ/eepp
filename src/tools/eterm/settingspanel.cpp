@@ -73,7 +73,13 @@ UIWindow* SettingsPanel::create( App& app ) {
 	panel->addFloat(
 		{ "uiFontSize", "appearance.fonts", app.i18n( "ui_font_size", "UI Font Size" ),
 		  app.i18n( "ui_font_size_desc", "Set the font size used by the application UI." ) },
-		6, 72, 0.5, [&app] { return app.config->font.uiSize; },
+		6, 72, 0.5,
+		[&app] {
+			if ( app.config->font.uiSize > 0 )
+				return app.config->font.uiSize;
+			auto* theme = app.scene->getUIThemeManager()->getDefaultTheme();
+			return theme ? PixelDensity::pxToDp( theme->getDefaultFontSize() ) : Float( 11 );
+		},
 		[&app]( double value ) { app.settingsActions->setUIFontSize( value ); } );
 	panel->addFloat(
 		{ "terminalFontSize", "appearance.fonts",
@@ -103,9 +109,7 @@ UIWindow* SettingsPanel::create( App& app ) {
 			static constexpr FontHinting values[] = { FontHinting::None, FontHinting::Slight,
 													  FontHinting::Full };
 			app.config->font.hinting = values[std::min( selected, size_t{ 2 } )];
-			app.scene->getResourceScope()->getFontService().setHinting( app.config->font.hinting );
-			app.forEachTerminal(
-				[]( UITerminal* terminal ) { terminal->syncFontRenderingConfig(); } );
+			app.settingsActions->applyFontRendering();
 			app.savePreferences();
 		} );
 	panel->addChoice(
@@ -119,10 +123,7 @@ UIWindow* SettingsPanel::create( App& app ) {
 			static constexpr FontAntialiasing values[] = {
 				FontAntialiasing::None, FontAntialiasing::Grayscale, FontAntialiasing::Subpixel };
 			app.config->font.antialiasing = values[std::min( selected, size_t{ 2 } )];
-			app.scene->getResourceScope()->getFontService().setAntialiasing(
-				app.config->font.antialiasing );
-			app.forEachTerminal(
-				[]( UITerminal* terminal ) { terminal->syncFontRenderingConfig(); } );
+			app.settingsActions->applyFontRendering();
 			app.savePreferences();
 		} );
 

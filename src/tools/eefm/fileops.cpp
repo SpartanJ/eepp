@@ -106,7 +106,7 @@ void withLocalFiles( VirtualFileSystem* vfs, Executor& executor, UISceneNode* ui
 		FileSystem::makeDir( cache, true );
 		std::string local = cache + uris[i].getLastPathSegment();
 		CopyOptions options;
-		options.overwrite = EE::VFS::OverwritePolicy::Overwrite;
+		options.overwrite = OverwritePolicy::Overwrite;
 		vfs->copy( uris[i], URI::fromFSPath( local ), options )
 			.completion()
 			.thenOn( executor,
@@ -138,7 +138,8 @@ void App::openFiles( const std::vector<URI>& uris ) {
 		return;
 	withLocalFiles( mVFS, *mExecutor, mUI, uris, [this]( std::vector<std::string> paths ) {
 		for ( const auto& path : paths ) {
-			std::string mime = MimeDatabase::instance().typeForName( path );
+			const std::string& mime =
+				MimeDatabase::instance().typeForName( FileSystem::fileNameFromPath( path ) );
 			auto app = Applications::instance().defaultFor( mime );
 			if ( app && Applications::launch( *app, { path } ) )
 				continue;
@@ -191,10 +192,31 @@ void App::showContextMenu( FileTab* tab, bool background ) {
 		allFolders = allFolders && dir;
 		anyFolder = anyFolder || dir;
 	}
+	// Create New is offered on items too (as Dolphin): with a full, scrolled list there may be
+	// no empty space to right click. It creates in the current folder.
+	auto addCreateNew = [this, menu, tab] {
+		UIPopUpMenu* create = UIPopUpMenu::New();
+		create->add( mUI->i18n( "eefm_new_folder", "Folder..." ), icon( "folder-add" ), "F10" )
+			->setId( "new-folder" );
+		create->add( mUI->i18n( "eefm_new_text_file", "Text File..." ), icon( "file-add" ) )
+			->setId( "new-file" );
+		create->on( Event::OnItemClicked, [this, tab]( const Event* event ) {
+			std::string id( event->getNode()->getId() );
+			if ( id == "new-folder" )
+				newFolder( tab );
+			else if ( id == "new-file" )
+				newTextFile( tab );
+		} );
+		menu->addSubMenu( mUI->i18n( "eefm_create_new", "Create New" ), icon( "file-add" ),
+						  create );
+		menu->addSeparator();
+	};
 	std::vector<Application> apps;
 	if ( !rows.empty() ) {
+		addCreateNew();
 		if ( !anyFolder ) {
-			std::string mime = MimeDatabase::instance().typeOf( tab->model->entry( rows[0] ) );
+			const std::string& mime =
+				MimeDatabase::instance().typeOf( tab->model->entry( rows[0] ) );
 			apps = Applications::instance().forMime( mime );
 			String openText =
 				apps.empty() ? mUI->i18n( "eefm_open", "Open" )
@@ -261,21 +283,7 @@ void App::showContextMenu( FileTab* tab, bool background ) {
 					   icon( "action-add-place" ) )
 				->setId( "add-place" );
 	} else {
-		UIPopUpMenu* create = UIPopUpMenu::New();
-		create->add( mUI->i18n( "eefm_new_folder", "Folder..." ), icon( "folder-add" ), "F10" )
-			->setId( "new-folder" );
-		create->add( mUI->i18n( "eefm_new_text_file", "Text File..." ), icon( "file-add" ) )
-			->setId( "new-file" );
-		create->on( Event::OnItemClicked, [this, tab]( const Event* event ) {
-			std::string id( event->getNode()->getId() );
-			if ( id == "new-folder" )
-				newFolder( tab );
-			else if ( id == "new-file" )
-				newTextFile( tab );
-		} );
-		menu->addSubMenu( mUI->i18n( "eefm_create_new", "Create New" ), icon( "file-add" ),
-						  create );
-		menu->addSeparator();
+		addCreateNew();
 		if ( !clipboardFiles().uris.empty() )
 			menu->add( mUI->i18n( "eefm_paste", "Paste" ), icon( "paste" ), "Ctrl+V" )
 				->setId( "paste" );
@@ -529,7 +537,7 @@ void App::startTransfer( const URI& source, const URI& destination, bool move, i
 				return;
 			}
 			if ( result.error().is( VFSErrorCode::AlreadyExists ) &&
-				 options.overwrite == EE::VFS::OverwritePolicy::Fail ) {
+				 options.overwrite == OverwritePolicy::Fail ) {
 				confirm( mUI, mUI->i18n( "eefm_file_exists", "File Already Exists" ),
 						 String::format( "\"%s\" already exists. Overwrite it?",
 										 destination.getLastPathSegment().c_str() ),
@@ -537,7 +545,7 @@ void App::startTransfer( const URI& source, const URI& destination, bool move, i
 							 if ( !overwrite )
 								 return;
 							 CopyOptions retry = options;
-							 retry.overwrite = EE::VFS::OverwritePolicy::Overwrite;
+							 retry.overwrite = OverwritePolicy::Overwrite;
 							 startTransfer( source, destination, move, paneIndex, retry );
 						 } );
 				return;
@@ -690,24 +698,24 @@ void App::renameSelection() {
 	auto* tab = currentTab();
 	if ( !tab )
 		return;
-	auto selection = selectedURIs( tab );
-	if ( selection.size() != 1 )
+	auto rows = selectedRows( tab );
+	if ( rows.size() == 1 )
+		tab->view->beginRename( rows[0] );
+}
+
+void App::renameEntry( FileTab* tab, const FileInfo& entry, const std::string& name ) {
+	if ( name.find( '/' ) != std::string::npos ) {
+		showError( mUI, mUI->i18n( "eefm_invalid_name", "A name cannot contain \"/\"." ) );
 		return;
-	URI source = selection[0];
-	promptText( mUI, mUI->i18n( "eefm_rename", "Rename" ),
-				mUI->i18n( "eefm_new_name", "Rename the item to:" ), source.getLastPathSegment(),
-				false, [this, source, tab]( std::optional<std::string> name ) {
-					if ( !name || name->empty() || name->find( '/' ) != std::string::npos ||
-						 *name == source.getLastPathSegment() )
-						return;
-					tab->selectWhenListed = *name;
-					mVFS->rename( source, source.getParent().withAppendedSegment( *name ) )
-						.thenOn( *mExecutor, [this]( VFSResult<void>&& result ) {
-							if ( !result )
-								reportError( mUI->i18n( "eefm_rename_failed", "Could not rename" ),
-											 result.error() );
-						} );
-				} );
+	}
+	URI source = entry.uriIn( tab->model->uri() );
+	tab->selectLater( name );
+	mVFS->rename( source, source.getParent().withAppendedSegment( name ) )
+		.thenOn( *mExecutor, [this]( VFSResult<void>&& result ) {
+			if ( !result )
+				reportError( mUI->i18n( "eefm_rename_failed", "Could not rename" ),
+							 result.error() );
+		} );
 }
 
 void App::newFolder( FileTab* tab ) {
@@ -717,7 +725,7 @@ void App::newFolder( FileTab* tab ) {
 				"New Folder", false, [this, parent, tab]( std::optional<std::string> name ) {
 					if ( !name || name->empty() || name->find( '/' ) != std::string::npos )
 						return;
-					tab->selectWhenListed = *name;
+					tab->selectLater( *name );
 					mVFS->makeDir( parent.withAppendedSegment( *name ) )
 						.thenOn( *mExecutor, [this]( VFSResult<void>&& result ) {
 							if ( !result )
@@ -730,25 +738,24 @@ void App::newFolder( FileTab* tab ) {
 
 void App::newTextFile( FileTab* tab ) {
 	URI parent = tab->model->uri();
-	promptText(
-		mUI, mUI->i18n( "eefm_new_text_file_title", "New Text File" ),
-		mUI->i18n( "eefm_file_name", "File name:" ), "Text File.txt", false,
-		[this, parent, tab]( std::optional<std::string> name ) {
-			if ( !name || name->empty() || name->find( '/' ) != std::string::npos )
-				return;
-			tab->selectWhenListed = *name;
-			mVFS->open( parent.withAppendedSegment( *name ), EE::VFS::OpenFlags::Write |
-																 EE::VFS::OpenFlags::Create |
-																 EE::VFS::OpenFlags::Exclusive )
-				.thenOn( *mExecutor, [this]( VFSResult<EE::VFS::FileHandle>&& handle ) {
-					if ( !handle ) {
-						reportError( mUI->i18n( "eefm_new_file_failed", "Could not create file" ),
-									 handle.error() );
+	promptText( mUI, mUI->i18n( "eefm_new_text_file_title", "New Text File" ),
+				mUI->i18n( "eefm_file_name", "File name:" ), "Text File.txt", false,
+				[this, parent, tab]( std::optional<std::string> name ) {
+					if ( !name || name->empty() || name->find( '/' ) != std::string::npos )
 						return;
-					}
-					handle.value().close();
+					tab->selectLater( *name );
+					mVFS->open( parent.withAppendedSegment( *name ),
+								OpenFlags::Write | OpenFlags::Create | OpenFlags::Exclusive )
+						.thenOn( *mExecutor, [this]( VFSResult<FileHandle>&& handle ) {
+							if ( !handle ) {
+								reportError(
+									mUI->i18n( "eefm_new_file_failed", "Could not create file" ),
+									handle.error() );
+								return;
+							}
+							handle.value().close();
+						} );
 				} );
-		} );
 }
 
 // ---------------------------------------------------------------------------------------------

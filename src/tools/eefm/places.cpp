@@ -25,6 +25,7 @@
 using json = nlohmann::json;
 using namespace EE;
 using namespace EE::System;
+using namespace EE::VFS;
 
 namespace eefm {
 
@@ -214,7 +215,7 @@ std::vector<URI> Places::sshHosts() {
 	std::string config;
 	if ( !FileSystem::fileGet( home + ".ssh/config", config ) )
 		return hosts;
-	auto file = VFS::SSHConfigFile::parse( config, home + ".ssh/config" );
+	auto file = SSHConfigFile::parse( config, home + ".ssh/config" );
 	for ( const auto& line : file.lines ) {
 		if ( line.keyword != "host" )
 			continue;

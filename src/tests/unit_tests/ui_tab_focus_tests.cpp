@@ -249,6 +249,34 @@ UTEST( TabFocus, ReverseTraversalIncludesAnInteractiveParentBeforeItsChildren ) 
 	EXPECT_TRUE( parent->getPrevTabWidget() == before );
 }
 
+UTEST( TabFocus, SpinBoxKeepsPartialTextUntilCommitted ) {
+	auto app = focusApp();
+	auto* spin = UISpinBox::New();
+	auto* other = UIPushButton::New();
+	spin->setMinValue( 6 )->setMaxValue( 72 );
+	spin->setValue( 12 );
+	auto* input = spin->getTextInput();
+	input->setFocus();
+	// "1" on the way to "14" is out of range: neither applied nor rewritten.
+	input->setText( "1" );
+	EXPECT_EQ( spin->getValue(), 12.0 );
+	EXPECT_TRUE( input->getText() == "1" );
+	input->setText( "14" );
+	EXPECT_EQ( spin->getValue(), 14.0 );
+	input->setText( "" );
+	EXPECT_EQ( spin->getValue(), 14.0 );
+	// Committing clamps and normalizes the text.
+	input->setText( "100" );
+	other->setFocus();
+	EXPECT_EQ( spin->getValue(), 72.0 );
+	EXPECT_TRUE( input->getText() == "72" );
+	input->setFocus();
+	input->setText( "" );
+	other->setFocus();
+	EXPECT_EQ( spin->getValue(), 72.0 );
+	EXPECT_TRUE( input->getText() == "72" );
+}
+
 UTEST( TabFocus, CompositeControlsHaveOneFunctionalEntry ) {
 	auto app = focusApp();
 	auto* before = UIPushButton::New();

@@ -125,6 +125,7 @@ PlacesPanel::PlacesPanel() : UILinearLayout( "placespanel", UIOrientation::Verti
 void PlacesPanel::setEntries( std::vector<Entry> entries ) {
 	mEntries = std::move( entries );
 	mRows.clear();
+	mIcons.clear();
 	mSlot.reset();
 	mDraggedRow.reset();
 	// Deferred close: this may run from the click handler of one of the rows.
@@ -170,8 +171,10 @@ void PlacesPanel::setEntries( std::vector<Entry> entries ) {
 		UIImage* icon = UIImage::New();
 		icon->setParent( line );
 		icon->addClass( "place_icon" );
-		if ( UIIcon* themeIcon = getUISceneNode()->findIcon( place.icon ) )
-			icon->setDrawable( themeIcon->getSource( PixelDensity::dpToPxI( 16 ) ) );
+		UIIcon* placeIcon = iconOf( place );
+		if ( placeIcon )
+			icon->setDrawable( placeIcon->getSource( PixelDensity::dpToPxI( 16 ) ) );
+		mIcons.emplace_back( icon, placeIcon );
 		icon->setLayoutGravity( UI_VALIGN_CENTER );
 		UITextView* label = UITextView::New();
 		label->setParent( line );
@@ -214,6 +217,20 @@ void PlacesPanel::setEntries( std::vector<Entry> entries ) {
 		} );
 		row->setData( i );
 		mRows.push_back( row );
+	}
+}
+
+UIIcon* PlacesPanel::iconOf( const Place& place ) const {
+	return iconProvider ? iconProvider( place ) : getUISceneNode()->findIcon( place.icon );
+}
+
+void PlacesPanel::refreshIcons() {
+	for ( auto& [image, icon] : mIcons ) {
+		if ( !icon )
+			continue;
+		const DrawablePtr& source = icon->getSource( PixelDensity::dpToPxI( 16 ) );
+		if ( source && image->getDrawable() != source )
+			image->setDrawable( source );
 	}
 }
 

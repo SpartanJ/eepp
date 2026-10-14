@@ -80,6 +80,18 @@ void App::createPane( int index, UIWidget* parent ) {
 	p.root = mUI->loadLayoutFromString( PaneLayout, parent )->asType<UIWidget>();
 	p.tabs = p.root->findByClass<UITabWidget>( "pane_tabs" );
 	p.status = p.root->findByClass<UITextView>( "pane_status" );
+	// The status bar counts as empty space for the context menu (as Dolphin): with a full,
+	// scrolled list it is the only place to reach Create New, Paste...
+	for ( UIWidget* part : { p.root->findByClass<UIWidget>( "pane_status_bar" ),
+							 static_cast<UIWidget*>( p.status ) } ) {
+		part->on( Event::MouseClick, [this, index]( const Event* event ) {
+			if ( !( static_cast<const MouseEvent*>( event )->getFlags() & EE_BUTTON_RMASK ) )
+				return;
+			setActivePane( index );
+			if ( auto* tab = currentTab( pane( index ) ) )
+				showContextMenu( tab, true );
+		} );
+	}
 	p.transferBox = p.root->findByClass( "pane_transfer" );
 	p.transferBar = p.root->findByClass<UIProgressBar>( "transfer_bar" );
 	p.transferText = p.root->findByClass<UITextView>( "transfer_text" );
@@ -232,6 +244,13 @@ void App::createPane( int index, UIWidget* parent ) {
 		}
 	} );
 	p.filterInput->on( Event::OnFocus, [this, index]( const Event* ) { setActivePane( index ); } );
+	// Escape returns to the files (the filter and the selection stay).
+	p.filterInput->on( Event::KeyDown, [this, index]( const Event* event ) {
+		if ( event->asKeyEvent()->getKeyCode() != KEY_ESCAPE )
+			return;
+		if ( auto* tab = currentTab( pane( index ) ) )
+			tab->view->setFocus();
+	} );
 	p.root->findByClass( "filter_close" )->onClick( [this]( const MouseEvent* ) {
 		setFilterBarVisible( false );
 	} );
@@ -306,11 +325,8 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 	config.vfs = mVFS;
 	config.showHidden = mShowHidden;
 	raw->model = VFSDirectoryModel::New( *mExecutor, config );
-	UISceneNode* ui = mUI;
-	raw->model->setIconProvider( [ui]( const FileInfo& info ) -> Variant {
-		UIIcon* icon = ui->findIcon( MimeDatabase::instance().iconName( info ) );
-		if ( !icon )
-			icon = ui->findIcon( info.isDirectory() ? "folder" : "file" );
+	raw->model->setIconProvider( [this]( const FileInfo& info ) -> Variant {
+		UIIcon* icon = fileIcon( info );
 		return icon ? Variant( icon ) : Variant();
 	} );
 	raw->model->setTypeProvider(
@@ -318,6 +334,9 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 	raw->model->setTimeFormatter( formatTime );
 	raw->model->setItemCountFormatter( itemCount );
 	raw->model->setOnStateChanged( [this, raw] { onTabStateChanged( raw ); } );
+	raw->model->setOnRename( [this, raw]( const FileInfo& entry, const std::string& name ) {
+		renameEntry( raw, entry, name );
+	} );
 
 	raw->view = FileTableView::New();
 	auto* view = raw->view;
@@ -329,6 +348,9 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 	view->setMainColumn( VFSDirectoryModel::Name );
 	view->setFitAllColumnsToWidget( true );
 	view->setRowSearchByName( true );
+	view->setSingleClickNavigation( mConfig->files.singleClick );
+	// Dragging from the empty area selects with a rectangle, as Dolphin.
+	view->setRubberBandSelection( true );
 	// Same size as the other icons: glyphs are not scaled to fit (see the stylesheet).
 	view->setIconSize( PixelDensity::dpToPxI( 16 ) );
 	view->setColumnReorderingEnabled( true );
@@ -377,6 +399,18 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 	view->on( Event::OnFocus, [this, raw]( const Event* ) { setActivePane( raw->pane->index ); } );
 
 	raw->tab = pane.tabs->add( displayName( uri ), view, icon( "mime-folder" ) );
+	// The new tab button would sit over a dragged tab: hidden while one moves (a press alone
+	// starts a drag, so it waits for the movement), back in place after.
+	raw->tab->on( Event::OnPositionChange, [this, raw]( const Event* ) {
+		if ( raw->tab->isDragging() && raw->pane->newTabButton )
+			raw->pane->newTabButton->setVisible( false );
+	} );
+	raw->tab->on( Event::OnDragStop, [this, raw]( const Event* ) {
+		if ( !raw->pane->newTabButton )
+			return;
+		raw->pane->newTabButton->setVisible( true );
+		positionNewTabButton( *raw->pane );
+	} );
 	// Files can be dropped on a tab: they go to that tab's folder.
 	raw->tab->on( Event::OnNodeDropped, [this, raw]( const Event* event ) {
 		const auto* drop = static_cast<const DropEvent*>( event );
@@ -456,7 +490,8 @@ void App::navigate( FileTab* tab, URI uri, bool recordHistory ) {
 		tab->historyIndex = tab->history.size() - 1;
 	}
 	// Folder item counts list every subfolder: only where that is cheap.
-	tab->model->setCountDirectoryItems( uri.getScheme() == "file" );
+	tab->model->setCountDirectoryItems( mConfig->files.countFolderItems &&
+										uri.getScheme() == "file" );
 	if ( !tab->pane->filterLocked && !tab->filter.empty() ) {
 		tab->filter.clear();
 		if ( tab == currentTab( *tab->pane ) )
@@ -472,7 +507,7 @@ void App::navigate( FileTab* tab, URI uri, bool recordHistory ) {
 void App::goBack() {
 	auto* tab = currentTab();
 	if ( tab && tab->historyIndex > 0 ) {
-		tab->selectWhenListed = tab->model->uri().getLastPathSegment();
+		tab->selectLater( tab->model->uri().getLastPathSegment() );
 		--tab->historyIndex;
 		navigate( tab, tab->history[tab->historyIndex], false );
 	}
@@ -493,7 +528,7 @@ void App::goUp() {
 	URI parent = tab->model->uri().getParent();
 	if ( parent != tab->model->uri() ) {
 		// Like Dolphin, the folder we leave stays selected in its parent.
-		tab->selectWhenListed = tab->model->uri().getLastPathSegment();
+		tab->selectLater( tab->model->uri().getLastPathSegment() );
 		navigate( tab, parent );
 	}
 }
@@ -557,6 +592,7 @@ void App::updateChrome( Pane& pane ) {
 	mApp->getWindow()->setTitle( locationText( uri ) + " — eefm" );
 	if ( mPlacesPanel )
 		mPlacesPanel->setCurrent( uri );
+	syncTerminalDirectory();
 }
 
 void App::onTabStateChanged( FileTab* tab ) {
@@ -564,7 +600,8 @@ void App::onTabStateChanged( FileTab* tab ) {
 		if ( auto row = tab->model->rowOf( tab->selectWhenListed ) ) {
 			tab->view->setSelection( tab->model->index( *row ) );
 			tab->selectWhenListed.clear();
-		} else if ( tab->model->loadState() != VFSDirectoryModel::LoadState::Loading ) {
+		} else if ( tab->model->loadState() != VFSDirectoryModel::LoadState::Loading &&
+					tab->selectWhenListedSince.getElapsedTime() > Seconds( 5 ) ) {
 			tab->selectWhenListed.clear();
 		}
 	}
@@ -576,10 +613,21 @@ void App::applyFilter( FileTab* tab ) {
 	bool changed = tab->filter != tab->model->nameFilter() ||
 				   mFilterMode != tab->model->nameFilterMode() ||
 				   mFilterCaseSensitive != tab->model->nameFilterCaseSensitive();
-	// The selection is kept by row: it would point at other entries once rows change.
-	if ( changed )
+	// The view keeps the selection by row, which shifts when the filter changes: remember the
+	// selected entries by name and select those that are still listed.
+	std::vector<std::string> selected;
+	if ( changed ) {
+		for ( size_t row : selectedRows( tab ) )
+			selected.push_back( tab->model->entry( row ).name );
 		tab->view->getSelection().clear();
+	}
 	tab->model->setNameFilter( tab->filter, mFilterMode, mFilterCaseSensitive );
+	std::vector<ModelIndex> visible;
+	for ( const auto& name : selected )
+		if ( auto row = tab->model->rowOf( name ) )
+			visible.push_back( tab->model->index( static_cast<int>( *row ) ) );
+	if ( !visible.empty() )
+		tab->view->getSelection().set( visible );
 	if ( tab == currentTab( *tab->pane ) ) {
 		if ( tab->model->isNameFilterValid() )
 			tab->pane->filterInput->removeClass( "invalid" );

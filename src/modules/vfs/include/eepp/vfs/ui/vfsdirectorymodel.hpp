@@ -122,7 +122,8 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 	void setItemCountFormatter( ItemCountFormatter formatter );
 
 	/** Enables or disables Config::countDirectoryItems; takes effect from the next listing. */
-	void setCountDirectoryItems( bool count ) { mConfig.countDirectoryItems = count; }
+	/** Turning it off drops the counts; turning it on counts the folders listed. */
+	void setCountDirectoryItems( bool count );
 
 	bool countDirectoryItems() const { return mConfig.countDirectoryItems; }
 
@@ -152,6 +153,14 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 		mOnStateChanged = std::move( callback );
 	}
 
+	/** Handles a rename typed in place: the entry and its new name. The model does not rename:
+	 * the handler performs it (asynchronously) and the listing follows through the watch or a
+	 * refresh. */
+	using RenameHandler = std::function<void( const FileInfo& entry, const std::string& name )>;
+
+	/** Makes names editable in place (the view's editing delegate) and sets who renames. */
+	void setOnRename( RenameHandler handler ) { mOnRename = std::move( handler ); }
+
 	// Model
 
 	size_t rowCount( const ModelIndex& = ModelIndex() ) const override;
@@ -172,6 +181,15 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 	SortOrder sortOrder() const override { return mSortOrder; }
 
 	int keyColumn() const override { return static_cast<int>( mSortColumn ); }
+
+	/** Type-to-select always matches names, whatever the sort column (as file managers do). */
+	int searchColumn() const override { return Name; }
+
+	/** Names are editable when a rename handler is set. */
+	bool isEditable( const ModelIndex& index ) const override;
+
+	/** A name edited in place: passed to the rename handler (unchanged names are ignored). */
+	void setData( const ModelIndex& index, const Variant& data ) override;
 
 	/** Formats POSIX permission bits like `ls -l` ("drwxr-xr-x"). */
 	static std::string permissionsToString( const FileInfo& info );
@@ -255,6 +273,7 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 	TimeFormatter mTimeFormatter;
 	ItemCountFormatter mItemCountFormatter;
 	std::function<void()> mOnStateChanged;
+	RenameHandler mOnRename;
 	std::unordered_map<std::string, ItemCount> mItemCounts;
 	std::deque<std::string> mCountQueue;
 	std::unordered_set<std::string> mCountQueued;

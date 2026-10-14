@@ -670,9 +670,9 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.istarget("windows") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32", "shell32" } )
 	elseif os.istarget("mingw32") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32", "shell32" } )
 	elseif os.istarget("macosx") then
 		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
 	elseif os.istarget("bsd") then
@@ -1045,6 +1045,7 @@ function build_eepp( build_name )
 			"src/eepp/scene/*.cpp",
 			"src/eepp/scene/actions/*.cpp",
 			"src/eepp/ui/*.cpp",
+			"src/eepp/ui/icons/*.cpp",
 			"src/eepp/ui/accessibility/*.cpp",
 			"src/eepp/ui/abstract/*.cpp",
 			"src/eepp/ui/models/*.cpp",
@@ -1805,7 +1806,8 @@ workspace "eepp"
 		files { "src/eepp/ui/platform/macos/macosmenubar.mm",
 				"src/eepp/window/platform/macos/platformhelper.mm",
 				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm",
-				"src/eepp/system/fileassociation_macos.mm" }
+				"src/eepp/system/fileassociation_macos.mm",
+				"src/eepp/ui/icons/systemiconsmacos.mm" }
 		buildoptions { "-x objective-c++" }
 		build_base_cpp_configuration( "eepp-macos-helper" )
 		target_dir_lib( "" )
@@ -2147,8 +2149,9 @@ workspace "eepp"
 	project "eefm"
 		set_kind()
 		language "C++"
-		incdirs { "src/thirdparty" }
+		incdirs { "src/thirdparty", "src/modules/eterm/include/" }
 		files { "src/tools/eefm/*.cpp" }
+		links { "eterm-static" }
 		eepp_module_vfs_add()
 		filter "system:windows"
 			links { "shell32" } -- Recycle Bin (SHFileOperationW)

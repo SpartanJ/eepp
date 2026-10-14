@@ -49,7 +49,8 @@ struct FontConfig {
 	FontAntialiasing antialiasing{ FontAntialiasing::Grayscale };
 	Float size{ 11 };
 	std::string uiPath;
-	Float uiSize{ 11 };
+	/** In dp; 0: the theme's size. */
+	Float uiSize{ 0 };
 };
 
 struct WindowConfig {

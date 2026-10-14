@@ -155,6 +155,9 @@ class InputEvent {
 	/** File dropped event */
 	struct FileDroppedEvent {
 		const char* file;
+		/** True when the backend reports where the file was dropped (SDL3). */
+		bool hasPosition;
+		Int16 x, y; /** The X/Y window coordinates of the drop, like mouse events */
 	};
 
 	/** Text dropped event */

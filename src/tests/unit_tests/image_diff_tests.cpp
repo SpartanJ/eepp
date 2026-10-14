@@ -95,3 +95,29 @@ UTEST( ImageDiff, DifferentDimensions ) {
 	EXPECT_EQ( result.maxDeltaE, 0.0 );
 	EXPECT_TRUE( result.diffImage == nullptr );
 }
+
+UTEST( Image, svgDetectionSkipsProlog ) {
+	auto info = []( const std::string& svg, int& width, int& height ) {
+		int channels = 0;
+		return Image::getInfoFromMemory( reinterpret_cast<const unsigned char*>( svg.data() ),
+										 svg.size(), &width, &height, &channels );
+	};
+	const std::string body = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"22\" height=\"22\">"
+							 "<rect width=\"22\" height=\"22\"/></svg>";
+	int width = 0, height = 0;
+	// A leading comment (as Inkscape writes), a declaration, a BOM, whitespace and a DOCTYPE.
+	for ( const std::string& prolog :
+		  { std::string(), std::string( "<!-- Created with Inkscape -->" ),
+			std::string( "<?xml version=\"1.0\"?>\n<!-- c -->\n" ),
+			std::string( "\xEF\xBB\xBF  \n" ),
+			std::string( "<?xml version=\"1.0\"?><!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" "
+						 "\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">" ) } ) {
+		width = height = 0;
+		EXPECT_TRUE( info( prolog + body, width, height ) );
+		EXPECT_EQ( 22, width );
+		EXPECT_EQ( 22, height );
+	}
+	// XML that is not an SVG document, and an unterminated comment.
+	EXPECT_FALSE( info( "<?xml version=\"1.0\"?><html><svg/></html>", width, height ) );
+	EXPECT_FALSE( info( "<!-- never closed " + body, width, height ) );
+}

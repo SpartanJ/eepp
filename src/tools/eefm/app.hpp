@@ -1,6 +1,7 @@
 #ifndef EEFM_APP_HPP
 #define EEFM_APP_HPP
 
+#include "config.hpp"
 #include "dialogs.hpp"
 #include "fileview.hpp"
 #include "places.hpp"
@@ -8,11 +9,17 @@
 
 #include <eepp/ee.hpp>
 #include <eepp/scene/mainthreadexecutor.hpp>
+#include <eepp/ui/uisystemicontheme.hpp>
 #include <eepp/vfs.hpp>
 #include <eepp/vfs/ui/vfsdirectorymodel.hpp>
+#include <eterm/terminal/terminalcolorscheme.hpp>
 #include <map>
 #include <memory>
 #include <nlohmann/json.hpp>
+
+namespace eterm { namespace UI {
+class UITerminal;
+}} // namespace eterm::UI
 
 namespace eefm {
 
@@ -21,14 +28,21 @@ using namespace EE::Scene;
 using namespace EE::UI;
 using namespace EE::UI::Models;
 using namespace EE::Window;
+using EE::System::Clock;
 using EE::System::FileSystem;
+using EE::System::Milliseconds;
+using EE::System::Seconds;
 using EE::System::Sys;
 using EE::System::ThreadPool;
 // Declared inside the namespace so they win over names other headers inject globally (for
 // example System::FileInfo).
 using EE::VFS::CopyOptions;
+using EE::VFS::FileHandle;
 using EE::VFS::FileInfo;
+using EE::VFS::OpenFlags;
+using EE::VFS::OverwritePolicy;
 using EE::VFS::RemoveOptions;
+using EE::VFS::SpaceInfo;
 using EE::VFS::Transfer;
 using EE::VFS::TransferProgress;
 using EE::VFS::TransferProgressSubscription;
@@ -39,6 +53,9 @@ using EE::VFS::VFSErrorCode;
 using EE::VFS::VFSResult;
 using EE::VFS::VirtualFileSystem;
 using EE::VFS::WatchStatus;
+#ifdef EE_VFS_SFTP
+using EE::VFS::SFTPProvider;
+#endif
 
 struct Pane;
 
@@ -52,8 +69,17 @@ struct FileTab {
 	size_t historyIndex{ 0 };
 	/** Filter text of this tab (the filter bar shows the current tab's). */
 	std::string filter;
-	/** Entry to select once it is listed (the folder we came from when going up). */
+	/** Entry to select once it is listed (the folder we came from when going up, a created or
+	 * renamed item). */
 	std::string selectWhenListed;
+	/** Since when selectWhenListed waits: changes can arrive in steps (a rename is a removal,
+	 * then an addition), so it is dropped only after a while without appearing. */
+	Clock selectWhenListedSince;
+
+	void selectLater( std::string name ) {
+		selectWhenListed = std::move( name );
+		selectWhenListedSince.restart();
+	}
 };
 
 /** Location bar of a pane (lives in the toolbar, aligned with its pane). */
@@ -215,7 +241,11 @@ class App {
 
 	void emptyTrash();
 
+	/** Renames the selected item in place (an editor over its name). */
 	void renameSelection();
+
+	/** A name typed in place: renames the entry. */
+	void renameEntry( FileTab* tab, const FileInfo& entry, const std::string& name );
 
 	void newFolder( FileTab* tab );
 
@@ -229,6 +259,50 @@ class App {
 
 	void dropFiles( const std::vector<URI>& uris, const URI& destination, int paneIndex );
 
+	/** Copies the files dropped from other applications into the pane (or the folder row)
+	 * where they were dropped. */
+	void dropExternalFiles();
+
+	// --- settings (settings.cpp)
+	void showSettings();
+
+	/** Font picker for the UI font, the fallback font or the terminal font. */
+	enum class FontTarget { UI, Fallback, Terminal };
+	void openFontPicker( FontTarget target );
+
+	void savePreferences();
+
+	/** Applies the hinting and anti-aliasing settings to every font, live. */
+	void applyFontRendering();
+
+	/** UI font (when not null) and size, for new and existing text. */
+	void applyUIFont( Font* font, Float sizeDp );
+
+	/** Applies the Files settings to every open tab. */
+	void applyFilesConfig();
+
+	/** The terminal color schemes bundled with eterm and the user's (lazily loaded). */
+	const std::map<std::string, eterm::Terminal::TerminalColorScheme>& terminalColorSchemes();
+
+	/** Applies the Terminal appearance settings to the terminal, if any. */
+	void applyTerminalConfig();
+
+	// --- terminal panel (F4), below the panes; created on first use
+	void toggleTerminal();
+
+	void showTerminal( bool show );
+
+	bool isTerminalVisible() const;
+
+	bool createTerminal();
+
+	void closeTerminal();
+
+	void rememberTerminalSize();
+
+	/** The shell follows the active pane (cd), unless a full screen program runs. */
+	void syncTerminalDirectory();
+
 	void transferFiles( const std::vector<URI>& sources, const URI& destination, bool move,
 						int paneIndex );
 
@@ -241,6 +315,12 @@ class App {
 
 	void runBlocking( std::function<std::string()> work, std::function<void()> refresh,
 					  String errorTitle );
+
+	/** Icon of a file row: the platform icon for its type, eefm's glyph until it loads. */
+	UIIcon* fileIcon( const FileInfo& info );
+
+	/** Icon of a place: the platform icon for it (special folders, drives, trash...). */
+	UIIcon* placeIcon( const Place& place );
 
 	/** Theme icon as a drawable for menus, tabs and buttons. */
 	DrawablePtr icon( const std::string& name, int sizeDp = 16 ) const;
@@ -270,6 +350,28 @@ class App {
 	UISceneNode* mUI{ nullptr };
 	std::unique_ptr<MainThreadExecutor> mExecutor;
 	std::shared_ptr<ThreadPool> mPool;
+	std::unique_ptr<AppConfig> mConfig;
+	UIWindow* mSettingsWindow{ nullptr };
+	std::map<std::string, eterm::Terminal::TerminalColorScheme> mTerminalColorSchemes;
+	bool mTerminalColorSchemesLoaded{ false };
+	/** Colored icons from the user's icon theme / the OS shell (glyph icons until loaded). */
+	std::shared_ptr<UISystemIconTheme> mSystemIcons;
+	/** fileIcon() by MIME type; cleared when the icon settings change. */
+	std::unordered_map<std::string, UIIcon*> mFileIcons;
+	eterm::UI::UITerminal* mTerminal{ nullptr };
+	FontTrueType* mTerminalFont{ nullptr };
+	UISplitter* mTerminalSplitter{ nullptr };
+	/** Last directory the shell was sent to, and when (the shell needs a moment to run it). */
+	std::string mTerminalDirectory;
+	Clock mTerminalDirectorySent;
+	/** Active pane and folder last followed: the shell follows changes only, so a directory
+	 * changed in the shell stays until the files move. */
+	std::string mTerminalFollowed;
+	/** Share of the files above the terminal (persisted). */
+	std::string mTerminalPartition{ "70%" };
+	/** Files dropped from other applications in the current frame, and where. */
+	std::vector<URI> mDroppedFiles;
+	std::optional<Vector2f> mDropPosition;
 	VirtualFileSystem* mVFS{ nullptr };
 	std::string mConfigDir;
 	nlohmann::json mState;
