@@ -1073,6 +1073,10 @@ function eepp_module_vfs_add()
 	if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 		links { "ws2_32" }
 	end
+	-- efsw watches directories through FSEvents.
+	if os.is_real("macosx") then
+		links { "CoreFoundation.framework", "CoreServices.framework" }
+	end
 	if vfs_sftp_enabled() then
 		defines { "EE_VFS_SFTP" }
 		links { "libssh2-static" }

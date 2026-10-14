@@ -1000,6 +1000,9 @@ function eepp_module_vfs_add()
 	-- The ssh_config evaluator (always built) resolves host names through Winsock.
 	filter "system:windows"
 		links { "ws2_32" }
+	-- efsw watches directories through FSEvents.
+	filter "system:macosx"
+		links { "CoreFoundation.framework", "CoreServices.framework" }
 	filter {}
 	if vfs_sftp_enabled() then
 		defines { "EE_VFS_SFTP" }
