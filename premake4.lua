@@ -899,7 +899,8 @@ function set_apple_config()
 		if table.contains(backends, "SDL2") then
 			defines { "EE_SDL2_FROM_ROOTPATH" }
 		end
-		if table.contains(backends, "SDL3") then
+		if table.contains(backends, "SDL3") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
+			-- Framework headers are flat; pkg-config exposes the SDL3/ include prefix.
 			defines { "EE_SDL3_FROM_ROOTPATH" }
 		end
 		if not is_xcode() and not _OPTIONS["use-frameworks"] then
@@ -908,7 +909,7 @@ function set_apple_config()
 				buildoptions { sdl2flags }
 			end
 			if table.contains(backends, "SDL3") then
-				local sdl3flags = popen("sdl3-config --cflags"):gsub("\n", "")
+				local sdl3flags = popen("pkg-config --cflags sdl3"):gsub("\n", "")
 				buildoptions { sdl3flags }
 			end
 		end
@@ -1690,7 +1691,8 @@ solution "eepp"
 		files { "src/eepp/ui/platform/macos/macosmenubar.mm",
 				"src/eepp/window/platform/macos/platformhelper.mm",
 				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm",
-				"src/eepp/system/fileassociation_macos.mm" }
+				"src/eepp/system/fileassociation_macos.mm",
+				"src/eepp/window/draganddrop/cocoadraganddrop.mm" }
 		buildoptions { "-x objective-c++" }
 		if not is_vs() then
 			buildoptions{ "-std=c++20" }
@@ -1727,7 +1729,7 @@ solution "eepp"
 		files { "src/examples/external_shader/*.cpp" }
 		build_link_configuration( "eepp-external-shader", true )
 
-	if os.is("linux") or os.is("windows") then
+	if os.is("linux") or os.is("windows") or os.is("macosx") then
 		project "eepp-native-dnd-tests"
 			kind "ConsoleApp"
 			language "C++"
@@ -1736,6 +1738,8 @@ solution "eepp"
 			if os.is("linux") then
 				files { "src/tests/native_drag_and_drop/x11.cpp" }
 				links { "dl" }
+			elseif os.is("macosx") then
+				files { "src/tests/native_drag_and_drop/macos.cpp" }
 			else
 				files { "src/tests/native_drag_and_drop/win32.cpp" }
 				links { "shell32", "ole32", "uuid", "gdi32" }

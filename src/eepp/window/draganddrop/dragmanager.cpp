@@ -1,4 +1,5 @@
 #include "dragmanager.hpp"
+#include "cocoadraganddrop.hpp"
 #include "dragaccess.hpp"
 #include "win32draganddrop.hpp"
 #include "x11draganddrop.hpp"
@@ -18,6 +19,8 @@ bool DragManager::hasSession() {
 bool DragManager::isFileDragSupported( const NativeWindowContext& context ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return context.kind == NativeWindowContext::Kind::Win32;
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	return context.kind == NativeWindowContext::Kind::Cocoa;
 #elif defined( EE_HAS_X11_DRAG_SOURCE )
 	return context.kind == NativeWindowContext::Kind::X11 && X11DragAndDrop::isSupported();
 #else
@@ -50,6 +53,10 @@ DragStartResult DragManager::startFileDrag( NativeWindowContext context, const D
 	if ( context.kind == NativeWindowContext::Kind::Win32 ) {
 		sSource = Win32DragAndDrop::createSource( context, offer, std::move( completion ), result );
 	}
+#endif
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	if ( context.kind == NativeWindowContext::Kind::Cocoa )
+		sSource = CocoaDragAndDrop::createSource( context, offer, std::move( completion ), result );
 #endif
 	return result;
 }

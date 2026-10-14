@@ -72,7 +72,9 @@ For a file card or row, handle the gesture as follows:
 `startDrag()` does not detect the source widget or apply a movement threshold for you. Use
 `isDragging()` to query the source window's active session. Keep updating input through your normal
 application loop: it advances the drag and delivers completion. On Windows, the next input update
-enters the native modal drag loop until the gesture ends.
+enters the native modal drag loop until the gesture ends. On macOS, AppKit runs its drag loop inside
+event processing in the same way. In both cases the application does not render frames until the
+drop or cancellation, so present any visual change, such as dimming the source item, before then.
 
 Native dragging is independent of eepp's internal UI dragging. When handing an internal drag to the
 native API, end the internal drag without emitting its drop action, clear the dispatcher's dragged
@@ -102,7 +104,9 @@ None otherwise.
 Call `drag.cancelDrag()` to cancel the source window's session. Cancellation requests do not invoke
 the callback inline; keep updating input to receive completion. Escape and closing or destroying
 the source window also cancel the drag. Window destruction remains synchronous: the drag does not
-keep a destroyed window alive.
+keep a destroyed window alive. AppKit cannot abort a running drag: on macOS, `cancelDrag()` delivers
+a `Cancelled` completion immediately and the image stays under the pointer until release, but every
+target then refuses the drop.
 
 The facade borrows its window and must not outlive it. The offer and preview image only need to
 remain alive during `startDrag()`; a started session owns its native file list, copied preview and
@@ -133,9 +137,13 @@ With `{8, 8}`, the pointer sits eight pixels into the image. The default `{-12, 
 image just beyond the pointer so the target remains visible.
 
 Images must have RGB or RGBA pixels, be at most 2048 pixels per side, and contain no more than
-1,048,576 pixels in total. Each hotspot coordinate must be between -2048 and 2048. Alpha is
-composited onto the preview background. The image is copied during `startDrag()` and may be released
-or reused as soon as the call returns.
+1,048,576 pixels in total. Each hotspot coordinate must be between -2048 and 2048. On Windows and
+X11, alpha is composited onto the preview background; macOS keeps it transparent. The image is
+copied during `startDrag()` and may be released or reused as soon as the call returns.
+
+On macOS, the default preview is each file's Finder icon, and AppKit draws the item count and the
+copy cursor. Preview pixels map to display pixels, so on a Retina display the image appears at half
+its pixel size in points, matching a widget snapshot taken from the window's framebuffer.
 
 To display a widget, capture it into an `Image` once when the gesture starts and pass that image.
 Any `UIWidget` can supply the snapshot; the drag API does not retain or render the widget. See
@@ -178,15 +186,17 @@ Query capabilities for the actual window rather than assuming support from the o
 | `dataSource` | Arbitrary native data sources; currently false. |
 | `negotiatedTarget` | Native target action/MIME negotiation; currently false. |
 
-Outbound local-file dragging is implemented for Windows and X11 on Linux/BSD, with SDL2 or SDL3.
-Wayland, macOS and Haiku currently report no file-source support. On Linux/BSD, X11 headers enable
+Outbound local-file dragging is implemented for Windows, macOS and X11 on Linux/BSD, with SDL2 or
+SDL3. Wayland and Haiku currently report no file-source support. On Linux/BSD, X11 headers enable
 source support when building eepp; no additional consumer link dependency or build option is needed.
 The X11 library is loaded dynamically, and a Wayland window does not load it for dragging.
 
 On Windows, SDL2 receives files through its legacy file-drop path, which cannot receive the outgoing
 OLE gesture used by this source. Use SDL3 for eepp-window-to-eepp-window native drops. Both backends
 can drag files out to native OLE targets. On X11, the source window itself is excluded as a native
-target; keep same-window operations in your internal UI drag handling.
+target; keep same-window operations in your internal UI drag handling. macOS does not exclude it: a
+drop onto the source window arrives there as ordinary `FileDropped` events, so keep same-window
+operations internal there as well.
 
 Applications that install their own `SDL_SetX11EventHook` must coordinate its use: SDL3 has a single
 hook slot, which eepp uses during an active native drag and clears afterwards.

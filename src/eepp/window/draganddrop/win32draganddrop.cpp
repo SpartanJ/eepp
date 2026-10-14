@@ -192,7 +192,7 @@ class Win32DragSource : public DragSource {
 		oleInitialized = true;
 		size_t characters = 1; // final NUL after the per-path terminators
 		const size_t limit =
-			( std::numeric_limits<SIZE_T>::max() - sizeof( DROPFILES ) ) / sizeof( wchar_t );
+			( ( std::numeric_limits<SIZE_T>::max )() - sizeof( DROPFILES ) ) / sizeof( wchar_t );
 		for ( const auto& file : offer.files ) {
 			if ( file.path.size() > INT_MAX )
 				return { "File path is too large", DragStartStatus::InvalidOffer };
