@@ -33,6 +33,24 @@ Input::~Input() {
 	eeSAFE_DELETE( mJoystickManager );
 }
 
+bool Input::acquireNativeDragCapture() {
+	return false;
+}
+
+void Input::restoreNativeDragCapture() {}
+
+void Input::resetNativeDragInput() {
+	resetButton( EE_BUTTON_LEFT );
+	mNativeDragReleasePending = true;
+	restoreNativeDragCapture();
+}
+
+bool Input::consumeNativeDragRelease() {
+	const bool pending = mNativeDragReleasePending;
+	mNativeDragReleasePending = false;
+	return pending;
+}
+
 void Input::wakeUpEventLoop() {
 #if defined( EE_BACKEND_SDL3 )
 	Backend::SDL3::InputSDL::wakeUpEventLoop();
@@ -141,7 +159,7 @@ void Input::processEvent( InputEvent* Event ) {
 			break;
 		}
 		case InputEvent::MouseButtonDown: {
-			mPressTrigger |= EE_BUTTON_MASK( Event->button.button );
+			recordButtonPress( Event->button.button );
 			mLastMouseEvent.restart();
 			break;
 		}
@@ -201,7 +219,7 @@ void Input::processEvent( InputEvent* Event ) {
 			Finger->ydelta = Event->finger.dy;
 
 			if ( 0 == Event->finger.fingerId ) {
-				mPressTrigger |= EE_BUTTON_LMASK;
+				recordButtonPress( EE_BUTTON_LEFT );
 			}
 
 			mLastMouseEvent.restart();
@@ -238,7 +256,7 @@ void Input::processEvent( InputEvent* Event ) {
 			Finger->ydelta = Event->finger.dy;
 
 			if ( 0 == Event->finger.fingerId ) {
-				mPressTrigger |= EE_BUTTON_LMASK;
+				recordButtonPress( EE_BUTTON_LEFT );
 			}
 
 			mLastMouseEvent.restart();
@@ -350,10 +368,15 @@ void Input::injectScancodeUp( const Scancode& scancode ) {
 	BitOp::writeBitKey( &mScancodeUp[scancode / 8], scancode % 8, 1 );
 }
 
+void Input::recordButtonPress( const Uint32& Button ) {
+	if ( Button == EE_BUTTON_LEFT )
+		mNativeDragReleasePending = false;
+	mPressTrigger |= EE_BUTTON_MASK( Button );
+}
+
 void Input::injectButtonPress( const Uint32& Button ) {
 	if ( Button < 8 )
-		if ( !( mPressTrigger & EE_BUTTON_MASK( Button ) ) )
-			mPressTrigger |= EE_BUTTON_MASK( Button );
+		recordButtonPress( Button );
 }
 
 void Input::injectButtonRelease( const Uint32& Button ) {
@@ -367,6 +390,19 @@ void Input::injectButtonRelease( const Uint32& Button ) {
 		if ( !( mClickTrigger & EE_BUTTON_MASK( Button ) ) )
 			mClickTrigger |= EE_BUTTON_MASK( Button );
 	}
+}
+
+void Input::resetButton( const Uint32& Button ) {
+	if ( Button == 0 || Button >= 8 )
+		return;
+	const auto mask = ~EE_BUTTON_MASK( Button );
+	// The UI dispatcher needs a release trigger to end its pressed-node state. Keep the previous
+	// frame's press bit and suppress click feedback; no Input callbacks are dispatched here.
+	if ( mPressTrigger & ~mask )
+		mReleaseTrigger |= ~mask;
+	mPressTrigger &= mask;
+	mClickTrigger &= mask;
+	mDoubleClickTrigger &= mask;
 }
 
 Vector2i Input::getMousePos() const {

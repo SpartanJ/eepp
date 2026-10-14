@@ -24,12 +24,12 @@ jobs:
         sudo apt update
         sudo apt install -y gcc-13 g++-13 wget mesa-utils xvfb gdb zstd \
           python3-gi gir1.2-atspi-2.0 at-spi2-core dbus-x11
-        bash projects/linux/scripts/install_sdl2.sh --keep-build
+        bash projects/linux/scripts/install_sdl3.sh --keep-build
         wget https://cdn.ensoft.dev/eepp-assets/premake-5.0.0-beta6-linux.tar.gz
         tar xvzf premake-5.0.0-beta6-linux.tar.gz
     - name: Build
       run: |
-        ./premake5 --disable-static-build --with-debug-symbols gmake
+        ./premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 gmake
         cd make/linux
         make all -j$(nproc) -e config=release_x86_64
     - name: Package development environment
@@ -41,15 +41,15 @@ jobs:
           echo "configuration=release_x86_64"
           echo "platform=linux"
           echo "arch=x86_64"
-          echo "sdl2=$(sdl2-config --version)"
+          echo "sdl3=$(pkg-config --modversion sdl3)"
         } > .eepp-dev-environment
 
-        # Keep the small set of system graphics headers needed to compile
-        # renderer/backend translation units in a relocated development VM.
+        # Preserve graphics and X11 declarations used by cached objects. Otherwise a partial
+        # rebuild without system X11 headers can silently disable only part of native dragging.
         mkdir -p .eepp-dev/sysroot/include
-        for include_dir in GL EGL GLES GLES2 GLES3 KHR; do
+        for include_dir in GL EGL GLES GLES2 GLES3 KHR X11; do
           if [ -d "/usr/include/$include_dir" ]; then
-            cp -a "/usr/include/$include_dir" .eepp-dev/sysroot/include/
+            cp -rL "/usr/include/$include_dir" .eepp-dev/sysroot/include/
           fi
         done
 

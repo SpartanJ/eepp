@@ -110,6 +110,11 @@ class EE_API Input {
 	/** Inject the mouse button as released */
 	void injectButtonRelease( const Uint32& Button );
 
+	/** End a held button's gesture with a release trigger, without generating a click or
+	 * dispatching Input callbacks. Used when native modal interaction consumes input outside the
+	 * event loop. */
+	void resetButton( const Uint32& Button );
+
 	/** @return If the left Control Key is pressed */
 	bool isLeftControlPressed() const;
 
@@ -291,10 +296,29 @@ class EE_API Input {
 
   protected:
 	friend class Window;
+	friend struct Private::NativeDragAccess;
 
 	Input( EE::Window::Window* window, JoystickManager* joystickmanager );
 
 	virtual void init() = 0;
+
+	/** Temporarily capture the source without changing the application's capture request.
+	 * Backends without native source capture return false. */
+	virtual bool acquireNativeDragCapture();
+
+	/** Restore the application's capture request after temporary native drag capture. */
+	virtual void restoreNativeDragCapture();
+
+	/** Discard stale backend gesture events after a modal drag, then end the left press without
+	 * generating a click and restore capture. The default only resets eepp's input state. */
+	virtual void resetNativeDragInput();
+
+	/** Consume the one delayed native release left by a modal drag. New left presses, including
+	 * injected ones, clear this pending release before it can suppress their button-up. */
+	bool consumeNativeDragRelease();
+
+	/** Record a native, injected or touch press; a new left press ends any stale modal release. */
+	void recordButtonPress( const Uint32& Button );
 
 	EE::Window::Window* mWindow;
 	JoystickManager* mJoystickManager;
@@ -320,6 +344,7 @@ class EE_API Input {
 	Uint32 mNumCallBacks;
 	Float mMouseSpeed;
 	bool mInputGrabbed;
+	bool mNativeDragReleasePending{ false };
 	InputFinger mFingers[EE_MAX_FINGERS];
 	Uint64 mEventsSentId{ 0 };
 	Clock mLastEvent;

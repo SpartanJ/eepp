@@ -18,7 +18,7 @@ compiler=""
 configuration=""
 platform=""
 arch=""
-sdl2=""
+sdl3=""
 while IFS='=' read -r key value; do
 	case "$key" in
 		commit) commit="$value" ;;
@@ -26,11 +26,11 @@ while IFS='=' read -r key value; do
 		configuration) configuration="$value" ;;
 		platform) platform="$value" ;;
 		arch) arch="$value" ;;
-		sdl2) sdl2="$value" ;;
+		sdl3) sdl3="$value" ;;
 	esac
 done < "$METADATA_FILE"
 
-for key in commit configuration platform arch sdl2; do
+for key in commit configuration platform arch sdl3; do
 	if [ -z "${!key}" ]; then
 		echo "Invalid $METADATA_FILE: missing '$key'" >&2
 		exit 1
@@ -54,6 +54,15 @@ if [ ! -d "$obj_dir" ]; then
 	exit 1
 fi
 
+# The artifact's cached objects include X11 dragging. Require its bundled declarations before
+# regenerating or rebuilding so __has_include cannot select a different backend configuration.
+for header in Xlib.h Xatom.h keysym.h; do
+	if [ ! -f "$DEV_DIR/sysroot/include/X11/$header" ]; then
+		echo "Missing bundled X11 header: $header. Download a fresh development artifact." >&2
+		exit 1
+	fi
+done
+
 # Compiler-generated dependency files contain absolute system-header paths from
 # the GitHub Actions runner (for example /usr/include/c++/13/...). Those paths
 # make GNU Make consider otherwise valid cached objects stale after relocation.
@@ -76,14 +85,14 @@ fi
 # post-build commands. Regenerating them is cheap and keeps the cached objects.
 (
 	cd "$ROOT_DIR"
-	./premake5 --disable-static-build --with-debug-symbols gmake
+	./premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 gmake
 )
 
-sdl_lib_dir="$ROOT_DIR/sdl2_build/SDL2-$sdl2/build/.libs"
-if [ ! -e "$sdl_lib_dir/libSDL2.so" ]; then
-	sdl_link="$(find "$ROOT_DIR/sdl2_build" -type l -name libSDL2.so -print -quit 2>/dev/null || true)"
+sdl_lib_dir="$ROOT_DIR/sdl3_build/SDL3-$sdl3/build"
+if [ ! -e "$sdl_lib_dir/libSDL3.so" ]; then
+	sdl_link="$(find "$ROOT_DIR/sdl3_build" -type l -name libSDL3.so -print -quit 2>/dev/null || true)"
 	if [ -z "$sdl_link" ]; then
-		echo "Could not find retained SDL2 $sdl2 build output." >&2
+		echo "Could not find retained SDL3 $sdl3 build output." >&2
 		exit 1
 	fi
 	sdl_lib_dir="$(dirname "$sdl_link")"
@@ -92,9 +101,9 @@ fi
 mkdir -p "$DEV_DIR/lib" "$DEV_DIR/include" "$DEV_DIR/sysroot/include"
 
 # The retained SDL build contains the exact headers used in CI. Expose them in
-# an SDL2/ include layout so files including <SDL2/SDL.h> compile without a
+# an SDL3/ include layout so files including <SDL3/SDL.h> compile without a
 # system-wide SDL development package.
-ln -sfn "$ROOT_DIR/sdl2_build/SDL2-$sdl2/include" "$DEV_DIR/include/SDL2"
+ln -sfn "$ROOT_DIR/sdl3_build/SDL3-$sdl3/include/SDL3" "$DEV_DIR/include/SDL3"
 
 # Minimal CI/agent images often provide the OpenGL runtime (libGL.so.1) but not
 # the development linker symlink (libGL.so). A local shim is enough for -lGL
@@ -131,7 +140,7 @@ echo "Development artifact ready:"
 echo "  commit:        $commit"
 echo "  compiler:      ${compiler:-unknown}"
 echo "  configuration: $configuration"
-echo "  SDL2:          $sdl2"
+echo "  SDL3:          $sdl3"
 echo ""
 echo "Load the build/runtime environment with:"
 echo "  source '$ENV_FILE'"

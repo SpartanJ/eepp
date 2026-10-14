@@ -30,6 +30,7 @@
 #include <eepp/window/backend/SDL3/backendsdl3.hpp>
 #include <eepp/window/backend/SDL3/platformhelpersdl3.hpp>
 #endif
+#include <eepp/window/draganddrop/dragmanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/runtime.hpp>
@@ -192,6 +193,7 @@ Engine::~Engine() {
 
 	// Windows own the GL contexts and must outlive every GPU resource and graphics manager above.
 	destroy();
+	Private::DragManager::poll();
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	eeSAFE_DELETE( mZip );
@@ -384,15 +386,20 @@ EE::Window::Window* Engine::getWindowID( const Uint32& winID ) {
 }
 
 void Engine::updateInput() {
-	if ( !mWindow )
+	if ( !mWindow ) {
+		Private::DragManager::poll();
 		return;
+	}
+	// A native drag can destroy the polling window and select a different current window.
+	// Finish the same other windows whose input frames we began before entering that loop.
+	auto* pollingWindow = mWindow;
 	for ( auto& window : mWindows ) {
-		if ( window.second != mWindow )
+		if ( window.second != pollingWindow )
 			window.second->getInput()->beginInputFrame();
 	}
-	mWindow->getInput()->update();
+	pollingWindow->getInput()->update();
 	for ( auto& window : mWindows ) {
-		if ( window.second != mWindow )
+		if ( window.second != pollingWindow )
 			window.second->getInput()->endInputFrame();
 	}
 }

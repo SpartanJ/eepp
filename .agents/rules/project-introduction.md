@@ -44,6 +44,65 @@ When working on this project, rely on the following resources to understand exis
 *   **Implementation Examples:** A wide variety of examples showing how to use the library are located in `src/examples/`.
 *   **General Context:** The `README.md` at the root directory contains deeper project details.
 
+## Architecture and Human Readability
+
+Optimize code organization for the maintainer reading it. Correctness and performance are required;
+they do not excuse architecture that requires a repository-wide search to understand a small change.
+Minimize the concepts and file jumps needed to follow an operation, rather than optimizing only for
+short files or fewer lines.
+
+Before adding code, inspect the existing public class, its implementation, and the relevant backend.
+Identify who owns the state, who calls the operation, and who cleans it up. Extend those existing
+responsibilities where they fit. Do not introduce a manager, adapter, friend, callback bridge, or
+virtual hook merely because another backend might exist someday; each boundary must serve a concrete
+current responsibility or lifetime requirement.
+
+- **Make file names navigable.** An implementation unit with externally used declarations must have
+  a matching header basename. Put its declarations in that header and its definitions in the matching
+  source. For example, `DragManager::invalidateWindow()` belongs in `dragmanager.hpp/.cpp`, rather than
+  being declared in `dragcontext.hpp` and defined in `dragmanager.cpp`. Include the matching header
+  first where platform setup permits. Entry points and tests need no empty companion headers;
+  genuinely header-only interfaces and templates need no empty source files.
+- **Give subsystem operations a named container.** Group related operations in a class or struct
+  instead of exposing a collection of namespace-level functions. Use static methods for a
+  process-wide service such as `DragManager`, with its state in private static members. A reader
+  should discover the available operations by opening the type or using `DragManager::` completion.
+  Keep method names concise within that scope, such as `DragManager::poll()` and
+  `DragManager::invalidateWindow()`, rather than repeating the subsystem name in every method.
+  Keep genuinely file-local implementation helpers local; do not introduce singleton instances,
+  heap allocations, or forwarding layers just to group functions.
+- **Keep responsibilities together.** Implement a public class's methods in its corresponding source.
+  A manager owns coordination and lifetime; a platform implementation owns native behavior; a context
+  describes borrowed handles. Do not scatter a class's methods among unrelated helper sources or use
+  a generic `context`, `common`, or `utils` header as a collection of unrelated declarations. Preserve
+  established platform-specific splits when they represent a real backend boundary.
+  Shared backend contracts belong in a virtual base; each existing backend implements its own
+  concrete class in its backend directory. Do not combine those implementations into a shared
+  class that switches backend behavior with preprocessor branches.
+- **Keep dependencies explicit.** Headers must include what their declarations require. Callers
+  include the header that owns the operation they use. Platform factory declarations and availability
+  checks belong with that platform's implementation, not in a shared session/interface header.
+  Implementation-only helpers stay local to their source file. Keep internal plumbing out of public
+  installed headers unless consumers actually need it.
+- **Prefer direct control flow.** Use an existing object's interface directly when access and
+  lifetime permit it. Avoid forwarding functions, wrapper classes, and access machinery that add no
+  responsibility. A facade delegating to the owner of shared state is a meaningful boundary; several
+  layers forwarding the same arguments without adding behavior are a signal to simplify.
+- **Name and order code for reading.** Names should explain the responsibility, and declarations and
+  definitions should follow the same logical order where practical. Related setup, operation, and
+  cleanup paths must be easy to find. Comments explain ownership, invariants, and unavoidable platform
+  constraints; they must not justify unnecessary indirection.
+
+Before finishing, follow one normal operation and one cancellation/destruction path from the public
+API. Check that each declaration leads to the source a reader would expect, ownership is apparent,
+and dependencies follow the intended subsystem/backend boundaries. Fix surprising organization;
+adding an explanation does not repair it. Keep this review proportional to the change rather than
+creating new abstractions or architecture documents for their own sake.
+
+User documentation teaches consumers how to use the API, including examples, results, ownership,
+and supported behavior. Allocation audits, test transcripts, implementation history, and remaining
+engineering tasks belong in development reports, not in consumer guides.
+
 ## Localization
 
 The locale catalogs under `bin/assets/i18n/` belong to **ecode**; the other applications are not

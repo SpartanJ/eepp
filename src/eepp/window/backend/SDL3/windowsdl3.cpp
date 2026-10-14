@@ -2,6 +2,7 @@
 
 #ifdef EE_BACKEND_SDL3
 
+#include <cstring>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/shaderprogramregistry.hpp>
@@ -11,13 +12,20 @@
 #include <eepp/window/backend/SDL3/clipboardsdl3.hpp>
 #include <eepp/window/backend/SDL3/cursormanagersdl3.hpp>
 #include <eepp/window/backend/SDL3/displaymanagersdl3.hpp>
+#include <eepp/window/backend/SDL3/dragpreviewsdl3.hpp>
 #include <eepp/window/backend/SDL3/inputsdl3.hpp>
 #include <eepp/window/backend/SDL3/windowsdl3.hpp>
 #include <eepp/window/backend/SDL3/wminfo.hpp>
 #include <eepp/window/backend/backendhelper.hpp>
+#include <eepp/window/draganddrop/dragmanager.hpp>
+#include <eepp/window/draganddrop/x11draganddrop.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/runtime.hpp>
 #include <eepp/window/terminal/terminalruntime.hpp>
+
+#ifdef EE_HAS_X11_DRAG_SOURCE
+#include <SDL3/SDL_system.h>
+#endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include <eepp/window/backend/SDL3/displaymanagersdl3.hpp>
@@ -31,6 +39,87 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL3 {
 
+NativeWindowContext WindowSDL::getNativeDragContext() {
+	auto context = Window::getNativeDragContext();
+	if ( !canUseNativeDrag() || !mSDLWindow )
+		return context;
+	const char* driver = SDL_GetCurrentVideoDriver();
+	if ( !driver )
+		return context;
+	auto props = SDL_GetWindowProperties( mSDLWindow );
+	if ( std::strcmp( driver, "x11" ) == 0 ) {
+		context.handles.x11 = {
+			SDL_GetPointerProperty( props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr ),
+			static_cast<unsigned long>(
+				SDL_GetNumberProperty( props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0 ) ) };
+		if ( context.handles.x11.display && context.handles.x11.window )
+			context.kind = NativeWindowContext::Kind::X11;
+	} else if ( std::strcmp( driver, "wayland" ) == 0 ) {
+		context.handles.wayland = {
+			SDL_GetPointerProperty( props, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr ),
+			SDL_GetPointerProperty( props, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr ) };
+		if ( context.handles.wayland.display && context.handles.wayland.surface )
+			context.kind = NativeWindowContext::Kind::Wayland;
+	} else if ( std::strcmp( driver, "windows" ) == 0 ) {
+		context.handles.window =
+			SDL_GetPointerProperty( props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr );
+		if ( context.handles.window )
+			context.kind = NativeWindowContext::Kind::Win32;
+	} else if ( std::strcmp( driver, "cocoa" ) == 0 ) {
+		context.handles.window =
+			SDL_GetPointerProperty( props, SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, nullptr );
+		if ( context.handles.window )
+			context.kind = NativeWindowContext::Kind::Cocoa;
+	}
+	return context;
+}
+
+bool WindowSDL::isNativeFileTargetSupported() const {
+	if ( !canUseNativeDrag() || !mSDLWindow )
+		return false;
+	const char* driver = SDL_GetCurrentVideoDriver();
+	return driver && ( std::strcmp( driver, "x11" ) == 0 || std::strcmp( driver, "wayland" ) == 0 ||
+					   std::strcmp( driver, "windows" ) == 0 ||
+					   std::strcmp( driver, "cocoa" ) == 0 || std::strcmp( driver, "haiku" ) == 0 );
+}
+
+namespace {
+#ifdef EE_HAS_X11_DRAG_SOURCE
+// Process-global SDL state; DragManager enforces a single active session and owning window.
+bool nativeDragEventsEnabled = false;
+bool SDLCALL nativeDragX11Hook( void*, XEvent* event ) {
+	// Only our owned source protocol messages are consumed. SDL retains input, clipboard
+	// and incoming XDND; in particular it must not send a second SelectionNotify for our offer.
+	return !Private::DragManager::handleEvent( event );
+}
+#endif
+} // namespace
+
+void WindowSDL::initializeNativeDragEvents() {
+#ifdef EE_HAS_X11_DRAG_SOURCE
+	const char* driver = SDL_GetCurrentVideoDriver();
+	if ( nativeDragEventsEnabled || !canUseNativeDrag() || !driver ||
+		 std::strcmp( driver, "x11" ) != 0 )
+		return;
+	nativeDragEventsEnabled = true;
+	SDL_SetX11EventHook( nativeDragX11Hook, nullptr );
+#endif
+}
+
+void WindowSDL::shutdownNativeDragEvents() {
+#ifdef EE_HAS_X11_DRAG_SOURCE
+	if ( !nativeDragEventsEnabled )
+		return;
+	nativeDragEventsEnabled = false;
+	SDL_SetX11EventHook( nullptr, nullptr );
+#endif
+}
+
+Private::NativeDragPreview* WindowSDL::createNativeDragPreview( const DragOffer& offer,
+																bool manageCursor ) {
+	return DragPreviewSDL::create( this, mSDLWindow, offer, manageCursor );
+}
+
 WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	Window( Settings, Context, eeNew( ClipboardSDL, ( this ) ), eeNew( InputSDL, ( this ) ),
 			eeNew( CursorManagerSDL, ( this ) ) ) {
@@ -43,6 +132,7 @@ WindowSDL::~WindowSDL() {
 }
 
 void WindowSDL::destroySDLResources() {
+	Private::DragManager::invalidateWindow( this );
 	if ( nullptr != mGLContext ) {
 		SDL_GL_DestroyContext( mGLContext );
 		mGLContext = nullptr;

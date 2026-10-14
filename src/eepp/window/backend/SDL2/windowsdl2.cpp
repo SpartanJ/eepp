@@ -2,6 +2,7 @@
 
 #ifdef EE_BACKEND_SDL2
 
+#include <cstring>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/shaderprogramregistry.hpp>
@@ -10,10 +11,14 @@
 #include <eepp/system/log.hpp>
 #include <eepp/window/backend/SDL2/clipboardsdl2.hpp>
 #include <eepp/window/backend/SDL2/cursormanagersdl2.hpp>
+#include <eepp/window/backend/SDL2/dragpreviewsdl2.hpp>
 #include <eepp/window/backend/SDL2/inputsdl2.hpp>
+#include <eepp/window/backend/SDL2/syswm.hpp>
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>
 #include <eepp/window/backend/SDL2/wminfo.hpp>
 #include <eepp/window/backend/backendhelper.hpp>
+#include <eepp/window/draganddrop/dragmanager.hpp>
+#include <eepp/window/draganddrop/x11draganddrop.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/runtime.hpp>
 #include <eepp/window/terminal/terminalruntime.hpp>
@@ -31,6 +36,99 @@
 #endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
+
+NativeWindowContext WindowSDL::getNativeDragContext() {
+	auto context = Window::getNativeDragContext();
+	if ( !canUseNativeDrag() || !mSDLWindow )
+		return context;
+	const char* driver = SDL_GetCurrentVideoDriver();
+	if ( !driver )
+		return context;
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	defined( EE_HAS_X11_DRAG_SOURCE )
+	SDL_SysWMinfo info{};
+	SDL_VERSION( &info.version );
+	if ( !SDL_GetWindowWMInfo( mSDLWindow, &info ) )
+		return context;
+	switch ( info.subsystem ) {
+#ifdef SDL_VIDEO_DRIVER_X11
+		case SDL_SYSWM_X11:
+			if ( std::strcmp( driver, "x11" ) == 0 && info.info.x11.display &&
+				 info.info.x11.window ) {
+				context.handles.x11 = { info.info.x11.display, info.info.x11.window };
+				context.kind = NativeWindowContext::Kind::X11;
+			}
+			break;
+#endif
+#ifdef SDL_VIDEO_DRIVER_WAYLAND
+		case SDL_SYSWM_WAYLAND:
+			if ( std::strcmp( driver, "wayland" ) == 0 && info.info.wl.display &&
+				 info.info.wl.surface ) {
+				context.handles.wayland = { info.info.wl.display, info.info.wl.surface };
+				context.kind = NativeWindowContext::Kind::Wayland;
+			}
+			break;
+#endif
+#ifdef SDL_VIDEO_DRIVER_WINDOWS
+		case SDL_SYSWM_WINDOWS:
+			context.handles.window = info.info.win.window;
+			context.kind = NativeWindowContext::Kind::Win32;
+			break;
+#endif
+#ifdef SDL_VIDEO_DRIVER_COCOA
+		case SDL_SYSWM_COCOA:
+			context.handles.window = info.info.cocoa.window;
+			context.kind = NativeWindowContext::Kind::Cocoa;
+			break;
+#endif
+		default:
+			break;
+	}
+#endif
+	return context;
+}
+
+bool WindowSDL::isNativeFileTargetSupported() const {
+	if ( !canUseNativeDrag() || !mSDLWindow )
+		return false;
+	const char* driver = SDL_GetCurrentVideoDriver();
+	return driver && ( std::strcmp( driver, "x11" ) == 0 || std::strcmp( driver, "wayland" ) == 0 ||
+					   std::strcmp( driver, "windows" ) == 0 ||
+					   std::strcmp( driver, "cocoa" ) == 0 || std::strcmp( driver, "haiku" ) == 0 );
+}
+
+namespace {
+#ifdef EE_HAS_X11_DRAG_SOURCE
+// Process-global SDL state; DragManager enforces a single active session and owning window.
+bool nativeDragEventsEnabled = false;
+Uint8 previousNativeDragEventState = SDL_DISABLE;
+#endif
+} // namespace
+
+void WindowSDL::initializeNativeDragEvents() {
+#ifdef EE_HAS_X11_DRAG_SOURCE
+	const char* driver = SDL_GetCurrentVideoDriver();
+	if ( nativeDragEventsEnabled || !canUseNativeDrag() || !driver ||
+		 std::strcmp( driver, "x11" ) != 0 )
+		return;
+	nativeDragEventsEnabled = true;
+	previousNativeDragEventState = SDL_EventState( SDL_SYSWMEVENT, SDL_ENABLE );
+#endif
+}
+
+void WindowSDL::shutdownNativeDragEvents() {
+#ifdef EE_HAS_X11_DRAG_SOURCE
+	if ( !nativeDragEventsEnabled )
+		return;
+	nativeDragEventsEnabled = false;
+	SDL_EventState( SDL_SYSWMEVENT, previousNativeDragEventState );
+#endif
+}
+
+Private::NativeDragPreview* WindowSDL::createNativeDragPreview( const DragOffer& offer,
+																bool manageCursor ) {
+	return DragPreviewSDL::create( this, mSDLWindow, offer, manageCursor );
+}
 
 WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	Window( Settings, Context, eeNew( ClipboardSDL, ( this ) ), eeNew( InputSDL, ( this ) ),
@@ -52,6 +150,7 @@ WindowSDL::~WindowSDL() {
 }
 
 void WindowSDL::destroySDLResources() {
+	Private::DragManager::invalidateWindow( this );
 	if ( nullptr != mGLContext ) {
 		SDL_GL_DeleteContext( mGLContext );
 		mGLContext = nullptr;

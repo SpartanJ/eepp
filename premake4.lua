@@ -605,6 +605,11 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 	end
 
+	if os.is_real("linux") and package_name == "eepp" and _ACTION == "gmake" then
+		-- Shared eepp must resolve its own indirect dependencies beside the library.
+		linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
+	end
+
 	if os.is_real("macosx") then
 		linkoptions { "-weak_framework UniformTypeIdentifiers" }
 	end
@@ -1136,6 +1141,7 @@ function build_eepp( build_name )
 			"src/eepp/graphics/*.cpp",
 			"src/eepp/graphics/renderer/*.cpp",
 			"src/eepp/window/*.cpp",
+			"src/eepp/window/draganddrop/*.cpp",
 			"src/eepp/window/backend/*.cpp",
 			"src/eepp/network/*.cpp",
 			"src/eepp/network/ssl/*.cpp",
@@ -1720,6 +1726,28 @@ solution "eepp"
 		language "C++"
 		files { "src/examples/external_shader/*.cpp" }
 		build_link_configuration( "eepp-external-shader", true )
+
+	if os.is("linux") or os.is("windows") then
+		project "eepp-native-dnd-tests"
+			kind "ConsoleApp"
+			language "C++"
+			files { "src/tests/native_drag_and_drop/main.cpp",
+				"src/examples/native_drag_and_drop/native_drag_and_drop.cpp" }
+			if os.is("linux") then
+				files { "src/tests/native_drag_and_drop/x11.cpp" }
+				links { "dl" }
+			else
+				files { "src/tests/native_drag_and_drop/win32.cpp" }
+				links { "shell32", "ole32", "uuid", "gdi32" }
+			end
+			build_link_configuration( "eepp-native-dnd-tests", true )
+	end
+
+	project "eepp-native-drag-and-drop"
+		set_kind()
+		language "C++"
+		files { "src/examples/native_drag_and_drop/*.cpp" }
+		build_link_configuration( "eepp-native-drag-and-drop", true )
 
 	project "eepp-empty-window"
 		set_kind()

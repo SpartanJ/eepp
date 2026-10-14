@@ -5,6 +5,19 @@
 using namespace EE;
 using namespace EE::Graphics;
 
+UTEST( Image, FillWithColorCoversEveryPixelAndChannel ) {
+	const Uint8 components[] = { 17, 43, 99, 151 };
+	for ( Uint32 channels = 1; channels <= 4; ++channels ) {
+		Image image( 7, 3, channels, Color::Transparent );
+		image.fillWithColor( Color( 17, 43, 99, 151 ) );
+		for ( size_t pixel = 0; pixel < 21; ++pixel ) {
+			for ( Uint32 channel = 0; channel < channels; ++channel ) {
+				EXPECT_EQ( image.getPixels()[pixel * channels + channel], components[channel] );
+			}
+		}
+	}
+}
+
 UTEST( ImageDiff, ExactEqualityRGB ) {
 	const Uint8 pixels[] = { 12, 34, 56, 78, 90, 123 };
 	const Image image1( pixels, 2, 1, 3 );
