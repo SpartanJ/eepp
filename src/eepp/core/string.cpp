@@ -1928,7 +1928,12 @@ std::string String::randString( size_t len, std::string dictionary ) {
 }
 
 std::string_view String::numberClean( std::string_view strNumber ) {
-	while ( strNumber.back() == '0' )
+	const auto decimal = strNumber.find( '.' );
+	if ( decimal == std::string_view::npos ||
+		 strNumber.find_first_of( "eE", decimal ) != std::string_view::npos ) {
+		return strNumber;
+	}
+	while ( strNumber.size() > decimal + 1 && strNumber.back() == '0' )
 		strNumber.remove_suffix( 1 );
 	if ( strNumber.back() == '.' )
 		strNumber.remove_suffix( 1 );
@@ -1936,21 +1941,11 @@ std::string_view String::numberClean( std::string_view strNumber ) {
 }
 
 std::string String::numberClean( const std::string& number ) {
-	std::string strNumber( number );
-	while ( strNumber.back() == '0' )
-		strNumber.pop_back();
-	if ( strNumber.back() == '.' )
-		strNumber.pop_back();
-	return strNumber;
+	return std::string( numberClean( std::string_view( number ) ) );
 }
 
 void String::numberCleanInPlace( std::string& strNumber ) {
-	if ( strNumber.empty() )
-		return;
-	while ( strNumber.back() == '0' )
-		strNumber.pop_back();
-	if ( strNumber.back() == '.' )
-		strNumber.pop_back();
+	strNumber.resize( numberClean( std::string_view( strNumber ) ).size() );
 }
 
 void String::insertChar( String& str, const unsigned int& pos, const StringBaseType& tchar ) {
