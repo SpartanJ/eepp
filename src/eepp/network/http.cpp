@@ -1,8 +1,12 @@
 #include <algorithm>
 #include <cctype>
+#include <charconv>
+#include <chrono>
 #include <cstring>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/http/httpstreamchunked.hpp>
+#include <eepp/network/socketselector.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/compression.hpp>
@@ -14,8 +18,8 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
 #include <iostream>
-#include <iterator>
 #include <limits>
+#include <optional>
 #include <sstream>
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -31,6 +35,244 @@ namespace EE { namespace Network {
 
 static std::string sDefaultUserAgent = "Mozilla/5.0 (Linux; x86_64) eepp-network/1.0 "
 									   "Chrome/146.0.0.0 AppleWebKit/537.36 Safari/537.36";
+
+namespace {
+
+using SteadyClock = std::chrono::steady_clock;
+
+// These limits bound metadata, independently of the size of downloaded resource bodies.
+constexpr std::size_t MaxHTTPHeaderBytes = 64 * 1024;
+constexpr unsigned MaxInformationalResponses = 32;
+
+bool isRedirectStatus( Http::Response::Status status ) {
+	return status == Http::Response::MovedPermanently ||
+		   status == Http::Response::MovedTemporarily || status == Http::Response::SeeOther ||
+		   status == Http::Response::TemporaryRedirect ||
+		   status == Http::Response::PermanentRedirect;
+}
+
+std::string originKey( const URI& uri ) {
+	return String::toLower( uri.getScheme() ) + "://" + String::toLower( uri.getHost() ) + ":" +
+		   String::toString( uri.getPort() );
+}
+
+std::string transportKey( const URI& uri, const URI& proxy ) {
+	return originKey( uri ) + "\n" +
+		   ( proxy.empty() ? "" : originKey( proxy ) + "\n" + proxy.getUserInfo() );
+}
+
+class DiscardStream : public IOStreamString {
+  public:
+	ios_size write( const char*, ios_size size ) { return size; }
+};
+
+bool hasToken( std::string_view value, std::string_view token ) {
+	while ( !value.empty() ) {
+		const auto comma = value.find( ',' );
+		const auto part = String::trim( value.substr( 0, comma ) );
+		if ( part.size() == token.size() &&
+			 std::equal( part.begin(), part.end(), token.begin(),
+						 []( unsigned char a, char b ) { return std::tolower( a ) == b; } ) )
+			return true;
+		if ( comma == std::string_view::npos )
+			break;
+		value.remove_prefix( comma + 1 );
+	}
+	return false;
+}
+
+bool parseContentLength( std::string_view value, Uint64& length ) {
+	bool first = true;
+	do {
+		const auto comma = value.find( ',' );
+		const auto part = String::trim( value.substr( 0, comma ) );
+		Uint64 parsed = 0;
+		auto result = std::from_chars( part.data(), part.data() + part.size(), parsed );
+		if ( part.empty() || result.ec != std::errc() || result.ptr != part.data() + part.size() ||
+			 ( !first && parsed != length ) )
+			return false;
+		length = parsed;
+		first = false;
+		if ( comma == std::string_view::npos )
+			return true;
+		value.remove_prefix( comma + 1 );
+	} while ( !value.empty() );
+	return false;
+}
+
+// Servers close idle connections whenever they choose (Apache's default keep-alive timeout is 5 s),
+// so by the time a connection is reused its FIN, RST, or stray bytes are usually already readable.
+// A nonblocking read finds them without waiting. Any data at all is invalid: no request is in
+// flight on an idle connection. For TLS this also consumes post-handshake records such as session
+// tickets, which leave a healthy connection reporting NotReady.
+bool isIdleConnectionUsable( TcpSocket& socket ) {
+	socket.setBlocking( false );
+	char byte;
+	std::size_t count = 0;
+	const auto status = socket.receive( &byte, sizeof( byte ), count );
+	return status == Socket::NotReady || ( status == Socket::Done && count == 0 );
+}
+
+} // namespace
+
+struct Http::ConnectionPool {
+	struct Connection {
+		std::unique_ptr<TcpSocket> socket;
+		SocketSelector selector;
+		std::string key;
+		SteadyClock::time_point lastUsed;
+		bool busy{ true };
+		bool validateCertificate{ true };
+		bool validateHostname{ true };
+
+		~Connection() {
+			// In particular, an OpenSSL close_notify must not block browser session teardown.
+			if ( socket )
+				socket->setBlocking( false );
+		}
+	};
+
+	struct Lease {
+		ConnectionPool& pool;
+		Connection* connection{ nullptr };
+		bool reused{ false };
+		bool reusable{ false };
+
+		explicit Lease( ConnectionPool& pool ) : pool( pool ) {}
+
+		~Lease() { release(); }
+
+		void release() {
+			if ( !connection )
+				return;
+			std::unique_ptr<Connection> discarded;
+			{
+				std::lock_guard<std::mutex> lock( pool.mutex );
+				if ( reusable && !pool.closed.load( std::memory_order_acquire ) ) {
+					connection->busy = false;
+					connection->lastUsed = SteadyClock::now();
+				} else {
+					auto it = std::find_if(
+						pool.connections.begin(), pool.connections.end(),
+						[this]( const auto& item ) { return item.get() == connection; } );
+					if ( it != pool.connections.end() ) {
+						discarded = std::move( *it );
+						pool.connections.erase( it );
+					}
+				}
+				connection = nullptr;
+			}
+			// TLS destruction and callbacks must never execute under the pool mutex.
+			pool.condition.notify_all();
+		}
+	};
+
+	explicit ConnectionPool( ConnectionPoolOptions options = {} ) : options( options ) {
+		this->options.maxConnections = std::max<std::size_t>( 1, options.maxConnections );
+		this->options.maxConnectionsPerHost =
+			std::max<std::size_t>( 1, options.maxConnectionsPerHost );
+	}
+
+	bool acquire( Lease& lease, const Http& http, const Request& request,
+				  SteadyClock::time_point started, Time timeout ) {
+		std::unique_lock<std::mutex> lock( mutex );
+		while ( !closed.load( std::memory_order_acquire ) && !request.isCancelled() &&
+				!http.mShuttingDown.load( std::memory_order_acquire ) ) {
+			const auto now = SteadyClock::now();
+			if ( timeout > Time::Zero &&
+				 now - started >= std::chrono::microseconds( timeout.asMicroseconds() ) )
+				return false;
+			// Expiry and capacity eviction remove only idle sockets; active leases stay stable.
+			for ( auto it = connections.begin(); it != connections.end(); ) {
+				if ( !( *it )->busy &&
+					 now - ( *it )->lastUsed >=
+						 std::chrono::microseconds( options.idleTimeout.asMicroseconds() ) ) {
+					auto discarded = std::move( *it );
+					it = connections.erase( it );
+					lock.unlock();
+					discarded.reset();
+					lock.lock();
+					// Another acquirer may have changed the vector while it was unlocked.
+					it = connections.begin();
+				} else {
+					++it;
+				}
+			}
+			std::size_t hostCount = 0;
+			Connection* oldest = nullptr;
+			for ( auto& connection : connections ) {
+				const bool sameHost = connection->key == http.mConnectionKey;
+				if ( sameHost )
+					++hostCount;
+				if ( !connection->busy && sameHost &&
+					 connection->validateCertificate == request.getValidateCertificate() &&
+					 connection->validateHostname == request.getValidateHostname() ) {
+					connection->busy = true;
+					lease.connection = connection.get();
+					lease.reused = true;
+					return true;
+				}
+			}
+			for ( auto& connection : connections ) {
+				if ( !connection->busy &&
+					 ( hostCount < options.maxConnectionsPerHost ||
+					   connection->key == http.mConnectionKey ) &&
+					 ( !oldest || connection->lastUsed < oldest->lastUsed ) )
+					oldest = connection.get();
+			}
+			if ( oldest && ( connections.size() >= options.maxConnections ||
+							 hostCount >= options.maxConnectionsPerHost ) ) {
+				auto it =
+					std::find_if( connections.begin(), connections.end(),
+								  [oldest]( const auto& item ) { return item.get() == oldest; } );
+				auto discarded = std::move( *it );
+				connections.erase( it );
+				lock.unlock();
+				discarded.reset();
+				lock.lock();
+				continue;
+			}
+			if ( connections.size() < options.maxConnections &&
+				 hostCount < options.maxConnectionsPerHost ) {
+				auto connection = std::make_unique<Connection>();
+				connection->key = http.mConnectionKey;
+				connection->validateCertificate = request.getValidateCertificate();
+				connection->validateHostname = request.getValidateHostname();
+				lease.connection = connection.get();
+				connections.emplace_back( std::move( connection ) );
+				return true;
+			}
+			// Timed waits also observe per-request cancellation without running user callbacks
+			// locked.
+			condition.wait_for( lock, std::chrono::milliseconds( 10 ) );
+		}
+		return false;
+	}
+
+	void closeIdle( bool closePool = false ) {
+		SmallVector<std::unique_ptr<Connection>, 8> discarded;
+		{
+			std::lock_guard<std::mutex> lock( mutex );
+			if ( closePool )
+				closed.store( true, std::memory_order_release );
+			for ( auto it = connections.begin(); it != connections.end(); ) {
+				if ( !( *it )->busy ) {
+					discarded.emplace_back( std::move( *it ) );
+					it = connections.erase( it );
+				} else {
+					++it;
+				}
+			}
+		}
+		condition.notify_all();
+	}
+
+	std::mutex mutex;
+	std::condition_variable condition;
+	SmallVector<std::unique_ptr<Connection>, 8> connections;
+	ConnectionPoolOptions options;
+	std::atomic<bool> closed{ false };
+};
 
 void Http::setDefaultUserAgent( const std::string& userAgent ) {
 	sDefaultUserAgent = userAgent;
@@ -284,7 +526,7 @@ std::string Http::Request::prepare( const Http& http ) const {
 	std::string method = methodToString( mMethod );
 
 	// Write the first line containing the request type
-	if ( http.getProxy().empty() ) {
+	if ( http.getProxy().empty() || http.isSSL() ) {
 		out << method << " " << mUri << " ";
 	} else {
 		URI uri = http.getURI();
@@ -565,62 +807,58 @@ const std::string& Http::Response::getBody() const {
 }
 
 void Http::Response::parse( const std::string& data ) {
-	std::istringstream in( data );
-
-	// Extract the HTTP version from the first line
-	std::string version;
-
-	if ( in >> version ) {
-		if ( ( version.size() >= 8 ) && ( version[6] == '.' ) &&
-			 ( String::toLower( version.substr( 0, 5 ) ) == "http/" ) &&
-			 std::isdigit( version[5] ) && std::isdigit( version[7] ) ) {
-			mMajorVersion = version[5] - '0';
-			mMinorVersion = version[7] - '0';
-		} else {
-			// Invalid HTTP version
-			mStatus = InvalidResponse;
-			return;
-		}
-	}
-
-	// Extract the status code from the first line
-	int status = InvalidResponse;
-
-	if ( in >> status ) {
-		mStatus = static_cast<Status>( status );
-	} else {
-		// Invalid status code
-		mStatus = InvalidResponse;
-		return;
-	}
-
-	// Ignore the end of the first line
-	in.ignore( std::numeric_limits<std::streamsize>::max(), '\n' );
-
-	// Parse the other lines, which contain fields, one by one
-	parseFields( in );
-
+	mFields.clear();
 	mBody.clear();
+	mStatus = InvalidResponse;
+	mMajorVersion = mMinorVersion = 0;
+	std::istringstream in( data );
+	std::string version;
+	int status = 0;
+	if ( !( in >> version >> status ) || version.size() != 8 || version.substr( 0, 5 ) != "HTTP/" ||
+		 version[5] != '1' || version[6] != '.' || ( version[7] != '0' && version[7] != '1' ) ||
+		 status < 100 || status > 599 )
+		return;
+	mMajorVersion = 1;
+	mMinorVersion = version[7] - '0';
+	in.ignore( std::numeric_limits<std::streamsize>::max(), '\n' );
+	if ( parseFields( in ) )
+		mStatus = static_cast<Status>( status );
 }
 
-void Http::Response::parseFields( std::istream& in ) {
+bool Http::Response::parseFields( std::istream& in ) {
 	std::string line;
-	while ( std::getline( in, line ) && ( line.size() > 2 ) ) {
-		std::string::size_type pos = line.find( ": " );
-
-		if ( pos != std::string::npos ) {
-			// Extract the field name and its value
-			std::string field = line.substr( 0, pos );
-			std::string value = line.substr( pos + 2 );
-
-			// Remove any trailing \r
-			if ( !value.empty() && ( *value.rbegin() == '\r' ) )
-				value.erase( value.size() - 1 );
-
-			// Add the field
-			mFields[String::toLower( field )] = value;
+	while ( std::getline( in, line ) ) {
+		if ( !line.empty() && line.back() == '\r' )
+			line.pop_back();
+		if ( line.empty() )
+			return true;
+		const auto colon = line.find( ':' );
+		if ( colon == std::string::npos || colon == 0 )
+			return false;
+		for ( size_t i = 0; i < colon; ++i ) {
+			const unsigned char ch = line[i];
+			if ( !std::isalnum( ch ) &&
+				 std::string_view( "!#$%&'*+-.^_`|~" ).find( ch ) == std::string_view::npos )
+				return false;
+		}
+		auto value = String::trim( std::string_view( line ).substr( colon + 1 ) );
+		for ( const unsigned char ch : value ) {
+			if ( ( ch < 32 && ch != '\t' ) || ch == 127 )
+				return false;
+		}
+		std::string field = String::toLower( line.substr( 0, colon ) );
+		auto it = mFields.find( field );
+		if ( it != mFields.end() ) {
+			// RFC 9110 5.3: repeated fields combine into one comma-separated list, except
+			// Set-Cookie, whose values may themselves contain commas (Expires dates). Keep each
+			// Set-Cookie on its own line; field values cannot contain line breaks.
+			it->second += field == "set-cookie" ? '\n' : ',';
+			it->second.append( value );
+		} else {
+			mFields[std::move( field )] = std::string( value );
 		}
 	}
+	return true;
 }
 
 static Http::Pool sGlobalHttpPool = Http::Pool();
@@ -703,78 +941,44 @@ Uint64 Http::postAsync( const Http::AsyncResponseCallback& cb, const URI& uri, c
 						 validateCertificate, proxy, followRedirect );
 }
 
-Http::Http() : mConnection( NULL ), mHost(), mPort( 0 ), mIsSSL( false ), mHostSolved( false ) {}
+Http::Http() : Http( "" ) {}
 
 Http::Http( const std::string& host, unsigned short port, bool useSSL, URI proxy ) :
-	mConnection( NULL ),
-	mHostName( host ),
-	mPort( port ),
-	mIsSSL( useSSL ),
-	mHostSolved( false ),
-	mProxy( proxy ) {
-	setHost( host, port, useSSL, proxy );
+	mConnections( std::make_shared<ConnectionPool>() ), mPort( 0 ), mIsSSL( false ) {
+	setHost( host, port, useSSL, std::move( proxy ) );
+}
+
+Http::Http( std::shared_ptr<ConnectionPool> connections, const URI& host, const URI& proxy ) :
+	mConnections( std::move( connections ) ), mPort( 0 ), mIsSSL( false ) {
+	setHost( host, proxy );
 }
 
 Http::~Http() {
 	shutdown();
-
-	// Then we destroy the last open connection
-	HttpConnection* connection = mConnection;
-
-	eeSAFE_DELETE( connection );
 }
 
 void Http::setHost( const std::string& host, unsigned short port, bool useSSL, URI proxy ) {
-	mProxy = proxy;
-
-	bool sameHost( host == mHostName && port == mPort && useSSL == mIsSSL );
-
-	// Check the protocol
-	if ( String::toLower( host.substr( 0, 7 ) ) == "http://" ) {
-		// HTTP protocol
-		mHostName = host.substr( 7 );
-		mPort = ( port != 0 ? port : 80 );
-	} else if ( String::toLower( host.substr( 0, 8 ) ) == "https://" ) {
-// HTTPS protocol
-#if defined( EE_SSL_SUPPORT ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		mIsSSL = true;
-		mHostName = host.substr( 8 );
-		mPort = ( port != 0 ? port : 443 );
-#else
-		mHostName = "";
-		mPort = 0;
-#endif
-	} else {
-		// Undefined protocol - use HTTP, unless SSL is specified
-		mHostName = host;
-		mPort = ( port != 0 ? port : 80 );
-
-#if defined( EE_SSL_SUPPORT ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		mPort = useSSL ? ( port != 0 ? port : 443 ) : mPort;
-		mIsSSL = useSSL || mPort == 443;
-#endif
+	std::string name = host;
+	if ( String::toLower( name.substr( 0, 8 ) ) == "https://" ) {
+		name.erase( 0, 8 );
+		useSSL = true;
+	} else if ( String::toLower( name.substr( 0, 7 ) ) == "http://" ) {
+		name.erase( 0, 7 );
+		useSSL = false;
 	}
-
-	// Remove any trailing '/' from the host name
-	if ( !mHostName.empty() && ( *mHostName.rbegin() == '/' ) )
-		mHostName.erase( mHostName.size() - 1 );
-
-	if ( !mProxy.empty() ) {
-		sameHost = false;
-	}
-
-	// If the new host is different to the last set host
-	// and there's an open connection to the host, we close
-	// the old connection to prepare a new one.
-	if ( !sameHost && NULL != mConnection ) {
-		HttpConnection* connection = mConnection;
-		eeSAFE_DELETE( connection );
-		mConnection = NULL;
-	}
+	if ( !name.empty() && name.back() == '/' )
+		name.pop_back();
+	mHostName = String::toLower( name );
+	mIsSSL = useSSL;
+	mPort = port ? port : ( useSSL ? 443 : 80 );
+	mProxy = std::move( proxy );
+	mHost = IpAddress();
+	mHostSolved = false;
+	mConnectionKey = transportKey( getURI(), mProxy );
 }
 
 void Http::setHost( const URI& uri, URI proxy ) {
-	setHost( uri.getHost(), uri.getPort(), uri.getScheme() == "https" );
+	setHost( uri.getHost(), uri.getPort(), uri.getScheme() == "https", std::move( proxy ) );
 }
 
 Http::Response Http::sendRequest( const Http::Request& request, Time timeout ) {
@@ -797,432 +1001,433 @@ static bool sendProgress( const Http& http, const Http::Request& request,
 
 Http::Response Http::downloadRequest( const Http::Request& request, IOStream& writeTo,
 									  Time timeout ) {
-	// Solve the host IP only when the request starts.
-	if ( !mHostSolved ) {
-		if ( !mProxy.empty() ) {
-			mHost = IpAddress( mProxy.getHost() );
-		} else {
-			mHost = IpAddress( mHostName );
+	const auto started = SteadyClock::now();
+	auto remaining = [&]() {
+		if ( timeout <= Time::Zero )
+			return Time::Zero;
+		const auto elapsed =
+			std::chrono::duration_cast<std::chrono::microseconds>( SteadyClock::now() - started )
+				.count();
+		return Microseconds( std::max<Int64>( 1, timeout.asMicroseconds() - elapsed ) );
+	};
+	// Ordinary requests need only the prepared wire-header copy below. Own another Request
+	// only when resuming or redirecting actually changes it.
+	std::optional<Request> modifiedRequest;
+	const Request* currentRequest = &request;
+	if ( request.isContinue() && writeTo.getSize() > 0 ) {
+		Request head( request );
+		head.setContinue( false );
+		head.setMethod( Request::Head );
+		IOStreamString headBody;
+		auto response = downloadRequest( head, headBody, remaining() );
+		Uint64 length = 0;
+		const auto offset = writeTo.getSize();
+		modifiedRequest.emplace( request );
+		currentRequest = &*modifiedRequest;
+		if ( response.isOK() && hasToken( response.getField( "accept-ranges" ), "bytes" ) &&
+			 parseContentLength( response.getField( "content-length" ), length ) &&
+			 static_cast<Uint64>( offset ) < length ) {
+			writeTo.seek( offset );
+			modifiedRequest->setField( "Range", "bytes=" + String::toString( offset ) + "-" );
 		}
-		mHostSolved = true;
+		modifiedRequest->setContinue( false );
 	}
 
-	if ( 0 == mHost.toInteger() ) {
-		return Response();
-	}
+	Http* target = this;
+	std::unique_ptr<Http> redirected;
+	for ( unsigned redirects = 0;; ++redirects ) {
+		const Request& current = *currentRequest;
+		auto connections = target->mConnections;
+		auto cancelled = [&]() {
+			if ( connections->closed.load( std::memory_order_acquire ) ||
+				 target->mShuttingDown.load( std::memory_order_acquire ) )
+				current.mCancel->store( true, std::memory_order_release );
+			return current.isCancelled();
+		};
+		auto expired = [&]() {
+			return timeout > Time::Zero &&
+				   SteadyClock::now() - started >=
+					   std::chrono::microseconds( timeout.asMicroseconds() );
+		};
+		auto progress = [&]( const Response& response, Request::Status status, Uint64 total,
+							 Uint64 count ) {
+			if ( !sendProgress( *target, current, response, status, total, count ) )
+				current.mCancel->store( true, std::memory_order_release );
+			return !cancelled();
+		};
 
-	if ( NULL == mConnection ) {
-		HttpConnection* connection = eeNew( HttpConnection, () );
-		TcpSocket* socket = NULL;
-
-		// If the http client is proxied and the end host use SSL
-		// We need to create an HTTP Tunnel against the proxy server
-		if ( isProxied() && mIsSSL && SSLSocket::isSupported() ) {
-			socket = SSLSocket::New( mHostName, request.getValidateCertificate(),
-									 request.getValidateHostname() );
-
-			connection->setSSL( true );
-		} else {
-			bool isSSL = !isProxied()
-							 ? mIsSSL
-							 : ( SSLSocket::isSupported() && mProxy.getScheme() == "https" );
-
-			socket = isSSL ? SSLSocket::New( mHostName, request.getValidateCertificate(),
-											 request.getValidateHostname() )
-						   : TcpSocket::New();
-
-			connection->setSSL( isSSL );
-		}
-
-		if ( timeout != Time::Zero ) {
-			socket->setReceiveTimeout( timeout );
-			socket->setSendTimeout( timeout );
-		}
-
-		connection->setSocket( socket );
-
-		mConnection = connection;
-	}
-
-	// First make sure that the request is valid -- add missing mandatory fields
-	Request toSend( prepareFields( request ) );
-
-	// Prepare the response
-	Response received;
-
-	if ( request.isCancelled() ) {
-		onCancel( request );
-		endConnection();
-		return Response();
-	}
-
-	// If not connected, try to connect to the server
-	if ( mConnection && !mConnection->isConnected() ) {
-		// We need to create an HTTP Tunnel?
-		if ( isProxied() && mIsSSL && SSLSocket::isSupported() ) {
-			SSLSocket* sslSocket = reinterpret_cast<SSLSocket*>( mConnection->getSocket() );
-
-			// For an HTTP Tunnel first we need to connect to the proxy server ( without TLS )
-			if ( sslSocket->tcpConnect( mHost, mProxy.getPort(), timeout ) != Socket::Done ) {
-				endConnection();
-				return received;
-			} else {
-				mConnection->setConnected( true );
+		// Idle connections the server already closed are discarded before use, for every method.
+		auto acquireUsable = [&]( ConnectionPool::Lease& lease ) {
+			while ( connections->acquire( lease, *target, current, started, timeout ) ) {
+				if ( !lease.reused || isIdleConnectionUsable( *lease.connection->socket ) )
+					return true;
+				lease.release(); // Not reusable, so the dead connection is discarded.
+				lease.reused = false;
 			}
-		} else {
-			if ( mConnection->getSocket()->connect(
-					 mHost, mProxy.empty() ? mPort : mProxy.getPort(), timeout ) != Socket::Done ) {
-				endConnection();
-				return received;
-			} else {
-				mConnection->setConnected( true );
-			}
-		}
+			return false;
+		};
 
-		if ( mConnection->isConnected() &&
-			 !sendProgress( *this, request, received, Request::Connected, 0, 0 ) ) {
-			endConnection();
-			return received;
-		}
-	}
-
-	// Connect the socket to the host
-	if ( mConnection && mConnection->isConnected() ) {
-		// Create a HTTP Tunnel for SSL connections if not ready
-		if ( isProxied() && mIsSSL && !mConnection->isTunneled() ) {
-			// Create the HTTP Tunnel request
-			Request tunnelRequest;
-			std::string tunnelStr = tunnelRequest.prepareTunnel( *this );
-
-			SSLSocket* sslSocket = reinterpret_cast<SSLSocket*>( mConnection->getSocket() );
-			std::size_t sent;
-
-			// Send the request
-			if ( sslSocket->tcpSend( tunnelStr.c_str(), tunnelStr.size(), sent ) == Socket::Done ) {
-				char buffer[PACKET_BUFFER_SIZE + 1];
-				std::size_t read = 0;
-
-				// Get the proxy server response
-				if ( sslSocket->tcpReceive( buffer, PACKET_BUFFER_SIZE, read ) == Socket::Done ) {
-					// Parse the HTTP Tunnel request response
-					Response tunnelResponse;
-					std::string header;
-					header.append( buffer, read );
-					tunnelResponse.parse( header );
-
-					if ( tunnelResponse.getStatus() == Response::Ok ) {
-						// Stablish the SSL connection if the response is positive
-						if ( sslSocket->sslConnect( mHost, mProxy.getPort(), timeout ) !=
-							 Socket::Done ) {
-							return received;
+		Response response;
+		// The server can still close a connection between that check and our request. Retry once,
+		// only for safe requests and only before any response bytes have arrived; never replay a
+		// form submission.
+		for ( unsigned attempt = 0; attempt < 2; ++attempt ) {
+			ConnectionPool::Lease lease( *connections );
+			if ( cancelled() || expired() || !acquireUsable( lease ) )
+				break;
+			bool responseBytes = false;
+			bool retryable = false;
+			auto perform = [&]() -> Response {
+				Response received;
+				auto invalid = [&]() {
+					received.mStatus = Response::InvalidResponse;
+					return received;
+				};
+				auto& connection = *lease.connection;
+				const bool tunnel = target->isProxied() && target->mIsSSL;
+				if ( !connection.socket ) {
+					if ( tunnel && target->mProxy.getScheme() == "https" )
+						return received; // Nested TLS to an HTTPS CONNECT proxy is unsupported.
+					const bool ssl = target->mIsSSL || ( target->isProxied() &&
+														 target->mProxy.getScheme() == "https" );
+					if ( ssl && !SSLSocket::isSupported() )
+						return received;
+					connection.socket.reset( ssl ? SSLSocket::New( tunnel || !target->isProxied()
+																	   ? target->mHostName
+																	   : target->mProxy.getHost(),
+																   current.getValidateCertificate(),
+																   current.getValidateHostname() )
+												 : TcpSocket::New() );
+					IpAddress address;
+					{
+						std::lock_guard<std::mutex> lock( target->mHostMutex );
+						if ( !target->mHostSolved ) {
+							target->mHost =
+								IpAddress( target->isProxied() ? target->mProxy.getHost()
+															   : target->mHostName );
+							target->mHostSolved = target->mHost.toInteger() != 0;
 						}
-					} else {
-						return tunnelResponse;
+						address = target->mHost;
 					}
-				} else {
+					if ( expired() || cancelled() || address.toInteger() == 0 )
+						return received;
+					const auto port =
+						target->isProxied() ? target->mProxy.getPort() : target->mPort;
+					// Connect TCP first: timeout options have no effect before a socket handle
+					// exists.
+					if ( connection.socket->TcpSocket::connect( address, port, remaining() ) !=
+						 Socket::Done ) {
+						std::lock_guard<std::mutex> lock( target->mHostMutex );
+						target->mHostSolved = false;
+						return received;
+					}
+					connection.socket->setSendTimeout( remaining() );
+					connection.selector.add( *connection.socket );
+					if ( tunnel ) {
+						auto* socket = static_cast<SSLSocket*>( connection.socket.get() );
+						Request connect;
+						if ( current.hasField( "Proxy-Authorization" ) ) {
+							connect.setField( "Proxy-Authorization",
+											  current.getField( "Proxy-Authorization" ) );
+						}
+						const std::string wire = connect.prepareTunnel( *target );
+						std::size_t sent = 0;
+						if ( socket->tcpSend( wire.data(), wire.size(), sent ) != Socket::Done )
+							return received;
+						socket->setBlocking( false );
+						std::string header;
+						char buffer[1024];
+						while ( header.find( "\r\n\r\n" ) == std::string::npos ) {
+							if ( cancelled() || expired() || header.size() > MaxHTTPHeaderBytes )
+								return received;
+							std::size_t count = 0;
+							const auto status =
+								socket->tcpReceive( buffer, sizeof( buffer ), count );
+							if ( status == Socket::NotReady ) {
+								connection.selector.wait(
+									timeout > Time::Zero
+										? std::min( remaining(), Milliseconds( 100 ) )
+										: Milliseconds( 100 ) );
+								continue;
+							}
+							if ( status != Socket::Done )
+								return received;
+							header.append( buffer, count );
+						}
+						Response connected;
+						connected.parse( header );
+						if ( !connected.isOK() || header.find( "\r\n\r\n" ) + 4 != header.size() )
+							return received;
+					}
+					if ( ssl ) {
+						auto* socket = static_cast<SSLSocket*>( connection.socket.get() );
+						socket->setBlocking( true );
+						connection.socket->setReceiveTimeout( remaining() );
+						if ( socket->sslConnect( address, port, remaining() ) != Socket::Done )
+							return received;
+					}
+				}
+				auto& socket = *connection.socket;
+				socket.setBlocking( true );
+				socket.setSendTimeout( remaining() );
+				if ( !progress( received, Request::Connected, 0, 0 ) || expired() )
+					return received;
+				const Request toSend( target->prepareFields( current ) );
+				const std::string wire = toSend.prepare( *target );
+				if ( current.isVerbose() )
+					std::cout << "Request:\n" << wire << std::endl;
+				if ( socket.send( wire.data(), wire.size() ) != Socket::Done ) {
+					retryable = true;
 					return received;
 				}
+				if ( !progress( received, Request::Sent, 0, 0 ) )
+					return received;
+				// Read readiness and cancellation use the selector instead of SO_RCVTIMEO:
+				// Windows reports receive timeouts as a disconnection, unlike POSIX EAGAIN.
+				socket.setBlocking( false );
 
-				mConnection->setTunneled( true );
-				mConnection->setKeepAlive( true );
-			}
-		}
-
-		if ( request.isContinue() ) {
-			std::size_t continueLength = writeTo.getSize();
-
-			if ( continueLength > 0 ) {
-				IOStreamString responseHeadBody;
-				Request requestHead = request;
-				requestHead.setContinue( false );
-				requestHead.setMethod( Request::Head );
-				Response responseHead = downloadRequest( requestHead, responseHeadBody );
-				Uint64 contentLength = 0;
-
-				if ( responseHead.hasField( "Accept-Ranges" ) &&
-					 responseHead.hasField( "Content-Length" ) &&
-					 String::fromString( contentLength,
-										 responseHead.getField( "Content-Length" ) ) &&
-					 contentLength > 0 && continueLength < contentLength ) {
-					writeTo.seek( continueLength );
-					Request newRequest( request );
-					newRequest.setContinue( false );
-					newRequest.setField( "Range", String::format( "bytes=%lu-%lu",
-																  (unsigned long)continueLength,
-																  (unsigned long)contentLength ) );
-					return downloadRequest( newRequest, writeTo, timeout );
-				}
-			}
-		}
-
-		// Convert the request to string and send it through the connected socket
-		std::string requestStr = toSend.prepare( *this );
-
-		if ( request.isVerbose() ) {
-			std::cout << "Request:" << std::endl;
-			std::cout << requestStr << std::endl;
-		}
-
-		if ( !requestStr.empty() ) {
-			Socket::Status status;
-
-			// Send it through the socket
-			if ( mConnection && mConnection->getSocket()->send(
-									requestStr.c_str(), requestStr.size() ) == Socket::Done ) {
-				if ( !request.isCancelled() &&
-					 !sendProgress( *this, request, received, Request::Sent, 0, 0 ) ) {
-					request.mCancel->store( true, std::memory_order_release );
-				}
-
-				// Wait for the server's response
-				std::size_t currentTotalBytes = 0;
-				std::size_t len = 0;
-				std::size_t read = 0;
-				char buffer[PACKET_BUFFER_SIZE + 1];
-				bool isnheader = false;
-				bool chunked = false;
-				bool compressed = false;
-				Uint64 contentLength = 0;
-				std::string headerBuffer;
-				HttpStreamChunked* chunkedStream = NULL;
-				IOStreamInflate* inflateStream = NULL;
-				IOStream* bufferStream = NULL;
-
-				while ( !request.isCancelled() && mConnection &&
-						( status = mConnection->getSocket()->receive( buffer, PACKET_BUFFER_SIZE,
-																	  read ) ) == Socket::Done ) {
-					char* readBuffer = buffer;
-
-					// If we didn't receive the header yet, we will try to find the end of the
-					// header
-					if ( !isnheader ) {
-						headerBuffer.append( readBuffer, read );
-
-						std::size_t headerEnd = headerBuffer.find( "\r\n\r\n" );
-						std::size_t headerDelimiterSize = 4;
-
-						if ( headerEnd == std::string::npos ) {
-							headerEnd = headerBuffer.find( "\n\n" );
-							headerDelimiterSize = 2;
+				std::string pending;
+				char buffer[PACKET_BUFFER_SIZE];
+				Socket::Status lastStatus = Socket::Done;
+				auto readMore = [&]() {
+					while ( !cancelled() && !expired() ) {
+						std::size_t count = 0;
+						lastStatus = socket.receive( buffer, sizeof( buffer ), count );
+						if ( lastStatus == Socket::NotReady ||
+							 ( lastStatus == Socket::Done && count == 0 ) ) {
+							connection.selector.wait(
+								timeout > Time::Zero ? std::min( remaining(), Milliseconds( 100 ) )
+													 : Milliseconds( 100 ) );
+							continue;
 						}
+						if ( lastStatus != Socket::Done )
+							return false;
+						responseBytes = true;
+						pending.append( buffer, count );
+						return true;
+					}
+					return false;
+				};
+				unsigned informationals = 0;
+				for ( ;; ) {
+					std::size_t end = pending.find( "\r\n\r\n" );
+					std::size_t delimiter = 4;
+					if ( end == std::string::npos ) {
+						end = pending.find( "\n\n" );
+						delimiter = 2;
+					}
+					if ( end == std::string::npos ) {
+						if ( pending.size() > MaxHTTPHeaderBytes )
+							return invalid();
+						if ( !readMore() ) {
+							retryable = !responseBytes && lastStatus == Socket::Disconnected;
+							return responseBytes ? invalid() : received;
+						}
+						continue;
+					}
+					end += delimiter;
+					if ( end > MaxHTTPHeaderBytes )
+						return invalid();
+					received.parse( pending.substr( 0, end ) );
+					pending.erase( 0, end );
+					if ( received.getStatus() == Response::InvalidResponse )
+						return received;
+					if ( received.getStatus() >= 200 )
+						break;
+					if ( received.getStatus() == 101 ||
+						 ++informationals > MaxInformationalResponses )
+						return invalid();
+				}
 
-						if ( headerEnd != std::string::npos ) {
-							isnheader = true;
-							headerEnd += headerDelimiterSize;
-							len = headerBuffer.size() - headerEnd;
+				const auto status = received.getStatus();
+				if ( current.getMethod() == Request::Connect && received.isOK() )
+					return invalid(); // Raw upgraded/tunnel streams are not exposed by this API.
+				const bool noBody = current.getMethod() == Request::Head ||
+									status == Response::NoContent ||
+									status == Response::NotModified;
+				const bool hasLength = received.hasField( "content-length" );
+				Uint64 length = 0;
+				if ( hasLength &&
+					 !parseContentLength( received.getField( "content-length" ), length ) )
+					return invalid();
+				const std::string transfer =
+					String::toLower( received.getField( "transfer-encoding" ) );
+				const bool chunked = !noBody && transfer == "chunked";
+				if ( !noBody && !transfer.empty() && ( !chunked || hasLength ) )
+					return invalid();
+				bool persistent = !hasToken( toSend.getField( "connection" ), "close" ) &&
+								  !hasToken( received.getField( "connection" ), "close" ) &&
+								  ( received.mMinorVersion == 1 ||
+									hasToken( received.getField( "connection" ), "keep-alive" ) ) &&
+								  ( toSend.mMinorVersion == 1 ||
+									hasToken( toSend.getField( "connection" ), "keep-alive" ) );
+				if ( target->isProxied() && !tunnel &&
+					 hasToken( received.getField( "proxy-connection" ), "close" ) )
+					persistent = false;
+				const bool redirect =
+					current.getFollowRedirect() && redirects < current.getMaxRedirects() &&
+					isRedirectStatus( status ) && !received.getField( "location" ).empty();
+				if ( !progress( received, Request::HeaderReceived, length, 0 ) )
+					return received;
 
-							std::string responseHead( headerBuffer, 0, headerEnd );
-
-							if ( !responseHead.empty() ) {
-								// Build the Response object from the received data
-								received.parse( responseHead );
-
-								// Check if the response is chunked
-								chunked = received.getField( "transfer-encoding" ) == "chunked";
-
-								// Check if the content is compressed
-								std::string encoding( received.getField( "content-encoding" ) );
-								compressed =
-									encoding == "gzip" || encoding == "deflate" || encoding == "br";
-
-								if ( compressed ) {
-									Compression::Mode compressionMode =
-										"gzip" == encoding
-											? Compression::MODE_GZIP
-											: ( "br" == encoding ? Compression::MODE_BROTLI
-																 : Compression::MODE_DEFLATE );
-
-									inflateStream =
-										IOStreamInflate::New( writeTo, compressionMode );
-								}
-
-								if ( chunked ) {
-									IOStream& writeToStream = compressed ? *inflateStream : writeTo;
-									chunkedStream = eeNew( HttpStreamChunked, ( writeToStream ) );
-								}
-
-								bufferStream = chunked ? chunkedStream
-													   : ( compressed ? inflateStream : &writeTo );
-
-								// Get the content length
-								if ( !received.getField( "content-length" ).empty() ) {
-									if ( !String::fromString(
-											 contentLength,
-											 received.getField( "content-length" ) ) )
-										contentLength = 0;
-								}
-
-								if ( mConnection && received.getField( "connection" ) == "close" ) {
-									mConnection->setConnected( false );
-									mConnection->setTunneled( false );
-								}
-
-								// If a redirection is requested, and requests follows
-								// redirections, send a new request to the redirection location.
-								if ( ( received.getStatus() == Response::MovedPermanently ||
-									   received.getStatus() == Response::MovedTemporarily ||
-									   received.getStatus() == Response::SeeOther ||
-									   received.getStatus() == Response::PermanentRedirect ||
-									   received.getStatus() == Response::TemporaryRedirect ) &&
-									 request.getFollowRedirect() ) {
-
-									// Only continue redirecting if less than 10 redirections
-									// were done
-									if ( request.mRedirectionCount < request.getMaxRedirects() ) {
-										std::string location( received.getField( "location" ) );
-										URI uri( location );
-
-										// Close the connection
-										if ( mConnection && !mConnection->isKeepAlive() )
-											mConnection->disconnect();
-
-										eeSAFE_DELETE( chunkedStream );
-										eeSAFE_DELETE( inflateStream );
-
-										if ( !request.isCancelled() &&
-											 !sendProgress( *this, request, received,
-															Request::Redirect, contentLength,
-															currentTotalBytes ) ) {
-											request.mCancel->store( true,
-																	std::memory_order_release );
-										} else {
-											Http::Request newRequest( request );
-											newRequest.setUri( uri.getPathAndQuery() );
-											newRequest.setMethod(
-												Http::Request::getRedirectMethodFromStatus(
-													request.getMethod(), received.getStatus() ) );
-
-											newRequest.setProgressCallback(
-												request.getProgressCallback() );
-
-											if ( received.hasField( "set-cookie" ) &&
-												 ( uri.getHost().empty() ||
-												   uri.getHost() == getHostName() ) ) {
-												const std::string& setCookie =
-													received.getField( "set-cookie" );
-												std::string_view cookiePair = String::trim(
-													std::string_view( setCookie )
-														.substr( 0, setCookie.find( ';' ) ) );
-												const size_t equals = cookiePair.find( '=' );
-												if ( equals != std::string::npos && equals != 0 ) {
-													std::string cookieHeader( cookiePair );
-													std::string_view cookieName =
-														cookiePair.substr( 0, equals );
-													const std::string& previous =
-														request.getField( "cookie" );
-													String::readBySeparator(
-														previous,
-														[&]( std::string_view part ) {
-															std::string_view pair =
-																String::trim( part );
-															if ( !pair.empty() &&
-																 pair.substr( 0,
-																			  pair.find( '=' ) ) !=
-																	 cookieName ) {
-																cookieHeader += "; ";
-																cookieHeader.append( pair.data(),
-																					 pair.size() );
-															}
-														},
-														';' );
-													newRequest.setField( "Cookie", cookieHeader );
-												}
-											}
-
-											request.mRedirectionCount++;
-											newRequest.mRedirectionCount =
-												request.mRedirectionCount;
-
-											// Same host, expects a path in the same domain
-											if ( uri.getHost().empty() ||
-												 uri.getHost() == getHostName() ) {
-												return downloadRequest( newRequest, writeTo,
-																		timeout );
-											} else {
-												// New host, we need to solve the host
-												Http http( uri.getHost(), uri.getPort(),
-														   uri.getScheme() == "https" ? true
-																					  : false );
-												return http.downloadRequest( newRequest, writeTo,
-																			 timeout );
-											}
-										}
-									}
-								}
-
-								if ( !request.isCancelled() &&
-									 !sendProgress( *this, request, received,
-													Request::HeaderReceived, contentLength, 0 ) ) {
-									request.mCancel->store( true, std::memory_order_release );
-								}
-
-								// Move the response body bytes already read into the socket buffer.
-								if ( len > 0 ) {
-									std::memmove( buffer, headerBuffer.data() + headerEnd, len );
-									readBuffer = buffer;
-									read = len;
-								} else {
-									read = 0;
-								}
-
-								headerBuffer.clear();
+				// Redirect bodies are discarded, but fully framed before another request can use
+				// this socket. Their content coding need not be decoded for navigation.
+				DiscardStream discard;
+				IOStream& destination = redirect ? static_cast<IOStream&>( discard ) : writeTo;
+				std::optional<IOStreamInflate> inflate;
+				if ( !noBody && !redirect ) {
+					const auto encoding =
+						String::toLower( received.getField( "content-encoding" ) );
+					if ( encoding == "gzip" || encoding == "deflate" || encoding == "br" ) {
+						inflate.emplace( destination,
+										 encoding == "gzip"
+											 ? Compression::MODE_GZIP
+											 : ( encoding == "br" ? Compression::MODE_BROTLI
+																  : Compression::MODE_DEFLATE ) );
+					}
+				}
+				IOStream& decoded = inflate ? static_cast<IOStream&>( *inflate ) : destination;
+				std::optional<HttpStreamChunked> chunks;
+				if ( chunked )
+					chunks.emplace( decoded );
+				IOStream& body = chunks ? static_cast<IOStream&>( *chunks ) : decoded;
+				Uint64 count = 0;
+				bool complete = false;
+				for ( ;; ) {
+					if ( cancelled() || expired() )
+						return invalid();
+					if ( !pending.empty() ) {
+						// Bytes beyond the framed message cannot belong to it (no pipelining). Like
+						// browsers, keep the message and never reuse the connection, instead of
+						// failing a response that is complete.
+						std::size_t size = pending.size();
+						if ( noBody )
+							size = 0;
+						else if ( !chunked && hasLength && size > length - count )
+							size = static_cast<std::size_t>( length - count );
+						if ( size != pending.size() )
+							persistent = false;
+						const ios_size written = size > 0 ? body.write( pending.data(), size ) : 0;
+						if ( chunks && chunks->isComplete() && written >= 0 &&
+							 static_cast<std::size_t>( written ) < size ) {
+							persistent = false;
+						} else if ( written != static_cast<ios_size>( size ) ) {
+							return invalid();
+						}
+						count += written;
+						pending.clear();
+						if ( written > 0 &&
+							 !progress( received, Request::ContentReceived, length, count ) )
+							return invalid();
+					}
+					complete =
+						noBody || ( chunks ? chunks->isComplete() : hasLength && count == length );
+					if ( complete )
+						break;
+					if ( !readMore() ) {
+						complete = !cancelled() && !expired() &&
+								   lastStatus == Socket::Disconnected && !chunked && !hasLength;
+						persistent = false;
+						break;
+					}
+				}
+				// An empty body has no compressed stream to complete, e.g. Content-Length: 0 with
+				// Content-Encoding: gzip.
+				if ( !complete || ( inflate && inflate->hasInput() &&
+									( inflate->hasError() || !inflate->isComplete() ) ) )
+					return invalid();
+				if ( chunks && !chunks->getHeaderBuffer().empty() ) {
+					Response trailers;
+					std::istringstream in( chunks->getHeaderBuffer() );
+					if ( !trailers.parseFields( in ) )
+						return invalid();
+					for ( auto& field : trailers.mFields ) {
+						if ( field.first == "content-length" ||
+							 field.first == "transfer-encoding" || field.first == "connection" ||
+							 field.first == "content-encoding" || field.first == "host" )
+							return invalid();
+						received.mFields.insert_or_assign( field.first, std::move( field.second ) );
+					}
+				}
+				lease.reusable = persistent && !cancelled();
+				return received;
+			};
+			response = perform();
+			if ( !retryable || !lease.reused || responseBytes || cancelled() || expired() ||
+				 ( current.getMethod() != Request::Get && current.getMethod() != Request::Head &&
+				   current.getMethod() != Request::Options ) )
+				break;
+		}
+		if ( cancelled() ) {
+			onCancel( current );
+			return response;
+		}
+		if ( !current.getFollowRedirect() || redirects >= current.getMaxRedirects() ||
+			 !isRedirectStatus( response.getStatus() ) || response.getField( "location" ).empty() )
+			return response;
+		if ( !progress( response, Request::Redirect, 0, 0 ) ) {
+			onCancel( current );
+			return response;
+		}
+		URI next = target->getURI();
+		next.setPathEtc( current.getUri() );
+		next.resolve( response.getField( "location" ) );
+		if ( next.getScheme() != "http" && next.getScheme() != "https" ) {
+			response.mStatus = Response::InvalidResponse;
+			return response;
+		}
+		const bool sameOrigin = originKey( next ) == originKey( target->getURI() );
+		Request nextRequest( current );
+		nextRequest.mFields.erase( "host" );
+		if ( !sameOrigin ) {
+			nextRequest.mFields.erase( "authorization" );
+			nextRequest.mFields.erase( "cookie" );
+		} else if ( response.hasField( "set-cookie" ) ) {
+			// Each Set-Cookie line sets one cookie, replacing any previous value of that name.
+			std::string cookies = current.getField( "cookie" );
+			String::readBySeparator(
+				response.getField( "set-cookie" ),
+				[&]( std::string_view setCookie ) {
+					std::string_view pair =
+						String::trim( setCookie.substr( 0, setCookie.find( ';' ) ) );
+					const auto equals = pair.find( '=' );
+					if ( equals == std::string_view::npos || equals == 0 )
+						return;
+					const auto name = pair.substr( 0, equals );
+					std::string merged( pair );
+					String::readBySeparator(
+						cookies,
+						[&]( std::string_view part ) {
+							part = String::trim( part );
+							if ( !part.empty() && part.substr( 0, part.find( '=' ) ) != name ) {
+								merged += "; ";
+								merged.append( part );
 							}
-						}
-					}
-
-					if ( isnheader ) {
-						currentTotalBytes += read;
-
-						if ( read > 0 && !request.isCancelled() )
-							bufferStream->write( readBuffer, read );
-
-						if ( !request.isCancelled() &&
-							 !sendProgress( *this, request, received, Request::ContentReceived,
-											contentLength, currentTotalBytes ) ) {
-							request.mCancel->store( true, std::memory_order_release );
-							break;
-						}
-
-						// If the response is compressed and the stream ended means that we received
-						// the message. So we can skip the socket receive call.
-						if ( ( compressed && NULL != inflateStream && !inflateStream->isOpen() ) ||
-							 ( contentLength > 0 && contentLength == currentTotalBytes ) ) {
-							break;
-						}
-					}
-				}
-
-				if ( chunked && NULL != chunkedStream &&
-					 !chunkedStream->getHeaderBuffer().empty() ) {
-					headerBuffer.append( chunkedStream->getHeaderBuffer() );
-				}
-
-				if ( !headerBuffer.empty() ) {
-					std::istringstream in( headerBuffer );
-					received.parseFields( in );
-				}
-
-				if ( mConnection && status == Socket::Status::Disconnected ) {
-					mConnection->setConnected( false );
-					mConnection->setTunneled( false );
-				}
-
-				eeSAFE_DELETE( chunkedStream );
-				eeSAFE_DELETE( inflateStream );
-			} else if ( mConnection ) {
-				mConnection->setConnected( false );
-				mConnection->setTunneled( false );
-			}
+						},
+						';' );
+					cookies = std::move( merged );
+				},
+				'\n' );
+			if ( !cookies.empty() )
+				nextRequest.setField( "Cookie", cookies );
 		}
-
-		if ( request.isCancelled() )
-			onCancel( request );
-
-		// Close the connection
-		endConnection();
+		const auto method =
+			Request::getRedirectMethodFromStatus( current.getMethod(), response.getStatus() );
+		if ( method != current.getMethod() ) {
+			nextRequest.setBody( "" );
+			nextRequest.mFields.erase( "content-length" );
+			nextRequest.mFields.erase( "content-type" );
+		}
+		nextRequest.setMethod( method );
+		nextRequest.setUri( next.getPathAndQuery() );
+		modifiedRequest.emplace( std::move( nextRequest ) );
+		currentRequest = &*modifiedRequest;
+		if ( !sameOrigin ) {
+			auto nextHttp = std::unique_ptr<Http>( new Http( connections, next, target->mProxy ) );
+			redirected = std::move( nextHttp );
+			target = redirected.get();
+		}
 	}
-
-	return received;
 }
 
 Http::Request::Method
@@ -1245,19 +1450,6 @@ Http::Request::getRedirectMethodFromStatus( Method requestMethod,
 														: requestMethod;
 }
 
-void Http::endConnection() {
-	if ( mConnection && !mConnection->isKeepAlive() ) {
-		if ( mConnection->isConnected() )
-			mConnection->disconnect();
-
-		if ( mConnection ) {
-			HttpConnection* connection = mConnection;
-			eeSAFE_DELETE( connection );
-			mConnection = NULL;
-		}
-	}
-}
-
 Http::Response Http::downloadRequest( const Http::Request& request, std::string writePath,
 									  Time timeout ) {
 	IOStreamFile file( writePath, request.isContinue() ? "ab+" : "wb+" );
@@ -1276,8 +1468,9 @@ Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncRespon
 								  Http::Request request, Time timeout, bool fromLocalPool ) :
 	mId( id ),
 	mHttp( http ),
+	mOwner( fromLocalPool ? http->weak_from_this().lock() : nullptr ),
 	mCb( cb ),
-	mRequest( request ),
+	mRequest( std::move( request ) ),
 	mTimeout( timeout ),
 	mStreamed( false ),
 	mStreamOwned( false ),
@@ -1289,8 +1482,9 @@ Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncRespon
 								  bool fromLocalPool ) :
 	mId( id ),
 	mHttp( http ),
+	mOwner( fromLocalPool ? http->weak_from_this().lock() : nullptr ),
 	mCb( cb ),
-	mRequest( request ),
+	mRequest( std::move( request ) ),
 	mTimeout( timeout ),
 	mStreamed( true ),
 	mStreamOwned( false ),
@@ -1302,8 +1496,9 @@ Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncRespon
 								  bool fromLocalPool ) :
 	mId( id ),
 	mHttp( http ),
+	mOwner( fromLocalPool ? http->weak_from_this().lock() : nullptr ),
 	mCb( cb ),
-	mRequest( request ),
+	mRequest( std::move( request ) ),
 	mTimeout( timeout ),
 	mStreamed( true ),
 	mStreamOwned( true ),
@@ -1461,7 +1656,7 @@ Http::Request Http::prepareFields( const Http::Request& request ) {
 	if ( !toSend.hasField( "Host" ) ) {
 		toSend.setField(
 			"Host",
-			mHostName + ( mPort != 80 && mPort != 443 ? ":" + String::toString( mPort ) : "" ) );
+			mHostName + ( mPort != ( mIsSSL ? 443 : 80 ) ? ":" + String::toString( mPort ) : "" ) );
 	}
 
 	if ( !toSend.hasField( "Content-Length" ) && toSend.mBody.size() > 0 ) {
@@ -1473,21 +1668,13 @@ Http::Request Http::prepareFields( const Http::Request& request ) {
 	if ( ( toSend.mMethod == Request::Post ) && !toSend.hasField( "Content-Type" ) )
 		toSend.setField( "Content-Type", "application/x-www-form-urlencoded" );
 
-	if ( ( toSend.mMajorVersion * 10 + toSend.mMinorVersion >= 11 ) &&
-		 !toSend.hasField( "Connection" ) && ( !mConnection || !mConnection->isKeepAlive() ) ) {
-		toSend.setField( "Connection", "close" );
+	if ( mIsSSL && isProxied() ) {
+		// Proxy credentials belong to CONNECT, never to the origin inside its TLS tunnel.
+		toSend.mFields.erase( "proxy-authorization" );
+		toSend.mFields.erase( "proxy-connection" );
 	}
 
-	if ( !mProxy.empty() ) {
-		toSend.setField( "Accept", "*/*" );
-
-		if ( mIsSSL ) {
-			toSend.setField( "Proxy-connection", "keep-alive" );
-		} else {
-			toSend.setField( "Proxy-connection", "close" );
-		}
-	}
-
+	// HTTP/1.1 persistence is the default. Respect an explicit Connection: close request.
 	if ( request.isCompressedResponse() )
 		toSend.setField( "Accept-Encoding", "gzip, deflate, br" );
 
@@ -1519,13 +1706,23 @@ bool Http::setCancelRequest( Uint64 reqId, bool resetCancelCallback ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 struct WGetAsyncRequest {
 	Http* http;
+	// Browser fetches, like native async operations, must retain a shared client after a
+	// document partition closes. The closed flag suppresses its late completion.
+	std::shared_ptr<Http> owner;
+	const std::atomic<bool>* closed;
 	Http::Request request;
 	Http::AsyncResponseCallback cb;
 	IOStream* writeTo{ nullptr };
+
+	bool isCancelled() const {
+		return request.isCancelled() || closed->load( std::memory_order_acquire );
+	}
 };
 
 void emscripten_async_wget2_got_data( unsigned, void* vwget, void* buffer, unsigned bufferSize ) {
-	WGetAsyncRequest* wget = reinterpret_cast<WGetAsyncRequest*>( vwget );
+	auto wget = std::unique_ptr<WGetAsyncRequest>( static_cast<WGetAsyncRequest*>( vwget ) );
+	if ( wget->isCancelled() )
+		return;
 	Http::Response::Status status = Http::Response::Status::Ok;
 	if ( wget->writeTo ) {
 		wget->writeTo->write( (const char*)buffer, bufferSize );
@@ -1539,37 +1736,39 @@ void emscripten_async_wget2_got_data( unsigned, void* vwget, void* buffer, unsig
 																	  status, responseBody );
 		wget->cb( *wget->http, wget->request, response );
 	}
-	delete wget;
 }
 
 void emscripten_async_wget2_got_file( unsigned int, void* vwget, const char* ) {
-	WGetAsyncRequest* wget = reinterpret_cast<WGetAsyncRequest*>( vwget );
+	auto wget = std::unique_ptr<WGetAsyncRequest>( static_cast<WGetAsyncRequest*>( vwget ) );
+	if ( wget->isCancelled() )
+		return;
 	Http::Response::Status status = Http::Response::Status::Ok;
 	Http::Response response =
 		Http::Response::createFakeResponse( Http::Response::FieldTable(), status, "" );
 	wget->cb( *wget->http, wget->request, response );
-	delete wget;
 }
 
 void emscripten_async_wget2_got_error_data( unsigned, void* vwget, int errorCode,
 											const char* errorDescription ) {
-	WGetAsyncRequest* wget = reinterpret_cast<WGetAsyncRequest*>( vwget );
+	auto wget = std::unique_ptr<WGetAsyncRequest>( static_cast<WGetAsyncRequest*>( vwget ) );
+	if ( wget->isCancelled() )
+		return;
 	std::string responseBody;
 	Http::Response::Status status = Http::Response::intAsStatus( errorCode );
 	Http::Response response =
 		Http::Response::createFakeResponse( Http::Response::FieldTable(), status, responseBody );
 	wget->cb( *wget->http, wget->request, response );
-	delete wget;
 }
 
 void emscripten_async_wget2_got_error_file( unsigned int, void* vwget, int errorCode ) {
-	WGetAsyncRequest* wget = reinterpret_cast<WGetAsyncRequest*>( vwget );
+	auto wget = std::unique_ptr<WGetAsyncRequest>( static_cast<WGetAsyncRequest*>( vwget ) );
+	if ( wget->isCancelled() )
+		return;
 	std::string responseBody;
 	Http::Response::Status status = Http::Response::intAsStatus( errorCode );
 	Http::Response response =
 		Http::Response::createFakeResponse( Http::Response::FieldTable(), status, responseBody );
 	wget->cb( *wget->http, wget->request, response );
-	delete wget;
 }
 #endif
 
@@ -1579,6 +1778,8 @@ Uint64 Http::sendAsyncRequest( const Http::AsyncResponseCallback& cb, const Http
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	WGetAsyncRequest* wget = new WGetAsyncRequest();
 	wget->http = this;
+	wget->owner = weak_from_this().lock();
+	wget->closed = &mConnections->closed;
 	wget->cb = cb;
 	wget->request = Http::Request( request );
 	emscripten_async_wget2_data( ( getURI().toString() + request.getUri() ).c_str(),
@@ -1618,6 +1819,8 @@ Uint64 Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	WGetAsyncRequest* wget = new WGetAsyncRequest();
 	wget->http = this;
+	wget->owner = weak_from_this().lock();
+	wget->closed = &mConnections->closed;
 	wget->cb = cb;
 	wget->writeTo = &writeTo;
 	wget->request = Http::Request( request );
@@ -1660,6 +1863,8 @@ Uint64 Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	WGetAsyncRequest* wget = new WGetAsyncRequest();
 	wget->http = this;
+	wget->owner = weak_from_this().lock();
+	wget->closed = &mConnections->closed;
 	wget->cb = cb;
 	wget->request = Http::Request( request );
 	emscripten_async_wget2( ( getURI().toString() + request.getUri() ).c_str(), writePath.c_str(),
@@ -1715,129 +1920,84 @@ URI Http::getURI() const {
 		String::format( "%s://%s:%d", mIsSSL ? "https" : "http", mHostName.c_str(), mPort ) );
 }
 
-Http::HttpConnection::HttpConnection() :
-	mSocket( NULL ),
-	mIsConnected( false ),
-	mIsTunneled( false ),
-	mIsSSL( false ),
-	mIsKeepAlive( false ) {}
-
-Http::HttpConnection::HttpConnection( TcpSocket* socket ) :
-	mSocket( socket ),
-	mIsConnected( false ),
-	mIsTunneled( false ),
-	mIsSSL( false ),
-	mIsKeepAlive( false ) {}
-
-Http::HttpConnection::~HttpConnection() {
-	eeSAFE_DELETE( mSocket );
-}
-
-void Http::HttpConnection::setSocket( TcpSocket* socket ) {
-	mSocket = socket;
-}
-
-TcpSocket* Http::HttpConnection::getSocket() const {
-	return mSocket;
-}
-
-void Http::HttpConnection::disconnect() {
-	if ( NULL != mSocket )
-		mSocket->disconnect();
-
-	mIsConnected = false;
-}
-
-const bool& Http::HttpConnection::isConnected() const {
-	return mIsConnected;
-}
-
-void Http::HttpConnection::setConnected( const bool& connected ) {
-	mIsConnected = connected;
-}
-
-const bool& Http::HttpConnection::isTunneled() const {
-	return mIsTunneled;
-}
-
-void Http::HttpConnection::setTunneled( const bool& tunneled ) {
-	mIsTunneled = tunneled;
-}
-
-const bool& Http::HttpConnection::isSSL() const {
-	return mIsSSL;
-}
-
-void Http::HttpConnection::setSSL( const bool& ssl ) {
-	mIsSSL = ssl;
-}
-
-const bool& Http::HttpConnection::isKeepAlive() const {
-	return mIsKeepAlive;
-}
-
-void Http::HttpConnection::setKeepAlive( const bool& isKeepAlive ) {
-	mIsKeepAlive = isKeepAlive;
-}
-
 Http::Pool& Http::Pool::getGlobal() {
 	return sGlobalHttpPool;
 }
 
-Http::Pool::Pool() {}
+Http::Pool::Pool() : Pool( ConnectionPoolOptions{} ) {}
+
+Http::Pool::Pool( const ConnectionPoolOptions& options ) :
+	mConnections( std::make_shared<ConnectionPool>( options ) ) {}
 
 Http::Pool::~Pool() {
-	clear();
+	if ( !mClosed )
+		clear();
 }
 
 void Http::Pool::clear() {
-	decltype( mHttps ) https;
+	decltype( mHttps ) clients;
+	std::shared_ptr<ConnectionPool> connections;
 	{
-		Lock l( mMutex );
-		https.swap( mHttps );
+		Lock lock( mMutex );
+		if ( mClosed )
+			return;
+		clients.swap( mHttps );
+		connections = std::move( mConnections );
+		mConnections = std::make_shared<ConnectionPool>( connections->options );
 	}
-	// Requests may keep their Http alive while running on the shared ThreadPool. Establish the
-	// operation barrier explicitly before releasing the Pool's ownership. Callbacks can re-enter
-	// the global Pool, so never wait while holding the Pool mutex. A shared-pool callback also
-	// cannot wait for requests queued behind itself; their shared operations retain each Http until
-	// drained.
-	AsyncRequest* currentRequest = AsyncRequest::current();
-	const bool waitForSharedRequests = !currentRequest || currentRequest->fromLocalPool();
-	for ( const auto& [_, http] : https )
-		http->shutdown( waitForSharedRequests );
-	https.clear();
+	connections->closeIdle( true );
+	// Callbacks may re-enter the client pool. Never join while holding its mutex, and never
+	// wait on shared-executor work queued behind the callback doing the clearing.
+	AsyncRequest* current = AsyncRequest::current();
+	const bool wait = !current || current->fromLocalPool();
+	for ( const auto& client : clients )
+		client.second->shutdown( wait );
+}
+
+void Http::Pool::close() {
+	decltype( mHttps ) clients;
+	std::shared_ptr<ConnectionPool> connections;
+	{
+		Lock lock( mMutex );
+		mClosed = true;
+		clients.swap( mHttps );
+		connections = mConnections;
+	}
+	// Async operations retain their clients in both executor modes. Closing their transport
+	// makes queued/running work observe cancellation without joining any worker on the UI thread.
+	connections->closeIdle( true );
+}
+
+void Http::Pool::closeIdleConnections() {
+	std::shared_ptr<ConnectionPool> connections;
+	{
+		Lock lock( mMutex );
+		connections = mConnections;
+	}
+	connections->closeIdle();
 }
 
 std::string Http::Pool::getHostKey( const URI& host, const URI& proxy ) {
-	return proxy.empty() ? host.getSchemeAndAuthority()
-						 : String::format( "%s-%s", host.getSchemeAndAuthority().c_str(),
-										   proxy.getSchemeAndAuthority().c_str() );
-}
-
-String::HashType Http::Pool::getHostHash( const URI& host, const URI& proxy ) {
-	return String::hash( Http::Pool::getHostKey( host, proxy ) );
+	return transportKey( host, proxy );
 }
 
 bool Http::Pool::exists( const URI& host, const URI& proxy ) {
-	Lock l( mMutex );
-	return mHttps.find( getHostHash( host, proxy ) ) != mHttps.end();
+	Lock lock( mMutex );
+	return mHttps.find( getHostKey( host, proxy ) ) != mHttps.end();
 }
 
 std::shared_ptr<Http> Http::Pool::get( const URI& host, const URI& proxy ) {
-	{
-		Lock l( mMutex );
-		auto hostInstance = mHttps.find( Http::Pool::getHostHash( host, proxy ) );
-
-		if ( hostInstance != mHttps.end() ) {
-			return hostInstance->second;
-		}
-	}
-
-	auto http =
-		std::make_shared<Http>( host.getHost(), host.getPort(), host.getScheme() == "https" );
-	Lock l( mMutex );
-	mHttps[getHostHash( host, proxy )] = http;
-	return http;
+	const std::string key = getHostKey( host, proxy );
+	Lock lock( mMutex );
+	auto found = mHttps.find( key );
+	if ( found != mHttps.end() )
+		return found->second;
+	// The complete key participates in equality; hash collisions cannot alias origins/proxies.
+	// Constructing under the lock also prevents concurrent first requests creating two clients.
+	auto client = std::shared_ptr<Http>( new Http( mConnections, host, proxy ) );
+	if ( !mClosed )
+		mHttps.emplace( key, client );
+	return client;
 }
 
 static constexpr const char* TWO_HYPHENS = "--";

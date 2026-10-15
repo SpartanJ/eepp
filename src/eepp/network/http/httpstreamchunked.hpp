@@ -8,7 +8,7 @@ using namespace EE::System;
 
 namespace EE { namespace Network { namespace Private {
 
-class HttpStreamChunked : public IOStreamString {
+class EE_API HttpStreamChunked : public IOStreamString {
   public:
 	HttpStreamChunked( IOStream& mWriteTo );
 
@@ -16,12 +16,17 @@ class HttpStreamChunked : public IOStreamString {
 
 	const std::string& getHeaderBuffer() const;
 
+	bool isComplete() const;
+
+	bool hasError() const;
+
   protected:
+	enum class State : Uint8 { Size, Data, DataCR, DataLF, Trailer, Complete, Error };
 	IOStream& mWriteTo;
-	std::string mChunkBuffer;
+	std::string mLine;
 	std::string mHeaderBuffer;
-	bool mChunkNewBuffer = false;
-	bool mChunkEnded = false;
+	Uint64 mRemaining{ 0 };
+	State mState{ State::Size };
 };
 
 }}} // namespace EE::Network::Private

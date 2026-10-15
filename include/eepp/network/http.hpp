@@ -12,7 +12,6 @@
 #include <eepp/system/lock.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/thread.hpp>
-#include <eepp/system/threadlocalptr.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/time.hpp>
 #include <map>
@@ -28,8 +27,12 @@ using namespace EE::System;
 
 namespace EE { namespace Network {
 
-/** @brief A HTTP client */
+/** @brief An HTTP client with exclusively leased, reusable connections.
+ * Requests can run concurrently. Configure the host/proxy before starting requests; setHost() and
+ * setProxy() must not race with active requests. */
 class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
+	struct ConnectionPool;
+
   public:
 	/** @brief Define a HTTP response */
 	class EE_API Response {
@@ -161,7 +164,7 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 		**  This function is used by Http to extract values passed
 		**  in the response.
 		**  @param in String stream containing the header values */
-		void parseFields( std::istream& in );
+		bool parseFields( std::istream& in );
 
 		// Member data
 		FieldTable mFields;			///< Fields of the header
@@ -188,7 +191,7 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 					 ///< target resource.
 			Patch,	 ///< The PATCH method is used to apply partial modifications to a resource.
 			Connect	 ///< The CONNECT method starts two-way communications with the requested
-					///< resource. It can be used to open a tunnel.
+					 ///< resource. It can be used to open a tunnel.
 		};
 
 		/** @brief Enumerate the available states for a request */
@@ -269,7 +272,7 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 		void setUri( const std::string& uri );
 
 		/** @brief Set the HTTP version for the request
-		**  The HTTP version is 1.0 by default.
+		**  The HTTP version is 1.1 by default.
 		**  @param major Major HTTP version number
 		**  @param minor Minor HTTP version number */
 		void setHttpVersion( unsigned int major, unsigned int minor );
@@ -622,6 +625,14 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 		std::map<std::string, std::string> mParams;
 	};
 
+	/** Bounds shared by all origins in a Pool. HTTP/1 requests exclusively lease a connection.
+	 * Idle expiry is checked on acquisition; clear() closes idle sockets immediately. */
+	struct ConnectionPoolOptions {
+		std::size_t maxConnections{ 64 };
+		std::size_t maxConnectionsPerHost{ 6 };
+		Time idleTimeout{ Seconds( 30 ) };
+	};
+
 	/** HTTP Client Pool.
 	 * Will keep the instances of the HTTP clients until the Pool is destroyed.
 	 * Acts as a host client cache.
@@ -635,12 +646,21 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 
 		Pool();
 
+		explicit Pool( const ConnectionPoolOptions& options );
+
 		~Pool();
 
 		/** Cancel and clear all HTTP clients. Outside an HTTP callback this is an operation
 		 * barrier. From a shared-pool callback, completion is deferred to avoid waiting for work
 		 * queued behind the current callback. */
 		void clear();
+
+		/** Permanently closes this pool, cancelling work without joining workers. Safe for browser
+		 * session teardown on the UI thread. Subsequent requests are cancelled. */
+		void close();
+
+		/** Closes idle connections without cancelling active requests. */
+		void closeIdleConnections();
 
 		/** @return True if the client already exists in the pool
 		 * @param host The scheme + hostname + port represented as an URI.
@@ -656,11 +676,11 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 
 	  protected:
 		Mutex mMutex;
-		UnorderedMap<Uint32, std::shared_ptr<Http>> mHttps;
+		UnorderedMap<std::string, std::shared_ptr<Http>> mHttps;
+		std::shared_ptr<ConnectionPool> mConnections;
+		bool mClosed{ false };
 
 		static std::string getHostKey( const URI& host, const URI& proxy );
-
-		static String::HashType getHostHash( const URI& host, const URI& proxy );
 	};
 
 	/** Creates an HTTP Request using the global HTTP Client Pool */
@@ -727,6 +747,8 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 	static void setThreadPool( std::shared_ptr<ThreadPool> pool );
 
   private:
+	Http( std::shared_ptr<ConnectionPool> connections, const URI& host, const URI& proxy );
+
 	class AsyncRequest : public Thread {
 	  public:
 		static std::atomic<Uint64> IdCounter;
@@ -756,6 +778,7 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 		friend class Http;
 		Uint64 mId{ 0 };
 		Http* mHttp;
+		std::shared_ptr<Http> mOwner;
 		AsyncResponseCallback mCb;
 		Http::Request mRequest;
 		Time mTimeout;
@@ -781,53 +804,17 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 		std::shared_ptr<AsyncRequest> mRequest;
 	};
 
-	class HttpConnection {
-	  public:
-		HttpConnection();
-
-		HttpConnection( TcpSocket* socket );
-
-		~HttpConnection();
-
-		void setSocket( TcpSocket* socket );
-
-		TcpSocket* getSocket() const;
-
-		void disconnect();
-
-		const bool& isConnected() const;
-
-		void setConnected( const bool& connected );
-
-		const bool& isTunneled() const;
-
-		void setTunneled( const bool& tunneled );
-
-		const bool& isSSL() const;
-
-		void setSSL( const bool& ssl );
-
-		const bool& isKeepAlive() const;
-
-		void setKeepAlive( const bool& isKeepAlive );
-
-	  protected:
-		TcpSocket* mSocket;
-		bool mIsConnected;
-		bool mIsTunneled;
-		bool mIsSSL;
-		bool mIsKeepAlive;
-	};
-
 	friend class AsyncRequest;
-	ThreadLocalPtr<HttpConnection> mConnection; ///< Connection to the host
-	IpAddress mHost;							///< Web host address
-	std::string mHostName;						///< Web host name
-	unsigned short mPort;						///< Port used for connection with host
+	std::shared_ptr<ConnectionPool> mConnections;
+	std::string mConnectionKey;
+	std::mutex mHostMutex;
+	IpAddress mHost;	   ///< Web host address
+	std::string mHostName; ///< Web host name
 	std::vector<AsyncRequest*> mThreads;
 	Mutex mThreadsMutex;
+	unsigned short mPort; ///< Port used for connection with host
+	bool mHostSolved{ false };
 	bool mIsSSL;
-	bool mHostSolved;
 	std::atomic<bool> mShuttingDown{ false };
 	URI mProxy;
 	std::mutex mRequestsMutex;
@@ -849,8 +836,6 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 	Request prepareFields( const Http::Request& request );
 
 	void onCancel( const Http::Request& request );
-
-	void endConnection();
 };
 
 }} // namespace EE::Network

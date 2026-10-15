@@ -111,22 +111,21 @@ bool CookieManager::empty() const {
 void CookieManager::parseSetCookie( const std::string& domain,
 									const std::string& setCookieHeader ) {
 	Lock l( mMutex );
-	size_t end = setCookieHeader.find( ';' );
-	std::string_view cookiePair( end != std::string::npos
-									 ? std::string_view( setCookieHeader ).substr( 0, end )
-									 : std::string_view( setCookieHeader ) );
-
-	size_t eq = cookiePair.find( '=' );
-	if ( eq == std::string::npos )
-		return;
-
-	std::string name( cookiePair.substr( 0, eq ) );
-	std::string value( cookiePair.substr( eq + 1 ) );
-
-	if ( name.empty() )
-		return;
-
-	mCookies[domain][String::trim( name )] = String::trim( value );
+	// Http::Response keeps each received Set-Cookie field on its own line.
+	String::readBySeparator(
+		setCookieHeader,
+		[&]( std::string_view setCookie ) {
+			const std::string_view cookiePair = setCookie.substr( 0, setCookie.find( ';' ) );
+			const size_t eq = cookiePair.find( '=' );
+			if ( eq == std::string_view::npos )
+				return;
+			const auto name = String::trim( cookiePair.substr( 0, eq ) );
+			if ( name.empty() )
+				return;
+			mCookies[domain][std::string( name )] =
+				std::string( String::trim( cookiePair.substr( eq + 1 ) ) );
+		},
+		'\n' );
 }
 
 bool CookieManager::hasCookie( const std::string& domain ) const {

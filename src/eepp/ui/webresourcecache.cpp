@@ -28,9 +28,9 @@ std::string canonicalURI( URI uri ) {
 
 std::string makeRequestKey( CachePartitionId partition, const WebResourceRequest& request ) {
 	std::string key =
-		String::format( "%llu\n%u\n%u\n%s\n", static_cast<unsigned long long>( partition ),
+		String::format( "%llu\n%u\n%u\n%d\n%s\n", static_cast<unsigned long long>( partition ),
 						static_cast<Uint32>( request.kind ), static_cast<Uint32>( request.method ),
-						canonicalURI( request.uri ).c_str() );
+						request.validateCertificate, canonicalURI( request.uri ).c_str() );
 	for ( const auto& header : request.headers ) {
 		std::string name = String::toLower( header.first );
 		// Documents can change with authentication, while static resources remain reusable as
@@ -67,6 +67,7 @@ struct WebResourceCache::Impl {
 	};
 
 	struct Entry {
+		CachePartitionId partition{ 0 };
 		WebResourceLoadState state{ WebResourceLoadState::Empty };
 		// A cache key identifies a reusable resource, not one particular asynchronous load. These
 		// values identify the load currently allowed to complete into this entry.
@@ -95,6 +96,8 @@ struct WebResourceCache::Impl {
 	Clock clock;
 	UnorderedMap<DocumentSessionId, Session> sessions;
 	UnorderedMap<std::string, Entry> entries;
+	UnorderedMap<CachePartitionId, std::shared_ptr<Http::Pool>> transports;
+	Http::ConnectionPoolOptions connectionOptions;
 	Time ttl{ Seconds( 30 ) };
 	Time retryDelay{ Seconds( 1 ) };
 	std::size_t byteBudget{ 64 * 1024 * 1024 };
@@ -182,7 +185,16 @@ WebResourceCachePtr WebResourceCache::New() {
 	return std::make_shared<WebResourceCache>();
 }
 
-WebResourceCache::WebResourceCache() : mImpl( std::make_unique<Impl>() ) {}
+WebResourceCachePtr WebResourceCache::New( const Http::ConnectionPoolOptions& options ) {
+	return std::make_shared<WebResourceCache>( options );
+}
+
+WebResourceCache::WebResourceCache() : WebResourceCache( Http::ConnectionPoolOptions{} ) {}
+
+WebResourceCache::WebResourceCache( const Http::ConnectionPoolOptions& options ) :
+	mImpl( std::make_unique<Impl>() ) {
+	mImpl->connectionOptions = options;
+}
 
 WebResourceCache::~WebResourceCache() {
 	clear();
@@ -203,15 +215,40 @@ DocumentSessionId WebResourceCache::createSession( CachePartitionId partition ) 
 
 void WebResourceCache::destroySession( DocumentSessionId session ) {
 	std::vector<Impl::Entry> releasedEntries;
+	std::shared_ptr<Http::Pool> releasedTransport;
 	{
 		std::lock_guard<std::mutex> lock( mImpl->mutex );
 		auto it = mImpl->sessions.find( session );
 		if ( it == mImpl->sessions.end() )
 			return;
+		const CachePartitionId partition = it->second.partition;
 		mImpl->releaseSessionLeases( session );
 		mImpl->sessions.erase( it );
+		const bool stillUsed = std::any_of(
+			mImpl->sessions.begin(), mImpl->sessions.end(),
+			[partition]( const auto& item ) { return item.second.partition == partition; } );
+		if ( !stillUsed ) {
+			// Closing the transport suppresses its callbacks. Remove its pending entries now so
+			// a later session in this partition can start fresh instead of joining an orphan load.
+			for ( auto entry = mImpl->entries.begin(); entry != mImpl->entries.end(); ) {
+				if ( entry->second.partition == partition &&
+					 entry->second.state == WebResourceLoadState::Loading ) {
+					--mImpl->inFlightCount;
+					entry = mImpl->eraseEntry( entry, releasedEntries );
+				} else {
+					++entry;
+				}
+			}
+			auto transport = mImpl->transports.find( partition );
+			if ( transport != mImpl->transports.end() ) {
+				releasedTransport = std::move( transport->second );
+				mImpl->transports.erase( transport );
+			}
+		}
 		mImpl->pruneLocked( releasedEntries );
 	}
+	if ( releasedTransport )
+		releasedTransport->close();
 }
 
 Uint64 WebResourceCache::beginNavigation( DocumentSessionId session, const URI& uri ) {
@@ -245,6 +282,7 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 	Uint64 operationEpoch = 0;
 	Uint64 operationId = 0;
 	Fetcher fetcher;
+	std::shared_ptr<Http::Pool> transport;
 	{
 		std::lock_guard<std::mutex> lock( mImpl->mutex );
 		auto sessionIt = mImpl->sessions.find( session );
@@ -253,6 +291,7 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 		key = makeRequestKey( sessionIt->second.partition, request );
 		auto entryIt = mImpl->entries.try_emplace( key ).first;
 		auto& entry = entryIt->second;
+		entry.partition = sessionIt->second.partition;
 		mImpl->lease( session, entry );
 		if ( entry.state == WebResourceLoadState::Ready ) {
 			immediate = { true, entry.state, entry.status, {}, {}, entry.data, entry.texture };
@@ -276,6 +315,12 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 				++mImpl->inFlightCount;
 				startRequest = true;
 				fetcher = mImpl->fetcher;
+				if ( !fetcher ) {
+					auto& pool = mImpl->transports[sessionIt->second.partition];
+					if ( !pool )
+						pool = std::make_shared<Http::Pool>( mImpl->connectionOptions );
+					transport = pool;
+				}
 			}
 		}
 	}
@@ -287,12 +332,18 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 	if ( !startRequest )
 		return;
 
-	std::shared_ptr<std::string> redirectCookie;
-	if ( !fetcher )
-		redirectCookie = std::make_shared<std::string>();
+	// Collects the Set-Cookie fields of every response in the redirect chain, attributed to the
+	// origin that actually sent each one. Progress callbacks run on the request's worker before its
+	// completion, which then owns the trail; it is never accessed concurrently.
+	struct CookieTrail {
+		URI requested;
+		std::vector<WebResourceCookies> cookies;
+		bool observedHeaders{ false };
+	};
+	auto trail = std::make_shared<CookieTrail>();
+	trail->requested = request.uri;
 	auto weak = weak_from_this();
-	auto process = [weak, key, operationEpoch, operationId,
-					redirectCookie]( Http::Response& response ) {
+	auto process = [weak, key, operationEpoch, operationId, trail]( Http::Response& response ) {
 		auto self = weak.lock();
 		if ( !self )
 			return;
@@ -312,9 +363,13 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 		}
 
 		const int status = static_cast<int>( response.getStatus() );
-		std::string setCookie = response.getField( "set-cookie" );
-		if ( setCookie.empty() && redirectCookie )
-			setCookie = *redirectCookie;
+		std::vector<WebResourceCookies> cookies = std::move( trail->cookies );
+		// The default transport recorded every response's cookies as its headers arrived. A
+		// custom fetcher reports no progress, so its final response belongs to the request URI.
+		if ( !trail->observedHeaders && response.hasField( "set-cookie" ) ) {
+			cookies.push_back(
+				{ trail->requested.getAuthority(), response.getField( "set-cookie" ) } );
+		}
 		std::shared_ptr<const std::string> data;
 		std::unique_ptr<Image> image;
 		std::string error;
@@ -380,12 +435,12 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 				entry.data = std::move( data );
 				entry.error.clear();
 				self->mImpl->retainedBytes += entry.retainedBytes;
-				result = { true,	   entry.state,	 entry.status, {}, std::move( setCookie ),
+				result = { true,	   entry.state,	 entry.status, {}, std::move( cookies ),
 						   entry.data, entry.texture };
 			} else {
 				entry.state = WebResourceLoadState::Failed;
 				entry.error = std::move( error );
-				result = { false, entry.state,	entry.status, entry.error, std::move( setCookie ),
+				result = { false, entry.state,	entry.status, entry.error, std::move( cookies ),
 						   {},	  entry.texture };
 			}
 			if ( entry.state == WebResourceLoadState::Failed )
@@ -424,21 +479,44 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 	if ( fetcher ) {
 		fetcher( request, std::move( complete ) );
 	} else {
+		// Attribute cookies when a response's headers arrive, using the client that received it.
+		// Predicting the next hop from Location is wrong whenever Http rejects that hop: the
+		// redirect response itself then completes the request.
 		Http::Request::ProgressCallback progress =
-			[redirectCookie]( const Http&, const Http::Request&, const Http::Response& response,
-							  const Http::Request::Status& status, std::size_t, std::size_t ) {
-				if ( status == Http::Request::Status::Redirect &&
-					 response.hasField( "set-cookie" ) )
-					*redirectCookie = response.getField( "set-cookie" );
+			[trail]( const Http& http, const Http::Request&, const Http::Response& response,
+					 const Http::Request::Status& status, std::size_t, std::size_t ) {
+				if ( status != Http::Request::Status::HeaderReceived )
+					return true;
+				trail->observedHeaders = true;
+				if ( !response.hasField( "set-cookie" ) )
+					return true;
+				const URI responder = http.getURI();
+				const URI& requested = trail->requested;
+				// Same origin keeps the requested authority, as UISceneNode looks cookies up by it.
+				const bool sameOrigin = responder.getScheme() == requested.getScheme() &&
+										responder.getPort() == requested.getPort() &&
+										String::toLower( responder.getHost() ) ==
+											String::toLower( requested.getHost() );
+				trail->cookies.push_back(
+					{ sameOrigin ? requested.getAuthority() : responder.getAuthority(),
+					  response.getField( "set-cookie" ) } );
 				return true;
 			};
-		Http::requestAsync(
+		// The partition owns transport lifetime across navigations and across intentionally
+		// shared views. Cookies remain request/scene state, never connection state.
+		auto client = transport->get( request.uri, request.proxy );
+		Http::Request httpRequest( request.uri.getPathAndQuery(), request.method, request.body,
+								   request.validateCertificate, request.validateCertificate,
+								   request.followRedirect, true );
+		httpRequest.setProgressCallback( progress );
+		for ( const auto& header : request.headers )
+			httpRequest.setField( header.first, header.second );
+		client->sendAsyncRequest(
 			[complete = std::move( complete )]( const Http&, Http::Request&,
 												Http::Response& response ) mutable {
 				complete( std::move( response ) );
 			},
-			request.uri, request.timeout, request.method, progress, request.headers, request.body,
-			request.validateCertificate, request.proxy, request.followRedirect );
+			httpRequest, request.timeout );
 	}
 }
 
@@ -548,11 +626,14 @@ void WebResourceCache::prune() {
 
 void WebResourceCache::clear() {
 	std::vector<Impl::Entry> releasedEntries;
+	decltype( mImpl->transports ) transports;
 	{
 		std::lock_guard<std::mutex> lock( mImpl->mutex );
-		// The underlying HTTP operations cannot necessarily be cancelled. Advancing the epoch makes
-		// their eventual completions harmless before the entries and accounting are reset below.
+		// Default transports are cancelled outside the lock. A custom fetcher need not support
+		// cancellation, so advance the epoch before resetting entries to reject its late
+		// completion.
 		++mImpl->cacheEpoch;
+		transports.swap( mImpl->transports );
 		releasedEntries.reserve( mImpl->entries.size() );
 		for ( auto& entry : mImpl->entries ) {
 			entry.second.state = WebResourceLoadState::Cancelled;
@@ -564,6 +645,8 @@ void WebResourceCache::clear() {
 		mImpl->retainedBytes = 0;
 		mImpl->inFlightCount = 0;
 	}
+	for ( auto& transport : transports )
+		transport.second->close();
 }
 
 void WebResourceCache::setFetcher( Fetcher fetcher ) {

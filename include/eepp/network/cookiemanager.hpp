@@ -16,7 +16,7 @@ class EE_API CookieManager {
 	/** Store Set-Cookie headers from an HTTP response for the given domain. */
 	void storeCookies( const std::string& domain, const Http::Response& response );
 
-	/** Store cookies from a raw Set-Cookie header string. */
+	/** Store cookies from raw Set-Cookie field values, one field per line. */
 	void storeCookiesFromHeader( const std::string& domain, const std::string& setCookieHeader );
 
 	/** Build the Cookie header string for outgoing requests to the given domain. */
