@@ -19,8 +19,10 @@
 #include <eepp/system/sys.hpp>
 #include <iostream>
 #include <limits>
+#include <list>
 #include <optional>
 #include <sstream>
+#include <thread>
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 #include <emscripten.h>
@@ -39,6 +41,10 @@ static std::string sDefaultUserAgent = "Mozilla/5.0 (Linux; x86_64) eepp-network
 namespace {
 
 using SteadyClock = std::chrono::steady_clock;
+
+// How often a request waiting on its socket rechecks cancellation. Well inside the 100 ms Engine
+// shutdown allows running requests to drop their sockets.
+const Time CancellationCheckInterval = Milliseconds( 25 );
 
 // These limits bound metadata, independently of the size of downloaded resource bodies.
 constexpr std::size_t MaxHTTPHeaderBytes = 64 * 1024;
@@ -115,56 +121,195 @@ bool isIdleConnectionUsable( TcpSocket& socket ) {
 
 } // namespace
 
-struct Http::ConnectionPool {
-	struct Connection {
-		std::unique_ptr<TcpSocket> socket;
-		SocketSelector selector;
-		std::string key;
-		SteadyClock::time_point lastUsed;
-		bool busy{ true };
-		bool validateCertificate{ true };
-		bool validateHostname{ true };
+/** Process-wide budget of open connection sockets, shared by every ConnectionPool, and the service
+ * thread that closes idle connections when they expire and delivers async connection grants.
+ * Sockets, not reserved slots, are counted: file descriptors are what is scarce, and slots
+ * reserved for queued work hold none.
+ *
+ * Intentionally never destroyed: its service thread must not be joined during static destruction
+ * (on Windows that runs under the loader lock), and pools may outlive other statics. */
+struct Http::ConnectionBudget {
+	static ConnectionBudget& instance();
 
-		~Connection() {
-			// In particular, an OpenSSL close_notify must not block browser session teardown.
-			if ( socket )
-				socket->setBlocking( false );
-		}
-	};
+	void setLimit( std::size_t count ) {
+		mLimit.store( std::max<std::size_t>( 1, count ), std::memory_order_release );
+		wake();
+	}
 
-	struct Lease {
-		ConnectionPool& pool;
-		Connection* connection{ nullptr };
-		bool reused{ false };
-		bool reusable{ false };
+	std::size_t getLimit() const { return mLimit.load( std::memory_order_acquire ); }
 
-		explicit Lease( ConnectionPool& pool ) : pool( pool ) {}
+	void registerPool( const std::shared_ptr<ConnectionPool>& pool );
 
-		~Lease() { release(); }
-
-		void release() {
-			if ( !connection )
-				return;
-			std::unique_ptr<Connection> discarded;
+	/** Takes one socket from the budget for a running request, which already holds its slot.
+	 * When the budget is spent, closes the least recently used idle socket of any pool, then a
+	 * socket held for queued work that has not started; it waits only while every socket is in
+	 * active use, and those requests make progress. */
+	template <class Abandoned>
+	bool acquire( Abandoned abandoned, std::optional<SteadyClock::time_point> deadline ) {
+		for ( ;; ) {
+			Uint64 changes;
 			{
-				std::lock_guard<std::mutex> lock( pool.mutex );
-				if ( reusable && !pool.closed.load( std::memory_order_acquire ) ) {
-					connection->busy = false;
-					connection->lastUsed = SteadyClock::now();
-				} else {
-					auto it = std::find_if(
-						pool.connections.begin(), pool.connections.end(),
-						[this]( const auto& item ) { return item.get() == connection; } );
-					if ( it != pool.connections.end() ) {
-						discarded = std::move( *it );
-						pool.connections.erase( it );
-					}
-				}
-				connection = nullptr;
+				std::lock_guard<std::mutex> lock( mMutex );
+				changes = mChanges;
 			}
-			// TLS destruction and callbacks must never execute under the pool mutex.
-			pool.condition.notify_all();
+			if ( tryAcquire() )
+				return true;
+			if ( reclaimOne() )
+				continue;
+			std::unique_lock<std::mutex> lock( mMutex );
+			// A socket closed or became idle (reclaimable) after this pass started: retry it.
+			if ( mOpen.load( std::memory_order_acquire ) < getLimit() || mChanges != changes )
+				continue;
+			// Cancellation through Http wakes this wait; a Request copy cancelled directly cannot,
+			// so it is rechecked at a coarse interval.
+			auto wakeAt = SteadyClock::now() + std::chrono::milliseconds( 250 );
+			if ( deadline && *deadline < wakeAt )
+				wakeAt = *deadline;
+			mReleased.wait_until( lock, wakeAt );
+			lock.unlock();
+			if ( abandoned() || ( deadline && SteadyClock::now() >= *deadline ) )
+				return false;
 		}
+	}
+
+	void release() {
+		mOpen.fetch_sub( 1, std::memory_order_acq_rel );
+		wake();
+	}
+
+	/** Wakes budget waiters so they observe a closed or newly idle (reclaimable) socket, a
+	 * cancellation, a closed pool, or a new limit. Counting changes under the mutex orders each
+	 * one before any waiter's check-then-wait. */
+	void wake() {
+		{
+			std::lock_guard<std::mutex> lock( mMutex );
+			++mChanges;
+		}
+		mReleased.notify_all();
+	}
+
+	/** Runs a task on the pool service thread, outside every pool and executor lock. */
+	void post( std::function<void()> task );
+
+	/** Cancels every request in every pool and closes their idle connections. */
+	void cancelAll();
+
+	/** @return True once no pooled socket is open, waiting at most until the deadline. */
+	bool waitUntilClosed( SteadyClock::time_point deadline ) {
+		std::unique_lock<std::mutex> lock( mMutex );
+		return mReleased.wait_until(
+			lock, deadline, [this] { return mOpen.load( std::memory_order_acquire ) == 0; } );
+	}
+
+	/** Arranges for the background timer to expire idle connections no later than when. */
+	void scheduleExpiry( SteadyClock::time_point when );
+
+  private:
+	bool tryAcquire() {
+		std::size_t open = mOpen.load( std::memory_order_acquire );
+		while ( open < getLimit() ) {
+			if ( mOpen.compare_exchange_weak( open, open + 1, std::memory_order_acq_rel ) )
+				return true;
+		}
+		return false;
+	}
+
+	bool reclaimOne();
+
+	std::vector<std::shared_ptr<ConnectionPool>> livePools();
+
+	void startServiceThread();
+
+	void serviceLoop();
+
+	std::mutex mMutex;
+	std::condition_variable mReleased;
+	std::condition_variable mServiceCondition;
+	std::vector<std::weak_ptr<ConnectionPool>> mPools;
+	std::vector<std::function<void()>> mTasks;
+	std::optional<SteadyClock::time_point> mNextExpiry;
+	std::thread mServiceThread;
+	Uint64 mChanges{ 0 };
+	std::atomic<std::size_t> mOpen{ 0 };
+	std::atomic<std::size_t> mLimit{ 256 };
+};
+
+struct Http::PooledConnection {
+	std::unique_ptr<TcpSocket> socket;
+	SocketSelector selector;
+	std::string key;
+	SteadyClock::time_point lastUsed;
+	// The lease of queued work this slot is reserved for, until that work starts running.
+	ConnectionLease* parked{ nullptr };
+	bool busy{ true };
+	bool validateCertificate{ true };
+	bool validateHostname{ true };
+
+	~PooledConnection() { resetSocket(); }
+
+	/** Installs a socket whose place in the process-wide budget was already acquired. */
+	void open( TcpSocket* opened ) {
+		resetSocket();
+		socket.reset( opened );
+	}
+
+	/** Drops the socket but keeps this connection slot, and its place in the pool limits. */
+	void resetSocket() {
+		if ( !socket )
+			return;
+		// In particular, an OpenSSL close_notify must not block browser session teardown.
+		socket->setBlocking( false );
+		selector.clear();
+		socket.reset();
+		ConnectionBudget::instance().release();
+	}
+};
+
+/** Exclusive use of one pooled connection slot. The slot returns to the pool when released: idle
+ * if the response was fully consumed and the connection may persist, otherwise it is closed. */
+struct Http::ConnectionLease {
+	ConnectionPool& pool;
+	PooledConnection* connection{ nullptr };
+	bool reused{ false };
+	bool reusable{ false };
+	// A running request took this lease's reserved slot before its queued work started.
+	bool revoked{ false };
+
+	explicit ConnectionLease( ConnectionPool& pool ) : pool( pool ) {}
+
+	~ConnectionLease() { release(); }
+
+	/** Takes over another lease's connection, e.g. one granted before its request ran. */
+	void adopt( ConnectionLease& other ) {
+		release();
+		connection = other.connection;
+		reused = other.reused;
+		other.connection = nullptr;
+		other.reused = false;
+	}
+
+	void release();
+};
+
+struct Http::ConnectionPool {
+	using Connection = PooledConnection;
+	using Lease = ConnectionLease;
+
+	// Sockets are destroyed and grant callbacks run only after the pool mutex is released: TLS
+	// teardown and executor scheduling must never run under it.
+	using Discarded = SmallVector<std::unique_ptr<Connection>, 8>;
+	using GrantCallback = std::function<void( std::unique_ptr<Lease> )>;
+	using Granted = std::vector<std::pair<GrantCallback, std::unique_ptr<Lease>>>;
+
+	/** A request waiting for a connection. Blocking waiters receive their lease in place; async
+	 * waiters hold no thread and receive it through their callback. Both keep the Http and Request
+	 * alive while queued: the caller's frame, or the shared operation owning them. */
+	struct Waiter {
+		const Http* http;
+		const Request* request;
+		GrantCallback callback;
+		Lease* blocking{ nullptr };
+		bool* granted{ nullptr };
 	};
 
 	explicit ConnectionPool( ConnectionPoolOptions options = {} ) : options( options ) {
@@ -173,84 +318,205 @@ struct Http::ConnectionPool {
 			std::max<std::size_t>( 1, options.maxConnectionsPerHost );
 	}
 
+	/** Blocks until a connection is leased, the request is abandoned, or the deadline passes.
+	 * Waiters are served in arrival order per host, so a blocked host never starves another. */
 	bool acquire( Lease& lease, const Http& http, const Request& request,
-				  SteadyClock::time_point started, Time timeout ) {
+				  std::optional<SteadyClock::time_point> deadline ) {
+		Discarded discarded;
+		Granted granted;
+		bool done = false;
 		std::unique_lock<std::mutex> lock( mutex );
-		while ( !closed.load( std::memory_order_acquire ) && !request.isCancelled() &&
-				!http.mShuttingDown.load( std::memory_order_acquire ) ) {
-			const auto now = SteadyClock::now();
-			if ( timeout > Time::Zero &&
-				 now - started >= std::chrono::microseconds( timeout.asMicroseconds() ) )
+		auto self = waiters.insert( waiters.end(), Waiter{ &http, &request, {}, &lease, &done } );
+		dispatch( granted, discarded );
+		if ( !granted.empty() || !discarded.empty() ) {
+			lock.unlock();
+			deliver( granted );
+			discarded.clear();
+			lock.lock();
+		}
+		while ( !done ) {
+			// Cancellation through Http wakes waiters at once. A Request copy cancelled directly
+			// cannot reach this pool, so a blocking waiter rechecks it at a coarse interval.
+			auto wakeAt = SteadyClock::now() + std::chrono::milliseconds( 250 );
+			if ( deadline && *deadline < wakeAt )
+				wakeAt = *deadline;
+			condition.wait_until( lock, wakeAt );
+			if ( done )
+				break;
+			if ( deadline && SteadyClock::now() >= *deadline ) {
+				waiters.erase( self );
 				return false;
-			// Expiry and capacity eviction remove only idle sockets; active leases stay stable.
+			}
+			if ( request.isCancelled() ) {
+				waiters.erase( self );
+				return false;
+			}
+		}
+		return lease.connection != nullptr;
+	}
+
+	/** Queues an async request without blocking. The callback runs exactly once, outside the pool
+	 * mutex, possibly on the calling thread; an abandoned request receives an empty lease. */
+	void enqueue( const Http& http, const Request& request, GrantCallback callback,
+				  bool first = false ) {
+		Discarded discarded;
+		Granted granted;
+		{
+			std::lock_guard<std::mutex> lock( mutex );
+			Waiter waiter{ &http, &request, std::move( callback ) };
+			if ( first )
+				waiters.push_front( std::move( waiter ) );
+			else
+				waiters.push_back( std::move( waiter ) );
+			dispatch( granted, discarded );
+		}
+		deliver( granted );
+	}
+
+	/** Called when granted queued work starts running. Returns false if a running request took
+	 * its reserved slot meanwhile; the work must then queue again. A reserved slot that was never
+	 * connected switches to a connection that became idle while the work was queued, instead of
+	 * opening another one. */
+	bool activate( Lease& lease ) {
+		Discarded discarded;
+		Granted granted;
+		{
+			std::lock_guard<std::mutex> lock( mutex );
+			if ( lease.revoked )
+				return false;
+			Connection* reserved = lease.connection;
+			if ( !reserved )
+				return true; // Abandoned: the request observes its cancellation.
+			reserved->parked = nullptr;
+			if ( reserved->socket )
+				return true;
+			for ( auto& connection : connections ) {
+				if ( !connection->busy && connection->key == reserved->key &&
+					 connection->validateCertificate == reserved->validateCertificate &&
+					 connection->validateHostname == reserved->validateHostname ) {
+					connection->busy = true;
+					lease.connection = connection.get();
+					lease.reused = true;
+					erase( reserved, discarded );
+					dispatch( granted, discarded );
+					break;
+				}
+			}
+		}
+		deliver( granted );
+		return true;
+	}
+
+	static std::shared_ptr<ConnectionPool> create( ConnectionPoolOptions options = {} ) {
+		auto pool = std::make_shared<ConnectionPool>( options );
+		ConnectionBudget::instance().registerPool( pool );
+		return pool;
+	}
+
+	/** @return When this pool's least recently used idle socket was last used, if it has one. */
+	std::optional<SteadyClock::time_point> oldestIdleSocket() {
+		std::lock_guard<std::mutex> lock( mutex );
+		std::optional<SteadyClock::time_point> oldest;
+		for ( const auto& connection : connections ) {
+			if ( !connection->busy && connection->socket &&
+				 ( !oldest || connection->lastUsed < *oldest ) )
+				oldest = connection->lastUsed;
+		}
+		return oldest;
+	}
+
+	/** Closes one socket to make room in the process-wide budget: the least recently used idle
+	 * one or, when takeReserved is set, one held for queued work that has not started. */
+	bool closeSocketForBudget( bool takeReserved ) {
+		Discarded discarded;
+		Granted granted;
+		bool closed = false;
+		{
+			std::lock_guard<std::mutex> lock( mutex );
+			Connection* victim = nullptr;
+			for ( auto& connection : connections ) {
+				// Active connections belong to running requests, which replace their socket
+				// without this mutex: only idle or reserved ones may be inspected.
+				const bool eligible =
+					takeReserved ? connection->parked != nullptr : !connection->busy;
+				if ( !eligible || !connection->socket )
+					continue;
+				if ( takeReserved ) {
+					victim = connection.get();
+					break;
+				}
+				if ( !victim || connection->lastUsed < victim->lastUsed )
+					victim = connection.get();
+			}
+			if ( victim ) {
+				if ( victim->parked )
+					revoke( *victim );
+				erase( victim, discarded );
+				dispatch( granted, discarded );
+				closed = true;
+			}
+		}
+		deliver( granted );
+		return closed; // The discarded socket leaves the budget as it is destroyed.
+	}
+
+	/** Closes expired idle connections now. @return The next idle expiry, if any remain. */
+	std::optional<SteadyClock::time_point> expireIdleNow() {
+		Discarded discarded;
+		Granted granted;
+		std::optional<SteadyClock::time_point> next;
+		{
+			std::lock_guard<std::mutex> lock( mutex );
+			expireIdle( discarded );
+			const auto lifetime = std::chrono::microseconds( options.idleTimeout.asMicroseconds() );
+			for ( const auto& connection : connections ) {
+				if ( !connection->busy && ( !next || connection->lastUsed + lifetime < *next ) )
+					next = connection->lastUsed + lifetime;
+			}
+			if ( !discarded.empty() )
+				dispatch( granted, discarded );
+		}
+		deliver( granted );
+		return next;
+	}
+
+	/** Cancels every request queued here, makes requests already running observe cancellation
+	 * at their next checkpoint, and closes idle connections. The pool stays usable. */
+	void cancelAll() {
+		Discarded discarded;
+		Granted granted;
+		{
+			std::lock_guard<std::mutex> lock( mutex );
+			generation.fetch_add( 1, std::memory_order_acq_rel );
+			for ( auto& waiter : waiters )
+				waiter.request->mCancel->store( true, std::memory_order_release );
 			for ( auto it = connections.begin(); it != connections.end(); ) {
-				if ( !( *it )->busy &&
-					 now - ( *it )->lastUsed >=
-						 std::chrono::microseconds( options.idleTimeout.asMicroseconds() ) ) {
-					auto discarded = std::move( *it );
+				if ( !( *it )->busy ) {
+					discarded.emplace_back( std::move( *it ) );
 					it = connections.erase( it );
-					lock.unlock();
-					discarded.reset();
-					lock.lock();
-					// Another acquirer may have changed the vector while it was unlocked.
-					it = connections.begin();
 				} else {
 					++it;
 				}
 			}
-			std::size_t hostCount = 0;
-			Connection* oldest = nullptr;
-			for ( auto& connection : connections ) {
-				const bool sameHost = connection->key == http.mConnectionKey;
-				if ( sameHost )
-					++hostCount;
-				if ( !connection->busy && sameHost &&
-					 connection->validateCertificate == request.getValidateCertificate() &&
-					 connection->validateHostname == request.getValidateHostname() ) {
-					connection->busy = true;
-					lease.connection = connection.get();
-					lease.reused = true;
-					return true;
-				}
-			}
-			for ( auto& connection : connections ) {
-				if ( !connection->busy &&
-					 ( hostCount < options.maxConnectionsPerHost ||
-					   connection->key == http.mConnectionKey ) &&
-					 ( !oldest || connection->lastUsed < oldest->lastUsed ) )
-					oldest = connection.get();
-			}
-			if ( oldest && ( connections.size() >= options.maxConnections ||
-							 hostCount >= options.maxConnectionsPerHost ) ) {
-				auto it =
-					std::find_if( connections.begin(), connections.end(),
-								  [oldest]( const auto& item ) { return item.get() == oldest; } );
-				auto discarded = std::move( *it );
-				connections.erase( it );
-				lock.unlock();
-				discarded.reset();
-				lock.lock();
-				continue;
-			}
-			if ( connections.size() < options.maxConnections &&
-				 hostCount < options.maxConnectionsPerHost ) {
-				auto connection = std::make_unique<Connection>();
-				connection->key = http.mConnectionKey;
-				connection->validateCertificate = request.getValidateCertificate();
-				connection->validateHostname = request.getValidateHostname();
-				lease.connection = connection.get();
-				connections.emplace_back( std::move( connection ) );
-				return true;
-			}
-			// Timed waits also observe per-request cancellation without running user callbacks
-			// locked.
-			condition.wait_for( lock, std::chrono::milliseconds( 10 ) );
+			dispatch( granted, discarded );
 		}
-		return false;
+		deliver( granted );
+	}
+
+	/** Re-evaluates waiters after a cancellation, so cancelled waiters are released at once. */
+	void wake() {
+		Discarded discarded;
+		Granted granted;
+		{
+			std::lock_guard<std::mutex> lock( mutex );
+			dispatch( granted, discarded );
+		}
+		deliver( granted );
 	}
 
 	void closeIdle( bool closePool = false ) {
-		SmallVector<std::unique_ptr<Connection>, 8> discarded;
+		Discarded discarded;
+		Granted granted;
 		{
 			std::lock_guard<std::mutex> lock( mutex );
 			if ( closePool )
@@ -263,16 +529,327 @@ struct Http::ConnectionPool {
 					++it;
 				}
 			}
+			dispatch( granted, discarded );
 		}
-		condition.notify_all();
+		deliver( granted );
 	}
 
 	std::mutex mutex;
 	std::condition_variable condition;
 	SmallVector<std::unique_ptr<Connection>, 8> connections;
+	std::list<Waiter> waiters;
 	ConnectionPoolOptions options;
 	std::atomic<bool> closed{ false };
+	// Requests started under an older generation were cancelled by cancelAll().
+	std::atomic<Uint64> generation{ 1 };
+
+	/** Async grants run on the service thread, never where the lease was released: that can be
+	 * inside an executor's own lock (ThreadPool::removeId() destroys queued work under it), and
+	 * scheduling there would re-enter that lock. */
+	static void deliver( Granted& granted ) {
+		for ( auto& entry : granted ) {
+			auto grant = std::make_shared<std::pair<GrantCallback, std::unique_ptr<Lease>>>(
+				std::move( entry ) );
+			ConnectionBudget::instance().post(
+				[grant] { grant->first( std::move( grant->second ) ); } );
+		}
+		granted.clear();
+	}
+
+	void erase( Connection* connection, Discarded& discarded ) {
+		auto it =
+			std::find_if( connections.begin(), connections.end(),
+						  [connection]( const auto& item ) { return item.get() == connection; } );
+		if ( it != connections.end() ) {
+			discarded.emplace_back( std::move( *it ) );
+			connections.erase( it );
+		}
+	}
+
+	bool isAbandoned( const Waiter& waiter ) const {
+		return closed.load( std::memory_order_acquire ) || waiter.request->isCancelled() ||
+			   waiter.http->mShuttingDown.load( std::memory_order_acquire );
+	}
+
+	/** Leases a connection for the waiter if the limits allow it: an idle connection with the same
+	 * key and TLS policy, otherwise a new slot, evicting the oldest idle connection when needed.
+	 * Only idle sockets are ever expired or evicted; active leases stay stable. */
+	bool reserve( const Waiter& waiter, Connection*& leased, bool& reused, Discarded& discarded ) {
+		const std::string& key = waiter.http->mConnectionKey;
+		const Request& request = *waiter.request;
+		// Blocking waiters are running requests or blocking callers. They may take slots reserved
+		// for queued work that has not started: otherwise running work could wait forever on
+		// reservations queued behind it in the same executor (e.g. a redirect with one worker).
+		const bool canTakeReserved = waiter.blocking != nullptr;
+		auto matches = [&]( const Connection& connection ) {
+			return connection.key == key &&
+				   connection.validateCertificate == request.getValidateCertificate() &&
+				   connection.validateHostname == request.getValidateHostname();
+		};
+		for ( ;; ) {
+			std::size_t hostCount = 0;
+			Connection* reserved = nullptr;
+			for ( auto& connection : connections ) {
+				if ( connection->key == key )
+					++hostCount;
+				if ( !matches( *connection ) )
+					continue;
+				if ( !connection->busy ) {
+					connection->busy = true;
+					leased = connection.get();
+					reused = true;
+					return true;
+				}
+				if ( canTakeReserved && connection->parked && !reserved )
+					reserved = connection.get();
+			}
+			if ( reserved ) {
+				revoke( *reserved );
+				leased = reserved;
+				reused = reserved->socket != nullptr;
+				return true;
+			}
+			if ( connections.size() < options.maxConnections &&
+				 hostCount < options.maxConnectionsPerHost ) {
+				auto connection = std::make_unique<Connection>();
+				connection->key = key;
+				connection->validateCertificate = request.getValidateCertificate();
+				connection->validateHostname = request.getValidateHostname();
+				leased = connection.get();
+				reused = false;
+				connections.emplace_back( std::move( connection ) );
+				return true;
+			}
+			// At the host limit only this host's idle connections (with another TLS policy) make
+			// room; at the global limit any idle connection does. Reserved slots of queued work
+			// come last, preferring ones that never connected.
+			Connection* oldest = nullptr;
+			Connection* reservedSlot = nullptr;
+			for ( auto& connection : connections ) {
+				if ( hostCount >= options.maxConnectionsPerHost && connection->key != key )
+					continue;
+				if ( !connection->busy ) {
+					if ( !oldest || connection->lastUsed < oldest->lastUsed )
+						oldest = connection.get();
+				} else if ( canTakeReserved && connection->parked &&
+							( !reservedSlot || ( reservedSlot->socket && !connection->socket ) ) ) {
+					reservedSlot = connection.get();
+				}
+			}
+			if ( !oldest && reservedSlot ) {
+				revoke( *reservedSlot );
+				oldest = reservedSlot;
+			}
+			if ( !oldest )
+				return false;
+			erase( oldest, discarded );
+		}
+	}
+
+	static void revoke( Connection& connection ) {
+		ConnectionLease& lease = *connection.parked;
+		lease.connection = nullptr;
+		lease.reused = false;
+		lease.revoked = true;
+		connection.parked = nullptr;
+	}
+
+	void expireIdle( Discarded& discarded ) {
+		const auto now = SteadyClock::now();
+		const auto lifetime = std::chrono::microseconds( options.idleTimeout.asMicroseconds() );
+		for ( auto it = connections.begin(); it != connections.end(); ) {
+			if ( !( *it )->busy && now - ( *it )->lastUsed >= lifetime ) {
+				discarded.emplace_back( std::move( *it ) );
+				it = connections.erase( it );
+			} else {
+				++it;
+			}
+		}
+	}
+
+	/** Serves waiters in arrival order. Called with the mutex held whenever capacity may have
+	 * changed: a release, a new waiter, a cancellation, or closing. */
+	void dispatch( Granted& granted, Discarded& discarded ) {
+		if ( waiters.empty() )
+			return;
+		expireIdle( discarded );
+		bool wakeBlocking = false;
+		for ( auto it = waiters.begin(); it != waiters.end(); ) {
+			Connection* leased = nullptr;
+			bool reused = false;
+			// An abandoned waiter receives an empty lease; its request observes the cancellation.
+			if ( !isAbandoned( *it ) && !reserve( *it, leased, reused, discarded ) ) {
+				++it;
+				continue;
+			}
+			if ( it->blocking ) {
+				it->blocking->connection = leased;
+				it->blocking->reused = reused;
+				*it->granted = true;
+				wakeBlocking = true;
+			} else {
+				auto lease = std::make_unique<Lease>( *this );
+				lease->connection = leased;
+				lease->reused = reused;
+				if ( leased )
+					leased->parked = lease.get();
+				granted.emplace_back( std::move( it->callback ), std::move( lease ) );
+			}
+			it = waiters.erase( it );
+		}
+		if ( wakeBlocking )
+			condition.notify_all();
+	}
 };
+
+Http::ConnectionBudget& Http::ConnectionBudget::instance() {
+	static ConnectionBudget* budget = new ConnectionBudget();
+	return *budget;
+}
+
+void Http::ConnectionBudget::registerPool( const std::shared_ptr<ConnectionPool>& pool ) {
+	std::lock_guard<std::mutex> lock( mMutex );
+	mPools.erase( std::remove_if( mPools.begin(), mPools.end(),
+								  []( const auto& item ) { return item.expired(); } ),
+				  mPools.end() );
+	mPools.emplace_back( pool );
+}
+
+std::vector<std::shared_ptr<Http::ConnectionPool>> Http::ConnectionBudget::livePools() {
+	std::vector<std::shared_ptr<ConnectionPool>> live;
+	std::lock_guard<std::mutex> lock( mMutex );
+	live.reserve( mPools.size() );
+	for ( const auto& pool : mPools ) {
+		if ( auto locked = pool.lock() )
+			live.emplace_back( std::move( locked ) );
+	}
+	return live;
+}
+
+bool Http::ConnectionBudget::reclaimOne() {
+	// Pool mutexes are only ever taken one at a time, never with the budget mutex held.
+	auto pools = livePools();
+	ConnectionPool* oldest = nullptr;
+	SteadyClock::time_point oldestUse;
+	for ( const auto& pool : pools ) {
+		const auto used = pool->oldestIdleSocket();
+		if ( used && ( !oldest || *used < oldestUse ) ) {
+			oldest = pool.get();
+			oldestUse = *used;
+		}
+	}
+	if ( oldest && oldest->closeSocketForBudget( false ) )
+		return true;
+	for ( const auto& pool : pools ) {
+		if ( pool->closeSocketForBudget( true ) )
+			return true;
+	}
+	return false;
+}
+
+void Http::ConnectionBudget::cancelAll() {
+	for ( const auto& pool : livePools() )
+		pool->cancelAll();
+	wake();
+}
+
+void Http::ConnectionBudget::scheduleExpiry( SteadyClock::time_point when ) {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	std::lock_guard<std::mutex> lock( mMutex );
+	if ( mNextExpiry && *mNextExpiry <= when )
+		return;
+	mNextExpiry = when;
+	startServiceThread();
+	mServiceCondition.notify_all();
+#else
+	(void)when; // Without threads, idle connections expire when connections are requested.
+#endif
+}
+
+void Http::ConnectionBudget::post( std::function<void()> task ) {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	{
+		std::lock_guard<std::mutex> lock( mMutex );
+		mTasks.emplace_back( std::move( task ) );
+		startServiceThread();
+	}
+	mServiceCondition.notify_all();
+#else
+	task(); // Single-threaded: there is no executor lock to avoid.
+#endif
+}
+
+void Http::ConnectionBudget::startServiceThread() {
+	if ( !mServiceThread.joinable() )
+		mServiceThread = std::thread( [this] { serviceLoop(); } );
+}
+
+void Http::ConnectionBudget::serviceLoop() {
+	std::unique_lock<std::mutex> lock( mMutex );
+	for ( ;; ) {
+		if ( !mTasks.empty() ) {
+			auto tasks = std::move( mTasks );
+			mTasks.clear();
+			lock.unlock();
+			for ( auto& task : tasks )
+				task();
+			// Captures (operations, leases, executor references) are released here too, unlocked.
+			tasks.clear();
+			lock.lock();
+			continue;
+		}
+		if ( mNextExpiry && SteadyClock::now() >= *mNextExpiry ) {
+			mNextExpiry.reset();
+			lock.unlock();
+			std::optional<SteadyClock::time_point> next;
+			for ( const auto& pool : livePools() ) {
+				const auto expiresAt = pool->expireIdleNow();
+				if ( expiresAt && ( !next || *expiresAt < *next ) )
+					next = expiresAt;
+			}
+			lock.lock();
+			if ( next && ( !mNextExpiry || *next < *mNextExpiry ) )
+				mNextExpiry = next;
+			continue;
+		}
+		if ( mNextExpiry )
+			mServiceCondition.wait_until( lock, *mNextExpiry );
+		else
+			mServiceCondition.wait( lock );
+	}
+}
+
+void Http::ConnectionLease::release() {
+	ConnectionPool::Discarded discarded;
+	ConnectionPool::Granted granted;
+	std::optional<SteadyClock::time_point> expiresAt;
+	{
+		// A reservation can be revoked concurrently, under this mutex: read it only here.
+		std::lock_guard<std::mutex> lock( pool.mutex );
+		if ( !connection )
+			return;
+		connection->parked = nullptr;
+		// A slot without a socket never connected (its request was cancelled or abandoned first),
+		// so it is not an idle connection.
+		if ( reusable && connection->socket && !pool.closed.load( std::memory_order_acquire ) ) {
+			connection->busy = false;
+			connection->lastUsed = SteadyClock::now();
+			expiresAt = connection->lastUsed +
+						std::chrono::microseconds( pool.options.idleTimeout.asMicroseconds() );
+		} else {
+			pool.erase( connection, discarded );
+		}
+		connection = nullptr;
+		reused = false;
+		pool.dispatch( granted, discarded );
+	}
+	ConnectionPool::deliver( granted );
+	if ( expiresAt ) {
+		// An idle socket is reclaimable: budget waiters elsewhere may now proceed.
+		ConnectionBudget::instance().wake();
+		ConnectionBudget::instance().scheduleExpiry( *expiresAt );
+	}
+}
 
 void Http::setDefaultUserAgent( const std::string& userAgent ) {
 	sDefaultUserAgent = userAgent;
@@ -866,7 +1443,9 @@ static Http::Pool sGlobalHttpPool = Http::Pool();
 static std::shared_ptr<ThreadPool> sGlobalThreadPool = nullptr;
 static std::mutex sGlobalThreadPoolMutex;
 
-static std::shared_ptr<ThreadPool> getGlobalThreadPool() {
+// Callers keep only a weak reference: one taken by a worker could otherwise be the executor's
+// last owner and destroy it on that worker.
+static std::weak_ptr<ThreadPool> getGlobalThreadPool() {
 	std::lock_guard<std::mutex> lock( sGlobalThreadPoolMutex );
 	return sGlobalThreadPool;
 }
@@ -944,7 +1523,7 @@ Uint64 Http::postAsync( const Http::AsyncResponseCallback& cb, const URI& uri, c
 Http::Http() : Http( "" ) {}
 
 Http::Http( const std::string& host, unsigned short port, bool useSSL, URI proxy ) :
-	mConnections( std::make_shared<ConnectionPool>() ), mPort( 0 ), mIsSSL( false ) {
+	mConnections( ConnectionPool::create() ), mPort( 0 ), mIsSSL( false ) {
 	setHost( host, port, useSSL, std::move( proxy ) );
 }
 
@@ -1001,7 +1580,23 @@ static bool sendProgress( const Http& http, const Http::Request& request,
 
 Http::Response Http::downloadRequest( const Http::Request& request, IOStream& writeTo,
 									  Time timeout ) {
-	const auto started = SteadyClock::now();
+	return transfer( request, writeTo, timeout, nullptr, false );
+}
+
+Http::Response Http::transfer( const Http::Request& request, IOStream& writeTo, Time timeout,
+							   ConnectionPool::Lease* granted, bool async,
+							   std::chrono::steady_clock::time_point* clockOrigin,
+							   Uint64 generation ) {
+	// Async requests carry the generation they were created under; a blocking call starts now.
+	if ( !generation )
+		generation = mConnections->generation.load( std::memory_order_acquire );
+	// A blocking call's timeout bounds the whole call, including any wait for a connection. An
+	// async request's clock starts once it holds its first connection: like browsers, requests
+	// queued behind a busy origin only wait, and leave the queue when cancelled or closed.
+	auto started = SteadyClock::now();
+	bool clockStarted = !async;
+	if ( clockOrigin )
+		*clockOrigin = started;
 	auto remaining = [&]() {
 		if ( timeout <= Time::Zero )
 			return Time::Zero;
@@ -1019,7 +1614,17 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 		head.setContinue( false );
 		head.setMethod( Request::Head );
 		IOStreamString headBody;
-		auto response = downloadRequest( head, headBody, remaining() );
+		// The probe uses any granted connection, and its time counts against the same timeout:
+		// a blocking call keeps its deadline, and an async request's clock starts when the probe
+		// holds its connection.
+		auto probeStarted = started;
+		auto response = transfer( head, headBody, async ? timeout : remaining(), granted, async,
+								  &probeStarted, generation );
+		granted = nullptr;
+		if ( async ) {
+			started = probeStarted;
+			clockStarted = true;
+		}
 		Uint64 length = 0;
 		const auto offset = writeTo.getSize();
 		modifiedRequest.emplace( request );
@@ -1040,6 +1645,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 		auto connections = target->mConnections;
 		auto cancelled = [&]() {
 			if ( connections->closed.load( std::memory_order_acquire ) ||
+				 connections->generation.load( std::memory_order_acquire ) != generation ||
 				 target->mShuttingDown.load( std::memory_order_acquire ) )
 				current.mCancel->store( true, std::memory_order_release );
 			return current.isCancelled();
@@ -1056,15 +1662,32 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 			return !cancelled();
 		};
 
-		// Idle connections the server already closed are discarded before use, for every method.
+		// Never wait for a connection while holding one: the previous hop's lease and any retry's
+		// lease are released before the next acquisition, so waiters cannot deadlock each other.
 		auto acquireUsable = [&]( ConnectionPool::Lease& lease ) {
-			while ( connections->acquire( lease, *target, current, started, timeout ) ) {
-				if ( !lease.reused || isIdleConnectionUsable( *lease.connection->socket ) )
-					return true;
-				lease.release(); // Not reusable, so the dead connection is discarded.
+			if ( granted && granted->connection ) {
+				lease.adopt( *granted );
+			} else {
+				std::optional<SteadyClock::time_point> deadline;
+				if ( clockStarted && timeout > Time::Zero )
+					deadline = started + std::chrono::microseconds( timeout.asMicroseconds() );
+				if ( !connections->acquire( lease, *target, current, deadline ) )
+					return false;
+			}
+			granted = nullptr;
+			if ( !clockStarted ) {
+				started = SteadyClock::now();
+				clockStarted = true;
+				if ( clockOrigin )
+					*clockOrigin = started;
+			}
+			// Idle connections the server already closed are replaced before use, for every
+			// method. The slot stays leased, so the replacement does not queue again.
+			if ( lease.reused && !isIdleConnectionUsable( *lease.connection->socket ) ) {
+				lease.connection->resetSocket();
 				lease.reused = false;
 			}
-			return false;
+			return true;
 		};
 
 		Response response;
@@ -1092,12 +1715,20 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 														 target->mProxy.getScheme() == "https" );
 					if ( ssl && !SSLSocket::isSupported() )
 						return received;
-					connection.socket.reset( ssl ? SSLSocket::New( tunnel || !target->isProxied()
-																	   ? target->mHostName
-																	   : target->mProxy.getHost(),
-																   current.getValidateCertificate(),
-																   current.getValidateHostname() )
-												 : TcpSocket::New() );
+					// Every open socket counts against the process-wide budget. This request
+					// already holds its slot; it only waits on sockets in active use.
+					std::optional<SteadyClock::time_point> deadline;
+					if ( timeout > Time::Zero )
+						deadline = started + std::chrono::microseconds( timeout.asMicroseconds() );
+					if ( !ConnectionBudget::instance().acquire(
+							 [&] { return cancelled() || expired(); }, deadline ) )
+						return received;
+					connection.open( ssl ? SSLSocket::New( tunnel || !target->isProxied()
+															   ? target->mHostName
+															   : target->mProxy.getHost(),
+														   current.getValidateCertificate(),
+														   current.getValidateHostname() )
+										 : TcpSocket::New() );
 					IpAddress address;
 					{
 						std::lock_guard<std::mutex> lock( target->mHostMutex );
@@ -1146,8 +1777,8 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 							if ( status == Socket::NotReady ) {
 								connection.selector.wait(
 									timeout > Time::Zero
-										? std::min( remaining(), Milliseconds( 100 ) )
-										: Milliseconds( 100 ) );
+										? std::min( remaining(), CancellationCheckInterval )
+										: CancellationCheckInterval );
 								continue;
 							}
 							if ( status != Socket::Done )
@@ -1196,8 +1827,9 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 						if ( lastStatus == Socket::NotReady ||
 							 ( lastStatus == Socket::Done && count == 0 ) ) {
 							connection.selector.wait(
-								timeout > Time::Zero ? std::min( remaining(), Milliseconds( 100 ) )
-													 : Milliseconds( 100 ) );
+								timeout > Time::Zero
+									? std::min( remaining(), CancellationCheckInterval )
+									: CancellationCheckInterval );
 							continue;
 						}
 						if ( lastStatus != Socket::Done )
@@ -1456,6 +2088,24 @@ Http::Response Http::downloadRequest( const Http::Request& request, std::string 
 	return downloadRequest( request, file, timeout );
 }
 
+void Http::cancelAllRequests() {
+	ConnectionBudget::instance().cancelAll();
+}
+
+bool Http::waitForConnectionsToClose( Time timeout ) {
+	return ConnectionBudget::instance().waitUntilClosed(
+		SteadyClock::now() +
+		std::chrono::microseconds( std::max<Int64>( 0, timeout.asMicroseconds() ) ) );
+}
+
+void Http::setMaxOpenConnections( std::size_t count ) {
+	ConnectionBudget::instance().setLimit( count );
+}
+
+std::size_t Http::getMaxOpenConnections() {
+	return ConnectionBudget::instance().getLimit();
+}
+
 void Http::setThreadPool( std::shared_ptr<ThreadPool> pool ) {
 	std::lock_guard<std::mutex> lock( sGlobalThreadPoolMutex );
 	sGlobalThreadPool = pool;
@@ -1475,7 +2125,8 @@ Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncRespon
 	mStreamed( false ),
 	mStreamOwned( false ),
 	mFromLocalPool( fromLocalPool ),
-	mStream( NULL ) {}
+	mStream( NULL ),
+	mGeneration( http->mConnections->generation.load( std::memory_order_acquire ) ) {}
 
 Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncResponseCallback& cb,
 								  Http::Request request, IOStream& writeTo, Time timeout,
@@ -1489,7 +2140,8 @@ Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncRespon
 	mStreamed( true ),
 	mStreamOwned( false ),
 	mFromLocalPool( fromLocalPool ),
-	mStream( &writeTo ) {}
+	mStream( &writeTo ),
+	mGeneration( http->mConnections->generation.load( std::memory_order_acquire ) ) {}
 
 Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncResponseCallback& cb,
 								  Http::Request request, std::string writePath, Time timeout,
@@ -1503,7 +2155,8 @@ Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncRespon
 	mStreamed( true ),
 	mStreamOwned( true ),
 	mFromLocalPool( fromLocalPool ),
-	mStream( IOStreamFile::New( writePath, "wb" ) ) {}
+	mStream( IOStreamFile::New( writePath, "wb" ) ),
+	mGeneration( http->mConnections->generation.load( std::memory_order_acquire ) ) {}
 
 Http::AsyncRequest::~AsyncRequest() {
 	if ( mStreamOwned )
@@ -1515,11 +2168,22 @@ void Http::AsyncRequest::cancel( bool resetCancelCallback ) {
 }
 
 void Http::AsyncRequest::run() {
+	execute( nullptr );
+}
+
+void Http::AsyncRequest::execute( ConnectionLease* granted ) {
 	AsyncRequest* previousRequest = sCurrent;
 	sCurrent = this;
 
-	Http::Response response = mStreamed ? mHttp->downloadRequest( mRequest, *mStream, mTimeout )
-										: mHttp->sendRequest( mRequest, mTimeout );
+	Http::Response response;
+	if ( mStreamed ) {
+		response =
+			mHttp->transfer( mRequest, *mStream, mTimeout, granted, true, nullptr, mGeneration );
+	} else {
+		IOStreamString body;
+		response = mHttp->transfer( mRequest, body, mTimeout, granted, true, nullptr, mGeneration );
+		response.mBody = std::move( body.getStream() );
+	}
 
 	if ( !mRequest.isCancelled() )
 		mCb( *mHttp, mRequest, response );
@@ -1543,15 +2207,47 @@ Http::AsyncRequest* Http::AsyncRequest::current() {
 }
 
 Http::SharedRequestOperation::SharedRequestOperation( Http& http,
-													  std::shared_ptr<AsyncRequest> request ) :
-	mHttp( http ), mOwner( http.weak_from_this().lock() ), mRequest( std::move( request ) ) {}
+													  std::shared_ptr<AsyncRequest> request,
+													  std::weak_ptr<ThreadPool> threadPool ) :
+	mHttp( http ),
+	mOwner( http.weak_from_this().lock() ),
+	mRequest( std::move( request ) ),
+	mThreadPool( std::move( threadPool ) ) {}
 
 Http::SharedRequestOperation::~SharedRequestOperation() {
+	// Never run: return any granted connection to the pool, idle if it is a healthy one. Whether
+	// it still holds one is decided under the pool mutex, as a reservation can be revoked.
+	if ( mLease )
+		mLease->reusable = true;
+	mLease.reset();
 	mHttp.completeSharedRequest( mRequest );
 }
 
 void Http::SharedRequestOperation::run() {
-	mRequest->run();
+	if ( mLease && !mHttp.mConnections->activate( *mLease ) ) {
+		// A running request took the reserved slot. Wait again, ahead of later arrivals.
+		mLease.reset();
+		queue( true );
+		return;
+	}
+	mRequest->execute( mLease.get() );
+}
+
+void Http::SharedRequestOperation::queue( bool first ) {
+	// Wait for a connection in the pool's queue, not in a worker: a request queued behind its
+	// origin's limit must not keep other origins' requests from running. The queued waiter
+	// retains this operation, and through it the Http and the request.
+	auto self = shared_from_this();
+	mHttp.mConnections->enqueue(
+		mHttp, mRequest->mRequest,
+		[self]( std::unique_ptr<ConnectionLease> lease ) {
+			self->mLease = std::move( lease );
+			// On the service thread. The executor is owned only for this call, so it can never
+			// be destroyed by one of its own workers; once gone, this operation is discarded.
+			if ( auto executor = self->mThreadPool.lock() )
+				executor->run( [self] { self->run(); } );
+		},
+		first );
 }
 
 bool Http::removeAsyncRequest( AsyncRequest* req ) {
@@ -1588,7 +2284,7 @@ void Http::completeSharedRequest( const std::shared_ptr<AsyncRequest>& request )
 	mRequestsComplete.notify_all();
 }
 
-bool Http::scheduleSharedRequest( const std::shared_ptr<ThreadPool>& threadPool,
+bool Http::scheduleSharedRequest( const std::weak_ptr<ThreadPool>& threadPool,
 								  const std::shared_ptr<AsyncRequest>& request ) {
 	if ( !registerSharedRequest( request ) ) {
 		request->cancel();
@@ -1597,8 +2293,7 @@ bool Http::scheduleSharedRequest( const std::shared_ptr<ThreadPool>& threadPool,
 
 	// The executor is externally owned and may discard queued work. The operation reports
 	// completion when the queued function releases it, whether or not run() was called.
-	auto operation = std::make_shared<SharedRequestOperation>( *this, request );
-	threadPool->run( [operation] { operation->run(); } );
+	std::make_shared<SharedRequestOperation>( *this, request, threadPool )->queue();
 	return true;
 }
 
@@ -1614,6 +2309,10 @@ void Http::shutdown( bool waitForSharedRequests ) {
 
 	for ( const auto& request : sharedRequests )
 		request->cancel();
+	// Queued requests hold no thread: release them now, so they run, observe the cancellation,
+	// and complete.
+	mConnections->wake();
+	ConnectionBudget::instance().wake();
 
 	std::vector<AsyncRequest*> threads;
 	{
@@ -1694,13 +2393,18 @@ bool Http::isProxied() const {
 }
 
 bool Http::setCancelRequest( Uint64 reqId, bool resetCancelCallback ) {
-	std::lock_guard<std::mutex> lock( mRequestsMutex );
-	auto found = mCurRequests.find( reqId );
-	if ( found != mCurRequests.end() ) {
+	{
+		std::lock_guard<std::mutex> lock( mRequestsMutex );
+		auto found = mCurRequests.find( reqId );
+		if ( found == mCurRequests.end() )
+			return false;
 		found->second->cancel( resetCancelCallback );
-		return true;
 	}
-	return false;
+	// A queued request holds no thread; release it now so it completes. Outside mRequestsMutex:
+	// waking may schedule work that completes requests.
+	mConnections->wake();
+	ConnectionBudget::instance().wake();
+	return true;
 }
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -1790,7 +2494,7 @@ Uint64 Http::sendAsyncRequest( const Http::AsyncResponseCallback& cb, const Http
 	return id;
 #else
 	auto threadPool = getGlobalThreadPool();
-	if ( threadPool ) {
+	if ( !threadPool.expired() ) {
 		auto asyncRequest = std::make_shared<AsyncRequest>( id, this, cb, request, timeout, false );
 		scheduleSharedRequest( threadPool, asyncRequest );
 		return id;
@@ -1832,7 +2536,7 @@ Uint64 Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 	return id;
 #else
 	auto threadPool = getGlobalThreadPool();
-	if ( threadPool ) {
+	if ( !threadPool.expired() ) {
 		auto asyncRequest =
 			std::make_shared<AsyncRequest>( id, this, cb, request, writeTo, timeout, false );
 		scheduleSharedRequest( threadPool, asyncRequest );
@@ -1874,7 +2578,7 @@ Uint64 Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 							NULL );
 #else
 	auto threadPool = getGlobalThreadPool();
-	if ( threadPool ) {
+	if ( !threadPool.expired() ) {
 		auto asyncRequest =
 			std::make_shared<AsyncRequest>( id, this, cb, request, writePath, timeout, false );
 		scheduleSharedRequest( threadPool, asyncRequest );
@@ -1927,7 +2631,7 @@ Http::Pool& Http::Pool::getGlobal() {
 Http::Pool::Pool() : Pool( ConnectionPoolOptions{} ) {}
 
 Http::Pool::Pool( const ConnectionPoolOptions& options ) :
-	mConnections( std::make_shared<ConnectionPool>( options ) ) {}
+	mConnections( ConnectionPool::create( options ) ) {}
 
 Http::Pool::~Pool() {
 	if ( !mClosed )
@@ -1943,7 +2647,7 @@ void Http::Pool::clear() {
 			return;
 		clients.swap( mHttps );
 		connections = std::move( mConnections );
-		mConnections = std::make_shared<ConnectionPool>( connections->options );
+		mConnections = ConnectionPool::create( connections->options );
 	}
 	connections->closeIdle( true );
 	// Callbacks may re-enter the client pool. Never join while holding its mutex, and never
@@ -1966,6 +2670,7 @@ void Http::Pool::close() {
 	// Async operations retain their clients in both executor modes. Closing their transport
 	// makes queued/running work observe cancellation without joining any worker on the UI thread.
 	connections->closeIdle( true );
+	ConnectionBudget::instance().wake();
 }
 
 void Http::Pool::closeIdleConnections() {

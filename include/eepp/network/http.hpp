@@ -1,6 +1,7 @@
 #ifndef EE_NETWORKCHTTP_HPP
 #define EE_NETWORKCHTTP_HPP
 
+#include <chrono>
 #include <condition_variable>
 #include <eepp/config.hpp>
 #include <eepp/core/containers.hpp>
@@ -32,6 +33,9 @@ namespace EE { namespace Network {
  * setProxy() must not race with active requests. */
 class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 	struct ConnectionPool;
+	struct PooledConnection;
+	struct ConnectionLease;
+	struct ConnectionBudget;
 
   public:
 	/** @brief Define a HTTP response */
@@ -191,7 +195,7 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 					 ///< target resource.
 			Patch,	 ///< The PATCH method is used to apply partial modifications to a resource.
 			Connect	 ///< The CONNECT method starts two-way communications with the requested
-					 ///< resource. It can be used to open a tunnel.
+					///< resource. It can be used to open a tunnel.
 		};
 
 		/** @brief Enumerate the available states for a request */
@@ -476,7 +480,7 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 	**  of Time::Zero means that the client will use the system default timeout
 	**  (which is usually pretty long).
 	**  @param request Request to send
-	**  @param timeout Maximum time to wait
+	**  @param timeout Maximum time to wait, including any wait for a pooled connection
 	**  @return Server's response */
 	Response sendRequest( const Request& request, Time timeout = Time::Zero );
 
@@ -491,7 +495,7 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 	**  (which is usually pretty long).
 	**  @param request Request to send
 	**  @param writeTo The IO stream to write the downloaded content
-	**  @param timeout Maximum time to wait
+	**  @param timeout Maximum time to wait, including any wait for a pooled connection
 	**  @return Server's response */
 	Response downloadRequest( const Request& request, IOStream& writeTo,
 							  Time timeout = Time::Zero );
@@ -507,7 +511,7 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 	**  (which is usually pretty long).
 	**  @param request Request to send
 	**  @param writePath The path of the file to write the downloaded content
-	**  @param timeout Maximum time to wait
+	**  @param timeout Maximum time to wait, including any wait for a pooled connection
 	**  @return Server's response */
 	Response downloadRequest( const Request& request, std::string writePath,
 							  Time timeout = Time::Zero );
@@ -522,6 +526,10 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 
 	/** @brief Schedules the request asynchronously and passes the response to the callback.
 	 ** This function does not lock the caller thread.
+	 ** Unlike a blocking request, the timeout of an async request (here and in
+	 ** downloadAsyncRequest) starts once it holds a connection. A request queued behind its
+	 ** origin's connection limit waits, holding no shared thread-pool worker, until a connection
+	 ** frees or it is cancelled.
 	 ** @see sendRequest
 	 ** @return Unique Id of the request added */
 	Uint64 sendAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
@@ -625,8 +633,10 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 		std::map<std::string, std::string> mParams;
 	};
 
-	/** Bounds shared by all origins in a Pool. HTTP/1 requests exclusively lease a connection.
-	 * Idle expiry is checked on acquisition; clear() closes idle sockets immediately. */
+	/** Bounds shared by all origins in a Pool, within the process-wide setMaxOpenConnections()
+	 * limit. HTTP/1 requests exclusively lease a connection; requests beyond a limit wait in
+	 * arrival order per origin. Idle connections are closed by a timer once idleTimeout elapses;
+	 * clear() closes them immediately. */
 	struct ConnectionPoolOptions {
 		std::size_t maxConnections{ 64 };
 		std::size_t maxConnectionsPerHost{ 6 };
@@ -742,6 +752,23 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 	/** It will try to get the proxy from the environment variables. */
 	static URI getEnvProxyURI();
 
+	/** Cancels every HTTP request of every Pool and client, queued or running, blocking or async,
+	 * and closes all idle connections, without waiting. Running requests stop at their next
+	 * checkpoint and drop their sockets. Pools stay usable for new requests. Engine calls this
+	 * when it shuts down. */
+	static void cancelAllRequests();
+
+	/** Waits, at most timeout, until every pooled HTTP connection is closed.
+	 * @return True if none remains open. */
+	static bool waitForConnectionsToClose( Time timeout );
+
+	/** Sets the process-wide limit of open HTTP connections, shared by every Pool (default 256).
+	 * At the limit, opening a connection first closes the least recently used idle connection of
+	 * any pool, and otherwise waits for an active one to finish. */
+	static void setMaxOpenConnections( std::size_t count );
+
+	static std::size_t getMaxOpenConnections();
+
 	/** Set the externally owned thread pool used for async requests, otherwise each Http uses its
 	 * own threads. Http cancellation and destruction do not stop or drain this pool. */
 	static void setThreadPool( std::shared_ptr<ThreadPool> pool );
@@ -766,6 +793,9 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 
 		void run();
 
+		/** Performs the request, using a connection the pool already granted, if any. */
+		void execute( ConnectionLease* granted );
+
 		Uint64 id() const { return mId; }
 
 		void cancel( bool resetCancelCallback = false );
@@ -786,22 +816,33 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 		bool mStreamOwned;
 		bool mFromLocalPool;
 		IOStream* mStream;
+		// The pool generation this request was created under; see cancelAllRequests().
+		Uint64 mGeneration;
 
 		static thread_local AsyncRequest* sCurrent;
 	};
 
-	class SharedRequestOperation {
+	class SharedRequestOperation : public std::enable_shared_from_this<SharedRequestOperation> {
 	  public:
-		SharedRequestOperation( Http& http, std::shared_ptr<AsyncRequest> request );
+		SharedRequestOperation( Http& http, std::shared_ptr<AsyncRequest> request,
+								std::weak_ptr<ThreadPool> threadPool );
 
+		/** An executor that discards this operation without running it returns any granted
+		 * connection to the pool. */
 		~SharedRequestOperation();
 
 		void run();
+
+		/** Waits in the connection pool's queue, then runs on the executor with its connection. */
+		void queue( bool first = false );
 
 	  private:
 		Http& mHttp;
 		std::shared_ptr<Http> mOwner;
 		std::shared_ptr<AsyncRequest> mRequest;
+		// Never owned: an owning reference could make this operation the executor's last owner.
+		std::weak_ptr<ThreadPool> mThreadPool;
+		std::unique_ptr<ConnectionLease> mLease;
 	};
 
 	friend class AsyncRequest;
@@ -828,12 +869,19 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 
 	void completeSharedRequest( const std::shared_ptr<AsyncRequest>& request );
 
-	bool scheduleSharedRequest( const std::shared_ptr<ThreadPool>& threadPool,
+	bool scheduleSharedRequest( const std::weak_ptr<ThreadPool>& threadPool,
 								const std::shared_ptr<AsyncRequest>& request );
 
 	void shutdown( bool waitForSharedRequests = true );
 
 	Request prepareFields( const Http::Request& request );
+
+	/** clockOrigin, if set, receives when this transfer's timeout clock started. A zero
+	 * generation means the current one: the request starts now. */
+	Response transfer( const Request& request, IOStream& writeTo, Time timeout,
+					   ConnectionLease* granted, bool async,
+					   std::chrono::steady_clock::time_point* clockOrigin = nullptr,
+					   Uint64 generation = 0 );
 
 	void onCancel( const Http::Request& request );
 };

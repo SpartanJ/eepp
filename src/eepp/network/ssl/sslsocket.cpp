@@ -18,6 +18,11 @@ using namespace EE::System;
 namespace EE { namespace Network { namespace SSL {
 
 static bool ssl_initialized = false;
+// end() is deferred while sockets live: a worker can still be inside a handshake that reads the
+// backend's certificate state (mbedtls points every config at its CA chain).
+static Uint32 sLiveSockets = 0;
+static bool sEndPending = false;
+static std::function<void()> sConstructionHook;
 
 std::string SSLSocket::CertificatesPath = "";
 static Mutex sMutex;
@@ -75,7 +80,8 @@ bool SSLSocket::init() {
 				if ( FileSystem::fileExists( Sys::getProcessPath() + "assets/ca-bundle.pem" ) ) {
 					CertificatesPath = Sys::getProcessPath() + "assets/ca-bundle.pem";
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-				} else if ( FileSystem::fileExists( Sys::getProcessPath() + "/../Resources/assets/ca-bundle.pem" ) ) {
+				} else if ( FileSystem::fileExists( Sys::getProcessPath() +
+													"/../Resources/assets/ca-bundle.pem" ) ) {
 					CertificatesPath = Sys::getProcessPath() + "/../Resources/assets/ca-bundle.pem";
 #endif
 				} else {
@@ -98,9 +104,7 @@ bool SSLSocket::init() {
 	return ret;
 }
 
-bool SSLSocket::end() {
-	Lock l( sMutex );
-
+static bool endBackend() {
 	bool ret = false;
 
 	if ( ssl_initialized ) {
@@ -116,6 +120,26 @@ bool SSLSocket::end() {
 	}
 
 	return ret;
+}
+
+bool SSLSocket::end() {
+	Lock l( sMutex );
+	if ( ssl_initialized && sLiveSockets > 0 ) {
+		// The last socket's destruction releases the backend.
+		sEndPending = true;
+		return true;
+	}
+	return endBackend();
+}
+
+bool SSLSocket::isInitialized() {
+	Lock l( sMutex );
+	return ssl_initialized;
+}
+
+void SSLSocket::setConstructionHook( std::function<void()> hook ) {
+	Lock l( sMutex );
+	sConstructionHook = std::move( hook );
 }
 
 bool SSLSocket::isSupported() {
@@ -144,11 +168,25 @@ SSLSocket::SSLSocket( std::string hostname, bool validateCertificate, bool valid
 	mValidateCertificate( validateCertificate ),
 	mValidateHostname( validateHostname ),
 	mRestoreSession( restoreSession ) {
+	// Initialization and registration are one step: an end() in between would see no live socket
+	// and release the backend this socket is about to use. sMutex is recursive, so init() can
+	// take it again.
+	Lock l( sMutex );
 	init();
+	if ( sConstructionHook )
+		sConstructionHook();
+	++sLiveSockets;
+	// A socket created after a deferred end() keeps the backend in use.
+	sEndPending = false;
 }
 
 SSLSocket::~SSLSocket() {
 	eeSAFE_DELETE( mImpl );
+	Lock l( sMutex );
+	if ( --sLiveSockets == 0 && sEndPending ) {
+		sEndPending = false;
+		endBackend();
+	}
 }
 
 Socket::Status SSLSocket::connect( const IpAddress& remoteAddress, unsigned short remotePort,
