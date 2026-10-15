@@ -2148,7 +2148,8 @@ solution "eepp"
 		language "C++"
 		files { "src/benchmarks/*.cpp" }
 		includedirs { "src/thirdparty" }
-		build_link_configuration( "eepp-benchmarks", true )
+		-- UTEST_MAIN supplies a native main instead of eepp's SDL_main.
+		build_link_configuration( "eepp-benchmarks", true, false )
 
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
