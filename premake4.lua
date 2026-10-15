@@ -1062,6 +1062,7 @@ end
 
 function eepp_module_backward_add( ecode_mode )
 	files { "src/modules/backward/src/backward.cpp" }
+	includedirs { "src/thirdparty" }
 	if ecode_mode then
 		defines { "EE_BACKWARD_ECODE_MODE" }
 	end
@@ -1071,6 +1072,12 @@ function eepp_module_backward_add( ecode_mode )
 	end
 	if os.is_real("linux") or os.is_real("bsd") then
 		linkoptions { "-rdynamic" }
+	end
+	if os.is_real("linux") then
+		if os_findlib("dw") then
+			links { "dw" }
+			defines { "EE_BACKWARD_HAS_DW" }
+		end
 	end
 	configuration {}
 end
@@ -1915,12 +1922,14 @@ solution "eepp"
 	project "eepp-textureatlaseditor"
 		set_kind()
 		language "C++"
+		eepp_module_backward_add( false )
 		files { "src/tools/textureatlaseditor/*.cpp" }
 		build_link_configuration( "eepp-TextureAtlasEditor", true )
 
 	project "eepp-mapeditor"
 		set_kind()
 		language "C++"
+		eepp_module_backward_add( false )
 		files { "src/tools/mapeditor/*.cpp" }
 		eepp_module_maps_add()
 		build_link_configuration( "eepp-MapEditor", true )
@@ -1928,6 +1937,7 @@ solution "eepp"
 	project "eepp-uieditor"
 		set_kind()
 		language "C++"
+		eepp_module_backward_add( false )
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		links { "efsw-static", "pugixml-static" }
 		if not os.is_real("windows") and not os.is_real("haiku") then
@@ -1959,12 +1969,6 @@ solution "eepp"
 			-- libutil provides openpty(3) on Linux and FreeBSD.
 			links { "util" }
 		end
-		if os.is_real("linux") then
-			if os_findlib("dw") then
-				links { "dw" }
-				defines { "EE_BACKWARD_HAS_DW" }
-			end
-		end
 		if os.is("haiku") then
 			links { "bsd", "network" }
 		end
@@ -1990,6 +1994,7 @@ solution "eepp"
 	project "eterm"
 		set_kind()
 		language "C++"
+		eepp_module_backward_add( false )
 		files { "src/tools/eterm/**.cpp" }
 		links { "efsw-static", "eterm-static" }
 		includedirs { "src/thirdparty/efsw/include", "src/modules/eterm/include/", "src/thirdparty" }
@@ -2018,6 +2023,7 @@ solution "eepp"
 	project "eepp-texturepacker"
 		kind "ConsoleApp"
 		language "C++"
+		eepp_module_backward_add( false )
 		includedirs { "src/thirdparty" }
 		files { "src/tools/texturepacker/*.cpp" }
 		build_link_configuration( "eepp-TexturePacker", true )
@@ -2025,6 +2031,7 @@ solution "eepp"
 	project "eeiv"
 		kind "WindowedApp"
 		language "C++"
+		eepp_module_backward_add( false )
 		files { "src/tools/eeiv/*.cpp" }
 		if os.is("windows") and not is_vs() then
 			if os.is64bit() then
@@ -2038,6 +2045,7 @@ solution "eepp"
 	project "eproc"
 		set_kind()
 		language "C++"
+		eepp_module_backward_add( false )
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		if os.is("windows") and not is_vs() then
 			if os.is64bit() then
