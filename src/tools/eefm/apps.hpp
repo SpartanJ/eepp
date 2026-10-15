@@ -39,8 +39,10 @@ class Applications {
 	/** Opens a terminal emulator in directory. */
 	static bool openTerminal( const std::string& directory );
 
-	/** Starts argv detached from eefm (no zombie, no shared session). */
-	static bool spawn( const std::vector<std::string>& argv, const std::string& workingDir = {} );
+	/** Starts argv detached from eefm (no zombie, no shared session). On Windows, console
+	 * gives the process its own console (shells), in the user's default terminal. */
+	static bool spawn( const std::vector<std::string>& argv, const std::string& workingDir = {},
+					   bool console = false );
 
 	/** Splits a desktop entry Exec value into arguments (quoting rules of the spec). */
 	static std::vector<std::string> splitExec( const std::string& exec );

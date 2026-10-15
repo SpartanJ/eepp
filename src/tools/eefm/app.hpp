@@ -317,6 +317,9 @@ class App {
 					  String errorTitle );
 
 	/** Icon of a file row: the platform icon for its type, eefm's glyph until it loads. */
+	/** Marks the scene when eefm's own (glyph) icons are used, for the stylesheet. */
+	void updateIconStyle();
+
 	UIIcon* fileIcon( const FileInfo& info );
 
 	/** Icon of a place: the platform icon for it (special folders, drives, trash...). */
@@ -388,6 +391,8 @@ class App {
 
 	std::unique_ptr<Pane> mPanes[2];
 	int mActivePane{ 0 };
+	/** A tab being dragged to the other pane: out of its pane, not yet in the other one. */
+	std::unique_ptr<FileTab> mMovingTab;
 	bool mSplit{ true };
 	bool mPlacesVisible{ true };
 	bool mFilterBarVisible{ true };

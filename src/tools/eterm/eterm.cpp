@@ -838,6 +838,8 @@ int App::run( int argc, char* argv[] ) {
 	appSettings.fontHinting = config->font.hinting;
 	appSettings.fontAntialiasing = config->font.antialiasing;
 	appSettings.baseFont = uiFont.get();
+	// Widgets such as the font picker load in the background with it.
+	appSettings.threadPool = ThreadPool::createShared( 2 );
 	const Int32 frameRateLimit =
 		config->window.benchmarkMode ? 0 : static_cast<Int32>( config->window.maxFPS );
 #if EE_PLATFORM == EE_PLATFORM_MACOS

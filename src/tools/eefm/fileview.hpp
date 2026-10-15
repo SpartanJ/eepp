@@ -45,6 +45,9 @@ class FileTableView : public UITableView {
 	/** A file drag started from this view (after the pointer moved). */
 	std::function<void()> onDragStarted;
 
+	/** A row was clicked with the middle button. */
+	std::function<void( size_t row )> onRowMiddleClick;
+
 	/** Context menu requested over the empty area. */
 	std::function<void()> onBackgroundMenu;
 

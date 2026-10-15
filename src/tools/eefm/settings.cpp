@@ -13,6 +13,19 @@ using namespace eterm::UI;
 
 namespace eefm {
 
+namespace {
+
+/** The file of a loaded font as an absolute path, empty when unknown. */
+std::string fontFilePath( Font* font ) {
+	FontDesc desc;
+	if ( !font || font->getType() != FontType::TTF ||
+		 !static_cast<FontTrueType*>( font )->getFontDesc( desc ) )
+		return {};
+	return FileSystem::getRealPath( desc.path );
+}
+
+} // namespace
+
 void App::savePreferences() {
 	mConfig->save();
 }
@@ -92,6 +105,7 @@ void App::applyTerminalConfig() {
 
 void App::applyFilesConfig() {
 	mFileIcons.clear();
+	updateIconStyle();
 	for ( auto& pane : mPanes ) {
 		if ( !pane )
 			continue;
@@ -112,9 +126,23 @@ void App::openFontPicker( FontTarget target ) {
 	auto* dialog = UIFontPickerDialog::New( flags );
 	dialog->setTitle( mUI->i18n( "eefm_select_font", "Select Font" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
-	const std::string& current = target == FontTarget::UI		  ? mConfig->font.uiPath
-								 : target == FontTarget::Fallback ? mConfig->font.fallbackPath
-																  : mConfig->terminal.fontPath;
+	std::string current = target == FontTarget::UI		   ? mConfig->font.uiPath
+						  : target == FontTarget::Fallback ? mConfig->font.fallbackPath
+														   : mConfig->terminal.fontPath;
+	// Not configured: the font in use (the bundled one, or the first explicit fallback).
+	if ( current.empty() ) {
+		if ( target == FontTarget::UI ) {
+			current = fontFilePath( mUI->getUIThemeManager()->getDefaultFont() );
+		} else if ( target == FontTarget::Fallback ) {
+			const auto& fallbacks = mUI->getResourceScope()->getFontService().getFallbackFonts();
+			if ( !fallbacks.empty() )
+				current = fontFilePath( fallbacks.front().get() );
+		} else {
+			current = mTerminalFont ? fontFilePath( mTerminalFont )
+									: FileSystem::getRealPath( Sys::getProcessPath() +
+															   "assets/fonts/DejaVuSansMono.ttf" );
+		}
+	}
 	if ( !current.empty() )
 		dialog->setSelectedFont( current );
 	if ( target != FontTarget::Fallback ) {
@@ -143,7 +171,12 @@ void App::openFontPicker( FontTarget target ) {
 			if ( !font->loadFromFile( selection.font.path ) )
 				return;
 			mConfig->font.fallbackPath = selection.font.path;
-			scope.getFontService().addFallbackFont( std::move( font ) );
+			// It replaces the previous one (fallbacks are looked up in order).
+			auto& service = scope.getFontService();
+			auto previous = service.getFallbackFonts();
+			for ( const auto& fallback : previous )
+				service.removeFallbackFont( fallback.get() );
+			service.addFallbackFont( std::move( font ) );
 		} else {
 			auto font = FontTrueType::New( "eefm-monospace", scope );
 			if ( !font->loadFromFile( selection.font.path ) )
@@ -159,6 +192,7 @@ void App::openFontPicker( FontTarget target ) {
 		}
 		savePreferences();
 	} );
+	dialog->center();
 	dialog->show();
 }
 

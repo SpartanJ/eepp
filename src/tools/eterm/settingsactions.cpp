@@ -7,6 +7,19 @@
 
 namespace eterm {
 
+namespace {
+
+/** The file of a loaded font as an absolute path, empty when unknown. */
+std::string fontFilePath( Font* font ) {
+	FontDesc desc;
+	if ( !font || font->getType() != FontType::TTF ||
+		 !static_cast<FontTrueType*>( font )->getFontDesc( desc ) )
+		return {};
+	return FileSystem::getRealPath( desc.path );
+}
+
+} // namespace
+
 SettingsActions::SettingsActions( App* app ) : mApp( app ) {}
 
 void SettingsActions::showSettings() {
@@ -32,6 +45,19 @@ void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {
 	std::string currentPath = uiFont		 ? mApp->config->font.uiPath
 							  : fallbackFont ? mApp->config->font.fallbackPath
 											 : mApp->config->font.path;
+	// Not configured: the font in use (the bundled one, or the first explicit fallback).
+	if ( currentPath.empty() ) {
+		if ( uiFont ) {
+			currentPath = fontFilePath( mApp->scene->getUIThemeManager()->getDefaultFont() );
+		} else if ( fallbackFont ) {
+			const auto& fallbacks =
+				mApp->scene->getResourceScope()->getFontService().getFallbackFonts();
+			if ( !fallbacks.empty() )
+				currentPath = fontFilePath( fallbacks.front().get() );
+		} else {
+			currentPath = fontFilePath( mApp->terminalFont );
+		}
+	}
 	if ( !currentPath.empty() )
 		dialog->setSelectedFont( currentPath );
 	if ( !fallbackFont ) {
@@ -58,7 +84,12 @@ void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {
 			auto font = FontTrueType::New( "eterm-fallback-font", resourceScope );
 			if ( font->loadFromFile( selection.font.path ) ) {
 				mApp->config->font.fallbackPath = selection.font.path;
-				resourceScope.getFontService().addFallbackFont( std::move( font ) );
+				// It replaces the previous one (fallbacks are looked up in order).
+				auto& service = resourceScope.getFontService();
+				auto previous = service.getFallbackFonts();
+				for ( const auto& fallback : previous )
+					service.removeFallbackFont( fallback.get() );
+				service.addFallbackFont( std::move( font ) );
 			}
 		} else {
 			auto font = FontTrueType::New( "eterm-monospace", resourceScope );
@@ -76,6 +107,7 @@ void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {
 		}
 		mApp->savePreferences();
 	} );
+	dialog->center();
 	dialog->show();
 }
 

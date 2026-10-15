@@ -187,8 +187,13 @@ Vector2f UIPushButton::calcLayoutSize( const std::array<UIWidget*, 3>& logicalWi
 		if ( !widgets[i] || !widgets[i]->isVisible() )
 			continue;
 		widget = widgets[i];
-		if ( widget->getPixelsSize().getWidth() > 0 ) {
-			totSize.x += widget->getLayoutPixelsMargin().Left + widget->getPixelsSize().getWidth();
+		// An expanded text box takes the width it is given: its content is the whole text.
+		Float width = widget == mTextBox && mExpandTextView
+						  ? mTextBox->getTextWidth() + mTextBox->getPixelsPadding().Left +
+								mTextBox->getPixelsPadding().Right
+						  : widget->getPixelsSize().getWidth();
+		if ( width > 0 ) {
+			totSize.x += widget->getLayoutPixelsMargin().Left + width;
 			if ( ( i + 1 < widgets.size() && widgets[i + 1] && widgets[i + 1]->isVisible() ) ||
 				 ( i + 2 < widgets.size() && widgets[i + 2] && widgets[i + 2]->isVisible() ) ) {
 				totSize.x += widget->getLayoutPixelsMargin().Right;

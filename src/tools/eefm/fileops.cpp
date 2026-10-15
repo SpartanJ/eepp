@@ -213,7 +213,6 @@ void App::showContextMenu( FileTab* tab, bool background ) {
 	};
 	std::vector<Application> apps;
 	if ( !rows.empty() ) {
-		addCreateNew();
 		if ( !anyFolder ) {
 			const std::string& mime =
 				MimeDatabase::instance().typeOf( tab->model->entry( rows[0] ) );
@@ -254,7 +253,10 @@ void App::showContextMenu( FileTab* tab, bool background ) {
 						   icon( "view-split" ) )
 					->setId( "open-other" );
 		}
-		menu->addSeparator();
+		// After the open actions, as Dolphin.
+		if ( menu->getCount() > 0 )
+			menu->addSeparator();
+		addCreateNew();
 		menu->add( mUI->i18n( "eefm_cut", "Cut" ), icon( "cut" ), "Ctrl+X" )->setId( "cut" );
 		menu->add( mUI->i18n( "eefm_copy", "Copy" ), icon( "copy" ), "Ctrl+C" )->setId( "copy" );
 		menu->add( mUI->i18n( "eefm_copy_location", "Copy Location" ),

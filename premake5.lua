@@ -1023,6 +1023,7 @@ end
 
 function eepp_module_backward_add( ecode_mode )
 	files { "src/modules/backward/src/backward.cpp" }
+	incdirs { "src/thirdparty" }
 	if ecode_mode then
 		defines { "EE_BACKWARD_ECODE_MODE" }
 	end
@@ -1030,6 +1031,11 @@ function eepp_module_backward_add( ecode_mode )
 		links { "dbghelp", "psapi" }
 	filter "system:linux or system:bsd"
 		linkoptions { "-rdynamic" }
+	filter "system:linux"
+		if os_findlib("dw") then
+			links { "dw" }
+			defines { "EE_BACKWARD_HAS_DW" }
+		end
 	filter {}
 end
 
@@ -2044,12 +2050,14 @@ workspace "eepp"
 	project "eepp-textureatlaseditor"
 		set_kind()
 		language "C++"
+		eepp_module_backward_add( false )
 		files { "src/tools/textureatlaseditor/*.cpp" }
 		build_link_configuration( "eepp-TextureAtlasEditor", true )
 
 	project "eepp-mapeditor"
 		set_kind()
 		language "C++"
+		eepp_module_backward_add( false )
 		files { "src/tools/mapeditor/*.cpp" }
 		eepp_module_maps_add()
 		build_link_configuration( "eepp-MapEditor", true )
@@ -2057,6 +2065,7 @@ workspace "eepp"
 	project "eepp-uieditor"
 		set_kind()
 		language "C++"
+		eepp_module_backward_add( false )
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		links { "efsw-static", "pugixml-static" }
 		files { "src/tools/uieditor/*.cpp" }
@@ -2092,10 +2101,6 @@ workspace "eepp"
 			links { "pthread" }
 		filter "system:linux"
 			links { "util" }
-			if os_findlib("dw") then
-				links { "dw" }
-				defines { "EE_BACKWARD_HAS_DW" }
-			end
 		filter { "system:linux or system:macosx or system:haiku or system:bsd", "configurations:release*" }
 			buildoptions { "-g1", "-fvisibility=default" }
 		filter "system:haiku"
@@ -2108,6 +2113,7 @@ workspace "eepp"
 	project "eterm"
 		set_kind()
 		language "C++"
+		eepp_module_backward_add( false )
 		incdirs { "src/thirdparty/efsw/include", "src/modules/eterm/include/", "src/thirdparty" }
 		files { "src/tools/eterm/**.cpp" }
 		links { "efsw-static", "eterm-static" }
@@ -2131,6 +2137,7 @@ workspace "eepp"
 	project "eepp-texturepacker"
 		kind "ConsoleApp"
 		language "C++"
+		eepp_module_backward_add( false )
 		incdirs { "src/thirdparty" }
 		files { "src/tools/texturepacker/*.cpp" }
 		build_link_configuration( "eepp-TexturePacker", true )
@@ -2138,6 +2145,7 @@ workspace "eepp"
 	project "eeiv"
 		set_kind()
 		language "C++"
+		eepp_module_backward_add( false )
 		filter { "system:windows", "action:vs*" }
 			files { "bin/assets/icon/eeiv.rc", "bin/assets/icon/eeiv.ico" }
 			vpaths { ['Resources/*'] = { "eeiv.rc", "eeiv.ico" } }
@@ -2152,6 +2160,7 @@ workspace "eepp"
 	project "eefm"
 		set_kind()
 		language "C++"
+		eepp_module_backward_add( false )
 		incdirs { "src/thirdparty", "src/modules/eterm/include/" }
 		files { "src/tools/eefm/*.cpp" }
 		links { "eterm-static" }
@@ -2164,6 +2173,7 @@ workspace "eepp"
 	project "eproc"
 		set_kind()
 		language "C++"
+		eepp_module_backward_add( false )
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		filter { "system:windows", "action:vs*" }
 			files { "bin/assets/icon/eproc.rc", "bin/assets/icon/eproc.ico" }

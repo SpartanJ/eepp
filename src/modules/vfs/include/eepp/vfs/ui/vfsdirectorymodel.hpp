@@ -173,7 +173,8 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 
 	bool isSortable() override { return true; }
 
-	/** Cells get a per column class: vfs_name, vfs_size, vfs_modified, vfs_type... */
+	/** Cells get a per column class: vfs_name (vfs_folder for folders), vfs_size, vfs_modified,
+	 * vfs_type... */
 	bool classModelRoleEnabled() override { return true; }
 
 	void sort( const size_t& column, const SortOrder& order ) override;

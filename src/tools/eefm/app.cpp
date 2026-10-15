@@ -15,6 +15,15 @@ namespace {
 const char* Layout = R"xml(
 <style>
 <![CDATA[
+/* The inactive pane's view is a little dimmer than the active one, in both color schemes. */
+:root {
+	--pane-inactive-back: #1f2225;
+}
+@media (prefers-color-scheme: light) {
+	:root {
+		--pane-inactive-back: #f7f7f7;
+	}
+}
 #toolbar {
 	padding: 3dp 4dp;
 	background-color: var(--back);
@@ -44,7 +53,8 @@ SelectButton.tool:selected {
 	background-color: var(--list-back);
 	padding-left: 4dp;
 }
-/* The frame draws the focus border; the input itself has none. */
+/* The frame draws the hover and focus border; the input itself has none. */
+.location_frame:hover,
 .location_frame:focus-within {
 	border-color: var(--primary);
 }
@@ -140,11 +150,12 @@ tab::icon,
 	border-bottom-width: 2dp;
 	border-bottom-color: var(--primary);
 }
+/* The same tints as the file rows. */
 .place:hover {
-	background-color: #ffffff10;
+	background-color: rgba( var(--primary), 0.12 );
 }
 .place.selected {
-	background-color: var(--item-hover);
+	background-color: rgba( var(--primary), 0.3 );
 }
 .place_icon {
 	margin-right: 6dp;
@@ -155,16 +166,18 @@ tab::icon,
 .device_usage {
 	min-height: 3dp;
 	max-height: 3dp;
-	margin: 2dp 0dp 0dp 22dp;
+	margin: 3dp 0dp 1dp 22dp;
 	border-width: 0dp;
-	background-color: var(--list-back-alt);
+	border-radius: 2dp;
+	background-color: rgba( var(--font-hint), 0.2 );
 }
+/* Calm until the device is nearly full. */
 .device_usage ProgressBar::filler {
-	background-color: var(--primary);
-	border-radius: 0dp;
+	background-color: rgba( var(--primary), 0.6 );
+	border-radius: 2dp;
 }
 .device_usage.full ProgressBar::filler {
-	background-color: var(--theme-error);
+	background-color: rgba( var(--theme-error), 0.8 );
 }
 .place.droppable-hovering, placerow:droppable-hovering {
 	background-color: var(--primary);
@@ -178,28 +191,46 @@ tab::icon,
 	border-width: 1dp;
 	border-color: var(--tab-line);
 	border-radius: 3dp;
-	padding: 2dp 6dp;
+	padding: 2dp 8dp;
+	background-color: var(--back);
 }
 .pane_filter_bar {
 	padding: 2dp 4dp 4dp 4dp;
+	background-color: var(--back);
+}
+/* One field, as the location bar: the options sit inside it. */
+.filter_frame {
+	border-width: 1dp;
+	border-color: var(--button-border);
+	border-radius: 2dp;
+	background-color: var(--list-back);
+	margin-right: 2dp;
+}
+.filter_frame:hover,
+.filter_frame:focus-within {
+	border-color: var(--primary);
+}
+.filter_frame.invalid {
+	border-color: var(--theme-error);
 }
 .pane_filter_bar PushButton, .pane_filter_bar SelectButton {
 	background-color: transparent;
 	border-color: transparent;
-	padding: 3dp 5dp;
+	padding: 2dp 4dp;
 	icon-size: 14dp;
 }
 .pane_filter_bar SelectButton:selected {
 	background-color: var(--item-hover);
 }
-.filter_input {
-	margin: 0dp 4dp;
+.filter_input, .filter_input:focus {
+	background-color: transparent;
+	border-color: transparent;
+	border-width: 0dp;
+	padding: 3dp 2dp;
 }
-.filter_input.invalid {
-	border-color: var(--theme-error);
-}
-.filter_mode {
-	margin-right: 4dp;
+.filter_mode, .filter_mode:focus, .filter_mode:hover {
+	background-color: transparent;
+	border-color: transparent;
 }
 .new_tab {
 	background-color: transparent;
@@ -207,8 +238,21 @@ tab::icon,
 	padding: 2dp 6dp;
 	icon-size: 14dp;
 }
-.pane:not(.active) tableview::row:selected {
-	opacity: 0.6;
+/* Unselected tabs keep their close button, dimmed (hiding it would resize the tab). */
+Tab:not(:selected) Tab::close {
+	foreground-tint: rgba( var(--tab-close), 0.35 );
+}
+Tab:hover Tab::close {
+	foreground-tint: var(--tab-close);
+}
+/* As specific as the rules above, or they would hide the theme's hover color. */
+Tab Tab::close:hover,
+Tab:not(:selected) Tab::close:hover {
+	foreground-tint: var(--tab-close-hover);
+}
+/* Scrollbars stay out of the way until used. */
+ScrollBar::vbutton, ScrollBar::hbutton {
+	background-color: rgba( var(--font-hint), 0.45 );
 }
 .transfer_text {
 	margin-right: 6dp;
@@ -231,18 +275,51 @@ tableview::cell {
 	text-align: left;
 	opacity: 1;
 }
+tableview::cell::text {
+	text-overflow: ellipsis;
+}
 tableview::row {
 	opacity: 1;
+	border-width: 1dp;
+	border-color: transparent;
+	border-radius: 3dp;
 }
 /* Alternating rows, as eproc and Dolphin. */
 tableview::row:nth-child(even) {
 	background-color: var(--list-back-alt);
 }
-tableview::row:nth-child(even):hover {
-	background-color: var(--item-hover);
+/* The inactive pane's view is a little dimmer; its text stays the same, both panes are read
+   during operations. */
+.pane:not(.active) TableView,
+.pane:not(.active) TableView > ScrollBar,
+.pane:not(.active) tableview::row {
+	background-color: var(--pane-inactive-back);
 }
+.pane:not(.active) tableview::row:nth-child(even) {
+	background-color: var(--list-back-alt);
+}
+/* Hover and selection are soft tints of the accent with an outline, as Dolphin. */
+tableview::row:hover,
+tableview::row:nth-child(even):hover,
+.pane:not(.active) tableview::row:hover,
+.pane:not(.active) tableview::row:nth-child(even):hover {
+	background-color: rgba( var(--primary), 0.12 );
+}
+tableview::row:selected,
 tableview::row:nth-child(even):selected {
-	background-color: var(--primary);
+	background-color: rgba( var(--primary), 0.3 );
+	border-color: var(--primary);
+}
+/* In the inactive pane the selection is grey: the keyboard goes to the other one. */
+.pane:not(.active) tableview::row:selected,
+.pane:not(.active) tableview::row:nth-child(even):selected {
+	background-color: rgba( var(--font-hint), 0.22 );
+	border-color: rgba( var(--font-hint), 0.5 );
+}
+/* The text is readable on the tint (the theme's selected color is meant for a solid fill). */
+tableview::row:selected tableview::cell {
+	color: var(--font);
+	tint: var(--font);
 }
 /* Secondary columns are dimmed, like the places headers (selected rows keep the theme's
    selected text color: that rule is more specific). */
@@ -254,8 +331,19 @@ tableview::cell.vfs_owner,
 tableview::cell.vfs_group {
 	color: var(--font-hint);
 }
+tableview::row:selected tableview::cell.vfs_size,
+tableview::row:selected tableview::cell.vfs_modified,
+tableview::row:selected tableview::cell.vfs_type,
+tableview::row:selected tableview::cell.vfs_permissions,
+tableview::row:selected tableview::cell.vfs_owner,
+tableview::row:selected tableview::cell.vfs_group {
+	color: var(--font-hint);
+}
 tableview::cell.vfs_size {
 	text-align: right;
+}
+.glyph_icons tableview::cell.vfs_folder {
+	tint: var(--primary);
 }
 tableview::cell.dragged {
 	opacity: 0.5;
@@ -351,6 +439,9 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 		appSettings.pixelDensity = mConfig->window.pixelDensity;
 	appSettings.fontHinting = mConfig->font.hinting;
 	appSettings.fontAntialiasing = mConfig->font.antialiasing;
+	// Shared with the scene: widgets such as the font picker load in the background with it.
+	mPool = ThreadPool::createShared( 2 );
+	appSettings.threadPool = mPool;
 	FontTrueTypePtr uiFont;
 	if ( !mConfig->font.uiPath.empty() && FileSystem::fileExists( mConfig->font.uiPath ) ) {
 		uiFont = FontTrueType::New( "eefm-ui-font" );
@@ -379,7 +470,6 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	loadIcons( mUI, Sys::getProcessPath() + "assets/" );
 
 	mExecutor = std::make_unique<MainThreadExecutor>( mUI );
-	mPool = ThreadPool::createShared( 2 );
 	// Theme detection and icon loading run on the pool: startup does not wait for them.
 	mSystemIcons = UISystemIconTheme::New( *mPool, *mExecutor );
 	mSystemIcons->setOnIconsLoaded( [this] {
@@ -399,6 +489,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 #endif
 
 	mUI->loadLayoutFromString( Layout );
+	updateIconStyle();
 	mToolbar = mUI->find<UIWidget>( "toolbar" );
 	mMenuButton = mUI->find<UIWidget>( "app_menu" );
 	mMainSplitter = mUI->find<UISplitter>( "main_splitter" );
@@ -545,9 +636,13 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 			} );
 			return;
 		}
-		if ( !focus || !focus->isWidget() || focus->isType( UI_TYPE_PUSHBUTTON ) ||
-			 focus->isType( UI_TYPE_TEXTINPUT ) )
+		if ( !focus || !focus->isWidget() || focus->isType( UI_TYPE_TEXTINPUT ) )
 			return;
+		// Buttons and their parts (a tab's close button): the click that follows goes to the
+		// focused node, it must stay there.
+		for ( Node* node = focus; node; node = node->getParent() )
+			if ( node->isType( UI_TYPE_PUSHBUTTON ) )
+				return;
 		for ( int i = 0; i < 2; ++i ) {
 			auto* tab = currentTab( pane( i ) );
 			if ( !tab || !pane( i ).root->inParentTreeOf( focus ) || tab->view == focus ||
@@ -583,7 +678,7 @@ void App::loadState() {
 		mState = nlohmann::json::object();
 	mSplit = mState.value( "split", true );
 	mPlacesVisible = mState.value( "places_visible", true );
-	mFilterBarVisible = mState.value( "filter_bar", true );
+	mFilterBarVisible = mState.value( "filter_bar", false );
 	mShowHidden = mState.value( "show_hidden", false );
 	mFilterCaseSensitive = mState.value( "filter_case_sensitive", false );
 	std::string mode = mState.value( "filter_mode", "glob" );
@@ -1334,6 +1429,16 @@ void App::showPlaceDialog( std::optional<size_t> index, Place initial ) {
 			nameInput->getDocument().selectAll();
 		}
 	} );
+}
+
+void App::updateIconStyle() {
+	// eefm's glyph icons are tinted by the stylesheet (folders in the accent color); a system
+	// theme's icons keep their own colors.
+	bool glyphs = !mConfig->files.systemIcons;
+	if ( glyphs )
+		mUI->getRoot()->addClass( "glyph_icons" );
+	else
+		mUI->getRoot()->removeClass( "glyph_icons" );
 }
 
 UIIcon* App::fileIcon( const FileInfo& info ) {

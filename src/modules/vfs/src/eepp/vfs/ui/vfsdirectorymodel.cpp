@@ -841,6 +841,9 @@ Variant VFSDirectoryModel::data( const ModelIndex& index, ModelRole role ) const
 		static const std::string Classes[ColumnCount] = {
 			"vfs_name",		   "vfs_size",	"vfs_modified", "vfs_type",
 			"vfs_permissions", "vfs_owner", "vfs_group" };
+		static const std::string FolderName = "vfs_folder";
+		if ( index.column() == Name && info.isDirectory() )
+			return Variant( &FolderName );
 		return index.column() < ColumnCount ? Variant( &Classes[index.column()] ) : Variant();
 	}
 	if ( role != ModelRole::Display && role != ModelRole::Sort )

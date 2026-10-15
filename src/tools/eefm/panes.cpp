@@ -19,11 +19,13 @@ const char* PaneLayout = R"xml(
 		</hbox>
 	</hbox>
 	<hbox class="pane_filter_bar" layout_width="match_parent" layout_height="wrap_content">
-		<SelectButton class="filter_lock" icon="filter-unlock" tooltip="Keep Filter When Changing Folders" layout_gravity="center_vertical" />
-		<TextInput class="filter_input" layout_width="0" layout_weight="1" layout_height="wrap_content" hint="Filter..." />
-		<SelectButton class="filter_case" icon="filter-case" tooltip="Match Case" layout_gravity="center_vertical" />
-		<DropDownList class="filter_mode" layout_width="140dp" layout_gravity="center_vertical" />
-		<PushButton class="filter_close" icon="action-close" tooltip="Hide Filter Bar" layout_gravity="center_vertical" />
+		<hbox class="filter_frame" layout_width="0" layout_weight="1" layout_height="wrap_content">
+			<SelectButton class="filter_lock" icon="filter-unlock" tooltip="Keep Filter When Changing Folders" layout_gravity="center_vertical" />
+			<TextInput class="filter_input" layout_width="0" layout_weight="1" layout_height="wrap_content" layout_gravity="center_vertical" hint="Filter..." />
+			<SelectButton class="filter_case" icon="filter-case" tooltip="Match Case" layout_gravity="center_vertical" />
+			<DropDownList class="filter_mode" layout_width="72dp" layout_gravity="center_vertical" tooltip="Match Mode" />
+		</hbox>
+		<PushButton class="filter_close" icon="action-close" tooltip="Hide Filter Bar (Ctrl+I)" layout_gravity="center_vertical" />
 	</hbox>
 </vbox>
 )xml";
@@ -48,7 +50,7 @@ std::string formatTime( Int64 seconds ) {
 	char clock[16];
 	std::strftime( clock, sizeof( clock ), "%H:%M", &local );
 	if ( local.tm_year == today.tm_year && local.tm_yday == today.tm_yday )
-		return std::string( "Today at " ) + clock;
+		return std::string( "Today " ) + clock;
 	std::time_t yesterday = now - 86400;
 	std::tm yesterdayTm{};
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -57,10 +59,11 @@ std::string formatTime( Int64 seconds ) {
 	localtime_r( &yesterday, &yesterdayTm );
 #endif
 	if ( local.tm_year == yesterdayTm.tm_year && local.tm_yday == yesterdayTm.tm_yday )
-		return std::string( "Yesterday at " ) + clock;
+		return std::string( "Yesterday " ) + clock;
+	// Short, as Dolphin: the year in two digits.
 	char date[32];
-	std::strftime( date, sizeof( date ), "%d/%m/%Y", &local );
-	return std::string( date ) + " at " + clock;
+	std::strftime( date, sizeof( date ), "%d/%m/%y", &local );
+	return std::string( date ) + " " + clock;
 }
 
 std::string itemCount( Uint64 count ) {
@@ -106,6 +109,12 @@ void App::createPane( int index, UIWidget* parent ) {
 	p.tabs->setTabsClosable( true );
 	p.tabs->setHideTabBarOnSingleTab( false );
 	p.tabs->setAllowRearrangeTabs( true );
+	// Tabs can be dragged to the other pane (dragged off the tab bar, then dropped there).
+	p.tabs->setAllowDragAndDropTabs( true );
+	p.tabs->setAcceptsDropOfWidgetFn( [this, index]( const UIWidget* widget ) {
+		const auto* tab = widget->asConstType<UITab>();
+		return mSplit && tab->getTabWidget() == this->pane( 1 - index ).tabs;
+	} );
 	p.tabs->on( Event::OnTabSelected, [this, index]( const Event* ) {
 		Pane& pane = this->pane( index );
 		updateChrome( pane );
@@ -120,11 +129,20 @@ void App::createPane( int index, UIWidget* parent ) {
 		const auto* tabEvent = static_cast<const TabEvent*>( event );
 		auto it = std::find_if( pane.tabList.begin(), pane.tabList.end(),
 								[&]( const auto& tab ) { return tab->tab == tabEvent->getTab(); } );
+		// A tab that is not closing moves to the other pane: it is kept for OnTabAdded there.
+		bool moving = it != pane.tabList.end() && !tabEvent->getTab()->isClosing();
+		if ( moving )
+			mMovingTab = std::move( *it );
 		if ( it != pane.tabList.end() )
 			pane.tabList.erase( it );
 		positionNewTabButton( pane );
 		if ( !pane.tabList.empty() )
 			return;
+		// Moving its last tab out leaves the pane on the same folder, in a new tab.
+		if ( moving ) {
+			openTab( pane, mMovingTab->model->uri(), true );
+			return;
+		}
 		// The last tab of a pane closes the pane (or the window when it is the only one).
 		if ( index == 1 ) {
 			setSplit( false );
@@ -140,8 +158,16 @@ void App::createPane( int index, UIWidget* parent ) {
 			quit();
 		}
 	} );
-	p.tabs->on( Event::OnTabAdded,
-				[this, index]( const Event* ) { positionNewTabButton( this->pane( index ) ); } );
+	p.tabs->on( Event::OnTabAdded, [this, index]( const Event* event ) {
+		Pane& pane = this->pane( index );
+		const auto* tabEvent = static_cast<const TabEvent*>( event );
+		if ( mMovingTab && mMovingTab->tab == tabEvent->getTab() ) {
+			mMovingTab->pane = &pane;
+			pane.tabList.push_back( std::move( mMovingTab ) );
+			setActivePane( index );
+		}
+		positionNewTabButton( pane );
+	} );
 	p.tabs->getTabBar()->on( Event::OnSizeChange, [this, index]( const Event* ) {
 		positionNewTabButton( this->pane( index ) );
 	} );
@@ -205,9 +231,9 @@ void App::createPane( int index, UIWidget* parent ) {
 
 	// Filter bar
 	p.filterMode->getListBox()->addListBoxItems(
-		{ mUI->i18n( "eefm_filter_text", "Plain Text" ),
-		  mUI->i18n( "eefm_filter_glob", "Glob Pattern" ),
-		  mUI->i18n( "eefm_filter_regex", "Regular Expression" ) } );
+		{ mUI->i18n( "eefm_filter_text_short", "Text" ),
+		  mUI->i18n( "eefm_filter_glob_short", "Glob" ),
+		  mUI->i18n( "eefm_filter_regex_short", "Regex" ) } );
 	p.filterMode->getListBox()->setSelected( static_cast<Uint32>( mFilterMode ) );
 	p.filterMode->on( Event::OnItemSelected, [this, index]( const Event* ) {
 		Uint32 selected = this->pane( index ).filterMode->getListBox()->getItemSelectedIndex();
@@ -361,9 +387,9 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 		if ( width <= 0 )
 			return;
 		view->setColumnMaxWidth( VFSDirectoryModel::Size,
-								 eemax( eefloor( width * 0.15f ), PixelDensity::dpToPx( 72 ) ) );
-		view->setColumnMaxWidth( VFSDirectoryModel::Modified, eefloor( width * 0.24f ) );
-		view->setColumnMaxWidth( VFSDirectoryModel::Type, eefloor( width * 0.24f ) );
+								 eemax( eefloor( width * 0.14f ), PixelDensity::dpToPx( 64 ) ) );
+		view->setColumnMaxWidth( VFSDirectoryModel::Modified, eefloor( width * 0.27f ) );
+		view->setColumnMaxWidth( VFSDirectoryModel::Type, eefloor( width * 0.18f ) );
 	};
 	view->on( Event::OnSizeChange, [capColumns]( const Event* ) { capColumns(); } );
 	view->onModelEvent( [this, raw]( const ModelEvent* event ) {
@@ -377,6 +403,18 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 			showContextMenu( raw, false );
 		}
 	} );
+	// Middle click opens a folder in a new tab, in the background (as Dolphin and browsers);
+	// with the modifier (Ctrl, Cmd on macOS) the new tab is selected and focused.
+	view->onRowMiddleClick = [this, raw]( size_t row ) {
+		setActivePane( raw->pane->index );
+		if ( row >= raw->model->rowCount() || !raw->model->entry( row ).isDirectory() )
+			return;
+		bool select =
+			mApp->getWindow()->getInput()->getSanitizedModState() & KeyMod::getDefaultModifier();
+		FileTab* tab = openTab( *raw->pane, raw->model->entryURI( row ), select );
+		if ( select && tab )
+			tab->view->setFocus();
+	};
 	view->setOnSelectionChange( [this, raw] {
 		if ( raw->pane && raw == currentTab( *raw->pane ) )
 			updateStatus( *raw->pane );
@@ -629,10 +667,12 @@ void App::applyFilter( FileTab* tab ) {
 	if ( !visible.empty() )
 		tab->view->getSelection().set( visible );
 	if ( tab == currentTab( *tab->pane ) ) {
+		// The frame around the input draws the border.
+		auto* frame = tab->pane->filterInput->getParent()->asType<UIWidget>();
 		if ( tab->model->isNameFilterValid() )
-			tab->pane->filterInput->removeClass( "invalid" );
+			frame->removeClass( "invalid" );
 		else
-			tab->pane->filterInput->addClass( "invalid" );
+			frame->addClass( "invalid" );
 		updateStatus( *tab->pane );
 	}
 }

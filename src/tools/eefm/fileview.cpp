@@ -39,7 +39,11 @@ class FileCell : public UITableCell {
   public:
 	static FileCell* New( const std::string& tag ) { return eeNew( FileCell, ( tag ) ); }
 
-	explicit FileCell( const std::string& tag ) : UITableCell( tag ) { setDragEnabled( true ); }
+	explicit FileCell( const std::string& tag ) : UITableCell( tag ) {
+		setDragEnabled( true );
+		// The text takes the cell's free width, so long names end in an ellipsis (stylesheet).
+		setExpandTextView( true );
+	}
 
 	Uint32 getType() const override { return FileTableView::CellType; }
 
@@ -116,6 +120,18 @@ class FileCell : public UITableCell {
 		if ( isDragging() && !mDragActive && ( flags & getDragButton() ) )
 			cancelPendingDrag();
 		return UITableCell::onMouseUp( position, flags );
+	}
+
+	Uint32 onMouseClick( const Vector2i& position, const Uint32& flags ) override {
+		if ( flags & EE_BUTTON_MMASK ) {
+			auto* table = view();
+			ModelIndex rowIndex = getParent()->asType<UITableRow>()->getCurIndex();
+			if ( table && table->onRowMiddleClick && rowIndex.isValid() ) {
+				table->onRowMiddleClick( static_cast<size_t>( rowIndex.row() ) );
+				return 1;
+			}
+		}
+		return UITableCell::onMouseClick( position, flags );
 	}
 
 	Uint32 onDrag( const Vector2f& position, const Uint32&, const Sizef& ) override {
