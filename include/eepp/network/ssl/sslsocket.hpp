@@ -2,6 +2,7 @@
 #define EE_NETWORKCSSLSOCKET_HPP
 
 #include <eepp/network/tcpsocket.hpp>
+#include <functional>
 
 namespace EE { namespace Network { namespace SSL {
 
@@ -21,7 +22,17 @@ class EE_API SSLSocket : public TcpSocket {
 
 	static bool init();
 
+	/** Releases the TLS backend. While sockets still live, the release is deferred until the
+	 * last one is destroyed, unless a new socket is created first. */
 	static bool end();
+
+	/** @return True while the TLS backend is initialized. */
+	static bool isInitialized();
+
+	/** Testing seam: the hook runs during socket construction, after the backend is initialized
+	 * and before the socket counts as live, with the TLS state mutex held. Pass an empty function
+	 * to remove it. */
+	static void setConstructionHook( std::function<void()> hook );
 
 	/** @return True when the library was compiled with SSL support. */
 	static bool isSupported();

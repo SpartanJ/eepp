@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 import os
 from pathlib import Path
 import statistics
@@ -36,6 +37,8 @@ def run_sample(args, disabled):
 			"--benchmark-inactive",
 			"--benchmark-iterations",
 			str(args.iterations),
+			"--benchmark-warmup-iterations",
+			str(args.warmup_iterations),
 		],
 		check=True,
 		capture_output=True,
@@ -45,9 +48,22 @@ def run_sample(args, disabled):
 	)
 	wall_ms = (time.perf_counter() - start) * 1000
 	result = json.loads(completed.stdout)
+	check(
+		result.get("iterations") == args.iterations
+		and result.get("warmup_iterations") == args.warmup_iterations,
+		"executable did not report the requested measurement and warmup iterations",
+	)
+	for key in ("initialization_us", "readiness_us", "warmup_us", "notifications_us"):
+		value = result.get(key)
+		check(
+			isinstance(value, (int, float)) and math.isfinite(value) and value >= 0,
+			f"invalid or missing {key} measurement",
+		)
+	check(result["notifications_us"] > 0, "notification measurement was zero")
 	result["wall_ms"] = wall_ms
 	result["initialization_ms"] = result.pop("initialization_us") / 1000
 	result["readiness_ms"] = result.pop("readiness_us") / 1000
+	result["warmup_ms"] = result.pop("warmup_us") / 1000
 	result["notifications_ms"] = result.pop("notifications_us") / 1000
 	return result
 
@@ -59,8 +75,8 @@ def median_sample(samples):
 	}
 
 
-def collect_samples(args, first_index, count, enabled_samples, disabled_samples):
-	for index in range(first_index, first_index + count):
+def collect_samples(args, enabled_samples, disabled_samples):
+	for index in range(args.samples):
 		# Reverse each adjacent pair so neither mode consistently benefits from running second.
 		modes = (True, False) if index % 2 == 0 else (False, True)
 		for disabled in modes:
@@ -83,61 +99,58 @@ def summarize(enabled_samples, disabled_samples):
 	}
 
 
-def main():
+def create_parser():
 	parser = argparse.ArgumentParser(description="Benchmark inactive accessibility overhead")
 	parser.add_argument("--executable", default="bin/eepp-ui-accessibility")
-	parser.add_argument("--iterations", type=int, default=100000)
-	parser.add_argument("--samples", type=int, default=5)
-	parser.add_argument("--confirmation-samples", type=int, default=10)
+	parser.add_argument("--iterations", type=int, default=1000000,
+		help="measured setText calls per process (roughly one second on the CI runner)")
+	parser.add_argument("--warmup-iterations", type=int, default=100000,
+		help="untimed setText calls before each measurement")
+	parser.add_argument("--samples", type=int, default=10,
+		help="fixed number of adjacent enabled/disabled sample pairs")
 	parser.add_argument("--timeout", type=float, default=10)
 	parser.add_argument("--max-initialization-ms", type=float, default=250)
 	parser.add_argument("--max-notification-ratio", type=float, default=1.01)
 	parser.add_argument("--max-wall-ratio", type=float, default=1.25)
 	parser.add_argument("--json", action="store_true")
-	args = parser.parse_args()
+	return parser
+
+
+def main(argv=None):
+	args = create_parser().parse_args(argv)
 	check(args.iterations > 0 and args.samples > 0, "iterations and samples must be positive")
-	check(args.confirmation_samples >= 0, "confirmation samples must not be negative")
+	check(args.warmup_iterations >= 0, "warmup iterations must not be negative")
+	for key in ("timeout", "max_initialization_ms", "max_notification_ratio", "max_wall_ratio"):
+		value = getattr(args, key)
+		check(math.isfinite(value) and value > 0, f"{key} must be finite and positive")
 
 	enabled_samples = []
 	disabled_samples = []
-	collect_samples(args, 0, args.samples, enabled_samples, disabled_samples)
+	# The sample count is independent of the result: no early pass or retry-until-green.
+	collect_samples(args, enabled_samples, disabled_samples)
 	output = summarize(enabled_samples, disabled_samples)
-	if (
-		output["notification_ratio"] > args.max_notification_ratio
-		or output["wall_ratio"] > args.max_wall_ratio
-	) and args.confirmation_samples:
-		collect_samples(
-			args,
-			args.samples,
-			args.confirmation_samples,
-			enabled_samples,
-			disabled_samples,
-		)
-		output = summarize(enabled_samples, disabled_samples)
+	output["sample_pairs"] = args.samples
 
 	enabled = output["enabled"]
-	failed = (
-		enabled["initialization_ms"] > args.max_initialization_ms
-		or output["notification_ratio"] > args.max_notification_ratio
-		or output["wall_ratio"] > args.max_wall_ratio
-	)
-	if failed:
-		print(json.dumps(output, sort_keys=True), file=sys.stderr)
-	check(
-		enabled["initialization_ms"] <= args.max_initialization_ms,
-		"inactive native backend initialization exceeded threshold",
-	)
-	check(
-		output["notification_ratio"] <= args.max_notification_ratio,
-		"inactive accessibility notification overhead exceeded threshold",
-	)
-	check(
-		output["wall_ratio"] <= args.max_wall_ratio,
-		"inactive accessibility wall-time overhead exceeded threshold",
-	)
+	failures = []
+	for value, limit, message in (
+		(enabled["initialization_ms"], args.max_initialization_ms,
+			"inactive native backend initialization exceeded threshold"),
+		(output["notification_ratio"], args.max_notification_ratio,
+			"inactive accessibility notification overhead exceeded threshold"),
+		(output["wall_ratio"], args.max_wall_ratio,
+			"inactive accessibility wall-time overhead exceeded threshold"),
+	):
+		if value > limit:
+			failures.append(message)
+	output["failures"] = failures
+	# Preserve the complete JSON artifact even when a guard rejects this run.
 	if args.json:
-		print(json.dumps(output, sort_keys=True))
-	else:
+		print(json.dumps(output, sort_keys=True), flush=True)
+	elif failures:
+		print(json.dumps(output, sort_keys=True), file=sys.stderr)
+	check(not failures, "; ".join(failures))
+	if not args.json:
 		print(
 			"Inactive accessibility benchmark passed: "
 			f"initialization {enabled['initialization_ms']:.3f}ms, "

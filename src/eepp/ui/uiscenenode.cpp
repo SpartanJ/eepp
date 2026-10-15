@@ -939,6 +939,11 @@ Uint64 UISceneNode::getDocumentGeneration() const {
 			   : 0;
 }
 
+static void storeWebResourceCookies( CookieManager& cookies, const WebResourceResult& result ) {
+	for ( const auto& received : result.cookies )
+		cookies.storeCookiesFromHeader( received.authority, received.setCookie );
+}
+
 void UISceneNode::requestWebResource( WebResourceRequest request,
 									  WebResourceCache::Callback callback ) {
 	if ( !mWebResourceCache || !mDocumentSessionId )
@@ -951,15 +956,14 @@ void UISceneNode::requestWebResource( WebResourceRequest request,
 	auto resourceState = mAsyncResourceLoadState;
 	Uint64 resourceGeneration =
 		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
-	auto wrapped = [resourceState, resourceGeneration, callback = std::move( callback ),
-					authority = request.uri.getAuthority()]( const WebResourceResult& result ) {
+	auto wrapped = [resourceState, resourceGeneration,
+					callback = std::move( callback )]( const WebResourceResult& result ) {
 		if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) )
 			return;
 		UISceneNode* scene = resourceState->owner.load( std::memory_order_acquire );
 		if ( !scene )
 			return;
-		if ( !result.setCookie.empty() )
-			scene->getCookieManager().storeCookiesFromHeader( authority, result.setCookie );
+		storeWebResourceCookies( scene->getCookieManager(), result );
 		if ( callback )
 			callback( result );
 	};
@@ -985,15 +989,14 @@ TexturePtr UISceneNode::requestWebTexture( WebResourceRequest request,
 			resourceState, resourceGeneration,
 			[completion = std::move( completion )]( UISceneNode* ) { completion(); } );
 	};
-	auto wrapped = [resourceState, resourceGeneration, callback = std::move( callback ),
-					authority = request.uri.getAuthority()]( const WebResourceResult& result ) {
+	auto wrapped = [resourceState, resourceGeneration,
+					callback = std::move( callback )]( const WebResourceResult& result ) {
 		if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) )
 			return;
 		UISceneNode* scene = resourceState->owner.load( std::memory_order_acquire );
 		if ( !scene )
 			return;
-		if ( !result.setCookie.empty() )
-			scene->getCookieManager().storeCookiesFromHeader( authority, result.setCookie );
+		storeWebResourceCookies( scene->getCookieManager(), result );
 		if ( callback )
 			callback( result );
 	};

@@ -88,6 +88,42 @@ UTEST( String, fromStringView ) {
 	EXPECT_EQ( 1234, intValue );
 }
 
+UTEST( String, numberClean ) {
+	const struct {
+		std::string_view input;
+		std::string_view expected;
+	} cases[] = {
+		{ "", "" },
+		{ "0", "0" },
+		{ "000", "000" },
+		{ "140", "140" },
+		{ "1000", "1000" },
+		{ "-140", "-140" },
+		{ "0.000", "0" },
+		{ "-0.000", "-0" },
+		{ "140.000", "140" },
+		{ "140.", "140" },
+		{ "140.0500", "140.05" },
+		{ "0.00100", "0.001" },
+		{ "1.25", "1.25" },
+		{ "1e+20", "1e+20" },
+		{ "1e-10", "1e-10" },
+		{ "1.25e+20", "1.25e+20" },
+		{ "1.2500E-10", "1.2500E-10" },
+	};
+	for ( const auto& testCase : cases ) {
+		EXPECT_TRUE( String::numberClean( testCase.input ) == testCase.expected );
+		const std::string input( testCase.input );
+		EXPECT_STDSTREQ( String::numberClean( input ), std::string( testCase.expected ) );
+		std::string inPlace( input );
+		String::numberCleanInPlace( inPlace );
+		EXPECT_STDSTREQ( inPlace, std::string( testCase.expected ) );
+	}
+
+	EXPECT_STDSTREQ( String::fromDouble( 140.0, "", "", 0 ), "140" );
+	EXPECT_STDSTREQ( String::fromFloat( 140.f, "", "", 0 ), "140" );
+}
+
 UTEST( String, trim ) {
 	// Separators are removed from both ends and interior ones are kept.
 	EXPECT_TRUE( String::trim( std::string( "abc" ) ) == std::string( "abc" ) );

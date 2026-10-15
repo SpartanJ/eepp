@@ -29,6 +29,7 @@ jobs:
         wget https://cdn.ensoft.dev/eepp-assets/premake-5.0.0-beta6-linux.tar.gz
         tar xvzf premake-5.0.0-beta6-linux.tar.gz
     - name: Build
+      id: build
       run: |
         ./premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 gmake
         cd make/linux
@@ -89,6 +90,7 @@ jobs:
         name: linux-eepp-sdk-x86_64
         path: projects/linux/sdk/eepp-sdk-*.tar.gz
     - name: Unit Tests
+      id: unit_tests
       run: |
         cd projects/scripts
         bash ./run_gdb_tests.sh
@@ -115,15 +117,24 @@ jobs:
         python3 projects/scripts/test-wayland-dnd.py --scale=2 \
           --log-dir bin/unit_tests/output/native-dnd/wayland-scale2 \
           2>&1 | tee bin/unit_tests/output/native-dnd/wayland-scale2.log
+    - name: Inactive Benchmark Runner Tests
+      run: |
+        /usr/bin/python3 -m unittest discover -s projects/scripts/tests \
+          -p test_benchmark_accessibility_inactive.py
     - name: Inactive Accessibility Benchmark
       timeout-minutes: 2
       run: |
         mkdir -p bin/unit_tests/output
+        benchmark_exit_code=0
+        # Redirect only Python's JSON, not stdout inherited by activated D-Bus services.
         env -u AT_SPI_BUS_ADDRESS dbus-run-session -- projects/scripts/xvfb-run-eepp \
-          /usr/bin/python3 projects/scripts/benchmark_accessibility_inactive.py --json \
-          > bin/unit_tests/output/accessibility-inactive-benchmark.json
+          bash -c '/usr/bin/python3 projects/scripts/benchmark_accessibility_inactive.py --json \
+            > bin/unit_tests/output/accessibility-inactive-benchmark.json' || benchmark_exit_code=$?
         cat bin/unit_tests/output/accessibility-inactive-benchmark.json
+        exit "$benchmark_exit_code"
     - name: Native AT-SPI Regression Tests
+      # A noisy performance failure must not skip correctness coverage or turn the job green.
+      if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.unit_tests.outcome == 'success' }}
       timeout-minutes: 2
       run: |
         mkdir -p bin/unit_tests/output
@@ -132,6 +143,7 @@ jobs:
           > bin/unit_tests/output/atspi-regressions.log
         cat bin/unit_tests/output/atspi-regressions.log
     - name: Native AT-SPI Secondary Window Tests
+      if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.unit_tests.outcome == 'success' }}
       # Closes a secondary window while the client stays connected; the primary must keep answering.
       timeout-minutes: 2
       run: |
@@ -141,6 +153,7 @@ jobs:
           > bin/unit_tests/output/atspi-multi-window.log
         cat bin/unit_tests/output/atspi-multi-window.log
     - name: Native AT-SPI Deferred Policy Tests
+      if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.unit_tests.outcome == 'success' }}
       # Changes policy from inside a native text request; teardown must wait for its reply.
       timeout-minutes: 2
       run: |
@@ -150,6 +163,7 @@ jobs:
           > bin/unit_tests/output/atspi-deferred-policy.log
         cat bin/unit_tests/output/atspi-deferred-policy.log
     - name: AT-SPI Benchmark
+      if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.unit_tests.outcome == 'success' }}
       timeout-minutes: 5
       run: |
         mkdir -p bin/unit_tests/output

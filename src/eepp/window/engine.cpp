@@ -140,6 +140,11 @@ Engine::~Engine() {
 	// can reach is destroyed.
 	Network::Http::Pool::getGlobal().clear();
 
+	// Every other request (web view partitions, app-owned clients, blocking requests on other
+	// threads, queued work) is cancelled without waiting; its callbacks are suppressed. Running
+	// requests drop their sockets as they notice, which is awaited below once no window is left.
+	Network::Http::cancelAllRequests();
+
 	// Reject new UI resource deliveries before scenes begin destruction. Rejected closures remain
 	// queued until scene-owned producers have joined, allowing their captures to be released here
 	// on the Engine/main thread.
@@ -186,15 +191,20 @@ Engine::~Engine() {
 
 	PackRegistry::destroySingleton();
 
-#ifdef EE_SSL_SUPPORT
-	Network::SSL::SSLSocket::end();
-#endif
-
 	VirtualFileSystem::destroySingleton();
 
 	// Windows own the GL contexts and must outlive every GPU resource and graphics manager above.
 	destroy();
 	Private::DragManager::poll();
+
+	// With every window closed, give cancelled requests a short, invisible moment to drop their
+	// sockets. Release TLS only then: should a socket outlive this, SSLSocket defers releasing the
+	// backend until the last one is destroyed.
+	Network::Http::waitForConnectionsToClose( Milliseconds( 100 ) );
+
+#ifdef EE_SSL_SUPPORT
+	Network::SSL::SSLSocket::end();
+#endif
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	eeSAFE_DELETE( mZip );

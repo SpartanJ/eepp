@@ -10,6 +10,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace EE { namespace UI {
 
@@ -100,9 +101,9 @@ enum class WebResourceLoadState : Uint8 {
 /** Complete input required to identify and fetch one web resource variant.
  *
  * Cache identity includes the partition, canonical URI, resource kind, method, non-navigation
- * headers, body, and image decode options. Cookie and Referer are deliberately excluded from entry
- * identity: the partition isolates cookie contexts, while these two values naturally change during
- * navigation. They are still sent with the HTTP request.
+ * headers, body, TLS certificate validation policy, and image decode options. Cookie and Referer
+ * are deliberately excluded from entry identity: the partition isolates cookie contexts, while
+ * these two values naturally change during navigation. They are still sent with the HTTP request.
  *
  * Transport policy such as timeout, proxy, and completionDispatcher controls a fetch but does not
  * describe the resulting resource and is therefore not part of cache identity. */
@@ -145,6 +146,14 @@ struct EE_API WebResourceRequest {
 	CompletionDispatcher completionDispatcher;
 };
 
+/** Set-Cookie field values received from one origin while loading a resource. */
+struct EE_API WebResourceCookies {
+	/** URI authority of the response that set the cookies, in URI::getAuthority() form. */
+	std::string authority;
+	/** Raw Set-Cookie field values, one field per line. */
+	std::string setCookie;
+};
+
 /** Result delivered to a WebResourceCache subscriber.
  *
  * Data resources set data, while image resources set texture. A texture request may already have
@@ -158,8 +167,10 @@ struct EE_API WebResourceResult {
 	int status{ 0 };
 	/** Failure description. Empty for successful results. */
 	std::string error;
-	/** Set-Cookie value from the final response, or from its redirect chain when applicable. */
-	std::string setCookie;
+	/** Set-Cookie fields from every redirect hop and the final response, in arrival order, each
+	 * attributed to the origin that sent it. A cross-origin redirect never lends its cookies to
+	 * the requested origin. */
+	std::vector<WebResourceCookies> cookies;
 	/** Shared immutable response body for documents, stylesheets, and fonts. */
 	std::shared_ptr<const std::string> data;
 	/** Shared texture for image resources. */
@@ -180,7 +191,11 @@ struct EE_API WebResourceResult {
  *
  * Requests for the same key are coalesced into one HTTP operation. Each current subscriber receives
  * the result, while callbacks belonging to obsolete navigation generations are discarded. Public
- * operations are internally synchronized. Subscriber callbacks run without the cache mutex held. */
+ * operations are internally synchronized. Subscriber callbacks run without the cache mutex held.
+ *
+ * Each cache partition owns an independent HTTP connection pool. Idle connections survive document
+ * navigation and can be reused by sessions sharing that partition. Destroying its final session
+ * closes the transport without joining workers; generation guards still protect UI delivery. */
 class EE_API WebResourceCache : public std::enable_shared_from_this<WebResourceCache> {
   public:
 	/** Receives the completed result of a data or texture request. */
@@ -189,8 +204,14 @@ class EE_API WebResourceCache : public std::enable_shared_from_this<WebResourceC
 	/** @return A newly allocated shared web-resource cache. */
 	static WebResourceCachePtr New();
 
+	/** Creates a cache with independent bounded HTTP transports for each cache partition. */
+	static WebResourceCachePtr New( const Network::Http::ConnectionPoolOptions& options );
+
 	/** Creates an empty cache with a 30-second TTL, 1-second retry delay, and 64 MiB budget. */
 	WebResourceCache();
+
+	explicit WebResourceCache( const Network::Http::ConnectionPoolOptions& options );
+
 	/** Cancels cache delivery and releases all retained entries and sessions. */
 	~WebResourceCache();
 
@@ -288,7 +309,7 @@ class EE_API WebResourceCache : public std::enable_shared_from_this<WebResourceC
 	/** Custom fetch implementation, primarily intended for deterministic tests.
 	 *
 	 * The fetcher must eventually invoke FetchCompletion exactly once. Production uses
-	 * Http::requestAsync when no custom fetcher is installed. */
+	 * the partition's bounded Http::Pool when no custom fetcher is installed. */
 	using Fetcher = std::function<void( const WebResourceRequest&, FetchCompletion )>;
 
 	/** Installs or clears a custom HTTP fetch implementation. */

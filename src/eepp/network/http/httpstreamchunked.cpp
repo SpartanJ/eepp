@@ -1,112 +1,87 @@
+#include <algorithm>
+#include <charconv>
 #include <eepp/network/http/httpstreamchunked.hpp>
 
 namespace EE { namespace Network { namespace Private {
 
-HttpStreamChunked::HttpStreamChunked( IOStream& mWriteTo ) :
-	mWriteTo( mWriteTo ), mChunkNewBuffer( false ), mChunkEnded( false ) {}
+HttpStreamChunked::HttpStreamChunked( IOStream& writeTo ) : mWriteTo( writeTo ) {}
 
 ios_size HttpStreamChunked::write( const char* data, ios_size size ) {
-	ios_size writeTotal = 0;
-
-	// If the chunk reading ended we just add the buffer received as a header
-	// Otherwise we process the buffer data as chunk
-	if ( !mChunkEnded ) {
-		// Keep a chunk buffer until the end of chunk is found
-		mChunkBuffer.append( data, size );
-
-		// If the new chunk starts with \r\n and the last removed chunk
-		// did not contain the trailing \r\n, we remove it to detect
-		// correctly the next length data
-		if ( mChunkNewBuffer ) {
-			if ( mChunkBuffer.substr( 0, 2 ) == "\r\n" ) {
-				mChunkBuffer = mChunkBuffer.substr( 2 );
+	if ( size < 0 || mState == State::Error )
+		return -1;
+	const char* begin = data;
+	const char* end = data + size;
+	while ( data != end && mState != State::Error ) {
+		// No pipelining: bytes after the trailer terminator cannot belong to this response. Stop
+		// consuming; the caller sees a short write and must not reuse the connection.
+		if ( mState == State::Complete )
+			break;
+		if ( mState == State::Data ) {
+			const auto count =
+				static_cast<std::size_t>( std::min<Uint64>( mRemaining, end - data ) );
+			if ( mWriteTo.write( data, count ) != static_cast<ios_size>( count ) ) {
+				mState = State::Error;
+				break;
 			}
-
-			mChunkNewBuffer = false;
+			data += count;
+			mRemaining -= count;
+			if ( mRemaining == 0 )
+				mState = State::DataCR;
+		} else if ( mState == State::DataCR || mState == State::DataLF ) {
+			const bool cr = mState == State::DataCR;
+			if ( *data++ != ( cr ? '\r' : '\n' ) )
+				mState = State::Error;
+			else
+				mState = cr ? State::DataLF : State::Size;
+		} else {
+			mLine += *data++;
+			// Bound chunk extensions and trailers to the same 64 KiB header budget as Http.
+			if ( mLine.size() + mHeaderBuffer.size() > 64 * 1024 ) {
+				mState = State::Error;
+				break;
+			}
+			if ( mLine.back() != '\n' )
+				continue;
+			if ( mLine.size() < 2 || mLine[mLine.size() - 2] != '\r' ) {
+				mState = State::Error;
+				break;
+			}
+			if ( mState == State::Trailer ) {
+				// The zero chunk alone is not completion: consume all trailers and the empty line.
+				if ( mLine.size() == 2 )
+					mState = State::Complete;
+				else
+					mHeaderBuffer += mLine;
+			} else {
+				std::string_view length( mLine.data(), mLine.size() - 2 );
+				length = length.substr( 0, length.find( ';' ) );
+				// RFC 9112 7.1.1 allows bad whitespace (BWS) before a chunk extension's ';'.
+				while ( !length.empty() && ( length.back() == ' ' || length.back() == '\t' ) )
+					length.remove_suffix( 1 );
+				auto result =
+					std::from_chars( length.data(), length.data() + length.size(), mRemaining, 16 );
+				if ( length.empty() || result.ec != std::errc() ||
+					 result.ptr != length.data() + length.size() )
+					mState = State::Error;
+				else
+					mState = mRemaining == 0 ? State::Trailer : State::Data;
+			}
+			mLine.clear();
 		}
-
-		bool retry;
-
-		do {
-			retry = false;
-
-			// Check for the first \r\n to find the end of the length definition
-			std::string::size_type lenEnd = mChunkBuffer.find( "\r\n" );
-
-			if ( lenEnd != std::string::npos ) {
-				std::string::size_type firstCharPos = lenEnd + 2;
-				Uint64 length;
-
-				// Get the length of the chunk
-				bool res = String::fromString( length, mChunkBuffer.substr( 0, lenEnd ), 16 );
-
-				// If the length is solved...
-				if ( res ) {
-					// And it's bigger than 0, means that there are more chunks
-					if ( length > 0 ) {
-						// Check if the chunk buffer size at least equals to the length reported
-						if ( mChunkBuffer.size() - firstCharPos >= length ) {
-							// In that case write the chunk to the file buffer
-							writeTotal = mWriteTo.write( &mChunkBuffer[firstCharPos], length );
-
-							// And keep the remaining not completed chunk
-							mChunkBuffer = mChunkBuffer.substr( firstCharPos + length );
-
-							// Check if already have the \r\n of the next length in the buffer
-							if ( !mChunkBuffer.empty() ) {
-								std::size_t pos = 0;
-
-								// Remove al the \r\n remaining
-								while ( pos < mChunkBuffer.size() &&
-										0 == strncmp( &mChunkBuffer[pos], "\r\n", 2 ) ) {
-									pos += 2;
-								}
-
-								if ( pos > 0 ) {
-									// Remove it to be able to read the next length
-									mChunkBuffer = mChunkBuffer.substr( pos );
-								}
-
-								// If still the chunk is not empty it could be another chunk
-								// already received, so we check that retrying
-								if ( !mChunkBuffer.empty() ) {
-									std::string::size_type lenEnd =
-										mChunkBuffer.find_first_of( "\r\n" );
-
-									if ( lenEnd != std::string::npos ) {
-										bool res = String::fromString(
-											length, mChunkBuffer.substr( 0, lenEnd ), 16 );
-
-										if ( res && length > 0 ) {
-											retry = true;
-										}
-									}
-								}
-							}
-
-							// If the next chunk received starts with \r\n it's because
-							// it's part of the chunk size information, so we need to flag it
-							// to remove it
-							mChunkNewBuffer = true;
-						}
-					} else {
-						// If the value is 0 means that the data ended
-						// But after this we can receive extra headers
-						mChunkEnded = true;
-						mChunkBuffer.clear();
-					}
-				}
-			}
-		} while ( retry );
-	} else {
-		mHeaderBuffer.append( data, size );
 	}
-
-	return writeTotal;
+	return mState == State::Error ? -1 : data - begin;
 }
 
 const std::string& HttpStreamChunked::getHeaderBuffer() const {
 	return mHeaderBuffer;
+}
+
+bool HttpStreamChunked::isComplete() const {
+	return mState == State::Complete;
+}
+
+bool HttpStreamChunked::hasError() const {
+	return mState == State::Error;
 }
 
 }}} // namespace EE::Network::Private

@@ -37,11 +37,20 @@ class EE_API IOStreamInflate : public IOStream {
 
 	const Compression::Mode& getMode() const;
 
+	/** True after write() has consumed and validated the compressed stream's end marker. */
+	bool isComplete() const;
+
+	bool hasError() const;
+
+	/** True once write() has received any compressed bytes. An empty input never completes. */
+	bool hasInput() const;
+
   protected:
 	IOStream& mStream;
 	Compression::Mode mMode;
 	ScopedBuffer mBuffer;
 	LocalInflateStreamData* mLocalStream;
+	bool mHasInput{ false };
 };
 
 }} // namespace EE::System
