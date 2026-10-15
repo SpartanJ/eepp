@@ -138,8 +138,8 @@ image just beyond the pointer so the target remains visible.
 
 Images must have RGB or RGBA pixels, be at most 2048 pixels per side, and contain no more than
 1,048,576 pixels in total. Each hotspot coordinate must be between -2048 and 2048. On Windows and
-X11, alpha is composited onto the preview background; macOS keeps it transparent. The image is
-copied during `startDrag()` and may be released or reused as soon as the call returns.
+X11, alpha is composited onto the preview background; Wayland and macOS keep it transparent. The
+image is copied during `startDrag()` and may be released or reused as soon as the call returns.
 
 On macOS, the default preview is each file's Finder icon, and AppKit draws the item count and the
 copy cursor. Preview pixels map to display pixels, so on a Retina display the image appears at half
@@ -186,17 +186,29 @@ Query capabilities for the actual window rather than assuming support from the o
 | `dataSource` | Arbitrary native data sources; currently false. |
 | `negotiatedTarget` | Native target action/MIME negotiation; currently false. |
 
-Outbound local-file dragging is implemented for Windows, macOS and X11 on Linux/BSD, with SDL2 or
-SDL3. Wayland and Haiku currently report no file-source support. On Linux/BSD, X11 headers enable
-source support when building eepp; no additional consumer link dependency or build option is needed.
-The X11 library is loaded dynamically, and a Wayland window does not load it for dragging.
+Outbound local-file dragging is implemented for Windows, macOS, X11 and Wayland, with SDL2 or SDL3.
+Haiku currently reports no file-source support. On Linux/BSD, X11 and Wayland client headers enable
+their respective transports when building eepp. Wayland requires client headers and a client library
+at version 1.20 or newer. Both client libraries load dynamically; no additional consumer link
+dependency or build option is needed.
+Without the corresponding headers, eepp still builds with that transport disabled; check
+`getCapabilities().fileSource` before offering native file dragging.
+
+On Wayland, start the drag from a real left-button press on the source window while that button is
+still held. Injecting only eepp/SDL input events cannot authorize a native drag: the compositor must
+have issued the press serial. A second button held during the gesture is unsupported. The compositor
+moves the drag image, including transparent pixels and its hotspot. A small badge shows Copy,
+rejected, or pending target negotiation without changing the supplied image. This requires the core
+subcompositor protocol. File reception continues through SDL's ordinary drop events, including drops
+into another window of the same application. Compositors must provide version 3 of the core
+data-device protocol for Copy negotiation and completion.
 
 On Windows, SDL2 receives files through its legacy file-drop path, which cannot receive the outgoing
 OLE gesture used by this source. Use SDL3 for eepp-window-to-eepp-window native drops. Both backends
 can drag files out to native OLE targets. On X11, the source window itself is excluded as a native
-target; keep same-window operations in your internal UI drag handling. macOS does not exclude it: a
-drop onto the source window arrives there as ordinary `FileDropped` events, so keep same-window
-operations internal there as well.
+target; keep same-window operations in your internal UI drag handling. On macOS and Wayland, a drag
+that returns to the source window can deliver ordinary `FileDropped` events there; keep same-window
+operations internal on those platforms as well.
 
 Applications that install their own `SDL_SetX11EventHook` must coordinate its use: SDL3 has a single
 hook slot, which eepp uses during an active native drag and clears afterwards.
@@ -213,3 +225,13 @@ bin/eepp-native-drag-and-drop /absolute/file.txt /absolute/another-file.txt
 Run `bin/eepp-native-dnd-tests` without arguments for a manual playground with temporary sample
 files, or supply paths with `--manual`. You control the pointer; drag the card into the receiving
 window, a file manager or a browser upload input. Escape cancels the gesture.
+
+For automated Wayland integration checks, build `eepp-native-dnd-tests` and run:
+
+```sh
+python3 projects/scripts/test-wayland-dnd.py
+```
+
+This requires Weston with its X11 backend, Xvfb, xdotool and ImageMagick. It creates an isolated
+Weston session and injects input only there; it does not move your desktop pointer. Protocol logs
+are saved in the temporary directory printed by the runner. Normal manual runs never inject input.

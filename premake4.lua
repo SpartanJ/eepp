@@ -1749,7 +1749,8 @@ solution "eepp"
 			files { "src/tests/native_drag_and_drop/main.cpp",
 				"src/examples/native_drag_and_drop/native_drag_and_drop.cpp" }
 			if os.is("linux") then
-				files { "src/tests/native_drag_and_drop/x11.cpp" }
+				files { "src/tests/native_drag_and_drop/x11.cpp",
+					"src/tests/native_drag_and_drop/wayland.cpp" }
 				links { "dl" }
 			elseif os.is("macosx") then
 				files { "src/tests/native_drag_and_drop/macos.cpp" }

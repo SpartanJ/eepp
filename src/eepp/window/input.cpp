@@ -40,9 +40,13 @@ bool Input::acquireNativeDragCapture() {
 void Input::restoreNativeDragCapture() {}
 
 void Input::resetNativeDragInput() {
+	suppressNativeDragRelease();
+	restoreNativeDragCapture();
+}
+
+void Input::suppressNativeDragRelease() {
 	resetButton( EE_BUTTON_LEFT );
 	mNativeDragReleasePending = true;
-	restoreNativeDragCapture();
 }
 
 bool Input::consumeNativeDragRelease() {

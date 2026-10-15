@@ -9,6 +9,9 @@
 using namespace EE::System;
 
 int runAutomatedNativeDragTests();
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+int runAutomatedWaylandDragTests( bool receiver, bool processExit = false );
+#endif
 
 namespace {
 std::string utf8Path( const std::filesystem::path& path ) {
@@ -63,6 +66,13 @@ struct SampleFiles {
 
 EE_MAIN_FUNC int main( int argc, char** argv ) {
 	auto arguments = Sys::parseArguments( argc, argv );
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	if ( arguments.size() == 1 && arguments[0] == "--automated-wayland-exit" )
+		return runAutomatedWaylandDragTests( false, true );
+	if ( arguments.size() == 1 &&
+		 ( arguments[0] == "--automated-wayland" || arguments[0] == "--automated-wayland-target" ) )
+		return runAutomatedWaylandDragTests( arguments[0] == "--automated-wayland-target" );
+#endif
 	if ( arguments.size() == 1 && arguments[0] == "--automated" ) {
 		std::cout << "Automated integration checks: synthetic pointer and keyboard input.\n"
 					 "Run on an isolated display.\n"

@@ -18,6 +18,7 @@
 #include <eepp/window/backend/SDL2/wminfo.hpp>
 #include <eepp/window/backend/backendhelper.hpp>
 #include <eepp/window/draganddrop/dragmanager.hpp>
+#include <eepp/window/draganddrop/waylanddraganddrop.hpp>
 #include <eepp/window/draganddrop/x11draganddrop.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/runtime.hpp>
@@ -45,7 +46,7 @@ NativeWindowContext WindowSDL::getNativeDragContext() {
 	if ( !driver )
 		return context;
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
-	defined( EE_HAS_X11_DRAG_SOURCE )
+	defined( EE_HAS_X11_DRAG_SOURCE ) || defined( EE_HAS_WAYLAND_DRAG_SOURCE )
 	SDL_SysWMinfo info{};
 	SDL_VERSION( &info.version );
 	if ( !SDL_GetWindowWMInfo( mSDLWindow, &info ) )
@@ -151,6 +152,9 @@ WindowSDL::~WindowSDL() {
 
 void WindowSDL::destroySDLResources() {
 	Private::DragManager::invalidateWindow( this );
+#ifdef EE_HAS_WAYLAND_DRAG_SOURCE
+	Private::WaylandDragAndDrop::detachWindow( *this );
+#endif
 	if ( nullptr != mGLContext ) {
 		SDL_GL_DeleteContext( mGLContext );
 		mGLContext = nullptr;
@@ -407,6 +411,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Hidden )
 		SDL_HideWindow( mSDLWindow );
+
+#ifdef EE_HAS_WAYLAND_DRAG_SOURCE
+	Private::WaylandDragAndDrop::attachWindow( getNativeDragContext() );
+#endif
 
 	logSuccessfulInit( getVersion() );
 

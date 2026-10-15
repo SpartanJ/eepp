@@ -571,10 +571,9 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		}
 	}
 
-#if EE_PLATFORM == EE_PLATFORM_WIN
 	if ( event.Type == InputEvent::MouseButtonUp && event.button.button == EE_BUTTON_LEFT ) {
-		// OLE can consume the release before SDL notices it. Consume at most one delayed
-		// release after modal cleanup; a new left press clears the flag in Input.
+		// A native drag can synthesize a release on focus loss or consume the real release.
+		// Suppress only that gesture; a new left press clears the flag in Input.
 		auto* eventWindow = event.WinID == mWindow->getWindowID()
 								? mWindow
 								: Engine::instance()->getWindowID( event.WinID );
@@ -582,7 +581,6 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			 Private::NativeDragAccess::consumeNativeDragRelease( *eventWindow->getInput() ) )
 			return;
 	}
-#endif
 
 	if ( event.Type == InputEvent::MouseMotion )
 		Private::DragManager::handleInput( event.WinID, Private::NativeDragInput::Motion );

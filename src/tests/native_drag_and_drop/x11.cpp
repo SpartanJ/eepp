@@ -142,8 +142,14 @@ int runAutomatedNativeDragTests() {
 	window->display();
 	std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
 	auto drag = DragAndDrop::forWindow( *window );
-	if ( !drag.getCapabilities().fileSource )
+	if ( Private::NativeDragAccess::getNativeDragContext( *window ).kind !=
+			 NativeWindowContext::Kind::X11 ||
+		 !drag.getCapabilities().fileSource ) {
+		Engine::destroySingleton();
+		x11.XCloseDisplay( peer );
+		dlclose( library );
 		return 77;
+	}
 	auto target =
 		x11.XCreateSimpleWindow( peer, DefaultRootWindow( peer ), 500, 400, 300, 200, 0, 0, 0 );
 	x11.XStoreName( peer, target, "eepp XDND integration target" );

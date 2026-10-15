@@ -18,6 +18,7 @@
 #include <eepp/window/backend/SDL3/wminfo.hpp>
 #include <eepp/window/backend/backendhelper.hpp>
 #include <eepp/window/draganddrop/dragmanager.hpp>
+#include <eepp/window/draganddrop/waylanddraganddrop.hpp>
 #include <eepp/window/draganddrop/x11draganddrop.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/runtime.hpp>
@@ -133,6 +134,9 @@ WindowSDL::~WindowSDL() {
 
 void WindowSDL::destroySDLResources() {
 	Private::DragManager::invalidateWindow( this );
+#ifdef EE_HAS_WAYLAND_DRAG_SOURCE
+	Private::WaylandDragAndDrop::detachWindow( *this );
+#endif
 	if ( nullptr != mGLContext ) {
 		SDL_GL_DestroyContext( mGLContext );
 		mGLContext = nullptr;
@@ -365,6 +369,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Hidden )
 		SDL_HideWindow( mSDLWindow );
+
+#ifdef EE_HAS_WAYLAND_DRAG_SOURCE
+	Private::WaylandDragAndDrop::attachWindow( getNativeDragContext() );
+#endif
 
 	logSuccessfulInit( getVersion() );
 

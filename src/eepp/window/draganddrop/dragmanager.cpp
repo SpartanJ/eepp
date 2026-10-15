@@ -1,6 +1,7 @@
 #include "dragmanager.hpp"
 #include "cocoadraganddrop.hpp"
 #include "dragaccess.hpp"
+#include "waylanddraganddrop.hpp"
 #include "win32draganddrop.hpp"
 #include "x11draganddrop.hpp"
 #include <eepp/window/engine.hpp>
@@ -21,9 +22,15 @@ bool DragManager::isFileDragSupported( const NativeWindowContext& context ) {
 	return context.kind == NativeWindowContext::Kind::Win32;
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 	return context.kind == NativeWindowContext::Kind::Cocoa;
-#elif defined( EE_HAS_X11_DRAG_SOURCE )
-	return context.kind == NativeWindowContext::Kind::X11 && X11DragAndDrop::isSupported();
 #else
+#ifdef EE_HAS_X11_DRAG_SOURCE
+	if ( context.kind == NativeWindowContext::Kind::X11 )
+		return X11DragAndDrop::isSupported();
+#endif
+#ifdef EE_HAS_WAYLAND_DRAG_SOURCE
+	if ( context.kind == NativeWindowContext::Kind::Wayland )
+		return WaylandDragAndDrop::isSupported( context );
+#endif
 	return false;
 #endif
 }
@@ -32,6 +39,12 @@ DragStartResult DragManager::startFileDrag( NativeWindowContext context, const D
 											std::string payload,
 											DragCompletionCallback completion ) {
 	DragStartResult result;
+#ifdef EE_HAS_WAYLAND_DRAG_SOURCE
+	if ( context.kind == NativeWindowContext::Kind::Wayland ) {
+		sSource = WaylandDragAndDrop::createSource( context, offer, std::move( payload ),
+													std::move( completion ), result );
+	}
+#endif
 #ifdef EE_HAS_X11_DRAG_SOURCE
 	if ( context.kind == NativeWindowContext::Kind::X11 ) {
 		// Enable backend protocol forwarding only for a session, so idle windows do not
@@ -114,6 +127,15 @@ void DragManager::invalidateWindow( Window* window ) {
 		NativeDragAccess::shutdownNativeDragEvents( *window );
 		sSource->owner = nullptr;
 	}
+}
+
+void DragManager::shutdown() {
+	if ( !sSource )
+		return;
+	auto source = std::move( sSource );
+	source->cancel();
+	if ( source->owner )
+		NativeDragAccess::shutdownNativeDragEvents( *source->owner );
 }
 
 }}} // namespace EE::Window::Private

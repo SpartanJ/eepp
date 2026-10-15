@@ -13,7 +13,7 @@ namespace EE { namespace Window { namespace Private {
 
 enum class DragFeedback : Uint8 { Rejected, Pending, Copy };
 
-/** Borrowed backend presentation for the single process-wide drag. The transport must reset it
+/** Backend presentation for the single process-wide drag. The transport must reset it
  * before releasing its source window. Backend resources never outlive reset(). */
 class NativeDragPreview {
   public:
@@ -30,11 +30,14 @@ class NativeDragPreview {
   protected:
 	using FileImagePixels = std::array<Uint8, 112 * 48 * 4>;
 	using CopyCursorPixels = std::array<Uint8, 24 * 24 * 4>;
+	using FeedbackImagePixels = std::array<Uint8, 16 * 16 * 4>;
 
 	/** Images borrow the supplied scratch storage and must not outlive it. */
 	static Graphics::Image makeFileImage( FileImagePixels& pixels, size_t count );
 
 	static Graphics::Image makeCopyCursorImage( CopyCursorPixels& pixels );
+
+	static Graphics::Image makeFeedbackImage( FeedbackImagePixels& pixels, DragFeedback feedback );
 };
 
 }}} // namespace EE::Window::Private

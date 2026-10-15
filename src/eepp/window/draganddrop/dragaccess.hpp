@@ -35,6 +35,8 @@ struct NativeDragAccess {
 
 	static void resetNativeDragInput( Input& input ) { input.resetNativeDragInput(); }
 
+	static void suppressNativeDragRelease( Input& input ) { input.suppressNativeDragRelease(); }
+
 	static bool consumeNativeDragRelease( Input& input ) {
 		return input.consumeNativeDragRelease();
 	}

@@ -313,11 +313,15 @@ class EE_API Input {
 	 * generating a click and restore capture. The default only resets eepp's input state. */
 	virtual void resetNativeDragInput();
 
-	/** Consume the one delayed native release left by a modal drag. New left presses, including
-	 * injected ones, clear this pending release before it can suppress their button-up. */
+	/** End the initiating press without a click and suppress its next backend button-up. */
+	void suppressNativeDragRelease();
+
+	/** Consume the one synthetic or delayed release left by a native drag. New left presses,
+	 * including injected ones, clear this pending release before it can suppress their button-up.
+	 */
 	bool consumeNativeDragRelease();
 
-	/** Record a native, injected or touch press; a new left press ends any stale modal release. */
+	/** Record a native, injected or touch press; a new left press ends any stale native release. */
 	void recordButtonPress( const Uint32& Button );
 
 	EE::Window::Window* mWindow;

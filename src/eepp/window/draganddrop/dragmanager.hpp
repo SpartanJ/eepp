@@ -33,6 +33,9 @@ class DragManager {
 
 	static void invalidateWindow( Window* window );
 
+	/** Release the session without delivering its completion during backend/process teardown. */
+	static void shutdown();
+
   private:
 	static std::unique_ptr<DragSource> sSource;
 	static bool sPolling;

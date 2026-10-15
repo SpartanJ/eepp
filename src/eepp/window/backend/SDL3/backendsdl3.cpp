@@ -2,6 +2,8 @@
 
 #ifdef EE_BACKEND_SDL3
 
+#include <eepp/window/draganddrop/waylanddraganddrop.hpp>
+
 #if ( EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS ) && defined( main )
 #undef main
 #endif
@@ -29,6 +31,9 @@ WindowBackendSDL3::WindowBackendSDL3() : WindowBackendLibrary() {
 }
 
 WindowBackendSDL3::~WindowBackendSDL3() {
+#ifdef EE_HAS_WAYLAND_DRAG_SOURCE
+	Private::WaylandDragAndDrop::shutdown();
+#endif
 #if EE_PLATFORM != EE_PLATFORM_MACOS
 	SDL_Quit();
 #endif

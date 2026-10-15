@@ -64,4 +64,25 @@ Image NativeDragPreview::makeCopyCursorImage( CopyCursorPixels& pixels ) {
 	return image;
 }
 
+Image NativeDragPreview::makeFeedbackImage( FeedbackImagePixels& pixels, DragFeedback feedback ) {
+	Image image( pixels.data(), 16, 16, 4 );
+	image.avoidFreeImage( true );
+	image.fillWithColor( Color::Transparent );
+	const Color background = feedback == DragFeedback::Copy		  ? Color( 31, 150, 82 )
+							 : feedback == DragFeedback::Rejected ? Color( 195, 45, 55 )
+																  : Color( 190, 135, 20 );
+	for ( unsigned y = 1; y < 15; ++y ) {
+		for ( unsigned x = 1; x < 15; ++x ) {
+			const bool horizontal = y >= 7 && y <= 8 && x >= 4 && x <= 11;
+			const bool vertical = x >= 7 && x <= 8 && y >= 4 && y <= 11;
+			const bool dots = y >= 7 && y <= 8 && x >= 3 && x <= 12 && ( x - 3 ) % 4 < 2;
+			const bool mark = feedback == DragFeedback::Pending
+								  ? dots
+								  : horizontal || ( feedback == DragFeedback::Copy && vertical );
+			image.setPixel( x, y, mark ? Color::White : background );
+		}
+	}
+	return image;
+}
+
 }}} // namespace EE::Window::Private
