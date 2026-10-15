@@ -15,6 +15,7 @@
 #include <eepp/system/thread.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/time.hpp>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -195,7 +196,7 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 					 ///< target resource.
 			Patch,	 ///< The PATCH method is used to apply partial modifications to a resource.
 			Connect	 ///< The CONNECT method starts two-way communications with the requested
-					///< resource. It can be used to open a tunnel.
+					 ///< resource. It can be used to open a tunnel.
 		};
 
 		/** @brief Enumerate the available states for a request */
@@ -768,6 +769,13 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 	static void setMaxOpenConnections( std::size_t count );
 
 	static std::size_t getMaxOpenConnections();
+
+	/** Testing seam: runs immediately before a socket-budget condition wait, with the budget
+	 * mutex held. The hook must not call HTTP APIs. recheckInterval controls the fallback poll
+	 * for direct Request cancellation; use a value beyond the request deadline to test
+	 * notifications alone. Passing an empty hook restores the normal 250 ms interval. */
+	static void setConnectionBudgetWaitHook( std::function<void()> hook,
+											 Time recheckInterval = Milliseconds( 250 ) );
 
 	/** Set the externally owned thread pool used for async requests, otherwise each Http uses its
 	 * own threads. Http cancellation and destruction do not stop or drain this pool. */

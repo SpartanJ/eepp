@@ -140,6 +140,13 @@ struct Http::ConnectionBudget {
 
 	void registerPool( const std::shared_ptr<ConnectionPool>& pool );
 
+	void setWaitHook( std::function<void()> hook, Time recheckInterval ) {
+		std::lock_guard<std::mutex> lock( mMutex );
+		mWaitRecheckInterval =
+			hook ? std::max( Microseconds( 1 ), recheckInterval ) : Milliseconds( 250 );
+		mWaitHook = std::move( hook );
+	}
+
 	/** Takes one socket from the budget for a running request, which already holds its slot.
 	 * When the budget is spent, closes the least recently used idle socket of any pool, then a
 	 * socket held for queued work that has not started; it waits only while every socket is in
@@ -162,10 +169,15 @@ struct Http::ConnectionBudget {
 				continue;
 			// Cancellation through Http wakes this wait; a Request copy cancelled directly cannot,
 			// so it is rechecked at a coarse interval.
-			auto wakeAt = SteadyClock::now() + std::chrono::milliseconds( 250 );
+			if ( mWaitHook )
+				mWaitHook();
+			auto wakeAt = SteadyClock::now() +
+						  std::chrono::microseconds( mWaitRecheckInterval.asMicroseconds() );
 			if ( deadline && *deadline < wakeAt )
 				wakeAt = *deadline;
-			mReleased.wait_until( lock, wakeAt );
+			mReleased.wait_until( lock, wakeAt, [&] {
+				return mChanges != changes || mOpen.load( std::memory_order_acquire ) < getLimit();
+			} );
 			lock.unlock();
 			if ( abandoned() || ( deadline && SteadyClock::now() >= *deadline ) )
 				return false;
@@ -229,6 +241,8 @@ struct Http::ConnectionBudget {
 	std::vector<std::function<void()>> mTasks;
 	std::optional<SteadyClock::time_point> mNextExpiry;
 	std::thread mServiceThread;
+	std::function<void()> mWaitHook;
+	Time mWaitRecheckInterval{ Milliseconds( 250 ) };
 	Uint64 mChanges{ 0 };
 	std::atomic<std::size_t> mOpen{ 0 };
 	std::atomic<std::size_t> mLimit{ 256 };
@@ -2104,6 +2118,10 @@ void Http::setMaxOpenConnections( std::size_t count ) {
 
 std::size_t Http::getMaxOpenConnections() {
 	return ConnectionBudget::instance().getLimit();
+}
+
+void Http::setConnectionBudgetWaitHook( std::function<void()> hook, Time recheckInterval ) {
+	ConnectionBudget::instance().setWaitHook( std::move( hook ), recheckInterval );
 }
 
 void Http::setThreadPool( std::shared_ptr<ThreadPool> pool ) {

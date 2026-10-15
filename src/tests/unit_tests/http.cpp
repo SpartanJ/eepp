@@ -1307,6 +1307,16 @@ struct OpenConnectionLimit {
 	std::size_t previous;
 };
 
+// Keep the budget's polling fallback beyond the test deadline: only a notification can make
+// progress. Restore both the hook and normal polling even when an assertion fails.
+struct ConnectionBudgetWaitHook {
+	explicit ConnectionBudgetWaitHook( ThreadGate& waiting ) {
+		Http::setConnectionBudgetWaitHook( [&waiting] { waiting.enterAndWait(); }, Seconds( 30 ) );
+	}
+
+	~ConnectionBudgetWaitHook() { Http::setConnectionBudgetWaitHook( {} ); }
+};
+
 HTTPTest::Server::Handler respondOk() {
 	return []( TcpSocket& socket, const std::string&, unsigned ) {
 		return HTTPTest::Server::respond( socket );
@@ -1460,10 +1470,9 @@ UTEST( Http, requestsNeverOwnTheirExecutor ) {
 
 UTEST( Http, budgetWaitersProceedWhenAnActiveSocketBecomesIdle ) {
 	OpenConnectionLimit limit( 1 );
-	ThreadGate entered;
+	ThreadGate responseGate;
 	HTTPTest::Server busy( [&]( TcpSocket& socket, const std::string&, unsigned ) {
-		entered.release();
-		std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+		responseGate.enterAndWait();
 		return HTTPTest::Server::respond( socket );
 	} );
 	HTTPTest::Server other( respondOk() );
@@ -1472,18 +1481,32 @@ UTEST( Http, budgetWaitersProceedWhenAnActiveSocketBecomesIdle ) {
 	Http::Pool b;
 	Http::Response held;
 	std::thread holder(
-		[&] { held = a.get( busy.uri() )->sendRequest( Http::Request(), Seconds( 5 ) ); } );
-	{
-		std::unique_lock<std::mutex> lock( entered.mutex );
-		entered.condition.wait_for( lock, std::chrono::seconds( 5 ),
-									[&] { return entered.released; } );
+		[&] { held = a.get( busy.uri() )->sendRequest( Http::Request(), Seconds( 10 ) ); } );
+	const bool serving = responseGate.waitUntilEntered();
+	if ( !serving ) {
+		responseGate.release();
+		holder.join();
+		ASSERT_TRUE( serving );
 	}
-	// The held socket turns idle after about 50 ms, well inside this timeout and the coarse
-	// recheck interval: becoming reclaimable must wake this waiter.
-	auto response = b.get( other.uri() )->sendRequest( Http::Request(), Milliseconds( 200 ) );
+
+	ThreadGate waitingGate;
+	ConnectionBudgetWaitHook hook( waitingGate );
+	Http::Response response;
+	std::thread waiter(
+		[&] { response = b.get( other.uri() )->sendRequest( Http::Request(), Seconds( 10 ) ); } );
+	const bool waiting = waitingGate.waitUntilEntered();
+	// The waiter holds the budget mutex immediately before its condition wait. Let the first
+	// response finish, then let the waiter sleep: releasing the idle socket must notify it.
+	// A generous deadline allows slow scheduling and transfer; polling is disabled until after
+	// that deadline, so it cannot hide a missing notification.
+	responseGate.release();
+	waitingGate.release();
 	holder.join();
+	waiter.join();
+	EXPECT_TRUE( waiting );
 	EXPECT_EQ( held.getStatus(), Http::Response::Ok );
 	EXPECT_EQ( response.getStatus(), Http::Response::Ok );
+	EXPECT_EQ( other.accepted.load(), 1u );
 }
 
 UTEST( Http, resumedBlockingDownloadKeepsItsDeadlineAcrossTheProbe ) {
