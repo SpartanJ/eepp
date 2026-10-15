@@ -1,6 +1,5 @@
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/inputevent.hpp>
@@ -26,21 +25,13 @@ EventDispatcher::EventDispatcher( SceneNode* sceneNode ) :
 	mNodeWasDragging( NULL ),
 	mNodeDragging( NULL ) {
 	mCbId = mInput->pushCallback( [this]( InputEvent* event ) {
-		if ( mSceneNode->isUISceneNode() ) {
-			auto context = mSceneNode->asType<UI::UISceneNode>()->makeCurrent();
-			inputCallback( event );
-		} else {
-			inputCallback( event );
-		}
+		auto context = mSceneNode->makeCurrent();
+		inputCallback( event );
 	} );
 	mIMECbId = mWindow->getIME().addTextEditingCb(
 		[this]( const String& text, Int32 start, Int32 length ) {
-			if ( mSceneNode->isUISceneNode() ) {
-				auto context = mSceneNode->asType<UI::UISceneNode>()->makeCurrent();
-				sendTextEditing( text, start, length );
-			} else {
-				sendTextEditing( text, start, length );
-			}
+			auto context = mSceneNode->makeCurrent();
+			sendTextEditing( text, start, length );
 		} );
 }
 

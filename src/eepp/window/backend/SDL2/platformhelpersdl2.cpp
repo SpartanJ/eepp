@@ -1,6 +1,8 @@
-#include <eepp/system/log.hpp>
-#include <eepp/window/backend/SDL2/base.hpp>
 #include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
+
+#ifdef EE_BACKEND_SDL2
+
+#include <eepp/system/log.hpp>
 
 using namespace EE::System;
 
@@ -109,3 +111,5 @@ bool PlatformHelperSDL2::isExternalStorageWritable() {
 #endif
 
 }}}} // namespace EE::Window::Backend::SDL2
+
+#endif

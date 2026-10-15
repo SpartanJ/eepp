@@ -1,3 +1,4 @@
+#include "httpserver.hpp"
 #include "utest.hpp"
 
 #include <atomic>
@@ -3795,4 +3796,74 @@ UTEST( UIWebView, DefaultShortcutsScrollByViewportAndRespectFocusedControls ) {
 	EXPECT_EQ( disabledValue, scroll->getValue() );
 	FileSystem::fileRemove( path );
 	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, PersistentTransportReusesDocumentCssFontAndImageAcrossNavigation ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "UIWebView Persistent Transport", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( win != nullptr );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	FontTrueType* font = FontTrueType::New( "PersistentTransportDefaultFont" ).get();
+	ASSERT_TRUE( font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" ) );
+	std::string imageData, fontData;
+	ASSERT_TRUE(
+		FileSystem::fileGet( "assets/html/reddit_old_thread_files/pixel.png", imageData ) );
+	ASSERT_TRUE( FileSystem::fileGet( "../assets/fonts/NotoSans-Regular.ttf", fontData ) );
+	HTTPTest::Server server( [&]( TcpSocket& socket, const std::string& request, unsigned ) {
+		const auto path = request.substr( 4, request.find( ' ', 4 ) - 4 );
+		const auto query = path.substr( path.find( '?' ) );
+		std::string body;
+		if ( path.find( "/page" ) == 0 ) {
+			body = "<!doctype html><html><head><link rel='stylesheet' href='/style.css" + query +
+				   "'></head><body><p>Persistent transport</p><img src='/pixel.png" + query +
+				   "'></body></html>";
+		} else if ( path.find( "/style.css" ) == 0 ) {
+			body = "@font-face { font-family: TransportFont; src: url('/font.ttf" + query +
+				   "'); } p { font-family: TransportFont; color: #123456; }";
+		} else if ( path.find( "/font.ttf" ) == 0 ) {
+			body = fontData;
+		} else if ( path.find( "/pixel.png" ) == 0 ) {
+			body = imageData;
+		} else {
+			return false;
+		}
+		return HTTPTest::Server::respond( socket, body );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	auto executor = ThreadPool::createShared( 1 );
+	Http::setThreadPool( executor );
+	auto scene = UISceneNode::New();
+	SceneManager::instance()->add( scene );
+	scene->getUIThemeManager()->setDefaultFont( font );
+	scene->setThreadPool( executor );
+	auto webView = UIWebView::New();
+	webView->setParent( scene->getRoot() );
+	webView->setPixelsSize( 640, 420 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	bool loaded = true;
+	for ( unsigned navigation = 1; navigation <= 2; ++navigation ) {
+		webView->loadURI( server.uri( "/page?navigation=" + String::toString( navigation ) ) );
+		Clock clock;
+		auto complete = [&] {
+			return server.requests.load() >= navigation * 4 &&
+				   webView->getWebResourceCache()->getInFlightCount() == 0;
+		};
+		while ( !complete() && clock.getElapsedTime() < Seconds( 5 ) ) {
+			win->getInput()->update();
+			SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+			Sys::sleep( Milliseconds( 1 ) );
+		}
+		loaded &= complete();
+		if ( !loaded )
+			break;
+	}
+	EXPECT_TRUE( loaded );
+	EXPECT_EQ( server.accepted.load(), 1u );
+	EXPECT_EQ( server.requests.load(), 8u );
+	Http::setThreadPool( nullptr );
+	Engine::destroySingleton();
+	EXPECT_TRUE( server.waitForClosed( 1 ) );
+	executor.reset();
 }

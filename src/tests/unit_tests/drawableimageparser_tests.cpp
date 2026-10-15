@@ -31,7 +31,7 @@ static UISceneNode* initDrawableParserTest() {
 
 	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
-	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
+	SceneManager::instance()->setCurrentSceneNode( sceneNode );
 	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
 	themeManager->applyDefaultTheme( sceneNode->getRoot() );

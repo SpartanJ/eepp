@@ -471,7 +471,7 @@ function get_architecture()
 	return "x86_64"
 end
 
-function build_link_configuration( package_name, use_ee_icon )
+function build_link_configuration( package_name, use_ee_icon, use_sdl_main )
 	filter {}
 	incdirs { "include" }
 	local extension = "";
@@ -550,6 +550,12 @@ function build_link_configuration( package_name, use_ee_icon )
 			linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
 		end
 
+	filter { "system:linux", "action:not vs*" }
+		if package_name == "eepp" then
+			-- Shared eepp must resolve its own indirect dependencies beside the library.
+			linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
+		end
+
 	filter "system:macosx"
 		linkoptions { "-weak_framework UniformTypeIdentifiers" }
 
@@ -608,6 +614,11 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 		if table.contains( backends, "SDL3" ) then
 			links { "SDL3" }
+			if package_name ~= "eepp" and package_name ~= "eepp-static" and use_sdl_main ~= false then
+				-- SDL3 provides main/WinMain through a header instead of SDL2main.lib.
+				files { "src/eepp/main/sdl3_main.cpp" }
+				incdirs { "src/thirdparty/" .. get_sdl_version_dir() .. "/include" }
+			end
 		end
 
 	filter { "options:windows-vc-build", "options:arch=arm64" }
@@ -670,9 +681,9 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.istarget("windows") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32", "shell32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "dwrite", "uiautomationcore", "comctl32" } )
 	elseif os.istarget("mingw32") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "dwrite", "uiautomationcore", "comctl32", "shell32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "dwrite", "uiautomationcore", "comctl32" } )
 	elseif os.istarget("macosx") then
 		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
 	elseif os.istarget("bsd") then
@@ -855,7 +866,8 @@ function set_apple_config()
 		if table.contains(backends, "SDL2") then
 			defines { "EE_SDL2_FROM_ROOTPATH" }
 		end
-		if table.contains(backends, "SDL3") then
+		if table.contains(backends, "SDL3") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
+			-- Framework headers are flat; pkg-config exposes the SDL3/ include prefix.
 			defines { "EE_SDL3_FROM_ROOTPATH" }
 		end
 		if not is_xcode() and not _OPTIONS["use-frameworks"] then
@@ -864,7 +876,7 @@ function set_apple_config()
 				buildoptions { sdl2flags }
 			end
 			if table.contains(backends, "SDL3") then
-				local sdl3flags = popen("sdl3-config --cflags"):gsub("\n", "")
+				local sdl3flags = popen("pkg-config --cflags sdl3"):gsub("\n", "")
 				buildoptions { sdl3flags }
 			end
 		end
@@ -1047,6 +1059,7 @@ function build_eepp( build_name )
 			"src/eepp/graphics/*.cpp",
 			"src/eepp/graphics/renderer/*.cpp",
 			"src/eepp/window/*.cpp",
+			"src/eepp/window/draganddrop/*.cpp",
 			"src/eepp/window/backend/*.cpp",
 			"src/eepp/network/*.cpp",
 			"src/eepp/network/ssl/*.cpp",
@@ -1816,7 +1829,8 @@ workspace "eepp"
 				"src/eepp/window/platform/macos/platformhelper.mm",
 				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm",
 				"src/eepp/system/fileassociation_macos.mm",
-				"src/eepp/ui/icons/systemiconsmacos.mm" }
+				"src/eepp/ui/icons/systemiconsmacos.mm",
+				"src/eepp/window/draganddrop/cocoadraganddrop.mm" }
 		buildoptions { "-x objective-c++" }
 		build_base_cpp_configuration( "eepp-macos-helper" )
 		target_dir_lib( "" )
@@ -1855,6 +1869,31 @@ workspace "eepp"
 		language "C++"
 		files { "src/examples/external_shader/*.cpp" }
 		build_link_configuration( "eepp-external-shader", true )
+
+	if os.istarget("linux") or os.istarget("windows") or os.istarget("macosx") then
+		project "eepp-native-dnd-tests"
+			kind "ConsoleApp"
+			language "C++"
+			files { "src/tests/native_drag_and_drop/main.cpp",
+				"src/examples/native_drag_and_drop/native_drag_and_drop.cpp" }
+			if os.istarget("linux") then
+				files { "src/tests/native_drag_and_drop/x11.cpp",
+					"src/tests/native_drag_and_drop/wayland.cpp" }
+				links { "dl" }
+			elseif os.istarget("macosx") then
+				files { "src/tests/native_drag_and_drop/macos.cpp" }
+			else
+				files { "src/tests/native_drag_and_drop/win32.cpp" }
+				links { "shell32", "ole32", "uuid", "gdi32" }
+			end
+			build_link_configuration( "eepp-native-dnd-tests", true )
+	end
+
+	project "eepp-native-drag-and-drop"
+		set_kind()
+		language "C++"
+		files { "src/examples/native_drag_and_drop/*.cpp" }
+		build_link_configuration( "eepp-native-drag-and-drop", true )
 
 	project "eepp-empty-window"
 		set_kind()
@@ -2238,7 +2277,8 @@ workspace "eepp"
 		files { "src/benchmarks/*.cpp" }
 		incdirs { "src/thirdparty" }
 		eepp_module_vfs_add()
-		build_link_configuration( "eepp-benchmarks", true )
+		-- UTEST_MAIN supplies a native main instead of eepp's SDL_main.
+		build_link_configuration( "eepp-benchmarks", true, false )
 
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
@@ -2301,7 +2341,8 @@ workspace "eepp"
 				"src/eepp/ui/accessibility/accessibilitybackenduiaprovider.cpp",
 				"src/eepp/ui/accessibility/accessibilitybackenduiatext.cpp" }
 			links { "uiautomationcore", "ole32", "oleaut32", "comctl32" }
-			build_link_configuration( "eepp-windows-accessibility-tests", true )
+			-- This harness supplies its own native wmain instead of eepp's SDL_main.
+			build_link_configuration( "eepp-windows-accessibility-tests", true, false )
 			-- MinGW: the harness uses wmain, and CLSID_CUIAutomation lives in libuuid.
 			filter "action:gmake*"
 				links { "uuid" }

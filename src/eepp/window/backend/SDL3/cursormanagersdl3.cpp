@@ -68,16 +68,12 @@ void CursorManagerSDL::remove( Cursor* cursor, bool Delete ) {
 }
 
 void CursorManagerSDL::reload() {
-	if ( mVisible ) {
-		show();
-		if ( mCurSysCursor ) {
-			set( mSysCursor );
-		} else {
-			set( mCurrent );
-		}
-	} else {
-		hide();
-	}
+	// Native drag feedback or a recreated window can change SDL's cursor without changing our
+	// requested state. Bypass set()'s identity cache, even when restoring a hidden cursor.
+	SDL_SetCursor( mCurSysCursor ? getLoadCursor( mSysCursor )
+				   : mCurrent	 ? static_cast<CursorSDL*>( mCurrent )->GetCursor()
+								 : SDL_GetDefaultCursor() );
+	setVisible( mVisible );
 }
 
 }}}} // namespace EE::Window::Backend::SDL3

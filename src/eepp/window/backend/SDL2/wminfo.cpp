@@ -2,17 +2,13 @@
 
 #ifdef EE_BACKEND_SDL2
 
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
-	( defined( SDL_VIDEO_DRIVER_X11 ) && defined( EE_X11_PLATFORM ) ) ||  \
-	EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM_ANDROID == EE_PLATFORM
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS ||    \
+	( defined( SDL_VIDEO_DRIVER_X11 ) && defined( EE_X11_PLATFORM ) ) ||     \
+	defined( SDL_VIDEO_DRIVER_WAYLAND ) || EE_PLATFORM == EE_PLATFORM_IOS || \
+	EE_PLATFORM_ANDROID == EE_PLATFORM
 #define EE_WMINFO
 
-#if !defined( EE_COMPILER_MSVC ) && EE_PLATFORM != EE_PLATFORM_ANDROID && \
-	EE_PLATFORM != EE_PLATFORM_IOS && !defined( EE_SDL2_FROM_ROOTPATH )
-#include <SDL2/SDL_syswm.h>
-#else
-#include <SDL_syswm.h>
-#endif
+#include <eepp/window/backend/SDL2/syswm.hpp>
 #endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
@@ -20,8 +16,10 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 #ifdef EE_WMINFO
 WMInfo::WMInfo( SDL_Window* win ) : mWMInfo( eeMalloc( sizeof( SDL_SysWMinfo ) ) ) {
 	SDL_SysWMinfo* info = static_cast<SDL_SysWMinfo*>( mWMInfo );
+	*info = {};
 	SDL_VERSION( &info->version );
-	SDL_GetWindowWMInfo( win, info );
+	if ( !SDL_GetWindowWMInfo( win, info ) )
+		info->subsystem = SDL_SYSWM_UNKNOWN;
 }
 #else
 WMInfo::WMInfo( SDL_Window* win ) : mWMInfo( nullptr ) {}
@@ -36,7 +34,7 @@ WMInfo::~WMInfo() {
 #if defined( SDL_VIDEO_DRIVER_X11 ) && defined( EE_X11_PLATFORM )
 X11Window WMInfo::getWindow() const {
 	SDL_SysWMinfo* info = static_cast<SDL_SysWMinfo*>( mWMInfo );
-	return info->info.x11.window;
+	return info && info->subsystem == SDL_SYSWM_X11 ? info->info.x11.window : 0;
 }
 #endif
 
@@ -46,11 +44,11 @@ eeWindowHandle WMInfo::getWindowHandler() const {
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	return info->info.win.window;
+	return info && info->subsystem == SDL_SYSWM_WINDOWS ? info->info.win.window : 0;
 #elif defined( SDL_VIDEO_DRIVER_X11 ) && defined( EE_X11_PLATFORM )
-	return info->info.x11.display;
+	return info && info->subsystem == SDL_SYSWM_X11 ? info->info.x11.display : 0;
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
-	return info->info.cocoa.window;
+	return info && info->subsystem == SDL_SYSWM_COCOA ? info->info.cocoa.window : 0;
 #else
 	return 0;
 #endif

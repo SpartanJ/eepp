@@ -143,91 +143,57 @@ ios_size IOStreamInflate::read( char* buffer, ios_size length ) {
 }
 
 ios_size IOStreamInflate::write( const char* buffer, ios_size length ) {
-	if ( mLocalStream->state != Z_OK || !mStream.isOpen() || length == 0 )
+	if ( length == 0 )
 		return 0;
+	if ( mLocalStream->state != Z_OK || !mStream.isOpen() || length < 0 )
+		return -1;
+	mHasInput = true;
 
 	if ( mMode == Compression::MODE_BROTLI ) {
-		size_t avail_in = length;
-		const uint8_t* next_in = reinterpret_cast<const uint8_t*>( buffer );
-
-		while ( avail_in > 0 ||
-				mLocalStream->brotliResult == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT ) {
-			size_t avail_out = mBuffer.length();
-			uint8_t* next_out = reinterpret_cast<uint8_t*>( mBuffer.get() );
-
+		size_t availIn = length;
+		const uint8_t* nextIn = reinterpret_cast<const uint8_t*>( buffer );
+		do {
+			size_t availOut = mBuffer.length();
+			uint8_t* nextOut = reinterpret_cast<uint8_t*>( mBuffer.get() );
 			mLocalStream->brotliResult = BrotliDecoderDecompressStream(
-				mLocalStream->brotliState, &avail_in, &next_in, &avail_out, &next_out, nullptr );
-
-			if ( mLocalStream->brotliResult == BROTLI_DECODER_RESULT_ERROR ) {
+				mLocalStream->brotliState, &availIn, &nextIn, &availOut, &nextOut, nullptr );
+			const ios_size have = mBuffer.length() - availOut;
+			if ( mLocalStream->brotliResult == BROTLI_DECODER_RESULT_ERROR ||
+				 ( have > 0 && mStream.write( reinterpret_cast<const char*>( mBuffer.get() ),
+											  have ) != have ) ) {
 				mLocalStream->state = Z_DATA_ERROR;
-				return 0;
+				return -1;
 			}
-
-			size_t have = mBuffer.length() - avail_out;
-			if ( have > 0 ) {
-				if ( mStream.write( (const char*)mBuffer.get(), have ) != (ios_size)have ) {
-					return 0;
-				}
-			}
-
 			if ( mLocalStream->brotliResult == BROTLI_DECODER_RESULT_SUCCESS ) {
-				mLocalStream->state = Z_STREAM_END;
-				break;
+				mLocalStream->state = availIn == 0 ? Z_STREAM_END : Z_DATA_ERROR;
+				return availIn == 0 ? length : -1;
 			}
-
-			if ( mLocalStream->brotliResult == BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT ) {
-				break;
-			}
-		}
-
+		} while ( availIn > 0 ||
+				  mLocalStream->brotliResult == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT );
 		return length;
 	}
 
-	z_stream& zstr = mLocalStream->strm;
-
-	zstr.next_in = (unsigned char*)buffer;
-	zstr.avail_in = length;
-	zstr.next_out = mBuffer.get();
-	zstr.avail_out = mBuffer.length();
-
-	for ( ;; ) {
-		int rc = inflate( &zstr, Z_NO_FLUSH );
-
-		if ( rc == Z_STREAM_END ) {
-			length = mStream.write( (const char*)mBuffer.get(), mBuffer.length() - zstr.avail_out );
-
-			mLocalStream->state = rc;
-
+	z_stream& stream = mLocalStream->strm;
+	stream.next_in = reinterpret_cast<Bytef*>( const_cast<char*>( buffer ) );
+	stream.avail_in = length;
+	do {
+		stream.next_out = mBuffer.get();
+		stream.avail_out = mBuffer.length();
+		const int result = inflate( &stream, Z_NO_FLUSH );
+		const ios_size have = mBuffer.length() - stream.avail_out;
+		if ( ( result != Z_OK && result != Z_STREAM_END && result != Z_BUF_ERROR ) ||
+			 ( have > 0 &&
+			   mStream.write( reinterpret_cast<const char*>( mBuffer.get() ), have ) != have ) ) {
+			mLocalStream->state = Z_DATA_ERROR;
+			return -1;
+		}
+		if ( result == Z_STREAM_END ) {
+			mLocalStream->state = stream.avail_in == 0 ? Z_STREAM_END : Z_DATA_ERROR;
+			return stream.avail_in == 0 ? length : -1;
+		}
+		if ( result == Z_BUF_ERROR && have == 0 )
 			break;
-		}
-
-		if ( rc != Z_OK )
-			return 0;
-
-		if ( zstr.avail_out == 0 ) {
-			ios_size ret = mStream.write( (const char*)mBuffer.get(), mBuffer.length() );
-
-			if ( ret == 0 )
-				return 0;
-
-			zstr.next_out = (unsigned char*)mBuffer.get();
-			zstr.avail_out = mBuffer.length();
-		}
-
-		if ( zstr.avail_in == 0 ) {
-			ios_size ret =
-				mStream.write( (const char*)mBuffer.get(), mBuffer.length() - zstr.avail_out );
-
-			if ( ret == 0 )
-				return 0;
-
-			zstr.next_out = (unsigned char*)mBuffer.get();
-			zstr.avail_out = mBuffer.length();
-
-			break;
-		}
-	}
-
+	} while ( stream.avail_in > 0 || stream.avail_out == 0 );
 	return length;
 }
 
@@ -245,6 +211,18 @@ ios_size IOStreamInflate::getSize() {
 
 bool IOStreamInflate::isOpen() {
 	return mStream.isOpen() && mLocalStream->state != Z_STREAM_END;
+}
+
+bool IOStreamInflate::isComplete() const {
+	return mLocalStream->state == Z_STREAM_END;
+}
+
+bool IOStreamInflate::hasError() const {
+	return mLocalStream->state != Z_OK && mLocalStream->state != Z_STREAM_END;
+}
+
+bool IOStreamInflate::hasInput() const {
+	return mHasInput;
 }
 
 const Compression::Mode& IOStreamInflate::getMode() const {

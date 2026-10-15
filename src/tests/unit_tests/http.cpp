@@ -1,4 +1,8 @@
-#include "utest.h"
+#include "../../eepp/network/http/httpstreamchunked.hpp"
+#include "httpserver.hpp"
+#include "utest.hpp"
+#include <eepp/system/compression.hpp>
+#include <sstream>
 
 #include <atomic>
 #include <condition_variable>
@@ -10,14 +14,18 @@
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/network/tcplistener.hpp>
 #include <eepp/network/tcpsocket.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/window/engine.hpp>
 
 #include "highfiledescriptors.hpp"
 
 using namespace EE;
 using namespace EE::Network;
+using EE::Window::Engine;
 
 namespace {
 
@@ -119,6 +127,7 @@ UTEST( Http, redirectSendsCookiePairWithoutSetCookieAttributes ) {
 			const std::string response = step == 0
 											 ? "HTTP/1.1 303 See Other\r\nLocation: /landing\r\n"
 											   "Set-Cookie: session=new; Path=/; HttpOnly\r\n"
+											   "Set-Cookie: theme=dark; Path=/\r\n"
 											   "Content-Length: 0\r\nConnection: close\r\n\r\n"
 											 : "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n"
 											   "Connection: close\r\n\r\nok";
@@ -137,7 +146,8 @@ UTEST( Http, redirectSendsCookiePairWithoutSetCookieAttributes ) {
 	EXPECT_TRUE( serverOk );
 	EXPECT_EQ( response.getStatus(), Http::Response::Ok );
 	EXPECT_TRUE( redirectedRequest.find( "GET /landing " ) == 0 );
-	EXPECT_TRUE( redirectedRequest.find( "cookie: session=new; pref=1\r\n" ) != std::string::npos );
+	EXPECT_TRUE( redirectedRequest.find( "cookie: theme=dark; session=new; pref=1\r\n" ) !=
+				 std::string::npos );
 	EXPECT_TRUE( redirectedRequest.find( "HttpOnly" ) == std::string::npos );
 }
 
@@ -459,3 +469,1209 @@ UTEST( Http, tcpConnectTimeoutHandlesFdAboveFdSetSize ) {
 	listener.close();
 }
 #endif
+
+UTEST( Http, persistentResponsesReuseConnectionAcrossWorkers ) {
+	HTTPTest::Server server( []( TcpSocket& socket, const std::string&, unsigned id ) {
+		return HTTPTest::Server::respond( socket, String::toString( id ) );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::Pool pool;
+	auto client = pool.get( server.uri() );
+	Http::Response first, second;
+	std::thread a( [&] { first = client->sendRequest( Http::Request( "/one" ), Seconds( 2 ) ); } );
+	a.join();
+	std::thread b( [&] { second = client->sendRequest( Http::Request( "/two" ), Seconds( 2 ) ); } );
+	b.join();
+	EXPECT_EQ( first.getStatus(), Http::Response::Ok );
+	EXPECT_EQ( second.getStatus(), Http::Response::Ok );
+	EXPECT_STREQ( first.getBody().c_str(), "1" );
+	EXPECT_STREQ( second.getBody().c_str(), "1" );
+	EXPECT_EQ( server.accepted.load(), 1u );
+	pool.clear();
+	EXPECT_TRUE( server.waitForClosed( 1 ) );
+}
+
+UTEST( Http, emptyAndInformationalResponsesFinishBeforeNextRequest ) {
+	HTTPTest::Server server( []( TcpSocket& socket, const std::string& request, unsigned ) {
+		if ( request.find( "/zero " ) != std::string::npos )
+			return HTTPTest::Server::respond( socket, "" );
+		if ( request.find( "HEAD " ) == 0 )
+			return HTTPTest::Server::send( socket,
+										   "HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\n" );
+		if ( request.find( "/204 " ) != std::string::npos )
+			return HTTPTest::Server::send( socket, "HTTP/1.1 204 No Content\r\n\r\n" );
+		if ( request.find( "/304 " ) != std::string::npos )
+			return HTTPTest::Server::send(
+				socket, "HTTP/1.1 304 Not Modified\r\nContent-Length: 100\r\n\r\n" );
+		return HTTPTest::Server::send(
+			socket, "HTTP/1.1 103 Early Hints\r\nLink: </a.css>\r\n\r\n"
+					"HTTP/1.1 100 Continue\r\n\r\nHTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok" );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::Pool pool;
+	auto client = pool.get( server.uri() );
+	for ( const auto* path : { "/zero", "/head", "/204", "/304", "/hints" } ) {
+		Http::Request request( path );
+		if ( std::string_view( path ) == "/head" )
+			request.setMethod( Http::Request::Head );
+		auto response = client->sendRequest( request, Milliseconds( 500 ) );
+		EXPECT_EQ( response.getStatus(),
+				   std::string_view( path ) == "/204"
+					   ? Http::Response::NoContent
+					   : ( std::string_view( path ) == "/304" ? Http::Response::NotModified
+															  : Http::Response::Ok ) );
+		EXPECT_STREQ( response.getBody().c_str(),
+					  std::string_view( path ) == "/hints" ? "ok" : "" );
+	}
+	EXPECT_EQ( server.accepted.load(), 1u );
+}
+
+UTEST( Http, chunkedTrailersCompleteBeforeConnectionReuse ) {
+	HTTPTest::Server server( []( TcpSocket& socket, const std::string&, unsigned ) {
+		return HTTPTest::Server::send(
+			socket, "HTTP/1.1 200 OK\r\nTransfer-Encoding: Chunked\r\n\r\n"
+					"2;extension=value\r\nhe\r\n3\r\nllo\r\n0\r\nX-Trailer: yes\r\n\r\n" );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::Pool pool;
+	auto client = pool.get( server.uri() );
+	for ( int i = 0; i < 2; ++i ) {
+		auto response = client->sendRequest( Http::Request(), Milliseconds( 500 ) );
+		EXPECT_EQ( response.getStatus(), Http::Response::Ok );
+		EXPECT_STREQ( response.getBody().c_str(), "hello" );
+		EXPECT_STREQ( response.getField( "x-trailer" ).c_str(), "yes" );
+	}
+	EXPECT_EQ( server.accepted.load(), 1u );
+}
+
+UTEST( Http, chunkDecoderHandlesEverySplitIncludingTrailers ) {
+	const std::string wire = "3;name=value\r\nabc\r\n2\r\nde\r\n0\r\nX-End: yes\r\n\r\n";
+	for ( size_t split = 0; split <= wire.size(); ++split ) {
+		System::IOStreamString output;
+		EE::Network::Private::HttpStreamChunked decoder( output );
+		EXPECT_EQ( decoder.write( wire.data(), split ), static_cast<ios_size>( split ) );
+		EXPECT_EQ( decoder.write( wire.data() + split, wire.size() - split ),
+				   static_cast<ios_size>( wire.size() - split ) );
+		EXPECT_TRUE( decoder.isComplete() );
+		EXPECT_FALSE( decoder.hasError() );
+		EXPECT_STREQ( output.getStream().c_str(), "abcde" );
+		EXPECT_STREQ( decoder.getHeaderBuffer().c_str(), "X-End: yes\r\n" );
+	}
+}
+
+UTEST( Http, compressedChunkedResponseConsumesTrailerAfterDecoderEnd ) {
+	const std::string text( 70000, 'a' );
+	System::IOStreamMemory input( text.data(), text.size() );
+	System::IOStreamString encoded;
+	ASSERT_EQ( System::Compression::compress( encoded, input, System::Compression::MODE_GZIP ),
+			   System::Compression::OK );
+	std::mutex mutex;
+	std::condition_variable condition;
+	unsigned bodyObserved = 0;
+	std::atomic<bool> aborted{ false };
+	HTTPTest::Server server( [&]( TcpSocket& socket, const std::string&, unsigned ) {
+		const auto& bytes = encoded.getStream();
+		std::ostringstream size;
+		size << std::hex << bytes.size();
+		if ( !HTTPTest::Server::send( socket, "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n"
+											  "Content-Encoding: gzip\r\n\r\n" +
+												  size.str() + "\r\n" + bytes + "\r\n" ) )
+			return false;
+		{
+			std::unique_lock<std::mutex> lock( mutex );
+			if ( !condition.wait_for( lock, std::chrono::seconds( 2 ),
+									  [&] { return bodyObserved > 0; } ) ) {
+				aborted = true;
+				return false;
+			}
+			--bodyObserved;
+		}
+		return HTTPTest::Server::send( socket, "0\r\nX-End: consumed\r\n\r\n" );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::Pool pool;
+	auto client = pool.get( server.uri() );
+	for ( int i = 0; i < 2; ++i ) {
+		bool notified = false;
+		Http::Request request;
+		request.setProgressCallback( [&]( const Http&, const Http::Request&, const Http::Response&,
+										  Http::Request::Status status, size_t, size_t ) {
+			if ( status == Http::Request::ContentReceived && !notified ) {
+				std::lock_guard<std::mutex> lock( mutex );
+				notified = true;
+				++bodyObserved;
+				condition.notify_all();
+			}
+			return true;
+		} );
+		auto response = client->sendRequest( request, Seconds( 3 ) );
+		EXPECT_EQ( response.getStatus(), Http::Response::Ok );
+		EXPECT_TRUE( response.getBody() == text );
+		EXPECT_STREQ( response.getField( "x-end" ).c_str(), "consumed" );
+	}
+	EXPECT_FALSE( aborted.load() );
+	EXPECT_EQ( server.accepted.load(), 1u );
+}
+
+UTEST( Http, malformedAndTruncatedMessagesAreNeverReused ) {
+	const std::vector<std::string> responses = {
+		"HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nshort",
+		"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nab",
+		"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nX-End: incomplete\r\n",
+		"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Length: 3\r\n\r\nok",
+		"HTTP/1.1 200 OK\r\nContent-Length: -1\r\n\r\nok",
+		"HTTP/1.1 200 OK\r\nContent-Length: 2x\r\n\r\nok",
+		"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nContent-Length: 0\r\n\r\n0\r\n\r\n",
+		"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\nZ\r\nhello\r\n0\r\n\r\n" };
+	for ( const auto& wire : responses ) {
+		HTTPTest::Server server( [&]( TcpSocket& socket, const std::string&, unsigned id ) {
+			if ( id == 1 ) {
+				HTTPTest::Server::send( socket, wire );
+				return false;
+			}
+			return HTTPTest::Server::respond( socket );
+		} );
+		ASSERT_TRUE( server.isListening() );
+		Http::Pool pool;
+		auto client = pool.get( server.uri() );
+		auto bad = client->sendRequest( Http::Request(), Seconds( 1 ) );
+		EXPECT_EQ( bad.getStatus(), Http::Response::InvalidResponse );
+		auto good = client->sendRequest( Http::Request(), Seconds( 1 ) );
+		EXPECT_EQ( good.getStatus(), Http::Response::Ok );
+		EXPECT_STREQ( good.getBody().c_str(), "ok" );
+		EXPECT_EQ( server.accepted.load(), 2u );
+	}
+}
+
+UTEST( Http, readTimeoutAndCancellationDiscardPartialConnections ) {
+	HTTPTest::Server server( []( TcpSocket& socket, const std::string&, unsigned id ) {
+		if ( id == 1 )
+			return HTTPTest::Server::send( socket,
+										   "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\na" );
+		return HTTPTest::Server::respond( socket );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::Pool pool;
+	auto client = pool.get( server.uri() );
+	auto timedOut = client->sendRequest( Http::Request(), Milliseconds( 80 ) );
+	EXPECT_EQ( timedOut.getStatus(), Http::Response::InvalidResponse );
+	Http::Request cancelled;
+	cancelled.setProgressCallback(
+		[]( const Http&, const Http::Request&, const Http::Response&, Http::Request::Status status,
+			size_t, size_t ) { return status != Http::Request::HeaderReceived; } );
+	client->sendRequest( cancelled, Seconds( 1 ) );
+	EXPECT_TRUE( cancelled.isCancelled() );
+	auto good = client->sendRequest( Http::Request(), Seconds( 1 ) );
+	EXPECT_EQ( good.getStatus(), Http::Response::Ok );
+	EXPECT_EQ( server.accepted.load(), 3u );
+}
+
+UTEST( Http, redirectBodyIsDrainedAndPostBodyIsRemovedFor303 ) {
+	std::mutex mutex;
+	std::string landing;
+	HTTPTest::Server server( [&]( TcpSocket& socket, const std::string& request, unsigned ) {
+		if ( request.find( "POST /a/start " ) == 0 ) {
+			return HTTPTest::Server::send( socket,
+										   "HTTP/1.1 303 See Other\r\nLocation: ../landing\r\n"
+										   "Content-Length: 7\r\n\r\ndiscard" );
+		}
+		{
+			std::lock_guard<std::mutex> lock( mutex );
+			landing = request;
+		}
+		return HTTPTest::Server::respond( socket, "landed" );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::Pool pool;
+	auto client = pool.get( server.uri() );
+	auto response = client->sendRequest(
+		Http::Request( "/a/start", Http::Request::Post, "payload" ), Seconds( 2 ) );
+	EXPECT_EQ( response.getStatus(), Http::Response::Ok );
+	EXPECT_STREQ( response.getBody().c_str(), "landed" );
+	std::lock_guard<std::mutex> lock( mutex );
+	EXPECT_TRUE( landing.find( "GET /landing HTTP/1.1\r\n" ) == 0 );
+	EXPECT_TRUE( landing.find( "payload" ) == std::string::npos );
+	EXPECT_TRUE( landing.find( "content-length" ) == std::string::npos );
+	EXPECT_EQ( server.accepted.load(), 1u );
+}
+
+UTEST( Http, idleConnectionsClosedByServerAreReplacedForEveryMethod ) {
+	// A server keep-alive timeout: the connection is closed while idle in the pool. The FIN is
+	// already readable at reuse time, so even a POST gets a fresh connection.
+	for ( const auto method : { Http::Request::Get, Http::Request::Post } ) {
+		HTTPTest::Server server( []( TcpSocket& socket, const std::string&, unsigned id ) {
+			const bool sent = HTTPTest::Server::respond( socket );
+			return sent && id != 1;
+		} );
+		ASSERT_TRUE( server.isListening() );
+		Http::Pool pool;
+		auto client = pool.get( server.uri() );
+		EXPECT_EQ( client->sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+				   Http::Response::Ok );
+		EXPECT_TRUE( server.waitForClosed( 1 ) );
+		auto response = client->sendRequest( Http::Request( "/", method, "a=1" ), Seconds( 1 ) );
+		EXPECT_EQ( response.getStatus(), Http::Response::Ok );
+		EXPECT_EQ( server.accepted.load(), 2u );
+	}
+}
+
+UTEST( Http, closeAfterReusedRequestRetriesGetButNeverReplaysPost ) {
+	// The server closes the reused connection after reading the request, without responding:
+	// the race no pre-use check can see. Only safe methods are replayed.
+	for ( const auto method : { Http::Request::Get, Http::Request::Post } ) {
+		std::atomic<unsigned> firstConnectionRequests{ 0 };
+		HTTPTest::Server server( [&]( TcpSocket& socket, const std::string&, unsigned id ) {
+			if ( id == 1 && ++firstConnectionRequests == 2 )
+				return false;
+			return HTTPTest::Server::respond( socket );
+		} );
+		ASSERT_TRUE( server.isListening() );
+		Http::Pool pool;
+		auto client = pool.get( server.uri() );
+		EXPECT_EQ( client->sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+				   Http::Response::Ok );
+		auto response = client->sendRequest( Http::Request( "/", method, "a=1" ), Seconds( 1 ) );
+		if ( method == Http::Request::Get ) {
+			EXPECT_EQ( response.getStatus(), Http::Response::Ok );
+			EXPECT_EQ( server.accepted.load(), 2u );
+		} else {
+			EXPECT_EQ( response.getStatus(), Http::Response::ConnectionFailed );
+			EXPECT_EQ( server.accepted.load(), 1u );
+		}
+	}
+}
+
+UTEST( Http, bytesBeyondTheFramedMessageKeepResponseButDiscardConnection ) {
+	struct Case {
+		Http::Request::Method method;
+		std::string wire;
+		std::string body;
+		Http::Response::Status status;
+	};
+	const std::vector<Case> cases = {
+		{ Http::Request::Get, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok\r\n", "ok",
+		  Http::Response::Ok },
+		{ Http::Request::Get,
+		  "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n2\r\nok\r\n0\r\n\r\njunk", "ok",
+		  Http::Response::Ok },
+		{ Http::Request::Head, "HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nbody", "",
+		  Http::Response::Ok },
+		{ Http::Request::Get, "HTTP/1.1 204 No Content\r\n\r\nbody", "",
+		  Http::Response::NoContent } };
+	for ( const auto& test : cases ) {
+		HTTPTest::Server server( [&]( TcpSocket& socket, const std::string&, unsigned id ) {
+			if ( id == 1 )
+				return HTTPTest::Server::send( socket, test.wire );
+			return HTTPTest::Server::respond( socket );
+		} );
+		ASSERT_TRUE( server.isListening() );
+		Http::Pool pool;
+		auto client = pool.get( server.uri() );
+		auto response = client->sendRequest( Http::Request( "/", test.method ), Seconds( 1 ) );
+		EXPECT_EQ( response.getStatus(), test.status );
+		EXPECT_STDSTREQ( response.getBody(), test.body );
+		auto next = client->sendRequest( Http::Request(), Seconds( 1 ) );
+		EXPECT_EQ( next.getStatus(), Http::Response::Ok );
+		EXPECT_STREQ( next.getBody().c_str(), "ok" );
+		EXPECT_EQ( server.accepted.load(), 2u );
+	}
+}
+
+UTEST( Http, emptyCompressedBodiesAreCompleteAndReusable ) {
+	for ( const std::string framing :
+		  { "Content-Length: 0\r\n\r\n", "Transfer-Encoding: chunked\r\n\r\n0\r\n\r\n" } ) {
+		HTTPTest::Server server( [&]( TcpSocket& socket, const std::string&, unsigned ) {
+			return HTTPTest::Server::send( socket, "HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\n" +
+													   framing );
+		} );
+		ASSERT_TRUE( server.isListening() );
+		Http::Pool pool;
+		auto client = pool.get( server.uri() );
+		for ( int i = 0; i < 2; ++i ) {
+			auto response = client->sendRequest( Http::Request(), Seconds( 1 ) );
+			EXPECT_EQ( response.getStatus(), Http::Response::Ok );
+			EXPECT_TRUE( response.getBody().empty() );
+		}
+		EXPECT_EQ( server.accepted.load(), 1u );
+	}
+}
+
+UTEST( Http, chunkDecoderAcceptsWhitespaceBeforeExtensionsAndStopsAtMessageEnd ) {
+	const std::string wire = "3 \t;name=value\r\nabc\r\n2\t\r\nde\r\n0 ;last\r\n\r\n";
+	System::IOStreamString output;
+	EE::Network::Private::HttpStreamChunked decoder( output );
+	const std::string withExtra = wire + "next";
+	EXPECT_EQ( decoder.write( withExtra.data(), withExtra.size() ),
+			   static_cast<ios_size>( wire.size() ) );
+	EXPECT_TRUE( decoder.isComplete() );
+	EXPECT_FALSE( decoder.hasError() );
+	EXPECT_STREQ( output.getStream().c_str(), "abcde" );
+	EXPECT_EQ( decoder.write( "more", 4 ), static_cast<ios_size>( 0 ) );
+
+	// Whitespace is only allowed between the size and an extension, never before the size.
+	System::IOStreamString rejected;
+	EE::Network::Private::HttpStreamChunked leading( rejected );
+	EXPECT_EQ( leading.write( " 3\r\nabc\r\n", 10 ), static_cast<ios_size>( -1 ) );
+	EXPECT_TRUE( leading.hasError() );
+}
+
+UTEST( Http, everySetCookieFieldIsKeptSeparately ) {
+	HTTPTest::Server server( []( TcpSocket& socket, const std::string&, unsigned ) {
+		return HTTPTest::Server::respond(
+			socket, "ok",
+			"Set-Cookie: a=1; Expires=Wed, 21 Oct 2026 07:28:00 GMT\r\n"
+			"Vary: Accept\r\n"
+			"Set-Cookie: b=2; Path=/\r\n"
+			"Vary: Cookie\r\n" );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::Pool pool;
+	auto response = pool.get( server.uri() )->sendRequest( Http::Request(), Seconds( 1 ) );
+	EXPECT_EQ( response.getStatus(), Http::Response::Ok );
+	EXPECT_STREQ( response.getField( "set-cookie" ).c_str(),
+				  "a=1; Expires=Wed, 21 Oct 2026 07:28:00 GMT\nb=2; Path=/" );
+	EXPECT_STREQ( response.getField( "vary" ).c_str(), "Accept,Cookie" );
+}
+
+UTEST( Http, connectionAndTlsPoliciesControlReuse ) {
+	for ( const auto* fields : { "Connection: Keep-Alive, CLOSE\r\n", "" } ) {
+		HTTPTest::Server server( [fields]( TcpSocket& socket, const std::string&, unsigned ) {
+			return HTTPTest::Server::respond( socket, "ok", fields );
+		} );
+		ASSERT_TRUE( server.isListening() );
+		Http::Pool pool;
+		auto client = pool.get( server.uri() );
+		for ( bool validate : { true, false, true } ) {
+			Http::Request request( "/", Http::Request::Get, "", validate, validate );
+			EXPECT_EQ( client->sendRequest( request, Seconds( 1 ) ).getStatus(),
+					   Http::Response::Ok );
+		}
+		EXPECT_EQ( server.accepted.load(), *fields ? 3u : 2u );
+	}
+}
+
+UTEST( Http, poolBoundsConcurrentConnectionsAndWaitersRespectTimeouts ) {
+	ThreadGate gate;
+	HTTPTest::Server server( [&]( TcpSocket& socket, const std::string&, unsigned ) {
+		gate.enterAndWait();
+		return HTTPTest::Server::respond( socket );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::ConnectionPoolOptions options;
+	options.maxConnections = 2;
+	options.maxConnectionsPerHost = 2;
+	Http::Pool pool( options );
+	auto client = pool.get( server.uri() );
+	Http::Response first, second;
+	std::thread a( [&] { first = client->sendRequest( Http::Request(), Seconds( 3 ) ); } );
+	std::thread b( [&] { second = client->sendRequest( Http::Request(), Seconds( 3 ) ); } );
+	const bool bothEntered = server.waitForRequests( 2 );
+	auto blocked = client->sendRequest( Http::Request(), Milliseconds( 50 ) );
+	HTTPTest::Server other( []( TcpSocket& socket, const std::string&, unsigned ) {
+		return HTTPTest::Server::respond( socket );
+	} );
+	auto otherClient = pool.get( other.uri() );
+	auto globallyBlocked = otherClient->sendRequest( Http::Request(), Milliseconds( 50 ) );
+	const auto accepted = server.accepted.load();
+	gate.release();
+	a.join();
+	b.join();
+	EXPECT_TRUE( bothEntered );
+	EXPECT_EQ( blocked.getStatus(), Http::Response::ConnectionFailed );
+	EXPECT_EQ( accepted, 2u );
+	EXPECT_EQ( globallyBlocked.getStatus(), Http::Response::ConnectionFailed );
+	EXPECT_EQ( other.accepted.load(), 0u );
+	EXPECT_EQ( first.getStatus(), Http::Response::Ok );
+	EXPECT_EQ( second.getStatus(), Http::Response::Ok );
+	EXPECT_EQ( client->sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+			   Http::Response::Ok );
+	EXPECT_EQ( server.accepted.load(), 2u );
+}
+
+UTEST( Http, idleExpiryAndExplicitIdleCloseReleaseSockets ) {
+	HTTPTest::Server server( []( TcpSocket& socket, const std::string&, unsigned ) {
+		return HTTPTest::Server::respond( socket );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::ConnectionPoolOptions options;
+	options.idleTimeout = Time::Zero;
+	Http::Pool pool( options );
+	auto client = pool.get( server.uri() );
+	EXPECT_EQ( client->sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+			   Http::Response::Ok );
+	EXPECT_EQ( client->sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+			   Http::Response::Ok );
+	EXPECT_EQ( server.accepted.load(), 2u );
+	pool.closeIdleConnections();
+	EXPECT_TRUE( server.waitForClosed( 2 ) );
+}
+
+UTEST( Http, proxyIsUsedAndPoolKeysSeparateOriginsAndProxies ) {
+	std::mutex mutex;
+	std::string seen;
+	HTTPTest::Server proxy( [&]( TcpSocket& socket, const std::string& request, unsigned ) {
+		{
+			std::lock_guard<std::mutex> lock( mutex );
+			seen = request;
+		}
+		return HTTPTest::Server::respond( socket );
+	} );
+	ASSERT_TRUE( proxy.isListening() );
+	Http::Pool pool;
+	const URI origin( "http://unresolvable.invalid:8081/path" );
+	auto client = pool.get( origin, proxy.uri() );
+	EXPECT_TRUE( client ==
+				 pool.get( URI( "HTTP://UNRESOLVABLE.INVALID:8081/other" ), proxy.uri() ) );
+	EXPECT_TRUE( client !=
+				 pool.get( URI( "https://unresolvable.invalid:8081/path" ), proxy.uri() ) );
+	EXPECT_TRUE( client != pool.get( origin ) );
+	auto response = client->sendRequest( Http::Request( "/path" ), Seconds( 1 ) );
+	EXPECT_EQ( response.getStatus(), Http::Response::Ok );
+	{
+		std::lock_guard<std::mutex> lock( mutex );
+		EXPECT_TRUE( seen.find( "GET http://unresolvable.invalid:8081/path HTTP/1.1\r\n" ) == 0 );
+		EXPECT_TRUE( seen.find( "host: unresolvable.invalid:8081\r\n" ) != std::string::npos );
+	}
+	Http direct;
+	direct.setHost( origin, proxy.uri() );
+	EXPECT_EQ( direct.sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+			   Http::Response::Ok );
+}
+
+UTEST( Http, globalCapacityEvictsIdleConnectionsAcrossOrigins ) {
+	HTTPTest::Server first( []( TcpSocket& socket, const std::string&, unsigned ) {
+		return HTTPTest::Server::respond( socket, "first" );
+	} );
+	HTTPTest::Server second( []( TcpSocket& socket, const std::string&, unsigned ) {
+		return HTTPTest::Server::respond( socket, "second" );
+	} );
+	ASSERT_TRUE( first.isListening() && second.isListening() );
+	Http::ConnectionPoolOptions options;
+	options.maxConnections = 1;
+	Http::Pool pool( options );
+	auto a = pool.get( first.uri() );
+	auto b = pool.get( second.uri() );
+	EXPECT_TRUE( a->sendRequest( Http::Request(), Seconds( 1 ) ).getBody() == "first" );
+	EXPECT_TRUE( b->sendRequest( Http::Request(), Seconds( 1 ) ).getBody() == "second" );
+	EXPECT_TRUE( first.waitForClosed( 1 ) );
+	EXPECT_TRUE( a->sendRequest( Http::Request(), Seconds( 1 ) ).getBody() == "first" );
+	EXPECT_TRUE( second.waitForClosed( 1 ) );
+	EXPECT_EQ( first.accepted.load(), 2u );
+	EXPECT_EQ( second.accepted.load(), 1u );
+}
+
+UTEST( Http, http10AndExplicitCloseRespectPersistencePolicy ) {
+	for ( int policy = 0; policy < 3; ++policy ) {
+		HTTPTest::Server server( [policy]( TcpSocket& socket, const std::string&, unsigned ) {
+			return HTTPTest::Server::send(
+				socket, "HTTP/1.0 200 OK\r\nContent-Length: 2\r\n" +
+							std::string( policy ? "Connection: Keep-Alive\r\n" : "" ) + "\r\nok" );
+		} );
+		ASSERT_TRUE( server.isListening() );
+		Http::Pool pool;
+		auto client = pool.get( server.uri() );
+		Http::Request request;
+		if ( policy == 2 )
+			request.setField( "Connection", "close" );
+		for ( int i = 0; i < 2; ++i ) {
+			EXPECT_EQ( client->sendRequest( request, Seconds( 1 ) ).getStatus(),
+					   Http::Response::Ok );
+		}
+		EXPECT_EQ( server.accepted.load(), policy == 1 ? 1u : 2u );
+	}
+}
+
+UTEST( Http, compressedContentLengthRequiresValidatedDecoderCompletion ) {
+	const std::string text( 70000, 'x' );
+	for ( const auto mode : { System::Compression::MODE_GZIP, System::Compression::MODE_DEFLATE,
+							  System::Compression::MODE_BROTLI } ) {
+		System::IOStreamMemory input( text.data(), text.size() );
+		System::IOStreamString encoded;
+		if ( mode == System::Compression::MODE_BROTLI ) {
+			// Fixed Brotli encoding of 70,000 'x' bytes; eepp includes no Brotli encoder.
+			const unsigned char bytes[] = { 0x5b, 0x6f, 0x11, 0x81, 0x5f, 0x02, 0x2f,
+											0x1e, 0x0b, 0x04, 0x52, 0x12, 0x02, 0x00 };
+			encoded.write( reinterpret_cast<const char*>( bytes ), sizeof( bytes ) );
+		} else {
+			ASSERT_EQ( System::Compression::compress( encoded, input, mode ),
+					   System::Compression::OK );
+		}
+		const char* encoding =
+			mode == System::Compression::MODE_GZIP
+				? "gzip"
+				: ( mode == System::Compression::MODE_BROTLI ? "br" : "deflate" );
+		HTTPTest::Server server( [&]( TcpSocket& socket, const std::string& request, unsigned ) {
+			auto bytes = encoded.getStream();
+			if ( request.find( "/truncated " ) != std::string::npos )
+				bytes.pop_back();
+			return HTTPTest::Server::respond(
+				socket, bytes, std::string( "Content-Encoding: " ) + encoding + "\r\n" );
+		} );
+		ASSERT_TRUE( server.isListening() );
+		Http::Pool pool;
+		auto client = pool.get( server.uri() );
+		for ( int i = 0; i < 2; ++i ) {
+			auto good = client->sendRequest( Http::Request(), Seconds( 1 ) );
+			EXPECT_EQ( good.getStatus(), Http::Response::Ok );
+			EXPECT_TRUE( good.getBody() == text );
+		}
+		EXPECT_EQ( server.accepted.load(), 1u );
+		auto truncated = client->sendRequest( Http::Request( "/truncated" ), Seconds( 1 ) );
+		EXPECT_EQ( truncated.getStatus(), Http::Response::InvalidResponse );
+		EXPECT_EQ( client->sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+				   Http::Response::Ok );
+		EXPECT_EQ( server.accepted.load(), 2u );
+	}
+}
+
+UTEST( Http, resumedDownloadReusesHeadConnectionAndRequestsRemainingRange ) {
+	std::atomic<bool> sawRange{ false };
+	HTTPTest::Server server( [&]( TcpSocket& socket, const std::string& request, unsigned ) {
+		if ( request.find( "HEAD " ) == 0 ) {
+			return HTTPTest::Server::send( socket, "HTTP/1.1 200 OK\r\nContent-Length: 6\r\n"
+												   "Accept-Ranges: bytes\r\n\r\n" );
+		}
+		sawRange = request.find( "range: bytes=3-\r\n" ) != std::string::npos;
+		return HTTPTest::Server::send(
+			socket, "HTTP/1.1 206 Partial Content\r\nContent-Length: 3\r\n\r\ndef" );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::Pool pool;
+	System::IOStreamString output;
+	output.write( "abc", 3 );
+	Http::Request request;
+	request.setContinue( true );
+	auto response = pool.get( server.uri() )->downloadRequest( request, output, Seconds( 1 ) );
+	EXPECT_EQ( response.getStatus(), Http::Response::PartialContent );
+	EXPECT_TRUE( output.getStream() == "abcdef" );
+	EXPECT_TRUE( sawRange.load() );
+	EXPECT_EQ( server.accepted.load(), 1u );
+}
+
+UTEST( Http, destinationWriteFailureDiscardsConnection ) {
+	struct ShortWriteStream : System::IOStreamString {
+		ios_size write( const char*, ios_size size ) { return size - 1; }
+	};
+	HTTPTest::Server server( []( TcpSocket& socket, const std::string&, unsigned ) {
+		return HTTPTest::Server::respond( socket );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::Pool pool;
+	auto client = pool.get( server.uri() );
+	ShortWriteStream output;
+	auto bad = client->downloadRequest( Http::Request(), output, Seconds( 1 ) );
+	EXPECT_EQ( bad.getStatus(), Http::Response::InvalidResponse );
+	EXPECT_EQ( client->sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+			   Http::Response::Ok );
+	EXPECT_EQ( server.accepted.load(), 2u );
+}
+
+namespace {
+
+// Collects async completions and cancellations, which arrive on worker threads.
+struct AsyncResults {
+	void complete( const std::string& path, Http::Response::Status status ) {
+		std::lock_guard<std::mutex> lock( mutex );
+		completed.emplace_back( path, status );
+		condition.notify_all();
+	}
+
+	void cancel() {
+		std::lock_guard<std::mutex> lock( mutex );
+		++cancelled;
+		condition.notify_all();
+	}
+
+	template <class Predicate> bool waitFor( Predicate predicate, Time timeout = Seconds( 3 ) ) {
+		std::unique_lock<std::mutex> lock( mutex );
+		return condition.wait_for( lock, std::chrono::microseconds( timeout.asMicroseconds() ),
+								   [&] { return predicate(); } );
+	}
+
+	Http::AsyncResponseCallback callback( const std::string& path ) {
+		return [this, path]( const Http&, Http::Request&, Http::Response& response ) {
+			complete( path, response.getStatus() );
+		};
+	}
+
+	std::mutex mutex;
+	std::condition_variable condition;
+	std::vector<std::pair<std::string, Http::Response::Status>> completed;
+	unsigned cancelled{ 0 };
+};
+
+// The first request on the server is held until released; later ones respond at once.
+struct HeldFirstRequest {
+	HeldFirstRequest() :
+		server( [this]( TcpSocket& socket, const std::string& request, unsigned ) {
+			const auto path = request.substr( 4, request.find( ' ', 4 ) - 4 );
+			{
+				std::lock_guard<std::mutex> lock( mutex );
+				order.push_back( path );
+			}
+			if ( path == "/held" )
+				gate.enterAndWait();
+			return HTTPTest::Server::respond( socket );
+		} ) {}
+
+	~HeldFirstRequest() { gate.release(); }
+
+	std::vector<std::string> served() {
+		std::lock_guard<std::mutex> lock( mutex );
+		return order;
+	}
+
+	ThreadGate gate;
+	std::mutex mutex;
+	std::vector<std::string> order;
+	HTTPTest::Server server;
+};
+
+Http::ConnectionPoolOptions oneConnectionPerHost() {
+	Http::ConnectionPoolOptions options;
+	options.maxConnectionsPerHost = 1;
+	return options;
+}
+
+} // namespace
+
+UTEST( Http, queuedAsyncRequestsDoNotTimeOutWhileWaitingForAConnection ) {
+	// Both executor modes: one thread per request, and the shared thread pool.
+	for ( const bool shared : { false, true } ) {
+		auto threadPool = shared ? System::ThreadPool::createShared( 4 ) : nullptr;
+		Http::setThreadPool( threadPool );
+		{
+			HeldFirstRequest origin;
+			ASSERT_TRUE( origin.server.isListening() );
+			AsyncResults results;
+			Http::Pool pool( oneConnectionPerHost() );
+			auto client = pool.get( origin.server.uri() );
+			client->sendAsyncRequest( results.callback( "/held" ), Http::Request( "/held" ),
+									  Seconds( 5 ) );
+			ASSERT_TRUE( origin.gate.waitUntilEntered() );
+			// Queued far longer than its own timeout; its transfer is fast once it is leased.
+			client->sendAsyncRequest( results.callback( "/queued" ), Http::Request( "/queued" ),
+									  Milliseconds( 200 ) );
+			std::this_thread::sleep_for( std::chrono::milliseconds( 500 ) );
+			origin.gate.release();
+			EXPECT_TRUE( results.waitFor( [&] { return results.completed.size() == 2; } ) );
+			std::lock_guard<std::mutex> lock( results.mutex );
+			for ( const auto& [path, status] : results.completed )
+				EXPECT_EQ_MSG( status, Http::Response::Ok, path.c_str() );
+		}
+		Http::setThreadPool( nullptr );
+	}
+}
+
+UTEST( Http, queuedRequestsDoNotOccupySharedWorkers ) {
+	auto threadPool = System::ThreadPool::createShared( 2 );
+	Http::setThreadPool( threadPool );
+	{
+		HeldFirstRequest busy;
+		HTTPTest::Server other( []( TcpSocket& socket, const std::string&, unsigned ) {
+			return HTTPTest::Server::respond( socket );
+		} );
+		ASSERT_TRUE( busy.server.isListening() && other.isListening() );
+		AsyncResults results;
+		Http::Pool pool( oneConnectionPerHost() );
+		auto busyClient = pool.get( busy.server.uri() );
+		// One worker runs the held transfer; the queued requests must not take the other.
+		busyClient->sendAsyncRequest( results.callback( "/held" ), Http::Request( "/held" ),
+									  Seconds( 5 ) );
+		ASSERT_TRUE( busy.gate.waitUntilEntered() );
+		for ( int i = 0; i < 3; ++i ) {
+			busyClient->sendAsyncRequest( results.callback( "/queued" ), Http::Request( "/queued" ),
+										  Seconds( 5 ) );
+		}
+		pool.get( other.uri() )
+			->sendAsyncRequest( results.callback( "/other" ), Http::Request( "/other" ),
+								Seconds( 5 ) );
+		EXPECT_TRUE( results.waitFor( [&] {
+			return std::any_of( results.completed.begin(), results.completed.end(),
+								[]( const auto& item ) { return item.first == "/other"; } );
+		} ) );
+		busy.gate.release();
+		EXPECT_TRUE( results.waitFor( [&] { return results.completed.size() == 5; } ) );
+	}
+	Http::setThreadPool( nullptr );
+}
+
+UTEST( Http, queuedRequestsAreServedInArrivalOrder ) {
+	auto threadPool = System::ThreadPool::createShared( 4 );
+	Http::setThreadPool( threadPool );
+	{
+		HeldFirstRequest origin;
+		ASSERT_TRUE( origin.server.isListening() );
+		AsyncResults results;
+		Http::Pool pool( oneConnectionPerHost() );
+		auto client = pool.get( origin.server.uri() );
+		client->sendAsyncRequest( results.callback( "/held" ), Http::Request( "/held" ),
+								  Seconds( 5 ) );
+		ASSERT_TRUE( origin.gate.waitUntilEntered() );
+		for ( const char* path : { "/1", "/2", "/3", "/4" } )
+			client->sendAsyncRequest( results.callback( path ), Http::Request( path ),
+									  Seconds( 5 ) );
+		origin.gate.release();
+		EXPECT_TRUE( results.waitFor( [&] { return results.completed.size() == 5; } ) );
+		const std::vector<std::string> expected{ "/held", "/1", "/2", "/3", "/4" };
+		EXPECT_TRUE( origin.served() == expected );
+		EXPECT_EQ( origin.server.accepted.load(), 1u );
+	}
+	Http::setThreadPool( nullptr );
+}
+
+UTEST( Http, cancellingOrClosingReleasesQueuedRequestsImmediately ) {
+	auto threadPool = System::ThreadPool::createShared( 4 );
+	Http::setThreadPool( threadPool );
+	{
+		HeldFirstRequest origin;
+		ASSERT_TRUE( origin.server.isListening() );
+		AsyncResults results;
+		Http::Pool pool( oneConnectionPerHost() );
+		auto client = pool.get( origin.server.uri() );
+		client->sendAsyncRequest( results.callback( "/held" ), Http::Request( "/held" ),
+								  Seconds( 5 ) );
+		ASSERT_TRUE( origin.gate.waitUntilEntered() );
+		auto queued = [&]( const char* path ) {
+			Http::Request request( path );
+			request.setCancelCallback(
+				[&]( const Http&, const Http::Request& ) { results.cancel(); } );
+			return client->sendAsyncRequest( results.callback( path ), request, Seconds( 5 ) );
+		};
+		const auto cancelled = queued( "/cancelled" );
+		queued( "/closed" );
+		// The held connection is still busy, so only the cancellation itself can release these.
+		EXPECT_TRUE( client->setCancelRequest( cancelled ) );
+		EXPECT_TRUE( results.waitFor( [&] { return results.cancelled == 1; } ) );
+		pool.close();
+		EXPECT_TRUE( results.waitFor( [&] { return results.cancelled == 2; } ) );
+		{
+			std::lock_guard<std::mutex> lock( results.mutex );
+			EXPECT_TRUE( results.completed.empty() );
+		}
+		origin.gate.release();
+		const auto served = origin.served();
+		EXPECT_TRUE( std::find( served.begin(), served.end(), "/cancelled" ) == served.end() );
+		EXPECT_TRUE( std::find( served.begin(), served.end(), "/closed" ) == served.end() );
+	}
+	Http::setThreadPool( nullptr );
+}
+
+UTEST( Http, runningRequestsNeverWaitOnSlotsReservedForQueuedWork ) {
+	// One worker and one connection: the redirect hop of the running request must not wait for
+	// the slot granted to the request queued behind it on that same worker.
+	auto threadPool = System::ThreadPool::createShared( 1 );
+	Http::setThreadPool( threadPool );
+	{
+		ThreadGate gate;
+		HTTPTest::Server server( [&]( TcpSocket& socket, const std::string& request, unsigned ) {
+			if ( request.find( "GET /redirect " ) == 0 ) {
+				gate.enterAndWait();
+				return HTTPTest::Server::send( socket, "HTTP/1.1 302 Found\r\nLocation: /final\r\n"
+													   "Content-Length: 0\r\n\r\n" );
+			}
+			return HTTPTest::Server::respond( socket );
+		} );
+		ASSERT_TRUE( server.isListening() );
+		AsyncResults results;
+		Http::Pool pool( oneConnectionPerHost() );
+		auto client = pool.get( server.uri() );
+		client->sendAsyncRequest( results.callback( "/redirect" ), Http::Request( "/redirect" ),
+								  Seconds( 5 ) );
+		ASSERT_TRUE( gate.waitUntilEntered() );
+		client->sendAsyncRequest( results.callback( "/queued" ), Http::Request( "/queued" ),
+								  Seconds( 5 ) );
+		gate.release();
+		EXPECT_TRUE( results.waitFor( [&] { return results.completed.size() == 2; } ) );
+		{
+			std::lock_guard<std::mutex> lock( results.mutex );
+			for ( const auto& [path, status] : results.completed )
+				EXPECT_EQ_MSG( status, Http::Response::Ok, path.c_str() );
+		}
+		EXPECT_EQ( server.accepted.load(), 1u );
+		pool.close();
+	}
+	Http::setThreadPool( nullptr );
+}
+
+namespace {
+
+// Restores the process-wide connection limit, even when an assertion ends the test early.
+struct OpenConnectionLimit {
+	explicit OpenConnectionLimit( std::size_t count ) : previous( Http::getMaxOpenConnections() ) {
+		Http::setMaxOpenConnections( count );
+	}
+
+	~OpenConnectionLimit() { Http::setMaxOpenConnections( previous ); }
+
+	std::size_t previous;
+};
+
+HTTPTest::Server::Handler respondOk() {
+	return []( TcpSocket& socket, const std::string&, unsigned ) {
+		return HTTPTest::Server::respond( socket );
+	};
+}
+
+} // namespace
+
+UTEST( Http, idleConnectionsExpireOnATimerWithoutFurtherRequests ) {
+	HTTPTest::Server server( respondOk() );
+	ASSERT_TRUE( server.isListening() );
+	Http::ConnectionPoolOptions options;
+	options.idleTimeout = Milliseconds( 100 );
+	Http::Pool pool( options );
+	EXPECT_EQ( pool.get( server.uri() )->sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+			   Http::Response::Ok );
+	// No request follows, in this pool or any other: only the timer can close it.
+	EXPECT_TRUE( server.waitForClosed( 1 ) );
+	EXPECT_EQ( server.accepted.load(), 1u );
+}
+
+UTEST( Http, processWideLimitReclaimsIdleConnectionsFromOtherPools ) {
+	OpenConnectionLimit limit( 1 );
+	EXPECT_EQ( Http::getMaxOpenConnections(), static_cast<std::size_t>( 1 ) );
+	HTTPTest::Server first( respondOk() );
+	HTTPTest::Server second( respondOk() );
+	ASSERT_TRUE( first.isListening() && second.isListening() );
+	Http::Pool a;
+	Http::Pool b;
+	EXPECT_EQ( a.get( first.uri() )->sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+			   Http::Response::Ok );
+	EXPECT_EQ( b.get( second.uri() )->sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+			   Http::Response::Ok );
+	EXPECT_TRUE( first.waitForClosed( 1 ) );
+	EXPECT_EQ( a.get( first.uri() )->sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+			   Http::Response::Ok );
+	EXPECT_TRUE( second.waitForClosed( 1 ) );
+	EXPECT_EQ( first.accepted.load(), 2u );
+	EXPECT_EQ( second.accepted.load(), 1u );
+}
+
+UTEST( Http, processWideLimitWaitsWhileEverySocketIsActive ) {
+	OpenConnectionLimit limit( 1 );
+	ThreadGate gate;
+	HTTPTest::Server busy( [&]( TcpSocket& socket, const std::string&, unsigned ) {
+		gate.enterAndWait();
+		return HTTPTest::Server::respond( socket );
+	} );
+	HTTPTest::Server other( respondOk() );
+	ASSERT_TRUE( busy.isListening() && other.isListening() );
+	Http::Pool a;
+	Http::Pool b;
+	Http::Response held;
+	std::thread holder(
+		[&] { held = a.get( busy.uri() )->sendRequest( Http::Request(), Seconds( 5 ) ); } );
+	const bool entered = gate.waitUntilEntered();
+	// The only socket is in active use and nothing is reclaimable: the blocking call times out.
+	auto blocked = b.get( other.uri() )->sendRequest( Http::Request(), Milliseconds( 200 ) );
+	const auto acceptedWhileHeld = other.accepted.load();
+	gate.release();
+	holder.join();
+	EXPECT_TRUE( entered );
+	EXPECT_EQ( blocked.getStatus(), Http::Response::ConnectionFailed );
+	EXPECT_EQ( acceptedWhileHeld, 0u );
+	EXPECT_EQ( held.getStatus(), Http::Response::Ok );
+	// Once that request finishes its idle socket is reclaimable.
+	EXPECT_EQ( b.get( other.uri() )->sendRequest( Http::Request(), Seconds( 1 ) ).getStatus(),
+			   Http::Response::Ok );
+	EXPECT_TRUE( busy.waitForClosed( 1 ) );
+}
+
+UTEST( Http, discardingAGrantedTaskInsideTheExecutorLockDoesNotDeadlock ) {
+	// ThreadPool::removeId() destroys queued work under the executor's own mutex. Returning that
+	// work's connection grants it to the next waiter, which must not schedule synchronously.
+	auto threadPool = System::ThreadPool::createShared( 1 );
+	ThreadGate workerGate;
+	const Uint64 gateId = threadPool->run( [&] { workerGate.enterAndWait(); } );
+	ASSERT_TRUE( workerGate.waitUntilEntered() );
+	Http::setThreadPool( threadPool );
+	{
+		HTTPTest::Server server( respondOk() );
+		ASSERT_TRUE( server.isListening() );
+		AsyncResults results;
+		Http::Pool pool( oneConnectionPerHost() );
+		auto client = pool.get( server.uri() );
+		client->sendAsyncRequest( results.callback( "/discarded" ), Http::Request( "/discarded" ),
+								  Seconds( 5 ) );
+		const Uint64 discardedId = gateId + 1;
+		System::Clock clock;
+		while ( !threadPool->existsIdInQueue( discardedId ) &&
+				clock.getElapsedTime() < Seconds( 3 ) )
+			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		ASSERT_TRUE( threadPool->existsIdInQueue( discardedId ) );
+		client->sendAsyncRequest( results.callback( "/next" ), Http::Request( "/next" ),
+								  Seconds( 5 ) );
+
+		auto removed = std::make_shared<std::atomic<bool>>( false );
+		std::thread remover( [threadPool, discardedId, removed] {
+			threadPool->removeId( discardedId );
+			removed->store( true );
+		} );
+		clock.restart();
+		while ( !removed->load() && clock.getElapsedTime() < Seconds( 3 ) )
+			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		const bool returned = removed->load();
+		if ( returned )
+			remover.join();
+		else
+			remover.detach(); // Deadlocked: leave it rather than hang the suite.
+		EXPECT_TRUE( returned );
+		workerGate.release();
+		if ( returned ) {
+			EXPECT_TRUE( results.waitFor( [&] { return !results.completed.empty(); } ) );
+			std::lock_guard<std::mutex> lock( results.mutex );
+			ASSERT_EQ( results.completed.size(), static_cast<size_t>( 1 ) );
+			EXPECT_STREQ( results.completed[0].first.c_str(), "/next" );
+			EXPECT_EQ( results.completed[0].second, Http::Response::Ok );
+		}
+	}
+	Http::setThreadPool( nullptr );
+}
+
+UTEST( Http, requestsNeverOwnTheirExecutor ) {
+	// Once the app releases the executor during a request, it must be destroyed by the app, not
+	// later by its own worker when that request completes.
+	auto threadPool = System::ThreadPool::createShared( 1 );
+	std::weak_ptr<System::ThreadPool> observed = threadPool;
+	Http::setThreadPool( threadPool );
+	ThreadGate gate;
+	HTTPTest::Server server( [&]( TcpSocket& socket, const std::string&, unsigned ) {
+		gate.enterAndWait();
+		return HTTPTest::Server::respond( socket );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	AsyncResults results;
+	Http::Pool pool;
+	pool.get( server.uri() )
+		->sendAsyncRequest( results.callback( "/" ), Http::Request(), Seconds( 5 ) );
+	ASSERT_TRUE( gate.waitUntilEntered() );
+	Http::setThreadPool( nullptr );
+	std::thread releaser( [&] {
+		std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+		gate.release();
+	} );
+	// Joins the worker, which finishes the request once the gate opens.
+	threadPool.reset();
+	EXPECT_TRUE( observed.expired() );
+	releaser.join();
+	EXPECT_TRUE( results.waitFor( [&] { return results.completed.size() == 1; } ) );
+}
+
+UTEST( Http, budgetWaitersProceedWhenAnActiveSocketBecomesIdle ) {
+	OpenConnectionLimit limit( 1 );
+	ThreadGate entered;
+	HTTPTest::Server busy( [&]( TcpSocket& socket, const std::string&, unsigned ) {
+		entered.release();
+		std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+		return HTTPTest::Server::respond( socket );
+	} );
+	HTTPTest::Server other( respondOk() );
+	ASSERT_TRUE( busy.isListening() && other.isListening() );
+	Http::Pool a;
+	Http::Pool b;
+	Http::Response held;
+	std::thread holder(
+		[&] { held = a.get( busy.uri() )->sendRequest( Http::Request(), Seconds( 5 ) ); } );
+	{
+		std::unique_lock<std::mutex> lock( entered.mutex );
+		entered.condition.wait_for( lock, std::chrono::seconds( 5 ),
+									[&] { return entered.released; } );
+	}
+	// The held socket turns idle after about 50 ms, well inside this timeout and the coarse
+	// recheck interval: becoming reclaimable must wake this waiter.
+	auto response = b.get( other.uri() )->sendRequest( Http::Request(), Milliseconds( 200 ) );
+	holder.join();
+	EXPECT_EQ( held.getStatus(), Http::Response::Ok );
+	EXPECT_EQ( response.getStatus(), Http::Response::Ok );
+}
+
+UTEST( Http, resumedBlockingDownloadKeepsItsDeadlineAcrossTheProbe ) {
+	HTTPTest::Server server( []( TcpSocket& socket, const std::string& request, unsigned ) {
+		std::this_thread::sleep_for( std::chrono::milliseconds( 80 ) );
+		if ( request.find( "HEAD " ) == 0 ) {
+			return HTTPTest::Server::send( socket, "HTTP/1.1 200 OK\r\nContent-Length: 6\r\n"
+												   "Accept-Ranges: bytes\r\n\r\n" );
+		}
+		return HTTPTest::Server::send(
+			socket, "HTTP/1.1 206 Partial Content\r\nContent-Length: 3\r\n\r\ndef" );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::Pool pool;
+	System::IOStreamString output;
+	output.write( "abc", 3 );
+	Http::Request request;
+	request.setContinue( true );
+	// Probe and range request take about 160 ms in all: past a 120 ms blocking deadline.
+	auto response =
+		pool.get( server.uri() )->downloadRequest( request, output, Milliseconds( 120 ) );
+	EXPECT_NE( response.getStatus(), Http::Response::PartialContent );
+}
+
+UTEST( Http, cancelAllRequestsStopsEveryPoolButKeepsPoolsUsable ) {
+	auto threadPool = System::ThreadPool::createShared( 4 );
+	Http::setThreadPool( threadPool );
+	{
+		ThreadGate gate;
+		HTTPTest::Server server( [&]( TcpSocket& socket, const std::string& request, unsigned ) {
+			if ( request.find( "GET /held " ) == 0 )
+				gate.enterAndWait();
+			return HTTPTest::Server::respond( socket );
+		} );
+		ASSERT_TRUE( server.isListening() );
+		AsyncResults results;
+		Http::Pool blockingPool;
+		Http::Pool asyncPool( oneConnectionPerHost() );
+		// A blocking request on another thread, which no client tracks...
+		Http::Response blocking;
+		std::thread caller( [&] {
+			blocking = blockingPool.get( server.uri() )
+						   ->sendRequest( Http::Request( "/held" ), Seconds( 5 ) );
+		} );
+		ASSERT_TRUE( gate.waitUntilEntered() );
+		// ...and, in another pool, an async request queued behind a running one.
+		auto client = asyncPool.get( server.uri() );
+		client->sendAsyncRequest( results.callback( "/running" ), Http::Request( "/held" ),
+								  Seconds( 5 ) );
+		ASSERT_TRUE( server.waitForRequests( 2 ) );
+		Http::Request queued( "/queued" );
+		queued.setCancelCallback( [&]( const Http&, const Http::Request& ) { results.cancel(); } );
+		client->sendAsyncRequest( results.callback( "/queued" ), queued, Seconds( 5 ) );
+
+		Http::cancelAllRequests();
+		// Running requests notice at their next read checkpoint, without the server answering.
+		EXPECT_TRUE( results.waitFor( [&] { return results.cancelled == 1; } ) );
+		EXPECT_TRUE( Http::waitForConnectionsToClose( Seconds( 1 ) ) );
+		caller.join();
+		EXPECT_NE( blocking.getStatus(), Http::Response::Ok );
+		{
+			std::lock_guard<std::mutex> lock( results.mutex );
+			EXPECT_TRUE( results.completed.empty() );
+		}
+		gate.release();
+		// Requests made afterwards run normally.
+		EXPECT_EQ( blockingPool.get( server.uri() )
+					   ->sendRequest( Http::Request( "/after" ), Seconds( 1 ) )
+					   .getStatus(),
+				   Http::Response::Ok );
+		client->sendAsyncRequest( results.callback( "/after" ), Http::Request( "/after" ),
+								  Seconds( 1 ) );
+		EXPECT_TRUE( results.waitFor( [&] { return results.completed.size() == 1; } ) );
+	}
+	Http::setThreadPool( nullptr );
+}
+
+UTEST( Http, sslEndIsDeferredWhileSocketsLive ) {
+	if ( !SSL::SSLSocket::isSupported() )
+		UTEST_SKIP( "TLS support is not enabled" );
+	// Ending TLS while a socket still lives must keep the backend until it is destroyed; a socket
+	// created meanwhile keeps it in use. ASan builds verify that no state is released early.
+	std::unique_ptr<SSL::SSLSocket> live( SSL::SSLSocket::New( "localhost", true, true ) );
+	EXPECT_TRUE( SSL::SSLSocket::end() );
+	EXPECT_TRUE( SSL::SSLSocket::isInitialized() );
+	std::unique_ptr<SSL::SSLSocket> created( SSL::SSLSocket::New( "localhost", true, true ) );
+	live.reset();
+	created.reset();
+	EXPECT_TRUE( SSL::SSLSocket::isInitialized() );
+	// With no socket left, end() releases immediately; the next socket initializes again.
+	SSL::SSLSocket::end();
+	EXPECT_FALSE( SSL::SSLSocket::isInitialized() );
+	std::unique_ptr<SSL::SSLSocket> again( SSL::SSLSocket::New( "localhost", true, true ) );
+	EXPECT_TRUE( SSL::SSLSocket::isInitialized() );
+}
+
+UTEST( Http, sslEndDuringSocketConstructionKeepsTheBackend ) {
+	if ( !SSL::SSLSocket::isSupported() )
+		UTEST_SKIP( "TLS support is not enabled" );
+	// Forces an end() between backend initialization and live-socket registration: it must not
+	// see zero sockets there and release the backend the new socket is about to use.
+	std::thread ender;
+	std::atomic<bool> ended{ false };
+	SSL::SSLSocket::setConstructionHook( [&] {
+		ender = std::thread( [&] {
+			SSL::SSLSocket::end();
+			ended.store( true );
+		} );
+		// Gives end() the chance to finish here; it may only proceed once the socket is live.
+		System::Clock clock;
+		while ( !ended.load() && clock.getElapsedTime() < Milliseconds( 100 ) )
+			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	} );
+	std::unique_ptr<SSL::SSLSocket> socket( SSL::SSLSocket::New( "localhost", true, true ) );
+	SSL::SSLSocket::setConstructionHook( {} );
+	ender.join();
+	EXPECT_TRUE( ended.load() );
+	EXPECT_TRUE( SSL::SSLSocket::isInitialized() );
+	// The deferred end() runs once the socket is gone.
+	socket.reset();
+	EXPECT_FALSE( SSL::SSLSocket::isInitialized() );
+}
+
+UTEST( Http, sslEndDuringAHandshakeWaitsForTheSocket ) {
+	if ( !SSL::SSLSocket::isSupported() )
+		UTEST_SKIP( "TLS support is not enabled" );
+	TcpListener listener;
+	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
+	ThreadGate gate;
+	// The server reads the ClientHello and then stalls, holding the client inside its handshake.
+	std::thread server( [&] {
+		TcpSocket client;
+		if ( listener.accept( client ) == Socket::Done ) {
+			char buffer[1024];
+			std::size_t received = 0;
+			client.receive( buffer, sizeof( buffer ), received );
+		}
+		gate.enterAndWait();
+		client.disconnect();
+	} );
+	Socket::Status status = Socket::Done;
+	std::thread handshake( [&] {
+		std::unique_ptr<SSL::SSLSocket> socket( SSL::SSLSocket::New( "localhost", true, true ) );
+		status = socket->connect( IpAddress::LocalHost, listener.getLocalPort(), Seconds( 5 ) );
+	} );
+	const bool stalled = gate.waitUntilEntered();
+	SSL::SSLSocket::end();
+	const bool keptDuringHandshake = SSL::SSLSocket::isInitialized();
+	gate.release();
+	handshake.join();
+	server.join();
+	listener.close();
+	ASSERT_TRUE( stalled );
+	EXPECT_TRUE( keptDuringHandshake );
+	EXPECT_NE( status, Socket::Done );
+	EXPECT_FALSE( SSL::SSLSocket::isInitialized() );
+}
+
+UTEST( Http, engineShutdownCancelsRequestsAndClosesTheirSockets ) {
+	Engine::instance();
+	ThreadGate gate;
+	HTTPTest::Server server( [&]( TcpSocket& socket, const std::string&, unsigned ) {
+		gate.enterAndWait();
+		return HTTPTest::Server::respond( socket );
+	} );
+	ASSERT_TRUE( server.isListening() );
+	Http::Pool pool;
+	Http::Response response;
+	std::atomic<bool> finished{ false };
+	std::thread caller( [&] {
+		response = pool.get( server.uri() )->sendRequest( Http::Request(), Seconds( 5 ) );
+		finished.store( true );
+	} );
+	ASSERT_TRUE( gate.waitUntilEntered() );
+	System::Clock clock;
+	Engine::destroySingleton();
+	const Time shutdown = clock.getElapsedTime();
+	// The server still holds its response: only the shutdown can have ended the request, and it
+	// must have closed the socket within the shutdown's short wait.
+	clock.restart();
+	while ( !finished.load() && clock.getElapsedTime() < Seconds( 1 ) )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	const bool endedByShutdown = finished.load();
+	gate.release();
+	caller.join();
+	EXPECT_TRUE( endedByShutdown );
+	// The socket closed before the shutdown's 100 ms wait for it ran out.
+	EXPECT_TRUE( shutdown < Milliseconds( 100 ) );
+	EXPECT_NE( response.getStatus(), Http::Response::Ok );
+	EXPECT_TRUE( server.waitForClosed( 1 ) );
+}

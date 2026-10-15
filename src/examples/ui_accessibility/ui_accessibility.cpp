@@ -19,7 +19,8 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	bool testPasswordMode = false;
 	bool testHTML = false;
 	size_t benchmarkItems = 1000;
-	size_t benchmarkIterations = 100000;
+	size_t benchmarkIterations = 1000000;
+	size_t benchmarkWarmupIterations = 100000;
 	for ( int i = 1; i < argc; ++i ) {
 		multiWindow |= std::string_view( argv[i] ) == "--multi-window";
 		closePrimary |= std::string_view( argv[i] ) == "--close-primary";
@@ -35,6 +36,8 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			benchmarkItems = std::max<size_t>( 1, std::strtoull( argv[++i], nullptr, 10 ) );
 		if ( std::string_view( argv[i] ) == "--benchmark-iterations" && i + 1 < argc )
 			benchmarkIterations = std::max<size_t>( 1, std::strtoull( argv[++i], nullptr, 10 ) );
+		if ( std::string_view( argv[i] ) == "--benchmark-warmup-iterations" && i + 1 < argc )
+			benchmarkWarmupIterations = std::strtoull( argv[++i], nullptr, 10 );
 	}
 	UIApplication::Settings settings;
 	settings.threadPool = ThreadPool::createShared( 1 );
@@ -163,18 +166,36 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 			}
 		}
 		const auto readinessUs = clock.getElapsedTime().asMicroseconds();
+		if ( !manager->isBackendInitializationComplete() ) {
+			std::cerr << "Inactive accessibility benchmark backend initialization timed out\n";
+			return EXIT_FAILURE;
+		}
 		if ( manager->hasActiveNativeClients() ) {
 			std::cerr << "Inactive accessibility benchmark requires no attached native clients\n";
 			return EXIT_FAILURE;
 		}
+		// Warm the same text/layout/event path before measuring it, in both modes. No drawing
+		// or event-loop pumping is added to the timed workload.
+		const auto runNotifications = [status]( size_t iterations ) {
+			for ( size_t i = 0; i < iterations; ++i )
+				status->setText( i & 1 ? "Ready" : "Idle" );
+		};
 		clock.restart();
-		for ( size_t i = 0; i < benchmarkIterations; ++i )
-			status->setText( i & 1 ? "Ready" : "Idle" );
+		runNotifications( benchmarkWarmupIterations );
+		const auto warmupUs = clock.getElapsedTime().asMicroseconds();
+		clock.restart();
+		runNotifications( benchmarkIterations );
 		const auto notificationsUs = clock.getElapsedTime().asMicroseconds();
+		if ( manager->hasActiveNativeClients() ) {
+			std::cerr << "A native client connected during the inactive accessibility benchmark\n";
+			return EXIT_FAILURE;
+		}
 		std::cout << "{\"initialization_us\":" << initializationUs
 				  << ",\"readiness_us\":" << readinessUs
 				  << ",\"iterations\":" << benchmarkIterations
-				  << ",\"notifications_us\":" << notificationsUs << "}\n";
+				  << ",\"warmup_iterations\":" << benchmarkWarmupIterations
+				  << ",\"warmup_us\":" << warmupUs << ",\"notifications_us\":" << notificationsUs
+				  << "}\n";
 		return EXIT_SUCCESS;
 	}
 	content->find<UIPushButton>( "save" )->onClick(

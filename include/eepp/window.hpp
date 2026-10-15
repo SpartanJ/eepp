@@ -6,6 +6,7 @@
 #include <eepp/window/cursor.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/window/displaymanager.hpp>
+#include <eepp/window/draganddrop.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/inputevent.hpp>

@@ -29,7 +29,7 @@ static void init_flex_test() {
 	FontFamily::loadFromRegular( font );
 	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
-	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
+	SceneManager::instance()->setCurrentSceneNode( sceneNode );
 	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
 	themeManager->applyDefaultTheme( sceneNode->getRoot() );

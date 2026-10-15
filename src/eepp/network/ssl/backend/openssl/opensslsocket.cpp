@@ -220,12 +220,13 @@ OpenSSLSocket::~OpenSSLSocket() {
 
 Socket::Status OpenSSLSocket::connect( const IpAddress& /*remoteAddress*/,
 									   unsigned short /*remotePort*/, Time /*timeout*/ ) {
-	if ( mConnected ) {
-		disconnect();
-	}
+	// A failed handshake can own TLS state without having reached Connected.
+	disconnect();
 
 	// Set up a SSL_CTX object, which will tell our BIO object how to do its work
 	mCTX = SSL_CTX_new( SSLv23_client_method() );
+	if ( !mCTX )
+		return mStatus = Socket::Error;
 
 	SSL_CTX_set_options( mCTX, SSL_OP_NO_TICKET );
 
@@ -270,6 +271,10 @@ Socket::Status OpenSSLSocket::connect( const IpAddress& /*remoteAddress*/,
 	}
 
 	mSSL = SSL_new( mCTX );
+	if ( !mSSL ) {
+		disconnect();
+		return mStatus = Socket::Error;
+	}
 
 	SSL_set_fd( mSSL, (int)mSSLSocket->mSocket );
 
@@ -320,12 +325,12 @@ Socket::Status OpenSSLSocket::connect( const IpAddress& /*remoteAddress*/,
 }
 
 void OpenSSLSocket::disconnect() {
-	if ( !mConnected )
-		return;
-
-	SSL_shutdown( mSSL );
-	SSL_free( mSSL );
-	SSL_CTX_free( mCTX );
+	if ( mConnected && mSSL )
+		SSL_shutdown( mSSL );
+	if ( mSSL )
+		SSL_free( mSSL );
+	if ( mCTX )
+		SSL_CTX_free( mCTX );
 
 	mSSL = NULL;
 	mCTX = NULL;
@@ -386,6 +391,7 @@ Socket::Status OpenSSLSocket::send( const void* data, std::size_t size ) {
 }
 
 Socket::Status OpenSSLSocket::receive( void* data, std::size_t size, std::size_t& received ) {
+	received = 0;
 	if ( size == 0 ) {
 		received = 0;
 		return Socket::Done;
@@ -398,6 +404,9 @@ Socket::Status OpenSSLSocket::receive( void* data, std::size_t size, std::size_t
 	int ret = SSL_read( mSSL, buf, size );
 
 	if ( ret < 0 ) {
+		const int error = SSL_get_error( mSSL, ret );
+		if ( error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE )
+			return Socket::NotReady;
 		printError( ret );
 		disconnect();
 		return Socket::Disconnected;

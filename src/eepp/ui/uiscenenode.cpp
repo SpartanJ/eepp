@@ -156,28 +156,6 @@ UISceneNode* UISceneNode::New( EE::Window::Window* window, bool importDefaultRes
 	return eeNew( UISceneNode, ( window, importDefaultResources, std::move( threadPool ) ) );
 }
 
-UISceneNode::Context::Context( UISceneNode* scene ) :
-	mPreviousScene( SceneManager::instance()->setScopedUISceneNode( scene ) ),
-	mWindowContext(
-		Engine::instance()->makeWindowCurrent( scene ? scene->getWindow() : nullptr ) ) {}
-
-UISceneNode::Context::~Context() {
-	if ( !mActive )
-		return;
-	SceneManager::instance()->setScopedUISceneNode( mPreviousScene );
-}
-
-UISceneNode::Context::Context( Context&& other ) noexcept :
-	mPreviousScene( other.mPreviousScene ),
-	mWindowContext( std::move( other.mWindowContext ) ),
-	mActive( other.mActive ) {
-	other.mActive = false;
-}
-
-UISceneNode::Context UISceneNode::makeCurrent() {
-	return Context( this );
-}
-
 UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResources,
 						  std::shared_ptr<ThreadPool> threadPool ) :
 	SceneNode( window ),
@@ -193,6 +171,8 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 	mWebResourceCache( WebResourceCache::New() ),
 	mKeyBindings( mWindow->getInput() ),
 	mThreadPool( std::move( threadPool ) ) {
+	// Scoped scene lookup must recognize this as a UI scene before creating its root widgets.
+	mNodeFlags |= NODE_FLAG_UISCENENODE | NODE_FLAG_OVER_FIND_ALLOWED;
 	auto context = makeCurrent();
 	if ( mImportDefaultResources )
 		mResourceScope->importCatalog( defaultResourceScope().getLocalCatalog() );
@@ -204,8 +184,6 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 
 	// Update only UI elements that requires it.
 	setUpdateAllChildren( false );
-
-	mNodeFlags |= NODE_FLAG_UISCENENODE | NODE_FLAG_OVER_FIND_ALLOWED;
 
 	setEventDispatcher( UIEventDispatcher::New( this ) );
 
@@ -961,6 +939,11 @@ Uint64 UISceneNode::getDocumentGeneration() const {
 			   : 0;
 }
 
+static void storeWebResourceCookies( CookieManager& cookies, const WebResourceResult& result ) {
+	for ( const auto& received : result.cookies )
+		cookies.storeCookiesFromHeader( received.authority, received.setCookie );
+}
+
 void UISceneNode::requestWebResource( WebResourceRequest request,
 									  WebResourceCache::Callback callback ) {
 	if ( !mWebResourceCache || !mDocumentSessionId )
@@ -973,15 +956,14 @@ void UISceneNode::requestWebResource( WebResourceRequest request,
 	auto resourceState = mAsyncResourceLoadState;
 	Uint64 resourceGeneration =
 		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
-	auto wrapped = [resourceState, resourceGeneration, callback = std::move( callback ),
-					authority = request.uri.getAuthority()]( const WebResourceResult& result ) {
+	auto wrapped = [resourceState, resourceGeneration,
+					callback = std::move( callback )]( const WebResourceResult& result ) {
 		if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) )
 			return;
 		UISceneNode* scene = resourceState->owner.load( std::memory_order_acquire );
 		if ( !scene )
 			return;
-		if ( !result.setCookie.empty() )
-			scene->getCookieManager().storeCookiesFromHeader( authority, result.setCookie );
+		storeWebResourceCookies( scene->getCookieManager(), result );
 		if ( callback )
 			callback( result );
 	};
@@ -1007,15 +989,14 @@ TexturePtr UISceneNode::requestWebTexture( WebResourceRequest request,
 			resourceState, resourceGeneration,
 			[completion = std::move( completion )]( UISceneNode* ) { completion(); } );
 	};
-	auto wrapped = [resourceState, resourceGeneration, callback = std::move( callback ),
-					authority = request.uri.getAuthority()]( const WebResourceResult& result ) {
+	auto wrapped = [resourceState, resourceGeneration,
+					callback = std::move( callback )]( const WebResourceResult& result ) {
 		if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, resourceGeneration ) )
 			return;
 		UISceneNode* scene = resourceState->owner.load( std::memory_order_acquire );
 		if ( !scene )
 			return;
-		if ( !result.setCookie.empty() )
-			scene->getCookieManager().storeCookiesFromHeader( authority, result.setCookie );
+		storeWebResourceCookies( scene->getCookieManager(), result );
 		if ( callback )
 			callback( result );
 	};

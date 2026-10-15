@@ -24,12 +24,14 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/backend.hpp>
+#if defined( EE_SDL_VERSION_2 )
 #include <eepp/window/backend/SDL2/backendsdl2.hpp>
 #include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
-#if defined( EE_SDL_VERSION_3 )
+#elif defined( EE_SDL_VERSION_3 )
 #include <eepp/window/backend/SDL3/backendsdl3.hpp>
 #include <eepp/window/backend/SDL3/platformhelpersdl3.hpp>
 #endif
+#include <eepp/window/draganddrop/dragmanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/runtime.hpp>
@@ -138,6 +140,11 @@ Engine::~Engine() {
 	// can reach is destroyed.
 	Network::Http::Pool::getGlobal().clear();
 
+	// Every other request (web view partitions, app-owned clients, blocking requests on other
+	// threads, queued work) is cancelled without waiting; its callbacks are suppressed. Running
+	// requests drop their sockets as they notice, which is awaited below once no window is left.
+	Network::Http::cancelAllRequests();
+
 	// Reject new UI resource deliveries before scenes begin destruction. Rejected closures remain
 	// queued until scene-owned producers have joined, allowing their captures to be released here
 	// on the Engine/main thread.
@@ -184,14 +191,20 @@ Engine::~Engine() {
 
 	PackRegistry::destroySingleton();
 
-#ifdef EE_SSL_SUPPORT
-	Network::SSL::SSLSocket::end();
-#endif
-
 	PackFileIndex::destroySingleton();
 
 	// Windows own the GL contexts and must outlive every GPU resource and graphics manager above.
 	destroy();
+	Private::DragManager::poll();
+
+	// With every window closed, give cancelled requests a short, invisible moment to drop their
+	// sockets. Release TLS only then: should a socket outlive this, SSLSocket defers releasing the
+	// backend until the last one is destroyed.
+	Network::Http::waitForConnectionsToClose( Milliseconds( 100 ) );
+
+#ifdef EE_SSL_SUPPORT
+	Network::SSL::SSLSocket::end();
+#endif
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	eeSAFE_DELETE( mZip );
@@ -384,15 +397,20 @@ EE::Window::Window* Engine::getWindowID( const Uint32& winID ) {
 }
 
 void Engine::updateInput() {
-	if ( !mWindow )
+	if ( !mWindow ) {
+		Private::DragManager::poll();
 		return;
+	}
+	// A native drag can destroy the polling window and select a different current window.
+	// Finish the same other windows whose input frames we began before entering that loop.
+	auto* pollingWindow = mWindow;
 	for ( auto& window : mWindows ) {
-		if ( window.second != mWindow )
+		if ( window.second != pollingWindow )
 			window.second->getInput()->beginInputFrame();
 	}
-	mWindow->getInput()->update();
+	pollingWindow->getInput()->update();
 	for ( auto& window : mWindows ) {
-		if ( window.second != mWindow )
+		if ( window.second != pollingWindow )
 			window.second->getInput()->endInputFrame();
 	}
 }

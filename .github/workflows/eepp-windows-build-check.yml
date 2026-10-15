@@ -31,7 +31,7 @@ jobs:
     - name: Create project
       shell: powershell
       run: |
-        ./premake5.exe --windows-vc-build --disable-static-build --with-debug-symbols vs2022
+        ./premake5.exe --windows-vc-build --disable-static-build --with-debug-symbols --with-backend=SDL3 vs2022
     - name: Build
       shell: cmd
       run: |

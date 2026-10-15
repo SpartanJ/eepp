@@ -14,7 +14,7 @@ bool SceneManager::isActive() {
 		   !SceneManager::isShuttingDown();
 }
 
-SceneManager::SceneManager() : mUISceneNode( NULL ), mScopedUISceneNode( NULL ) {}
+SceneManager::SceneManager() : mCurrentSceneNode( nullptr ) {}
 
 SceneManager::~SceneManager() {
 	UIInspectorServer::stop();
@@ -28,6 +28,8 @@ SceneManager::~SceneManager() {
 
 SceneNode* SceneManager::add( SceneNode* sceneNode ) {
 	mSceneNodes.push_back( sceneNode );
+	if ( !mCurrentSceneNode )
+		setCurrentSceneNode( sceneNode );
 	if ( sceneNode->isUISceneNode() )
 		UIInspectorServer::startFromEnvironment( sceneNode->asType<UISceneNode>() );
 	return sceneNode;
@@ -36,10 +38,8 @@ SceneNode* SceneManager::add( SceneNode* sceneNode ) {
 bool SceneManager::remove( SceneNode* sceneNode ) {
 	auto it = std::find( mSceneNodes.begin(), mSceneNodes.end(), sceneNode );
 	if ( it != mSceneNodes.end() ) {
-		if ( mUISceneNode == sceneNode )
-			mUISceneNode = nullptr;
-		if ( mScopedUISceneNode == sceneNode )
-			mScopedUISceneNode = nullptr;
+		if ( mCurrentSceneNode == sceneNode )
+			mCurrentSceneNode = nullptr;
 		mSceneNodes.erase( it );
 		return true;
 	}
@@ -52,13 +52,8 @@ size_t SceneManager::count() const {
 
 void SceneManager::draw() {
 	for ( auto& sceneNode : mSceneNodes ) {
-		if ( sceneNode->isUISceneNode() ) {
-			auto context = sceneNode->asType<UISceneNode>()->makeCurrent();
-			sceneNode->draw();
-		} else {
-			auto context = Engine::instance()->makeWindowCurrent( sceneNode->getWindow() );
-			sceneNode->draw();
-		}
+		auto context = sceneNode->makeCurrent();
+		sceneNode->draw();
 	}
 }
 
@@ -66,13 +61,8 @@ void SceneManager::draw( EE::Window::Window* window ) {
 	for ( auto& sceneNode : mSceneNodes ) {
 		if ( sceneNode->getWindow() != window )
 			continue;
-		if ( sceneNode->isUISceneNode() ) {
-			auto context = sceneNode->asType<UISceneNode>()->makeCurrent();
-			sceneNode->draw();
-		} else {
-			auto context = Engine::instance()->makeWindowCurrent( window );
-			sceneNode->draw();
-		}
+		auto context = sceneNode->makeCurrent();
+		sceneNode->draw();
 	}
 }
 
@@ -84,13 +74,8 @@ void SceneManager::update( const Time& elapsed ) {
 	const size_t sceneCount = mSceneNodes.size();
 	for ( size_t i = 0; i < sceneCount && i < mSceneNodes.size(); ++i ) {
 		auto* sceneNode = mSceneNodes[i];
-		if ( sceneNode->isUISceneNode() ) {
-			auto context = sceneNode->asType<UISceneNode>()->makeCurrent();
-			sceneNode->update( elapsed );
-		} else {
-			auto context = Engine::instance()->makeWindowCurrent( sceneNode->getWindow() );
-			sceneNode->update( elapsed );
-		}
+		auto context = sceneNode->makeCurrent();
+		sceneNode->update( elapsed );
 	}
 	UIInspectorServer::pump();
 }
@@ -99,27 +84,14 @@ void SceneManager::update() {
 	update( mClock.getElapsedTimeAndReset() );
 }
 
+SceneNode* SceneManager::getCurrentSceneNode() const {
+	return mCurrentSceneNode;
+}
+
 UISceneNode* SceneManager::getUISceneNode() {
-	if ( mScopedUISceneNode )
-		return mScopedUISceneNode;
-
-	if ( Engine::existsSingleton() ) {
-		if ( mUISceneNode && mUISceneNode->getWindow() == Engine::instance()->getCurrentWindow() )
-			return mUISceneNode;
-		if ( auto* scene = getUISceneNode( Engine::instance()->getCurrentWindow() ) )
-			return scene;
-	}
-
-	if ( NULL == mUISceneNode ) {
-		for ( auto& sceneNode : mSceneNodes ) {
-			if ( sceneNode->isUISceneNode() ) {
-				mUISceneNode = sceneNode->asType<UISceneNode>();
-				break;
-			}
-		}
-	}
-
-	return mUISceneNode;
+	return mCurrentSceneNode && mCurrentSceneNode->isUISceneNode()
+			   ? mCurrentSceneNode->asType<UISceneNode>()
+			   : nullptr;
 }
 
 UISceneNode* SceneManager::getUISceneNode( EE::Window::Window* window ) {
@@ -135,13 +107,9 @@ void SceneManager::forEachSceneNode( const std::function<void( SceneNode* )>& ca
 		callback( sceneNode );
 }
 
-void SceneManager::setCurrentUISceneNode( UISceneNode* uiSceneNode ) {
-	mUISceneNode = uiSceneNode;
-}
-
-UISceneNode* SceneManager::setScopedUISceneNode( UISceneNode* uiSceneNode ) {
-	UISceneNode* previous = mScopedUISceneNode;
-	mScopedUISceneNode = uiSceneNode;
+SceneNode* SceneManager::setCurrentSceneNode( SceneNode* sceneNode ) {
+	SceneNode* previous = mCurrentSceneNode;
+	mCurrentSceneNode = sceneNode;
 	return previous;
 }
 
@@ -152,10 +120,8 @@ void SceneManager::destroyScenes( EE::Window::Window* window ) {
 			++it;
 			continue;
 		}
-		if ( mUISceneNode == sceneNode )
-			mUISceneNode = nullptr;
-		if ( mScopedUISceneNode == sceneNode )
-			mScopedUISceneNode = nullptr;
+		if ( mCurrentSceneNode == sceneNode )
+			mCurrentSceneNode = nullptr;
 		it = mSceneNodes.erase( it );
 		eeSAFE_DELETE( sceneNode );
 	}

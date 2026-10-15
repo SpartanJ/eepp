@@ -103,3 +103,11 @@ UTEST( CookieManager, persistence ) {
 	EXPECT_FALSE( FileSystem::fileExists( path + ".tmp" ) );
 	FileSystem::fileRemove( path );
 }
+
+UTEST( CookieManager, storesEverySetCookieField ) {
+	CookieManager cm;
+	cm.storeCookies( "example.com",
+					 fakeResponse( "a=1; Expires=Wed, 21 Oct 2026 07:28:00 GMT\nb=2; Path=/" ) );
+	EXPECT_EQ( cm.size(), 2u );
+	EXPECT_TRUE( cm.getCookieHeader( "example.com" ) == "a=1; b=2" );
+}

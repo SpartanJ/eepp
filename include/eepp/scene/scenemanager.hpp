@@ -28,6 +28,7 @@ class EE_API SceneManager {
 
 	~SceneManager();
 
+	/** Registers a scene and makes it current if no scene is currently bound. */
 	SceneNode* add( SceneNode* sceneNode );
 
 	bool remove( SceneNode* sceneNode );
@@ -43,6 +44,11 @@ class EE_API SceneManager {
 
 	void update();
 
+	/** Returns the currently bound scene, or nullptr if none is bound. Scoped contexts temporarily
+	 * override this persistent binding. Scene binding is restricted to the application thread. */
+	SceneNode* getCurrentSceneNode() const;
+
+	/** Returns the current scene if it is a UI scene, otherwise nullptr. */
 	UISceneNode* getUISceneNode();
 
 	/** Returns the UI scene associated with @p window, or nullptr if none is registered. */
@@ -51,7 +57,9 @@ class EE_API SceneManager {
 	/** Enumerates registered top-level scenes on the UI thread. */
 	void forEachSceneNode( const std::function<void( SceneNode* )>& callback ) const;
 
-	void setCurrentUISceneNode( UISceneNode* uiSceneNode );
+	/** Sets the persistent scene binding and returns the previous scene. Does not switch native
+	 * windows; use SceneNode::makeCurrent() for scoped scene and graphics-context binding. */
+	SceneNode* setCurrentSceneNode( SceneNode* sceneNode );
 
 	/** Removes and destroys all registered scene nodes associated with @p window. */
 	void destroyScenes( EE::Window::Window* window );
@@ -59,15 +67,8 @@ class EE_API SceneManager {
 	Time getElapsed() const;
 
   protected:
-	friend class EE::UI::UISceneNode;
-
-	/** Installs the ambient UI scene for the current scope and returns the previously scoped scene.
-	 * UI scene and graphics-context switching is restricted to the application's UI thread. */
-	UISceneNode* setScopedUISceneNode( UISceneNode* uiSceneNode );
-
 	Clock mClock;
-	UISceneNode* mUISceneNode;
-	UISceneNode* mScopedUISceneNode;
+	SceneNode* mCurrentSceneNode;
 	std::vector<SceneNode*> mSceneNodes;
 };
 

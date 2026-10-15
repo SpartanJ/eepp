@@ -563,6 +563,14 @@ or wrong.
 | UIA end to end | `src/tests/windows_accessibility/main.cpp` (`eepp-windows-accessibility-tests`) | Windows CI, including the provider regressions. Under Wine it builds and finds the window, but Wine's UIA client lacks several APIs, so most end-to-end checks report `E_NOTIMPL`. |
 | NSAccessibility end to end | `projects/scripts/test_macos_accessibility.swift`; `benchmark_macos_accessibility.swift` locally | macOS CI. |
 
+The inactive benchmark compares enabled and disabled accessibility in the **same Release build**,
+not a before/after branch comparison. Each process warms 100,000 `setText()` calls before timing
+1,000,000 calls (roughly one second on the CI runner). It collects ten adjacent sample pairs with
+alternating order, regardless of the result, and retains the ratio-of-medians notification guard
+of **1.01×**. Raw samples, warmup times and failure reasons are included in JSON even when a guard
+fails. Linux native correctness checks still run after a timing failure; the failed guard still
+fails the CI job.
+
 Useful tools:
 
 - the runtime inspector's *Accessibility* tab shows exactly what a widget projects, and its *Audit*

@@ -1278,6 +1278,24 @@ and stylesheet links:
 
 `UIWebView` can load local and HTTP/HTTPS stylesheets.
 
+HTTP/HTTPS documents, stylesheets, fonts, and images use the document's `WebResourceCache` transport.
+Each cache partition owns a bounded HTTP/1.1 connection pool: by default, up to 64 connections in
+all and 6 per origin/proxy route. Idle connections are closed by a timer after 30 seconds. All pools
+also share a process-wide limit of 256 open connections (`Http::setMaxOpenConnections()`); at that
+limit, the least recently used idle connection of any pool is closed to make room. Requests beyond a
+limit wait in arrival order per origin, without occupying a thread-pool worker, and their timeout
+starts once they hold a connection. Connections are exclusively leased for a request and reused only
+after the complete response, including chunk trailers, has been consumed. HTTP/1.1 persistence is
+enabled by default; explicit `Connection: close`, incomplete messages, cancellation, and transport
+errors discard the socket.
+
+Idle connections survive navigation. Views intentionally sharing a `WebResourceCache` and
+`CachePartitionId` also share its transport; separate partitions use independent pools. Cookies
+remain request state and follow the existing document cookie policy. Destroying a partition's final
+session closes its transport without waiting for workers on the UI thread. To customize connection
+limits or idle expiry, create the shared cache with
+`WebResourceCache::New( Http::ConnectionPoolOptions{ ... } )` before installing it on the views.
+
 Relative stylesheet resource URLs are resolved against the stylesheet/document base URI when one is
 available.
 

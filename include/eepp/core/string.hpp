@@ -516,13 +516,14 @@ class EE_API String {
 	/** Removes the numbers at the end of the string */
 	static std::string removeNumbersAtEnd( std::string txt );
 
-	/** Removes the trailing 0 and . in a string number */
+	/** Removes trailing fractional zeros and the decimal point if no fraction remains.
+	 * Integers and scientific notation are preserved. */
 	static std::string_view numberClean( std::string_view strNumber );
 
-	/** Removes the trailing 0 and . in a string number */
+	/** @copydoc numberClean(std::string_view) */
 	static std::string numberClean( const std::string& strNumber );
 
-	/** Removes the trailing 0 and . in a string number */
+	/** @copydoc numberClean(std::string_view) */
 	static void numberCleanInPlace( std::string& strNumber );
 
 	/** Searches the position of the corresponding close bracket in a string. */

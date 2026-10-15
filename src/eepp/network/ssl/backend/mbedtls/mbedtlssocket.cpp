@@ -100,12 +100,14 @@ int MbedTLSSocket::bio_recv( void* ctx, unsigned char* buf, size_t len ) {
 	size_t got;
 	Socket::Status err = sp->mSSLSocket->tcpReceive( buf, len, got );
 
-	if ( err != Socket::Done ) {
-		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-	}
-	if ( got == 0 ) {
+	if ( err == Socket::NotReady )
 		return MBEDTLS_ERR_SSL_WANT_READ;
-	}
+	if ( err == Socket::Disconnected )
+		return 0;
+	if ( err != Socket::Done )
+		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
+	if ( got == 0 )
+		return MBEDTLS_ERR_SSL_WANT_READ;
 	return got;
 }
 
@@ -262,7 +264,7 @@ Socket::Status MbedTLSSocket::receive( void* data, std::size_t size, std::size_t
 
 	int ret = mbedtls_ssl_read( &mSSLContext, (unsigned char*)data, size );
 	if ( ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE ) {
-		ret = 0; // non blocking io
+		return Socket::NotReady;
 	} else if ( ret <= 0 ) {
 		disconnect();
 		return Socket::Disconnected;

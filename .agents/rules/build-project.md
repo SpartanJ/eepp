@@ -94,6 +94,10 @@ To compile the project in debug mode, execute the `make` command, ensuring you p
 
 ### Build Parallelism
 
+Run only one build at a time. Finish the current build before starting another configuration,
+platform build, or compiler-based diagnostic. Each build already uses the available processors;
+overlapping builds can exhaust the developer's machine.
+
 Always use all processors reported by the platform when selecting the parallel job count. On Linux
 and other systems with `nproc`, use `-j$(nproc)` exactly; do not substitute an arbitrary fixed value
 such as `-j4`. Use the platform-equivalent processor-count command where `nproc` is unavailable.

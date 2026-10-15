@@ -1,6 +1,10 @@
 #ifndef EE_PLATFORMHELPERSDL3_HPP
 #define EE_PLATFORMHELPERSDL3_HPP
 
+#include <eepp/window/backend/SDL3/base.hpp>
+
+#ifdef EE_BACKEND_SDL3
+
 #include <eepp/window/platformhelper.hpp>
 #include <string>
 
@@ -34,5 +38,7 @@ class EE_API PlatformHelperSDL3 : public PlatformHelper {
 };
 
 }}}} // namespace EE::Window::Backend::SDL3
+
+#endif
 
 #endif

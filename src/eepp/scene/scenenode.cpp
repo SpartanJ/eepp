@@ -3,6 +3,7 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/scene/actionmanager.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/window/engine.hpp>
@@ -18,6 +19,27 @@ void SceneNode::setNodeParentChangeCallback( NodeParentChangeCallback callback )
 
 SceneNode* SceneNode::New( EE::Window::Window* window ) {
 	return eeNew( SceneNode, ( window ) );
+}
+
+SceneNode::Context::Context( SceneNode* scene ) :
+	mPreviousScene( SceneManager::instance()->setCurrentSceneNode( scene ) ),
+	mWindowContext(
+		Engine::instance()->makeWindowCurrent( scene ? scene->getWindow() : nullptr ) ) {}
+
+SceneNode::Context::~Context() {
+	if ( mActive )
+		SceneManager::instance()->setCurrentSceneNode( mPreviousScene );
+}
+
+SceneNode::Context::Context( Context&& other ) noexcept :
+	mPreviousScene( other.mPreviousScene ),
+	mWindowContext( std::move( other.mWindowContext ) ),
+	mActive( other.mActive ) {
+	other.mActive = false;
+}
+
+SceneNode::Context SceneNode::makeCurrent() {
+	return Context( this );
 }
 
 SceneNode::SceneNode( EE::Window::Window* window ) :

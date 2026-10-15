@@ -169,7 +169,7 @@ static UISceneNode* initTreeViewTestScene() {
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	UISceneNode* sceneNode = UISceneNode::New();
 	SceneManager::instance()->add( sceneNode );
-	SceneManager::instance()->setCurrentUISceneNode( sceneNode );
+	SceneManager::instance()->setCurrentSceneNode( sceneNode );
 	sceneNode->getUIThemeManager()->setDefaultFont( font );
 	return sceneNode;
 }

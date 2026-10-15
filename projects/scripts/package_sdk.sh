@@ -192,8 +192,8 @@ copy_binary() {
 
 for entry in bin/eepp-*; do
 	[ -e "$entry" ] || continue
-	case "$entry" in
-		*-debug | *.dll | *.so | *.dylib | *.a | *.data | *.html | *.js | *.wasm)
+	case "${entry##*/}" in
+		*-debug | *-debug.exe | eepp-native-dnd-tests* | *.dll | *.so | *.dylib | *.a | *.data | *.html | *.js | *.wasm)
 			continue
 			;;
 	esac
@@ -232,17 +232,23 @@ if [ "$PLATFORM" == "macos" ]; then
 	)
 elif [ "$PLATFORM" == "windows" ]; then
 	SHARED_LIBS=(eepp.dll eepp-maps.dll eepp-physics.dll)
-	# MinGW import libraries (libeepp*.a, generated along with the DLLs) plus
+	# Premake 5 names MinGW import/static archives *.lib on Windows, like MSVC, plus
 	# the statically linked modules and tools.
 	STATIC_LIBS=(
-		libeepp.a
-		libeepp-maps.a
-		libeepp-physics.a
-		libeepp-maps-static.a
-		libeepp-physics-static.a
-		libeterm.a
-		liblanguages-syntax-highlighting.a
+		eepp.lib
+		eepp-maps.lib
+		eepp-physics.lib
+		eepp-maps-static.lib
+		eepp-physics-static.lib
+		eterm.lib
+		languages-syntax-highlighting.lib
 	)
+	# Premake 4 uses GNU-style names. Choose the matching archive family together.
+	if [ ! -f "$LIBS_SRC/eepp.lib" ] && [ -f "$LIBS_SRC/libeepp.a" ]; then
+		for index in "${!STATIC_LIBS[@]}"; do
+			STATIC_LIBS[index]="lib${STATIC_LIBS[index]%.lib}.a"
+		done
+	fi
 else
 	SHARED_LIBS=(libeepp.so libeepp-maps.so libeepp-physics.so)
 	STATIC_LIBS=(
@@ -267,7 +273,7 @@ copy_lib() {
 	cp -L "$src" "$dest_dir/"
 	if [ "$STRIP_BINARIES" = true ]; then
 		case "$name" in
-			*.a)
+			*.a | *.lib)
 				# Static archives only tolerate debug-symbol stripping: a full
 				# strip corrupts the archive's object members.
 				case "$PLATFORM" in
@@ -319,90 +325,85 @@ cp -r docs/articles "$STAGING/docs/articles"
 sed "s/@SDK_VERSION@/$SDK_VERSION/g" projects/scripts/eepp-sdk-README.md > "$STAGING/README.md"
 
 # ---------------------------------------------------------------------------
-# macOS: make the package relocatable. The build links against homebrew's
-# SDL2 and against libs/<platform>/<arch>/ through absolute or homebrew paths;
-# rewrite every dependency to @loader_path and re-sign ad-hoc (mirroring what
-# projects/macos/ecode/build.app.sh does for ecode.app).
+# Bundle SDL3 next to the binaries. The SDK build workflows select this backend
+# explicitly; a missing runtime must not produce an unusable release archive.
+# ---------------------------------------------------------------------------
+
+bundle_sdl3() {
+	local sdl_path
+	case "$PLATFORM" in
+		windows)
+			sdl_path=bin/SDL3.dll
+			;;
+		macos)
+			sdl_path="$(brew --prefix sdl3)/lib/libSDL3.0.dylib"
+			;;
+		*)
+			sdl_path="$(ldd "$STAGING/bin/libeepp.so" | awk '/libSDL3\.so\.0 =>/ {print $3; exit}')"
+			;;
+	esac
+	if [ -z "$sdl_path" ] || [ ! -f "$sdl_path" ]; then
+		echo "Error: SDL3 runtime not found; build the SDK with --with-backend=SDL3 first" >&2
+		exit 1
+	fi
+	case "$PLATFORM" in
+		windows) cp -L "$sdl_path" "$STAGING/bin/SDL3.dll" ;;
+		macos) cp -L "$sdl_path" "$STAGING/bin/libSDL3.0.dylib" ;;
+		*)
+			# ldd resolves the versioned file; the loader needs its SONAME, not that filename.
+			cp -L "$sdl_path" "$STAGING/bin/libSDL3.so.0"
+			# Shared libraries are linked with $ORIGIN. Keep one runtime copy and expose
+			# it beside the link libraries as well as the runnable demos.
+			ln -s ../../../bin/libSDL3.so.0 "$STAGING/libs/$LIBS_PLATFORM/$ARCH/libSDL3.so.0"
+			;;
+	esac
+}
+
+# ---------------------------------------------------------------------------
+# macOS: rewrite Homebrew/checkout paths for both runnable tools and link libraries.
+# Keep the SDK relocatable and re-sign after modifying Mach-O load commands.
 # ---------------------------------------------------------------------------
 
 fix_macos_ids() {
-	local bin_dir="$STAGING/bin"
-
 	if [ "$PLATFORM" != "macos" ]; then
 		return 0
 	fi
+	local directory binary dep sdl_dependency lib
+	chmod +w "$STAGING/bin/libSDL3.0.dylib"
+	install_name_tool -id "@loader_path/libSDL3.0.dylib" "$STAGING/bin/libSDL3.0.dylib"
+	codesign --force --sign - "$STAGING/bin/libSDL3.0.dylib"
 
-	# Point the shared libraries at their bundled SDL2 dependency.
-	for lib in "${SHARED_LIBS[@]}"; do
-		[ -f "$bin_dir/$lib" ] || continue
-		install_name_tool -change "$(otool -L "$bin_dir/$lib" | awk '/SDL2/ {print $1; exit}')" \
-			"@loader_path/libSDL2-2.0.0.dylib" "$bin_dir/$lib" 2>/dev/null || true
+	for directory in "$STAGING/bin" "$STAGING/libs/$LIBS_PLATFORM/$ARCH"; do
+		sdl_dependency="@loader_path/libSDL3.0.dylib"
+		if [ "$directory" != "$STAGING/bin" ]; then
+			sdl_dependency="@loader_path/../../../bin/libSDL3.0.dylib"
+		fi
+		for binary in "$directory"/*; do
+			if [ ! -f "$binary" ] || ! is_executable "$binary"; then
+				continue
+			fi
+			while read -r dep; do
+				case "$(basename "$dep")" in
+					libeepp.dylib | libeepp-maps.dylib | libeepp-physics.dylib)
+						install_name_tool -change "$dep" "@loader_path/$(basename "$dep")" "$binary"
+						;;
+					libSDL3*.dylib)
+						install_name_tool -change "$dep" "$sdl_dependency" "$binary"
+						;;
+				esac
+			done < <(otool -L "$binary" | tail -n +2 | awk '{print $1}')
+			for lib in "${SHARED_LIBS[@]}"; do
+				if [ "$(basename "$binary")" == "$lib" ]; then
+					install_name_tool -id "@loader_path/$lib" "$binary"
+					break
+				fi
+			done
+			codesign --force --sign - "$binary"
+		done
 	done
-
-	# The executables record the absolute path of the just-built libeepp.dylib;
-	# rewrite it (and any other eepp dependency) to its bundled location.
-	for exe in "$bin_dir"/*; do
-		[ -f "$exe" ] && is_executable "$exe" || continue
-		while read -r dep; do
-			case "$dep" in
-				*@loader_path* | */eepp-sdk/*)
-					continue
-					;;
-			esac
-			case "$(basename "$dep")" in
-				libeepp.dylib | libeepp-maps.dylib | libeepp-physics.dylib)
-					install_name_tool -change "$dep" "@loader_path/$(basename "$dep")" "$exe"
-					;;
-				libSDL2*.dylib)
-					if [ -f "$bin_dir/libSDL2-2.0.0.dylib" ]; then
-						install_name_tool -change "$dep" "@loader_path/libSDL2-2.0.0.dylib" "$exe"
-					fi
-					;;
-			esac
-		done < <(otool -L "$exe" | tail -n +2 | awk '{print $1}')
-		codesign --force --sign - "$exe" 2>/dev/null || true
-	done
-
-	for lib in "${SHARED_LIBS[@]}"; do
-		[ -f "$bin_dir/$lib" ] || continue
-		install_name_tool -id "@loader_path/$lib" "$bin_dir/$lib"
-		codesign --force --sign - "$bin_dir/$lib" 2>/dev/null || true
-	done
-
-	codesign --force --sign - "$STAGING/libs/$LIBS_PLATFORM/$ARCH"/*.dylib 2>/dev/null || true
 }
 
-# ---------------------------------------------------------------------------
-# Bundle SDL2 next to the binaries when available. Optional: the package
-# README documents the fallback to the system SDL2.
-# ---------------------------------------------------------------------------
-
-bundle_sdl2() {
-	if [ "$PLATFORM" == "windows" ]; then
-		# Premake already drops the SDL2 DLL into bin/ when configured with
-		# --windows-mingw-build.
-		if [ -f bin/SDL2.dll ]; then
-			cp -L bin/SDL2.dll "$STAGING/bin/"
-		else
-			echo "Warning: bin/SDL2.dll not found, the tools will require it at runtime" >&2
-		fi
-	elif [ "$PLATFORM" == "macos" ]; then
-		SDL2_PATH="$(brew --prefix)/opt/sdl2/lib/libSDL2-2.0.0.dylib"
-		if [ -f "$SDL2_PATH" ]; then
-			cp -L "$SDL2_PATH" "$STAGING/bin/"
-			chmod +w "$STAGING/bin/libSDL2-2.0.0.dylib"
-			install_name_tool -id "@loader_path/libSDL2-2.0.0.dylib" "$STAGING/bin/libSDL2-2.0.0.dylib"
-			codesign --force --sign - "$STAGING/bin/libSDL2-2.0.0.dylib" 2>/dev/null || true
-		fi
-	else
-		SDL2_PATH="$(ldd "$STAGING/bin/eepp-ui-hello-world" 2>/dev/null | awk '/libSDL[23]/ {print $3; exit}')"
-		if [ -n "$SDL2_PATH" ] && [ -f "$SDL2_PATH" ]; then
-			cp -L "$SDL2_PATH" "$STAGING/bin/"
-		fi
-	fi
-}
-
-bundle_sdl2
+bundle_sdl3
 fix_macos_ids
 
 # ---------------------------------------------------------------------------
