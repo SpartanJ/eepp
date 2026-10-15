@@ -8,6 +8,7 @@
 #include <eepp/version.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/cursormanager.hpp>
+#include <eepp/window/draganddrop/dragmanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/runtime.hpp>
@@ -19,6 +20,28 @@
 #endif
 
 namespace EE { namespace Window {
+
+bool Window::canUseNativeDrag() const {
+	return isOpen() && !Runtime::isOffscreen() && Runtime::mode() != RuntimeMode::Terminal;
+}
+
+NativeWindowContext Window::getNativeDragContext() {
+	NativeWindowContext context;
+	context.owner = this;
+	return context;
+}
+
+bool Window::isNativeFileTargetSupported() const {
+	return false;
+}
+
+void Window::initializeNativeDragEvents() {}
+
+void Window::shutdownNativeDragEvents() {}
+
+Private::NativeDragPreview* Window::createNativeDragPreview( const DragOffer&, bool ) {
+	return nullptr;
+}
 
 Window::FrameData::FrameData() : FrameElapsed( NULL ), ElapsedTime() {}
 
@@ -40,6 +63,7 @@ Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard* Cli
 }
 
 Window::~Window() {
+	Private::DragManager::invalidateWindow( this );
 	eeSAFE_DELETE( mClipboard );
 	eeSAFE_DELETE( mInput );
 	eeSAFE_DELETE( mCursorManager );
@@ -393,6 +417,7 @@ bool Window::isOpen() const {
 }
 
 void Window::close() {
+	Private::DragManager::invalidateWindow( this );
 	mWindow.Created = false;
 }
 

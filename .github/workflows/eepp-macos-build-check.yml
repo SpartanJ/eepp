@@ -19,11 +19,10 @@ jobs:
         git submodule update --init --recursive
     - name: Install dependencies
       run: |
-        brew install wget SDL2 premake
+        brew install wget sdl3 premake
     - name: Build
       run: |
-        premake5 --disable-static-build --with-debug-symbols gmake
-        make -C make/macosx/ -j$(sysctl -n hw.ncpu) -e config=release_arm64
+        bash projects/macos/make_no_fw.sh --backend=SDL3 --with-debug-symbols -e config=release_arm64
     - name: Set SDK version
       id: sdk_version
       run: |

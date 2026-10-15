@@ -121,6 +121,17 @@ class EE_API WindowSDL : public Window {
 	int getCurrentDisplayIndex() const;
 
   protected:
+	NativeWindowContext getNativeDragContext();
+
+	bool isNativeFileTargetSupported() const;
+
+	void initializeNativeDragEvents();
+
+	void shutdownNativeDragEvents();
+
+	Private::NativeDragPreview* createNativeDragPreview( const DragOffer& offer,
+														 bool manageCursor );
+
 	friend class ClipboardSDL;
 
 	void destroySDLResources();

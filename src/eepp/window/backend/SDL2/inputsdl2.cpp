@@ -6,8 +6,15 @@
 #include <eepp/window/backend/SDL2/inputsdl2.hpp>
 #include <eepp/window/backend/SDL2/joystickmanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>
+#include <eepp/window/draganddrop/dragaccess.hpp>
+#include <eepp/window/draganddrop/dragmanager.hpp>
+#include <eepp/window/draganddrop/x11draganddrop.hpp>
 #include <eepp/window/engine.hpp>
 #include <limits>
+
+#if defined( EE_HAS_X11_DRAG_SOURCE ) && defined( SDL_VIDEO_DRIVER_X11 )
+#include <eepp/window/backend/SDL2/syswm.hpp>
+#endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
@@ -44,14 +51,19 @@ void InputSDL::update() {
 	while ( SDL_PollEvent( &SDLEvent ) )
 		sendEvent( SDLEvent );
 	endInputFrame();
+	Private::DragManager::poll();
 }
 
 void InputSDL::waitEvent( const Time& timeout ) {
+	const auto waitTimeout = Private::DragManager::hasSession() &&
+									 ( timeout == Time::Zero || timeout > Milliseconds( 50 ) )
+								 ? Milliseconds( 50 )
+								 : timeout;
 	SDL_Event SDLEvent;
-	if ( timeout == Time::Zero ) {
+	if ( waitTimeout == Time::Zero ) {
 		if ( SDL_WaitEvent( &SDLEvent ) )
 			mQueuedEvents.emplace_back( SDLEvent );
-	} else if ( SDL_WaitEventTimeout( &SDLEvent, (int)timeout.asMilliseconds() ) ) {
+	} else if ( SDL_WaitEventTimeout( &SDLEvent, (int)waitTimeout.asMilliseconds() ) ) {
 		if ( SDLEvent.type != SDL_FIRSTEVENT )
 			mQueuedEvents.emplace_back( SDLEvent );
 	}
@@ -97,7 +109,37 @@ Vector2i InputSDL::queryMousePos() {
 }
 
 void InputSDL::captureMouse( const bool& capture ) {
-	SDL_CaptureMouse( capture ? SDL_TRUE : SDL_FALSE );
+	if ( SDL_CaptureMouse( capture ? SDL_TRUE : SDL_FALSE ) == 0 )
+		mMouseCaptureRequested = capture;
+}
+
+bool InputSDL::acquireNativeDragCapture() {
+	if ( SDL_GetMouseFocus() != static_cast<WindowSDL*>( mWindow )->getSDLWindow() )
+		return false;
+	return SDL_CaptureMouse( SDL_TRUE ) == 0;
+}
+
+void InputSDL::restoreNativeDragCapture() {
+	SDL_CaptureMouse( mMouseCaptureRequested ? SDL_TRUE : SDL_FALSE );
+}
+
+void InputSDL::resetNativeDragInput() {
+	// OLE owns dispatch during its modal loop. Synchronize SDL, then remove only this source's
+	// queued mouse gesture events; other windows, keyboard, wheel and drop events are preserved.
+	SDL_PumpEvents();
+	Uint32 windowId = mWindow->getWindowID();
+	SDL_FilterEvents(
+		[]( void* id, SDL_Event* event ) -> int {
+			if ( event->type == SDL_MOUSEMOTION )
+				return event->motion.windowID != *static_cast<Uint32*>( id );
+			if ( event->type == SDL_MOUSEBUTTONDOWN || event->type == SDL_MOUSEBUTTONUP ) {
+				return event->button.windowID != *static_cast<Uint32*>( id ) ||
+					   event->button.button != SDL_BUTTON_LEFT;
+			}
+			return 1;
+		},
+		&windowId );
+	Input::resetNativeDragInput();
 }
 
 bool InputSDL::isMouseCaptured() const {
@@ -509,6 +551,10 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_SYSWMEVENT: {
+#if defined( EE_HAS_X11_DRAG_SOURCE ) && defined( SDL_VIDEO_DRIVER_X11 )
+			if ( SDLEvent.syswm.msg && SDLEvent.syswm.msg->subsystem == SDL_SYSWM_X11 )
+				Private::DragManager::handleEvent( &SDLEvent.syswm.msg->msg.x11.event );
+#endif
 			event.Type = InputEvent::SysWM;
 			event.syswm.msg = (InputEvent::SysWMmsg*)SDLEvent.syswm.msg;
 			break;
@@ -544,6 +590,24 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			}
 		}
 	}
+
+	if ( event.Type == InputEvent::MouseButtonUp && event.button.button == EE_BUTTON_LEFT ) {
+		// A native drag can synthesize a release on focus loss or consume the real release.
+		// Suppress only that gesture; a new left press clears the flag in Input.
+		auto* eventWindow = event.WinID == mWindow->getWindowID()
+								? mWindow
+								: Engine::instance()->getWindowID( event.WinID );
+		if ( eventWindow &&
+			 Private::NativeDragAccess::consumeNativeDragRelease( *eventWindow->getInput() ) )
+			return;
+	}
+
+	if ( event.Type == InputEvent::MouseMotion )
+		Private::DragManager::handleInput( event.WinID, Private::NativeDragInput::Motion );
+	else if ( event.Type == InputEvent::MouseButtonUp && event.button.button == EE_BUTTON_LEFT )
+		Private::DragManager::handleInput( event.WinID, Private::NativeDragInput::Release );
+	else if ( event.Type == InputEvent::KeyDown && event.key.keysym.sym == KEY_ESCAPE )
+		Private::DragManager::handleInput( event.WinID, Private::NativeDragInput::Escape );
 
 	if ( InputEvent::NoEvent != event.Type )
 		processEventForWindow( &event );

@@ -5,7 +5,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-static SDL_Cursor* SDL_SYS_CURSORS[Cursor::SysCursorCount] = {0};
+static SDL_Cursor* SDL_SYS_CURSORS[Cursor::SysCursorCount] = { 0 };
 
 static SDL_Cursor* getLoadCursor( const Cursor::SysType& cursor ) {
 	if ( 0 == SDL_SYS_CURSORS[cursor] ) {
@@ -73,17 +73,12 @@ void CursorManagerSDL::remove( Cursor* cursor, bool Delete ) {
 }
 
 void CursorManagerSDL::reload() {
-	if ( mVisible ) {
-		show();
-
-		if ( mCurSysCursor ) {
-			set( mSysCursor );
-		} else {
-			set( mCurrent );
-		}
-	} else {
-		hide();
-	}
+	// Native drag feedback or a recreated window can change SDL's cursor without changing our
+	// requested state. Bypass set()'s identity cache, even when restoring a hidden cursor.
+	SDL_SetCursor( mCurSysCursor ? getLoadCursor( mSysCursor )
+				   : mCurrent	 ? static_cast<CursorSDL*>( mCurrent )->GetCursor()
+								 : SDL_GetDefaultCursor() );
+	setVisible( mVisible );
 }
 
 }}}} // namespace EE::Window::Backend::SDL2

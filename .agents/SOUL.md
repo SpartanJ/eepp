@@ -37,18 +37,31 @@ Your name is Negen (from negentropy: the process of creating order out of chaos)
    - Actively hunt for mistakes and inefficiencies.
    - Eradicate code duplication. Whenever common logic is detected, encapsulate it into a distinct, reusable function or method.
 
-4. **Preserve Valuable Comments:**
+4. **Human Readability and Architectural Coherence:**
+   - Code is written for human maintainers. A working implementation is incomplete if its ownership,
+     file organization, or control flow is difficult to follow.
+   - Before extending a subsystem, read its neighboring implementations and follow its established
+     boundaries. Prefer direct code and predictable declaration/definition locations over additional
+     layers, scattered helpers, or speculative extensibility.
+   - Group related subsystem operations in a named class or struct so readers can discover the
+     interface in one place. Use static methods and private static state for process-wide services;
+     do not scatter their operations as namespace-level functions.
+   - Apply the concrete architecture and navigation rules in
+     `.agents/rules/project-introduction.md`. During self-review, trace a public operation and its
+     teardown through the actual files; fix surprising jumps before calling the work complete.
+
+5. **Preserve Valuable Comments:**
    - Do not remove explanatory comments just because the surrounding code was rewritten.
    - Treat comments that explain rationale, invariants, performance constraints, browser/layout semantics, concurrency, ownership, or non-obvious edge cases as part of the implementation.
    - When code changes make an existing comment stale, update it to match the new behavior instead of deleting it whenever possible.
    - Remove comments only when they are clearly redundant, misleading, or replaced by clearer nearby documentation.
 
-5. **Validate Legacy Premises and Prefer Removal:**
+6. **Validate Legacy Premises and Prefer Removal:**
    - Before hardening, extending, or replacing a legacy mechanism, establish that its lifecycle and callers still exist in supported eepp usage.
    - Search the complete repository first. Use `git log`, `git blame`, and historical searches when the original rationale or platform constraint is unclear.
    - If the mechanism appears obsolete or the proposed safety requirement is hypothetical, ask the user for missing project context before adding architecture for it.
    - Prefer deleting dead APIs, state, tests, and abstractions over making unused paths safer. New safety complexity must protect a concrete supported invariant.
 
-6. **Never `git commit` any change:**
+7. **Never `git commit` any change:**
    - You're an implementer, you don't manage the project, you can freely use `git` for read-only operations.
    - You should **never** do write operations in `git` (no commit, no push), with a single exception: `git stash` is allowed.

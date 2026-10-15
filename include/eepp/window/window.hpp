@@ -8,6 +8,7 @@
 #include <eepp/window/base.hpp>
 #include <eepp/window/framepresenter.hpp>
 #include <eepp/window/inputmethod.hpp>
+#include <eepp/window/nativewindowcontext.hpp>
 
 #include <limits>
 
@@ -20,6 +21,12 @@ class PlatformImpl;
 class Clipboard;
 class Input;
 class CursorManager;
+struct DragOffer;
+
+namespace Private {
+struct NativeDragAccess;
+class NativeDragPreview;
+} // namespace Private
 
 enum WindowStyle {
 	Borderless = ( 1 << 0 ),
@@ -587,6 +594,7 @@ class EE_API Window {
   protected:
 	friend class Engine;
 	friend class Input;
+	friend struct Private::NativeDragAccess;
 
 	mutable WindowInfo mWindow;
 	bool mDeferNativeResourceDestructionOnClose{ false };
@@ -647,6 +655,25 @@ class EE_API Window {
 
 	virtual void onWindowResize( Uint32 Width, Uint32 Height ) = 0;
 
+	/** Borrow the backend's native handles for a source gesture. Unsupported backends return an
+	 * empty context. The returned context borrows this window as its owner. */
+	virtual NativeWindowContext getNativeDragContext();
+
+	/** Whether this backend delivers native file-drop events to this window. */
+	virtual bool isNativeFileTargetSupported() const;
+
+	/** Enable native protocol event forwarding for the single active drag session. */
+	virtual void initializeNativeDragEvents();
+
+	/** Restore native event forwarding before the source window's backend resources are released.
+	 * Called on completion, setup failure or source invalidation. */
+	virtual void shutdownNativeDragEvents();
+
+	/** Borrow the backend's preview for the single active gesture; reset it before closing this
+	 * window. Unsupported backends return nullptr. */
+	virtual Private::NativeDragPreview* createNativeDragPreview( const DragOffer& offer,
+																 bool manageCursor );
+
 	void sendVideoResizeCb();
 
 	void createView();
@@ -673,6 +700,9 @@ class EE_API Window {
 	void onCloseRequest();
 
 	void onQuit();
+
+	/** Closed windows and offscreen/terminal runtimes cannot exchange native drags. */
+	bool canUseNativeDrag() const;
 };
 
 }} // namespace EE::Window

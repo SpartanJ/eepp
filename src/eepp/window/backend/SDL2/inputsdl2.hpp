@@ -47,8 +47,16 @@ class EE_API InputSDL : public Input {
 	Scancode getScancodeFromKey( const Keycode& scancode ) const;
 
   protected:
+	bool acquireNativeDragCapture();
+
+	void restoreNativeDragCapture();
+
+	void resetNativeDragInput();
+
 	friend class WindowSDL;
 	Float mDPIScale;
+	/** Explicit capture requested by eepp, distinct from SDL's automatic button capture. */
+	bool mMouseCaptureRequested{ false };
 	std::vector<SDL_Event> mQueuedEvents;
 
 	InputSDL( EE::Window::Window* window );

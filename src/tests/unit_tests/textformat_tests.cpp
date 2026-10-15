@@ -94,17 +94,16 @@ UTEST( TextFormat, autodetectProject ) {
 		auto files = FileSystem::filesInfoGetInPath( folder, false, true, true, true );
 		for ( const auto& file : files ) {
 			if ( file.isDirectory() ) {
-				checkFolder( file.getFilepath() );
+				// Downloaded SDL SDKs contain platform binaries outside this source scan.
+				if ( !LuaPattern::hasMatches( file.getFileName(), "^SDL[23]%-%d+%.%d+%.%d+$" ) )
+					checkFolder( file.getFilepath() );
 				continue;
 			}
 			auto extension = file.getExtension();
-			bool fromSDLFolder = false;
 			if ( "a" == extension || "zip" == extension || "dll" == extension ||
 				 "dat" == extension || "cur" == extension || "icns" == extension ||
-				 "wav" == extension || Image::isImageExtension( file.getFilepath() ) ||
-				 ( fromSDLFolder =
-					   LuaPattern::hasMatches( file.getFilepath(), "SDL2%-%d+%.%d+%.%d+" ) ) ) {
-				if ( !fromSDLFolder && "dat" != extension ) {
+				 "wav" == extension || Image::isImageExtension( file.getFilepath() ) ) {
+				if ( "dat" != extension ) {
 					EXPECT_TRUE_MSG( TextDocument::fileMightBeBinary( file.getFilepath() ),
 									 String::format( "File %s should be detected as binary file",
 													 file.getFilepath() )

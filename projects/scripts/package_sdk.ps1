@@ -76,7 +76,7 @@ try {
 		Copy-Item -Path $Source -Destination "$Staging\bin\$Name"
 	}
 
-	$Binaries = @(Get-ChildItem "bin" -File | Where-Object { $_.Name -like "eepp-*" } | Select-Object -ExpandProperty Name)
+	$Binaries = @(Get-ChildItem "bin" -File | Where-Object { $_.Extension -eq ".exe" -and $_.Name -like "eepp-*" -and $_.Name -notlike "*-debug.exe" -and $_.Name -notlike "eepp-native-dnd-tests*" } | Select-Object -ExpandProperty Name)
 	foreach ($Name in $Binaries) {
 		Add-Binary -Name $Name
 	}
@@ -87,36 +87,27 @@ try {
 
 	# -----------------------------------------------------------------------
 	# Libraries: shared libraries required at runtime plus the import/static
-	# libraries useful for linking. Release configurations only. MSVC and
-	# MinGW produce different import library flavors; missing files (for
-	# example a MinGW import library on an MSVC build) are skipped with a
-	# warning.
+	# libraries useful for linking. Release configurations only; optional
+	# libraries that were not built are skipped with a warning.
 	# -----------------------------------------------------------------------
 
 	$SharedLibs = @("eepp.dll", "eepp-maps.dll", "eepp-physics.dll")
 
-	if ($Platform -eq "mingw") {
-		# MinGW import libraries (libeepp*.a, generated along with the DLLs)
-		# plus the statically linked modules and tools.
-		$LinkLibs = @(
-			"libeepp.a",
-			"libeepp-maps.a",
-			"libeepp-physics.a",
-			"libeepp-maps-static.a",
-			"libeepp-physics-static.a",
-			"libeterm.a",
-			"liblanguages-syntax-highlighting.a"
-		)
-	} else {
-		$LinkLibs = @(
-			"eepp.lib",
-			"eepp-maps.lib",
-			"eepp-physics.lib",
-			"eepp-maps-static.lib",
-			"eepp-physics-static.lib",
-			"eterm.lib",
-			"languages-syntax-highlighting.lib"
-		)
+	# Premake 5 emits *.lib archives for both Windows toolchains. The archive
+	# contents still belong to the compiler selected for this SDK.
+	$LinkLibs = @(
+		"eepp.lib",
+		"eepp-maps.lib",
+		"eepp-physics.lib",
+		"eepp-maps-static.lib",
+		"eepp-physics-static.lib",
+		"eterm.lib",
+		"languages-syntax-highlighting.lib"
+	)
+	if ($Platform -eq "mingw" -and -not (Test-Path "libs\windows\$Arch\eepp.lib") -and
+		(Test-Path "libs\windows\$Arch\libeepp.a")) {
+		# Premake 4 uses GNU-style archive names.
+		$LinkLibs = @($LinkLibs | ForEach-Object { "lib$($_ -replace '\.lib$', '').a" })
 	}
 
 	foreach ($Lib in $SharedLibs) {
@@ -146,11 +137,12 @@ try {
 	Copy-Item -Recurse -Path "docs\articles" -Destination "$Staging\docs\articles"
 	(Get-Content "projects\scripts\eepp-sdk-README.md" -Raw) -replace '@SDK_VERSION@', $Version | Set-Content "$Staging\README.md"
 
-	# SDL2 runtime DLL next to the binaries.
-	$SdlDll = "bin\SDL2.dll"
-	if (Test-Path $SdlDll) {
-		Copy-Item -Path $SdlDll -Destination "$Staging\bin\SDL2.dll"
+	# SDL3 runtime DLL next to the binaries.
+	$SdlDll = "bin\SDL3.dll"
+	if (-not (Test-Path $SdlDll)) {
+		throw "SDL3 runtime not found: $SdlDll. Build the SDK with --with-backend=SDL3 first."
 	}
+	Copy-Item -Path $SdlDll -Destination "$Staging\bin\SDL3.dll"
 
 	# -----------------------------------------------------------------------
 	# Zip.

@@ -43,7 +43,7 @@ jobs:
         fi
     - name: Build
       run: |
-        bash projects/mingw32/make.sh -e config=release_x86_64 -j$(nproc)
+        bash projects/mingw32/make.sh --backend=sdl3 -e config=release_x86_64 -j$(nproc)
     - name: Package eepp SDK
       run: |
         bash projects/scripts/package_sdk.sh windows x86_64 --strip --version ${{ steps.sdk_version.outputs.version }}

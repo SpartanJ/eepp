@@ -1270,7 +1270,7 @@ void Image::fillWithColor( const Color& Color ) {
 	if ( NULL == mPixels )
 		return;
 
-	Uint64 size = mWidth * mHeight;
+	const auto size = mSize;
 
 	switch ( mChannels ) {
 		case 4: {
