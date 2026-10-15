@@ -210,6 +210,14 @@ target; keep same-window operations in your internal UI drag handling. On macOS 
 that returns to the source window can deliver ordinary `FileDropped` events there; keep same-window
 operations internal on those platforms as well.
 
+Applications can start the native drag as soon as their own drag passes its threshold and keep the
+internal drag running beside it, as file managers do. Files can then be dropped on any window,
+including one the user switches to with Alt+Tab mid-drag. Internal drag feedback continues while
+the source window still receives the pointer. Ignore the internal drag's release while the native
+session is active and resolve it from the completion instead. On X11, a release over the source
+window ends the session `Cancelled` with `DragResult::releasedOverSource` set, so the application
+completes it as its internal drop. Elsewhere, such a drop arrives as `FileDropped` events.
+
 Applications that install their own `SDL_SetX11EventHook` must coordinate its use: SDL3 has a single
 hook slot, which eepp uses during an active native drag and clears afterwards.
 

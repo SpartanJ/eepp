@@ -242,6 +242,7 @@ class X11DragSource : public DragSource {
 				resetPreview();
 				ungrab();
 			} else {
+				releasedOverSource = !target && overOrigin;
 				cancel();
 			}
 		}
@@ -443,12 +444,15 @@ class X11DragSource : public DragSource {
 		int rx, ry, wx, wy;
 		unsigned mask;
 		unsigned candidateVersion = 0;
+		const bool wasOverOrigin = overOrigin;
+		overOrigin = false;
 		// XDND v3+ advertises awareness on the top-level client, which routes to its widgets.
 		// Walk through WM containers, then stop at that client instead of traversing its children.
 		for ( unsigned depth = 0; under && depth < 64; ++depth ) {
 			if ( under == origin || under == helper ) {
 				candidate = 0;
 				candidateProxy = 0;
+				overOrigin = under == origin;
 				break;
 			}
 			// XDND specifies XdndAware on the validated proxy, which can be the only aware
@@ -467,7 +471,8 @@ class X11DragSource : public DragSource {
 				break;
 			under = child;
 		}
-		if ( candidate != target || candidateProxy != proxy ) {
+		// Entering or leaving the source window changes no target (it is never one).
+		if ( candidate != target || candidateProxy != proxy || overOrigin != wasOverOrigin ) {
 			if ( target )
 				send( atoms[Leave] );
 			target = candidate;
@@ -476,7 +481,9 @@ class X11DragSource : public DragSource {
 			accepted = false;
 			waitingStatus = false;
 			uriRequested = false;
-			preview->setFeedback( target ? DragFeedback::Pending : DragFeedback::Rejected );
+			// Over the source window the application resolves the drop itself.
+			preview->setFeedback( target || overOrigin ? DragFeedback::Pending
+													   : DragFeedback::Rejected );
 			if ( target )
 				send( atoms[Enter], static_cast<long>( version ) << 24, atoms[UriList] );
 		}
@@ -719,6 +726,8 @@ class X11DragSource : public DragSource {
 	int x{ 0 }, y{ 0 };
 	unsigned version{ 0 };
 	bool pointerGrabbed{ false };
+	/** The pointer is over the source window (never a target), as of the last position(). */
+	bool overOrigin{ false };
 	bool dirty{ true };
 	bool released{ false };
 	bool waitingStatus{ false };

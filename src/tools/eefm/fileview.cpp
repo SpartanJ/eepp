@@ -1,14 +1,24 @@
 #include "fileview.hpp"
+#include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/image.hpp>
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/nodemessage.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/models/modeleditingdelegate.hpp>
+#include <eepp/ui/uiicon.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitablerow.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/window/cursormanager.hpp>
+#include <eepp/window/draganddrop.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
+#include <unordered_map>
 
+using namespace EE::Graphics;
 using namespace EE::Scene;
 using namespace EE::UI::Doc;
 using namespace EE::UI::Models;
@@ -23,16 +33,71 @@ FileDrag& currentFileDrag() {
 
 namespace {
 
-/** Floating label that follows the pointer while files are dragged. */
-UITextView* dragLabel( UISceneNode* ui ) {
-	static UITextView* label = nullptr;
+/** Floating label that follows the pointer while files are dragged: the dragged row's icon and
+ * name (or the item count). */
+UIPushButton* dragLabel( UISceneNode* ui ) {
+	static UIPushButton* label = nullptr;
 	if ( !label || label->getUISceneNode() != ui ) {
-		label = UITextView::New();
+		label = UIPushButton::NewWithTag( "file_drag_label" );
 		label->setParent( ui->getRoot() );
-		label->setClass( "file_drag_label" );
 		label->setVisible( false )->setEnabled( false );
 	}
 	return label;
+}
+
+/** Renders widget alone (nothing behind it) and reads it back: the system drag shows it. */
+Image snapshot( UIWidget* widget ) {
+	auto* ui = widget->getUISceneNode();
+	auto* window = ui->getWindow();
+	ui->updateDirtyStyles();
+	ui->updateDirtyStyleStates();
+	ui->updateDirtyLayouts();
+	const Sizef size = widget->getPixelsSize();
+	const int width = std::min<int>( std::ceil( size.getWidth() ), window->getWidth() );
+	const int height = std::min<int>( std::ceil( size.getHeight() ), window->getHeight() );
+	if ( width <= 0 || height <= 0 || width > 2048 || height > 2048 )
+		return {};
+	// Drawn at the window's top left, into the back buffer, which is never presented: the next
+	// frame draws the scene again.
+	const Vector2f position = widget->getPixelsPosition();
+	const bool visible = widget->isVisible();
+	widget->setPixelsPosition( 0, 0 );
+	widget->setVisible( true );
+	// The label's rounded corners keep the cleared color (the X11 preview is opaque): the theme
+	// background, not the window's black.
+	const RGB clearColor = window->getClearColor();
+	if ( widget->getUIStyle() ) {
+		auto back = widget->getUIStyle()->getVariable( "--back" );
+		if ( !back.isEmpty() )
+			window->setClearColor( Color::fromString( back.getValue() ).toRGB() );
+	}
+	auto context = Engine::instance()->makeWindowCurrent( window );
+	window->clear();
+	window->setClearColor( clearColor );
+	widget->nodeDraw();
+	GlobalBatchRenderer::instance()->draw();
+	Image image( width, height, 4, Color::Transparent, false );
+	FrameReadback readback;
+	readback.pixels = image.getPixels();
+	readback.size = { width, height };
+	readback.stride = static_cast<size_t>( width ) * 4;
+	readback.position = { 0, static_cast<int>( window->getHeight() ) - height };
+	readback.format = FramePixelFormat::RGBA32;
+	readback.origin = FrameOrigin::TopLeft;
+	const bool read = window->readFrameBuffer( readback );
+	widget->setPixelsPosition( position );
+	widget->setVisible( visible );
+	ui->invalidate( nullptr );
+	if ( !read )
+		return {};
+	if ( readback.origin == FrameOrigin::BottomLeft ) {
+		for ( int y = 0; y < height / 2; ++y ) {
+			auto* row = image.getPixels() + y * readback.stride;
+			auto* opposite = image.getPixels() + ( height - 1 - y ) * readback.stride;
+			std::swap_ranges( row, row + readback.stride, opposite );
+		}
+	}
+	return image;
 }
 
 class FileCell : public UITableCell {
@@ -43,6 +108,11 @@ class FileCell : public UITableCell {
 		setDragEnabled( true );
 		// The text takes the cell's free width, so long names end in an ellipsis (stylesheet).
 		setExpandTextView( true );
+	}
+
+	~FileCell() override {
+		if ( sNativeDragCell == this )
+			sNativeDragCell = nullptr;
 	}
 
 	Uint32 getType() const override { return FileTableView::CellType; }
@@ -76,6 +146,40 @@ class FileCell : public UITableCell {
 		return UITableCell::onDragStart( position, flags );
 	}
 
+	static UIIcon* rowIcon( FileTableView* table, const ModelIndex& row ) {
+		auto* model = table->getModel();
+		if ( !model || !row.isValid() )
+			return nullptr;
+		Variant data(
+			model->data( model->index( row.row(), table->getMainColumn() ), ModelRole::Icon ) );
+		return data.is( Variant::Type::Icon ) ? data.asIcon() : nullptr;
+	}
+
+	/** The row whose icon stands for the dragged items: one of the most common type (icons are
+	 * cached per type), the pressed row on a tie. */
+	static ModelIndex dragIconRow( FileTableView* table, const ModelIndex& pressed ) {
+		const auto indexes = table->getSelection().indexes();
+		if ( indexes.size() < 2 )
+			return pressed;
+		std::unordered_map<UIIcon*, std::pair<size_t, ModelIndex>> counts;
+		for ( const auto& index : indexes ) {
+			auto& count =
+				counts.emplace( rowIcon( table, index ), std::make_pair( 0, index ) ).first->second;
+			++count.first;
+		}
+		const size_t pressedCount = counts[rowIcon( table, pressed )].first;
+		ModelIndex best = pressed;
+		size_t bestCount = pressedCount;
+		for ( const auto& index : indexes ) {
+			const auto& count = counts[rowIcon( table, index )];
+			if ( count.first > bestCount ) {
+				bestCount = count.first;
+				best = count.second;
+			}
+		}
+		return best;
+	}
+
 	void beginFileDrag() {
 		mDragActive = true;
 		if ( auto* table = view() ) {
@@ -87,10 +191,23 @@ class FileCell : public UITableCell {
 			drag.uris = table->dragPayload ? table->dragPayload() : std::vector<URI>{};
 			drag.source = table;
 			drag.folders = table->isFolderRow != nullptr;
+			drag.native = false;
 			for ( const auto& index : table->getSelection().indexes() )
 				drag.folders = drag.folders && index.isValid() &&
 							   table->isFolderRow( static_cast<size_t>( index.row() ) );
 			auto* label = dragLabel( getUISceneNode() );
+			const ModelIndex iconRow = dragIconRow( table, rowIndex );
+			DrawablePtr icon;
+			if ( UIIcon* found = rowIcon( table, iconRow ) )
+				icon = found->createDrawable( table->getIconSize() );
+			label->setIcon( icon );
+			// Folders are tinted as in the rows (stylesheet).
+			bool folder = table->isFolderRow && iconRow.isValid() &&
+						  table->isFolderRow( static_cast<size_t>( iconRow.row() ) );
+			if ( folder )
+				label->addClass( "vfs_folder" );
+			else
+				label->removeClass( "vfs_folder" );
 			label->setText( drag.uris.size() == 1
 								? String::fromUtf8( drag.uris[0].getLastPathSegment() )
 								: String( String::format( "%zu items", drag.uris.size() ) ) );
@@ -108,11 +225,61 @@ class FileCell : public UITableCell {
 			getEventDispatcher()->setNodeDragging( nullptr );
 	}
 
+	/** Starts the system drag along with eefm's own as soon as files are dragged (local files
+	 * only: other applications get paths), so they can be dropped anywhere: other windows, even
+	 * after switching to them with Alt+Tab mid-drag. eefm's drag keeps following the pointer
+	 * while it sees it; a drop on eefm is its own (Move/Copy) drop. */
+	void startNativeDrag() {
+		auto* window = getUISceneNode()->getWindow();
+		auto drag = DragAndDrop::forWindow( *window );
+		if ( !drag.getCapabilities().fileSource )
+			return;
+		DragOffer offer;
+		for ( const auto& uri : currentFileDrag().uris ) {
+			if ( uri.getScheme() != "file" )
+				return;
+			offer.files.push_back( { uri.getFSPath() } );
+		}
+		Image preview = snapshot( dragLabel( getUISceneNode() ) );
+		if ( preview.getPixels() )
+			offer.preview.image = &preview;
+		auto result = drag.startDrag( offer, []( DragResult result ) {
+			FileCell* cell = sNativeDragCell;
+			sNativeDragCell = nullptr;
+			if ( cell )
+				cell->endNativeDrag( result.releasedOverSource );
+		} );
+		if ( result.status != DragStartStatus::Started ) {
+			Log::warning( "eefm: native drag not started: %s", result.error.c_str() );
+			return;
+		}
+		currentFileDrag().native = true;
+		sNativeDragCell = this;
+		mNativeDrag = true;
+		// The system draws the dragged files.
+		dragLabel( getUISceneNode() )->setVisible( false );
+	}
+
+	/** The system drag ended. Released over eefm's own window (X11 offers it to no one), it is
+	 * dropped as eefm's drag. Elsewhere the drop was the target's (eefm included, as a file drop
+	 * on Wayland, macOS and Windows), or cancelled. */
+	void endNativeDrag( bool drop ) {
+		mNativeDrag = false;
+		if ( !isDragging() )
+			return;
+		setDragging( false, drop );
+		if ( getEventDispatcher() && getEventDispatcher()->getNodeDragging() == this )
+			getEventDispatcher()->setNodeDragging( nullptr );
+	}
+
 	Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags ) override {
 		if ( isDragging() && !mDragActive && !( flags & getDragButton() ) ) {
 			cancelPendingDrag();
 			return 1;
 		}
+		// The system drag owns the release: eefm's drag waits for it to end.
+		if ( mNativeDrag && !( flags & getDragButton() ) )
+			return 1;
 		return UITableCell::onCalculateDrag( position, flags );
 	}
 
@@ -140,10 +307,13 @@ class FileCell : public UITableCell {
 				 std::abs( position.y - mPressPosition.y ) < PixelDensity::dpToPx( 4 ) )
 				return 0;
 			beginFileDrag();
+			startNativeDrag();
 		}
-		auto* label = dragLabel( getUISceneNode() );
-		label->setVisible( true );
-		label->setPixelsPosition( position + PixelDensity::dpToPx( 12 ) );
+		if ( !mNativeDrag ) {
+			auto* label = dragLabel( getUISceneNode() );
+			label->setVisible( true );
+			label->setPixelsPosition( position + PixelDensity::dpToPx( 12 ) );
+		}
 		getUISceneNode()->getWindow()->getCursorManager()->set( Cursor::Hand );
 		setEnabled( false );
 		Node* over = getUISceneNode()->overFind( position );
@@ -177,6 +347,8 @@ class FileCell : public UITableCell {
 	Uint32 onKeyDown( const KeyEvent& event ) override {
 		// Escape cancels the drag without dropping.
 		if ( event.getKeyCode() == KEY_ESCAPE && isDragging() ) {
+			if ( mNativeDrag )
+				DragAndDrop::forWindow( *getUISceneNode()->getWindow() ).cancelDrag();
 			setDragging( false, false );
 			getEventDispatcher()->setNodeDragging( nullptr );
 			return 1;
@@ -188,7 +360,13 @@ class FileCell : public UITableCell {
 	UIWidget* mDropTarget{ nullptr };
 	Vector2f mPressPosition;
 	bool mDragActive{ false };
+	/** A system drag started with this one is in progress. */
+	bool mNativeDrag{ false };
+	/** The cell whose drag the system drag in progress started with, while it exists. */
+	static FileCell* sNativeDragCell;
 };
+
+FileCell* FileCell::sNativeDragCell = nullptr;
 
 } // namespace
 

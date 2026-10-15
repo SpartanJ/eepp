@@ -20,6 +20,8 @@ struct FileDrag {
 	FileTableView* source{ nullptr };
 	/** Every dragged item is a folder (they can be added as places). */
 	bool folders{ false };
+	/** A system drag started with it (other applications can take the files). */
+	bool native{ false };
 };
 
 /** The drag in progress (or the last one; it is replaced when the next drag starts). */

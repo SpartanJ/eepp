@@ -440,7 +440,8 @@ void App::paste( FileTab* tab, std::optional<URI> into ) {
 	}
 }
 
-void App::dropFiles( const std::vector<URI>& uris, const URI& destination, int paneIndex ) {
+void App::dropFiles( const std::vector<URI>& uris, const URI& destination, int paneIndex,
+					 bool copy ) {
 	std::vector<URI> sources;
 	for ( const auto& uri : uris ) {
 		// Dropping into the folder an item already is in, or a folder into itself, does nothing.
@@ -450,6 +451,10 @@ void App::dropFiles( const std::vector<URI>& uris, const URI& destination, int p
 	}
 	if ( sources.empty() )
 		return;
+	if ( copy ) {
+		transferFiles( sources, destination, false, paneIndex );
+		return;
+	}
 	auto* input = mApp->getWindow()->getInput();
 	if ( input->isShiftPressed() ) {
 		transferFiles( sources, destination, true, paneIndex );

@@ -53,6 +53,10 @@ struct DragResult {
 	std::string error;
 	DragEndReason reason{ DragEndReason::Cancelled };
 	DragAction performedAction{ DragAction::None };
+	/** The gesture was released over its own source window, which X11 never offers as a native
+	 * target: the session ends Cancelled, and the application can complete it as an internal
+	 * drop. Elsewhere the source window receives ordinary FileDropped events instead. */
+	bool releasedOverSource{ false };
 };
 
 struct DragStartResult {

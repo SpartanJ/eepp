@@ -257,7 +257,10 @@ class App {
 
 	void addToPlaces( const URI& uri );
 
-	void dropFiles( const std::vector<URI>& uris, const URI& destination, int paneIndex );
+	/** Moves or copies (as the user picks) the dropped files to destination; with copy, they are
+	 * copied without asking. Files already there are skipped. */
+	void dropFiles( const std::vector<URI>& uris, const URI& destination, int paneIndex,
+					bool copy = false );
 
 	/** Copies the files dropped from other applications into the pane (or the folder row)
 	 * where they were dropped. */

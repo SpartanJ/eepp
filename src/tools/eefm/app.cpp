@@ -261,12 +261,18 @@ ScrollBar::vbutton, ScrollBar::hbutton {
 	min-width: 120dp;
 	margin-right: 4dp;
 }
-.file_drag_label {
+file_drag_label {
 	background-color: var(--menu-back);
 	border-width: 1dp;
 	border-color: var(--menu-border);
 	border-radius: 3dp;
-	padding: 3dp 8dp;
+	padding: 4dp 8dp 4dp 6dp;
+	color: var(--font);
+	/* The rows' tint, explicitly: a folder's tint would stay for the next drag otherwise. */
+	tint: var(--font);
+}
+file_drag_label::icon {
+	margin-right: 6dp;
 }
 /* Every cell and row gets explicit values for what the rules below change: a property no rule
    sets anymore keeps its last value (recycled cells change class, drags end, panes go
@@ -342,7 +348,8 @@ tableview::row:selected tableview::cell.vfs_group {
 tableview::cell.vfs_size {
 	text-align: right;
 }
-.glyph_icons tableview::cell.vfs_folder {
+.glyph_icons tableview::cell.vfs_folder,
+.glyph_icons file_drag_label.vfs_folder {
 	tint: var(--primary);
 }
 tableview::cell.dragged {
@@ -1524,7 +1531,10 @@ void App::dropExternalFiles() {
 		 row && *row < tab->model->rowCount() && tab->model->entry( *row ).isDirectory() )
 		destination = tab->model->entryURI( *row );
 	setActivePane( target );
-	transferFiles( files, destination, false, target );
+	// eefm's own drag dropped on eefm arrives here on Wayland, macOS and Windows (the system drag
+	// started with it): it is resolved as the internal drag it is. Other files are copied.
+	const auto& drag = currentFileDrag();
+	dropFiles( files, destination, target, !( drag.native && files == drag.uris ) );
 }
 
 DrawablePtr App::icon( const std::string& name, int sizeDp ) const {

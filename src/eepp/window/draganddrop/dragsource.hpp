@@ -30,7 +30,8 @@ class DragSource {
 		if ( completed )
 			return false;
 		result = { std::move( error ), reason,
-				   reason == DragEndReason::Dropped ? action : DragAction::None };
+				   reason == DragEndReason::Dropped ? action : DragAction::None,
+				   reason == DragEndReason::Cancelled && releasedOverSource };
 		completed = true;
 		return true;
 	}
@@ -39,6 +40,8 @@ class DragSource {
 	DragCompletionCallback completion;
 	DragResult result;
 	bool completed{ false };
+	/** Set by transports that exclude the source window when the release happens over it. */
+	bool releasedOverSource{ false };
 };
 
 }}} // namespace EE::Window::Private
