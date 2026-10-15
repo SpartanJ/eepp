@@ -81,6 +81,13 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 			std::lock_guard<std::mutex> lock( mEntriesMutex );
 			Entry& entry = mEntries[composite];
 			entry.rootPath = root;
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+			// FSEvents reports resolved paths: /private/var/... for a root under /var.
+			std::string realRoot( System::FileSystem::getRealPath( nativeRoot ) );
+			System::FileSystem::dirAddSlashAtEnd( realRoot );
+			if ( realRoot != root )
+				entry.realRootPath = std::move( realRoot );
+#endif
 			entry.recursive = options.recursive;
 			entry.sinks.emplace_back( token, sink );
 			auto& highest = mHighestId[key];
@@ -142,8 +149,11 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 				}
 				return;
 			}
-			root = it->second.rootPath;
-			for ( auto& sink : it->second.sinks )
+			const Entry& entry = it->second;
+			root = !entry.realRootPath.empty() && String::startsWith( dir, entry.realRootPath )
+					   ? entry.realRootPath
+					   : entry.rootPath;
+			for ( auto& sink : entry.sinks )
 				if ( auto locked = sink.second.lock() )
 					sinks.push_back( std::move( locked ) );
 		}
@@ -225,6 +235,9 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 
 	struct Entry {
 		std::string rootPath; // native, with trailing separator
+		/** rootPath with its symlinks resolved, when that differs (macOS only, where the native
+		 * backend reports resolved paths). */
+		std::string realRootPath;
 		std::vector<std::pair<Uint64, std::weak_ptr<WatchSink>>> sinks;
 		bool recursive{ false };
 	};
