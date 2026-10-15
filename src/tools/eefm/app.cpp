@@ -433,7 +433,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	mConfig = std::make_unique<AppConfig>( mConfigDir );
 	mConfig->load();
 	WindowSettings ws( width, height, "eefm", WindowStyle::Default, WindowBackend::Default, 32,
-					   Sys::getProcessPath() + "assets/icon/ee.png" );
+					   Sys::getProcessPath() + "assets/icon/eefm.png" );
 	UIApplication::Settings appSettings;
 	if ( mConfig->window.pixelDensity > 0 )
 		appSettings.pixelDensity = mConfig->window.pixelDensity;

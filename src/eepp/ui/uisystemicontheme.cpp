@@ -7,10 +7,8 @@
 #include <eepp/system/sys.hpp>
 
 #include <algorithm>
-#include <cctype>
 #include <cstdlib>
 #include <mutex>
-#include <string_view>
 
 using namespace EE::Graphics;
 using namespace EE::System;
@@ -26,83 +24,6 @@ std::string lowerExtension( const std::string& name ) {
 	return String::toLower( name.substr( dot + 1 ) );
 }
 
-/** Breeze icons color parts with stylesheet classes ("ColorScheme-Text") and currentColor, which
- * nanosvg does not support. As KDE's icon loader does, resolve each element's currentColor to the
- * color its class defines in the icon's own stylesheet. */
-std::string applyStylesheetColors( std::string svg ) {
-	size_t styleStart = svg.find( "<style" );
-	if ( styleStart == std::string::npos || svg.find( "currentColor" ) == std::string::npos )
-		return svg;
-	size_t styleEnd = svg.find( "</style>", styleStart );
-	if ( styleEnd == std::string::npos )
-		return svg;
-	std::unordered_map<std::string, std::string> colors;
-	std::string css = svg.substr( styleStart, styleEnd - styleStart );
-	for ( size_t pos = css.find( '.' ); pos != std::string::npos; pos = css.find( '.', pos + 1 ) ) {
-		size_t nameEnd = pos + 1;
-		while ( nameEnd < css.size() &&
-				( std::isalnum( static_cast<unsigned char>( css[nameEnd] ) ) ||
-				  css[nameEnd] == '-' || css[nameEnd] == '_' ) )
-			++nameEnd;
-		size_t open = css.find( '{', nameEnd );
-		size_t close = css.find( '}', open );
-		if ( nameEnd == pos + 1 || open == std::string::npos || close == std::string::npos )
-			continue;
-		for ( auto declaration : String::split( css.substr( open + 1, close - open - 1 ), ';' ) ) {
-			size_t colon = declaration.find( ':' );
-			if ( colon == std::string::npos )
-				continue;
-			if ( String::trim( String::trim( declaration.substr( 0, colon ) ), '\n' ) == "color" )
-				colors[css.substr( pos + 1, nameEnd - pos - 1 )] =
-					String::trim( declaration.substr( colon + 1 ) );
-		}
-		pos = close;
-	}
-	if ( colors.empty() )
-		return svg;
-	std::string out;
-	out.reserve( svg.size() );
-	size_t pos = 0;
-	while ( pos < svg.size() ) {
-		size_t tagStart = svg.find( '<', pos );
-		size_t tagEnd =
-			tagStart == std::string::npos ? std::string::npos : svg.find( '>', tagStart );
-		if ( tagEnd == std::string::npos ) {
-			out.append( svg, pos, std::string::npos );
-			break;
-		}
-		out.append( svg, pos, tagStart - pos );
-		pos = tagEnd + 1;
-		// Only the tags that change are copied.
-		std::string_view tag( svg.data() + tagStart, tagEnd - tagStart + 1 );
-		size_t classPos = tag.find( "class=" );
-		size_t valueEnd = classPos == std::string_view::npos || classPos + 6 >= tag.size()
-							  ? std::string_view::npos
-							  : tag.find( tag[classPos + 6], classPos + 7 );
-		const std::string* color = nullptr;
-		if ( valueEnd != std::string_view::npos &&
-			 tag.find( "currentColor" ) != std::string_view::npos ) {
-			std::string_view classes = tag.substr( classPos + 7, valueEnd - classPos - 7 );
-			while ( !color && !classes.empty() ) {
-				size_t space = classes.find( ' ' );
-				auto found = colors.find( std::string( classes.substr( 0, space ) ) );
-				if ( found != colors.end() )
-					color = &found->second;
-				classes = space == std::string_view::npos ? std::string_view{}
-														  : classes.substr( space + 1 );
-			}
-		}
-		if ( !color ) {
-			out.append( tag );
-			continue;
-		}
-		std::string replaced( tag );
-		String::replaceAll( replaced, "currentColor", *color );
-		out += replaced;
-	}
-	return out;
-}
-
 /** Reads and rasterizes an icon file (SVG or PNG) at size pixels. Any thread. */
 std::unique_ptr<Image> loadIconFile( const std::string& path, int size ) {
 	std::unique_ptr<Image> image;
@@ -110,7 +31,6 @@ std::unique_ptr<Image> loadIconFile( const std::string& path, int size ) {
 		std::string svg;
 		if ( !FileSystem::fileGet( path, svg ) )
 			return nullptr;
-		svg = applyStylesheetColors( std::move( svg ) );
 		Image::FormatConfiguration format;
 		int width = 0, height = 0, channels = 0;
 		if ( !Image::getInfoFromMemory( reinterpret_cast<const unsigned char*>( svg.data() ),
@@ -157,8 +77,9 @@ class UISystemIconTheme::Backend {
 	void init() {
 		std::call_once( mInit, [this] {
 #ifdef EE_SYSTEM_ICONS_FREEDESKTOP
-			std::string name = mRequestedTheme.empty() ? Private::FreedesktopIconLookup::detectThemeName()
-													   : mRequestedTheme;
+			std::string name = mRequestedTheme.empty()
+								   ? Private::FreedesktopIconLookup::detectThemeName()
+								   : mRequestedTheme;
 			mLookup = std::make_unique<Private::FreedesktopIconLookup>( name );
 #endif
 		} );

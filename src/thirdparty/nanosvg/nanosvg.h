@@ -339,7 +339,18 @@ int nsvg__parseXML(char* input,
 	char* mark = s;
 	int state = NSVG_XML_CONTENT;
 	while (*s) {
-		if (*s == '<' && state == NSVG_XML_CONTENT) {
+		if (*s == '<' && state == NSVG_XML_CONTENT && strncmp(s, "<![CDATA[", 9) == 0) {
+			// CDATA section (stylesheets): its text is content, it may contain '<' and '>'.
+			char* end = strstr(s + 9, "]]>");
+			*s = '\0';
+			nsvg__parseContent(mark, contentCb, ud);
+			if (end == NULL)
+				break;
+			*end = '\0';
+			nsvg__parseContent(s + 9, contentCb, ud);
+			s = end + 3;
+			mark = s;
+		} else if (*s == '<' && state == NSVG_XML_CONTENT) {
 			// Start of a tag
 			*s++ = '\0';
 			nsvg__parseContent(mark, contentCb, ud);
@@ -440,6 +451,9 @@ typedef struct NSVGattrib
 	char hasFill;
 	char hasStroke;
 	char visible;
+	unsigned int color;		// The "color" property, what currentColor resolves to (inherited).
+	char fillCurrentColor;		// The fill is currentColor (resolved when the shape is added).
+	char strokeCurrentColor;
 } NSVGattrib;
 
 typedef struct NSVGparser
@@ -458,6 +472,9 @@ typedef struct NSVGparser
 	float dpi;
 	char pathFlag;
 	char defsFlag;
+	char styleFlag;			// Inside a <style> element.
+	char* styleSheet;		// Text of the <style> elements: simple ".class { ... }" rules.
+	int styleSheetLength;
 } NSVGparser;
 
 static void nsvg__xformIdentity(float* t)
@@ -648,6 +665,7 @@ static NSVGparser* nsvg__createParser(unsigned current_color)
 	p->attr[0].fontSize = 40.0f;
 
 	p->image->current_color = current_color;
+	p->attr[0].color = current_color;
 
 	p->alignX = NSVG_ALIGN_MID;
 	p->alignY = NSVG_ALIGN_MID;
@@ -698,6 +716,7 @@ static void nsvg__deleteParser(NSVGparser* p)
 		nsvg__deleteGradientData(p->gradients);
 		nsvgDelete(p->image);
 		free(p->pts);
+		free(p->styleSheet);
 		free(p);
 	}
 }
@@ -1005,7 +1024,7 @@ static void nsvg__addShape(NSVGparser* p)
 		shape->fill.type = NSVG_PAINT_NONE;
 	} else if (attr->hasFill == 1) {
 		shape->fill.type = NSVG_PAINT_COLOR;
-		shape->fill.v.color = attr->fillColor;
+		shape->fill.v.color = attr->fillCurrentColor ? (attr->color & 0xffffff) : attr->fillColor;
 		shape->fill.v.color |= (unsigned int)(attr->fillOpacity*255) << 24;
 	} else if (attr->hasFill == 2) {
 		shape->fill.type = NSVG_PAINT_UNDEF;
@@ -1016,7 +1035,7 @@ static void nsvg__addShape(NSVGparser* p)
 		shape->stroke.type = NSVG_PAINT_NONE;
 	} else if (attr->hasStroke == 1) {
 		shape->stroke.type = NSVG_PAINT_COLOR;
-		shape->stroke.v.color = attr->strokeColor;
+		shape->stroke.v.color = attr->strokeCurrentColor ? (attr->color & 0xffffff) : attr->strokeColor;
 		shape->stroke.v.color |= (unsigned int)(attr->strokeOpacity*255) << 24;
 	} else if (attr->hasStroke == 2) {
 		shape->stroke.type = NSVG_PAINT_UNDEF;
@@ -1817,11 +1836,15 @@ static int nsvg__parseAttr(NSVGparser* p, const char* name, const char* value)
 			nsvg__parseUrl(attr->fillGradient, value);
 		} else if (strncmp(value, "currentColor", 12) == 0) {
 			attr->hasFill = 1;
-			attr->fillColor = p->image->current_color;
+			attr->fillCurrentColor = 1;
 		} else {
 			attr->hasFill = 1;
+			attr->fillCurrentColor = 0;
 			attr->fillColor = nsvg__parseColor(value);
 		}
+	} else if (strcmp(name, "color") == 0) {
+		if (strncmp(value, "currentColor", 12) != 0 && strcmp(value, "inherit") != 0)
+			attr->color = nsvg__parseColor(value);
 	} else if (strcmp(name, "opacity") == 0) {
 		attr->opacity = nsvg__parseOpacity(value);
 	} else if (strcmp(name, "fill-opacity") == 0) {
@@ -1834,9 +1857,10 @@ static int nsvg__parseAttr(NSVGparser* p, const char* name, const char* value)
 			nsvg__parseUrl(attr->strokeGradient, value);
 		} else if (strncmp(value, "currentColor", 12) == 0) {
 			attr->hasStroke = 1;
-			attr->strokeColor = p->image->current_color;
+			attr->strokeCurrentColor = 1;
 		} else {
 			attr->hasStroke = 1;
+			attr->strokeCurrentColor = 0;
 			attr->strokeColor = nsvg__parseColor(value);
 		}
 	} else if (strcmp(name, "stroke-width") == 0) {
@@ -1925,6 +1949,72 @@ static void nsvg__parseStyle(NSVGparser* p, const char* str)
 
 		nsvg__parseNameValue(p, start, end);
 		if (*str) ++str;
+	}
+}
+
+// Applies the declarations of the stylesheet's ".name { ... }" rules that match the element's
+// classes. Only simple class selectors (in selector lists) are supported.
+static void nsvg__applyClasses(NSVGparser* p, const char** attr)
+{
+	const char* classes = NULL;
+	const char* rule;
+	int i;
+	if (p->styleSheet == NULL)
+		return;
+	for (i = 0; attr[i]; i += 2) {
+		if (strcmp(attr[i], "class") == 0) {
+			classes = attr[i + 1];
+			break;
+		}
+	}
+	if (classes == NULL)
+		return;
+	rule = p->styleSheet;
+	while (*rule) {
+		const char* open = strchr(rule, '{');
+		const char* close;
+		const char* sel;
+		int matched = 0;
+		if (open == NULL)
+			break;
+		close = strchr(open, '}');
+		if (close == NULL)
+			break;
+		// Each selector of the list: ".name", matched against each class of the element.
+		for (sel = rule; sel < open && !matched; ) {
+			const char* name;
+			const char* c;
+			size_t len;
+			while (sel < open && *sel != '.') ++sel;
+			if (sel >= open)
+				break;
+			name = ++sel;
+			while (sel < open && (nsvg__isdigit(*sel) || (*sel >= 'a' && *sel <= 'z') ||
+								  (*sel >= 'A' && *sel <= 'Z') || *sel == '-' || *sel == '_'))
+				++sel;
+			len = (size_t)(sel - name);
+			// Compound selectors (".a:hover", ".a b") are not supported: skip them.
+			while (sel < open && nsvg__isspace(*sel)) ++sel;
+			if (len == 0 || (sel < open && *sel != ','))
+				continue;
+			for (c = classes; *c && !matched; ) {
+				const char* start;
+				while (*c && nsvg__isspace(*c)) ++c;
+				start = c;
+				while (*c && !nsvg__isspace(*c)) ++c;
+				if ((size_t)(c - start) == len && strncmp(start, name, len) == 0)
+					matched = 1;
+			}
+		}
+		if (matched) {
+			char decls[512];
+			size_t n = (size_t)(close - open - 1);
+			if (n >= sizeof(decls)) n = sizeof(decls) - 1;
+			memcpy(decls, open + 1, n);
+			decls[n] = '\0';
+			nsvg__parseStyle(p, decls);
+		}
+		rule = close + 1;
 	}
 }
 
@@ -2828,6 +2918,11 @@ static void nsvg__startElement(void* ud, const char* el, const char** attr)
 {
 	NSVGparser* p = (NSVGparser*)ud;
 
+	if (strcmp(el, "style") == 0) {
+		p->styleFlag = 1;
+		return;
+	}
+
 	if (p->defsFlag) {
 		// Skip everything but gradients in defs
 		if (strcmp(el, "linearGradient") == 0) {
@@ -2838,14 +2933,17 @@ static void nsvg__startElement(void* ud, const char* el, const char** attr)
 			nsvg__parseGradientStop(p, attr);
 		} else if (strcmp(el, "path") == 0) {
 			nsvg__pushAttr(p);
+			nsvg__applyClasses(p, attr);
 			nsvg__parsePath(p, attr);
 			nsvg__popAttr(p);
 		} else if (strcmp(el, "g") == 0) {
 			nsvg__pushAttr(p);
+			nsvg__applyClasses(p, attr);
 			nsvg__parseAttribs(p, attr);
 			/* left open */
 		} else if (strcmp(el, "symbol") == 0) {
 			nsvg__pushAttr(p);
+			nsvg__applyClasses(p, attr);
 			nsvg__parseAttribs(p, attr);
 			/* left open */
 		} else {
@@ -2857,40 +2955,49 @@ static void nsvg__startElement(void* ud, const char* el, const char** attr)
 
 	if (strcmp(el, "g") == 0) {
 		nsvg__pushAttr(p);
+		nsvg__applyClasses(p, attr);
 		nsvg__parseAttribs(p, attr);
 		/* left open */
 	} else if (strcmp(el, "use") == 0)  {
 		nsvg__pushAttr(p);
+		nsvg__applyClasses(p, attr);
 		nsvg__parseUse(p, attr);
 		nsvg__popAttr(p);
 	} else if (strcmp(el, "path") == 0) {
 		if (p->pathFlag)	// Do not allow nested paths.
 			return;
 		nsvg__pushAttr(p);
+		nsvg__applyClasses(p, attr);
 		nsvg__parsePath(p, attr);
 		nsvg__popAttr(p);
 	} else if (strcmp(el, "rect") == 0) {
 		nsvg__pushAttr(p);
+		nsvg__applyClasses(p, attr);
 		nsvg__parseRect(p, attr);
 		nsvg__popAttr(p);
 	} else if (strcmp(el, "circle") == 0) {
 		nsvg__pushAttr(p);
+		nsvg__applyClasses(p, attr);
 		nsvg__parseCircle(p, attr);
 		nsvg__popAttr(p);
 	} else if (strcmp(el, "ellipse") == 0) {
 		nsvg__pushAttr(p);
+		nsvg__applyClasses(p, attr);
 		nsvg__parseEllipse(p, attr);
 		nsvg__popAttr(p);
 	} else if (strcmp(el, "line") == 0)  {
 		nsvg__pushAttr(p);
+		nsvg__applyClasses(p, attr);
 		nsvg__parseLine(p, attr);
 		nsvg__popAttr(p);
 	} else if (strcmp(el, "polyline") == 0)  {
 		nsvg__pushAttr(p);
+		nsvg__applyClasses(p, attr);
 		nsvg__parsePoly(p, attr, 0);
 		nsvg__popAttr(p);
 	} else if (strcmp(el, "polygon") == 0)  {
 		nsvg__pushAttr(p);
+		nsvg__applyClasses(p, attr);
 		nsvg__parsePoly(p, attr, 1);
 		nsvg__popAttr(p);
 	} else  if (strcmp(el, "linearGradient") == 0) {
@@ -2913,6 +3020,11 @@ static void nsvg__endElement(void* ud, const char* el)
 {
 	NSVGparser* p = (NSVGparser*)ud;
 
+	if (strcmp(el, "style") == 0) {
+		p->styleFlag = 0;
+		return;
+	}
+
 	if (p->defsFlag) {
 		if (strcmp(el, "g") == 0)
 			nsvg__popAttr(p);
@@ -2932,9 +3044,21 @@ static void nsvg__endElement(void* ud, const char* el)
 
 static void nsvg__content(void* ud, const char* s)
 {
-	NSVG_NOTUSED(ud);
-	NSVG_NOTUSED(s);
-	// empty
+	NSVGparser* p = (NSVGparser*)ud;
+	int len;
+	char* sheet;
+	// The text of <style> elements is kept for the class rules.
+	if (!p->styleFlag)
+		return;
+	len = (int)strlen(s);
+	sheet = (char*)realloc(p->styleSheet, (size_t)(p->styleSheetLength + len + 2));
+	if (sheet == NULL)
+		return;
+	p->styleSheet = sheet;
+	memcpy(p->styleSheet + p->styleSheetLength, s, (size_t)len);
+	p->styleSheetLength += len;
+	p->styleSheet[p->styleSheetLength++] = '\n';
+	p->styleSheet[p->styleSheetLength] = '\0';
 }
 
 static void nsvg__imageBounds(NSVGparser* p, float* bounds)
