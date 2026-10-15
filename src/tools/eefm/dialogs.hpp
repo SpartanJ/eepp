@@ -9,6 +9,7 @@
 #include <eepp/vfs/sftp/sftpprovider.hpp>
 #endif
 #include <functional>
+#include <mutex>
 #include <optional>
 #include <string>
 
@@ -34,7 +35,10 @@ void showError( UISceneNode* ui, const String& message );
  * I/O thread; dialogs are always created on the UI thread through the executor. */
 class SSHPrompts : public SSHHostKeyVerifier, public SSHAuthenticationHandler {
   public:
-	SSHPrompts( UISceneNode* ui, Executor& uiExecutor ) : mUI( ui ), mExecutor( uiExecutor ) {}
+	SSHPrompts( UISceneNode* ui, Executor& uiExecutor ) : mUI( ui ), mExecutor( &uiExecutor ) {}
+
+	/** Refuses late requests before the executor and scene are destroyed. */
+	void shutdown();
 
 	Task<SSHHostKeyDecision> verify( const SSHHostKeyInfo& info ) override;
 
@@ -43,7 +47,8 @@ class SSHPrompts : public SSHHostKeyVerifier, public SSHAuthenticationHandler {
 
   private:
 	UISceneNode* mUI;
-	Executor& mExecutor;
+	std::mutex mMutex;
+	Executor* mExecutor;
 };
 #endif
 

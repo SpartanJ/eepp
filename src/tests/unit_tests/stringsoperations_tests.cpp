@@ -66,6 +66,16 @@ class ScopedTestDirectory {
 
 } // namespace
 
+UTEST( String, icompare ) {
+	EXPECT_EQ( 0, String::icompare( "Readme.MD", "readme.md" ) );
+	EXPECT_TRUE( String::icompare( "alpha", "Beta" ) < 0 );
+	EXPECT_TRUE( String::icompare( "Beta", "alpha" ) > 0 );
+	EXPECT_TRUE( String::icompare( "abc", "ABCD" ) < 0 );
+	EXPECT_TRUE( String::icompare( "", "a" ) < 0 );
+	// Bytes above ASCII compare unsigned, as std::string::compare does.
+	EXPECT_TRUE( String::icompare( "z", "\xC3\xA1" ) < 0 );
+}
+
 UTEST( String, countLines ) {
 	EXPECT_EQ( static_cast<size_t>( 0 ), String::countLines( "" ) );
 	EXPECT_EQ( static_cast<size_t>( 1 ), String::countLines( "A" ) );

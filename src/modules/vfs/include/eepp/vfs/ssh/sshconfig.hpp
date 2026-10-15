@@ -146,9 +146,11 @@ struct SSHResolvedConfig {
 	/** Non-fatal problems (unknown directives, failed expansions, unreadable includes). */
 	std::vector<std::string> warnings;
 
-	/** @return A key identifying meaningfully different SSH sessions (host, port, user, proxy
-	 * chain, authentication profile, host key alias). Never contains a filesystem path of the
-	 * remote side. */
+	/** @return A key identifying meaningfully different SSH sessions: destination (host, port,
+	 * user, proxy chain, host key alias) and the security policy that verified and
+	 * authenticated it (known hosts, host key checking, algorithms, authentication settings).
+	 * Sessions are only shared between configurations with equal keys. Never contains a
+	 * filesystem path of the remote side. */
 	std::string connectionKey() const;
 };
 

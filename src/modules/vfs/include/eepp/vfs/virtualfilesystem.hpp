@@ -27,15 +27,19 @@ using EE::System::ThreadPool;
  * - Tasks resolve on VFS or provider threads; use thenOn() with a UI executor before touching UI
  *   or model state.
  * - Multi-step operations run on a dedicated orchestration pool that waits on provider tasks.
- *   Provider work never runs on that pool, so waits there cannot starve provider I/O.
+ *   Provider work never runs on that pool, so waits there cannot starve provider I/O. Copies and
+ *   moves run on a pool of their own: long transfers never delay the other operations.
  */
 class VirtualFileSystem {
   public:
 	struct Config {
 		/** Worker threads for blocking local I/O (LocalProvider and similar). */
 		Uint32 ioThreads{ 4 };
-		/** Worker threads for multi-step orchestration (transfers, recursive operations). */
+		/** Worker threads for multi-step orchestration (whole-file reads and writes, recursive
+		 * operations). */
 		Uint32 orchestrationThreads{ 2 };
+		/** Copies and moves running at the same time; more wait for one to finish. */
+		Uint32 transferThreads{ 2 };
 		/** Register file:// and res:// (and sftp:// when built with SFTP support). */
 		bool registerDefaultProviders{ true };
 	};
@@ -154,6 +158,7 @@ class VirtualFileSystem {
 	std::unordered_map<std::string, std::shared_ptr<VFSProvider>> mProviders;
 	std::shared_ptr<ThreadPool> mIOPool;
 	std::shared_ptr<ThreadPool> mOrchestrationPool;
+	std::shared_ptr<ThreadPool> mTransferPool;
 	std::unique_ptr<WatchManager> mWatchManager;
 };
 

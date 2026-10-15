@@ -1,6 +1,7 @@
 #ifndef EE_VFS_SFTP_SSHSESSION_HPP
 #define EE_VFS_SFTP_SSHSESSION_HPP
 
+#include "sshagent.hpp"
 #include "sshsocket.hpp"
 #include <algorithm>
 #include <atomic>
@@ -128,6 +129,9 @@ class SSHIOContext : public std::enable_shared_from_this<SSHIOContext> {
 	/** Registers a connection (I/O thread only). */
 	void addConnection( std::shared_ptr<SSHConnection> connection );
 
+	/** Fails registered sessions, including sessions still awaiting authentication. */
+	void closeConnections();
+
   private:
 	void loop();
 
@@ -221,6 +225,8 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 
 	const SSHResolvedConfig& config() const { return mConfig; }
 
+	const std::shared_ptr<SSHIOContext>& ioContext() const { return mContext; }
+
 	/** Last activity time (any thread), for idle pooling. */
 	std::chrono::steady_clock::time_point lastUse() const;
 
@@ -233,6 +239,11 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 
 	/** @return Milliseconds until a timer of this connection fires, -1 if none. */
 	int nextTimeoutMs() const;
+
+	std::chrono::milliseconds idleTimeout() const;
+
+	/** @return True when the connection stayed idle longer than its idle timeout. */
+	bool idleExpired() const;
 
 	LIBSSH2_SESSION* session() const { return mSession; }
 
@@ -253,14 +264,44 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	/** Tracks an open SFTP handle (I/O thread only). Handles still open when the connection is
 	 * destroyed (for example because their owners died after the connection failed) are closed
 	 * then, so libssh2 releases them. */
-	void trackHandle( LIBSSH2_SFTP_HANDLE* handle ) { mHandles.push_back( handle ); }
+	void trackHandle( LIBSSH2_SFTP_HANDLE* handle ) {
+		mHandles.push_back( handle );
+		addUser();
+	}
 
 	void untrackHandle( LIBSSH2_SFTP_HANDLE* handle ) {
-		mHandles.erase( std::remove( mHandles.begin(), mHandles.end(), handle ), mHandles.end() );
+		auto it = std::find( mHandles.begin(), mHandles.end(), handle );
+		if ( it != mHandles.end() ) {
+			mHandles.erase( it );
+			removeUser();
+		}
 	}
 
 	/** Registers a channel pump (I/O thread only, connection must be ready). */
-	void addPump( std::shared_ptr<SSHChannelPump> pump ) { mPumps.push_back( std::move( pump ) ); }
+	void addPump( std::shared_ptr<SSHChannelPump> pump ) {
+		mPumps.push_back( std::move( pump ) );
+		addUser();
+	}
+
+	/** Something keeps using the connection without queued operations: an open handle, a pump,
+	 * a jump child's channel. A connection in use is never closed as idle. Any thread. */
+	void addUser() { mUsers.fetch_add( 1, std::memory_order_relaxed ); }
+
+	void removeUser() { mUsers.fetch_sub( 1, std::memory_order_relaxed ); }
+
+	/** @return True when nothing uses the connection (no users, no queued operations). */
+	bool isIdle() const {
+		return mUsers.load( std::memory_order_relaxed ) == 0 && !hasQueuedOperations();
+	}
+
+	/** Closes the connection once it stayed idle this long (zero: never). Set it before the
+	 * connection is added to the I/O context. */
+	void setIdleTimeout( Time timeout ) { mIdleTimeout = timeout; }
+
+	/** Whether Ready includes a started SFTP subsystem (true by default). Jump hosts only open
+	 * channels for the next hop and need no SFTP. Set it before the connection is added to the
+	 * I/O context. */
+	void setSFTPRequired( bool required ) { mSFTPRequired = required; }
 
 	/** Opens a direct-tcpip channel for a child session (ProxyJump). I/O thread only. */
 	LIBSSH2_CHANNEL* openDirectTcpip( const std::string& host, Uint16 port, bool& again );
@@ -286,7 +327,10 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	friend class ChannelTransport;
 	friend class ProcessTransport;
 
+	/** Queues operation, or fails it right away when the connection is already terminal. */
 	void enqueue( std::unique_ptr<SSHOperation> operation );
+
+	bool hasQueuedOperations() const;
 
 	void fail( VFSError error );
 
@@ -302,7 +346,19 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 
 	void requestExternal( const SSHAuthenticationRequest& request );
 
-	void applyAlgorithmPreferences();
+	/** Lists the agent's keys on a worker thread (AgentListing until it answers). */
+	void startAgentListing();
+
+	/** Asks the agent for the signature of payload on a worker thread. */
+	void startAgentSignature( std::string_view payload );
+
+	/** libssh2 sign callback of agent keys: EAGAIN until the agent thread answered. */
+	static int agentSign( LIBSSH2_SESSION* session, unsigned char** signature,
+						  size_t* signatureLength, const unsigned char* data, size_t dataLength,
+						  void** abstract );
+
+	/** Applies the configured algorithm restrictions; fails when one permits nothing available. */
+	VFSResult<void> applyAlgorithmPreferences();
 
 	/** Host key algorithms for which known_hosts holds a key of this host. */
 	std::vector<std::string_view> knownHostKeyAlgorithms();
@@ -319,6 +375,9 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 
 	mutable std::mutex mQueueMutex;
 	std::deque<std::unique_ptr<SSHOperation>> mQueue;
+	/** Set (under mQueueMutex) once the connection failed or closed: new operations fail with it
+	 * instead of being queued. */
+	std::optional<VFSError> mQueueFailure;
 	std::vector<std::shared_ptr<SSHChannelPump>> mPumps;
 	std::vector<LIBSSH2_SFTP_HANDLE*> mHandles;
 	std::vector<TaskSource<VFSResult<void>>> mReadyWaiters;
@@ -333,8 +392,13 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 		List,
 		NextMethod,
 		AgentConnect,
+		/** libssh2's agent (where SSHAgent is not supported). */
 		AgentNext,
 		AgentAuth,
+		/** SSHAgent on a worker thread: listing, then each key. */
+		AgentListing,
+		AgentKeyNext,
+		AgentKeyAuth,
 		KeyNext,
 		KeyAuth,
 		KbdAuth,
@@ -349,6 +413,15 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	std::string mServerMethods;
 	struct libssh2_agent_publickey* mAgentIdentity{ nullptr };
 	std::vector<std::string> mAllowedAgentBlobs;
+	/** Agent calls block (signing may wait for a hardware key touch): they run on a worker
+	 * thread while the I/O thread keeps serving the other sessions. */
+	std::shared_ptr<SSHAgent> mAgentClient;
+	std::vector<SSHAgent::Identity> mAgentKeys;
+	size_t mAgentKeyIndex{ 0 };
+	/** The signature libssh2 asked for (its payload), and the agent's answer once it arrived. */
+	std::string mAgentSignPayload;
+	std::optional<VFSResult<std::string>> mAgentSignature;
+	bool mAgentSigning{ false };
 	size_t mKeyIndex{ 0 };
 	std::string mPassphrase;
 	Uint32 mAttempts{ 0 };
@@ -365,14 +438,11 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	int mPendingHostKeyBits{ 0 };
 
 	std::atomic<State> mState{ State::Starting };
+	std::atomic<Uint32> mUsers{ 0 };
+	Time mIdleTimeout;
+	bool mSFTPRequired{ true };
 	bool mWaitingExternal{ false };
 };
-
-/** Base64 without padding, as used by OpenSSH fingerprints. */
-std::string base64Unpadded( const unsigned char* data, size_t length );
-
-/** Maps an SFTP status code to a VFS error code. */
-VFSErrorCode mapSFTPStatus( unsigned long status );
 
 /** TCP transport. */
 class SocketTransport : public SSHTransport {

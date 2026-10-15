@@ -46,20 +46,140 @@ std::string temporarySiblingName( std::string_view name ) {
 	return tmp;
 }
 
-/** Writes every byte of data through handle, starting at offset 0. */
+/** Writes every byte of data through handle, starting at offset. */
 VFSResult<void> writeFully( FileHandle& handle, std::span<const Uint8> data,
-							const CancellationToken& token ) {
-	Uint64 offset = 0;
-	while ( offset < data.size() ) {
-		size_t chunk = std::min<size_t>( IOChunkSize, data.size() - offset );
-		auto written = await( handle.write( offset, data.subspan( offset, chunk ), token ) );
+							const CancellationToken& token, Uint64 offset = 0 ) {
+	size_t done = 0;
+	while ( done < data.size() ) {
+		size_t chunk = std::min<size_t>( IOChunkSize, data.size() - done );
+		auto written = await( handle.write( offset + done, data.subspan( done, chunk ), token ) );
 		if ( !written )
 			return Err( std::move( written ).error() );
 		if ( written.value() == 0 )
 			return Err( VFSError( VFSErrorCode::IO, handle.uri(), "Short write" ) );
-		offset += written.value();
+		done += written.value();
 	}
 	return Ok();
+}
+
+/** makeDirs() body. Orchestration jobs call it directly: waiting on a makeDirs() task from the
+ * orchestration pool would wait on a job queued behind the waiting one. */
+VFSResult<void> makeDirsBlocking( VFSProvider& provider, const URI& uri,
+								  const MkDirOptions& options, const CancellationToken& token ) {
+	std::vector<URI> missing;
+	URI current( uri );
+	while ( true ) {
+		auto info = await( provider.stat( current, StatOptions{}, token ) );
+		if ( info ) {
+			if ( !info.value().isDirectory() )
+				return Err( VFSError( VFSErrorCode::NotDirectory, current ) );
+			break;
+		}
+		if ( !info.error().is( VFSErrorCode::NotFound ) )
+			return Err( std::move( info ).error() );
+		missing.push_back( current );
+		URI parent( current.getParent() );
+		if ( parent.getPath() == current.getPath() )
+			break;
+		current = std::move( parent );
+	}
+	for ( auto it = missing.rbegin(); it != missing.rend(); ++it ) {
+		auto made = await( provider.mkdir( *it, options, token ) );
+		if ( !made ) {
+			if ( !made.error().is( VFSErrorCode::AlreadyExists ) )
+				return made;
+			// Lost a race with another creator: fine if it is a directory.
+			auto info = await( provider.stat( *it, StatOptions{}, token ) );
+			if ( !info || !info.value().isDirectory() )
+				return made;
+		}
+	}
+	return Ok();
+}
+
+/** The file a write to uri replaces: the target of a symlink (so the link survives the
+ * replacement), otherwise uri itself. */
+VFSResult<URI> resolveWriteTarget( VFSProvider& provider, const URI& uri,
+								   const CancellationToken& token ) {
+	auto linkInfo = await( provider.stat( uri, StatOptions{ false }, token ) );
+	if ( !linkInfo || !linkInfo.value().isSymlink() )
+		return Ok( URI( uri ) );
+	auto resolved = await( provider.canonicalize( uri, token ) );
+	// A dangling link is replaced by the new file.
+	if ( !resolved && resolved.error().is( VFSErrorCode::NotFound ) )
+		return Ok( URI( uri ) );
+	return resolved;
+}
+
+struct ReplaceOptions {
+	/** Mode of a newly created file (the provider filters it through the umask). */
+	std::optional<Uint32> createPermissions;
+	/** Exact mode to give the new version (for example the replaced file's), applied after it is
+	 * written: creation modes are filtered through the umask. */
+	std::optional<Uint32> exactPermissions;
+	bool fsync{ false };
+	/** Replace through a temporary sibling. When false, target is rewritten in place. */
+	bool atomic{ true };
+	/** Without atomic replacement support, rewrite target in place instead of failing. */
+	bool allowInPlace{ false };
+	/** Fail if another entry appeared at target while the temporary was being written. */
+	bool overwrite{ true };
+};
+
+/** Writes a new version of target with write( FileHandle& ). The data goes to a temporary sibling
+ * that replaces target only once write() and beforeReplace() succeeded, so a failure never damages
+ * the current version, nor another name of the same file (a hard link to it). Non-atomic writes,
+ * and providers without atomic replacement (when allowed), rewrite target in place. */
+template <typename Write, typename BeforeReplace>
+VFSResult<void> replaceFile( VFSProvider& provider, const URI& target,
+							 const ReplaceOptions& options, const CancellationToken& token,
+							 Write&& write, BeforeReplace&& beforeReplace ) {
+	ProviderCapabilities caps = provider.capabilities( target );
+	auto writeTo = [&]( const URI& file, OpenFlags flags ) -> VFSResult<void> {
+		OpenOptions openOptions( flags );
+		openOptions.createPermissions =
+			options.exactPermissions ? options.exactPermissions : options.createPermissions;
+		auto opened = await( provider.open( file, openOptions, token ) );
+		if ( !opened )
+			return Err( std::move( opened ).error() );
+		FileHandle handle( std::move( opened ).value() );
+		VFSResult<void> written = write( handle );
+		if ( written && options.fsync && caps.has( VFSCapability::Fsync ) )
+			written = await( handle.flush() );
+		auto closed = await( handle.close() );
+		if ( !written )
+			return written;
+		if ( !closed )
+			return closed;
+		if ( options.exactPermissions && caps.has( VFSCapability::Permissions ) )
+			return await( provider.setPermissions( file, *options.exactPermissions, token ) );
+		return Ok();
+	};
+
+	if ( !options.atomic || !caps.has( VFSCapability::Rename ) ||
+		 ( options.overwrite && !caps.has( VFSCapability::AtomicReplace ) ) ) {
+		if ( options.atomic && !options.allowInPlace ) {
+			return Err( VFSError( VFSErrorCode::Unsupported, target,
+								  "Atomic replacement is not supported by this provider" ) );
+		}
+		// beforeReplace() guards a replacement; in place, the old version is already gone.
+		return writeTo( target, OpenFlags::Write | OpenFlags::Create | OpenFlags::Truncate );
+	}
+
+	URI temporary( target.getParent().withAppendedSegment(
+		temporarySiblingName( target.getLastPathSegment() ) ) );
+	auto written =
+		writeTo( temporary, OpenFlags::Write | OpenFlags::Create | OpenFlags::Exclusive );
+	if ( written )
+		written = beforeReplace();
+	if ( written )
+		written = await(
+			provider.rename( temporary, target, RenameOptions{ options.overwrite }, token ) );
+	if ( !written ) {
+		// Best effort: never leave the temporary behind.
+		await( provider.remove( temporary, {}, CancellationToken() ) );
+	}
+	return written;
 }
 
 } // namespace
@@ -85,6 +205,7 @@ VirtualFileSystem::VirtualFileSystem( const Config& config ) :
 	mIOPool( ThreadPool::createShared( std::max<Uint32>( 1, config.ioThreads ) ) ),
 	mOrchestrationPool(
 		ThreadPool::createShared( std::max<Uint32>( 1, config.orchestrationThreads ) ) ),
+	mTransferPool( ThreadPool::createShared( std::max<Uint32>( 1, config.transferThreads ) ) ),
 	mWatchManager( std::make_unique<WatchManager>() ) {
 	if ( config.registerDefaultProviders )
 		registerDefaultProviders();
@@ -92,6 +213,7 @@ VirtualFileSystem::VirtualFileSystem( const Config& config ) :
 
 VirtualFileSystem::~VirtualFileSystem() {
 	// Orchestration jobs wait on provider tasks: stop them first, while providers still run.
+	mTransferPool.reset();
 	mOrchestrationPool.reset();
 	mWatchManager.reset();
 	{
@@ -104,7 +226,7 @@ VirtualFileSystem::~VirtualFileSystem() {
 void VirtualFileSystem::registerDefaultProviders() {
 	registerProvider( std::make_shared<LocalProvider>( mIOPool ) );
 	registerProvider( std::make_shared<ResourceProvider>( mIOPool ) );
-	mWatchManager->registerBackend( "file", std::make_shared<LocalWatchBackend>() );
+	mWatchManager->registerBackend( "file", std::make_shared<LocalWatchBackend>( mIOPool ) );
 	mWatchManager->setFallbackBackend( std::make_shared<PollingWatchBackend>( *this ) );
 #ifdef EE_VFS_SFTP
 	auto sftp = std::make_shared<SFTPProvider>();
@@ -372,103 +494,64 @@ VFSTask<FileInfo> VirtualFileSystem::writeAll( const URI& uri, std::vector<Uint8
 	if ( !provider )
 		return unsupportedScheme<FileInfo>( uri );
 	// The buffer is moved into the job: the caller's data must outlive the asynchronous write.
-	return orchestrate<FileInfo>( [this, provider, uri, data = std::move( data ), options,
-								   token]() -> VFSResult<FileInfo> {
-		auto checkRevision = [&]( const VFSResult<FileInfo>& current ) -> VFSResult<void> {
-			if ( !options.expectedRevision )
-				return Ok();
-			if ( !current ) {
-				if ( current.error().is( VFSErrorCode::NotFound ) )
+	return orchestrate<FileInfo>(
+		[provider, uri, data = std::move( data ), options, token]() -> VFSResult<FileInfo> {
+			auto checkRevision = [&]( const VFSResult<FileInfo>& current ) -> VFSResult<void> {
+				if ( !options.expectedRevision )
+					return Ok();
+				if ( !current ) {
+					if ( current.error().is( VFSErrorCode::NotFound ) )
+						return Err( VFSError( VFSErrorCode::ChangedExternally, uri,
+											  "The file was removed externally" ) );
+					return Err( current.error() );
+				}
+				if ( !current.value().revision.matches( *options.expectedRevision ) )
 					return Err( VFSError( VFSErrorCode::ChangedExternally, uri,
-										  "The file was removed externally" ) );
-				return Err( current.error() );
+										  "The file was modified externally" ) );
+				return Ok();
+			};
+
+			auto target = resolveWriteTarget( *provider, uri, token );
+			if ( !target )
+				return Err( std::move( target ).error() );
+
+			auto existing = await( provider->stat( target.value(), StatOptions{}, token ) );
+			if ( !existing && !existing.error().is( VFSErrorCode::NotFound ) )
+				return Err( std::move( existing ).error() );
+			if ( auto check = checkRevision( existing ); !check )
+				return Err( std::move( check ).error() );
+			if ( existing && existing.value().isDirectory() )
+				return Err( VFSError( VFSErrorCode::IsDirectory, uri ) );
+
+			if ( options.createParents && !existing ) {
+				auto parents = makeDirsBlocking( *provider, target.value().getParent(), {}, token );
+				if ( !parents )
+					return Err( std::move( parents ).error() );
 			}
-			if ( !current.value().revision.matches( *options.expectedRevision ) )
-				return Err( VFSError( VFSErrorCode::ChangedExternally, uri,
-									  "The file was modified externally" ) );
-			return Ok();
-		};
 
-		// Saving through a symlink writes the link target, so the link survives the atomic
-		// replace.
-		URI target( uri );
-		auto linkInfo = await( provider->stat( uri, StatOptions{ false }, token ) );
-		if ( linkInfo && linkInfo.value().isSymlink() ) {
-			auto resolved = await( provider->canonicalize( uri, token ) );
-			if ( !resolved )
-				return Err( std::move( resolved ).error() );
-			target = std::move( resolved ).value();
-		}
-
-		auto existing = await( provider->stat( target, StatOptions{}, token ) );
-		if ( !existing && !existing.error().is( VFSErrorCode::NotFound ) )
-			return Err( std::move( existing ).error() );
-		if ( auto check = checkRevision( existing ); !check )
-			return Err( std::move( check ).error() );
-		if ( existing && existing.value().isDirectory() )
-			return Err( VFSError( VFSErrorCode::IsDirectory, uri ) );
-
-		if ( options.createParents && !existing ) {
-			auto parents = await( makeDirs( target.getParent(), {}, token ) );
-			if ( !parents )
-				return Err( std::move( parents ).error() );
-		}
-
-		ProviderCapabilities caps = provider->capabilities( target );
-		bool atomic = options.atomic && caps.has( VFSCapability::Rename ) &&
-					  caps.has( VFSCapability::AtomicReplace );
-		if ( options.atomic && !atomic && !options.allowNonAtomicFallback ) {
-			return Err( VFSError( VFSErrorCode::Unsupported, uri,
-								  "Atomic replacement is not supported by this provider" ) );
-		}
-
-		OpenOptions openOptions;
-		openOptions.createPermissions =
-			existing ? existing.value().permissions() : options.permissions;
-		std::span<const Uint8> bytes( data.data(), data.size() );
-
-		auto writeTo = [&]( const URI& file, OpenFlags flags ) -> VFSResult<void> {
-			openOptions.flags = flags;
-			auto opened = await( provider->open( file, openOptions, token ) );
-			if ( !opened )
-				return Err( std::move( opened ).error() );
-			FileHandle handle( std::move( opened ).value() );
-			auto written = writeFully( handle, bytes, token );
-			if ( written && options.fsync && caps.has( VFSCapability::Fsync ) )
-				written = await( handle.flush() );
-			auto closed = await( handle.close() );
-			if ( !written )
-				return written;
-			return closed;
-		};
-
-		if ( !atomic ) {
-			auto written =
-				writeTo( target, OpenFlags::Write | OpenFlags::Create | OpenFlags::Truncate );
+			ReplaceOptions replace;
+			if ( existing )
+				replace.exactPermissions = existing.value().permissions();
+			else
+				replace.createPermissions = options.permissions;
+			replace.fsync = options.fsync;
+			replace.atomic = options.atomic;
+			replace.allowInPlace = options.allowNonAtomicFallback;
+			std::span<const Uint8> bytes( data.data(), data.size() );
+			auto written = replaceFile(
+				*provider, target.value(), replace, token,
+				[&]( FileHandle& handle ) { return writeFully( handle, bytes, token ); },
+				[&]() -> VFSResult<void> {
+					// Narrow the race window: re-check right before replacing.
+					if ( !options.expectedRevision )
+						return Ok();
+					return checkRevision(
+						await( provider->stat( target.value(), StatOptions{}, token ) ) );
+				} );
 			if ( !written )
 				return Err( std::move( written ).error() );
-		} else {
-			URI temporary( target.getParent().withAppendedSegment(
-				temporarySiblingName( target.getLastPathSegment() ) ) );
-			auto written =
-				writeTo( temporary, OpenFlags::Write | OpenFlags::Create | OpenFlags::Exclusive );
-			if ( written && options.expectedRevision ) {
-				// Narrow the race window: re-check right before replacing.
-				written = checkRevision( await( provider->stat( target, StatOptions{}, token ) ) );
-			}
-			if ( written ) {
-				written =
-					await( provider->rename( temporary, target, RenameOptions{ true }, token ) );
-			}
-			if ( !written ) {
-				// Best effort: never leave the temporary behind.
-				await( provider->remove( temporary, {}, CancellationToken() ) );
-				return Err( std::move( written ).error() );
-			}
-		}
-
-		return await( provider->stat( target, StatOptions{}, token ) );
-	} );
+			return await( provider->stat( target.value(), StatOptions{}, token ) );
+		} );
 }
 
 VFSTask<void> VirtualFileSystem::makeDirs( const URI& uri, const MkDirOptions& options,
@@ -477,35 +560,7 @@ VFSTask<void> VirtualFileSystem::makeDirs( const URI& uri, const MkDirOptions& o
 	if ( !provider )
 		return unsupportedScheme<void>( uri );
 	return orchestrate<void>( [provider, uri, options, token]() -> VFSResult<void> {
-		std::vector<URI> missing;
-		URI current( uri );
-		while ( true ) {
-			auto info = await( provider->stat( current, StatOptions{}, token ) );
-			if ( info ) {
-				if ( !info.value().isDirectory() )
-					return Err( VFSError( VFSErrorCode::NotDirectory, current ) );
-				break;
-			}
-			if ( !info.error().is( VFSErrorCode::NotFound ) )
-				return Err( std::move( info ).error() );
-			missing.push_back( current );
-			URI parent( current.getParent() );
-			if ( parent.getPath() == current.getPath() )
-				break;
-			current = std::move( parent );
-		}
-		for ( auto it = missing.rbegin(); it != missing.rend(); ++it ) {
-			auto made = await( provider->mkdir( *it, options, token ) );
-			if ( !made ) {
-				if ( !made.error().is( VFSErrorCode::AlreadyExists ) )
-					return made;
-				// Lost a race with another creator: fine if it is a directory.
-				auto info = await( provider->stat( *it, StatOptions{}, token ) );
-				if ( !info || !info.value().isDirectory() )
-					return made;
-			}
-		}
-		return Ok();
+		return makeDirsBlocking( *provider, uri, options, token );
 	} );
 }
 
@@ -600,9 +655,9 @@ class TransferEngine {
 			return Err( VFSError( VFSErrorCode::InvalidOperation, mSource,
 								  "Source and destination are the same" ) );
 
-		bool sameProvider = mSrcProvider == mDstProvider && sameAuthority( mSource, mDestination );
+		mSameProvider = mSrcProvider == mDstProvider && sameAuthority( mSource, mDestination );
 
-		if ( mMove && sameProvider ) {
+		if ( mMove && mSameProvider ) {
 			auto renamed = await( mSrcProvider->rename(
 				mSource, mDestination,
 				RenameOptions{ mOptions.overwrite == OverwritePolicy::Overwrite }, mToken ) );
@@ -628,11 +683,23 @@ class TransferEngine {
 				return Err( std::move( renamed ).error() );
 		}
 
-		auto rootInfo = await( mSrcProvider->stat( mSource, StatOptions{ true }, mToken ) );
+		auto rootInfo = await( mSrcProvider->stat( mSource, StatOptions{ false }, mToken ) );
 		if ( !rootInfo )
 			return Err( std::move( rootInfo ).error() );
+		if ( rootInfo.value().isSymlink() ) {
+			// Providers cannot create links, so a copy takes the link's content. A move cannot:
+			// removing what was copied would empty the link's target, not move the link.
+			if ( mMove ) {
+				return Err( VFSError( VFSErrorCode::Unsupported, mSource,
+									  "Symbolic links can only be moved within their file "
+									  "system" ) );
+			}
+			rootInfo = await( mSrcProvider->stat( mSource, StatOptions{ true }, mToken ) );
+			if ( !rootInfo )
+				return Err( std::move( rootInfo ).error() );
+		}
 
-		if ( rootInfo.value().isDirectory() && sameProvider &&
+		if ( rootInfo.value().isDirectory() && mSameProvider &&
 			 mDestination.isSameOrChildOf( mSource ) ) {
 			return Err( VFSError( VFSErrorCode::InvalidOperation, mDestination,
 								  "Cannot copy a directory into itself" ) );
@@ -736,12 +803,30 @@ class TransferEngine {
 				advanceFiles( info );
 				return Ok( false );
 			}
+			if ( mSameProvider ) {
+				auto same = isSameFile( source, destination );
+				if ( !same )
+					return Err( std::move( same ).error() );
+				if ( same.value() ) {
+					return Err( VFSError( VFSErrorCode::InvalidOperation, destination,
+										  "Source and destination are the same file" ) );
+				}
+			}
 		} else if ( !existing.error().is( VFSErrorCode::NotFound ) ) {
 			return Err( std::move( existing ).error() );
 		}
 
-		if ( auto copied = copyFile( info, source, destination ); !copied )
+		if ( auto copied = copyFile( info, source, destination ); !copied ) {
+			// A destination can appear while the temporary is written. Skip still applies at
+			// publication time, and a move must keep that source.
+			if ( mOptions.overwrite == OverwritePolicy::Skip &&
+				 copied.error().is( VFSErrorCode::AlreadyExists ) ) {
+				++mResult.filesSkipped;
+				advanceFiles( info );
+				return Ok( false );
+			}
 			return Err( std::move( copied ).error() );
+		}
 		++mResult.filesTransferred;
 		advanceFiles( info, false );
 
@@ -805,6 +890,18 @@ class TransferEngine {
 			true );
 	}
 
+	/** @return True when both URIs name the same file through symlinks or "..". Hard links are
+	 * not detected; replaceFile() keeps their data safe. */
+	VFSResult<bool> isSameFile( const URI& source, const URI& destination ) {
+		auto canonicalSource = await( mSrcProvider->canonicalize( source, mToken ) );
+		if ( !canonicalSource )
+			return Err( std::move( canonicalSource ).error() );
+		auto canonicalDestination = await( mDstProvider->canonicalize( destination, mToken ) );
+		if ( !canonicalDestination )
+			return Err( std::move( canonicalDestination ).error() );
+		return Ok( canonicalSource.value() == canonicalDestination.value() );
+	}
+
 	VFSResult<void> copyFile( const FileInfo& info, const URI& source, const URI& destination ) {
 		mState->updateProgress(
 			[&]( TransferProgress& p ) {
@@ -813,80 +910,45 @@ class TransferEngine {
 			},
 			true );
 
+		auto target = resolveWriteTarget( *mDstProvider, destination, mToken );
+		if ( !target )
+			return Err( std::move( target ).error() );
+
 		auto srcOpened = await( mSrcProvider->open( source, OpenFlags::Read, mToken ) );
 		if ( !srcOpened )
 			return Err( std::move( srcOpened ).error() );
 		FileHandle src( std::move( srcOpened ).value() );
 
-		OpenOptions dstOptions( OpenFlags::Write | OpenFlags::Create | OpenFlags::Truncate );
-		bool preserve = mOptions.preservePermissions && info.permissions() &&
-						mDstProvider->capabilities( destination ).has( VFSCapability::Permissions );
-		if ( preserve )
-			dstOptions.createPermissions = info.permissions();
-		auto dstOpened = await( mDstProvider->open( destination, dstOptions, mToken ) );
-		if ( !dstOpened ) {
-			src.close();
-			return Err( std::move( dstOpened ).error() );
-		}
-		FileHandle dst( std::move( dstOpened ).value() );
-
+		ReplaceOptions replace;
+		if ( mOptions.preservePermissions && info.permissions() )
+			replace.exactPermissions = info.permissions();
+		replace.overwrite = mOptions.overwrite == OverwritePolicy::Overwrite;
 		std::vector<Uint8> buffer( mOptions.chunkSize );
-		Uint64 offset = 0;
-		VFSResult<void> status = Ok();
-		while ( true ) {
-			if ( auto c = checkCancelled( source ); !c ) {
-				status = std::move( c );
-				break;
-			}
-			auto read = await( src.read( offset, buffer, mToken ) );
-			if ( !read ) {
-				status = Err( std::move( read ).error() );
-				break;
-			}
-			size_t got = read.value();
-			if ( got == 0 )
-				break;
-			if ( auto written = writeFully( dst, std::span<const Uint8>( buffer.data(), got ),
-											mToken, offset );
-				 !written ) {
-				status = std::move( written );
-				break;
-			}
-			offset += got;
-			mResult.bytesTransferred += got;
-			mState->updateProgress( [got]( TransferProgress& p ) { p.bytesDone += got; } );
-		}
-
-		auto srcClosed = await( src.close() );
-		auto dstClosed = await( dst.close() );
-		if ( status && !dstClosed )
-			status = std::move( dstClosed );
-		(void)srcClosed;
-
-		if ( !status ) {
-			// Never leave a truncated file that looks complete.
-			await( mDstProvider->remove( destination, {}, CancellationToken() ) );
-			return status;
-		}
-		if ( preserve ) {
-			// Creation permissions are filtered by the umask; apply the exact mode.
-			await( mDstProvider->setPermissions( destination, *info.permissions(), mToken ) );
-		}
-		return Ok();
-	}
-
-	static VFSResult<void> writeFully( FileHandle& handle, std::span<const Uint8> data,
-									   const CancellationToken& token, Uint64 baseOffset ) {
-		size_t done = 0;
-		while ( done < data.size() ) {
-			auto written = await( handle.write( baseOffset + done, data.subspan( done ), token ) );
-			if ( !written )
-				return Err( std::move( written ).error() );
-			if ( written.value() == 0 )
-				return Err( VFSError( VFSErrorCode::IO, handle.uri(), "Short write" ) );
-			done += written.value();
-		}
-		return Ok();
+		auto copied = replaceFile(
+			*mDstProvider, target.value(), replace, mToken,
+			[&]( FileHandle& dst ) -> VFSResult<void> {
+				Uint64 offset = 0;
+				while ( true ) {
+					if ( auto c = checkCancelled( source ); !c )
+						return c;
+					auto read = await( src.read( offset, buffer, mToken ) );
+					if ( !read )
+						return Err( std::move( read ).error() );
+					size_t got = read.value();
+					if ( got == 0 )
+						return Ok();
+					if ( auto written = writeFully(
+							 dst, std::span<const Uint8>( buffer.data(), got ), mToken, offset );
+						 !written )
+						return written;
+					offset += got;
+					mResult.bytesTransferred += got;
+					mState->updateProgress( [got]( TransferProgress& p ) { p.bytesDone += got; } );
+				}
+			},
+			[]() -> VFSResult<void> { return Ok(); } );
+		await( src.close() );
+		return copied;
 	}
 
 	VirtualFileSystem& mVfs;
@@ -899,6 +961,8 @@ class TransferEngine {
 	VFSProvider* mDstProvider{ nullptr };
 	TransferResult mResult;
 	bool mMove;
+	/** Source and destination are served by the same provider and authority. */
+	bool mSameProvider{ false };
 };
 
 namespace {
@@ -922,12 +986,12 @@ Transfer startTransfer( VirtualFileSystem& vfs, std::shared_ptr<ThreadPool> pool
 
 Transfer VirtualFileSystem::copy( const URI& source, const URI& destination,
 								  const CopyOptions& options ) {
-	return startTransfer( *this, mOrchestrationPool, source, destination, options, false );
+	return startTransfer( *this, mTransferPool, source, destination, options, false );
 }
 
 Transfer VirtualFileSystem::move( const URI& source, const URI& destination,
 								  const CopyOptions& options ) {
-	return startTransfer( *this, mOrchestrationPool, source, destination, options, true );
+	return startTransfer( *this, mTransferPool, source, destination, options, true );
 }
 
 }} // namespace EE::VFS

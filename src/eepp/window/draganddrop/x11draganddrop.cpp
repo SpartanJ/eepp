@@ -140,6 +140,7 @@ class X11DragSource : public DragSource {
 			 !( mask & Button1Mask ) )
 			return { "A left-button pointer gesture is required", DragStartStatus::InvalidGesture };
 		preview = NativeDragAccess::createNativeDragPreview( *owner, offer, true );
+		sourceHandlesDrops = offer.sourceHandlesDrops;
 		if ( !preview )
 			return { "Could not create the drag preview", DragStartStatus::Failed };
 		XErrorScope setup( x11, display );
@@ -481,9 +482,10 @@ class X11DragSource : public DragSource {
 			accepted = false;
 			waitingStatus = false;
 			uriRequested = false;
-			// Over the source window the application resolves the drop itself.
-			preview->setFeedback( target || overOrigin ? DragFeedback::Pending
-													   : DragFeedback::Rejected );
+			// Over the source window, an application that handles its own drops resolves it.
+			preview->setFeedback( target || ( overOrigin && sourceHandlesDrops )
+									  ? DragFeedback::Pending
+									  : DragFeedback::Rejected );
 			if ( target )
 				send( atoms[Enter], static_cast<long>( version ) << 24, atoms[UriList] );
 		}
@@ -728,6 +730,8 @@ class X11DragSource : public DragSource {
 	bool pointerGrabbed{ false };
 	/** The pointer is over the source window (never a target), as of the last position(). */
 	bool overOrigin{ false };
+	/** DragOffer::sourceHandlesDrops of the session. */
+	bool sourceHandlesDrops{ false };
 	bool dirty{ true };
 	bool released{ false };
 	bool waitingStatus{ false };

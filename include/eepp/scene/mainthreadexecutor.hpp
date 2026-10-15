@@ -15,8 +15,9 @@ class Node;
  * deferred to the next scene update, even when execute() is called from the main thread, which is
  * what Task::thenOn() requires.
  *
- * The dispatcher node must outlive the executor. Destroying the executor drops queued functions
- * that have not run yet (releasing what they own, for example abandoning task sources).
+ * The dispatcher node must outlive the executor, or shutdown() must be called before the node is
+ * destroyed. Destroying the executor drops queued functions that have not run yet (releasing what
+ * they own, for example abandoning task sources).
  */
 class EE_API MainThreadExecutor : public Executor {
   public:
@@ -29,6 +30,11 @@ class EE_API MainThreadExecutor : public Executor {
 	MainThreadExecutor& operator=( const MainThreadExecutor& ) = delete;
 
 	void execute( Function function ) override;
+
+	/** Detaches the executor from its dispatcher node and drops the queued functions. Functions
+	 * executed afterwards are dropped too. Call it before the dispatcher node is destroyed when
+	 * work may still be executed on this executor (it must then outlive that work). */
+	void shutdown();
 
 	/** @return Number of functions waiting for the main thread. */
 	size_t pending() const;

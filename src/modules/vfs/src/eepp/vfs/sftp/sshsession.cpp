@@ -1,8 +1,10 @@
 #include "sshsession.hpp"
 #include <algorithm>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 #include <eepp/core/string.hpp>
+#include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
@@ -80,10 +82,20 @@ int knownHostKeyBits( int type ) {
 	}
 }
 
+/** Decodes base64 text (as in known_hosts and .pub files), nullopt when it is not valid. */
+std::optional<std::string> decodeBase64( std::string_view text ) {
+	std::string decoded;
+	if ( System::Base64::decode( text, decoded ) == static_cast<size_t>( -1 ) )
+		return std::nullopt;
+	return decoded;
+}
+
 /** Loads known_hosts line by line: libssh2_knownhost_readfile() stops at the first entry it
  * cannot parse (certificate authorities, security-key types...), which would hide every later
- * host. */
-void loadKnownHosts( LIBSSH2_KNOWNHOSTS* hosts, const std::string& path ) {
+ * host. libssh2 does not know markers: the key blobs of "@revoked" lines are added to revoked
+ * (when given), "@cert-authority" lines are ignored. */
+void loadKnownHosts( LIBSSH2_KNOWNHOSTS* hosts, const std::string& path,
+					 std::vector<std::string>* revoked ) {
 	std::string data;
 	if ( !FileSystem::fileExists( path ) || !FileSystem::fileGet( path, data ) )
 		return;
@@ -97,8 +109,18 @@ void loadKnownHosts( LIBSSH2_KNOWNHOSTS* hosts, const std::string& path ) {
 		while ( !line.empty() && ( line.back() == '\r' || line.back() == ' ' ) )
 			line.remove_suffix( 1 );
 		size_t first = line.find_first_not_of( " \t" );
-		if ( first == std::string_view::npos || line[first] == '#' || line[first] == '@' )
+		if ( first == std::string_view::npos || line[first] == '#' )
 			continue;
+		if ( line[first] == '@' ) {
+			// "@revoked hosts keytype base64key [comment]": the key is never accepted, for any
+			// host (stricter than matching the host patterns, never weaker).
+			auto fields = String::split( std::string( line.substr( first ) ), " \t" );
+			if ( revoked && fields.size() >= 4 && fields[0] == "@revoked" ) {
+				if ( auto blob = decodeBase64( fields[3] ) )
+					revoked->push_back( std::move( *blob ) );
+			}
+			continue;
+		}
 		// libssh2 inspects the byte after the given length (expecting an optional newline), so
 		// hand it a NUL-terminated copy rather than a view into the file buffer.
 		std::string entry( line );
@@ -120,29 +142,13 @@ bool isKeyEncrypted( const std::string& path ) {
 	if ( begin == std::string::npos )
 		return false;
 	size_t end = data.find( "-----END", begin + Begin.size() );
-	std::string base64;
-	for ( size_t i = begin + Begin.size(); i < end && i < data.size(); ++i )
-		if ( !std::isspace( static_cast<unsigned char>( data[i] ) ) )
-			base64 += data[i];
-	// Decode just the header: "openssh-key-v1\0" + uint32 length + cipher name.
-	static constexpr char Alphabet[] =
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-	std::string decoded;
-	Uint32 buffer = 0;
-	int bits = 0;
-	for ( char c : base64 ) {
-		if ( c == '=' || decoded.size() > 64 )
-			break;
-		const char* pos = std::strchr( Alphabet, c );
-		if ( !pos )
-			break;
-		buffer = ( buffer << 6 ) | static_cast<Uint32>( pos - Alphabet );
-		bits += 6;
-		if ( bits >= 8 ) {
-			bits -= 8;
-			decoded += static_cast<char>( ( buffer >> bits ) & 0xFF );
-		}
-	}
+	auto decodedText = decodeBase64( std::string_view( data ).substr(
+		begin + Begin.size(),
+		end == std::string::npos ? std::string::npos : end - begin - Begin.size() ) );
+	if ( !decodedText )
+		return false;
+	// Only the header matters: "openssh-key-v1\0" + uint32 length + cipher name.
+	const std::string& decoded = *decodedText;
 	static constexpr size_t Magic = 15; // "openssh-key-v1" + NUL
 	if ( decoded.size() < Magic + 4 )
 		return false;
@@ -161,25 +167,9 @@ std::optional<std::string> readPublicKeyBlob( const std::string& path ) {
 	auto fields = String::split( data, ' ' );
 	if ( fields.size() < 2 )
 		return std::nullopt;
-	static constexpr char Alphabet[] =
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-	std::string decoded;
-	Uint32 buffer = 0;
-	int bits = 0;
-	for ( char c : fields[1] ) {
-		if ( c == '=' || c == '\n' || c == '\r' )
-			break;
-		const char* pos = std::strchr( Alphabet, c );
-		if ( !pos )
-			return std::nullopt;
-		buffer = ( buffer << 6 ) | static_cast<Uint32>( pos - Alphabet );
-		bits += 6;
-		if ( bits >= 8 ) {
-			bits -= 8;
-			decoded += static_cast<char>( ( buffer >> bits ) & 0xFF );
-		}
-	}
-	return decoded;
+	String::trimInPlace( fields[1], '\n' );
+	String::trimInPlace( fields[1], '\r' );
+	return decodeBase64( fields[1] );
 }
 
 /** Host key algorithms of a known_hosts key type, in libssh2 method names. */
@@ -210,32 +200,17 @@ bool isSocketError( int rc ) {
 		   rc == LIBSSH2_ERROR_KEX_FAILURE;
 }
 
-} // namespace
-
+/** Base64 without padding, as used by OpenSSH fingerprints. */
 std::string base64Unpadded( const unsigned char* data, size_t length ) {
-	static constexpr char Alphabet[] =
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	std::string out;
-	size_t i = 0;
-	for ( ; i + 2 < length; i += 3 ) {
-		Uint32 v = ( data[i] << 16 ) | ( data[i + 1] << 8 ) | data[i + 2];
-		out += Alphabet[( v >> 18 ) & 63];
-		out += Alphabet[( v >> 12 ) & 63];
-		out += Alphabet[( v >> 6 ) & 63];
-		out += Alphabet[v & 63];
-	}
-	if ( i < length ) {
-		Uint32 v = data[i] << 16;
-		if ( i + 1 < length )
-			v |= data[i + 1] << 8;
-		out += Alphabet[( v >> 18 ) & 63];
-		out += Alphabet[( v >> 12 ) & 63];
-		if ( i + 1 < length )
-			out += Alphabet[( v >> 6 ) & 63];
-	}
+	System::Base64::encode( std::string_view( reinterpret_cast<const char*>( data ), length ),
+							out );
+	while ( !out.empty() && out.back() == '=' )
+		out.pop_back();
 	return out;
 }
 
+/** Maps an SFTP status code to a VFS error code. */
 VFSErrorCode mapSFTPStatus( unsigned long status ) {
 	switch ( status ) {
 		case LIBSSH2_FX_OK:
@@ -273,6 +248,8 @@ VFSErrorCode mapSFTPStatus( unsigned long status ) {
 			return VFSErrorCode::IO;
 	}
 }
+
+} // namespace
 
 // ---------------------------------------------------------------------------------------------
 // I/O context
@@ -315,6 +292,8 @@ void SSHIOContext::stop() {
 void SSHIOContext::post( Command command ) {
 	{
 		std::lock_guard<std::mutex> lock( mMutex );
+		if ( mStopping.load( std::memory_order_acquire ) )
+			return;
 		mCommands.emplace_back( std::move( command ) );
 	}
 	mWake.signal();
@@ -322,6 +301,15 @@ void SSHIOContext::post( Command command ) {
 
 void SSHIOContext::addConnection( std::shared_ptr<SSHConnection> connection ) {
 	mConnections.push_back( std::move( connection ) );
+}
+
+void SSHIOContext::closeConnections() {
+	post( [this] {
+		for ( auto& connection : mConnections ) {
+			connection->fail(
+				VFSError( VFSErrorCode::ConnectionLost, URI(), "Connection closed" ) );
+		}
+	} );
 }
 
 void SSHIOContext::loop() {
@@ -341,7 +329,7 @@ void SSHIOContext::loop() {
 		// Drop finished connections; their owners (pool, handles) may still reference them.
 		mConnections.erase( std::remove_if( mConnections.begin(), mConnections.end(),
 											[]( const std::shared_ptr<SSHConnection>& c ) {
-												return !c->isUsable() && c->mQueue.empty();
+												return !c->isUsable() && !c->hasQueuedOperations();
 											} ),
 							mConnections.end() );
 
@@ -449,12 +437,28 @@ void SSHConnection::markUsed() {
 }
 
 void SSHConnection::enqueue( std::unique_ptr<SSHOperation> operation ) {
+	std::optional<VFSError> failure;
 	{
 		std::lock_guard<std::mutex> lock( mQueueMutex );
-		mLastUse = std::chrono::steady_clock::now();
-		mQueue.push_back( std::move( operation ) );
+		// A failed or closed connection is dropped by the I/O context: nobody would run the
+		// operation.
+		if ( mQueueFailure ) {
+			failure = mQueueFailure;
+		} else {
+			mLastUse = std::chrono::steady_clock::now();
+			mQueue.push_back( std::move( operation ) );
+		}
+	}
+	if ( failure ) {
+		operation->fail( *failure );
+		return;
 	}
 	mContext->wake();
+}
+
+bool SSHConnection::hasQueuedOperations() const {
+	std::lock_guard<std::mutex> lock( mQueueMutex );
+	return !mQueue.empty();
 }
 
 void SSHConnection::fail( VFSError error ) {
@@ -463,6 +467,13 @@ void SSHConnection::fail( VFSError error ) {
 		return;
 	mFailure = std::move( error );
 	mState = State::Failed;
+	if ( mAgentClient )
+		mAgentClient->cancel();
+	{
+		// From now on enqueue() fails operations itself; drive() fails the queued ones.
+		std::lock_guard<std::mutex> lock( mQueueMutex );
+		mQueueFailure = mFailure;
+	}
 	for ( auto& waiter : mReadyWaiters )
 		waiter.resolve( Err( mFailure ) );
 	mReadyWaiters.clear();
@@ -540,7 +551,18 @@ int SSHConnection::nextTimeoutMs() const {
 		consider( mDeadline );
 	if ( state == State::Ready && mConfig.serverAliveInterval )
 		consider( mNextKeepalive );
+	if ( state == State::Ready && mIdleTimeout != Time::Zero && isIdle() )
+		consider( lastUse() + idleTimeout() );
 	return timeout;
+}
+
+std::chrono::milliseconds SSHConnection::idleTimeout() const {
+	return std::chrono::milliseconds( static_cast<Int64>( mIdleTimeout.asMilliseconds() ) );
+}
+
+bool SSHConnection::idleExpired() const {
+	return mState.load() == State::Ready && mIdleTimeout != Time::Zero && isIdle() &&
+		   std::chrono::steady_clock::now() - lastUse() > idleTimeout();
 }
 
 void SSHConnection::drive() {
@@ -566,8 +588,10 @@ void SSHConnection::drive() {
 			operation->fail( mFailure );
 		auto pumps = std::move( mPumps );
 		mPumps.clear();
-		for ( auto& pump : pumps )
+		for ( auto& pump : pumps ) {
+			removeUser();
 			pump->connectionLost( mFailure );
+		}
 		return;
 	}
 
@@ -600,11 +624,18 @@ void SSHConnection::drive() {
 			++i;
 		} else {
 			mPumps.erase( mPumps.begin() + i );
+			removeUser();
 		}
 		if ( !isUsable() ) {
 			drive();
 			return;
 		}
+	}
+
+	if ( idleExpired() ) {
+		fail( VFSError( VFSErrorCode::ConnectionLost, URI(), "Idle connection closed" ) );
+		mState = State::Closed;
+		return;
 	}
 
 	if ( mConfig.serverAliveInterval && std::chrono::steady_clock::now() >= mNextKeepalive ) {
@@ -625,9 +656,9 @@ std::vector<std::string_view> SSHConnection::knownHostKeyAlgorithms() {
 	if ( !hosts )
 		return known;
 	for ( const auto& file : mConfig.userKnownHostsFiles )
-		loadKnownHosts( hosts, file );
+		loadKnownHosts( hosts, file, nullptr );
 	for ( const auto& file : mConfig.globalKnownHostsFiles )
-		loadKnownHosts( hosts, file );
+		loadKnownHosts( hosts, file, nullptr );
 	std::string checkHost = mConfig.hostKeyAlias.value_or( mConfig.hostName );
 	// A key that can never be stored: a "mismatch" means an entry of that type exists for the
 	// host. This lets libssh2 handle hashed names and [host]:port entries.
@@ -647,7 +678,7 @@ std::vector<std::string_view> SSHConnection::knownHostKeyAlgorithms() {
 	return known;
 }
 
-void SSHConnection::applyAlgorithmPreferences() {
+VFSResult<void> SSHConnection::applyAlgorithmPreferences() {
 	// Like OpenSSH, unless HostKeyAlgorithms is configured, prefer the host key algorithms that
 	// known_hosts already has keys for, so a known host is not reported as unknown just because
 	// the server also offers another key type.
@@ -677,22 +708,30 @@ void SSHConnection::applyAlgorithmPreferences() {
 	struct Pref {
 		const std::optional<std::string>* spec;
 		int method;
+		const char* option;
 	};
 	const Pref prefs[] = {
-		{ &mConfig.kexAlgorithms, LIBSSH2_METHOD_KEX },
-		{ &mConfig.hostKeyAlgorithms, LIBSSH2_METHOD_HOSTKEY },
-		{ &mConfig.ciphers, LIBSSH2_METHOD_CRYPT_CS },
-		{ &mConfig.ciphers, LIBSSH2_METHOD_CRYPT_SC },
-		{ &mConfig.macs, LIBSSH2_METHOD_MAC_CS },
-		{ &mConfig.macs, LIBSSH2_METHOD_MAC_SC },
+		{ &mConfig.kexAlgorithms, LIBSSH2_METHOD_KEX, "KexAlgorithms" },
+		{ &mConfig.hostKeyAlgorithms, LIBSSH2_METHOD_HOSTKEY, "HostKeyAlgorithms" },
+		{ &mConfig.ciphers, LIBSSH2_METHOD_CRYPT_CS, "Ciphers" },
+		{ &mConfig.ciphers, LIBSSH2_METHOD_CRYPT_SC, "Ciphers" },
+		{ &mConfig.macs, LIBSSH2_METHOD_MAC_CS, "MACs" },
+		{ &mConfig.macs, LIBSSH2_METHOD_MAC_SC, "MACs" },
 	};
 	for ( const auto& pref : prefs ) {
 		if ( !*pref.spec )
 			continue;
+		// A configured restriction is a policy: when nothing it permits is available, the
+		// connection fails instead of falling back to libssh2's defaults.
+		auto unsupported = [&]() -> VFSResult<void> {
+			return Err( VFSError( VFSErrorCode::Unsupported, URI(),
+								  std::string( "None of the configured " ) + pref.option + " (" +
+									  **pref.spec + ") is supported" ) );
+		};
 		const char** algs = nullptr;
 		int count = libssh2_session_supported_algs( mSession, pref.method, &algs );
 		if ( count <= 0 )
-			continue;
+			return unsupported();
 		std::vector<std::string> supported( algs, algs + count );
 		libssh2_free( mSession, algs );
 		auto list = SSHConfigEvaluator::applyAlgorithmSpec( supported, **pref.spec );
@@ -705,9 +744,11 @@ void SSHConnection::applyAlgorithmPreferences() {
 				joined += ',';
 			joined += alg;
 		}
-		if ( !joined.empty() )
-			libssh2_session_method_pref( mSession, pref.method, joined.c_str() );
+		if ( joined.empty() ||
+			 libssh2_session_method_pref( mSession, pref.method, joined.c_str() ) != 0 )
+			return unsupported();
 	}
+	return Ok();
 }
 
 Step SSHConnection::establish() {
@@ -721,7 +762,10 @@ Step SSHConnection::establish() {
 			libssh2_session_set_blocking( mSession, 0 );
 			if ( mConfig.compression )
 				libssh2_session_flag( mSession, LIBSSH2_FLAG_COMPRESS, 1 );
-			applyAlgorithmPreferences();
+			if ( auto preferred = applyAlgorithmPreferences(); !preferred ) {
+				fail( std::move( preferred ).error() );
+				return Step::Done;
+			}
 			mTransport->install( mSession );
 			mState = State::Handshake;
 			[[fallthrough]];
@@ -747,8 +791,9 @@ Step SSHConnection::establish() {
 			mState = State::SFTPInit;
 			[[fallthrough]];
 		case State::SFTPInit:
-			mSFTP = libssh2_sftp_init( mSession );
-			if ( !mSFTP ) {
+			// Jump hosts only forward channels: they need not offer SFTP.
+			mSFTP = mSFTPRequired ? libssh2_sftp_init( mSession ) : nullptr;
+			if ( !mSFTP && mSFTPRequired ) {
 				if ( libssh2_session_last_errno( mSession ) == LIBSSH2_ERROR_EAGAIN )
 					return Step::Again;
 				fail( lastError( URI(), "Unable to start the SFTP subsystem" ) );
@@ -818,10 +863,21 @@ Step SSHConnection::stepHostKey() {
 	std::string checkHost = mConfig.hostKeyAlias.value_or( mConfig.hostName );
 	int keyBits = knownHostKeyBits( keyType );
 	LIBSSH2_KNOWNHOSTS* hosts = libssh2_knownhost_init( mSession );
+	std::vector<std::string> revoked;
 	for ( const auto& file : mConfig.userKnownHostsFiles )
-		loadKnownHosts( hosts, file );
+		loadKnownHosts( hosts, file, &revoked );
 	for ( const auto& file : mConfig.globalKnownHostsFiles )
-		loadKnownHosts( hosts, file );
+		loadKnownHosts( hosts, file, &revoked );
+	const std::string_view presented( key, keyLength );
+	if ( std::find( revoked.begin(), revoked.end(), presented ) != revoked.end() ) {
+		// Checked before anything else: a revoked key is never accepted, even when it is also
+		// listed as known or StrictHostKeyChecking would accept new keys.
+		libssh2_knownhost_free( hosts );
+		fail( VFSError( VFSErrorCode::HostKeyRejected, URI(),
+						"The " + std::string( hostKeyTypeName( keyType ) ) + " host key of " +
+							checkHost + " is revoked" ) );
+		return Step::Done;
+	}
 	struct libssh2_knownhost* entry = nullptr;
 	int check = libssh2_knownhost_checkp(
 		hosts, checkHost.c_str(), mConfig.port, key, keyLength,
@@ -959,6 +1015,101 @@ bool SSHConnection::saveHostKey( const char* key, size_t keyLength, int keyBits,
 	return true;
 }
 
+void SSHConnection::startAgentListing() {
+	mAuthPhase = AuthPhase::AgentListing;
+	// Listing identities needs no user interaction. Keep the connection deadline active so an
+	// unresponsive agent cannot leave the connection pending forever.
+	mWaitingExternal = false;
+	auto agent = std::make_shared<SSHAgent>( *mConfig.identityAgent );
+	mAgentClient = agent;
+	std::vector<std::string> allowed;
+	if ( mConfig.identitiesOnly ) {
+		for ( const auto& file : mConfig.identityFiles )
+			if ( auto blob = readPublicKeyBlob( file + ".pub" ) )
+				allowed.push_back( std::move( *blob ) );
+	}
+	std::weak_ptr<SSHConnection> weak = weak_from_this();
+	std::weak_ptr<SSHIOContext> context = mContext;
+	// The connection cancels the agent socket on failure or shutdown, waking this worker even
+	// if the agent never answers. The worker owns its captures until it exits.
+	std::thread( [agent, weak, context, identitiesOnly = mConfig.identitiesOnly,
+				  allowed = std::move( allowed )]() mutable {
+		auto keys = agent->listIdentities();
+		auto io = context.lock();
+		if ( !io )
+			return;
+		io->post( [agent = std::move( agent ), weak, identitiesOnly, allowed = std::move( allowed ),
+				   keys = std::make_shared<decltype( keys )>( std::move( keys ) )]() mutable {
+			auto self = weak.lock();
+			if ( !self || !self->isUsable() || self->mAuthPhase != AuthPhase::AgentListing )
+				return;
+			self->mWaitingExternal = false;
+			self->mAgentKeys.clear();
+			self->mAgentKeyIndex = 0;
+			if ( *keys ) {
+				for ( auto& key : keys->value() ) {
+					if ( !identitiesOnly ||
+						 std::find( allowed.begin(), allowed.end(), key.blob ) != allowed.end() )
+						self->mAgentKeys.push_back( std::move( key ) );
+				}
+			}
+			self->mAgentClient = self->mAgentKeys.empty() ? nullptr : std::move( agent );
+			self->mAuthPhase =
+				self->mAgentKeys.empty() ? AuthPhase::KeyNext : AuthPhase::AgentKeyNext;
+		} );
+	} ).detach();
+}
+
+void SSHConnection::startAgentSignature( std::string_view payload ) {
+	mAgentSignPayload.assign( payload );
+	mAgentSignature.reset();
+	mAgentSigning = true;
+	mWaitingExternal = true;
+	std::weak_ptr<SSHConnection> weak = weak_from_this();
+	std::weak_ptr<SSHIOContext> context = mContext;
+	std::thread( [agent = mAgentClient, weak, context, blob = mAgentKeys[mAgentKeyIndex].blob,
+				  payload = mAgentSignPayload,
+				  algorithm = std::string( SSHAgent::algorithmOfSignedRequest( payload ) )] {
+		auto signature =
+			std::make_shared<VFSResult<std::string>>( agent->sign( blob, payload, algorithm ) );
+		if ( auto io = context.lock() ) {
+			io->post( [weak, signature] {
+				auto self = weak.lock();
+				if ( !self || !self->isUsable() || !self->mAgentSigning )
+					return;
+				self->mAgentSigning = false;
+				self->mWaitingExternal = false;
+				self->mAgentSignature = std::move( *signature );
+			} );
+		}
+	} ).detach();
+}
+
+int SSHConnection::agentSign( LIBSSH2_SESSION*, unsigned char** signature, size_t* signatureLength,
+							  const unsigned char* data, size_t dataLength, void** abstract ) {
+	auto* self = static_cast<SSHConnection*>( *abstract );
+	std::string_view payload( reinterpret_cast<const char*>( data ), dataLength );
+	// libssh2 calls again with the same payload after an EAGAIN.
+	if ( self->mAgentSignature && self->mAgentSignPayload == payload ) {
+		auto result = std::move( *self->mAgentSignature );
+		self->mAgentSignature.reset();
+		self->mAgentSignPayload.clear();
+		if ( !result )
+			return LIBSSH2_ERROR_AGENT_PROTOCOL;
+		const std::string& raw = result.value();
+		// Released by libssh2 with the session's (default) allocator.
+		*signature = static_cast<unsigned char*>( std::malloc( raw.size() ) );
+		if ( !*signature )
+			return LIBSSH2_ERROR_ALLOC;
+		std::memcpy( *signature, raw.data(), raw.size() );
+		*signatureLength = raw.size();
+		return 0;
+	}
+	if ( !self->mAgentSigning )
+		self->startAgentSignature( payload );
+	return LIBSSH2_ERROR_EAGAIN;
+}
+
 void SSHConnection::requestExternal( const SSHAuthenticationRequest& request ) {
 	mWaitingExternal = true;
 	mExternalAnswer.reset();
@@ -1075,6 +1226,10 @@ Step SSHConnection::stepAuthentication() {
 					mAuthPhase = AuthPhase::KeyNext;
 					continue;
 				}
+				if ( SSHAgent::supported() ) {
+					startAgentListing();
+					return Step::Again;
+				}
 				mAgent = libssh2_agent_init( mSession );
 				if ( mAgent ) {
 					libssh2_agent_set_identity_path( mAgent, mConfig.identityAgent->c_str() );
@@ -1130,6 +1285,43 @@ Step SSHConnection::stepAuthentication() {
 					return Step::Done;
 				}
 				mAuthPhase = AuthPhase::AgentNext;
+				continue;
+			}
+			case AuthPhase::AgentListing:
+				// startAgentListing() moves on once the agent answered.
+				return Step::Again;
+			case AuthPhase::AgentKeyNext: {
+				if ( mAgentKeyIndex >= mAgentKeys.size() ) {
+					mAgentClient.reset();
+					mAgentKeys.clear();
+					mAuthPhase = AuthPhase::KeyNext;
+					continue;
+				}
+				mAgentSignPayload.clear();
+				mAgentSignature.reset();
+				mAuthPhase = AuthPhase::AgentKeyAuth;
+				continue;
+			}
+			case AuthPhase::AgentKeyAuth: {
+				const std::string& blob = mAgentKeys[mAgentKeyIndex].blob;
+				void* abstract = this;
+				int rc = libssh2_userauth_publickey(
+					mSession, user.c_str(), reinterpret_cast<const unsigned char*>( blob.data() ),
+					blob.size(), &SSHConnection::agentSign, &abstract );
+				if ( rc == LIBSSH2_ERROR_EAGAIN )
+					return Step::Again;
+				if ( rc == 0 ) {
+					mAgentClient.reset();
+					mAgentKeys.clear();
+					mAuthPhase = AuthPhase::Done;
+					continue;
+				}
+				if ( isSocketError( libssh2_session_last_errno( mSession ) ) ) {
+					fail( lastError( URI(), "Authentication failed" ) );
+					return Step::Done;
+				}
+				++mAgentKeyIndex;
+				mAuthPhase = AuthPhase::AgentKeyNext;
 				continue;
 			}
 			case AuthPhase::KeyNext: {
@@ -1327,9 +1519,14 @@ short SocketTransport::pollEvents( short directions ) const {
 
 ChannelTransport::ChannelTransport( std::shared_ptr<SSHConnection> parent, std::string host,
 									Uint16 port ) :
-	mParent( std::move( parent ) ), mHost( std::move( host ) ), mPort( port ) {}
+	mParent( std::move( parent ) ), mHost( std::move( host ) ), mPort( port ) {
+	// The child's traffic is invisible to the parent's queue: keep the parent from closing as
+	// idle while the child lives.
+	mParent->addUser();
+}
 
 ChannelTransport::~ChannelTransport() {
+	mParent->removeUser();
 	// The channel belongs to the parent session; libssh2_session_free() of the parent releases
 	// it. Freeing it here could race with the parent's I/O thread usage.
 }

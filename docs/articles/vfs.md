@@ -110,6 +110,12 @@ Moves use a native rename when both sides are on the same provider/authority and
 plus removal of the entries that were completely copied; a source is never removed after a partial
 transfer.
 
+File copies are written to a temporary sibling before publication. `Fail` and `Skip` also apply
+when a destination appears while the copy is running. The `Overwrite` policy requires
+`AtomicReplace`; otherwise the transfer returns `Unsupported` and preserves the old contents.
+Creating a file with `Fail` or `Skip` requires `Rename`. Moving a symlink through the copy fallback
+is unsupported; native same-filesystem renames still move the link itself.
+
 ## Watching
 
 ```cpp

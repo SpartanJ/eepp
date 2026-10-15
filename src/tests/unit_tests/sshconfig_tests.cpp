@@ -485,6 +485,25 @@ UTEST( SSHConfig, connectionKeyIgnoresPathsAndDistinguishesProfiles ) {
 	EXPECT_TRUE( a.connectionKey() != c.connectionKey() );
 }
 
+UTEST( SSHConfig, connectionKeyIncludesTheSecurityPolicy ) {
+	// A session verified under a permissive policy must not serve a stricter configuration.
+	FakeSystem fake;
+	fake.files[UserConfig] = "Host makyo\n    User black\n";
+	auto base = fake.resolve( "makyo" );
+	auto stricter = base;
+	stricter.strictHostKeyChecking = SSHStrictHostKeyChecking::Yes;
+	EXPECT_TRUE( base.connectionKey() != stricter.connectionKey() );
+	auto otherKnownHosts = base;
+	otherKnownHosts.userKnownHostsFiles = { "/different/known_hosts" };
+	EXPECT_TRUE( base.connectionKey() != otherKnownHosts.connectionKey() );
+	auto restricted = base;
+	restricted.hostKeyAlgorithms = std::string( "ssh-ed25519" );
+	EXPECT_TRUE( base.connectionKey() != restricted.connectionKey() );
+	auto noPassword = base;
+	noPassword.passwordAuthentication = false;
+	EXPECT_TRUE( base.connectionKey() != noPassword.connectionKey() );
+}
+
 #if EE_PLATFORM != EE_PLATFORM_WIN
 namespace {
 

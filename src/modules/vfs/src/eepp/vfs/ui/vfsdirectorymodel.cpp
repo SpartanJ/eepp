@@ -359,13 +359,15 @@ void VFSDirectoryModel::rescan() {
 // Entry storage
 // ---------------------------------------------------------------------------------------------
 
-bool VFSDirectoryModel::less( const FileInfo& a, const FileInfo& b ) const {
+bool VFSDirectoryModel::less( const FileInfo& a, const FileInfo& b, const std::string* aType,
+							  const std::string* bType ) const {
 	bool aDir = a.isDirectory(), bDir = b.isDirectory();
 	if ( aDir != bDir )
 		return aDir; // Directories first, whatever the order.
 	int cmp = 0;
+	// Runs O(n log n) times per sort on the UI thread: no allocations.
 	auto compareNames = [&] {
-		int c = String::toLower( a.name ).compare( String::toLower( b.name ) );
+		int c = String::icompare( a.name, b.name );
 		return c != 0 ? c : a.name.compare( b.name );
 	};
 	auto compareNumbers = []( auto x, auto y ) { return x < y ? -1 : ( y < x ? 1 : 0 ); };
@@ -378,7 +380,7 @@ bool VFSDirectoryModel::less( const FileInfo& a, const FileInfo& b ) const {
 				cmp = compareNumbers( a.size().value_or( 0 ), b.size().value_or( 0 ) );
 			break;
 		case Type:
-			cmp = typeOf( a ).compare( typeOf( b ) );
+			cmp = aType && bType ? aType->compare( *bType ) : typeOf( a ).compare( typeOf( b ) );
 			break;
 		case Modified:
 			cmp = compareNumbers( a.modifiedTime().value_or( 0 ), b.modifiedTime().value_or( 0 ) );
@@ -400,6 +402,47 @@ bool VFSDirectoryModel::less( const FileInfo& a, const FileInfo& b ) const {
 	return mSortOrder == SortOrder::Descending ? cmp > 0 : cmp < 0;
 }
 
+void VFSDirectoryModel::sortEntries( std::vector<FileInfo>& entries ) const {
+	if ( mSortColumn != Type ) {
+		std::stable_sort( entries.begin(), entries.end(),
+						  [this]( const FileInfo& a, const FileInfo& b ) { return less( a, b ); } );
+		return;
+	}
+	// The type provider (a std::function returning a string) runs once per entry, not twice per
+	// comparison.
+	std::vector<std::string> types;
+	types.reserve( entries.size() );
+	for ( const auto& entry : entries )
+		types.push_back( typeOf( entry ) );
+	std::vector<size_t> order( entries.size() );
+	for ( size_t i = 0; i < order.size(); ++i )
+		order[i] = i;
+	std::stable_sort( order.begin(), order.end(), [&]( size_t x, size_t y ) {
+		return less( entries[x], entries[y], &types[x], &types[y] );
+	} );
+	std::vector<FileInfo> sorted;
+	sorted.reserve( entries.size() );
+	for ( size_t index : order )
+		sorted.push_back( std::move( entries[index] ) );
+	entries.swap( sorted );
+}
+
+void VFSDirectoryModel::rowsInserted( size_t entryIndex, bool visible ) {
+	size_t row = visibleRowFor( entryIndex );
+	for ( size_t i = row; i < mRows.size(); ++i )
+		++mRows[i];
+	if ( visible )
+		mRows.insert( mRows.begin() + row, entryIndex );
+}
+
+void VFSDirectoryModel::rowsErased( size_t entryIndex ) {
+	size_t row = visibleRowFor( entryIndex );
+	if ( row < mRows.size() && mRows[row] == entryIndex )
+		mRows.erase( mRows.begin() + row );
+	for ( size_t i = row; i < mRows.size(); ++i )
+		--mRows[i];
+}
+
 void VFSDirectoryModel::rebuildRows() {
 	mRows.clear();
 	mRows.reserve( mEntries.size() );
@@ -419,7 +462,7 @@ void VFSDirectoryModel::mergeBatch( std::vector<FileInfo>&& batch ) {
 	for ( const auto& info : batch )
 		queueItemCount( info );
 	auto cmp = [this]( const FileInfo& a, const FileInfo& b ) { return less( a, b ); };
-	std::sort( batch.begin(), batch.end(), cmp );
+	sortEntries( batch );
 	if ( mEntries.empty() ) {
 		mEntries = std::move( batch );
 	} else {
@@ -446,15 +489,17 @@ void VFSDirectoryModel::removeByName( const std::string& name ) {
 	size_t index = static_cast<size_t>( it - mEntries.begin() );
 	bool visible = isVisible( *it );
 	mItemCounts.erase( name );
+	// Rows are updated in place: watch events arrive one by one, a full rebuild would cost a
+	// pass over every entry each time.
 	if ( visible ) {
 		int row = static_cast<int>( visibleRowFor( index ) );
 		beginDeleteRows( {}, row, row );
 		mEntries.erase( it );
-		rebuildRows();
+		rowsErased( index );
 		endDeleteRows();
 	} else {
 		mEntries.erase( it );
-		rebuildRows();
+		rowsErased( index );
 	}
 	onModelUpdate( Model::UpdateFlag::DontInvalidateIndexes );
 	notifyChanged();
@@ -491,11 +536,11 @@ void VFSDirectoryModel::upsert( FileInfo&& info ) {
 		int row = static_cast<int>( visibleRowFor( index ) );
 		beginInsertRows( {}, row, row );
 		mEntries.insert( pos, std::move( info ) );
-		rebuildRows();
+		rowsInserted( index, true );
 		endInsertRows();
 	} else {
 		mEntries.insert( pos, std::move( info ) );
-		rebuildRows();
+		rowsInserted( index, false );
 	}
 	onModelUpdate( Model::UpdateFlag::DontInvalidateIndexes );
 	notifyChanged();
@@ -683,8 +728,9 @@ bool VFSDirectoryModel::matchesNameFilter( const std::string& name ) const {
 		case NameFilterMode::PlainText:
 			if ( mFilterCaseSensitive )
 				return name.find( mFilterPattern ) != std::string::npos;
-			return String::toLower( name ).find( String::toLower( mFilterPattern ) ) !=
-				   std::string::npos;
+			// Every entry is matched on each rebuild: no lowercase copies.
+			return String::BMH::find( std::string_view( name ), mFilterPattern, 0,
+									  mFilterOccurrences, true ) != -1;
 		case NameFilterMode::Glob:
 			return String::globMatch( name, mFilterGlob, !mFilterCaseSensitive );
 		case NameFilterMode::RegEx:
@@ -702,6 +748,12 @@ void VFSDirectoryModel::setNameFilter( std::string pattern, NameFilterMode mode,
 	mFilterCaseSensitive = caseSensitive;
 	mFilterRegEx.reset();
 	mFilterValid = true;
+	mFilterOccurrences.clear();
+	if ( mode == NameFilterMode::PlainText && !caseSensitive && !mFilterPattern.empty() ) {
+		mFilterOccurrences = String::BMH::createOccTable(
+			reinterpret_cast<const unsigned char*>( mFilterPattern.data() ),
+			mFilterPattern.size(), true );
+	}
 	// Unanchored like Dolphin ("md" matches "notes.md"). A doubled '*' would mean "**" (any
 	// path) to globMatch, so only missing wildcards are added.
 	mFilterGlob.clear();
@@ -893,8 +945,7 @@ Variant VFSDirectoryModel::data( const ModelIndex& index, ModelRole role ) const
 void VFSDirectoryModel::sort( const size_t& column, const SortOrder& order ) {
 	mSortColumn = column < ColumnCount ? column : Name;
 	mSortOrder = order == SortOrder::None ? SortOrder::Ascending : order;
-	std::stable_sort( mEntries.begin(), mEntries.end(),
-					  [this]( const FileInfo& a, const FileInfo& b ) { return less( a, b ); } );
+	sortEntries( mEntries );
 	rebuildRows();
 	invalidate( Model::UpdateFlag::InvalidateAllIndexes );
 }

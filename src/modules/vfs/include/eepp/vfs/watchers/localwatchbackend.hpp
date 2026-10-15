@@ -1,6 +1,7 @@
 #ifndef EE_VFS_WATCHERS_LOCALWATCHBACKEND_HPP
 #define EE_VFS_WATCHERS_LOCALWATCHBACKEND_HPP
 
+#include <eepp/system/threadpool.hpp>
 #include <eepp/vfs/watch.hpp>
 #include <memory>
 
@@ -18,11 +19,16 @@ class LocalWatchBackendImpl;
  * (efsw handleMissedFileActions) become RescanRequired.
  *
  * Several logical watches on the same directory share one efsw watch.
+ *
+ * Registration and removal touch the filesystem (the generic watcher takes a snapshot of the
+ * tree), so they run on the I/O pool, never on the caller's thread.
  */
 class LocalWatchBackend : public WatchBackend {
   public:
-	/** @param genericPollingInterval Polling interval for the generic efsw watcher. */
-	explicit LocalWatchBackend( Time genericPollingInterval = System::Seconds( 1 ) );
+	/** @param pool Where watches are registered and removed.
+	 * @param genericPollingInterval Polling interval for the generic efsw watcher. */
+	explicit LocalWatchBackend( std::shared_ptr<System::ThreadPool> pool,
+								Time genericPollingInterval = System::Seconds( 1 ) );
 
 	~LocalWatchBackend() override;
 
@@ -30,6 +36,7 @@ class LocalWatchBackend : public WatchBackend {
 													   std::shared_ptr<WatchSink> sink ) override;
 
   private:
+	std::shared_ptr<System::ThreadPool> mPool;
 	std::shared_ptr<detail::LocalWatchBackendImpl> mImpl;
 };
 

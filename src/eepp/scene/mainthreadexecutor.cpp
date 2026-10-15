@@ -28,6 +28,10 @@ MainThreadExecutor::MainThreadExecutor( Node* dispatcher ) : mState( std::make_s
 }
 
 MainThreadExecutor::~MainThreadExecutor() {
+	shutdown();
+}
+
+void MainThreadExecutor::shutdown() {
 	std::vector<Function> dropped;
 	{
 		std::lock_guard<std::mutex> lock( mState->mutex );

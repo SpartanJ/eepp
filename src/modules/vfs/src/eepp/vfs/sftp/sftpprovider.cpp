@@ -506,76 +506,112 @@ Time SFTPProviderImpl::connectTimeout( const SSHResolvedConfig& config ) const {
 	return config.connectTimeout ? *config.connectTimeout : mConfig.defaultConnectTimeout;
 }
 
-/** Builds (blocking, on a helper thread) a ready connection for a resolved configuration,
- * including its ProxyJump chain or ProxyCommand transport. */
-VFSResult<std::shared_ptr<SSHConnection>>
-SFTPProviderImpl::buildConnection( const SSHResolvedConfig& config ) {
-	std::unique_ptr<SSHTransport> transport;
-	if ( !config.proxyJump.empty() ) {
-		// Each jump host uses its own ssh_config (like `ssh -J`); the chain is the target's.
-		std::shared_ptr<SSHConnection> parent;
-		for ( size_t i = 0; i <= config.proxyJump.size(); ++i ) {
-			bool last = i == config.proxyJump.size();
-			SSHResolvedConfig hopConfig;
-			if ( last ) {
-				hopConfig = config;
-			} else {
-				const auto& jump = config.proxyJump[i];
-				auto resolved = resolveSync(
-					jump.host, jump.user.empty() ? std::nullopt : std::optional( jump.user ),
-					jump.port ? std::optional<Uint16>( jump.port ) : std::nullopt );
-				if ( !resolved )
-					return Err( std::move( resolved ).error() );
-				hopConfig = std::move( resolved ).value();
-				hopConfig.proxyJump.clear();
-				hopConfig.proxyCommand.reset();
-			}
-			std::unique_ptr<SSHTransport> hopTransport;
-			if ( !parent ) {
-				std::string error;
-				SocketHandle socket = connectTcp(
-					hopConfig.hostName, hopConfig.port,
-					static_cast<int>( connectTimeout( hopConfig ).asMilliseconds() ), error );
-				if ( socket == InvalidSocket )
-					return Err( VFSError( VFSErrorCode::ConnectionLost, URI(), error ) );
-				hopTransport = std::make_unique<SocketTransport>( socket );
-			} else {
-				auto channelTransport = std::make_unique<ChannelTransport>(
-					parent, hopConfig.hostName, hopConfig.port );
-				ChannelTransport* raw = channelTransport.get();
-				// Opening the channel is an operation on the parent: it is serialized with the
-				// parent's own SFTP traffic.
-				auto opened = await( parent->submit<void>(
-					{}, URI(), [raw]( SSHConnection& ) -> std::optional<VFSResult<void>> {
-						VFSError error;
-						if ( raw->open( error ) == Step::Again )
-							return std::nullopt;
-						if ( !raw->channel() )
-							return VFSResult<void>( Err( std::move( error ) ) );
-						return VFSResult<void>( Ok() );
-					} ) );
-				if ( !opened )
-					return Err( std::move( opened ).error() );
-				hopTransport = std::move( channelTransport );
-			}
-			auto connection = std::make_shared<SSHConnection>( mContext, hopConfig, hooks(),
-															   std::move( hopTransport ),
-															   connectTimeout( hopConfig ) );
-			mContext->post(
-				[context = mContext, connection] { context->addConnection( connection ); } );
-			auto ready = await( connection->whenReady() );
+/** A connection being built, one hop of its ProxyJump chain at a time. */
+struct SFTPProviderImpl::Build {
+	SSHResolvedConfig config;
+	/** The previous hop, which carries the next one's channel. */
+	std::shared_ptr<SSHConnection> parent;
+	size_t hop{ 0 };
+	TaskSource<VFSResult<std::shared_ptr<SSHConnection>>> source;
+};
+
+VFSTask<std::shared_ptr<SSHConnection>>
+SFTPProviderImpl::buildConnection( SSHResolvedConfig config ) {
+	auto build = std::make_shared<Build>();
+	build->config = std::move( config );
+	auto task = build->source.task();
+	buildHop( std::move( build ) );
+	return task;
+}
+
+void SFTPProviderImpl::buildHop( std::shared_ptr<Build> build ) {
+	// Transports are set up on a helper thread (TCP connect blocks, bounded by ConnectTimeout).
+	// Waiting for the session is not: the handshake and authentication may wait on the user
+	// (host key, password), so it continues from the connection's ready task instead.
+	auto pool = mHelperPool;
+	if ( !pool ) {
+		build->source.resolve(
+			Err( VFSError( VFSErrorCode::ConnectionLost, URI(), "SFTP provider shutting down" ) ) );
+		return;
+	}
+	std::weak_ptr<SFTPProviderImpl> weak = weak_from_this();
+	pool->run( [weak, build = std::move( build )]() mutable {
+		HelperThreadScope scope;
+		auto self = weak.lock();
+		if ( !self )
+			return; // The source is abandoned with the build.
+		auto connection = self->startHop( *build );
+		if ( !connection ) {
+			build->source.resolve( Err( std::move( connection ).error() ) );
+			return;
+		}
+		bool last = build->hop == build->config.proxyJump.size();
+		std::string hopName = connection.value()->config().hostName;
+		connection.value()->whenReady().then( [weak, build, connection = connection.value(), last,
+											   hopName]( VFSResult<void>&& ready ) mutable {
+			auto self = weak.lock();
+			if ( !self )
+				return;
 			if ( !ready ) {
 				VFSError error = std::move( ready ).error();
 				if ( !last )
-					error.message = "ProxyJump " + hopConfig.hostName + ": " + error.message;
-				return Err( std::move( error ) );
+					error.message = "ProxyJump " + hopName + ": " + error.message;
+				build->source.resolve( Err( std::move( error ) ) );
+				return;
 			}
-			parent = std::move( connection );
-		}
-		return Ok( std::move( parent ) );
+			if ( !last ) {
+				build->parent = std::move( connection );
+				++build->hop;
+				self->buildHop( std::move( build ) );
+				return;
+			}
+			self->probeExtensions( connection )
+				.then( [build, connection]( VFSResult<void>&& ) mutable {
+					build->source.resolve( Ok( std::move( connection ) ) );
+				} );
+		} );
+	} );
+}
+
+VFSResult<std::shared_ptr<SSHConnection>> SFTPProviderImpl::startHop( Build& build ) {
+	const SSHResolvedConfig& config = build.config;
+	bool last = build.hop == config.proxyJump.size();
+	SSHResolvedConfig hopConfig;
+	if ( last ) {
+		hopConfig = config;
+	} else {
+		// Each jump host uses its own ssh_config (like `ssh -J`); the chain is the target's.
+		const auto& jump = config.proxyJump[build.hop];
+		auto resolved =
+			resolveSync( jump.host, jump.user.empty() ? std::nullopt : std::optional( jump.user ),
+						 jump.port ? std::optional<Uint16>( jump.port ) : std::nullopt );
+		if ( !resolved )
+			return Err( std::move( resolved ).error() );
+		hopConfig = std::move( resolved ).value();
+		hopConfig.proxyJump.clear();
+		hopConfig.proxyCommand.reset();
 	}
 
-	if ( config.proxyCommand ) {
+	std::unique_ptr<SSHTransport> transport;
+	if ( build.parent ) {
+		auto channelTransport =
+			std::make_unique<ChannelTransport>( build.parent, hopConfig.hostName, hopConfig.port );
+		ChannelTransport* raw = channelTransport.get();
+		// Opening the channel is an operation on the parent: it is serialized with the parent's
+		// own traffic. Bounded (no user interaction), so waiting here is fine.
+		auto opened = await( build.parent->submit<void>(
+			{}, URI(), [raw]( SSHConnection& ) -> std::optional<VFSResult<void>> {
+				VFSError error;
+				if ( raw->open( error ) == Step::Again )
+					return std::nullopt;
+				if ( !raw->channel() )
+					return VFSResult<void>( Err( std::move( error ) ) );
+				return VFSResult<void>( Ok() );
+			} ) );
+		if ( !opened )
+			return Err( std::move( opened ).error() );
+		transport = std::move( channelTransport );
+	} else if ( last && config.proxyCommand ) {
 		auto process = std::make_unique<ProcessTransport>( mContext, *config.proxyCommand );
 		if ( !process->started() )
 			return Err( VFSError( VFSErrorCode::ConnectionLost, URI(),
@@ -584,26 +620,28 @@ SFTPProviderImpl::buildConnection( const SSHResolvedConfig& config ) {
 	} else {
 		std::string error;
 		SocketHandle socket =
-			connectTcp( config.hostName, config.port,
-						static_cast<int>( connectTimeout( config ).asMilliseconds() ), error );
+			connectTcp( hopConfig.hostName, hopConfig.port,
+						static_cast<int>( connectTimeout( hopConfig ).asMilliseconds() ), error );
 		if ( socket == InvalidSocket )
 			return Err( VFSError( VFSErrorCode::ConnectionLost, URI(), error ) );
 		transport = std::make_unique<SocketTransport>( socket );
 	}
-	auto connection = std::make_shared<SSHConnection>(
-		mContext, config, hooks(), std::move( transport ), connectTimeout( config ) );
+
+	Time timeout = connectTimeout( hopConfig );
+	auto connection = std::make_shared<SSHConnection>( mContext, std::move( hopConfig ), hooks(),
+													   std::move( transport ), timeout );
+	connection->setIdleTimeout( mConfig.idleTimeout );
+	connection->setSFTPRequired( last );
 	mContext->post( [context = mContext, connection] { context->addConnection( connection ); } );
-	auto ready = await( connection->whenReady() );
-	if ( !ready )
-		return Err( std::move( ready ).error() );
 	return Ok( std::move( connection ) );
 }
 
 /** Probes SFTP extensions once per connection: posix-rename (atomic replace), statvfs. fsync is
  * detected on first use. */
-void SFTPProviderImpl::probeExtensions( const std::shared_ptr<SSHConnection>& connection ) {
+VFSTask<void>
+SFTPProviderImpl::probeExtensions( const std::shared_ptr<SSHConnection>& connection ) {
 	static const std::string probe = "/.eepp-vfs-extension-probe-does-not-exist";
-	await( connection->submit<void>(
+	return connection->submit<void>(
 		{}, URI(), []( SSHConnection& c ) -> std::optional<VFSResult<void>> {
 			if ( c.posixRenameSupport < 0 ) {
 				int rc = libssh2_sftp_posix_rename_ex(
@@ -628,19 +666,19 @@ void SFTPProviderImpl::probeExtensions( const std::shared_ptr<SSHConnection>& co
 			if ( c.posixRenameSupport == 1 && c.fsyncSupport < 0 )
 				c.fsyncSupport = 1; // Both arrived in OpenSSH 6.5; confirmed on first use.
 			return VFSResult<void>( Ok() );
-		} ) );
+		} );
 }
 
 void SFTPProviderImpl::pruneIdle() {
-	auto now = std::chrono::steady_clock::now();
-	auto idle =
-		std::chrono::milliseconds( static_cast<Int64>( mConfig.idleTimeout.asMilliseconds() ) );
+	// Idle connections close themselves on the I/O thread (SSHConnection::setIdleTimeout());
+	// here the pool forgets the closed ones, and closes those whose timer has not fired yet.
 	for ( auto it = mPool.begin(); it != mPool.end(); ) {
 		auto& entry = it->second;
-		if ( entry.connection &&
-			 ( !entry.connection->isUsable() || ( entry.connection.use_count() == 1 &&
-												  now - entry.connection->lastUse() > idle ) ) ) {
-			entry.connection->close();
+		auto connection = entry.connection.lock();
+		if ( connection && ( !connection->isUsable() || connection->idleExpired() ) ) {
+			connection->close();
+			it = mPool.erase( it );
+		} else if ( !connection && entry.waiters.empty() ) {
 			it = mPool.erase( it );
 		} else {
 			++it;
@@ -651,18 +689,21 @@ void SFTPProviderImpl::pruneIdle() {
 VFSTask<std::shared_ptr<SSHConnection>> SFTPProviderImpl::connection( const URI& uri ) {
 	using Result = VFSResult<std::shared_ptr<SSHConnection>>;
 	std::string key = authorityKey( uri );
+	Uint64 generation;
 	TaskSource<Result> source;
 	auto task = source.task();
 	{
 		std::lock_guard<std::mutex> lock( mPoolMutex );
+		generation = mPoolGeneration;
 		pruneIdle();
 		auto it = mPool.find( key );
 		if ( it != mPool.end() ) {
-			if ( it->second.connection && it->second.connection->isUsable() ) {
-				source.resolve( Ok( it->second.connection ) );
+			auto connection = it->second.connection.lock();
+			if ( connection && connection->isUsable() ) {
+				source.resolve( Ok( std::move( connection ) ) );
 				return task;
 			}
-			if ( !it->second.connection ) {
+			if ( !connection && !it->second.waiters.empty() ) {
 				it->second.waiters.push_back( std::move( source ) );
 				return task;
 			}
@@ -675,7 +716,7 @@ VFSTask<std::shared_ptr<SSHConnection>> SFTPProviderImpl::connection( const URI&
 		return readyError<std::shared_ptr<SSHConnection>>( VFSErrorCode::ConnectionLost, uri,
 														   "SFTP provider shutting down" );
 	std::weak_ptr<SFTPProviderImpl> weak = weak_from_this();
-	pool->run( [weak, uri, key]() {
+	pool->run( [weak, uri, key, generation]() {
 		HelperThreadScope scope;
 		auto self = weak.lock();
 		if ( !self )
@@ -691,10 +732,13 @@ VFSTask<std::shared_ptr<SSHConnection>> SFTPProviderImpl::connection( const URI&
 			std::shared_ptr<SSHConnection> existing;
 			{
 				std::lock_guard<std::mutex> lock( self->mPoolMutex );
+				if ( self->mPoolGeneration != generation )
+					return;
 				for ( auto& entry : self->mPool ) {
-					if ( entry.second.connection && entry.second.connection->isUsable() &&
-						 entry.second.connection->config().connectionKey() == connectionKey ) {
-						existing = entry.second.connection;
+					auto connection = entry.second.connection.lock();
+					if ( connection && connection->isUsable() &&
+						 connection->config().connectionKey() == connectionKey ) {
+						existing = std::move( connection );
 						break;
 					}
 				}
@@ -702,37 +746,51 @@ VFSTask<std::shared_ptr<SSHConnection>> SFTPProviderImpl::connection( const URI&
 			if ( existing ) {
 				result = Ok( existing );
 			} else {
-				result = self->buildConnection( config.value() );
-				if ( result )
-					self->probeExtensions( result.value() );
-			}
-			if ( !result && result.error().uri.empty() )
-				result.error().uri = uri;
-		}
-		std::vector<TaskSource<Result>> waiters;
-		{
-			std::lock_guard<std::mutex> lock( self->mPoolMutex );
-			auto it = self->mPool.find( key );
-			if ( it != self->mPool.end() ) {
-				waiters = std::move( it->second.waiters );
-				if ( result )
-					it->second.connection = result.value();
-				else
-					self->mPool.erase( it );
+				self->buildConnection( std::move( config ).value() )
+					.then( [weak, uri, key, generation]( Result&& built ) {
+						if ( auto self = weak.lock() )
+							self->finishConnection( key, uri, generation, std::move( built ) );
+					} );
+				return;
 			}
 		}
-		for ( auto& waiter : waiters )
-			waiter.resolve( Result( result ) );
+		self->finishConnection( key, uri, generation, std::move( result ) );
 	} );
 	return task;
+}
+
+void SFTPProviderImpl::finishConnection( const std::string& key, const URI& uri, Uint64 generation,
+										 VFSResult<std::shared_ptr<SSHConnection>>&& result ) {
+	if ( !result && result.error().uri.empty() )
+		result.error().uri = uri;
+	std::vector<TaskSource<VFSResult<std::shared_ptr<SSHConnection>>>> waiters;
+	{
+		std::lock_guard<std::mutex> lock( mPoolMutex );
+		if ( generation != mPoolGeneration ) {
+			if ( result )
+				result.value()->close();
+			return;
+		}
+		auto it = mPool.find( key );
+		if ( it != mPool.end() ) {
+			waiters = std::move( it->second.waiters );
+			if ( result )
+				it->second.connection = result.value();
+			else
+				mPool.erase( it );
+		}
+	}
+	for ( auto& waiter : waiters )
+		waiter.resolve( VFSResult<std::shared_ptr<SSHConnection>>( result ) );
 }
 
 ProviderCapabilities SFTPProviderImpl::capabilities( const URI& uri ) const {
 	ProviderCapabilities caps( BaseCapabilities );
 	std::lock_guard<std::mutex> lock( mPoolMutex );
 	auto it = mPool.find( authorityKey( uri ) );
-	if ( it != mPool.end() && it->second.connection ) {
-		const auto& c = *it->second.connection;
+	auto connection = it != mPool.end() ? it->second.connection.lock() : nullptr;
+	if ( connection ) {
+		const auto& c = *connection;
 		caps.set( VFSCapability::AtomicRename, c.posixRenameSupport == 1 );
 		caps.set( VFSCapability::AtomicReplace, c.posixRenameSupport == 1 );
 		caps.set( VFSCapability::Fsync, c.fsyncSupport == 1 );
@@ -742,19 +800,32 @@ ProviderCapabilities SFTPProviderImpl::capabilities( const URI& uri ) const {
 }
 
 void SFTPProviderImpl::disconnectAll() {
-	std::lock_guard<std::mutex> lock( mPoolMutex );
-	for ( auto& entry : mPool )
-		if ( entry.second.connection )
-			entry.second.connection->close();
-	mPool.clear();
+	std::map<std::string, PoolEntry> removed;
+	{
+		std::lock_guard<std::mutex> lock( mPoolMutex );
+		++mPoolGeneration;
+		removed.swap( mPool );
+	}
+	// Completing waiters can run arbitrary continuations: never under the pool lock. Include
+	// pending connections, whose authentication may be waiting on UI that is shutting down.
+	mContext->closeConnections();
+	for ( auto& entry : removed ) {
+		if ( auto connection = entry.second.connection.lock() )
+			connection->close();
+		for ( auto& waiter : entry.second.waiters )
+			waiter.resolve(
+				Err( VFSError( VFSErrorCode::ConnectionLost, URI(), "Connection closed" ) ) );
+	}
 }
 
 size_t SFTPProviderImpl::connectionCount() const {
 	std::lock_guard<std::mutex> lock( mPoolMutex );
 	size_t count = 0;
-	for ( const auto& entry : mPool )
-		if ( entry.second.connection && entry.second.connection->isUsable() )
+	for ( const auto& entry : mPool ) {
+		if ( auto connection = entry.second.connection.lock();
+			 connection && connection->isUsable() )
 			++count;
+	}
 	return count;
 }
 

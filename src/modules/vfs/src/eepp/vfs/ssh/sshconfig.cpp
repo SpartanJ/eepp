@@ -1307,8 +1307,32 @@ std::string SSHResolvedConfig::connectionKey() const {
 	add( identitiesOnly ? "1" : "0" );
 	for ( const auto& identity : identityFiles )
 		add( identity );
+	for ( const auto& certificate : certificateFiles )
+		add( certificate );
 	add( identityAgent.value_or( "" ) );
 	add( hostKeyAlias.value_or( "" ) );
+	// Security policy: a connection verified or authenticated under a weaker policy must never
+	// be handed to a destination that demands a stricter one.
+	add( "known" );
+	for ( const auto& file : userKnownHostsFiles )
+		add( file );
+	add( "global" );
+	for ( const auto& file : globalKnownHostsFiles )
+		add( file );
+	add( String::toString( static_cast<int>( strictHostKeyChecking ) ) );
+	add( checkHostIP ? "1" : "0" );
+	for ( const auto* algorithms :
+		  { &ciphers, &macs, &kexAlgorithms, &hostKeyAlgorithms, &pubkeyAcceptedAlgorithms } )
+		add( algorithms->has_value() ? "+" + **algorithms : std::string() );
+	add( "auth" );
+	for ( const auto& method : preferredAuthentications )
+		add( method );
+	add( pubkeyAuthentication ? "1" : "0" );
+	add( passwordAuthentication ? "1" : "0" );
+	add( kbdInteractiveAuthentication ? "1" : "0" );
+	add( String::toString( numberOfPasswordPrompts ) );
+	add( batchMode ? "1" : "0" );
+	add( compression ? "1" : "0" );
 	return key;
 }
 

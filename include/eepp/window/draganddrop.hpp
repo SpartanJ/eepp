@@ -47,6 +47,9 @@ struct DragOffer {
 	SmallVector<DragFile, 1> files;
 	DragActions actions{ static_cast<DragActions>( DragAction::Copy ) };
 	DragPreview preview;
+	/** The application completes drops on its own window (DragResult::releasedOverSource on
+	 * X11): the preview shows a pending drop there instead of a rejected one. */
+	bool sourceHandlesDrops{ false };
 };
 
 struct DragResult {

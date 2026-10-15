@@ -196,6 +196,44 @@ UTEST( VFSDirectoryModel, staysLiveThroughWatchEvents ) {
 	EXPECT_EQ( 3u, model->rowCount() );
 }
 
+UTEST( VFSDirectoryModel, watchEventsKeepRowsInStepWithHiddenEntries ) {
+	// Rows are updated in place by watch events: hidden and filtered entries in between must
+	// keep the visible rows pointing at the right entries.
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	for ( const char* name : { ".a-hidden", "b-keep.txt", "c-other.txt", ".d-hidden" } )
+		FileSystem::fileWrite( tmp.path + name, std::string_view( "1" ) );
+	TestLoop loop;
+	VFSDirectoryModel::Config config;
+	config.vfs = &vfs;
+	auto model = VFSDirectoryModel::New( loop, config );
+	model->setURI( tmp.uri() );
+	EXPECT_TRUE( loop.runUntil(
+		[&] { return model->loadState() == VFSDirectoryModel::LoadState::Ready; } ) );
+	model->setNameFilter( "keep", VFSDirectoryModel::NameFilterMode::PlainText );
+	EXPECT_EQ( 1u, model->rowCount() );
+
+	for ( const char* name : { ".0-hidden", "a-keep.txt", "bb-other.txt", "z-KEEP.txt" } )
+		FileSystem::fileWrite( tmp.path + name, std::string_view( "1" ) );
+	FileSystem::fileRemove( tmp.path + ".a-hidden" );
+	EXPECT_TRUE( loop.runUntil( [&] {
+		return model->rowOf( "a-keep.txt" ) && model->rowOf( "z-KEEP.txt" ) &&
+			   model->rowCount() == 3;
+	} ) );
+	FileSystem::fileRemove( tmp.path + "b-keep.txt" );
+	EXPECT_TRUE( loop.runUntil( [&] { return !model->rowOf( "b-keep.txt" ); } ) );
+	auto names = modelNames( *model );
+	ASSERT_EQ( 2u, names.size() );
+	EXPECT_STDSTREQ( "a-keep.txt", names[0] );
+	EXPECT_STDSTREQ( "z-KEEP.txt", names[1] );
+	// The same rows as a full rebuild.
+	model->setNameFilter( "" );
+	model->setNameFilter( "keep", VFSDirectoryModel::NameFilterMode::PlainText );
+	EXPECT_EQ( 2u, model->rowCount() );
+	EXPECT_STDSTREQ( "a-keep.txt", model->entry( 0 ).name );
+	EXPECT_STDSTREQ( "z-KEEP.txt", model->entry( 1 ).name );
+}
+
 UTEST( MainThreadExecutor, runsDeferredOnSceneUpdate ) {
 	UIApplication app(
 		WindowSettings( 320, 240, "eepp - MainThreadExecutor Test", WindowStyle::Default,

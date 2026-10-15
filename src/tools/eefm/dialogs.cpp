@@ -65,12 +65,22 @@ void showError( UISceneNode* ui, const String& message ) {
 
 #ifdef EE_VFS_SFTP
 
+void SSHPrompts::shutdown() {
+	std::lock_guard<std::mutex> lock( mMutex );
+	mExecutor = nullptr;
+}
+
 Task<SSHHostKeyDecision> SSHPrompts::verify( const SSHHostKeyInfo& info ) {
 	auto source = std::make_shared<TaskSource<SSHHostKeyDecision>>();
 	auto task = source->task();
+	std::lock_guard<std::mutex> lock( mMutex );
+	if ( !mExecutor ) {
+		source->resolve( SSHHostKeyDecision::Reject );
+		return task;
+	}
 	UISceneNode* ui = mUI;
 	// If the executor drops this (shutdown) the source is abandoned and the key rejected.
-	mExecutor.execute( [ui, info, source] {
+	mExecutor->execute( [ui, info, source] {
 		String message = String::format(
 			ui->i18n( "eefm_unknown_host_key",
 					  "The authenticity of host '%s' (port %d) can't be established.\n%s key "
@@ -92,8 +102,13 @@ SSHPrompts::request( const SSHAuthenticationRequest& request ) {
 	using Answers = std::optional<std::vector<std::string>>;
 	auto source = std::make_shared<TaskSource<Answers>>();
 	auto task = source->task();
+	std::lock_guard<std::mutex> lock( mMutex );
+	if ( !mExecutor ) {
+		source->resolve( std::nullopt );
+		return task;
+	}
 	UISceneNode* ui = mUI;
-	mExecutor.execute( [ui, request, source] {
+	mExecutor->execute( [ui, request, source] {
 		String title = ui->i18n( "eefm_authentication", "Authentication" ) + " - " +
 					   String::fromUtf8( request.user + "@" + request.host );
 		// Prompts are asked one after another; any cancel aborts the whole request.

@@ -216,7 +216,9 @@ including one the user switches to with Alt+Tab mid-drag. Internal drag feedback
 the source window still receives the pointer. Ignore the internal drag's release while the native
 session is active and resolve it from the completion instead. On X11, a release over the source
 window ends the session `Cancelled` with `DragResult::releasedOverSource` set, so the application
-completes it as its internal drop. Elsewhere, such a drop arrives as `FileDropped` events.
+completes it as its internal drop. Elsewhere, such a drop arrives as `FileDropped` events. Set
+`DragOffer::sourceHandlesDrops` so the preview shows a pending drop, not a rejected one, while the
+pointer is over the source window.
 
 Applications that install their own `SDL_SetX11EventHook` must coordinate its use: SDL3 has a single
 hook slot, which eepp uses during an active native drag and clears afterwards.

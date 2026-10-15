@@ -2,6 +2,7 @@
 #include "vfs_test_utils.hpp"
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <eepp/system/directorypack.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/packfileindex.hpp>
@@ -13,7 +14,8 @@
 #include <thread>
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
-#include <unistd.h> // symlink
+#include <sys/stat.h> // umask
+#include <unistd.h>	  // symlink, link
 #endif
 
 using namespace EE;
@@ -644,4 +646,312 @@ UTEST( VFSIOStream, synchronousAdapterReadsSeeksAndWrites ) {
 	IOStreamVFS missing( vfs, URI( "mem://s/none" ) );
 	EXPECT_FALSE( missing.isOpen() );
 	EXPECT_TRUE( missing.error().has_value() );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Data safety: copies, moves and saves never lose existing data
+// ---------------------------------------------------------------------------------------------
+
+namespace {
+
+/** Every read fails: a copy from it fails after the destination was opened. */
+class FailingReadHandle : public FileHandleImpl {
+  public:
+	VFSTask<size_t> read( Uint64, std::span<Uint8>, CancellationToken ) override {
+		return readyError<size_t>( VFSErrorCode::IO, URI(), "injected read failure" );
+	}
+
+	VFSTask<size_t> write( Uint64, std::span<const Uint8>, CancellationToken ) override {
+		return readyError<size_t>( VFSErrorCode::IO, URI() );
+	}
+
+	VFSTask<void> truncate( Uint64 ) override { return readyValue<void>(); }
+
+	VFSTask<void> flush() override { return readyValue<void>(); }
+
+	VFSTask<FileInfo> stat() override { return readyError<FileInfo>( VFSErrorCode::IO, URI() ); }
+
+	VFSTask<void> close() override { return readyValue<void>(); }
+
+	ProviderCapabilities capabilities() const override { return {}; }
+};
+
+class FailingReadProvider : public MemoryProvider {
+  public:
+	FailingReadProvider() : MemoryProvider( "fault" ) {}
+
+	VFSTask<FileHandle> open( const URI& uri, const OpenOptions&, CancellationToken ) override {
+		return readyValue<FileHandle>( uri, std::make_shared<FailingReadHandle>() );
+	}
+};
+
+class NonAtomicMemoryProvider : public MemoryProvider {
+  public:
+	ProviderCapabilities capabilities( const URI& uri ) const override {
+		auto caps = MemoryProvider::capabilities( uri );
+		return caps.set( VFSCapability::AtomicReplace, false );
+	}
+};
+
+/** Publishes another application's destination after the transfer's existence check. */
+class RacingReadHandle : public FailingReadHandle {
+  public:
+	explicit RacingReadHandle( std::shared_ptr<MemoryProvider> destination ) :
+		mDestination( std::move( destination ) ) {}
+
+	VFSTask<size_t> read( Uint64 offset, std::span<Uint8> data, CancellationToken ) override {
+		if ( offset != 0 )
+			return readyValue<size_t>( 0 );
+		mDestination->putFile( URI( "mem://t/destination" ), "concurrently created data" );
+		data[0] = 'x';
+		return readyValue<size_t>( 1 );
+	}
+
+  private:
+	std::shared_ptr<MemoryProvider> mDestination;
+};
+
+class RacingReadProvider : public MemoryProvider {
+  public:
+	explicit RacingReadProvider( std::shared_ptr<MemoryProvider> destination ) :
+		MemoryProvider( "race" ), mDestination( std::move( destination ) ) {}
+
+	VFSTask<FileHandle> open( const URI& uri, const OpenOptions&, CancellationToken ) override {
+		return readyValue<FileHandle>( uri, std::make_shared<RacingReadHandle>( mDestination ) );
+	}
+
+  private:
+	std::shared_ptr<MemoryProvider> mDestination;
+};
+
+} // namespace
+
+UTEST( VFSSafety, unsafeReplacementIsRefusedWithoutAtomicReplace ) {
+	VirtualFileSystem vfs;
+	auto destination = std::make_shared<NonAtomicMemoryProvider>();
+	auto source = std::make_shared<FailingReadProvider>();
+	vfs.registerProvider( destination );
+	vfs.registerProvider( source );
+	source->putFile( URI( "fault://t/source" ), "new content" );
+	destination->putFile( URI( "mem://t/destination" ), "valuable data" );
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::Overwrite;
+	auto result = waitFor(
+		vfs.copy( URI( "fault://t/source" ), URI( "mem://t/destination" ), options ).completion() );
+	ASSERT_FALSE( result.hasValue() );
+	EXPECT_EQ( VFSErrorCode::Unsupported, result.error().code );
+	EXPECT_STDSTREQ( "valuable data", *destination->fileContent( URI( "mem://t/destination" ) ) );
+	// A new file still needs only a no-replace rename, not atomic replacement support.
+	auto memory = std::make_shared<MemoryProvider>( "source" );
+	memory->putFile( URI( "source://t/file" ), "new content" );
+	vfs.registerProvider( memory );
+	EXPECT_TRUE(
+		waitFor( vfs.copy( URI( "source://t/file" ), URI( "mem://t/new" ) ).completion() ) );
+	EXPECT_STDSTREQ( "new content", *destination->fileContent( URI( "mem://t/new" ) ) );
+}
+
+UTEST( VFSSafety, concurrentDestinationRespectsFailAndSkip ) {
+	for ( auto policy : { OverwritePolicy::Fail, OverwritePolicy::Skip } ) {
+		VirtualFileSystem vfs;
+		auto destination = std::make_shared<MemoryProvider>();
+		auto source = std::make_shared<RacingReadProvider>( destination );
+		source->putFile( URI( "race://t/source" ), "x" );
+		vfs.registerProvider( destination );
+		vfs.registerProvider( source );
+		CopyOptions options;
+		options.overwrite = policy;
+		auto result =
+			waitFor( vfs.move( URI( "race://t/source" ), URI( "mem://t/destination" ), options )
+						 .completion() );
+		if ( policy == OverwritePolicy::Fail ) {
+			ASSERT_FALSE( result.hasValue() );
+			EXPECT_EQ( VFSErrorCode::AlreadyExists, result.error().code );
+		} else {
+			ASSERT_TRUE( result.hasValue() );
+			EXPECT_EQ( 1u, result.value().filesSkipped );
+			EXPECT_EQ( 0u, result.value().sourcesRemoved );
+		}
+		EXPECT_STDSTREQ( "concurrently created data",
+						 *destination->fileContent( URI( "mem://t/destination" ) ) );
+		EXPECT_TRUE( source->fileContent( URI( "race://t/source" ) ).has_value() );
+	}
+}
+
+UTEST( VFSSafety, failedOverwriteKeepsTheDestination ) {
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<MemoryProvider>();
+	auto fault = std::make_shared<FailingReadProvider>();
+	vfs.registerProvider( mem );
+	vfs.registerProvider( fault );
+	fault->putFile( URI( "fault://t/source" ), "new content" );
+	mem->putFile( URI( "mem://t/file" ), "valuable data" );
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::Overwrite;
+	auto result = waitFor(
+		vfs.copy( URI( "fault://t/source" ), URI( "mem://t/file" ), options ).completion() );
+	EXPECT_FALSE( result.hasValue() );
+	EXPECT_STDSTREQ( "valuable data", readString( vfs, URI( "mem://t/file" ) ) );
+	// No temporary is left behind.
+	auto listed = waitFor( vfs.listAll( URI( "mem://t/" ) ) );
+	ASSERT_TRUE( listed.hasValue() );
+	EXPECT_EQ( 1u, listed.value().size() );
+}
+
+UTEST( VFSSafety, writeAllCreateParentsWithOneOrchestrationThread ) {
+	// writeAll() runs on the orchestration pool: creating the parents must not wait on another
+	// job of that pool.
+	VirtualFileSystem::Config config;
+	config.registerDefaultProviders = false;
+	config.orchestrationThreads = 1;
+	VirtualFileSystem vfs( config );
+	vfs.registerProvider( std::make_shared<MemoryProvider>() );
+	WriteOptions options;
+	options.createParents = true;
+	auto task = vfs.writeAll( URI( "mem://t/new/dir/file" ), std::string_view( "data" ), options );
+	ASSERT_EQ( TaskState::Ready, task.waitFor( std::chrono::seconds( 5 ) ) );
+	EXPECT_TRUE( std::move( task ).takeValue().hasValue() );
+	EXPECT_STDSTREQ( "data", readString( vfs, URI( "mem://t/new/dir/file" ) ) );
+}
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+
+UTEST( VFSSafety, copyOntoAHardLinkKeepsTheSource ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	URI source = tmp.uri().withAppendedSegment( "file" );
+	URI alias = tmp.uri().withAppendedSegment( "hardlink" );
+	ASSERT_TRUE( waitFor( vfs.writeAll( source, std::string_view( "valuable data" ) ) ) );
+	ASSERT_EQ( 0, ::link( source.getFSPath().c_str(), alias.getFSPath().c_str() ) );
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::Overwrite;
+	waitFor( vfs.copy( source, alias, options ).completion() );
+	EXPECT_STDSTREQ( "valuable data", readString( vfs, source ) );
+	EXPECT_STDSTREQ( "valuable data", readString( vfs, alias ) );
+}
+
+UTEST( VFSSafety, copyOntoASymlinkToTheSourceFails ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	URI source = tmp.uri().withAppendedSegment( "file" );
+	URI alias = tmp.uri().withAppendedSegment( "link" );
+	ASSERT_TRUE( waitFor( vfs.writeAll( source, std::string_view( "valuable data" ) ) ) );
+	ASSERT_EQ( 0, ::symlink( source.getFSPath().c_str(), alias.getFSPath().c_str() ) );
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::Overwrite;
+	auto result = waitFor( vfs.copy( source, alias, options ).completion() );
+	EXPECT_EQ( VFSErrorCode::InvalidOperation, codeOf( result ) );
+	EXPECT_STDSTREQ( "valuable data", readString( vfs, source ) );
+}
+
+UTEST( VFSSafety, movingADirectorySymlinkAcrossProvidersKeepsItsTarget ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	vfs.registerProvider( std::make_shared<MemoryProvider>() );
+	URI real = tmp.uri().withAppendedSegment( "real" );
+	URI link = tmp.uri().withAppendedSegment( "link" );
+	ASSERT_TRUE( waitFor( vfs.makeDirs( real ) ) );
+	ASSERT_TRUE(
+		waitFor( vfs.writeAll( real.withAppendedSegment( "file" ), std::string_view( "data" ) ) ) );
+	ASSERT_EQ( 0, ::symlink( real.getFSPath().c_str(), link.getFSPath().c_str() ) );
+	auto result = waitFor( vfs.move( link, URI( "mem://t/moved" ) ).completion() );
+	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( result ) );
+	EXPECT_STDSTREQ( "data", readString( vfs, real.withAppendedSegment( "file" ) ) );
+	EXPECT_TRUE( waitFor( vfs.stat( link, StatOptions{ false } ) ).hasValue() );
+}
+
+UTEST( VFSSafety, atomicSaveKeepsTheExactMode ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	URI file = tmp.uri().withAppendedSegment( "file" );
+	ASSERT_TRUE( waitFor( vfs.writeAll( file, std::string_view( "v1" ) ) ) );
+	ASSERT_TRUE( waitFor( vfs.setPermissions( file, 0777 ) ) );
+	mode_t mask = ::umask( 0077 );
+	auto saved = waitFor( vfs.writeAll( file, std::string_view( "v2" ) ) );
+	::umask( mask );
+	ASSERT_TRUE( saved.hasValue() );
+	EXPECT_EQ( 0777u, *saved.value().permissions() );
+	EXPECT_STDSTREQ( "v2", readString( vfs, file ) );
+}
+
+#endif
+
+UTEST( VFSWatch, localRegistrationRunsOnThePool ) {
+	// Registering touches the filesystem (slow mounts block): it must not run on the caller's
+	// (UI) thread. With the backend's pool busy, watch() returns a pending task.
+	TempDir tmp;
+	auto pool = ThreadPool::createShared( 1 );
+	std::mutex gate;
+	std::unique_lock<std::mutex> hold( gate );
+	pool->run( [&gate] { std::lock_guard<std::mutex> wait( gate ); } );
+	auto backend = std::make_shared<LocalWatchBackend>( pool );
+	WatchManager manager;
+	manager.registerBackend( "file", backend );
+	auto task = manager.watch( tmp.uri() );
+	EXPECT_EQ( TaskState::Pending, task.state() );
+	hold.unlock();
+	ASSERT_EQ( TaskState::Ready, task.waitFor( std::chrono::seconds( 5 ) ) );
+	auto handle = std::move( task ).takeValue();
+	ASSERT_TRUE( handle.hasValue() );
+	EXPECT_EQ( WatchStatus::Active, handle.value().status() );
+	handle.value().reset();
+}
+
+namespace {
+
+/** open() blocks until released: a transfer reading from it keeps its thread busy. */
+class GatedProvider : public MemoryProvider {
+  public:
+	GatedProvider() : MemoryProvider( "gated" ) {}
+
+	VFSTask<FileHandle> open( const URI& uri, const OpenOptions& options,
+							  CancellationToken token ) override {
+		{
+			std::unique_lock<std::mutex> lock( mMutex );
+			mOpened = true;
+			mChanged.notify_all();
+			mChanged.wait( lock, [this] { return mReleased; } );
+		}
+		return MemoryProvider::open( uri, options, std::move( token ) );
+	}
+
+	void waitOpened() {
+		std::unique_lock<std::mutex> lock( mMutex );
+		mChanged.wait_for( lock, std::chrono::seconds( 5 ), [this] { return mOpened; } );
+	}
+
+	void release() {
+		std::lock_guard<std::mutex> lock( mMutex );
+		mReleased = true;
+		mChanged.notify_all();
+	}
+
+  private:
+	std::mutex mMutex;
+	std::condition_variable mChanged;
+	bool mOpened{ false };
+	bool mReleased{ false };
+};
+
+} // namespace
+
+UTEST( VFSSafety, transfersDoNotDelayOtherOperations ) {
+	// Copies run on their own pool: with every transfer thread busy, saves still complete.
+	VirtualFileSystem::Config config;
+	config.registerDefaultProviders = false;
+	config.orchestrationThreads = 1;
+	config.transferThreads = 1;
+	VirtualFileSystem vfs( config );
+	auto mem = std::make_shared<MemoryProvider>();
+	auto gated = std::make_shared<GatedProvider>();
+	vfs.registerProvider( mem );
+	vfs.registerProvider( gated );
+	gated->putFile( URI( "gated://t/big" ), std::string( 1024, 'x' ) );
+	Transfer transfer = vfs.copy( URI( "gated://t/big" ), URI( "mem://t/copy" ) );
+	gated->waitOpened();
+	auto saved = vfs.writeAll( URI( "mem://t/other" ), std::string_view( "data" ) );
+	EXPECT_EQ( TaskState::Ready, saved.waitFor( std::chrono::seconds( 5 ) ) );
+	gated->release();
+	auto done = transfer.completion();
+	ASSERT_EQ( TaskState::Ready, done.waitFor( std::chrono::seconds( 5 ) ) );
+	EXPECT_TRUE( std::move( done ).takeValue().hasValue() );
 }

@@ -3,14 +3,21 @@
 
 #if defined( EE_VFS_SFTP ) && EE_PLATFORM != EE_PLATFORM_WIN
 
+#include "../../modules/vfs/src/eepp/vfs/sftp/sshagent.hpp"
 #include "vfs_test_utils.hpp"
+#include <condition_variable>
 #include <cstdlib>
+#include <eepp/system/base64.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/vfs/sftp/sftpprovider.hpp>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/un.h>
 #include <unistd.h>
+#if defined( __linux__ )
+#include <dirent.h>
+#endif
 
 using namespace vfstest;
 using EE::System::Process;
@@ -211,7 +218,21 @@ class TestSSHServer {
 			// preferred by default: connecting needs the known-type ordering.
 			"Host edhost\n    StrictHostKeyChecking yes\n    UserKnownHostsFile " + mDir +
 			"kh_ed25519\n" + common +
-			"Host * !secret !edkey !ednopub !edsecret\n    IdentityFile " + mDir + "id_ecdsa\n" +
+			// Every host key of the server is @revoked: never accepted, not even as new.
+			"Host revoked\n    StrictHostKeyChecking accept-new\n    UserKnownHostsFile " + mDir +
+			"kh_revoked\n" + common +
+			// Only an algorithm libssh2 does not support: the connection must fail.
+			"Host badalgo\n    HostKeyAlgorithms sk-ssh-ed25519@openssh.com\n"
+			"    StrictHostKeyChecking accept-new\n    UserKnownHostsFile " +
+			mDir + "kh_badalgo\n" + common +
+			// Only an ssh-agent can authenticate these: their identity file does not exist.
+			"Host agent\n    IdentityAgent " + mDir + "agent.sock\n    IdentitiesOnly no\n" +
+			"    IdentityFile " + mDir + "no-such-key\n    PreferredAuthentications publickey\n" +
+			common + "Host stalledagent\n    IdentityAgent " + mDir +
+			"stalled-agent.sock\n    IdentitiesOnly no\n    IdentityFile " + mDir +
+			"no-such-key\n    PreferredAuthentications publickey\n" + common +
+			"Host * !secret !edkey !ednopub !edsecret !agent !stalledagent\n    IdentityFile " +
+			mDir + "id_ecdsa\n" +
 			"Host *\n    StrictHostKeyChecking accept-new\n    UserKnownHostsFile " + mDir +
 			"known_hosts\n" + common;
 		FileSystem::fileWrite( mDir + "ssh_config", std::string_view( sshConfig ) );
@@ -222,6 +243,15 @@ class TestSSHServer {
 		FileSystem::fileWrite(
 			mDir + "kh_mismatch",
 			std::string_view( "mismatch-alias " + fields[0] + " " + fields[1] + "\n" ) );
+		std::string revoked;
+		for ( const char* key : { "host_ecdsa.pub", "host_ed25519.pub" } ) {
+			std::string pub;
+			FileSystem::fileGet( mDir + key, pub );
+			auto keyFields = String::split( pub, ' ' );
+			revoked +=
+				"@revoked [127.0.0.1]:" + port + " " + keyFields[0] + " " + keyFields[1] + "\n";
+		}
+		FileSystem::fileWrite( mDir + "kh_revoked", std::string_view( revoked ) );
 		std::string hostEd;
 		FileSystem::fileGet( mDir + "host_ed25519.pub", hostEd );
 		fields = String::split( hostEd, ' ' );
@@ -474,6 +504,30 @@ UTEST( SFTP, hostKeyPolicies ) {
 	}
 }
 
+UTEST( SFTP, revokedHostKeysAreRejected ) {
+	REQUIRE_SSHD();
+	SFTPFixture fx;
+	auto revoked = waitFor( fx.vfs.stat( server.uri( "revoked" ) ) );
+	EXPECT_EQ( VFSErrorCode::HostKeyRejected, codeOf( revoked ) );
+}
+
+UTEST( SFTP, unsupportedAlgorithmRestrictionFails ) {
+	REQUIRE_SSHD();
+	SFTPFixture fx;
+	auto connected = waitFor( fx.vfs.stat( server.uri( "badalgo" ) ) );
+	EXPECT_FALSE( connected.hasValue() );
+}
+
+UTEST( SFTP, reuseKeepsTheStricterHostKeyPolicy ) {
+	REQUIRE_SSHD();
+	// "testhost" accepts new keys, "strict" does not know the server: both reach the same server
+	// and user, but "strict" must not reuse the connection "testhost" made.
+	SFTPFixture fx;
+	REQUIRE_OK( waitFor( fx.vfs.stat( server.uri( "testhost" ) ) ) );
+	auto strict = waitFor( fx.vfs.stat( server.uri( "strict" ) ) );
+	EXPECT_EQ( VFSErrorCode::HostKeyRejected, codeOf( strict ) );
+}
+
 UTEST( SFTP, authenticationPrompts ) {
 	REQUIRE_SSHD();
 	{
@@ -584,6 +638,365 @@ UTEST( SFTP, connectionReuseReconnectAndErrors ) {
 	EXPECT_EQ( 1u, config.value().proxyJump.size() );
 }
 
+UTEST( SFTP, operationsOnAClosedConnectionFail ) {
+	REQUIRE_SSHD();
+	SFTPFixture fx;
+	URI file = server.uri( "testhost", uniqueName( "closed" ) );
+	REQUIRE_OK( waitFor( fx.vfs.writeAll( file, std::string_view( "data" ) ) ) );
+	auto opened = waitFor( fx.vfs.open( file ) );
+	REQUIRE_OK( opened );
+	FileHandle handle( std::move( opened ).value() );
+	fx.sftp->disconnectAll();
+	// Give the I/O thread time to drop the closed connection.
+	std::this_thread::sleep_for( std::chrono::milliseconds( 200 ) );
+	Uint8 buffer[8];
+	auto read = handle.read( 0, buffer );
+	ASSERT_EQ( TaskState::Ready, read.waitFor( std::chrono::seconds( 5 ) ) );
+	EXPECT_EQ( VFSErrorCode::ConnectionLost, codeOf( std::move( read ).takeValue() ) );
+	auto closed = handle.close();
+	ASSERT_EQ( TaskState::Ready, closed.waitFor( std::chrono::seconds( 5 ) ) );
+}
+
+UTEST( SFTP, idleConnectionsCloseButNotWhileInUse ) {
+	REQUIRE_SSHD();
+	SFTPProviderConfig config;
+	config.idleTimeout = System::Milliseconds( 300 );
+	SFTPFixture fx( config );
+	URI file = server.uri( "testhost", uniqueName( "idle" ) );
+	REQUIRE_OK( waitFor( fx.vfs.writeAll( file, std::string_view( "data" ) ) ) );
+	auto opened = waitFor( fx.vfs.open( file ) );
+	REQUIRE_OK( opened );
+	FileHandle handle( std::move( opened ).value() );
+	// An open handle keeps the connection.
+	std::this_thread::sleep_for( std::chrono::milliseconds( 800 ) );
+	EXPECT_EQ( 1u, fx.sftp->connectionCount() );
+	Uint8 buffer[4];
+	auto read = waitFor( handle.read( 0, buffer ) );
+	REQUIRE_OK( read );
+	EXPECT_EQ( 4u, read.value() );
+	REQUIRE_OK( waitFor( handle.close() ) );
+	// Unused, it closes after the idle timeout; the next operation reconnects.
+	bool closed = false;
+	for ( int i = 0; i < 50 && !closed; ++i ) {
+		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+		closed = fx.sftp->connectionCount() == 0;
+	}
+	EXPECT_TRUE( closed );
+	EXPECT_TRUE( waitFor( fx.vfs.stat( file ) ).hasValue() );
+}
+
+#if defined( __linux__ )
+UTEST( SFTP, idleConnectionReleasesItsSocket ) {
+	REQUIRE_SSHD();
+	auto connectedSockets = [&server] {
+		int count = 0;
+		DIR* fds = ::opendir( "/proc/self/fd" );
+		if ( !fds )
+			return -1;
+		while ( auto* entry = ::readdir( fds ) ) {
+			if ( entry->d_name[0] == '.' )
+				continue;
+			int fd = std::atoi( entry->d_name );
+			sockaddr_in peer{};
+			socklen_t length = sizeof( peer );
+			if ( ::getpeername( fd, reinterpret_cast<sockaddr*>( &peer ), &length ) == 0 &&
+				 peer.sin_family == AF_INET && ntohs( peer.sin_port ) == server.port() )
+				++count;
+		}
+		::closedir( fds );
+		return count;
+	};
+	int before = connectedSockets();
+	ASSERT_GE( before, 0 );
+	SFTPProviderConfig config;
+	config.idleTimeout = System::Milliseconds( 300 );
+	SFTPFixture fx( config );
+	REQUIRE_OK( waitFor( fx.vfs.stat( server.uri( "testhost" ) ) ) );
+	EXPECT_EQ( before + 1, connectedSockets() );
+	for ( int i = 0; i < 50 && connectedSockets() != before; ++i )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+	EXPECT_EQ( before, connectedSockets() );
+}
+#endif
+
+namespace {
+
+/** Never answers until released: a user who leaves a password dialog open. */
+class PendingAuthenticator : public SSHAuthenticationHandler {
+  public:
+	Task<std::optional<std::vector<std::string>>>
+	request( const SSHAuthenticationRequest& ) override {
+		std::lock_guard<std::mutex> lock( mMutex );
+		if ( mReleased )
+			return makeReadyTask( std::optional<std::vector<std::string>>() );
+		mPending.emplace_back();
+		return mPending.back().task();
+	}
+
+	size_t pending() {
+		std::lock_guard<std::mutex> lock( mMutex );
+		return mPending.size();
+	}
+
+	void release() {
+		std::vector<TaskSource<std::optional<std::vector<std::string>>>> pending;
+		{
+			std::lock_guard<std::mutex> lock( mMutex );
+			mReleased = true;
+			pending.swap( mPending );
+		}
+		// Declined: later prompts (other methods, attempts) are declined right away.
+		for ( auto& source : pending )
+			source.resolve( std::nullopt );
+	}
+
+  private:
+	std::mutex mMutex;
+	std::vector<TaskSource<std::optional<std::vector<std::string>>>> mPending;
+	bool mReleased{ false };
+};
+
+} // namespace
+
+UTEST( SFTP, pendingPromptsDoNotBlockOtherConnections ) {
+	REQUIRE_SSHD();
+	auto prompts = std::make_shared<PendingAuthenticator>();
+	SFTPProviderConfig config;
+	config.authenticationHandler = prompts;
+	SFTPFixture fx( config );
+	// Two connections wait for the user (as many as connection helper threads).
+	auto pw = fx.vfs.stat( server.uri( "pw" ) );
+	auto secret = fx.vfs.stat( server.uri( "secret" ) );
+	for ( int i = 0; i < 100 && prompts->pending() < 2; ++i )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+	EXPECT_EQ( 2u, prompts->pending() );
+	auto other = fx.vfs.stat( server.uri( "testhost" ) );
+	ASSERT_EQ( TaskState::Ready, other.waitFor( std::chrono::seconds( 10 ) ) );
+	EXPECT_TRUE( std::move( other ).takeValue().hasValue() );
+	prompts->release();
+	EXPECT_EQ( TaskState::Ready, pw.waitFor( std::chrono::seconds( 10 ) ) );
+	EXPECT_EQ( TaskState::Ready, secret.waitFor( std::chrono::seconds( 10 ) ) );
+}
+
+UTEST( SFTP, disconnectCompletesOperationsWaitingForAPrompt ) {
+	REQUIRE_SSHD();
+	auto auth = std::make_shared<PendingAuthenticator>();
+	SFTPProviderConfig config;
+	config.authenticationHandler = auth;
+	SFTPFixture fx( config );
+	auto pending = fx.vfs.stat( server.uri( "pw" ) );
+	for ( int i = 0; i < 200 && auth->pending() == 0; ++i )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+	EXPECT_GT( auth->pending(), 0u );
+	fx.sftp->disconnectAll();
+	auto state = pending.waitFor( std::chrono::seconds( 2 ) );
+	auth->release();
+	ASSERT_EQ( TaskState::Ready, state );
+	EXPECT_EQ( VFSErrorCode::ConnectionLost, codeOf( std::move( pending ).takeValue() ) );
+}
+
+namespace {
+
+/** An ssh-agent that lists one key and answers signing requests only once released (a hardware
+ * key waiting for a touch). */
+class StalledAgent {
+  public:
+	StalledAgent( const std::string& path, std::string keyBlob ) : mKey( std::move( keyBlob ) ) {
+		::unlink( path.c_str() );
+		mListener = ::socket( AF_UNIX, SOCK_STREAM, 0 );
+		sockaddr_un address{};
+		address.sun_family = AF_UNIX;
+		std::strncpy( address.sun_path, path.c_str(), sizeof( address.sun_path ) - 1 );
+		::bind( mListener, reinterpret_cast<sockaddr*>( &address ), sizeof( address ) );
+		::listen( mListener, 4 );
+		mThread = std::thread( [this] { serve(); } );
+	}
+
+	~StalledAgent() {
+		release();
+		::shutdown( mListener, SHUT_RDWR );
+		::close( mListener );
+		{
+			std::lock_guard<std::mutex> lock( mMutex );
+			if ( mClient >= 0 )
+				::shutdown( mClient, SHUT_RDWR );
+		}
+		mThread.join();
+	}
+
+	bool signRequested() {
+		std::lock_guard<std::mutex> lock( mMutex );
+		return mSignRequested;
+	}
+
+	void release() {
+		std::lock_guard<std::mutex> lock( mMutex );
+		mReleased = true;
+		mChanged.notify_all();
+	}
+
+  private:
+	static void putU32( std::string& out, Uint32 value ) {
+		for ( int shift = 24; shift >= 0; shift -= 8 )
+			out += static_cast<char>( ( value >> shift ) & 0xFF );
+	}
+
+	static bool readAll( int fd, char* data, size_t size ) {
+		while ( size > 0 ) {
+			ssize_t rc = ::recv( fd, data, size, 0 );
+			if ( rc <= 0 )
+				return false;
+			data += rc;
+			size -= static_cast<size_t>( rc );
+		}
+		return true;
+	}
+
+	void serve() {
+		while ( true ) {
+			int client = ::accept( mListener, nullptr, nullptr );
+			if ( client < 0 )
+				return;
+#ifdef SO_NOSIGPIPE
+			int noSigPipe = 1;
+			::setsockopt( client, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, sizeof( noSigPipe ) );
+#endif
+			{
+				std::lock_guard<std::mutex> lock( mMutex );
+				mClient = client;
+			}
+			while ( true ) {
+				unsigned char header[4];
+				if ( !readAll( client, reinterpret_cast<char*>( header ), 4 ) )
+					break;
+				Uint32 length =
+					( header[0] << 24 ) | ( header[1] << 16 ) | ( header[2] << 8 ) | header[3];
+				std::string request( length, '\0' );
+				if ( !readAll( client, request.data(), length ) )
+					break;
+				std::string body;
+				if ( request[0] == 11 ) { // Request identities.
+					body += static_cast<char>( 12 );
+					putU32( body, 1 );
+					putU32( body, static_cast<Uint32>( mKey.size() ) );
+					body += mKey;
+					putU32( body, 0 );
+				} else {
+					std::unique_lock<std::mutex> lock( mMutex );
+					mSignRequested = true;
+					mChanged.wait( lock, [this] { return mReleased; } );
+					body += static_cast<char>( 5 ); // Failure.
+				}
+				std::string reply;
+				putU32( reply, static_cast<Uint32>( body.size() ) );
+				reply += body;
+#ifdef MSG_NOSIGNAL
+				::send( client, reply.data(), reply.size(), MSG_NOSIGNAL );
+#else
+				::send( client, reply.data(), reply.size(), 0 );
+#endif
+			}
+			{
+				std::lock_guard<std::mutex> lock( mMutex );
+				mClient = -1;
+			}
+			::close( client );
+		}
+	}
+
+	std::string mKey;
+	int mListener{ -1 };
+	int mClient{ -1 };
+	std::mutex mMutex;
+	std::condition_variable mChanged;
+	bool mSignRequested{ false };
+	bool mReleased{ false };
+	std::thread mThread;
+};
+
+std::string publicKeyBlob( const std::string& pubFile ) {
+	std::string text, blob;
+	FileSystem::fileGet( pubFile, text );
+	auto fields = String::split( text, ' ' );
+	if ( fields.size() >= 2 )
+		System::Base64::decode( fields[1], blob );
+	return blob;
+}
+
+} // namespace
+
+UTEST( SFTP, agentAuthentication ) {
+	REQUIRE_SSHD();
+	std::string agentBinary = Sys::which( "ssh-agent" );
+	std::string addBinary = Sys::which( "ssh-add" );
+	if ( agentBinary.empty() || addBinary.empty() ) {
+		printf( "  ssh-agent not found, skipped\n" );
+		return;
+	}
+	std::string socket = server.dir() + "agent.sock";
+	FileSystem::fileRemove( socket );
+	Process agent;
+	ASSERT_TRUE( agent.create( agentBinary, { "-D", "-a", socket } ) );
+	for ( int i = 0; i < 100 && !FileSystem::fileExists( socket ); ++i )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+	Process add;
+	ASSERT_TRUE( add.create( "/bin/sh", { "-c", "SSH_AUTH_SOCK='" + socket + "' '" + addBinary +
+													"' '" + server.dir() + "id_ecdsa'" } ) );
+	int code = -1;
+	add.join( &code );
+	ASSERT_EQ( 0, code );
+	{
+		// The identity file does not exist: only the agent's key can authenticate.
+		SFTPFixture fx;
+		REQUIRE_OK( waitFor( fx.vfs.stat( server.uri( "agent" ) ) ) );
+	}
+	agent.kill();
+}
+
+UTEST( SFTP, stalledAgentDoesNotBlockOtherConnections ) {
+	REQUIRE_SSHD();
+	StalledAgent agent( server.dir() + "stalled-agent.sock",
+						publicKeyBlob( server.dir() + "id_ecdsa.pub" ) );
+	SFTPFixture fx;
+	auto stalled = fx.vfs.stat( server.uri( "stalledagent" ) );
+	for ( int i = 0; i < 200 && !agent.signRequested(); ++i )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 25 ) );
+	EXPECT_TRUE( agent.signRequested() );
+	// The agent waits for a touch: every other session keeps working meanwhile.
+	auto other = fx.vfs.stat( server.uri( "testhost" ) );
+	ASSERT_EQ( TaskState::Ready, other.waitFor( std::chrono::seconds( 10 ) ) );
+	EXPECT_TRUE( std::move( other ).takeValue().hasValue() );
+	EXPECT_TRUE( stalled.isPending() );
+	agent.release();
+	ASSERT_EQ( TaskState::Ready, stalled.waitFor( std::chrono::seconds( 10 ) ) );
+	EXPECT_EQ( VFSErrorCode::AuthenticationFailed, codeOf( std::move( stalled ).takeValue() ) );
+}
+
+UTEST( SFTP, cancelledAgentRequestDoesNotWaitForTheAgent ) {
+	REQUIRE_SSHD();
+	std::string path = server.dir() + "cancel-agent.sock";
+	StalledAgent agent( path, publicKeyBlob( server.dir() + "id_ecdsa.pub" ) );
+	sftp::SSHAgent client( path );
+	auto keys = client.listIdentities();
+	REQUIRE_OK( keys );
+	ASSERT_FALSE( keys.value().empty() );
+	TaskSource<VFSResult<std::string>> source;
+	auto task = source.task();
+	std::thread worker( [&client, &keys, source = std::move( source )]() mutable {
+		source.resolve( client.sign( keys.value()[0].blob, "payload", "ecdsa-sha2-nistp256" ) );
+	} );
+	for ( int i = 0; i < 200 && !agent.signRequested(); ++i )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+	EXPECT_TRUE( agent.signRequested() );
+	client.cancel();
+	auto state = task.waitFor( std::chrono::seconds( 2 ) );
+	// Also release on failure so a regression cannot hang the suite during thread destruction.
+	agent.release();
+	worker.join();
+	ASSERT_EQ( TaskState::Ready, state );
+	EXPECT_FALSE( std::move( task ).takeValue().hasValue() );
+}
+
 UTEST( SFTP, remoteWatchThroughAgent ) {
 	REQUIRE_SSHD();
 	std::string agent = Sys::getProcessPath();
@@ -650,6 +1063,46 @@ UTEST( SFTP, remoteWatchFallsBackToPolling ) {
 	FileSystem::fileWrite( local + "/polled.txt", std::string_view( "x" ) );
 	EXPECT_TRUE(
 		loop.runUntil( [&] { return events.has( WatchEventType::Added, "polled.txt" ); } ) );
+}
+
+UTEST( SFTP, closingTheLastWatchAllowsIdleCleanup ) {
+	REQUIRE_SSHD();
+	std::string agent = Sys::getProcessPath();
+	FileSystem::dirAddSlashAtEnd( agent );
+	agent += "../efsw-agent";
+	if ( !FileSystem::fileExists( agent ) ) {
+		printf( "  efsw-agent not built, remote watch test skipped\n" );
+		return;
+	}
+	SFTPProviderConfig config;
+	config.watchAgentCommand = agent + " --stdio";
+	config.idleTimeout = System::Milliseconds( 300 );
+	SFTPFixture fx( config );
+	auto opened = waitFor( fx.vfs.watch( server.uri( "testhost" ) ) );
+	REQUIRE_OK( opened );
+	WatchHandle watch( std::move( opened ).value() );
+	std::this_thread::sleep_for( std::chrono::milliseconds( 700 ) );
+	EXPECT_EQ( 1u, fx.sftp->connectionCount() );
+	watch.reset();
+	for ( int i = 0; i < 50 && fx.sftp->connectionCount() != 0; ++i )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+	EXPECT_EQ( 0u, fx.sftp->connectionCount() );
+}
+
+UTEST( SFTP, silentWatchAgentFallsBackToPolling ) {
+	REQUIRE_SSHD();
+	// The command runs but never answers the handshake: the watch (and the listing that waits
+	// for it) must not stay pending.
+	SFTPProviderConfig config;
+	config.watchAgentCommand = "sleep 60";
+	SFTPFixture fx( config );
+	std::string name = uniqueName( "silentwatch" );
+	FileSystem::makeDir( server.remoteRoot() + "/" + name );
+	auto task = fx.vfs.watch( server.uri( "testhost", name ) );
+	ASSERT_EQ( TaskState::Ready, task.waitFor( std::chrono::seconds( 20 ) ) );
+	auto opened = std::move( task ).takeValue();
+	REQUIRE_OK( opened );
+	EXPECT_EQ( WatchStatus::Polling, opened.value().status() );
 }
 
 #endif

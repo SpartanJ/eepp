@@ -331,19 +331,31 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 
 class LocalWatchRegistration : public WatchRegistration {
   public:
-	LocalWatchRegistration( std::shared_ptr<LocalWatchBackendImpl> impl, Uint64 token ) :
-		mImpl( std::move( impl ) ), mToken( token ) {}
+	LocalWatchRegistration( std::weak_ptr<System::ThreadPool> pool,
+							std::shared_ptr<LocalWatchBackendImpl> impl, Uint64 token ) :
+		mPool( std::move( pool ) ), mImpl( std::move( impl ) ), mToken( token ) {}
 
-	~LocalWatchRegistration() override { mImpl->remove( mToken ); }
+	~LocalWatchRegistration() override {
+		// Removing an efsw watch may wait on its thread: off the caller's (UI) thread. Events
+		// stop anyway, the handle closes its delivery right after this.
+		if ( auto pool = mPool.lock() ) {
+			pool->run( [impl = std::move( mImpl ), token = mToken] { impl->remove( token ); } );
+		} else {
+			mImpl->remove( mToken );
+		}
+	}
 
   private:
+	std::weak_ptr<System::ThreadPool> mPool;
 	std::shared_ptr<LocalWatchBackendImpl> mImpl;
 	Uint64 mToken;
 };
 
 } // namespace detail
 
-LocalWatchBackend::LocalWatchBackend( Time genericPollingInterval ) :
+LocalWatchBackend::LocalWatchBackend( std::shared_ptr<System::ThreadPool> pool,
+									  Time genericPollingInterval ) :
+	mPool( std::move( pool ) ),
 	mImpl( std::make_shared<detail::LocalWatchBackendImpl>( genericPollingInterval ) ) {}
 
 LocalWatchBackend::~LocalWatchBackend() = default;
@@ -355,20 +367,25 @@ LocalWatchBackend::watch( const URI& root, const WatchOptions& options,
 	auto path = LocalProvider::toNativePath( root );
 	if ( !path )
 		return readyError<Registration>( std::move( path ).error() );
-	if ( !System::FileSystem::isDirectory( path.value() ) ) {
-		return readyError<Registration>( System::FileSystem::fileExists( path.value() )
-											 ? VFSErrorCode::NotDirectory
-											 : VFSErrorCode::NotFound,
-										 root );
-	}
-	// efsw registration is synchronous and fast; once it returns the watch is active, so a
-	// listing started afterwards cannot miss changes.
-	auto added = mImpl->add( path.value(), options, sink );
-	if ( !added )
-		return readyError<Registration>( std::move( added ).error() );
-	sink->setStatus( added.value().second ? WatchStatus::Polling : WatchStatus::Active );
-	return readyValue<Registration>(
-		std::make_unique<detail::LocalWatchRegistration>( mImpl, added.value().first ) );
+	std::weak_ptr<System::ThreadPool> weakPool = mPool;
+	// Checking the directory and registering it touch the filesystem (a slow mount blocks): on
+	// the I/O pool. Once the task resolves the watch is active, so a listing started afterwards
+	// cannot miss changes.
+	return mPool->submit( [impl = mImpl, weakPool, root, options, sink = std::move( sink ),
+						   nativeRoot = std::move( path ).value()]() -> VFSResult<Registration> {
+		if ( !System::FileSystem::isDirectory( nativeRoot ) ) {
+			return Err( VFSError( System::FileSystem::fileExists( nativeRoot )
+									  ? VFSErrorCode::NotDirectory
+									  : VFSErrorCode::NotFound,
+								  root ) );
+		}
+		auto added = impl->add( nativeRoot, options, sink );
+		if ( !added )
+			return Err( std::move( added ).error() );
+		sink->setStatus( added.value().second ? WatchStatus::Polling : WatchStatus::Active );
+		return Ok( Registration(
+			std::make_unique<detail::LocalWatchRegistration>( weakPool, impl, added.value().first ) ) );
+	} );
 }
 
 }} // namespace EE::VFS

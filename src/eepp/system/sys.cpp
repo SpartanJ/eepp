@@ -807,6 +807,40 @@ std::string Sys::getConfigPath( const std::string& appname ) {
 	return std::string( path );
 }
 
+std::string Sys::getCachePath( const std::string& appname ) {
+	auto under = []( std::string base, const char* subdirectory, const std::string& appname ) {
+		FileSystem::dirAddSlashAtEnd( base );
+		return base + subdirectory + appname;
+	};
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::string local = getEnv( "LOCALAPPDATA" );
+	if ( !local.empty() )
+		return under( std::move( local ), "", appname );
+#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+	// On iOS HOME is the application's container.
+	std::string home = getEnv( "HOME" );
+	if ( !home.empty() )
+		return under( std::move( home ), "Library/Caches/", appname );
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	std::string home = getEnv( "HOME" );
+	if ( !home.empty() )
+		return under( std::move( home ), "config/cache/", appname );
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_SOLARIS
+	// The XDG Base Directory specification ignores empty and relative values.
+	std::string cache = getEnv( "XDG_CACHE_HOME" );
+	if ( !cache.empty() && cache[0] == '/' )
+		return under( std::move( cache ), "", appname );
+	std::string home = getEnv( "HOME" );
+	if ( !home.empty() )
+		return under( std::move( home ), ".cache/", appname );
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	return under( Window::Engine::instance()->getPlatformHelper()->getInternalStoragePath(),
+				  "cache/", appname );
+#endif
+	return getTempPath() + appname;
+}
+
 std::string Sys::getTempPath() {
 	char path[EE_MAX_CFG_PATH_LEN + 1];
 

@@ -417,13 +417,32 @@ int App::run( int argc, char* argv[] ) {
 	if ( !init( locations.Get(), split.Get() ) )
 		return EXIT_FAILURE;
 	int result = mApp->run();
+	// Producers stop before the executor they deliver to goes away: continuations hold it by
+	// reference. Running transfers are cancelled (destroying the VFS waits for them).
+	for ( auto& transfer : mTransfers )
+		transfer.second.transfer.cancel();
 	mTransfers.clear();
 	for ( auto& pane : mPanes )
 		if ( pane )
 			pane->tabList.clear();
-	mExecutor.reset();
-	mPool.reset();
+#ifdef EE_VFS_SFTP
+	if ( mSSHPrompts )
+		mSSHPrompts->shutdown();
+#endif
+	// The scene is still alive: quit() stops the application loop without destroying it.
+	// Detach before waiting for producers, so late completions cannot schedule more UI work.
+	mExecutor->shutdown();
+#ifdef EE_VFS_SFTP
+	if ( auto sftp = std::dynamic_pointer_cast<SFTPProvider>( mVFS->provider( "sftp" ) ) )
+		sftp->disconnectAll();
+#endif
 	VirtualFileSystem::destroyInstance();
+	// The UI thread pool belongs to the scene too: work finishing while it is joined finds the
+	// executor detached (its functions are dropped), not destroyed.
+	mSystemIcons.reset();
+	mPool.reset();
+	mApp.reset();
+	mExecutor.reset();
 	return result;
 }
 
@@ -625,8 +644,9 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	} );
 
 	mApp->getWindow()->setCloseRequestCallback( [this]( EE::Window::Window* ) {
-		saveState();
-		return true;
+		quit();
+		// Keep the scene and its dispatcher alive until producers and the executor stop.
+		return false;
 	} );
 
 	// The keyboard belongs to the files: a click on a pane's bars or empty areas focuses the
@@ -753,9 +773,8 @@ void App::saveState() {
 }
 
 void App::quit() {
-	// Closing the window programmatically skips the close request callback.
 	saveState();
-	mApp->getWindow()->close();
+	mApp->requestQuit();
 }
 
 void App::rememberViewState( FileTab* tab ) {

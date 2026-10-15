@@ -44,7 +44,9 @@ class SFTPProviderImpl : public std::enable_shared_from_this<SFTPProviderImpl> {
 
   private:
 	struct PoolEntry {
-		std::shared_ptr<SSHConnection> connection;
+		/** The I/O context owns live sessions; the pool must not retain their resources after
+		 * the context closes them. An expired entry with waiters is still being built. */
+		std::weak_ptr<SSHConnection> connection;
 		std::vector<TaskSource<VFSResult<std::shared_ptr<SSHConnection>>>> waiters;
 	};
 
@@ -52,9 +54,23 @@ class SFTPProviderImpl : public std::enable_shared_from_this<SFTPProviderImpl> {
 											  std::optional<std::string> user,
 											  std::optional<Uint16> port ) const;
 
-	VFSResult<std::shared_ptr<SSHConnection>> buildConnection( const SSHResolvedConfig& config );
+	struct Build;
 
-	void probeExtensions( const std::shared_ptr<SSHConnection>& connection );
+	/** Connects to config through its ProxyJump chain or ProxyCommand. The task resolves on the
+	 * I/O thread once the session is ready (authenticated, SFTP started). */
+	VFSTask<std::shared_ptr<SSHConnection>> buildConnection( SSHResolvedConfig config );
+
+	/** Sets up the next hop of build on a helper thread and continues when it is ready. */
+	void buildHop( std::shared_ptr<Build> build );
+
+	/** Creates the transport and connection of build's current hop (helper thread). */
+	VFSResult<std::shared_ptr<SSHConnection>> startHop( Build& build );
+
+	VFSTask<void> probeExtensions( const std::shared_ptr<SSHConnection>& connection );
+
+	/** Hands the connection (or the failure) to every request waiting on the pool key. */
+	void finishConnection( const std::string& key, const URI& uri, Uint64 generation,
+						   VFSResult<std::shared_ptr<SSHConnection>>&& result );
 
 	SSHConnectionHooks hooks() const;
 
@@ -69,6 +85,8 @@ class SFTPProviderImpl : public std::enable_shared_from_this<SFTPProviderImpl> {
 	std::shared_ptr<System::ThreadPool> mHelperPool;
 	mutable std::mutex mPoolMutex;
 	std::map<std::string, PoolEntry> mPool;
+	/** Invalidates connection builds still in flight when disconnectAll() is called. */
+	Uint64 mPoolGeneration{ 0 };
 };
 
 }}} // namespace EE::VFS::sftp

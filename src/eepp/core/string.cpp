@@ -2828,6 +2828,17 @@ bool String::iequals( std::string_view str1, std::string_view str2 ) {
 		   } );
 }
 
+int String::icompare( std::string_view str1, std::string_view str2 ) {
+	const size_t length = std::min( str1.size(), str2.size() );
+	for ( size_t i = 0; i < length; ++i ) {
+		const int c1 = std::tolower( static_cast<unsigned char>( str1[i] ) );
+		const int c2 = std::tolower( static_cast<unsigned char>( str2[i] ) );
+		if ( c1 != c2 )
+			return c1 < c2 ? -1 : 1;
+	}
+	return str1.size() < str2.size() ? -1 : ( str1.size() > str2.size() ? 1 : 0 );
+}
+
 bool String::iequals( String::View str1, String::View str2 ) {
 	return str1.length() == str2.length() &&
 		   std::equal( str1.begin(), str1.end(), str2.begin(),

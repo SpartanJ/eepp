@@ -2,6 +2,7 @@
 #include "apps.hpp"
 #include "mime.hpp"
 #include "trash.hpp"
+#include <eepp/system/sha1.hpp>
 
 namespace eefm {
 
@@ -86,6 +87,15 @@ void App::openRow( FileTab* tab, size_t row ) {
 
 namespace {
 
+/** Where remote files are downloaded to be opened: private to the user (the shared /tmp is
+ * not, on Linux and BSD). */
+std::string remoteCacheDirectory() {
+	std::string cache = Sys::getCachePath( "eefm" );
+	FileSystem::dirAddSlashAtEnd( cache );
+	cache += "remote/";
+	return cache;
+}
+
 /** Calls done( localPaths ) with local copies of uris (remote files are downloaded to a cache
  * folder first). */
 void withLocalFiles( VirtualFileSystem* vfs, Executor& executor, UISceneNode* ui,
@@ -100,10 +110,12 @@ void withLocalFiles( VirtualFileSystem* vfs, Executor& executor, UISceneNode* ui
 			continue;
 		}
 		++*remaining;
-		std::string cache = Sys::getTempPath();
-		FileSystem::dirAddSlashAtEnd( cache );
-		cache += "eefm/" + uris[i].getScheme() + "/" + uris[i].getHost() + "/";
-		FileSystem::makeDir( cache, true );
+		// One private folder per remote file (its complete URI: user, port and path included),
+		// so files with the same name never overwrite each other; the file keeps its name for
+		// the application that opens it.
+		std::string cache =
+			remoteCacheDirectory() + SHA1::fromString( uris[i].toString() ).toHexString() + "/";
+		FileSystem::makeDir( cache, true, 0700 );
 		std::string local = cache + uris[i].getLastPathSegment();
 		CopyOptions options;
 		options.overwrite = OverwritePolicy::Overwrite;

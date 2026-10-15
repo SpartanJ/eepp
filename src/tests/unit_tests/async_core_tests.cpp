@@ -308,6 +308,22 @@ UTEST( Cancellation, callbackMayDestroyItsOwnRegistration ) {
 	EXPECT_FALSE( static_cast<bool>( reg ) );
 }
 
+UTEST( Cancellation, callbackMayDestroyTheSource ) {
+	// The state must outlive the callbacks even when one of them destroys the source that is
+	// cancelling (use-after-free under AddressSanitizer otherwise).
+	auto source = std::make_unique<CancellationSource>();
+	CancellationRegistration reg;
+	int calls = 0;
+	reg = source->token().onCancel( [&] {
+		++calls;
+		reg.reset();
+		source.reset();
+	} );
+	source->cancel();
+	EXPECT_EQ( 1, calls );
+	EXPECT_TRUE( source == nullptr );
+}
+
 UTEST( Cancellation, sourceAndTokenLifetimeIndependence ) {
 	CancellationToken token;
 	{

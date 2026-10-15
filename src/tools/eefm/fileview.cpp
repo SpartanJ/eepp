@@ -243,6 +243,8 @@ class FileCell : public UITableCell {
 		Image preview = snapshot( dragLabel( getUISceneNode() ) );
 		if ( preview.getPixels() )
 			offer.preview.image = &preview;
+		// Drops on eefm's own window complete as eefm's drag (see endNativeDrag()).
+		offer.sourceHandlesDrops = true;
 		auto result = drag.startDrag( offer, []( DragResult result ) {
 			FileCell* cell = sNativeDragCell;
 			sNativeDragCell = nullptr;

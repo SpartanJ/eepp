@@ -229,11 +229,22 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 
 	void rebuildRows();
 
+	/** Updates mRows for an entry inserted at entryIndex (already in mEntries). */
+	void rowsInserted( size_t entryIndex, bool visible );
+
+	/** Updates mRows for the entry erased from entryIndex. */
+	void rowsErased( size_t entryIndex );
+
+	/** Sorts entries by the current order (stable). */
+	void sortEntries( std::vector<FileInfo>& entries ) const;
+
 	void setLoadState( LoadState state, std::optional<VFSError> error = std::nullopt );
 
 	void notifyChanged();
 
-	bool less( const FileInfo& a, const FileInfo& b ) const;
+	/** The sort order. aType and bType are the entries' types when already known. */
+	bool less( const FileInfo& a, const FileInfo& b, const std::string* aType = nullptr,
+			   const std::string* bType = nullptr ) const;
 
 	bool isVisible( const FileInfo& info ) const;
 
@@ -282,6 +293,8 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 	bool mCountRefreshPending{ false };
 	std::string mFilterPattern;
 	std::string mFilterGlob;
+	/** Case-insensitive plain text filter: the pattern's search table. */
+	String::BMH::OccTable mFilterOccurrences;
 	std::unique_ptr<System::RegEx> mFilterRegEx;
 	NameFilterMode mFilterMode{ NameFilterMode::Glob };
 	bool mFilterCaseSensitive{ false };

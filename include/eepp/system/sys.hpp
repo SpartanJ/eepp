@@ -42,6 +42,13 @@ class EE_API Sys {
 	/** @return A storage path for config files for every platform */
 	static std::string getConfigPath( const std::string& appname );
 
+	/** @return A storage path for cache files (data the application can recreate) for every
+	 * platform, private to the user: $XDG_CACHE_HOME/appname (~/.cache/appname) on Linux and BSD,
+	 * ~/Library/Caches/appname on macOS and iOS, %LOCALAPPDATA%\appname on Windows,
+	 * ~/config/cache/appname on Haiku. Elsewhere, or without those variables, a directory in the
+	 * temporary path. The directory is not created. */
+	static std::string getCachePath( const std::string& appname );
+
 	/** @return The path of the directory designated for temporary files. */
 	static std::string getTempPath();
 

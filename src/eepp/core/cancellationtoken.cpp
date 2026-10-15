@@ -107,7 +107,10 @@ CancellationSource::CancellationSource() :
 	mState( std::make_shared<detail::CancellationState>() ) {}
 
 bool CancellationSource::cancel() {
-	return mState && mState->cancel();
+	// A callback may destroy this source (and with it the last reference to the state) while the
+	// state is still running callbacks: keep the state alive until cancel() returns.
+	std::shared_ptr<detail::CancellationState> state( mState );
+	return state && state->cancel();
 }
 
 } // namespace EE

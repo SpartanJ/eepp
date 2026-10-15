@@ -58,10 +58,7 @@ class AgentClient : public SSHChannelPump, public std::enable_shared_from_this<A
 	/** Thread-safe: queue a frame for the agent. */
 	void send( std::vector<uint8_t> frame ) {
 		auto self = shared_from_this();
-		auto context = ioContext();
-		if ( !context )
-			return;
-		context->post( [self, frame = std::move( frame )]() mutable {
+		mConnection->ioContext()->post( [self, frame = std::move( frame )]() mutable {
 			if ( self->mState.load() == State::Dead )
 				return;
 			self->mOut.insert( self->mOut.end(), frame.begin(), frame.end() );
@@ -72,9 +69,14 @@ class AgentClient : public SSHChannelPump, public std::enable_shared_from_this<A
 
 	void connectionLost( const VFSError& error ) override { die( error.message ); }
 
-  private:
-	std::shared_ptr<SSHIOContext> ioContext() const;
+	/** Thread-safe: gives up on the agent (as if its channel closed). */
+	void stop( std::string reason ) {
+		auto self = shared_from_this();
+		mConnection->ioContext()->post(
+			[self, reason = std::move( reason )] { self->die( reason ); } );
+	}
 
+  private:
 	void die( const std::string& reason );
 
 	void handle( const agent::Frame& frame );
@@ -148,6 +150,10 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 
 	static constexpr Uint32 MaxReconnectDelaySeconds = 30;
 
+	/** How long an agent may take to confirm a watch (its handshake included) before the watch
+	 * falls back to polling: the directory listing waits for the watch. */
+	static constexpr auto EstablishTimeout = std::chrono::seconds( 5 );
+
 	RemoteWatchBackendImpl( std::shared_ptr<SFTPProviderImpl> provider, VirtualFileSystem& vfs ) :
 		mProvider( provider ),
 		mPolling( std::make_shared<PollingWatchBackend>( vfs ) ),
@@ -157,11 +163,17 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 
 	void shutdown() {
 		std::map<Uint32, std::shared_ptr<RemoteWatch>> watches;
+		std::map<std::string, AgentEntry> agents;
 		{
 			std::lock_guard<std::mutex> lock( mMutex );
 			watches.swap( mWatches );
-			mAgents.clear();
+			agents.swap( mAgents );
+			for ( auto& watch : watches )
+				watch.second->mode = RemoteWatch::Mode::Closed;
 		}
+		for ( auto& entry : agents )
+			if ( entry.second.agent )
+				entry.second.agent->stop( "Watch backend closed" );
 		for ( auto& watch : watches )
 			watch.second->polling.reset();
 	}
@@ -210,6 +222,7 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 			w.u32( id );
 			watch->agent->send( w.frame( agent::MessageUnwatch ) );
 		}
+		stopUnusedAgent( watch->agent );
 		watch->polling.reset();
 	}
 
@@ -350,11 +363,6 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 			sink->rescanRequired();
 	}
 
-	std::shared_ptr<SSHIOContext> ioContext() const {
-		auto provider = mProvider.lock();
-		return provider ? provider->ioContext() : nullptr;
-	}
-
   private:
 	struct AgentEntry {
 		std::shared_ptr<AgentClient> agent;
@@ -362,6 +370,22 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 		std::string lastError;
 		Uint32 failures{ 0 };
 	};
+
+	void stopUnusedAgent( const std::shared_ptr<AgentClient>& client ) {
+		if ( !client )
+			return;
+		{
+			std::lock_guard<std::mutex> lock( mMutex );
+			for ( const auto& watch : mWatches )
+				if ( watch.second->agent == client )
+					return;
+			auto it = mAgents.find( client->key() );
+			if ( it != mAgents.end() && it->second.agent == client )
+				it->second.agent.reset();
+		}
+		// An unused pump otherwise counts as an active user forever, preventing idle cleanup.
+		client->stop( "No watches remain" );
+	}
 
 	void completeEstablishment( RemoteWatch& watch, VFSResult<void>&& result ) {
 		std::optional<TaskSource<VFSResult<void>>> source;
@@ -401,13 +425,15 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 								   "efsw-agent is not available and polling is disabled" ) ) );
 			return;
 		}
+		std::shared_ptr<AgentClient> previousAgent;
 		{
 			std::lock_guard<std::mutex> lock( mMutex );
 			if ( watch->mode == RemoteWatch::Mode::Closed )
 				return;
 			watch->mode = RemoteWatch::Mode::Polling;
-			watch->agent.reset();
+			previousAgent = std::move( watch->agent );
 		}
+		stopUnusedAgent( previousAgent );
 		std::weak_ptr<RemoteWatchBackendImpl> weak = weak_from_this();
 		std::weak_ptr<RemoteWatch> weakWatch = watch;
 		mPolling->watch( watch->root, watch->options, sink )
@@ -539,6 +565,35 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 		else if ( ready )
 			sendWatch( client, *watch );
 		// Otherwise agentReady() sends it once the handshake completes.
+		scheduleEstablishTimeout( watch, client );
+	}
+
+	/** An agent that never answers (stalled, or a command that is not the agent) must not keep
+	 * the watch, and the listing waiting on it, pending forever. */
+	void scheduleEstablishTimeout( const std::shared_ptr<RemoteWatch>& watch,
+								   const std::shared_ptr<AgentClient>& client ) {
+		std::weak_ptr<RemoteWatchBackendImpl> weak = weak_from_this();
+		std::weak_ptr<RemoteWatch> weakWatch = watch;
+		std::weak_ptr<AgentClient> weakClient = client;
+		mRunner.runAfter( EstablishTimeout, [weak, weakWatch, weakClient] {
+			auto self = weak.lock();
+			auto watch = weakWatch.lock();
+			auto client = weakClient.lock();
+			if ( !self || !watch || !client )
+				return;
+			{
+				std::lock_guard<std::mutex> lock( self->mMutex );
+				if ( watch->mode == RemoteWatch::Mode::Closed ||
+					 watch->mode == RemoteWatch::Mode::Agent || watch->agent != client )
+					return;
+			}
+			if ( client->state() != AgentClient::State::Ready ) {
+				// No handshake: the agent is marked unavailable and its watches poll.
+				client->stop( "efsw-agent did not answer" );
+				return;
+			}
+			self->usePolling( watch );
+		} );
 	}
 
 	std::weak_ptr<SFTPProviderImpl> mProvider;
@@ -554,11 +609,6 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 // ---------------------------------------------------------------------------------------------
 // Agent client
 // ---------------------------------------------------------------------------------------------
-
-std::shared_ptr<SSHIOContext> AgentClient::ioContext() const {
-	auto backend = mBackend.lock();
-	return backend ? backend->ioContext() : nullptr;
-}
 
 void AgentClient::start( const std::string& command ) {
 	auto self = shared_from_this();
