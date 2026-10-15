@@ -6,6 +6,11 @@
 #include <eterm/ui/uiterminal.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+// Lean: the RPC headers declare a UUID that clashes with EE::System::UUID, which eterm's
+// headers bring into the global namespace.
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 // windows.h first: tlhelp32.h depends on it.
 #include <windows.h>
 
