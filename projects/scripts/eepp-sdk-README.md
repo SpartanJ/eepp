@@ -57,19 +57,19 @@ examples (available in the repository under `src/examples/`) to learn the API.
 ## Native file dragging
 
 `include/eepp/window/draganddrop.hpp` provides outbound local-file dragging. Query
-`DragAndDrop::getCapabilities()` before enabling an external drag gesture. X11 and Windows sources
-are included by default. X11 is detected from the build headers and dynamically loaded only when
-using SDL's X11 driver; an unavailable library returns `Unsupported`. Native Wayland, macOS, and
-Haiku sources remain gated. The existing SDL file
-and text drop callbacks continue to work.
+`DragAndDrop::getCapabilities()` before enabling an external drag gesture. Windows, macOS, X11 and
+Wayland sources are supported with SDL2 and SDL3. X11 and Wayland support requires their development
+headers when building eepp; their client libraries load dynamically at runtime. An unavailable
+backend returns `Unsupported`. The existing SDL file and text drop callbacks continue to work.
 
-Started drags show a shared SDL bitmap preview and action cursor. Supply an RGB/RGBA widget snapshot
+Started drags show a bitmap preview and action feedback. Supply an RGB/RGBA widget snapshot
 through `DragOffer::preview`, or use the generated file/count icon. Snapshot pixels are copied during
 `startDrag()`; the session never retains a widget or the supplied Image.
 
-Unix consumers do not need to link `X11`; Windows consumers need the normal
-eepp OLE dependencies (`ole32`, `uuid`). See `docs/articles/native_drag_and_drop.md` for source
-lifetime rules, examples, validation, and remaining platform gates.
+Unix consumers do not need to link `X11` or `wayland-client`. Static Windows builds need `shell32`
+alongside eepp's OLE dependencies (`ole32`, `uuid`); the Premake scripts include them automatically.
+See `docs/articles/native_drag_and_drop.md` for usage examples, source lifetime rules and supported
+behavior.
 
 ## Building an SDK snapshot
 

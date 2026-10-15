@@ -242,8 +242,9 @@ def run(binary, log_dir, scale):
         pointer("mouseup", 1)
         print("Wayland process exit with a live backend passed")
         protocol = (log_dir / "source-protocol.log").read_text(errors="replace")
-        created = len(re.findall(r"\.data_offer\(new id wl_data_offer#", protocol))
-        destroyed = len(re.findall(r"-> wl_data_offer#\d+\.destroy\(\)", protocol))
+        # Older libwayland logs use '@' for object IDs; newer versions use '#'.
+        created = len(re.findall(r"\.data_offer\(new id wl_data_offer[@#]", protocol))
+        destroyed = len(re.findall(r"-> wl_data_offer[@#]\d+\.destroy\(\)", protocol))
         assert created > 0 and created == destroyed, (created, destroyed)
         print(f"Wayland offer proxies: {created} created, {destroyed} destroyed")
         print("Wayland drag checks passed; logs:", log_dir)
