@@ -42,8 +42,7 @@ class FileHandleImpl {
 /** @brief Open file with explicit-offset I/O.
  *
  * Offset-based operations avoid a shared mutable seek position, so independent reads can be
- * pipelined. read() returning 0 bytes for a non-empty buffer means end of file. FileCursor
- * provides sequential access on top of this interface.
+ * pipelined. read() returning 0 bytes for a non-empty buffer means end of file.
  */
 class FileHandle {
   public:
@@ -113,38 +112,6 @@ class FileHandle {
 
 	URI mUri;
 	std::shared_ptr<FileHandleImpl> mImpl;
-};
-
-/** @brief Sequential read/write position over a FileHandle. Not thread-safe; issue one operation
- * at a time and wait for it before the next. */
-class FileCursor {
-  public:
-	explicit FileCursor( FileHandle& handle, Uint64 position = 0 ) :
-		mHandle( &handle ), mPosition( position ) {}
-
-	VFSTask<size_t> read( std::span<Uint8> data, CancellationToken token = {} ) {
-		return advance( mHandle->read( mPosition, data, std::move( token ) ) );
-	}
-
-	VFSTask<size_t> write( std::span<const Uint8> data, CancellationToken token = {} ) {
-		return advance( mHandle->write( mPosition, data, std::move( token ) ) );
-	}
-
-	void seek( Uint64 position ) noexcept { mPosition = position; }
-
-	Uint64 position() const noexcept { return mPosition; }
-
-  private:
-	VFSTask<size_t> advance( VFSTask<size_t>&& task ) {
-		return std::move( task ).then( [this]( VFSResult<size_t>&& result ) {
-			if ( result )
-				mPosition += result.value();
-			return std::move( result );
-		} );
-	}
-
-	FileHandle* mHandle;
-	Uint64 mPosition;
 };
 
 }} // namespace EE::VFS

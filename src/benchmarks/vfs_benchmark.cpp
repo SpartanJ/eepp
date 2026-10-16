@@ -40,9 +40,10 @@ std::string benchDir( const std::string& name ) {
 }
 
 void populate( const std::string& dir, int count ) {
-	for ( int i = 0; i < count; ++i )
+	for ( int i = 0; i < count; ++i ) {
 		FileSystem::fileWrite( dir + "file-" + String::toString( i ) + ".txt",
 							   std::string_view( "x" ) );
+	}
 }
 
 /** Executor drained by the calling thread, standing in for a UI loop. */
@@ -84,9 +85,9 @@ UTEST( VFSBenchmark, taskAndContinuationOverhead ) {
 
 	clock.restart();
 	for ( int i = 0; i < Iterations; ++i ) {
-		TaskSource<int> source;
-		auto task = source.task().then( []( int v ) { return v * 2; } );
-		source.resolve( i );
+		TaskResolver<int> resolve;
+		auto task = Task<int>::create( resolve ).then( []( int v ) { return v * 2; } );
+		resolve( i );
 		sum += std::move( task ).takeValue();
 	}
 	printf( "  pending task resolve + then(): %8.1f ns/op\n", ms( clock ) * 1e6 / Iterations );
@@ -94,11 +95,11 @@ UTEST( VFSBenchmark, taskAndContinuationOverhead ) {
 	LoopExecutor loop;
 	clock.restart();
 	for ( int i = 0; i < Iterations; ++i ) {
-		auto task = makeReadyTask( i ).thenOn( loop, []( int v ) { return v; } );
+		auto task = makeReadyTask( i ).then( loop, []( int v ) { return v; } );
 		loop.drain();
 		sum += std::move( task ).takeValue();
 	}
-	printf( "  thenOn() executor hop:         %8.1f ns/op\n", ms( clock ) * 1e6 / Iterations );
+	printf( "  then( executor ) hop:         %8.1f ns/op\n", ms( clock ) * 1e6 / Iterations );
 
 	auto pool = ThreadPool::createUnique( 4 );
 	constexpr int Submits = 200000;

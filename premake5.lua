@@ -1829,7 +1829,7 @@ workspace "eepp"
 				"src/eepp/window/platform/macos/platformhelper.mm",
 				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm",
 				"src/eepp/system/fileassociation_macos.mm",
-				"src/eepp/ui/icons/systemiconsmacos.mm",
+				"src/eepp/ui/icons/macosiconimage.mm",
 				"src/eepp/window/draganddrop/cocoadraganddrop.mm" }
 		buildoptions { "-x objective-c++" }
 		build_base_cpp_configuration( "eepp-macos-helper" )
@@ -2285,7 +2285,7 @@ workspace "eepp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
 		defines { "EE_UNIT_TESTS" }
 		links { "eterm-static", "languages-syntax-highlighting-static" }
-		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
+		incdirs { "src/modules/eterm/include/", "src/thirdparty", "src/modules/vfs/src/" }
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp",
 				"src/tools/eproc/process_info.cpp",

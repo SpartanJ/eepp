@@ -1,7 +1,7 @@
 #ifndef EE_VFS_SFTP_SFTPPROVIDERIMPL_HPP
 #define EE_VFS_SFTP_SFTPPROVIDERIMPL_HPP
 
-#include "sshsession.hpp"
+#include "sshconnection.hpp"
 #include <eepp/system/threadpool.hpp>
 #include <eepp/vfs/sftp/sftpprovider.hpp>
 #include <map>
@@ -14,6 +14,17 @@ namespace EE { namespace VFS { namespace sftp {
  * Also used by the remote watch backend to reuse pooled connections. */
 class SFTPProviderImpl : public std::enable_shared_from_this<SFTPProviderImpl> {
   public:
+	/** Marks the current thread as a helper pool thread while a helper job runs, so the provider
+	 * knows when its last reference is released on one of its own threads. */
+	class HelperThreadScope {
+	  public:
+		HelperThreadScope();
+
+		~HelperThreadScope();
+
+		static bool active();
+	};
+
 	explicit SFTPProviderImpl( SFTPProviderConfig config );
 
 	~SFTPProviderImpl();
@@ -39,7 +50,9 @@ class SFTPProviderImpl : public std::enable_shared_from_this<SFTPProviderImpl> {
 
 	const SFTPProviderConfig& config() const { return mConfig; }
 
-	/** Pool key: the URI authority exactly as written (user@host:port). */
+	/** Pool key: the URI authority exactly as written (user@host:port). Connections are found
+	 * by this key first, then by their effective configuration (SSHResolvedConfig::
+	 * connectionKey()). */
 	static std::string authorityKey( const URI& uri );
 
   private:
@@ -47,7 +60,7 @@ class SFTPProviderImpl : public std::enable_shared_from_this<SFTPProviderImpl> {
 		/** The I/O context owns live sessions; the pool must not retain their resources after
 		 * the context closes them. An expired entry with waiters is still being built. */
 		std::weak_ptr<SSHConnection> connection;
-		std::vector<TaskSource<VFSResult<std::shared_ptr<SSHConnection>>>> waiters;
+		std::vector<TaskResolver<VFSResult<std::shared_ptr<SSHConnection>>>> waiters;
 	};
 
 	VFSResult<SSHResolvedConfig> resolveSync( const std::string& host,

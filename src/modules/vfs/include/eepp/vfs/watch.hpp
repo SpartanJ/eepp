@@ -67,10 +67,10 @@ struct WatchOptions {
 	bool allowOutOfScopeLinks{ false };
 	/** Report moves inside the watched tree as single Moved events where the backend can. */
 	bool reportCrossDirectoryMoves{ true };
-	/** Interval used when the watch falls back to polling. */
-	Time pollingInterval{ System::Seconds( 2 ) };
 	/** Allow falling back to polling when no event-driven backend is available. */
 	bool allowPolling{ true };
+	/** Interval used when the watch falls back to polling. */
+	Time pollingInterval{ System::Seconds( 2 ) };
 };
 
 using WatchCallback = SmallUniqueFunction<void( WatchEventBatch&& ), 48>;

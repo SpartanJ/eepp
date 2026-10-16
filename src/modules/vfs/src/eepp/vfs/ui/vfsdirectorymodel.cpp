@@ -162,13 +162,12 @@ void VFSDirectoryModel::startSession() {
 	// The watch is established before listing so no change between the two can be missed.
 	std::weak_ptr<VFSDirectoryModel> weak = weak_from_this();
 	mConfig.vfs->watch( mURI, WatchOptions{} )
-		.thenOn( *mExecutor,
-				 [gate = mExecutor, weak, generation]( VFSResult<WatchHandle>&& watch ) {
-					 auto self = weak.lock();
-					 if ( !self || self->mGeneration != generation )
-						 return;
-					 self->onWatchReady( generation, std::move( watch ) );
-				 } );
+		.then( *mExecutor, [gate = mExecutor, weak, generation]( VFSResult<WatchHandle>&& watch ) {
+			auto self = weak.lock();
+			if ( !self || self->mGeneration != generation )
+				return;
+			self->onWatchReady( generation, std::move( watch ) );
+		} );
 }
 
 void VFSDirectoryModel::onWatchReady( Uint64 generation, VFSResult<WatchHandle>&& watch ) {
@@ -192,43 +191,43 @@ void VFSDirectoryModel::startListing( Uint64 generation ) {
 	options.metadata = mConfig.metadata;
 	std::weak_ptr<VFSDirectoryModel> weak = weak_from_this();
 	mConfig.vfs->openDirectory( mURI, options, mSession->cancel.token() )
-		.thenOn( *mExecutor,
-				 [gate = mExecutor, weak, generation]( VFSResult<DirectoryHandle>&& handle ) {
-					 auto self = weak.lock();
-					 if ( !self || self->mGeneration != generation )
-						 return;
-					 if ( !handle ) {
-						 self->mSession->listing = false;
-						 self->setLoadState( LoadState::Error, std::move( handle ).error() );
-						 return;
-					 }
-					 self->mSession->handle = std::move( handle ).value();
-					 self->readNext( generation, true );
-				 } );
+		.then( *mExecutor,
+			   [gate = mExecutor, weak, generation]( VFSResult<DirectoryHandle>&& handle ) {
+				   auto self = weak.lock();
+				   if ( !self || self->mGeneration != generation )
+					   return;
+				   if ( !handle ) {
+					   self->mSession->listing = false;
+					   self->setLoadState( LoadState::Error, std::move( handle ).error() );
+					   return;
+				   }
+				   self->mSession->handle = std::move( handle ).value();
+				   self->readNext( generation, true );
+			   } );
 }
 
 void VFSDirectoryModel::readNext( Uint64 generation, bool first ) {
 	std::weak_ptr<VFSDirectoryModel> weak = weak_from_this();
 	size_t count = first ? mConfig.firstBatchSize : mConfig.batchSize;
 	mSession->handle.read( count, mSession->cancel.token() )
-		.thenOn( *mExecutor,
-				 [gate = mExecutor, weak, generation]( VFSResult<DirectoryBatch>&& batch ) {
-					 auto self = weak.lock();
-					 if ( !self || self->mGeneration != generation )
-						 return;
-					 if ( !batch ) {
-						 self->mSession->handle.close();
-						 self->mSession->listing = false;
-						 self->setLoadState( LoadState::Error, std::move( batch ).error() );
-						 return;
-					 }
-					 bool done = batch.value().endOfDirectory;
-					 self->mergeBatch( std::move( batch.value().entries ) );
-					 if ( done )
-						 self->finishListing( generation );
-					 else
-						 self->readNext( generation, false );
-				 } );
+		.then( *mExecutor,
+			   [gate = mExecutor, weak, generation]( VFSResult<DirectoryBatch>&& batch ) {
+				   auto self = weak.lock();
+				   if ( !self || self->mGeneration != generation )
+					   return;
+				   if ( !batch ) {
+					   self->mSession->handle.close();
+					   self->mSession->listing = false;
+					   self->setLoadState( LoadState::Error, std::move( batch ).error() );
+					   return;
+				   }
+				   bool done = batch.value().endOfDirectory;
+				   self->mergeBatch( std::move( batch.value().entries ) );
+				   if ( done )
+					   self->finishListing( generation );
+				   else
+					   self->readNext( generation, false );
+			   } );
 }
 
 void VFSDirectoryModel::finishListing( Uint64 ) {
@@ -313,17 +312,17 @@ void VFSDirectoryModel::statAndUpsert( const std::string& name ) {
 	// Describe links as links (like the listing does), with their target type resolved.
 	mConfig.vfs
 		->stat( mURI.withAppendedSegment( name ), StatOptions{ false }, mSession->cancel.token() )
-		.thenOn( *mExecutor,
-				 [gate = mExecutor, weak, generation, name]( VFSResult<FileInfo>&& info ) {
-					 auto self = weak.lock();
-					 if ( !self || self->mGeneration != generation )
-						 return;
-					 if ( info ) {
-						 self->upsert( std::move( info ).value() );
-					 } else if ( info.error().is( VFSErrorCode::NotFound ) ) {
-						 self->removeByName( name );
-					 }
-				 } );
+		.then( *mExecutor,
+			   [gate = mExecutor, weak, generation, name]( VFSResult<FileInfo>&& info ) {
+				   auto self = weak.lock();
+				   if ( !self || self->mGeneration != generation )
+					   return;
+				   if ( info ) {
+					   self->upsert( std::move( info ).value() );
+				   } else if ( info.error().is( VFSErrorCode::NotFound ) ) {
+					   self->removeByName( name );
+				   }
+			   } );
 }
 
 void VFSDirectoryModel::rescan() {
@@ -340,19 +339,19 @@ void VFSDirectoryModel::rescan() {
 	options.metadata = mConfig.metadata;
 	std::weak_ptr<VFSDirectoryModel> weak = weak_from_this();
 	mConfig.vfs->listAll( mURI, options, mSession->cancel.token() )
-		.thenOn( *mExecutor, [gate = mExecutor, weak,
-							  generation]( VFSResult<std::vector<FileInfo>>&& entries ) {
-			auto self = weak.lock();
-			if ( !self || self->mGeneration != generation )
-				return;
-			if ( !entries ) {
-				self->mSession->listing = false;
-				self->setLoadState( LoadState::Error, std::move( entries ).error() );
-				return;
-			}
-			self->reconcile( std::move( entries ).value() );
-			self->finishListing( generation );
-		} );
+		.then( *mExecutor,
+			   [gate = mExecutor, weak, generation]( VFSResult<std::vector<FileInfo>>&& entries ) {
+				   auto self = weak.lock();
+				   if ( !self || self->mGeneration != generation )
+					   return;
+				   if ( !entries ) {
+					   self->mSession->listing = false;
+					   self->setLoadState( LoadState::Error, std::move( entries ).error() );
+					   return;
+				   }
+				   self->reconcile( std::move( entries ).value() );
+				   self->finishListing( generation );
+			   } );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -373,11 +372,12 @@ bool VFSDirectoryModel::less( const FileInfo& a, const FileInfo& b, const std::s
 	auto compareNumbers = []( auto x, auto y ) { return x < y ? -1 : ( y < x ? 1 : 0 ); };
 	switch ( mSortColumn ) {
 		case Size:
-			if ( aDir )
+			if ( aDir ) {
 				cmp = compareNumbers( itemCountOf( a ).value_or( 0 ),
 									  itemCountOf( b ).value_or( 0 ) );
-			else
+			} else {
 				cmp = compareNumbers( a.size().value_or( 0 ), b.size().value_or( 0 ) );
+			}
 			break;
 		case Type:
 			cmp = aType && bType ? aType->compare( *bType ) : typeOf( a ).compare( typeOf( b ) );
@@ -446,9 +446,10 @@ void VFSDirectoryModel::rowsErased( size_t entryIndex ) {
 void VFSDirectoryModel::rebuildRows() {
 	mRows.clear();
 	mRows.reserve( mEntries.size() );
-	for ( size_t i = 0; i < mEntries.size(); ++i )
+	for ( size_t i = 0; i < mEntries.size(); ++i ) {
 		if ( isVisible( mEntries[i] ) )
 			mRows.push_back( i );
+	}
 }
 
 size_t VFSDirectoryModel::visibleRowFor( size_t entryIndex ) const {
@@ -558,9 +559,10 @@ void VFSDirectoryModel::reconcile( std::vector<FileInfo>&& entries ) {
 	for ( size_t i = 0; i < entries.size(); ++i )
 		fresh.emplace( entries[i].name, i );
 	std::vector<std::string> gone;
-	for ( const auto& entry : mEntries )
+	for ( const auto& entry : mEntries ) {
 		if ( !fresh.count( entry.name ) )
 			gone.push_back( entry.name );
+	}
 	for ( const auto& name : gone )
 		removeByName( name );
 	for ( auto& entry : entries )
@@ -672,16 +674,17 @@ void VFSDirectoryModel::pumpItemCounts() {
 		CancellationToken token = mSession->cancel.token();
 		mConfig.vfs->openDirectory( mURI.withAppendedSegment( name ), options, token )
 			.then( [token]( VFSResult<DirectoryHandle>&& handle ) -> VFSTask<ItemCount> {
-				if ( !handle )
+				if ( !handle ) {
 					return makeReadyTask(
 						VFSResult<ItemCount>( Err( std::move( handle ).error() ) ) );
+				}
 				auto state = std::make_shared<CountState>();
 				state->handle = std::move( handle ).value();
 				state->token = token;
 				return readCount<ItemCount>( std::move( state ) );
 			} )
-			.thenOn( *mExecutor, [gate = mExecutor, weak, generation,
-								  name]( VFSResult<ItemCount>&& count ) mutable {
+			.then( *mExecutor, [gate = mExecutor, weak, generation,
+								name]( VFSResult<ItemCount>&& count ) mutable {
 				auto self = weak.lock();
 				if ( !self || self->mGeneration != generation )
 					return;
@@ -751,8 +754,8 @@ void VFSDirectoryModel::setNameFilter( std::string pattern, NameFilterMode mode,
 	mFilterOccurrences.clear();
 	if ( mode == NameFilterMode::PlainText && !caseSensitive && !mFilterPattern.empty() ) {
 		mFilterOccurrences = String::BMH::createOccTable(
-			reinterpret_cast<const unsigned char*>( mFilterPattern.data() ),
-			mFilterPattern.size(), true );
+			reinterpret_cast<const unsigned char*>( mFilterPattern.data() ), mFilterPattern.size(),
+			true );
 	}
 	// Unanchored like Dolphin ("md" matches "notes.md"). A doubled '*' would mean "**" (any
 	// path) to globMatch, so only missing wildcards are added.
@@ -780,16 +783,18 @@ size_t VFSDirectoryModel::filteredOutCount() const {
 	if ( mFilterPattern.empty() )
 		return 0;
 	size_t count = 0;
-	for ( const auto& info : mEntries )
+	for ( const auto& info : mEntries ) {
 		if ( ( mConfig.showHidden || !info.hidden ) && !matchesNameFilter( info.name ) )
 			++count;
+	}
 	return count;
 }
 
 std::optional<size_t> VFSDirectoryModel::rowOf( std::string_view name ) const {
-	for ( size_t row = 0; row < mRows.size(); ++row )
+	for ( size_t row = 0; row < mRows.size(); ++row ) {
 		if ( mEntries[mRows[row]].name == name )
 			return row;
+	}
 	return std::nullopt;
 }
 
@@ -850,9 +855,10 @@ std::string VFSDirectoryModel::permissionsToString( const FileInfo& info ) {
 	if ( !perms )
 		return out;
 	static constexpr char Letters[] = "rwxrwxrwx";
-	for ( int i = 0; i < 9; ++i )
+	for ( int i = 0; i < 9; ++i ) {
 		if ( *perms & ( 1u << ( 8 - i ) ) )
 			out[i + 1] = Letters[i];
+	}
 	if ( *perms & 04000 )
 		out[3] = ( *perms & 0100 ) ? 's' : 'S';
 	if ( *perms & 02000 )

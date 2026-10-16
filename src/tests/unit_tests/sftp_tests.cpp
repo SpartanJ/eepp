@@ -1,7 +1,8 @@
-#include "utest.hpp"
 #include <eepp/config.hpp>
 
 #if defined( EE_VFS_SFTP ) && EE_PLATFORM != EE_PLATFORM_WIN
+
+#include "utest.hpp"
 
 #include "../../modules/vfs/src/eepp/vfs/sftp/sshagent.hpp"
 #include "vfs_test_utils.hpp"
@@ -316,11 +317,12 @@ class ScriptedAuthenticator : public SSHAuthenticationHandler {
 			answer = std::vector<std::string>{ *mAnswers[mNext] };
 		++mNext;
 		// Answer asynchronously from another thread, like a UI would.
-		TaskSource<std::optional<std::vector<std::string>>> source;
-		auto task = source.task();
-		std::thread( [source = std::move( source ), answer]() mutable {
+		using Answers = std::optional<std::vector<std::string>>;
+		TaskResolver<Answers> resolve;
+		auto task = Task<Answers>::create( resolve );
+		std::thread( [resolve, answer] {
 			std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
-			source.resolve( answer );
+			resolve( answer );
 		} ).detach();
 		return task;
 	}
@@ -730,7 +732,7 @@ class PendingAuthenticator : public SSHAuthenticationHandler {
 		if ( mReleased )
 			return makeReadyTask( std::optional<std::vector<std::string>>() );
 		mPending.emplace_back();
-		return mPending.back().task();
+		return Task<std::optional<std::vector<std::string>>>::create( mPending.back() );
 	}
 
 	size_t pending() {
@@ -739,20 +741,20 @@ class PendingAuthenticator : public SSHAuthenticationHandler {
 	}
 
 	void release() {
-		std::vector<TaskSource<std::optional<std::vector<std::string>>>> pending;
+		std::vector<TaskResolver<std::optional<std::vector<std::string>>>> pending;
 		{
 			std::lock_guard<std::mutex> lock( mMutex );
 			mReleased = true;
 			pending.swap( mPending );
 		}
 		// Declined: later prompts (other methods, attempts) are declined right away.
-		for ( auto& source : pending )
-			source.resolve( std::nullopt );
+		for ( auto& resolve : pending )
+			resolve( std::nullopt );
 	}
 
   private:
 	std::mutex mMutex;
-	std::vector<TaskSource<std::optional<std::vector<std::string>>>> mPending;
+	std::vector<TaskResolver<std::optional<std::vector<std::string>>>> mPending;
 	bool mReleased{ false };
 };
 
@@ -980,10 +982,10 @@ UTEST( SFTP, cancelledAgentRequestDoesNotWaitForTheAgent ) {
 	auto keys = client.listIdentities();
 	REQUIRE_OK( keys );
 	ASSERT_FALSE( keys.value().empty() );
-	TaskSource<VFSResult<std::string>> source;
-	auto task = source.task();
-	std::thread worker( [&client, &keys, source = std::move( source )]() mutable {
-		source.resolve( client.sign( keys.value()[0].blob, "payload", "ecdsa-sha2-nistp256" ) );
+	TaskResolver<VFSResult<std::string>> resolve;
+	auto task = VFSTask<std::string>::create( resolve );
+	std::thread worker( [&client, &keys, resolve] {
+		resolve( client.sign( keys.value()[0].blob, "payload", "ecdsa-sha2-nistp256" ) );
 	} );
 	for ( int i = 0; i < 200 && !agent.signRequested(); ++i )
 		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );

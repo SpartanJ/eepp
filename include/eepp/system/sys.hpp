@@ -49,6 +49,17 @@ class EE_API Sys {
 	 * temporary path. The directory is not created. */
 	static std::string getCachePath( const std::string& appname );
 
+	/** @return The user's data directory (appname inside it, when given), without a trailing
+	 * slash: $XDG_DATA_HOME (~/.local/share) on Linux, BSD and Haiku, ~/Library/Application
+	 * Support on macOS and iOS, %APPDATA% on Windows. Elsewhere, the config path. The directory
+	 * is not created. */
+	static std::string getDataPath( const std::string& appname = "" );
+
+	/** @return The directories searched for shared data (icons, applications, MIME types), most
+	 * important first: getDataPath(), then $XDG_DATA_DIRS (/usr/local/share:/usr/share) on Linux,
+	 * BSD and Haiku. No trailing slashes. */
+	static std::vector<std::string> getDataSearchPaths();
+
 	/** @return The path of the directory designated for temporary files. */
 	static std::string getTempPath();
 

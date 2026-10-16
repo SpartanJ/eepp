@@ -24,8 +24,8 @@ using EE::System::ThreadPool;
  *
  * Threading:
  * - All methods are non-blocking and callable from any thread, including the UI thread.
- * - Tasks resolve on VFS or provider threads; use thenOn() with a UI executor before touching UI
- *   or model state.
+ * - Tasks resolve on VFS or provider threads; continue with then( uiExecutor, fn ) before
+ *   touching UI or model state.
  * - Multi-step operations run on a dedicated orchestration pool that waits on provider tasks.
  *   Provider work never runs on that pool, so waits there cannot starve provider I/O. Copies and
  *   moves run on a pool of their own: long transfers never delay the other operations.
@@ -145,8 +145,6 @@ class VirtualFileSystem {
 	VFSTask<WatchHandle> watch( const URI& root, const WatchOptions& options = {} );
 
   private:
-	friend class TransferEngine;
-
 	template <typename T> VFSTask<T> unsupportedScheme( const URI& uri ) const;
 
 	/** Runs a blocking job on the orchestration pool and returns its result as a task. */
@@ -161,11 +159,6 @@ class VirtualFileSystem {
 	std::shared_ptr<ThreadPool> mTransferPool;
 	std::unique_ptr<WatchManager> mWatchManager;
 };
-
-/** @return VirtualFileSystem::instance(). Enables the `VFS::instance()` spelling. */
-inline VirtualFileSystem& instance() {
-	return VirtualFileSystem::instance();
-}
 
 }} // namespace EE::VFS
 

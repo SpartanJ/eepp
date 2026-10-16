@@ -40,9 +40,10 @@ bool SSHPattern::match( std::string_view str, std::string_view pattern, bool cas
 	// Iterative wildcard matching with single-star backtracking (linear in practice).
 	size_t s = 0, p = 0, starP = std::string_view::npos, starS = 0;
 	auto equal = [caseInsensitive]( char a, char b ) {
-		if ( caseInsensitive )
+		if ( caseInsensitive ) {
 			return std::tolower( static_cast<unsigned char>( a ) ) ==
 				   std::tolower( static_cast<unsigned char>( b ) );
+		}
 		return a == b;
 	};
 	while ( s < str.size() ) {
@@ -344,12 +345,14 @@ constexpr std::pair<const char*, const char*> OptionAliases[] = {
 };
 
 const OptionDef* findOption( std::string_view keyword ) {
-	for ( const auto& alias : OptionAliases )
+	for ( const auto& alias : OptionAliases ) {
 		if ( keyword == alias.first )
 			keyword = alias.second;
-	for ( const auto& def : OptionTable )
+	}
+	for ( const auto& def : OptionTable ) {
 		if ( keyword == def.keyword )
 			return &def;
+	}
 	return nullptr;
 }
 
@@ -652,9 +655,10 @@ class SSHConfigEvaluator::Impl {
 		const OptionDef* def = findOption( line.keyword );
 		if ( !def ) {
 			std::string ignore = value( "ignoreunknown", "" );
-			if ( ignore.empty() || !listMatches( line.keyword, ignore ) )
+			if ( ignore.empty() || !listMatches( line.keyword, ignore ) ) {
 				mWarnings.push_back( path + " line " + String::toString( line.line ) +
 									 ": unsupported option \"" + line.keyword + "\"" );
+			}
 			return;
 		}
 		std::string keyword( def->keyword );
@@ -669,9 +673,10 @@ class SSHConfigEvaluator::Impl {
 				// Like OpenSSH's add_identity_file()/forward handling, exact duplicates are
 				// ignored; this also keeps the final re-parse pass from appending twice.
 				auto& list = mValues[keyword];
-				for ( const auto& arg : line.args )
+				for ( const auto& arg : line.args ) {
 					if ( std::find( list.begin(), list.end(), arg ) == list.end() )
 						list.push_back( arg );
+				}
 				break;
 			}
 			case Merge::Special:
@@ -1048,9 +1053,10 @@ class SSHConfigEvaluator::Impl {
 			 it != mValues.end() && toLower( it->second.front() ) != "none" )
 			it->second = expandList( "controlpath", { it->second.front() }, tokens );
 		if ( auto it = mValues.find( "globalknownhostsfile" ); it != mValues.end() ) {
-			if ( !( it->second.size() == 1 && toLower( it->second[0] ) == "none" ) )
+			if ( !( it->second.size() == 1 && toLower( it->second[0] ) == "none" ) ) {
 				config.globalKnownHostsFiles =
 					expandList( "globalknownhostsfile", it->second, tokens );
+			}
 		} else {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 			std::string programData =
@@ -1169,29 +1175,33 @@ SSHConfigEvaluator::applyAlgorithmSpec( const std::vector<std::string>& defaults
 	switch ( op ) {
 		case '+':
 			result = defaults;
-			for ( const auto& item : items )
+			for ( const auto& item : items ) {
 				if ( std::find( result.begin(), result.end(), item ) == result.end() )
 					result.push_back( item );
+			}
 			return result;
 		case '-':
-			for ( const auto& def : defaults )
+			for ( const auto& def : defaults ) {
 				if ( SSHPattern::matchList( def, list ) != SSHPattern::ListMatch::Match )
 					result.push_back( def );
+			}
 			return result;
 		case '^':
 			result = items;
-			for ( const auto& def : defaults )
+			for ( const auto& def : defaults ) {
 				if ( std::find( result.begin(), result.end(), def ) == result.end() )
 					result.push_back( def );
+			}
 			return result;
 		default:
 			// Plain lists may contain wildcards that select from the defaults.
 			for ( const auto& item : items ) {
 				if ( hasWildcard( item ) ) {
-					for ( const auto& def : defaults )
+					for ( const auto& def : defaults ) {
 						if ( SSHPattern::match( def, item ) &&
 							 std::find( result.begin(), result.end(), def ) == result.end() )
 							result.push_back( def );
+					}
 				} else if ( std::find( result.begin(), result.end(), item ) == result.end() ) {
 					result.push_back( item );
 				}

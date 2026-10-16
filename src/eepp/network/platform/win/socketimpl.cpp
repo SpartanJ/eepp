@@ -1,7 +1,10 @@
-#include <cstring>
-#include <eepp/network/platform/win/socketimpl.hpp>
+#include <eepp/config.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+
+#include <eepp/network/platform/win/socketimpl.hpp>
+
+#include <cstring>
 
 namespace EE { namespace Network { namespace Private {
 

@@ -20,11 +20,17 @@ namespace {
 struct LifetimeCounter {
 	static inline std::atomic<int> alive{ 0 };
 	int value{ 0 };
+
 	explicit LifetimeCounter( int v ) : value( v ) { ++alive; }
+
 	LifetimeCounter( const LifetimeCounter& o ) : value( o.value ) { ++alive; }
+
 	LifetimeCounter( LifetimeCounter&& o ) noexcept : value( o.value ) { ++alive; }
+
 	LifetimeCounter& operator=( const LifetimeCounter& ) = default;
+
 	LifetimeCounter& operator=( LifetimeCounter&& ) noexcept = default;
+
 	~LifetimeCounter() { --alive; }
 };
 
@@ -81,12 +87,10 @@ class DiagnosticCapture {
   public:
 	static inline std::atomic<int> abandoned{ 0 };
 	static inline std::atomic<int> resolvedTwice{ 0 };
-	static inline std::atomic<int> retrievedTwice{ 0 };
 
 	DiagnosticCapture() {
 		abandoned = 0;
 		resolvedTwice = 0;
-		retrievedTwice = 0;
 		mPrevious = TaskDiagnostics::setHandler( []( TaskDiagnostic d ) {
 			switch ( d ) {
 				case TaskDiagnostic::Abandoned:
@@ -94,9 +98,6 @@ class DiagnosticCapture {
 					break;
 				case TaskDiagnostic::ResolvedTwice:
 					++resolvedTwice;
-					break;
-				case TaskDiagnostic::TaskRetrievedTwice:
-					++retrievedTwice;
 					break;
 			}
 		} );
@@ -125,7 +126,6 @@ UTEST( Result, trivialValuesAndErrors ) {
 	EXPECT_FALSE( err.hasValue() );
 	EXPECT_TRUE( err.hasError() );
 	EXPECT_EQ( 7, err.error() );
-	EXPECT_EQ( 3, err.valueOr( 3 ) );
 
 	// Same value and error type must remain unambiguous through Ok/Err.
 	Result<std::string, std::string> s = Err( std::string( "bad" ) );
@@ -201,28 +201,6 @@ UTEST( Result, accessorValueCategories ) {
 	EXPECT_TRUE( true );
 }
 
-UTEST( Result, combinators ) {
-	Result<int, std::string> r = Ok( 2 );
-	auto mapped = std::move( r ).map( []( int v ) { return std::to_string( v * 2 ); } );
-	EXPECT_TRUE( mapped.value() == "4" );
-
-	Result<int, std::string> e = Err( std::string( "e" ) );
-	auto mappedErr = std::move( e ).mapError( []( std::string&& s ) { return (int)s.size(); } );
-	EXPECT_EQ( 1, mappedErr.error() );
-
-	Result<int, std::string> chain = Ok( 3 );
-	auto chained = std::move( chain ).andThen( []( int v ) -> Result<int, std::string> {
-		if ( v > 2 )
-			return Err( std::string( "too big" ) );
-		return Ok( v );
-	} );
-	EXPECT_TRUE( chained.error() == "too big" );
-
-	auto recovered = std::move( chained ).orElse(
-		[]( std::string&& ) -> Result<int, std::string> { return Ok( 0 ); } );
-	EXPECT_EQ( 0, recovered.value() );
-}
-
 // ---------------------------------------------------------------------------------------------
 // SmallUniqueFunction
 // ---------------------------------------------------------------------------------------------
@@ -255,7 +233,6 @@ UTEST( SmallUniqueFunction, moveOnlyCapturesAndHeapFallback ) {
 
 UTEST( Cancellation, defaultTokenNeverCancels ) {
 	CancellationToken token;
-	EXPECT_FALSE( token.canBeCancelled() );
 	EXPECT_FALSE( token.isCancellationRequested() );
 	bool called = false;
 	auto reg = token.onCancel( [&] { called = true; } );
@@ -330,7 +307,6 @@ UTEST( Cancellation, sourceAndTokenLifetimeIndependence ) {
 		CancellationSource source;
 		token = source.token();
 	}
-	EXPECT_TRUE( token.canBeCancelled() );
 	EXPECT_FALSE( token.isCancellationRequested() );
 	auto reg = token.onCancel( [] {} );
 	EXPECT_TRUE( static_cast<bool>( reg ) );
@@ -403,10 +379,10 @@ UTEST( Cancellation, unregisterRaceWaitsForRunningCallback ) {
 // ---------------------------------------------------------------------------------------------
 
 UTEST( Task, readyBeforeThen ) {
-	TaskSource<int> source;
-	auto task = source.task();
+	TaskResolver<int> resolve;
+	auto task = Task<int>::create( resolve );
 	EXPECT_EQ( TaskState::Pending, task.state() );
-	source.resolve( 21 );
+	resolve( 21 );
 	EXPECT_EQ( TaskState::Ready, task.state() );
 	int observed = 0;
 	auto next = std::move( task ).then( [&]( int v ) {
@@ -420,39 +396,40 @@ UTEST( Task, readyBeforeThen ) {
 }
 
 UTEST( Task, thenBeforeReady ) {
-	TaskSource<std::string> source;
+	TaskResolver<std::string> resolve;
 	std::string observed;
-	auto next = source.task().then( [&]( std::string&& v ) { observed = std::move( v ); } );
+	auto next = Task<std::string>::create( resolve ).then(
+		[&]( std::string&& v ) { observed = std::move( v ); } );
 	EXPECT_TRUE( observed.empty() );
 	EXPECT_TRUE( next.isPending() );
-	source.resolve( "hello" );
+	resolve( "hello" );
 	EXPECT_TRUE( observed == "hello" );
 	EXPECT_TRUE( next.isReady() );
 	static_assert( std::is_same_v<decltype( next ), Task<void>> );
 }
 
 UTEST( Task, moveOnlyValues ) {
-	TaskSource<std::unique_ptr<int>> source;
-	auto task = source.task().then( []( std::unique_ptr<int>&& p ) {
+	TaskResolver<std::unique_ptr<int>> resolve;
+	auto task = Task<std::unique_ptr<int>>::create( resolve ).then( []( std::unique_ptr<int>&& p ) {
 		*p += 1;
 		return std::move( p );
 	} );
-	source.resolve( std::make_unique<int>( 1 ) );
+	resolve( std::make_unique<int>( 1 ) );
 	auto value = std::move( task ).takeValue();
 	EXPECT_EQ( 2, *value );
 
 	static_assert( !std::is_copy_constructible_v<Task<int>> );
-	static_assert( !std::is_copy_constructible_v<TaskSource<int>> );
+	static_assert( std::is_copy_constructible_v<TaskResolver<int>> );
 }
 
 UTEST( Task, voidTasks ) {
-	TaskSource<void> source;
+	TaskResolver<void> resolve;
 	int steps = 0;
-	auto t = source.task().then( [&] { ++steps; } ).then( [&] {
+	auto t = Task<void>::create( resolve ).then( [&] { ++steps; } ).then( [&] {
 		++steps;
 		return 5;
 	} );
-	source.resolve();
+	resolve();
 	EXPECT_EQ( 2, steps );
 	EXPECT_EQ( 5, std::move( t ).takeValue() );
 	auto ready = makeReadyTask();
@@ -473,15 +450,17 @@ UTEST( Task, resultValues ) {
 }
 
 UTEST( Task, flattensNestedTasks ) {
-	TaskSource<int> outer;
-	TaskSource<std::string> inner;
-	auto flattened = outer.task().then( [&inner]( int v ) {
-		return inner.task().then( [v]( std::string&& s ) { return s + std::to_string( v ); } );
+	TaskResolver<int> resolveOuter;
+	TaskResolver<std::string> resolveInner;
+	Task<std::string> inner = Task<std::string>::create( resolveInner );
+	auto flattened = Task<int>::create( resolveOuter ).then( [&inner]( int v ) {
+		return std::move( inner ).then(
+			[v]( std::string&& s ) { return s + std::to_string( v ); } );
 	} );
 	static_assert( std::is_same_v<decltype( flattened ), Task<std::string>> );
-	outer.resolve( 7 );
+	resolveOuter( 7 );
 	EXPECT_TRUE( flattened.isPending() );
-	inner.resolve( "n" );
+	resolveInner( "n" );
 	EXPECT_TRUE( flattened.isReady() );
 	EXPECT_TRUE( std::move( flattened ).takeValue() == "n7" );
 
@@ -495,10 +474,10 @@ UTEST( Task, flattensNestedTasks ) {
 	EXPECT_TRUE( voidFlat.isReady() );
 }
 
-UTEST( Task, thenOnAlwaysDispatchesThroughExecutor ) {
+UTEST( Task, thenAlwaysDispatchesThroughExecutor ) {
 	QueueExecutor executor;
 	int observed = 0;
-	auto ready = makeReadyTask( 3 ).thenOn( executor, [&]( int v ) {
+	auto ready = makeReadyTask( 3 ).then( executor, [&]( int v ) {
 		observed = v;
 		return v + 1;
 	} );
@@ -510,10 +489,10 @@ UTEST( Task, thenOnAlwaysDispatchesThroughExecutor ) {
 	EXPECT_EQ( 3, observed );
 	EXPECT_EQ( 4, std::move( ready ).takeValue() );
 
-	TaskSource<int> source;
-	auto pending = source.task().thenOn( executor, [&]( int v ) { observed = v; } );
+	TaskResolver<int> resolve;
+	auto pending = Task<int>::create( resolve ).then( executor, [&]( int v ) { observed = v; } );
 	EXPECT_EQ( 0u, executor.pending() );
-	source.resolve( 9 );
+	resolve( 9 );
 	EXPECT_EQ( 3, observed );
 	EXPECT_EQ( 1u, executor.pending() );
 	executor.drain();
@@ -521,22 +500,70 @@ UTEST( Task, thenOnAlwaysDispatchesThroughExecutor ) {
 	EXPECT_TRUE( pending.isReady() );
 }
 
-UTEST( Task, onCompleteObservesTerminalState ) {
+UTEST( Task, onCompleteObservesBothOutcomes ) {
 	DiagnosticCapture capture;
-	TaskState seen = TaskState::Pending;
-	int value = 0;
-	makeReadyTask( 4 ).onComplete( [&]( Task<int>&& t ) {
-		seen = t.state();
-		value = std::move( t ).takeValue();
+	std::optional<int> seen;
+	bool called = false;
+	makeReadyTask( 4 ).onComplete( [&]( std::optional<int>&& value ) {
+		called = true;
+		seen = value;
 	} );
-	EXPECT_EQ( TaskState::Ready, seen );
-	EXPECT_EQ( 4, value );
+	EXPECT_TRUE( called );
+	EXPECT_TRUE( seen.has_value() && *seen == 4 );
 
+	called = false;
 	{
-		TaskSource<int> source;
-		source.task().onComplete( [&]( Task<int>&& t ) { seen = t.state(); } );
+		TaskResolver<int> resolve;
+		Task<int>::create( resolve ).onComplete( [&]( std::optional<int>&& value ) {
+			called = true;
+			seen = value;
+		} );
 	}
-	EXPECT_EQ( TaskState::Abandoned, seen );
+	EXPECT_TRUE( called );
+	EXPECT_FALSE( seen.has_value() );
+
+	bool completed = true;
+	{
+		TaskResolver<void> resolve;
+		Task<void>::create( resolve ).onComplete( [&]( bool ready ) { completed = ready; } );
+	}
+	EXPECT_FALSE( completed );
+}
+
+UTEST( Task, resolverCopiesShareOneTask ) {
+	DiagnosticCapture capture;
+	TaskResolver<int> resolve;
+	auto task = Task<int>::create( resolve );
+	{
+		TaskResolver<int> copy = resolve;
+		TaskResolver<int> assigned;
+		assigned = copy;
+	}
+	// Other copies are gone, but one is left: the task is still pending.
+	EXPECT_TRUE( task.isPending() );
+	EXPECT_EQ( 0, DiagnosticCapture::abandoned.load() );
+	TaskResolver<int> late = resolve;
+	EXPECT_TRUE( late( 3 ) );
+	EXPECT_FALSE( resolve( 4 ) );
+	EXPECT_EQ( 1, DiagnosticCapture::resolvedTwice.load() );
+	EXPECT_EQ( 3, std::move( task ).takeValue() );
+
+	// The last copy abandons the task.
+	Task<int> abandoned;
+	{
+		TaskResolver<int> first;
+		abandoned = Task<int>::create( first );
+		TaskResolver<int> second = first;
+		first = TaskResolver<int>();
+		EXPECT_TRUE( abandoned.isPending() );
+	}
+	EXPECT_EQ( TaskState::Abandoned, abandoned.state() );
+	EXPECT_EQ( 1, DiagnosticCapture::abandoned.load() );
+
+	// A resolver that create() never filled belongs to no task.
+	TaskResolver<int> empty;
+	EXPECT_FALSE( empty( 1 ) );
+	EXPECT_EQ( 2, DiagnosticCapture::resolvedTwice.load() );
 }
 
 UTEST( Task, abandonmentPropagatesThroughChains ) {
@@ -546,18 +573,19 @@ UTEST( Task, abandonmentPropagatesThroughChains ) {
 	Task<int> tail;
 	Task<int> flattenedTail;
 	{
-		TaskSource<int> source;
-		tail = source.task()
+		TaskResolver<int> resolve;
+		tail = Task<int>::create( resolve )
 				   .then( [&]( int v ) {
 					   called = true;
 					   return v;
 				   } )
-				   .thenOn( executor, [&]( int v ) {
+				   .then( executor, [&]( int v ) {
 					   called = true;
 					   return v;
 				   } );
-		TaskSource<int> inner;
-		flattenedTail = makeReadyTask( 1 ).then( [&]( int ) { return inner.task(); } );
+		TaskResolver<int> resolveInner;
+		Task<int> inner = Task<int>::create( resolveInner );
+		flattenedTail = makeReadyTask( 1 ).then( [&]( int ) { return std::move( inner ); } );
 		EXPECT_TRUE( flattenedTail.isPending() );
 	}
 	EXPECT_FALSE( called );
@@ -573,28 +601,27 @@ UTEST( Task, abandonmentPropagatesThroughChains ) {
 UTEST( Task, droppedExecutorWorkAbandonsChain ) {
 	DiagnosticCapture capture;
 	QueueExecutor executor;
-	auto t = makeReadyTask( 1 ).thenOn( executor, []( int v ) { return v; } );
+	auto t = makeReadyTask( 1 ).then( executor, []( int v ) { return v; } );
 	executor.clear();
 	EXPECT_EQ( TaskState::Abandoned, t.state() );
 	EXPECT_EQ( 1, DiagnosticCapture::abandoned.load() );
 }
 
-UTEST( Task, doubleResolveAndDoubleTaskAreRejected ) {
+UTEST( Task, doubleResolveIsRejected ) {
 	DiagnosticCapture capture;
-	TaskSource<int> source;
-	auto task = source.task();
-	auto second = source.task();
-	EXPECT_FALSE( second.valid() );
-	EXPECT_EQ( TaskState::Abandoned, second.state() );
-	EXPECT_EQ( 1, DiagnosticCapture::retrievedTwice.load() );
-	EXPECT_TRUE( source.resolve( 1 ) );
-	EXPECT_FALSE( source.resolve( 2 ) );
+	TaskResolver<int> resolve;
+	auto task = Task<int>::create( resolve );
+	EXPECT_TRUE( resolve( 1 ) );
+	EXPECT_FALSE( resolve( 2 ) );
 	EXPECT_EQ( 1, DiagnosticCapture::resolvedTwice.load() );
 	EXPECT_EQ( 1, std::move( task ).takeValue() );
 
-	// then() on an invalid task yields an abandoned task without calling the continuation.
+	// A continuation on an invalid task yields an abandoned task without being called.
+	Task<int> invalid;
+	EXPECT_FALSE( invalid.valid() );
+	EXPECT_EQ( TaskState::Abandoned, invalid.state() );
 	bool called = false;
-	auto fromInvalid = std::move( second ).then( [&]( int ) { called = true; } );
+	auto fromInvalid = std::move( invalid ).then( [&]( int ) { called = true; } );
 	EXPECT_FALSE( called );
 	EXPECT_EQ( TaskState::Abandoned, fromInvalid.state() );
 }
@@ -603,8 +630,8 @@ UTEST( Task, resolveVersusThenRaceRunsContinuationExactlyOnce ) {
 	constexpr int Iterations = 20000;
 	std::atomic<int> totalCalls{ 0 };
 	for ( int i = 0; i < Iterations; ++i ) {
-		TaskSource<int> source;
-		auto task = source.task();
+		TaskResolver<int> resolve;
+		auto task = Task<int>::create( resolve );
 		std::atomic<int> calls{ 0 };
 		std::atomic<int> ready{ 0 };
 		Task<void> chained;
@@ -612,7 +639,7 @@ UTEST( Task, resolveVersusThenRaceRunsContinuationExactlyOnce ) {
 			++ready;
 			while ( ready.load() < 2 ) {
 			}
-			source.resolve( i );
+			resolve( i );
 		} );
 		++ready;
 		while ( ready.load() < 2 ) {
@@ -630,12 +657,12 @@ UTEST( Task, resolveVersusThenRaceRunsContinuationExactlyOnce ) {
 }
 
 UTEST( Task, waitBlocksUntilResolvedFromAnotherThread ) {
-	TaskSource<int> source;
-	auto task = source.task();
+	TaskResolver<int> resolve;
+	auto task = Task<int>::create( resolve );
 	EXPECT_EQ( TaskState::Pending, task.waitFor( std::chrono::milliseconds( 1 ) ) );
 	std::thread producer( [&] {
 		std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
-		source.resolve( 11 );
+		resolve( 11 );
 	} );
 	EXPECT_EQ( TaskState::Ready, task.wait() );
 	producer.join();
@@ -645,12 +672,13 @@ UTEST( Task, waitBlocksUntilResolvedFromAnotherThread ) {
 }
 
 UTEST( Task, layout ) {
-	// Keep the shared state compact: one allocation holding mutex, continuation and value.
+	// Keep the shared state compact: one allocation holding mutex, continuation, waiter, value,
+	// the two counters and the state.
 	EXPECT_LE( sizeof( detail::TaskSharedState<int> ),
 			   sizeof( std::mutex ) + sizeof( detail::TaskSharedState<int>::Continuation ) +
-				   sizeof( void* ) + sizeof( std::optional<int> ) + 8 );
+				   sizeof( void* ) + sizeof( std::optional<int> ) + 16 );
 	EXPECT_EQ( sizeof( void* ), sizeof( Task<int> ) );
-	EXPECT_EQ( sizeof( void* ), sizeof( TaskSource<int> ) );
+	EXPECT_EQ( sizeof( void* ), sizeof( TaskResolver<int> ) );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -675,17 +703,17 @@ UTEST( ThreadPoolTask, submitResolvesOnWorker ) {
 UTEST( ThreadPoolTask, poolIsAnExecutor ) {
 	auto pool = ThreadPool::createUnique( 2 );
 	Executor& executor = *pool;
-	auto t = makeReadyTask( 2 ).thenOn( executor, []( int v ) { return v * 10; } );
+	auto t = makeReadyTask( 2 ).then( executor, []( int v ) { return v * 10; } );
 	auto v = std::move( t ).get();
 	EXPECT_EQ( 20, *v );
 
 	// Existing run() API with move-only captures.
 	std::atomic<int> result{ 0 };
-	TaskSource<void> done;
-	auto doneTask = done.task();
-	pool->run( [p = std::make_unique<int>( 5 ), &result, done = std::move( done )]() mutable {
+	TaskResolver<void> done;
+	auto doneTask = Task<void>::create( done );
+	pool->run( [p = std::make_unique<int>( 5 ), &result, done]() mutable {
 		result = *p;
-		done.resolve();
+		done();
 	} );
 	EXPECT_EQ( TaskState::Ready, doneTask.wait() );
 	EXPECT_EQ( 5, result.load() );
@@ -699,7 +727,7 @@ UTEST( ThreadPoolTask, manyConcurrentChains ) {
 	for ( int i = 0; i < Count; ++i ) {
 		tasks.emplace_back(
 			pool->submit( [i] { return i; } )
-				.thenOn( *pool, []( int v ) { return v * 2; } )
+				.then( *pool, []( int v ) { return v * 2; } )
 				.then( [&pool]( int v ) { return pool->submit( [v] { return v + 1; } ); } ) );
 	}
 	long long sum = 0;

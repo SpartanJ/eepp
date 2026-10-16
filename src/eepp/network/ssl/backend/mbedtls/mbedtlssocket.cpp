@@ -1,6 +1,8 @@
-#include <eepp/network/ssl/backend/mbedtls/mbedtlssocket.hpp>
+#include <eepp/config.hpp>
 
 #ifdef EE_MBEDTLS
+
+#include <eepp/network/ssl/backend/mbedtls/mbedtlssocket.hpp>
 
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>

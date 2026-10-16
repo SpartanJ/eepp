@@ -84,13 +84,13 @@ struct WriteOptions {
 	bool allowNonAtomicFallback{ false };
 	/** Flush to stable storage before the final rename, where supported. */
 	bool fsync{ true };
+	/** Create missing parent directories. */
+	bool createParents{ false };
 	/** Fail with ChangedExternally when the current destination revision differs. An expected
 	 * revision on a missing destination also fails. */
 	std::optional<FileRevision> expectedRevision;
 	/** Permissions for a newly created destination. Existing destinations keep their mode. */
 	std::optional<Uint32> permissions;
-	/** Create missing parent directories. */
-	bool createParents{ false };
 };
 
 enum class OverwritePolicy : Uint8 {

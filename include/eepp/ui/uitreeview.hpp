@@ -106,10 +106,6 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual void openModelIndexParentTree( const ModelIndex& index );
 
-	bool getFocusOnSelection() const;
-
-	void setFocusOnSelection( bool focusOnSelection );
-
 	bool tryOpenModelIndex( const ModelIndex& index, bool forceUpdate = true );
 
 	void updateContentSize();
@@ -144,8 +140,6 @@ class EE_API UITreeView : public UIAbstractTableView {
 	UIIcon* mContractIcon{ nullptr };
 	size_t mExpanderIconSize{ 16 };
 	bool mExpandersAsIcons{ false };
-	bool mFocusOnSelection{ true };
-	bool mFocusSelectionDirty{ false };
 	bool mDisableCellClipping{ false };
 
 	UITreeView();

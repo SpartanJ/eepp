@@ -249,7 +249,7 @@ UTEST( MainThreadExecutor, runsDeferredOnSceneUpdate ) {
 		// Never inline, even on the main thread.
 		EXPECT_TRUE( order.empty() );
 		EXPECT_EQ( 2u, executor.pending() );
-		auto task = makeReadyTask( 3 ).thenOn( executor, [&]( int v ) { order.push_back( v ); } );
+		auto task = makeReadyTask( 3 ).then( executor, [&]( int v ) { order.push_back( v ); } );
 		std::thread worker( [&] { executor.execute( [&] { order.push_back( 4 ); } ); } );
 		worker.join();
 		scene->update( Time::Zero );

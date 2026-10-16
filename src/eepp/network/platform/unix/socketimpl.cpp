@@ -1,6 +1,8 @@
-#include <eepp/network/platform/unix/socketimpl.hpp>
+#include <eepp/config.hpp>
 
 #if defined( EE_PLATFORM_POSIX )
+
+#include <eepp/network/platform/unix/socketimpl.hpp>
 
 #include <cstring>
 #include <errno.h>

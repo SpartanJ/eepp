@@ -29,48 +29,35 @@ constexpr SocketHandle InvalidSocket = -1;
 using PollFd = struct pollfd;
 #endif
 
-/** Initializes the platform socket layer once (WSAStartup on Windows). */
-void socketsInit();
-
-void closeSocket( SocketHandle socket );
-
-bool setNonBlocking( SocketHandle socket );
-
-int pollSockets( PollFd* fds, size_t count, int timeoutMs );
-
-/** @return The pending socket error (SO_ERROR), 0 when none. */
-int socketError( SocketHandle socket );
-
-std::string socketErrorString( int error );
-
-/** Connects to host:port with a timeout (blocking for the caller, socket left non-blocking).
- * Tries every resolved address in order. @return InvalidSocket on failure with error filled. */
-SocketHandle connectTcp( const std::string& host, Uint16 port, int timeoutMs, std::string& error );
-
-/** Self-pipe used to wake a thread blocked in pollSockets(). On Windows a connected loopback
- * socket pair is used because WSAPoll() only accepts sockets. */
-class WakeSignal {
+/** Non-blocking TCP sockets and polling for the SSH I/O thread, over the platform socket API
+ * (the descriptors are handed to libssh2). */
+class SSHSocket {
   public:
-	WakeSignal();
+	/** Initializes the platform socket layer once (WSAStartup on Windows). */
+	static void init();
 
-	~WakeSignal();
+	static void close( SocketHandle socket );
 
-	WakeSignal( const WakeSignal& ) = delete;
+	static bool setNonBlocking( SocketHandle socket );
 
-	WakeSignal& operator=( const WakeSignal& ) = delete;
+	/** poll() / WSAPoll(), retried on EINTR. */
+	static int poll( PollFd* fds, size_t count, int timeoutMs );
 
-	bool valid() const { return mRead != InvalidSocket; }
+	/** @return The pending socket error (SO_ERROR), 0 when none. */
+	static int pendingError( SocketHandle socket );
 
-	/** Socket/descriptor to poll for readability. */
-	SocketHandle pollHandle() const { return mRead; }
+	static std::string errorString( int error );
 
-	void signal();
-
-	void drain();
+	/** Connects to host:port with a timeout (blocking for the caller, socket left non-blocking).
+	 * Tries every resolved address in order. @return InvalidSocket on failure with error filled.
+	 */
+	static SocketHandle connect( const std::string& host, Uint16 port, int timeoutMs,
+								 std::string& error );
 
   private:
-	SocketHandle mRead{ InvalidSocket };
-	SocketHandle mWrite{ InvalidSocket };
+	static int lastError();
+
+	static bool connectInProgress( int error );
 };
 
 }}} // namespace EE::VFS::sftp

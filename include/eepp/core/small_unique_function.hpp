@@ -14,7 +14,7 @@ template <typename Signature, std::size_t InlineSize = 64> class SmallUniqueFunc
 /** Move-only type-erased callable with inline storage and a heap fallback.
  *
  * Unlike SmallFunction, the stored callable only needs to be move-constructible, which allows
- * closures that own move-only state (task sources, unique pointers, file handles) to be queued
+ * closures that own move-only state (tasks, unique pointers, file handles) to be queued
  * on executors without wrapping them in shared heap holders. Callables larger than InlineSize, or
  * whose alignment or move constructor make inline relocation unsafe, are stored on the heap.
  *
@@ -90,11 +90,6 @@ class SmallUniqueFunction<R( Args... ), InlineSize> {
 	bool isInline() const noexcept { return mVTable && mVTable->isInline; }
 
 	static constexpr std::size_t inlineSize() noexcept { return InlineSize; }
-
-	/** @return True if a callable of this type would be stored without a heap allocation. */
-	template <typename Callable> static constexpr bool fitsInline() noexcept {
-		return FitsInline<std::decay_t<Callable>>;
-	}
 
   private:
 	static constexpr std::size_t StorageSize =

@@ -28,8 +28,8 @@ struct SpaceInfo {
  * Threading contract:
  * - Every method may be called from any thread and must never block the caller on I/O; work is
  *   performed on provider-owned threads and reported through the returned task.
- * - Returned tasks may resolve on any thread. Callers that touch UI or model state must hop with
- *   thenOn().
+ * - Returned tasks may resolve on any thread. Callers that touch UI or model state must continue
+ *   with then( uiExecutor, fn ).
  * - Cancellation is cooperative: a cancelled operation completes with VFSErrorCode::Cancelled.
  * - Providers never touch UI or model state.
  */
@@ -74,14 +74,6 @@ class VFSProvider {
 		(void)permissions;
 		return readyError<void>( VFSErrorCode::Unsupported, uri,
 								 "Provider does not support permissions" );
-	}
-
-	/** Optional: same-provider native copy of one regular file (VFSCapability::NativeCopy).
-	 * Recursive copies are always orchestrated by the VFS. */
-	virtual VFSTask<void> nativeCopy( const URI& from, const URI& /*to*/, bool /*overwrite*/,
-									  CancellationToken /*token*/ ) {
-		return readyError<void>( VFSErrorCode::Unsupported, from,
-								 "Provider does not support native copy" );
 	}
 
 	/** Optional: filesystem space information (VFSCapability::FreeSpace). */

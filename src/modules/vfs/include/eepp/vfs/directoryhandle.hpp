@@ -53,9 +53,10 @@ class DirectoryHandle {
 	DirectoryHandle& operator=( const DirectoryHandle& ) = delete;
 
 	VFSTask<DirectoryBatch> read( size_t maxEntries = 256, CancellationToken token = {} ) {
-		if ( !mImpl )
+		if ( !mImpl ) {
 			return readyError<DirectoryBatch>( VFSErrorCode::InvalidOperation, mUri,
 											   "Directory handle is closed" );
+		}
 		return mImpl->read( maxEntries == 0 ? 1 : maxEntries, std::move( token ) );
 	}
 

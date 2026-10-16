@@ -4,6 +4,7 @@
 #include <eepp/core/uri.hpp>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace eefm {
 
@@ -11,32 +12,42 @@ namespace eefm {
  *
  * Linux/BSD follow the freedesktop.org Trash specification (the home trash, or a
  * $topdir/.Trash-$uid directory for files on other file systems), macOS moves to ~/.Trash and
- * Windows uses the Recycle Bin. These are blocking calls: run them off the UI thread.
+ * Windows uses the Recycle Bin. Everything but supported(), location() and contains() blocks:
+ * run it off the UI thread.
  */
-namespace trash {
+class Trash {
+  public:
+	/** @return True when uri can be moved to the trash (a local file outside the trash). */
+	static bool supported( const EE::URI& uri );
 
-/** @return True when uri can be moved to the trash (a local file outside the trash). */
-bool supported( const EE::URI& uri );
+	/** @return The browsable trash folder (where trashed files live), if the platform has one. */
+	static std::optional<EE::URI> location();
 
-/** @return The browsable trash folder (where trashed files live), if the platform has one. */
-std::optional<EE::URI> location();
+	/** @return True when uri is inside a browsable trash folder. */
+	static bool contains( const EE::URI& uri );
 
-/** @return True when uri is inside a browsable trash folder. */
-bool contains( const EE::URI& uri );
+	/** Moves a local file or directory to the trash. @return An error message, empty on success.
+	 */
+	static std::string moveToTrash( const std::string& path );
 
-/** Moves a local file or directory to the trash. @return An error message, empty on success. */
-std::string moveToTrash( const std::string& path );
+	/** Moves every path to the trash. @return One "name: error" line per failure. */
+	static std::string moveToTrash( const std::vector<std::string>& paths );
 
-/** Moves a trashed entry back to its original location (spec trashes only). */
-std::string restore( const std::string& trashedPath );
+	/** Moves a trashed entry back to its original location (spec trashes only). */
+	static std::string restore( const std::string& trashedPath );
 
-/** @return The original location of a trashed entry, when recorded. */
-std::optional<std::string> originalPath( const std::string& trashedPath );
+	/** Restores every path. @return One "name: error" line per failure. */
+	static std::string restore( const std::vector<std::string>& trashedPaths );
 
-/** Permanently removes everything in the home trash. */
-std::string empty();
+	/** @return The original location of a trashed entry, when recorded. */
+	static std::optional<std::string> originalPath( const std::string& trashedPath );
 
-} // namespace trash
+	/** Drops what the trash recorded about an entry that was deleted from it (its .trashinfo). */
+	static void forget( const std::string& trashedPath );
+
+	/** Permanently removes everything in the home trash. */
+	static std::string empty();
+};
 
 } // namespace eefm
 

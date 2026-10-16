@@ -103,9 +103,10 @@ void SHA1::final( Digest& result, Context& ctx ) {
 
 	transform( ctx, ctx.buffer );
 
-	for ( int i = 0; i < 5; ++i )
+	for ( int i = 0; i < 5; ++i ) {
 		for ( int j = 0; j < 4; ++j )
 			result[i * 4 + j] = static_cast<Uint8>( ctx.state[i] >> ( 24 - j * 8 ) );
+	}
 
 	memset( &ctx, 0, sizeof( ctx ) );
 }

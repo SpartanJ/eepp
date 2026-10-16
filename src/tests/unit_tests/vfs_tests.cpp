@@ -7,9 +7,9 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/packfileindex.hpp>
 #include <eepp/system/sys.hpp>
-#include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/system/zip.hpp>
 #include <eepp/vfs.hpp>
+#include <eepp/vfs/watchers/localwatchbackend.hpp>
 #include <mutex>
 #include <thread>
 
@@ -511,9 +511,10 @@ UTEST( VFSWatch, localEventsAreDeliveredThroughExecutor ) {
 
 	// A burst is coalesced into few batches.
 	int before = collector.batches.load();
-	for ( int i = 0; i < 50; ++i )
+	for ( int i = 0; i < 50; ++i ) {
 		FileSystem::fileWrite( tmp.path + "burst" + String::toString( i ),
 							   std::string_view( "x" ) );
+	}
 	EXPECT_TRUE(
 		loop.runUntil( [&] { return collector.has( WatchEventType::Added, "burst49" ); } ) );
 	EXPECT_LT( collector.batches.load() - before, 50 );
@@ -597,55 +598,6 @@ UTEST( VFSWatch, unsupportedWithoutPolling ) {
 	options.allowPolling = false;
 	auto result = waitFor( vfs.watch( URI( "mem://u/d" ), options ) );
 	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( result ) );
-}
-
-UTEST( VFSLegacy, deprecatedVirtualFileSystemAliasStillWorks ) {
-#if defined( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-	EXPECT_TRUE( System::VFS::instance() == System::PackFileIndex::instance() );
-	EXPECT_TRUE( System::VirtualFileSystem::instance() == System::PackFileIndex::instance() );
-#if defined( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-}
-
-UTEST( VFSIOStream, synchronousAdapterReadsSeeksAndWrites ) {
-	VirtualFileSystem vfs;
-	auto mem = std::make_shared<MemoryProvider>();
-	vfs.registerProvider( mem );
-	std::string content;
-	for ( int i = 0; i < 1000; ++i )
-		content += static_cast<char>( 'a' + i % 26 );
-	mem->putFile( URI( "mem://s/data" ), content );
-	{
-		IOStreamVFS stream( vfs, URI( "mem://s/data" ), OpenFlags::Read, 16 );
-		EXPECT_TRUE( stream.isOpen() );
-		EXPECT_EQ( 1000, (int)stream.getSize() );
-		std::string read;
-		char byte;
-		while ( stream.read( &byte, 1 ) == 1 )
-			read += byte;
-		EXPECT_TRUE( read == content );
-		stream.seek( 500 );
-		std::vector<char> big( 300 );
-		EXPECT_EQ( 300, (int)stream.read( big.data(), 300 ) );
-		EXPECT_TRUE( std::string( big.begin(), big.end() ) == content.substr( 500, 300 ) );
-		EXPECT_EQ( 800, (int)stream.tell() );
-	}
-	{
-		IOStreamVFS stream( vfs, URI( "mem://s/out" ),
-							OpenFlags::Write | OpenFlags::Create | OpenFlags::Truncate );
-		EXPECT_TRUE( stream.isOpen() );
-		EXPECT_EQ( 5, (int)stream.write( "hello", 5 ) );
-		stream.seek( 0 );
-		EXPECT_EQ( 1, (int)stream.write( "J", 1 ) );
-	}
-	EXPECT_STDSTREQ( "Jello", *mem->fileContent( URI( "mem://s/out" ) ) );
-	IOStreamVFS missing( vfs, URI( "mem://s/none" ) );
-	EXPECT_FALSE( missing.isOpen() );
-	EXPECT_TRUE( missing.error().has_value() );
 }
 
 // ---------------------------------------------------------------------------------------------

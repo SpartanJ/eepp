@@ -20,9 +20,10 @@ class VectorDirectoryImpl : public DirectoryHandleImpl {
 		DirectoryBatch batch;
 		{
 			std::lock_guard<std::mutex> lock( mMutex );
-			if ( token.isCancellationRequested() )
+			if ( token.isCancellationRequested() ) {
 				return readyError<DirectoryBatch>( VFSErrorCode::Cancelled, URI(),
 												   "Operation cancelled" );
+			}
 			size_t count = std::min( maxEntries, mEntries.size() - mPosition );
 			if ( mPosition == 0 && count == mEntries.size() ) {
 				batch.entries = std::move( mEntries );

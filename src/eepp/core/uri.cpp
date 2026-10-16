@@ -81,40 +81,8 @@ URI::URI( const std::string& scheme, const std::string& authority, const std::st
 	parseAuthority( beg, end );
 }
 
-URI::URI( const URI& uri ) :
-	mScheme( uri.mScheme ),
-	mUserInfo( uri.mUserInfo ),
-	mHost( uri.mHost ),
-	mPort( uri.mPort ),
-	mPortSpecified( uri.mPortSpecified ),
-	mPath( uri.mPath ),
-	mQuery( uri.mQuery ),
-	mFragment( uri.mFragment ) {}
-
-URI::URI( const URI& baseURI, const std::string& relativeURI ) :
-	mScheme( baseURI.mScheme ),
-	mUserInfo( baseURI.mUserInfo ),
-	mHost( baseURI.mHost ),
-	mPort( baseURI.mPort ),
-	mPortSpecified( baseURI.mPortSpecified ),
-	mPath( baseURI.mPath ),
-	mQuery( baseURI.mQuery ),
-	mFragment( baseURI.mFragment ) {
+URI::URI( const URI& baseURI, const std::string& relativeURI ) : URI( baseURI ) {
 	resolve( relativeURI );
-}
-
-URI& URI::operator=( const URI& uri ) {
-	if ( &uri != this ) {
-		mScheme = uri.mScheme;
-		mUserInfo = uri.mUserInfo;
-		mHost = uri.mHost;
-		mPort = uri.mPort;
-		mPortSpecified = uri.mPortSpecified;
-		mPath = uri.mPath;
-		mQuery = uri.mQuery;
-		mFragment = uri.mFragment;
-	}
-	return *this;
 }
 
 URI& URI::operator=( const std::string& uri ) {
@@ -843,13 +811,18 @@ URI URI::fromFSPath( const std::string& fsPath ) {
 	return uri;
 }
 
-URI URI::withAppendedSegment( std::string_view segment ) const {
+URI URI::withAuthorityOnly() const {
 	URI uri;
 	uri.mScheme = mScheme;
 	uri.mUserInfo = mUserInfo;
 	uri.mHost = mHost;
 	uri.mPort = mPort;
 	uri.mPortSpecified = mPortSpecified;
+	return uri;
+}
+
+URI URI::withAppendedSegment( std::string_view segment ) const {
+	URI uri( withAuthorityOnly() );
 	uri.mPath.reserve( mPath.size() + segment.size() + 1 );
 	uri.mPath = mPath;
 	if ( uri.mPath.empty() || uri.mPath.back() != '/' )
@@ -859,19 +832,12 @@ URI URI::withAppendedSegment( std::string_view segment ) const {
 }
 
 URI URI::getParent() const {
-	URI uri;
-	uri.mScheme = mScheme;
-	uri.mUserInfo = mUserInfo;
-	uri.mHost = mHost;
-	uri.mPort = mPort;
-	uri.mPortSpecified = mPortSpecified;
+	URI uri( withAuthorityOnly() );
 	std::string_view path( mPath );
 	while ( path.size() > 1 && path.back() == '/' )
 		path.remove_suffix( 1 );
 	size_t pos = path.find_last_of( '/' );
-	if ( pos == std::string_view::npos ) {
-		uri.mPath = "/";
-	} else if ( pos == 0 ) {
+	if ( pos == std::string_view::npos || pos == 0 ) {
 		uri.mPath = "/";
 	} else {
 		uri.mPath = std::string( path.substr( 0, pos ) );
@@ -884,9 +850,13 @@ URI URI::getParent() const {
 	return uri;
 }
 
+bool URI::hasSameAuthority( const URI& other ) const {
+	return mScheme == other.mScheme && mHost == other.mHost && getPort() == other.getPort() &&
+		   mUserInfo == other.mUserInfo;
+}
+
 bool URI::isSameOrChildOf( const URI& ancestor ) const {
-	if ( mScheme != ancestor.mScheme || mHost != ancestor.mHost ||
-		 getPort() != ancestor.getPort() || mUserInfo != ancestor.mUserInfo )
+	if ( !hasSameAuthority( ancestor ) )
 		return false;
 	std::string_view base( ancestor.mPath );
 	while ( base.size() > 1 && base.back() == '/' )

@@ -8,15 +8,12 @@ static void defaultTaskDiagnosticHandler( TaskDiagnostic diagnostic ) {
 #ifdef EE_DEBUG
 	switch ( diagnostic ) {
 		case TaskDiagnostic::Abandoned:
-			eePRINTL( "TASK CONTRACT VIOLATION: a TaskSource was destroyed without resolving its "
-					  "task. The task chain was abandoned." );
+			eePRINTL( "TASK CONTRACT VIOLATION: the last TaskResolver of a task was destroyed "
+					  "without being called. The task chain was abandoned." );
 			break;
 		case TaskDiagnostic::ResolvedTwice:
-			eePRINTL( "TASK CONTRACT VIOLATION: TaskSource::resolve() called on a completed task. "
+			eePRINTL( "TASK CONTRACT VIOLATION: a TaskResolver was called for a completed task. "
 					  "The value was discarded." );
-			break;
-		case TaskDiagnostic::TaskRetrievedTwice:
-			eePRINTL( "TASK CONTRACT VIOLATION: TaskSource::task() called more than once." );
 			break;
 	}
 #else

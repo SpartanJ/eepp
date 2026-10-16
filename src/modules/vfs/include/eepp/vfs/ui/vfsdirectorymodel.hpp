@@ -51,19 +51,19 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 	struct Config {
 		/** Defaults to VirtualFileSystem::instance(). */
 		VirtualFileSystem* vfs{ nullptr };
-		bool showHidden{ false };
-		bool watch{ true };
 		/** The first batch is small so the first rows appear quickly. */
 		size_t firstBatchSize{ 128 };
 		size_t batchSize{ 2048 };
-		DirectoryMetadata metadata{ DirectoryMetadata::Full };
 		/** Above this many pending events, re-list instead of applying them one by one. */
 		size_t maxIncrementalEvents{ 256 };
+		/** Directory counts running at the same time. */
+		size_t maxConcurrentItemCounts{ 4 };
+		DirectoryMetadata metadata{ DirectoryMetadata::Full };
+		bool showHidden{ false };
+		bool watch{ true };
 		/** Count the entries of each listed directory in the background (shown in the Size
 		 * column). Each count lists a directory, so enable it where listings are cheap. */
 		bool countDirectoryItems{ false };
-		/** Directory counts running at the same time. */
-		size_t maxConcurrentItemCounts{ 4 };
 	};
 
 	using IconProvider = std::function<Variant( const FileInfo& )>;
@@ -121,8 +121,8 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 
 	void setItemCountFormatter( ItemCountFormatter formatter );
 
-	/** Enables or disables Config::countDirectoryItems; takes effect from the next listing. */
-	/** Turning it off drops the counts; turning it on counts the folders listed. */
+	/** Enables or disables Config::countDirectoryItems. Turning it off drops the counts; turning
+	 * it on counts the folders listed. */
 	void setCountDirectoryItems( bool count );
 
 	bool countDirectoryItems() const { return mConfig.countDirectoryItems; }
@@ -290,20 +290,20 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 	std::deque<std::string> mCountQueue;
 	std::unordered_set<std::string> mCountQueued;
 	size_t mCountsInFlight{ 0 };
-	bool mCountRefreshPending{ false };
 	std::string mFilterPattern;
 	std::string mFilterGlob;
 	/** Case-insensitive plain text filter: the pattern's search table. */
 	String::BMH::OccTable mFilterOccurrences;
 	std::unique_ptr<System::RegEx> mFilterRegEx;
-	NameFilterMode mFilterMode{ NameFilterMode::Glob };
-	bool mFilterCaseSensitive{ false };
-	bool mFilterValid{ true };
 	std::optional<VFSError> mError;
 	Uint64 mGeneration{ 0 };
 	size_t mSortColumn{ Name };
 	SortOrder mSortOrder{ SortOrder::Ascending };
 	LoadState mLoadState{ LoadState::Idle };
+	NameFilterMode mFilterMode{ NameFilterMode::Glob };
+	bool mCountRefreshPending{ false };
+	bool mFilterCaseSensitive{ false };
+	bool mFilterValid{ true };
 };
 
 }} // namespace EE::VFS

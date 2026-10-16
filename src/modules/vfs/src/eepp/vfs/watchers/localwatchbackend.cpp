@@ -126,9 +126,10 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 		// Outside the entries lock: efsw may be delivering a callback that needs it.
 		std::lock_guard<std::mutex> lock( mWatchersMutex );
 		auto it = mWatchers.find( static_cast<int>( removed >> KeyShift ) );
-		if ( it != mWatchers.end() && it->second.watcher )
+		if ( it != mWatchers.end() && it->second.watcher ) {
 			it->second.watcher->removeWatch(
 				static_cast<efsw::WatchID>( removed & ( ( Uint64( 1 ) << KeyShift ) - 1 ) ) );
+		}
 	}
 
 	void dispatch( int key, efsw::WatchID id, const std::string& dir, const std::string& filename,
@@ -153,9 +154,10 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 			root = !entry.realRootPath.empty() && String::startsWith( dir, entry.realRootPath )
 					   ? entry.realRootPath
 					   : entry.rootPath;
-			for ( auto& sink : entry.sinks )
+			for ( auto& sink : entry.sinks ) {
 				if ( auto locked = sink.second.lock() )
 					sinks.push_back( std::move( locked ) );
+			}
 		}
 		if ( sinks.empty() )
 			return;
@@ -197,9 +199,10 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 			auto it = mEntries.find( compose( key, id ) );
 			if ( it == mEntries.end() )
 				return;
-			for ( auto& sink : it->second.sinks )
+			for ( auto& sink : it->second.sinks ) {
 				if ( auto locked = sink.second.lock() )
 					sinks.push_back( std::move( locked ) );
+			}
 		}
 		for ( auto& sink : sinks )
 			sink->rescanRequired();
@@ -383,8 +386,8 @@ LocalWatchBackend::watch( const URI& root, const WatchOptions& options,
 		if ( !added )
 			return Err( std::move( added ).error() );
 		sink->setStatus( added.value().second ? WatchStatus::Polling : WatchStatus::Active );
-		return Ok( Registration(
-			std::make_unique<detail::LocalWatchRegistration>( weakPool, impl, added.value().first ) ) );
+		return Ok( Registration( std::make_unique<detail::LocalWatchRegistration>(
+			weakPool, impl, added.value().first ) ) );
 	} );
 }
 

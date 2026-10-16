@@ -131,18 +131,7 @@ void MimeDatabase::load() {
 		mExtensions[builtin.extension] = Glob{ 0, builtin.mime };
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_HAIKU
-	std::string dataHome = Sys::getEnv( "XDG_DATA_HOME" );
-	if ( dataHome.empty() ) {
-		dataHome = Sys::getUserDirectory();
-		FileSystem::dirAddSlashAtEnd( dataHome );
-		dataHome += ".local/share";
-	}
-	mDataDirs.push_back( dataHome );
-	std::string dataDirs = Sys::getEnv( "XDG_DATA_DIRS" );
-	if ( dataDirs.empty() )
-		dataDirs = "/usr/local/share:/usr/share";
-	for ( const auto& dir : String::split( dataDirs, ':' ) )
-		mDataDirs.push_back( dir );
+	mDataDirs = Sys::getDataSearchPaths();
 	// Lower priority directories first, so user definitions override system ones.
 	for ( auto it = mDataDirs.rbegin(); it != mDataDirs.rend(); ++it ) {
 		std::string base = *it;
@@ -214,9 +203,10 @@ const std::string& MimeDatabase::typeForName( const std::string& name ) {
 		if ( found != mExtensions.end() )
 			return found->second.mime;
 	}
-	for ( const auto& pattern : mPatterns )
+	for ( const auto& pattern : mPatterns ) {
 		if ( String::globMatch( name, pattern.first, true ) )
 			return pattern.second.mime;
+	}
 	return unknown;
 }
 
@@ -235,9 +225,10 @@ std::vector<std::string> MimeDatabase::withParents( const std::string& mime ) {
 		auto found = mParents.find( out[i] );
 		if ( found == mParents.end() )
 			continue;
-		for ( const auto& parent : found->second )
+		for ( const auto& parent : found->second ) {
 			if ( std::find( out.begin(), out.end(), parent ) == out.end() )
 				out.push_back( parent );
+		}
 	}
 	if ( startsWith( mime, "text/" ) &&
 		 std::find( out.begin(), out.end(), "text/plain" ) == out.end() )
@@ -262,9 +253,10 @@ std::string MimeDatabase::description( const std::string& mime, const std::strin
 			FileSystem::dirAddSlashAtEnd( base );
 			text = readComment( base + "mime/" + mime + ".xml" );
 		}
-		for ( size_t i = 0; !known && text.empty() && i < std::size( BuiltinTypes ); ++i )
+		for ( size_t i = 0; !known && text.empty() && i < std::size( BuiltinTypes ); ++i ) {
 			if ( mime == BuiltinTypes[i].mime )
 				text = BuiltinTypes[i].description;
+		}
 		if ( !known )
 			mDescriptions[mime] = text;
 		if ( !text.empty() )

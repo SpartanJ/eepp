@@ -1,13 +1,7 @@
 #include <algorithm>
 #include <eepp/core/cancellationtoken.hpp>
-#include <eepp/core/executor.hpp>
 
 namespace EE {
-
-InlineExecutor& InlineExecutor::instance() {
-	static InlineExecutor executor;
-	return executor;
-}
 
 namespace detail {
 

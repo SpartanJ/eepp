@@ -194,9 +194,10 @@ void PlacesPanel::setEntries( std::vector<Entry> entries ) {
 			parts.push_back( usage );
 		}
 		// The row handles the mouse (clicks and drags): its parts are only drawn.
-		for ( UIWidget* part : parts )
+		for ( UIWidget* part : parts ) {
 			if ( part != row )
 				part->setEnabled( false );
+		}
 		row->setDragEnabled( mEntries[i].index >= 0 );
 		// A drag that ends over a row may still produce its click; the next press re-arms.
 		row->on( Event::MouseDown, [this]( const Event* ) { mSuppressClick = false; } );
@@ -280,9 +281,10 @@ void PlacesPanel::setCurrent( const URI& uri ) {
 
 std::optional<size_t> PlacesPanel::entryOf( Node* node ) const {
 	while ( node && node != this ) {
-		for ( size_t i = 0; i < mRows.size(); ++i )
+		for ( size_t i = 0; i < mRows.size(); ++i ) {
 			if ( mRows[i] == node )
 				return i;
+		}
 		node = node->getParent();
 	}
 	return std::nullopt;
@@ -314,9 +316,10 @@ void PlacesPanel::trackDrag() {
 }
 
 void PlacesPanel::beginPlaceDrag( UIWidget* row ) {
-	for ( size_t i = 0; i < mRows.size(); ++i )
+	for ( size_t i = 0; i < mRows.size(); ++i ) {
 		if ( mRows[i] == row )
 			mDraggedRow = i;
+	}
 	trackDrag();
 }
 
@@ -354,9 +357,10 @@ void PlacesPanel::scheduledUpdate( const Time& ) {
 
 std::vector<size_t> PlacesPanel::sectionRows( PlaceSection section ) const {
 	std::vector<size_t> rows;
-	for ( size_t i = 0; i < mEntries.size() && i < mRows.size(); ++i )
+	for ( size_t i = 0; i < mEntries.size() && i < mRows.size(); ++i ) {
 		if ( mEntries[i].index >= 0 && mEntries[i].place.section == section )
 			rows.push_back( i );
+	}
 	return rows;
 }
 
@@ -378,7 +382,7 @@ std::optional<PlacesPanel::Slot> PlacesPanel::reorderSlot( const Vector2f& posit
 }
 
 std::optional<PlacesPanel::Slot> PlacesPanel::folderSlot( const Vector2f& position ) const {
-	const FileDrag& drag = currentFileDrag();
+	const FileDrag& drag = FileTableView::currentDrag();
 	if ( !drag.folders || drag.uris.empty() )
 		return std::nullopt;
 	PlaceSection section = Places::sectionFor( drag.uris.front() );
@@ -392,9 +396,10 @@ std::optional<PlacesPanel::Slot> PlacesPanel::folderSlot( const Vector2f& positi
 		if ( position.y < rect.Top + edge )
 			return Slot{ section, static_cast<size_t>( mEntries[rows[k]].index ), rows[k], false };
 		if ( position.y > rect.Bottom - edge ) {
-			if ( k + 1 < rows.size() )
+			if ( k + 1 < rows.size() ) {
 				return Slot{ section, static_cast<size_t>( mEntries[rows[k + 1]].index ),
 							 rows[k + 1], false };
+			}
 			return Slot{ section, std::nullopt, rows[k], true };
 		}
 		return std::nullopt;

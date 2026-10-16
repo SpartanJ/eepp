@@ -9,7 +9,7 @@ needed) and are designed to be used together:
 | Header | Types | Role |
 | --- | --- | --- |
 | `<eepp/core/result.hpp>` | `Result<T, E>`, `Ok()`, `Err()` | A value or a typed error, no exceptions. |
-| `<eepp/core/task.hpp>` | `Task<T>`, `TaskSource<T>`, `makeReadyTask()`, `TaskDiagnostics` | A value that becomes available later, with continuations. |
+| `<eepp/core/task.hpp>` | `Task<T>`, `TaskResolver<T>`, `makeReadyTask()`, `TaskDiagnostics` | A value that becomes available later, with continuations. |
 | `<eepp/core/executor.hpp>` | `Executor`, `InlineExecutor` | Where continuations and jobs run. |
 | `<eepp/system/threadpool.hpp>` | `ThreadPool` (an `Executor`, plus `submit()`) | Background threads that return tasks. |
 | `<eepp/scene/mainthreadexecutor.hpp>` | `MainThreadExecutor` | Runs continuations on the UI thread. |
@@ -20,7 +20,7 @@ The pieces fit as one pipeline:
 
 ```text
 producer (thread pool, I/O thread)          consumer (usually the UI)
-TaskSource<Result<T, E>>  --resolve-->  Task<Result<T, E>>  --thenOn( executor, fn )-->  fn( Result )
+TaskResolver<Result<T, E>>  --resolve( value )-->  Task<Result<T, E>>  --then( executor, fn )-->  fn( Result )
         ^                                                                      |
         +------------------- CancellationToken <---- CancellationSource -------+
 ```
@@ -50,29 +50,35 @@ else
 
 - `hasValue()`, `hasError()` and `explicit operator bool` test the state; `value()` and `error()`
   assert in debug builds when used on the wrong state.
-- Rvalue combinators consume the result: `valueOr()`, `map()`, `mapError()`, `andThen()`,
-  `orElse()`.
 - Errors are values. Do not use exceptions or sentinel values for expected failures.
 
-## Task and TaskSource
+## Task and TaskResolver
 
-A `TaskSource<T>` is the producer side; its `task()` is the single consumer handle:
+A `Task<T>` is a value that arrives later. `Task<T>::create( resolve )` returns a pending task and
+fills `resolve` with the function that completes it:
 
 ```cpp
-TaskSource<int> source;
-Task<int> task = source.task();
-std::thread( [source = std::move( source )]() mutable { source.resolve( 42 ); } ).detach();
+Task<int> computeLater( ThreadPool& pool ) {
+	TaskResolver<int> resolve;
+	auto task = Task<int>::create( resolve );
+	pool.execute( [resolve] { resolve( 42 ); } );
+	return task;
+}
 ```
+
+`TaskResolver` is copyable, so it can be captured by several callbacks (a dialog's accept and
+cancel buttons, for example). The first call completes the task; a later call is ignored and
+reported as `ResolvedTwice`. Calling it runs the continuations attached without an executor before
+it returns.
 
 Consumers attach one continuation chain. Continuations consume the task, so it is always written
 as `std::move( task ).then( ... )` (a temporary needs no `std::move`):
 
 | Method | Runs `fn` |
 | --- | --- |
+| `then( executor, fn )` | Always through `executor`, even when already ready. |
 | `then( fn )` | On the thread that resolves the task, or immediately if it is already ready. |
-| `thenOn( executor, fn )` | Always through `executor`, even when already ready. |
-| `onComplete( fn )` | On the completing thread with the terminal task (`Ready` or `Abandoned`), producing nothing. |
-| `onCompleteOn( executor, fn )` | Same, through `executor`. |
+| `onComplete( fn )` | Like `then( fn )`, but also when abandoned: `fn( std::optional<T> )` gets `std::nullopt`. It produces nothing. |
 
 `fn` may return a value, `void` or another `Task<U>`; nested tasks are flattened, so chains stay
 `Task<U>` instead of `Task<Task<U>>`:
@@ -85,32 +91,32 @@ vfs.stat( uri )
 				VFSResult<std::vector<Uint8>>( Err( VFSError( VFSErrorCode::NotFound, uri ) ) ) );
 		return vfs.readAll( uri );
 	} )
-	.thenOn( uiExecutor, []( VFSResult<std::vector<Uint8>>&& data ) { /* UI thread */ } );
+	.then( uiExecutor, []( VFSResult<std::vector<Uint8>>&& data ) { /* UI thread */ } );
 ```
 
 ### Abandonment
 
-If the last `TaskSource` is destroyed without resolving, the task becomes `Abandoned`: its
-continuations do not run and the abandonment propagates down the chain. This is an
+If the last copy of a `TaskResolver` is destroyed without being called, the task becomes
+`Abandoned`: its continuations do not run (`onComplete` receives `std::nullopt`) and the
+abandonment propagates down the chain. This is an
 infrastructure bug (a producer was lost), not a domain outcome, so it is reported through
 `TaskDiagnostics` (debug builds print a diagnostic; tools and tests can install a handler with
 `TaskDiagnostics::setHandler()`). Domain outcomes, including cancellation, belong in the value:
 use `Task<Result<T, E>>`.
 
-`TaskDiagnostics` also reports `ResolvedTwice` and `TaskRetrievedTwice`.
+`TaskDiagnostics` also reports `ResolvedTwice`.
 
 ### Blocking
 
 `wait()`, `waitFor()` and `get()` block the calling thread (`get()` returns `std::optional<T>`,
-empty when abandoned). They exist for worker-thread adapters (for example the VFS
-`IOStreamVFS`) and tests. Never block the UI thread, and never block a thread the producer needs
+empty when abandoned). They exist for worker-thread adapters and tests. Never block the UI thread, and never block a thread the producer needs
 to make progress (for example a pool waiting on itself).
 
 ### Ready tasks
 
 `makeReadyTask( value )` (or `Task<T>::ready( ... )`) creates an already-resolved task, useful for
-early returns and synchronous fast paths. `then()` on a ready task runs immediately; `thenOn()`
-still goes through its executor.
+early returns and synchronous fast paths. `then( fn )` on a ready task runs immediately;
+`then( executor, fn )` still goes through its executor.
 
 ## Executors
 
@@ -125,19 +131,19 @@ destroyed without running.
   ```cpp
   auto pool = ThreadPool::createShared( 4 );
   pool->submit( [] { return countLines( path ); } )   // Task<size_t>
-	  .thenOn( uiExecutor, []( size_t lines ) { showLineCount( lines ); } );
+	  .then( uiExecutor, []( size_t lines ) { showLineCount( lines ); } );
   ```
 
 - `Scene::MainThreadExecutor( sceneNode )`: queues functions for the UI thread and drains them in
   submission order during the scene update. Execution is always deferred, even when `execute()` is
   called on the main thread. Destroying it drops queued functions.
 
-Use `thenOn( uiExecutor, ... )` for anything that touches widgets or models. `then()` runs where
+Use `then( uiExecutor, ... )` for anything that touches widgets or models. `then( fn )` runs where
 the task resolves, which for I/O is a worker or I/O thread.
 
 ### Executor lifetime
 
-`thenOn()` keeps a plain reference to its executor until the continuation is dispatched. The
+`then( executor, fn )` keeps a plain reference to its executor until the continuation is dispatched. The
 executor must outlive every task chain dispatched through it. Objects that start operations and
 can be destroyed before those operations finish (for example a model that is closed while a
 listing is in flight) should not hand out the executor directly: route continuations through an

@@ -34,7 +34,7 @@ class TransferState {
 	/** Minimum interval between progress notifications inside one file. */
 	static constexpr Int64 ProgressIntervalMicroseconds = 16000;
 
-	TransferState() : mCompletion( mCompletionSource.task() ) {}
+	TransferState() : mCompletion( VFSTask<TransferResult>::create( mResolveCompletion ) ) {}
 
 	CancellationToken token() const { return mCancel.token(); }
 
@@ -43,15 +43,16 @@ class TransferState {
 	bool isCancelled() const { return mCancel.isCancellationRequested(); }
 
 	VFSTask<TransferResult> takeCompletion() {
-		if ( mCompletionTaken.exchange( true ) )
+		if ( mCompletionTaken.exchange( true ) ) {
 			return readyError<TransferResult>( VFSErrorCode::InvalidOperation, URI(),
 											   "Transfer completion was already retrieved" );
+		}
 		return std::move( mCompletion );
 	}
 
 	void complete( VFSResult<TransferResult>&& result ) {
 		flushProgress();
-		mCompletionSource.resolve( std::move( result ) );
+		mResolveCompletion( std::move( result ) );
 	}
 
 	/** Applies mutate( TransferProgress& ) and notifies subscribers, throttled unless force. */
@@ -92,11 +93,6 @@ class TransferState {
 				targets.push_back( subscription.second );
 		}
 		publish( targets, snapshot );
-	}
-
-	TransferProgress progress() const {
-		std::lock_guard<std::mutex> lock( mMutex );
-		return mProgress;
 	}
 
 	Uint64 subscribe( TransferProgressCallback callback, Executor* executor ) {
@@ -140,7 +136,7 @@ class TransferState {
 	}
 
 	CancellationSource mCancel;
-	TaskSource<VFSResult<TransferResult>> mCompletionSource;
+	TaskResolver<VFSResult<TransferResult>> mResolveCompletion;
 	VFSTask<TransferResult> mCompletion;
 	mutable std::mutex mMutex;
 	TransferProgress mProgress;

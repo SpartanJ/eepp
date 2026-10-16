@@ -14,7 +14,6 @@ enum class VFSCapability : Uint32 {
 	Create = 1u << 3,
 	Remove = 1u << 4,
 	Rename = 1u << 5,
-	NativeCopy = 1u << 6,
 
 	Seek = 1u << 7,
 	RandomAccess = 1u << 8,

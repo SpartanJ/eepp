@@ -25,14 +25,6 @@ class EE_API UITableView : public UIAbstractTableView {
 		const std::string& text, const bool& caseSensitive = false,
 		FindRowWithTextMatchKind matchKind = FindRowWithTextMatchKind::StartsWith ) const;
 
-	bool getFocusOnSelection() const;
-
-	/** When the selection changes while the table has the keyboard focus, the selected row's
-	 * cell takes it, as in UITreeView (on by default, TableFlagFocusOnSelection). Cells are
-	 * recycled: without it the focused cell can show another row, and keys it handles (Enter
-	 * clicks it, which selects its row) act on that row instead of the selection. */
-	void setFocusOnSelection( bool focusOnSelection );
-
 	virtual void setTableFlags( Uint32 flags );
 
 	bool getRubberBandSelection() const;
@@ -49,9 +41,6 @@ class EE_API UITableView : public UIAbstractTableView {
 
   protected:
 	Sizef mContentSize;
-	bool mFocusOnSelection{ true };
-	bool mFocusSelectionDirty{ false };
-	bool mRubberBandSelection{ false };
 	bool mRubberBandPressed{ false };
 	bool mRubberBandDragged{ false };
 	/** Where the band started, in content coordinates (scrolling included). */

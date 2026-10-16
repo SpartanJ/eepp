@@ -26,11 +26,6 @@ using namespace EE::Window;
 
 namespace eefm {
 
-FileDrag& currentFileDrag() {
-	static FileDrag drag;
-	return drag;
-}
-
 namespace {
 
 /** Floating label that follows the pointer while files are dragged: the dragged row's icon and
@@ -187,14 +182,15 @@ class FileCell : public UITableCell {
 			ModelIndex rowIndex = getParent()->asType<UITableRow>()->getCurIndex();
 			if ( !table->getSelection().contains( rowIndex ) )
 				table->getSelection().set( rowIndex );
-			auto& drag = currentFileDrag();
+			auto& drag = FileTableView::currentDrag();
 			drag.uris = table->dragPayload ? table->dragPayload() : std::vector<URI>{};
 			drag.source = table;
 			drag.folders = table->isFolderRow != nullptr;
 			drag.native = false;
-			for ( const auto& index : table->getSelection().indexes() )
+			for ( const auto& index : table->getSelection().indexes() ) {
 				drag.folders = drag.folders && index.isValid() &&
 							   table->isFolderRow( static_cast<size_t>( index.row() ) );
+			}
 			auto* label = dragLabel( getUISceneNode() );
 			const ModelIndex iconRow = dragIconRow( table, rowIndex );
 			DrawablePtr icon;
@@ -235,7 +231,7 @@ class FileCell : public UITableCell {
 		if ( !drag.getCapabilities().fileSource )
 			return;
 		DragOffer offer;
-		for ( const auto& uri : currentFileDrag().uris ) {
+		for ( const auto& uri : FileTableView::currentDrag().uris ) {
 			if ( uri.getScheme() != "file" )
 				return;
 			offer.files.push_back( { uri.getFSPath() } );
@@ -255,7 +251,7 @@ class FileCell : public UITableCell {
 			Log::warning( "eefm: native drag not started: %s", result.error.c_str() );
 			return;
 		}
-		currentFileDrag().native = true;
+		FileTableView::currentDrag().native = true;
 		sNativeDragCell = this;
 		mNativeDrag = true;
 		// The system draws the dragged files.
@@ -372,6 +368,11 @@ FileCell* FileCell::sNativeDragCell = nullptr;
 
 } // namespace
 
+FileDrag& FileTableView::currentDrag() {
+	static FileDrag drag;
+	return drag;
+}
+
 FileTableView* FileTableView::New() {
 	return eeNew( FileTableView, () );
 }
@@ -388,9 +389,10 @@ FileTableView::FileTableView() : UITableView() {
 			auto* input = delegate->getWidget()->asType<UITextInput>();
 			const String& text = input->getText();
 			size_t dot = folder ? String::InvalidPos : text.rfind( '.' );
-			if ( dot != String::InvalidPos && dot > 0 )
+			if ( dot != String::InvalidPos && dot > 0 ) {
 				input->getDocument().setSelection(
 					TextRange( { 0, 0 }, { 0, static_cast<Int64>( dot ) } ) );
+			}
 		};
 		return delegate;
 	};
@@ -428,11 +430,11 @@ UIWidget* FileTableView::createCell( UIWidget* rowWidget, const ModelIndex& inde
 std::optional<size_t> FileTableView::rowOf( Node* node ) const {
 	while ( node && node != this ) {
 		ModelIndex index;
-		if ( node->isType( UI_TYPE_TABLECELL ) )
+		if ( node->isType( UI_TYPE_TABLECELL ) ) {
 			index = node->asType<UITableCell>()->getCurIndex();
-		else if ( auto* row = dynamic_cast<UITableRow*>( node ) )
+		} else if ( auto* row = dynamic_cast<UITableRow*>( node ) ) {
 			index = row->getCurIndex();
-		else {
+		} else {
 			node = node->getParent();
 			continue;
 		}

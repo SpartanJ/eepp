@@ -59,17 +59,17 @@ class PollingWatchBackendImpl {
 	/** Takes the initial snapshot on the polling thread and resolves once the watch is active.
 	 */
 	VFSTask<Uint64> add( URI root, WatchOptions options, std::shared_ptr<WatchSink> sink ) {
-		TaskSource<VFSResult<Uint64>> source;
-		auto task = source.task();
 		std::lock_guard<std::mutex> lock( mMutex );
 		if ( mStopping )
 			return readyError<Uint64>( VFSErrorCode::InvalidOperation, root, "Shutting down" );
+		TaskResolver<VFSResult<Uint64>> resolve;
+		auto task = VFSTask<Uint64>::create( resolve );
 		auto watch = std::make_shared<Watch>();
 		watch->root = std::move( root );
 		watch->options = options;
 		watch->sink = sink;
 		watch->id = ++mLastId;
-		mPendingAdds.push_back( { watch, std::move( source ) } );
+		mPendingAdds.push_back( { watch, std::move( resolve ) } );
 		ensureThread();
 		mWake.notify_all();
 		return task;
@@ -83,7 +83,7 @@ class PollingWatchBackendImpl {
   private:
 	struct PendingAdd {
 		std::shared_ptr<Watch> watch;
-		TaskSource<VFSResult<Uint64>> source;
+		TaskResolver<VFSResult<Uint64>> resolve;
 	};
 
 	void ensureThread() {
@@ -101,7 +101,7 @@ class PollingWatchBackendImpl {
 				auto snapshot = take( *pending.watch );
 				lock.lock();
 				if ( !snapshot ) {
-					pending.source.resolve( Err( std::move( snapshot ).error() ) );
+					pending.resolve( Err( std::move( snapshot ).error() ) );
 					continue;
 				}
 				pending.watch->snapshot = std::move( snapshot ).value();
@@ -111,16 +111,17 @@ class PollingWatchBackendImpl {
 				lock.unlock();
 				if ( auto sink = pending.watch->sink.lock() )
 					sink->setStatus( WatchStatus::Polling );
-				pending.source.resolve( Ok( id ) );
+				pending.resolve( Ok( id ) );
 				lock.lock();
 				continue;
 			}
 
 			auto now = std::chrono::steady_clock::now();
 			std::shared_ptr<Watch> next;
-			for ( auto& watch : mWatches )
+			for ( auto& watch : mWatches ) {
 				if ( !next || watch.second->due < next->due )
 					next = watch.second;
+			}
 			if ( !next ) {
 				mWake.wait( lock );
 				continue;
@@ -138,9 +139,8 @@ class PollingWatchBackendImpl {
 		while ( !mPendingAdds.empty() ) {
 			auto pending = std::move( mPendingAdds.front() );
 			mPendingAdds.pop_front();
-			pending.source.resolve(
-				Err( VFSError( VFSErrorCode::InvalidOperation, pending.watch->root,
-							   "Watch backend shutting down" ) ) );
+			pending.resolve( Err( VFSError( VFSErrorCode::InvalidOperation, pending.watch->root,
+											"Watch backend shutting down" ) ) );
 		}
 	}
 
@@ -221,9 +221,10 @@ class PollingWatchBackendImpl {
 				events.push_back( WatchEvent{ entry.first, {}, WatchEventType::Modified } );
 			}
 		}
-		for ( const auto& entry : previous )
+		for ( const auto& entry : previous ) {
 			if ( current.find( entry.first ) == current.end() )
 				events.push_back( WatchEvent{ entry.first, {}, WatchEventType::Removed } );
+		}
 		watch.snapshot = std::move( snapshot ).value();
 		if ( !events.empty() )
 			sink->push( std::move( events ) );

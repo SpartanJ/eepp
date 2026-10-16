@@ -24,9 +24,6 @@ struct FileDrag {
 	bool native{ false };
 };
 
-/** The drag in progress (or the last one; it is replaced when the next drag starts). */
-FileDrag& currentFileDrag();
-
 /** @brief Details view of one directory: draggable rows and a drop target. */
 class FileTableView : public UITableView {
   public:
@@ -34,6 +31,9 @@ class FileTableView : public UITableView {
 	static constexpr Uint32 CellType = UI_TYPE_USER + 0x0EF1;
 
 	static FileTableView* New();
+
+	/** The drag in progress (or the last one; it is replaced when the next drag starts). */
+	static FileDrag& currentDrag();
 
 	/** Returns the URIs to drag when a drag starts (the selection). */
 	std::function<std::vector<URI>()> dragPayload;

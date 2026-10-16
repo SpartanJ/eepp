@@ -7,19 +7,6 @@
 
 namespace eterm {
 
-namespace {
-
-/** The file of a loaded font as an absolute path, empty when unknown. */
-std::string fontFilePath( Font* font ) {
-	FontDesc desc;
-	if ( !font || font->getType() != FontType::TTF ||
-		 !static_cast<FontTrueType*>( font )->getFontDesc( desc ) )
-		return {};
-	return FileSystem::getRealPath( desc.path );
-}
-
-} // namespace
-
 SettingsActions::SettingsActions( App* app ) : mApp( app ) {}
 
 void SettingsActions::showSettings() {
@@ -48,14 +35,15 @@ void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {
 	// Not configured: the font in use (the bundled one, or the first explicit fallback).
 	if ( currentPath.empty() ) {
 		if ( uiFont ) {
-			currentPath = fontFilePath( mApp->scene->getUIThemeManager()->getDefaultFont() );
+			currentPath =
+				FontTrueType::filePathOf( mApp->scene->getUIThemeManager()->getDefaultFont() );
 		} else if ( fallbackFont ) {
 			const auto& fallbacks =
 				mApp->scene->getResourceScope()->getFontService().getFallbackFonts();
 			if ( !fallbacks.empty() )
-				currentPath = fontFilePath( fallbacks.front().get() );
+				currentPath = FontTrueType::filePathOf( fallbacks.front().get() );
 		} else {
-			currentPath = fontFilePath( mApp->terminalFont );
+			currentPath = FontTrueType::filePathOf( mApp->terminalFont );
 		}
 	}
 	if ( !currentPath.empty() )
@@ -126,40 +114,12 @@ void SettingsActions::setTerminalFontSize( Float size ) {
 }
 
 void SettingsActions::applyUIFont( Font* font, Float sizeDp ) {
-	// The theme decides the size (and font) of new text; existing text views that do not get them
-	// from the stylesheet are updated in place (as ecode does).
-	const Float size = PixelDensity::dpToPx( sizeDp );
-	UIThemeManager* manager = mApp->scene->getUIThemeManager();
-	manager->setDefaultFontSize( size );
-	if ( manager->getDefaultTheme() )
-		manager->getDefaultTheme()->setDefaultFontSize( size );
-	if ( font ) {
-		manager->setDefaultFont( font );
-		if ( manager->getDefaultTheme() )
-			manager->getDefaultTheme()->setDefaultFont( font );
-	}
-	mApp->scene->forEachNode( [font, size]( Node* node ) {
-		if ( !node->isType( UI_TYPE_TEXTVIEW ) )
-			return;
-		UITextView* text = node->asType<UITextView>();
-		const UIStyle* style = text->getUIStyle();
-		if ( !style || !style->hasProperty( PropertyId::FontSize ) )
-			text->setFontSize( size );
-		if ( font && ( !style || !style->hasProperty( PropertyId::FontFamily ) ) )
-			text->setFont( font );
-	} );
+	mApp->scene->applyDefaultFont( font, PixelDensity::dpToPx( sizeDp ) );
 }
 
 void SettingsActions::applyFontRendering() {
-	// The base UI fonts live in the default resource scope (UIApplication creates them there),
-	// the scene's own fonts in the scene's scope: both, as UIApplication does at startup.
-	for ( FontService* service : { &defaultResourceScope().getFontService(),
-								   &mApp->scene->getResourceScope()->getFontService() } ) {
-		service->setHinting( mApp->config->font.hinting );
-		service->setAntialiasing( mApp->config->font.antialiasing );
-	}
+	mApp->scene->setFontRendering( mApp->config->font.hinting, mApp->config->font.antialiasing );
 	mApp->forEachTerminal( []( UITerminal* terminal ) { terminal->syncFontRenderingConfig(); } );
-	mApp->scene->getRoot()->invalidateDraw();
 }
 
 } // namespace eterm

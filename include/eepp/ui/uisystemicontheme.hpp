@@ -12,6 +12,10 @@
 
 namespace EE { namespace UI {
 
+namespace Private {
+class SystemIconBackend;
+}
+
 /** @brief Icons provided by the platform, loaded asynchronously.
  *
  * - Linux and BSD: the user's freedesktop.org icon theme (Icon Theme Specification).
@@ -63,15 +67,13 @@ class EE_API UISystemIconTheme : public std::enable_shared_from_this<UISystemIco
 
 	/** A request for an icon image. Public for the platform backends. */
 	struct Request {
-		enum class Kind { Names, File, Path };
-		Kind kind{ Kind::Names };
+		enum class Kind : Uint8 { Names, File, Path };
 		std::vector<std::string> names;
 		/** File name (File) or path (Path). */
 		std::string value;
+		Kind kind{ Kind::Names };
 		bool isDirectory{ false };
 	};
-
-	class Backend;
 
   protected:
 	class Icon;
@@ -88,7 +90,7 @@ class EE_API UISystemIconTheme : public std::enable_shared_from_this<UISystemIco
 
 	Executor& mWorker;
 	Executor& mUI;
-	std::shared_ptr<Backend> mBackend;
+	std::shared_ptr<Private::SystemIconBackend> mBackend;
 	std::string mThemeName;
 	std::unordered_map<std::string, UIIconPtr> mIcons;
 	std::function<void()> mOnIconsLoaded;

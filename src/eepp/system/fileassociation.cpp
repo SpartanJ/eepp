@@ -58,17 +58,6 @@ static std::string applicationSlug( std::string_view id ) {
 	return slug.empty() ? "application" : slug;
 }
 
-static std::string xdgDataHome() {
-	auto path = Sys::getEnv( "XDG_DATA_HOME" );
-	if ( path.empty() ) {
-		path = Sys::getUserDirectory();
-		FileSystem::dirAddSlashAtEnd( path );
-		path += ".local/share";
-	}
-	FileSystem::dirRemoveSlashAtEnd( path );
-	return path;
-}
-
 static std::string xdgConfigHome() {
 	auto path = Sys::getEnv( "XDG_CONFIG_HOME" );
 	if ( path.empty() ) {
@@ -85,11 +74,11 @@ static std::string desktopEntryName( const FileAssociationApplication& applicati
 }
 
 static std::string desktopEntryPath( const FileAssociationApplication& application ) {
-	return xdgDataHome() + "/applications/" + desktopEntryName( application );
+	return Sys::getDataPath() + "/applications/" + desktopEntryName( application );
 }
 
 static std::string mimePackagePath( const FileAssociationApplication& application ) {
-	return xdgDataHome() + "/mime/packages/" + applicationSlug( application.id ) + ".xml";
+	return Sys::getDataPath() + "/mime/packages/" + applicationSlug( application.id ) + ".xml";
 }
 
 static std::string desktopEscape( std::string_view value ) {
@@ -204,14 +193,7 @@ mimeTypesForExtensions( const std::vector<std::string>& extensions,
 						const FileAssociationApplication& application ) {
 	std::unordered_set<std::string> wanted( extensions.begin(), extensions.end() );
 	std::unordered_map<std::string, std::pair<int, std::string>> weightedTypes;
-	std::vector<std::string> dataDirectories{ xdgDataHome() };
-	auto systemDirectories = Sys::getEnv( "XDG_DATA_DIRS" );
-	if ( systemDirectories.empty() )
-		systemDirectories = "/usr/local/share:/usr/share";
-	for ( auto& directory : String::split( systemDirectories, ':' ) )
-		dataDirectories.emplace_back( std::move( directory ) );
-	for ( auto& directory : dataDirectories ) {
-		FileSystem::dirRemoveSlashAtEnd( directory );
+	for ( const auto& directory : Sys::getDataSearchPaths() ) {
 		loadMimeGlobs( directory + "/mime/globs2", wanted, weightedTypes );
 		loadMimeGlobs( directory + "/mime/globs", wanted, weightedTypes );
 	}
@@ -371,7 +353,7 @@ static bool updateMimeAppsRegistration( const FileAssociationApplication& applic
 		if ( !desktop.empty() )
 			paths.emplace_back( configHome + '/' + desktop + "-mimeapps.list" );
 	}
-	const auto legacyPath = xdgDataHome() + "/applications/mimeapps.list";
+	const auto legacyPath = Sys::getDataPath() + "/applications/mimeapps.list";
 	if ( FileSystem::fileExists( legacyPath ) )
 		paths.emplace_back( legacyPath );
 	std::sort( paths.begin(), paths.end() );
@@ -388,7 +370,7 @@ static bool writeXdgRegistration( const FileAssociationApplication& application,
 								  const std::vector<std::string>& extensions, bool visible,
 								  std::string& error ) {
 	const auto previousExtensions = desktopExtensions( application );
-	const auto dataHome = xdgDataHome();
+	const auto dataHome = Sys::getDataPath();
 	const auto applicationsDirectory = dataHome + "/applications";
 	const auto mimeDirectory = dataHome + "/mime";
 	const auto packageDirectory = mimeDirectory + "/packages";
@@ -668,7 +650,7 @@ bool FileAssociation::setRegisteredExtensions( const std::vector<std::string>& r
 	const auto supported = normalizeExtensions( supportedExtensions );
 	const auto requested = normalizeExtensions( registeredExtensions );
 	std::vector<std::string> selected;
-	selected.reserve( ( std::min )( requested.size(), supported.size() ) );
+	selected.reserve( (std::min)( requested.size(), supported.size() ) );
 	std::set_intersection( requested.begin(), requested.end(), supported.begin(), supported.end(),
 						   std::back_inserter( selected ) );
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD

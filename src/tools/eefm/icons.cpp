@@ -83,17 +83,19 @@ FontTrueType* loadFont( UISceneNode* ui, const std::string& name, const std::str
 
 } // namespace
 
-void loadIcons( UISceneNode* ui, const std::string& assetsPath ) {
+void Icons::load( UISceneNode* ui, const std::string& assetsPath ) {
 	FontTrueType* remix = loadFont( ui, "icon", assetsPath + "fonts/remixicon.ttf" );
 	FontTrueType* nonicons = loadFont( ui, "nonicons", assetsPath + "fonts/nonicons.ttf" );
 	FontTrueType* codicons = loadFont( ui, "codicon", assetsPath + "fonts/codicon.ttf" );
 	auto theme = IconManager::init( "eefm", remix, nonicons, codicons );
-	if ( remix && remix->loaded() )
+	if ( remix && remix->loaded() ) {
 		for ( const auto& icon : RemixIcons )
 			theme->add( UIGlyphIcon::New( icon.name, remix, icon.codePoint ) );
-	if ( codicons && codicons->loaded() )
+	}
+	if ( codicons && codicons->loaded() ) {
 		for ( const auto& icon : CodIcons )
 			theme->add( UIGlyphIcon::New( icon.name, codicons, icon.codePoint ) );
+	}
 	ui->getUIIconThemeManager()->setCurrentTheme( theme );
 }
 

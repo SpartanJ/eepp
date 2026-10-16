@@ -841,6 +841,54 @@ std::string Sys::getCachePath( const std::string& appname ) {
 	return getTempPath() + appname;
 }
 
+std::string Sys::getDataPath( const std::string& appname ) {
+	auto under = []( std::string base, const char* subdirectory, const std::string& appname ) {
+		FileSystem::dirAddSlashAtEnd( base );
+		base += subdirectory;
+		base += appname;
+		FileSystem::dirRemoveSlashAtEnd( base );
+		return base;
+	};
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::string roaming = getEnv( "APPDATA" );
+	if ( !roaming.empty() )
+		return under( std::move( roaming ), "", appname );
+#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+	std::string home = getEnv( "HOME" );
+	if ( !home.empty() )
+		return under( std::move( home ), "Library/Application Support/", appname );
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_SOLARIS || EE_PLATFORM == EE_PLATFORM_HAIKU
+	// The XDG Base Directory specification ignores empty and relative values.
+	std::string data = getEnv( "XDG_DATA_HOME" );
+	if ( !data.empty() && data[0] == '/' )
+		return under( std::move( data ), "", appname );
+	std::string home = getEnv( "HOME" );
+	if ( !home.empty() )
+		return under( std::move( home ), ".local/share/", appname );
+#endif
+	std::string config = getConfigPath( appname );
+	FileSystem::dirRemoveSlashAtEnd( config );
+	return config;
+}
+
+std::vector<std::string> Sys::getDataSearchPaths() {
+	std::vector<std::string> paths{ getDataPath() };
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_SOLARIS || EE_PLATFORM == EE_PLATFORM_HAIKU
+	std::string dirs = getEnv( "XDG_DATA_DIRS" );
+	if ( dirs.empty() )
+		dirs = "/usr/local/share:/usr/share";
+	for ( auto& dir : String::split( dirs, ':' ) ) {
+		if ( dir.empty() || dir[0] != '/' )
+			continue;
+		FileSystem::dirRemoveSlashAtEnd( dir );
+		paths.push_back( std::move( dir ) );
+	}
+#endif
+	return paths;
+}
+
 std::string Sys::getTempPath() {
 	char path[EE_MAX_CFG_PATH_LEN + 1];
 

@@ -82,9 +82,6 @@ class Transfer {
 	TransferProgressSubscription onProgress( TransferProgressCallback callback,
 											 Executor* deliveryExecutor = nullptr );
 
-	/** @return The most recent progress snapshot. */
-	TransferProgress progress() const;
-
 	/** Requests cancellation. The transfer completes with VFSErrorCode::Cancelled; files fully
 	 * copied so far remain at the destination, the source of a move is never removed for
 	 * entries that were not completely copied. */

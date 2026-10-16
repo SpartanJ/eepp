@@ -1809,7 +1809,7 @@ solution "eepp"
 				"src/eepp/window/platform/macos/platformhelper.mm",
 				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm",
 				"src/eepp/system/fileassociation_macos.mm",
-				"src/eepp/ui/icons/systemiconsmacos.mm",
+				"src/eepp/ui/icons/macosiconimage.mm",
 				"src/eepp/window/draganddrop/cocoadraganddrop.mm" }
 		buildoptions { "-x objective-c++" }
 		if not is_vs() then
@@ -2277,7 +2277,7 @@ solution "eepp"
 		targetdir("./bin/unit_tests")
 		defines { "EE_UNIT_TESTS" }
 		links { "eterm-static", "languages-syntax-highlighting-static" }
-		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
+		includedirs { "src/modules/eterm/include/", "src/thirdparty", "src/modules/vfs/src/" }
 		language "C++"
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }

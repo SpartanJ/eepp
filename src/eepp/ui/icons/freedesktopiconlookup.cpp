@@ -58,13 +58,6 @@ int toInt( const std::string& text, int fallback ) {
 	return !text.empty() && String::fromString( value, text ) ? value : fallback;
 }
 
-std::string lowerExtension( const std::string& name ) {
-	size_t dot = name.find_last_of( '.' );
-	if ( dot == std::string::npos || dot + 1 == name.size() )
-		return {};
-	return String::toLower( name.substr( dot + 1 ) );
-}
-
 #ifdef EE_SYSTEM_ICONS_FREEDESKTOP
 
 /** Output of a command (first line, trimmed), empty if it fails. Blocking. */
@@ -207,14 +200,15 @@ struct FreedesktopIconLookup::Theme {
 static void indexIconFiles( const std::string& dir,
 							std::unordered_map<std::string, std::string>& files ) {
 	for ( const auto& file : FileSystem::filesGetInPath( dir, false, false, false ) ) {
-		std::string extension = lowerExtension( file );
+		std::string extension = FileSystem::fileExtension( file );
 		if ( extension != "png" && extension != "svg" )
 			continue;
 		std::string name = file.substr( 0, file.size() - extension.size() - 1 );
 		auto found = files.find( name );
 		if ( found == files.end() ||
-			 ( extension == "png" && lowerExtension( found->second ) != "png" ) )
+			 ( extension == "png" && FileSystem::fileExtension( found->second ) != "png" ) ) {
 			files[name] = dir + file;
+		}
 	}
 }
 
@@ -223,14 +217,8 @@ std::vector<std::string> FreedesktopIconLookup::defaultSearchPaths() {
 #ifdef EE_SYSTEM_ICONS_FREEDESKTOP
 	std::string home = withSlash( Sys::getUserDirectory() );
 	paths.push_back( home + ".icons" );
-	std::string dataHome = Sys::getEnv( "XDG_DATA_HOME" );
-	paths.push_back( withSlash( dataHome.empty() ? home + ".local/share" : dataHome ) + "icons" );
-	std::string dataDirs = Sys::getEnv( "XDG_DATA_DIRS" );
-	if ( dataDirs.empty() )
-		dataDirs = "/usr/local/share:/usr/share";
-	for ( const auto& dir : String::split( dataDirs, ':' ) )
-		if ( !dir.empty() )
-			paths.push_back( withSlash( dir ) + "icons" );
+	for ( const auto& dir : Sys::getDataSearchPaths() )
+		paths.push_back( withSlash( dir ) + "icons" );
 	paths.push_back( "/usr/share/pixmaps" );
 #endif
 	return paths;
@@ -245,16 +233,18 @@ std::string FreedesktopIconLookup::detectThemeName() {
 		theme = kdeIconTheme();
 		return theme.empty() ? "breeze" : theme;
 	}
-	if ( is( "xfce" ) )
+	if ( is( "xfce" ) ) {
 		theme = commandOutput( "xfconf-query", "-c xsettings -p /Net/IconThemeName" );
-	else if ( is( "cinnamon" ) )
+	} else if ( is( "cinnamon" ) ) {
 		theme = unquote(
 			commandOutput( "gsettings", "get org.cinnamon.desktop.interface icon-theme" ) );
-	else if ( is( "mate" ) )
+	} else if ( is( "mate" ) ) {
 		theme = unquote( commandOutput( "gsettings", "get org.mate.interface icon-theme" ) );
-	if ( theme.empty() && !desktop.empty() )
+	}
+	if ( theme.empty() && !desktop.empty() ) {
 		theme =
 			unquote( commandOutput( "gsettings", "get org.gnome.desktop.interface icon-theme" ) );
+	}
 	if ( theme.empty() )
 		theme = gtkSettingsIconTheme();
 	if ( theme.empty() )
@@ -273,9 +263,10 @@ FreedesktopIconLookup::FreedesktopIconLookup( const std::string& themeName,
 	auto installed = [&]( const std::string& name ) {
 		if ( name.empty() )
 			return false;
-		for ( const auto& path : mSearchPaths )
+		for ( const auto& path : mSearchPaths ) {
 			if ( FileSystem::fileExists( path + name + "/index.theme" ) )
 				return true;
+		}
 		return false;
 	};
 	for ( const std::string& candidate : { themeName, std::string( "breeze" ),
@@ -302,24 +293,28 @@ void FreedesktopIconLookup::addTheme( const std::string& name,
 	if ( !seen.insert( name ).second )
 		return;
 	std::string text;
-	for ( const auto& path : mSearchPaths )
+	for ( const auto& path : mSearchPaths ) {
 		if ( FileSystem::fileGet( path + name + "/index.theme", text ) )
 			break;
+	}
 	if ( text.empty() )
 		return;
 	IniSections ini = parseIni( text );
 	auto theme = std::make_unique<Theme>();
 	theme->name = name;
-	for ( const auto& parent : String::split( iniValue( ini, "Icon Theme", "Inherits" ), ',' ) )
+	for ( const auto& parent : String::split( iniValue( ini, "Icon Theme", "Inherits" ), ',' ) ) {
 		if ( !String::trim( parent ).empty() )
 			theme->inherits.push_back( String::trim( parent ) );
+	}
 	std::vector<std::string> dirNames;
-	for ( const char* key : { "Directories", "ScaledDirectories" } )
-		for ( const auto& dir : String::split( iniValue( ini, "Icon Theme", key ), ',' ) )
+	for ( const char* key : { "Directories", "ScaledDirectories" } ) {
+		for ( const auto& dir : String::split( iniValue( ini, "Icon Theme", key ), ',' ) ) {
 			if ( !String::trim( dir ).empty() &&
 				 std::find( dirNames.begin(), dirNames.end(), String::trim( dir ) ) ==
 					 dirNames.end() )
 				dirNames.push_back( String::trim( dir ) );
+		}
+	}
 	for ( const auto& dirName : dirNames ) {
 		Theme::Dir dir;
 		dir.size = toInt( iniValue( ini, dirName, "Size" ), 0 );

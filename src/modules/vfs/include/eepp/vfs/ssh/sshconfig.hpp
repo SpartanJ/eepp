@@ -98,20 +98,16 @@ struct SSHResolvedConfig {
 	/** Effective connection host (HostName applied, canonicalized when enabled). */
 	std::string hostName;
 	std::string user;
-	Uint16 port{ 22 };
 
 	/** Expanded identity file paths, in order. Defaults apply when none are configured. */
 	std::vector<std::string> identityFiles;
 	std::vector<std::string> certificateFiles;
 	/** Agent socket/pipe path; nullopt when agent use is disabled ("IdentityAgent none"). */
 	std::optional<std::string> identityAgent;
-	bool identitiesOnly{ false };
 
 	std::vector<std::string> userKnownHostsFiles;
 	std::vector<std::string> globalKnownHostsFiles;
-	SSHStrictHostKeyChecking strictHostKeyChecking{ SSHStrictHostKeyChecking::Ask };
 	std::optional<std::string> hostKeyAlias;
-	bool checkHostIP{ false };
 
 	std::vector<SSHJumpHost> proxyJump;
 	/** Expanded ProxyCommand, nullopt when unset or "none". */
@@ -119,15 +115,8 @@ struct SSHResolvedConfig {
 
 	std::optional<Time> connectTimeout;
 	std::optional<Time> serverAliveInterval;
-	Uint32 serverAliveCountMax{ 3 };
 
 	std::vector<std::string> preferredAuthentications;
-	bool pubkeyAuthentication{ true };
-	bool passwordAuthentication{ true };
-	bool kbdInteractiveAuthentication{ true };
-	Uint32 numberOfPasswordPrompts{ 3 };
-	bool batchMode{ false };
-	bool compression{ false };
 
 	/** Algorithm preference specifications as configured (with OpenSSH +/-/^ modifiers). Apply
 	 * with SSHConfigEvaluator::applyAlgorithmSpec() against the backend's supported list. */
@@ -138,13 +127,25 @@ struct SSHResolvedConfig {
 	std::optional<std::string> pubkeyAcceptedAlgorithms;
 
 	std::string tag;
-	/** True when hostname canonicalization rewrote the host. */
-	bool canonicalized{ false };
 
 	/** Every evaluated directive (lowercase keyword -> values), first-wins or accumulated. */
 	std::map<std::string, std::vector<std::string>> options;
 	/** Non-fatal problems (unknown directives, failed expansions, unreadable includes). */
 	std::vector<std::string> warnings;
+
+	Uint32 serverAliveCountMax{ 3 };
+	Uint32 numberOfPasswordPrompts{ 3 };
+	Uint16 port{ 22 };
+	SSHStrictHostKeyChecking strictHostKeyChecking{ SSHStrictHostKeyChecking::Ask };
+	bool identitiesOnly{ false };
+	bool checkHostIP{ false };
+	bool pubkeyAuthentication{ true };
+	bool passwordAuthentication{ true };
+	bool kbdInteractiveAuthentication{ true };
+	bool batchMode{ false };
+	bool compression{ false };
+	/** True when hostname canonicalization rewrote the host. */
+	bool canonicalized{ false };
 
 	/** @return A key identifying meaningfully different SSH sessions: destination (host, port,
 	 * user, proxy chain, host key alias) and the security policy that verified and
@@ -161,7 +162,6 @@ struct SSHConfigContext {
 	std::string originalHost;
 	/** Command-line style overrides (from the URI): they win over every config file. */
 	std::optional<std::string> userOverride;
-	std::optional<Uint16> portOverride;
 
 	std::string localUser;
 	std::string homeDirectory;
@@ -195,6 +195,8 @@ struct SSHConfigContext {
 	std::function<std::optional<std::string>( const std::string& fqdn )> resolve;
 	/** Returns true if any local interface address is inside the CIDR network. */
 	std::function<bool( const std::string& cidr )> localNetworkContains;
+	/** Command-line style port override (from the URI): it wins over every config file. */
+	std::optional<Uint16> portOverride;
 
 	/** @return A context backed by the real system: current user, real files, environment,
 	 * process execution for Match exec, DNS for canonicalization, ~/.ssh/config and the system

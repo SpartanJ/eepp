@@ -56,7 +56,6 @@
 #include <eepp/system/time.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/system/uuid.hpp>
-#include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/system/zip.hpp>
 
 #endif

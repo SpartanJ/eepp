@@ -1,63 +1,52 @@
+#include "fileoperations.hpp"
 #include "app.hpp"
 #include "apps.hpp"
+#include "location.hpp"
 #include "mime.hpp"
+#include "panemanager.hpp"
+#include "placescontroller.hpp"
 #include "trash.hpp"
 #include <eepp/system/sha1.hpp>
 
 namespace eefm {
 
-namespace {
+FileOperations::FileOperations( App& app ) : mApp( app ), mUI( app.ui() ), mVFS( app.vfs() ) {}
 
-bool isSameOrInside( const URI& uri, const URI& folder ) {
-	if ( uri.getScheme() != folder.getScheme() || uri.getAuthority() != folder.getAuthority() )
-		return false;
-	std::string path = uri.getPath(), root = folder.getPath();
-	while ( root.size() > 1 && root.back() == '/' )
-		root.pop_back();
-	while ( path.size() > 1 && path.back() == '/' )
-		path.pop_back();
-	return path == root ||
-		   ( path.size() > root.size() && path.compare( 0, root.size(), root ) == 0 &&
-			 ( root == "/" || path[root.size()] == '/' ) );
+FileOperations::~FileOperations() = default;
+
+void FileOperations::cancelTransfers() {
+	for ( auto& transfer : mTransfers )
+		transfer.second.transfer.cancel();
+	mTransfers.clear();
 }
 
-} // namespace
-
-// ---------------------------------------------------------------------------------------------
-// Selection helpers
-// ---------------------------------------------------------------------------------------------
-
-std::vector<size_t> App::selectedRows( FileTab* tab ) const {
-	std::vector<size_t> rows;
-	for ( const auto& index : tab->view->getSelection().indexes() )
-		if ( index.row() >= 0 && static_cast<size_t>( index.row() ) < tab->model->rowCount() &&
-			 std::find( rows.begin(), rows.end(), static_cast<size_t>( index.row() ) ) ==
-				 rows.end() )
-			rows.push_back( static_cast<size_t>( index.row() ) );
-	std::sort( rows.begin(), rows.end() );
-	return rows;
+void FileOperations::cancelTransfers( int paneIndex ) {
+	for ( auto& transfer : mTransfers ) {
+		if ( transfer.second.pane == paneIndex )
+			transfer.second.transfer.cancel();
+	}
 }
 
-std::vector<URI> App::selectedURIs( FileTab* tab ) const {
-	std::vector<URI> uris;
-	for ( size_t row : selectedRows( tab ) )
-		uris.push_back( tab->model->entryURI( row ) );
-	return uris;
+void FileOperations::addDroppedFile( URI uri, std::optional<Vector2f> position ) {
+	mDroppedFiles.push_back( std::move( uri ) );
+	if ( position )
+		mDropPosition = position;
 }
 
-void App::reportError( const String& action, const VFSError& error ) {
+void FileOperations::reportError( const String& action, const VFSError& error ) {
 	if ( error.is( VFSErrorCode::Cancelled ) )
 		return;
-	showError( mUI, action + ":\n" + String::fromUtf8( error.toString() ) );
+	Dialogs::showError( mUI, action + ":\n" + String::fromUtf8( error.toString() ) );
 }
 
-void App::runBlocking( std::function<std::string()> work, std::function<void()> refresh,
-					   String errorTitle ) {
-	mPool->submit( std::move( work ) )
-		.thenOn( *mExecutor, [this, refresh = std::move( refresh ),
-							  errorTitle = std::move( errorTitle )]( std::string error ) {
+void FileOperations::runInBackground( std::function<std::string()> work,
+									  std::function<void()> refresh, String errorTitle ) {
+	mApp.pool()
+		->submit( std::move( work ) )
+		.then( mApp.executor(), [this, refresh = std::move( refresh ),
+								 errorTitle = std::move( errorTitle )]( std::string error ) {
 			if ( !error.empty() )
-				showError( mUI, errorTitle + ":\n" + String::fromUtf8( error ) );
+				Dialogs::showError( mUI, errorTitle + ":\n" + String::fromUtf8( error ) );
 			if ( refresh )
 				refresh();
 		} );
@@ -67,21 +56,22 @@ void App::runBlocking( std::function<std::string()> work, std::function<void()> 
 // Opening
 // ---------------------------------------------------------------------------------------------
 
-void App::openRow( FileTab* tab, size_t row ) {
+void FileOperations::openRow( FileTab* tab, size_t row ) {
 	if ( row >= tab->model->rowCount() )
 		return;
 	if ( tab->model->entry( row ).isDirectory() ) {
-		navigate( tab, tab->model->entryURI( row ) );
+		mApp.panes().navigate( tab, tab->model->entryURI( row ) );
 		return;
 	}
 	// Enter / double click on a multiple selection opens all the selected files.
-	auto rows = selectedRows( tab );
+	auto rows = tab->selectedRows();
 	if ( std::find( rows.begin(), rows.end(), row ) == rows.end() )
 		rows = { row };
 	std::vector<URI> files;
-	for ( size_t selected : rows )
+	for ( size_t selected : rows ) {
 		if ( !tab->model->entry( selected ).isDirectory() )
 			files.push_back( tab->model->entryURI( selected ) );
+	}
 	openFiles( files );
 }
 
@@ -121,23 +111,25 @@ void withLocalFiles( VirtualFileSystem* vfs, Executor& executor, UISceneNode* ui
 		options.overwrite = OverwritePolicy::Overwrite;
 		vfs->copy( uris[i], URI::fromFSPath( local ), options )
 			.completion()
-			.thenOn( executor,
-					 [paths, remaining, finish, local, i, ui,
-					  name = uris[i].getLastPathSegment()]( VFSResult<TransferResult>&& result ) {
-						 if ( result )
-							 ( *paths )[i] = local;
-						 else if ( !result.error().is( VFSErrorCode::Cancelled ) )
-							 showError( ui, String::fromUtf8( "Could not download " + name + ":\n" +
+			.then( executor, [paths, remaining, finish, local, i, ui,
+							  name = uris[i].getLastPathSegment()](
+								 VFSResult<TransferResult>&& result ) {
+				if ( result ) {
+					( *paths )[i] = local;
+				} else if ( !result.error().is( VFSErrorCode::Cancelled ) ) {
+					Dialogs::showError( ui, String::fromUtf8( "Could not download " + name + ":\n" +
 															  result.error().toString() ) );
-						 if ( --*remaining == 0 ) {
-							 std::vector<std::string> ready;
-							 for ( auto& path : *paths )
-								 if ( !path.empty() )
-									 ready.push_back( path );
-							 if ( !ready.empty() )
-								 ( *finish )( std::move( ready ) );
-						 }
-					 } );
+				}
+				if ( --*remaining == 0 ) {
+					std::vector<std::string> ready;
+					for ( auto& path : *paths ) {
+						if ( !path.empty() )
+							ready.push_back( path );
+					}
+					if ( !ready.empty() )
+						( *finish )( std::move( ready ) );
+				}
+			} );
 	}
 	if ( *remaining == 0 )
 		done( std::move( *paths ) );
@@ -145,10 +137,10 @@ void withLocalFiles( VirtualFileSystem* vfs, Executor& executor, UISceneNode* ui
 
 } // namespace
 
-void App::openFiles( const std::vector<URI>& uris ) {
+void FileOperations::openFiles( const std::vector<URI>& uris ) {
 	if ( uris.empty() )
 		return;
-	withLocalFiles( mVFS, *mExecutor, mUI, uris, [this]( std::vector<std::string> paths ) {
+	withLocalFiles( mVFS, mApp.executor(), mUI, uris, [this]( std::vector<std::string> paths ) {
 		for ( const auto& path : paths ) {
 			const std::string& mime =
 				MimeDatabase::instance().typeForName( FileSystem::fileNameFromPath( path ) );
@@ -156,48 +148,50 @@ void App::openFiles( const std::vector<URI>& uris ) {
 			if ( app && Applications::launch( *app, { path } ) )
 				continue;
 			if ( !Engine::instance()->openURI( URI::fromFSPath( path ).toString() ) )
-				showError( mUI, String::fromUtf8( "No application can open " + path ) );
+				Dialogs::showError( mUI, String::fromUtf8( "No application can open " + path ) );
 		}
 	} );
 }
 
-void App::openWith( const std::vector<URI>& uris ) {
-	promptText( mUI, mUI->i18n( "eefm_open_with", "Open With" ),
-				mUI->i18n( "eefm_open_with_command", "Command to open the files with:" ), "", false,
-				[this, uris]( std::optional<std::string> command ) {
-					if ( !command || String::trim( *command ).empty() )
-						return;
-					withLocalFiles( mVFS, *mExecutor, mUI, uris,
-									[this, command = *command]( std::vector<std::string> paths ) {
-										if ( !Applications::launchCommand( command, paths ) )
-											showError( mUI, String::fromUtf8( "Could not run \"" +
-																			  command + "\"" ) );
-									} );
-				} );
+void FileOperations::openWith( const std::vector<URI>& uris ) {
+	Dialogs::promptText(
+		mUI, mUI->i18n( "eefm_open_with", "Open With" ),
+		mUI->i18n( "eefm_open_with_command", "Command to open the files with:" ), "", false,
+		[this, uris]( std::optional<std::string> command ) {
+			if ( !command || String::trim( *command ).empty() )
+				return;
+			withLocalFiles( mVFS, mApp.executor(), mUI, uris,
+							[this, command = *command]( std::vector<std::string> paths ) {
+								if ( !Applications::launchCommand( command, paths ) ) {
+									Dialogs::showError( mUI, String::fromUtf8( "Could not run \"" +
+																			   command + "\"" ) );
+								}
+							} );
+		} );
 }
 
-void App::openTerminalHere( FileTab* tab ) {
+void FileOperations::openTerminalHere( FileTab* tab ) {
 	URI uri = tab->model->uri();
-	auto rows = selectedRows( tab );
+	auto rows = tab->selectedRows();
 	if ( rows.size() == 1 && tab->model->entry( rows[0] ).isDirectory() )
 		uri = tab->model->entryURI( rows[0] );
 	if ( uri.getScheme() != "file" ) {
-		showError( mUI, "A terminal can only be opened in local folders." );
+		Dialogs::showError( mUI, "A terminal can only be opened in local folders." );
 		return;
 	}
 	if ( !Applications::openTerminal( uri.getFSPath() ) )
-		showError( mUI, "No terminal emulator was found (set $TERMINAL)." );
+		Dialogs::showError( mUI, "No terminal emulator was found (set $TERMINAL)." );
 }
 
 // ---------------------------------------------------------------------------------------------
 // Context menus
 // ---------------------------------------------------------------------------------------------
 
-void App::showContextMenu( FileTab* tab, bool background ) {
+void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	auto rows = background ? std::vector<size_t>{} : selectedRows( tab );
-	auto uris = background ? std::vector<URI>{} : selectedURIs( tab );
-	bool inTrash = trash::contains( tab->model->uri() );
+	auto rows = background ? std::vector<size_t>{} : tab->selectedRows();
+	auto uris = background ? std::vector<URI>{} : tab->selectedURIs();
+	bool inTrash = Trash::contains( tab->model->uri() );
 	bool allFolders = !rows.empty(), anyFolder = false;
 	for ( size_t row : rows ) {
 		bool dir = tab->model->entry( row ).isDirectory();
@@ -208,9 +202,9 @@ void App::showContextMenu( FileTab* tab, bool background ) {
 	// no empty space to right click. It creates in the current folder.
 	auto addCreateNew = [this, menu, tab] {
 		UIPopUpMenu* create = UIPopUpMenu::New();
-		create->add( mUI->i18n( "eefm_new_folder", "Folder..." ), icon( "folder-add" ), "F10" )
+		create->add( mUI->i18n( "eefm_new_folder", "Folder..." ), mApp.icon( "folder-add" ), "F10" )
 			->setId( "new-folder" );
-		create->add( mUI->i18n( "eefm_new_text_file", "Text File..." ), icon( "file-add" ) )
+		create->add( mUI->i18n( "eefm_new_text_file", "Text File..." ), mApp.icon( "file-add" ) )
 			->setId( "new-file" );
 		create->on( Event::OnItemClicked, [this, tab]( const Event* event ) {
 			std::string id( event->getNode()->getId() );
@@ -219,7 +213,7 @@ void App::showContextMenu( FileTab* tab, bool background ) {
 			else if ( id == "new-file" )
 				newTextFile( tab );
 		} );
-		menu->addSubMenu( mUI->i18n( "eefm_create_new", "Create New" ), icon( "file-add" ),
+		menu->addSubMenu( mUI->i18n( "eefm_create_new", "Create New" ), mApp.icon( "file-add" ),
 						  create );
 		menu->addSeparator();
 	};
@@ -232,7 +226,7 @@ void App::showContextMenu( FileTab* tab, bool background ) {
 			String openText =
 				apps.empty() ? mUI->i18n( "eefm_open", "Open" )
 							 : String( String::format( "Open with %s", apps[0].name.c_str() ) );
-			menu->add( openText, icon( "action-open-with" ), "Return" )->setId( "open" );
+			menu->add( openText, mApp.icon( "action-open-with" ), "Return" )->setId( "open" );
 			UIPopUpMenu* with = UIPopUpMenu::New();
 			for ( size_t i = 0; i < apps.size(); ++i )
 				with->add( String::fromUtf8( apps[i].name ) )->setId( "app" )->setData( i );
@@ -245,82 +239,92 @@ void App::showContextMenu( FileTab* tab, bool background ) {
 				std::string id( event->getNode()->getId() );
 				if ( id == "app" ) {
 					size_t index = static_cast<size_t>( event->getNode()->getData() );
-					if ( index < apps.size() )
-						withLocalFiles( mVFS, *mExecutor, mUI, uris,
+					if ( index < apps.size() ) {
+						withLocalFiles( mVFS, mApp.executor(), mUI, uris,
 										[app = apps[index]]( std::vector<std::string> paths ) {
 											Applications::launch( app, paths );
 										} );
+					}
 				} else if ( id == "other-app" ) {
 					openWith( uris );
 				}
 			} );
 		} else if ( allFolders ) {
-			menu->add( mUI->i18n( "eefm_open", "Open" ), icon( "mime-folder" ), "Return" )
+			menu->add( mUI->i18n( "eefm_open", "Open" ), mApp.icon( "mime-folder" ), "Return" )
 				->setId( "open" );
 			menu->add( mUI->i18n( "eefm_open_new_tab", "Open in New Tab" ),
-					   icon( "action-new-tab" ) )
+					   mApp.icon( "action-new-tab" ) )
 				->setId( "open-tab" );
-			if ( mSplit )
+			if ( mApp.isSplit() ) {
 				menu->add( mUI->i18n( "eefm_open_other_pane", "Open in Other Pane" ),
-						   icon( "view-split" ) )
+						   mApp.icon( "view-split" ) )
 					->setId( "open-other" );
+			}
 		}
 		// After the open actions, as Dolphin.
 		if ( menu->getCount() > 0 )
 			menu->addSeparator();
 		addCreateNew();
-		menu->add( mUI->i18n( "eefm_cut", "Cut" ), icon( "cut" ), "Ctrl+X" )->setId( "cut" );
-		menu->add( mUI->i18n( "eefm_copy", "Copy" ), icon( "copy" ), "Ctrl+C" )->setId( "copy" );
+		menu->add( mUI->i18n( "eefm_cut", "Cut" ), mApp.icon( "cut" ), "Ctrl+X" )->setId( "cut" );
+		menu->add( mUI->i18n( "eefm_copy", "Copy" ), mApp.icon( "copy" ), "Ctrl+C" )
+			->setId( "copy" );
 		menu->add( mUI->i18n( "eefm_copy_location", "Copy Location" ),
-				   icon( "action-copy-location" ) )
+				   mApp.icon( "action-copy-location" ) )
 			->setId( "copy-location" );
-		if ( rows.size() == 1 && allFolders && !clipboardFiles().uris.empty() )
-			menu->add( mUI->i18n( "eefm_paste_into", "Paste into Folder" ), icon( "paste" ) )
+		if ( rows.size() == 1 && allFolders && !clipboardFiles().uris.empty() ) {
+			menu->add( mUI->i18n( "eefm_paste_into", "Paste into Folder" ), mApp.icon( "paste" ) )
 				->setId( "paste-into" );
+		}
 		menu->addSeparator();
-		if ( rows.size() == 1 )
-			menu->add( mUI->i18n( "eefm_rename", "Rename..." ), icon( "edit" ), "F2" )
+		if ( rows.size() == 1 ) {
+			menu->add( mUI->i18n( "eefm_rename", "Rename..." ), mApp.icon( "edit" ), "F2" )
 				->setId( "rename" );
+		}
 		if ( inTrash ) {
-			menu->add( mUI->i18n( "eefm_restore", "Restore" ), icon( "action-restore" ) )
+			menu->add( mUI->i18n( "eefm_restore", "Restore" ), mApp.icon( "action-restore" ) )
 				->setId( "restore" );
-		} else if ( trash::supported( uris[0] ) ) {
-			menu->add( mUI->i18n( "eefm_move_to_trash", "Move to Trash" ), icon( "place-trash" ),
-					   "Del" )
+		} else if ( Trash::supported( uris[0] ) ) {
+			menu->add( mUI->i18n( "eefm_move_to_trash", "Move to Trash" ),
+					   mApp.icon( "place-trash" ), "Del" )
 				->setId( "trash" );
 		}
-		menu->add( mUI->i18n( "eefm_delete", "Delete" ), icon( "delete-bin" ), "Shift+Del" )
+		menu->add( mUI->i18n( "eefm_delete", "Delete" ), mApp.icon( "delete-bin" ), "Shift+Del" )
 			->setId( "delete" );
 		menu->addSeparator();
-		if ( rows.size() == 1 && allFolders )
+		if ( rows.size() == 1 && allFolders ) {
 			menu->add( mUI->i18n( "eefm_add_to_places", "Add to Places" ),
-					   icon( "action-add-place" ) )
+					   mApp.icon( "action-add-place" ) )
 				->setId( "add-place" );
+		}
 	} else {
 		addCreateNew();
-		if ( !clipboardFiles().uris.empty() )
-			menu->add( mUI->i18n( "eefm_paste", "Paste" ), icon( "paste" ), "Ctrl+V" )
+		if ( !clipboardFiles().uris.empty() ) {
+			menu->add( mUI->i18n( "eefm_paste", "Paste" ), mApp.icon( "paste" ), "Ctrl+V" )
 				->setId( "paste" );
+		}
 		menu->add( mUI->i18n( "eefm_copy_location", "Copy Location" ),
-				   icon( "action-copy-location" ) )
+				   mApp.icon( "action-copy-location" ) )
 			->setId( "copy-current-location" );
-		menu->add( mUI->i18n( "eefm_add_to_places", "Add to Places" ), icon( "action-add-place" ) )
+		menu->add( mUI->i18n( "eefm_add_to_places", "Add to Places" ),
+				   mApp.icon( "action-add-place" ) )
 			->setId( "add-current-place" );
 		menu->addSeparator();
-		menu->addCheckBox( mUI->i18n( "eefm_show_hidden", "Show Hidden Files" ), mShowHidden,
+		menu->addCheckBox( mUI->i18n( "eefm_show_hidden", "Show Hidden Files" ), mApp.showHidden(),
 						   "Ctrl+H" )
 			->setId( "hidden" );
-		if ( inTrash )
-			menu->add( mUI->i18n( "eefm_empty_trash", "Empty Trash" ), icon( "place-trash" ) )
+		if ( inTrash ) {
+			menu->add( mUI->i18n( "eefm_empty_trash", "Empty Trash" ), mApp.icon( "place-trash" ) )
 				->setId( "empty-trash" );
-		menu->add( mUI->i18n( "eefm_refresh", "Reload" ), icon( "view-refresh" ), "F5" )
+		}
+		menu->add( mUI->i18n( "eefm_refresh", "Reload" ), mApp.icon( "view-refresh" ), "F5" )
 			->setId( "refresh" );
 	}
-	if ( tab->model->uri().getScheme() == "file" )
+	if ( tab->model->uri().getScheme() == "file" ) {
 		menu->add( mUI->i18n( "eefm_open_terminal", "Open Terminal Here" ),
-				   icon( "action-terminal" ), "Shift+F4" )
+				   mApp.icon( "action-terminal" ), "Shift+F4" )
 			->setId( "terminal" );
-	menu->add( mUI->i18n( "eefm_properties", "Properties" ), icon( "action-properties" ),
+	}
+	menu->add( mUI->i18n( "eefm_properties", "Properties" ), mApp.icon( "action-properties" ),
 			   "Alt+Return" )
 		->setId( "properties" );
 
@@ -331,19 +335,20 @@ void App::showContextMenu( FileTab* tab, bool background ) {
 				openRow( tab, rows[0] );
 		} else if ( id == "open-tab" ) {
 			for ( const auto& uri : uris )
-				openTab( *tab->pane, uri, uris.size() == 1 );
+				mApp.panes().openTab( *tab->pane, uri, uris.size() == 1 );
 		} else if ( id == "open-other" ) {
-			if ( auto* other = currentTab( pane( 1 - tab->pane->index ) ) )
-				navigate( other, uris[0] );
+			if ( auto* other =
+					 mApp.panes().currentTab( mApp.panes().pane( 1 - tab->pane->index ) ) )
+				mApp.panes().navigate( other, uris[0] );
 		} else if ( id == "cut" || id == "copy" ) {
 			copySelection( id == "cut" );
 		} else if ( id == "copy-location" ) {
 			std::string text;
 			for ( const auto& uri : uris )
-				text += ( text.empty() ? "" : "\n" ) + clipboardText( uri );
-			mApp->getWindow()->getClipboard()->setText( text );
+				text += ( text.empty() ? "" : "\n" ) + Location::clipboardText( uri );
+			mApp.window()->getClipboard()->setText( text );
 		} else if ( id == "copy-current-location" ) {
-			mApp->getWindow()->getClipboard()->setText( clipboardText( tab->model->uri() ) );
+			mApp.window()->getClipboard()->setText( Location::clipboardText( tab->model->uri() ) );
 		} else if ( id == "paste" ) {
 			paste( tab );
 		} else if ( id == "paste-into" ) {
@@ -357,11 +362,11 @@ void App::showContextMenu( FileTab* tab, bool background ) {
 		} else if ( id == "delete" ) {
 			deleteSelection();
 		} else if ( id == "add-place" ) {
-			addToPlaces( uris[0] );
+			mApp.places().add( uris[0] );
 		} else if ( id == "add-current-place" ) {
-			addToPlaces( tab->model->uri() );
+			mApp.places().add( tab->model->uri() );
 		} else if ( id == "hidden" ) {
-			setShowHidden( !mShowHidden );
+			mApp.setShowHidden( !mApp.showHidden() );
 		} else if ( id == "empty-trash" ) {
 			emptyTrash();
 		} else if ( id == "refresh" ) {
@@ -379,11 +384,11 @@ void App::showContextMenu( FileTab* tab, bool background ) {
 // Clipboard and transfers
 // ---------------------------------------------------------------------------------------------
 
-void App::copySelection( bool cut ) {
-	auto* tab = currentTab();
+void FileOperations::copySelection( bool cut ) {
+	auto* tab = mApp.panes().currentTab();
 	if ( !tab )
 		return;
-	auto uris = selectedURIs( tab );
+	auto uris = tab->selectedURIs();
 	if ( uris.empty() )
 		return;
 	// The formats file managers exchange: text/uri-list (with CRLF), GNOME's copied-files list
@@ -401,7 +406,7 @@ void App::copySelection( bool cut ) {
 		data.emplace_back( "application/x-kde-cutselection", "1" );
 	for ( const auto& mimeType : EE::Window::Clipboard::getTextMimeTypes() )
 		data.emplace_back( mimeType, text );
-	auto* clipboard = mApp->getWindow()->getClipboard();
+	auto* clipboard = mApp.window()->getClipboard();
 	mClipboard = std::move( uris );
 	mClipboardCut = cut;
 	mClipboardText = text;
@@ -409,8 +414,8 @@ void App::copySelection( bool cut ) {
 		clipboard->setText( text );
 }
 
-App::ClipboardFiles App::clipboardFiles() const {
-	auto* clipboard = mApp->getWindow()->getClipboard();
+FileOperations::ClipboardFiles FileOperations::clipboardFiles() const {
+	auto* clipboard = mApp.window()->getClipboard();
 	ClipboardFiles files;
 	if ( clipboard->hasData( "text/uri-list" ) ) {
 		for ( auto line : String::split( clipboard->getDataString( "text/uri-list" ), '\n' ) ) {
@@ -440,7 +445,7 @@ App::ClipboardFiles App::clipboardFiles() const {
 	return files;
 }
 
-void App::paste( FileTab* tab, std::optional<URI> into ) {
+void FileOperations::paste( FileTab* tab, std::optional<URI> into ) {
 	ClipboardFiles files = clipboardFiles();
 	if ( files.uris.empty() )
 		return;
@@ -448,16 +453,16 @@ void App::paste( FileTab* tab, std::optional<URI> into ) {
 	if ( files.cut ) {
 		// Cut files can be pasted once.
 		mClipboard.clear();
-		mApp->getWindow()->getClipboard()->clearData();
+		mApp.window()->getClipboard()->clearData();
 	}
 }
 
-void App::dropFiles( const std::vector<URI>& uris, const URI& destination, int paneIndex,
-					 bool copy ) {
+void FileOperations::dropFiles( const std::vector<URI>& uris, const URI& destination, int paneIndex,
+								bool copy ) {
 	std::vector<URI> sources;
 	for ( const auto& uri : uris ) {
 		// Dropping into the folder an item already is in, or a folder into itself, does nothing.
-		if ( uri.getParent() == destination || isSameOrInside( destination, uri ) )
+		if ( uri.getParent() == destination || destination.isSameOrChildOf( uri ) )
 			continue;
 		sources.push_back( uri );
 	}
@@ -467,7 +472,7 @@ void App::dropFiles( const std::vector<URI>& uris, const URI& destination, int p
 		transferFiles( sources, destination, false, paneIndex );
 		return;
 	}
-	auto* input = mApp->getWindow()->getInput();
+	auto* input = mApp.window()->getInput();
 	if ( input->isShiftPressed() ) {
 		transferFiles( sources, destination, true, paneIndex );
 		return;
@@ -477,12 +482,12 @@ void App::dropFiles( const std::vector<URI>& uris, const URI& destination, int p
 		return;
 	}
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->add( mUI->i18n( "eefm_move_here", "Move Here" ), icon( "cut" ), "Shift" )
+	menu->add( mUI->i18n( "eefm_move_here", "Move Here" ), mApp.icon( "cut" ), "Shift" )
 		->setId( "move" );
-	menu->add( mUI->i18n( "eefm_copy_here", "Copy Here" ), icon( "copy" ), "Ctrl" )
+	menu->add( mUI->i18n( "eefm_copy_here", "Copy Here" ), mApp.icon( "copy" ), "Ctrl" )
 		->setId( "copy" );
 	menu->addSeparator();
-	menu->add( mUI->i18n( "eefm_cancel", "Cancel" ), icon( "action-close" ), "Esc" )
+	menu->add( mUI->i18n( "eefm_cancel", "Cancel" ), mApp.icon( "action-close" ), "Esc" )
 		->setId( "cancel" );
 	menu->on( Event::OnItemClicked, [this, sources, destination, paneIndex]( const Event* event ) {
 		std::string id( event->getNode()->getId() );
@@ -492,34 +497,29 @@ void App::dropFiles( const std::vector<URI>& uris, const URI& destination, int p
 	menu->showOverMouseCursor();
 }
 
-void App::transferFiles( const std::vector<URI>& sources, const URI& destination, bool move,
-						 int paneIndex ) {
+void FileOperations::transferFiles( const std::vector<URI>& sources, const URI& destination,
+									bool move, int paneIndex ) {
 	for ( const auto& source : sources ) {
 		std::string name = source.getLastPathSegment();
 		URI target = destination.withAppendedSegment( name );
 		if ( target == source ) {
 			if ( move )
 				continue; // Moving onto itself is a no-op.
-			std::string base = name, extension;
-			size_t dot = name.find_last_of( '.' );
-			if ( dot != std::string::npos && dot > 0 ) {
-				base = name.substr( 0, dot );
-				extension = name.substr( dot );
-			}
+			auto [base, extension] = FileSystem::fileNameSplitExtension( name );
 			target = destination.withAppendedSegment( base + " (copy)" + extension );
 		}
 		startTransfer( source, target, move, paneIndex );
 	}
 }
 
-void App::startTransfer( const URI& source, const URI& destination, bool move, int paneIndex,
-						 const CopyOptions& options ) {
+void FileOperations::startTransfer( const URI& source, const URI& destination, bool move,
+									int paneIndex, const CopyOptions& options ) {
 	Uint64 id = ++mLastTransferId;
 	ActiveTransfer active{
 		id,
 		paneIndex,
 		( move ? mUI->i18n( "eefm_moving", "Moving " ) : mUI->i18n( "eefm_copying", "Copying " ) ) +
-			displayName( source ),
+			Location::displayName( source ),
 		move ? mVFS->move( source, destination, options )
 			 : mVFS->copy( source, destination, options ),
 		{},
@@ -532,13 +532,13 @@ void App::startTransfer( const URI& source, const URI& destination, bool move, i
 				updateTransfers();
 			}
 		},
-		mExecutor.get() );
+		&mApp.executor() );
 	auto completion = active.transfer.completion();
 	mTransfers.emplace( id, std::move( active ) );
 	updateTransfers();
 	std::move( completion )
-		.thenOn( *mExecutor, [this, id, source, destination, move, paneIndex,
-							  options]( VFSResult<TransferResult>&& result ) {
+		.then( mApp.executor(), [this, id, source, destination, move, paneIndex,
+								 options]( VFSResult<TransferResult>&& result ) {
 			auto it = mTransfers.find( id );
 			String label = it != mTransfers.end() ? it->second.label : String();
 			if ( it != mTransfers.end() )
@@ -548,33 +548,36 @@ void App::startTransfer( const URI& source, const URI& destination, bool move, i
 				// Views showing the folder that received the files recount it (a watch on the
 				// parent does not see changes inside a subfolder).
 				URI folder = destination.getParent();
-				for ( auto& pane : mPanes )
-					for ( auto& tab : pane->tabList )
+				for ( auto& pane : mApp.panes().all() ) {
+					for ( auto& tab : pane->tabList ) {
 						if ( tab->model->uri() == folder.getParent() &&
 							 folder != tab->model->uri() )
 							tab->model->refresh();
+					}
+				}
 				return;
 			}
 			if ( result.error().is( VFSErrorCode::AlreadyExists ) &&
 				 options.overwrite == OverwritePolicy::Fail ) {
-				confirm( mUI, mUI->i18n( "eefm_file_exists", "File Already Exists" ),
-						 String::format( "\"%s\" already exists. Overwrite it?",
-										 destination.getLastPathSegment().c_str() ),
-						 [this, source, destination, move, paneIndex, options]( bool overwrite ) {
-							 if ( !overwrite )
-								 return;
-							 CopyOptions retry = options;
-							 retry.overwrite = OverwritePolicy::Overwrite;
-							 startTransfer( source, destination, move, paneIndex, retry );
-						 } );
+				Dialogs::confirm(
+					mUI, mUI->i18n( "eefm_file_exists", "File Already Exists" ),
+					String::format( "\"%s\" already exists. Overwrite it?",
+									destination.getLastPathSegment().c_str() ),
+					[this, source, destination, move, paneIndex, options]( bool overwrite ) {
+						if ( !overwrite )
+							return;
+						CopyOptions retry = options;
+						retry.overwrite = OverwritePolicy::Overwrite;
+						startTransfer( source, destination, move, paneIndex, retry );
+					} );
 				return;
 			}
 			reportError( label, result.error() );
 		} );
 }
 
-void App::updateTransfers() {
-	for ( auto& pane : mPanes ) {
+void FileOperations::updateTransfers() {
+	for ( auto& pane : mApp.panes().all() ) {
 		size_t count = 0;
 		Uint64 done = 0, total = 0;
 		String label;
@@ -601,14 +604,14 @@ void App::updateTransfers() {
 // Trash, delete and rename
 // ---------------------------------------------------------------------------------------------
 
-void App::moveToTrash() {
-	auto* tab = currentTab();
+void FileOperations::moveToTrash() {
+	auto* tab = mApp.panes().currentTab();
 	if ( !tab )
 		return;
-	auto uris = selectedURIs( tab );
+	auto uris = tab->selectedURIs();
 	if ( uris.empty() )
 		return;
-	if ( trash::contains( tab->model->uri() ) || !trash::supported( uris[0] ) ) {
+	if ( Trash::contains( tab->model->uri() ) || !Trash::supported( uris[0] ) ) {
 		// Remote files and files already in the trash can only be deleted.
 		deleteSelection();
 		return;
@@ -619,33 +622,24 @@ void App::moveToTrash() {
 							  uris[0].getLastPathSegment().c_str() )
 			: String::format( "Do you really want to move these %zu items to the trash?",
 							  uris.size() );
-	confirm( mUI, mUI->i18n( "eefm_move_to_trash", "Move to Trash" ), message,
-			 [this, uris]( bool accepted ) {
-				 if ( !accepted )
-					 return;
-				 std::vector<std::string> paths;
-				 for ( const auto& uri : uris )
-					 paths.push_back( uri.getFSPath() );
-				 runBlocking(
-					 [paths] {
-						 std::string errors;
-						 for ( const auto& path : paths ) {
-							 std::string error = trash::moveToTrash( path );
-							 if ( !error.empty() )
-								 errors +=
-									 FileSystem::fileNameFromPath( path ) + ": " + error + "\n";
-						 }
-						 return errors;
-					 },
-					 nullptr, mUI->i18n( "eefm_trash_failed", "Could not move to the trash" ) );
-			 } );
+	Dialogs::confirm( mUI, mUI->i18n( "eefm_move_to_trash", "Move to Trash" ), message,
+					  [this, uris]( bool accepted ) {
+						  if ( !accepted )
+							  return;
+						  std::vector<std::string> paths;
+						  for ( const auto& uri : uris )
+							  paths.push_back( uri.getFSPath() );
+						  runInBackground(
+							  [paths] { return Trash::moveToTrash( paths ); }, nullptr,
+							  mUI->i18n( "eefm_trash_failed", "Could not move to the trash" ) );
+					  } );
 }
 
-void App::deleteSelection() {
-	auto* tab = currentTab();
+void FileOperations::deleteSelection() {
+	auto* tab = mApp.panes().currentTab();
 	if ( !tab )
 		return;
-	auto selection = selectedURIs( tab );
+	auto selection = tab->selectedURIs();
 	if ( selection.empty() )
 		return;
 	String message =
@@ -656,133 +650,123 @@ void App::deleteSelection() {
 			: String::format( "Do you really want to permanently delete these %zu "
 							  "items?\nThis action cannot be undone.",
 							  selection.size() );
-	confirm(
+	Dialogs::confirm(
 		mUI, mUI->i18n( "eefm_delete", "Delete" ), message, [this, selection]( bool accepted ) {
 			if ( !accepted )
 				return;
 			for ( const auto& uri : selection ) {
-				bool trashed = trash::contains( uri );
+				bool trashed = Trash::contains( uri );
 				mVFS->remove( uri, RemoveOptions{ true } )
-					.thenOn( *mExecutor, [this, uri, trashed]( VFSResult<void>&& result ) {
+					.then( mApp.executor(), [this, uri, trashed]( VFSResult<void>&& result ) {
 						if ( !result ) {
 							reportError( mUI->i18n( "eefm_delete_failed", "Could not delete " ) +
 											 String::fromUtf8( uri.getLastPathSegment() ),
 										 result.error() );
 							return;
 						}
-						// Deleting from the trash also drops the entry's .trashinfo.
-						if ( trashed && uri.getScheme() == "file" ) {
-							std::string files = FileSystem::fileRemoveFileName( uri.getFSPath() );
-							if ( files.size() > 1 && files.back() == '/' )
-								files.pop_back();
-							std::string info = FileSystem::fileRemoveFileName( files ) + "info/" +
-											   uri.getLastPathSegment() + ".trashinfo";
-							FileSystem::fileRemove( info );
-						}
+						// Deleting from the trash also drops what the trash recorded about it.
+						if ( trashed && uri.getScheme() == "file" )
+							mApp.pool()->run( [path = uri.getFSPath()] { Trash::forget( path ); } );
 					} );
 			}
 		} );
 }
 
-void App::restoreFromTrash( const std::vector<URI>& uris ) {
+void FileOperations::restoreFromTrash( const std::vector<URI>& uris ) {
 	std::vector<std::string> paths;
 	for ( const auto& uri : uris )
 		paths.push_back( uri.getFSPath() );
-	runBlocking(
-		[paths] {
-			std::string errors;
-			for ( const auto& path : paths ) {
-				std::string error = trash::restore( path );
-				if ( !error.empty() )
-					errors += FileSystem::fileNameFromPath( path ) + ": " + error + "\n";
+	runInBackground( [paths] { return Trash::restore( paths ); }, nullptr,
+					 mUI->i18n( "eefm_restore_failed", "Could not restore" ) );
+}
+
+void FileOperations::emptyTrash() {
+	Dialogs::confirm(
+		mUI, mUI->i18n( "eefm_empty_trash", "Empty Trash" ),
+		mUI->i18n( "eefm_confirm_empty_trash",
+				   "Do you really want to empty the trash? All items will be deleted." ),
+		[this]( bool accepted ) {
+			if ( accepted ) {
+				runInBackground(
+					[] { return Trash::empty(); }, nullptr,
+					mUI->i18n( "eefm_empty_trash_failed", "Could not empty the trash" ) );
 			}
-			return errors;
-		},
-		nullptr, mUI->i18n( "eefm_restore_failed", "Could not restore" ) );
+		} );
 }
 
-void App::emptyTrash() {
-	confirm( mUI, mUI->i18n( "eefm_empty_trash", "Empty Trash" ),
-			 mUI->i18n( "eefm_confirm_empty_trash",
-						"Do you really want to empty the trash? All items will be deleted." ),
-			 [this]( bool accepted ) {
-				 if ( accepted )
-					 runBlocking(
-						 [] { return trash::empty(); }, nullptr,
-						 mUI->i18n( "eefm_empty_trash_failed", "Could not empty the trash" ) );
-			 } );
-}
-
-void App::renameSelection() {
-	auto* tab = currentTab();
+void FileOperations::renameSelection() {
+	auto* tab = mApp.panes().currentTab();
 	if ( !tab )
 		return;
-	auto rows = selectedRows( tab );
+	auto rows = tab->selectedRows();
 	if ( rows.size() == 1 )
 		tab->view->beginRename( rows[0] );
 }
 
-void App::renameEntry( FileTab* tab, const FileInfo& entry, const std::string& name ) {
+void FileOperations::renameEntry( FileTab* tab, const FileInfo& entry, const std::string& name ) {
 	if ( name.find( '/' ) != std::string::npos ) {
-		showError( mUI, mUI->i18n( "eefm_invalid_name", "A name cannot contain \"/\"." ) );
+		Dialogs::showError( mUI, mUI->i18n( "eefm_invalid_name", "A name cannot contain \"/\"." ) );
 		return;
 	}
 	URI source = entry.uriIn( tab->model->uri() );
 	tab->selectLater( name );
 	mVFS->rename( source, source.getParent().withAppendedSegment( name ) )
-		.thenOn( *mExecutor, [this]( VFSResult<void>&& result ) {
-			if ( !result )
+		.then( mApp.executor(), [this]( VFSResult<void>&& result ) {
+			if ( !result ) {
 				reportError( mUI->i18n( "eefm_rename_failed", "Could not rename" ),
 							 result.error() );
+			}
 		} );
 }
 
-void App::newFolder( FileTab* tab ) {
+void FileOperations::newFolder( FileTab* tab ) {
 	URI parent = tab->model->uri();
-	promptText( mUI, mUI->i18n( "eefm_new_folder_title", "New Folder" ),
-				mUI->i18n( "eefm_folder_name", "Create new folder in:\n" ) + locationText( parent ),
-				"New Folder", false, [this, parent, tab]( std::optional<std::string> name ) {
-					if ( !name || name->empty() || name->find( '/' ) != std::string::npos )
-						return;
-					tab->selectLater( *name );
-					mVFS->makeDir( parent.withAppendedSegment( *name ) )
-						.thenOn( *mExecutor, [this]( VFSResult<void>&& result ) {
-							if ( !result )
-								reportError( mUI->i18n( "eefm_new_folder_failed",
-														"Could not create folder" ),
-											 result.error() );
-						} );
+	Dialogs::promptText(
+		mUI, mUI->i18n( "eefm_new_folder_title", "New Folder" ),
+		mUI->i18n( "eefm_folder_name", "Create new folder in:\n" ) + Location::text( parent ),
+		"New Folder", false, [this, parent, tab]( std::optional<std::string> name ) {
+			if ( !name || name->empty() || name->find( '/' ) != std::string::npos )
+				return;
+			tab->selectLater( *name );
+			mVFS->makeDir( parent.withAppendedSegment( *name ) )
+				.then( mApp.executor(), [this]( VFSResult<void>&& result ) {
+					if ( !result ) {
+						reportError(
+							mUI->i18n( "eefm_new_folder_failed", "Could not create folder" ),
+							result.error() );
+					}
 				} );
+		} );
 }
 
-void App::newTextFile( FileTab* tab ) {
+void FileOperations::newTextFile( FileTab* tab ) {
 	URI parent = tab->model->uri();
-	promptText( mUI, mUI->i18n( "eefm_new_text_file_title", "New Text File" ),
-				mUI->i18n( "eefm_file_name", "File name:" ), "Text File.txt", false,
-				[this, parent, tab]( std::optional<std::string> name ) {
-					if ( !name || name->empty() || name->find( '/' ) != std::string::npos )
+	Dialogs::promptText(
+		mUI, mUI->i18n( "eefm_new_text_file_title", "New Text File" ),
+		mUI->i18n( "eefm_file_name", "File name:" ), "Text File.txt", false,
+		[this, parent, tab]( std::optional<std::string> name ) {
+			if ( !name || name->empty() || name->find( '/' ) != std::string::npos )
+				return;
+			tab->selectLater( *name );
+			mVFS->open( parent.withAppendedSegment( *name ),
+						OpenFlags::Write | OpenFlags::Create | OpenFlags::Exclusive )
+				.then( mApp.executor(), [this]( VFSResult<FileHandle>&& handle ) {
+					if ( !handle ) {
+						reportError( mUI->i18n( "eefm_new_file_failed", "Could not create file" ),
+									 handle.error() );
 						return;
-					tab->selectLater( *name );
-					mVFS->open( parent.withAppendedSegment( *name ),
-								OpenFlags::Write | OpenFlags::Create | OpenFlags::Exclusive )
-						.thenOn( *mExecutor, [this]( VFSResult<FileHandle>&& handle ) {
-							if ( !handle ) {
-								reportError(
-									mUI->i18n( "eefm_new_file_failed", "Could not create file" ),
-									handle.error() );
-								return;
-							}
-							handle.value().close();
-						} );
+					}
+					handle.value().close();
 				} );
+		} );
 }
 
 // ---------------------------------------------------------------------------------------------
 // Properties
 // ---------------------------------------------------------------------------------------------
 
-void App::showProperties( FileTab* tab ) {
-	auto rows = selectedRows( tab );
+void FileOperations::showProperties( FileTab* tab ) {
+	auto rows = tab->selectedRows();
 	std::string text;
 	auto line = [&text]( const char* key, const std::string& value ) {
 		if ( !value.empty() )
@@ -796,7 +780,7 @@ void App::showProperties( FileTab* tab ) {
 		line( "Name", info.name );
 		line( "Type", MimeDatabase::instance().describe( info ) + " (" +
 						  MimeDatabase::instance().typeOf( info ) + ")" );
-		line( "Location", locationText( tab->model->uri() ).toUtf8() );
+		line( "Location", Location::text( tab->model->uri() ).toUtf8() );
 		if ( info.isDirectory() ) {
 			if ( auto count = tab->model->directoryItemCount( rows[0] ) )
 				line( "Contents", std::to_string( *count ) + ( *count == 1 ? " item" : " items" ) );
@@ -813,10 +797,11 @@ void App::showProperties( FileTab* tab ) {
 			line( "Permissions", VFSDirectoryModel::permissionsToString( info ) );
 		line( "Owner", info.owner );
 		line( "Group", info.group );
-		if ( trash::contains( tab->model->uri() ) && tab->model->uri().getScheme() == "file" )
+		if ( Trash::contains( tab->model->uri() ) && tab->model->uri().getScheme() == "file" ) {
 			if ( auto original =
-					 trash::originalPath( tab->model->entryURI( rows[0] ).getFSPath() ) )
+					 Trash::originalPath( tab->model->entryURI( rows[0] ).getFSPath() ) )
 				line( "Original location", *original );
+		}
 	} else if ( rows.size() > 1 ) {
 		Uint64 bytes = 0, folders = 0;
 		for ( size_t row : rows ) {
@@ -829,17 +814,46 @@ void App::showProperties( FileTab* tab ) {
 		line( "Selected", std::to_string( rows.size() ) + " items (" + std::to_string( folders ) +
 							  " folders)" );
 		line( "Size of files", FileSystem::sizeToString( static_cast<Int64>( bytes ) ) );
-		line( "Location", locationText( tab->model->uri() ).toUtf8() );
+		line( "Location", Location::text( tab->model->uri() ).toUtf8() );
 	} else {
 		const URI& uri = tab->model->uri();
-		line( "Folder", displayName( uri ).toUtf8() );
-		line( "Location", clipboardText( uri ) );
+		line( "Folder", Location::displayName( uri ).toUtf8() );
+		line( "Location", Location::clipboardText( uri ) );
 		line( "Contents", std::to_string( tab->model->rowCount() ) + " visible items" );
 	}
 	UIMessageBox* box = UIMessageBox::New( UIMessageBox::OK, String::fromUtf8( text ) );
 	box->setTitle( mUI->i18n( "eefm_properties", "Properties" ) );
 	box->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	box->showWhenReady();
+}
+
+void FileOperations::dropExternalFiles() {
+	std::vector<URI> files = std::move( mDroppedFiles );
+	mDroppedFiles.clear();
+	// Where it was dropped (the backend may not report it: then the pointer).
+	Vector2f position = mDropPosition ? *mDropPosition : mUI->getEventDispatcher()->getMousePosf();
+	mDropPosition.reset();
+	Node* over = mUI->overFind( position );
+	int target = mApp.panes().activeIndex();
+	for ( int i = 0; i < 2; ++i ) {
+		Pane& p = mApp.panes().pane( i );
+		if ( over && p.root->getParent() == mApp.paneSplitter() &&
+			 ( p.root == over || p.root->inParentTreeOf( over ) ) )
+			target = i;
+	}
+	auto* tab = mApp.panes().currentTab( mApp.panes().pane( target ) );
+	if ( !tab )
+		return;
+	// Onto a folder: into it (as drops between panes); anywhere else: the pane's folder.
+	URI destination = tab->model->uri();
+	if ( auto row = tab->view->rowOf( over );
+		 row && *row < tab->model->rowCount() && tab->model->entry( *row ).isDirectory() )
+		destination = tab->model->entryURI( *row );
+	mApp.panes().setActivePane( target );
+	// eefm's own drag dropped on eefm arrives here on Wayland, macOS and Windows (the system drag
+	// started with it): it is resolved as the internal drag it is. Other files are copied.
+	const auto& drag = FileTableView::currentDrag();
+	dropFiles( files, destination, target, !( drag.native && files == drag.uris ) );
 }
 
 } // namespace eefm

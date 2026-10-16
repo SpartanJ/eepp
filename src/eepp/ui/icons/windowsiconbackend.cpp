@@ -2,13 +2,15 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
+#include "windowsiconbackend.hpp"
+
 // Stock icons (SHGetStockIconInfo) and known folders need Windows Vista.
 #if !defined( _WIN32_WINNT ) || _WIN32_WINNT < 0x0600
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0600
 #endif
 
-#include "systemicons.hpp"
+#include <eepp/core/string.hpp>
 
 #include <windows.h>
 
@@ -31,16 +33,6 @@ namespace {
 // IID_IImageList: not every MinGW libuuid has it.
 const IID ImageListIID = {
 	0x46eb5926, 0x582e, 0x4017, { 0x9f, 0xdf, 0xe8, 0x99, 0x8d, 0xaa, 0x09, 0x50 } };
-
-std::wstring toWide( const std::string& text ) {
-	if ( text.empty() )
-		return {};
-	int length = MultiByteToWideChar( CP_UTF8, 0, text.c_str(), -1, nullptr, 0 );
-	std::wstring wide( length > 0 ? length - 1 : 0, L'\0' );
-	if ( length > 0 )
-		MultiByteToWideChar( CP_UTF8, 0, text.c_str(), -1, &wide[0], length );
-	return wide;
-}
 
 /** Initializes COM for the calling thread for the lifetime of the object, when needed. */
 struct ComScope {
@@ -118,7 +110,7 @@ std::unique_ptr<Image> imageFromSystemIndex( int index, int size ) {
 	}
 	imageList->Release();
 	if ( image )
-		fitImage( *image, size );
+		SystemIconBackend::fitImage( *image, size );
 	return image;
 }
 
@@ -190,25 +182,27 @@ int namedIndex( const std::string& name ) {
 		{ "text-x-generic", SIID_DOCNOASSOC },
 		{ "application-x-executable", SIID_APPLICATION },
 	};
-	for ( const auto& entry : stock )
+	for ( const auto& entry : stock ) {
 		if ( name == entry.name )
 			return stockIndex( entry.id );
+	}
 	return -1;
 }
 
 } // namespace
 
-std::unique_ptr<Image> loadWindowsIcon( const UISystemIconTheme::Request& request, int size ) {
+std::unique_ptr<Image> WindowsIconBackend::load( const Request& request, int size ) {
 	ComScope com;
 	int index = -1;
-	using Kind = UISystemIconTheme::Request::Kind;
-	if ( request.kind == Kind::Path )
-		index = pathIndex( toWide( request.value ), 0, 0 );
-	else if ( request.kind == Kind::File )
+	using Kind = Request::Kind;
+	if ( request.kind == Kind::Path ) {
+		index = pathIndex( String( request.value ).toWideString(), 0, 0 );
+	} else if ( request.kind == Kind::File ) {
+		// By type only: the file does not need to exist.
 		index = request.isDirectory ? folderIndex()
-									// By type only: the file does not need to exist.
-									: pathIndex( toWide( request.value ), FILE_ATTRIBUTE_NORMAL,
-												 SHGFI_USEFILEATTRIBUTES );
+									: pathIndex( String( request.value ).toWideString(),
+												 FILE_ATTRIBUTE_NORMAL, SHGFI_USEFILEATTRIBUTES );
+	}
 	for ( size_t i = 0; index < 0 && i < request.names.size(); ++i )
 		index = namedIndex( request.names[i] );
 	return index < 0 ? nullptr : imageFromSystemIndex( index, size );

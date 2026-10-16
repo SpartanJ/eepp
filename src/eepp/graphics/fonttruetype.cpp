@@ -623,6 +623,15 @@ bool FontTrueType::getFontDesc( FontDesc& desc ) const {
 	return !desc.family.empty() && !desc.path.empty();
 }
 
+std::string FontTrueType::filePathOf( const Font* font ) {
+	FontDesc desc;
+	if ( !font || font->getType() != FontType::TTF ||
+		 !static_cast<const FontTrueType*>( font )->getFontDesc( desc ) ) {
+		return {};
+	}
+	return FileSystem::getRealPath( desc.path );
+}
+
 bool FontTrueType::setVariableFontWeight( FontWeight weight ) {
 	if ( !loaded() || !mFace || !mLibrary )
 		return false;

@@ -186,9 +186,10 @@ inline void providerConformance( int* utest_result, VirtualFileSystem& vfs, cons
 	EXPECT_TRUE( notDir.hasError() );
 	if ( !notDir )
 		EXPECT_EQ( VFSErrorCode::NotDirectory, notDir.error().code );
-	for ( int i = 0; i < 10; ++i )
+	for ( int i = 0; i < 10; ++i ) {
 		EXPECT_TRUE(
 			writeString( vfs, dir.withAppendedSegment( "f" + String::toString( i ) ), "x" ) );
+	}
 	{
 		auto opened = waitFor( vfs.openDirectory( dir ) );
 		EXPECT_TRUE( opened.hasValue() );
@@ -284,9 +285,10 @@ struct EventCollector {
 
 	bool has( WatchEventType type, const std::string& path ) {
 		std::lock_guard<std::mutex> lock( mutex );
-		for ( const auto& event : events )
+		for ( const auto& event : events ) {
 			if ( event.type == type && event.relativePath == path )
 				return true;
+		}
 		return false;
 	}
 };

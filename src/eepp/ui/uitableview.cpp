@@ -440,28 +440,16 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 	return UIAbstractTableView::onKeyDown( event );
 }
 
-bool UITableView::getFocusOnSelection() const {
-	return mFocusOnSelection;
-}
-
-void UITableView::setFocusOnSelection( bool focusOnSelection ) {
-	mFocusOnSelection = focusOnSelection;
-	if ( !mFocusOnSelection )
-		mFocusSelectionDirty = false;
-}
-
 void UITableView::setTableFlags( Uint32 flags ) {
 	UIAbstractTableView::setTableFlags( flags );
-	setFocusOnSelection( flags & TableFlagFocusOnSelection );
 	setRubberBandSelection( flags & TableFlagRubberBandSelection );
 }
 
 bool UITableView::getRubberBandSelection() const {
-	return mRubberBandSelection;
+	return mTableFlags & TableFlagRubberBandSelection;
 }
 
 void UITableView::setRubberBandSelection( bool enabled ) {
-	mRubberBandSelection = enabled;
 	if ( enabled )
 		mTableFlags |= TableFlagRubberBandSelection;
 	else
@@ -479,7 +467,7 @@ Uint32 UITableView::onMouseDown( const Vector2i& position, const Uint32& flags )
 	if ( ( flags & EE_BUTTON_LMASK ) && !mRubberBandPressed && dispatcher &&
 		 dispatcher->justPressTriggered( EE_BUTTON_LMASK ) ) {
 		mRubberBandDragged = false;
-		if ( mRubberBandSelection && mSelectionKind == SelectionKind::Multiple &&
+		if ( getRubberBandSelection() && mSelectionKind == SelectionKind::Multiple &&
 			 isRowSelection() && getModel() && !isEditing() ) {
 			Vector2f local( convertToNodeSpace( position.asFloat() ) );
 			if ( local.y >= getHeaderHeight() ) {
@@ -523,9 +511,10 @@ void UITableView::scheduledUpdate( const Time& time ) {
 			delta = local.y - top;
 		else if ( local.y > bottom )
 			delta = local.y - bottom;
-		if ( delta != 0 )
+		if ( delta != 0 ) {
 			mVScroll->setValue(
 				std::clamp( ( mScrollOffset.y + delta * 0.5f ) / scrollable, 0.f, 1.f ) );
+		}
 	}
 	updateRubberBand( local );
 }
@@ -610,7 +599,7 @@ void UITableView::onModelSelectionChange() {
 	UIAbstractTableView::onModelSelectionChange();
 	// Only while the table has the keyboard: a selection changed by code must not take the focus
 	// from elsewhere.
-	if ( mFocusOnSelection && !getSelection().isEmpty() && hasFocusWithin() )
+	if ( getFocusOnSelection() && !getSelection().isEmpty() && hasFocusWithin() )
 		mFocusSelectionDirty = true;
 }
 

@@ -24,7 +24,7 @@
 using namespace EE;
 using namespace EE::System;
 
-namespace eefm { namespace trash {
+namespace eefm {
 
 namespace {
 
@@ -33,14 +33,7 @@ namespace {
 constexpr bool SpecTrash = true;
 
 std::string homeTrash() {
-	std::string dataHome = Sys::getEnv( "XDG_DATA_HOME" );
-	if ( dataHome.empty() ) {
-		dataHome = Sys::getUserDirectory();
-		FileSystem::dirAddSlashAtEnd( dataHome );
-		dataHome += ".local/share";
-	}
-	FileSystem::dirAddSlashAtEnd( dataHome );
-	return dataHome + "Trash/";
+	return Sys::getDataPath( "Trash" ) + "/";
 }
 
 /** Percent-encodes a path for the Path= key of a .trashinfo file. */
@@ -102,12 +95,7 @@ std::string mountPointOf( const std::string& path ) {
 /** Picks a free name in trash/files and atomically reserves it with its info file. */
 std::string writeInfo( const std::string& trashDir, const std::string& name,
 					   const std::string& recordedPath, std::string& trashedName ) {
-	std::string base = name, extension;
-	size_t dot = name.find_last_of( '.' );
-	if ( dot != std::string::npos && dot > 0 ) {
-		base = name.substr( 0, dot );
-		extension = name.substr( dot );
-	}
+	auto [base, extension] = FileSystem::fileNameSplitExtension( name );
 	char date[32];
 	std::time_t now = std::time( nullptr );
 	std::tm local{};
@@ -200,9 +188,32 @@ std::string absolute( std::string path ) {
 	return path;
 }
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+/** .trashinfo file of a trashed entry ("<trash>/files/<name>" -> "<trash>/info/<name>.trashinfo").
+ */
+std::string infoPathOf( const std::string& trashedPath ) {
+	std::string path = absolute( trashedPath );
+	std::string trashDir =
+		FileSystem::fileRemoveFileName( absolute( FileSystem::fileRemoveFileName( path ) ) );
+	return trashDir + "info/" + FileSystem::fileNameFromPath( path ) + ".trashinfo";
+}
+#endif
+
+/** Runs action on each path. @return One "name: error" line per failure. */
+template <typename Action>
+std::string forEachPath( const std::vector<std::string>& paths, Action action ) {
+	std::string errors;
+	for ( const auto& path : paths ) {
+		std::string error = action( path );
+		if ( !error.empty() )
+			errors += FileSystem::fileNameFromPath( path ) + ": " + error + "\n";
+	}
+	return errors;
+}
+
 } // namespace
 
-bool supported( const URI& uri ) {
+bool Trash::supported( const URI& uri ) {
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_WIN
 	return uri.getScheme() == "file" && !contains( uri );
@@ -212,7 +223,7 @@ bool supported( const URI& uri ) {
 #endif
 }
 
-std::optional<URI> location() {
+std::optional<URI> Trash::location() {
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 	return URI::fromFSPath( homeTrash() + "files/" );
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
@@ -224,7 +235,7 @@ std::optional<URI> location() {
 #endif
 }
 
-bool contains( const URI& uri ) {
+bool Trash::contains( const URI& uri ) {
 	auto trash = location();
 	if ( !trash || uri.getScheme() != "file" )
 		return false;
@@ -234,7 +245,7 @@ bool contains( const URI& uri ) {
 		   path.find( "/.Trash-" ) != std::string::npos;
 }
 
-std::string moveToTrash( const std::string& rawPath ) {
+std::string Trash::moveToTrash( const std::string& rawPath ) {
 	std::string path = absolute( rawPath );
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 	std::string error = trashInto( homeTrash(), path, path );
@@ -274,12 +285,11 @@ std::string moveToTrash( const std::string& rawPath ) {
 #endif
 }
 
-std::optional<std::string> originalPath( const std::string& trashedPath ) {
+std::optional<std::string> Trash::originalPath( const std::string& trashedPath ) {
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
-	std::string path = absolute( trashedPath );
-	std::string filesDir = FileSystem::fileRemoveFileName( path );
-	std::string trashDir = FileSystem::fileRemoveFileName( absolute( filesDir ) );
-	std::string infoPath = trashDir + "info/" + FileSystem::fileNameFromPath( path ) + ".trashinfo";
+	std::string infoPath = infoPathOf( trashedPath );
+	std::string trashDir =
+		FileSystem::fileRemoveFileName( absolute( FileSystem::fileRemoveFileName( infoPath ) ) );
 	std::string info;
 	if ( !FileSystem::fileGet( infoPath, info ) )
 		return std::nullopt;
@@ -303,7 +313,7 @@ std::optional<std::string> originalPath( const std::string& trashedPath ) {
 #endif
 }
 
-std::string restore( const std::string& trashedPath ) {
+std::string Trash::restore( const std::string& trashedPath ) {
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 	std::string path = absolute( trashedPath );
 	auto original = originalPath( path );
@@ -316,9 +326,7 @@ std::string restore( const std::string& trashedPath ) {
 		FileSystem::makeDir( parent, true );
 	if ( ::rename( path.c_str(), original->c_str() ) != 0 )
 		return std::strerror( errno );
-	std::string trashDir =
-		FileSystem::fileRemoveFileName( absolute( FileSystem::fileRemoveFileName( path ) ) );
-	unlink( ( trashDir + "info/" + FileSystem::fileNameFromPath( path ) + ".trashinfo" ).c_str() );
+	forget( path );
 	return {};
 #else
 	(void)trashedPath;
@@ -326,7 +334,23 @@ std::string restore( const std::string& trashedPath ) {
 #endif
 }
 
-std::string empty() {
+std::string Trash::moveToTrash( const std::vector<std::string>& paths ) {
+	return forEachPath( paths, []( const std::string& path ) { return moveToTrash( path ); } );
+}
+
+std::string Trash::restore( const std::vector<std::string>& trashedPaths ) {
+	return forEachPath( trashedPaths, []( const std::string& path ) { return restore( path ); } );
+}
+
+void Trash::forget( const std::string& trashedPath ) {
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+	unlink( infoPathOf( trashedPath ).c_str() );
+#else
+	(void)trashedPath;
+#endif
+}
+
+std::string Trash::empty() {
 	if constexpr ( !SpecTrash ) {
 		auto trash = location();
 		if ( !trash )
@@ -359,4 +383,4 @@ std::string empty() {
 	return {};
 }
 
-}} // namespace eefm::trash
+} // namespace eefm

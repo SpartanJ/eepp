@@ -1753,6 +1753,19 @@ Uint32 UIAbstractTableView::getTableFlags() const {
 	return mTableFlags;
 }
 
+bool UIAbstractTableView::getFocusOnSelection() const {
+	return mTableFlags & TableFlagFocusOnSelection;
+}
+
+void UIAbstractTableView::setFocusOnSelection( bool focusOnSelection ) {
+	if ( focusOnSelection ) {
+		mTableFlags |= TableFlagFocusOnSelection;
+	} else {
+		mTableFlags &= ~TableFlagFocusOnSelection;
+		mFocusSelectionDirty = false;
+	}
+}
+
 void UIAbstractTableView::setTableFlags( Uint32 flags ) {
 	mTableFlags = flags;
 	setHeadersVisible( flags & TableFlagHeaders );
@@ -1760,6 +1773,7 @@ void UIAbstractTableView::setTableFlags( Uint32 flags ) {
 	setAutoColumnsWidth( flags & TableFlagAutoColumns );
 	setFitAllColumnsToWidget( flags & TableFlagFitColumns );
 	setSingleClickNavigation( flags & TableFlagSingleClick );
+	setFocusOnSelection( flags & TableFlagFocusOnSelection );
 	setRowSearchByName( flags & TableFlagRowSearch );
 	setRowHeaderVisible( flags & TableFlagRowHeader );
 }

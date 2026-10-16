@@ -18,7 +18,7 @@ are useful on their own:
 | Header | Type |
 | --- | --- |
 | `<eepp/core/result.hpp>` | `Result<T, E>`, `Ok()`, `Err()` |
-| `<eepp/core/task.hpp>` | `Task<T>`, `TaskSource<T>`, `makeReadyTask()` |
+| `<eepp/core/task.hpp>` | `Task<T>`, `TaskResolver<T>`, `makeReadyTask()` |
 | `<eepp/core/cancellationtoken.hpp>` | `CancellationSource`, `CancellationToken`, `CancellationRegistration` |
 | `<eepp/core/executor.hpp>` | `Executor`, `InlineExecutor` (`ThreadPool` is an `Executor` and has `submit()`) |
 | `<eepp/scene/mainthreadexecutor.hpp>` | `MainThreadExecutor`: runs continuations on the UI thread |
@@ -32,11 +32,11 @@ lives in `<eepp/vfs/ui/vfsdirectorymodel.hpp>` and is not part of the aggregate 
 Every VFS operation returns `VFSTask<T>`, an alias of `Task<Result<T, VFSError>>`:
 
 ```cpp
-auto& vfs = EE::VFS::instance();
+auto& vfs = EE::VFS::VirtualFileSystem::instance();
 MainThreadExecutor ui( sceneNode );
 
 vfs.stat( URI( "sftp://makyo/home/black/notes.txt" ) )
-	.thenOn( ui, []( VFSResult<FileInfo>&& info ) {
+	.then( ui, []( VFSResult<FileInfo>&& info ) {
 		if ( info )
 			label->setText( info.value().name );
 		else
@@ -47,16 +47,16 @@ vfs.stat( URI( "sftp://makyo/home/black/notes.txt" ) )
 Rules:
 
 - VFS methods never block and may be called from any thread.
-- Tasks resolve on VFS threads. `then()` runs where the task resolves; `thenOn( executor, ... )`
-  always goes through the executor. Touch UI or model state only from `thenOn( uiExecutor, ... )`.
+- Tasks resolve on VFS threads. `then( fn )` runs where the task resolves; `then( executor, fn )`
+  always goes through the executor. Touch UI or model state only from `then( uiExecutor, ... )`.
 - A `Task` has one consumer: continuations consume it (`std::move( task ).then( ... )`).
   A continuation returning another task is flattened.
 - If a producer is destroyed without resolving, its task chain becomes `Abandoned` instead of
   hanging. That is an infrastructure bug (reported by `TaskDiagnostics`), never a domain outcome.
 - Cancellation is cooperative: pass `CancellationToken`s; cancelled operations complete with
   `VFSErrorCode::Cancelled`.
-- `Task::wait()`/`get()` block. They exist for worker-thread adapters (for example `IOStreamVFS`)
-  and tests; never use them on the UI thread.
+- `Task::wait()`/`get()` block. They exist for worker-thread adapters and tests; never use them
+  on the UI thread.
 
 Errors are typed (`VFSErrorCode`): callers branch on codes such as `NotFound`,
 `PermissionDenied`, `ChangedExternally` or `HostKeyRejected`, never on errno or libssh2 values.
@@ -76,9 +76,7 @@ vfs.rename( from, to, RenameOptions{ true } );
 vfs.canonicalize( uri );     // resolves symlinks/aliases; URIs are never canonicalized implicitly
 ```
 
-`FileHandle` uses explicit offsets (`read( offset, span )`, `write( offset, span )`); `FileCursor`
-adds a sequential position. `IOStreamVFS` exposes a VFS file as a blocking `System::IOStream` for
-existing decoders running on worker threads.
+`FileHandle` uses explicit offsets (`read( offset, span )`, `write( offset, span )`).
 
 `FileInfo` is a plain value. Unknown metadata stays unknown (`std::optional` accessors). It does
 not store its own URI, because listings hold many entries and the caller always knows the URI it
@@ -102,7 +100,7 @@ Recursive and cross-provider transfers are orchestrated by the VFS, not by provi
 ```cpp
 Transfer transfer = vfs.copy( URI( "sftp://makyo/srv/www" ), URI::fromFSPath( "/tmp/www" ) );
 auto progress = transfer.onProgress( []( const TransferProgress& p ) { ... }, &uiExecutor );
-transfer.completion().thenOn( uiExecutor, []( VFSResult<TransferResult>&& r ) { ... } );
+transfer.completion().then( uiExecutor, []( VFSResult<TransferResult>&& r ) { ... } );
 transfer.cancel();
 ```
 
@@ -120,7 +118,7 @@ is unsupported; native same-filesystem renames still move the link itself.
 
 ```cpp
 vfs.watch( uri, WatchOptions{ /*recursive*/ true } )
-	.thenOn( ui, [this]( VFSResult<WatchHandle>&& watch ) {
+	.then( ui, [this]( VFSResult<WatchHandle>&& watch ) {
 		mWatch = std::move( watch ).value();
 		mWatch.onEvents( ui, [this]( WatchEventBatch&& batch ) { ... } );
 	} );
@@ -219,7 +217,6 @@ on the server's `PATH`, or set `SFTPProviderConfig::watchAgentCommand`. The eepp
 
 ## Resources (`res://`)
 
-`System::PackFileIndex` (formerly `System::VirtualFileSystem`, still available as a deprecated
-alias) indexes the files of every open `Pack`. `res:///fonts/a.ttf` maps to the pack path
+`System::PackFileIndex` (formerly `System::VirtualFileSystem`) indexes the files of every open `Pack`. `res:///fonts/a.ttf` maps to the pack path
 `fonts/a.ttf`; directories are implicit. The provider is read-only and extracts files to memory
 when they are opened.

@@ -250,9 +250,10 @@ VFSResult<std::string> SSHAgent::sign( std::string_view blob, std::string_view d
 	if ( !reader.valid() || !signature.valid() )
 		return Err( agentError( "malformed signature" ) );
 	// The server verifies the algorithm announced in the request.
-	if ( !algorithm.empty() && signedWith != algorithm )
+	if ( !algorithm.empty() && signedWith != algorithm ) {
 		return Err( agentError( "signed with " + std::string( signedWith ) + " instead of " +
 								std::string( algorithm ) ) );
+	}
 	return Ok( std::string( raw ) );
 }
 

@@ -208,6 +208,14 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void setTableFlags( Uint32 flags );
 
+	bool getFocusOnSelection() const;
+
+	/** When the selection changes, the selected row's cell takes the keyboard focus (on by
+	 * default, TableFlagFocusOnSelection). Cells are recycled: without it the focused cell can
+	 * show another row, and keys it handles (Enter clicks it, which selects its row) act on that
+	 * row instead of the selection. */
+	void setFocusOnSelection( bool focusOnSelection );
+
 	void recalculateColumnsWidth();
 
 	UITableCell* getCellFromIndex( const ModelIndex& index ) const;
@@ -288,6 +296,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	std::function<void( UIPopUpMenu*, size_t )> mOnHeaderContextMenuCb;
 	Float mRowHeaderWidth{ 0 };
 	Uint32 mTableFlags{ UITABLE_DEFAULT_FLAGS };
+	/** The selection changed: its cell takes the focus once it is laid out. */
+	bool mFocusSelectionDirty{ false };
 	ColumnWidthMode mColumnWidthMode{ ColumnWidthMode::Pixels };
 	bool mColumnWidthModeMenuEnabled{ false };
 	bool mColumnReorderingEnabled{ false };

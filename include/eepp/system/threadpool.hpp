@@ -43,14 +43,14 @@ class EE_API ThreadPool : NonCopyable, public Executor {
 	template <typename F> auto submit( F&& fn ) -> Task<std::invoke_result_t<std::decay_t<F>&>> {
 		using Fn = std::decay_t<F>;
 		using R = std::invoke_result_t<Fn&>;
-		TaskSource<R> source;
-		Task<R> task = source.task();
-		run( [fn = Fn( std::forward<F>( fn ) ), source = std::move( source )]() mutable {
+		TaskResolver<R> resolve;
+		Task<R> task = Task<R>::create( resolve );
+		run( [fn = Fn( std::forward<F>( fn ) ), resolve = std::move( resolve )]() mutable {
 			if constexpr ( std::is_void_v<R> ) {
 				fn();
-				source.resolve();
+				resolve();
 			} else {
-				source.resolve( fn() );
+				resolve( fn() );
 			}
 		} );
 		return task;

@@ -42,9 +42,10 @@ NSImage* iconForName( const char* name ) {
 		{ "folder-pictures", @"Pictures" },
 		{ "folder-videos", @"Movies" },
 	};
-	for ( const auto& folder : folders )
+	for ( const auto& folder : folders ) {
 		if ( std::strcmp( name, folder.name ) == 0 )
 			return [workspace iconForFile:homePath( folder.component )];
+	}
 	if ( std::strcmp( name, "folder" ) == 0 )
 		return [NSImage imageNamed:NSImageNameFolder];
 	if ( std::strcmp( name, "user-trash" ) == 0 )
@@ -84,14 +85,16 @@ extern "C" unsigned char* eeppSystemIconRGBA( int kind, const char* value, int i
 		return nullptr;
 	@autoreleasepool {
 		NSImage* image = nil;
-		if ( kind == 2 && value && *value )
+		if ( kind == 2 && value && *value ) {
 			image =
 				[[NSWorkspace sharedWorkspace] iconForFile:[NSString stringWithUTF8String:value]];
-		else if ( kind == 1 )
+		} else if ( kind == 1 ) {
 			image = iconForFileName( value, isDirectory != 0 );
-		for ( int i = 0; !image && i < nameCount; ++i )
+		}
+		for ( int i = 0; !image && i < nameCount; ++i ) {
 			if ( names[i] )
 				image = iconForName( names[i] );
+		}
 		if ( !image )
 			return nullptr;
 
@@ -129,10 +132,12 @@ extern "C" unsigned char* eeppSystemIconRGBA( int kind, const char* value, int i
 			// AppKit bitmaps are premultiplied.
 			for ( int i = 0; i < size * size * 4; i += 4 ) {
 				unsigned alpha = pixels[i + 3];
-				if ( alpha > 0 && alpha < 255 )
-					for ( int c = 0; c < 3; ++c )
+				if ( alpha > 0 && alpha < 255 ) {
+					for ( int c = 0; c < 3; ++c ) {
 						pixels[i + c] = static_cast<unsigned char>(
 							std::min( 255u, ( pixels[i + c] * 255u + alpha / 2 ) / alpha ) );
+					}
+				}
 			}
 		} else if ( pixels ) {
 			std::free( pixels );

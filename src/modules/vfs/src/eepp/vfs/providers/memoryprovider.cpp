@@ -139,11 +139,11 @@ ProviderCapabilities MemoryProvider::capabilities( const URI& ) const {
 template <typename T> VFSTask<T> MemoryProvider::complete( VFSResult<T>&& result ) {
 	if ( !mExecutor )
 		return makeReadyTask<VFSResult<T>>( std::move( result ) );
-	TaskSource<VFSResult<T>> source;
-	auto task = source.task();
-	mExecutor->execute( [source = std::move( source ),
+	TaskResolver<VFSResult<T>> resolve;
+	auto task = VFSTask<T>::create( resolve );
+	mExecutor->execute( [resolve = std::move( resolve ),
 						 result = std::make_unique<VFSResult<T>>( std::move( result ) )]() mutable {
-		source.resolve( std::move( *result ) );
+		resolve( std::move( *result ) );
 	} );
 	return task;
 }
@@ -328,17 +328,19 @@ VFSTask<void> MemoryProvider::rename( const URI& from, const URI& to, const Rena
 	++mOperations;
 	std::string src = key( from );
 	std::string dst = key( to );
-	if ( from.getHost() != to.getHost() )
+	if ( from.getHost() != to.getHost() ) {
 		return complete<void>(
 			Err( VFSError( VFSErrorCode::Unsupported, from, "Different namespaces" ) ) );
+	}
 	auto srcIt = mNodes.find( src );
 	if ( srcIt == mNodes.end() )
 		return complete<void>( Err( VFSError( VFSErrorCode::NotFound, from ) ) );
 	if ( src == dst )
 		return complete<void>( Ok() );
-	if ( String::startsWith( dst, src + "/" ) )
+	if ( String::startsWith( dst, src + "/" ) ) {
 		return complete<void>(
 			Err( VFSError( VFSErrorCode::InvalidOperation, to, "Destination inside source" ) ) );
+	}
 	auto parent = find( parentKey( dst ) );
 	if ( !parent || !parent->directory )
 		return complete<void>( Err( VFSError( VFSErrorCode::NotFound, to ) ) );
@@ -347,9 +349,10 @@ VFSTask<void> MemoryProvider::rename( const URI& from, const URI& to, const Rena
 	if ( dstIt != mNodes.end() ) {
 		if ( !options.overwrite )
 			return complete<void>( Err( VFSError( VFSErrorCode::AlreadyExists, to ) ) );
-		if ( dstIt->second->directory != srcIsDir )
+		if ( dstIt->second->directory != srcIsDir ) {
 			return complete<void>( Err( VFSError(
 				srcIsDir ? VFSErrorCode::NotDirectory : VFSErrorCode::IsDirectory, to ) ) );
+		}
 		if ( dstIt->second->directory ) {
 			auto child = mNodes.lower_bound( dst + "/" );
 			if ( child != mNodes.end() && String::startsWith( child->first, dst + "/" ) )

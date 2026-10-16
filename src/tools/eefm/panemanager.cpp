@@ -1,10 +1,19 @@
+#include "panemanager.hpp"
 #include "app.hpp"
+#include "fileoperations.hpp"
+#include "location.hpp"
 #include "mime.hpp"
+#include "placescontroller.hpp"
+#include "terminalpanel.hpp"
 #include <ctime>
 
 namespace eefm {
 
 namespace {
+
+std::string sortOrderName( SortOrder order ) {
+	return order == SortOrder::Descending ? "descending" : "ascending";
+}
 
 const char* PaneLayout = R"xml(
 <vbox class="pane" layout_width="0" layout_height="match_parent" min-width="200dp">
@@ -72,11 +81,53 @@ std::string itemCount( Uint64 count ) {
 
 } // namespace
 
-// ---------------------------------------------------------------------------------------------
-// Panes
-// ---------------------------------------------------------------------------------------------
+PaneManager::PaneManager( App& app ) : mApp( app ), mUI( app.ui() ) {}
 
-void App::createPane( int index, UIWidget* parent ) {
+PaneManager::~PaneManager() = default;
+
+void PaneManager::clearTabs() {
+	for ( auto& pane : mPanes ) {
+		if ( pane )
+			pane->tabList.clear();
+	}
+}
+
+void PaneManager::loadState( const nlohmann::json& state ) {
+	mFilterCaseSensitive = state.value( "filter_case_sensitive", false );
+	std::string mode = state.value( "filter_mode", "glob" );
+	mFilterMode = mode == "text"	? VFSDirectoryModel::NameFilterMode::PlainText
+				  : mode == "regex" ? VFSDirectoryModel::NameFilterMode::RegEx
+									: VFSDirectoryModel::NameFilterMode::Glob;
+	if ( state.contains( "view" ) && state["view"].is_object() )
+		mViewState = state["view"];
+}
+
+void PaneManager::saveState( nlohmann::json& state ) {
+	state["filter_case_sensitive"] = mFilterCaseSensitive;
+	state["filter_mode"] = mFilterMode == VFSDirectoryModel::NameFilterMode::PlainText ? "text"
+						   : mFilterMode == VFSDirectoryModel::NameFilterMode::RegEx   ? "regex"
+																					   : "glob";
+	nlohmann::json panes = nlohmann::json::array();
+	for ( auto& pane : mPanes ) {
+		nlohmann::json tabs = nlohmann::json::array();
+		size_t current = 0;
+		for ( Uint32 i = 0; i < pane->tabs->getTabCount(); ++i ) {
+			FileTab* tab = findTab( pane->tabs->getTab( i ) );
+			if ( !tab )
+				continue;
+			if ( tab->tab == pane->tabs->getTabSelected() )
+				current = tabs.size();
+			tabs.push_back( tab->model->uri().toString() );
+		}
+		panes.push_back( { { "tabs", tabs }, { "current", current } } );
+	}
+	state["panes"] = panes;
+	if ( auto* tab = currentTab() )
+		rememberViewState( tab );
+	state["view"] = mViewState;
+}
+
+void PaneManager::createPane( int index, UIWidget* parent ) {
 	auto owned = std::make_unique<Pane>();
 	Pane& p = *owned;
 	p.index = index;
@@ -92,7 +143,7 @@ void App::createPane( int index, UIWidget* parent ) {
 				return;
 			setActivePane( index );
 			if ( auto* tab = currentTab( pane( index ) ) )
-				showContextMenu( tab, true );
+				mApp.fileOps().showContextMenu( tab, true );
 		} );
 	}
 	p.transferBox = p.root->findByClass( "pane_transfer" );
@@ -113,7 +164,7 @@ void App::createPane( int index, UIWidget* parent ) {
 	p.tabs->setAllowDragAndDropTabs( true );
 	p.tabs->setAcceptsDropOfWidgetFn( [this, index]( const UIWidget* widget ) {
 		const auto* tab = widget->asConstType<UITab>();
-		return mSplit && tab->getTabWidget() == this->pane( 1 - index ).tabs;
+		return mApp.isSplit() && tab->getTabWidget() == this->pane( 1 - index ).tabs;
 	} );
 	p.tabs->on( Event::OnTabSelected, [this, index]( const Event* ) {
 		Pane& pane = this->pane( index );
@@ -145,17 +196,17 @@ void App::createPane( int index, UIWidget* parent ) {
 		}
 		// The last tab of a pane closes the pane (or the window when it is the only one).
 		if ( index == 1 ) {
-			setSplit( false );
+			mApp.setSplit( false );
 			openTab( pane, URI::fromFSPath( Sys::getUserDirectory() ), true );
-		} else if ( mSplit ) {
+		} else if ( mApp.isSplit() ) {
 			Pane& right = this->pane( 1 );
 			for ( auto& tab : right.tabList )
 				openTab( pane, tab->model->uri(), false );
-			setSplit( false );
+			mApp.setSplit( false );
 			if ( pane.tabs->getTabCount() > 0 )
 				pane.tabs->setTabSelected( 0u );
 		} else {
-			quit();
+			mApp.quit();
 		}
 	} );
 	p.tabs->on( Event::OnTabAdded, [this, index]( const Event* event ) {
@@ -180,7 +231,7 @@ void App::createPane( int index, UIWidget* parent ) {
 	p.newTabButton = UIPushButton::New();
 	p.newTabButton->setParent( p.tabs->getTabBar() );
 	p.newTabButton->addClass( "new_tab" );
-	p.newTabButton->setIcon( icon( "action-new-tab" ) );
+	p.newTabButton->setIcon( mApp.icon( "action-new-tab" ) );
 	p.newTabButton->setTooltipText( "New Tab (Ctrl+T)" );
 	p.newTabButton->onClick( [this, index]( const MouseEvent* ) {
 		Pane& pane = this->pane( index );
@@ -192,11 +243,11 @@ void App::createPane( int index, UIWidget* parent ) {
 	// Location bar
 	auto* frame = p.location.box->findByClass( "location_frame" );
 	if ( auto* image = frame->findByClass<UIImage>( "location_icon" ) )
-		image->setDrawable( icon( "mime-folder", 14 ) );
+		image->setDrawable( mApp.icon( "mime-folder", 14 ) );
 	p.location.input->on( Event::OnPressEnter, [this, index]( const Event* ) {
 		Pane& pane = this->pane( index );
 		if ( auto* tab = currentTab( pane ) ) {
-			navigate( tab, parseLocation( pane.location.input->getText().toUtf8() ) );
+			navigate( tab, Location::parse( pane.location.input->getText().toUtf8() ) );
 			tab->view->setFocus();
 		}
 	} );
@@ -213,20 +264,18 @@ void App::createPane( int index, UIWidget* parent ) {
 	auto* accept = UIPushButton::New();
 	accept->setParent( p.location.box );
 	accept->addClass( "tool" );
-	accept->setIcon( icon( "action-accept" ) );
+	accept->setIcon( mApp.icon( "action-accept" ) );
 	accept->setTooltipText( "Go" );
 	accept->setLayoutGravity( UI_VALIGN_CENTER );
 	accept->onClick( [this, index]( const MouseEvent* ) {
 		Pane& pane = this->pane( index );
 		if ( auto* tab = currentTab( pane ) )
-			navigate( tab, parseLocation( pane.location.input->getText().toUtf8() ) );
+			navigate( tab, Location::parse( pane.location.input->getText().toUtf8() ) );
 	} );
 
 	// Transfers
 	p.root->findByClass( "transfer_cancel" )->onClick( [this, index]( const MouseEvent* ) {
-		for ( auto& transfer : mTransfers )
-			if ( transfer.second.pane == index )
-				transfer.second.transfer.cancel();
+		mApp.fileOps().cancelTransfers( index );
 	} );
 
 	// Filter bar
@@ -260,7 +309,8 @@ void App::createPane( int index, UIWidget* parent ) {
 		Pane& pane = this->pane( index );
 		pane.filterLocked = !pane.filterLocked;
 		static_cast<UISelectButton*>( pane.filterLock )->setSelected( pane.filterLocked );
-		pane.filterLock->setIcon( icon( pane.filterLocked ? "filter-lock" : "filter-unlock" ) );
+		pane.filterLock->setIcon(
+			mApp.icon( pane.filterLocked ? "filter-lock" : "filter-unlock" ) );
 	} );
 	p.filterInput->on( Event::OnTextChanged, [this, index]( const Event* ) {
 		Pane& pane = this->pane( index );
@@ -278,30 +328,33 @@ void App::createPane( int index, UIWidget* parent ) {
 			tab->view->setFocus();
 	} );
 	p.root->findByClass( "filter_close" )->onClick( [this]( const MouseEvent* ) {
-		setFilterBarVisible( false );
+		mApp.setFilterBarVisible( false );
 	} );
 
 	mPanes[index] = std::move( owned );
 }
 
-FileTab* App::currentTab( Pane& pane ) {
+FileTab* PaneManager::currentTab( Pane& pane ) {
 	UITab* selected = pane.tabs->getTabSelected();
-	for ( auto& tab : pane.tabList )
+	for ( auto& tab : pane.tabList ) {
 		if ( tab->tab == selected )
 			return tab.get();
+	}
 	return nullptr;
 }
 
-FileTab* App::findTab( UITab* uitab ) {
-	for ( auto& pane : mPanes )
-		for ( auto& tab : pane->tabList )
+FileTab* PaneManager::findTab( UITab* uitab ) {
+	for ( auto& pane : mPanes ) {
+		for ( auto& tab : pane->tabList ) {
 			if ( tab->tab == uitab )
 				return tab.get();
+		}
+	}
 	return nullptr;
 }
 
-void App::setActivePane( int index ) {
-	if ( index == 1 && !mSplit )
+void PaneManager::setActivePane( int index ) {
+	if ( index == 1 && !mApp.isSplit() )
 		index = 0;
 	mActivePane = index;
 	for ( int i = 0; i < 2; ++i ) {
@@ -317,7 +370,7 @@ void App::setActivePane( int index ) {
 	updateChrome( activePane() );
 }
 
-void App::positionNewTabButton( Pane& target ) {
+void PaneManager::positionNewTabButton( Pane& target ) {
 	if ( !target.newTabButton )
 		return;
 	// Deferred: tabs are laid out after the event that triggered this.
@@ -340,7 +393,7 @@ void App::positionNewTabButton( Pane& target ) {
 // Tabs
 // ---------------------------------------------------------------------------------------------
 
-FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
+FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 	// New tabs inherit the columns, widths and sorting of the tab they were opened from.
 	if ( auto* current = currentTab( pane ) )
 		rememberViewState( current );
@@ -348,11 +401,11 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 	FileTab* raw = tab.get();
 	raw->pane = &pane;
 	VFSDirectoryModel::Config config;
-	config.vfs = mVFS;
-	config.showHidden = mShowHidden;
-	raw->model = VFSDirectoryModel::New( *mExecutor, config );
+	config.vfs = mApp.vfs();
+	config.showHidden = mApp.showHidden();
+	raw->model = VFSDirectoryModel::New( mApp.executor(), config );
 	raw->model->setIconProvider( [this]( const FileInfo& info ) -> Variant {
-		UIIcon* icon = fileIcon( info );
+		UIIcon* icon = mApp.fileIcon( info );
 		return icon ? Variant( icon ) : Variant();
 	} );
 	raw->model->setTypeProvider(
@@ -361,7 +414,7 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 	raw->model->setItemCountFormatter( itemCount );
 	raw->model->setOnStateChanged( [this, raw] { onTabStateChanged( raw ); } );
 	raw->model->setOnRename( [this, raw]( const FileInfo& entry, const std::string& name ) {
-		renameEntry( raw, entry, name );
+		mApp.fileOps().renameEntry( raw, entry, name );
 	} );
 
 	raw->view = FileTableView::New();
@@ -374,7 +427,7 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 	view->setMainColumn( VFSDirectoryModel::Name );
 	view->setFitAllColumnsToWidget( true );
 	view->setRowSearchByName( true );
-	view->setSingleClickNavigation( mConfig->files.singleClick );
+	view->setSingleClickNavigation( mApp.config().files.singleClick );
 	// Dragging from the empty area selects with a rectangle, as Dolphin.
 	view->setRubberBandSelection( true );
 	// Same size as the other icons: glyphs are not scaled to fit (see the stylesheet).
@@ -395,12 +448,12 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 	view->onModelEvent( [this, raw]( const ModelEvent* event ) {
 		setActivePane( raw->pane->index );
 		if ( event->getModelEventType() == ModelEventType::Open ) {
-			openRow( raw, event->getModelIndex().row() );
+			mApp.fileOps().openRow( raw, event->getModelIndex().row() );
 		} else if ( event->getModelEventType() == ModelEventType::OpenMenu ) {
 			// Right-clicking an unselected row selects it first.
 			if ( !raw->view->getSelection().contains( event->getModelIndex() ) )
 				raw->view->getSelection().set( event->getModelIndex() );
-			showContextMenu( raw, false );
+			mApp.fileOps().showContextMenu( raw, false );
 		}
 	} );
 	// Middle click opens a folder in a new tab, in the background (as Dolphin and browsers);
@@ -410,7 +463,7 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 		if ( row >= raw->model->rowCount() || !raw->model->entry( row ).isDirectory() )
 			return;
 		bool select =
-			mApp->getWindow()->getInput()->getSanitizedModState() & KeyMod::getDefaultModifier();
+			mApp.window()->getInput()->getSanitizedModState() & KeyMod::getDefaultModifier();
 		FileTab* tab = openTab( *raw->pane, raw->model->entryURI( row ), select );
 		if ( select && tab )
 			tab->view->setFocus();
@@ -421,10 +474,13 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 	} );
 	view->onBackgroundMenu = [this, raw] {
 		setActivePane( raw->pane->index );
-		showContextMenu( raw, true );
+		mApp.fileOps().showContextMenu( raw, true );
 	};
-	view->dragPayload = [this, raw] { return selectedURIs( raw ); };
-	view->onDragStarted = [this] { mPlacesPanel->trackDrag(); };
+	view->dragPayload = [this, raw] { return raw->selectedURIs(); };
+	view->onDragStarted = [this] {
+		if ( auto* panel = mApp.places().panel() )
+			panel->trackDrag();
+	};
 	view->isFolderRow = [raw]( size_t row ) {
 		return row < raw->model->rowCount() && raw->model->entry( row ).isDirectory();
 	};
@@ -432,11 +488,12 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 		URI destination = raw->model->uri();
 		if ( row && *row < raw->model->rowCount() && raw->model->entry( *row ).isDirectory() )
 			destination = raw->model->entryURI( *row );
-		dropFiles( currentFileDrag().uris, destination, raw->pane->index );
+		mApp.fileOps().dropFiles( FileTableView::currentDrag().uris, destination,
+								  raw->pane->index );
 	};
 	view->on( Event::OnFocus, [this, raw]( const Event* ) { setActivePane( raw->pane->index ); } );
 
-	raw->tab = pane.tabs->add( displayName( uri ), view, icon( "mime-folder" ) );
+	raw->tab = pane.tabs->add( Location::displayName( uri ), view, mApp.icon( "mime-folder" ) );
 	// The new tab button would sit over a dragged tab: hidden while one moves (a press alone
 	// starts a drag, so it waits for the movement), back in place after.
 	raw->tab->on( Event::OnPositionChange, [this, raw]( const Event* ) {
@@ -452,8 +509,10 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 	// Files can be dropped on a tab: they go to that tab's folder.
 	raw->tab->on( Event::OnNodeDropped, [this, raw]( const Event* event ) {
 		const auto* drop = static_cast<const DropEvent*>( event );
-		if ( drop->getDroppedNode() && drop->getDroppedNode()->isType( FileTableView::CellType ) )
-			dropFiles( currentFileDrag().uris, raw->model->uri(), raw->pane->index );
+		if ( drop->getDroppedNode() && drop->getDroppedNode()->isType( FileTableView::CellType ) ) {
+			mApp.fileOps().dropFiles( FileTableView::currentDrag().uris, raw->model->uri(),
+									  raw->pane->index );
+		}
 	} );
 	pane.tabList.push_back( std::move( tab ) );
 	applyViewState( raw );
@@ -463,14 +522,14 @@ FileTab* App::openTab( Pane& pane, const URI& uri, bool select ) {
 	return raw;
 }
 
-void App::closeTab( FileTab* tab ) {
+void PaneManager::closeTab( FileTab* tab ) {
 	if ( tab && tab->pane )
 		tab->pane->tabs->removeTab( tab->tab );
 }
 
-void App::updateTabTitle( FileTab* tab ) {
-	tab->tab->setText( displayName( tab->model->uri() ) );
-	tab->tab->setTooltipText( locationText( tab->model->uri() ) );
+void PaneManager::updateTabTitle( FileTab* tab ) {
+	tab->tab->setText( Location::displayName( tab->model->uri() ) );
+	tab->tab->setTooltipText( Location::text( tab->model->uri() ) );
 	positionNewTabButton( *tab->pane );
 }
 
@@ -478,43 +537,7 @@ void App::updateTabTitle( FileTab* tab ) {
 // Navigation
 // ---------------------------------------------------------------------------------------------
 
-URI App::parseLocation( const std::string& text ) {
-	std::string trimmed = String::trim( text );
-	if ( trimmed.find( "://" ) != std::string::npos ) {
-		URI uri( trimmed );
-		if ( uri.getPath().empty() )
-			uri.setRawPath( "/" );
-		return uri;
-	}
-	return URI::fromFSPath( FileSystem::expandTilde( trimmed ) );
-}
-
-String App::displayName( const URI& uri ) {
-	std::string name = uri.getLastPathSegment();
-	if ( name.empty() || uri.getPath() == "/" )
-		name = uri.getScheme() == "file" ? std::string( "/" ) : uri.getHost();
-	return String::fromUtf8( name );
-}
-
-String App::locationText( const URI& uri ) const {
-	if ( uri.getScheme() == "file" ) {
-		std::string path = uri.getFSPath();
-		FileSystem::dirAddSlashAtEnd( path );
-		return String::fromUtf8( path );
-	}
-	return String::fromUtf8( uri.toString() );
-}
-
-std::string App::clipboardText( const URI& uri ) const {
-	if ( uri.getScheme() != "file" )
-		return uri.toString();
-	std::string path = uri.getFSPath();
-	if ( path.size() > 1 && path.back() == '/' )
-		path.pop_back();
-	return path;
-}
-
-void App::navigate( FileTab* tab, URI uri, bool recordHistory ) {
+void PaneManager::navigate( FileTab* tab, URI uri, bool recordHistory ) {
 	if ( uri.getPath().empty() )
 		uri.setRawPath( "/" );
 	if ( recordHistory ) {
@@ -528,7 +551,7 @@ void App::navigate( FileTab* tab, URI uri, bool recordHistory ) {
 		tab->historyIndex = tab->history.size() - 1;
 	}
 	// Folder item counts list every subfolder: only where that is cheap.
-	tab->model->setCountDirectoryItems( mConfig->files.countFolderItems &&
+	tab->model->setCountDirectoryItems( mApp.config().files.countFolderItems &&
 										uri.getScheme() == "file" );
 	if ( !tab->pane->filterLocked && !tab->filter.empty() ) {
 		tab->filter.clear();
@@ -542,7 +565,7 @@ void App::navigate( FileTab* tab, URI uri, bool recordHistory ) {
 		updateChrome( *tab->pane );
 }
 
-void App::goBack() {
+void PaneManager::goBack() {
 	auto* tab = currentTab();
 	if ( tab && tab->historyIndex > 0 ) {
 		tab->selectLater( tab->model->uri().getLastPathSegment() );
@@ -551,7 +574,7 @@ void App::goBack() {
 	}
 }
 
-void App::goForward() {
+void PaneManager::goForward() {
 	auto* tab = currentTab();
 	if ( tab && tab->historyIndex + 1 < tab->history.size() ) {
 		++tab->historyIndex;
@@ -559,7 +582,7 @@ void App::goForward() {
 	}
 }
 
-void App::goUp() {
+void PaneManager::goUp() {
 	auto* tab = currentTab();
 	if ( !tab )
 		return;
@@ -571,12 +594,12 @@ void App::goUp() {
 	}
 }
 
-void App::goHome() {
+void PaneManager::goHome() {
 	if ( auto* tab = currentTab() )
 		navigate( tab, URI::fromFSPath( Sys::getUserDirectory() ) );
 }
 
-void App::showLocationHistory( Pane& pane ) {
+void PaneManager::showLocationHistory( Pane& pane ) {
 	auto* tab = currentTab( pane );
 	if ( !tab || tab->history.empty() )
 		return;
@@ -590,7 +613,7 @@ void App::showLocationHistory( Pane& pane ) {
 		if ( duplicate )
 			continue;
 		shown.push_back( i );
-		auto* item = menu->add( locationText( tab->history[i] ), icon( "mime-folder" ) );
+		auto* item = menu->add( Location::text( tab->history[i] ), mApp.icon( "mime-folder" ) );
 		item->setData( i );
 		if ( i == tab->historyIndex )
 			item->addClass( "current" );
@@ -614,26 +637,26 @@ void App::showLocationHistory( Pane& pane ) {
 // Chrome, status and filter
 // ---------------------------------------------------------------------------------------------
 
-void App::updateChrome( Pane& pane ) {
+void PaneManager::updateChrome( Pane& pane ) {
 	auto* tab = currentTab( pane );
 	if ( !tab )
 		return;
 	const URI& uri = tab->model->uri();
 	if ( !pane.location.input->hasFocus() )
-		pane.location.input->setText( locationText( uri ) );
+		pane.location.input->setText( Location::text( uri ) );
 	updateStatus( pane );
 	if ( pane.index != mActivePane )
 		return;
 	mUI->find<UIWidget>( "back" )->setEnabled( tab->historyIndex > 0 );
 	mUI->find<UIWidget>( "forward" )->setEnabled( tab->historyIndex + 1 < tab->history.size() );
 	mUI->find<UIWidget>( "up" )->setEnabled( uri.getParent() != uri );
-	mApp->getWindow()->setTitle( locationText( uri ) + " — eefm" );
-	if ( mPlacesPanel )
-		mPlacesPanel->setCurrent( uri );
-	syncTerminalDirectory();
+	mApp.window()->setTitle( Location::text( uri ) + " — eefm" );
+	if ( auto* panel = mApp.places().panel() )
+		panel->setCurrent( uri );
+	mApp.terminal().syncDirectory();
 }
 
-void App::onTabStateChanged( FileTab* tab ) {
+void PaneManager::onTabStateChanged( FileTab* tab ) {
 	if ( !tab->selectWhenListed.empty() ) {
 		if ( auto row = tab->model->rowOf( tab->selectWhenListed ) ) {
 			tab->view->setSelection( tab->model->index( *row ) );
@@ -647,7 +670,7 @@ void App::onTabStateChanged( FileTab* tab ) {
 		updateStatus( *tab->pane );
 }
 
-void App::applyFilter( FileTab* tab ) {
+void PaneManager::applyFilter( FileTab* tab ) {
 	bool changed = tab->filter != tab->model->nameFilter() ||
 				   mFilterMode != tab->model->nameFilterMode() ||
 				   mFilterCaseSensitive != tab->model->nameFilterCaseSensitive();
@@ -655,15 +678,16 @@ void App::applyFilter( FileTab* tab ) {
 	// selected entries by name and select those that are still listed.
 	std::vector<std::string> selected;
 	if ( changed ) {
-		for ( size_t row : selectedRows( tab ) )
+		for ( size_t row : tab->selectedRows() )
 			selected.push_back( tab->model->entry( row ).name );
 		tab->view->getSelection().clear();
 	}
 	tab->model->setNameFilter( tab->filter, mFilterMode, mFilterCaseSensitive );
 	std::vector<ModelIndex> visible;
-	for ( const auto& name : selected )
+	for ( const auto& name : selected ) {
 		if ( auto row = tab->model->rowOf( name ) )
 			visible.push_back( tab->model->index( static_cast<int>( *row ) ) );
+	}
 	if ( !visible.empty() )
 		tab->view->getSelection().set( visible );
 	if ( tab == currentTab( *tab->pane ) ) {
@@ -677,7 +701,7 @@ void App::applyFilter( FileTab* tab ) {
 	}
 }
 
-void App::updateStatus( Pane& pane ) {
+void PaneManager::updateStatus( Pane& pane ) {
 	auto* tab = currentTab( pane );
 	if ( !tab )
 		return;
@@ -707,17 +731,19 @@ void App::updateStatus( Pane& pane ) {
 			std::string text;
 			if ( dirs )
 				text = std::to_string( dirs ) + ( dirs == 1 ? " folder" : " folders" );
-			if ( regular )
+			if ( regular ) {
 				text += ( text.empty() ? "" : ", " ) + std::to_string( regular ) +
 						( regular == 1 ? " file" : " files" );
+			}
 			return text.empty() ? std::string( "Empty folder" ) : text;
 		};
 		std::string text;
 		if ( selectedFolders + selectedFiles > 0 ) {
 			text = describe( selectedFolders, selectedFiles ) + " selected";
-			if ( selectedFiles )
+			if ( selectedFiles ) {
 				text +=
 					" (" + FileSystem::sizeToString( static_cast<Int64>( selectedBytes ) ) + ")";
+			}
 		} else {
 			text = describe( folders, files );
 			if ( files )
@@ -736,6 +762,103 @@ void App::updateStatus( Pane& pane ) {
 		status = String::fromUtf8( text );
 	}
 	pane.status->setText( status );
+}
+
+void PaneManager::rememberViewState( FileTab* tab ) {
+	if ( !tab )
+		return;
+	nlohmann::json view = nlohmann::json::object();
+	// Automatic widths follow the view size; only widths set by the user are remembered.
+	if ( !tab->view->getAutoColumnsWidth() )
+		view["columns"] = tab->view->serializeColumnWidths();
+	nlohmann::json hidden = nlohmann::json::array();
+	for ( size_t col = 0; col < VFSDirectoryModel::ColumnCount; ++col ) {
+		if ( tab->view->isColumnHidden( col ) )
+			hidden.push_back( col );
+	}
+	view["hidden"] = hidden;
+	view["order"] = tab->view->getColumnOrder();
+	view["sort_column"] = tab->model->keyColumn();
+	view["sort_order"] = sortOrderName( tab->model->sortOrder() );
+	mViewState = std::move( view );
+}
+
+void PaneManager::applyViewState( FileTab* tab ) {
+	auto* view = tab->view;
+	if ( !mViewState.is_object() || mViewState.empty() ) {
+		view->setColumnsHidden(
+			{ VFSDirectoryModel::Permissions, VFSDirectoryModel::Owner, VFSDirectoryModel::Group },
+			true );
+		return;
+	}
+	if ( mViewState.contains( "hidden" ) && mViewState["hidden"].is_array() ) {
+		for ( size_t col = 0; col < VFSDirectoryModel::ColumnCount; ++col ) {
+			bool hidden = false;
+			for ( const auto& value : mViewState["hidden"] )
+				hidden = hidden || ( value.is_number() && value.get<size_t>() == col );
+			view->setColumnHidden( col, hidden );
+		}
+	}
+	if ( mViewState.contains( "order" ) && mViewState["order"].is_array() ) {
+		std::vector<size_t> order;
+		for ( const auto& value : mViewState["order"] ) {
+			if ( value.is_number() )
+				order.push_back( value.get<size_t>() );
+		}
+		view->setColumnOrder( std::move( order ) );
+	}
+	if ( mViewState.contains( "columns" ) ) {
+		view->setAutoColumnsWidth( false );
+		view->unserializeColumnWidths( mViewState["columns"] );
+	}
+	size_t column = mViewState.value( "sort_column", 0 );
+	if ( column < VFSDirectoryModel::ColumnCount ) {
+		view->sortByColumn( column, mViewState.value( "sort_order", "ascending" ) == "descending"
+										? SortOrder::Descending
+										: SortOrder::Ascending );
+	}
+}
+
+void PaneManager::restoreTabs( const nlohmann::json& state,
+							   const std::vector<std::string>& locations, bool forceSplit ) {
+	URI home = URI::fromFSPath( Sys::getUserDirectory() );
+	bool split = mApp.isSplit();
+	if ( !locations.empty() ) {
+		if ( forceSplit && locations.size() >= 2 ) {
+			openTab( pane( 0 ), Location::parse( locations[0] ) );
+			for ( size_t i = 1; i < locations.size(); ++i )
+				openTab( pane( 1 ), Location::parse( locations[i] ) );
+			split = true;
+		} else {
+			for ( const auto& location : locations )
+				openTab( pane( 0 ), Location::parse( location ) );
+			openTab( pane( 1 ), Location::parse( locations.back() ) );
+			split = forceSplit || split;
+		}
+	} else if ( state.contains( "panes" ) && state["panes"].is_array() ) {
+		for ( int i = 0; i < 2 && i < static_cast<int>( state["panes"].size() ); ++i ) {
+			const auto& saved = state["panes"][i];
+			if ( !saved.contains( "tabs" ) || !saved["tabs"].is_array() )
+				continue;
+			for ( const auto& uri : saved["tabs"] ) {
+				if ( uri.is_string() )
+					openTab( pane( i ), URI( uri.get<std::string>() ), false );
+			}
+			Uint32 current = saved.value( "current", 0u );
+			if ( current < pane( i ).tabs->getTabCount() )
+				pane( i ).tabs->setTabSelected( current );
+		}
+	}
+	for ( int i = 0; i < 2; ++i ) {
+		if ( pane( i ).tabList.empty() )
+			openTab( pane( i ), home );
+	}
+	mApp.setSplit( split );
+	// Start on the left pane, with the keyboard there too: restoring tabs focuses the views it
+	// selects (the right pane's last), and the highlight alone does not move the focus.
+	setActivePane( 0 );
+	if ( auto* tab = currentTab( pane( 0 ) ) )
+		tab->view->setFocus();
 }
 
 } // namespace eefm

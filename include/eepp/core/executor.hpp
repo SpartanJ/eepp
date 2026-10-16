@@ -11,7 +11,7 @@ namespace EE {
  * Core code schedules continuations through this interface without knowing whether they run on a
  * thread pool, the UI thread, an I/O thread, or inline. Implementations must run every accepted
  * function exactly once, unless the executor is being destroyed, in which case pending functions
- * may be destroyed without running (their owned state, such as task sources, is then released
+ * may be destroyed without running (their owned state, such as task resolvers, is then released
  * normally).
  */
 class EE_API Executor {

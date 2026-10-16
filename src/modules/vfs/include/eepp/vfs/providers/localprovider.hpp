@@ -77,6 +77,23 @@ class LocalProvider : public VFSProvider {
 	std::shared_ptr<System::ThreadPool> mPool;
 };
 
+/** Runs fn( nativePath ) -> VFSResult<T> on the I/O pool (the platform implementations' common
+ * path for blocking calls). */
+template <typename T, typename F>
+VFSTask<T> LocalProvider::run( const URI& uri, CancellationToken token, F&& fn ) {
+	if ( token.isCancellationRequested() )
+		return readyError<T>( cancelledError( uri ) );
+	auto path = toNativePath( uri );
+	if ( !path )
+		return readyError<T>( std::move( path ).error() );
+	return mPool->submit( [fn = std::forward<F>( fn ), path = std::move( path ).value(),
+						   token = std::move( token )]() mutable -> VFSResult<T> {
+		if ( token.isCancellationRequested() )
+			return Err( VFSError( VFSErrorCode::Cancelled, URI(), "Operation cancelled" ) );
+		return fn( path );
+	} );
+}
+
 }} // namespace EE::VFS
 
 #endif

@@ -79,9 +79,10 @@ bool isNetworkFileSystem( const std::string& type ) {
 								   "smbfs",			"afpfs",		"webdav",		 "davfs",
 								   "fuse.sshfs",	"fusefs.sshfs", "sshfs",		 "fuse.rclone",
 								   "fusefs.rclone", "ceph",			"fuse.glusterfs" };
-	for ( const char* known : types )
+	for ( const char* known : types ) {
 		if ( type == known )
 			return true;
+	}
 	return false;
 }
 
@@ -200,7 +201,7 @@ std::vector<Place> Places::builtIn() {
 		place.id = known.id;
 		places.push_back( std::move( place ) );
 	}
-	if ( auto trashLocation = trash::location() ) {
+	if ( auto trashLocation = Trash::location() ) {
 		Place place{ "Trash", *trashLocation, "place-trash", PlaceSection::Places, true };
 		place.trash = true;
 		place.id = "trash";
@@ -280,28 +281,34 @@ void Places::load() {
 		place.icon = item.value( "icon", defaultIcon( place.uri ) );
 		place.hidden = item.value( "hidden", false );
 		place.section = sectionFor( place.uri );
-		for ( const auto& existing : mPlaces )
+		for ( const auto& existing : mPlaces ) {
 			if ( existing.uri == place.uri )
 				return;
+		}
 		mPlaces.push_back( std::move( place ) );
 	};
 
 	if ( document.is_array() ) {
 		// First format: only the user places, after the built-in ones.
-		for ( const auto& item : document )
+		for ( const auto& item : document ) {
 			if ( item.is_object() && !item.contains( "id" ) )
 				readPlace( item );
+		}
 	} else if ( document.is_object() ) {
 		mShowHidden = document.value( "show_hidden", false );
-		if ( document.contains( "hidden_sections" ) && document["hidden_sections"].is_array() )
-			for ( const auto& key : document["hidden_sections"] )
+		if ( document.contains( "hidden_sections" ) && document["hidden_sections"].is_array() ) {
+			for ( const auto& key : document["hidden_sections"] ) {
 				for ( auto section :
-					  { PlaceSection::Places, PlaceSection::Remote, PlaceSection::Devices } )
+					  { PlaceSection::Places, PlaceSection::Remote, PlaceSection::Devices } ) {
 					if ( key.is_string() && key.get<std::string>() == sectionKey( section ) )
 						mHiddenSections.push_back( section );
-		if ( document.contains( "places" ) && document["places"].is_array() )
+				}
+			}
+		}
+		if ( document.contains( "places" ) && document["places"].is_array() ) {
 			for ( const auto& item : document["places"] )
 				readPlace( item );
+		}
 	}
 
 	// Built-in places not in the configuration (first run, or new XDG folders) keep their
@@ -310,14 +317,17 @@ void Places::load() {
 		if ( used[i] )
 			continue;
 		auto next = mPlaces.end();
-		for ( size_t j = i + 1; j < mDefaults.size() && next == mPlaces.end(); ++j )
-			if ( used[j] )
+		for ( size_t j = i + 1; j < mDefaults.size() && next == mPlaces.end(); ++j ) {
+			if ( used[j] ) {
 				next = std::find_if( mPlaces.begin(), mPlaces.end(), [&]( const Place& place ) {
 					return place.id == mDefaults[j].id;
 				} );
-		if ( next == mPlaces.end() )
+			}
+		}
+		if ( next == mPlaces.end() ) {
 			next = std::find_if( mPlaces.begin(), mPlaces.end(),
 								 []( const Place& place ) { return place.id.empty(); } );
+		}
 		mPlaces.insert( next, mDefaults[i] );
 	}
 }
@@ -327,9 +337,10 @@ bool Places::save() const {
 	for ( const auto& place : mPlaces ) {
 		json item = json::object();
 		const Place* defaults = nullptr;
-		for ( const auto& candidate : mDefaults )
+		for ( const auto& candidate : mDefaults ) {
 			if ( !place.id.empty() && candidate.id == place.id )
 				defaults = &candidate;
+		}
 		if ( defaults ) {
 			// Only what the user changed, so the defaults (XDG folders) can still evolve.
 			item["id"] = place.id;
@@ -362,9 +373,10 @@ bool Places::save() const {
 }
 
 bool Places::add( Place place, std::optional<size_t> before ) {
-	for ( const auto& existing : mPlaces )
+	for ( const auto& existing : mPlaces ) {
 		if ( existing.uri == place.uri )
 			return false;
+	}
 	place.section = sectionFor( place.uri );
 	if ( before && *before < mPlaces.size() && mPlaces[*before].section == place.section ) {
 		mPlaces.insert( mPlaces.begin() + *before, std::move( place ) );
@@ -482,9 +494,10 @@ std::vector<Place> Places::devices() {
 	auto addDevice = [&]( std::string name, const std::string& path, const char* icon,
 						  PlaceSection section = PlaceSection::Devices ) {
 		URI uri = URI::fromFSPath( withSlash( path ) );
-		for ( const auto& device : devices )
+		for ( const auto& device : devices ) {
 			if ( device.uri == uri )
 				return;
+		}
 		devices.push_back( Place{ std::move( name ), uri, icon, section, true } );
 	};
 	// Network mounts are never touched here (no stat): an unreachable server would block.
@@ -496,9 +509,10 @@ std::vector<Place> Places::devices() {
 	// Device node -> label, from the udev by-label links.
 	std::map<std::string, std::string> labels;
 	const std::string byLabel = "/dev/disk/by-label/";
-	if ( FileSystem::isDirectory( byLabel ) )
+	if ( FileSystem::isDirectory( byLabel ) ) {
 		for ( const auto& label : FileSystem::filesGetInPath( byLabel ) )
 			labels[realPath( byLabel + label )] = decodeOctal( label, true );
+	}
 	// procfs files report a size of 0: read them as a stream.
 	std::ifstream stream( "/proc/self/mounts" );
 	if ( !stream )

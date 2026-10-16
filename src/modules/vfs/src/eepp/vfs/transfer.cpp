@@ -30,9 +30,10 @@ void TransferProgressSubscription::reset() {
 Transfer::Transfer( std::shared_ptr<detail::TransferState> state ) : mState( std::move( state ) ) {}
 
 VFSTask<TransferResult> Transfer::completion() {
-	if ( !mState )
+	if ( !mState ) {
 		return readyError<TransferResult>( VFSErrorCode::InvalidOperation, URI(),
 										   "Invalid transfer" );
+	}
 	return mState->takeCompletion();
 }
 
@@ -42,10 +43,6 @@ TransferProgressSubscription Transfer::onProgress( TransferProgressCallback call
 		return {};
 	Uint64 id = mState->subscribe( std::move( callback ), deliveryExecutor );
 	return TransferProgressSubscription( mState, id );
-}
-
-TransferProgress Transfer::progress() const {
-	return mState ? mState->progress() : TransferProgress();
 }
 
 void Transfer::cancel() {

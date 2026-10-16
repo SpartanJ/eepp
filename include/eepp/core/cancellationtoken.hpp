@@ -102,9 +102,6 @@ class EE_API CancellationToken {
 		return mState && mState->isCancellationRequested();
 	}
 
-	/** @return False for the default "never cancelled" token. */
-	bool canBeCancelled() const noexcept { return nullptr != mState; }
-
 	/** Registers a callback that runs synchronously on the thread calling cancel(). If
 	 * cancellation already happened, the callback runs immediately on the calling thread and the
 	 * returned registration is empty. */

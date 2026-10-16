@@ -1,4 +1,6 @@
+#include "terminalpanel.hpp"
 #include "app.hpp"
+#include "panemanager.hpp"
 
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -142,42 +144,66 @@ std::string localDirectory( FileTab* tab ) {
 
 } // namespace
 
-void App::toggleTerminal() {
-	showTerminal( !mTerminal || mTerminal->getParent() != mTerminalSplitter );
+TerminalPanel::TerminalPanel( App& app, UISplitter* splitter ) :
+	mApp( app ), mUI( app.ui() ), mSplitter( splitter ) {}
+
+TerminalPanel::~TerminalPanel() = default;
+
+void TerminalPanel::setTerminalFont( FontTrueType* font ) {
+	mTerminalFont = font;
+	FontFamily::loadFromRegular( mTerminalFont );
+	if ( mTerminal ) {
+		mTerminal->setFont( mTerminalFont );
+		mTerminal->setFontSize( PixelDensity::dpToPx( mApp.config().terminal.fontSize ) );
+	}
 }
 
-bool App::isTerminalVisible() const {
-	return mTerminal && mTerminal->getParent() == mTerminalSplitter;
+void TerminalPanel::setFontSize( Float sizeDp ) {
+	if ( mTerminal )
+		mTerminal->setFontSize( PixelDensity::dpToPx( sizeDp ) );
 }
 
-void App::showTerminal( bool show ) {
+void TerminalPanel::syncFontRendering() {
+	if ( mTerminal )
+		mTerminal->syncFontRenderingConfig();
+}
+
+void TerminalPanel::toggle() {
+	show( !mTerminal || mTerminal->getParent() != mSplitter );
+}
+
+bool TerminalPanel::isVisible() const {
+	return mTerminal && mTerminal->getParent() == mSplitter;
+}
+
+void TerminalPanel::show( bool show ) {
 	if ( show ) {
-		if ( !mTerminal && !createTerminal() )
+		if ( !mTerminal && !create() )
 			return;
-		if ( mTerminal->getParent() != mTerminalSplitter ) {
-			mTerminal->setParent( mTerminalSplitter );
+		if ( mTerminal->getParent() != mSplitter ) {
+			mTerminal->setParent( mSplitter );
 			mTerminal->setVisible( true );
-			mTerminalSplitter->setSplitPartition( StyleSheetLength( mTerminalPartition ) );
+			mSplitter->setSplitPartition( StyleSheetLength( mPartition ) );
 		}
 		mTerminal->setFocus();
-		syncTerminalDirectory();
-	} else if ( isTerminalVisible() ) {
-		rememberTerminalSize();
+		syncDirectory();
+	} else if ( isVisible() ) {
+		rememberSize();
 		// Parked, not closed: the shell keeps running until the next F4.
-		mTerminal->setParent( mParking );
-		if ( auto* tab = currentTab() )
+		mTerminal->setParent( mApp.parking() );
+		if ( auto* tab = mApp.panes().currentTab() )
 			tab->view->setFocus();
 	}
 }
 
-bool App::createTerminal() {
+bool TerminalPanel::create() {
 	if ( !mTerminalFont ) {
 		// The configured font, else the bundled one.
 		auto& scope = *mUI->getResourceScope();
 		FontTrueType* font = nullptr;
-		if ( !mConfig->terminal.fontPath.empty() ) {
+		if ( !mApp.config().terminal.fontPath.empty() ) {
 			auto configured = FontTrueType::New( "eefm-monospace", scope );
-			if ( configured->loadFromFile( mConfig->terminal.fontPath ) )
+			if ( configured->loadFromFile( mApp.config().terminal.fontPath ) )
 				font = configured.get();
 		}
 		if ( !font ) {
@@ -187,82 +213,82 @@ bool App::createTerminal() {
 				font = bundled.get();
 		}
 		if ( !font ) {
-			showError( mUI, mUI->i18n( "eefm_terminal_font_failed",
-									   "The terminal font could not be loaded." ) );
+			Dialogs::showError( mUI, mUI->i18n( "eefm_terminal_font_failed",
+												"The terminal font could not be loaded." ) );
 			return false;
 		}
 		FontFamily::loadFromRegular( font );
 		mTerminalFont = font;
 	}
-	std::string directory = localDirectory( currentTab() );
+	std::string directory = localDirectory( mApp.panes().currentTab() );
 	if ( directory.empty() )
 		directory = Sys::getUserDirectory();
-	Sizef size( mTerminalSplitter->getPixelsSize().getWidth(),
-				eemax( PixelDensity::dpToPx( 120 ),
-					   mTerminalSplitter->getPixelsSize().getHeight() * 0.3f ) );
-	mTerminal = UITerminal::New( mTerminalFont, PixelDensity::dpToPx( mConfig->terminal.fontSize ),
-								 size, mConfig->terminal.shell,
-								 Process::parseArgs( mConfig->terminal.shellArguments ), {},
-								 directory, mConfig->terminal.historySize );
+	Sizef size(
+		mSplitter->getPixelsSize().getWidth(),
+		eemax( PixelDensity::dpToPx( 120 ), mSplitter->getPixelsSize().getHeight() * 0.3f ) );
+	mTerminal = UITerminal::New(
+		mTerminalFont, PixelDensity::dpToPx( mApp.config().terminal.fontSize ), size,
+		mApp.config().terminal.shell, Process::parseArgs( mApp.config().terminal.shellArguments ),
+		{}, directory, mApp.config().terminal.historySize );
 	if ( !mTerminal || !mTerminal->getTerm() ) {
 		if ( mTerminal )
 			mTerminal->close();
 		mTerminal = nullptr;
-		showError( mUI, mUI->i18n( "eefm_terminal_failed", "The terminal could not be started." ) );
+		Dialogs::showError(
+			mUI, mUI->i18n( "eefm_terminal_failed", "The terminal could not be started." ) );
 		return false;
 	}
-	mTerminal->setParent( mParking );
-	applyTerminalConfig();
+	mTerminal->setParent( mApp.parking() );
+	applyConfig();
 	mTerminalDirectory = directory;
 	mTerminalFollowed.clear();
 	// F4 reaches the terminal (it takes every key): it hides the panel from there too.
-	mTerminal->setCommand( "eefm-toggle-terminal", [this] { showTerminal( false ); } );
+	mTerminal->setCommand( "eefm-toggle-terminal", [this] { show( false ); } );
 	mTerminal->addKeyBinding( { KEY_F4 }, "eefm-toggle-terminal" );
 	// When the shell exits the panel closes; the next F4 starts a new one.
 	mTerminal->getTerm()->pushEventCallback( [this]( const TerminalDisplay::Event& event ) {
 		if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT )
-			mUI->runOnMainThread( [this] { closeTerminal(); } );
+			mUI->runOnMainThread( [this] { close(); } );
 	} );
 	return true;
 }
 
-void App::closeTerminal() {
+void TerminalPanel::close() {
 	if ( !mTerminal )
 		return;
-	bool visible = isTerminalVisible();
+	bool visible = isVisible();
 	if ( visible )
-		rememberTerminalSize();
+		rememberSize();
 	mTerminal->close();
 	mTerminal = nullptr;
 	mTerminalDirectory.clear();
 	mTerminalFollowed.clear();
-	if ( visible )
-		if ( auto* tab = currentTab() )
+	if ( visible ) {
+		if ( auto* tab = mApp.panes().currentTab() )
 			tab->view->setFocus();
+	}
 }
 
-void App::rememberTerminalSize() {
-	if ( !isTerminalVisible() || mTerminalSplitter->getPixelsSize().getHeight() <= 0 )
+void TerminalPanel::rememberSize() {
+	if ( !isVisible() || mSplitter->getPixelsSize().getHeight() <= 0 )
 		return;
-	Float files =
-		mTerminalSplitter->getPixelsSize().getHeight() - mTerminal->getPixelsSize().getHeight();
-	mTerminalPartition = String::format(
-		"%.2f%%",
-		eeclamp( files / mTerminalSplitter->getPixelsSize().getHeight() * 100.f, 10.f, 90.f ) );
+	Float files = mSplitter->getPixelsSize().getHeight() - mTerminal->getPixelsSize().getHeight();
+	mPartition = String::format(
+		"%.2f%%", eeclamp( files / mSplitter->getPixelsSize().getHeight() * 100.f, 10.f, 90.f ) );
 }
 
-void App::syncTerminalDirectory() {
+void TerminalPanel::syncDirectory() {
 	// As Dolphin: the shell follows the active pane, but only while it waits at its prompt: not
 	// with a full screen program (alternate screen) nor any other command running. Remote
 	// folders have no local path to go to.
-	if ( !mConfig->terminal.followActivePane || !isTerminalVisible() || !mTerminal->getTerm() ||
+	if ( !mApp.config().terminal.followActivePane || !isVisible() || !mTerminal->getTerm() ||
 		 mTerminal->getTerm()->isAltScr() )
 		return;
-	std::string directory = localDirectory( currentTab() );
+	std::string directory = localDirectory( mApp.panes().currentTab() );
 	if ( directory.empty() )
 		return;
 	// Only when the active pane or its folder changed (not on every refresh of the chrome).
-	std::string followed = String::toString( mActivePane ) + ":" + directory;
+	std::string followed = String::toString( mApp.panes().activeIndex() ) + ":" + directory;
 	if ( followed == mTerminalFollowed )
 		return;
 	ShellState shell = shellState( mTerminal->getTerm()->getProcessId() );
@@ -281,6 +307,41 @@ void App::syncTerminalDirectory() {
 	mTerminalDirectory = directory;
 	mTerminalDirectorySent.restart();
 	mTerminal->getTerm()->executeFile( changeDirectoryCommand( directory ) );
+}
+
+const std::map<std::string, TerminalColorScheme>& TerminalPanel::colorSchemes() {
+	if ( !mTerminalColorSchemesLoaded ) {
+		mTerminalColorSchemesLoaded = true;
+		// The schemes eterm ships, then the user's (eterm's config folder: shared with eterm).
+		auto schemes = TerminalColorScheme::loadFromFile(
+			Sys::getProcessPath() + "assets/colorschemes/terminalcolorschemes.conf" );
+		std::string userSchemes =
+			Sys::getConfigPath( "eterm" ) + FileSystem::getOSSlash() + "colorschemes";
+		if ( FileSystem::isDirectory( userSchemes ) ) {
+			for ( const auto& file : FileSystem::filesGetInPath( userSchemes ) ) {
+				auto more = TerminalColorScheme::loadFromFile( userSchemes +
+															   FileSystem::getOSSlash() + file );
+				schemes.insert( schemes.end(), std::make_move_iterator( more.begin() ),
+								std::make_move_iterator( more.end() ) );
+			}
+		}
+		for ( auto& scheme : schemes ) {
+			std::string name = scheme.getName();
+			mTerminalColorSchemes.emplace( std::move( name ), std::move( scheme ) );
+		}
+	}
+	return mTerminalColorSchemes;
+}
+
+void TerminalPanel::applyConfig() {
+	if ( !mTerminal || !mTerminal->getTerm() )
+		return;
+	const auto& schemes = colorSchemes();
+	auto found = schemes.find( mApp.config().terminal.colorScheme );
+	mTerminal->setColorScheme( found != schemes.end() ? found->second
+													  : TerminalColorScheme::getDefault() );
+	mTerminal->getTerm()->setCursorMode( mApp.config().terminal.cursorStyle );
+	mTerminal->setVerticalScrollMode( mApp.config().terminal.scrollBarMode );
 }
 
 } // namespace eefm

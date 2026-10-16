@@ -280,9 +280,10 @@ UTEST( SSHConfig, includesAreConditionalOrderedAndCycleSafe ) {
 	// Deep include chains are rejected.
 	FakeSystem deep;
 	deep.files[UserConfig] = "Include /d/0\n";
-	for ( int i = 0; i < 20; ++i )
+	for ( int i = 0; i < 20; ++i ) {
 		deep.files["/d/" + String::toString( i )] =
 			"Include /d/" + String::toString( i + 1 ) + "\n";
+	}
 	EXPECT_FALSE( deep.error( "x" ).empty() );
 }
 
@@ -653,9 +654,10 @@ UTEST( SSHConfig, differentialAgainstSshDashG ) {
 					continue; // OpenSSH's default identity list differs between versions.
 				std::string a = String::join( ours, '|' );
 				std::string b = String::join( theirs, '|' );
-				if ( a != b )
+				if ( a != b ) {
 					printf( "  mismatch fixture %zu host %s key %s: ours=[%s] ssh=[%s]\n", f,
 							host.c_str(), key.c_str(), a.c_str(), b.c_str() );
+				}
 				EXPECT_STDSTREQ( b, a );
 				++compared;
 			}

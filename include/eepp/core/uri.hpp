@@ -85,7 +85,7 @@ class EE_API URI {
 		 const std::string& query, const std::string& fragment );
 
 	/** Copy constructor. Creates an URI from another one. */
-	URI( const URI& uri );
+	URI( const URI& uri ) = default;
 
 	/** Move constructor. */
 	URI( URI&& uri ) noexcept = default;
@@ -98,7 +98,7 @@ class EE_API URI {
 	~URI() = default;
 
 	/** Assignment operator. */
-	URI& operator=( const URI& uri );
+	URI& operator=( const URI& uri ) = default;
 
 	/** Move assignment operator. */
 	URI& operator=( URI&& uri ) noexcept = default;
@@ -199,6 +199,10 @@ class EE_API URI {
 	/** @returns True if this URI's path is `ancestor`'s path or lies below it, and both share the
 	 * scheme and authority. */
 	bool isSameOrChildOf( const URI& ancestor ) const;
+
+	/** @returns True if both URIs have the same scheme, user-info, host and port (the scheme's
+	 * well-known port when none is specified). */
+	bool hasSameAuthority( const URI& other ) const;
 
 	/** @returns The last path segment. */
 	std::string getLastPathSegment() const;
@@ -353,6 +357,9 @@ class EE_API URI {
 	static const std::string ILLEGAL;
 
   private:
+	/** @return A URI with this one's scheme and authority, and no path, query or fragment. */
+	URI withAuthorityOnly() const;
+
 	std::string mScheme;
 	std::string mUserInfo;
 	std::string mHost;

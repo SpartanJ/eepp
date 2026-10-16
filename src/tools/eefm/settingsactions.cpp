@@ -1,6 +1,9 @@
+#include "settingsactions.hpp"
 #include "app.hpp"
+#include "panemanager.hpp"
+#include "placescontroller.hpp"
+#include "terminalpanel.hpp"
 
-#include <eepp/graphics/fontfamily.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eterm/ui/uiterminal.hpp>
@@ -13,134 +16,60 @@ using namespace eterm::UI;
 
 namespace eefm {
 
-namespace {
+SettingsActions::SettingsActions( App& app ) : mApp( app ), mUI( app.ui() ) {}
 
-/** The file of a loaded font as an absolute path, empty when unknown. */
-std::string fontFilePath( Font* font ) {
-	FontDesc desc;
-	if ( !font || font->getType() != FontType::TTF ||
-		 !static_cast<FontTrueType*>( font )->getFontDesc( desc ) )
-		return {};
-	return FileSystem::getRealPath( desc.path );
+void SettingsActions::savePreferences() {
+	mApp.config().save();
 }
 
-} // namespace
-
-void App::savePreferences() {
-	mConfig->save();
+void SettingsActions::applyFontRendering() {
+	mUI->setFontRendering( mApp.config().font.hinting, mApp.config().font.antialiasing );
+	mApp.terminal().syncFontRendering();
 }
 
-void App::applyFontRendering() {
-	// The base UI fonts live in the default resource scope (UIApplication creates them there),
-	// the scene's own fonts in the scene's scope: both, as UIApplication does at startup.
-	for ( FontService* service : { &defaultResourceScope().getFontService(),
-								   &mUI->getResourceScope()->getFontService() } ) {
-		service->setHinting( mConfig->font.hinting );
-		service->setAntialiasing( mConfig->font.antialiasing );
-	}
-	if ( mTerminal )
-		mTerminal->syncFontRenderingConfig();
-	mUI->getRoot()->invalidateDraw();
+void SettingsActions::applyUIFont( Font* font, Float sizeDp ) {
+	mUI->applyDefaultFont( font, PixelDensity::dpToPx( sizeDp ) );
 }
 
-void App::applyUIFont( Font* font, Float sizeDp ) {
-	// As ecode: the theme decides the size (and font) of new text, existing text views that
-	// do not get them from the stylesheet are updated in place.
-	const Float size = PixelDensity::dpToPx( sizeDp );
-	UIThemeManager* manager = mUI->getUIThemeManager();
-	manager->setDefaultFontSize( size );
-	if ( manager->getDefaultTheme() )
-		manager->getDefaultTheme()->setDefaultFontSize( size );
-	if ( font ) {
-		manager->setDefaultFont( font );
-		if ( manager->getDefaultTheme() )
-			manager->getDefaultTheme()->setDefaultFont( font );
-	}
-	mUI->forEachNode( [font, size]( Node* node ) {
-		if ( !node->isType( UI_TYPE_TEXTVIEW ) )
-			return;
-		UITextView* text = node->asType<UITextView>();
-		const UIStyle* style = text->getUIStyle();
-		if ( !style || !style->hasProperty( PropertyId::FontSize ) )
-			text->setFontSize( size );
-		if ( font && ( !style || !style->hasProperty( PropertyId::FontFamily ) ) )
-			text->setFont( font );
-	} );
-}
-
-const std::map<std::string, TerminalColorScheme>& App::terminalColorSchemes() {
-	if ( !mTerminalColorSchemesLoaded ) {
-		mTerminalColorSchemesLoaded = true;
-		// The schemes eterm ships, then the user's (eterm's config folder: shared with eterm).
-		auto schemes = TerminalColorScheme::loadFromFile(
-			Sys::getProcessPath() + "assets/colorschemes/terminalcolorschemes.conf" );
-		std::string userSchemes =
-			Sys::getConfigPath( "eterm" ) + FileSystem::getOSSlash() + "colorschemes";
-		if ( FileSystem::isDirectory( userSchemes ) ) {
-			for ( const auto& file : FileSystem::filesGetInPath( userSchemes ) ) {
-				auto more = TerminalColorScheme::loadFromFile( userSchemes +
-															   FileSystem::getOSSlash() + file );
-				schemes.insert( schemes.end(), std::make_move_iterator( more.begin() ),
-								std::make_move_iterator( more.end() ) );
-			}
-		}
-		for ( auto& scheme : schemes ) {
-			std::string name = scheme.getName();
-			mTerminalColorSchemes.emplace( std::move( name ), std::move( scheme ) );
-		}
-	}
-	return mTerminalColorSchemes;
-}
-
-void App::applyTerminalConfig() {
-	if ( !mTerminal || !mTerminal->getTerm() )
-		return;
-	const auto& schemes = terminalColorSchemes();
-	auto found = schemes.find( mConfig->terminal.colorScheme );
-	mTerminal->setColorScheme( found != schemes.end() ? found->second
-													  : TerminalColorScheme::getDefault() );
-	mTerminal->getTerm()->setCursorMode( mConfig->terminal.cursorStyle );
-	mTerminal->setVerticalScrollMode( mConfig->terminal.scrollBarMode );
-}
-
-void App::applyFilesConfig() {
-	mFileIcons.clear();
-	updateIconStyle();
-	for ( auto& pane : mPanes ) {
+void SettingsActions::applyFilesConfig() {
+	mApp.clearFileIcons();
+	mApp.updateIconStyle();
+	for ( auto& pane : mApp.panes().all() ) {
 		if ( !pane )
 			continue;
 		for ( auto& tab : pane->tabList ) {
-			tab->view->setSingleClickNavigation( mConfig->files.singleClick );
-			tab->model->setCountDirectoryItems( mConfig->files.countFolderItems &&
+			tab->view->setSingleClickNavigation( mApp.config().files.singleClick );
+			tab->model->setCountDirectoryItems( mApp.config().files.countFolderItems &&
 												tab->model->uri().getScheme() == "file" );
 			tab->view->invalidateDraw();
 		}
 	}
-	refreshPlaces();
+	mApp.places().refresh();
 }
 
-void App::openFontPicker( FontTarget target ) {
+void SettingsActions::openFontPicker( FontTarget target ) {
 	const Uint32 flags = UIFontPickerDialog::ShowStyle |
 						 ( target == FontTarget::Fallback ? 0 : UIFontPickerDialog::ShowSize ) |
 						 ( target == FontTarget::Terminal ? UIFontPickerDialog::MonospaceOnly : 0 );
 	auto* dialog = UIFontPickerDialog::New( flags );
 	dialog->setTitle( mUI->i18n( "eefm_select_font", "Select Font" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
-	std::string current = target == FontTarget::UI		   ? mConfig->font.uiPath
-						  : target == FontTarget::Fallback ? mConfig->font.fallbackPath
-														   : mConfig->terminal.fontPath;
+	std::string current = target == FontTarget::UI		   ? mApp.config().font.uiPath
+						  : target == FontTarget::Fallback ? mApp.config().font.fallbackPath
+														   : mApp.config().terminal.fontPath;
 	// Not configured: the font in use (the bundled one, or the first explicit fallback).
 	if ( current.empty() ) {
 		if ( target == FontTarget::UI ) {
-			current = fontFilePath( mUI->getUIThemeManager()->getDefaultFont() );
+			current = FontTrueType::filePathOf( mUI->getUIThemeManager()->getDefaultFont() );
 		} else if ( target == FontTarget::Fallback ) {
 			const auto& fallbacks = mUI->getResourceScope()->getFontService().getFallbackFonts();
 			if ( !fallbacks.empty() )
-				current = fontFilePath( fallbacks.front().get() );
+				current = FontTrueType::filePathOf( fallbacks.front().get() );
 		} else {
-			current = mTerminalFont ? fontFilePath( mTerminalFont )
-									: FileSystem::getRealPath( Sys::getProcessPath() +
-															   "assets/fonts/DejaVuSansMono.ttf" );
+			FontTrueType* terminalFont = mApp.terminal().terminalFont();
+			current = terminalFont ? FontTrueType::filePathOf( terminalFont )
+								   : FileSystem::getRealPath( Sys::getProcessPath() +
+															  "assets/fonts/DejaVuSansMono.ttf" );
 		}
 	}
 	if ( !current.empty() )
@@ -149,10 +78,10 @@ void App::openFontPicker( FontTarget target ) {
 		auto selection = dialog->getSelection();
 		selection.size = static_cast<Uint32>(
 			target == FontTarget::UI
-				? ( mConfig->font.uiSize > 0
-						? mConfig->font.uiSize
+				? ( mApp.config().font.uiSize > 0
+						? mApp.config().font.uiSize
 						: PixelDensity::pxToDp( mUI->getUIThemeManager()->getDefaultFontSize() ) )
-				: mConfig->terminal.fontSize );
+				: mApp.config().terminal.fontSize );
 		dialog->setSelection( selection );
 	}
 	dialog->setOnFontPicked( [this, target]( const UIFontSelection& selection ) {
@@ -163,14 +92,14 @@ void App::openFontPicker( FontTarget target ) {
 			auto font = FontTrueType::New( "eefm-ui-font", scope );
 			if ( !font->loadFromFile( selection.font.path ) )
 				return;
-			mConfig->font.uiPath = selection.font.path;
-			mConfig->font.uiSize = selection.size;
-			applyUIFont( font.get(), mConfig->font.uiSize );
+			mApp.config().font.uiPath = selection.font.path;
+			mApp.config().font.uiSize = selection.size;
+			applyUIFont( font.get(), mApp.config().font.uiSize );
 		} else if ( target == FontTarget::Fallback ) {
 			auto font = FontTrueType::New( "eefm-fallback-font", scope );
 			if ( !font->loadFromFile( selection.font.path ) )
 				return;
-			mConfig->font.fallbackPath = selection.font.path;
+			mApp.config().font.fallbackPath = selection.font.path;
 			// It replaces the previous one (fallbacks are looked up in order).
 			auto& service = scope.getFontService();
 			auto previous = service.getFallbackFonts();
@@ -181,14 +110,9 @@ void App::openFontPicker( FontTarget target ) {
 			auto font = FontTrueType::New( "eefm-monospace", scope );
 			if ( !font->loadFromFile( selection.font.path ) )
 				return;
-			mConfig->terminal.fontPath = selection.font.path;
-			mConfig->terminal.fontSize = selection.size;
-			mTerminalFont = font.get();
-			FontFamily::loadFromRegular( mTerminalFont );
-			if ( mTerminal ) {
-				mTerminal->setFont( mTerminalFont );
-				mTerminal->setFontSize( PixelDensity::dpToPx( mConfig->terminal.fontSize ) );
-			}
+			mApp.config().terminal.fontPath = selection.font.path;
+			mApp.config().terminal.fontSize = selection.size;
+			mApp.terminal().setTerminalFont( font.get() );
 		}
 		savePreferences();
 	} );
@@ -196,7 +120,7 @@ void App::openFontPicker( FontTarget target ) {
 	dialog->show();
 }
 
-void App::showSettings() {
+void SettingsActions::showSettings() {
 	if ( mSettingsWindow ) {
 		mSettingsWindow->toFront();
 		return;
@@ -227,16 +151,18 @@ void App::showSettings() {
 		{ mUI->i18n( "eefm_system", "System" ), mUI->i18n( "eefm_light", "Light" ),
 		  mUI->i18n( "eefm_dark", "Dark" ) },
 		[this] {
-			return mConfig->theme.uiColorScheme == ColorSchemeExtPreference::System	 ? size_t{ 0 }
-				   : mConfig->theme.uiColorScheme == ColorSchemeExtPreference::Light ? size_t{ 1 }
-																					 : size_t{ 2 };
+			return mApp.config().theme.uiColorScheme == ColorSchemeExtPreference::System
+					   ? size_t{ 0 }
+				   : mApp.config().theme.uiColorScheme == ColorSchemeExtPreference::Light
+					   ? size_t{ 1 }
+					   : size_t{ 2 };
 		},
 		[this]( size_t selected ) {
 			static constexpr ColorSchemeExtPreference values[] = { ColorSchemeExtPreference::System,
 																   ColorSchemeExtPreference::Light,
 																   ColorSchemeExtPreference::Dark };
-			mConfig->theme.uiColorScheme = values[std::min( selected, size_t{ 2 } )];
-			mUI->setColorSchemePreference( mConfig->theme.uiColorScheme );
+			mApp.config().theme.uiColorScheme = values[std::min( selected, size_t{ 2 } )];
+			mUI->setColorSchemePreference( mApp.config().theme.uiColorScheme );
 			mUI->updateWindowTitleBarColor();
 			savePreferences();
 		} );
@@ -259,14 +185,14 @@ void App::showSettings() {
 		  mUI->i18n( "eefm_ui_font_size_desc", "The font size of the interface." ) },
 		6, 72, 0.5,
 		[this] {
-			if ( mConfig->font.uiSize > 0 )
-				return mConfig->font.uiSize;
+			if ( mApp.config().font.uiSize > 0 )
+				return mApp.config().font.uiSize;
 			auto* theme = mUI->getUIThemeManager()->getDefaultTheme();
 			return theme ? PixelDensity::pxToDp( theme->getDefaultFontSize() ) : Float( 11 );
 		},
 		[this]( double value ) {
-			mConfig->font.uiSize = value;
-			applyUIFont( nullptr, mConfig->font.uiSize );
+			mApp.config().font.uiSize = value;
+			applyUIFont( nullptr, mApp.config().font.uiSize );
 			savePreferences();
 		} );
 	panel->addFloat(
@@ -274,11 +200,11 @@ void App::showSettings() {
 		  mUI->i18n( "eefm_ui_scale_desc", "Scale the whole interface. " ) + restart },
 		1, 6, 0.1,
 		[this] {
-			return mConfig->window.pixelDensity > 0 ? mConfig->window.pixelDensity
-													: PixelDensity::getPixelDensity();
+			return mApp.config().window.pixelDensity > 0 ? mApp.config().window.pixelDensity
+														 : PixelDensity::getPixelDensity();
 		},
 		[this]( double value ) {
-			mConfig->window.pixelDensity = value;
+			mApp.config().window.pixelDensity = value;
 			savePreferences();
 		} );
 	panel->addChoice(
@@ -286,11 +212,11 @@ void App::showSettings() {
 		  mUI->i18n( "eefm_font_hinting_desc", "Align glyphs to the pixel grid." ) },
 		{ mUI->i18n( "eefm_none", "None" ), mUI->i18n( "eefm_slight", "Slight" ),
 		  mUI->i18n( "eefm_full", "Full" ) },
-		[this] { return static_cast<size_t>( mConfig->font.hinting ); },
+		[this] { return static_cast<size_t>( mApp.config().font.hinting ); },
 		[this]( size_t selected ) {
 			static constexpr FontHinting values[] = { FontHinting::None, FontHinting::Slight,
 													  FontHinting::Full };
-			mConfig->font.hinting = values[std::min( selected, size_t{ 2 } )];
+			mApp.config().font.hinting = values[std::min( selected, size_t{ 2 } )];
 			applyFontRendering();
 			savePreferences();
 		} );
@@ -300,11 +226,11 @@ void App::showSettings() {
 		  mUI->i18n( "eefm_font_antialiasing_desc", "How glyph edges are smoothed." ) },
 		{ mUI->i18n( "eefm_none", "None" ), mUI->i18n( "eefm_grayscale", "Grayscale" ),
 		  mUI->i18n( "eefm_subpixel", "Subpixel" ) },
-		[this] { return static_cast<size_t>( mConfig->font.antialiasing ); },
+		[this] { return static_cast<size_t>( mApp.config().font.antialiasing ); },
 		[this]( size_t selected ) {
 			static constexpr FontAntialiasing values[] = {
 				FontAntialiasing::None, FontAntialiasing::Grayscale, FontAntialiasing::Subpixel };
-			mConfig->font.antialiasing = values[std::min( selected, size_t{ 2 } )];
+			mApp.config().font.antialiasing = values[std::min( selected, size_t{ 2 } )];
 			applyFontRendering();
 			savePreferences();
 		} );
@@ -316,7 +242,7 @@ void App::showSettings() {
 					  mUI->i18n( "eefm_single_click", "Open with a Single Click" ),
 					  mUI->i18n( "eefm_single_click_desc",
 								 "Open files and folders with one click instead of two." ) },
-					&mConfig->files.singleClick, [this]( bool ) {
+					&mApp.config().files.singleClick, [this]( bool ) {
 						applyFilesConfig();
 						savePreferences();
 					} );
@@ -325,7 +251,7 @@ void App::showSettings() {
 					  mUI->i18n( "eefm_count_folder_items_desc",
 								 "Show how many items local folders contain in the Size "
 								 "column." ) },
-					&mConfig->files.countFolderItems, [this]( bool ) {
+					&mApp.config().files.countFolderItems, [this]( bool ) {
 						applyFilesConfig();
 						savePreferences();
 					} );
@@ -333,7 +259,7 @@ void App::showSettings() {
 					  mUI->i18n( "eefm_smooth_scroll", "Smooth Scrolling" ),
 					  mUI->i18n( "eefm_smooth_scroll_desc",
 								 "Animate scrolling from mouse wheels and trackpads." ) },
-					&mConfig->files.smoothScroll, [this]( bool value ) {
+					&mApp.config().files.smoothScroll, [this]( bool value ) {
 						mUI->setSmoothScrollEnabled( value, true );
 						savePreferences();
 					} );
@@ -345,7 +271,7 @@ void App::showSettings() {
 		  mUI->i18n( "eefm_system_icons_desc",
 					 "Show the desktop's icons for files, folders and places (the icon theme on "
 					 "Linux, the shell's icons on Windows and macOS) instead of eefm's own." ) },
-		&mConfig->files.systemIcons, [this]( bool ) {
+		&mApp.config().files.systemIcons, [this]( bool ) {
 			applyFilesConfig();
 			savePreferences();
 		} );
@@ -358,9 +284,9 @@ void App::showSettings() {
 					  mUI->i18n( "eefm_follow_active_pane_desc",
 								 "Change the shell's folder when the active pane changes, "
 								 "while the shell waits at its prompt." ) },
-					&mConfig->terminal.followActivePane, [this]( bool value ) {
+					&mApp.config().terminal.followActivePane, [this]( bool value ) {
 						if ( value )
-							syncTerminalDirectory();
+							mApp.terminal().syncDirectory();
 						savePreferences();
 					} );
 	const std::vector<std::string> knownShells{ "bash", "sh",  "zsh",  "fish", "nu",		"csh",
@@ -372,10 +298,10 @@ void App::showSettings() {
 		if ( !path.empty() )
 			shells.emplace_back( path );
 	}
-	if ( !mConfig->terminal.shell.empty() &&
-		 std::find( shells.begin(), shells.end(), String( mConfig->terminal.shell ) ) ==
+	if ( !mApp.config().terminal.shell.empty() &&
+		 std::find( shells.begin(), shells.end(), String( mApp.config().terminal.shell ) ) ==
 			 shells.end() )
-		shells.emplace_back( mConfig->terminal.shell );
+		shells.emplace_back( mApp.config().terminal.shell );
 	panel->addEditableChoice(
 		{ "terminalShell", "terminal.behavior", mUI->i18n( "eefm_terminal_shell", "Shell" ),
 		  mUI->i18n( "eefm_terminal_shell_desc",
@@ -383,14 +309,14 @@ void App::showSettings() {
 					 "new terminals." ) },
 		shells,
 		[this, defaultShell] {
-			return mConfig->terminal.shell.empty() ? defaultShell
-												   : String( mConfig->terminal.shell );
+			return mApp.config().terminal.shell.empty() ? defaultShell
+														: String( mApp.config().terminal.shell );
 		},
 		[this, defaultShell]( const String& selection ) {
 			std::string shell = selection == defaultShell ? std::string() : selection.toUtf8();
 			if ( !shell.empty() && Sys::which( shell ).empty() && !FileSystem::fileExists( shell ) )
 				return false;
-			mConfig->terminal.shell = shell;
+			mApp.config().terminal.shell = shell;
 			savePreferences();
 			return true;
 		} );
@@ -399,9 +325,9 @@ void App::showSettings() {
 		  mUI->i18n( "eefm_terminal_shell_arguments", "Shell Arguments" ),
 		  mUI->i18n( "eefm_terminal_shell_arguments_desc",
 					 "Arguments passed to the shell. Applies to new terminals." ) },
-		[this] { return mConfig->terminal.shellArguments; },
+		[this] { return mApp.config().terminal.shellArguments; },
 		[this]( const std::string& value ) {
-			mConfig->terminal.shellArguments = value;
+			mApp.config().terminal.shellArguments = value;
 			savePreferences();
 			return true;
 		},
@@ -413,11 +339,11 @@ void App::showSettings() {
 					 "Lines of history kept. Applies to new terminals." ) },
 		0, std::numeric_limits<int>::max(),
 		[this] {
-			return static_cast<int>( std::min<size_t>( mConfig->terminal.historySize,
+			return static_cast<int>( std::min<size_t>( mApp.config().terminal.historySize,
 													   std::numeric_limits<int>::max() ) );
 		},
 		[this]( int value ) {
-			mConfig->terminal.historySize = value;
+			mApp.config().terminal.historySize = value;
 			savePreferences();
 		} );
 
@@ -433,16 +359,15 @@ void App::showSettings() {
 		{ "terminalFontSize", "terminal.appearance",
 		  mUI->i18n( "eefm_terminal_font_size", "Terminal Font Size" ),
 		  mUI->i18n( "eefm_terminal_font_size_desc", "The font size of the terminal." ) },
-		6, 72, 0.5, [this] { return mConfig->terminal.fontSize; },
+		6, 72, 0.5, [this] { return mApp.config().terminal.fontSize; },
 		[this]( double value ) {
-			mConfig->terminal.fontSize = value;
-			if ( mTerminal )
-				mTerminal->setFontSize( PixelDensity::dpToPx( value ) );
+			mApp.config().terminal.fontSize = value;
+			mApp.terminal().setFontSize( value );
 			savePreferences();
 		} );
 	std::vector<String> schemeNames{ mUI->i18n( "eefm_default", "Default" ) };
 	std::vector<std::string> schemeIds{ "" };
-	for ( const auto& [name, scheme] : terminalColorSchemes() ) {
+	for ( const auto& [name, scheme] : mApp.terminal().colorSchemes() ) {
 		schemeNames.emplace_back( name );
 		schemeIds.emplace_back( name );
 	}
@@ -453,13 +378,14 @@ void App::showSettings() {
 		schemeNames,
 		[this, schemeIds] {
 			auto found =
-				std::find( schemeIds.begin(), schemeIds.end(), mConfig->terminal.colorScheme );
+				std::find( schemeIds.begin(), schemeIds.end(), mApp.config().terminal.colorScheme );
 			return found == schemeIds.end() ? size_t{ 0 }
 											: static_cast<size_t>( found - schemeIds.begin() );
 		},
 		[this, schemeIds]( size_t selected ) {
-			mConfig->terminal.colorScheme = schemeIds[std::min( selected, schemeIds.size() - 1 )];
-			applyTerminalConfig();
+			mApp.config().terminal.colorScheme =
+				schemeIds[std::min( selected, schemeIds.size() - 1 )];
+			mApp.terminal().applyConfig();
 			savePreferences();
 		} );
 	panel->addChoice(
@@ -477,8 +403,8 @@ void App::showSettings() {
 				TerminalCursorMode::BlinkingBlock,	TerminalCursorMode::SteadyBlock,
 				TerminalCursorMode::BlinkUnderline, TerminalCursorMode::SteadyUnderline,
 				TerminalCursorMode::BlinkBar,		TerminalCursorMode::SteadyBar };
-			auto found =
-				std::find( std::begin( modes ), std::end( modes ), mConfig->terminal.cursorStyle );
+			auto found = std::find( std::begin( modes ), std::end( modes ),
+									mApp.config().terminal.cursorStyle );
 			return found == std::end( modes ) ? size_t{ 0 }
 											  : static_cast<size_t>( found - std::begin( modes ) );
 		},
@@ -487,8 +413,8 @@ void App::showSettings() {
 				TerminalCursorMode::BlinkingBlock,	TerminalCursorMode::SteadyBlock,
 				TerminalCursorMode::BlinkUnderline, TerminalCursorMode::SteadyUnderline,
 				TerminalCursorMode::BlinkBar,		TerminalCursorMode::SteadyBar };
-			mConfig->terminal.cursorStyle = modes[std::min( selected, size_t{ 5 } )];
-			applyTerminalConfig();
+			mApp.config().terminal.cursorStyle = modes[std::min( selected, size_t{ 5 } )];
+			mApp.terminal().applyConfig();
 			savePreferences();
 		} );
 	panel->addChoice(
@@ -498,15 +424,15 @@ void App::showSettings() {
 		{ mUI->i18n( "eefm_auto", "Auto" ), mUI->i18n( "eefm_always_visible", "Always Visible" ),
 		  mUI->i18n( "eefm_always_hidden", "Always Hidden" ) },
 		[this] {
-			return mConfig->terminal.scrollBarMode == ScrollBarMode::Auto		? size_t{ 0 }
-				   : mConfig->terminal.scrollBarMode == ScrollBarMode::AlwaysOn ? size_t{ 1 }
-																				: size_t{ 2 };
+			return mApp.config().terminal.scrollBarMode == ScrollBarMode::Auto		 ? size_t{ 0 }
+				   : mApp.config().terminal.scrollBarMode == ScrollBarMode::AlwaysOn ? size_t{ 1 }
+																					 : size_t{ 2 };
 		},
 		[this]( size_t selected ) {
-			mConfig->terminal.scrollBarMode = selected == 0	  ? ScrollBarMode::Auto
-											  : selected == 1 ? ScrollBarMode::AlwaysOn
-															  : ScrollBarMode::AlwaysOff;
-			applyTerminalConfig();
+			mApp.config().terminal.scrollBarMode = selected == 0   ? ScrollBarMode::Auto
+												   : selected == 1 ? ScrollBarMode::AlwaysOn
+																   : ScrollBarMode::AlwaysOff;
+			mApp.terminal().applyConfig();
 			savePreferences();
 		} );
 
@@ -516,7 +442,7 @@ void App::showSettings() {
 	panel->addBool(
 		{ "vsync", "window.renderer", mUI->i18n( "eefm_vsync", "VSync" ),
 		  mUI->i18n( "eefm_vsync_desc", "Synchronize rendering with the display. " ) + restart },
-		&mConfig->window.vsync, [this]( bool ) { savePreferences(); } );
+		&mApp.config().window.vsync, [this]( bool ) { savePreferences(); } );
 	const String monitorRate = mUI->i18n( "eefm_monitor_refresh_rate", "Monitor Refresh Rate" );
 	const String unlimited = mUI->i18n( "eefm_unlimited", "Unlimited" );
 	panel->addEditableChoice(
@@ -526,12 +452,12 @@ void App::showSettings() {
 					 "Limit the frames per second, follow the monitor, or do not limit them." ) },
 		{ monitorRate, unlimited, "30", "60", "75", "120", "144", "165", "240" },
 		[this, monitorRate, unlimited] {
-			return mConfig->window.maxFPS ==
+			return mApp.config().window.maxFPS ==
 						   static_cast<Uint32>( ContextSettings::FrameRateLimitScreenRefreshRate )
 					   ? monitorRate
-				   : mConfig->window.maxFPS == 0
+				   : mApp.config().window.maxFPS == 0
 					   ? unlimited
-					   : String( String::toString( mConfig->window.maxFPS ) );
+					   : String( String::toString( mApp.config().window.maxFPS ) );
 		},
 		[this, monitorRate, unlimited]( const String& selection ) {
 			Uint32 value;
@@ -541,8 +467,8 @@ void App::showSettings() {
 				value = 0;
 			else if ( !String::fromString( value, selection ) || value > 1000 )
 				return false;
-			mConfig->window.maxFPS = value;
-			mApp->getWindow()->setFrameRateLimit( value );
+			mApp.config().window.maxFPS = value;
+			mApp.window()->setFrameRateLimit( value );
 			savePreferences();
 			return true;
 		} );
@@ -550,7 +476,7 @@ void App::showSettings() {
 	std::vector<String> rendererNames;
 	for ( auto version : rendererVersions )
 		rendererNames.emplace_back( Renderer::graphicsLibraryVersionToString( version ) );
-	if ( !rendererVersions.empty() )
+	if ( !rendererVersions.empty() ) {
 		panel->addChoice(
 			{ "rendererVersion", "window.renderer",
 			  mUI->i18n( "eefm_renderer_version", "Renderer Version" ),
@@ -558,16 +484,17 @@ void App::showSettings() {
 			rendererNames,
 			[this, rendererVersions] {
 				auto found = std::find( rendererVersions.begin(), rendererVersions.end(),
-										mConfig->window.rendererVersion );
+										mApp.config().window.rendererVersion );
 				return found == rendererVersions.end()
 						   ? size_t{ 0 }
 						   : static_cast<size_t>( found - rendererVersions.begin() );
 			},
 			[this, rendererVersions]( size_t selected ) {
-				mConfig->window.rendererVersion =
+				mApp.config().window.rendererVersion =
 					rendererVersions[std::min( selected, rendererVersions.size() - 1 )];
 				savePreferences();
 			} );
+	}
 	panel->addChoice(
 		{ "multisamples", "window.renderer",
 		  mUI->i18n( "eefm_multisamples", "Multisample Anti-Aliasing" ),
@@ -575,15 +502,15 @@ void App::showSettings() {
 		{ "0", "2", "4", "8", "16" },
 		[this] {
 			static constexpr Uint32 values[] = { 0, 2, 4, 8, 16 };
-			auto found =
-				std::find( std::begin( values ), std::end( values ), mConfig->window.multisamples );
+			auto found = std::find( std::begin( values ), std::end( values ),
+									mApp.config().window.multisamples );
 			return found == std::end( values )
 					   ? size_t{ 0 }
 					   : static_cast<size_t>( found - std::begin( values ) );
 		},
 		[this]( size_t selected ) {
 			static constexpr Uint32 values[] = { 0, 2, 4, 8, 16 };
-			mConfig->window.multisamples = values[std::min( selected, size_t{ 4 } )];
+			mApp.config().window.multisamples = values[std::min( selected, size_t{ 4 } )];
 			savePreferences();
 		} );
 

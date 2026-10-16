@@ -19,13 +19,13 @@ class VirtualFileSystem;
  * offered: they always fail with VFSErrorCode::HostKeyRejected. */
 struct SSHHostKeyInfo {
 	std::string host;
-	Uint16 port{ 22 };
 	/** Key algorithm, for example "ecdsa-sha2-nistp256". */
 	std::string keyType;
 	/** OpenSSH style fingerprint: "SHA256:" followed by unpadded base64. */
 	std::string fingerprint;
 	/** known_hosts file the key will be stored in on AcceptAndSave. */
 	std::string knownHostsFile;
+	Uint16 port{ 22 };
 };
 
 enum class SSHHostKeyDecision : Uint8 {
@@ -58,7 +58,6 @@ struct SSHAuthenticationRequest {
 		KeyboardInteractive,
 	};
 
-	Kind kind{ Kind::Password };
 	std::string user;
 	std::string host;
 	/** Passphrase requests: the identity file. */
@@ -70,6 +69,7 @@ struct SSHAuthenticationRequest {
 	std::vector<SSHPrompt> prompts;
 	/** 1-based attempt number, bounded by NumberOfPasswordPrompts. */
 	Uint32 attempt{ 1 };
+	Kind kind{ Kind::Password };
 };
 
 /** Supplies secrets on demand. Secrets are used for one authentication attempt and never stored
@@ -109,8 +109,10 @@ class SFTPProviderImpl;
  * ProxyJump, ProxyCommand, known hosts and authentication options), so `sftp://makyo/` behaves
  * like `ssh makyo`. Passwords are never accepted in URIs.
  *
- * Connections are pooled by effective configuration (not by path) and shared by every operation
- * for that destination. All SSH sessions are driven by one I/O thread in non-blocking mode;
+ * Connections are pooled (not per path) and shared by every operation for that destination:
+ * URIs are looked up by their authority as written, and URIs whose authority differs but
+ * resolves to the same effective configuration (an alias, an explicit default user) share the
+ * connection too. All SSH sessions are driven by one I/O thread in non-blocking mode;
  * provider methods never block the caller.
  */
 class SFTPProvider : public VFSProvider {
@@ -166,9 +168,6 @@ class SFTPProvider : public VFSProvider {
 	/** Watch backend for sftp:// URIs: remote efsw-agent over the same SSH connection, with
 	 * polling through the VFS as fallback. */
 	std::shared_ptr<WatchBackend> createWatchBackend( VirtualFileSystem& vfs );
-
-	/** Internal access for the remote watcher. */
-	const std::shared_ptr<sftp::SFTPProviderImpl>& impl() const { return mImpl; }
 
   private:
 	std::shared_ptr<sftp::SFTPProviderImpl> mImpl;

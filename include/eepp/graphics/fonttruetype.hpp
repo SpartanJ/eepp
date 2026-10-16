@@ -51,6 +51,10 @@ class EE_API FontTrueType : public Font {
 
 	bool getFontDesc( FontDesc& desc ) const;
 
+	/** @return The absolute path of the file font was loaded from, empty when it is not a
+	 * TrueType font loaded from a file. */
+	static std::string filePathOf( const Font* font );
+
 	const Uint32& getFaceIndex() const { return mFaceIndex; }
 
 	/** Sets the OpenType variable font "wght" axis, if available. */

@@ -1,4 +1,4 @@
-#include "sshsession.hpp"
+#include "sshconnection.hpp"
 #include <algorithm>
 #include <cerrno>
 #include <cstdlib>
@@ -6,27 +6,14 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
-#include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
 #include <mutex>
-
-#if EE_PLATFORM != EE_PLATFORM_WIN
-#include <sys/socket.h>
-#endif
 
 namespace EE { namespace VFS { namespace sftp {
 
 using System::FileSystem;
 
 namespace {
-
-void libssh2GlobalInit() {
-	static std::once_flag once;
-	std::call_once( once, [] {
-		socketsInit();
-		libssh2_init( 0 );
-	} );
-}
 
 /** Overwrites a secret before releasing it. */
 void scrub( std::string& secret ) {
@@ -251,109 +238,6 @@ VFSErrorCode mapSFTPStatus( unsigned long status ) {
 
 } // namespace
 
-// ---------------------------------------------------------------------------------------------
-// I/O context
-// ---------------------------------------------------------------------------------------------
-
-SSHIOContext::SSHIOContext() {
-	libssh2GlobalInit();
-}
-
-SSHIOContext::~SSHIOContext() {
-	stop();
-}
-
-void SSHIOContext::start() {
-	if ( mThread.joinable() )
-		return;
-	mThread = std::thread( [this] { loop(); } );
-	mThreadId = mThread.get_id();
-}
-
-void SSHIOContext::stop() {
-	if ( !mThread.joinable() )
-		return;
-	mStopping = true;
-	mWake.signal();
-	mThread.join();
-	// The I/O thread is gone: fail everything that is still queued from here.
-	for ( auto& connection : mConnections )
-		connection->fail( VFSError( VFSErrorCode::ConnectionLost, URI(), "SSH layer shut down" ) );
-	for ( auto& connection : mConnections )
-		connection->drive();
-	mConnections.clear();
-	std::vector<Command> commands;
-	{
-		std::lock_guard<std::mutex> lock( mMutex );
-		commands.swap( mCommands );
-	}
-}
-
-void SSHIOContext::post( Command command ) {
-	{
-		std::lock_guard<std::mutex> lock( mMutex );
-		if ( mStopping.load( std::memory_order_acquire ) )
-			return;
-		mCommands.emplace_back( std::move( command ) );
-	}
-	mWake.signal();
-}
-
-void SSHIOContext::addConnection( std::shared_ptr<SSHConnection> connection ) {
-	mConnections.push_back( std::move( connection ) );
-}
-
-void SSHIOContext::closeConnections() {
-	post( [this] {
-		for ( auto& connection : mConnections ) {
-			connection->fail(
-				VFSError( VFSErrorCode::ConnectionLost, URI(), "Connection closed" ) );
-		}
-	} );
-}
-
-void SSHIOContext::loop() {
-	std::vector<Command> commands;
-	std::vector<PollFd> fds;
-	while ( !mStopping.load( std::memory_order_acquire ) ) {
-		{
-			std::lock_guard<std::mutex> lock( mMutex );
-			commands.swap( mCommands );
-		}
-		for ( auto& command : commands )
-			command();
-		commands.clear();
-
-		for ( size_t i = 0; i < mConnections.size(); ++i )
-			mConnections[i]->drive();
-		// Drop finished connections; their owners (pool, handles) may still reference them.
-		mConnections.erase( std::remove_if( mConnections.begin(), mConnections.end(),
-											[]( const std::shared_ptr<SSHConnection>& c ) {
-												return !c->isUsable() && !c->hasQueuedOperations();
-											} ),
-							mConnections.end() );
-
-		fds.clear();
-		PollFd wake{};
-		wake.fd = mWake.pollHandle();
-		wake.events = POLLIN;
-		fds.push_back( wake );
-		int timeout = -1;
-		for ( const auto& connection : mConnections ) {
-			connection->collectPoll( fds );
-			int next = connection->nextTimeoutMs();
-			if ( next >= 0 && ( timeout < 0 || next < timeout ) )
-				timeout = next;
-		}
-		pollSockets( fds.data(), fds.size(), timeout );
-		mWake.drain();
-	}
-}
-
-// ---------------------------------------------------------------------------------------------
-// Connection
-// ---------------------------------------------------------------------------------------------
-
 SSHConnection::SSHConnection( std::shared_ptr<SSHIOContext> context, SSHResolvedConfig config,
 							  SSHConnectionHooks hooks, std::unique_ptr<SSHTransport> transport,
 							  Time connectTimeout ) :
@@ -394,22 +278,22 @@ SSHConnection::~SSHConnection() {
 }
 
 VFSTask<void> SSHConnection::whenReady() {
-	TaskSource<VFSResult<void>> source;
-	auto task = source.task();
+	TaskResolver<VFSResult<void>> resolve;
+	auto task = VFSTask<void>::create( resolve );
 	std::weak_ptr<SSHConnection> weak = weak_from_this();
-	mContext->post( [weak, source = std::move( source )]() mutable {
+	mContext->post( [weak, resolve = std::move( resolve )]() mutable {
 		auto self = weak.lock();
 		if ( !self ) {
-			source.resolve( Err( VFSError( VFSErrorCode::ConnectionLost ) ) );
+			resolve( Err( VFSError( VFSErrorCode::ConnectionLost ) ) );
 			return;
 		}
 		State state = self->mState.load();
 		if ( state == State::Ready )
-			source.resolve( Ok() );
+			resolve( Ok() );
 		else if ( state == State::Failed || state == State::Closed )
-			source.resolve( Err( self->mFailure ) );
+			resolve( Err( self->mFailure ) );
 		else
-			self->mReadyWaiters.push_back( std::move( source ) );
+			self->mReadyWaiters.push_back( std::move( resolve ) );
 	} );
 	return task;
 }
@@ -474,8 +358,8 @@ void SSHConnection::fail( VFSError error ) {
 		std::lock_guard<std::mutex> lock( mQueueMutex );
 		mQueueFailure = mFailure;
 	}
-	for ( auto& waiter : mReadyWaiters )
-		waiter.resolve( Err( mFailure ) );
+	for ( auto& resolve : mReadyWaiters )
+		resolve( Err( mFailure ) );
 	mReadyWaiters.clear();
 }
 
@@ -808,8 +692,8 @@ Step SSHConnection::establish() {
 			}
 			mState = State::Ready;
 			markUsed();
-			for ( auto& waiter : mReadyWaiters )
-				waiter.resolve( Ok() );
+			for ( auto& resolve : mReadyWaiters )
+				resolve( Ok() );
 			mReadyWaiters.clear();
 			return Step::Done;
 		default:
@@ -948,9 +832,9 @@ Step SSHConnection::stepHostKey() {
 	std::weak_ptr<SSHConnection> weak = weak_from_this();
 	auto context = mContext;
 	mHooks.hostKeyVerifier->verify( info ).onComplete(
-		[weak, context]( Task<SSHHostKeyDecision>&& result ) {
-			SSHHostKeyDecision decision =
-				result.isReady() ? std::move( result ).takeValue() : SSHHostKeyDecision::Reject;
+		[weak, context]( std::optional<SSHHostKeyDecision>&& answer ) {
+			// No answer (the verifier was abandoned) rejects the key.
+			SSHHostKeyDecision decision = answer.value_or( SSHHostKeyDecision::Reject );
 			context->post( [weak, decision] {
 				if ( auto self = weak.lock() ) {
 					self->mHostKeyDecision = decision;
@@ -981,9 +865,10 @@ bool SSHConnection::saveHostKey( const char* key, size_t keyLength, int keyBits,
 		LIBSSH2_KNOWNHOST_TYPE_PLAIN | LIBSSH2_KNOWNHOST_KEYENC_RAW | keyBits, &entry );
 	char line[16384];
 	size_t lineLength = 0;
-	if ( rc == 0 )
+	if ( rc == 0 ) {
 		rc = libssh2_knownhost_writeline( hosts, entry, line, sizeof( line ), &lineLength,
 										  LIBSSH2_KNOWNHOST_FILE_OPENSSH );
+	}
 	libssh2_knownhost_free( hosts );
 	if ( rc != 0 ) {
 		error = "Could not format the known_hosts entry";
@@ -1024,9 +909,10 @@ void SSHConnection::startAgentListing() {
 	mAgentClient = agent;
 	std::vector<std::string> allowed;
 	if ( mConfig.identitiesOnly ) {
-		for ( const auto& file : mConfig.identityFiles )
+		for ( const auto& file : mConfig.identityFiles ) {
 			if ( auto blob = readPublicKeyBlob( file + ".pub" ) )
 				allowed.push_back( std::move( *blob ) );
+		}
 	}
 	std::weak_ptr<SSHConnection> weak = weak_from_this();
 	std::weak_ptr<SSHIOContext> context = mContext;
@@ -1110,17 +996,30 @@ int SSHConnection::agentSign( LIBSSH2_SESSION*, unsigned char** signature, size_
 	return LIBSSH2_ERROR_EAGAIN;
 }
 
-void SSHConnection::requestExternal( const SSHAuthenticationRequest& request ) {
+SSHAuthenticationRequest SSHConnection::passphraseRequest( const std::string& user,
+														   const std::string& identityFile ) const {
+	SSHAuthenticationRequest request;
+	request.kind = SSHAuthenticationRequest::Kind::Passphrase;
+	request.user = user;
+	request.identityFile = identityFile;
+	request.prompts = { SSHPrompt{ "Enter passphrase for key '" + identityFile + "': ", false } };
+	return request;
+}
+
+void SSHConnection::requestExternal( SSHAuthenticationRequest request, AuthPhase resume ) {
+	request.host = mConfig.hostName;
+	request.attempt = ++mAttempts;
+	mResumePhase = resume;
 	mWaitingExternal = true;
 	mExternalAnswer.reset();
 	mAuthPhase = AuthPhase::WaitingInput;
 	std::weak_ptr<SSHConnection> weak = weak_from_this();
 	auto context = mContext;
 	mHooks.authenticationHandler->request( request ).onComplete(
-		[weak, context]( Task<std::optional<std::vector<std::string>>>&& result ) {
-			auto answers = std::make_shared<std::optional<std::vector<std::string>>>();
-			if ( result.isReady() )
-				*answers = std::move( result ).takeValue();
+		[weak, context]( std::optional<std::optional<std::vector<std::string>>>&& answer ) {
+			// No answer (the handler was abandoned) cancels like the user would.
+			auto answers = std::make_shared<std::optional<std::vector<std::string>>>(
+				answer ? std::move( *answer ) : std::nullopt );
 			context->post( [weak, answers] {
 				if ( auto self = weak.lock() ) {
 					self->mExternalAnswer = std::move( *answers );
@@ -1239,9 +1138,10 @@ Step SSHConnection::stepAuthentication() {
 						mAgentIdentity = nullptr;
 						mAllowedAgentBlobs.clear();
 						if ( mConfig.identitiesOnly ) {
-							for ( const auto& file : mConfig.identityFiles )
+							for ( const auto& file : mConfig.identityFiles ) {
 								if ( auto blob = readPublicKeyBlob( file + ".pub" ) )
 									mAllowedAgentBlobs.push_back( std::move( *blob ) );
+							}
 						}
 						mAuthPhase = AuthPhase::AgentNext;
 						continue;
@@ -1340,16 +1240,7 @@ Step SSHConnection::stepAuthentication() {
 						++mKeyIndex;
 						continue;
 					}
-					SSHAuthenticationRequest request;
-					request.kind = SSHAuthenticationRequest::Kind::Passphrase;
-					request.user = user;
-					request.host = mConfig.hostName;
-					request.identityFile = file;
-					request.prompts = {
-						SSHPrompt{ "Enter passphrase for key '" + file + "': ", false } };
-					request.attempt = ++mAttempts;
-					mResumePhase = AuthPhase::KeyAuth;
-					requestExternal( request );
+					requestExternal( passphraseRequest( user, file ), AuthPhase::KeyAuth );
 					return Step::Again;
 				}
 				mAuthPhase = AuthPhase::KeyAuth;
@@ -1384,16 +1275,7 @@ Step SSHConnection::stepAuthentication() {
 				if ( wrongPassphrase && !mPassphrase.empty() &&
 					 mAttempts < mConfig.numberOfPasswordPrompts && mHooks.authenticationHandler ) {
 					scrub( mPassphrase );
-					SSHAuthenticationRequest request;
-					request.kind = SSHAuthenticationRequest::Kind::Passphrase;
-					request.user = user;
-					request.host = mConfig.hostName;
-					request.identityFile = file;
-					request.prompts = {
-						SSHPrompt{ "Enter passphrase for key '" + file + "': ", false } };
-					request.attempt = ++mAttempts;
-					mResumePhase = AuthPhase::KeyAuth;
-					requestExternal( request );
+					requestExternal( passphraseRequest( user, file ), AuthPhase::KeyAuth );
 					return Step::Again;
 				}
 				scrub( mPassphrase );
@@ -1418,13 +1300,10 @@ Step SSHConnection::stepAuthentication() {
 					SSHAuthenticationRequest request;
 					request.kind = SSHAuthenticationRequest::Kind::KeyboardInteractive;
 					request.user = user;
-					request.host = mConfig.hostName;
 					request.name = mKbdName;
 					request.instruction = mKbdInstruction;
 					request.prompts = mKbdPrompts;
-					request.attempt = ++mAttempts;
-					mResumePhase = AuthPhase::KbdAuth;
-					requestExternal( request );
+					requestExternal( std::move( request ), AuthPhase::KbdAuth );
 					return Step::Again;
 				}
 				mAuthPhase = AuthPhase::NextMethod;
@@ -1439,12 +1318,9 @@ Step SSHConnection::stepAuthentication() {
 					SSHAuthenticationRequest request;
 					request.kind = SSHAuthenticationRequest::Kind::Password;
 					request.user = user;
-					request.host = mConfig.hostName;
 					request.prompts = {
 						SSHPrompt{ user + "@" + mConfig.hostName + "'s password: ", false } };
-					request.attempt = ++mAttempts;
-					mResumePhase = AuthPhase::PasswordAuth;
-					requestExternal( request );
+					requestExternal( std::move( request ), AuthPhase::PasswordAuth );
 					return Step::Again;
 				}
 				int rc = libssh2_userauth_password_ex(
@@ -1507,168 +1383,6 @@ LIBSSH2_CHANNEL* SSHConnection::openDirectTcpip( const std::string& host, Uint16
 	if ( !channel && libssh2_session_last_errno( mSession ) == LIBSSH2_ERROR_EAGAIN )
 		again = true;
 	return channel;
-}
-
-// ---------------------------------------------------------------------------------------------
-// Transports
-// ---------------------------------------------------------------------------------------------
-
-short SocketTransport::pollEvents( short directions ) const {
-	return directions;
-}
-
-ChannelTransport::ChannelTransport( std::shared_ptr<SSHConnection> parent, std::string host,
-									Uint16 port ) :
-	mParent( std::move( parent ) ), mHost( std::move( host ) ), mPort( port ) {
-	// The child's traffic is invisible to the parent's queue: keep the parent from closing as
-	// idle while the child lives.
-	mParent->addUser();
-}
-
-ChannelTransport::~ChannelTransport() {
-	mParent->removeUser();
-	// The channel belongs to the parent session; libssh2_session_free() of the parent releases
-	// it. Freeing it here could race with the parent's I/O thread usage.
-}
-
-short ChannelTransport::pollEvents( short directions ) const {
-	// Data for the child arrives through the parent's socket.
-	return static_cast<short>( directions | mParent->pollEvents() | POLLIN );
-}
-
-libssh2_socket_t ChannelTransport::handshakeSocket() const {
-	return static_cast<libssh2_socket_t>( mParent->pollSocket() );
-}
-
-Step ChannelTransport::open( VFSError& error ) {
-	bool again = false;
-	mChannel = mParent->openDirectTcpip( mHost, mPort, again );
-	if ( mChannel )
-		return Step::Done;
-	if ( again )
-		return Step::Again;
-	error = mParent->lastError( URI(), ( "ProxyJump: could not open a channel to " + mHost + ":" +
-										 String::toString( mPort ) )
-										   .c_str() );
-	return Step::Done;
-}
-
-void ChannelTransport::install( LIBSSH2_SESSION* session ) {
-	libssh2_session_callback_set2( session, LIBSSH2_CALLBACK_SEND,
-								   reinterpret_cast<libssh2_cb_generic*>( &sendCallback ) );
-	libssh2_session_callback_set2( session, LIBSSH2_CALLBACK_RECV,
-								   reinterpret_cast<libssh2_cb_generic*>( &recvCallback ) );
-}
-
-ssize_t ChannelTransport::sendCallback( libssh2_socket_t, const void* buffer, size_t length, int,
-										void** abstract ) {
-	auto* connection = static_cast<SSHConnection*>( *abstract );
-	auto* transport = static_cast<ChannelTransport*>( connection->mTransport.get() );
-	ssize_t rc =
-		libssh2_channel_write( transport->mChannel, static_cast<const char*>( buffer ), length );
-	if ( rc == LIBSSH2_ERROR_EAGAIN )
-		return -EAGAIN;
-	if ( rc < 0 )
-		return -ECONNRESET;
-	return rc;
-}
-
-ssize_t ChannelTransport::recvCallback( libssh2_socket_t, void* buffer, size_t length, int,
-										void** abstract ) {
-	auto* connection = static_cast<SSHConnection*>( *abstract );
-	auto* transport = static_cast<ChannelTransport*>( connection->mTransport.get() );
-	ssize_t rc = libssh2_channel_read( transport->mChannel, static_cast<char*>( buffer ), length );
-	if ( rc == LIBSSH2_ERROR_EAGAIN )
-		return -EAGAIN;
-	if ( rc < 0 )
-		return -ECONNRESET;
-	if ( rc == 0 && !libssh2_channel_eof( transport->mChannel ) )
-		return -EAGAIN;
-	return rc;
-}
-
-ProcessTransport::ProcessTransport( std::shared_ptr<SSHIOContext> context,
-									const std::string& command ) :
-	mContext( std::move( context ) ), mProcess( std::make_unique<System::Process>() ) {
-	mPlaceholder = ::socket( AF_INET, SOCK_STREAM, 0 );
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	std::string shell = "cmd";
-	std::vector<std::string> args{ "/c", command };
-#else
-	const char* envShell = std::getenv( "SHELL" );
-	std::string shell = envShell && *envShell ? envShell : "/bin/sh";
-	std::vector<std::string> args{ "-c", command };
-#endif
-	if ( !mProcess->create( shell, args,
-							System::Process::getDefaultOptions() |
-								System::Process::Options::EnableAsync ) ) {
-		mProcess.reset();
-		return;
-	}
-	mProcess->startAsyncRead( [this]( const char* bytes, size_t n ) {
-		{
-			std::lock_guard<std::mutex> lock( mMutex );
-			mBuffer.append( bytes, n );
-		}
-		mContext->wake();
-	} );
-}
-
-ProcessTransport::~ProcessTransport() {
-	if ( mProcess ) {
-		mProcess->kill();
-		mProcess.reset();
-	}
-	closeSocket( mPlaceholder );
-}
-
-bool ProcessTransport::started() const {
-	return nullptr != mProcess;
-}
-
-bool ProcessTransport::alive() const {
-	if ( !mProcess )
-		return false;
-	std::lock_guard<std::mutex> lock( mMutex );
-	return !mBuffer.empty() || mProcess->isAlive();
-}
-
-libssh2_socket_t ProcessTransport::handshakeSocket() const {
-	// libssh2 only hands this value to the callbacks below.
-	return static_cast<libssh2_socket_t>( mPlaceholder );
-}
-
-void ProcessTransport::install( LIBSSH2_SESSION* session ) {
-	libssh2_session_callback_set2( session, LIBSSH2_CALLBACK_SEND,
-								   reinterpret_cast<libssh2_cb_generic*>( &sendCallback ) );
-	libssh2_session_callback_set2( session, LIBSSH2_CALLBACK_RECV,
-								   reinterpret_cast<libssh2_cb_generic*>( &recvCallback ) );
-}
-
-ssize_t ProcessTransport::sendCallback( libssh2_socket_t, const void* buffer, size_t length, int,
-										void** abstract ) {
-	auto* connection = static_cast<SSHConnection*>( *abstract );
-	auto* transport = static_cast<ProcessTransport*>( connection->mTransport.get() );
-	if ( !transport->mProcess || !transport->mProcess->isAlive() )
-		return -ECONNRESET;
-	size_t written = transport->mProcess->write( static_cast<const char*>( buffer ), length );
-	return written == 0 ? -EAGAIN : static_cast<ssize_t>( written );
-}
-
-ssize_t ProcessTransport::recvCallback( libssh2_socket_t, void* buffer, size_t length, int,
-										void** abstract ) {
-	auto* connection = static_cast<SSHConnection*>( *abstract );
-	auto* transport = static_cast<ProcessTransport*>( connection->mTransport.get() );
-	std::lock_guard<std::mutex> lock( transport->mMutex );
-	if ( transport->mBuffer.empty() ) {
-		if ( !transport->mProcess || !transport->mProcess->isAlive() )
-			return 0;
-		return -EAGAIN;
-	}
-	size_t count = std::min( length, transport->mBuffer.size() );
-	std::memcpy( buffer, transport->mBuffer.data(), count );
-	transport->mBuffer.erase( 0, count );
-	return static_cast<ssize_t>( count );
 }
 
 }}} // namespace EE::VFS::sftp

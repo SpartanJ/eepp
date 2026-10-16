@@ -13,11 +13,11 @@ class Node;
  * Functions are queued and drained in submission order by a single Node::runOnMainThread()
  * runnable per batch, so bursts of continuations cost one scheduled action. Execution is always
  * deferred to the next scene update, even when execute() is called from the main thread, which is
- * what Task::thenOn() requires.
+ * what Task::then() requires.
  *
  * The dispatcher node must outlive the executor, or shutdown() must be called before the node is
  * destroyed. Destroying the executor drops queued functions that have not run yet (releasing what
- * they own, for example abandoning task sources).
+ * they own, for example abandoning the tasks of the resolvers they hold).
  */
 class EE_API MainThreadExecutor : public Executor {
   public:

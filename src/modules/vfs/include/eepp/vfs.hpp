@@ -5,7 +5,6 @@
 #include <eepp/vfs/directoryhandle.hpp>
 #include <eepp/vfs/error.hpp>
 #include <eepp/vfs/filehandle.hpp>
-#include <eepp/vfs/iostreamvfs.hpp>
 #include <eepp/vfs/fileinfo.hpp>
 #include <eepp/vfs/options.hpp>
 #include <eepp/vfs/provider.hpp>
@@ -15,7 +14,5 @@
 #include <eepp/vfs/transfer.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
 #include <eepp/vfs/watch.hpp>
-#include <eepp/vfs/watchers/localwatchbackend.hpp>
-#include <eepp/vfs/watchers/pollingwatchbackend.hpp>
 
 #endif

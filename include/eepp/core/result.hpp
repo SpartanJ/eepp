@@ -2,7 +2,6 @@
 #define EE_CORE_RESULT_HPP
 
 #include <eepp/core/debug.hpp>
-#include <functional>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -38,16 +37,6 @@ constexpr OkValue<void> Ok() {
 template <typename E> constexpr ErrValue<std::decay_t<E>> Err( E&& error ) {
 	return ErrValue<std::decay_t<E>>{ std::forward<E>( error ) };
 }
-
-template <typename T, typename E> class Result;
-
-namespace detail {
-
-template <typename T> struct IsResult : std::false_type {};
-
-template <typename T, typename E> struct IsResult<Result<T, E>> : std::true_type {};
-
-} // namespace detail
 
 /** @brief A synchronous success-or-error value.
  *
@@ -180,58 +169,6 @@ template <typename T, typename E> class Result {
 
 	T&& operator*() && { return std::move( *this ).value(); }
 
-	/** @return The value, or fallback when this holds an error. */
-	template <typename U> T valueOr( U&& fallback ) const& {
-		return mHasValue ? mValue : static_cast<T>( std::forward<U>( fallback ) );
-	}
-
-	template <typename U> T valueOr( U&& fallback ) && {
-		return mHasValue ? std::move( mValue ) : static_cast<T>( std::forward<U>( fallback ) );
-	}
-
-	/** Transforms the value with fn( T&& ) -> U, forwarding errors unchanged. */
-	template <typename F> auto map( F&& fn ) && {
-		using U = std::invoke_result_t<F, T&&>;
-		if constexpr ( std::is_void_v<U> ) {
-			if ( !mHasValue )
-				return Result<void, E>( Err( std::move( mError ) ) );
-			std::invoke( std::forward<F>( fn ), std::move( mValue ) );
-			return Result<void, E>( Ok() );
-		} else {
-			if ( !mHasValue )
-				return Result<U, E>( Err( std::move( mError ) ) );
-			return Result<U, E>( Ok( std::invoke( std::forward<F>( fn ), std::move( mValue ) ) ) );
-		}
-	}
-
-	/** Transforms the error with fn( E&& ) -> G, forwarding values unchanged. */
-	template <typename F> auto mapError( F&& fn ) && {
-		using G = std::invoke_result_t<F, E&&>;
-		if ( mHasValue )
-			return Result<T, G>( Ok( std::move( mValue ) ) );
-		return Result<T, G>( Err( std::invoke( std::forward<F>( fn ), std::move( mError ) ) ) );
-	}
-
-	/** Chains fn( T&& ) -> Result<U, E> on success, forwarding errors unchanged. */
-	template <typename F> auto andThen( F&& fn ) && {
-		using R = std::invoke_result_t<F, T&&>;
-		static_assert( detail::IsResult<R>::value,
-					   "andThen() requires a Result-returning callable" );
-		if ( !mHasValue )
-			return R( Err( std::move( mError ) ) );
-		return std::invoke( std::forward<F>( fn ), std::move( mValue ) );
-	}
-
-	/** Recovers with fn( E&& ) -> Result<T, G> on error, forwarding values unchanged. */
-	template <typename F> auto orElse( F&& fn ) && {
-		using R = std::invoke_result_t<F, E&&>;
-		static_assert( detail::IsResult<R>::value,
-					   "orElse() requires a Result-returning callable" );
-		if ( mHasValue )
-			return R( Ok( std::move( mValue ) ) );
-		return std::invoke( std::forward<F>( fn ), std::move( mError ) );
-	}
-
   private:
 	void destroy() noexcept {
 		if ( mHasValue )
@@ -338,46 +275,6 @@ template <typename E> class Result<void, E> {
 	E&& error() && {
 		eeASSERTM( !mHasValue, "Result::error() called on a success result" );
 		return std::move( mError );
-	}
-
-	/** Runs fn() -> U on success, forwarding errors unchanged. */
-	template <typename F> auto map( F&& fn ) && {
-		using U = std::invoke_result_t<F>;
-		if constexpr ( std::is_void_v<U> ) {
-			if ( !mHasValue )
-				return Result<void, E>( Err( std::move( mError ) ) );
-			std::invoke( std::forward<F>( fn ) );
-			return Result<void, E>( Ok() );
-		} else {
-			if ( !mHasValue )
-				return Result<U, E>( Err( std::move( mError ) ) );
-			return Result<U, E>( Ok( std::invoke( std::forward<F>( fn ) ) ) );
-		}
-	}
-
-	template <typename F> auto mapError( F&& fn ) && {
-		using G = std::invoke_result_t<F, E&&>;
-		if ( mHasValue )
-			return Result<void, G>( Ok() );
-		return Result<void, G>( Err( std::invoke( std::forward<F>( fn ), std::move( mError ) ) ) );
-	}
-
-	template <typename F> auto andThen( F&& fn ) && {
-		using R = std::invoke_result_t<F>;
-		static_assert( detail::IsResult<R>::value,
-					   "andThen() requires a Result-returning callable" );
-		if ( !mHasValue )
-			return R( Err( std::move( mError ) ) );
-		return std::invoke( std::forward<F>( fn ) );
-	}
-
-	template <typename F> auto orElse( F&& fn ) && {
-		using R = std::invoke_result_t<F, E&&>;
-		static_assert( detail::IsResult<R>::value,
-					   "orElse() requires a Result-returning callable" );
-		if ( mHasValue )
-			return R( Ok() );
-		return std::invoke( std::forward<F>( fn ), std::move( mError ) );
 	}
 
   private:

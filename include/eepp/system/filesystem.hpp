@@ -7,6 +7,7 @@
 #include <eepp/system/scopedbuffer.hpp>
 #include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace EE { namespace System {
@@ -53,6 +54,11 @@ class EE_API FileSystem {
 	 * @param lowerExt Lowercase the extension obtained? ( true by default )
 	 */
 	static std::string fileExtension( const std::string& filepath, const bool& lowerExt = true );
+
+	/** Splits a file name into its base and its extension, the dot included ("a.tar.gz" ->
+	 * "a.tar", ".gz"). A name whose only dot is the first character (".bashrc") has no extension.
+	 */
+	static std::pair<std::string, std::string> fileNameSplitExtension( const std::string& name );
 
 	/** @return The file name of a file path */
 	static std::string fileNameFromPath( const std::string& filepath );

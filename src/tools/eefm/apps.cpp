@@ -70,9 +70,10 @@ std::unordered_map<std::string, std::string> readGroup( const std::string& data,
 
 std::vector<std::string> splitList( const std::string& value ) {
 	std::vector<std::string> out;
-	for ( auto& item : String::split( value, ';' ) )
+	for ( auto& item : String::split( value, ';' ) ) {
 		if ( !item.empty() )
 			out.push_back( item );
+	}
 	return out;
 }
 
@@ -92,8 +93,9 @@ void Applications::load() {
 		return;
 	mLoaded = true;
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
-	auto dataDirs =
-		xdgDirs( "XDG_DATA_HOME", ".local/share", "XDG_DATA_DIRS", "/usr/local/share:/usr/share" );
+	auto dataDirs = Sys::getDataSearchPaths();
+	for ( auto& dir : dataDirs )
+		FileSystem::dirAddSlashAtEnd( dir );
 	// Earlier directories win: desktop ids already seen are skipped.
 	for ( const auto& base : dataDirs ) {
 		std::string dir = base + "applications/";
@@ -134,14 +136,16 @@ void Applications::load() {
 		for ( const auto& group : { "Default Applications", "Added Associations" } ) {
 			for ( const auto& [mime, value] : readGroup( data, group ) ) {
 				auto& ids = mDefaults[mime];
-				for ( const auto& id : splitList( value ) )
+				for ( const auto& id : splitList( value ) ) {
 					if ( std::find( ids.begin(), ids.end(), id ) == ids.end() )
 						ids.push_back( id );
+				}
 			}
 		}
-		for ( const auto& [mime, value] : readGroup( data, "Removed Associations" ) )
+		for ( const auto& [mime, value] : readGroup( data, "Removed Associations" ) ) {
 			for ( const auto& id : splitList( value ) )
 				mRemoved[mime].push_back( id );
+		}
 	}
 #endif
 }
@@ -159,23 +163,26 @@ std::vector<Application> Applications::forMime( const std::string& mime ) {
 		if ( removed != mRemoved.end() && std::find( removed->second.begin(), removed->second.end(),
 													 id ) != removed->second.end() )
 			return;
-		for ( const auto& existing : out )
+		for ( const auto& existing : out ) {
 			if ( existing.id == id )
 				return;
+		}
 		out.push_back( app->second );
 	};
 	// Preferences of the exact type and its parents first, then every handler.
 	for ( const auto& type : types ) {
 		auto defaults = mDefaults.find( type );
-		if ( defaults != mDefaults.end() )
+		if ( defaults != mDefaults.end() ) {
 			for ( const auto& id : defaults->second )
 				addId( id, type );
+		}
 	}
 	for ( const auto& type : types ) {
 		auto handlers = mByMime.find( type );
-		if ( handlers != mByMime.end() )
+		if ( handlers != mByMime.end() ) {
 			for ( const auto& id : handlers->second )
 				addId( id, type );
+		}
 	}
 	return out;
 }
@@ -264,9 +271,10 @@ bool Applications::launch( const Application& app, const std::vector<std::string
 	}
 	bool ok = spawn( argv );
 	// "%f" applications take one file per process.
-	if ( ok && paths.size() > 1 && app.exec.find( "%f" ) != std::string::npos )
+	if ( ok && paths.size() > 1 && app.exec.find( "%f" ) != std::string::npos ) {
 		for ( size_t i = 1; i < paths.size(); ++i )
 			launch( app, { paths[i] } );
+	}
 	return ok;
 }
 

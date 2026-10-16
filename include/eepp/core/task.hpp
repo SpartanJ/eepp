@@ -5,6 +5,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <eepp/config.hpp>
+#include <eepp/core/debug.hpp>
 #include <eepp/core/executor.hpp>
 #include <eepp/core/small_unique_function.hpp>
 #include <functional>
@@ -29,12 +30,10 @@ enum class TaskState : Uint8 {
 
 /** Infrastructure misuse reported by tasks. */
 enum class TaskDiagnostic : Uint8 {
-	/** The last TaskSource was destroyed while its task was still pending. */
+	/** The last TaskResolver of a pending task was destroyed without being called. */
 	Abandoned,
-	/** resolve() was called on an already completed TaskSource; the value was discarded. */
+	/** A TaskResolver was called for an already completed task; the value was discarded. */
 	ResolvedTwice,
-	/** TaskSource::task() was called more than once; an empty task was returned. */
-	TaskRetrievedTwice,
 };
 
 /** Diagnostics hooks for task contract violations.
@@ -54,7 +53,7 @@ class EE_API TaskDiagnostics {
 };
 
 template <typename T> class Task;
-template <typename T> class TaskSource;
+template <typename T> class TaskResolver;
 
 namespace detail {
 
@@ -87,11 +86,13 @@ using ContinuationResult = typename ContinuationInvokeResult<T, F>::Type;
 template <typename T, typename F>
 using ContinuationValue = typename UnwrapTask<ContinuationResult<T, F>>::Type;
 
-/** State shared by one TaskSource<T> and one Task<T>.
+/** State shared by one Task<T> and the copies of its TaskResolver<T>.
  *
  * Reference counting is intrusive so that continuations can re-acquire ownership from the plain
  * reference they receive (needed to keep the value alive while a continuation is queued on an
- * executor) and so that every task costs exactly one allocation.
+ * executor) and so that every task costs exactly one allocation. Resolver copies are counted
+ * apart, so the task is abandoned when the last resolver goes away, whoever else still holds the
+ * state.
  */
 template <typename T> class TaskSharedState {
   public:
@@ -103,6 +104,13 @@ template <typename T> class TaskSharedState {
 	void release() noexcept {
 		if ( mRefs.fetch_sub( 1, std::memory_order_acq_rel ) == 1 )
 			delete this;
+	}
+
+	void retainResolver() noexcept { mResolvers.fetch_add( 1, std::memory_order_relaxed ); }
+
+	/** @return True if the last resolver was released. */
+	bool releaseResolver() noexcept {
+		return mResolvers.fetch_sub( 1, std::memory_order_acq_rel ) == 1;
 	}
 
 	TaskState state() const noexcept { return mState.load( std::memory_order_acquire ); }
@@ -186,18 +194,14 @@ template <typename T> class TaskSharedState {
 	/** Only valid once Ready, and only from the single consumer. */
 	Value& value() noexcept { return *mValue; }
 
-	bool markTaskRetrieved() noexcept {
-		return !mTaskRetrieved.exchange( true, std::memory_order_relaxed );
-	}
-
   private:
 	std::mutex mMutex;
 	Continuation mContinuation;
 	std::condition_variable* mWaiter{ nullptr };
 	std::optional<Value> mValue;
 	std::atomic<Uint32> mRefs{ 1 };
+	std::atomic<Uint32> mResolvers{ 1 };
 	std::atomic<TaskState> mState{ TaskState::Pending };
-	std::atomic<bool> mTaskRetrieved{ false };
 };
 
 /** Intrusive owning pointer to a TaskSharedState. */
@@ -260,21 +264,21 @@ template <typename T> class TaskStateRef {
 };
 
 struct TaskAccess {
-	/** Abandons a chained source without a diagnostic: the root abandonment was already
-	 * reported where it happened. */
-	template <typename U> static void abandonSilently( TaskSource<U>& source ) {
-		source.abandonIfPending( false );
+	/** Abandons a chained task without a diagnostic: the root abandonment was already reported
+	 * where it happened. */
+	template <typename U> static void abandonSilently( TaskResolver<U>& resolver ) {
+		resolver.abandonNow();
 	}
 
 	/** Resolves `next` with the outcome of `inner` (task flattening). */
-	template <typename U> static void forward( Task<U>&& inner, TaskSource<U>&& next ) {
+	template <typename U> static void forward( Task<U>&& inner, TaskResolver<U>&& next ) {
 		std::move( inner ).attach( [next = std::move( next )]( TaskSharedState<U>& state ) mutable {
 			if ( state.state() != TaskState::Ready ) {
 				abandonSilently( next );
 			} else if constexpr ( std::is_void_v<U> ) {
-				next.resolve();
+				next();
 			} else {
-				next.resolve( std::move( state.value() ) );
+				next( std::move( state.value() ) );
 			}
 		} );
 	}
@@ -282,46 +286,55 @@ struct TaskAccess {
 
 } // namespace detail
 
-/** @brief Producer side of a Task.
+/** @brief Completes a Task: call it with the value.
  *
- * Move-only. task() may be called exactly once. Destroying an unresolved source abandons its task,
- * reports TaskDiagnostic::Abandoned and propagates the abandonment through every chained
- * continuation, so consumers never stay silently pending forever.
+ * Filled in by Task<T>::create(), which returns its task. Copyable: every copy completes the same
+ * task, so it can be captured by several callbacks, and the first call wins (a later call reports
+ * TaskDiagnostic::ResolvedTwice). Calling it runs the continuations attached without an executor
+ * (then( fn ), onComplete( fn )) on the calling thread before it returns.
+ *
+ * When the last copy is destroyed without having been called, the task is abandoned and
+ * TaskDiagnostic::Abandoned is reported: its consumer is still told (then() skips its function,
+ * onComplete() receives std::nullopt), so it never waits forever.
+ *
+ * A default-constructed resolver belongs to no task until create() fills it; calling it before
+ * that only reports ResolvedTwice.
  */
-template <typename T> class TaskSource {
+template <typename T> class TaskResolver {
   public:
-	TaskSource() : mState( detail::TaskStateRef<T>::adopt( new detail::TaskSharedState<T>() ) ) {}
+	TaskResolver() noexcept = default;
 
-	TaskSource( TaskSource&& ) noexcept = default;
+	TaskResolver( const TaskResolver& other ) noexcept :
+		mState( detail::TaskStateRef<T>::retain( other.mState.get() ) ) {
+		if ( mState )
+			mState->retainResolver();
+	}
 
-	TaskSource& operator=( TaskSource&& other ) noexcept {
+	TaskResolver( TaskResolver&& ) noexcept = default;
+
+	TaskResolver& operator=( const TaskResolver& other ) {
 		if ( this != &other ) {
-			abandonIfPending( true );
+			TaskResolver copy( other );
+			*this = std::move( copy );
+		}
+		return *this;
+	}
+
+	TaskResolver& operator=( TaskResolver&& other ) {
+		if ( this != &other ) {
+			release();
 			mState = std::move( other.mState );
 		}
 		return *this;
 	}
 
-	TaskSource( const TaskSource& ) = delete;
+	~TaskResolver() { release(); }
 
-	TaskSource& operator=( const TaskSource& ) = delete;
-
-	~TaskSource() { abandonIfPending( true ); }
-
-	/** @return The consumer task. Valid only on the first call. */
-	Task<T> task() {
-		if ( !mState || !mState->markTaskRetrieved() ) {
-			TaskDiagnostics::report( TaskDiagnostic::TaskRetrievedTwice );
-			return Task<T>();
-		}
-		return Task<T>( detail::TaskStateRef<T>::retain( mState.get() ) );
-	}
-
-	/** Completes the task. Continuations attached with then() run synchronously on this thread.
-	 * @return False (and reports TaskDiagnostic::ResolvedTwice) if already completed. */
-	template <typename... Args> bool resolve( Args&&... args ) {
+	/** Completes the task with the value built from args.
+	 * @return False (and reports TaskDiagnostic::ResolvedTwice) if it was already completed. */
+	template <typename... Args> bool operator()( Args&&... args ) const {
 		static_assert( !std::is_void_v<T> || sizeof...( Args ) == 0,
-					   "TaskSource<void>::resolve() takes no arguments" );
+					   "TaskResolver<void> is called without arguments" );
 		if ( !mState || !mState->resolve( std::forward<Args>( args )... ) ) {
 			TaskDiagnostics::report( TaskDiagnostic::ResolvedTwice );
 			return false;
@@ -329,33 +342,48 @@ template <typename T> class TaskSource {
 		return true;
 	}
 
-	/** @return True while the source owns a state that has not been completed. */
-	bool isPending() const noexcept { return mState && mState->state() == TaskState::Pending; }
-
-	bool valid() const noexcept { return static_cast<bool>( mState ); }
-
   private:
+	friend class Task<T>;
 	friend struct detail::TaskAccess;
 
-	void abandonIfPending( bool diagnose ) {
-		if ( mState && mState->abandon() && diagnose )
+	explicit TaskResolver( detail::TaskStateRef<T> state ) noexcept :
+		mState( std::move( state ) ) {}
+
+	/** Drops this copy; the last copy abandons a still pending task. */
+	void release() {
+		if ( !mState )
+			return;
+		if ( mState->releaseResolver() && mState->abandon() )
 			TaskDiagnostics::report( TaskDiagnostic::Abandoned );
+		mState.reset();
+	}
+
+	/** Abandons the task now, without a diagnostic, and drops this copy. */
+	void abandonNow() {
+		if ( !mState )
+			return;
+		mState->abandon();
+		mState->releaseResolver();
 		mState.reset();
 	}
 
 	detail::TaskStateRef<T> mState;
 };
 
-/** @brief Single-consumer handle to a value that a producer will eventually make available.
+/** @brief The result of an operation that completes later.
  *
- * Task is move-only and carries no domain error semantics: fallible operations return
- * Task<Result<T, E>>. Continuations consume the task (`std::move( task ).then( ... )`), so only
- * one continuation chain can ever exist.
+ * The consumer's end. The producer completes it through the TaskResolver that create() fills
+ * in. Task is move-only and carries no domain error semantics: fallible operations return
+ * Task<Result<T, E>>. Attaching a continuation consumes the task (`std::move( task ).then( ... )`),
+ * so only one continuation chain can ever exist.
  *
- * - then( fn ): runs fn on the thread that resolves the task, or immediately if already ready.
- * - thenOn( executor, fn ): always runs fn through the executor, even if already ready.
+ * - then( executor, fn ): runs fn through the executor (for example the UI thread's), even if the
+ *   task has already completed. This is the normal way to use a result.
+ * - then( fn ): runs fn on whichever thread completes the task, or right away on the calling
+ *   thread if it already has. For cheap transformations that touch no thread-bound state.
  * - fn may return a value, void, or a Task<U>; nested tasks are flattened into Task<U>.
- * - If the producer is abandoned, fn is not called and the returned task is abandoned too.
+ * - If the task is abandoned, fn is not called and the returned task is abandoned too.
+ * - onComplete( fn ) also observes abandonment: fn receives std::nullopt.
  */
 template <typename T> class Task {
   public:
@@ -372,11 +400,27 @@ template <typename T> class Task {
 
 	Task& operator=( const Task& ) = delete;
 
+	/** @return A pending task. resolve is set to the resolver that completes it (a resolver it
+	 * held before is released).
+	 *
+	 * @code
+	 * TaskResolver<int> resolve;
+	 * auto task = Task<int>::create( resolve );
+	 * pool.execute( [resolve] { resolve( 42 ); } );
+	 * return task;
+	 * @endcode
+	 */
+	static Task create( TaskResolver<T>& resolve ) {
+		auto* state = new detail::TaskSharedState<T>(); // One reference, one resolver.
+		resolve = TaskResolver<T>( detail::TaskStateRef<T>::adopt( state ) );
+		return Task( detail::TaskStateRef<T>::retain( state ) );
+	}
+
 	/** @return A task that is already Ready with the given value. */
 	template <typename... Args> static Task ready( Args&&... args ) {
-		TaskSource<T> source;
-		Task task = source.task();
-		source.resolve( std::forward<Args>( args )... );
+		TaskResolver<T> resolve;
+		Task task = create( resolve );
+		resolve( std::forward<Args>( args )... );
 		return task;
 	}
 
@@ -420,26 +464,13 @@ template <typename T> class Task {
 		}
 	}
 
-	/** Attaches a continuation, see the class documentation. */
-	template <typename F> auto then( F&& fn ) && {
+	/** Runs fn( value ) through executor once the task completes, even if it already has. The
+	 * executor must outlive the task chain. See the class documentation. */
+	template <typename F> auto then( Executor& executor, F&& fn ) && {
 		using Fn = std::decay_t<F>;
 		using Out = detail::ContinuationValue<T, Fn>;
-		TaskSource<Out> next;
-		Task<Out> result = next.task();
-		attach( [fn = Fn( std::forward<F>( fn ) ),
-				 next = std::move( next )]( detail::TaskSharedState<T>& state ) mutable {
-			Task::runContinuation( state, fn, next );
-		} );
-		return result;
-	}
-
-	/** Attaches a continuation that is always scheduled on executor, even when the task is
-	 * already ready. The executor must outlive the task chain. */
-	template <typename F> auto thenOn( Executor& executor, F&& fn ) && {
-		using Fn = std::decay_t<F>;
-		using Out = detail::ContinuationValue<T, Fn>;
-		TaskSource<Out> next;
-		Task<Out> result = next.task();
+		TaskResolver<Out> next;
+		Task<Out> result = Task<Out>::create( next );
 		attach( [executor = &executor, fn = Fn( std::forward<F>( fn ) ),
 				 next = std::move( next )]( detail::TaskSharedState<T>& state ) mutable {
 			if ( state.state() != TaskState::Ready ) {
@@ -454,30 +485,40 @@ template <typename T> class Task {
 		return result;
 	}
 
-	/** Observes completion without producing a new task. fn( Task<T>&& completed ) receives the
-	 * terminal task (Ready or Abandoned) on the completing thread. */
+	/** Runs fn( value ) on the thread that completes the task, or right away on the calling
+	 * thread if it already has. See the class documentation. */
+	template <typename F> auto then( F&& fn ) && {
+		using Fn = std::decay_t<F>;
+		using Out = detail::ContinuationValue<T, Fn>;
+		TaskResolver<Out> next;
+		Task<Out> result = Task<Out>::create( next );
+		attach( [fn = Fn( std::forward<F>( fn ) ),
+				 next = std::move( next )]( detail::TaskSharedState<T>& state ) mutable {
+			Task::runContinuation( state, fn, next );
+		} );
+		return result;
+	}
+
+	/** Observes the outcome without producing a new task, on the thread that completes the task
+	 * (or right away on the calling thread if it already has). fn( std::optional<T> value )
+	 * receives the value, or std::nullopt if the task was abandoned; for Task<void>,
+	 * fn( bool completed ) receives false if it was abandoned. */
 	template <typename F> void onComplete( F&& fn ) && {
 		using Fn = std::decay_t<F>;
 		attach( [fn = Fn( std::forward<F>( fn ) )]( detail::TaskSharedState<T>& state ) mutable {
-			std::invoke( fn, Task( detail::TaskStateRef<T>::retain( &state ) ) );
-		} );
-	}
-
-	/** Same as onComplete(), but fn is always dispatched through executor. */
-	template <typename F> void onCompleteOn( Executor& executor, F&& fn ) && {
-		using Fn = std::decay_t<F>;
-		attach( [executor = &executor,
-				 fn = Fn( std::forward<F>( fn ) )]( detail::TaskSharedState<T>& state ) mutable {
-			executor->execute(
-				[ref = detail::TaskStateRef<T>::retain( &state ), fn = std::move( fn )]() mutable {
-					std::invoke( fn, Task( std::move( ref ) ) );
-				} );
+			const bool ready = state.state() == TaskState::Ready;
+			if constexpr ( std::is_void_v<T> ) {
+				std::invoke( fn, ready );
+			} else if ( ready ) {
+				std::invoke( fn, std::optional<T>( std::move( state.value() ) ) );
+			} else {
+				std::invoke( fn, std::optional<T>() );
+			}
 		} );
 	}
 
   private:
 	template <typename> friend class Task;
-	template <typename> friend class TaskSource;
 	friend struct detail::TaskAccess;
 
 	explicit Task( detail::TaskStateRef<T> state ) noexcept : mState( std::move( state ) ) {}
@@ -485,7 +526,7 @@ template <typename T> class Task {
 	void attach( typename detail::TaskSharedState<T>::Continuation continuation ) {
 		if ( !mState ) {
 			// An invalid task behaves as abandoned. Run the continuation against a throwaway
-			// abandoned state so every chained source is abandoned consistently.
+			// abandoned state so every chained task is abandoned consistently.
 			detail::TaskStateRef<T> dead =
 				detail::TaskStateRef<T>::adopt( new detail::TaskSharedState<T>() );
 			dead->abandon();
@@ -498,7 +539,7 @@ template <typename T> class Task {
 
 	template <typename Fn, typename Out>
 	static void runContinuation( detail::TaskSharedState<T>& state, Fn& fn,
-								 TaskSource<Out>& next ) {
+								 TaskResolver<Out>& next ) {
 		if ( state.state() != TaskState::Ready ) {
 			detail::TaskAccess::abandonSilently( next );
 			return;
@@ -506,11 +547,11 @@ template <typename T> class Task {
 		using R = detail::ContinuationResult<T, Fn>;
 		if constexpr ( std::is_void_v<R> ) {
 			invoke( state, fn );
-			next.resolve();
+			next();
 		} else if constexpr ( detail::IsTask<R>::value ) {
 			detail::TaskAccess::forward( invoke( state, fn ), std::move( next ) );
 		} else {
-			next.resolve( invoke( state, fn ) );
+			next( invoke( state, fn ) );
 		}
 	}
 

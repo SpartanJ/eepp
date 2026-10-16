@@ -1,5 +1,5 @@
 #include "sftpproviderimpl.hpp"
-#include "sshsession.hpp"
+#include "sshconnection.hpp"
 #include <condition_variable>
 #include <eepp/vfs/sftp/remotewatchbackend.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
@@ -26,7 +26,7 @@ struct RemoteWatch {
 	std::weak_ptr<WatchSink> sink;
 	std::shared_ptr<AgentClient> agent;
 	std::unique_ptr<WatchRegistration> polling;
-	std::optional<TaskSource<VFSResult<void>>> establishment;
+	std::optional<TaskResolver<VFSResult<void>>> establishment;
 	Uint32 retries{ 0 };
 	Mode mode{ Mode::Establishing };
 	bool established{ false };
@@ -171,9 +171,10 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 			for ( auto& watch : watches )
 				watch.second->mode = RemoteWatch::Mode::Closed;
 		}
-		for ( auto& entry : agents )
+		for ( auto& entry : agents ) {
 			if ( entry.second.agent )
 				entry.second.agent->stop( "Watch backend closed" );
+		}
 		for ( auto& watch : watches )
 			watch.second->polling.reset();
 	}
@@ -184,9 +185,9 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 		watch->root = root;
 		watch->options = options;
 		watch->sink = sink;
-		TaskSource<VFSResult<void>> source;
-		auto established = source.task();
-		watch->establishment = std::move( source );
+		TaskResolver<VFSResult<void>> resolveEstablished;
+		auto established = VFSTask<void>::create( resolveEstablished );
+		watch->establishment = std::move( resolveEstablished );
 		{
 			std::lock_guard<std::mutex> lock( mMutex );
 			watch->id = ++mLastId;
@@ -234,10 +235,11 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 			std::lock_guard<std::mutex> lock( mMutex );
 			auto& entry = mAgents[client->key()];
 			entry.failures = 0;
-			for ( auto& watch : mWatches )
+			for ( auto& watch : mWatches ) {
 				if ( watch.second->agent == client &&
 					 watch.second->mode != RemoteWatch::Mode::Agent )
 					pending.push_back( watch.second );
+			}
 		}
 		for ( auto& watch : pending )
 			sendWatch( client, *watch );
@@ -376,9 +378,10 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 			return;
 		{
 			std::lock_guard<std::mutex> lock( mMutex );
-			for ( const auto& watch : mWatches )
+			for ( const auto& watch : mWatches ) {
 				if ( watch.second->agent == client )
 					return;
+			}
 			auto it = mAgents.find( client->key() );
 			if ( it != mAgents.end() && it->second.agent == client )
 				it->second.agent.reset();
@@ -388,14 +391,14 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 	}
 
 	void completeEstablishment( RemoteWatch& watch, VFSResult<void>&& result ) {
-		std::optional<TaskSource<VFSResult<void>>> source;
+		std::optional<TaskResolver<VFSResult<void>>> resolve;
 		{
 			std::lock_guard<std::mutex> lock( mMutex );
-			source = std::move( watch.establishment );
+			resolve = std::move( watch.establishment );
 			watch.establishment.reset();
 		}
-		if ( source )
-			source->resolve( std::move( result ) );
+		if ( resolve )
+			( *resolve )( std::move( result ) );
 	}
 
 	void sendWatch( const std::shared_ptr<AgentClient>& client, const RemoteWatch& watch ) {
@@ -418,11 +421,12 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 	void usePolling( const std::shared_ptr<RemoteWatch>& watch ) {
 		auto sink = watch->sink.lock();
 		if ( !sink || !watch->options.allowPolling ) {
-			if ( !watch->established )
+			if ( !watch->established ) {
 				completeEstablishment(
 					*watch,
 					Err( VFSError( VFSErrorCode::Unsupported, watch->root,
 								   "efsw-agent is not available and polling is disabled" ) ) );
+			}
 			return;
 		}
 		std::shared_ptr<AgentClient> previousAgent;
@@ -628,9 +632,10 @@ void AgentClient::start( const std::string& command ) {
 				int rc = libssh2_channel_exec( self->mChannel, command.c_str() );
 				if ( rc == LIBSSH2_ERROR_EAGAIN )
 					return std::nullopt;
-				if ( rc != 0 )
+				if ( rc != 0 ) {
 					return VFSResult<void>(
 						Err( c.lastError( URI(), "efsw-agent: could not run the agent" ) ) );
+				}
 				agent::Writer hello;
 				hello.str( "eepp-vfs" );
 				auto frame = hello.frame( agent::MessageHello );

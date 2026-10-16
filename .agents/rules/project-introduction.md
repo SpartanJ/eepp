@@ -26,11 +26,13 @@ not `eTerm`. Its implementation lives under `src/modules/eterm/`.
 ## 5. eefm (File Manager)
 
 `eefm` is the repository's file manager, a Dolphin-like application built on the `eepp-vfs`
-module (`src/modules/vfs/`). Its implementation lives under `src/tools/eefm/`: `app.cpp` (window,
-layout, state, shortcuts), `panes.cpp` (split panes, tabs, navigation, status and filter bars),
-`fileops.cpp` (context menus, clipboard, drag and drop, transfers), `fileview.cpp` (drag-enabled
-table view), `placespanel.cpp` / `places.cpp`, and desktop integration in `mime.cpp`, `apps.cpp`
-and `trash.cpp`. Browsing and file operations must go through the VFS so local, packed and remote
+module (`src/modules/vfs/`). Its implementation lives under `src/tools/eefm/`. `App` (`app.cpp`)
+owns the window, layout, state and shortcuts, and the parts, which reach each other through it (as
+in ecode): `PaneManager` (split panes, tabs, navigation, status and filter bars),
+`FileOperations` (context menus, clipboard, drag and drop, transfers, trash), `PlacesController`
+with `PlacesPanel` / `Places`, `TerminalPanel` and `SettingsActions`. `FileTableView`
+(`fileview.cpp`) is the drag-enabled table view; desktop integration lives in `MimeDatabase`,
+`Applications` and `Trash`. Browsing and file operations must go through the VFS so local, packed and remote
 (`sftp://`) locations behave the same; only desktop integration (trash, mounted devices, MIME
 database, launching applications) may use local platform APIs. See `docs/articles/vfs.md`.
 
@@ -72,8 +74,10 @@ current responsibility or lifetime requirement.
   a matching header basename. Put its declarations in that header and its definitions in the matching
   source. For example, `DragManager::invalidateWindow()` belongs in `dragmanager.hpp/.cpp`, rather than
   being declared in `dragcontext.hpp` and defined in `dragmanager.cpp`. Include the matching header
-  first where platform setup permits. Entry points and tests need no empty companion headers;
-  genuinely header-only interfaces and templates need no empty source files.
+  first where platform setup permits. A source compiled on every platform but wrapped entirely in a
+  platform guard includes only `<eepp/config.hpp>` before the guard, and its matching header first
+  inside it, so other platforms do not parse its headers. Entry points and tests need no empty
+  companion headers; genuinely header-only interfaces and templates need no empty source files.
 - **Give subsystem operations a named container.** Group related operations in a class or struct
   instead of exposing a collection of namespace-level functions. Use static methods for a
   process-wide service such as `DragManager`, with its state in private static members. A reader
