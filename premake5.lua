@@ -1878,6 +1878,7 @@ workspace "eepp"
 				"src/examples/native_drag_and_drop/native_drag_and_drop.cpp" }
 			if os.istarget("linux") then
 				files { "src/tests/native_drag_and_drop/x11.cpp",
+					"src/tests/native_drag_and_drop/x11droptarget.cpp",
 					"src/tests/native_drag_and_drop/wayland.cpp" }
 				links { "dl" }
 			elseif os.istarget("macosx") then

@@ -1,4 +1,5 @@
 #include "../../examples/native_drag_and_drop/native_drag_and_drop.hpp"
+#include "testexitcode.hpp"
 #include <array>
 #include <chrono>
 #include <eepp/system/sys.hpp>
@@ -9,7 +10,11 @@
 using namespace EE::System;
 
 int runAutomatedNativeDragTests();
+
 #if EE_PLATFORM == EE_PLATFORM_LINUX
+/** Receiving drags without files (setDataDropHandler / setFileSaveDropHandler): X11 only. */
+int runAutomatedNativeDropTests();
+
 int runAutomatedWaylandDragTests( bool receiver, bool processExit = false );
 #endif
 
@@ -77,7 +82,14 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		std::cout << "Automated integration checks: synthetic pointer and keyboard input.\n"
 					 "Run on an isolated display.\n"
 				  << std::flush;
-		return runAutomatedNativeDragTests();
+		const int drag = runAutomatedNativeDragTests();
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+		// Both are skipped together, on a display that is not X11.
+		const int drop = runAutomatedNativeDropTests();
+		if ( drag == EXIT_SUCCESS || drag == TestSkipped )
+			return drop;
+#endif
+		return drag;
 	}
 	if ( arguments.size() == 1 && arguments[0] == "--help" ) {
 		std::cout << "Usage: eepp-native-dnd-tests [--manual] [file paths...]\n"

@@ -5,7 +5,11 @@
 #include <eepp/core/small_vector.hpp>
 #include <eepp/math/vector2.hpp>
 #include <functional>
+#include <optional>
 #include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace EE { namespace Graphics {
 class Image;
@@ -74,9 +78,39 @@ struct DragCapabilities {
 	bool fileTarget{ false };
 	bool negotiatedTarget{ false };
 	bool dragImage{ false };
+	/** Drops of application-defined MIME types (setDataDropHandler()) and of files their source
+	 * saves where they are dropped (setFileSaveDropHandler()). */
+	bool dataTarget{ false };
+};
+
+/** A drop received through setDataDropHandler(). */
+struct DataDrop {
+	/** Each requested MIME type the drag offered, with its contents, in the requested order. */
+	std::vector<std::pair<std::string, std::string>> items;
+	/** Where it was dropped, in window coordinates. */
+	Math::Vector2f position;
+
+	/** The contents offered as mimeType, or nullptr. */
+	const std::string* find( std::string_view mimeType ) const;
+};
+
+/** A drop whose source creates the file itself where it is dropped (the XDS direct save
+ * protocol, XdndDirectSave0): archive managers extracting entries, browsers saving images. */
+struct FileSaveDrop {
+	/** The name the source suggests for the file. Archive managers send a placeholder: they
+	 * only use the folder. */
+	std::string fileName;
+	/** Where it was dropped, in window coordinates. */
+	Math::Vector2f position;
 };
 
 using DragCompletionCallback = std::function<void( DragResult )>;
+
+using DataDropCallback = std::function<void( DataDrop )>;
+
+/** Returns the local folder (an absolute path) the source should save into, or nullopt to
+ * refuse the drop. */
+using FileSaveDropCallback = std::function<std::optional<std::string>( const FileSaveDrop& )>;
 
 /** Native cross-application file dragging. All methods must run on the window/UI thread.
  * This lightweight facade borrows its Window and must not outlive it. A started session owns its
@@ -102,6 +136,21 @@ class EE_API DragAndDrop {
 	void cancelDrag();
 
 	bool isDragging() const;
+
+	/** Receive drags from other applications that offer one of mimeTypes and no file list
+	 * (text/uri-list), such as an archive manager's extraction protocol. Drags with a file list
+	 * keep arriving as FileDropped events. The callback runs on the UI thread, outside native
+	 * event hooks, after the source was told the drop succeeded. Replaces this window's previous
+	 * handler; an empty list removes it. Returns false where unsupported (see dataTarget). */
+	bool setDataDropHandler( std::vector<std::string> mimeTypes, DataDropCallback callback );
+
+	/** Receive drags from other applications whose source saves the file where it is dropped
+	 * (XDS). These take priority over a file list offered with them, which such sources only
+	 * fill with temporary copies, if at all. The callback runs on the UI thread, outside native
+	 * event hooks, when the drag is dropped; the source then saves into the returned folder.
+	 * Replaces this window's previous handler; an empty callback removes it. Returns false
+	 * where unsupported (see dataTarget). */
+	bool setFileSaveDropHandler( FileSaveDropCallback callback );
 
 	/** Serialize an offer as text/uri-list (CRLF). Rejects empty, relative, invalid UTF-8 and NUL
 	 * paths. Preserves order and duplicate entries. On failure output is empty. */

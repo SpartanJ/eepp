@@ -1,6 +1,7 @@
 #include "fileoperations.hpp"
 #include "app.hpp"
 #include "apps.hpp"
+#include "arkdrop.hpp"
 #include "location.hpp"
 #include "mime.hpp"
 #include "panemanager.hpp"
@@ -138,6 +139,57 @@ void withLocalFiles( VirtualFileSystem* vfs, Executor& executor, UISceneNode* ui
 } // namespace
 
 void FileOperations::openFiles( const std::vector<URI>& uris ) {
+	if ( uris.empty() )
+		return;
+	// Local programs run instead (as in other file managers). Only local ones: a downloaded
+	// copy of a remote file is opened. Telling them apart reads the files, on the pool.
+	mApp.pool()
+		->submit( [uris] {
+			std::vector<Applications::ExecutableKind> kinds;
+			kinds.reserve( uris.size() );
+			for ( const auto& uri : uris ) {
+				kinds.push_back( uri.getScheme() == "file"
+									 ? Applications::executableKind( uri.getFSPath() )
+									 : Applications::ExecutableKind::None );
+			}
+			return kinds;
+		} )
+		.then( mApp.executor(), [this, uris]( std::vector<Applications::ExecutableKind> kinds ) {
+			std::vector<URI> documents;
+			for ( size_t i = 0; i < uris.size(); ++i ) {
+				if ( kinds[i] == Applications::ExecutableKind::None )
+					documents.push_back( uris[i] );
+				else
+					runProgram( uris[i].getFSPath(),
+								kinds[i] == Applications::ExecutableKind::Script );
+			}
+			openDocuments( documents );
+		} );
+}
+
+void FileOperations::runProgram( const std::string& path, bool confirm ) {
+	auto run = [this, path] {
+		if ( !Applications::spawn( { path }, FileSystem::fileRemoveFileName( path ) ) )
+			Dialogs::showError( mUI, String::fromUtf8( "Could not run " + path ) );
+	};
+	if ( !confirm ) {
+		run();
+		return;
+	}
+	// A script can be anything downloaded with the execute permission: ask first.
+	Dialogs::confirm( mUI, mUI->i18n( "eefm_run_script", "Run Script" ),
+					  String::format( mUI->i18n( "eefm_run_script_question",
+												 "\"%s\" is an executable script. Run it?" )
+										  .toUtf8()
+										  .c_str(),
+									  FileSystem::fileNameFromPath( path ).c_str() ),
+					  [run]( bool accepted ) {
+						  if ( accepted )
+							  run();
+					  } );
+}
+
+void FileOperations::openDocuments( const std::vector<URI>& uris ) {
 	if ( uris.empty() )
 		return;
 	withLocalFiles( mVFS, mApp.executor(), mUI, uris, [this]( std::vector<std::string> paths ) {
@@ -827,12 +879,8 @@ void FileOperations::showProperties( FileTab* tab ) {
 	box->showWhenReady();
 }
 
-void FileOperations::dropExternalFiles() {
-	std::vector<URI> files = std::move( mDroppedFiles );
-	mDroppedFiles.clear();
-	// Where it was dropped (the backend may not report it: then the pointer).
-	Vector2f position = mDropPosition ? *mDropPosition : mUI->getEventDispatcher()->getMousePosf();
-	mDropPosition.reset();
+std::optional<FileOperations::DropDestination>
+FileOperations::dropDestination( Vector2f position ) {
 	Node* over = mUI->overFind( position );
 	int target = mApp.panes().activeIndex();
 	for ( int i = 0; i < 2; ++i ) {
@@ -843,17 +891,54 @@ void FileOperations::dropExternalFiles() {
 	}
 	auto* tab = mApp.panes().currentTab( mApp.panes().pane( target ) );
 	if ( !tab )
-		return;
+		return std::nullopt;
 	// Onto a folder: into it (as drops between panes); anywhere else: the pane's folder.
-	URI destination = tab->model->uri();
+	URI folder = tab->model->uri();
 	if ( auto row = tab->view->rowOf( over );
 		 row && *row < tab->model->rowCount() && tab->model->entry( *row ).isDirectory() )
-		destination = tab->model->entryURI( *row );
+		folder = tab->model->entryURI( *row );
 	mApp.panes().setActivePane( target );
+	return DropDestination{ std::move( folder ), target };
+}
+
+void FileOperations::dropExternalFiles() {
+	std::vector<URI> files = std::move( mDroppedFiles );
+	mDroppedFiles.clear();
+	// Where it was dropped (the backend may not report it: then the pointer).
+	Vector2f position = mDropPosition ? *mDropPosition : mUI->getEventDispatcher()->getMousePosf();
+	mDropPosition.reset();
+	auto destination = dropDestination( position );
+	if ( !destination )
+		return;
 	// eefm's own drag dropped on eefm arrives here on Wayland, macOS and Windows (the system drag
 	// started with it): it is resolved as the internal drag it is. Other files are copied.
 	const auto& drag = FileTableView::currentDrag();
-	dropFiles( files, destination, target, !( drag.native && files == drag.uris ) );
+	dropFiles( files, destination->folder, destination->pane,
+			   !( drag.native && files == drag.uris ) );
+}
+
+std::optional<std::string> FileOperations::localDropFolder( Vector2f position ) {
+	auto destination = dropDestination( position );
+	if ( !destination )
+		return std::nullopt;
+	// The source writes the files itself, so it can only reach local folders.
+	if ( destination->folder.getScheme() != "file" ) {
+		Dialogs::showError( mUI, mUI->i18n( "eefm_drop_local_only",
+											"Files dragged from this application can only be "
+											"dropped on local folders." ) );
+		return std::nullopt;
+	}
+	return destination->folder.getFSPath();
+}
+
+void FileOperations::dropArchiveEntries( DataDrop drop ) {
+	auto folder = localDropFolder( drop.position );
+	if ( !folder )
+		return;
+	// The folder's watcher shows the extracted files as Ark writes them.
+	runInBackground( [drop = std::move( drop ),
+					  folder = std::move( *folder )] { return ArkDrop::extract( drop, folder ); },
+					 {}, mUI->i18n( "eefm_extract_failed", "Could not extract" ) );
 }
 
 } // namespace eefm

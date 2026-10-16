@@ -35,6 +35,10 @@ bool Window::isNativeFileTargetSupported() const {
 	return false;
 }
 
+bool Window::isNativeDataTargetSupported() const {
+	return false;
+}
+
 void Window::initializeNativeDragEvents() {}
 
 void Window::shutdownNativeDragEvents() {}

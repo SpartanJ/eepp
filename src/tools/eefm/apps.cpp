@@ -11,7 +11,9 @@
 #endif
 #include <windows.h>
 #elif defined( EE_PLATFORM_POSIX )
+#include <cstring>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
@@ -367,6 +369,39 @@ bool Applications::openTerminal( const std::string& directory ) {
 			return true;
 	}
 	return false;
+#endif
+}
+
+Applications::ExecutableKind Applications::executableKind( const std::string& path ) {
+#if defined( EE_PLATFORM_POSIX ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && \
+	EE_PLATFORM != EE_PLATFORM_IOS && EE_PLATFORM != EE_PLATFORM_ANDROID
+	struct stat info;
+	if ( stat( path.c_str(), &info ) != 0 || !S_ISREG( info.st_mode ) ||
+		 access( path.c_str(), X_OK ) != 0 )
+		return ExecutableKind::None;
+	int fd = open( path.c_str(), O_RDONLY | O_CLOEXEC );
+	if ( fd < 0 )
+		return ExecutableKind::None;
+	unsigned char header[4]{};
+	const ssize_t size = read( fd, header, sizeof( header ) );
+	close( fd );
+	if ( size >= 2 && header[0] == '#' && header[1] == '!' )
+		return ExecutableKind::Script;
+	if ( size < 4 )
+		return ExecutableKind::None;
+	static const unsigned char programMagic[][4] = {
+		{ 0x7f, 'E', 'L', 'F' },								// ELF
+		{ 0xfe, 0xed, 0xfa, 0xce }, { 0xce, 0xfa, 0xed, 0xfe }, // Mach-O 32-bit
+		{ 0xfe, 0xed, 0xfa, 0xcf }, { 0xcf, 0xfa, 0xed, 0xfe }, // Mach-O 64-bit
+		{ 0xca, 0xfe, 0xba, 0xbe } };							// Mach-O universal
+	for ( const auto& magic : programMagic ) {
+		if ( std::memcmp( header, magic, sizeof( header ) ) == 0 )
+			return ExecutableKind::Program;
+	}
+	return ExecutableKind::None;
+#else
+	(void)path;
+	return ExecutableKind::None;
 #endif
 }
 

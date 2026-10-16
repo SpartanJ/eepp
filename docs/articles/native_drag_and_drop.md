@@ -174,6 +174,49 @@ The file path is borrowed and valid only during the event callback. A multiple-f
 individual file events. This receiving API does not expose negotiated actions, MIME selection or a
 grouped drop session. Text drops continue to use `InputEvent::TextDropped`.
 
+## Receive drags that carry no files
+
+Some applications drag things that only become files when they are dropped. An archive manager
+drags entries it has not extracted yet; a browser drags an image it has not saved. These drags have
+no file list, so they never produce `FileDropped` events. Two handlers receive them. Check
+`getCapabilities().dataTarget` first: currently only X11 with the SDL3 backend supports them.
+
+**Files saved by their source (XDS).** With the XDS protocol (`XdndDirectSave0`), the receiver
+picks a folder and the source writes the file there itself. Engrampa, Xarchiver and some browsers
+use it. Return the absolute path of a local folder, or `std::nullopt` to refuse the drop:
+
+```cpp
+auto drag = DragAndDrop::forWindow( window );
+drag.setFileSaveDropHandler( []( const FileSaveDrop& drop ) -> std::optional<std::string> {
+    // drop.position is in window coordinates: pick the folder shown there.
+    return std::string( "/home/user/Downloads" );
+} );
+```
+
+The callback runs on the UI thread when the drag is dropped. The source then saves into the folder,
+and reports its own errors. `FileSaveDrop::fileName` is the name the source suggests; archive
+managers send a placeholder because they only use the folder. A drag that offers XDS goes to this
+handler even when it also offers a file list, because such sources only fill that list with
+temporary copies, if at all.
+
+**Application-defined MIME types.** Register the MIME types you understand to receive their raw
+contents, together with the drop position:
+
+```cpp
+drag.setDataDropHandler( { "application/x-my-app-item" }, []( DataDrop drop ) {
+    if ( const std::string* item = drop.find( "application/x-my-app-item" ) )
+        std::cout << "Received " << item->size() << " bytes\n";
+} );
+```
+
+Only drags that offer one of the registered types and no file list reach this handler. Each
+registered type that the drag offers is fetched, in registration order, before the callback runs
+on the UI thread. Payloads are limited to 1 MiB.
+
+Both handlers belong to their window: setting one replaces the window's previous handler, an empty
+callback removes it, and destroying the window removes both. Callbacks run outside native event
+hooks and may replace or remove handlers.
+
 ## Check platform support
 
 Query capabilities for the actual window rather than assuming support from the operating system:
@@ -183,6 +226,7 @@ Query capabilities for the actual window rather than assuming support from the o
 | `fileSource` | Local files can be dragged out of this window. |
 | `dragImage` | The native source supports a preview image. |
 | `fileTarget` | The window supports existing file-drop events. |
+| `dataTarget` | Drags without files: `setFileSaveDropHandler()` and `setDataDropHandler()`. |
 | `dataSource` | Arbitrary native data sources; currently false. |
 | `negotiatedTarget` | Native target action/MIME negotiation; currently false. |
 
@@ -221,7 +265,8 @@ completes it as its internal drop. Elsewhere, such a drop arrives as `FileDroppe
 pointer is over the source window.
 
 Applications that install their own `SDL_SetX11EventHook` must coordinate its use: SDL3 has a single
-hook slot, which eepp uses during an active native drag and clears afterwards.
+hook slot, which eepp uses during an active native drag and while a window has a file save or data
+drop handler, and clears afterwards.
 
 ## Run the example
 

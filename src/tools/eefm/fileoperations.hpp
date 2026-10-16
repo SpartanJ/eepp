@@ -5,6 +5,7 @@
 
 #include <eepp/vfs/transfer.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
+#include <eepp/window/draganddrop.hpp>
 #include <functional>
 #include <map>
 #include <optional>
@@ -65,6 +66,15 @@ class FileOperations {
 	 * where they were dropped. */
 	void dropExternalFiles();
 
+	/** Entries dragged out of Ark: Ark extracts them into the pane (or the folder row) where
+	 * they were dropped. */
+	void dropArchiveEntries( EE::Window::DataDrop drop );
+
+	/** The local folder of the pane (or the folder row) under position, for a drop whose source
+	 * writes the files itself (an archive manager extracting entries, a browser saving an
+	 * image). A remote folder is refused, with an error. */
+	std::optional<std::string> localDropFolder( Vector2f position );
+
 	/** Cancels the transfers shown in pane paneIndex. */
 	void cancelTransfers( int paneIndex );
 
@@ -81,12 +91,29 @@ class FileOperations {
 		EE::VFS::TransferProgress progress;
 	};
 
+	/** Where a drop lands: a folder row, else the folder of the pane under the pointer. */
+	struct DropDestination {
+		URI folder;
+		int pane;
+	};
+
 	struct ClipboardFiles {
 		std::vector<URI> uris;
 		bool cut{ false };
 	};
 
+	/** The destination of a drop at position (the active pane's folder when no pane is there),
+	 * which makes that pane the active one. */
+	std::optional<DropDestination> dropDestination( Vector2f position );
+
+	/** Runs the local programs among uris and opens the other files. */
 	void openFiles( const std::vector<URI>& uris );
+
+	/** Starts the program at path in its folder, after asking when confirm. */
+	void runProgram( const std::string& path, bool confirm );
+
+	/** Opens the files with their default applications. */
+	void openDocuments( const std::vector<URI>& uris );
 
 	void openWith( const std::vector<URI>& uris );
 

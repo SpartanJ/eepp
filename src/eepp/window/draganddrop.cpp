@@ -84,6 +84,14 @@ bool validateOffer( const DragOffer& offer, size_t& capacity, std::string* error
 
 } // namespace
 
+const std::string* DataDrop::find( std::string_view mimeType ) const {
+	for ( const auto& item : items ) {
+		if ( item.first == mimeType )
+			return &item.second;
+	}
+	return nullptr;
+}
+
 DragAndDrop::DragAndDrop( Window& window ) : mWindow( &window ) {}
 
 DragAndDrop DragAndDrop::forWindow( Window& window ) {
@@ -93,8 +101,8 @@ DragAndDrop DragAndDrop::forWindow( Window& window ) {
 DragCapabilities DragAndDrop::getCapabilities() const {
 	auto context = Private::NativeDragAccess::getNativeDragContext( *mWindow );
 	const bool source = Private::DragManager::isFileDragSupported( context );
-	return { source, false, Private::NativeDragAccess::isNativeFileTargetSupported( *mWindow ),
-			 false, source };
+	return { source, false,	 Private::NativeDragAccess::isNativeFileTargetSupported( *mWindow ),
+			 false,	 source, Private::NativeDragAccess::isNativeDataTargetSupported( *mWindow ) };
 }
 
 DragStartResult DragAndDrop::startDrag( const DragOffer& offer,
@@ -139,6 +147,30 @@ void DragAndDrop::cancelDrag() {
 
 bool DragAndDrop::isDragging() const {
 	return Private::DragManager::isDragging( *mWindow );
+}
+
+bool DragAndDrop::setDataDropHandler( std::vector<std::string> mimeTypes,
+									  DataDropCallback callback ) {
+	if ( mimeTypes.empty() )
+		callback = {};
+	// Removing a handler always succeeds, also where there is nothing to remove.
+	const bool removing = !callback;
+	if ( !removing && !Private::NativeDragAccess::isNativeDataTargetSupported( *mWindow ) )
+		return false;
+	return Private::DragManager::setDataDropHandler(
+			   Private::NativeDragAccess::getNativeDragContext( *mWindow ), std::move( mimeTypes ),
+			   std::move( callback ) ) ||
+		   removing;
+}
+
+bool DragAndDrop::setFileSaveDropHandler( FileSaveDropCallback callback ) {
+	const bool removing = !callback;
+	if ( !removing && !Private::NativeDragAccess::isNativeDataTargetSupported( *mWindow ) )
+		return false;
+	return Private::DragManager::setFileSaveDropHandler(
+			   Private::NativeDragAccess::getNativeDragContext( *mWindow ),
+			   std::move( callback ) ) ||
+		   removing;
 }
 
 bool DragAndDrop::encodeFileUriList( const DragOffer& offer, std::string& output,

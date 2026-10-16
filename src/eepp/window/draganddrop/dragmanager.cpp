@@ -4,6 +4,7 @@
 #include "waylanddraganddrop.hpp"
 #include "win32draganddrop.hpp"
 #include "x11draganddrop.hpp"
+#include "x11droptarget.hpp"
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
 #include <memory>
@@ -11,7 +12,13 @@
 namespace EE { namespace Window { namespace Private {
 
 std::unique_ptr<DragSource> DragManager::sSource;
+std::unique_ptr<DropTarget> DragManager::sTarget;
 bool DragManager::sPolling = false;
+bool DragManager::sTickingTarget = false;
+
+bool DragManager::needsNativeEvents() {
+	return sTarget || ( sSource && sSource->owner );
+}
 
 bool DragManager::hasSession() {
 	return sSource != nullptr;
@@ -55,10 +62,11 @@ DragStartResult DragManager::startFileDrag( NativeWindowContext context, const D
 													std::move( completion ), result );
 		} catch ( ... ) {
 			// A failed C++ session allocation must also release the temporary native bridge.
-			NativeDragAccess::shutdownNativeDragEvents( *context.owner );
+			if ( !needsNativeEvents() )
+				NativeDragAccess::shutdownNativeDragEvents( *context.owner );
 			throw;
 		}
-		if ( !sSource )
+		if ( !needsNativeEvents() )
 			NativeDragAccess::shutdownNativeDragEvents( *context.owner );
 	}
 #endif
@@ -83,10 +91,51 @@ bool DragManager::isDragging( const Window& window ) {
 	return sSource && sSource->owner == &window && !sSource->completed;
 }
 
+bool DragManager::setDataDropHandler( NativeWindowContext context,
+									  std::vector<std::string> mimeTypes,
+									  DataDropCallback callback ) {
+	const bool adding = static_cast<bool>( callback );
+	return updateTarget( context, adding, [&]( DropTarget& target ) {
+		return target.setDataHandler( context, std::move( mimeTypes ), std::move( callback ) );
+	} );
+}
+
+bool DragManager::setFileSaveDropHandler( NativeWindowContext context,
+										  FileSaveDropCallback callback ) {
+	const bool adding = static_cast<bool>( callback );
+	return updateTarget( context, adding, [&]( DropTarget& target ) {
+		return target.setFileSaveHandler( context, std::move( callback ) );
+	} );
+}
+
+bool DragManager::updateTarget( const NativeWindowContext& context, bool adding,
+								const std::function<bool( DropTarget& )>& update ) {
+#ifdef EE_HAS_X11_DRAG_SOURCE
+	if ( adding && !sTarget && context.kind == NativeWindowContext::Kind::X11 )
+		sTarget = X11DropTarget::create();
+#endif
+	if ( !sTarget || !context.owner )
+		return false;
+	const bool updated = update( *sTarget );
+	releaseEmptyTarget( *context.owner );
+	if ( sTarget && !sTarget->empty() )
+		NativeDragAccess::initializeNativeDragEvents( *context.owner );
+	return updated;
+}
+
+void DragManager::releaseEmptyTarget( Window& window ) {
+	// While tick() runs, an empty target stays until a later update or window invalidation.
+	if ( !sTarget || !sTarget->empty() || sTickingTarget )
+		return;
+	sTarget.reset();
+	if ( !needsNativeEvents() )
+		NativeDragAccess::shutdownNativeDragEvents( window );
+}
+
 bool DragManager::handleEvent( void* event ) {
-	if ( sSource && !sSource->completed )
-		return sSource->handleEvent( event );
-	return false;
+	if ( sSource && !sSource->completed && sSource->handleEvent( event ) )
+		return true;
+	return sTarget && sTarget->handleEvent( event );
 }
 
 void DragManager::handleInput( Uint32 windowId, NativeDragInput input ) {
@@ -96,6 +145,16 @@ void DragManager::handleInput( Uint32 windowId, NativeDragInput input ) {
 }
 
 void DragManager::poll() {
+	// A callback may pump input again: the target is ticked once at a time.
+	if ( sTarget && !sTickingTarget && !Engine::isShuttingDown() ) {
+		sTickingTarget = true;
+		sTarget->tick();
+		sTickingTarget = false;
+	}
+	pollSource();
+}
+
+void DragManager::pollSource() {
 	if ( !sSource || sPolling )
 		return;
 	sPolling = true;
@@ -112,7 +171,7 @@ void DragManager::poll() {
 	auto callback = std::move( finished->completion );
 	auto result = std::move( finished->result );
 	finished.reset();
-	if ( owner )
+	if ( owner && !needsNativeEvents() )
 		NativeDragAccess::shutdownNativeDragEvents( *owner );
 	sPolling = false;
 	if ( callback && !Engine::isShuttingDown() )
@@ -122,14 +181,20 @@ void DragManager::poll() {
 void DragManager::invalidateWindow( Window* window ) {
 	if ( sSource && sSource->owner == window ) {
 		sSource->cancel();
-		// Disable the bridge while virtual dispatch still reaches the window backend, before
-		// its resources are destroyed. Completion may be polled after the owner is gone.
-		NativeDragAccess::shutdownNativeDragEvents( *window );
 		sSource->owner = nullptr;
+		// Disable the bridge while virtual dispatch still reaches the window backend, before its
+		// resources are destroyed. Completion may be polled after the owner is gone.
+		if ( !needsNativeEvents() )
+			NativeDragAccess::shutdownNativeDragEvents( *window );
+	}
+	if ( sTarget ) {
+		sTarget->removeWindow( window );
+		releaseEmptyTarget( *window );
 	}
 }
 
 void DragManager::shutdown() {
+	sTarget.reset();
 	if ( !sSource )
 		return;
 	auto source = std::move( sSource );

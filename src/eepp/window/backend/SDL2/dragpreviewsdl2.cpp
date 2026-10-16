@@ -2,6 +2,7 @@
 #include <eepp/graphics/image.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/window/window.hpp>
+#include <utility>
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include <eepp/window/backend/SDL2/syswm.hpp>
 #endif
@@ -180,9 +181,10 @@ void DragPreviewSDL::applyCursor() {
 
 void DragPreviewSDL::reset() {
 	const bool managedCursor = mCursors[0] != nullptr;
-	if ( mWindow ) {
+	// Destroying the window pumps native events, which can reach reset() again: detach it first.
+	if ( auto* window = std::exchange( mWindow, nullptr ) ) {
 		RestoreGLContext restore;
-		SDL_DestroyWindow( mWindow );
+		SDL_DestroyWindow( window );
 	}
 	for ( auto*& cursor : mCursors ) {
 		if ( cursor )

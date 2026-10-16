@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "arkdrop.hpp"
 #include "fileoperations.hpp"
 #include "icons.hpp"
 #include "location.hpp"
@@ -580,6 +581,17 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 		pane->root->on( Event::OnPositionChange, [this]( const Event* ) { layoutLocationBars(); } );
 	}
 	mToolbar->on( Event::OnSizeChange, [this]( const Event* ) { layoutLocationBars(); } );
+
+	// Drags whose source creates the files where they are dropped. Most use XDS (Engrampa,
+	// Xarchiver, browsers saving images); Ark names its own extraction service instead.
+	auto dragAndDrop = DragAndDrop::forWindow( *mApp->getWindow() );
+	dragAndDrop.setFileSaveDropHandler( [this]( const FileSaveDrop& drop ) {
+		return mFileOperations->localDropFolder( drop.position );
+	} );
+	dragAndDrop.setDataDropHandler( ArkDrop::mimeTypes(), [this]( DataDrop drop ) {
+		if ( ArkDrop::isArkDrop( drop ) )
+			mFileOperations->dropArchiveEntries( std::move( drop ) );
+	} );
 
 	mApp->getWindow()->getInput()->pushCallback( [this]( InputEvent* event ) {
 		if ( event->Type == InputEvent::FileDropped ) {

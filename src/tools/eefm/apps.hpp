@@ -1,6 +1,7 @@
 #ifndef EEFM_APPS_HPP
 #define EEFM_APPS_HPP
 
+#include <eepp/config.hpp>
 #include <eepp/core/uri.hpp>
 #include <mutex>
 #include <optional>
@@ -23,6 +24,16 @@ struct Application {
 /** @brief Applications registered for MIME types ("Open with") and process launching. */
 class Applications {
   public:
+	/** What running a file means. */
+	enum class ExecutableKind : EE::Uint8 {
+		/** Not runnable: it is opened with an application. */
+		None,
+		/** A native executable (ELF / Mach-O) the user may execute. */
+		Program,
+		/** An executable text file with an interpreter line ("#!"). */
+		Script
+	};
+
 	static Applications& instance();
 
 	/** Applications for a MIME type (and its parent types), the default one first. */
@@ -43,6 +54,12 @@ class Applications {
 	 * gives the process its own console (shells), in the user's default terminal. */
 	static bool spawn( const std::vector<std::string>& argv, const std::string& workingDir = {},
 					   bool console = false );
+
+	/** Whether the local file at path can be run, from its permissions and its first bytes (the
+	 * execute permission alone is not enough: FAT and NTFS mounts give it to every file). Reads
+	 * the file: call it off the UI thread. Always None on Windows, where opening a program runs
+	 * it. */
+	static ExecutableKind executableKind( const std::string& path );
 
 	/** Splits a desktop entry Exec value into arguments (quoting rules of the spec). */
 	static std::vector<std::string> splitExec( const std::string& exec );

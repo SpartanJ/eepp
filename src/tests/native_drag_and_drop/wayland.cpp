@@ -1,3 +1,4 @@
+#include "testexitcode.hpp"
 #include <array>
 #include <chrono>
 #include <cstdlib>
@@ -244,7 +245,7 @@ struct WaylandChecks {
 		if ( !initialize() )
 			return 1;
 		if ( !DragAndDrop::forWindow( *source ).getCapabilities().fileSource )
-			return 77;
+			return TestSkipped;
 		if ( processExit )
 			scenario = Shutdown;
 		prepare();

@@ -1,4 +1,5 @@
 #include "../../eepp/window/draganddrop/x11draganddrop.hpp"
+#include "testexitcode.hpp"
 
 #ifdef EE_HAS_X11_DRAG_SOURCE
 
@@ -120,11 +121,11 @@ struct X11TestFunctions : Private::X11Library {
 int runAutomatedNativeDragTests() {
 	X11TestFunctions x11;
 	if ( !x11.load() )
-		return 77;
+		return TestSkipped;
 	auto* library = dlopen( "libXtst.so.6", RTLD_NOW );
 	if ( !library ) {
 		std::cerr << "XTest is required for this native integration harness\n";
-		return 77;
+		return TestSkipped;
 	}
 	using FakeButton = int ( * )( ::X11Display*, unsigned, int, unsigned long );
 	auto fakeButton = reinterpret_cast<FakeButton>( dlsym( library, "XTestFakeButtonEvent" ) );
@@ -132,7 +133,7 @@ int runAutomatedNativeDragTests() {
 	auto getCursor = reinterpret_cast<void* ( * )()>( dlsym( RTLD_DEFAULT, "SDL_GetCursor" ) );
 	auto* peer = x11.XOpenDisplay( nullptr );
 	if ( !peer || !fakeButton || !getCursor )
-		return 77;
+		return TestSkipped;
 	auto* window = Engine::instance()->createWindow( { 320, 240, "eepp XDND integration source" } );
 	if ( !window || !window->isOpen() )
 		return 1;
@@ -148,7 +149,7 @@ int runAutomatedNativeDragTests() {
 		Engine::destroySingleton();
 		x11.XCloseDisplay( peer );
 		dlclose( library );
-		return 77;
+		return TestSkipped;
 	}
 	auto target =
 		x11.XCreateSimpleWindow( peer, DefaultRootWindow( peer ), 500, 400, 300, 200, 0, 0, 0 );
@@ -676,7 +677,7 @@ int runAutomatedNativeDragTests() {
 #else
 
 int runAutomatedNativeDragTests() {
-	return 77;
+	return TestSkipped;
 }
 
 #endif
