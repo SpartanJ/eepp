@@ -4,23 +4,37 @@ DIRPATH="$(dirname "$CANONPATH")"
 cd "$DIRPATH" || exit
 
 VERSION=
-for i in "$@"; do
-	case $i in
+USE_FRAMEWORKS=
+while [ "$#" -gt 0 ]; do
+	case "$1" in
 		--version)
-			if [[ -n $2 ]]; then VERSION="$2"; fi
-			shift
+			if [[ $# -lt 2 || -z $2 ]]; then
+				echo "Missing value for --version" >&2
+				exit 1
+			fi
+			VERSION="$2"
+			shift 2
+			;;
+		--use-frameworks)
+			USE_FRAMEWORKS=1
 			shift
 			;;
-		-*|--*)
-			echo "Unknown option $i"
+		-*)
+			echo "Unknown option $1"
 			exit 1
 			;;
 		*)
+			shift
 			;;
 	esac
 done
 
-SDL2_CONFIG=$(which sdl2-config)
+SDL2_CONFIG=
+# Release packages use the official SDL2 framework even if Homebrew SDL2 is installed.
+# Homebrew's sdl2-compat also needs SDL3, which this SDL2 packager does not bundle.
+if [ -z "$USE_FRAMEWORKS" ]; then
+	SDL2_CONFIG=$(command -v sdl2-config)
+fi
 CONFIG_NAME=
 ARCH_PATH=
 DYLIB_PATH=
