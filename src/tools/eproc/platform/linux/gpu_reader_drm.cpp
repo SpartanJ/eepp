@@ -72,9 +72,57 @@ bool readClient( const char* path, DrmClient& client ) {
 
 } // namespace
 
+bool DrmGpuReader::hasSupportedDevice( const char* drmClassPath ) {
+	DIR* devices = opendir( drmClassPath );
+	if ( !devices )
+		return true;
+
+	bool foundDevice = false;
+	bool supported = false;
+	struct dirent* entry;
+	while ( ( entry = readdir( devices ) ) != nullptr ) {
+		const char* number = nullptr;
+		if ( strncmp( entry->d_name, "card", 4 ) == 0 )
+			number = entry->d_name + 4;
+		else if ( strncmp( entry->d_name, "renderD", 7 ) == 0 )
+			number = entry->d_name + 7;
+		if ( !number || *number < '0' || *number > '9' )
+			continue;
+		while ( *number >= '0' && *number <= '9' )
+			++number;
+		if ( *number != '\0' )
+			continue; // Connector entries such as card0-DP-1 are not devices.
+
+		foundDevice = true;
+		char path[PATH_MAX];
+		char driver[PATH_MAX];
+		const int length =
+			snprintf( path, sizeof( path ), "%s/%s/device/driver", drmClassPath, entry->d_name );
+		const ssize_t driverLength = length > 0 && static_cast<size_t>( length ) < sizeof( path )
+										 ? readlink( path, driver, sizeof( driver ) - 1 )
+										 : -1;
+		if ( driverLength <= 0 || static_cast<size_t>( driverLength ) >= sizeof( driver ) - 1 ) {
+			supported = true;
+			break;
+		}
+		driver[driverLength] = '\0';
+		const char* name = strrchr( driver, '/' );
+		if ( strcmp( name ? name + 1 : driver, "nvidia" ) != 0 ) {
+			supported = true;
+			break;
+		}
+	}
+	closedir( devices );
+	// Missing/unknown sysfs information must not suppress a potentially supported device.
+	return supported || !foundDevice;
+}
+
 void DrmGpuReader::beginSample() {
 	mSampleTime = std::chrono::steady_clock::now();
-	mAvailable = access( "/dev/dri", F_OK ) == 0;
+	// /dev/dri also exists with the proprietary NVIDIA driver, whose fdinfo is ignored
+	// by readClient(). Avoid walking every process's descriptors when only that driver exists.
+	// Recheck each sample for hotplug; mixed-GPU systems retain the ordinary DRM path.
+	mAvailable = access( "/dev/dri", F_OK ) == 0 && hasSupportedDevice( "/sys/class/drm" );
 	if ( ++mPass == 0 )
 		++mPass;
 	// Entries of exited processes are retained briefly to avoid rebuilding the map each pass.
