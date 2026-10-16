@@ -738,7 +738,14 @@ bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, System
 
 	// Network packet capture runs continuously in its own thread; this refresh only joins the
 	// current procfs socket ownership with the endpoints seen by that capture thread.
-	mNetworkMonitor.refreshMapping();
+	// The first socket-ownership walk costs about as much as the process walk. They use
+	// independent state, so overlap them at startup instead of holding up the base snapshot.
+	// Later samples keep the ordinary single-worker path. The local jthread also joins on error.
+	std::jthread startupNetworkMapping;
+	if ( mPass == 1 )
+		startupNetworkMapping = std::jthread( [this] { mNetworkMonitor.refreshMapping(); } );
+	else
+		mNetworkMonitor.refreshMapping();
 
 	DIR* procDir = opendir( "/proc" );
 	if ( !procDir )
@@ -867,6 +874,8 @@ bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, System
 	if ( ( mPass % kCacheSweepInterval ) == 0 )
 		pruneCaches();
 
+	if ( startupNetworkMapping.joinable() )
+		startupNetworkMapping.join();
 	mNetworkMonitor.applyRates( processes );
 
 	return true;

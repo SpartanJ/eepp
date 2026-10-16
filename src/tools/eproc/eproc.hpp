@@ -57,6 +57,8 @@ class App {
 	void savePreferences();
 	void setupProcessTable();
 
+	void updateProcessCell( UITableCell* cell, bool initial );
+
 	/** Restores the saved display, position, size, and maximized state. */
 	void restoreWindowState();
 
@@ -190,8 +192,6 @@ class App {
 	bool mTreeMode{ false };
 	bool mTreeExpansionInitialized{ false };
 	bool mTreeSearchActive{ false };
-	bool mProcessTableStateRestored{ false };
-	bool mProcessTableStateRestoreScheduled{ false };
 	bool mCollectProportionalMemory{ false };
 	bool mCollectionRequested{ false };
 	bool mWindowStateSaved{ false };

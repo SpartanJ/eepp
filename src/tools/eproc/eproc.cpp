@@ -30,6 +30,7 @@ using namespace ProcessTableState;
 
 namespace {
 
+constexpr String::HashType kStartupPublishTag = String::hash( "eproc-startup-publish" );
 constexpr size_t kPerformanceHistorySamples = 600;
 constexpr double kPerformanceVisibleSeconds = 60.0;
 static_assert( kPerformanceHistorySamples >=
@@ -212,14 +213,15 @@ const char* usernameClass( const ProcessInfo& process ) {
 	return "eproc-process-username-other";
 }
 
-void setCellClassEnabled( UITableCell& cell, std::string_view className, bool enabled ) {
+bool setCellClassEnabled( UITableCell& cell, std::string_view className, bool enabled ) {
 	const bool hasClass = cell.hasClass( className );
 	if ( enabled == hasClass )
-		return;
+		return false;
 	if ( enabled )
 		cell.addClass( std::string{ className } );
 	else
 		cell.removeClass( std::string{ className } );
+	return true;
 }
 
 constexpr std::array<std::string_view, 5> kUsernameClasses = {
@@ -1260,33 +1262,9 @@ void App::setupProcessTable() {
 		view->setColumnHidden( ProcessModel::ColTotalMemory, false );
 #endif
 		hideUnsupportedProcessColumns( *view );
-		view->setOnUpdateCellCb( [this]( UITableCell* cell, Model* ) {
-			if ( !cell )
-				return;
-
-			const ModelIndex index = cell->getCurIndex();
-			const ProcessInfo* process = processForIndex( index );
-			setCellClassEnabled( *cell, "eproc-process-ended",
-								 process && process->status == ProcessStatus::Ended );
-
-			const std::string_view desiredUsernameClass =
-				process && index.column() == ProcessModel::ColUsername ? usernameClass( *process )
-																	   : std::string_view{};
-			for ( const auto className : kUsernameClasses )
-				setCellClassEnabled( *cell, className, className == desiredUsernameClass );
-			const int cpuUsage = process && index.column() == ProcessModel::ColCpu
-									 ? mProcessModel->displayedCpuUsage( *process )
-									 : 0;
-			const size_t fillIndex =
-				cpuUsage > 0 ? static_cast<size_t>( std::min( 10, ( cpuUsage + 9 ) / 10 ) ) : 0;
-			// A removed class does not reset its CSS background image, so every reused cell
-			// must receive an explicit fill class, including the 0% state.
-			for ( size_t i = 0; i < kCpuFillClasses.size(); ++i ) {
-				if ( i != fillIndex )
-					setCellClassEnabled( *cell, kCpuFillClasses[i], false );
-			}
-			setCellClassEnabled( *cell, kCpuFillClasses[fillIndex], true );
-		} );
+		view->setSetupCellCb( [this]( UITableCell* cell ) { updateProcessCell( cell, true ); } );
+		view->setOnUpdateCellCb(
+			[this]( UITableCell* cell, Model* ) { updateProcessCell( cell, false ); } );
 		view->setOnHeaderContextMenuCb( [this]( UIPopUpMenu* menu, size_t column ) {
 			for ( Uint32 i = 0; i < menu->getCount(); ) {
 				const UIWidget* item = menu->getItem( i );
@@ -1350,6 +1328,53 @@ void App::setupProcessTable() {
 		if ( mProcessModel->getFilter() != mConfig->filterMode )
 			onFilterChanged();
 	}
+
+	// Column visibility, widths, order, and sorting do not depend on process data. Restore
+	// them while the models are empty, before the first snapshot can size or paint the views.
+	restoreProcessTableState();
+	reconcileProportionalMemory();
+}
+
+void App::updateProcessCell( UITableCell* cell, bool initial ) {
+	if ( !cell )
+		return;
+
+	// Apply this batch synchronously below; queueing each class change would repeat
+	// the same style work on the following frame.
+	const bool wasLoading = cell->isLoadingState();
+	cell->setLoadingState( true );
+	const ModelIndex index = cell->getCurIndex();
+	if ( initial ) {
+		const Variant columnClass = index.model()->data( index, ModelRole::Class );
+		cell->setClass( std::string{ columnClass.asStdStringView() } );
+	}
+	const ProcessInfo* process = processForIndex( index );
+	bool classesChanged = setCellClassEnabled( *cell, "eproc-process-ended",
+											   process && process->status == ProcessStatus::Ended );
+
+	const std::string_view desiredUsernameClass =
+		process && index.column() == ProcessModel::ColUsername ? usernameClass( *process )
+															   : std::string_view{};
+	for ( const auto className : kUsernameClasses )
+		classesChanged |=
+			setCellClassEnabled( *cell, className, className == desiredUsernameClass );
+	const int cpuUsage = process && index.column() == ProcessModel::ColCpu
+							 ? mProcessModel->displayedCpuUsage( *process )
+							 : 0;
+	const size_t fillIndex =
+		cpuUsage > 0 ? static_cast<size_t>( std::min( 10, ( cpuUsage + 9 ) / 10 ) ) : 0;
+	// A removed class does not reset its CSS background image, so every reused cell
+	// must receive an explicit fill class, including the 0% state.
+	for ( size_t i = 0; i < kCpuFillClasses.size(); ++i ) {
+		if ( i != fillIndex )
+			classesChanged |= setCellClassEnabled( *cell, kCpuFillClasses[i], false );
+	}
+	classesChanged |= setCellClassEnabled( *cell, kCpuFillClasses[fillIndex], true );
+	cell->setLoadingState( wasLoading );
+	// New cells receive these classes before the view's initial style pass. Recycled cells
+	// need only their own style reapplied; text color/alignment propagate to their children.
+	if ( classesChanged && !initial )
+		cell->reloadStyle( false, true, true );
 }
 
 void App::startCollection() {
@@ -1387,14 +1412,24 @@ void App::setupRefreshTimer() {
 	// for staged results and dispatches a new sample once the refresh period has elapsed.
 	// Publishing only at the sampling cadence would delay the first visible snapshot.
 	mRoot->setInterval( [this] { onRefreshTick(); }, Milliseconds( mTickIntervalMs ) );
+
+	// During startup, consume ready data on the next UI update instead of leaving it staged
+	// for up to 100 ms. Never wait for the worker; keep the normal poll once startup is done.
+	mRoot->setInterval(
+		[this] {
+			const bool collecting = mCollectInFlight.load();
+			publishStagedSnapshot();
+			if ( !collecting )
+				mRoot->removeActionsByTag( kStartupPublishTag );
+		},
+		Time::Zero, kStartupPublishTag );
 }
 
 void App::onRefreshTick() {
 	publishStagedSnapshot();
 	if ( mCollectInFlight.load() )
 		return;
-	if ( mProcessTableStateRestored )
-		reconcileProportionalMemory();
+	reconcileProportionalMemory();
 	if ( mCollectionRequested ) {
 		mCollectionRequested = false;
 		mDispatchClock.getElapsedTimeAndReset();
@@ -1516,19 +1551,6 @@ void App::publishStagedSnapshot() {
 		} else if ( hasMemory ) {
 			mProcessModel->applyProportionalMemory( memory );
 		}
-	}
-
-	if ( !mProcessTableStateRestored && !mProcessTableStateRestoreScheduled && mApp &&
-		 mApp->getUI() ) {
-		mProcessTableStateRestoreScheduled = true;
-		mApp->getUI()->runOnMainThread( [this] {
-			if ( !mProcessTableStateRestored ) {
-				restoreProcessTableState();
-				mProcessTableStateRestored = true;
-				reconcileProportionalMemory();
-			}
-			mProcessTableStateRestoreScheduled = false;
-		} );
 	}
 
 	updateStatusBar();

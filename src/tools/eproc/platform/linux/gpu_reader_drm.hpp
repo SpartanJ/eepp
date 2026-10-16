@@ -16,6 +16,11 @@ class DrmGpuReader {
 	void query( long pid, long long startTime, int& usagePercent, long& memoryKiB );
 
   private:
+	friend struct DrmGpuReaderTestAccess;
+
+	/** NVIDIA counters come from NVML. Unknown drivers still require the fdinfo scan. */
+	static bool hasSupportedDevice( const char* drmClassPath );
+
 	struct ClientSample {
 		unsigned long long engineNs{ 0 };
 		std::chrono::steady_clock::time_point sampledAt{};
