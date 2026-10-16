@@ -16,8 +16,6 @@ class DrmGpuReader {
 	void query( long pid, long long startTime, int& usagePercent, long& memoryKiB );
 
   private:
-	friend struct DrmGpuReaderTestAccess;
-
 	/** NVIDIA counters come from NVML. Unknown drivers still require the fdinfo scan. */
 	static bool hasSupportedDevice( const char* drmClassPath );
 
