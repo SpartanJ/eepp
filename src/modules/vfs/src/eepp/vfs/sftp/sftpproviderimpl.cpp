@@ -5,6 +5,7 @@
 #include "sshsockettransport.hpp"
 #include <eepp/core/string.hpp>
 #include <eepp/vfs/detail/await.hpp>
+#include <eepp/vfs/path.hpp>
 #include <thread>
 
 namespace EE { namespace VFS { namespace sftp {
@@ -112,6 +113,8 @@ VFSResult<SSHResolvedConfig> SFTPProviderImpl::resolveSync( const std::string& h
 }
 
 VFSResult<SSHResolvedConfig> SFTPProviderImpl::resolveForURI( const URI& uri ) const {
+	if ( !VFSPath::validURI( uri ) )
+		return Err( VFSError( VFSErrorCode::InvalidURI, uri, "NUL in SFTP URI" ) );
 	if ( uri.getHost().empty() )
 		return Err( VFSError( VFSErrorCode::InvalidURI, uri, "sftp:// URI without host" ) );
 	if ( uri.getUserInfo().find( ':' ) != std::string::npos ) {
@@ -317,6 +320,9 @@ void SFTPProviderImpl::pruneIdle() {
 }
 
 VFSTask<std::shared_ptr<SSHConnection>> SFTPProviderImpl::connection( const URI& uri ) {
+	if ( !VFSPath::validURI( uri ) )
+		return readyError<std::shared_ptr<SSHConnection>>( VFSErrorCode::InvalidURI, uri,
+														   "NUL in SFTP URI" );
 	using Result = VFSResult<std::shared_ptr<SSHConnection>>;
 	std::string key = authorityKey( uri );
 	Uint64 generation;

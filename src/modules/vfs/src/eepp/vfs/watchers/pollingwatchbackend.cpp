@@ -1,6 +1,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <eepp/vfs/detail/await.hpp>
+#include <eepp/vfs/path.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
 #include <eepp/vfs/watchers/pollingwatchbackend.hpp>
 #include <list>
@@ -40,6 +41,7 @@ class PollingWatchBackendImpl : public std::enable_shared_from_this<PollingWatch
 		std::chrono::steady_clock::time_point due;
 		Uint64 id{ 0 };
 		bool failed{ false };
+		bool terminal{ false };
 	};
 
 	explicit PollingWatchBackendImpl( VirtualFileSystem& vfs ) : mVfs( vfs ) {}
@@ -127,6 +129,8 @@ class PollingWatchBackendImpl : public std::enable_shared_from_this<PollingWatch
 			auto now = std::chrono::steady_clock::now();
 			std::shared_ptr<Watch> next;
 			for ( auto& watch : mWatches ) {
+				if ( watch.second->terminal )
+					continue;
 				if ( !next || watch.second->due < next->due )
 					next = watch.second;
 			}
@@ -170,26 +174,45 @@ class PollingWatchBackendImpl : public std::enable_shared_from_this<PollingWatch
 		while ( !pending.empty() ) {
 			auto [dir, prefix] = std::move( pending.back() );
 			pending.pop_back();
-			auto listed = await( mVfs.listAll( dir ) );
-			if ( !listed ) {
+			auto opened = await( mVfs.openDirectory( dir ) );
+			if ( !opened ) {
 				// A subdirectory vanishing mid-scan is a normal race; the root failing is not.
-				if ( prefix.empty() || !listed.error().is( VFSErrorCode::NotFound ) )
-					return Err( std::move( listed ).error() );
+				if ( prefix.empty() || !opened.error().is( VFSErrorCode::NotFound ) )
+					return Err( std::move( opened ).error() );
 				continue;
 			}
-			for ( auto& entry : listed.value() ) {
-				if ( snapshot.entries.size() >= PollingWatchBackend::MaxEntries )
-					return Ok( std::move( snapshot ) );
-				std::string relative = prefix.empty() ? entry.name : prefix + "/" + entry.name;
-				Snapshot::Entry value;
-				value.revision = entry.revision;
-				value.modified = entry.modifiedTime().value_or( 0 );
-				value.size = entry.size().value_or( 0 );
-				value.type = entry.type;
-				if ( watch.options.recursive && entry.type == FileType::Directory )
-					pending.emplace_back( dir.withAppendedSegment( entry.name ), relative );
-				snapshot.entries.emplace( std::move( relative ), std::move( value ) );
+			DirectoryHandle handle = std::move( opened ).value();
+			while ( true ) {
+				auto listed = await( handle.read( 1024 ) );
+				if ( !listed ) {
+					await( handle.close() );
+					return Err( std::move( listed ).error() );
+				}
+				for ( auto& entry : listed.value().entries ) {
+					if ( !VFSPath::validName( entry.name, dir ) ) {
+						await( handle.close() );
+						return Err( VFSError( VFSErrorCode::ProtocolError, dir,
+											  "Invalid directory entry name" ) );
+					}
+					if ( snapshot.entries.size() >= PollingWatchBackend::MaxEntries ) {
+						await( handle.close() );
+						return Err( VFSError( VFSErrorCode::Unsupported, watch.root,
+											  "Polling snapshot exceeds the entry limit" ) );
+					}
+					std::string relative = prefix.empty() ? entry.name : prefix + "/" + entry.name;
+					Snapshot::Entry value;
+					value.revision = entry.revision;
+					value.modified = entry.modifiedTime().value_or( 0 );
+					value.size = entry.size().value_or( 0 );
+					value.type = entry.type;
+					if ( watch.options.recursive && entry.type == FileType::Directory )
+						pending.emplace_back( dir.withAppendedSegment( entry.name ), relative );
+					snapshot.entries.emplace( std::move( relative ), std::move( value ) );
+				}
+				if ( listed.value().endOfDirectory )
+					break;
 			}
+			await( handle.close() );
 		}
 		return Ok( std::move( snapshot ) );
 	}
@@ -200,6 +223,13 @@ class PollingWatchBackendImpl : public std::enable_shared_from_this<PollingWatch
 			return;
 		auto snapshot = take( watch );
 		if ( !snapshot ) {
+			if ( snapshot.error().is( VFSErrorCode::Unsupported ) ) {
+				watch.terminal = true;
+				watch.snapshot = {};
+				sink->setStatus( WatchStatus::Failed );
+				sink->rescanRequired();
+				return;
+			}
 			if ( !watch.failed ) {
 				watch.failed = true;
 				bool rootGone = snapshot.error().is( VFSErrorCode::NotFound ) ||

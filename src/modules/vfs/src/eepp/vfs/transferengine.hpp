@@ -42,7 +42,15 @@ class TransferEngine {
 
 	VFSResult<void> checkCancelled( const URI& uri ) const;
 
-	VFSResult<void> scan( Node& node, const URI& uri, int depth, Uint64& files, Uint64& bytes );
+	/** A move must never remove a source whose scanned revision is no longer current. */
+	VFSResult<void> checkSource( const VFSFileInfo& info, const URI& uri );
+
+	/** Includes aliases through existing destination ancestors, when canonicalization is supported.
+	 */
+	VFSResult<void> checkDirectoryDestination();
+
+	VFSResult<void> scan( Node& node, const URI& uri, const URI& destination, int depth,
+						  Uint64& files, Uint64& bytes );
 
 	/** @return True if the entry (and everything below it) was fully copied. */
 	VFSResult<bool> copyNode( const Node& node, const URI& source, const URI& destination,

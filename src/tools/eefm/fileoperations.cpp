@@ -9,6 +9,7 @@
 #include "trash.hpp"
 #include <atomic>
 #include <eepp/system/sha1.hpp>
+#include <eepp/vfs/path.hpp>
 
 namespace eefm {
 
@@ -668,6 +669,8 @@ void FileOperations::transferFiles( const std::vector<URI>& sources, const URI& 
 									bool move, int paneIndex ) {
 	for ( const auto& source : sources ) {
 		std::string name = source.getLastPathSegment();
+		if ( !validateName( name, destination ) )
+			continue;
 		URI target = destination.withAppendedSegment( name );
 		if ( target == source ) {
 			if ( move )
@@ -911,10 +914,8 @@ void FileOperations::renameSelection() {
 
 void FileOperations::renameEntry( FileTab* tab, const VFSFileInfo& entry,
 								  const std::string& name ) {
-	if ( name.find( '/' ) != std::string::npos ) {
-		Dialogs::showError( mUI, mUI->i18n( "eefm_invalid_name", "A name cannot contain \"/\"." ) );
+	if ( !validateName( name, tab->model->uri() ) )
 		return;
-	}
 	URI source = entry.uriIn( tab->model->uri() );
 	tab->selectLater( name );
 	mVFS->rename( source, source.getParent().withAppendedSegment( name ) )
@@ -932,7 +933,7 @@ void FileOperations::newFolder( FileTab* tab ) {
 		mUI, mUI->i18n( "eefm_new_folder_title", "New Folder" ),
 		mUI->i18n( "eefm_folder_name", "Create new folder in:\n" ) + Location::text( parent ),
 		"New Folder", false, [this, parent, tab]( std::optional<std::string> name ) {
-			if ( !name || name->empty() || name->find( '/' ) != std::string::npos )
+			if ( !name || !validateName( *name, parent ) )
 				return;
 			tab->selectLater( *name );
 			mVFS->makeDir( parent.withAppendedSegment( *name ) )
@@ -952,7 +953,7 @@ void FileOperations::newTextFile( FileTab* tab ) {
 		mUI, mUI->i18n( "eefm_new_text_file_title", "New Text File" ),
 		mUI->i18n( "eefm_file_name", "File name:" ), "Text File.txt", false,
 		[this, parent, tab]( std::optional<std::string> name ) {
-			if ( !name || name->empty() || name->find( '/' ) != std::string::npos )
+			if ( !name || !validateName( *name, parent ) )
 				return;
 			tab->selectLater( *name );
 			mVFS->open( parent.withAppendedSegment( *name ),
@@ -966,6 +967,14 @@ void FileOperations::newTextFile( FileTab* tab ) {
 					handle.value().close();
 				} );
 		} );
+}
+
+bool FileOperations::validateName( const std::string& name, const URI& directory ) {
+	if ( VFSPath::validName( name, directory ) )
+		return true;
+	Dialogs::showError( mUI,
+						mUI->i18n( "eefm_invalid_name", "Enter a valid file or folder name." ) );
+	return false;
 }
 
 // ---------------------------------------------------------------------------------------------

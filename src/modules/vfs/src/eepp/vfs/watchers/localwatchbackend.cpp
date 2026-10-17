@@ -4,6 +4,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/vfs/providers/localioscheduler.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>
+#include <eepp/vfs/watchers/earlywatchevents.hpp>
 #include <eepp/vfs/watchers/localwatchbackend.hpp>
 #include <efsw/efsw.hpp>
 #include <map>
@@ -22,10 +23,6 @@ namespace detail {
  * are only unique within a watcher and callbacks do not identify the watcher. */
 class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBackendImpl> {
   public:
-	/** Events for a watch id that is not registered yet are buffered (efsw may deliver before
-	 * addWatch() returns); beyond this many the watch gets a RescanRequired instead. */
-	static constexpr size_t MaxEarlyEvents = 4096;
-
 	explicit LocalWatchBackendImpl( Time pollingInterval ) : mPollingInterval( pollingInterval ) {}
 
 	~LocalWatchBackendImpl() {
@@ -44,6 +41,9 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 	VFSResult<std::pair<Uint64, bool>> add( const std::string& nativeRoot,
 											const WatchOptions& options,
 											const std::shared_ptr<WatchSink>& sink ) {
+		// One registration at a time makes pre-registration callbacks attributable, including
+		// failed registrations. Entries and callbacks retain their own short-lived lock.
+		std::lock_guard<std::mutex> adding( mAddsMutex );
 		std::string root( nativeRoot );
 		FileSystem::dirAddSlashAtEnd( root );
 		Uint64 token = ++mLastToken;
@@ -78,7 +78,7 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 		if ( id < 0 )
 			return Err( mapEfswError( id, nativeRoot ) );
 
-		std::vector<PendingEvent> early;
+		EarlyWatchEvents early;
 		Uint64 composite = compose( key, id );
 		{
 			std::lock_guard<std::mutex> lock( mEntriesMutex );
@@ -95,14 +95,16 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 			entry.sinks.emplace_back( token, sink );
 			auto& highest = mHighestId[key];
 			highest = std::max( highest, id );
+			mRegisteringKey = -1;
 			auto it = mEarly.find( composite );
 			if ( it != mEarly.end() ) {
 				early = std::move( it->second );
 				mEarly.erase( it );
 			}
 		}
-		for ( auto& event : early )
+		early.replay( *sink, [&]( const EarlyWatchEvents::Event& event ) {
 			dispatch( key, id, event.dir, event.filename, event.action, event.oldFilename );
+		} );
 		return Ok( std::make_pair( token, ( key & GenericBit ) != 0 ) );
 	}
 
@@ -146,10 +148,8 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 			if ( it == mEntries.end() ) {
 				// efsw ids only grow: an unknown id above the highest registered one belongs to
 				// an addWatch() still in flight; anything else is a removed watch.
-				if ( id > mHighestId[key] ) {
-					auto& early = mEarly[composite];
-					if ( early.size() < MaxEarlyEvents )
-						early.push_back( PendingEvent{ dir, filename, oldFilename, action } );
+				if ( key == mRegisteringKey && id > mHighestId[key] ) {
+					mEarly[composite].push( dir, filename, action, oldFilename );
 				}
 				return;
 			}
@@ -200,8 +200,11 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 		{
 			std::lock_guard<std::mutex> lock( mEntriesMutex );
 			auto it = mEntries.find( compose( key, id ) );
-			if ( it == mEntries.end() )
+			if ( it == mEntries.end() ) {
+				if ( key == mRegisteringKey && id > mHighestId[key] )
+					mEarly[compose( key, id )].invalidate();
 				return;
+			}
 			for ( auto& sink : it->second.sinks ) {
 				if ( auto locked = sink.second.lock() )
 					sinks.push_back( std::move( locked ) );
@@ -248,13 +251,6 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 		bool recursive{ false };
 	};
 
-	struct PendingEvent {
-		std::string dir;
-		std::string filename;
-		std::string oldFilename;
-		efsw::Action action;
-	};
-
 	static int optionBits( const WatchOptions& options ) {
 		return ( options.followSymlinks ? 2 : 0 ) | ( options.allowOutOfScopeLinks ? 4 : 0 );
 	}
@@ -297,7 +293,23 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 			slot.watcher->allowOutOfScopeLinks( options.allowOutOfScopeLinks );
 			slot.watcher->watch();
 		}
-		return slot.watcher->addWatch( root, slot.listener.get(), options.recursive, efswOptions );
+		{
+			std::lock_guard<std::mutex> lock( mEntriesMutex );
+			mRegisteringKey = key;
+		}
+		auto id =
+			slot.watcher->addWatch( root, slot.listener.get(), options.recursive, efswOptions );
+		if ( id < 0 ) {
+			std::lock_guard<std::mutex> lock( mEntriesMutex );
+			mRegisteringKey = -1;
+			for ( auto it = mEarly.begin(); it != mEarly.end(); ) {
+				if ( static_cast<int>( it->first >> KeyShift ) == key )
+					it = mEarly.erase( it );
+				else
+					++it;
+			}
+		}
+		return id;
 	}
 
 	static std::string toRelative( const std::string& root, std::string path ) {
@@ -326,13 +338,15 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 	}
 
 	Time mPollingInterval;
+	std::mutex mAddsMutex;
 	std::mutex mWatchersMutex;
 	std::map<int, WatcherSlot> mWatchers;
 	std::mutex mEntriesMutex;
 	std::unordered_map<Uint64, Entry> mEntries;
 	std::unordered_map<int, efsw::WatchID> mHighestId;
-	std::unordered_map<Uint64, std::vector<PendingEvent>> mEarly;
+	std::unordered_map<Uint64, EarlyWatchEvents> mEarly;
 	std::atomic<Uint64> mLastToken{ 0 };
+	int mRegisteringKey{ -1 };
 };
 
 class LocalWatchRegistration : public WatchRegistration {

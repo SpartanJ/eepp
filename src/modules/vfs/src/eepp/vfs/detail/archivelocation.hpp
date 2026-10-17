@@ -2,6 +2,7 @@
 #define EE_VFS_DETAIL_ARCHIVELOCATION_HPP
 
 #include <eepp/vfs/error.hpp>
+#include <eepp/vfs/path.hpp>
 
 namespace EE { namespace VFS { namespace detail {
 
@@ -33,7 +34,7 @@ class ArchiveLocation {
 
 	static VFSResult<ArchiveLocation> parse( const URI& uri, std::string_view scheme ) {
 		if ( uri.getScheme() != scheme || uri.getAuthority() != uri.getHost() ||
-			 !uri.getFragment().empty() || uri.getPath().find( '\0' ) != std::string::npos )
+			 !uri.getFragment().empty() || !VFSPath::validURI( uri ) )
 			return Err( VFSError( VFSErrorCode::InvalidURI, uri, "Invalid archive location" ) );
 		if ( !uri.getRawQuery().empty() )
 			return Err(
@@ -77,7 +78,7 @@ class ArchiveLocation {
 		if ( archive.getScheme() != "file" || !archive.getRawQuery().empty() ||
 			 !archive.getFragment().empty() || archive.getAuthority() != archive.getHost() ||
 			 archive.getPath().empty() || archive.getPath().front() != '/' ||
-			 archive.getPath().find( '\0' ) != std::string::npos )
+			 !VFSPath::validURI( archive ) || member.find( '\0' ) != std::string_view::npos )
 			return {};
 		URI uri;
 		uri.setScheme( std::string( scheme ) );

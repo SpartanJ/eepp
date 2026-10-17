@@ -127,6 +127,8 @@ class FileOperations {
 
 	void newTextFile( FileTab* tab );
 
+	bool validateName( const std::string& name, const URI& directory );
+
 	void transferFiles( const std::vector<URI>& sources, const URI& destination, bool move,
 						int paneIndex );
 

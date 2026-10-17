@@ -6,10 +6,12 @@
 
 #include "../../modules/vfs/src/eepp/vfs/sftp/sshagent.hpp"
 #include "vfs_test_utils.hpp"
+#include <array>
 #include <condition_variable>
 #include <cstdlib>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/process.hpp>
+#include <eepp/vfs/path.hpp>
 #include <eepp/vfs/sftp/sftpprovider.hpp>
 #include <netinet/in.h>
 #include <poll.h>
@@ -468,6 +470,24 @@ std::string uniqueName( const char* prefix ) {
 }
 
 } // namespace
+
+UTEST( SFTP, nulURIsFailBeforeConnecting ) {
+	SFTPProvider provider;
+	for ( const auto text : { "sftp://host/path%00suffix", "sftp://host/user%00/path" } ) {
+		const URI uri( text );
+		EXPECT_EQ( VFSErrorCode::InvalidURI, codeOf( waitFor( provider.stat( uri, {}, {} ) ) ) );
+		EXPECT_EQ( VFSErrorCode::InvalidURI,
+				   codeOf( waitFor( provider.open( uri, OpenFlags::Write, {} ) ) ) );
+		EXPECT_EQ( VFSErrorCode::InvalidURI, codeOf( waitFor( provider.remove( uri, {}, {} ) ) ) );
+		EXPECT_EQ(
+			VFSErrorCode::InvalidURI,
+			codeOf( waitFor( provider.rename( URI( "sftp://host/source" ), uri, {}, {} ) ) ) );
+		EXPECT_EQ(
+			VFSErrorCode::InvalidURI,
+			codeOf( waitFor( provider.rename( uri, URI( "sftp://host/target" ), {}, {} ) ) ) );
+	}
+	EXPECT_EQ( 0u, provider.connectionCount() );
+}
 
 UTEST( SFTP, conformanceOverRealServer ) {
 	REQUIRE_SSHD();
@@ -1251,6 +1271,43 @@ UTEST( SFTP, remoteWatchThroughAgent ) {
 	FileSystem::fileWrite( local + "/after.txt", std::string_view( "x" ) );
 	EXPECT_TRUE(
 		loop.runUntil( [&] { return events.has( WatchEventType::Added, "after.txt" ); } ) );
+}
+
+UTEST( SFTP, repeatedWatchStartsFreeTheirChannelsWithoutClosingSFTP ) {
+	REQUIRE_SSHD();
+	std::string agent = Sys::getProcessPath();
+	FileSystem::dirAddSlashAtEnd( agent );
+	agent += "../efsw-agent";
+	if ( !FileSystem::fileExists( agent ) )
+		UTEST_SKIP( "efsw-agent not built" );
+	SFTPProviderConfig config;
+	config.watchAgentCommand = agent + " --stdio";
+	config.idleTimeout = System::Time::Zero;
+	SFTPFixture fx( config );
+	const std::string name = uniqueName( "channel-restarts" );
+	const URI directory = server.uri( "testhost", name );
+	FileSystem::makeDir( server.remoteRoot() + "/" + name );
+	FileSystem::fileWrite( server.remoteRoot() + "/" + name + "/keep", std::string_view( "keep" ) );
+	const URI file = directory.withAppendedSegment( "keep" );
+	auto opened = waitFor( fx.vfs.open( file ) );
+	REQUIRE_OK( opened );
+	FileHandle handle = std::move( opened ).value();
+	for ( int i = 0; i < 200; ++i ) {
+		auto watched = waitFor( fx.vfs.watch( directory ) );
+		REQUIRE_OK( watched );
+		ASSERT_EQ( WatchStatus::Active, watched.value().status() );
+		watched.value().reset();
+		// A server normally permits ten session channels; repeatedly abandoning them would
+		// exhaust it. Keep the same SFTP handle alive to detect hidden reconnects as well.
+		std::array<Uint8, 4> bytes{};
+		auto read = waitFor( handle.read( 0, bytes ) );
+		REQUIRE_OK( read );
+		EXPECT_EQ( 4u, read.value() );
+		EXPECT_EQ( int( 'k' ), int( bytes[0] ) );
+		REQUIRE_OK( waitFor( fx.vfs.stat( file ) ) );
+		EXPECT_EQ( 1u, fx.sftp->connectionCount() );
+	}
+	REQUIRE_OK( waitFor( handle.close() ) );
 }
 
 UTEST( SFTP, remoteWatchFallsBackToPolling ) {

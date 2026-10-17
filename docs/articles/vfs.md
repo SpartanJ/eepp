@@ -28,6 +28,13 @@ are useful on their own:
 
 Link the module with `eepp_module_vfs_add()` in Premake and include `<eepp/vfs.hpp>`. The UI model
 lives in `<eepp/vfs/ui/vfsdirectorymodel.hpp>` and is not part of the aggregate header.
+
+`VFSPath::validURI(uri)` rejects embedded NULs in decoded paths and authorities before native
+calls. `VFSPath::validName(name, directory)` checks a single basename before appending untrusted
+names: empty names, dot entries, slashes and NULs are invalid. Local Windows destinations also
+reject backslashes, reserved characters and device names. Remote POSIX names retain their own
+rules on Windows; transfer scans validate them again against the destination's rules.
+
 The default is `eepp-vfs-static`; generate with `--with-shared-vfs` to build and link `eepp-vfs`
 as a shared library. Public types and non-inline functions use `EE_VFS_API`, controlled by
 `EE_VFS_EXPORTS` for the DLL and `EE_VFS_STATIC` for static builds, independently of core eepp
@@ -159,6 +166,19 @@ transfer. The copy-and-remove fallback requires the source provider's `Remove` c
 it (for example, on `zip://` and `res://`), the move returns `Unsupported` before modifying the
 destination.
 
+Copy-and-remove moves require nonempty source revisions. Each file is checked against its scanned
+revision before copying and again immediately before removal. A detected change returns
+`ChangedExternally`, retains the source and leaves any published destination copy available for
+recovery. A provider without revisions returns `Unsupported`; use an explicit copy instead.
+Revision checks are best effort: SFTP v3 revisions have second-resolution timestamps and size,
+and a pathname can still change between the final stat and removal. This is not an atomic
+conditional-delete operation. Native same-provider renames do not need these copy/delete checks.
+
+Directory copies through one provider also compare canonical paths, resolving the nearest existing
+destination ancestor before checking containment. This rejects a destination reached through a
+symlink back into the source. Providers without canonicalization retain the lexical containment
+check; concurrent alias changes remain outside this guarantee.
+
 A successful completion with `result.partial()` means some entries were skipped. Inspect
 `filesSkipped` and report a partial transfer to the user: existing files under `Skip`, directory
 symlinks, dangling links and unsupported special files are left uncopied. Links to regular files
@@ -195,6 +215,12 @@ Events are relative to the watched root and arrive in coalesced batches through 
 choose. `RescanRequired` means continuity was lost (missed native events, reconnection, overflow):
 re-list the directory. `WatchHandle::status()` reports `Active`, `Polling`, `Reconnecting` or
 `Failed`, so a broken remote watch never looks healthy.
+
+The generic polling backend refuses an initial snapshot above 100,000 entries with `Unsupported`.
+If an existing watch exceeds that limit, it reports `Failed` and one `RescanRequired` event, then
+stops polling that scope. Register smaller scopes to restore coverage. Partial snapshots are never
+reported as complete watches. Local native events buffered during registration likewise emit
+`RescanRequired` if their bounded buffer overflows.
 
 Backends:
 

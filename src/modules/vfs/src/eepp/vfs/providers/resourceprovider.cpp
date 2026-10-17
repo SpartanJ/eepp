@@ -1,5 +1,6 @@
 #include <eepp/system/packfileindex.hpp>
 #include <eepp/vfs/detail/memoryhandles.hpp>
+#include <eepp/vfs/path.hpp>
 #include <eepp/vfs/providers/resourceprovider.hpp>
 
 namespace EE { namespace VFS {
@@ -64,6 +65,8 @@ std::string ResourceProvider::toPackPath( const URI& uri ) {
 
 VFSTask<VFSFileInfo> ResourceProvider::stat( const URI& uri, const StatOptions&,
 											 CancellationToken token ) {
+	if ( !VFSPath::validURI( uri ) )
+		return readyError<VFSFileInfo>( VFSErrorCode::InvalidURI, uri, "NUL in resource URI" );
 	if ( token.isCancellationRequested() )
 		return readyError<VFSFileInfo>( cancelledError( uri ) );
 	// Index lookups are in-memory: answer synchronously.
@@ -84,6 +87,8 @@ VFSTask<VFSFileInfo> ResourceProvider::stat( const URI& uri, const StatOptions&,
 VFSTask<DirectoryHandle> ResourceProvider::openDirectory( const URI& uri,
 														  const DirectoryOpenOptions&,
 														  CancellationToken token ) {
+	if ( !VFSPath::validURI( uri ) )
+		return readyError<DirectoryHandle>( VFSErrorCode::InvalidURI, uri, "NUL in resource URI" );
 	if ( token.isCancellationRequested() )
 		return readyError<DirectoryHandle>( cancelledError( uri ) );
 	auto* index = PackFileIndex::instance();
@@ -104,6 +109,8 @@ VFSTask<DirectoryHandle> ResourceProvider::openDirectory( const URI& uri,
 
 VFSTask<FileHandle> ResourceProvider::open( const URI& uri, const OpenOptions& options,
 											CancellationToken token ) {
+	if ( !VFSPath::validURI( uri ) )
+		return readyError<FileHandle>( VFSErrorCode::InvalidURI, uri, "NUL in resource URI" );
 	if ( hasFlag( options.flags, OpenFlags::Write ) ||
 		 hasFlag( options.flags, OpenFlags::Create ) ||
 		 hasFlag( options.flags, OpenFlags::Truncate ) )
@@ -148,6 +155,8 @@ VFSTask<void> ResourceProvider::rename( const URI& from, const URI&, const Renam
 }
 
 VFSTask<URI> ResourceProvider::canonicalize( const URI& uri, CancellationToken ) {
+	if ( !VFSPath::validURI( uri ) )
+		return readyError<URI>( VFSErrorCode::InvalidURI, uri, "NUL in resource URI" );
 	// Packs have no aliases: the canonical form is the normalized path.
 	return readyValue<URI>( resourceURI( toPackPath( uri ) ) );
 }

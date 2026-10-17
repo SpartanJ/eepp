@@ -2,6 +2,7 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
+#include <eepp/vfs/path.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>
 
 #include <atomic>
@@ -33,6 +34,8 @@ ProviderCapabilities LocalProvider::capabilities( const URI& ) const {
 }
 
 VFSResult<std::string> LocalProvider::toNativePath( const URI& uri ) {
+	if ( !VFSPath::validURI( uri ) )
+		return Err( VFSError( VFSErrorCode::InvalidURI, uri, "NUL in file URI" ) );
 	if ( uri.getScheme() != "file" )
 		return Err( VFSError( VFSErrorCode::InvalidURI, uri, "Not a file:// URI" ) );
 	if ( uri.getPath().empty() )

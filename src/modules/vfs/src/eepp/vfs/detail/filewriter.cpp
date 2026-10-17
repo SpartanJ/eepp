@@ -73,7 +73,12 @@ VFSResult<void> FileWriter::makeDirs( VFSProvider& provider, const URI& uri,
 VFSResult<URI> FileWriter::resolveTarget( VFSProvider& provider, const URI& uri,
 										  const CancellationToken& token ) {
 	auto linkInfo = await( provider.stat( uri, StatOptions{ false }, token ) );
-	if ( !linkInfo || !linkInfo.value().isSymlink() )
+	if ( !linkInfo ) {
+		if ( linkInfo.error().is( VFSErrorCode::NotFound ) )
+			return Ok( URI( uri ) );
+		return Err( std::move( linkInfo ).error() );
+	}
+	if ( !linkInfo.value().isSymlink() )
 		return Ok( URI( uri ) );
 	auto resolved = await( provider.canonicalize( uri, token ) );
 	// A dangling link is replaced by the new file.

@@ -1,5 +1,6 @@
 #include <eepp/vfs/detail/filewriter.hpp>
 #include <eepp/vfs/detail/transferstate.hpp>
+#include <eepp/vfs/path.hpp>
 #include <eepp/vfs/transferengine.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
 
@@ -103,17 +104,16 @@ VFSResult<TransferResult> TransferEngine::run() {
 			return Err( std::move( rootInfo ).error() );
 	}
 
-	if ( rootInfo.value().isDirectory() && mSameProvider &&
-		 mDestination.isSameOrChildOf( mSource ) ) {
-		return Err( VFSError( VFSErrorCode::InvalidOperation, mDestination,
-							  "Cannot copy a directory into itself" ) );
+	if ( rootInfo.value().isDirectory() && mSameProvider ) {
+		if ( auto checked = checkDirectoryDestination(); !checked )
+			return Err( std::move( checked ).error() );
 	}
 
 	// Scan first: totals for progress, and the copy phase reuses the listing instead of
 	// enumerating (possibly remote) directories twice.
 	Node root{ std::move( rootInfo ).value(), {} };
 	Uint64 files = 0, bytes = 0;
-	if ( auto scanned = scan( root, mSource, 0, files, bytes ); !scanned )
+	if ( auto scanned = scan( root, mSource, mDestination, 0, files, bytes ); !scanned )
 		return Err( std::move( scanned ).error() );
 	mState->updateProgress(
 		[&]( TransferProgress& p ) {
@@ -134,12 +134,72 @@ VFSResult<void> TransferEngine::checkCancelled( const URI& uri ) const {
 	return Ok();
 }
 
-VFSResult<void> TransferEngine::scan( Node& node, const URI& uri, int depth, Uint64& files,
-									  Uint64& bytes ) {
+VFSResult<void> TransferEngine::checkSource( const VFSFileInfo& info, const URI& uri ) {
+	if ( info.revision.empty() )
+		return Err(
+			VFSError( VFSErrorCode::Unsupported, uri, "Moving requires a source revision" ) );
+	auto current = await( mSrcProvider->stat( uri, StatOptions{ false }, mToken ) );
+	if ( !current && !current.error().is( VFSErrorCode::NotFound ) )
+		return Err( std::move( current ).error() );
+	if ( !current || current.value().type != info.type ||
+		 !info.revision.matches( current.value().revision ) ) {
+		return Err(
+			VFSError( VFSErrorCode::ChangedExternally, uri,
+					  "Source changed during move; source retained and any copied data kept" ) );
+	}
+	return Ok();
+}
+
+VFSResult<void> TransferEngine::checkDirectoryDestination() {
+	auto invalid = [&] {
+		return Err( VFSError( VFSErrorCode::InvalidOperation, mDestination,
+							  "Cannot copy a directory into itself" ) );
+	};
+	if ( mDestination.isSameOrChildOf( mSource ) )
+		return invalid();
+	auto source = await( mSrcProvider->canonicalize( mSource, mToken ) );
+	if ( !source ) {
+		if ( source.error().is( VFSErrorCode::Unsupported ) )
+			return Ok();
+		return Err( std::move( source ).error() );
+	}
+	URI ancestor = mDestination;
+	std::vector<std::string> missing;
+	while ( true ) {
+		auto resolved = await( mDstProvider->canonicalize( ancestor, mToken ) );
+		if ( resolved ) {
+			ancestor = std::move( resolved ).value();
+			break;
+		}
+		if ( resolved.error().is( VFSErrorCode::Unsupported ) )
+			return Ok();
+		if ( !resolved.error().is( VFSErrorCode::NotFound ) )
+			return Err( std::move( resolved ).error() );
+		URI parent = ancestor.getParent();
+		if ( parent == ancestor || missing.size() >= MaxDepth )
+			return Err( std::move( resolved ).error() );
+		missing.push_back( ancestor.getLastPathSegment() );
+		ancestor = std::move( parent );
+	}
+	for ( auto it = missing.rbegin(); it != missing.rend(); ++it )
+		ancestor = ancestor.withAppendedSegment( *it );
+	ancestor.normalize();
+	if ( ancestor.isSameOrChildOf( source.value() ) )
+		return invalid();
+	return Ok();
+}
+
+VFSResult<void> TransferEngine::scan( Node& node, const URI& uri, const URI& destination, int depth,
+									  Uint64& files, Uint64& bytes ) {
 	if ( auto c = checkCancelled( uri ); !c )
 		return c;
 	if ( depth > MaxDepth )
 		return Err( VFSError( VFSErrorCode::TooManySymlinks, uri, "Directory tree too deep" ) );
+	if ( mMove &&
+		 ( node.info.type == FileType::Regular || node.info.type == FileType::Directory ) &&
+		 node.info.revision.empty() )
+		return Err(
+			VFSError( VFSErrorCode::Unsupported, uri, "Moving requires a source revision" ) );
 	if ( !node.info.isDirectory() ) {
 		++files;
 		bytes += node.info.size().value_or( 0 );
@@ -152,6 +212,9 @@ VFSResult<void> TransferEngine::scan( Node& node, const URI& uri, int depth, Uin
 		return Err( std::move( listed ).error() );
 	node.children.reserve( listed.value().size() );
 	for ( auto& entry : listed.value() ) {
+		if ( !VFSPath::validName( entry.name, destination ) )
+			return Err( VFSError( VFSErrorCode::InvalidURI, destination,
+								  "Directory entry is not a valid destination basename" ) );
 		Node child{ std::move( entry ), {} };
 		if ( child.info.isSymlink() && child.info.targetType == FileType::Directory ) {
 			// Providers cannot create symlinks, and following directory links risks cycles:
@@ -159,8 +222,9 @@ VFSResult<void> TransferEngine::scan( Node& node, const URI& uri, int depth, Uin
 			node.children.push_back( std::move( child ) );
 			continue;
 		}
-		if ( auto scanned =
-				 scan( child, uri.withAppendedSegment( child.info.name ), depth + 1, files, bytes );
+		if ( auto scanned = scan( child, uri.withAppendedSegment( child.info.name ),
+								  destination.withAppendedSegment( child.info.name ), depth + 1,
+								  files, bytes );
 			 !scanned ) {
 			return scanned;
 		}
@@ -219,6 +283,10 @@ VFSResult<bool> TransferEngine::copyNode( const Node& node, const URI& source,
 		return Err( std::move( existing ).error() );
 	}
 
+	if ( mMove ) {
+		if ( auto checked = checkSource( info, source ); !checked )
+			return Err( std::move( checked ).error() );
+	}
 	if ( auto copied = copyFile( info, source, destination ); !copied ) {
 		// A destination can appear while the temporary is written. Skip still applies at
 		// publication time, and a move must keep that source.
@@ -234,6 +302,10 @@ VFSResult<bool> TransferEngine::copyNode( const Node& node, const URI& source,
 	advanceFiles( info, false );
 
 	if ( mMove ) {
+		// The destination is recoverable even if reading or publishing it raced an editor.
+		// A path re-stat cannot make the final unlink atomic; never delete a known newer source.
+		if ( auto checked = checkSource( info, source ); !checked )
+			return Err( std::move( checked ).error() );
 		auto removed = await( mSrcProvider->remove( source, {}, mToken ) );
 		if ( !removed )
 			return Err( std::move( removed ).error() );
@@ -244,6 +316,10 @@ VFSResult<bool> TransferEngine::copyNode( const Node& node, const URI& source,
 
 VFSResult<bool> TransferEngine::copyDirectory( const Node& node, const URI& source,
 											   const URI& destination, int depth ) {
+	if ( mMove ) {
+		if ( auto checked = checkSource( node.info, source ); !checked )
+			return Err( std::move( checked ).error() );
+	}
 	auto existing = await( mDstProvider->stat( destination, StatOptions{}, mToken ) );
 	if ( existing ) {
 		if ( !existing.value().isDirectory() )
@@ -276,6 +352,12 @@ VFSResult<bool> TransferEngine::copyDirectory( const Node& node, const URI& sour
 	// A move only removes a source directory whose whole content was moved: skipped or
 	// uncopyable entries keep it (and their data) in place.
 	if ( mMove && complete ) {
+		// Removing our children changes a directory's revision. Empty source directories have
+		// no such expected changes and can still be checked against their scanned revision.
+		if ( node.children.empty() ) {
+			if ( auto checked = checkSource( node.info, source ); !checked )
+				return Err( std::move( checked ).error() );
+		}
 		auto removed = await( mSrcProvider->remove( source, {}, mToken ) );
 		if ( !removed )
 			return Err( std::move( removed ).error() );

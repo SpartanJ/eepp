@@ -7,6 +7,7 @@
 #include <eepp/vfs/filehandle.hpp>
 #include <eepp/vfs/fileinfo.hpp>
 #include <eepp/vfs/options.hpp>
+#include <eepp/vfs/path.hpp>
 #include <eepp/vfs/provider.hpp>
 #include <eepp/vfs/providers/archiveprovider.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>

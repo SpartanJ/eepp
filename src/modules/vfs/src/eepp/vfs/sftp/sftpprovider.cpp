@@ -3,6 +3,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/vfs/detail/await.hpp>
+#include <eepp/vfs/path.hpp>
 #include <eepp/vfs/sftp/remotewatchbackend.hpp>
 #include <eepp/vfs/sftp/sftpprovider.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
@@ -181,6 +182,11 @@ class SFTPDirectoryImpl : public DirectoryHandleImpl {
 					std::string entryName( name, static_cast<size_t>( rc ) );
 					if ( entryName == "." || entryName == ".." )
 						continue;
+					if ( !VFSPath::validName( entryName, base ) ) {
+						return VFSResult<DirectoryBatch>(
+							Err( VFSError( VFSErrorCode::ProtocolError, base,
+										   "Invalid SFTP directory entry name" ) ) );
+					}
 					VFSFileInfo info;
 					info.name = std::move( entryName );
 					info.hidden = info.name[0] == '.';
@@ -706,6 +712,8 @@ VFSTask<void> SFTPProvider::remove( const URI& uri, const RemoveOptions&,
 
 VFSTask<void> SFTPProvider::rename( const URI& from, const URI& to, const RenameOptions& options,
 									CancellationToken token ) {
+	if ( !VFSPath::validURI( from ) || !VFSPath::validURI( to ) )
+		return readyError<void>( VFSErrorCode::InvalidURI, to, "NUL in SFTP URI" );
 	if ( SFTPProviderImpl::authorityKey( from ) != SFTPProviderImpl::authorityKey( to ) ) {
 		return readyError<void>( VFSErrorCode::Unsupported, from,
 								 "Rename across SFTP servers is not possible" );

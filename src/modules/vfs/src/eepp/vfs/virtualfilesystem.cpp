@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <eepp/vfs/detail/await.hpp>
 #include <eepp/vfs/detail/filewriter.hpp>
+#include <eepp/vfs/path.hpp>
 #include <eepp/vfs/providers/archiveprovider.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>
 #include <eepp/vfs/providers/resourceprovider.hpp>
@@ -217,6 +218,14 @@ bool consumeBatch( ListAllState& state, VFSResult<DirectoryBatch>&& batch ) {
 		return true;
 	}
 	auto& entries = batch.value().entries;
+	for ( const auto& entry : entries ) {
+		if ( !VFSPath::validName( entry.name, state.handle.uri() ) ) {
+			state.handle.close();
+			state.resolve( Err( VFSError( VFSErrorCode::ProtocolError, state.handle.uri(),
+										  "Invalid directory entry name" ) ) );
+			return true;
+		}
+	}
 	if ( !entries.empty() ) {
 		state.total += entries.size();
 		state.batches.push_back( std::move( entries ) );
@@ -440,6 +449,10 @@ VFSResult<void> removeTree( VFSProvider& provider, const URI& uri, const Cancell
 			if ( !batch )
 				return Err( std::move( batch ).error() );
 			for ( const auto& entry : batch.value().entries ) {
+				if ( !VFSPath::validName( entry.name, uri ) ) {
+					return Err( VFSError( VFSErrorCode::ProtocolError, uri,
+										  "Invalid directory entry name" ) );
+				}
 				// Symlinks are removed, never followed.
 				VFSResult<void> removed =
 					entry.type == FileType::Directory

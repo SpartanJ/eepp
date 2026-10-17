@@ -18,8 +18,9 @@ class PollingWatchBackendImpl;
  * Used for schemes without an event-driven backend, and as the remote fallback when no
  * efsw-agent is available. Polling runs on one dedicated thread. Watches report
  * WatchStatus::Polling; transient listing failures switch them to Reconnecting and the next
- * successful poll emits RescanRequired. Recursive polling is limited to MaxEntries entries per
- * watch; larger trees degrade to the top directories that fit.
+ * successful poll emits RescanRequired. Snapshots are limited to MaxEntries entries per watch:
+ * oversized initial registrations fail with Unsupported. A watch that outgrows the limit reports
+ * Failed and RescanRequired once, then stops polling; register a smaller scope to resume watching.
  */
 class EE_VFS_API PollingWatchBackend : public WatchBackend {
   public:

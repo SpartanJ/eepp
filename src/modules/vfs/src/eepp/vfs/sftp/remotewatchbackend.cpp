@@ -67,7 +67,11 @@ class AgentClient : public SSHChannelPump, public std::enable_shared_from_this<A
 
 	bool pump( SSHConnection& connection ) override;
 
-	void connectionLost( const VFSError& error ) override { die( error.message ); }
+	void connectionLost( const VFSError& error ) override {
+		die( error.message );
+		// A failed session frees its remaining channels during teardown.
+		mChannel = nullptr;
+	}
 
 	/** Thread-safe: gives up on the agent (as if its channel closed). */
 	void stop( std::string reason ) {
@@ -90,6 +94,7 @@ class AgentClient : public SSHChannelPump, public std::enable_shared_from_this<A
 	std::string mStderr;
 	std::atomic<State> mState{ State::Starting };
 	bool mHello{ false };
+	bool mPumping{ false };
 };
 
 /** Delayed callbacks for retries and backoff. */
@@ -636,16 +641,26 @@ void AgentClient::start( const std::string& command ) {
 					return VFSResult<void>(
 						Err( c.lastError( URI(), "efsw-agent: could not run the agent" ) ) );
 				}
-				agent::Writer hello;
-				hello.str( "eepp-vfs" );
-				auto frame = hello.frame( agent::MessageHello );
-				self->mOut.insert( self->mOut.end(), frame.begin(), frame.end() );
+				// A stop may have arrived while open/exec was waiting on EAGAIN. Complete that
+				// operation before releasing its channel, but do not start a stopped agent.
+				if ( self->mState.load() != State::Dead ) {
+					agent::Writer hello;
+					hello.str( "eepp-vfs" );
+					auto frame = hello.frame( agent::MessageHello );
+					self->mOut.insert( self->mOut.end(), frame.begin(), frame.end() );
+				}
+				self->mPumping = true;
 				c.addPump( self );
 				return VFSResult<void>( Ok() );
 			} )
 		.then( [self]( VFSResult<void>&& result ) {
 			if ( !result )
 				self->die( result.error().message );
+			// Exec failure can leave an open channel before the ordinary pump was installed.
+			if ( self->mChannel && !self->mPumping && self->mConnection->isReady() ) {
+				self->mPumping = true;
+				self->mConnection->addPump( self );
+			}
 		} );
 }
 
@@ -653,8 +668,9 @@ void AgentClient::die( const std::string& reason ) {
 	State previous = mState.exchange( State::Dead );
 	if ( previous == State::Dead )
 		return;
-	// The channel stays owned by the session (freed with it); stop using it.
-	mChannel = nullptr;
+	// Keep the channel until the next pump pass. Releasing it can return EAGAIN, and must
+	// never run inside an agent callback or abandon resources on a still-healthy SFTP session.
+	mConnection->ioContext()->wake();
 	if ( auto backend = mBackend.lock() ) {
 		std::string message = reason;
 		if ( !mStderr.empty() )
@@ -664,8 +680,16 @@ void AgentClient::die( const std::string& reason ) {
 }
 
 bool AgentClient::pump( SSHConnection& c ) {
-	if ( mState.load() == State::Dead || !mChannel )
+	if ( !mChannel )
 		return false;
+	if ( mState.load() == State::Dead ) {
+		// Channel-local nonblocking cleanup: do not hold the SFTP operation queue while a
+		// peer acknowledges close. Other channels and sessions continue on the same I/O loop.
+		if ( libssh2_channel_free( mChannel ) == LIBSSH2_ERROR_EAGAIN )
+			return true;
+		mChannel = nullptr;
+		return false;
+	}
 	while ( !mOut.empty() ) {
 		ssize_t rc = libssh2_channel_write( mChannel, reinterpret_cast<const char*>( mOut.data() ),
 											mOut.size() );
@@ -673,7 +697,7 @@ bool AgentClient::pump( SSHConnection& c ) {
 			break;
 		if ( rc < 0 ) {
 			die( c.lastError( URI(), "efsw-agent write failed" ).message );
-			return false;
+			return true;
 		}
 		mOut.erase( mOut.begin(), mOut.begin() + rc );
 	}
@@ -684,7 +708,7 @@ bool AgentClient::pump( SSHConnection& c ) {
 			break;
 		if ( rc < 0 ) {
 			die( c.lastError( URI(), "efsw-agent read failed" ).message );
-			return false;
+			return true;
 		}
 		if ( rc == 0 )
 			break;
@@ -695,11 +719,11 @@ bool AgentClient::pump( SSHConnection& c ) {
 		while ( ( result = mParser.next( frame, error ) ) == 1 ) {
 			handle( frame );
 			if ( mState.load() == State::Dead )
-				return false;
+				return true;
 		}
 		if ( result < 0 ) {
 			die( "efsw-agent protocol error: " + error );
-			return false;
+			return true;
 		}
 	}
 	// Drain stderr so the channel window never fills; keep a short tail for diagnostics.
@@ -715,7 +739,7 @@ bool AgentClient::pump( SSHConnection& c ) {
 		while ( !mStderr.empty() && ( mStderr.back() == '\n' || mStderr.back() == '\r' ) )
 			mStderr.pop_back();
 		die( "efsw-agent exited" );
-		return false;
+		return true;
 	}
 	return true;
 }
