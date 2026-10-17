@@ -198,7 +198,8 @@ VFSResult<bool> TransferEngine::copyNode( const Node& node, const URI& source,
 	if ( existing ) {
 		if ( existing.value().isDirectory() )
 			return Err( VFSError( VFSErrorCode::IsDirectory, destination ) );
-		if ( mOptions.overwrite == OverwritePolicy::Fail )
+		if ( mOptions.overwrite == OverwritePolicy::Fail ||
+			 mOptions.overwrite == OverwritePolicy::MergeDirectories )
 			return Err( VFSError( VFSErrorCode::AlreadyExists, destination ) );
 		if ( mOptions.overwrite == OverwritePolicy::Skip ) {
 			++mResult.filesSkipped;

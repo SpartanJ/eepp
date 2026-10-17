@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <eepp/vfs/detail/await.hpp>
 #include <eepp/vfs/detail/filewriter.hpp>
+#include <eepp/vfs/providers/archiveprovider.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>
 #include <eepp/vfs/providers/resourceprovider.hpp>
 #include <eepp/vfs/providers/zipprovider.hpp>
@@ -71,6 +72,7 @@ VirtualFileSystem::~VirtualFileSystem() {
 void VirtualFileSystem::registerDefaultProviders() {
 	registerProvider( std::make_shared<LocalProvider>( mLocalIO ) );
 	registerProvider( std::make_shared<ZipProvider>( mLocalIO ) );
+	registerProvider( std::make_shared<ArchiveProvider>( mLocalIO ) );
 	registerProvider( std::make_shared<ResourceProvider>( mIOPool ) );
 	// Network mounts are polled through the VFS (whose calls time out), not by efsw.
 	auto polling = std::make_shared<PollingWatchBackend>( *this );

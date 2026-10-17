@@ -8,6 +8,7 @@
 #include <eepp/vfs/fileinfo.hpp>
 #include <eepp/vfs/options.hpp>
 #include <eepp/vfs/provider.hpp>
+#include <eepp/vfs/providers/archiveprovider.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>
 #include <eepp/vfs/providers/memoryprovider.hpp>
 #include <eepp/vfs/providers/resourceprovider.hpp>

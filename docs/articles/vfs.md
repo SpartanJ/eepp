@@ -9,6 +9,7 @@ for local files, packed resources and remote servers:
 | --- | --- | --- |
 | `file://` | `LocalProvider` | Native filesystem (POSIX and Win32). |
 | `zip://` | `ZipProvider` | Read-only browsing and streaming reads of individual local ZIP archives. |
+| `archive://` | `ArchiveProvider` | Read-only local archives through optional runtime-loaded libarchive 3.x. |
 | `res://` | `ResourceProvider` | Read-only view of every open `Pack` (`System::PackFileIndex`). |
 | `sftp://` | `SFTPProvider` | Built by default (`--without-vfs-sftp` disables it), libssh2 based, honors `~/.ssh/config`. |
 | `mem://` | `MemoryProvider` | In-memory filesystem, mainly for tests. |
@@ -170,6 +171,11 @@ when a destination appears while the copy is running. The `Overwrite` policy req
 `AtomicReplace`; otherwise the transfer returns `Unsupported` and preserves the old contents.
 Creating a file with `Fail` or `Skip` requires `Rename`. Moving a symlink through the copy fallback
 is unsupported; native same-filesystem renames still move the link itself.
+
+`MergeDirectories` merges existing destination directories but reports `AlreadyExists` for files,
+including files that appear during the copy. It supports copying an archive root into an existing
+folder without overwriting files. The default `Fail` policy also rejects existing directories;
+`Overwrite` and `Skip` merge directories and apply their respective policies to files.
 
 Native renames also preserve an existing destination when safe replacement is unavailable.
 POSIX systems without an atomic no-replace primitive return `Unsupported` for no-overwrite
@@ -343,6 +349,77 @@ provide metadata and streaming access. Streams borrow the archive and must be de
 callers sharing an archive across threads must serialize access. `open()` never creates a missing
 file; writing starts explicitly with `create()`. The default constructor retains resource-pack
 registration for the engine and other existing pack consumers.
+
+## Runtime archives (`archive://`)
+
+`ArchiveProvider` is registered by default but loads libarchive only when used, on an I/O worker.
+It requires a compatible libarchive **3.x** shared library, with no libarchive development headers
+or build-time link dependency. Missing libraries, unsupported ABI versions and missing required
+symbols return `Unsupported`; the rest of the VFS, including bundled ZIP support, remains available.
+Emscripten and iOS have no runtime backend.
+
+```cpp
+URI backing = URI::fromFSPath( "/home/me/downloads/source.tar.gz" );
+URI root = ArchiveProvider::makeURI( backing );
+vfs.listAll( root );
+vfs.copy( root.withAppendedSegment( "source" ), URI::fromFSPath( "/home/me/source" ) );
+
+auto provider = std::dynamic_pointer_cast<ArchiveProvider>( vfs.provider( "archive" ) );
+provider->support().then( ui, []( VFSResult<ArchiveSupport>&& support ) {
+    // version, formats and compression filters from the installed runtime library.
+} );
+```
+
+Locations use `archive:///path/source.tar.gz!/member`, with the same bang escaping, member path
+rules and archive-root navigation as `zip://`. Only local `file://` backing archives are accepted.
+An optional constructor `libraryPath` selects an exact library; otherwise the provider tries the
+platform's usual libarchive names (including `/usr/lib/libarchive.2.dylib` on macOS).
+
+Supported readers are enabled individually: TAR (including GNU and PAX variants), CPIO, ar, 7z,
+RAR/RAR5, ISO9660, CAB, LHA, XAR and ZIP, when supplied by the loaded library. Compression filters
+include gzip, bzip2, xz, LZMA, lzip, zstd and lz4 when built into that library. `support()` reports
+the enabled set. External decompression programs are never enabled. Recognition does not guarantee
+every entry can be decoded: encrypted or unsupported entry data and detected corruption report
+errors when read. Integrity checks follow the installed libarchive; there is no extra checksum pass.
+In particular, libarchive 3.8.2's gzip reader does not verify the gzip trailer CRC.
+
+`eefm` recognizes `.tar`, `.tar.gz`, `.tgz`, other common compressed TAR suffixes, `.7z`, `.rar`,
+`.iso`, `.cab`, `.cpio`, `.ar`, `.deb`, `.xar` and `.lha`/`.lzh` as browsing candidates. Extensions
+are case-insensitive; the archive contents determine whether opening succeeds. A `.deb` opens its
+outer ar container; nested archives currently need to be copied out before browsing. ZIP-based
+formats continue to use the bundled `ZipProvider`.
+
+Right-click a single recognized local archive in `eefm` for the **Extract** submenu. The first
+action extracts into a folder named after the archive (for example `package.tar.gz` into
+`package/`); **Extract Here** uses its containing folder. **Extract To...** accepts a destination
+folder path or URI, including writable SFTP locations. Extraction uses VFS transfers with progress,
+cancellation and confirmation before overwriting existing files. Hidden entries are included.
+It follows VFS copy semantics: links to files are copied as contents, while directory symlinks and
+unsupported special entries are skipped and reported as a partial transfer. Links are not recreated.
+
+The provider is read-only; moves out fail before copying because source removal is unavailable.
+Indexing scans headers and skips entry data without extracting it into memory. Compressed archives
+may require decompression during indexing. Each opened file has an independent streaming reader;
+opening a late entry or seeking backwards can replay the archive prefix, so repeated random reads
+can be expensive. For plain and gzip TAR, an explicit file close returns one idle reader to its
+index: opening later entries can continue forward, avoiding repeated prefix decompression during
+sequential directory copies. Other codecs and formats are released on close, so large decoder
+windows or solid blocks are not retained by the index. `Seek` is supported, `RandomAccess` is not.
+Idle readers close their native files; reuse reopens at the saved input position and checks the
+backing revision again. Cached decoder state therefore does not block deleting or replacing the
+archive on Windows. Data is not cached as extracted files.
+
+Symbolic and hard links resolve only inside the archive, with a 40-link limit; native filesystem
+targets are never followed. Device nodes and FIFOs can be listed but cannot be opened as files.
+Unsafe member names are excluded using the same checks as ZIP. Indexes have a 262,144-entry limit
+and a conservative 64 MiB metadata budget, including implicit directories and stored paths, with
+at most eight cached indexes. These limits cover the provider's index, not libarchive's own decoder
+working memory. Open handles can retain older indexes.
+
+Backing-file revisions invalidate cached indexes for new operations. Existing readers retain their
+opened file and library; reopening for a backward seek after replacement reports `ChangedExternally`.
+In-place modifications may cause read errors. Network mounts use the local scheduler's isolated
+lanes and buffer-safe timeouts, and archive changes can be watched through the VFS polling backend.
 
 ## Resources (`res://`)
 

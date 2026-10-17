@@ -4,6 +4,7 @@
 #include <array>
 #include <eepp/core/containers.hpp>
 #include <eepp/system/zip.hpp>
+#include <eepp/vfs/detail/archivelocation.hpp>
 #include <eepp/vfs/detail/memoryhandles.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>
 #include <limits>
@@ -47,73 +48,6 @@ VFSError readerError( const Zip& reader, const URI& uri ) {
 	}
 	return VFSError( code, uri, reader.errorMessage() );
 }
-
-/** Archive paths are untrusted. Reject names that could leave a copy destination or turn into
- * native Windows paths/streams; do not resolve these names into aliases of safe entries. */
-bool safeEntry( std::string_view name ) {
-	if ( name.empty() || name.size() > 4096 || name.front() == '/' ||
-		 name.find_first_of( std::string_view( "\\:\0", 3 ) ) != std::string_view::npos )
-		return false;
-	size_t start = 0;
-	while ( start < name.size() ) {
-		size_t end = name.find( '/', start );
-		if ( end == std::string_view::npos )
-			end = name.size();
-		auto part = name.substr( start, end - start );
-		// Windows trims trailing dots/spaces; an all-dot/space segment can become a parent.
-		if ( part.empty() || part.find_first_not_of( ". " ) == std::string_view::npos )
-			return false;
-		start = end + 1;
-	}
-	return true;
-}
-
-/** Parsed archive identity and normalized path within it. */
-struct ZipAddress {
-	URI archive;
-	std::string member;
-
-	static VFSResult<ZipAddress> parse( const URI& uri ) {
-		if ( uri.getScheme() != "zip" || uri.getAuthority() != uri.getHost() ||
-			 !uri.getFragment().empty() || uri.getPath().find( '\0' ) != std::string::npos )
-			return Err( VFSError( VFSErrorCode::InvalidURI, uri, "Invalid ZIP location" ) );
-		if ( !uri.getRawQuery().empty() )
-			return Err( VFSError( VFSErrorCode::Unsupported, uri, "Unsupported ZIP backing URI" ) );
-		const auto& path = uri.getPath();
-		if ( path.empty() || path.front() != '/' )
-			return Err( VFSError( VFSErrorCode::InvalidURI, uri, "ZIP path must be absolute" ) );
-		std::string backing;
-		backing.reserve( path.size() );
-		size_t boundary = std::string::npos;
-		for ( size_t i = 0; i < path.size(); ++i ) {
-			if ( path[i] == '!' ) {
-				if ( i + 1 < path.size() && path[i + 1] == '!' ) {
-					backing += '!';
-					++i;
-					continue;
-				}
-				if ( i + 1 == path.size() || path[i + 1] == '/' ) {
-					boundary = i + 1;
-					break;
-				}
-			}
-			backing += path[i];
-		}
-		if ( boundary == std::string::npos || backing.empty() || backing.back() == '/' )
-			return Err(
-				VFSError( VFSErrorCode::InvalidURI, uri, "ZIP path needs archive.zip!/member" ) );
-		ZipAddress result;
-		result.archive.setScheme( "file" );
-		result.archive.setHost( uri.getHost() );
-		result.archive.setRawPath( std::move( backing ) );
-		URI member;
-		member.setScheme( "zip" );
-		member.setRawPath( boundary == path.size() ? "/" : path.substr( boundary ) );
-		member.normalize();
-		result.member = member.getPath();
-		return Ok( std::move( result ) );
-	}
-};
 
 struct ZipNode {
 	VFSFileInfo info;
@@ -163,7 +97,7 @@ struct ZipArchive {
 			if ( !reader.entry( entry, metadata ) )
 				return Err( readerError( reader, uri ) );
 			std::string_view name( metadata.name );
-			if ( !safeEntry( name ) )
+			if ( !detail::ArchiveLocation::safeEntry( name ) )
 				continue;
 			const bool directory = name.back() == '/';
 			if ( directory )
@@ -369,7 +303,7 @@ class ZipProviderImpl : public std::enable_shared_from_this<ZipProviderImpl> {
 	VFSTask<T> run( const URI& uri, CancellationToken token, F&& fn ) {
 		if ( token.isCancellationRequested() )
 			return readyError<T>( cancelledError( uri ) );
-		auto address = ZipAddress::parse( uri );
+		auto address = detail::ArchiveLocation::parse( uri, "zip" );
 		if ( !address )
 			return readyError<T>( std::move( address ).error() );
 		auto native = LocalProvider::toNativePath( address.value().archive );
@@ -471,43 +405,18 @@ ZipProvider::ZipProvider( std::shared_ptr<LocalIOScheduler> scheduler ) :
 ZipProvider::~ZipProvider() = default;
 
 URI ZipProvider::makeURI( const URI& archive, std::string_view member ) {
-	if ( archive.getScheme() != "file" || !archive.getRawQuery().empty() ||
-		 !archive.getFragment().empty() || archive.getAuthority() != archive.getHost() ||
-		 archive.getPath().empty() || archive.getPath().front() != '/' ||
-		 archive.getPath().find( '\0' ) != std::string::npos )
-		return {};
-	URI uri;
-	uri.setScheme( "zip" );
-	uri.setHost( archive.getHost() );
-	std::string path;
-	path.reserve( archive.getPath().size() + member.size() + 2 );
-	// Escape literal bangs in the backing path, so even a directory named "packages!" is
-	// unambiguous. Only the first unescaped "!/" separates the archive from its member.
-	for ( char c : archive.getPath() ) {
-		path += c;
-		if ( c == '!' )
-			path += '!';
-	}
-	URI entry;
-	entry.setScheme( "zip" );
-	entry.setRawPath( member.empty() || member.front() != '/' ? "/" + std::string( member )
-															  : std::string( member ) );
-	entry.normalize();
-	path += '!';
-	path += entry.getPath();
-	uri.setRawPath( std::move( path ) );
-	return uri;
+	return detail::ArchiveLocation::make( "zip", archive, member );
 }
 
 VFSResult<URI> ZipProvider::archiveURI( const URI& uri ) {
-	auto address = ZipAddress::parse( uri );
+	auto address = detail::ArchiveLocation::parse( uri, "zip" );
 	if ( !address )
 		return Err( std::move( address ).error() );
 	return Ok( std::move( address ).value().archive );
 }
 
 VFSResult<std::string> ZipProvider::memberPath( const URI& uri ) {
-	auto address = ZipAddress::parse( uri );
+	auto address = detail::ArchiveLocation::parse( uri, "zip" );
 	if ( !address )
 		return Err( std::move( address ).error() );
 	return Ok( std::move( address ).value().member );

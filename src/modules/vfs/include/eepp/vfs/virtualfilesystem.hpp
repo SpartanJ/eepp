@@ -46,7 +46,8 @@ class EE_VFS_API VirtualFileSystem {
 		 * counts as not responding: the call fails with TimedOut, and so do further calls until
 		 * the server answers again (see LocalIOScheduler). */
 		System::Time networkMountTimeout{ System::Seconds( 15 ) };
-		/** Register file://, zip:// and res:// (and sftp:// when built with SFTP support). */
+		/** Register file://, zip://, archive:// and res:// (and sftp:// when built with SFTP
+		 * support). */
 		bool registerDefaultProviders{ true };
 	};
 

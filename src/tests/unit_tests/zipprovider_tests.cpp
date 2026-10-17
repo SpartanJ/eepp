@@ -302,6 +302,52 @@ UTEST( Zip, standaloneReaderIsReadOnlyAndHasBoundedSeek ) {
 	EXPECT_TRUE( missing.error() == Zip::Error::InvalidArchive );
 }
 
+UTEST( ZipProvider, extractRootIntoExistingFolder ) {
+	TempDir temp;
+	VirtualFileSystem vfs;
+	const URI file = temp.uri().withAppendedSegment( "archive.zip" );
+	ASSERT_TRUE(
+		makeZip( file.getFSPath(),
+				 { { ".hidden", "hidden" }, { "sub/file.txt", "contents" }, { "empty", "" } } ) );
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::MergeDirectories;
+	auto copied =
+		waitFor( vfs.copy( ZipProvider::makeURI( file ), temp.uri(), options ).completion() );
+	ASSERT_TRUE( copied );
+	EXPECT_FALSE( copied.value().partial() );
+	EXPECT_EQ( 3u, copied.value().filesTransferred );
+	EXPECT_STDSTREQ( "hidden", readString( vfs, temp.uri().withAppendedSegment( ".hidden" ) ) );
+	EXPECT_STDSTREQ( "contents",
+					 readString( vfs, temp.uri().withAppendedSegment( "sub" ).withAppendedSegment(
+										  "file.txt" ) ) );
+	EXPECT_STDSTREQ( "", readString( vfs, temp.uri().withAppendedSegment( "empty" ) ) );
+	// The backing archive remains usable after extraction into its containing folder.
+	EXPECT_STDSTREQ( "hidden", readString( vfs, ZipProvider::makeURI( file, "/.hidden" ) ) );
+}
+
+UTEST( ZipLocation, extractionFolderNames ) {
+	TempDir temp;
+	for ( const auto& [file, folder] : { std::pair{ "Mixed Case.zip", "Mixed Case" },
+										 { "release.TAR.GZ", "release" },
+										 { "package.tar.bz2", "package" },
+										 { "package.tar.xz", "package" },
+										 { "package.tar.lzma", "package" },
+										 { "package.tar.lz", "package" },
+										 { "package.tar.zst", "package" },
+										 { "package.tar.lz4", "package" },
+										 { "package.tar.Z", "package" },
+										 { "package.tgz", "package" },
+										 { "release.v1.7z", "release.v1" },
+										 { "a! #%雪.epub", "a! #%雪" },
+										 { ".hidden.zip", ".hidden" },
+										 { ".tar.gz", "archive" },
+										 { "..zip", "archive" },
+										 { "...zip", "archive" } } ) {
+		EXPECT_STDSTREQ(
+			folder, eefm::Location::archiveFolderName( temp.uri().withAppendedSegment( file ) ) );
+	}
+}
+
 UTEST( ZipLocation, zipBasedFormatsUseTheSameProvider ) {
 	TempDir temp;
 	VirtualFileSystem vfs;

@@ -346,6 +346,49 @@ UTEST( VFSTransfer, crossProviderCopyAndProgress ) {
 	EXPECT_STDSTREQ( "new", readString( vfs, destination.withAppendedSegment( "a.txt" ) ) );
 }
 
+UTEST( VFSTransfer, directoryMergeRequiresExplicitFileOverwrite ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( mem );
+	const URI source( "mem://s/tree" );
+	const URI nested = tmp.uri().withAppendedSegment( "nested" );
+	const URI file = nested.withAppendedSegment( "file.txt" );
+	mem->putDirectory( source.withAppendedSegment( "empty" ) );
+	mem->putFile( source.withAppendedSegment( "nested" ).withAppendedSegment( "file.txt" ), "new" );
+	ASSERT_TRUE( waitFor( vfs.makeDir( nested ) ) );
+	ASSERT_TRUE( waitFor( vfs.writeAll( tmp.uri().withAppendedSegment( "unrelated" ), "keep" ) ) );
+	// The ordinary Fail policy still rejects the existing root directory.
+	EXPECT_EQ( VFSErrorCode::AlreadyExists,
+			   codeOf( waitFor( vfs.copy( source, tmp.uri() ).completion() ) ) );
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::MergeDirectories;
+	auto copied = waitFor( vfs.copy( source, tmp.uri(), options ).completion() );
+	ASSERT_TRUE( copied );
+	EXPECT_EQ( 1u, copied.value().filesTransferred );
+	EXPECT_STDSTREQ( "new", readString( vfs, file ) );
+	EXPECT_STDSTREQ( "keep", readString( vfs, tmp.uri().withAppendedSegment( "unrelated" ) ) );
+	ASSERT_TRUE(
+		waitFor( vfs.stat( tmp.uri().withAppendedSegment( "empty" ) ) ).value().isDirectory() );
+
+	ASSERT_TRUE( waitFor( vfs.writeAll( file, "existing" ) ) );
+	auto conflict = waitFor( vfs.copy( source, tmp.uri(), options ).completion() );
+	ASSERT_FALSE( conflict );
+	EXPECT_EQ( VFSErrorCode::AlreadyExists, conflict.error().code );
+	EXPECT_TRUE( conflict.error().uri == file );
+	EXPECT_STDSTREQ( "existing", readString( vfs, file ) );
+	// The policy also protects a file copied directly, without a directory root.
+	EXPECT_EQ(
+		VFSErrorCode::AlreadyExists,
+		codeOf( waitFor(
+			vfs.copy( source.withAppendedSegment( "nested" ).withAppendedSegment( "file.txt" ),
+					  file, options )
+				.completion() ) ) );
+	options.overwrite = OverwritePolicy::Overwrite;
+	ASSERT_TRUE( waitFor( vfs.copy( source, tmp.uri(), options ).completion() ) );
+	EXPECT_STDSTREQ( "new", readString( vfs, file ) );
+}
+
 UTEST( VFSTransfer, moveNeverRemovesUncopiedSources ) {
 	VirtualFileSystem vfs;
 	auto memA = std::make_shared<MemoryProvider>( "mema" );
@@ -748,7 +791,8 @@ UTEST( VFSSafety, unsafeReplacementIsRefusedWithoutAtomicReplace ) {
 }
 
 UTEST( VFSSafety, concurrentDestinationRespectsFailAndSkip ) {
-	for ( auto policy : { OverwritePolicy::Fail, OverwritePolicy::Skip } ) {
+	for ( auto policy :
+		  { OverwritePolicy::Fail, OverwritePolicy::Skip, OverwritePolicy::MergeDirectories } ) {
 		VirtualFileSystem vfs;
 		auto destination = std::make_shared<MemoryProvider>();
 		auto source = std::make_shared<RacingReadProvider>( destination );
@@ -760,7 +804,7 @@ UTEST( VFSSafety, concurrentDestinationRespectsFailAndSkip ) {
 		auto result =
 			waitFor( vfs.move( URI( "race://t/source" ), URI( "mem://t/destination" ), options )
 						 .completion() );
-		if ( policy == OverwritePolicy::Fail ) {
+		if ( policy != OverwritePolicy::Skip ) {
 			ASSERT_FALSE( result.hasValue() );
 			EXPECT_EQ( VFSErrorCode::AlreadyExists, result.error().code );
 		} else {

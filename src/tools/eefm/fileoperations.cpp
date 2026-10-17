@@ -393,6 +393,41 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 					->setId( "open-other" );
 			}
 		}
+		if ( !inTrash && uris.size() == 1 && !anyFolder &&
+			 !Location::archiveRoot( uris[0] ).empty() ) {
+			const URI file = uris[0];
+			const std::string folderName = Location::archiveFolderName( file );
+			const URI folder = file.getParent().withAppendedSegment( folderName );
+			const int paneIndex = tab->pane->index;
+			UIPopUpMenu* extract = UIPopUpMenu::New();
+			extract->add( String::format( "Extract to \"%s/\"", folderName.c_str() ) )
+				->setId( "extract-folder" );
+			extract->add( mUI->i18n( "eefm_extract_here", "Extract Here" ) )
+				->setId( "extract-here" );
+			extract->add( mUI->i18n( "eefm_extract_to", "Extract To..." ) )->setId( "extract-to" );
+			extract->on(
+				Event::OnItemClicked, [this, file, folder, paneIndex]( const Event* event ) {
+					const std::string& id = event->getNode()->getId();
+					if ( id == "extract-here" ) {
+						extractArchive( file, file.getParent(), paneIndex );
+					} else if ( id == "extract-folder" ) {
+						extractArchive( file, folder, paneIndex );
+					} else if ( id == "extract-to" ) {
+						Dialogs::promptText(
+							mUI, mUI->i18n( "eefm_extract_to", "Extract To..." ),
+							mUI->i18n( "eefm_extract_destination",
+									   "Destination folder (path or URI):" ),
+							Location::text( folder ).toUtf8(), false,
+							[this, file, paneIndex]( std::optional<std::string> destination ) {
+								if ( !destination || String::trim( *destination ).empty() )
+									return;
+								extractArchive( file, Location::parse( *destination ), paneIndex );
+							} );
+					}
+				} );
+			menu->addSubMenu( mUI->i18n( "eefm_extract", "Extract" ), mApp.icon( "mime-archive" ),
+							  extract );
+		}
 		// After the open actions, as Dolphin.
 		if ( menu->getCount() > 0 )
 			menu->addSeparator();
@@ -640,22 +675,35 @@ void FileOperations::transferFiles( const std::vector<URI>& sources, const URI& 
 			auto [base, extension] = FileSystem::fileNameSplitExtension( name );
 			target = destination.withAppendedSegment( base + " (copy)" + extension );
 		}
-		startTransfer( source, target, move, paneIndex );
+		startTransfer( source, target, move ? TransferKind::Move : TransferKind::Copy, paneIndex );
 	}
 }
 
-void FileOperations::startTransfer( const URI& source, const URI& destination, bool move,
+void FileOperations::extractArchive( const URI& file, const URI& destination, int paneIndex ) {
+	URI root = Location::archiveRoot( file );
+	if ( root.empty() )
+		return;
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::MergeDirectories;
+	// Copy the root as one transfer: entries are streamed sequentially, and an empty archive
+	// still creates its destination folder. Existing files require an explicit overwrite.
+	startTransfer( root, destination, TransferKind::Extract, paneIndex, options );
+}
+
+void FileOperations::startTransfer( const URI& source, const URI& destination, TransferKind kind,
 									int paneIndex, const CopyOptions& options ) {
+	const bool move = kind == TransferKind::Move;
+	String label = kind == TransferKind::Extract ? mUI->i18n( "eefm_extracting", "Extracting " )
+				   : move						 ? mUI->i18n( "eefm_moving", "Moving " )
+												 : mUI->i18n( "eefm_copying", "Copying " );
 	Uint64 id = ++mLastTransferId;
-	ActiveTransfer active{
-		id,
-		paneIndex,
-		( move ? mUI->i18n( "eefm_moving", "Moving " ) : mUI->i18n( "eefm_copying", "Copying " ) ) +
-			Location::displayName( source ),
-		move ? mVFS->move( source, destination, options )
-			 : mVFS->copy( source, destination, options ),
-		{},
-		{} };
+	ActiveTransfer active{ id,
+						   paneIndex,
+						   std::move( label ) + Location::displayName( source ),
+						   move ? mVFS->move( source, destination, options )
+								: mVFS->copy( source, destination, options ),
+						   {},
+						   {} };
 	active.subscription = active.transfer.onProgress(
 		[this, id]( const TransferProgress& progress ) {
 			auto it = mTransfers.find( id );
@@ -669,7 +717,7 @@ void FileOperations::startTransfer( const URI& source, const URI& destination, b
 	mTransfers.emplace( id, std::move( active ) );
 	updateTransfers();
 	std::move( completion )
-		.then( mApp.executor(), [this, id, source, destination, move, paneIndex,
+		.then( mApp.executor(), [this, id, source, destination, kind, paneIndex,
 								 options]( VFSResult<TransferResult>&& result ) {
 			auto it = mTransfers.find( id );
 			String label = it != mTransfers.end() ? it->second.label : String();
@@ -690,25 +738,33 @@ void FileOperations::startTransfer( const URI& source, const URI& destination, b
 				URI folder = destination.getParent();
 				for ( auto& pane : mApp.panes().all() ) {
 					for ( auto& tab : pane->tabList ) {
-						if ( tab->model->uri() == folder.getParent() &&
-							 folder != tab->model->uri() )
+						if ( ( tab->model->uri() == folder.getParent() &&
+							   folder != tab->model->uri() ) ||
+							 ( kind == TransferKind::Extract && tab->model->uri() == destination ) )
 							tab->model->refresh();
 					}
 				}
 				return;
 			}
 			if ( result.error().is( VFSErrorCode::AlreadyExists ) &&
-				 options.overwrite == OverwritePolicy::Fail ) {
+				 ( options.overwrite == OverwritePolicy::Fail ||
+				   options.overwrite == OverwritePolicy::MergeDirectories ) ) {
+				String question =
+					kind == TransferKind::Extract
+						? mUI->i18n( "eefm_extract_overwrite",
+									 "The extraction destination contains existing files. "
+									 "Overwrite them?\n" ) +
+							  Location::text( destination )
+						: String( String::format( "\"%s\" already exists. Overwrite it?",
+												  destination.getLastPathSegment().c_str() ) );
 				Dialogs::confirm(
-					mUI, mUI->i18n( "eefm_file_exists", "File Already Exists" ),
-					String::format( "\"%s\" already exists. Overwrite it?",
-									destination.getLastPathSegment().c_str() ),
-					[this, source, destination, move, paneIndex, options]( bool overwrite ) {
+					mUI, mUI->i18n( "eefm_file_exists", "File Already Exists" ), question,
+					[this, source, destination, kind, paneIndex, options]( bool overwrite ) {
 						if ( !overwrite )
 							return;
 						CopyOptions retry = options;
 						retry.overwrite = OverwritePolicy::Overwrite;
-						startTransfer( source, destination, move, paneIndex, retry );
+						startTransfer( source, destination, kind, paneIndex, retry );
 					} );
 				return;
 			}

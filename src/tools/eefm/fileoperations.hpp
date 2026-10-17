@@ -82,6 +82,8 @@ class FileOperations {
 	void cancelTransfers();
 
   private:
+	enum class TransferKind : Uint8 { Copy, Move, Extract };
+
 	struct ActiveTransfer {
 		Uint64 id;
 		int pane;
@@ -128,7 +130,9 @@ class FileOperations {
 	void transferFiles( const std::vector<URI>& sources, const URI& destination, bool move,
 						int paneIndex );
 
-	void startTransfer( const URI& source, const URI& destination, bool move, int paneIndex,
+	void extractArchive( const URI& file, const URI& destination, int paneIndex );
+
+	void startTransfer( const URI& source, const URI& destination, TransferKind kind, int paneIndex,
 						const EE::VFS::CopyOptions& options = {} );
 
 	void updateTransfers();

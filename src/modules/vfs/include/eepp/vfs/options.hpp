@@ -100,6 +100,8 @@ enum class OverwritePolicy : Uint8 {
 	Overwrite,
 	/** Leave existing destination files untouched and continue. */
 	Skip,
+	/** Merge existing directories, but fail with AlreadyExists for existing files. */
+	MergeDirectories,
 };
 
 struct EE_VFS_API CopyOptions {
