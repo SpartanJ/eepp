@@ -15,6 +15,9 @@ class Location {
 	/** A typed location: a URI, or a local path ("~" expands to the home folder). */
 	static URI parse( const std::string& text );
 
+	/** Browsable ZIP archive root for a local .zip, .jar, .apk or .epub file; empty otherwise. */
+	static URI archiveRoot( const URI& file );
+
 	/** Parent location; leaving an archive root returns to the archive's containing folder. */
 	static URI parent( const URI& uri );
 

@@ -302,6 +302,23 @@ UTEST( Zip, standaloneReaderIsReadOnlyAndHasBoundedSeek ) {
 	EXPECT_TRUE( missing.error() == Zip::Error::InvalidArchive );
 }
 
+UTEST( ZipLocation, zipBasedFormatsUseTheSameProvider ) {
+	TempDir temp;
+	VirtualFileSystem vfs;
+	for ( const char* name : { "archive.zip", "library.jar", "application.APK", "book.epub" } ) {
+		const std::string path = temp.path + name;
+		ASSERT_TRUE( makeZip( path, { { "entry.txt", "archive content" } } ) );
+		const URI file = URI::fromFSPath( path );
+		const URI root = eefm::Location::archiveRoot( file );
+		EXPECT_TRUE( root == ZipProvider::makeURI( file ) );
+		EXPECT_STDSTREQ( "archive content",
+						 readString( vfs, root.withAppendedSegment( "entry.txt" ) ) );
+	}
+	EXPECT_TRUE(
+		eefm::Location::archiveRoot( temp.uri().withAppendedSegment( "file.txt" ) ).empty() );
+	EXPECT_TRUE( eefm::Location::archiveRoot( URI( "sftp://host/archive.zip" ) ).empty() );
+}
+
 UTEST( ZipLocation, readableAddressesRoundTripAndRootReturnsToContainingFolder ) {
 	TempDir temp;
 	const URI archive = URI::fromFSPath( temp.path + "Mixed # %!?.zip" );

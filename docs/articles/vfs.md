@@ -329,7 +329,9 @@ data is exposed as a regular file. Unsafe names (absolute paths, traversal compo
 or drive/stream colons) are excluded. Indexes are limited to 262,144 entries including implicit
 directories, with at most eight cached indexes; existing handles can retain older indexes.
 
-In eefm, Enter or double-click on a local `.zip` file enters it. Files inside open through the usual
+In eefm, Enter or double-click on a local `.zip`, `.jar`, `.apk` or `.epub` file enters it
+(extensions are case-insensitive). These ZIP-based formats share `ZipProvider` and `zip://` locations.
+Files inside open through the usual
 application flow, and copying entries out uses VFS transfers. Up at the archive root returns to its
 containing folder and selects the archive. History and saved tabs retain archive locations. The
 location bar displays a readable address such as

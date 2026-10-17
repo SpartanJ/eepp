@@ -9,7 +9,6 @@
 #include "trash.hpp"
 #include <atomic>
 #include <eepp/system/sha1.hpp>
-#include <eepp/vfs/providers/zipprovider.hpp>
 
 namespace eefm {
 
@@ -75,9 +74,8 @@ void FileOperations::openRow( FileTab* tab, size_t row ) {
 		return;
 	}
 	const URI entry = tab->model->entryURI( row );
-	if ( entry.getScheme() == "file" &&
-		 String::toLower( FileSystem::fileExtension( tab->model->entry( row ).name ) ) == "zip" ) {
-		mApp.panes().navigate( tab, ZipProvider::makeURI( entry ) );
+	if ( URI archive = Location::archiveRoot( entry ); !archive.empty() ) {
+		mApp.panes().navigate( tab, archive );
 		return;
 	}
 	// Enter / double click on a multiple selection opens all the selected files.

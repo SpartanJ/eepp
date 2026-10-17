@@ -19,6 +19,15 @@ URI Location::parse( const std::string& text ) {
 	return URI::fromFSPath( FileSystem::expandTilde( trimmed ) );
 }
 
+URI Location::archiveRoot( const URI& file ) {
+	if ( file.getScheme() != "file" )
+		return {};
+	const std::string extension = String::toLower( FileSystem::fileExtension( file.getPath() ) );
+	if ( extension == "zip" || extension == "jar" || extension == "apk" || extension == "epub" )
+		return ZipProvider::makeURI( file );
+	return {};
+}
+
 URI Location::parent( const URI& uri ) {
 	if ( uri.getScheme() == "zip" ) {
 		auto archive = ZipProvider::archiveURI( uri );
