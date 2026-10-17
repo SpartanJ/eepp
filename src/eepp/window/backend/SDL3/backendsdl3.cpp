@@ -3,6 +3,7 @@
 #ifdef EE_BACKEND_SDL3
 
 #include <eepp/window/draganddrop/waylanddraganddrop.hpp>
+#include <eepp/window/runtime.hpp>
 
 #if ( EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS ) && defined( main )
 #undef main
@@ -19,6 +20,17 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL3 {
 
 WindowBackendSDL3::WindowBackendSDL3() : WindowBackendLibrary() {
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	if ( Runtime::isOffscreen() ) {
+		// EGL dispatchers can retain thread state across unload/reload, leaving stale TLS
+		// pointers on the next Engine startup. Retain one library reference for the process,
+		// as SDL already does for GLX. Windows, contexts and surfaces still shut down normally.
+		[[maybe_unused]] static auto* const eglLibrary = [] {
+			const char* libraryPath = SDL_GetHint( SDL_HINT_EGL_LIBRARY );
+			return SDL_LoadObject( libraryPath ? libraryPath : "libEGL.so.1" );
+		}();
+	}
+#endif
 	if ( !SDL_GetHint( SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS ) )
 		SDL_SetHint( SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0" );
 	// The following hints are not available in SDL3 (or renamed)

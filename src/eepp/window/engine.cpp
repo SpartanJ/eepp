@@ -470,7 +470,7 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 	bool Resizeable = ini->getValueB( iniKeyName, "resizeable", true );
 	bool Borderless = ini->getValueB( iniKeyName, "borderless", false );
 	bool useDesktopResolution = ini->getValueB( iniKeyName, "usedesktopresolution", false );
-	std::string pixelDensityStr = ini->getValue( iniKeyName, "pixeldensity" );
+	std::string pixelDensityStr = ini->getValue( iniKeyName, "pixeldensity", "auto" );
 	float pixelDensity = PixelDensity::getPixelDensity();
 	bool useScreenKeyboard =
 		ini->getValueB( iniKeyName, "usescreenkeyboard", EE_SCREEN_KEYBOARD_ENABLED );

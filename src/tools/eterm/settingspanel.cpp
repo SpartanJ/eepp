@@ -307,6 +307,27 @@ UIWindow* SettingsPanel::create( App& app ) {
 			return true;
 		},
 		true );
+	panel->addText(
+		{ "terminalDefaultWorkingDirectory", "terminal.behavior",
+		  app.i18n( "default_working_directory", "Default Working Directory" ),
+		  app.i18n( "default_working_directory_desc",
+					"Set the starting directory for new terminals. Leave empty to use your home "
+					"directory. A command-line directory overrides it for that launch." ) },
+		[&app] { return app.config->terminal.defaultWorkingDirectory; },
+		[&app]( const std::string& value ) {
+			auto directory = FileSystem::expandTilde( value );
+			if ( !directory.empty() ) {
+				if ( !FileSystem::isDirectory( directory ) )
+					return false;
+				directory = FileSystem::getRealPath( directory );
+			}
+			app.config->terminal.defaultWorkingDirectory = directory;
+			app.terminalConfig.workingDirectory =
+				directory.empty() ? Sys::getUserDirectory() : std::move( directory );
+			app.savePreferences();
+			return true;
+		},
+		true );
 	panel->addInteger(
 		{ "terminalScrollback", "terminal.behavior",
 		  app.i18n( "terminal_scrollback", "Terminal Scrollback" ),

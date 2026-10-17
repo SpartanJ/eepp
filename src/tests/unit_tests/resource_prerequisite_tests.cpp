@@ -1,6 +1,7 @@
 #include "utest.hpp"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <condition_variable>
 #include <eepp/core/lrucache.hpp>
@@ -896,6 +897,47 @@ UTEST( ResourcePrerequisites, workerFileTextureLoadReleasesDecoderPixelsCorrectl
 	texture.reset();
 	window->display( false );
 	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, workerGraphicsThreadCanExitAfterEngineShutdown ) {
+	for ( int cycle = 0; cycle < 2; ++cycle ) {
+		auto* window = createLifecycleTestWindow( "Worker graphics shutdown test" );
+		ASSERT_TRUE( window && window->isOpen() );
+		std::array<TexturePtr, 2> textures;
+		LoaderGate uploaded;
+		std::thread worker( [&] {
+			constexpr Uint8 redPixel[] = { 255, 0, 0, 255 };
+			// Rebinding must keep sharing textures with the main context.
+			for ( auto& texture : textures ) {
+				texture = TextureFactory::instance()->loadFromPixels( redPixel, 1, 1, 4 );
+			}
+			uploaded.run();
+		} );
+		uploaded.waitUntilStarted();
+		// Main-context readback checks both object sharing and that the worker left it usable.
+		for ( const auto& texture : textures ) {
+			EXPECT_TRUE( texture != nullptr );
+			if ( texture ) {
+				const Uint8* pixels = texture->lock( true );
+				EXPECT_TRUE( pixels != nullptr );
+				EXPECT_EQ( texture->getMemSize(), 4u );
+				if ( pixels && texture->getMemSize() == 4 ) {
+					EXPECT_EQ( pixels[0], 255 );
+					EXPECT_EQ( pixels[1], 0 );
+					EXPECT_EQ( pixels[2], 0 );
+				}
+				texture->unlock();
+			}
+		}
+
+		textures = {};
+		Engine::destroySingleton();
+
+		// App-owned thread pools can outlive the video backend. Their TLS destructors must
+		// not call unloaded driver code when the worker eventually exits.
+		uploaded.finish();
+		worker.join();
+	}
 }
 
 UTEST( ResourcePrerequisites, textureRegionRetainsItsTexture ) {

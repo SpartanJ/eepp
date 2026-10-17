@@ -40,6 +40,8 @@ class AppConfig {
 	WindowStateConfig windowState;
 	// Serialized process table columns, widths, and sorting state.
 	std::string processTableState;
+	std::string uiFontPath;
+	std::string fallbackFontPath;
 	bool divideCpuUsage{ false };
 	bool performancePerCore{ false };
 	bool treeView{ false };
@@ -47,6 +49,8 @@ class AppConfig {
 	int filterMode{ 0 };
 	int refreshIntervalMs{ 1000 };
 	Float pixelDensity{ 0 };
+	/** In dp; 0 uses the theme default. */
+	Float uiFontSize{ 0 };
 	FontHinting fontHinting{ FontHinting::Full };
 	FontAntialiasing fontAntialiasing{ FontAntialiasing::Grayscale };
 	EE::UI::ColorSchemeExtPreference colorScheme{ EE::UI::ColorSchemeExtPreference::System };

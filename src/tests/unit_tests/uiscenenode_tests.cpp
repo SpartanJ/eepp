@@ -3,6 +3,7 @@
 #include <array>
 #include <chrono>
 #include <eepp/graphics/fontfamily.hpp>
+#include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/scene/eventdispatcher.hpp>
@@ -21,6 +22,8 @@
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -38,6 +41,106 @@ using namespace EE::Graphics;
 using namespace EE::Window;
 using namespace EE::Scene;
 using namespace EE::UI;
+
+UTEST( FontPreferences, updatesExistingAndFutureTextWithoutOverridingStyles ) {
+	UIApplication app(
+		WindowSettings{ 400, 300, "UI Font Preferences" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	auto* scene = app.getUI();
+	auto* layout = scene->loadLayoutFromString( R"xml(
+		<vbox>
+			<TextView id="default_text" text="Default font" />
+			<TextView id="styled_text" text="Styled font" />
+		</vbox>
+	)xml" );
+	ASSERT_NE( nullptr, layout );
+	scene->combineStyleSheet( "#styled_text { font-size: 19dp; font-family: monospace; }" );
+	scene->flushDirtyStyleAndLayout();
+	auto* defaultText = layout->find<UITextView>( "default_text" );
+	auto* styledText = layout->find<UITextView>( "styled_text" );
+	Font* styledFont = styledText->getFont();
+	const auto styledSize = styledText->getFontSize();
+	EXPECT_EQ( 19u, styledSize );
+	const std::string fontPath = Sys::getProcessPath() + ".." + FileSystem::getOSSlash() +
+								 "assets" + FileSystem::getOSSlash() + "fonts" +
+								 FileSystem::getOSSlash() + "DejaVuSansMono.ttf";
+	auto font = FontTrueType::New( "preferences-ui-font", *scene->getResourceScope() );
+	ASSERT_TRUE( font->loadFromFile( fontPath ) );
+	EXPECT_STDSTREQ( FileSystem::getRealPath( fontPath ), FontTrueType::filePathOf( font.get() ) );
+
+	scene->applyDefaultFont( font.get(), 18 );
+	EXPECT_EQ( font.get(), defaultText->getFont() );
+	EXPECT_EQ( 18u, defaultText->getFontSize() );
+	EXPECT_EQ( styledFont, styledText->getFont() );
+	EXPECT_EQ( styledSize, styledText->getFontSize() );
+	EXPECT_EQ( font.get(), scene->getUIThemeManager()->getDefaultTheme()->getDefaultFont() );
+	EXPECT_EQ( 18.f, scene->getUIThemeManager()->getDefaultTheme()->getDefaultFontSize() );
+
+	auto* newText = UITextView::New();
+	newText->setParent( scene->getRoot() );
+	EXPECT_EQ( font.get(), newText->getFont() );
+	EXPECT_EQ( 18u, newText->getFontSize() );
+	scene->applyDefaultFont( nullptr, 22 );
+	EXPECT_EQ( font.get(), newText->getFont() );
+	EXPECT_EQ( 22u, newText->getFontSize() );
+	EXPECT_EQ( 22u, defaultText->getFontSize() );
+	EXPECT_EQ( styledSize, styledText->getFontSize() );
+}
+
+UTEST( FontPreferences, renderingPolicyReachesBaseAndSceneFonts ) {
+	UIApplication app(
+		WindowSettings{ 400, 300, "Font Rendering Preferences" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	auto* scene = app.getUI();
+	auto* baseFont = static_cast<FontTrueType*>( scene->getUIThemeManager()->getDefaultFont() );
+	auto localFont = FontTrueType::New( "preferences-local-font", *scene->getResourceScope() );
+	ASSERT_TRUE( localFont->loadFromFile( FontTrueType::filePathOf( baseFont ) ) );
+
+	scene->setFontRendering( FontHinting::None, FontAntialiasing::None );
+	for ( auto* font : { baseFont, localFont.get() } ) {
+		EXPECT_EQ( Font::fontHintingFromEnvironment( FontHinting::None ), font->getHinting() );
+		EXPECT_EQ( Font::fontAntialiasingFromEnvironment( FontAntialiasing::None ),
+				   font->getAntialiasing() );
+	}
+	scene->setFontRendering( FontHinting::Full, FontAntialiasing::Grayscale );
+	for ( auto* font : { baseFont, localFont.get() } ) {
+		EXPECT_EQ( Font::fontHintingFromEnvironment( FontHinting::Full ), font->getHinting() );
+		EXPECT_EQ( Font::fontAntialiasingFromEnvironment( FontAntialiasing::Grayscale ),
+				   font->getAntialiasing() );
+	}
+}
+
+UTEST( FontPreferences, rejectedFontCanBeDestroyedOrLoadedAgain ) {
+	UIApplication app(
+		WindowSettings{ 400, 300, "Rejected Font Preferences" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	const std::string fontPath = Sys::getProcessPath() + ".." + FileSystem::getOSSlash() +
+								 "assets" + FileSystem::getOSSlash() + "fonts" +
+								 FileSystem::getOSSlash() + "DejaVuSansMono.ttf";
+	std::string data;
+	ASSERT_TRUE( FileSystem::fileGet( fontPath, data ) );
+	ASSERT_GE( data.size(), 12u );
+	const size_t tableCount =
+		( static_cast<Uint8>( data[4] ) << 8 ) | static_cast<Uint8>( data[5] );
+	ASSERT_GE( data.size(), 12u + tableCount * 16u );
+	// FreeType must reject Unicode selection without a character map or glyph names to synthesize
+	// one.
+	for ( size_t index = 0; index < tableCount; ++index ) {
+		const size_t offset = 12 + index * 16;
+		if ( data.compare( offset, 4, "cmap" ) == 0 || data.compare( offset, 4, "post" ) == 0 )
+			data.replace( offset, 4, "test" );
+	}
+	{
+		auto font =
+			FontTrueType::New( "rejected-preference-font", *app.getUI()->getResourceScope() );
+		EXPECT_FALSE( font->loadFromMemory( data.data(), data.size() ) );
+		EXPECT_FALSE( font->loaded() );
+		EXPECT_TRUE( font->loadFromFile( fontPath ) );
+	}
+	auto font = FontTrueType::New( "rejected-font-destruction", *app.getUI()->getResourceScope() );
+	EXPECT_FALSE( font->loadFromMemory( data.data(), data.size() ) );
+	EXPECT_FALSE( font->loaded() );
+}
 
 UTEST( UISceneNode, CssPointerCursorUsesHandCursor ) {
 	EXPECT_EQ( Cursor::fromName( "pointer" ), Cursor::Hand );
@@ -676,13 +779,13 @@ UTEST( UIApplication, CreatesSecondaryWindowWithoutChangingAmbientScene ) {
 	const Sizei primaryScreenSize = primaryWindow->getSizeInScreenCoordinates();
 	auto* fileDialog = UIFileDialog::NewInApplicationWindow(
 		app,
-		WindowSettings( 640, 400, "File Dialog UI Context",
-						WindowStyle::Titlebar | WindowStyle::Resize, WindowBackend::Default, 32, {},
-						1, false, true ),
+		WindowSettings( 640, 400, "File Dialog UI Context", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
 		UIFileDialog::DefaultFlags, "*", FileSystem::getCurrentWorkingDirectory(),
 		ContextSettings( false, 0, 0, GLv_default, true, false ), true,
 		UIWindow::ApplicationWindowPosition::CenteredOnPrimary );
 	ASSERT_TRUE( fileDialog != nullptr );
+	EXPECT_FALSE( fileDialog->getUISceneNode()->getWindow()->isVisible() );
 	EXPECT_EQ( app.getWindowCount(), 3u );
 	EXPECT_NE( fileDialog->getUISceneNode(), app.getUI() );
 	EXPECT_NE( fileDialog->getUISceneNode(), secondaryUI );

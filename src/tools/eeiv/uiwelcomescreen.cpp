@@ -50,7 +50,8 @@ static const auto LAYOUT = R"xml(
 	<tv id="welcome_title" text="eeiv" lg="center" />
 	<tv id="welcome_hint" text="Open an image or a folder to get started" lg="center" margin-bottom="24dp" />
 	<PushButton id="open_image" text="Open Image" lg="center" margin-bottom="8dp" />
-	<PushButton id="open_folder" text="Open Folder" lg="center" />
+	<PushButton id="open_folder" text="Open Folder" lg="center" margin-bottom="8dp" />
+	<PushButton id="open_settings" text="Settings" lg="center" />
 </vbox>
 )xml";
 
@@ -65,4 +66,5 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) : UIRelativeLayout(), mApp( app ) {
 
 	find( "open_image" )->onClick( [this]( auto ) { mApp->openFileDialog(); } );
 	find( "open_folder" )->onClick( [this]( auto ) { mApp->openFolderDialog(); } );
+	find( "open_settings" )->onClick( [this]( auto ) { mApp->showSettings(); } );
 }

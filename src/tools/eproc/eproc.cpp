@@ -5,6 +5,7 @@
 
 #include <args/args.hxx>
 #include <eepp/system/log.hpp>
+#include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimenuitem.hpp>
@@ -345,7 +346,15 @@ bool App::init() {
 	ctx.VSync = mConfig->vsync;
 	ctx.FrameRateLimit = mConfig->frameRateLimit;
 	ctx.Version = mConfig->rendererVersion;
+	FontTrueTypePtr uiFont;
+	if ( !mConfig->uiFontPath.empty() ) {
+		uiFont = FontTrueType::New( "eproc-ui-font" );
+		if ( !uiFont->loadFromFile( mConfig->uiFontPath ) )
+			uiFont.reset();
+	}
 	UIApplication::Settings settings;
+	settings.baseFont = uiFont.get();
+	settings.threadPool = ThreadPool::createShared( 2 );
 	settings.pixelDensity = mPixelDensity;
 	settings.fontHinting = mFontHinting;
 	settings.fontAntialiasing = mFontAntialiasing;
@@ -360,6 +369,15 @@ bool App::init() {
 		return false;
 	ui->setColorSchemePreference( mColorScheme );
 	ui->updateWindowTitleBarColor();
+	if ( mConfig->uiFontSize > 0 )
+		ui->applyDefaultFont( nullptr, PixelDensity::dpToPx( mConfig->uiFontSize ) );
+	if ( !mConfig->fallbackFontPath.empty() ) {
+		auto fallback = FontTrueType::New( "eproc-fallback-font", *ui->getResourceScope() );
+		if ( fallback->loadFromFile( mConfig->fallbackFontPath ) )
+			setFallbackFont( std::move( fallback ) );
+	} else if ( auto fallback = ui->getResourceScope()->findFont( "DroidSansFallbackFull" ) ) {
+		setFallbackFont( std::move( fallback ) );
+	}
 
 	restoreWindowState();
 	if ( mApp->getWindow() ) {
@@ -696,6 +714,71 @@ void App::showSettings() {
 	mSettingsWindow = SettingsPanel::create( *this );
 	mSettingsWindow->on( Event::OnWindowClose,
 						 [this]( const Event* ) { mSettingsWindow = nullptr; } );
+}
+
+void App::openFontPicker( bool fallbackFont ) {
+	const Uint32 flags = Tools::UIFontPickerDialog::ShowStyle |
+						 ( fallbackFont ? 0 : Tools::UIFontPickerDialog::ShowSize );
+	auto* dialog = Tools::UIFontPickerDialog::New( flags );
+	auto* scene = mApp->getUI();
+	dialog->setTitle( scene->i18n( "select_font", "Select Font" ) );
+	dialog->setCloseShortcut( KEY_ESCAPE );
+	std::string path = fallbackFont ? mConfig->fallbackFontPath : mConfig->uiFontPath;
+	if ( path.empty() ) {
+		if ( fallbackFont ) {
+			const auto& fallbacks = scene->getResourceScope()->getFontService().getFallbackFonts();
+			if ( !fallbacks.empty() )
+				path = FontTrueType::filePathOf( fallbacks.front().get() );
+		} else {
+			path = FontTrueType::filePathOf( scene->getUIThemeManager()->getDefaultFont() );
+		}
+	}
+	if ( !path.empty() )
+		dialog->setSelectedFont( path );
+	if ( !fallbackFont ) {
+		auto selection = dialog->getSelection();
+		selection.size = static_cast<Uint32>(
+			mConfig->uiFontSize > 0
+				? mConfig->uiFontSize
+				: PixelDensity::pxToDp( scene->getUIThemeManager()->getDefaultFontSize() ) );
+		dialog->setSelection( selection );
+	}
+	dialog->setOnFontPicked( [this, fallbackFont]( const Tools::UIFontSelection& selection ) {
+		if ( selection.font.path.empty() )
+			return;
+		auto* scene = mApp->getUI();
+		auto font = FontTrueType::New( fallbackFont ? "eproc-fallback-font" : "eproc-ui-font",
+									   *scene->getResourceScope() );
+		if ( !font->loadFromFile( selection.font.path ) )
+			return;
+		if ( fallbackFont ) {
+			mConfig->fallbackFontPath = selection.font.path;
+			setFallbackFont( std::move( font ) );
+		} else {
+			mConfig->uiFontPath = selection.font.path;
+			mConfig->uiFontSize = selection.size;
+			scene->applyDefaultFont( font.get(), PixelDensity::dpToPx( mConfig->uiFontSize ) );
+		}
+		savePreferences();
+	} );
+	dialog->center();
+	dialog->show();
+}
+
+void App::setUIFontSize( Float size ) {
+	mConfig->uiFontSize = size;
+	mApp->getUI()->applyDefaultFont( nullptr, PixelDensity::dpToPx( size ) );
+	savePreferences();
+}
+
+void App::setFallbackFont( FontPtr font ) {
+	for ( FontService* service : { &defaultResourceScope().getFontService(),
+								   &mApp->getUI()->getResourceScope()->getFontService() } ) {
+		while ( !service->getFallbackFonts().empty() )
+			service->removeFallbackFont( service->getFallbackFonts().back().get() );
+		service->addFallbackFont( font );
+	}
+	mApp->getUI()->invalidateDraw();
 }
 
 static nlohmann::json serializeProcessColumns( const UIAbstractTableView& view,

@@ -562,6 +562,7 @@ bool FontTrueType::setFontFace( void* _face ) {
 #ifdef EE_TRUETYPE_SVG_FONT_ENABLED
 		FT_Property_Set( static_cast<FT_Library>( mLibrary ), "ot-svg", "svg-hooks", &svg_hooks );
 #else
+		cleanup();
 		return false;
 #endif
 	}
@@ -578,7 +579,7 @@ bool FontTrueType::setFontFace( void* _face ) {
 	if ( !mIsColorEmojiFont ) {
 		if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
 			Log::error( "Failed to load font from memory (failed to create the stroker)" );
-			FT_Done_Face( face );
+			cleanup();
 			return false;
 		}
 	}
@@ -588,7 +589,7 @@ bool FontTrueType::setFontFace( void* _face ) {
 		Log::error( "Failed to load font from memory (failed to set the Unicode character set)" );
 		if ( stroker )
 			FT_Stroker_Done( stroker );
-		FT_Done_Face( face );
+		cleanup();
 		return false;
 	}
 

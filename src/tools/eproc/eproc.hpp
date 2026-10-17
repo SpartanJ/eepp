@@ -54,6 +54,13 @@ class App {
 	void restoreTabFocus();
 
 	void showSettings();
+
+	void openFontPicker( bool fallbackFont = false );
+
+	void setUIFontSize( Float size );
+
+	void setFallbackFont( FontPtr font );
+
 	void savePreferences();
 	void setupProcessTable();
 

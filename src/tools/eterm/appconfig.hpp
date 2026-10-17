@@ -25,7 +25,7 @@ enum class NewTerminalBehavior { CurrentTabBar, VerticalSplit, HorizontalSplit }
 struct TerminalConfig {
 	std::string shell;
 	std::string shellArguments;
-	std::string workingDirectory;
+	std::string defaultWorkingDirectory;
 	std::string executeInShell;
 	size_t historySize{ 10000 };
 	size_t initialTabs{ 1 };

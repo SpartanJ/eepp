@@ -93,7 +93,9 @@ void FrameBuffer::setBufferView() {
 }
 
 void FrameBuffer::recoverView() {
-	GlobalBatchRenderer::instance()->draw();
+	// Framebuffers can be destroyed after the batch renderer during Engine shutdown.
+	if ( auto* batch = GlobalBatchRenderer::existsSingleton() )
+		batch->draw();
 
 	auto found = std::find( sFBOActiveViews.begin(), sFBOActiveViews.end(), &mView );
 	if ( found != sFBOActiveViews.end() )
