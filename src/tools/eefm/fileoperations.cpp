@@ -13,6 +13,8 @@
 
 namespace eefm {
 
+using namespace EE::VFS;
+
 FileOperations::FileOperations( App& app ) : mApp( app ), mUI( app.ui() ), mVFS( app.vfs() ) {}
 
 FileOperations::~FileOperations() = default;
