@@ -370,6 +370,9 @@ bool Window::initializeRuntimeRenderTarget() {
 	if ( mLogicalFrameBuffer )
 		return true;
 
+	// The first window is still being constructed. Texture-backed renderers need it current
+	// in Engine as well as SDL before their framebuffer attachment can be uploaded.
+	auto context = Engine::instance()->makeWindowCurrent( this );
 	mLogicalFrameBuffer =
 		Graphics::FrameBuffer::New( getWidth(), getHeight(), true, false, true, 4, this );
 

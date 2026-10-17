@@ -137,6 +137,7 @@ class EE_API WindowSDL : public Window {
 	void destroySDLResources();
 
 	SDL_Window* mSDLWindow{ nullptr };
+	SDL_Window* mSDLWindowThread{ nullptr };
 	SDL_GLContext mGLContext{ nullptr };
 	SDL_GLContext mGLContextThread{ nullptr };
 	Mutex mGLContextMutex;

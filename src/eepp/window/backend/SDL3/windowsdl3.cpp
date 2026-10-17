@@ -149,6 +149,11 @@ void WindowSDL::destroySDLResources() {
 
 	eeSAFE_DELETE( mWMinfo );
 
+	if ( mSDLWindowThread ) {
+		SDL_DestroyWindow( mSDLWindowThread );
+		mSDLWindowThread = nullptr;
+	}
+
 	if ( nullptr != mSDLWindow ) {
 		SDL_DestroyWindow( mSDLWindow );
 		mSDLWindow = nullptr;
@@ -213,6 +218,8 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.Flags |= SDL_WINDOW_BORDERLESS;
 	}
 
+	// SDL's attributes survive window creation; every window must select its own configuration.
+	SDL_GL_ResetAttributes();
 	setGLConfig();
 
 	Uint32 tmpFlags = mWindow.Flags;
@@ -233,17 +240,6 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.WindowConfig.Height *= mWindow.WindowConfig.PixelDensity;
 	}
 #endif
-
-	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Title.c_str(), mWindow.WindowConfig.Width,
-								   mWindow.WindowConfig.Height, tmpFlags );
-
-	if ( nullptr == mSDLWindow ) {
-		Log::error( "Unable to create window: %s", SDL_GetError() );
-
-		logFailureInit( "WindowSDL", getVersion() );
-
-		return false;
-	}
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 	Log::notice( "Choosing GL Version from: %d", Context.Version );
@@ -284,14 +280,36 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	}
 #endif
 
+	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Title.c_str(), mWindow.WindowConfig.Width,
+								   mWindow.WindowConfig.Height, tmpFlags );
+
+	if ( nullptr == mSDLWindow ) {
+		Log::error( "Unable to create window: %s", SDL_GetError() );
+
+		logFailureInit( "WindowSDL", getVersion() );
+
+		return false;
+	}
+
 	// Sharing window contexts is independent from supporting an auxiliary context on a worker
 	// thread. Platforms without threaded GL contexts still need shared object namespaces for
 	// resources used by multiple native windows.
 	SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT,
 						 mWindow.ContextConfig.SharedGLContext ? 1 : 0 );
 #ifdef SDL3_THREADED_GLCONTEXT
-	if ( mWindow.ContextConfig.SharedGLContext )
-		mGLContextThread = SDL_GL_CreateContext( mSDLWindow );
+	if ( mWindow.ContextConfig.SharedGLContext ) {
+		if ( std::strcmp( SDL_GetCurrentVideoDriver(), "offscreen" ) == 0 ) {
+			// EGL cannot bind one surface on two threads at once. The worker needs its own
+			// drawable while sharing GL objects with the main window's context.
+			mSDLWindowThread = SDL_CreateWindow( "eepp worker context", 1, 1,
+												 SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN );
+			if ( !mSDLWindowThread ) {
+				Log::error( "Unable to create worker GL surface: %s", SDL_GetError() );
+				return false;
+			}
+		}
+		mGLContextThread = SDL_GL_CreateContext( mSDLWindowThread ? mSDLWindowThread : mSDLWindow );
+	}
 #endif
 	mGLContext = SDL_GL_CreateContext( mSDLWindow );
 
@@ -407,11 +425,13 @@ bool WindowSDL::isThreadedGLContext() const {
 
 void WindowSDL::setGLContextThread() {
 	mGLContextMutex.lock();
-	SDL_GL_MakeCurrent( mSDLWindow, mGLContextThread );
+	if ( !SDL_GL_MakeCurrent( mSDLWindowThread ? mSDLWindowThread : mSDLWindow, mGLContextThread ) )
+		Log::error( "Unable to bind worker GL context: %s", SDL_GetError() );
 }
 
 void WindowSDL::unsetGLContextThread() {
-	SDL_GL_MakeCurrent( mSDLWindow, nullptr );
+	if ( !SDL_GL_MakeCurrent( nullptr, nullptr ) )
+		Log::error( "Unable to release worker GL context: %s", SDL_GetError() );
 #if SDL_VERSION_ATLEAST( 3, 2, 0 )
 	SDL_CleanupTLS();
 #endif
