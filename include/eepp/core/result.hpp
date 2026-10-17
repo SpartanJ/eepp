@@ -46,7 +46,7 @@ template <typename E> constexpr ErrValue<std::decay_t<E>> Err( E&& error ) {
  * both contained types are copyable.
  *
  * @code
- * Result<FileInfo, VFSError> statResult = Ok( std::move( info ) );
+ * Result<VFSFileInfo, VFSError> statResult = Ok( std::move( info ) );
  * if ( statResult )
  *     consume( statResult.value() );
  * else

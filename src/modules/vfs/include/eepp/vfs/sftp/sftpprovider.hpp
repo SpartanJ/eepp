@@ -125,8 +125,8 @@ class SFTPProvider : public VFSProvider {
 
 	ProviderCapabilities capabilities( const URI& uri ) const override;
 
-	VFSTask<FileInfo> stat( const URI& uri, const StatOptions& options,
-							CancellationToken token ) override;
+	VFSTask<VFSFileInfo> stat( const URI& uri, const StatOptions& options,
+							   CancellationToken token ) override;
 
 	VFSTask<DirectoryHandle> openDirectory( const URI& uri, const DirectoryOpenOptions& options,
 											CancellationToken token ) override;

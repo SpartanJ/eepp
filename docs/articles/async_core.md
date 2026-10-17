@@ -85,7 +85,7 @@ as `std::move( task ).then( ... )` (a temporary needs no `std::move`):
 
 ```cpp
 vfs.stat( uri )
-	.then( [&vfs, uri]( VFSResult<FileInfo>&& info ) -> VFSTask<std::vector<Uint8>> {
+	.then( [&vfs, uri]( VFSResult<VFSFileInfo>&& info ) -> VFSTask<std::vector<Uint8>> {
 		if ( !info || !info.value().isRegularFile() )
 			return makeReadyTask(
 				VFSResult<std::vector<Uint8>>( Err( VFSError( VFSErrorCode::NotFound, uri ) ) ) );

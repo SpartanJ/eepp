@@ -37,7 +37,7 @@ std::string FileRevision::toHexString() const {
 	return str;
 }
 
-std::optional<URI> FileInfo::symlinkTargetURI( const URI& linkURI ) const {
+std::optional<URI> VFSFileInfo::symlinkTargetURI( const URI& linkURI ) const {
 	if ( symlinkTarget.empty() )
 		return std::nullopt;
 	std::string target( symlinkTarget );

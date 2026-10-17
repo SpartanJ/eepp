@@ -44,6 +44,7 @@ VirtualFileSystem::VirtualFileSystem() : VirtualFileSystem( Config{} ) {}
 
 VirtualFileSystem::VirtualFileSystem( const Config& config ) :
 	mIOPool( ThreadPool::createShared( std::max<Uint32>( 1, config.ioThreads ) ) ),
+	mLocalIO( std::make_shared<LocalIOScheduler>( mIOPool, config.networkMountTimeout ) ),
 	mOrchestrationPool(
 		ThreadPool::createShared( std::max<Uint32>( 1, config.orchestrationThreads ) ) ),
 	mTransferPool( ThreadPool::createShared( std::max<Uint32>( 1, config.transferThreads ) ) ),
@@ -61,14 +62,19 @@ VirtualFileSystem::~VirtualFileSystem() {
 		std::unique_lock<std::shared_mutex> lock( mProvidersMutex );
 		mProviders.clear();
 	}
+	// Ends the network mount lanes: a thread blocked on an unreachable server is left behind.
+	mLocalIO.reset();
 	mIOPool.reset();
 }
 
 void VirtualFileSystem::registerDefaultProviders() {
-	registerProvider( std::make_shared<LocalProvider>( mIOPool ) );
+	registerProvider( std::make_shared<LocalProvider>( mLocalIO ) );
 	registerProvider( std::make_shared<ResourceProvider>( mIOPool ) );
-	mWatchManager->registerBackend( "file", std::make_shared<LocalWatchBackend>( mIOPool ) );
-	mWatchManager->setFallbackBackend( std::make_shared<PollingWatchBackend>( *this ) );
+	// Network mounts are polled through the VFS (whose calls time out), not by efsw.
+	auto polling = std::make_shared<PollingWatchBackend>( *this );
+	mWatchManager->registerBackend( "file",
+									std::make_shared<LocalWatchBackend>( mIOPool, polling ) );
+	mWatchManager->setFallbackBackend( std::move( polling ) );
 #ifdef EE_VFS_SFTP
 	auto sftp = std::make_shared<SFTPProvider>();
 	registerProvider( sftp );
@@ -138,9 +144,9 @@ template <typename T, typename F> VFSTask<T> VirtualFileSystem::orchestrate( F&&
 		return unsupportedScheme<Type>( uri ); \
 	return provider->call
 
-VFSTask<FileInfo> VirtualFileSystem::stat( const URI& uri, const StatOptions& options,
-										   CancellationToken token ) {
-	EE_VFS_FORWARD( FileInfo, uri, stat( uri, options, std::move( token ) ) );
+VFSTask<VFSFileInfo> VirtualFileSystem::stat( const URI& uri, const StatOptions& options,
+											  CancellationToken token ) {
+	EE_VFS_FORWARD( VFSFileInfo, uri, stat( uri, options, std::move( token ) ) );
 }
 
 VFSTask<FileHandle> VirtualFileSystem::open( const URI& uri, const OpenOptions& options,
@@ -192,10 +198,10 @@ namespace {
 struct ListAllState {
 	DirectoryHandle handle;
 	/** Batches are kept apart and joined once at the end: appending to one growing vector would
-	 * move every (large) FileInfo again on each reallocation. */
-	std::vector<std::vector<FileInfo>> batches;
+	 * move every (large) VFSFileInfo again on each reallocation. */
+	std::vector<std::vector<VFSFileInfo>> batches;
 	size_t total{ 0 };
-	TaskResolver<VFSResult<std::vector<FileInfo>>> resolve;
+	TaskResolver<VFSResult<std::vector<VFSFileInfo>>> resolve;
 	CancellationToken token;
 };
 
@@ -214,7 +220,7 @@ bool consumeBatch( ListAllState& state, VFSResult<DirectoryBatch>&& batch ) {
 	if ( !batch.value().endOfDirectory )
 		return false;
 	state.handle.close();
-	std::vector<FileInfo> all;
+	std::vector<VFSFileInfo> all;
 	if ( state.batches.size() == 1 ) {
 		all = std::move( state.batches.front() );
 	} else {
@@ -248,17 +254,17 @@ void listAllStep( std::shared_ptr<ListAllState> state ) {
 
 } // namespace
 
-VFSTask<std::vector<FileInfo>> VirtualFileSystem::listAll( const URI& uri,
-														   const DirectoryOpenOptions& options,
-														   CancellationToken token ) {
+VFSTask<std::vector<VFSFileInfo>> VirtualFileSystem::listAll( const URI& uri,
+															  const DirectoryOpenOptions& options,
+															  CancellationToken token ) {
 	return openDirectory( uri, options, token )
-		.then( [token]( VFSResult<DirectoryHandle>&& handle ) -> VFSTask<std::vector<FileInfo>> {
+		.then( [token]( VFSResult<DirectoryHandle>&& handle ) -> VFSTask<std::vector<VFSFileInfo>> {
 			if ( !handle )
-				return readyError<std::vector<FileInfo>>( std::move( handle ).error() );
+				return readyError<std::vector<VFSFileInfo>>( std::move( handle ).error() );
 			auto state = std::make_shared<ListAllState>();
 			state->handle = std::move( handle ).value();
 			state->token = token;
-			auto task = VFSTask<std::vector<FileInfo>>::create( state->resolve );
+			auto task = VFSTask<std::vector<VFSFileInfo>>::create( state->resolve );
 			listAllStep( std::move( state ) );
 			return task;
 		} );
@@ -322,23 +328,23 @@ VFSTask<std::vector<Uint8>> VirtualFileSystem::readAll( const URI& uri, Cancella
 	} );
 }
 
-VFSTask<FileInfo> VirtualFileSystem::writeAll( const URI& uri, std::string_view data,
-											   const WriteOptions& options,
-											   CancellationToken token ) {
+VFSTask<VFSFileInfo> VirtualFileSystem::writeAll( const URI& uri, std::string_view data,
+												  const WriteOptions& options,
+												  CancellationToken token ) {
 	return writeAll( uri, std::vector<Uint8>( data.begin(), data.end() ), options,
 					 std::move( token ) );
 }
 
-VFSTask<FileInfo> VirtualFileSystem::writeAll( const URI& uri, std::vector<Uint8> data,
-											   const WriteOptions& options,
-											   CancellationToken token ) {
+VFSTask<VFSFileInfo> VirtualFileSystem::writeAll( const URI& uri, std::vector<Uint8> data,
+												  const WriteOptions& options,
+												  CancellationToken token ) {
 	auto provider = providerFor( uri );
 	if ( !provider )
-		return unsupportedScheme<FileInfo>( uri );
+		return unsupportedScheme<VFSFileInfo>( uri );
 	// The buffer is moved into the job: the caller's data must outlive the asynchronous write.
-	return orchestrate<FileInfo>( [provider, uri, data = std::move( data ), options,
-								   token]() -> VFSResult<FileInfo> {
-		auto checkRevision = [&]( const VFSResult<FileInfo>& current ) -> VFSResult<void> {
+	return orchestrate<VFSFileInfo>( [provider, uri, data = std::move( data ), options,
+									  token]() -> VFSResult<VFSFileInfo> {
+		auto checkRevision = [&]( const VFSResult<VFSFileInfo>& current ) -> VFSResult<void> {
 			if ( !options.expectedRevision )
 				return Ok();
 			if ( !current ) {

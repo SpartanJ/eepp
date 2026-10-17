@@ -84,7 +84,7 @@ struct DragCapabilities {
 };
 
 /** A drop received through setDataDropHandler(). */
-struct DataDrop {
+struct EE_API DataDrop {
 	/** Each requested MIME type the drag offered, with its contents, in the requested order. */
 	std::vector<std::pair<std::string, std::string>> items;
 	/** Where it was dropped, in window coordinates. */

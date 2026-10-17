@@ -9,8 +9,11 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/system/zip.hpp>
 #include <eepp/vfs.hpp>
+#include <eepp/vfs/providers/localioscheduler.hpp>
+#include <eepp/vfs/providers/localprovider.hpp>
 #include <eepp/vfs/watchers/localwatchbackend.hpp>
 #include <mutex>
+#include <optional>
 #include <thread>
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
@@ -20,9 +23,7 @@
 
 using namespace EE;
 using namespace EE::VFS;
-using EE::System::FileSystem;
-using EE::System::Sys;
-using EE::System::ThreadPool;
+using namespace EE::System;
 using namespace vfstest;
 
 // ---------------------------------------------------------------------------------------------
@@ -30,7 +31,7 @@ using namespace vfstest;
 // ---------------------------------------------------------------------------------------------
 
 UTEST( VFSFileInfo, unknownMetadataIsDistinguishableFromZero ) {
-	FileInfo info;
+	VFSFileInfo info;
 	EXPECT_FALSE( info.size().has_value() );
 	EXPECT_FALSE( info.modifiedTime().has_value() );
 	info.setSize( 0 ).setModifiedTime( 0 ).setPermissions( 0 );
@@ -53,7 +54,7 @@ UTEST( VFSFileInfo, revisionsCompare ) {
 }
 
 UTEST( VFSFileInfo, symlinkTargetResolution ) {
-	FileInfo info;
+	VFSFileInfo info;
 	URI link( "sftp://host/a/b/link" );
 	info.symlinkTarget = "../c/target #x";
 	auto resolved = info.symlinkTargetURI( link );
@@ -66,7 +67,7 @@ UTEST( VFSFileInfo, symlinkTargetResolution ) {
 
 UTEST( VFSFileInfo, layout ) {
 	// Keep the hot listing value compact: 4 strings + revision + scalars, no per-entry URI.
-	EXPECT_LE( sizeof( FileInfo ), 4 * sizeof( std::string ) + 40 + 56 );
+	EXPECT_LE( sizeof( VFSFileInfo ), 4 * sizeof( std::string ) + 40 + 56 );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -409,9 +410,9 @@ UTEST( VFSResource, matchesPackFileIndex ) {
 	FileSystem::fileWrite( tmp.path + "pack/vfs-test/fonts/a.ttf",
 						   std::string_view( "font-data" ) );
 	FileSystem::fileWrite( tmp.path + "pack/vfs-test/themes/x.css", std::string_view( "css" ) );
-	System::DirectoryPack pack;
+	DirectoryPack pack;
 	EXPECT_TRUE( pack.open( tmp.path + "pack" ) );
-	auto* index = System::PackFileIndex::instance();
+	auto* index = PackFileIndex::instance();
 	EXPECT_TRUE( index->fileExists( "vfs-test/fonts/a.ttf" ) );
 	EXPECT_TRUE( index->directoryExists( "vfs-test/fonts" ) );
 
@@ -453,7 +454,7 @@ UTEST( VFSResource, zipPackWithSeveralFiles ) {
 	{
 		// Every addFile() rewrites the archive; the later ones replace an existing file, which
 		// used to fail on Windows and silently drop the file.
-		System::Zip zip;
+		Zip zip;
 		ASSERT_TRUE( zip.create( zipPath ) );
 		std::vector<Uint8> a{ 'a', '1' }, b{ 'b', '2' }, c{ 'c', '3' };
 		EXPECT_TRUE( zip.addFile( a, "vfs-zip/a.txt" ) );
@@ -462,7 +463,7 @@ UTEST( VFSResource, zipPackWithSeveralFiles ) {
 		EXPECT_TRUE( zip.close() );
 	}
 
-	System::Zip zip;
+	Zip zip;
 	ASSERT_TRUE( zip.open( zipPath ) );
 	EXPECT_EQ( 3u, zip.getFileList().size() );
 	std::vector<Uint8> data;
@@ -559,7 +560,7 @@ UTEST( VFSWatch, pollingBackendForProvidersWithoutNotifications ) {
 	vfs.registerProvider( mem );
 	mem->putFile( URI( "mem://w/dir/existing.txt" ), "1" );
 	WatchOptions options;
-	options.pollingInterval = System::Milliseconds( 20 );
+	options.pollingInterval = Milliseconds( 20 );
 	options.recursive = true;
 	auto opened = waitFor( vfs.watch( URI( "mem://w/dir" ), options ) );
 	EXPECT_TRUE( opened.hasValue() );
@@ -621,7 +622,9 @@ class FailingReadHandle : public FileHandleImpl {
 
 	VFSTask<void> flush() override { return readyValue<void>(); }
 
-	VFSTask<FileInfo> stat() override { return readyError<FileInfo>( VFSErrorCode::IO, URI() ); }
+	VFSTask<VFSFileInfo> stat() override {
+		return readyError<VFSFileInfo>( VFSErrorCode::IO, URI() );
+	}
 
 	VFSTask<void> close() override { return readyValue<void>(); }
 
@@ -907,3 +910,383 @@ UTEST( VFSSafety, transfersDoNotDelayOtherOperations ) {
 	ASSERT_EQ( TaskState::Ready, done.waitFor( std::chrono::seconds( 5 ) ) );
 	EXPECT_TRUE( std::move( done ).takeValue().hasValue() );
 }
+
+// ---------------------------------------------------------------------------------------------
+// Network mounts: an unreachable server never blocks local folders, and its calls time out
+// ---------------------------------------------------------------------------------------------
+
+namespace {
+
+/** Holds the calls that wait on it, like a server that stopped answering, until opened. */
+class Gate {
+  public:
+	void wait() {
+		std::unique_lock<std::mutex> lock( mMutex );
+		mOpened.wait( lock, [this] { return mOpen; } );
+	}
+
+	/** @return Whether it opened within timeout. */
+	bool waitFor( std::chrono::milliseconds timeout ) {
+		std::unique_lock<std::mutex> lock( mMutex );
+		return mOpened.wait_for( lock, timeout, [this] { return mOpen; } );
+	}
+
+	void open() {
+		std::lock_guard<std::mutex> lock( mMutex );
+		mOpen = true;
+		mOpened.notify_all();
+	}
+
+  private:
+	std::mutex mMutex;
+	std::condition_variable mOpened;
+	bool mOpen{ false };
+};
+
+/** Paths under /net are on a network mount; everything else is local. */
+std::optional<LocalIOScheduler::NetworkMount> fakeNetworkMount( const std::string& path ) {
+	if ( path.rfind( "/net", 0 ) == 0 )
+		return LocalIOScheduler::NetworkMount{ "/net", "server:/export" };
+	return std::nullopt;
+}
+
+std::atomic<int> sResolvedTwice{ 0 };
+
+} // namespace
+
+UTEST( LocalIOScheduler, hungMountTimesOutWithoutBlockingLocalCalls ) {
+	sResolvedTwice = 0;
+	auto previous = TaskDiagnostics::setHandler( []( TaskDiagnostic diagnostic ) {
+		if ( diagnostic == TaskDiagnostic::ResolvedTwice )
+			++sResolvedTwice;
+	} );
+	const auto timeout = Milliseconds( 200 );
+	auto pool = ThreadPool::createShared( 2 );
+	auto scheduler = std::make_shared<LocalIOScheduler>( pool, timeout, &fakeNetworkMount );
+	auto gate = std::make_shared<Gate>();
+	auto hung = [gate]() -> VFSResult<int> {
+		gate->wait();
+		return Ok( 1 );
+	};
+	ASSERT_TRUE( scheduler->routeFor( "/net/folder" ).isNetworkMount() );
+	ASSERT_FALSE( scheduler->routeFor( "/home/user" ).isNetworkMount() );
+
+	// Both lane threads hang, and a third call waits behind them.
+	const auto started = std::chrono::steady_clock::now();
+	auto first = scheduler->submit<int>( "/net/a", hung );
+	auto second = scheduler->submit<int>( "/net/b", hung );
+	auto queued = scheduler->submit<int>( "/net/c", []() -> VFSResult<int> { return Ok( 3 ); } );
+
+	// Meanwhile local calls run on the pool as usual.
+	auto local = waitFor(
+		scheduler->submit<int>( "/home/user", []() -> VFSResult<int> { return Ok( 7 ); } ) );
+	ASSERT_TRUE( local.hasValue() );
+	EXPECT_EQ( 7, local.value() );
+
+	// The hung calls and the one queued behind them fail once the timeout passes.
+	auto firstResult = waitFor( std::move( first ) );
+	auto queuedResult = waitFor( std::move( queued ) );
+	auto secondResult = waitFor( std::move( second ) );
+	const auto waited = std::chrono::steady_clock::now() - started;
+	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( firstResult ) );
+	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( secondResult ) );
+	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( queuedResult ) );
+	EXPECT_TRUE( !firstResult &&
+				 firstResult.error().message == "server:/export is not responding" );
+	EXPECT_TRUE( waited >= std::chrono::milliseconds( 200 ) );
+	EXPECT_TRUE( waited < std::chrono::seconds( 5 ) );
+
+	// While the mount does not answer, new calls fail at once instead of waiting.
+	const auto rejectedAt = std::chrono::steady_clock::now();
+	auto rejected =
+		waitFor( scheduler->submit<int>( "/net/d", []() -> VFSResult<int> { return Ok( 4 ); } ) );
+	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( rejected ) );
+	EXPECT_TRUE( std::chrono::steady_clock::now() - rejectedAt < std::chrono::milliseconds( 100 ) );
+
+	// The server answers again: the late results are discarded, and the mount works again.
+	gate->open();
+	VFSResult<int> recovered = Err( VFSError( VFSErrorCode::Unknown ) );
+	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 5 );
+	while ( !recovered && std::chrono::steady_clock::now() < deadline ) {
+		recovered = waitFor(
+			scheduler->submit<int>( "/net/e", []() -> VFSResult<int> { return Ok( 5 ); } ) );
+		if ( !recovered )
+			std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+	}
+	ASSERT_TRUE( recovered.hasValue() );
+	EXPECT_EQ( 5, recovered.value() );
+	scheduler.reset();
+	EXPECT_EQ( 0, sResolvedTwice.load() );
+	TaskDiagnostics::setHandler( previous );
+}
+
+UTEST( LocalIOScheduler, shutdownLeavesHungCallsBehind ) {
+	auto pool = ThreadPool::createShared( 1 );
+	auto scheduler = std::make_shared<LocalIOScheduler>( pool, Seconds( 60 ), &fakeNetworkMount );
+	auto gate = std::make_shared<Gate>();
+	auto hung = [gate]() -> VFSResult<int> {
+		gate->wait();
+		return Ok( 1 );
+	};
+	// Both lane threads hang; a third call waits behind them.
+	auto first = scheduler->submit<int>( "/net/a", hung );
+	auto second = scheduler->submit<int>( "/net/b", hung );
+	auto queued = scheduler->submit<int>( "/net/c", []() -> VFSResult<int> { return Ok( 3 ); } );
+	std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+	// Destroying the scheduler does not wait for the hung calls, and fails the queued one.
+	const auto destroyedAt = std::chrono::steady_clock::now();
+	scheduler.reset();
+	EXPECT_TRUE( std::chrono::steady_clock::now() - destroyedAt < std::chrono::seconds( 1 ) );
+	EXPECT_EQ( VFSErrorCode::Cancelled, codeOf( waitFor( std::move( queued ) ) ) );
+	// The detached threads still complete their calls when the server answers.
+	gate->open();
+	EXPECT_TRUE( waitFor( std::move( first ) ).hasValue() );
+	EXPECT_TRUE( waitFor( std::move( second ) ).hasValue() );
+}
+
+UTEST( LocalIOScheduler, timedOutCallNeverWritesIntoTheCallersMemory ) {
+	auto pool = ThreadPool::createShared( 1 );
+	auto scheduler =
+		std::make_shared<LocalIOScheduler>( pool, Milliseconds( 100 ), &fakeNetworkMount );
+	auto gate = std::make_shared<Gate>();
+	auto finished = std::make_shared<Gate>();
+	auto committed = std::make_shared<std::atomic<bool>>( false );
+	// The work runs on, past the timeout; its result must not reach the caller's buffer, which
+	// the caller may have released once told TimedOut.
+	auto task = scheduler->submitCommitted<int>(
+		scheduler->routeFor( "/net/file" ),
+		[gate, finished]() -> VFSResult<int> {
+			gate->wait();
+			finished->open();
+			return Ok( 1 );
+		},
+		[committed]( VFSResult<int>&& result ) {
+			*committed = true;
+			return std::move( result );
+		} );
+	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( task ) ) ) );
+	gate->open();
+	finished->wait();
+	std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+	EXPECT_FALSE( committed->load() );
+	// In time, it commits.
+	VFSResult<int> late = Err( VFSError( VFSErrorCode::Unknown ) );
+	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 5 );
+	while ( !late && std::chrono::steady_clock::now() < deadline ) {
+		late = waitFor( scheduler->submitCommitted<int>(
+			scheduler->routeFor( "/net/file" ), []() -> VFSResult<int> { return Ok( 2 ); },
+			[committed]( VFSResult<int>&& result ) {
+				*committed = true;
+				return std::move( result );
+			} ) );
+	}
+	ASSERT_TRUE( late.hasValue() );
+	EXPECT_TRUE( committed->load() );
+}
+
+UTEST( LocalIOScheduler, slowTimeoutCompletionNeverDelaysOtherMounts ) {
+	// Two mounts, both hanging.
+	auto lookup = []( const std::string& path ) -> std::optional<LocalIOScheduler::NetworkMount> {
+		for ( const char* root : { "/neta", "/netb" } ) {
+			if ( path.rfind( root, 0 ) == 0 )
+				return LocalIOScheduler::NetworkMount{ root, root };
+		}
+		return std::nullopt;
+	};
+	const auto timeout = std::chrono::milliseconds( 200 );
+	// One worker: the timeouts must not wait for it.
+	auto pool = ThreadPool::createShared( 1 );
+	auto scheduler = std::make_shared<LocalIOScheduler>( pool, Milliseconds( 200 ), lookup );
+	auto gate = std::make_shared<Gate>();
+	auto hung = [gate]() -> VFSResult<int> {
+		gate->wait();
+		return Ok( 1 );
+	};
+	// The first mount's timeout runs a completion that takes long (a close that waits, say).
+	auto slowStarted = std::make_shared<Gate>();
+	scheduler->submit<int>( "/neta/x", hung )
+		.onComplete( [slowStarted]( std::optional<VFSResult<int>> ) {
+			slowStarted->open();
+			std::this_thread::sleep_for( std::chrono::seconds( 2 ) );
+		} );
+	ASSERT_TRUE( slowStarted->waitFor( std::chrono::seconds( 5 ) ) );
+	// Meanwhile the other mount's calls still time out on time.
+	const auto started = std::chrono::steady_clock::now();
+	auto other = scheduler->submit<int>( "/netb/x", hung );
+	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( other ) ) ) );
+	EXPECT_TRUE( std::chrono::steady_clock::now() - started < timeout * 4 );
+	gate->open();
+}
+
+UTEST( LocalIOScheduler, lastOwnerReleasedByALaneCallTearsDown ) {
+	auto pool = ThreadPool::createShared( 1 );
+	auto scheduler =
+		std::make_shared<LocalIOScheduler>( pool, Milliseconds( 100 ), &fakeNetworkMount );
+	auto gate = std::make_shared<Gate>();
+	auto destroyed = std::make_shared<Gate>();
+	// Holds the scheduler, like a file handle's call; signals once the scheduler is gone.
+	struct Owner {
+		std::shared_ptr<LocalIOScheduler> scheduler;
+		std::shared_ptr<Gate> destroyed;
+		~Owner() {
+			scheduler.reset();
+			if ( destroyed )
+				destroyed->open();
+		}
+	};
+	auto owner = std::make_shared<Owner>();
+	owner->scheduler = scheduler;
+	owner->destroyed = destroyed;
+	auto task = scheduler->submit<int>( "/net/a", [gate, owner]() -> VFSResult<int> {
+		gate->wait();
+		return Ok( 1 );
+	} );
+	owner.reset();
+	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( task ) ) ) );
+	// The call recovers after the timeout, holding the last owner: the lane's thread tears the
+	// scheduler down.
+	scheduler.reset();
+	gate->open();
+	EXPECT_TRUE( destroyed->waitFor( std::chrono::seconds( 5 ) ) );
+}
+
+UTEST( LocalIOScheduler, neverOwnsThePool ) {
+	auto pool = ThreadPool::createShared( 1 );
+	auto scheduler = std::make_shared<LocalIOScheduler>( pool, Seconds( 5 ), &fakeNetworkMount );
+	// A call that holds the last scheduler reference ends on a pool worker: the pool, owned
+	// elsewhere, is not destroyed there.
+	auto task = scheduler->submit<int>(
+		"/home/user", [owner = scheduler]() -> VFSResult<int> { return Ok( 1 ); } );
+	scheduler.reset();
+	EXPECT_TRUE( waitFor( std::move( task ) ).hasValue() );
+	std::weak_ptr<ThreadPool> weak = pool;
+	auto other = std::make_shared<LocalIOScheduler>( weak, Seconds( 5 ), &fakeNetworkMount );
+	pool.reset();
+	EXPECT_TRUE( weak.expired() );
+	// Once its owner releases the pool, every call fails instead of running: the file system is
+	// shutting down, on network mounts too.
+	auto ran = std::make_shared<std::atomic<bool>>( false );
+	auto work = [ran]() -> VFSResult<int> {
+		*ran = true;
+		return Ok( 1 );
+	};
+	EXPECT_EQ( VFSErrorCode::Cancelled,
+			   codeOf( waitFor( other->submit<int>( "/home/user", work ) ) ) );
+	EXPECT_EQ( VFSErrorCode::Cancelled,
+			   codeOf( waitFor( other->submit<int>( "/net/file", work ) ) ) );
+	EXPECT_EQ( VFSErrorCode::Cancelled,
+			   codeOf( waitFor( other->submitResolved<int>( "/net/file", true, work ) ) ) );
+	EXPECT_EQ( VFSErrorCode::Cancelled,
+			   codeOf( waitFor( other->submitCommitted<int>(
+				   other->routeFor( "/net/file" ), work,
+				   []( VFSResult<int>&& result ) { return std::move( result ); } ) ) ) );
+	EXPECT_FALSE( ran->load() );
+}
+
+UTEST( LocalIOScheduler, localTemporaryFolderIsNotANetworkMount ) {
+	TempDir tmp;
+	EXPECT_FALSE( LocalIOScheduler::findNetworkMount( tmp.path ).has_value() );
+}
+
+UTEST( LocalIOScheduler, renameBetweenRoutesNeverWaitsOnTheOtherMount ) {
+	TempDir tmp;
+	const std::string mount = tmp.path + "net";
+	ASSERT_TRUE( FileSystem::makeDir( mount ) );
+	ASSERT_TRUE( FileSystem::fileWrite( tmp.path + "local.txt", "local" ) );
+	ASSERT_TRUE( FileSystem::fileWrite( mount + "/a.txt", "a" ) );
+	// The "net" folder stands in for a network mount: its calls run on a lane.
+	auto pool = ThreadPool::createShared( 1 );
+	auto scheduler = std::make_shared<LocalIOScheduler>(
+		pool, Seconds( 5 ),
+		[mount]( const std::string& path ) -> std::optional<LocalIOScheduler::NetworkMount> {
+			if ( path.rfind( mount, 0 ) == 0 )
+				return LocalIOScheduler::NetworkMount{ mount, "server:/export" };
+			return std::nullopt;
+		} );
+	LocalProvider provider( scheduler );
+	// Into the mount: answered at once as crossing file systems (the VFS then copies), without a
+	// call that would look the mount up.
+	auto across = waitFor( provider.rename( URI::fromFSPath( tmp.path + "local.txt" ),
+											URI::fromFSPath( mount + "/local.txt" ), {}, {} ) );
+	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( across ) );
+	EXPECT_TRUE( FileSystem::fileExists( tmp.path + "local.txt" ) );
+	// Within the mount it renames, on the mount's lane.
+	auto within = waitFor( provider.rename( URI::fromFSPath( mount + "/a.txt" ),
+											URI::fromFSPath( mount + "/b.txt" ), {}, {} ) );
+	EXPECT_TRUE( within.hasValue() );
+	EXPECT_TRUE( FileSystem::fileExists( mount + "/b.txt" ) );
+}
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+UTEST( LocalIOScheduler, linksIntoAMountRunOnItsLane ) {
+	TempDir tmp;
+	// Physical paths: the stand-in mount is matched by prefix, after the links are followed.
+	char* real = ::realpath( tmp.path.c_str(), nullptr );
+	ASSERT_TRUE( real != nullptr );
+	const std::string base = std::string( real ) + "/";
+	::free( real );
+	const std::string mount = base + "net";
+	ASSERT_TRUE( FileSystem::makeDir( mount ) );
+	ASSERT_TRUE( FileSystem::makeDir( base + "dir" ) );
+	ASSERT_TRUE( FileSystem::fileWrite( base + "local.txt", "local" ) );
+	ASSERT_EQ( 0, ::symlink( mount.c_str(), ( base + "link" ).c_str() ) );
+	ASSERT_EQ( 0, ::symlink( "link", ( base + "link2" ).c_str() ) );
+	auto lookup =
+		[mount]( const std::string& path ) -> std::optional<LocalIOScheduler::NetworkMount> {
+		if ( path.rfind( mount, 0 ) == 0 )
+			return LocalIOScheduler::NetworkMount{ mount, "server:/export" };
+		return std::nullopt;
+	};
+	EXPECT_TRUE( ( mount + "/a.txt" ) ==
+				 LocalIOScheduler::resolvePath( base + "link/a.txt", true, lookup ) );
+	EXPECT_TRUE( mount == LocalIOScheduler::resolvePath( base + "dir/../link2", true, lookup ) );
+	EXPECT_TRUE( ( base + "link" ) ==
+				 LocalIOScheduler::resolvePath( base + "link", false, lookup ) );
+
+	// The mount's server stops answering: both lane threads hang, and the mount counts as not
+	// responding.
+	auto pool = ThreadPool::createShared( 1 );
+	auto scheduler = std::make_shared<LocalIOScheduler>( pool, Milliseconds( 100 ), lookup );
+	auto gate = std::make_shared<Gate>();
+	auto hung = [gate]() -> VFSResult<int> {
+		gate->wait();
+		return Ok( 1 );
+	};
+	auto first = scheduler->submit<int>( mount + "/a", hung );
+	auto second = scheduler->submit<int>( mount + "/b", hung );
+	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( first ) ) ) );
+	LocalProvider provider( scheduler );
+
+	// Calls through the links run on the mount's lane: they fail at once, as the mount's own do,
+	// instead of hanging on the shared pool.
+	StatOptions follow;
+	follow.followSymlinks = true;
+	EXPECT_EQ( VFSErrorCode::TimedOut,
+			   codeOf( waitFor( provider.stat( URI::fromFSPath( base + "link" ), follow, {} ) ) ) );
+	EXPECT_EQ(
+		VFSErrorCode::TimedOut,
+		codeOf( waitFor( provider.stat( URI::fromFSPath( base + "link2" ), follow, {} ) ) ) );
+	EXPECT_EQ(
+		VFSErrorCode::TimedOut,
+		codeOf( waitFor( provider.openDirectory( URI::fromFSPath( base + "link" ), {}, {} ) ) ) );
+	EXPECT_EQ( VFSErrorCode::TimedOut,
+			   codeOf( waitFor(
+				   provider.stat( URI::fromFSPath( base + "link/a.txt" ), StatOptions{}, {} ) ) ) );
+	// A move through a link into the mount crosses file systems, answered without the mount.
+	EXPECT_EQ( VFSErrorCode::Unsupported,
+			   codeOf( waitFor( provider.rename( URI::fromFSPath( base + "local.txt" ),
+												 URI::fromFSPath( base + "link/local.txt" ), {},
+												 {} ) ) ) );
+	// The links themselves, and the local files, are local.
+	StatOptions noFollow;
+	noFollow.followSymlinks = false;
+	auto linkInfo = waitFor( provider.stat( URI::fromFSPath( base + "link" ), noFollow, {} ) );
+	ASSERT_TRUE( linkInfo.hasValue() );
+	EXPECT_TRUE( linkInfo.value().type == FileType::Symlink );
+	EXPECT_TRUE(
+		waitFor( provider.stat( URI::fromFSPath( base + "local.txt" ), follow, {} ) ).hasValue() );
+
+	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( second ) ) ) );
+	gate->open();
+}
+#endif

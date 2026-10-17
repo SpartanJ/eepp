@@ -4,8 +4,9 @@
 
 #include <eepp/vfs/providers/localprovider.hpp>
 
-#include "localpath.hpp"
+#include <atomic>
 #include <eepp/core/string.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <mutex>
 #include <shared_mutex>
 
@@ -17,9 +18,11 @@
 #endif
 #include <windows.h>
 
+using namespace EE::System;
+
 namespace EE { namespace VFS {
 
-using System::ThreadPool;
+using Route = LocalIOScheduler::Route;
 
 ProviderCapabilities LocalProvider::capabilities( const URI& ) const {
 	return VFSCapability::Read | VFSCapability::Write | VFSCapability::List |
@@ -110,8 +113,8 @@ FileType typeFromAttributes( DWORD attributes, DWORD reparseTag ) {
 }
 
 /** Common metadata fill for Win32 attribute data. */
-void fillInfo( FileInfo& info, DWORD attributes, const FILETIME& created, const FILETIME& accessed,
-			   const FILETIME& modified, Uint64 size ) {
+void fillInfo( VFSFileInfo& info, DWORD attributes, const FILETIME& created,
+			   const FILETIME& accessed, const FILETIME& modified, Uint64 size ) {
 	info.setModifiedTime( fileTimeToUnix( modified ) );
 	info.setCreatedTime( fileTimeToUnix( created ) );
 	info.setAccessedTime( fileTimeToUnix( accessed ) );
@@ -132,12 +135,12 @@ HANDLE openForMetadata( const std::wstring& path, bool follow ) {
 		FILE_FLAG_BACKUP_SEMANTICS | ( follow ? 0 : FILE_FLAG_OPEN_REPARSE_POINT ), nullptr );
 }
 
-VFSResult<FileInfo> statHandle( HANDLE handle, const URI& uri, const std::string& path ) {
+VFSResult<VFSFileInfo> statHandle( HANDLE handle, const URI& uri, const std::string& path ) {
 	BY_HANDLE_FILE_INFORMATION data;
 	if ( !GetFileInformationByHandle( handle, &data ) )
 		return Err( lastError( path, "GetFileInformationByHandle failed" ) );
-	FileInfo info;
-	info.name = LocalPath::fileName( path );
+	VFSFileInfo info;
+	info.name = FileSystem::fileNameFromPath( path );
 	DWORD tag = 0;
 	if ( data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT ) {
 		FILE_ATTRIBUTE_TAG_INFO tagInfo;
@@ -158,9 +161,10 @@ VFSResult<FileInfo> statHandle( HANDLE handle, const URI& uri, const std::string
 class LocalDirectoryImpl : public DirectoryHandleImpl,
 						   public std::enable_shared_from_this<LocalDirectoryImpl> {
   public:
-	LocalDirectoryImpl( std::shared_ptr<ThreadPool> pool, URI uri, std::string path,
-						DirectoryOpenOptions options ) :
-		mPool( std::move( pool ) ),
+	LocalDirectoryImpl( std::shared_ptr<LocalIOScheduler> scheduler, Route route, URI uri,
+						std::string path, DirectoryOpenOptions options ) :
+		mScheduler( std::move( scheduler ) ),
+		mRoute( std::move( route ) ),
 		mUri( std::move( uri ) ),
 		mPath( std::move( path ) ),
 		mOptions( options ) {}
@@ -186,19 +190,32 @@ class LocalDirectoryImpl : public DirectoryHandleImpl,
 	}
 
 	VFSTask<DirectoryBatch> read( size_t maxEntries, CancellationToken token ) override {
-		return mPool->submit(
-			[self = shared_from_this(), maxEntries, token]() -> VFSResult<DirectoryBatch> {
-				return self->readSync( maxEntries, token );
+		return mScheduler->submit<DirectoryBatch>(
+			mRoute, [self = shared_from_this(), maxEntries, token]() -> VFSResult<DirectoryBatch> {
+				auto batch = self->readSync( maxEntries, token );
+				// After releasing the mutex: a close() that could not take it set the flag first.
+				if ( self->mClosePending )
+					self->tryClose();
+				return batch;
 			} );
 	}
 
+	/** Never waits: a read in progress holds the mutex for as long as its file system takes (an
+	 * unresponsive server, until the server answers), and the caller may be the UI thread. That
+	 * read closes the directory when it ends. */
 	VFSTask<void> close() override {
-		std::lock_guard<std::mutex> lock( mMutex );
-		closeNow();
+		mClosePending = true;
+		tryClose();
 		return readyValue<void>();
 	}
 
   private:
+	void tryClose() {
+		std::unique_lock<std::mutex> lock( mMutex, std::try_to_lock );
+		if ( lock.owns_lock() )
+			closeNow();
+	}
+
 	VFSResult<DirectoryBatch> readSync( size_t maxEntries, const CancellationToken& token ) {
 		std::lock_guard<std::mutex> lock( mMutex );
 		DirectoryBatch batch;
@@ -217,8 +234,8 @@ class LocalDirectoryImpl : public DirectoryHandleImpl,
 			mHasPending = false;
 			if ( wcscmp( mData.cFileName, L"." ) == 0 || wcscmp( mData.cFileName, L".." ) == 0 )
 				continue;
-			// Built in place: a FileInfo is large, moving it into the batch is measurable.
-			FileInfo& info = batch.entries.emplace_back();
+			// Built in place: a VFSFileInfo is large, moving it into the batch is measurable.
+			VFSFileInfo& info = batch.entries.emplace_back();
 			info.name = fromWide( mData.cFileName );
 			info.type = typeFromAttributes( mData.dwFileAttributes, mData.dwReserved0 );
 			Uint64 size = ( static_cast<Uint64>( mData.nFileSizeHigh ) << 32 ) | mData.nFileSizeLow;
@@ -252,10 +269,12 @@ class LocalDirectoryImpl : public DirectoryHandleImpl,
 		mEnd = true;
 	}
 
-	std::shared_ptr<ThreadPool> mPool;
+	std::shared_ptr<LocalIOScheduler> mScheduler;
+	Route mRoute;
 	URI mUri;
 	std::string mPath;
 	std::mutex mMutex;
+	std::atomic<bool> mClosePending{ false };
 	WIN32_FIND_DATAW mData{};
 	HANDLE mFind{ INVALID_HANDLE_VALUE };
 	DirectoryOpenOptions mOptions;
@@ -265,9 +284,10 @@ class LocalDirectoryImpl : public DirectoryHandleImpl,
 
 class LocalFileImpl : public FileHandleImpl, public std::enable_shared_from_this<LocalFileImpl> {
   public:
-	LocalFileImpl( std::shared_ptr<ThreadPool> pool, URI uri, std::string path, HANDLE handle,
-				   ProviderCapabilities caps ) :
-		mPool( std::move( pool ) ),
+	LocalFileImpl( std::shared_ptr<LocalIOScheduler> scheduler, Route route, URI uri,
+				   std::string path, HANDLE handle, ProviderCapabilities caps ) :
+		mScheduler( std::move( scheduler ) ),
+		mRoute( std::move( route ) ),
 		mUri( std::move( uri ) ),
 		mPath( std::move( path ) ),
 		mHandle( handle ),
@@ -279,47 +299,42 @@ class LocalFileImpl : public FileHandleImpl, public std::enable_shared_from_this
 	}
 
 	VFSTask<size_t> read( Uint64 offset, std::span<Uint8> data, CancellationToken token ) override {
-		return submit<size_t>( token, [offset, data]( LocalFileImpl& self ) -> VFSResult<size_t> {
-			size_t done = 0;
-			while ( done < data.size() ) {
-				OVERLAPPED ov{};
-				Uint64 pos = offset + done;
-				ov.Offset = static_cast<DWORD>( pos );
-				ov.OffsetHigh = static_cast<DWORD>( pos >> 32 );
-				DWORD chunk =
-					static_cast<DWORD>( std::min<size_t>( data.size() - done, 0x40000000u ) );
-				DWORD got = 0;
-				if ( !ReadFile( self.mHandle, data.data() + done, chunk, &got, &ov ) ) {
-					if ( GetLastError() == ERROR_HANDLE_EOF )
-						break;
-					return Err( lastError( self.mPath, "ReadFile failed" ) );
-				}
-				if ( got == 0 )
-					break;
-				done += got;
-			}
-			return Ok( done );
-		} );
+		if ( !mRoute.isNetworkMount() ) {
+			return submit<size_t>( token, [offset, data]( LocalFileImpl& self ) {
+				return self.readInto( offset, data );
+			} );
+		}
+		// The call can outlive the caller's wait (TimedOut), and with it data: it reads into a
+		// buffer of its own, copied into data only while the caller still waits.
+		return submitCommitted<std::vector<Uint8>, size_t>(
+			token,
+			[offset, size = data.size()]( LocalFileImpl& self ) -> VFSResult<std::vector<Uint8>> {
+				std::vector<Uint8> buffer( size );
+				auto read = self.readInto( offset, buffer );
+				if ( !read )
+					return Err( std::move( read ).error() );
+				buffer.resize( read.value() );
+				return Ok( std::move( buffer ) );
+			},
+			[data]( VFSResult<std::vector<Uint8>>&& read ) -> VFSResult<size_t> {
+				if ( !read )
+					return Err( std::move( read ).error() );
+				std::copy( read.value().begin(), read.value().end(), data.begin() );
+				return Ok( read.value().size() );
+			} );
 	}
 
 	VFSTask<size_t> write( Uint64 offset, std::span<const Uint8> data,
 						   CancellationToken token ) override {
-		return submit<size_t>( token, [offset, data]( LocalFileImpl& self ) -> VFSResult<size_t> {
-			size_t done = 0;
-			while ( done < data.size() ) {
-				OVERLAPPED ov{};
-				Uint64 pos = offset + done;
-				ov.Offset = static_cast<DWORD>( pos );
-				ov.OffsetHigh = static_cast<DWORD>( pos >> 32 );
-				DWORD chunk =
-					static_cast<DWORD>( std::min<size_t>( data.size() - done, 0x40000000u ) );
-				DWORD put = 0;
-				if ( !WriteFile( self.mHandle, data.data() + done, chunk, &put, &ov ) )
-					return Err( lastError( self.mPath, "WriteFile failed" ) );
-				done += put;
-			}
-			return Ok( done );
-		} );
+		if ( !mRoute.isNetworkMount() ) {
+			return submit<size_t>( token, [offset, data]( LocalFileImpl& self ) {
+				return self.writeFrom( offset, data );
+			} );
+		}
+		// As read(): the call may outlive data, so it writes from a copy.
+		return submit<size_t>(
+			token, [offset, copy = std::vector<Uint8>( data.begin(), data.end() )](
+					   LocalFileImpl& self ) { return self.writeFrom( offset, copy ); } );
 	}
 
 	VFSTask<void> truncate( Uint64 size ) override {
@@ -341,14 +356,14 @@ class LocalFileImpl : public FileHandleImpl, public std::enable_shared_from_this
 		} );
 	}
 
-	VFSTask<FileInfo> stat() override {
-		return submit<FileInfo>( {}, []( LocalFileImpl& self ) {
+	VFSTask<VFSFileInfo> stat() override {
+		return submit<VFSFileInfo>( {}, []( LocalFileImpl& self ) {
 			return statHandle( self.mHandle, self.mUri, self.mPath );
 		} );
 	}
 
 	VFSTask<void> close() override {
-		return mPool->submit( [self = shared_from_this()]() -> VFSResult<void> {
+		return mScheduler->submit<void>( mRoute, [self = shared_from_this()]() -> VFSResult<void> {
 			std::unique_lock<std::shared_mutex> lock( self->mMutex );
 			if ( self->mHandle != INVALID_HANDLE_VALUE ) {
 				BOOL ok = CloseHandle( self->mHandle );
@@ -363,19 +378,72 @@ class LocalFileImpl : public FileHandleImpl, public std::enable_shared_from_this
 	ProviderCapabilities capabilities() const override { return mCaps; }
 
   private:
-	template <typename T, typename F> VFSTask<T> submit( CancellationToken token, F&& fn ) {
-		return mPool->submit( [self = shared_from_this(), fn = std::forward<F>( fn ),
-							   token = std::move( token )]() mutable -> VFSResult<T> {
+	VFSResult<size_t> readInto( Uint64 offset, std::span<Uint8> data ) {
+		size_t done = 0;
+		while ( done < data.size() ) {
+			OVERLAPPED ov{};
+			Uint64 pos = offset + done;
+			ov.Offset = static_cast<DWORD>( pos );
+			ov.OffsetHigh = static_cast<DWORD>( pos >> 32 );
+			DWORD chunk = static_cast<DWORD>( std::min<size_t>( data.size() - done, 0x40000000u ) );
+			DWORD got = 0;
+			if ( !ReadFile( mHandle, data.data() + done, chunk, &got, &ov ) ) {
+				if ( GetLastError() == ERROR_HANDLE_EOF )
+					break;
+				return Err( lastError( mPath, "ReadFile failed" ) );
+			}
+			if ( got == 0 )
+				break;
+			done += got;
+		}
+		return Ok( done );
+	}
+
+	VFSResult<size_t> writeFrom( Uint64 offset, std::span<const Uint8> data ) {
+		size_t done = 0;
+		while ( done < data.size() ) {
+			OVERLAPPED ov{};
+			Uint64 pos = offset + done;
+			ov.Offset = static_cast<DWORD>( pos );
+			ov.OffsetHigh = static_cast<DWORD>( pos >> 32 );
+			DWORD chunk = static_cast<DWORD>( std::min<size_t>( data.size() - done, 0x40000000u ) );
+			DWORD put = 0;
+			if ( !WriteFile( mHandle, data.data() + done, chunk, &put, &ov ) )
+				return Err( lastError( mPath, "WriteFile failed" ) );
+			done += put;
+		}
+		return Ok( done );
+	}
+
+	/** Runs fn( *this ) -> VFSResult<T> where the file's calls run, unless cancelled or closed. */
+	template <typename T, typename F> auto guarded( CancellationToken token, F&& fn ) {
+		return [self = shared_from_this(), fn = std::forward<F>( fn ),
+				token = std::move( token )]() mutable -> VFSResult<T> {
 			if ( token.isCancellationRequested() )
 				return Err( cancelledError( self->mUri ) );
 			std::shared_lock<std::shared_mutex> lock( self->mMutex );
 			if ( self->mHandle == INVALID_HANDLE_VALUE )
 				return Err( VFSError( VFSErrorCode::InvalidOperation, self->mUri, "File closed" ) );
 			return fn( *self );
-		} );
+		};
 	}
 
-	std::shared_ptr<ThreadPool> mPool;
+	template <typename T, typename F> VFSTask<T> submit( CancellationToken token, F&& fn ) {
+		return mScheduler->submit<T>( mRoute,
+									  guarded<T>( std::move( token ), std::forward<F>( fn ) ) );
+	}
+
+	/** submit() of fn -> VFSResult<T>, then commit( VFSResult<T>&& ) -> VFSResult<U> (see
+	 * LocalIOScheduler::submitCommitted()). */
+	template <typename T, typename U, typename F, typename C>
+	VFSTask<U> submitCommitted( CancellationToken token, F&& fn, C&& commit ) {
+		return mScheduler->submitCommitted<U>(
+			mRoute, guarded<T>( std::move( token ), std::forward<F>( fn ) ),
+			std::forward<C>( commit ) );
+	}
+
+	std::shared_ptr<LocalIOScheduler> mScheduler;
+	Route mRoute;
 	URI mUri;
 	std::string mPath;
 	std::shared_mutex mMutex;
@@ -385,16 +453,16 @@ class LocalFileImpl : public FileHandleImpl, public std::enable_shared_from_this
 
 } // namespace
 
-VFSResult<FileInfo> LocalProvider::statSync( const URI& uri, const std::string& path,
-											 bool followSymlinks ) {
+VFSResult<VFSFileInfo> LocalProvider::statSync( const URI& uri, const std::string& path,
+												bool followSymlinks ) {
 	std::wstring wide = toWide( path );
 	HANDLE handle = openForMetadata( wide, followSymlinks );
 	if ( handle == INVALID_HANDLE_VALUE ) {
 		WIN32_FILE_ATTRIBUTE_DATA data;
 		if ( !GetFileAttributesExW( wide.c_str(), GetFileExInfoStandard, &data ) )
 			return Err( lastError( path, "Stat failed" ) );
-		FileInfo info;
-		info.name = LocalPath::fileName( path );
+		VFSFileInfo info;
+		info.name = FileSystem::fileNameFromPath( path );
 		info.type = typeFromAttributes( data.dwFileAttributes, 0 );
 		Uint64 size = ( static_cast<Uint64>( data.nFileSizeHigh ) << 32 ) | data.nFileSizeLow;
 		fillInfo( info, data.dwFileAttributes, data.ftCreationTime, data.ftLastAccessTime,
@@ -416,37 +484,39 @@ VFSResult<FileInfo> LocalProvider::statSync( const URI& uri, const std::string& 
 	return info;
 }
 
-VFSTask<FileInfo> LocalProvider::stat( const URI& uri, const StatOptions& options,
-									   CancellationToken token ) {
-	return run<FileInfo>( uri, std::move( token ),
-						  [uri, follow = options.followSymlinks]( const std::string& path ) {
-							  return statSync( uri, path, follow );
-						  } );
+VFSTask<VFSFileInfo> LocalProvider::stat( const URI& uri, const StatOptions& options,
+										  CancellationToken token ) {
+	const bool follow = options.followSymlinks;
+	return run<VFSFileInfo>(
+		uri, follow ? LastLink::Follow : LastLink::Keep, std::move( token ),
+		[uri, follow]( const std::string& path ) { return statSync( uri, path, follow ); } );
 }
 
 VFSTask<DirectoryHandle> LocalProvider::openDirectory( const URI& uri,
 													   const DirectoryOpenOptions& options,
 													   CancellationToken token ) {
-	return run<DirectoryHandle>(
-		uri, std::move( token ),
-		[pool = mPool, uri, options]( const std::string& path ) -> VFSResult<DirectoryHandle> {
-			DWORD attrs = GetFileAttributesW( toWide( path ).c_str() );
-			if ( attrs == INVALID_FILE_ATTRIBUTES )
-				return Err( lastError( path, "Open directory failed" ) );
-			if ( !( attrs & FILE_ATTRIBUTE_DIRECTORY ) )
-				return Err( VFSError( VFSErrorCode::NotDirectory, uri ) );
-			auto impl = std::make_shared<LocalDirectoryImpl>( pool, uri, path, options );
-			if ( auto started = impl->start(); !started )
-				return Err( std::move( started ).error() );
-			return Ok( DirectoryHandle( uri, std::move( impl ) ) );
-		} );
+	return run<DirectoryHandle>( uri, LastLink::Follow, std::move( token ),
+								 [scheduler = mScheduler, uri, options](
+									 const std::string& path ) -> VFSResult<DirectoryHandle> {
+									 DWORD attrs = GetFileAttributesW( toWide( path ).c_str() );
+									 if ( attrs == INVALID_FILE_ATTRIBUTES )
+										 return Err( lastError( path, "Open directory failed" ) );
+									 if ( !( attrs & FILE_ATTRIBUTE_DIRECTORY ) )
+										 return Err( VFSError( VFSErrorCode::NotDirectory, uri ) );
+									 auto impl = std::make_shared<LocalDirectoryImpl>(
+										 scheduler, scheduler->resolvedRouteFor( path, true ), uri,
+										 path, options );
+									 if ( auto started = impl->start(); !started )
+										 return Err( std::move( started ).error() );
+									 return Ok( DirectoryHandle( uri, std::move( impl ) ) );
+								 } );
 }
 
 VFSTask<FileHandle> LocalProvider::open( const URI& uri, const OpenOptions& options,
 										 CancellationToken token ) {
 	return run<FileHandle>(
-		uri, std::move( token ),
-		[pool = mPool, uri, options,
+		uri, LastLink::Follow, std::move( token ),
+		[scheduler = mScheduler, uri, options,
 		 caps = capabilities( uri )]( const std::string& path ) -> VFSResult<FileHandle> {
 			OpenFlags flags = options.flags;
 			DWORD access = 0;
@@ -479,76 +549,96 @@ VFSTask<FileHandle> LocalProvider::open( const URI& uri, const OpenOptions& opti
 				CloseHandle( handle );
 				return Err( VFSError( VFSErrorCode::IsDirectory, uri ) );
 			}
-			return Ok( FileHandle(
-				uri, std::make_shared<LocalFileImpl>( pool, uri, path, handle, caps ) ) );
+			return Ok( FileHandle( uri, std::make_shared<LocalFileImpl>(
+											scheduler, scheduler->resolvedRouteFor( path, true ),
+											uri, path, handle, caps ) ) );
 		} );
 }
 
 VFSTask<void> LocalProvider::mkdir( const URI& uri, const MkDirOptions&, CancellationToken token ) {
-	return run<void>( uri, std::move( token ), []( const std::string& path ) -> VFSResult<void> {
-		if ( !CreateDirectoryW( toWide( path ).c_str(), nullptr ) )
-			return Err( lastError( path, "Create directory failed" ) );
-		return Ok();
-	} );
-}
-
-VFSTask<void> LocalProvider::remove( const URI& uri, const RemoveOptions&,
-									 CancellationToken token ) {
-	return run<void>( uri, std::move( token ), []( const std::string& path ) -> VFSResult<void> {
-		std::wstring wide = toWide( path );
-		DWORD attrs = GetFileAttributesW( wide.c_str() );
-		if ( attrs == INVALID_FILE_ATTRIBUTES )
-			return Err( lastError( path, "Remove failed" ) );
-		// Directory symlinks/junctions are removed with RemoveDirectory, never followed.
-		BOOL ok = ( attrs & FILE_ATTRIBUTE_DIRECTORY ) ? RemoveDirectoryW( wide.c_str() )
-													   : DeleteFileW( wide.c_str() );
-		if ( !ok )
-			return Err( lastError( path, "Remove failed" ) );
-		return Ok();
-	} );
-}
-
-VFSTask<void> LocalProvider::rename( const URI& from, const URI& to, const RenameOptions& options,
-									 CancellationToken token ) {
-	auto toPath = toNativePath( to );
-	if ( !toPath )
-		return readyError<void>( std::move( toPath ).error() );
-	return run<void>( from, std::move( token ),
-					  [to = std::move( toPath ).value(), overwrite = options.overwrite](
-						  const std::string& path ) -> VFSResult<void> {
-						  // No MOVEFILE_COPY_ALLOWED: cross-volume moves fail with
-						  // ERROR_NOT_SAME_DEVICE and the VFS falls back to copy + remove.
-						  DWORD flags = 0;
-						  if ( overwrite )
-							  flags |= MOVEFILE_REPLACE_EXISTING;
-						  if ( !MoveFileExW( toWide( path ).c_str(), toWide( to ).c_str(), flags ) )
-							  return Err( lastError( path, "Rename failed" ) );
+	return run<void>( uri, LastLink::Keep, std::move( token ),
+					  []( const std::string& path ) -> VFSResult<void> {
+						  if ( !CreateDirectoryW( toWide( path ).c_str(), nullptr ) )
+							  return Err( lastError( path, "Create directory failed" ) );
 						  return Ok();
 					  } );
 }
 
+VFSTask<void> LocalProvider::remove( const URI& uri, const RemoveOptions&,
+									 CancellationToken token ) {
+	return run<void>(
+		uri, LastLink::Keep, std::move( token ), []( const std::string& path ) -> VFSResult<void> {
+			std::wstring wide = toWide( path );
+			DWORD attrs = GetFileAttributesW( wide.c_str() );
+			if ( attrs == INVALID_FILE_ATTRIBUTES )
+				return Err( lastError( path, "Remove failed" ) );
+			// Directory symlinks/junctions are removed with RemoveDirectory, never followed.
+			BOOL ok = ( attrs & FILE_ATTRIBUTE_DIRECTORY ) ? RemoveDirectoryW( wide.c_str() )
+														   : DeleteFileW( wide.c_str() );
+			if ( !ok )
+				return Err( lastError( path, "Remove failed" ) );
+			return Ok();
+		} );
+}
+
+VFSTask<void> LocalProvider::rename( const URI& from, const URI& to, const RenameOptions& options,
+									 CancellationToken token ) {
+	if ( token.isCancellationRequested() )
+		return readyError<void>( cancelledError( from ) );
+	auto fromPath = toNativePath( from );
+	if ( !fromPath )
+		return readyError<void>( std::move( fromPath ).error() );
+	auto toPath = toNativePath( to );
+	if ( !toPath )
+		return readyError<void>( std::move( toPath ).error() );
+	// A rename never crosses file systems, and paths on different routes (a local disk and a
+	// network mount, or two mounts, their parents' links followed) are never on the same one:
+	// answer it before the call, as the system would (the VFS then copies and removes). The call
+	// then never waits on the other path's mount, which the system call would look up.
+	const std::string& native = fromPath.value();
+	const std::string& target = toPath.value();
+	return mScheduler->submitOnSameRoute<void>(
+		native, target,
+		VFSError( VFSErrorCode::Unsupported, from,
+				  "The source and destination are on different file systems" ),
+		guarded<void>( native, std::move( token ),
+					   [to = target, overwrite = options.overwrite](
+						   const std::string& path ) -> VFSResult<void> {
+						   // No MOVEFILE_COPY_ALLOWED: cross-volume moves fail with
+						   // ERROR_NOT_SAME_DEVICE and the VFS falls back to copy + remove.
+						   DWORD flags = 0;
+						   if ( overwrite )
+							   flags |= MOVEFILE_REPLACE_EXISTING;
+						   if ( !MoveFileExW( toWide( path ).c_str(), toWide( to ).c_str(),
+											  flags ) )
+							   return Err( lastError( path, "Rename failed" ) );
+						   return Ok();
+					   } ) );
+}
+
 VFSTask<URI> LocalProvider::canonicalize( const URI& uri, CancellationToken token ) {
-	return run<URI>( uri, std::move( token ), []( const std::string& path ) -> VFSResult<URI> {
-		HANDLE handle = openForMetadata( toWide( path ), true );
-		if ( handle == INVALID_HANDLE_VALUE )
-			return Err( lastError( path, "Canonicalize failed" ) );
-		wchar_t buffer[32768];
-		DWORD len = GetFinalPathNameByHandleW( handle, buffer, 32768, FILE_NAME_NORMALIZED );
-		CloseHandle( handle );
-		if ( len == 0 || len >= 32768 )
-			return Err( lastError( path, "GetFinalPathNameByHandleW failed" ) );
-		std::string result = fromWide( buffer );
-		if ( String::startsWith( result, "\\\\?\\UNC\\" ) )
-			result = "\\\\" + result.substr( 8 );
-		else if ( String::startsWith( result, "\\\\?\\" ) )
-			result = result.substr( 4 );
-		return Ok( URI::fromFSPath( result ) );
-	} );
+	return run<URI>(
+		uri, LastLink::Follow, std::move( token ), []( const std::string& path ) -> VFSResult<URI> {
+			HANDLE handle = openForMetadata( toWide( path ), true );
+			if ( handle == INVALID_HANDLE_VALUE )
+				return Err( lastError( path, "Canonicalize failed" ) );
+			wchar_t buffer[32768];
+			DWORD len = GetFinalPathNameByHandleW( handle, buffer, 32768, FILE_NAME_NORMALIZED );
+			CloseHandle( handle );
+			if ( len == 0 || len >= 32768 )
+				return Err( lastError( path, "GetFinalPathNameByHandleW failed" ) );
+			std::string result = fromWide( buffer );
+			if ( String::startsWith( result, "\\\\?\\UNC\\" ) )
+				result = "\\\\" + result.substr( 8 );
+			else if ( String::startsWith( result, "\\\\?\\" ) )
+				result = result.substr( 4 );
+			return Ok( URI::fromFSPath( result ) );
+		} );
 }
 
 VFSTask<void> LocalProvider::setPermissions( const URI& uri, Uint32 permissions,
 											 CancellationToken token ) {
-	return run<void>( uri, std::move( token ),
+	return run<void>( uri, LastLink::Follow, std::move( token ),
 					  [permissions]( const std::string& path ) -> VFSResult<void> {
 						  std::wstring wide = toWide( path );
 						  DWORD attrs = GetFileAttributesW( wide.c_str() );
@@ -566,7 +656,8 @@ VFSTask<void> LocalProvider::setPermissions( const URI& uri, Uint32 permissions,
 
 VFSTask<SpaceInfo> LocalProvider::spaceInfo( const URI& uri, CancellationToken token ) {
 	return run<SpaceInfo>(
-		uri, std::move( token ), []( const std::string& path ) -> VFSResult<SpaceInfo> {
+		uri, LastLink::Follow, std::move( token ),
+		[]( const std::string& path ) -> VFSResult<SpaceInfo> {
 			ULARGE_INTEGER available, total, free;
 			if ( !GetDiskFreeSpaceExW( toWide( path ).c_str(), &available, &total, &free ) )
 				return Err( lastError( path, "GetDiskFreeSpaceExW failed" ) );

@@ -19,8 +19,8 @@ VFSError readOnly( const URI& uri ) {
 	return VFSError( VFSErrorCode::ReadOnly, uri, "res:// is read-only" );
 }
 
-FileInfo makeInfo( std::string name, bool directory, Uint64 generation ) {
-	FileInfo info;
+VFSFileInfo makeInfo( std::string name, bool directory, Uint64 generation ) {
+	VFSFileInfo info;
 	info.name = std::move( name );
 	info.type = directory ? FileType::Directory : FileType::Regular;
 	info.hidden = !info.name.empty() && info.name[0] == '.';
@@ -62,10 +62,10 @@ std::string ResourceProvider::toPackPath( const URI& uri ) {
 	return path;
 }
 
-VFSTask<FileInfo> ResourceProvider::stat( const URI& uri, const StatOptions&,
-										  CancellationToken token ) {
+VFSTask<VFSFileInfo> ResourceProvider::stat( const URI& uri, const StatOptions&,
+											 CancellationToken token ) {
 	if ( token.isCancellationRequested() )
-		return readyError<FileInfo>( cancelledError( uri ) );
+		return readyError<VFSFileInfo>( cancelledError( uri ) );
 	// Index lookups are in-memory: answer synchronously.
 	auto* index = PackFileIndex::instance();
 	std::string path = toPackPath( uri );
@@ -75,10 +75,10 @@ VFSTask<FileInfo> ResourceProvider::stat( const URI& uri, const StatOptions&,
 						   ? std::string( "/" )
 						   : ( slash == std::string::npos ? path : path.substr( slash + 1 ) );
 	if ( path.empty() || index->directoryExists( path ) )
-		return readyValue<FileInfo>( makeInfo( std::move( name ), true, generation ) );
+		return readyValue<VFSFileInfo>( makeInfo( std::move( name ), true, generation ) );
 	if ( index->fileExists( path ) )
-		return readyValue<FileInfo>( makeInfo( std::move( name ), false, generation ) );
-	return readyError<FileInfo>( VFSErrorCode::NotFound, uri );
+		return readyValue<VFSFileInfo>( makeInfo( std::move( name ), false, generation ) );
+	return readyError<VFSFileInfo>( VFSErrorCode::NotFound, uri );
 }
 
 VFSTask<DirectoryHandle> ResourceProvider::openDirectory( const URI& uri,
@@ -94,7 +94,7 @@ VFSTask<DirectoryHandle> ResourceProvider::openDirectory( const URI& uri,
 	}
 	Uint64 generation = index->getGeneration();
 	auto listing = index->listDirectory( path );
-	std::vector<FileInfo> entries;
+	std::vector<VFSFileInfo> entries;
 	entries.reserve( listing.size() );
 	for ( auto& entry : listing )
 		entries.push_back( makeInfo( std::move( entry.name ), entry.isDirectory, generation ) );
@@ -115,23 +115,23 @@ VFSTask<FileHandle> ResourceProvider::open( const URI& uri, const OpenOptions& o
 	if ( path.empty() || index->directoryExists( path ) )
 		return readyError<FileHandle>( VFSErrorCode::IsDirectory, uri );
 	// Decompression may be slow: do it on the I/O pool.
-	return mPool->submit(
-		[uri, path = std::move( path ), token = std::move( token )]() -> VFSResult<FileHandle> {
-			if ( token.isCancellationRequested() )
-				return Err( cancelledError( uri ) );
-			auto* index = PackFileIndex::instance();
-			Uint64 generation = index->getGeneration();
-			auto data = std::make_shared<std::vector<Uint8>>();
-			if ( !index->extractFileToMemory( path, *data ) )
-				return Err( VFSError( VFSErrorCode::NotFound, uri ) );
-			size_t slash = path.find_last_of( '/' );
-			FileInfo info = makeInfo( slash == std::string::npos ? path : path.substr( slash + 1 ),
-									  false, generation );
-			info.setSize( data->size() );
-			return Ok( FileHandle(
-				uri, std::make_shared<detail::BufferFileImpl>(
-						 std::move( data ), uri, std::move( info ), ResourceCapabilities ) ) );
-		} );
+	return mPool->submit( [uri, path = std::move( path ),
+						   token = std::move( token )]() -> VFSResult<FileHandle> {
+		if ( token.isCancellationRequested() )
+			return Err( cancelledError( uri ) );
+		auto* index = PackFileIndex::instance();
+		Uint64 generation = index->getGeneration();
+		auto data = std::make_shared<std::vector<Uint8>>();
+		if ( !index->extractFileToMemory( path, *data ) )
+			return Err( VFSError( VFSErrorCode::NotFound, uri ) );
+		size_t slash = path.find_last_of( '/' );
+		VFSFileInfo info = makeInfo( slash == std::string::npos ? path : path.substr( slash + 1 ),
+									 false, generation );
+		info.setSize( data->size() );
+		return Ok( FileHandle(
+			uri, std::make_shared<detail::BufferFileImpl>(
+					 std::move( data ), uri, std::move( info ), ResourceCapabilities ) ) );
+	} );
 }
 
 VFSTask<void> ResourceProvider::mkdir( const URI& uri, const MkDirOptions&, CancellationToken ) {

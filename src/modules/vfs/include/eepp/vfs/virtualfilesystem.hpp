@@ -3,6 +3,7 @@
 
 #include <eepp/system/threadpool.hpp>
 #include <eepp/vfs/provider.hpp>
+#include <eepp/vfs/providers/localioscheduler.hpp>
 #include <eepp/vfs/transfer.hpp>
 #include <eepp/vfs/watch.hpp>
 #include <memory>
@@ -40,6 +41,10 @@ class VirtualFileSystem {
 		Uint32 orchestrationThreads{ 2 };
 		/** Copies and moves running at the same time; more wait for one to finish. */
 		Uint32 transferThreads{ 2 };
+		/** How long a call on a network mount (NFS, SMB, SSHFS...) may take before the mount
+		 * counts as not responding: the call fails with TimedOut, and so do further calls until
+		 * the server answers again (see LocalIOScheduler). */
+		System::Time networkMountTimeout{ System::Seconds( 15 ) };
 		/** Register file:// and res:// (and sftp:// when built with SFTP support). */
 		bool registerDefaultProviders{ true };
 	};
@@ -77,12 +82,17 @@ class VirtualFileSystem {
 	/** Pool used by providers for blocking local I/O. */
 	const std::shared_ptr<ThreadPool>& ioPool() const { return mIOPool; }
 
+	/** Where the VFS runs blocking calls on local paths. Applications run their own blocking
+	 * work on a path here too, so that a network mount that stopped answering fails it after
+	 * the timeout instead of holding one of their threads. */
+	LocalIOScheduler& localIO() { return *mLocalIO; }
+
 	WatchManager& watchManager() { return *mWatchManager; }
 
 	// Primitive operations (forwarded to the provider).
 
-	VFSTask<FileInfo> stat( const URI& uri, const StatOptions& options = {},
-							CancellationToken token = {} );
+	VFSTask<VFSFileInfo> stat( const URI& uri, const StatOptions& options = {},
+							   CancellationToken token = {} );
 
 	VFSTask<FileHandle> open( const URI& uri, const OpenOptions& options = {},
 							  CancellationToken token = {} );
@@ -109,9 +119,9 @@ class VirtualFileSystem {
 	// Orchestrated operations.
 
 	/** Reads every entry of a directory by repeatedly consuming a DirectoryHandle. */
-	VFSTask<std::vector<FileInfo>> listAll( const URI& uri,
-											const DirectoryOpenOptions& options = {},
-											CancellationToken token = {} );
+	VFSTask<std::vector<VFSFileInfo>> listAll( const URI& uri,
+											   const DirectoryOpenOptions& options = {},
+											   CancellationToken token = {} );
 
 	/** Reads a whole file. Fails with InvalidOperation if it is larger than maxSize. */
 	VFSTask<std::vector<Uint8>> readAll( const URI& uri, CancellationToken token = {},
@@ -119,11 +129,11 @@ class VirtualFileSystem {
 
 	/** Writes a whole file (atomically by default) and returns its new metadata, including the
 	 * revision to use for the next conflict-checked save. */
-	VFSTask<FileInfo> writeAll( const URI& uri, std::vector<Uint8> data,
-								const WriteOptions& options = {}, CancellationToken token = {} );
+	VFSTask<VFSFileInfo> writeAll( const URI& uri, std::vector<Uint8> data,
+								   const WriteOptions& options = {}, CancellationToken token = {} );
 
-	VFSTask<FileInfo> writeAll( const URI& uri, std::string_view data,
-								const WriteOptions& options = {}, CancellationToken token = {} );
+	VFSTask<VFSFileInfo> writeAll( const URI& uri, std::string_view data,
+								   const WriteOptions& options = {}, CancellationToken token = {} );
 
 	/** Creates a directory and every missing parent. Succeeds if it already exists. */
 	VFSTask<void> makeDirs( const URI& uri, const MkDirOptions& options = {},
@@ -155,6 +165,7 @@ class VirtualFileSystem {
 	mutable std::shared_mutex mProvidersMutex;
 	std::unordered_map<std::string, std::shared_ptr<VFSProvider>> mProviders;
 	std::shared_ptr<ThreadPool> mIOPool;
+	std::shared_ptr<LocalIOScheduler> mLocalIO;
 	std::shared_ptr<ThreadPool> mOrchestrationPool;
 	std::shared_ptr<ThreadPool> mTransferPool;
 	std::unique_ptr<WatchManager> mWatchManager;

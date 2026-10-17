@@ -29,11 +29,9 @@ using EE::System::Milliseconds;
 using EE::System::Seconds;
 using EE::System::Sys;
 using EE::System::ThreadPool;
-// Declared inside the namespace so they win over names other headers inject globally (for
-// example System::FileInfo).
+// Declared inside the namespace so they win over names other headers inject globally.
 using EE::VFS::CopyOptions;
 using EE::VFS::FileHandle;
-using EE::VFS::FileInfo;
 using EE::VFS::OpenFlags;
 using EE::VFS::OverwritePolicy;
 using EE::VFS::RemoveOptions;
@@ -45,6 +43,7 @@ using EE::VFS::TransferResult;
 using EE::VFS::VFSDirectoryModel;
 using EE::VFS::VFSError;
 using EE::VFS::VFSErrorCode;
+using EE::VFS::VFSFileInfo;
 using EE::VFS::VFSResult;
 using EE::VFS::VirtualFileSystem;
 using EE::VFS::WatchStatus;
@@ -114,7 +113,7 @@ class App {
 	UIWidget* parking() const { return mParking; }
 
 	/** Icon of a file row: the platform icon for its type, eefm's glyph until it loads. */
-	UIIcon* fileIcon( const FileInfo& info );
+	UIIcon* fileIcon( const VFSFileInfo& info );
 
 	/** Forgets the file icons resolved so far (the icon settings changed). */
 	void clearFileIcons() { mFileIcons.clear(); }

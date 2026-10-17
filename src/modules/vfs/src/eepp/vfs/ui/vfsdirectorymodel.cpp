@@ -313,7 +313,7 @@ void VFSDirectoryModel::statAndUpsert( const std::string& name ) {
 	mConfig.vfs
 		->stat( mURI.withAppendedSegment( name ), StatOptions{ false }, mSession->cancel.token() )
 		.then( *mExecutor,
-			   [gate = mExecutor, weak, generation, name]( VFSResult<FileInfo>&& info ) {
+			   [gate = mExecutor, weak, generation, name]( VFSResult<VFSFileInfo>&& info ) {
 				   auto self = weak.lock();
 				   if ( !self || self->mGeneration != generation )
 					   return;
@@ -339,26 +339,26 @@ void VFSDirectoryModel::rescan() {
 	options.metadata = mConfig.metadata;
 	std::weak_ptr<VFSDirectoryModel> weak = weak_from_this();
 	mConfig.vfs->listAll( mURI, options, mSession->cancel.token() )
-		.then( *mExecutor,
-			   [gate = mExecutor, weak, generation]( VFSResult<std::vector<FileInfo>>&& entries ) {
-				   auto self = weak.lock();
-				   if ( !self || self->mGeneration != generation )
-					   return;
-				   if ( !entries ) {
-					   self->mSession->listing = false;
-					   self->setLoadState( LoadState::Error, std::move( entries ).error() );
-					   return;
-				   }
-				   self->reconcile( std::move( entries ).value() );
-				   self->finishListing( generation );
-			   } );
+		.then( *mExecutor, [gate = mExecutor, weak,
+							generation]( VFSResult<std::vector<VFSFileInfo>>&& entries ) {
+			auto self = weak.lock();
+			if ( !self || self->mGeneration != generation )
+				return;
+			if ( !entries ) {
+				self->mSession->listing = false;
+				self->setLoadState( LoadState::Error, std::move( entries ).error() );
+				return;
+			}
+			self->reconcile( std::move( entries ).value() );
+			self->finishListing( generation );
+		} );
 }
 
 // ---------------------------------------------------------------------------------------------
 // Entry storage
 // ---------------------------------------------------------------------------------------------
 
-bool VFSDirectoryModel::less( const FileInfo& a, const FileInfo& b, const std::string* aType,
+bool VFSDirectoryModel::less( const VFSFileInfo& a, const VFSFileInfo& b, const std::string* aType,
 							  const std::string* bType ) const {
 	bool aDir = a.isDirectory(), bDir = b.isDirectory();
 	if ( aDir != bDir )
@@ -402,10 +402,11 @@ bool VFSDirectoryModel::less( const FileInfo& a, const FileInfo& b, const std::s
 	return mSortOrder == SortOrder::Descending ? cmp > 0 : cmp < 0;
 }
 
-void VFSDirectoryModel::sortEntries( std::vector<FileInfo>& entries ) const {
+void VFSDirectoryModel::sortEntries( std::vector<VFSFileInfo>& entries ) const {
 	if ( mSortColumn != Type ) {
-		std::stable_sort( entries.begin(), entries.end(),
-						  [this]( const FileInfo& a, const FileInfo& b ) { return less( a, b ); } );
+		std::stable_sort(
+			entries.begin(), entries.end(),
+			[this]( const VFSFileInfo& a, const VFSFileInfo& b ) { return less( a, b ); } );
 		return;
 	}
 	// The type provider (a std::function returning a string) runs once per entry, not twice per
@@ -420,7 +421,7 @@ void VFSDirectoryModel::sortEntries( std::vector<FileInfo>& entries ) const {
 	std::stable_sort( order.begin(), order.end(), [&]( size_t x, size_t y ) {
 		return less( entries[x], entries[y], &types[x], &types[y] );
 	} );
-	std::vector<FileInfo> sorted;
+	std::vector<VFSFileInfo> sorted;
 	sorted.reserve( entries.size() );
 	for ( size_t index : order )
 		sorted.push_back( std::move( entries[index] ) );
@@ -457,17 +458,17 @@ size_t VFSDirectoryModel::visibleRowFor( size_t entryIndex ) const {
 								mRows.begin() );
 }
 
-void VFSDirectoryModel::mergeBatch( std::vector<FileInfo>&& batch ) {
+void VFSDirectoryModel::mergeBatch( std::vector<VFSFileInfo>&& batch ) {
 	if ( batch.empty() )
 		return;
 	for ( const auto& info : batch )
 		queueItemCount( info );
-	auto cmp = [this]( const FileInfo& a, const FileInfo& b ) { return less( a, b ); };
+	auto cmp = [this]( const VFSFileInfo& a, const VFSFileInfo& b ) { return less( a, b ); };
 	sortEntries( batch );
 	if ( mEntries.empty() ) {
 		mEntries = std::move( batch );
 	} else {
-		std::vector<FileInfo> merged;
+		std::vector<VFSFileInfo> merged;
 		merged.reserve( mEntries.size() + batch.size() );
 		std::merge( std::make_move_iterator( mEntries.begin() ),
 					std::make_move_iterator( mEntries.end() ),
@@ -484,7 +485,7 @@ void VFSDirectoryModel::mergeBatch( std::vector<FileInfo>&& batch ) {
 
 void VFSDirectoryModel::removeByName( const std::string& name ) {
 	auto it = std::find_if( mEntries.begin(), mEntries.end(),
-							[&name]( const FileInfo& info ) { return info.name == name; } );
+							[&name]( const VFSFileInfo& info ) { return info.name == name; } );
 	if ( it == mEntries.end() )
 		return;
 	size_t index = static_cast<size_t>( it - mEntries.begin() );
@@ -506,16 +507,16 @@ void VFSDirectoryModel::removeByName( const std::string& name ) {
 	notifyChanged();
 }
 
-void VFSDirectoryModel::upsert( FileInfo&& info ) {
+void VFSDirectoryModel::upsert( VFSFileInfo&& info ) {
 	if ( info.isDirectory() && mConfig.countDirectoryItems ) {
 		// The directory changed: its count is stale.
 		mItemCounts.erase( info.name );
 		queueItemCount( info );
 		pumpItemCounts();
 	}
-	auto cmp = [this]( const FileInfo& a, const FileInfo& b ) { return less( a, b ); };
+	auto cmp = [this]( const VFSFileInfo& a, const VFSFileInfo& b ) { return less( a, b ); };
 	auto it = std::find_if( mEntries.begin(), mEntries.end(),
-							[&info]( const FileInfo& e ) { return e.name == info.name; } );
+							[&info]( const VFSFileInfo& e ) { return e.name == info.name; } );
 	if ( it != mEntries.end() ) {
 		size_t index = static_cast<size_t>( it - mEntries.begin() );
 		bool orderKept = ( index == 0 || !cmp( info, mEntries[index - 1] ) ) &&
@@ -547,7 +548,7 @@ void VFSDirectoryModel::upsert( FileInfo&& info ) {
 	notifyChanged();
 }
 
-void VFSDirectoryModel::reconcile( std::vector<FileInfo>&& entries ) {
+void VFSDirectoryModel::reconcile( std::vector<VFSFileInfo>&& entries ) {
 	// Large re-lists are replaced wholesale; row-level diffing would be quadratic.
 	constexpr size_t MaxIncrementalReconcile = 4096;
 	if ( entries.size() > MaxIncrementalReconcile || mEntries.size() > MaxIncrementalReconcile ) {
@@ -594,7 +595,7 @@ void VFSDirectoryModel::setShowHidden( bool show ) {
 	invalidate( Model::UpdateFlag::InvalidateAllIndexes );
 }
 
-const FileInfo& VFSDirectoryModel::entry( size_t row ) const {
+const VFSFileInfo& VFSDirectoryModel::entry( size_t row ) const {
 	return mEntries[mRows[row]];
 }
 
@@ -613,7 +614,7 @@ void VFSDirectoryModel::setItemCountFormatter( ItemCountFormatter formatter ) {
 	invalidate( Model::UpdateFlag::DontInvalidateIndexes );
 }
 
-std::string VFSDirectoryModel::typeOf( const FileInfo& info ) const {
+std::string VFSDirectoryModel::typeOf( const VFSFileInfo& info ) const {
 	if ( mTypeProvider )
 		return mTypeProvider( info );
 	return info.isDirectory() ? "Folder" : "File";
@@ -639,7 +640,7 @@ void VFSDirectoryModel::setCountDirectoryItems( bool count ) {
 	invalidate( Model::UpdateFlag::DontInvalidateIndexes );
 }
 
-std::optional<Uint64> VFSDirectoryModel::itemCountOf( const FileInfo& info ) const {
+std::optional<Uint64> VFSDirectoryModel::itemCountOf( const VFSFileInfo& info ) const {
 	auto it = mItemCounts.find( info.name );
 	if ( it == mItemCounts.end() )
 		return std::nullopt;
@@ -652,7 +653,7 @@ std::optional<Uint64> VFSDirectoryModel::directoryItemCount( size_t row ) const 
 	return itemCountOf( mEntries[mRows[row]] );
 }
 
-void VFSDirectoryModel::queueItemCount( const FileInfo& info ) {
+void VFSDirectoryModel::queueItemCount( const VFSFileInfo& info ) {
 	if ( !mConfig.countDirectoryItems || !info.isDirectory() || !mSession )
 		return;
 	if ( mCountQueued.insert( info.name ).second )
@@ -720,7 +721,7 @@ void VFSDirectoryModel::onItemCounted( const std::string& name, VFSResult<ItemCo
 // Name filter
 // ---------------------------------------------------------------------------------------------
 
-bool VFSDirectoryModel::isVisible( const FileInfo& info ) const {
+bool VFSDirectoryModel::isVisible( const VFSFileInfo& info ) const {
 	if ( !mConfig.showHidden && info.hidden )
 		return false;
 	return mFilterPattern.empty() || matchesNameFilter( info.name );
@@ -827,7 +828,7 @@ std::string VFSDirectoryModel::columnName( const size_t& column ) const {
 	}
 }
 
-std::string VFSDirectoryModel::permissionsToString( const FileInfo& info ) {
+std::string VFSDirectoryModel::permissionsToString( const VFSFileInfo& info ) {
 	std::string out( 10, '-' );
 	switch ( info.type ) {
 		case FileType::Directory:
@@ -876,19 +877,19 @@ bool VFSDirectoryModel::isEditable( const ModelIndex& index ) const {
 void VFSDirectoryModel::setData( const ModelIndex& index, const Variant& data ) {
 	if ( !isEditable( index ) )
 		return;
-	const FileInfo& info = entry( static_cast<size_t>( index.row() ) );
+	const VFSFileInfo& info = entry( static_cast<size_t>( index.row() ) );
 	std::string name = data.toString();
 	if ( name.empty() || name == info.name )
 		return;
 	// Copy: the handler may refresh the listing, which replaces the entries.
-	FileInfo entryCopy = info;
+	VFSFileInfo entryCopy = info;
 	mOnRename( entryCopy, name );
 }
 
 Variant VFSDirectoryModel::data( const ModelIndex& index, ModelRole role ) const {
 	if ( !index.isValid() || static_cast<size_t>( index.row() ) >= mRows.size() )
 		return {};
-	const FileInfo& info = mEntries[mRows[index.row()]];
+	const VFSFileInfo& info = mEntries[mRows[index.row()]];
 	if ( role == ModelRole::Icon ) {
 		if ( index.column() == Name && mIconProvider )
 			return mIconProvider( info );

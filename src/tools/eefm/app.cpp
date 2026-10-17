@@ -1060,7 +1060,7 @@ void App::updateIconStyle() {
 		mUI->getRoot()->removeClass( "glyph_icons" );
 }
 
-UIIcon* App::fileIcon( const FileInfo& info ) {
+UIIcon* App::fileIcon( const VFSFileInfo& info ) {
 	// Runs on every cell update: the icon depends only on the type, so it is resolved once per
 	// type (typeOf returns a reference: no allocation on the way).
 	auto& mime = MimeDatabase::instance();

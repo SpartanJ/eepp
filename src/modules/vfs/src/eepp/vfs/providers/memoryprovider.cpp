@@ -97,8 +97,8 @@ class MemoryFileImpl : public FileHandleImpl {
 
 	VFSTask<void> flush() override { return readyValue<void>(); }
 
-	VFSTask<FileInfo> stat() override {
-		FileInfo info;
+	VFSTask<VFSFileInfo> stat() override {
+		VFSFileInfo info;
 		info.name = mUri.getLastPathSegment();
 		info.type = FileType::Regular;
 		std::lock_guard<std::mutex> lock( mNode->mutex );
@@ -106,7 +106,7 @@ class MemoryFileImpl : public FileHandleImpl {
 		info.setModifiedTime( mNode->modified );
 		info.setPermissions( mNode->permissions );
 		info.revision = FileRevision::fromValues( { mNode->revision } );
-		return readyValue<FileInfo>( std::move( info ) );
+		return readyValue<VFSFileInfo>( std::move( info ) );
 	}
 
 	VFSTask<void> close() override { return readyValue<void>(); }
@@ -178,9 +178,9 @@ std::shared_ptr<MemoryProvider::Node> MemoryProvider::find( const std::string& k
 	return it != mNodes.end() ? it->second : nullptr;
 }
 
-FileInfo MemoryProvider::describe( const URI& uri, const std::string& key,
-								   const Node& node ) const {
-	FileInfo info;
+VFSFileInfo MemoryProvider::describe( const URI& uri, const std::string& key,
+									  const Node& node ) const {
+	VFSFileInfo info;
 	size_t slash = key.find_last_of( '/' );
 	info.name = isRootKey( key ) ? std::string( "/" ) : key.substr( slash + 1 );
 	info.hidden = !info.name.empty() && info.name[0] == '.';
@@ -216,17 +216,17 @@ VFSResult<std::shared_ptr<MemoryProvider::Node>> MemoryProvider::createNode( con
 	return Ok( std::move( node ) );
 }
 
-VFSTask<FileInfo> MemoryProvider::stat( const URI& uri, const StatOptions&,
-										CancellationToken token ) {
+VFSTask<VFSFileInfo> MemoryProvider::stat( const URI& uri, const StatOptions&,
+										   CancellationToken token ) {
 	if ( token.isCancellationRequested() )
-		return complete<FileInfo>( Err( cancelledError( uri ) ) );
+		return complete<VFSFileInfo>( Err( cancelledError( uri ) ) );
 	std::lock_guard<std::mutex> lock( mMutex );
 	++mOperations;
 	std::string k = key( uri );
 	auto node = find( k );
 	if ( !node )
-		return complete<FileInfo>( Err( VFSError( VFSErrorCode::NotFound, uri ) ) );
-	return complete<FileInfo>( Ok( describe( uri, k, *node ) ) );
+		return complete<VFSFileInfo>( Err( VFSError( VFSErrorCode::NotFound, uri ) ) );
+	return complete<VFSFileInfo>( Ok( describe( uri, k, *node ) ) );
 }
 
 VFSTask<DirectoryHandle> MemoryProvider::openDirectory( const URI& uri, const DirectoryOpenOptions&,
@@ -242,7 +242,7 @@ VFSTask<DirectoryHandle> MemoryProvider::openDirectory( const URI& uri, const Di
 	if ( !node->directory )
 		return complete<DirectoryHandle>( Err( VFSError( VFSErrorCode::NotDirectory, uri ) ) );
 	std::string prefix = isRootKey( k ) ? k : k + "/";
-	std::vector<FileInfo> entries;
+	std::vector<VFSFileInfo> entries;
 	for ( auto it = mNodes.lower_bound( prefix );
 		  it != mNodes.end() && String::startsWith( it->first, prefix ); ++it ) {
 		std::string_view rest( it->first );

@@ -66,10 +66,10 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 		bool countDirectoryItems{ false };
 	};
 
-	using IconProvider = std::function<Variant( const FileInfo& )>;
+	using IconProvider = std::function<Variant( const VFSFileInfo& )>;
 
 	/** Text for an entry (used by the Type column). */
-	using TextProvider = std::function<std::string( const FileInfo& )>;
+	using TextProvider = std::function<std::string( const VFSFileInfo& )>;
 
 	/** Formats a Unix timestamp in seconds (used by the Modified column). */
 	using TimeFormatter = std::function<std::string( Int64 )>;
@@ -104,7 +104,7 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 	void setShowHidden( bool show );
 
 	/** Visible entry for a row. */
-	const FileInfo& entry( size_t row ) const;
+	const VFSFileInfo& entry( size_t row ) const;
 
 	/** URI of the visible entry for a row. */
 	URI entryURI( size_t row ) const { return entry( row ).uriIn( mURI ); }
@@ -156,7 +156,7 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 	/** Handles a rename typed in place: the entry and its new name. The model does not rename:
 	 * the handler performs it (asynchronously) and the listing follows through the watch or a
 	 * refresh. */
-	using RenameHandler = std::function<void( const FileInfo& entry, const std::string& name )>;
+	using RenameHandler = std::function<void( const VFSFileInfo& entry, const std::string& name )>;
 
 	/** Makes names editable in place (the view's editing delegate) and sets who renames. */
 	void setOnRename( RenameHandler handler ) { mOnRename = std::move( handler ); }
@@ -193,7 +193,7 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 	void setData( const ModelIndex& index, const Variant& data ) override;
 
 	/** Formats POSIX permission bits like `ls -l` ("drwxr-xr-x"). */
-	static std::string permissionsToString( const FileInfo& info );
+	static std::string permissionsToString( const VFSFileInfo& info );
 
   protected:
 	VFSDirectoryModel( Executor& uiExecutor, const Config& config );
@@ -217,15 +217,15 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 
 	void statAndUpsert( const std::string& name );
 
-	void upsert( FileInfo&& info );
+	void upsert( VFSFileInfo&& info );
 
 	void removeByName( const std::string& name );
 
 	void rescan();
 
-	void reconcile( std::vector<FileInfo>&& entries );
+	void reconcile( std::vector<VFSFileInfo>&& entries );
 
-	void mergeBatch( std::vector<FileInfo>&& batch );
+	void mergeBatch( std::vector<VFSFileInfo>&& batch );
 
 	void rebuildRows();
 
@@ -236,17 +236,17 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 	void rowsErased( size_t entryIndex );
 
 	/** Sorts entries by the current order (stable). */
-	void sortEntries( std::vector<FileInfo>& entries ) const;
+	void sortEntries( std::vector<VFSFileInfo>& entries ) const;
 
 	void setLoadState( LoadState state, std::optional<VFSError> error = std::nullopt );
 
 	void notifyChanged();
 
 	/** The sort order. aType and bType are the entries' types when already known. */
-	bool less( const FileInfo& a, const FileInfo& b, const std::string* aType = nullptr,
+	bool less( const VFSFileInfo& a, const VFSFileInfo& b, const std::string* aType = nullptr,
 			   const std::string* bType = nullptr ) const;
 
-	bool isVisible( const FileInfo& info ) const;
+	bool isVisible( const VFSFileInfo& info ) const;
 
 	bool matchesNameFilter( const std::string& name ) const;
 
@@ -255,15 +255,15 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 		Uint64 visible{ 0 };
 	};
 
-	void queueItemCount( const FileInfo& info );
+	void queueItemCount( const VFSFileInfo& info );
 
 	void pumpItemCounts();
 
 	void onItemCounted( const std::string& name, VFSResult<ItemCount>&& count );
 
-	std::optional<Uint64> itemCountOf( const FileInfo& info ) const;
+	std::optional<Uint64> itemCountOf( const VFSFileInfo& info ) const;
 
-	std::string typeOf( const FileInfo& info ) const;
+	std::string typeOf( const VFSFileInfo& info ) const;
 
 	size_t visibleRowFor( size_t entryIndex ) const;
 
@@ -277,7 +277,7 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 	URI mURI;
 	std::unique_ptr<Session> mSession;
 	/** All entries (including hidden ones), kept sorted. */
-	std::vector<FileInfo> mEntries;
+	std::vector<VFSFileInfo> mEntries;
 	/** Visible rows: indices into mEntries. */
 	std::vector<size_t> mRows;
 	IconProvider mIconProvider;

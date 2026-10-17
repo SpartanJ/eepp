@@ -15,7 +15,7 @@ namespace EE { namespace VFS {
  * entries. "." and ".." are never reported.
  */
 struct DirectoryBatch {
-	std::vector<FileInfo> entries;
+	std::vector<VFSFileInfo> entries;
 	bool endOfDirectory{ false };
 };
 

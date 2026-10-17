@@ -36,7 +36,7 @@ auto& vfs = EE::VFS::VirtualFileSystem::instance();
 MainThreadExecutor ui( sceneNode );
 
 vfs.stat( URI( "sftp://makyo/home/black/notes.txt" ) )
-	.then( ui, []( VFSResult<FileInfo>&& info ) {
+	.then( ui, []( VFSResult<VFSFileInfo>&& info ) {
 		if ( info )
 			label->setText( info.value().name );
 		else
@@ -61,6 +61,47 @@ Rules:
 Errors are typed (`VFSErrorCode`): callers branch on codes such as `NotFound`,
 `PermissionDenied`, `ChangedExternally` or `HostKeyRejected`, never on errno or libssh2 values.
 
+### Network mounts
+
+A `file://` path can be on a network mount (NFS, SMB, SSHFS...). When its server stops answering,
+a `hard` NFS mount blocks every call on it until the server is back, and nothing can interrupt the
+blocked thread. `LocalIOScheduler` keeps that from spreading:
+
+- Calls on local disks run on the I/O pool (`Config::ioThreads`). Calls under a network mount run
+  on that mount's own lane (two threads), so a dead server never holds the threads every local
+  folder needs. Mounts are found from the mount table, which never blocks.
+- A path through a symbolic link into a mount is on that mount too. While any network mount is
+  mounted, the provider first reads the path's links on the I/O pool (they are on local disks),
+  stopping where the path enters a mount, then runs the call on that mount's lane. Watches and
+  renames follow the links the same way.
+- A call that takes longer than `Config::networkMountTimeout` (15 seconds by default) fails with
+  `VFSErrorCode::TimedOut` ("server:/export is not responding"), and so does every call queued
+  behind it. Until the stuck call returns, further calls on that mount fail at once. When it
+  returns, its result is discarded and the mount works again.
+  A timed-out read never writes into the caller's buffer afterwards (it reads into one of its own,
+  copied only while the caller waits), and a write works from a copy. Closing a directory whose
+  read is stuck never waits: the read closes it when it ends.
+- Watches under a network mount poll through the VFS (`PollingWatchBackend`), whose calls time out,
+  instead of using efsw.
+- Listing a local folder never asks a mount's server: a network mount inside it is listed as a
+  folder without metadata, and a symbolic link into a mount without its target's type.
+- A rename between a local path and a network mount, or between two mounts, fails without calling
+  the system with `Unsupported` (it would cross file systems), so a move copies and removes
+  instead.
+
+Applications that run their own blocking work on a local path (reading a file header, a trash
+operation) can run it where the VFS runs that path's calls, with the same protection:
+
+```cpp
+vfs.localIO()
+	.submit<bool>( path, [path]() -> VFSResult<bool> { return Ok( isExecutable( path ) ); } )
+	.then( ui, []( VFSResult<bool>&& executable ) { ... } );
+```
+
+`localIO().submit( path, ... )` chooses the lane from the path as written; use
+`submitResolved( path, followLast, ... )` when the path may go through a link. On Windows, links
+are not followed yet: only UNC paths and mapped network drives are routed to a lane.
+
 ## Files and directories
 
 ```cpp
@@ -69,7 +110,7 @@ vfs.openDirectory( uri );    // VFSTask<DirectoryHandle>; then handle.read( 256 
 
 vfs.listAll( uri );          // convenience: the whole directory
 vfs.readAll( uri );          // VFSTask<std::vector<Uint8>>
-vfs.writeAll( uri, data );   // atomic by default, returns the new FileInfo
+vfs.writeAll( uri, data );   // atomic by default, returns the new VFSFileInfo
 vfs.makeDirs( uri );
 vfs.remove( uri, RemoveOptions{ true } );   // recursive
 vfs.rename( from, to, RenameOptions{ true } );
@@ -78,10 +119,10 @@ vfs.canonicalize( uri );     // resolves symlinks/aliases; URIs are never canoni
 
 `FileHandle` uses explicit offsets (`read( offset, span )`, `write( offset, span )`).
 
-`FileInfo` is a plain value. Unknown metadata stays unknown (`std::optional` accessors). It does
+`VFSFileInfo` is a plain value. Unknown metadata stays unknown (`std::optional` accessors). It does
 not store its own URI, because listings hold many entries and the caller always knows the URI it
 listed: use `info.uriIn( directory )` for a listed entry (`VFSDirectoryModel::entryURI( row )` in
-the model). `FileInfo::revision` is an opaque token used for conflict detection:
+the model). `VFSFileInfo::revision` is an opaque token used for conflict detection:
 
 ```cpp
 WriteOptions options;
@@ -131,8 +172,8 @@ re-list the directory. `WatchHandle::status()` reports `Active`, `Polling`, `Rec
 
 Backends:
 
-- `file://`: efsw native watching; directories efsw reports as remote (NFS, SMB) use efsw's
-  generic polling watcher.
+- `file://`: efsw native watching. Directories on a network mount are polled through the VFS
+  instead (see Network mounts).
 - `sftp://`: `efsw-agent --stdio` runs on the server through an exec channel of the same SSH
   connection (one agent per connection, many watches). When the agent dies or the connection drops,
   watches report `Reconnecting`, re-register and emit `RescanRequired`. If the agent is not

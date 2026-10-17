@@ -4,12 +4,13 @@
 
 #include <eepp/vfs/providers/localprovider.hpp>
 
-#include "localpath.hpp"
+#include <atomic>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <dirent.h>
 #include <eepp/core/string.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <fcntl.h>
 #include <grp.h>
 #include <mutex>
@@ -29,9 +30,11 @@
 #include <stdio.h>
 #endif
 
+using namespace EE::System;
+
 namespace EE { namespace VFS {
 
-using System::ThreadPool;
+using Route = LocalIOScheduler::Route;
 
 ProviderCapabilities LocalProvider::capabilities( const URI& ) const {
 	ProviderCapabilities caps =
@@ -137,7 +140,7 @@ Uint64 modifiedNanoseconds( const struct stat& st ) {
 #endif
 }
 
-void fillFromStat( FileInfo& info, const struct stat& st ) {
+void fillFromStat( VFSFileInfo& info, const struct stat& st ) {
 	info.type = typeFromMode( st.st_mode );
 	if ( info.type != FileType::Directory )
 		info.setSize( static_cast<Uint64>( st.st_size ) );
@@ -167,7 +170,7 @@ std::mutex sNamesMutex;
 std::unordered_map<Uint32, std::string> sUserNames;
 std::unordered_map<Uint32, std::string> sGroupNames;
 
-void fillOwnerNames( FileInfo& info ) {
+void fillOwnerNames( VFSFileInfo& info ) {
 	if ( auto uid = info.uid() )
 		info.owner = LocalProvider::userName( *uid );
 	if ( auto gid = info.gid() )
@@ -177,30 +180,46 @@ void fillOwnerNames( FileInfo& info ) {
 class LocalDirectoryImpl : public DirectoryHandleImpl,
 						   public std::enable_shared_from_this<LocalDirectoryImpl> {
   public:
-	LocalDirectoryImpl( std::shared_ptr<ThreadPool> pool, URI uri, std::string path, DIR* dir,
-						DirectoryOpenOptions options ) :
-		mPool( std::move( pool ) ),
+	/** @param physicalPath path with its links followed (LocalIOScheduler::resolvePath()). */
+	LocalDirectoryImpl( std::shared_ptr<LocalIOScheduler> scheduler, URI uri, std::string path,
+						const std::string& physicalPath, DIR* dir, DirectoryOpenOptions options ) :
+		mScheduler( std::move( scheduler ) ),
+		mRoute( mScheduler->routeFor( physicalPath ) ),
 		mUri( std::move( uri ) ),
 		mPath( std::move( path ) ),
+		mNetworkMounts( LocalIOScheduler::networkMountsIn( physicalPath ) ),
 		mDir( dir ),
 		mOptions( options ) {}
 
 	~LocalDirectoryImpl() override { closeNow(); }
 
 	VFSTask<DirectoryBatch> read( size_t maxEntries, CancellationToken token ) override {
-		return mPool->submit(
-			[self = shared_from_this(), maxEntries, token]() -> VFSResult<DirectoryBatch> {
-				return self->readSync( maxEntries, token );
+		return mScheduler->submit<DirectoryBatch>(
+			mRoute, [self = shared_from_this(), maxEntries, token]() -> VFSResult<DirectoryBatch> {
+				auto batch = self->readSync( maxEntries, token );
+				// After releasing the mutex: a close() that could not take it set the flag first.
+				if ( self->mClosePending )
+					self->tryClose();
+				return batch;
 			} );
 	}
 
+	/** Never waits: a read in progress holds the mutex for as long as its file system takes (an
+	 * unresponsive server, until the server answers), and the caller may be the UI thread. That
+	 * read closes the directory when it ends. */
 	VFSTask<void> close() override {
-		std::lock_guard<std::mutex> lock( mMutex );
-		closeNow();
+		mClosePending = true;
+		tryClose();
 		return readyValue<void>();
 	}
 
   private:
+	void tryClose() {
+		std::unique_lock<std::mutex> lock( mMutex, std::try_to_lock );
+		if ( lock.owns_lock() )
+			closeNow();
+	}
+
 	VFSResult<DirectoryBatch> readSync( size_t maxEntries, const CancellationToken& token ) {
 		std::lock_guard<std::mutex> lock( mMutex );
 		DirectoryBatch batch;
@@ -226,10 +245,17 @@ class LocalDirectoryImpl : public DirectoryHandleImpl,
 			const char* name = entry->d_name;
 			if ( name[0] == '.' && ( name[1] == 0 || ( name[1] == '.' && name[2] == 0 ) ) )
 				continue;
-			// Built in place: a FileInfo is large, moving it into the batch is measurable.
-			FileInfo& info = batch.entries.emplace_back();
+			// Built in place: a VFSFileInfo is large, moving it into the batch is measurable.
+			VFSFileInfo& info = batch.entries.emplace_back();
 			info.name = name;
 			info.hidden = name[0] == '.';
+			// A network mount's root: reading its metadata would ask its server, which may not
+			// answer. It is listed as the folder it is, without metadata.
+			if ( !mNetworkMounts.empty() && std::find( mNetworkMounts.begin(), mNetworkMounts.end(),
+													   info.name ) != mNetworkMounts.end() ) {
+				info.type = FileType::Directory;
+				continue;
+			}
 #ifdef DT_UNKNOWN
 			switch ( entry->d_type ) {
 				case DT_REG:
@@ -266,13 +292,17 @@ class LocalDirectoryImpl : public DirectoryHandleImpl,
 				}
 			}
 			if ( info.type == FileType::Symlink ) {
-				if ( full )
+				if ( full || mOptions.resolveSymlinkTargets )
 					info.symlinkTarget = readLink( dirFd, name );
-				if ( mOptions.resolveSymlinkTargets ) {
+				// Not into a network mount: following the link would ask its server.
+				if ( mOptions.resolveSymlinkTargets &&
+					 !pointsIntoNetworkMount( info.symlinkTarget ) ) {
 					struct stat target;
 					if ( fstatat( dirFd, name, &target, 0 ) == 0 )
 						info.targetType = typeFromMode( target.st_mode );
 				}
+				if ( !full )
+					info.symlinkTarget.clear();
 			}
 		}
 		return Ok( std::move( batch ) );
@@ -285,19 +315,33 @@ class LocalDirectoryImpl : public DirectoryHandleImpl,
 		}
 	}
 
-	std::shared_ptr<ThreadPool> mPool;
+	bool pointsIntoNetworkMount( const std::string& target ) const {
+		if ( target.empty() )
+			return false;
+		return LocalIOScheduler::findNetworkMount(
+				   LocalIOScheduler::resolvePath( target[0] == '/' ? target : mPath + "/" + target,
+												  true ) )
+			.has_value();
+	}
+
+	std::shared_ptr<LocalIOScheduler> mScheduler;
+	Route mRoute;
 	URI mUri;
 	std::string mPath;
+	/** The network mounts in this directory, never stat'ed. */
+	std::vector<std::string> mNetworkMounts;
 	std::mutex mMutex;
+	std::atomic<bool> mClosePending{ false };
 	DIR* mDir;
 	DirectoryOpenOptions mOptions;
 };
 
 class LocalFileImpl : public FileHandleImpl, public std::enable_shared_from_this<LocalFileImpl> {
   public:
-	LocalFileImpl( std::shared_ptr<ThreadPool> pool, URI uri, std::string path, int fd,
-				   ProviderCapabilities caps ) :
-		mPool( std::move( pool ) ),
+	LocalFileImpl( std::shared_ptr<LocalIOScheduler> scheduler, Route route, URI uri,
+				   std::string path, int fd, ProviderCapabilities caps ) :
+		mScheduler( std::move( scheduler ) ),
+		mRoute( std::move( route ) ),
 		mUri( std::move( uri ) ),
 		mPath( std::move( path ) ),
 		mFd( fd ),
@@ -309,40 +353,42 @@ class LocalFileImpl : public FileHandleImpl, public std::enable_shared_from_this
 	}
 
 	VFSTask<size_t> read( Uint64 offset, std::span<Uint8> data, CancellationToken token ) override {
-		return submit<size_t>( token, [offset, data]( LocalFileImpl& self ) -> VFSResult<size_t> {
-			size_t done = 0;
-			while ( done < data.size() ) {
-				ssize_t got = ::pread( self.mFd, data.data() + done, data.size() - done,
-									   static_cast<off_t>( offset + done ) );
-				if ( got < 0 ) {
-					if ( errno == EINTR )
-						continue;
-					return Err( errnoError( self.mPath, "read failed" ) );
-				}
-				if ( got == 0 )
-					break;
-				done += static_cast<size_t>( got );
-			}
-			return Ok( done );
-		} );
+		if ( !mRoute.isNetworkMount() ) {
+			return submit<size_t>( token, [offset, data]( LocalFileImpl& self ) {
+				return self.readInto( offset, data );
+			} );
+		}
+		// The call can outlive the caller's wait (TimedOut), and with it data: it reads into a
+		// buffer of its own, copied into data only while the caller still waits.
+		return submitCommitted<std::vector<Uint8>, size_t>(
+			token,
+			[offset, size = data.size()]( LocalFileImpl& self ) -> VFSResult<std::vector<Uint8>> {
+				std::vector<Uint8> buffer( size );
+				auto read = self.readInto( offset, buffer );
+				if ( !read )
+					return Err( std::move( read ).error() );
+				buffer.resize( read.value() );
+				return Ok( std::move( buffer ) );
+			},
+			[data]( VFSResult<std::vector<Uint8>>&& read ) -> VFSResult<size_t> {
+				if ( !read )
+					return Err( std::move( read ).error() );
+				std::copy( read.value().begin(), read.value().end(), data.begin() );
+				return Ok( read.value().size() );
+			} );
 	}
 
 	VFSTask<size_t> write( Uint64 offset, std::span<const Uint8> data,
 						   CancellationToken token ) override {
-		return submit<size_t>( token, [offset, data]( LocalFileImpl& self ) -> VFSResult<size_t> {
-			size_t done = 0;
-			while ( done < data.size() ) {
-				ssize_t put = ::pwrite( self.mFd, data.data() + done, data.size() - done,
-										static_cast<off_t>( offset + done ) );
-				if ( put < 0 ) {
-					if ( errno == EINTR )
-						continue;
-					return Err( errnoError( self.mPath, "write failed" ) );
-				}
-				done += static_cast<size_t>( put );
-			}
-			return Ok( done );
-		} );
+		if ( !mRoute.isNetworkMount() ) {
+			return submit<size_t>( token, [offset, data]( LocalFileImpl& self ) {
+				return self.writeFrom( offset, data );
+			} );
+		}
+		// As read(): the call may outlive data, so it writes from a copy.
+		return submit<size_t>(
+			token, [offset, copy = std::vector<Uint8>( data.begin(), data.end() )](
+					   LocalFileImpl& self ) { return self.writeFrom( offset, copy ); } );
 	}
 
 	VFSTask<void> truncate( Uint64 size ) override {
@@ -366,13 +412,13 @@ class LocalFileImpl : public FileHandleImpl, public std::enable_shared_from_this
 		} );
 	}
 
-	VFSTask<FileInfo> stat() override {
-		return submit<FileInfo>( {}, []( LocalFileImpl& self ) -> VFSResult<FileInfo> {
+	VFSTask<VFSFileInfo> stat() override {
+		return submit<VFSFileInfo>( {}, []( LocalFileImpl& self ) -> VFSResult<VFSFileInfo> {
 			struct stat st;
 			if ( ::fstat( self.mFd, &st ) != 0 )
 				return Err( errnoError( self.mPath, "fstat failed" ) );
-			FileInfo info;
-			info.name = LocalPath::fileName( self.mPath );
+			VFSFileInfo info;
+			info.name = FileSystem::fileNameFromPath( self.mPath );
 			info.hidden = !info.name.empty() && info.name[0] == '.';
 			fillFromStat( info, st );
 			return Ok( std::move( info ) );
@@ -380,7 +426,7 @@ class LocalFileImpl : public FileHandleImpl, public std::enable_shared_from_this
 	}
 
 	VFSTask<void> close() override {
-		return mPool->submit( [self = shared_from_this()]() -> VFSResult<void> {
+		return mScheduler->submit<void>( mRoute, [self = shared_from_this()]() -> VFSResult<void> {
 			// Waits for in-flight operations on this descriptor.
 			std::unique_lock<std::shared_mutex> lock( self->mMutex );
 			if ( self->mFd >= 0 ) {
@@ -396,19 +442,67 @@ class LocalFileImpl : public FileHandleImpl, public std::enable_shared_from_this
 	ProviderCapabilities capabilities() const override { return mCaps; }
 
   private:
-	template <typename T, typename F> VFSTask<T> submit( CancellationToken token, F&& fn ) {
-		return mPool->submit( [self = shared_from_this(), fn = std::forward<F>( fn ),
-							   token = std::move( token )]() mutable -> VFSResult<T> {
+	VFSResult<size_t> readInto( Uint64 offset, std::span<Uint8> data ) {
+		size_t done = 0;
+		while ( done < data.size() ) {
+			ssize_t got = ::pread( mFd, data.data() + done, data.size() - done,
+								   static_cast<off_t>( offset + done ) );
+			if ( got < 0 ) {
+				if ( errno == EINTR )
+					continue;
+				return Err( errnoError( mPath, "read failed" ) );
+			}
+			if ( got == 0 )
+				break;
+			done += static_cast<size_t>( got );
+		}
+		return Ok( done );
+	}
+
+	VFSResult<size_t> writeFrom( Uint64 offset, std::span<const Uint8> data ) {
+		size_t done = 0;
+		while ( done < data.size() ) {
+			ssize_t put = ::pwrite( mFd, data.data() + done, data.size() - done,
+									static_cast<off_t>( offset + done ) );
+			if ( put < 0 ) {
+				if ( errno == EINTR )
+					continue;
+				return Err( errnoError( mPath, "write failed" ) );
+			}
+			done += static_cast<size_t>( put );
+		}
+		return Ok( done );
+	}
+
+	/** Runs fn( *this ) -> VFSResult<T> where the file's calls run, unless cancelled or closed. */
+	template <typename T, typename F> auto guarded( CancellationToken token, F&& fn ) {
+		return [self = shared_from_this(), fn = std::forward<F>( fn ),
+				token = std::move( token )]() mutable -> VFSResult<T> {
 			if ( token.isCancellationRequested() )
 				return Err( cancelledError( self->mUri ) );
 			std::shared_lock<std::shared_mutex> lock( self->mMutex );
 			if ( self->mFd < 0 )
 				return Err( VFSError( VFSErrorCode::InvalidOperation, self->mUri, "File closed" ) );
 			return fn( *self );
-		} );
+		};
 	}
 
-	std::shared_ptr<ThreadPool> mPool;
+	template <typename T, typename F> VFSTask<T> submit( CancellationToken token, F&& fn ) {
+		return mScheduler->submit<T>( mRoute,
+									  guarded<T>( std::move( token ), std::forward<F>( fn ) ) );
+	}
+
+	/** submit() of fn -> VFSResult<T>, then commit( VFSResult<T>&& ) -> VFSResult<U> (see
+	 * LocalIOScheduler::submitCommitted()). */
+	template <typename T, typename U, typename F, typename C>
+	VFSTask<U> submitCommitted( CancellationToken token, F&& fn, C&& commit ) {
+		return mScheduler->submitCommitted<U>(
+			mRoute, guarded<T>( std::move( token ), std::forward<F>( fn ) ),
+			std::forward<C>( commit ) );
+	}
+
+	std::shared_ptr<LocalIOScheduler> mScheduler;
+	Route mRoute;
 	URI mUri;
 	std::string mPath;
 	std::shared_mutex mMutex;
@@ -476,18 +570,28 @@ std::string LocalProvider::groupNameUncached( Uint32 gid ) {
 	return name;
 }
 
-VFSResult<FileInfo> LocalProvider::statSync( const URI& uri, const std::string& path,
-											 bool followSymlinks ) {
+VFSResult<VFSFileInfo> LocalProvider::statSync( const URI& uri, const std::string& path,
+												bool followSymlinks ) {
 	struct stat st;
 	if ( ::lstat( path.c_str(), &st ) != 0 )
 		return Err( errnoError( path, "stat failed" ) );
-	FileInfo info;
-	info.name = LocalPath::fileName( path );
+	VFSFileInfo info;
+	// The root keeps its name ("/"): it has no last component.
+	info.name = path == "/" ? path : FileSystem::fileNameFromPath( path );
 	info.hidden = !info.name.empty() && info.name[0] == '.';
 	if ( S_ISLNK( st.st_mode ) ) {
 		info.symlinkTarget = readLink( -1, path.c_str() );
+		// Without following, the target's type is a detail: not worth asking a network mount's
+		// server for it. Following is what the caller asked for.
+		const std::string& link = info.symlinkTarget;
+		const bool intoNetworkMount =
+			!followSymlinks && !link.empty() &&
+			LocalIOScheduler::findNetworkMount(
+				LocalIOScheduler::resolvePath(
+					link[0] == '/' ? link : FileSystem::fileRemoveFileName( path ) + link, true ) )
+				.has_value();
 		struct stat target;
-		bool resolved = ::stat( path.c_str(), &target ) == 0;
+		bool resolved = !intoNetworkMount && ::stat( path.c_str(), &target ) == 0;
 		if ( followSymlinks ) {
 			if ( !resolved )
 				return Err( errnoError( path, "stat failed" ) );
@@ -504,33 +608,36 @@ VFSResult<FileInfo> LocalProvider::statSync( const URI& uri, const std::string& 
 	return Ok( std::move( info ) );
 }
 
-VFSTask<FileInfo> LocalProvider::stat( const URI& uri, const StatOptions& options,
-									   CancellationToken token ) {
-	return run<FileInfo>( uri, std::move( token ),
-						  [uri, follow = options.followSymlinks]( const std::string& path ) {
-							  return statSync( uri, path, follow );
-						  } );
+VFSTask<VFSFileInfo> LocalProvider::stat( const URI& uri, const StatOptions& options,
+										  CancellationToken token ) {
+	const bool follow = options.followSymlinks;
+	return run<VFSFileInfo>(
+		uri, follow ? LastLink::Follow : LastLink::Keep, std::move( token ),
+		[uri, follow]( const std::string& path ) { return statSync( uri, path, follow ); } );
 }
 
 VFSTask<DirectoryHandle> LocalProvider::openDirectory( const URI& uri,
 													   const DirectoryOpenOptions& options,
 													   CancellationToken token ) {
 	return run<DirectoryHandle>(
-		uri, std::move( token ),
-		[pool = mPool, uri, options]( const std::string& path ) -> VFSResult<DirectoryHandle> {
+		uri, LastLink::Follow, std::move( token ),
+		[scheduler = mScheduler, uri,
+		 options]( const std::string& path ) -> VFSResult<DirectoryHandle> {
 			DIR* dir = ::opendir( path.c_str() );
 			if ( !dir )
 				return Err( errnoError( path, "opendir failed" ) );
-			return Ok( DirectoryHandle(
-				uri, std::make_shared<LocalDirectoryImpl>( pool, uri, path, dir, options ) ) );
+			return Ok( DirectoryHandle( uri, std::make_shared<LocalDirectoryImpl>(
+												 scheduler, uri, path,
+												 LocalIOScheduler::resolvePath( path, true ), dir,
+												 options ) ) );
 		} );
 }
 
 VFSTask<FileHandle> LocalProvider::open( const URI& uri, const OpenOptions& options,
 										 CancellationToken token ) {
 	return run<FileHandle>(
-		uri, std::move( token ),
-		[pool = mPool, uri, options,
+		uri, LastLink::Follow, std::move( token ),
+		[scheduler = mScheduler, uri, options,
 		 caps = capabilities( uri )]( const std::string& path ) -> VFSResult<FileHandle> {
 			OpenFlags flags = options.flags;
 			int oflags = O_CLOEXEC;
@@ -555,14 +662,15 @@ VFSTask<FileHandle> LocalProvider::open( const URI& uri, const OpenOptions& opti
 				::close( fd );
 				return Err( VFSError( VFSErrorCode::IsDirectory, uri ) );
 			}
-			return Ok(
-				FileHandle( uri, std::make_shared<LocalFileImpl>( pool, uri, path, fd, caps ) ) );
+			return Ok( FileHandle( uri, std::make_shared<LocalFileImpl>(
+											scheduler, scheduler->resolvedRouteFor( path, true ),
+											uri, path, fd, caps ) ) );
 		} );
 }
 
 VFSTask<void> LocalProvider::mkdir( const URI& uri, const MkDirOptions& options,
 									CancellationToken token ) {
-	return run<void>( uri, std::move( token ),
+	return run<void>( uri, LastLink::Keep, std::move( token ),
 					  [mode = options.permissions.value_or( 0777 )](
 						  const std::string& path ) -> VFSResult<void> {
 						  if ( ::mkdir( path.c_str(), static_cast<mode_t>( mode ) ) != 0 )
@@ -573,15 +681,16 @@ VFSTask<void> LocalProvider::mkdir( const URI& uri, const MkDirOptions& options,
 
 VFSTask<void> LocalProvider::remove( const URI& uri, const RemoveOptions&,
 									 CancellationToken token ) {
-	return run<void>( uri, std::move( token ), []( const std::string& path ) -> VFSResult<void> {
-		struct stat st;
-		if ( ::lstat( path.c_str(), &st ) != 0 )
-			return Err( errnoError( path, "remove failed" ) );
-		int result = S_ISDIR( st.st_mode ) ? ::rmdir( path.c_str() ) : ::unlink( path.c_str() );
-		if ( result != 0 )
-			return Err( errnoError( path, "remove failed" ) );
-		return Ok();
-	} );
+	return run<void>(
+		uri, LastLink::Keep, std::move( token ), []( const std::string& path ) -> VFSResult<void> {
+			struct stat st;
+			if ( ::lstat( path.c_str(), &st ) != 0 )
+				return Err( errnoError( path, "remove failed" ) );
+			int result = S_ISDIR( st.st_mode ) ? ::rmdir( path.c_str() ) : ::unlink( path.c_str() );
+			if ( result != 0 )
+				return Err( errnoError( path, "remove failed" ) );
+			return Ok();
+		} );
 }
 
 namespace {
@@ -610,35 +719,52 @@ int renameNoReplace( const char* from, const char* to ) {
 
 VFSTask<void> LocalProvider::rename( const URI& from, const URI& to, const RenameOptions& options,
 									 CancellationToken token ) {
+	if ( token.isCancellationRequested() )
+		return readyError<void>( cancelledError( from ) );
+	auto fromPath = toNativePath( from );
+	if ( !fromPath )
+		return readyError<void>( std::move( fromPath ).error() );
 	auto toPath = toNativePath( to );
 	if ( !toPath )
 		return readyError<void>( std::move( toPath ).error() );
-	return run<void>( from, std::move( token ),
-					  [to = std::move( toPath ).value(), overwrite = options.overwrite](
-						  const std::string& path ) -> VFSResult<void> {
-						  int result = overwrite ? ::rename( path.c_str(), to.c_str() )
-												 : renameNoReplace( path.c_str(), to.c_str() );
-						  if ( result != 0 )
-							  return Err( errnoError( path, "rename failed" ) );
-						  return Ok();
-					  } );
+	// A rename never crosses file systems, and paths on different routes (a local disk and a
+	// network mount, or two mounts, their parents' links followed) are never on the same one:
+	// answer it before the call, as the system would (the VFS then copies and removes). The call
+	// then never waits on the other path's mount, which the system call would look up.
+	const std::string& native = fromPath.value();
+	const std::string& target = toPath.value();
+	return mScheduler->submitOnSameRoute<void>(
+		native, target,
+		VFSError( VFSErrorCode::Unsupported, from,
+				  "The source and destination are on different file systems" ),
+		guarded<void>( native, std::move( token ),
+					   [to = target, overwrite = options.overwrite](
+						   const std::string& path ) -> VFSResult<void> {
+						   int result = overwrite ? ::rename( path.c_str(), to.c_str() )
+												  : renameNoReplace( path.c_str(), to.c_str() );
+						   if ( result != 0 )
+							   return Err( errnoError( path, "rename failed" ) );
+						   return Ok();
+					   } ) );
 }
 
 VFSTask<URI> LocalProvider::canonicalize( const URI& uri, CancellationToken token ) {
-	return run<URI>( uri, std::move( token ), []( const std::string& path ) -> VFSResult<URI> {
-		char* resolved = ::realpath( path.c_str(), nullptr );
-		if ( !resolved )
-			return Err( errnoError( path, "realpath failed" ) );
-		URI result = URI::fromFSPath( resolved );
-		::free( resolved );
-		return Ok( std::move( result ) );
-	} );
+	return run<URI>( uri, LastLink::Follow, std::move( token ),
+					 []( const std::string& path ) -> VFSResult<URI> {
+						 char* resolved = ::realpath( path.c_str(), nullptr );
+						 if ( !resolved )
+							 return Err( errnoError( path, "realpath failed" ) );
+						 URI result = URI::fromFSPath( resolved );
+						 ::free( resolved );
+						 return Ok( std::move( result ) );
+					 } );
 }
 
 VFSTask<void> LocalProvider::setPermissions( const URI& uri, Uint32 permissions,
 											 CancellationToken token ) {
 	return run<void>(
-		uri, std::move( token ), [permissions]( const std::string& path ) -> VFSResult<void> {
+		uri, LastLink::Follow, std::move( token ),
+		[permissions]( const std::string& path ) -> VFSResult<void> {
 			if ( ::chmod( path.c_str(), static_cast<mode_t>( permissions & 07777 ) ) != 0 )
 				return Err( errnoError( path, "chmod failed" ) );
 			return Ok();
@@ -647,7 +773,8 @@ VFSTask<void> LocalProvider::setPermissions( const URI& uri, Uint32 permissions,
 
 VFSTask<SpaceInfo> LocalProvider::spaceInfo( const URI& uri, CancellationToken token ) {
 	return run<SpaceInfo>(
-		uri, std::move( token ), []( const std::string& path ) -> VFSResult<SpaceInfo> {
+		uri, LastLink::Follow, std::move( token ),
+		[]( const std::string& path ) -> VFSResult<SpaceInfo> {
 			struct statvfs st;
 			if ( ::statvfs( path.c_str(), &st ) != 0 )
 				return Err( errnoError( path, "statvfs failed" ) );

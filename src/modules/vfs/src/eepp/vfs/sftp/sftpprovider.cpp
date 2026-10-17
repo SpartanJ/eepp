@@ -41,7 +41,7 @@ FileType typeFromPermissions( unsigned long permissions ) {
 	}
 }
 
-void fillFromAttributes( FileInfo& info, const LIBSSH2_SFTP_ATTRIBUTES& attrs ) {
+void fillFromAttributes( VFSFileInfo& info, const LIBSSH2_SFTP_ATTRIBUTES& attrs ) {
 	if ( attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS ) {
 		info.type = typeFromPermissions( attrs.permissions );
 		info.setPermissions( static_cast<Uint32>( attrs.permissions & 07777 ) );
@@ -63,7 +63,7 @@ void fillFromAttributes( FileInfo& info, const LIBSSH2_SFTP_ATTRIBUTES& attrs ) 
 }
 
 /** Extracts owner and group from an `ls -l` style SFTP long name. */
-void ownerFromLongName( FileInfo& info, const char* longEntry ) {
+void ownerFromLongName( VFSFileInfo& info, const char* longEntry ) {
 	std::vector<std::string> fields;
 	std::string current;
 	for ( const char* c = longEntry; *c && fields.size() < 4; ++c ) {
@@ -181,7 +181,7 @@ class SFTPDirectoryImpl : public DirectoryHandleImpl {
 					std::string entryName( name, static_cast<size_t>( rc ) );
 					if ( entryName == "." || entryName == ".." )
 						continue;
-					FileInfo info;
+					VFSFileInfo info;
 					info.name = std::move( entryName );
 					info.hidden = info.name[0] == '.';
 					fillFromAttributes( info, attrs );
@@ -194,7 +194,7 @@ class SFTPDirectoryImpl : public DirectoryHandleImpl {
 				while ( state->linkIndex < state->links.size() ) {
 					if ( token.isCancellationRequested() )
 						return VFSResult<DirectoryBatch>( Err( cancelledError( base ) ) );
-					FileInfo& link = state->batch.entries[state->links[state->linkIndex]];
+					VFSFileInfo& link = state->batch.entries[state->links[state->linkIndex]];
 					URI linkURI = base.withAppendedSegment( link.name );
 					std::string path = sftpPath( linkURI );
 					auto target = sftpStat( c, linkURI, path, true );
@@ -349,24 +349,24 @@ class SFTPFileImpl : public FileHandleImpl {
 			} );
 	}
 
-	VFSTask<FileInfo> stat() override {
+	VFSTask<VFSFileInfo> stat() override {
 		if ( !mHandle )
-			return readyError<FileInfo>( VFSErrorCode::InvalidOperation, mUri, "File closed" );
+			return readyError<VFSFileInfo>( VFSErrorCode::InvalidOperation, mUri, "File closed" );
 		LIBSSH2_SFTP_HANDLE* handle = mHandle;
 		URI uri = mUri;
-		return mConnection->submit<FileInfo>(
-			{}, mUri, [handle, uri]( SSHConnection& c ) -> std::optional<VFSResult<FileInfo>> {
+		return mConnection->submit<VFSFileInfo>(
+			{}, mUri, [handle, uri]( SSHConnection& c ) -> std::optional<VFSResult<VFSFileInfo>> {
 				LIBSSH2_SFTP_ATTRIBUTES attrs{};
 				int rc = libssh2_sftp_fstat_ex( handle, &attrs, 0 );
 				if ( rc == LIBSSH2_ERROR_EAGAIN )
 					return std::nullopt;
 				if ( rc != 0 )
-					return VFSResult<FileInfo>( Err( c.lastError( uri, "fstat failed" ) ) );
-				FileInfo info;
+					return VFSResult<VFSFileInfo>( Err( c.lastError( uri, "fstat failed" ) ) );
+				VFSFileInfo info;
 				info.name = uri.getLastPathSegment();
 				info.hidden = !info.name.empty() && info.name[0] == '.';
 				fillFromAttributes( info, attrs );
-				return VFSResult<FileInfo>( Ok( std::move( info ) ) );
+				return VFSResult<VFSFileInfo>( Ok( std::move( info ) ) );
 			} );
 	}
 
@@ -456,10 +456,10 @@ VFSTask<void> SFTPProvider::connect( const URI& uri ) {
 		} );
 }
 
-VFSTask<FileInfo> SFTPProvider::stat( const URI& uri, const StatOptions& options,
-									  CancellationToken token ) {
+VFSTask<VFSFileInfo> SFTPProvider::stat( const URI& uri, const StatOptions& options,
+										 CancellationToken token ) {
 	bool follow = options.followSymlinks;
-	return withConnection<FileInfo>(
+	return withConnection<VFSFileInfo>(
 		mImpl, uri, token, [uri, follow, token]( std::shared_ptr<SSHConnection> connection ) {
 			struct State {
 				std::optional<LIBSSH2_SFTP_ATTRIBUTES> attrs;
@@ -470,16 +470,16 @@ VFSTask<FileInfo> SFTPProvider::stat( const URI& uri, const StatOptions& options
 			};
 			auto state = std::make_shared<State>();
 			std::string path = sftpPath( uri );
-			return connection->submit<FileInfo>(
+			return connection->submit<VFSFileInfo>(
 				token, uri,
 				[state, path, uri,
-				 follow]( SSHConnection& c ) -> std::optional<VFSResult<FileInfo>> {
+				 follow]( SSHConnection& c ) -> std::optional<VFSResult<VFSFileInfo>> {
 					if ( !state->attrs ) {
 						auto attrs = sftpStat( c, uri, path, false );
 						if ( !attrs )
 							return std::nullopt;
 						if ( !*attrs )
-							return VFSResult<FileInfo>( Err( attrs->error() ) );
+							return VFSResult<VFSFileInfo>( Err( attrs->error() ) );
 						state->attrs = attrs->value();
 					}
 					bool isLink =
@@ -505,10 +505,10 @@ VFSTask<FileInfo> SFTPProvider::stat( const URI& uri, const StatOptions& options
 							targetAttrs = attrs->value();
 							state->targetType = typeFromPermissions( attrs->value().permissions );
 						} else if ( follow ) {
-							return VFSResult<FileInfo>( Err( attrs->error() ) );
+							return VFSResult<VFSFileInfo>( Err( attrs->error() ) );
 						}
 					}
-					FileInfo info;
+					VFSFileInfo info;
 					info.name = uri.getLastPathSegment();
 					if ( info.name.empty() )
 						info.name = "/";
@@ -518,7 +518,7 @@ VFSTask<FileInfo> SFTPProvider::stat( const URI& uri, const StatOptions& options
 					info.symlinkTarget = state->link;
 					if ( isLink && !follow )
 						info.targetType = state->targetType;
-					return VFSResult<FileInfo>( Ok( std::move( info ) ) );
+					return VFSResult<VFSFileInfo>( Ok( std::move( info ) ) );
 				} );
 		} );
 }

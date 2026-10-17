@@ -42,8 +42,8 @@ class VFSProvider {
 
 	virtual ProviderCapabilities capabilities( const URI& uri ) const = 0;
 
-	virtual VFSTask<FileInfo> stat( const URI& uri, const StatOptions& options,
-									CancellationToken token ) = 0;
+	virtual VFSTask<VFSFileInfo> stat( const URI& uri, const StatOptions& options,
+									   CancellationToken token ) = 0;
 
 	virtual VFSTask<DirectoryHandle> openDirectory( const URI& uri,
 													const DirectoryOpenOptions& options,

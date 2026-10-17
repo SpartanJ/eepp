@@ -404,16 +404,16 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 	config.vfs = mApp.vfs();
 	config.showHidden = mApp.showHidden();
 	raw->model = VFSDirectoryModel::New( mApp.executor(), config );
-	raw->model->setIconProvider( [this]( const FileInfo& info ) -> Variant {
+	raw->model->setIconProvider( [this]( const VFSFileInfo& info ) -> Variant {
 		UIIcon* icon = mApp.fileIcon( info );
 		return icon ? Variant( icon ) : Variant();
 	} );
 	raw->model->setTypeProvider(
-		[]( const FileInfo& info ) { return MimeDatabase::instance().describe( info ); } );
+		[]( const VFSFileInfo& info ) { return MimeDatabase::instance().describe( info ); } );
 	raw->model->setTimeFormatter( formatTime );
 	raw->model->setItemCountFormatter( itemCount );
 	raw->model->setOnStateChanged( [this, raw] { onTabStateChanged( raw ); } );
-	raw->model->setOnRename( [this, raw]( const FileInfo& entry, const std::string& name ) {
+	raw->model->setOnRename( [this, raw]( const VFSFileInfo& entry, const std::string& name ) {
 		mApp.fileOps().renameEntry( raw, entry, name );
 	} );
 
@@ -708,12 +708,17 @@ void PaneManager::updateStatus( Pane& pane ) {
 	auto& model = *tab->model;
 	String status;
 	if ( model.loadState() == VFSDirectoryModel::LoadState::Error ) {
-		status = String::fromUtf8( model.error()->toString() );
+		const VFSError& error = *model.error();
+		std::string text = error.message.empty() ? error.toString() : error.message;
+		// A server that stopped answering may come back.
+		if ( error.is( VFSErrorCode::TimedOut ) || error.is( VFSErrorCode::ConnectionLost ) )
+			text += " (F5 to retry)";
+		status = String::fromUtf8( text );
 	} else {
 		Uint64 folders = 0, files = 0, bytes = 0;
 		Uint64 selectedFolders = 0, selectedFiles = 0, selectedBytes = 0;
 		for ( size_t row = 0; row < model.rowCount(); ++row ) {
-			const FileInfo& info = model.entry( row );
+			const VFSFileInfo& info = model.entry( row );
 			bool selected = tab->view->getSelection().containsRow( static_cast<int>( row ) );
 			if ( info.isDirectory() ) {
 				++folders;

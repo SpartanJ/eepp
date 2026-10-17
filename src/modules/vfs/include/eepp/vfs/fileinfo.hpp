@@ -31,7 +31,7 @@ const char* toString( FileType type );
  * Two revisions are only comparable when produced by the same provider. An empty revision means
  * "unknown" and never matches.
  *
- * Stored inline (no heap) because it travels inside every FileInfo.
+ * Stored inline (no heap) because it travels inside every VFSFileInfo.
  */
 class FileRevision {
   public:
@@ -92,7 +92,7 @@ class FileRevision {
  * The entry does not store its URI: listings hold thousands of entries and the caller always
  * knows the URI it listed or stat'ed. Use uriIn( directory ) for an entry of a listing.
  */
-class FileInfo {
+class VFSFileInfo {
   public:
 	/** Last path segment (verbatim, not percent-encoded). */
 	std::string name;
@@ -133,23 +133,23 @@ class FileInfo {
 
 	std::optional<Uint32> gid() const { return get( Field::Gid, mGid ); }
 
-	FileInfo& setSize( Uint64 value ) { return set( Field::Size, mSize, value ); }
+	VFSFileInfo& setSize( Uint64 value ) { return set( Field::Size, mSize, value ); }
 
 	/** Times are Unix timestamps in seconds. */
-	FileInfo& setModifiedTime( Int64 value ) { return set( Field::Modified, mModified, value ); }
+	VFSFileInfo& setModifiedTime( Int64 value ) { return set( Field::Modified, mModified, value ); }
 
-	FileInfo& setCreatedTime( Int64 value ) { return set( Field::Created, mCreated, value ); }
+	VFSFileInfo& setCreatedTime( Int64 value ) { return set( Field::Created, mCreated, value ); }
 
-	FileInfo& setAccessedTime( Int64 value ) { return set( Field::Accessed, mAccessed, value ); }
+	VFSFileInfo& setAccessedTime( Int64 value ) { return set( Field::Accessed, mAccessed, value ); }
 
 	/** POSIX permission bits (07777 range). */
-	FileInfo& setPermissions( Uint32 value ) {
+	VFSFileInfo& setPermissions( Uint32 value ) {
 		return set( Field::Permissions, mPermissions, value );
 	}
 
-	FileInfo& setUid( Uint32 value ) { return set( Field::Uid, mUid, value ); }
+	VFSFileInfo& setUid( Uint32 value ) { return set( Field::Uid, mUid, value ); }
 
-	FileInfo& setGid( Uint32 value ) { return set( Field::Gid, mGid, value ); }
+	VFSFileInfo& setGid( Uint32 value ) { return set( Field::Gid, mGid, value ); }
 
 	/** @return The URI of this entry inside the listed directory. */
 	URI uriIn( const URI& directory ) const { return directory.withAppendedSegment( name ); }
@@ -175,7 +175,7 @@ class FileInfo {
 		return std::nullopt;
 	}
 
-	template <typename T> FileInfo& set( Field field, T& member, T value ) {
+	template <typename T> VFSFileInfo& set( Field field, T& member, T value ) {
 		member = value;
 		mPresent |= static_cast<Uint8>( field );
 		return *this;

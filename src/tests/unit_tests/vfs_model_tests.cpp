@@ -74,7 +74,7 @@ UTEST( VFSDirectoryModel, nameFilterModesTypesAndItemCounts ) {
 	config.vfs = &vfs;
 	config.countDirectoryItems = true;
 	auto model = VFSDirectoryModel::New( loop, config );
-	model->setTypeProvider( []( const EE::VFS::FileInfo& info ) {
+	model->setTypeProvider( []( const EE::VFS::VFSFileInfo& info ) {
 		return info.isDirectory() ? std::string( "Folder" )
 								  : String::toUpper( FileSystem::fileExtension( info.name ) );
 	} );

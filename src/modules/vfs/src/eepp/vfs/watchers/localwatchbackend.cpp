@@ -2,6 +2,7 @@
 #include <atomic>
 #include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/vfs/providers/localioscheduler.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>
 #include <eepp/vfs/watchers/localwatchbackend.hpp>
 #include <efsw/efsw.hpp>
@@ -9,6 +10,8 @@
 #include <mutex>
 #include <unordered_map>
 #include <vector>
+
+using namespace EE::System;
 
 namespace EE { namespace VFS {
 
@@ -42,7 +45,7 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 											const WatchOptions& options,
 											const std::shared_ptr<WatchSink>& sink ) {
 		std::string root( nativeRoot );
-		System::FileSystem::dirAddSlashAtEnd( root );
+		FileSystem::dirAddSlashAtEnd( root );
 		Uint64 token = ++mLastToken;
 
 		// Share an existing efsw watch on the same root with the same options.
@@ -83,8 +86,8 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 			entry.rootPath = root;
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 			// FSEvents reports resolved paths: /private/var/... for a root under /var.
-			std::string realRoot( System::FileSystem::getRealPath( nativeRoot ) );
-			System::FileSystem::dirAddSlashAtEnd( realRoot );
+			std::string realRoot( FileSystem::getRealPath( nativeRoot ) );
+			FileSystem::dirAddSlashAtEnd( realRoot );
 			if ( realRoot != root )
 				entry.realRootPath = std::move( realRoot );
 #endif
@@ -334,7 +337,7 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 
 class LocalWatchRegistration : public WatchRegistration {
   public:
-	LocalWatchRegistration( std::weak_ptr<System::ThreadPool> pool,
+	LocalWatchRegistration( std::weak_ptr<ThreadPool> pool,
 							std::shared_ptr<LocalWatchBackendImpl> impl, Uint64 token ) :
 		mPool( std::move( pool ) ), mImpl( std::move( impl ) ), mToken( token ) {}
 
@@ -349,16 +352,18 @@ class LocalWatchRegistration : public WatchRegistration {
 	}
 
   private:
-	std::weak_ptr<System::ThreadPool> mPool;
+	std::weak_ptr<ThreadPool> mPool;
 	std::shared_ptr<LocalWatchBackendImpl> mImpl;
 	Uint64 mToken;
 };
 
 } // namespace detail
 
-LocalWatchBackend::LocalWatchBackend( std::shared_ptr<System::ThreadPool> pool,
+LocalWatchBackend::LocalWatchBackend( std::shared_ptr<ThreadPool> pool,
+									  std::shared_ptr<WatchBackend> networkBackend,
 									  Time genericPollingInterval ) :
 	mPool( std::move( pool ) ),
+	mNetworkBackend( std::move( networkBackend ) ),
 	mImpl( std::make_shared<detail::LocalWatchBackendImpl>( genericPollingInterval ) ) {}
 
 LocalWatchBackend::~LocalWatchBackend() = default;
@@ -370,25 +375,44 @@ LocalWatchBackend::watch( const URI& root, const WatchOptions& options,
 	auto path = LocalProvider::toNativePath( root );
 	if ( !path )
 		return readyError<Registration>( std::move( path ).error() );
-	std::weak_ptr<System::ThreadPool> weakPool = mPool;
+	if ( mNetworkBackend && LocalIOScheduler::findNetworkMount( path.value() ) )
+		return mNetworkBackend->watch( root, options, std::move( sink ) );
+	std::weak_ptr<ThreadPool> weakPool = mPool;
+	TaskResolver<VFSResult<Registration>> resolve;
+	auto task = VFSTask<Registration>::create( resolve );
 	// Checking the directory and registering it touch the filesystem (a slow mount blocks): on
 	// the I/O pool. Once the task resolves the watch is active, so a listing started afterwards
 	// cannot miss changes.
-	return mPool->submit( [impl = mImpl, weakPool, root, options, sink = std::move( sink ),
-						   nativeRoot = std::move( path ).value()]() -> VFSResult<Registration> {
-		if ( !System::FileSystem::isDirectory( nativeRoot ) ) {
-			return Err( VFSError( System::FileSystem::fileExists( nativeRoot )
-									  ? VFSErrorCode::NotDirectory
-									  : VFSErrorCode::NotFound,
-								  root ) );
+	mPool->submit( [impl = mImpl, weakPool, network = mNetworkBackend, root, options,
+					sink = std::move( sink ), nativeRoot = std::move( path ).value(),
+					resolve = std::move( resolve )]() mutable {
+		// Through a symbolic link into a network mount: checking it would ask the server.
+		if ( network && LocalIOScheduler::findNetworkMount(
+							LocalIOScheduler::resolvePath( nativeRoot, true ) ) ) {
+			network->watch( root, options, std::move( sink ) )
+				.onComplete( [resolve]( std::optional<VFSResult<Registration>> result ) {
+					if ( result )
+						resolve( std::move( *result ) );
+				} );
+			return;
+		}
+		if ( !FileSystem::isDirectory( nativeRoot ) ) {
+			resolve(
+				Err( VFSError( FileSystem::fileExists( nativeRoot ) ? VFSErrorCode::NotDirectory
+																	: VFSErrorCode::NotFound,
+							   root ) ) );
+			return;
 		}
 		auto added = impl->add( nativeRoot, options, sink );
-		if ( !added )
-			return Err( std::move( added ).error() );
+		if ( !added ) {
+			resolve( Err( std::move( added ).error() ) );
+			return;
+		}
 		sink->setStatus( added.value().second ? WatchStatus::Polling : WatchStatus::Active );
-		return Ok( Registration( std::make_unique<detail::LocalWatchRegistration>(
-			weakPool, impl, added.value().first ) ) );
+		resolve( Ok( Registration( std::make_unique<detail::LocalWatchRegistration>(
+			weakPool, impl, added.value().first ) ) ) );
 	} );
+	return task;
 }
 
 }} // namespace EE::VFS

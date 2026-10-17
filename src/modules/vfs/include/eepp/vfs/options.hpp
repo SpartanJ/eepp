@@ -22,7 +22,7 @@ enum class DirectoryMetadata : Uint8 {
 
 struct DirectoryOpenOptions {
 	DirectoryMetadata metadata{ DirectoryMetadata::Full };
-	/** Resolve the target type of symlinks (FileInfo::targetType). May cost a stat per link. */
+	/** Resolve the target type of symlinks (VFSFileInfo::targetType). May cost a stat per link. */
 	bool resolveSymlinkTargets{ true };
 };
 

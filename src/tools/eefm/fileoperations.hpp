@@ -43,7 +43,7 @@ class FileOperations {
 	void renameSelection();
 
 	/** A name typed in place: renames the entry. */
-	void renameEntry( FileTab* tab, const EE::VFS::FileInfo& entry, const std::string& name );
+	void renameEntry( FileTab* tab, const EE::VFS::VFSFileInfo& entry, const std::string& name );
 
 	void newFolder( FileTab* tab );
 
@@ -137,8 +137,8 @@ class FileOperations {
 
 	/** Runs work (blocking, it returns an error message) on the pool, then refresh on the UI
 	 * thread; a failure is reported under errorTitle. */
-	void runInBackground( std::function<std::string()> work, std::function<void()> refresh,
-						  String errorTitle );
+	void runInBackground( const std::string& path, std::function<std::string()> work,
+						  std::function<void()> refresh, String errorTitle );
 
 	App& mApp;
 	UISceneNode* mUI;

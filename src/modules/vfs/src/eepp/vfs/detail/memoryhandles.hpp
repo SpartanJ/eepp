@@ -13,7 +13,7 @@ namespace EE { namespace VFS { namespace detail {
 /** Directory handle over an already materialized listing. Batches are returned as ready tasks. */
 class VectorDirectoryImpl : public DirectoryHandleImpl {
   public:
-	explicit VectorDirectoryImpl( std::vector<FileInfo> entries ) :
+	explicit VectorDirectoryImpl( std::vector<VFSFileInfo> entries ) :
 		mEntries( std::move( entries ) ) {}
 
 	VFSTask<DirectoryBatch> read( size_t maxEntries, CancellationToken token ) override {
@@ -49,14 +49,14 @@ class VectorDirectoryImpl : public DirectoryHandleImpl {
 
   private:
 	std::mutex mMutex;
-	std::vector<FileInfo> mEntries;
+	std::vector<VFSFileInfo> mEntries;
 	size_t mPosition{ 0 };
 };
 
 /** Read-only file handle over an immutable buffer. */
 class BufferFileImpl : public FileHandleImpl {
   public:
-	BufferFileImpl( std::shared_ptr<const std::vector<Uint8>> data, URI uri, FileInfo info,
+	BufferFileImpl( std::shared_ptr<const std::vector<Uint8>> data, URI uri, VFSFileInfo info,
 					ProviderCapabilities caps ) :
 		mData( std::move( data ) ),
 		mUri( std::move( uri ) ),
@@ -83,7 +83,7 @@ class BufferFileImpl : public FileHandleImpl {
 
 	VFSTask<void> flush() override { return readyValue<void>(); }
 
-	VFSTask<FileInfo> stat() override { return readyValue<FileInfo>( mInfo ); }
+	VFSTask<VFSFileInfo> stat() override { return readyValue<VFSFileInfo>( mInfo ); }
 
 	VFSTask<void> close() override { return readyValue<void>(); }
 
@@ -92,7 +92,7 @@ class BufferFileImpl : public FileHandleImpl {
   private:
 	std::shared_ptr<const std::vector<Uint8>> mData;
 	URI mUri;
-	FileInfo mInfo;
+	VFSFileInfo mInfo;
 	ProviderCapabilities mCaps;
 };
 

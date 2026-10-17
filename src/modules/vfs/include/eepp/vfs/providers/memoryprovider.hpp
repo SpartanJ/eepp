@@ -31,8 +31,8 @@ class MemoryProvider : public VFSProvider {
 
 	ProviderCapabilities capabilities( const URI& uri ) const override;
 
-	VFSTask<FileInfo> stat( const URI& uri, const StatOptions& options,
-							CancellationToken token ) override;
+	VFSTask<VFSFileInfo> stat( const URI& uri, const StatOptions& options,
+							   CancellationToken token ) override;
 
 	VFSTask<DirectoryHandle> openDirectory( const URI& uri, const DirectoryOpenOptions& options,
 											CancellationToken token ) override;
@@ -77,7 +77,7 @@ class MemoryProvider : public VFSProvider {
 	VFSResult<std::shared_ptr<Node>> createNode( const URI& uri, const std::string& key,
 												 bool directory, Uint32 permissions );
 
-	FileInfo describe( const URI& uri, const std::string& key, const Node& node ) const;
+	VFSFileInfo describe( const URI& uri, const std::string& key, const Node& node ) const;
 
 	std::string mScheme;
 	Executor* mExecutor;

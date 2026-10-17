@@ -160,7 +160,7 @@ UTEST( VFSBenchmark, localDirectoryListing ) {
 				count, firstBatch, total, namesOnly, sync );
 		FileSystem::dirRemoveAll( dir );
 	}
-	printf( "  sizeof(FileInfo) = %zu bytes\n", sizeof( FileInfo ) );
+	printf( "  sizeof(VFSFileInfo) = %zu bytes\n", sizeof( VFSFileInfo ) );
 }
 
 UTEST( VFSBenchmark, localThroughput ) {

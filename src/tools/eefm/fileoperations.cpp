@@ -40,17 +40,23 @@ void FileOperations::reportError( const String& action, const VFSError& error ) 
 	Dialogs::showError( mUI, action + ":\n" + String::fromUtf8( error.toString() ) );
 }
 
-void FileOperations::runInBackground( std::function<std::string()> work,
+void FileOperations::runInBackground( const std::string& path, std::function<std::string()> work,
 									  std::function<void()> refresh, String errorTitle ) {
-	mApp.pool()
-		->submit( std::move( work ) )
-		.then( mApp.executor(), [this, refresh = std::move( refresh ),
-								 errorTitle = std::move( errorTitle )]( std::string error ) {
-			if ( !error.empty() )
-				Dialogs::showError( mUI, errorTitle + ":\n" + String::fromUtf8( error ) );
-			if ( refresh )
-				refresh();
-		} );
+	// Where the VFS runs the calls on path: on a network mount that stopped answering, the work
+	// fails after the timeout instead of holding one of eefm's threads.
+	mVFS->localIO()
+		.submitResolved<std::string>(
+			path, false,
+			[work = std::move( work )]() -> VFSResult<std::string> { return Ok( work() ); } )
+		.then( mApp.executor(),
+			   [this, refresh = std::move( refresh ),
+				errorTitle = std::move( errorTitle )]( VFSResult<std::string> result ) {
+				   const std::string error = result ? result.value() : result.error().message;
+				   if ( !error.empty() )
+					   Dialogs::showError( mUI, errorTitle + ":\n" + String::fromUtf8( error ) );
+				   if ( refresh )
+					   refresh();
+			   } );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -142,29 +148,52 @@ void FileOperations::openFiles( const std::vector<URI>& uris ) {
 	if ( uris.empty() )
 		return;
 	// Local programs run instead (as in other file managers). Only local ones: a downloaded
-	// copy of a remote file is opened. Telling them apart reads the files, on the pool.
-	mApp.pool()
-		->submit( [uris] {
-			std::vector<Applications::ExecutableKind> kinds;
-			kinds.reserve( uris.size() );
-			for ( const auto& uri : uris ) {
-				kinds.push_back( uri.getScheme() == "file"
-									 ? Applications::executableKind( uri.getFSPath() )
-									 : Applications::ExecutableKind::None );
-			}
-			return kinds;
-		} )
-		.then( mApp.executor(), [this, uris]( std::vector<Applications::ExecutableKind> kinds ) {
-			std::vector<URI> documents;
-			for ( size_t i = 0; i < uris.size(); ++i ) {
-				if ( kinds[i] == Applications::ExecutableKind::None )
-					documents.push_back( uris[i] );
-				else
-					runProgram( uris[i].getFSPath(),
-								kinds[i] == Applications::ExecutableKind::Script );
-			}
-			openDocuments( documents );
-		} );
+	// copy of a remote file is opened.
+	auto local = std::find_if( uris.begin(), uris.end(),
+							   []( const URI& uri ) { return uri.getScheme() == "file"; } );
+	if ( local == uris.end() ) {
+		openDocuments( uris );
+		return;
+	}
+	// Telling them apart reads the files, each where the VFS reads it (files in one folder can
+	// link into different mounts): a file whose mount stopped answering opens as a document.
+	using Kind = Applications::ExecutableKind;
+	// Shared by the checks, and joined on the UI thread: no lock needed.
+	struct Pending {
+		std::vector<URI> uris;
+		std::vector<Kind> kinds;
+		size_t remaining;
+	};
+	auto pending = std::make_shared<Pending>(
+		Pending{ uris, std::vector<Kind>( uris.size(), Kind::None ), uris.size() } );
+	auto checked = [this, pending] {
+		if ( --pending->remaining != 0 )
+			return;
+		std::vector<URI> documents;
+		for ( size_t i = 0; i < pending->uris.size(); ++i ) {
+			if ( pending->kinds[i] == Kind::None )
+				documents.push_back( pending->uris[i] );
+			else
+				runProgram( pending->uris[i].getFSPath(), pending->kinds[i] == Kind::Script );
+		}
+		openDocuments( documents );
+	};
+	for ( size_t i = 0; i < uris.size(); ++i ) {
+		if ( uris[i].getScheme() != "file" ) {
+			checked();
+			continue;
+		}
+		std::string path = uris[i].getFSPath();
+		mVFS->localIO()
+			.submitResolved<Kind>(
+				path, true,
+				[path]() -> VFSResult<Kind> { return Ok( Applications::executableKind( path ) ); } )
+			.then( mApp.executor(), [pending, checked, i]( VFSResult<Kind> kind ) {
+				if ( kind )
+					pending->kinds[i] = kind.value();
+				checked();
+			} );
+	}
 }
 
 void FileOperations::runProgram( const std::string& path, bool confirm ) {
@@ -682,7 +711,8 @@ void FileOperations::moveToTrash() {
 						  for ( const auto& uri : uris )
 							  paths.push_back( uri.getFSPath() );
 						  runInBackground(
-							  [paths] { return Trash::moveToTrash( paths ); }, nullptr,
+							  paths.front(), [paths] { return Trash::moveToTrash( paths ); },
+							  nullptr,
 							  mUI->i18n( "eefm_trash_failed", "Could not move to the trash" ) );
 					  } );
 }
@@ -718,7 +748,12 @@ void FileOperations::deleteSelection() {
 						}
 						// Deleting from the trash also drops what the trash recorded about it.
 						if ( trashed && uri.getScheme() == "file" )
-							mApp.pool()->run( [path = uri.getFSPath()] { Trash::forget( path ); } );
+							mVFS->localIO().submitResolved<void>(
+								uri.getFSPath(), false,
+								[path = uri.getFSPath()]() -> VFSResult<void> {
+									Trash::forget( path );
+									return Ok();
+								} );
 					} );
 			}
 		} );
@@ -728,8 +763,11 @@ void FileOperations::restoreFromTrash( const std::vector<URI>& uris ) {
 	std::vector<std::string> paths;
 	for ( const auto& uri : uris )
 		paths.push_back( uri.getFSPath() );
-	runInBackground( [paths] { return Trash::restore( paths ); }, nullptr,
-					 mUI->i18n( "eefm_restore_failed", "Could not restore" ) );
+	if ( paths.empty() )
+		return;
+	runInBackground(
+		paths.front(), [paths] { return Trash::restore( paths ); }, nullptr,
+		mUI->i18n( "eefm_restore_failed", "Could not restore" ) );
 }
 
 void FileOperations::emptyTrash() {
@@ -739,9 +777,10 @@ void FileOperations::emptyTrash() {
 				   "Do you really want to empty the trash? All items will be deleted." ),
 		[this]( bool accepted ) {
 			if ( accepted ) {
+				const auto trash = Trash::location();
 				runInBackground(
-					[] { return Trash::empty(); }, nullptr,
-					mUI->i18n( "eefm_empty_trash_failed", "Could not empty the trash" ) );
+					trash ? trash->getFSPath() : std::string(), [] { return Trash::empty(); },
+					nullptr, mUI->i18n( "eefm_empty_trash_failed", "Could not empty the trash" ) );
 			}
 		} );
 }
@@ -755,7 +794,8 @@ void FileOperations::renameSelection() {
 		tab->view->beginRename( rows[0] );
 }
 
-void FileOperations::renameEntry( FileTab* tab, const FileInfo& entry, const std::string& name ) {
+void FileOperations::renameEntry( FileTab* tab, const VFSFileInfo& entry,
+								  const std::string& name ) {
 	if ( name.find( '/' ) != std::string::npos ) {
 		Dialogs::showError( mUI, mUI->i18n( "eefm_invalid_name", "A name cannot contain \"/\"." ) );
 		return;
@@ -828,7 +868,7 @@ void FileOperations::showProperties( FileTab* tab ) {
 		return seconds ? Sys::epochToString( static_cast<Uint64>( *seconds ) ) : std::string();
 	};
 	if ( rows.size() == 1 ) {
-		const FileInfo& info = tab->model->entry( rows[0] );
+		const VFSFileInfo& info = tab->model->entry( rows[0] );
 		line( "Name", info.name );
 		line( "Type", MimeDatabase::instance().describe( info ) + " (" +
 						  MimeDatabase::instance().typeOf( info ) + ")" );
@@ -857,7 +897,7 @@ void FileOperations::showProperties( FileTab* tab ) {
 	} else if ( rows.size() > 1 ) {
 		Uint64 bytes = 0, folders = 0;
 		for ( size_t row : rows ) {
-			const FileInfo& info = tab->model->entry( row );
+			const VFSFileInfo& info = tab->model->entry( row );
 			if ( info.isDirectory() )
 				++folders;
 			else
@@ -935,10 +975,18 @@ void FileOperations::dropArchiveEntries( DataDrop drop ) {
 	auto folder = localDropFolder( drop.position );
 	if ( !folder )
 		return;
-	// The folder's watcher shows the extracted files as Ark writes them.
-	runInBackground( [drop = std::move( drop ),
-					  folder = std::move( *folder )] { return ArkDrop::extract( drop, folder ); },
-					 {}, mUI->i18n( "eefm_extract_failed", "Could not extract" ) );
+	// Only a D-Bus call, Ark writes the files itself: on eefm's pool, not where the folder's
+	// calls run. The folder's watcher shows the extracted files as Ark writes them.
+	mApp.pool()
+		->submit( [drop = std::move( drop ), folder = std::move( *folder )] {
+			return ArkDrop::extract( drop, folder );
+		} )
+		.then( mApp.executor(), [this]( std::string error ) {
+			if ( !error.empty() ) {
+				Dialogs::showError( mUI, mUI->i18n( "eefm_extract_failed", "Could not extract" ) +
+											 ":\n" + String::fromUtf8( error ) );
+			}
+		} );
 }
 
 } // namespace eefm

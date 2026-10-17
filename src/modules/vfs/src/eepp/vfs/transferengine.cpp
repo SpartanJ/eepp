@@ -166,7 +166,7 @@ VFSResult<bool> TransferEngine::copyNode( const Node& node, const URI& source,
 										  const URI& destination, int depth ) {
 	if ( auto c = checkCancelled( source ); !c )
 		return Err( std::move( c ).error() );
-	const FileInfo& info = node.info;
+	const VFSFileInfo& info = node.info;
 
 	if ( depth > 0 && info.isSymlink() && info.targetType == FileType::Directory ) {
 		++mResult.filesSkipped;
@@ -271,7 +271,7 @@ VFSResult<bool> TransferEngine::copyDirectory( const Node& node, const URI& sour
 	return Ok( complete );
 }
 
-void TransferEngine::advanceFiles( const FileInfo& info, bool addBytes ) {
+void TransferEngine::advanceFiles( const VFSFileInfo& info, bool addBytes ) {
 	mState->updateProgress(
 		[&]( TransferProgress& p ) {
 			++p.filesDone;
@@ -291,7 +291,7 @@ VFSResult<bool> TransferEngine::isSameFile( const URI& source, const URI& destin
 	return Ok( canonicalSource.value() == canonicalDestination.value() );
 }
 
-VFSResult<void> TransferEngine::copyFile( const FileInfo& info, const URI& source,
+VFSResult<void> TransferEngine::copyFile( const VFSFileInfo& info, const URI& source,
 										  const URI& destination ) {
 	mState->updateProgress(
 		[&]( TransferProgress& p ) {

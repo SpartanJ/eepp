@@ -1,8 +1,8 @@
 #ifndef EE_VFS_PROVIDERS_LOCALPROVIDER_HPP
 #define EE_VFS_PROVIDERS_LOCALPROVIDER_HPP
 
-#include <eepp/system/threadpool.hpp>
 #include <eepp/vfs/provider.hpp>
+#include <eepp/vfs/providers/localioscheduler.hpp>
 #include <memory>
 #include <string>
 
@@ -10,7 +10,9 @@ namespace EE { namespace VFS {
 
 /** @brief `file://` provider backed by the native filesystem.
  *
- * Blocking system calls run on the supplied I/O pool. Native paths are converted at the provider
+ * Blocking system calls run through the LocalIOScheduler: on its I/O pool, or on a network
+ * mount's own lane, where an unreachable server makes calls fail with TimedOut instead of
+ * blocking every caller. Native paths are converted at the provider
  * boundary (URI::fromFSPath / URI::getFSPath); file URIs with a host other than "localhost" are
  * only accepted on Windows (UNC paths).
  *
@@ -19,7 +21,7 @@ namespace EE { namespace VFS {
  */
 class LocalProvider : public VFSProvider {
   public:
-	explicit LocalProvider( std::shared_ptr<System::ThreadPool> pool );
+	explicit LocalProvider( std::shared_ptr<LocalIOScheduler> scheduler );
 
 	~LocalProvider() override;
 
@@ -27,8 +29,8 @@ class LocalProvider : public VFSProvider {
 
 	ProviderCapabilities capabilities( const URI& uri ) const override;
 
-	VFSTask<FileInfo> stat( const URI& uri, const StatOptions& options,
-							CancellationToken token ) override;
+	VFSTask<VFSFileInfo> stat( const URI& uri, const StatOptions& options,
+							   CancellationToken token ) override;
 
 	VFSTask<DirectoryHandle> openDirectory( const URI& uri, const DirectoryOpenOptions& options,
 											CancellationToken token ) override;
@@ -55,8 +57,8 @@ class LocalProvider : public VFSProvider {
 	/** Blocking helpers shared by the asynchronous operations and the local watch backend. */
 	static VFSResult<std::string> toNativePath( const URI& uri );
 
-	static VFSResult<FileInfo> statSync( const URI& uri, const std::string& path,
-										 bool followSymlinks );
+	static VFSResult<VFSFileInfo> statSync( const URI& uri, const std::string& path,
+											bool followSymlinks );
 
 	/** @return Cached user/group name for an id ("" when unknown or unsupported). Thread-safe.
 	 */
@@ -64,34 +66,48 @@ class LocalProvider : public VFSProvider {
 
 	static std::string groupName( Uint32 gid );
 
-	const std::shared_ptr<System::ThreadPool>& pool() const { return mPool; }
-
   private:
 	static std::string userNameUncached( Uint32 uid );
 
 	static std::string groupNameUncached( Uint32 gid );
 
-	template <typename T, typename F>
-	VFSTask<T> run( const URI& uri, CancellationToken token, F&& fn );
+	/** Whether a call follows a symbolic link in its path's last component (stat, open), or acts
+	 * on the link itself (lstat, remove, mkdir). */
+	enum class LastLink { Follow, Keep };
 
-	std::shared_ptr<System::ThreadPool> mPool;
+	template <typename T, typename F>
+	VFSTask<T> run( const URI& uri, LastLink last, CancellationToken token, F&& fn );
+
+	/** fn( path ), unless token is cancelled by the time it runs. */
+	template <typename T, typename F>
+	static auto guarded( std::string path, CancellationToken token, F&& fn );
+
+	std::shared_ptr<LocalIOScheduler> mScheduler;
 };
 
-/** Runs fn( nativePath ) -> VFSResult<T> on the I/O pool (the platform implementations' common
- * path for blocking calls). */
+/** Runs fn( nativePath ) -> VFSResult<T> where the path's calls run, its symbolic links followed
+ * (the platform implementations' common path for blocking calls). */
 template <typename T, typename F>
-VFSTask<T> LocalProvider::run( const URI& uri, CancellationToken token, F&& fn ) {
+VFSTask<T> LocalProvider::run( const URI& uri, LastLink last, CancellationToken token, F&& fn ) {
 	if ( token.isCancellationRequested() )
 		return readyError<T>( cancelledError( uri ) );
 	auto path = toNativePath( uri );
 	if ( !path )
 		return readyError<T>( std::move( path ).error() );
-	return mPool->submit( [fn = std::forward<F>( fn ), path = std::move( path ).value(),
-						   token = std::move( token )]() mutable -> VFSResult<T> {
+	const std::string& native = path.value();
+	return mScheduler->submitResolved<T>(
+		native, last == LastLink::Follow,
+		guarded<T>( native, std::move( token ), std::forward<F>( fn ) ) );
+}
+
+template <typename T, typename F>
+auto LocalProvider::guarded( std::string path, CancellationToken token, F&& fn ) {
+	return [fn = std::forward<F>( fn ), path = std::move( path ),
+			token = std::move( token )]() mutable -> VFSResult<T> {
 		if ( token.isCancellationRequested() )
 			return Err( VFSError( VFSErrorCode::Cancelled, URI(), "Operation cancelled" ) );
 		return fn( path );
-	} );
+	};
 }
 
 }} // namespace EE::VFS

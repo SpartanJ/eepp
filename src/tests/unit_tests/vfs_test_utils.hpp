@@ -104,7 +104,7 @@ inline VFSResult<void> writeString( VirtualFileSystem& vfs, const URI& uri,
 	return Ok();
 }
 
-inline std::vector<std::string> sortedNames( const std::vector<FileInfo>& entries ) {
+inline std::vector<std::string> sortedNames( const std::vector<VFSFileInfo>& entries ) {
 	std::vector<std::string> names;
 	for ( const auto& entry : entries )
 		names.push_back( entry.name );

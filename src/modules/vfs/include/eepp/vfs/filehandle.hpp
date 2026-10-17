@@ -32,7 +32,7 @@ class FileHandleImpl {
 	 * storage. */
 	virtual VFSTask<void> flush() = 0;
 
-	virtual VFSTask<FileInfo> stat() = 0;
+	virtual VFSTask<VFSFileInfo> stat() = 0;
 
 	virtual VFSTask<void> close() = 0;
 
@@ -84,9 +84,9 @@ class FileHandle {
 		return mImpl->flush();
 	}
 
-	VFSTask<FileInfo> stat() {
+	VFSTask<VFSFileInfo> stat() {
 		if ( !mImpl )
-			return closedError<FileInfo>();
+			return closedError<VFSFileInfo>();
 		return mImpl->stat();
 	}
 

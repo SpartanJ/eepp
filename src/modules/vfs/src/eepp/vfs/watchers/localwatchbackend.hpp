@@ -22,12 +22,17 @@ class LocalWatchBackendImpl;
  *
  * Registration and removal touch the filesystem (the generic watcher takes a snapshot of the
  * tree), so they run on the I/O pool, never on the caller's thread.
+ *
+ * Directories on a network mount go to networkBackend instead (the VFS polling backend): efsw's
+ * own threads would block on an unreachable server, while VFS calls time out.
  */
 class LocalWatchBackend : public WatchBackend {
   public:
 	/** @param pool Where watches are registered and removed.
+	 * @param networkBackend Watches directories on network mounts; without it efsw does.
 	 * @param genericPollingInterval Polling interval for the generic efsw watcher. */
 	explicit LocalWatchBackend( std::shared_ptr<System::ThreadPool> pool,
+								std::shared_ptr<WatchBackend> networkBackend = {},
 								Time genericPollingInterval = System::Seconds( 1 ) );
 
 	~LocalWatchBackend() override;
@@ -37,6 +42,7 @@ class LocalWatchBackend : public WatchBackend {
 
   private:
 	std::shared_ptr<System::ThreadPool> mPool;
+	std::shared_ptr<WatchBackend> mNetworkBackend;
 	std::shared_ptr<detail::LocalWatchBackendImpl> mImpl;
 };
 

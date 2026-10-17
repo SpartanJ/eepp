@@ -34,7 +34,7 @@ class TransferEngine {
 
   private:
 	struct Node {
-		FileInfo info;
+		VFSFileInfo info;
 		std::vector<Node> children;
 	};
 
@@ -51,13 +51,13 @@ class TransferEngine {
 	VFSResult<bool> copyDirectory( const Node& node, const URI& source, const URI& destination,
 								   int depth );
 
-	void advanceFiles( const FileInfo& info, bool addBytes = true );
+	void advanceFiles( const VFSFileInfo& info, bool addBytes = true );
 
 	/** @return True when both URIs name the same file through symlinks or "..". Hard links are
 	 * not detected; FileWriter::replace() keeps their data safe. */
 	VFSResult<bool> isSameFile( const URI& source, const URI& destination );
 
-	VFSResult<void> copyFile( const FileInfo& info, const URI& source, const URI& destination );
+	VFSResult<void> copyFile( const VFSFileInfo& info, const URI& source, const URI& destination );
 
 	VirtualFileSystem& mVfs;
 	std::shared_ptr<detail::TransferState> mState;

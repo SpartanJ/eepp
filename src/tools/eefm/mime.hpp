@@ -21,7 +21,7 @@ class MimeDatabase {
 
 	/** MIME type of an entry ("inode/directory" for directories). The tables are immutable once
 	 * loaded, so the reference stays valid. */
-	const std::string& typeOf( const EE::VFS::FileInfo& info );
+	const std::string& typeOf( const EE::VFS::VFSFileInfo& info );
 
 	/** MIME type of a file name (not a path). */
 	const std::string& typeForName( const std::string& name );
@@ -30,10 +30,10 @@ class MimeDatabase {
 	std::string description( const std::string& mime, const std::string& name = {} );
 
 	/** Description of an entry, cached by type: cheap enough for sorting. */
-	std::string describe( const EE::VFS::FileInfo& info );
+	std::string describe( const EE::VFS::VFSFileInfo& info );
 
 	/** Name of eefm's glyph icon for an entry (the fallback icon set). */
-	std::string iconName( const EE::VFS::FileInfo& info );
+	std::string iconName( const EE::VFS::VFSFileInfo& info );
 
 	/** Freedesktop icon names for a type, most specific first: the shared-mime-info icon, the
 	 * type's own name ("text-x-python"), its parents', its generic icon and the media's generic
@@ -41,7 +41,7 @@ class MimeDatabase {
 	std::vector<std::string> iconNames( const std::string& mime );
 
 	/** iconNames() of an entry, cached by type (never evicted: the types are a closed set). */
-	const std::vector<std::string>& iconNames( const EE::VFS::FileInfo& info );
+	const std::vector<std::string>& iconNames( const EE::VFS::VFSFileInfo& info );
 
 	/** The type and its parents (text/markdown -> text/plain), most specific first. */
 	std::vector<std::string> withParents( const std::string& mime );
