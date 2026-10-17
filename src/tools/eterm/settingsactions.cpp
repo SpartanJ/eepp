@@ -32,12 +32,29 @@ void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {
 	std::string currentPath = uiFont		 ? mApp->config->font.uiPath
 							  : fallbackFont ? mApp->config->font.fallbackPath
 											 : mApp->config->font.path;
+	// Not configured: the font in use (the bundled one, or the first explicit fallback).
+	if ( currentPath.empty() ) {
+		if ( uiFont ) {
+			currentPath =
+				FontTrueType::filePathOf( mApp->scene->getUIThemeManager()->getDefaultFont() );
+		} else if ( fallbackFont ) {
+			const auto& fallbacks =
+				mApp->scene->getResourceScope()->getFontService().getFallbackFonts();
+			if ( !fallbacks.empty() )
+				currentPath = FontTrueType::filePathOf( fallbacks.front().get() );
+		} else {
+			currentPath = FontTrueType::filePathOf( mApp->terminalFont );
+		}
+	}
 	if ( !currentPath.empty() )
 		dialog->setSelectedFont( currentPath );
 	if ( !fallbackFont ) {
 		auto selection = dialog->getSelection();
-		selection.size =
-			static_cast<Uint32>( uiFont ? mApp->config->font.uiSize : mApp->config->font.size );
+		selection.size = static_cast<Uint32>(
+			!uiFont ? mApp->config->font.size
+			: mApp->config->font.uiSize > 0
+				? mApp->config->font.uiSize
+				: PixelDensity::pxToDp( mApp->scene->getUIThemeManager()->getDefaultFontSize() ) );
 		dialog->setSelection( selection );
 	}
 	dialog->setOnFontPicked( [this, uiFont, fallbackFont]( const UIFontSelection& selection ) {
@@ -49,15 +66,18 @@ void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {
 			if ( font->loadFromFile( selection.font.path ) ) {
 				mApp->config->font.uiPath = selection.font.path;
 				mApp->config->font.uiSize = selection.size;
-				mApp->scene->getUIThemeManager()->setDefaultFont( font.get() );
-				mApp->scene->getUIThemeManager()->setDefaultFontSize( mApp->config->font.uiSize );
-				mApp->scene->getRoot()->reloadStyle( true, true, true, true, true );
+				applyUIFont( font.get(), mApp->config->font.uiSize );
 			}
 		} else if ( fallbackFont ) {
 			auto font = FontTrueType::New( "eterm-fallback-font", resourceScope );
 			if ( font->loadFromFile( selection.font.path ) ) {
 				mApp->config->font.fallbackPath = selection.font.path;
-				resourceScope.getFontService().addFallbackFont( std::move( font ) );
+				// It replaces the previous one (fallbacks are looked up in order).
+				auto& service = resourceScope.getFontService();
+				auto previous = service.getFallbackFonts();
+				for ( const auto& fallback : previous )
+					service.removeFallbackFont( fallback.get() );
+				service.addFallbackFont( std::move( font ) );
 			}
 		} else {
 			auto font = FontTrueType::New( "eterm-monospace", resourceScope );
@@ -75,13 +95,13 @@ void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {
 		}
 		mApp->savePreferences();
 	} );
+	dialog->center();
 	dialog->show();
 }
 
 void SettingsActions::setUIFontSize( Float size ) {
 	mApp->config->font.uiSize = size;
-	mApp->scene->getUIThemeManager()->setDefaultFontSize( size );
-	mApp->scene->getRoot()->reloadStyle( true, true, true, true, true );
+	applyUIFont( nullptr, size );
 	mApp->savePreferences();
 }
 
@@ -91,6 +111,15 @@ void SettingsActions::setTerminalFontSize( Float size ) {
 	mApp->forEachTerminal(
 		[this]( UITerminal* terminal ) { terminal->setFontSize( mApp->terminalFontSize ); } );
 	mApp->savePreferences();
+}
+
+void SettingsActions::applyUIFont( Font* font, Float sizeDp ) {
+	mApp->scene->applyDefaultFont( font, PixelDensity::dpToPx( sizeDp ) );
+}
+
+void SettingsActions::applyFontRendering() {
+	mApp->scene->setFontRendering( mApp->config->font.hinting, mApp->config->font.antialiasing );
+	mApp->forEachTerminal( []( UITerminal* terminal ) { terminal->syncFontRenderingConfig(); } );
 }
 
 } // namespace eterm

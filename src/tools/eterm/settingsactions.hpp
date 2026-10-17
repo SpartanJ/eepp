@@ -21,6 +21,12 @@ class SettingsActions {
 
 	void setTerminalFontSize( Float size );
 
+	/** UI font (when not null) and size in dp, for new and existing text. */
+	void applyUIFont( Font* font, Float sizeDp );
+
+	/** Applies the hinting and anti-aliasing settings to every font, live. */
+	void applyFontRendering();
+
   private:
 	App* mApp{ nullptr };
 	UIWindow* mSettingsWindow{ nullptr };

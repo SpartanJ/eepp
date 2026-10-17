@@ -486,6 +486,25 @@ class EE_API UISceneNode : public SceneNode {
 	UIThemeManager* getUIThemeManager() const;
 
 	/**
+	 * @brief Changes the default UI font size (and font) at runtime.
+	 *
+	 * Sets them as the theme manager's and default theme's defaults, which new text uses, and
+	 * updates existing text views whose stylesheet does not set them.
+	 *
+	 * @param font The new default font, or null to keep the current one.
+	 * @param size The new default font size, in pixels.
+	 */
+	void applyDefaultFont( Graphics::Font* font, Float size );
+
+	/**
+	 * @brief Changes font hinting and antialiasing at runtime.
+	 *
+	 * Applies them to this scene's fonts and to the default resource scope, where the
+	 * application's base UI fonts live (as UIApplication does at startup), then redraws.
+	 */
+	void setFontRendering( Graphics::FontHinting hinting, Graphics::FontAntialiasing antialiasing );
+
+	/**
 	 * @brief Gets the root widget of this UISceneNode.
 	 *
 	 * The root is a UIRoot widget that contains all other UI widgets.

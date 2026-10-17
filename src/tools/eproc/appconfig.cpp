@@ -38,6 +38,12 @@ void AppConfig::load() {
 	refreshIntervalMs =
 		std::clamp( mState.getValueI( "monitoring", "refresh_interval_ms", refreshIntervalMs ),
 					MinRefreshIntervalMs, MaxRefreshIntervalMs );
+	uiFontPath = mState.getValue( "appearance", "ui_font", uiFontPath );
+	fallbackFontPath = mState.getValue( "appearance", "fallback_font", fallbackFontPath );
+	const double savedFontSize = mState.getValueF( "appearance", "ui_font_size", uiFontSize );
+	if ( std::isfinite( savedFontSize ) &&
+		 ( savedFontSize == 0 || ( savedFontSize >= 6 && savedFontSize <= 72 ) ) )
+		uiFontSize = static_cast<Float>( savedFontSize );
 	const double savedDensity = mState.getValueF( "appearance", "pixel_density", pixelDensity );
 	if ( std::isfinite( savedDensity ) && savedDensity >= 0 && savedDensity <= 6 )
 		pixelDensity = static_cast<Float>( savedDensity );
@@ -84,6 +90,9 @@ bool AppConfig::save() {
 	mState.setValueI( "process_table", "filter_mode", filterMode );
 	mState.setValueI( "monitoring", "refresh_interval_ms", refreshIntervalMs );
 	mState.setValueF( "appearance", "pixel_density", pixelDensity );
+	mState.setValue( "appearance", "ui_font", uiFontPath );
+	mState.setValue( "appearance", "fallback_font", fallbackFontPath );
+	mState.setValueF( "appearance", "ui_font_size", uiFontSize );
 	mState.setValueI( "appearance", "font_hinting", static_cast<int>( fontHinting ) );
 	mState.setValueI( "appearance", "font_antialiasing", static_cast<int>( fontAntialiasing ) );
 	mState.setValue( "appearance", "color_scheme",

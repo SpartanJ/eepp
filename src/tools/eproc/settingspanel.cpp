@@ -75,6 +75,26 @@ UIWindow* SettingsPanel::create( App& app ) {
 
 	panel->addCategory( "appearance.fonts", scene->i18n( "appearance", "Appearance" ),
 						scene->i18n( "fonts_and_scale", "Fonts & Scale" ) );
+	panel->addAction(
+		{ "uiFont", "appearance.fonts",
+		  scene->i18n( "ui_font_and_size_ellipsis", "UI Font & Size..." ),
+		  scene->i18n( "ui_font_desc", "Choose the proportional font used by the interface." ) },
+		scene->i18n( "choose_font", "Choose Font..." ), [&app] { app.openFontPicker(); } );
+	panel->addAction(
+		{ "fallbackFont", "appearance.fonts",
+		  scene->i18n( "fallback_font_ellipsis", "Fallback Font..." ),
+		  scene->i18n( "fallback_font_desc", "Choose the font used for missing glyphs." ) },
+		scene->i18n( "choose_font", "Choose Font..." ), [&app] { app.openFontPicker( true ); } );
+	panel->addFloat(
+		{ "uiFontSize", "appearance.fonts", scene->i18n( "ui_font_size", "UI Font Size" ),
+		  scene->i18n( "ui_font_size_desc", "Set the font size used by the application UI." ) },
+		6, 72, 0.5,
+		[&app, scene] {
+			return app.mConfig->uiFontSize > 0
+					   ? app.mConfig->uiFontSize
+					   : PixelDensity::pxToDp( scene->getUIThemeManager()->getDefaultFontSize() );
+		},
+		[&app]( double value ) { app.setUIFontSize( value ); } );
 	panel->addFloat(
 		{ "uiScaleFactor", "appearance.fonts", scene->i18n( "ui_scale_factor", "UI Scale Factor" ),
 		  scene->i18n( "ui_scale_factor_desc",
@@ -100,7 +120,7 @@ UIWindow* SettingsPanel::create( App& app ) {
 													  FontHinting::Full };
 			app.mFontHinting = values[std::min( selected, size_t{ 2 } )];
 			app.mConfig->fontHinting = app.mFontHinting;
-			scene->getResourceScope()->getFontService().setHinting( app.mFontHinting );
+			scene->setFontRendering( app.mFontHinting, app.mFontAntialiasing );
 			app.savePreferences();
 		} );
 	panel->addChoice(
@@ -115,7 +135,7 @@ UIWindow* SettingsPanel::create( App& app ) {
 				FontAntialiasing::None, FontAntialiasing::Grayscale, FontAntialiasing::Subpixel };
 			app.mFontAntialiasing = values[std::min( selected, size_t{ 2 } )];
 			app.mConfig->fontAntialiasing = app.mFontAntialiasing;
-			scene->getResourceScope()->getFontService().setAntialiasing( app.mFontAntialiasing );
+			scene->setFontRendering( app.mFontHinting, app.mFontAntialiasing );
 			app.savePreferences();
 		} );
 

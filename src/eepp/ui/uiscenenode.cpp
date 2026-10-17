@@ -29,6 +29,8 @@
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitouchdraggablewidget.hpp>
@@ -1385,6 +1387,38 @@ bool UISceneNode::isLoading() const {
 
 UIThemeManager* UISceneNode::getUIThemeManager() const {
 	return mUIThemeManager;
+}
+
+void UISceneNode::applyDefaultFont( Font* font, Float size ) {
+	UITheme* theme = mUIThemeManager->getDefaultTheme();
+	mUIThemeManager->setDefaultFontSize( size );
+	if ( theme )
+		theme->setDefaultFontSize( size );
+	if ( font ) {
+		mUIThemeManager->setDefaultFont( font );
+		if ( theme )
+			theme->setDefaultFont( font );
+	}
+	forEachNode( [font, size]( Node* node ) {
+		if ( !node->isType( UI_TYPE_TEXTVIEW ) )
+			return;
+		UITextView* text = node->asType<UITextView>();
+		const UIStyle* style = text->getUIStyle();
+		if ( !style || !style->hasProperty( PropertyId::FontSize ) )
+			text->setFontSize( size );
+		if ( font && ( !style || !style->hasProperty( PropertyId::FontFamily ) ) )
+			text->setFont( font );
+	} );
+}
+
+void UISceneNode::setFontRendering( FontHinting hinting, FontAntialiasing antialiasing ) {
+	for ( FontService* service :
+		  { &defaultResourceScope().getFontService(), &mResourceScope->getFontService() } ) {
+		service->setHinting( hinting );
+		service->setAntialiasing( antialiasing );
+	}
+	if ( mRoot )
+		mRoot->invalidateDraw();
 }
 
 void UISceneNode::setTheme( UITheme* theme ) {
