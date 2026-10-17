@@ -3842,6 +3842,12 @@ UTEST( UIWebView, PersistentTransportReusesDocumentCssFontAndImageAcrossNavigati
 	webView->setParent( scene->getRoot() );
 	webView->setPixelsSize( 640, 420 );
 	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	// One worker does not limit connections reserved ahead of execution by queued requests.
+	// Cap this origin so the strict socket count tests reuse across resources and navigations.
+	Http::ConnectionPoolOptions options;
+	options.maxConnectionsPerHost = 1;
+	webView->setWebResourceCache( WebResourceCache::New( options ) );
+
 	bool loaded = true;
 	for ( unsigned navigation = 1; navigation <= 2; ++navigation ) {
 		webView->loadURI( server.uri( "/page?navigation=" + String::toString( navigation ) ) );
