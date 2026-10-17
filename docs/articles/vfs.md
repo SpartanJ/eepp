@@ -154,7 +154,9 @@ transfer.cancel();
 
 Moves use a native rename when both sides are on the same provider/authority and fall back to copy
 plus removal of the entries that were completely copied; a source is never removed after a partial
-transfer.
+transfer. The copy-and-remove fallback requires the source provider's `Remove` capability. Without
+it (for example, on `zip://` and `res://`), the move returns `Unsupported` before modifying the
+destination.
 
 A successful completion with `result.partial()` means some entries were skipped. Inspect
 `filesSkipped` and report a partial transfer to the user: existing files under `Skip`, directory

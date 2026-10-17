@@ -386,6 +386,35 @@ UTEST( VFSTransfer, sameProviderMoveRenames ) {
 	EXPECT_EQ( VFSErrorCode::InvalidOperation, codeOf( self ) );
 }
 
+UTEST( VFSTransfer, nativeMoveDoesNotRequireRemoveCapability ) {
+	class RenameOnlyProvider : public MemoryProvider {
+	  public:
+		ProviderCapabilities capabilities( const URI& uri ) const override {
+			return MemoryProvider::capabilities( uri ).set( VFSCapability::Remove, false );
+		}
+	};
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<RenameOnlyProvider>();
+	vfs.registerProvider( mem );
+	const URI source( "mem://m/source" );
+	const URI destination( "mem://m/destination" );
+	mem->putFile( source, "source" );
+	auto moved = waitFor( vfs.move( source, destination ).completion() );
+	ASSERT_TRUE( moved.hasValue() );
+	EXPECT_TRUE( moved.value().renamed );
+	EXPECT_FALSE( mem->fileContent( source ).has_value() );
+	EXPECT_STDSTREQ( "source", readString( vfs, destination ) );
+
+	// A rejected native rename must not fall back to copying when removal is unavailable.
+	mem->putFile( source, "keep source" );
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::Skip;
+	moved = waitFor( vfs.move( source, destination, options ).completion() );
+	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( moved ) );
+	EXPECT_STDSTREQ( "keep source", readString( vfs, source ) );
+	EXPECT_STDSTREQ( "source", readString( vfs, destination ) );
+}
+
 UTEST( VFSTransfer, cancellation ) {
 	VirtualFileSystem vfs;
 	auto pool = ThreadPool::createShared( 1 );

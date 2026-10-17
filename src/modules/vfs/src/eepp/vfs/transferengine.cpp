@@ -81,6 +81,13 @@ VFSResult<TransferResult> TransferEngine::run() {
 			return Err( std::move( renamed ).error() );
 	}
 
+	// A copy-and-remove move cannot succeed without removal support. Reject it before
+	// creating or replacing destination entries, but still allow native renames above.
+	if ( mMove && !mSrcProvider->capabilities( mSource ).has( VFSCapability::Remove ) ) {
+		return Err( VFSError( VFSErrorCode::Unsupported, mSource,
+							  "Moving requires source removal support" ) );
+	}
+
 	auto rootInfo = await( mSrcProvider->stat( mSource, StatOptions{ false }, mToken ) );
 	if ( !rootInfo )
 		return Err( std::move( rootInfo ).error() );

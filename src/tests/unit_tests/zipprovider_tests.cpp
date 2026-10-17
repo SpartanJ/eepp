@@ -194,6 +194,42 @@ UTEST( ZipProvider, readOnlyErrorsMissingFilesAndCancellation ) {
 	EXPECT_EQ( VFSErrorCode::ReadOnly, codeOf( waitFor( handle.truncate( 0 ) ) ) );
 }
 
+UTEST( ZipProvider, movesFromZipAndResourcesLeaveDestinationsUntouched ) {
+	TempDir temp;
+	const std::string path = temp.path + "archive.zip";
+	ASSERT_TRUE( makeZip( path, { { "vfs-readonly-move/file.txt", "source" },
+								  { "vfs-readonly-move/dir/child.txt", "source" } } ) );
+	// Register the archive as a resource pack too, so both read-only providers use real data.
+	Zip pack;
+	ASSERT_TRUE( pack.open( path ) );
+	VirtualFileSystem vfs;
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::Overwrite;
+	for ( const URI& root : { ZipProvider::makeURI( URI::fromFSPath( path ), "/vfs-readonly-move" ),
+							  URI( "res:///vfs-readonly-move" ) } ) {
+		for ( const std::string name : { "file.txt", "dir" } ) {
+			const URI source = root.withAppendedSegment( name );
+			const URI destination = URI::fromFSPath( temp.path + root.getScheme() + "-" + name );
+			auto moved = waitFor( vfs.move( source, destination ).completion() );
+			EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( moved ) );
+			EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( vfs.stat( destination ) ) ) );
+
+			const bool directory = name == "dir";
+			if ( directory )
+				ASSERT_TRUE( waitFor( vfs.makeDirs( destination ) ).hasValue() );
+			const URI destinationFile =
+				directory ? destination.withAppendedSegment( "child.txt" ) : destination;
+			ASSERT_TRUE( writeString( vfs, destinationFile, "existing destination" ).hasValue() );
+			moved = waitFor( vfs.move( source, destination, options ).completion() );
+			EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( moved ) );
+			EXPECT_STDSTREQ( "existing destination", readString( vfs, destinationFile ) );
+			EXPECT_STDSTREQ(
+				"source",
+				readString( vfs, directory ? source.withAppendedSegment( "child.txt" ) : source ) );
+		}
+	}
+}
+
 UTEST( ZipProvider, browsingNeverRegistersResourcesAndNoticesArchiveReplacement ) {
 	TempDir temp;
 	const std::string path = temp.path + "archive.zip";
