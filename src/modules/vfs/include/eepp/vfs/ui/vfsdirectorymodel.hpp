@@ -38,7 +38,8 @@ using UI::Models::Variant;
  * (and therefore selection) of entries that still exist.
  *
  * All public methods must be called on the UI thread, which must be the thread the executor runs
- * functions on.
+ * functions on. The executor must outlive the model. InlineExecutor is suitable only when
+ * the provider also completes on the UI thread.
  */
 class EE_VFS_API VFSDirectoryModel : public Model,
 									 public std::enable_shared_from_this<VFSDirectoryModel> {

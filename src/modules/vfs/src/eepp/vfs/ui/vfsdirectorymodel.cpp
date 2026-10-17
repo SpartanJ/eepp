@@ -1,15 +1,20 @@
 #include <algorithm>
+#include <chrono>
+#include <eepp/core/containers.hpp>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/vfs/ui/vfsdirectorymodel.hpp>
-#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 
 namespace EE { namespace VFS {
 
 namespace {
+
+// Bound sorting work in one UI dispatch even when a provider streams millions of entries.
+constexpr size_t MaxCoalescedEntries = 32 * 1024;
 
 struct CountState {
 	DirectoryHandle handle;
@@ -52,11 +57,65 @@ struct VFSDirectoryModel::Session {
 	WatchHandle watch;
 	/** Events that arrived while a listing or re-list was in progress. */
 	std::vector<WatchEvent> buffered;
+	/** Coalesce fast listings geometrically instead of moving every accumulated row per batch. */
+	std::vector<VFSFileInfo> pendingEntries;
+	std::chrono::steady_clock::time_point lastMerge;
+	UnorderedMap<std::string, Uint64> pendingStats;
+	Uint64 nextStat{ 0 };
 	Uint64 generation{ 0 };
 	/** A listing or re-list is running: watch events are buffered. */
 	bool listing{ true };
 	/** Too many buffered events (or a rescan request) while listing: re-list afterwards. */
 	bool rescanAfterListing{ false };
+};
+
+class VFSDirectoryModel::ExecutorGate final : public Executor {
+  public:
+	explicit ExecutorGate( Executor& target ) : mTarget( target ) {}
+
+	void setOwner( const std::shared_ptr<VFSDirectoryModel>& owner ) { mOwner = owner; }
+
+	void execute( Function fn ) override {
+		// Pin the model through submission, including inline execution. The borrowed executor
+		// outlives the model, so teardown cannot race a dispatch to a destroyed executor.
+		// Late completions only test their weak model reference and resolve their task chains.
+		auto owner = mOwner.lock();
+		if ( !owner ) {
+			fn();
+			return;
+		}
+		struct Dispatch {
+			ExecutorGate* gate;
+			SmallVector<Function, 1> pending;
+			Dispatch* previous;
+			Dispatch*& active;
+
+			~Dispatch() { active = previous; }
+		};
+		static thread_local Dispatch* active = nullptr;
+		// A synchronous target can submit another ready batch through this same gate. Defer
+		// that submission until the outer execute() returns, bounding the stack without a
+		// second heap-allocated wrapper around every queued continuation. Each thread has its
+		// own dispatch chain; every deferred function still goes through the target executor.
+		for ( auto* dispatch = active; dispatch; dispatch = dispatch->previous ) {
+			if ( dispatch->gate == this ) {
+				dispatch->pending.push_back( std::move( fn ) );
+				return;
+			}
+		}
+		Dispatch dispatch{ this, {}, active, active };
+		active = &dispatch;
+		mTarget.execute( std::move( fn ) );
+		while ( !dispatch.pending.empty() ) {
+			auto next = std::move( dispatch.pending.front() );
+			dispatch.pending.erase( dispatch.pending.begin() );
+			mTarget.execute( std::move( next ) );
+		}
+	}
+
+  private:
+	std::weak_ptr<VFSDirectoryModel> mOwner;
+	Executor& mTarget;
 };
 
 std::shared_ptr<VFSDirectoryModel> VFSDirectoryModel::New( Executor& uiExecutor ) {
@@ -65,35 +124,10 @@ std::shared_ptr<VFSDirectoryModel> VFSDirectoryModel::New( Executor& uiExecutor 
 
 std::shared_ptr<VFSDirectoryModel> VFSDirectoryModel::New( Executor& uiExecutor,
 														   const Config& config ) {
-	return std::shared_ptr<VFSDirectoryModel>( new VFSDirectoryModel( uiExecutor, config ) );
+	auto model = std::shared_ptr<VFSDirectoryModel>( new VFSDirectoryModel( uiExecutor, config ) );
+	model->mExecutor->setOwner( model );
+	return model;
 }
-
-class VFSDirectoryModel::ExecutorGate final : public Executor {
-  public:
-	explicit ExecutorGate( Executor& target ) : mTarget( &target ) {}
-
-	void execute( Function fn ) override {
-		{
-			std::lock_guard<std::mutex> lock( mMutex );
-			if ( mTarget ) {
-				mTarget->execute( std::move( fn ) );
-				return;
-			}
-		}
-		// Closed: the model is gone. Its continuations only check their weak reference and
-		// return, so running them here is safe and keeps their task chains resolved.
-		fn();
-	}
-
-	void close() {
-		std::lock_guard<std::mutex> lock( mMutex );
-		mTarget = nullptr;
-	}
-
-  private:
-	std::mutex mMutex;
-	Executor* mTarget;
-};
 
 VFSDirectoryModel::VFSDirectoryModel( Executor& uiExecutor, const Config& config ) :
 	mExecutor( std::make_shared<ExecutorGate>( uiExecutor ) ), mConfig( config ) {
@@ -106,7 +140,6 @@ VFSDirectoryModel::VFSDirectoryModel( Executor& uiExecutor, const Config& config
 }
 
 VFSDirectoryModel::~VFSDirectoryModel() {
-	mExecutor->close();
 	if ( mSession )
 		mSession->cancel.cancel();
 }
@@ -211,7 +244,7 @@ void VFSDirectoryModel::readNext( Uint64 generation, bool first ) {
 	size_t count = first ? mConfig.firstBatchSize : mConfig.batchSize;
 	mSession->handle.read( count, mSession->cancel.token() )
 		.then( *mExecutor,
-			   [gate = mExecutor, weak, generation]( VFSResult<DirectoryBatch>&& batch ) {
+			   [gate = mExecutor, weak, generation, first]( VFSResult<DirectoryBatch>&& batch ) {
 				   auto self = weak.lock();
 				   if ( !self || self->mGeneration != generation )
 					   return;
@@ -222,7 +255,30 @@ void VFSDirectoryModel::readNext( Uint64 generation, bool first ) {
 					   return;
 				   }
 				   bool done = batch.value().endOfDirectory;
-				   self->mergeBatch( std::move( batch.value().entries ) );
+				   auto& session = *self->mSession;
+				   auto& pending = session.pendingEntries;
+				   auto& entries = batch.value().entries;
+				   if ( pending.empty() ) {
+					   pending = std::move( entries );
+				   } else {
+					   pending.insert( pending.end(), std::make_move_iterator( entries.begin() ),
+									   std::make_move_iterator( entries.end() ) );
+				   }
+				   auto now = std::chrono::steady_clock::now();
+				   // Keep the small first batch immediate. While data arrives quickly, each
+				   // merge grows with the visible listing, up to a bounded batch; slow listings
+				   // show new rows at the next batch after 50 ms, and EOF always flushes the tail.
+				   if ( first || done ||
+						pending.size() >= std::min( self->mEntries.size(), MaxCoalescedEntries ) ||
+						now - session.lastMerge >= std::chrono::milliseconds( 50 ) ) {
+					   auto merged = std::move( pending );
+					   self->mergeBatch( std::move( merged ) );
+					   if ( self->mGeneration != generation )
+						   return;
+					   self->mSession->lastMerge = std::chrono::steady_clock::now();
+				   }
+				   if ( self->mGeneration != generation )
+					   return;
 				   if ( done )
 					   self->finishListing( generation );
 				   else
@@ -230,10 +286,12 @@ void VFSDirectoryModel::readNext( Uint64 generation, bool first ) {
 			   } );
 }
 
-void VFSDirectoryModel::finishListing( Uint64 ) {
+void VFSDirectoryModel::finishListing( Uint64 generation ) {
 	mSession->handle.close();
 	mSession->listing = false;
 	setLoadState( LoadState::Ready );
+	if ( mGeneration != generation )
+		return;
 	auto buffered = std::move( mSession->buffered );
 	mSession->buffered.clear();
 	if ( mSession->rescanAfterListing ) {
@@ -287,13 +345,17 @@ void VFSDirectoryModel::applyEvents( std::vector<WatchEvent>&& events ) {
 				return;
 			case WatchEventType::Removed:
 				if ( isChild( event.relativePath ) ) {
+					mSession->pendingStats.erase( event.relativePath );
 					removeByName( event.relativePath );
 					seen.erase( event.relativePath );
 				}
 				break;
 			case WatchEventType::Moved:
-				if ( isChild( event.oldRelativePath ) )
+				if ( isChild( event.oldRelativePath ) ) {
+					mSession->pendingStats.erase( event.oldRelativePath );
 					removeByName( event.oldRelativePath );
+					seen.erase( event.oldRelativePath );
+				}
 				[[fallthrough]];
 			case WatchEventType::Added:
 			case WatchEventType::Modified:
@@ -302,27 +364,36 @@ void VFSDirectoryModel::applyEvents( std::vector<WatchEvent>&& events ) {
 				break;
 		}
 	}
-	for ( const auto& name : toStat )
-		statAndUpsert( name );
+	for ( const auto& name : toStat ) {
+		if ( seen.erase( name ) )
+			statAndUpsert( name );
+	}
 }
 
 void VFSDirectoryModel::statAndUpsert( const std::string& name ) {
 	Uint64 generation = mGeneration;
+	Uint64 revision = ++mSession->nextStat;
+	mSession->pendingStats[name] = revision;
 	std::weak_ptr<VFSDirectoryModel> weak = weak_from_this();
 	// Describe links as links (like the listing does), with their target type resolved.
 	mConfig.vfs
 		->stat( mURI.withAppendedSegment( name ), StatOptions{ false }, mSession->cancel.token() )
-		.then( *mExecutor,
-			   [gate = mExecutor, weak, generation, name]( VFSResult<VFSFileInfo>&& info ) {
-				   auto self = weak.lock();
-				   if ( !self || self->mGeneration != generation )
-					   return;
-				   if ( info ) {
-					   self->upsert( std::move( info ).value() );
-				   } else if ( info.error().is( VFSErrorCode::NotFound ) ) {
-					   self->removeByName( name );
-				   }
-			   } );
+		.then( *mExecutor, [gate = mExecutor, weak, generation, revision,
+							name]( VFSResult<VFSFileInfo>&& info ) {
+			auto self = weak.lock();
+			if ( !self || self->mGeneration != generation )
+				return;
+			auto& pending = self->mSession->pendingStats;
+			auto it = pending.find( name );
+			if ( it == pending.end() || it->second != revision )
+				return;
+			pending.erase( it );
+			if ( info ) {
+				self->upsert( std::move( info ).value() );
+			} else if ( info.error().is( VFSErrorCode::NotFound ) ) {
+				self->removeByName( name );
+			}
+		} );
 }
 
 void VFSDirectoryModel::rescan() {
@@ -334,6 +405,7 @@ void VFSDirectoryModel::rescan() {
 		return;
 	}
 	mSession->listing = true;
+	mSession->pendingStats.clear();
 	Uint64 generation = mGeneration;
 	DirectoryOpenOptions options;
 	options.metadata = mConfig.metadata;

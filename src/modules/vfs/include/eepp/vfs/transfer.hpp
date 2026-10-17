@@ -23,12 +23,17 @@ struct EE_VFS_API TransferProgress {
 struct EE_VFS_API TransferResult {
 	Uint64 bytesTransferred{ 0 };
 	Uint64 filesTransferred{ 0 };
+	/** Entries left uncopied: existing destinations under Skip, symlinks inside a tree,
+	 * and unsupported special files. Moves retain every skipped source entry. */
 	Uint64 filesSkipped{ 0 };
 	Uint64 directoriesCreated{ 0 };
 	/** Move only: entries removed from the source after being copied. */
 	Uint64 sourcesRemoved{ 0 };
 	/** True when a move completed through a native rename instead of copy + remove. */
 	bool renamed{ false };
+
+	/** A successful task can still describe a partial transfer; surface this to the user. */
+	bool partial() const { return filesSkipped != 0; }
 };
 
 using TransferProgressCallback = SmallUniqueFunction<void( const TransferProgress& ), 48>;

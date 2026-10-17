@@ -2,7 +2,7 @@
 # xvfb-run-eepp: xvfb-run variant with race-safe automatic display selection.
 # Defaults tuned for eepp GUI tests:
 #   --auto-servernum enabled by default
-#   --server-args "-screen 0 1280x1024x24" enabled by default
+#   --server-args "-screen 0 1280x1024x24 -noreset" enabled by default
 #   ASAN_OPTIONS includes detect_leaks=0 for the child process
 
 set -e
@@ -14,7 +14,9 @@ AUTO_SERVERNUM=yes
 AUTHFILE=
 ERRORFILE=/dev/null
 STARTWAIT=3
-XVFBARGS="-screen 0 1280x1024x24"
+# Tests repeatedly disconnect the last X client. Keep this disposable server alive instead of
+# reinitializing its extensions on every disconnect (which can crash Xvfb in long suites).
+XVFBARGS="-screen 0 1280x1024x24 -noreset"
 LISTENTCP="-nolisten tcp"
 XAUTHPROTO=.
 LOCKDIR=
@@ -69,7 +71,7 @@ cleanup() {
     fi
 
     if [ -n "$AUTHFILE" ]; then
-        XAUTHORITY=$AUTHFILE xauth remove ":$SERVERNUM" >"$ERRORFILE" 2>&1 || true
+        XAUTHORITY=$AUTHFILE xauth remove ":$SERVERNUM" >>"$ERRORFILE" 2>&1 || true
     fi
 
     [ -n "$XVFB_RUN_TMPDIR" ] && rm -rf "$XVFB_RUN_TMPDIR" || true

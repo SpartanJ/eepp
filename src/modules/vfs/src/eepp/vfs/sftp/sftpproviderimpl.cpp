@@ -258,7 +258,8 @@ VFSResult<std::shared_ptr<SSHConnection>> SFTPProviderImpl::startHop( Build& bui
 
 	Time timeout = connectTimeout( hopConfig );
 	auto connection = std::make_shared<SSHConnection>( mContext, std::move( hopConfig ), hooks(),
-													   std::move( transport ), timeout );
+													   std::move( transport ), timeout,
+													   mConfig.operationTimeout );
 	connection->setIdleTimeout( mConfig.idleTimeout );
 	connection->setSFTPRequired( last );
 	mContext->post( [context = mContext, connection] { context->addConnection( connection ); } );

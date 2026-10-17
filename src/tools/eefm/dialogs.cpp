@@ -57,8 +57,12 @@ void Dialogs::confirm( UISceneNode*, const String& title, const String& message,
 }
 
 void Dialogs::showError( UISceneNode* ui, const String& message ) {
+	showMessage( ui->i18n( "eefm_error", "Error" ), message );
+}
+
+void Dialogs::showMessage( const String& title, const String& message ) {
 	UIMessageBox* box = UIMessageBox::New( UIMessageBox::OK, message );
-	box->setTitle( ui->i18n( "eefm_error", "Error" ) );
+	box->setTitle( title );
 	box->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	box->showWhenReady();
 }

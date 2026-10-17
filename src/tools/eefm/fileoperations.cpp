@@ -7,6 +7,7 @@
 #include "panemanager.hpp"
 #include "placescontroller.hpp"
 #include "trash.hpp"
+#include <atomic>
 #include <eepp/system/sha1.hpp>
 #include <eepp/vfs/providers/zipprovider.hpp>
 
@@ -100,53 +101,96 @@ std::string remoteCacheDirectory() {
 	return cache;
 }
 
+void downloadLocalCopies( VirtualFileSystem* vfs, Executor& executor, UISceneNode* ui,
+						  const std::vector<URI>& uris,
+						  std::function<void( std::vector<std::string> )> done ) {
+	// All completions run on the UI executor. The extra count keeps synchronous failures from
+	// finishing the group before every input has been scheduled.
+	struct Pending {
+		std::vector<std::string> paths;
+		std::function<void( std::vector<std::string> )> done;
+		size_t remaining;
+
+		void complete() {
+			if ( --remaining != 0 )
+				return;
+			paths.erase( std::remove_if( paths.begin(), paths.end(),
+										 []( const std::string& path ) { return path.empty(); } ),
+						 paths.end() );
+			if ( !paths.empty() )
+				done( std::move( paths ) );
+		}
+	};
+	auto pending = std::make_shared<Pending>(
+		Pending{ std::vector<std::string>( uris.size() ), std::move( done ), uris.size() + 1 } );
+	for ( size_t i = 0; i < uris.size(); ++i ) {
+		if ( uris[i].getScheme() == "file" ) {
+			pending->paths[i] = uris[i].getFSPath();
+			pending->complete();
+			continue;
+		}
+		// Each open gets a fresh private folder. Fail on any collision: never overwrite a
+		// copy an external editor may have changed, including copies from earlier processes.
+		static std::atomic<Uint64> serial{ 0 };
+		std::string cache =
+			remoteCacheDirectory() + SHA1::fromString( uris[i].toString() ).toHexString() + "/" +
+			String::toString( Sys::getProcessID() ) + "-" + String::toString( Sys::getTicks() ) +
+			"-" + String::toString( ++serial ) + "/";
+		std::string local = cache + uris[i].getLastPathSegment();
+		CopyOptions options;
+		options.overwrite = OverwritePolicy::Fail;
+		options.preservePermissions = false;
+		// Cache directories may themselves live on a mount: create them through the VFS so
+		// neither directory creation nor downloading blocks the UI thread.
+		vfs->makeDirs( URI::fromFSPath( cache ), MkDirOptions{ 0700 } )
+			.then( executor,
+				   [vfs, source = uris[i], local,
+					options]( VFSResult<void>&& made ) -> VFSTask<TransferResult> {
+					   if ( !made )
+						   return readyError<TransferResult>( std::move( made ).error() );
+					   return vfs->copy( source, URI::fromFSPath( local ), options ).completion();
+				   } )
+			.then( executor, [pending, local = std::move( local ), i,
+							  ui]( VFSResult<TransferResult>&& result ) mutable {
+				if ( result && result.value().partial() ) {
+					Dialogs::showMessage(
+						"Could Not Open Local Copy",
+						"The file could not be copied completely. Its type may be unsupported." );
+				} else if ( result ) {
+					pending->paths[i] = std::move( local );
+				} else if ( !result.error().is( VFSErrorCode::Cancelled ) ) {
+					Dialogs::showError( ui,
+										String::fromUtf8( "Could not download " +
+														  FileSystem::fileNameFromPath( local ) +
+														  ":\n" + result.error().toString() ) );
+				}
+				pending->complete();
+			} );
+	}
+	pending->complete();
+}
+
 /** Calls done( localPaths ) with local copies of uris (remote files are downloaded to a cache
  * folder first). */
 void withLocalFiles( VirtualFileSystem* vfs, Executor& executor, UISceneNode* ui,
 					 const std::vector<URI>& uris,
 					 std::function<void( std::vector<std::string> )> done ) {
-	auto paths = std::make_shared<std::vector<std::string>>( uris.size() );
-	auto remaining = std::make_shared<size_t>( 0 );
-	auto finish = std::make_shared<std::function<void( std::vector<std::string> )>>( done );
-	for ( size_t i = 0; i < uris.size(); ++i ) {
-		if ( uris[i].getScheme() == "file" ) {
-			( *paths )[i] = uris[i].getFSPath();
-			continue;
-		}
-		++*remaining;
-		// One private folder per remote file (its complete URI: user, port and path included),
-		// so files with the same name never overwrite each other; the file keeps its name for
-		// the application that opens it.
-		std::string cache =
-			remoteCacheDirectory() + SHA1::fromString( uris[i].toString() ).toHexString() + "/";
-		FileSystem::makeDir( cache, true, 0700 );
-		std::string local = cache + uris[i].getLastPathSegment();
-		CopyOptions options;
-		options.overwrite = OverwritePolicy::Overwrite;
-		vfs->copy( uris[i], URI::fromFSPath( local ), options )
-			.completion()
-			.then( executor, [paths, remaining, finish, local, i, ui,
-							  name = uris[i].getLastPathSegment()](
-								 VFSResult<TransferResult>&& result ) {
-				if ( result ) {
-					( *paths )[i] = local;
-				} else if ( !result.error().is( VFSErrorCode::Cancelled ) ) {
-					Dialogs::showError( ui, String::fromUtf8( "Could not download " + name + ":\n" +
-															  result.error().toString() ) );
-				}
-				if ( --*remaining == 0 ) {
-					std::vector<std::string> ready;
-					for ( auto& path : *paths ) {
-						if ( !path.empty() )
-							ready.push_back( path );
-					}
-					if ( !ready.empty() )
-						( *finish )( std::move( ready ) );
-				}
+	if ( std::any_of( uris.begin(), uris.end(),
+					  []( const URI& uri ) { return uri.getScheme() != "file"; } ) ) {
+		Dialogs::confirm(
+			ui, "Open Local Copy",
+			"These files will open as local copies. Changes are not uploaded to the original "
+			"location. Each open creates a new copy; previous copies remain in " +
+				String::fromUtf8( remoteCacheDirectory() ) + ". Continue?",
+			[vfs, &executor, ui, uris, done = std::move( done )]( bool accepted ) mutable {
+				if ( !accepted )
+					return;
+				// Download below without asking a second time.
+				downloadLocalCopies( vfs, executor, ui, uris, std::move( done ) );
 			} );
+		return;
 	}
-	if ( *remaining == 0 )
-		done( std::move( *paths ) );
+	downloadLocalCopies( vfs, executor, ui, uris, std::move( done ) );
 }
 
 } // namespace
@@ -633,6 +677,14 @@ void FileOperations::startTransfer( const URI& source, const URI& destination, b
 				mTransfers.erase( it );
 			updateTransfers();
 			if ( result ) {
+				if ( result.value().partial() ) {
+					Dialogs::showMessage( "Partial Transfer",
+										  label + ":\n" +
+											  String::toString( result.value().filesSkipped ) +
+											  " entries were skipped (existing destinations, "
+											  "symbolic links, or unsupported "
+											  "file types). Skipped source entries were kept." );
+				}
 				// Views showing the folder that received the files recount it (a watch on the
 				// parent does not see changes inside a subfolder).
 				URI folder = destination.getParent();

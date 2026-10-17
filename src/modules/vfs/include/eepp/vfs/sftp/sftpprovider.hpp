@@ -97,6 +97,9 @@ struct EE_VFS_API SFTPProviderConfig {
 	/** Remote command used for the efsw notification agent (run over an exec channel). Empty
 	 * disables remote agent watching (polling is used instead). */
 	std::string watchAgentCommand{ "efsw-agent --stdio" };
+	/** Maximum duration of one started operation, including EAGAIN waits. Expiration fails
+	 * the entire session and its queue; the next request establishes a fresh session. */
+	Time operationTimeout{ System::Seconds( 30 ) };
 };
 
 namespace sftp {

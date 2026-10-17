@@ -671,12 +671,58 @@ UTEST( Task, waitBlocksUntilResolvedFromAnotherThread ) {
 	EXPECT_EQ( 11, *value );
 }
 
+UTEST( Task, concurrentWaitersObserveResolutionAndAbandonment ) {
+	for ( bool abandon : { false, true } ) {
+		for ( int iteration = 0; iteration < 20; ++iteration ) {
+			TaskResolver<int> resolve;
+			const auto task = Task<int>::create( resolve );
+			std::atomic<int> started{ 0 };
+			TaskState first{}, second{};
+			std::thread a( [&] {
+				++started;
+				first = task.wait();
+			} );
+			std::thread b( [&] {
+				++started;
+				second = task.wait();
+			} );
+			while ( started.load() != 2 )
+				std::this_thread::yield();
+			std::this_thread::sleep_for( std::chrono::milliseconds( 2 ) );
+			if ( abandon )
+				resolve = {};
+			else
+				resolve( 7 );
+			a.join();
+			b.join();
+			EXPECT_EQ( abandon ? TaskState::Abandoned : TaskState::Ready, first );
+			EXPECT_EQ( first, second );
+		}
+	}
+}
+
+UTEST( Task, oneWaiterTimingOutDoesNotUnregisterAnother ) {
+	TaskResolver<int> resolve;
+	const auto task = Task<int>::create( resolve );
+	TaskState longer{};
+	std::thread thread( [&] { longer = task.waitFor( std::chrono::seconds( 1 ) ); } );
+	EXPECT_EQ( TaskState::Pending, task.waitFor( std::chrono::milliseconds( 20 ) ) );
+	auto start = std::chrono::steady_clock::now();
+	resolve( 1 );
+	thread.join();
+	EXPECT_EQ( TaskState::Ready, longer );
+	EXPECT_LT( std::chrono::duration_cast<std::chrono::milliseconds>(
+				   std::chrono::steady_clock::now() - start )
+				   .count(),
+			   500 );
+}
+
 UTEST( Task, layout ) {
-	// Keep the shared state compact: one allocation holding mutex, continuation, waiter, value,
-	// the two counters and the state.
+	// Keep the shared state compact: one allocation holding mutex, continuation, shared condition
+	// variable, value, the two counters and the state.
 	EXPECT_LE( sizeof( detail::TaskSharedState<int> ),
 			   sizeof( std::mutex ) + sizeof( detail::TaskSharedState<int>::Continuation ) +
-				   sizeof( void* ) + sizeof( std::optional<int> ) + 16 );
+				   sizeof( std::condition_variable ) + sizeof( std::optional<int> ) + 16 );
 	EXPECT_EQ( sizeof( void* ), sizeof( Task<int> ) );
 	EXPECT_EQ( sizeof( void* ), sizeof( TaskResolver<int> ) );
 }

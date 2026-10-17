@@ -20,6 +20,32 @@ std::vector<std::string> modelNames( const VFSDirectoryModel& model ) {
 	return names;
 }
 
+class ControlledWatchBackend : public WatchBackend {
+  public:
+	std::shared_ptr<WatchSink> sink;
+
+	VFSTask<std::unique_ptr<WatchRegistration>>
+	watch( const URI&, const WatchOptions&, std::shared_ptr<WatchSink> target ) override {
+		sink = std::move( target );
+		return readyValue<std::unique_ptr<WatchRegistration>>(
+			std::make_unique<WatchRegistration>() );
+	}
+
+	void send( WatchEventType type ) { sink->push( WatchEvent{ "file", {}, type } ); }
+};
+
+class DelayedStatProvider : public MemoryProvider {
+  public:
+	std::vector<TaskResolver<VFSResult<VFSFileInfo>>> pending;
+
+	VFSTask<VFSFileInfo> stat( const URI&, const StatOptions&, CancellationToken ) override {
+		TaskResolver<VFSResult<VFSFileInfo>> resolve;
+		auto task = VFSTask<VFSFileInfo>::create( resolve );
+		pending.push_back( std::move( resolve ) );
+		return task;
+	}
+};
+
 } // namespace
 
 UTEST( VFSDirectoryModel, listsIncrementallySortsAndFiltersHidden ) {
@@ -232,6 +258,78 @@ UTEST( VFSDirectoryModel, watchEventsKeepRowsInStepWithHiddenEntries ) {
 	EXPECT_EQ( 2u, model->rowCount() );
 	EXPECT_STDSTREQ( "a-keep.txt", model->entry( 0 ).name );
 	EXPECT_STDSTREQ( "z-KEEP.txt", model->entry( 1 ).name );
+}
+
+UTEST( VFSDirectoryModel, inlineExecutorAllowsReadyListingsAndReentrantRelease ) {
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( mem );
+	for ( int i = 0; i < 5000; ++i )
+		mem->putFile( URI( "mem://inline/dir/f" + String::toString( i ) ), "" );
+	VFSDirectoryModel::Config config;
+	config.vfs = &vfs;
+	config.watch = false;
+	config.firstBatchSize = 1;
+	config.batchSize = 1;
+	auto model = VFSDirectoryModel::New( InlineExecutor::instance(), config );
+	model->setURI( URI( "mem://inline/dir" ) );
+	EXPECT_EQ( VFSDirectoryModel::LoadState::Ready, model->loadState() );
+	EXPECT_EQ( 5000u, model->rowCount() );
+	std::weak_ptr<VFSDirectoryModel> weak = model;
+	model->setOnStateChanged( [&] {
+		if ( model && model->loadState() == VFSDirectoryModel::LoadState::Ready )
+			model.reset();
+	} );
+	model->refresh();
+	EXPECT_TRUE( weak.expired() );
+}
+
+UTEST( VFSDirectoryModel, watchStatsCannotResurrectDeletedEntriesOrReorderUpdates ) {
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<DelayedStatProvider>();
+	auto watch = std::make_shared<ControlledWatchBackend>();
+	mem->putFile( URI( "mem://watch/dir/file" ), "" );
+	vfs.registerProvider( mem );
+	vfs.watchManager().registerBackend( "mem", watch );
+	TestLoop loop;
+	VFSDirectoryModel::Config config;
+	config.vfs = &vfs;
+	auto model = VFSDirectoryModel::New( loop, config );
+	model->setURI( URI( "mem://watch/dir" ) );
+	ASSERT_TRUE( loop.runUntil(
+		[&] { return model->loadState() == VFSDirectoryModel::LoadState::Ready; } ) );
+	watch->send( WatchEventType::Modified );
+	loop.drain();
+	ASSERT_EQ( 1u, mem->pending.size() );
+	watch->send( WatchEventType::Removed );
+	loop.drain();
+	EXPECT_FALSE( model->rowOf( "file" ) );
+	VFSFileInfo info;
+	info.name = "file";
+	info.type = FileType::Regular;
+	mem->pending[0]( Ok( info ) );
+	loop.drain();
+	EXPECT_FALSE( model->rowOf( "file" ) );
+
+	watch->send( WatchEventType::Added );
+	loop.drain();
+	watch->send( WatchEventType::Modified );
+	loop.drain();
+	ASSERT_EQ( 3u, mem->pending.size() );
+	info.setSize( 200 );
+	mem->pending[2]( Ok( info ) );
+	loop.drain();
+	info.setSize( 100 );
+	mem->pending[1]( Ok( info ) );
+	loop.drain();
+	ASSERT_TRUE( model->rowOf( "file" ) );
+	EXPECT_EQ( 200u, model->entry( *model->rowOf( "file" ) ).size().value_or( 0 ) );
+
+	watch->send( WatchEventType::Modified );
+	loop.drain();
+	model.reset();
+	mem->pending.back()( Ok( info ) );
+	loop.drain(); // A queued completion must be harmless after model destruction.
 }
 
 UTEST( MainThreadExecutor, runsDeferredOnSceneUpdate ) {

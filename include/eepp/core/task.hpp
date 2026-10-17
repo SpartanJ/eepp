@@ -124,10 +124,7 @@ template <typename T> class TaskSharedState {
 			mValue.emplace( std::forward<Args>( args )... );
 			mState.store( TaskState::Ready, std::memory_order_release );
 			continuation = std::move( mContinuation );
-			// Notified while holding the lock: the waiter cannot return (and destroy its
-			// stack-allocated condition variable) before we release the mutex.
-			if ( mWaiter )
-				mWaiter->notify_all();
+			mWaiters.notify_all();
 		}
 		if ( continuation )
 			continuation( *this );
@@ -143,8 +140,7 @@ template <typename T> class TaskSharedState {
 				return false;
 			mState.store( TaskState::Abandoned, std::memory_order_release );
 			continuation = std::move( mContinuation );
-			if ( mWaiter )
-				mWaiter->notify_all();
+			mWaiters.notify_all();
 		}
 		if ( continuation )
 			continuation( *this );
@@ -167,12 +163,9 @@ template <typename T> class TaskSharedState {
 	TaskState wait() {
 		std::unique_lock<std::mutex> lock( mMutex );
 		if ( mState.load( std::memory_order_relaxed ) == TaskState::Pending ) {
-			std::condition_variable waiter;
-			mWaiter = &waiter;
-			waiter.wait( lock, [this] {
+			mWaiters.wait( lock, [this] {
 				return mState.load( std::memory_order_relaxed ) != TaskState::Pending;
 			} );
-			mWaiter = nullptr;
 		}
 		return mState.load( std::memory_order_relaxed );
 	}
@@ -181,12 +174,9 @@ template <typename T> class TaskSharedState {
 	TaskState waitFor( const std::chrono::duration<Rep, Period>& timeout ) {
 		std::unique_lock<std::mutex> lock( mMutex );
 		if ( mState.load( std::memory_order_relaxed ) == TaskState::Pending ) {
-			std::condition_variable waiter;
-			mWaiter = &waiter;
-			waiter.wait_for( lock, timeout, [this] {
+			mWaiters.wait_for( lock, timeout, [this] {
 				return mState.load( std::memory_order_relaxed ) != TaskState::Pending;
 			} );
-			mWaiter = nullptr;
 		}
 		return mState.load( std::memory_order_relaxed );
 	}
@@ -197,7 +187,7 @@ template <typename T> class TaskSharedState {
   private:
 	std::mutex mMutex;
 	Continuation mContinuation;
-	std::condition_variable* mWaiter{ nullptr };
+	std::condition_variable mWaiters;
 	std::optional<Value> mValue;
 	std::atomic<Uint32> mRefs{ 1 };
 	std::atomic<Uint32> mResolvers{ 1 };

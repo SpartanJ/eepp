@@ -705,14 +705,10 @@ int renameNoReplace( const char* from, const char* to ) {
 #elif defined( __APPLE__ ) && defined( RENAME_EXCL )
 	return ::renamex_np( from, to, RENAME_EXCL );
 #endif
-	// Fallback for filesystems/kernels without an atomic no-replace rename. There is a small race
-	// window between the check and the rename.
-	struct stat st;
-	if ( ::lstat( to, &st ) == 0 ) {
-		errno = EEXIST;
-		return -1;
-	}
-	return ::rename( from, to );
+	// A check followed by ordinary rename can destroy a concurrently created destination.
+	// Let the transfer engine use its safe publication path, or report Unsupported.
+	errno = ENOTSUP;
+	return -1;
 }
 
 } // namespace

@@ -156,11 +156,22 @@ Moves use a native rename when both sides are on the same provider/authority and
 plus removal of the entries that were completely copied; a source is never removed after a partial
 transfer.
 
+A successful completion with `result.partial()` means some entries were skipped. Inspect
+`filesSkipped` and report a partial transfer to the user: existing files under `Skip`, directory
+symlinks, dangling links and unsupported special files are left uncopied. Links to regular files
+are copied as their contents. A move retains every skipped source entry.
+During copy-and-remove moves, all child symlinks are skipped: copying their targets would not
+reproduce the links, and removing a target could break another link before it is read.
+
 File copies are written to a temporary sibling before publication. `Fail` and `Skip` also apply
 when a destination appears while the copy is running. The `Overwrite` policy requires
 `AtomicReplace`; otherwise the transfer returns `Unsupported` and preserves the old contents.
 Creating a file with `Fail` or `Skip` requires `Rename`. Moving a symlink through the copy fallback
 is unsupported; native same-filesystem renames still move the link itself.
+
+Native renames also preserve an existing destination when safe replacement is unavailable.
+POSIX systems without an atomic no-replace primitive return `Unsupported` for no-overwrite
+renames, rather than using an existence check followed by a replacing rename.
 
 ## Watching
 
@@ -203,6 +214,8 @@ model->setURI( URI( "sftp://makyo/home/black" ) );
 It enumerates incrementally (the first rows appear after the first batch), discards results of
 previous navigations, stays live through watches (row inserts/deletes keep the selection), and
 exposes `loadState()`, `error()` and `watchStatus()`.
+Fast listings coalesce subsequent batches before merging them into the sorted rows; slow listings
+publish new rows at the next batch after 50 ms, and the last batch always flushes pending entries.
 
 Columns are Name, Size, Modified, Type, Permissions, Owner and Group; cells carry a per-column CSS
 class (`vfs_size`, ...). Applications customize the text with `setTypeProvider()`,
@@ -242,6 +255,15 @@ password, filtered by `PreferredAuthentications` and the `*Authentication` optio
 Connections are pooled per effective configuration and shared by every operation and watch. All
 sessions are driven by one non-blocking I/O thread. `posix-rename@openssh.com` (atomic replace),
 `fsync@openssh.com` and `statvfs@openssh.com` are detected per server.
+
+`SFTPProviderConfig::operationTimeout` bounds each started operation (30 seconds by default),
+including waits for socket readiness. This applies even when `ServerAliveInterval` is unset.
+Expiration fails the entire session and all queued operations with `TimedOut`; a later request
+establishes a new session. Set a longer duration for operations expected to take more time.
+
+eefm opens files from SFTP and other non-local providers as local copies after an explicit prompt.
+Edits are not uploaded automatically. Each open downloads to a fresh private cache folder; earlier
+copies remain available, so reopening cannot silently discard local edits.
 
 ### efsw-agent
 

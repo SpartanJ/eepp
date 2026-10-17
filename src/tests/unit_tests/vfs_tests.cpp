@@ -22,6 +22,13 @@
 #include <unistd.h>	  // symlink, link
 #endif
 
+#if defined( __linux__ )
+#include <linux/filter.h>
+#include <linux/seccomp.h>
+#include <sys/prctl.h>
+#include <sys/syscall.h>
+#endif
+
 using namespace EE;
 using namespace EE::VFS;
 using namespace EE::System;
@@ -1338,3 +1345,86 @@ UTEST( VFSWatch, pollingCallbackCanReleaseTheLastBackendOwner ) {
 	ASSERT_TRUE( waitFor( std::move( task ) ).hasValue() );
 	EXPECT_TRUE( weak.expired() );
 }
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+UTEST( VFSTransfer, specialEntriesProducePartialResultsAndMovesKeepOriginals ) {
+	TempDir tmp;
+	std::string tree = tmp.path + "tree";
+	ASSERT_TRUE( FileSystem::makeDir( tree + "/dir", true ) );
+	ASSERT_TRUE( FileSystem::fileWrite( tree + "/file", std::string_view( "data" ) ) );
+	ASSERT_EQ( 0, ::symlink( "file", ( tree + "/file-link" ).c_str() ) );
+	ASSERT_EQ( 0, ::symlink( "dir", ( tree + "/dir-link" ).c_str() ) );
+	ASSERT_EQ( 0, ::symlink( "missing", ( tree + "/dangling" ).c_str() ) );
+	ASSERT_EQ( 0, ::mkfifo( ( tree + "/fifo" ).c_str(), 0600 ) );
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( mem );
+	for ( bool move : { false, true } ) {
+		URI target( move ? "mem://partial/moved" : "mem://partial/copied" );
+		auto transfer = move ? vfs.move( URI::fromFSPath( tree ), target )
+							 : vfs.copy( URI::fromFSPath( tree ), target );
+		auto result = waitFor( transfer.completion() );
+		ASSERT_TRUE( result );
+		EXPECT_TRUE( result.value().partial() );
+		EXPECT_EQ( move ? 4u : 3u, result.value().filesSkipped );
+		// A link to a regular file is copied as its content; directory links are not followed.
+		if ( !move ) {
+			EXPECT_STDSTREQ( "data", readString( vfs, target.withAppendedSegment( "file-link" ) ) );
+		} else {
+			EXPECT_TRUE( waitFor(
+				vfs.stat( URI::fromFSPath( tree + "/file-link" ), StatOptions{ false } ) ) );
+		}
+		for ( const char* name : { "dir-link", "dangling", "fifo" } ) {
+			EXPECT_TRUE(
+				waitFor( vfs.stat( URI::fromFSPath( tree + "/" + name ), StatOptions{ false } ) ) );
+		}
+	}
+}
+#endif
+
+#if defined( __linux__ ) && defined( SYS_renameat2 )
+UTEST( VFSLocal, unavailableNoReplacePrimitiveNeverFallsBackToReplacingRename ) {
+	auto pool = ThreadPool::createShared( 1 );
+	// Restrict just this disposable worker: force the old-kernel ENOSYS path deterministically.
+	auto installed = pool->submit( [] {
+		sock_filter instructions[] = {
+			BPF_STMT( BPF_LD | BPF_W | BPF_ABS, offsetof( seccomp_data, nr ) ),
+			BPF_JUMP( BPF_JMP | BPF_JEQ | BPF_K, SYS_renameat2, 0, 1 ),
+			BPF_STMT( BPF_RET | BPF_K, SECCOMP_RET_ERRNO | ENOSYS ),
+			BPF_STMT( BPF_RET | BPF_K, SECCOMP_RET_ALLOW ),
+		};
+		sock_fprog program{ 4, instructions };
+		return ::prctl( PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0 ) == 0 &&
+			   ::prctl( PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &program ) == 0;
+	} );
+	auto supported = std::move( installed ).get();
+	if ( !supported || !*supported ) {
+		printf( "  seccomp unavailable: cannot force renameat2 ENOSYS\n" );
+		return;
+	}
+	TempDir tmp;
+	auto scheduler = std::make_shared<LocalIOScheduler>(
+		pool, Seconds( 1 ),
+		[]( const std::string& ) -> std::optional<LocalIOScheduler::NetworkMount> {
+			return std::nullopt;
+		} );
+	LocalProvider provider( scheduler );
+	URI source = tmp.uri().withAppendedSegment( "source" );
+	URI destination = tmp.uri().withAppendedSegment( "destination" );
+	ASSERT_TRUE( FileSystem::fileWrite( source.getFSPath(), std::string_view( "source" ) ) );
+	for ( bool exists : { false, true } ) {
+		if ( exists )
+			ASSERT_TRUE(
+				FileSystem::fileWrite( destination.getFSPath(), std::string_view( "keep" ) ) );
+		auto renamed = waitFor( provider.rename( source, destination, {}, {} ) );
+		EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( renamed ) );
+		EXPECT_TRUE( FileSystem::fileExists( source.getFSPath() ) );
+		EXPECT_EQ( exists, FileSystem::fileExists( destination.getFSPath() ) );
+		if ( exists ) {
+			std::string bytes;
+			ASSERT_TRUE( FileSystem::fileGet( destination.getFSPath(), bytes ) );
+			EXPECT_STDSTREQ( "keep", bytes );
+		}
+	}
+}
+#endif

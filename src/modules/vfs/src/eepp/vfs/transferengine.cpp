@@ -168,8 +168,12 @@ VFSResult<bool> TransferEngine::copyNode( const Node& node, const URI& source,
 		return Err( std::move( c ).error() );
 	const VFSFileInfo& info = node.info;
 
-	if ( depth > 0 && info.isSymlink() && info.targetType == FileType::Directory ) {
+	if ( depth > 0 && info.isSymlink() && ( mMove || info.targetType == FileType::Directory ) ) {
+		// Copying link contents during a move can remove the target before another link
+		// is read, and cannot reproduce the link at the destination. Preserve the link itself.
 		++mResult.filesSkipped;
+		if ( info.targetType != FileType::Directory )
+			advanceFiles( info );
 		return Ok( false );
 	}
 
@@ -179,6 +183,7 @@ VFSResult<bool> TransferEngine::copyNode( const Node& node, const URI& source,
 	if ( !info.isRegularFile() ) {
 		// Sockets, FIFOs, devices and dangling links are not copied.
 		++mResult.filesSkipped;
+		advanceFiles( info );
 		return Ok( false );
 	}
 

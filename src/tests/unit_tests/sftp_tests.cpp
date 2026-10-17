@@ -12,6 +12,7 @@
 #include <eepp/system/process.hpp>
 #include <eepp/vfs/sftp/sftpprovider.hpp>
 #include <netinet/in.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -30,6 +31,11 @@ class TestSSHServer {
   public:
 	static TestSSHServer& instance() {
 		static TestSSHServer server;
+		return server;
+	}
+
+	static TestSSHServer& withoutPosixRename() {
+		static TestSSHServer server( true );
 		return server;
 	}
 
@@ -76,7 +82,10 @@ class TestSSHServer {
 	}
 
   private:
-	TestSSHServer() { mAvailable = start(); }
+	explicit TestSSHServer( bool disablePosixRename = false ) :
+		mDisablePosixRename( disablePosixRename ) {
+		mAvailable = start();
+	}
 
 	static bool run( const std::string& command, const std::vector<std::string>& args ) {
 		Process process;
@@ -112,7 +121,7 @@ class TestSSHServer {
 		mDir = Sys::getTempPath();
 		FileSystem::dirAddSlashAtEnd( mDir );
 		mDir += "eepp-sftp-test-" + String::toString( Sys::getProcessID() ) + "-" +
-				String::toString( Sys::getTicks() ) + "/";
+				String::toString( Sys::getTicks() ) + ( mDisablePosixRename ? "-no-posix/" : "/" );
 		FileSystem::makeDir( remoteRoot(), true );
 		for ( const char* key : { "host_ecdsa", "id_ecdsa", "other_ecdsa" } ) {
 			if ( !run( keygen, { "-q", "-t", "ecdsa", "-N", "", "-f", mDir + key } ) ) {
@@ -168,7 +177,8 @@ class TestSSHServer {
 								 "PasswordAuthentication yes\n"
 								 "KbdInteractiveAuthentication no\n"
 								 "AllowTcpForwarding yes\n"
-								 "Subsystem sftp internal-sftp\n"
+								 "Subsystem sftp internal-sftp" +
+								 ( mDisablePosixRename ? " -P posix-rename\n" : "\n" ) +
 								 "LogLevel ERROR\n"
 								 // Tests fail authentication on purpose; OpenSSH >= 9.8 would
 								 // otherwise penalize (refuse) the loopback source afterwards.
@@ -267,6 +277,107 @@ class TestSSHServer {
 	std::unique_ptr<Process> mServer;
 	int mPort{ 0 };
 	bool mAvailable{ false };
+	bool mDisablePosixRename{ false };
+};
+
+/** Loopback transport that drops bytes without FIN/RST after SSH login. */
+class BlackholeProxy {
+  public:
+	explicit BlackholeProxy( int upstreamPort ) : mUpstreamPort( upstreamPort ) {
+		mListener = ::socket( AF_INET, SOCK_STREAM, 0 );
+		sockaddr_in address{};
+		address.sin_family = AF_INET;
+		address.sin_addr.s_addr = htonl( INADDR_LOOPBACK );
+		if ( ::bind( mListener, reinterpret_cast<sockaddr*>( &address ), sizeof( address ) ) != 0 ||
+			 ::listen( mListener, 8 ) != 0 )
+			return;
+		socklen_t size = sizeof( address );
+		::getsockname( mListener, reinterpret_cast<sockaddr*>( &address ), &size );
+		mPort = ntohs( address.sin_port );
+		mThread = std::thread( [this] {
+			while ( !mStopping.load() ) {
+				pollfd fd{ mListener, POLLIN, 0 };
+				if ( ::poll( &fd, 1, 10 ) <= 0 )
+					continue;
+				int client = ::accept( mListener, nullptr, nullptr );
+				if ( client >= 0 )
+					mClients.emplace_back( [this, client] { forward( client ); } );
+			}
+		} );
+	}
+
+	~BlackholeProxy() {
+		mStopping = true;
+		if ( mThread.joinable() )
+			mThread.join();
+		for ( auto& thread : mClients )
+			thread.join();
+		if ( mListener >= 0 )
+			::close( mListener );
+	}
+
+	int port() const { return mPort; }
+
+	void drop( bool enabled ) { mDropping = enabled; }
+
+  private:
+	void forward( int client ) {
+		int upstream = ::socket( AF_INET, SOCK_STREAM, 0 );
+#ifdef SO_NOSIGPIPE
+		int noSigpipe = 1;
+		::setsockopt( client, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, sizeof( noSigpipe ) );
+		::setsockopt( upstream, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, sizeof( noSigpipe ) );
+#endif
+		sockaddr_in address{};
+		address.sin_family = AF_INET;
+		address.sin_addr.s_addr = htonl( INADDR_LOOPBACK );
+		address.sin_port = htons( mUpstreamPort );
+		if ( ::connect( upstream, reinterpret_cast<sockaddr*>( &address ), sizeof( address ) ) ==
+			 0 ) {
+			bool alive = true;
+			while ( alive && !mStopping.load() ) {
+				pollfd fds[] = { { client, POLLIN, 0 }, { upstream, POLLIN, 0 } };
+				if ( ::poll( fds, 2, 10 ) <= 0 )
+					continue;
+				for ( int i = 0; i < 2 && alive; ++i ) {
+					if ( !fds[i].revents )
+						continue;
+					char buffer[16384];
+					ssize_t size = ::recv( fds[i].fd, buffer, sizeof( buffer ), 0 );
+					if ( size <= 0 ) {
+						alive = false;
+						break;
+					}
+					if ( mDropping.load() )
+						continue;
+					ssize_t sent = 0;
+					while ( sent < size ) {
+#ifdef MSG_NOSIGNAL
+						int flags = MSG_NOSIGNAL;
+#else
+						int flags = 0;
+#endif
+						ssize_t n = ::send( fds[1 - i].fd, buffer + sent, size - sent, flags );
+						if ( n <= 0 ) {
+							alive = false;
+							break;
+						}
+						sent += n;
+					}
+				}
+			}
+		}
+		::close( upstream );
+		::close( client );
+	}
+
+	std::thread mThread;
+	std::vector<std::thread> mClients;
+	int mUpstreamPort;
+	int mListener{ -1 };
+	int mPort{ 0 };
+	std::atomic<bool> mStopping{ false };
+	std::atomic<bool> mDropping{ false };
 };
 
 /** Stops the test (with the error printed) when a VFS result failed. */
@@ -378,6 +489,103 @@ UTEST( SFTP, conformanceOverRealServer ) {
 	auto space = waitFor( fx.vfs.spaceInfo( server.uri( "testhost" ) ) );
 	REQUIRE_OK( space );
 	EXPECT_TRUE( space.value().capacity > 0 );
+}
+
+UTEST( SFTP, replacementWithoutPosixRenamePreservesBothFiles ) {
+	auto& server = TestSSHServer::withoutPosixRename();
+	if ( !server.available() ) {
+		printf( "  SFTP integration test skipped: %s\n", server.skipReason().c_str() );
+		return;
+	}
+	VirtualFileSystem vfs;
+	auto sftp = server.provider();
+	vfs.registerProvider( sftp );
+	std::string name = uniqueName( "safe-replace" );
+	ASSERT_TRUE( FileSystem::makeDir( server.remoteRoot() + "/" + name ) );
+	std::string src = server.remoteRoot() + "/" + name + "/source";
+	std::string dst = server.remoteRoot() + "/" + name + "/destination";
+	ASSERT_TRUE( FileSystem::fileWrite( src, std::string_view( "new data" ) ) );
+	ASSERT_TRUE( FileSystem::fileWrite( dst, std::string_view( "precious old data" ) ) );
+	URI source = server.uri( "testhost", name + "/source" );
+	URI destination = server.uri( "testhost", name + "/destination" );
+	auto result = waitFor( vfs.rename( source, destination, RenameOptions{ true } ) );
+	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( result ) );
+	EXPECT_STDSTREQ( "new data", readString( vfs, URI::fromFSPath( src ) ) );
+	EXPECT_STDSTREQ( "precious old data", readString( vfs, URI::fromFSPath( dst ) ) );
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::Overwrite;
+	auto moved = waitFor( vfs.move( source, destination, options ).completion() );
+	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( moved ) );
+	EXPECT_STDSTREQ( "new data", readString( vfs, URI::fromFSPath( src ) ) );
+	EXPECT_STDSTREQ( "precious old data", readString( vfs, URI::fromFSPath( dst ) ) );
+}
+
+UTEST( SFTP, blackholedReadyOperationsFailTheSessionAndReconnect ) {
+	REQUIRE_SSHD();
+	for ( bool keepalive : { false, true } ) {
+		for ( int first = 0; first < 3; ++first ) {
+			BlackholeProxy proxy( server.port() );
+			ASSERT_NE( 0, proxy.port() );
+			TempDir temp;
+			std::string configuration;
+			ASSERT_TRUE( FileSystem::fileGet( server.dir() + "ssh_config", configuration ) );
+			configuration = std::string( "Host *\n    ServerAliveInterval " ) +
+							( keepalive ? "1\n" : "0\n" ) + configuration;
+			ASSERT_TRUE(
+				FileSystem::fileWrite( temp.path + "config", std::string_view( configuration ) ) );
+			SFTPProviderConfig config;
+			config.operationTimeout = System::Milliseconds( 200 );
+			config.watchAgentCommand.clear();
+			config.configContextFactory = [path = temp.path]( const std::string& host ) {
+				auto context = SSHConfigContext::system( host );
+				context.sources = { { path + "config", path } };
+				return context;
+			};
+			VirtualFileSystem vfs;
+			auto provider = std::make_shared<SFTPProvider>( std::move( config ) );
+			vfs.registerProvider( provider );
+			std::string name = uniqueName( "blackhole" );
+			ASSERT_TRUE( FileSystem::fileWrite( server.remoteRoot() + "/" + name,
+												std::string_view( "bytes" ) ) );
+			URI uri = server.uri( "testhost", name );
+			uri.setPort( static_cast<Uint16>( proxy.port() ) );
+			URI directory = uri.getParent();
+			auto opened = waitFor( vfs.open( uri ) );
+			REQUIRE_OK( opened );
+			auto listed = waitFor( vfs.openDirectory( directory ) );
+			REQUIRE_OK( listed );
+			proxy.drop( true );
+			VFSTask<VFSFileInfo> stat;
+			VFSTask<size_t> read;
+			VFSTask<DirectoryBatch> list;
+			Uint8 buffer[16];
+			// Rotate the FIFO head: stat, read and readdir must each time out when started.
+			for ( int i = 0; i < 3; ++i ) {
+				switch ( ( first + i ) % 3 ) {
+					case 0:
+						stat = vfs.stat( uri );
+						break;
+					case 1:
+						read = opened.value().read( 0, buffer );
+						break;
+					case 2:
+						list = listed.value().read();
+						break;
+				}
+			}
+			ASSERT_EQ( TaskState::Ready, stat.waitFor( std::chrono::seconds( 5 ) ) );
+			ASSERT_EQ( TaskState::Ready, read.waitFor( std::chrono::seconds( 5 ) ) );
+			ASSERT_EQ( TaskState::Ready, list.waitFor( std::chrono::seconds( 5 ) ) );
+			EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( stat ) ) ) );
+			EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( read ) ) ) );
+			EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( list ) ) ) );
+			proxy.drop( false );
+			// The old handles still exist: recovery must select a fresh session anyway.
+			auto recovered = waitFor( vfs.stat( uri ) );
+			REQUIRE_OK( recovered );
+			EXPECT_EQ( 5u, recovered.value().size().value_or( 0 ) );
+		}
+	}
 }
 
 UTEST( SFTP, metadataOwnershipAndSymlinks ) {

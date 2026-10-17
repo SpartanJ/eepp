@@ -24,6 +24,8 @@ class Dialogs {
 						 std::function<void( bool )> done );
 
 	static void showError( UISceneNode* ui, const String& message );
+
+	static void showMessage( const String& title, const String& message );
 };
 
 } // namespace eefm

@@ -774,25 +774,12 @@ VFSTask<void> SFTPProvider::rename( const URI& from, const URI& to, const Rename
 							return VFSResult<void>(
 								Err( VFSError( VFSErrorCode::IsDirectory, to ) ) );
 						}
-						state->phase = 2;
 					}
-					if ( state->phase == 2 ) {
-						// Without posix-rename the replace cannot be atomic (the provider does
-						// not report AtomicReplace in that case).
-						int rc = libssh2_sftp_unlink_ex( c.sftp(), dst.c_str(),
-														 static_cast<unsigned>( dst.size() ) );
-						if ( rc == LIBSSH2_ERROR_EAGAIN )
-							return std::nullopt;
-						if ( rc != 0 )
-							return finish( rc, "rename (replace) failed" );
-						state->phase = 3;
-					}
-					int rc = libssh2_sftp_rename_ex(
-						c.sftp(), src.c_str(), static_cast<unsigned>( src.size() ), dst.c_str(),
-						static_cast<unsigned>( dst.size() ), 0 );
-					if ( rc == LIBSSH2_ERROR_EAGAIN )
-						return std::nullopt;
-					return finish( rc, "rename failed" );
+					// Never unlink a good destination to emulate replacement: a later rename
+					// can fail and leave the user with neither file at the destination.
+					return VFSResult<void>(
+						Err( VFSError( VFSErrorCode::Unsupported, to,
+									   "Server cannot safely replace the destination" ) ) );
 				} );
 		} );
 }

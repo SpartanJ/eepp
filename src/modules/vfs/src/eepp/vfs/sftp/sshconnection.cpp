@@ -240,12 +240,13 @@ VFSErrorCode mapSFTPStatus( unsigned long status ) {
 
 SSHConnection::SSHConnection( std::shared_ptr<SSHIOContext> context, SSHResolvedConfig config,
 							  SSHConnectionHooks hooks, std::unique_ptr<SSHTransport> transport,
-							  Time connectTimeout ) :
+							  Time connectTimeout, Time operationTimeout ) :
 	mContext( std::move( context ) ),
 	mConfig( std::move( config ) ),
 	mHooks( std::move( hooks ) ),
 	mTransport( std::move( transport ) ),
 	mLastUse( std::chrono::steady_clock::now() ),
+	mOperationTimeout( operationTimeout ),
 	mConnectTimeout( connectTimeout ) {
 	mDeadline =
 		std::chrono::steady_clock::now() +
@@ -435,6 +436,8 @@ int SSHConnection::nextTimeoutMs() const {
 		consider( mDeadline );
 	if ( state == State::Ready && mConfig.serverAliveInterval )
 		consider( mNextKeepalive );
+	if ( state == State::Ready && mOperationDeadline )
+		consider( *mOperationDeadline );
 	if ( state == State::Ready && mIdleTimeout != Time::Zero && isIdle() )
 		consider( lastUse() + idleTimeout() );
 	return timeout;
@@ -452,6 +455,12 @@ bool SSHConnection::idleExpired() const {
 void SSHConnection::drive() {
 	if ( mTransport && !mTransport->alive() && isUsable() )
 		fail( VFSError( VFSErrorCode::ConnectionLost, URI(), "Transport closed" ) );
+	if ( isReady() && mOperationDeadline &&
+		 std::chrono::steady_clock::now() >= *mOperationDeadline ) {
+		// libssh2 retains request state across EAGAIN: expiring just the operation and
+		// reusing the session would corrupt subsequent requests. Retire the whole session.
+		fail( VFSError( VFSErrorCode::TimedOut, URI(), "SFTP operation timed out" ) );
+	}
 
 	if ( isUsable() && mState.load() != State::Ready ) {
 		if ( !mWaitingExternal && std::chrono::steady_clock::now() > mDeadline ) {
@@ -487,8 +496,14 @@ void SSHConnection::drive() {
 				break;
 			operation = mQueue.front().get();
 		}
+		if ( !mOperationDeadline ) {
+			mOperationDeadline = std::chrono::steady_clock::now() +
+								 std::chrono::microseconds(
+									 std::max<Int64>( 1, mOperationTimeout.asMicroseconds() ) );
+		}
 		if ( operation->step( *this ) == Step::Again )
 			break;
+		mOperationDeadline.reset();
 		std::unique_ptr<SSHOperation> done;
 		{
 			std::lock_guard<std::mutex> lock( mQueueMutex );

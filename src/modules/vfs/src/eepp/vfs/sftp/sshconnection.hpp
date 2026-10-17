@@ -46,7 +46,7 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 
 	SSHConnection( std::shared_ptr<SSHIOContext> context, SSHResolvedConfig config,
 				   SSHConnectionHooks hooks, std::unique_ptr<SSHTransport> transport,
-				   Time connectTimeout );
+				   Time connectTimeout, Time operationTimeout );
 
 	~SSHConnection();
 
@@ -265,6 +265,8 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	std::chrono::steady_clock::time_point mLastUse;
 	std::chrono::steady_clock::time_point mDeadline;
 	std::chrono::steady_clock::time_point mNextKeepalive;
+	std::optional<std::chrono::steady_clock::time_point> mOperationDeadline;
+	Time mOperationTimeout;
 	Time mConnectTimeout;
 	VFSError mFailure;
 
