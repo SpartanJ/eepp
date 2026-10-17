@@ -193,6 +193,10 @@ newoption {
     description = "Set the shared data directory (default: /usr/share/ecode)",
 }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
+newoption { trigger = "with-shared-vfs", description = "Builds and links the VFS module as a shared library instead of a static library." }
+if _OPTIONS["with-static-eepp"] and _OPTIONS["with-shared-vfs"] then
+	error("--with-shared-vfs requires eepp-shared; it cannot be combined with --with-static-eepp")
+end
 newoption { trigger = "without-vfs-sftp", description = "Disables sftp:// support in the eepp-vfs module (otherwise the vendored libssh2 is built)." }
 newoption { trigger = "with-lto", description = "Enables Link-Time Optimization for release builds." }
 
@@ -1085,8 +1089,8 @@ function vfs_sftp_enabled()
 	return _OPTIONS["without-vfs-sftp"] == nil and not os.is_real("emscripten")
 end
 
-function eepp_module_vfs_add()
-	links { "eepp-vfs-static", "efsw-static" }
+function eepp_module_vfs_dependencies()
+	links { "efsw-static" }
 	includedirs { "src/modules/vfs/include/", "src/thirdparty/efsw/include" }
 	-- The ssh_config evaluator (always built) resolves host names through Winsock.
 	if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
@@ -1109,6 +1113,58 @@ function eepp_module_vfs_add()
 			end
 		end
 	end
+end
+
+function eepp_module_vfs_add()
+	includedirs { "src/modules/vfs/include/", "src/thirdparty/efsw/include" }
+	if vfs_sftp_enabled() then
+		defines { "EE_VFS_SFTP" }
+	end
+	if _OPTIONS["with-shared-vfs"] then
+		links { "eepp-vfs" }
+	else
+		links { "eepp-vfs-static" }
+		defines { "EE_VFS_STATIC" }
+		eepp_module_vfs_dependencies()
+	end
+end
+
+function build_vfs_module( shared )
+	local name = shared and "eepp-vfs" or "eepp-vfs-static"
+	project(name)
+		kind(shared and "SharedLib" or "StaticLib")
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src/modules/vfs/include/", "src/modules/vfs/src/", "src/thirdparty/efsw/include" }
+		files { "src/modules/vfs/src/**.cpp" }
+		defines { shared and "EE_VFS_EXPORTS" or "EE_VFS_STATIC" }
+		if shared then
+			eepp_module_vfs_dependencies()
+			links { "eepp-shared" }
+		end
+		if vfs_sftp_enabled() then
+			defines { "EE_VFS_SFTP" }
+			includedirs { "src/thirdparty/libssh2/include" }
+		else
+			excludes { "src/modules/vfs/src/eepp/vfs/sftp/**.cpp" }
+		end
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
+		if not is_vs() then
+			buildoptions{ "-std=c++20" }
+		else
+			buildoptions{ "/std:c++20" }
+		end
+		build_base_cpp_configuration( name )
+
+		if shared then
+			postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp-vfs" )
+			postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/unit_tests/", "eepp-vfs" )
+			if os.is_real("mingw32") or os.is_real("mingw64") or (os.is("windows") and not is_vs()) then
+				links { "winpthread" }
+			end
+		end
 end
 
 function eepp_module_backward_add( ecode_mode )
@@ -1761,27 +1817,10 @@ solution "eepp"
 		end
 		build_base_cpp_configuration( "efsw-agent" )
 
-	project "eepp-vfs-static"
-		kind "StaticLib"
-		language "C++"
-		set_targetdir("libs/" .. os.get_real() .. "/")
-		includedirs { "include", "src/modules/vfs/include/", "src/modules/vfs/src/", "src/thirdparty/efsw/include" }
-		files { "src/modules/vfs/src/**.cpp" }
-		if vfs_sftp_enabled() then
-			defines { "EE_VFS_SFTP" }
-			includedirs { "src/thirdparty/libssh2/include" }
-		else
-			excludes { "src/modules/vfs/src/eepp/vfs/sftp/**.cpp" }
-		end
-		if _OPTIONS["with-static-eepp"] then
-			defines { "EE_STATIC" }
-		end
-		if not is_vs() then
-			buildoptions{ "-std=c++20" }
-		else
-			buildoptions{ "/std:c++20" }
-		end
-		build_base_cpp_configuration( "eepp-vfs" )
+	build_vfs_module( false )
+	if _OPTIONS["with-shared-vfs"] then
+		build_vfs_module( true )
+	end
 
 	project "languages-syntax-highlighting-static"
 		kind "StaticLib"
@@ -2297,6 +2336,7 @@ solution "eepp"
 			links { "util" }
 		end
 		files { "src/tests/unit_tests/*.cpp",
+				"src/tools/eefm/location.cpp",
 				"src/tools/eproc/process_info.cpp",
 				"src/tools/eproc/process_model.cpp",
 				"src/tools/eproc/process_table_state.cpp",
@@ -2313,6 +2353,7 @@ solution "eepp"
 			links { "Cocoa.framework" }
 		end
 		eepp_module_vfs_add()
+		links { "efsw-static" }
 		eepp_module_backward_add( false )
 
 		configuration { "linux" }

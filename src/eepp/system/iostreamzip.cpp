@@ -1,7 +1,10 @@
 #include <eepp/system/iostreamzip.hpp>
+
+#include <algorithm>
+#include <array>
 #include <eepp/system/zip.hpp>
 #include <libzip/zip.h>
-#include <libzip/zipint.h>
+#include <limits>
 
 namespace EE { namespace System {
 
@@ -10,61 +13,62 @@ IOStreamZip* IOStreamZip::New( Zip* pack, const std::string& path ) {
 }
 
 IOStreamZip::IOStreamZip( Zip* pack, const std::string& path ) :
-	mPath( path ), mZip( pack->getZip() ), mFile( NULL ), mPos( 0 ) {
-	struct zip_stat zs;
-	int err = zip_stat( mZip, path.c_str(), 0, &zs );
+	IOStreamZip( pack, static_cast<Uint64>( pack->exists( path ) ) ) {}
 
-	if ( !err ) {
-		mFile = zip_fopen_index( mZip, zs.index, 0 );
+IOStreamZip::IOStreamZip( Zip* pack, Uint64 index ) :
+	mZip( pack->getZip() ), mFile( nullptr ), mIndex( index ), mSize( 0 ), mPos( 0 ) {
+	struct zip_stat info;
+	zip_stat_init( &info );
+	if ( mZip && zip_stat_index( mZip, index, 0, &info ) == 0 &&
+		 info.size <= static_cast<Uint64>( std::numeric_limits<ios_size>::max() ) ) {
+		mSize = static_cast<ios_size>( info.size );
+		mFile = zip_fopen_index( mZip, index, 0 );
 	}
 }
 
 IOStreamZip::~IOStreamZip() {
-	if ( isOpen() ) {
+	if ( mFile )
 		zip_fclose( mFile );
-	}
 }
 
 ios_size IOStreamZip::read( char* data, ios_size size ) {
-	int res = -1;
-
-	if ( isOpen() ) {
-		res = zip_fread( mFile, reinterpret_cast<void*>( &data[0] ), size );
-
-		if ( -1 != res ) {
-			mPos += size;
+	if ( !mFile || size < 0 )
+		return -1;
+	auto count = zip_fread( mFile, data, static_cast<Uint64>( size ) );
+	if ( count > 0 ) {
+		mPos += count;
+		// libzip validates the CRC only on the read past EOF. Validate before reporting the
+		// last bytes: offset-based callers may never request another read on this stream.
+		if ( mPos >= mSize ) {
+			char extra;
+			if ( mPos != mSize || zip_fread( mFile, &extra, 1 ) != 0 )
+				return -1;
 		}
 	}
-
-	return -1 != res ? res : 0;
+	return count;
 }
 
-ios_size IOStreamZip::write( const char* data, ios_size size ) {
-	return 0;
+ios_size IOStreamZip::write( const char*, ios_size ) {
+	return -1;
 }
 
 ios_size IOStreamZip::seek( ios_size position ) {
-	if ( isOpen() && mPos != position ) {
+	if ( !mFile || position < 0 || position > mSize )
+		return -1;
+	if ( position < mPos ) {
 		zip_fclose( mFile );
-
-		struct zip_stat zs;
-		int err = zip_stat( mZip, mPath.c_str(), 0, &zs );
-
-		if ( !err ) {
-			mFile = zip_fopen_index( mZip, zs.index, 0 );
-
-			if ( 0 != position ) {
-				ScopedBuffer ptr( position );
-				read( (char*)ptr.get(), position );
-			}
-
-			mPos = position;
-
-			return position;
-		}
+		mFile = zip_fopen_index( mZip, mIndex, 0 );
+		mPos = 0;
+		if ( !mFile )
+			return -1;
 	}
-
-	return 0;
+	std::array<char, 16384> scratch;
+	while ( mPos < position ) {
+		const auto count = std::min<ios_size>( position - mPos, scratch.size() );
+		if ( read( scratch.data(), count ) <= 0 )
+			return -1;
+	}
+	return mPos;
 }
 
 ios_size IOStreamZip::tell() {
@@ -72,13 +76,11 @@ ios_size IOStreamZip::tell() {
 }
 
 ios_size IOStreamZip::getSize() {
-	struct zip_stat zs;
-	int err = zip_stat( mZip, mPath.c_str(), 0, &zs );
-	return !err ? zs.size : 0;
+	return mSize;
 }
 
 bool IOStreamZip::isOpen() {
-	return NULL != mFile;
+	return mFile != nullptr;
 }
 
 }} // namespace EE::System

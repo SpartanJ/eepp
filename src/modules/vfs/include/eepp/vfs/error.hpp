@@ -1,10 +1,10 @@
 #ifndef EE_VFS_ERROR_HPP
 #define EE_VFS_ERROR_HPP
 
-#include <eepp/config.hpp>
 #include <eepp/core/result.hpp>
 #include <eepp/core/task.hpp>
 #include <eepp/core/uri.hpp>
+#include <eepp/vfs/config.hpp>
 #include <string>
 #include <string_view>
 
@@ -38,13 +38,13 @@ enum class VFSErrorCode : Uint8 {
 };
 
 /** @return A stable, human readable identifier for code (for example "NotFound"). */
-const char* toString( VFSErrorCode code );
+EE_VFS_API const char* toString( VFSErrorCode code );
 
 /** @brief Typed VFS failure.
  *
  * nativeCode keeps the provider error (errno, Win32 error, SFTP status) for diagnostics only.
  */
-struct VFSError {
+struct EE_VFS_API VFSError {
 	URI uri;
 	std::string message;
 	Int64 nativeCode{ 0 };

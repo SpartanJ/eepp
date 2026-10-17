@@ -21,7 +21,7 @@ class PollingWatchBackendImpl;
  * successful poll emits RescanRequired. Recursive polling is limited to MaxEntries entries per
  * watch; larger trees degrade to the top directories that fit.
  */
-class PollingWatchBackend : public WatchBackend {
+class EE_VFS_API PollingWatchBackend : public WatchBackend {
   public:
 	static constexpr size_t MaxEntries = 100000;
 

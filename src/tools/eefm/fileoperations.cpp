@@ -8,6 +8,7 @@
 #include "placescontroller.hpp"
 #include "trash.hpp"
 #include <eepp/system/sha1.hpp>
+#include <eepp/vfs/providers/zipprovider.hpp>
 
 namespace eefm {
 
@@ -68,6 +69,12 @@ void FileOperations::openRow( FileTab* tab, size_t row ) {
 		return;
 	if ( tab->model->entry( row ).isDirectory() ) {
 		mApp.panes().navigate( tab, tab->model->entryURI( row ) );
+		return;
+	}
+	const URI entry = tab->model->entryURI( row );
+	if ( entry.getScheme() == "file" &&
+		 String::toLower( FileSystem::fileExtension( tab->model->entry( row ).name ) ) == "zip" ) {
+		mApp.panes().navigate( tab, ZipProvider::makeURI( entry ) );
 		return;
 	}
 	// Enter / double click on a multiple selection opens all the selected files.

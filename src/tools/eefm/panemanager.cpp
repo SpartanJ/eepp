@@ -568,7 +568,7 @@ void PaneManager::navigate( FileTab* tab, URI uri, bool recordHistory ) {
 void PaneManager::goBack() {
 	auto* tab = currentTab();
 	if ( tab && tab->historyIndex > 0 ) {
-		tab->selectLater( tab->model->uri().getLastPathSegment() );
+		tab->selectLater( Location::entryName( tab->model->uri() ) );
 		--tab->historyIndex;
 		navigate( tab, tab->history[tab->historyIndex], false );
 	}
@@ -586,10 +586,10 @@ void PaneManager::goUp() {
 	auto* tab = currentTab();
 	if ( !tab )
 		return;
-	URI parent = tab->model->uri().getParent();
+	URI parent = Location::parent( tab->model->uri() );
 	if ( parent != tab->model->uri() ) {
 		// Like Dolphin, the folder we leave stays selected in its parent.
-		tab->selectLater( tab->model->uri().getLastPathSegment() );
+		tab->selectLater( Location::entryName( tab->model->uri() ) );
 		navigate( tab, parent );
 	}
 }
@@ -649,7 +649,7 @@ void PaneManager::updateChrome( Pane& pane ) {
 		return;
 	mUI->find<UIWidget>( "back" )->setEnabled( tab->historyIndex > 0 );
 	mUI->find<UIWidget>( "forward" )->setEnabled( tab->historyIndex + 1 < tab->history.size() );
-	mUI->find<UIWidget>( "up" )->setEnabled( uri.getParent() != uri );
+	mUI->find<UIWidget>( "up" )->setEnabled( Location::parent( uri ) != uri );
 	mApp.window()->setTitle( Location::text( uri ) + " — eefm" );
 	if ( auto* panel = mApp.places().panel() )
 		panel->setCurrent( uri );

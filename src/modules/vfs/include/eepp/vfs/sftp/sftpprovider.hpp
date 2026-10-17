@@ -2,6 +2,7 @@
 #define EE_VFS_SFTP_SFTPPROVIDER_HPP
 
 #include <eepp/core/task.hpp>
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/provider.hpp>
 #include <eepp/vfs/ssh/sshconfig.hpp>
 #include <eepp/vfs/watch.hpp>
@@ -17,7 +18,7 @@ class VirtualFileSystem;
 
 /** Unknown host key presented for a user decision. Changed (mismatching) host keys are never
  * offered: they always fail with VFSErrorCode::HostKeyRejected. */
-struct SSHHostKeyInfo {
+struct EE_VFS_API SSHHostKeyInfo {
 	std::string host;
 	/** Key algorithm, for example "ecdsa-sha2-nistp256". */
 	std::string keyType;
@@ -37,7 +38,7 @@ enum class SSHHostKeyDecision : Uint8 {
 };
 
 /** Application policy for unknown host keys (for example a UI dialog). */
-class SSHHostKeyVerifier {
+class EE_VFS_API SSHHostKeyVerifier {
   public:
 	virtual ~SSHHostKeyVerifier() = default;
 
@@ -45,12 +46,12 @@ class SSHHostKeyVerifier {
 	virtual Task<SSHHostKeyDecision> verify( const SSHHostKeyInfo& info ) = 0;
 };
 
-struct SSHPrompt {
+struct EE_VFS_API SSHPrompt {
 	std::string text;
 	bool echo{ false };
 };
 
-struct SSHAuthenticationRequest {
+struct EE_VFS_API SSHAuthenticationRequest {
 	enum class Kind : Uint8 {
 		Password,
 		/** Passphrase of an encrypted identity file. */
@@ -74,7 +75,7 @@ struct SSHAuthenticationRequest {
 
 /** Supplies secrets on demand. Secrets are used for one authentication attempt and never stored
  * by the VFS (and never appear in URIs). */
-class SSHAuthenticationHandler {
+class EE_VFS_API SSHAuthenticationHandler {
   public:
 	virtual ~SSHAuthenticationHandler() = default;
 
@@ -83,7 +84,7 @@ class SSHAuthenticationHandler {
 	request( const SSHAuthenticationRequest& request ) = 0;
 };
 
-struct SFTPProviderConfig {
+struct EE_VFS_API SFTPProviderConfig {
 	std::shared_ptr<SSHHostKeyVerifier> hostKeyVerifier;
 	std::shared_ptr<SSHAuthenticationHandler> authenticationHandler;
 	/** Builds the OpenSSH configuration context for a host. Defaults to
@@ -115,7 +116,7 @@ class SFTPProviderImpl;
  * connection too. All SSH sessions are driven by one I/O thread in non-blocking mode;
  * provider methods never block the caller.
  */
-class SFTPProvider : public VFSProvider {
+class EE_VFS_API SFTPProvider : public VFSProvider {
   public:
 	explicit SFTPProvider( SFTPProviderConfig config = {} );
 

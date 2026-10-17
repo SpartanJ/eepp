@@ -2,6 +2,7 @@
 #define EE_VFS_VIRTUALFILESYSTEM_HPP
 
 #include <eepp/system/threadpool.hpp>
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/provider.hpp>
 #include <eepp/vfs/providers/localioscheduler.hpp>
 #include <eepp/vfs/transfer.hpp>
@@ -31,7 +32,7 @@ using EE::System::ThreadPool;
  *   Provider work never runs on that pool, so waits there cannot starve provider I/O. Copies and
  *   moves run on a pool of their own: long transfers never delay the other operations.
  */
-class VirtualFileSystem {
+class EE_VFS_API VirtualFileSystem {
   public:
 	struct Config {
 		/** Worker threads for blocking local I/O (LocalProvider and similar). */
@@ -45,7 +46,7 @@ class VirtualFileSystem {
 		 * counts as not responding: the call fails with TimedOut, and so do further calls until
 		 * the server answers again (see LocalIOScheduler). */
 		System::Time networkMountTimeout{ System::Seconds( 15 ) };
-		/** Register file:// and res:// (and sftp:// when built with SFTP support). */
+		/** Register file://, zip:// and res:// (and sftp:// when built with SFTP support). */
 		bool registerDefaultProviders{ true };
 	};
 

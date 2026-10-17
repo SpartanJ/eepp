@@ -3,6 +3,7 @@
 #include <eepp/vfs/detail/filewriter.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>
 #include <eepp/vfs/providers/resourceprovider.hpp>
+#include <eepp/vfs/providers/zipprovider.hpp>
 #include <eepp/vfs/transferengine.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
 #include <eepp/vfs/watchers/localwatchbackend.hpp>
@@ -69,6 +70,7 @@ VirtualFileSystem::~VirtualFileSystem() {
 
 void VirtualFileSystem::registerDefaultProviders() {
 	registerProvider( std::make_shared<LocalProvider>( mLocalIO ) );
+	registerProvider( std::make_shared<ZipProvider>( mLocalIO ) );
 	registerProvider( std::make_shared<ResourceProvider>( mIOPool ) );
 	// Network mounts are polled through the VFS (whose calls time out), not by efsw.
 	auto polling = std::make_shared<PollingWatchBackend>( *this );

@@ -2,12 +2,13 @@
 
 ## Introduction
 
-`eepp-vfs` is an optional static module that gives applications one asynchronous, URI-based API
+`eepp-vfs` is an optional module that gives applications one asynchronous, URI-based API
 for local files, packed resources and remote servers:
 
 | Scheme | Provider | Notes |
 | --- | --- | --- |
 | `file://` | `LocalProvider` | Native filesystem (POSIX and Win32). |
+| `zip://` | `ZipProvider` | Read-only browsing and streaming reads of individual local ZIP archives. |
 | `res://` | `ResourceProvider` | Read-only view of every open `Pack` (`System::PackFileIndex`). |
 | `sftp://` | `SFTPProvider` | Built by default (`--without-vfs-sftp` disables it), libssh2 based, honors `~/.ssh/config`. |
 | `mem://` | `MemoryProvider` | In-memory filesystem, mainly for tests. |
@@ -26,6 +27,12 @@ are useful on their own:
 
 Link the module with `eepp_module_vfs_add()` in Premake and include `<eepp/vfs.hpp>`. The UI model
 lives in `<eepp/vfs/ui/vfsdirectorymodel.hpp>` and is not part of the aggregate header.
+The default is `eepp-vfs-static`; generate with `--with-shared-vfs` to build and link `eepp-vfs`
+as a shared library. Public types and non-inline functions use `EE_VFS_API`, controlled by
+`EE_VFS_EXPORTS` for the DLL and `EE_VFS_STATIC` for static builds, independently of core eepp
+exports. The Premake helper sets the consumer flags and dependencies. The MinGW helper accepts
+`--with-shared-vfs` as well. Combining it with `--with-static-eepp` is rejected: a shared VFS
+must use the same eepp DLL as the application, including its resource and UI singletons.
 
 ## Tasks, results and threads
 
@@ -255,6 +262,61 @@ on the server's `PATH`, or set `SFTPProviderConfig::watchAgentCommand`. The eepp
 - Operations on one SSH connection are serialized; a long transfer delays metadata requests on the
   same connection.
 - The efsw-agent is not deployed automatically.
+
+## ZIP archives (`zip://`)
+
+`ZipProvider` is registered by default. Build archive locations with `makeURI()` rather than
+concatenating paths: the backing file URI and the path inside the archive are separate identities.
+Locations use `zip:///path/archive.zip!/member`. The host, when present, identifies a local UNC
+archive. Literal `!` characters in the backing path are doubled, so a directory named `packages!`
+uses `packages!!/` before the archive boundary. Member names use ordinary URI escaping.
+`withAppendedSegment()` appends a member; eefm handles crossing the archive root with Up.
+
+```cpp
+URI archive = URI::fromFSPath( "/home/me/downloads/package.zip" );
+URI root = ZipProvider::makeURI( archive );
+URI folder = root.withAppendedSegment( "docs" );
+
+vfs.listAll( folder ).then( ui, []( VFSResult<std::vector<VFSFileInfo>>&& entries ) { ... } );
+vfs.readAll( folder.withAppendedSegment( "README.txt" ) );
+vfs.copy( folder, URI::fromFSPath( "/home/me/extracted-docs" ) );
+```
+
+Directories exist both for explicit directory entries (including empty directories) and implicitly
+for the parents of files. Listings include uncompressed file sizes and entry timestamps. Permission bits are unspecified
+(the archive API does not expose them), so copies receive the destination filesystem's defaults. Browsing
+never registers an archive in `PackRegistry` or `PackFileIndex`, so archive contents do not become
+application resources. Opening a missing archive reports `NotFound` and never creates a file.
+
+The provider is read-only: creating, replacing, renaming or deleting entries returns `ReadOnly`.
+Files stream through independent readers without extracting the entire entry into memory.
+Sequential reads retain the decompression position; seeking backwards replays the compressed
+prefix with bounded scratch memory. `Seek` is advertised; `RandomAccess` is not. CRC failures are
+reported as `IO`, including when the final read requests exactly the remaining file size.
+
+Changes to the backing file invalidate its cached index for new operations. Open handles keep
+their original reader and metadata; modifying an archive in place can cause their reads to fail.
+The normal VFS polling backend detects archive changes. Archives on network mounts use the local
+I/O scheduler's mount isolation and timeouts.
+
+Only `file://` backing archives are supported initially. Password-protected entries and unsupported
+compression methods report `Unsupported`. ZIP symlink attributes are not followed: their stored
+data is exposed as a regular file. Unsafe names (absolute paths, traversal components, backslashes
+or drive/stream colons) are excluded. Indexes are limited to 262,144 entries including implicit
+directories, with at most eight cached indexes; existing handles can retain older indexes.
+
+In eefm, Enter or double-click on a local `.zip` file enters it. Files inside open through the usual
+application flow, and copying entries out uses VFS transfers. Up at the archive root returns to its
+containing folder and selects the archive. History and saved tabs retain archive locations. The
+location bar displays a readable address such as
+`zip:///home/me/downloads/package.zip!/docs`, which can also be typed or pasted there.
+
+For lower-level archive access, construct `Zip archive(false)` to opt out of the resource registry
+and call `archive.open(path, Zip::OpenMode::ReadOnly)`. `entryCount()`, `entry()` and `openStream()`
+provide metadata and streaming access. Streams borrow the archive and must be destroyed before it;
+callers sharing an archive across threads must serialize access. `open()` never creates a missing
+file; writing starts explicitly with `create()`. The default constructor retains resource-pack
+registration for the engine and other existing pack consumers.
 
 ## Resources (`res://`)
 

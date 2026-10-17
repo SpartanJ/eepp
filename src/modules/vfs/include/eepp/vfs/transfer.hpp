@@ -4,13 +4,14 @@
 #include <eepp/core/cancellationtoken.hpp>
 #include <eepp/core/executor.hpp>
 #include <eepp/core/small_unique_function.hpp>
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/error.hpp>
 #include <memory>
 #include <optional>
 
 namespace EE { namespace VFS {
 
-struct TransferProgress {
+struct EE_VFS_API TransferProgress {
 	URI currentSource;
 	URI currentDestination;
 	Uint64 bytesDone{ 0 };
@@ -19,7 +20,7 @@ struct TransferProgress {
 	std::optional<Uint64> filesTotal;
 };
 
-struct TransferResult {
+struct EE_VFS_API TransferResult {
 	Uint64 bytesTransferred{ 0 };
 	Uint64 filesTransferred{ 0 };
 	Uint64 filesSkipped{ 0 };
@@ -37,7 +38,7 @@ class TransferState;
 }
 
 /** @brief RAII handle of a progress subscription. */
-class TransferProgressSubscription {
+class EE_VFS_API TransferProgressSubscription {
   public:
 	TransferProgressSubscription() = default;
 
@@ -69,7 +70,7 @@ class TransferProgressSubscription {
  * coalesced: a slow subscriber receives the latest snapshot rather than every intermediate one.
  * Transfers keep running when the Transfer object is destroyed; call cancel() to stop them.
  */
-class Transfer {
+class EE_VFS_API Transfer {
   public:
 	Transfer() = default;
 

@@ -1,15 +1,19 @@
 #include <eepp/system/pack.hpp>
-#include <eepp/system/packregistry.hpp>
 #include <eepp/system/packfileindex.hpp>
+#include <eepp/system/packregistry.hpp>
 
 namespace EE { namespace System {
 
-Pack::Pack() : Mutex(), mIsOpen( false ) {
-	PackRegistry::instance()->add( this );
+Pack::Pack() : Pack( true ) {}
+
+Pack::Pack( bool registerResource ) : mIsOpen( false ), mRegisterResource( registerResource ) {
+	if ( mRegisterResource )
+		PackRegistry::instance()->add( this );
 }
 
 Pack::~Pack() {
-	PackRegistry::instance()->remove( this );
+	if ( mRegisterResource )
+		PackRegistry::instance()->remove( this );
 }
 
 bool Pack::isOpen() const {
@@ -17,11 +21,13 @@ bool Pack::isOpen() const {
 }
 
 void Pack::onPackOpened() {
-	PackFileIndex::instance()->onResourceAdd( this );
+	if ( mRegisterResource )
+		PackFileIndex::instance()->onResourceAdd( this );
 }
 
 void Pack::onPackClosed() {
-	PackFileIndex::instance()->onResourceRemove( this );
+	if ( mRegisterResource )
+		PackFileIndex::instance()->onResourceRemove( this );
 }
 
 }} // namespace EE::System

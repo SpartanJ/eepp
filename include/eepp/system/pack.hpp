@@ -14,6 +14,9 @@ class EE_API Pack : protected Mutex {
   public:
 	Pack();
 
+	/** Standalone archives can opt out of PackRegistry and PackFileIndex. */
+	explicit Pack( bool registerResource );
+
 	virtual ~Pack();
 
 	/** Creates a new pack file */
@@ -81,6 +84,7 @@ class EE_API Pack : protected Mutex {
 
   protected:
 	bool mIsOpen;
+	bool mRegisterResource;
 
 	void onPackOpened();
 

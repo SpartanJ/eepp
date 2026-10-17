@@ -2,6 +2,7 @@
 #define EE_VFS_PROVIDERS_RESOURCEPROVIDER_HPP
 
 #include <eepp/system/threadpool.hpp>
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/provider.hpp>
 #include <memory>
 
@@ -16,7 +17,7 @@ namespace EE { namespace VFS {
  * Revisions change whenever a pack is opened or closed. Sizes are reported once a file is opened
  * (packs expose no cheap size query), so listing and stat leave them unknown.
  */
-class ResourceProvider : public VFSProvider {
+class EE_VFS_API ResourceProvider : public VFSProvider {
   public:
 	explicit ResourceProvider( std::shared_ptr<System::ThreadPool> pool );
 

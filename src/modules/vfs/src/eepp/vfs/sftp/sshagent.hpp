@@ -18,7 +18,7 @@ namespace EE { namespace VFS { namespace sftp {
  * time. Speaks the agent protocol over Unix-domain sockets; elsewhere (Windows named pipes,
  * Pageant) supported() is false and libssh2's own agent support is used.
  */
-class SSHAgent {
+class EE_VFS_API SSHAgent {
   public:
 	struct Identity {
 		/** Public key blob (SSH wire format). */

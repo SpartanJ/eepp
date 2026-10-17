@@ -16,11 +16,13 @@ class EE_API IOStreamZip : public IOStream {
   public:
 	static IOStreamZip* New( Zip* pack, const std::string& path );
 
-	/** @brief Open a file from a zip file
+	/** @brief Open a file from a zip file. The pack must outlive the stream.
 	**	@param pack Pack to open from path
 	**	@param path Path of the file in the pack file
 	**/
 	IOStreamZip( Zip* pack, const std::string& path );
+
+	IOStreamZip( Zip* pack, Uint64 index );
 
 	virtual ~IOStreamZip();
 
@@ -37,9 +39,10 @@ class EE_API IOStreamZip : public IOStream {
 	bool isOpen();
 
   protected:
-	std::string mPath;
 	struct zip* mZip;
 	struct zip_file* mFile;
+	Uint64 mIndex;
+	ios_size mSize;
 	ios_size mPos;
 };
 

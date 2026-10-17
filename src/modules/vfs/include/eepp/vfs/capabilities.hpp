@@ -1,7 +1,7 @@
 #ifndef EE_VFS_CAPABILITIES_HPP
 #define EE_VFS_CAPABILITIES_HPP
 
-#include <eepp/config.hpp>
+#include <eepp/vfs/config.hpp>
 
 namespace EE { namespace VFS {
 
@@ -36,7 +36,7 @@ enum class VFSCapability : Uint32 {
 
 /** Set of VFSCapability flags. Capabilities may vary per URI (for example per SFTP server), so
  * providers report them per URI. */
-class ProviderCapabilities {
+class EE_VFS_API ProviderCapabilities {
   public:
 	constexpr ProviderCapabilities() noexcept = default;
 

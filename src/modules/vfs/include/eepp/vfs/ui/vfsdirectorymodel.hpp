@@ -6,6 +6,7 @@
 #include <eepp/system/regex.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/models/variant.hpp>
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
 #include <functional>
 #include <memory>
@@ -39,7 +40,8 @@ using UI::Models::Variant;
  * All public methods must be called on the UI thread, which must be the thread the executor runs
  * functions on.
  */
-class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSDirectoryModel> {
+class EE_VFS_API VFSDirectoryModel : public Model,
+									 public std::enable_shared_from_this<VFSDirectoryModel> {
   public:
 	enum Column : Uint8 { Name, Size, Modified, Type, Permissions, Owner, Group, ColumnCount };
 
@@ -82,6 +84,10 @@ class VFSDirectoryModel : public Model, public std::enable_shared_from_this<VFSD
 	static std::shared_ptr<VFSDirectoryModel> New( Executor& uiExecutor, const Config& config );
 
 	~VFSDirectoryModel() override;
+
+	VFSDirectoryModel( const VFSDirectoryModel& ) = delete;
+
+	VFSDirectoryModel& operator=( const VFSDirectoryModel& ) = delete;
 
 	/** Navigates to a directory. */
 	void setURI( URI uri );

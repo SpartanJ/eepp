@@ -5,6 +5,7 @@
 #include <eepp/core/executor.hpp>
 #include <eepp/core/small_unique_function.hpp>
 #include <eepp/system/time.hpp>
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/error.hpp>
 #include <memory>
 #include <mutex>
@@ -29,11 +30,11 @@ enum class WatchEventType : Uint8 {
 	RescanRequired,
 };
 
-const char* toString( WatchEventType type );
+EE_VFS_API const char* toString( WatchEventType type );
 
 /** One change, relative to the watched root ("dir/file.txt", '/' separated, never leading '/').
  */
-struct WatchEvent {
+struct EE_VFS_API WatchEvent {
 	std::string relativePath;
 	std::string oldRelativePath;
 	WatchEventType type{ WatchEventType::Modified };
@@ -52,16 +53,16 @@ enum class WatchStatus : Uint8 {
 	Failed,
 };
 
-const char* toString( WatchStatus status );
+EE_VFS_API const char* toString( WatchStatus status );
 
 /** A coalesced group of events for one watch. Events are in arrival order. */
-struct WatchEventBatch {
+struct EE_VFS_API WatchEventBatch {
 	URI root;
 	std::vector<WatchEvent> events;
 	WatchStatus status{ WatchStatus::Active };
 };
 
-struct WatchOptions {
+struct EE_VFS_API WatchOptions {
 	bool recursive{ false };
 	bool followSymlinks{ false };
 	bool allowOutOfScopeLinks{ false };
@@ -84,7 +85,7 @@ class WatchSubscriptionState;
  * Thread-safe. Events are accumulated and delivered as one batch per executor dispatch, which
  * coalesces bursts without adding a latency timer.
  */
-class WatchSink {
+class EE_VFS_API WatchSink {
   public:
 	virtual ~WatchSink() = default;
 
@@ -101,14 +102,14 @@ class WatchSink {
 };
 
 /** Backend-side registration of one logical watch. Destroying it stops native watching. */
-class WatchRegistration {
+class EE_VFS_API WatchRegistration {
   public:
 	virtual ~WatchRegistration() = default;
 };
 
 /** @brief Notification engine for a set of URIs. Backends adapt efsw (local), a remote
  * efsw-agent or polling into URI space; they never mutate UI or model state. */
-class WatchBackend {
+class EE_VFS_API WatchBackend {
   public:
 	virtual ~WatchBackend() = default;
 
@@ -125,7 +126,7 @@ class WatchBackend {
  * that the callback is not running and will not run again (a callback may destroy its own
  * handle).
  */
-class WatchHandle {
+class EE_VFS_API WatchHandle {
   public:
 	WatchHandle() = default;
 
@@ -167,7 +168,7 @@ class WatchHandle {
  * Backends are registered per scheme. A scheme without a dedicated backend uses the fallback
  * backend (normally polling through the VFS) when WatchOptions::allowPolling is set.
  */
-class WatchManager {
+class EE_VFS_API WatchManager {
   public:
 	WatchManager();
 

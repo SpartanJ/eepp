@@ -5,6 +5,7 @@
 #include <eepp/core/task.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/time.hpp>
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/error.hpp>
 #include <functional>
 #include <memory>
@@ -28,10 +29,10 @@ class MountWatchdog;
  * The kernel cannot interrupt a call on an unreachable hard NFS mount, so its thread stays blocked;
  * nobody waits for it anymore, and its result is discarded if it ever arrives.
  */
-class EE_API LocalIOScheduler {
+class EE_VFS_API LocalIOScheduler {
   public:
 	/** A file system mounted from another machine. */
-	struct NetworkMount {
+	struct EE_VFS_API NetworkMount {
 		/** Where it is mounted (a native path). */
 		std::string root;
 		/** What is mounted, for messages ("server:/export", "//server/share"). */
@@ -40,7 +41,7 @@ class EE_API LocalIOScheduler {
 
 	/** Where the calls of a path run: its network mount's lane, or the shared pool. Resolve it
 	 * once for a handle (an open file or directory) and reuse it for the handle's calls. */
-	class Route {
+	class EE_VFS_API Route {
 	  public:
 		bool isNetworkMount() const { return mLane != nullptr; }
 
@@ -128,7 +129,7 @@ class EE_API LocalIOScheduler {
 
 	/** A call queued on a lane: run once on the lane's thread, or failed by the watchdog, and
 	 * only the first of the two completes its task. */
-	class Call {
+	class EE_VFS_API Call {
 	  public:
 		virtual ~Call() = default;
 
@@ -154,7 +155,7 @@ class EE_API LocalIOScheduler {
 
 	/** What the routing needs, shared with the calls that resolve their route on the pool (which
 	 * can outlive the scheduler). */
-	struct Routing {
+	struct EE_VFS_API Routing {
 		MountLookup lookup;
 		std::shared_ptr<MountWatchdog> watchdog;
 

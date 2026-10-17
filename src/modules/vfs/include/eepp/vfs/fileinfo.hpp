@@ -3,8 +3,8 @@
 
 #include <array>
 #include <cstring>
-#include <eepp/config.hpp>
 #include <eepp/core/uri.hpp>
+#include <eepp/vfs/config.hpp>
 #include <initializer_list>
 #include <optional>
 #include <string>
@@ -22,7 +22,7 @@ enum class FileType : Uint8 {
 	Socket,
 };
 
-const char* toString( FileType type );
+EE_VFS_API const char* toString( FileType type );
 
 /** @brief Opaque, provider-defined revision token.
  *
@@ -33,7 +33,7 @@ const char* toString( FileType type );
  *
  * Stored inline (no heap) because it travels inside every VFSFileInfo.
  */
-class FileRevision {
+class EE_VFS_API FileRevision {
   public:
 	static constexpr size_t Capacity = 32;
 
@@ -92,7 +92,7 @@ class FileRevision {
  * The entry does not store its URI: listings hold thousands of entries and the caller always
  * knows the URI it listed or stat'ed. Use uriIn( directory ) for an entry of a listing.
  */
-class VFSFileInfo {
+class EE_VFS_API VFSFileInfo {
   public:
 	/** Last path segment (verbatim, not percent-encoded). */
 	std::string name;

@@ -12,6 +12,7 @@
 #include <eepp/vfs/providers/localioscheduler.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>
 #include <eepp/vfs/watchers/localwatchbackend.hpp>
+#include <eepp/vfs/watchers/pollingwatchbackend.hpp>
 #include <mutex>
 #include <optional>
 #include <thread>
@@ -460,12 +461,15 @@ UTEST( VFSResource, zipPackWithSeveralFiles ) {
 		EXPECT_TRUE( zip.addFile( a, "vfs-zip/a.txt" ) );
 		EXPECT_TRUE( zip.addFile( b, "vfs-zip/sub/b.txt" ) );
 		EXPECT_TRUE( zip.addFile( c, "vfs-zip/sub/c.txt" ) );
+		std::vector<Uint8> empty;
+		EXPECT_TRUE( zip.addFile( empty, "vfs-zip/empty.txt" ) );
+		EXPECT_TRUE( zip.addFile( empty, "vfs-zip/empty-dir/" ) );
 		EXPECT_TRUE( zip.close() );
 	}
 
 	Zip zip;
 	ASSERT_TRUE( zip.open( zipPath ) );
-	EXPECT_EQ( 3u, zip.getFileList().size() );
+	EXPECT_EQ( 4u, zip.getFileList().size() );
 	std::vector<Uint8> data;
 	EXPECT_TRUE( zip.extractFileToMemory( "vfs-zip/sub/c.txt", data ) );
 	EXPECT_STDSTREQ( "c3", std::string( data.begin(), data.end() ) );
@@ -473,6 +477,8 @@ UTEST( VFSResource, zipPackWithSeveralFiles ) {
 	VirtualFileSystem vfs;
 	EXPECT_STDSTREQ( "a1", readString( vfs, URI( "res:///vfs-zip/a.txt" ) ) );
 	EXPECT_STDSTREQ( "b2", readString( vfs, URI( "res:///vfs-zip/sub/b.txt" ) ) );
+	EXPECT_STDSTREQ( "", readString( vfs, URI( "res:///vfs-zip/empty.txt" ) ) );
+	EXPECT_FALSE( PackFileIndex::instance()->fileExists( "vfs-zip/empty-dir" ) );
 	auto listed = waitFor( vfs.listAll( URI( "res:///vfs-zip/sub" ) ) );
 	ASSERT_TRUE( listed.hasValue() );
 	EXPECT_EQ( 2u, listed.value().size() );
@@ -1290,3 +1296,45 @@ UTEST( LocalIOScheduler, linksIntoAMountRunOnItsLane ) {
 	gate->open();
 }
 #endif
+
+namespace {
+
+class ReleasePollingBackendSink : public WatchSink {
+  public:
+	URI uri;
+	std::mutex gate;
+	std::shared_ptr<PollingWatchBackend> backend;
+
+	void push( WatchEvent&& ) override {}
+
+	void push( std::vector<WatchEvent>&& ) override {}
+
+	void rescanRequired() override {}
+
+	void setStatus( WatchStatus ) override {
+		std::lock_guard<std::mutex> lock( gate );
+		backend.reset();
+	}
+
+	const URI& root() const override { return uri; }
+};
+
+} // namespace
+
+UTEST( VFSWatch, pollingCallbackCanReleaseTheLastBackendOwner ) {
+	VirtualFileSystem vfs;
+	auto memory = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( memory );
+	const URI root( "mem://polling-teardown/dir" );
+	memory->putFile( root.withAppendedSegment( "file" ), "contents" );
+	auto sink = std::make_shared<ReleasePollingBackendSink>();
+	sink->uri = root;
+	sink->backend = std::make_shared<PollingWatchBackend>( vfs );
+	std::weak_ptr<PollingWatchBackend> weak = sink->backend;
+	std::unique_lock<std::mutex> hold( sink->gate );
+	auto task = sink->backend->watch( root, {}, sink );
+	hold.unlock();
+	ASSERT_EQ( TaskState::Ready, task.waitFor( std::chrono::seconds( 5 ) ) );
+	ASSERT_TRUE( waitFor( std::move( task ) ).hasValue() );
+	EXPECT_TRUE( weak.expired() );
+}

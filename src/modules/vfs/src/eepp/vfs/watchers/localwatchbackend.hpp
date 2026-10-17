@@ -26,7 +26,7 @@ class LocalWatchBackendImpl;
  * Directories on a network mount go to networkBackend instead (the VFS polling backend): efsw's
  * own threads would block on an unreachable server, while VFS calls time out.
  */
-class LocalWatchBackend : public WatchBackend {
+class EE_VFS_API LocalWatchBackend : public WatchBackend {
   public:
 	/** @param pool Where watches are registered and removed.
 	 * @param networkBackend Watches directories on network mounts; without it efsw does.

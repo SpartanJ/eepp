@@ -1,6 +1,7 @@
 #ifndef EE_VFS_PROVIDERS_LOCALPROVIDER_HPP
 #define EE_VFS_PROVIDERS_LOCALPROVIDER_HPP
 
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/provider.hpp>
 #include <eepp/vfs/providers/localioscheduler.hpp>
 #include <memory>
@@ -19,7 +20,7 @@ namespace EE { namespace VFS {
  * Revisions are derived from device, inode (file index), modification time and size, so both
  * in-place edits and atomic replacements are detected.
  */
-class LocalProvider : public VFSProvider {
+class EE_VFS_API LocalProvider : public VFSProvider {
   public:
 	explicit LocalProvider( std::shared_ptr<LocalIOScheduler> scheduler );
 

@@ -3,6 +3,7 @@
 
 #include <eepp/core/cancellationtoken.hpp>
 #include <eepp/vfs/capabilities.hpp>
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/directoryhandle.hpp>
 #include <eepp/vfs/error.hpp>
 #include <eepp/vfs/filehandle.hpp>
@@ -12,7 +13,7 @@
 
 namespace EE { namespace VFS {
 
-struct SpaceInfo {
+struct EE_VFS_API SpaceInfo {
 	Uint64 capacity{ 0 };
 	Uint64 free{ 0 };
 	/** Free space available to the current (non-privileged) user. */
@@ -33,7 +34,7 @@ struct SpaceInfo {
  * - Cancellation is cooperative: a cancelled operation completes with VFSErrorCode::Cancelled.
  * - Providers never touch UI or model state.
  */
-class VFSProvider {
+class EE_VFS_API VFSProvider {
   public:
 	virtual ~VFSProvider() = default;
 

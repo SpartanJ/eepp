@@ -2,25 +2,65 @@
 #define EE_SYSTEMCZIP_HPP
 
 #include <eepp/system/pack.hpp>
+#include <memory>
 
 struct zip;
 
 namespace EE { namespace System {
 
-/** @brief Zip files package manager. */
+/** ZIP archive reader/writer and optional resource pack. Use Zip(false) and OpenMode::ReadOnly
+ * for standalone browsing. Entry streams borrow the archive and must be destroyed before it.
+ * Serialize access to an archive and its streams when sharing them between threads. */
 class EE_API Zip : public Pack {
   public:
 	static Zip* New();
 
+	struct Entry {
+		std::string name;
+		Uint64 size{ 0 };
+		Int64 modified{ 0 };
+		Uint32 crc{ 0 };
+	};
+
+	enum class OpenMode : Uint8 { ReadOnly, ReadWrite };
+
+	enum class Error : Uint8 {
+		None,
+		NotFound,
+		PermissionDenied,
+		InvalidArchive,
+		Unsupported,
+		ReadOnly,
+		IO
+	};
+
 	Zip();
+
+	explicit Zip( bool registerResource );
 
 	~Zip();
 
 	/** Creates a new pack file */
 	bool create( const std::string& path );
 
-	/** Open a pack file */
+	/** Opens an existing archive for reading and writing. Missing files are never created;
+	 * use create() explicitly. */
 	bool open( const std::string& path );
+
+	/** ReadOnly supports Unicode native paths and cannot modify or create an archive. */
+	bool open( const std::string& path, OpenMode mode );
+
+	Uint64 entryCount() const;
+
+	bool entry( Uint64 index, Entry& result );
+
+	/** Opens an entry without extracting it into memory. Backward seeks replay the prefix;
+	 * scratch space is bounded. Reads/seeks return -1 on error, including CRC failures. */
+	std::unique_ptr<IOStream> openStream( Uint64 index );
+
+	Error error() const { return mError; }
+
+	const std::string& errorMessage() const { return mErrorMessage; }
 
 	/** Close the pack file */
 	bool close();
@@ -80,8 +120,20 @@ class EE_API Zip : public Pack {
 	struct zip* mZip;
 
 	std::string mZipPath;
+	std::string mErrorMessage;
+	OpenMode mOpenMode{ OpenMode::ReadWrite };
+	Error mError{ Error::None };
 
 	struct zip* getZip();
+
+  private:
+	bool openReadOnly( const std::string& path );
+
+	void setError( int code, int systemCode = 0 );
+
+	bool writable();
+
+	bool extractStream( IOStream& stream, Uint8* data, size_t size );
 };
 
 }} // namespace EE::System

@@ -2,6 +2,7 @@
 #define EE_VFS_PROVIDERS_MEMORYPROVIDER_HPP
 
 #include <eepp/core/executor.hpp>
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/provider.hpp>
 #include <map>
 #include <memory>
@@ -21,7 +22,7 @@ namespace EE { namespace VFS {
  *
  * Open file handles keep their data alive when the file is removed or replaced, like POSIX inodes.
  */
-class MemoryProvider : public VFSProvider {
+class EE_VFS_API MemoryProvider : public VFSProvider {
   public:
 	explicit MemoryProvider( std::string scheme = "mem", Executor* completionExecutor = nullptr );
 

@@ -1,8 +1,8 @@
 #ifndef EE_VFS_SSH_SSHCONFIG_HPP
 #define EE_VFS_SSH_SSHCONFIG_HPP
 
-#include <eepp/config.hpp>
 #include <eepp/system/time.hpp>
+#include <eepp/vfs/config.hpp>
 #include <functional>
 #include <map>
 #include <memory>
@@ -18,7 +18,7 @@ namespace EE { namespace VFS {
 using EE::System::Time;
 
 /** @brief OpenSSH-style pattern matching (ssh_config(5) "PATTERNS"). */
-class SSHPattern {
+class EE_VFS_API SSHPattern {
   public:
 	enum class ListMatch : Int8 {
 		/** A negated pattern matched: the whole list is rejected. */
@@ -38,7 +38,7 @@ class SSHPattern {
 };
 
 /** One "Keyword arguments" line of an ssh_config file. */
-struct SSHConfigLine {
+struct EE_VFS_API SSHConfigLine {
 	/** Lowercased keyword. */
 	std::string keyword;
 	/** Arguments split with OpenSSH quoting rules. */
@@ -53,7 +53,7 @@ struct SSHConfigLine {
  * Parsing only tokenizes: directives are kept in file order so the evaluator can apply OpenSSH's
  * ordering, first-value-wins, Host/Match activation and Include semantics.
  */
-class SSHConfigFile {
+class EE_VFS_API SSHConfigFile {
   public:
 	static SSHConfigFile parse( std::string_view text, std::string path = {} );
 
@@ -79,7 +79,7 @@ enum class SSHStrictHostKeyChecking : Uint8 {
 	No,
 };
 
-struct SSHJumpHost {
+struct EE_VFS_API SSHJumpHost {
 	std::string user;
 	std::string host;
 	/** 0 when not specified (the jump host's own config / default applies). */
@@ -93,7 +93,7 @@ struct SSHJumpHost {
  * Paths are fully expanded (tilde, tokens, environment). The raw evaluated option values are kept
  * in `options` for diagnostics and `ssh -G` style dumps.
  */
-struct SSHResolvedConfig {
+struct EE_VFS_API SSHResolvedConfig {
 	std::string originalHost;
 	/** Effective connection host (HostName applied, canonicalized when enabled). */
 	std::string hostName;
@@ -157,7 +157,7 @@ struct SSHResolvedConfig {
 
 /** Environment of an evaluation. Everything that touches the system is injectable so tests stay
  * deterministic and never execute commands or resolve names. */
-struct SSHConfigContext {
+struct EE_VFS_API SSHConfigContext {
 	/** Host as given by the user (URI host). */
 	std::string originalHost;
 	/** Command-line style overrides (from the URI): they win over every config file. */
@@ -211,11 +211,15 @@ struct SSHConfigContext {
  * cycle/depth protection, hostname canonicalization and the canonical/final re-parse pass, and
  * context-aware token and environment expansion.
  */
-class SSHConfigEvaluator {
+class EE_VFS_API SSHConfigEvaluator {
   public:
 	explicit SSHConfigEvaluator( SSHConfigContext context );
 
 	~SSHConfigEvaluator();
+
+	SSHConfigEvaluator( const SSHConfigEvaluator& ) = delete;
+
+	SSHConfigEvaluator& operator=( const SSHConfigEvaluator& ) = delete;
 
 	/** @return The resolved configuration, or an error message for fatal problems (for example
 	 * canonicalization failure with CanonicalizeFallbackLocal no). */

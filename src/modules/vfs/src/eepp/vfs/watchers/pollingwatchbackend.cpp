@@ -12,7 +12,7 @@ namespace EE { namespace VFS {
 
 namespace detail {
 
-class PollingWatchBackendImpl {
+class PollingWatchBackendImpl : public std::enable_shared_from_this<PollingWatchBackendImpl> {
   public:
 	struct Snapshot {
 		struct Entry {
@@ -52,8 +52,12 @@ class PollingWatchBackendImpl {
 			mStopping = true;
 		}
 		mWake.notify_all();
-		if ( mThread.joinable() )
-			mThread.join();
+		if ( mThread.joinable() ) {
+			if ( mThread.get_id() == std::this_thread::get_id() )
+				mThread.detach();
+			else
+				mThread.join();
+		}
 	}
 
 	/** Takes the initial snapshot on the polling thread and resolves once the watch is active.
@@ -88,7 +92,9 @@ class PollingWatchBackendImpl {
 
 	void ensureThread() {
 		if ( !mThread.joinable() )
-			mThread = std::thread( [this] { loop(); } );
+			// A synchronous watch callback may release the backend on this thread. Keep its
+			// state alive until the loop observes stop(), without joining the current thread.
+			mThread = std::thread( [self = shared_from_this()] { self->loop(); } );
 	}
 
 	void loop() {
@@ -101,7 +107,9 @@ class PollingWatchBackendImpl {
 				auto snapshot = take( *pending.watch );
 				lock.lock();
 				if ( !snapshot ) {
+					lock.unlock();
 					pending.resolve( Err( std::move( snapshot ).error() ) );
+					lock.lock();
 					continue;
 				}
 				pending.watch->snapshot = std::move( snapshot ).value();
@@ -139,8 +147,10 @@ class PollingWatchBackendImpl {
 		while ( !mPendingAdds.empty() ) {
 			auto pending = std::move( mPendingAdds.front() );
 			mPendingAdds.pop_front();
+			lock.unlock();
 			pending.resolve( Err( VFSError( VFSErrorCode::InvalidOperation, pending.watch->root,
 											"Watch backend shutting down" ) ) );
+			lock.lock();
 		}
 	}
 

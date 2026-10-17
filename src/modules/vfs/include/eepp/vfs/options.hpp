@@ -1,13 +1,13 @@
 #ifndef EE_VFS_OPTIONS_HPP
 #define EE_VFS_OPTIONS_HPP
 
-#include <eepp/config.hpp>
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/fileinfo.hpp>
 #include <optional>
 
 namespace EE { namespace VFS {
 
-struct StatOptions {
+struct EE_VFS_API StatOptions {
 	/** When false the entry itself is described (lstat semantics). */
 	bool followSymlinks{ true };
 };
@@ -20,7 +20,7 @@ enum class DirectoryMetadata : Uint8 {
 	Full,
 };
 
-struct DirectoryOpenOptions {
+struct EE_VFS_API DirectoryOpenOptions {
 	DirectoryMetadata metadata{ DirectoryMetadata::Full };
 	/** Resolve the target type of symlinks (VFSFileInfo::targetType). May cost a stat per link. */
 	bool resolveSymlinkTargets{ true };
@@ -52,7 +52,7 @@ constexpr bool hasFlag( OpenFlags flags, OpenFlags flag ) noexcept {
 	return ( static_cast<Uint8>( flags ) & static_cast<Uint8>( flag ) ) != 0;
 }
 
-struct OpenOptions {
+struct EE_VFS_API OpenOptions {
 	OpenFlags flags{ OpenFlags::Read };
 	/** Permissions for newly created files; provider default (0666 & ~umask) when unset. */
 	std::optional<Uint32> createPermissions;
@@ -62,21 +62,21 @@ struct OpenOptions {
 	OpenOptions( OpenFlags flags ) : flags( flags ) {}
 };
 
-struct MkDirOptions {
+struct EE_VFS_API MkDirOptions {
 	std::optional<Uint32> permissions;
 };
 
-struct RemoveOptions {
+struct EE_VFS_API RemoveOptions {
 	/** VFS-level only: remove directory contents recursively. Providers receive false. */
 	bool recursive{ false };
 };
 
-struct RenameOptions {
+struct EE_VFS_API RenameOptions {
 	/** Replace an existing destination. Atomic when the provider reports AtomicReplace. */
 	bool overwrite{ false };
 };
 
-struct WriteOptions {
+struct EE_VFS_API WriteOptions {
 	/** Write a sibling temporary file and atomically rename it over the destination. */
 	bool atomic{ true };
 	/** When atomic replacement is unsupported, fall back to an in-place write instead of failing
@@ -102,7 +102,7 @@ enum class OverwritePolicy : Uint8 {
 	Skip,
 };
 
-struct CopyOptions {
+struct EE_VFS_API CopyOptions {
 	OverwritePolicy overwrite{ OverwritePolicy::Fail };
 	bool recursive{ true };
 	/** Copy permission bits when both sides support them. */

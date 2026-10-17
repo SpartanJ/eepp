@@ -11,6 +11,7 @@
 #include <eepp/vfs/providers/localprovider.hpp>
 #include <eepp/vfs/providers/memoryprovider.hpp>
 #include <eepp/vfs/providers/resourceprovider.hpp>
+#include <eepp/vfs/providers/zipprovider.hpp>
 #include <eepp/vfs/transfer.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
 #include <eepp/vfs/watch.hpp>

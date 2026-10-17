@@ -257,6 +257,8 @@ _zip_readcdir(FILE *fp, off_t buf_offset, unsigned char *buf, unsigned char *eoc
 
     left = cd->size;
     i=0;
+    if (cd->nentry == 0 && left == 0)
+        return cd;
     do {
 	if ((_zip_dirent_read(cd->entry+i, fp, bufp, &left, 0, error)) < 0) {
 	    cd->nentry = i;

@@ -2,6 +2,7 @@
 #define EE_VFS_DIRECTORYHANDLE_HPP
 
 #include <eepp/core/cancellationtoken.hpp>
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/error.hpp>
 #include <eepp/vfs/fileinfo.hpp>
 #include <memory>
@@ -14,7 +15,7 @@ namespace EE { namespace VFS {
  * endOfDirectory is explicit: an empty batch does not imply EOF, and the final batch may carry
  * entries. "." and ".." are never reported.
  */
-struct DirectoryBatch {
+struct EE_VFS_API DirectoryBatch {
 	std::vector<VFSFileInfo> entries;
 	bool endOfDirectory{ false };
 };
@@ -23,7 +24,7 @@ struct DirectoryBatch {
  * a read is pending and must release native resources in their destructor if close() was never
  * called. Calls are serialized by the handle's single consumer; implementations need not support
  * concurrent read() calls. */
-class DirectoryHandleImpl {
+class EE_VFS_API DirectoryHandleImpl {
   public:
 	virtual ~DirectoryHandleImpl() = default;
 
@@ -37,7 +38,7 @@ class DirectoryHandleImpl {
  * Move-only. Destroying an open handle releases it without waiting. read() after EOF returns an
  * empty batch with endOfDirectory set.
  */
-class DirectoryHandle {
+class EE_VFS_API DirectoryHandle {
   public:
 	DirectoryHandle() = default;
 

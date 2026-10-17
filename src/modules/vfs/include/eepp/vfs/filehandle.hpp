@@ -3,6 +3,7 @@
 
 #include <eepp/core/cancellationtoken.hpp>
 #include <eepp/vfs/capabilities.hpp>
+#include <eepp/vfs/config.hpp>
 #include <eepp/vfs/error.hpp>
 #include <eepp/vfs/fileinfo.hpp>
 #include <memory>
@@ -16,7 +17,7 @@ namespace EE { namespace VFS {
  * task completes. Implementations must release native resources in their destructor if close()
  * was never called.
  */
-class FileHandleImpl {
+class EE_VFS_API FileHandleImpl {
   public:
 	virtual ~FileHandleImpl() = default;
 
@@ -44,7 +45,7 @@ class FileHandleImpl {
  * Offset-based operations avoid a shared mutable seek position, so independent reads can be
  * pipelined. read() returning 0 bytes for a non-empty buffer means end of file.
  */
-class FileHandle {
+class EE_VFS_API FileHandle {
   public:
 	FileHandle() = default;
 
