@@ -22,8 +22,9 @@ void AppConfig::load() {
 	terminal.shell = mIni.getValue( "terminal", "shell", terminal.shell );
 	terminal.shellArguments =
 		mIni.getValue( "terminal", "shell_arguments", terminal.shellArguments );
-	terminal.workingDirectory =
-		mIni.getValue( "terminal", "working_directory", terminal.workingDirectory );
+	// The legacy working_directory key also captured one-off command-line paths.
+	terminal.defaultWorkingDirectory =
+		mIni.getValue( "terminal", "default_working_directory", terminal.defaultWorkingDirectory );
 	terminal.executeInShell =
 		mIni.getValue( "terminal", "execute_in_shell", terminal.executeInShell );
 	terminal.historySize = mIni.getValueU( "terminal", "scrollback", terminal.historySize );
@@ -99,7 +100,8 @@ bool AppConfig::savePreferences() {
 	mIni.deleteValue( "window", "max_fps" );
 	mIni.setValue( "terminal", "shell", terminal.shell );
 	mIni.setValue( "terminal", "shell_arguments", terminal.shellArguments );
-	mIni.setValue( "terminal", "working_directory", terminal.workingDirectory );
+	mIni.deleteValue( "terminal", "working_directory" );
+	mIni.setValue( "terminal", "default_working_directory", terminal.defaultWorkingDirectory );
 	mIni.setValue( "terminal", "execute_in_shell", terminal.executeInShell );
 	mIni.setValueU( "terminal", "scrollback", terminal.historySize );
 	mIni.setValue( "terminal", "cursor_style",

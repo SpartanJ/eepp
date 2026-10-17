@@ -701,7 +701,8 @@ int App::run( int argc, char* argv[] ) {
 		parser, "prefers-color-scheme",
 		"Set the preferred color scheme (\"light\", \"dark\" or \"system\")",
 		{ 'c', "prefers-color-scheme" } );
-	args::Positional<std::string> wd( parser, "wording-dir", "Working Directory / executable" );
+	args::Positional<std::string> wd( parser, "working-dir",
+									  "Working directory / executable for this launch only" );
 	args::Flag closeOnExit( parser, "close-on-exit",
 							"close the application when the executable exits",
 							{ "close", "close-on-exit" } );
@@ -770,8 +771,6 @@ int App::run( int argc, char* argv[] ) {
 		}
 		config->theme.uiColorScheme = ColorSchemePreferences::fromStringExt( scheme );
 	}
-	if ( wd )
-		config->terminal.workingDirectory = wd.Get();
 	config->terminal.executeInShell = executeInShell.Get();
 	config->theme.colorScheme = colorScheme.Get();
 	config->window.maxFPS = maxFPS.Get();
@@ -938,9 +937,14 @@ int App::run( int argc, char* argv[] ) {
 		resourceScope.getFontService().addFallbackFont( std::move( fallback ) );
 	}
 
-	const std::string launchPath = config->terminal.workingDirectory.empty()
-									   ? initialWorkingDirectory
-									   : config->terminal.workingDirectory;
+	std::string launchPath = FileSystem::expandTilde( config->terminal.defaultWorkingDirectory );
+	if ( wd ) {
+		launchPath = wd.Get();
+	} else if ( launchPath.empty() || !FileSystem::isDirectory( launchPath ) ) {
+		if ( !launchPath.empty() )
+			Log::warning( "Default working directory does not exist: %s", launchPath );
+		launchPath = Sys::getUserDirectory();
+	}
 	FileInfo launchFile( launchPath );
 	const bool launchExecutable = launchFile.isRegularFile() && launchFile.isExecutable();
 	terminalConfig.program = launchExecutable ? launchFile.getFilepath() : config->terminal.shell;

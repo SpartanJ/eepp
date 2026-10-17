@@ -779,13 +779,13 @@ UTEST( UIApplication, CreatesSecondaryWindowWithoutChangingAmbientScene ) {
 	const Sizei primaryScreenSize = primaryWindow->getSizeInScreenCoordinates();
 	auto* fileDialog = UIFileDialog::NewInApplicationWindow(
 		app,
-		WindowSettings( 640, 400, "File Dialog UI Context",
-						WindowStyle::Titlebar | WindowStyle::Resize, WindowBackend::Default, 32, {},
-						1, false, true ),
+		WindowSettings( 640, 400, "File Dialog UI Context", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
 		UIFileDialog::DefaultFlags, "*", FileSystem::getCurrentWorkingDirectory(),
 		ContextSettings( false, 0, 0, GLv_default, true, false ), true,
 		UIWindow::ApplicationWindowPosition::CenteredOnPrimary );
 	ASSERT_TRUE( fileDialog != nullptr );
+	EXPECT_FALSE( fileDialog->getUISceneNode()->getWindow()->isVisible() );
 	EXPECT_EQ( app.getWindowCount(), 3u );
 	EXPECT_NE( fileDialog->getUISceneNode(), app.getUI() );
 	EXPECT_NE( fileDialog->getUISceneNode(), secondaryUI );

@@ -48,6 +48,16 @@ optimization, benchmarking, or validating runtime speed. Do not reuse a gmake tr
 The debug/unit-test workflow below is additional correctness validation. It does not replace the
 release Ninja build required for performance work.
 
+## Benchmark Runtime
+
+Run the release benchmark harness with the native runtime on a usable desktop:
+`EEPP_RUNTIME=native bin/benchmarks/eepp-benchmarks`.
+The benchmarks that create windows explicitly request `WindowStyle::Hidden`; other benchmarks
+do not create windows. They can use the native renderer without showing desktop windows or taking
+focus. Do not switch this harness to headless merely to avoid interrupting the user. Verify the
+renderer before reporting hardware rendering performance; headless and Xvfb runs can use software
+rendering and measure a different execution path.
+
 ## Debug and Unit-Test Builds
 
 All build commands must be executed from the **root project directory**. On macOS, follow the
@@ -116,6 +126,13 @@ Run the following command, replacing `<os_name>` with the correct environment:
 *   Windows: `make -C make/windows -j%NUMBER_OF_PROCESSORS%`
 
 ## Running GUI Examples Under Xvfb
+
+For ordinary application/example launches and UI inspector automation, try `EEPP_RUNTIME=headless`
+first to avoid desktop windows and input interference without requiring Xvfb. This preference does
+not apply to the unit-test and benchmark harnesses: their windows are already hidden, so use the
+native runtime on a usable desktop. Use the native/Xvfb paths below for examples only when the
+required check cannot run with the headless runtime. Verify the renderer before using an offscreen
+run to assess hardware rendering or performance.
 
 Xvfb does not support the multisampled OpenGL contexts requested by some eepp examples. In
 particular, `src/examples/ui_html/ui_html.cpp` normally requests 4x MSAA. Launching that binary

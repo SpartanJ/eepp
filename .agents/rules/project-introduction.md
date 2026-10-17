@@ -23,6 +23,24 @@ not `eTerm`. Its implementation lives under `src/modules/eterm/`.
 `eeiv` is the repository's image viewer. Its application entry point is
 `src/tools/eeiv/eeiv.cpp`.
 
+## AI Agent Runtime Checks
+
+AI agents should prefer `EEPP_RUNTIME=headless` when launching ordinary applications or examples
+and when automating their UI with the inspector. This avoids opening desktop windows or interrupting
+the human's keyboard input and focus. Coordinate interactive checks that require visible native
+windows with the user before driving them.
+
+Unit tests and benchmarks are different: run their release binaries with the native runtime on a
+usable desktop. The unit-test build defines `EE_UNIT_TESTS`, which adds `WindowStyle::Hidden` to
+the default window style; benchmarks that create windows explicitly request `WindowStyle::Hidden`.
+These hidden windows preserve native rendering without appearing or taking desktop focus. Keep
+test and benchmark windows hidden when adding or changing cases. Do not select the headless runtime
+solely to avoid desktop interruption for these harnesses.
+
+Use headless tests when no usable display is available, when requested, or when testing the headless
+runtime itself. Headless rendering can use a software renderer, so verify the renderer before
+assessing GPU behavior or performance. See `.agents/rules/unit-tests.md` for commands and fallbacks.
+
 ## Documentation & Code References
 
 When working on this project, rely on the following resources to understand existing implementations:
