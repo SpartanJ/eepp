@@ -622,7 +622,10 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 			// handle their own clicks, so this is tracked at the window level.
 			// The widget under the pointer must belong to the pane: menus and dialogs drawn over
 			// it are not the pane.
-			Vector2f mouse( event->button.x, event->button.y );
+			// Use the dispatcher's view coordinates: native button events can use logical
+			// coordinates while the UI uses drawable pixels on high-DPI displays.
+			Vector2f mouse = mApp->getWindow()->getInput()->getMousePosFromView(
+				mApp->getWindow()->getDefaultView() );
 			Node* over = mUI->overFind( mouse );
 			for ( int i = 0; i < 2; ++i ) {
 				Pane& p = mPaneManager->pane( i );
@@ -666,19 +669,25 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 			} );
 			return;
 		}
-		if ( !focus || !focus->isWidget() || focus->isType( UI_TYPE_TEXTINPUT ) )
+		if ( !focus || !focus->isWidget() )
 			return;
-		// Buttons and their parts (a tab's close button): the click that follows goes to the
-		// focused node, it must stay there.
-		for ( Node* node = focus; node; node = node->getParent() ) {
-			if ( node->isType( UI_TYPE_PUSHBUTTON ) )
-				return;
-		}
 		for ( int i = 0; i < 2; ++i ) {
 			auto* tab = mPaneManager->currentTab( mPaneManager->pane( i ) );
-			if ( !tab || !mPaneManager->pane( i ).root->inParentTreeOf( focus ) ||
-				 tab->view == focus || tab->view->inParentTreeOf( focus ) )
+			if ( !tab || !mPaneManager->pane( i ).root->inParentTreeOf( focus ) )
 				continue;
+			// Row clicks focus a cell (a push button), not the view itself. Keep file commands
+			// on that pane before leaving the focused control in charge of its own input.
+			if ( i != mPaneManager->activeIndex() )
+				mPaneManager->setActivePane( i );
+			if ( focus->isType( UI_TYPE_TEXTINPUT ) || tab->view == focus ||
+				 tab->view->inParentTreeOf( focus ) )
+				return;
+			// Buttons and their parts (a tab's close button): the click that follows goes to
+			// the focused node, it must stay there.
+			for ( Node* node = focus; node; node = node->getParent() ) {
+				if ( node->isType( UI_TYPE_PUSHBUTTON ) )
+					return;
+			}
 			mUI->runOnMainThread( [this, i, focus] {
 				auto* current = mPaneManager->currentTab( mPaneManager->pane( i ) );
 				// Only if nothing else took the focus meanwhile (focus is not dereferenced).
