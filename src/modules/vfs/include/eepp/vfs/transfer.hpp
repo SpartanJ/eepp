@@ -84,7 +84,10 @@ class EE_VFS_API Transfer {
 	/** @return The completion task. Can be retrieved exactly once. */
 	VFSTask<TransferResult> completion();
 
-	/** Subscribes to progress. Without an executor, the callback runs on the transfer thread. */
+	/** Subscribes to progress. Without an executor, the callback runs on the transfer thread.
+	 * An executor is borrowed and must survive subscription reset(). When reset inside its own
+	 * callback, it must survive the active execute() call as well. Callbacks should not throw:
+	 * an exception stops this subscription's delivery and propagates to its executor or caller. */
 	TransferProgressSubscription onProgress( TransferProgressCallback callback,
 											 Executor* deliveryExecutor = nullptr );
 

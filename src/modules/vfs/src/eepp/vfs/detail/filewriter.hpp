@@ -57,13 +57,16 @@ class FileWriter {
 									const ReplaceOptions& options, const CancellationToken& token,
 									Write&& write, BeforeReplace&& beforeReplace ) {
 		ProviderCapabilities caps = provider.capabilities( target );
-		auto writeTo = [&]( const URI& file, OpenFlags flags ) -> VFSResult<void> {
+		auto writeTo = [&]( const URI& file, OpenFlags flags,
+							bool* created = nullptr ) -> VFSResult<void> {
 			OpenOptions openOptions( flags );
 			openOptions.createPermissions =
 				options.exactPermissions ? options.exactPermissions : options.createPermissions;
 			auto opened = await( provider.open( file, openOptions, token ) );
 			if ( !opened )
 				return Err( std::move( opened ).error() );
+			if ( created )
+				*created = true;
 			FileHandle handle( std::move( opened ).value() );
 			VFSResult<void> written = write( handle );
 			if ( written && options.fsync && caps.has( VFSCapability::Fsync ) )
@@ -89,22 +92,27 @@ class FileWriter {
 		}
 
 		URI temporary( target.getParent().withAppendedSegment( temporarySiblingName() ) );
-		auto written =
-			writeTo( temporary, OpenFlags::Write | OpenFlags::Create | OpenFlags::Exclusive );
+		bool created = false;
+		auto written = writeTo(
+			temporary, OpenFlags::Write | OpenFlags::Create | OpenFlags::Exclusive, &created );
 		if ( written )
 			written = beforeReplace();
 		if ( written ) {
-			written = await(
-				provider.rename( temporary, target, RenameOptions{ options.overwrite }, token ) );
+			written = publish( provider, temporary, target, options.overwrite, token );
 		}
-		if ( !written ) {
-			// Best effort: never leave the temporary behind.
+		if ( !written && created ) {
+			// Best effort: remove only the temporary we created, never another creator's file
+			// after an Exclusive open failed.
 			await( provider.remove( temporary, {}, CancellationToken() ) );
 		}
 		return written;
 	}
 
   private:
+	/** Publish the exclusive temporary; only this path may use the local link/unlink fallback. */
+	static VFSResult<void> publish( VFSProvider& provider, const URI& temporary, const URI& target,
+									bool overwrite, const CancellationToken& token );
+
 	/** @return A short hidden basename, unique to this process and call. */
 	static std::string temporarySiblingName();
 };

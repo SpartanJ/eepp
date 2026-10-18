@@ -221,14 +221,16 @@ folder without overwriting files. The default `Fail` policy also rejects existin
 `Overwrite` and `Skip` merge directories and apply their respective policies to files.
 
 Native renames also preserve an existing destination when safe replacement is unavailable.
-On POSIX systems without a native no-replace rename, regular files use an atomic hard-link
-publication followed by unlinking the source name. Default copies and moves can therefore create
-missing destinations without overwriting a competing creator. Both names can briefly exist; if
-source cleanup fails, the operation returns `IO` explaining that publication succeeded and both
-names may remain. The destination is never removed to roll back that failure. File systems must
-support hard links for this fallback. Other file types, including directories, return `Unsupported`
-from no-overwrite `rename()` when the native primitive is unavailable. No existence-check-then-rename
-fallback is used.
+On POSIX systems without a native no-replace rename, public no-overwrite `rename()` returns
+`Unsupported` for a missing destination. High-level moves use the revision-checked copy/remove
+fallback described above, including its final stat/unlink race; use copy without removal if source
+writers cannot be coordinated and the source must never be deleted after a concurrent replacement.
+Only the internal writer's exclusively created temporary siblings may use atomic hard-link
+publication followed by unlinking the temporary name. Both names can briefly exist; if temporary
+cleanup fails, the operation returns `IO` explaining that publication succeeded and both names may
+remain. The destination is never removed to roll back that failure. File systems must support hard
+links for this publication fallback. No link/unlink move of an arbitrary public source, or
+existence-check-then-replacing-rename fallback, is used.
 
 ## Watching
 

@@ -125,6 +125,8 @@ class EE_VFS_API WatchBackend {
  * no backend thread ever calls it directly. Destroying the handle stops the watch and guarantees
  * that the callback is not running and will not run again (a callback may destroy its own
  * handle).
+ * The executor is borrowed and must outlive reset() or replacement by onEvents(). If either is
+ * called from the callback itself, retain the executor until its active execute() call returns.
  */
 class EE_VFS_API WatchHandle {
   public:
@@ -141,7 +143,10 @@ class EE_VFS_API WatchHandle {
 	~WatchHandle();
 
 	/** Sets the delivery executor and callback. Events that arrived before this call are
-	 * delivered right after it. The executor must outlive the handle. */
+	 * delivered right after it. Re-registration from a callback is allowed; its old callable
+	 * stays alive until it returns. The executor must outlive the handle or be drained by reset().
+	 * Callbacks should not throw: an exception stops delivery and propagates to the executor.
+	 */
 	void onEvents( Executor& executor, WatchCallback callback );
 
 	/** Stops watching now. */

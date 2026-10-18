@@ -5,8 +5,25 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/sys.hpp>
 #include <vector>
+#if EE_PLATFORM != EE_PLATFORM_WIN
+#include <eepp/vfs/providers/localprovider.hpp>
+#endif
 
 namespace EE { namespace VFS { namespace detail {
+
+VFSResult<void> FileWriter::publish( VFSProvider& provider, const URI& temporary, const URI& target,
+									 bool overwrite, const CancellationToken& token ) {
+	auto renamed = await( provider.rename( temporary, target, RenameOptions{ overwrite }, token ) );
+#if EE_PLATFORM != EE_PLATFORM_WIN
+	if ( !renamed && !overwrite && renamed.error().is( VFSErrorCode::Unsupported ) ) {
+		// The generic provider contract remains an atomic rename. Only an exclusive temporary
+		// owned by this writer is safe to publish using a non-atomic source-name cleanup.
+		if ( auto* local = dynamic_cast<LocalProvider*>( &provider ) )
+			return await( local->publishTemporary( temporary, target, token ) );
+	}
+#endif
+	return renamed;
+}
 
 std::string FileWriter::temporarySiblingName() {
 	static std::atomic<Uint32> sCounter{ 0 };

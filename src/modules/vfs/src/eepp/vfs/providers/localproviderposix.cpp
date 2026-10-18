@@ -714,28 +714,16 @@ VFSResult<void> renameNoReplace( const std::string& from, const std::string& to 
 	if ( errno != ENOSYS && errno != EINVAL && errno != ENOTSUP && errno != EOPNOTSUPP )
 		return Err( errnoError( from, "rename failed" ) );
 
-	struct stat source;
-	if ( ::lstat( from.c_str(), &source ) != 0 )
-		return Err( errnoError( from, "Cannot check rename source type" ) );
-	if ( !S_ISREG( source.st_mode ) ) {
-		// In particular, a directory cannot use link/unlink. Never use check-then-rename:
-		// ordinary rename could destroy a destination created after the check.
-		return Err( VFSError( VFSErrorCode::Unsupported, URI::fromFSPath( from ),
-							  "No-replace rename is unavailable for this file type" ) );
-	}
-	// linkat() publishes the complete inode atomically and fails if to already exists.
-	// Flags 0 also prevent following a source symlink substituted after lstat().
-	if ( ::linkat( AT_FDCWD, from.c_str(), AT_FDCWD, to.c_str(), 0 ) != 0 )
-		return Err( errnoError( from, "No-replace publication failed" ) );
-	if ( ::unlink( from.c_str() ) != 0 ) {
-		// Publication succeeded: never roll it back by deleting the destination. Always use IO
-		// here so the transfer engine cannot mistake cleanup failure for a fallback request.
-		auto error = errnoError( from, "Destination published, but source name cleanup failed; "
-									   "both names may remain" );
-		error.code = VFSErrorCode::IO;
-		return Err( std::move( error ) );
-	}
-	return Ok();
+	// link/unlink cannot rename a public source safely: another process could replace its
+	// pathname after link() and before unlink(). The transfer engine uses revision-checked
+	// copy/remove instead; FileWriter alone may publish an exclusively owned temporary.
+	struct stat destination;
+	if ( ::lstat( to.c_str(), &destination ) == 0 )
+		return Err( errnoError( to, "Rename destination already exists", EEXIST ) );
+	if ( errno != ENOENT )
+		return Err( errnoError( to, "Cannot check rename destination" ) );
+	return Err( VFSError( VFSErrorCode::Unsupported, URI::fromFSPath( from ),
+						  "Native no-replace rename is unavailable" ) );
 }
 
 /** rename() is a successful no-op between hardlinks. Check native identity, independently of
@@ -792,6 +780,43 @@ VFSTask<void> LocalProvider::rename( const URI& from, const URI& to, const Renam
 							   return Err( errnoError( path, "rename failed" ) );
 						   return Ok();
 					   } ) );
+}
+
+VFSTask<void> LocalProvider::publishTemporary( const URI& from, const URI& to,
+											   CancellationToken token ) {
+	if ( from.getParent() != to.getParent() ) {
+		return readyError<void>( VFSErrorCode::InvalidOperation, from,
+								 "Temporary publication requires sibling paths" );
+	}
+	auto toPath = toNativePath( to );
+	if ( !toPath )
+		return readyError<void>( std::move( toPath ).error() );
+	return run<void>(
+		from, LastLink::Keep, std::move( token ),
+		[to = std::move( toPath ).value()]( const std::string& path ) -> VFSResult<void> {
+			struct stat source;
+			if ( ::lstat( path.c_str(), &source ) != 0 )
+				return Err( errnoError( path, "Cannot check temporary file type" ) );
+			if ( !S_ISREG( source.st_mode ) ) {
+				return Err( VFSError( VFSErrorCode::ChangedExternally, URI::fromFSPath( path ),
+									  "Temporary file is no longer a regular file" ) );
+			}
+			// The writer owns this exclusive temporary name. linkat() publishes the complete
+			// inode atomically and fails if the destination already exists; flags 0 never follow
+			// a source symlink. This is not an atomic move of an arbitrary public pathname.
+			if ( ::linkat( AT_FDCWD, path.c_str(), AT_FDCWD, to.c_str(), 0 ) != 0 )
+				return Err( errnoError( path, "No-replace publication failed" ) );
+			if ( ::unlink( path.c_str() ) != 0 ) {
+				// Publication succeeded. Never roll back the destination or request a copy
+				// fallback.
+				auto error =
+					errnoError( path, "Destination published, but temporary cleanup failed; "
+									  "both names may remain" );
+				error.code = VFSErrorCode::IO;
+				return Err( std::move( error ) );
+			}
+			return Ok();
+		} );
 }
 
 VFSTask<URI> LocalProvider::canonicalize( const URI& uri, CancellationToken token ) {

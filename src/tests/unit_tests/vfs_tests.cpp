@@ -3,6 +3,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstdio>
 #include <eepp/system/directorypack.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/packfileindex.hpp>
@@ -1473,6 +1474,7 @@ class PublicationRaceLocalProvider : public LocalProvider {
   public:
 	using LocalProvider::LocalProvider;
 	bool racePublication{ false };
+	bool noReplaceUnavailable{ false };
 
 	VFSTask<void> rename( const URI& from, const URI& to, const RenameOptions& options,
 						  CancellationToken token ) override {
@@ -1481,16 +1483,22 @@ class PublicationRaceLocalProvider : public LocalProvider {
 			if ( !FileSystem::fileWrite( to.getFSPath(), std::string_view( "competitor" ) ) )
 				return readyError<void>( VFSErrorCode::IO, to, "Cannot create competing file" );
 		}
+		if ( noReplaceUnavailable && !options.overwrite ) {
+			return readyError<void>( VFSErrorCode::Unsupported, from,
+									 "Test provider has no native no-replace rename" );
+		}
 		return LocalProvider::rename( from, to, options, std::move( token ) );
 	}
 };
 
 void checkLocalNoReplacePublication( int* utest_result,
-									 const std::shared_ptr<LocalIOScheduler>& scheduler ) {
+									 const std::shared_ptr<LocalIOScheduler>& scheduler,
+									 bool noReplaceUnavailable = false ) {
 	VirtualFileSystem::Config config;
 	config.registerDefaultProviders = false;
 	VirtualFileSystem vfs( config );
 	auto provider = std::make_shared<PublicationRaceLocalProvider>( scheduler );
+	provider->noReplaceUnavailable = noReplaceUnavailable;
 	vfs.registerProvider( provider );
 	for ( bool move : { false, true } ) {
 		TempDir tmp;
@@ -1577,6 +1585,82 @@ UTEST( VFSLocal, atomicWritesAndCopiesSupportLongBasenames ) {
 	}
 }
 
+#if EE_PLATFORM != EE_PLATFORM_WIN
+UTEST( VFSLocal, privatePublicationWorksWithoutNativeNoReplace ) {
+	auto pool = ThreadPool::createShared( 1 );
+	auto scheduler = std::make_shared<LocalIOScheduler>( pool, Seconds( 5 ) );
+	checkLocalNoReplacePublication( utest_result, scheduler, true );
+}
+
+UTEST( VFSLocal, copyRemoveFallbackPreservesAReplacedPublicSource ) {
+	class ReplacingSourceProvider : public LocalProvider {
+	  public:
+		using LocalProvider::LocalProvider;
+		URI source;
+		URI replacement;
+		bool replaced{ false };
+
+		VFSTask<void> rename( const URI& from, const URI& to, const RenameOptions& options,
+							  CancellationToken token ) override {
+			if ( options.overwrite )
+				return LocalProvider::rename( from, to, options, std::move( token ) );
+			if ( !replaced && from.getLastPathSegment().starts_with( ".eepp-" ) ) {
+				if ( ::rename( replacement.getFSPath().c_str(), source.getFSPath().c_str() ) != 0 )
+					return readyError<void>( VFSErrorCode::IO, source, "Cannot replace source" );
+				replaced = true;
+			}
+			return readyError<void>( VFSErrorCode::Unsupported, from, "No native no-replace" );
+		}
+	};
+	TempDir tmp;
+	auto pool = ThreadPool::createShared( 1 );
+	auto scheduler = std::make_shared<LocalIOScheduler>( pool, Seconds( 5 ) );
+	auto provider = std::make_shared<ReplacingSourceProvider>( scheduler );
+	VirtualFileSystem::Config config;
+	config.registerDefaultProviders = false;
+	VirtualFileSystem vfs( config );
+	vfs.registerProvider( provider );
+	provider->source = tmp.uri().withAppendedSegment( "source" );
+	provider->replacement = tmp.uri().withAppendedSegment( "replacement" );
+	const URI destination = tmp.uri().withAppendedSegment( "destination" );
+	ASSERT_TRUE( FileSystem::fileWrite( provider->source.getFSPath(), std::string_view( "old" ) ) );
+	ASSERT_TRUE(
+		FileSystem::fileWrite( provider->replacement.getFSPath(), std::string_view( "new" ) ) );
+	auto result = waitFor( vfs.move( provider->source, destination ).completion() );
+	EXPECT_EQ( VFSErrorCode::ChangedExternally, codeOf( result ) );
+	EXPECT_TRUE( provider->replaced );
+	EXPECT_STDSTREQ( "new", readString( vfs, provider->source ) );
+	EXPECT_STDSTREQ( "old", readString( vfs, destination ) );
+	auto listed = waitFor( vfs.listAll( tmp.uri() ) );
+	ASSERT_TRUE( listed );
+	EXPECT_TRUE( sortedNames( listed.value() ) ==
+				 std::vector<std::string>( { "destination", "source" } ) );
+}
+#endif
+
+UTEST( VFSSafety, failedExclusiveTemporaryOpenNeverRemovesAnotherCreatorsFile ) {
+	class CollidingProvider : public MemoryProvider {
+	  public:
+		VFSTask<FileHandle> open( const URI& uri, const OpenOptions& options,
+								  CancellationToken token ) override {
+			if ( hasFlag( options.flags, OpenFlags::Exclusive ) )
+				putFile( uri, "other creator" );
+			return MemoryProvider::open( uri, options, std::move( token ) );
+		}
+	};
+	VirtualFileSystem vfs;
+	auto provider = std::make_shared<CollidingProvider>();
+	vfs.registerProvider( provider );
+	const URI file( "mem://collision/file" );
+	EXPECT_EQ( VFSErrorCode::AlreadyExists, codeOf( waitFor( vfs.writeAll( file, "new" ) ) ) );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( vfs.stat( file ) ) ) );
+	auto listed = waitFor( vfs.listAll( file.getParent() ) );
+	ASSERT_TRUE( listed );
+	ASSERT_EQ( 1u, listed.value().size() );
+	EXPECT_STDSTREQ( "other creator", readString( vfs, file.getParent().withAppendedSegment(
+														   listed.value()[0].name ) ) );
+}
+
 #if defined( __linux__ ) && defined( SYS_renameat2 )
 UTEST( VFSLocal, unavailableNoReplacePrimitiveUsesSafeFilePublication ) {
 	auto pool = ThreadPool::createShared( 1 );
@@ -1607,6 +1691,18 @@ UTEST( VFSLocal, unavailableNoReplacePrimitiveUsesSafeFilePublication ) {
 	TempDir tmp;
 	const URI directory = tmp.uri().withAppendedSegment( "directory" );
 	const URI destination = tmp.uri().withAppendedSegment( "destination" );
+	const URI source = tmp.uri().withAppendedSegment( "source" );
+	ASSERT_TRUE( FileSystem::fileWrite( source.getFSPath(), std::string_view( "source" ) ) );
+	auto before = waitFor( provider.stat( source, {}, {} ) );
+	ASSERT_TRUE( before );
+	// No link/unlink window is allowed for a public source. Refuse the operation before
+	// publication; only FileWriter's exclusive temporary names may use the fallback.
+	EXPECT_EQ( VFSErrorCode::Unsupported,
+			   codeOf( waitFor( provider.rename( source, destination, {}, {} ) ) ) );
+	auto after = waitFor( provider.stat( source, {}, {} ) );
+	ASSERT_TRUE( after );
+	EXPECT_TRUE( before.value().revision.matches( after.value().revision ) );
+	EXPECT_FALSE( FileSystem::fileExists( destination.getFSPath() ) );
 	ASSERT_TRUE( FileSystem::makeDir( directory.getFSPath() ) );
 	EXPECT_EQ( VFSErrorCode::Unsupported,
 			   codeOf( waitFor( provider.rename( directory, destination, {}, {} ) ) ) );
@@ -1617,8 +1713,8 @@ UTEST( VFSLocal, unavailableNoReplacePrimitiveUsesSafeFilePublication ) {
 	EXPECT_EQ( VFSErrorCode::Unsupported,
 			   codeOf( waitFor( provider.rename( symlink, destination, {}, {} ) ) ) );
 
-	// After successful link publication, force unlink to fail on this worker. Neither the
-	// provider nor the transfer engine may roll back the destination or start a copy fallback.
+	// Force private temporary cleanup to fail after publication. Neither a copy nor a
+	// copy/remove move may roll back the destination or delete the public source afterward.
 	auto denyUnlink = pool->submit( [] {
 		sock_filter instructions[] = {
 			BPF_STMT( BPF_LD | BPF_W | BPF_ABS, offsetof( seccomp_data, nr ) ),
@@ -1657,7 +1753,7 @@ UTEST( VFSLocal, unavailableNoReplacePrimitiveUsesSafeFilePublication ) {
 		auto listed = waitFor( vfs.listAll( cleanup.uri() ) );
 		ASSERT_TRUE( listed );
 		// Copy's unremovable temporary is reported as a cleanup error, never silent success.
-		EXPECT_EQ( move ? 2u : 3u, listed.value().size() );
+		EXPECT_EQ( 3u, listed.value().size() );
 	}
 }
 #endif

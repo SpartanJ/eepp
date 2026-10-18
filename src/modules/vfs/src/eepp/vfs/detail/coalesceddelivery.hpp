@@ -1,10 +1,12 @@
 #ifndef EE_VFS_DETAIL_COALESCEDDELIVERY_HPP
 #define EE_VFS_DETAIL_COALESCEDDELIVERY_HPP
 
+#include <condition_variable>
 #include <eepp/core/executor.hpp>
 #include <eepp/core/small_unique_function.hpp>
 #include <memory>
 #include <mutex>
+#include <thread>
 
 namespace EE { namespace VFS { namespace detail {
 
@@ -20,7 +22,10 @@ namespace EE { namespace VFS { namespace detail {
  * - Callbacks for one channel never run concurrently.
  * - After close() returns, the callback is not running (unless close() was called from inside it)
  *   and never runs again. Closing from inside the callback is allowed; the callable is released
- *   once it returns.
+ *   once it returns. External close() also drains executor submissions before returning.
+ * - A borrowed executor must survive close()/setTarget(). When called from its callback, it must
+ *   survive the active execute() call as well; that call cannot wait for itself to return.
+ * - Callback exceptions retire delivery before propagating to the executor or inline caller.
  *
  * Policy requirements:
  *   using Payload = ...;            accumulated state
@@ -61,38 +66,58 @@ class CoalescedDelivery : public std::enable_shared_from_this<CoalescedDelivery<
 	}
 
 	/** Sets the callback and its executor (nullptr = inline on the producer thread). Pending data
-	 * is delivered right away. */
+	 * is delivered right away. Waits for an earlier executor submission and callback, except from
+	 * the active callback: that submission already entered execute() and must be allowed to finish.
+	 * Queued work for an earlier target cannot invoke the replacement callback. */
 	void setTarget( Executor* executor, Callback callback ) {
-		{
-			std::lock_guard<std::recursive_mutex> delivery( mDeliveryMutex );
-			mCallback = std::move( callback );
-		}
+		Callback previous;
 		bool dispatchNow;
 		{
-			std::lock_guard<std::mutex> lock( mMutex );
+			std::unique_lock<std::mutex> lock( mMutex );
 			if ( mClosed )
 				return;
-			mExecutor = executor;
-			mHasTarget = true;
-			dispatchNow = Policy::hasData( mPayload ) && scheduleLocked();
+			// Prevent another producer from borrowing the old executor while this change waits.
+			++mRetargeting;
+			if ( mCallbackThread != std::this_thread::get_id() ) {
+				mChanged.wait(
+					lock, [this] { return !mSubmitting && mCallbackThread == std::thread::id{}; } );
+			}
+			if ( !mClosed ) {
+				previous = std::move( mCallback );
+				mCallback = std::move( callback );
+				mExecutor = executor;
+				mHasTarget = true;
+				++mGeneration;
+				mScheduled = false;
+				mDispatchPending = false;
+				if ( Policy::hasData( mPayload ) )
+					scheduleLocked();
+			}
+		}
+		previous = nullptr;
+		{
+			std::lock_guard<std::mutex> lock( mMutex );
+			--mRetargeting;
+			dispatchNow = mDispatchPending && !mRetargeting;
 		}
 		if ( dispatchNow )
 			dispatch();
 	}
 
 	void close() {
+		Callback discarded;
 		{
-			std::lock_guard<std::mutex> lock( mMutex );
-			mClosed = true;
-			mExecutor = nullptr;
-			mHasTarget = false;
+			std::unique_lock<std::mutex> lock( mMutex );
+			retireLocked();
+			// A synchronous executor can run the callback on another thread and wait for it.
+			// Its own callback must not wait for execute() to return. No other submission can
+			// start during delivery; the current callable is owned by deliver() until it returns.
+			if ( mCallbackThread != std::this_thread::get_id() ) {
+				mChanged.wait(
+					lock, [this] { return !mSubmitting && mCallbackThread == std::thread::id{}; } );
+			}
+			discarded = std::move( mCallback );
 		}
-		// Waits for a delivery running on another thread. A callback closing its own channel
-		// already holds this recursive mutex on this thread; deliver() then releases the callable
-		// after it returns instead of destroying it mid-call.
-		std::lock_guard<std::recursive_mutex> delivery( mDeliveryMutex );
-		if ( !mInCallback )
-			mCallback = nullptr;
 	}
 
 	bool isClosed() const {
@@ -101,75 +126,149 @@ class CoalescedDelivery : public std::enable_shared_from_this<CoalescedDelivery<
 	}
 
   private:
+	void retireLocked() {
+		mClosed = true;
+		mExecutor = nullptr;
+		mHasTarget = false;
+		mScheduled = false;
+		mDispatchPending = false;
+	}
+
+	/** Stack lease covers the pointer lookup through the return from execute(), including
+	 * exceptions. No per-dispatch heap allocation or owned executor is needed. */
+	struct Submission {
+		CoalescedDelivery& owner;
+		bool accepted{ false };
+
+		~Submission() { owner.finishSubmission( accepted ); }
+	};
+
+	struct Invocation {
+		CoalescedDelivery& owner;
+		Callback& callback;
+		Uint64 generation;
+		bool completed{ false };
+
+		~Invocation() { owner.finishDelivery( generation, callback, completed ); }
+	};
+
 	/** @return True if the caller must dispatch (after releasing the lock). */
 	bool scheduleLocked() {
 		if ( !mHasTarget || mScheduled || mClosed )
 			return false;
 		mScheduled = true;
+		mDispatchPending = true;
 		return true;
 	}
 
 	void dispatch() {
-		Executor* executor;
+		// An inline callback may release its last subscription owner.
+		auto keepAlive = this->shared_from_this();
+		while ( true ) {
+			Executor* executor;
+			Uint64 generation;
+			{
+				std::lock_guard<std::mutex> lock( mMutex );
+				if ( mClosed || !mDispatchPending || mSubmitting || mRetargeting ||
+					 mCallbackThread != std::thread::id{} )
+					return;
+				mDispatchPending = false;
+				mSubmitting = true;
+				executor = mExecutor;
+				generation = mGeneration;
+			}
+			{
+				Submission submission{ *this };
+				if ( executor ) {
+					executor->execute( [weak = this->weak_from_this(), generation] {
+						if ( auto self = weak.lock() )
+							self->deliver( generation );
+					} );
+				} else {
+					deliver( generation );
+				}
+				submission.accepted = true;
+			}
+			// Inline or synchronously awaited callbacks can request another delivery. Submit it
+			// only after execute() returns, never recursively while that executor is waiting.
+		}
+	}
+
+	void finishSubmission( bool accepted ) {
+		Callback discarded;
 		{
 			std::lock_guard<std::mutex> lock( mMutex );
-			if ( !mHasTarget ) {
+			mSubmitting = false;
+			if ( !accepted ) {
+				// If execute() (or an inline callback) throws, retire this channel while unwinding.
+				// The exception still propagates to the caller; close() must remain drainable.
+				retireLocked();
+				discarded = std::move( mCallback );
+			}
+		}
+		mChanged.notify_all();
+	}
+
+	void deliver( Uint64 generation ) {
+		Delivered delivered;
+		Callback callback;
+		{
+			std::lock_guard<std::mutex> lock( mMutex );
+			if ( mClosed || generation != mGeneration || mCallbackThread != std::thread::id{} )
+				return;
+			if ( !Policy::hasData( mPayload ) || !mCallback ) {
 				mScheduled = false;
 				return;
 			}
-			executor = mExecutor;
+			delivered = Policy::take( mPayload );
+			// Keep the executing callable alive even if it re-registers or closes this channel.
+			callback = std::move( mCallback );
+			mCallbackThread = std::this_thread::get_id();
 		}
-		if ( !executor ) {
-			deliver();
-			return;
+		{
+			Invocation invocation{ *this, callback, generation };
+			callback( std::move( delivered ) );
+			invocation.completed = true;
 		}
-		executor->execute( [weak = this->weak_from_this()] {
-			if ( auto self = weak.lock() )
-				self->deliver();
-		} );
+		dispatch();
 	}
 
-	void deliver() {
-		std::lock_guard<std::recursive_mutex> delivery( mDeliveryMutex );
-		if ( mInCallback ) {
-			// Re-entrant update from inside the callback with an inline target: the outer
-			// delivery loop below picks the new data up.
-			return;
-		}
-		while ( true ) {
-			Delivered delivered;
-			{
-				std::lock_guard<std::mutex> lock( mMutex );
-				mScheduled = false;
-				if ( mClosed || !Policy::hasData( mPayload ) )
-					break;
-				delivered = Policy::take( mPayload );
-			}
-			if ( !mCallback )
-				break;
-			mInCallback = true;
-			mCallback( std::move( delivered ) );
-			mInCallback = false;
+	void finishDelivery( Uint64 generation, Callback& callback, bool completed ) {
+		{
 			std::lock_guard<std::mutex> lock( mMutex );
-			// Inline targets drain synchronously; executor targets were re-dispatched by update().
-			if ( mClosed || mExecutor || !Policy::hasData( mPayload ) )
-				break;
-			mScheduled = true;
+			if ( !completed )
+				retireLocked();
+			if ( !mClosed && generation == mGeneration )
+				mCallback = std::move( callback );
 		}
-		std::lock_guard<std::mutex> lock( mMutex );
-		if ( mClosed )
-			mCallback = nullptr;
+		// Destruction can release captures with their own teardown. Do it outside the payload
+		// lock, but before notifying an external close() that this invocation has finished.
+		callback = nullptr;
+		{
+			std::lock_guard<std::mutex> lock( mMutex );
+			mCallbackThread = {};
+			if ( generation == mGeneration ) {
+				mScheduled = false;
+				if ( Policy::hasData( mPayload ) )
+					scheduleLocked();
+			}
+		}
+		mChanged.notify_all();
 	}
 
 	mutable std::mutex mMutex;
-	std::recursive_mutex mDeliveryMutex;
+	std::condition_variable mChanged;
 	Payload mPayload{};
 	Callback mCallback;
 	Executor* mExecutor{ nullptr };
+	Uint64 mGeneration{ 0 };
+	std::thread::id mCallbackThread;
+	Uint32 mRetargeting{ 0 };
 	bool mHasTarget{ false };
 	bool mScheduled{ false };
+	bool mDispatchPending{ false };
+	bool mSubmitting{ false };
 	bool mClosed{ false };
-	bool mInCallback{ false };
 };
 
 }}} // namespace EE::VFS::detail
