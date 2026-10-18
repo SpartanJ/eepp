@@ -1,24 +1,20 @@
+#include <eepp/vfs/detail/filewriter.hpp>
+
 #include <algorithm>
 #include <atomic>
 #include <eepp/core/string.hpp>
 #include <eepp/system/sys.hpp>
-#include <eepp/vfs/detail/filewriter.hpp>
 #include <vector>
 
 namespace EE { namespace VFS { namespace detail {
 
-std::string FileWriter::temporarySiblingName( std::string_view name ) {
+std::string FileWriter::temporarySiblingName() {
 	static std::atomic<Uint32> sCounter{ 0 };
-	std::string tmp( "." );
-	tmp.append( name );
-	tmp += ".eepp-";
-	tmp += String::toString( static_cast<Uint64>( System::Sys::getProcessID() ) );
-	tmp += '-';
-	tmp += String::toString( static_cast<Uint64>( System::Sys::getTicks() ) );
-	tmp += '-';
-	tmp += String::toString( ++sCounter );
-	tmp += ".tmp";
-	return tmp;
+	// Keep the component short even when the destination already reaches NAME_MAX.
+	return String::format( ".eepp-%llu-%llu-%u.tmp",
+						   static_cast<unsigned long long>( System::Sys::getProcessID() ),
+						   static_cast<unsigned long long>( System::Sys::getTicks() ),
+						   static_cast<unsigned int>( ++sCounter ) );
 }
 
 VFSResult<void> FileWriter::writeFully( FileHandle& handle, std::span<const Uint8> data,

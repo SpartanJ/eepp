@@ -27,7 +27,7 @@
 #define RENAME_NOREPLACE ( 1 << 0 )
 #endif
 #endif
-#if defined( __APPLE__ )
+#if defined( __APPLE__ ) || defined( __FreeBSD__ )
 #include <stdio.h>
 #endif
 
@@ -108,9 +108,7 @@ VFSErrorCode mapErrno( int error ) {
 }
 
 VFSError errnoError( const std::string& path, const char* what, int error = errno ) {
-	std::string message( what );
-	message += ": ";
-	message += std::strerror( error );
+	std::string message = String::format( "%s: %s", what, std::strerror( error ) );
 	return VFSError( mapErrno( error ), URI::fromFSPath( path ), std::move( message ), error );
 }
 
@@ -698,20 +696,46 @@ VFSTask<void> LocalProvider::remove( const URI& uri, const RemoveOptions&,
 
 namespace {
 
-/** rename() that fails with EEXIST instead of replacing the destination. */
-int renameNoReplace( const char* from, const char* to ) {
-#if defined( __linux__ ) && defined( SYS_renameat2 )
-	int result = static_cast<int>(
-		::syscall( SYS_renameat2, AT_FDCWD, from, AT_FDCWD, to, RENAME_NOREPLACE ) );
-	if ( result == 0 || ( errno != ENOSYS && errno != EINVAL ) )
-		return result;
-#elif defined( __APPLE__ ) && defined( RENAME_EXCL )
-	return ::renamex_np( from, to, RENAME_EXCL );
-#endif
-	// A check followed by ordinary rename can destroy a concurrently created destination.
-	// Let the transfer engine use its safe publication path, or report Unsupported.
+/** Publish without replacing any destination, including one created concurrently. */
+VFSResult<void> renameNoReplace( const std::string& from, const std::string& to ) {
+	int result = -1;
 	errno = ENOTSUP;
-	return -1;
+#if defined( __linux__ ) && defined( SYS_renameat2 )
+	result = static_cast<int>( ::syscall( SYS_renameat2, AT_FDCWD, from.c_str(), AT_FDCWD,
+										  to.c_str(), RENAME_NOREPLACE ) );
+#elif defined( __APPLE__ ) && defined( RENAME_EXCL )
+	result = ::renamex_np( from.c_str(), to.c_str(), RENAME_EXCL );
+#elif defined( __FreeBSD__ ) && defined( AT_RENAME_NOREPLACE )
+	// Older FreeBSD headers (including 14.x) do not expose this API or flag.
+	result = ::renameat2( AT_FDCWD, from.c_str(), AT_FDCWD, to.c_str(), AT_RENAME_NOREPLACE );
+#endif
+	if ( result == 0 )
+		return Ok();
+	if ( errno != ENOSYS && errno != EINVAL && errno != ENOTSUP && errno != EOPNOTSUPP )
+		return Err( errnoError( from, "rename failed" ) );
+
+	struct stat source;
+	if ( ::lstat( from.c_str(), &source ) != 0 )
+		return Err( errnoError( from, "Cannot check rename source type" ) );
+	if ( !S_ISREG( source.st_mode ) ) {
+		// In particular, a directory cannot use link/unlink. Never use check-then-rename:
+		// ordinary rename could destroy a destination created after the check.
+		return Err( VFSError( VFSErrorCode::Unsupported, URI::fromFSPath( from ),
+							  "No-replace rename is unavailable for this file type" ) );
+	}
+	// linkat() publishes the complete inode atomically and fails if to already exists.
+	// Flags 0 also prevent following a source symlink substituted after lstat().
+	if ( ::linkat( AT_FDCWD, from.c_str(), AT_FDCWD, to.c_str(), 0 ) != 0 )
+		return Err( errnoError( from, "No-replace publication failed" ) );
+	if ( ::unlink( from.c_str() ) != 0 ) {
+		// Publication succeeded: never roll it back by deleting the destination. Always use IO
+		// here so the transfer engine cannot mistake cleanup failure for a fallback request.
+		auto error = errnoError( from, "Destination published, but source name cleanup failed; "
+									   "both names may remain" );
+		error.code = VFSErrorCode::IO;
+		return Err( std::move( error ) );
+	}
+	return Ok();
 }
 
 /** rename() is a successful no-op between hardlinks. Check native identity, independently of
@@ -754,19 +778,17 @@ VFSTask<void> LocalProvider::rename( const URI& from, const URI& to, const Renam
 		guarded<void>( native, std::move( token ),
 					   [to = target, overwrite = options.overwrite](
 						   const std::string& path ) -> VFSResult<void> {
-						   if ( overwrite ) {
-							   auto same = sameNativeFile( path, to );
-							   if ( !same )
-								   return Err( std::move( same ).error() );
-							   if ( same.value() ) {
-								   return Err( VFSError(
-									   VFSErrorCode::InvalidOperation, URI::fromFSPath( path ),
-									   "Source and destination are the same file" ) );
-							   }
+						   if ( !overwrite )
+							   return renameNoReplace( path, to );
+						   auto same = sameNativeFile( path, to );
+						   if ( !same )
+							   return Err( std::move( same ).error() );
+						   if ( same.value() ) {
+							   return Err( VFSError( VFSErrorCode::InvalidOperation,
+													 URI::fromFSPath( path ),
+													 "Source and destination are the same file" ) );
 						   }
-						   int result = overwrite ? ::rename( path.c_str(), to.c_str() )
-												  : renameNoReplace( path.c_str(), to.c_str() );
-						   if ( result != 0 )
+						   if ( ::rename( path.c_str(), to.c_str() ) != 0 )
 							   return Err( errnoError( path, "rename failed" ) );
 						   return Ok();
 					   } ) );

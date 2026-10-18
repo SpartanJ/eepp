@@ -20,6 +20,9 @@ namespace EE { namespace VFS {
  * Revisions are derived from device, inode (file index), modification time and size, so both
  * in-place edits and atomic replacements are detected. Overwrite renames reject matching native
  * file identities, including hardlinks, with InvalidOperation and retain both names.
+ * On POSIX systems without native no-replace rename, regular files use atomic hard-link
+ * publication followed by source unlink. Cleanup failure returns IO after publication and may
+ * leave both names; other file types return Unsupported when the native primitive is unavailable.
  */
 class EE_VFS_API LocalProvider : public VFSProvider {
   public:

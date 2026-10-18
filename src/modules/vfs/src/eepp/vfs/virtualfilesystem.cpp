@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <eepp/core/string.hpp>
 #include <eepp/vfs/detail/await.hpp>
 #include <eepp/vfs/detail/filewriter.hpp>
 #include <eepp/vfs/path.hpp>
@@ -131,9 +132,9 @@ ProviderCapabilities VirtualFileSystem::capabilities( const URI& uri ) const {
 }
 
 template <typename T> VFSTask<T> VirtualFileSystem::unsupportedScheme( const URI& uri ) const {
-	return readyError<T>( uri.getScheme().empty() ? VFSErrorCode::InvalidURI
-												  : VFSErrorCode::Unsupported,
-						  uri, "No provider registered for scheme '" + uri.getScheme() + "'" );
+	return readyError<T>(
+		uri.getScheme().empty() ? VFSErrorCode::InvalidURI : VFSErrorCode::Unsupported, uri,
+		String::format( "No provider registered for scheme '%s'", uri.getScheme() ) );
 }
 
 template <typename T, typename F> VFSTask<T> VirtualFileSystem::orchestrate( F&& job ) {

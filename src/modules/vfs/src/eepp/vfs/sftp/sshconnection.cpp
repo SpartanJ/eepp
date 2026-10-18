@@ -378,11 +378,8 @@ void SSHConnection::fail( VFSError error ) {
 VFSError SSHConnection::lastError( const URI& uri, const char* what ) {
 	char* message = nullptr;
 	int rc = mSession ? libssh2_session_last_error( mSession, &message, nullptr, 0 ) : 0;
-	std::string text( what );
-	if ( message && *message ) {
-		text += ": ";
-		text += message;
-	}
+	std::string text =
+		message && *message ? String::format( "%s: %s", what, message ) : std::string( what );
 	if ( rc == LIBSSH2_ERROR_SFTP_PROTOCOL && mSFTP ) {
 		unsigned long status = libssh2_sftp_last_error( mSFTP );
 		return VFSError( mapSFTPStatus( status ), uri, std::move( text ),
@@ -635,8 +632,8 @@ VFSResult<void> SSHConnection::applyAlgorithmPreferences() {
 		// connection fails instead of falling back to libssh2's defaults.
 		auto unsupported = [&]() -> VFSResult<void> {
 			return Err( VFSError( VFSErrorCode::Unsupported, URI(),
-								  std::string( "None of the configured " ) + pref.option + " (" +
-									  **pref.spec + ") is supported" ) );
+								  String::format( "None of the configured %s (%s) is supported",
+												  pref.option, **pref.spec ) ) );
 		};
 		const char** algs = nullptr;
 		int count = libssh2_session_supported_algs( mSession, pref.method, &algs );
@@ -748,7 +745,7 @@ Step SSHConnection::stepHostKey() {
 		SSHHostKeyDecision decision = *mHostKeyDecision;
 		if ( decision == SSHHostKeyDecision::Reject ) {
 			fail( VFSError( VFSErrorCode::HostKeyRejected, URI(),
-							"Host key for " + mConfig.hostName + " was rejected" ) );
+							String::format( "Host key for %s was rejected", mConfig.hostName ) ) );
 			return Step::Done;
 		}
 		if ( decision == SSHHostKeyDecision::AcceptAndSave ) {
@@ -784,8 +781,8 @@ Step SSHConnection::stepHostKey() {
 		// listed as known or StrictHostKeyChecking would accept new keys.
 		libssh2_knownhost_free( hosts );
 		fail( VFSError( VFSErrorCode::HostKeyRejected, URI(),
-						"The " + std::string( hostKeyTypeName( keyType ) ) + " host key of " +
-							checkHost + " is revoked" ) );
+						String::format( "The %s host key of %s is revoked",
+										hostKeyTypeName( keyType ), checkHost ) ) );
 		return Step::Done;
 	}
 	struct libssh2_knownhost* entry = nullptr;
@@ -811,9 +808,10 @@ Step SSHConnection::stepHostKey() {
 			return Step::Done;
 		case LIBSSH2_KNOWNHOST_CHECK_MISMATCH:
 			// Never accepted, whatever StrictHostKeyChecking says.
-			fail( VFSError( VFSErrorCode::HostKeyRejected, URI(),
-							"REMOTE HOST IDENTIFICATION HAS CHANGED for " + checkHost + " (" +
-								hostKeyTypeName( keyType ) + " " + fingerprint + ")" ) );
+			fail(
+				VFSError( VFSErrorCode::HostKeyRejected, URI(),
+						  String::format( "REMOTE HOST IDENTIFICATION HAS CHANGED for %s (%s %s)",
+										  checkHost, hostKeyTypeName( keyType ), fingerprint ) ) );
 			return Step::Done;
 		case LIBSSH2_KNOWNHOST_CHECK_FAILURE:
 			fail( VFSError( VFSErrorCode::HostKeyRejected, URI(),
@@ -826,10 +824,11 @@ Step SSHConnection::stepHostKey() {
 	// Unknown host key.
 	switch ( mConfig.strictHostKeyChecking ) {
 		case SSHStrictHostKeyChecking::Yes:
-			fail( VFSError( VFSErrorCode::HostKeyRejected, URI(),
-							"No " + std::string( hostKeyTypeName( keyType ) ) +
-								" host key is known for " + checkHost +
-								" and StrictHostKeyChecking is enabled (" + fingerprint + ")" ) );
+			fail(
+				VFSError( VFSErrorCode::HostKeyRejected, URI(),
+						  String::format( "No %s host key is known for %s and "
+										  "StrictHostKeyChecking is enabled (%s)",
+										  hostKeyTypeName( keyType ), checkHost, fingerprint ) ) );
 			return Step::Done;
 		case SSHStrictHostKeyChecking::AcceptNew:
 		case SSHStrictHostKeyChecking::No: {
@@ -845,9 +844,10 @@ Step SSHConnection::stepHostKey() {
 			break;
 	}
 	if ( !mHooks.hostKeyVerifier ) {
-		fail( VFSError( VFSErrorCode::HostKeyRejected, URI(),
-						"Unknown host key for " + checkHost + " (" + fingerprint +
-							") and no host key verifier is installed" ) );
+		fail( VFSError(
+			VFSErrorCode::HostKeyRejected, URI(),
+			String::format( "Unknown host key for %s (%s) and no host key verifier is installed",
+							checkHost, fingerprint ) ) );
 		return Step::Done;
 	}
 	SSHHostKeyInfo info;
@@ -889,7 +889,7 @@ bool SSHConnection::saveHostKey( const char* key, size_t keyLength, int keyBits,
 	}
 	std::string host = mConfig.hostKeyAlias.value_or( mConfig.hostName );
 	if ( mConfig.port != 22 )
-		host = "[" + host + "]:" + String::toString( mConfig.port );
+		host = String::format( "[%s]:%u", host, static_cast<unsigned int>( mConfig.port ) );
 	LIBSSH2_KNOWNHOSTS* hosts = libssh2_knownhost_init( mSession );
 	struct libssh2_knownhost* entry = nullptr;
 	int rc = libssh2_knownhost_addc(
@@ -921,8 +921,8 @@ bool SSHConnection::saveHostKey( const char* key, size_t keyLength, int keyBits,
 	content.append( line, lineLength );
 	if ( content.back() != '\n' )
 		content += '\n';
-	std::string temporary =
-		path + ".eepp-" + String::toString( static_cast<Uint64>( System::Sys::getProcessID() ) );
+	std::string temporary = String::format(
+		"%s.eepp-%llu", path, static_cast<unsigned long long>( System::Sys::getProcessID() ) );
 	if ( !FileSystem::fileWrite( temporary, std::string_view( content ) ) ||
 		 !FileSystem::fileMove( temporary, path ) ) {
 		FileSystem::fileRemove( temporary );
@@ -1034,7 +1034,8 @@ SSHAuthenticationRequest SSHConnection::passphraseRequest( const std::string& us
 	request.kind = SSHAuthenticationRequest::Kind::Passphrase;
 	request.user = user;
 	request.identityFile = identityFile;
-	request.prompts = { SSHPrompt{ "Enter passphrase for key '" + identityFile + "': ", false } };
+	request.prompts = {
+		SSHPrompt{ String::format( "Enter passphrase for key '%s': ", identityFile ), false } };
 	return request;
 }
 
@@ -1131,8 +1132,8 @@ Step SSHConnection::stepAuthentication() {
 			case AuthPhase::NextMethod: {
 				if ( mMethodIndex >= mMethods.size() ) {
 					fail( VFSError( VFSErrorCode::AuthenticationFailed, URI(),
-									user + "@" + mConfig.hostName + ": Permission denied (" +
-										mServerMethods + ")" ) );
+									String::format( "%s@%s: Permission denied (%s)", user,
+													mConfig.hostName, mServerMethods ) ) );
 					return Step::Done;
 				}
 				const std::string& method = mMethods[mMethodIndex++];
@@ -1350,8 +1351,8 @@ Step SSHConnection::stepAuthentication() {
 					SSHAuthenticationRequest request;
 					request.kind = SSHAuthenticationRequest::Kind::Password;
 					request.user = user;
-					request.prompts = {
-						SSHPrompt{ user + "@" + mConfig.hostName + "'s password: ", false } };
+					request.prompts = { SSHPrompt{
+						String::format( "%s@%s's password: ", user, mConfig.hostName ), false } };
 					requestExternal( std::move( request ), AuthPhase::PasswordAuth );
 					return Step::Again;
 				}

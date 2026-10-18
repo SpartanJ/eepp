@@ -43,9 +43,10 @@ Step SSHChannelTransport::open( VFSError& error ) {
 		return Step::Done;
 	if ( again )
 		return Step::Again;
-	error = mParent->lastError( URI(), ( "ProxyJump: could not open a channel to " + mHost + ":" +
-										 String::toString( mPort ) )
-										   .c_str() );
+	error =
+		mParent->lastError( URI(), String::format( "ProxyJump: could not open a channel to %s:%u",
+												   mHost, static_cast<unsigned int>( mPort ) )
+									   .c_str() );
 	return Step::Done;
 }
 

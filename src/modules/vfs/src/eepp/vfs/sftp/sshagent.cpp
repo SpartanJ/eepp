@@ -1,4 +1,5 @@
 #include "sshagent.hpp"
+#include <eepp/core/string.hpp>
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
 #include <cerrno>
@@ -126,7 +127,7 @@ VFSResult<std::string> SSHAgent::transact( std::string_view request ) {
 	if ( mSocket < 0 ) {
 		sockaddr_un address{};
 		if ( mPath.empty() || mPath.size() >= sizeof( address.sun_path ) )
-			return Err( agentError( "invalid socket path \"" + mPath + "\"" ) );
+			return Err( agentError( String::format( "invalid socket path \"%s\"", mPath ) ) );
 		address.sun_family = AF_UNIX;
 		std::memcpy( address.sun_path, mPath.c_str(), mPath.size() + 1 );
 		{
@@ -145,7 +146,7 @@ VFSResult<std::string> SSHAgent::transact( std::string_view request ) {
 									   sizeof( address ) ) != 0 ) {
 			std::string error( std::strerror( errno ) );
 			disconnect();
-			return Err( agentError( "cannot connect to " + mPath + ": " + error ) );
+			return Err( agentError( String::format( "cannot connect to %s: %s", mPath, error ) ) );
 		}
 	}
 	if ( mCancelled.load( std::memory_order_acquire ) ) {

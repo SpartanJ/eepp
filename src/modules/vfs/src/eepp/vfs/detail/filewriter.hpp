@@ -7,7 +7,6 @@
 #include <optional>
 #include <span>
 #include <string>
-#include <string_view>
 
 namespace EE { namespace VFS { namespace detail {
 
@@ -89,8 +88,7 @@ class FileWriter {
 			return writeTo( target, OpenFlags::Write | OpenFlags::Create | OpenFlags::Truncate );
 		}
 
-		URI temporary( target.getParent().withAppendedSegment(
-			temporarySiblingName( target.getLastPathSegment() ) ) );
+		URI temporary( target.getParent().withAppendedSegment( temporarySiblingName() ) );
 		auto written =
 			writeTo( temporary, OpenFlags::Write | OpenFlags::Create | OpenFlags::Exclusive );
 		if ( written )
@@ -107,8 +105,8 @@ class FileWriter {
 	}
 
   private:
-	/** @return A hidden name, unique to this process and call, next to name. */
-	static std::string temporarySiblingName( std::string_view name );
+	/** @return A short hidden basename, unique to this process and call. */
+	static std::string temporarySiblingName();
 };
 
 }}} // namespace EE::VFS::detail

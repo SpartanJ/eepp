@@ -30,7 +30,7 @@ bool makeZip( const std::string& path,
 }
 
 /** Bulk empty-entry fixture: Zip::addFile() rewrites/reopens the archive for every entry. */
-template <typename Name> bool makeEmptyZip( const std::string& path, Uint16 count, Name&& nameOf ) {
+template <typename Name> bool makeEmptyZip( const std::string& path, Uint32 count, Name&& nameOf ) {
 	std::string local, central;
 	const auto initialLength = nameOf( 0 ).size();
 	local.reserve( count * ( initialLength + 38 ) );
@@ -39,7 +39,7 @@ template <typename Name> bool makeEmptyZip( const std::string& path, Uint16 coun
 		for ( unsigned i = 0; i < width; ++i )
 			bytes[at + i] = static_cast<char>( value >> ( 8 * i ) );
 	};
-	for ( Uint16 i = 0; i < count; ++i ) {
+	for ( Uint32 i = 0; i < count; ++i ) {
 		const auto name = nameOf( i );
 		const size_t offset = local.size();
 		local.append( 30, '\0' );
@@ -197,6 +197,21 @@ UTEST( ZipProvider, malformedCentralDirectoriesAreRejectedBeforeAllocation ) {
 	ASSERT_TRUE( FileSystem::fileWrite( inconsistent, std::string_view( bytes ) ) );
 	EXPECT_FALSE( reader.open( inconsistent, Zip::OpenMode::ReadOnlyBounded ) );
 	EXPECT_EQ( Zip::Error::InvalidArchive, reader.error() );
+}
+
+UTEST( ZipProvider, wrappedZeroInfoZipCountIsIntentionallyRejected ) {
+	TempDir temp;
+	const std::string path = temp.path + "wrapped-zero.zip";
+	// The fixture writes all 65,536 headers, but its two 16-bit EOCD counts wrap to zero.
+	ASSERT_TRUE(
+		makeEmptyZip( path, 65536, []( Uint32 i ) { return "file" + std::to_string( i ); } ) );
+	Zip reader( false );
+	for ( auto mode : { Zip::OpenMode::ReadOnly, Zip::OpenMode::ReadOnlyBounded } ) {
+		EXPECT_FALSE( reader.open( path, mode ) );
+		EXPECT_EQ( Zip::Error::InvalidArchive, reader.error() );
+	}
+	VirtualFileSystem vfs;
+	EXPECT_FALSE( waitFor( vfs.listAll( ZipProvider::makeURI( URI::fromFSPath( path ) ) ) ) );
 }
 
 UTEST( ZipProvider, streamingReadsSeekBackwardsAndCopyAcrossProviders ) {

@@ -221,8 +221,14 @@ folder without overwriting files. The default `Fail` policy also rejects existin
 `Overwrite` and `Skip` merge directories and apply their respective policies to files.
 
 Native renames also preserve an existing destination when safe replacement is unavailable.
-POSIX systems without an atomic no-replace primitive return `Unsupported` for no-overwrite
-renames, rather than using an existence check followed by a replacing rename.
+On POSIX systems without a native no-replace rename, regular files use an atomic hard-link
+publication followed by unlinking the source name. Default copies and moves can therefore create
+missing destinations without overwriting a competing creator. Both names can briefly exist; if
+source cleanup fails, the operation returns `IO` explaining that publication succeeded and both
+names may remain. The destination is never removed to roll back that failure. File systems must
+support hard links for this fallback. Other file types, including directories, return `Unsupported`
+from no-overwrite `rename()` when the native primitive is unavailable. No existence-check-then-rename
+fallback is used.
 
 ## Watching
 
@@ -392,6 +398,10 @@ directories and a conservative 64 MiB metadata budget covering libzip's decoded 
 nodes, stored paths and container growth. Oversized central directories are rejected before
 decoding; budget violations return `InvalidOperation`. At most eight indexes are cached;
 existing handles can retain older indexes.
+
+Legacy InfoZIP archives whose 16-bit entry count wraps to zero with a nonempty central directory
+(for example, exactly 65,536 entries) are intentionally rejected as inconsistent. A zero count is
+accepted only for an empty central directory.
 
 In eefm, Enter or double-click on a local `.zip`, `.jar`, `.apk` or `.epub` file enters it
 (extensions are case-insensitive). These ZIP-based formats share `ZipProvider` and `zip://` locations.

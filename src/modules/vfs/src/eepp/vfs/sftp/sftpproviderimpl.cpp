@@ -186,7 +186,7 @@ void SFTPProviderImpl::buildHop( std::shared_ptr<Build> build ) {
 			if ( !ready ) {
 				VFSError error = std::move( ready ).error();
 				if ( !last )
-					error.message = "ProxyJump " + hopName + ": " + error.message;
+					error.message = String::format( "ProxyJump %s: %s", hopName, error.message );
 				build->resolve( Err( std::move( error ) ) );
 				return;
 			}

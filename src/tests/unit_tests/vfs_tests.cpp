@@ -1466,8 +1466,119 @@ UTEST( VFSTransfer, specialEntriesProducePartialResultsAndMovesKeepOriginals ) {
 }
 #endif
 
+namespace {
+
+/** Creates a competing file precisely when the completed temporary is about to be published. */
+class PublicationRaceLocalProvider : public LocalProvider {
+  public:
+	using LocalProvider::LocalProvider;
+	bool racePublication{ false };
+
+	VFSTask<void> rename( const URI& from, const URI& to, const RenameOptions& options,
+						  CancellationToken token ) override {
+		if ( racePublication ) {
+			racePublication = false;
+			if ( !FileSystem::fileWrite( to.getFSPath(), std::string_view( "competitor" ) ) )
+				return readyError<void>( VFSErrorCode::IO, to, "Cannot create competing file" );
+		}
+		return LocalProvider::rename( from, to, options, std::move( token ) );
+	}
+};
+
+void checkLocalNoReplacePublication( int* utest_result,
+									 const std::shared_ptr<LocalIOScheduler>& scheduler ) {
+	VirtualFileSystem::Config config;
+	config.registerDefaultProviders = false;
+	VirtualFileSystem vfs( config );
+	auto provider = std::make_shared<PublicationRaceLocalProvider>( scheduler );
+	vfs.registerProvider( provider );
+	for ( bool move : { false, true } ) {
+		TempDir tmp;
+		const URI source = tmp.uri().withAppendedSegment( "source" );
+		const URI destination = tmp.uri().withAppendedSegment( "destination" );
+		ASSERT_TRUE( writeString( vfs, source, "source" ) );
+		auto transfer = move ? vfs.move( source, destination ) : vfs.copy( source, destination );
+		ASSERT_TRUE( waitFor( transfer.completion() ) );
+		EXPECT_STDSTREQ( "source", readString( vfs, destination ) );
+		EXPECT_EQ( move, !waitFor( vfs.stat( source ) ) );
+
+		ASSERT_TRUE( writeString( vfs, source, "keep source" ) );
+		auto before = waitFor( vfs.stat( destination ) );
+		ASSERT_TRUE( before );
+		auto refused = move ? vfs.move( source, destination ) : vfs.copy( source, destination );
+		EXPECT_EQ( VFSErrorCode::AlreadyExists, codeOf( waitFor( refused.completion() ) ) );
+		EXPECT_STDSTREQ( "source", readString( vfs, destination ) );
+		EXPECT_STDSTREQ( "keep source", readString( vfs, source ) );
+		auto after = waitFor( vfs.stat( destination ) );
+		ASSERT_TRUE( after );
+		EXPECT_TRUE( before.value().revision.matches( after.value().revision ) );
+
+		ASSERT_TRUE( waitFor( vfs.remove( destination ) ) );
+		provider->racePublication = true;
+		auto raced = move ? vfs.move( source, destination ) : vfs.copy( source, destination );
+		EXPECT_EQ( VFSErrorCode::AlreadyExists, codeOf( waitFor( raced.completion() ) ) );
+		EXPECT_FALSE( provider->racePublication );
+		EXPECT_STDSTREQ( "competitor", readString( vfs, destination ) );
+		EXPECT_STDSTREQ( "keep source", readString( vfs, source ) );
+		auto listed = waitFor( vfs.listAll( tmp.uri() ) );
+		ASSERT_TRUE( listed );
+		EXPECT_TRUE( sortedNames( listed.value() ) ==
+					 std::vector<std::string>( { "destination", "source" } ) );
+	}
+}
+
+} // namespace
+
+UTEST( VFSLocal, noReplaceCopyAndMovePreserveCompetingDestinations ) {
+	auto pool = ThreadPool::createShared( 1 );
+	auto scheduler = std::make_shared<LocalIOScheduler>( pool, Seconds( 5 ) );
+	checkLocalNoReplacePublication( utest_result, scheduler );
+}
+
+UTEST( VFSLocal, atomicWritesAndCopiesSupportLongBasenames ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	const URI source = tmp.uri().withAppendedSegment( "source" );
+	for ( size_t length : { 240u, 250u } ) {
+		ASSERT_TRUE( writeString( vfs, source, "copied" ) );
+		const URI file = tmp.uri().withAppendedSegment( std::string( length, 'a' ) );
+		// Establish that this filesystem/configuration supports the destination itself.
+		auto probe = waitFor(
+			vfs.open( file, OpenFlags::Write | OpenFlags::Create | OpenFlags::Exclusive ) );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if ( !probe && probe.error().is( VFSErrorCode::InvalidURI ) ) {
+			printf( "  Windows long paths unavailable: %s\n", probe.error().toString().c_str() );
+			continue;
+		}
+#endif
+		ASSERT_TRUE( probe );
+		ASSERT_TRUE( waitFor( probe.value().close() ) );
+		ASSERT_TRUE( writeString( vfs, file, "atomic save" ) );
+		EXPECT_STDSTREQ( "atomic save", readString( vfs, file ) );
+		ASSERT_TRUE( waitFor( vfs.remove( file ) ) );
+		ASSERT_TRUE( waitFor( vfs.copy( source, file ).completion() ) );
+		EXPECT_STDSTREQ( "copied", readString( vfs, file ) );
+		auto before = waitFor( vfs.stat( file ) );
+		ASSERT_TRUE( before );
+		EXPECT_EQ( VFSErrorCode::AlreadyExists,
+				   codeOf( waitFor( vfs.copy( source, file ).completion() ) ) );
+		auto after = waitFor( vfs.stat( file ) );
+		ASSERT_TRUE( after );
+		EXPECT_TRUE( before.value().revision.matches( after.value().revision ) );
+		CopyOptions options;
+		options.overwrite = OverwritePolicy::Overwrite;
+		ASSERT_TRUE( writeString( vfs, source, "overwritten" ) );
+		ASSERT_TRUE( waitFor( vfs.copy( source, file, options ).completion() ) );
+		EXPECT_STDSTREQ( "overwritten", readString( vfs, file ) );
+		ASSERT_TRUE( waitFor( vfs.remove( file ) ) );
+		auto listed = waitFor( vfs.listAll( tmp.uri() ) );
+		ASSERT_TRUE( listed );
+		EXPECT_TRUE( sortedNames( listed.value() ) == std::vector<std::string>( { "source" } ) );
+	}
+}
+
 #if defined( __linux__ ) && defined( SYS_renameat2 )
-UTEST( VFSLocal, unavailableNoReplacePrimitiveNeverFallsBackToReplacingRename ) {
+UTEST( VFSLocal, unavailableNoReplacePrimitiveUsesSafeFilePublication ) {
 	auto pool = ThreadPool::createShared( 1 );
 	// Restrict just this disposable worker: force the old-kernel ENOSYS path deterministically.
 	auto installed = pool->submit( [] {
@@ -1486,29 +1597,67 @@ UTEST( VFSLocal, unavailableNoReplacePrimitiveNeverFallsBackToReplacingRename ) 
 		printf( "  seccomp unavailable: cannot force renameat2 ENOSYS\n" );
 		return;
 	}
-	TempDir tmp;
 	auto scheduler = std::make_shared<LocalIOScheduler>(
 		pool, Seconds( 1 ),
 		[]( const std::string& ) -> std::optional<LocalIOScheduler::NetworkMount> {
 			return std::nullopt;
 		} );
+	checkLocalNoReplacePublication( utest_result, scheduler );
 	LocalProvider provider( scheduler );
-	URI source = tmp.uri().withAppendedSegment( "source" );
-	URI destination = tmp.uri().withAppendedSegment( "destination" );
-	ASSERT_TRUE( FileSystem::fileWrite( source.getFSPath(), std::string_view( "source" ) ) );
-	for ( bool exists : { false, true } ) {
-		if ( exists )
-			ASSERT_TRUE(
-				FileSystem::fileWrite( destination.getFSPath(), std::string_view( "keep" ) ) );
-		auto renamed = waitFor( provider.rename( source, destination, {}, {} ) );
-		EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( renamed ) );
-		EXPECT_TRUE( FileSystem::fileExists( source.getFSPath() ) );
-		EXPECT_EQ( exists, FileSystem::fileExists( destination.getFSPath() ) );
-		if ( exists ) {
-			std::string bytes;
-			ASSERT_TRUE( FileSystem::fileGet( destination.getFSPath(), bytes ) );
-			EXPECT_STDSTREQ( "keep", bytes );
-		}
+	TempDir tmp;
+	const URI directory = tmp.uri().withAppendedSegment( "directory" );
+	const URI destination = tmp.uri().withAppendedSegment( "destination" );
+	ASSERT_TRUE( FileSystem::makeDir( directory.getFSPath() ) );
+	EXPECT_EQ( VFSErrorCode::Unsupported,
+			   codeOf( waitFor( provider.rename( directory, destination, {}, {} ) ) ) );
+	EXPECT_TRUE( FileSystem::isDirectory( directory.getFSPath() ) );
+	EXPECT_FALSE( FileSystem::fileExists( destination.getFSPath() ) );
+	const URI symlink = tmp.uri().withAppendedSegment( "symlink" );
+	ASSERT_EQ( 0, ::symlink( "directory", symlink.getFSPath().c_str() ) );
+	EXPECT_EQ( VFSErrorCode::Unsupported,
+			   codeOf( waitFor( provider.rename( symlink, destination, {}, {} ) ) ) );
+
+	// After successful link publication, force unlink to fail on this worker. Neither the
+	// provider nor the transfer engine may roll back the destination or start a copy fallback.
+	auto denyUnlink = pool->submit( [] {
+		sock_filter instructions[] = {
+			BPF_STMT( BPF_LD | BPF_W | BPF_ABS, offsetof( seccomp_data, nr ) ),
+			BPF_JUMP( BPF_JMP | BPF_JEQ | BPF_K, SYS_unlinkat, 0, 1 ),
+			BPF_STMT( BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM ),
+#ifdef SYS_unlink
+			BPF_JUMP( BPF_JMP | BPF_JEQ | BPF_K, SYS_unlink, 0, 1 ),
+			BPF_STMT( BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM ),
+#endif
+			BPF_STMT( BPF_RET | BPF_K, SECCOMP_RET_ALLOW ),
+		};
+		sock_fprog program{
+			static_cast<unsigned short>( sizeof( instructions ) / sizeof( instructions[0] ) ),
+			instructions };
+		return ::prctl( PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &program ) == 0;
+	} );
+	auto denied = std::move( denyUnlink ).get();
+	ASSERT_TRUE( denied && *denied );
+	VirtualFileSystem::Config config;
+	config.registerDefaultProviders = false;
+	VirtualFileSystem vfs( config );
+	vfs.registerProvider( std::make_shared<LocalProvider>( scheduler ) );
+	for ( bool move : { false, true } ) {
+		TempDir cleanup;
+		const URI source = cleanup.uri().withAppendedSegment( "source" );
+		const URI target = cleanup.uri().withAppendedSegment( "target" );
+		ASSERT_TRUE( FileSystem::fileWrite( source.getFSPath(), std::string_view( "source" ) ) );
+		auto transfer = move ? vfs.move( source, target ) : vfs.copy( source, target );
+		auto result = waitFor( transfer.completion() );
+		ASSERT_FALSE( result );
+		EXPECT_EQ( VFSErrorCode::IO, result.error().code );
+		EXPECT_EQ( EPERM, result.error().nativeCode );
+		EXPECT_TRUE( result.error().message.find( "Destination published" ) != std::string::npos );
+		EXPECT_STDSTREQ( "source", readString( vfs, target ) );
+		EXPECT_STDSTREQ( "source", readString( vfs, source ) );
+		auto listed = waitFor( vfs.listAll( cleanup.uri() ) );
+		ASSERT_TRUE( listed );
+		// Copy's unremovable temporary is reported as a cleanup error, never silent success.
+		EXPECT_EQ( move ? 2u : 3u, listed.value().size() );
 	}
 }
 #endif

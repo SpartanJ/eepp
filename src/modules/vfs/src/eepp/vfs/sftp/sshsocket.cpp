@@ -143,7 +143,7 @@ SocketHandle SSHSocket::connect( const std::string& host, Uint16 port, int timeo
 	std::string service = String::toString( port );
 	int gai = getaddrinfo( host.c_str(), service.c_str(), &hints, &addresses );
 	if ( gai != 0 || !addresses ) {
-		error = "Could not resolve hostname " + host + ": " + gai_strerror( gai );
+		String::formatTo( error, "Could not resolve hostname %s: %s", host, gai_strerror( gai ) );
 		return InvalidSocket;
 	}
 	auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( timeoutMs );
@@ -162,7 +162,8 @@ SocketHandle SSHSocket::connect( const std::string& host, Uint16 port, int timeo
 		}
 		int err = lastError();
 		if ( !connectInProgress( err ) ) {
-			error = "connect to " + host + " port " + service + ": " + errorString( err );
+			String::formatTo( error, "connect to %s port %s: %s", host, service,
+							  errorString( err ) );
 			close( sock );
 			continue;
 		}
@@ -170,7 +171,7 @@ SocketHandle SSHSocket::connect( const std::string& host, Uint16 port, int timeo
 											  deadline - std::chrono::steady_clock::now() )
 											  .count() );
 		if ( remaining <= 0 ) {
-			error = "connect to " + host + " port " + service + ": Connection timed out";
+			String::formatTo( error, "connect to %s port %s: Connection timed out", host, service );
 			close( sock );
 			break;
 		}
@@ -179,13 +180,14 @@ SocketHandle SSHSocket::connect( const std::string& host, Uint16 port, int timeo
 		pfd.events = POLLOUT;
 		int ready = poll( &pfd, 1, remaining );
 		if ( ready <= 0 ) {
-			error = "connect to " + host + " port " + service + ": Connection timed out";
+			String::formatTo( error, "connect to %s port %s: Connection timed out", host, service );
 			close( sock );
 			continue;
 		}
 		err = pendingError( sock );
 		if ( err != 0 ) {
-			error = "connect to " + host + " port " + service + ": " + errorString( err );
+			String::formatTo( error, "connect to %s port %s: %s", host, service,
+							  errorString( err ) );
 			close( sock );
 			continue;
 		}

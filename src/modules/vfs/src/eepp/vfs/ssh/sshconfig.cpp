@@ -178,13 +178,14 @@ SSHConfigFile SSHConfigFile::parse( std::string_view text, std::string path ) {
 			rest.remove_suffix( 1 );
 		entry.rawArgs = std::string( rest );
 		if ( !splitArguments( rest, entry.args ) ) {
-			file.errors.push_back( file.path + " line " + String::toString( lineNumber ) +
-								   ": invalid quotes" );
+			file.errors.push_back( String::format( "%s line %u: invalid quotes", file.path,
+												   static_cast<unsigned int>( lineNumber ) ) );
 			continue;
 		}
 		if ( entry.args.empty() ) {
-			file.errors.push_back( file.path + " line " + String::toString( lineNumber ) +
-								   ": no argument after keyword \"" + entry.keyword + "\"" );
+			file.errors.push_back(
+				String::format( "%s line %u: no argument after keyword \"%s\"", file.path,
+								static_cast<unsigned int>( lineNumber ), entry.keyword ) );
 			continue;
 		}
 		file.lines.push_back( std::move( entry ) );
@@ -571,8 +572,9 @@ class SSHConfigEvaluator::Impl {
 			bool matched;
 			if ( attribute == "all" ) {
 				if ( i + 1 != args.size() ) {
-					mError = path + " line " + String::toString( line.line ) +
-							 ": Match all must appear alone or after canonical/final";
+					String::formatTo(
+						mError, "%s line %u: Match all must appear alone or after canonical/final",
+						path, static_cast<unsigned int>( line.line ) );
 					return false;
 				}
 				matched = true;
@@ -582,8 +584,8 @@ class SSHConfigEvaluator::Impl {
 				matched = mFinalPass;
 			} else {
 				if ( i + 1 >= args.size() ) {
-					mError = path + " line " + String::toString( line.line ) +
-							 ": missing argument for Match " + attribute;
+					String::formatTo( mError, "%s line %u: missing argument for Match %s", path,
+									  static_cast<unsigned int>( line.line ), attribute );
 					return false;
 				}
 				const std::string& arg = args[++i];
@@ -614,7 +616,7 @@ class SSHConfigEvaluator::Impl {
 					if ( !result ) {
 						matched = false;
 					} else if ( !mCtx.exec ) {
-						mWarnings.push_back( "Match exec disabled: \"" + arg + "\"" );
+						mWarnings.push_back( String::format( "Match exec disabled: \"%s\"", arg ) );
 						matched = false;
 					} else {
 						std::string host = matchTargetHost();
@@ -623,8 +625,8 @@ class SSHConfigEvaluator::Impl {
 						matched = command && mCtx.exec( *command );
 					}
 				} else {
-					mError = path + " line " + String::toString( line.line ) +
-							 ": unsupported Match attribute " + attribute;
+					String::formatTo( mError, "%s line %u: unsupported Match attribute %s", path,
+									  static_cast<unsigned int>( line.line ), attribute );
 					return false;
 				}
 			}
@@ -656,8 +658,9 @@ class SSHConfigEvaluator::Impl {
 		if ( !def ) {
 			std::string ignore = value( "ignoreunknown", "" );
 			if ( ignore.empty() || !listMatches( line.keyword, ignore ) ) {
-				mWarnings.push_back( path + " line " + String::toString( line.line ) +
-									 ": unsupported option \"" + line.keyword + "\"" );
+				mWarnings.push_back( String::format( "%s line %u: unsupported option \"%s\"", path,
+													 static_cast<unsigned int>( line.line ),
+													 line.keyword ) );
 			}
 			return;
 		}
@@ -759,7 +762,7 @@ class SSHConfigEvaluator::Impl {
 			else if ( mCtx.userHome )
 				home = mCtx.userHome( name );
 			if ( !home ) {
-				mWarnings.push_back( std::string( what ) + ": unknown user in \"" + input + "\"" );
+				mWarnings.push_back( String::format( "%s: unknown user in \"%s\"", what, input ) );
 				return std::nullopt;
 			}
 			str = *home + ( slash == std::string::npos ? std::string() : str.substr( slash ) );
@@ -770,16 +773,16 @@ class SSHConfigEvaluator::Impl {
 				if ( str[i] == '$' && i + 1 < str.size() && str[i + 1] == '{' ) {
 					size_t end = str.find( '}', i + 2 );
 					if ( end == std::string::npos ) {
-						mWarnings.push_back( std::string( what ) + ": unterminated ${ in \"" +
-											 input + "\"" );
+						mWarnings.push_back(
+							String::format( "%s: unterminated ${ in \"%s\"", what, input ) );
 						return std::nullopt;
 					}
 					std::string name = str.substr( i + 2, end - i - 2 );
 					auto env = mCtx.getEnv ? mCtx.getEnv( name ) : std::nullopt;
 					if ( !env ) {
 						// OpenSSH ignores the setting when a referenced variable is unset.
-						mWarnings.push_back( std::string( what ) + ": environment variable " +
-											 name + " is not set" );
+						mWarnings.push_back( String::format(
+							"%s: environment variable %s is not set", what, name ) );
 						return std::nullopt;
 					}
 					out += *env;
@@ -800,14 +803,14 @@ class SSHConfigEvaluator::Impl {
 				continue;
 			}
 			if ( i + 1 >= str.size() ) {
-				mWarnings.push_back( std::string( what ) + ": trailing % in \"" + input + "\"" );
+				mWarnings.push_back( String::format( "%s: trailing %% in \"%s\"", what, input ) );
 				return std::nullopt;
 			}
 			char token = str[++i];
 			auto value = tokenValue( token, tokens, t );
 			if ( !value ) {
-				mWarnings.push_back( std::string( what ) + ": unknown token %" +
-									 std::string( 1, token ) + " in \"" + input + "\"" );
+				mWarnings.push_back(
+					String::format( "%s: unknown token %%%c in \"%s\"", what, token, input ) );
 				return std::nullopt;
 			}
 			out += *value;
@@ -969,8 +972,10 @@ class SSHConfigEvaluator::Impl {
 				return candidate;
 			}
 		}
-		if ( !parseBool( value( "canonicalizefallbacklocal", "yes" ), true ) )
-			mError = "Could not resolve host \"" + host + "\" in any canonical domain";
+		if ( !parseBool( value( "canonicalizefallbacklocal", "yes" ), true ) ) {
+			String::formatTo( mError, "Could not resolve host \"%s\" in any canonical domain",
+							  host );
+		}
 		return std::nullopt;
 	}
 
@@ -1001,7 +1006,7 @@ class SSHConfigEvaluator::Impl {
 		config.user = value( "user", mCtx.localUser );
 		int port = 22;
 		if ( !String::fromString( port, value( "port", "22" ) ) || port <= 0 || port > 65535 ) {
-			mWarnings.push_back( "Invalid port \"" + value( "port", "" ) + "\"" );
+			mWarnings.push_back( String::format( "Invalid port \"%s\"", value( "port", "" ) ) );
 			port = 22;
 		}
 		config.port = static_cast<Uint16>( port );
@@ -1089,8 +1094,10 @@ class SSHConfigEvaluator::Impl {
 					auto parsed = SSHConfigEvaluator::parseJumpHost( spec );
 					if ( parsed )
 						config.proxyJump.push_back( *parsed );
-					else
-						mWarnings.push_back( "Invalid ProxyJump entry \"" + spec + "\"" );
+					else {
+						mWarnings.push_back(
+							String::format( "Invalid ProxyJump entry \"%s\"", spec ) );
+					}
 				}
 			}
 		}

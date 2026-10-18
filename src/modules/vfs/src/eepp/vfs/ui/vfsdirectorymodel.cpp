@@ -46,7 +46,8 @@ template <typename Count> VFSTask<Count> readCount( std::shared_ptr<CountState> 
 }
 
 std::string defaultItemCount( Uint64 count ) {
-	return count == 1 ? std::string( "1 item" ) : String::toString( count ) + " items";
+	return count == 1 ? std::string( "1 item" )
+					  : String::format( "%llu items", static_cast<unsigned long long>( count ) );
 }
 
 } // namespace
