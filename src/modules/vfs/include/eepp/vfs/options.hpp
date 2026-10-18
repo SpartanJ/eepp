@@ -67,7 +67,8 @@ struct EE_VFS_API MkDirOptions {
 };
 
 struct EE_VFS_API RemoveOptions {
-	/** VFS-level only: remove directory contents recursively. Providers receive false. */
+	/** Remove directory contents recursively. Passed to providers with RecursiveRemove;
+	 * otherwise VirtualFileSystem walks using pathname operations (not race resistant). */
 	bool recursive{ false };
 };
 

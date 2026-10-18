@@ -39,12 +39,6 @@ void SSHIOContext::stop() {
 	mStopping = true;
 	mWake.signal();
 	mThread.join();
-	// The I/O thread is gone: fail everything that is still queued from here.
-	for ( auto& connection : mConnections )
-		connection->fail( VFSError( VFSErrorCode::ConnectionLost, URI(), "SSH layer shut down" ) );
-	for ( auto& connection : mConnections )
-		connection->drive();
-	mConnections.clear();
 	std::vector<Command> commands;
 	{
 		std::lock_guard<std::mutex> lock( mMutex );
@@ -92,7 +86,14 @@ void SSHIOContext::loop() {
 		// Drop finished connections; their owners (pool, handles) may still reference them.
 		mConnections.erase( std::remove_if( mConnections.begin(), mConnections.end(),
 											[]( const std::shared_ptr<SSHConnection>& c ) {
-												return !c->isUsable() && !c->hasQueuedOperations();
+												if ( c->isUsable() || c->hasQueuedOperations() )
+													return false;
+												// A keepalive/idle failure can happen at the end of
+												// drive(). Notify any pumps before reclaiming their
+												// channels.
+												c->drive();
+												c->releaseSession();
+												return true;
 											} ),
 							mConnections.end() );
 
@@ -111,6 +112,15 @@ void SSHIOContext::loop() {
 		SSHSocket::poll( fds.data(), fds.size(), timeout );
 		mWake.drain();
 	}
+	// Consumers can retain failed connections after stop() returns. Reclaim their sessions
+	// here, so releasing those references later on the UI thread performs no protocol work.
+	for ( auto& connection : mConnections )
+		connection->fail( VFSError( VFSErrorCode::ConnectionLost, URI(), "SSH layer shut down" ) );
+	for ( auto& connection : mConnections ) {
+		connection->drive();
+		connection->releaseSession();
+	}
+	mConnections.clear();
 }
 
 }}} // namespace EE::VFS::sftp

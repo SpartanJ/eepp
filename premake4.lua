@@ -2318,6 +2318,9 @@ solution "eepp"
 		defines { "EE_UNIT_TESTS" }
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		includedirs { "src/modules/eterm/include/", "src/thirdparty", "src/modules/vfs/src/" }
+		if vfs_sftp_enabled() then
+			includedirs { "src/thirdparty/libssh2/include" }
+		end
 		language "C++"
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }

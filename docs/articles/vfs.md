@@ -153,6 +153,17 @@ Atomic writes go to a sibling temporary file, are flushed and renamed over the d
 symlinked destination is written through to its target. Providers report what they can do through
 `capabilities( uri )` (for example `AtomicReplace`, `Fsync`, `Permissions`).
 
+POSIX local recursive removal uses opened directory descriptors and never follows a replaced
+child symlink. It can partially remove a tree before reporting cancellation, an I/O error, or
+`ChangedExternally` when a directory replacement is detected. The supplied root's parent path
+is resolved when traversal starts; this is not a sandbox for untrusted root paths. Nested network
+mounts must be removed separately. Providers advertising `RecursiveRemove` provide their own
+directory-bound traversal. Other providers, including SFTP and the current Windows backend, use
+the generic pathname walker: symlinks present when inspected are removed themselves, but a
+concurrent directory/link replacement can redirect later child operations. Coordinate writers
+before recursive removal on those providers; do not use that fallback to delete an untrusted,
+concurrently modified tree.
+
 ### Copy and move
 
 Recursive and cross-provider transfers are orchestrated by the VFS, not by providers:
@@ -231,6 +242,12 @@ cleanup fails, the operation returns `IO` explaining that publication succeeded 
 remain. The destination is never removed to roll back that failure. File systems must support hard
 links for this publication fallback. No link/unlink move of an arbitrary public source, or
 existence-check-then-replacing-rename fallback, is used.
+
+Temporary publication assumes other writers cannot replace the writer's temporary pathname.
+Exclusive creation prevents initial name collisions, but does not reserve the name until rename
+or link/unlink publication. Atomic writes and copies therefore do not authenticate the published
+bytes against a hostile directory owner or another writer with permission to replace that name.
+Use a directory whose writers are trusted (or an application-private directory) for that guarantee.
 
 ## Watching
 

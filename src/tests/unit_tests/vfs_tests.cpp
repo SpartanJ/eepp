@@ -19,6 +19,7 @@
 #include <thread>
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
+#include <fcntl.h>
 #include <sys/stat.h> // umask
 #include <unistd.h>	  // symlink, link
 #endif
@@ -149,6 +150,133 @@ UTEST( VFSProvider, localMetadataAndRevisions ) {
 }
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
+UTEST( VFSLocal, recursiveRemovalDoesNotUsePathnameTraversal ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	const URI tree = tmp.uri().withAppendedSegment( "tree" );
+	const URI outside = tmp.uri().withAppendedSegment( "outside" );
+	ASSERT_TRUE( waitFor( vfs.makeDir( tree ) ) );
+	ASSERT_TRUE( waitFor( vfs.makeDir( outside ) ) );
+	ASSERT_TRUE( writeString( vfs, outside.withAppendedSegment( "precious" ), "keep" ) );
+	auto pool = ThreadPool::createShared( 1 );
+	class SwappingProvider : public LocalProvider {
+	  public:
+		SwappingProvider( std::shared_ptr<LocalIOScheduler> scheduler, URI tree, URI outside ) :
+			LocalProvider( std::move( scheduler ) ),
+			tree( std::move( tree ) ),
+			outside( std::move( outside ) ) {}
+
+		VFSTask<VFSFileInfo> stat( const URI& uri, const StatOptions& options,
+								   CancellationToken token ) override {
+			return LocalProvider::stat( uri, options, token )
+				.then( InlineExecutor::instance(),
+					   [this, uri, options]( VFSResult<VFSFileInfo>&& result ) {
+						   // Reproduce the old walker's stat/openDirectory gap. It must never use
+						   // this path for a provider offering descriptor-bound recursive removal.
+						   if ( uri == tree && !options.followSymlinks && result )
+							   swap();
+						   return std::move( result );
+					   } );
+		}
+
+		VFSTask<void> remove( const URI& uri, const RemoveOptions& options,
+							  CancellationToken token ) override {
+			if ( uri == tree && options.recursive )
+				swap(); // Also exercise a root replaced before native traversal starts.
+			return LocalProvider::remove( uri, options, std::move( token ) );
+		}
+
+		void swap() {
+			if ( swapped )
+				return;
+			swapped =
+				::rename( tree.getFSPath().c_str(),
+						  tree.getParent().withAppendedSegment( "aside" ).getFSPath().c_str() ) ==
+					0 &&
+				::symlink( outside.getFSPath().c_str(), tree.getFSPath().c_str() ) == 0;
+		}
+
+		URI tree;
+		URI outside;
+		bool swapped{ false };
+	};
+	auto provider = std::make_shared<SwappingProvider>(
+		std::make_shared<LocalIOScheduler>( pool, Seconds( 5 ) ), tree, outside );
+	vfs.registerProvider( provider );
+	auto result = waitFor( vfs.remove( tree, RemoveOptions{ true } ) );
+	EXPECT_TRUE( result );
+	EXPECT_TRUE( provider->swapped );
+	EXPECT_STDSTREQ( "keep", readString( vfs, outside.withAppendedSegment( "precious" ) ) );
+	EXPECT_EQ( VFSErrorCode::NotFound,
+			   codeOf( waitFor( vfs.stat( tree, StatOptions{ false } ) ) ) );
+}
+
+UTEST( VFSLocal, recursiveRemovalPreservesLinkTargetsAndHonorsCancellation ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	const URI tree = tmp.uri().withAppendedSegment( "tree" );
+	const URI nested = tree.withAppendedSegment( "nested" );
+	const URI outside = tmp.uri().withAppendedSegment( "outside" );
+	ASSERT_TRUE( waitFor( vfs.makeDirs( nested ) ) );
+	ASSERT_TRUE( writeString( vfs, nested.withAppendedSegment( "file" ), "delete" ) );
+	ASSERT_TRUE( writeString( vfs, outside, "keep" ) );
+	ASSERT_EQ( 0,
+			   ::symlink( outside.getFSPath().c_str(), ( nested.getFSPath() + "/link" ).c_str() ) );
+	ASSERT_EQ( 0, ::symlink( "missing", ( nested.getFSPath() + "/broken" ).c_str() ) );
+	CancellationSource cancellation;
+	cancellation.cancel();
+	EXPECT_EQ( VFSErrorCode::Cancelled, codeOf( waitFor( vfs.remove( tree, RemoveOptions{ true },
+																	 cancellation.token() ) ) ) );
+	EXPECT_STDSTREQ( "delete", readString( vfs, nested.withAppendedSegment( "file" ) ) );
+	EXPECT_TRUE( waitFor( vfs.remove( tree, RemoveOptions{ true } ) ) );
+	EXPECT_STDSTREQ( "keep", readString( vfs, outside ) );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( vfs.stat( tree ) ) ) );
+#if defined( O_SEARCH ) || defined( O_PATH )
+	// Removing a known entry does not require permission to list its parent directory.
+	ASSERT_EQ( 0, ::chmod( tmp.path.c_str(), 0300 ) );
+	auto removed = waitFor( vfs.remove( outside, RemoveOptions{ true } ) );
+	EXPECT_EQ( 0, ::chmod( tmp.path.c_str(), 0700 ) );
+	EXPECT_TRUE( removed );
+#endif
+}
+
+UTEST( VFSLocal, recursiveRemovalKeepsOpenedAncestorsDuringReplacement ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	const std::string tree = tmp.path + "tree";
+	const std::string outside = tmp.path + "outside";
+	ASSERT_TRUE( FileSystem::makeDir( tree ) );
+	ASSERT_TRUE( FileSystem::makeDir( outside ) );
+	// More than the generic walker's 512-entry batch. Matching names make any redirection
+	// destructive and observable, including after enumeration has already started.
+	for ( size_t i = 0; i < 1200; ++i ) {
+		const std::string name = String::format( "/%zu", i );
+		ASSERT_TRUE( FileSystem::fileWrite( tree + name, std::string_view( "delete" ) ) );
+		ASSERT_TRUE( FileSystem::fileWrite( outside + name, std::string_view( "keep" ) ) );
+	}
+	std::atomic<bool> done{ false };
+	bool swapped = false;
+	std::thread replacer( [&] {
+		while ( !done.load() && ::access( ( tree + "/0" ).c_str(), F_OK ) == 0 )
+			std::this_thread::yield();
+		if ( !done.load() && ::rename( tree.c_str(), ( tmp.path + "aside" ).c_str() ) == 0 )
+			swapped = ::symlink( outside.c_str(), tree.c_str() ) == 0;
+	} );
+	auto result = waitFor( vfs.remove( URI::fromFSPath( tree ), RemoveOptions{ true } ) );
+	done = true;
+	replacer.join();
+	EXPECT_TRUE( result || result.error().is( VFSErrorCode::ChangedExternally ) ||
+				 result.error().is( VFSErrorCode::NotDirectory ) );
+	// The operation may finish before the replacer runs; outside bytes must survive either way.
+	for ( size_t i = 0; i < 1200; ++i ) {
+		std::string bytes;
+		EXPECT_TRUE( FileSystem::fileGet( String::format( "%s/%zu", outside, i ), bytes ) );
+		EXPECT_STDSTREQ( "keep", bytes );
+	}
+	if ( swapped )
+		EXPECT_EQ( 0, ::unlink( tree.c_str() ) ); // TempDir cleanup must not follow our test link.
+}
+
 UTEST( VFSProvider, localSymlinks ) {
 	TempDir tmp;
 	VirtualFileSystem vfs;

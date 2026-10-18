@@ -26,6 +26,8 @@ class FileWriter;
  * file identities, including hardlinks, with InvalidOperation and retain both names.
  * Without native no-replace rename, public no-overwrite renames return Unsupported. Only the
  * internal writer's exclusively owned temporary files may use hard-link publication and unlink.
+ * POSIX recursive removal is descriptor-relative and does not follow replaced child symlinks;
+ * the Windows backend currently uses the VFS's generic pathname traversal instead.
  */
 class EE_VFS_API LocalProvider : public VFSProvider {
   public:

@@ -117,7 +117,8 @@ class SFTPProviderImpl;
  * URIs are looked up by their authority as written, and URIs whose authority differs but
  * resolves to the same effective configuration (an alias, an explicit default user) share the
  * connection too. All SSH sessions are driven by one I/O thread in non-blocking mode;
- * provider methods never block the caller.
+ * provider methods never block the caller. Terminal sessions reclaim their protocol resources
+ * on that thread without waiting for peer replies, before their retained consumer handles die.
  */
 class EE_VFS_API SFTPProvider : public VFSProvider {
   public:

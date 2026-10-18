@@ -265,28 +265,49 @@ bool SSHConnection::hasDistinctPeer( const SSHConnection& other ) const {
 }
 
 SSHConnection::~SSHConnection() {
+	// Registered sessions have already been reclaimed on the I/O thread. An unregistered
+	// connection can still die during setup; its cleanup must never wait on the peer either.
+	releaseSession();
+	scrub( mPassword );
+	scrub( mPassphrase );
+	scrub( mKbdAnswers );
+}
+
+ssize_t SSHConnection::discardSend( libssh2_socket_t, const void*, size_t, int, void** ) {
+	return -ECONNRESET;
+}
+
+ssize_t SSHConnection::discardReceive( libssh2_socket_t, void*, size_t, int, void** ) {
+	return 0;
+}
+
+void SSHConnection::releaseSession() {
 	if ( mAgent ) {
 		libssh2_agent_disconnect( mAgent );
 		libssh2_agent_free( mAgent );
+		mAgent = nullptr;
 	}
 	if ( mSession ) {
-		// Teardown may need a few writes (channel close, disconnect): do them bounded and
-		// blocking rather than leaking the session.
-		libssh2_session_set_timeout( mSession, 2000 );
-		libssh2_session_set_blocking( mSession, 1 );
+		// The session is terminal: never wait for a blackholed peer, touch a jump parent's
+		// session, or write to a ProxyCommand during reclamation. EOF/error callbacks let
+		// libssh2 complete its pending close/free state machines without EAGAIN or polling.
+		libssh2_session_set_blocking( mSession, 0 );
+		libssh2_session_callback_set2( mSession, LIBSSH2_CALLBACK_SEND,
+									   reinterpret_cast<libssh2_cb_generic*>( &discardSend ) );
+		libssh2_session_callback_set2( mSession, LIBSSH2_CALLBACK_RECV,
+									   reinterpret_cast<libssh2_cb_generic*>( &discardReceive ) );
 		// libssh2 frees a handle on every completed close, even when sending fails.
 		for ( auto* handle : mHandles )
 			libssh2_sftp_close_handle( handle );
 		mHandles.clear();
 		if ( mSFTP )
 			libssh2_sftp_shutdown( mSFTP );
-		if ( isReady() || mState == State::Closed )
-			libssh2_session_disconnect( mSession, "eepp-vfs closing" );
+		mSFTP = nullptr;
 		libssh2_session_free( mSession );
+		mSession = nullptr;
 	}
-	scrub( mPassword );
-	scrub( mPassphrase );
-	scrub( mKbdAnswers );
+	// ProxyCommand teardown and jump-parent reference release belong to the I/O thread too.
+	mTransport.reset();
 }
 
 VFSTask<void> SSHConnection::whenReady() {

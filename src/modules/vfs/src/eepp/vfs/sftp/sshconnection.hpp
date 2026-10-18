@@ -121,9 +121,8 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	int fsyncSupport{ -1 };
 	int statvfsSupport{ -1 };
 
-	/** Tracks an open SFTP handle (I/O thread only). Handles still open when the connection is
-	 * destroyed (for example because their owners died after the connection failed) are closed
-	 * then, so libssh2 releases them. */
+	/** Tracks an open SFTP handle (I/O thread only). Terminal connections release outstanding
+	 * handles on that thread before unregistering, even if consumer handles still retain us. */
 	void trackHandle( LIBSSH2_SFTP_HANDLE* handle ) {
 		mHandles.push_back( handle );
 		addUser();
@@ -214,6 +213,14 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	bool hasQueuedOperations() const;
 
 	void fail( VFSError error );
+
+	/** Reclaims terminal-session resources on the I/O thread without protocol round trips.
+	 * Also safe for the destructor of a connection that was never registered/started. */
+	void releaseSession();
+
+	static ssize_t discardSend( libssh2_socket_t, const void*, size_t, int, void** );
+
+	static ssize_t discardReceive( libssh2_socket_t, void*, size_t, int, void** );
 
 	Step establish();
 

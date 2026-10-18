@@ -2325,6 +2325,9 @@ workspace "eepp"
 		defines { "EE_UNIT_TESTS" }
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		incdirs { "src/modules/eterm/include/", "src/thirdparty", "src/modules/vfs/src/" }
+		if vfs_sftp_enabled() then
+			incdirs { "src/thirdparty/libssh2/include" }
+		end
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp",
 				"src/tools/eefm/location.cpp",

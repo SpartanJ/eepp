@@ -14,6 +14,8 @@ enum class VFSCapability : Uint32 {
 	Create = 1u << 3,
 	Remove = 1u << 4,
 	Rename = 1u << 5,
+	/** remove(recursive=true) traverses opened directories without following swapped links. */
+	RecursiveRemove = 1u << 6,
 
 	Seek = 1u << 7,
 	RandomAccess = 1u << 8,

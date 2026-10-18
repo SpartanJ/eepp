@@ -40,11 +40,11 @@ using Route = LocalIOScheduler::Route;
 ProviderCapabilities LocalProvider::capabilities( const URI& ) const {
 	ProviderCapabilities caps =
 		VFSCapability::Read | VFSCapability::Write | VFSCapability::List | VFSCapability::Create |
-		VFSCapability::Remove | VFSCapability::Rename | VFSCapability::Seek |
-		VFSCapability::RandomAccess | VFSCapability::Truncate | VFSCapability::Symlinks |
-		VFSCapability::Permissions | VFSCapability::AtomicRename | VFSCapability::AtomicReplace |
-		VFSCapability::Fsync | VFSCapability::FreeSpace | VFSCapability::HardLinks |
-		VFSCapability::Ownership;
+		VFSCapability::Remove | VFSCapability::RecursiveRemove | VFSCapability::Rename |
+		VFSCapability::Seek | VFSCapability::RandomAccess | VFSCapability::Truncate |
+		VFSCapability::Symlinks | VFSCapability::Permissions | VFSCapability::AtomicRename |
+		VFSCapability::AtomicReplace | VFSCapability::Fsync | VFSCapability::FreeSpace |
+		VFSCapability::HardLinks | VFSCapability::Ownership;
 #if EE_PLATFORM != EE_PLATFORM_MACOS
 	// macOS file systems are case-insensitive by default.
 	caps.set( VFSCapability::CaseSensitive );
@@ -680,8 +680,154 @@ VFSTask<void> LocalProvider::mkdir( const URI& uri, const MkDirOptions& options,
 					  } );
 }
 
-VFSTask<void> LocalProvider::remove( const URI& uri, const RemoveOptions&,
+namespace {
+
+/** Keep every ancestor open: renaming an ancestor or replacing it with a link must not
+ * redirect subsequent child operations. Diagnostic paths are never used for child syscalls. */
+class LocalTreeRemover {
+  public:
+	static VFSResult<void> remove( std::string path, const CancellationToken& token ) {
+		while ( path.size() > 1 && path.back() == '/' )
+			path.pop_back();
+		const size_t slash = path.find_last_of( '/' );
+		const std::string name = path.substr( slash == std::string::npos ? 0 : slash + 1 );
+		if ( name.empty() || name == "." || name == ".." ) {
+			return Err( VFSError( VFSErrorCode::InvalidOperation, URI::fromFSPath( path ),
+								  "Recursive removal requires a named entry" ) );
+		}
+		// Resolve only the supplied parent for mount routing/diagnostics. Descendant operations
+		// below are descriptor-relative and never resolve their mutable pathname again.
+		path = LocalIOScheduler::resolvePath( path, false );
+		const size_t parentSlash = path.find_last_of( '/' );
+		const std::string parent = parentSlash == std::string::npos
+									   ? "."
+									   : ( parentSlash == 0 ? "/" : path.substr( 0, parentSlash ) );
+		// Removing a known file needs search/write permission on its parent, not read permission.
+		int flags = O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC;
+#if defined( O_SEARCH )
+		flags |= O_SEARCH;
+#elif defined( O_PATH )
+		flags |= O_PATH;
+#else
+		flags |= O_RDONLY;
+#endif
+		int fd;
+		do {
+			fd = ::open( parent.c_str(), flags );
+		} while ( fd < 0 && errno == EINTR );
+		if ( fd < 0 )
+			return Err( errnoError( path, "Cannot open removal parent" ) );
+		struct Parent {
+			int fd;
+
+			~Parent() { ::close( fd ); }
+		} directory{ fd };
+		return removeAt( directory.fd, name.c_str(), path, token, 0 );
+	}
+
+  private:
+	struct CloseDirectory {
+		void operator()( DIR* directory ) const { ::closedir( directory ); }
+	};
+
+	using Directory = std::unique_ptr<DIR, CloseDirectory>;
+
+	static VFSResult<void> changed( const std::string& path ) {
+		return Err( VFSError( VFSErrorCode::ChangedExternally, URI::fromFSPath( path ),
+							  "Directory changed during recursive removal" ) );
+	}
+
+	static VFSResult<void> removeAt( int parent, const char* name, std::string& path,
+									 const CancellationToken& token, unsigned depth ) {
+		if ( token.isCancellationRequested() )
+			return Err( cancelledError( URI::fromFSPath( path ) ) );
+		// Bound both open descriptors and recursive stack use. Worker threads on macOS can
+		// have a 512 KiB stack; retaining 512 frames would exceed that before the depth check.
+		if ( depth > 256 ) {
+			return Err( VFSError( VFSErrorCode::TooManySymlinks, URI::fromFSPath( path ),
+								  "Directory tree too deep" ) );
+		}
+		struct stat before;
+		if ( ::fstatat( parent, name, &before, AT_SYMLINK_NOFOLLOW ) != 0 )
+			return Err( errnoError( path, "Cannot stat removal entry" ) );
+		if ( !S_ISDIR( before.st_mode ) ) {
+			// unlinkat without AT_REMOVEDIR cannot follow a link or remove a directory that
+			// replaced this entry after the stat.
+			if ( ::unlinkat( parent, name, 0 ) != 0 )
+				return Err( errnoError( path, "Cannot remove entry" ) );
+			return Ok();
+		}
+		int fd;
+		do {
+			fd = ::openat( parent, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC );
+		} while ( fd < 0 && errno == EINTR );
+		if ( fd < 0 )
+			return Err(
+				errnoError( path, "Cannot open removal directory without following links" ) );
+		DIR* stream = ::fdopendir( fd );
+		if ( !stream ) {
+			const int error = errno;
+			::close( fd );
+			return Err( errnoError( path, "Cannot read removal directory", error ) );
+		}
+		Directory directory( stream );
+		struct stat opened;
+		if ( ::fstat( fd, &opened ) != 0 )
+			return Err( errnoError( path, "Cannot stat opened removal directory" ) );
+		if ( opened.st_dev != before.st_dev || opened.st_ino != before.st_ino )
+			return changed( path );
+		// Do not enter a nested network mount from this directory's I/O lane. Its server may
+		// be unreachable; even stat'ing that entry would block this lane on a different mount.
+		const auto networkMounts = LocalIOScheduler::networkMountsIn( path );
+		const size_t pathLength = path.size();
+		while ( true ) {
+			if ( token.isCancellationRequested() )
+				return Err( cancelledError( URI::fromFSPath( path ) ) );
+			errno = 0;
+			dirent* entry = ::readdir( stream );
+			if ( !entry ) {
+				if ( errno != 0 )
+					return Err( errnoError( path, "Cannot read removal directory" ) );
+				break;
+			}
+			if ( std::strcmp( entry->d_name, "." ) == 0 || std::strcmp( entry->d_name, ".." ) == 0 )
+				continue;
+			if ( std::find( networkMounts.begin(), networkMounts.end(), entry->d_name ) !=
+				 networkMounts.end() ) {
+				return Err( VFSError( VFSErrorCode::Unsupported, URI::fromFSPath( path ),
+									  "Remove nested network mounts separately" ) );
+			}
+			path.push_back( '/' );
+			path.append( entry->d_name );
+			auto result = removeAt( fd, entry->d_name, path, token, depth + 1 );
+			path.resize( pathLength );
+			if ( !result )
+				return result;
+		}
+		// This check preserves a detected replacement. The final rmdir can race with another
+		// rename, but it cannot follow a symlink or remove any replacement directory's contents.
+		struct stat current;
+		if ( ::fstatat( parent, name, &current, AT_SYMLINK_NOFOLLOW ) != 0 )
+			return Err( errnoError( path, "Cannot check removed directory identity" ) );
+		if ( current.st_dev != opened.st_dev || current.st_ino != opened.st_ino )
+			return changed( path );
+		if ( token.isCancellationRequested() )
+			return Err( cancelledError( URI::fromFSPath( path ) ) );
+		if ( ::unlinkat( parent, name, AT_REMOVEDIR ) != 0 )
+			return Err( errnoError( path, "Cannot remove directory" ) );
+		return Ok();
+	}
+};
+
+} // namespace
+
+VFSTask<void> LocalProvider::remove( const URI& uri, const RemoveOptions& options,
 									 CancellationToken token ) {
+	if ( options.recursive ) {
+		return run<void>( uri, LastLink::Keep, token, [token]( const std::string& path ) {
+			return LocalTreeRemover::remove( path, token );
+		} );
+	}
 	return run<void>(
 		uri, LastLink::Keep, std::move( token ), []( const std::string& path ) -> VFSResult<void> {
 			struct stat st;

@@ -485,7 +485,7 @@ VFSTask<void> VirtualFileSystem::remove( const URI& uri, const RemoveOptions& op
 	auto provider = providerFor( uri );
 	if ( !provider )
 		return unsupportedScheme<void>( uri );
-	if ( !options.recursive )
+	if ( !options.recursive || provider->capabilities( uri ).has( VFSCapability::RecursiveRemove ) )
 		return provider->remove( uri, options, std::move( token ) );
 	return orchestrate<void>( [provider, uri, token]() -> VFSResult<void> {
 		return removeTree( *provider, uri, token, 0 );

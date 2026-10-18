@@ -24,7 +24,8 @@ struct EE_VFS_API SpaceInfo {
  *
  * The interface is deliberately primitive: recursive copy, move, recursive removal, atomic
  * writes and directory creation with parents are orchestrated by VirtualFileSystem on top of
- * these operations, so providers do not reimplement them.
+ * these operations. RecursiveRemove providers handle recursive deletion themselves to keep
+ * traversal and removal bound to opened directories instead of mutable child paths.
  *
  * Threading contract:
  * - Every method may be called from any thread and must never block the caller on I/O; work is
@@ -57,7 +58,8 @@ class EE_VFS_API VFSProvider {
 	virtual VFSTask<void> mkdir( const URI& uri, const MkDirOptions& options,
 								 CancellationToken token ) = 0;
 
-	/** Removes a file, a symlink (never its target) or an empty directory. */
+	/** Removes a file, a symlink (never its target) or an empty directory. Providers advertising
+	 * RecursiveRemove also accept recursive=true and must not follow replaced child symlinks. */
 	virtual VFSTask<void> remove( const URI& uri, const RemoveOptions& options,
 								  CancellationToken token ) = 0;
 

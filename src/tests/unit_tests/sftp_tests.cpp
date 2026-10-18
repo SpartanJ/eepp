@@ -4,6 +4,7 @@
 
 #include "utest.hpp"
 
+#include "../../modules/vfs/src/eepp/vfs/sftp/sftpproviderimpl.hpp"
 #include "../../modules/vfs/src/eepp/vfs/sftp/sshagent.hpp"
 #include "vfs_test_utils.hpp"
 #include <array>
@@ -729,6 +730,75 @@ UTEST( SFTP, replacementWithoutPosixRenamePreservesBothFiles ) {
 	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( moved ) );
 	EXPECT_STDSTREQ( "new data", readString( vfs, URI::fromFSPath( src ) ) );
 	EXPECT_STDSTREQ( "precious old data", readString( vfs, URI::fromFSPath( dst ) ) );
+}
+
+UTEST( SFTP, blackholedSessionReclaimsHandlesBeforeConsumerDisposal ) {
+	REQUIRE_SSHD();
+	for ( bool stop : { false, true } ) {
+		BlackholeProxy proxy( server.port() );
+		ASSERT_NE( 0, proxy.port() );
+		SFTPProviderConfig config;
+		config.watchAgentCommand.clear();
+		config.configContextFactory = [dir = server.dir()]( const std::string& host ) {
+			auto context = SSHConfigContext::system( host );
+			context.sources = { { dir + "ssh_config", dir } };
+			return context;
+		};
+		auto impl = std::make_shared<sftp::SFTPProviderImpl>( std::move( config ) );
+		URI uri = server.uri( "testhost" );
+		uri.setPort( static_cast<Uint16>( proxy.port() ) );
+		auto connected = waitFor( impl->connection( uri ) );
+		REQUIRE_OK( connected );
+		auto connection = std::move( connected ).value();
+		const std::string path = server.remoteRoot();
+		// Retain many server handles without closing them before the peer stops responding.
+		auto opened = waitFor( connection->submit<void>(
+			{}, uri,
+			[path, count = 0]( sftp::SSHConnection& c ) mutable -> std::optional<VFSResult<void>> {
+				while ( count < 32 ) {
+					auto* handle = libssh2_sftp_opendir( c.sftp(), path.c_str() );
+					if ( !handle ) {
+						if ( libssh2_session_last_errno( c.session() ) == LIBSSH2_ERROR_EAGAIN )
+							return std::nullopt;
+						return Err( c.lastError( URI(), "Opening teardown test handle" ) );
+					}
+					c.trackHandle( handle );
+					++count;
+				}
+				return Ok();
+			} ) );
+		REQUIRE_OK( opened );
+		proxy.drop( true );
+		const auto start = std::chrono::steady_clock::now();
+		if ( stop ) {
+			impl->ioContext()->stop();
+			EXPECT_TRUE( connection->session() == nullptr );
+			EXPECT_TRUE( connection->transport() == nullptr );
+		} else {
+			connection->close();
+			TaskResolver<VFSResult<bool>> resolve;
+			auto reclaimed = VFSTask<bool>::create( resolve );
+			// A second turn runs after terminal-session retirement, while the consumer still
+			// retains its strong reference. Inspect session state only on its owning thread.
+			auto context = impl->ioContext();
+			context->post( [context, connection, resolve = std::move( resolve )]() mutable {
+				context->post( [connection, resolve = std::move( resolve )]() mutable {
+					resolve( Ok( connection->session() == nullptr &&
+								 connection->transport() == nullptr ) );
+				} );
+			} );
+			ASSERT_EQ( TaskState::Ready, reclaimed.waitFor( std::chrono::seconds( 2 ) ) );
+			auto result = waitFor( std::move( reclaimed ) );
+			EXPECT_TRUE( result && result.value() );
+		}
+		// Releasing the final consumer reference on this thread must not run protocol closes.
+		connection.reset();
+		impl.reset();
+		EXPECT_LT( std::chrono::duration_cast<std::chrono::milliseconds>(
+					   std::chrono::steady_clock::now() - start )
+					   .count(),
+				   1000 );
+	}
 }
 
 UTEST( SFTP, blackholedReadyOperationsFailTheSessionAndReconnect ) {
