@@ -840,14 +840,12 @@ VFSTask<bool> SFTPProvider::sameFileSystem( const URI& from, const URI& to,
 					// policy.
 					if ( source == destination.value() )
 						return Ok( true );
-					const auto& a = source->config();
-					const auto& b = destination.value()->config();
-					// Different users, ports or authentication policies on one host can still
-					// expose the same files. Distinct sessions cannot establish that identity.
-					if ( a.hostName == b.hostName ) {
-						return Err( VFSError( VFSErrorCode::Unsupported, to,
-											  "Cannot verify resource identity across distinct SSH "
-											  "sessions on the same endpoint" ) );
+					// Different DNS names, users or routes do not prove disjoint namespaces.
+					// Require established peer/key evidence, not configuration spellings.
+					if ( !source->hasDistinctPeer( *destination.value() ) ) {
+						return Err( VFSError(
+							VFSErrorCode::Unsupported, to,
+							"Cannot verify resource identity across these SSH sessions" ) );
 					}
 					return Ok( false );
 				} );

@@ -34,7 +34,7 @@ const char* PaneLayout = R"xml(
 			<SelectButton class="filter_case" icon="filter-case" tooltip="Match Case" layout_gravity="center_vertical" />
 			<DropDownList class="filter_mode" layout_width="72dp" layout_gravity="center_vertical" tooltip="Match Mode" />
 		</hbox>
-		<PushButton class="filter_close" icon="action-close" tooltip="Hide Filter Bar (Ctrl+I)" layout_gravity="center_vertical" />
+		<PushButton class="filter_close" icon="action-close" tooltip="Hide Filter Bar" layout_gravity="center_vertical" />
 	</hbox>
 </vbox>
 )xml";
@@ -232,7 +232,8 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 	p.newTabButton->setParent( p.tabs->getTabBar() );
 	p.newTabButton->addClass( "new_tab" );
 	p.newTabButton->setIcon( mApp.icon( "action-new-tab" ) );
-	p.newTabButton->setTooltipText( "New Tab (Ctrl+T)" );
+	p.newTabButton->setTooltipText(
+		mApp.shortcutTooltip( mUI->i18n( "eefm_new_tab", "New Tab" ), "new-tab" ) );
 	p.newTabButton->onClick( [this, index]( const MouseEvent* ) {
 		Pane& pane = this->pane( index );
 		setActivePane( index );

@@ -71,6 +71,41 @@ int SSHSocket::pendingError( SocketHandle socket ) {
 	return error;
 }
 
+std::optional<SSHSocket::Endpoint> SSHSocket::peerEndpoint( SocketHandle socket ) {
+	sockaddr_storage address{};
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	int length = sizeof( address );
+#else
+	socklen_t length = sizeof( address );
+#endif
+	if ( getpeername( socket, reinterpret_cast<sockaddr*>( &address ), &length ) != 0 )
+		return std::nullopt;
+	Endpoint endpoint;
+	if ( address.ss_family == AF_INET &&
+		 length >= static_cast<decltype( length )>( sizeof( sockaddr_in ) ) ) {
+		const auto& peer = reinterpret_cast<const sockaddr_in&>( address );
+		std::memcpy( endpoint.address.data() + 12, &peer.sin_addr, 4 );
+		endpoint.port = ntohs( peer.sin_port );
+		endpoint.family = 4;
+	} else if ( address.ss_family == AF_INET6 &&
+				length >= static_cast<decltype( length )>( sizeof( sockaddr_in6 ) ) ) {
+		const auto& peer = reinterpret_cast<const sockaddr_in6&>( address );
+		std::memcpy( endpoint.address.data(), &peer.sin6_addr, 16 );
+		endpoint.scope = peer.sin6_scope_id;
+		endpoint.port = ntohs( peer.sin6_port );
+		endpoint.family = 6;
+		constexpr Uint8 MappedPrefix[]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff };
+		if ( std::memcmp( endpoint.address.data(), MappedPrefix, sizeof( MappedPrefix ) ) == 0 ) {
+			endpoint.family = 4;
+			endpoint.scope = 0;
+			endpoint.address[10] = endpoint.address[11] = 0;
+		}
+	} else {
+		return std::nullopt;
+	}
+	return endpoint;
+}
+
 std::string SSHSocket::errorString( int error ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	char buffer[256] = { 0 };

@@ -71,7 +71,8 @@ class EE_VFS_API VFSProvider {
 
 	/** Whether canonical paths from these URIs belong to one resource namespace.
 	 * Called only for URIs served by this provider instance. True makes canonical paths
-	 * comparable even when authorities differ; false must mean disjoint namespaces.
+	 * comparable even when authorities differ; false identifies disjoint namespaces within
+	 * the provider's identity model (independent servers can still share physical storage).
 	 * Resolve authority aliases here. Return Unsupported if identity is uncertain, so a
 	 * transfer fails before modifying its destination. This does not promise native rename
 	 * support or imply that both paths are on one device. */

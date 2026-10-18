@@ -113,6 +113,10 @@ tab::icon,
 	text-align: center;
 	scale-type: none;
 }
+/* The application logo keeps its colors in light, dark and selected menu states. */
+#open-in-eefm > Menu::Item::icon {
+	tint: white;
+}
 #places_scroll {
 	background-color: var(--back);
 }
@@ -366,12 +370,12 @@ tableview::cell.dragged {
 </style>
 <vbox id="root" layout_width="match_parent" layout_height="match_parent">
 	<hbox id="toolbar" layout_width="match_parent" layout_height="wrap_content">
-		<PushButton id="back" class="tool" icon="go-previous" tooltip="Back (Alt+Left)" />
-		<PushButton id="forward" class="tool" icon="go-next" tooltip="Forward (Alt+Right)" />
-		<PushButton id="up" class="tool" icon="go-parent" tooltip="Go Up (Alt+Up)" />
-		<PushButton id="refresh" class="tool" icon="view-refresh" tooltip="Reload (F5)" />
-		<SelectButton id="places_toggle" class="tool" icon="places-panel" tooltip="Show Places Panel (F9)" />
-		<SelectButton id="split" class="tool" icon="view-split" tooltip="Split View (F3)" />
+		<PushButton id="back" class="tool" icon="go-previous" />
+		<PushButton id="forward" class="tool" icon="go-next" />
+		<PushButton id="up" class="tool" icon="go-parent" />
+		<PushButton id="refresh" class="tool" icon="view-refresh" />
+		<SelectButton id="places_toggle" class="tool" icon="places-panel" />
+		<SelectButton id="split" class="tool" icon="view-split" />
 		<hbox id="location_0" class="location" layout_width="200dp" layout_height="wrap_content" />
 		<hbox id="location_1" class="location" layout_width="200dp" layout_height="wrap_content" />
 		<widget layout_width="0" layout_weight="1" layout_height="1dp" />
@@ -510,7 +514,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	}
 	if ( mState.contains( "window" ) && mState["window"].value( "maximized", false ) )
 		mApp->getWindow()->maximize();
-	Icons::load( mUI, Sys::getProcessPath() + "assets/" );
+	Icons::load( mUI, Sys::getProcessPath() + "assets/", ws.Icon );
 
 	// Theme detection and icon loading run on the pool: startup does not wait for them.
 	mSystemIcons = UISystemIconTheme::New( *mPool, *mExecutor );
@@ -545,6 +549,9 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 
 	mPlacesController = std::make_unique<PlacesController>( *this, mConfigDir + "places.json" );
 	mPlacesController->createPanel( mPlacesScroll );
+
+	// Pane tooltips resolve their shortcuts while the panes are created.
+	registerShortcuts();
 
 	// Panes and their location bars
 	for ( int i = 0; i < 2; ++i ) {
@@ -682,7 +689,6 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 		}
 	} );
 
-	registerShortcuts();
 	mPaneManager->restoreTabs( mState, locations, forceSplit );
 	setPlacesVisible( mPlacesVisible );
 	setFilterBarVisible( mFilterBarVisible );
@@ -843,28 +849,44 @@ void App::layoutLocationBars() {
 // Menus and shortcuts
 // ---------------------------------------------------------------------------------------------
 
+std::string App::getKeybind( const std::string& command ) const {
+	return mUI->getKeyBindings().getCommandKeybindString( command );
+}
+
+String App::shortcutTooltip( String text, const std::string& command ) const {
+	const auto shortcut = getKeybind( command );
+	if ( !shortcut.empty() )
+		text += " (" + shortcut + ")";
+	return text;
+}
+
 void App::showAppMenu() {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->add( mUI->i18n( "eefm_new_tab", "New Tab" ), icon( "action-new-tab" ), "Ctrl+T" )
+	menu->add( mUI->i18n( "eefm_new_tab", "New Tab" ), icon( "action-new-tab" ),
+			   getKeybind( "new-tab" ) )
 		->setId( "new-tab" );
 	if ( mPaneManager->currentTab() &&
 		 mPaneManager->currentTab()->model->uri().getScheme() == "file" ) {
 		menu->add( mUI->i18n( "eefm_open_terminal", "Open Terminal" ), icon( "action-terminal" ),
-				   "Shift+F4" )
+				   getKeybind( "terminal" ) )
 			->setId( "open-terminal" );
 	}
 	menu->addSeparator();
-	menu->addCheckBox( mUI->i18n( "eefm_show_hidden", "Show Hidden Files" ), mShowHidden, "Ctrl+H" )
+	menu->addCheckBox( mUI->i18n( "eefm_show_hidden", "Show Hidden Files" ), mShowHidden,
+					   getKeybind( "toggle-hidden" ) )
 		->setId( "hidden" );
-	menu->addCheckBox( mUI->i18n( "eefm_split_view", "Split View" ), mSplit, "F3" )
+	menu->addCheckBox( mUI->i18n( "eefm_split_view", "Split View" ), mSplit,
+					   getKeybind( "toggle-split" ) )
 		->setId( "split" );
 	// As Dolphin: the panels are in a submenu.
 	UIPopUpMenu* panels = UIPopUpMenu::New();
-	panels->addCheckBox( mUI->i18n( "eefm_panel_places", "Places" ), mPlacesVisible, "F9" )
+	panels
+		->addCheckBox( mUI->i18n( "eefm_panel_places", "Places" ), mPlacesVisible,
+					   getKeybind( "toggle-places" ) )
 		->setId( "places" );
 	panels
 		->addCheckBox( mUI->i18n( "eefm_panel_terminal", "Terminal" ), mTerminalPanel->isVisible(),
-					   "F4" )
+					   getKeybind( "toggle-terminal" ) )
 		->setId( "terminal" );
 	panels->on( Event::OnItemClicked, [this]( const Event* event ) {
 		std::string id( event->getNode()->getId() );
@@ -876,13 +898,14 @@ void App::showAppMenu() {
 	menu->addSubMenu( mUI->i18n( "eefm_show_panels", "Show Panels" ), icon( "places-panel" ),
 					  panels );
 	menu->addCheckBox( mUI->i18n( "eefm_show_filter_bar", "Show Filter Bar" ), mFilterBarVisible,
-					   "Ctrl+I" )
+					   getKeybind( "toggle-filter" ) )
 		->setId( "filter" );
 	menu->addSeparator();
 	menu->add( mUI->i18n( "eefm_configure", "Configure eefm..." ), icon( "settings" ),
-			   "Ctrl+Shift+," )
+			   getKeybind( "settings" ) )
 		->setId( "settings" );
-	menu->add( mUI->i18n( "eefm_quit", "Quit" ), icon( "quit" ), "Ctrl+Q" )->setId( "quit" );
+	menu->add( mUI->i18n( "eefm_quit", "Quit" ), icon( "quit" ), getKeybind( "quit" ) )
+		->setId( "quit" );
 	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		std::string id( event->getNode()->getId() );
 		if ( id == "new-tab" ) {
@@ -1048,6 +1071,19 @@ void App::registerShortcuts() {
 		{ "mod+q", "quit" },
 		{ "mod+shift+f11", "debug-widget-tree-view" },
 	} );
+	mUI->find<UIWidget>( "back" )->setTooltipText(
+		shortcutTooltip( mUI->i18n( "eefm_back", "Back" ), "go-back" ) );
+	mUI->find<UIWidget>( "forward" )
+		->setTooltipText( shortcutTooltip( mUI->i18n( "eefm_forward", "Forward" ), "go-forward" ) );
+	mUI->find<UIWidget>( "up" )->setTooltipText(
+		shortcutTooltip( mUI->i18n( "eefm_go_up", "Go Up" ), "go-up" ) );
+	mUI->find<UIWidget>( "refresh" )
+		->setTooltipText( shortcutTooltip( mUI->i18n( "eefm_refresh", "Reload" ), "refresh" ) );
+	mUI->find<UIWidget>( "places_toggle" )
+		->setTooltipText( shortcutTooltip( mUI->i18n( "eefm_show_places", "Show Places Panel" ),
+										   "toggle-places" ) );
+	mUI->find<UIWidget>( "split" )->setTooltipText(
+		shortcutTooltip( mUI->i18n( "eefm_split_view", "Split View" ), "toggle-split" ) );
 }
 
 void App::updateIconStyle() {

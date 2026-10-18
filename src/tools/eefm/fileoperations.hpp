@@ -14,6 +14,8 @@
 
 namespace eefm {
 
+struct Application;
+
 class App;
 
 /** @brief What eefm does with files: opening, the context menu, the clipboard, transfers, the
@@ -118,6 +120,9 @@ class FileOperations {
 	void openDocuments( const std::vector<URI>& uris );
 
 	void openWith( const std::vector<URI>& uris );
+
+	/** Opens files with the chosen application, including archives. */
+	void openWith( const std::vector<URI>& uris, Application app );
 
 	/** Files in the clipboard: copied here or in another file manager (text/uri-list, with the
 	 * GNOME / KDE cut markers). */

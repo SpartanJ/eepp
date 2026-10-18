@@ -1,7 +1,9 @@
 #ifndef EE_VFS_SFTP_SSHSOCKET_HPP
 #define EE_VFS_SFTP_SSHSOCKET_HPP
 
+#include <array>
 #include <eepp/config.hpp>
+#include <optional>
 #include <string>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -33,6 +35,20 @@ using PollFd = struct pollfd;
  * (the descriptors are handed to libssh2). */
 class SSHSocket {
   public:
+	/** Numeric connected peer, independent of hostname spelling. IPv4-mapped IPv6 addresses
+	 * use the IPv4 representation so the same peer compares equal across address families. */
+	struct Endpoint {
+		std::array<Uint8, 16> address{};
+		Uint32 scope{ 0 };
+		Uint16 port{ 0 };
+		Uint8 family{ 0 };
+
+		bool operator==( const Endpoint& ) const = default;
+	};
+
+	/** Returns the actual TCP peer without another DNS lookup; unknown on error. */
+	static std::optional<Endpoint> peerEndpoint( SocketHandle socket );
+
 	/** Initializes the platform socket layer once (WSAStartup on Windows). */
 	static void init();
 

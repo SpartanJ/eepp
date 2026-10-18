@@ -303,6 +303,17 @@ void FileOperations::openWith( const std::vector<URI>& uris ) {
 		} );
 }
 
+void FileOperations::openWith( const std::vector<URI>& uris, Application app ) {
+	withLocalFiles( mVFS, mApp.executor(), mUI, uris,
+					[this, app = std::move( app )]( std::vector<std::string> paths ) {
+						if ( !Applications::launch( app, paths ) ) {
+							Dialogs::showError(
+								mUI,
+								String::fromUtf8( "Could not open the files with " + app.name ) );
+						}
+					} );
+}
+
 void FileOperations::openTerminalHere( FileTab* tab ) {
 	URI uri = tab->model->uri();
 	auto rows = tab->selectedRows();
@@ -322,6 +333,8 @@ void FileOperations::openTerminalHere( FileTab* tab ) {
 
 void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
+	// Enter is handled natively by UITableView rather than a scene command.
+	const auto openShortcut = mUI->getKeyBindings().getShortcutString( { KEY_RETURN }, true );
 	auto rows = background ? std::vector<size_t>{} : tab->selectedRows();
 	auto uris = background ? std::vector<URI>{} : tab->selectedURIs();
 	bool inTrash = Trash::contains( tab->model->uri() );
@@ -335,7 +348,9 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 	// no empty space to right click. It creates in the current folder.
 	auto addCreateNew = [this, menu, tab] {
 		UIPopUpMenu* create = UIPopUpMenu::New();
-		create->add( mUI->i18n( "eefm_new_folder", "Folder..." ), mApp.icon( "folder-add" ), "F10" )
+		create
+			->add( mUI->i18n( "eefm_new_folder", "Folder..." ), mApp.icon( "folder-add" ),
+				   mApp.getKeybind( "new-folder" ) )
 			->setId( "new-folder" );
 		create->add( mUI->i18n( "eefm_new_text_file", "Text File..." ), mApp.icon( "file-add" ) )
 			->setId( "new-file" );
@@ -350,16 +365,28 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 						  create );
 		menu->addSeparator();
 	};
-	std::vector<Application> apps;
+	std::optional<Application> defaultApp;
+	const bool archive = !anyFolder && !uris.empty() && !Location::archiveRoot( uris[0] ).empty();
 	if ( !rows.empty() ) {
 		if ( !anyFolder ) {
 			const std::string& mime =
 				MimeDatabase::instance().typeOf( tab->model->entry( rows[0] ) );
-			apps = Applications::instance().forMime( mime );
-			String openText =
-				apps.empty() ? mUI->i18n( "eefm_open", "Open" )
-							 : String( String::format( "Open with %s", apps[0].name.c_str() ) );
-			menu->add( openText, mApp.icon( "action-open-with" ), "Return" )->setId( "open" );
+			auto apps = Applications::instance().forMime( mime );
+			if ( archive ) {
+				menu->add( mUI->i18n( "eefm_open_in_eefm", "Open in eefm" ), mApp.icon( "eefm" ),
+						   openShortcut )
+					->setId( "open-in-eefm" );
+			}
+			if ( !archive || !apps.empty() ) {
+				String openText =
+					apps.empty() ? mUI->i18n( "eefm_open", "Open" )
+								 : String( String::format( "Open with %s", apps[0].name.c_str() ) );
+				menu->add( openText, mApp.icon( "action-open-with" ), archive ? "" : openShortcut )
+					->setId( apps.empty() ? "open" : "open-app" );
+			}
+			// Keep the application named by the action, independently of archive navigation.
+			if ( !apps.empty() )
+				defaultApp = apps.front();
 			UIPopUpMenu* with = UIPopUpMenu::New();
 			for ( size_t i = 0; i < apps.size(); ++i )
 				with->add( String::fromUtf8( apps[i].name ) )->setId( "app" )->setData( i );
@@ -368,22 +395,19 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 			with->add( mUI->i18n( "eefm_other_application", "Other Application..." ) )
 				->setId( "other-app" );
 			menu->addSubMenu( mUI->i18n( "eefm_open_with", "Open With" ), nullptr, with );
-			with->on( Event::OnItemClicked, [this, uris, apps]( const Event* event ) {
-				std::string id( event->getNode()->getId() );
-				if ( id == "app" ) {
-					size_t index = static_cast<size_t>( event->getNode()->getData() );
-					if ( index < apps.size() ) {
-						withLocalFiles( mVFS, mApp.executor(), mUI, uris,
-										[app = apps[index]]( std::vector<std::string> paths ) {
-											Applications::launch( app, paths );
-										} );
-					}
-				} else if ( id == "other-app" ) {
-					openWith( uris );
-				}
-			} );
+			with->on( Event::OnItemClicked,
+					  [this, uris, apps = std::move( apps )]( const Event* event ) {
+						  std::string id( event->getNode()->getId() );
+						  if ( id == "app" ) {
+							  size_t index = static_cast<size_t>( event->getNode()->getData() );
+							  if ( index < apps.size() )
+								  openWith( uris, apps[index] );
+						  } else if ( id == "other-app" ) {
+							  openWith( uris );
+						  }
+					  } );
 		} else if ( allFolders ) {
-			menu->add( mUI->i18n( "eefm_open", "Open" ), mApp.icon( "mime-folder" ), "Return" )
+			menu->add( mUI->i18n( "eefm_open", "Open" ), mApp.icon( "mime-folder" ), openShortcut )
 				->setId( "open" );
 			menu->add( mUI->i18n( "eefm_open_new_tab", "Open in New Tab" ),
 					   mApp.icon( "action-new-tab" ) )
@@ -394,8 +418,7 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 					->setId( "open-other" );
 			}
 		}
-		if ( !inTrash && uris.size() == 1 && !anyFolder &&
-			 !Location::archiveRoot( uris[0] ).empty() ) {
+		if ( !inTrash && uris.size() == 1 && archive ) {
 			const URI file = uris[0];
 			const std::string folderName = Location::archiveFolderName( file );
 			const URI folder = file.getParent().withAppendedSegment( folderName );
@@ -433,8 +456,10 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 		if ( menu->getCount() > 0 )
 			menu->addSeparator();
 		addCreateNew();
-		menu->add( mUI->i18n( "eefm_cut", "Cut" ), mApp.icon( "cut" ), "Ctrl+X" )->setId( "cut" );
-		menu->add( mUI->i18n( "eefm_copy", "Copy" ), mApp.icon( "copy" ), "Ctrl+C" )
+		menu->add( mUI->i18n( "eefm_cut", "Cut" ), mApp.icon( "cut" ), mApp.getKeybind( "cut" ) )
+			->setId( "cut" );
+		menu->add( mUI->i18n( "eefm_copy", "Copy" ), mApp.icon( "copy" ),
+				   mApp.getKeybind( "copy" ) )
 			->setId( "copy" );
 		menu->add( mUI->i18n( "eefm_copy_location", "Copy Location" ),
 				   mApp.icon( "action-copy-location" ) )
@@ -445,7 +470,8 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 		}
 		menu->addSeparator();
 		if ( rows.size() == 1 ) {
-			menu->add( mUI->i18n( "eefm_rename", "Rename..." ), mApp.icon( "edit" ), "F2" )
+			menu->add( mUI->i18n( "eefm_rename", "Rename..." ), mApp.icon( "edit" ),
+					   mApp.getKeybind( "rename" ) )
 				->setId( "rename" );
 		}
 		if ( inTrash ) {
@@ -453,10 +479,11 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 				->setId( "restore" );
 		} else if ( Trash::supported( uris[0] ) ) {
 			menu->add( mUI->i18n( "eefm_move_to_trash", "Move to Trash" ),
-					   mApp.icon( "place-trash" ), "Del" )
+					   mApp.icon( "place-trash" ), mApp.getKeybind( "trash" ) )
 				->setId( "trash" );
 		}
-		menu->add( mUI->i18n( "eefm_delete", "Delete" ), mApp.icon( "delete-bin" ), "Shift+Del" )
+		menu->add( mUI->i18n( "eefm_delete", "Delete" ), mApp.icon( "delete-bin" ),
+				   mApp.getKeybind( "delete" ) )
 			->setId( "delete" );
 		menu->addSeparator();
 		if ( rows.size() == 1 && allFolders ) {
@@ -467,7 +494,8 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 	} else {
 		addCreateNew();
 		if ( !clipboardFiles().uris.empty() ) {
-			menu->add( mUI->i18n( "eefm_paste", "Paste" ), mApp.icon( "paste" ), "Ctrl+V" )
+			menu->add( mUI->i18n( "eefm_paste", "Paste" ), mApp.icon( "paste" ),
+					   mApp.getKeybind( "paste" ) )
 				->setId( "paste" );
 		}
 		menu->add( mUI->i18n( "eefm_copy_location", "Copy Location" ),
@@ -478,29 +506,34 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 			->setId( "add-current-place" );
 		menu->addSeparator();
 		menu->addCheckBox( mUI->i18n( "eefm_show_hidden", "Show Hidden Files" ), mApp.showHidden(),
-						   "Ctrl+H" )
+						   mApp.getKeybind( "toggle-hidden" ) )
 			->setId( "hidden" );
 		if ( inTrash ) {
 			menu->add( mUI->i18n( "eefm_empty_trash", "Empty Trash" ), mApp.icon( "place-trash" ) )
 				->setId( "empty-trash" );
 		}
-		menu->add( mUI->i18n( "eefm_refresh", "Reload" ), mApp.icon( "view-refresh" ), "F5" )
+		menu->add( mUI->i18n( "eefm_refresh", "Reload" ), mApp.icon( "view-refresh" ),
+				   mApp.getKeybind( "refresh" ) )
 			->setId( "refresh" );
 	}
 	if ( tab->model->uri().getScheme() == "file" ) {
 		menu->add( mUI->i18n( "eefm_open_terminal", "Open Terminal Here" ),
-				   mApp.icon( "action-terminal" ), "Shift+F4" )
+				   mApp.icon( "action-terminal" ), mApp.getKeybind( "terminal" ) )
 			->setId( "terminal" );
 	}
 	menu->add( mUI->i18n( "eefm_properties", "Properties" ), mApp.icon( "action-properties" ),
-			   "Alt+Return" )
+			   mApp.getKeybind( "properties" ) )
 		->setId( "properties" );
 
-	menu->on( Event::OnItemClicked, [this, tab, uris, rows]( const Event* event ) {
+	menu->on( Event::OnItemClicked, [this, tab, uris, rows,
+									 defaultApp = std::move( defaultApp )]( const Event* event ) {
 		std::string id( event->getNode()->getId() );
-		if ( id == "open" ) {
+		if ( id == "open" || id == "open-in-eefm" ) {
 			if ( !rows.empty() )
 				openRow( tab, rows[0] );
+		} else if ( id == "open-app" ) {
+			if ( defaultApp )
+				openWith( uris, *defaultApp );
 		} else if ( id == "open-tab" ) {
 			for ( const auto& uri : uris )
 				mApp.panes().openTab( *tab->pane, uri, uris.size() == 1 );

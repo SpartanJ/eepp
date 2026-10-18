@@ -7,6 +7,7 @@
 #include "sshoperation.hpp"
 #include "sshtransport.hpp"
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <deque>
@@ -76,6 +77,11 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	}
 
 	bool isReady() const { return mState.load( std::memory_order_acquire ) == State::Ready; }
+
+	/** True only for ready sessions with different visible TCP peers and different verified
+	 * host keys of the same algorithm. Unknown, proxied or coincident peers remain ambiguous.
+	 * Logical server separation cannot establish that their backing storage is not shared. */
+	bool hasDistinctPeer( const SSHConnection& other ) const;
 
 	const SSHResolvedConfig& config() const { return mConfig; }
 
@@ -250,6 +256,10 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	SSHResolvedConfig mConfig;
 	SSHConnectionHooks mHooks;
 	std::unique_ptr<SSHTransport> mTransport;
+	const std::optional<SSHSocket::Endpoint> mPeerEndpoint;
+	int mHostKeyType{ 0 };
+	/** Written during host-key verification, immutable after Ready publishes it. */
+	std::array<Uint8, 32> mHostKeyHash{};
 	LIBSSH2_SESSION* mSession{ nullptr };
 	LIBSSH2_SFTP* mSFTP{ nullptr };
 	LIBSSH2_AGENT* mAgent{ nullptr };
@@ -305,6 +315,7 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	std::atomic<State> mState{ State::Starting };
 	std::atomic<Uint32> mUsers{ 0 };
 	Time mIdleTimeout;
+	bool mHasHostKeyHash{ false };
 	bool mSFTPRequired{ true };
 	bool mWaitingExternal{ false };
 };

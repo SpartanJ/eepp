@@ -2,8 +2,9 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
-#include <eepp/vfs/path.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>
+
+#include <eepp/vfs/path.hpp>
 
 #include <atomic>
 #include <eepp/core/string.hpp>
@@ -136,6 +137,36 @@ HANDLE openForMetadata( const std::wstring& path, bool follow ) {
 		path.c_str(), FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 		nullptr, OPEN_EXISTING,
 		FILE_FLAG_BACKUP_SEMANTICS | ( follow ? 0 : FILE_FLAG_OPEN_REPARSE_POINT ), nullptr );
+}
+
+/** The volume and file index identify a native file independently of its revision. Keep the
+ * handles open while comparing, and inspect links themselves as rename() does. */
+VFSResult<bool> sameNativeFile( const std::string& from, const std::string& to ) {
+	HANDLE destination = openForMetadata( toWide( to ), false );
+	if ( destination == INVALID_HANDLE_VALUE ) {
+		const DWORD error = GetLastError();
+		if ( mapWin32Error( error ) == VFSErrorCode::NotFound )
+			return Ok( false );
+		return Err( lastError( to, "Cannot check rename destination identity" ) );
+	}
+	HANDLE source = openForMetadata( toWide( from ), false );
+	if ( source == INVALID_HANDLE_VALUE ) {
+		auto error = lastError( from, "Cannot check rename source identity" );
+		CloseHandle( destination );
+		return Err( std::move( error ) );
+	}
+	BY_HANDLE_FILE_INFORMATION a, b;
+	if ( !GetFileInformationByHandle( source, &a ) ||
+		 !GetFileInformationByHandle( destination, &b ) ) {
+		auto error = lastError( from, "Cannot read rename file identity" );
+		CloseHandle( source );
+		CloseHandle( destination );
+		return Err( std::move( error ) );
+	}
+	CloseHandle( source );
+	CloseHandle( destination );
+	return Ok( a.dwVolumeSerialNumber == b.dwVolumeSerialNumber &&
+			   a.nFileIndexHigh == b.nFileIndexHigh && a.nFileIndexLow == b.nFileIndexLow );
 }
 
 VFSResult<VFSFileInfo> statHandle( HANDLE handle, const URI& uri, const std::string& path ) {
@@ -604,19 +635,29 @@ VFSTask<void> LocalProvider::rename( const URI& from, const URI& to, const Renam
 		native, target,
 		VFSError( VFSErrorCode::Unsupported, from,
 				  "The source and destination are on different file systems" ),
-		guarded<void>( native, std::move( token ),
-					   [to = target, overwrite = options.overwrite](
-						   const std::string& path ) -> VFSResult<void> {
-						   // No MOVEFILE_COPY_ALLOWED: cross-volume moves fail with
-						   // ERROR_NOT_SAME_DEVICE and the VFS falls back to copy + remove.
-						   DWORD flags = 0;
-						   if ( overwrite )
-							   flags |= MOVEFILE_REPLACE_EXISTING;
-						   if ( !MoveFileExW( toWide( path ).c_str(), toWide( to ).c_str(),
-											  flags ) )
-							   return Err( lastError( path, "Rename failed" ) );
-						   return Ok();
-					   } ) );
+		guarded<void>(
+			native, std::move( token ),
+			[to = target,
+			 overwrite = options.overwrite]( const std::string& path ) -> VFSResult<void> {
+				if ( overwrite ) {
+					auto same = sameNativeFile( path, to );
+					if ( !same )
+						return Err( std::move( same ).error() );
+					if ( same.value() ) {
+						return Err( VFSError( VFSErrorCode::InvalidOperation,
+											  URI::fromFSPath( path ),
+											  "Source and destination are the same file" ) );
+					}
+				}
+				// No MOVEFILE_COPY_ALLOWED: cross-volume moves fail with
+				// ERROR_NOT_SAME_DEVICE and the VFS falls back to copy + remove.
+				DWORD flags = 0;
+				if ( overwrite )
+					flags |= MOVEFILE_REPLACE_EXISTING;
+				if ( !MoveFileExW( toWide( path ).c_str(), toWide( to ).c_str(), flags ) )
+					return Err( lastError( path, "Rename failed" ) );
+				return Ok();
+			} ) );
 }
 
 VFSTask<URI> LocalProvider::canonicalize( const URI& uri, CancellationToken token ) {

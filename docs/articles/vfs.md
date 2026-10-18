@@ -185,6 +185,17 @@ checked using canonical paths before a destination can be modified. Self-transfe
 every provider implements `sameFileSystem()` to resolve aliases or identify disjoint namespaces.
 This contract also applies to same-authority transfers; authority text alone does not decide identity.
 Namespace identity does not promise a rename across device boundaries.
+Local overwrite renames compare native file identity (device/inode on POSIX, volume/file index
+on Windows). Moving between hardlinks returns `InvalidOperation` and retains both names;
+matching bytes or timestamps alone do not identify a file.
+
+Separate SSH sessions are treated as different logical servers only when their connected TCP
+endpoints differ and their verified host keys differ within the same key algorithm. Hostname
+spellings alone are insufficient. Matching peers or keys, unobservable proxy/jump endpoints, and
+incomparable key algorithms return `Unsupported` before destination writes. Transfers between
+independently identified direct SSH servers remain supported. This cannot detect shared storage
+(such as NFS) behind independent servers; remote moves retain the best-effort revision limitations
+above, rather than providing a global physical-file identity guarantee.
 
 Directory copies through one provider also compare canonical paths, resolving the nearest existing
 destination ancestor before checking containment. This rejects a destination reached through a
@@ -376,6 +387,8 @@ directories, with at most eight cached indexes; existing handles can retain olde
 
 In eefm, Enter or double-click on a local `.zip`, `.jar`, `.apk` or `.epub` file enters it
 (extensions are case-insensitive). These ZIP-based formats share `ZipProvider` and `zip://` locations.
+The archive context menu offers **Open in eefm** for browsing and **Open with <application>**
+for launching the named external application. The **Open With** submenu also opens files externally.
 Files inside open through the usual
 application flow, and copying entries out uses VFS transfers. Up at the archive root returns to its
 containing folder and selects the archive. History and saved tabs retain archive locations. The

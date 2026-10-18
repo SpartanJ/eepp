@@ -245,12 +245,23 @@ SSHConnection::SSHConnection( std::shared_ptr<SSHIOContext> context, SSHResolved
 	mConfig( std::move( config ) ),
 	mHooks( std::move( hooks ) ),
 	mTransport( std::move( transport ) ),
+	mPeerEndpoint( mTransport ? mTransport->peerEndpoint() : std::nullopt ),
 	mLastUse( std::chrono::steady_clock::now() ),
 	mOperationTimeout( operationTimeout ),
 	mConnectTimeout( connectTimeout ) {
 	mDeadline =
 		std::chrono::steady_clock::now() +
 		std::chrono::milliseconds( std::max<Int64>( 1000, connectTimeout.asMilliseconds() ) );
+}
+
+bool SSHConnection::hasDistinctPeer( const SSHConnection& other ) const {
+	// Acquiring Ready publishes the verified key. These fields never change afterwards,
+	// including when a session closes, and connection owners retain both objects here.
+	if ( !isReady() || !other.isReady() )
+		return false;
+	return mPeerEndpoint && other.mPeerEndpoint && *mPeerEndpoint != *other.mPeerEndpoint &&
+		   mHasHostKeyHash && other.mHasHostKeyHash && mHostKeyType != 0 &&
+		   mHostKeyType == other.mHostKeyType && mHostKeyHash != other.mHostKeyHash;
 }
 
 SSHConnection::~SSHConnection() {
@@ -784,6 +795,12 @@ Step SSHConnection::stepHostKey() {
 	libssh2_knownhost_free( hosts );
 
 	const char* hash = libssh2_hostkey_hash( mSession, LIBSSH2_HOSTKEY_HASH_SHA256 );
+	mHostKeyType = keyType;
+	if ( hash ) {
+		std::copy_n( reinterpret_cast<const Uint8*>( hash ), mHostKeyHash.size(),
+					 mHostKeyHash.begin() );
+		mHasHostKeyHash = true;
+	}
 	std::string fingerprint =
 		hash ? "SHA256:" + base64Unpadded( reinterpret_cast<const unsigned char*>( hash ), 32 )
 			 : std::string( "unknown" );

@@ -18,7 +18,8 @@ namespace EE { namespace VFS {
  * only accepted on Windows (UNC paths).
  *
  * Revisions are derived from device, inode (file index), modification time and size, so both
- * in-place edits and atomic replacements are detected.
+ * in-place edits and atomic replacements are detected. Overwrite renames reject matching native
+ * file identities, including hardlinks, with InvalidOperation and retain both names.
  */
 class EE_VFS_API LocalProvider : public VFSProvider {
   public:

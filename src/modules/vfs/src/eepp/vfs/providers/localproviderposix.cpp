@@ -714,6 +714,21 @@ int renameNoReplace( const char* from, const char* to ) {
 	return -1;
 }
 
+/** rename() is a successful no-op between hardlinks. Check native identity, independently of
+ * revisions, so an overwrite move cannot report success while retaining its source name. */
+VFSResult<bool> sameNativeFile( const std::string& from, const std::string& to ) {
+	struct stat destination;
+	if ( ::lstat( to.c_str(), &destination ) != 0 ) {
+		if ( errno == ENOENT )
+			return Ok( false );
+		return Err( errnoError( to, "Cannot check rename destination identity" ) );
+	}
+	struct stat source;
+	if ( ::lstat( from.c_str(), &source ) != 0 )
+		return Err( errnoError( from, "Cannot check rename source identity" ) );
+	return Ok( source.st_dev == destination.st_dev && source.st_ino == destination.st_ino );
+}
+
 } // namespace
 
 VFSTask<void> LocalProvider::rename( const URI& from, const URI& to, const RenameOptions& options,
@@ -739,6 +754,16 @@ VFSTask<void> LocalProvider::rename( const URI& from, const URI& to, const Renam
 		guarded<void>( native, std::move( token ),
 					   [to = target, overwrite = options.overwrite](
 						   const std::string& path ) -> VFSResult<void> {
+						   if ( overwrite ) {
+							   auto same = sameNativeFile( path, to );
+							   if ( !same )
+								   return Err( std::move( same ).error() );
+							   if ( same.value() ) {
+								   return Err( VFSError(
+									   VFSErrorCode::InvalidOperation, URI::fromFSPath( path ),
+									   "Source and destination are the same file" ) );
+							   }
+						   }
 						   int result = overwrite ? ::rename( path.c_str(), to.c_str() )
 												  : renameNoReplace( path.c_str(), to.c_str() );
 						   if ( result != 0 )

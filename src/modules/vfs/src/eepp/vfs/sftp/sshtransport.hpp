@@ -12,6 +12,10 @@ class SSHTransport {
   public:
 	virtual ~SSHTransport() = default;
 
+	/** Final connected TCP endpoint, when visible. A jump channel or proxy process cannot
+	 * expose the final peer's address, so its identity remains unknown here. */
+	virtual std::optional<SSHSocket::Endpoint> peerEndpoint() const { return std::nullopt; }
+
 	/** Socket to poll, or InvalidSocket when readiness is signaled through the wake pipe. */
 	virtual SocketHandle pollSocket() const = 0;
 

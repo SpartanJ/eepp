@@ -36,6 +36,11 @@ class TestSSHServer {
 		return server;
 	}
 
+	static TestSSHServer& independent() {
+		static TestSSHServer server;
+		return server;
+	}
+
 	static TestSSHServer& withoutPosixRename() {
 		static TestSSHServer server( true );
 		return server;
@@ -216,8 +221,9 @@ class TestSSHServer {
 		// IdentityFile accumulates across every matching block, so the default key comes from a
 		// negated block that excludes the passphrase test host.
 		std::string sshConfig =
-			"Host strict\n    StrictHostKeyChecking yes\n    UserKnownHostsFile " + mDir +
-			"kh_strict\n" + common + "Host ask\n    StrictHostKeyChecking ask\n" +
+			"Host testhost-localhost\n    HostName localhost\n"
+			"Host strict\n    StrictHostKeyChecking yes\n    UserKnownHostsFile " +
+			mDir + "kh_strict\n" + common + "Host ask\n    StrictHostKeyChecking ask\n" +
 			"    UserKnownHostsFile " + mDir + "kh_ask\n" + common +
 			"Host mismatch\n    HostKeyAlias mismatch-alias\n    UserKnownHostsFile " + mDir +
 			"kh_mismatch\n" + common + "Host secret\n    IdentityFile " + mDir + "id_secret\n" +
@@ -574,6 +580,87 @@ UTEST( SFTP, aliasesCannotCopyOrMoveOntoTheSameRemoteFile ) {
 		waitFor( fx.vfs.stat( URI::fromFSPath( server.remoteRoot() + "/" + name ) ) )
 			.value()
 			.revision ) );
+}
+
+UTEST( SFTP, differentHostNamesForOnePeerNeverModifyTheSource ) {
+	REQUIRE_SSHD();
+	SFTPFixture fx;
+	const std::string name = uniqueName( "peer-identity" );
+	const URI source = server.uri( "testhost", name );
+	const URI alias = server.uri( "testhost-localhost", name );
+	ASSERT_TRUE(
+		FileSystem::fileWrite( server.remoteRoot() + "/" + name, std::string_view( "same" ) ) );
+	const URI local = URI::fromFSPath( server.remoteRoot() + "/" + name );
+	const auto before = waitFor( fx.vfs.stat( local ) ).value().revision;
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::Overwrite;
+	for ( const bool reverse : { false, true } ) {
+		const URI& from = reverse ? alias : source;
+		const URI& to = reverse ? source : alias;
+		// HostName localhost and 127.0.0.1 produce separate sessions for the same TCP peer.
+		EXPECT_EQ( VFSErrorCode::Unsupported,
+				   codeOf( waitFor( fx.vfs.copy( from, to, options ).completion() ) ) );
+		EXPECT_EQ( VFSErrorCode::Unsupported,
+				   codeOf( waitFor( fx.vfs.move( from, to, options ).completion() ) ) );
+		EXPECT_STDSTREQ( "same", readString( fx.vfs, from ) );
+		auto current = waitFor( fx.vfs.stat( local ) );
+		ASSERT_TRUE( current );
+		EXPECT_TRUE( before.matches( current.value().revision ) );
+	}
+	const URI absent = server.uri( "testhost-localhost", name + "-absent" );
+	EXPECT_EQ( VFSErrorCode::Unsupported,
+			   codeOf( waitFor( fx.vfs.move( source, absent, options ).completion() ) ) );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( fx.vfs.stat( absent ) ) ) );
+	EXPECT_STDSTREQ( "same", readString( fx.vfs, source ) );
+}
+
+UTEST( SFTP, differentVerifiedPeersSupportCrossServerTransfers ) {
+	REQUIRE_SSHD();
+	auto& other = TestSSHServer::independent();
+	if ( !other.available() ) {
+		printf( "  Independent SSH server unavailable: %s\n", other.skipReason().c_str() );
+		UTEST_SKIP( "Independent SSH server is unavailable" );
+	}
+	TempDir configDir;
+	for ( const auto& entry :
+		  { std::make_pair( &server, "first" ), std::make_pair( &other, "second" ) } ) {
+		std::string config;
+		ASSERT_TRUE( FileSystem::fileGet( entry.first->dir() + "ssh_config", config ) );
+		// Use comparable key algorithms on both servers. Different HostName spellings also
+		// verify that disjointness comes from the connected peers, not configuration text.
+		config = std::string( "Host *\n    HostKeyAlgorithms ecdsa-sha2-nistp256\n" ) +
+				 ( entry.first == &other ? "    HostName localhost\n" : "" ) + config;
+		ASSERT_TRUE(
+			FileSystem::fileWrite( configDir.path + entry.second, std::string_view( config ) ) );
+	}
+	SFTPProviderConfig config;
+	config.configContextFactory = [path = configDir.path]( const std::string& host ) {
+		auto context = SSHConfigContext::system( host );
+		context.sources = { { path + ( host == "second-server" ? "second" : "first" ), path } };
+		context.exec = nullptr;
+		context.resolve = nullptr;
+		return context;
+	};
+	config.watchAgentCommand.clear();
+	VirtualFileSystem vfs;
+	auto provider = std::make_shared<SFTPProvider>( std::move( config ) );
+	vfs.registerProvider( provider );
+	const std::string name = uniqueName( "independent-peer" );
+	const URI source = server.uri( "first-server", name );
+	const URI destination = other.uri( "second-server", name );
+	ASSERT_TRUE(
+		FileSystem::fileWrite( server.remoteRoot() + "/" + name, std::string_view( "keep" ) ) );
+	auto same = waitFor( provider->sameFileSystem( source, destination, {} ) );
+	REQUIRE_OK( same );
+	EXPECT_FALSE( same.value() );
+	ASSERT_TRUE( waitFor( vfs.copy( source, destination ).completion() ) );
+	EXPECT_STDSTREQ( "keep", readString( vfs, source ) );
+	EXPECT_STDSTREQ( "keep", readString( vfs, destination ) );
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::Overwrite;
+	ASSERT_TRUE( waitFor( vfs.move( source, destination, options ).completion() ) );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( vfs.stat( source ) ) ) );
+	EXPECT_STDSTREQ( "keep", readString( vfs, destination ) );
 }
 
 UTEST( SFTP, replacementWithoutPosixRenamePreservesBothFiles ) {

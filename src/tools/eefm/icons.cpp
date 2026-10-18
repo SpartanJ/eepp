@@ -1,5 +1,8 @@
 #include "icons.hpp"
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/uiicontheme.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
@@ -83,7 +86,8 @@ FontTrueType* loadFont( UISceneNode* ui, const std::string& name, const std::str
 
 } // namespace
 
-void Icons::load( UISceneNode* ui, const std::string& assetsPath ) {
+void Icons::load( UISceneNode* ui, const std::string& assetsPath,
+				  const std::string& windowIconPath ) {
 	FontTrueType* remix = loadFont( ui, "icon", assetsPath + "fonts/remixicon.ttf" );
 	FontTrueType* nonicons = loadFont( ui, "nonicons", assetsPath + "fonts/nonicons.ttf" );
 	FontTrueType* codicons = loadFont( ui, "codicon", assetsPath + "fonts/codicon.ttf" );
@@ -95,6 +99,17 @@ void Icons::load( UISceneNode* ui, const std::string& assetsPath ) {
 	if ( codicons && codicons->loaded() ) {
 		for ( const auto& icon : CodIcons )
 			theme->add( UIGlyphIcon::New( icon.name, codicons, icon.codePoint ) );
+	}
+	// The scene owns the same logo used for the native window. Upload once at startup;
+	// context menus borrow the cached drawable instead of decoding the PNG on each open.
+	if ( auto texture = TextureFactory::instance()->loadFromFile( windowIconPath, true ) ) {
+		const int size = PixelDensity::dpToPxI( 16 );
+		const Rect source( 0, 0, texture->getImageWidth(), texture->getImageHeight() );
+		auto drawable = TextureRegion::New( std::move( texture ), source, Sizef( size, size ) );
+		drawable->setPixelDensity( PixelDensity::getPixelDensity() );
+		auto appIcon = UIIcon::New( "eefm" );
+		appIcon->setSource( size, std::move( drawable ) );
+		theme->add( std::move( appIcon ) );
 	}
 	ui->getUIIconThemeManager()->setCurrentTheme( theme );
 }

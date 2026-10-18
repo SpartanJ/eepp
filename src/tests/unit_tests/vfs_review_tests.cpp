@@ -300,6 +300,57 @@ UTEST( VFSSafety, equivalentLocalAuthoritiesNeverReplaceTheSource ) {
 	EXPECT_STDSTREQ( "keep", readString( vfs, destination ) );
 }
 
+UTEST( VFSSafety, overwriteMovesBetweenHardLinksAreRejected ) {
+	TempDir temp;
+	VirtualFileSystem vfs;
+	const URI source = temp.uri().withAppendedSegment( "source" );
+	const URI link = temp.uri().withAppendedSegment( "hardlink" );
+	ASSERT_TRUE( waitFor( vfs.writeAll( source, "keep" ) ) );
+	auto nativePath = []( const URI& uri ) {
+		const std::string path = uri.getFSPath();
+		return std::filesystem::path( std::u8string( path.begin(), path.end() ) );
+	};
+	std::error_code error;
+	std::filesystem::create_hard_link( nativePath( source ), nativePath( link ), error );
+	ASSERT_FALSE( error );
+	const auto revision = waitFor( vfs.stat( source ) ).value().revision;
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::Overwrite;
+	for ( const bool authorityAlias : { false, true } ) {
+		URI alias = link;
+		if ( authorityAlias )
+			alias.setHost( "localhost" );
+		for ( const bool reverse : { false, true } ) {
+			const URI& from = reverse ? alias : source;
+			const URI& to = reverse ? source : alias;
+			EXPECT_EQ( VFSErrorCode::InvalidOperation,
+					   codeOf( waitFor( vfs.move( from, to, options ).completion() ) ) );
+			EXPECT_EQ( VFSErrorCode::InvalidOperation,
+					   codeOf( waitFor( vfs.rename( from, to, RenameOptions{ true } ) ) ) );
+			EXPECT_TRUE( revision.matches( waitFor( vfs.stat( source ) ).value().revision ) );
+			EXPECT_TRUE( revision.matches( waitFor( vfs.stat( link ) ).value().revision ) );
+			EXPECT_TRUE(
+				std::filesystem::equivalent( nativePath( source ), nativePath( link ), error ) );
+			EXPECT_FALSE( error );
+			EXPECT_STDSTREQ( "keep", readString( vfs, source ) );
+			EXPECT_STDSTREQ( "keep", readString( vfs, link ) );
+		}
+	}
+	// Equal bytes, length and timestamps on a distinct file must not be mistaken for identity.
+	const URI destination = temp.uri().withAppendedSegment( "destination" );
+	ASSERT_TRUE( waitFor( vfs.writeAll( destination, "keep" ) ) );
+	const auto modified = std::filesystem::last_write_time( nativePath( source ), error );
+	ASSERT_FALSE( error );
+	std::filesystem::last_write_time( nativePath( destination ), modified, error );
+	ASSERT_FALSE( error );
+	auto moved = waitFor( vfs.move( source, destination, options ).completion() );
+	ASSERT_TRUE( moved );
+	EXPECT_TRUE( moved.value().renamed );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( vfs.stat( source ) ) ) );
+	EXPECT_STDSTREQ( "keep", readString( vfs, destination ) );
+	EXPECT_STDSTREQ( "keep", readString( vfs, link ) );
+}
+
 UTEST( VFSProvider, allProvidersExposeCancellableNamespaceIdentity ) {
 	TempDir temp;
 	VirtualFileSystem vfs;

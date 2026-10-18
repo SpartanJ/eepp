@@ -12,6 +12,10 @@ class SSHSocketTransport : public SSHTransport {
 
 	~SSHSocketTransport() override { SSHSocket::close( mSocket ); }
 
+	std::optional<SSHSocket::Endpoint> peerEndpoint() const override {
+		return SSHSocket::peerEndpoint( mSocket );
+	}
+
 	SocketHandle pollSocket() const override { return mSocket; }
 
 	short pollEvents( short directions ) const override { return directions; }

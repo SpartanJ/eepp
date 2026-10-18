@@ -93,6 +93,12 @@ class App {
 
 	SettingsActions& settings() const { return *mSettingsActions; }
 
+	/** Display label for a command's registered shortcut, including platform modifiers. */
+	std::string getKeybind( const std::string& command ) const;
+
+	/** Appends the registered shortcut to a tooltip when the command has one. */
+	String shortcutTooltip( String text, const std::string& command ) const;
+
 	/** Saves the state and closes the window. */
 	void quit();
 
