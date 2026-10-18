@@ -1,7 +1,8 @@
+#include <eepp/vfs/sftp/remotewatchbackend.hpp>
+
 #include "sftpproviderimpl.hpp"
 #include "sshconnection.hpp"
 #include <condition_variable>
-#include <eepp/vfs/sftp/remotewatchbackend.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
 #include <eepp/vfs/watchers/pollingwatchbackend.hpp>
 #include <efsw/agent_protocol.hpp>
@@ -155,14 +156,12 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 
 	static constexpr Uint32 MaxReconnectDelaySeconds = 30;
 
-	/** How long an agent may take to confirm a watch (its handshake included) before the watch
-	 * falls back to polling: the directory listing waits for the watch. */
-	static constexpr auto EstablishTimeout = std::chrono::seconds( 5 );
-
-	RemoteWatchBackendImpl( std::shared_ptr<SFTPProviderImpl> provider, VirtualFileSystem& vfs ) :
+	RemoteWatchBackendImpl( std::shared_ptr<SFTPProviderImpl> provider, VirtualFileSystem& vfs,
+							Time establishmentTimeout ) :
 		mProvider( provider ),
 		mPolling( std::make_shared<PollingWatchBackend>( vfs ) ),
-		mCommand( provider->config().watchAgentCommand ) {}
+		mCommand( provider->config().watchAgentCommand ),
+		mEstablishTimeout( std::max<Int64>( 1, establishmentTimeout.asMilliseconds() ) ) {}
 
 	~RemoteWatchBackendImpl() { shutdown(); }
 
@@ -584,7 +583,7 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 		std::weak_ptr<RemoteWatchBackendImpl> weak = weak_from_this();
 		std::weak_ptr<RemoteWatch> weakWatch = watch;
 		std::weak_ptr<AgentClient> weakClient = client;
-		mRunner.runAfter( EstablishTimeout, [weak, weakWatch, weakClient] {
+		mRunner.runAfter( mEstablishTimeout, [weak, weakWatch, weakClient] {
 			auto self = weak.lock();
 			auto watch = weakWatch.lock();
 			auto client = weakClient.lock();
@@ -608,6 +607,8 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 	std::weak_ptr<SFTPProviderImpl> mProvider;
 	std::shared_ptr<PollingWatchBackend> mPolling;
 	std::string mCommand;
+	/** Bounds agent handshake/watch confirmation: the directory listing waits for it. */
+	const std::chrono::milliseconds mEstablishTimeout;
 	std::mutex mMutex;
 	std::map<Uint32, std::shared_ptr<RemoteWatch>> mWatches;
 	std::map<std::string, AgentEntry> mAgents;
@@ -852,7 +853,12 @@ class RemoteWatchRegistration : public WatchRegistration {
 
 RemoteWatchBackend::RemoteWatchBackend( std::shared_ptr<sftp::SFTPProviderImpl> provider,
 										VirtualFileSystem& vfs ) :
-	mImpl( std::make_shared<sftp::RemoteWatchBackendImpl>( std::move( provider ), vfs ) ) {}
+	RemoteWatchBackend( std::move( provider ), vfs, System::Seconds( 5 ) ) {}
+
+RemoteWatchBackend::RemoteWatchBackend( std::shared_ptr<sftp::SFTPProviderImpl> provider,
+										VirtualFileSystem& vfs, Time establishmentTimeout ) :
+	mImpl( std::make_shared<sftp::RemoteWatchBackendImpl>( std::move( provider ), vfs,
+														   establishmentTimeout ) ) {}
 
 RemoteWatchBackend::~RemoteWatchBackend() {
 	mImpl->shutdown();

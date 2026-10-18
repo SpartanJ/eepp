@@ -55,6 +55,26 @@ static unsigned char *_zip_memmem(const unsigned char *, int,
 static struct zip_cdir *_zip_readcdir(FILE *, off_t, unsigned char *, unsigned char *,
 				 int, int, struct zip_error *);
 
+/* Conservative bound for the decoded central directory and its parallel entry array.
+   Infozip's wrapped entry counts can leave one extra 65535-entry allocation block.
+   Include allocator/growth slack and the temporary EOCD/local-header buffers. */
+static zip_uint64_t
+metadata_size(int nentry, zip_uint32_t encoded_size)
+{
+    return 2 * (zip_uint64_t)encoded_size
+        + ((zip_uint64_t)nentry + ZIP_UINT16_MAX) * sizeof(struct zip_dirent)
+        + (zip_uint64_t)nentry * (sizeof(struct zip_entry) + 128)
+        + 256 * 1024;
+}
+
+ZIP_EXTERN zip_uint64_t
+zip_get_metadata_size(struct zip *za)
+{
+    if (za == NULL || za->cdir == NULL)
+        return 0;
+    return metadata_size(za->cdir->nentry, za->cdir->size);
+}
+
 
 
 ZIP_EXTERN struct zip *
@@ -166,7 +186,7 @@ _zip_readcdir(FILE *fp, off_t buf_offset, unsigned char *buf, unsigned char *eoc
     struct zip_cdir *cd;
     unsigned char *cdp, **bufp;
     int i, comlen, nentry;
-    zip_uint32_t left;
+    zip_uint32_t left, encoded_size;
 
     comlen = buf + buflen - eocd - EOCDLEN;
     if (comlen < 0) {
@@ -192,10 +212,22 @@ _zip_readcdir(FILE *fp, off_t buf_offset, unsigned char *buf, unsigned char *eoc
     /* number of cdir-entries */
     nentry = _zip_read2(&cdp);
 
+    encoded_size = _zip_read4(&cdp);
+    /* Never decode entries into the zero-length allocation of an empty directory. */
+    if (nentry == 0 && encoded_size != 0) {
+        _zip_error_set(error, ZIP_ER_INCONS, 0);
+        return NULL;
+    }
+    if ((flags & ZIP_LIMIT_METADATA)
+        && metadata_size(nentry, encoded_size) > 64 * 1024 * 1024) {
+        _zip_error_set(error, ZIP_ER_METADATA, 0);
+        return NULL;
+    }
+
     if ((cd=_zip_cdir_new(nentry, error)) == NULL)
 	return NULL;
 
-    cd->size = _zip_read4(&cdp);
+    cd->size = encoded_size;
     cd->offset = _zip_read4(&cdp);
     cd->comment = NULL;
     cd->comment_len = _zip_read2(&cdp);
@@ -270,6 +302,14 @@ _zip_readcdir(FILE *fp, off_t buf_offset, unsigned char *buf, unsigned char *eoc
 	if (i == cd->nentry && left > 0) {
 	    /* Infozip extension for more than 64k entries:
 	       nentries wraps around, size indicates correct EOCD */
+	    if ((flags & ZIP_LIMIT_METADATA)
+	        && metadata_size(cd->nentry + ZIP_UINT16_MAX, cd->size)
+	            > 64 * 1024 * 1024) {
+	        _zip_error_set(error, ZIP_ER_METADATA, 0);
+	        cd->nentry = i;
+	        _zip_cdir_free(cd);
+	        return NULL;
+	    }
 	    if (_zip_cdir_grow(cd, cd->nentry+ZIP_UINT16_MAX, error) < 0) {
 		cd->nentry = i;
 		_zip_cdir_free(cd);

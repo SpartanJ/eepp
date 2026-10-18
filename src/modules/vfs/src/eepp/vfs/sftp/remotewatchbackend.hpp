@@ -29,6 +29,9 @@ class RemoteWatchBackend : public WatchBackend {
   public:
 	RemoteWatchBackend( std::shared_ptr<sftp::SFTPProviderImpl> provider, VirtualFileSystem& vfs );
 
+	RemoteWatchBackend( std::shared_ptr<sftp::SFTPProviderImpl> provider, VirtualFileSystem& vfs,
+						Time establishmentTimeout );
+
 	~RemoteWatchBackend() override;
 
 	VFSTask<std::unique_ptr<WatchRegistration>> watch( const URI& root, const WatchOptions& options,

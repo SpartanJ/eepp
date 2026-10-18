@@ -1,6 +1,7 @@
 #include "../../tools/eefm/location.hpp"
 #include "utest.hpp"
 #include "vfs_test_utils.hpp"
+#include <algorithm>
 #include <array>
 #include <cerrno>
 #include <eepp/system/base64.hpp>
@@ -26,6 +27,45 @@ bool makeZip( const std::string& path,
 			return false;
 	}
 	return archive.close();
+}
+
+/** Bulk empty-entry fixture: Zip::addFile() rewrites/reopens the archive for every entry. */
+template <typename Name> bool makeEmptyZip( const std::string& path, Uint16 count, Name&& nameOf ) {
+	std::string local, central;
+	const auto initialLength = nameOf( 0 ).size();
+	local.reserve( count * ( initialLength + 38 ) );
+	central.reserve( count * ( initialLength + 54 ) );
+	auto put = []( std::string& bytes, size_t at, Uint32 value, unsigned width ) {
+		for ( unsigned i = 0; i < width; ++i )
+			bytes[at + i] = static_cast<char>( value >> ( 8 * i ) );
+	};
+	for ( Uint16 i = 0; i < count; ++i ) {
+		const auto name = nameOf( i );
+		const size_t offset = local.size();
+		local.append( 30, '\0' );
+		put( local, offset, 0x04034b50, 4 );
+		put( local, offset + 4, 20, 2 );
+		put( local, offset + 26, static_cast<Uint32>( name.size() ), 2 );
+		local += name;
+		const size_t entry = central.size();
+		central.append( 46, '\0' );
+		put( central, entry, 0x02014b50, 4 );
+		put( central, entry + 4, 20, 2 );
+		put( central, entry + 6, 20, 2 );
+		put( central, entry + 28, static_cast<Uint32>( name.size() ), 2 );
+		put( central, entry + 42, static_cast<Uint32>( offset ), 4 );
+		central += name;
+	}
+	const auto centralOffset = static_cast<Uint32>( local.size() );
+	local += central;
+	const size_t end = local.size();
+	local.append( 22, '\0' );
+	put( local, end, 0x06054b50, 4 );
+	put( local, end + 8, count, 2 );
+	put( local, end + 10, count, 2 );
+	put( local, end + 12, static_cast<Uint32>( central.size() ), 4 );
+	put( local, end + 16, centralOffset, 4 );
+	return FileSystem::fileWrite( path, std::string_view( local ) );
 }
 
 } // namespace
@@ -101,6 +141,62 @@ UTEST( ZipProvider, listsImplicitAndEmptyDirectoriesWithMetadata ) {
 	}
 	EXPECT_EQ( 4u, count );
 	EXPECT_TRUE( waitFor( handle.close() ).hasValue() );
+}
+
+UTEST( ZipProvider, aggregateMetadataBudgetBoundsDeepIndexes ) {
+	TempDir temp;
+	const std::string path = temp.path + "deep.zip";
+	std::string nested;
+	for ( int i = 0; i < 64; ++i )
+		nested += std::string( 60, 'd' ) + '/';
+	ASSERT_TRUE( makeEmptyZip( path, 512, [&nested]( Uint16 i ) {
+		return std::to_string( i ) + '/' + nested + "file";
+	} ) );
+	VirtualFileSystem vfs;
+	auto listed = waitFor( vfs.listAll( ZipProvider::makeURI( URI::fromFSPath( path ) ) ) );
+	ASSERT_FALSE( listed );
+	EXPECT_EQ( VFSErrorCode::InvalidOperation, listed.error().code );
+	EXPECT_TRUE( listed.error().message.find( "metadata budget" ) != std::string::npos );
+	// A normal many-entry archive stays well below the budget and remains usable after failure.
+	const std::string normal = temp.path + "many.zip";
+	ASSERT_TRUE(
+		makeEmptyZip( normal, 1024, []( Uint16 i ) { return "dir/file" + std::to_string( i ); } ) );
+	const URI root = ZipProvider::makeURI( URI::fromFSPath( normal ), "/dir" );
+	auto valid = waitFor( vfs.listAll( root ) );
+	ASSERT_TRUE( valid );
+	EXPECT_EQ( 1024u, valid.value().size() );
+}
+
+UTEST( ZipProvider, malformedCentralDirectoriesAreRejectedBeforeAllocation ) {
+	TempDir temp;
+	// A tiny EOCD claims a huge directory. The bounded reader rejects its declared metadata
+	// before allocating its entry array or attempting to decode any names/comments/extra fields.
+	std::array<Uint8, 22> eocd{};
+	eocd[0] = 'P';
+	eocd[1] = 'K';
+	eocd[2] = 5;
+	eocd[3] = 6;
+	eocd[8] = eocd[9] = eocd[10] = eocd[11] = 255;
+	eocd[15] = 4; // 64 MiB of encoded metadata, before decoded objects/allocation slack.
+	const std::string path = temp.path + "oversized.zip";
+	ASSERT_TRUE( FileSystem::fileWrite( path, eocd.data(), eocd.size() ) );
+	Zip reader( false );
+	EXPECT_FALSE( reader.open( path, Zip::OpenMode::ReadOnlyBounded ) );
+	EXPECT_EQ( Zip::Error::InvalidArchive, reader.error() );
+	EXPECT_TRUE( reader.errorMessage().find( "metadata budget" ) != std::string::npos );
+	VirtualFileSystem vfs;
+	auto listed = waitFor( vfs.listAll( ZipProvider::makeURI( URI::fromFSPath( path ) ) ) );
+	EXPECT_EQ( VFSErrorCode::InvalidOperation, codeOf( listed ) );
+	// An empty-directory count must not allow a nonempty directory to be decoded into
+	// storage allocated for zero entries.
+	const std::string inconsistent = temp.path + "inconsistent.zip";
+	ASSERT_TRUE( makeEmptyZip( inconsistent, 1, []( Uint16 ) { return std::string( "file" ); } ) );
+	std::string bytes;
+	ASSERT_TRUE( FileSystem::fileGet( inconsistent, bytes ) );
+	std::fill_n( bytes.end() - 14, 4, '\0' );
+	ASSERT_TRUE( FileSystem::fileWrite( inconsistent, std::string_view( bytes ) ) );
+	EXPECT_FALSE( reader.open( inconsistent, Zip::OpenMode::ReadOnlyBounded ) );
+	EXPECT_EQ( Zip::Error::InvalidArchive, reader.error() );
 }
 
 UTEST( ZipProvider, streamingReadsSeekBackwardsAndCopyAcrossProviders ) {

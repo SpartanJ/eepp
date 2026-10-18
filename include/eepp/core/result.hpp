@@ -41,9 +41,11 @@ template <typename E> constexpr ErrValue<std::decay_t<E>> Err( E&& error ) {
 /** @brief A synchronous success-or-error value.
  *
  * Result<T, E> holds either a T or an E, stored inline in a union. It has no threading or async
- * semantics and never throws: accessing the inactive member is a contract violation reported by a
- * debug assertion. Move-only value and error types are supported; copy operations exist only when
- * both contained types are copyable.
+ * semantics. Payload construction and assignment can propagate exceptions; accessing the inactive
+ * member is a contract violation reported by a debug assertion. Move-only types are supported.
+ * Assignment requires at least one alternative to be nothrow move-constructible, so a failed
+ * cross-alternative construction preserves the destination's previous alternative and value.
+ * Assignment within one alternative follows that payload's exception guarantee.
  *
  * @code
  * Result<VFSFileInfo, VFSError> statResult = Ok( std::move( info ) );
@@ -102,7 +104,9 @@ template <typename T, typename E> class Result {
 
 	Result& operator=( const Result& other )
 		requires( std::is_copy_constructible_v<T> && std::is_copy_constructible_v<E> &&
-				  std::is_copy_assignable_v<T> && std::is_copy_assignable_v<E> )
+				  std::is_copy_assignable_v<T> && std::is_copy_assignable_v<E> &&
+				  (std::is_nothrow_move_constructible_v<T> ||
+				   std::is_nothrow_move_constructible_v<E>))
 	{
 		if ( this != &other )
 			assign( other );
@@ -114,7 +118,9 @@ template <typename T, typename E> class Result {
 												  std::is_nothrow_move_assignable_v<T> &&
 												  std::is_nothrow_move_assignable_v<E> )
 		requires( std::is_move_constructible_v<T> && std::is_move_constructible_v<E> &&
-				  std::is_move_assignable_v<T> && std::is_move_assignable_v<E> )
+				  std::is_move_assignable_v<T> && std::is_move_assignable_v<E> &&
+				  (std::is_nothrow_move_constructible_v<T> ||
+				   std::is_nothrow_move_constructible_v<E>))
 	{
 		if ( this != &other )
 			assign( std::move( other ) );
@@ -170,6 +176,35 @@ template <typename T, typename E> class Result {
 	T&& operator*() && { return std::move( *this ).value(); }
 
   private:
+	/** Commit a new alternative without ever leaving a live Result with an inactive member.
+	 * The rollback owns an inline backup and restores it during exception unwinding. */
+	template <typename New, typename Old, typename Arg>
+	static void replace( New* destination, Old* previous, Arg&& argument ) {
+		if constexpr ( std::is_nothrow_constructible_v<New, Arg&&> ) {
+			std::destroy_at( previous );
+			std::construct_at( destination, std::forward<Arg>( argument ) );
+		} else if constexpr ( std::is_nothrow_move_constructible_v<New> ) {
+			New temporary( std::forward<Arg>( argument ) );
+			std::destroy_at( previous );
+			std::construct_at( destination, std::move( temporary ) );
+		} else {
+			static_assert( std::is_nothrow_move_constructible_v<Old> );
+			struct Rollback {
+				Old* storage;
+				Old value;
+
+				~Rollback() {
+					if ( storage )
+						std::construct_at( storage, std::move( value ) );
+				}
+			};
+			Rollback rollback{ previous, std::move( *previous ) };
+			std::destroy_at( previous );
+			std::construct_at( destination, std::forward<Arg>( argument ) );
+			rollback.storage = nullptr;
+		}
+	}
+
 	void destroy() noexcept {
 		if ( mHasValue )
 			std::destroy_at( std::addressof( mValue ) );
@@ -185,12 +220,14 @@ template <typename T, typename E> class Result {
 				mError = std::forward<Other>( other ).mError;
 			return;
 		}
-		destroy();
+		if ( other.mHasValue ) {
+			replace( std::addressof( mValue ), std::addressof( mError ),
+					 std::forward<Other>( other ).mValue );
+		} else {
+			replace( std::addressof( mError ), std::addressof( mValue ),
+					 std::forward<Other>( other ).mError );
+		}
 		mHasValue = other.mHasValue;
-		if ( mHasValue )
-			std::construct_at( std::addressof( mValue ), std::forward<Other>( other ).mValue );
-		else
-			std::construct_at( std::addressof( mError ), std::forward<Other>( other ).mError );
 	}
 
 	union {
@@ -288,10 +325,11 @@ template <typename E> class Result<void, E> {
 			mError = std::forward<Other>( other ).mError;
 			return;
 		}
-		destroy();
-		mHasValue = other.mHasValue;
-		if ( !mHasValue )
+		if ( mHasValue && !other.mHasValue )
 			std::construct_at( std::addressof( mError ), std::forward<Other>( other ).mError );
+		else
+			destroy();
+		mHasValue = other.mHasValue;
 	}
 
 	union {

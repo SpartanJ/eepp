@@ -417,6 +417,39 @@ VFSTask<T> withConnection( const std::shared_ptr<SFTPProviderImpl>& impl, const 
 		} );
 }
 
+/** A native operation involving two names must run on their actual common SFTP session.
+ * Configuration/authority equality cannot substitute for connection identity. */
+VFSTask<std::shared_ptr<SSHConnection>>
+commonConnection( const std::shared_ptr<SFTPProviderImpl>& impl, const URI& from, const URI& to,
+				  CancellationToken token ) {
+	if ( token.isCancellationRequested() )
+		return readyError<std::shared_ptr<SSHConnection>>( cancelledError( from ) );
+	return impl->connection( from ).then(
+		[impl = impl, to = to,
+		 token = std::move( token )]( VFSResult<std::shared_ptr<SSHConnection>>&& source ) mutable
+			-> VFSTask<std::shared_ptr<SSHConnection>> {
+			if ( !source )
+				return readyError<std::shared_ptr<SSHConnection>>( std::move( source ).error() );
+			return impl->connection( to ).then(
+				[impl = std::move( impl ), source = std::move( source ).value(),
+				 to = std::move( to ), token = std::move( token )](
+					VFSResult<std::shared_ptr<SSHConnection>>&& target ) mutable
+					-> VFSResult<std::shared_ptr<SSHConnection>> {
+					if ( token.isCancellationRequested() )
+						return Err( cancelledError( to ) );
+					if ( !target )
+						return Err( std::move( target ).error() );
+					if ( source != target.value() ) {
+						return Err( VFSError( VFSErrorCode::Unsupported, to,
+											  "Native rename requires one shared SFTP session" ) );
+					}
+					if ( !source->isReady() )
+						return Err( VFSError( VFSErrorCode::ConnectionLost, to ) );
+					return Ok( std::move( source ) );
+				} );
+		} );
+}
+
 } // namespace
 
 SFTPProvider::SFTPProvider( SFTPProviderConfig config ) :
@@ -715,25 +748,23 @@ VFSTask<void> SFTPProvider::rename( const URI& from, const URI& to, const Rename
 									CancellationToken token ) {
 	if ( !VFSPath::validURI( from ) || !VFSPath::validURI( to ) )
 		return readyError<void>( VFSErrorCode::InvalidURI, to, "NUL in SFTP URI" );
-	if ( SFTPProviderImpl::authorityKey( from ) != SFTPProviderImpl::authorityKey( to ) ) {
-		return readyError<void>( VFSErrorCode::Unsupported, from,
-								 "Rename across SFTP servers is not possible" );
-	}
 	bool overwrite = options.overwrite;
-	return withConnection<void>(
-		mImpl, from, token,
-		[from, to, overwrite, token]( std::shared_ptr<SSHConnection> connection ) {
+	return commonConnection( mImpl, from, to, token )
+		.then( [from, to, overwrite,
+				token]( VFSResult<std::shared_ptr<SSHConnection>>&& ready ) -> VFSTask<void> {
+			if ( !ready )
+				return readyError<void>( std::move( ready ).error() );
+			auto connection = std::move( ready ).value();
 			std::string src = sftpPath( from );
 			std::string dst = sftpPath( to );
 			struct State {
 				int phase{ 0 };
 				std::optional<VFSError> error;
 			};
-			auto state = std::make_shared<State>();
 			return connection->submit<void>(
 				token, from,
-				[src, dst, from, to, overwrite,
-				 state]( SSHConnection& c ) -> std::optional<VFSResult<void>> {
+				[src = std::move( src ), dst = std::move( dst ), from, to, overwrite,
+				 state = State{}]( SSHConnection& c ) mutable -> std::optional<VFSResult<void>> {
 					auto finish = [&]( int rc,
 									   const char* what ) -> std::optional<VFSResult<void>> {
 						if ( rc == 0 )
@@ -749,7 +780,7 @@ VFSTask<void> SFTPProvider::rename( const URI& from, const URI& to, const Rename
 							return std::nullopt;
 						return finish( rc, "rename failed" );
 					}
-					if ( state->phase == 0 ) {
+					if ( state.phase == 0 ) {
 						long flags = overwrite ? LIBSSH2_SFTP_RENAME_OVERWRITE |
 													 LIBSSH2_SFTP_RENAME_ATOMIC |
 													 LIBSSH2_SFTP_RENAME_NATIVE
@@ -764,19 +795,19 @@ VFSTask<void> SFTPProvider::rename( const URI& from, const URI& to, const Rename
 						VFSError error = c.lastError( from, "rename failed" );
 						if ( !isGenericFailure( error ) )
 							return VFSResult<void>( Err( std::move( error ) ) );
-						state->error = std::move( error );
-						state->phase = 1;
+						state.error = std::move( error );
+						state.phase = 1;
 					}
-					if ( state->phase == 1 ) {
+					if ( state.phase == 1 ) {
 						// SFTP v3 rename refuses existing targets with a generic failure.
 						auto exists = sftpStat( c, to, dst, false );
 						if ( !exists )
 							return std::nullopt;
 						if ( !*exists )
-							return VFSResult<void>( Err( std::move( *state->error ) ) );
+							return VFSResult<void>( Err( std::move( *state.error ) ) );
 						if ( !overwrite ) {
-							state->error->code = VFSErrorCode::AlreadyExists;
-							return VFSResult<void>( Err( std::move( *state->error ) ) );
+							state.error->code = VFSErrorCode::AlreadyExists;
+							return VFSResult<void>( Err( std::move( *state.error ) ) );
 						}
 						if ( typeFromPermissions( exists->value().permissions ) ==
 							 FileType::Directory ) {
@@ -901,6 +932,11 @@ VFSTask<SpaceInfo> SFTPProvider::spaceInfo( const URI& uri, CancellationToken to
 
 std::shared_ptr<WatchBackend> SFTPProvider::createWatchBackend( VirtualFileSystem& vfs ) {
 	return std::make_shared<RemoteWatchBackend>( mImpl, vfs );
+}
+
+std::shared_ptr<WatchBackend> SFTPProvider::createWatchBackend( VirtualFileSystem& vfs,
+																Time establishmentTimeout ) {
+	return std::make_shared<RemoteWatchBackend>( mImpl, vfs, establishmentTimeout );
 }
 
 }} // namespace EE::VFS

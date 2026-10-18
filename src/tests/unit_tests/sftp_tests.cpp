@@ -14,6 +14,7 @@
 #include <eepp/vfs/path.hpp>
 #include <eepp/vfs/sftp/sftpprovider.hpp>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <poll.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -328,11 +329,14 @@ class BlackholeProxy {
 
 	void drop( bool enabled ) { mDropping = enabled; }
 
-	void readDelay( unsigned milliseconds ) { mReadDelay = milliseconds; }
-
   private:
 	void forward( int client ) {
 		int upstream = ::socket( AF_INET, SOCK_STREAM, 0 );
+		// The proxy forwards SSH's small request/response packets immediately. Nagle's
+		// algorithm plus delayed ACKs otherwise adds artificial latency to every round trip.
+		int noDelay = 1;
+		::setsockopt( client, IPPROTO_TCP, TCP_NODELAY, &noDelay, sizeof( noDelay ) );
+		::setsockopt( upstream, IPPROTO_TCP, TCP_NODELAY, &noDelay, sizeof( noDelay ) );
 #ifdef SO_NOSIGPIPE
 		int noSigpipe = 1;
 		::setsockopt( client, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, sizeof( noSigpipe ) );
@@ -360,10 +364,7 @@ class BlackholeProxy {
 					}
 					if ( mDropping.load() )
 						continue;
-					if ( i == 1 && mReadDelay.load() ) {
-						std::this_thread::sleep_for(
-							std::chrono::milliseconds( mReadDelay.load() ) );
-					}
+
 					ssize_t sent = 0;
 					while ( sent < size ) {
 #ifdef MSG_NOSIGNAL
@@ -390,7 +391,6 @@ class BlackholeProxy {
 	int mUpstreamPort;
 	int mListener{ -1 };
 	int mPort{ 0 };
-	std::atomic<unsigned> mReadDelay{ 0 };
 	std::atomic<bool> mStopping{ false };
 	std::atomic<bool> mDropping{ false };
 };
@@ -465,10 +465,14 @@ struct SFTPFixture {
 	VirtualFileSystem vfs;
 	std::shared_ptr<SFTPProvider> sftp;
 
-	explicit SFTPFixture( SFTPProviderConfig config = {} ) {
+	explicit SFTPFixture( SFTPProviderConfig config = {},
+						  std::optional<Time> watchEstablishmentTimeout = {} ) {
 		sftp = TestSSHServer::instance().provider( std::move( config ) );
 		vfs.registerProvider( sftp );
-		vfs.watchManager().registerBackend( "sftp", sftp->createWatchBackend( vfs ) );
+		vfs.watchManager().registerBackend(
+			"sftp", watchEstablishmentTimeout
+						? sftp->createWatchBackend( vfs, *watchEstablishmentTimeout )
+						: sftp->createWatchBackend( vfs ) );
 	}
 
 	~SFTPFixture() {
@@ -582,6 +586,39 @@ UTEST( SFTP, aliasesCannotCopyOrMoveOntoTheSameRemoteFile ) {
 			.revision ) );
 }
 
+UTEST( SFTP, aliasesUseNativeRenameOnlyOnTheirSharedSession ) {
+	REQUIRE_SSHD();
+	SFTPFixture fx;
+	const std::string name = uniqueName( "native-alias" );
+	const URI source = server.uri( "testhost", name );
+	const URI alias = server.uri( "testhost-alias", name + "-moved" );
+	ASSERT_TRUE( FileSystem::fileWrite( server.remoteRoot() + "/" + name,
+										std::string_view( "native move" ) ) );
+	for ( const bool reverse : { false, true } ) {
+		const URI& from = reverse ? alias : source;
+		const URI& to = reverse ? source : alias;
+		auto transfer = fx.vfs.move( from, to );
+		std::atomic<Uint64> progressBytes{ 0 };
+		auto subscription = transfer.onProgress(
+			[&]( const TransferProgress& progress ) { progressBytes = progress.bytesDone; } );
+		auto moved = waitFor( transfer.completion() );
+		REQUIRE_OK( moved );
+		EXPECT_TRUE( moved.value().renamed );
+		EXPECT_EQ( 0u, moved.value().bytesTransferred );
+		EXPECT_EQ( 0u, progressBytes.load() );
+		EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( fx.vfs.stat( from ) ) ) );
+		EXPECT_STDSTREQ( "native move", readString( fx.vfs, to ) );
+	}
+	const URI separate = server.uri( "edkey", name + "-separate" );
+	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( waitFor( fx.vfs.rename( source, separate ) ) ) );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( fx.vfs.stat( separate ) ) ) );
+	EXPECT_STDSTREQ( "native move", readString( fx.vfs, source ) );
+	CancellationSource cancelled;
+	cancelled.cancel();
+	EXPECT_EQ( VFSErrorCode::Cancelled,
+			   codeOf( waitFor( fx.vfs.rename( source, alias, {}, cancelled.token() ) ) ) );
+}
+
 UTEST( SFTP, differentHostNamesForOnePeerNeverModifyTheSource ) {
 	REQUIRE_SSHD();
 	SFTPFixture fx;
@@ -653,6 +690,8 @@ UTEST( SFTP, differentVerifiedPeersSupportCrossServerTransfers ) {
 	auto same = waitFor( provider->sameFileSystem( source, destination, {} ) );
 	REQUIRE_OK( same );
 	EXPECT_FALSE( same.value() );
+	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( waitFor( vfs.rename( source, destination ) ) ) );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( vfs.stat( destination ) ) ) );
 	ASSERT_TRUE( waitFor( vfs.copy( source, destination ).completion() ) );
 	EXPECT_STDSTREQ( "keep", readString( vfs, source ) );
 	EXPECT_STDSTREQ( "keep", readString( vfs, destination ) );
@@ -690,34 +729,6 @@ UTEST( SFTP, replacementWithoutPosixRenamePreservesBothFiles ) {
 	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( moved ) );
 	EXPECT_STDSTREQ( "new data", readString( vfs, URI::fromFSPath( src ) ) );
 	EXPECT_STDSTREQ( "precious old data", readString( vfs, URI::fromFSPath( dst ) ) );
-}
-
-UTEST( SFTP, progressingReadAllCanOutlastTheOperationDeadline ) {
-	REQUIRE_SSHD();
-	BlackholeProxy proxy( server.port() );
-	ASSERT_NE( 0, proxy.port() );
-	SFTPProviderConfig config;
-	// Scale the deadline down so this regression does not add a 30-second delay to every run.
-	config.operationTimeout = System::Seconds( 1 );
-	VirtualFileSystem vfs;
-	auto provider = server.provider( config );
-	vfs.registerProvider( provider );
-	const std::string name = uniqueName( "slow-progress" );
-	ASSERT_TRUE( FileSystem::fileWrite( server.remoteRoot() + "/" + name,
-										std::string( 4 * 1024 * 1024, 'x' ) ) );
-	URI uri = server.uri( "testhost", name );
-	uri.setPort( static_cast<Uint16>( proxy.port() ) );
-	REQUIRE_OK( waitFor( vfs.stat( uri ) ) );
-	proxy.readDelay( 10 );
-	const auto start = std::chrono::steady_clock::now();
-	auto data = waitFor( vfs.readAll( uri ) );
-	REQUIRE_OK( data );
-	EXPECT_EQ( 4u * 1024 * 1024, data.value().size() );
-	EXPECT_TRUE( std::all_of( data.value().begin(), data.value().end(),
-							  []( Uint8 c ) { return c == 'x'; } ) );
-	EXPECT_TRUE( std::chrono::steady_clock::now() - start > std::chrono::seconds( 1 ) );
-	REQUIRE_OK( waitFor( vfs.stat( uri ) ) );
-	EXPECT_EQ( 1u, provider->connectionCount() );
 }
 
 UTEST( SFTP, blackholedReadyOperationsFailTheSessionAndReconnect ) {
@@ -1057,8 +1068,7 @@ UTEST( SFTP, operationsOnAClosedConnectionFail ) {
 	REQUIRE_OK( opened );
 	FileHandle handle( std::move( opened ).value() );
 	fx.sftp->disconnectAll();
-	// Give the I/O thread time to drop the closed connection.
-	std::this_thread::sleep_for( std::chrono::milliseconds( 200 ) );
+	// Closing and subsequent handle operations are serialized by the SSH I/O context.
 	Uint8 buffer[8];
 	auto read = handle.read( 0, buffer );
 	ASSERT_EQ( TaskState::Ready, read.waitFor( std::chrono::seconds( 5 ) ) );
@@ -1070,7 +1080,7 @@ UTEST( SFTP, operationsOnAClosedConnectionFail ) {
 UTEST( SFTP, idleConnectionsCloseButNotWhileInUse ) {
 	REQUIRE_SSHD();
 	SFTPProviderConfig config;
-	config.idleTimeout = System::Milliseconds( 300 );
+	config.idleTimeout = System::Milliseconds( 50 );
 	SFTPFixture fx( config );
 	URI file = server.uri( "testhost", uniqueName( "idle" ) );
 	REQUIRE_OK( waitFor( fx.vfs.writeAll( file, std::string_view( "data" ) ) ) );
@@ -1078,7 +1088,7 @@ UTEST( SFTP, idleConnectionsCloseButNotWhileInUse ) {
 	REQUIRE_OK( opened );
 	FileHandle handle( std::move( opened ).value() );
 	// An open handle keeps the connection.
-	std::this_thread::sleep_for( std::chrono::milliseconds( 800 ) );
+	std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
 	EXPECT_EQ( 1u, fx.sftp->connectionCount() );
 	Uint8 buffer[4];
 	auto read = waitFor( handle.read( 0, buffer ) );
@@ -1087,8 +1097,8 @@ UTEST( SFTP, idleConnectionsCloseButNotWhileInUse ) {
 	REQUIRE_OK( waitFor( handle.close() ) );
 	// Unused, it closes after the idle timeout; the next operation reconnects.
 	bool closed = false;
-	for ( int i = 0; i < 50 && !closed; ++i ) {
-		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+	for ( int i = 0; i < 200 && !closed; ++i ) {
+		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
 		closed = fx.sftp->connectionCount() == 0;
 	}
 	EXPECT_TRUE( closed );
@@ -1119,12 +1129,12 @@ UTEST( SFTP, idleConnectionReleasesItsSocket ) {
 	int before = connectedSockets();
 	ASSERT_GE( before, 0 );
 	SFTPProviderConfig config;
-	config.idleTimeout = System::Milliseconds( 300 );
+	config.idleTimeout = System::Milliseconds( 50 );
 	SFTPFixture fx( config );
 	REQUIRE_OK( waitFor( fx.vfs.stat( server.uri( "testhost" ) ) ) );
 	EXPECT_EQ( before + 1, connectedSockets() );
-	for ( int i = 0; i < 50 && connectedSockets() != before; ++i )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+	for ( int i = 0; i < 200 && connectedSockets() != before; ++i )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
 	EXPECT_EQ( before, connectedSockets() );
 }
 #endif
@@ -1472,7 +1482,8 @@ UTEST( SFTP, repeatedWatchStartsFreeTheirChannelsWithoutClosingSFTP ) {
 	auto opened = waitFor( fx.vfs.open( file ) );
 	REQUIRE_OK( opened );
 	FileHandle handle = std::move( opened ).value();
-	for ( int i = 0; i < 200; ++i ) {
+	// Cross the server's ten-channel limit twice without turning this into a stress test.
+	for ( int i = 0; i < 24; ++i ) {
 		auto watched = waitFor( fx.vfs.watch( directory ) );
 		REQUIRE_OK( watched );
 		ASSERT_EQ( WatchStatus::Active, watched.value().status() );
@@ -1523,16 +1534,16 @@ UTEST( SFTP, closingTheLastWatchAllowsIdleCleanup ) {
 	}
 	SFTPProviderConfig config;
 	config.watchAgentCommand = agent + " --stdio";
-	config.idleTimeout = System::Milliseconds( 300 );
+	config.idleTimeout = System::Milliseconds( 50 );
 	SFTPFixture fx( config );
 	auto opened = waitFor( fx.vfs.watch( server.uri( "testhost" ) ) );
 	REQUIRE_OK( opened );
 	WatchHandle watch( std::move( opened ).value() );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 700 ) );
+	std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
 	EXPECT_EQ( 1u, fx.sftp->connectionCount() );
 	watch.reset();
-	for ( int i = 0; i < 50 && fx.sftp->connectionCount() != 0; ++i )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+	for ( int i = 0; i < 200 && fx.sftp->connectionCount() != 0; ++i )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
 	EXPECT_EQ( 0u, fx.sftp->connectionCount() );
 }
 
@@ -1541,12 +1552,12 @@ UTEST( SFTP, silentWatchAgentFallsBackToPolling ) {
 	// The command runs but never answers the handshake: the watch (and the listing that waits
 	// for it) must not stay pending.
 	SFTPProviderConfig config;
-	config.watchAgentCommand = "sleep 60";
-	SFTPFixture fx( config );
+	config.watchAgentCommand = "cat >/dev/null";
+	SFTPFixture fx( config, System::Milliseconds( 50 ) );
 	std::string name = uniqueName( "silentwatch" );
 	FileSystem::makeDir( server.remoteRoot() + "/" + name );
 	auto task = fx.vfs.watch( server.uri( "testhost", name ) );
-	ASSERT_EQ( TaskState::Ready, task.waitFor( std::chrono::seconds( 20 ) ) );
+	ASSERT_EQ( TaskState::Ready, task.waitFor( std::chrono::seconds( 2 ) ) );
 	auto opened = std::move( task ).takeValue();
 	REQUIRE_OK( opened );
 	EXPECT_EQ( WatchStatus::Polling, opened.value().status() );

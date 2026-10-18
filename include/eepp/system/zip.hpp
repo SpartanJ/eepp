@@ -8,8 +8,9 @@ struct zip;
 
 namespace EE { namespace System {
 
-/** ZIP archive reader/writer and optional resource pack. Use Zip(false) and OpenMode::ReadOnly
- * for standalone browsing. Entry streams borrow the archive and must be destroyed before it.
+/** ZIP archive reader/writer and optional resource pack. Use Zip(false) and
+ * OpenMode::ReadOnlyBounded for untrusted standalone browsing. Entry streams borrow the archive
+ * and must be destroyed before it.
  * Serialize access to an archive and its streams when sharing them between threads. */
 class EE_API Zip : public Pack {
   public:
@@ -22,7 +23,13 @@ class EE_API Zip : public Pack {
 		Uint32 crc{ 0 };
 	};
 
-	enum class OpenMode : Uint8 { ReadOnly, ReadWrite };
+	enum class OpenMode : Uint8 {
+		ReadOnly,
+		ReadWrite,
+		/** Read-only with a 64 MiB metadata allocation bound, checked before decoding the
+		 * central directory. Suitable for untrusted archive browsing. */
+		ReadOnlyBounded
+	};
 
 	enum class Error : Uint8 {
 		None,
@@ -51,6 +58,10 @@ class EE_API Zip : public Pack {
 	bool open( const std::string& path, OpenMode mode );
 
 	Uint64 entryCount() const;
+
+	/** Conservative decoded central-directory memory estimate, including allocation slack.
+	 * This excludes decompressed file data and indexes built by the caller. */
+	Uint64 metadataSize() const;
 
 	bool entry( Uint64 index, Entry& result );
 

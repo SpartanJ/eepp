@@ -24,6 +24,7 @@ constexpr ProviderCapabilities
 					 static_cast<Uint32>( VFSCapability::CaseSensitive ) );
 constexpr Uint64 NoEntry = std::numeric_limits<Uint64>::max();
 constexpr size_t MaxEntries = 262144;
+constexpr size_t MaxMetadata = 64 * 1024 * 1024;
 
 VFSError readOnly( const URI& uri ) {
 	return VFSError( VFSErrorCode::ReadOnly, uri, "ZIP archives are read-only" );
@@ -89,6 +90,12 @@ struct ZipArchive {
 		if ( count > MaxEntries )
 			return Err(
 				VFSError( VFSErrorCode::InvalidOperation, uri, "ZIP has too many entries" ) );
+		const Uint64 libraryMetadata = reader.metadataSize();
+		if ( libraryMetadata > MaxMetadata ) {
+			return Err(
+				VFSError( VFSErrorCode::InvalidOperation, uri, "ZIP metadata budget exceeded" ) );
+		}
+		size_t budget = MaxMetadata - static_cast<size_t>( libraryMetadata );
 		nodes.push_back( { info( "/", true ), {}, NoEntry } );
 		paths.emplace( "", 0 );
 		Zip::Entry metadata;
@@ -115,10 +122,14 @@ struct ZipArchive {
 				auto found = paths.find( path );
 				size_t node;
 				if ( found == paths.end() ) {
-					if ( nodes.size() >= MaxEntries ) {
+					// Include the node/name, full path-map key, child index, hash buckets and
+					// allocator/vector growth slack before retaining any of those allocations.
+					const size_t cost = 2 * ( sizeof( ZipNode ) + path.size() + end - start + 128 );
+					if ( nodes.size() >= MaxEntries || cost > budget ) {
 						return Err( VFSError( VFSErrorCode::InvalidOperation, uri,
-											  "ZIP has too many directories and entries" ) );
+											  "ZIP metadata budget exceeded" ) );
 					}
+					budget -= cost;
 					node = nodes.size();
 					paths.emplace( std::move( path ), node );
 					nodes[parent].children.push_back( node );
@@ -365,7 +376,7 @@ class ZipProviderImpl : public std::enable_shared_from_this<ZipProviderImpl> {
 			std::string_view( reinterpret_cast<const char*>( revision.data() ), revision.size() ) );
 		archive->route = scheduler->resolvedRouteFor( path, true );
 		Zip reader( false );
-		if ( !reader.open( path, Zip::OpenMode::ReadOnly ) )
+		if ( !reader.open( path, Zip::OpenMode::ReadOnlyBounded ) )
 			return Err( readerError( reader, uri ) );
 		auto indexed = archive->index( reader, uri, token );
 		if ( !indexed )
@@ -479,7 +490,7 @@ VFSTask<FileHandle> ZipProvider::open( const URI& uri, const OpenOptions& option
 			if ( info.info.type == FileType::Directory )
 				return Err( VFSError( VFSErrorCode::IsDirectory, uri ) );
 			auto reader = std::make_unique<Zip>( false );
-			if ( !reader->open( archive->path, Zip::OpenMode::ReadOnly ) )
+			if ( !reader->open( archive->path, Zip::OpenMode::ReadOnlyBounded ) )
 				return Err( readerError( *reader, uri ) );
 			auto current =
 				LocalProvider::statSync( URI::fromFSPath( archive->path ), archive->path, true );

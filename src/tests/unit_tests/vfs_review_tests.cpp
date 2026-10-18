@@ -416,7 +416,7 @@ UTEST( VFSSafety, inMemoryAuthoritiesRemainSeparateNamespaces ) {
 	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( vfs.stat( URI( "mem://one/file" ) ) ) ) );
 }
 
-UTEST( VFSOrchestration, knownSizeNeverExpandsTheReadRequest ) {
+UTEST( VFSOrchestration, readRequestsStayBoundedForKnownAndUnknownSizes ) {
 	class GeneratedFile : public FileHandleImpl {
 	  public:
 		explicit GeneratedFile( Uint64 length, bool known ) : size( length ), knownSize( known ) {}
@@ -424,6 +424,10 @@ UTEST( VFSOrchestration, knownSizeNeverExpandsTheReadRequest ) {
 		VFSTask<size_t> read( Uint64 offset, std::span<Uint8> data, CancellationToken ) override {
 			largestRead = std::max( largestRead, data.size() );
 			++reads;
+			// Fault oversized requests immediately; no timed/throttled SSH transfer is needed
+			// to catch a capacity reservation escaping into a whole-file operation.
+			if ( data.size() > 256u * 1024 )
+				return readyError<size_t>( VFSErrorCode::TimedOut );
 			const size_t count =
 				static_cast<size_t>( std::min<Uint64>( data.size(), size - offset ) );
 			std::memset( data.data(), 'x', count );
@@ -468,13 +472,15 @@ UTEST( VFSOrchestration, knownSizeNeverExpandsTheReadRequest ) {
 	auto provider = std::make_shared<GeneratedProvider>();
 	vfs.registerProvider( provider );
 	const URI file( "mem://test/generated" );
-	provider->file = std::make_shared<GeneratedFile>( 64 * 1024 * 1024, true );
-	auto read = waitFor( vfs.readAll( file ) );
-	ASSERT_TRUE( read );
-	EXPECT_EQ( 64u * 1024 * 1024, read.value().size() );
-	EXPECT_LE( provider->file->largestRead, 256u * 1024 );
-	EXPECT_GT( provider->file->reads, 1u );
-	EXPECT_EQ( int( 'x' ), int( read.value().back() ) );
+	for ( const bool known : { false, true } ) {
+		provider->file = std::make_shared<GeneratedFile>( 2 * 1024 * 1024, known );
+		auto read = waitFor( vfs.readAll( file ) );
+		ASSERT_TRUE( read );
+		EXPECT_EQ( 2u * 1024 * 1024, read.value().size() );
+		EXPECT_LE( provider->file->largestRead, 256u * 1024 );
+		EXPECT_EQ( 9u, provider->file->reads ); // Eight bounded reads, followed by EOF.
+		EXPECT_EQ( int( 'x' ), int( read.value().back() ) );
+	}
 	for ( const bool known : { false, true } ) {
 		provider->file = std::make_shared<GeneratedFile>( 10, known );
 		auto unlimited = waitFor( vfs.readAll( file, {}, std::numeric_limits<Uint64>::max() ) );

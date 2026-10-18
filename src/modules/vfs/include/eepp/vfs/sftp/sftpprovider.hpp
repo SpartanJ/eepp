@@ -178,6 +178,11 @@ class EE_VFS_API SFTPProvider : public VFSProvider {
 	 * polling through the VFS as fallback. */
 	std::shared_ptr<WatchBackend> createWatchBackend( VirtualFileSystem& vfs );
 
+	/** As above, with a maximum agent/watch establishment time before polling fallback.
+	 * The default overload allows five seconds. Values below one millisecond are clamped. */
+	std::shared_ptr<WatchBackend> createWatchBackend( VirtualFileSystem& vfs,
+													  Time establishmentTimeout );
+
   private:
 	std::shared_ptr<sftp::SFTPProviderImpl> mImpl;
 };

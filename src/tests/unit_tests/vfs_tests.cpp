@@ -1179,11 +1179,20 @@ UTEST( LocalIOScheduler, slowTimeoutCompletionNeverDelaysOtherMounts ) {
 		}
 		return std::nullopt;
 	};
-	const auto timeout = std::chrono::milliseconds( 200 );
 	// One worker: the timeouts must not wait for it.
 	auto pool = ThreadPool::createShared( 1 );
-	auto scheduler = std::make_shared<LocalIOScheduler>( pool, Milliseconds( 200 ), lookup );
+	auto scheduler = std::make_shared<LocalIOScheduler>( pool, Milliseconds( 50 ), lookup );
 	auto gate = std::make_shared<Gate>();
+	auto slowFinish = std::make_shared<Gate>();
+	struct ReleaseGates {
+		Gate& work;
+		Gate& callback;
+
+		~ReleaseGates() {
+			work.open();
+			callback.open();
+		}
+	} release{ *gate, *slowFinish };
 	auto hung = [gate]() -> VFSResult<int> {
 		gate->wait();
 		return Ok( 1 );
@@ -1191,17 +1200,19 @@ UTEST( LocalIOScheduler, slowTimeoutCompletionNeverDelaysOtherMounts ) {
 	// The first mount's timeout runs a completion that takes long (a close that waits, say).
 	auto slowStarted = std::make_shared<Gate>();
 	scheduler->submit<int>( "/neta/x", hung )
-		.onComplete( [slowStarted]( std::optional<VFSResult<int>> ) {
+		.onComplete( [slowStarted, slowFinish]( std::optional<VFSResult<int>> ) {
 			slowStarted->open();
-			std::this_thread::sleep_for( std::chrono::seconds( 2 ) );
+			slowFinish->wait();
 		} );
 	ASSERT_TRUE( slowStarted->waitFor( std::chrono::seconds( 5 ) ) );
 	// Meanwhile the other mount's calls still time out on time.
-	const auto started = std::chrono::steady_clock::now();
 	auto other = scheduler->submit<int>( "/netb/x", hung );
-	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( other ) ) ) );
-	EXPECT_TRUE( std::chrono::steady_clock::now() - started < timeout * 4 );
-	gate->open();
+	const auto state = other.waitFor( std::chrono::seconds( 2 ) );
+	EXPECT_EQ( TaskState::Ready, state );
+	if ( state == TaskState::Ready )
+		EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( other ) ) ) );
+	// Release both gates on every exit, including a failed assertion. A blocked callback is
+	// observable without a fixed multi-second sleep or stranded background test threads.
 }
 
 UTEST( LocalIOScheduler, lastOwnerReleasedByALaneCallTearsDown ) {

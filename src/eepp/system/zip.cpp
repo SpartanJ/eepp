@@ -56,7 +56,7 @@ bool Zip::open( const std::string& path, OpenMode mode ) {
 	mError = Error::None;
 	mErrorMessage.clear();
 	mOpenMode = mode;
-	if ( mode == OpenMode::ReadOnly ) {
+	if ( mode != OpenMode::ReadWrite ) {
 		if ( !openReadOnly( path ) )
 			return false;
 	} else {
@@ -282,7 +282,8 @@ bool Zip::openReadOnly( const std::string& path ) {
 		return false;
 	}
 	int error = ZIP_ER_OK;
-	mZip = zip_fdopen( descriptor, 0, &error );
+	mZip = zip_fdopen( descriptor, mOpenMode == OpenMode::ReadOnlyBounded ? ZIP_LIMIT_METADATA : 0,
+					   &error );
 	if ( !mZip ) {
 		// This vendored libzip consumes descriptor after fdopen succeeds. Only its two early
 		// ZIP_ER_OPEN failures (dup/fdopen) leave it for the caller to close.
@@ -305,6 +306,10 @@ Uint64 Zip::entryCount() const {
 		return 0;
 	const auto count = zip_get_num_entries( mZip, 0 );
 	return count == std::numeric_limits<Uint64>::max() ? 0 : count;
+}
+
+Uint64 Zip::metadataSize() const {
+	return mZip ? zip_get_metadata_size( mZip ) : 0;
 }
 
 bool Zip::entry( Uint64 index, Entry& result ) {
@@ -349,7 +354,8 @@ void Zip::setError( int code, int systemCode ) {
 	else if ( zip_error_get_sys_type( code ) == ZIP_ET_SYS &&
 			  ( systemCode == EACCES || systemCode == EPERM ) )
 		mError = Error::PermissionDenied;
-	else if ( code == ZIP_ER_NOZIP || code == ZIP_ER_INCONS || code == ZIP_ER_EOF )
+	else if ( code == ZIP_ER_NOZIP || code == ZIP_ER_INCONS || code == ZIP_ER_EOF ||
+			  code == ZIP_ER_METADATA )
 		mError = Error::InvalidArchive;
 	else if ( code == ZIP_ER_COMPNOTSUPP || code == ZIP_ER_MULTIDISK ||
 			  code == ZIP_ER_ENCRNOTSUPP || code == ZIP_ER_NOPASSWD || code == ZIP_ER_WRONGPASSWD )
@@ -362,7 +368,7 @@ void Zip::setError( int code, int systemCode ) {
 }
 
 bool Zip::writable() {
-	if ( mOpenMode == OpenMode::ReadOnly ) {
+	if ( mOpenMode != OpenMode::ReadWrite ) {
 		mError = Error::ReadOnly;
 		mErrorMessage = "ZIP archive is read-only";
 		return false;

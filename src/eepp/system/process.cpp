@@ -1,4 +1,5 @@
 #include <bitset>
+#include <cerrno>
 #include <eepp/core/debug.hpp>
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/core/string.hpp>
@@ -263,7 +264,16 @@ size_t Process::write( const std::string_view& buffer ) {
 }
 
 bool Process::join( int* const returnCodeOut ) {
-	return mProcess != nullptr && 0 == subprocess_join( PROCESS_PTR, returnCodeOut );
+	if ( !mProcess )
+		return false;
+	int result = subprocess_join( PROCESS_PTR, returnCodeOut );
+#ifdef EE_PLATFORM_POSIX
+	// Signals (including debugger stops) can interrupt waitpid without the child exiting.
+	// The subprocess implementation retains its child on EINTR, so the same join is retried.
+	while ( result != 0 && errno == EINTR )
+		result = subprocess_join( PROCESS_PTR, returnCodeOut );
+#endif
+	return result == 0;
 }
 
 bool Process::kill() {

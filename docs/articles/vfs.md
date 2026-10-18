@@ -330,6 +330,11 @@ copies remain available, so reopening cannot silently discard local edits.
 on the server's `PATH`, or set `SFTPProviderConfig::watchAgentCommand`. The eepp build produces
 `bin/efsw-agent` for the build host.
 
+Agent/watch establishment allows five seconds before falling back to polling. Applications can
+choose a different bound when registering the backend with
+`provider->createWatchBackend( vfs, Milliseconds( 500 ) )`; SSH connection/authentication deadlines
+remain independent.
+
 ### Known limitations
 
 - FIDO security-key identity files (`ssh-keygen -t ed25519-sk` / `ecdsa-sk`) are not supported
@@ -383,7 +388,10 @@ Only `file://` backing archives are supported initially. Password-protected entr
 compression methods report `Unsupported`. ZIP symlink attributes are not followed: their stored
 data is exposed as a regular file. Unsafe names (absolute paths, traversal components, backslashes
 or drive/stream colons) are excluded. Indexes are limited to 262,144 entries including implicit
-directories, with at most eight cached indexes; existing handles can retain older indexes.
+directories and a conservative 64 MiB metadata budget covering libzip's decoded directory,
+nodes, stored paths and container growth. Oversized central directories are rejected before
+decoding; budget violations return `InvalidOperation`. At most eight indexes are cached;
+existing handles can retain older indexes.
 
 In eefm, Enter or double-click on a local `.zip`, `.jar`, `.apk` or `.epub` file enters it
 (extensions are case-insensitive). These ZIP-based formats share `ZipProvider` and `zip://` locations.

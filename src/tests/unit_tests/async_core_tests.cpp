@@ -39,6 +39,38 @@ struct TestError {
 	std::string message;
 };
 
+#if defined( __cpp_exceptions ) || defined( _CPPUNWIND )
+/** Counts only fully constructed objects, exposing destruction of an inactive union member. */
+template <bool NothrowMove> struct ThrowingPayload {
+	static inline int alive{ 0 };
+	static inline bool failCopy{ false };
+	static inline bool failMove{ false };
+	int value;
+
+	explicit ThrowingPayload( int value ) : value( value ) { ++alive; }
+
+	ThrowingPayload( const ThrowingPayload& other ) : value( other.value ) {
+		if ( failCopy )
+			throw 1;
+		++alive;
+	}
+
+	ThrowingPayload( ThrowingPayload&& other ) noexcept( NothrowMove ) : value( other.value ) {
+		if constexpr ( !NothrowMove ) {
+			if ( failMove )
+				throw 2;
+		}
+		++alive;
+	}
+
+	ThrowingPayload& operator=( const ThrowingPayload& ) = default;
+
+	ThrowingPayload& operator=( ThrowingPayload&& ) = default;
+
+	~ThrowingPayload() { --alive; }
+};
+#endif
+
 /** Executor that queues work until drain() is called, to make dispatch observable. */
 class QueueExecutor : public Executor {
   public:
@@ -200,6 +232,109 @@ UTEST( Result, accessorValueCategories ) {
 	static_assert( std::is_same_v<decltype( std::declval<R&&>().error() ), int&&> );
 	EXPECT_TRUE( true );
 }
+
+#if defined( __cpp_exceptions ) || defined( _CPPUNWIND )
+UTEST( Result, failedAlternativeConstructionPreservesThePreviousValue ) {
+	using Safe = ThrowingPayload<true>;
+	using Risky = ThrowingPayload<false>;
+	using R = Result<Safe, Risky>;
+	static_assert( std::is_copy_constructible_v<Result<Risky, Risky>> );
+	static_assert( !std::is_copy_assignable_v<Result<Risky, Risky>> );
+	static_assert( !std::is_move_assignable_v<Result<Risky, Risky>> );
+	EXPECT_EQ( 0, Safe::alive );
+	EXPECT_EQ( 0, Risky::alive );
+	{
+		R value = Ok( Safe( 7 ) );
+		R error = Err( Risky( 9 ) );
+		Risky::failCopy = true;
+		bool threw = false;
+		try {
+			value = error;
+		} catch ( int ) {
+			threw = true;
+		}
+		Risky::failCopy = false;
+		EXPECT_TRUE( threw );
+		ASSERT_TRUE( value );
+		EXPECT_EQ( 7, value->value );
+		EXPECT_EQ( 1, Safe::alive );
+		EXPECT_EQ( 1, Risky::alive );
+		Risky::failMove = true;
+		threw = false;
+		try {
+			value = std::move( error );
+		} catch ( int ) {
+			threw = true;
+		}
+		Risky::failMove = false;
+		EXPECT_TRUE( threw );
+		ASSERT_TRUE( value );
+		EXPECT_EQ( 7, value->value );
+		EXPECT_EQ( 1, Safe::alive );
+		EXPECT_EQ( 1, Risky::alive );
+		Safe::failCopy = true;
+		threw = false;
+		try {
+			error = value;
+		} catch ( int ) {
+			threw = true;
+		}
+		Safe::failCopy = false;
+		EXPECT_TRUE( threw );
+		ASSERT_TRUE( error.hasError() );
+		EXPECT_EQ( 9, error.error().value );
+		EXPECT_EQ( 1, Safe::alive );
+		EXPECT_EQ( 1, Risky::alive );
+		// Both transitions remain usable after a failed assignment.
+		value = error;
+		EXPECT_TRUE( value.hasError() );
+		EXPECT_EQ( 9, value.error().value );
+		error = R( Ok( Safe( 11 ) ) );
+		EXPECT_TRUE( error.hasValue() );
+		EXPECT_EQ( 11, error->value );
+	}
+	EXPECT_EQ( 0, Safe::alive );
+	EXPECT_EQ( 0, Risky::alive );
+}
+
+UTEST( Result, voidAssignmentCommitsTheErrorOnlyAfterConstruction ) {
+	using Payload = ThrowingPayload<false>;
+	EXPECT_EQ( 0, Payload::alive );
+	{
+		Result<void, Payload> value = Ok();
+		Result<void, Payload> error = Err( Payload( 3 ) );
+		Payload::failCopy = true;
+		bool threw = false;
+		try {
+			value = error;
+		} catch ( int ) {
+			threw = true;
+		}
+		Payload::failCopy = false;
+		EXPECT_TRUE( threw );
+		EXPECT_TRUE( value.hasValue() );
+		EXPECT_EQ( 1, Payload::alive );
+		Payload::failMove = true;
+		threw = false;
+		try {
+			value = std::move( error );
+		} catch ( int ) {
+			threw = true;
+		}
+		Payload::failMove = false;
+		EXPECT_TRUE( threw );
+		EXPECT_TRUE( value.hasValue() );
+		EXPECT_EQ( 1, Payload::alive );
+		value = error;
+		EXPECT_EQ( 2, Payload::alive );
+		EXPECT_EQ( 3, value.error().value );
+		value = Result<void, Payload>( Ok() );
+		EXPECT_TRUE( value.hasValue() );
+		EXPECT_EQ( 1, Payload::alive );
+	}
+	EXPECT_EQ( 0, Payload::alive );
+}
+#endif
 
 // ---------------------------------------------------------------------------------------------
 // SmallUniqueFunction
