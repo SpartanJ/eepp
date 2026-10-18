@@ -460,7 +460,9 @@ VFSResult<void> removeTree( VFSProvider& provider, const URI& uri, const Cancell
 					return Err( VFSError( VFSErrorCode::ProtocolError, uri,
 										  "Invalid directory entry name" ) );
 				}
-				// Symlinks are removed, never followed.
+				// Remove inspected links themselves. This pathname fallback requires a stable tree:
+				// a later directory/link replacement can redirect openDirectory or child
+				// operations.
 				VFSResult<void> removed =
 					entry.type == FileType::Directory
 						? removeTree( provider, uri.withAppendedSegment( entry.name ), token,

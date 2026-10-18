@@ -1105,6 +1105,75 @@ UTEST( SFTP, proxyJumpAndProxyCommand ) {
 					 readString( fx.vfs, server.uri( "proxied", name + "/x.txt" ) ) );
 }
 
+UTEST( SFTP, blackholedProxyCommandTeardownKeepsOtherSessionsResponsive ) {
+	REQUIRE_SSHD();
+	if ( Sys::which( "nc" ).empty() )
+		UTEST_SKIP( "netcat is required for the ProxyCommand teardown test" );
+	BlackholeProxy proxy( server.port() );
+	ASSERT_NE( 0, proxy.port() );
+	TempDir temp;
+	std::string original;
+	ASSERT_TRUE( FileSystem::fileGet( server.dir() + "ssh_config", original ) );
+	const std::string configuration =
+		"Host shutdown-proxy\n    ProxyCommand trap '' TERM; exec nc 127.0.0.1 " +
+		std::to_string( proxy.port() ) + "\n" + original;
+	ASSERT_TRUE( FileSystem::fileWrite( temp.path + "config", std::string_view( configuration ) ) );
+	SFTPProviderConfig config;
+	config.watchAgentCommand.clear();
+	config.configContextFactory = [path = temp.path]( const std::string& host ) {
+		auto context = SSHConfigContext::system( host );
+		context.sources = { { path + "config", path } };
+		return context;
+	};
+	auto impl = std::make_shared<sftp::SFTPProviderImpl>( std::move( config ) );
+	const URI proxied = server.uri( "shutdown-proxy" );
+	const URI direct = server.uri( "testhost" );
+	auto tunnel = waitFor( impl->connection( proxied ) );
+	REQUIRE_OK( tunnel );
+	auto live = waitFor( impl->connection( direct ) );
+	REQUIRE_OK( live );
+	ASSERT_TRUE( tunnel.value() != live.value() );
+	proxy.drop( true );
+	const auto started = std::chrono::steady_clock::now();
+	tunnel.value()->close();
+	// The second context turn runs after the first session's transport has been destroyed.
+	TaskResolver<VFSResult<bool>> resolve;
+	auto retired = VFSTask<bool>::create( resolve );
+	auto context = impl->ioContext();
+	context->post( [context, connection = tunnel.value(),
+					resolve = std::move( resolve )]() mutable {
+		context->post( [connection = std::move( connection ),
+						resolve = std::move( resolve )]() mutable {
+			resolve( Ok( connection->session() == nullptr && connection->transport() == nullptr ) );
+		} );
+	} );
+	ASSERT_EQ( TaskState::Ready, retired.waitFor( std::chrono::seconds( 2 ) ) );
+	auto done = waitFor( std::move( retired ) );
+	REQUIRE_OK( done );
+	EXPECT_TRUE( done.value() );
+	const std::string path = server.remoteRoot();
+	auto stat = live.value()->submit<void>(
+		{}, direct, [path]( sftp::SSHConnection& connection ) -> std::optional<VFSResult<void>> {
+			LIBSSH2_SFTP_ATTRIBUTES attributes{};
+			const int result = libssh2_sftp_stat_ex( connection.sftp(), path.c_str(),
+													 static_cast<unsigned>( path.size() ),
+													 LIBSSH2_SFTP_STAT, &attributes );
+			if ( result == LIBSSH2_ERROR_EAGAIN )
+				return std::nullopt;
+			if ( result != 0 )
+				return Err( connection.lastError( URI(), "Independent session stalled" ) );
+			return Ok();
+		} );
+	ASSERT_EQ( TaskState::Ready, stat.waitFor( std::chrono::seconds( 2 ) ) );
+	auto response = waitFor( std::move( stat ) );
+	REQUIRE_OK( response );
+	const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::steady_clock::now() - started );
+	printf( "  ProxyCommand retirement and independent stat: %lld ms\n",
+			static_cast<long long>( elapsed.count() ) );
+	EXPECT_LT( elapsed.count(), 1000 );
+}
+
 UTEST( SFTP, connectionReuseReconnectAndErrors ) {
 	REQUIRE_SSHD();
 	SFTPFixture fx;

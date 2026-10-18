@@ -1,7 +1,7 @@
 #include <eepp/config.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
-	EE_PLATFORM == EE_PLATFORM_BSD
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD
 
 #include "utest.hpp"
 #include "vfs_test_utils.hpp"
@@ -9,15 +9,54 @@
 #include <condition_variable>
 #include <cstdlib>
 #include <eepp/system/process.hpp>
+#include <optional>
+#if EE_PLATFORM != EE_PLATFORM_WIN
 #include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#endif
 
 using namespace vfstest;
 using EE::System::Process;
 
+UTEST( Process, asyncReaderTeardownDoesNotWaitForChildInput ) {
+	std::mutex mutex;
+	std::condition_variable changed;
+	std::string output;
+	std::optional<Process> process( std::in_place );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	const std::string shell = "cmd.exe";
+	const std::vector<std::string> arguments{ "/D", "/Q", "/C", "echo ready&set /p token=" };
+#else
+	const std::string shell = "/bin/sh";
+	const std::vector<std::string> arguments{ "-c", "trap '' TERM; printf ready; read token" };
+#endif
+	ASSERT_TRUE( process->create( shell, arguments,
+								  Process::getDefaultOptions() | Process::EnableAsync |
+									  Process::CombinedStdoutStderr ) );
+	process->startAsyncRead( [&]( const char* bytes, size_t count ) {
+		std::lock_guard<std::mutex> lock( mutex );
+		output.append( bytes, count );
+		changed.notify_all();
+	} );
+	{
+		std::unique_lock<std::mutex> lock( mutex );
+		ASSERT_TRUE( changed.wait_for( lock, std::chrono::seconds( 2 ), [&] {
+			return output.find( "ready" ) != std::string::npos;
+		} ) );
+	}
+	ASSERT_TRUE( process->isAlive() );
+	const auto started = std::chrono::steady_clock::now();
+	process.reset();
+	const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::steady_clock::now() - started );
+	printf( "  Async process teardown: %lld ms\n", static_cast<long long>( elapsed.count() ) );
+	EXPECT_LT( elapsed.count(), 1000 );
+}
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
 UTEST( Process, joinRetriesInterruptedWaits ) {
 	TempDir temp;
 	const std::string fifo = temp.path + "release";
@@ -81,5 +120,7 @@ UTEST( Process, joinRetriesInterruptedWaits ) {
 	EXPECT_TRUE( joined );
 	EXPECT_EQ( 23, code );
 }
+
+#endif
 
 #endif

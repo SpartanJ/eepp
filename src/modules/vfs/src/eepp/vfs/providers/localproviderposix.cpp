@@ -686,7 +686,8 @@ namespace {
  * redirect subsequent child operations. Diagnostic paths are never used for child syscalls. */
 class LocalTreeRemover {
   public:
-	static VFSResult<void> remove( std::string path, const CancellationToken& token ) {
+	static VFSResult<void> remove( std::string path, const CancellationToken& token,
+								   bool networkMount ) {
 		while ( path.size() > 1 && path.back() == '/' )
 			path.pop_back();
 		const size_t slash = path.find_last_of( '/' );
@@ -697,7 +698,8 @@ class LocalTreeRemover {
 		}
 		// Resolve only the supplied parent for mount routing/diagnostics. Descendant operations
 		// below are descriptor-relative and never resolve their mutable pathname again.
-		path = LocalIOScheduler::resolvePath( path, false );
+		if ( !networkMount )
+			path = LocalIOScheduler::resolvePath( path, false );
 		const size_t parentSlash = path.find_last_of( '/' );
 		const std::string parent = parentSlash == std::string::npos
 									   ? "."
@@ -715,8 +717,18 @@ class LocalTreeRemover {
 		do {
 			fd = ::open( parent.c_str(), flags );
 		} while ( fd < 0 && errno == EINTR );
-		if ( fd < 0 )
-			return Err( errnoError( path, "Cannot open removal parent" ) );
+		if ( fd < 0 ) {
+			const int error = errno;
+			struct stat metadata;
+			if ( ( error == ELOOP || error == ENOTDIR ) &&
+				 ::lstat( parent.c_str(), &metadata ) == 0 && S_ISLNK( metadata.st_mode ) ) {
+				return Err( VFSError( VFSErrorCode::Unsupported, URI::fromFSPath( path ),
+									  "Recursive removal requires a resolved parent; use the real "
+									  "directory path instead of a network-mount symlink",
+									  error ) );
+			}
+			return Err( errnoError( path, "Cannot open removal parent", error ) );
+		}
 		struct Parent {
 			int fd;
 
@@ -824,9 +836,11 @@ class LocalTreeRemover {
 VFSTask<void> LocalProvider::remove( const URI& uri, const RemoveOptions& options,
 									 CancellationToken token ) {
 	if ( options.recursive ) {
-		return run<void>( uri, LastLink::Keep, token, [token]( const std::string& path ) {
-			return LocalTreeRemover::remove( path, token );
-		} );
+		return run<void>( uri, LastLink::Keep, token,
+						  [scheduler = mScheduler, token]( const std::string& path ) {
+							  return LocalTreeRemover::remove(
+								  path, token, scheduler->routeFor( path ).isNetworkMount() );
+						  } );
 	}
 	return run<void>(
 		uri, LastLink::Keep, std::move( token ), []( const std::string& path ) -> VFSResult<void> {

@@ -1,3 +1,15 @@
+#include <eepp/config.hpp>
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 #include "utest.hpp"
 #include "vfs_test_utils.hpp"
 #include <atomic>
@@ -150,6 +162,44 @@ UTEST( VFSProvider, localMetadataAndRevisions ) {
 }
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
+UTEST( VFSLocal, recursiveRemovalThroughParentSymlinksHasAnExplicitMountPolicy ) {
+	TempDir tmp;
+	VirtualFileSystem local;
+	auto canonical = waitFor( local.canonicalize( tmp.uri() ) );
+	ASSERT_TRUE( canonical );
+	const URI root = std::move( canonical ).value();
+	const URI real = root.withAppendedSegment( "real" );
+	const URI alias = root.withAppendedSegment( "alias" );
+	ASSERT_TRUE( waitFor( local.makeDir( real ) ) );
+	ASSERT_EQ( 0, ::symlink( real.getFSPath().c_str(), alias.getFSPath().c_str() ) );
+	const URI tree = real.withAppendedSegment( "tree" );
+	const URI viaLink = alias.withAppendedSegment( "tree" );
+	ASSERT_TRUE( waitFor( local.makeDir( tree ) ) );
+	ASSERT_TRUE( writeString( local, tree.withAppendedSegment( "file" ), "keep" ) );
+	ASSERT_TRUE( waitFor( local.remove( viaLink, RemoveOptions{ true } ) ) );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( local.stat( tree ) ) ) );
+	ASSERT_TRUE( waitFor( local.makeDir( tree ) ) );
+	ASSERT_TRUE( writeString( local, tree.withAppendedSegment( "file" ), "keep" ) );
+	const std::string mount = root.getFSPath();
+	auto pool = ThreadPool::createShared( 1 );
+	auto scheduler = std::make_shared<LocalIOScheduler>(
+		pool, Seconds( 2 ),
+		[mount]( const std::string& path ) -> std::optional<LocalIOScheduler::NetworkMount> {
+			if ( path.starts_with( mount ) )
+				return LocalIOScheduler::NetworkMount{ mount, "testserver:/share" };
+			return std::nullopt;
+		} );
+	VirtualFileSystem::Config config;
+	config.registerDefaultProviders = false;
+	VirtualFileSystem network( config );
+	network.registerProvider( std::make_shared<LocalProvider>( scheduler ) );
+	auto removed = waitFor( network.remove( viaLink, RemoveOptions{ true } ) );
+	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( removed ) );
+	EXPECT_STDSTREQ( "keep", readString( local, tree.withAppendedSegment( "file" ) ) );
+	// The real directory remains removable on the same network lane.
+	ASSERT_TRUE( waitFor( network.remove( tree, RemoveOptions{ true } ) ) );
+}
+
 UTEST( VFSLocal, recursiveRemovalDoesNotUsePathnameTraversal ) {
 	TempDir tmp;
 	VirtualFileSystem vfs;
@@ -1675,19 +1725,38 @@ UTEST( VFSLocal, atomicWritesAndCopiesSupportLongBasenames ) {
 	TempDir tmp;
 	VirtualFileSystem vfs;
 	const URI source = tmp.uri().withAppendedSegment( "source" );
+	bool tested = false;
 	for ( size_t length : { 240u, 250u } ) {
 		ASSERT_TRUE( writeString( vfs, source, "copied" ) );
 		const URI file = tmp.uri().withAppendedSegment( std::string( length, 'a' ) );
-		// Establish that this filesystem/configuration supports the destination itself.
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		// A native open is the prerequisite: legacy MAX_PATH failures may be reported as
+		// ERROR_PATH_NOT_FOUND instead of ERROR_FILENAME_EXCED_RANGE on Windows runners.
+		const auto native = String::fromUtf8( file.getFSPath() ).toWideString();
+		HANDLE handle = CreateFileW( native.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW,
+									 FILE_ATTRIBUTE_NORMAL, nullptr );
+		if ( handle == INVALID_HANDLE_VALUE ) {
+			const DWORD error = GetLastError();
+			printf( "  Native long-path probe: error=%lu, path length=%zu\n",
+					static_cast<unsigned long>( error ), native.size() );
+			if ( native.size() >= MAX_PATH &&
+				 ( error == ERROR_FILENAME_EXCED_RANGE || error == ERROR_PATH_NOT_FOUND ||
+				   error == ERROR_INVALID_NAME ) )
+				continue;
+			ASSERT_TRUE( handle != INVALID_HANDLE_VALUE );
+		}
+		ASSERT_TRUE( CloseHandle( handle ) );
+		ASSERT_TRUE( DeleteFileW( native.c_str() ) );
+#endif
+		// Once the platform can create the destination, every VFS failure is a regression.
 		auto probe = waitFor(
 			vfs.open( file, OpenFlags::Write | OpenFlags::Create | OpenFlags::Exclusive ) );
-#if EE_PLATFORM == EE_PLATFORM_WIN
-		if ( !probe && probe.error().is( VFSErrorCode::InvalidURI ) ) {
-			printf( "  Windows long paths unavailable: %s\n", probe.error().toString().c_str() );
-			continue;
+		if ( !probe ) {
+			printf( "  VFS long-path probe: %s (native=%lld)\n", probe.error().toString().c_str(),
+					static_cast<long long>( probe.error().nativeCode ) );
 		}
-#endif
 		ASSERT_TRUE( probe );
+		tested = true;
 		ASSERT_TRUE( waitFor( probe.value().close() ) );
 		ASSERT_TRUE( writeString( vfs, file, "atomic save" ) );
 		EXPECT_STDSTREQ( "atomic save", readString( vfs, file ) );
@@ -1711,6 +1780,8 @@ UTEST( VFSLocal, atomicWritesAndCopiesSupportLongBasenames ) {
 		ASSERT_TRUE( listed );
 		EXPECT_TRUE( sortedNames( listed.value() ) == std::vector<std::string>( { "source" } ) );
 	}
+	if ( !tested )
+		UTEST_SKIP( "Native filesystem/API configuration cannot create long destination paths" );
 }
 
 #if EE_PLATFORM != EE_PLATFORM_WIN

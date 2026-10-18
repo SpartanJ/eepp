@@ -141,8 +141,10 @@ class EE_VFS_API VirtualFileSystem {
 	VFSTask<void> makeDirs( const URI& uri, const MkDirOptions& options = {},
 							CancellationToken token = {} );
 
-	/** Removes an entry. Directories require options.recursive unless empty. Symlinks are
-	 * removed, never followed. */
+	/** Removes an entry. Directories require options.recursive unless empty. Inspected symlinks
+	 * are removed themselves. Recursive removal without RecursiveRemove uses pathname traversal:
+	 * callers must prevent concurrent directory/link replacement (Windows local and SFTP included).
+	 * Check capabilities(uri) for RecursiveRemove when directory-bound traversal is required. */
 	VFSTask<void> remove( const URI& uri, const RemoveOptions& options = {},
 						  CancellationToken token = {} );
 

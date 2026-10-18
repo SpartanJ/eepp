@@ -156,13 +156,19 @@ symlinked destination is written through to its target. Providers report what th
 POSIX local recursive removal uses opened directory descriptors and never follows a replaced
 child symlink. It can partially remove a tree before reporting cancellation, an I/O error, or
 `ChangedExternally` when a directory replacement is detected. The supplied root's parent path
-is resolved when traversal starts; this is not a sandbox for untrusted root paths. Nested network
-mounts must be removed separately. Providers advertising `RecursiveRemove` provide their own
-directory-bound traversal. Other providers, including SFTP and the current Windows backend, use
-the generic pathname walker: symlinks present when inspected are removed themselves, but a
-concurrent directory/link replacement can redirect later child operations. Coordinate writers
-before recursive removal on those providers; do not use that fallback to delete an untrusted,
-concurrently modified tree.
+is resolved when traversal starts; this is not a sandbox for untrusted root paths. An unresolved
+symlink in the immediate parent inside a network mount returns `Unsupported`; use the real
+directory path. Nested network mounts must be removed separately. Providers advertising
+`RecursiveRemove` provide their own directory-bound traversal. Other providers, including SFTP
+and the current Windows backend, use the generic pathname walker. Inspected symlinks are removed
+themselves, but concurrent directory/link replacement can redirect later child operations.
+Coordinate writers before recursive removal on those providers; do not use that fallback to
+delete an untrusted, concurrently modified tree.
+
+Applications requiring directory-bound recursive removal should check
+`vfs.capabilities( uri ).has( VFSCapability::RecursiveRemove )` before calling `remove()`.
+The generic Windows/SFTP fallback remains available for stable trees; it does not promise
+protection against concurrent directory or link replacement.
 
 ### Copy and move
 

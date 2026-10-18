@@ -377,5 +377,10 @@ UTEST( CoalescedDelivery, concurrentPublicationAndCloseStress ) {
 		EXPECT_EQ( 0, afterClose.load() );
 	}
 	printf( "  CoalescedDelivery<int>: %zu bytes\n", sizeof( Delivery ) );
-	EXPECT_LE( sizeof( Delivery ), 256u );
+	// Standard-library synchronization types have different sizes across ABIs. Budget those
+	// separately, leaving 64 bytes for the payload, pointers, counters, flags and padding.
+	constexpr size_t budget = sizeof( std::mutex ) + sizeof( std::condition_variable ) +
+							  sizeof( Delivery::Callback ) +
+							  sizeof( std::enable_shared_from_this<Delivery> ) + 64;
+	EXPECT_LE( sizeof( Delivery ), budget );
 }

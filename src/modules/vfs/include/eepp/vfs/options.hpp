@@ -68,7 +68,8 @@ struct EE_VFS_API MkDirOptions {
 
 struct EE_VFS_API RemoveOptions {
 	/** Remove directory contents recursively. Passed to providers with RecursiveRemove;
-	 * otherwise VirtualFileSystem walks using pathname operations (not race resistant). */
+	 * otherwise VirtualFileSystem walks using pathname operations. That fallback requires a
+	 * stable tree: coordinate other writers; it is not safe against concurrent link replacement. */
 	bool recursive{ false };
 };
 
