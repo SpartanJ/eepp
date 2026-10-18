@@ -50,6 +50,11 @@ class EE_VFS_API LocalProvider : public VFSProvider {
 
 	VFSTask<URI> canonicalize( const URI& uri, CancellationToken token ) override;
 
+	/** Whether canonical paths from these authorities share one resource namespace.
+	 * Unknown identity returns Unsupported; this does not promise native rename support. */
+	VFSTask<bool> sameFileSystem( const URI& from, const URI& to,
+								  CancellationToken token ) override;
+
 	VFSTask<void> setPermissions( const URI& uri, Uint32 permissions,
 								  CancellationToken token ) override;
 

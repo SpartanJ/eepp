@@ -102,9 +102,7 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 				mEarly.erase( it );
 			}
 		}
-		early.replay( *sink, [&]( const EarlyWatchEvents::Event& event ) {
-			dispatch( key, id, event.dir, event.filename, event.action, event.oldFilename );
-		} );
+		early.replay( *sink );
 		return Ok( std::make_pair( token, ( key & GenericBit ) != 0 ) );
 	}
 

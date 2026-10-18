@@ -322,6 +322,8 @@ class BlackholeProxy {
 
 	void drop( bool enabled ) { mDropping = enabled; }
 
+	void readDelay( unsigned milliseconds ) { mReadDelay = milliseconds; }
+
   private:
 	void forward( int client ) {
 		int upstream = ::socket( AF_INET, SOCK_STREAM, 0 );
@@ -352,6 +354,10 @@ class BlackholeProxy {
 					}
 					if ( mDropping.load() )
 						continue;
+					if ( i == 1 && mReadDelay.load() ) {
+						std::this_thread::sleep_for(
+							std::chrono::milliseconds( mReadDelay.load() ) );
+					}
 					ssize_t sent = 0;
 					while ( sent < size ) {
 #ifdef MSG_NOSIGNAL
@@ -378,6 +384,7 @@ class BlackholeProxy {
 	int mUpstreamPort;
 	int mListener{ -1 };
 	int mPort{ 0 };
+	std::atomic<unsigned> mReadDelay{ 0 };
 	std::atomic<bool> mStopping{ false };
 	std::atomic<bool> mDropping{ false };
 };
@@ -511,6 +518,64 @@ UTEST( SFTP, conformanceOverRealServer ) {
 	EXPECT_TRUE( space.value().capacity > 0 );
 }
 
+UTEST( SFTP, aliasesCannotCopyOrMoveOntoTheSameRemoteFile ) {
+	REQUIRE_SSHD();
+	SFTPFixture fx;
+	const std::string name = uniqueName( "alias-identity" );
+	const URI source = server.uri( "testhost", name );
+	// Both names inherit the same HostName, User, Port and authentication policy.
+	const URI alias = server.uri( "testhost-alias", name );
+	FileSystem::fileWrite( server.remoteRoot() + "/" + name, std::string_view( "keep" ) );
+	const auto before =
+		waitFor( fx.vfs.stat( URI::fromFSPath( server.remoteRoot() + "/" + name ) ) )
+			.value()
+			.revision;
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::Overwrite;
+	for ( const bool reverse : { false, true } ) {
+		const URI& from = reverse ? alias : source;
+		const URI& to = reverse ? source : alias;
+		EXPECT_EQ( VFSErrorCode::InvalidOperation,
+				   codeOf( waitFor( fx.vfs.copy( from, to, options ).completion() ) ) );
+		EXPECT_EQ( VFSErrorCode::InvalidOperation,
+				   codeOf( waitFor( fx.vfs.move( from, to, options ).completion() ) ) );
+		EXPECT_STDSTREQ( "keep", readString( fx.vfs, source ) );
+		EXPECT_TRUE( before.matches(
+			waitFor( fx.vfs.stat( URI::fromFSPath( server.remoteRoot() + "/" + name ) ) )
+				.value()
+				.revision ) );
+	}
+	// The pool counts authority entries, including aliases sharing the same session.
+	EXPECT_EQ( 2u, fx.sftp->connectionCount() );
+	const std::string directory = uniqueName( "alias-tree" );
+	FileSystem::makeDir( server.remoteRoot() + "/" + directory );
+	const URI nested = server.uri( "testhost-alias", directory + "/nested" );
+	EXPECT_EQ( VFSErrorCode::InvalidOperation,
+			   codeOf( waitFor(
+				   fx.vfs.copy( server.uri( "testhost", directory ), nested ).completion() ) ) );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( fx.vfs.stat( nested ) ) ) );
+	// Canonical paths through a host alias remain independently usable for different files.
+	const URI target = server.uri( "testhost-alias", name + "-copy" );
+	ASSERT_TRUE( waitFor( fx.vfs.copy( source, target ).completion() ) );
+	EXPECT_STDSTREQ( "keep", readString( fx.vfs, target ) );
+	// The same host with a different authentication policy uses a separate session. Its
+	// namespace might coincide, so reject even a new destination before attempting a write.
+	const URI uncertain = server.uri( "edkey", name );
+	EXPECT_EQ( VFSErrorCode::Unsupported,
+			   codeOf( waitFor( fx.vfs.copy( source, uncertain, options ).completion() ) ) );
+	EXPECT_EQ( VFSErrorCode::Unsupported,
+			   codeOf( waitFor( fx.vfs.move( source, uncertain, options ).completion() ) ) );
+	const URI absent = server.uri( "edkey", name + "-uncertain" );
+	EXPECT_EQ( VFSErrorCode::Unsupported,
+			   codeOf( waitFor( fx.vfs.copy( source, absent ).completion() ) ) );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( fx.vfs.stat( absent ) ) ) );
+	EXPECT_STDSTREQ( "keep", readString( fx.vfs, source ) );
+	EXPECT_TRUE( before.matches(
+		waitFor( fx.vfs.stat( URI::fromFSPath( server.remoteRoot() + "/" + name ) ) )
+			.value()
+			.revision ) );
+}
+
 UTEST( SFTP, replacementWithoutPosixRenamePreservesBothFiles ) {
 	auto& server = TestSSHServer::withoutPosixRename();
 	if ( !server.available() ) {
@@ -538,6 +603,34 @@ UTEST( SFTP, replacementWithoutPosixRenamePreservesBothFiles ) {
 	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( moved ) );
 	EXPECT_STDSTREQ( "new data", readString( vfs, URI::fromFSPath( src ) ) );
 	EXPECT_STDSTREQ( "precious old data", readString( vfs, URI::fromFSPath( dst ) ) );
+}
+
+UTEST( SFTP, progressingReadAllCanOutlastTheOperationDeadline ) {
+	REQUIRE_SSHD();
+	BlackholeProxy proxy( server.port() );
+	ASSERT_NE( 0, proxy.port() );
+	SFTPProviderConfig config;
+	// Scale the deadline down so this regression does not add a 30-second delay to every run.
+	config.operationTimeout = System::Seconds( 1 );
+	VirtualFileSystem vfs;
+	auto provider = server.provider( config );
+	vfs.registerProvider( provider );
+	const std::string name = uniqueName( "slow-progress" );
+	ASSERT_TRUE( FileSystem::fileWrite( server.remoteRoot() + "/" + name,
+										std::string( 4 * 1024 * 1024, 'x' ) ) );
+	URI uri = server.uri( "testhost", name );
+	uri.setPort( static_cast<Uint16>( proxy.port() ) );
+	REQUIRE_OK( waitFor( vfs.stat( uri ) ) );
+	proxy.readDelay( 10 );
+	const auto start = std::chrono::steady_clock::now();
+	auto data = waitFor( vfs.readAll( uri ) );
+	REQUIRE_OK( data );
+	EXPECT_EQ( 4u * 1024 * 1024, data.value().size() );
+	EXPECT_TRUE( std::all_of( data.value().begin(), data.value().end(),
+							  []( Uint8 c ) { return c == 'x'; } ) );
+	EXPECT_TRUE( std::chrono::steady_clock::now() - start > std::chrono::seconds( 1 ) );
+	REQUIRE_OK( waitFor( vfs.stat( uri ) ) );
+	EXPECT_EQ( 1u, provider->connectionCount() );
 }
 
 UTEST( SFTP, blackholedReadyOperationsFailTheSessionAndReconnect ) {

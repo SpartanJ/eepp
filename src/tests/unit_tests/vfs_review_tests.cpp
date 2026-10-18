@@ -1,10 +1,13 @@
 #include "utest.hpp"
 #include "vfs_test_utils.hpp"
+#include <condition_variable>
+#include <cstring>
 #include <eepp/vfs/path.hpp>
 #include <eepp/vfs/watchers/earlywatchevents.hpp>
 #include <eepp/vfs/watchers/pollingwatchbackend.hpp>
 #include <filesystem>
 #include <functional>
+#include <limits>
 #include <utility>
 
 using namespace EE;
@@ -255,6 +258,188 @@ UTEST( VFSPath, nulLocalURIsNeverAliasTheNativePrefix ) {
 	EXPECT_EQ( VFSErrorCode::InvalidURI, codeOf( LocalProvider::toNativePath( host ) ) );
 }
 
+UTEST( VFSSafety, equivalentLocalAuthoritiesNeverReplaceTheSource ) {
+	TempDir temp;
+	VirtualFileSystem vfs;
+	const URI file = temp.uri().withAppendedSegment( "file" );
+	const URI link = temp.uri().withAppendedSegment( "hardlink" );
+	ASSERT_TRUE( waitFor( vfs.writeAll( file, "keep" ) ) );
+	std::error_code error;
+	const std::string nativeFile = file.getFSPath(), nativeLink = link.getFSPath();
+	std::filesystem::create_hard_link(
+		std::filesystem::path( std::u8string( nativeFile.begin(), nativeFile.end() ) ),
+		std::filesystem::path( std::u8string( nativeLink.begin(), nativeLink.end() ) ), error );
+	ASSERT_FALSE( error );
+	URI alias = file;
+	alias.setHost( "localhost" );
+	const auto revision = waitFor( vfs.stat( file ) ).value().revision;
+	CopyOptions options;
+	options.overwrite = OverwritePolicy::Overwrite;
+	for ( const bool reverse : { false, true } ) {
+		const URI& source = reverse ? alias : file;
+		const URI& destination = reverse ? file : alias;
+		EXPECT_EQ( VFSErrorCode::InvalidOperation,
+				   codeOf( waitFor( vfs.copy( source, destination, options ).completion() ) ) );
+		EXPECT_TRUE( revision.matches( waitFor( vfs.stat( file ) ).value().revision ) );
+		EXPECT_EQ( VFSErrorCode::InvalidOperation,
+				   codeOf( waitFor( vfs.move( source, destination, options ).completion() ) ) );
+		EXPECT_TRUE( revision.matches( waitFor( vfs.stat( file ) ).value().revision ) );
+		EXPECT_TRUE( revision.matches( waitFor( vfs.stat( link ) ).value().revision ) );
+		EXPECT_STDSTREQ( "keep", readString( vfs, file ) );
+		EXPECT_STDSTREQ( "keep", readString( vfs, link ) );
+	}
+	URI nested = temp.uri().withAppendedSegment( "nested" );
+	nested.setHost( "localhost" );
+	EXPECT_EQ( VFSErrorCode::InvalidOperation,
+			   codeOf( waitFor( vfs.copy( temp.uri(), nested, options ).completion() ) ) );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( vfs.stat( nested ) ) ) );
+	// Distinct files through those same authorities remain transferable.
+	URI destination = temp.uri().withAppendedSegment( "copy" );
+	destination.setHost( "localhost" );
+	ASSERT_TRUE( waitFor( vfs.copy( file, destination ).completion() ) );
+	EXPECT_STDSTREQ( "keep", readString( vfs, destination ) );
+}
+
+UTEST( VFSProvider, allProvidersExposeCancellableNamespaceIdentity ) {
+	TempDir temp;
+	VirtualFileSystem vfs;
+	vfs.registerProvider( std::make_shared<MemoryProvider>() );
+	CancellationSource cancelled;
+	cancelled.cancel();
+	const URI locations[]{
+		temp.uri(),
+		URI( "mem://test/file" ),
+		URI( "res://fonts/file" ),
+		ZipProvider::makeURI( temp.uri().withAppendedSegment( "file.zip" ) ),
+		ArchiveProvider::makeURI( temp.uri().withAppendedSegment( "file.tar" ) ),
+#ifdef EE_VFS_SFTP
+		URI( "sftp://unused-host/file" ),
+#endif
+	};
+	for ( const URI& uri : locations ) {
+		auto provider = vfs.providerFor( uri );
+		ASSERT_TRUE( provider );
+		auto identity = waitFor( provider->sameFileSystem( uri, uri, {} ) );
+		ASSERT_TRUE( identity );
+		EXPECT_TRUE( identity.value() );
+		EXPECT_EQ( VFSErrorCode::Cancelled,
+				   codeOf( waitFor( provider->sameFileSystem( uri, uri, cancelled.token() ) ) ) );
+	}
+	// res:// authorities are convenience path prefixes in the global pack namespace.
+	auto resources = vfs.providerFor( URI( "res:///" ) );
+	EXPECT_TRUE( waitFor( resources->sameFileSystem( URI( "res://fonts/file" ),
+													 URI( "res:///fonts/file" ), {} ) )
+					 .value() );
+}
+
+UTEST( VFSSafety, transfersUseTheProvidersNamespaceDecision ) {
+	class IdentityProvider : public MemoryProvider {
+	  public:
+		VFSTask<bool> sameFileSystem( const URI& from, const URI&, CancellationToken ) override {
+			return readyError<bool>( VFSErrorCode::Unsupported, from, "Identity is uncertain" );
+		}
+	};
+	VirtualFileSystem vfs;
+	auto provider = std::make_shared<IdentityProvider>();
+	vfs.registerProvider( provider );
+	const URI source( "mem://one/source" ), destination( "mem://one/destination" );
+	provider->putFile( source, "keep" );
+	// The authorities match, but only the provider can decide whether paths are comparable.
+	EXPECT_EQ( VFSErrorCode::Unsupported,
+			   codeOf( waitFor( vfs.copy( source, destination ).completion() ) ) );
+	EXPECT_EQ( VFSErrorCode::Unsupported,
+			   codeOf( waitFor( vfs.move( source, destination ).completion() ) ) );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( vfs.stat( destination ) ) ) );
+	EXPECT_STDSTREQ( "keep", readString( vfs, source ) );
+}
+
+UTEST( VFSSafety, inMemoryAuthoritiesRemainSeparateNamespaces ) {
+	VirtualFileSystem vfs;
+	auto provider = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( provider );
+	provider->putFile( URI( "mem://one/file" ), "one" );
+	provider->putDirectory( URI( "mem://two/" ) );
+	ASSERT_TRUE(
+		waitFor( vfs.move( URI( "mem://one/file" ), URI( "mem://two/file" ) ).completion() ) );
+	EXPECT_STDSTREQ( "one", readString( vfs, URI( "mem://two/file" ) ) );
+	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( vfs.stat( URI( "mem://one/file" ) ) ) ) );
+}
+
+UTEST( VFSOrchestration, knownSizeNeverExpandsTheReadRequest ) {
+	class GeneratedFile : public FileHandleImpl {
+	  public:
+		explicit GeneratedFile( Uint64 length, bool known ) : size( length ), knownSize( known ) {}
+
+		VFSTask<size_t> read( Uint64 offset, std::span<Uint8> data, CancellationToken ) override {
+			largestRead = std::max( largestRead, data.size() );
+			++reads;
+			const size_t count =
+				static_cast<size_t>( std::min<Uint64>( data.size(), size - offset ) );
+			std::memset( data.data(), 'x', count );
+			return readyValue<size_t>( count );
+		}
+
+		VFSTask<size_t> write( Uint64, std::span<const Uint8>, CancellationToken ) override {
+			return readyError<size_t>( VFSErrorCode::ReadOnly );
+		}
+
+		VFSTask<void> truncate( Uint64 ) override {
+			return readyError<void>( VFSErrorCode::ReadOnly );
+		}
+
+		VFSTask<void> flush() override { return readyValue<void>(); }
+
+		VFSTask<void> close() override { return readyValue<void>(); }
+
+		VFSTask<VFSFileInfo> stat() override {
+			VFSFileInfo info;
+			if ( knownSize )
+				info.setSize( size );
+			return readyValue<VFSFileInfo>( std::move( info ) );
+		}
+
+		ProviderCapabilities capabilities() const override { return VFSCapability::Read; }
+
+		Uint64 size;
+		size_t largestRead{ 0 };
+		size_t reads{ 0 };
+		bool knownSize;
+	};
+	class GeneratedProvider : public MemoryProvider {
+	  public:
+		VFSTask<FileHandle> open( const URI& uri, const OpenOptions&, CancellationToken ) override {
+			return readyValue<FileHandle>( uri, file );
+		}
+
+		std::shared_ptr<GeneratedFile> file;
+	};
+	VirtualFileSystem vfs;
+	auto provider = std::make_shared<GeneratedProvider>();
+	vfs.registerProvider( provider );
+	const URI file( "mem://test/generated" );
+	provider->file = std::make_shared<GeneratedFile>( 64 * 1024 * 1024, true );
+	auto read = waitFor( vfs.readAll( file ) );
+	ASSERT_TRUE( read );
+	EXPECT_EQ( 64u * 1024 * 1024, read.value().size() );
+	EXPECT_LE( provider->file->largestRead, 256u * 1024 );
+	EXPECT_GT( provider->file->reads, 1u );
+	EXPECT_EQ( int( 'x' ), int( read.value().back() ) );
+	for ( const bool known : { false, true } ) {
+		provider->file = std::make_shared<GeneratedFile>( 10, known );
+		auto unlimited = waitFor( vfs.readAll( file, {}, std::numeric_limits<Uint64>::max() ) );
+		ASSERT_TRUE( unlimited );
+		EXPECT_EQ( 10u, unlimited.value().size() );
+		EXPECT_EQ( VFSErrorCode::InvalidOperation,
+				   codeOf( waitFor( vfs.readAll( file, {}, 9 ) ) ) );
+		EXPECT_EQ( 10u, waitFor( vfs.readAll( file, {}, 10 ) ).value().size() );
+		provider->file = std::make_shared<GeneratedFile>( 0, known );
+		EXPECT_TRUE( waitFor( vfs.readAll( file, {}, 0 ) ).value().empty() );
+		provider->file = std::make_shared<GeneratedFile>( 1, known );
+		EXPECT_EQ( VFSErrorCode::InvalidOperation,
+				   codeOf( waitFor( vfs.readAll( file, {}, 0 ) ) ) );
+	}
+}
+
 UTEST( VFSPath, basenameValidationUsesTheDestinationRules ) {
 	const URI local = URI::fromFSPath( System::Sys::getTempPath() );
 	const URI remote( "sftp://host/folder" );
@@ -430,30 +615,60 @@ UTEST( VFSSafety, directoryAliasesCannotBypassTheSelfCopyGuard ) {
 	}
 }
 
-UTEST( VFSWatch, earlyNativeOverflowRequiresARescan ) {
-	EE::VFS::detail::EarlyWatchEvents pending;
-	for ( size_t i = 0; i < EE::VFS::detail::EarlyWatchEvents::MaxEvents + 8; ++i )
-		pending.push( "/root/", "entry", efsw::Actions::Add, {} );
+UTEST( VFSWatch, earlyNativeEventsAlwaysRequireARescan ) {
 	RecordingSink sink;
-	unsigned delivered = 0;
-	pending.replay( sink, [&]( const auto& ) { ++delivered; } );
-	EXPECT_EQ( 0u, delivered );
-	ASSERT_EQ( 1u, sink.events.size() );
-	EXPECT_EQ( WatchEventType::RescanRequired, sink.events[0].type );
-	// An explicit missed-actions callback before registration has the same contract.
+	EE::VFS::detail::EarlyWatchEvents clean;
+	clean.replay( sink );
+	EXPECT_TRUE( sink.events.empty() );
+	for ( const size_t count : { size_t( 1 ), size_t( 5000 ) } ) {
+		EE::VFS::detail::EarlyWatchEvents pending;
+		for ( size_t i = 0; i < count; ++i )
+			pending.push( "/root/", "older", efsw::Actions::Add, {} );
+		pending.replay( sink );
+	}
 	EE::VFS::detail::EarlyWatchEvents missed;
 	missed.invalidate();
-	missed.push( "/root/", "later", efsw::Actions::Add, {} );
-	missed.replay( sink, [&]( const auto& ) { ++delivered; } );
-	EXPECT_EQ( 0u, delivered );
-	EXPECT_EQ( 2u, sink.events.size() );
-	// A new registration starts with a clean buffer and preserves the full bounded stream.
-	EE::VFS::detail::EarlyWatchEvents complete;
-	for ( size_t i = 0; i < EE::VFS::detail::EarlyWatchEvents::MaxEvents; ++i )
-		complete.push( "/root/", "entry", efsw::Actions::Add, {} );
-	complete.replay( sink, [&]( const auto& ) { ++delivered; } );
-	EXPECT_EQ( EE::VFS::detail::EarlyWatchEvents::MaxEvents, delivered );
-	EXPECT_EQ( 2u, sink.events.size() );
+	missed.replay( sink );
+	ASSERT_EQ( 3u, sink.events.size() );
+	for ( const auto& event : sink.events )
+		EXPECT_EQ( WatchEventType::RescanRequired, event.type );
+}
+
+UTEST( VFSWatch, liveEventsDuringRegistrationCannotBeFollowedByStaleReplay ) {
+	class PausedSink : public RecordingSink {
+	  public:
+		void rescanRequired() override {
+			std::unique_lock<std::mutex> lock( mutex );
+			replaying = true;
+			wake.notify_all();
+			wake.wait( lock, [&] { return release; } );
+			RecordingSink::rescanRequired();
+		}
+
+		std::mutex mutex;
+		std::condition_variable wake;
+		bool replaying{ false };
+		bool release{ false };
+	};
+	EE::VFS::detail::EarlyWatchEvents pending;
+	pending.push( "/root/", "entry", efsw::Actions::Add, {} );
+	PausedSink sink;
+	std::thread registration( [&] { pending.replay( sink ); } );
+	bool replaying;
+	{
+		std::unique_lock<std::mutex> lock( sink.mutex );
+		replaying =
+			sink.wake.wait_for( lock, std::chrono::seconds( 2 ), [&] { return sink.replaying; } );
+		// The newer native event arrives after publication while registration is paused.
+		sink.push( WatchEvent{ "entry", {}, WatchEventType::Removed } );
+		sink.release = true;
+	}
+	sink.wake.notify_all();
+	registration.join();
+	ASSERT_TRUE( replaying );
+	ASSERT_EQ( 2u, sink.events.size() );
+	EXPECT_EQ( WatchEventType::Removed, sink.events[0].type );
+	EXPECT_EQ( WatchEventType::RescanRequired, sink.events[1].type );
 }
 
 UTEST( VFSWatch, oversizedInitialPollingSnapshotIsRejected ) {

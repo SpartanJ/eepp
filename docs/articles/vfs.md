@@ -132,6 +132,10 @@ vfs.rename( from, to, RenameOptions{ true } );
 vfs.canonicalize( uri );     // resolves symlinks/aliases; URIs are never canonicalized implicitly
 ```
 
+`readAll()` reserves a known file length but keeps each handle read bounded to 256 KiB. An SFTP
+operation deadline therefore applies to each chunk, rather than the whole file; a single chunk
+can still time out. Explicit size limits, including `UINT64_MAX`, are checked without overflow.
+
 `FileHandle` uses explicit offsets (`read( offset, span )`, `write( offset, span )`).
 
 `VFSFileInfo` is a plain value. Unknown metadata stays unknown (`std::optional` accessors). It does
@@ -160,7 +164,7 @@ transfer.completion().then( uiExecutor, []( VFSResult<TransferResult>&& r ) { ..
 transfer.cancel();
 ```
 
-Moves use a native rename when both sides are on the same provider/authority and fall back to copy
+Moves use a native rename when both sides share a provider filesystem namespace and fall back to copy
 plus removal of the entries that were completely copied; a source is never removed after a partial
 transfer. The copy-and-remove fallback requires the source provider's `Remove` capability. Without
 it (for example, on `zip://` and `res://`), the move returns `Unsupported` before modifying the
@@ -173,6 +177,14 @@ recovery. A provider without revisions returns `Unsupported`; use an explicit co
 Revision checks are best effort: SFTP v3 revisions have second-resolution timestamps and size,
 and a pathname can still change between the final stat and removal. This is not an atomic
 conditional-delete operation. Native same-provider renames do not need these copy/delete checks.
+
+Transfers resolve whether both authorities share a filesystem namespace. Equivalent local
+authorities (`file:///` and `file://localhost/`) and SSH aliases sharing a resolved session are
+checked using canonical paths before a destination can be modified. Self-transfers return
+`InvalidOperation`. Unknown identity across authorities returns `Unsupported` conservatively;
+every provider implements `sameFileSystem()` to resolve aliases or identify disjoint namespaces.
+This contract also applies to same-authority transfers; authority text alone does not decide identity.
+Namespace identity does not promise a rename across device boundaries.
 
 Directory copies through one provider also compare canonical paths, resolving the nearest existing
 destination ancestor before checking containment. This rejects a destination reached through a
@@ -219,8 +231,9 @@ re-list the directory. `WatchHandle::status()` reports `Active`, `Polling`, `Rec
 The generic polling backend refuses an initial snapshot above 100,000 entries with `Unsupported`.
 If an existing watch exceeds that limit, it reports `Failed` and one `RescanRequired` event, then
 stops polling that scope. Register smaller scopes to restore coverage. Partial snapshots are never
-reported as complete watches. Local native events buffered during registration likewise emit
-`RescanRequired` if their bounded buffer overflows.
+reported as complete watches. Any local native event received during registration causes
+`RescanRequired`. Early event payloads are not replayed because newer live events can arrive
+concurrently with publication of the registration.
 
 Backends:
 

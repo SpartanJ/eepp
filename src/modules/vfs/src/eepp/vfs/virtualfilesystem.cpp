@@ -298,7 +298,7 @@ VFSTask<std::vector<Uint8>> VirtualFileSystem::readAll( const URI& uri, Cancella
 		std::vector<Uint8> data;
 		auto info = await( handle.stat() );
 		if ( info && info.value().size() ) {
-			if ( *info.value().size() > maxSize ) {
+			if ( *info.value().size() > maxSize || *info.value().size() > data.max_size() ) {
 				handle.close();
 				return Err( VFSError( VFSErrorCode::InvalidOperation, uri,
 									  "File exceeds the maximum read size" ) );
@@ -312,11 +312,17 @@ VFSTask<std::vector<Uint8>> VirtualFileSystem::readAll( const URI& uri, Cancella
 				return Err( cancelledError( uri ) );
 			}
 			size_t old = data.size();
-			size_t chunk = FileWriter::IOChunkSize;
-			if ( data.capacity() > old && data.capacity() - old >= 1 )
-				chunk = std::max<size_t>( chunk, data.capacity() - old );
-			if ( old + chunk > maxSize + 1 )
-				chunk = static_cast<size_t>( maxSize + 1 - old );
+			// Capacity reservation must not turn a bounded I/O call into a whole-file SFTP
+			// operation. Keep enough room for one overflow byte, without maxSize + 1 wrapping.
+			const Uint64 remaining = maxSize - old;
+			size_t chunk = remaining < FileWriter::IOChunkSize
+							   ? static_cast<size_t>( remaining ) + 1
+							   : FileWriter::IOChunkSize;
+			if ( chunk > data.max_size() - old ) {
+				handle.close();
+				return Err( VFSError( VFSErrorCode::InvalidOperation, uri,
+									  "File exceeds the maximum buffer size" ) );
+			}
 			data.resize( old + chunk );
 			auto read =
 				await( handle.read( offset, std::span<Uint8>( data.data() + old, chunk ), token ) );

@@ -432,8 +432,8 @@ std::optional<size_t> FileTableView::rowOf( Node* node ) const {
 		ModelIndex index;
 		if ( node->isType( UI_TYPE_TABLECELL ) ) {
 			index = node->asType<UITableCell>()->getCurIndex();
-		} else if ( auto* row = dynamic_cast<UITableRow*>( node ) ) {
-			index = row->getCurIndex();
+		} else if ( node->isType( UI_TYPE_TABLEROW ) ) {
+			index = node->asType<UITableRow>()->getCurIndex();
 		} else {
 			node = node->getParent();
 			continue;

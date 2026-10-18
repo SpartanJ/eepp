@@ -69,6 +69,15 @@ class EE_VFS_API VFSProvider {
 	 */
 	virtual VFSTask<URI> canonicalize( const URI& uri, CancellationToken token ) = 0;
 
+	/** Whether canonical paths from these URIs belong to one resource namespace.
+	 * Called only for URIs served by this provider instance. True makes canonical paths
+	 * comparable even when authorities differ; false must mean disjoint namespaces.
+	 * Resolve authority aliases here. Return Unsupported if identity is uncertain, so a
+	 * transfer fails before modifying its destination. This does not promise native rename
+	 * support or imply that both paths are on one device. */
+	virtual VFSTask<bool> sameFileSystem( const URI& from, const URI& to,
+										  CancellationToken token ) = 0;
+
 	/** Optional: sets POSIX permission bits (VFSCapability::Permissions). */
 	virtual VFSTask<void> setPermissions( const URI& uri, Uint32 permissions,
 										  CancellationToken /*token*/ ) {

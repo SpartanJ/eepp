@@ -390,6 +390,14 @@ VFSTask<URI> MemoryProvider::canonicalize( const URI& uri, CancellationToken ) {
 	return complete<URI>( Ok( std::move( canonical ) ) );
 }
 
+VFSTask<bool> MemoryProvider::sameFileSystem( const URI& from, const URI& to,
+											  CancellationToken token ) {
+	if ( token.isCancellationRequested() )
+		return readyError<bool>( cancelledError( from ) );
+	// The host is part of the in-memory node key; different hosts cannot alias.
+	return readyValue<bool>( from.getHost() == to.getHost() );
+}
+
 VFSTask<void> MemoryProvider::setPermissions( const URI& uri, Uint32 permissions,
 											  CancellationToken ) {
 	std::lock_guard<std::mutex> lock( mMutex );

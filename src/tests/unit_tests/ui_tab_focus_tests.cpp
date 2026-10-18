@@ -649,6 +649,14 @@ UTEST( TabFocus, ModelViewsDoNotTabThroughRecycledCells ) {
 		EXPECT_TRUE( view->isTabFocusable() );
 		auto* cell = view->getCellFromIndex( view->getModel()->index( 0 ) );
 		ASSERT_TRUE( cell != nullptr );
+		// Recycled rows remain discoverable through Node's type API, as cells already are.
+		auto* row = cell->getParent();
+		ASSERT_TRUE( row != nullptr );
+		EXPECT_EQ( UI_TYPE_TABLEROW, row->getType() );
+		EXPECT_TRUE( row->isType( UI_TYPE_TABLEROW ) );
+		EXPECT_TRUE( row->isType( UI_TYPE_WIDGET ) );
+		EXPECT_TRUE( row->isType( UI_TYPE_UINODE ) );
+		EXPECT_FALSE( row->isType( UI_TYPE_TABLECELL ) );
 		EXPECT_FALSE( cell->isTabFocusable() );
 		EXPECT_FALSE( view->getVerticalScrollBar()->getSlider()->isTabFocusable() );
 		EXPECT_FALSE( view->getHorizontalScrollBar()->getSlider()->isTabFocusable() );

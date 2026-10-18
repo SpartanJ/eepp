@@ -4,51 +4,27 @@
 #include <eepp/vfs/watch.hpp>
 #include <efsw/efsw.hpp>
 #include <string>
-#include <vector>
 
 namespace EE { namespace VFS { namespace detail {
 
-/** Callbacks received before efsw returns the id that the adapter must register. */
+/** Records loss of incremental ordering before a native watch registration is published. */
 class EarlyWatchEvents {
   public:
-	static constexpr size_t MaxEvents = 4096;
-
-	struct Event {
-		std::string dir;
-		std::string filename;
-		std::string oldFilename;
-		efsw::Action action;
-	};
-
-	void push( const std::string& dir, const std::string& filename, efsw::Action action,
-			   const std::string& oldFilename ) {
-		if ( mOverflow )
-			return;
-		if ( mEvents.size() == MaxEvents ) {
-			invalidate();
-			return;
-		}
-		mEvents.push_back( { dir, filename, oldFilename, action } );
+	void push( const std::string&, const std::string&, efsw::Action, const std::string& ) {
+		invalidate();
 	}
 
-	void invalidate() {
-		mEvents.clear();
-		mOverflow = true;
-	}
+	void invalidate() { mPending = true; }
 
-	/** An invalidation replaces the truncated stream; it must never look complete. */
-	template <typename Dispatch> void replay( WatchSink& sink, Dispatch&& dispatch ) const {
-		if ( mOverflow ) {
+	/** Live events can arrive as soon as registration is published. Invalidate instead of
+	 * replaying older events after them; no early payloads or callbacks need to be retained. */
+	void replay( WatchSink& sink ) const {
+		if ( mPending )
 			sink.rescanRequired();
-		} else {
-			for ( const auto& event : mEvents )
-				dispatch( event );
-		}
 	}
 
   private:
-	std::vector<Event> mEvents;
-	bool mOverflow{ false };
+	bool mPending{ false };
 };
 
 }}} // namespace EE::VFS::detail

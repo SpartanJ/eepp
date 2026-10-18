@@ -1,7 +1,8 @@
+#include <eepp/vfs/providers/resourceprovider.hpp>
+
 #include <eepp/system/packfileindex.hpp>
 #include <eepp/vfs/detail/memoryhandles.hpp>
 #include <eepp/vfs/path.hpp>
-#include <eepp/vfs/providers/resourceprovider.hpp>
 
 namespace EE { namespace VFS {
 
@@ -159,6 +160,16 @@ VFSTask<URI> ResourceProvider::canonicalize( const URI& uri, CancellationToken )
 		return readyError<URI>( VFSErrorCode::InvalidURI, uri, "NUL in resource URI" );
 	// Packs have no aliases: the canonical form is the normalized path.
 	return readyValue<URI>( resourceURI( toPackPath( uri ) ) );
+}
+
+VFSTask<bool> ResourceProvider::sameFileSystem( const URI& from, const URI& to,
+												CancellationToken token ) {
+	if ( token.isCancellationRequested() )
+		return readyError<bool>( cancelledError( from ) );
+	if ( !VFSPath::validURI( from ) || !VFSPath::validURI( to ) )
+		return readyError<bool>( VFSErrorCode::InvalidURI, to, "NUL in provider URI" );
+	// All authorities are path prefixes in the same PackFileIndex namespace.
+	return readyValue<bool>( true );
 }
 
 }} // namespace EE::VFS

@@ -57,6 +57,9 @@ class EE_VFS_API ZipProvider : public VFSProvider {
 
 	VFSTask<URI> canonicalize( const URI& uri, CancellationToken token ) override;
 
+	VFSTask<bool> sameFileSystem( const URI& from, const URI& to,
+								  CancellationToken token ) override;
+
   private:
 	std::shared_ptr<ZipProviderImpl> mImpl;
 };

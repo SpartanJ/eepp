@@ -6,6 +6,7 @@
 #include <eepp/vfs/archive/libarchive.hpp>
 #include <eepp/vfs/detail/archivelocation.hpp>
 #include <eepp/vfs/detail/memoryhandles.hpp>
+#include <eepp/vfs/path.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>
 #include <limits>
 #include <mutex>
@@ -692,6 +693,20 @@ VFSTask<URI> ArchiveProvider::canonicalize( const URI& uri, CancellationToken to
 								auto backing = ArchiveProvider::archiveURI( uri );
 								return Ok( ArchiveProvider::makeURI( backing.value(), resolved ) );
 							} );
+}
+
+VFSTask<bool> ArchiveProvider::sameFileSystem( const URI& from, const URI& to,
+											   CancellationToken token ) {
+	if ( token.isCancellationRequested() )
+		return readyError<bool>( cancelledError( from ) );
+	if ( !VFSPath::validURI( from ) || !VFSPath::validURI( to ) )
+		return readyError<bool>( VFSErrorCode::InvalidURI, to, "NUL in provider URI" );
+	// Canonical URI paths include the backing archive path and the member path. Different
+	// archive files remain comparable within one authority; UNC host aliases are uncertain.
+	if ( from.hasSameAuthority( to ) )
+		return readyValue<bool>( true );
+	return readyError<bool>( VFSErrorCode::Unsupported, to,
+							 "Cannot determine archive identity across provider authorities" );
 }
 
 }} // namespace EE::VFS

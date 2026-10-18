@@ -1,7 +1,8 @@
+#include <eepp/vfs/transferengine.hpp>
+
 #include <eepp/vfs/detail/filewriter.hpp>
 #include <eepp/vfs/detail/transferstate.hpp>
 #include <eepp/vfs/path.hpp>
-#include <eepp/vfs/transferengine.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
 
 namespace EE { namespace VFS {
@@ -54,9 +55,30 @@ VFSResult<TransferResult> TransferEngine::run() {
 							  "Source and destination are the same" ) );
 	}
 
-	mSameProvider = mSrcProvider == mDstProvider && mSource.hasSameAuthority( mDestination );
+	if ( mSrcProvider == mDstProvider ) {
+		auto same = await( mSrcProvider->sameFileSystem( mSource, mDestination, mToken ) );
+		if ( !same )
+			return Err( std::move( same ).error() );
+		mSameFileSystem = same.value();
+	}
+	// Equivalent authorities can name the very same file. Check before even attempting a
+	// native move; copy/delete must never publish onto, or remove, its own source.
+	if ( mSameFileSystem && !mSource.hasSameAuthority( mDestination ) ) {
+		auto destination = await( mDstProvider->stat( mDestination, {}, mToken ) );
+		if ( destination ) {
+			auto same = isSameFile( mSource, mDestination );
+			if ( !same )
+				return Err( std::move( same ).error() );
+			if ( same.value() ) {
+				return Err( VFSError( VFSErrorCode::InvalidOperation, mDestination,
+									  "Source and destination are the same file" ) );
+			}
+		} else if ( !destination.error().is( VFSErrorCode::NotFound ) ) {
+			return Err( std::move( destination ).error() );
+		}
+	}
 
-	if ( mMove && mSameProvider ) {
+	if ( mMove && mSameFileSystem ) {
 		auto renamed = await( mSrcProvider->rename(
 			mSource, mDestination,
 			RenameOptions{ mOptions.overwrite == OverwritePolicy::Overwrite }, mToken ) );
@@ -104,7 +126,7 @@ VFSResult<TransferResult> TransferEngine::run() {
 			return Err( std::move( rootInfo ).error() );
 	}
 
-	if ( rootInfo.value().isDirectory() && mSameProvider ) {
+	if ( rootInfo.value().isDirectory() && mSameFileSystem ) {
 		if ( auto checked = checkDirectoryDestination(); !checked )
 			return Err( std::move( checked ).error() );
 	}
@@ -184,6 +206,9 @@ VFSResult<void> TransferEngine::checkDirectoryDestination() {
 	for ( auto it = missing.rbegin(); it != missing.rend(); ++it )
 		ancestor = ancestor.withAppendedSegment( *it );
 	ancestor.normalize();
+	// Both paths have already been resolved in the same provider namespace. Use one authority
+	// for the containment comparison so spelling an SSH alias cannot bypass it.
+	ancestor.setAuthority( source.value().getAuthority() );
 	if ( ancestor.isSameOrChildOf( source.value() ) )
 		return invalid();
 	return Ok();
@@ -270,7 +295,7 @@ VFSResult<bool> TransferEngine::copyNode( const Node& node, const URI& source,
 			advanceFiles( info );
 			return Ok( false );
 		}
-		if ( mSameProvider ) {
+		if ( mSameFileSystem ) {
 			auto same = isSameFile( source, destination );
 			if ( !same )
 				return Err( std::move( same ).error() );
@@ -383,7 +408,7 @@ VFSResult<bool> TransferEngine::isSameFile( const URI& source, const URI& destin
 	auto canonicalDestination = await( mDstProvider->canonicalize( destination, mToken ) );
 	if ( !canonicalDestination )
 		return Err( std::move( canonicalDestination ).error() );
-	return Ok( canonicalSource.value() == canonicalDestination.value() );
+	return Ok( canonicalSource.value().getPath() == canonicalDestination.value().getPath() );
 }
 
 VFSResult<void> TransferEngine::copyFile( const VFSFileInfo& info, const URI& source,

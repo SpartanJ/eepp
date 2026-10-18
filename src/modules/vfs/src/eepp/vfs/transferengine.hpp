@@ -18,7 +18,7 @@ class TransferState;
 }
 
 /** Recursive copy or move of one entry, across providers when necessary. A move within one
- * provider and authority is a rename when the provider can do it. */
+ * provider filesystem namespace is a rename when the provider can do it. */
 class TransferEngine {
   public:
 	/** Runs a copy (or a move) on pool and returns its handle. Without a pool (the VFS is shutting
@@ -77,8 +77,8 @@ class TransferEngine {
 	VFSProvider* mDstProvider{ nullptr };
 	TransferResult mResult;
 	bool mMove;
-	/** Source and destination are served by the same provider and authority. */
-	bool mSameProvider{ false };
+	/** Source and destination canonical paths belong to the same provider namespace. */
+	bool mSameFileSystem{ false };
 };
 
 }} // namespace EE::VFS

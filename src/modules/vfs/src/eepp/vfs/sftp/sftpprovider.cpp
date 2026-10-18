@@ -1,3 +1,5 @@
+#include <eepp/vfs/sftp/sftpprovider.hpp>
+
 #include "sftpproviderimpl.hpp"
 #include "sshconnection.hpp"
 #include <eepp/core/string.hpp>
@@ -5,7 +7,6 @@
 #include <eepp/vfs/detail/await.hpp>
 #include <eepp/vfs/path.hpp>
 #include <eepp/vfs/sftp/remotewatchbackend.hpp>
-#include <eepp/vfs/sftp/sftpprovider.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
 #include <eepp/vfs/watchers/pollingwatchbackend.hpp>
 
@@ -811,6 +812,44 @@ VFSTask<URI> SFTPProvider::canonicalize( const URI& uri, CancellationToken token
 					result.setFragment( "" );
 					result.setRawPath( std::string( buffer, static_cast<size_t>( rc ) ) );
 					return VFSResult<URI>( Ok( std::move( result ) ) );
+				} );
+		} );
+}
+
+VFSTask<bool> SFTPProvider::sameFileSystem( const URI& from, const URI& to,
+											CancellationToken token ) {
+	if ( token.isCancellationRequested() )
+		return readyError<bool>( cancelledError( from ) );
+	if ( from.hasSameAuthority( to ) )
+		return readyValue<bool>( true );
+	return mImpl->connection( from ).then(
+		[impl = mImpl, to,
+		 token]( VFSResult<std::shared_ptr<SSHConnection>>&& source ) mutable -> VFSTask<bool> {
+			if ( !source )
+				return readyError<bool>( std::move( source ).error() );
+			return impl->connection( to ).then(
+				// Keep provider state and the source session alive while resolving the destination.
+				[impl = std::move( impl ), source = std::move( source ).value(),
+				 to = std::move( to ), token](
+					VFSResult<std::shared_ptr<SSHConnection>>&& destination ) -> VFSResult<bool> {
+					if ( token.isCancellationRequested() )
+						return Err( cancelledError( to ) );
+					if ( !destination )
+						return Err( std::move( destination ).error() );
+					// Pooling already resolves aliases, users, ports, proxy routes and trust
+					// policy.
+					if ( source == destination.value() )
+						return Ok( true );
+					const auto& a = source->config();
+					const auto& b = destination.value()->config();
+					// Different users, ports or authentication policies on one host can still
+					// expose the same files. Distinct sessions cannot establish that identity.
+					if ( a.hostName == b.hostName ) {
+						return Err( VFSError( VFSErrorCode::Unsupported, to,
+											  "Cannot verify resource identity across distinct SSH "
+											  "sessions on the same endpoint" ) );
+					}
+					return Ok( false );
 				} );
 		} );
 }

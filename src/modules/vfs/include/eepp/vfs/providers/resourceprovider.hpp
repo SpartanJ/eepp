@@ -45,6 +45,9 @@ class EE_VFS_API ResourceProvider : public VFSProvider {
 
 	VFSTask<URI> canonicalize( const URI& uri, CancellationToken token ) override;
 
+	VFSTask<bool> sameFileSystem( const URI& from, const URI& to,
+								  CancellationToken token ) override;
+
 	/** @return The pack-relative path for a res:// URI ("" for the root). */
 	static std::string toPackPath( const URI& uri );
 

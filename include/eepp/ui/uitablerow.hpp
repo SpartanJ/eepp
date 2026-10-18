@@ -14,6 +14,12 @@ class EE_API UITableRow : public UIWidget {
 
 	static UITableRow* New() { return eeNew( UITableRow, () ); }
 
+	Uint32 getType() const { return UI_TYPE_TABLEROW; }
+
+	bool isType( const Uint32& type ) const {
+		return UITableRow::getType() == type ? true : UIWidget::isType( type );
+	}
+
 	ModelIndex getCurIndex() const { return mCurIndex; }
 
 	void setCurIndex( const ModelIndex& curIndex ) { mCurIndex = curIndex; }
