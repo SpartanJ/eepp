@@ -1,10 +1,11 @@
 #include <eepp/core/debug.hpp>
-#include <eepp/network/uri.hpp>
+#include <eepp/core/uri.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 
 using namespace EE::System;
 
-namespace EE { namespace Network {
+namespace EE {
 
 static void AppendHex( std::string& str, int value, int width ) {
 	eeASSERT( width > 0 && width < 64 );
@@ -80,39 +81,8 @@ URI::URI( const std::string& scheme, const std::string& authority, const std::st
 	parseAuthority( beg, end );
 }
 
-URI::URI( const URI& uri ) :
-	mScheme( uri.mScheme ),
-	mUserInfo( uri.mUserInfo ),
-	mHost( uri.mHost ),
-	mPort( uri.mPort ),
-	mPath( uri.mPath ),
-	mQuery( uri.mQuery ),
-	mFragment( uri.mFragment ) {}
-
-URI::URI( const URI& baseURI, const std::string& relativeURI ) :
-	mScheme( baseURI.mScheme ),
-	mUserInfo( baseURI.mUserInfo ),
-	mHost( baseURI.mHost ),
-	mPort( baseURI.mPort ),
-	mPath( baseURI.mPath ),
-	mQuery( baseURI.mQuery ),
-	mFragment( baseURI.mFragment ) {
+URI::URI( const URI& baseURI, const std::string& relativeURI ) : URI( baseURI ) {
 	resolve( relativeURI );
-}
-
-URI::~URI() {}
-
-URI& URI::operator=( const URI& uri ) {
-	if ( &uri != this ) {
-		mScheme = uri.mScheme;
-		mUserInfo = uri.mUserInfo;
-		mHost = uri.mHost;
-		mPort = uri.mPort;
-		mPath = uri.mPath;
-		mQuery = uri.mQuery;
-		mFragment = uri.mFragment;
-	}
-	return *this;
 }
 
 URI& URI::operator=( const std::string& uri ) {
@@ -132,6 +102,7 @@ void URI::swap( URI& uri ) {
 	std::swap( mUserInfo, uri.mUserInfo );
 	std::swap( mHost, uri.mHost );
 	std::swap( mPort, uri.mPort );
+	std::swap( mPortSpecified, uri.mPortSpecified );
 	std::swap( mPath, uri.mPath );
 	std::swap( mQuery, uri.mQuery );
 	std::swap( mFragment, uri.mFragment );
@@ -142,6 +113,7 @@ void URI::clear() {
 	mUserInfo.clear();
 	mHost.clear();
 	mPort = 0;
+	mPortSpecified = false;
 	mPath.clear();
 	mQuery.clear();
 	mFragment.clear();
@@ -215,7 +187,16 @@ unsigned short URI::getPort() const {
 }
 
 void URI::getPort( unsigned short port ) {
+	setPort( port );
+}
+
+void URI::setPort( unsigned short port ) {
 	mPort = port;
+	mPortSpecified = port != 0;
+}
+
+unsigned short URI::getSpecifiedPort() const {
+	return mPortSpecified ? mPort : 0;
 }
 
 std::string URI::getAuthority() const {
@@ -241,6 +222,7 @@ void URI::setAuthority( const std::string& authority ) {
 	mUserInfo.clear();
 	mHost.clear();
 	mPort = 0;
+	mPortSpecified = false;
 	std::string::const_iterator beg = authority.begin();
 	std::string::const_iterator end = authority.end();
 	parseAuthority( beg, end );
@@ -263,6 +245,10 @@ std::string URI::getLastPathSegment() const {
 void URI::setPath( const std::string& path ) {
 	mPath.clear();
 	decode( path, mPath );
+}
+
+void URI::setRawPath( std::string path ) {
+	mPath = std::move( path );
 }
 
 void URI::setRawQuery( const std::string& query ) {
@@ -329,6 +315,7 @@ void URI::resolve( const URI& relativeURI ) {
 		mUserInfo = relativeURI.mUserInfo;
 		mHost = relativeURI.mHost;
 		mPort = relativeURI.mPort;
+		mPortSpecified = relativeURI.mPortSpecified;
 		mPath = relativeURI.mPath;
 		mQuery = relativeURI.mQuery;
 		removeDotSegments();
@@ -337,6 +324,7 @@ void URI::resolve( const URI& relativeURI ) {
 			mUserInfo = relativeURI.mUserInfo;
 			mHost = relativeURI.mHost;
 			mPort = relativeURI.mPort;
+			mPortSpecified = relativeURI.mPortSpecified;
 			mPath = relativeURI.mPath;
 			mQuery = relativeURI.mQuery;
 			removeDotSegments();
@@ -539,7 +527,7 @@ bool URI::isWellKnownPort() const {
 unsigned short URI::getWellKnownPort() const {
 	if ( mScheme == "ftp" )
 		return 21;
-	else if ( mScheme == "ssh" )
+	else if ( mScheme == "ssh" || mScheme == "sftp" )
 		return 22;
 	else if ( mScheme == "telnet" )
 		return 23;
@@ -662,6 +650,7 @@ void URI::parseHostAndPort( std::string::const_iterator& it,
 
 			if ( String::fromString( nport, port ) && nport > 0 && nport < 65536 ) {
 				mPort = (unsigned short)nport;
+				mPortSpecified = true;
 			} else {
 				return; // throw SyntaxException("bad or invalid port number", port);
 			}
@@ -762,6 +751,13 @@ void URI::buildPath( const std::vector<std::string>& segments, bool leadingSlash
 
 std::string URI::getFSPath() const {
 #if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( mScheme == "file" && !mHost.empty() && mHost != "localhost" ) {
+		std::string path( "\\\\" );
+		path += mHost;
+		path += mPath;
+		String::replaceAll( path, "/", "\\" );
+		return path;
+	}
 	if ( mScheme == "file" && !mPath.empty() && mPath[0] == '/' ) {
 		std::string path = mPath.substr( 1 );
 		String::replaceAll( path, "/", "\\" );
@@ -771,6 +767,106 @@ std::string URI::getFSPath() const {
 	}
 #endif
 	return mPath;
+}
+
+URI URI::fromFSPath( const std::string& fsPath ) {
+	URI uri;
+	uri.mScheme = "file";
+	std::string path( fsPath );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	String::replaceAll( path, "\\", "/" );
+	if ( path.size() >= 2 && path[0] == '/' && path[1] == '/' ) {
+		// UNC: //server/share/rest
+		size_t hostEnd = path.find( '/', 2 );
+		uri.mHost =
+			path.substr( 2, hostEnd == std::string::npos ? std::string::npos : hostEnd - 2 );
+		uri.mPath = hostEnd == std::string::npos ? std::string( "/" ) : path.substr( hostEnd );
+		return uri;
+	}
+	if ( path.size() >= 2 && path[1] == ':' ) {
+		path[0] = std::tolower( path[0] );
+		path.insert( path.begin(), '/' );
+		if ( path.size() == 3 )
+			path += '/';
+	} else if ( path.empty() || path[0] != '/' ) {
+		std::string cwd( System::FileSystem::getCurrentWorkingDirectory() );
+		String::replaceAll( cwd, "\\", "/" );
+		if ( !cwd.empty() && cwd.back() != '/' )
+			cwd += '/';
+		if ( cwd.size() >= 2 && cwd[1] == ':' ) {
+			cwd[0] = std::tolower( cwd[0] );
+			cwd.insert( cwd.begin(), '/' );
+		}
+		path = cwd + path;
+	}
+#else
+	if ( path.empty() || path[0] != '/' ) {
+		std::string cwd( System::FileSystem::getCurrentWorkingDirectory() );
+		if ( !cwd.empty() && cwd.back() != '/' )
+			cwd += '/';
+		path = cwd + path;
+	}
+#endif
+	uri.mPath = std::move( path );
+	return uri;
+}
+
+URI URI::withAuthorityOnly() const {
+	URI uri;
+	uri.mScheme = mScheme;
+	uri.mUserInfo = mUserInfo;
+	uri.mHost = mHost;
+	uri.mPort = mPort;
+	uri.mPortSpecified = mPortSpecified;
+	return uri;
+}
+
+URI URI::withAppendedSegment( std::string_view segment ) const {
+	URI uri( withAuthorityOnly() );
+	uri.mPath.reserve( mPath.size() + segment.size() + 1 );
+	uri.mPath = mPath;
+	if ( uri.mPath.empty() || uri.mPath.back() != '/' )
+		uri.mPath += '/';
+	uri.mPath.append( segment );
+	return uri;
+}
+
+URI URI::getParent() const {
+	URI uri( withAuthorityOnly() );
+	std::string_view path( mPath );
+	while ( path.size() > 1 && path.back() == '/' )
+		path.remove_suffix( 1 );
+	size_t pos = path.find_last_of( '/' );
+	if ( pos == std::string_view::npos || pos == 0 ) {
+		uri.mPath = "/";
+	} else {
+		uri.mPath = std::string( path.substr( 0, pos ) );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		// Keep drive roots as directories: "/c:" -> "/c:/".
+		if ( uri.mPath.size() == 3 && uri.mPath[2] == ':' )
+			uri.mPath += '/';
+#endif
+	}
+	return uri;
+}
+
+bool URI::hasSameAuthority( const URI& other ) const {
+	return mScheme == other.mScheme && mHost == other.mHost && getPort() == other.getPort() &&
+		   mUserInfo == other.mUserInfo;
+}
+
+bool URI::isSameOrChildOf( const URI& ancestor ) const {
+	if ( !hasSameAuthority( ancestor ) )
+		return false;
+	std::string_view base( ancestor.mPath );
+	while ( base.size() > 1 && base.back() == '/' )
+		base.remove_suffix( 1 );
+	std::string_view path( mPath );
+	if ( !String::startsWith( path, base ) )
+		return false;
+	if ( path.size() == base.size() )
+		return true;
+	return base == "/" || path[base.size()] == '/';
 }
 
 bool URI::operator<( const URI& url ) const {
@@ -808,27 +904,27 @@ bool URI::operator<( const URI& url ) const {
 	return cmp < 0;
 }
 
-const std::string& EE::Network::URI::getScheme() const {
+const std::string& EE::URI::getScheme() const {
 	return mScheme;
 }
 
-const std::string& EE::Network::URI::getUserInfo() const {
+const std::string& EE::URI::getUserInfo() const {
 	return mUserInfo;
 }
 
-const std::string& EE::Network::URI::getHost() const {
+const std::string& EE::URI::getHost() const {
 	return mHost;
 }
 
-const std::string& EE::Network::URI::getPath() const {
+const std::string& EE::URI::getPath() const {
 	return mPath;
 }
 
-const std::string& EE::Network::URI::getRawQuery() const {
+const std::string& EE::URI::getRawQuery() const {
 	return mQuery;
 }
 
-const std::string& EE::Network::URI::getFragment() const {
+const std::string& EE::URI::getFragment() const {
 	return mFragment;
 }
 
@@ -836,4 +932,4 @@ void swap( URI& u1, URI& u2 ) {
 	u1.swap( u2 );
 }
 
-}} // namespace EE::Network
+} // namespace EE

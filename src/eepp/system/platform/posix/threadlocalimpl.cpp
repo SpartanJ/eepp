@@ -1,6 +1,8 @@
-#include <eepp/system/platform/posix/threadlocalimpl.hpp>
+#include <eepp/config.hpp>
 
 #if defined( EE_PLATFORM_POSIX )
+
+#include <eepp/system/platform/posix/threadlocalimpl.hpp>
 
 namespace EE { namespace System { namespace Private {
 

@@ -662,6 +662,9 @@ class EE_API Window {
 	/** Whether this backend delivers native file-drop events to this window. */
 	virtual bool isNativeFileTargetSupported() const;
 
+	/** Whether this backend can intercept native drops of application-defined MIME types. */
+	virtual bool isNativeDataTargetSupported() const;
+
 	/** Enable native protocol event forwarding for the single active drag session. */
 	virtual void initializeNativeDragEvents();
 

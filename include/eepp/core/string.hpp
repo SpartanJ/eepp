@@ -539,6 +539,10 @@ class EE_API String {
 
 	static bool iequals( String::View str1, String::View str2 );
 
+	/** Compares ignoring ASCII case, without allocating (as comparing String::toLower() copies
+	 * would). @return Negative, zero or positive, like std::string::compare(). */
+	static int icompare( std::string_view str1, std::string_view str2 );
+
 	/** Creates a random string using the dictionary characters. */
 	static std::string randString(
 		size_t len,

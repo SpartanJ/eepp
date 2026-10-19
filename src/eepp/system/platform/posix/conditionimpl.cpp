@@ -1,6 +1,8 @@
-#include <eepp/system/platform/posix/conditionimpl.hpp>
+#include <eepp/config.hpp>
 
 #if defined( EE_PLATFORM_POSIX )
+
+#include <eepp/system/platform/posix/conditionimpl.hpp>
 
 #include <iostream>
 

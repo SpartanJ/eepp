@@ -12,11 +12,13 @@
 #undef None
 #undef Status
 #include "dragaccess.hpp"
+#include "x11errorscope.hpp"
 #include "x11library.hpp"
 #include <algorithm>
 #include <array>
 #include <climits>
 #include <eepp/system/clock.hpp>
+#include <utility>
 
 namespace EE { namespace Window { namespace Private {
 
@@ -63,61 +65,6 @@ struct X11Functions : X11Library {
 };
 #undef EE_X11_SOURCE_FUNCTIONS
 
-/** Foreign windows may disappear between querying them and sending a protocol message. Scope the
- * process-global handler to our own synchronous request batch, and preserve SDL's error handler. */
-class XErrorScope {
-  public:
-	XErrorScope( const X11Functions& x11, Display* display ) : x11( x11 ), display( display ) {
-		// Older queued errors are forwarded by serial range; no leading round trip is needed.
-		firstRequest = NextRequest( display );
-		synchronizedRequest = firstRequest - 1;
-		parent = active;
-		previous = x11.XSetErrorHandler( handleError );
-		active = this;
-	}
-
-	~XErrorScope() {
-		sync();
-		active = parent;
-		x11.XSetErrorHandler( previous );
-	}
-
-	/** Confirm property writes before sending SelectionNotify, as required by ICCCM. */
-	bool sync() {
-		// Explicit validation can drain the batch before scope exit. Only synchronize again
-		// if another request was issued, such as the subsequent SelectionNotify reply.
-		if ( NextRequest( display ) != synchronizedRequest ) {
-			x11.XSync( display, False );
-			synchronizedRequest = NextRequest( display );
-		}
-		return !failed;
-	}
-
-  private:
-	static int handleError( Display* display, XErrorEvent* event ) {
-		for ( auto* scope = active; scope; scope = scope->parent ) {
-			if ( display == scope->display && event->serial >= scope->firstRequest ) {
-				scope->failed = true;
-				return 0;
-			}
-			// Nested scopes share this handler. Forward unrelated connections/requests only
-			// through the outermost original handler, avoiding recursion into ourselves.
-			if ( !scope->parent && scope->previous )
-				return scope->previous( display, event );
-		}
-		return 0;
-	}
-
-	const X11Functions& x11;
-	Display* display;
-	XErrorHandler previous;
-	XErrorScope* parent;
-	unsigned long firstRequest;
-	unsigned long synchronizedRequest{ 0 };
-	bool failed{ false };
-	static inline XErrorScope* active{ nullptr };
-};
-
 class X11DragSource : public DragSource {
   public:
 	X11DragSource( NativeWindowContext context, std::string payload,
@@ -140,6 +87,7 @@ class X11DragSource : public DragSource {
 			 !( mask & Button1Mask ) )
 			return { "A left-button pointer gesture is required", DragStartStatus::InvalidGesture };
 		preview = NativeDragAccess::createNativeDragPreview( *owner, offer, true );
+		sourceHandlesDrops = offer.sourceHandlesDrops;
 		if ( !preview )
 			return { "Could not create the drag preview", DragStartStatus::Failed };
 		XErrorScope setup( x11, display );
@@ -212,7 +160,8 @@ class X11DragSource : public DragSource {
 			dirty |= currentX != x || currentY != y;
 			x = currentX;
 			y = currentY;
-			preview->move( x, y );
+			if ( preview )
+				preview->move( x, y );
 		}
 		bool expired = false;
 		for ( const auto& transfer : transfers ) {
@@ -242,6 +191,7 @@ class X11DragSource : public DragSource {
 				resetPreview();
 				ungrab();
 			} else {
+				releasedOverSource = !target && overOrigin;
 				cancel();
 			}
 		}
@@ -317,8 +267,9 @@ class X11DragSource : public DragSource {
 						waitingStatus = false;
 						accepted = ( event.xclient.data.l[1] & 1 ) &&
 								   static_cast<Atom>( event.xclient.data.l[4] ) == atoms[Copy];
-						preview->setFeedback( accepted ? DragFeedback::Copy
-													   : DragFeedback::Rejected );
+						if ( preview )
+							preview->setFeedback( accepted ? DragFeedback::Copy
+														   : DragFeedback::Rejected );
 					} else if ( event.xclient.message_type == atoms[Finished] && dropped ) {
 						const bool success =
 							version < 5 ||
@@ -443,12 +394,15 @@ class X11DragSource : public DragSource {
 		int rx, ry, wx, wy;
 		unsigned mask;
 		unsigned candidateVersion = 0;
+		const bool wasOverOrigin = overOrigin;
+		overOrigin = false;
 		// XDND v3+ advertises awareness on the top-level client, which routes to its widgets.
 		// Walk through WM containers, then stop at that client instead of traversing its children.
 		for ( unsigned depth = 0; under && depth < 64; ++depth ) {
 			if ( under == origin || under == helper ) {
 				candidate = 0;
 				candidateProxy = 0;
+				overOrigin = under == origin;
 				break;
 			}
 			// XDND specifies XdndAware on the validated proxy, which can be the only aware
@@ -467,7 +421,8 @@ class X11DragSource : public DragSource {
 				break;
 			under = child;
 		}
-		if ( candidate != target || candidateProxy != proxy ) {
+		// Entering or leaving the source window changes no target (it is never one).
+		if ( candidate != target || candidateProxy != proxy || overOrigin != wasOverOrigin ) {
 			if ( target )
 				send( atoms[Leave] );
 			target = candidate;
@@ -476,7 +431,11 @@ class X11DragSource : public DragSource {
 			accepted = false;
 			waitingStatus = false;
 			uriRequested = false;
-			preview->setFeedback( target ? DragFeedback::Pending : DragFeedback::Rejected );
+			// Over the source window, an application that handles its own drops resolves it.
+			if ( preview )
+				preview->setFeedback( target || ( overOrigin && sourceHandlesDrops )
+										  ? DragFeedback::Pending
+										  : DragFeedback::Rejected );
 			if ( target )
 				send( atoms[Enter], static_cast<long>( version ) << 24, atoms[UriList] );
 		}
@@ -668,10 +627,10 @@ class X11DragSource : public DragSource {
 	}
 
 	void resetPreview() {
-		if ( preview ) {
-			preview->reset();
-			preview = nullptr;
-		}
+		// Destroying the preview window pumps X events (SDL waits for its unmap), which can
+		// re-enter handleEvent() and release(): detach the preview first so it is reset once.
+		if ( auto* detached = std::exchange( preview, nullptr ) )
+			detached->reset();
 	}
 
 	void ungrab() {
@@ -719,6 +678,10 @@ class X11DragSource : public DragSource {
 	int x{ 0 }, y{ 0 };
 	unsigned version{ 0 };
 	bool pointerGrabbed{ false };
+	/** The pointer is over the source window (never a target), as of the last position(). */
+	bool overOrigin{ false };
+	/** DragOffer::sourceHandlesDrops of the session. */
+	bool sourceHandlesDrops{ false };
 	bool dirty{ true };
 	bool released{ false };
 	bool waitingStatus{ false };

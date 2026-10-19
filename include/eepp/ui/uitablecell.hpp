@@ -61,6 +61,14 @@ class EE_API UITableCell : public UIPushButton {
 
 	virtual void onModelIndexChange() {}
 
+	/** Enter belongs to the model view, which opens the row or edits the cell. Clicking the cell
+	 * as well would open the row twice with single-click navigation. */
+	Uint32 onKeyDown( const KeyEvent& event ) {
+		if ( event.getKeyCode() == KEY_RETURN || event.getKeyCode() == KEY_KP_ENTER )
+			return UIWidget::onKeyDown( event );
+		return UIPushButton::onKeyDown( event );
+	}
+
 	Uint32 onFocus( NodeFocusReason reason ) {
 		getUISceneNode()->getWindow()->startTextInput();
 		return UIPushButton::onFocus( reason );

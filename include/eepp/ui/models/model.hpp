@@ -108,6 +108,13 @@ class EE_API Model {
 
 	virtual int keyColumn() const { return -1; }
 
+	/** Column matched by type-to-select (typing a name selects the first row that starts with
+	 * it). Defaults to the key column, else the tree column. Override it when
+	 * the key column follows the sorting but rows should always be found by name. */
+	virtual int searchColumn() const {
+		return keyColumn() != -1 ? keyColumn() : static_cast<int>( treeColumn() );
+	}
+
 	virtual SortOrder sortOrder() const { return SortOrder::None; }
 
 	virtual bool isSortable() { return false; }

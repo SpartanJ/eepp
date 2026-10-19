@@ -34,6 +34,7 @@
 #include <eepp/system/md5.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/pack.hpp>
+#include <eepp/system/packfileindex.hpp>
 #include <eepp/system/packregistry.hpp>
 #include <eepp/system/pak.hpp>
 #include <eepp/system/parsermatcher.hpp>
@@ -44,6 +45,7 @@
 #include <eepp/system/resourceloader.hpp>
 #include <eepp/system/scopedbuffer.hpp>
 #include <eepp/system/scopedop.hpp>
+#include <eepp/system/sha1.hpp>
 #include <eepp/system/singleton.hpp>
 #include <eepp/system/singletondeclarations.hpp>
 #include <eepp/system/sys.hpp>
@@ -54,7 +56,6 @@
 #include <eepp/system/time.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/system/uuid.hpp>
-#include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/system/zip.hpp>
 
 #endif

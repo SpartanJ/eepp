@@ -51,6 +51,11 @@ newoption {
     description = "Set the shared data directory",
 }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
+newoption { trigger = "with-shared-vfs", description = "Builds and links the VFS module as a shared library instead of a static library." }
+if _OPTIONS["with-static-eepp"] and _OPTIONS["with-shared-vfs"] then
+	error("--with-shared-vfs requires eepp-shared; it cannot be combined with --with-static-eepp")
+end
+newoption { trigger = "without-vfs-sftp", description = "Disables sftp:// support in the eepp-vfs module (otherwise the vendored libssh2 is built)." }
 newoption { trigger = "with-lto", description = "Enables Link-Time Optimization for release builds." }
 
 function is_arm64_arch()
@@ -1000,6 +1005,89 @@ function eepp_module_physics_add()
 	incdirs { "src/modules/physics/include/", "src/modules/physics/src/" }
 end
 
+function vfs_sftp_enabled()
+	-- Enabled by default; emscripten has no raw sockets or processes for SSH.
+	return _OPTIONS["without-vfs-sftp"] == nil and not os.istarget("emscripten")
+end
+
+function eepp_module_vfs_dependencies()
+	links { "efsw-static" }
+	incdirs { "src/modules/vfs/include/", "src/thirdparty/efsw/include" }
+	-- The ssh_config evaluator (always built) resolves host names through Winsock.
+	filter "system:windows"
+		links { "ws2_32" }
+	-- efsw watches directories through FSEvents.
+	filter "system:macosx"
+		links { "CoreFoundation.framework", "CoreServices.framework" }
+	filter {}
+	if vfs_sftp_enabled() then
+		defines { "EE_VFS_SFTP" }
+		links { "libssh2-static" }
+		filter "system:windows"
+			-- Like mbedtls below: eepp.dll does not export the zlib that libssh2 uses.
+			links { "zlib-static", "ws2_32", "crypt32", "bcrypt" }
+		filter {}
+		if not _OPTIONS["with-openssl"] then
+			-- libssh2 calls mbedtls directly. ELF and Mach-O builds of eepp export it, so linking a
+			-- second copy would duplicate (and interpose) its globals; eepp.dll does not export it.
+			filter "system:windows"
+				links { "mbedtls-static" }
+			filter {}
+		end
+	end
+end
+
+function eepp_module_vfs_add()
+	incdirs { "src/modules/vfs/include/", "src/thirdparty/efsw/include" }
+	if vfs_sftp_enabled() then
+		defines { "EE_VFS_SFTP" }
+	end
+	if _OPTIONS["with-shared-vfs"] then
+		links { "eepp-vfs" }
+	else
+		links { "eepp-vfs-static" }
+		defines { "EE_VFS_STATIC" }
+		eepp_module_vfs_dependencies()
+	end
+end
+
+function build_vfs_module( shared )
+	local name = shared and "eepp-vfs" or "eepp-vfs-static"
+	project(name)
+		kind(shared and "SharedLib" or "StaticLib")
+		language "C++"
+		cppdialect "C++20"
+		incdirs { "include", "src/modules/vfs/include/", "src/modules/vfs/src/", "src/thirdparty/efsw/include" }
+		files { "src/modules/vfs/src/**.cpp" }
+		defines { shared and "EE_VFS_EXPORTS" or "EE_VFS_STATIC" }
+		if shared then
+			eepp_module_vfs_dependencies()
+			links { "eepp-shared" }
+		end
+		if vfs_sftp_enabled() then
+			defines { "EE_VFS_SFTP" }
+			incdirs { "src/thirdparty/libssh2/include" }
+		else
+			excludes { "src/modules/vfs/src/eepp/vfs/sftp/**.cpp" }
+		end
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
+		build_base_cpp_configuration( name )
+		target_dir_lib("")
+		filter "action:not vs*"
+			buildoptions { "-Wall" }
+		filter { "action:export-compile-commands", "system:macosx" }
+			buildoptions { "-std=c++20" }
+
+		if shared then
+			postsymlinklib_arch( "eepp-vfs" )
+			filter { "system:windows", "action:not vs*" }
+				links { "winpthread" }
+			filter {}
+		end
+end
+
 function eepp_module_backward_add( ecode_mode )
 	files { "src/modules/backward/src/backward.cpp" }
 	incdirs { "src/thirdparty" }
@@ -1034,6 +1122,7 @@ function build_eepp( build_name )
 			"src/eepp/scene/*.cpp",
 			"src/eepp/scene/actions/*.cpp",
 			"src/eepp/ui/*.cpp",
+			"src/eepp/ui/icons/*.cpp",
 			"src/eepp/ui/accessibility/*.cpp",
 			"src/eepp/ui/abstract/*.cpp",
 			"src/eepp/ui/models/*.cpp",
@@ -1168,7 +1257,7 @@ function postsymlinklib_arch(name)
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "options:arch=arm64" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "options:arch=aarch64" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/universal/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:universal" )
-	if name == "eepp" then
+	if name == "eepp" or name == "eepp-vfs" then
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:x86" )
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86_64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:x86_64" )
 		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:ARM" )
@@ -1709,6 +1798,49 @@ workspace "eepp"
 		filter { "action:export-compile-commands", "system:macosx" }
 			buildoptions { "-std=c++20" }
 
+	if vfs_sftp_enabled() then
+	project "libssh2-static"
+		kind "StaticLib"
+		language "C"
+		incdirs { "src/thirdparty/libssh2/include", "src/thirdparty/libssh2/src" }
+		files { "src/thirdparty/libssh2/src/*.c" }
+		defines { "HAVE_CONFIG_H", "LIBSSH2_HAVE_ZLIB" }
+		if _OPTIONS["with-openssl"] then
+			defines { "LIBSSH2_OPENSSL" }
+		else
+			defines { "LIBSSH2_MBEDTLS" }
+			-- mbedTLS has no Ed25519/X25519: Monocypher provides them (mbedtls_ed25519.c).
+			incdirs { "src/thirdparty/mbedtls/include", "src/thirdparty/monocypher" }
+			files { "src/thirdparty/monocypher/*.c" }
+		end
+		build_base_configuration( "libssh2" )
+		target_dir_thirdparty()
+	end
+
+	-- Remote file watching helper consumed by the eepp-vfs sftp:// watch backend. It only depends on
+	-- efsw and is normally deployed on the remote host.
+	project "efsw-agent"
+		kind "ConsoleApp"
+		language "C++"
+		cppdialect "C++20"
+		targetdir(_MAIN_SCRIPT_DIR .. "/bin")
+		incdirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
+		files { "src/thirdparty/efsw/src/agent/*.cpp" }
+		links { "efsw-static" }
+		build_base_cpp_configuration( "efsw-agent" )
+		filter { "system:windows", "action:not vs*" }
+			links { "winpthread" }
+		filter { "system:not windows", "system:not haiku" }
+			links { "pthread" }
+		filter "system:macosx"
+			links { "CoreFoundation.framework", "CoreServices.framework" }
+		filter {}
+
+	build_vfs_module( false )
+	if _OPTIONS["with-shared-vfs"] then
+		build_vfs_module( true )
+	end
+
 	project "languages-syntax-highlighting-static"
 		kind "StaticLib"
 		language "C++"
@@ -1735,6 +1867,7 @@ workspace "eepp"
 				"src/eepp/window/platform/macos/platformhelper.mm",
 				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm",
 				"src/eepp/system/fileassociation_macos.mm",
+				"src/eepp/ui/icons/macosiconimage.mm",
 				"src/eepp/window/draganddrop/cocoadraganddrop.mm" }
 		buildoptions { "-x objective-c++" }
 		build_base_cpp_configuration( "eepp-macos-helper" )
@@ -1783,6 +1916,7 @@ workspace "eepp"
 				"src/examples/native_drag_and_drop/native_drag_and_drop.cpp" }
 			if os.istarget("linux") then
 				files { "src/tests/native_drag_and_drop/x11.cpp",
+					"src/tests/native_drag_and_drop/x11droptarget.cpp",
 					"src/tests/native_drag_and_drop/wayland.cpp" }
 				links { "dl" }
 			elseif os.istarget("macosx") then
@@ -2101,6 +2235,19 @@ workspace "eepp"
 		files { "src/tools/eeiv/*.cpp" }
 		build_link_configuration( "eeiv", false )
 
+	project "eefm"
+		set_kind()
+		language "C++"
+		eepp_module_backward_add( false )
+		incdirs { "src/thirdparty", "src/modules/eterm/include/" }
+		files { "src/tools/eefm/*.cpp" }
+		links { "eterm-static" }
+		eepp_module_vfs_add()
+		filter "system:windows"
+			links { "shell32" } -- Recycle Bin (SHFileOperationW)
+		filter {}
+		build_link_configuration( "eefm", true )
+
 	project "eproc"
 		set_kind()
 		language "C++"
@@ -2168,6 +2315,7 @@ workspace "eepp"
 		language "C++"
 		files { "src/benchmarks/*.cpp" }
 		incdirs { "src/thirdparty" }
+		eepp_module_vfs_add()
 		-- UTEST_MAIN supplies a native main instead of eepp's SDL_main.
 		build_link_configuration( "eepp-benchmarks", true, false )
 
@@ -2176,9 +2324,13 @@ workspace "eepp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
 		defines { "EE_UNIT_TESTS" }
 		links { "eterm-static", "languages-syntax-highlighting-static" }
-		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
+		incdirs { "src/modules/eterm/include/", "src/thirdparty", "src/modules/vfs/src/" }
+		if vfs_sftp_enabled() then
+			incdirs { "src/thirdparty/libssh2/include" }
+		end
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp",
+				"src/tools/eefm/location.cpp",
 				"src/tools/eproc/process_info.cpp",
 				"src/tools/eproc/process_model.cpp",
 				"src/tools/eproc/process_table_state.cpp",
@@ -2206,6 +2358,8 @@ workspace "eepp"
 		filter "system:bsd"
 			links { "util" }
 		filter {}
+		eepp_module_vfs_add()
+		links { "efsw-static" }
 		eepp_module_backward_add( false )
 
 		filter { "system:linux" }

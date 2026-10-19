@@ -9,7 +9,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packregistry.hpp>
-#include <eepp/system/virtualfilesystem.hpp>
+#include <eepp/system/packfileindex.hpp>
 #include <eepp/ui/css/keyframesdefinition.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetpropertiesparser.hpp>
@@ -287,8 +287,8 @@ std::string StyleSheetParser::importCSS( std::string path,
 			importedList.push_back( path );
 			return response.getBody();
 		}
-	} else if ( VFS::instance()->fileExists( path ) ) {
-		IOStream* stream = VFS::instance()->getFileFromPath( path );
+	} else if ( PackFileIndex::instance()->fileExists( path ) ) {
+		IOStream* stream = PackFileIndex::instance()->getFileFromPath( path );
 		ScopedBuffer buffer( stream->getSize() );
 		stream->read( reinterpret_cast<char*>( buffer.get() ), buffer.size() );
 		importedList.push_back( path );

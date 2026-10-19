@@ -17,7 +17,7 @@
 #include <eepp/system/parsermatcher.hpp>
 #include <eepp/system/regex.hpp>
 #include <eepp/system/thread.hpp>
-#include <eepp/system/virtualfilesystem.hpp>
+#include <eepp/system/packfileindex.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/tools/uiinspectorserver.hpp>
@@ -191,7 +191,7 @@ Engine::~Engine() {
 
 	PackRegistry::destroySingleton();
 
-	VirtualFileSystem::destroySingleton();
+	PackFileIndex::destroySingleton();
 
 	// Windows own the GL contexts and must outlive every GPU resource and graphics manager above.
 	destroy();

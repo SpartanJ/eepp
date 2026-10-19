@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+ <defs>
+  <linearGradient id="eefm-back" x1="32" x2="32" y1="6" y2="34" gradientUnits="userSpaceOnUse">
+   <stop stop-color="#2b8fd6" offset="0"/>
+   <stop stop-color="#1a6fb5" offset="1"/>
+  </linearGradient>
+  <linearGradient id="eefm-paper" x1="12" x2="42" y1="15" y2="30" gradientUnits="userSpaceOnUse">
+   <stop stop-color="#f5f5f5" offset="0"/>
+   <stop stop-color="#e3e7ea" offset="1"/>
+  </linearGradient>
+  <linearGradient id="eefm-front" x1="20" x2="52" y1="24" y2="60" gradientUnits="userSpaceOnUse">
+   <stop stop-color="#3daee9" offset="0"/>
+   <stop stop-color="#0082ba" offset="1"/>
+  </linearGradient>
+ </defs>
+ <!-- Back of the folder, with its tab -->
+ <path d="m4 6v27c0 0.554 0.446 1 1 1h54c0.554 0 1-0.446 1-1v-23h-28l-4-4z" fill="url(#eefm-back)"/>
+ <path d="m28 6 3 5h29v-1h-28z" fill="#fff" opacity=".3"/>
+ <!-- Paper -->
+ <rect x="6" y="15" width="52" height="15" rx="1" ry="1" fill="url(#eefm-paper)"/>
+ <!-- Front of the folder -->
+ <path d="m26 24-4 4h-19v29c0 0.554 0.446 1 1 1h56c0.554 0 1-0.446 1-1v-33z" fill="url(#eefm-front)"/>
+ <path d="m3 28v1h20l3-5-4 4z" fill="#fff" opacity=".3"/>
+ <path d="m3 56v1c0 0.554 0.446 1 1 1h56c0.554 0 1-0.446 1-1v-1c0 0.554-0.446 1-1 1h-56c-0.554 0-1-0.446-1-1z" opacity=".3"/>
+ <!-- The eepp swirl -->
+ <g transform="matrix(2.75 0 0 2.75 14.5 24.4)" opacity=".92">
+  <g transform="matrix(.80588 0 0 .80588 1.3641 1.2538)" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.15">
+   <path transform="matrix(1 0 0 -1 .19808 11.984)" d="m6.0943 5.9899c0.16457 0.1173 0.0098785 0.35997-0.11145 0.43612-0.40848 0.25638-0.89022-0.11622-1.039-0.4965-0.32983-0.84299 0.37932-1.6794 1.1646-1.8967 1.4211-0.39338 2.7295 0.77904 3.0093 2.1158 0.36822 1.7593-0.79537 3.4576-2.3989 4.1096"/>
+   <path transform="matrix(1 0 0 -1 .030284 12.252)" d="m6.3163 6.3608c-0.14689-0.18552 0.10611-0.40806 0.26737-0.45419 0.54289-0.15532 0.96335 0.42061 1.0068 0.89674 0.096424 1.0555-0.97349 1.7652-1.9275 1.7539-1.7263-0.020368-2.8161-1.765-2.6954-3.3595 0.15881-2.0986 2.0205-3.6297 4.0363-3.8406"/>
+  </g>
+ </g>
+</svg>

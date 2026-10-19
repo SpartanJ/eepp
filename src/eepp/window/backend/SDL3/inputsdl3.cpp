@@ -497,8 +497,12 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_EVENT_DROP_FILE: {
+			const Float eventWindowScale = getEventWindowScale( mWindow, SDLEvent.drop.windowID );
 			event.Type = InputEvent::FileDropped;
 			event.file.file = SDLEvent.drop.data;
+			event.file.hasPosition = true;
+			event.file.x = static_cast<Int16>( SDLEvent.drop.x * eventWindowScale );
+			event.file.y = static_cast<Int16>( SDLEvent.drop.y * eventWindowScale );
 			event.WinID = SDLEvent.drop.windowID;
 			break;
 		}

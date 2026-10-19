@@ -568,6 +568,8 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		case SDL_DROPFILE: {
 			event.Type = InputEvent::FileDropped;
 			event.file.file = SDLEvent.drop.file;
+			event.file.hasPosition = false;
+			event.file.x = event.file.y = 0;
 			event.WinID = SDLEvent.drop.windowID;
 			break;
 		}

@@ -1,6 +1,8 @@
-#include "accessibilitybackenduia.hpp"
+#include <eepp/config.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+
+#include "accessibilitybackenduia.hpp"
 
 namespace EE { namespace UI { namespace Uia {
 

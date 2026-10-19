@@ -138,6 +138,13 @@ std::string FileSystem::fileExtension( const std::string& filepath, const bool& 
 	return tstr;
 }
 
+std::pair<std::string, std::string> FileSystem::fileNameSplitExtension( const std::string& name ) {
+	size_t dot = name.find_last_of( '.' );
+	if ( dot == std::string::npos || dot == 0 )
+		return { name, std::string() };
+	return { name.substr( 0, dot ), name.substr( dot ) };
+}
+
 std::string FileSystem::fileRemoveExtension( const std::string& filepath ) {
 	return filepath.substr( 0, filepath.find_last_of( "." ) );
 }

@@ -34,6 +34,7 @@
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/window/input.hpp>
 
@@ -82,6 +83,21 @@ size_t tabbableCount( const Node* node ) {
 		count += tabbableCount( child );
 	return count;
 }
+
+// Three top-level rows without children, usable by flat views and trees alike.
+class FlatRowsModel final : public Models::Model {
+  public:
+	size_t rowCount( const Models::ModelIndex& parent ) const override {
+		return parent.isValid() ? 0 : 3;
+	}
+
+	size_t columnCount( const Models::ModelIndex& ) const override { return 1; }
+
+	Variant data( const Models::ModelIndex& index, Models::ModelRole role ) const override {
+		return role == Models::ModelRole::Display ? Variant( std::to_string( index.row() ) )
+												  : Variant();
+	}
+};
 
 } // namespace
 
@@ -247,6 +263,34 @@ UTEST( TabFocus, ReverseTraversalIncludesAnInteractiveParentBeforeItsChildren ) 
 	EXPECT_TRUE( last->getPrevTabWidget() == first );
 	EXPECT_TRUE( first->getPrevTabWidget() == parent );
 	EXPECT_TRUE( parent->getPrevTabWidget() == before );
+}
+
+UTEST( TabFocus, SpinBoxKeepsPartialTextUntilCommitted ) {
+	auto app = focusApp();
+	auto* spin = UISpinBox::New();
+	auto* other = UIPushButton::New();
+	spin->setMinValue( 6 )->setMaxValue( 72 );
+	spin->setValue( 12 );
+	auto* input = spin->getTextInput();
+	input->setFocus();
+	// "1" on the way to "14" is out of range: neither applied nor rewritten.
+	input->setText( "1" );
+	EXPECT_EQ( spin->getValue(), 12.0 );
+	EXPECT_TRUE( input->getText() == "1" );
+	input->setText( "14" );
+	EXPECT_EQ( spin->getValue(), 14.0 );
+	input->setText( "" );
+	EXPECT_EQ( spin->getValue(), 14.0 );
+	// Committing clamps and normalizes the text.
+	input->setText( "100" );
+	other->setFocus();
+	EXPECT_EQ( spin->getValue(), 72.0 );
+	EXPECT_TRUE( input->getText() == "72" );
+	input->setFocus();
+	input->setText( "" );
+	other->setFocus();
+	EXPECT_EQ( spin->getValue(), 72.0 );
+	EXPECT_TRUE( input->getText() == "72" );
 }
 
 UTEST( TabFocus, CompositeControlsHaveOneFunctionalEntry ) {
@@ -605,9 +649,58 @@ UTEST( TabFocus, ModelViewsDoNotTabThroughRecycledCells ) {
 		EXPECT_TRUE( view->isTabFocusable() );
 		auto* cell = view->getCellFromIndex( view->getModel()->index( 0 ) );
 		ASSERT_TRUE( cell != nullptr );
+		// Recycled rows remain discoverable through Node's type API, as cells already are.
+		auto* row = cell->getParent();
+		ASSERT_TRUE( row != nullptr );
+		EXPECT_EQ( UI_TYPE_TABLEROW, row->getType() );
+		EXPECT_TRUE( row->isType( UI_TYPE_TABLEROW ) );
+		EXPECT_TRUE( row->isType( UI_TYPE_WIDGET ) );
+		EXPECT_TRUE( row->isType( UI_TYPE_UINODE ) );
+		EXPECT_FALSE( row->isType( UI_TYPE_TABLECELL ) );
 		EXPECT_FALSE( cell->isTabFocusable() );
 		EXPECT_FALSE( view->getVerticalScrollBar()->getSlider()->isTabFocusable() );
 		EXPECT_FALSE( view->getHorizontalScrollBar()->getSlider()->isTabFocusable() );
+	}
+}
+
+UTEST( TabFocus, ModelViewsOpenOnceOnEnterAfterKeyboardSelection ) {
+	auto app = focusApp();
+	// Focus-on-selection moves the focus to the selected row's cell: Enter there must open the row
+	// once, also with single-click navigation (where a cell click opens it).
+	for ( bool singleClick : { false, true } ) {
+		for ( int kind = 0; kind < 3; ++kind ) {
+			UIAbstractTableView* view =
+				kind == 0	? static_cast<UIAbstractTableView*>( UIListView::New() )
+				: kind == 1 ? static_cast<UIAbstractTableView*>( UITableView::New() )
+							: UITreeView::New();
+			auto draw = [kind, view] {
+				if ( kind == 2 )
+					static_cast<UITreeView*>( view )->drawChildren();
+				else
+					static_cast<UITableView*>( view )->drawChildren();
+			};
+			view->setSize( 200, 150 );
+			view->setModel( std::make_shared<FlatRowsModel>() );
+			view->setSingleClickNavigation( singleClick );
+			std::vector<int> opened;
+			view->on( Event::OnModelEvent, [&opened]( const Event* event ) {
+				auto* modelEvent = static_cast<const Abstract::ModelEvent*>( event );
+				if ( modelEvent->getModelEventType() == Abstract::ModelEventType::Open )
+					opened.push_back( modelEvent->getModelIndex().row() );
+			} );
+			view->getSelection().set( view->getModel()->index( 0 ) );
+			view->setFocus();
+			app.getUI()->update( Time::Zero );
+			draw();
+			FocusDispatcherAccess::key( app.getUI(), KEY_DOWN );
+			draw();
+			EXPECT_TRUE( view->hasFocusWithin() && !view->hasFocus() );
+			FocusDispatcherAccess::key( app.getUI(), KEY_RETURN );
+			EXPECT_EQ( opened.size(), 1u );
+			EXPECT_TRUE( !opened.empty() && opened[0] == 1 );
+			view->close();
+			app.getUI()->update( Time::Zero );
+		}
 	}
 }
 

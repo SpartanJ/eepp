@@ -16,6 +16,10 @@ struct NativeDragAccess {
 		return window.isNativeFileTargetSupported();
 	}
 
+	static bool isNativeDataTargetSupported( const Window& window ) {
+		return window.isNativeDataTargetSupported();
+	}
+
 	static void initializeNativeDragEvents( Window& window ) {
 		window.initializeNativeDragEvents();
 	}

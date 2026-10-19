@@ -138,6 +138,7 @@
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiicontheme.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
+#include <eepp/ui/uisystemicontheme.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 #include <eepp/ui/uilayout.hpp>

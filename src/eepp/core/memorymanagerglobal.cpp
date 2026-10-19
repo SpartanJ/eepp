@@ -1,8 +1,10 @@
+#include <eepp/config.hpp>
+
+#ifdef EE_MEMORY_MANAGER
+
 #include <cstddef>
 #include <eepp/core/memorymanager.hpp>
 #include <new>
-
-#ifdef EE_MEMORY_MANAGER
 
 void* operator new( std::size_t size ) {
 	return EE::MemoryManager::allocateGlobal( size, alignof( std::max_align_t ) );

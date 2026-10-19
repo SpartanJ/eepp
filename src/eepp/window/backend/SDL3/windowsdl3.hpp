@@ -125,6 +125,8 @@ class EE_API WindowSDL : public Window {
 
 	bool isNativeFileTargetSupported() const;
 
+	bool isNativeDataTargetSupported() const;
+
 	void initializeNativeDragEvents();
 
 	void shutdownNativeDragEvents();

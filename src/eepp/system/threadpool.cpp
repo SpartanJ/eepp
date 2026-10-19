@@ -111,7 +111,11 @@ bool ThreadPool::removeWithTag( const Uint64& tag ) {
 	return !ids.empty();
 }
 
-Uint64 ThreadPool::run( SmallFunction<48> func,
+void ThreadPool::execute( Executor::Function func ) {
+	run( std::move( func ) );
+}
+
+Uint64 ThreadPool::run( Executor::Function func,
 						const std::function<void( const Uint64& )>& doneCallback,
 						const Uint64& tag ) {
 	Uint64 id = ++mLastWorkId;

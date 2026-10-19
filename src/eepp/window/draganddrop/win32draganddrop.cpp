@@ -1,8 +1,11 @@
-#include "win32draganddrop.hpp"
-#include "dragaccess.hpp"
-#include "dragpreview.hpp"
+#include <eepp/config.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+
+#include "win32draganddrop.hpp"
+
+#include "dragaccess.hpp"
+#include "dragpreview.hpp"
 
 #include <algorithm>
 #include <climits>

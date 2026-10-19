@@ -1,0 +1,103 @@
+#include <eepp/vfs/detail/filewriter.hpp>
+
+#include <algorithm>
+#include <atomic>
+#include <eepp/core/string.hpp>
+#include <eepp/system/sys.hpp>
+#include <vector>
+#if EE_PLATFORM != EE_PLATFORM_WIN
+#include <eepp/vfs/providers/localprovider.hpp>
+#endif
+
+namespace EE { namespace VFS { namespace detail {
+
+VFSResult<void> FileWriter::publish( VFSProvider& provider, const URI& temporary, const URI& target,
+									 bool overwrite, const CancellationToken& token ) {
+	auto renamed = await( provider.rename( temporary, target, RenameOptions{ overwrite }, token ) );
+#if EE_PLATFORM != EE_PLATFORM_WIN
+	if ( !renamed && !overwrite && renamed.error().is( VFSErrorCode::Unsupported ) ) {
+		// The generic provider contract remains an atomic rename. Only an exclusive temporary
+		// owned by this writer is safe to publish using a non-atomic source-name cleanup.
+		if ( auto* local = dynamic_cast<LocalProvider*>( &provider ) )
+			return await( local->publishTemporary( temporary, target, token ) );
+	}
+#endif
+	return renamed;
+}
+
+std::string FileWriter::temporarySiblingName() {
+	static std::atomic<Uint32> sCounter{ 0 };
+	// Keep the component short even when the destination already reaches NAME_MAX.
+	return String::format( ".eepp-%llu-%llu-%u.tmp",
+						   static_cast<unsigned long long>( System::Sys::getProcessID() ),
+						   static_cast<unsigned long long>( System::Sys::getTicks() ),
+						   static_cast<unsigned int>( ++sCounter ) );
+}
+
+VFSResult<void> FileWriter::writeFully( FileHandle& handle, std::span<const Uint8> data,
+										const CancellationToken& token, Uint64 offset ) {
+	size_t done = 0;
+	while ( done < data.size() ) {
+		size_t chunk = std::min<size_t>( IOChunkSize, data.size() - done );
+		auto written = await( handle.write( offset + done, data.subspan( done, chunk ), token ) );
+		if ( !written )
+			return Err( std::move( written ).error() );
+		if ( written.value() == 0 )
+			return Err( VFSError( VFSErrorCode::IO, handle.uri(), "Short write" ) );
+		done += written.value();
+	}
+	return Ok();
+}
+
+VFSResult<void> FileWriter::makeDirs( VFSProvider& provider, const URI& uri,
+									  const MkDirOptions& options,
+									  const CancellationToken& token ) {
+	std::vector<URI> missing;
+	URI current( uri );
+	while ( true ) {
+		auto info = await( provider.stat( current, StatOptions{}, token ) );
+		if ( info ) {
+			if ( !info.value().isDirectory() )
+				return Err( VFSError( VFSErrorCode::NotDirectory, current ) );
+			break;
+		}
+		if ( !info.error().is( VFSErrorCode::NotFound ) )
+			return Err( std::move( info ).error() );
+		missing.push_back( current );
+		URI parent( current.getParent() );
+		if ( parent.getPath() == current.getPath() )
+			break;
+		current = std::move( parent );
+	}
+	for ( auto it = missing.rbegin(); it != missing.rend(); ++it ) {
+		auto made = await( provider.mkdir( *it, options, token ) );
+		if ( !made ) {
+			if ( !made.error().is( VFSErrorCode::AlreadyExists ) )
+				return made;
+			// Lost a race with another creator: fine if it is a directory.
+			auto info = await( provider.stat( *it, StatOptions{}, token ) );
+			if ( !info || !info.value().isDirectory() )
+				return made;
+		}
+	}
+	return Ok();
+}
+
+VFSResult<URI> FileWriter::resolveTarget( VFSProvider& provider, const URI& uri,
+										  const CancellationToken& token ) {
+	auto linkInfo = await( provider.stat( uri, StatOptions{ false }, token ) );
+	if ( !linkInfo ) {
+		if ( linkInfo.error().is( VFSErrorCode::NotFound ) )
+			return Ok( URI( uri ) );
+		return Err( std::move( linkInfo ).error() );
+	}
+	if ( !linkInfo.value().isSymlink() )
+		return Ok( URI( uri ) );
+	auto resolved = await( provider.canonicalize( uri, token ) );
+	// A dangling link is replaced by the new file.
+	if ( !resolved && resolved.error().is( VFSErrorCode::NotFound ) )
+		return Ok( URI( uri ) );
+	return resolved;
+}
+
+}}} // namespace EE::VFS::detail

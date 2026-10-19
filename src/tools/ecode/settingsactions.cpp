@@ -163,20 +163,8 @@ void SettingsActions::setTerminalFontSize( const StyleSheetLength& size ) {
 
 void SettingsActions::setUIFontSize( const StyleSheetLength& size ) {
 	mApp->getConfig().ui.fontSize = size;
-	const Float fontSize = size.asPixels( 0, Sizef(), mApp->getDisplayDPI() );
-	UIThemeManager* manager = mApp->getUISceneNode()->getUIThemeManager();
-	manager->setDefaultFontSize( fontSize );
-	manager->getDefaultTheme()->setDefaultFontSize( fontSize );
-	mApp->getUISceneNode()->forEachNode( [this]( Node* node ) {
-		if ( node->isType( UI_TYPE_TEXTVIEW ) ) {
-			UITextView* textView = node->asType<UITextView>();
-			if ( !textView->getUIStyle()->hasProperty( PropertyId::FontSize ) ) {
-				textView->setFontSize( mApp->getConfig().ui.fontSize.asPixels(
-					node->getParent()->getPixelsSize().getWidth(), Sizef(),
-					mApp->getUISceneNode()->getDPI() ) );
-			}
-		}
-	} );
+	mApp->getUISceneNode()->applyDefaultFont( nullptr,
+											  size.asPixels( 0, Sizef(), mApp->getDisplayDPI() ) );
 	setUIPanelFontSize( mApp->getConfig().ui.panelFontSize );
 }
 

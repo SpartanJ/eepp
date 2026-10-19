@@ -1,6 +1,8 @@
-#include <eepp/system/platform/win/conditionimpl.hpp>
+#include <eepp/config.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+
+#include <eepp/system/platform/win/conditionimpl.hpp>
 
 #include <iostream>
 

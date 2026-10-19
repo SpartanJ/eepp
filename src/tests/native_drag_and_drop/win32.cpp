@@ -1,3 +1,4 @@
+#include "testexitcode.hpp"
 #include <chrono>
 #include <eepp/window.hpp>
 #include <iostream>
@@ -231,7 +232,7 @@ int runAutomatedNativeDragTests() {
 			window->setDeferNativeResourceDestructionOnClose( true );
 		auto drag = DragAndDrop::forWindow( *window );
 		if ( !drag.getCapabilities().fileSource )
-			return 77;
+			return TestSkipped;
 		HWND origin = window->getWindowHandler();
 		SetForegroundWindow( origin );
 		bool ordinaryReleasePassed = true;

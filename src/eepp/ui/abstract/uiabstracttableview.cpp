@@ -353,6 +353,30 @@ std::vector<ModelIndex> UIAbstractTableView::getSelectionRange( const ModelIndex
 	return range;
 }
 
+void UIAbstractTableView::extendSelectionTo( const ModelIndex& index ) {
+	if ( !getModel() || !getModel()->isValid( index ) )
+		return;
+	if ( mSelectionKind != SelectionKind::Multiple ) {
+		getSelection().set( index );
+		return;
+	}
+	ModelIndex anchor = mSelectionAnchor;
+	if ( !anchor.isValid() || !getModel()->isValid( anchor ) )
+		anchor = getSelection().isEmpty() ? index : getSelection().first();
+	mExtendingSelection = true;
+	getSelection().set( getSelectionRange( anchor, index ) );
+	mExtendingSelection = false;
+	mSelectionAnchor = anchor;
+	mSelectionCursor = index;
+}
+
+void UIAbstractTableView::onModelSelectionChange() {
+	UIAbstractView::onModelSelectionChange();
+	// Any other change starts a new range there.
+	if ( !mExtendingSelection )
+		mSelectionAnchor = mSelectionCursor = getSelection().first();
+}
+
 size_t UIAbstractTableView::getItemCount() const {
 	if ( !getModel() )
 		return 0;
@@ -382,11 +406,10 @@ void UIAbstractTableView::resetColumnData() {
 	if ( !model )
 		return;
 	size_t count = model->columnCount();
-	for ( size_t i = 0; i < count; i++ ) {
-		ColumnData& col = columnData( i );
-		col.minWidth = 0;
-		col.maxWidth = 0;
-	}
+	// minWidth comes from the header text (which the model may change); maxWidth is set by the
+	// application (setColumnMaxWidth) and must survive model updates.
+	for ( size_t i = 0; i < count; i++ )
+		columnData( i ).minWidth = 0;
 }
 
 void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
@@ -461,6 +484,9 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 				}
 				if ( col.widget )
 					colWidth = eemax( colWidth, col.widget->getPixelsSize().getWidth() );
+				// Capped columns leave the rest of their content width to the main column.
+				if ( col.maxWidth != 0 )
+					colWidth = eemin( colWidth, eemax( col.maxWidth, col.minWidth ) );
 				usedWidth += colWidth;
 				col.setWidth( colWidth );
 			}
@@ -1001,10 +1027,12 @@ UITableRow* UIAbstractTableView::createRow() {
 			if ( mSelectionKind == SelectionKind::Multiple &&
 				 ( getInput()->getSanitizedModState() & KeyMod::getDefaultModifier() ) ) {
 				getSelection().toggle( index );
+				// Ctrl+click moves the anchor to the clicked row.
+				mSelectionAnchor = mSelectionCursor = index;
 			} else if ( mSelectionKind == SelectionKind::Multiple &&
 						( getInput()->getSanitizedModState() & KEYMOD_SHIFT ) &&
 						!getSelection().isEmpty() ) {
-				getSelection().set( getSelectionRange( getSelection().first(), index ) );
+				extendSelectionTo( index );
 			} else if ( mSelectionKind == SelectionKind::Multiple ) {
 				if ( !getSelection().contains( index ) )
 					getSelection().set( index );
@@ -1485,9 +1513,7 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 			mSearchText.pop_back();
 			const Model* model = getModel();
 			ModelIndex sel = getSelection().first();
-			auto col = model->keyColumn() != -1
-						   ? model->keyColumn()
-						   : ( model->treeColumn() >= 0 ? model->treeColumn() : 0 );
+			auto col = model->searchColumn();
 			Int64 rowCount = model->rowCount( sel.parent() );
 			for ( auto rowNext = sel.row() + 1; rowNext < rowCount; rowNext++ ) {
 				ModelIndex next = model->index( rowNext, col, sel.parent() );
@@ -1586,6 +1612,8 @@ bool UIAbstractTableView::applyProperty( const StyleSheetProperty& attribute ) {
 						flags |= TableFlagRowSearch;
 					else if ( String::iequals( token, "row-header" ) )
 						flags |= TableFlagRowHeader;
+					else if ( String::iequals( token, "rubber-band" ) )
+						flags |= TableFlagRubberBandSelection;
 					return true;
 				},
 				attribute.getValue(), "|" );
@@ -1642,6 +1670,8 @@ std::string UIAbstractTableView::getPropertyString( const PropertyDefinition* pr
 				val += "focus-on-selection|";
 			if ( flags & TableFlagDisableClipping )
 				val += "disable-clipping|";
+			if ( flags & TableFlagRubberBandSelection )
+				val += "rubber-band|";
 			if ( !val.empty() )
 				val.pop_back();
 			return val;
@@ -1723,6 +1753,19 @@ Uint32 UIAbstractTableView::getTableFlags() const {
 	return mTableFlags;
 }
 
+bool UIAbstractTableView::getFocusOnSelection() const {
+	return mTableFlags & TableFlagFocusOnSelection;
+}
+
+void UIAbstractTableView::setFocusOnSelection( bool focusOnSelection ) {
+	if ( focusOnSelection ) {
+		mTableFlags |= TableFlagFocusOnSelection;
+	} else {
+		mTableFlags &= ~TableFlagFocusOnSelection;
+		mFocusSelectionDirty = false;
+	}
+}
+
 void UIAbstractTableView::setTableFlags( Uint32 flags ) {
 	mTableFlags = flags;
 	setHeadersVisible( flags & TableFlagHeaders );
@@ -1730,6 +1773,7 @@ void UIAbstractTableView::setTableFlags( Uint32 flags ) {
 	setAutoColumnsWidth( flags & TableFlagAutoColumns );
 	setFitAllColumnsToWidget( flags & TableFlagFitColumns );
 	setSingleClickNavigation( flags & TableFlagSingleClick );
+	setFocusOnSelection( flags & TableFlagFocusOnSelection );
 	setRowSearchByName( flags & TableFlagRowSearch );
 	setRowHeaderVisible( flags & TableFlagRowHeader );
 }

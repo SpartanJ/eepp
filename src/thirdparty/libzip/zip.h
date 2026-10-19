@@ -59,6 +59,7 @@ extern "C" {
 #define ZIP_CREATE           1
 #define ZIP_EXCL             2
 #define ZIP_CHECKCONS        4
+#define ZIP_LIMIT_METADATA   8 /* eepp: bound decoded central-directory metadata */
 
 
 /* flags for zip_name_locate, zip_fopen, zip_stat, ... */
@@ -112,6 +113,7 @@ extern "C" {
 #define ZIP_ER_RDONLY        25  /* N Read-only archive */
 #define ZIP_ER_NOPASSWD      26  /* N No password provided */
 #define ZIP_ER_WRONGPASSWD   27  /* N Wrong password provided */
+#define ZIP_ER_METADATA      28  /* N ZIP metadata budget exceeded */
 
 /* type of system error value */
 
@@ -234,6 +236,7 @@ ZIP_EXTERN const char *zip_get_file_extra(struct zip *, zip_uint64_t,
 					  int *, int);
 ZIP_EXTERN const char *zip_get_name(struct zip *, zip_uint64_t, int);
 ZIP_EXTERN zip_uint64_t zip_get_num_entries(struct zip *, int);
+ZIP_EXTERN zip_uint64_t zip_get_metadata_size(struct zip *);
 ZIP_EXTERN int zip_get_num_files(struct zip *);  /* deprecated, use zip_get_num_entries instead */
 ZIP_EXTERN int zip_name_locate(struct zip *, const char *, int);
 ZIP_EXTERN struct zip *zip_open(const char *, int, int *);

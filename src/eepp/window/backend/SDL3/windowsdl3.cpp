@@ -84,13 +84,24 @@ bool WindowSDL::isNativeFileTargetSupported() const {
 					   std::strcmp( driver, "cocoa" ) == 0 || std::strcmp( driver, "haiku" ) == 0 );
 }
 
+bool WindowSDL::isNativeDataTargetSupported() const {
+#ifdef EE_HAS_X11_DRAG_SOURCE
+	// The X11 event hook lets eepp answer the drags SDL's own XDND support cannot read.
+	const char* driver = SDL_GetCurrentVideoDriver();
+	return canUseNativeDrag() && mSDLWindow && driver && std::strcmp( driver, "x11" ) == 0;
+#else
+	return false;
+#endif
+}
+
 namespace {
 #ifdef EE_HAS_X11_DRAG_SOURCE
-// Process-global SDL state; DragManager enforces a single active session and owning window.
+// Process-global SDL state, enabled while a drag session or a data drop handler needs it.
 bool nativeDragEventsEnabled = false;
 bool SDLCALL nativeDragX11Hook( void*, XEvent* event ) {
-	// Only our owned source protocol messages are consumed. SDL retains input, clipboard
-	// and incoming XDND; in particular it must not send a second SelectionNotify for our offer.
+	// Only our own protocol messages are consumed: those of our drag source and of the drags our
+	// data drop target accepted. SDL retains input, clipboard and every other incoming XDND; in
+	// particular it must not send a second SelectionNotify for our offer.
 	return !Private::DragManager::handleEvent( event );
 }
 #endif

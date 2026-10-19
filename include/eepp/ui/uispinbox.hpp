@@ -70,6 +70,8 @@ class EE_API UISpinBox : public UIWidget {
 	double mValue;
 	double mClickStep;
 	bool mModifyingVal;
+	Uint32 mCommitOnEnterCb{ 0 };
+	Uint32 mCommitOnFocusLossCb{ 0 };
 
 	UISpinBox();
 
@@ -84,6 +86,9 @@ class EE_API UISpinBox : public UIWidget {
 	virtual void onPaddingChange();
 
 	virtual void onBufferChange( const Event* event );
+
+	/** Clamps the typed value and rewrites the text (on enter and on focus loss). */
+	void commitText();
 };
 
 }} // namespace EE::UI

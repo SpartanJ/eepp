@@ -104,6 +104,7 @@ CODE_SRCS				:=  \
 	scene/actions/*.cpp \
 	ui/*.cpp \
 	ui/accessibility/*.cpp \
+	ui/icons/*.cpp \
 	ui/css/*.cpp \
 	ui/doc/*.cpp \
 	ui/doc/languages/*.cpp \

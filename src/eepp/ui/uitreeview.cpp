@@ -978,17 +978,9 @@ void UITreeView::openModelIndexParentTree( const ModelIndex& index ) {
 	createOrUpdateColumns( false );
 }
 
-bool UITreeView::getFocusOnSelection() const {
-	return mFocusOnSelection;
-}
-
-void UITreeView::setFocusOnSelection( bool focusOnSelection ) {
-	mFocusOnSelection = focusOnSelection;
-}
-
 void UITreeView::onModelSelectionChange() {
 	UIAbstractTableView::onModelSelectionChange();
-	if ( mFocusOnSelection )
+	if ( getFocusOnSelection() )
 		mFocusSelectionDirty = true;
 }
 
@@ -1094,7 +1086,6 @@ std::vector<PropertyId> UITreeView::getPropertiesImplemented() const {
 void UITreeView::setTableFlags( Uint32 flags ) {
 	UIAbstractTableView::setTableFlags( flags );
 	setExpandersAsIcons( flags & TableFlagExpandersAsIcons );
-	setFocusOnSelection( flags & TableFlagFocusOnSelection );
 	setDisableCellClipping( flags & TableFlagDisableClipping );
 }
 

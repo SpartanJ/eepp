@@ -25,8 +25,33 @@ class EE_API UITableView : public UIAbstractTableView {
 		const std::string& text, const bool& caseSensitive = false,
 		FindRowWithTextMatchKind matchKind = FindRowWithTextMatchKind::StartsWith ) const;
 
+	virtual void setTableFlags( Uint32 flags );
+
+	bool getRubberBandSelection() const;
+
+	/** Dragging from the empty area of the table draws a rectangle that selects the rows it
+	 * touches; Ctrl or Shift add them to the selection. Works only with multiple selection and
+	 * row selection. Off by default (TableFlagRubberBandSelection). The rectangle is a
+	 * "tableview::rubberband" child widget, styled by the theme. */
+	void setRubberBandSelection( bool enabled );
+
+	/** True when the last left press became a rubber band (until the next press): its release
+	 * is not a click on the empty area. */
+	bool rubberBandDragged() const { return mRubberBandDragged; }
+
   protected:
 	Sizef mContentSize;
+	bool mRubberBandPressed{ false };
+	bool mRubberBandDragged{ false };
+	/** Where the band started, in content coordinates (scrolling included). */
+	Vector2f mRubberBandStart;
+	/** The selection kept when the band adds to it (Ctrl or Shift held at the press). */
+	std::vector<ModelIndex> mRubberBandBase;
+	UIWidget* mRubberBand{ nullptr };
+	/** Rows the band covers (-1: none; -2: not applied yet): the selection is only rebuilt when
+	 * they change. */
+	Int64 mRubberBandFirst{ -2 };
+	Int64 mRubberBandLast{ -2 };
 
 	UITableView();
 
@@ -39,6 +64,16 @@ class EE_API UITableView : public UIAbstractTableView {
 	void onColumnSizeChange( const size_t&, bool );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	virtual void onModelSelectionChange();
+
+	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+
+	virtual void scheduledUpdate( const Time& time );
+
+	void updateRubberBand( const Vector2f& localPosition );
+
+	void endRubberBand();
 };
 
 }} // namespace EE::UI

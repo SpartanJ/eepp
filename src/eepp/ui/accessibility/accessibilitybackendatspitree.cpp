@@ -1,6 +1,8 @@
-#include "accessibilitybackendatspi.hpp"
+#include <eepp/config.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_FREEBSD
+
+#include "accessibilitybackendatspi.hpp"
 
 #include <algorithm>
 #include <cstdlib>
