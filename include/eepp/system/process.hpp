@@ -1,6 +1,7 @@
 #ifndef EE_SYSTEM_PROCESS_HPP
 #define EE_SYSTEM_PROCESS_HPP
 
+#include <atomic>
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/time.hpp>
@@ -190,14 +191,17 @@ class EE_API Process {
 	 ** @return On success true is returned.
 	 **
 	 ** If the process to be destroyed had not finished execution, it will be
-	 ** terminated (i.e killed). */
+	 ** terminated (i.e killed) and reaped. The asynchronous readers are not waited for: they
+	 ** stop on their own, and their pipes are released once they did (at the latest when the
+	 ** Process is destroyed), so a read callback may still run after kill() returns. */
 	bool kill();
 
 	/** @brief Destroy a previously created process.
 	 ** @return On success true is returned.
 	 **
 	 ** If the process to be destroyed had not finished execution, it may out live
-	 ** the parent process. */
+	 ** the parent process. The asynchronous readers are stopped before their pipes are closed:
+	 ** they first get up to a second to read what an exited child wrote. */
 	bool destroy();
 
 	/** @brief Returns if the subprocess is currently still alive and executing.
@@ -240,7 +244,9 @@ class EE_API Process {
 
   protected:
 	void* mProcess{ nullptr };
-	bool mShuttingDown{ false };
+	std::atomic<bool> mShuttingDown{ false };
+	std::atomic<bool> mStdOutDone{ true };
+	std::atomic<bool> mStdErrDone{ true };
 	bool mKilled{ false };
 	bool mIsAsync{ false };
 	bool mKilling{ false };
@@ -253,6 +259,15 @@ class EE_API Process {
 	ReadFn mReadStdErrFn;
 
 	size_t readAll( std::string& buffer, bool readErr, Time timeout = Time::Zero );
+
+	bool terminate();
+
+	bool readersStopped() const;
+
+	void stopReaders();
+
+	/** Stops the readers, then frees the pipes and the process state they use. */
+	void release();
 };
 
 }} // namespace EE::System

@@ -1,5 +1,6 @@
 #include <bitset>
 #include <cerrno>
+#include <chrono>
 #include <eepp/core/debug.hpp>
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/core/string.hpp>
@@ -22,8 +23,13 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <stdio.h>
+#include <sys/wait.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 #include <windows.h>
+// subprocess.h keeps winbase.h out (it declares the subset it uses), and with it ioapiset.h.
+#ifndef _IO_APISET_H_
+extern "C" __declspec( dllimport ) int __stdcall CancelIoEx( void* file, void* overlapped );
+#endif
 #endif
 
 #define CHUNK_SIZE 4096
@@ -98,18 +104,9 @@ Process::Process( const std::string& command, const std::vector<std::string>& ar
 
 Process::~Process() {
 	mShuttingDown = true;
-	if ( mProcess ) {
-		if ( isAlive() ) {
-			kill();
-		} else {
-			destroy();
-		}
-	}
-	if ( mStdOutThread.joinable() )
-		mStdOutThread.join();
-	if ( mStdErrThread.joinable() )
-		mStdErrThread.join();
-	eeSAFE_FREE( mProcess );
+	if ( isAlive() )
+		kill();
+	release();
 }
 
 bool Process::create( const std::string& command, Uint32 options,
@@ -133,8 +130,17 @@ bool Process::create( const std::string& command, const std::vector<std::string>
 					  Uint32 options,
 					  const std::unordered_map<std::string, std::string>& environment,
 					  const std::string& workingDirectory ) {
-	if ( mProcess )
-		return false;
+	if ( mProcess ) {
+		if ( !mKilled )
+			return false;
+		// A killed process keeps its pipes until its readers stopped.
+		release();
+	}
+	// A reused Process starts over: a killed one would otherwise refuse to kill the new child
+	// and stop its readers at once.
+	mShuttingDown = false;
+	mKilled = false;
+	mKilling = false;
 	std::vector<const char*> strings;
 	std::string rcommand;
 	mProcess = eeMalloc( sizeof( subprocess_s ) );
@@ -282,19 +288,126 @@ bool Process::kill() {
 	mKilling = true;
 	mShuttingDown = true;
 	subprocess_init_shutdown( PROCESS_PTR );
-	if ( PROCESS_PTR->alive ) {
-		int ret = subprocess_terminate( PROCESS_PTR );
+	if ( !PROCESS_PTR->alive )
+		return false;
+	const bool terminated = terminate();
+	mKilled = true;
+	// The readers may still be using the pipes. kill() never waits for them: a caller can hold
+	// a lock that their callbacks take. They stop on their own (the child is gone and they
+	// observe mShuttingDown), and release() frees the pipes once they did.
+	if ( readersStopped() )
+		release();
+	return terminated;
+}
+
+#ifdef EE_PLATFORM_POSIX
+static void reapChild( pid_t child ) {
+	// SIGKILL is delivered asynchronously: wait for it briefly, then leave the wait to a thread
+	// so that the caller never stalls on a child that is slow to exit.
+	for ( int attempt = 0; attempt < 10; ++attempt ) {
+		const pid_t result = waitpid( child, nullptr, WNOHANG );
+		if ( result == child || ( result < 0 && errno != EINTR ) )
+			return;
+		if ( result == 0 )
+			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	}
+	try {
+		std::thread( [child] {
+			while ( waitpid( child, nullptr, 0 ) < 0 && errno == EINTR ) {
+			}
+		} ).detach();
+	} catch ( const std::system_error& ) {
+		Log::error( "Process: could not start a thread to reap child %d", child );
+	}
+}
+#endif
+
+bool Process::terminate() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	// subprocess_terminate() forgets the process handle without closing it, and destroy() only
+	// closes the stdin handle along with it: hand it back for destroy().
+	void* handle = PROCESS_PTR->hProcess;
+	const int result = subprocess_terminate( PROCESS_PTR );
+	PROCESS_PTR->hProcess = handle;
+	return 0 == result;
+#elif defined( EE_PLATFORM_POSIX )
+	// subprocess_terminate() forgets the child without waiting for it, which would leave a
+	// zombie until this process exits.
+	const pid_t child = PROCESS_PTR->child;
+	if ( child <= 0 )
+		return false;
+	const int result = subprocess_terminate( PROCESS_PTR );
+	reapChild( child );
+	return 0 == result;
+#else
+	return 0 == subprocess_terminate( PROCESS_PTR );
+#endif
+}
+
+bool Process::readersStopped() const {
+	return ( !mStdOutThread.joinable() || mStdOutDone ) &&
+		   ( !mStdErrThread.joinable() || mStdErrDone );
+}
+
+void Process::stopReaders() {
+	mShuttingDown = true;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	// A reader blocks in a pipe read until the pipe breaks, which a surviving grandchild holding
+	// the pipe can postpone indefinitely. Cancel its read until it returns: a cancel that lands
+	// before the reader issued its next read misses it, hence the retries.
+	if ( mProcess ) {
+		// _get_osfhandle() returns -1 (INVALID_HANDLE_VALUE) for a bad descriptor.
+		auto handleOf = []( FILE* file ) -> void* {
+			if ( !file )
+				return nullptr;
+			const intptr_t handle = _get_osfhandle( _fileno( file ) );
+			return handle == -1 ? nullptr : reinterpret_cast<void*>( handle );
+		};
+		void* stdOut = handleOf( PROCESS_PTR->stdout_file );
+		void* stdErr = handleOf( PROCESS_PTR->stderr_file );
+		const auto readerIsRunning = []( const std::thread& thread,
+										 const std::atomic<bool>& done ) {
+			return thread.joinable() && !done && thread.get_id() != std::this_thread::get_id();
+		};
+		while ( readerIsRunning( mStdOutThread, mStdOutDone ) ||
+				readerIsRunning( mStdErrThread, mStdErrDone ) ) {
+			if ( stdOut )
+				CancelIoEx( stdOut, nullptr );
+			if ( stdErr && stdErr != stdOut )
+				CancelIoEx( stdErr, nullptr );
+			std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+		}
+	}
+#endif
+	// POSIX readers poll with a timeout and observe mShuttingDown.
+	if ( mStdOutThread.joinable() )
+		mStdOutThread.join();
+	if ( mStdErrThread.joinable() )
+		mStdErrThread.join();
+}
+
+void Process::release() {
+	stopReaders();
+	if ( mProcess ) {
 		destroy();
 		eeSAFE_FREE( mProcess );
-		mKilled = true;
-		return 0 == ret;
 	}
-	return false;
 }
 
 bool Process::destroy() {
 	if ( mProcess == nullptr )
 		return true;
+	if ( mStdOutThread.joinable() || mStdErrThread.joinable() ) {
+		// The readers use the pipes. Let them drain what an exited child wrote (they stop at the
+		// end of the pipe), then stop them: a grandchild can keep the pipe open. Readers that
+		// already ended are joined too, so that startAsyncRead() can start new ones.
+		if ( !readersStopped() && !isAlive() ) {
+			const auto until = std::chrono::steady_clock::now() + std::chrono::seconds( 1 );
+			while ( !readersStopped() && std::chrono::steady_clock::now() < until )
+				std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		}
+		stopReaders();
+	}
 	return 0 == subprocess_destroy( PROCESS_PTR );
 }
 
@@ -407,8 +520,11 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 
 void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 	eeASSERT( mProcess != nullptr );
-	mReadStdOutFn = readStdOut;
-	mReadStdErrFn = readStdErr;
+	// The readers call both unconditionally: a missing one would throw std::bad_function_call
+	// on the reader thread (terminating the program) as soon as the child wrote to that stream.
+	auto ignore = []( const char*, size_t ) {};
+	mReadStdOutFn = readStdOut ? std::move( readStdOut ) : ReadFn( ignore );
+	mReadStdErrFn = readStdErr ? std::move( readStdErr ) : ReadFn( ignore );
 	Log::info( "Process::startAsyncRead called for command: %s", mCmdLine );
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	void* stdOutFd =
@@ -416,6 +532,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 	void* stdErrFd =
 		SUBPROCESS_PTR_CAST( void*, _get_osfhandle( _fileno( PROCESS_PTR->stderr_file ) ) );
 	if ( stdOutFd ) {
+		mStdOutDone = false;
 		mStdOutThread = std::thread( [this, stdOutFd]() {
 			Log::info( "Process::startAsyncRead thread started for command: %s", mCmdLine );
 			unsigned n;
@@ -431,9 +548,11 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 				if ( !mShuttingDown )
 					mReadStdOutFn( buffer.c_str(), static_cast<size_t>( n ) );
 			}
+			mStdOutDone = true;
 		} );
 	}
 	if ( stdErrFd && stdErrFd != stdOutFd ) {
+		mStdErrDone = false;
 		mStdErrThread = std::thread( [this, stdErrFd]() {
 			unsigned n;
 			std::string buffer;
@@ -449,13 +568,16 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 				if ( !mShuttingDown )
 					mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
 			}
+			mStdErrDone = true;
 		} );
 	}
 #elif defined( EE_PLATFORM_POSIX )
-	mStdOutThread = std::thread( [this] {
+	// Read on the calling thread: the reader never touches the process state.
+	const int stdOutFd = PROCESS_PTR->stdout_file ? fileno( PROCESS_PTR->stdout_file ) : 0;
+	const int stdErrFd = PROCESS_PTR->stderr_file ? fileno( PROCESS_PTR->stderr_file ) : 0;
+	mStdOutDone = false;
+	mStdOutThread = std::thread( [this, stdOutFd, stdErrFd] {
 		Log::info( "Process::startAsyncRead thread started for command: %s", mCmdLine );
-		auto stdOutFd = fileno( PROCESS_PTR->stdout_file );
-		auto stdErrFd = PROCESS_PTR->stderr_file ? fileno( PROCESS_PTR->stderr_file ) : 0;
 		std::vector<pollfd> pollfds;
 		std::bitset<2> fdIsStdOut;
 		if ( stdOutFd ) {
@@ -478,8 +600,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 			}
 			pollfds.back().events = POLLIN;
 		} else {
-			Log::error( "Process::startAsyncRead %s stdOutFd PROCESS_PTR->stdout_file: %p fd: %d",
-						mCmdLine, PROCESS_PTR->stdout_file, stdOutFd );
+			Log::error( "Process::startAsyncRead %s has no stdout fd", mCmdLine );
 		}
 
 		if ( stdErrFd && stdOutFd != stdErrFd ) {
@@ -501,8 +622,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 			}
 			pollfds.back().events = POLLIN;
 		} else if ( !stdErrFd ) {
-			Log::error( "Process::startAsyncRead %s stdOutFd PROCESS_PTR->stderr_file: %p fd: %d",
-						PROCESS_PTR->stderr_file, stdErrFd );
+			Log::error( "Process::startAsyncRead %s has no stderr fd", mCmdLine );
 		}
 		std::string buffer;
 		buffer.resize( mBufferSize );
@@ -567,6 +687,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 
 		Log::info( "Process::startAsyncRead polling ended for: %s, any open: %s, shutting down: %s",
 				   mCmdLine, anyOpen ? "true" : "false", mShuttingDown ? "true" : "false" );
+		mStdOutDone = true;
 	} );
 #endif
 }
