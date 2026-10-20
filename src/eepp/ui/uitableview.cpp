@@ -477,7 +477,6 @@ Uint32 UITableView::onMouseDown( const Vector2i& position, const Uint32& flags )
 				mRubberBandBase.clear();
 				if ( mod & ( KeyMod::getDefaultModifier() | KEYMOD_SHIFT ) )
 					mRubberBandBase = getSelection().indexes();
-				subscribeScheduledUpdate();
 			}
 		}
 	}
@@ -591,8 +590,8 @@ void UITableView::endRubberBand() {
 		mRubberBand->setVisible( false );
 		invalidateDraw();
 	}
-	if ( isSubscribedForScheduledUpdate() )
-		unsubscribeScheduledUpdate();
+	// The scrollable base owns scheduled updates for smooth scrolling and touch inertia;
+	// ending a selection gesture must keep those updates running.
 }
 
 void UITableView::onModelSelectionChange() {

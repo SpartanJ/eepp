@@ -425,6 +425,73 @@ UTEST( UIAbstractTableView, RightClickPreservesMultipleSelectedRows ) {
 	EXPECT_TRUE( table->getSelection().containsRow( third.row() ) );
 }
 
+UTEST( UIAbstractTableView, SmoothScrollingSurvivesRubberBandCleanup ) {
+	UIApplication app(
+		WindowSettings( 600, 300, "eepp - table scrolling test" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* scene = app.getUI();
+	auto* input = app.getWindow()->getInput();
+	for ( int cleanup = 0; cleanup < 3; ++cleanup ) {
+		auto model = std::make_shared<ThreeColumnModel>();
+		auto* table = UITableView::New();
+		table->setParent( scene->getRoot() );
+		table->setPixelsSize( 500, 240 );
+		table->setRowHeight( 24 );
+		table->setModel( model );
+		table->setColumnsWidth( 100 );
+		table->setSelectionKind( UIAbstractView::SelectionKind::Multiple );
+		table->setSelectionType( UIAbstractView::SelectionType::Row );
+		table->setRubberBandSelection( true );
+		scene->flushDirtyStyleAndLayout();
+		table->drawChildren();
+
+		if ( cleanup == 0 ) {
+			// Applying table flags can disable rubber-band selection before smooth scrolling
+			// is first enabled.
+			table->setRubberBandSelection( false );
+		} else {
+			// Both a click and a rectangle selection in the empty area end the band.
+			input->cleanStates();
+			input->setMousePos( table->convertToWorldSpace( { 40, 180 } ).asInt() );
+			input->injectButtonPress( EE_BUTTON_LEFT );
+			scene->update( Milliseconds( 16 ) );
+			if ( cleanup == 2 ) {
+				input->setMousePos( table->convertToWorldSpace( { 80, 80 } ).asInt() );
+				scene->update( Milliseconds( 16 ) );
+				EXPECT_TRUE( table->rubberBandDragged() );
+			}
+			input->cleanStates();
+			input->injectButtonRelease( EE_BUTTON_LEFT );
+			scene->update( Milliseconds( 16 ) );
+		}
+		input->cleanStates();
+		// Scheduled removals take effect on the next scene update.
+		scene->update( Milliseconds( 16 ) );
+		table->setSmoothScrollEnabled( true );
+		model->setRows( 100 );
+		model->invalidate();
+		scene->flushDirtyStyleAndLayout();
+		table->drawChildren();
+		ASSERT_TRUE( table->getVerticalScrollBar()->isEnabled() );
+
+		// Wheel routing uses the hovered row even while another widget owns keyboard focus.
+		scene->getRoot()->setFocus();
+		auto* cell = table->getCellFromIndex( model->index( 0, 0 ) );
+		ASSERT_TRUE( cell != nullptr );
+		input->setMousePos( cell->convertToWorldSpace( { 10, 10 } ).asInt() );
+		InputEvent wheel{};
+		wheel.Type = InputEvent::MouseWheel;
+		wheel.WinID = app.getWindow()->getWindowID();
+		wheel.wheel.y = -0.5f;
+		wheel.wheel.direction = InputEvent::WheelEvent::Normal;
+		input->processEventForWindow( &wheel );
+		scene->update( Milliseconds( 16 ) );
+		EXPECT_GT( table->getVerticalScrollBar()->getValue(), 0.f );
+		eeDelete( table );
+		scene->update( Milliseconds( 16 ) );
+	}
+}
+
 UTEST( UIAbstractTableView, SortPreservesMultipleSelectedSourceRows ) {
 	UIApplication app(
 		WindowSettings( 600, 300, "eepp - unit tests" ),
