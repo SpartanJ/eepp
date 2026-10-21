@@ -215,6 +215,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	// Match UITextView's theme default and whole-pixel character size.
 	setFontSize( static_cast<Uint32>( theme ? theme->getDefaultFontSize()
 											: themeManager->getDefaultFontSize() ) );
+	mMenuIconSize = getCharacterSize();
 
 	setClipType( ClipType::ContentBox );
 	mDoc->registerClient( this );
