@@ -44,7 +44,8 @@ class EE_API UISystemIconTheme : public std::enable_shared_from_this<UISystemIco
 	/** Icon for standard (freedesktop) icon names, tried in order: "folder", "user-home",
 	 * "folder-documents", "user-trash", "drive-harddisk", "drive-removable-media",
 	 * "network-server", "text-x-generic"... Windows and macOS map these names to their own
-	 * special folder and stock icons. The returned icon is owned by the theme. */
+	 * special folder and stock icons. Linux and BSD also accept absolute icon file paths.
+	 * The returned icon is owned by the theme. */
 	UIIcon* getIcon( const std::vector<std::string>& names, UIIcon* fallback = nullptr );
 
 	/** Icon for a file or folder type. On Linux and BSD names are the freedesktop names of its
@@ -58,6 +59,10 @@ class EE_API UISystemIconTheme : public std::enable_shared_from_this<UISystemIco
 	UIIcon* getPathIcon( const std::string& path, const std::vector<std::string>& names,
 						 UIIcon* fallback = nullptr );
 
+	/** Windows icon resource location (quoted path and resource index, or an indirect resource).
+	 * Lookup and image decoding run on the worker, like other system icons. */
+	UIIcon* getIconResource( const std::string& location, UIIcon* fallback = nullptr );
+
 	/** The freedesktop theme in use, once detected (empty before, and on Windows and macOS). */
 	const std::string& getThemeName() const;
 
@@ -67,9 +72,9 @@ class EE_API UISystemIconTheme : public std::enable_shared_from_this<UISystemIco
 
 	/** A request for an icon image. Public for the platform backends. */
 	struct Request {
-		enum class Kind : Uint8 { Names, File, Path };
+		enum class Kind : Uint8 { Names, File, Path, Resource };
 		std::vector<std::string> names;
-		/** File name (File) or path (Path). */
+		/** File name (File), path (Path), or native icon resource location (Resource). */
 		std::string value;
 		Kind kind{ Kind::Names };
 		bool isDirectory{ false };

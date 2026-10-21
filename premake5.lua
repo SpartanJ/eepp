@@ -685,9 +685,9 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.istarget("windows") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "dwrite", "uiautomationcore", "comctl32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "shlwapi", "dwrite", "uiautomationcore", "comctl32" } )
 	elseif os.istarget("mingw32") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "dwrite", "uiautomationcore", "comctl32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "shlwapi", "dwrite", "uiautomationcore", "comctl32" } )
 	elseif os.istarget("macosx") then
 		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
 	elseif os.istarget("bsd") then
@@ -1867,6 +1867,7 @@ workspace "eepp"
 				"src/eepp/window/platform/macos/platformhelper.mm",
 				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm",
 				"src/eepp/system/fileassociation_macos.mm",
+				"src/eepp/system/applications_macos.mm",
 				"src/eepp/ui/icons/macosiconimage.mm",
 				"src/eepp/window/draganddrop/cocoadraganddrop.mm" }
 		buildoptions { "-x objective-c++" }

@@ -1,9 +1,12 @@
-#include "apps.hpp"
-#include "mime.hpp"
+#include <eepp/system/applications.hpp>
+
 #include <algorithm>
+#include <eepp/core/containers.hpp>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <mutex>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #ifndef WIN32_LEAN_AND_MEAN
@@ -11,6 +14,7 @@
 #endif
 #include <windows.h>
 #elif defined( EE_PLATFORM_POSIX )
+#include <cerrno>
 #include <cstring>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -21,10 +25,11 @@
 using namespace EE;
 using namespace EE::System;
 
-namespace eefm {
+namespace EE { namespace System {
 
 namespace {
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 std::vector<std::string> xdgDirs( const char* homeVar, const char* homeDefault, const char* dirsVar,
 								  const char* dirsDefault ) {
 	std::vector<std::string> dirs;
@@ -34,23 +39,23 @@ std::vector<std::string> xdgDirs( const char* homeVar, const char* homeDefault, 
 		FileSystem::dirAddSlashAtEnd( home );
 		home += homeDefault;
 	}
-	dirs.push_back( home );
+	dirs.push_back( std::move( home ) );
 	std::string others = Sys::getEnv( dirsVar );
 	if ( others.empty() )
 		others = dirsDefault;
-	for ( const auto& dir : String::split( others, ':' ) )
-		dirs.push_back( dir );
+	for ( auto& dir : String::split( others, ':' ) )
+		dirs.push_back( std::move( dir ) );
 	for ( auto& dir : dirs )
 		FileSystem::dirAddSlashAtEnd( dir );
 	return dirs;
 }
 
 /** Key=Value pairs of one [group] of an INI style file (desktop entries, mimeapps.list). */
-std::unordered_map<std::string, std::string> readGroup( const std::string& data,
-														const std::string& group ) {
-	std::unordered_map<std::string, std::string> values;
+SmallUnorderedMap<std::string, std::string, 16> readGroup( const std::string& data,
+														   const std::string& group ) {
+	SmallUnorderedMap<std::string, std::string, 16> values;
 	bool inGroup = false;
-	for ( auto line : String::split( data, '\n' ) ) {
+	for ( auto& line : String::split( data, '\n' ) ) {
 		String::trimInPlace( line );
 		if ( line.empty() || line[0] == '#' )
 			continue;
@@ -65,7 +70,7 @@ std::unordered_map<std::string, std::string> readGroup( const std::string& data,
 			continue;
 		std::string key = String::trim( line.substr( 0, eq ) );
 		if ( !values.count( key ) )
-			values[key] = String::trim( line.substr( eq + 1 ) );
+			values[std::move( key )] = String::trim( line.substr( eq + 1 ) );
 	}
 	return values;
 }
@@ -79,21 +84,37 @@ std::vector<std::string> splitList( const std::string& value ) {
 	return out;
 }
 
+#endif
+
+#if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_WIN
 std::string fileURI( const std::string& path ) {
 	return URI::fromFSPath( path ).toString();
 }
+#endif
 
 } // namespace
 
-Applications& Applications::instance() {
-	static Applications apps;
-	return apps;
+#if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_WIN
+struct Applications::Registry {
+	std::mutex mutex;
+	UnorderedMap<std::string, Application> apps;
+	UnorderedMap<std::string, std::vector<std::string>> byMime;
+	UnorderedMap<std::string, std::vector<std::string>> defaults;
+	UnorderedMap<std::string, std::vector<std::string>> removed;
+	bool loaded{ false };
+
+	void load();
+};
+
+Applications::Registry& Applications::registry() {
+	static Registry data;
+	return data;
 }
 
-void Applications::load() {
-	if ( mLoaded )
+void Applications::Registry::load() {
+	if ( loaded )
 		return;
-	mLoaded = true;
+	loaded = true;
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 	auto dataDirs = Sys::getDataSearchPaths();
 	for ( auto& dir : dataDirs )
@@ -104,7 +125,7 @@ void Applications::load() {
 		if ( !FileSystem::isDirectory( dir ) )
 			continue;
 		for ( const auto& file : FileSystem::filesGetInPath( dir ) ) {
-			if ( !String::endsWith( file, ".desktop" ) || mApps.count( file ) )
+			if ( !String::endsWith( file, ".desktop" ) || apps.count( file ) )
 				continue;
 			std::string data;
 			if ( !FileSystem::fileGet( dir + file, data ) )
@@ -115,13 +136,14 @@ void Applications::load() {
 				continue;
 			Application app;
 			app.id = file;
-			app.name = entry["Name"];
-			app.exec = entry["Exec"];
+			app.name = std::move( entry["Name"] );
+			app.exec = std::move( entry["Exec"] );
+			app.icon = std::move( entry["Icon"] );
 			app.terminal = entry["Terminal"] == "true";
-			mApps[file] = app;
+			apps.emplace( file, std::move( app ) );
 			// NoDisplay apps still handle types (they are just not shown in menus).
 			for ( const auto& mime : splitList( entry["MimeType"] ) )
-				mByMime[mime].push_back( file );
+				byMime[mime].push_back( file );
 		}
 	}
 	// mimeapps.list: user config first, so its defaults come first.
@@ -137,7 +159,7 @@ void Applications::load() {
 			continue;
 		for ( const auto& group : { "Default Applications", "Added Associations" } ) {
 			for ( const auto& [mime, value] : readGroup( data, group ) ) {
-				auto& ids = mDefaults[mime];
+				auto& ids = defaults[mime];
 				for ( const auto& id : splitList( value ) ) {
 					if ( std::find( ids.begin(), ids.end(), id ) == ids.end() )
 						ids.push_back( id );
@@ -146,24 +168,29 @@ void Applications::load() {
 		}
 		for ( const auto& [mime, value] : readGroup( data, "Removed Associations" ) ) {
 			for ( const auto& id : splitList( value ) )
-				mRemoved[mime].push_back( id );
+				removed[mime].push_back( id );
 		}
 	}
 #endif
 }
 
-std::vector<Application> Applications::forMime( const std::string& mime ) {
-	auto types = MimeDatabase::instance().withParents( mime );
-	std::lock_guard<std::mutex> lock( mMutex );
-	load();
+#endif
+
+#if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_WIN
+std::vector<Application> Applications::forFile( const URI&,
+												const std::vector<std::string>& mimeTypes ) {
+	auto& data = registry();
+	std::lock_guard<std::mutex> lock( data.mutex );
+	data.load();
 	std::vector<Application> out;
 	auto addId = [&]( const std::string& id, const std::string& type ) {
-		auto app = mApps.find( id );
-		if ( app == mApps.end() )
+		auto app = data.apps.find( id );
+		if ( app == data.apps.end() )
 			return;
-		auto removed = mRemoved.find( type );
-		if ( removed != mRemoved.end() && std::find( removed->second.begin(), removed->second.end(),
-													 id ) != removed->second.end() )
+		auto removed = data.removed.find( type );
+		if ( removed != data.removed.end() &&
+			 std::find( removed->second.begin(), removed->second.end(), id ) !=
+				 removed->second.end() )
 			return;
 		for ( const auto& existing : out ) {
 			if ( existing.id == id )
@@ -172,28 +199,30 @@ std::vector<Application> Applications::forMime( const std::string& mime ) {
 		out.push_back( app->second );
 	};
 	// Preferences of the exact type and its parents first, then every handler.
-	for ( const auto& type : types ) {
-		auto defaults = mDefaults.find( type );
-		if ( defaults != mDefaults.end() ) {
+	for ( const auto& type : mimeTypes ) {
+		auto defaults = data.defaults.find( type );
+		if ( defaults != data.defaults.end() ) {
 			for ( const auto& id : defaults->second )
 				addId( id, type );
 		}
 	}
-	for ( const auto& type : types ) {
-		auto handlers = mByMime.find( type );
-		if ( handlers != mByMime.end() ) {
+	for ( const auto& type : mimeTypes ) {
+		auto handlers = data.byMime.find( type );
+		if ( handlers != data.byMime.end() ) {
 			for ( const auto& id : handlers->second )
 				addId( id, type );
 		}
 	}
 	return out;
 }
+#endif
 
-std::optional<Application> Applications::defaultFor( const std::string& mime ) {
-	auto apps = forMime( mime );
+std::optional<Application> Applications::defaultFor( const URI& uri,
+													 const std::vector<std::string>& mimeTypes ) {
+	auto apps = forFile( uri, mimeTypes );
 	if ( apps.empty() )
 		return std::nullopt;
-	return apps.front();
+	return std::move( apps.front() );
 }
 
 std::vector<std::string> Applications::splitExec( const std::string& exec ) {
@@ -215,7 +244,7 @@ std::vector<std::string> Applications::splitExec( const std::string& exec ) {
 			hasToken = true;
 		} else if ( c == ' ' || c == '\t' ) {
 			if ( hasToken || !current.empty() )
-				args.push_back( current );
+				args.push_back( std::move( current ) );
 			current.clear();
 			hasToken = false;
 		} else {
@@ -223,16 +252,28 @@ std::vector<std::string> Applications::splitExec( const std::string& exec ) {
 		}
 	}
 	if ( hasToken || !current.empty() )
-		args.push_back( current );
+		args.push_back( std::move( current ) );
 	return args;
 }
 
+#if EE_PLATFORM != EE_PLATFORM_WIN
 bool Applications::launch( const Application& app, const std::vector<std::string>& paths ) {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	if ( app.exec.empty() || paths.empty() )
+		return false;
+	// Give Launch Services the bundle, rather than starting its executable directly. Argument
+	// boundaries preserve spaces, Unicode and leading dashes without shell interpolation.
+	std::vector<std::string> argv{ "/usr/bin/open", "-a", app.exec, "--" };
+	argv.insert( argv.end(), paths.begin(), paths.end() );
+	return spawn( argv );
+#else
 	std::vector<std::string> argv;
 	bool filesUsed = false;
+	bool singleFile = false;
 	for ( const auto& arg : splitExec( app.exec ) ) {
 		if ( arg == "%f" || arg == "%u" ) {
 			// Single-file applications get one process per file below.
+			singleFile = true;
 			if ( !paths.empty() )
 				argv.push_back( arg == "%u" ? fileURI( paths[0] ) : paths[0] );
 			filesUsed = true;
@@ -259,7 +300,7 @@ bool Applications::launch( const Application& app, const std::vector<std::string
 			}
 			expanded += arg[i];
 		}
-		argv.push_back( expanded );
+		argv.push_back( std::move( expanded ) );
 	}
 	if ( argv.empty() )
 		return false;
@@ -271,14 +312,19 @@ bool Applications::launch( const Application& app, const std::vector<std::string
 			terminal = Sys::which( "konsole" ).empty() ? "xterm" : "konsole";
 		argv.insert( argv.begin(), { terminal, "-e" } );
 	}
-	bool ok = spawn( argv );
-	// "%f" applications take one file per process.
-	if ( ok && paths.size() > 1 && app.exec.find( "%f" ) != std::string::npos ) {
-		for ( size_t i = 1; i < paths.size(); ++i )
-			launch( app, { paths[i] } );
+	if ( !spawn( argv ) )
+		return false;
+	// Both %f and %u handlers take one file per invocation.
+	if ( singleFile ) {
+		for ( size_t i = 1; i < paths.size(); ++i ) {
+			if ( !launch( app, { paths[i] } ) )
+				return false;
+		}
 	}
-	return ok;
+	return true;
+#endif
 }
+#endif
 
 bool Applications::launchCommand( const std::string& command,
 								  const std::vector<std::string>& paths ) {
@@ -287,122 +333,6 @@ bool Applications::launchCommand( const std::string& command,
 		return false;
 	argv.insert( argv.end(), paths.begin(), paths.end() );
 	return spawn( argv );
-}
-
-namespace {
-
-#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_MACOS
-/** The terminal set in KDE's settings (kdeglobals, [General] TerminalApplication). */
-std::string kdeTerminal() {
-	std::string config = Sys::getEnv( "XDG_CONFIG_HOME" );
-	if ( config.empty() )
-		config = Sys::getUserDirectory() + "/.config";
-	std::string contents;
-	if ( !FileSystem::fileGet( config + "/kdeglobals", contents ) )
-		return {};
-	bool general = false;
-	for ( auto line : String::split( contents, '\n' ) ) {
-		line = String::trim( line );
-		if ( !line.empty() && line[0] == '[' )
-			general = line == "[General]";
-		else if ( general && String::startsWith( line, "TerminalApplication=" ) )
-			return String::trim( line.substr( strlen( "TerminalApplication=" ) ) );
-	}
-	return {};
-}
-#endif
-
-} // namespace
-
-bool Applications::openTerminal( const std::string& directory ) {
-	// eepp's own terminal when installed (or built next to eefm); the directory is also passed
-	// as its working directory argument, over the one in its config.
-	std::string eterm = Sys::which( "eterm" );
-	if ( eterm.empty() ) {
-		std::string sibling = Sys::getProcessPath() + "eterm";
-#if EE_PLATFORM == EE_PLATFORM_WIN
-		sibling += ".exe";
-#endif
-		if ( FileSystem::fileExists( sibling ) )
-			eterm = sibling;
-	}
-	if ( !eterm.empty() && spawn( { eterm, directory }, directory ) )
-		return true;
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	// A console of its own: Windows opens it in the default terminal (Windows Terminal or the
-	// console host, as set in the system settings).
-	std::string powershell = Sys::which( "powershell.exe" );
-	return spawn( { powershell.empty() ? "cmd.exe" : powershell }, directory, true );
-#elif EE_PLATFORM == EE_PLATFORM_MACOS
-	return spawn( { "open", "-a", "Terminal", directory } );
-#else
-	// Otherwise the user's default terminal: $TERMINAL, the desktop's own setting and default,
-	// the distribution's alternative, then the common ones.
-	std::vector<std::string> candidates;
-	std::string preferred = Sys::getEnv( "TERMINAL" );
-	if ( !preferred.empty() )
-		candidates.push_back( preferred );
-	candidates.push_back( "xdg-terminal-exec" );
-	std::string desktop = String::toLower( Sys::getEnv( "XDG_CURRENT_DESKTOP" ) );
-	if ( desktop.find( "kde" ) != std::string::npos ) {
-		std::string kde = kdeTerminal();
-		if ( !kde.empty() )
-			candidates.push_back( kde );
-		candidates.push_back( "konsole" );
-	} else if ( desktop.find( "gnome" ) != std::string::npos ) {
-		candidates.insert( candidates.end(), { "ptyxis", "kgx", "gnome-terminal" } );
-	} else if ( desktop.find( "xfce" ) != std::string::npos ) {
-		candidates.push_back( "xfce4-terminal" );
-	} else if ( desktop.find( "mate" ) != std::string::npos ) {
-		candidates.push_back( "mate-terminal" );
-	} else if ( desktop.find( "lxqt" ) != std::string::npos ) {
-		candidates.push_back( "qterminal" );
-	}
-	candidates.push_back( "x-terminal-emulator" );
-	for ( const char* name : { "konsole", "gnome-terminal", "kgx", "xfce4-terminal", "alacritty",
-							   "kitty", "foot", "wezterm", "xterm" } )
-		candidates.push_back( name );
-	for ( const auto& candidate : candidates ) {
-		if ( candidate.find( '/' ) == std::string::npos && Sys::which( candidate ).empty() )
-			continue;
-		if ( spawn( { candidate }, directory ) )
-			return true;
-	}
-	return false;
-#endif
-}
-
-Applications::ExecutableKind Applications::executableKind( const std::string& path ) {
-#if defined( EE_PLATFORM_POSIX ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && \
-	EE_PLATFORM != EE_PLATFORM_IOS && EE_PLATFORM != EE_PLATFORM_ANDROID
-	struct stat info;
-	if ( stat( path.c_str(), &info ) != 0 || !S_ISREG( info.st_mode ) ||
-		 access( path.c_str(), X_OK ) != 0 )
-		return ExecutableKind::None;
-	int fd = open( path.c_str(), O_RDONLY | O_CLOEXEC );
-	if ( fd < 0 )
-		return ExecutableKind::None;
-	unsigned char header[4]{};
-	const ssize_t size = read( fd, header, sizeof( header ) );
-	close( fd );
-	if ( size >= 2 && header[0] == '#' && header[1] == '!' )
-		return ExecutableKind::Script;
-	if ( size < 4 )
-		return ExecutableKind::None;
-	static const unsigned char programMagic[][4] = {
-		{ 0x7f, 'E', 'L', 'F' },								// ELF
-		{ 0xfe, 0xed, 0xfa, 0xce }, { 0xce, 0xfa, 0xed, 0xfe }, // Mach-O 32-bit
-		{ 0xfe, 0xed, 0xfa, 0xcf }, { 0xcf, 0xfa, 0xed, 0xfe }, // Mach-O 64-bit
-		{ 0xca, 0xfe, 0xba, 0xbe } };							// Mach-O universal
-	for ( const auto& magic : programMagic ) {
-		if ( std::memcmp( header, magic, sizeof( header ) ) == 0 )
-			return ExecutableKind::Program;
-	}
-	return ExecutableKind::None;
-#else
-	(void)path;
-	return ExecutableKind::None;
-#endif
 }
 
 bool Applications::spawn( const std::vector<std::string>& argv, const std::string& workingDir,
@@ -414,7 +344,19 @@ bool Applications::spawn( const std::vector<std::string>& argv, const std::strin
 	for ( const auto& arg : argv ) {
 		if ( !commandLine.empty() )
 			commandLine += ' ';
-		commandLine += '"' + arg + '"';
+		commandLine += '"';
+		size_t slashes = 0;
+		for ( char c : arg ) {
+			if ( c == '\\' ) {
+				++slashes;
+				continue;
+			}
+			commandLine.append( c == '"' ? slashes * 2 + 1 : slashes, '\\' );
+			commandLine += c;
+			slashes = 0;
+		}
+		commandLine.append( slashes * 2, '\\' );
+		commandLine += '"';
 	}
 	std::wstring wide = String( commandLine ).toWideString();
 	std::wstring dir = String( workingDir ).toWideString();
@@ -422,7 +364,7 @@ bool Applications::spawn( const std::vector<std::string>& argv, const std::strin
 	si.cb = sizeof( si );
 	PROCESS_INFORMATION pi{};
 	// A new process group would start with Ctrl+C disabled: shells get their own console instead,
-	// which already keeps them apart from eefm.
+	// which already keeps them apart from the caller.
 	DWORD flags = console ? CREATE_NEW_CONSOLE : DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP;
 	if ( !CreateProcessW( nullptr, wide.data(), nullptr, nullptr, FALSE, flags, nullptr,
 						  dir.empty() ? nullptr : dir.c_str(), &si, &pi ) )
@@ -433,13 +375,19 @@ bool Applications::spawn( const std::vector<std::string>& argv, const std::strin
 #elif defined( EE_PLATFORM_POSIX ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && \
 	EE_PLATFORM != EE_PLATFORM_IOS && EE_PLATFORM != EE_PLATFORM_ANDROID
 	(void)console;
-	std::vector<char*> args;
+	SmallVector<char*, 16> args;
+	args.reserve( argv.size() + 1 );
 	for ( const auto& arg : argv )
 		args.push_back( const_cast<char*>( arg.c_str() ) );
 	args.push_back( nullptr );
 	int pipeFds[2];
 	if ( pipe( pipeFds ) != 0 )
 		return false;
+	if ( fcntl( pipeFds[1], F_SETFD, FD_CLOEXEC ) == -1 ) {
+		close( pipeFds[0] );
+		close( pipeFds[1] );
+		return false;
+	}
 	// Double fork: the grandchild is adopted by init, so no zombie is left behind. The pipe
 	// reports whether exec succeeded.
 	pid_t child = fork();
@@ -454,10 +402,8 @@ bool Applications::spawn( const std::vector<std::string>& argv, const std::strin
 		pid_t grandchild = fork();
 		if ( grandchild != 0 )
 			_exit( grandchild < 0 ? 1 : 0 );
-		fcntl( pipeFds[1], F_SETFD, FD_CLOEXEC );
-		if ( !workingDir.empty() && chdir( workingDir.c_str() ) != 0 ) {
-		}
-		execvp( args[0], args.data() );
+		if ( workingDir.empty() || chdir( workingDir.c_str() ) == 0 )
+			execvp( args[0], args.data() );
 		char failed = 1;
 		ssize_t written = write( pipeFds[1], &failed, 1 );
 		(void)written;
@@ -465,11 +411,17 @@ bool Applications::spawn( const std::vector<std::string>& argv, const std::strin
 	}
 	close( pipeFds[1] );
 	int status = 0;
-	waitpid( child, &status, 0 );
+	pid_t waited;
+	do {
+		waited = waitpid( child, &status, 0 );
+	} while ( waited < 0 && errno == EINTR );
 	char failed = 0;
-	ssize_t got = read( pipeFds[0], &failed, 1 );
+	ssize_t got;
+	do {
+		got = read( pipeFds[0], &failed, 1 );
+	} while ( got < 0 && errno == EINTR );
 	close( pipeFds[0] );
-	return WIFEXITED( status ) && WEXITSTATUS( status ) == 0 && got <= 0;
+	return waited == child && WIFEXITED( status ) && WEXITSTATUS( status ) == 0 && got == 0;
 #else
 	(void)workingDir;
 	(void)console;
@@ -477,4 +429,4 @@ bool Applications::spawn( const std::vector<std::string>& argv, const std::strin
 #endif
 }
 
-} // namespace eefm
+}} // namespace EE::System

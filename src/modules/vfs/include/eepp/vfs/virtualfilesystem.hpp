@@ -3,6 +3,7 @@
 
 #include <eepp/system/threadpool.hpp>
 #include <eepp/vfs/config.hpp>
+#include <eepp/vfs/directorystats.hpp>
 #include <eepp/vfs/provider.hpp>
 #include <eepp/vfs/providers/localioscheduler.hpp>
 #include <eepp/vfs/transfer.hpp>
@@ -124,6 +125,18 @@ class EE_VFS_API VirtualFileSystem {
 	VFSTask<std::vector<VFSFileInfo>> listAll( const URI& uri,
 											   const DirectoryOpenOptions& options = {},
 											   CancellationToken token = {} );
+
+	/** Recursively measures a file, folder, or selection. Root errors fail the task; unreadable
+	 * descendants produce an incomplete result with subtotals. Progress runs on the worker.
+	 * Cancellation fails with Cancelled after publishing a final subtotal. The scan is not an
+	 * atomic snapshot of a tree being modified. */
+	VFSTask<DirectoryStats> directoryStats( const URI& uri,
+											DirectoryStatsProgressCallback onProgress = {},
+											CancellationToken token = {} );
+
+	VFSTask<DirectoryStats> directoryStats( std::vector<URI> roots,
+											DirectoryStatsProgressCallback onProgress = {},
+											CancellationToken token = {} );
 
 	/** Reads a whole file. Fails with InvalidOperation if it is larger than maxSize. */
 	VFSTask<std::vector<Uint8>> readAll( const URI& uri, CancellationToken token = {},

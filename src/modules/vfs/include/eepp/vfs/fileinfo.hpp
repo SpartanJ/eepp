@@ -24,6 +24,17 @@ enum class FileType : Uint8 {
 
 EE_VFS_API const char* toString( FileType type );
 
+/** Stable object identity within a provider's filesystem namespace. Revision changes do not
+ * change identity. Providers without reliable volume/file identifiers leave it unavailable. */
+struct EE_VFS_API FileIdentity {
+	Uint64 volume{ 0 };
+	Uint64 file{ 0 };
+
+	bool operator==( const FileIdentity& other ) const noexcept {
+		return volume == other.volume && file == other.file;
+	}
+};
+
 /** @brief Opaque, provider-defined revision token.
  *
  * Used to detect external modification between reading and writing a file. Providers derive it
@@ -121,6 +132,18 @@ class EE_VFS_API VFSFileInfo {
 
 	std::optional<Uint64> size() const { return get( Field::Size, mSize ); }
 
+	/** Filesystem allocation in bytes, not logical size rounded to a block boundary.
+	 * Unknown stays distinct from a valid zero (for example a fully sparse file). */
+	std::optional<Uint64> allocatedSize() const {
+		return get( Field::AllocatedSize, mAllocatedSize );
+	}
+
+	std::optional<FileIdentity> identity() const { return get( Field::Identity, mIdentity ); }
+
+	/** Whether this object can have multiple directory entries. Unknown link counts are
+	 * conservative: setIdentity() defaults to true so scans still deduplicate correctly. */
+	bool hasMultipleLinks() const { return mPresent & static_cast<Uint16>( Field::MultipleLinks ); }
+
 	std::optional<Int64> modifiedTime() const { return get( Field::Modified, mModified ); }
 
 	std::optional<Int64> createdTime() const { return get( Field::Created, mCreated ); }
@@ -134,6 +157,18 @@ class EE_VFS_API VFSFileInfo {
 	std::optional<Uint32> gid() const { return get( Field::Gid, mGid ); }
 
 	VFSFileInfo& setSize( Uint64 value ) { return set( Field::Size, mSize, value ); }
+
+	VFSFileInfo& setAllocatedSize( Uint64 value ) {
+		return set( Field::AllocatedSize, mAllocatedSize, value );
+	}
+
+	VFSFileInfo& setIdentity( FileIdentity value, bool multipleLinks = true ) {
+		if ( multipleLinks )
+			mPresent |= static_cast<Uint16>( Field::MultipleLinks );
+		else
+			mPresent &= ~static_cast<Uint16>( Field::MultipleLinks );
+		return set( Field::Identity, mIdentity, value );
+	}
 
 	/** Times are Unix timestamps in seconds. */
 	VFSFileInfo& setModifiedTime( Int64 value ) { return set( Field::Modified, mModified, value ); }
@@ -159,7 +194,7 @@ class EE_VFS_API VFSFileInfo {
 	std::optional<URI> symlinkTargetURI( const URI& linkURI ) const;
 
   private:
-	enum class Field : Uint8 {
+	enum class Field : Uint16 {
 		Size = 1 << 0,
 		Modified = 1 << 1,
 		Created = 1 << 2,
@@ -167,28 +202,33 @@ class EE_VFS_API VFSFileInfo {
 		Permissions = 1 << 4,
 		Uid = 1 << 5,
 		Gid = 1 << 6,
+		AllocatedSize = 1 << 7,
+		Identity = 1 << 8,
+		MultipleLinks = 1 << 9,
 	};
 
 	template <typename T> std::optional<T> get( Field field, const T& value ) const {
-		if ( mPresent & static_cast<Uint8>( field ) )
+		if ( mPresent & static_cast<Uint16>( field ) )
 			return value;
 		return std::nullopt;
 	}
 
 	template <typename T> VFSFileInfo& set( Field field, T& member, T value ) {
 		member = value;
-		mPresent |= static_cast<Uint8>( field );
+		mPresent |= static_cast<Uint16>( field );
 		return *this;
 	}
 
 	Uint64 mSize{ 0 };
+	Uint64 mAllocatedSize{ 0 };
+	FileIdentity mIdentity;
 	Int64 mModified{ 0 };
 	Int64 mCreated{ 0 };
 	Int64 mAccessed{ 0 };
 	Uint32 mPermissions{ 0 };
 	Uint32 mUid{ 0 };
 	Uint32 mGid{ 0 };
-	Uint8 mPresent{ 0 };
+	Uint16 mPresent{ 0 };
 };
 
 }} // namespace EE::VFS

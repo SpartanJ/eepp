@@ -2,6 +2,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/vfs/detail/await.hpp>
 #include <eepp/vfs/detail/filewriter.hpp>
+#include <eepp/vfs/directorystatsengine.hpp>
 #include <eepp/vfs/path.hpp>
 #include <eepp/vfs/providers/archiveprovider.hpp>
 #include <eepp/vfs/providers/localprovider.hpp>
@@ -191,6 +192,22 @@ VFSTask<void> VirtualFileSystem::setPermissions( const URI& uri, Uint32 permissi
 
 VFSTask<SpaceInfo> VirtualFileSystem::spaceInfo( const URI& uri, CancellationToken token ) {
 	EE_VFS_FORWARD( SpaceInfo, uri, spaceInfo( uri, std::move( token ) ) );
+}
+
+VFSTask<DirectoryStats>
+VirtualFileSystem::directoryStats( const URI& uri, DirectoryStatsProgressCallback onProgress,
+								   CancellationToken token ) {
+	return directoryStats( std::vector<URI>{ uri }, std::move( onProgress ), std::move( token ) );
+}
+
+VFSTask<DirectoryStats> VirtualFileSystem::directoryStats(
+	std::vector<URI> roots, DirectoryStatsProgressCallback onProgress, CancellationToken token ) {
+	return orchestrate<DirectoryStats>( [this, roots = std::move( roots ),
+										 onProgress = std::move( onProgress ),
+										 token = std::move( token )]() mutable {
+		return DirectoryStatsEngine::run( *this, roots, std::move( onProgress ),
+										  std::move( token ) );
+	} );
 }
 
 #undef EE_VFS_FORWARD

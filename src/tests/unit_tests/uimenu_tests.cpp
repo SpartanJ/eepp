@@ -97,6 +97,30 @@ UTEST( UIMenu, SemanticActivationLifecycleAndRoles ) {
 	EXPECT_EQ( subMenuShowStep, 2 );
 }
 
+UTEST( UIMenu, ClosingPopupAlsoReleasesSeparatelyParentedSubmenus ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Popup Lifetime Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* root = UIPopUpMenu::New();
+	auto* child = UIPopUpMenu::New();
+	auto* grandchild = UIPopUpMenu::New();
+	// Popup submenus share the scene parent rather than belonging to the owner item's tree.
+	for ( auto* popup : { root, child, grandchild } )
+		popup->setParent( app.getUI()->getRoot() );
+	root->addSubMenu( "Child", {}, child );
+	child->addSubMenu( "Grandchild", {}, grandchild );
+	root->addSubMenu( "Unassigned", {}, nullptr );
+	int closed = 0;
+	for ( auto* popup : { root, child, grandchild } )
+		popup->on( Event::OnClose, [&closed]( const Event* ) { ++closed; } );
+	root->close();
+	EXPECT_TRUE( child->isClosing() );
+	EXPECT_TRUE( grandchild->isClosing() );
+	app.getUI()->update( Milliseconds( 16 ) );
+	EXPECT_EQ( 3, closed );
+}
+
 UTEST( UIMenu, NestedMenuBarAndSubmenuAtHighDensity ) {
 	UIApplication app(
 		WindowSettings( 800, 600, "eepp - Menu DPI Test", WindowStyle::Default,

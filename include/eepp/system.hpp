@@ -1,6 +1,7 @@
 #ifndef EEPP_SYSTEM_HPP
 #define EEPP_SYSTEM_HPP
 
+#include <eepp/system/applications.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/bitop.hpp>
 #include <eepp/system/clock.hpp>

@@ -119,3 +119,13 @@ UTEST( FreedesktopIconLookup, userIconsOverrideAndMissingThemes ) {
 	EXPECT_FALSE( none.isValid() );
 	EXPECT_TRUE( none.find( { "folder" }, 16 ).empty() );
 }
+
+UTEST( FreedesktopIconLookup, absoluteIconPathsWithoutATheme ) {
+	TempDir root;
+	const auto path = root.path + "application icon.svg";
+	touch( path );
+	FreedesktopIconLookup lookup( "not-installed", { root.path } );
+	EXPECT_FALSE( lookup.isValid() );
+	EXPECT_STDSTREQ( path, lookup.find( { path }, 24 ) );
+	EXPECT_TRUE( lookup.find( { root.path + "missing.png" }, 24 ).empty() );
+}

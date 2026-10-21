@@ -9,6 +9,7 @@
 
 #include <eepp/ee.hpp>
 #include <eepp/scene/mainthreadexecutor.hpp>
+#include <eepp/system/applications.hpp>
 #include <eepp/ui/uisystemicontheme.hpp>
 #include <eepp/vfs.hpp>
 #include <eepp/vfs/ui/vfsdirectorymodel.hpp>
@@ -17,6 +18,8 @@
 #include <unordered_map>
 
 namespace eefm {
+
+using EE::System::Application;
 
 using namespace EE;
 using namespace EE::Scene;
@@ -130,10 +133,20 @@ class App {
 	/** Theme icon as a drawable for menus, tabs and buttons. */
 	DrawablePtr icon( const std::string& name, int sizeDp = 16 ) const;
 
+	/** Popup menu icon at the UI font's pixel size, as in UICodeEditor. */
+	DrawablePtr menuIcon( const std::string& name ) const;
+
+	/** Binds a menu item's asynchronously loaded application icon, with a theme fallback. */
+	void setApplicationIcon( UIPushButton* item, const Application& application );
+
 	/** Marks the scene when eefm's own (glyph) icons are used, for the stylesheet. */
 	void updateIconStyle();
 
   private:
+	int menuIconSize() const;
+
+	void updateApplicationIcon( UIImage* image );
+
 	bool init( const std::vector<std::string>& locations, bool forceSplit );
 
 	void loadState();

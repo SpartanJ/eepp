@@ -8,6 +8,7 @@
 #include "placescontroller.hpp"
 #include "settingsactions.hpp"
 #include "terminalpanel.hpp"
+#include <eepp/system/applications.hpp>
 
 #include <args/args.hxx>
 #include <iostream>
@@ -115,6 +116,10 @@ tab::icon,
 }
 /* The application logo keeps its colors in light, dark and selected menu states. */
 #open-in-eefm > Menu::Item::icon {
+	tint: white;
+}
+/* Application images retain their native colors, including hovered and selected rows. */
+PopUpMenu Menu::Item > Menu::Item::icon.application_icon_loaded {
 	tint: white;
 }
 #places_scroll {
@@ -441,7 +446,7 @@ int App::run( int argc, char* argv[] ) {
 	int result = mApp->run();
 	// Producers stop before the executor they deliver to goes away: continuations hold it by
 	// reference. Running transfers are cancelled (destroying the VFS waits for them).
-	mFileOperations->cancelTransfers();
+	mFileOperations->cancelOperations();
 	mPaneManager->clearTabs();
 #ifdef EE_VFS_SFTP
 	if ( mSSHPrompts )
@@ -530,6 +535,8 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	// Theme detection and icon loading run on the pool: startup does not wait for them.
 	mSystemIcons = UISystemIconTheme::New( *mPool, *mExecutor );
 	mSystemIcons->setOnIconsLoaded( [this] {
+		for ( auto* image : mUI->getRoot()->findAllByClass( "application_icon" ) )
+			updateApplicationIcon( image->asType<UIImage>() );
 		for ( int i = 0; i < PaneManager::Count; ++i ) {
 			if ( auto* tab = mPaneManager->currentTab( mPaneManager->pane( i ) ) )
 				tab->view->invalidateDraw();
@@ -612,6 +619,13 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	} );
 
 	mApp->getWindow()->getInput()->pushCallback( [this]( InputEvent* event ) {
+		// Discovery may still be running after a right click. Subsequent input dismisses
+		// that request even when it leaves the selection and focused pane unchanged.
+		if ( event->Type == InputEvent::MouseButtonDown || event->Type == InputEvent::MouseWheel ||
+			 ( event->Type == InputEvent::KeyDown && event->key.keysym.sym == KEY_ESCAPE ) ||
+			 ( event->Type == InputEvent::Window &&
+			   event->window.type == InputEvent::WindowKeyboardFocusLost ) )
+			mFileOperations->cancelContextMenu();
 		if ( event->Type == InputEvent::FileDropped ) {
 			// Files dropped from other applications: gathered, then copied in one transfer once
 			// the events of this frame were delivered (a drop sends one event per file).
@@ -860,13 +874,13 @@ String App::shortcutTooltip( String text, const std::string& command ) const {
 
 void App::showAppMenu() {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->add( mUI->i18n( "eefm_new_tab", "New Tab" ), icon( "action-new-tab" ),
+	menu->add( mUI->i18n( "eefm_new_tab", "New Tab" ), menuIcon( "action-new-tab" ),
 			   getKeybind( "new-tab" ) )
 		->setId( "new-tab" );
 	if ( mPaneManager->currentTab() &&
 		 mPaneManager->currentTab()->model->uri().getScheme() == "file" ) {
-		menu->add( mUI->i18n( "eefm_open_terminal", "Open Terminal" ), icon( "action-terminal" ),
-				   getKeybind( "terminal" ) )
+		menu->add( mUI->i18n( "eefm_open_terminal", "Open Terminal" ),
+				   menuIcon( "action-terminal" ), getKeybind( "terminal" ) )
 			->setId( "open-terminal" );
 	}
 	menu->addSeparator();
@@ -893,16 +907,16 @@ void App::showAppMenu() {
 		else if ( id == "terminal" )
 			mTerminalPanel->toggle();
 	} );
-	menu->addSubMenu( mUI->i18n( "eefm_show_panels", "Show Panels" ), icon( "places-panel" ),
+	menu->addSubMenu( mUI->i18n( "eefm_show_panels", "Show Panels" ), menuIcon( "places-panel" ),
 					  panels );
 	menu->addCheckBox( mUI->i18n( "eefm_show_filter_bar", "Show Filter Bar" ), mFilterBarVisible,
 					   getKeybind( "toggle-filter" ) )
 		->setId( "filter" );
 	menu->addSeparator();
-	menu->add( mUI->i18n( "eefm_configure", "Configure eefm..." ), icon( "settings" ),
+	menu->add( mUI->i18n( "eefm_configure", "Configure eefm..." ), menuIcon( "settings" ),
 			   getKeybind( "settings" ) )
 		->setId( "settings" );
-	menu->add( mUI->i18n( "eefm_quit", "Quit" ), icon( "quit" ), getKeybind( "quit" ) )
+	menu->add( mUI->i18n( "eefm_quit", "Quit" ), menuIcon( "quit" ), getKeybind( "quit" ) )
 		->setId( "quit" );
 	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		std::string id( event->getNode()->getId() );
@@ -1060,6 +1074,7 @@ void App::registerShortcuts() {
 		{ "delete", "trash" },
 		{ "shift+delete", "delete" },
 		{ "f2", "rename" },
+		{ "mod+return", "properties" },
 		{ "alt+return", "properties" },
 		{ "shift+f4", "terminal" },
 		{ "f4", "toggle-terminal" },
@@ -1156,6 +1171,50 @@ UIIcon* App::placeIcon( const Place& place ) {
 DrawablePtr App::icon( const std::string& name, int sizeDp ) const {
 	UIIcon* found = mUI->findIcon( name );
 	return found ? found->getSource( PixelDensity::dpToPxI( sizeDp ) ) : DrawablePtr();
+}
+
+DrawablePtr App::menuIcon( const std::string& name ) const {
+	return mUI->findIconDrawable( name, menuIconSize() );
+}
+
+int App::menuIconSize() const {
+	auto* manager = mUI->getUIThemeManager();
+	auto* theme = manager->getDefaultTheme();
+	return static_cast<Uint32>( theme ? theme->getDefaultFontSize()
+									  : manager->getDefaultFontSize() );
+}
+
+void App::setApplicationIcon( UIPushButton* item, const Application& application ) {
+	UIIcon* fallback = mUI->findIcon( "action-open-with" );
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	UIIcon* icon = mSystemIcons->getPathIcon( application.exec, {}, fallback );
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	UIIcon* icon = application.icon.empty()
+					   ? fallback
+					   : mSystemIcons->getIconResource( application.icon, fallback );
+#else
+	UIIcon* icon = application.icon.empty()
+					   ? fallback
+					   : mSystemIcons->getIcon( { application.icon }, fallback );
+#endif
+	auto* image = item->getIcon();
+	image->addClass( "application_icon" );
+	// The theme owns this icon until shutdown. Binding to the live widget avoids keeping
+	// menu pointers in callbacks: closed menus simply disappear from the refresh query.
+	image->setData( reinterpret_cast<UintPtr>( icon ) );
+	updateApplicationIcon( image );
+}
+
+void App::updateApplicationIcon( UIImage* image ) {
+	auto* icon = reinterpret_cast<UIIcon*>( image->getData() );
+	// Bundle icons have internal padding and finer detail than action glyphs.
+	const int size = menuIconSize() + PixelDensity::dpToPxI( 2 );
+	const DrawablePtr source = icon ? icon->getSource( size ) : DrawablePtr{};
+	image->getParent()->asType<UIPushButton>()->setIcon( source ? source->clone() : DrawablePtr{} );
+	if ( source && source->getDrawableType() != Drawable::GLYPH )
+		image->addClass( "application_icon_loaded" );
+	else
+		image->removeClass( "application_icon_loaded" );
 }
 
 } // namespace eefm

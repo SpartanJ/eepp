@@ -99,11 +99,14 @@ bool UIPopUpMenu::hide() {
 }
 
 void UIPopUpMenu::close() {
+	// Queries exclude nodes in a closing tree. Collect submenu owners before marking
+	// this popup closed, or their separately parented menus would be left alive.
+	auto menuSubMenus = findAllByType( UI_TYPE_MENUSUBMENU );
 	UIMenu::close();
 
-	auto menuSubMenus = findAllByType( UI_TYPE_MENUSUBMENU );
 	for ( auto* menu : menuSubMenus )
-		menu->asType<UIMenuSubMenu>()->getSubMenu()->close();
+		if ( auto* subMenu = menu->asType<UIMenuSubMenu>()->getSubMenu() )
+			subMenu->close();
 }
 
 bool UIPopUpMenu::isHiding() const {

@@ -3,6 +3,7 @@
 
 #include "pane.hpp"
 
+#include <eepp/system/applications.hpp>
 #include <eepp/vfs/transfer.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
 #include <eepp/window/draganddrop.hpp>
@@ -14,9 +15,11 @@
 
 namespace eefm {
 
-struct Application;
+using EE::System::Application;
 
 class App;
+
+class PropertiesDialog;
 
 /** @brief What eefm does with files: opening, the context menu, the clipboard, transfers, the
  * trash, renaming, creating and drops. */
@@ -30,6 +33,9 @@ class FileOperations {
 	void openRow( FileTab* tab, size_t row );
 
 	void showContextMenu( FileTab* tab, bool background );
+
+	/** Discards handler discovery for a context menu superseded by further input. */
+	void cancelContextMenu() { ++mContextMenuGeneration; }
 
 	void copySelection( bool cut );
 
@@ -79,10 +85,13 @@ class FileOperations {
 	/** Cancels the transfers shown in pane paneIndex. */
 	void cancelTransfers( int paneIndex );
 
-	/** Cancels every transfer and forgets them (shutdown). */
-	void cancelTransfers();
+	/** Cancels transfers and property measurements before the VFS is destroyed. */
+	void cancelOperations();
 
   private:
+	void buildContextMenu( FileTab* tab, bool background, Vector2f position,
+						   std::vector<Application> apps );
+
 	enum class TransferKind : Uint8 { Copy, Move, Extract };
 
 	/** One paste/drop/extraction: conflicts share decisions, and prompts are sequential. */
@@ -170,7 +179,10 @@ class FileOperations {
 	UISceneNode* mUI;
 	EE::VFS::VirtualFileSystem* mVFS;
 	std::map<Uint64, ActiveTransfer> mTransfers;
+	std::vector<std::weak_ptr<PropertiesDialog>> mProperties;
 	Uint64 mLastTransferId{ 0 };
+	/** Rejects application discovery results from superseded context menu requests. */
+	Uint64 mContextMenuGeneration{ 0 };
 	/** Fallback for backends without clipboard MIME data: the files copied here, while the
 	 * clipboard text is still mClipboardText. */
 	std::vector<URI> mClipboard;

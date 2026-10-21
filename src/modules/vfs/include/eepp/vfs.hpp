@@ -3,6 +3,7 @@
 
 #include <eepp/vfs/capabilities.hpp>
 #include <eepp/vfs/directoryhandle.hpp>
+#include <eepp/vfs/directorystats.hpp>
 #include <eepp/vfs/error.hpp>
 #include <eepp/vfs/filehandle.hpp>
 #include <eepp/vfs/fileinfo.hpp>

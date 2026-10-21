@@ -29,8 +29,6 @@ std::string FreedesktopIconBackend::themeName() {
 
 std::unique_ptr<Image> FreedesktopIconBackend::load( const Request& request, int size ) {
 	init();
-	if ( !mLookup->isValid() )
-		return nullptr;
 	std::string path = mLookup->find( request.names, size );
 	return path.empty() ? nullptr : loadIconFile( path, size );
 }

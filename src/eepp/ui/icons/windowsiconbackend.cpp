@@ -20,6 +20,7 @@
 #include <objbase.h>
 #include <shellapi.h>
 #include <shlobj.h>
+#include <shlwapi.h>
 
 #include <cstring>
 #include <vector>
@@ -189,12 +190,58 @@ int namedIndex( const std::string& name ) {
 	return -1;
 }
 
+/** Handler locations can name a DLL resource, an executable, or a packaged app image. This
+ * method is called by UISystemIconTheme's worker; all Shell lookup and decoding stay there. */
+std::unique_ptr<Image> resourceImage( const std::string& resource, int size ) {
+	auto path = String( resource ).toWideString();
+	int index = PathParseIconLocationW( path.data() );
+	path.resize( wcslen( path.c_str() ) );
+	if ( path.empty() )
+		return nullptr;
+	if ( path.front() == L'@' ) {
+		std::wstring resolved( 32768, L'\0' );
+		if ( FAILED( SHLoadIndirectString( path.c_str(), resolved.data(),
+										   static_cast<UINT>( resolved.size() ), nullptr ) ) )
+			return nullptr;
+		resolved.resize( wcslen( resolved.c_str() ) );
+		path = std::move( resolved );
+	}
+	const DWORD length = ExpandEnvironmentStringsW( path.c_str(), nullptr, 0 );
+	if ( length ) {
+		std::wstring expanded( length, L'\0' );
+		const DWORD written = ExpandEnvironmentStringsW( path.c_str(), expanded.data(), length );
+		if ( written && written <= length ) {
+			expanded.resize( wcslen( expanded.c_str() ) );
+			path = std::move( expanded );
+		}
+	}
+	HICON icon = nullptr;
+	std::unique_ptr<Image> image;
+	if ( SUCCEEDED( SHDefExtractIconW( path.c_str(), index, 0, &icon, nullptr,
+									   MAKELONG( size, size ) ) ) &&
+		 icon ) {
+		image = imageFromIcon( icon );
+	} else {
+		// Store apps commonly supply a PNG instead of an executable's icon resource.
+		image = std::make_unique<Image>( String( path ).toUtf8(), 4 );
+		if ( !image->getPixelsPtr() )
+			image.reset();
+	}
+	if ( icon )
+		DestroyIcon( icon );
+	if ( image )
+		SystemIconBackend::fitImage( *image, size );
+	return image;
+}
+
 } // namespace
 
 std::unique_ptr<Image> WindowsIconBackend::load( const Request& request, int size ) {
 	ComScope com;
 	int index = -1;
 	using Kind = Request::Kind;
+	if ( request.kind == Kind::Resource )
+		return resourceImage( request.value, size );
 	if ( request.kind == Kind::Path ) {
 		index = pathIndex( String( request.value ).toWideString(), 0, 0 );
 	} else if ( request.kind == Kind::File ) {

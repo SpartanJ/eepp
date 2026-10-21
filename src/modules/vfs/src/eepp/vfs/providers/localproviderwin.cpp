@@ -187,6 +187,22 @@ VFSResult<VFSFileInfo> statHandle( HANDLE handle, const URI& uri, const std::str
 	fillInfo( info, data.dwFileAttributes, data.ftCreationTime, data.ftLastAccessTime,
 			  data.ftLastWriteTime, size );
 	Uint64 index = ( static_cast<Uint64>( data.nFileIndexHigh ) << 32 ) | data.nFileIndexLow;
+	info.setIdentity( { data.dwVolumeSerialNumber, index }, data.nNumberOfLinks > 1 );
+	FILE_STANDARD_INFO standard;
+	if ( GetFileInformationByHandleEx( handle, FileStandardInfo, &standard, sizeof( standard ) ) &&
+		 standard.AllocationSize.QuadPart >= 0 ) {
+		if ( data.dwFileAttributes & ( FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_SPARSE_FILE ) ) {
+			FILE_COMPRESSION_INFO compression;
+			if ( GetFileInformationByHandleEx( handle, FileCompressionInfo, &compression,
+											   sizeof( compression ) ) &&
+				 compression.CompressedFileSize.QuadPart >= 0 ) {
+				info.setAllocatedSize(
+					static_cast<Uint64>( compression.CompressedFileSize.QuadPart ) );
+			}
+		} else {
+			info.setAllocatedSize( static_cast<Uint64>( standard.AllocationSize.QuadPart ) );
+		}
+	}
 	info.revision = FileRevision::fromValues(
 		{ data.dwVolumeSerialNumber, index, fileTimeRaw( data.ftLastWriteTime ), size } );
 	return Ok( std::move( info ) );
@@ -277,6 +293,14 @@ class LocalDirectoryImpl : public DirectoryHandleImpl,
 					  mData.ftLastWriteTime, size );
 			info.revision =
 				FileRevision::fromValues( { fileTimeRaw( mData.ftLastWriteTime ), size } );
+			if ( mOptions.metadata == DirectoryMetadata::Storage && !info.isSymlink() ) {
+				// Enumeration does not carry allocation or identity. Query them only for
+				// measurements, keeping ordinary listings free of per-entry handle opens.
+				auto storage = LocalProvider::statSync(
+					info.uriIn( mUri ), mPath + FileSystem::getOSSlash() + info.name, false );
+				if ( storage )
+					info = std::move( storage ).value();
+			}
 			if ( info.type == FileType::Symlink && mOptions.resolveSymlinkTargets ) {
 				std::string childPath = mPath;
 				if ( !childPath.empty() && childPath.back() != '\\' && childPath.back() != '/' )

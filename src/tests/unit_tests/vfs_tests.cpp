@@ -61,6 +61,16 @@ UTEST( VFSFileInfo, unknownMetadataIsDistinguishableFromZero ) {
 	EXPECT_EQ( 0u, *info.size() );
 	EXPECT_TRUE( info.permissions().has_value() );
 	EXPECT_FALSE( info.uid().has_value() );
+	EXPECT_FALSE( info.allocatedSize().has_value() );
+	EXPECT_FALSE( info.identity().has_value() );
+	info.setAllocatedSize( 0 ).setIdentity( { 0, 0 }, false );
+	ASSERT_TRUE( info.allocatedSize() );
+	EXPECT_EQ( 0u, *info.allocatedSize() );
+	ASSERT_TRUE( info.identity() );
+	EXPECT_EQ( 0u, info.identity()->file );
+	EXPECT_FALSE( info.hasMultipleLinks() );
+	info.setIdentity( { 1, 2 } );
+	EXPECT_TRUE( info.hasMultipleLinks() );
 }
 
 UTEST( VFSFileInfo, revisionsCompare ) {
@@ -88,8 +98,11 @@ UTEST( VFSFileInfo, symlinkTargetResolution ) {
 }
 
 UTEST( VFSFileInfo, layout ) {
-	// Keep the hot listing value compact: 4 strings + revision + scalars, no per-entry URI.
-	EXPECT_LE( sizeof( VFSFileInfo ), 4 * sizeof( std::string ) + 40 + 56 );
+	// Four strings + inline revision/storage/scalars. No per-entry optional allocations or URI.
+	EXPECT_EQ( 16u, sizeof( FileIdentity ) );
+	EXPECT_LE( sizeof( VFSFileInfo ), 4 * sizeof( std::string ) + 112 );
+	printf( "  VFSFileInfo: %zu bytes; FileIdentity: %zu; DirectoryStats: %zu\n",
+			sizeof( VFSFileInfo ), sizeof( FileIdentity ), sizeof( DirectoryStats ) );
 }
 
 // ---------------------------------------------------------------------------------------------

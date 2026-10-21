@@ -18,6 +18,9 @@ enum class DirectoryMetadata : Uint8 {
 	NamesAndTypes,
 	/** Everything the provider can report for each entry. */
 	Full,
+	/** Sizes and file identities for recursive measurements. Providers may omit expensive
+	 * presentation metadata such as resolved owner/group names. */
+	Storage,
 };
 
 struct EE_VFS_API DirectoryOpenOptions {

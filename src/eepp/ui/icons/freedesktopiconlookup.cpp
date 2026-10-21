@@ -353,6 +353,12 @@ const std::string& FreedesktopIconLookup::getThemeName() const {
 
 std::string FreedesktopIconLookup::find( const std::vector<std::string>& names, int size,
 										 int scale ) const {
+	// Desktop entries may name an icon file directly instead of a themed icon.
+	for ( const auto& name : names ) {
+		if ( !name.empty() && !FileSystem::isRelativePath( name ) &&
+			 FileSystem::fileExists( name ) )
+			return name;
+	}
 	for ( const auto& theme : mThemes ) {
 		for ( const auto& name : names ) {
 			std::string path = theme->lookup( name, size, scale );

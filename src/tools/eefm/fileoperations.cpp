@@ -1,13 +1,15 @@
 #include "fileoperations.hpp"
 #include "app.hpp"
-#include "apps.hpp"
 #include "arkdrop.hpp"
+#include "desktopintegration.hpp"
 #include "location.hpp"
 #include "mime.hpp"
 #include "panemanager.hpp"
 #include "placescontroller.hpp"
+#include "propertiesdialog.hpp"
 #include "trash.hpp"
 #include <atomic>
+#include <eepp/system/applications.hpp>
 #include <eepp/system/sha1.hpp>
 #include <eepp/vfs/path.hpp>
 
@@ -19,12 +21,18 @@ FileOperations::FileOperations( App& app ) : mApp( app ), mUI( app.ui() ), mVFS(
 
 FileOperations::~FileOperations() = default;
 
-void FileOperations::cancelTransfers() {
+void FileOperations::cancelOperations() {
+	cancelContextMenu();
 	for ( auto& transfer : mTransfers ) {
 		transfer.second.batch->cancelled = true;
 		transfer.second.transfer.cancel();
 	}
 	mTransfers.clear();
+	for ( auto& weak : mProperties ) {
+		if ( auto dialog = weak.lock() )
+			dialog->cancel();
+	}
+	mProperties.clear();
 }
 
 void FileOperations::cancelTransfers( int paneIndex ) {
@@ -213,7 +221,7 @@ void FileOperations::openFiles( const std::vector<URI>& uris ) {
 	}
 	// Telling them apart reads the files, each where the VFS reads it (files in one folder can
 	// link into different mounts): a file whose mount stopped answering opens as a document.
-	using Kind = Applications::ExecutableKind;
+	using Kind = DesktopIntegration::ExecutableKind;
 	// Shared by the checks, and joined on the UI thread: no lock needed.
 	struct Pending {
 		std::vector<URI> uris;
@@ -241,9 +249,10 @@ void FileOperations::openFiles( const std::vector<URI>& uris ) {
 		}
 		std::string path = uris[i].getFSPath();
 		mVFS->localIO()
-			.submitResolved<Kind>(
-				path, true,
-				[path]() -> VFSResult<Kind> { return Ok( Applications::executableKind( path ) ); } )
+			.submitResolved<Kind>( path, true,
+								   [path]() -> VFSResult<Kind> {
+									   return Ok( DesktopIntegration::executableKind( path ) );
+								   } )
 			.then( mApp.executor(), [pending, checked, i]( VFSResult<Kind> kind ) {
 				if ( kind )
 					pending->kinds[i] = kind.value();
@@ -279,11 +288,15 @@ void FileOperations::openDocuments( const std::vector<URI>& uris ) {
 		return;
 	withLocalFiles( mVFS, mApp.executor(), mUI, uris, [this]( std::vector<std::string> paths ) {
 		for ( const auto& path : paths ) {
+#if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_WIN
 			const std::string& mime =
 				MimeDatabase::instance().typeForName( FileSystem::fileNameFromPath( path ) );
-			auto app = Applications::instance().defaultFor( mime );
+			auto app = Applications::defaultFor( URI::fromFSPath( path ),
+												 MimeDatabase::instance().withParents( mime ) );
 			if ( app && Applications::launch( *app, { path } ) )
 				continue;
+#endif
+			// The native opener resolves the system default, including per-file overrides.
 			if ( !Engine::instance()->openURI( URI::fromFSPath( path ).toString() ) )
 				Dialogs::showError( mUI, String::fromUtf8( "No application can open " + path ) );
 		}
@@ -310,11 +323,16 @@ void FileOperations::openWith( const std::vector<URI>& uris ) {
 void FileOperations::openWith( const std::vector<URI>& uris, Application app ) {
 	withLocalFiles( mVFS, mApp.executor(), mUI, uris,
 					[this, app = std::move( app )]( std::vector<std::string> paths ) {
-						if ( !Applications::launch( app, paths ) ) {
-							Dialogs::showError(
-								mUI,
-								String::fromUtf8( "Could not open the files with " + app.name ) );
-						}
+						mApp.pool()
+							->submit( [app = std::move( app ), paths = std::move( paths )] {
+								return Applications::launch( app, paths )
+										   ? std::string{}
+										   : "Could not open the files with " + app.name;
+							} )
+							.then( mApp.executor(), [this]( std::string&& error ) {
+								if ( !error.empty() )
+									Dialogs::showError( mUI, String::fromUtf8( error ) );
+							} );
 					} );
 }
 
@@ -327,7 +345,7 @@ void FileOperations::openTerminalHere( FileTab* tab ) {
 		Dialogs::showError( mUI, "A terminal can only be opened in local folders." );
 		return;
 	}
-	if ( !Applications::openTerminal( uri.getFSPath() ) )
+	if ( !DesktopIntegration::openTerminal( uri.getFSPath() ) )
 		Dialogs::showError( mUI, "No terminal emulator was found (set $TERMINAL)." );
 }
 
@@ -336,7 +354,48 @@ void FileOperations::openTerminalHere( FileTab* tab ) {
 // ---------------------------------------------------------------------------------------------
 
 void FileOperations::showContextMenu( FileTab* tab, bool background ) {
+	const auto generation = ++mContextMenuGeneration;
+	const auto position = mApp.window()->getInput()->getMousePos().asFloat();
+	const auto rows = tab->selectedRows();
+	if ( background || rows.empty() || std::any_of( rows.begin(), rows.end(), [tab]( size_t row ) {
+			 return tab->model->entry( row ).isDirectory();
+		 } ) ) {
+		buildContextMenu( tab, background, position, {} );
+		return;
+	}
+	auto uris = tab->selectedURIs();
+	std::weak_ptr<VFSDirectoryModel> model = tab->model;
+	// Launch Services (and an XDG database's first load) can touch disk. Keep the queries
+	// off the UI thread and own their inputs until the worker and UI continuation finish.
+	auto discover = [uri = uris.front(),
+					 mime = std::string( MimeDatabase::instance().typeOf( tab->model->entry(
+						 rows[0] ) ) )]() -> VFSResult<std::vector<Application>> {
+		return Ok( Applications::forFile( uri, MimeDatabase::instance().withParents( mime ) ) );
+	};
+	// A native file may live on a disconnected network mount. Its metadata lookup uses
+	// the same isolated, time-limited lane as other local VFS reads.
+	auto task = uris.front().getScheme() == "file"
+					? mVFS->localIO().submitResolved<std::vector<Application>>(
+						  uris.front().getFSPath(), true, std::move( discover ) )
+					: mApp.pool()->submit( std::move( discover ) );
+	std::move( task ).then( mApp.executor(), [this, tab, model, generation, position,
+											  uris = std::move( uris )](
+												 VFSResult<std::vector<Application>>&& result ) {
+		// A tab may close or navigate while discovery runs. The weak model is checked
+		// before dereferencing the borrowed tab, and a changed selection invalidates it.
+		auto owner = model.lock();
+		if ( generation != mContextMenuGeneration || !owner || mApp.panes().currentTab() != tab ||
+			 tab->model != owner || !tab->view->hasFocusWithin() || tab->selectedURIs() != uris )
+			return;
+		buildContextMenu( tab, false, position,
+						  result ? std::move( result ).value() : std::vector<Application>{} );
+	} );
+}
+
+void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f position,
+									   std::vector<Application> apps ) {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
+	menu->setCloseOnHide( true );
 	// Enter is handled natively by UITableView rather than a scene command.
 	const auto openShortcut = mUI->getKeyBindings().getShortcutString( { KEY_RETURN }, true );
 	auto rows = background ? std::vector<size_t>{} : tab->selectedRows();
@@ -353,10 +412,11 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 	auto addCreateNew = [this, menu, tab] {
 		UIPopUpMenu* create = UIPopUpMenu::New();
 		create
-			->add( mUI->i18n( "eefm_new_folder", "Folder..." ), mApp.icon( "folder-add" ),
+			->add( mUI->i18n( "eefm_new_folder", "Folder..." ), mApp.menuIcon( "folder-add" ),
 				   mApp.getKeybind( "new-folder" ) )
 			->setId( "new-folder" );
-		create->add( mUI->i18n( "eefm_new_text_file", "Text File..." ), mApp.icon( "file-add" ) )
+		create
+			->add( mUI->i18n( "eefm_new_text_file", "Text File..." ), mApp.menuIcon( "file-add" ) )
 			->setId( "new-file" );
 		create->on( Event::OnItemClicked, [this, tab]( const Event* event ) {
 			std::string id( event->getNode()->getId() );
@@ -365,7 +425,7 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 			else if ( id == "new-file" )
 				newTextFile( tab );
 		} );
-		menu->addSubMenu( mUI->i18n( "eefm_create_new", "Create New" ), mApp.icon( "file-add" ),
+		menu->addSubMenu( mUI->i18n( "eefm_create_new", "Create New" ), mApp.menuIcon( "file-add" ),
 						  create );
 		menu->addSeparator();
 	};
@@ -373,32 +433,36 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 	const bool archive = !anyFolder && !uris.empty() && !Location::archiveRoot( uris[0] ).empty();
 	if ( !rows.empty() ) {
 		if ( !anyFolder ) {
-			const std::string& mime =
-				MimeDatabase::instance().typeOf( tab->model->entry( rows[0] ) );
-			auto apps = Applications::instance().forMime( mime );
 			if ( archive ) {
-				menu->add( mUI->i18n( "eefm_open_in_eefm", "Open in eefm" ), mApp.icon( "eefm" ),
-						   openShortcut )
+				menu->add( mUI->i18n( "eefm_open_in_eefm", "Open in eefm" ),
+						   mApp.menuIcon( "eefm" ), openShortcut )
 					->setId( "open-in-eefm" );
 			}
 			if ( !archive || !apps.empty() ) {
 				String openText =
 					apps.empty() ? mUI->i18n( "eefm_open", "Open" )
 								 : String( String::format( "Open with %s", apps[0].name.c_str() ) );
-				menu->add( openText, mApp.icon( "action-open-with" ), archive ? "" : openShortcut )
-					->setId( apps.empty() ? "open" : "open-app" );
+				auto* item = menu->add( openText, mApp.menuIcon( "action-open-with" ),
+										archive ? "" : openShortcut );
+				item->setId( apps.empty() ? "open" : "open-app" );
+				if ( !apps.empty() )
+					mApp.setApplicationIcon( item, apps.front() );
 			}
 			// Keep the application named by the action, independently of archive navigation.
 			if ( !apps.empty() )
 				defaultApp = apps.front();
 			UIPopUpMenu* with = UIPopUpMenu::New();
-			for ( size_t i = 0; i < apps.size(); ++i )
-				with->add( String::fromUtf8( apps[i].name ) )->setId( "app" )->setData( i );
+			for ( size_t i = 0; i < apps.size(); ++i ) {
+				auto* item = with->add( String::fromUtf8( apps[i].name ) );
+				item->setId( "app" )->setData( i );
+				mApp.setApplicationIcon( item, apps[i] );
+			}
 			if ( !apps.empty() )
 				with->addSeparator();
 			with->add( mUI->i18n( "eefm_other_application", "Other Application..." ) )
 				->setId( "other-app" );
-			menu->addSubMenu( mUI->i18n( "eefm_open_with", "Open With" ), nullptr, with );
+			menu->addSubMenu( mUI->i18n( "eefm_open_with", "Open With" ), nullptr, with )
+				->setId( "open-with" );
 			with->on( Event::OnItemClicked,
 					  [this, uris, apps = std::move( apps )]( const Event* event ) {
 						  std::string id( event->getNode()->getId() );
@@ -411,14 +475,15 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 						  }
 					  } );
 		} else if ( allFolders ) {
-			menu->add( mUI->i18n( "eefm_open", "Open" ), mApp.icon( "mime-folder" ), openShortcut )
+			menu->add( mUI->i18n( "eefm_open", "Open" ), mApp.menuIcon( "mime-folder" ),
+					   openShortcut )
 				->setId( "open" );
 			menu->add( mUI->i18n( "eefm_open_new_tab", "Open in New Tab" ),
-					   mApp.icon( "action-new-tab" ) )
+					   mApp.menuIcon( "action-new-tab" ) )
 				->setId( "open-tab" );
 			if ( mApp.isSplit() ) {
 				menu->add( mUI->i18n( "eefm_open_other_pane", "Open in Other Pane" ),
-						   mApp.icon( "view-split" ) )
+						   mApp.menuIcon( "view-split" ) )
 					->setId( "open-other" );
 			}
 		}
@@ -453,79 +518,82 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 							} );
 					}
 				} );
-			menu->addSubMenu( mUI->i18n( "eefm_extract", "Extract" ), mApp.icon( "mime-archive" ),
-							  extract );
+			menu->addSubMenu( mUI->i18n( "eefm_extract", "Extract" ),
+							  mApp.menuIcon( "mime-archive" ), extract );
 		}
 		// After the open actions, as Dolphin.
 		if ( menu->getCount() > 0 )
 			menu->addSeparator();
 		addCreateNew();
-		menu->add( mUI->i18n( "eefm_cut", "Cut" ), mApp.icon( "cut" ), mApp.getKeybind( "cut" ) )
+		menu->add( mUI->i18n( "eefm_cut", "Cut" ), mApp.menuIcon( "cut" ),
+				   mApp.getKeybind( "cut" ) )
 			->setId( "cut" );
-		menu->add( mUI->i18n( "eefm_copy", "Copy" ), mApp.icon( "copy" ),
+		menu->add( mUI->i18n( "eefm_copy", "Copy" ), mApp.menuIcon( "copy" ),
 				   mApp.getKeybind( "copy" ) )
 			->setId( "copy" );
 		menu->add( mUI->i18n( "eefm_copy_location", "Copy Location" ),
-				   mApp.icon( "action-copy-location" ) )
+				   mApp.menuIcon( "action-copy-location" ) )
 			->setId( "copy-location" );
 		if ( rows.size() == 1 && allFolders && !clipboardFiles().uris.empty() ) {
-			menu->add( mUI->i18n( "eefm_paste_into", "Paste into Folder" ), mApp.icon( "paste" ) )
+			menu->add( mUI->i18n( "eefm_paste_into", "Paste into Folder" ),
+					   mApp.menuIcon( "paste" ) )
 				->setId( "paste-into" );
 		}
 		menu->addSeparator();
 		if ( rows.size() == 1 ) {
-			menu->add( mUI->i18n( "eefm_rename", "Rename..." ), mApp.icon( "edit" ),
+			menu->add( mUI->i18n( "eefm_rename", "Rename..." ), mApp.menuIcon( "edit" ),
 					   mApp.getKeybind( "rename" ) )
 				->setId( "rename" );
 		}
 		if ( inTrash ) {
-			menu->add( mUI->i18n( "eefm_restore", "Restore" ), mApp.icon( "action-restore" ) )
+			menu->add( mUI->i18n( "eefm_restore", "Restore" ), mApp.menuIcon( "action-restore" ) )
 				->setId( "restore" );
 		} else if ( Trash::supported( uris[0] ) ) {
 			menu->add( mUI->i18n( "eefm_move_to_trash", "Move to Trash" ),
-					   mApp.icon( "place-trash" ), mApp.getKeybind( "trash" ) )
+					   mApp.menuIcon( "place-trash" ), mApp.getKeybind( "trash" ) )
 				->setId( "trash" );
 		}
-		menu->add( mUI->i18n( "eefm_delete", "Delete" ), mApp.icon( "delete-bin" ),
+		menu->add( mUI->i18n( "eefm_delete", "Delete" ), mApp.menuIcon( "delete-bin" ),
 				   mApp.getKeybind( "delete" ) )
 			->setId( "delete" );
 		menu->addSeparator();
 		if ( rows.size() == 1 && allFolders ) {
 			menu->add( mUI->i18n( "eefm_add_to_places", "Add to Places" ),
-					   mApp.icon( "action-add-place" ) )
+					   mApp.menuIcon( "action-add-place" ) )
 				->setId( "add-place" );
 		}
 	} else {
 		addCreateNew();
 		if ( !clipboardFiles().uris.empty() ) {
-			menu->add( mUI->i18n( "eefm_paste", "Paste" ), mApp.icon( "paste" ),
+			menu->add( mUI->i18n( "eefm_paste", "Paste" ), mApp.menuIcon( "paste" ),
 					   mApp.getKeybind( "paste" ) )
 				->setId( "paste" );
 		}
 		menu->add( mUI->i18n( "eefm_copy_location", "Copy Location" ),
-				   mApp.icon( "action-copy-location" ) )
+				   mApp.menuIcon( "action-copy-location" ) )
 			->setId( "copy-current-location" );
 		menu->add( mUI->i18n( "eefm_add_to_places", "Add to Places" ),
-				   mApp.icon( "action-add-place" ) )
+				   mApp.menuIcon( "action-add-place" ) )
 			->setId( "add-current-place" );
 		menu->addSeparator();
 		menu->addCheckBox( mUI->i18n( "eefm_show_hidden", "Show Hidden Files" ), mApp.showHidden(),
 						   mApp.getKeybind( "toggle-hidden" ) )
 			->setId( "hidden" );
 		if ( inTrash ) {
-			menu->add( mUI->i18n( "eefm_empty_trash", "Empty Trash" ), mApp.icon( "place-trash" ) )
+			menu->add( mUI->i18n( "eefm_empty_trash", "Empty Trash" ),
+					   mApp.menuIcon( "place-trash" ) )
 				->setId( "empty-trash" );
 		}
-		menu->add( mUI->i18n( "eefm_refresh", "Reload" ), mApp.icon( "view-refresh" ),
+		menu->add( mUI->i18n( "eefm_refresh", "Reload" ), mApp.menuIcon( "view-refresh" ),
 				   mApp.getKeybind( "refresh" ) )
 			->setId( "refresh" );
 	}
 	if ( tab->model->uri().getScheme() == "file" ) {
 		menu->add( mUI->i18n( "eefm_open_terminal", "Open Terminal Here" ),
-				   mApp.icon( "action-terminal" ), mApp.getKeybind( "terminal" ) )
+				   mApp.menuIcon( "action-terminal" ), mApp.getKeybind( "terminal" ) )
 			->setId( "terminal" );
 	}
-	menu->add( mUI->i18n( "eefm_properties", "Properties" ), mApp.icon( "action-properties" ),
+	menu->add( mUI->i18n( "eefm_properties", "Properties" ), mApp.menuIcon( "action-properties" ),
 			   mApp.getKeybind( "properties" ) )
 		->setId( "properties" );
 
@@ -582,7 +650,7 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 			showProperties( tab );
 		}
 	} );
-	menu->showOverMouseCursor();
+	menu->showAtScreenPosition( position );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -687,12 +755,12 @@ void FileOperations::dropFiles( const std::vector<URI>& uris, const URI& destina
 		return;
 	}
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->add( mUI->i18n( "eefm_move_here", "Move Here" ), mApp.icon( "cut" ), "Shift" )
+	menu->add( mUI->i18n( "eefm_move_here", "Move Here" ), mApp.menuIcon( "cut" ), "Shift" )
 		->setId( "move" );
-	menu->add( mUI->i18n( "eefm_copy_here", "Copy Here" ), mApp.icon( "copy" ), "Ctrl" )
+	menu->add( mUI->i18n( "eefm_copy_here", "Copy Here" ), mApp.menuIcon( "copy" ), "Ctrl" )
 		->setId( "copy" );
 	menu->addSeparator();
-	menu->add( mUI->i18n( "eefm_cancel", "Cancel" ), mApp.icon( "action-close" ), "Esc" )
+	menu->add( mUI->i18n( "eefm_cancel", "Cancel" ), mApp.menuIcon( "action-close" ), "Esc" )
 		->setId( "cancel" );
 	menu->on( Event::OnItemClicked, [this, sources, destination, paneIndex]( const Event* event ) {
 		std::string id( event->getNode()->getId() );
@@ -1075,65 +1143,8 @@ bool FileOperations::validateName( const std::string& name, const URI& directory
 // ---------------------------------------------------------------------------------------------
 
 void FileOperations::showProperties( FileTab* tab ) {
-	auto rows = tab->selectedRows();
-	std::string text;
-	auto line = [&text]( const char* key, const std::string& value ) {
-		if ( !value.empty() )
-			text += std::string( key ) + ": " + value + "\n";
-	};
-	auto time = []( std::optional<Int64> seconds ) {
-		return seconds ? Sys::epochToString( static_cast<Uint64>( *seconds ) ) : std::string();
-	};
-	if ( rows.size() == 1 ) {
-		const VFSFileInfo& info = tab->model->entry( rows[0] );
-		line( "Name", info.name );
-		line( "Type", MimeDatabase::instance().describe( info ) + " (" +
-						  MimeDatabase::instance().typeOf( info ) + ")" );
-		line( "Location", Location::text( tab->model->uri() ).toUtf8() );
-		if ( info.isDirectory() ) {
-			if ( auto count = tab->model->directoryItemCount( rows[0] ) )
-				line( "Contents", std::to_string( *count ) + ( *count == 1 ? " item" : " items" ) );
-		} else if ( info.size() ) {
-			line( "Size", FileSystem::sizeToString( static_cast<Int64>( *info.size() ) ) + " (" +
-							  std::to_string( *info.size() ) + " bytes)" );
-		}
-		if ( info.isSymlink() )
-			line( "Points to", info.symlinkTarget );
-		line( "Modified", time( info.modifiedTime() ) );
-		line( "Accessed", time( info.accessedTime() ) );
-		line( "Created", time( info.createdTime() ) );
-		if ( info.permissions() )
-			line( "Permissions", VFSDirectoryModel::permissionsToString( info ) );
-		line( "Owner", info.owner );
-		line( "Group", info.group );
-		if ( Trash::contains( tab->model->uri() ) && tab->model->uri().getScheme() == "file" ) {
-			if ( auto original =
-					 Trash::originalPath( tab->model->entryURI( rows[0] ).getFSPath() ) )
-				line( "Original location", *original );
-		}
-	} else if ( rows.size() > 1 ) {
-		Uint64 bytes = 0, folders = 0;
-		for ( size_t row : rows ) {
-			const VFSFileInfo& info = tab->model->entry( row );
-			if ( info.isDirectory() )
-				++folders;
-			else
-				bytes += info.size().value_or( 0 );
-		}
-		line( "Selected", std::to_string( rows.size() ) + " items (" + std::to_string( folders ) +
-							  " folders)" );
-		line( "Size of files", FileSystem::sizeToString( static_cast<Int64>( bytes ) ) );
-		line( "Location", Location::text( tab->model->uri() ).toUtf8() );
-	} else {
-		const URI& uri = tab->model->uri();
-		line( "Folder", Location::displayName( uri ).toUtf8() );
-		line( "Location", Location::clipboardText( uri ) );
-		line( "Contents", std::to_string( tab->model->rowCount() ) + " visible items" );
-	}
-	UIMessageBox* box = UIMessageBox::New( UIMessageBox::OK, String::fromUtf8( text ) );
-	box->setTitle( mUI->i18n( "eefm_properties", "Properties" ) );
-	box->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
-	box->showWhenReady();
+	std::erase_if( mProperties, []( const auto& dialog ) { return dialog.expired(); } );
+	mProperties.push_back( PropertiesDialog::show( mApp, tab ) );
 }
 
 std::optional<FileOperations::DropDestination>

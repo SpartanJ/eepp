@@ -273,6 +273,43 @@ or link/unlink publication. Atomic writes and copies therefore do not authentica
 bytes against a hostile directory owner or another writer with permission to replace that name.
 Use a directory whose writers are trusted (or an application-private directory) for that guarantee.
 
+## Recursive size measurements
+
+`directoryStats()` measures a file, a directory tree, or a vector of selected URIs asynchronously.
+It reports logical file bytes, optional allocated bytes, file and subfolder counts, and whether
+unreadable entries or missing logical sizes made the result incomplete.
+
+```cpp
+CancellationSource cancel;
+auto task = vfs.directoryStats( folder,
+    [&uiExecutor]( const DirectoryStats& subtotal ) {
+        // Progress runs on a worker. Own the snapshot when dispatching UI work.
+        uiExecutor.execute( [subtotal] { /* display the subtotal */ } );
+    }, cancel.token() );
+std::move( task ).then( uiExecutor, []( VFSResult<DirectoryStats>&& result ) {
+    // Check result.value().incomplete() before presenting an exact total.
+} );
+// Stop the scan without modifying files:
+cancel.cancel();
+```
+
+Hidden entries are included. Symbolic links count as files, contribute no bytes, and are never
+followed, including a selected root link. Directory metadata contributes to allocated space, but
+not logical file size. Selected root directories are excluded from the subfolder count. Overlapping
+URI selections are collapsed; hard links contribute bytes once when native identities are known.
+
+Allocated size is reported by local providers. It is not estimated by rounding logical size to a
+block boundary. A zero allocation is valid, including sparse files. Providers without allocation
+metadata, such as archive and SFTP providers, still report logical totals but leave `allocatedSize`
+unset. Allocated bytes describe filesystem allocation, not exclusive physical ownership of blocks
+shared by filesystem clones or compression/deduplication.
+
+Root errors fail the task. Errors below a root leave an incomplete subtotal and record the first
+error and the number of unreadable entries. Cancellation returns `Cancelled` after publishing a
+final subtotal. Progress is throttled to 200 ms plus the final snapshot. These measurements are
+best effort, not an atomic snapshot of a tree being modified; directories deeper than 256 levels
+are reported as incomplete.
+
 ## Watching
 
 ```cpp

@@ -59,7 +59,8 @@ class EE_API FreedesktopIconLookup {
 	/** Path of the best file for names (most specific first): every name is tried in the theme,
 	 * then in its parents, then in hicolor (theme first, as the specification and GTK do, so the
 	 * user's theme wins over a more specific hicolor icon), then unthemed. The closest size wins;
-	 * scalable icons match any size in their range. Empty if none is found. */
+	 * scalable icons match any size in their range. Absolute file paths bypass theme lookup and
+	 * also work without an installed theme. Empty if none is found. May stat absolute paths. */
 	std::string find( const std::vector<std::string>& names, int size, int scale = 1 ) const;
 
   private:

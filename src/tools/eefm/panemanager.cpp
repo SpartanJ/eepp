@@ -512,7 +512,7 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 		focusPane( raw->pane->index );
 		mApp.fileOps().showContextMenu( raw, true );
 	};
-	view->dragPayload = [this, raw] { return raw->selectedURIs(); };
+	view->dragPayload = [raw] { return raw->selectedURIs(); };
 	view->onDragStarted = [this] {
 		if ( auto* panel = mApp.places().panel() )
 			panel->trackDrag();
@@ -530,7 +530,7 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 	raw->tab = pane.tabs->add( Location::displayName( uri ), view, mApp.icon( "mime-folder" ) );
 	// The new tab button would sit over a dragged tab: hidden while one moves (a press alone
 	// starts a drag, so it waits for the movement), back in place after.
-	raw->tab->on( Event::OnPositionChange, [this, raw]( const Event* ) {
+	raw->tab->on( Event::OnPositionChange, [raw]( const Event* ) {
 		if ( raw->tab->isDragging() && raw->pane->newTabButton )
 			raw->pane->newTabButton->setVisible( false );
 	} );

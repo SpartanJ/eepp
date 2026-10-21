@@ -145,6 +145,10 @@ void fillFromStat( VFSFileInfo& info, const struct stat& st ) {
 	info.type = typeFromMode( st.st_mode );
 	if ( info.type != FileType::Directory )
 		info.setSize( static_cast<Uint64>( st.st_size ) );
+	if ( st.st_blocks >= 0 )
+		info.setAllocatedSize( static_cast<Uint64>( st.st_blocks ) * 512 );
+	info.setIdentity( { static_cast<Uint64>( st.st_dev ), static_cast<Uint64>( st.st_ino ) },
+					  st.st_nlink > 1 );
 	info.setModifiedTime( static_cast<Int64>( st.st_mtime ) );
 	info.setAccessedTime( static_cast<Int64>( st.st_atime ) );
 #if defined( __APPLE__ ) || defined( __FreeBSD__ ) || defined( __NetBSD__ )
@@ -284,7 +288,8 @@ class LocalDirectoryImpl : public DirectoryHandleImpl,
 					break;
 			}
 #endif
-			if ( full || info.type == FileType::Unknown ) {
+			if ( full || mOptions.metadata == DirectoryMetadata::Storage ||
+				 info.type == FileType::Unknown ) {
 				struct stat st;
 				if ( fstatat( dirFd, name, &st, AT_SYMLINK_NOFOLLOW ) == 0 ) {
 					fillFromStat( info, st );

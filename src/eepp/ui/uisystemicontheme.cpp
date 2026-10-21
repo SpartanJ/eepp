@@ -144,6 +144,16 @@ UIIcon* UISystemIconTheme::getPathIcon( const std::string& path,
 	return icon( std::move( key ), std::move( request ), fallback );
 }
 
+UIIcon* UISystemIconTheme::getIconResource( const std::string& location, UIIcon* fallback ) {
+	std::string key = "r:" + location;
+	if ( UIIcon* found = findIcon( key ) )
+		return found;
+	Request request;
+	request.kind = Request::Kind::Resource;
+	request.value = location;
+	return icon( std::move( key ), std::move( request ), fallback );
+}
+
 const std::string& UISystemIconTheme::getThemeName() const {
 	return mThemeName;
 }
