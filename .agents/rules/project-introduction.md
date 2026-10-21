@@ -38,10 +38,13 @@ database, launching applications) may use local platform APIs. See `docs/article
 
 ## AI Agent Runtime Checks
 
+Native is the default runtime. Leave `EEPP_RUNTIME` unset for normal native runs; set it to
+`native` only to override an inherited non-native value or to test explicit runtime selection.
+
 AI agents should prefer `EEPP_RUNTIME=headless` when launching ordinary applications or examples
 and when automating their UI with the inspector. This avoids opening desktop windows or interrupting
 the human's keyboard input and focus. When headless rendering is unavailable (notably on macOS),
-or native rendering needs verification, use `EEPP_RUNTIME=native EEPP_WINDOW_HIDDEN=1` instead of
+or native rendering needs verification, use `EEPP_WINDOW_HIDDEN=1` instead of
 modifying application sources to add `WindowStyle::Hidden`. This also keeps secondary native windows
 hidden, even if the application calls `show()` or restores them. Coordinate interactive checks that
 require visible native windows with the user before driving them.

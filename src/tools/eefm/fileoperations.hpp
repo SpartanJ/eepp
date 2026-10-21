@@ -53,8 +53,7 @@ class FileOperations {
 
 	void openTerminalHere( FileTab* tab );
 
-	/** Moves or copies (as the user picks) the dropped files to destination; with copy, they are
-	 * copied without asking. Files already there are skipped. */
+	/** Moves or copies dropped files to destination, resolving conflicts within one batch. */
 	void dropFiles( const std::vector<URI>& uris, const URI& destination, int paneIndex,
 					bool copy = false );
 
@@ -86,6 +85,19 @@ class FileOperations {
   private:
 	enum class TransferKind : Uint8 { Copy, Move, Extract };
 
+	/** One paste/drop/extraction: conflicts share decisions, and prompts are sequential. */
+	struct TransferBatch {
+		std::vector<std::pair<URI, URI>> entries;
+		size_t next{ 0 };
+		Uint64 conflictsSkipped{ 0 };
+		UIWindow* dialog{ nullptr };
+		std::optional<EE::VFS::ConflictAction> files;
+		std::optional<EE::VFS::ConflictAction> folders;
+		int pane{ 0 };
+		TransferKind kind{ TransferKind::Copy };
+		bool cancelled{ false };
+	};
+
 	struct ActiveTransfer {
 		Uint64 id;
 		int pane;
@@ -93,6 +105,7 @@ class FileOperations {
 		EE::VFS::Transfer transfer;
 		EE::VFS::TransferProgressSubscription subscription;
 		EE::VFS::TransferProgress progress;
+		std::shared_ptr<TransferBatch> batch;
 	};
 
 	/** Where a drop lands: a folder row, else the folder of the pane under the pointer. */
@@ -139,8 +152,10 @@ class FileOperations {
 
 	void extractArchive( const URI& file, const URI& destination, int paneIndex );
 
-	void startTransfer( const URI& source, const URI& destination, TransferKind kind, int paneIndex,
-						const EE::VFS::CopyOptions& options = {} );
+	void startNextTransfer( const std::shared_ptr<TransferBatch>& batch );
+
+	void startTransfer( const URI& source, const URI& destination,
+						const std::shared_ptr<TransferBatch>& batch );
 
 	void updateTransfers();
 

@@ -5,10 +5,13 @@ This project relies on a comprehensive suite of unit tests to prevent regression
 ## Running Tests
 The test binary manages its own current working directory, so you can execute it from anywhere.
 
+Native is the default runtime. Leave `EEPP_RUNTIME` unset for normal native runs; set it to
+`native` only to override an inherited non-native value or to test explicit runtime selection.
+
 The required default workflow is:
 
 1. Build the release unit-test target (use ninja build).
-2. On a usable desktop, run `EEPP_RUNTIME=native bin/unit_tests/eepp-unit_tests` directly, without
+2. On a usable desktop, run `bin/unit_tests/eepp-unit_tests` directly, without
    Xvfb. The unit-test build defines `EE_UNIT_TESTS`, making `WindowStyle::Default` include
    `WindowStyle::Hidden`; native test windows remain hidden and do not take desktop focus.
 3. If sandbox restrictions prevent access to the host display, retry the same native command with
@@ -16,7 +19,7 @@ The required default workflow is:
 4. When no usable display is available, use `EEPP_RUNTIME=headless bin/unit_tests/eepp-unit_tests`.
    Also use it when requested or when checking the headless runtime itself.
 5. Use Xvfb only if there is no usable desktop display and the required check cannot run with the
-   headless runtime. Keep the explicit runtime selection in fallback commands below.
+   headless runtime. The fallback commands below use the default native runtime.
 
 The preference for headless application launches and interactive UI inspector checks does not
 change this harness workflow. Keep all native test windows hidden, including secondary dialog
@@ -25,13 +28,13 @@ hosts; showing a UI widget inside a hidden host does not require showing the nat
 *   **Use the release test binary during normal development:**
     When AddressSanitizer or other debug-only diagnostics are not required, build and run `bin/unit_tests/eepp-unit_tests`. The optimized release suite is substantially faster and is the required default for iterative testing. Use `bin/unit_tests/eepp-unit_tests-debug` only when investigating memory safety, assertions, or other behavior that specifically requires the debug configuration.
 *   **Default Execution on a Graphical Desktop:**
-    `EEPP_RUNTIME=native bin/unit_tests/eepp-unit_tests`
+    `bin/unit_tests/eepp-unit_tests`
     Hidden windows preserve native rendering without appearing or taking desktop focus.
     Confirm that the renderer log names the real GPU rather than llvmpipe when validating rendering
     behavior or performance.
 *   **Filtered Tests:**
     Use the same native runtime for focused runs on a usable desktop:
-    `EEPP_RUNTIME=native bin/unit_tests/eepp-unit_tests --filter="FontRendering.*Offset*"`
+    `bin/unit_tests/eepp-unit_tests --filter="FontRendering.*Offset*"`
 *   **Headless Execution:**
     `EEPP_RUNTIME=headless bin/unit_tests/eepp-unit_tests`
     Use this when no usable desktop display is available, when requested, or for headless runtime
@@ -39,14 +42,14 @@ hosts; showing a UI widget inside a hidden host does not require showing the nat
     do not necessarily represent hardware GPU performance. Add `--filter` for focused headless runs.
 *   **Last Fallback When the Headless Runtime Cannot Support the Required Check:**
     Keep `projects/scripts/xvfb-run-eepp` as the fallback when no usable desktop display is available:
-    `EEPP_RUNTIME=native projects/scripts/xvfb-run-eepp bin/unit_tests/eepp-unit_tests`
+    `projects/scripts/xvfb-run-eepp bin/unit_tests/eepp-unit_tests`
     The wrapper provides a race-safe isolated display at `1280x1024x24` and injects
     `ASAN_OPTIONS=detect_leaks=0`. Xvfb can use llvmpipe, so do not use wrapper timings to evaluate
     hardware-rendered performance.
 *   **Wrapper Fallback:**
     If `projects/scripts/xvfb-run-eepp` itself fails before launching the test binary, report that
     failure and use:
-    `EEPP_RUNTIME=native xvfb-run -a -s "-screen 0 1280x1024x24" bin/unit_tests/eepp-unit_tests`
+    `xvfb-run -a -s "-screen 0 1280x1024x24" bin/unit_tests/eepp-unit_tests`
     Do not use plain `xvfb-run` as the first headless attempt.
 *   **Non-window Tests:**
     Tests known not to create windows can run without selecting a video driver:

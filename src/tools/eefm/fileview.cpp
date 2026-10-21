@@ -398,6 +398,57 @@ FileTableView::FileTableView() : UITableView() {
 	};
 }
 
+void FileTableView::beginNavigation() {
+	resetSearchText();
+	if ( !mReplayingNavigation )
+		mNavigationInput.clear();
+	mLoading = true;
+	// The selected cell can disappear as soon as the model clears the previous directory.
+	if ( hasFocusWithin() )
+		setFocus();
+}
+
+void FileTableView::endNavigation() {
+	mLoading = false;
+	if ( mReplayingNavigation || mNavigationInput.empty() )
+		return;
+	if ( !hasFocusWithin() ) {
+		mNavigationInput.clear();
+		return;
+	}
+	mReplayingNavigation = true;
+	size_t consumed = 0;
+	while ( !mLoading && consumed < mNavigationInput.size() ) {
+		const auto character = mNavigationInput[consumed++];
+		if ( character == '\n' ) {
+			const auto index = getSelection().first();
+			if ( !index.isValid() ) {
+				consumed = mNavigationInput.size();
+				break;
+			}
+			onOpenModelIndex( index );
+		} else {
+			UITableView::onTextInput( TextInputEvent( this, Event::TextInput, character, 0 ) );
+		}
+	}
+	mNavigationInput.erase( 0, consumed );
+	mReplayingNavigation = false;
+}
+
+Uint32 FileTableView::onTextInput( const TextInputEvent& event ) {
+	if ( mLoading && !isEditing() ) {
+		mNavigationInput += event.getText();
+		return 1;
+	}
+	return UITableView::onTextInput( event );
+}
+
+void FileTableView::onWidgetFocusLoss() {
+	// Abandon pending commands even if focus returns before the listing finishes.
+	mNavigationInput.clear();
+	UITableView::onWidgetFocusLoss();
+}
+
 void FileTableView::beginRename( size_t row ) {
 	if ( !getModel() || row >= getModel()->rowCount() )
 		return;
@@ -458,6 +509,13 @@ Uint32 FileTableView::onMessage( const NodeMessage* msg ) {
 }
 
 Uint32 FileTableView::onKeyDown( const KeyEvent& event ) {
+	if ( mLoading && ( event.getKeyCode() == KEY_RETURN || event.getKeyCode() == KEY_KP_ENTER ) &&
+		 !isEditing() && event.getSanitizedMod() == 0 ) {
+		mNavigationInput += '\n';
+		return 1;
+	}
+	if ( event.getKeyCode() == KEY_ESCAPE )
+		mNavigationInput.clear();
 	// Escape clears the selection (as Dolphin); with nothing selected it is left to others.
 	if ( event.getKeyCode() == KEY_ESCAPE && !isEditing() &&
 		 !( event.getMod() & ( KEYMOD_CTRL | KEYMOD_SHIFT | KEYMOD_ALT | KEYMOD_META ) ) &&

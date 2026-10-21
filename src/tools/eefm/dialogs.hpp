@@ -1,7 +1,9 @@
 #ifndef EEFM_DIALOGS_HPP
 #define EEFM_DIALOGS_HPP
 
+#include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/vfs/transfer.hpp>
 #include <functional>
 #include <optional>
 #include <string>
@@ -26,6 +28,11 @@ class Dialogs {
 	static void showError( UISceneNode* ui, const String& message );
 
 	static void showMessage( const String& title, const String& message );
+
+	/** Resolve one transfer collision; the repeat choice applies only to the current batch. */
+	static UIMessageBox*
+	transferConflict( UISceneNode* ui, const EE::VFS::TransferConflict& conflict,
+					  std::function<void( EE::VFS::ConflictResolution, bool )> done );
 };
 
 } // namespace eefm

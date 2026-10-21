@@ -6,10 +6,34 @@
 #include <eepp/core/small_unique_function.hpp>
 #include <eepp/vfs/config.hpp>
 #include <eepp/vfs/error.hpp>
+#include <eepp/vfs/fileinfo.hpp>
+#include <functional>
 #include <memory>
 #include <optional>
 
 namespace EE { namespace VFS {
+
+enum class ConflictAction : Uint8 { Cancel, Skip, Overwrite, OverwriteOlder, Rename };
+
+struct EE_VFS_API TransferConflict {
+	URI source;
+	URI destination;
+	VFSFileInfo sourceInfo;
+	VFSFileInfo destinationInfo;
+};
+
+struct EE_VFS_API ConflictResolution {
+	/** Rename: a new basename, or empty to generate a unique name automatically. */
+	std::string name;
+	ConflictAction action{ ConflictAction::Cancel };
+};
+
+/** Per-entry conflict decision, called on a transfer worker. Dispatch UI work through an executor.
+ * The request is owned and can be moved into asynchronous work. Cancellation stops waiting for
+ * the task. OverwriteOlder skips if either modification time is unavailable. Type mismatches
+ * can only be skipped or renamed. Completed entries are never replayed. */
+using TransferConflictResolver =
+	std::function<VFSTask<ConflictResolution>( TransferConflict, CancellationToken )>;
 
 struct EE_VFS_API TransferProgress {
 	URI currentSource;

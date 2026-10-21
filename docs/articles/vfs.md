@@ -232,6 +232,24 @@ when a destination appears while the copy is running. The `Overwrite` policy req
 Creating a file with `Fail` or `Skip` requires `Rename`. Moving a symlink through the copy fallback
 is unsupported; native same-filesystem renames still move the link itself.
 
+The four-argument `copy(source, destination, options, onConflict)` and `move()` overloads
+optionally resolve each collision during the transfer, including files inside merged directories.
+The callback receives an owned `TransferConflict` with source/destination URIs and metadata and
+returns `VFSTask<ConflictResolution>`. It runs on the transfer worker: dispatch
+dialogs to the UI executor and resolve the task when the user answers. Cancellation stops waiting
+for a decision. Completed entries are retained; the transfer continues from the conflicting entry.
+
+The actions are `Overwrite`, `OverwriteOlder`, `Skip`, `Rename`, and `Cancel`. `OverwriteOlder`
+requires both modification times and skips unless the source is newer. `Rename` accepts a validated
+new basename; an empty name generates an available sibling name while preserving the extension.
+Files and directories cannot overwrite one another. With `MergeDirectories`, existing directories
+are merged without prompting, while file collisions still invoke the resolver.
+
+Decisions apply to one entry. Applications implementing “Apply to All” should retain decisions for
+the current operation, distinguishing directory merges from file overwrites. Explicit skips still
+contribute to `TransferResult::filesSkipped`; callers can count their own skip decisions to
+distinguish them from unsupported entries when reporting partial transfers.
+
 `MergeDirectories` merges existing destination directories but reports `AlreadyExists` for files,
 including files that appear during the copy. It supports copying an archive root into an existing
 folder without overwriting files. The default `Fail` policy also rejects existing directories;

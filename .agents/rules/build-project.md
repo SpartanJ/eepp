@@ -50,8 +50,11 @@ release Ninja build required for performance work.
 
 ## Benchmark Runtime
 
+Native is the default runtime; normal native commands do not need `EEPP_RUNTIME=native`. Use that
+assignment only to override an inherited non-native value or to test explicit runtime selection.
+
 Run the release benchmark harness with the native runtime on a usable desktop:
-`EEPP_RUNTIME=native bin/benchmarks/eepp-benchmarks`.
+`bin/benchmarks/eepp-benchmarks`.
 The benchmarks that create windows explicitly request `WindowStyle::Hidden`; other benchmarks
 do not create windows. They can use the native renderer without showing desktop windows or taking
 focus. Do not switch this harness to headless merely to avoid interrupting the user. Verify the
@@ -134,7 +137,7 @@ native runtime on a usable desktop. Use the native/Xvfb paths below for examples
 required check cannot run with the headless runtime. Verify the renderer before using an offscreen
 run to assess hardware rendering or performance.
 
-When the headless driver is unavailable, use `EEPP_RUNTIME=native EEPP_WINDOW_HIDDEN=1` for ordinary
+When the headless driver is unavailable, use `EEPP_WINDOW_HIDDEN=1` for ordinary
 application/example launches and inspector automation. This preserves native rendering while
 forcing primary and secondary eepp windows hidden, including explicit `show()`/restore requests;
 it avoids temporary source edits to add `WindowStyle::Hidden`. A usable native display is still

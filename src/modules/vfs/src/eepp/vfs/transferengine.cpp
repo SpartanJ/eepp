@@ -1,5 +1,7 @@
 #include <eepp/vfs/transferengine.hpp>
 
+#include <chrono>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/vfs/detail/filewriter.hpp>
 #include <eepp/vfs/detail/transferstate.hpp>
 #include <eepp/vfs/path.hpp>
@@ -11,8 +13,8 @@ using detail::await;
 using detail::FileWriter;
 
 Transfer TransferEngine::start( VirtualFileSystem& vfs, std::shared_ptr<ThreadPool> pool,
-								URI source, URI destination, const CopyOptions& options,
-								bool move ) {
+								URI source, URI destination, const CopyOptions& options, bool move,
+								TransferConflictResolver onConflict ) {
 	auto state = std::make_shared<detail::TransferState>();
 	Transfer transfer( state );
 	if ( !pool ) {
@@ -20,20 +22,23 @@ Transfer TransferEngine::start( VirtualFileSystem& vfs, std::shared_ptr<ThreadPo
 			Err( VFSError( VFSErrorCode::InvalidOperation, source, "VFS is shutting down" ) ) );
 		return transfer;
 	}
-	auto engine = std::make_shared<TransferEngine>( vfs, state, std::move( source ),
-													std::move( destination ), options, move );
+	auto engine =
+		std::make_shared<TransferEngine>( vfs, state, std::move( source ), std::move( destination ),
+										  options, move, std::move( onConflict ) );
 	pool->run( [engine = std::move( engine ), state]() { state->complete( engine->run() ); } );
 	return transfer;
 }
 
 TransferEngine::TransferEngine( VirtualFileSystem& vfs,
 								std::shared_ptr<detail::TransferState> state, URI source,
-								URI destination, CopyOptions options, bool move ) :
+								URI destination, CopyOptions options, bool move,
+								TransferConflictResolver onConflict ) :
 	mVfs( vfs ),
 	mState( std::move( state ) ),
 	mSource( std::move( source ) ),
 	mDestination( std::move( destination ) ),
 	mOptions( options ),
+	mOnConflict( std::move( onConflict ) ),
 	mToken( mState->token() ),
 	mMove( move ) {
 	if ( mOptions.chunkSize == 0 )
@@ -78,10 +83,54 @@ VFSResult<TransferResult> TransferEngine::run() {
 		}
 	}
 
+	if ( mMove && mSameFileSystem && mOnConflict ) {
+		for ( ;; ) {
+			auto existing =
+				await( mDstProvider->stat( mDestination, StatOptions{ false }, mToken ) );
+			if ( !existing ) {
+				if ( !existing.error().is( VFSErrorCode::NotFound ) )
+					return Err( std::move( existing ).error() );
+				break;
+			}
+			auto info = await( mSrcProvider->stat( mSource, StatOptions{ false }, mToken ) );
+			if ( !info )
+				return Err( std::move( info ).error() );
+			if ( mOptions.overwrite == OverwritePolicy::MergeDirectories &&
+				 info.value().isDirectory() && existing.value().isDirectory() ) {
+				mRootConflictResolved = true;
+				break;
+			}
+			auto resolved =
+				resolveConflict( info.value(), existing.value(), mSource, mDestination );
+			if ( !resolved )
+				return Err( std::move( resolved ).error() );
+			const auto& decision = resolved.value();
+			if ( decision.action == ConflictAction::Skip ) {
+				++mResult.filesSkipped;
+				return Ok( mResult );
+			}
+			if ( decision.action == ConflictAction::Rename ) {
+				auto renamed =
+					renamedDestination( mDestination, decision.name, info.value().isDirectory() );
+				if ( !renamed )
+					return Err( std::move( renamed ).error() );
+				mDestination = std::move( renamed ).value();
+				continue;
+			}
+			if ( info.value().isDirectory() != existing.value().isDirectory() )
+				return Err( VFSError( existing.value().isDirectory() ? VFSErrorCode::IsDirectory
+																	 : VFSErrorCode::NotDirectory,
+									  mDestination ) );
+			mRootConflictResolved = true;
+			break;
+		}
+	}
 	if ( mMove && mSameFileSystem ) {
 		auto renamed = await( mSrcProvider->rename(
 			mSource, mDestination,
-			RenameOptions{ mOptions.overwrite == OverwritePolicy::Overwrite }, mToken ) );
+			RenameOptions{ mRootConflictResolved ||
+						   ( !mOnConflict && mOptions.overwrite == OverwritePolicy::Overwrite ) },
+			mToken ) );
 		if ( renamed ) {
 			mResult.renamed = true;
 			mState->updateProgress(
@@ -95,11 +144,11 @@ VFSResult<TransferResult> TransferEngine::run() {
 			return Ok( mResult );
 		}
 		const auto code = renamed.error().code;
-		bool fallback =
-			code == VFSErrorCode::Unsupported || code == VFSErrorCode::NotEmpty ||
-			( code == VFSErrorCode::AlreadyExists &&
-			  mOptions.overwrite != OverwritePolicy::Fail ) ||
-			( code == VFSErrorCode::IsDirectory && mOptions.overwrite != OverwritePolicy::Fail );
+		bool fallback = code == VFSErrorCode::Unsupported || code == VFSErrorCode::NotEmpty ||
+						( code == VFSErrorCode::AlreadyExists &&
+						  ( mOptions.overwrite != OverwritePolicy::Fail || mOnConflict ) ) ||
+						( code == VFSErrorCode::IsDirectory &&
+						  ( mOptions.overwrite != OverwritePolicy::Fail || mOnConflict ) );
 		if ( !fallback )
 			return Err( std::move( renamed ).error() );
 	}
@@ -127,7 +176,7 @@ VFSResult<TransferResult> TransferEngine::run() {
 	}
 
 	if ( rootInfo.value().isDirectory() && mSameFileSystem ) {
-		if ( auto checked = checkDirectoryDestination(); !checked )
+		if ( auto checked = checkDirectoryDestination( mSource, mDestination ); !checked )
 			return Err( std::move( checked ).error() );
 	}
 
@@ -172,20 +221,21 @@ VFSResult<void> TransferEngine::checkSource( const VFSFileInfo& info, const URI&
 	return Ok();
 }
 
-VFSResult<void> TransferEngine::checkDirectoryDestination() {
+VFSResult<void> TransferEngine::checkDirectoryDestination( const URI& sourceURI,
+														   const URI& destinationURI ) {
 	auto invalid = [&] {
-		return Err( VFSError( VFSErrorCode::InvalidOperation, mDestination,
+		return Err( VFSError( VFSErrorCode::InvalidOperation, destinationURI,
 							  "Cannot copy a directory into itself" ) );
 	};
-	if ( mDestination.isSameOrChildOf( mSource ) )
+	if ( destinationURI.isSameOrChildOf( sourceURI ) )
 		return invalid();
-	auto source = await( mSrcProvider->canonicalize( mSource, mToken ) );
+	auto source = await( mSrcProvider->canonicalize( sourceURI, mToken ) );
 	if ( !source ) {
 		if ( source.error().is( VFSErrorCode::Unsupported ) )
 			return Ok();
 		return Err( std::move( source ).error() );
 	}
-	URI ancestor = mDestination;
+	URI ancestor = destinationURI;
 	std::vector<std::string> missing;
 	while ( true ) {
 		auto resolved = await( mDstProvider->canonicalize( ancestor, mToken ) );
@@ -258,8 +308,8 @@ VFSResult<void> TransferEngine::scan( Node& node, const URI& uri, const URI& des
 	return Ok();
 }
 
-VFSResult<bool> TransferEngine::copyNode( const Node& node, const URI& source,
-										  const URI& destination, int depth ) {
+VFSResult<bool> TransferEngine::copyNode( const Node& node, const URI& source, URI destination,
+										  int depth ) {
 	if ( auto c = checkCancelled( source ); !c )
 		return Err( std::move( c ).error() );
 	const VFSFileInfo& info = node.info;
@@ -283,45 +333,90 @@ VFSResult<bool> TransferEngine::copyNode( const Node& node, const URI& source,
 		return Ok( false );
 	}
 
-	auto existing = await( mDstProvider->stat( destination, StatOptions{}, mToken ) );
-	if ( existing ) {
-		if ( existing.value().isDirectory() )
-			return Err( VFSError( VFSErrorCode::IsDirectory, destination ) );
-		if ( mOptions.overwrite == OverwritePolicy::Fail ||
-			 mOptions.overwrite == OverwritePolicy::MergeDirectories )
-			return Err( VFSError( VFSErrorCode::AlreadyExists, destination ) );
-		if ( mOptions.overwrite == OverwritePolicy::Skip ) {
-			++mResult.filesSkipped;
-			advanceFiles( info );
-			return Ok( false );
+	bool overwrite = ( !mOnConflict && mOptions.overwrite == OverwritePolicy::Overwrite ) ||
+					 ( depth == 0 && mRootConflictResolved );
+	for ( ;; ) {
+		auto existing = await( mDstProvider->stat( destination, StatOptions{}, mToken ) );
+		if ( existing ) {
+			if ( mOnConflict && !( depth == 0 && mRootConflictResolved ) ) {
+				auto resolved = resolveConflict( info, existing.value(), source, destination );
+				if ( !resolved )
+					return Err( std::move( resolved ).error() );
+				const auto& decision = resolved.value();
+				if ( decision.action == ConflictAction::Rename ) {
+					auto renamed = renamedDestination( destination, decision.name, false );
+					if ( !renamed )
+						return Err( std::move( renamed ).error() );
+					destination = std::move( renamed ).value();
+					overwrite = false;
+					continue;
+				}
+				if ( decision.action == ConflictAction::Skip ) {
+					++mResult.filesSkipped;
+					advanceFiles( info );
+					return Ok( false );
+				}
+				overwrite = true;
+			} else if ( !mOnConflict ) {
+				if ( existing.value().isDirectory() )
+					return Err( VFSError( VFSErrorCode::IsDirectory, destination ) );
+				if ( mOptions.overwrite == OverwritePolicy::Fail ||
+					 mOptions.overwrite == OverwritePolicy::MergeDirectories )
+					return Err( VFSError( VFSErrorCode::AlreadyExists, destination ) );
+				if ( mOptions.overwrite == OverwritePolicy::Skip ) {
+					++mResult.filesSkipped;
+					advanceFiles( info );
+					return Ok( false );
+				}
+			}
+			if ( mSameFileSystem ) {
+				auto same = isSameFile( source, destination );
+				if ( !same )
+					return Err( std::move( same ).error() );
+				if ( same.value() )
+					return Err( VFSError( VFSErrorCode::InvalidOperation, destination,
+										  "Source and destination are the same file" ) );
+			}
+			if ( existing.value().isDirectory() )
+				return Err( VFSError( VFSErrorCode::IsDirectory, destination ) );
+		} else if ( !existing.error().is( VFSErrorCode::NotFound ) ) {
+			return Err( std::move( existing ).error() );
 		}
-		if ( mSameFileSystem ) {
-			auto same = isSameFile( source, destination );
-			if ( !same )
-				return Err( std::move( same ).error() );
-			if ( same.value() ) {
-				return Err( VFSError( VFSErrorCode::InvalidOperation, destination,
-									  "Source and destination are the same file" ) );
+
+		if ( mMove ) {
+			if ( auto checked = checkSource( info, source ); !checked )
+				return Err( std::move( checked ).error() );
+			// A conflict decision can still use a native move, including an auto-renamed target.
+			if ( mSameFileSystem && mOnConflict ) {
+				auto renamed = await( mSrcProvider->rename( source, destination,
+															RenameOptions{ overwrite }, mToken ) );
+				if ( renamed ) {
+					mResult.renamed = depth == 0;
+					++mResult.filesTransferred;
+					++mResult.sourcesRemoved;
+					advanceFiles( info );
+					return Ok( true );
+				}
+				if ( renamed.error().is( VFSErrorCode::AlreadyExists ) )
+					continue;
+				if ( !renamed.error().is( VFSErrorCode::Unsupported ) )
+					return Err( std::move( renamed ).error() );
 			}
 		}
-	} else if ( !existing.error().is( VFSErrorCode::NotFound ) ) {
-		return Err( std::move( existing ).error() );
-	}
-
-	if ( mMove ) {
-		if ( auto checked = checkSource( info, source ); !checked )
-			return Err( std::move( checked ).error() );
-	}
-	if ( auto copied = copyFile( info, source, destination ); !copied ) {
-		// A destination can appear while the temporary is written. Skip still applies at
-		// publication time, and a move must keep that source.
-		if ( mOptions.overwrite == OverwritePolicy::Skip &&
-			 copied.error().is( VFSErrorCode::AlreadyExists ) ) {
-			++mResult.filesSkipped;
-			advanceFiles( info );
-			return Ok( false );
+		if ( auto copied = copyFile( info, source, destination, overwrite ); !copied ) {
+			// Resolve destinations which appeared while writing, without replaying completed files.
+			if ( copied.error().is( VFSErrorCode::AlreadyExists ) ) {
+				if ( mOnConflict )
+					continue;
+				if ( mOptions.overwrite == OverwritePolicy::Skip ) {
+					++mResult.filesSkipped;
+					advanceFiles( info );
+					return Ok( false );
+				}
+			}
+			return Err( std::move( copied ).error() );
 		}
-		return Err( std::move( copied ).error() );
+		break;
 	}
 	++mResult.filesTransferred;
 	advanceFiles( info, false );
@@ -339,30 +434,58 @@ VFSResult<bool> TransferEngine::copyNode( const Node& node, const URI& source,
 	return Ok( true );
 }
 
-VFSResult<bool> TransferEngine::copyDirectory( const Node& node, const URI& source,
-											   const URI& destination, int depth ) {
+VFSResult<bool> TransferEngine::copyDirectory( const Node& node, const URI& source, URI destination,
+											   int depth ) {
 	if ( mMove ) {
 		if ( auto checked = checkSource( node.info, source ); !checked )
 			return Err( std::move( checked ).error() );
 	}
-	auto existing = await( mDstProvider->stat( destination, StatOptions{}, mToken ) );
-	if ( existing ) {
-		if ( !existing.value().isDirectory() )
-			return Err( VFSError( VFSErrorCode::NotDirectory, destination ) );
-		if ( mOptions.overwrite == OverwritePolicy::Fail )
-			return Err( VFSError( VFSErrorCode::AlreadyExists, destination ) );
-	} else if ( !existing.error().is( VFSErrorCode::NotFound ) ) {
-		return Err( std::move( existing ).error() );
-	} else {
-		MkDirOptions mkdir;
-		if ( mOptions.preservePermissions &&
-			 mDstProvider->capabilities( destination ).has( VFSCapability::Permissions ) ) {
-			mkdir.permissions = node.info.permissions();
+	for ( ;; ) {
+		auto existing = await( mDstProvider->stat( destination, StatOptions{}, mToken ) );
+		if ( existing ) {
+			if ( mOnConflict && !( depth == 0 && mRootConflictResolved ) &&
+				 ( mOptions.overwrite != OverwritePolicy::MergeDirectories ||
+				   !existing.value().isDirectory() ) ) {
+				auto resolved = resolveConflict( node.info, existing.value(), source, destination );
+				if ( !resolved )
+					return Err( std::move( resolved ).error() );
+				const auto& decision = resolved.value();
+				if ( decision.action == ConflictAction::Rename ) {
+					auto renamed = renamedDestination( destination, decision.name, true );
+					if ( !renamed )
+						return Err( std::move( renamed ).error() );
+					destination = std::move( renamed ).value();
+					continue;
+				}
+				if ( decision.action == ConflictAction::Skip ) {
+					++mResult.filesSkipped;
+					return Ok( false );
+				}
+			} else if ( !mOnConflict ) {
+				if ( !existing.value().isDirectory() )
+					return Err( VFSError( VFSErrorCode::NotDirectory, destination ) );
+				if ( mOptions.overwrite == OverwritePolicy::Fail )
+					return Err( VFSError( VFSErrorCode::AlreadyExists, destination ) );
+			}
+			if ( !existing.value().isDirectory() )
+				return Err( VFSError( VFSErrorCode::NotDirectory, destination ) );
+		} else if ( !existing.error().is( VFSErrorCode::NotFound ) ) {
+			return Err( std::move( existing ).error() );
+		} else {
+			MkDirOptions mkdir;
+			if ( mOptions.preservePermissions &&
+				 mDstProvider->capabilities( destination ).has( VFSCapability::Permissions ) ) {
+				mkdir.permissions = node.info.permissions();
+			}
+			auto made = await( mDstProvider->mkdir( destination, mkdir, mToken ) );
+			if ( !made ) {
+				if ( mOnConflict && made.error().is( VFSErrorCode::AlreadyExists ) )
+					continue;
+				return Err( std::move( made ).error() );
+			}
+			++mResult.directoriesCreated;
 		}
-		auto made = await( mDstProvider->mkdir( destination, mkdir, mToken ) );
-		if ( !made )
-			return Err( std::move( made ).error() );
-		++mResult.directoriesCreated;
+		break;
 	}
 
 	bool complete = true;
@@ -411,8 +534,73 @@ VFSResult<bool> TransferEngine::isSameFile( const URI& source, const URI& destin
 	return Ok( canonicalSource.value().getPath() == canonicalDestination.value().getPath() );
 }
 
+VFSResult<ConflictResolution> TransferEngine::resolveConflict( const VFSFileInfo& sourceInfo,
+															   const VFSFileInfo& destinationInfo,
+															   const URI& source,
+															   const URI& destination ) {
+	if ( auto cancelled = checkCancelled( source ); !cancelled )
+		return Err( std::move( cancelled ).error() );
+	TransferConflict conflict{ source, destination, sourceInfo, destinationInfo };
+	auto task = mOnConflict( std::move( conflict ), mToken );
+	while ( task.waitFor( std::chrono::milliseconds( 20 ) ) == TaskState::Pending ) {
+		if ( auto cancelled = checkCancelled( source ); !cancelled )
+			return Err( std::move( cancelled ).error() );
+	}
+	if ( auto cancelled = checkCancelled( source ); !cancelled )
+		return Err( std::move( cancelled ).error() );
+	auto resolved = await( std::move( task ) );
+	if ( !resolved )
+		return resolved;
+	auto& decision = resolved.value();
+	if ( decision.action == ConflictAction::Cancel )
+		return Err( cancelledError( source ) );
+	if ( decision.action == ConflictAction::OverwriteOlder ) {
+		const auto src = sourceInfo.modifiedTime();
+		const auto dst = destinationInfo.modifiedTime();
+		decision.action =
+			src && dst && *src > *dst && !sourceInfo.isDirectory() && !destinationInfo.isDirectory()
+				? ConflictAction::Overwrite
+				: ConflictAction::Skip;
+	}
+	return resolved;
+}
+
+VFSResult<URI> TransferEngine::renamedDestination( const URI& destination, const std::string& name,
+												   bool directory ) {
+	auto validate = [this, directory]( URI renamed ) -> VFSResult<URI> {
+		if ( renamed == mSource )
+			return Err( VFSError( VFSErrorCode::InvalidOperation, renamed,
+								  "Source and destination must remain distinct" ) );
+		if ( directory && mSameFileSystem ) {
+			if ( auto checked = checkDirectoryDestination( mSource, renamed ); !checked )
+				return Err( std::move( checked ).error() );
+		}
+		return Ok( std::move( renamed ) );
+	};
+	if ( !name.empty() ) {
+		if ( !VFSPath::validName( name, destination.getParent() ) ||
+			 name == destination.getLastPathSegment() )
+			return Err( VFSError( VFSErrorCode::InvalidURI, destination, "Invalid new name" ) );
+		return validate( destination.getParent().withAppendedSegment( name ) );
+	}
+	const auto original = destination.getLastPathSegment();
+	auto parts = directory ? std::make_pair( original, std::string() )
+						   : System::FileSystem::fileNameSplitExtension( original );
+	for ( Uint64 number = 1;; ++number ) {
+		if ( auto cancelled = checkCancelled( destination ); !cancelled )
+			return Err( std::move( cancelled ).error() );
+		URI candidate = destination.getParent().withAppendedSegment(
+			parts.first + " (" + String::toString( number ) + ")" + parts.second );
+		auto existing = await( mDstProvider->stat( candidate, StatOptions{ false }, mToken ) );
+		if ( !existing && existing.error().is( VFSErrorCode::NotFound ) )
+			return validate( std::move( candidate ) );
+		if ( !existing )
+			return Err( std::move( existing ).error() );
+	}
+}
+
 VFSResult<void> TransferEngine::copyFile( const VFSFileInfo& info, const URI& source,
-										  const URI& destination ) {
+										  const URI& destination, bool overwrite ) {
 	mState->updateProgress(
 		[&]( TransferProgress& p ) {
 			p.currentSource = source;
@@ -432,12 +620,12 @@ VFSResult<void> TransferEngine::copyFile( const VFSFileInfo& info, const URI& so
 	FileWriter::ReplaceOptions replace;
 	if ( mOptions.preservePermissions && info.permissions() )
 		replace.exactPermissions = info.permissions();
-	replace.overwrite = mOptions.overwrite == OverwritePolicy::Overwrite;
+	replace.overwrite = overwrite;
 	std::vector<Uint8> buffer( mOptions.chunkSize );
+	Uint64 offset = 0;
 	auto copied = FileWriter::replace(
 		*mDstProvider, target.value(), replace, mToken,
 		[&]( FileHandle& dst ) -> VFSResult<void> {
-			Uint64 offset = 0;
 			while ( true ) {
 				if ( auto c = checkCancelled( source ); !c )
 					return c;
@@ -453,12 +641,18 @@ VFSResult<void> TransferEngine::copyFile( const VFSFileInfo& info, const URI& so
 					return written;
 				}
 				offset += got;
-				mResult.bytesTransferred += got;
 				mState->updateProgress( [got]( TransferProgress& p ) { p.bytesDone += got; } );
 			}
 		},
 		[]() -> VFSResult<void> { return Ok(); } );
 	await( src.close() );
+	if ( copied ) {
+		mResult.bytesTransferred += offset;
+	} else if ( offset > 0 ) {
+		// The temporary was discarded. Do not count it again if a publication conflict
+		// resolves to retry or skip this entry.
+		mState->updateProgress( [offset]( TransferProgress& p ) { p.bytesDone -= offset; }, true );
+	}
 	return copied;
 }
 

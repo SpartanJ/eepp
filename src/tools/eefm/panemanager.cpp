@@ -20,7 +20,8 @@ const char* PaneLayout = R"xml(
 	<TabWidget class="pane_tabs" layout_width="match_parent" layout_height="0" layout_weight="1" />
 	<hbox class="pane_status_bar" layout_width="match_parent" layout_height="wrap_content">
 		<TextView class="pane_status" layout_width="wrap_content" layout_height="wrap_content" />
-		<widget layout_width="0" layout_weight="1" layout_height="1dp" />
+		<!-- Let clicks in the empty area reach the status bar background menu. -->
+		<widget layout_width="0" layout_weight="1" layout_height="1dp" enabled="false" />
 		<hbox class="pane_transfer" layout_width="wrap_content" layout_height="wrap_content" visible="false">
 			<TextView class="transfer_text" layout_gravity="center_vertical" />
 			<ProgressBar class="transfer_bar" layout_width="140dp" layout_gravity="center_vertical" display-percent="false" />
@@ -592,6 +593,7 @@ void PaneManager::navigate( FileTab* tab, URI uri, bool recordHistory ) {
 			tab->pane->filterInput->setText( "" );
 	}
 	applyFilter( tab );
+	tab->view->beginNavigation();
 	tab->model->setURI( uri );
 	updateTabTitle( tab );
 	if ( tab == currentTab( *tab->pane ) )
@@ -690,6 +692,8 @@ void PaneManager::updateChrome( Pane& pane ) {
 }
 
 void PaneManager::onTabStateChanged( FileTab* tab ) {
+	if ( tab->model->loadState() != VFSDirectoryModel::LoadState::Loading )
+		tab->view->endNavigation();
 	if ( !tab->selectWhenListed.empty() ) {
 		if ( auto row = tab->model->rowOf( tab->selectWhenListed ) ) {
 			tab->view->setSelection( tab->model->index( *row ) );

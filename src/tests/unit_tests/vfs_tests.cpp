@@ -568,6 +568,287 @@ UTEST( VFSTransfer, directoryMergeRequiresExplicitFileOverwrite ) {
 	EXPECT_STDSTREQ( "new", readString( vfs, file ) );
 }
 
+UTEST( VFSTransfer, resolvesNestedConflictsWithoutRestartingTheTree ) {
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( mem );
+	for ( const auto* name : { "a.txt", "b.txt", "c.txt" } ) {
+		mem->putFile( URI( std::string( "mem://test/source/sub/" ) + name ), "new" );
+		mem->putFile( URI( std::string( "mem://test/destination/sub/" ) + name ), "old" );
+	}
+	int files = 0, folders = 0;
+	CopyOptions options;
+	TransferConflictResolver onConflict;
+	onConflict = [&]( const TransferConflict& conflict, CancellationToken ) {
+		ConflictResolution decision;
+		if ( conflict.sourceInfo.isDirectory() ) {
+			++folders;
+			decision.action = ConflictAction::Overwrite;
+		} else {
+			++files;
+			const auto name = conflict.source.getLastPathSegment();
+			decision.action = name == "a.txt"	? ConflictAction::Skip
+							  : name == "b.txt" ? ConflictAction::Overwrite
+												: ConflictAction::Rename;
+		}
+		return readyValue<ConflictResolution>( std::move( decision ) );
+	};
+	auto result = waitFor(
+		vfs.copy( URI( "mem://test/source" ), URI( "mem://test/destination" ), options, onConflict )
+			.completion() );
+	ASSERT_TRUE( result );
+	EXPECT_EQ( 2, folders );
+	EXPECT_EQ( 3, files );
+	EXPECT_EQ( 2u, result.value().filesTransferred );
+	EXPECT_EQ( 1u, result.value().filesSkipped );
+	EXPECT_STDSTREQ( "old", readString( vfs, URI( "mem://test/destination/sub/a.txt" ) ) );
+	EXPECT_STDSTREQ( "new", readString( vfs, URI( "mem://test/destination/sub/b.txt" ) ) );
+	EXPECT_STDSTREQ( "old", readString( vfs, URI( "mem://test/destination/sub/c.txt" ) ) );
+	EXPECT_STDSTREQ( "new", readString( vfs, URI( "mem://test/destination/sub/c (1).txt" ) ) );
+}
+
+UTEST( VFSTransfer, interactiveMoveKeepsSkippedSourcesAndRenamesWithoutConflicts ) {
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( mem );
+	mem->putFile( URI( "mem://test/source/a" ), "new" );
+	mem->putFile( URI( "mem://test/destination/a" ), "old" );
+	CopyOptions options;
+	TransferConflictResolver onConflict;
+	onConflict = []( const TransferConflict&, CancellationToken ) {
+		return readyValue<ConflictResolution>( ConflictResolution{ {}, ConflictAction::Skip } );
+	};
+	auto skipped = waitFor( vfs.move( URI( "mem://test/source/a" ),
+									  URI( "mem://test/destination/a" ), options, onConflict )
+								.completion() );
+	ASSERT_TRUE( skipped );
+	EXPECT_STDSTREQ( "new", readString( vfs, URI( "mem://test/source/a" ) ) );
+	EXPECT_STDSTREQ( "old", readString( vfs, URI( "mem://test/destination/a" ) ) );
+	auto moved = waitFor( vfs.move( URI( "mem://test/source/a" ), URI( "mem://test/destination/b" ),
+									options, onConflict )
+							  .completion() );
+	ASSERT_TRUE( moved );
+	EXPECT_TRUE( moved.value().renamed );
+	EXPECT_EQ( VFSErrorCode::NotFound,
+			   codeOf( waitFor( vfs.stat( URI( "mem://test/source/a" ) ) ) ) );
+}
+
+UTEST( VFSTransfer, interactiveOverwriteUsesNativeMovesAndRejectsTypeReplacement ) {
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( mem );
+	mem->putFile( URI( "mem://test/source" ), "new" );
+	mem->putFile( URI( "mem://test/destination" ), "old" );
+	CopyOptions options;
+	TransferConflictResolver onConflict;
+	onConflict = []( const TransferConflict&, CancellationToken ) {
+		return readyValue<ConflictResolution>(
+			ConflictResolution{ {}, ConflictAction::Overwrite } );
+	};
+	auto moved = waitFor(
+		vfs.move( URI( "mem://test/source" ), URI( "mem://test/destination" ), options, onConflict )
+			.completion() );
+	ASSERT_TRUE( moved );
+	EXPECT_TRUE( moved.value().renamed );
+	EXPECT_EQ( 0u, moved.value().bytesTransferred );
+	EXPECT_STDSTREQ( "new", readString( vfs, URI( "mem://test/destination" ) ) );
+	mem->putDirectory( URI( "mem://test/folder" ) );
+	EXPECT_EQ( VFSErrorCode::IsDirectory,
+			   codeOf( waitFor( vfs.copy( URI( "mem://test/destination" ),
+										  URI( "mem://test/folder" ), options, onConflict )
+									.completion() ) ) );
+	EXPECT_EQ( VFSErrorCode::NotDirectory,
+			   codeOf( waitFor( vfs.copy( URI( "mem://test/folder" ),
+										  URI( "mem://test/destination" ), options, onConflict )
+									.completion() ) ) );
+	EXPECT_STDSTREQ( "new", readString( vfs, URI( "mem://test/destination" ) ) );
+}
+
+UTEST( VFSTransfer, interactiveDirectoryMoveAsksOncePerConflictAndKeepsSkippedEntries ) {
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( mem );
+	mem->putFile( URI( "mem://test/source/skip" ), "new" );
+	mem->putFile( URI( "mem://test/source/move" ), "move" );
+	mem->putFile( URI( "mem://test/destination/skip" ), "old" );
+	int folders = 0, files = 0;
+	TransferConflictResolver onConflict = [&]( const TransferConflict& conflict,
+											   CancellationToken ) {
+		const bool folder = conflict.sourceInfo.isDirectory();
+		folder ? ++folders : ++files;
+		return readyValue<ConflictResolution>(
+			ConflictResolution{ {}, folder ? ConflictAction::Overwrite : ConflictAction::Skip } );
+	};
+	auto moved = waitFor(
+		vfs.move( URI( "mem://test/source" ), URI( "mem://test/destination" ), {}, onConflict )
+			.completion() );
+	ASSERT_TRUE( moved );
+	EXPECT_EQ( 1, folders );
+	EXPECT_EQ( 1, files );
+	EXPECT_STDSTREQ( "new", readString( vfs, URI( "mem://test/source/skip" ) ) );
+	EXPECT_STDSTREQ( "old", readString( vfs, URI( "mem://test/destination/skip" ) ) );
+	EXPECT_STDSTREQ( "move", readString( vfs, URI( "mem://test/destination/move" ) ) );
+	EXPECT_EQ( VFSErrorCode::NotFound,
+			   codeOf( waitFor( vfs.stat( URI( "mem://test/source/move" ) ) ) ) );
+}
+
+UTEST( VFSTransfer, overwriteOlderOnlyReplacesAnOlderDestination ) {
+	class TimedProvider : public MemoryProvider {
+	  public:
+		Int64 destinationTime{ 40 };
+
+		VFSTask<VFSFileInfo> stat( const URI& uri, const StatOptions& options,
+								   CancellationToken token ) override {
+			return MemoryProvider::stat( uri, options, token )
+				.then( [time = uri.getLastPathSegment() == "source" ? 20 : destinationTime](
+						   VFSResult<VFSFileInfo>&& result ) {
+					if ( result )
+						result.value().setModifiedTime( time );
+					return std::move( result );
+				} );
+		}
+	};
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<TimedProvider>();
+	vfs.registerProvider( mem );
+	mem->putFile( URI( "mem://test/source" ), "new" );
+	mem->putFile( URI( "mem://test/destination" ), "old" );
+	CopyOptions options;
+	TransferConflictResolver onConflict;
+	onConflict = []( const TransferConflict&, CancellationToken ) {
+		return readyValue<ConflictResolution>(
+			ConflictResolution{ {}, ConflictAction::OverwriteOlder } );
+	};
+	auto skipped = waitFor(
+		vfs.copy( URI( "mem://test/source" ), URI( "mem://test/destination" ), options, onConflict )
+			.completion() );
+	ASSERT_TRUE( skipped );
+	EXPECT_STDSTREQ( "old", readString( vfs, URI( "mem://test/destination" ) ) );
+	mem->destinationTime = 10;
+	auto overwritten = waitFor(
+		vfs.copy( URI( "mem://test/source" ), URI( "mem://test/destination" ), options, onConflict )
+			.completion() );
+	ASSERT_TRUE( overwritten );
+	EXPECT_EQ( 0u, overwritten.value().filesSkipped );
+	EXPECT_STDSTREQ( "new", readString( vfs, URI( "mem://test/destination" ) ) );
+}
+
+UTEST( VFSTransfer, conflictRenameValidatesNamesAndNeverReplacesExistingCandidates ) {
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( mem );
+	mem->putFile( URI( "mem://test/source.txt" ), "new" );
+	mem->putFile( URI( "mem://test/file.txt" ), "old" );
+	mem->putFile( URI( "mem://test/file (1).txt" ), "keep" );
+	CopyOptions options;
+	TransferConflictResolver onConflict;
+	onConflict = []( const TransferConflict&, CancellationToken ) {
+		return readyValue<ConflictResolution>( ConflictResolution{ {}, ConflictAction::Rename } );
+	};
+	ASSERT_TRUE( waitFor( vfs.copy( URI( "mem://test/source.txt" ), URI( "mem://test/file.txt" ),
+									options, onConflict )
+							  .completion() ) );
+	EXPECT_STDSTREQ( "keep", readString( vfs, URI( "mem://test/file (1).txt" ) ) );
+	EXPECT_STDSTREQ( "new", readString( vfs, URI( "mem://test/file (2).txt" ) ) );
+	onConflict = []( const TransferConflict&, CancellationToken ) {
+		return readyValue<ConflictResolution>(
+			ConflictResolution{ "../escape", ConflictAction::Rename } );
+	};
+	EXPECT_EQ( VFSErrorCode::InvalidURI,
+			   codeOf( waitFor( vfs.copy( URI( "mem://test/source.txt" ),
+										  URI( "mem://test/file.txt" ), options, onConflict )
+									.completion() ) ) );
+	EXPECT_STDSTREQ( "old", readString( vfs, URI( "mem://test/file.txt" ) ) );
+}
+
+UTEST( VFSTransfer, conflictRenameProtectsACandidateCreatedDuringPublication ) {
+	class RacingProvider : public MemoryProvider {
+	  public:
+		VFSTask<void> rename( const URI& from, const URI& to, const RenameOptions& options,
+							  CancellationToken token ) override {
+			if ( !mCollided && to.getLastPathSegment() == "file (1).txt" ) {
+				mCollided = true;
+				putFile( to, "concurrent file" );
+			}
+			return MemoryProvider::rename( from, to, options, std::move( token ) );
+		}
+
+	  private:
+		bool mCollided{ false };
+	};
+	for ( const auto action :
+		  { ConflictAction::Rename, ConflictAction::Skip, ConflictAction::Overwrite } ) {
+		VirtualFileSystem vfs;
+		auto mem = std::make_shared<RacingProvider>();
+		vfs.registerProvider( mem );
+		mem->putFile( URI( "mem://test/source.txt" ), "new" );
+		mem->putFile( URI( "mem://test/file.txt" ), "old" );
+		CopyOptions options;
+		options.overwrite = OverwritePolicy::Overwrite;
+		TaskResolver<VFSResult<ConflictResolution>> resolve;
+		auto pending = VFSTask<ConflictResolution>::create( resolve );
+		TransferConflictResolver onConflict = [&, first = true]( const TransferConflict&,
+																 CancellationToken ) mutable {
+			if ( first ) {
+				first = false;
+				return std::move( pending );
+			}
+			return readyValue<ConflictResolution>( ConflictResolution{ {}, action } );
+		};
+		auto transfer = vfs.copy( URI( "mem://test/source.txt" ), URI( "mem://test/file.txt" ),
+								  options, onConflict );
+		TransferProgress last;
+		bool bounded = true;
+		// Hold the first decision until subscribed, so even a fast worker is observed.
+		auto subscription = transfer.onProgress( [&]( const TransferProgress& progress ) {
+			last = progress;
+			bounded =
+				bounded && ( !progress.bytesTotal || progress.bytesDone <= *progress.bytesTotal );
+		} );
+		resolve( Ok( ConflictResolution{ {}, ConflictAction::Rename } ) );
+		auto result = waitFor( transfer.completion() );
+		ASSERT_TRUE( result );
+		EXPECT_TRUE( bounded );
+		EXPECT_EQ( 3u, last.bytesDone );
+		EXPECT_EQ( 1u, last.filesDone );
+		EXPECT_EQ( action == ConflictAction::Skip ? 0u : 3u, result.value().bytesTransferred );
+		EXPECT_EQ( action == ConflictAction::Skip ? 1u : 0u, result.value().filesSkipped );
+		EXPECT_STDSTREQ( "old", readString( vfs, URI( "mem://test/file.txt" ) ) );
+		EXPECT_STDSTREQ( action == ConflictAction::Overwrite ? "new" : "concurrent file",
+						 readString( vfs, URI( "mem://test/file (1).txt" ) ) );
+		if ( action == ConflictAction::Rename ) {
+			EXPECT_STDSTREQ( "new", readString( vfs, URI( "mem://test/file (1) (1).txt" ) ) );
+		}
+	}
+}
+
+UTEST( VFSTransfer, cancellingWhileAConflictDecisionIsPendingDoesNotWaitForTheUI ) {
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( mem );
+	mem->putFile( URI( "mem://test/source" ), "new" );
+	mem->putFile( URI( "mem://test/destination" ), "old" );
+	TaskResolver<VFSResult<ConflictResolution>> resolve;
+	auto pending = VFSTask<ConflictResolution>::create( resolve );
+	std::atomic<bool> requested{ false };
+	CopyOptions options;
+	TransferConflictResolver onConflict;
+	onConflict = [&]( const TransferConflict&, CancellationToken ) {
+		requested = true;
+		return std::move( pending );
+	};
+	auto transfer = vfs.copy( URI( "mem://test/source" ), URI( "mem://test/destination" ), options,
+							  onConflict );
+	auto completion = transfer.completion();
+	TestLoop loop;
+	EXPECT_TRUE( loop.runUntil( [&] { return requested.load(); } ) );
+	transfer.cancel();
+	EXPECT_TRUE( loop.runUntil( [&] { return completion.isReady(); } ) );
+	resolve( Ok( ConflictResolution{} ) );
+	EXPECT_EQ( VFSErrorCode::Cancelled, codeOf( waitFor( std::move( completion ) ) ) );
+	EXPECT_STDSTREQ( "old", readString( vfs, URI( "mem://test/destination" ) ) );
+}
+
 UTEST( VFSTransfer, moveNeverRemovesUncopiedSources ) {
 	VirtualFileSystem vfs;
 	auto memA = std::make_shared<MemoryProvider>( "mema" );
@@ -1034,6 +1315,45 @@ UTEST( VFSSafety, writeAllCreateParentsWithOneOrchestrationThread ) {
 }
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
+
+UTEST( VFSTransfer, interactiveSymlinkMoveRemainsANativeRename ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	auto source = tmp.uri().withAppendedSegment( "source-link" );
+	auto destination = tmp.uri().withAppendedSegment( "destination" );
+	ASSERT_EQ( 0, ::symlink( "target", source.getFSPath().c_str() ) );
+	ASSERT_TRUE( waitFor( vfs.writeAll( destination, "old" ) ) );
+	TransferConflictResolver onConflict = []( const TransferConflict&, CancellationToken ) {
+		return readyValue<ConflictResolution>(
+			ConflictResolution{ {}, ConflictAction::Overwrite } );
+	};
+	auto moved = waitFor( vfs.move( source, destination, {}, onConflict ).completion() );
+	ASSERT_TRUE( moved );
+	EXPECT_TRUE( moved.value().renamed );
+	auto link = waitFor( vfs.stat( destination, StatOptions{ false } ) );
+	ASSERT_TRUE( link );
+	EXPECT_TRUE( link.value().isSymlink() );
+	EXPECT_STDSTREQ( "target", link.value().symlinkTarget );
+}
+
+UTEST( VFSTransfer, renamedDirectoryCannotAliasItsSource ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	auto source = tmp.uri().withAppendedSegment( "source" );
+	auto inside = source.withAppendedSegment( "inside" );
+	auto destination = tmp.uri().withAppendedSegment( "destination" );
+	auto alias = tmp.uri().withAppendedSegment( "alias" );
+	ASSERT_TRUE( waitFor( vfs.makeDirs( inside ) ) );
+	ASSERT_TRUE( waitFor( vfs.makeDir( destination ) ) );
+	ASSERT_EQ( 0, ::symlink( inside.getFSPath().c_str(), alias.getFSPath().c_str() ) );
+	TransferConflictResolver onConflict = []( const TransferConflict&, CancellationToken ) {
+		return readyValue<ConflictResolution>(
+			ConflictResolution{ "alias", ConflictAction::Rename } );
+	};
+	auto copied = waitFor( vfs.copy( source, destination, {}, onConflict ).completion() );
+	EXPECT_EQ( VFSErrorCode::InvalidOperation, codeOf( copied ) );
+	EXPECT_TRUE( waitFor( vfs.stat( inside ) ).hasValue() );
+}
 
 UTEST( VFSSafety, copyOntoAHardLinkKeepsTheSource ) {
 	TempDir tmp;

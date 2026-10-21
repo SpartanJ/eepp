@@ -151,9 +151,17 @@ class EE_VFS_API VirtualFileSystem {
 	/** Copies a file or directory tree, across providers when necessary. */
 	Transfer copy( const URI& source, const URI& destination, const CopyOptions& options = {} );
 
+	/** Copy with per-entry conflict decisions, including collisions inside directory trees. */
+	Transfer copy( const URI& source, const URI& destination, const CopyOptions& options,
+				   TransferConflictResolver onConflict );
+
 	/** Moves a file or directory: native rename when possible, otherwise copy + remove of the
 	 * entries that were completely copied. */
 	Transfer move( const URI& source, const URI& destination, const CopyOptions& options = {} );
+
+	/** Move with per-entry conflict decisions. Skipped source entries are retained. */
+	Transfer move( const URI& source, const URI& destination, const CopyOptions& options,
+				   TransferConflictResolver onConflict );
 
 	/** Convenience for watchManager().watch(). */
 	VFSTask<WatchHandle> watch( const URI& root, const WatchOptions& options = {} );

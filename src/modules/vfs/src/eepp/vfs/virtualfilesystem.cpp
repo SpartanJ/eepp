@@ -503,9 +503,23 @@ Transfer VirtualFileSystem::copy( const URI& source, const URI& destination,
 	return TransferEngine::start( *this, mTransferPool, source, destination, options, false );
 }
 
+Transfer VirtualFileSystem::copy( const URI& source, const URI& destination,
+								  const CopyOptions& options,
+								  TransferConflictResolver onConflict ) {
+	return TransferEngine::start( *this, mTransferPool, source, destination, options, false,
+								  std::move( onConflict ) );
+}
+
 Transfer VirtualFileSystem::move( const URI& source, const URI& destination,
 								  const CopyOptions& options ) {
 	return TransferEngine::start( *this, mTransferPool, source, destination, options, true );
+}
+
+Transfer VirtualFileSystem::move( const URI& source, const URI& destination,
+								  const CopyOptions& options,
+								  TransferConflictResolver onConflict ) {
+	return TransferEngine::start( *this, mTransferPool, source, destination, options, true,
+								  std::move( onConflict ) );
 }
 
 }} // namespace EE::VFS

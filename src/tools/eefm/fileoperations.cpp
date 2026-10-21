@@ -20,15 +20,19 @@ FileOperations::FileOperations( App& app ) : mApp( app ), mUI( app.ui() ), mVFS(
 FileOperations::~FileOperations() = default;
 
 void FileOperations::cancelTransfers() {
-	for ( auto& transfer : mTransfers )
+	for ( auto& transfer : mTransfers ) {
+		transfer.second.batch->cancelled = true;
 		transfer.second.transfer.cancel();
+	}
 	mTransfers.clear();
 }
 
 void FileOperations::cancelTransfers( int paneIndex ) {
 	for ( auto& transfer : mTransfers ) {
-		if ( transfer.second.pane == paneIndex )
+		if ( transfer.second.pane == paneIndex ) {
+			transfer.second.batch->cancelled = true;
 			transfer.second.transfer.cancel();
+		}
 	}
 }
 
@@ -700,6 +704,10 @@ void FileOperations::dropFiles( const std::vector<URI>& uris, const URI& destina
 
 void FileOperations::transferFiles( const std::vector<URI>& sources, const URI& destination,
 									bool move, int paneIndex ) {
+	auto batch = std::make_shared<TransferBatch>();
+	batch->entries.reserve( sources.size() );
+	batch->pane = paneIndex;
+	batch->kind = move ? TransferKind::Move : TransferKind::Copy;
 	for ( const auto& source : sources ) {
 		std::string name = source.getLastPathSegment();
 		if ( !validateName( name, destination ) )
@@ -711,35 +719,100 @@ void FileOperations::transferFiles( const std::vector<URI>& sources, const URI& 
 			auto [base, extension] = FileSystem::fileNameSplitExtension( name );
 			target = destination.withAppendedSegment( base + " (copy)" + extension );
 		}
-		startTransfer( source, target, move ? TransferKind::Move : TransferKind::Copy, paneIndex );
+		batch->entries.emplace_back( source, std::move( target ) );
 	}
+	startNextTransfer( batch );
 }
 
 void FileOperations::extractArchive( const URI& file, const URI& destination, int paneIndex ) {
 	URI root = Location::archiveRoot( file );
 	if ( root.empty() )
 		return;
-	CopyOptions options;
-	options.overwrite = OverwritePolicy::MergeDirectories;
-	// Copy the root as one transfer: entries are streamed sequentially, and an empty archive
-	// still creates its destination folder. Existing files require an explicit overwrite.
-	startTransfer( root, destination, TransferKind::Extract, paneIndex, options );
+	auto batch = std::make_shared<TransferBatch>();
+	batch->entries.emplace_back( std::move( root ), destination );
+	batch->pane = paneIndex;
+	batch->kind = TransferKind::Extract;
+	startNextTransfer( batch );
 }
 
-void FileOperations::startTransfer( const URI& source, const URI& destination, TransferKind kind,
-									int paneIndex, const CopyOptions& options ) {
+void FileOperations::startNextTransfer( const std::shared_ptr<TransferBatch>& batch ) {
+	if ( batch->cancelled || batch->next == batch->entries.size() )
+		return;
+	const auto& entry = batch->entries[batch->next++];
+	startTransfer( entry.first, entry.second, batch );
+}
+
+void FileOperations::startTransfer( const URI& source, const URI& destination,
+									const std::shared_ptr<TransferBatch>& batch ) {
+	const auto kind = batch->kind;
+	const int paneIndex = batch->pane;
+	CopyOptions options;
+	if ( kind == TransferKind::Extract )
+		options.overwrite = OverwritePolicy::MergeDirectories;
+	batch->conflictsSkipped = 0;
+	auto onConflict = [this, batch, executor = &mApp.executor()]( TransferConflict conflict,
+																  CancellationToken token ) {
+		TaskResolver<VFSResult<ConflictResolution>> resolve;
+		auto task = VFSTask<ConflictResolution>::create( resolve );
+		// Own the request while it crosses from the transfer worker to the UI thread.
+		executor->execute( [this, batch, conflict = std::move( conflict ), token,
+							resolve = std::move( resolve )]() mutable {
+			if ( batch->cancelled || token.isCancellationRequested() ) {
+				resolve( Err( cancelledError( conflict.source ) ) );
+				return;
+			}
+			const bool folder = conflict.sourceInfo.isDirectory();
+			const auto srcTime = conflict.sourceInfo.modifiedTime();
+			const auto dstTime = conflict.destinationInfo.modifiedTime();
+			const bool sourceNewer = !folder && !conflict.destinationInfo.isDirectory() &&
+									 srcTime && dstTime && *srcTime > *dstTime;
+			auto answer = [batch, sourceNewer,
+						   resolve = std::move( resolve )]( ConflictResolution decision ) mutable {
+				if ( decision.action == ConflictAction::Skip ||
+					 ( decision.action == ConflictAction::OverwriteOlder && !sourceNewer ) )
+					++batch->conflictsSkipped;
+				resolve( Ok( std::move( decision ) ) );
+			};
+			auto remembered = folder ? batch->folders : batch->files;
+			// A remembered overwrite never authorizes replacing a different entry type.
+			if ( remembered &&
+				 ( *remembered == ConflictAction::Skip || *remembered == ConflictAction::Rename ||
+				   conflict.sourceInfo.isDirectory() == conflict.destinationInfo.isDirectory() ) ) {
+				answer( ConflictResolution{ {}, *remembered } );
+				return;
+			}
+			batch->dialog = Dialogs::transferConflict(
+				mUI, conflict,
+				[batch, folder, answer = std::move( answer )]( ConflictResolution decision,
+															   bool applyAll ) mutable {
+					if ( decision.action == ConflictAction::Cancel )
+						batch->cancelled = true;
+					else if ( applyAll )
+						( folder ? batch->folders : batch->files ) = decision.action;
+					answer( std::move( decision ) );
+				} );
+			batch->dialog->on( Event::OnWindowClose,
+							   [batch, dialog = batch->dialog]( const Event* ) {
+								   if ( batch->dialog == dialog )
+									   batch->dialog = nullptr;
+							   } );
+		} );
+		return task;
+	};
 	const bool move = kind == TransferKind::Move;
 	String label = kind == TransferKind::Extract ? mUI->i18n( "eefm_extracting", "Extracting " )
 				   : move						 ? mUI->i18n( "eefm_moving", "Moving " )
 												 : mUI->i18n( "eefm_copying", "Copying " );
 	Uint64 id = ++mLastTransferId;
-	ActiveTransfer active{ id,
-						   paneIndex,
-						   std::move( label ) + Location::displayName( source ),
-						   move ? mVFS->move( source, destination, options )
-								: mVFS->copy( source, destination, options ),
-						   {},
-						   {} };
+	ActiveTransfer active{
+		id,
+		paneIndex,
+		std::move( label ) + Location::displayName( source ),
+		move ? mVFS->move( source, destination, options, std::move( onConflict ) )
+			 : mVFS->copy( source, destination, options, std::move( onConflict ) ),
+		{},
+		{},
+		batch };
 	active.subscription = active.transfer.onProgress(
 		[this, id]( const TransferProgress& progress ) {
 			auto it = mTransfers.find( id );
@@ -753,18 +826,19 @@ void FileOperations::startTransfer( const URI& source, const URI& destination, T
 	mTransfers.emplace( id, std::move( active ) );
 	updateTransfers();
 	std::move( completion )
-		.then( mApp.executor(), [this, id, source, destination, kind, paneIndex,
-								 options]( VFSResult<TransferResult>&& result ) {
+		.then( mApp.executor(), [this, id, destination, kind,
+								 batch]( VFSResult<TransferResult>&& result ) {
 			auto it = mTransfers.find( id );
 			String label = it != mTransfers.end() ? it->second.label : String();
 			if ( it != mTransfers.end() )
 				mTransfers.erase( it );
 			updateTransfers();
 			if ( result ) {
-				if ( result.value().partial() ) {
+				if ( result.value().filesSkipped > batch->conflictsSkipped ) {
 					Dialogs::showMessage( "Partial Transfer",
 										  label + ":\n" +
-											  String::toString( result.value().filesSkipped ) +
+											  String::toString( result.value().filesSkipped -
+																batch->conflictsSkipped ) +
 											  " entries were skipped (existing destinations, "
 											  "symbolic links, or unsupported "
 											  "file types). Skipped source entries were kept." );
@@ -780,31 +854,17 @@ void FileOperations::startTransfer( const URI& source, const URI& destination, T
 							tab->model->refresh();
 					}
 				}
+				startNextTransfer( batch );
 				return;
 			}
-			if ( result.error().is( VFSErrorCode::AlreadyExists ) &&
-				 ( options.overwrite == OverwritePolicy::Fail ||
-				   options.overwrite == OverwritePolicy::MergeDirectories ) ) {
-				String question =
-					kind == TransferKind::Extract
-						? mUI->i18n( "eefm_extract_overwrite",
-									 "The extraction destination contains existing files. "
-									 "Overwrite them?\n" ) +
-							  Location::text( destination )
-						: String( String::format( "\"%s\" already exists. Overwrite it?",
-												  destination.getLastPathSegment().c_str() ) );
-				Dialogs::confirm(
-					mUI, mUI->i18n( "eefm_file_exists", "File Already Exists" ), question,
-					[this, source, destination, kind, paneIndex, options]( bool overwrite ) {
-						if ( !overwrite )
-							return;
-						CopyOptions retry = options;
-						retry.overwrite = OverwritePolicy::Overwrite;
-						startTransfer( source, destination, kind, paneIndex, retry );
-					} );
+			if ( result.error().is( VFSErrorCode::Cancelled ) ) {
+				batch->cancelled = true;
+				if ( batch->dialog && !batch->dialog->isClosing() )
+					batch->dialog->closeWindow();
 				return;
 			}
 			reportError( label, result.error() );
+			batch->cancelled = true;
 		} );
 }
 

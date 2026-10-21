@@ -59,6 +59,11 @@ class FileTableView : public UITableView {
 	/** @return The row of a widget inside this view (cells or rows), if any. */
 	std::optional<size_t> rowOf( Node* node ) const;
 
+	/** Reset type-to-select for a new location and retain input until its listing is ready. */
+	void beginNavigation();
+
+	void endNavigation();
+
   protected:
 	FileTableView();
 
@@ -69,6 +74,15 @@ class FileTableView : public UITableView {
 	Uint32 onMouseClick( const Vector2i& position, const Uint32& flags ) override;
 
 	Uint32 onKeyDown( const KeyEvent& event ) override;
+
+	Uint32 onTextInput( const TextInputEvent& event ) override;
+
+	void onWidgetFocusLoss() override;
+
+  private:
+	String mNavigationInput;
+	bool mLoading{ false };
+	bool mReplayingNavigation{ false };
 };
 
 } // namespace eefm
