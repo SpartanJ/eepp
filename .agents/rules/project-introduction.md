@@ -40,8 +40,11 @@ database, launching applications) may use local platform APIs. See `docs/article
 
 AI agents should prefer `EEPP_RUNTIME=headless` when launching ordinary applications or examples
 and when automating their UI with the inspector. This avoids opening desktop windows or interrupting
-the human's keyboard input and focus. Coordinate interactive checks that require visible native
-windows with the user before driving them.
+the human's keyboard input and focus. When headless rendering is unavailable (notably on macOS),
+or native rendering needs verification, use `EEPP_RUNTIME=native EEPP_WINDOW_HIDDEN=1` instead of
+modifying application sources to add `WindowStyle::Hidden`. This also keeps secondary native windows
+hidden, even if the application calls `show()` or restores them. Coordinate interactive checks that
+require visible native windows with the user before driving them.
 
 Unit tests and benchmarks are different: run their release binaries with the native runtime on a
 usable desktop. The unit-test build defines `EE_UNIT_TESTS`, which adds `WindowStyle::Hidden` to

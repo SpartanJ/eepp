@@ -39,6 +39,26 @@ Copy the `port` and generated `token` from that startup line into the client env
 The default port is selected by the OS at launch, so the client cannot infer it in advance.
 If you set `EEPP_INSPECTOR_TOKEN` yourself, use that value for the client instead.
 
+## Hidden native windows
+
+Set `EEPP_WINDOW_HIDDEN=1` to inspect an application without opening desktop windows:
+
+```sh
+EEPP_RUNTIME=native EEPP_WINDOW_HIDDEN=1 EEPP_INSPECTOR=1 ./bin/eefm
+```
+
+The flag forces every eepp window created through `Engine::createWindow()` hidden, including
+secondary application windows and native dialog hosts. Native `show()`, `raise()`, `restore()`,
+`maximize()`, and fullscreen requests cannot reveal these windows while the flag is enabled.
+Widget visibility, rendering, screenshots, and inspector input remain available. Set the flag before
+launch; only the exact value `1` enables it. Unset, empty, `0`, and all other values disable it.
+
+This flag preserves the selected runtime and renderer. With `EEPP_RUNTIME=native`, it still needs a
+usable native display, but keeps the windows hidden. Use this when the headless SDL driver is
+unavailable (for example, on macOS) or when checking native rendering without interrupting desktop
+focus. `EEPP_RUNTIME=headless` instead selects an offscreen video driver. The visibility flag does
+not suppress operating-system dialogs opened outside eepp's window API.
+
 ## Python client
 
 `projects/scripts/eepp-inspect.py` requires Python 3 and only the standard library. It reads `EEPP_INSPECTOR_HOST`, `EEPP_INSPECTOR_PORT`, and `EEPP_INSPECTOR_TOKEN`, or the corresponding `--host`, `--port`, and `--token` options. Use `--pretty` for indented JSON. Default stdout is compact JSON only; diagnostics go to stderr. Ordinary commands connect, authenticate, print one response, and disconnect.

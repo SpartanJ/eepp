@@ -261,9 +261,20 @@ Tab Tab::close:hover,
 Tab:not(:selected) Tab::close:hover {
 	foreground-tint: var(--tab-close-hover);
 }
-/* Scrollbars stay out of the way until used. */
+/* The focused pane uses the theme's thumb color; the others stay muted. */
 ScrollBar::vbutton, ScrollBar::hbutton {
 	background-color: rgba( var(--font-hint), 0.45 );
+}
+.pane:focus-within ScrollBar::vbutton,
+.pane:focus-within ScrollBar::hbutton {
+	background-color: var(--scrollbar-button);
+}
+/* Keep Breeze's hover color above the more specific focused-pane rule. */
+.pane:focus-within ScrollBar::vslider:hover ScrollBar::vbutton,
+.pane:focus-within ScrollBar::vbutton:hover,
+.pane:focus-within ScrollBar::hslider:hover ScrollBar::hbutton,
+.pane:focus-within ScrollBar::hbutton:hover {
+	background-color: var(--primary);
 }
 .transfer_text {
 	margin-right: 6dp;
@@ -617,28 +628,6 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 		} else if ( event->Type == InputEvent::EventsSent ) {
 			if ( mFileOperations->hasDroppedFiles() )
 				mFileOperations->dropExternalFiles();
-		} else if ( event->Type == InputEvent::MouseButtonDown ) {
-			// Any press inside a pane (or its location bar) makes it the active one. Widgets
-			// handle their own clicks, so this is tracked at the window level.
-			// The widget under the pointer must belong to the pane: menus and dialogs drawn over
-			// it are not the pane.
-			// Use the dispatcher's view coordinates: native button events can use logical
-			// coordinates while the UI uses drawable pixels on high-DPI displays.
-			Vector2f mouse = mApp->getWindow()->getInput()->getMousePosFromView(
-				mApp->getWindow()->getDefaultView() );
-			Node* over = mUI->overFind( mouse );
-			for ( int i = 0; i < 2; ++i ) {
-				Pane& p = mPaneManager->pane( i );
-				if ( over && ( ( p.root->getParent() == mPaneSplitter &&
-								 ( p.root == over || p.root->inParentTreeOf( over ) ) ) ||
-							   ( p.location.box->isVisible() &&
-								 ( p.location.box == over ||
-								   p.location.box->inParentTreeOf( over ) ) ) ) ) {
-					if ( i != mPaneManager->activeIndex() )
-						mPaneManager->setActivePane( i );
-					break;
-				}
-			}
 		} else if ( event->Type == InputEvent::MouseButtonUp ) {
 			// Side mouse buttons navigate the history.
 			if ( event->button.button == EE_BUTTON_4 )
@@ -654,6 +643,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 		return false;
 	} );
 
+	// Keyboard focus determines the active pane; scrolling and background operations do not.
 	// The keyboard belongs to the files: a click on a pane's bars or empty areas focuses the
 	// container under the pointer, which would swallow the keys (typing, arrows, Enter). Hand
 	// it to that pane's files on the next frame. Buttons and text fields keep it.
@@ -671,31 +661,30 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 		}
 		if ( !focus || !focus->isWidget() )
 			return;
-		for ( int i = 0; i < 2; ++i ) {
-			auto* tab = mPaneManager->currentTab( mPaneManager->pane( i ) );
-			if ( !tab || !mPaneManager->pane( i ).root->inParentTreeOf( focus ) )
-				continue;
-			// Row clicks focus a cell (a push button), not the view itself. Keep file commands
-			// on that pane before leaving the focused control in charge of its own input.
-			if ( i != mPaneManager->activeIndex() )
-				mPaneManager->setActivePane( i );
-			if ( focus->isType( UI_TYPE_TEXTINPUT ) || tab->view == focus ||
-				 tab->view->inParentTreeOf( focus ) )
-				return;
-			// Buttons and their parts (a tab's close button): the click that follows goes to
-			// the focused node, it must stay there.
-			for ( Node* node = focus; node; node = node->getParent() ) {
-				if ( node->isType( UI_TYPE_PUSHBUTTON ) )
-					return;
-			}
-			mUI->runOnMainThread( [this, i, focus] {
-				auto* current = mPaneManager->currentTab( mPaneManager->pane( i ) );
-				// Only if nothing else took the focus meanwhile (focus is not dereferenced).
-				if ( current && mUI->getEventDispatcher()->getFocusNode() == focus )
-					current->view->setFocus();
-			} );
+		Pane* pane = mPaneManager->paneForNode( focus );
+		if ( !pane )
 			return;
+		auto* tab = mPaneManager->currentTab( *pane );
+		if ( !tab )
+			return;
+		// Row clicks focus a cell (a push button), not the view itself. Refresh the pane's
+		// decorations without replacing the focused control that must receive the click.
+		mPaneManager->onFocusChange();
+		if ( focus->isType( UI_TYPE_TEXTINPUT ) || tab->view == focus ||
+			 tab->view->inParentTreeOf( focus ) )
+			return;
+		// Buttons and their parts (a tab's close button): the click that follows goes to
+		// the focused node, it must stay there.
+		for ( Node* node = focus; node; node = node->getParent() ) {
+			if ( node->isType( UI_TYPE_PUSHBUTTON ) )
+				return;
 		}
+		mUI->runOnMainThread( [this, i = pane->index, focus] {
+			auto* current = mPaneManager->currentTab( mPaneManager->pane( i ) );
+			// Only if nothing else took the focus meanwhile (focus is not dereferenced).
+			if ( current && mUI->getEventDispatcher()->getFocusNode() == focus )
+				current->view->setFocus();
+		} );
 	} );
 
 	mPaneManager->restoreTabs( mState, locations, forceSplit );
@@ -774,7 +763,7 @@ void App::setSplit( bool split ) {
 	} else if ( !split && right.root->getParent() == mPaneSplitter ) {
 		right.root->setParent( mParking );
 		if ( mPaneManager->activeIndex() == 1 )
-			mPaneManager->setActivePane( 0 );
+			mPaneManager->focusPane( 0 );
 	}
 	right.location.box->setVisible( split );
 	if ( auto* button = mUI->find<UISelectButton>( "split" ) )
@@ -1002,9 +991,7 @@ void App::registerShortcuts() {
 	mUI->setKeyBindingCommand( "switch-pane", fileCommand( [this] {
 								   if ( !mSplit )
 									   return;
-								   mPaneManager->setActivePane( 1 - mPaneManager->activeIndex() );
-								   if ( auto* tab = mPaneManager->currentTab() )
-									   tab->view->setFocus();
+								   mPaneManager->focusPane( 1 - mPaneManager->activeIndex() );
 							   } ) );
 	mUI->setKeyBindingCommand( "refresh", onTab( []( FileTab* tab ) { tab->model->refresh(); } ) );
 	mUI->setKeyBindingCommand( "go-back", [this] { mPaneManager->goBack(); } );

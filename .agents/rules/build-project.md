@@ -134,6 +134,12 @@ native runtime on a usable desktop. Use the native/Xvfb paths below for examples
 required check cannot run with the headless runtime. Verify the renderer before using an offscreen
 run to assess hardware rendering or performance.
 
+When the headless driver is unavailable, use `EEPP_RUNTIME=native EEPP_WINDOW_HIDDEN=1` for ordinary
+application/example launches and inspector automation. This preserves native rendering while
+forcing primary and secondary eepp windows hidden, including explicit `show()`/restore requests;
+it avoids temporary source edits to add `WindowStyle::Hidden`. A usable native display is still
+required. See `docs/articles/ui_inspector.md` for the environment flag's behavior.
+
 Xvfb does not support the multisampled OpenGL contexts requested by some eepp examples. In
 particular, `src/examples/ui_html/ui_html.cpp` normally requests 4x MSAA. Launching that binary
 through `xvfb-run` or `projects/scripts/xvfb-run-eepp` can therefore fail immediately with

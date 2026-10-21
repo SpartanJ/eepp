@@ -1094,7 +1094,7 @@ FileOperations::dropDestination( Vector2f position ) {
 	if ( auto row = tab->view->rowOf( over );
 		 row && *row < tab->model->rowCount() && tab->model->entry( *row ).isDirectory() )
 		folder = tab->model->entryURI( *row );
-	mApp.panes().setActivePane( target );
+	mApp.panes().focusPane( target );
 	return DropDestination{ std::move( folder ), target };
 }
 

@@ -28,9 +28,10 @@ class PaneManager {
 
 	Pane& pane( int index ) { return *mPanes[index]; }
 
-	Pane& activePane() { return *mPanes[mActivePane]; }
+	Pane& activePane() { return pane( activeIndex() ); }
 
-	int activeIndex() const { return mActivePane; }
+	/** @return The pane owning keyboard focus, or the last focused pane while other UI owns it. */
+	int activeIndex() const;
 
 	/** @return True once both panes exist. */
 	bool ready() const { return mPanes[0] && mPanes[1]; }
@@ -39,9 +40,12 @@ class PaneManager {
 
 	FileTab* currentTab( Pane& pane );
 
-	FileTab* currentTab() { return mPanes[mActivePane] ? currentTab( activePane() ) : nullptr; }
+	FileTab* currentTab();
 
 	FileTab* findTab( UITab* tab );
+
+	/** @return The pane owning a node in its view or location bar, or nullptr for other UI. */
+	Pane* paneForNode( const Node* node ) const;
 
 	FileTab* openTab( Pane& pane, const URI& uri, bool select = true );
 
@@ -50,7 +54,11 @@ class PaneManager {
 	/** Closes every tab (their models stop listing and watching). */
 	void clearTabs();
 
-	void setActivePane( int index );
+	/** Gives a pane's files keyboard focus unless one of its controls already owns it. */
+	void focusPane( int index );
+
+	/** Updates pane decorations and remembers the pane owning the current keyboard focus. */
+	void onFocusChange();
 
 	void navigate( FileTab* tab, URI uri, bool recordHistory = true );
 
@@ -98,7 +106,9 @@ class PaneManager {
 	std::unique_ptr<FileTab> mMovingTab;
 	/** Column widths / visibility / sort shared by new tabs. */
 	nlohmann::json mViewState;
-	int mActivePane{ 0 };
+	/** Command context while a toolbar, popup, dialog, places or terminal owns keyboard focus.
+	 * Only updated from actual pane focus; activeIndex() always prefers the current focus. */
+	int mLastFocusedPane{ 0 };
 	EE::VFS::VFSDirectoryModel::NameFilterMode mFilterMode{
 		EE::VFS::VFSDirectoryModel::NameFilterMode::Glob };
 	bool mFilterCaseSensitive{ false };

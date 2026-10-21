@@ -85,6 +85,12 @@ PaneManager::PaneManager( App& app ) : mApp( app ), mUI( app.ui() ) {}
 
 PaneManager::~PaneManager() = default;
 
+int PaneManager::activeIndex() const {
+	if ( auto* focused = paneForNode( mUI->getEventDispatcher()->getFocusNode() ) )
+		return focused->index;
+	return mLastFocusedPane;
+}
+
 void PaneManager::clearTabs() {
 	for ( auto& pane : mPanes ) {
 		if ( pane )
@@ -141,7 +147,7 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 		part->on( Event::MouseClick, [this, index]( const Event* event ) {
 			if ( !( static_cast<const MouseEvent*>( event )->getFlags() & EE_BUTTON_RMASK ) )
 				return;
-			setActivePane( index );
+			focusPane( index );
 			if ( auto* tab = currentTab( pane( index ) ) )
 				mApp.fileOps().showContextMenu( tab, true );
 		} );
@@ -215,7 +221,7 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 		if ( mMovingTab && mMovingTab->tab == tabEvent->getTab() ) {
 			mMovingTab->pane = &pane;
 			pane.tabList.push_back( std::move( mMovingTab ) );
-			setActivePane( index );
+			focusPane( index );
 		}
 		positionNewTabButton( pane );
 	} );
@@ -236,7 +242,7 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 		mApp.shortcutTooltip( mUI->i18n( "eefm_new_tab", "New Tab" ), "new-tab" ) );
 	p.newTabButton->onClick( [this, index]( const MouseEvent* ) {
 		Pane& pane = this->pane( index );
-		setActivePane( index );
+		focusPane( index );
 		auto* tab = currentTab( pane );
 		openTab( pane, tab ? tab->model->uri() : URI::fromFSPath( Sys::getUserDirectory() ) );
 	} );
@@ -252,8 +258,6 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 			tab->view->setFocus();
 		}
 	} );
-	p.location.input->on( Event::OnFocus,
-						  [this, index]( const Event* ) { setActivePane( index ); } );
 	frame->findByClass( "location_clear" )->onClick( [this, index]( const MouseEvent* ) {
 		auto* input = this->pane( index ).location.input;
 		input->setText( "" );
@@ -320,7 +324,6 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 			applyFilter( tab );
 		}
 	} );
-	p.filterInput->on( Event::OnFocus, [this, index]( const Event* ) { setActivePane( index ); } );
 	// Escape returns to the files (the filter and the selection stay).
 	p.filterInput->on( Event::KeyDown, [this, index]( const Event* event ) {
 		if ( event->asKeyEvent()->getKeyCode() != KEY_ESCAPE )
@@ -344,6 +347,11 @@ FileTab* PaneManager::currentTab( Pane& pane ) {
 	return nullptr;
 }
 
+FileTab* PaneManager::currentTab() {
+	auto* owner = mPanes[activeIndex()].get();
+	return owner ? currentTab( *owner ) : nullptr;
+}
+
 FileTab* PaneManager::findTab( UITab* uitab ) {
 	for ( auto& pane : mPanes ) {
 		for ( auto& tab : pane->tabList ) {
@@ -354,13 +362,40 @@ FileTab* PaneManager::findTab( UITab* uitab ) {
 	return nullptr;
 }
 
-void PaneManager::setActivePane( int index ) {
+Pane* PaneManager::paneForNode( const Node* node ) const {
+	if ( !node )
+		return nullptr;
+	for ( const auto& pane : mPanes ) {
+		if ( !pane )
+			continue;
+		for ( auto* root : { pane->root, pane->location.box } ) {
+			if ( root && ( root == node || root->isParentOf( node ) ) )
+				return pane.get();
+		}
+	}
+	return nullptr;
+}
+
+void PaneManager::focusPane( int index ) {
 	if ( index == 1 && !mApp.isSplit() )
 		index = 0;
-	mActivePane = index;
+	Pane& target = pane( index );
+	if ( paneForNode( mUI->getEventDispatcher()->getFocusNode() ) != &target ) {
+		if ( auto* tab = currentTab( target ) )
+			tab->view->setFocus();
+	}
+	// Startup and tab restoration can already have placed focus here before the tab was ready.
+	onFocusChange();
+}
+
+void PaneManager::onFocusChange() {
+	Pane* focused = paneForNode( mUI->getEventDispatcher()->getFocusNode() );
+	if ( !focused || ( mLastFocusedPane == focused->index && focused->root->hasClass( "active" ) ) )
+		return;
+	mLastFocusedPane = focused->index;
 	for ( int i = 0; i < 2; ++i ) {
 		Pane& p = pane( i );
-		if ( i == index ) {
+		if ( &p == focused ) {
 			p.root->addClass( "active" );
 			p.location.box->addClass( "active" );
 		} else {
@@ -368,7 +403,7 @@ void PaneManager::setActivePane( int index ) {
 			p.location.box->removeClass( "active" );
 		}
 	}
-	updateChrome( activePane() );
+	updateChrome( *focused );
 }
 
 void PaneManager::positionNewTabButton( Pane& target ) {
@@ -447,7 +482,7 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 	};
 	view->on( Event::OnSizeChange, [capColumns]( const Event* ) { capColumns(); } );
 	view->onModelEvent( [this, raw]( const ModelEvent* event ) {
-		setActivePane( raw->pane->index );
+		focusPane( raw->pane->index );
 		if ( event->getModelEventType() == ModelEventType::Open ) {
 			mApp.fileOps().openRow( raw, event->getModelIndex().row() );
 		} else if ( event->getModelEventType() == ModelEventType::OpenMenu ) {
@@ -460,7 +495,6 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 	// Middle click opens a folder in a new tab, in the background (as Dolphin and browsers);
 	// with the modifier (Ctrl, Cmd on macOS) the new tab is selected and focused.
 	view->onRowMiddleClick = [this, raw]( size_t row ) {
-		setActivePane( raw->pane->index );
 		if ( row >= raw->model->rowCount() || !raw->model->entry( row ).isDirectory() )
 			return;
 		bool select =
@@ -474,7 +508,7 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 			updateStatus( *raw->pane );
 	} );
 	view->onBackgroundMenu = [this, raw] {
-		setActivePane( raw->pane->index );
+		focusPane( raw->pane->index );
 		mApp.fileOps().showContextMenu( raw, true );
 	};
 	view->dragPayload = [this, raw] { return raw->selectedURIs(); };
@@ -492,8 +526,6 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 		mApp.fileOps().dropFiles( FileTableView::currentDrag().uris, destination,
 								  raw->pane->index );
 	};
-	view->on( Event::OnFocus, [this, raw]( const Event* ) { setActivePane( raw->pane->index ); } );
-
 	raw->tab = pane.tabs->add( Location::displayName( uri ), view, mApp.icon( "mime-folder" ) );
 	// The new tab button would sit over a dragged tab: hidden while one moves (a press alone
 	// starts a drag, so it waits for the movement), back in place after.
@@ -646,7 +678,7 @@ void PaneManager::updateChrome( Pane& pane ) {
 	if ( !pane.location.input->hasFocus() )
 		pane.location.input->setText( Location::text( uri ) );
 	updateStatus( pane );
-	if ( pane.index != mActivePane )
+	if ( pane.index != activeIndex() )
 		return;
 	mUI->find<UIWidget>( "back" )->setEnabled( tab->historyIndex > 0 );
 	mUI->find<UIWidget>( "forward" )->setEnabled( tab->historyIndex + 1 < tab->history.size() );
@@ -861,10 +893,8 @@ void PaneManager::restoreTabs( const nlohmann::json& state,
 	}
 	mApp.setSplit( split );
 	// Start on the left pane, with the keyboard there too: restoring tabs focuses the views it
-	// selects (the right pane's last), and the highlight alone does not move the focus.
-	setActivePane( 0 );
-	if ( auto* tab = currentTab( pane( 0 ) ) )
-		tab->view->setFocus();
+	// selects (the right pane's last).
+	focusPane( 0 );
 }
 
 } // namespace eefm

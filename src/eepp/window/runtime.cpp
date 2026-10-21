@@ -29,6 +29,11 @@ bool Runtime::isOffscreen() {
 	return mode() != RuntimeMode::Native;
 }
 
+bool Runtime::forceHiddenWindows() {
+	const char* value = std::getenv( "EEPP_WINDOW_HIDDEN" );
+	return value && 0 == std::strcmp( value, "1" );
+}
+
 const char* Runtime::modeName() {
 	switch ( mode() ) {
 		case RuntimeMode::Headless:

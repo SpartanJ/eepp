@@ -13,11 +13,11 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/packfileindex.hpp>
 #include <eepp/system/packregistry.hpp>
 #include <eepp/system/parsermatcher.hpp>
 #include <eepp/system/regex.hpp>
 #include <eepp/system/thread.hpp>
-#include <eepp/system/packfileindex.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/tools/uiinspectorserver.hpp>
@@ -299,6 +299,10 @@ EE::Window::Window* Engine::createDefaultWindow( const WindowSettings& Settings,
 }
 
 EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettings Context ) {
+	if ( Runtime::forceHiddenWindows() ) {
+		Settings.Style |= WindowStyle::Hidden;
+		Settings.Style &= ~( WindowStyle::Fullscreen | WindowStyle::UseDesktopResolution );
+	}
 	const bool firstWindow = mWindows.empty();
 	if ( Runtime::mode() == RuntimeMode::Terminal && !mWindows.empty() ) {
 		Log::error( "Terminal runtime currently supports one top-level Window" );

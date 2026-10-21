@@ -486,6 +486,8 @@ void WindowSDL::setGLConfig() {
 }
 
 void WindowSDL::toggleFullscreen() {
+	if ( Runtime::forceHiddenWindows() )
+		return;
 	Log::info( "toggleFullscreen called: %s", isWindowed() ? "is windowed" : "is fullscreen" );
 
 	if ( isWindowed() ) {
@@ -579,6 +581,8 @@ void WindowSDL::onWindowResize( Uint32 width, Uint32 height ) {
 }
 
 void WindowSDL::setSize( Uint32 width, Uint32 height, bool windowed ) {
+	if ( Runtime::forceHiddenWindows() )
+		windowed = true;
 	if ( ( !width || !height ) ) {
 		width = mWindow.DesktopResolution.getWidth();
 		height = mWindow.DesktopResolution.getHeight();
@@ -747,7 +751,7 @@ void WindowSDL::minimize() {
 }
 
 void WindowSDL::maximize() {
-	if ( Runtime::isOffscreen() )
+	if ( Runtime::isOffscreen() || Runtime::forceHiddenWindows() )
 		return;
 	SDL_MaximizeWindow( mSDLWindow );
 }
@@ -765,10 +769,14 @@ void WindowSDL::hide() {
 }
 
 void WindowSDL::raise() {
+	if ( Runtime::forceHiddenWindows() )
+		return;
 	SDL_RaiseWindow( mSDLWindow );
 }
 
 void WindowSDL::restore() {
+	if ( Runtime::forceHiddenWindows() )
+		return;
 	SDL_RestoreWindow( mSDLWindow );
 }
 
@@ -784,6 +792,8 @@ void WindowSDL::flash( WindowFlashOperation op ) {
 }
 
 void WindowSDL::show() {
+	if ( Runtime::forceHiddenWindows() )
+		return;
 	SDL_ShowWindow( mSDLWindow );
 }
 
