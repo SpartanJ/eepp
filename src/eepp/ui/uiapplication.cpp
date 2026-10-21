@@ -1,3 +1,5 @@
+#include <eepp/ui/uiapplication.hpp>
+
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -7,7 +9,6 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/ui/iconmanager.hpp>
-#include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitheme.hpp>
@@ -78,6 +79,7 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	}
 	Engine::instance()->getPlatformHelper()->setNativeScrollMomentumEnabled( true );
 	mWindow->setDeferNativeResourceDestructionOnClose( true );
+	mWindow->setQuitCallback( [this]( EE::Window::Window* ) { requestQuit(); } );
 
 	mDidRun = true;
 
@@ -207,6 +209,7 @@ UIApplication::createWindowInternal( const WindowSettings& windowSettings,
 	if ( !window || !window->isOpen() )
 		return nullptr;
 	window->setDeferNativeResourceDestructionOnClose( true );
+	window->setQuitCallback( [this]( EE::Window::Window* ) { requestQuit(); } );
 
 	auto* ui = UISceneNode::New(
 		window, true, mUISceneNode ? mUISceneNode->getThreadPool() : mSettings.threadPool );

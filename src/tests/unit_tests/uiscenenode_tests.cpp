@@ -595,8 +595,70 @@ UTEST( UISceneNode, WidgetDeletionUsesDraggingStateAfterCloseCallbacks ) {
 class TestUIApplication : public UIApplication {
   public:
 	using UIApplication::UIApplication;
+
 	void tickOnce() { tick(); }
+
+	void markRunning() { mRunning = true; }
 };
+
+UTEST( UIApplication, NativeQuitStopsLoopWithoutClosingWindowsAndCanBeOverridden ) {
+	TestUIApplication app(
+		WindowSettings( 320, 240, "Native Quit", WindowStyle::Default, WindowBackend::Default, 32,
+						{}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f,
+								 false ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	auto* window = app.getWindow();
+	ASSERT_TRUE( window != nullptr );
+	app.setQuitPolicy( UIApplication::QuitPolicy::Explicit );
+	app.markRunning();
+	InputEvent event( InputEvent::Quit );
+	event.WinID = window->getWindowID();
+	window->getInput()->pushEvent( event );
+	EXPECT_FALSE( app.isRunning() );
+	EXPECT_TRUE( window->isOpen() );
+	EXPECT_EQ( app.getWindowCount(), 1u );
+	EXPECT_TRUE( app.getUI() != nullptr );
+
+	bool handled = false;
+	window->setQuitCallback( [&]( EE::Window::Window* target ) {
+		handled = true;
+		EXPECT_EQ( target, window );
+	} );
+	app.markRunning();
+	window->getInput()->pushEvent( event );
+	EXPECT_TRUE( handled );
+	EXPECT_TRUE( app.isRunning() );
+}
+
+UTEST( UIApplication, NativeQuitFromSecondaryWindowStopsApplication ) {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		UTEST_SKIP( "Terminal runtime supports only one native window" );
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	UTEST_SKIP( "Emscripten supports only one native window" );
+#endif
+	TestUIApplication app(
+		WindowSettings( 320, 240, "Primary Quit", WindowStyle::Default, WindowBackend::Default, 32,
+						{}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f,
+								 false ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getWindow() != nullptr );
+	auto* secondary =
+		app.createWindow( WindowSettings( 240, 180, "Secondary Quit", WindowStyle::Default,
+										  WindowBackend::Default, 32, {}, 1, false, true ),
+						  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( secondary != nullptr );
+	app.setQuitPolicy( UIApplication::QuitPolicy::OnLastWindowClosed );
+	app.markRunning();
+	InputEvent event( InputEvent::Quit );
+	event.WinID = secondary->getWindow()->getWindowID();
+	secondary->getWindow()->getInput()->pushEvent( event );
+	EXPECT_FALSE( app.isRunning() );
+	EXPECT_TRUE( app.getWindow()->isOpen() );
+	EXPECT_TRUE( secondary->getWindow()->isOpen() );
+	EXPECT_EQ( app.getWindowCount(), 2u );
+}
 
 UTEST( UIApplication, ClosingCurrentWindowSelectsSurvivingScene ) {
 	if ( Runtime::mode() == RuntimeMode::Terminal )

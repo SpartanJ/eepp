@@ -656,6 +656,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 		// Keep the scene and its dispatcher alive until producers and the executor stop.
 		return false;
 	} );
+	mApp->getWindow()->setQuitCallback( [this]( EE::Window::Window* ) { quit(); } );
 
 	// Keyboard focus determines the active pane; scrolling and background operations do not.
 	// The keyboard belongs to the files: a click on a pane's bars or empty areas focuses the
@@ -1071,8 +1072,6 @@ void App::registerShortcuts() {
 		{ "mod+x", "cut" },
 		{ "mod+v", "paste" },
 		{ "mod+a", "select-all" },
-		{ "delete", "trash" },
-		{ "shift+delete", "delete" },
 		{ "f2", "rename" },
 		{ "mod+return", "properties" },
 		{ "alt+return", "properties" },
@@ -1082,6 +1081,13 @@ void App::registerShortcuts() {
 		{ "mod+q", "quit" },
 		{ "mod+shift+f11", "debug-widget-tree-view" },
 	} );
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	mUI->getKeyBindings().addKeybindsString(
+		{ { "mod+backspace", "trash" }, { "mod+alt+backspace", "delete" } } );
+#else
+	mUI->getKeyBindings().addKeybindsString(
+		{ { "delete", "trash" }, { "shift+delete", "delete" } } );
+#endif
 	mUI->find<UIWidget>( "back" )->setTooltipText(
 		shortcutTooltip( mUI->i18n( "eefm_back", "Back" ), "go-back" ) );
 	mUI->find<UIWidget>( "forward" )

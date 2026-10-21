@@ -119,7 +119,9 @@ class EE_API UIApplication {
 	void closeWindow( EE::Window::Window* window );
 
 	/** Requests termination of the application loop without changing the open state of its
-	 * windows. Backend resources are released by UIApplication destruction. */
+	 * windows. Backend resources are released by UIApplication destruction.
+	 * Native Quit requests call this by default. Use Window::setQuitCallback() on an owned
+	 * window to save state or ask for confirmation before calling requestQuit(). */
 	void requestQuit();
 
 	/** Returns whether the application main loop is currently running. */

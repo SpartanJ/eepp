@@ -2,16 +2,23 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
+// Query Windows 10 association metadata through the existing AssocQueryString API.
+// Microsoft's SDK gates these enum values on NTDDI_VERSION; MinGW exposes them unconditionally.
+#if !defined( _WIN32_WINNT ) || _WIN32_WINNT < 0x0A00
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0A00
+#endif
+#if !defined( NTDDI_VERSION ) || NTDDI_VERSION < 0x0A000000
+#undef NTDDI_VERSION
+#define NTDDI_VERSION 0x0A000000
+#endif
+
 #include <eepp/system/applications.hpp>
 
 #include <eepp/core/small_vector.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
 
-#if !defined( _WIN32_WINNT ) || _WIN32_WINNT < 0x0600
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
-#endif
 #include <windows.h>
 
 #include <algorithm>
@@ -19,6 +26,7 @@
 #include <shellapi.h>
 #include <shlobj.h>
 #include <shlwapi.h>
+#include <type_traits>
 #include <wrl/client.h>
 
 namespace EE { namespace System {
@@ -39,6 +47,9 @@ struct Apartment {
 struct TaskMemory {
 	void operator()( void* pointer ) const { CoTaskMemFree( pointer ); }
 };
+
+// Preserve the SDK's __unaligned qualifier and optional strict PIDL types.
+using ItemIdList = std::unique_ptr<std::remove_pointer_t<PIDLIST_ABSOLUTE>, TaskMemory>;
 
 std::string takeString( PWSTR text ) {
 	std::unique_ptr<wchar_t, TaskMemory> owned( text );
@@ -83,7 +94,7 @@ bool invokeItems( IAssocHandler* handler, PCIDLIST_ABSOLUTE* items, UINT count )
 	// have separate temporary parents, so invoke those documents individually.
 	bool flat = true;
 	if ( count > 1 ) {
-		std::unique_ptr<ITEMIDLIST, TaskMemory> parent( ILCloneFull( items[0] ) );
+		ItemIdList parent( ILCloneFull( items[0] ) );
 		if ( !parent || !ILRemoveLastID( parent.get() ) )
 			return false;
 		for ( UINT i = 1; i < count && flat; ++i )
@@ -115,7 +126,7 @@ bool invokeItems( IAssocHandler* handler, PCIDLIST_ABSOLUTE* items, UINT count )
 bool invoke( IAssocHandler* handler, const std::vector<std::string>& paths ) {
 	// Shell items preserve the registered application's invocation protocol (including
 	// packaged apps and DDE), rather than guessing an executable's command-line syntax.
-	EE::SmallVector<std::unique_ptr<ITEMIDLIST, TaskMemory>, 8> owned;
+	EE::SmallVector<ItemIdList, 8> owned;
 	EE::SmallVector<PCIDLIST_ABSOLUTE, 8> items;
 	owned.reserve( paths.size() );
 	items.reserve( paths.size() );
