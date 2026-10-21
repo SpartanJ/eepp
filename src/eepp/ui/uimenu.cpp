@@ -749,6 +749,10 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIWidget* menu, UIMenu* parent, UIM
 	if ( nullptr == sceneNode )
 		return;
 
+	// Newly built menus can still have deferred CSS. Fit their styled dimensions, otherwise
+	// larger rows or padding applied next frame can push the menu outside the visible scene.
+	menu->reloadStyle( true, true );
+
 	if ( trigger || !parent || !subMenu ) {
 		pos = UIPopUp::findBestPosition( menu, pos, trigger, true );
 		return;

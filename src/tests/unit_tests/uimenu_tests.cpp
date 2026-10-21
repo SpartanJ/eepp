@@ -225,6 +225,31 @@ UTEST( UIMenu, SharedPopupPlacementUsesWorldPixelsAtHighDensity ) {
 	PixelDensity::setPixelDensity( previousDensity );
 }
 
+UTEST( UIMenu, CursorPopupFitsAfterDeferredStyling ) {
+	UIApplication app(
+		WindowSettings( 640, 480, "eepp - Styled Popup Placement Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	const Float previousDensity = PixelDensity::getPixelDensity();
+	for ( const Float density : { 1.f, 2.f } ) {
+		PixelDensity::setPixelDensity( density );
+		app.getUI()->setStyleSheet( "popupmenu { padding: 4dp; } "
+									"popupmenu menu::item { min-height: 50dp; padding: 8dp; }" );
+		auto* popup = UIPopUpMenu::New();
+		popup->setParent( app.getUI()->getRoot() );
+		for ( int i = 0; i < 3; ++i )
+			popup->add( "Item" );
+		const Rectf bounds( app.getUI()->getVisibleWorldBounds() );
+		popup->showAtScreenPosition( { bounds.Right - 10, bounds.Bottom - 10 } );
+		app.getUI()->updateDirtyStyles();
+		app.getUI()->updateDirtyStyleStates();
+		app.getUI()->updateDirtyLayouts();
+		EXPECT_TRUE( bounds.contains( popup->getScreenRect() ) );
+		popup->hide();
+	}
+	PixelDensity::setPixelDensity( previousDensity );
+}
+
 namespace {
 
 class DensityTestCheckBox : public UICheckBox {
