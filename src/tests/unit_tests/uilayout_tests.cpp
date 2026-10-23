@@ -3,10 +3,61 @@
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
 using namespace EE;
 using namespace EE::UI;
+
+UTEST( UINode, PixelSizesClampToZeroWithoutExplicitMinimums ) {
+	for ( Float density : { 1.f, 2.f } ) {
+		UIApplication app( WindowSettings( 320, 240, "Nonnegative pixel sizes" ),
+						   UIApplication::Settings(
+							   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), density ) );
+		auto* widget = UIWidget::New();
+		const auto fitted = widget->fitMinMaxSizePx( { -20, -30 } );
+		EXPECT_EQ( fitted.x, 0.f );
+		EXPECT_EQ( fitted.y, 0.f );
+		widget->setPixelsSize( -20, -30 );
+		EXPECT_EQ( widget->getPixelsSize().x, 0.f );
+		EXPECT_EQ( widget->getPixelsSize().y, 0.f );
+		// Shrinking a padded container below its padding must not give its child a negative size.
+		widget->setPixelsSize( 200, 0 );
+		auto* child = UIWidget::New();
+		child->setParent( widget );
+		child->setPixelsSize( widget->getPixelsSize().x, widget->getPixelsSize().y - 4 );
+		EXPECT_EQ( child->getPixelsSize().y, 0.f );
+	}
+}
+
+UTEST( UINode, PixelMinimumsAndChangingEmConstraints ) {
+	for ( Float density : { 1.f, 2.f } ) {
+		UIApplication app( WindowSettings( 320, 240, "Pixel sizing constraints" ),
+						   UIApplication::Settings(
+							   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), density ) );
+		auto* widget = UIWidget::New();
+		widget->setMinSize( { 10, 20 } );
+		widget->setPixelsSize( -10, -10 );
+		EXPECT_EQ( widget->getPixelsSize().x, 10 * density );
+		EXPECT_EQ( widget->getPixelsSize().y, 20 * density );
+		widget->setPixelsSize( 40 * density, 50 * density );
+		EXPECT_EQ( widget->getPixelsSize().x, 40 * density );
+		EXPECT_EQ( widget->getPixelsSize().y, 50 * density );
+
+		auto* text = UITextView::New();
+		text->setFontSize( 12 * density );
+		auto* relative = UIWidget::New();
+		relative->setParent( text );
+		relative->setMinSizeEq( "1em", "1em" );
+		relative->setMaxSizeEq( "1em", "1em" );
+		for ( Uint32 fontSize : { 12u, 6u, 24u, 3u } ) {
+			text->setFontSize( fontSize * density );
+			relative->setPixelsSize( 100 * density, 100 * density );
+			EXPECT_EQ( relative->getPixelsSize().x, fontSize * density );
+			EXPECT_EQ( relative->getPixelsSize().y, fontSize * density );
+		}
+	}
+}
 
 UTEST( UILinearLayout, AlignAgainstLayoutUsesParentPadding ) {
 	UIApplication app(

@@ -844,7 +844,10 @@ void UIListBox::selectPrev() {
 				mVScrollBar->setValue( (Float)( SelIndex * mRowHeight ) /
 									   (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 
-				mItems[SelIndex]->setFocus();
+				// Scrolling can virtualize this row, particularly in an unopened popup.
+				if ( isVisible() && isEnabled() && SelIndex < (Int32)mItems.size() &&
+					 mItems[SelIndex] )
+					mItems[SelIndex]->setFocus();
 			}
 
 			setSelected( SelIndex );
@@ -868,7 +871,10 @@ void UIListBox::selectNext() {
 				mVScrollBar->setValue( (Float)( SelIndex * mRowHeight ) /
 									   (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 
-				mItems[SelIndex]->setFocus();
+				// Scrolling can virtualize this row, particularly in an unopened popup.
+				if ( isVisible() && isEnabled() && SelIndex < (Int32)mItems.size() &&
+					 mItems[SelIndex] )
+					mItems[SelIndex]->setFocus();
 			}
 
 			setSelected( SelIndex );

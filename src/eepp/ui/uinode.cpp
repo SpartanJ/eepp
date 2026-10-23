@@ -396,11 +396,8 @@ Sizef UINode::getMinSizePx() const {
 Sizef UINode::fitMinMaxSizePx( const Sizef& size ) const {
 	Sizef s( size );
 
-	if ( mMinSize.x != 0.f )
-		s.x = std::max( s.x, PixelDensity::dpToPx( mMinSize.x ) );
-
-	if ( mMinSize.y != 0.f )
-		s.y = std::max( s.y, PixelDensity::dpToPx( mMinSize.y ) );
+	s.x = std::max( s.x, PixelDensity::dpToPx( mMinSize.x ) );
+	s.y = std::max( s.y, PixelDensity::dpToPx( mMinSize.y ) );
 
 	if ( !mMinWidthEq.empty() ) {
 		Float length = lengthFromValue( mMinWidthEq, PropertyRelativeTarget::ContainingBlockWidth );

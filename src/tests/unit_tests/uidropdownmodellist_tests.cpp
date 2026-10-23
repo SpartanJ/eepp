@@ -20,6 +20,41 @@ using namespace EE::Scene;
 using namespace EE::UI;
 using namespace EE::UI::Models;
 
+UTEST( UIDropDown, SelectionNavigationBeforeOpeningPopup ) {
+	for ( Float density : { 1.f, 2.f } ) {
+		UIApplication app(
+			WindowSettings( 640, 480, "Unopened dropdown navigation", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(),
+									 density ) );
+		auto* dropdown = UIDropDownList::New();
+		dropdown->setParent( app.getUI()->getRoot() );
+		dropdown->setSize( 200, 22 );
+		auto* list = dropdown->getListBox();
+		list->addListBoxItems( { "Branches", "Status", "History" } );
+		// An unopened popup can have no content viewport yet, especially with theme padding.
+		list->setPixelsSize( 200, 0 );
+		list->setPaddingPixelsTop( 2 );
+		list->setPaddingPixelsBottom( 2 );
+		list->setSelected( 1 );
+		auto* selected = list->getItemSelected();
+		ASSERT_TRUE( selected != nullptr );
+		EXPECT_GE( selected->getParent()->getPixelsSize().getHeight(), 0.f );
+		auto* input = UITextInput::New();
+		input->setParent( app.getUI()->getRoot() );
+		input->setFocus();
+		ASSERT_FALSE( list->isVisible() );
+		list->selectNext();
+		EXPECT_EQ( list->getItemSelectedIndex(), 2u );
+		list->selectPrev();
+		EXPECT_EQ( list->getItemSelectedIndex(), 1u );
+		list->selectPrev();
+		EXPECT_EQ( list->getItemSelectedIndex(), 0u );
+		EXPECT_FALSE( list->isVisible() );
+		EXPECT_TRUE( input->hasFocus() );
+	}
+}
+
 UTEST( UIDropDownModelList, basicFunctionality ) {
 	UIApplication app(
 		WindowSettings( 800, 600, "eepp - UIDropDownModelList Test", WindowStyle::Default,
