@@ -2181,8 +2181,16 @@ Sets the row height in any element that contains fixed size rows.
 
 * Applicable to: EE::UI::UIListBox (ListBox), EE::UI::UIDropDownList (DropDownList), EE::UI::UIWidgetTable (WidgetTable), EE::UI::UIGridLayout (GridLayout), EE::UI::TableView (TableView), EE::UI::TreeView (TreeView), EE::UI::ListView (ListView)
 * Data Type: [length](#length-data-type)
-* Default value: Varies on each case. ListBox and DropDownList will guess the value based on the [font-size](#font-size). Table requires this value to be manually set in order to work. GridLayout
+* Default value: Varies on each case. ListBox and DropDownList will guess the value based on the [font-size](#font-size). WidgetTable requires this value to be manually set in order to work. GridLayout
 will require the value only if [row-mode](#row-mode) is `size`.
+
+TableView and TreeView use automatic, uniform row heights when this property is unset or `0`.
+Automatic rows preserve the theme's column-header spacing and follow cell text and vertical padding.
+Font and padding changes update the height and scroll range automatically, including shrinking below
+the initial height when the text becomes smaller. Header fonts, sort indicators, skins and header
+size constraints affect the header height separately. Before content is measured, or when every
+column is hidden, the fallback is `16dp`. A nonzero `row-height` fixes the height exactly and disables
+this automatic adjustment.
 
 ---
 

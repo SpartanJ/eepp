@@ -181,13 +181,6 @@ Node* UINode::setSize( const Float& Width, const Float& Height ) {
 
 UINode* UINode::setPixelsSize( const Sizef& size ) {
 	Sizef s( fitMinMaxSizePx( size ) );
-	Sizef pMinSize( PixelDensity::dpToPx( mMinSize ) );
-
-	if ( s.x < pMinSize.x )
-		s.x = pMinSize.x;
-
-	if ( s.y < pMinSize.y )
-		s.y = pMinSize.y;
 
 	if ( s != mSize ) {
 		Vector2f sizeChange( s.x - mSize.x, s.y - mSize.y );
@@ -2059,8 +2052,14 @@ Rectf UINode::getLocalDpBounds() const {
 Float UINode::getAbsoluteFontSize( const UIWidget* widget ) const {
 	std::string pxStr = widget->getPropertyString(
 		StyleSheetSpecification::instance()->getProperty( PropertyId::FontSize ) );
-	if ( pxStr.empty() )
+	if ( pxStr.empty() ) {
+		// Non-text widgets, such as button icons, use their parent's computed font size.
+		for ( auto* parent = widget->getParent(); parent; parent = parent->getParent() ) {
+			if ( parent->isWidget() )
+				return getAbsoluteFontSize( parent->asType<UIWidget>() );
+		}
 		return 12.f * PixelDensity::getPixelDensity();
+	}
 	StyleSheetLength len( pxStr );
 	if ( len.getUnit() == StyleSheetLength::Unit::Rem ) {
 		Float rootFontSize = 12.f * PixelDensity::getPixelDensity();

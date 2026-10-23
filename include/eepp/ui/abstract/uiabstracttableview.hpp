@@ -48,6 +48,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	bool isType( const Uint32& type ) const;
 
+	/** Uniform row height in pixels. Automatic rows retain the header's spacing and follow
+	 * cell fonts and padding independently of header icons, skins and size constraints. */
 	virtual Float getRowHeight() const;
 
 	virtual Float getHeaderHeight() const;
@@ -99,7 +101,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	int visibleColumnCount() const;
 
-	/** In pixels. */
+	/** In pixels. A nonzero value fixes the height; zero restores automatic sizing. */
 	void setRowHeight( const Float& rowHeight );
 
 	/** In pixels. */
@@ -324,6 +326,12 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void createOrUpdateColumns( bool resetColumnData = false );
 
+	virtual Uint32 onMessage( const NodeMessage* msg );
+
+	void scheduleRowHeightUpdate();
+
+	void updateRowHeight();
+
 	virtual void onSizeChange();
 
 	virtual void onColumnSizeChange( const size_t& colIndex, bool fromUserInteraction = false );
@@ -347,6 +355,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 								  const size_t& indentLevel, const Float& yOffset );
 
 	virtual void updateTableCellData( UITableCell* cell, const ModelIndex& index );
+
+	DrawablePtr createCellIcon( UITableCell* cell, UIIcon* icon ) const;
 
 	virtual UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index );
 

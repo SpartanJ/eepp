@@ -1,9 +1,11 @@
+#include <eepp/ui/uitableheadercolumn.hpp>
+
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
+#include <eepp/ui/layoutinvalidation.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uimenuitem.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
-#include <eepp/ui/uitableheadercolumn.hpp>
 #include <eepp/window/input.hpp>
 
 namespace EE { namespace UI {
@@ -23,6 +25,30 @@ UITableHeaderColumn::UITableHeaderColumn( const std::string& parentTag, UIAbstra
 	mImage->on( Event::OnMarginChange, cb );
 	mImage->on( Event::OnSizeChange, cb );
 	mImage->on( Event::OnVisibleChange, cb );
+}
+
+Uint32 UITableHeaderColumn::onMessage( const NodeMessage* msg ) {
+	// Header height includes text, the sort indicator, padding and min/max constraints.
+	// Observe self invalidations as well: constraints can change through a size notification.
+	if ( msg->getMsg() == NodeMessage::LayoutAttributeChange &&
+		 ( msg->getSender() == this || msg->getSender() == mTextBox ||
+		   ( mImage && msg->getSender() == mImage ) ) &&
+		 ( layoutInvalidationFromMessage( msg ) &
+		   toLayoutInvalidationFlags( LayoutInvalidationReason::IntrinsicSize ) ) )
+		notifyRowHeightChange();
+	return UIPushButton::onMessage( msg );
+}
+
+void UITableHeaderColumn::onThemeLoaded() {
+	UIPushButton::onThemeLoaded();
+	notifyRowHeightChange();
+}
+
+void UITableHeaderColumn::notifyRowHeightChange() {
+	if ( getParent() ) {
+		NodeMessage notification( this, NodeMessage::TableHeaderMetricsChange );
+		getParent()->messagePost( &notification );
+	}
 }
 
 Uint32 UITableHeaderColumn::onCalculateDrag( const Vector2f& position, const Uint32& flags ) {

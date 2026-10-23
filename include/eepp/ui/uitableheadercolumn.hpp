@@ -26,6 +26,12 @@ class EE_API UITableHeaderColumn : public UIPushButton {
 	Float mReorderGrabX{ 0 };
 	Vector2f mReorderPressPos;
 
+	Uint32 onMessage( const NodeMessage* msg );
+
+	void onThemeLoaded();
+
+	void notifyRowHeightChange();
+
 	Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 
 	Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );

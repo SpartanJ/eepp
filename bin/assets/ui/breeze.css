@@ -1098,7 +1098,14 @@ tableview::cell,
 treeview::cell {
 	padding-left: 4dp;
 	padding-right: 4dp;
-	min-icon-size: 16dp 16dp;
+	min-icon-size: 0dp 0dp;
+}
+
+table::cell::icon,
+tableview::cell::icon,
+treeview::cell::icon {
+	min-size: 1.5em 1.5em;
+	max-size: 1.5em 100%;
 }
 
 treeview::cell::expander {

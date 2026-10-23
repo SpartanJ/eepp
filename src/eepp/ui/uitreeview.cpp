@@ -354,7 +354,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 			cell->setIcon( icon.asDrawable() );
 		} else if ( icon.is( Variant::Type::Icon ) && icon.asIcon() ) {
 			isVisible = true;
-			cell->setIcon( icon.asIcon()->createDrawable( mIconSize ) );
+			cell->setIcon( createCellIcon( cell, icon.asIcon() ) );
 		}
 		if ( cell->hasIcon() )
 			cell->getIcon()->setVisible( isVisible );

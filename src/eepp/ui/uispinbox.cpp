@@ -19,6 +19,8 @@ UISpinBox::UISpinBox() :
 	mModifyingVal( false ) {
 	mFlags |= UI_SCROLLABLE;
 	mInput = UITextInput::NewWithTag( "spinbox::input" );
+	// The composite measures the input's natural height; the input fills its assigned bounds.
+	mInput->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mInput->setVisible( true );
 	mInput->setEnabled( true );
 	mInput->setParent( this );
@@ -101,27 +103,36 @@ void UISpinBox::setTheme( UITheme* Theme ) {
 }
 
 void UISpinBox::adjustChildren() {
-	mInput->setSize( getSize().getWidth() - mPushUp->getSize().getWidth(),
-					 mInput->getSize().getHeight() );
+	// Child construction and initial style application can notify before both buttons exist.
+	if ( !mInput || !mPushUp || !mPushDown )
+		return;
 
-	if ( mInput->getSize().getHeight() < mInput->getSkinSize().getHeight() ) {
-		mInput->setSize( getSize().getWidth() - mPushUp->getSize().getWidth(),
-						 mInput->getSkinSize().getHeight() );
+	if ( mHeightPolicy == SizePolicy::WrapContent ) {
+		// Measure the line, not the assigned input height, so live font/padding changes can
+		// grow and shrink the spinbox without the child competing with a fixed parent height.
+		const auto& padding = mInput->getPixelsPadding();
+		const Float height =
+			eemax<int>( mInput->getTextCache()->getLineSpacing(),
+						PixelDensity::dpToPxI( mInput->getSkinSize().getHeight() ) ) +
+			padding.Top + padding.Bottom;
+		setInternalPixelsHeight(
+			mInput->fitMinMaxSizePx( { mInput->getPixelsSize().getWidth(), height } ).getHeight() );
 	}
 
-	if ( ( mFlags & UI_AUTO_SIZE ) || getSize().getHeight() < mInput->getSize().getHeight() ) {
-		setInternalHeight( mInput->getSize().getHeight() );
-	}
+	mInput->setPixelsSize( eemax( 0.f, mSize.getWidth() - mPushUp->getPixelsSize().getWidth() ),
+						   mSize.getHeight() );
+	mInput->setPixelsPosition( 0, 0 );
 
-	mInput->centerVertical();
+	const Float posY = eefloor( ( mSize.getHeight() - mPushUp->getPixelsSize().getHeight() -
+								  mPushDown->getPixelsSize().getHeight() ) *
+								0.5f );
+	mPushUp->setPixelsPosition( mSize.getWidth() - mPushUp->getPixelsSize().getWidth(), posY );
+	mPushDown->setPixelsPosition( mSize.getWidth() - mPushDown->getPixelsSize().getWidth(),
+								  posY + mPushUp->getPixelsSize().getHeight() );
+}
 
-	int posY = ( getSize().getHeight() - mPushUp->getSize().getHeight() -
-				 mPushDown->getSize().getHeight() ) /
-			   2;
-
-	mPushUp->setPosition( getSize().getWidth() - mPushUp->getSize().getWidth(), posY );
-	mPushDown->setPosition( getSize().getWidth() - mPushDown->getSize().getWidth(),
-							posY + mPushUp->getSize().getHeight() );
+void UISpinBox::onAutoSize() {
+	adjustChildren();
 }
 
 void UISpinBox::setPadding( const Rectf& padding ) {
@@ -144,6 +155,14 @@ const double& UISpinBox::getClickStep() const {
 
 Uint32 UISpinBox::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
+		case NodeMessage::LayoutAttributeChange:
+			if ( Msg->getSender() == mInput &&
+				 ( layoutInvalidationFromMessage( Msg ) &
+				   toLayoutInvalidationFlags( LayoutInvalidationReason::IntrinsicSize ) ) ) {
+				adjustChildren();
+				return 1;
+			}
+			break;
 		case NodeMessage::MouseClick: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mPushUp ) {

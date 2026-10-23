@@ -1,6 +1,7 @@
+#include <eepp/ui/abstract/uiabstracttableview.hpp>
+
 #include <algorithm>
 #include <eepp/system/thread.hpp>
-#include <eepp/ui/abstract/uiabstracttableview.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
@@ -20,6 +21,11 @@ class TableHeaderLayout : public UILinearLayout {
   public:
 	TableHeaderLayout( const std::string& tag ) :
 		UILinearLayout( tag, UIOrientation::Horizontal ) {}
+
+	// Keep the view's automatic geometry cache in its existing owned layout, without changing
+	// UIAbstractTableView's public object layout or allocating a separate state object.
+	Float autoRowHeight{ 0 };
+	bool updatingRowHeight{ false };
 
 	void updateLayout() override {
 		UITableHeaderColumn* dragged = nullptr;
@@ -106,15 +112,107 @@ bool UIAbstractTableView::isType( const Uint32& type ) const {
 }
 
 Float UIAbstractTableView::getRowHeight() const {
-	return mRowHeight != 0 ? mRowHeight
-						   : ( eeceil( columnData( 0 ).widget
-										   ? columnData( 0 ).widget->getPixelsSize().getHeight()
-										   : PixelDensity::dpToPx( 16 ) ) );
+	if ( mRowHeight != 0 )
+		return mRowHeight;
+	const Float height = static_cast<TableHeaderLayout*>( mHeader )->autoRowHeight;
+	// Empty views and views with every column hidden still need a positive row stride.
+	return height > 0 ? height : PixelDensity::dpToPx( 16 );
+}
+
+Uint32 UIAbstractTableView::onMessage( const NodeMessage* msg ) {
+	switch ( msg->getMsg() ) {
+		case NodeMessage::TableCellMetricsChange:
+			if ( mRowHeight == 0 )
+				scheduleRowHeightUpdate();
+			return 1;
+		case NodeMessage::TableHeaderMetricsChange:
+			scheduleRowHeightUpdate();
+			return 1;
+	}
+	return UIAbstractView::onMessage( msg );
+}
+
+void UIAbstractTableView::scheduleRowHeightUpdate() {
+	auto* layout = static_cast<TableHeaderLayout*>( mHeader );
+	if ( layout->updatingRowHeight )
+		return;
+	// Restart one pending action as font/theme changes visit the text nodes. Measurements use
+	// only the allocated (recycled) cells, never the entire model, and stay out of hit testing.
+	debounce(
+		[this] {
+			auto* layout = static_cast<TableHeaderLayout*>( mHeader );
+			layout->updatingRowHeight = true;
+			const Float previousRowHeight = getRowHeight();
+			const Float previousHeaderHeight = getHeaderHeight();
+			updateRowHeight();
+			if ( previousRowHeight != getRowHeight() ||
+				 previousHeaderHeight != getHeaderHeight() ) {
+				createOrUpdateColumns( false );
+				invalidateDraw();
+			}
+			layout->updatingRowHeight = false;
+		},
+		Time::Zero, String::hash( "updateTableRowHeight" ) );
+}
+
+void UIAbstractTableView::updateRowHeight() {
+	// Header buttons become fixed-size after column layout. Measure their natural content
+	// directly; reading their assigned height prevents both font updates and shrinking.
+	mHeaderHeight = 0;
+	Float defaultRowHeight = 0;
+	Float rowPadding = 0;
+	for ( auto& column : mColumn ) {
+		auto* header = column.widget;
+		if ( !header || !column.visible )
+			continue;
+		const auto& padding = header->getPixelsPadding();
+		const Float verticalPadding = padding.Top + padding.Bottom;
+		const Float textHeight = header->getTextView()->getPixelsSize().getHeight();
+		rowPadding = eemax( rowPadding, verticalPadding );
+		defaultRowHeight = eemax( defaultRowHeight, eeceil( textHeight + verticalPadding ) );
+		const auto* extra = header->getExtraInnerWidget();
+		const Float skinHeight = PixelDensity::dpToPx(
+			eemax( header->getSkinSize().getHeight(),
+				   header->getSkinSize( UIState::StateFlagSelected ).getHeight() ) );
+		column.minHeight =
+			eeceil( eemax( skinHeight,
+						   eemax( textHeight, extra ? extra->getPixelsSize().getHeight() : 0.f ) ) +
+					verticalPadding );
+		column.minHeight =
+			header->fitMinMaxSizePx( { header->getPixelsSize().getWidth(), column.minHeight } )
+				.getHeight();
+		mHeaderHeight = eemax( mHeaderHeight, column.minHeight );
+	}
+	auto* layout = static_cast<TableHeaderLayout*>( mHeader );
+	layout->autoRowHeight = 0;
+	if ( mRowHeight != 0 )
+		return;
+	for ( const auto& row : mWidgets ) {
+		for ( const auto& entry : row ) {
+			auto* widget = entry.second;
+			if ( !widget || !widget->isType( UI_TYPE_TABLECELL ) )
+				continue;
+			auto* cell = widget->asType<UITableCell>();
+			const auto index = cell->getCurIndex();
+			if ( !index.isValid() || isColumnHidden( index.column() ) )
+				continue;
+			const auto& padding = cell->getPixelsPadding();
+			// Preserve the theme's header spacing, but let body text shrink independently of
+			// header fonts, sort indicators, skin dimensions and header-only constraints.
+			layout->autoRowHeight =
+				eemax( layout->autoRowHeight,
+					   eeceil( cell->getTextView()->getPixelsSize().getHeight() +
+							   eemax( rowPadding, padding.Top + padding.Bottom ) ) );
+		}
+	}
+	if ( layout->autoRowHeight == 0 )
+		layout->autoRowHeight = defaultRowHeight;
 }
 
 void UIAbstractTableView::setRowHeight( const Float& rowHeight ) {
 	if ( mRowHeight != rowHeight ) {
 		mRowHeight = rowHeight;
+		scheduleRowHeightUpdate();
 		createOrUpdateColumns( false );
 	}
 }
@@ -441,9 +539,12 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 		if ( !col.widget ) {
 			orderChanged = true;
 			col.widget = eeNew( UITableHeaderColumn, ( mTag, this, i ) );
+			// The view assigns fixed column bounds after measuring the natural header height.
+			col.widget->unsetFlags( UI_AUTO_SIZE );
 			col.widget->setParent( mHeader );
 			col.widget->setEnabled( true );
 			col.widget->setVisible( true );
+			scheduleRowHeightUpdate();
 		}
 		col.visible = !isColumnHidden( i );
 		col.widget->setVisible( col.visible );
@@ -568,12 +669,7 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 }
 
 Float UIAbstractTableView::getHeaderHeight() const {
-	return areHeadersVisible()
-			   ? eeceil( columnData( 0 ).widget
-							 ? eemax( mHeaderHeight,
-									  columnData( 0 ).widget->getPixelsSize().getHeight() )
-							 : 16 )
-			   : 0;
+	return areHeadersVisible() ? eeceil( columnData( 0 ).widget ? mHeaderHeight : 16 ) : 0;
 }
 
 Sizef UIAbstractTableView::getContentSize() const {
@@ -594,7 +690,11 @@ bool UIAbstractTableView::areHeadersVisible() const {
 }
 
 void UIAbstractTableView::setHeadersVisible( bool visible ) {
-	mHeader->setVisible( visible );
+	if ( mHeader->isVisible() != visible ) {
+		mHeader->setVisible( visible );
+		scheduleRowHeightUpdate();
+		createOrUpdateColumns( false );
+	}
 }
 
 void UIAbstractTableView::onSizeChange() {
@@ -838,6 +938,7 @@ UITableHeaderColumn* UIAbstractTableView::getHeaderColumn( const size_t& column 
 void UIAbstractTableView::setColumnHidden( const size_t& column, bool hidden ) {
 	if ( columnData( column ).visible != !hidden ) {
 		columnData( column ).visible = !hidden;
+		scheduleRowHeightUpdate();
 		createOrUpdateColumns( false );
 		// Header/cell widgets are implementation details; their visibility events are suppressed.
 		// Refresh the view's virtual cells and native clients' cached children explicitly.
@@ -852,8 +953,10 @@ void UIAbstractTableView::setColumnsHidden( const std::vector<size_t>& columns, 
 		columnData( col ).visible = !hidden;
 	}
 	createOrUpdateColumns( false );
-	if ( changed )
+	if ( changed ) {
+		scheduleRowHeightUpdate();
 		notifyAccessibilityEvent( AccessibilityEvent::ChildrenChanged );
+	}
 }
 
 void UIAbstractTableView::setColumnReorderingEnabled( bool enabled ) {
@@ -1205,7 +1308,7 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 			cell->setIcon( icon.asDrawable() );
 		} else if ( icon.is( Variant::Type::Icon ) && icon.asIcon() ) {
 			isVisible = true;
-			cell->setIcon( icon.asIcon()->createDrawable( mIconSize ) );
+			cell->setIcon( createCellIcon( cell, icon.asIcon() ) );
 		}
 		if ( cell->hasIcon() )
 			cell->getIcon()->setVisible( isVisible );
@@ -1225,6 +1328,22 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 	}
 
 	return widget;
+}
+
+DrawablePtr UIAbstractTableView::createCellIcon( UITableCell* cell, UIIcon* icon ) const {
+	const auto& source = icon->getSource( mIconSize );
+	if ( !source )
+		return {};
+	auto* image = cell->getIcon();
+	size_t size = mIconSize;
+	if ( !image->getMaxWidthEq().empty() ) {
+		// Glyphs match the text's em size; native images may have padding and fill the larger
+		// CSS box. FitInside only scales down, so each needs an appropriately sized source.
+		size = eemax( size, static_cast<size_t>( source->getDrawableType() == Drawable::GLYPH
+													 ? cell->getTextView()->getFontSize()
+													 : image->getPixelsSize().getWidth() ) );
+	}
+	return size == mIconSize ? source->clone() : icon->createDrawable( size );
 }
 
 void UIAbstractTableView::updateTableCellData( UITableCell* cell, const ModelIndex& index ) {

@@ -89,7 +89,7 @@ SelectButton.tool:selected {
 	min-width: 16dp;
 	min-height: 16dp;
 }
-/* Glyph icons are drawn at their tight bounds, so their sizes differ: every icon gets a fixed
+/* Menu glyphs are drawn at their tight bounds, so their sizes differ: each gets a fixed
    16dp box (menus included, with or without an icon) and the glyph is centered in it at its
    natural size (fitting would scale each glyph differently). */
 PopUpMenu {
@@ -101,7 +101,6 @@ PopUpMenu Menu::CheckBox::icon {
 	margin-right: 2dp;
 	margin-inline-end: 6dp;
 }
-tableview::cell::icon,
 Menu::Item::icon,
 Menu::SubMenu::icon,
 Menu::CheckBox::icon,
@@ -113,6 +112,12 @@ tab::icon,
 	/* Images take text-align as their horizontal alignment, and cells set it (inherited). */
 	text-align: center;
 	scale-type: none;
+}
+/* File icons fit the theme's font-relative box, including native system images. */
+tableview::cell::icon {
+	gravity: center;
+	text-align: center;
+	scale-type: fit-inside;
 }
 /* The application logo keeps its colors in light, dark and selected menu states. */
 #open-in-eefm > Menu::Item::icon {
@@ -731,8 +736,11 @@ void App::saveState() {
 	bool maximized = window->isMaximized();
 	state["window"] = { { "maximized", maximized } };
 	if ( !maximized ) {
-		state["window"]["width"] = window->getSize().getWidth();
-		state["window"]["height"] = window->getSize().getHeight();
+		// WindowSettings takes screen coordinates; drawable pixels would grow on each HiDPI
+		// restore.
+		const auto size = window->getSizeInScreenCoordinates();
+		state["window"]["width"] = size.getWidth();
+		state["window"]["height"] = size.getHeight();
 	} else if ( mState.contains( "window" ) ) {
 		state["window"]["width"] = mState["window"].value( "width", 1400 );
 		state["window"]["height"] = mState["window"].value( "height", 820 );

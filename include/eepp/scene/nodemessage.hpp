@@ -26,6 +26,8 @@ class EE_API NodeMessage {
 		DragStop,
 		Drop,
 		LayoutAttributeChange,
+		TableCellMetricsChange,
+		TableHeaderMetricsChange,
 		UserMessage,
 		NoMessage = eeINDEX_NOT_FOUND
 	};

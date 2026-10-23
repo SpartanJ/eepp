@@ -62,9 +62,9 @@ class EE_API UISpinBox : public UIWidget {
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
   protected:
-	UITextInput* mInput;
-	UIWidget* mPushUp;
-	UIWidget* mPushDown;
+	UITextInput* mInput{ nullptr };
+	UIWidget* mPushUp{ nullptr };
+	UIWidget* mPushDown{ nullptr };
 	double mMinValue;
 	double mMaxValue;
 	double mValue;
@@ -76,6 +76,8 @@ class EE_API UISpinBox : public UIWidget {
 	UISpinBox();
 
 	void adjustChildren();
+
+	virtual void onAutoSize();
 
 	virtual void onSizeChange();
 
