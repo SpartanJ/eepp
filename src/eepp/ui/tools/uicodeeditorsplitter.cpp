@@ -490,32 +490,15 @@ void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
 		}
 	}
 	UITab* addedTab = d.first;
-	loadAsyncFileFromPath( path, d.second, onLoaded );
+	// Creation may have fallen back to the main split when no destination was supplied.
+	tabWidget = addedTab->getTabWidget();
+	loadAsyncFileFromPath( path, d.second, std::move( onLoaded ) );
 	tabWidget->setTabSelected( addedTab );
 }
 
 void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
 	const std::string& path, std::function<void( UICodeEditor*, const std::string& )> onLoaded ) {
-	if ( !mThreadPool ) {
-		Log::error( "UICodeEditorSplitter::loadAsyncFileFromPathInNewTab loading file async "
-					"without thread pool." );
-		loadFileFromPathInNewTab( path );
-		return;
-	}
-	auto d = createCodeEditorInTabWidget( getPreferredTabWidget() );
-	if ( d.first == nullptr || d.second == nullptr ) {
-		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
-			d = createCodeEditorInTabWidget( mTabWidgets[0] );
-		} else {
-			Log::error( "Couldn't createCodeEditorInTabWidget in "
-						"UICodeEditorSplitter::loadAsyncFileFromPathInNewTab" );
-			return;
-		}
-	}
-	UITabWidget* tabWidget = d.first->getTabWidget();
-	UITab* addedTab = d.first;
-	loadAsyncFileFromPath( path, d.second, onLoaded );
-	tabWidget->setTabSelected( addedTab );
+	loadAsyncFileFromPathInNewTab( path, std::move( onLoaded ), getPreferredTabWidget() );
 }
 
 void UICodeEditorSplitter::setCurrentEditor( UICodeEditor* editor ) {

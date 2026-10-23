@@ -1017,6 +1017,9 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 
 	UITabWidget* curTabWidget =
 		editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() );
+	// Closing the previous project's tabs can leave no current widget until a tab is selected.
+	if ( !curTabWidget )
+		curTabWidget = editorSplitter->getFirstTabWidget();
 
 	if ( cfg.keyValueExists( "nodes", "documents" ) ) {
 		json j;

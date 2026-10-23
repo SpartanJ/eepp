@@ -63,6 +63,63 @@ static UICodeEditor* editorInTab( UITabWidget* tabWidget, Uint32 index ) {
 	return tabWidget->getTab( index )->getOwnedWidget()->asType<UICodeEditor>();
 }
 
+UTEST( UICodeEditorSplitter, AsyncFileLoadSelectsTabInResolvedDestination ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	EditorSplitterTestClient client;
+	auto* splitter = TestableEditorSplitter::New( &client, app.getUI() );
+	auto threadPool = ThreadPool::createShared( 1 );
+	splitter->setThreadPool( threadPool );
+	auto* mainTabs = splitter->createEditorWithTabWidget( app.getUI(), false );
+	auto* otherTabs = splitter->splitTabWidget( SplitDirection::Right, mainTabs );
+	splitter->createCodeEditorInTabWidget( otherTabs );
+	const std::string path = Sys::getProcessPath() + "assets" + FileSystem::getOSSlash() +
+							 "textformat" + FileSystem::getOSSlash() +
+							 "english.utf8.crlf.nobom.txt";
+	UICodeEditor* loadedEditor = nullptr;
+	bool loaded = false;
+
+	// A missing destination falls back to the main split; an explicit destination must win over
+	// the preference, while the overload without a destination must honor it.
+	for ( int destination = 0; destination < 3; ++destination ) {
+		otherTabs->setTabSelected( otherTabs->getTab( 0 ) );
+		splitter->setOpenDocumentsInMainSplit( true );
+		loaded = false;
+		loadedEditor = nullptr;
+		auto onLoaded = [&]( UICodeEditor* editor, const std::string& loadedPath ) {
+			loadedEditor = editor;
+			EXPECT_TRUE( loadedPath == path );
+			EXPECT_TRUE( editor->getDocument().getFilePath() == path );
+			loaded = true;
+		};
+		auto* expectedTabs = destination == 1 ? otherTabs : mainTabs;
+		const auto previousCount = expectedTabs->getTabCount();
+		if ( destination == 2 ) {
+			splitter->loadAsyncFileFromPathInNewTab( path, onLoaded );
+		} else {
+			splitter->loadAsyncFileFromPathInNewTab( path, onLoaded,
+													 destination == 0 ? nullptr : otherTabs );
+		}
+
+		EXPECT_EQ( expectedTabs->getTabCount(), previousCount + 1 );
+		EXPECT_EQ( expectedTabs->getTabSelected(), expectedTabs->getTab( previousCount ) );
+		Clock clock;
+		while ( !loaded && clock.getElapsedTime() < Seconds( 5 ) ) {
+			app.getUI()->update( Milliseconds( 1 ) );
+			Sys::sleep( Milliseconds( 1 ) );
+		}
+		EXPECT_TRUE( loaded );
+		EXPECT_EQ( expectedTabs->getTabSelected()->getOwnedWidget(), loadedEditor );
+	}
+
+	// Join the worker before destroying the splitter referenced by the completion callback.
+	splitter->setThreadPool( nullptr );
+	threadPool.reset();
+	app.getUI()->update( Time::Zero );
+	eeDelete( splitter );
+}
+
 UTEST( UICodeEditorSplitter, EditorMovedBetweenSplitsKeepsFocusTracking ) {
 	UIApplication app(
 		WindowSettings( 800, 600, "eepp - unit tests" ),
