@@ -29,7 +29,7 @@ toLayoutInvalidationFlags( LayoutInvalidationReason reason ) {
 	return static_cast<LayoutInvalidationFlags>( reason );
 }
 
-LayoutInvalidationFlags layoutInvalidationFromMessage( const Scene::NodeMessage* msg );
+EE_API LayoutInvalidationFlags layoutInvalidationFromMessage( const Scene::NodeMessage* msg );
 
 namespace LayoutInvalidation {
 
