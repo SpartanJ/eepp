@@ -81,13 +81,22 @@ Dialogs::transferConflict( UISceneNode* ui, const EE::VFS::TransferConflict& con
 	const bool sameType =
 		conflict.sourceInfo.isDirectory() == conflict.destinationInfo.isDirectory();
 	const auto name = conflict.destination.getLastPathSegment();
-	String message = String::format(
-		"\"%s\" already exists.\n\nSource: %s\nDestination: %s\n\n%s", name.c_str(),
-		Location::clipboardText( conflict.source ).c_str(),
-		Location::clipboardText( conflict.destination ).c_str(),
-		folders	   ? "Write into the existing folder? Existing files will be handled separately."
-		: sameType ? "Overwrite the destination, rename the incoming file, or skip it?"
-				   : "The source and destination have different types. Rename or skip this item." );
+	const auto instruction =
+		folders ? ui->i18n(
+					  "eefm_conflict_merge",
+					  "Write into the existing folder? Existing files will be handled separately." )
+		: sameType
+			? ui->i18n( "eefm_conflict_overwrite_question",
+						"Overwrite the destination, rename the incoming file, or skip it?" )
+			: ui->i18n(
+				  "eefm_conflict_type_mismatch",
+				  "The source and destination have different types. Rename or skip this item." );
+	String message =
+		String::format( ui->i18n( "eefm_conflict_details",
+								  "\"%s\" already exists.\n\nSource: %s\nDestination: %s\n\n%s" )
+							.toUtf8(),
+						name, Location::clipboardText( conflict.source ),
+						Location::clipboardText( conflict.destination ), instruction.toUtf8() );
 	auto* box = UIMessageBox::New( UIMessageBox::INPUT, message );
 	box->getTextBox()->setMaxWidthEq( "70vw" );
 	box->getTextBox()->setWordWrap( true );
@@ -99,10 +108,13 @@ Dialogs::transferConflict( UISceneNode* ui, const EE::VFS::TransferConflict& con
 	input->getDocument().selectAll();
 	auto* applyAll = UICheckBox::New();
 	applyAll->setId( "conflict_apply_all" );
-	applyAll->setText( "Apply to All" );
-	applyAll->setTooltipText( folders ? "Apply to subsequent folder conflicts in this operation. "
-										"File conflicts are handled separately."
-									  : "Apply to subsequent file conflicts in this operation." );
+	applyAll->setText( ui->i18n( "eefm_apply_to_all", "Apply to All" ) );
+	applyAll->setTooltipText(
+		folders ? ui->i18n( "eefm_conflict_apply_folders",
+							"Apply to subsequent folder conflicts in this operation. File "
+							"conflicts are handled separately." )
+				: ui->i18n( "eefm_conflict_apply_files",
+							"Apply to subsequent file conflicts in this operation." ) );
 	applyAll->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
 	applyAll->setLayoutMargin( Rectf( 0, 8, 0, 0 ) );
 	applyAll->setParent( input->getParent() );
@@ -123,11 +135,12 @@ Dialogs::transferConflict( UISceneNode* ui, const EE::VFS::TransferConflict& con
 	};
 	auto* overwrite = box->getButtonOK();
 	overwrite->setId( "conflict_overwrite" );
-	overwrite->setText( folders ? "Write Into" : "Overwrite" );
+	overwrite->setText( folders ? ui->i18n( "eefm_write_into", "Write Into" )
+								: ui->i18n( "eefm_overwrite", "Overwrite" ) );
 	auto* cancel = box->getButtonCancel();
 	cancel->setId( "conflict_cancel" );
-	cancel->setText( "Cancel" );
-	auto addButton = [box]( const char* id, const char* text ) {
+	cancel->setText( ui->i18n( "eefm_cancel", "Cancel" ) );
+	auto addButton = [box]( const char* id, const String& text ) {
 		auto* button = UIPushButton::New();
 		button->setId( id );
 		button->setText( text );
@@ -136,12 +149,12 @@ Dialogs::transferConflict( UISceneNode* ui, const EE::VFS::TransferConflict& con
 		button->setParent( box->getButtonOK()->getParent() );
 		return button;
 	};
-	auto* skip = addButton( "conflict_skip", "Skip" );
+	auto* skip = addButton( "conflict_skip", ui->i18n( "eefm_conflict_skip", "Skip" ) );
 	skip->on( Event::MouseClick, [finish]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
 			finish( ConflictAction::Skip );
 	} );
-	auto* rename = addButton( "conflict_rename", "Rename" );
+	auto* rename = addButton( "conflict_rename", ui->i18n( "eefm_conflict_rename", "Rename" ) );
 	rename->on( Event::MouseClick, [finish]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
 			finish( ConflictAction::Rename );
@@ -149,19 +162,20 @@ Dialogs::transferConflict( UISceneNode* ui, const EE::VFS::TransferConflict& con
 	UIPushButton* older = nullptr;
 	if ( !folders && sameType && conflict.sourceInfo.modifiedTime() &&
 		 conflict.destinationInfo.modifiedTime() ) {
-		older = addButton( "conflict_older", "Overwrite Older" );
+		older = addButton( "conflict_older", ui->i18n( "eefm_conflict_older", "Overwrite Older" ) );
 		older->on( Event::MouseClick, [finish]( const Event* event ) {
 			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
 				finish( ConflictAction::OverwriteOlder );
 		} );
 	}
-	auto updateButtons = [input, applyAll, overwrite, older, rename, name, sameType,
+	auto updateButtons = [ui, input, applyAll, overwrite, older, rename, name, sameType,
 						  parent = conflict.destination.getParent()]( const Event* ) {
 		const auto value = input->getText().toUtf8();
 		overwrite->setEnabled( sameType && value == name );
 		if ( older )
 			older->setEnabled( value == name );
-		rename->setText( applyAll->isChecked() ? "Auto Rename" : "Rename" );
+		rename->setText( applyAll->isChecked() ? ui->i18n( "eefm_auto_rename", "Auto Rename" )
+											   : ui->i18n( "eefm_conflict_rename", "Rename" ) );
 		rename->setEnabled( applyAll->isChecked() ||
 							( value != name && VFSPath::validName( value, parent ) ) );
 	};

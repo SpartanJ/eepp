@@ -206,7 +206,9 @@ class FileCell : public UITableCell {
 				label->removeClass( "vfs_folder" );
 			label->setText( drag.uris.size() == 1
 								? String::fromUtf8( drag.uris[0].getLastPathSegment() )
-								: String( String::format( "%zu items", drag.uris.size() ) ) );
+								: String( String::format(
+									  getUISceneNode()->i18n( "eefm_items", "%zu items" ).toUtf8(),
+									  drag.uris.size() ) ) );
 			label->toFront();
 			if ( table->onDragStarted )
 				table->onDragStarted();

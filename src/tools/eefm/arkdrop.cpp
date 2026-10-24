@@ -42,15 +42,15 @@ class DBusFunctions {
 	void ( *errorInit )( DBusError* ){ nullptr };
 	void ( *errorFree )( DBusError* ){ nullptr };
 	unsigned int ( *errorIsSet )( const DBusError* ){ nullptr };
-	DBusConnection* ( *busGetPrivate )(int, DBusError*){ nullptr };
+	DBusConnection* ( *busGetPrivate )( int, DBusError* ){ nullptr };
 	void ( *connectionSetExitOnDisconnect )( DBusConnection*, unsigned int ){ nullptr };
 	void ( *connectionClose )( DBusConnection* ){ nullptr };
 	void ( *connectionUnref )( DBusConnection* ){ nullptr };
-	DBusMessage* ( *messageNewMethodCall )(const char*, const char*, const char*,
-										   const char*){ nullptr };
+	DBusMessage* ( *messageNewMethodCall )( const char*, const char*, const char*,
+											const char* ){ nullptr };
 	unsigned int ( *messageAppendArgs )( DBusMessage*, int, ... ){ nullptr };
-	DBusMessage* ( *connectionSendWithReplyAndBlock )(DBusConnection*, DBusMessage*, int,
-													  DBusError*){ nullptr };
+	DBusMessage* ( *connectionSendWithReplyAndBlock )( DBusConnection*, DBusMessage*, int,
+													   DBusError* ){ nullptr };
 	void ( *messageUnref )( DBusMessage* ){ nullptr };
 	/** Validators that report instead of asserting, unlike the message constructors. */
 	unsigned int ( *validateBusName )( const char*, DBusError* ){ nullptr };
@@ -100,16 +100,22 @@ bool ArkDrop::isArkDrop( const DataDrop& drop ) {
 	return drop.find( ServiceType ) && drop.find( PathType );
 }
 
-std::string ArkDrop::extract( const DataDrop& drop, const std::string& folder ) {
+std::string ArkDrop::extract( const DataDrop& drop, const std::string& folder,
+							  const EE::System::Translator& translator ) {
 	const std::string* service = drop.find( ServiceType );
 	const std::string* path = drop.find( PathType );
 	const auto& dbus = DBusFunctions::get();
 	if ( !dbus.loaded() )
-		return "D-Bus is unavailable (libdbus-1 could not be loaded)";
+		return translator
+			.getString( "eefm_dbus_unavailable",
+						"D-Bus is unavailable (libdbus-1 could not be loaded)" )
+			.toUtf8();
 	DBusError error;
 	dbus.errorInit( &error );
-	auto takeError = [&]( const char* fallback ) {
-		std::string message = dbus.errorIsSet( &error ) && error.message ? error.message : fallback;
+	auto takeError = [&]( std::string fallback ) {
+		std::string message = dbus.errorIsSet( &error ) && error.message
+								  ? std::string( error.message )
+								  : std::move( fallback );
 		dbus.errorFree( &error );
 		return message;
 	};
@@ -120,13 +126,23 @@ std::string ArkDrop::extract( const DataDrop& drop, const std::string& folder ) 
 			   validate( value->c_str(), &error );
 	};
 	if ( !valid( service, dbus.validateBusName ) || !valid( path, dbus.validatePath ) )
-		return takeError( "The drag did not name the Ark instance it came from" );
+		return takeError( translator
+							  .getString( "eefm_ark_drag_invalid",
+										  "The drag did not name the Ark instance it came from" )
+							  .toUtf8() );
 	if ( !valid( &folder, dbus.validateUtf8 ) )
-		return takeError( "Ark can only extract into folders whose path is valid UTF-8" );
+		return takeError(
+			translator
+				.getString( "eefm_ark_path_invalid",
+							"Ark can only extract into folders whose path is valid UTF-8" )
+				.toUtf8() );
 	// A private connection: libdbus' shared one belongs to whoever else uses it in the process.
 	DBusConnection* connection = dbus.busGetPrivate( DBusBusSession, &error );
 	if ( !connection )
-		return takeError( "Could not connect to the D-Bus session bus" );
+		return takeError( translator
+							  .getString( "eefm_dbus_connection_failed",
+										  "Could not connect to the D-Bus session bus" )
+							  .toUtf8() );
 	dbus.connectionSetExitOnDisconnect( connection, 0 );
 	std::string result;
 	if ( DBusMessage* call =
@@ -134,16 +150,20 @@ std::string ArkDrop::extract( const DataDrop& drop, const std::string& folder ) 
 										"extractSelectedFilesTo" ) ) {
 		const char* destination = folder.c_str();
 		if ( !dbus.messageAppendArgs( call, DBusTypeString, &destination, DBusTypeInvalid ) ) {
-			result = "Out of memory";
+			result = translator.getString( "eefm_out_of_memory", "Out of memory" ).toUtf8();
 		} else if ( DBusMessage* reply = dbus.connectionSendWithReplyAndBlock(
 						connection, call, DBusReplyTimeoutMs, &error ) ) {
 			dbus.messageUnref( reply );
 		} else {
-			result = takeError( "Ark did not answer" );
+			result = takeError(
+				translator.getString( "eefm_ark_no_answer", "Ark did not answer" ).toUtf8() );
 		}
 		dbus.messageUnref( call );
 	} else {
-		result = "Invalid Ark D-Bus name or object path";
+		result =
+			translator
+				.getString( "eefm_ark_instance_invalid", "Invalid Ark D-Bus name or object path" )
+				.toUtf8();
 	}
 	dbus.connectionClose( connection );
 	dbus.connectionUnref( connection );

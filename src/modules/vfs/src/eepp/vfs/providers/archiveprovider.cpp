@@ -576,6 +576,14 @@ VFSTask<ArchiveSupport> ArchiveProvider::support( CancellationToken token ) {
 		} );
 }
 
+bool ArchiveProvider::relocateURI( URI& uri, const URI& from, const URI& to ) const {
+	auto address = detail::ArchiveLocation::parse( uri, scheme() );
+	if ( !address || !VFSProvider::relocateURI( address.value().archive, from, to ) )
+		return false;
+	uri = makeURI( address.value().archive, address.value().member );
+	return true;
+}
+
 ProviderCapabilities ArchiveProvider::capabilities( const URI& ) const {
 	return ArchiveCapabilities;
 }

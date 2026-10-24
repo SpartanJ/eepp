@@ -9,6 +9,8 @@
 #include "settingsactions.hpp"
 #include "terminalpanel.hpp"
 #include <eepp/system/applications.hpp>
+#include <eepp/ui/uimenubar.hpp>
+#include <eepp/ui/uimenuitem.hpp>
 
 #include <args/args.hxx>
 #include <iostream>
@@ -387,9 +389,127 @@ tableview::cell.vfs_size {
 tableview::cell.dragged {
 	opacity: 0.5;
 }
+
+.file_properties .properties_body {
+	layout_width: match_parent;
+	layout_height: match_parent;
+	padding: 12dp;
+}
+.file_properties #properties_loading_overlay {
+	background-color: rgba( var(--back), 0.82 );
+}
+.file_properties .properties_page {
+	layout_width: match_parent;
+	layout_height: wrap_content;
+	padding: 18dp 16dp;
+}
+.file_properties .properties_row {
+	layout_width: match_parent;
+	layout_height: wrap_content;
+	margin-bottom: 4dp;
+}
+.file_properties .properties_row > * {
+	layout-gravity: center_vertical;
+}
+.file_properties .properties_label {
+	layout_width: 112dp;
+	layout_height: wrap_content;
+	margin-right: 24dp;
+	text-align: right;
+	color: var(--font-hint);
+}
+.file_properties .properties_value {
+	layout_width: 0;
+	layout_weight: 1;
+	layout_height: wrap_content;
+	word-wrap: true;
+	text-selection: true;
+}
+.file_properties .properties_heading {
+	layout_width: match_parent;
+	layout_height: wrap_content;
+	font-style: bold;
+	margin-bottom: 10dp;
+}
+.file_properties .properties_separator {
+	layout_width: match_parent;
+	layout_height: 1dp;
+	background-color: var(--tab-line);
+	margin: 8dp 0 12dp 0;
+}
+.file_properties .properties_hint {
+	layout_width: match_parent;
+	layout_height: wrap_content;
+	word-wrap: true;
+	color: var(--font-hint);
+	margin-top: 10dp;
+}
+.file_properties .properties_actions {
+	layout_width: match_parent;
+	layout_height: wrap_content;
+	margin-top: 12dp;
+	gravity: right;
+}
+.file_properties .properties_actions pushbutton {
+	min-width: 80dp;
+	margin-left: 8dp;
+}
+.file_properties dropdownlist {
+	layout_width: 0;
+	layout_weight: 1;
+	layout_height: wrap_content;
+	popup-to-root: true;
+}
+.file_properties textinput {
+	layout_width: 0;
+	layout_weight: 1;
+	layout_height: wrap_content;
+}
+
+.file_properties.compact .properties_body {
+	padding: 6dp;
+}
+.file_properties.compact .properties_page {
+	padding: 8dp;
+}
+.file_properties.compact .properties_label {
+	layout_width: 88dp;
+	margin-right: 12dp;
+}
+.file_properties.compact .properties_label image {
+	margin-left: 40dp;
+}
+.file_properties.compact .properties_actions {
+	margin-top: 6dp;
+}
+.file_properties.compact .properties_actions pushbutton {
+	layout_width: 0;
+	layout_weight: 1;
+	min-width: 0;
+	margin-left: 4dp;
+}
+.file_properties.narrow .properties_row {
+	orientation: vertical;
+}
+.file_properties.narrow .properties_label {
+	layout_width: match_parent;
+	margin-right: 0;
+	text-align: left;
+}
+.file_properties.narrow .properties_value,
+.file_properties.narrow dropdownlist,
+.file_properties.narrow textinput {
+	layout_width: match_parent;
+	layout_weight: 0;
+}
+.file_properties.narrow .properties_row > * {
+	layout-gravity: left;
+}
+
 ]]>
 </style>
 <vbox id="root" layout_width="match_parent" layout_height="match_parent">
+	<MenuBar id="main_menubar" lw="mp" lh="wc" visible="false" />
 	<hbox id="toolbar" layout_width="match_parent" layout_height="wrap_content">
 		<PushButton id="back" class="tool" icon="go-previous" />
 		<PushButton id="forward" class="tool" icon="go-next" />
@@ -400,7 +520,7 @@ tableview::cell.dragged {
 		<hbox id="location_0" class="location" layout_width="200dp" layout_height="wrap_content" />
 		<hbox id="location_1" class="location" layout_width="200dp" layout_height="wrap_content" />
 		<widget layout_width="0" layout_weight="1" layout_height="1dp" />
-		<PushButton id="app_menu" class="tool" icon="app-menu" tooltip="Menu" />
+		<PushButton id="app_menu" class="tool" icon="app-menu" tooltip='@string(eefm_menu, "Menu")' />
 	</hbox>
 	<Splitter id="terminal_splitter" layout_width="match_parent" layout_height="0" layout_weight="1" orientation="vertical" splitter-partition="70%">
 	<Splitter id="main_splitter" layout_width="match_parent" layout_height="match_parent" orientation="horizontal" splitter-partition="185dp">
@@ -415,9 +535,9 @@ tableview::cell.dragged {
 const char* LocationLayout = R"xml(
 <hbox class="location_frame" layout_width="0" layout_weight="1" layout_height="wrap_content">
 	<Image class="location_icon" layout_gravity="center_vertical" />
-	<TextInput class="location_input" layout_width="0" layout_weight="1" layout_height="wrap_content" hint="Location" />
-	<PushButton class="location_clear" icon="location-clear" tooltip="Clear" layout_gravity="center_vertical" />
-	<PushButton class="location_history" icon="location-history" tooltip="Recent Locations" layout_gravity="center_vertical" />
+	<TextInput class="location_input" layout_width="0" layout_weight="1" layout_height="wrap_content" hint='@string(eefm_location, "Location")' />
+	<PushButton class="location_clear" icon="location-clear" tooltip='@string(eefm_clear, "Clear")' layout_gravity="center_vertical" />
+	<PushButton class="location_history" icon="location-history" tooltip='@string(eefm_recent_locations, "Recent Locations")' layout_gravity="center_vertical" />
 </hbox>
 )xml";
 
@@ -432,11 +552,22 @@ App::App() = default;
 App::~App() = default;
 
 int App::run( int argc, char* argv[] ) {
-	args::ArgumentParser parser( "eefm - file manager" );
-	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
-	args::Flag split( parser, "split", "Open the locations side by side", { 's', "split" } );
+	const Translator translator;
+	args::ArgumentParser parser(
+		translator.getString( "eefm_cli_description", "eefm - file manager" ).toUtf8() );
+	args::HelpFlag help( parser, "help",
+						 translator.getString( "eefm_cli_help", "Display this help menu" ).toUtf8(),
+						 { 'h', "help" } );
+	args::Flag split(
+		parser, "split",
+		translator.getString( "eefm_cli_split", "Open the locations side by side" ).toUtf8(),
+		{ 's', "split" } );
 	args::PositionalList<std::string> locations(
-		parser, "locations", "Paths or URIs to open (one tab each, or one per side with --split)" );
+		parser, "locations",
+		translator
+			.getString( "eefm_cli_locations",
+						"Paths or URIs to open (one tab each, or one per side with --split)" )
+			.toUtf8() );
 	try {
 		parser.ParseCLI( argc, argv );
 	} catch ( const args::Help& ) {
@@ -575,6 +706,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 
 	// Pane tooltips resolve their shortcuts while the panes are created.
 	registerShortcuts();
+	createMenuBar();
 
 	// Panes and their location bars
 	for ( int i = 0; i < 2; ++i ) {
@@ -848,15 +980,18 @@ void App::layoutLocationBars() {
 		UIWidget* left = mPaneManager->pane( 0 ).location.box;
 		UIWidget* right = mPaneManager->pane( 1 ).location.box;
 		Float leftX = left->getScreenPos().x;
-		Float menuX = mMenuButton->getScreenPos().x;
+		Float endX = mMenuButton->isVisible()
+						 ? mMenuButton->getScreenPos().x
+						 : mToolbar->getScreenPos().x + mToolbar->getPixelsSize().getWidth() -
+							   mToolbar->getPixelsPadding().Right;
 		Float leftWidth;
 		if ( mSplit ) {
 			Float rightPaneX = mPaneManager->pane( 1 ).root->getScreenPos().x;
 			leftWidth = std::max( minWidth, rightPaneX - leftX - gap );
-			right->setPixelsSize( std::max( minWidth, menuX - gap - rightPaneX ),
+			right->setPixelsSize( std::max( minWidth, endX - gap - rightPaneX ),
 								  right->getPixelsSize().getHeight() );
 		} else {
-			leftWidth = std::max( minWidth, menuX - gap - leftX );
+			leftWidth = std::max( minWidth, endX - gap - leftX );
 		}
 		left->setLayoutWidthPolicy( SizePolicy::Fixed );
 		right->setLayoutWidthPolicy( SizePolicy::Fixed );
@@ -961,6 +1096,83 @@ void App::showAppMenu() {
 					mMenuButton->getScreenPos().y + mMenuButton->getPixelsSize().getHeight() );
 		menu->setPixelsPosition( menu->getParent()->convertToNodeSpace( p ) );
 	} );
+}
+
+void App::createMenuBar() {
+	auto* bar = mUI->find<UIMenuBar>( "main_menubar" );
+	auto menu = [this, bar]( const String& title ) {
+		auto* result = UIPopUpMenu::New();
+		result->on( Event::OnItemClicked, [this]( const Event* event ) {
+			const auto& command = event->getNode()->getId();
+			const auto shortcut = mUI->getKeyBindings().getShortcutFromCommand( command );
+			if ( !shortcut.empty() ) {
+				auto* dispatcher = mUI->getEventDispatcher();
+				dispatcher->sendKeyDown( shortcut.key, SCANCODE_UNKNOWN, 0, shortcut.mod );
+				dispatcher->sendKeyUp( shortcut.key, SCANCODE_UNKNOWN, 0, shortcut.mod );
+			} else {
+				mUI->executeKeyBindingCommand( command );
+			}
+		} );
+		bar->addMenuButton( title, result );
+		return result;
+	};
+	auto add = [this]( UIPopUpMenu* menu, const String& text, const char* command ) {
+		auto* item = menu->add( text, nullptr, getKeybind( command ) );
+		item->setId( command );
+		return item;
+	};
+	auto* file = menu( mUI->i18n( "eefm_file_menu", "File" ) );
+	add( file, mUI->i18n( "eefm_new_tab", "New Tab" ), "new-tab" );
+	add( file, mUI->i18n( "eefm_close_tab", "Close Tab" ), "close-tab" );
+	file->addSeparator();
+	add( file, mUI->i18n( "eefm_new_folder_title", "New Folder" ), "new-folder" );
+	add( file, mUI->i18n( "eefm_properties", "Properties" ), "properties" );
+	file->addSeparator();
+	add( file, mUI->i18n( "eefm_quit", "Quit" ), "quit" )->setMenuRole( MenuRole::Quit );
+
+	auto* edit = menu( mUI->i18n( "eefm_edit_menu", "Edit" ) );
+	add( edit, mUI->i18n( "eefm_cut", "Cut" ), "cut" );
+	add( edit, mUI->i18n( "eefm_copy", "Copy" ), "copy" );
+	add( edit, mUI->i18n( "eefm_paste", "Paste" ), "paste" );
+	edit->addSeparator();
+	add( edit, mUI->i18n( "eefm_select_all", "Select All" ), "select-all" );
+	add( edit, mUI->i18n( "eefm_rename", "Rename..." ), "rename" );
+	add( edit, mUI->i18n( "eefm_move_to_trash", "Move to Trash" ), "trash" );
+	add( edit, mUI->i18n( "eefm_delete", "Delete" ), "delete" );
+
+	auto* view = menu( mUI->i18n( "eefm_view_menu", "View" ) );
+	add( view, mUI->i18n( "eefm_refresh", "Reload" ), "refresh" );
+	add( view, mUI->i18n( "eefm_show_hidden", "Show Hidden Files" ), "toggle-hidden" );
+	add( view, mUI->i18n( "eefm_split_view", "Split View" ), "toggle-split" );
+	add( view, mUI->i18n( "eefm_panel_places", "Places" ), "toggle-places" );
+	add( view, mUI->i18n( "eefm_panel_terminal", "Terminal" ), "toggle-terminal" );
+	add( view, mUI->i18n( "eefm_show_filter_bar", "Show Filter Bar" ), "toggle-filter" );
+	view->addSeparator();
+	add( view, mUI->i18n( "eefm_configure", "Configure eefm..." ), "settings" )
+		->setMenuRole( MenuRole::Preferences );
+
+	auto* go = menu( mUI->i18n( "eefm_go_menu", "Go" ) );
+	add( go, mUI->i18n( "eefm_back", "Back" ), "go-back" );
+	add( go, mUI->i18n( "eefm_forward", "Forward" ), "go-forward" );
+	add( go, mUI->i18n( "eefm_go_up", "Go Up" ), "go-up" );
+	add( go, mUI->i18n( "eefm_home", "Home" ), "go-home" );
+	add( go, mUI->i18n( "eefm_location", "Location" ), "focus-location" );
+	go->addSeparator();
+	add( go, mUI->i18n( "eefm_open_terminal", "Open Terminal" ), "terminal" );
+
+	// As in ecode, the native menu owns AppKit key equivalents. Its bridge lets the registered
+	// eepp keybindings execute keyboard actions once, instead of also closing the native window.
+	if ( bar->isGlobalMenuBarSupported() )
+		bar->setGlobalMenuBarEnabled( true );
+	setMenuBarVisible( mConfig->window.showMenuBar );
+}
+
+void App::setMenuBarVisible( bool visible ) {
+	mConfig->window.showMenuBar = visible;
+	auto* bar = mUI->find<UIMenuBar>( "main_menubar" );
+	bar->setVisible( visible && !bar->isGlobalMenuBarEnabled() );
+	mMenuButton->setVisible( !bar->isVisible() );
+	layoutLocationBars();
 }
 
 void App::registerShortcuts() {

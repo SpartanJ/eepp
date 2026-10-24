@@ -434,6 +434,14 @@ VFSResult<std::string> ZipProvider::memberPath( const URI& uri ) {
 	return Ok( std::move( address ).value().member );
 }
 
+bool ZipProvider::relocateURI( URI& uri, const URI& from, const URI& to ) const {
+	auto address = detail::ArchiveLocation::parse( uri, scheme() );
+	if ( !address || !VFSProvider::relocateURI( address.value().archive, from, to ) )
+		return false;
+	uri = makeURI( address.value().archive, address.value().member );
+	return true;
+}
+
 ProviderCapabilities ZipProvider::capabilities( const URI& ) const {
 	return ZipCapabilities;
 }

@@ -302,3 +302,23 @@ UTEST( UIScrolling, MouseWheelOverrideCanSuppressListenerDispatch ) {
 	EXPECT_EQ( widget->calls, 1 );
 	EXPECT_EQ( wheelEvents, 0 );
 }
+
+UTEST( UIScrolling, XmlOffModesHideScrollBarsEvenWhenContentOverflows ) {
+	UIApplication app(
+		WindowSettings{ 320, 240, "eepp - XML scroll modes" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* scene = app.getUI();
+	ASSERT_NE( scene, nullptr );
+	auto* scroll = scene
+					   ->loadLayoutFromString( R"xml(
+		<ScrollView lw="120dp" lh="100dp" hscroll-mode="off" vscroll-mode="off">
+			<widget lw="400dp" lh="300dp" />
+		</ScrollView>
+	)xml" )
+					   ->asType<UIScrollView>();
+	scene->flushDirtyStyleAndLayout();
+	EXPECT_TRUE( scroll->getHorizontalScrollMode() == ScrollBarMode::AlwaysOff );
+	EXPECT_TRUE( scroll->getVerticalScrollMode() == ScrollBarMode::AlwaysOff );
+	EXPECT_FALSE( scroll->getHorizontalScrollBar()->isVisible() );
+	EXPECT_FALSE( scroll->getVerticalScrollBar()->isVisible() );
+}

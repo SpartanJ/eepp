@@ -138,7 +138,6 @@ void SettingsActions::showSettings() {
 	auto* panel = UISettingsPanel::New( window->getContainer() );
 	panel->setId( "settings_panel_content" );
 	panel->setSearchResultsText( mUI->i18n( "eefm_search_results", "Search Results" ) );
-	const String restart = mUI->i18n( "eefm_restart_required", "Restart required." );
 
 	// Appearance
 	panel->addCategory( "appearance.theme", mUI->i18n( "eefm_appearance", "Appearance" ),
@@ -166,6 +165,14 @@ void SettingsActions::showSettings() {
 			mUI->updateWindowTitleBarColor();
 			savePreferences();
 		} );
+
+#if EE_PLATFORM != EE_PLATFORM_MACOS
+	panel->addBool(
+		{ "showMenuBar", "appearance.theme", mUI->i18n( "eefm_show_menu_bar", "Show Menu Bar" ),
+		  mUI->i18n( "eefm_show_menu_bar_desc", "Show the menu bar above the toolbar." ) },
+		[this] { return mApp.config().window.showMenuBar; },
+		[this]( bool visible ) { mApp.setMenuBarVisible( visible ); } );
+#endif
 
 	panel->addCategory( "appearance.fonts", mUI->i18n( "eefm_appearance", "Appearance" ),
 						mUI->i18n( "eefm_fonts_and_scale", "Fonts & Scale" ) );
@@ -197,7 +204,7 @@ void SettingsActions::showSettings() {
 		} );
 	panel->addFloat(
 		{ "uiScaleFactor", "appearance.fonts", mUI->i18n( "eefm_ui_scale", "UI Scale Factor" ),
-		  mUI->i18n( "eefm_ui_scale_desc", "Scale the whole interface. " ) + restart },
+		  mUI->i18n( "eefm_ui_scale_desc", "Scale the whole interface. Restart required." ) },
 		1, 6, 0.1,
 		[this] {
 			return mApp.config().window.pixelDensity > 0 ? mApp.config().window.pixelDensity
@@ -439,10 +446,10 @@ void SettingsActions::showSettings() {
 	// Window
 	panel->addCategory( "window.renderer", mUI->i18n( "eefm_window", "Window" ),
 						mUI->i18n( "eefm_renderer", "Renderer" ) );
-	panel->addBool(
-		{ "vsync", "window.renderer", mUI->i18n( "eefm_vsync", "VSync" ),
-		  mUI->i18n( "eefm_vsync_desc", "Synchronize rendering with the display. " ) + restart },
-		&mApp.config().window.vsync, [this]( bool ) { savePreferences(); } );
+	panel->addBool( { "vsync", "window.renderer", mUI->i18n( "eefm_vsync", "VSync" ),
+					  mUI->i18n( "eefm_vsync_desc",
+								 "Synchronize rendering with the display. Restart required." ) },
+					&mApp.config().window.vsync, [this]( bool ) { savePreferences(); } );
 	const String monitorRate = mUI->i18n( "eefm_monitor_refresh_rate", "Monitor Refresh Rate" );
 	const String unlimited = mUI->i18n( "eefm_unlimited", "Unlimited" );
 	panel->addEditableChoice(
@@ -480,7 +487,7 @@ void SettingsActions::showSettings() {
 		panel->addChoice(
 			{ "rendererVersion", "window.renderer",
 			  mUI->i18n( "eefm_renderer_version", "Renderer Version" ),
-			  mUI->i18n( "eefm_renderer_version_desc", "The graphics API. " ) + restart },
+			  mUI->i18n( "eefm_renderer_version_desc", "The graphics API. Restart required." ) },
 			rendererNames,
 			[this, rendererVersions] {
 				auto found = std::find( rendererVersions.begin(), rendererVersions.end(),
@@ -498,7 +505,7 @@ void SettingsActions::showSettings() {
 	panel->addChoice(
 		{ "multisamples", "window.renderer",
 		  mUI->i18n( "eefm_multisamples", "Multisample Anti-Aliasing" ),
-		  mUI->i18n( "eefm_multisamples_desc", "Renderer multisampling. " ) + restart },
+		  mUI->i18n( "eefm_multisamples_desc", "Renderer multisampling. Restart required." ) },
 		{ "0", "2", "4", "8", "16" },
 		[this] {
 			static constexpr Uint32 values[] = { 0, 2, 4, 8, 16 };

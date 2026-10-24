@@ -180,35 +180,28 @@ bool Translator::loadFromPack( Pack* pack, const std::string& FilePackPath, std:
 }
 
 String Translator::getString( const std::string& key, const String& defaultValue ) {
-	StringLocaleDictionary::iterator lang = mDictionary.find( mCurrentLanguage );
-
-	if ( lang != mDictionary.end() || mSetDefaultValues ) {
-		if ( lang == mDictionary.end() ) {
-			mDictionary[mCurrentLanguage] = StringDictionary{};
-			lang = mDictionary.find( mCurrentLanguage );
-		}
-
-		StringDictionary& dictionary = lang->second;
-		StringDictionary::iterator string = dictionary.find( key );
-		if ( string != dictionary.end() )
-			return string->second;
-
-		if ( mSetDefaultValues && !defaultValue.empty() ) {
+	if ( mSetDefaultValues ) {
+		auto& dictionary = mDictionary[mCurrentLanguage];
+		auto found = dictionary.find( key );
+		if ( found != dictionary.end() )
+			return found->second;
+		if ( !defaultValue.empty() ) {
 			dictionary[key] = defaultValue;
 			return defaultValue;
 		}
 	}
+	return static_cast<const Translator&>( *this ).getString( key, defaultValue );
+}
 
-	lang = mDictionary.find( mDefaultLanguage );
-
-	if ( lang != mDictionary.end() ) {
-		StringDictionary& dictionary = lang->second;
-		StringDictionary::iterator string = dictionary.find( key );
-
-		if ( string != dictionary.end() )
-			return string->second;
+String Translator::getString( const std::string& key, const String& defaultValue ) const {
+	for ( const auto* language : { &mCurrentLanguage, &mDefaultLanguage } ) {
+		auto dictionary = mDictionary.find( *language );
+		if ( dictionary == mDictionary.end() )
+			continue;
+		auto found = dictionary->second.find( key );
+		if ( found != dictionary->second.end() )
+			return found->second;
 	}
-
 	return defaultValue;
 }
 

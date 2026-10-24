@@ -4,6 +4,7 @@
 #include <eepp/system/threadpool.hpp>
 #include <eepp/vfs/config.hpp>
 #include <eepp/vfs/directorystats.hpp>
+#include <eepp/vfs/permissionchanges.hpp>
 #include <eepp/vfs/provider.hpp>
 #include <eepp/vfs/providers/localioscheduler.hpp>
 #include <eepp/vfs/transfer.hpp>
@@ -82,6 +83,11 @@ class EE_VFS_API VirtualFileSystem {
 
 	ProviderCapabilities capabilities( const URI& uri ) const;
 
+	/** Rewrites a saved URI after a completed rename, using that URI's provider. No I/O occurs.
+	 * Returns false without changing uri if unaffected or its provider is unregistered.
+	 * See VFSProvider::relocateURI(). */
+	bool relocateURI( URI& uri, const URI& from, const URI& to ) const;
+
 	/** Pool used by providers for blocking local I/O. */
 	const std::shared_ptr<ThreadPool>& ioPool() const { return mIOPool; }
 
@@ -117,9 +123,23 @@ class EE_VFS_API VirtualFileSystem {
 	VFSTask<void> setPermissions( const URI& uri, Uint32 permissions,
 								  CancellationToken token = {} );
 
+	VFSTask<void> setOwnership( const URI& uri, std::optional<Uint32> uid,
+								std::optional<Uint32> gid, CancellationToken token = {} );
+
+	/** Resolves names or numeric ownership IDs using the URI's provider. Empty text preserves
+	 * that ID. Providers without a name service accept numeric IDs only. */
+	VFSTask<Ownership> resolveOwnership( const URI& uri, std::string user, std::string group,
+										 CancellationToken token = {} );
+
 	VFSTask<SpaceInfo> spaceInfo( const URI& uri, CancellationToken token = {} );
 
 	// Orchestrated operations.
+
+	/** Applies permission/ownership edits off the caller thread. Stops at the first error;
+	 * earlier changes remain applied. Cancellation is cooperative. Recursive traversal skips
+	 * observed symlinks; callers must coordinate concurrent writers of the tree. */
+	VFSTask<void> changePermissions( std::vector<URI> roots, PermissionChanges changes,
+									 CancellationToken token = {} );
 
 	/** Reads every entry of a directory by repeatedly consuming a DirectoryHandle. */
 	VFSTask<std::vector<VFSFileInfo>> listAll( const URI& uri,

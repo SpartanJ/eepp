@@ -71,7 +71,7 @@ std::string decodePath( const std::string& value ) {
 
 /** Mount point of path: the topmost ancestor on the same device. */
 std::string mountPointOf( const std::string& path ) {
-	struct stat st{};
+	struct stat st {};
 	if ( lstat( path.c_str(), &st ) != 0 )
 		return {};
 	dev_t device = st.st_dev;
@@ -82,7 +82,7 @@ std::string mountPointOf( const std::string& path ) {
 			parent.pop_back();
 		if ( parent.empty() )
 			parent = "/";
-		struct stat pst{};
+		struct stat pst {};
 		if ( stat( parent.c_str(), &pst ) != 0 || pst.st_dev != device )
 			break;
 		if ( parent == current )
@@ -94,7 +94,8 @@ std::string mountPointOf( const std::string& path ) {
 
 /** Picks a free name in trash/files and atomically reserves it with its info file. */
 std::string writeInfo( const std::string& trashDir, const std::string& name,
-					   const std::string& recordedPath, std::string& trashedName ) {
+					   const std::string& recordedPath, std::string& trashedName,
+					   const Translator& translator ) {
 	auto [base, extension] = FileSystem::fileNameSplitExtension( name );
 	char date[32];
 	std::time_t now = std::time( nullptr );
@@ -123,21 +124,25 @@ std::string writeInfo( const std::string& trashDir, const std::string& name,
 		close( fd );
 		if ( !ok ) {
 			unlink( infoPath.c_str() );
-			return "Could not write the trash information file";
+			return translator
+				.getString( "eefm_trash_info_failed", "Could not write the trash information file" )
+				.toUtf8();
 		}
 		trashedName = candidate;
 		return {};
 	}
-	return "Too many files with the same name in the trash";
+	return translator
+		.getString( "eefm_trash_name_collisions", "Too many files with the same name in the trash" )
+		.toUtf8();
 }
 
 std::string trashInto( const std::string& trashDir, const std::string& path,
-					   const std::string& recordedPath ) {
+					   const std::string& recordedPath, const Translator& translator ) {
 	FileSystem::makeDir( trashDir + "files", true, 0700 );
 	FileSystem::makeDir( trashDir + "info", true, 0700 );
 	std::string name = FileSystem::fileNameFromPath( path );
 	std::string trashedName;
-	std::string error = writeInfo( trashDir, name, recordedPath, trashedName );
+	std::string error = writeInfo( trashDir, name, recordedPath, trashedName, translator );
 	if ( !error.empty() )
 		return error;
 	if ( ::rename( path.c_str(), ( trashDir + "files/" + trashedName ).c_str() ) != 0 ) {
@@ -157,7 +162,7 @@ std::string topDirTrash( const std::string& path, std::string& recordedPath ) {
 	std::string uid = String::toString( static_cast<Uint64>( getuid() ) );
 	std::string topSlash = top == "/" ? top : top + "/";
 	// $topdir/.Trash/$uid (only when .Trash is a sticky, non-symlink directory)...
-	struct stat st{};
+	struct stat st {};
 	std::string shared = topSlash + ".Trash";
 	if ( lstat( shared.c_str(), &st ) == 0 && S_ISDIR( st.st_mode ) && ( st.st_mode & S_ISVTX ) ) {
 		std::string dir = shared + "/" + uid + "/";
@@ -245,10 +250,11 @@ bool Trash::contains( const URI& uri ) {
 		   path.find( "/.Trash-" ) != std::string::npos;
 }
 
-std::string Trash::moveToTrash( const std::string& rawPath ) {
+std::string Trash::moveToTrash( const std::string& rawPath, const Translator& translator ) {
+	(void)translator;
 	std::string path = absolute( rawPath );
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
-	std::string error = trashInto( homeTrash(), path, path );
+	std::string error = trashInto( homeTrash(), path, path, translator );
 	if ( error.empty() )
 		return {};
 	if ( errno != EXDEV )
@@ -256,8 +262,9 @@ std::string Trash::moveToTrash( const std::string& rawPath ) {
 	std::string recorded;
 	std::string topTrash = topDirTrash( path, recorded );
 	if ( topTrash.empty() )
-		return "This file system has no trash";
-	return trashInto( topTrash, path, recorded );
+		return translator.getString( "eefm_trash_unavailable", "This file system has no trash" )
+			.toUtf8();
+	return trashInto( topTrash, path, recorded, translator );
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 	std::string target = location()->getFSPath();
 	FileSystem::makeDir( target, true );
@@ -277,11 +284,17 @@ std::string Trash::moveToTrash( const std::string& rawPath ) {
 	op.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT | FOF_NOERRORUI;
 	int result = SHFileOperationW( &op );
 	if ( result != 0 || op.fAnyOperationsAborted )
-		return "Could not move to the Recycle Bin (error " + String::toString( result ) + ")";
+		return String::format(
+			translator
+				.getString( "eefm_recycle_failed", "Could not move to the Recycle Bin (error %d)" )
+				.toUtf8(),
+			result );
 	return {};
 #else
 	(void)path;
-	return "The trash is not supported on this platform";
+	return translator
+		.getString( "eefm_trash_not_supported", "The trash is not supported on this platform" )
+		.toUtf8();
 #endif
 }
 
@@ -313,14 +326,19 @@ std::optional<std::string> Trash::originalPath( const std::string& trashedPath )
 #endif
 }
 
-std::string Trash::restore( const std::string& trashedPath ) {
+std::string Trash::restore( const std::string& trashedPath, const Translator& translator ) {
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 	std::string path = absolute( trashedPath );
 	auto original = originalPath( path );
 	if ( !original )
-		return "The original location of this item is unknown";
+		return translator
+			.getString( "eefm_restore_original_unknown",
+						"The original location of this item is unknown" )
+			.toUtf8();
 	if ( FileSystem::fileExists( *original ) )
-		return "\"" + *original + "\" already exists";
+		return String::format(
+			translator.getString( "eefm_restore_exists", "\"%s\" already exists" ).toUtf8(),
+			*original );
 	std::string parent = FileSystem::fileRemoveFileName( *original );
 	if ( !parent.empty() )
 		FileSystem::makeDir( parent, true );
@@ -330,16 +348,24 @@ std::string Trash::restore( const std::string& trashedPath ) {
 	return {};
 #else
 	(void)trashedPath;
-	return "Restoring is not supported on this platform";
+	return translator
+		.getString( "eefm_restore_not_supported", "Restoring is not supported on this platform" )
+		.toUtf8();
 #endif
 }
 
-std::string Trash::moveToTrash( const std::vector<std::string>& paths ) {
-	return forEachPath( paths, []( const std::string& path ) { return moveToTrash( path ); } );
+std::string Trash::moveToTrash( const std::vector<std::string>& paths,
+								const Translator& translator ) {
+	return forEachPath( paths, [&translator]( const std::string& path ) {
+		return moveToTrash( path, translator );
+	} );
 }
 
-std::string Trash::restore( const std::vector<std::string>& trashedPaths ) {
-	return forEachPath( trashedPaths, []( const std::string& path ) { return restore( path ); } );
+std::string Trash::restore( const std::vector<std::string>& trashedPaths,
+							const Translator& translator ) {
+	return forEachPath( trashedPaths, [&translator]( const std::string& path ) {
+		return restore( path, translator );
+	} );
 }
 
 void Trash::forget( const std::string& trashedPath ) {
@@ -350,11 +376,14 @@ void Trash::forget( const std::string& trashedPath ) {
 #endif
 }
 
-std::string Trash::empty() {
+std::string Trash::empty( const Translator& translator ) {
 	if constexpr ( !SpecTrash ) {
 		auto trash = location();
 		if ( !trash )
-			return "The trash is not supported on this platform";
+			return translator
+				.getString( "eefm_trash_not_supported",
+							"The trash is not supported on this platform" )
+				.toUtf8();
 		std::string dir = trash->getFSPath();
 		for ( const auto& name : FileSystem::filesGetInPath( dir ) ) {
 			if ( FileSystem::isDirectory( dir + name ) )
@@ -371,7 +400,7 @@ std::string Trash::empty() {
 		for ( const auto& name : FileSystem::filesGetInPath( dir ) ) {
 			std::string entry = dir + name;
 			// Never follow a symlinked directory out of the trash.
-			struct stat st{};
+			struct stat st {};
 			if ( lstat( entry.c_str(), &st ) == 0 && S_ISDIR( st.st_mode ) )
 				FileSystem::dirRemoveAll( entry );
 			else

@@ -35,6 +35,13 @@ names: empty names, dot entries, slashes and NULs are invalid. Local Windows des
 reject backslashes, reserved characters and device names. Remote POSIX names retain their own
 rules on Windows; transfer scans validate them again against the destination's rules.
 
+`VirtualFileSystem::relocateURI(saved, from, to)` updates a saved location after a successful
+same-authority rename. It transforms normalized URIs synchronously without performing I/O. The
+saved URI's provider handles the transformation: ordinary paths use prefix replacement, while
+archive providers update the backing file and preserve the member path. Custom compound providers
+can override `VFSProvider::relocateURI()` without application-side scheme checks. It returns `false`
+and leaves `saved` unchanged when unaffected or its provider is unregistered.
+
 The default is `eepp-vfs-static`; generate with `--with-shared-vfs` to build and link `eepp-vfs`
 as a shared library. Public types and non-inline functions use `EE_VFS_API`, controlled by
 `EE_VFS_EXPORTS` for the DLL and `EE_VFS_STATIC` for static builds, independently of core eepp
@@ -44,7 +51,7 @@ must use the same eepp DLL as the application, including its resource and UI sin
 
 ## Tasks, results and threads
 
-Every VFS operation returns `VFSTask<T>`, an alias of `Task<Result<T, VFSError>>`:
+Every VFS I/O operation returns `VFSTask<T>`, an alias of `Task<Result<T, VFSError>>`:
 
 ```cpp
 auto& vfs = EE::VFS::VirtualFileSystem::instance();

@@ -2,6 +2,7 @@
 #define EEFM_TRASH_HPP
 
 #include <eepp/core/uri.hpp>
+#include <eepp/system/translator.hpp>
 #include <optional>
 #include <string>
 #include <vector>
@@ -28,16 +29,20 @@ class Trash {
 
 	/** Moves a local file or directory to the trash. @return An error message, empty on success.
 	 */
-	static std::string moveToTrash( const std::string& path );
+	static std::string moveToTrash( const std::string& path,
+									const EE::System::Translator& translator );
 
 	/** Moves every path to the trash. @return One "name: error" line per failure. */
-	static std::string moveToTrash( const std::vector<std::string>& paths );
+	static std::string moveToTrash( const std::vector<std::string>& paths,
+									const EE::System::Translator& translator );
 
 	/** Moves a trashed entry back to its original location (spec trashes only). */
-	static std::string restore( const std::string& trashedPath );
+	static std::string restore( const std::string& trashedPath,
+								const EE::System::Translator& translator );
 
 	/** Restores every path. @return One "name: error" line per failure. */
-	static std::string restore( const std::vector<std::string>& trashedPaths );
+	static std::string restore( const std::vector<std::string>& trashedPaths,
+								const EE::System::Translator& translator );
 
 	/** @return The original location of a trashed entry, when recorded. */
 	static std::optional<std::string> originalPath( const std::string& trashedPath );
@@ -46,7 +51,7 @@ class Trash {
 	static void forget( const std::string& trashedPath );
 
 	/** Permanently removes everything in the home trash. */
-	static std::string empty();
+	static std::string empty( const EE::System::Translator& translator );
 };
 
 } // namespace eefm

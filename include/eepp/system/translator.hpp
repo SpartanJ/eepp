@@ -37,6 +37,10 @@ class EE_API Translator {
 
 	String getString( const std::string& key, const String& defaultValue = String() );
 
+	/** Read-only lookup, even when saving defaults is enabled. Concurrent const lookups are
+	 * safe while the language and dictionaries remain unchanged. */
+	String getString( const std::string& key, const String& defaultValue = String() ) const;
+
 	void setString( const std::string& lang, const std::string& key, const String& val );
 
 	template <typename... Args> String getStringf( const char* key, Args&&... args ) {

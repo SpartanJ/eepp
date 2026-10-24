@@ -1,3 +1,6 @@
+#include <eepp/vfs/virtualfilesystem.hpp>
+
+#include "permissionsengine.hpp"
 #include <algorithm>
 #include <eepp/core/string.hpp>
 #include <eepp/vfs/detail/await.hpp>
@@ -9,7 +12,6 @@
 #include <eepp/vfs/providers/resourceprovider.hpp>
 #include <eepp/vfs/providers/zipprovider.hpp>
 #include <eepp/vfs/transferengine.hpp>
-#include <eepp/vfs/virtualfilesystem.hpp>
 #include <eepp/vfs/watchers/localwatchbackend.hpp>
 #include <eepp/vfs/watchers/pollingwatchbackend.hpp>
 #include <mutex>
@@ -132,6 +134,11 @@ ProviderCapabilities VirtualFileSystem::capabilities( const URI& uri ) const {
 	return provider ? provider->capabilities( uri ) : ProviderCapabilities();
 }
 
+bool VirtualFileSystem::relocateURI( URI& uri, const URI& from, const URI& to ) const {
+	auto provider = providerFor( uri );
+	return provider && provider->relocateURI( uri, from, to );
+}
+
 template <typename T> VFSTask<T> VirtualFileSystem::unsupportedScheme( const URI& uri ) const {
 	return readyError<T>(
 		uri.getScheme().empty() ? VFSErrorCode::InvalidURI : VFSErrorCode::Unsupported, uri,
@@ -190,8 +197,31 @@ VFSTask<void> VirtualFileSystem::setPermissions( const URI& uri, Uint32 permissi
 	EE_VFS_FORWARD( void, uri, setPermissions( uri, permissions, std::move( token ) ) );
 }
 
+VFSTask<void> VirtualFileSystem::setOwnership( const URI& uri, std::optional<Uint32> uid,
+											   std::optional<Uint32> gid,
+											   CancellationToken token ) {
+	EE_VFS_FORWARD( void, uri, setOwnership( uri, uid, gid, std::move( token ) ) );
+}
+
+VFSTask<Ownership> VirtualFileSystem::resolveOwnership( const URI& uri, std::string user,
+														std::string group,
+														CancellationToken token ) {
+	EE_VFS_FORWARD(
+		Ownership, uri,
+		resolveOwnership( uri, std::move( user ), std::move( group ), std::move( token ) ) );
+}
+
 VFSTask<SpaceInfo> VirtualFileSystem::spaceInfo( const URI& uri, CancellationToken token ) {
 	EE_VFS_FORWARD( SpaceInfo, uri, spaceInfo( uri, std::move( token ) ) );
+}
+
+VFSTask<void> VirtualFileSystem::changePermissions( std::vector<URI> roots,
+													PermissionChanges changes,
+													CancellationToken token ) {
+	return orchestrate<void>(
+		[this, roots = std::move( roots ), changes, token = std::move( token )] {
+			return PermissionsEngine::run( *this, roots, changes, token );
+		} );
 }
 
 VFSTask<DirectoryStats>

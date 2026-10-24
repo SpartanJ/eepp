@@ -125,9 +125,7 @@ std::shared_ptr<VFSDirectoryModel> VFSDirectoryModel::New( Executor& uiExecutor 
 
 std::shared_ptr<VFSDirectoryModel> VFSDirectoryModel::New( Executor& uiExecutor,
 														   const Config& config ) {
-	auto model = std::shared_ptr<VFSDirectoryModel>( new VFSDirectoryModel( uiExecutor, config ) );
-	model->mExecutor->setOwner( model );
-	return model;
+	return std::shared_ptr<VFSDirectoryModel>( new VFSDirectoryModel( uiExecutor, config ) );
 }
 
 VFSDirectoryModel::VFSDirectoryModel( Executor& uiExecutor, const Config& config ) :
@@ -165,6 +163,10 @@ void VFSDirectoryModel::refresh() {
 }
 
 void VFSDirectoryModel::startSession() {
+	// Construction through a subclass bypasses New(). Register shared ownership before any
+	// provider can complete, once only: rewriting the weak owner later would race worker reads.
+	if ( mGeneration == 0 )
+		mExecutor->setOwner( shared_from_this() );
 	++mGeneration;
 	if ( mSession ) {
 		mSession->cancel.cancel();

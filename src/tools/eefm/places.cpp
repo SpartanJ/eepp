@@ -88,7 +88,8 @@ bool isNetworkFileSystem( const std::string& type ) {
 
 /** "share on server", from the mount source: server:/path (NFS, sshfs), //server/share (SMB) or
  * user@server:/path. Falls back to the mount point's name. */
-std::string networkShareName( const std::string& source, const std::string& mountPoint ) {
+std::string networkShareName( const std::string& source, const std::string& mountPoint,
+							  const Translator& translator ) {
 	std::string server, share;
 	if ( String::startsWith( source, "//" ) ) {
 		size_t slash = source.find( '/', 2 );
@@ -108,7 +109,10 @@ std::string networkShareName( const std::string& source, const std::string& moun
 		share = FileSystem::fileNameFromPath( mountPoint );
 	if ( server.empty() )
 		return share.empty() ? mountPoint : share;
-	return share.empty() ? server : share + " on " + server;
+	return share.empty() ? server
+						 : String::format(
+							   translator.getString( "eefm_share_on_server", "%s on %s" ).toUtf8(),
+							   share, server );
 }
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
@@ -489,7 +493,7 @@ bool Places::hasHidden() const {
 						[]( const Place& place ) { return place.hidden; } );
 }
 
-std::vector<Place> Places::devices() {
+std::vector<Place> Places::devices( const Translator& translator ) {
 	std::vector<Place> devices;
 	auto addDevice = [&]( std::string name, const std::string& path, const char* icon,
 						  PlaceSection section = PlaceSection::Devices ) {
@@ -502,7 +506,7 @@ std::vector<Place> Places::devices() {
 	};
 	// Network mounts are never touched here (no stat): an unreachable server would block.
 	auto addNetworkShare = [&]( const std::string& source, const std::string& mountPoint ) {
-		addDevice( networkShareName( source, mountPoint ), mountPoint, "place-network",
+		addDevice( networkShareName( source, mountPoint, translator ), mountPoint, "place-network",
 				   PlaceSection::Remote );
 	};
 #if EE_PLATFORM == EE_PLATFORM_LINUX
@@ -543,7 +547,7 @@ std::vector<Place> Places::devices() {
 		if ( label != labels.end() )
 			name = label->second;
 		else if ( mountPoint == "/" )
-			name = "Root";
+			name = translator.getString( "eefm_root", "Root" ).toUtf8();
 		else
 			name = FileSystem::fileNameFromPath( mountPoint );
 		addDevice( name, mountPoint,
@@ -579,7 +583,7 @@ std::vector<Place> Places::devices() {
 #else
 		if ( !String::startsWith( source, "/dev/" ) )
 			continue;
-		addDevice( mountPoint == "/" ? std::string( "Root" )
+		addDevice( mountPoint == "/" ? translator.getString( "eefm_root", "Root" ).toUtf8()
 									 : FileSystem::fileNameFromPath( mountPoint ),
 				   mountPoint,
 				   mountPoint == "/"							 ? "device-root"
@@ -588,9 +592,9 @@ std::vector<Place> Places::devices() {
 #endif
 	}
 	if ( devices.empty() )
-		addDevice( "Root", "/", "device-root" );
+		addDevice( translator.getString( "eefm_root", "Root" ).toUtf8(), "/", "device-root" );
 #else
-	addDevice( "Root", "/", "device-root" );
+	addDevice( translator.getString( "eefm_root", "Root" ).toUtf8(), "/", "device-root" );
 #endif
 	return devices;
 }

@@ -365,3 +365,47 @@ UTEST( MainThreadExecutor, runsDeferredOnSceneUpdate ) {
 	scene->update( Time::Zero );
 	EXPECT_EQ( 4u, order.size() );
 }
+
+UTEST( VFSDirectoryModel, subclassConstructionDefersListingAndItemCountsToUIExecutor ) {
+	class DerivedModel : public VFSDirectoryModel {
+	  public:
+		DerivedModel( Executor& executor, const Config& config ) :
+			VFSDirectoryModel( executor, config ) {}
+	};
+	VirtualFileSystem vfs;
+	TestLoop producer, ui;
+	auto memory = std::make_shared<MemoryProvider>( "mem", &producer );
+	vfs.registerProvider( memory );
+	memory->putFile( URI( "mem:///root/folder/file" ), "data" );
+	VFSDirectoryModel::Config config;
+	config.vfs = &vfs;
+	config.watch = false;
+	config.countDirectoryItems = true;
+	auto model = std::make_shared<DerivedModel>( ui, config );
+	const auto uiThread = std::this_thread::get_id();
+	std::atomic<bool> wrongThread{ false };
+	model->setOnStateChanged( [&] {
+		if ( std::this_thread::get_id() != uiThread )
+			wrongThread = true;
+	} );
+	model->setURI( URI( "mem:///root" ) );
+	// Resolve the provider's first result on a worker; no model state may change until UI drain.
+	std::thread worker( [&] { producer.drain(); } );
+	worker.join();
+	EXPECT_EQ( VFSDirectoryModel::LoadState::Loading, model->loadState() );
+	EXPECT_EQ( 0u, model->rowCount() );
+	ASSERT_TRUE( ui.runUntil( [&] {
+		std::thread worker( [&] { producer.drain(); } );
+		worker.join();
+		return model->loadState() == VFSDirectoryModel::LoadState::Ready &&
+			   model->rowOf( "folder" ) && model->directoryItemCount( *model->rowOf( "folder" ) );
+	} ) );
+	EXPECT_FALSE( wrongThread.load() );
+	EXPECT_EQ( 1u, *model->directoryItemCount( *model->rowOf( "folder" ) ) );
+	// Navigation reuses the initialized gate, and pending completions remain safe on teardown.
+	model->setURI( URI( "mem:///root/folder" ) );
+	model.reset();
+	std::thread lateWorker( [&] { producer.drain(); } );
+	lateWorker.join();
+	ui.drain();
+}

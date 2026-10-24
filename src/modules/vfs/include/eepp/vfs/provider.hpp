@@ -9,9 +9,16 @@
 #include <eepp/vfs/filehandle.hpp>
 #include <eepp/vfs/fileinfo.hpp>
 #include <eepp/vfs/options.hpp>
+#include <optional>
 #include <string_view>
 
 namespace EE { namespace VFS {
+
+/** Resolved ownership IDs. Missing fields preserve the current owner/group. */
+struct EE_VFS_API Ownership {
+	std::optional<Uint32> uid;
+	std::optional<Uint32> gid;
+};
 
 struct EE_VFS_API SpaceInfo {
 	Uint64 capacity{ 0 };
@@ -94,6 +101,28 @@ class EE_VFS_API VFSProvider {
 		return readyError<SpaceInfo>( VFSErrorCode::Unsupported, uri,
 									  "Provider does not report free space" );
 	}
+
+	/** Sets numeric ownership IDs (VFSCapability::Ownership). An unset ID is preserved.
+	 * Like setPermissions(), follows the final symlink. */
+	virtual VFSTask<void> setOwnership( const URI& uri, std::optional<Uint32> uid,
+										std::optional<Uint32> gid, CancellationToken /*token*/ ) {
+		(void)uid;
+		(void)gid;
+		return readyError<void>( VFSErrorCode::Unsupported, uri,
+								 "Provider does not support ownership changes" );
+	}
+
+	/** Resolves ownership text within this provider's namespace. Empty text preserves that ID.
+	 * The default accepts decimal numeric IDs; local providers also accept account names. */
+	virtual VFSTask<Ownership> resolveOwnership( const URI& uri, std::string user,
+												 std::string group, CancellationToken token );
+
+	/** Rewrites a saved location after a successful same-authority rename. This only transforms
+	 * URIs and performs no I/O; it does not rename entries. Returns false and leaves uri unchanged
+	 * when unaffected. The default replaces an ordinary path prefix; providers with
+	 * compound URIs override this to update backing locations while preserving member paths.
+	 * Paths must already be normalized, as for navigation. */
+	virtual bool relocateURI( URI& uri, const URI& from, const URI& to ) const;
 };
 
 }} // namespace EE::VFS

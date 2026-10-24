@@ -52,8 +52,9 @@ SSHPrompts::request( const SSHAuthenticationRequest& request ) {
 	}
 	UISceneNode* ui = mUI;
 	mExecutor->execute( [ui, request, resolve] {
-		String title = ui->i18n( "eefm_authentication", "Authentication" ) + " - " +
-					   String::fromUtf8( request.user + "@" + request.host );
+		String title = String::format(
+			ui->i18n( "eefm_authentication_title", "Authentication - %s@%s" ).toUtf8(),
+			request.user, request.host );
 		// Prompts are asked one after another; any cancel aborts the whole request.
 		auto answers = std::make_shared<std::vector<std::string>>();
 		auto ask = std::make_shared<std::function<void( size_t )>>();

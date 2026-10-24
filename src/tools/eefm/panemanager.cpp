@@ -25,30 +25,31 @@ const char* PaneLayout = R"xml(
 		<hbox class="pane_transfer" layout_width="wrap_content" layout_height="wrap_content" visible="false">
 			<TextView class="transfer_text" layout_gravity="center_vertical" />
 			<ProgressBar class="transfer_bar" layout_width="140dp" layout_gravity="center_vertical" display-percent="false" />
-			<PushButton class="transfer_cancel tool" icon="action-close" tooltip="Cancel" />
+			<PushButton class="transfer_cancel tool" icon="action-close" tooltip='@string(eefm_cancel, "Cancel")' />
 		</hbox>
 	</hbox>
 	<hbox class="pane_filter_bar" layout_width="match_parent" layout_height="wrap_content">
 		<hbox class="filter_frame" layout_width="0" layout_weight="1" layout_height="wrap_content">
-			<SelectButton class="filter_lock" icon="filter-unlock" tooltip="Keep Filter When Changing Folders" layout_gravity="center_vertical" />
-			<TextInput class="filter_input" layout_width="0" layout_weight="1" layout_height="wrap_content" layout_gravity="center_vertical" hint="Filter..." />
-			<SelectButton class="filter_case" icon="filter-case" tooltip="Match Case" layout_gravity="center_vertical" />
-			<DropDownList class="filter_mode" layout_width="72dp" layout_gravity="center_vertical" tooltip="Match Mode" />
+			<SelectButton class="filter_lock" icon="filter-unlock" tooltip='@string(eefm_keep_filter, "Keep Filter When Changing Folders")' layout_gravity="center_vertical" />
+			<TextInput class="filter_input" layout_width="0" layout_weight="1" layout_height="wrap_content" layout_gravity="center_vertical" hint='@string(eefm_filter, "Filter...")' />
+			<SelectButton class="filter_case" icon="filter-case" tooltip='@string(eefm_match_case, "Match Case")' layout_gravity="center_vertical" />
+			<DropDownList class="filter_mode" layout_width="72dp" layout_gravity="center_vertical" tooltip='@string(eefm_match_mode, "Match Mode")' />
 		</hbox>
-		<PushButton class="filter_close" icon="action-close" tooltip="Hide Filter Bar" layout_gravity="center_vertical" />
+		<PushButton class="filter_close" icon="action-close" tooltip='@string(eefm_hide_filter, "Hide Filter Bar")' layout_gravity="center_vertical" />
 	</hbox>
 </vbox>
 )xml";
 
 /** Dolphin-like dates: "5 minute(s) ago", "Today at 12:02", "29/09/2026 at 12:02". */
-std::string formatTime( Int64 seconds ) {
+std::string formatTime( UISceneNode* ui, Int64 seconds ) {
 	std::time_t now = std::time( nullptr );
 	std::time_t when = static_cast<std::time_t>( seconds );
 	Int64 diff = static_cast<Int64>( now ) - seconds;
 	if ( diff >= 0 && diff < 60 )
-		return "Just now";
+		return ui->i18n( "eefm_just_now", "Just now" ).toUtf8();
 	if ( diff >= 0 && diff < 3600 )
-		return String::format( "%d minute(s) ago", static_cast<int>( diff / 60 ) );
+		return String::format( ui->i18n( "eefm_minutes_ago", "%d minute(s) ago" ).toUtf8(),
+							   static_cast<int>( diff / 60 ) );
 	std::tm local{}, today{};
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	localtime_s( &local, &when );
@@ -58,9 +59,10 @@ std::string formatTime( Int64 seconds ) {
 	localtime_r( &now, &today );
 #endif
 	char clock[16];
-	std::strftime( clock, sizeof( clock ), "%H:%M", &local );
+	std::strftime( clock, sizeof( clock ), ui->i18n( "eefm_time_format", "%H:%M" ).toUtf8().c_str(),
+				   &local );
 	if ( local.tm_year == today.tm_year && local.tm_yday == today.tm_yday )
-		return std::string( "Today " ) + clock;
+		return String::format( ui->i18n( "eefm_today_time", "Today %s" ).toUtf8(), clock );
 	std::time_t yesterday = now - 86400;
 	std::tm yesterdayTm{};
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -69,16 +71,54 @@ std::string formatTime( Int64 seconds ) {
 	localtime_r( &yesterday, &yesterdayTm );
 #endif
 	if ( local.tm_year == yesterdayTm.tm_year && local.tm_yday == yesterdayTm.tm_yday )
-		return std::string( "Yesterday " ) + clock;
+		return String::format( ui->i18n( "eefm_yesterday_time", "Yesterday %s" ).toUtf8(), clock );
 	// Short, as Dolphin: the year in two digits.
 	char date[32];
-	std::strftime( date, sizeof( date ), "%d/%m/%y", &local );
+	std::strftime( date, sizeof( date ),
+				   ui->i18n( "eefm_short_date_format", "%d/%m/%y" ).toUtf8().c_str(), &local );
 	return std::string( date ) + " " + clock;
 }
 
-std::string itemCount( Uint64 count ) {
-	return count == 1 ? std::string( "1 item" ) : String::toString( count ) + " items";
+std::string itemCount( UISceneNode* ui, Uint64 count ) {
+	return String::format( ( count == 1 ? ui->i18n( "eefm_item_one", "%llu item" )
+										: ui->i18n( "eefm_item_many", "%llu items" ) )
+							   .toUtf8(),
+						   static_cast<unsigned long long>( count ) );
 }
+
+/** Application column labels stay out of the provider-independent VFS model. */
+class FileDirectoryModel : public VFSDirectoryModel {
+  public:
+	FileDirectoryModel( Executor& executor, const Config& config, UISceneNode& ui ) :
+		VFSDirectoryModel( executor, config ), mUI( ui ) {}
+
+	std::string columnName( const size_t& column ) const override {
+		switch ( column ) {
+			case Name:
+				return mUI.i18n( "eefm_column_name", "Name" ).toUtf8();
+			case Size:
+				return mUI.i18n( "eefm_column_size", "Size" ).toUtf8();
+			case Modified:
+				return mUI.i18n( "eefm_column_modified", "Modified" ).toUtf8();
+			case Type:
+				return mUI.i18n( "eefm_column_type", "Type" ).toUtf8();
+			case Permissions:
+				return mUI.i18n( "eefm_column_permissions", "Permissions" ).toUtf8();
+			case Owner:
+				return mUI.i18n( "eefm_column_owner", "Owner" ).toUtf8();
+			case Group:
+				return mUI.i18n( "eefm_column_group", "Group" ).toUtf8();
+			default:
+				return {};
+		}
+	}
+
+  private:
+	UISceneNode& mUI;
+};
+
+static_assert( sizeof( FileDirectoryModel ) <=
+			   sizeof( VFSDirectoryModel ) + alignof( VFSDirectoryModel ) );
 
 } // namespace
 
@@ -271,7 +311,7 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 	accept->setParent( p.location.box );
 	accept->addClass( "tool" );
 	accept->setIcon( mApp.icon( "action-accept" ) );
-	accept->setTooltipText( "Go" );
+	accept->setTooltipText( mUI->i18n( "eefm_go", "Go" ) );
 	accept->setLayoutGravity( UI_VALIGN_CENTER );
 	accept->onClick( [this, index]( const MouseEvent* ) {
 		Pane& pane = this->pane( index );
@@ -440,15 +480,16 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 	VFSDirectoryModel::Config config;
 	config.vfs = mApp.vfs();
 	config.showHidden = mApp.showHidden();
-	raw->model = VFSDirectoryModel::New( mApp.executor(), config );
+	raw->model = std::make_shared<FileDirectoryModel>( mApp.executor(), config, *mUI );
 	raw->model->setIconProvider( [this]( const VFSFileInfo& info ) -> Variant {
 		UIIcon* icon = mApp.fileIcon( info );
 		return icon ? Variant( icon ) : Variant();
 	} );
-	raw->model->setTypeProvider(
-		[]( const VFSFileInfo& info ) { return MimeDatabase::instance().describe( info ); } );
-	raw->model->setTimeFormatter( formatTime );
-	raw->model->setItemCountFormatter( itemCount );
+	raw->model->setTypeProvider( [this]( const VFSFileInfo& info ) {
+		return MimeDatabase::instance().describe( info, &mUI->getTranslator() );
+	} );
+	raw->model->setTimeFormatter( [this]( Int64 seconds ) { return formatTime( mUI, seconds ); } );
+	raw->model->setItemCountFormatter( [this]( Uint64 count ) { return itemCount( mUI, count ); } );
 	raw->model->setOnStateChanged( [this, raw] { onTabStateChanged( raw ); } );
 	raw->model->setOnRename( [this, raw]( const VFSFileInfo& entry, const std::string& name ) {
 		mApp.fileOps().renameEntry( raw, entry, name );
@@ -600,6 +641,21 @@ void PaneManager::navigate( FileTab* tab, URI uri, bool recordHistory ) {
 		updateChrome( *tab->pane );
 }
 
+void PaneManager::onEntryRenamed( const URI& from, const URI& to ) {
+	for ( const auto& pane : mPanes ) {
+		if ( !pane )
+			continue;
+		for ( const auto& tab : pane->tabList ) {
+			// Rewrite every history entry, including inactive Back/Forward destinations.
+			for ( auto& uri : tab->history )
+				mApp.vfs()->relocateURI( uri, from, to );
+			URI current = tab->model->uri();
+			if ( mApp.vfs()->relocateURI( current, from, to ) )
+				navigate( tab.get(), std::move( current ), false );
+		}
+	}
+}
+
 void PaneManager::goBack() {
 	auto* tab = currentTab();
 	if ( tab && tab->historyIndex > 0 ) {
@@ -685,7 +741,8 @@ void PaneManager::updateChrome( Pane& pane ) {
 	mUI->find<UIWidget>( "back" )->setEnabled( tab->historyIndex > 0 );
 	mUI->find<UIWidget>( "forward" )->setEnabled( tab->historyIndex + 1 < tab->history.size() );
 	mUI->find<UIWidget>( "up" )->setEnabled( Location::parent( uri ) != uri );
-	mApp.window()->setTitle( Location::text( uri ) + " — eefm" );
+	mApp.window()->setTitle( String::format( mUI->i18n( "eefm_window_title", "%s — eefm" ).toUtf8(),
+											 Location::text( uri ).toUtf8() ) );
 	if ( auto* panel = mApp.places().panel() )
 		panel->setCurrent( uri );
 	mApp.terminal().syncDirectory();
@@ -749,7 +806,8 @@ void PaneManager::updateStatus( Pane& pane ) {
 		std::string text = error.message.empty() ? error.toString() : error.message;
 		// A server that stopped answering may come back.
 		if ( error.is( VFSErrorCode::TimedOut ) || error.is( VFSErrorCode::ConnectionLost ) )
-			text += " (F5 to retry)";
+			text = String::format( mUI->i18n( "eefm_retry_status", "%s (F5 to retry)" ).toUtf8(),
+								   text );
 		status = String::fromUtf8( text );
 	} else {
 		Uint64 folders = 0, files = 0, bytes = 0;
@@ -769,19 +827,32 @@ void PaneManager::updateStatus( Pane& pane ) {
 				}
 			}
 		}
-		auto describe = []( Uint64 dirs, Uint64 regular ) {
+		auto describe = [this]( Uint64 dirs, Uint64 regular ) {
 			std::string text;
 			if ( dirs )
-				text = std::to_string( dirs ) + ( dirs == 1 ? " folder" : " folders" );
+				text =
+					String::format( ( dirs == 1 ? mUI->i18n( "eefm_folder_one", "%llu folder" )
+												: mUI->i18n( "eefm_folder_many", "%llu folders" ) )
+										.toUtf8(),
+									static_cast<unsigned long long>( dirs ) );
 			if ( regular ) {
-				text += ( text.empty() ? "" : ", " ) + std::to_string( regular ) +
-						( regular == 1 ? " file" : " files" );
+				const auto files =
+					String::format( ( regular == 1 ? mUI->i18n( "eefm_file_one", "%llu file" )
+												   : mUI->i18n( "eefm_file_many", "%llu files" ) )
+										.toUtf8(),
+									static_cast<unsigned long long>( regular ) );
+				text =
+					text.empty()
+						? files
+						: String::format( mUI->i18n( "eefm_folder_file_counts", "%s, %s" ).toUtf8(),
+										  text, files );
 			}
-			return text.empty() ? std::string( "Empty folder" ) : text;
+			return text.empty() ? mUI->i18n( "eefm_empty_folder", "Empty folder" ).toUtf8() : text;
 		};
 		std::string text;
 		if ( selectedFolders + selectedFiles > 0 ) {
-			text = describe( selectedFolders, selectedFiles ) + " selected";
+			text = String::format( mUI->i18n( "eefm_selected_count", "%s selected" ).toUtf8(),
+								   describe( selectedFolders, selectedFiles ) );
 			if ( selectedFiles ) {
 				text +=
 					" (" + FileSystem::sizeToString( static_cast<Int64>( selectedBytes ) ) + ")";
@@ -792,15 +863,21 @@ void PaneManager::updateStatus( Pane& pane ) {
 				text += " (" + FileSystem::sizeToString( static_cast<Int64>( bytes ) ) + ")";
 		}
 		if ( model.loadState() == VFSDirectoryModel::LoadState::Loading )
-			text = "Loading... " + text;
+			text = String::format( mUI->i18n( "eefm_loading_status", "Loading... %s" ).toUtf8(),
+								   text );
 		size_t filtered = model.filteredOutCount();
 		if ( filtered )
-			text += ", " + std::to_string( filtered ) + " hidden by the filter";
+			text = String::format(
+				mUI->i18n( "eefm_filtered_status", "%s, %zu hidden by the filter" ).toUtf8(), text,
+				filtered );
 		auto watch = model.watchStatus();
 		if ( watch && *watch == WatchStatus::Polling )
-			text += " - polling for changes";
+			text = String::format(
+				mUI->i18n( "eefm_polling_status", "%s - polling for changes" ).toUtf8(), text );
 		else if ( watch && *watch == WatchStatus::Reconnecting )
-			text += " - reconnecting watcher";
+			text = String::format(
+				mUI->i18n( "eefm_reconnecting_status", "%s - reconnecting watcher" ).toUtf8(),
+				text );
 		status = String::fromUtf8( text );
 	}
 	pane.status->setText( status );

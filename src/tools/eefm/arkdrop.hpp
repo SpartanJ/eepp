@@ -1,6 +1,7 @@
 #ifndef EEFM_ARKDROP_HPP
 #define EEFM_ARKDROP_HPP
 
+#include <eepp/system/translator.hpp>
 #include <eepp/window/draganddrop.hpp>
 #include <string>
 #include <vector>
@@ -23,7 +24,8 @@ class ArkDrop {
 	/** Asks the Ark instance that started drop to extract its dragged entries into folder (a
 	 * local path). A blocking D-Bus call: Ark extracts on its own afterwards and shows its own
 	 * progress and overwrite questions. Returns an error message, empty on success. */
-	static std::string extract( const EE::Window::DataDrop& drop, const std::string& folder );
+	static std::string extract( const EE::Window::DataDrop& drop, const std::string& folder,
+								const EE::System::Translator& translator );
 };
 
 } // namespace eefm

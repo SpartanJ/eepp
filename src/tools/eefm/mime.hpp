@@ -1,6 +1,7 @@
 #ifndef EEFM_MIME_HPP
 #define EEFM_MIME_HPP
 
+#include <eepp/system/translator.hpp>
 #include <eepp/vfs/fileinfo.hpp>
 #include <mutex>
 #include <string>
@@ -26,11 +27,14 @@ class MimeDatabase {
 	/** MIME type of a file name (not a path). */
 	const std::string& typeForName( const std::string& name );
 
-	/** Human readable description ("Markdown document"). */
-	std::string description( const std::string& mime, const std::string& name = {} );
+	/** Human readable description ("Markdown document"). Optional translations use the MIME
+	 * type as their key. Consult the translator only on its owning thread. */
+	std::string description( const std::string& mime, const std::string& name = {},
+							 const EE::System::Translator* translator = nullptr );
 
 	/** Description of an entry, cached by type: cheap enough for sorting. */
-	std::string describe( const EE::VFS::VFSFileInfo& info );
+	std::string describe( const EE::VFS::VFSFileInfo& info,
+						  const EE::System::Translator* translator = nullptr );
 
 	/** Name of eefm's glyph icon for an entry (the fallback icon set). */
 	std::string iconName( const EE::VFS::VFSFileInfo& info );

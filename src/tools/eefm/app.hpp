@@ -115,6 +115,9 @@ class App {
 
 	void setFilterBarVisible( bool visible );
 
+	/** The in-window menu bar stays hidden when the native menu bar is active. */
+	void setMenuBarVisible( bool visible );
+
 	/** The splitter that holds the panes (the right one only while split). */
 	UISplitter* paneSplitter() const { return mPaneSplitter; }
 
@@ -154,6 +157,8 @@ class App {
 	void saveState();
 
 	void registerShortcuts();
+
+	void createMenuBar();
 
 	void showAppMenu();
 

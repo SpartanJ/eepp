@@ -67,6 +67,12 @@ class EE_VFS_API LocalProvider : public VFSProvider {
 	VFSTask<void> setPermissions( const URI& uri, Uint32 permissions,
 								  CancellationToken token ) override;
 
+	VFSTask<void> setOwnership( const URI& uri, std::optional<Uint32> uid,
+								std::optional<Uint32> gid, CancellationToken token ) override;
+
+	VFSTask<Ownership> resolveOwnership( const URI& uri, std::string user, std::string group,
+										 CancellationToken token ) override;
+
 	VFSTask<SpaceInfo> spaceInfo( const URI& uri, CancellationToken token ) override;
 
 	/** Blocking helpers shared by the asynchronous operations and the local watch backend. */

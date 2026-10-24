@@ -203,6 +203,7 @@ class EE_VFS_API VFSDirectoryModel : public Model,
 	static std::string permissionsToString( const VFSFileInfo& info );
 
   protected:
+	/** Subclasses must be owned by a shared_ptr before navigation starts. */
 	VFSDirectoryModel( Executor& uiExecutor, const Config& config );
 
   private:

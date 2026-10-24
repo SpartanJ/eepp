@@ -236,7 +236,15 @@ std::vector<std::string> MimeDatabase::withParents( const std::string& mime ) {
 	return out;
 }
 
-std::string MimeDatabase::description( const std::string& mime, const std::string& name ) {
+std::string MimeDatabase::description( const std::string& mime, const std::string& name,
+									   const Translator* translator ) {
+	if ( translator ) {
+		auto translated = translator->getString( mime );
+		if ( !translated.empty() )
+			return translated.toUtf8();
+	}
+	if ( mime == "inode/directory" && translator )
+		return translator->getString( "eefm_folder", "Folder" ).toUtf8();
 	{
 		std::lock_guard<std::mutex> lock( mMutex );
 		load();
@@ -264,16 +272,18 @@ std::string MimeDatabase::description( const std::string& mime, const std::strin
 	}
 	std::string extension = lowerExtension( name );
 	if ( !extension.empty() )
-		return String::toUpper( extension ) + " file";
-	return "File";
+		return translator ? String::format(
+								translator->getString( "eefm_extension_file", "%s file" ).toUtf8(),
+								String::toUpper( extension ) )
+						  : String::toUpper( extension ) + " file";
+	return translator ? translator->getString( "eefm_file", "File" ).toUtf8() : "File";
 }
 
-std::string MimeDatabase::describe( const EE::VFS::VFSFileInfo& info ) {
-	if ( info.isDirectory() )
-		return "Folder";
+std::string MimeDatabase::describe( const EE::VFS::VFSFileInfo& info,
+									const Translator* translator ) {
 	// The type decides (not the extension: "CMakeLists.txt" is not a text file); description()
-	// caches by type.
-	return description( typeOf( info ), info.name );
+	// caches the system/built-in fallback by type and checks optional MIME translations first.
+	return description( typeOf( info ), info.name, translator );
 }
 
 std::vector<std::string> MimeDatabase::iconNames( const std::string& mime ) {

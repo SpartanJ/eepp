@@ -427,14 +427,14 @@ commonConnection( const std::shared_ptr<SFTPProviderImpl>& impl, const URI& from
 	return impl->connection( from ).then(
 		[impl = impl, to = to,
 		 token = std::move( token )]( VFSResult<std::shared_ptr<SSHConnection>>&& source ) mutable
-			-> VFSTask<std::shared_ptr<SSHConnection>> {
+		-> VFSTask<std::shared_ptr<SSHConnection>> {
 			if ( !source )
 				return readyError<std::shared_ptr<SSHConnection>>( std::move( source ).error() );
 			return impl->connection( to ).then(
 				[impl = std::move( impl ), source = std::move( source ).value(),
 				 to = std::move( to ), token = std::move( token )](
 					VFSResult<std::shared_ptr<SSHConnection>>&& target ) mutable
-					-> VFSResult<std::shared_ptr<SSHConnection>> {
+				-> VFSResult<std::shared_ptr<SSHConnection>> {
 					if ( token.isCancellationRequested() )
 						return Err( cancelledError( to ) );
 					if ( !target )
@@ -901,6 +901,54 @@ VFSTask<void> SFTPProvider::setPermissions( const URI& uri, Uint32 permissions,
 						return std::nullopt;
 					if ( rc != 0 )
 						return VFSResult<void>( Err( c.lastError( uri, "chmod failed" ) ) );
+					return VFSResult<void>( Ok() );
+				} );
+		} );
+}
+
+VFSTask<void> SFTPProvider::setOwnership( const URI& uri, std::optional<Uint32> uid,
+										  std::optional<Uint32> gid, CancellationToken token ) {
+	if ( token.isCancellationRequested() )
+		return readyError<void>( cancelledError( uri ) );
+	if ( !uid && !gid )
+		return readyValue<void>();
+	return withConnection<void>(
+		mImpl, uri, token, [uri, uid, gid, token]( std::shared_ptr<SSHConnection> connection ) {
+			return connection->submit<void>(
+				token, uri,
+				[path = sftpPath( uri ), uri, uid, gid, attrs = LIBSSH2_SFTP_ATTRIBUTES{},
+				 loaded = false]( SSHConnection& c ) mutable -> std::optional<VFSResult<void>> {
+					// SFTP v3 transmits uid and gid together. Read the missing ID once, keeping
+					// the phase and attributes across nonblocking EAGAIN retries.
+					if ( !loaded ) {
+						if ( !uid || !gid ) {
+							int rc = libssh2_sftp_stat_ex( c.sftp(), path.c_str(),
+														   static_cast<unsigned>( path.size() ),
+														   LIBSSH2_SFTP_STAT, &attrs );
+							if ( rc == LIBSSH2_ERROR_EAGAIN )
+								return std::nullopt;
+							if ( rc != 0 )
+								return VFSResult<void>(
+									Err( c.lastError( uri, "stat before chown failed" ) ) );
+							if ( !( attrs.flags & LIBSSH2_SFTP_ATTR_UIDGID ) )
+								return VFSResult<void>(
+									Err( VFSError( VFSErrorCode::Unsupported, uri,
+												   "Server does not report ownership IDs" ) ) );
+						}
+						attrs.flags = LIBSSH2_SFTP_ATTR_UIDGID;
+						if ( uid )
+							attrs.uid = *uid;
+						if ( gid )
+							attrs.gid = *gid;
+						loaded = true;
+					}
+					int rc = libssh2_sftp_stat_ex( c.sftp(), path.c_str(),
+												   static_cast<unsigned>( path.size() ),
+												   LIBSSH2_SFTP_SETSTAT, &attrs );
+					if ( rc == LIBSSH2_ERROR_EAGAIN )
+						return std::nullopt;
+					if ( rc != 0 )
+						return VFSResult<void>( Err( c.lastError( uri, "chown failed" ) ) );
 					return VFSResult<void>( Ok() );
 				} );
 		} );

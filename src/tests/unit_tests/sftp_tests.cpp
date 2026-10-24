@@ -900,6 +900,29 @@ UTEST( SFTP, metadataOwnershipAndSymlinks ) {
 	EXPECT_STDSTREQ( "testhost", canonical.value().getHost() );
 }
 
+UTEST( SFTP, ownershipChangesPreserveTheUnspecifiedID ) {
+	REQUIRE_SSHD();
+	SFTPFixture fx;
+	const URI file = server.uri( "testhost", uniqueName( "ownership" ) );
+	ASSERT_TRUE( waitFor( fx.vfs.writeAll( file, "data" ) ).hasValue() );
+	auto before = waitFor( fx.vfs.stat( file ) );
+	REQUIRE_OK( before );
+	ASSERT_TRUE( before.value().uid().has_value() );
+	ASSERT_TRUE( before.value().gid().has_value() );
+	const auto uid = before.value().uid();
+	const auto gid = before.value().gid();
+	ASSERT_TRUE( waitFor( fx.vfs.setOwnership( file, uid, std::nullopt ) ).hasValue() );
+	auto after = waitFor( fx.vfs.stat( file ) );
+	REQUIRE_OK( after );
+	EXPECT_EQ( *uid, *after.value().uid() );
+	EXPECT_EQ( *gid, *after.value().gid() );
+	ASSERT_TRUE( waitFor( fx.vfs.setOwnership( file, std::nullopt, gid ) ).hasValue() );
+	after = waitFor( fx.vfs.stat( file ) );
+	REQUIRE_OK( after );
+	EXPECT_EQ( *uid, *after.value().uid() );
+	EXPECT_EQ( *gid, *after.value().gid() );
+}
+
 UTEST( SFTP, atomicWritesDetectConflicts ) {
 	REQUIRE_SSHD();
 	SFTPFixture fx;

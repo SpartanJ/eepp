@@ -35,6 +35,9 @@ class EE_VFS_API ZipProvider : public VFSProvider {
 
 	std::string_view scheme() const override { return "zip"; }
 
+	/** Follows a renamed backing archive or its containing directory, preserving the member. */
+	bool relocateURI( URI& uri, const URI& from, const URI& to ) const override;
+
 	ProviderCapabilities capabilities( const URI& uri ) const override;
 
 	VFSTask<VFSFileInfo> stat( const URI& uri, const StatOptions& options,

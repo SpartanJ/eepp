@@ -55,7 +55,7 @@ void PlacesController::saveConfig() {
 }
 
 void PlacesController::refresh() {
-	mDevices = Places::devices();
+	mDevices = Places::devices( mUI->getTranslator() );
 	std::vector<PlacesPanel::Entry> entries;
 	bool showHidden = mPlaces->showHidden();
 	auto listed = [&]( const Place& place ) {
@@ -282,7 +282,7 @@ void PlacesController::showPlaceDialog( std::optional<size_t> index, Place initi
 		button->addClass( "place_icon_choice" );
 		if ( UIIcon* themeIcon = mUI->findIcon( name ) )
 			button->setIcon( themeIcon->getSource( PixelDensity::dpToPxI( 16 ) ) );
-		button->setTooltipText( name );
+		button->setTooltipText( mUI->i18n( name, name ) );
 		if ( name == *chosen )
 			button->select();
 		buttons->push_back( button );

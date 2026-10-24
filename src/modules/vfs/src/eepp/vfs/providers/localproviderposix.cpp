@@ -7,6 +7,7 @@
 
 #include <atomic>
 #include <cerrno>
+#include <charconv>
 #include <cstdlib>
 #include <cstring>
 #include <dirent.h>
@@ -1004,6 +1005,80 @@ VFSTask<void> LocalProvider::setPermissions( const URI& uri, Uint32 permissions,
 			if ( ::chmod( path.c_str(), static_cast<mode_t>( permissions & 07777 ) ) != 0 )
 				return Err( errnoError( path, "chmod failed" ) );
 			return Ok();
+		} );
+}
+
+VFSTask<void> LocalProvider::setOwnership( const URI& uri, std::optional<Uint32> uid,
+										   std::optional<Uint32> gid, CancellationToken token ) {
+	if ( token.isCancellationRequested() )
+		return readyError<void>( cancelledError( uri ) );
+	if ( !uid && !gid )
+		return readyValue<void>();
+	return run<void>( uri, LastLink::Follow, std::move( token ),
+					  [uid, gid]( const std::string& path ) -> VFSResult<void> {
+						  if ( ::chown( path.c_str(),
+										uid ? static_cast<uid_t>( *uid ) : uid_t( -1 ),
+										gid ? static_cast<gid_t>( *gid ) : gid_t( -1 ) ) != 0 )
+							  return Err( errnoError( path, "chown failed" ) );
+						  return Ok();
+					  } );
+}
+
+VFSTask<Ownership> LocalProvider::resolveOwnership( const URI& uri, std::string user,
+													std::string group, CancellationToken token ) {
+	return run<Ownership>(
+		uri, LastLink::Follow, std::move( token ),
+		[user = std::move( user ),
+		 group = std::move( group )]( const std::string& path ) -> VFSResult<Ownership> {
+			Ownership ids;
+			char scratch[8192];
+			std::vector<char> overflow;
+			char* buffer = scratch;
+			size_t capacity = sizeof( scratch );
+			auto resolve = [&buffer, &capacity, &overflow]( const std::string& text, bool isGroup,
+															std::optional<Uint32>& id ) {
+				if ( text.empty() )
+					return 0;
+				if ( text.find( '\0' ) != std::string::npos )
+					return EINVAL;
+				Uint32 number;
+				auto parsed = std::from_chars( text.data(), text.data() + text.size(), number );
+				if ( parsed.ec == std::errc() && parsed.ptr == text.data() + text.size() ) {
+					if ( number == ~Uint32( 0 ) )
+						return EINVAL;
+					id = number;
+					return 0;
+				}
+				for ( ;; ) {
+					int error;
+					if ( isGroup ) {
+						struct group entry;
+						struct group* found = nullptr;
+						error = getgrnam_r( text.c_str(), &entry, buffer, capacity, &found );
+						if ( error == 0 && found )
+							id = static_cast<Uint32>( found->gr_gid );
+					} else {
+						struct passwd entry;
+						struct passwd* found = nullptr;
+						error = getpwnam_r( text.c_str(), &entry, buffer, capacity, &found );
+						if ( error == 0 && found )
+							id = static_cast<Uint32>( found->pw_uid );
+					}
+					if ( error != ERANGE || capacity >= 1024 * 1024 )
+						return error ? error : id ? 0 : ENOENT;
+					// Large directory-service records need more than the inline scratch buffer.
+					capacity *= 2;
+					overflow.resize( capacity );
+					buffer = overflow.data();
+				}
+			};
+			int error = resolve( user, false, ids.uid );
+			if ( error )
+				return Err( errnoError( path, "Cannot resolve user", error ) );
+			error = resolve( group, true, ids.gid );
+			if ( error )
+				return Err( errnoError( path, "Cannot resolve group", error ) );
+			return Ok( std::move( ids ) );
 		} );
 }
 

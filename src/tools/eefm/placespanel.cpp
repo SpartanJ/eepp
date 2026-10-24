@@ -97,6 +97,32 @@ const char* sectionTitle( PlaceSection section ) {
 	return "";
 }
 
+String placeLabel( UISceneNode* ui, const Place& place ) {
+	if ( place.automatic ) {
+		struct Label {
+			const char* id;
+			const char* key;
+			const char* text;
+		};
+		static_assert( sizeof( Label ) == 3 * sizeof( const char* ) );
+		static constexpr Label labels[] = { { "home", "eefm_home", "Home" },
+											{ "desktop", "eefm_desktop", "Desktop" },
+											{ "documents", "eefm_documents", "Documents" },
+											{ "downloads", "eefm_downloads", "Downloads" },
+											{ "music", "eefm_music", "Music" },
+											{ "pictures", "eefm_pictures", "Pictures" },
+											{ "videos", "eefm_videos", "Videos" },
+											{ "trash", "eefm_trash", "Trash" } };
+		for ( const auto& label : labels ) {
+			if ( place.id == label.id && place.name == label.text )
+				return ui->i18n( label.key, label.text );
+		}
+		if ( place.id.empty() && place.icon == "device-root" && place.name == "Root" )
+			return ui->i18n( "eefm_root", "Root" );
+	}
+	return String::fromUtf8( place.name );
+}
+
 bool isSameOrChild( const URI& uri, const URI& place ) {
 	if ( uri.getScheme() != place.getScheme() || uri.getAuthority() != place.getAuthority() )
 		return false;
@@ -179,7 +205,7 @@ void PlacesPanel::setEntries( std::vector<Entry> entries ) {
 		UITextView* label = UITextView::New();
 		label->setParent( line );
 		label->addClass( "place_name" );
-		label->setText( String::fromUtf8( place.name ) );
+		label->setText( placeLabel( getUISceneNode(), place ) );
 		label->setLayoutGravity( UI_VALIGN_CENTER );
 		std::vector<UIWidget*> parts{ row, line, icon, label };
 		if ( place.section == PlaceSection::Devices ) {

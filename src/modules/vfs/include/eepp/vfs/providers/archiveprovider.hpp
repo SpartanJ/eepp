@@ -52,6 +52,9 @@ class EE_VFS_API ArchiveProvider : public VFSProvider {
 	/** Reports the actual installed library's capabilities, or Unsupported when unavailable. */
 	VFSTask<ArchiveSupport> support( CancellationToken token = {} );
 
+	/** Follows a renamed backing archive or its containing directory, preserving the member. */
+	bool relocateURI( URI& uri, const URI& from, const URI& to ) const override;
+
 	ProviderCapabilities capabilities( const URI& uri ) const override;
 
 	VFSTask<VFSFileInfo> stat( const URI& uri, const StatOptions& options,

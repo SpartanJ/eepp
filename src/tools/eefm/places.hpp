@@ -2,6 +2,7 @@
 #define EEFM_PLACES_HPP
 
 #include <eepp/core/uri.hpp>
+#include <eepp/system/translator.hpp>
 #include <optional>
 #include <string>
 #include <vector>
@@ -79,7 +80,7 @@ class Places {
 	/** Mounted file systems worth showing: local disks and removable media (Devices section) and
 	 * network shares such as NFS, SMB or sshfs mounts (Remote section). Reads the mount table only
 	 * (never stats a mount), so it is cheap and does not block on unreachable servers. */
-	static std::vector<Place> devices();
+	static std::vector<Place> devices( const EE::System::Translator& translator );
 
 	static std::string defaultIcon( const EE::URI& uri );
 

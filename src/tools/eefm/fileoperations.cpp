@@ -53,7 +53,9 @@ void FileOperations::addDroppedFile( URI uri, std::optional<Vector2f> position )
 void FileOperations::reportError( const String& action, const VFSError& error ) {
 	if ( error.is( VFSErrorCode::Cancelled ) )
 		return;
-	Dialogs::showError( mUI, action + ":\n" + String::fromUtf8( error.toString() ) );
+	Dialogs::showError( mUI,
+						String::format( mUI->i18n( "eefm_operation_error", "%s:\n%s" ).toUtf8(),
+										action.toUtf8(), error.toString() ) );
 }
 
 void FileOperations::runInBackground( const std::string& path, std::function<std::string()> work,
@@ -64,15 +66,18 @@ void FileOperations::runInBackground( const std::string& path, std::function<std
 		.submitResolved<std::string>(
 			path, false,
 			[work = std::move( work )]() -> VFSResult<std::string> { return Ok( work() ); } )
-		.then( mApp.executor(),
-			   [this, refresh = std::move( refresh ),
-				errorTitle = std::move( errorTitle )]( VFSResult<std::string> result ) {
-				   const std::string error = result ? result.value() : result.error().message;
-				   if ( !error.empty() )
-					   Dialogs::showError( mUI, errorTitle + ":\n" + String::fromUtf8( error ) );
-				   if ( refresh )
-					   refresh();
-			   } );
+		.then( mApp.executor(), [this, refresh = std::move( refresh ),
+								 errorTitle =
+									 std::move( errorTitle )]( VFSResult<std::string> result ) {
+			const std::string error =
+				result ? std::move( result ).value() : std::move( result ).error().message;
+			if ( !error.empty() )
+				Dialogs::showError(
+					mUI, String::format( mUI->i18n( "eefm_operation_error", "%s:\n%s" ).toUtf8(),
+										 errorTitle.toUtf8(), error ) );
+			if ( refresh )
+				refresh();
+		} );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -167,15 +172,18 @@ void downloadLocalCopies( VirtualFileSystem* vfs, Executor& executor, UISceneNod
 							  ui]( VFSResult<TransferResult>&& result ) mutable {
 				if ( result && result.value().partial() ) {
 					Dialogs::showMessage(
-						"Could Not Open Local Copy",
-						"The file could not be copied completely. Its type may be unsupported." );
+						ui->i18n( "eefm_local_copy_failed", "Could Not Open Local Copy" ),
+						ui->i18n( "eefm_local_copy_incomplete",
+								  "The file could not be copied completely. Its type may be "
+								  "unsupported." ) );
 				} else if ( result ) {
 					pending->paths[i] = std::move( local );
 				} else if ( !result.error().is( VFSErrorCode::Cancelled ) ) {
-					Dialogs::showError( ui,
-										String::fromUtf8( "Could not download " +
-														  FileSystem::fileNameFromPath( local ) +
-														  ":\n" + result.error().toString() ) );
+					Dialogs::showError( ui, String::format( ui->i18n( "eefm_download_failed",
+																	  "Could not download %s:\n%s" )
+																.toUtf8(),
+															FileSystem::fileNameFromPath( local ),
+															result.error().toString() ) );
 				}
 				pending->complete();
 			} );
@@ -191,10 +199,13 @@ void withLocalFiles( VirtualFileSystem* vfs, Executor& executor, UISceneNode* ui
 	if ( std::any_of( uris.begin(), uris.end(),
 					  []( const URI& uri ) { return uri.getScheme() != "file"; } ) ) {
 		Dialogs::confirm(
-			ui, "Open Local Copy",
-			"These files will open as local copies. Changes are not uploaded to the original "
-			"location. Each open creates a new copy; previous copies remain in " +
-				String::fromUtf8( remoteCacheDirectory() ) + ". Continue?",
+			ui, ui->i18n( "eefm_open_local_copy", "Open Local Copy" ),
+			String::format( ui->i18n( "eefm_local_copy_question",
+									  "These files will open as local copies. Changes are not "
+									  "uploaded to the original location. Each open creates a new "
+									  "copy; previous copies remain in %s. Continue?" )
+								.toUtf8(),
+							remoteCacheDirectory() ),
 			[vfs, &executor, ui, uris, done = std::move( done )]( bool accepted ) mutable {
 				if ( !accepted )
 					return;
@@ -264,7 +275,9 @@ void FileOperations::openFiles( const std::vector<URI>& uris ) {
 void FileOperations::runProgram( const std::string& path, bool confirm ) {
 	auto run = [this, path] {
 		if ( !Applications::spawn( { path }, FileSystem::fileRemoveFileName( path ) ) )
-			Dialogs::showError( mUI, String::fromUtf8( "Could not run " + path ) );
+			Dialogs::showError(
+				mUI, String::format( mUI->i18n( "eefm_run_failed", "Could not run %s" ).toUtf8(),
+									 path ) );
 	};
 	if ( !confirm ) {
 		run();
@@ -298,7 +311,11 @@ void FileOperations::openDocuments( const std::vector<URI>& uris ) {
 #endif
 			// The native opener resolves the system default, including per-file overrides.
 			if ( !Engine::instance()->openURI( URI::fromFSPath( path ).toString() ) )
-				Dialogs::showError( mUI, String::fromUtf8( "No application can open " + path ) );
+				Dialogs::showError(
+					mUI,
+					String::format(
+						mUI->i18n( "eefm_no_application", "No application can open %s" ).toUtf8(),
+						path ) );
 		}
 	} );
 }
@@ -313,27 +330,34 @@ void FileOperations::openWith( const std::vector<URI>& uris ) {
 			withLocalFiles( mVFS, mApp.executor(), mUI, uris,
 							[this, command = *command]( std::vector<std::string> paths ) {
 								if ( !Applications::launchCommand( command, paths ) ) {
-									Dialogs::showError( mUI, String::fromUtf8( "Could not run \"" +
-																			   command + "\"" ) );
+									Dialogs::showError(
+										mUI, String::format( mUI->i18n( "eefm_run_command_failed",
+																		"Could not run \"%s\"" )
+																 .toUtf8(),
+															 command ) );
 								}
 							} );
 		} );
 }
 
 void FileOperations::openWith( const std::vector<URI>& uris, Application app ) {
-	withLocalFiles( mVFS, mApp.executor(), mUI, uris,
-					[this, app = std::move( app )]( std::vector<std::string> paths ) {
-						mApp.pool()
-							->submit( [app = std::move( app ), paths = std::move( paths )] {
-								return Applications::launch( app, paths )
-										   ? std::string{}
-										   : "Could not open the files with " + app.name;
-							} )
-							.then( mApp.executor(), [this]( std::string&& error ) {
-								if ( !error.empty() )
-									Dialogs::showError( mUI, String::fromUtf8( error ) );
-							} );
-					} );
+	withLocalFiles(
+		mVFS, mApp.executor(), mUI, uris,
+		[this, app = std::move( app )]( std::vector<std::string> paths ) {
+			mApp.pool()
+				->submit( [app = std::move( app ), paths = std::move( paths )]() mutable {
+					return Applications::launch( app, paths ) ? std::string{}
+															  : std::move( app.name );
+				} )
+				.then( mApp.executor(), [this]( std::string&& error ) {
+					if ( !error.empty() )
+						Dialogs::showError(
+							mUI, String::format( mUI->i18n( "eefm_open_application_failed",
+															"Could not open the files with %s" )
+													 .toUtf8(),
+												 error ) );
+				} );
+		} );
 }
 
 void FileOperations::openTerminalHere( FileTab* tab ) {
@@ -342,11 +366,13 @@ void FileOperations::openTerminalHere( FileTab* tab ) {
 	if ( rows.size() == 1 && tab->model->entry( rows[0] ).isDirectory() )
 		uri = tab->model->entryURI( rows[0] );
 	if ( uri.getScheme() != "file" ) {
-		Dialogs::showError( mUI, "A terminal can only be opened in local folders." );
+		Dialogs::showError( mUI, mUI->i18n( "eefm_terminal_local_only",
+											"A terminal can only be opened in local folders." ) );
 		return;
 	}
 	if ( !DesktopIntegration::openTerminal( uri.getFSPath() ) )
-		Dialogs::showError( mUI, "No terminal emulator was found (set $TERMINAL)." );
+		Dialogs::showError( mUI, mUI->i18n( "eefm_terminal_not_found",
+											"No terminal emulator was found (set $TERMINAL)." ) );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -440,8 +466,11 @@ void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f p
 			}
 			if ( !archive || !apps.empty() ) {
 				String openText =
-					apps.empty() ? mUI->i18n( "eefm_open", "Open" )
-								 : String( String::format( "Open with %s", apps[0].name.c_str() ) );
+					apps.empty()
+						? mUI->i18n( "eefm_open", "Open" )
+						: String( String::format(
+							  mUI->i18n( "eefm_open_with_application", "Open with %s" ).toUtf8(),
+							  apps[0].name.c_str() ) );
 				auto* item = menu->add( openText, mApp.menuIcon( "action-open-with" ),
 										archive ? "" : openShortcut );
 				item->setId( apps.empty() ? "open" : "open-app" );
@@ -493,7 +522,10 @@ void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f p
 			const URI folder = file.getParent().withAppendedSegment( folderName );
 			const int paneIndex = tab->pane->index;
 			UIPopUpMenu* extract = UIPopUpMenu::New();
-			extract->add( String::format( "Extract to \"%s/\"", folderName.c_str() ) )
+			extract
+				->add( String::format(
+					mUI->i18n( "eefm_extract_to_folder", "Extract to \"%s/\"" ).toUtf8(),
+					folderName.c_str() ) )
 				->setId( "extract-folder" );
 			extract->add( mUI->i18n( "eefm_extract_here", "Extract Here" ) )
 				->setId( "extract-here" );
@@ -589,7 +621,7 @@ void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f p
 			->setId( "refresh" );
 	}
 	if ( tab->model->uri().getScheme() == "file" ) {
-		menu->add( mUI->i18n( "eefm_open_terminal", "Open Terminal Here" ),
+		menu->add( mUI->i18n( "eefm_open_terminal_here", "Open Terminal Here" ),
 				   mApp.menuIcon( "action-terminal" ), mApp.getKeybind( "terminal" ) )
 			->setId( "terminal" );
 	}
@@ -868,14 +900,16 @@ void FileOperations::startTransfer( const URI& source, const URI& destination,
 		return task;
 	};
 	const bool move = kind == TransferKind::Move;
-	String label = kind == TransferKind::Extract ? mUI->i18n( "eefm_extracting", "Extracting " )
-				   : move						 ? mUI->i18n( "eefm_moving", "Moving " )
-												 : mUI->i18n( "eefm_copying", "Copying " );
+	const auto labelFormat = kind == TransferKind::Extract
+								 ? mUI->i18n( "eefm_extracting", "Extracting %s" )
+							 : move ? mUI->i18n( "eefm_moving", "Moving %s" )
+									: mUI->i18n( "eefm_copying", "Copying %s" );
+	String label = String::format( labelFormat.toUtf8(), Location::displayName( source ).toUtf8() );
 	Uint64 id = ++mLastTransferId;
 	ActiveTransfer active{
 		id,
 		paneIndex,
-		std::move( label ) + Location::displayName( source ),
+		std::move( label ),
 		move ? mVFS->move( source, destination, options, std::move( onConflict ) )
 			 : mVFS->copy( source, destination, options, std::move( onConflict ) ),
 		{},
@@ -903,13 +937,17 @@ void FileOperations::startTransfer( const URI& source, const URI& destination,
 			updateTransfers();
 			if ( result ) {
 				if ( result.value().filesSkipped > batch->conflictsSkipped ) {
-					Dialogs::showMessage( "Partial Transfer",
-										  label + ":\n" +
-											  String::toString( result.value().filesSkipped -
-																batch->conflictsSkipped ) +
-											  " entries were skipped (existing destinations, "
-											  "symbolic links, or unsupported "
-											  "file types). Skipped source entries were kept." );
+					Dialogs::showMessage(
+						mUI->i18n( "eefm_partial_transfer", "Partial Transfer" ),
+						String::format(
+							mUI->i18n( "eefm_transfer_skipped_entries",
+									   "%s:\n%llu entries were skipped (existing destinations, "
+									   "symbolic links, or unsupported file types). Skipped source "
+									   "entries were kept." )
+								.toUtf8(),
+							label.toUtf8(),
+							static_cast<unsigned long long>( result.value().filesSkipped -
+															 batch->conflictsSkipped ) ) );
 				}
 				// Views showing the folder that received the files recount it (a watch on the
 				// parent does not see changes inside a subfolder).
@@ -953,7 +991,8 @@ void FileOperations::updateTransfers() {
 		if ( count == 0 )
 			continue;
 		if ( count > 1 )
-			label = String::format( "%zu operations", count );
+			label = String::format( mUI->i18n( "eefm_operations_count", "%zu operations" ).toUtf8(),
+									count );
 		pane->transferText->setText( label );
 		pane->transferBar->setProgress(
 			total > 0 ? static_cast<Float>( done ) * 100.f / static_cast<Float>( total ) : 0.f );
@@ -978,10 +1017,15 @@ void FileOperations::moveToTrash() {
 	}
 	String message =
 		uris.size() == 1
-			? String::format( "Do you really want to move \"%s\" to the trash?",
+			? String::format( mUI->i18n( "eefm_confirm_trash_one",
+										 "Do you really want to move \"%s\" to the trash?" )
+								  .toUtf8(),
 							  uris[0].getLastPathSegment().c_str() )
-			: String::format( "Do you really want to move these %zu items to the trash?",
-							  uris.size() );
+			: String::format(
+				  mUI->i18n( "eefm_confirm_trash_many",
+							 "Do you really want to move these %zu items to the trash?" )
+					  .toUtf8(),
+				  uris.size() );
 	Dialogs::confirm( mUI, mUI->i18n( "eefm_move_to_trash", "Move to Trash" ), message,
 					  [this, uris]( bool accepted ) {
 						  if ( !accepted )
@@ -989,8 +1033,12 @@ void FileOperations::moveToTrash() {
 						  std::vector<std::string> paths;
 						  for ( const auto& uri : uris )
 							  paths.push_back( uri.getFSPath() );
+						  const auto routingPath = paths.front();
 						  runInBackground(
-							  paths.front(), [paths] { return Trash::moveToTrash( paths ); },
+							  routingPath,
+							  [paths = std::move( paths ), translator = &mUI->getTranslator()] {
+								  return Trash::moveToTrash( paths, *translator );
+							  },
 							  nullptr,
 							  mUI->i18n( "eefm_trash_failed", "Could not move to the trash" ) );
 					  } );
@@ -1005,11 +1053,15 @@ void FileOperations::deleteSelection() {
 		return;
 	String message =
 		selection.size() == 1
-			? String::format( "Do you really want to permanently delete \"%s\"?\nThis action "
-							  "cannot be undone.",
+			? String::format( mUI->i18n( "eefm_confirm_delete_one",
+										 "Do you really want to permanently delete "
+										 "\"%s\"?\nThis action cannot be undone." )
+								  .toUtf8(),
 							  selection[0].getLastPathSegment().c_str() )
-			: String::format( "Do you really want to permanently delete these %zu "
-							  "items?\nThis action cannot be undone.",
+			: String::format( mUI->i18n( "eefm_confirm_delete_many",
+										 "Do you really want to permanently delete these %zu "
+										 "items?\nThis action cannot be undone." )
+								  .toUtf8(),
 							  selection.size() );
 	Dialogs::confirm(
 		mUI, mUI->i18n( "eefm_delete", "Delete" ), message, [this, selection]( bool accepted ) {
@@ -1020,8 +1072,10 @@ void FileOperations::deleteSelection() {
 				mVFS->remove( uri, RemoveOptions{ true } )
 					.then( mApp.executor(), [this, uri, trashed]( VFSResult<void>&& result ) {
 						if ( !result ) {
-							reportError( mUI->i18n( "eefm_delete_failed", "Could not delete " ) +
-											 String::fromUtf8( uri.getLastPathSegment() ),
+							reportError( String::format( mUI->i18n( "eefm_delete_failed",
+																	"Could not delete %s" )
+															 .toUtf8(),
+														 uri.getLastPathSegment() ),
 										 result.error() );
 							return;
 						}
@@ -1044,9 +1098,13 @@ void FileOperations::restoreFromTrash( const std::vector<URI>& uris ) {
 		paths.push_back( uri.getFSPath() );
 	if ( paths.empty() )
 		return;
+	const auto routingPath = paths.front();
 	runInBackground(
-		paths.front(), [paths] { return Trash::restore( paths ); }, nullptr,
-		mUI->i18n( "eefm_restore_failed", "Could not restore" ) );
+		routingPath,
+		[paths = std::move( paths ), translator = &mUI->getTranslator()] {
+			return Trash::restore( paths, *translator );
+		},
+		nullptr, mUI->i18n( "eefm_restore_failed", "Could not restore" ) );
 }
 
 void FileOperations::emptyTrash() {
@@ -1058,7 +1116,8 @@ void FileOperations::emptyTrash() {
 			if ( accepted ) {
 				const auto trash = Trash::location();
 				runInBackground(
-					trash ? trash->getFSPath() : std::string(), [] { return Trash::empty(); },
+					trash ? trash->getFSPath() : std::string(),
+					[translator = &mUI->getTranslator()] { return Trash::empty( *translator ); },
 					nullptr, mUI->i18n( "eefm_empty_trash_failed", "Could not empty the trash" ) );
 			}
 		} );
@@ -1078,22 +1137,29 @@ void FileOperations::renameEntry( FileTab* tab, const VFSFileInfo& entry,
 	if ( !validateName( name, tab->model->uri() ) )
 		return;
 	URI source = entry.uriIn( tab->model->uri() );
+	URI destination = source.getParent().withAppendedSegment( name );
 	tab->selectLater( name );
-	mVFS->rename( source, source.getParent().withAppendedSegment( name ) )
-		.then( mApp.executor(), [this]( VFSResult<void>&& result ) {
-			if ( !result ) {
-				reportError( mUI->i18n( "eefm_rename_failed", "Could not rename" ),
-							 result.error() );
-			}
-		} );
+	mVFS->rename( source, destination )
+		.then( mApp.executor(),
+			   [this, source = std::move( source ),
+				destination = std::move( destination )]( VFSResult<void>&& result ) {
+				   if ( !result ) {
+					   reportError( mUI->i18n( "eefm_rename_failed", "Could not rename" ),
+									result.error() );
+				   } else {
+					   mApp.panes().onEntryRenamed( source, destination );
+				   }
+			   } );
 }
 
 void FileOperations::newFolder( FileTab* tab ) {
 	URI parent = tab->model->uri();
 	Dialogs::promptText(
 		mUI, mUI->i18n( "eefm_new_folder_title", "New Folder" ),
-		mUI->i18n( "eefm_folder_name", "Create new folder in:\n" ) + Location::text( parent ),
-		"New Folder", false, [this, parent, tab]( std::optional<std::string> name ) {
+		String::format( mUI->i18n( "eefm_folder_name", "Create new folder in:\n%s" ).toUtf8(),
+						Location::text( parent ).toUtf8() ),
+		mUI->i18n( "eefm_new_folder_default", "New Folder" ).toUtf8(), false,
+		[this, parent, tab]( std::optional<std::string> name ) {
 			if ( !name || !validateName( *name, parent ) )
 				return;
 			tab->selectLater( *name );
@@ -1112,7 +1178,8 @@ void FileOperations::newTextFile( FileTab* tab ) {
 	URI parent = tab->model->uri();
 	Dialogs::promptText(
 		mUI, mUI->i18n( "eefm_new_text_file_title", "New Text File" ),
-		mUI->i18n( "eefm_file_name", "File name:" ), "Text File.txt", false,
+		mUI->i18n( "eefm_file_name", "File name:" ),
+		mUI->i18n( "eefm_new_text_file_default", "Text File.txt" ).toUtf8(), false,
 		[this, parent, tab]( std::optional<std::string> name ) {
 			if ( !name || !validateName( *name, parent ) )
 				return;
@@ -1206,8 +1273,9 @@ void FileOperations::dropArchiveEntries( DataDrop drop ) {
 	// Only a D-Bus call, Ark writes the files itself: on eefm's pool, not where the folder's
 	// calls run. The folder's watcher shows the extracted files as Ark writes them.
 	mApp.pool()
-		->submit( [drop = std::move( drop ), folder = std::move( *folder )] {
-			return ArkDrop::extract( drop, folder );
+		->submit( [drop = std::move( drop ), folder = std::move( *folder ),
+				   translator = &mUI->getTranslator()] {
+			return ArkDrop::extract( drop, folder, *translator );
 		} )
 		.then( mApp.executor(), [this]( std::string error ) {
 			if ( !error.empty() ) {

@@ -402,6 +402,101 @@ UTEST( VFSProvider, localPermissionsArePreserved ) {
 // Orchestration
 // ---------------------------------------------------------------------------------------------
 
+UTEST( VFSProvider, ownershipIDResolutionValidatesInputAndPreservesEmptyFields ) {
+	VirtualFileSystem vfs;
+	vfs.registerProvider( std::make_shared<MemoryProvider>() );
+	const URI uri( "mem:///ownership" );
+	auto ids = waitFor( vfs.resolveOwnership( uri, "0", "42" ) );
+	ASSERT_TRUE( ids.hasValue() );
+	ASSERT_TRUE( ids.value().uid.has_value() );
+	ASSERT_TRUE( ids.value().gid.has_value() );
+	EXPECT_EQ( 0u, *ids.value().uid );
+	EXPECT_EQ( 42u, *ids.value().gid );
+	ids = waitFor( vfs.resolveOwnership( uri, "", "" ) );
+	ASSERT_TRUE( ids.hasValue() );
+	EXPECT_FALSE( ids.value().uid.has_value() );
+	EXPECT_FALSE( ids.value().gid.has_value() );
+	for ( const auto& invalid : { "-1", "4294967295", "4294967296", "12x", "remote-user" } ) {
+		auto result = waitFor( vfs.resolveOwnership( uri, invalid, "" ) );
+		ASSERT_FALSE( result.hasValue() );
+		EXPECT_TRUE( result.error().is( VFSErrorCode::InvalidOperation ) );
+	}
+	CancellationSource cancel;
+	cancel.cancel();
+	auto cancelled = waitFor( vfs.resolveOwnership( uri, "0", "0", cancel.token() ) );
+	ASSERT_FALSE( cancelled.hasValue() );
+	EXPECT_TRUE( cancelled.error().is( VFSErrorCode::Cancelled ) );
+}
+
+UTEST( VFSProvider, ownershipChangesAreOptional ) {
+	VirtualFileSystem vfs;
+	auto memory = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( memory );
+	URI file( "mem:///ownership" );
+	memory->putFile( file, "data" );
+	auto result = waitFor( vfs.setOwnership( file, 42, std::nullopt ) );
+	ASSERT_FALSE( result.hasValue() );
+	EXPECT_TRUE( result.error().is( VFSErrorCode::Unsupported ) );
+	EXPECT_FALSE( vfs.capabilities( file ).has( VFSCapability::Ownership ) );
+}
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+UTEST( VFSProvider, localOwnershipNamesResolveOffTheCallerThread ) {
+	TempDir temp;
+	VirtualFileSystem vfs;
+	auto file = temp.uri().withAppendedSegment( "owned" );
+	ASSERT_TRUE( waitFor( vfs.writeAll( file, "data" ) ).hasValue() );
+	auto info = waitFor( vfs.stat( file ) );
+	ASSERT_TRUE( info.hasValue() );
+	ASSERT_FALSE( info.value().owner.empty() );
+	ASSERT_FALSE( info.value().group.empty() );
+	auto names = waitFor( vfs.resolveOwnership( file, info.value().owner, info.value().group ) );
+	ASSERT_TRUE( names.hasValue() );
+	ASSERT_TRUE( names.value().uid.has_value() );
+	ASSERT_TRUE( names.value().gid.has_value() );
+	EXPECT_EQ( *info.value().uid(), *names.value().uid );
+	EXPECT_EQ( *info.value().gid(), *names.value().gid );
+	auto numeric =
+		waitFor( vfs.resolveOwnership( file, std::to_string( *info.value().uid() ), "" ) );
+	ASSERT_TRUE( numeric.hasValue() );
+	ASSERT_TRUE( numeric.value().uid.has_value() );
+	EXPECT_EQ( *info.value().uid(), *numeric.value().uid );
+	EXPECT_FALSE( numeric.value().gid.has_value() );
+	auto invalid = waitFor( vfs.resolveOwnership( file, "eepp-nonexistent-account-for-test", "" ) );
+	EXPECT_FALSE( invalid.hasValue() );
+	const auto nul = info.value().owner + std::string( 1, '\0' ) + "suffix";
+	EXPECT_FALSE( waitFor( vfs.resolveOwnership( file, nul, "" ) ).hasValue() );
+}
+
+UTEST( VFSProvider, localOwnershipPreservesUnspecifiedIDsAndHonorsCancellation ) {
+	TempDir temp;
+	VirtualFileSystem vfs;
+	auto file = temp.uri().withAppendedSegment( "owned" );
+	ASSERT_TRUE( waitFor( vfs.writeAll( file, "data" ) ).hasValue() );
+	auto before = waitFor( vfs.stat( file ) );
+	ASSERT_TRUE( before.hasValue() );
+	ASSERT_TRUE( before.value().uid().has_value() );
+	ASSERT_TRUE( before.value().gid().has_value() );
+	const auto uid = before.value().uid();
+	const auto gid = before.value().gid();
+	ASSERT_TRUE( waitFor( vfs.setOwnership( file, uid, std::nullopt ) ).hasValue() );
+	auto after = waitFor( vfs.stat( file ) );
+	ASSERT_TRUE( after.hasValue() );
+	EXPECT_EQ( *uid, *after.value().uid() );
+	EXPECT_EQ( *gid, *after.value().gid() );
+	ASSERT_TRUE( waitFor( vfs.setOwnership( file, std::nullopt, gid ) ).hasValue() );
+	after = waitFor( vfs.stat( file ) );
+	ASSERT_TRUE( after.hasValue() );
+	EXPECT_EQ( *uid, *after.value().uid() );
+	EXPECT_EQ( *gid, *after.value().gid() );
+	CancellationSource cancel;
+	cancel.cancel();
+	auto cancelled = waitFor( vfs.setOwnership( file, uid, gid, cancel.token() ) );
+	ASSERT_FALSE( cancelled.hasValue() );
+	EXPECT_TRUE( cancelled.error().is( VFSErrorCode::Cancelled ) );
+}
+#endif
+
 UTEST( VFSOrchestration, writeAllDetectsExternalChanges ) {
 	TempDir tmp;
 	VirtualFileSystem vfs;

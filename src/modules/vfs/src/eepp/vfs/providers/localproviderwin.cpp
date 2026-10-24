@@ -722,6 +722,17 @@ VFSTask<void> LocalProvider::setPermissions( const URI& uri, Uint32 permissions,
 					  } );
 }
 
+VFSTask<void> LocalProvider::setOwnership( const URI& uri, std::optional<Uint32> uid,
+										   std::optional<Uint32> gid, CancellationToken token ) {
+	return VFSProvider::setOwnership( uri, uid, gid, std::move( token ) );
+}
+
+VFSTask<Ownership> LocalProvider::resolveOwnership( const URI& uri, std::string user,
+													std::string group, CancellationToken token ) {
+	return VFSProvider::resolveOwnership( uri, std::move( user ), std::move( group ),
+										  std::move( token ) );
+}
+
 VFSTask<SpaceInfo> LocalProvider::spaceInfo( const URI& uri, CancellationToken token ) {
 	return run<SpaceInfo>(
 		uri, LastLink::Follow, std::move( token ),

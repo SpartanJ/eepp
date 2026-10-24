@@ -65,9 +65,13 @@ struct WindowConfig {
 	Float pixelDensity{ 0 };
 	Uint32 maxFPS{ static_cast<Uint32>( ContextSettings::FrameRateLimitScreenRefreshRate ) };
 	bool vsync{ false };
+	bool showMenuBar{ false };
 	GraphicsLibraryVersion rendererVersion{ GLv_default };
 	Uint32 multisamples{ 0 };
 };
+
+// Menu visibility shares the existing padding after vsync.
+static_assert( sizeof( WindowConfig ) == 5 * sizeof( Uint32 ) );
 
 /** @brief eefm preferences (config.cfg in the eefm config folder). Session state (window, tabs,
  * columns) is kept apart, in state.json. */

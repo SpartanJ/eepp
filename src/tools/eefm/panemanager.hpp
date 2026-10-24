@@ -62,6 +62,9 @@ class PaneManager {
 
 	void navigate( FileTab* tab, URI uri, bool recordHistory = true );
 
+	/** Rewrites live locations and navigation history after an entry is renamed. */
+	void onEntryRenamed( const URI& from, const URI& to );
+
 	void goBack();
 
 	void goForward();

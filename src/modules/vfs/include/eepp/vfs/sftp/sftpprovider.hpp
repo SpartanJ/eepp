@@ -158,6 +158,9 @@ class EE_VFS_API SFTPProvider : public VFSProvider {
 	VFSTask<void> setPermissions( const URI& uri, Uint32 permissions,
 								  CancellationToken token ) override;
 
+	VFSTask<void> setOwnership( const URI& uri, std::optional<Uint32> uid,
+								std::optional<Uint32> gid, CancellationToken token ) override;
+
 	VFSTask<SpaceInfo> spaceInfo( const URI& uri, CancellationToken token ) override;
 
 	void setHostKeyVerifier( std::shared_ptr<SSHHostKeyVerifier> verifier );
