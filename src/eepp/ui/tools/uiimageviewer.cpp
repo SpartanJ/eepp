@@ -101,100 +101,142 @@ bool UIImageViewer::isType( const Uint32& type ) const {
 }
 
 void UIImageViewer::loadImageAsync( std::string_view path, bool isContents, bool loadGallery ) {
+	loadImageAsync( std::string( path ), isContents, loadGallery );
+}
+
+void UIImageViewer::loadImageAsync( std::string&& path, bool isContents, bool loadGallery ) {
+	loadImage( std::move( path ), isContents, loadGallery, {} );
+}
+
+void UIImageViewer::loadImageAsync( std::unique_ptr<IOStream> stream ) {
+	loadImage( {}, true, false, std::move( stream ) );
+}
+
+void UIImageViewer::loadImage( std::string path, bool isContents, bool loadGallery,
+							   std::unique_ptr<IOStream> stream ) {
 	if ( !getUISceneNode()->hasThreadPool() )
 		return;
 	mLoader->setVisible( true );
-	std::string ipath( path );
+	const Uint64 generation = ++mLoadGeneration;
 
+	// Gallery state belongs to the UI thread. Reuse its index without copying the cached list;
+	// newly enumerated files are moved back with the decoded image only if this request wins.
+	std::string galleryPath;
+	Int64 galleryIndex = 0;
+	bool reuseGallery = false;
+	if ( !isContents ) {
+		galleryPath = FileSystem::fileRemoveFileName( path );
+		FileSystem::dirAddSlashAtEnd( galleryPath );
+		reuseGallery = loadGallery && mHasGallery && galleryPath == mGalleryPath;
+		if ( reuseGallery ) {
+			const auto name = FileSystem::fileNameFromPath( path );
+			const auto it = std::find( mGalleryFiles.begin(), mGalleryFiles.end(), name );
+			if ( it != mGalleryFiles.end() )
+				galleryIndex = std::distance( mGalleryFiles.begin(), it );
+		}
+	}
+	mHasGallery = false;
 	mLoading++;
 
-	getUISceneNode()->getThreadPool()->run( [path = std::move( ipath ), this, isContents,
-											 loadGallery] {
+	getUISceneNode()->getThreadPool()->run( [path = std::move( path ), this, isContents,
+											 loadGallery, generation,
+											 galleryPath = std::move( galleryPath ), galleryIndex,
+											 reuseGallery, stream = std::move( stream )]() mutable {
 		ScopedOp op( [] {}, [this] { mLoading--; } );
+		if ( mClosing || generation != mLoadGeneration )
+			return;
 
-		auto folder( FileSystem::fileRemoveFileName( path ) );
-		FileSystem::dirAddSlashAtEnd( folder );
-		mHasGallery = false;
-		if ( loadGallery && !isContents ) {
+		bool hasGallery = reuseGallery;
+		std::vector<std::string> galleryFiles;
+		if ( !isContents && !reuseGallery ) {
+			// Serialize enumeration so obsolete requests stop before the next directory scan.
 			Lock l( mGalleryMutex );
-			bool sameFolder = folder == mGalleryPath;
-			bool newFolder = false;
-			if ( !sameFolder && FileSystem::isDirectory( folder ) ) {
-				mHasGallery = true;
-				newFolder = true;
-				mGalleryPath = folder;
-				mGalleryFiles =
-					FileSystem::filesGetInPath( mGalleryPath, true, true, false, [this] {
-						return mGalleryLoaderShouldAbort.load();
+			if ( mClosing || generation != mLoadGeneration )
+				return;
+			if ( loadGallery && FileSystem::isDirectory( galleryPath ) ) {
+				hasGallery = true;
+				galleryFiles =
+					FileSystem::filesGetInPath( galleryPath, true, true, false, [this, generation] {
+						return mGalleryLoaderShouldAbort.load() || generation != mLoadGeneration;
 					} );
-				std::erase_if( mGalleryFiles, []( const std::string& filename ) {
+				std::erase_if( galleryFiles, []( const std::string& filename ) {
 					return !Image::isImageExtension( filename );
 				} );
-			} else if ( sameFolder ) {
-				mHasGallery = true;
+				const auto name = FileSystem::fileNameFromPath( path );
+				const auto it = std::find( galleryFiles.begin(), galleryFiles.end(), name );
+				if ( it != galleryFiles.end() )
+					galleryIndex = std::distance( galleryFiles.begin(), it );
+			} else {
+				galleryFiles.push_back( FileSystem::fileNameFromPath( path ) );
 			}
-
-			if ( sameFolder || newFolder ) {
-				auto fileName( FileSystem::fileNameFromPath( path ) );
-				auto it = std::find( mGalleryFiles.begin(), mGalleryFiles.end(), fileName );
-				if ( it != mGalleryFiles.end() ) {
-					mGalleryImageIndex = std::distance( mGalleryFiles.begin(), it );
-				} else {
-					mGalleryImageIndex = 0;
-				}
-			}
-		} else {
-			Lock l( mGalleryMutex );
-			mGalleryPath = folder;
-			mGalleryFiles = { FileSystem::fileNameFromPath( path ) };
-			mGalleryImageIndex = 0;
 		}
 
+		if ( stream )
+			stream->seek( 0 );
 		Image::Format format =
-			isContents ? Image::getFormat( reinterpret_cast<const unsigned char*>( path.c_str() ),
-										   path.size() )
-					   : Image::getFormat( path );
+			stream		 ? Image::getFormat( *stream )
+			: isContents ? Image::getFormat( reinterpret_cast<const unsigned char*>( path.c_str() ),
+											 path.size() )
+						 : Image::getFormat( path );
 
 		if ( format == Image::Format::Unknown ) {
 			Log::error( "UIImageViewer: unsupported or invalid image: %s",
 						isContents ? "<memory>" : path.c_str() );
-			runOnMainThread( [this] { mLoader->setVisible( false ); } );
+			runOnMainThread( [this, generation] {
+				if ( generation == mLoadGeneration ) {
+					reset();
+					sendCommonEvent( Event::OnResourceLoadFailed );
+				}
+			} );
 			return;
 		}
 
-		if ( mClosing )
+		if ( mClosing || generation != mLoadGeneration )
 			return;
 
-		auto decodedImages = std::make_shared<std::vector<Image>>();
+		std::vector<Image> decodedImages;
 		int gifDelay = 0;
+		if ( stream )
+			stream->seek( 0 );
 		if ( format == Image::Format::GIF ) {
-			if ( isContents ) {
+			if ( stream ) {
+				auto gif = Image::loadGif( *stream );
+				decodedImages = std::move( gif.first );
+				gifDelay = gif.second;
+			} else if ( isContents ) {
 				IOStreamMemory stream( path.c_str(), path.size() );
 				auto gif = Image::loadGif( stream );
-				*decodedImages = std::move( gif.first );
+				decodedImages = std::move( gif.first );
 				gifDelay = gif.second;
 			} else {
 				IOStreamFile stream( path );
 				auto gif = Image::loadGif( stream );
-				*decodedImages = std::move( gif.first );
+				decodedImages = std::move( gif.first );
 				gifDelay = gif.second;
 			}
 		} else {
 			Image decoded =
-				isContents ? Image( reinterpret_cast<const Uint8*>( path.data() ), path.size() )
-						   : Image( path );
+				stream		 ? Image( *stream )
+				: isContents ? Image( reinterpret_cast<const Uint8*>( path.data() ), path.size() )
+							 : Image( path );
 			if ( decoded.getPixelsPtr() )
-				decodedImages->emplace_back( std::move( decoded ) );
+				decodedImages.emplace_back( std::move( decoded ) );
 		}
-		if ( decodedImages->empty() )
+		if ( stream && !stream->isOpen() )
+			decodedImages.clear();
+		if ( decodedImages.empty() )
 			Log::error( "UIImageViewer: failed to decode image: %s",
 						isContents ? "<memory>" : path.c_str() );
 
-		const Int64 fileSize = isContents ? path.size() : FileSystem::fileSize( path );
+		const Int64 fileSize = stream		? stream->getSize()
+							   : isContents ? path.size()
+											: FileSystem::fileSize( path );
 		std::string filePath( isContents ? std::string{} : path );
+		if ( mClosing || generation != mLoadGeneration )
+			return;
 
 		SpritePtr sprite = Sprite::New();
-		for ( const Image& decoded : *decodedImages ) {
+		for ( const Image& decoded : decodedImages ) {
 			auto texture = TextureFactory::instance()->loadFromPixels(
 				decoded.getPixelsPtr(), decoded.getWidth(), decoded.getHeight(),
 				decoded.getChannels(), false, Texture::ClampMode::ClampToEdge, false, false,
@@ -206,10 +248,20 @@ void UIImageViewer::loadImageAsync( std::string_view path, bool isContents, bool
 							decoded.getWidth(), decoded.getHeight() );
 		}
 
-		runOnMainThread( [this, decodedImages, format, fileSize, gifDelay,
-						  filePath = std::move( filePath ), sprite = std::move( sprite )] {
+		runOnMainThread( [this, format, fileSize, gifDelay, generation, hasGallery, reuseGallery,
+						  galleryPath = std::move( galleryPath ),
+						  galleryFiles = std::move( galleryFiles ), galleryIndex,
+						  sprite = std::move( sprite )]() mutable {
+			if ( generation != mLoadGeneration )
+				return;
+			mHasGallery = hasGallery;
 			DrawablePtr image;
 			if ( sprite->getNumFrames() ) {
+				if ( !reuseGallery ) {
+					mGalleryPath = std::move( galleryPath );
+					mGalleryFiles = std::move( galleryFiles );
+				}
+				mGalleryImageIndex = galleryIndex;
 				const size_t frameCount = sprite->getNumFrames();
 				if ( format == Image::Format::GIF ) {
 					sprite->setAnimationSpeed( 1000.f / static_cast<Float>( gifDelay ) );
@@ -229,9 +281,11 @@ void UIImageViewer::loadImageAsync( std::string_view path, bool isContents, bool
 				Log::info( "UIImageViewer: loaded %s (%dx%d, %d frame%s)",
 						   Image::formatToString( format ).c_str(), (int)s.x, (int)s.y,
 						   (int)frameCount, frameCount == 1 ? "" : "s" );
-				sendCommonEvent( Event::OnResourceLoaded );
+			} else {
+				reset();
 			}
 			mLoader->setVisible( false );
+			sendCommonEvent( image ? Event::OnResourceLoaded : Event::OnResourceLoadFailed );
 		} );
 	} );
 }
@@ -261,7 +315,10 @@ void UIImageViewer::updateImageLayout() {
 }
 
 void UIImageViewer::reset() {
+	++mLoadGeneration;
+	mHasGallery = false;
 	mImage->setDrawable( DrawablePtr{} )->setVisible( false );
+	mLoader->setVisible( false );
 }
 
 Uint32 UIImageViewer::onMessage( const NodeMessage* msg ) {
@@ -327,11 +384,11 @@ Uint32 UIImageViewer::onMessage( const NodeMessage* msg ) {
 			}
 		} else {
 			if ( msg->getFlags() & EE_BUTTON_WUMASK ) {
-				if ( mGalleryImageIndex - 1 >= 0 ) {
+				if ( mHasGallery && mGalleryImageIndex - 1 >= 0 ) {
 					loadImageAsync( mGalleryPath + mGalleryFiles[--mGalleryImageIndex] );
 				}
 			} else if ( msg->getFlags() & EE_BUTTON_WDMASK ) {
-				if ( mGalleryImageIndex + 1 < (Int64)mGalleryFiles.size() ) {
+				if ( mHasGallery && mGalleryImageIndex + 1 < (Int64)mGalleryFiles.size() ) {
 					loadImageAsync( mGalleryPath + mGalleryFiles[++mGalleryImageIndex] );
 				}
 			}
@@ -362,6 +419,8 @@ Uint32 UIImageViewer::onKeyDown( const KeyEvent& event ) {
 	} else if ( event.getKeyCode() == KEY_T ) {
 		resetImageView();
 	} else if ( event.getKeyCode() == KEY_X ) {
+		if ( !mImage->getDrawable() )
+			return 1;
 		auto sprite = static_cast<Sprite*>( mImage->getDrawable().get() );
 		auto mode = sprite->getRenderMode();
 		if ( mode == RENDER_NORMAL )
@@ -375,6 +434,8 @@ Uint32 UIImageViewer::onKeyDown( const KeyEvent& event ) {
 		sprite->setRenderMode( mode );
 		invalidateDraw();
 	} else if ( event.getKeyCode() == KEY_C ) {
+		if ( !mImage->getDrawable() )
+			return 1;
 		auto sprite = static_cast<Sprite*>( mImage->getDrawable().get() );
 		auto mode = sprite->getRenderMode();
 		if ( mode == RENDER_NORMAL )

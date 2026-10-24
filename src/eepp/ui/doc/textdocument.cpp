@@ -37,6 +37,11 @@ TextDocument::ScopedReadLock::ScopedReadLock( const TextDocument& document ) :
 	mLinesLock( document.mLinesMutex ), mDocumentLock( *document.mDocumentMutex ) {}
 
 bool TextDocument::fileMightBeBinary( const std::string& file ) {
+	IOStreamFile stream( file );
+	return fileMightBeBinary( stream, file );
+}
+
+bool TextDocument::fileMightBeBinary( IOStream& f, const std::string& file ) {
 	static constexpr size_t MAX_READ = 4096;
 	static constexpr std::array<char, 4> NULL_SEQUENCE = { 0, 0, 0, 0 };
 
@@ -62,17 +67,21 @@ bool TextDocument::fileMightBeBinary( const std::string& file ) {
 	static constexpr std::array<char, 4> UTF32LE_BOM = { (char)0xFF, (char)0xFE, (char)0x00,
 														 (char)0x00 };
 
-	IOStreamFile f( file );
 	if ( !f.isOpen() ) {
 		return false; // File cannot be opened, treat as non-binary or handle differently
 	}
 
+	const ios_size position = f.tell();
+	if ( position < 0 || f.seek( 0 ) != 0 || f.getSize() < 0 )
+		return false;
+	ScopedOp restore( nullptr, [&f, position] { f.seek( position ); } );
 	std::array<char, MAX_READ> buffer;
 	size_t bytesToRead = std::min<size_t>( MAX_READ, f.getSize() );
-	size_t bytesRead = f.read( buffer.data(), bytesToRead );
-	if ( bytesRead == 0 ) {
+	const ios_size received = f.read( buffer.data(), bytesToRead );
+	if ( received <= 0 || static_cast<Uint64>( received ) > bytesToRead ) {
 		return false; // Empty file or read failure
 	}
+	const size_t bytesRead = static_cast<size_t>( received );
 
 	// Check for text encoding BOMs (indicates text file)
 	if ( bytesRead >= 3 && std::equal( UTF8_BOM.begin(), UTF8_BOM.end(), buffer.begin() ) ) {
@@ -352,9 +361,7 @@ TextDocument::~TextDocument() {
 		Lock l( mLoadingMutex );
 	}
 
-	{
-		Lock l( mClientsMutex );
-	}
+	{ Lock l( mClientsMutex ); }
 
 	// Loading has been stopped
 	while ( mLoadingAsync ) {
@@ -525,6 +532,7 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 		mModificationId++;
 	}
 
+	bool readFailed = false;
 	MD5::Context md5Ctx;
 	if ( file.isOpen() ) {
 		const size_t BLOCK_SIZE = EE_1MB;
@@ -540,7 +548,12 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 		MD5::init( md5Ctx );
 
 		while ( pending && mLoading ) {
-			read = file.read( data.get(), blockSize );
+			const ios_size received = file.read( data.get(), blockSize );
+			if ( received <= 0 || static_cast<Uint64>( received ) > blockSize ) {
+				readFailed = true;
+				break;
+			}
+			read = static_cast<size_t>( received );
 			bufferPtr = data.get();
 			consume = read;
 
@@ -548,7 +561,7 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 
 			if ( pending == total ) {
 				// Check UTF-8 BOM header
-				if ( (char)0xef == data.get()[0] && (char)0xbb == data.get()[1] &&
+				if ( read >= 3 && (char)0xef == data.get()[0] && (char)0xbb == data.get()[1] &&
 					 (char)0xbf == data.get()[2] ) {
 					bufferPtr += 3;
 					consume -= 3;
@@ -556,14 +569,16 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 					mEncoding = TextFormat::Encoding::UTF8;
 				}
 				// Check UTF-16 LE BOM header
-				else if ( (char)0xFF == data.get()[0] && (char)0xFE == data.get()[1] ) {
+				else if ( read >= 2 && (char)0xFF == data.get()[0] &&
+						  (char)0xFE == data.get()[1] ) {
 					bufferPtr += 2;
 					consume -= 2;
 					mIsBOM = true;
 					mEncoding = TextFormat::Encoding::UTF16LE;
 				}
 				// Check UTF-16 BE BOM header
-				else if ( (char)0xFE == data.get()[0] && (char)0xFF == data.get()[1] ) {
+				else if ( read >= 2 && (char)0xFE == data.get()[0] &&
+						  (char)0xFF == data.get()[1] ) {
 					bufferPtr += 2;
 					consume -= 2;
 					mIsBOM = true;
@@ -671,8 +686,9 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 	mHash = MD5::result( md5Ctx ).digest;
 	mLoading = false;
 
-	return wasInterrupted ? LoadStatus::Interrupted
-						  : ( file.isOpen() ? LoadStatus::Loaded : LoadStatus::Failed );
+	return wasInterrupted
+			   ? LoadStatus::Interrupted
+			   : ( !readFailed && file.isOpen() ? LoadStatus::Loaded : LoadStatus::Failed );
 }
 
 void TextDocument::guessIndentType() {

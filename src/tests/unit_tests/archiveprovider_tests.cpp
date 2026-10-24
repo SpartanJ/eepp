@@ -387,8 +387,7 @@ UTEST( ArchiveProvider, recognizedFormatCanHaveAnUnavailableCodec ) {
 		bytes );
 	const std::string path = temp.path + "lzma.7z";
 	ASSERT_TRUE( FileSystem::fileWrite( path, bytes ) );
-	auto result =
-		waitFor( vfs.readAll( ArchiveProvider::makeURI( URI::fromFSPath( path ), "/file" ) ) );
+	auto result = readFile( vfs, ArchiveProvider::makeURI( URI::fromFSPath( path ), "/file" ) );
 	if ( std::find( support.value().filters.begin(), support.value().filters.end(), "lzma" ) ==
 		 support.value().filters.end() ) {
 		EXPECT_TRUE( result.hasError() );
@@ -513,7 +512,7 @@ UTEST( ArchiveProvider, truncatedGzipIsReported ) {
 	const URI file = ArchiveProvider::makeURI( URI::fromFSPath( path ), "/file" );
 	bytes.resize( bytes.size() - 6 );
 	ASSERT_TRUE( FileSystem::fileWrite( path, bytes ) );
-	EXPECT_TRUE( waitFor( vfs.readAll( file ) ).hasError() );
+	EXPECT_TRUE( readFile( vfs, file ).hasError() );
 }
 
 UTEST( ArchiveProvider, replacementCacheEvictionAndReaderLifetime ) {

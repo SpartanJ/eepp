@@ -1,9 +1,11 @@
 #ifndef EE_VFS_VIRTUALFILESYSTEM_HPP
 #define EE_VFS_VIRTUALFILESYSTEM_HPP
 
+#include <eepp/core/containers.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/vfs/config.hpp>
 #include <eepp/vfs/directorystats.hpp>
+#include <eepp/vfs/iostreamvfs.hpp>
 #include <eepp/vfs/permissionchanges.hpp>
 #include <eepp/vfs/provider.hpp>
 #include <eepp/vfs/providers/localioscheduler.hpp>
@@ -13,7 +15,6 @@
 #include <shared_mutex>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 namespace EE { namespace VFS {
@@ -23,7 +24,7 @@ using EE::System::ThreadPool;
 /** @brief URI-based virtual file system facade.
  *
  * Routes every operation to the provider registered for the URI scheme, and orchestrates the
- * multi-step operations that must not be reimplemented per provider: listAll(), readAll(),
+ * multi-step operations that must not be reimplemented per provider: listAll(), openStream(),
  * atomic writeAll(), makeDirs(), recursive remove(), and cross-provider copy() / move().
  *
  * Threading:
@@ -39,8 +40,8 @@ class EE_VFS_API VirtualFileSystem {
 	struct Config {
 		/** Worker threads for blocking local I/O (LocalProvider and similar). */
 		Uint32 ioThreads{ 4 };
-		/** Worker threads for multi-step orchestration (whole-file reads and writes, recursive
-		 * operations). */
+		/** Worker threads for multi-step orchestration (stream opening, whole-file writes,
+		 * recursive operations). */
 		Uint32 orchestrationThreads{ 2 };
 		/** Copies and moves running at the same time; more wait for one to finish. */
 		Uint32 transferThreads{ 2 };
@@ -158,9 +159,15 @@ class EE_VFS_API VirtualFileSystem {
 											DirectoryStatsProgressCallback onProgress = {},
 											CancellationToken token = {} );
 
-	/** Reads a whole file. Fails with InvalidOperation if it is larger than maxSize. */
-	VFSTask<std::vector<Uint8>> readAll( const URI& uri, CancellationToken token = {},
-										 Uint64 maxSize = 512ull * 1024 * 1024 );
+	/** Opens an owned, buffered IOStream without reading the whole file. Opening and length
+	 * validation are asynchronous; the resulting stream has synchronous operations for loaders.
+	 * Use it on a worker independent of provider I/O, never on the UI thread or ioPool().
+	 * maxSize bounds the length at open. Unknown or unrepresentable lengths fail explicitly.
+	 * The cancellation token remains attached for the stream's entire lifetime. */
+	VFSTask<std::unique_ptr<IOStreamVFS>> openStream( const URI& uri,
+													  const OpenOptions& options = {},
+													  CancellationToken token = {},
+													  Uint64 maxSize = IOStreamVFS::Unlimited );
 
 	/** Writes a whole file (atomically by default) and returns its new metadata, including the
 	 * revision to use for the next conflict-checked save. */
@@ -208,7 +215,7 @@ class EE_VFS_API VirtualFileSystem {
 	void registerDefaultProviders();
 
 	mutable std::shared_mutex mProvidersMutex;
-	std::unordered_map<std::string, std::shared_ptr<VFSProvider>> mProviders;
+	UnorderedMap<std::string, std::shared_ptr<VFSProvider>> mProviders;
 	std::shared_ptr<ThreadPool> mIOPool;
 	std::shared_ptr<LocalIOScheduler> mLocalIO;
 	std::shared_ptr<ThreadPool> mOrchestrationPool;

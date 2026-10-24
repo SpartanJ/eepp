@@ -103,6 +103,7 @@ bool InputSoundFile::openFromStream( IOStream& stream ) {
 	// Don't forget to reset the stream to its beginning before re-opening it
 	if ( stream.seek( 0 ) != 0 ) {
 		Log::error( "Failed to open sound file from stream (cannot restart stream)" );
+		close();
 		return false;
 	}
 
@@ -118,6 +119,14 @@ bool InputSoundFile::openFromStream( IOStream& stream ) {
 	mChannelCount = info.channelCount;
 	mSampleRate = info.sampleRate;
 
+	return true;
+}
+
+bool InputSoundFile::openFromStream( std::unique_ptr<IOStream> stream ) {
+	if ( !stream || !openFromStream( *stream ) )
+		return false;
+	mStreamOwned = true;
+	stream.release();
 	return true;
 }
 

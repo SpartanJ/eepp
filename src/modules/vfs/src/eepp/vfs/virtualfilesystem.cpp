@@ -335,64 +335,18 @@ VFSTask<std::vector<VFSFileInfo>> VirtualFileSystem::listAll( const URI& uri,
 // Orchestrated operations. These run on the orchestration pool and wait on provider tasks.
 // ---------------------------------------------------------------------------------------------
 
-VFSTask<std::vector<Uint8>> VirtualFileSystem::readAll( const URI& uri, CancellationToken token,
-														Uint64 maxSize ) {
-	return orchestrate<std::vector<Uint8>>( [this, uri, token,
-											 maxSize]() -> VFSResult<std::vector<Uint8>> {
-		auto opened = await( open( uri, OpenFlags::Read, token ) );
-		if ( !opened )
-			return Err( std::move( opened ).error() );
-		FileHandle handle( std::move( opened ).value() );
-		std::vector<Uint8> data;
-		auto info = await( handle.stat() );
-		if ( info && info.value().size() ) {
-			if ( *info.value().size() > maxSize || *info.value().size() > data.max_size() ) {
-				handle.close();
-				return Err( VFSError( VFSErrorCode::InvalidOperation, uri,
-									  "File exceeds the maximum read size" ) );
-			}
-			data.reserve( static_cast<size_t>( *info.value().size() ) );
-		}
-		Uint64 offset = 0;
-		while ( true ) {
-			if ( token.isCancellationRequested() ) {
-				handle.close();
-				return Err( cancelledError( uri ) );
-			}
-			size_t old = data.size();
-			// Capacity reservation must not turn a bounded I/O call into a whole-file SFTP
-			// operation. Keep enough room for one overflow byte, without maxSize + 1 wrapping.
-			const Uint64 remaining = maxSize - old;
-			size_t chunk = remaining < FileWriter::IOChunkSize
-							   ? static_cast<size_t>( remaining ) + 1
-							   : FileWriter::IOChunkSize;
-			if ( chunk > data.max_size() - old ) {
-				handle.close();
-				return Err( VFSError( VFSErrorCode::InvalidOperation, uri,
-									  "File exceeds the maximum buffer size" ) );
-			}
-			data.resize( old + chunk );
-			auto read =
-				await( handle.read( offset, std::span<Uint8>( data.data() + old, chunk ), token ) );
-			if ( !read ) {
-				handle.close();
-				return Err( std::move( read ).error() );
-			}
-			data.resize( old + read.value() );
-			offset += read.value();
-			if ( data.size() > maxSize ) {
-				handle.close();
-				return Err( VFSError( VFSErrorCode::InvalidOperation, uri,
-									  "File exceeds the maximum read size" ) );
-			}
-			if ( read.value() == 0 )
-				break;
-		}
-		auto closed = await( handle.close() );
-		if ( !closed )
-			return Err( std::move( closed ).error() );
-		return Ok( std::move( data ) );
-	} );
+VFSTask<std::unique_ptr<IOStreamVFS>> VirtualFileSystem::openStream( const URI& uri,
+																	 const OpenOptions& options,
+																	 CancellationToken token,
+																	 Uint64 maxSize ) {
+	return orchestrate<std::unique_ptr<IOStreamVFS>>(
+		[this, uri, options, token, maxSize]() -> VFSResult<std::unique_ptr<IOStreamVFS>> {
+			auto opened = await( open( uri, options, token ) );
+			if ( !opened )
+				return Err( std::move( opened ).error() );
+			return IOStreamVFS::create( std::move( opened ).value(), options.flags, token,
+										maxSize );
+		} );
 }
 
 VFSTask<VFSFileInfo> VirtualFileSystem::writeAll( const URI& uri, std::string_view data,

@@ -14,7 +14,7 @@ namespace EE { namespace VFS { namespace detail {
  * Only for jobs that may block (see await()). */
 class FileWriter {
   public:
-	/** Chunk used by readAll()/writeAll() and the generic copy loop. */
+	/** Chunk used by writeAll() and the generic copy loop. */
 	static constexpr size_t IOChunkSize = 256 * 1024;
 
 	struct ReplaceOptions {

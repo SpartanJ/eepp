@@ -249,7 +249,7 @@ UTEST( ZipProvider, streamingReadsSeekBackwardsAndCopyAcrossProviders ) {
 	ASSERT_TRUE( copied.hasValue() );
 	EXPECT_TRUE( content == readString( vfs, destination.withAppendedSegment( "large.txt" ) ) );
 	EXPECT_STDSTREQ( "second", readString( vfs, destination.withAppendedSegment( "second.txt" ) ) );
-	EXPECT_TRUE( waitFor( vfs.readAll( file, {}, 100 ) ).hasError() );
+	EXPECT_TRUE( readFile( vfs, file, {}, 100 ).hasError() );
 	// An in-place edit can break a backward seek. Keep the old stream alive when reopening
 	// fails: this is an I/O failure, and must not turn every later call into "File closed".
 	auto reopened = waitFor( vfs.open( file ) );

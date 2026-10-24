@@ -5,6 +5,7 @@
 #include <eepp/config.hpp>
 #include <eepp/core/noncopyable.hpp>
 #include <eepp/system/time.hpp>
+#include <memory>
 #include <string>
 
 namespace EE { namespace System {
@@ -63,6 +64,9 @@ class EE_API InputSoundFile : NonCopyable {
 	///
 	////////////////////////////////////////////////////////////
 	bool openFromStream( IOStream& stream );
+
+	/** Opens and takes ownership of stream. It is released when this file closes. */
+	bool openFromStream( std::unique_ptr<IOStream> stream );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Get the total number of audio samples in the file

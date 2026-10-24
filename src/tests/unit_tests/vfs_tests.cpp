@@ -552,16 +552,16 @@ UTEST( VFSOrchestration, writeAllCreateParentsAndMakeDirs ) {
 	EXPECT_EQ( VFSErrorCode::NotDirectory, codeOf( through ) );
 }
 
-UTEST( VFSOrchestration, readAllLimits ) {
+UTEST( VFSOrchestration, streamSizeLimits ) {
 	VirtualFileSystem vfs;
 	auto mem = std::make_shared<MemoryProvider>();
 	vfs.registerProvider( mem );
 	mem->putFile( URI( "mem://r/big" ), std::string( 1000, 'x' ) );
-	auto ok = waitFor( vfs.readAll( URI( "mem://r/big" ) ) );
+	auto ok = readFile( vfs, URI( "mem://r/big" ) );
 	EXPECT_EQ( 1000u, ok.value().size() );
-	auto limited = waitFor( vfs.readAll( URI( "mem://r/big" ), {}, 999 ) );
+	auto limited = readFile( vfs, URI( "mem://r/big" ), {}, 999 );
 	EXPECT_EQ( VFSErrorCode::InvalidOperation, codeOf( limited ) );
-	auto missing = waitFor( vfs.readAll( URI( "mem://r/none" ) ) );
+	auto missing = readFile( vfs, URI( "mem://r/none" ) );
 	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( missing ) );
 }
 
@@ -612,8 +612,8 @@ UTEST( VFSTransfer, crossProviderCopyAndProgress ) {
 	EXPECT_TRUE( last.bytesTotal && *last.bytesTotal == 4u + 600 * 1024 );
 	EXPECT_EQ( 4u + 600 * 1024, last.bytesDone );
 	EXPECT_STDSTREQ( "aaaa", readString( vfs, destination.withAppendedSegment( "a.txt" ) ) );
-	auto big = waitFor(
-		vfs.readAll( destination.withAppendedSegment( "sub" ).withAppendedSegment( "b.txt" ) ) );
+	auto big =
+		readFile( vfs, destination.withAppendedSegment( "sub" ).withAppendedSegment( "b.txt" ) );
 	EXPECT_EQ( 600u * 1024, big.value().size() );
 	auto emptyDir = waitFor( vfs.stat( destination.withAppendedSegment( "empty" ) ) );
 	EXPECT_TRUE( emptyDir && emptyDir.value().isDirectory() );

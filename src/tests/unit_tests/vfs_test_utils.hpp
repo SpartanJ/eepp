@@ -5,6 +5,7 @@
 
 #include "utest.hpp"
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <eepp/system/filesystem.hpp>
@@ -89,11 +90,27 @@ class TestLoop : public Executor {
 	std::vector<Function> mQueue;
 };
 
+/** Test assertions explicitly collect file contents; the production API returns a stream. */
+inline VFSResult<std::string> readFile( VirtualFileSystem& vfs, const URI& uri,
+										CancellationToken token = {},
+										Uint64 maxSize = IOStreamVFS::Unlimited ) {
+	auto opened = waitFor( vfs.openStream( uri, {}, token, maxSize ) );
+	if ( !opened )
+		return Err( std::move( opened ).error() );
+	auto& stream = *opened.value();
+	std::string contents;
+	std::array<char, 16384> buffer;
+	while ( const auto read = stream.read( buffer.data(), buffer.size() ) )
+		contents.append( buffer.data(), static_cast<size_t>( read ) );
+	auto closed = stream.close();
+	if ( !closed )
+		return Err( std::move( closed ).error() );
+	return Ok( std::move( contents ) );
+}
+
 inline std::string readString( VirtualFileSystem& vfs, const URI& uri ) {
-	auto data = waitFor( vfs.readAll( uri ) );
-	if ( !data )
-		return "<error: " + data.error().toString() + ">";
-	return std::string( data.value().begin(), data.value().end() );
+	auto data = readFile( vfs, uri );
+	return data ? std::move( data ).value() : "<error: " + data.error().toString() + ">";
 }
 
 inline VFSResult<void> writeString( VirtualFileSystem& vfs, const URI& uri,

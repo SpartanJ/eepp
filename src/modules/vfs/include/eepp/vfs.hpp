@@ -7,6 +7,7 @@
 #include <eepp/vfs/error.hpp>
 #include <eepp/vfs/filehandle.hpp>
 #include <eepp/vfs/fileinfo.hpp>
+#include <eepp/vfs/iostreamvfs.hpp>
 #include <eepp/vfs/options.hpp>
 #include <eepp/vfs/path.hpp>
 #include <eepp/vfs/provider.hpp>

@@ -1,8 +1,10 @@
 #include "../tests/unit_tests/utest.hpp"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cstdlib>
+#include <cstring>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
@@ -25,6 +27,25 @@ template <typename T> VFSResult<T> wait( VFSTask<T>&& task ) {
 	if ( !value )
 		return Err( VFSError( VFSErrorCode::Unknown ) );
 	return std::move( *value );
+}
+
+VFSResult<Uint64> readAndVerify( VirtualFileSystem& vfs, const URI& uri,
+								 const std::vector<Uint8>& expected ) {
+	auto opened = wait( vfs.openStream( uri ) );
+	if ( !opened )
+		return Err( std::move( opened ).error() );
+	std::array<char, 256 * 1024> buffer;
+	Uint64 total = 0;
+	while ( const auto count = opened.value()->read( buffer.data(), buffer.size() ) ) {
+		if ( total + count > expected.size() ||
+			 std::memcmp( buffer.data(), expected.data() + total, count ) != 0 )
+			return Err( VFSError( VFSErrorCode::IO, uri, "Read data differs" ) );
+		total += count;
+	}
+	auto closed = opened.value()->close();
+	if ( !closed )
+		return Err( std::move( closed ).error() );
+	return Ok( total );
 }
 
 double ms( const Clock& clock ) {
@@ -180,10 +201,10 @@ UTEST( VFSBenchmark, localThroughput ) {
 	ASSERT_TRUE( written.hasValue() );
 
 	clock.restart();
-	auto read = wait( vfs.readAll( file ) );
+	auto read = readAndVerify( vfs, file, data );
 	double readMs = ms( clock );
 	ASSERT_TRUE( read.hasValue() );
-	EXPECT_TRUE( read.value() == data );
+	EXPECT_TRUE( read.value() == data.size() );
 
 	clock.restart();
 	auto copied = wait( vfs.copy( file, URI::fromFSPath( dir + "copy.bin" ) ).completion() );
@@ -192,7 +213,7 @@ UTEST( VFSBenchmark, localThroughput ) {
 
 	printf( "  writeAll (atomic, no fsync) %.0f MiB: %7.1f ms (%6.0f MiB/s)\n", mb, writeMs,
 			mb / ( writeMs / 1000 ) );
-	printf( "  readAll               %.0f MiB: %7.1f ms (%6.0f MiB/s)\n", mb, readMs,
+	printf( "  openStream/read       %.0f MiB: %7.1f ms (%6.0f MiB/s)\n", mb, readMs,
 			mb / ( readMs / 1000 ) );
 	printf( "  copy (256 KiB chunks) %.0f MiB: %7.1f ms (%6.0f MiB/s)\n", mb, copyMs,
 			mb / ( copyMs / 1000 ) );
@@ -260,7 +281,7 @@ UTEST( VFSBenchmark, sftpRoundTrips ) {
 	auto written = wait( vfs.writeAll( file, data ) );
 	double writeMs = ms( clock );
 	clock.restart();
-	auto read = wait( vfs.readAll( file ) );
+	auto read = readAndVerify( vfs, file, data );
 	double readMs = ms( clock );
 	wait( vfs.remove( file ) );
 	printf( "  connect + auth + first stat: %8.1f ms\n", connectMs );

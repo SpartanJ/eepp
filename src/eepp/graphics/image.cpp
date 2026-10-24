@@ -375,8 +375,9 @@ static bool svg_test_from_stream( IOStream& stream ) {
 	std::string str;
 	str.resize( std::min<size_t>( 4096, stream.getSize() ) );
 	stream.seek( 0 );
-	size_t read = stream.read( &str[0], str.size() );
-	return read > 5 && svg_test_text( str.data(), read );
+	const ios_size read = stream.read( str.data(), str.size() );
+	return read > 5 && static_cast<Uint64>( read ) <= str.size() &&
+		   svg_test_text( str.data(), read );
 }
 
 struct ImageInfo {
@@ -401,8 +402,10 @@ static std::optional<ImageInfo> webp_test_from_memory( const Uint8* imageData,
 
 static std::optional<ImageInfo> webp_test_from_stream( IOStream& stream ) {
 	char buf[128]{ 0 };
-	stream.read( buf, 128 );
-	return webp_test_from_memory( reinterpret_cast<const Uint8*>( &buf[0] ), 128 );
+	stream.seek( 0 );
+	const ios_size read = stream.read( buf, sizeof( buf ) );
+	return read > 0 ? webp_test_from_memory( reinterpret_cast<const Uint8*>( buf ), read )
+					: std::optional<ImageInfo>{};
 }
 
 static std::optional<ImageInfo> webp_test( const std::string& path ) {
@@ -877,7 +880,9 @@ Image::Image( IOStream& stream, const unsigned int& forceChannels,
 			ScopedBuffer data( stream.getSize() + 1 );
 
 			stream.seek( 0 );
-			stream.read( (char*)data.get(), data.length() - 1 );
+			if ( stream.read( (char*)data.get(), data.length() - 1 ) !=
+				 static_cast<ios_size>( data.length() - 1 ) )
+				return;
 
 			data[data.length() - 1] = '\0';
 
@@ -885,7 +890,9 @@ Image::Image( IOStream& stream, const unsigned int& forceChannels,
 		} else if ( webp_test_from_stream( stream ) ) {
 			ScopedBuffer data( stream.getSize() );
 			stream.seek( 0 );
-			stream.read( (char*)data.get(), data.length() );
+			if ( stream.read( (char*)data.get(), data.length() ) !=
+				 static_cast<ios_size>( data.length() ) )
+				return;
 			webpLoad( data.get(), data.size() );
 		} else {
 			Log::error( "Failed to load image. Reason: %s", stbi_failure_reason() );
@@ -1520,7 +1527,8 @@ std::pair<std::vector<Image>, int> Image::loadGif( IOStream& stream ) {
 	stream.seek( 0 );
 	std::vector<Image> gif;
 	ScopedBuffer buf( stream.getSize() );
-	stream.read( (char*)buf.get(), buf.size() );
+	if ( stream.read( (char*)buf.get(), buf.size() ) != static_cast<ios_size>( buf.size() ) )
+		return {};
 	int width, height, frames, comp;
 	int* delays = NULL;
 	unsigned char* data = stbi_load_gif_from_memory( buf.get(), buf.size(), &delays, &width,

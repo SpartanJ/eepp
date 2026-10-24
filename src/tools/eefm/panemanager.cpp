@@ -4,6 +4,7 @@
 #include "location.hpp"
 #include "mime.hpp"
 #include "placescontroller.hpp"
+#include "previewpanel.hpp"
 #include "terminalpanel.hpp"
 #include <ctime>
 
@@ -881,6 +882,8 @@ void PaneManager::updateStatus( Pane& pane ) {
 		status = String::fromUtf8( text );
 	}
 	pane.status->setText( status );
+	if ( pane.index == activeIndex() )
+		mApp.preview().syncSelection();
 }
 
 void PaneManager::rememberViewState( FileTab* tab ) {

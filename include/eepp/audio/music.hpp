@@ -109,6 +109,9 @@ class EE_API Music : public SoundStream {
 	////////////////////////////////////////////////////////////
 	bool openFromStream( IOStream& stream );
 
+	/** Opens and owns stream for decoding and subsequent playback. May perform synchronous I/O. */
+	bool openFromStream( std::unique_ptr<IOStream> stream );
+
 	bool openFromPack( Pack* pack, const std::string& filePackPath );
 
 	////////////////////////////////////////////////////////////

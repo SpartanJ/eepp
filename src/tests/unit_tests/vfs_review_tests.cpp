@@ -416,7 +416,7 @@ UTEST( VFSSafety, inMemoryAuthoritiesRemainSeparateNamespaces ) {
 	EXPECT_EQ( VFSErrorCode::NotFound, codeOf( waitFor( vfs.stat( URI( "mem://one/file" ) ) ) ) );
 }
 
-UTEST( VFSOrchestration, readRequestsStayBoundedForKnownAndUnknownSizes ) {
+UTEST( VFSOrchestration, streamsBoundRequestsAndRejectUnknownLengths ) {
 	class GeneratedFile : public FileHandleImpl {
 	  public:
 		explicit GeneratedFile( Uint64 length, bool known ) : size( length ), knownSize( known ) {}
@@ -472,29 +472,36 @@ UTEST( VFSOrchestration, readRequestsStayBoundedForKnownAndUnknownSizes ) {
 	auto provider = std::make_shared<GeneratedProvider>();
 	vfs.registerProvider( provider );
 	const URI file( "mem://test/generated" );
-	for ( const bool known : { false, true } ) {
-		provider->file = std::make_shared<GeneratedFile>( 2 * 1024 * 1024, known );
-		auto read = waitFor( vfs.readAll( file ) );
-		ASSERT_TRUE( read );
-		EXPECT_EQ( 2u * 1024 * 1024, read.value().size() );
-		EXPECT_LE( provider->file->largestRead, 256u * 1024 );
-		EXPECT_EQ( 9u, provider->file->reads ); // Eight bounded reads, followed by EOF.
-		EXPECT_EQ( int( 'x' ), int( read.value().back() ) );
-	}
-	for ( const bool known : { false, true } ) {
-		provider->file = std::make_shared<GeneratedFile>( 10, known );
-		auto unlimited = waitFor( vfs.readAll( file, {}, std::numeric_limits<Uint64>::max() ) );
-		ASSERT_TRUE( unlimited );
-		EXPECT_EQ( 10u, unlimited.value().size() );
-		EXPECT_EQ( VFSErrorCode::InvalidOperation,
-				   codeOf( waitFor( vfs.readAll( file, {}, 9 ) ) ) );
-		EXPECT_EQ( 10u, waitFor( vfs.readAll( file, {}, 10 ) ).value().size() );
-		provider->file = std::make_shared<GeneratedFile>( 0, known );
-		EXPECT_TRUE( waitFor( vfs.readAll( file, {}, 0 ) ).value().empty() );
-		provider->file = std::make_shared<GeneratedFile>( 1, known );
-		EXPECT_EQ( VFSErrorCode::InvalidOperation,
-				   codeOf( waitFor( vfs.readAll( file, {}, 0 ) ) ) );
-	}
+	provider->file = std::make_shared<GeneratedFile>( 2 * 1024 * 1024, false );
+	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( waitFor( vfs.openStream( file ) ) ) );
+	EXPECT_EQ( 0u, provider->file->reads );
+	provider->file = std::make_shared<GeneratedFile>( 2 * 1024 * 1024, true );
+	auto opened = waitFor( vfs.openStream( file ) );
+	ASSERT_TRUE( opened );
+	EXPECT_EQ( 0u, provider->file->reads ); // Opening doesn't consume the file.
+	std::vector<char> data( 2 * 1024 * 1024 );
+	EXPECT_EQ( static_cast<ios_size>( data.size() ),
+			   opened.value()->read( data.data(), data.size() ) );
+	EXPECT_LE( provider->file->largestRead, 256u * 1024 );
+	EXPECT_EQ( 8u, provider->file->reads );
+	EXPECT_EQ( int( 'x' ), int( data.back() ) );
+	EXPECT_EQ( 0, opened.value()->read( data.data(), 1 ) );
+	EXPECT_EQ( 8u, provider->file->reads ); // Known EOF requires no provider request.
+	opened.value()->close();
+
+	provider->file = std::make_shared<GeneratedFile>( 10, true );
+	EXPECT_EQ( 10u, readFile( vfs, file, {}, IOStreamVFS::Unlimited ).value().size() );
+	EXPECT_EQ( VFSErrorCode::InvalidOperation, codeOf( readFile( vfs, file, {}, 9 ) ) );
+	EXPECT_EQ( 10u, readFile( vfs, file, {}, 10 ).value().size() );
+	provider->file = std::make_shared<GeneratedFile>( 0, true );
+	EXPECT_TRUE( readFile( vfs, file, {}, 0 ).value().empty() );
+	provider->file = std::make_shared<GeneratedFile>( 1, true );
+	EXPECT_EQ( VFSErrorCode::InvalidOperation, codeOf( readFile( vfs, file, {}, 0 ) ) );
+	provider->file = std::make_shared<GeneratedFile>( std::numeric_limits<Uint64>::max(), true );
+	EXPECT_EQ(
+		VFSErrorCode::InvalidOperation,
+		codeOf( waitFor( vfs.openStream( file, {}, {}, std::numeric_limits<Uint64>::max() ) ) ) );
+	EXPECT_EQ( 0u, provider->file->reads );
 }
 
 UTEST( VFSPath, basenameValidationUsesTheDestinationRules ) {

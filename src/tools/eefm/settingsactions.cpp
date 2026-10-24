@@ -2,6 +2,7 @@
 #include "app.hpp"
 #include "panemanager.hpp"
 #include "placescontroller.hpp"
+#include "previewpanel.hpp"
 #include "terminalpanel.hpp"
 
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
@@ -270,6 +271,13 @@ void SettingsActions::showSettings() {
 						mUI->setSmoothScrollEnabled( value, true );
 						savePreferences();
 					} );
+	panel->addBool(
+		{ "quickPreview", "files.behavior", mUI->i18n( "eefm_quick_preview", "Quick Preview" ),
+		  mUI->i18n(
+			  "eefm_quick_preview_desc",
+			  "Preview selected text, image, and audio files in a panel on the right (F11)." ) },
+		[this] { return mApp.preview().isVisible(); },
+		[this]( bool visible ) { mApp.preview().show( visible ); } );
 	panel->addCategory( "files.icons", mUI->i18n( "eefm_files", "Files" ),
 						mUI->i18n( "eefm_icons", "Icons" ) );
 	panel->addBool(

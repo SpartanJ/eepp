@@ -59,6 +59,7 @@ class PaneManager;
 class PlacesController;
 class SettingsActions;
 class TerminalPanel;
+class PreviewPanel;
 
 /** @brief eefm: the window, its layout and the services the parts of the file manager share.
  *
@@ -93,6 +94,8 @@ class App {
 	PlacesController& places() const { return *mPlacesController; }
 
 	TerminalPanel& terminal() const { return *mTerminalPanel; }
+
+	PreviewPanel& preview() const { return *mPreviewPanel; }
 
 	SettingsActions& settings() const { return *mSettingsActions; }
 
@@ -176,6 +179,7 @@ class App {
 	std::unique_ptr<FileOperations> mFileOperations;
 	std::unique_ptr<PlacesController> mPlacesController;
 	std::unique_ptr<TerminalPanel> mTerminalPanel;
+	std::unique_ptr<PreviewPanel> mPreviewPanel;
 	std::unique_ptr<SettingsActions> mSettingsActions;
 	/** Colored icons from the user's icon theme / the OS shell (glyph icons until loaded). */
 	std::shared_ptr<UISystemIconTheme> mSystemIcons;

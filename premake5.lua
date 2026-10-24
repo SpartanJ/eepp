@@ -2240,9 +2240,9 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		eepp_module_backward_add( false )
-		incdirs { "src/thirdparty", "src/modules/eterm/include/" }
+		incdirs { "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
 		files { "src/tools/eefm/*.cpp" }
-		links { "eterm-static" }
+		links { "eterm-static", "languages-syntax-highlighting-static" }
 		eepp_module_vfs_add()
 		filter "system:windows"
 			links { "shell32" } -- Recycle Bin (SHFileOperationW)

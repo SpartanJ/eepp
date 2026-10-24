@@ -2231,9 +2231,9 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		eepp_module_backward_add( false )
-		includedirs { "src/thirdparty", "src/modules/eterm/include/" }
+		includedirs { "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
 		files { "src/tools/eefm/*.cpp" }
-		links { "eterm-static" }
+		links { "eterm-static", "languages-syntax-highlighting-static" }
 		eepp_module_vfs_add()
 		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 			links { "shell32" } -- Recycle Bin (SHFileOperationW)

@@ -131,7 +131,7 @@ are not followed yet: only UNC paths and mapped network drives are routed to a l
 vfs.openDirectory( uri );    // VFSTask<DirectoryHandle>; then handle.read( 256 ) per batch
 
 vfs.listAll( uri );          // convenience: the whole directory
-vfs.readAll( uri );          // VFSTask<std::vector<Uint8>>
+vfs.openStream( uri );       // VFSTask<std::unique_ptr<IOStreamVFS>>
 vfs.writeAll( uri, data );   // atomic by default, returns the new VFSFileInfo
 vfs.makeDirs( uri );
 vfs.remove( uri, RemoveOptions{ true } );   // recursive
@@ -139,9 +139,32 @@ vfs.rename( from, to, RenameOptions{ true } );
 vfs.canonicalize( uri );     // resolves symlinks/aliases; URIs are never canonicalized implicitly
 ```
 
-`readAll()` reserves a known file length but keeps each handle read bounded to 256 KiB. An SFTP
-operation deadline therefore applies to each chunk, rather than the whole file; a single chunk
-can still time out. Explicit size limits, including `UINT64_MAX`, are checked without overflow.
+`openStream()` opens an owned `IOStreamVFS`, validates its initial length, and leaves its contents
+unread. Pass it to existing `IOStream` loaders on an application/loader worker, independently of
+provider workers. Opening uses the normal VFS task API; the returned `IOStream` has synchronous
+read, write, and seek operations. It is not an `AsyncIOStream`.
+
+Small reads share a lazy 64 KiB cache, including header rewinds; large requests are split into at
+most 256 KiB provider calls. EOF returns zero without another provider call. Errors and cancellation
+also return zero when no bytes were read, with the typed cause available through `error()` and
+`isOpen()` becoming false. The cancellation token stays attached for the stream's lifetime, even
+for cache hits. A stream has one position and must not be used concurrently. Its destructor schedules
+handle cleanup without waiting; explicit `close()` waits and reports cleanup errors.
+
+The optional `maxSize` argument validates the length at open, and `getSize()` caches that length
+(extended by writes through this stream). Unknown or unrepresentable lengths fail explicitly rather
+than forcing a whole-file download. Writable streams use the same `OpenOptions` as `open()`.
+
+```cpp
+vfs.openStream( uri, {}, cancellation.token(), 2 * 1024 * 1024 )
+    .then( loaderPool, []( VFSResult<std::unique_ptr<IOStreamVFS>>&& opened ) {
+        if ( !opened )
+            return;
+        TextDocument document;
+        document.loadFromStream( *opened.value() );
+        // Inspect opened.value()->error() to distinguish provider failures from decoder failures.
+    } );
+```
 
 `FileHandle` uses explicit offsets (`read( offset, span )`, `write( offset, span )`).
 
@@ -416,6 +439,15 @@ eefm opens files from SFTP and other non-local providers as local copies after a
 Edits are not uploaded automatically. Each open downloads to a fresh private cache folder; earlier
 copies remain available, so reopening cannot silently discard local edits.
 
+`eefm` also provides **Quick Preview**, disabled by default. Enable it with **F11**,
+**Show Panels → Quick Preview**, or **Configure eefm → Files → Quick Preview**. The panel follows
+one selected file in the active pane and remembers its visibility and width between sessions.
+Text is read-only and uses the syntax highlighting module; images use eepp's image viewer and
+audio uses its player, with playback started explicitly. Selection changes and closing the panel
+stop playback and cancel pending reads. Preview passes VFS streams directly to its loaders, including for archive
+members and SFTP files, without creating local copies or whole-file VFS buffers. Text previews accept files up to 2 MiB;
+image and audio previews accept files up to 128 MiB.
+
 ### efsw-agent
 
 `efsw-agent` is part of efsw (`src/agent/efsw-agent.cpp`, protocol in
@@ -456,7 +488,7 @@ URI root = ZipProvider::makeURI( archive );
 URI folder = root.withAppendedSegment( "docs" );
 
 vfs.listAll( folder ).then( ui, []( VFSResult<std::vector<VFSFileInfo>>&& entries ) { ... } );
-vfs.readAll( folder.withAppendedSegment( "README.txt" ) );
+vfs.openStream( folder.withAppendedSegment( "README.txt" ) );
 vfs.copy( folder, URI::fromFSPath( "/home/me/extracted-docs" ) );
 ```
 

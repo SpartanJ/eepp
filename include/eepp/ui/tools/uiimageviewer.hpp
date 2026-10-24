@@ -2,11 +2,16 @@
 #define EE_UI_TOOLS_UIIMAGEVIEWER_HPP
 
 #include <atomic>
+#include <memory>
 
 #include <eepp/ui/uiwidget.hpp>
 
 namespace EE::Graphics {
 class Texture;
+}
+
+namespace EE::System {
+class IOStream;
 }
 
 namespace EE::UI {
@@ -40,8 +45,22 @@ class EE_API UIImageViewer : public UIWidget {
 
 	virtual bool isType( const Uint32& type ) const override;
 
+	/** Loads the latest request, emitting OnResourceLoaded or OnResourceLoadFailed. reset()
+	 * invalidates pending results without waiting for decoding to finish. */
 	void loadImageAsync( std::string_view pathOrContents, bool isContents = false,
 						 bool loadGallery = true );
+
+	/** Takes ownership of an encoded image buffer without copying it into the worker. */
+	void loadImageAsync( std::string&& pathOrContents, bool isContents = false,
+						 bool loadGallery = true );
+
+	void loadImageAsync( const char* pathOrContents, bool isContents = false,
+						 bool loadGallery = true ) {
+		loadImageAsync( std::string_view( pathOrContents ), isContents, loadGallery );
+	}
+
+	/** Owns stream until worker decoding finishes. Reads and seeks run on the scene's pool. */
+	void loadImageAsync( std::unique_ptr<System::IOStream> stream );
 
 	UILoader* getLoader() const { return mLoader; }
 
@@ -107,6 +126,7 @@ class EE_API UIImageViewer : public UIWidget {
 	std::string mGalleryPath;
 	std::vector<std::string> mGalleryFiles;
 	Int64 mGalleryImageIndex{ 0 };
+	std::atomic<Uint64> mLoadGeneration{ 0 };
 	std::atomic<int> mLoading{ 0 };
 	bool mMouseMiddlePressing{ false };
 	std::atomic<bool> mGalleryLoaderShouldAbort{ false };
@@ -122,6 +142,9 @@ class EE_API UIImageViewer : public UIWidget {
 	bool mUseNativeImageSize{ false };
 
 	UIImageViewer();
+
+	void loadImage( std::string path, bool isContents, bool loadGallery,
+					std::unique_ptr<System::IOStream> stream );
 
 	virtual void onSizeChange() override;
 

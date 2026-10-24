@@ -6,6 +6,7 @@
 #include "mime.hpp"
 #include "panemanager.hpp"
 #include "placescontroller.hpp"
+#include "previewpanel.hpp"
 #include "settingsactions.hpp"
 #include "terminalpanel.hpp"
 #include <eepp/system/applications.hpp>
@@ -525,7 +526,9 @@ tableview::cell.dragged {
 	<Splitter id="terminal_splitter" layout_width="match_parent" layout_height="0" layout_weight="1" orientation="vertical" splitter-partition="70%">
 	<Splitter id="main_splitter" layout_width="match_parent" layout_height="match_parent" orientation="horizontal" splitter-partition="185dp">
 		<ScrollView id="places_scroll" layout_width="0" layout_height="match_parent" min-width="120dp" />
-		<Splitter id="pane_splitter" layout_width="0" layout_height="match_parent" orientation="horizontal" splitter-partition="50%" />
+		<Splitter id="preview_splitter" layout_width="0" layout_height="match_parent" orientation="horizontal" splitter-partition="72%">
+			<Splitter id="pane_splitter" layout_width="0" layout_height="match_parent" orientation="horizontal" splitter-partition="50%" />
+		</Splitter>
 	</Splitter>
 	</Splitter>
 	<widget id="parking" layout_width="0" layout_height="0" visible="false" enabled="false" />
@@ -583,6 +586,7 @@ int App::run( int argc, char* argv[] ) {
 	// Producers stop before the executor they deliver to goes away: continuations hold it by
 	// reference. Running transfers are cancelled (destroying the VFS waits for them).
 	mFileOperations->cancelOperations();
+	mPreviewPanel->cancel();
 	mPaneManager->clearTabs();
 #ifdef EE_VFS_SFTP
 	if ( mSSHPrompts )
@@ -607,6 +611,7 @@ int App::run( int argc, char* argv[] ) {
 	mPlacesController.reset();
 	mSettingsActions.reset();
 	mTerminalPanel.reset();
+	mPreviewPanel.reset();
 	mFileOperations.reset();
 	mPaneManager.reset();
 	mExecutor.reset();
@@ -700,6 +705,10 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	mPaneSplitter = mUI->find<UISplitter>( "pane_splitter" );
 	mPlacesScroll = mUI->find<UIWidget>( "places_scroll" );
 	mParking = mUI->find<UIWidget>( "parking" );
+	mPreviewPanel =
+		std::make_unique<PreviewPanel>( *this, mUI->find<UISplitter>( "preview_splitter" ) );
+	if ( mState.contains( "preview_partition" ) && mState["preview_partition"].is_string() )
+		mPreviewPanel->setPartition( mState["preview_partition"].get<std::string>() );
 
 	mPlacesController = std::make_unique<PlacesController>( *this, mConfigDir + "places.json" );
 	mPlacesController->createPanel( mPlacesScroll );
@@ -840,6 +849,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	} );
 
 	mPaneManager->restoreTabs( mState, locations, forceSplit );
+	mPreviewPanel->show( mState.value( "preview_visible", false ) );
 	setPlacesVisible( mPlacesVisible );
 	setFilterBarVisible( mFilterBarVisible );
 	mPlacesController->refreshDeviceUsage();
@@ -879,6 +889,9 @@ void App::saveState() {
 	}
 	mTerminalPanel->rememberSize();
 	state["terminal_partition"] = mTerminalPanel->partition();
+	mPreviewPanel->rememberSize();
+	state["preview_visible"] = mPreviewPanel->isVisible();
+	state["preview_partition"] = mPreviewPanel->partition();
 	state["split"] = mSplit;
 	state["places_visible"] = mPlacesVisible;
 	state["filter_bar"] = mFilterBarVisible;
@@ -976,7 +989,6 @@ void App::layoutLocationBars() {
 	mToolbar->runOnMainThread( [this] {
 		pending = false;
 		Float gap = PixelDensity::dpToPx( 6 );
-		Float minWidth = PixelDensity::dpToPx( 120 );
 		UIWidget* left = mPaneManager->pane( 0 ).location.box;
 		UIWidget* right = mPaneManager->pane( 1 ).location.box;
 		Float leftX = left->getScreenPos().x;
@@ -984,14 +996,15 @@ void App::layoutLocationBars() {
 						 ? mMenuButton->getScreenPos().x
 						 : mToolbar->getScreenPos().x + mToolbar->getPixelsSize().getWidth() -
 							   mToolbar->getPixelsPadding().Right;
+		endX = std::min( endX, mPaneSplitter->getScreenPos().x + mPaneSplitter->getPixelsSize().x );
 		Float leftWidth;
 		if ( mSplit ) {
 			Float rightPaneX = mPaneManager->pane( 1 ).root->getScreenPos().x;
-			leftWidth = std::max( minWidth, rightPaneX - leftX - gap );
-			right->setPixelsSize( std::max( minWidth, endX - gap - rightPaneX ),
+			leftWidth = std::max( 0.f, rightPaneX - leftX - gap );
+			right->setPixelsSize( std::max( 0.f, endX - gap - rightPaneX ),
 								  right->getPixelsSize().getHeight() );
 		} else {
-			leftWidth = std::max( minWidth, endX - gap - leftX );
+			leftWidth = std::max( 0.f, endX - gap - leftX );
 		}
 		left->setLayoutWidthPolicy( SizePolicy::Fixed );
 		right->setLayoutWidthPolicy( SizePolicy::Fixed );
@@ -1044,12 +1057,18 @@ void App::showAppMenu() {
 		->addCheckBox( mUI->i18n( "eefm_panel_terminal", "Terminal" ), mTerminalPanel->isVisible(),
 					   getKeybind( "toggle-terminal" ) )
 		->setId( "terminal" );
+	panels
+		->addCheckBox( mUI->i18n( "eefm_quick_preview", "Quick Preview" ),
+					   mPreviewPanel->isVisible(), getKeybind( "toggle-preview" ) )
+		->setId( "preview" );
 	panels->on( Event::OnItemClicked, [this]( const Event* event ) {
 		std::string id( event->getNode()->getId() );
 		if ( id == "places" )
 			setPlacesVisible( !mPlacesVisible );
 		else if ( id == "terminal" )
 			mTerminalPanel->toggle();
+		else if ( id == "preview" )
+			mPreviewPanel->show( !mPreviewPanel->isVisible() );
 	} );
 	menu->addSubMenu( mUI->i18n( "eefm_show_panels", "Show Panels" ), menuIcon( "places-panel" ),
 					  panels );
@@ -1146,6 +1165,7 @@ void App::createMenuBar() {
 	add( view, mUI->i18n( "eefm_split_view", "Split View" ), "toggle-split" );
 	add( view, mUI->i18n( "eefm_panel_places", "Places" ), "toggle-places" );
 	add( view, mUI->i18n( "eefm_panel_terminal", "Terminal" ), "toggle-terminal" );
+	add( view, mUI->i18n( "eefm_quick_preview", "Quick Preview" ), "toggle-preview" );
 	add( view, mUI->i18n( "eefm_show_filter_bar", "Show Filter Bar" ), "toggle-filter" );
 	view->addSeparator();
 	add( view, mUI->i18n( "eefm_configure", "Configure eefm..." ), "settings" )
@@ -1180,7 +1200,8 @@ void App::registerShortcuts() {
 	auto fileCommand = [this]( std::function<void()> fn ) {
 		return [this, fn = std::move( fn )] {
 			Node* focus = mUI->getEventDispatcher()->getFocusNode();
-			if ( !focus || !focus->isType( UI_TYPE_TEXTINPUT ) )
+			if ( !focus ||
+				 ( !focus->isType( UI_TYPE_TEXTINPUT ) && !focus->isType( UI_TYPE_CODEEDITOR ) ) )
 				fn();
 		};
 	};
@@ -1263,6 +1284,8 @@ void App::registerShortcuts() {
 	mUI->setKeyBindingCommand(
 		"terminal", onTab( [this]( FileTab* tab ) { mFileOperations->openTerminalHere( tab ); } ) );
 	mUI->setKeyBindingCommand( "toggle-terminal", [this] { mTerminalPanel->toggle(); } );
+	mUI->setKeyBindingCommand( "toggle-preview",
+							   [this] { mPreviewPanel->show( !mPreviewPanel->isVisible() ); } );
 	mUI->setKeyBindingCommand( "settings", [this] { mSettingsActions->showSettings(); } );
 	mUI->setKeyBindingCommand( "quit", [this] { quit(); } );
 	mUI->setKeyBindingCommand( "debug-widget-tree-view",
@@ -1297,6 +1320,7 @@ void App::registerShortcuts() {
 		{ "alt+return", "properties" },
 		{ "shift+f4", "terminal" },
 		{ "f4", "toggle-terminal" },
+		{ "f11", "toggle-preview" },
 		{ "mod+shift+,", "settings" },
 		{ "mod+q", "quit" },
 		{ "mod+shift+f11", "debug-widget-tree-view" },

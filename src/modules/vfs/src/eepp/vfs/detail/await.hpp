@@ -7,8 +7,8 @@ namespace EE { namespace VFS { namespace detail {
 
 /** Blocks on a VFS task and returns its result, mapping abandonment to an error.
  *
- * Only for VFS orchestration jobs, which run on the dedicated orchestration pool. Never call it on
- * the UI thread or on a thread that the awaited provider needs to make progress.
+ * For VFS orchestration jobs and synchronous IOStreamVFS calls on independent workers. Never call
+ * it on the UI thread or on a thread that the awaited provider needs to make progress.
  */
 template <typename T> VFSResult<T> await( VFSTask<T>&& task ) {
 	auto value = std::move( task ).get();

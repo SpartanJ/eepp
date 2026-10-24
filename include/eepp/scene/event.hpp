@@ -142,6 +142,7 @@ class EE_API Event {
 		OnAllowEditingChange,
 		OnFocusedDateChange,
 		OnDirectionChange,
+		OnResourceLoadFailed,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

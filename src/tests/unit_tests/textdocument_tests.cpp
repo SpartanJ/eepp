@@ -2,12 +2,68 @@
 #include <algorithm>
 #include <atomic>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <thread>
 
 using namespace EE::UI::Doc;
 using namespace EE::System;
+
+UTEST( TextDocument, ShortMemoryBuffersAreNotCompleteByteOrderMarks ) {
+	for ( const auto& bytes :
+		  { std::vector<EE::Uint8>{ 0xef }, std::vector<EE::Uint8>{ 0xef, 0xbb },
+			std::vector<EE::Uint8>{ 0xff }, std::vector<EE::Uint8>{ 0xfe } } ) {
+		TextDocument document( false );
+		EXPECT_EQ( document.loadFromMemory( bytes.data(), bytes.size() ),
+				   TextDocument::LoadStatus::Loaded );
+		EXPECT_FALSE( document.isBOM() );
+	}
+}
+
+UTEST( TextDocument, BinaryStreamProbePreservesThePositionAndHandlesTextBOMs ) {
+	IOStreamString stream;
+	stream.write( "hello world\n" );
+	EXPECT_EQ( 12, stream.tell() );
+	stream.seek( 3 );
+	EXPECT_FALSE( TextDocument::fileMightBeBinary( stream, "file.txt" ) );
+	EXPECT_EQ( 3, stream.tell() );
+	stream.seek( 0 );
+	TextDocument document( false );
+	EXPECT_TRUE( document.loadFromStream( stream ) == TextDocument::LoadStatus::Loaded );
+	EXPECT_TRUE( document.getText().toUtf8() == "hello world\n" );
+
+	stream.clear();
+	const char utf16[] = { (char)0xff, (char)0xfe, 'h', 0, 'i', 0 };
+	stream.write( utf16, sizeof( utf16 ) );
+	stream.seek( 1 );
+	EXPECT_FALSE( TextDocument::fileMightBeBinary( stream ) );
+	EXPECT_EQ( 1, stream.tell() );
+	stream.clear();
+	const char binary[] = { 0, 0, 0, 0, 1 };
+	stream.write( binary, sizeof( binary ) );
+	stream.seek( 2 );
+	EXPECT_TRUE( TextDocument::fileMightBeBinary( stream ) );
+	EXPECT_EQ( 2, stream.tell() );
+}
+
+UTEST( TextDocument, StreamReadFailuresDoNotLoadOrOverrunTheBinaryProbe ) {
+	class FailingStream : public IOStreamString {
+	  public:
+		EE::ios_size result = -1;
+
+		EE::ios_size read( char*, EE::ios_size ) { return result; }
+	} stream;
+	stream.write( "contents" );
+	stream.seek( 3 );
+	EXPECT_FALSE( TextDocument::fileMightBeBinary( stream ) );
+	EXPECT_EQ( 3, stream.tell() );
+	stream.seek( 0 );
+	TextDocument document( false );
+	EXPECT_TRUE( document.loadFromStream( stream ) == TextDocument::LoadStatus::Failed );
+	stream.result = 0; // An early EOF is still a failure when the advertised size is nonzero.
+	EXPECT_TRUE( document.loadFromStream( stream ) == TextDocument::LoadStatus::Failed );
+}
 
 UTEST( TextDocument, BuiltinCommandsRemainAvailableWithoutPerDocumentClosures ) {
 	TextDocument doc;

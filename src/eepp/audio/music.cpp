@@ -76,6 +76,14 @@ bool Music::openFromStream( IOStream& stream ) {
 	return true;
 }
 
+bool Music::openFromStream( std::unique_ptr<IOStream> stream ) {
+	stop();
+	if ( !mFile.openFromStream( std::move( stream ) ) )
+		return false;
+	initialize();
+	return true;
+}
+
 bool Music::openFromPack( Pack* pack, const std::string& filePackPath ) {
 	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, mData ) )
 		return openFromMemory( reinterpret_cast<const char*>( mData.get() ), mData.length() );

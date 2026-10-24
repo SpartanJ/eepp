@@ -54,6 +54,10 @@ class EE_API TextDocument {
 
 	static bool fileMightBeBinary( const std::string& file );
 
+	/** Checks the initial bytes without changing the stream position. fileName is an optional
+	 * syntax/extension hint. Reading may block; callers should use a loader worker. */
+	static bool fileMightBeBinary( IOStream& stream, const std::string& fileName = {} );
+
 	enum class UndoRedo { Undo, Redo };
 
 	enum class IndentType { IndentSpaces, IndentTabs };
@@ -100,11 +104,11 @@ class EE_API TextDocument {
 		enum Type { Core, Auxiliary };
 
 		virtual ~Client();
-		virtual void onDocumentLoaded( TextDocument* ) {};
+		virtual void onDocumentLoaded( TextDocument* ){};
 		virtual void onDocumentTextChanged( const DocumentContentChange& ) = 0;
 		virtual void onDocumentUndoRedo( const UndoRedo& eventType ) = 0;
 		virtual void onDocumentCursorChange( const TextPosition& ) = 0;
-		virtual void onDocumentInterestingCursorChange( const TextPosition& ) {};
+		virtual void onDocumentInterestingCursorChange( const TextPosition& ){};
 		virtual void onDocumentSelectionChange( const TextRange& ) = 0;
 		virtual void onDocumentLineCountChange( const size_t& lastCount,
 												const size_t& newCount ) = 0;

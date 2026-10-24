@@ -40,7 +40,7 @@ ios_size IOStreamString::seek( ios_size position ) {
 }
 
 ios_size IOStreamString::tell() {
-	return getSize();
+	return mPos;
 }
 
 ios_size IOStreamString::getSize() {
