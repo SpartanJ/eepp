@@ -1,4 +1,3 @@
-#include "../../thirdparty/libwebp/src/webp/decode.h"
 #include "exif_test_utils.hpp"
 #include "utest.hpp"
 #include <atomic>
@@ -351,6 +350,7 @@ UTEST( Image, WebPSaveHonorsLosslessAndPreservesTransparentPixels ) {
 	Image image( 17, 11, 4, Color::Transparent, false );
 	for ( size_t i = 0; i < image.getMemSize(); ++i )
 		image.getPixels()[i] = Uint8( i * 37 );
+	image.getPixels()[3] = 0;
 	for ( bool lossless : { false, true } ) {
 		Image::FormatConfiguration options;
 		options.webpSaveLossless( lossless );
@@ -359,20 +359,14 @@ UTEST( Image, WebPSaveHonorsLosslessAndPreservesTransparentPixels ) {
 		image.setImageFormatConfiguration( options );
 		const auto path = files.dir + "settings.webp";
 		ASSERT_TRUE( image.saveToFile( path, Image::SaveType::WEBP ) );
-		std::string bytes;
-		ASSERT_TRUE( FileSystem::fileGet( path, bytes ) );
-		WebPBitstreamFeatures features;
-		ASSERT_EQ( WebPGetFeatures( reinterpret_cast<const Uint8*>( bytes.data() ), bytes.size(),
-									&features ),
-				   VP8_STATUS_OK );
-		EXPECT_EQ( features.format, lossless ? 2 : 1 );
-		if ( lossless ) {
-			Image decoded( path, 4 );
-			ASSERT_EQ( decoded.getMemSize(), image.getMemSize() );
-			EXPECT_EQ(
-				std::memcmp( decoded.getPixelsPtr(), image.getPixelsPtr(), image.getMemSize() ),
-				0 );
-		}
+		Image decoded( path, 4 );
+		ASSERT_TRUE( decoded.getPixelsPtr() );
+		ASSERT_EQ( decoded.getMemSize(), image.getMemSize() );
+		const bool exact =
+			std::memcmp( decoded.getPixelsPtr(), image.getPixelsPtr(), image.getMemSize() ) == 0;
+		// Lossless preserves every byte, including RGB under transparent pixels. Lossy at
+		// quality zero must change this deliberately varied fixture.
+		EXPECT_TRUE( exact == lossless );
 	}
 }
 
