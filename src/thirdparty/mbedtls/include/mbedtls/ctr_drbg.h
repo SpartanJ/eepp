@@ -32,12 +32,27 @@
 
 #include "mbedtls/build_info.h"
 
-/* In case AES_C is defined then it is the primary option for backward
- * compatibility purposes. If that's not available, PSA is used instead */
-#if defined(MBEDTLS_AES_C)
-#include "mbedtls/aes.h"
-#else
+/* The CTR_DRBG implementation can either directly call the low-level AES
+ * module (gated by MBEDTLS_AES_C) or call the PSA API to perform AES
+ * operations. Calling the AES module directly is the default, both for
+ * maximum backward compatibility and because it's a bit more efficient
+ * (less glue code).
+ *
+ * When MBEDTLS_AES_C is disabled, the CTR_DRBG module calls PSA crypto and
+ * thus benefits from the PSA AES accelerator driver.
+ * It is technically possible to enable MBEDTLS_CTR_DRBG_USE_PSA_CRYPTO
+ * to use PSA even when MBEDTLS_AES_C is enabled, but there is very little
+ * reason to do so other than testing purposes and this is not officially
+ * supported.
+ */
+#if !defined(MBEDTLS_AES_C)
+#define MBEDTLS_CTR_DRBG_USE_PSA_CRYPTO
+#endif
+
+#if defined(MBEDTLS_CTR_DRBG_USE_PSA_CRYPTO)
 #include "psa/crypto.h"
+#else
+#include "mbedtls/aes.h"
 #endif
 
 #include "entropy.h"
@@ -157,7 +172,7 @@ extern "C" {
 #define MBEDTLS_CTR_DRBG_ENTROPY_NONCE_LEN (MBEDTLS_CTR_DRBG_ENTROPY_LEN + 1) / 2
 #endif
 
-#if !defined(MBEDTLS_AES_C)
+#if defined(MBEDTLS_CTR_DRBG_USE_PSA_CRYPTO)
 typedef struct mbedtls_ctr_drbg_psa_context {
     mbedtls_svc_key_id_t key_id;
     psa_cipher_operation_t operation;
@@ -171,8 +186,7 @@ typedef struct mbedtls_ctr_drbg_context {
     unsigned char MBEDTLS_PRIVATE(counter)[16];  /*!< The counter (V). */
     int MBEDTLS_PRIVATE(reseed_counter);         /*!< The reseed counter.
                                                   * This is the number of requests that have
-                                                  * been made since the last (re)seeding,
-                                                  * minus one.
+                                                  * been made since the last (re)seeding.
                                                   * Before the initial seeding, this field
                                                   * contains the amount of entropy in bytes
                                                   * to use as a nonce for the initial seeding,
@@ -189,10 +203,10 @@ typedef struct mbedtls_ctr_drbg_context {
                                                   * This is the maximum number of requests
                                                   * that can be made between reseedings. */
 
-#if defined(MBEDTLS_AES_C)
-    mbedtls_aes_context MBEDTLS_PRIVATE(aes_ctx);        /*!< The AES context. */
-#else
+#if defined(MBEDTLS_CTR_DRBG_USE_PSA_CRYPTO)
     mbedtls_ctr_drbg_psa_context MBEDTLS_PRIVATE(psa_ctx); /*!< The PSA context. */
+#else
+    mbedtls_aes_context MBEDTLS_PRIVATE(aes_ctx);        /*!< The AES context. */
 #endif
 
     /*

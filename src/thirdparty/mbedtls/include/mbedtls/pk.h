@@ -218,8 +218,11 @@ typedef struct mbedtls_pk_info_t mbedtls_pk_info_t;
  * \brief           Public key container
  */
 typedef struct mbedtls_pk_context {
-    const mbedtls_pk_info_t *MBEDTLS_PRIVATE(pk_info);    /**< Public key information         */
-    void *MBEDTLS_PRIVATE(pk_ctx);                        /**< Underlying public key context  */
+    /** Method table */
+    const mbedtls_pk_info_t *MBEDTLS_PRIVATE(pk_info);
+    /** Underlying type-specific key context */
+    void *MBEDTLS_PRIVATE(pk_ctx);
+
     /* The following field is used to store the ID of a private key in the
      * following cases:
      * - opaque key when MBEDTLS_USE_PSA_CRYPTO is defined
@@ -285,7 +288,7 @@ typedef int (*mbedtls_pk_rsa_alt_decrypt_func)(void *ctx, size_t *olen,
                                                const unsigned char *input, unsigned char *output,
                                                size_t output_max_len);
 typedef int (*mbedtls_pk_rsa_alt_sign_func)(void *ctx,
-                                            int (*f_rng)(void *, unsigned char *, size_t),
+                                            mbedtls_f_rng_t *f_rng,
                                             void *p_rng,
                                             mbedtls_md_type_t md_alg, unsigned int hashlen,
                                             const unsigned char *hash, unsigned char *sig);
@@ -359,32 +362,40 @@ int mbedtls_pk_setup(mbedtls_pk_context *ctx, const mbedtls_pk_info_t *info);
 
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
 /**
- * \brief           Initialize a PK context to wrap a PSA key.
+ * \brief Initialize a PK context to wrap a PSA key.
  *
- * \note            This function replaces mbedtls_pk_setup() for contexts
- *                  that wrap a (possibly opaque) PSA key instead of
- *                  storing and manipulating the key material directly.
+ * This function creates a PK context which wraps a PSA key. The PSA wrapped
+ * key must be an EC or RSA key pair (DH is not suported in the PK module).
  *
- * \param ctx       The context to initialize. It must be empty (type NONE).
- * \param key       The PSA key to wrap, which must hold an ECC or RSA key
- *                  pair (see notes below).
+ * Under the hood PSA functions will be used to perform the required
+ * operations and, based on the key type, used algorithms will be:
+ * * EC:
+ *     * verify, verify_ext, sign, sign_ext: ECDSA.
+ * * RSA:
+ *     * sign, decrypt: use the primary algorithm in the wrapped PSA key;
+ *     * sign_ext: RSA PSS if the pk_type is #MBEDTLS_PK_RSASSA_PSS, otherwise
+ *       it falls back to the sign() case;
+ *     * verify, verify_ext, encrypt: not supported.
  *
- * \note            The wrapped key must remain valid as long as the
- *                  wrapping PK context is in use, that is at least between
- *                  the point this function is called and the point
- *                  mbedtls_pk_free() is called on this context. The wrapped
- *                  key might then be independently used or destroyed.
+ * In order for the above operations to succeed, the policy of the wrapped PSA
+ * key must allow the specified algorithm.
  *
- * \note            This function is currently only available for ECC or RSA
- *                  key pairs (that is, keys containing private key material).
- *                  Support for other key types may be added later.
+ * Opaque PK contexts wrapping an EC keys also support \c mbedtls_pk_check_pair(),
+ * whereas RSA ones do not.
  *
- * \return          \c 0 on success.
- * \return          #MBEDTLS_ERR_PK_BAD_INPUT_DATA on invalid input
- *                  (context already used, invalid key identifier).
- * \return          #MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE if the key is not an
- *                  ECC key pair.
- * \return          #MBEDTLS_ERR_PK_ALLOC_FAILED on allocation failure.
+ * \warning The PSA wrapped key must remain valid as long as the wrapping PK
+ *          context is in use, that is at least between the point this function
+ *          is called and the point mbedtls_pk_free() is called on this context.
+ *
+ * \param ctx The context to initialize. It must be empty (type NONE).
+ * \param key The PSA key to wrap, which must hold an ECC or RSA key pair.
+ *
+ * \return    \c 0 on success.
+ * \return    #MBEDTLS_ERR_PK_BAD_INPUT_DATA on invalid input (context already
+ *            used, invalid key identifier).
+ * \return    #MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE if the key is not an ECC or
+ *            RSA key pair.
+ * \return    #MBEDTLS_ERR_PK_ALLOC_FAILED on allocation failure.
  */
 int mbedtls_pk_setup_opaque(mbedtls_pk_context *ctx,
                             const mbedtls_svc_key_id_t key);
@@ -830,7 +841,7 @@ int mbedtls_pk_verify_ext(mbedtls_pk_type_t type, const void *options,
  *                  length up to the hash length), depending on the padding mode
  *                  in the underlying RSA context. For a pk object constructed
  *                  by parsing, this is PKCS#1 v1.5 by default. Use
- *                  mbedtls_pk_verify_ext() to explicitly select a different
+ *                  mbedtls_pk_sign_ext() to explicitly select a different
  *                  algorithm.
  *
  * \return          0 on success, or a specific error code.
@@ -841,7 +852,7 @@ int mbedtls_pk_verify_ext(mbedtls_pk_type_t type, const void *options,
 int mbedtls_pk_sign(mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
                     const unsigned char *hash, size_t hash_len,
                     unsigned char *sig, size_t sig_size, size_t *sig_len,
-                    int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+                    mbedtls_f_rng_t *f_rng, void *p_rng);
 
 /**
  * \brief           Make signature given a signature type.
@@ -877,7 +888,7 @@ int mbedtls_pk_sign_ext(mbedtls_pk_type_t pk_type,
                         mbedtls_md_type_t md_alg,
                         const unsigned char *hash, size_t hash_len,
                         unsigned char *sig, size_t sig_size, size_t *sig_len,
-                        int (*f_rng)(void *, unsigned char *, size_t),
+                        mbedtls_f_rng_t *f_rng,
                         void *p_rng);
 
 /**
@@ -913,11 +924,20 @@ int mbedtls_pk_sign_restartable(mbedtls_pk_context *ctx,
                                 mbedtls_md_type_t md_alg,
                                 const unsigned char *hash, size_t hash_len,
                                 unsigned char *sig, size_t sig_size, size_t *sig_len,
-                                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
+                                mbedtls_f_rng_t *f_rng, void *p_rng,
                                 mbedtls_pk_restart_ctx *rs_ctx);
 
 /**
  * \brief           Decrypt message (including padding if relevant).
+ *
+ * \warning         When using PKCS#1 v1.5 (see note below), this is an
+ *                  inherently dangerous function (CWE-242) and the return value
+ *                  is sensitive, see mbedtls_rsa_rsaes_pkcs1_v15_decrypt().
+ *
+ * \note            For keys of type #MBEDTLS_PK_RSA, the encryption algorithm is
+ *                  either PKCS#1 v1.5 or OAEP, depending on the padding mode in
+ *                  the underlying RSA context. For a pk object constructed by
+ *                  parsing, this is PKCS#1 v1.5 by default.
  *
  * \param ctx       The PK context to use. It must have been set up
  *                  with a private key.
@@ -929,17 +949,12 @@ int mbedtls_pk_sign_restartable(mbedtls_pk_context *ctx,
  * \param f_rng     RNG function, must not be \c NULL.
  * \param p_rng     RNG parameter
  *
- * \note            For keys of type #MBEDTLS_PK_RSA, the signature algorithm is
- *                  either PKCS#1 v1.5 or OAEP, depending on the padding mode in
- *                  the underlying RSA context. For a pk object constructed by
- *                  parsing, this is PKCS#1 v1.5 by default.
- *
  * \return          0 on success, or a specific error code.
  */
 int mbedtls_pk_decrypt(mbedtls_pk_context *ctx,
                        const unsigned char *input, size_t ilen,
                        unsigned char *output, size_t *olen, size_t osize,
-                       int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+                       mbedtls_f_rng_t *f_rng, void *p_rng);
 
 /**
  * \brief           Encrypt message (including padding if relevant).
@@ -965,7 +980,7 @@ int mbedtls_pk_decrypt(mbedtls_pk_context *ctx,
 int mbedtls_pk_encrypt(mbedtls_pk_context *ctx,
                        const unsigned char *input, size_t ilen,
                        unsigned char *output, size_t *olen, size_t osize,
-                       int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+                       mbedtls_f_rng_t *f_rng, void *p_rng);
 
 /**
  * \brief           Check if a public-private pair of keys matches.
@@ -983,7 +998,7 @@ int mbedtls_pk_encrypt(mbedtls_pk_context *ctx,
  */
 int mbedtls_pk_check_pair(const mbedtls_pk_context *pub,
                           const mbedtls_pk_context *prv,
-                          int (*f_rng)(void *, unsigned char *, size_t),
+                          mbedtls_f_rng_t *f_rng,
                           void *p_rng);
 
 /**
@@ -1101,7 +1116,7 @@ static inline mbedtls_ecp_keypair *mbedtls_pk_ec(const mbedtls_pk_context pk)
 int mbedtls_pk_parse_key(mbedtls_pk_context *ctx,
                          const unsigned char *key, size_t keylen,
                          const unsigned char *pwd, size_t pwdlen,
-                         int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+                         mbedtls_f_rng_t *f_rng, void *p_rng);
 
 /** \ingroup pk_module */
 /**
@@ -1165,7 +1180,7 @@ int mbedtls_pk_parse_public_key(mbedtls_pk_context *ctx,
  */
 int mbedtls_pk_parse_keyfile(mbedtls_pk_context *ctx,
                              const char *path, const char *password,
-                             int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+                             mbedtls_f_rng_t *f_rng, void *p_rng);
 
 /** \ingroup pk_module */
 /**

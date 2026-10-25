@@ -27,6 +27,24 @@
 #define MBEDTLS_HAVE_NEON_INTRINSICS
 #endif
 
+/* Decide whether we're built for a Unix-like platform.
+ */
+#if defined(MBEDTLS_TEST_PLATFORM_IS_NOT_UNIXLIKE) //no-check-names
+/* We may be building on a Unix-like platform, but for test purposes,
+ * do not try to use Unix features. */
+#elif defined(_WIN32)
+/* If Windows platform interfaces are available, we use them, even if
+ * a Unix-like might also to be available. */
+/* defined(_WIN32) ==> we can include <windows.h> */
+#elif defined(unix) || defined(__unix) || defined(__unix__) ||    \
+    (defined(__APPLE__) && defined(__MACH__)) ||                  \
+    defined(__HAIKU__) ||                                         \
+    defined(__midipix__) ||                                       \
+    /* Add other Unix-like platform indicators here ^^^^ */ 0
+/* defined(MBEDTLS_PLATFORM_IS_UNIXLIKE) ==> we can include <unistd.h> */
+#define MBEDTLS_PLATFORM_IS_UNIXLIKE
+#endif
+
 /** Helper to define a function as static except when building invasive tests.
  *
  * If a function is only used inside its own source file and should be
@@ -99,6 +117,13 @@ extern void (*mbedtls_test_hook_test_fail)(const char *test, int line, const cha
  * fall back to the unsafe implementation. */
 #define ARRAY_LENGTH(array) ARRAY_LENGTH_UNSAFE(array)
 #endif
+
+#if defined(__has_builtin)
+#define MBEDTLS_HAS_BUILTIN(x) __has_builtin(x)
+#else
+#define MBEDTLS_HAS_BUILTIN(x) 0
+#endif
+
 /** Allow library to access its structs' private members.
  *
  * Although structs defined in header files are publicly available,
@@ -208,6 +233,11 @@ static inline void mbedtls_xor(unsigned char *r,
         return;
     }
 #endif
+#if defined(MBEDTLS_COMPILER_IS_GCC) && MBEDTLS_HAS_BUILTIN(__builtin_constant_p)
+    if (__builtin_constant_p(n) && n % 16 == 0) {
+        return;
+    }
+#endif
 #elif defined(MBEDTLS_ARCH_IS_X64) || defined(MBEDTLS_ARCH_IS_ARM64)
     /* This codepath probably only makes sense on architectures with 64-bit registers */
     for (; (i + 8) <= n; i += 8) {
@@ -219,6 +249,11 @@ static inline void mbedtls_xor(unsigned char *r,
         return;
     }
 #endif
+#if defined(MBEDTLS_COMPILER_IS_GCC) && MBEDTLS_HAS_BUILTIN(__builtin_constant_p)
+    if (__builtin_constant_p(n) && n % 8 == 0) {
+        return;
+    }
+#endif
 #else
     for (; (i + 4) <= n; i += 4) {
         uint32_t x = mbedtls_get_unaligned_uint32(a + i) ^ mbedtls_get_unaligned_uint32(b + i);
@@ -226,6 +261,11 @@ static inline void mbedtls_xor(unsigned char *r,
     }
 #if defined(__IAR_SYSTEMS_ICC__)
     if (n % 4 == 0) {
+        return;
+    }
+#endif
+#if defined(MBEDTLS_COMPILER_IS_GCC) && MBEDTLS_HAS_BUILTIN(__builtin_constant_p)
+    if (__builtin_constant_p(n) && n % 4 == 0) {
         return;
     }
 #endif
@@ -352,23 +392,19 @@ static inline void mbedtls_xor_no_simd(unsigned char *r,
 #endif
 
 /* Always provide a static assert macro, so it can be used unconditionally.
- * It will expand to nothing on some systems.
- * Can be used outside functions (but don't add a trailing ';' in that case:
- * the semicolon is included here to avoid triggering -Wextra-semi when
- * MBEDTLS_STATIC_ASSERT() expands to nothing).
- * Can't use the C11-style `defined(static_assert)` on FreeBSD, since it
+ * It does nothing on systems where we don't know how to define a static assert.
+ */
+/* Can't use the C11-style `defined(static_assert)` on FreeBSD, since it
  * defines static_assert even with -std=c99, but then complains about it.
  */
 #if defined(static_assert) && !defined(__FreeBSD__)
-#define MBEDTLS_STATIC_ASSERT(expr, msg)    static_assert(expr, msg);
+#define MBEDTLS_STATIC_ASSERT(expr, msg)    static_assert(expr, msg)
 #else
-#define MBEDTLS_STATIC_ASSERT(expr, msg)
-#endif
-
-#if defined(__has_builtin)
-#define MBEDTLS_HAS_BUILTIN(x) __has_builtin(x)
-#else
-#define MBEDTLS_HAS_BUILTIN(x) 0
+/* Make sure `MBEDTLS_STATIC_ASSERT(expr, msg);` is valid both inside and
+ * outside a function. We choose a struct declaration, which can be repeated
+ * any number of times and does not need a matching definition. */
+#define MBEDTLS_STATIC_ASSERT(expr, msg)                                \
+    struct ISO_C_does_not_allow_extra_semicolon_outside_of_a_function
 #endif
 
 /* Define compiler branch hints */
@@ -431,5 +467,21 @@ static inline void mbedtls_xor_no_simd(unsigned char *r,
 #if !defined(MBEDTLS_MAYBE_UNUSED)
 #    define MBEDTLS_MAYBE_UNUSED
 #endif
+
+/* GCC >= 15 has a warning 'unterminated-string-initialization' which complains if you initialize
+ * a string into an array without space for a terminating NULL character. In some places in the
+ * codebase this behaviour is intended, so we add the macro MBEDTLS_ATTRIBUTE_UNTERMINATED_STRING
+ * to suppress the warning in these places.
+ */
+#if defined(__has_attribute)
+#if __has_attribute(nonstring)
+#define MBEDTLS_HAS_ATTRIBUTE_NONSTRING
+#endif /* __has_attribute(nonstring) */
+#endif /* __has_attribute */
+#if defined(MBEDTLS_HAS_ATTRIBUTE_NONSTRING)
+#define MBEDTLS_ATTRIBUTE_UNTERMINATED_STRING __attribute__((nonstring))
+#else
+#define MBEDTLS_ATTRIBUTE_UNTERMINATED_STRING
+#endif /* MBEDTLS_HAS_ATTRIBUTE_NONSTRING */
 
 #endif /* MBEDTLS_LIBRARY_COMMON_H */

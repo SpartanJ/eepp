@@ -34,6 +34,8 @@
 
 #include "mbedtls/platform.h"
 
+#include "psa_util_internal.h"
+
 #if defined(MBEDTLS_ASN1_PARSE_C) && defined(MBEDTLS_CIPHER_C)
 static int pkcs5_parse_pbkdf2_params(const mbedtls_asn1_buf *params,
                                      mbedtls_asn1_buf *salt, int *iterations,

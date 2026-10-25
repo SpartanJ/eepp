@@ -1118,7 +1118,7 @@
  *           MBEDTLS_ECP_DP_SECP256R1_ENABLED
  *
  * \warning If SHA-256 is provided only by a PSA driver, you must call
- * psa_crypto_init() before the first hanshake (even if
+ * psa_crypto_init() before the first handshake (even if
  * MBEDTLS_USE_PSA_CRYPTO is disabled).
  *
  * This enables the following ciphersuites (if other requisites are
@@ -1203,6 +1203,20 @@
  * Do not use built-in platform entropy functions.
  * This is useful if your platform does not support
  * standards like the /dev/urandom or Windows CryptoAPI.
+ *
+ * If you enable this macro, you will probably need to enable
+ * #MBEDTLS_ENTROPY_HARDWARE_ALT and provide a function
+ * mbedtls_hardware_poll().
+ *
+ * \note The default platform entropy function supports the following
+ *       sources:
+ *       - getrandom() on Linux (if syscall() is available at compile time);
+ *       - getrandom() on FreeBSD and DragonFlyBSD (if available at compile
+ *         time);
+ *       - `sysctl(KERN_ARND)` on FreeBSD and NetBSD;
+ *       - #MBEDTLS_PLATFORM_DEV_RANDOM on Unix-like platforms
+ *         (unless one of the above is used);
+ *       - BCryptGenRandom() on Windows.
  *
  * Uncomment this macro to disable the built-in platform entropy functions.
  */
@@ -1415,6 +1429,23 @@
 //#define MBEDTLS_PSA_CRYPTO_SPM
 
 /**
+ * \def MBEDTLS_PSA_KEY_STORE_DYNAMIC
+ *
+ * Dynamically resize the PSA key store to accommodate any number of
+ * volatile keys (until the heap memory is exhausted).
+ *
+ * If this option is disabled, the key store has a fixed size
+ * #MBEDTLS_PSA_KEY_SLOT_COUNT for volatile keys and loaded persistent keys
+ * together.
+ *
+ * This option has no effect when #MBEDTLS_PSA_CRYPTO_C is disabled.
+ *
+ * Module:  library/psa_crypto.c
+ * Requires: MBEDTLS_PSA_CRYPTO_C
+ */
+#define MBEDTLS_PSA_KEY_STORE_DYNAMIC
+
+/**
  * Uncomment to enable p256-m. This is an alternative implementation of
  * key generation, ECDH and (randomized) ECDSA on the curve SECP256R1.
  * Compared to the default implementation:
@@ -1605,6 +1636,46 @@
  */
 //#define MBEDTLS_SSL_ASYNC_PRIVATE
 
+/** \def MBEDTLS_SSL_CLI_ALLOW_WEAK_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME
+ *
+ * In TLS clients, when a client authenticates a server through its
+ * certificate, the client normally checks three things:
+ * - the certificate chain must be valid;
+ * - the chain must start from a trusted CA;
+ * - the certificate must cover the server name that is expected by the client.
+ *
+ * Omitting any of these checks is generally insecure, and can allow a
+ * malicious server to impersonate a legitimate server.
+ *
+ * The third check may be safely skipped in some unusual scenarios,
+ * such as networks where eavesdropping is a risk but not active attacks,
+ * or a private PKI where the client equally trusts all servers that are
+ * accredited by the root CA.
+ *
+ * You should call mbedtls_ssl_set_hostname() with the expected server name
+ * before starting a TLS handshake on a client (unless the client is
+ * set up to only use PSK-based authentication, which does not rely on the
+ * host name). This configuration option controls what happens if a TLS client
+ * is configured with the authentication mode #MBEDTLS_SSL_VERIFY_REQUIRED
+ * (default), certificate authentication is enabled and the client does not
+ * call mbedtls_ssl_set_hostname():
+ *
+ * - If this option is unset (default), the connection attempt is aborted
+ *   with the error #MBEDTLS_ERR_SSL_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME.
+ * - If this option is set, the TLS library does not check the server name
+ *   that the certificate is valid for. This is the historical behavior
+ *   of Mbed TLS, but may be insecure as explained above.
+ *
+ * Enable this option for strict backward compatibility if you have
+ * determined that it is secure in the scenario where you are using
+ * Mbed TLS.
+ *
+ * \deprecated This option exists only for backward compatibility and will
+ *             be removed in the next major version of Mbed TLS.
+ *
+ */
+//#define MBEDTLS_SSL_CLI_ALLOW_WEAK_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME
+
 /**
  * \def MBEDTLS_SSL_CONTEXT_SERIALIZATION
  *
@@ -1707,6 +1778,20 @@
 #define MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
 
 /**
+ * \def MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+ *
+ * When this option is enabled, the client and server can extract additional
+ * shared symmetric keys after an SSL handshake using the function
+ * mbedtls_ssl_export_keying_material().
+ *
+ * The process for deriving the keys is specified in RFC 5705 for TLS 1.2 and
+ * in RFC 8446, Section 7.5, for TLS 1.3.
+ *
+ * Comment this macro to disable mbedtls_ssl_export_keying_material().
+ */
+#define MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+
+/**
  * \def MBEDTLS_SSL_RENEGOTIATION
  *
  * Enable support for TLS renegotiation.
@@ -1781,13 +1866,19 @@
  * Requires: MBEDTLS_PSA_CRYPTO_C
  *
  * \note TLS 1.3 uses PSA crypto for cryptographic operations that are
- *       directly performed by TLS 1.3 code. As a consequence, you must
- *       call psa_crypto_init() before the first TLS 1.3 handshake.
+ *       directly performed by TLS 1.3 code. As a consequence, when TLS 1.3
+ *       is enabled, a TLS handshake may call psa_crypto_init(), even
+ *       if it ends up negotiating a different TLS version.
  *
  * \note Cryptographic operations performed indirectly via another module
  *       (X.509, PK) or by code shared with TLS 1.2 (record protection,
  *       running handshake hash) only use PSA crypto if
  *       #MBEDTLS_USE_PSA_CRYPTO is enabled.
+ *
+ * \note In multithreaded applications, you must also enable
+ *       #MBEDTLS_THREADING_C, even if individual TLS contexts are not
+ *       shared between threads, unless only one thread ever calls
+ *       TLS functions.
  *
  * Uncomment this macro to enable the support for TLS 1.3.
  */
@@ -2073,7 +2164,19 @@
 /**
  * \def MBEDTLS_THREADING_ALT
  *
- * Provide your own alternate threading implementation.
+ * Provide your own alternate implementation of threading primitives
+ * for mutexes. If you enable this option:
+ *
+ * - Provide a header file `"threading_alt.h"`, defining the
+ *   type `mbedtls_threading_mutex_t` of mutex objects.
+ *
+ * - Call the function mbedtls_threading_set_alt() in your application
+ *   before calling any other library function (in particular before
+ *   calling psa_crypto_init(), performing an asymmetric cryptography
+ *   operation, or starting a TLS connection).
+ *
+ * See mbedtls/threading.h for more details, especially the documentation
+ * of mbedtls_threading_set_alt().
  *
  * Requires: MBEDTLS_THREADING_C
  *
@@ -2106,6 +2209,10 @@
  * \warning If you enable this option, you need to call `psa_crypto_init()`
  * before calling any function from the SSL/TLS, X.509 or PK modules, except
  * for the various mbedtls_xxx_init() functions which can be called at any time.
+ *
+ * \warning In multithreaded applications, you must also enable
+ * #MBEDTLS_THREADING_C, unless only one thread ever calls PSA functions
+ * (`psa_xxx()`), including indirect calls through SSL/TLS, X.509 or PK.
  *
  * \note An important and desirable effect of this option is that it allows
  * PK, X.509 and TLS to take advantage of PSA drivers. For example, enabling
@@ -2625,7 +2732,7 @@
  * The CTR_DRBG generator uses AES-256 by default.
  * To use AES-128 instead, enable \c MBEDTLS_CTR_DRBG_USE_128_BIT_KEY above.
  *
- * AES support can either be achived through builtin (MBEDTLS_AES_C) or PSA.
+ * AES support can either be achieved through builtin (MBEDTLS_AES_C) or PSA.
  * Builtin is the default option when MBEDTLS_AES_C is defined otherwise PSA
  * is used.
  *
@@ -3142,6 +3249,15 @@
 #define MBEDTLS_PKCS7_C
 
 /**
+ * \def MBEDTLS_PKCS7_ALLOW_WEAK_SIGNATURES
+ *
+ * Allow weak signature algorithms (RIPEMD160, MD5, SHA-1) in PKCS#7.
+ *
+ * Requires: MBEDTLS_PKCS7_C
+ */
+// #define MBEDTLS_PKCS7_ALLOW_WEAK_SIGNATURES
+
+/**
  * \def MBEDTLS_PKCS12_C
  *
  * Enable PKCS#12 PBE functions.
@@ -3193,7 +3309,18 @@
 /**
  * \def MBEDTLS_PSA_CRYPTO_C
  *
- * Enable the Platform Security Architecture cryptography API.
+ * Enable the Platform Security Architecture (PSA) cryptography API.
+ *
+ * \note In multithreaded applications, you must enable #MBEDTLS_THREADING_C,
+ *       unless only one thread ever calls `psa_xxx()` functions.
+ *       That includes indirect calls, such as:
+ *       - performing a TLS handshake if support for TLS 1.3 is enabled;
+ *       - using a TLS 1.3 connection;
+ *       - indirect calls from PK, X.509 or SSL functions when
+ *         #MBEDTLS_USE_PSA_CRYPTO is enabled;
+ *       - indirect calls to calculate a hash when #MBEDTLS_MD_C is disabled;
+ *       - any other call to a function that requires calling psa_crypto_init()
+ *         beforehand.
  *
  * Module:  library/psa_crypto.c
  *
@@ -3249,6 +3376,26 @@
  * Requires: MBEDTLS_FS_IO
  */
 #define MBEDTLS_PSA_ITS_FILE_C
+
+/**
+ * \def MBEDTLS_PSA_STATIC_KEY_SLOTS
+ *
+ * Statically preallocate memory to store keys' material in PSA instead
+ * of allocating it dynamically when required. This allows builds without a
+ * heap, if none of the enabled cryptographic implementations or other features
+ * require it.
+ * This feature affects both volatile and persistent keys which means that
+ * it's not possible to persistently store a key which is larger than
+ * #MBEDTLS_PSA_STATIC_KEY_SLOT_BUFFER_SIZE.
+ *
+ * \note This feature comes with a (potentially) higher RAM usage since:
+ *       - All the key slots are allocated no matter if they are used or not.
+ *       - Each key buffer's length is #MBEDTLS_PSA_STATIC_KEY_SLOT_BUFFER_SIZE bytes.
+ *
+ * Requires: MBEDTLS_PSA_CRYPTO_C
+ *
+ */
+//#define MBEDTLS_PSA_STATIC_KEY_SLOTS
 
 /**
  * \def MBEDTLS_RIPEMD160_C
@@ -3593,10 +3740,38 @@
  * \def MBEDTLS_THREADING_C
  *
  * Enable the threading abstraction layer.
- * By default Mbed TLS assumes it is used in a non-threaded environment or that
- * contexts are not shared between threads. If you do intend to use contexts
+ *
+ * Traditionally, Mbed TLS assumes it is used in a non-threaded environment or
+ * that contexts are not shared between threads. If you do intend to use contexts
  * between threads, you will need to enable this layer to prevent race
- * conditions. See also our Knowledge Base article about threading:
+ * conditions.
+ *
+ * The PSA subsystem has an implicit shared context. Therefore, you must
+ * enable this option if more than one thread may use any part of
+ * Mbed TLS that is implemented on top of the PSA subsystem.
+ *
+ * You must enable this option in multithreaded applications where more than
+ * one thread performs any of the following operations:
+ *
+ * - Any call to a PSA function (`psa_xxx()`).
+ * - Any call to a TLS, X.509 or PK function (`mbedtls_ssl_xxx()`,
+ *   `mbedtls_x509_xxx()`, `mbedtls_pkcs7_xxx()`, `mbedtls_pk_xxx()`)
+ *   if `MBEDTLS_USE_PSA_CRYPTO` is enabled (regardless of whether individual
+ *   TLS, X.509 or PK contexts are shared between threads).
+ * - A TLS 1.3 connection, regardless of the compile-time configuration.
+ * - Any library feature that calculates a hash, if `MBEDTLS_MD_C` is disabled.
+ *   As an exception, algorithm-specific low-level modules do not require
+ *   threading protection unless the contexts are shared between threads.
+ * - Any library feature that performs symmetric encryption or decryption,
+ *   if `MBEDTLS_CIPHER_C` is disabled.
+ *   As an exception, algorithm-specific low-level modules do not require
+ *   threading protection unless the contexts are shared between threads.
+ * - Any use of a cryptographic context if the same context is used in
+ *   multiple threads.
+ * - Any call to a function where the documentation specifies that
+ *   psa_crypto_init() must be called prior to that function.
+ *
+ * See also our Knowledge Base article about threading:
  * https://mbed-tls.readthedocs.io/en/latest/kb/development/thread-safety-and-multi-threading
  *
  * Module:  library/threading.c
@@ -3988,6 +4163,37 @@
 //#define MBEDTLS_PLATFORM_MS_TIME_TYPE_MACRO   int64_t //#define MBEDTLS_PLATFORM_MS_TIME_TYPE_MACRO   int64_t /**< Default milliseconds time macro to use, can be undefined. MBEDTLS_HAVE_TIME must be enabled. It must be signed, and at least 64 bits. If it is changed from the default, MBEDTLS_PRINTF_MS_TIME must be updated to match.*/
 //#define MBEDTLS_PRINTF_MS_TIME    PRId64 /**< Default fmt for printf. That's avoid compiler warning if mbedtls_ms_time_t is redefined */
 
+/** \def MBEDTLS_PLATFORM_DEV_RANDOM
+ *
+ * Path to a special file that returns cryptographic-quality random bytes
+ * when read. This is used by the default platform entropy source on
+ * non-Windows platforms unless a dedicated system call is available
+ * (see #MBEDTLS_NO_PLATFORM_ENTROPY).
+ *
+ * The default value is `/dev/random`, which is suitable on most platforms
+ * other than Linux. On Linux, either `/dev/random` or `/dev/urandom`
+ * may be the right choice, depending on the circumstances:
+ *
+ * - If possible, the library will use the getrandom() system call,
+ *   which is preferable, and #MBEDTLS_PLATFORM_DEV_RANDOM is not used.
+ * - If there is a dedicated hardware entropy source (e.g. RDRAND on x86
+ *   processors), then both `/dev/random` and `/dev/urandom` are fine.
+ * - `/dev/random` is always secure. However, with kernels older than 5.6,
+ *   `/dev/random` often blocks unnecessarily if there is no dedicated
+ *   hardware entropy source.
+ * - `/dev/urandom` never blocks. However, it may return predictable data
+ *   if it is used early after the kernel boots, especially on embedded
+ *   devices without an interactive user.
+ *
+ * Thus you should change the value to `/dev/urandom` if your application
+ * definitely won't be used on a device running Linux without a dedicated
+ * entropy source early during or after boot.
+ *
+ * This is the default value of ::mbedtls_platform_dev_random, which
+ * can be changed at run time.
+ */
+//#define MBEDTLS_PLATFORM_DEV_RANDOM "/dev/random"
+
 /** \def MBEDTLS_CHECK_RETURN
  *
  * This macro is used at the beginning of the declaration of a function
@@ -4016,24 +4222,53 @@
  * Use HMAC_DRBG with the specified hash algorithm for HMAC_DRBG for the
  * PSA crypto subsystem.
  *
- * If this option is unset:
- * - If CTR_DRBG is available, the PSA subsystem uses it rather than HMAC_DRBG.
- * - Otherwise, the PSA subsystem uses HMAC_DRBG with either
- *   #MBEDTLS_MD_SHA512 or #MBEDTLS_MD_SHA256 based on availability and
- *   on unspecified heuristics.
+ * If this option is unset, the library chooses a hash (currently between
+ * #MBEDTLS_MD_SHA512 and #MBEDTLS_MD_SHA256) based on availability and
+ * unspecified heuristics.
+ *
+ * \note The PSA crypto subsystem uses the first available mechanism amongst
+ *       the following:
+ *       - #MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if enabled;
+ *       - Entropy from #MBEDTLS_ENTROPY_C plus CTR_DRBG with AES
+ *         if #MBEDTLS_CTR_DRBG_C is enabled;
+ *       - Entropy from #MBEDTLS_ENTROPY_C plus HMAC_DRBG.
+ *
+ *       A future version may reevaluate the prioritization of DRBG mechanisms.
  */
 //#define MBEDTLS_PSA_HMAC_DRBG_MD_TYPE MBEDTLS_MD_SHA256
 
 /** \def MBEDTLS_PSA_KEY_SLOT_COUNT
- * Restrict the PSA library to supporting a maximum amount of simultaneously
- * loaded keys. A loaded key is a key stored by the PSA Crypto core as a
- * volatile key, or a persistent key which is loaded temporarily by the
- * library as part of a crypto operation in flight.
  *
- * If this option is unset, the library will fall back to a default value of
- * 32 keys.
+ * When #MBEDTLS_PSA_KEY_STORE_DYNAMIC is disabled,
+ * the maximum amount of PSA keys simultaneously in memory. This counts all
+ * volatile keys, plus loaded persistent keys.
+ *
+ * When #MBEDTLS_PSA_KEY_STORE_DYNAMIC is enabled,
+ * the maximum number of loaded persistent keys.
+ *
+ * Currently, persistent keys do not need to be loaded all the time while
+ * a multipart operation is in progress, only while the operation is being
+ * set up. This may change in future versions of the library.
+ *
+ * Currently, the library traverses of the whole table on each access to a
+ * persistent key. Therefore large values may cause poor performance.
+ *
+ * This option has no effect when #MBEDTLS_PSA_CRYPTO_C is disabled.
  */
 //#define MBEDTLS_PSA_KEY_SLOT_COUNT 32
+
+/**
+ * \def MBEDTLS_PSA_STATIC_KEY_SLOT_BUFFER_SIZE
+ *
+ * Define the size (in bytes) of each static key buffer when
+ * #MBEDTLS_PSA_STATIC_KEY_SLOTS is set. If not
+ * explicitly defined then it's automatically guessed from available PSA keys
+ * enabled in the build through PSA_WANT_xxx symbols.
+ * If required by the application this parameter can be set to higher values
+ * in order to store larger objects (ex: raw keys), but please note that this
+ * will increase RAM usage.
+ */
+//#define MBEDTLS_PSA_STATIC_KEY_SLOT_BUFFER_SIZE       256
 
 /* RSA OPTIONS */
 //#define MBEDTLS_RSA_GEN_KEY_MIN_BITS            1024 /**<  Minimum RSA key size that can be generated in bits (Minimum possible value is 128 bits) */

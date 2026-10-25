@@ -73,6 +73,7 @@ ecode.dmg
 /.cache/
 /compile_commands.json
 /bin/benchmarks*
+/bin/security*
 /bin/unit_tests/eepp*
 /bin/unit_tests/lib*
 /bin/unit_tests/output/*

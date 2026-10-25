@@ -31,6 +31,8 @@ struct RemoteWatch {
 	Uint32 retries{ 0 };
 	Mode mode{ Mode::Establishing };
 	bool established{ false };
+	/** Agent channel refusals retried since the last confirmed watch. */
+	Uint8 channelRetries{ 0 };
 };
 
 class RemoteWatchBackendImpl;
@@ -50,6 +52,9 @@ class AgentClient : public SSHChannelPump, public std::enable_shared_from_this<A
 	const std::string& key() const { return mKey; }
 
 	State state() const { return mState.load(); }
+
+	/** The server refused the exec channel itself, so the agent was never started. */
+	bool channelRefused() const { return mChannelRefused.load(); }
 
 	const std::shared_ptr<SSHConnection>& connection() const { return mConnection; }
 
@@ -94,6 +99,7 @@ class AgentClient : public SSHChannelPump, public std::enable_shared_from_this<A
 	std::vector<uint8_t> mOut;
 	std::string mStderr;
 	std::atomic<State> mState{ State::Starting };
+	std::atomic<bool> mChannelRefused{ false };
 	bool mHello{ false };
 	bool mPumping{ false };
 };
@@ -155,6 +161,12 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 	static constexpr auto UnavailableFor = std::chrono::minutes( 5 );
 
 	static constexpr Uint32 MaxReconnectDelaySeconds = 30;
+
+	/** A refused agent channel is retried this many times, doubling the delay, before that watch
+	 * polls. Abandoned watches free their channels once their agents exit, within milliseconds. */
+	static constexpr Uint8 MaxChannelRetries = 3;
+
+	static constexpr std::chrono::milliseconds ChannelRetryDelay{ 25 };
 
 	RemoteWatchBackendImpl( std::shared_ptr<SFTPProviderImpl> provider, VirtualFileSystem& vfs,
 							Time establishmentTimeout ) :
@@ -252,13 +264,17 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 	void agentDead( const std::shared_ptr<AgentClient>& client, bool wasReady,
 					const std::string& reason ) {
 		std::vector<std::shared_ptr<RemoteWatch>> affected;
+		const bool usable = client->connection()->isUsable();
+		// A refused channel on a usable session (its session limit is full) says nothing about
+		// whether the agent is installed.
+		const bool refused = usable && client->channelRefused();
 		{
 			std::lock_guard<std::mutex> lock( mMutex );
 			auto it = mAgents.find( client->key() );
 			if ( it != mAgents.end() && it->second.agent == client ) {
 				it->second.agent.reset();
 				it->second.lastError = reason;
-				if ( !wasReady && client->connection()->isUsable() ) {
+				if ( !wasReady && usable && !refused ) {
 					// The SSH session is fine but the agent never answered: not installed or
 					// not runnable on that host.
 					it->second.unavailableUntil = std::chrono::steady_clock::now() + UnavailableFor;
@@ -271,9 +287,11 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 				}
 			}
 		}
-		bool agentMissing = !wasReady && client->connection()->isUsable();
+		bool agentMissing = !wasReady && usable && !refused;
 		for ( auto& watch : affected ) {
-			if ( agentMissing ) {
+			if ( refused ) {
+				retryRefusedChannel( watch );
+			} else if ( agentMissing ) {
 				usePolling( watch );
 			} else {
 				{
@@ -302,6 +320,7 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 			watch->mode = RemoteWatch::Mode::Agent;
 			watch->established = true;
 			watch->retries = 0;
+			watch->channelRetries = 0;
 		}
 		if ( auto sink = watch->sink.lock() ) {
 			sink->setStatus( generic ? WatchStatus::Polling : WatchStatus::Active );
@@ -472,6 +491,36 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 			} );
 	}
 
+	/** Retries briefly within the establishment window, then polls only this watch. The host is
+	 * not marked unavailable, so later watches use the agent again. */
+	void retryRefusedChannel( const std::shared_ptr<RemoteWatch>& watch ) {
+		Uint8 attempt;
+		{
+			std::lock_guard<std::mutex> lock( mMutex );
+			if ( watch->mode == RemoteWatch::Mode::Closed )
+				return;
+			attempt = watch->channelRetries++;
+		}
+		if ( attempt >= MaxChannelRetries ) {
+			usePolling( watch );
+			return;
+		}
+		std::weak_ptr<RemoteWatchBackendImpl> weak = weak_from_this();
+		std::weak_ptr<RemoteWatch> weakWatch = watch;
+		mRunner.runAfter( ChannelRetryDelay * ( 1 << attempt ), [weak, weakWatch] {
+			auto self = weak.lock();
+			auto watch = weakWatch.lock();
+			if ( !self || !watch )
+				return;
+			{
+				std::lock_guard<std::mutex> lock( self->mMutex );
+				if ( watch->mode == RemoteWatch::Mode::Closed )
+					return;
+			}
+			self->establish( watch );
+		} );
+	}
+
 	void scheduleRetry( const std::shared_ptr<RemoteWatch>& watch ) {
 		Uint32 retries;
 		{
@@ -631,6 +680,7 @@ void AgentClient::start( const std::string& command ) {
 					if ( !self->mChannel ) {
 						if ( libssh2_session_last_errno( c.session() ) == LIBSSH2_ERROR_EAGAIN )
 							return std::nullopt;
+						self->mChannelRefused = true;
 						return VFSResult<void>(
 							Err( c.lastError( URI(), "efsw-agent: could not open a channel" ) ) );
 					}

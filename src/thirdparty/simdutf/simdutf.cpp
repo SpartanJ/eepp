@@ -1,4 +1,4 @@
-/* auto-generated on 2026-09-21 15:19:28.994895. Do not edit! */
+/* auto-generated from simdutf v9.2.1 (UTF-8/UTF-32 only). Do not edit! */
 /* begin file src/simdutf.cpp */
 #include "simdutf.h"
 

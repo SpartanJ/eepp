@@ -1,9 +1,9 @@
 /*
   zip_get_name.c -- get filename for a file in zip file
-  Copyright (C) 1999-2007 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,41 +32,27 @@
 */
 
 
+#include <string.h>
 
 #include "zipint.h"
 
 
-
-ZIP_EXTERN const char *
-zip_get_name(struct zip *za, zip_uint64_t idx, int flags)
-{
+ZIP_EXTERN const char *zip_get_name(zip_t *za, zip_uint64_t idx, zip_flags_t flags) {
     return _zip_get_name(za, idx, flags, &za->error);
 }
 
 
+const char *_zip_get_name(zip_t *za, zip_uint64_t idx, zip_flags_t flags, zip_error_t *error) {
+    zip_dirent_t *de;
+    const zip_uint8_t *str;
 
-const char *
-_zip_get_name(struct zip *za, zip_uint64_t idx, int flags,
-	      struct zip_error *error)
-{
-    if (idx >= za->nentry) {
-	_zip_error_set(error, ZIP_ER_INVAL, 0);
-	return NULL;
+    if ((de = _zip_get_dirent(za, idx, flags, error)) == NULL) {
+        return NULL;
     }
 
-    if ((flags & ZIP_FL_UNCHANGED) == 0) {
-	if (za->entry[idx].state == ZIP_ST_DELETED) {
-	    _zip_error_set(error, ZIP_ER_DELETED, 0);
-	    return NULL;
-	}
-	if (za->entry[idx].ch_filename)
-	    return za->entry[idx].ch_filename;
+    if ((str = _zip_string_get(de->filename, NULL, flags, error)) == NULL) {
+        return NULL;
     }
 
-    if (za->cdir == NULL || idx >= za->cdir->nentry) {
-	_zip_error_set(error, ZIP_ER_INVAL, 0);
-	return NULL;
-    }
-    
-    return za->cdir->entry[idx].filename;
+    return (const char *)str;
 }

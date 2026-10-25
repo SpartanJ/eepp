@@ -31,6 +31,11 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_intrin.h>
 
+// eepp: SDL only defines SDL_NEON_INTRINSICS when the compiler already targets NEON
+//   (__ARM_NEON, or MSVC on ARM), so NEON functions need no target attribute. GCC rejects
+//   SDL_TARGETING("neon") on AArch64, where "neon" is not a valid target name.
+#define MOJOAL_TARGETING_NEON
+
 #if defined(SDL_SSE_INTRINSICS)  // if you are on x86 or x86-64, we assume you have SSE1 by now.
 #define NEED_SCALAR_FALLBACK 0
 #elif defined(SDL_NEON_INTRINSICS) && (defined(__ARM_ARCH) && (__ARM_ARCH >= 8))  // ARMv8 always has NEON.
@@ -947,7 +952,7 @@ static void SDL_TARGETING("sse") calculate_distance_attenuation_and_angle_sse(co
 #endif
 
 #if defined(SDL_NEON_INTRINSICS)
-static float32x4_t SDL_TARGETING("neon") xyzzy_neon(const float32x4_t a, const float32x4_t b)
+static float32x4_t MOJOAL_TARGETING_NEON xyzzy_neon(const float32x4_t a, const float32x4_t b)
 {
     const float32x4_t shuf_a = { a[1], a[2], a[0], a[3] };
     const float32x4_t shuf_b = { b[1], b[2], b[0], b[3] };
@@ -957,7 +962,7 @@ static float32x4_t SDL_TARGETING("neon") xyzzy_neon(const float32x4_t a, const f
     return retval;
 }
 
-static ALfloat SDL_TARGETING("neon") dotproduct_neon(const float32x4_t a, const float32x4_t b)
+static ALfloat MOJOAL_TARGETING_NEON dotproduct_neon(const float32x4_t a, const float32x4_t b)
 {
     const float32x4_t prod = vmulq_f32(a, b);
     const float32x4_t sum1 = vaddq_f32(prod, vrev64q_f32(prod));
@@ -965,12 +970,12 @@ static ALfloat SDL_TARGETING("neon") dotproduct_neon(const float32x4_t a, const 
     return sum2[3];
 }
 
-static ALfloat SDL_TARGETING("neon") magnitude_neon(const float32x4_t v)
+static ALfloat MOJOAL_TARGETING_NEON magnitude_neon(const float32x4_t v)
 {
     return SDL_sqrtf(dotproduct_neon(v, v));
 }
 
-static void SDL_TARGETING("neon") calculate_distance_attenuation_and_angle_neon(const ALCcontext *ctx, const ALsource *src, ALfloat *_gain, ALfloat *_radians)
+static void MOJOAL_TARGETING_NEON calculate_distance_attenuation_and_angle_neon(const ALCcontext *ctx, const ALsource *src, ALfloat *_gain, ALfloat *_radians)
 {
     // (the math is explained in the scalar version.)
     const float32x4_t position_neon = !src->source_relative ? vsubq_f32(vld1q_f32(src->position), vld1q_f32(ctx->listener.position)) : vld1q_f32(src->position);
@@ -1427,7 +1432,7 @@ static void SDL_TARGETING("sse") mix_float32_stereo_to_stereo_sse(const ALfloat 
 #endif
 
 #if defined(SDL_NEON_INTRINSICS)
-static void SDL_TARGETING("neon") mix_float32_mono_to_stereo_neon(const ALfloat * SDL_RESTRICT panning, const float * SDL_RESTRICT data, float * SDL_RESTRICT stream, const ALsizei mixframes)
+static void MOJOAL_TARGETING_NEON mix_float32_mono_to_stereo_neon(const ALfloat * SDL_RESTRICT panning, const float * SDL_RESTRICT data, float * SDL_RESTRICT stream, const ALsizei mixframes)
 {
     const ALfloat left = panning[0];
     const ALfloat right = panning[1];
@@ -1488,7 +1493,7 @@ static void SDL_TARGETING("neon") mix_float32_mono_to_stereo_neon(const ALfloat 
     }
 }
 
-static void SDL_TARGETING("neon") mix_float32_stereo_to_stereo_neon(const ALfloat * SDL_RESTRICT panning, const float * SDL_RESTRICT data, float * SDL_RESTRICT stream, const ALsizei mixframes)
+static void MOJOAL_TARGETING_NEON mix_float32_stereo_to_stereo_neon(const ALfloat * SDL_RESTRICT panning, const float * SDL_RESTRICT data, float * SDL_RESTRICT stream, const ALsizei mixframes)
 {
     const ALfloat left = panning[0];
     const ALfloat right = panning[1];

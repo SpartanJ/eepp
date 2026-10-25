@@ -1,9 +1,9 @@
 /*
   zip_source_function.c -- create zip data source from callback function
-  Copyright (C) 1999-2009 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2022 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,47 +32,66 @@
 */
 
 
-
 #include <stdlib.h>
 
 #include "zipint.h"
 
 
+ZIP_EXTERN zip_source_t *zip_source_function(zip_t *za, zip_source_callback zcb, void *ud) {
+    if (za == NULL) {
+        return NULL;
+    }
 
-ZIP_EXTERN struct zip_source *
-zip_source_function(struct zip *za, zip_source_callback zcb, void *ud)
-{
-    struct zip_source *zs;
+    return zip_source_function_create(zcb, ud, &za->error);
+}
 
-    if (za == NULL)
-	return NULL;
 
-    if ((zs=_zip_source_new(za)) == NULL)
-	return NULL;
+ZIP_EXTERN zip_source_t *zip_source_function_create(zip_source_callback zcb, void *ud, zip_error_t *error) {
+    zip_source_t *zs;
+
+    if ((zs = _zip_source_new(error)) == NULL) {
+        return NULL;
+    }
 
     zs->cb.f = zcb;
     zs->ud = ud;
-    
+
+    zs->supports = zcb(ud, NULL, 0, ZIP_SOURCE_SUPPORTS);
+    if (zs->supports < 0) {
+        zs->supports = ZIP_SOURCE_SUPPORTS_READABLE;
+    }
+    zs->supports |= zip_source_make_command_bitmap(ZIP_SOURCE_SUPPORTS, -1);
+
     return zs;
 }
 
 
+ZIP_EXTERN void zip_source_keep(zip_source_t *src) {
+    src->refcount++;
+}
 
-struct zip_source *
-_zip_source_new(struct zip *za)
-{
-    struct zip_source *src;
 
-    if ((src=(struct zip_source *)malloc(sizeof(*src))) == NULL) {
-	_zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
-	return NULL;
+zip_source_t *_zip_source_new(zip_error_t *error) {
+    zip_source_t *src;
+
+    if ((src = (zip_source_t *)malloc(sizeof(*src))) == NULL) {
+        zip_error_set(error, ZIP_ER_MEMORY, 0);
+        return NULL;
     }
 
     src->src = NULL;
     src->cb.f = NULL;
     src->ud = NULL;
-    src->error_source = ZIP_LES_NONE;
-    src->is_open = 0;
+    src->open_count = 0;
+    src->write_state = ZIP_SOURCE_WRITE_CLOSED;
+    src->source_closed = false;
+    src->source_archive = NULL;
+    src->refcount = 1;
+    zip_error_init(&src->error);
+    src->eof = false;
+    src->had_read_error = false;
+    src->bytes_read = 0;
+    src->have_next_byte = false;
 
     return src;
 }

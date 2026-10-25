@@ -1,9 +1,9 @@
 /*
   zip_source_close.c -- close zip_source (stop reading)
-  Copyright (C) 2009 Dieter Baron and Thomas Klausner
+  Copyright (C) 2009-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,23 +32,40 @@
 */
 
 
-
 #include "zipint.h"
 
 
+int zip_source_close(zip_source_t *src) {
+    int ret = 0;
 
-ZIP_EXTERN void
-zip_source_close(struct zip_source *src)
-{
-    if (!src->is_open)
-	return;
-
-    if (src->src == NULL)
-	(void)src->cb.f(src->ud, NULL, 0, ZIP_SOURCE_CLOSE);
-    else {
-	(void)src->cb.l(src->src, src->ud, NULL, 0, ZIP_SOURCE_CLOSE);
-	zip_source_close(src->src);
+    if (!ZIP_SOURCE_IS_OPEN_READING(src)) {
+        zip_error_set(&src->error, ZIP_ER_INVAL, 0);
+        return -1;
     }
-    
-    src->is_open = 0;
+
+    src->open_count--;
+    if (src->open_count == 0) {
+        src->have_next_byte = false;
+
+        if (_zip_source_call(src, NULL, 0, ZIP_SOURCE_CLOSE) < 0) {
+            ret = -1;
+        }
+
+        if (ZIP_SOURCE_IS_LAYERED(src)) {
+            if (!ZIP_SOURCE_IS_OPEN_READING(src->src)) {
+                if (ret == 0) {
+                    zip_error_set(&src->error, ZIP_ER_INTERNAL, 0);
+                }
+                return -1;
+            }
+            if (zip_source_close(src->src) < 0) {
+                if (ret == 0) {
+                    zip_error_set_from_source(&src->error, src->src);
+                }
+                ret = -1;
+            }
+        }
+    }
+
+    return ret;
 }

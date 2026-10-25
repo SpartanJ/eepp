@@ -143,21 +143,24 @@ UTEST( ZipProvider, listsImplicitAndEmptyDirectoriesWithMetadata ) {
 	EXPECT_TRUE( waitFor( handle.close() ).hasValue() );
 }
 
-UTEST( ZipProvider, aggregateMetadataBudgetBoundsDeepIndexes ) {
+UTEST( ZipProvider, deepAndManyEntryIndexesAreListed ) {
 	TempDir temp;
 	const std::string path = temp.path + "deep.zip";
 	std::string nested;
 	for ( int i = 0; i < 64; ++i )
 		nested += std::string( 60, 'd' ) + '/';
-	ASSERT_TRUE( makeEmptyZip( path, 512, [&nested]( Uint16 i ) {
-		return std::to_string( i ) + '/' + nested + "file";
-	} ) );
+	ASSERT_TRUE( makeEmptyZip(
+		path, 4, [&nested]( Uint16 i ) { return std::to_string( i ) + '/' + nested + "file"; } ) );
 	VirtualFileSystem vfs;
+	// Every implicit directory of the 64-level paths is indexed.
 	auto listed = waitFor( vfs.listAll( ZipProvider::makeURI( URI::fromFSPath( path ) ) ) );
-	ASSERT_FALSE( listed );
-	EXPECT_EQ( VFSErrorCode::InvalidOperation, listed.error().code );
-	EXPECT_TRUE( listed.error().message.find( "metadata budget" ) != std::string::npos );
-	// A normal many-entry archive stays well below the budget and remains usable after failure.
+	ASSERT_TRUE( listed );
+	EXPECT_EQ( 4u, listed.value().size() );
+	auto leaf = waitFor( vfs.listAll( ZipProvider::makeURI(
+		URI::fromFSPath( path ), "/3/" + nested.substr( 0, nested.size() - 1 ) ) ) );
+	ASSERT_TRUE( leaf );
+	ASSERT_EQ( 1u, leaf.value().size() );
+	EXPECT_STDSTREQ( "file", leaf.value()[0].name );
 	const std::string normal = temp.path + "many.zip";
 	ASSERT_TRUE(
 		makeEmptyZip( normal, 1024, []( Uint16 i ) { return "dir/file" + std::to_string( i ); } ) );
@@ -169,49 +172,55 @@ UTEST( ZipProvider, aggregateMetadataBudgetBoundsDeepIndexes ) {
 
 UTEST( ZipProvider, malformedCentralDirectoriesAreRejectedBeforeAllocation ) {
 	TempDir temp;
-	// A tiny EOCD claims a huge directory. The bounded reader rejects its declared metadata
-	// before allocating its entry array or attempting to decode any names/comments/extra fields.
-	std::array<Uint8, 22> eocd{};
+	// A tiny EOCD claims a huge directory starting at a central-directory signature. It is
+	// rejected because the directory cannot fit before the end record, before allocating its
+	// entry array or decoding any names/comments/extra fields.
+	std::array<Uint8, 26> eocd{};
 	eocd[0] = 'P';
 	eocd[1] = 'K';
-	eocd[2] = 5;
-	eocd[3] = 6;
-	eocd[8] = eocd[9] = eocd[10] = eocd[11] = 255;
-	eocd[15] = 4; // 64 MiB of encoded metadata, before decoded objects/allocation slack.
+	eocd[2] = 1;
+	eocd[3] = 2;
+	eocd[4] = 'P';
+	eocd[5] = 'K';
+	eocd[6] = 5;
+	eocd[7] = 6;
+	eocd[12] = eocd[13] = eocd[14] = eocd[15] = 255;
+	eocd[19] = 4; // 64 MiB of encoded metadata.
 	const std::string path = temp.path + "oversized.zip";
 	ASSERT_TRUE( FileSystem::fileWrite( path, eocd.data(), eocd.size() ) );
 	Zip reader( false );
-	EXPECT_FALSE( reader.open( path, Zip::OpenMode::ReadOnlyBounded ) );
+	EXPECT_FALSE( reader.open( path, Zip::OpenMode::ReadOnly ) );
 	EXPECT_EQ( Zip::Error::InvalidArchive, reader.error() );
-	EXPECT_TRUE( reader.errorMessage().find( "metadata budget" ) != std::string::npos );
 	VirtualFileSystem vfs;
 	auto listed = waitFor( vfs.listAll( ZipProvider::makeURI( URI::fromFSPath( path ) ) ) );
 	EXPECT_EQ( VFSErrorCode::InvalidOperation, codeOf( listed ) );
-	// An empty-directory count must not allow a nonempty directory to be decoded into
-	// storage allocated for zero entries.
+	// A zero count with a nonempty directory is read as a wrapped InfoZIP count, which must
+	// then match the entries actually present.
 	const std::string inconsistent = temp.path + "inconsistent.zip";
 	ASSERT_TRUE( makeEmptyZip( inconsistent, 1, []( Uint16 ) { return std::string( "file" ); } ) );
 	std::string bytes;
 	ASSERT_TRUE( FileSystem::fileGet( inconsistent, bytes ) );
 	std::fill_n( bytes.end() - 14, 4, '\0' );
 	ASSERT_TRUE( FileSystem::fileWrite( inconsistent, std::string_view( bytes ) ) );
-	EXPECT_FALSE( reader.open( inconsistent, Zip::OpenMode::ReadOnlyBounded ) );
+	EXPECT_FALSE( reader.open( inconsistent, Zip::OpenMode::ReadOnly ) );
 	EXPECT_EQ( Zip::Error::InvalidArchive, reader.error() );
 }
 
-UTEST( ZipProvider, wrappedZeroInfoZipCountIsIntentionallyRejected ) {
+UTEST( ZipProvider, wrappedZeroInfoZipCountIsRecovered ) {
 	TempDir temp;
 	const std::string path = temp.path + "wrapped-zero.zip";
 	// The fixture writes all 65,536 headers, but its two 16-bit EOCD counts wrap to zero.
+	// libzip recovers the InfoZIP count from the directory size.
 	ASSERT_TRUE(
 		makeEmptyZip( path, 65536, []( Uint32 i ) { return "file" + std::to_string( i ); } ) );
 	Zip reader( false );
-	for ( auto mode : { Zip::OpenMode::ReadOnly, Zip::OpenMode::ReadOnlyBounded } ) {
-		EXPECT_FALSE( reader.open( path, mode ) );
-		EXPECT_EQ( Zip::Error::InvalidArchive, reader.error() );
-	}
+	ASSERT_TRUE( reader.open( path, Zip::OpenMode::ReadOnly ) );
+	EXPECT_EQ( 65536u, reader.entryCount() );
+	ASSERT_TRUE( reader.close() );
 	VirtualFileSystem vfs;
-	EXPECT_FALSE( waitFor( vfs.listAll( ZipProvider::makeURI( URI::fromFSPath( path ) ) ) ) );
+	auto listed = waitFor( vfs.listAll( ZipProvider::makeURI( URI::fromFSPath( path ) ) ) );
+	ASSERT_TRUE( listed );
+	EXPECT_EQ( 65536u, listed.value().size() );
 }
 
 UTEST( ZipProvider, streamingReadsSeekBackwardsAndCopyAcrossProviders ) {

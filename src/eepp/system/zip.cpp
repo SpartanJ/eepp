@@ -8,12 +8,6 @@
 #include <libzip/zip.h>
 #include <limits>
 
-#if EE_PLATFORM == EE_PLATFORM_WIN
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
-
 namespace EE { namespace System {
 
 Zip* Zip::New() {
@@ -56,16 +50,13 @@ bool Zip::open( const std::string& path, OpenMode mode ) {
 	mError = Error::None;
 	mErrorMessage.clear();
 	mOpenMode = mode;
-	if ( mode != OpenMode::ReadWrite ) {
-		if ( !openReadOnly( path ) )
-			return false;
-	} else {
-		int error = ZIP_ER_OK;
-		mZip = zip_open( path.c_str(), 0, &error );
-		if ( !mZip ) {
-			setError( error, errno );
-			return false;
-		}
+	// libzip opens UTF-8 paths as wide paths on Windows.
+	int error = ZIP_ER_OK;
+	mZip = zip_open( path.c_str(), mode == OpenMode::ReadOnly ? ZIP_RDONLY : 0, &error );
+	if ( !mZip ) {
+		// zip_open() reports the system error or inconsistency detail through errno.
+		setError( error, errno );
+		return false;
 	}
 	mZipPath = path;
 	mIsOpen = true;
@@ -76,14 +67,11 @@ bool Zip::open( const std::string& path, OpenMode mode ) {
 bool Zip::close() {
 	if ( mZip ) {
 		// zip_close() writes the pending changes. When that fails the archive is left allocated
-		// (and unchanged on disk): release it and report the failure.
+		// (and unchanged on disk): release it without writing and report the failure.
 		bool written = zip_close( mZip ) == 0;
 
-		if ( !written ) {
-			// Without pending changes zip_close() only frees the archive.
-			zip_unchange_all( mZip );
-			zip_close( mZip );
-		}
+		if ( !written )
+			zip_discard( mZip );
 
 		mIsOpen = false;
 
@@ -115,8 +103,7 @@ bool Zip::addFile( const Uint8* data, const Uint32& dataSize, const std::string&
 		struct zip_source* zs = zip_source_buffer( mZip, (const void*)data, dataSize, 0 );
 
 		if ( NULL != zs ) {
-			Int32 Result = (Int32)zip_add( mZip, inpack.c_str(), zs );
-			if ( Result < 0 ) {
+			if ( zip_file_add( mZip, inpack.c_str(), zs, ZIP_FL_ENC_GUESS ) < 0 ) {
 				zip_source_free( zs );
 				return false;
 			}
@@ -228,7 +215,7 @@ bool Zip::extractStream( IOStream& stream, Uint8* data, size_t size ) {
 
 Int32 Zip::exists( const std::string& path ) {
 	if ( isOpen() )
-		return zip_name_locate( mZip, path.c_str(), 0 );
+		return static_cast<Int32>( zip_name_locate( mZip, path.c_str(), 0 ) );
 
 	return -1;
 }
@@ -262,54 +249,11 @@ zip* Zip::getZip() {
 	return mZip;
 }
 
-bool Zip::openReadOnly( const std::string& path ) {
-	// fopenUtf8 preserves Windows Unicode paths. zip_fdopen consumes a duplicated descriptor,
-	// so the FILE owned here can always be closed normally.
-	FILE* file = FileSystem::fopenUtf8( path, "rb" );
-	if ( !file ) {
-		setError( errno == ENOENT ? ZIP_ER_NOENT : ZIP_ER_OPEN, errno );
-		return false;
-	}
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	int descriptor = _dup( _fileno( file ) );
-#else
-	int descriptor = dup( fileno( file ) );
-#endif
-	const int duplicateError = errno;
-	std::fclose( file );
-	if ( descriptor < 0 ) {
-		setError( ZIP_ER_OPEN, duplicateError );
-		return false;
-	}
-	int error = ZIP_ER_OK;
-	mZip = zip_fdopen( descriptor, mOpenMode == OpenMode::ReadOnlyBounded ? ZIP_LIMIT_METADATA : 0,
-					   &error );
-	if ( !mZip ) {
-		// This vendored libzip consumes descriptor after fdopen succeeds. Only its two early
-		// ZIP_ER_OPEN failures (dup/fdopen) leave it for the caller to close.
-		const int systemError = errno;
-		if ( error == ZIP_ER_OPEN ) {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-			_close( descriptor );
-#else
-			::close( descriptor );
-#endif
-		}
-		setError( error, systemError );
-		return false;
-	}
-	return true;
-}
-
 Uint64 Zip::entryCount() const {
 	if ( !mZip )
 		return 0;
 	const auto count = zip_get_num_entries( mZip, 0 );
-	return count == std::numeric_limits<Uint64>::max() ? 0 : count;
-}
-
-Uint64 Zip::metadataSize() const {
-	return mZip ? zip_get_metadata_size( mZip ) : 0;
+	return count < 0 ? 0 : static_cast<Uint64>( count );
 }
 
 bool Zip::entry( Uint64 index, Entry& result ) {
@@ -339,32 +283,34 @@ std::unique_ptr<IOStream> Zip::openStream( Uint64 index ) {
 	}
 	auto stream = std::make_unique<IOStreamZip>( this, index );
 	if ( !stream->isOpen() ) {
-		int code = 0;
-		int systemCode = 0;
-		zip_error_get( mZip, &code, &systemCode );
-		setError( code, systemCode );
+		const zip_error_t* error = zip_get_error( mZip );
+		setError( zip_error_code_zip( error ), zip_error_code_system( error ) );
 		return {};
 	}
 	return stream;
 }
 
 void Zip::setError( int code, int systemCode ) {
+	zip_error_t error;
+	zip_error_init( &error );
+	zip_error_set( &error, code, systemCode );
 	if ( code == ZIP_ER_NOENT )
 		mError = Error::NotFound;
-	else if ( zip_error_get_sys_type( code ) == ZIP_ET_SYS &&
+	else if ( zip_error_system_type( &error ) == ZIP_ET_SYS &&
 			  ( systemCode == EACCES || systemCode == EPERM ) )
 		mError = Error::PermissionDenied;
 	else if ( code == ZIP_ER_NOZIP || code == ZIP_ER_INCONS || code == ZIP_ER_EOF ||
-			  code == ZIP_ER_METADATA )
+			  code == ZIP_ER_TRUNCATED_ZIP || code == ZIP_ER_COMPRESSED_DATA ||
+			  code == ZIP_ER_DATA_LENGTH )
 		mError = Error::InvalidArchive;
 	else if ( code == ZIP_ER_COMPNOTSUPP || code == ZIP_ER_MULTIDISK ||
-			  code == ZIP_ER_ENCRNOTSUPP || code == ZIP_ER_NOPASSWD || code == ZIP_ER_WRONGPASSWD )
+			  code == ZIP_ER_ENCRNOTSUPP || code == ZIP_ER_NOPASSWD || code == ZIP_ER_WRONGPASSWD ||
+			  code == ZIP_ER_OPNOTSUPP )
 		mError = Error::Unsupported;
 	else
 		mError = Error::IO;
-	char message[256];
-	zip_error_to_str( message, sizeof( message ), code, systemCode );
-	mErrorMessage = message;
+	mErrorMessage = zip_error_strerror( &error );
+	zip_error_fini( &error );
 }
 
 bool Zip::writable() {

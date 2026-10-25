@@ -517,15 +517,13 @@ I/O scheduler's mount isolation and timeouts.
 Only `file://` backing archives are supported initially. Password-protected entries and unsupported
 compression methods report `Unsupported`. ZIP symlink attributes are not followed: their stored
 data is exposed as a regular file. Unsafe names (absolute paths, traversal components, backslashes
-or drive/stream colons) are excluded. Indexes are limited to 262,144 entries including implicit
-directories and a conservative 64 MiB metadata budget covering libzip's decoded directory,
-nodes, stored paths and container growth. Oversized central directories are rejected before
-decoding; budget violations return `InvalidOperation`. At most eight indexes are cached;
+or drive/stream colons) are excluded. Indexes have no fixed entry limit beyond what the ZIP
+format and libzip support; their memory grows with the size of the central directory.
+Inconsistent central directories return `InvalidOperation`. At most eight indexes are cached;
 existing handles can retain older indexes.
 
-Legacy InfoZIP archives whose 16-bit entry count wraps to zero with a nonempty central directory
-(for example, exactly 65,536 entries) are intentionally rejected as inconsistent. A zero count is
-accepted only for an empty central directory.
+Legacy InfoZIP archives without ZIP64 records, whose 16-bit entry count wraps past 65,535, are
+read using the central directory size; the recovered count must match the entries present.
 
 In eefm, Enter or double-click on a local `.zip`, `.jar`, `.apk` or `.epub` file enters it
 (extensions are case-insensitive). These ZIP-based formats share `ZipProvider` and `zip://` locations.

@@ -1,9 +1,9 @@
 /*
   zip_fopen_index_encrypted.c -- open file for reading by index w/ password
-  Copyright (C) 1999-2009 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,122 +32,36 @@
 */
 
 
-
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "zipint.h"
 
-static struct zip_file *_zip_file_new(struct zip *za);
+static zip_file_t *_zip_file_new(zip_t *za);
 
 
+ZIP_EXTERN zip_file_t *zip_fopen_index_encrypted(zip_t *za, zip_uint64_t index, zip_flags_t flags, const char *password) {
+    zip_file_t *zf;
+    zip_source_t *src;
 
-ZIP_EXTERN struct zip_file *
-zip_fopen_index_encrypted(struct zip *za, zip_uint64_t fileno, int flags,
-			  const char *password)
-{
-    struct zip_file *zf;
-    zip_compression_implementation comp_impl;
-    zip_encryption_implementation enc_impl;
-    struct zip_source *src, *s2;
-    zip_uint64_t start;
-    struct zip_stat st;
-
-    if (fileno >= za->nentry) {
-	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
-	return NULL;
+    if (password != NULL && password[0] == '\0') {
+        password = NULL;
     }
 
-    if ((flags & ZIP_FL_UNCHANGED) == 0
-	&& ZIP_ENTRY_DATA_CHANGED(za->entry+fileno)) {
-	_zip_error_set(&za->error, ZIP_ER_CHANGED, 0);
-	return NULL;
-    }
-
-    if (fileno >= za->cdir->nentry) {
-	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
-	return NULL;
-    }
-
-    if (flags & ZIP_FL_ENCRYPTED)
-	flags |= ZIP_FL_COMPRESSED;
-
-    zip_stat_index(za, fileno, flags, &st);
-
-    enc_impl = NULL;
-    if ((flags & ZIP_FL_ENCRYPTED) == 0) {
-	if (st.encryption_method != ZIP_EM_NONE) {
-	    if (password == NULL) {
-		_zip_error_set(&za->error, ZIP_ER_NOPASSWD, 0);
-		return NULL;
-	    }
-	    if ((enc_impl=zip_get_encryption_implementation(
-		     st.encryption_method)) == NULL) {
-		_zip_error_set(&za->error, ZIP_ER_ENCRNOTSUPP, 0);
-		return NULL;
-	    }
-	}
-    }
-
-    comp_impl = NULL;
-    if ((flags & ZIP_FL_COMPRESSED) == 0) {
-	if (st.comp_method != ZIP_CM_STORE) {
-	    if ((comp_impl=zip_get_compression_implementation(
-		     st.comp_method)) == NULL) {
-		_zip_error_set(&za->error, ZIP_ER_COMPNOTSUPP, 0);
-		return NULL;
-	    }
-	}
-    }
-
-    if ((start=_zip_file_get_offset(za, fileno)) == 0)
-	return NULL;
-
-    if (st.comp_size == 0) {
-	if ((src=zip_source_buffer(za, NULL, 0, 0)) == NULL)
-	    return NULL;
-    }
-    else {
-	if ((src=_zip_source_file_or_p(za, NULL, za->zp, start, st.comp_size,
-				       0, &st)) == NULL)
-	    return NULL;
-	if (enc_impl) {
-	    if ((s2=enc_impl(za, src, ZIP_EM_TRAD_PKWARE, 0,
-			     password)) == NULL) {
-		zip_source_free(src);
-		/* XXX: set error (how?) */
-		return NULL;
-	    }
-	    src = s2;
-	}
-	if (comp_impl) {
-	    if ((s2=comp_impl(za, src, za->cdir->entry[fileno].comp_method,
-			      0)) == NULL) {
-		zip_source_free(src);
-		/* XXX: set error (how?) */
-		return NULL;
-	    }
-	    src = s2;
-	}
-	if ((flags & ZIP_FL_COMPRESSED) == 0
-	    || st.comp_method == ZIP_CM_STORE ) {
-	    if ((s2=zip_source_crc(za, src, 1)) == NULL) {
-		zip_source_free(src);
-		/* XXX: set error (how?) */
-		return NULL;
-	    }
-	    src = s2;
-	}
+    if ((src = zip_source_zip_file_create(za, index, flags, 0, -1, password, &za->error)) == NULL) {
+        return NULL;
     }
 
     if (zip_source_open(src) < 0) {
-	_zip_error_set_from_source(&za->error, src);
-	zip_source_free(src);
-	return NULL;
+        zip_error_set_from_source(&za->error, src);
+        zip_source_free(src);
+        return NULL;
     }
 
-    zf = _zip_file_new(za);
+    if ((zf = _zip_file_new(za)) == NULL) {
+        zip_source_free(src);
+        return NULL;
+    }
 
     zf->src = src;
 
@@ -155,36 +69,15 @@ zip_fopen_index_encrypted(struct zip *za, zip_uint64_t fileno, int flags,
 }
 
 
+static zip_file_t *_zip_file_new(zip_t *za) {
+    zip_file_t *zf;
 
-static struct zip_file *
-_zip_file_new(struct zip *za)
-{
-    struct zip_file *zf, **file;
-    int n;
-
-    if ((zf=(struct zip_file *)malloc(sizeof(struct zip_file))) == NULL) {
-	_zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
-	return NULL;
-    }
-    
-    if (za->nfile >= za->nfile_alloc-1) {
-	n = za->nfile_alloc + 10;
-	file = (struct zip_file **)realloc(za->file,
-					   n*sizeof(struct zip_file *));
-	if (file == NULL) {
-	    _zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
-	    free(zf);
-	    return NULL;
-	}
-	za->nfile_alloc = n;
-	za->file = file;
+    if ((zf = (zip_file_t *)malloc(sizeof(struct zip_file))) == NULL) {
+        zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
+        return NULL;
     }
 
-    za->file[za->nfile++] = zf;
-
-    zf->za = za;
-    _zip_error_init(&zf->error);
-    zf->eof = 0;
+    zip_error_init(&zf->error);
     zf->src = NULL;
 
     return zf;

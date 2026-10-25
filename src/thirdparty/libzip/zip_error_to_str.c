@@ -1,9 +1,9 @@
 /*
   zip_error_to_str.c -- get string representation of zip error code
-  Copyright (C) 1999-2009 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2025 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,39 +32,28 @@
 */
 
 
-
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+/* LCOV_EXCL_START */
+#define _ZIP_COMPILING_DEPRECATED
 #include "zipint.h"
 
+#include <stdio.h>
+#include <string.h>
 
 
-ZIP_EXTERN int
-zip_error_to_str(char *buf, zip_uint64_t len, int ze, int se)
-{
-    const char *zs, *ss;
+ZIP_EXTERN int zip_error_to_str(char *buf, zip_uint64_t len, int ze, int se) {
+    zip_error_t error;
+    const char *error_string;
+    int ret;
 
-    if (ze < 0 || ze >= _zip_nerr_str)
-	return snprintf(buf, len, "Unknown error %d", ze);
+    zip_error_init(&error);
+    zip_error_set(&error, ze, se);
 
-    zs = _zip_err_str[ze];
-	
-    switch (_zip_err_type[ze]) {
-    case ZIP_ET_SYS:
-	ss = strerror(se);
-	break;
-	
-    case ZIP_ET_ZLIB:
-	ss = zError(se);
-	break;
-	
-    default:
-	ss = NULL;
-    }
+    error_string = zip_error_strerror(&error);
 
-    return snprintf(buf, len, "%s%s%s",
-		    zs, (ss ? ": " : ""), (ss ? ss : ""));
+    ret = snprintf_s(buf, ZIP_MIN(len, SIZE_MAX), error_string, strlen(error_string));
+
+    zip_error_fini(&error);
+
+    return ret;
 }
+/* LCOV_EXCL_STOP */

@@ -305,14 +305,26 @@
     {
       "name": "libvorbis",
       "path": "src/thirdparty/libvorbis",
-      "version": "1.3.6",
+      "version": "1.3.7",
       "version_evidence": "src/thirdparty/libvorbis/lib/info.c",
       "upstream": "https://github.com/xiph/vorbis",
-      "assessment": "upgrade",
-      "notes": "Encoder CVE-2018-10393 fix is absent in psy.c. Upgrade to 1.3.7; assess encoder input conditions.",
+      "assessment": "fixed",
+      "notes": "All imported include/ and lib/ files match the 1.3.7 release; standalone tool sources stay excluded. Encoder low-sample-rate and invalid-setup regression test added.",
       "source_revision": "1116575774d174fc1e79fbb0e1458319be0af548",
       "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "a070982556e996e0cb19ed9d3e1723700779db6e278e29cb9ae4ed1ef5bd7e35"
+      "source_fingerprint_sha256": "c12284fba99ae046b5113ca8e1b3ae385e1cd10061008b60be7d2d911530619d",
+      "baseline_source_fingerprint_sha256": "a070982556e996e0cb19ed9d3e1723700779db6e278e29cb9ae4ed1ef5bd7e35",
+      "upstream_tag": "v1.3.7",
+      "retained_patches": [
+        ".clang-format"
+      ],
+      "resolved_advisories": [
+        "CVE-2018-10393",
+        "CVE-2018-10392"
+      ],
+      "working_tree_modified": true,
+      "updated_at": "2026-10-25",
+      "upstream_archive_sha256": "b33cc4934322bcbf6efcbacf49e3ca01aadbea4114ec9589d1b1e9d20f72954b"
     },
     {
       "name": "libwebp",
@@ -341,26 +353,72 @@
     {
       "name": "libzip",
       "path": "src/thirdparty/libzip",
-      "version": "0.10 + local hardening",
+      "version": "1.12.1",
       "version_evidence": "src/thirdparty/libzip/zipconf.h",
       "upstream": "https://libzip.org/",
-      "assessment": "review",
-      "notes": "CVE-2012-1162 guarded locally. Old offset/size arithmetic and allocation checks still need work; modern libzip migration needs API/build review.",
+      "assessment": "fixed",
+      "notes": "Replaced the 0.10 fork with upstream lib/ sources; hand-written config.h/zipconf.h, generated zip_err_str.c. Old offset/size and allocation arithmetic is gone. Only zip.h's zipconf.h include is patched. The fork's ZIP_LIMIT_METADATA bounded open and the VFS ZIP limits were removed at the maintainer's direction. bzip2/xz/zstd/WinZip AES not built.",
       "source_revision": "a94a6f5f7ed694cabe344c6227357db6e94cfecd",
       "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "fe27084b4570a8471912c9244187f0c508e37565b3662a93cb1ca9d16a3612e8"
+      "source_fingerprint_sha256": "29220266a16ee1fd0c4663f10bc321876ea1bca5f1d3a1cb50457c81e2df4559",
+      "baseline_source_fingerprint_sha256": "fe27084b4570a8471912c9244187f0c508e37565b3662a93cb1ca9d16a3612e8",
+      "upstream_tag": "v1.12.1",
+      "retained_patches": [
+        "zip.h",
+        "zip_err_str.c",
+        "config.h",
+        "zipconf.h",
+        "README.eepp.md",
+        ".clang-format"
+      ],
+      "resolved_advisories": [
+        "CVE-2012-1163",
+        "CVE-2015-2331",
+        "CVE-2017-12858",
+        "CVE-2017-14107"
+      ],
+      "working_tree_modified": true,
+      "updated_at": "2026-10-25",
+      "upstream_archive_sha256": "c40062022a1963c80573d48f6070792297cecd7c6bffe3aefcac0d8b9bee8913"
     },
     {
       "name": "mbedtls",
       "path": "src/thirdparty/mbedtls",
-      "version": "3.6.0",
+      "version": "3.6.7",
       "version_evidence": "src/thirdparty/mbedtls/include/mbedtls/build_info.h",
       "upstream": "https://github.com/Mbed-TLS/mbedtls",
-      "assessment": "upgrade",
-      "notes": "Upgrade within LTS to 3.6.7. Multiple advisories have API, compiler, protocol-role or deployment preconditions; no blanket remote-RCE claim for eepp TLS client.",
+      "assessment": "fixed",
+      "notes": "Library sources and headers match the 3.6.7 LTS release except include/mbedtls/mbedtls_config.h, whose eepp block is retained (PSA crypto, TLS 1.3, LMS and weak key exchanges disabled). Restored PSA sources compile to empty objects. TLS client trust/hostname test added.",
       "source_revision": "1576fa7eb1c1664135326850c0fcf9f4d694d0b9",
       "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "d4ef114cebeaf7a0ebada30fc7cfb6469cb3b32fdee3bff1f064d20141aab764"
+      "source_fingerprint_sha256": "54c9b453ec73b73dfd413a07a457e0383c1ced78d20919f2e0f0d5ff51d4ca14",
+      "baseline_source_fingerprint_sha256": "d4ef114cebeaf7a0ebada30fc7cfb6469cb3b32fdee3bff1f064d20141aab764",
+      "upstream_tag": "mbedtls-3.6.7",
+      "retained_patches": [
+        "include/mbedtls/mbedtls_config.h",
+        ".clang-format"
+      ],
+      "resolved_advisories": [
+        "CVE-2024-45158",
+        "CVE-2024-45159",
+        "CVE-2024-49195",
+        "CVE-2025-47917",
+        "CVE-2025-48965",
+        "CVE-2025-52496",
+        "CVE-2026-25833",
+        "CVE-2026-25835",
+        "CVE-2026-34872",
+        "CVE-2026-34873",
+        "CVE-2026-34874",
+        "CVE-2026-34875",
+        "CVE-2026-34876",
+        "CVE-2026-49300",
+        "CVE-2026-50579",
+        "CVE-2026-50580"
+      ],
+      "working_tree_modified": true,
+      "updated_at": "2026-10-25",
+      "upstream_archive_sha256": "a7e8bcbec0e6f761b4af24f25677626b35f762f68eef79c08677a363212d11f6"
     },
     {
       "name": "md4c",
@@ -401,14 +459,23 @@
     {
       "name": "monocypher",
       "path": "src/thirdparty/monocypher",
-      "version": "4.0.2",
+      "version": "4.0.3",
       "version_evidence": "src/thirdparty/monocypher/monocypher.h",
       "upstream": "https://monocypher.org/",
-      "assessment": "maintenance",
-      "notes": "4.0.3 fixes compiler-dependent Ed25519/EdDSA timing leakage. Used for libssh2 Ed25519 signing and X25519; no high CVE assigned to this issue found.",
+      "assessment": "fixed",
+      "notes": "monocypher.{c,h} and monocypher-ed25519.{c,h} match the 4.0.3 release, fixing the compiler-dependent Ed25519 signing timing leak used by the SSH backend.",
       "source_revision": "88675a7c84b0785295d55a96477a8c046cc9f34c",
       "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "0061c4d2f475444b87289c62c9821de09c13b683f6b3cf01a594f9cd8fc80d6e"
+      "source_fingerprint_sha256": "6b1c995a9faa61f3f3222b1c2636a26b40e2ae6ced9208db54ba2d215568eb7c",
+      "baseline_source_fingerprint_sha256": "0061c4d2f475444b87289c62c9821de09c13b683f6b3cf01a594f9cd8fc80d6e",
+      "upstream_tag": "4.0.3",
+      "retained_patches": [
+        "README.eepp.md",
+        ".clang-format"
+      ],
+      "working_tree_modified": true,
+      "updated_at": "2026-10-25",
+      "upstream_archive_sha256": "8cc9bc341a66249016db9bd70e9142d8d0aef9945973744b1ac05dbc55d8ee66"
     },
     {
       "name": "nanosvg",
@@ -522,14 +589,26 @@
     {
       "name": "simdutf",
       "path": "src/thirdparty/simdutf",
-      "version": "9.2.0",
+      "version": "9.2.1",
       "version_evidence": "src/thirdparty/simdutf/simdutf.h",
       "upstream": "https://github.com/simdutf/simdutf",
-      "assessment": "maintenance",
-      "notes": "High GHSA-pw55-7mm7-cvhh is fixed in 9.2.1, but eepp does not call the affected Base64 APIs. Recommend >=9.2.1.",
+      "assessment": "fixed",
+      "notes": "Regenerated 9.2.1 amalgamation limited to UTF-8 and UTF-32, the same feature set as before; Base64 and Latin-1 are not compiled, so GHSA-pw55-7mm7-cvhh was not reachable.",
       "source_revision": "e2174aa04482cace8d416ac2bc960e9e9b724f54",
       "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "485a6b6e2b917237612bc99005cc0fba40504b8e5931a8aa91db6d2a3a126b49"
+      "source_fingerprint_sha256": "3bb0cd4013f8067968c4b40d43d0d915b3858f1c7c992db036679eefca8c7b95",
+      "baseline_source_fingerprint_sha256": "485a6b6e2b917237612bc99005cc0fba40504b8e5931a8aa91db6d2a3a126b49",
+      "upstream_tag": "v9.2.1",
+      "retained_patches": [
+        "simdutf.h",
+        "simdutf.cpp",
+        ".clang-format"
+      ],
+      "resolved_advisories": [
+        "GHSA-pw55-7mm7-cvhh"
+      ],
+      "working_tree_modified": true,
+      "updated_at": "2026-10-25"
     },
     {
       "name": "SOIL2",

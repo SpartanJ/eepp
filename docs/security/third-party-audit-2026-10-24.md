@@ -20,29 +20,34 @@ release has not been established.
 | libssh2 | 1.11.1 plus local crypto integration | **1.11.2_DEV**, pinned to upstream `6e7b2076a6ced2230968b27ee7c1abb77fe5a88d` | Refreshed the complete imported library source, preserving eepp's build configuration, classic Mbed TLS APIs and Monocypher integration. This is an unreleased snapshot, not a 1.11.2 release. |
 | libpng | 1.6.37 | **1.6.59** | Imported upstream library sources, architecture implementations and the release's prebuilt configuration without source patches. |
 | NanoSVG | Modified FLTK-derived snapshot | Same snapshot plus manual security fixes | Patched the reported arc conversion, fixed-point conversion/advancement and stroke tessellation issues while retaining local style/currentColor behavior. |
+| libzip | 0.10 plus local hardening | **1.12.1** | Replaced the fork with the upstream release; only an include-path patch remains. `Zip` uses the current API. ZIP browsing limits were removed. |
+| Mbed TLS | 3.6.0 | **3.6.7** (LTS) | Library and headers match the release; eepp's `mbedtls_config.h` block is retained (PSA crypto, TLS 1.3 and weak algorithms remain disabled). |
+| libvorbis | 1.3.6 | **1.3.7** | Includes the CVE-2018-10393 encoder bounds fix and the channel validation changes; all imported files match the release. |
+| Monocypher | 4.0.2 | **4.0.3** | Fixes the compiler-dependent Ed25519 signing timing leak; imported sources match the release. |
+| simdutf | 9.2.0 | **9.2.1** | Regenerated amalgamation with the same UTF-8/UTF-32-only feature set; Base64 stays disabled. |
 
-The release unit-test target builds with the required macOS script. The final full
-native release suite passed **2,124 tests**, including all **34 SFTP integration tests**
-against isolated loopback SSH servers and all **6 focused security tests**. The
-security cases cover five NanoSVG numeric/style regressions and RGB/RGBA palette
-decoding with 17-pixel rows. Both palette Neon functions are linked into the test
-executable on this ARM64 host.
+Validation of the complete working tree:
 
-The full suite includes PNG color-font loading/rendering, image loading and SVG UI
-coverage. No cross-platform build, optional OpenSSL-backend build or sanitizer/fuzz
-campaign was performed. Passing functional tests does not establish absence of all
-malformed-input vulnerabilities.
+- macOS ARM64: the full native release suite passed all 2,128 tests, including the SFTP
+  integration tests against loopback SSH servers and the PNG, NanoSVG, ZIP, TLS and Vorbis
+  security tests.
+- Linux ARM64 (Ubuntu 24.04, GCC 13, SDL 3.4.10, Docker): the release build succeeded and the
+  headless suite passed 2,139 of 2,140 tests with all SFTP tests required; one font test
+  skipped for lack of a font with a non-normal stretch.
+- Windows x86_64 (MinGW-w64 GCC 13 cross-build, Wine 7.7): the unit tests build and all ZIP
+  tests pass; the full suite under Wine was not conclusive (file-watch, long-path and headless
+  UI failures not reproduced on real Windows).
+- ASan/UBSan libFuzzer runs: ZIP (300 s, 3.39 M inputs) and NanoSVG, without findings. The
+  Linux CI job now fuzzes NanoSVG for 60 s and requires the SFTP tests to run.
+
+Not run: Linux x86_64, Android, Emscripten and the optional OpenSSL backend. Passing
+functional tests does not establish absence of all malformed-input vulnerabilities.
 
 ## Remaining cleanup order
 
 | Order | Component | Current source | Action | Reason and qualification |
 | --- | --- | --- | --- | --- |
-| 1 | libzip | 0.10 plus local hardening | Resolve residual arithmetic checks; plan a modern libzip migration | Local changes address one old CVE, but other unchecked arithmetic remains. Bounded VFS opens and the public unrestricted ZIP API have different exposure. |
-| 2 | Mbed TLS | 3.6.0 | Upgrade within LTS to 3.6.7 | Substantial security backlog. Many high-scoring findings require unused APIs, a TLS server role, unusual compiler behavior, or deployment conditions. Do not characterize the ordinary eepp HTTPS client as a confirmed RCE. |
-| 3 | libvorbis | 1.3.6 | Upgrade to 1.3.7 | The CVE-2018-10393 encoder bounds fix is absent; eepp includes an encoder. |
-| 4 | Bundled SDL2 source | 2.0.12 | Reconcile Android source with the newer SDL2 pin | Old source has high-severity surface/blit issues; an application exploit path was not established. |
-| 5 | simdutf | 9.2.0 | Update to at least 9.2.1 | High upstream advisory affects Base64 APIs that eepp does not currently call. |
-| 6 | Monocypher | 4.0.2 | Update to 4.0.3 | Compiler-dependent EdDSA/Ed25519 timing fix. Signing is used by our SSH backend; no high CVE for that issue was established. |
+| 1 | Bundled SDL2 source | 2.0.12 | Reconcile Android source with the newer SDL2 pin | Old source has high-severity surface/blit issues; an application exploit path was not established. |
 
 Orders indicate engineering priority for this repository, not a new CVSS score.
 Targets are releases verified during the initial audit; check upstream again before
@@ -144,46 +149,84 @@ These findings concern numeric undefined behavior and availability. The original
 reports include sanitizer-triggered termination; neither the initial audit nor this
 remediation establishes an eepp RCE or a deterministic release-build crash.
 
-## Remaining findings
+### libzip
 
-### libzip: old release with meaningful local changes
+Replaced the 0.10 fork with [libzip 1.12.1](https://github.com/nih-at/libzip/releases/tag/v1.12.1)
+(`libzip-1.12.1.tar.xz`, SHA-256
+`c40062022a1963c80573d48f6070792297cecd7c6bffe3aefcac0d8b9bee8913`, matching the GitHub
+release digest). [`README.eepp.md`](../../src/thirdparty/libzip/README.eepp.md) records the
+imported sources, the hand-written `config.h`/`zipconf.h` that replace CMake, the generated
+error table and the retained patches.
 
-[`zipconf.h`](../../src/thirdparty/libzip/zipconf.h) says 0.10, but the source is not
-an unmodified 0.10 release. In particular:
+The initial audit's open questions about the old code no longer apply:
 
-- CVE-2012-1162's zero-entry allocation/write condition is guarded in
-  [`zip_open.c`](../../src/thirdparty/libzip/zip_open.c), and the empty-directory
-  case returns before the original `do` loop. Do not list this as unpatched.
-- CVE-2017-12858's upstream fix removes a second free of a `zip_buffer` in
-  `_zip_dirent_process_winzip_aes()` failure handling. That machinery is absent
-  here. A scanner's version-only match is insufficient. ZIP64 advisory
-  CVE-2017-14107 likewise targets code not present in this old implementation.
-- The allocation bounds check associated with CVE-2015-2331 is absent from
-  `_zip_cdir_new()`, and `_zip_cdir_grow()` also multiplies without an allocation
-  overflow check. Exact reachability depends on entry-count handling and platform
-  size; the initial count here is only 16-bit, so this is not a reproduced CVE.
-- The expression `cd->offset + cd->size` still adds two `unsigned int` fields
-  before checking the end of the directory. This is the family of offset/size
-  arithmetic covered by CVE-2012-1163 (legacy CVSS 2.0 6.8). It warrants a focused
-  review even though it falls below this audit's nominal high threshold.
+- The `cd->offset + cd->size` addition (CVE-2012-1163 family) and the unchecked
+  `_zip_cdir_new()`/`_zip_cdir_grow()` multiplications (CVE-2015-2331 family) are gone. 1.12.1
+  reads 64-bit EOCD fields through bounds-checked buffers, rejects wrapping offsets and sizes,
+  rejects ZIP64 entry counts larger than the directory can hold, and grows arrays through
+  overflow-checked `ZIP_REALLOC`.
+- The signed-shift undefined behavior that a sanitizer run found in the old `_zip_read4()`, and the
+  entry-capacity update made before `realloc()` succeeded, existed only in the old fork. No
+  uncommitted fixes to 0.10 were kept.
+- CVE-2017-12858 and CVE-2017-14107 are fixed upstream. 1.12.1 also includes the later
+  hardening listed in the [security history](https://libzip.org/security/).
 
-The VFS path uses `OpenMode::ReadOnlyBounded` / `ZIP_LIMIT_METADATA`, which constrains
-large directories. The ordinary public `Zip::open()` uses `zip_open(..., 0, ...)`.
-Do not apply the VFS mitigation to every caller.
+The only source patch is `zip.h` including `"zipconf.h"` instead of `<zipconf.h>`.
 
-Sources: [libzip security history](https://libzip.org/security/),
-[CVE-2015-2331 allocation fix](https://github.com/php/php-src/commit/ef8fc4b53d92fbfcd8ef1abbd6f2f5fe2c4a11e5),
-[CVE-2017-12858 actual fix](https://github.com/nih-at/libzip/commit/2217022b7d1142738656d891e00b3d2d9179b796).
-The verified current upstream release is 1.12.1. Migration needs work on our
-custom APIs, file-descriptor ownership, metadata limits and build integration;
-it is not a drop-in replacement for the current fork.
+The old fork's `ZIP_LIMIT_METADATA` bounded open, and the VFS `ZipProvider` limits of 262,144
+entries and a 64 MiB metadata budget, were removed at the maintainer's direction. ZIP browsing
+now accepts whatever the format and libzip support. libzip bounds the entry count by the
+central directory size, so index memory grows with the archive: about 300 bytes per typical
+entry, and roughly 10× the directory size for a crafted directory of empty extra fields.
+`ArchiveProvider` (libarchive) still has its own 262,144-entry / 64 MiB limits.
 
-### Mbed TLS: upgrade, with precise exposure accounting
+`Zip` now opens read-only mode with `zip_open(ZIP_RDONLY)`. libzip converts UTF-8 paths to
+wide paths on Windows, so the `fopenUtf8`/`dup`/`zip_fdopen` ownership workaround was removed,
+and `ReadWrite` opens gain Unicode support on Windows. Deprecated calls were replaced by
+`zip_file_add`, `zip_get_error`, `zip_error_strerror` and `zip_discard`. The old 0.10
+Windows `rename()` workaround is superseded by upstream's Win32 backend. bzip2, xz, zstd and
+WinZip AES remain disabled, as they were in 0.10. On Windows, `advapi32` is now linked for
+upstream's random-number and ACL code.
 
-Default TLS backend is selected in `premake5.lua`; OpenSSL is optional.
-[`build_info.h`](../../src/thirdparty/mbedtls/include/mbedtls/build_info.h)
-identifies 3.6.0. The [3.6.7 LTS release](https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.7)
-is the verified update target, avoiding a simultaneous 4.x migration.
+InfoZIP archives whose 16-bit count wraps (for example, exactly 65,536 entries) now open,
+and libzip recovers the count from the directory size; the old fork rejected them because it
+could not decode them safely.
+
+Validation:
+[`zip_security_tests.cpp`](../../src/tests/unit_tests/zip_security_tests.cpp) covers wrapped and
+high-bit 32-bit ranges, 64-bit offset/size wrapping, and ZIP64 counts at 2^32 and 2^32−1 (which
+wrap a 32-bit allocation). A 300 s ASan/UBSan libFuzzer run of a temporary ZIP target, through
+the public `zip_open_from_source()` API, executed 3.39 M inputs without a finding. That target was
+then removed: libzip is now unmodified apart from one include line, and upstream maintains
+OSS-Fuzz harnesses. The NanoSVG target remains, because the local fork has no upstream fuzzing;
+the Linux CI job fuzzes it for 60 s on every run.
+
+- macOS ARM64: the full native release suite passed all 2,128 tests.
+- Linux ARM64 (Ubuntu 24.04, GCC 13, SDL 3.4.10, in Docker): the release build and the full
+  headless suite passed 2,139 of 2,140 tests, with all SFTP integration tests required and
+  run; one font test skipped for lack of a font with a non-normal stretch.
+- Windows x86_64 (MinGW-w64 GCC 13 cross-build, run under Wine 7.7): libzip builds without
+  warnings and all 21 ZIP tests pass. The full suite under Wine is not conclusive: file-watch,
+  long-path and headless UI tests failed or crashed in ways not yet reproduced on real Windows.
+- Linux x86_64, Android and Emscripten builds of the new configuration were not run.
+
+### Mbed TLS
+
+Updated from 3.6.0 to the [3.6.7 LTS release](https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.7)
+(`mbedtls-3.6.7.tar.bz2`, SHA-256
+`a7e8bcbec0e6f761b4af24f25677626b35f762f68eef79c08677a363212d11f6`), avoiding a simultaneous
+4.x migration. Every imported library source and header matches the release except
+`include/mbedtls/mbedtls_config.h`, whose trailing eepp block is retained: weak key exchanges,
+DES and DHM disabled, deprecated APIs removed, AESCE limited to AArch64 Linux, and
+`MBEDTLS_PSA_CRYPTO_C`, `MBEDTLS_SSL_PROTO_TLS1_3` and LMS disabled. The release's PSA
+sources are present again (3.6.0's import had deleted them as unused); with PSA disabled they
+compile to empty objects. They are kept deliberately: TLS 1.3 in Mbed TLS 3.6 requires PSA, and
+enabling it is planned as a separate migration. The libssh2 classic-API adapter is unchanged.
+
+The default TLS backend is selected in `premake5.lua`; OpenSSL is optional and was not
+built in this validation. [`tls_security_tests.cpp`](../../src/tests/unit_tests/tls_security_tests.cpp)
+connects to a loopback OpenSSL `s_server` (TLS 1.2), and checks that a trusted certificate is
+accepted while a wrong host name and an untrusted certificate are rejected.
 
 The ordinary [`MbedTLSSocket`](../../src/eepp/network/ssl/backend/mbedtls/mbedtlssocket.cpp)
 is a stream TLS client. It sets the hostname, uses certificate verification when
@@ -207,7 +250,7 @@ matches, not a claim they all affect that client:
 | CVE-2026-49300 | Malformed certificate interpreted as a CA. Upstream's exploit scenario requires accepting untrusted certificates through a different validator/trust-registration process; such a workflow was not found here. |
 | CVE-2026-50580 | TLS 1.2 ECDHE-PSK client with oversized configured PSK identity. No PSK configuration calls found. |
 | CVE-2026-50579 | Reused PKCS7 context; no PKCS7 caller found. |
-| CVE-2026-50713 | Introduced in 3.6.3; 3.6.0 is outside the affected interval. DTLS also differs from the eepp stream TLS path. |
+| CVE-2026-50713 | Introduced in 3.6.3, after the old 3.6.0, and fixed in 3.6.7 (DTLS renegotiation with `badmac_limit`). DTLS also differs from the eepp stream TLS path. |
 
 Advisory definitions and fixes: [official security index](https://mbed-tls.readthedocs.io/en/latest/security-advisories/).
 The individual documents were read from the official `Mbed-TLS/mbedtls-docs`
@@ -215,25 +258,24 @@ source archive, including issues whose NVD descriptions omit configuration detai
 The [AESNI advisory](https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-1/)
 is particularly useful when assessing x86 distribution builds.
 
-Several additional low/medium fixes apply to this old TLS baseline. Keeping 3.6.0
-because an individual high-CVE precondition is absent would leave that backlog.
-An upgrade is recommended, but the distinctions above should remain in the record.
+Advisory definitions and fixes: [official security index](https://mbed-tls.readthedocs.io/en/latest/security-advisories/).
+The individual documents were read from the official `Mbed-TLS/mbedtls-docs`
+source archive, including issues whose NVD descriptions omit configuration details.
+The [AESNI advisory](https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-1/)
+is particularly useful when assessing x86 distribution builds. 3.6.7 also clears the low and
+medium fixes accumulated since 3.6.0.
 
-### libvorbis: encoder update
+### libvorbis
 
-[`lib/info.c`](../../src/thirdparty/libvorbis/lib/info.c) identifies 1.3.6.
-[`lib/psy.c`](../../src/thirdparty/libvorbis/lib/psy.c) still lacks the loop/index
-bounds added for CVE-2018-10393 (CVSS 3.1 7.5). This was verified by comparing the
-local file with the official 1.3.7 archive.
-[`SoundFileWriterOgg`](../../src/eepp/audio/soundfilewriterogg.cpp) configures the
-Vorbis encoder with the supplied sample rate/channel count and invokes its analysis
-pipeline. The relevant issue is encoding unusual low sample rates, not ordinary
-playback of every Ogg file. Upgrade to 1.3.7 and test those input conditions.
-
-CVE-2018-10392 is another version match involving channel validation; its precise
-caller conditions were not reproduced. Include the upstream channel-validation
-changes in the refresh.
-Source: [upstream 1.3.7 changelog](https://github.com/xiph/vorbis/blob/v1.3.7/CHANGES).
+Updated from 1.3.6 to [1.3.7](https://github.com/xiph/vorbis/blob/v1.3.7/CHANGES)
+(`libvorbis-1.3.7.tar.xz`, SHA-256
+`b33cc4934322bcbf6efcbacf49e3ca01aadbea4114ec9589d1b1e9d20f72954b`). All imported files match
+the release, including the CVE-2018-10393 loop/index bounds in `lib/psy.c` and the
+CVE-2018-10392 channel validation. The standalone tool sources that eepp removed earlier
+(`tone.c`, `barkmel.c`) remain excluded. [`SoundFileWriterOgg`](../../src/eepp/audio/soundfilewriterogg.cpp)
+drives the encoder; [`vorbis_security_tests.cpp`](../../src/tests/unit_tests/vorbis_security_tests.cpp)
+encodes and decodes mono and stereo at 1 Hz to 44.1 kHz and checks that invalid rates and
+channel counts are rejected.
 
 ## High findings whose current eepp API conditions were not found
 
@@ -269,18 +311,16 @@ Sources: [Cairo advisory](https://github.com/harfbuzz/harfbuzz/security/advisori
 
 ### simdutf and Monocypher
 
-simdutf 9.2.0 is within the high
+simdutf was updated from 9.2.0 to 9.2.1, which fixes the high
 [GHSA-pw55-7mm7-cvhh](https://github.com/simdutf/simdutf/security/advisories/GHSA-pw55-7mm7-cvhh)
-range. It affects Base64 decoding into exactly sized output buffers, and is fixed
-in 9.2.1. eepp uses Unicode conversion/counting functions; no affected Base64
-consumer was found. The related LASX Latin-1 issue is also fixed in 9.2.1, but those
-conversion functions were not found among current callers. Neither advisory had a
-CVE assigned when checked.
+Base64 issue and the related LASX Latin-1 issue. eepp vendors a regenerated amalgamation
+limited to UTF-8 and UTF-32, as before; Base64 and Latin-1 support are not compiled, so
+neither advisory was reachable.
 
-Monocypher 4.0.3 fixes an EdDSA/Ed25519 timing leak in 4.0.2 and earlier with certain
-compiler/options combinations. Our SSH integration does sign using Ed25519, so
-update it during the SSH refresh. No high-scored CVE was found for that particular
-issue. Sources: [known bugs](https://monocypher.org/bugs),
+Monocypher was updated from 4.0.2 to 4.0.3, which fixes the compiler-dependent EdDSA/Ed25519
+timing leak. Our SSH integration signs with Ed25519, so this was relevant. The imported
+`monocypher.{c,h}` and `monocypher-ed25519.{c,h}` match the release. Sources:
+[known bugs](https://monocypher.org/bugs),
 [4.0.3 release](https://github.com/LoupVaillant/Monocypher/releases/tag/4.0.3).
 
 ### SDL version selection
@@ -350,15 +390,15 @@ and establish a verified tag/commit before calling a future update routine.
 | libogg | 1.3.3 | Screened | [framing.c](../../src/thirdparty/libogg/src/framing.c) |
 | libpng | 1.6.59 | Fixed | [png.h](../../src/thirdparty/libpng/png.h) |
 | libssh2 | 1.11.2_DEV @ 6e7b2076 + local integration | Fixed | [libssh2.h](../../src/thirdparty/libssh2/include/libssh2.h) |
-| libvorbis | 1.3.6 | Upgrade | [info.c](../../src/thirdparty/libvorbis/lib/info.c) |
+| libvorbis | 1.3.7 | Fixed | [info.c](../../src/thirdparty/libvorbis/lib/info.c) |
 | libwebp | 1.5.0 | Screened | [vp8i_dec.h](../../src/thirdparty/libwebp/src/dec/vp8i_dec.h) |
 | libyaml | 0.2.5 | Screened | [config.h](../../src/thirdparty/libyaml/src/config.h) |
-| libzip | 0.10 + local hardening | Review | [zipconf.h](../../src/thirdparty/libzip/zipconf.h) |
-| mbedtls | 3.6.0 | Upgrade | [build_info.h](../../src/thirdparty/mbedtls/include/mbedtls/build_info.h) |
+| libzip | 1.12.1 | Fixed | [zipconf.h](../../src/thirdparty/libzip/zipconf.h) |
+| mbedtls | 3.6.7 | Fixed | [build_info.h](../../src/thirdparty/mbedtls/include/mbedtls/build_info.h) |
 | md4c | Unversioned/patched snapshot | Snapshot | [md4c.c](../../src/thirdparty/md4c/md4c.c) |
 | mojoAL | 2.0.1 | Screened | [mojoal.c](../../src/thirdparty/mojoAL/mojoal.c) |
 | mojoAL-SDL3 | 2.9.9 | Screened | [mojoal.c](../../src/thirdparty/mojoAL-SDL3/mojoal.c) |
-| monocypher | 4.0.2 | Maintenance | [monocypher.h](../../src/thirdparty/monocypher/monocypher.h) |
+| monocypher | 4.0.3 | Fixed | [monocypher.h](../../src/thirdparty/monocypher/monocypher.h) |
 | nanosvg | Snapshot + 2026-10-25 security patches | Fixed | [nanosvg.h](../../src/thirdparty/nanosvg/nanosvg.h) |
 | nlohmann | 3.12.0 | Screened | [json.hpp](../../src/thirdparty/nlohmann/json.hpp) |
 | oniguruma | 6.9.10 | Screened | [oniguruma.h](../../src/thirdparty/oniguruma/oniguruma.h) |
@@ -367,7 +407,7 @@ and establish a verified tag/commit before calling a future update routine.
 | pugixml | 1.12 | Screened | [pugixml.hpp](../../src/thirdparty/pugixml/pugixml.hpp) |
 | SDL2 | 2.0.12 | Conditional | [SDL_version.h](../../src/thirdparty/SDL2/include/SDL_version.h) |
 | SheenBidi | 2.9.0 | Screened | [SBVersion.h](../../src/thirdparty/SheenBidi/Headers/SheenBidi/SBVersion.h) |
-| simdutf | 9.2.0 | Maintenance | [simdutf.h](../../src/thirdparty/simdutf/simdutf.h) |
+| simdutf | 9.2.1 (UTF-8/UTF-32 build) | Fixed | [simdutf.h](../../src/thirdparty/simdutf/simdutf.h) |
 | SOIL2 | 1.3.0 snapshot | Screened | [SOIL2.h](../../src/thirdparty/SOIL2/src/SOIL2/SOIL2.h) |
 | subprocess | Unversioned/patched snapshot | Snapshot | [subprocess.h](../../src/thirdparty/subprocess/subprocess.h) |
 | tabulate | 1.5.0 | Screened | [tabulate.hpp](../../src/thirdparty/tabulate/tabulate.hpp) |
@@ -457,16 +497,10 @@ Coverage gaps that remain explicit:
 
 ## Remaining implementation batches
 
-1. **ZIP follow-up:** resolve arithmetic questions in the current fork, then decide
-   between focused security backports and migration to modern libzip. Preserve
-   bounded-open behavior and ownership semantics during migration.
-2. **Cryptography maintenance:** Mbed TLS 3.6.7 and Monocypher 4.0.3, validating HTTP,
-   certificate checks, SSH keys, session lifetime and backend compatibility. Retain
-   the libssh2 classic API adapter unless PSA/threading migration is deliberate.
-3. **Audio/platform maintenance:** Vorbis 1.3.7 and Android SDL source reconciliation.
-4. **Small exposure-reducing updates:** simdutf >=9.2.1 and PCRE2 10.49. Establish
-   verified provenance for the remaining snapshot-only imports.
-5. Replace the libssh2 development snapshot with a security-fixed stable release
+1. **Platform maintenance:** reconcile the Android SDL2 source with the newer SDL2 pin.
+2. **Small exposure-reducing updates:** PCRE2 10.49. Establish verified provenance for the
+   remaining snapshot-only imports.
+3. Replace the libssh2 development snapshot with a security-fixed stable release
    when one is available, retaining the recorded integration patches.
 
 For subsequent updates, record the upstream release/commit and retained patches

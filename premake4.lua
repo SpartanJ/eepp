@@ -163,6 +163,7 @@ if _OPTIONS.platform then
 	premake.gcc.platforms['Native'] = premake.gcc.platforms[_OPTIONS.platform]
 end
 
+newoption { trigger = "with-security-fuzz", description = "Build the standalone NanoSVG libFuzzer target with ASan and UBSan (Clang required)." }
 newoption { trigger = "with-openssl", description = "Enables OpenSSL support ( and disables mbedtls backend )." }
 newoption { trigger = "with-dynamic-freetype", description = "Dynamic link against freetype." }
 newoption { trigger = "with-static-eepp", description = "Force to build the demos and tests with eepp compiled statically" }
@@ -393,7 +394,6 @@ function build_base_configuration( package_name )
 	end
 
 	if is_vs() then
-		includedirs { "src/thirdparty/libzip/vs" }
 		buildoptions { "/utf-8" }
 	end
 
@@ -729,11 +729,11 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.is_real("windows") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "shlwapi", "dwrite", "uiautomationcore", "comctl32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "shlwapi", "dwrite", "uiautomationcore", "comctl32", "advapi32" } )
 	elseif os.is_real("mingw32") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "shlwapi", "dwrite", "uiautomationcore", "comctl32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "shlwapi", "dwrite", "uiautomationcore", "comctl32", "advapi32" } )
 	elseif os.is_real("mingw64") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "shlwapi", "dwrite", "uiautomationcore", "comctl32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "shlwapi", "dwrite", "uiautomationcore", "comctl32", "advapi32" } )
 	elseif os.is_real("macosx") then
 		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
 	elseif os.is_real("bsd") then
@@ -1221,10 +1221,6 @@ function build_eepp( build_name )
 
 	add_static_links()
 
-	if is_vs() then
-		includedirs { "src/thirdparty/libzip/vs" }
-	end
-
 	if not is_vs() then
 		buildoptions{ "-std=c++20" }
 	else
@@ -1388,7 +1384,12 @@ solution "eepp"
 		language "C"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		files { "src/thirdparty/libzip/*.c" }
-		includedirs { "src/thirdparty/zlib" }
+		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
+			files { "src/thirdparty/libzip/win32/*.c" }
+		else
+			files { "src/thirdparty/libzip/posix/*.c" }
+		end
+		includedirs { "src/thirdparty/libzip", "src/thirdparty/zlib" }
 		build_base_configuration( "libzip" )
 
 	project "libpng-static"
@@ -2388,6 +2389,22 @@ solution "eepp"
 				linkoptions { "-municode" }
 			configuration {}
 	end
+
+-- Self-contained target instruments the vendored NanoSVG fork without reusing production archives.
+if _OPTIONS["with-security-fuzz"] then
+	project "eepp-fuzz-nanosvg"
+		kind "ConsoleApp"
+		language "C++"
+		configuration {}
+		targetdir "bin/security"
+		targetname "eepp-fuzz-nanosvg"
+		objdir "obj/security-fuzz/nanosvg"
+		includedirs { "src/thirdparty" }
+		files { "src/tests/security/fuzz_nanosvg.cpp" }
+		buildoptions { "-g", "-O1", "-fno-omit-frame-pointer",
+			"-fsanitize=fuzzer,address,undefined", "-fno-sanitize-recover=all" }
+		linkoptions { "-fsanitize=fuzzer,address,undefined" }
+end
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

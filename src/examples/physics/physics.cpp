@@ -54,7 +54,8 @@ static const int image_width = 188;
 static const int image_height = 35;
 static const int image_row_length = 24;
 
-static const char image_bitmap[] = {
+// Signed explicitly: the bitmap uses negative literals, and char is unsigned on AArch64 Linux.
+static const signed char image_bitmap[] = {
 	15,	  -16,	0,	  0,   0,	 0,	  0,   0,	0,	 0,	  0,	0,	  0,	0,	  0,   0,	 0,
 	0,	  0,	0,	  0,   7,	 -64, 15,  63,	-32, -2,  0,	0,	  0,	0,	  0,   0,	 0,
 	0,	  0,	0,	  0,   0,	 0,	  0,   0,	0,	 0,	  0,	31,	  -64,	15,	  127, -125, -1,

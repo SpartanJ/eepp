@@ -1,9 +1,9 @@
 /*
   zip_source_layered.c -- create layered source
-  Copyright (C) 2009 Dieter Baron and Thomas Klausner
+  Copyright (C) 2009-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,28 +32,43 @@
 */
 
 
-
 #include <stdlib.h>
 
 #include "zipint.h"
 
 
+zip_source_t *zip_source_layered(zip_t *za, zip_source_t *src, zip_source_layered_callback cb, void *ud) {
+    if (za == NULL) {
+        return NULL;
+    }
 
-ZIP_EXTERN struct zip_source *
-zip_source_layered(struct zip *za, struct zip_source *src,
-		   zip_source_layered_callback cb, void *ud)
-{
-    struct zip_source *zs;
+    return zip_source_layered_create(src, cb, ud, &za->error);
+}
 
-    if (za == NULL)
-	return NULL;
 
-    if ((zs=_zip_source_new(za)) == NULL)
-	return NULL;
+zip_source_t *zip_source_layered_create(zip_source_t *src, zip_source_layered_callback cb, void *ud, zip_error_t *error) {
+    zip_source_t *zs;
+    zip_int64_t lower_supports, supports;
+
+    lower_supports = zip_source_supports(src);
+    supports = cb(src, ud, &lower_supports, sizeof(lower_supports), ZIP_SOURCE_SUPPORTS);
+    if (supports < 0) {
+        zip_error_set(error, ZIP_ER_INVAL, 0); /* Initialize in case cb doesn't return valid error. */
+        cb(src, ud, error, sizeof(*error), ZIP_SOURCE_ERROR);
+        return NULL;
+    }
+
+    if ((zs = _zip_source_new(error)) == NULL) {
+        return NULL;
+    }
 
     zs->src = src;
     zs->cb.l = cb;
     zs->ud = ud;
-    
+    zs->supports = supports;
+
+    /* Layered sources can't support writing, since we currently have no use case. If we want to revisit this, we have to define how the two sources interact. */
+    zs->supports &= ~(ZIP_SOURCE_SUPPORTS_WRITABLE & ~ZIP_SOURCE_SUPPORTS_SEEKABLE);
+
     return zs;
 }

@@ -165,3 +165,9 @@ rights.
    - Affirmer understands and acknowledges that Creative Commons is not
      a party to this document and has no duty or obligation with respect
      to this CC0 or use of the Work.
+
+Special notes
+-------------
+
+The files in `tests/externals/` were placed in the public domain by
+their respective authors.  See the `AUTHORS.md` files in each directory.

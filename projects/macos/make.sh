@@ -1,13 +1,24 @@
 #!/bin/sh
 cd $(dirname "$0")
 
+CRYPTO_OPTION=
+FUZZ_OPTION=
+for arg do
+    shift
+    case "$arg" in
+        --with-openssl) CRYPTO_OPTION=--with-openssl ;;
+        --with-security-fuzz) FUZZ_OPTION=--with-security-fuzz ;;
+        *) set -- "$@" "$arg" ;;
+    esac
+done
+
 USE_ARCH=
 if command -v premake4 &> /dev/null
 then
-    premake4 --file=../../premake4.lua --use-frameworks --disable-static-build gmake
+    premake4 --file=../../premake4.lua --use-frameworks --disable-static-build ${CRYPTO_OPTION:+$CRYPTO_OPTION} ${FUZZ_OPTION:+$FUZZ_OPTION} gmake || exit 1
 elif command -v premake5 &> /dev/null
 then
-    premake5 --file=../../premake5.lua --use-frameworks --disable-static-build gmake
+    premake5 --file=../../premake5.lua --use-frameworks --disable-static-build ${CRYPTO_OPTION:+$CRYPTO_OPTION} ${FUZZ_OPTION:+$FUZZ_OPTION} gmake || exit 1
     USE_ARCH=arm64/
 else
     echo "Neither premake5 nor premake4 is available. Please install one."
@@ -25,4 +36,7 @@ if ! [ "$JOBS" -gt 0 ] 2>/dev/null; then
     exit 1
 fi
 
+if [ -n "$FUZZ_OPTION" ]; then
+    set -- "$@" "CC=${CC:-clang}" "CXX=${CXX:-clang++}"
+fi
 make -j"$JOBS" "$@"

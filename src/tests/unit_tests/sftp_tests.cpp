@@ -10,6 +10,7 @@
 #include <array>
 #include <condition_variable>
 #include <cstdlib>
+#include <cstring>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/vfs/path.hpp>
@@ -49,6 +50,11 @@ class TestSSHServer {
 	}
 
 	bool available() const { return mAvailable; }
+
+	static bool required() {
+		const char* value = std::getenv( "EEPP_REQUIRE_SFTP_TESTS" );
+		return value && std::strcmp( value, "1" ) == 0;
+	}
 
 	const std::string& skipReason() const { return mSkipReason; }
 
@@ -158,6 +164,13 @@ class TestSSHServer {
 		FileSystem::fileRemove( mDir + "id_ed25519_nopub.pub" );
 		FileSystem::fileWrite( mDir + "authorized_keys", std::string_view( authorized ) );
 
+		// Tests fail authentication on purpose; OpenSSH >= 9.8 would otherwise penalize (refuse)
+		// the loopback source afterwards. Older servers reject the option and refuse to start.
+		const std::string probe = mDir + "sshd_penalties_probe";
+		FileSystem::fileWrite( probe, std::string_view( "HostKey " + mDir +
+														"host_ed25519\nPerSourcePenalties no\n" ) );
+		const bool penalties = run( sshd, { "-t", "-f", probe } );
+
 		std::string user = SSHConfigContext::system( "x" ).localUser;
 		for ( int attempt = 0; attempt < 5 && !mServer; ++attempt ) {
 			mPort =
@@ -188,10 +201,8 @@ class TestSSHServer {
 								 "AllowTcpForwarding yes\n"
 								 "Subsystem sftp internal-sftp" +
 								 ( mDisablePosixRename ? " -P posix-rename\n" : "\n" ) +
-								 "LogLevel ERROR\n"
-								 // Tests fail authentication on purpose; OpenSSH >= 9.8 would
-								 // otherwise penalize (refuse) the loopback source afterwards.
-								 "PerSourcePenalties no\n";
+								 "LogLevel ERROR\n" +
+								 ( penalties ? "PerSourcePenalties no\n" : "" );
 			FileSystem::fileWrite( mDir + "sshd_config", std::string_view( config ) );
 			auto server = std::make_unique<Process>();
 			if ( !server->create( sshd, { "-D", "-e", "-f", mDir + "sshd_config" } ) )
@@ -410,7 +421,8 @@ class BlackholeProxy {
 	auto& server = TestSSHServer::instance();                                           \
 	if ( !server.available() ) {                                                        \
 		printf( "  SFTP integration test skipped: %s\n", server.skipReason().c_str() ); \
-		return;                                                                         \
+		ASSERT_FALSE( TestSSHServer::required() );                                      \
+		UTEST_SKIP( "Local SSH server is unavailable" );                                \
 	}
 
 class FixedVerifier : public SSHHostKeyVerifier {
@@ -657,6 +669,7 @@ UTEST( SFTP, differentVerifiedPeersSupportCrossServerTransfers ) {
 	auto& other = TestSSHServer::independent();
 	if ( !other.available() ) {
 		printf( "  Independent SSH server unavailable: %s\n", other.skipReason().c_str() );
+		ASSERT_FALSE( TestSSHServer::required() );
 		UTEST_SKIP( "Independent SSH server is unavailable" );
 	}
 	TempDir configDir;
@@ -707,7 +720,8 @@ UTEST( SFTP, replacementWithoutPosixRenamePreservesBothFiles ) {
 	auto& server = TestSSHServer::withoutPosixRename();
 	if ( !server.available() ) {
 		printf( "  SFTP integration test skipped: %s\n", server.skipReason().c_str() );
-		return;
+		ASSERT_FALSE( TestSSHServer::required() );
+		UTEST_SKIP( "Local SSH server is unavailable" );
 	}
 	VirtualFileSystem vfs;
 	auto sftp = server.provider();

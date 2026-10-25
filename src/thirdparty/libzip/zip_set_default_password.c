@@ -1,9 +1,9 @@
 /*
   zip_set_default_password.c -- set default password for decryption
-  Copyright (C) 2009 Dieter Baron and Thomas Klausner
+  Copyright (C) 2009-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,31 +32,31 @@
 */
 
 
-
 #include <stdlib.h>
 #include <string.h>
 
 #include "zipint.h"
 
 
-
-ZIP_EXTERN int
-zip_set_default_password(struct zip *za, const char *passwd)
-{
-    if (za == NULL)
-	return -1;
-
-    if (za->default_password)
-	free(za->default_password);
-    
-    if (passwd) {
-	if ((za->default_password=strdup(passwd)) == NULL) {
-	    _zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
-	    return -1;
-	}
+ZIP_EXTERN int zip_set_default_password(zip_t *za, const char *passwd) {
+    if (za == NULL) {
+        return -1;
     }
-    else
-	za->default_password = NULL;
+
+    if (za->default_password != NULL) {
+        _zip_crypto_clear(za->default_password, strlen(za->default_password));
+    }
+    free(za->default_password);
+
+    if (passwd && passwd[0] != '\0') {
+        if ((za->default_password = strdup(passwd)) == NULL) {
+            zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
+            return -1;
+        }
+    }
+    else {
+        za->default_password = NULL;
+    }
 
     return 0;
 }

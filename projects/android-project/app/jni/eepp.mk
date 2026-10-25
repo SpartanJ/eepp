@@ -76,7 +76,6 @@ LOCAL_CFLAGS			:= $(EEPP_C_FLAGS)
 CODE_SRCS				:=  \
 	../thirdparty/SOIL2/src/SOIL2/*.c \
 	../thirdparty/zlib/*.c \
-	../thirdparty/libzip/*.c \
 	../thirdparty/jpeg-compressor/*.cpp \
 	../thirdparty/imageresampler/*.cpp \
 	../thirdparty/pugixml/*.cpp \
@@ -116,7 +115,7 @@ LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= simdutf freetype libpng libwebp md4c pcre2 oniguruma harfbuzz sheenbidi gumbo-parser brotli
+LOCAL_STATIC_LIBRARIES	:= simdutf freetype libpng libzip libwebp md4c pcre2 oniguruma harfbuzz sheenbidi gumbo-parser brotli
 
 LOCAL_SHARED_LIBRARIES	:= SDL2
 
@@ -202,6 +201,26 @@ LOCAL_SRC_FILES			:= $(foreach F, $(LIBPNG_SRCS), $(addprefix $(dir $(F)),$(notd
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** LIBPNG ***************
+
+#*************** LIBZIP ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= libzip
+
+LIBZIP_SRCS			:=  \
+	libzip/*.c \
+	libzip/posix/*.c
+
+# Kept out of the eepp module: libzip's config.h and compat.h must not shadow other headers.
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/libzip/ $(LOCAL_PATH)/zlib/
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBZIP_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** LIBZIP ***************
 
 #*************** LIBWEBP ***************
 include $(CLEAR_VARS)

@@ -1,9 +1,9 @@
 /*
   zip_add.c -- add file via callback function
-  Copyright (C) 1999-2007 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2025 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -31,10 +31,9 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-
+/* LCOV_EXCL_START */
+#define _ZIP_COMPILING_DEPRECATED
 #include "zipint.h"
-
 
 
 /*
@@ -44,13 +43,7 @@
         ZIP_UINT64_MAX, and each entry is larger than 2 bytes.
 */
 
-ZIP_EXTERN zip_int64_t
-zip_add(struct zip *za, const char *name, struct zip_source *source)
-{
-    if (name == NULL || source == NULL) {
-	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
-	return -1;
-    }
-
-    return _zip_replace(za, ZIP_UINT64_MAX, name, source);
+ZIP_EXTERN zip_int64_t zip_add(zip_t *za, const char *name, zip_source_t *source) {
+    return zip_file_add(za, name, source, 0);
 }
+/* LCOV_EXCL_STOP */

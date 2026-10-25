@@ -94,8 +94,10 @@ UTEST( TextFormat, autodetectProject ) {
 		auto files = FileSystem::filesInfoGetInPath( folder, false, true, true, true );
 		for ( const auto& file : files ) {
 			if ( file.isDirectory() ) {
-				// Downloaded SDL SDKs contain platform binaries outside this source scan.
-				if ( !LuaPattern::hasMatches( file.getFileName(), "^SDL[23]%-%d+%.%d+%.%d+$" ) )
+				// Downloaded SDL SDKs contain platform binaries outside this source scan. Fuzz
+				// corpora hold deliberately malformed inputs of any encoding.
+				if ( !LuaPattern::hasMatches( file.getFileName(), "^SDL[23]%-%d+%.%d+%.%d+$" ) &&
+					 file.getFileName() != "corpus" )
 					checkFolder( file.getFilepath() );
 				continue;
 			}
