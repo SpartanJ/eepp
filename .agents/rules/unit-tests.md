@@ -4,6 +4,9 @@ This project relies on a comprehensive suite of unit tests to prevent regression
 
 ## Running Tests
 The test binary manages its own current working directory, so you can execute it from anywhere.
+CI unit-test steps set `SDL_AUDIODRIVER=dummy`, `SDL_AUDIO_DRIVER=dummy`, and
+`ALSOFT_DRIVERS=null` to exercise playback without an audio device. Local runs use the normal
+audio backend; set these environment variables explicitly when silent output is needed.
 
 Native is the default runtime. Leave `EEPP_RUNTIME` unset for normal native runs; set it to
 `native` only to override an inherited non-native value or to test explicit runtime selection.

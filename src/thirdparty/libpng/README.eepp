@@ -1,0 +1,15 @@
+eepp libpng import, updated 2026-10-25
+
+Upstream: https://github.com/pnggroup/libpng
+Release: v1.6.59
+Source archive: https://codeload.github.com/pnggroup/libpng/tar.gz/refs/tags/v1.6.59
+
+The library C sources, headers and architecture implementations are unchanged
+from v1.6.59. pnglibconf.h is scripts/pnglibconf.h.prebuilt from that release.
+Demo programs other than the previously included pngtest.c are not imported.
+The old local math.h portability edit in pngpriv.h is obsolete upstream.
+.clang-format preserves vendor formatting and preprocessor continuations.
+
+Includes the ARM Neon palette-expansion fix for CVE-2026-33636 and the later
+1.6.x security fixes. The existing Premake recursive source glob includes
+new architecture implementations; no build-system source list is duplicated.

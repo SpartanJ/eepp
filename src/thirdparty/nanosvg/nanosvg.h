@@ -2274,11 +2274,15 @@ static void nsvg__pathArcTo(NSVGparser* p, float* cpx, float* cpy, float* args, 
 		x2 = args[5];
 		y2 = args[6];
 	}
+	// Invalid endpoints cannot define a segment or a new current point.
+	if (!isfinite(x1) || !isfinite(y1) || !isfinite(x2) || !isfinite(y2))
+		return;
 
 	dx = x1 - x2;
 	dy = y1 - y2;
 	d = sqrtf(dx*dx + dy*dy);
-	if (d < 1e-6f || rx < 1e-6f || ry < 1e-6f) {
+	if (d < 1e-6f || rx < 1e-6f || ry < 1e-6f ||
+		!isfinite(rx) || !isfinite(ry) || !isfinite(rotx)) {
 		// The arc degenerates to a line
 		nsvg__lineTo(p, x2, y2);
 		*cpx = x2;
@@ -2323,6 +2327,15 @@ static void nsvg__pathArcTo(NSVGparser* p, float* cpx, float* cpy, float* args, 
 	vy = (-y1p - cyp) / ry;
 	a1 = nsvg__vecang(1.0f,0.0f, ux,uy);	// Initial angle
 	da = nsvg__vecang(ux,uy, vx,vy);		// Delta angle
+	// Extreme finite radii can also overflow the center calculation. Never cast
+	// a non-finite angle to int or pass invalid control points to the rasterizer.
+	if (!isfinite(a1) || !isfinite(da) || !isfinite(cx) || !isfinite(cy) ||
+		!isfinite(rx) || !isfinite(ry)) {
+		nsvg__lineTo(p, x2, y2);
+		*cpx = x2;
+		*cpy = y2;
+		return;
+	}
 
 //	if (vecrat(ux,uy,vx,vy) <= -1.0f) da = NSVG_PI;
 //	if (vecrat(ux,uy,vx,vy) >= 1.0f) da = 0;

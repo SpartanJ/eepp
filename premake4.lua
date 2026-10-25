@@ -2322,6 +2322,8 @@ solution "eepp"
 		if vfs_sftp_enabled() then
 			includedirs { "src/thirdparty/libssh2/include" }
 		end
+		-- Exercise the actual libpng decoder, including its platform SIMD paths.
+		links { "libpng-static", "zlib-static" }
 		language "C++"
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }

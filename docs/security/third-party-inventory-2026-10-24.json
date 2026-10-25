@@ -243,26 +243,64 @@
     {
       "name": "libpng",
       "path": "src/thirdparty/libpng",
-      "version": "1.6.37",
+      "version": "1.6.59",
       "version_evidence": "src/thirdparty/libpng/png.h",
       "upstream": "https://github.com/pnggroup/libpng",
-      "assessment": "upgrade",
-      "notes": "CVE-2026-33636: ARM Neon palette-expansion code is present and compiled in the existing macOS archive. Upgrade to 1.6.59.",
+      "assessment": "fixed",
+      "notes": "Library and architecture sources match v1.6.59; pnglibconf.h matches release prebuilt config. Includes ARM Neon palette-expansion and later fixes. RGB/RGBA partial-Neon-chunk regression passed on ARM64.",
       "source_revision": "a703b09cc17c59cb32f723e50f5ed459af994937",
       "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "4812fb83e506d2ab4f1cc58bd823a0e9d8208100540dad75e8615fea45ab5ab9"
+      "source_fingerprint_sha256": "c0a7e12fa29c4ae495d023d3d837a83ba59005d9d8664594ddac1d9af67a96b7",
+      "baseline_source_fingerprint_sha256": "4812fb83e506d2ab4f1cc58bd823a0e9d8208100540dad75e8615fea45ab5ab9",
+      "upstream_tag": "v1.6.59",
+      "retained_patches": [
+        ".clang-format"
+      ],
+      "resolved_advisories": [
+        "CVE-2026-33636",
+        "CVE-2026-33416",
+        "CVE-2026-25646",
+        "CVE-2025-64720",
+        "CVE-2025-65018",
+        "CVE-2025-66293",
+        "CVE-2026-22801"
+      ],
+      "working_tree_modified": true,
+      "updated_at": "2026-10-25",
+      "upstream_archive_sha256": "2540302a1844ad2b2b501977abecfa850f265f97b78f065a712ab4074a89f5b5"
     },
     {
       "name": "libssh2",
       "path": "src/thirdparty/libssh2",
-      "version": "1.11.1 + local crypto integration",
+      "version": "1.11.2_DEV",
       "version_evidence": "src/thirdparty/libssh2/include/libssh2.h",
       "upstream": "https://github.com/libssh2/libssh2",
-      "assessment": "patch",
-      "notes": "CVE-2026-55200, CVE-2026-66032 and CVE-2026-66035 fixes are absent. No newer official release was available at audit time; use verified backports or a reviewed upstream revision.",
+      "assessment": "fixed",
+      "notes": "Unreleased upstream snapshot; original high/critical findings and subsequent upstream fixes incorporated. Preserves static platform config, classic Mbed TLS digest/HMAC/CTR-DRBG API and adapted Monocypher Ed25519/X25519 integration. See README.eepp.",
       "source_revision": "88675a7c84b0785295d55a96477a8c046cc9f34c",
       "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "40d1220977298e6b21d645a861c04e9b514ef7409d25cbb1dee08b5617376c88"
+      "source_fingerprint_sha256": "110d78fdf88aaf747a102be06520976872ed37d528559ed89a6d0a0303d4176d",
+      "baseline_source_fingerprint_sha256": "40d1220977298e6b21d645a861c04e9b514ef7409d25cbb1dee08b5617376c88",
+      "upstream_revision": "6e7b2076a6ced2230968b27ee7c1abb77fe5a88d",
+      "retained_patches": [
+        "src/libssh2_config.h",
+        "src/mbedtls.c",
+        "src/mbedtls.h",
+        "src/mbedtls_ed25519.c",
+        ".clang-format"
+      ],
+      "resolved_advisories": [
+        "CVE-2026-55200",
+        "CVE-2026-66035",
+        "CVE-2026-66032",
+        "CVE-2026-66033",
+        "CVE-2026-66034",
+        "CVE-2026-58050",
+        "CVE-2026-7598"
+      ],
+      "working_tree_modified": true,
+      "updated_at": "2026-10-25",
+      "upstream_archive_sha256": "f45f441fb476e5c5dff3b96f770d7925203a5db5fb407124b68914327ccd65c6"
     },
     {
       "name": "libvorbis",
@@ -378,11 +416,24 @@
       "version": null,
       "version_evidence": "src/thirdparty/nanosvg/nanosvg.h",
       "upstream": "https://github.com/memononen/nanosvg",
-      "assessment": "patch",
-      "notes": "Locally modified FLTK-derived snapshot. CVE-2026-88366 and CVE-2026-88368 sites remain; upstream issues are open, so latest-master alone is not a proven remedy.",
+      "assessment": "fixed",
+      "notes": "Same modified FLTK-derived snapshot; exact base still unknown. Manual arc finite checks, guarded fixed-point casts and scanline advancement, bounded stroke tessellation. Five numeric/style regression tests passed; no allocation/layout changes.",
       "source_revision": "7f9c6d2153f27d647547d4851de663b46f6ef031",
       "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "490380228f8b16ffbda73186142d21141d93e5a1331024dd35bdf119702fae5c"
+      "source_fingerprint_sha256": "e7a2a11aa206b7aff9c672263d8617c7cc035376eccd2b4cf45313ac1eca4d4d",
+      "baseline_source_fingerprint_sha256": "490380228f8b16ffbda73186142d21141d93e5a1331024dd35bdf119702fae5c",
+      "retained_patches": [
+        "nanosvg.h",
+        "nanosvgrast.h",
+        ".clang-format"
+      ],
+      "resolved_advisories": [
+        "CVE-2026-88366",
+        "CVE-2026-88368",
+        "CVE-2026-88367"
+      ],
+      "working_tree_modified": true,
+      "updated_at": "2026-10-25"
     },
     {
       "name": "nlohmann",
@@ -919,5 +970,23 @@
       "retrieved_at": "2026-10-25T00:04:17.732",
       "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=zlib&resultsPerPage=2000"
     }
-  ]
+  ],
+  "last_updated": "2026-10-25",
+  "remediation_base_commit": "49f5e179d6a89cf6713b3729a0fa59e3658748c9",
+  "fingerprint_method": "SHA256 over sorted repository-relative paths, NUL, file bytes, NUL; tracked plus non-ignored untracked files, excluding deleted files. Submodule paths are relative to the submodule as in the initial inventory.",
+  "remediation_validation": {
+    "platform": "macOS ARM64",
+    "build": "projects/macos/make_no_fw.sh config=release eepp-unit_tests",
+    "full_native_release_suite": {
+      "passed": 2124,
+      "includes_sftp_integration_tests": 34,
+      "includes_focused_security_tests": 6
+    },
+    "not_performed": [
+      "OpenSSL backend build",
+      "cross-platform builds",
+      "sanitizer campaign",
+      "fuzzing"
+    ]
+  }
 }

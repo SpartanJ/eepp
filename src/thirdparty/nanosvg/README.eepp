@@ -1,0 +1,27 @@
+eepp NanoSVG security patches, applied 2026-10-25
+
+Base: existing modified FLTK-derived snapshot. Exact upstream base is still
+unestablished; do not replace it with master and discard eepp style/currentColor
+or SVG-glyph integration changes.
+
+Manual fixes:
+- CVE-2026-88366 / upstream #294: reject non-finite arc endpoints and fall back
+  to a line for invalid radii/rotation or non-finite intermediate angles and
+  centers before the angle-to-int conversion.
+- CVE-2026-88368 / upstream #292: validate finite edge geometry and rounded
+  fixed-point coordinates before casting or consuming a pool entry. Compare
+  against int bounds in double, since float(INT_MAX) rounds out of range.
+  Reject edges whose scanline advancement would overflow; skip rejected
+  edges without suppressing subsequent valid edges on that scanline.
+- CVE-2026-88367 / upstream #293: validate stroke tessellation inputs, use
+  double intermediates and cap the count at 1024 before converting to int.
+  Extreme geometry may be omitted or approximated rather than invoking UB.
+
+No new rasterizer allocations or public layout changes are introduced.
+Tests: src/tests/unit_tests/nanosvg_security_tests.cpp, plus existing image,
+SVG widget and font rendering tests. .clang-format preserves snapshot style.
+
+Reports:
+https://github.com/memononen/nanosvg/issues/292
+https://github.com/memononen/nanosvg/issues/293
+https://github.com/memononen/nanosvg/issues/294

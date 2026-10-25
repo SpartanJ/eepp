@@ -91,6 +91,10 @@ jobs:
         path: projects/linux/sdk/eepp-sdk-*.tar.gz
     - name: Unit Tests
       id: unit_tests
+      env:
+        SDL_AUDIODRIVER: dummy
+        SDL_AUDIO_DRIVER: dummy
+        ALSOFT_DRIVERS: "null"
       run: |
         cd projects/scripts
         bash ./run_gdb_tests.sh

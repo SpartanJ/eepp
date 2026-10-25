@@ -2329,6 +2329,8 @@ workspace "eepp"
 		if vfs_sftp_enabled() then
 			incdirs { "src/thirdparty/libssh2/include" }
 		end
+		-- Exercise the actual libpng decoder, including its platform SIMD paths.
+		links { "libpng-static", "zlib-static" }
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp",
 				"src/tools/eefm/location.cpp",

@@ -19,8 +19,6 @@
 
 #include "libssh2_priv.h"
 
-#ifndef HAVE_BCRYPT_PBKDF
-
 #include <stdlib.h>
 
 #define LIBSSH2_BCRYPT_PBKDF_C
@@ -43,20 +41,19 @@
  *
  * One modification from official pbkdf2. Instead of outputting key material
  * linearly, we mix it. pbkdf2 has a known weakness where if one uses it to
- * generate (i.e.) 512 bits of key material for use as two 256 bit keys, an
+ * generate (i.e.) 512 bits of key material for use as two 256-bit keys, an
  * attacker can merely run once through the outer loop below, but the user
  * always runs it twice. Shuffling output bytes requires computing the
  * entirety of the key material to assemble any subkey. This is something a
- * wise caller could do; we just do it for you.
+ * wise caller could do; we do it for you.
  */
 
-#define BCRYPT_BLOCKS 8
+#define BCRYPT_BLOCKS   8
 #define BCRYPT_HASHSIZE (BCRYPT_BLOCKS * 4)
 
-static void
-bcrypt_hash(uint8_t *sha2pass, uint8_t *sha2salt, uint8_t *out)
+static void bcrypt_hash(uint8_t *sha2pass, uint8_t *sha2salt, uint8_t *out)
 {
-    blf_ctx state;
+    struct blf_ctx state;
     uint8_t ciphertext[BCRYPT_HASHSIZE] = {
         'O', 'x', 'y', 'c', 'h', 'r', 'o', 'm', 'a', 't', 'i', 'c',
         'B', 'l', 'o', 'w', 'f', 'i', 's', 'h',
@@ -65,7 +62,7 @@ bcrypt_hash(uint8_t *sha2pass, uint8_t *sha2salt, uint8_t *out)
     uint32_t cdata[BCRYPT_BLOCKS];
     int i;
     uint16_t j;
-    uint16_t shalen = SHA512_DIGEST_LENGTH;
+    uint16_t shalen = SSH2_SHA512_DIG_LEN;
 
     /* key expansion */
     Blowfish_initstate(&state);
@@ -78,8 +75,7 @@ bcrypt_hash(uint8_t *sha2pass, uint8_t *sha2salt, uint8_t *out)
     /* encryption */
     j = 0;
     for(i = 0; i < BCRYPT_BLOCKS; i++)
-        cdata[i] = Blowfish_stream2word(ciphertext, sizeof(ciphertext),
-                                        &j);
+        cdata[i] = Blowfish_stream2word(ciphertext, sizeof(ciphertext), &j);
     for(i = 0; i < 64; i++)
         blf_enc(&state, cdata, BCRYPT_BLOCKS / 2);
 
@@ -92,31 +88,31 @@ bcrypt_hash(uint8_t *sha2pass, uint8_t *sha2salt, uint8_t *out)
     }
 
     /* zap */
-    _libssh2_explicit_zero(ciphertext, sizeof(ciphertext));
-    _libssh2_explicit_zero(cdata, sizeof(cdata));
-    _libssh2_explicit_zero(&state, sizeof(state));
+    ssh2_explicit_zero(ciphertext, sizeof(ciphertext));
+    ssh2_explicit_zero(cdata, sizeof(cdata));
+    ssh2_explicit_zero(&state, sizeof(state));
 }
 
-static int
-bcrypt_pbkdf(const char *pass, size_t passlen, const uint8_t *salt,
-             size_t saltlen,
-             uint8_t *key, size_t keylen, unsigned int rounds)
+static int bcrypt_pbkdf(const char *pass, size_t passlen,
+                        const uint8_t *salt, size_t saltlen,
+                        uint8_t *key, size_t keylen, unsigned int rounds)
 {
-    uint8_t sha2pass[SHA512_DIGEST_LENGTH];
-    uint8_t sha2salt[SHA512_DIGEST_LENGTH];
+    uint8_t sha2pass[SSH2_SHA512_DIG_LEN];
+    uint8_t sha2salt[SSH2_SHA512_DIG_LEN];
     uint8_t out[BCRYPT_HASHSIZE];
     uint8_t tmpout[BCRYPT_HASHSIZE];
     uint8_t *countsalt;
     size_t i, j, amt, stride;
     uint32_t count;
     size_t origkeylen = keylen;
-    libssh2_sha512_ctx ctx;
 
     /* nothing crazy */
     if(rounds < 1)
         return -1;
-    if(passlen == 0 || saltlen == 0 || keylen == 0 ||
-       keylen > sizeof(out) * sizeof(out) || saltlen > 1 << 20)
+    if(passlen == 0 || saltlen == 0 || keylen == 0)
+        return -1;
+    /* NOLINTNEXTLINE(bugprone-sizeof-expression) */
+    if(keylen > sizeof(out) * sizeof(out) || saltlen > 1 << 20)
         return -1;
     countsalt = calloc(1, saltlen + 4);
     if(!countsalt)
@@ -127,9 +123,8 @@ bcrypt_pbkdf(const char *pass, size_t passlen, const uint8_t *salt,
     memcpy(countsalt, salt, saltlen);
 
     /* collapse password */
-    if(!libssh2_sha512_init(&ctx) ||
-       !libssh2_sha512_update(ctx, pass, passlen) ||
-       !libssh2_sha512_final(ctx, sha2pass)) {
+    if(!ssh2_hash(SSH2_SHA512_ALG, pass, passlen,
+                  sha2pass, sizeof(sha2pass))) {
         free(countsalt);
         return -1;
     }
@@ -142,10 +137,9 @@ bcrypt_pbkdf(const char *pass, size_t passlen, const uint8_t *salt,
         countsalt[saltlen + 3] = count & 0xff;
 
         /* first round, salt is salt */
-        if(!libssh2_sha512_init(&ctx) ||
-           !libssh2_sha512_update(ctx, countsalt, saltlen + 4) ||
-           !libssh2_sha512_final(ctx, sha2salt)) {
-            _libssh2_explicit_zero(out, sizeof(out));
+        if(!ssh2_hash(SSH2_SHA512_ALG, countsalt, saltlen + 4,
+                      sha2salt, sizeof(sha2salt))) {
+            ssh2_explicit_zero(out, sizeof(out));
             free(countsalt);
             return -1;
         }
@@ -155,10 +149,9 @@ bcrypt_pbkdf(const char *pass, size_t passlen, const uint8_t *salt,
 
         for(i = 1; i < rounds; i++) {
             /* subsequent rounds, salt is previous output */
-            if(!libssh2_sha512_init(&ctx) ||
-               !libssh2_sha512_update(ctx, tmpout, sizeof(tmpout)) ||
-               !libssh2_sha512_final(ctx, sha2salt)) {
-                _libssh2_explicit_zero(out, sizeof(out));
+            if(!ssh2_hash(SSH2_SHA512_ALG, tmpout, sizeof(tmpout),
+                          sha2salt, sizeof(sha2salt))) {
+                ssh2_explicit_zero(out, sizeof(out));
                 free(countsalt);
                 return -1;
             }
@@ -171,34 +164,32 @@ bcrypt_pbkdf(const char *pass, size_t passlen, const uint8_t *salt,
         /*
          * pbkdf2 deviation: output the key material non-linearly.
          */
-        amt = LIBSSH2_MIN(amt, keylen);
+        amt = SSH2_MIN(amt, keylen);
         for(i = 0; i < amt; i++) {
             size_t dest = i * stride + (count - 1);
-            if(dest >= origkeylen) {
+            if(dest >= origkeylen)
                 break;
-            }
             key[dest] = out[i];
         }
         keylen -= i;
     }
 
     /* zap */
-    _libssh2_explicit_zero(out, sizeof(out));
+    ssh2_explicit_zero(out, sizeof(out));
     free(countsalt);
 
     return 0;
 }
-#endif /* HAVE_BCRYPT_PBKDF */
 
 /* Wrapper */
 
-int _libssh2_bcrypt_pbkdf(const char *pass,
-                          size_t passlen,
-                          const uint8_t *salt,
-                          size_t saltlen,
-                          uint8_t *key,
-                          size_t keylen,
-                          unsigned int rounds)
+int ssh2_bcrypt_pbkdf(const char *pass,
+                      size_t passlen,
+                      const uint8_t *salt,
+                      size_t saltlen,
+                      uint8_t *key,
+                      size_t keylen,
+                      unsigned int rounds)
 {
     return bcrypt_pbkdf(pass,
                         passlen,

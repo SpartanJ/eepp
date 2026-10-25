@@ -23,19 +23,19 @@
 #include "chacha.h"
 #include "poly1305.h"
 
-#define CHACHA_KEYLEN   32 /* Only 256 bit keys used here */
+#define CHACHA_KEYLEN   32 /* Only 256-bit keys used here */
 
 struct chachapoly_ctx {
     struct chacha_ctx main_ctx, header_ctx;
 };
 
-int chachapoly_init(struct chachapoly_ctx *cpctx,
-                    const u_char *key, u_int keylen);
-int chachapoly_crypt(struct chachapoly_ctx *cpctx, u_int seqnr,
-                     u_char *dest, const u_char *src, u_int len, u_int aadlen,
-                     int do_encrypt);
-int chachapoly_get_length(struct chachapoly_ctx *cpctx,
-                          u_int *plenp, u_int seqnr, const u_char *cp,
-                          u_int len);
+int chachapoly_init(struct chachapoly_ctx *ctx, const unsigned char *key,
+                    size_t keylen);
+int chachapoly_crypt(struct chachapoly_ctx *ctx, libssh2_uint64_t seqnr,
+                     unsigned char *dest, const unsigned char *src, size_t len,
+                     size_t aadlen, int do_encrypt);
+int chachapoly_get_length(struct chachapoly_ctx *ctx,
+                          unsigned int *plenp, libssh2_uint64_t seqnr,
+                          const unsigned char *cp, size_t len);
 
 #endif /* CHACHA_POLY_AEAD_H */

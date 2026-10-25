@@ -1,120 +1,150 @@
 # Third-party security audit — 2026-10-24
 
-Repository baseline: `dfc1a1941` (Brotli 1.2.1 upgrade included).
+Initial audit baseline: `dfc1a1941` (Brotli 1.2.1 upgrade included).
+Remediation update: **2026-10-25**, applied to the working tree based on `49f5e179d`.
 Scope: the 45 source trees in `src/thirdparty`, public third-party headers, nested
 components, and the build configuration that selects them. This is a source inventory
 and advisory/reachability review, not a deployed-binary SBOM or a claim that all code
-is vulnerability-free. No dependency sources were changed during this audit.
+is vulnerability-free.
 
 The companion [machine-readable inventory](third-party-inventory-2026-10-24.json)
-records version evidence, repository revisions, source fingerprints, upstream URLs,
-and the successful NVD queries. `version: null` means the upstream release has not
-been established; a repository commit or copyright year is not a substitute for it.
+now records the updated versions, upstream revision, retained patches and working-tree
+fingerprints. NVD discovery queries retain their original retrieval dates; they were
+not rerun as part of this remediation. `version: null` means the exact upstream
+release has not been established.
 
-## Recommended cleanup order
+## Completed remediation — 2026-10-25
+
+| Component | Before | Current source | Status |
+| --- | --- | --- | --- |
+| libssh2 | 1.11.1 plus local crypto integration | **1.11.2_DEV**, pinned to upstream `6e7b2076a6ced2230968b27ee7c1abb77fe5a88d` | Refreshed the complete imported library source, preserving eepp's build configuration, classic Mbed TLS APIs and Monocypher integration. This is an unreleased snapshot, not a 1.11.2 release. |
+| libpng | 1.6.37 | **1.6.59** | Imported upstream library sources, architecture implementations and the release's prebuilt configuration without source patches. |
+| NanoSVG | Modified FLTK-derived snapshot | Same snapshot plus manual security fixes | Patched the reported arc conversion, fixed-point conversion/advancement and stroke tessellation issues while retaining local style/currentColor behavior. |
+
+The release unit-test target builds with the required macOS script. The final full
+native release suite passed **2,124 tests**, including all **34 SFTP integration tests**
+against isolated loopback SSH servers and all **6 focused security tests**. The
+security cases cover five NanoSVG numeric/style regressions and RGB/RGBA palette
+decoding with 17-pixel rows. Both palette Neon functions are linked into the test
+executable on this ARM64 host.
+
+The full suite includes PNG color-font loading/rendering, image loading and SVG UI
+coverage. No cross-platform build, optional OpenSSL-backend build or sanitizer/fuzz
+campaign was performed. Passing functional tests does not establish absence of all
+malformed-input vulnerabilities.
+
+## Remaining cleanup order
 
 | Order | Component | Current source | Action | Reason and qualification |
 | --- | --- | --- | --- | --- |
-| 1 | libssh2 | 1.11.1 plus local crypto integration | Backport verified fixes or pin a reviewed upstream revision | Relevant transport and SFTP memory-corruption fixes are absent. Official latest release is still 1.11.1, so a version-only bump cannot resolve this. |
-| 2 | libpng | 1.6.37 | Upgrade to 1.6.59 | CVE-2026-33636 affects the compiled ARM Neon palette-expansion path. FreeType can reach it through PNG color glyphs. |
-| 3 | NanoSVG | Modified FLTK-derived snapshot | Backport reviewed numeric-range fixes with regression cases | CVE-2026-88366 and CVE-2026-88368 sites remain. The cited upstream issues are open; an arbitrary latest-master update is not a verified fix. |
-| 4 | libzip | 0.10 plus local hardening | Resolve residual arithmetic checks; plan a modern libzip migration | Local changes address one old CVE, but other unchecked arithmetic remains. Bounded VFS opens and the public unrestricted ZIP API have different exposure. |
-| 5 | Mbed TLS | 3.6.0 | Upgrade within LTS to 3.6.7 | Substantial security backlog. Many high-scoring findings require unused APIs, a TLS server role, unusual compiler behavior, or deployment conditions. Do not characterize the ordinary eepp HTTPS client as a confirmed RCE. |
-| 6 | libvorbis | 1.3.6 | Upgrade to 1.3.7 | The CVE-2018-10393 encoder bounds fix is absent. eepp includes an encoder, so this is not just a decoder-only dependency. |
-| 7 | Bundled SDL2 source | 2.0.12 | Reconcile Android source with the newer SDL2 pin | Old source has high-severity surface/blit issues. Windows/iOS download pins and system SDL are separate versions; a default BMP exploit path in eepp was not established. |
-| 8 | simdutf | 9.2.0 | Update to at least 9.2.1 | High upstream advisory affects Base64 APIs that eepp does not currently call. Useful small maintenance update, not a confirmed current attack path. |
-| 9 | Monocypher | 4.0.2 | Update to 4.0.3, preferably with libssh2 work | Upstream fixes compiler-dependent EdDSA/Ed25519 timing leakage. Signing is used by our SSH backend; applicability depends on generated code. No high CVE for that issue was established. |
+| 1 | libzip | 0.10 plus local hardening | Resolve residual arithmetic checks; plan a modern libzip migration | Local changes address one old CVE, but other unchecked arithmetic remains. Bounded VFS opens and the public unrestricted ZIP API have different exposure. |
+| 2 | Mbed TLS | 3.6.0 | Upgrade within LTS to 3.6.7 | Substantial security backlog. Many high-scoring findings require unused APIs, a TLS server role, unusual compiler behavior, or deployment conditions. Do not characterize the ordinary eepp HTTPS client as a confirmed RCE. |
+| 3 | libvorbis | 1.3.6 | Upgrade to 1.3.7 | The CVE-2018-10393 encoder bounds fix is absent; eepp includes an encoder. |
+| 4 | Bundled SDL2 source | 2.0.12 | Reconcile Android source with the newer SDL2 pin | Old source has high-severity surface/blit issues; an application exploit path was not established. |
+| 5 | simdutf | 9.2.0 | Update to at least 9.2.1 | High upstream advisory affects Base64 APIs that eepp does not currently call. |
+| 6 | Monocypher | 4.0.2 | Update to 4.0.3 | Compiler-dependent EdDSA/Ed25519 timing fix. Signing is used by our SSH backend; no high CVE for that issue was established. |
 
 Orders indicate engineering priority for this repository, not a new CVSS score.
-Targets are the upstream releases verified during this audit, rather than promises
-that future releases will have the same security status.
+Targets are releases verified during the initial audit; check upstream again before
+performing the remaining upgrades.
 
-## Findings with concrete source evidence
+## Resolved findings and retained integration
 
-### libssh2: highest priority
+### libssh2
 
-Version: [`include/libssh2.h`](../../src/thirdparty/libssh2/include/libssh2.h).
-The SFTP module calls `libssh2_sftp_init()` and `libssh2_sftp_open_ex()` in
-[`sshconnection.cpp`](../../src/modules/vfs/src/eepp/vfs/sftp/sshconnection.cpp)
-and [`sftpprovider.cpp`](../../src/modules/vfs/src/eepp/vfs/sftp/sftpprovider.cpp).
+Upstream snapshot:
+[6e7b2076](https://github.com/libssh2/libssh2/commit/6e7b2076a6ced2230968b27ee7c1abb77fe5a88d),
+2026-10-24. The complete library refresh includes the fixes below and later upstream
+security fixes, rather than only applying the original audit's six patch candidates.
+[`README.eepp`](../../src/thirdparty/libssh2/README.eepp) records import provenance and
+all retained integration points.
 
-| Advisory | Severity reported | Local evidence | Disposition |
-| --- | --- | --- | --- |
-| [CVE-2026-55200](https://nvd.nist.gov/vuln/detail/CVE-2026-55200) | Critical, CNA CVSS 4.0 9.2 | The full-packet branch in `src/transport.c` checks `packet_length < 1` without the upper-bound check added upstream. `crypt.c` registers ChaCha20-Poly1305 with `LIBSSH2_CRYPT_FLAG_REQUIRES_FULL_PACKET`. | Relevant to supported SSH use, including the Mbed TLS backend; AES-GCM being disabled there does not remove the ChaCha20 path. |
-| [CVE-2026-66035](https://nvd.nist.gov/vuln/detail/CVE-2026-66035) | High, CVSS 3.1 7.5 | ETM full-packet processing allocates `decrypt_size` then copies `blocksize - 1` bytes without the added minimum-size guard. ETM MACs are registered in `src/mac.c`. | Relevant transport memory-corruption risk from a malicious SSH peer. |
-| [CVE-2026-66032](https://nvd.nist.gov/vuln/detail/CVE-2026-66032) | High, CVSS 3.1 8.8 | `sftp_open()` frees `data` after an FX_OK response without the upstream `data = NULL` before waiting for a handle. | Relevant SFTP error-path double-free risk. |
-| [CVE-2026-66033](https://nvd.nist.gov/vuln/detail/CVE-2026-66033) | High, CVSS 3.1 7.5 | OpenSSL cipher bounds checks are not backported. | Relevant when built with `--with-openssl`; Mbed TLS backend has `LIBSSH2_AES_GCM = 0`. |
-| [CVE-2026-66034](https://nvd.nist.gov/vuln/detail/CVE-2026-66034), [CVE-2026-58050](https://nvd.nist.gov/vuln/detail/CVE-2026-58050) | High, respectively 7.5 and 7.0 | Vulnerable publickey subsystem implementation is included. | No eepp call to the publickey-list subsystem was found. Lower priority than transport/SFTP fixes, but include in a complete refresh. |
-| [CVE-2026-7598](https://nvd.nist.gov/vuln/detail/CVE-2026-7598) | Scores vary by provider | Username/password length arithmetic fixes are not present. | API-input preconditions matter; not equivalent to a malicious packet reaching ordinary small credentials. Include in refresh. |
+| Advisory | Initial finding / severity | Remediation |
+| --- | --- | --- |
+| [CVE-2026-55200](https://nvd.nist.gov/vuln/detail/CVE-2026-55200) | Critical, CNA CVSS 4.0 9.2; missing full-packet upper bound, including ChaCha20 use | Upstream transport bounds fix incorporated. |
+| [CVE-2026-66035](https://nvd.nist.gov/vuln/detail/CVE-2026-66035) | High, 7.5; ETM decrypt allocation/copy bounds | Upstream minimum-size checks and subsequent error-path cleanup incorporated. |
+| [CVE-2026-66032](https://nvd.nist.gov/vuln/detail/CVE-2026-66032) | High, 8.8; SFTP open error-path double free | Upstream dangling-pointer fix incorporated. |
+| [CVE-2026-66033](https://nvd.nist.gov/vuln/detail/CVE-2026-66033) | High, 7.5; optional OpenSSL AES-GCM bounds | Upstream fix incorporated; optional backend not built in this validation. |
+| [CVE-2026-66034](https://nvd.nist.gov/vuln/detail/CVE-2026-66034), [CVE-2026-58050](https://nvd.nist.gov/vuln/detail/CVE-2026-58050) | High, 7.5 / 7.0; publickey-list parsing and 32-bit attribute-count arithmetic | Upstream fixes incorporated even though no application consumer of this subsystem was found. |
+| [CVE-2026-7598](https://nvd.nist.gov/vuln/detail/CVE-2026-7598) | Provider scores differ; username/password size arithmetic | Upstream authentication input checks incorporated. |
 
-Verified upstream fixes:
+Verified fixes from the initial audit remain useful provenance:
+[packet upper bound](https://github.com/libssh2/libssh2/commit/97acf3dfda80c91c3a8c9f2372546301d4a1a7a8),
+[ETM bounds](https://github.com/libssh2/libssh2/commit/42e33d81577ed4b95d4b4f6f845e5ee8efe5eeb4),
+[SFTP lifetime](https://github.com/libssh2/libssh2/commit/5e4776146552d898b9c0e1b313cd093fa8dc92d0),
+[OpenSSL GCM bounds](https://github.com/libssh2/libssh2/commit/a2ed82d40964bbc0d64cd717aa0a5a892117d2e6),
+[publickey bounds](https://github.com/libssh2/libssh2/commit/a13bb6c773f0d55ad1628cede57e99803cd898d9),
+[authentication lengths](https://github.com/libssh2/libssh2/commit/256d04b60d80bf1190e96b0ad1e91b2174d744b1).
 
-- [97acf3df](https://github.com/libssh2/libssh2/commit/97acf3dfda80c91c3a8c9f2372546301d4a1a7a8): packet upper bound.
-- [42e33d81](https://github.com/libssh2/libssh2/commit/42e33d81577ed4b95d4b4f6f845e5ee8efe5eeb4): ETM minimum size.
-- [5e477614](https://github.com/libssh2/libssh2/commit/5e4776146552d898b9c0e1b313cd093fa8dc92d0): SFTP dangling pointer.
-- [a2ed82d4](https://github.com/libssh2/libssh2/commit/a2ed82d40964bbc0d64cd717aa0a5a892117d2e6): OpenSSL cipher bounds.
-- [a13bb6c7](https://github.com/libssh2/libssh2/commit/a13bb6c773f0d55ad1628cede57e99803cd898d9): publickey response bounds.
-- [256d04b6](https://github.com/libssh2/libssh2/commit/256d04b60d80bf1190e96b0ad1e91b2174d744b1): authentication length arithmetic.
+The only modified upstream implementation files are `src/mbedtls.c` and
+`src/mbedtls.h`. Upstream moved hashing/HMAC/random generation to PSA, which eepp
+explicitly disables. The local adapter retains the prior classic Mbed TLS digest,
+HMAC and CTR-DRBG APIs without enabling global PSA state or changing Mbed TLS
+configuration. Existing per-operation allocation behavior is retained; failed hash
+initialization is cleaned up and digest output sizes are checked.
 
-The [official release metadata](https://github.com/libssh2/libssh2/releases/latest)
-still selects 1.11.1. Backports need adaptation because upstream renamed many
-`_libssh2_*` internals. Preserve our Mbed TLS compatibility and Monocypher-based
-Ed25519/X25519 integration. Include the additional medium transport, SFTP and
-publickey advisories in the same review; do not assume the six patches above are a
-complete replacement for reviewing the upstream changes since 1.11.1.
+The eepp-owned `mbedtls_ed25519.c` was adapted to upstream's private names,
+unified file/blob key parser and NUL-terminated method strings. It retains key
+validation, private-key wiping, rejection of all-zero X25519 shared secrets and
+Monocypher-backed Ed25519/X25519 support. The static platform configuration is
+retained. New upstream backend files compile independently rather than through
+the removed `crypto.c` umbrella.
 
-Host-key validation remains necessary, but it should not be treated as a replacement
-for fixing transport processing, which runs during connection establishment.
-No exploit was run against eepp in this audit.
+Current upstream defaults disable legacy SHA1/MD5/DSA algorithms. Servers supporting
+only those methods may fail negotiation; weak algorithms were not re-enabled.
+Host-key validation remains necessary and is exercised by the SFTP suite.
 
-### libpng: ARM/AArch64 decoding path
+### libpng
 
-[`png.h`](../../src/thirdparty/libpng/png.h) identifies 1.6.37.
-The vulnerable loops are present in
-[`arm/palette_neon_intrinsics.c`](../../src/thirdparty/libpng/arm/palette_neon_intrinsics.c).
-`nm -g libs/macosx/thirdparty/liblibpng.a` confirms definitions of both palette
-expansion Neon functions in the existing local archive.
+Updated from 1.6.37 to [1.6.59](https://www.libpng.org/pub/png/libpng.html).
+All imported library source files match upstream, and `pnglibconf.h` is the release's
+`scripts/pnglibconf.h.prebuilt`. The old local `math.h` portability change is obsolete
+in the newer source. New architecture implementations are included by the existing
+recursive Premake source glob.
 
 [CVE-2026-33636 / GHSA-wjr5-c57x-95m2](https://github.com/pnggroup/libpng/security/advisories/GHSA-wjr5-c57x-95m2)
-affects 1.6.36–1.6.55, with ARM Neon palette expansion enabled. The final partial
-chunk can read and write before the row buffer. It is fixed in 1.6.56. Our
-FreeType [`pngshim.c`](../../src/thirdparty/freetype2/src/sfnt/pngshim.c) calls
-`png_set_palette_to_rgb()`, optionally `png_set_tRNS_to_alpha()`, and `png_read_image()`.
-Consequently a PNG color glyph in a font is a supported route to the affected code.
-This is not an assertion that the ordinary SOIL2 PNG loader uses libpng: it uses stb_image.
+affected our ARM Neon palette expansion and was fixed upstream in 1.6.56. The new
+release also includes subsequent security fixes. FreeType's PNG color glyph loader
+is the relevant consumer; ordinary SOIL2 PNG image loading uses stb_image instead.
 
-Upgrade to the [current 1.6.59 release](https://www.libpng.org/pub/png/libpng.html),
-which also includes subsequent fixes. Preserve build/configuration changes and
-validate ARM color-font decoding as well as ordinary font loading.
+The upgrade also covers the initial audit's conditional matches CVE-2026-33416,
+CVE-2026-25646, CVE-2025-64720, CVE-2025-65018, CVE-2025-66293 and CVE-2026-22801.
+Their API preconditions were not established in our wrapper, but no separate old
+implementation is retained. CVE-2026-22695 was introduced after our old 1.6.37 and
+was not an original exposure.
 
-Other high-scoring matches need distinct treatment:
+[`png_security_tests.cpp`](../../src/tests/unit_tests/png_security_tests.cpp) decodes
+independently generated 17-by-2 palette PNGs with and without transparency and
+checks every output channel. This exercises partial Neon chunks on ARM64 and runs
+against scalar/SIMD implementations selected on other hosts. The test target links
+libpng and zlib explicitly on both Premake versions so Windows does not depend on
+private libpng symbols being exported by `eepp.dll`.
 
-| Advisory | Repository assessment |
+### NanoSVG
+
+The modified FLTK-derived base and local style/currentColor behavior are preserved.
+Exact upstream base provenance remains unresolved; these fixes do not invent a new
+upstream release number. [`README.eepp`](../../src/thirdparty/nanosvg/README.eepp)
+records the manual changes.
+
+| Advisory | Applied change |
 | --- | --- |
-| [CVE-2026-33416](https://github.com/pnggroup/libpng/security/advisories/GHSA-m4pc-p4q3-4c7j) | Pointer aliasing bug is present. The required free/re-set ordering before continued transforms was not established in the FreeType wrapper. Covered by the proposed upgrade. |
-| [CVE-2026-25646](https://github.com/pnggroup/libpng/security/advisories/GHSA-g8hp-mq4h-rqm3) | No consumer call to palette quantization was found. |
-| CVE-2025-64720, CVE-2025-65018, CVE-2025-66293 | Affect simplified image APIs; eepp's FreeType wrapper uses the conventional API. No simplified API consumers outside vendored code were found. |
-| CVE-2026-22801 | Simplified PNG write API issue, rated moderate upstream despite a higher NVD score. No relevant consumer found. |
-| CVE-2026-22695 | Regression introduced in 1.6.51; not applicable to 1.6.37. |
+| [CVE-2026-88366 / upstream #294](https://github.com/memononen/nanosvg/issues/294) | Reject non-finite arc endpoints; treat invalid radii/rotation or non-finite intermediate angles/centers as a line before the angle-to-int cast. |
+| [CVE-2026-88368 / upstream #292](https://github.com/memononen/nanosvg/issues/292) | Validate finite edge geometry and rounded fixed-point values before casting or consuming a pool entry. Compare int bounds in double to avoid `float(INT_MAX)` rounding. Reject overflowing scanline advancement and continue processing subsequent valid edges. |
+| [CVE-2026-88367 / upstream #293](https://github.com/memononen/nanosvg/issues/293) | Validate stroke tessellation inputs, compute using double intermediates and cap subdivisions at 1024 before integer conversion. |
 
-### NanoSVG: parsing and rasterization
+Extreme malformed geometry may be omitted or approximated. The fixes add no
+rasterizer allocations and do not change the public or internal structure layouts.
+[`nanosvg_security_tests.cpp`](../../src/tests/unit_tests/nanosvg_security_tests.cpp)
+covers infinite/large finite arc radii, invalid endpoints, bounded stroke subdivision,
+range/NaN edge rejection without pool consumption, both directions of scanline
+integer overflow and continued rendering of styled/currentColor shapes.
 
-The snapshot has FLTK changes and local color/style behavior. There is no reliable
-embedded release identifier. It is used by
-[`Image`](../../src/eepp/graphics/image.cpp) and the SVG glyph hooks in
-[`FontTrueType`](../../src/eepp/graphics/fonttruetype.cpp).
+These findings concern numeric undefined behavior and availability. The original
+reports include sanitizer-triggered termination; neither the initial audit nor this
+remediation establishes an eepp RCE or a deterministic release-build crash.
 
-| Advisory | Current code | Assessment |
-| --- | --- | --- |
-| [CVE-2026-88366, upstream #294](https://github.com/memononen/nanosvg/issues/294) | `nsvg__pathArcTo()` converts a possibly non-finite delta angle to `int`, without a finite/range check. | Reported CVSS 3.1 7.5; vulnerable operation and parser caller present. |
-| [CVE-2026-88368, upstream #292](https://github.com/memononen/nanosvg/issues/292) | `nsvg__addActive()` converts scaled geometry to `int` without checking representability. | Reported CVSS 3.1 7.5; vulnerable operation and rasterizer caller present. |
-| [CVE-2026-88367, upstream #293](https://github.com/memononen/nanosvg/issues/293) | `nsvg__curveDivs()` divides by an angle that can round to zero before conversion to `int`. | Medium-scored related issue; include in the same hardening change. |
-
-These are numeric undefined-behavior/availability findings. The cited reports
-include sanitizer-triggered termination; this audit does not establish a release
-build RCE or deterministic release-build crash. Fixes need source comparison and
-regression tests rather than inventing a safe release number. The upstream issues
-were open when checked.
+## Remaining findings
 
 ### libzip: old release with meaningful local changes
 
@@ -318,8 +348,8 @@ and establish a verified tag/commit before calling a future update routine.
 | imageresampler | 2.2 | Screened | [resampler.h](../../src/thirdparty/imageresampler/resampler.h) |
 | jpeg-compressor | jpge 1.05; jpgd snapshot | Snapshot | [jpge.cpp](../../src/thirdparty/jpeg-compressor/jpge.cpp) |
 | libogg | 1.3.3 | Screened | [framing.c](../../src/thirdparty/libogg/src/framing.c) |
-| libpng | 1.6.37 | Upgrade | [png.h](../../src/thirdparty/libpng/png.h) |
-| libssh2 | 1.11.1 + local crypto integration | Patch | [libssh2.h](../../src/thirdparty/libssh2/include/libssh2.h) |
+| libpng | 1.6.59 | Fixed | [png.h](../../src/thirdparty/libpng/png.h) |
+| libssh2 | 1.11.2_DEV @ 6e7b2076 + local integration | Fixed | [libssh2.h](../../src/thirdparty/libssh2/include/libssh2.h) |
 | libvorbis | 1.3.6 | Upgrade | [info.c](../../src/thirdparty/libvorbis/lib/info.c) |
 | libwebp | 1.5.0 | Screened | [vp8i_dec.h](../../src/thirdparty/libwebp/src/dec/vp8i_dec.h) |
 | libyaml | 0.2.5 | Screened | [config.h](../../src/thirdparty/libyaml/src/config.h) |
@@ -329,7 +359,7 @@ and establish a verified tag/commit before calling a future update routine.
 | mojoAL | 2.0.1 | Screened | [mojoal.c](../../src/thirdparty/mojoAL/mojoal.c) |
 | mojoAL-SDL3 | 2.9.9 | Screened | [mojoal.c](../../src/thirdparty/mojoAL-SDL3/mojoal.c) |
 | monocypher | 4.0.2 | Maintenance | [monocypher.h](../../src/thirdparty/monocypher/monocypher.h) |
-| nanosvg | Unversioned/patched snapshot | Patch | [nanosvg.h](../../src/thirdparty/nanosvg/nanosvg.h) |
+| nanosvg | Snapshot + 2026-10-25 security patches | Fixed | [nanosvg.h](../../src/thirdparty/nanosvg/nanosvg.h) |
 | nlohmann | 3.12.0 | Screened | [json.hpp](../../src/thirdparty/nlohmann/json.hpp) |
 | oniguruma | 6.9.10 | Screened | [oniguruma.h](../../src/thirdparty/oniguruma/oniguruma.h) |
 | pcre2 | 10.44 | Conditional | [pcre2.h](../../src/thirdparty/pcre2/src/pcre2.h) |
@@ -405,10 +435,11 @@ and build outputs were not treated as the authoritative source inventory.
    selected patched code with upstream fixes. High/critical means an upstream high
    label or a published CVSS score >=7; provider/metric disagreements are noted where
    they materially change interpretation. A high label does not establish eepp RCE.
-4. No dependency edits, exploit execution, new build, fuzz campaign or cross-platform
-   runtime validation was performed. The existing libpng archive was inspected for
-   Neon symbols; it was not rebuilt. Existing test success from the earlier Brotli
-   task is not evidence that these other CVEs have been tested.
+4. The initial audit performed no dependency edits, exploit execution, new build,
+   fuzz campaign or cross-platform runtime validation. The 2026-10-25 follow-up
+   rebuilt libssh2/libpng and the release test target and applied the NanoSVG fixes;
+   validation is recorded above. Earlier Brotli test results are not used as evidence
+   for these changes.
 
 Coverage gaps that remain explicit:
 
@@ -424,24 +455,19 @@ Coverage gaps that remain explicit:
 - ARM/mobile, 32-bit, OpenSSL and other optional builds were assessed from source,
   not executed. Mbed TLS compiler-dependent issues need per-distribution analysis.
 
-## Suggested implementation batches
+## Remaining implementation batches
 
-1. **SSH security patch set:** transport bounds, ETM bounds, SFTP lifetime, optional
-   OpenSSL bounds, plus review of the remaining upstream security fixes. Preserve
-   local cryptography support. Exercise malformed-peer/error handling in isolated
-   regression tests, existing SFTP tests, and both crypto backends where available.
-2. **libpng update:** 1.6.59, preserving platform configuration; validate color PNG
-   glyphs on ARM and the existing font/image tests.
-3. **NanoSVG hardening:** establish an upstream/fork base, preserve local style/color
-   support, reject non-finite/out-of-range geometry and test the reported cases.
-4. **ZIP follow-up:** resolve arithmetic questions in the current fork, then decide
+1. **ZIP follow-up:** resolve arithmetic questions in the current fork, then decide
    between focused security backports and migration to modern libzip. Preserve
    bounded-open behavior and ownership semantics during migration.
-5. **Cryptography maintenance:** Mbed TLS 3.6.7 and Monocypher 4.0.3, validating HTTP,
-   certificate checks, SSH keys, session lifetime and backend compatibility.
-6. **Audio/platform maintenance:** Vorbis 1.3.7 and Android SDL source reconciliation.
-7. **Small exposure-reducing updates:** simdutf >=9.2.1 and PCRE2 10.49. Establish
+2. **Cryptography maintenance:** Mbed TLS 3.6.7 and Monocypher 4.0.3, validating HTTP,
+   certificate checks, SSH keys, session lifetime and backend compatibility. Retain
+   the libssh2 classic API adapter unless PSA/threading migration is deliberate.
+3. **Audio/platform maintenance:** Vorbis 1.3.7 and Android SDL source reconciliation.
+4. **Small exposure-reducing updates:** simdutf >=9.2.1 and PCRE2 10.49. Establish
    verified provenance for the remaining snapshot-only imports.
+5. Replace the libssh2 development snapshot with a security-fixed stable release
+   when one is available, retaining the recorded integration patches.
 
 For subsequent updates, record the upstream release/commit and retained patches
 next to the dependency, and regenerate the inventory after each batch. An automated

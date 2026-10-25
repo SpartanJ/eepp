@@ -1,0 +1,90 @@
+#include "utest.h"
+
+#include <array>
+#include <cstring>
+#include <libpng/png.h>
+
+namespace {
+
+// 17-pixel rows leave a scalar tail after both RGB8 and RGBA8 Neon chunks.
+// The RGB palette and index pattern are independent of the libpng writer.
+const unsigned char paletteRGB[] = {
+	0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44,
+	0x52, 0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x02, 0x08, 0x03, 0x00, 0x00, 0x00, 0x89,
+	0xf1, 0xc7, 0xfd, 0x00, 0x00, 0x00, 0x06, 0x50, 0x4c, 0x54, 0x45, 0x11, 0x22, 0x33, 0x99,
+	0xaa, 0xbb, 0xce, 0xeb, 0xfe, 0xc2, 0x00, 0x00, 0x00, 0x0f, 0x49, 0x44, 0x41, 0x54, 0x78,
+	0x9c, 0x63, 0x60, 0x60, 0x44, 0x83, 0x18, 0x02, 0x8c, 0x00, 0x01, 0x4d, 0x00, 0x12, 0x59,
+	0xcd, 0x51, 0x7a, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+};
+
+const unsigned char paletteRGBA[] = {
+	0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44,
+	0x52, 0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x02, 0x08, 0x03, 0x00, 0x00, 0x00, 0x89,
+	0xf1, 0xc7, 0xfd, 0x00, 0x00, 0x00, 0x06, 0x50, 0x4c, 0x54, 0x45, 0x11, 0x22, 0x33, 0x99,
+	0xaa, 0xbb, 0xce, 0xeb, 0xfe, 0xc2, 0x00, 0x00, 0x00, 0x02, 0x74, 0x52, 0x4e, 0x53, 0xff,
+	0x55, 0xfe, 0xb6, 0x95, 0x31, 0x00, 0x00, 0x00, 0x0f, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c,
+	0x63, 0x60, 0x60, 0x44, 0x83, 0x18, 0x02, 0x8c, 0x00, 0x01, 0x4d, 0x00, 0x12, 0x59, 0xcd,
+	0x51, 0x7a, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+};
+
+struct PNGSecurityReader {
+	const unsigned char* data;
+	size_t size;
+	size_t offset;
+
+	static void read( png_structp png, png_bytep destination, png_size_t count ) {
+		auto& reader = *static_cast<PNGSecurityReader*>( png_get_io_ptr( png ) );
+		if ( count > reader.size - reader.offset )
+			png_error( png, "Truncated palette fixture" );
+		std::memcpy( destination, reader.data + reader.offset, count );
+		reader.offset += count;
+	}
+};
+
+} // namespace
+
+UTEST( PNGSecurity, PaletteExpansionHandlesPartialNeonChunks ) {
+	for ( bool alpha : { false, true } ) {
+		PNGSecurityReader reader{ alpha ? paletteRGBA : paletteRGB,
+								  alpha ? sizeof( paletteRGBA ) : sizeof( paletteRGB ), 0 };
+		std::array<unsigned char, 17 * 2 * 4> pixels{};
+		const size_t channels = alpha ? 4 : 3;
+		png_bytep rows[] = { pixels.data(), pixels.data() + 17 * channels };
+		png_structp png =
+			png_create_read_struct( PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr );
+		ASSERT_TRUE( png != nullptr );
+		png_infop info = png_create_info_struct( png );
+		if ( !info ) {
+			png_destroy_read_struct( &png, nullptr, nullptr );
+			ASSERT_TRUE( info != nullptr );
+		}
+		if ( setjmp( png_jmpbuf( png ) ) ) {
+			png_destroy_read_struct( &png, &info, nullptr );
+			ASSERT_TRUE_MSG( false, "Palette PNG decoding failed" );
+		}
+		png_set_read_fn( png, &reader, PNGSecurityReader::read );
+		png_read_info( png, info );
+		png_set_palette_to_rgb( png );
+		if ( alpha )
+			png_set_tRNS_to_alpha( png );
+		png_read_update_info( png, info );
+		const size_t rowBytes = png_get_rowbytes( png, info );
+		// Do not let a malformed fixture write beyond the stack buffer.
+		if ( rowBytes != 17 * channels || png_get_image_height( png, info ) != 2 )
+			png_error( png, "Unexpected palette fixture dimensions" );
+		png_read_image( png, rows );
+		png_read_end( png, info );
+		png_destroy_read_struct( &png, &info, nullptr );
+		for ( size_t y = 0; y < 2; ++y ) {
+			for ( size_t x = 0; x < 17; ++x ) {
+				const size_t index = ( x + y ) % 2;
+				const size_t offset = ( y * 17 + x ) * channels;
+				EXPECT_EQ( pixels[offset], index ? 153 : 17 );
+				EXPECT_EQ( pixels[offset + 1], index ? 170 : 34 );
+				EXPECT_EQ( pixels[offset + 2], index ? 187 : 51 );
+				if ( alpha )
+					EXPECT_EQ( pixels[offset + 3], index ? 85 : 255 );
+			}
+		}
+	}
+}

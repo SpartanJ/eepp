@@ -93,6 +93,7 @@ void nsvgDeleteRasterizer(NSVGrasterizer*);
 #ifdef NANOSVGRAST_IMPLEMENTATION
 
 #include <math.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -617,10 +618,17 @@ static void nsvg__straightJoin(NSVGrasterizer* r, NSVGpoint* left, NSVGpoint* ri
 
 static int nsvg__curveDivs(float r, float arc, float tol)
 {
-	float da = acosf(r / (r + tol)) * 2.0f;
-	int divs = (int)ceilf(arc / da);
-	if (divs < 2) divs = 2;
-	return divs;
+	// Bound work for extreme stroke widths as well as avoiding inf/NaN casts.
+	const int maxDivs = 1024;
+	double da, divs;
+	if (!isfinite(r) || !isfinite(arc) || !isfinite(tol) ||
+		r <= 0.0f || arc <= 0.0f || tol <= 0.0f)
+		return 2;
+	da = acos((double)r / ((double)r + tol)) * 2.0;
+	if (!(da > 0.0)) return maxDivs;
+	divs = ceil((double)arc / da);
+	if (divs >= maxDivs) return maxDivs;
+	return divs > 2.0 ? (int)divs : 2;
 }
 
 static void nsvg__expandStroke(NSVGrasterizer* r, NSVGpoint* points, int npoints, int closed, int lineJoin, int lineCap, float lineWidth)
@@ -874,7 +882,20 @@ static int nsvg__cmpEdge(const void *p, const void *q)
 
 static NSVGactiveEdge* nsvg__addActive(NSVGrasterizer* r, NSVGedge* e, float startPoint)
 {
-	 NSVGactiveEdge* z;
+	NSVGactiveEdge* z;
+	float dxdy, dx, x;
+	if (!isfinite(e->x0) || !isfinite(e->y0) || !isfinite(e->x1) ||
+		!isfinite(e->y1) || !isfinite(startPoint) || e->y1 <= e->y0)
+		return NULL;
+	dxdy = (e->x1 - e->x0) / (e->y1 - e->y0);
+	dx = nsvg__roundf(NSVG__FIX * dxdy);
+	x = nsvg__roundf(NSVG__FIX * (e->x0 + dxdy * (startPoint - e->y0)));
+	// Compare in double: (float)INT_MAX rounds up beyond the valid int range.
+	// Reject before taking a pool entry, so malformed edges do not consume it.
+	if (!isfinite(dx) || !isfinite(x) ||
+		(double)dx < INT_MIN || (double)dx > INT_MAX ||
+		(double)x < INT_MIN || (double)x > INT_MAX)
+		return NULL;
 
 	if (r->freelist != NULL) {
 		// Restore from freelist.
@@ -886,14 +907,10 @@ static NSVGactiveEdge* nsvg__addActive(NSVGrasterizer* r, NSVGedge* e, float sta
 		if (z == NULL) return NULL;
 	}
 
-	float dxdy = (e->x1 - e->x0) / (e->y1 - e->y0);
 //	STBTT_assert(e->y0 <= start_point);
 	// round dx down to avoid going too far
-	if (dxdy < 0)
-		z->dx = (int)(-nsvg__roundf(NSVG__FIX * -dxdy));
-	else
-		z->dx = (int)nsvg__roundf(NSVG__FIX * dxdy);
-	z->x = (int)nsvg__roundf(NSVG__FIX * (e->x0 + dxdy * (startPoint - e->y0)));
+	z->dx = (int)dx;
+	z->x = (int)x;
 //	z->x -= off_x * FIX;
 	z->ey = e->y1;
 	z->next = 0;
@@ -1153,7 +1170,9 @@ static void nsvg__rasterizeSortedEdges(NSVGrasterizer *r, float tx, float ty, fl
 			// remove all active edges that terminate before the center of this scanline
 			while (*step) {
 				NSVGactiveEdge *z = *step;
-				if (z->ey <= scany) {
+				if (z->ey <= scany ||
+					(z->dx > 0 && z->x > INT_MAX - z->dx) ||
+					(z->dx < 0 && z->x < INT_MIN - z->dx)) {
 					*step = z->next; // delete from list
 //					NSVG__assert(z->valid);
 					nsvg__freeActive(r, z);
@@ -1185,7 +1204,7 @@ static void nsvg__rasterizeSortedEdges(NSVGrasterizer *r, float tx, float ty, fl
 			while (e < r->nedges && r->edges[e].y0 <= scany) {
 				if (r->edges[e].y1 > scany) {
 					NSVGactiveEdge* z = nsvg__addActive(r, &r->edges[e], scany);
-					if (z == NULL) break;
+					if (z == NULL) { e++; continue; }
 					// find insertion point
 					if (active == NULL) {
 						active = z;

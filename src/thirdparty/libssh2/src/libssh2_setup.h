@@ -24,32 +24,30 @@
    Keep this synced with root CMakeLists.txt */
 #elif defined(_WIN32)
 
-#define HAVE_SELECT
-#define HAVE_SNPRINTF
-
 #ifdef __MINGW32__
-# define HAVE_UNISTD_H
-# define HAVE_INTTYPES_H
-# define HAVE_SYS_TIME_H
-# define HAVE_GETTIMEOFDAY
-# define HAVE_STRTOLL
-#elif defined(_MSC_VER)
-# if _MSC_VER >= 1800
+#  define HAVE_UNISTD_H
 #  define HAVE_INTTYPES_H
-#  define HAVE_STRTOLL
-# else
-#  define HAVE_STRTOI64
-# endif
-# if _MSC_VER < 1900
-#  undef HAVE_SNPRINTF
-# endif
+#elif defined(_MSC_VER) && _MSC_VER >= 1800
+#  define HAVE_INTTYPES_H
 #endif
 
-#endif /* defined(HAVE_CONFIG_H) */
+#endif /* HAVE_CONFIG_H */
 
 /* Below applies to both auto-detected and hand-crafted configs */
 
 #ifdef _WIN32
+
+#if defined(__MINGW32__) && \
+    (!defined(__MINGW64_VERSION_MAJOR) || (__MINGW64_VERSION_MAJOR < 3))
+#error "mingw-w64 3.0 or greater required"
+#endif
+
+#if defined(UNICODE) && !defined(_UNICODE)
+#  error "UNICODE is defined but _UNICODE is not defined"
+#endif
+#if defined(_UNICODE) && !defined(UNICODE)
+#  error "_UNICODE is defined but UNICODE is not defined"
+#endif
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -57,45 +55,39 @@
 #ifndef NOGDI
 #define NOGDI
 #endif
-#ifndef NONLS
-#define NONLS
+
+#if defined(__clang__) && __clang_major__ >= 13
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreserved-macro-identifier"
 #endif
 
 #ifdef __MINGW32__
-# ifdef __MINGW64_VERSION_MAJOR
-/* Number of bits in a file offset, on hosts where this is settable. */
-#  ifndef _FILE_OFFSET_BITS
+#  undef _FILE_OFFSET_BITS
 #  define _FILE_OFFSET_BITS 64
-#  endif
-# endif
 #elif defined(_MSC_VER)
-# ifndef _CRT_SECURE_NO_WARNINGS
-# define _CRT_SECURE_NO_WARNINGS  /* for fopen(), getenv() */
-# endif
-# if !defined(LIBSSH2_LIBRARY) || defined(LIBSSH2_TESTS)
-   /* apply to examples and tests only */
-#  ifndef _CRT_NONSTDC_NO_DEPRECATE
-#  define _CRT_NONSTDC_NO_DEPRECATE  /* for strdup(), write() */
+#  if !defined(LIBSSH2_LIBRARY) || defined(LIBSSH2_TESTS)
+     /* apply to examples and tests only */
+#    ifndef _CRT_SECURE_NO_WARNINGS
+#    define _CRT_SECURE_NO_WARNINGS  /* for fopen(), getenv(),
+                                        in tests: vsnprintf() */
+#    endif
+#    ifndef _WINSOCK_DEPRECATED_NO_WARNINGS
+#    define _WINSOCK_DEPRECATED_NO_WARNINGS  /* for inet_addr() */
+#    endif
+     /* we cannot access our internal snprintf() implementation in examples and
+        tests when linking to a shared libssh2. */
+#    if _MSC_VER < 1900
+#      define snprintf _snprintf
+#    endif
 #  endif
-#  ifndef _WINSOCK_DEPRECATED_NO_WARNINGS
-#  define _WINSOCK_DEPRECATED_NO_WARNINGS  /* for inet_addr() */
-#  endif
-   /* we cannot access our internal snprintf() implementation in examples and
-      tests when linking to a shared libssh2. */
 #  if _MSC_VER < 1900
-#   undef HAVE_SNPRINTF
-#   define HAVE_SNPRINTF
-#   define snprintf _snprintf
-#  endif
-# endif
-# if _MSC_VER < 1500
-#  define vsnprintf _vsnprintf
-# endif
-# if _MSC_VER < 1900
-#  define strdup _strdup
 /* Silence bogus warning C4127: conditional expression is constant */
 #  pragma warning(disable:4127)
-# endif
+#  endif
+#endif
+
+#if defined(__clang__) && __clang_major__ >= 13
+#pragma clang diagnostic pop
 #endif
 
 #endif /* _WIN32 */

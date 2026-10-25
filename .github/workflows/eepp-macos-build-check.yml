@@ -64,6 +64,10 @@ jobs:
         files: |
           projects/macos/sdk/eepp-sdk-macos-arm64-*.tar.gz
     - name: Unit Tests
+      env:
+        SDL_AUDIODRIVER: dummy
+        SDL_AUDIO_DRIVER: dummy
+        ALSOFT_DRIVERS: "null"
       run: |
         set +e
         cd bin/unit_tests
