@@ -6,6 +6,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/ui/models/modeleditingdelegate.hpp>
 #include <eepp/ui/uiicon.hpp>
+#include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
@@ -194,9 +195,18 @@ class FileCell : public UITableCell {
 			auto* label = dragLabel( getUISceneNode() );
 			const ModelIndex iconRow = dragIconRow( table, rowIndex );
 			DrawablePtr icon;
-			if ( UIIcon* found = rowIcon( table, iconRow ) )
+			const auto data = table->getModel()->data(
+				table->getModel()->index( iconRow.row(), table->getMainColumn() ),
+				ModelRole::Icon );
+			if ( data.is( Variant::Type::Drawable ) && data.asDrawable() )
+				icon = data.asDrawable()->clone();
+			else if ( UIIcon* found = rowIcon( table, iconRow ) )
 				icon = found->createDrawable( table->getIconSize() );
 			label->setIcon( icon );
+			if ( data.is( Variant::Type::Drawable ) )
+				label->addClass( "image_thumbnail" );
+			else
+				label->removeClass( "image_thumbnail" );
 			// Folders are tinted as in the rows (stylesheet).
 			bool folder = table->isFolderRow && iconRow.isValid() &&
 						  table->isFolderRow( static_cast<size_t>( iconRow.row() ) );
@@ -449,6 +459,34 @@ void FileTableView::onWidgetFocusLoss() {
 	// Abandon pending commands even if focus returns before the listing finishes.
 	mNavigationInput.clear();
 	UITableView::onWidgetFocusLoss();
+}
+
+void FileTableView::releaseThumbnailIcons( size_t firstPooledRow ) {
+	for ( size_t i = firstPooledRow; i < mWidgets.size(); ++i ) {
+		for ( const auto& item : mWidgets[i] ) {
+			if ( auto* cell = item.second->asType<UITableCell>();
+				 cell->getIcon()->hasClass( "image_thumbnail" ) ) {
+				cell->setIcon( DrawablePtr{} );
+				cell->getIcon()->removeClass( "image_thumbnail" );
+			}
+		}
+	}
+}
+
+void FileTableView::drawChildren() {
+	size_t first = 0, end = 0;
+	if ( getModel() && getRowHeight() > 0 ) {
+		first = std::max( 0.f, mScrollOffset.y ) / getRowHeight();
+		end = std::min(
+			getModel()->rowCount(),
+			size_t( std::ceil( ( mScrollOffset.y + getPixelsSize().y ) / getRowHeight() ) ) );
+	}
+	if ( onVisibleRows )
+		onVisibleRows( first, end );
+	UITableView::drawChildren();
+	// The table retains a pool of row widgets. Clear image references in surplus rows after a
+	// viewport shrinks, instead of retaining textures until those cells happen to be reused.
+	releaseThumbnailIcons( end >= first ? end - first : 0 );
 }
 
 void FileTableView::beginRename( size_t row ) {

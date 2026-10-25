@@ -16,11 +16,25 @@ using namespace EE::System;
 struct NSVGimage;
 
 namespace EE { namespace System {
+
 class Pack;
 class IOStream;
+
 }} // namespace EE::System
 
 namespace EE { namespace Graphics {
+
+/** Stored-pixel to displayed-pixel transform, using EXIF's eight orientation values. */
+enum class ImageOrientation : Uint8 {
+	Normal = 1,
+	MirrorHorizontal,
+	Rotate180,
+	MirrorVertical,
+	Transpose,
+	Rotate90,
+	Transverse,
+	Rotate270
+};
 
 /** @brief A simple image class to manipulate them. */
 class EE_API Image {
@@ -185,6 +199,11 @@ class EE_API Image {
 		const unsigned char* data, const size_t& dataSize, int* width, int* height, int* channels,
 		const FormatConfiguration& imageFormatConfiguration = FormatConfiguration() );
 
+	/** Reads dimensions without decoding pixels and preserves the stream position. */
+	static bool getInfoFromStream(
+		IOStream& stream, int* width, int* height, int* channels,
+		const FormatConfiguration& imageFormatConfiguration = FormatConfiguration() );
+
 	/** @return True if the file is a valid image ( reads the file header to know if the file is an
 	 * image file format supported )
 	 * @param path the image path
@@ -311,6 +330,12 @@ class EE_API Image {
 	Image( IOStream& stream, const unsigned int& forceChannels = 0,
 		   const FormatConfiguration& formatConfiguration = FormatConfiguration() );
 
+	/** Loads from a stream with a decode-size hint in pixels. WebP and SVG fit within the box,
+	 * preserving aspect ratio without enlargement. Other codecs may ignore the hint; callers
+	 * can reduce the decoded image afterward. Zero disables the hint. */
+	Image( IOStream& stream, Sizei decodeSizeHint, const unsigned int& forceChannels = 0,
+		   const FormatConfiguration& formatConfiguration = FormatConfiguration() );
+
 	Image( const Image& other );
 
 	/** Overload the assignment operator to ensure the image copy */
@@ -402,6 +427,9 @@ class EE_API Image {
 	virtual void resize( const Uint32& newWidth, const Uint32& newHeight,
 						 ResamplerFilter filter = ResamplerFilter::RESAMPLER_LANCZOS4 );
 
+	/** Applies a stored-pixel orientation once. Does not change decoding defaults or metadata. */
+	void applyOrientation( ImageOrientation orientation );
+
 	/** Flip the image ( rotate the image 90º ) */
 	virtual void flip();
 
@@ -473,9 +501,9 @@ class EE_API Image {
 
 	void loadFromPack( Pack* Pack, const std::string& FilePackPath );
 
-	void svgLoad( NSVGimage* image );
+	void svgLoad( NSVGimage* image, Sizei decodeSizeHint = { 0, 0 } );
 
-	void webpLoad( const Uint8* imageData, size_t imageDataSize );
+	void webpLoad( const Uint8* imageData, size_t imageDataSize, Sizei decodeSizeHint = { 0, 0 } );
 };
 
 }} // namespace EE::Graphics

@@ -9,6 +9,7 @@
 #include "previewpanel.hpp"
 #include "settingsactions.hpp"
 #include "terminalpanel.hpp"
+#include "thumbnails.hpp"
 #include <eepp/system/applications.hpp>
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uimenuitem.hpp>
@@ -122,6 +123,8 @@ tableview::cell::icon {
 	text-align: center;
 	scale-type: fit-inside;
 }
+tableview::cell::icon.image_thumbnail { tint: white; }
+file_drag_label.image_thumbnail { tint: white; }
 /* The application logo keeps its colors in light, dark and selected menu states. */
 #open-in-eefm > Menu::Item::icon {
 	tint: white;
@@ -587,6 +590,7 @@ int App::run( int argc, char* argv[] ) {
 	// reference. Running transfers are cancelled (destroying the VFS waits for them).
 	mFileOperations->cancelOperations();
 	mPreviewPanel->cancel();
+	mThumbnails->shutdown();
 	mPaneManager->clearTabs();
 #ifdef EE_VFS_SFTP
 	if ( mSSHPrompts )
@@ -612,6 +616,7 @@ int App::run( int argc, char* argv[] ) {
 	mSettingsActions.reset();
 	mTerminalPanel.reset();
 	mPreviewPanel.reset();
+	mThumbnails.reset();
 	mFileOperations.reset();
 	mPaneManager.reset();
 	mExecutor.reset();
@@ -654,6 +659,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	if ( !mUI )
 		return false;
 	mExecutor = std::make_unique<MainThreadExecutor>( mUI );
+	mThumbnails = std::make_unique<Thumbnails>( *this );
 	mVFS = &VirtualFileSystem::instance();
 	mPaneManager = std::make_unique<PaneManager>( *this );
 	mPaneManager->loadState( mState );

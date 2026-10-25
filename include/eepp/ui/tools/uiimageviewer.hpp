@@ -4,23 +4,32 @@
 #include <atomic>
 #include <memory>
 
+#include <eepp/graphics/image.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
 namespace EE::Graphics {
+
 class Texture;
+
 }
 
 namespace EE::System {
+
 class IOStream;
+
 }
 
 namespace EE::UI {
+
 class UIImage;
 class UILoader;
 class UITextView;
+
 } // namespace EE::UI
 
 namespace EE::UI::Tools {
+
+using namespace EE::Graphics;
 
 class EE_API UIImageViewer : public UIWidget {
   public:
@@ -93,6 +102,9 @@ class EE_API UIImageViewer : public UIWidget {
 
 	virtual std::vector<PropertyId> getPropertiesImplemented() const override;
 
+	/** Display dimensions after EXIF orientation, without changing stored texture pixels. */
+	Sizef getOrientedImageSize() const;
+
 	void resetImageView();
 
 	/** Recalculates the displayed image size and position when the viewer size changes. */
@@ -140,6 +152,7 @@ class EE_API UIImageViewer : public UIWidget {
 	bool mPreserveImageView{ false };
 	bool mAutoFitOnSizeChange{ false };
 	bool mUseNativeImageSize{ false };
+	ImageOrientation mOrientation{ ImageOrientation::Normal };
 
 	UIImageViewer();
 

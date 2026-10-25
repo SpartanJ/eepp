@@ -9,6 +9,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packregistry.hpp>
+#include <eepp/system/scopedop.hpp>
 
 #include <algorithm>
 #include <array>
@@ -642,6 +643,34 @@ bool Image::getInfoFromMemory( const unsigned char* data, const size_t& dataSize
 	return res;
 }
 
+bool Image::getInfoFromStream( IOStream& stream, int* width, int* height, int* channels,
+							   const FormatConfiguration& imageFormatConfiguration ) {
+	const auto position = stream.tell();
+	if ( !stream.isOpen() || position < 0 )
+		return false;
+	ScopedOp restore( nullptr, [&] { stream.seek( position ); } );
+	if ( stream.seek( 0 ) != 0 )
+		return false;
+	// Decoder header callbacks can skip large JPEG APP/ICC segments without buffering them.
+	const stbi_io_callbacks callbacks{ IOCb::read, IOCb::skip, IOCb::eof };
+	if ( stbi_info_from_callbacks( &callbacks, &stream, width, height, channels ) != 0 )
+		return true;
+	if ( const auto info = webp_test_from_stream( stream ) ) {
+		*width = info->width;
+		*height = info->height;
+		*channels = info->channels;
+		return true;
+	}
+	if ( !svg_test_from_stream( stream ) || stream.getSize() <= 0 || stream.seek( 0 ) != 0 )
+		return false;
+	ScopedBuffer data( stream.getSize() );
+	if ( stream.read( reinterpret_cast<char*>( data.get() ), data.size() ) !=
+		 ios_size( data.size() ) )
+		return false;
+	return getInfoFromMemory( data.get(), data.size(), width, height, channels,
+							  imageFormatConfiguration );
+}
+
 bool Image::isImage( const std::string& path ) {
 	return STBI_unknown != stbi_test( path.c_str() ) || svg_test( path ) || webp_test( path );
 }
@@ -848,6 +877,10 @@ Image::Image( Pack* Pack, std::string FilePackPath, const unsigned int& forceCha
 
 Image::Image( IOStream& stream, const unsigned int& forceChannels,
 			  const FormatConfiguration& formatConfiguration ) :
+	Image( stream, Sizei( 0, 0 ), forceChannels, formatConfiguration ) {}
+
+Image::Image( IOStream& stream, Sizei decodeSizeHint, const unsigned int& forceChannels,
+			  const FormatConfiguration& formatConfiguration ) :
 	mPixels( NULL ),
 	mWidth( 0 ),
 	mHeight( 0 ),
@@ -886,14 +919,14 @@ Image::Image( IOStream& stream, const unsigned int& forceChannels,
 
 			data[data.length() - 1] = '\0';
 
-			svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f, 0xFFFFFFFF ) );
+			svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f, 0xFFFFFFFF ), decodeSizeHint );
 		} else if ( webp_test_from_stream( stream ) ) {
 			ScopedBuffer data( stream.getSize() );
 			stream.seek( 0 );
 			if ( stream.read( (char*)data.get(), data.length() ) !=
 				 static_cast<ios_size>( data.length() ) )
 				return;
-			webpLoad( data.get(), data.size() );
+			webpLoad( data.get(), data.size(), decodeSizeHint );
 		} else {
 			Log::error( "Failed to load image. Reason: %s", stbi_failure_reason() );
 		}
@@ -958,41 +991,51 @@ Image::~Image() {
 		clearCache();
 }
 
-void Image::webpLoad( const Uint8* imageData, size_t imageDataSize ) {
-	WebPBitstreamFeatures features;
-	if ( WebPGetFeatures( imageData, imageDataSize, &features ) != VP8_STATUS_OK )
+void Image::webpLoad( const Uint8* imageData, size_t imageDataSize, Sizei hint ) {
+	WebPDecoderConfig decoder;
+	if ( !WebPInitDecoderConfig( &decoder ) ||
+		 WebPGetFeatures( imageData, imageDataSize, &decoder.input ) != VP8_STATUS_OK )
 		return;
 
-	int channels = features.has_alpha ? 4 : 3;
-	int datasize = features.width * features.height * channels;
-	int stride = channels * features.width;
-	Uint8* dstImage = (Uint8*)malloc( datasize );
-
-	bool errdec = false;
-	if ( features.has_alpha ) {
-		errdec =
-			WebPDecodeRGBAInto( imageData, imageDataSize, dstImage, datasize, stride ) == nullptr;
-	} else {
-		errdec =
-			WebPDecodeRGBInto( imageData, imageDataSize, dstImage, datasize, stride ) == nullptr;
+	int width = decoder.input.width, height = decoder.input.height;
+	if ( hint.x > 0 && hint.y > 0 ) {
+		const double scale =
+			std::min( { 1., double( hint.x ) / width, double( hint.y ) / height } );
+		width = std::max( 1, int( width * scale ) );
+		height = std::max( 1, int( height * scale ) );
+		decoder.options.use_scaling =
+			width != decoder.input.width || height != decoder.input.height;
+		decoder.options.scaled_width = width;
+		decoder.options.scaled_height = height;
 	}
-
-	if ( errdec || nullptr == dstImage ) {
-		free( dstImage );
+	const int channels = decoder.input.has_alpha ? 4 : 3;
+	const int datasize = width * height * channels;
+	auto* pixels = static_cast<Uint8*>( malloc( datasize ) );
+	if ( !pixels )
+		return;
+	decoder.output.colorspace = channels == 4 ? MODE_RGBA : MODE_RGB;
+	decoder.output.is_external_memory = 1;
+	decoder.output.u.RGBA.rgba = pixels;
+	decoder.output.u.RGBA.stride = width * channels;
+	decoder.output.u.RGBA.size = datasize;
+	const auto status = WebPDecode( imageData, imageDataSize, &decoder );
+	WebPFreeDecBuffer( &decoder.output );
+	if ( status != VP8_STATUS_OK ) {
+		free( pixels );
 		return;
 	}
-
-	mPixels = dstImage;
-	mWidth = features.width;
-	mHeight = features.height;
+	mPixels = pixels;
+	mWidth = width;
+	mHeight = height;
 	mChannels = channels;
+	mSize = datasize;
 	mLoadedFromStbi = true;
 }
 
 std::vector<Uint8> webpPacker( const Image& img, Uint32 quality, Uint32 compressionMethod,
 							   bool lossless ) {
 	quality = eeclamp( quality, 0u, 100u );
-	compressionMethod = eeclamp( quality, 0u, 6u );
+	compressionMethod = eeclamp( compressionMethod, 0u, 6u );
 
 	if ( img.getChannels() < 3 )
 		return {};
@@ -1048,7 +1091,7 @@ std::vector<Uint8> webpPacker( const Image& img, Uint32 quality, Uint32 compress
 	return dst;
 }
 
-void Image::svgLoad( NSVGimage* image ) {
+void Image::svgLoad( NSVGimage* image, Sizei hint ) {
 	if ( image == NULL )
 		return;
 
@@ -1056,8 +1099,11 @@ void Image::svgLoad( NSVGimage* image ) {
 	unsigned char* img = NULL;
 	int w, h;
 
-	w = (int)image->width * mFormatConfiguration.svgScale();
-	h = (int)image->height * mFormatConfiguration.svgScale();
+	Float scale = mFormatConfiguration.svgScale();
+	if ( hint.x > 0 && hint.y > 0 && image->width > 0 && image->height > 0 )
+		scale = std::min( { scale, 1.f, hint.x / image->width, hint.y / image->height } );
+	w = std::max( 1, int( image->width * scale ) );
+	h = std::max( 1, int( image->height * scale ) );
 
 	rast = nsvgCreateRasterizer();
 
@@ -1065,12 +1111,13 @@ void Image::svgLoad( NSVGimage* image ) {
 		img = (unsigned char*)malloc( w * h * 4 );
 
 		if ( img != NULL ) {
-			nsvgRasterize( rast, image, 0, 0, mFormatConfiguration.svgScale(), img, w, h, w * 4 );
+			nsvgRasterize( rast, image, 0, 0, scale, img, w, h, w * 4 );
 
 			mPixels = img;
 			mWidth = w;
 			mHeight = h;
 			mChannels = 4;
+			mSize = w * h * 4;
 			mLoadedFromStbi = true;
 		}
 	}
@@ -1220,8 +1267,8 @@ bool Image::saveToFile( const std::string& filepath, const SaveType& Format ) {
 	if ( NULL != mPixels && 0 != mWidth && 0 != mHeight && 0 != mChannels ) {
 		if ( SaveType::WEBP == Format ) {
 			auto data = webpPacker( *this, mFormatConfiguration.webpSaveQuality(),
-									mFormatConfiguration.webpSaveLossless(),
-									mFormatConfiguration.webpCompressionMethod() );
+									mFormatConfiguration.webpCompressionMethod(),
+									mFormatConfiguration.webpSaveLossless() );
 			if ( !data.empty() )
 				Res = FileSystem::fileWrite( filepath, data );
 		} else if ( SaveType::JPG != Format ) {
@@ -1441,6 +1488,54 @@ Graphics::Image* Image::crop( Rect rect ) {
 	}
 
 	return NULL;
+}
+
+void Image::applyOrientation( ImageOrientation orientation ) {
+	const auto value = static_cast<Uint8>( orientation );
+	if ( !mPixels || value <= 1 || value > 8 )
+		return;
+	const bool swap = value >= 5;
+	Image transformed( swap ? mHeight : mWidth, swap ? mWidth : mHeight, mChannels,
+					   Color::Transparent, false );
+	for ( Uint32 y = 0; y < mHeight; ++y ) {
+		for ( Uint32 x = 0; x < mWidth; ++x ) {
+			Uint32 dx = x, dy = y;
+			switch ( orientation ) {
+				case ImageOrientation::MirrorHorizontal:
+					dx = mWidth - 1 - x;
+					break;
+				case ImageOrientation::Rotate180:
+					dx = mWidth - 1 - x;
+					dy = mHeight - 1 - y;
+					break;
+				case ImageOrientation::MirrorVertical:
+					dy = mHeight - 1 - y;
+					break;
+				case ImageOrientation::Transpose:
+					dx = y;
+					dy = x;
+					break;
+				case ImageOrientation::Rotate90:
+					dx = mHeight - 1 - y;
+					dy = x;
+					break;
+				case ImageOrientation::Transverse:
+					dx = mHeight - 1 - y;
+					dy = mWidth - 1 - x;
+					break;
+				case ImageOrientation::Rotate270:
+					dx = y;
+					dy = mWidth - 1 - x;
+					break;
+				default:
+					break;
+			}
+			std::memcpy( transformed.mPixels +
+							 ( size_t( dy ) * transformed.mWidth + dx ) * mChannels,
+						 mPixels + ( size_t( y ) * mWidth + x ) * mChannels, mChannels );
+		}
+	}
+	*this = std::move( transformed );
 }
 
 void Image::flip() {

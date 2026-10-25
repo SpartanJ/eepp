@@ -53,6 +53,14 @@ class FileTableView : public UITableView {
 	/** Context menu requested over the empty area. */
 	std::function<void()> onBackgroundMenu;
 
+	/** Called immediately before drawing the visible row range (end is exclusive). */
+	std::function<void( size_t first, size_t end )> onVisibleRows;
+
+	void drawChildren() override;
+
+	/** Drops thumbnail drawables held by recycled cells. Ordinary file icons are unaffected. */
+	void releaseThumbnailIcons( size_t firstPooledRow = 0 );
+
 	/** Starts renaming row in place (an editor over its name; the model renames on Enter). */
 	void beginRename( size_t row );
 

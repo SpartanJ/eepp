@@ -448,6 +448,11 @@ stop playback and cancel pending reads. Preview passes VFS streams directly to i
 members and SFTP files, without creating local copies or whole-file VFS buffers. Text previews accept files up to 2 MiB;
 image and audio previews accept files up to 128 MiB.
 
+Image thumbnails are enabled by default in `eefm`. **Configure eefm → Files → Icons** controls
+thumbnail display, cache format (QOI by default), persistence, shared-cache clearing, and optional archive/remote thumbnails.
+See [Image thumbnails and EXIF orientation](image_thumbnails.md) for the reusable service and
+cache behavior.
+
 ### efsw-agent
 
 `efsw-agent` is part of efsw (`src/agent/efsw-agent.cpp`, protocol in

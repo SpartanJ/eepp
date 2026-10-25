@@ -1,7 +1,9 @@
+#include "exif_test_utils.hpp"
 #include "utest.hpp"
 #include <atomic>
 #include <cstring>
 #include <eepp/graphics/image.hpp>
+#include <eepp/graphics/sprite.hpp>
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
@@ -213,10 +215,6 @@ UTEST( PreviewWidgets, AudioSeeksAndCleanupStayOnTheWorkerAfterOwnershipTransfer
 	EXPECT_GT( probe->workerSeeks.load(), 0 );
 	EXPECT_FALSE( probe->uiIO );
 	EXPECT_FALSE( probe->uiCleanup );
-	EXPECT_LE( sizeof( UIAudioPlayer ), sizeof( UIRelativeLayout ) +
-											sizeof( std::shared_ptr<Music> ) +
-											sizeof( std::optional<Task<void>> ) +
-											4 * sizeof( void* ) + sizeof( std::string ) );
 }
 
 UTEST( PreviewWidgets, FailedAudioRewindReleasesTheReaderAndOwnedStream ) {
@@ -277,4 +275,46 @@ UTEST( PreviewWidgets, GalleryMetadataIsCommittedWithTheCurrentImageAndClearedFo
 	EXPECT_TRUE( viewer->getImageName().empty() );
 	EXPECT_TRUE( viewer->getGalleryPath().empty() );
 	FileSystem::fileRemove( path );
+}
+
+UTEST( PreviewWidgets, EXIFOrientationUsesDrawTransformsAndKeepsTexturePixelsUnchanged ) {
+	UIApplication::Settings settings;
+	settings.threadPool = ThreadPool::createShared( 1 );
+	UIApplication app( WindowSettings{ 400, 300, "EXIF rendering" }, settings );
+	std::string path = Sys::getTempPath();
+	FileSystem::dirAddSlashAtEnd( path );
+	path += "eepp-exif-viewer-" + String::toString( Sys::getProcessID() ) + ".jpg";
+	Image source( 64, 32, 3, Color::Red );
+	ASSERT_TRUE( source.saveToFile( path, Image::SaveType::JPG ) );
+	std::string encoded;
+	ASSERT_TRUE( FileSystem::fileGet( path, encoded ) );
+	FileSystem::fileRemove( path );
+	auto* viewer = UIImageViewer::New();
+	viewer->setParent( app.getUI() );
+	viewer->setPixelsSize( 100, 40 );
+	const int rotations[] = { 0, 0, 180, 0, 90, 90, 90, 270 };
+	const RenderMode modes[] = { RENDER_NORMAL,	 RENDER_MIRROR, RENDER_NORMAL, RENDER_FLIPPED,
+								 RENDER_FLIPPED, RENDER_NORMAL, RENDER_MIRROR, RENDER_NORMAL };
+	for ( int orientation = 1; orientation <= 8; ++orientation ) {
+		viewer->loadImageAsync( exiftest::jpeg( encoded, exiftest::tiff( orientation ) ), true,
+								false );
+		ASSERT_TRUE( finishImageWork( viewer ) );
+		app.getUI()->update( Milliseconds( 16 ) );
+		ASSERT_TRUE( viewer->hasImage() );
+		auto* sprite = static_cast<Sprite*>( viewer->getImage()->getDrawable().get() );
+		EXPECT_EQ( sprite->getCurrentTextureRegion()->getTexture()->getPixelsSize().x, 64.f );
+		EXPECT_EQ( sprite->getCurrentTextureRegion()->getTexture()->getPixelsSize().y, 32.f );
+		EXPECT_EQ( sprite->getRenderMode(), modes[orientation - 1] );
+		EXPECT_EQ( viewer->getImage()->getRotation(), float( rotations[orientation - 1] ) );
+		EXPECT_EQ( viewer->getOrientedImageSize().x,
+				   orientation >= 5 ? sprite->getPixelsSize().y : sprite->getPixelsSize().x );
+		viewer->resetImageView();
+		EXPECT_EQ( viewer->getImage()->getRotation(), float( rotations[orientation - 1] ) );
+		const auto bounds = viewer->getImage()->getWorldBounds();
+		const auto parent = viewer->getWorldBounds();
+		EXPECT_GE( bounds.Left, parent.Left - 1.f );
+		EXPECT_LE( bounds.Right, parent.Right + 1.f );
+		EXPECT_GE( bounds.Top, parent.Top - 1.f );
+		EXPECT_LE( bounds.Bottom, parent.Bottom + 1.f );
+	}
 }

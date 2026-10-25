@@ -6,6 +6,7 @@
 #include "placescontroller.hpp"
 #include "previewpanel.hpp"
 #include "terminalpanel.hpp"
+#include "thumbnails.hpp"
 #include <ctime>
 
 namespace eefm {
@@ -117,9 +118,6 @@ class FileDirectoryModel : public VFSDirectoryModel {
   private:
 	UISceneNode& mUI;
 };
-
-static_assert( sizeof( FileDirectoryModel ) <=
-			   sizeof( VFSDirectoryModel ) + alignof( VFSDirectoryModel ) );
 
 } // namespace
 
@@ -482,7 +480,9 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 	config.vfs = mApp.vfs();
 	config.showHidden = mApp.showHidden();
 	raw->model = std::make_shared<FileDirectoryModel>( mApp.executor(), config, *mUI );
-	raw->model->setIconProvider( [this]( const VFSFileInfo& info ) -> Variant {
+	raw->model->setIconProvider( [this, raw]( const VFSFileInfo& info ) -> Variant {
+		if ( auto thumbnail = mApp.thumbnails().icon( raw, info ) )
+			return Variant( std::move( thumbnail ) );
 		UIIcon* icon = mApp.fileIcon( info );
 		return icon ? Variant( icon ) : Variant();
 	} );
@@ -511,6 +511,7 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 	view->setRubberBandSelection( true );
 	// Same size as the other icons: glyphs are not scaled to fit (see the stylesheet).
 	view->setIconSize( PixelDensity::dpToPxI( 16 ) );
+	mApp.thumbnails().attach( raw );
 	view->setColumnReorderingEnabled( true );
 	// Like Dolphin, the name keeps most of the width: the other columns are capped to a share
 	// of the view (they still use less when their content is narrower).

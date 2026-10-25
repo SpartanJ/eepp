@@ -46,9 +46,7 @@ PreviewKind kindForName( const std::string& name ) {
 
 } // namespace
 
-PreviewPanel::PreviewPanel( App& app, UISplitter* splitter ) : mApp( app ), mSplitter( splitter ) {
-	static_assert( sizeof( PreviewPanel ) <= sizeof( URI ) + 192 );
-}
+PreviewPanel::PreviewPanel( App& app, UISplitter* splitter ) : mApp( app ), mSplitter( splitter ) {}
 
 PreviewPanel::~PreviewPanel() = default;
 

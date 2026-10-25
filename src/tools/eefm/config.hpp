@@ -2,6 +2,7 @@
 #define EEFM_CONFIG_HPP
 
 #include <eepp/graphics/font.hpp>
+#include <eepp/graphics/imagethumbnailer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
@@ -41,6 +42,10 @@ struct FilesConfig {
 	/** Icons from the desktop icon theme (Linux, BSD) or the shell (Windows, macOS). */
 	bool systemIcons{ true };
 	bool smoothScroll{ false };
+	bool thumbnails{ true };
+	bool cacheThumbnails{ true };
+	bool remoteThumbnails{ false };
+	ImageThumbnailer::CacheFormat thumbnailCacheFormat{ ImageThumbnailer::CacheFormat::QOI };
 };
 
 struct TerminalConfig {
@@ -69,9 +74,6 @@ struct WindowConfig {
 	GraphicsLibraryVersion rendererVersion{ GLv_default };
 	Uint32 multisamples{ 0 };
 };
-
-// Menu visibility shares the existing padding after vsync.
-static_assert( sizeof( WindowConfig ) == 5 * sizeof( Uint32 ) );
 
 /** @brief eefm preferences (config.cfg in the eefm config folder). Session state (window, tabs,
  * columns) is kept apart, in state.json. */

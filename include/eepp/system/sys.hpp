@@ -105,6 +105,9 @@ class EE_API Sys {
 	**	@return The pointer to the object handle or NULL if there was an error */
 	static void* loadObject( const std::string& sofile );
 
+	/** Loads an optional library without diagnostics when logErrors is false. */
+	static void* loadObject( const std::string& sofile, bool logErrors );
+
 	/** Unloads a shared object from memory.
 	**	@param handle The object handle of the shared object to unload */
 	static void unloadObject( void* handle );
@@ -114,6 +117,8 @@ class EE_API Sys {
 	**	@param name The name of the function to look up
 	**	@return The pointer to the function or NULL if there was an error */
 	static void* loadFunction( void* handle, const std::string& name );
+
+	static void* loadFunction( void* handle, const std::string& name, bool logErrors );
 
 	/** @return the argument list in a vector of std::strings in UTF-8, ignoring the first argument
 	 * (the binary name) */

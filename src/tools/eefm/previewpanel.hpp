@@ -8,13 +8,17 @@
 #include <optional>
 
 namespace EE::UI {
+
 class UICodeEditor;
 class UILoader;
 class UITextView;
 namespace Tools {
+
 class UIAudioPlayer;
 class UIImageViewer;
+
 } // namespace Tools
+
 } // namespace EE::UI
 
 namespace eefm {

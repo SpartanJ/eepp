@@ -1,3 +1,4 @@
+#include <eepp/graphics/exif.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -16,6 +17,31 @@
 using namespace EE::Graphics;
 
 namespace EE::UI::Tools {
+
+namespace {
+
+Float orientationRotation( ImageOrientation orientation ) {
+	if ( orientation == ImageOrientation::Rotate180 )
+		return 180.f;
+	if ( orientation == ImageOrientation::Rotate270 )
+		return 270.f;
+	return static_cast<Uint8>( orientation ) >= 5 ? 90.f : 0.f;
+}
+
+RenderMode orientationMode( ImageOrientation orientation ) {
+	switch ( orientation ) {
+		case ImageOrientation::MirrorHorizontal:
+		case ImageOrientation::Transverse:
+			return RENDER_MIRROR;
+		case ImageOrientation::MirrorVertical:
+		case ImageOrientation::Transpose:
+			return RENDER_FLIPPED;
+		default:
+			return RENDER_NORMAL;
+	}
+}
+
+} // namespace
 
 Uint32 UIImageViewer::displayOptionsFromString( std::string_view str ) {
 	Uint32 opt = 0;
@@ -171,13 +197,15 @@ void UIImageViewer::loadImage( std::string path, bool isContents, bool loadGalle
 			}
 		}
 
-		if ( stream )
-			stream->seek( 0 );
-		Image::Format format =
-			stream		 ? Image::getFormat( *stream )
-			: isContents ? Image::getFormat( reinterpret_cast<const unsigned char*>( path.c_str() ),
-											 path.size() )
-						 : Image::getFormat( path );
+		if ( !stream ) {
+			if ( isContents )
+				stream = std::make_unique<IOStreamMemory>( path.data(), path.size() );
+			else
+				stream = std::make_unique<IOStreamFile>( path );
+		}
+		const auto metadata = Exif::read( *stream );
+		stream->seek( 0 );
+		const Image::Format format = Image::getFormat( *stream );
 
 		if ( format == Image::Format::Unknown ) {
 			Log::error( "UIImageViewer: unsupported or invalid image: %s",
@@ -196,41 +224,24 @@ void UIImageViewer::loadImage( std::string path, bool isContents, bool loadGalle
 
 		std::vector<Image> decodedImages;
 		int gifDelay = 0;
-		if ( stream )
-			stream->seek( 0 );
+		stream->seek( 0 );
 		if ( format == Image::Format::GIF ) {
-			if ( stream ) {
-				auto gif = Image::loadGif( *stream );
-				decodedImages = std::move( gif.first );
-				gifDelay = gif.second;
-			} else if ( isContents ) {
-				IOStreamMemory stream( path.c_str(), path.size() );
-				auto gif = Image::loadGif( stream );
-				decodedImages = std::move( gif.first );
-				gifDelay = gif.second;
-			} else {
-				IOStreamFile stream( path );
-				auto gif = Image::loadGif( stream );
-				decodedImages = std::move( gif.first );
-				gifDelay = gif.second;
-			}
+			auto gif = Image::loadGif( *stream );
+			decodedImages = std::move( gif.first );
+			gifDelay = gif.second;
 		} else {
-			Image decoded =
-				stream		 ? Image( *stream )
-				: isContents ? Image( reinterpret_cast<const Uint8*>( path.data() ), path.size() )
-							 : Image( path );
+			Image decoded( *stream );
 			if ( decoded.getPixelsPtr() )
 				decodedImages.emplace_back( std::move( decoded ) );
 		}
-		if ( stream && !stream->isOpen() )
+		if ( !stream->isOpen() )
 			decodedImages.clear();
+
 		if ( decodedImages.empty() )
 			Log::error( "UIImageViewer: failed to decode image: %s",
 						isContents ? "<memory>" : path.c_str() );
 
-		const Int64 fileSize = stream		? stream->getSize()
-							   : isContents ? path.size()
-											: FileSystem::fileSize( path );
+		const Int64 fileSize = stream->getSize();
 		std::string filePath( isContents ? std::string{} : path );
 		if ( mClosing || generation != mLoadGeneration )
 			return;
@@ -251,6 +262,7 @@ void UIImageViewer::loadImage( std::string path, bool isContents, bool loadGalle
 		runOnMainThread( [this, format, fileSize, gifDelay, generation, hasGallery, reuseGallery,
 						  galleryPath = std::move( galleryPath ),
 						  galleryFiles = std::move( galleryFiles ), galleryIndex,
+						  orientation = metadata.orientation,
 						  sprite = std::move( sprite )]() mutable {
 			if ( generation != mLoadGeneration )
 				return;
@@ -262,6 +274,12 @@ void UIImageViewer::loadImage( std::string path, bool isContents, bool loadGalle
 					mGalleryFiles = std::move( galleryFiles );
 				}
 				mGalleryImageIndex = galleryIndex;
+				// Orientation changes draw state only: full-size images retain their original
+				// pixels.
+				mImage->setRotation( mImage->getRotation() - orientationRotation( mOrientation ) +
+									 orientationRotation( orientation ) );
+				mOrientation = orientation;
+				sprite->setRenderMode( orientationMode( mOrientation ) );
 				const size_t frameCount = sprite->getNumFrames();
 				if ( format == Image::Format::GIF ) {
 					sprite->setAnimationSpeed( 1000.f / static_cast<Float>( gifDelay ) );
@@ -306,10 +324,10 @@ void UIImageViewer::updateImageLayout() {
 	Sizef imageSize( mUseNativeImageSize ? mImage->getDrawable()->getSize()
 										 : mImage->getDrawable()->getPixelsSize() );
 
-	const Float scale =
-		imageSize.x > mSize.x || imageSize.y > mSize.y
-			? eemin( mSize.x / imageSize.getWidth(), mSize.y / imageSize.getHeight() )
-			: 1.f;
+	Sizef oriented = imageSize;
+	if ( static_cast<Uint8>( mOrientation ) >= 5 )
+		std::swap( oriented.x, oriented.y );
+	const Float scale = std::min( { 1.f, mSize.x / oriented.x, mSize.y / oriented.y } );
 	mImage->setPixelsSize( eefloor( imageSize.x * scale ), eefloor( imageSize.y * scale ) );
 	mImage->center();
 }
@@ -397,10 +415,19 @@ Uint32 UIImageViewer::onMessage( const NodeMessage* msg ) {
 	return 0;
 }
 
+Sizef UIImageViewer::getOrientedImageSize() const {
+	if ( !mImage || !mImage->getDrawable() )
+		return {};
+	auto size = mImage->getDrawable()->getPixelsSize();
+	if ( static_cast<Uint8>( mOrientation ) >= 5 )
+		std::swap( size.x, size.y );
+	return size;
+}
+
 void UIImageViewer::resetImageView() {
 	mImage->setScale( 1 );
 	mImage->setPixelsPosition( Vector2f::Zero );
-	mImage->setRotation( 0 );
+	mImage->setRotation( orientationRotation( mOrientation ) );
 	mImage->setVisible( true );
 	mImage->center();
 }
@@ -516,8 +543,10 @@ void UIImageViewer::updateTextDisplay() {
 			if ( spr->getCurrentTextureRegion() ) {
 				auto tex = spr->getCurrentTextureRegion()->getTexture();
 				if ( tex ) {
-					str += String::format( "%d x %d", (int)tex->getImageWidth(),
-										   (int)tex->getImageHeight() );
+					const bool swapped = static_cast<Uint8>( mOrientation ) >= 5;
+					str += String::format(
+						"%d x %d", (int)( swapped ? tex->getImageHeight() : tex->getImageWidth() ),
+						(int)( swapped ? tex->getImageWidth() : tex->getImageHeight() ) );
 				}
 			}
 		} else {

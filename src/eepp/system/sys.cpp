@@ -976,12 +976,16 @@ int WIN_SetError( std::string prefix = "" ) {
 #endif
 
 void* Sys::loadObject( const std::string& sofile ) {
+	return loadObject( sofile, true );
+}
+
+void* Sys::loadObject( const std::string& sofile, bool logErrors ) {
 #if defined( EE_PLATFORM_POSIX )
 	void* handle = dlopen( sofile.c_str(), RTLD_NOW | RTLD_LOCAL );
 
 	const char* loaderror = (char*)dlerror();
 
-	if ( handle == NULL ) {
+	if ( handle == NULL && logErrors ) {
 		Log::warning( "Failed loading %s: %s", sofile.c_str(), loaderror );
 	}
 
@@ -994,12 +998,13 @@ void* Sys::loadObject( const std::string& sofile ) {
 	void* handle = (void*)LoadLibrary( tstr );
 #endif
 	/* Generate an error message if all loads failed */
-	if ( handle == NULL ) {
+	if ( handle == NULL && logErrors ) {
 		WIN_SetError( "Failed loading " + sofile );
 	}
 	return handle;
 #else
 #warning Sys::loadObject not implemented in this platform
+	return nullptr;
 #endif
 }
 
@@ -1018,6 +1023,10 @@ void Sys::unloadObject( void* handle ) {
 }
 
 void* Sys::loadFunction( void* handle, const std::string& name ) {
+	return loadFunction( handle, name, true );
+}
+
+void* Sys::loadFunction( void* handle, const std::string& name, bool logErrors ) {
 #if defined( EE_PLATFORM_POSIX )
 	void* symbol = dlsym( handle, name.c_str() );
 
@@ -1027,7 +1036,7 @@ void* Sys::loadFunction( void* handle, const std::string& name ) {
 
 		symbol = dlsym( handle, _name.c_str() );
 
-		if ( symbol == NULL ) {
+		if ( symbol == NULL && logErrors ) {
 			Log::warning( "Failed loading %s: %s", name.c_str(), (const char*)dlerror() );
 		}
 	}
@@ -1036,13 +1045,14 @@ void* Sys::loadFunction( void* handle, const std::string& name ) {
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	void* symbol = (void*)GetProcAddress( (HMODULE)handle, name.c_str() );
 
-	if ( symbol == NULL ) {
+	if ( symbol == NULL && logErrors ) {
 		WIN_SetError( "Failed loading function " + name );
 	}
 
 	return symbol;
 #else
 #warning Sys::loadFunction not implemented in this platform
+	return nullptr;
 #endif
 }
 
@@ -1295,9 +1305,9 @@ std::vector<std::string> Sys::getEnvSplit( const std::string& name ) {
 static ULONG_PTR GetParentProcessId() {
 	ULONG_PTR pbi[6];
 	ULONG ulSize = 0;
-	LONG( WINAPI * NtQueryInformationProcess )(
-		HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation,
-		ULONG ProcessInformationLength, PULONG ReturnLength );
+	LONG( WINAPI * NtQueryInformationProcess )
+	( HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation,
+	  ULONG ProcessInformationLength, PULONG ReturnLength );
 	*(FARPROC*)&NtQueryInformationProcess =
 		GetProcAddress( LoadLibraryA( "NTDLL.DLL" ), "NtQueryInformationProcess" );
 	if ( NtQueryInformationProcess ) {

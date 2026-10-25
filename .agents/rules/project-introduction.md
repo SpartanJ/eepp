@@ -165,6 +165,20 @@ declarations and unqualified eepp type names, such as `UISplitter`, over repeate
 qualified names such as `EE::UI::UISplitter`. Keep explicit qualification only where it is required
 to resolve ambiguity or avoid importing an unusually broad namespace into an unsuitable scope.
 
+Always leave one blank line immediately after a namespace's opening brace and immediately before
+its closing brace. This applies to named, nested, and anonymous namespaces, including namespaces
+whose first declaration is a `using namespace` directive. For example:
+
+```cpp
+namespace EE::Graphics {
+
+using namespace EE::System;
+
+// Declarations or definitions.
+
+} // namespace EE::Graphics
+```
+
 ## Function Spacing
 
 Always leave one blank line between consecutive function declarations in headers and between

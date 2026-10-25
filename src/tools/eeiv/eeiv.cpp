@@ -790,7 +790,7 @@ void App::registerKeyBindings() {
 		} else if ( key == KEY_KP_DIVIDE ) {
 			resetImageZoom();
 		} else if ( key == KEY_N && mImageViewer->getImage()->getDrawable() ) {
-			const Sizef size( mImageViewer->getImage()->getDrawable()->getPixelsSize() );
+			const Sizef size( mImageViewer->getOrientedImageSize() );
 			getWindow()->setSize( size.getWidth(), size.getHeight() );
 		} else if ( key == KEY_A ) {
 			setTextureFilter( mTextureFilter == Texture::Filter::Linear ? Texture::Filter::Nearest
@@ -800,7 +800,7 @@ void App::registerKeyBindings() {
 		} else if ( key == KEY_M ) {
 			fitImage();
 			if ( getWindow()->isMaximized() && mImageViewer->getImage()->getDrawable() ) {
-				const Sizef size( mImageViewer->getImage()->getDrawable()->getPixelsSize() );
+				const Sizef size( mImageViewer->getOrientedImageSize() );
 				getWindow()->setSize( size.getWidth(), size.getHeight() );
 			}
 		} else if ( key == KEY_K ) {

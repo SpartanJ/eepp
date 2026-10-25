@@ -29,6 +29,12 @@ void AppConfig::load() {
 	files.singleClick = mIni.getValueB( "files", "single_click", files.singleClick );
 	files.countFolderItems =
 		mIni.getValueB( "files", "count_folder_items", files.countFolderItems );
+	files.thumbnails = mIni.getValueB( "files", "thumbnails", files.thumbnails );
+	files.cacheThumbnails = mIni.getValueB( "files", "cache_thumbnails", files.cacheThumbnails );
+	files.remoteThumbnails = mIni.getValueB( "files", "remote_thumbnails", files.remoteThumbnails );
+	files.thumbnailCacheFormat = ImageThumbnailer::cacheFormatFromString(
+		mIni.getValue( "files", "thumbnail_cache_format",
+					   ImageThumbnailer::cacheFormatToString( files.thumbnailCacheFormat ) ) );
 	files.systemIcons = mIni.getValueB( "files", "system_icons", files.systemIcons );
 	files.smoothScroll = mIni.getValueB( "files", "smooth_scroll", files.smoothScroll );
 
@@ -75,6 +81,11 @@ bool AppConfig::save() {
 	mIni.setValueB( "files", "single_click", files.singleClick );
 	mIni.setValueB( "files", "count_folder_items", files.countFolderItems );
 	mIni.setValueB( "files", "system_icons", files.systemIcons );
+	mIni.setValueB( "files", "thumbnails", files.thumbnails );
+	mIni.setValueB( "files", "cache_thumbnails", files.cacheThumbnails );
+	mIni.setValueB( "files", "remote_thumbnails", files.remoteThumbnails );
+	mIni.setValue( "files", "thumbnail_cache_format",
+				   ImageThumbnailer::cacheFormatToString( files.thumbnailCacheFormat ) );
 	mIni.setValueB( "files", "smooth_scroll", files.smoothScroll );
 
 	mIni.setValue( "terminal", "font_path", terminal.fontPath );

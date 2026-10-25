@@ -1,0 +1,923 @@
+{
+  "audit_date": "2026-10-24",
+  "repository_commit": "dfc1a1941313afa16b2fa19dd3fbb1e508160490",
+  "scope": "Vendored runtime source inventory and high/critical advisory triage; not a deployed-binary SBOM or vulnerability-free certification.",
+  "assessment_definitions": {
+    "patch": "Relevant high/critical vulnerable code and supported caller found; patch or reviewed upstream revision needed.",
+    "upgrade": "Upgrade recommended; see report for exposure preconditions.",
+    "conditional": "Known advisories screened; conditions or local mitigations matter.",
+    "maintenance": "Known security maintenance item with no confirmed high-CVE exposure in current callers.",
+    "screened": "No actionable matching high/critical CVE established in this pass; not a guarantee of safety.",
+    "snapshot": "Release provenance incomplete; repository revision and fingerprint identify source, but version-range exclusions may be incomplete.",
+    "fixed": "Specific screened high CVE condition already fixed locally."
+  },
+  "components": [
+    {
+      "name": "args",
+      "path": "src/thirdparty/args",
+      "version": null,
+      "version_evidence": "src/thirdparty/args/args.hxx",
+      "upstream": "https://github.com/Taywee/args",
+      "assessment": "snapshot",
+      "notes": "Command-line parser; no embedded release identifier.",
+      "source_revision": "33f8a2eebb4d850f4f8a6778d6ba79b77a922de0",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "9e474a395a807dfcddb04a9895a6e081c05348705efa93d148ba36dd68d36467"
+    },
+    {
+      "name": "backward-cpp",
+      "path": "src/thirdparty/backward-cpp",
+      "version": null,
+      "version_evidence": "src/thirdparty/backward-cpp/backward.hpp",
+      "upstream": "https://github.com/bombela/backward-cpp",
+      "assessment": "snapshot",
+      "notes": "Locally modified stack-trace implementation.",
+      "source_revision": "dd039fc2335f2649ccfd176d63ca3435edac4849",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "39ccdd0e21dcbaf89437f215649b755b4337e94a7e4eead4c1e92fc3c490151f"
+    },
+    {
+      "name": "brotli",
+      "path": "src/thirdparty/brotli",
+      "version": "1.2.1",
+      "version_evidence": "src/thirdparty/brotli/common/version.h",
+      "upstream": "https://github.com/google/brotli",
+      "assessment": "fixed",
+      "notes": "CVE-2026-111497 fixed in dfc1a1941; portability edits retained.",
+      "source_revision": "dfc1a1941313afa16b2fa19dd3fbb1e508160490",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "9cdb8bdfc4fd56bf575247f86fd4447748cbb27bfb5e11a0e965b7072a853c1c"
+    },
+    {
+      "name": "chipmunk",
+      "path": "src/thirdparty/chipmunk",
+      "version": "6.1.4",
+      "version_evidence": "src/modules/physics/include/eepp/thirdparty/chipmunk/chipmunk.h",
+      "upstream": "https://github.com/slembcke/Chipmunk2D",
+      "assessment": "screened",
+      "notes": "Optional physics module; unrelated Chipmunk CMS matches excluded.",
+      "source_revision": "fcc3a412fb3e3737a3e50c4c2837711016e7a51c",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "6df135d36a0aab2271b25dd59d2d635d23cd2fb8e25353341368949845ddd236"
+    },
+    {
+      "name": "cpp-unicodelib",
+      "path": "src/thirdparty/cpp-unicodelib",
+      "version": null,
+      "version_evidence": "src/thirdparty/cpp-unicodelib/unicodelib.h",
+      "upstream": "https://github.com/yhirose/cpp-unicodelib",
+      "assessment": "snapshot",
+      "notes": "Unicode segmentation and character properties.",
+      "source_revision": "cc709e9d5df695cf625513ef91d4f2256765ef12",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "618cf0af9708dabe74a36f7f6d1f310cecd77caeff1c9791488feb701d980743"
+    },
+    {
+      "name": "dr_libs",
+      "path": "src/thirdparty/dr_libs",
+      "version": null,
+      "version_evidence": "src/thirdparty/dr_libs/dr_flac.h",
+      "upstream": "https://github.com/mackron/dr_libs",
+      "assessment": "screened",
+      "notes": "dr_flac 0.13.2; dr_mp3 0.7.2. dr_wav is absent. Metadata/all-at-once FLAC APIs are not used by the wrapper.",
+      "source_revision": "0ec661852ab87af5c8f4c73060ac05a1de096383",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "9c54bc323eef4e47d3baa4d5fb2e225fefb7c873c9c3c8f2af4ef80177998373"
+    },
+    {
+      "name": "dtl",
+      "path": "src/thirdparty/dtl",
+      "version": "1.21",
+      "version_evidence": "src/thirdparty/dtl/variables.hpp",
+      "upstream": "https://github.com/cubicdaiya/dtl",
+      "assessment": "screened",
+      "notes": "Diff and merge support.",
+      "source_revision": "2d536772bad73de8cebcc7d5c88338f0fa3c9bd0",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "4e22c55106f0f1c3a1783cd0d8df76f9593aa9bad33ac49d7d7ddc7e95d52f1e"
+    },
+    {
+      "name": "efsw",
+      "path": "src/thirdparty/efsw",
+      "version": "1.7.2 + 5 commits",
+      "version_evidence": "src/thirdparty/efsw/CMakeLists.txt",
+      "upstream": "https://github.com/SpartanJ/efsw",
+      "assessment": "screened",
+      "notes": "Submodule 58a105f56aa8dcc1a8771121bd196c7e2c6e4ef1; local agent implementation.",
+      "source_revision": "58a105f56aa8dcc1a8771121bd196c7e2c6e4ef1",
+      "source_revision_kind": "submodule commit",
+      "source_fingerprint_sha256": "91047a0ac53d55a65a11267dca3087dbdf79086f56c8d1611c9f09147b767ef2"
+    },
+    {
+      "name": "emscripten-browser-clipboard",
+      "path": "src/thirdparty/emscripten-browser-clipboard",
+      "version": null,
+      "version_evidence": "src/thirdparty/emscripten-browser-clipboard/emscripten_browser_clipboard.h",
+      "upstream": "https://github.com/Armchair-Software/emscripten-browser-clipboard",
+      "assessment": "snapshot",
+      "notes": "Web-specific clipboard bridge; local changes.",
+      "source_revision": "d31e880cc327c1cf523f6de0db7e57fd44a21971",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "c971d35240283965309dc98556181e80425c2e0f745f23e00171b51f1d18629f"
+    },
+    {
+      "name": "fast_float",
+      "path": "src/thirdparty/fast_float",
+      "version": "6.1.6",
+      "version_evidence": "src/thirdparty/fast_float/include/fast_float/fast_float.h",
+      "upstream": "https://github.com/fastfloat/fast_float",
+      "assessment": "screened",
+      "notes": "All 9 implementation headers match upstream v6.1.6 byte for byte.",
+      "source_revision": "4c8965c87673f3cf66281128a70e34fecbb314cb",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "d37af1afe22be59e8592468933b0f3d1ba51b430a0cdfc364e8a93e6e1b37aa0"
+    },
+    {
+      "name": "freetype2",
+      "path": "src/thirdparty/freetype2",
+      "version": "2.14.1",
+      "version_evidence": "src/thirdparty/freetype2/include/freetype/freetype.h",
+      "upstream": "https://freetype.org/",
+      "assessment": "screened",
+      "notes": "No matching high core FreeType CVE found; its libpng/Brotli/NanoSVG dependencies require separate treatment.",
+      "source_revision": "7d09138bb0e7b5371cdf6a8444f8a167feee43e4",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "8acad9d4e64686af9f20606aa5a2d3adbc961050bcc6e3550690606606a10a7a"
+    },
+    {
+      "name": "fts_fuzzy_match",
+      "path": "src/thirdparty/fts_fuzzy_match",
+      "version": null,
+      "version_evidence": "src/thirdparty/fts_fuzzy_match/fts_fuzzy_match.h",
+      "upstream": "https://github.com/forrestthewoods/lib_fts",
+      "assessment": "snapshot",
+      "notes": "Fuzzy search matcher.",
+      "source_revision": "dfb0820d0f9f8cb6b03b2d37000cd9b229e39e2f",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "c00b20fafd2fad1247d4ca239523a445f39702a85ea119f68573ea85bbc34762"
+    },
+    {
+      "name": "glew",
+      "path": "src/thirdparty/glew",
+      "version": "2.1.0",
+      "version_evidence": "src/thirdparty/glew/glew.h",
+      "upstream": "https://github.com/nigels-com/glew",
+      "assessment": "screened",
+      "notes": "Version text near end of generated header; GLEW_VERSION_MAJOR/MINOR/MICRO nearby are selector constants, not release components. Optional build.",
+      "source_revision": "c1c3dfb07505a1c7c643d7e817021c4472ad493b",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "6216715dd0517b0a0f65ccbcbd0e3421133fafd7e9ac0b8ba18a17e94994c8ea"
+    },
+    {
+      "name": "glm",
+      "path": "src/thirdparty/glm",
+      "version": "0.9.4.0",
+      "version_evidence": "src/thirdparty/glm/core/setup.hpp",
+      "upstream": "https://github.com/g-truc/glm",
+      "assessment": "screened",
+      "notes": "Used by renderer stack helper.",
+      "source_revision": "44b1656ca1241ae9ee8d8129d76e46d3567d7930",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "d28be757fe451f874c464aedc9ce68ec5524be83849afe607efb1db0a0257adc"
+    },
+    {
+      "name": "gumbo-parser",
+      "path": "src/thirdparty/gumbo-parser",
+      "version": null,
+      "version_evidence": "src/thirdparty/gumbo-parser/gumbo.h",
+      "upstream": "https://github.com/google/gumbo-parser",
+      "assessment": "snapshot",
+      "notes": "Old Google Gumbo-derived snapshot with local edits; no release macro. Nokogiri fork hashmap CVE is different code.",
+      "source_revision": "b7726b8767b751740b21c576d35030ff6c4c4d93",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "d9eec7addf71b232ed52830092ac13ffea0c31ffe8cd9b34313750831759ea20"
+    },
+    {
+      "name": "harfbuzz",
+      "path": "src/thirdparty/harfbuzz",
+      "version": "8.5.0",
+      "version_evidence": "src/thirdparty/harfbuzz/hb-version.h",
+      "upstream": "https://github.com/harfbuzz/harfbuzz",
+      "assessment": "conditional",
+      "notes": "Known high Cairo and WASM shaper issues are in disabled integrations; medium shaping advisories remain maintenance work.",
+      "source_revision": "91f93184af2a9d5d7b287217ca0559c8d057493b",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "a0644a9d6ef970a81ab70de0171b066d0d58ce1463f8d57d27d2e13645d9e69c"
+    },
+    {
+      "name": "imageresampler",
+      "path": "src/thirdparty/imageresampler",
+      "version": "2.2",
+      "version_evidence": "src/thirdparty/imageresampler/resampler.h",
+      "upstream": "https://github.com/richgel999/imageresampler",
+      "assessment": "screened",
+      "notes": "Version in source banner.",
+      "source_revision": "f44cf3f229a44d5bb8653e0515eae4d918a13dca",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "a2644c92b60caadaa0d599dac3b77f7b75f25f86442d9ced4da8148d0fb88cb1"
+    },
+    {
+      "name": "jpeg-compressor",
+      "path": "src/thirdparty/jpeg-compressor",
+      "version": null,
+      "version_evidence": "src/thirdparty/jpeg-compressor/jpge.cpp",
+      "upstream": "https://github.com/richgel999/jpeg-compressor",
+      "assessment": "snapshot",
+      "notes": "jpge encoder banner 1.05; jpgd decoder snapshot has no reliable release marker. Reported CVEs target absent stb_image.c.",
+      "source_revision": "f99db202de52d1e02bc04a197b19074afb343577",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "835500e66ca55c3dbf59c3c9764be018fae318181012627ec81c0fd469c29aa3"
+    },
+    {
+      "name": "libogg",
+      "path": "src/thirdparty/libogg",
+      "version": "1.3.3",
+      "version_evidence": "src/thirdparty/libogg/src/framing.c",
+      "upstream": "https://github.com/xiph/ogg",
+      "assessment": "screened",
+      "notes": "Both C sources and both public non-generated headers exactly match v1.3.3; config_types.h is generated configuration.",
+      "source_revision": "feeafde0739a9cb63edae3545ba9af7448f51c8e",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "6801ee81ef77895dfdf630b3b8be98c95f68b7477c1e3f65486efc32deb1d870"
+    },
+    {
+      "name": "libpng",
+      "path": "src/thirdparty/libpng",
+      "version": "1.6.37",
+      "version_evidence": "src/thirdparty/libpng/png.h",
+      "upstream": "https://github.com/pnggroup/libpng",
+      "assessment": "upgrade",
+      "notes": "CVE-2026-33636: ARM Neon palette-expansion code is present and compiled in the existing macOS archive. Upgrade to 1.6.59.",
+      "source_revision": "a703b09cc17c59cb32f723e50f5ed459af994937",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "4812fb83e506d2ab4f1cc58bd823a0e9d8208100540dad75e8615fea45ab5ab9"
+    },
+    {
+      "name": "libssh2",
+      "path": "src/thirdparty/libssh2",
+      "version": "1.11.1 + local crypto integration",
+      "version_evidence": "src/thirdparty/libssh2/include/libssh2.h",
+      "upstream": "https://github.com/libssh2/libssh2",
+      "assessment": "patch",
+      "notes": "CVE-2026-55200, CVE-2026-66032 and CVE-2026-66035 fixes are absent. No newer official release was available at audit time; use verified backports or a reviewed upstream revision.",
+      "source_revision": "88675a7c84b0785295d55a96477a8c046cc9f34c",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "40d1220977298e6b21d645a861c04e9b514ef7409d25cbb1dee08b5617376c88"
+    },
+    {
+      "name": "libvorbis",
+      "path": "src/thirdparty/libvorbis",
+      "version": "1.3.6",
+      "version_evidence": "src/thirdparty/libvorbis/lib/info.c",
+      "upstream": "https://github.com/xiph/vorbis",
+      "assessment": "upgrade",
+      "notes": "Encoder CVE-2018-10393 fix is absent in psy.c. Upgrade to 1.3.7; assess encoder input conditions.",
+      "source_revision": "1116575774d174fc1e79fbb0e1458319be0af548",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "a070982556e996e0cb19ed9d3e1723700779db6e278e29cb9ae4ed1ef5bd7e35"
+    },
+    {
+      "name": "libwebp",
+      "path": "src/thirdparty/libwebp",
+      "version": "1.5.0",
+      "version_evidence": "src/thirdparty/libwebp/src/dec/vp8i_dec.h",
+      "upstream": "https://chromium.googlesource.com/webm/libwebp",
+      "assessment": "screened",
+      "notes": "No matching high library CVE found. Old CVE-2023-4863 already fixed by this version; Perl/Node wrapper matches excluded.",
+      "source_revision": "cec4fa6e723fe3938d15ba95e25c267df6e4557d",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "2bb90b2b83955205b1c4a4e396ee1cdbb62801d919988deb1b30bc38ab9ff6e0"
+    },
+    {
+      "name": "libyaml",
+      "path": "src/thirdparty/libyaml",
+      "version": "0.2.5",
+      "version_evidence": "src/thirdparty/libyaml/src/config.h",
+      "upstream": "https://github.com/yaml/libyaml",
+      "assessment": "screened",
+      "notes": "ecode linter uses parser API with initialization; no high actionable library CVE found. Several 2024 reports were API misuse or withdrawn.",
+      "source_revision": "cfc6b546ac3e76d359de6735993bd1a934eb66d8",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "db074824c5860e678185acb99cf491e1fe475efbc8e76722d3aadedb19b60e4b"
+    },
+    {
+      "name": "libzip",
+      "path": "src/thirdparty/libzip",
+      "version": "0.10 + local hardening",
+      "version_evidence": "src/thirdparty/libzip/zipconf.h",
+      "upstream": "https://libzip.org/",
+      "assessment": "review",
+      "notes": "CVE-2012-1162 guarded locally. Old offset/size arithmetic and allocation checks still need work; modern libzip migration needs API/build review.",
+      "source_revision": "a94a6f5f7ed694cabe344c6227357db6e94cfecd",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "fe27084b4570a8471912c9244187f0c508e37565b3662a93cb1ca9d16a3612e8"
+    },
+    {
+      "name": "mbedtls",
+      "path": "src/thirdparty/mbedtls",
+      "version": "3.6.0",
+      "version_evidence": "src/thirdparty/mbedtls/include/mbedtls/build_info.h",
+      "upstream": "https://github.com/Mbed-TLS/mbedtls",
+      "assessment": "upgrade",
+      "notes": "Upgrade within LTS to 3.6.7. Multiple advisories have API, compiler, protocol-role or deployment preconditions; no blanket remote-RCE claim for eepp TLS client.",
+      "source_revision": "1576fa7eb1c1664135326850c0fcf9f4d694d0b9",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "d4ef114cebeaf7a0ebada30fc7cfb6469cb3b32fdee3bff1f064d20141aab764"
+    },
+    {
+      "name": "md4c",
+      "path": "src/thirdparty/md4c",
+      "version": null,
+      "version_evidence": "src/thirdparty/md4c/md4c.c",
+      "upstream": "https://github.com/mity/md4c",
+      "assessment": "snapshot",
+      "notes": "0.5.x-derived patched snapshot: public headers match 0.5.2/0.5.3; C implementation contains later/local changes. Older CVEs predate these APIs.",
+      "source_revision": "dbae41fd8543696ef9f094373a2bbb9233c6714d",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "6ee658ff6b212044b51b9a72e0bc27ffe848c96b4154737e5e8ba4f59477e527"
+    },
+    {
+      "name": "mojoAL",
+      "path": "src/thirdparty/mojoAL",
+      "version": "2.0.1",
+      "version_evidence": "src/thirdparty/mojoAL/mojoal.c",
+      "upstream": "https://github.com/icculus/mojoAL",
+      "assessment": "screened",
+      "notes": "SDL2 audio backend; OpenAL API version 1.1 is not the library release.",
+      "source_revision": "02b6076ceeab91b9b7cc7a1814474a64e5ca10f8",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "fbd6b8ecf2cc98de8d0d7b3c976c842897dc54a9fddc4b03164d5ed388f3a84f"
+    },
+    {
+      "name": "mojoAL-SDL3",
+      "path": "src/thirdparty/mojoAL-SDL3",
+      "version": "2.9.9",
+      "version_evidence": "src/thirdparty/mojoAL-SDL3/mojoal.c",
+      "upstream": "https://github.com/icculus/mojoAL",
+      "assessment": "screened",
+      "notes": "SDL3 variant; release macros in source.",
+      "source_revision": "1b263a531bb323bccb9deedd6f20f246d3df119c",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "24b3a98bf4c601bd88ffa78ed8be3e89a66d88b2a484213945584c070f605cd6"
+    },
+    {
+      "name": "monocypher",
+      "path": "src/thirdparty/monocypher",
+      "version": "4.0.2",
+      "version_evidence": "src/thirdparty/monocypher/monocypher.h",
+      "upstream": "https://monocypher.org/",
+      "assessment": "maintenance",
+      "notes": "4.0.3 fixes compiler-dependent Ed25519/EdDSA timing leakage. Used for libssh2 Ed25519 signing and X25519; no high CVE assigned to this issue found.",
+      "source_revision": "88675a7c84b0785295d55a96477a8c046cc9f34c",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "0061c4d2f475444b87289c62c9821de09c13b683f6b3cf01a594f9cd8fc80d6e"
+    },
+    {
+      "name": "nanosvg",
+      "path": "src/thirdparty/nanosvg",
+      "version": null,
+      "version_evidence": "src/thirdparty/nanosvg/nanosvg.h",
+      "upstream": "https://github.com/memononen/nanosvg",
+      "assessment": "patch",
+      "notes": "Locally modified FLTK-derived snapshot. CVE-2026-88366 and CVE-2026-88368 sites remain; upstream issues are open, so latest-master alone is not a proven remedy.",
+      "source_revision": "7f9c6d2153f27d647547d4851de663b46f6ef031",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "490380228f8b16ffbda73186142d21141d93e5a1331024dd35bdf119702fae5c"
+    },
+    {
+      "name": "nlohmann",
+      "path": "src/thirdparty/nlohmann",
+      "version": "3.12.0",
+      "version_evidence": "src/thirdparty/nlohmann/json.hpp",
+      "upstream": "https://github.com/nlohmann/json",
+      "assessment": "screened",
+      "notes": "Matching public forward header under include/eepp/thirdparty. Envoy exception-handling CVE is not a JSON library version defect.",
+      "source_revision": "be30ee67bcb028d337a0e4a4709a8aca26919dc4",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "9fc29df095c22cd4bdee5cd72cd1e3f01402190013d658de185f56807acdb5a1"
+    },
+    {
+      "name": "oniguruma",
+      "path": "src/thirdparty/oniguruma",
+      "version": "6.9.10",
+      "version_evidence": "src/thirdparty/oniguruma/oniguruma.h",
+      "upstream": "https://github.com/kkos/oniguruma",
+      "assessment": "screened",
+      "notes": "No matching high CVE found; original upstream repository is archived, so future maintenance needs an explicit policy.",
+      "source_revision": "8b56ad87084a1c63aedcd1c82059d3e5c4d7eb0e",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "509a199d237b6026a320a2f689f7cc941e62bc3f596b63957f3f34cd89fbc2db"
+    },
+    {
+      "name": "pcre2",
+      "path": "src/thirdparty/pcre2",
+      "version": "10.44",
+      "version_evidence": "src/thirdparty/pcre2/src/pcre2.h",
+      "upstream": "https://github.com/PCRE2Project/pcre2",
+      "assessment": "conditional",
+      "notes": "Recommend 10.49 maintenance update. eepp uses 8-bit pcre2_match with fresh match data, no growable JIT stack, direct jit_match, DFA or pattern-convert callers.",
+      "source_revision": "f44cf3f229a44d5bb8653e0515eae4d918a13dca",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "901a9f7b4fd3612bd6166808555e4a17e34837f58611d34b79226705702209d8"
+    },
+    {
+      "name": "portable-file-dialogs",
+      "path": "src/thirdparty/portable-file-dialogs",
+      "version": null,
+      "version_evidence": "src/thirdparty/portable-file-dialogs/portable-file-dialogs.h",
+      "upstream": "https://github.com/samhocevar/portable-file-dialogs",
+      "assessment": "snapshot",
+      "notes": "Native dialog helper with local platform changes.",
+      "source_revision": "835c1b7a2cbd124991f621459b559604755c25a0",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "67750c44e9d741d8cfff212bea0de26879e7daeab36f5cdc2ad64db3e33c5d84"
+    },
+    {
+      "name": "pugixml",
+      "path": "src/thirdparty/pugixml",
+      "version": "1.12",
+      "version_evidence": "src/thirdparty/pugixml/pugixml.hpp",
+      "upstream": "https://github.com/zeux/pugixml",
+      "assessment": "screened",
+      "notes": "No matching high CVE found.",
+      "source_revision": "2b61bf02c7421e7f7ac3e8be2c1d1fe0c40f662a",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "1dca1888d43c4c288ae8e25ef2ab1f67bcca6a4dace7ba63c5ce3a92e47879d8"
+    },
+    {
+      "name": "SDL2",
+      "path": "src/thirdparty/SDL2",
+      "version": "2.0.12",
+      "version_evidence": "src/thirdparty/SDL2/include/SDL_version.h",
+      "upstream": "https://github.com/libsdl-org/SDL",
+      "assessment": "conditional",
+      "notes": "Android makefile builds this old source tree. Other workflows use newer pins or system SDL; reconcile source and downloads.",
+      "source_revision": "f44cf3f229a44d5bb8653e0515eae4d918a13dca",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "f3cca78a054866c9d63376d15e07e1c7ed869bd88e8286aba38fe20e1cabccd6"
+    },
+    {
+      "name": "SheenBidi",
+      "path": "src/thirdparty/SheenBidi",
+      "version": "2.9.0",
+      "version_evidence": "src/thirdparty/SheenBidi/Headers/SheenBidi/SBVersion.h",
+      "upstream": "https://github.com/Tehreer/SheenBidi",
+      "assessment": "screened",
+      "notes": "No matching high CVE found.",
+      "source_revision": "91f93184af2a9d5d7b287217ca0559c8d057493b",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "126c283b1cfa72cd674e283a4ebbf3f636977a075f83af92d6c09e45c5101ed5"
+    },
+    {
+      "name": "simdutf",
+      "path": "src/thirdparty/simdutf",
+      "version": "9.2.0",
+      "version_evidence": "src/thirdparty/simdutf/simdutf.h",
+      "upstream": "https://github.com/simdutf/simdutf",
+      "assessment": "maintenance",
+      "notes": "High GHSA-pw55-7mm7-cvhh is fixed in 9.2.1, but eepp does not call the affected Base64 APIs. Recommend >=9.2.1.",
+      "source_revision": "e2174aa04482cace8d416ac2bc960e9e9b724f54",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "485a6b6e2b917237612bc99005cc0fba40504b8e5931a8aa91db6d2a3a126b49"
+    },
+    {
+      "name": "SOIL2",
+      "path": "src/thirdparty/SOIL2",
+      "version": "1.3.0 snapshot",
+      "version_evidence": "src/thirdparty/SOIL2/src/SOIL2/SOIL2.h",
+      "upstream": "https://github.com/SpartanJ/soil2",
+      "assessment": "screened",
+      "notes": "Submodule dc92c9ec6d83cda2a059e85ebb24d51d0632d7b2; CMake project version 1.0.0 is stale. Includes stb_image 2.30 and stb_image_write 1.16 plus custom container codecs.",
+      "source_revision": "dc92c9ec6d83cda2a059e85ebb24d51d0632d7b2",
+      "source_revision_kind": "submodule commit",
+      "source_fingerprint_sha256": "1dac9e9d315c7b408dbe7e7aed4c2ca93686deb3db2849e91ec5f279ef8adcf6"
+    },
+    {
+      "name": "subprocess",
+      "path": "src/thirdparty/subprocess",
+      "version": null,
+      "version_evidence": "src/thirdparty/subprocess/subprocess.h",
+      "upstream": "https://github.com/sheredom/subprocess.h",
+      "assessment": "snapshot",
+      "notes": "Local process-launching modifications; preserve them during any future rebase.",
+      "source_revision": "f6da5ef76ed681db4df724ffcb6296baaedefbe1",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "ee5c704f760ff85d11ef78fd53a859f63bcf662f5233e46edb0510a21278500e"
+    },
+    {
+      "name": "tabulate",
+      "path": "src/thirdparty/tabulate",
+      "version": "1.5.0",
+      "version_evidence": "src/thirdparty/tabulate/tabulate.hpp",
+      "upstream": "https://github.com/p-ranav/tabulate",
+      "assessment": "screened",
+      "notes": "Amalgamation includes variant-lite 1.2.2, optional-lite 3.2.0 and string-view-lite 1.6.0.",
+      "source_revision": "2ce608ff0923eaab893ba4464dc79cd8ab9c395d",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "cf1b24d9692ba6d39032d8f88273e01073ef3ffa1f48d201208f279fe3506746"
+    },
+    {
+      "name": "tinyexpr",
+      "path": "src/thirdparty/tinyexpr",
+      "version": null,
+      "version_evidence": "src/thirdparty/tinyexpr/tinyexpr.c",
+      "upstream": "https://github.com/codeplea/tinyexpr",
+      "assessment": "fixed",
+      "notes": "CVE-2026-88355 allocation condition is already prevented locally: size >= sizeof(te_expr).",
+      "source_revision": "a3d78a12174b7a17ad247d707b606ce7eac4805b",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "9326e85db57ca7a95ac312d74963d6924728933ed90526bf0d49105f52f2b12e"
+    },
+    {
+      "name": "utf8cpp",
+      "path": "src/thirdparty/utf8cpp",
+      "version": null,
+      "version_evidence": "src/thirdparty/utf8cpp/utf8.h",
+      "upstream": "https://github.com/nemtrif/utfcpp",
+      "assessment": "snapshot",
+      "notes": "No embedded release marker; use source fingerprint instead of guessing a tag.",
+      "source_revision": "c61abf37bfa53c8b2037dcebca51b316907896ad",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "ad804b7bcee55305b68fa1fc7536ce56ee68d0ef608f6a1af86456a93e488dea"
+    },
+    {
+      "name": "zlib",
+      "path": "src/thirdparty/zlib",
+      "version": "1.3.1",
+      "version_evidence": "src/thirdparty/zlib/zlib.h",
+      "upstream": "https://github.com/madler/zlib",
+      "assessment": "screened",
+      "notes": "No confirmed high issue in used inflate/deflate paths. untgz absent; Ruby zlib is a different product; non-blocking gzwrite issue needs a patch if upgrading to 1.3.2.",
+      "source_revision": "4a94c4aff2bb116ec5d437d9a41b68497f8c231f",
+      "source_revision_kind": "last eepp commit touching directory",
+      "source_fingerprint_sha256": "b90e8343157e4afee0adb8c066b9fc174d8aac342a76f2fe355ddfb8f4e4d70e"
+    }
+  ],
+  "nested_and_public_components": [
+    {
+      "name": "unordered_dense",
+      "version": "5.0.1",
+      "path": "include/eepp/thirdparty/unordered_dense.h",
+      "notes": "Public container headers; stl.h and huge_page_allocator.h belong to the same import.",
+      "representative_file_sha256": "3e25e4851173686dead824b03ed21f64fcba3038df5a7b5cbd8d0911a27b4ec2"
+    },
+    {
+      "name": "svector",
+      "version": "1.4.0",
+      "path": "include/eepp/thirdparty/svector.h",
+      "notes": "Public small-vector header.",
+      "representative_file_sha256": "5b22774be82b99528dbc29a4171c924d10fcd0388b75214f80723b003bd756bb"
+    },
+    {
+      "name": "stb_image",
+      "version": "2.30",
+      "path": "src/thirdparty/SOIL2/src/SOIL2/stb_image.h",
+      "notes": "Nested in SOIL2; older 2023 high advisories fixed; CVE-2026-5185 is medium and requires separate GIF-path follow-up.",
+      "representative_file_sha256": "4d1326b70791a33b716520c26f6b472f553ba1c7a53a99f95a2f815cef416bf1"
+    },
+    {
+      "name": "stb_image_write",
+      "version": "1.16",
+      "path": "src/thirdparty/SOIL2/src/SOIL2/stb_image_write.h",
+      "notes": "Nested in SOIL2.",
+      "representative_file_sha256": "136adafa7f9033acd2279454d51a23fadece98dfabeb6e5003a68ed4c22103ab"
+    },
+    {
+      "name": "hidapi",
+      "version": null,
+      "path": "src/thirdparty/SDL2/src/hidapi/hidapi/hidapi.h",
+      "notes": "SDL-modified unversioned snapshot; update as part of SDL source refresh.",
+      "representative_file_sha256": "955119a902fec5a91d4110e7c47a36570922b0c89ea6d44fd889b70cfb0c300b"
+    },
+    {
+      "name": "variant-lite",
+      "version": "1.2.2",
+      "path": "src/thirdparty/tabulate/tabulate.hpp",
+      "notes": "Nested amalgamation.",
+      "representative_file_sha256": "65c11ba5d984e3a353a6ca4f9e621f7d3d165a1346bbaf2d7fc1c7edfbd107a9"
+    },
+    {
+      "name": "optional-lite",
+      "version": "3.2.0",
+      "path": "src/thirdparty/tabulate/tabulate.hpp",
+      "notes": "Nested amalgamation.",
+      "representative_file_sha256": "65c11ba5d984e3a353a6ca4f9e621f7d3d165a1346bbaf2d7fc1c7edfbd107a9"
+    },
+    {
+      "name": "string-view-lite",
+      "version": "1.6.0",
+      "path": "src/thirdparty/tabulate/tabulate.hpp",
+      "notes": "Nested amalgamation.",
+      "representative_file_sha256": "65c11ba5d984e3a353a6ca4f9e621f7d3d165a1346bbaf2d7fc1c7edfbd107a9"
+    },
+    {
+      "name": "minimp3-derived decoder",
+      "version": null,
+      "path": "src/thirdparty/dr_libs/dr_mp3.h",
+      "notes": "Covered by dr_mp3 0.7.2 fingerprint; not a separately pinned minimp3 release.",
+      "representative_file_sha256": "6e083c9db08a4e175e48ae05dc2f2dd18815dd185aa152dcb15ccb91d42f3ba8"
+    }
+  ],
+  "nvd_screening": [
+    {
+      "term": "Mbed TLS",
+      "records": 81,
+      "retrieved_at": "2026-10-25T00:08:23.865",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=Mbed%20TLS&resultsPerPage=2000"
+    },
+    {
+      "term": "SDL",
+      "records": 75,
+      "retrieved_at": "2026-10-25T00:04:28.936",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=SDL&resultsPerPage=2000"
+    },
+    {
+      "term": "SOIL2",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:07:10.651",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=SOIL2&resultsPerPage=2000"
+    },
+    {
+      "term": "SheenBidi",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:05:25.825",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=SheenBidi&resultsPerPage=2000"
+    },
+    {
+      "term": "Taywee",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:08:56.701",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=Taywee&resultsPerPage=2000"
+    },
+    {
+      "term": "backward-cpp",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:06:47.493",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=backward-cpp&resultsPerPage=2000"
+    },
+    {
+      "term": "chipmunk",
+      "records": 18,
+      "retrieved_at": "2026-10-25T00:06:15.833",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=chipmunk&resultsPerPage=2000"
+    },
+    {
+      "term": "cpp-unicodelib",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:07:43.393",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=cpp-unicodelib&resultsPerPage=2000"
+    },
+    {
+      "term": "dr_flac",
+      "records": 1,
+      "retrieved_at": "2026-10-25T00:01:59.846",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=dr_flac&resultsPerPage=2000"
+    },
+    {
+      "term": "dr_libs",
+      "records": 4,
+      "retrieved_at": "2026-10-25T00:08:41.144",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=dr_libs&resultsPerPage=2000"
+    },
+    {
+      "term": "dr_mp3",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:02:13.626",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=dr_mp3&resultsPerPage=2000"
+    },
+    {
+      "term": "dtl",
+      "records": 152,
+      "retrieved_at": "2026-10-25T00:10:01.333",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=dtl&resultsPerPage=2000"
+    },
+    {
+      "term": "efsw",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:07:02.877",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=efsw&resultsPerPage=2000"
+    },
+    {
+      "term": "fast_float",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:05:59.373",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=fast_float&resultsPerPage=2000"
+    },
+    {
+      "term": "freetype",
+      "records": 112,
+      "retrieved_at": "2026-10-25T00:03:18.404",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=freetype&resultsPerPage=2000"
+    },
+    {
+      "term": "fts_fuzzy_match",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:07:52.112",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=fts_fuzzy_match&resultsPerPage=2000"
+    },
+    {
+      "term": "gumbo-parser",
+      "records": 2,
+      "retrieved_at": "2026-10-25T00:02:25.149",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=gumbo-parser&resultsPerPage=2000"
+    },
+    {
+      "term": "harfbuzz",
+      "records": 13,
+      "retrieved_at": "2026-10-25T00:08:31.921",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=harfbuzz&resultsPerPage=2000"
+    },
+    {
+      "term": "hidapi",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:09:08.347",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=hidapi&resultsPerPage=2000"
+    },
+    {
+      "term": "jpeg-compressor",
+      "records": 2,
+      "retrieved_at": "2026-10-25T00:06:28.123",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=jpeg-compressor&resultsPerPage=2000"
+    },
+    {
+      "term": "libogg",
+      "records": 3,
+      "retrieved_at": "2026-10-25T00:01:19.805",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=libogg&resultsPerPage=2000"
+    },
+    {
+      "term": "libpng",
+      "records": 81,
+      "retrieved_at": "2026-10-24T23:59:46.030",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=libpng&resultsPerPage=2000"
+    },
+    {
+      "term": "libssh2",
+      "records": 28,
+      "retrieved_at": "2026-10-25T00:02:41.206",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=libssh2&resultsPerPage=2000"
+    },
+    {
+      "term": "libvorbis",
+      "records": 19,
+      "retrieved_at": "2026-10-25T00:01:04.214",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=libvorbis&resultsPerPage=2000"
+    },
+    {
+      "term": "libwebp",
+      "records": 18,
+      "retrieved_at": "2026-10-25T00:02:57.912",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=libwebp&resultsPerPage=2000"
+    },
+    {
+      "term": "libyaml",
+      "records": 9,
+      "retrieved_at": "2026-10-25T00:03:44.521",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=libyaml&resultsPerPage=2000"
+    },
+    {
+      "term": "libzip",
+      "records": 9,
+      "retrieved_at": "2026-10-25T00:00:12.792",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=libzip&resultsPerPage=2000"
+    },
+    {
+      "term": "mbedtls",
+      "records": 36,
+      "retrieved_at": "2026-10-24T23:59:55.247",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=mbedtls&resultsPerPage=2000"
+    },
+    {
+      "term": "md4c",
+      "records": 8,
+      "retrieved_at": "2026-10-25T00:08:48.875",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=md4c&resultsPerPage=2000"
+    },
+    {
+      "term": "mojoAL",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:06:07.155",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=mojoAL&resultsPerPage=2000"
+    },
+    {
+      "term": "monocypher",
+      "records": 1,
+      "retrieved_at": "2026-10-25T00:04:56.081",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=monocypher&resultsPerPage=2000"
+    },
+    {
+      "term": "nanosvg",
+      "records": 4,
+      "retrieved_at": "2026-10-25T00:01:35.336",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=nanosvg&resultsPerPage=2000"
+    },
+    {
+      "term": "nlohmann",
+      "records": 2,
+      "retrieved_at": "2026-10-25T00:06:55.174",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=nlohmann&resultsPerPage=2000"
+    },
+    {
+      "term": "oniguruma",
+      "records": 15,
+      "retrieved_at": "2026-10-25T00:03:32.338",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=oniguruma&resultsPerPage=2000"
+    },
+    {
+      "term": "optional-lite",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:09:43.897",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=optional-lite&resultsPerPage=2000"
+    },
+    {
+      "term": "pcre2",
+      "records": 20,
+      "retrieved_at": "2026-10-25T00:00:36.691",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=pcre2&resultsPerPage=2000"
+    },
+    {
+      "term": "portable-file-dialogs",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:06:39.842",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=portable-file-dialogs&resultsPerPage=2000"
+    },
+    {
+      "term": "pugixml",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:03:59.102",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=pugixml&resultsPerPage=2000"
+    },
+    {
+      "term": "simdutf",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:05:09.901",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=simdutf&resultsPerPage=2000"
+    },
+    {
+      "term": "stb_image",
+      "records": 29,
+      "retrieved_at": "2026-10-25T00:01:48.572",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=stb_image&resultsPerPage=2000"
+    },
+    {
+      "term": "string-view-lite",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:09:51.694",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=string-view-lite&resultsPerPage=2000"
+    },
+    {
+      "term": "subprocess.h",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:08:08.777",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=subprocess.h&resultsPerPage=2000"
+    },
+    {
+      "term": "svector",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:07:27.059",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=svector&resultsPerPage=2000"
+    },
+    {
+      "term": "tabulate",
+      "records": 1,
+      "retrieved_at": "2026-10-25T00:07:34.679",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=tabulate&resultsPerPage=2000"
+    },
+    {
+      "term": "tclap",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:08:00.908",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=tclap&resultsPerPage=2000"
+    },
+    {
+      "term": "tinyexpr",
+      "records": 1,
+      "retrieved_at": "2026-10-25T00:04:46.257",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=tinyexpr&resultsPerPage=2000"
+    },
+    {
+      "term": "unordered_dense",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:07:18.415",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=unordered_dense&resultsPerPage=2000"
+    },
+    {
+      "term": "utf8cpp",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:05:44.784",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=utf8cpp&resultsPerPage=2000"
+    },
+    {
+      "term": "variant-lite",
+      "records": 0,
+      "retrieved_at": "2026-10-25T00:09:16.905",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=variant-lite&resultsPerPage=2000"
+    },
+    {
+      "term": "zlib",
+      "records": 104,
+      "retrieved_at": "2026-10-25T00:04:17.732",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=zlib&resultsPerPage=2000"
+    }
+  ]
+}

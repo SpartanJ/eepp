@@ -12,6 +12,7 @@
 #include <list>
 #include <optional>
 #include <type_traits>
+#include <vector>
 
 namespace EE {
 
@@ -80,6 +81,124 @@ class DynamicLRU {
 	}
 
 	[[nodiscard]] std::size_t size() const { return mCacheList.size(); }
+};
+
+/** Runtime weight budget (for example decoded image bytes) with contiguous entries and
+ * index-based recency links. Eviction swap-removes an entry and repairs its links/map index;
+ * vector growth never invalidates the LRU links. Values are copied on get(), as in the other
+ * caches; store shared ownership for large resources. Not thread-safe. */
+template <typename KeyT, typename ValueT> class WeightedLRUCache {
+  private:
+	static constexpr std::size_t None = std::numeric_limits<std::size_t>::max();
+
+	struct Entry {
+		KeyT key;
+		ValueT value;
+		std::size_t weight;
+		std::size_t previous{ None }, next{ None };
+	};
+
+	std::vector<Entry> mEntries;
+	UnorderedMap<KeyT, std::size_t> mIndex;
+	std::size_t mCapacity;
+	std::size_t mWeight{ 0 };
+	std::size_t mHead{ None }, mTail{ None };
+
+	void unlink( std::size_t index ) {
+		const auto& entry = mEntries[index];
+		if ( entry.previous == None )
+			mHead = entry.next;
+		else
+			mEntries[entry.previous].next = entry.next;
+		if ( entry.next == None )
+			mTail = entry.previous;
+		else
+			mEntries[entry.next].previous = entry.previous;
+	}
+
+	void makeMostRecent( std::size_t index ) {
+		auto& entry = mEntries[index];
+		entry.previous = None;
+		entry.next = mHead;
+		if ( mHead != None )
+			mEntries[mHead].previous = index;
+		else
+			mTail = index;
+		mHead = index;
+	}
+
+  public:
+	explicit WeightedLRUCache( std::size_t capacity ) : mCapacity( capacity ) {}
+
+	WeightedLRUCache( const WeightedLRUCache& ) = delete;
+
+	WeightedLRUCache& operator=( const WeightedLRUCache& ) = delete;
+
+	std::optional<ValueT> get( const KeyT& key ) {
+		auto found = mIndex.find( key );
+		if ( found == mIndex.end() )
+			return std::nullopt;
+		const auto index = found->second;
+		if ( index != mHead ) {
+			unlink( index );
+			makeMostRecent( index );
+		}
+		return mEntries[index].value;
+	}
+
+	bool erase( const KeyT& key ) {
+		auto found = mIndex.find( key );
+		if ( found == mIndex.end() )
+			return false;
+		const auto index = found->second;
+		unlink( index );
+		mWeight -= mEntries[index].weight;
+		mIndex.erase( found );
+		if ( index != mEntries.size() - 1 ) {
+			mEntries[index] = std::move( mEntries.back() );
+			const auto& moved = mEntries[index];
+			if ( moved.previous == None )
+				mHead = index;
+			else
+				mEntries[moved.previous].next = index;
+			if ( moved.next == None )
+				mTail = index;
+			else
+				mEntries[moved.next].previous = index;
+			mIndex.find( moved.key )->second = index;
+		}
+		mEntries.pop_back();
+		return true;
+	}
+
+	/** Oversized values are not retained; replacing a key first releases its old value.
+	 * Zero-weight entries are rejected so the weight budget also bounds the entry count. */
+	bool put( KeyT key, ValueT value, std::size_t weight ) {
+		erase( key );
+		if ( weight == 0 || weight > mCapacity )
+			return false;
+		while ( mWeight > mCapacity - weight )
+			erase( mEntries[mTail].key );
+		const auto index = mEntries.size();
+		mEntries.push_back( { std::move( key ), std::move( value ), weight } );
+		mIndex.emplace( mEntries.back().key, index );
+		makeMostRecent( index );
+		mWeight += weight;
+		return true;
+	}
+
+	void clear() {
+		mIndex.clear();
+		mEntries.clear();
+		mWeight = 0;
+		mHead = mTail = None;
+	}
+
+	std::size_t weight() const { return mWeight; }
+
+	std::size_t size() const { return mEntries.size(); }
+
+	std::size_t capacity() const { return mCapacity; }
 };
 
 // -----------------------------------------------------------------------------

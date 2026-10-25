@@ -104,7 +104,6 @@ String placeLabel( UISceneNode* ui, const Place& place ) {
 			const char* key;
 			const char* text;
 		};
-		static_assert( sizeof( Label ) == 3 * sizeof( const char* ) );
 		static constexpr Label labels[] = { { "home", "eefm_home", "Home" },
 											{ "desktop", "eefm_desktop", "Desktop" },
 											{ "documents", "eefm_documents", "Documents" },

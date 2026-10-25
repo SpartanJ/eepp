@@ -4,6 +4,7 @@
 #include "placescontroller.hpp"
 #include "previewpanel.hpp"
 #include "terminalpanel.hpp"
+#include "thumbnails.hpp"
 
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
@@ -34,6 +35,7 @@ void SettingsActions::applyUIFont( Font* font, Float sizeDp ) {
 
 void SettingsActions::applyFilesConfig() {
 	mApp.clearFileIcons();
+	mApp.thumbnails().configure();
 	mApp.updateIconStyle();
 	for ( auto& pane : mApp.panes().all() ) {
 		if ( !pane )
@@ -290,6 +292,51 @@ void SettingsActions::showSettings() {
 			applyFilesConfig();
 			savePreferences();
 		} );
+
+	panel->addBool( { "thumbnails", "files.icons",
+					  mUI->i18n( "eefm_image_thumbnails", "Show Image Thumbnails" ),
+					  mUI->i18n( "eefm_image_thumbnails_desc",
+								 "Display thumbnails for image files in the file list." ) },
+					&mApp.config().files.thumbnails, [this]( bool ) {
+						applyFilesConfig();
+						savePreferences();
+					} );
+	panel->addBool( { "cacheThumbnails", "files.icons",
+					  mUI->i18n( "eefm_cache_thumbnails", "Save Thumbnails Between Sessions" ),
+					  mUI->i18n( "eefm_cache_thumbnails_desc",
+								 "Keep a private thumbnail cache shared by eepp applications." ) },
+					&mApp.config().files.cacheThumbnails, [this]( bool ) {
+						mApp.thumbnails().configure();
+						savePreferences();
+					} );
+	panel->addChoice(
+		{ "thumbnailCacheFormat", "files.icons",
+		  mUI->i18n( "eefm_thumbnail_cache_format", "Thumbnail Cache Format" ),
+		  mUI->i18n( "eefm_thumbnail_cache_format_desc",
+					 "Image format used for newly saved thumbnails." ) },
+		{ "QOI", "PNG", mUI->i18n( "eefm_webp_lossless", "WebP (lossless)" ), "TGA" },
+		[this] { return static_cast<size_t>( mApp.config().files.thumbnailCacheFormat ); },
+		[this]( size_t value ) {
+			mApp.config().files.thumbnailCacheFormat =
+				static_cast<ImageThumbnailer::CacheFormat>( value );
+			mApp.thumbnails().configure();
+			savePreferences();
+		} );
+	panel->addBool(
+		{ "remoteThumbnails", "files.icons",
+		  mUI->i18n( "eefm_remote_thumbnails", "Thumbnails in Archives and Remote Locations" ),
+		  mUI->i18n( "eefm_remote_thumbnails_desc",
+					 "Also read images from other locations to generate thumbnails." ) },
+		&mApp.config().files.remoteThumbnails, [this]( bool ) {
+			mApp.thumbnails().configure();
+			savePreferences();
+		} );
+	panel->addAction( { "clearThumbnails", "files.icons",
+						mUI->i18n( "eefm_thumbnail_cache", "Thumbnail Cache" ),
+						mUI->i18n( "eefm_clear_thumbnail_cache_desc",
+								   "Remove saved thumbnails from the shared cache." ) },
+					  mUI->i18n( "eefm_clear_thumbnail_cache", "Clear Cache" ),
+					  [this] { mApp.thumbnails().clearCache(); } );
 
 	// Terminal
 	panel->addCategory( "terminal.behavior", mUI->i18n( "eefm_terminal", "Terminal" ),
