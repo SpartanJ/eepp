@@ -151,6 +151,7 @@ static void serializeGumboNodeToXML( GumboNode* node, std::string& out ) {
 		}
 		case GUMBO_NODE_COMMENT:
 		case GUMBO_NODE_TEMPLATE:
+		case GUMBO_NODE_PROCESSING_INSTRUCTION:
 			// We silently ignore comments to prevent XML double-hyphen crashes
 			break;
 	}

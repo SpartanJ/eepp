@@ -9,7 +9,8 @@
     "maintenance": "Known security maintenance item with no confirmed high-CVE exposure in current callers.",
     "screened": "No actionable matching high/critical CVE established in this pass; not a guarantee of safety.",
     "snapshot": "Release provenance incomplete; repository revision and fingerprint identify source, but version-range exclusions may be incomplete.",
-    "fixed": "Specific screened high CVE condition already fixed locally."
+    "fixed": "Specific screened high CVE condition already fixed locally.",
+    "owned": "eepp-maintained fork with no upstream release to track; reviewed as eepp code."
   },
   "components": [
     {
@@ -183,14 +184,14 @@
     {
       "name": "gumbo-parser",
       "path": "src/thirdparty/gumbo-parser",
-      "version": null,
-      "version_evidence": "src/thirdparty/gumbo-parser/gumbo.h",
-      "upstream": "https://github.com/google/gumbo-parser",
-      "assessment": "snapshot",
-      "notes": "Old Google Gumbo-derived snapshot with local edits; no release macro. Nokogiri fork hashmap CVE is different code.",
-      "source_revision": "b7726b8767b751740b21c576d35030ff6c4c4d93",
-      "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "d9eec7addf71b232ed52830092ac13ffea0c31ffe8cd9b34313750831759ea20"
+      "version": "0.14.1",
+      "version_evidence": "upstream tag 0.14.1 (src/ matches verbatim)",
+      "upstream": "https://codeberg.org/gumbo-parser/gumbo-parser",
+      "assessment": "fixed",
+      "notes": "Updated 2026-10-26 from codeberg 6dddad6 (0.13.2+9, no local source edits) to 0.14.1, which fixes two use-after-frees and a crash in selectedcontent handling and an uninitialized quirks-mode read; eepp's copy contained that code and parses untrusted web HTML. Library sources match the release; visualc/include/strings.h is upstream's MSVC shim. Nokogiri fork hashmap CVE is different code.",
+      "source_revision": "33103d884bbc77807d188e1a04cf9a83f19f4c5f",
+      "source_revision_kind": "upstream release tag commit",
+      "source_fingerprint_sha256": "db89f879a94ae853fe089120972df873902eff9b8087f479843a1e8c8a0c29f2"
     },
     {
       "name": "harfbuzz",
@@ -423,14 +424,14 @@
     {
       "name": "md4c",
       "path": "src/thirdparty/md4c",
-      "version": null,
-      "version_evidence": "src/thirdparty/md4c/md4c.c",
+      "version": "0.6.0",
+      "version_evidence": "upstream tag v0.6.0 (src/ matches verbatim)",
       "upstream": "https://github.com/mity/md4c",
-      "assessment": "snapshot",
-      "notes": "0.5.x-derived patched snapshot: public headers match 0.5.2/0.5.3; C implementation contains later/local changes. Older CVEs predate these APIs.",
-      "source_revision": "dbae41fd8543696ef9f094373a2bbb9233c6714d",
-      "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "6ee658ff6b212044b51b9a72e0bc27ffe848c96b4154737e5e8ba4f59477e527"
+      "assessment": "screened",
+      "notes": "Updated 2026-10-26 from upstream 481fbfb (0.5.2+16) plus one local md4c-html.c change to 0.6.0 unmodified. The local change wrote XHTML task-list checkboxes; upstream now emits identical output under MD_HTML_FLAG_XHTML, which eepp passes. Older CVEs predate these APIs.",
+      "source_revision": "7fc1815a5eeba2af7d6120a76202bf59f3b6e6e4",
+      "source_revision_kind": "upstream release tag commit",
+      "source_fingerprint_sha256": "167d1be062dccaa7d75c723beca8dc6410b0b6f3b5315466bc6a14079352fce3"
     },
     {
       "name": "mojoAL",
@@ -529,14 +530,14 @@
     {
       "name": "pcre2",
       "path": "src/thirdparty/pcre2",
-      "version": "10.44",
+      "version": "10.49",
       "version_evidence": "src/thirdparty/pcre2/src/pcre2.h",
       "upstream": "https://github.com/PCRE2Project/pcre2",
-      "assessment": "conditional",
-      "notes": "Recommend 10.49 maintenance update. eepp uses 8-bit pcre2_match with fresh match data, no growable JIT stack, direct jit_match, DFA or pattern-convert callers.",
-      "source_revision": "f44cf3f229a44d5bb8653e0515eae4d918a13dca",
-      "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "901a9f7b4fd3612bd6166808555e4a17e34837f58611d34b79226705702209d8"
+      "assessment": "fixed",
+      "notes": "Updated 2026-10-26 from 10.44 to 10.49 (pcre2-10.49.tar.bz2, SHA-256 53c156e1ba416a20da8e65395daa132da0d80e76910424caca3fcdae7831d384). Library sources, pcre2.h (from pcre2.h.generic), pcre2_chartables.c (from .dist) and deps/sljit match the release; only eepp's per-platform src/config.h is local. eepp uses 8-bit pcre2_match with fresh match data and no growable JIT stack, DFA or pattern-convert callers.",
+      "source_revision": "pcre2-10.49",
+      "source_revision_kind": "upstream release tarball",
+      "source_fingerprint_sha256": "8c98398d5721e3343a816c41410d2daf1eff438d032ea92eab3c905ac4a25e0e"
     },
     {
       "name": "portable-file-dialogs",
@@ -628,8 +629,8 @@
       "version": null,
       "version_evidence": "src/thirdparty/subprocess/subprocess.h",
       "upstream": "https://github.com/sheredom/subprocess.h",
-      "assessment": "snapshot",
-      "notes": "Local process-launching modifications; preserve them during any future rebase.",
+      "assessment": "owned",
+      "notes": "eepp-maintained fork of sheredom/subprocess.h that has diverged substantially from upstream; there is no upstream release to track. Review it as eepp code.",
       "source_revision": "f6da5ef76ed681db4df724ffcb6296baaedefbe1",
       "source_revision_kind": "last eepp commit touching directory",
       "source_fingerprint_sha256": "ee5c704f760ff85d11ef78fd53a859f63bcf662f5233e46edb0510a21278500e"
@@ -661,14 +662,14 @@
     {
       "name": "utf8cpp",
       "path": "src/thirdparty/utf8cpp",
-      "version": null,
-      "version_evidence": "src/thirdparty/utf8cpp/utf8.h",
+      "version": "4.2.1",
+      "version_evidence": "upstream tag v4.2.1 (source/ matches verbatim)",
       "upstream": "https://github.com/nemtrif/utfcpp",
-      "assessment": "snapshot",
-      "notes": "No embedded release marker; use source fingerprint instead of guessing a tag.",
-      "source_revision": "c61abf37bfa53c8b2037dcebca51b316907896ad",
-      "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "ad804b7bcee55305b68fa1fc7536ce56ee68d0ef608f6a1af86456a93e488dea"
+      "assessment": "screened",
+      "notes": "Updated 2026-10-26 from upstream aa3b12c (3.2.1+4, unmodified) to 4.2.1, which includes the is_valid fix rejecting code points above U+10FFFF (issue 141). LICENSE added.",
+      "source_revision": "3d1ff6dbf54e471c846dff55dda6c8ee10c0ee5c",
+      "source_revision_kind": "upstream release tag commit",
+      "source_fingerprint_sha256": "ea950519f27d33ebe273e04a0a26d73929038a50df2976e59e273bedcb1135fa"
     },
     {
       "name": "zlib",

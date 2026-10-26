@@ -26,6 +26,10 @@ release has not been established.
 | libvorbis | 1.3.6 | **1.3.7** | Includes the CVE-2018-10393 encoder bounds fix and the channel validation changes; all imported files match the release. |
 | Monocypher | 4.0.2 | **4.0.3** | Fixes the compiler-dependent Ed25519 signing timing leak; imported sources match the release. |
 | simdutf | 9.2.0 | **9.2.1** | Regenerated amalgamation with the same UTF-8/UTF-32-only feature set; Base64 stays disabled. |
+| PCRE2 | 10.44 | **10.49** | Library sources and sljit match the release; only eepp's per-platform `config.h` is local. |
+| Gumbo | codeberg `6dddad6` (0.13.2+9) | **0.14.1** | Fixes two use-after-frees, a crash and an uninitialized read in the HTML parser; sources match the release. |
+| md4c | `481fbfb` (0.5.2+16) plus one local change | **0.6.0** | Unmodified; upstream now writes the same XHTML checkboxes the local change produced. |
+| utf8cpp | `aa3b12c` (3.2.1+4) | **4.2.1** | Unmodified; includes the `is_valid` fix for code points above U+10FFFF. |
 | stb_image (SOIL2) | 2.30 with SOIL2's GIF disposal change | 2.30 plus a local CVE-2026-5185 fix (SOIL2 `116dfde`, 2026-10-26) | Fixed a stale frame pointer in the animated-GIF loader; no upstream fix exists. |
 
 ### Validation status — 2026-10-26
@@ -311,12 +315,20 @@ decode identically with the old and patched loaders under ASan/UBSan with no rep
 macOS release suite passes (2,128 passed, 2 audio tests skipped for lack of an audio device). None
 of those files contains the frame sequence that triggered the bug; no crafted reproducer was built.
 
-## High findings whose current eepp API conditions were not found
-
 ### PCRE2
 
-10.44 is older than the verified 10.49 security release, but these are not all
-reachable through our wrapper:
+Updated from 10.44 to [10.49](https://github.com/PCRE2Project/pcre2/releases/tag/pcre2-10.49)
+(`pcre2-10.49.tar.bz2`, SHA-256
+`53c156e1ba416a20da8e65395daa132da0d80e76910424caca3fcdae7831d384`). The library sources,
+`pcre2.h` (from `pcre2.h.generic`), `pcre2_chartables.c` (from `.dist`) and `deps/sljit` match
+the release; the tree now follows upstream's `src/` + `deps/sljit/` layout, so the JIT's
+relative include works unmodified. eepp's per-platform `src/config.h` is retained, minus the
+`HAVE_MEMMOVE`/`HAVE_STRERROR` checks that 10.49 no longer reads, and keeps its stricter
+`MAX_NAME_SIZE` (32) and `MAX_VARLOOKBEHIND` (64). 10.49 adds `pcre2_compile_cgroup.c`,
+`pcre2_compile_class.c` and `pcre2_match_next.c` to the Premake and Android source lists.
+
+The advisories below were not reachable through eepp's wrapper before the update; they are
+kept for reference:
 
 | Advisory | Why ordinary eepp Regex use differs |
 | --- | --- |
@@ -326,11 +338,43 @@ reachable through our wrapper:
 | CVE-2026-89157 | Requires large pattern conversion on 32-bit systems; no consumer pattern-convert calls found. |
 | CVE-2025-58050 | Only 10.45; our 10.44 is outside the affected interval. |
 
-Recommend 10.49 as maintenance, not as evidence of a confirmed current wrapper RCE.
 Sources: [10.49 advisory](https://github.com/PCRE2Project/pcre2/security/advisories/GHSA-r9hj-j2rw-4q3m),
 [DFA advisory](https://github.com/PCRE2Project/pcre2/security/advisories/GHSA-3r4p-g7gg-ppmf),
 [JIT state fix](https://github.com/PCRE2Project/pcre2/pull/937),
 [supported backports](https://github.com/PCRE2Project/pcre2/blob/main/SUPPORT-LIFECYCLE.md).
+
+### Gumbo, md4c and utf8cpp
+
+These three were unversioned imports. Comparing every upstream commit with eepp's copy
+established their bases, and each was then moved to its current release:
+
+| Library | Established base | Local changes | Now |
+| --- | --- | --- | --- |
+| Gumbo | [codeberg](https://codeberg.org/gumbo-parser/gumbo-parser) `6dddad6` (0.13.2+9, 2025-10-11), the maintained continuation of Google's archived repository | None in the sources | 0.14.1 (`33103d8`) |
+| md4c | `481fbfb` (0.5.2+16, 2024-02-25) | `md4c-html.c` wrote task-list checkboxes as XHTML | 0.6.0 (`7fc1815`) |
+| utf8cpp | `aa3b12c` (3.2.1+4, 2022-10-17) | None | 4.2.1 (`3d1ff6d`) |
+
+Gumbo is a security update. 0.14.0/0.14.1 fix two use-after-frees and an empty-stack crash in
+`selectedcontent` handling and an uninitialized quirks-mode read. eepp's copy contained that
+code, and the HTML compatibility layer parses untrusted pages with it. 0.14.1 adds the
+`GUMBO_NODE_PROCESSING_INSTRUCTION` node type, which `HTMLFormatter` now skips like comments.
+Three upstream warnings remain for variables used only by `assert()`.
+
+md4c 0.6.0 emits `disabled="true"`, `checked="true"` and ` />` under `MD_HTML_FLAG_XHTML`, the
+flag `Markdown::toXHTML` passes, so the local change is no longer needed; rendering a task list
+produces byte-identical output. utf8cpp 4.2.1 makes `is_valid` reject code points above
+U+10FFFF; eepp's other two call sites use `unchecked::next`.
+
+`subprocess` is an eepp-maintained fork that has diverged substantially from
+[sheredom/subprocess.h](https://github.com/sheredom/subprocess.h); it has no upstream release
+to track and is reviewed as eepp code.
+
+Validation: the macOS release build of the unit tests and ecode is warning-free apart from the
+Gumbo `assert()` variables, and the full suite passes (2,128 passed, 2 audio tests skipped for
+lack of an audio device), including 322 HTML, Markdown and web-view tests and the regex tests
+with the JIT enabled.
+
+## High findings whose current eepp API conditions were not found
 
 ### HarfBuzz
 
@@ -390,7 +434,7 @@ Source: [SDL surface-allocation fix](https://github.com/libsdl-org/SDL/commit/8c
 | zlib CVE-2026-27171 | CRC combine negative-length issue is below high severity; no affected application API use found. |
 | libyaml 2024 emitter/document reports | Current application use is initialized parser/event processing. Several reports concern API misuse or were rejected; do not infer a high parser exposure from the 0.2.5 number. [Maintainer analysis](https://github.com/yaml/libyaml/issues/303). |
 | jpeg-compressor CVE-2018-13030 / CVE-2018-13037 | Target `stb_image.c`, which is absent from this import; current image decoder is separately inventoried as stb_image 2.30. |
-| Gumbo CVE-2025-6490 | Withdrawn report about Nokogiri fork's `hashmap.c`; our Google-derived tree has no such file. |
+| Gumbo CVE-2025-6490 | Withdrawn report about Nokogiri fork's `hashmap.c`; the codeberg Gumbo tree eepp uses has no such file. |
 | Chipmunk CMS CVEs | Unrelated PHP applications, not Chipmunk2D physics. |
 | nlohmann CVE-2024-34363 | Envoy's handling of exceptions, not a nlohmann library version vulnerability. |
 
@@ -400,6 +444,7 @@ Source: [SDL surface-allocation fix](https://github.com/libsdl-org/SDL/commit/8c
 pass. It does not mean no bugs or no lower-severity advisories exist.
 `Snapshot` means upstream release provenance is incomplete; retain the fingerprint
 and establish a verified tag/commit before calling a future update routine.
+`Owned` means an eepp-maintained fork with no upstream release to track.
 
 | Component | Version established | Disposition | Local evidence |
 | --- | --- | --- | --- |
@@ -417,7 +462,7 @@ and establish a verified tag/commit before calling a future update routine.
 | fts_fuzzy_match | Unversioned/patched snapshot | Snapshot | [fts_fuzzy_match.h](../../src/thirdparty/fts_fuzzy_match/fts_fuzzy_match.h) |
 | glew | 2.1.0 | Screened | [glew.h](../../src/thirdparty/glew/glew.h) |
 | glm | 0.9.4.0 | Screened | [setup.hpp](../../src/thirdparty/glm/core/setup.hpp) |
-| gumbo-parser | Unversioned/patched snapshot | Snapshot | [gumbo.h](../../src/thirdparty/gumbo-parser/gumbo.h) |
+| gumbo-parser | 0.14.1 | Fixed | [gumbo.h](../../src/thirdparty/gumbo-parser/gumbo.h) |
 | harfbuzz | 8.5.0 | Conditional | [hb-version.h](../../src/thirdparty/harfbuzz/hb-version.h) |
 | imageresampler | 2.2 | Screened | [resampler.h](../../src/thirdparty/imageresampler/resampler.h) |
 | jpeg-compressor | jpge 1.05; jpgd snapshot | Snapshot | [jpge.cpp](../../src/thirdparty/jpeg-compressor/jpge.cpp) |
@@ -429,24 +474,24 @@ and establish a verified tag/commit before calling a future update routine.
 | libyaml | 0.2.5 | Screened | [config.h](../../src/thirdparty/libyaml/src/config.h) |
 | libzip | 1.12.1 | Fixed | [zipconf.h](../../src/thirdparty/libzip/zipconf.h) |
 | mbedtls | 3.6.7 | Fixed | [build_info.h](../../src/thirdparty/mbedtls/include/mbedtls/build_info.h) |
-| md4c | Unversioned/patched snapshot | Snapshot | [md4c.c](../../src/thirdparty/md4c/md4c.c) |
+| md4c | 0.6.0 | Screened | [md4c.c](../../src/thirdparty/md4c/md4c.c) |
 | mojoAL | 2.0.1 | Screened | [mojoal.c](../../src/thirdparty/mojoAL/mojoal.c) |
 | mojoAL-SDL3 | 2.9.9 | Screened | [mojoal.c](../../src/thirdparty/mojoAL-SDL3/mojoal.c) |
 | monocypher | 4.0.3 | Fixed | [monocypher.h](../../src/thirdparty/monocypher/monocypher.h) |
 | nanosvg | Snapshot + 2026-10-25 security patches | Fixed | [nanosvg.h](../../src/thirdparty/nanosvg/nanosvg.h) |
 | nlohmann | 3.12.0 | Screened | [json.hpp](../../src/thirdparty/nlohmann/json.hpp) |
 | oniguruma | 6.9.10 | Screened | [oniguruma.h](../../src/thirdparty/oniguruma/oniguruma.h) |
-| pcre2 | 10.44 | Conditional | [pcre2.h](../../src/thirdparty/pcre2/src/pcre2.h) |
+| pcre2 | 10.49 | Fixed | [pcre2.h](../../src/thirdparty/pcre2/src/pcre2.h) |
 | portable-file-dialogs | Unversioned/patched snapshot | Snapshot | [portable-file-dialogs.h](../../src/thirdparty/portable-file-dialogs/portable-file-dialogs.h) |
 | pugixml | 1.12 | Screened | [pugixml.hpp](../../src/thirdparty/pugixml/pugixml.hpp) |
 | SDL2 | 2.0.12 | Conditional | [SDL_version.h](../../src/thirdparty/SDL2/include/SDL_version.h) |
 | SheenBidi | 2.9.0 | Screened | [SBVersion.h](../../src/thirdparty/SheenBidi/Headers/SheenBidi/SBVersion.h) |
 | simdutf | 9.2.1 (UTF-8/UTF-32 build) | Fixed | [simdutf.h](../../src/thirdparty/simdutf/simdutf.h) |
 | SOIL2 | 1.3.0 snapshot | Screened | [SOIL2.h](../../src/thirdparty/SOIL2/src/SOIL2/SOIL2.h) |
-| subprocess | Unversioned/patched snapshot | Snapshot | [subprocess.h](../../src/thirdparty/subprocess/subprocess.h) |
+| subprocess | eepp-maintained fork | Owned | [subprocess.h](../../src/thirdparty/subprocess/subprocess.h) |
 | tabulate | 1.5.0 | Screened | [tabulate.hpp](../../src/thirdparty/tabulate/tabulate.hpp) |
 | tinyexpr | Unversioned/patched snapshot | Fixed | [tinyexpr.c](../../src/thirdparty/tinyexpr/tinyexpr.c) |
-| utf8cpp | Unversioned/patched snapshot | Snapshot | [utf8.h](../../src/thirdparty/utf8cpp/utf8.h) |
+| utf8cpp | 4.2.1 | Screened | [utf8.h](../../src/thirdparty/utf8cpp/utf8.h) |
 | zlib | 1.3.1 | Screened | [zlib.h](../../src/thirdparty/zlib/zlib.h) |
 
 ### Nested and public-header components
@@ -473,8 +518,7 @@ Version provenance verified by direct upstream-source comparison:
 
 - fast_float's nine implementation headers match v6.1.6.
 - libogg's two C sources and two non-generated public headers match v1.3.3.
-- MD4C public headers match 0.5.2/0.5.3, but implementation differs from both;
-  no exact release is asserted.
+- Gumbo, md4c and utf8cpp: see their resolved section; each now matches an upstream release.
 - SOIL2 and efsw are pinned submodules, not ordinary copied release directories.
 
 ### Build/test-only components and external dependencies
@@ -533,8 +577,9 @@ Coverage gaps that remain explicit:
 ## Remaining implementation batches
 
 1. **Platform maintenance:** reconcile the Android SDL2 source with the newer SDL2 pin.
-2. **Small exposure-reducing updates:** PCRE2 10.49. Establish verified provenance for the
-   remaining snapshot-only imports.
+2. **Provenance:** establish verified upstream versions for the remaining snapshot imports
+   (args, backward-cpp, cpp-unicodelib, emscripten-browser-clipboard, fts_fuzzy_match,
+   jpeg-compressor, portable-file-dialogs).
 3. Replace the libssh2 development snapshot with a security-fixed stable release
    when one is available, retaining the recorded integration patches.
 4. **Follow-up without a confirmed high finding:** review HarfBuzz's medium advisories.

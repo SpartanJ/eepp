@@ -262,6 +262,8 @@ LOCAL_SRC_FILES			:=   \
 	pcre2/src/pcre2_chartables.c \
 	pcre2/src/pcre2_chkdint.c \
 	pcre2/src/pcre2_compile.c \
+	pcre2/src/pcre2_compile_cgroup.c \
+	pcre2/src/pcre2_compile_class.c \
 	pcre2/src/pcre2_config.c \
 	pcre2/src/pcre2_context.c \
 	pcre2/src/pcre2_convert.c \
@@ -272,6 +274,7 @@ LOCAL_SRC_FILES			:=   \
 	pcre2/src/pcre2_maketables.c \
 	pcre2/src/pcre2_match.c \
 	pcre2/src/pcre2_match_data.c \
+	pcre2/src/pcre2_match_next.c \
 	pcre2/src/pcre2_newline.c \
 	pcre2/src/pcre2_ord2utf.c \
 	pcre2/src/pcre2_pattern_info.c \
