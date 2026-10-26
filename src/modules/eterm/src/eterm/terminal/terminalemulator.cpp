@@ -43,6 +43,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/version.hpp>
+#include <eepp/window/input.hpp>
 
 using namespace EE::Network;
 using namespace EE::System;
@@ -1159,10 +1160,6 @@ void TerminalEmulator::ttywriteInternal( const char* s, size_t n, int may_echo,
 	}
 }
 
-static Uint32 keyboardSanitizeMod( Uint32 mod ) {
-	return mod & KEYMOD_CTRL_SHIFT_ALT_META;
-}
-
 static bool isModifierKey( Keycode keycode ) {
 	switch ( keycode ) {
 		case KEY_LCTRL:
@@ -1227,7 +1224,7 @@ void TerminalEmulator::keyEvent( const KittyKeyEvent& event ) {
 		}
 	}
 
-	const Uint32 modifiers = keyboardSanitizeMod( event.modifiers );
+	const Uint32 modifiers = Input::sanitizeMod( event.modifiers );
 	const auto dpy = mDpy.lock();
 	const bool appKeypad = dpy && dpy->getMode( MODE_APPKEYPAD );
 	const bool numLock = dpy && dpy->getMode( MODE_NUMLOCK );

@@ -2,7 +2,7 @@
 
 Initial audit baseline: `dfc1a1941` (Brotli 1.2.1 upgrade included).
 Remediation: **2026-10-25**, committed in `33dd9d621` and `7069bb03e`, with the SDL3 audio
-shutdown fix `2f3f663cb`. Status refreshed **2026-10-26** against CI on `ccdc3a5d0`.
+shutdown fix `2f3f663cb`. Status refreshed **2026-10-26** against CI on `0d9acd28f`.
 Scope: the 45 source trees in `src/thirdparty`, public third-party headers, nested
 components, and the build configuration that selects them. This is a source inventory
 and advisory/reachability review, not a deployed-binary SBOM or a claim that all code
@@ -20,7 +20,7 @@ release has not been established.
 | --- | --- | --- | --- |
 | libssh2 | 1.11.1 plus local crypto integration | **1.11.2_DEV**, pinned to upstream `6e7b2076a6ced2230968b27ee7c1abb77fe5a88d` | Refreshed the complete imported library source, preserving eepp's build configuration, classic Mbed TLS APIs and Monocypher integration. This is an unreleased snapshot, not a 1.11.2 release. |
 | libpng | 1.6.37 | **1.6.59** | Imported upstream library sources, architecture implementations and the release's prebuilt configuration without source patches. |
-| NanoSVG | Modified FLTK-derived snapshot | Same snapshot plus manual security fixes | Patched the reported arc conversion, fixed-point conversion/advancement and stroke tessellation issues while retaining local style/currentColor behavior. |
+| NanoSVG | Modified FLTK-derived snapshot | Same snapshot plus manual security fixes | Patched the reported arc conversion, fixed-point conversion/advancement and stroke tessellation issues while retaining local style/currentColor behavior. 2026-10-26: fixed a single-stop gradient heap over-read, unbounded dashing, and NaN-to-int conversions in the rasterizer. |
 | libzip | 0.10 plus local hardening | **1.12.1** | Replaced the fork with the upstream release; only an include-path patch remains. `Zip` uses the current API. ZIP browsing limits were removed. |
 | Mbed TLS | 3.6.0 | **3.6.7** (LTS) | Library and headers match the release; eepp's `mbedtls_config.h` block is retained (PSA crypto, TLS 1.3 and weak algorithms remain disabled). |
 | libvorbis | 1.3.6 | **1.3.7** | Includes the CVE-2018-10393 encoder bounds fix and the channel validation changes; all imported files match the release. |
@@ -34,14 +34,16 @@ release has not been established.
 
 ### Validation status — 2026-10-26
 
-CI on `ccdc3a5d0`: all eight workflows passed (Linux, macOS, Windows, Windows MinGW
-nightly, Android, iOS, Emscripten and ecode nightly). Only the Linux, macOS and Windows jobs
-run the unit tests; the others are build checks.
+CI on `0d9acd28f`: the unit tests passed on every platform that runs them, and seven of eight
+workflows passed (macOS, Windows, Windows MinGW nightly, Android, iOS, Emscripten and ecode
+nightly). The Linux job failed only in its NanoSVG fuzzing step, which hung on an input; that
+led to the four NanoSVG fixes below, and the fuzzing step has since been removed from CI.
+Only the Linux, macOS and Windows jobs run the unit tests; the others are build checks.
 
 | Platform | Where | Result |
 | --- | --- | --- |
 | Linux x86_64 | CI | 2,141 of 2,141 passed, with the SFTP tests required (`EEPP_REQUIRE_SFTP_TESTS=1`) against a loopback OpenSSH server. |
-| Linux x86_64 | CI, NanoSVG ASan/UBSan libFuzzer | 532,224 inputs in 61 s, no findings. Runs on every Linux job. |
+| Linux x86_64 | CI, NanoSVG ASan/UBSan libFuzzer | Removed from CI after `0d9acd28f`. Earlier runs: 532,224 inputs in 61 s on `ccdc3a5d0` without findings; on `0d9acd28f` an input hung until the step's 10-minute timeout. |
 | macOS | CI | 2,130 of 2,130 passed, including SFTP. |
 | Windows x86_64 (MSVC) | CI | 2,062 passed; `VFSLocal.atomicWritesAndCopiesSupportLongBasenames` skipped because the runner lacks long-path support. |
 | Android, iOS, Emscripten, MinGW | CI | Build only. |
@@ -49,10 +51,12 @@ run the unit tests; the others are build checks.
 | Linux ARM64 (Ubuntu 24.04, GCC 13, SDL 3.4.10) | Local Docker, before commit | 2,139 of 2,140 passed with SFTP required; one font test skipped (no font with a non-normal stretch). |
 | Windows x86_64 (MinGW-w64 GCC 13, Wine 7.7) | Local, before commit | All 21 ZIP tests passed. The full suite under Wine was inconclusive; superseded by the Windows CI run. |
 | ZIP ASan/UBSan libFuzzer | Local, before commit | 300 s, 3.39 M inputs, no findings. The temporary target was then removed (see libzip). |
+| macOS ARM64, NanoSVG fixes | Local, before commit | 2,133 passed; 2 audio tests skipped (no audio device). Includes the three new NanoSVG regression tests. |
+| NanoSVG ASan/UBSan libFuzzer, Linux ARM64 | Local Docker, before commit | About 967,000 inputs on the fixed code with a 10 s per-input timeout, no crash, sanitizer report or slow input. Stopped by hand before its time limit. |
 
 The first CI run of `7069bb03e` failed on Linux: the unit tests crashed with a null call in
 `SDL_QuitAudio`, reached from MojoAL's `alcCloseDevice` during Engine teardown. That race
-predates the dependency updates and was fixed in `2f3f663cb`; every run since has passed.
+predates the dependency updates and was fixed in `2f3f663cb`.
 
 Not run anywhere: the optional OpenSSL backend, 32-bit builds, and the unit tests on Android,
 iOS and Emscripten. Passing functional tests does not establish absence of all
@@ -153,7 +157,7 @@ records the manual changes.
 | [CVE-2026-88368 / upstream #292](https://github.com/memononen/nanosvg/issues/292) | Validate finite edge geometry and rounded fixed-point values before casting or consuming a pool entry. Compare int bounds in double to avoid `float(INT_MAX)` rounding. Reject overflowing scanline advancement and continue processing subsequent valid edges. |
 | [CVE-2026-88367 / upstream #293](https://github.com/memononen/nanosvg/issues/293) | Validate stroke tessellation inputs, compute using double intermediates and cap subdivisions at 1024 before integer conversion. |
 
-Extreme malformed geometry may be omitted or approximated. The fixes add no
+Extreme malformed geometry may be omitted or approximated. The 2026-10-25 fixes add no
 rasterizer allocations and do not change the public or internal structure layouts.
 [`nanosvg_security_tests.cpp`](../../src/tests/unit_tests/nanosvg_security_tests.cpp)
 covers infinite/large finite arc radii, invalid endpoints, bounded stroke subdivision,
@@ -163,6 +167,25 @@ integer overflow and continued rendering of styled/currentColor shapes.
 These findings concern numeric undefined behavior and availability. The original
 reports include sanitizer-triggered termination; neither the initial audit nor this
 remediation establishes an eepp RCE or a deterministic release-build crash.
+
+#### Rasterizer fixes found by fuzzing — 2026-10-26
+
+The CI fuzzing step on `0d9acd28f` hung on an input; investigating it found four bugs in
+`nanosvgrast.h`, all reachable from SVG input. No public advisories cover them.
+
+| Issue | Evidence | Fix |
+| --- | --- | --- |
+| A gradient with a single stop built its 256-entry color ramp from `stops[0..255]`, reading up to 255 stops past the allocation. Single-stop gradients are valid SVG, so ordinary files trigger it. | ASan heap-buffer-overflow in `nsvg__initPaint` on a one-stop `<linearGradient>` fill. | Fill the ramp from `stops[0]`. |
+| Dashed strokes had no bound. A long path with a tiny dash pattern emitted an unbounded number of dashes, and once a dash was below the float precision of the coordinates the dash position stopped advancing, so the loop never ended. | The CI hang. A valid 1e9-unit line with a 1-unit dash ran past a 60 s limit. | Cap dash segments at 16,384 per `nsvgRasterizeXY` call (new `NSVGrasterizer::dashSegments` counter). The cap is per image because dashes on shared scanlines make rasterization quadratic; at the cap the worst case is about 150 ms in release builds. Dashes past the budget are not drawn. |
+| `nsvg__clampf` returned NaN unchanged; callers convert the result to `int`, including as a gradient color-ramp index. | Code review. | NaN clamps to the lower bound. |
+| `nsvg__roundJoin` converted a NaN segment count to `int` when point deltas were non-finite. | UBSan report on a fuzzer-generated input. | Fall back to the maximum segment count. |
+
+The dash counter is the only layout change, in the rasterizer's internal struct; the public API
+and allocations are unchanged. [`nanosvg_security_tests.cpp`](../../src/tests/unit_tests/nanosvg_security_tests.cpp)
+adds tests for the single-stop ramp, NaN clamping and the shared dash budget. On the fixed
+code the one-stop gradient, the saved UBSan input, the long dashed line and a 40-line dashed SVG
+run without sanitizer reports, and about 967,000 fuzzer inputs ran without findings. The fuzz
+target is kept for manual runs (`--with-security-fuzz`) but is no longer run in CI.
 
 ### libzip
 
@@ -214,7 +237,7 @@ wrap a 32-bit allocation). A 300 s ASan/UBSan libFuzzer run of a temporary ZIP t
 the public `zip_open_from_source()` API, executed 3.39 M inputs without a finding. That target was
 then removed: libzip is now unmodified apart from one include line, and upstream maintains
 OSS-Fuzz harnesses. The NanoSVG target remains, because the local fork has no upstream fuzzing;
-the Linux CI job fuzzes it for 60 s on every run.
+it is built with `--with-security-fuzz` for manual runs and is not part of CI.
 
 The ZIP and ZIP-provider tests pass on every platform in the validation table above:
 Linux x86_64, macOS and Windows (MSVC) in CI, and locally on macOS ARM64, Linux ARM64

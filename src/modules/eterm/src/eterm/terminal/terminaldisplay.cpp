@@ -7,6 +7,7 @@
 #include <eepp/system/color.hpp>
 #include <eepp/window.hpp>
 #include <eepp/window/clipboard.hpp>
+#include <eepp/window/input.hpp>
 #include <eterm/system/processfactory.hpp>
 #include <eterm/terminal/boxdrawdata.hpp>
 #include <eterm/terminal/kittygraphicsrenderer.hpp>
@@ -19,21 +20,6 @@ namespace eterm { namespace Terminal {
 #define IS_SET( flag ) ( ( mMode & ( flag ) ) != 0 )
 #define DIV( n, d ) ( ( ( n ) + ( d ) / 2.0f ) / ( d ) )
 #define DIVI( n, d ) ( ( ( n ) + ( d ) / 2 ) / ( d ) )
-
-static Uint32 sanitizeMod( const Uint32& mod ) {
-	Uint32 smod = 0;
-	if ( mod & KEYMOD_CTRL )
-		smod |= KEYMOD_CTRL;
-	if ( mod & KEYMOD_SHIFT )
-		smod |= KEYMOD_SHIFT;
-	if ( mod & KEYMOD_META )
-		smod |= KEYMOD_META;
-	if ( mod & KEYMOD_LALT )
-		smod |= KEYMOD_LALT;
-	if ( mod & KEYMOD_RALT )
-		smod |= KEYMOD_RALT;
-	return smod;
-}
 
 TerminalKeyMap::TerminalKeyMap( const TerminalKey keys[], size_t keysLen,
 								const TerminalScancode platformKeys[], size_t platformKeysLen,
@@ -1245,7 +1231,7 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 		mWindow->getClipboard()->setPrimarySelectionText( getSelection() );
 	}
 
-	Uint32 smod = sanitizeMod( modifiers );
+	Uint32 smod = Input::sanitizeMod( modifiers );
 
 	if ( flags & EE_BUTTON_LMASK ) {
 		mAlreadyClickedLButton = false;
@@ -1259,7 +1245,7 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 	auto scIt = terminalKeyMap.MouseShortcuts().find( flags );
 	if ( scIt != terminalKeyMap.MouseShortcuts().end() ) {
 		for ( auto& k : scIt->second ) {
-			Uint32 kmask = sanitizeMod( k.mask );
+			Uint32 kmask = Input::sanitizeMod( k.mask );
 
 			if ( kmask != smod )
 				continue;
@@ -2010,7 +1996,7 @@ void TerminalDisplay::onTextEditing( const String&, const Int32&, const Int32& )
 }
 
 bool TerminalDisplay::isRegisteredShortcut( const Keycode& keyCode, const Uint32& mod ) const {
-	Uint32 smod = sanitizeMod( mod );
+	Uint32 smod = Input::sanitizeMod( mod );
 	auto scIt = terminalKeyMap.Shortcuts().find( keyCode );
 	if ( scIt != terminalKeyMap.Shortcuts().end() ) {
 		for ( auto& k : scIt->second ) {
@@ -2037,7 +2023,7 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& chr, cons
 								 const Scancode& scancode, bool repeat ) {
 	if ( mWindow->getIME().isEditing() )
 		return;
-	Uint32 smod = sanitizeMod( mod );
+	Uint32 smod = Input::sanitizeMod( mod );
 
 	auto scIt = terminalKeyMap.Shortcuts().find( keyCode );
 	if ( scIt != terminalKeyMap.Shortcuts().end() ) {

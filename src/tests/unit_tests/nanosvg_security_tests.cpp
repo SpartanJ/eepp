@@ -125,3 +125,51 @@ UTEST( NanoSVGSecurity, InvalidGeometryDoesNotSuppressFollowingStyledShapes ) {
 	EXPECT_EQ( pixels[center + 2], 0x33 );
 	EXPECT_EQ( pixels[center + 3], 255 );
 }
+
+UTEST( NanoSVGSecurity, SingleStopGradientFillsTheRampFromItsOnlyStop ) {
+	// The gradient allocation holds one stop; the color ramp must not read past it.
+	char input[] = R"svg(<svg width="16" height="16"><defs><linearGradient id="g">
+<stop offset="0.5" stop-color="#ff0000"/></linearGradient></defs>
+<rect width="16" height="16" fill="url(#g)"/></svg>)svg";
+	SVGImage image( nsvgParse( input, "px", 96, 0xFFFFFFFF ), &nsvgDelete );
+	SVGRasterizer rasterizer( nsvgCreateRasterizer(), &nsvgDeleteRasterizer );
+	ASSERT_TRUE( image != nullptr );
+	ASSERT_TRUE( rasterizer != nullptr );
+	std::array<unsigned char, 16 * 16 * 4> pixels{};
+	nsvgRasterize( rasterizer.get(), image.get(), 0, 0, 1, pixels.data(), 16, 16, 16 * 4 );
+	for ( size_t x : { 1, 8, 14 } ) {
+		const size_t pixel = ( 8 * 16 + x ) * 4;
+		EXPECT_EQ( pixels[pixel], 255 );
+		EXPECT_EQ( pixels[pixel + 1], 0 );
+		EXPECT_EQ( pixels[pixel + 2], 0 );
+		EXPECT_EQ( pixels[pixel + 3], 255 );
+	}
+}
+
+UTEST( NanoSVGSecurity, ClampMapsNaNToTheLowerBound ) {
+	// Callers convert the clamped value to int and index the gradient color ramp with it.
+	EXPECT_EQ( nsvg__clampf( std::numeric_limits<float>::quiet_NaN(), 0.f, 255.f ), 0.f );
+	EXPECT_EQ( nsvg__clampf( -1.f, 0.f, 255.f ), 0.f );
+	EXPECT_EQ( nsvg__clampf( 300.f, 0.f, 255.f ), 255.f );
+	EXPECT_EQ( nsvg__clampf( 7.5f, 0.f, 255.f ), 7.5f );
+}
+
+UTEST( NanoSVGSecurity, DashedStrokesAreBoundedPerImage ) {
+	// A 1-unit dash along a 1e9-unit line would emit about 1e9 dashes, and beyond the float
+	// precision of the coordinates the dash position stops advancing.
+	char input[] = R"(<svg width="32" height="32">
+<line x1="0" y1="16" x2="1000000000" y2="16" stroke="#000" stroke-width="4" stroke-dasharray="1"/>
+<line x1="0" y1="16" x2="1000000000" y2="16" stroke="#000" stroke-width="4" stroke-dasharray="1"/>
+</svg>)";
+	SVGImage image( nsvgParse( input, "px", 96, 0xFFFFFFFF ), &nsvgDelete );
+	SVGRasterizer rasterizer( nsvgCreateRasterizer(), &nsvgDeleteRasterizer );
+	ASSERT_TRUE( image != nullptr );
+	ASSERT_TRUE( rasterizer != nullptr );
+	std::array<unsigned char, 32 * 32 * 4> pixels{};
+	nsvgRasterize( rasterizer.get(), image.get(), 0, 0, 1, pixels.data(), 32, 32, 32 * 4 );
+	// The budget is shared by both lines: the first exhausts it, and each line stops at its
+	// first dash past the budget.
+	EXPECT_EQ( rasterizer->dashSegments, NSVG__MAX_DASH_SEGMENTS + 2 );
+	// Dashes before the budget ran out are still drawn.
+	EXPECT_GT( pixels[( 16 * 32 + 0 ) * 4 + 3], 0 );
+}

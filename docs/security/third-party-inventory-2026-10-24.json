@@ -485,15 +485,16 @@
       "version_evidence": "src/thirdparty/nanosvg/nanosvg.h",
       "upstream": "https://github.com/memononen/nanosvg",
       "assessment": "fixed",
-      "notes": "Same modified FLTK-derived snapshot; exact base still unknown. Manual arc finite checks, guarded fixed-point casts and scanline advancement, bounded stroke tessellation. Five numeric/style regression tests passed; no allocation/layout changes.",
+      "notes": "Same modified FLTK-derived snapshot; exact base still unknown. 2026-10-25: arc finite checks, guarded fixed-point casts and scanline advancement, bounded stroke tessellation. 2026-10-26 (found by fuzzing): single-stop gradient heap over-read, unbounded dashing capped at 16384 segments per rasterization, NaN-safe clamp and round-join segment count. Eight regression tests pass.",
       "source_revision": "7f9c6d2153f27d647547d4851de663b46f6ef031",
       "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "e7a2a11aa206b7aff9c672263d8617c7cc035376eccd2b4cf45313ac1eca4d4d",
+      "source_fingerprint_sha256": "af9f63a94754e8aeb5179b7eba6f8ecb2292ded5ec6dcaf89a342060094f1c86",
       "baseline_source_fingerprint_sha256": "490380228f8b16ffbda73186142d21141d93e5a1331024dd35bdf119702fae5c",
       "retained_patches": [
         "nanosvg.h",
         "nanosvgrast.h",
-        ".clang-format"
+        ".clang-format",
+        "README.eepp"
       ],
       "resolved_advisories": [
         "CVE-2026-88366",
@@ -501,7 +502,7 @@
         "CVE-2026-88367"
       ],
       "working_tree_modified": true,
-      "updated_at": "2026-10-25"
+      "updated_at": "2026-10-26"
     },
     {
       "name": "nlohmann",
@@ -1056,10 +1057,9 @@
   "fingerprint_method": "SHA256 over sorted repository-relative paths, NUL, file bytes, NUL; tracked plus non-ignored untracked files, excluding deleted files. Submodule paths are relative to the submodule as in the initial inventory.",
   "remediation_validation": {
     "ci": {
-      "commit": "ccdc3a5d08cd4a879781913feddc64ba75fe35f5",
+      "commit": "0d9acd28fddc1b3e3420e9d107c6773ae0e0aa32",
       "date": "2026-10-26",
       "workflows_passed": [
-        "Linux",
         "macOS",
         "Windows",
         "Windows MinGW Nightly",
@@ -1092,16 +1092,10 @@
         "Emscripten",
         "Windows MinGW"
       ],
-      "fuzzing": {
-        "target": "eepp-fuzz-nanosvg",
-        "sanitizers": [
-          "address",
-          "undefined"
-        ],
-        "inputs": 532224,
-        "seconds": 61,
-        "findings": 0
-      }
+      "workflows_failed": {
+        "Linux": "unit tests passed (2141/2141); the NanoSVG fuzzing step hung, leading to the 2026-10-26 NanoSVG fixes"
+      },
+      "fuzzing_removed_from_ci": true
     },
     "local_before_commit": {
       "macos_arm64": {
@@ -1127,6 +1121,23 @@
         "seconds": 300,
         "findings": 0,
         "note": "temporary target, removed after the run"
+      },
+      "nanosvg_fix_macos_arm64": {
+        "passed": 2133,
+        "total": 2135,
+        "skipped": 2,
+        "skipped_reason": "no audio device"
+      },
+      "nanosvg_fix_fuzzing": {
+        "target": "eepp-fuzz-nanosvg",
+        "platform": "Linux ARM64 Docker",
+        "sanitizers": [
+          "address",
+          "undefined"
+        ],
+        "inputs": 967000,
+        "per_input_timeout_seconds": 10,
+        "findings": 0
       }
     },
     "not_performed": [

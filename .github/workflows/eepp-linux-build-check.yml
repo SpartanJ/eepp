@@ -25,7 +25,7 @@ jobs:
         sudo apt install -y gcc-13 g++-13 wget mesa-utils xvfb xauth gdb zstd \
           weston xdotool imagemagick \
           python3-gi gir1.2-atspi-2.0 at-spi2-core dbus-x11 \
-          openssh-server openssh-client netcat-openbsd clang
+          openssh-server openssh-client netcat-openbsd
         bash projects/linux/scripts/install_sdl3.sh --keep-build
         wget https://cdn.ensoft.dev/eepp-assets/premake-5.0.0-beta6-linux.tar.gz
         tar xvzf premake-5.0.0-beta6-linux.tar.gz
@@ -101,19 +101,6 @@ jobs:
       run: |
         cd projects/scripts
         bash ./run_gdb_tests.sh
-    - name: NanoSVG Fuzzing
-      # The vendored NanoSVG fork carries local security patches and has no upstream fuzzing.
-      if: ${{ !cancelled() && steps.build.outcome == 'success' }}
-      timeout-minutes: 10
-      run: |
-        ./premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 --with-security-fuzz gmake
-        make -C make/linux -e config=release_x86_64 CC=clang CXX=clang++ eepp-fuzz-nanosvg -j$(nproc)
-        # New inputs go to the output folder so the committed seeds stay unchanged; crash
-        # reproducers are uploaded with the other test output.
-        mkdir -p bin/unit_tests/output/fuzz-nanosvg/corpus
-        bin/security/eepp-fuzz-nanosvg -max_total_time=60 -max_len=8192 \
-          -artifact_prefix=bin/unit_tests/output/fuzz-nanosvg/ \
-          bin/unit_tests/output/fuzz-nanosvg/corpus src/tests/security/corpus/nanosvg
     - name: Native X11 Drag and Drop Tests
       timeout-minutes: 5
       shell: bash

@@ -102,6 +102,9 @@ void nsvgDeleteRasterizer(NSVGrasterizer*);
 #define NSVG__FIX			(1 << NSVG__FIXSHIFT)
 #define NSVG__FIXMASK		(NSVG__FIX-1)
 #define NSVG__MEMPAGE_SIZE	1024
+#ifndef NSVG__MAX_DASH_SEGMENTS
+#define NSVG__MAX_DASH_SEGMENTS	16384
+#endif
 
 typedef struct NSVGedge {
 	float x0,y0, x1,y1;
@@ -165,6 +168,8 @@ struct NSVGrasterizer
 
 	unsigned char* bitmap;
 	int width, height, stride;
+
+	int dashSegments; // Dash segments emitted by the current nsvgRasterizeXY call.
 };
 
 NSVGrasterizer* nsvgCreateRasterizer(void)
@@ -576,9 +581,11 @@ static void nsvg__roundJoin(NSVGrasterizer* r, NSVGpoint* left, NSVGpoint* right
 	if (da < NSVG_PI) da += NSVG_PI*2;
 	if (da > NSVG_PI) da -= NSVG_PI*2;
 
-	n = (int)ceilf((nsvg__absf(da) / NSVG_PI) * (float)ncap);
+	// Non-finite point deltas make da NaN; converting NaN to int is undefined.
+	n = ncap;
+	if ((nsvg__absf(da) / NSVG_PI) * (float)ncap < (float)ncap)
+		n = (int)ceilf((nsvg__absf(da) / NSVG_PI) * (float)ncap);
 	if (n < 2) n = 2;
-	if (n > ncap) n = ncap;
 
 	lx = left->x;
 	ly = left->y;
@@ -830,6 +837,12 @@ static void nsvg__flattenShapeStroke(NSVGrasterizer* r, NSVGshape* shape, float 
 				float dist = sqrtf(dx*dx + dy*dy);
 
 				if ((totalDist + dist) > dashLen) {
+					// A long path with a tiny dash pattern would emit an unbounded number of
+					// dashes, and once a dash is below the float precision of the coordinates
+					// 'cur' stops advancing. Dashes on shared scanlines also make rasterization
+					// quadratic, so the budget covers the whole image, not each path.
+					if (++r->dashSegments > NSVG__MAX_DASH_SEGMENTS)
+						break;
 					// Calculate intermediate point
 					float d = (dashLen - totalDist) / dist;
 					float x = cur.x + dx * d;
@@ -989,7 +1002,8 @@ static void nsvg__fillActiveEdges(unsigned char* scanline, int len, NSVGactiveEd
 	}
 }
 
-static float nsvg__clampf(float a, float mn, float mx) { return a < mn ? mn : (a > mx ? mx : a); }
+// NaN clamps to mn: callers convert the result to int and use it as an index.
+static float nsvg__clampf(float a, float mn, float mx) { return a > mn ? (a < mx ? a : mx) : mn; }
 
 static unsigned int nsvg__RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
@@ -1320,8 +1334,10 @@ static void nsvg__initPaint(NSVGcachedPaint* cache, NSVGpaint* paint, float opac
 		for (i = 0; i < 256; i++)
 			cache->colors[i] = 0;
 	} else if (grad->nstops == 1) {
+		// A single stop fills the whole ramp; stops[] has only one entry.
+		unsigned int color = nsvg__applyOpacity(grad->stops[0].color, opacity);
 		for (i = 0; i < 256; i++)
-			cache->colors[i] = nsvg__applyOpacity(grad->stops[i].color, opacity);
+			cache->colors[i] = color;
 	} else {
 		unsigned int ca, cb = 0;
 		float ua, ub, du, u;
@@ -1415,6 +1431,7 @@ void nsvgRasterizeXY(NSVGrasterizer* r,
 	r->width = w;
 	r->height = h;
 	r->stride = stride;
+	r->dashSegments = 0;
 
 	if (w > r->cscanline) {
 		r->cscanline = w;

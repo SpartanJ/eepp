@@ -18,6 +18,15 @@ Manual fixes:
   Extreme geometry may be omitted or approximated rather than invoking UB.
 
 No new rasterizer allocations or public layout changes are introduced.
+
+Rasterizer fixes, applied 2026-10-26 (found by fuzzing, no upstream reports):
+- Single-stop gradients filled the color ramp from stops[0..255]; use stops[0].
+- Dashed strokes are capped at NSVG__MAX_DASH_SEGMENTS (16384) per
+  nsvgRasterizeXY call, tracked in NSVGrasterizer::dashSegments. Unbounded
+  dashing could loop forever once dashes fell below coordinate precision.
+- nsvg__clampf maps NaN to the lower bound; its callers index arrays with it.
+- nsvg__roundJoin no longer converts a NaN segment count to int.
+The dashSegments field is the only change to an internal struct.
 Tests: src/tests/unit_tests/nanosvg_security_tests.cpp, plus existing image,
 SVG widget and font rendering tests. .clang-format preserves snapshot style.
 

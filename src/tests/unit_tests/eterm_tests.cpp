@@ -1351,6 +1351,78 @@ UTEST( eterm, kitty_modifier_key_does_not_scroll_to_bottom ) {
 	EXPECT_EQ( 0, term->scrollPos() );
 }
 
+UTEST( eterm, tab_and_backtab_preserve_physical_modifiers ) {
+	const Uint32 modifierCases[] = { KEYMOD_NONE, KEYMOD_LSHIFT, KEYMOD_RSHIFT, KEYMOD_SHIFT };
+	for ( Uint32 flags : { 0u, 1u, 3u, 7u, 8u, 11u } ) {
+		for ( Uint32 modifiers : modifierCases ) {
+			auto pty = std::make_unique<MockPty>();
+			pty->mBuffer = "\033[>" + std::to_string( flags ) + "u";
+			pty->mLoopWrites = false;
+			MockPty* ptyPtr = pty.get();
+			auto term = TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(),
+												  std::make_shared<MockDisplay>(), 100 );
+			term->update();
+
+			const bool shifted = modifiers & KEYMOD_SHIFT;
+			const bool reportAll = flags & 8;
+			const bool reportEvents = reportAll && ( flags & 2 );
+			const std::string prefix = shifted ? "\033[9;2" : "\033[9;1";
+			const std::string press = reportAll ? prefix + ( reportEvents ? ":1u" : "u" )
+									  : shifted ? "\033[Z"
+												: "\t";
+			const std::string release = reportEvents ? prefix + ":3u" : "";
+			KittyKeyEvent event{ KEY_TAB, SCANCODE_TAB, 0, modifiers, KittyKeyEventType::Press };
+			term->keyEvent( event );
+			EXPECT_STDSTREQ( press, ptyPtr->mWrites );
+			event.type = KittyKeyEventType::Release;
+			term->keyEvent( event );
+			EXPECT_STDSTREQ( press + release, ptyPtr->mWrites );
+			// Lock bits must not prevent a legacy keymap match.
+			if ( !reportAll ) {
+				ptyPtr->mWrites.clear();
+				event.type = KittyKeyEventType::Repeat;
+				term->keyEvent( event );
+				EXPECT_STDSTREQ( press, ptyPtr->mWrites );
+				ptyPtr->mWrites.clear();
+				event.type = KittyKeyEventType::Press;
+				event.modifiers |= KEYMOD_CAPS | KEYMOD_NUM;
+				term->keyEvent( event );
+				EXPECT_STDSTREQ( press, ptyPtr->mWrites );
+			}
+		}
+	}
+}
+
+UTEST( eterm, legacy_keymap_normalizes_sides_and_preserves_altgr ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto term = TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(),
+										  std::make_shared<MockDisplay>(), 100 );
+	const struct {
+		Keycode key;
+		Scancode scancode;
+		Uint32 modifiers;
+		const char* bytes;
+	} cases[] = {
+		{ KEY_UP, SCANCODE_UP, KEYMOD_LSHIFT, "\033[1;2A" },
+		{ KEY_UP, SCANCODE_UP, KEYMOD_RSHIFT, "\033[1;2A" },
+		{ KEY_UP, SCANCODE_UP, KEYMOD_LCTRL, "\033[1;5A" },
+		{ KEY_UP, SCANCODE_UP, KEYMOD_RCTRL, "\033[1;5A" },
+		{ KEY_UP, SCANCODE_UP, KEYMOD_RCTRL | KEYMOD_RSHIFT | KEYMOD_LALT, "\033[1;8A" },
+		{ KEY_F1, SCANCODE_F1, KEYMOD_LMETA, "\033[1;6P" },
+		{ KEY_F1, SCANCODE_F1, KEYMOD_RMETA, "\033[1;6P" },
+		{ KEY_F1, SCANCODE_F1, KEYMOD_LALT, "\033[1;3P" },
+		{ KEY_F1, SCANCODE_F1, KEYMOD_RALT, "\033[1;4P" },
+	};
+	for ( const auto& entry : cases ) {
+		ptyPtr->mWrites.clear();
+		term->keyEvent(
+			{ entry.key, entry.scancode, 0, entry.modifiers, KittyKeyEventType::Press } );
+		EXPECT_STDSTREQ( entry.bytes, ptyPtr->mWrites );
+	}
+}
+
 UTEST( eterm, application_cursor_keys_are_written_to_pty ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer = "\033[?1h";
