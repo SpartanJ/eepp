@@ -1,15 +1,16 @@
 # Third-party security audit — 2026-10-24
 
 Initial audit baseline: `dfc1a1941` (Brotli 1.2.1 upgrade included).
-Remediation update: **2026-10-25**, applied to the working tree based on `49f5e179d`.
+Remediation: **2026-10-25**, committed in `33dd9d621` and `7069bb03e`, with the SDL3 audio
+shutdown fix `2f3f663cb`. Status refreshed **2026-10-26** against CI on `ccdc3a5d0`.
 Scope: the 45 source trees in `src/thirdparty`, public third-party headers, nested
 components, and the build configuration that selects them. This is a source inventory
 and advisory/reachability review, not a deployed-binary SBOM or a claim that all code
 is vulnerability-free.
 
 The companion [machine-readable inventory](third-party-inventory-2026-10-24.json)
-now records the updated versions, upstream revision, retained patches and working-tree
-fingerprints. NVD discovery queries retain their original retrieval dates; they were
+now records the updated versions, upstream revision, retained patches and source
+fingerprints (recomputed from `ccdc3a5d0` on 2026-10-26). NVD discovery queries retain their original retrieval dates; they were
 not rerun as part of this remediation. `version: null` means the exact upstream
 release has not been established.
 
@@ -25,23 +26,33 @@ release has not been established.
 | libvorbis | 1.3.6 | **1.3.7** | Includes the CVE-2018-10393 encoder bounds fix and the channel validation changes; all imported files match the release. |
 | Monocypher | 4.0.2 | **4.0.3** | Fixes the compiler-dependent Ed25519 signing timing leak; imported sources match the release. |
 | simdutf | 9.2.0 | **9.2.1** | Regenerated amalgamation with the same UTF-8/UTF-32-only feature set; Base64 stays disabled. |
+| stb_image (SOIL2) | 2.30 with SOIL2's GIF disposal change | 2.30 plus a local CVE-2026-5185 fix (SOIL2 `116dfde`, 2026-10-26) | Fixed a stale frame pointer in the animated-GIF loader; no upstream fix exists. |
 
-Validation of the complete working tree:
+### Validation status — 2026-10-26
 
-- macOS ARM64: the full native release suite passed all 2,128 tests, including the SFTP
-  integration tests against loopback SSH servers and the PNG, NanoSVG, ZIP, TLS and Vorbis
-  security tests.
-- Linux ARM64 (Ubuntu 24.04, GCC 13, SDL 3.4.10, Docker): the release build succeeded and the
-  headless suite passed 2,139 of 2,140 tests with all SFTP tests required; one font test
-  skipped for lack of a font with a non-normal stretch.
-- Windows x86_64 (MinGW-w64 GCC 13 cross-build, Wine 7.7): the unit tests build and all ZIP
-  tests pass; the full suite under Wine was not conclusive (file-watch, long-path and headless
-  UI failures not reproduced on real Windows).
-- ASan/UBSan libFuzzer runs: ZIP (300 s, 3.39 M inputs) and NanoSVG, without findings. The
-  Linux CI job now fuzzes NanoSVG for 60 s and requires the SFTP tests to run.
+CI on `ccdc3a5d0`: all eight workflows passed (Linux, macOS, Windows, Windows MinGW
+nightly, Android, iOS, Emscripten and ecode nightly). Only the Linux, macOS and Windows jobs
+run the unit tests; the others are build checks.
 
-Not run: Linux x86_64, Android, Emscripten and the optional OpenSSL backend. Passing
-functional tests does not establish absence of all malformed-input vulnerabilities.
+| Platform | Where | Result |
+| --- | --- | --- |
+| Linux x86_64 | CI | 2,141 of 2,141 passed, with the SFTP tests required (`EEPP_REQUIRE_SFTP_TESTS=1`) against a loopback OpenSSH server. |
+| Linux x86_64 | CI, NanoSVG ASan/UBSan libFuzzer | 532,224 inputs in 61 s, no findings. Runs on every Linux job. |
+| macOS | CI | 2,130 of 2,130 passed, including SFTP. |
+| Windows x86_64 (MSVC) | CI | 2,062 passed; `VFSLocal.atomicWritesAndCopiesSupportLongBasenames` skipped because the runner lacks long-path support. |
+| Android, iOS, Emscripten, MinGW | CI | Build only. |
+| macOS ARM64 | Local, before commit | 2,128 of 2,128 passed, including SFTP and the PNG, NanoSVG, ZIP, TLS and Vorbis security tests. |
+| Linux ARM64 (Ubuntu 24.04, GCC 13, SDL 3.4.10) | Local Docker, before commit | 2,139 of 2,140 passed with SFTP required; one font test skipped (no font with a non-normal stretch). |
+| Windows x86_64 (MinGW-w64 GCC 13, Wine 7.7) | Local, before commit | All 21 ZIP tests passed. The full suite under Wine was inconclusive; superseded by the Windows CI run. |
+| ZIP ASan/UBSan libFuzzer | Local, before commit | 300 s, 3.39 M inputs, no findings. The temporary target was then removed (see libzip). |
+
+The first CI run of `7069bb03e` failed on Linux: the unit tests crashed with a null call in
+`SDL_QuitAudio`, reached from MojoAL's `alcCloseDevice` during Engine teardown. That race
+predates the dependency updates and was fixed in `2f3f663cb`; every run since has passed.
+
+Not run anywhere: the optional OpenSSL backend, 32-bit builds, and the unit tests on Android,
+iOS and Emscripten. Passing functional tests does not establish absence of all
+malformed-input vulnerabilities.
 
 ## Remaining cleanup order
 
@@ -201,14 +212,10 @@ then removed: libzip is now unmodified apart from one include line, and upstream
 OSS-Fuzz harnesses. The NanoSVG target remains, because the local fork has no upstream fuzzing;
 the Linux CI job fuzzes it for 60 s on every run.
 
-- macOS ARM64: the full native release suite passed all 2,128 tests.
-- Linux ARM64 (Ubuntu 24.04, GCC 13, SDL 3.4.10, in Docker): the release build and the full
-  headless suite passed 2,139 of 2,140 tests, with all SFTP integration tests required and
-  run; one font test skipped for lack of a font with a non-normal stretch.
-- Windows x86_64 (MinGW-w64 GCC 13 cross-build, run under Wine 7.7): libzip builds without
-  warnings and all 21 ZIP tests pass. The full suite under Wine is not conclusive: file-watch,
-  long-path and headless UI tests failed or crashed in ways not yet reproduced on real Windows.
-- Linux x86_64, Android and Emscripten builds of the new configuration were not run.
+The ZIP and ZIP-provider tests pass on every platform in the validation table above:
+Linux x86_64, macOS and Windows (MSVC) in CI, and locally on macOS ARM64, Linux ARM64
+and under Wine for MinGW. The Android, iOS and Emscripten CI jobs build the new libzip
+configuration.
 
 ### Mbed TLS
 
@@ -276,6 +283,33 @@ CVE-2018-10392 channel validation. The standalone tool sources that eepp removed
 drives the encoder; [`vorbis_security_tests.cpp`](../../src/tests/unit_tests/vorbis_security_tests.cpp)
 encodes and decodes mono and stereo at 1 Hz to 44.1 kHz and checks that invalid rates and
 channel counts are rejected.
+
+### stb_image GIF loader (CVE-2026-5185)
+
+[CVE-2026-5185](https://nvd.nist.gov/vuln/detail/CVE-2026-5185) is a medium (CVSS 3.1 5.3)
+heap memory-safety bug in `stbi__gif_load_next`, tracked upstream as
+[nothings/stb #1916](https://github.com/nothings/stb/issues/1916). Upstream has no fix. In
+upstream 2.30 the cause is the `two_back` pointer computed before the start of the frame buffer.
+
+SOIL2's copy had already replaced `two_back` (SOIL2 `1acee65`, "Fix gif dispose logic") with a
+`last_non_disposable` pointer. It was set to the start of the accumulated frame buffer and refreshed
+only after frames with disposal method 0 or 1. After a frame with disposal 2 or 3, the `realloc`
+that appends it could move the buffer, so a later disposal-3 frame read through a freed pointer.
+
+eepp reaches this path: `Image::loadGif` (used by `UIImageViewer`, e.g. the ecode and eefm
+previews) and `Texture::loadGif` / `Sprite::fromGif` call `stbi_load_gif_from_memory`. Opening a
+crafted animated GIF was enough; no network route is needed.
+
+Fixed in SOIL2 [`116dfde`](https://github.com/SpartanJ/SOIL2/commit/116dfde76de4ebac11531c98dfb45e4fae400948):
+`stbi__load_gif_main` stores the frame index and rebuilds the pointer from the current buffer
+before each frame. Disposal 3 now restores the most recent frame with disposal 0 or 1 instead of
+always frame 0. The rest of SOIL2's customized stb_image, including its added formats, is
+unchanged. eepp's submodule points to this commit.
+
+Validation: five real animated GIFs, covering disposal methods 1, 2 and 3 (up to 321 frames),
+decode identically with the old and patched loaders under ASan/UBSan with no reports, and the
+macOS release suite passes (2,128 passed, 2 audio tests skipped for lack of an audio device). None
+of those files contains the frame sequence that triggered the bug; no crafted reproducer was built.
 
 ## High findings whose current eepp API conditions were not found
 
@@ -348,7 +382,7 @@ Source: [SDL surface-allocation fix](https://github.com/libsdl-org/SDL/commit/8c
 | tinyexpr CVE-2026-88355 | `new_expr()` already allocates `sizeof(te_expr) + extra`, never less than `sizeof(te_expr)`. Local code predates and independently prevents the reported condition. [Original issue](https://github.com/codeplea/tinyexpr/issues/145). |
 | FreeType CVE-2025-27363 / CVE-2026-23865 | Our 2.14.1 is newer than the affected versions. Pillow's CVE-2026-112893 is a caller bug in a different project. FreeType's dependent codecs remain separately covered above. |
 | libwebp CVE-2023-4863 | Our 1.5.0 includes the fix shipped in 1.3.2. Later matches about Perl Image::WebP's bundled old decoder or an npm wrapper are different products. |
-| stb_image's 2023 high advisories | SOIL2 bundles 2.30, beyond those affected releases. CVE-2026-5185 is a medium GIF finding and needs a separate follow-up; do not label stb_image vulnerability-free. |
+| stb_image's 2023 high advisories | SOIL2 bundles 2.30, beyond those affected releases. The medium GIF finding CVE-2026-5185 is fixed locally (see above); do not label stb_image vulnerability-free. |
 | dr_libs WAV CVEs | `dr_wav.h` is not vendored or used. We have dr_flac and dr_mp3. Their metadata and whole-file APIs must be assessed independently; WAV advisories are not transferable. |
 | zlib CVE-2026-22184 | `contrib/untgz` demonstration utility is absent, not part of the built library. |
 | zlib CVE-2026-27820 | Ruby `zlib` binding, not native zlib, despite a misleading broad version/CPE match. |
@@ -421,7 +455,7 @@ and establish a verified tag/commit before calling a future update routine.
 | --- | --- | --- |
 | unordered_dense | 5.0.1 | [unordered_dense.h](../../include/eepp/thirdparty/unordered_dense.h). Public container headers; stl.h and huge_page_allocator.h belong to the same import. |
 | svector | 1.4.0 | [svector.h](../../include/eepp/thirdparty/svector.h). Public small-vector header. |
-| stb_image | 2.30 | [stb_image.h](../../src/thirdparty/SOIL2/src/SOIL2/stb_image.h). Nested in SOIL2; older 2023 high advisories fixed; CVE-2026-5185 is medium and requires separate GIF-path follow-up. |
+| stb_image | 2.30 | [stb_image.h](../../src/thirdparty/SOIL2/src/SOIL2/stb_image.h). Nested in SOIL2; older 2023 high advisories fixed; CVE-2026-5185 fixed locally in SOIL2 `116dfde`. |
 | stb_image_write | 1.16 | [stb_image_write.h](../../src/thirdparty/SOIL2/src/SOIL2/stb_image_write.h). Nested in SOIL2. |
 | hidapi | Snapshot; parent fingerprint recorded | [hidapi.h](../../src/thirdparty/SDL2/src/hidapi/hidapi/hidapi.h). SDL-modified unversioned snapshot; update as part of SDL source refresh. |
 | variant-lite | 1.2.2 | [tabulate.hpp](../../src/thirdparty/tabulate/tabulate.hpp). Nested amalgamation. |
@@ -477,9 +511,9 @@ and build outputs were not treated as the authoritative source inventory.
    they materially change interpretation. A high label does not establish eepp RCE.
 4. The initial audit performed no dependency edits, exploit execution, new build,
    fuzz campaign or cross-platform runtime validation. The 2026-10-25 follow-up
-   rebuilt libssh2/libpng and the release test target and applied the NanoSVG fixes;
-   validation is recorded above. Earlier Brotli test results are not used as evidence
-   for these changes.
+   upgraded the components in the remediation table and applied the NanoSVG fixes; its
+   local and CI validation is recorded above. Earlier Brotli test results are not used
+   as evidence for these changes.
 
 Coverage gaps that remain explicit:
 
@@ -492,8 +526,9 @@ Coverage gaps that remain explicit:
 - Consumer API searches establish the current repository's callers. They cannot
   prove that downstream eepp users never call a bundled library directly or enable
   a different configuration.
-- ARM/mobile, 32-bit, OpenSSL and other optional builds were assessed from source,
-  not executed. Mbed TLS compiler-dependent issues need per-distribution analysis.
+- 64-bit ARM and x86 desktop builds are executed (see validation). Mobile and Emscripten
+  builds compile in CI without running tests; 32-bit, OpenSSL and other optional builds
+  were assessed from source, not executed. Mbed TLS compiler-dependent issues need per-distribution analysis.
 
 ## Remaining implementation batches
 
@@ -502,6 +537,10 @@ Coverage gaps that remain explicit:
    remaining snapshot-only imports.
 3. Replace the libssh2 development snapshot with a security-fixed stable release
    when one is available, retaining the recorded integration patches.
+4. **Follow-up without a confirmed high finding:** review HarfBuzz's medium advisories.
+5. **TLS 1.3:** enable PSA crypto and TLS 1.3 in eepp's Mbed TLS configuration and port
+   `MbedTLSSocket`. The PSA sources are already vendored for this, and Mbed TLS 4.x drops
+   the classic API that `MbedTLSSocket` and the libssh2 adapter use.
 
 For subsequent updates, record the upstream release/commit and retained patches
 next to the dependency, and regenerate the inventory after each batch. An automated

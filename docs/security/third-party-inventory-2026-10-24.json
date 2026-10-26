@@ -99,14 +99,14 @@
     {
       "name": "efsw",
       "path": "src/thirdparty/efsw",
-      "version": "1.7.2 + 5 commits",
+      "version": "1.7.2 + 6 commits",
       "version_evidence": "src/thirdparty/efsw/CMakeLists.txt",
       "upstream": "https://github.com/SpartanJ/efsw",
       "assessment": "screened",
-      "notes": "Submodule 58a105f56aa8dcc1a8771121bd196c7e2c6e4ef1; local agent implementation.",
-      "source_revision": "58a105f56aa8dcc1a8771121bd196c7e2c6e4ef1",
+      "notes": "Submodule 0712eec2787a98e2436cf83f0f52d0eedfe490fc; local agent implementation. efsw-agent now exits immediately when stdin closes, so SSH channels are released without waiting for the next poll.",
+      "source_revision": "0712eec2787a98e2436cf83f0f52d0eedfe490fc",
       "source_revision_kind": "submodule commit",
-      "source_fingerprint_sha256": "91047a0ac53d55a65a11267dca3087dbdf79086f56c8d1611c9f09147b767ef2"
+      "source_fingerprint_sha256": "5ed1bb6a1795defc14adc68183c94d7ea9f8f5b96b52e28e50bc19ee564fd7b1"
     },
     {
       "name": "emscripten-browser-clipboard",
@@ -451,10 +451,10 @@
       "version_evidence": "src/thirdparty/mojoAL-SDL3/mojoal.c",
       "upstream": "https://github.com/icculus/mojoAL",
       "assessment": "screened",
-      "notes": "SDL3 variant; release macros in source.",
-      "source_revision": "1b263a531bb323bccb9deedd6f20f246d3df119c",
+      "notes": "SDL3 variant; release macros in source. Local patch: MOJOAL_TARGETING_NEON replaces SDL_TARGETING(\"neon\"), which GCC rejects on AArch64 where NEON is always available.",
+      "source_revision": "7069bb03e686ed2d065b56e0d33c76dd36eb1acf",
       "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "24b3a98bf4c601bd88ffa78ed8be3e89a66d88b2a484213945584c070f605cd6"
+      "source_fingerprint_sha256": "1d1cf816837247034dccfc3d26d59ccf4237446f03c4fb7049cd40688cd867c2"
     },
     {
       "name": "monocypher",
@@ -617,10 +617,10 @@
       "version_evidence": "src/thirdparty/SOIL2/src/SOIL2/SOIL2.h",
       "upstream": "https://github.com/SpartanJ/soil2",
       "assessment": "screened",
-      "notes": "Submodule dc92c9ec6d83cda2a059e85ebb24d51d0632d7b2; CMake project version 1.0.0 is stale. Includes stb_image 2.30 and stb_image_write 1.16 plus custom container codecs.",
-      "source_revision": "dc92c9ec6d83cda2a059e85ebb24d51d0632d7b2",
+      "notes": "Submodule 116dfde76de4ebac11531c98dfb45e4fae400948; CMake project version 1.0.0 is stale. Includes stb_image 2.30 and stb_image_write 1.16 plus custom container codecs. 257964f enables stb_image's existing NEON JPEG kernels on AArch64; no decoder logic changed. 116dfde fixes CVE-2026-5185 (stale animated-GIF disposal pointer after realloc in stbi__load_gif_main).",
+      "source_revision": "116dfde76de4ebac11531c98dfb45e4fae400948",
       "source_revision_kind": "submodule commit",
-      "source_fingerprint_sha256": "1dac9e9d315c7b408dbe7e7aed4c2ca93686deb3db2849e91ec5f279ef8adcf6"
+      "source_fingerprint_sha256": "75f712cf534edac0d72e6748e520a5e2f123bdb0b752e0fb97b8bf1c9bef38db"
     },
     {
       "name": "subprocess",
@@ -702,7 +702,7 @@
       "name": "stb_image",
       "version": "2.30",
       "path": "src/thirdparty/SOIL2/src/SOIL2/stb_image.h",
-      "notes": "Nested in SOIL2; older 2023 high advisories fixed; CVE-2026-5185 is medium and requires separate GIF-path follow-up.",
+      "notes": "Nested in SOIL2; older 2023 high advisories fixed; CVE-2026-5185 fixed locally in SOIL2 116dfde (no upstream fix).",
       "representative_file_sha256": "4d1326b70791a33b716520c26f6b472f553ba1c7a53a99f95a2f815cef416bf1"
     },
     {
@@ -1050,22 +1050,94 @@
       "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=zlib&resultsPerPage=2000"
     }
   ],
-  "last_updated": "2026-10-25",
+  "last_updated": "2026-10-26",
   "remediation_base_commit": "49f5e179d6a89cf6713b3729a0fa59e3658748c9",
   "fingerprint_method": "SHA256 over sorted repository-relative paths, NUL, file bytes, NUL; tracked plus non-ignored untracked files, excluding deleted files. Submodule paths are relative to the submodule as in the initial inventory.",
   "remediation_validation": {
-    "platform": "macOS ARM64",
-    "build": "projects/macos/make_no_fw.sh config=release eepp-unit_tests",
-    "full_native_release_suite": {
-      "passed": 2124,
-      "includes_sftp_integration_tests": 34,
-      "includes_focused_security_tests": 6
+    "ci": {
+      "commit": "ccdc3a5d08cd4a879781913feddc64ba75fe35f5",
+      "date": "2026-10-26",
+      "workflows_passed": [
+        "Linux",
+        "macOS",
+        "Windows",
+        "Windows MinGW Nightly",
+        "Android",
+        "iOS",
+        "Emscripten",
+        "Build Nightly"
+      ],
+      "unit_tests": {
+        "linux_x86_64": {
+          "passed": 2141,
+          "total": 2141,
+          "sftp_required": true
+        },
+        "macos": {
+          "passed": 2130,
+          "total": 2130
+        },
+        "windows_x86_64_msvc": {
+          "passed": 2062,
+          "total": 2063,
+          "skipped": [
+            "VFSLocal.atomicWritesAndCopiesSupportLongBasenames"
+          ]
+        }
+      },
+      "build_only": [
+        "Android",
+        "iOS",
+        "Emscripten",
+        "Windows MinGW"
+      ],
+      "fuzzing": {
+        "target": "eepp-fuzz-nanosvg",
+        "sanitizers": [
+          "address",
+          "undefined"
+        ],
+        "inputs": 532224,
+        "seconds": 61,
+        "findings": 0
+      }
+    },
+    "local_before_commit": {
+      "macos_arm64": {
+        "passed": 2128,
+        "total": 2128
+      },
+      "linux_arm64_docker": {
+        "passed": 2139,
+        "total": 2140,
+        "skipped": 1,
+        "sftp_required": true
+      },
+      "windows_x86_64_mingw_wine": {
+        "zip_tests_passed": 21,
+        "full_suite": "inconclusive under Wine; superseded by Windows CI"
+      },
+      "zip_fuzzing": {
+        "sanitizers": [
+          "address",
+          "undefined"
+        ],
+        "inputs": 3390000,
+        "seconds": 300,
+        "findings": 0,
+        "note": "temporary target, removed after the run"
+      }
     },
     "not_performed": [
       "OpenSSL backend build",
-      "cross-platform builds",
-      "sanitizer campaign",
-      "fuzzing"
+      "32-bit builds",
+      "unit tests on Android, iOS and Emscripten"
     ]
-  }
+  },
+  "remediation_commits": [
+    "33dd9d621",
+    "7069bb03e",
+    "2f3f663cb"
+  ],
+  "fingerprint_commit": "ccdc3a5d08cd4a879781913feddc64ba75fe35f5"
 }
