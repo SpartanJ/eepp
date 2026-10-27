@@ -22,6 +22,10 @@ a tar.gz, Windows produces a zip, and macOS produces an app bundle with an optio
 MinGW platform directory is `mingw32`, while its archives use the name `windows`.
 The existing `projects/<platform>/ecode/` entry points forward to these packagers.
 
+Linux cross builds require `CC` and `CXX` to select the target toolchain, along with its
+`STRIP` tool. The packager locates SDL using the target compiler's library search paths;
+install the target SDL runtime there before packaging. This also applies to `--skip-build`.
+
 ## Assets
 
 An application's `src/tools/<app>/assets.list` declares its packaged files, one path per line,

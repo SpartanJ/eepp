@@ -4849,10 +4849,7 @@ void App::init( InitParameters& params ) {
 
 		if ( mConfig.windowState.position != Vector2i( -1, -1 ) &&
 			 mConfig.windowState.displayIndex < displayManager->getDisplayCount() ) {
-			// 1 px offset to avoid a bug in SDL2 2.28 when maximizing windows
-			mWindow->setPosition( mConfig.windowState.position.x +
-									  ( mConfig.windowState.maximized ? -1 : 0 ),
-								  mConfig.windowState.position.y );
+			mWindow->setPosition( mConfig.windowState.position.x, mConfig.windowState.position.y );
 		}
 
 		if ( mWindow->isWindowed() && mWindow->getSize() >= currentDisplay->getSize().asInt() ) {

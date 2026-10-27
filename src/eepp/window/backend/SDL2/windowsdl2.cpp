@@ -821,8 +821,13 @@ void WindowSDL::minimize() {
 }
 
 void WindowSDL::maximize() {
-	if ( Runtime::isOffscreen() || Runtime::forceHiddenWindows() )
+	if ( Runtime::isOffscreen() || Runtime::forceHiddenWindows() || !isWindowed() || isMaximized() )
 		return;
+	// SDL2 can fail to maximize a window restored at its previous maximized position.
+	// The one-pixel nudge is still needed with SDL 2.32.10. Keep it tied to the native
+	// maximize request so applications can restore saved positions without accumulating offsets.
+	const Vector2i position = getPosition();
+	setPosition( position.x - 1, position.y );
 	SDL_MaximizeWindow( mSDLWindow );
 }
 

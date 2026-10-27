@@ -112,6 +112,7 @@ class AppPackaging(PackagingFixture):
         self.assertIn("Missing asset", result.stdout)
 
     def test_linux_archives_and_launcher(self):
+        self.command("uname", "echo x86_64")
         self.package("linux", "--backend", "SDL3", "--version", "nightly")
         self.assertTrue((self.output / "sample-linux-nightly-x86_64.AppImage").is_file())
         archive = self.output / "sample-linux-nightly-x86_64.tar.gz"
@@ -130,6 +131,37 @@ class AppPackaging(PackagingFixture):
             text=True, capture_output=True, check=True,
         )
         self.assertEqual(result.stdout.splitlines(), ["argument with spaces", "-f"])
+
+    def test_linux_cross_runtime_uses_target_compiler(self):
+        self.command("uname", "echo x86_64")
+        marker = self.root / "host-ldd-called"
+        self.command("ldd", f'touch "{marker}"; echo "not a dynamic executable" >&2; exit 1')
+        compiler = self.commands / "aarch64-linux-gnu-g++"
+        self.env["CXX"] = str(compiler)
+        runtime = self.root / "target libraries"
+        runtime.mkdir()
+        self.command(compiler.name, f'printf "%s/%s\\n" "{runtime}" "${{1#-print-file-name=}}"')
+        for backend, library in (("SDL2", "libSDL2-2.0.so.0"), ("SDL3", "libSDL3.so.0")):
+            with self.subTest(backend=backend):
+                (runtime / library).write_text(f"ARM64 {backend}")
+                self.package("linux", "--arch", "aarch64", "--backend", backend)
+                with tarfile.open(self.output / "sample-linux-1.2.3-arm64.tar.gz") as package:
+                    self.assertEqual(package.extractfile(f"sample/libs/{library}").read(),
+                                     f"ARM64 {backend}".encode())
+                self.assertFalse(marker.exists(), "Cross packaging must not execute host ldd")
+        self.env.pop("CXX")
+        self.env["CC"] = str(compiler)
+        self.package("linux", "--arch", "aarch64", "--backend", "SDL3")
+        self.env.pop("CC")
+        result = self.package("linux", "--arch", "aarch64", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Cross packaging requires CXX or CC", result.stdout)
+        # GCC returns the input name when the target library cannot be found.
+        self.env["CXX"] = str(compiler)
+        self.command(compiler.name, 'echo "${1#-print-file-name=}"')
+        result = self.package("linux", "--arch", "aarch64", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Cannot resolve libSDL2-2.0.so.0", result.stdout)
 
     def test_freebsd_version_and_fresh_staging(self):
         self.package("freebsd", "--backend", "SDL3")

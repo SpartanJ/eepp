@@ -42,10 +42,13 @@ UTEST( UIApplication, forcedHiddenWindowsIgnorePresentationRequests ) {
 					  ( WindowStyle::Fullscreen | WindowStyle::UseDesktopResolution ) );
 		EXPECT_FALSE( window->isVisible() );
 		EXPECT_TRUE( window->isWindowed() );
+		const auto position = window->getPosition();
 		window->show();
 		window->raise();
 		window->restore();
 		window->maximize();
+		EXPECT_EQ( window->getPosition().x, position.x );
+		EXPECT_EQ( window->getPosition().y, position.y );
 		window->toggleFullscreen();
 		window->setSize( 360, 260, false );
 		EXPECT_FALSE( window->isVisible() );

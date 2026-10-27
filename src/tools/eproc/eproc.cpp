@@ -668,7 +668,7 @@ void App::restoreWindowState() {
 	const auto& state = mConfig->windowState;
 	if ( state.position != Vector2i( -1, -1 ) && displayManager && state.displayIndex >= 0 &&
 		 state.displayIndex < displayManager->getDisplayCount() ) {
-		window->setPosition( state.position.x + ( state.maximized ? -1 : 0 ), state.position.y );
+		window->setPosition( state.position.x, state.position.y );
 	}
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN

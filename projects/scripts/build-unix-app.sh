@@ -57,10 +57,18 @@ Categories=Utility;
 DESKTOP
 	fi
 	cp "$SOURCE_DIR/assets/icon/$APP.png" "$STAGING/$APP.png"
-	# Resolve SDL from this build's eepp rather than choosing a possibly incompatible install.
+	# Native builds resolve SDL from eepp. Cross builds must use the target toolchain:
+	# the host's ldd cannot inspect a foreign executable and may try to run its loader.
 	SDL_NAME=libSDL2-2.0.so.0
 	[ "$BACKEND" != SDL3 ] || SDL_NAME=libSDL3.so.0
-	SDL_PATH=$(ldd "$LIB_SOURCE" | awk -v name="$SDL_NAME" '$1 == name && $2 == "=>" {print $3; exit}')
+	HOST_ARCH=$(uname -m)
+	case "$HOST_ARCH" in aarch64) HOST_ARCH=arm64 ;; amd64) HOST_ARCH=x86_64 ;; i686) HOST_ARCH=x86 ;; esac
+	if [ "$PLATFORM" = linux ] && [ "$ARCH" != "$HOST_ARCH" ]; then
+		[ -n "${CXX:-${CC:-}}" ] || package_error "Cross packaging requires CXX or CC for target $ARCH"
+		SDL_PATH=$("${CXX:-$CC}" "-print-file-name=$SDL_NAME")
+	else
+		SDL_PATH=$(ldd "$LIB_SOURCE" | awk -v name="$SDL_NAME" '$1 == name && $2 == "=>" {print $3; exit}')
+	fi
 	[ -f "$SDL_PATH" ] || package_error "Cannot resolve $SDL_NAME from libeepp.so"
 	cp -L "$SDL_PATH" "$LIB_DEST/$SDL_NAME"
 	"${STRIP:-strip}" "$LIB_DEST/$SDL_NAME"

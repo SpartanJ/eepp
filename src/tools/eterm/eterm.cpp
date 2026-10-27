@@ -798,12 +798,7 @@ int App::run( int argc, char* argv[] ) {
 		return EXIT_FAILURE;
 	}
 
-	Sizei windowSize( config->windowState.size );
-	const auto displaySize = currentDisplay->getUsableBounds().getSize();
-	if ( displaySize.getWidth() > 0 && windowSize.getWidth() >= displaySize.getWidth() )
-		windowSize.setWidth( static_cast<int>( displaySize.getWidth() * 0.8f ) );
-	if ( displaySize.getHeight() > 0 && windowSize.getHeight() >= displaySize.getHeight() )
-		windowSize.setHeight( static_cast<int>( displaySize.getHeight() * 0.75f ) );
+	const Sizei windowSize( config->windowState.size );
 
 	FontTrueTypePtr uiFont;
 	if ( !config->font.uiPath.empty() && FileSystem::fileExists( config->font.uiPath ) ) {
@@ -1018,10 +1013,7 @@ int App::run( int argc, char* argv[] ) {
 #endif
 	if ( config->windowState.position != Vector2i( -1, -1 ) &&
 		 config->windowState.displayIndex < displayManager->getDisplayCount() ) {
-		// 1 px offset to avoid a bug in SDL2 2.28 when maximizing windows
-		appWindow->setPosition( config->windowState.position.x +
-									( config->windowState.maximized ? -1 : 0 ),
-								config->windowState.position.y );
+		appWindow->setPosition( config->windowState.position.x, config->windowState.position.y );
 	}
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	if ( config->windowState.maximized ) {
