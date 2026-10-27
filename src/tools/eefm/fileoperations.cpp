@@ -46,8 +46,11 @@ void FileOperations::cancelTransfers( int paneIndex ) {
 
 void FileOperations::addDroppedFile( URI uri, std::optional<Vector2f> position ) {
 	mDroppedFiles.push_back( std::move( uri ) );
-	if ( position )
-		mDropPosition = position;
+	// Input has processed this frame's motion; the scene dispatcher updates afterward.
+	mDropPosition =
+		position
+			? *position
+			: mApp.window()->getInput()->getMousePosFromView( mApp.window()->getDefaultView() );
 }
 
 void FileOperations::reportError( const String& action, const VFSError& error ) {
@@ -1237,10 +1240,12 @@ FileOperations::dropDestination( Vector2f position ) {
 }
 
 void FileOperations::dropExternalFiles() {
+	if ( mDroppedFiles.empty() )
+		return;
 	std::vector<URI> files = std::move( mDroppedFiles );
 	mDroppedFiles.clear();
-	// Where it was dropped (the backend may not report it: then the pointer).
-	Vector2f position = mDropPosition ? *mDropPosition : mUI->getEventDispatcher()->getMousePosf();
+	// Captured with the file event, before further input can move the pointer.
+	Vector2f position = *mDropPosition;
 	mDropPosition.reset();
 	auto destination = dropDestination( position );
 	if ( !destination )

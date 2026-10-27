@@ -571,6 +571,18 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.file.hasPosition = false;
 			event.file.x = event.file.y = 0;
 			event.WinID = SDLEvent.drop.windowID;
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+			// AppKit owns pointer dispatch during a native drag. SDL2 has no drop coordinates,
+			// and its cached mouse position can still be at the start of the gesture.
+			auto* target = Engine::instance()->getWindowID( event.WinID );
+			if ( !target )
+				target = mWindow;
+			const Vector2f position =
+				target->getInput()->queryMousePos().asFloat() * target->getScale();
+			event.file.x = position.x;
+			event.file.y = position.y;
+			event.file.hasPosition = true;
+#endif
 			break;
 		}
 		case SDL_DROPTEXT: {

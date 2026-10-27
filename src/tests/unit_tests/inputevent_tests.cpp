@@ -4,10 +4,55 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS && defined( EE_SDL_VERSION_2 )
+#include "../../eepp/window/backend/SDL2/base.hpp"
+#endif
+
 using namespace EE;
 using namespace EE::UI;
 using namespace EE::Window;
 using EE::Window::Private::NativeDragAccess;
+
+#if EE_PLATFORM == EE_PLATFORM_MACOS && defined( EE_SDL_VERSION_2 )
+UTEST( InputEvent, cocoaSDL2FileDropUsesTargetPointerInsteadOfCachedPosition ) {
+	WindowSettings settings{ 320, 240, "File Drop Position Test" };
+	settings.Style |= WindowStyle::Hidden;
+	UIApplication app( settings );
+	auto* pollingInput = app.getWindow()->getInput();
+	auto* target = Engine::instance()->createWindow( settings );
+	ASSERT_TRUE( target != nullptr );
+	auto* targetInput = target->getInput();
+	// Different hidden-window origins expose accidentally using the polling window's position.
+	SDL_SetWindowPosition( SDL_GetWindowFromID( app.getWindow()->getWindowID() ), 10, 20 );
+	SDL_SetWindowPosition( SDL_GetWindowFromID( target->getWindowID() ), 110, 220 );
+	pollingInput->update();
+	targetInput->setMousePos( { -10000, -10000 } );
+	unsigned received = 0;
+	const auto callback = targetInput->pushCallback( [&]( InputEvent* event ) {
+		if ( event->Type != InputEvent::FileDropped )
+			return;
+		++received;
+		EXPECT_TRUE( event->file.hasPosition );
+		const Vector2f position = targetInput->queryMousePos().asFloat() * target->getScale();
+		EXPECT_NEAR( event->file.x, position.x, 2.f * target->getScale() );
+		EXPECT_NEAR( event->file.y, position.y, 2.f * target->getScale() );
+		EXPECT_NE( event->file.x, -10000.f );
+		EXPECT_NE( event->file.y, -10000.f );
+	} );
+	SDL_Event drop{};
+	drop.type = SDL_DROPFILE;
+	drop.drop.windowID = target->getWindowID();
+	drop.drop.file = SDL_strdup( "/tmp/eefm-drop-position-test" );
+	const int pushed = SDL_PushEvent( &drop );
+	if ( pushed != 1 )
+		SDL_free( drop.drop.file );
+	EXPECT_EQ( pushed, 1 );
+	pollingInput->update();
+	EXPECT_EQ( received, 1u );
+	targetInput->popCallback( callback );
+	Engine::instance()->destroyWindow( target );
+}
+#endif
 
 UTEST( InputEvent, modalReleaseEndsGestureWithoutClickOrOtherButtonChanges ) {
 	WindowSettings settings{ 320, 240, "Modal Input State Test" };

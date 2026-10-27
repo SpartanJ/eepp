@@ -2352,6 +2352,15 @@ solution "eepp"
 		kind "ConsoleApp"
 		targetdir("./bin/unit_tests")
 		defines { "EE_UNIT_TESTS" }
+		if os.is("macosx") and table.contains(backends, "SDL2") then
+			-- Inject native SDL2 drops to test Cocoa's modal pointer handling.
+			defines { "EE_SDL_VERSION_2" }
+			if is_xcode() or _OPTIONS["use-frameworks"] then
+				links { get_backend_link_name( "SDL2" ) }
+			else
+				linkoptions { popen("sdl2-config --libs"):gsub("\n", "") }
+			end
+		end
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		includedirs { "src/modules/eterm/include/", "src/thirdparty", "src/modules/vfs/src/" }
 		if vfs_sftp_enabled() then
