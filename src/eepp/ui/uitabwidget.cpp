@@ -1162,6 +1162,14 @@ Uint32 UITabWidget::onMessage( const NodeMessage* msg ) {
 	return 0;
 }
 
+Uint32 UITabWidget::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	// Only the bare tab bar handles wheel messages here; page content must still bubble normally.
+	if ( offset.y != 0.f && mAllowSwitchTabsInEmptySpaces && getEventDispatcher() &&
+		 getEventDispatcher()->getMouseOverNode() == mTabBar )
+		return 1;
+	return UIWidget::onMouseWheel( offset, flipped );
+}
+
 std::optional<SplitDirection> UITabWidget::getDropDirection() const {
 	Vector2f mousePos( getEventDispatcher()->getMousePosf() );
 	mousePos = convertToNodeSpace( mousePos );

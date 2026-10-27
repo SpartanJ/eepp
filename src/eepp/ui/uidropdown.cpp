@@ -109,6 +109,15 @@ UIDropDown* UIDropDown::showList() {
 	return this;
 }
 
+Uint32 UIDropDown::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	// Dropdown selection uses discrete wheel button events in onMouseUp(). Consume the precise
+	// vertical wheel event too, including fractional tails and selection boundaries, so ancestors
+	// do not scroll while the pointer is over either dropdown implementation.
+	if ( mEnabled && mVisible && isMouseOver() && getPopUpWidget() && offset.y != 0.f )
+		return 1;
+	return UITextInput::onMouseWheel( offset, flipped );
+}
+
 Float UIDropDown::getPopUpWidth( Float contentsWidth ) const {
 	Float width = NULL != mFriendNode ? mFriendNode->getSize().getWidth() : getSize().getWidth();
 

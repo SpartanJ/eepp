@@ -67,6 +67,13 @@ Uint32 UISpinBox::onKeyDown( const KeyEvent& event ) {
 	return UIWidget::onKeyDown( event );
 }
 
+Uint32 UISpinBox::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	// The input and buttons change the value through discrete MouseClick messages.
+	if ( offset.y != 0.f )
+		return 1;
+	return UIWidget::onMouseWheel( offset, flipped );
+}
+
 Uint32 UISpinBox::getType() const {
 	return UI_TYPE_SPINBOX;
 }

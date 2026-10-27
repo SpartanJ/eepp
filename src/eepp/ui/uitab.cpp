@@ -372,6 +372,13 @@ bool UITab::onCreateContextMenu( const Vector2i& position, const Uint32& flags )
 	return true;
 }
 
+Uint32 UITab::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	// MouseUp messages switch tabs or scroll the tab strip when the modifier is pressed.
+	if ( offset.y != 0.f && getTabWidget() )
+		return 1;
+	return UISelectButton::onMouseWheel( offset, flipped );
+}
+
 Uint32 UITab::onKeyDown( const KeyEvent& event ) {
 	if ( event.getKeyCode() == KEY_RETURN || event.getKeyCode() == KEY_KP_ENTER ||
 		 event.getKeyCode() == KEY_SPACE ) {

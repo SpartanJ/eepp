@@ -579,14 +579,23 @@ Uint32 UITerminal::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 }
 
 Uint32 UITerminal::onMouseWheel( const Vector2f& offset, bool ) {
+	if ( !mTerm )
+		return 0;
 	const Uint32 modifiers = getInput()->getSanitizedModState();
 	if ( modifiers != 0 && modifiers != KEYMOD_SHIFT )
 		return 1;
+	if ( offset == Vector2f::Zero )
+		return 0;
+	// Discrete button events have already been sent to the terminal application. Do not also
+	// scroll local history or an ancestor when the application owns the wheel. Shift overrides
+	// mouse capture for local selection and scrolling on the main screen.
+	if ( mTerm->isAltScr() || ( mTerm->isAppCapturingMouse() && modifiers != KEYMOD_SHIFT ) ) {
+		return 1;
+	}
 	if ( offset.y == 0.f )
 		return 0;
 
-	const Float rows =
-		modifiers == KEYMOD_SHIFT ? getVisibleArea() : ( mTerm ? mTerm->getClickStep() : 1.f );
+	const Float rows = modifiers == KEYMOD_SHIFT ? getVisibleArea() : mTerm->getClickStep();
 	const Float multiplier = rows * mTerm->getLineHeight();
 	const Float factor = getWheelScrollFactor( offset.y );
 	return scrollBy( { 0.f, -factor * multiplier }, std::abs( factor ) ) ? 1 : 0;

@@ -66,6 +66,8 @@ class EE_API UITab : public UISelectButton {
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
+
 	virtual Uint32 onMessage( const NodeMessage* message );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );

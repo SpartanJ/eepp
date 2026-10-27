@@ -163,6 +163,8 @@ class EE_API UIImageViewer : public UIWidget {
 
 	virtual Uint32 onMessage( const NodeMessage* ) override;
 
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped ) override;
+
 	virtual Uint32 onKeyDown( const KeyEvent& event ) override;
 
 	void updateImageLayout();

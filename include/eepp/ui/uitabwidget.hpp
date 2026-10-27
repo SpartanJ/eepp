@@ -284,6 +284,8 @@ class EE_API UITabWidget : public UIWidget {
 
 	virtual Uint32 onMessage( const NodeMessage* msg );
 
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
+
 	virtual void drawDroppableHovering();
 
 	void setContainerSize();

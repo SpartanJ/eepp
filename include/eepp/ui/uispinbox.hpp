@@ -30,6 +30,8 @@ class EE_API UISpinBox : public UIWidget {
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
+
 	void addValue( const double& value );
 
 	virtual UISpinBox* setMinValue( const double& minVal );

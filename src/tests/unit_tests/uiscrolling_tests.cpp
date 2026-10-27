@@ -1,12 +1,23 @@
 #include "utest.h"
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/ui/charts/uichart.hpp>
+#include <eepp/ui/models/itemlistmodel.hpp>
+#include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiconsole.hpp>
+#include <eepp/ui/uidatetimeedit.hpp>
+#include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uidropdownmodellist.hpp>
+#include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uispinbox.hpp>
+#include <eepp/ui/uitabwidget.hpp>
+#include <eepp/ui/uiwidgettable.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/inputevent.hpp>
@@ -73,6 +84,61 @@ class ScrollingTestConsole : public UIConsole {
 
 	String::HashType getLastLogHash() const { return mCmdLog.back().hash; }
 };
+
+namespace {
+
+struct WheelPropagationTest {
+	UIApplication app{
+		WindowSettings{ 320, 240, "eepp - wheel propagation test" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) };
+	UIScrollView* scrollView{ UIScrollView::New() };
+	UIWidget* content{ UIWidget::New() };
+
+	WheelPropagationTest() {
+		scrollView->setPixelsSize( 280, 160 );
+		scrollView->setParent( app.getUI()->getRoot() );
+		content->setPixelsSize( 260, 600 );
+		content->setParent( scrollView );
+		app.getUI()->getRoot()->setFocus();
+	}
+
+	void add( UIWidget* widget, const Sizef& size = { 200.f, 30.f } ) {
+		widget->setPixelsSize( size );
+		widget->setParent( content );
+		app.getUI()->flushDirtyStyleAndLayout();
+	}
+
+	void hover( Node* node, const Vector2f& position = { 10.f, 10.f } ) {
+		app.getWindow()->getInput()->setMousePos( node->convertToWorldSpace( position ).asInt() );
+	}
+
+	void wheel( const Vector2f& offset, bool discrete = true ) {
+		auto* input = app.getWindow()->getInput();
+		input->cleanStates();
+		InputEvent event{};
+		event.WinID = app.getWindow()->getWindowID();
+		if ( discrete ) {
+			// Native backends emit wheel button events as well as the precise wheel event.
+			event.Type = InputEvent::MouseButtonDown;
+			event.button.button =
+				offset.y != 0.f ? ( offset.y > 0.f ? EE_BUTTON_WHEELUP : EE_BUTTON_WHEELDOWN )
+								: ( offset.x > 0.f ? EE_BUTTON_WHEELRIGHT : EE_BUTTON_WHEELLEFT );
+			event.button.state = 1;
+			input->processEventForWindow( &event );
+			event.Type = InputEvent::MouseButtonUp;
+			event.button.state = 0;
+			input->processEventForWindow( &event );
+		}
+		event.Type = InputEvent::MouseWheel;
+		event.wheel.x = offset.x;
+		event.wheel.y = offset.y;
+		event.wheel.direction = InputEvent::WheelEvent::Normal;
+		input->processEventForWindow( &event );
+		app.getUI()->update( Milliseconds( 16 ) );
+	}
+};
+
+} // namespace
 
 UTEST( UIScrolling, SceneSmoothScrollingDefaultsCanBeInheritedSnapshottedAndAppliedNow ) {
 	UIApplication app(
@@ -234,6 +300,257 @@ UTEST( UIScrolling, CodeEditorPluginCanConsumePreciseWheelBeforeEditorScrolls ) 
 	editor->unregisterPlugin( &plugin );
 
 	eeDelete( editor );
+}
+
+UTEST( UIScrolling, DropDownWheelChangesSelectionWithoutScrollingAncestor ) {
+	WheelPropagationTest test;
+	auto* dropdown = UIDropDownList::New();
+	test.add( dropdown );
+	auto* list = dropdown->getListBox();
+	list->addListBoxItems( { "First", "Second", "Third" } );
+	list->setSelected( 0 );
+	test.hover( dropdown );
+	ASSERT_TRUE( test.scrollView->getVerticalScrollBar()->isEnabled() );
+
+	// Selection changes once per step and retains wheel ownership at either end of the list.
+	const Uint32 expectedSelection[] = { 1, 2, 2, 1, 0, 0 };
+	for ( size_t i = 0; i < 6; ++i ) {
+		test.wheel( { 0.f, i < 3 ? -1.f : 1.f } );
+		EXPECT_EQ( expectedSelection[i], list->getItemSelectedIndex() );
+		EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+	}
+
+	// A fractional tail without a discrete step must not scroll the containing view either.
+	test.wheel( { 0.f, -0.25f }, false );
+	EXPECT_EQ( 0u, list->getItemSelectedIndex() );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+
+	test.hover( test.content, { 220.f, 80.f } );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_EQ( 0u, list->getItemSelectedIndex() );
+	EXPECT_GT( test.scrollView->getVerticalScrollBar()->getValue(), 0.f );
+}
+
+UTEST( UIScrolling, ModelDropDownWheelDoesNotScrollAncestor ) {
+	WheelPropagationTest test;
+	auto* dropdown = UIDropDownModelList::New();
+	dropdown->setModel( Models::ItemListOwnerModel<std::string>::create(
+		std::vector<std::string>{ "First", "Second", "Third" } ) );
+	test.add( dropdown );
+	auto* list = dropdown->getListView();
+	list->getSelection().set( list->getModel()->index( 0, 0 ) );
+	test.hover( dropdown );
+	test.wheel( { 0.f, -1.f } );
+	ASSERT_FALSE( list->getSelection().isEmpty() );
+	EXPECT_EQ( 1, list->getSelection().first().row() );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+}
+
+UTEST( UIScrolling, SliderAndScrollbarWheelChangesValueOnceWithoutScrollingAncestor ) {
+	WheelPropagationTest test;
+	auto* slider = UISlider::NewHorizontal();
+	test.add( slider );
+	slider->setValue( 0.5f );
+	slider->setClickStep( 0.1f );
+	test.hover( slider->getSliderButton(), { 1.f, 1.f } );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_NEAR( 0.6f, slider->getValue(), 0.0001f );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+	test.hover( slider, { 10.f, 10.f } );
+	test.wheel( { 1.f, 0.f } );
+	EXPECT_NEAR( 0.7f, slider->getValue(), 0.0001f );
+	slider->setValue( 1.f );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_NEAR( 1.f, slider->getValue(), 0.0001f );
+	test.wheel( { 0.f, -0.25f }, false );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+	eeDelete( slider );
+
+	auto* bar = UIScrollBar::NewVertical();
+	test.add( bar, { 30.f, 120.f } );
+	bar->setValue( 0.5f );
+	bar->setClickStep( 0.1f );
+	test.hover( bar->getSlider(), { 5.f, 5.f } );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_NEAR( 0.6f, bar->getValue(), 0.0001f );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+}
+
+UTEST( UIScrolling, SpinBoxWheelDoesNotScrollAncestorAtValueLimits ) {
+	WheelPropagationTest test;
+	auto* spin = UISpinBox::New();
+	spin->setMinValue( 0 );
+	spin->setMaxValue( 2 );
+	spin->setValue( 1 );
+	spin->setClickStep( 1 );
+	test.add( spin );
+	spin->getTextInput()->setFocus();
+	test.hover( spin->getTextInput() );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_EQ( 0.0, spin->getValue() );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_EQ( 0.0, spin->getValue() );
+	test.wheel( { 0.f, 1.f } );
+	EXPECT_EQ( 1.0, spin->getValue() );
+	test.wheel( { 0.f, -0.25f }, false );
+	EXPECT_EQ( 1.0, spin->getValue() );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+}
+
+UTEST( UIScrolling, TabWheelConsumesOnlyTabBarGestures ) {
+	WheelPropagationTest test;
+	auto* tabs = UITabWidget::New();
+	tabs->add( "A", UIWidget::New() );
+	tabs->add( "B", UIWidget::New() );
+	tabs->setTabSelected( tabs->getTab( 0 ) );
+	test.add( tabs, { 240.f, 120.f } );
+	test.hover( tabs->getTab( 0 ) );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_EQ( 1u, tabs->getTabSelectedIndex() );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+
+	tabs->setAllowSwitchTabsInEmptySpaces( true );
+	test.hover( tabs->getTabBar(), { 230.f, 5.f } );
+	test.wheel( { 0.f, 1.f } );
+	EXPECT_EQ( 0u, tabs->getTabSelectedIndex() );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+
+	// A page that does not handle the wheel must still let the outer scroll view move.
+	test.hover( tabs->getTab( 0 )->getOwnedWidget(), { 30.f, 30.f } );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_GT( test.scrollView->getVerticalScrollBar()->getValue(), 0.f );
+}
+
+UTEST( UIScrolling, LegacyListAndTableWheelDoNotScrollAncestor ) {
+	WheelPropagationTest test;
+	auto* list = UIListBox::New();
+	test.add( list, { 200.f, 120.f } );
+	for ( int i = 0; i < 20; ++i )
+		list->addListBoxItem( "Row" );
+	test.app.getUI()->flushDirtyStyleAndLayout();
+	ASSERT_TRUE( list->getVerticalScrollBar()->isVisible() );
+	test.hover( list->getItem( 0 ) );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_GT( list->getVerticalScrollBar()->getValue(), 0.f );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+	eeDelete( list );
+
+	auto* table = UIWidgetTable::New();
+	table->setColumnsCount( 1 );
+	table->setRowHeight( 24 );
+	test.add( table, { 200.f, 120.f } );
+	for ( int i = 0; i < 20; ++i ) {
+		auto* row = UIWidgetTableRow::New();
+		row->setParent( table->getContainer() );
+		row->setColumn( 0, UIWidget::New() );
+		table->add( row );
+	}
+	test.app.getUI()->flushDirtyStyleAndLayout();
+	ASSERT_TRUE( table->getVerticalScrollBar()->isVisible() );
+	test.hover( table->getRow( 0 )->getColumn( 0 ) );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_GT( table->getVerticalScrollBar()->getValue(), 0.f );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+}
+
+UTEST( UIScrolling, ImageZoomWheelDoesNotScrollAncestor ) {
+	WheelPropagationTest test;
+	auto* viewer = Tools::UIImageViewer::New();
+	test.add( viewer, { 200.f, 120.f } );
+	test.hover( viewer );
+	auto* input = test.app.getWindow()->getInput();
+	InputEvent modifiers{};
+	modifiers.Type = InputEvent::KeyDown;
+	modifiers.key.keysym.mod = KeyMod::getDefaultModifier();
+	input->processEventForWindow( &modifiers );
+	const Float scale = viewer->getImage()->getScale().x;
+	test.wheel( { 0.f, 1.f } );
+	EXPECT_GT( viewer->getImage()->getScale().x, scale );
+	test.wheel( { 0.f, -0.25f }, false );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+	modifiers.Type = InputEvent::KeyUp;
+	modifiers.key.keysym.mod = 0;
+	input->processEventForWindow( &modifiers );
+}
+
+UTEST( UIScrolling, DateTimeWheelEditingConsumesOnlyWhenItChangesTheValue ) {
+	WheelPropagationTest test;
+	auto* edit = UIDateTimeEdit::New( DateTimeEditMode::Date );
+	test.add( edit );
+	edit->setDate( CalendarDate{ 2026, 10, 26 } );
+	edit->setWheelEditingEnabled( true );
+	edit->setFocus();
+	edit->setActiveSection( DateTimeSection::Day );
+	test.hover( edit );
+	test.wheel( { 0.f, -1.f } );
+	ASSERT_TRUE( edit->getDate().has_value() );
+	EXPECT_EQ( 25, edit->getDate()->day );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+
+	edit->setWheelEditingEnabled( false );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_EQ( 25, edit->getDate()->day );
+	EXPECT_GT( test.scrollView->getVerticalScrollBar()->getValue(), 0.f );
+}
+
+UTEST( UIScrolling, ChartWheelZoomConsumesOnlyInsideThePlot ) {
+	WheelPropagationTest test;
+	auto* chart = Charts::UIChart::New();
+	test.add( chart, { 240.f, 140.f } );
+	chart->setAxisRange( chart->xAxis(), { 0, 10 } );
+	chart->setAxisRange( chart->yAxis(), { 0, 10 } );
+	test.app.getUI()->draw();
+	test.hover( chart, { 120.f, 60.f } );
+	test.wheel( { 0.f, -1.f } );
+	const auto range = chart->axisRange( chart->xAxis() );
+	EXPECT_GT( range.max - range.min, 10.0 );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+
+	test.hover( chart, { 2.f, 2.f } );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_NEAR( range.max, chart->axisRange( chart->xAxis() ).max, 0.0001 );
+	EXPECT_GT( test.scrollView->getVerticalScrollBar()->getValue(), 0.f );
+}
+
+UTEST( UIScrolling, ScrollableEditorAndConsoleConsumeBeforeAncestor ) {
+	WheelPropagationTest test;
+	auto* editor = UICodeEditor::New();
+	test.add( editor, { 200.f, 100.f } );
+	editor->getDocument().textInput( String( 100, '\n' ) );
+	test.app.getUI()->flushDirtyStyleAndLayout();
+	test.hover( editor );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_GT( editor->getScroll().y, 0.f );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+	eeDelete( editor );
+
+	auto* console = eeNew( ScrollingTestConsole, () );
+	test.add( console, { 200.f, 100.f } );
+	console->setScrollRange( 20 );
+	test.hover( console );
+	test.wheel( { 0.f, 1.f } );
+	EXPECT_EQ( 6, console->getScrollOffset() );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+}
+
+UTEST( UIScrolling, NestedScrollViewsConsumeBeforeAncestorAndBubbleAtBoundary ) {
+	WheelPropagationTest test;
+	auto* inner = UIScrollView::New();
+	test.add( inner, { 200.f, 120.f } );
+	auto* content = UIWidget::New();
+	content->setPixelsSize( 160, 500 );
+	content->setParent( inner );
+	test.app.getUI()->flushDirtyStyleAndLayout();
+	test.hover( content );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_GT( inner->getVerticalScrollBar()->getValue(), 0.f );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+
+	inner->getVerticalScrollBar()->setValue( 1.f );
+	test.hover( inner, { 10.f, 10.f } );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_NEAR( 1.f, inner->getVerticalScrollBar()->getValue(), 0.0001f );
+	EXPECT_GT( test.scrollView->getVerticalScrollBar()->getValue(), 0.f );
 }
 
 UTEST( UIScrolling, MouseWheelListenerConsumesBeforeScrollableAncestor ) {

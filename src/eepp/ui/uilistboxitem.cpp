@@ -78,6 +78,15 @@ Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 	return 1;
 }
 
+Uint32 UIListBoxItem::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	// onMouseUp() forwards the discrete wheel step to the owning list's scrollbar.
+	if ( offset.y != 0.f &&
+		 getParent()->getParent()->asType<UIListBox>()->getVerticalScrollBar()->isVisible() ) {
+		return 1;
+	}
+	return UITextView::onMouseWheel( offset, flipped );
+}
+
 Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( Flags & EE_BUTTONS_LRM ) {
 		UIListBox* LBParent = getParent()->getParent()->asType<UIListBox>();

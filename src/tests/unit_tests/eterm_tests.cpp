@@ -9,6 +9,7 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/inputevent.hpp>
@@ -21,6 +22,7 @@
 #include <eterm/terminal/terminalgraphics.hpp>
 #include <eterm/terminal/terminalsearch.hpp>
 #include <eterm/terminal/terminalsession.hpp>
+#include <eterm/ui/uiterminal.hpp>
 #include <limits>
 #include <thread>
 
@@ -198,6 +200,63 @@ class SelectionTestDisplay : public TerminalDisplay {
 
 	using TerminalDisplay::positionToGrid;
 };
+
+UTEST( eterm_ui, applicationWheelDoesNotScrollHistoryOrAncestor ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm wheel propagation", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(),
+										 1 ) );
+	for ( bool alternateScreen : { false, true } ) {
+		auto pty = std::make_unique<MockPty>();
+		for ( int line = 0; line < 80; ++line )
+			pty->mBuffer += "wheel history\r\n";
+		pty->mBuffer += alternateScreen ? "\033[?1049h" : "\033[?1000h";
+		pty->mLoopWrites = false;
+		auto session =
+			TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+		ASSERT_TRUE(
+			waitForSnapshot( session, [alternateScreen]( const TerminalSnapshot& snapshot ) {
+				return alternateScreen ? snapshot.altScreen
+									   : ( snapshot.windowMode & MODE_MOUSEBTN ) != 0;
+			} ) != nullptr );
+		auto display = std::make_shared<SelectionTestDisplay>(
+			app.getWindow(), app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+		EXPECT_EQ( alternateScreen, display->isAltScr() );
+		EXPECT_EQ( !alternateScreen, display->isAppCapturingMouse() );
+		auto* scroll = EE::UI::UIScrollView::New();
+		scroll->setPixelsSize( 500, 300 );
+		scroll->setParent( app.getUI()->getRoot() );
+		auto* content = EE::UI::UIWidget::New();
+		content->setPixelsSize( 450, 900 );
+		content->setParent( scroll );
+		int propagatedWheelEvents = 0;
+		content->on( EE::Scene::Event::MouseWheel,
+					 [&]( const EE::Scene::Event* ) { ++propagatedWheelEvents; } );
+		auto* terminal = eterm::UI::UITerminal::New( display );
+		terminal->setPixelsSize( 400, 200 );
+		terminal->setParent( content );
+		app.getUI()->flushDirtyStyleAndLayout();
+		ASSERT_TRUE( scroll->getVerticalScrollBar()->isEnabled() );
+		auto* input = app.getWindow()->getInput();
+		input->setMousePos( terminal->convertToWorldSpace( { 40.f, 40.f } ).asInt() );
+		app.getUI()->update( Milliseconds( 16 ) );
+		const Float previousValue = terminal->getVerticalScrollBar()->getValue();
+		InputEvent wheel{};
+		wheel.Type = InputEvent::MouseWheel;
+		wheel.WinID = app.getWindow()->getWindowID();
+		wheel.wheel.y = 1.f;
+		input->processEventForWindow( &wheel );
+		app.getUI()->update( Milliseconds( 16 ) );
+		EXPECT_NEAR( previousValue, terminal->getVerticalScrollBar()->getValue(), 0.0001f );
+		wheel.wheel.y = 0.f;
+		wheel.wheel.x = 1.f;
+		input->processEventForWindow( &wheel );
+		app.getUI()->update( Milliseconds( 16 ) );
+		EXPECT_EQ( 0, propagatedWheelEvents );
+		EXPECT_NEAR( 0.f, scroll->getVerticalScrollBar()->getValue(), 0.0001f );
+		eeDelete( scroll );
+	}
+}
 
 UTEST( eterm_display, selection_clamps_each_axis_independently ) {
 	EE::UI::UIApplication app(

@@ -415,6 +415,13 @@ Uint32 UIImageViewer::onMessage( const NodeMessage* msg ) {
 	return 0;
 }
 
+Uint32 UIImageViewer::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	// Zoom and gallery navigation use discrete MouseUp messages.
+	if ( offset.y != 0.f && ( getInput()->isKeyModPressed() || mHasGallery ) )
+		return 1;
+	return UIWidget::onMouseWheel( offset, flipped );
+}
+
 Sizef UIImageViewer::getOrientedImageSize() const {
 	if ( !mImage || !mImage->getDrawable() )
 		return {};

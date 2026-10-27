@@ -148,6 +148,13 @@ Uint32 UISlider::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	return UIWidget::onMouseDown( position, flags );
 }
 
+Uint32 UISlider::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	// manageClick() handles the discrete wheel step through MouseUp, including on the thumb.
+	if ( offset.x != 0.f || offset.y != 0.f )
+		return 1;
+	return UIWidget::onMouseWheel( offset, flipped );
+}
+
 void UISlider::adjustChildren() {
 	mUpdating = true;
 

@@ -149,6 +149,14 @@ Uint32 UIWidgetTableRow::onMessage( const NodeMessage* Msg ) {
 	return 0;
 }
 
+Uint32 UIWidgetTableRow::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	// MouseUp messages already forward the discrete step to the table's scrollbar.
+	auto* table = gridParent();
+	if ( offset.y != 0.f && table && table->getVerticalScrollBar()->isVisible() )
+		return 1;
+	return UIWidget::onMouseWheel( offset, flipped );
+}
+
 void UIWidgetTableRow::onAutoSize() {
 	UIWidgetTable* MyParent = getParent()->getParent()->asType<UIWidgetTable>();
 
