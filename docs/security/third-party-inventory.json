@@ -16,25 +16,25 @@
     {
       "name": "args",
       "path": "src/thirdparty/args",
-      "version": null,
-      "version_evidence": "src/thirdparty/args/args.hxx",
+      "version": "6.6.1",
+      "version_evidence": "upstream tag 6.6.1 (args.hxx matches verbatim)",
       "upstream": "https://github.com/Taywee/args",
-      "assessment": "snapshot",
-      "notes": "Command-line parser; no embedded release identifier.",
-      "source_revision": "33f8a2eebb4d850f4f8a6778d6ba79b77a922de0",
-      "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "9e474a395a807dfcddb04a9895a6e081c05348705efa93d148ba36dd68d36467"
+      "assessment": "screened",
+      "notes": "Updated 2026-10-26 from upstream d877e96 (6.2.2+10, 2019-08-18, unmodified) to 6.6.1 unmodified; LICENSE added.",
+      "source_revision": "35414206ed9b8aa838a4a0b4c9194604c564d5ac",
+      "source_revision_kind": "upstream release tag commit",
+      "source_fingerprint_sha256": "e755e3a1d777f8f1086d320194bfdd38ea2436b415468a790037f38706d01dfb"
     },
     {
       "name": "backward-cpp",
       "path": "src/thirdparty/backward-cpp",
-      "version": null,
-      "version_evidence": "src/thirdparty/backward-cpp/backward.hpp",
+      "version": "1.6+70 (0bfd0a0)",
+      "version_evidence": "closest upstream commit by content",
       "upstream": "https://github.com/bombela/backward-cpp",
-      "assessment": "snapshot",
-      "notes": "Locally modified stack-trace implementation.",
-      "source_revision": "dd039fc2335f2649ccfd176d63ca3435edac4849",
-      "source_revision_kind": "last eepp commit touching directory",
+      "assessment": "owned",
+      "notes": "eepp-maintained fork, forked from upstream 0bfd0a0 (v1.6+70, 2025-04-14). Upstream does not support MinGW; eepp adds demangling and symbol names for Windows with GCC/MinGW (cxxabi, Z-prefixed names, UnDecorateSymbolName fallback). Review it as eepp code.",
+      "source_revision": "0bfd0a0",
+      "source_revision_kind": "fork base commit",
       "source_fingerprint_sha256": "39ccdd0e21dcbaf89437f215649b755b4337e94a7e4eead4c1e92fc3c490151f"
     },
     {
@@ -64,14 +64,14 @@
     {
       "name": "cpp-unicodelib",
       "path": "src/thirdparty/cpp-unicodelib",
-      "version": null,
-      "version_evidence": "src/thirdparty/cpp-unicodelib/unicodelib.h",
+      "version": "18.0.0",
+      "version_evidence": "upstream tag v18.0.0 plus one local patch",
       "upstream": "https://github.com/yhirose/cpp-unicodelib",
-      "assessment": "snapshot",
-      "notes": "Unicode segmentation and character properties.",
-      "source_revision": "cc709e9d5df695cf625513ef91d4f2256765ef12",
-      "source_revision_kind": "last eepp commit touching directory",
-      "source_fingerprint_sha256": "618cf0af9708dabe74a36f7f6d1f310cecd77caeff1c9791488feb701d980743"
+      "assessment": "screened",
+      "notes": "Updated 2026-10-26 from upstream d68020d (Unicode 16.0.0, 2024-10-13) to v18.0.0 (Unicode 18.0.0). Local patch kept in unicodelib.h and unicodelib_encodings.h: the C++17 check also accepts _MSVC_LANG, since eepp does not build with /Zc:__cplusplus. LICENSE added.",
+      "source_revision": "469224e560fb3000615fde3186e654d617667c5a",
+      "source_revision_kind": "upstream release tag commit plus local patch",
+      "source_fingerprint_sha256": "411e29096df2a4958f70cc3f538a61ef05784c836f3e84f301e4e296b9ae0318"
     },
     {
       "name": "dr_libs",
@@ -112,13 +112,13 @@
     {
       "name": "emscripten-browser-clipboard",
       "path": "src/thirdparty/emscripten-browser-clipboard",
-      "version": null,
-      "version_evidence": "src/thirdparty/emscripten-browser-clipboard/emscripten_browser_clipboard.h",
+      "version": "633dc92",
+      "version_evidence": "closest upstream commit by content",
       "upstream": "https://github.com/Armchair-Software/emscripten-browser-clipboard",
-      "assessment": "snapshot",
-      "notes": "Web-specific clipboard bridge; local changes.",
-      "source_revision": "d31e880cc327c1cf523f6de0db7e57fd44a21971",
-      "source_revision_kind": "last eepp commit touching directory",
+      "assessment": "owned",
+      "notes": "eepp-maintained fork, forked from upstream 633dc92 (2023-03-09). Adds Ctrl/Cmd+V and right-click paste handling for SDL2's Emscripten backend. Upstream's later commits are not tracked; review it as eepp code.",
+      "source_revision": "633dc92",
+      "source_revision_kind": "fork base commit",
       "source_fingerprint_sha256": "c971d35240283965309dc98556181e80425c2e0f745f23e00171b51f1d18629f"
     },
     {
@@ -148,13 +148,13 @@
     {
       "name": "fts_fuzzy_match",
       "path": "src/thirdparty/fts_fuzzy_match",
-      "version": null,
-      "version_evidence": "src/thirdparty/fts_fuzzy_match/fts_fuzzy_match.h",
+      "version": "d541eb4",
+      "version_evidence": "closest upstream commit by content",
       "upstream": "https://github.com/forrestthewoods/lib_fts",
-      "assessment": "snapshot",
-      "notes": "Fuzzy search matcher.",
-      "source_revision": "dfb0820d0f9f8cb6b03b2d37000cd9b229e39e2f",
-      "source_revision_kind": "last eepp commit touching directory",
+      "assessment": "screened",
+      "notes": "Base upstream lib_fts d541eb4 (2017-02-18), the last upstream change to code/fts_fuzzy_match.h. Local change: [[maybe_unused]] on three declarations.",
+      "source_revision": "d541eb4",
+      "source_revision_kind": "upstream commit plus local patches",
       "source_fingerprint_sha256": "c00b20fafd2fad1247d4ca239523a445f39702a85ea119f68573ea85bbc34762"
     },
     {
@@ -220,13 +220,13 @@
     {
       "name": "jpeg-compressor",
       "path": "src/thirdparty/jpeg-compressor",
-      "version": null,
-      "version_evidence": "src/thirdparty/jpeg-compressor/jpge.cpp",
+      "version": "aeb7d3b (jpge 1.05)",
+      "version_evidence": "closest upstream commit by content",
       "upstream": "https://github.com/richgel999/jpeg-compressor",
-      "assessment": "snapshot",
-      "notes": "jpge encoder banner 1.05; jpgd decoder snapshot has no reliable release marker. Reported CVEs target absent stb_image.c.",
-      "source_revision": "f99db202de52d1e02bc04a197b19074afb343577",
-      "source_revision_kind": "last eepp commit touching directory",
+      "assessment": "screened",
+      "notes": "Base upstream aeb7d3b (2020-05-07), upstream's latest commit. Local change: drops #include <malloc.h> (absent on macOS). Reported CVEs target stb_image.c, which is absent.",
+      "source_revision": "aeb7d3b",
+      "source_revision_kind": "upstream commit plus local patches",
       "source_fingerprint_sha256": "835500e66ca55c3dbf59c3c9764be018fae318181012627ec81c0fd469c29aa3"
     },
     {
@@ -543,13 +543,13 @@
     {
       "name": "portable-file-dialogs",
       "path": "src/thirdparty/portable-file-dialogs",
-      "version": null,
-      "version_evidence": "src/thirdparty/portable-file-dialogs/portable-file-dialogs.h",
+      "version": "0.1.0+67 (7f852d8)",
+      "version_evidence": "closest upstream commit by content",
       "upstream": "https://github.com/samhocevar/portable-file-dialogs",
-      "assessment": "snapshot",
-      "notes": "Native dialog helper with local platform changes.",
-      "source_revision": "835c1b7a2cbd124991f621459b559604755c25a0",
-      "source_revision_kind": "last eepp commit touching directory",
+      "assessment": "owned",
+      "notes": "eepp-maintained fork, forked from upstream 7f852d8 (0.1.0+67, 2022-11-11); upstream is largely unmaintained. Adds a Windows owner-window fallback, save-dialog default extension and flags, macOS save-dialog default location/name, and _WIN32_WINNT and POSIX/BSD feature macros. Review it as eepp code.",
+      "source_revision": "7f852d8",
+      "source_revision_kind": "fork base commit",
       "source_fingerprint_sha256": "67750c44e9d741d8cfff212bea0de26879e7daeab36f5cdc2ad64db3e33c5d84"
     },
     {

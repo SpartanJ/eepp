@@ -2,7 +2,7 @@
  *
  * https://github.com/Taywee/args
  *
- * Copyright (c) 2016-2019 Taylor C. Richberger <taywee@gmx.com> and Pavel
+ * Copyright (c) 2016-2024 Taylor Richberger <taylor@axfive.net> and Pavel
  * Belikov
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -32,6 +32,15 @@
 
 #ifndef ARGS_HXX
 #define ARGS_HXX
+#pragma push_macro("min")
+#pragma push_macro("max")
+#undef min
+#undef max
+
+#define ARGS_VERSION "6.6.1"
+#define ARGS_VERSION_MAJOR 6
+#define ARGS_VERSION_MINOR 6
+#define ARGS_VERSION_PATCH 1
 
 #include <algorithm>
 #include <iterator>
@@ -45,18 +54,21 @@
 #include <unordered_set>
 #include <type_traits>
 #include <cstddef>
+#include <cctype>
+#include <cerrno>
+#include <cstdlib>
+#include <limits>
+#include <iostream>
 
-#ifdef ARGS_TESTNAMESPACE
-namespace argstest
-{
-#else
+#if defined(_MSC_VER) && _MSC_VER <= 1800
+#define noexcept
+#endif
 
 /** \namespace args
  * \brief contains all the functionality of the args library
  */
 namespace args
 {
-#endif
     /** Getter to grab the value from the argument type.
      *
      * If the Get() function of the type returns a reference, so does this, and
@@ -87,6 +99,167 @@ namespace args
             }
         }
         return length;
+    }
+
+    /** Safe addition to prevent integer overflow.
+     * Returns true if the addition is successful, false if it would overflow.
+     */
+    template<typename T>
+    bool SafeAdd(T a, T b, T& out) noexcept
+    {
+        static_assert(std::is_integral<T>::value, "SafeAdd requires integral types.");
+        if (std::is_unsigned<T>::value)
+        {
+            using U = typename std::make_unsigned<T>::type;
+            const U ua = static_cast<U>(a);
+            const U ub = static_cast<U>(b);
+            const U maxv = std::numeric_limits<U>::max();
+            if (ua > maxv - ub)
+            {
+                return false;
+            }
+            out = static_cast<T>(ua + ub);
+            return true;
+        }
+        else
+        {
+#if defined(__clang__) || defined(__GNUC__)
+            return !__builtin_add_overflow(a, b, &out);
+#else
+            // Fallback bounds check
+            if (b > 0 && a > std::numeric_limits<T>::max() - b)
+            {
+                return false;
+            }
+            if (b < 0 && a < std::numeric_limits<T>::min() - b)
+            {
+                return false;
+            }
+            out = a + b;
+            return true;
+#endif
+        }
+    }
+
+    /** Safe multiplication to prevent integer overflow.
+     * Returns true if the multiplication is successful, false if it would overflow.
+     */
+    template<typename T>
+    bool SafeMultiply(T a, T b, T& out) noexcept
+    {
+        static_assert(std::is_integral<T>::value, "SafeMultiply requires integral types.");
+
+        if (a == 0 || b == 0)
+        {
+            out = 0;
+            return true;
+        }
+
+        if (std::is_unsigned<T>::value)
+        {
+            using U = typename std::make_unsigned<T>::type;
+            const U ua = static_cast<U>(a);
+            const U ub = static_cast<U>(b);
+            const U maxv = std::numeric_limits<U>::max();
+            if (ub > maxv / ua)
+            {
+                return false;
+            }
+            out = static_cast<T>(ua * ub);
+            return true;
+        }
+        else
+        {
+#if defined(__clang__) || defined(__GNUC__)
+            return !__builtin_mul_overflow(a, b, &out);
+#else
+            // Fallback bounds check
+            if (a == -1 && b == std::numeric_limits<T>::min())
+            {
+                return false;
+            }
+            if (b == -1 && a == std::numeric_limits<T>::min())
+            {
+                return false;
+            }
+            if ((a > 0 && b > 0 && a > std::numeric_limits<T>::max() / b) ||
+                (a > 0 && b < 0 && b < std::numeric_limits<T>::min() / a) ||
+                (a < 0 && b > 0 && a < std::numeric_limits<T>::min() / b) ||
+                (a < 0 && b < 0 && a < std::numeric_limits<T>::max() / b))
+            {
+                return false;
+            }
+            out = a * b;
+            return true;
+#endif
+        }
+    }
+
+    /** Safe subtraction to prevent integer underflow.
+     * Returns true if the subtraction is successful, false if it would underflow.
+     */
+    template<typename T>
+    bool SafeSub(T a, T b, T& out) noexcept
+    {
+        static_assert(std::is_integral<T>::value, "SafeSub requires integral types.");
+        if (std::is_unsigned<T>::value)
+        {
+            if (a < b)
+            {
+                return false;
+            }
+            out = a - b;
+            return true;
+        }
+        else
+        {
+#if defined(__clang__) || defined(__GNUC__)
+            return !__builtin_sub_overflow(a, b, &out);
+#else
+            // Fallback bounds check
+            if (b > 0 && a < std::numeric_limits<T>::min() + b)
+            {
+                return false;
+            }
+            if (b < 0 && a > std::numeric_limits<T>::max() + b)
+            {
+                return false;
+            }
+            out = a - b;
+            return true;
+#endif
+        }
+    }
+
+    /** Safe negation to prevent integer overflow.
+     * Returns true if the negation is successful, false if it would overflow.
+     */
+    // Unsigned overload
+    template<typename T>
+    typename std::enable_if<std::is_unsigned<T>::value, bool>::type
+    SafeNeg(T a, T& out) noexcept
+    {
+        static_assert(std::is_integral<T>::value, "SafeNeg requires integral types.");
+        if (a != 0)
+        {
+            return false;
+        }
+        out = 0;
+        return true;
+    }
+
+    // Signed overload
+    template<typename T>
+    typename std::enable_if<std::is_signed<T>::value, bool>::type
+    SafeNeg(T a, T& out) noexcept
+    {
+        static_assert(std::is_integral<T>::value, "SafeNeg requires integral types.");
+        if (a == std::numeric_limits<T>::min())
+        {
+            return false;
+        }
+        out = -a;
+        return true;
     }
 
     /** (INTERNAL) Wrap a vector of words into a vector of lines
@@ -139,7 +312,24 @@ namespace args
             }
 
             auto itemsize = Glyphs(*it);
-            if ((line.length() + 1 + itemsize) > currentwidth)
+            
+            // Refactored to prevent integer overflow
+            bool needsWrap = false;
+            if (itemsize >= currentwidth)
+            {
+                needsWrap = true;
+            }
+            else
+            {
+                size_t remainingWidth = (currentwidth > itemsize) ? (currentwidth - itemsize) : 0;
+                size_t nextLength = 0;
+                if (!SafeAdd<std::string::size_type>(line.length(), static_cast<std::string::size_type>(1), nextLength) || nextLength > remainingWidth)
+                {
+                    needsWrap = true;
+                }
+            }
+            
+            if (needsWrap)
             {
                 if (!empty)
                 {
@@ -176,16 +366,52 @@ namespace args
         std::string Join(const T& array, const std::string &delimiter)
         {
             std::string res;
-            for (auto &element : array)
+            
+            // Safely compute reservation size to avoid unbounded reallocations
+            using size_type = std::string::size_type;
+            size_type total = 0;
+            size_type count = 0;
+            const size_type delim_size = static_cast<size_type>(delimiter.size());
+            bool can_reserve = true;
+            
+            for (const auto &element : array)
             {
-                if (!res.empty())
+                const size_type elem_size = static_cast<size_type>(element.size());
+                if (!SafeAdd<size_type>(total, elem_size, total))
+                {
+                    can_reserve = false;
+                    break;
+                }
+                ++count;
+            }
+            
+            if (can_reserve && count > 1)
+            {
+                size_type delim_count = count - 1;
+                size_type delim_total = 0;
+                if (!SafeMultiply<size_type>(delim_count, delim_size, delim_total) ||
+                    !SafeAdd<size_type>(total, delim_total, total))
+                {
+                    can_reserve = false;
+                }
+            }
+            
+            if (can_reserve && total > 0)
+            {
+                res.reserve(total);
+            }
+            
+            bool first = true;
+            for (const auto &element : array)
+            {
+                if (!first)
                 {
                     res += delimiter;
                 }
-
                 res += element;
+                first = false;
             }
-
+            
             return res;
         }
     }
@@ -217,9 +443,9 @@ namespace args
         std::istringstream stream(in);
         std::string::size_type indent = 0;
 
-        for (char c : in)
+        for (auto c : in)
         {
-            if (!isspace(c))
+            if (!std::isspace(static_cast<unsigned char>(c)))
             {
                 break;
             }
@@ -453,7 +679,7 @@ namespace args
             Matcher(std::initializer_list<EitherFlag> in) :
                 Matcher(EitherFlag::GetShort(in), EitherFlag::GetLong(in)) {}
 
-            Matcher(Matcher &&other) : shortFlags(std::move(other.shortFlags)), longFlags(std::move(other.longFlags))
+            Matcher(Matcher &&other) noexcept : shortFlags(std::move(other.shortFlags)), longFlags(std::move(other.longFlags))
             {}
 
             ~Matcher() {}
@@ -758,7 +984,7 @@ namespace args
 #ifndef ARGS_NOEXCEPT
             if (max < min)
             {
-                throw UsageError("Nargs: max > min");
+                throw UsageError("Nargs: max < min");
             }
 #endif
         }
@@ -840,6 +1066,11 @@ namespace args
                 return false;
             }
 
+            virtual bool IsFlag() const
+            {
+                return false;
+            }
+
             virtual FlagBase *Match(const EitherFlag &)
             {
                 return nullptr;
@@ -911,7 +1142,7 @@ namespace args
             }
 
             /// Only for ARGS_NOEXCEPT
-            std::string GetErrorMsg() const
+            virtual std::string GetErrorMsg() const
             {
                 return errorMsg;
             }
@@ -1007,11 +1238,29 @@ namespace args
 
     namespace detail
     {
-        template <typename T, typename = int>
-        struct IsConvertableToString : std::false_type {};
+        template<typename T>
+        using vector = std::vector<T, std::allocator<T>>;
+        
+        template<typename K, typename T>
+        using unordered_map = std::unordered_map<K, T, std::hash<K>, 
+            std::equal_to<K>, std::allocator<std::pair<const K, T> > >;
+
+        template<typename S, typename T>
+        class is_streamable
+        {
+            template<typename SS, typename TT>
+            static auto test(int)
+            -> decltype( std::declval<SS&>() << std::declval<TT>(), std::true_type() );
+
+            template<typename, typename>
+            static auto test(...) -> std::false_type;
+
+        public:
+            using type = decltype(test<S,T>(0));
+        };
 
         template <typename T>
-        struct IsConvertableToString<T, decltype(std::declval<std::ostringstream&>() << std::declval<T>(), int())> : std::true_type {};
+        using IsConvertableToString = typename is_streamable<std::ostringstream, T>::type;
 
         template <typename T>
         typename std::enable_if<IsConvertableToString<T>::value, std::string>::type
@@ -1027,6 +1276,22 @@ namespace args
         ToString(const T &)
         {
             return {};
+        }
+
+        // Keep emplace_back for sequences: insert can require move assignment
+        // even when appending a copyable value at the end of a vector.
+        template <typename Container, typename T>
+        auto AppendMappedValue(Container &container, const T &value, int)
+            -> decltype(container.emplace_back(value), void())
+        {
+            container.emplace_back(value);
+        }
+
+        template <typename Container, typename T>
+        auto AppendMappedValue(Container &container, const T &value, long)
+            -> decltype(container.insert(std::end(container), value), void())
+        {
+            container.insert(std::end(container), value);
         }
 
         template <typename T>
@@ -1087,6 +1352,11 @@ namespace args
             FlagBase(const std::string &name_, const std::string &help_, Matcher &&matcher_, Options options_) : NamedBase(name_, help_, options_), matcher(std::move(matcher_)) {}
 
             virtual ~FlagBase() {}
+
+            virtual bool IsFlag() const override
+            {
+                return true;
+            }
 
             virtual FlagBase *Match(const EitherFlag &flag) override
             {
@@ -1160,8 +1430,21 @@ namespace args
 
 #ifdef ARGS_NOEXCEPT
             /// Only for ARGS_NOEXCEPT
+            bool usageError = false;
+            void SetUsageError()
+            {
+                usageError = true;
+            }
+            void ClearUsageError()
+            {
+                usageError = false;
+            }
             virtual Error GetError() const override
             {
+                if(usageError)
+                {
+                    return Error::Usage;
+                }
                 const auto nargs = NumberOfArguments();
                 if (nargs.min > nargs.max)
                 {
@@ -1229,7 +1512,65 @@ namespace args
             virtual void ParseValue(const std::vector<std::string> &value_) override
             {
                 syntax = value_.at(0);
-                std::istringstream(value_.at(1)) >> cword;
+                const std::string &raw = value_.at(1);
+                bool failed = false;
+
+                const auto firstNonSpace = std::find_if_not(raw.begin(), raw.end(), [](char c)
+                {
+                    return std::isspace(static_cast<unsigned char>(c)) != 0;
+                });
+
+                // Reject explicit signs: cword must be a plain non-negative
+                // decimal index. istringstream would otherwise silently
+                // accept "+1".
+                if (firstNonSpace != raw.end() && (*firstNonSpace == '-' || *firstNonSpace == '+'))
+                {
+                    failed = true;
+                }
+
+                size_t parsed = 0;
+                if (!failed)
+                {
+                    std::istringstream ss(raw);
+                    // Use the C locale so that the cword index parses
+                    // consistently regardless of any std::locale::global call
+                    // elsewhere in the process. A locale with a non-empty
+                    // grouping facet would otherwise reject digit-only inputs
+                    // like "12" when grouping rules expect separators.
+                    ss.imbue(std::locale::classic());
+                    ss >> parsed;
+                    if (ss.fail())
+                    {
+                        failed = true;
+                    }
+                    else
+                    {
+                        char extra;
+                        if (ss >> extra)
+                        {
+                            failed = true;
+                        }
+                        else if (!ss.eof())
+                        {
+                            failed = true;
+                        }
+                    }
+                }
+
+                if (failed)
+                {
+#ifdef ARGS_NOEXCEPT
+                    error = Error::Parse;
+                    errorMsg = "Argument 'completion' received invalid value type '" + raw + "'";
+#else
+                    std::ostringstream problem;
+                    problem << "Argument 'completion' received invalid value type '" << raw << "'";
+                    throw ParseError(problem.str());
+#endif
+                    return;
+                }
+
+                cword = parsed;
             }
 
             /** Get the completion reply
@@ -1314,6 +1655,7 @@ namespace args
     class Group : public Base
     {
         private:
+            Group* parent;
             std::vector<Base*> children;
             std::function<bool(const Group &)> validator;
 
@@ -1370,11 +1712,15 @@ namespace args
                 }
             };
             /// If help is empty, this group will not be printed in help output
-            Group(const std::string &help_ = std::string(), const std::function<bool(const Group &)> &validator_ = Validators::DontCare, Options options_ = {}) : Base(help_, options_), validator(validator_) {}
+            Group(const std::string &help_ = std::string(), const std::function<bool(const Group &)> &validator_ = Validators::DontCare, Options options_ = {}) : Base(help_, options_), validator(validator_)
+            {
+                parent = nullptr;
+            }
             /// If help is empty, this group will not be printed in help output
             Group(Group &group_, const std::string &help_ = std::string(), const std::function<bool(const Group &)> &validator_ = Validators::DontCare, Options options_ = {}) : Base(help_, options_), validator(validator_)
             {
                 group_.Add(*this);
+                parent = &group_;
             }
             virtual ~Group() {}
 
@@ -1383,6 +1729,27 @@ namespace args
             void Add(Base &child)
             {
                 children.emplace_back(&child);
+
+                if(child.IsFlag()) {
+#ifndef ARGS_NOEXCEPT
+                    // Detection runs from the child's own constructor, so a
+                    // duplicate throws before that constructor completes and the
+                    // child's storage is released while the stack unwinds. Undo
+                    // the registration first, or a caller that catches the error
+                    // leaves this group holding a pointer to a dead object.
+                    try
+                    {
+                        SignalDetectDuplicates();
+                    }
+                    catch (...)
+                    {
+                        children.pop_back();
+                        throw;
+                    }
+#else
+                    SignalDetectDuplicates();
+#endif
+                }
             }
 
             /** Get all this group's children
@@ -1480,6 +1847,41 @@ namespace args
                         std::count_if(std::begin(Children()), std::end(Children()), [](const Base *child){return child->Matched();}));
             }
 
+            /** Get the list of children which were matched
+             */
+            std::vector<Base *> GetMatchedChildren() const
+            {
+                // Could be replaced by C++ 20 filter, or a custom iterator.
+                std::vector<Base*> matched_children;
+                std::copy_if(children.begin(), children.end(), std::back_inserter(matched_children), [](Base* b){
+                    return b->Matched();
+                });
+                return matched_children;
+            }
+
+            /** Gets the children which are a certain type.
+              * \tparam ChildType The type of child to select. 
+              * \param matching Return only children of the type which matched (default false).
+              * \return Vector of children meeting the criteria.
+             */
+             template <typename ChildType>
+             std::vector<ChildType *> GetFilteredChildren(bool matching = false) const
+             {
+                std::vector<ChildType *> filtered_children;
+                for(Base *child : children) {
+                    if(!matching || child->Matched())
+                    {
+                        ChildType* cast_result = dynamic_cast<ChildType*>(child);
+                        if(cast_result != nullptr)
+                        {
+                            filtered_children.push_back(cast_result);
+                        }
+
+                    }
+                }
+                return filtered_children;
+             }
+
             /** Whether or not this group matches validation
              */
             virtual bool Matched() const noexcept override
@@ -1575,6 +1977,85 @@ namespace args
 #endif
             }
 
+            /** Sends a signal to the root of the tree to begin checking for
+              * duplicates. If this is the root, begins checking.
+              */
+            void SignalDetectDuplicates()
+            {
+                if(parent != nullptr) parent->SignalDetectDuplicates();
+                else DetectDuplicateFlags();
+            }
+
+            /** Detect duplicate flags.
+              * In a noexcept context, sets an error on the duplicate flag.
+              * In a normal context, throws a ParseError.
+              */
+            void DetectDuplicateFlags()
+            {
+                std::unordered_set<char> usedShortFlags;
+                std::unordered_set<std::string> usedLongFlags;
+                DetectDuplicateFlags(usedShortFlags, usedLongFlags);
+            }
+        
+            /** Used by parameterless DetectDuplicateFlags.
+              */
+            void DetectDuplicateFlags(std::unordered_set<char> &usedShortFlags, std::unordered_set<std::string> &usedLongFlags)
+            {
+                for (Base *child: Children())
+                {
+                    if(auto flag = dynamic_cast<FlagBase*>(child))
+                    {
+                        // Check for duplicate flags, setting a usage error on the
+                        // flag if a duplicate is detected.
+                        for(EitherFlag flagString: flag->GetMatcher().GetFlagStrings())
+                        {
+                            if(flagString.isShort)
+                            {
+                                if(usedShortFlags.count(flagString.shortFlag))
+                                {
+#ifdef ARGS_NOEXCEPT
+                                    flag->SetUsageError();
+#else
+                                    throw ParseError("duplicate short flag detected");
+#endif
+                                }
+                                else
+                                {
+                                    usedShortFlags.insert(flagString.shortFlag);
+                                }
+                            }
+                            else
+                            {
+                                if(usedLongFlags.count(flagString.longFlag))
+                                {
+#ifdef ARGS_NOEXCEPT
+                                    flag->SetUsageError();
+#else
+                                    throw ParseError("duplicate long flag detected");
+#endif
+                                }
+                                else
+                                {
+                                    usedLongFlags.insert(flagString.longFlag);
+                                }
+                            }
+                        }
+                    }
+                    else if(auto group = dynamic_cast<Group*>(child))
+                    {
+                        // A command opens its own flag namespace and runs its
+                        // own duplicate detection as a separate root, so a flag
+                        // reused either side of a command boundary is not a
+                        // genuine duplicate. Only descend into plain groups
+                        // here; IsGroup() is false for a Command.
+                        if(group->IsGroup())
+                        {
+                            group->DetectDuplicateFlags(usedShortFlags, usedLongFlags);
+                        }
+                    }
+                }
+            }
+
 #ifdef ARGS_NOEXCEPT
             /// Only for ARGS_NOEXCEPT
             virtual Error GetError() const override
@@ -1591,6 +2072,24 @@ namespace args
                 } else
                 {
                     return (*it)->GetError();
+                }
+            }
+
+            /// Only for ARGS_NOEXCEPT
+            virtual std::string GetErrorMsg() const override
+            {
+                if (error != Error::None)
+                {
+                    return errorMsg;
+                }
+
+                auto it = std::find_if(Children().begin(), Children().end(), [](const Base *child){return child->GetError() != Error::None;});
+                if (it == Children().end())
+                {
+                    return "";
+                } else
+                {
+                    return (*it)->GetErrorMsg();
                 }
             }
 #endif
@@ -1967,7 +2466,16 @@ namespace args
             {
                 UpdateSubparserHelp(params);
 
-                auto res = Group::GetProgramLine(params);
+                std::vector<std::string> res;
+
+                if ((subparserHasFlag || Group::HasFlag()) && params.showProglineOptions && !params.proglineShowFlags)
+                {
+                    res.push_back(params.proglineOptions);
+                }
+
+                auto group_res = Group::GetProgramLine(params);
+                std::move(std::move(group_res).begin(), std::move(group_res).end(), std::back_inserter(res));
+
                 res.insert(res.end(), subparserProgramLine.begin(), subparserProgramLine.end());
 
                 if (!params.proglineCommand.empty() && (Group::HasCommand() || subparserHasCommand))
@@ -1980,17 +2488,12 @@ namespace args
                     res.insert(res.begin(), Name());
                 }
 
-                if ((subparserHasFlag || Group::HasFlag()) && params.showProglineOptions && !params.proglineShowFlags)
-                {
-                    res.push_back(params.proglineOptions);
-                }
-
                 if (!ProglinePostfix().empty())
                 {
                     std::string line;
-                    for (char c : ProglinePostfix())
+                    for (auto c : ProglinePostfix())
                     {
-                        if (isspace(c))
+                        if (std::isspace(static_cast<unsigned char>(c)))
                         {
                             if (!line.empty())
                             {
@@ -2233,8 +2736,8 @@ namespace args
             bool allowSeparateShortValue = true;
             bool allowSeparateLongValue = true;
 
-            CompletionFlag *completion = nullptr;
             bool readCompletion = false;
+            CompletionFlag *completion = nullptr;
 
         protected:
             enum class OptionType
@@ -2246,12 +2749,26 @@ namespace args
 
             OptionType ParseOption(const std::string &s, bool allowEmpty = false)
             {
-                if (s.find(longprefix) == 0 && (allowEmpty || s.length() > longprefix.length()))
+                const bool matchesLong = s.find(longprefix) == 0 && (allowEmpty || s.length() > longprefix.length());
+                const bool matchesShort = s.find(shortprefix) == 0 && (allowEmpty || s.length() > shortprefix.length());
+
+                // A chunk can start with both prefixes when one is a prefix of
+                // the other, or when the long prefix is empty (every string
+                // starts with it). Resolve to the longer, more specific prefix:
+                // this keeps the default "--"/"-" preference for long flags
+                // while letting a short flag be recognised under an empty long
+                // prefix instead of being swallowed as a nameless long flag.
+                if (matchesLong && matchesShort)
+                {
+                    return longprefix.length() >= shortprefix.length() ? OptionType::LongFlag : OptionType::ShortFlag;
+                }
+
+                if (matchesLong)
                 {
                     return OptionType::LongFlag;
                 }
 
-                if (s.find(shortprefix) == 0 && (allowEmpty || s.length() > shortprefix.length()))
+                if (matchesShort)
                 {
                     return OptionType::ShortFlag;
                 }
@@ -2300,14 +2817,14 @@ namespace args
 
                 Nargs nargs = flag.NumberOfArguments();
 
-                if (hasJoined && !allowJoined && nargs.min != 0)
+                if (hasJoined && !allowJoined && (nargs.min != 0 || !canDiscardJoined))
                 {
                     return "Flag '" + arg + "' was passed a joined argument, but these are disallowed";
                 }
 
                 if (hasJoined)
                 {
-                    if (!canDiscardJoined || nargs.max != 0)
+                    if (!canDiscardJoined || (allowJoined && nargs.max != 0))
                     {
                         values.push_back(joinedArg);
                     }
@@ -2317,18 +2834,31 @@ namespace args
                     {
                         return "Flag '" + arg + "' was passed a separate argument, but these are disallowed";
                     }
-                } else
-                {
+                } else if (allowSeparate && (!hasJoined || !values.empty())) {
+                    // Only gather separate values when they are allowed. A joined
+                    // value that was discarded rather than taken (short chunks such
+                    // as -nf when joined short values are off) means this flag isn't
+                    // taking an argument here, so the rest of the chunk is flags.
                     auto valueIt = it;
                     ++valueIt;
 
                     while (valueIt != end &&
+                           *valueIt != terminator &&
                            values.size() < nargs.max &&
-                           (nargs.min == nargs.max || ParseOption(*valueIt) == OptionType::Positional))
+                           (values.size() < nargs.min || ParseOption(*valueIt) == OptionType::Positional))
                     {
                         if (Complete(flag, valueIt, end))
                         {
-                            it = end;
+                            // Park `it` on the completion position rather than
+                            // `end`. In ARGS_NOEXCEPT mode Complete returns
+                            // true (no throw), so the caller's for-loop will
+                            // run its ++it after we return; advancing an
+                            // already-end iterator is undefined behavior and
+                            // causes a subsequent out-of-bounds read of the
+                            // arg vector. Since Complete only fires when
+                            // ++nextIt == end, valueIt is the last element,
+                            // and ++(it=valueIt) safely lands on end.
+                            it = valueIt;
                             return "";
                         }
 
@@ -2380,6 +2910,17 @@ namespace args
 
                 if (auto flag = Match(arg))
                 {
+#ifdef ARGS_NOEXCEPT
+                    // Match() may set the flag's error (e.g. Error::Extra when
+                    // Options::Single is violated). In non-noexcept mode that
+                    // path throws and parsing stops before the value is read;
+                    // in noexcept mode we must mirror that and skip the value
+                    // parsing so the previously-stored value is preserved.
+                    if (flag->GetError() != Error::None)
+                    {
+                        return false;
+                    }
+#endif
                     std::vector<std::string> values;
                     const std::string errorMessage = ParseArgsValues(*flag, arg, it, end, allowSeparateLongValue, allowJoinedLongValue,
                                                                      separator != argchunk.npos, joined, false, values);
@@ -2397,6 +2938,17 @@ namespace args
                     if (!readCompletion)
                     {
                         flag->ParseValue(values);
+#ifdef ARGS_NOEXCEPT
+                        // Non-noexcept ParseValue paths throw on Help, reader
+                        // failure, or Map miss, which halts parsing. Mirror
+                        // that here so a later parser-level error (e.g. an
+                        // unknown flag) cannot shadow the flag's error in
+                        // ArgumentParser::GetError().
+                        if (flag->GetError() != Error::None)
+                        {
+                            return false;
+                        }
+#endif
                     }
 
                     if (flag->KickOut())
@@ -2430,6 +2982,15 @@ namespace args
 
                     if (auto flag = Match(arg))
                     {
+#ifdef ARGS_NOEXCEPT
+                        // See ParseLong: if Match recorded an error
+                        // (e.g. Options::Single violation), bail before the
+                        // value is parsed so the prior value is preserved.
+                        if (flag->GetError() != Error::None)
+                        {
+                            return false;
+                        }
+#endif
                         const std::string value(argit + 1, std::end(argchunk));
                         std::vector<std::string> values;
                         const std::string errorMessage = ParseArgsValues(*flag, std::string(1, arg), it, end,
@@ -2450,6 +3011,15 @@ namespace args
                         if (!readCompletion)
                         {
                             flag->ParseValue(values);
+#ifdef ARGS_NOEXCEPT
+                            // See ParseLong: ensure a flag-level error from
+                            // ParseValue (Help, Parse, Map) halts parsing so
+                            // it cannot be shadowed by a later parser error.
+                            if (flag->GetError() != Error::None)
+                            {
+                                return false;
+                            }
+#endif
                         }
 
                         if (flag->KickOut())
@@ -2484,7 +3054,7 @@ namespace args
                 {
                     if (completion->syntax == "bash" && ParseOption(choice) == OptionType::LongFlag && choice.find(longseparator) != std::string::npos)
                     {
-                        completion->reply.push_back(choice.substr(choice.find(longseparator) + 1));
+                        completion->reply.push_back(choice.substr(choice.find(longseparator) + longseparator.size()));
                     } else
                     {
                         completion->reply.push_back(choice);
@@ -2496,7 +3066,7 @@ namespace args
             }
 
             template <typename It>
-            bool Complete(It it, It end)
+            bool Complete(It it, It end, bool terminated)
             {
                 auto nextIt = it;
                 if (!readCompletion || (++nextIt != end))
@@ -2509,7 +3079,11 @@ namespace args
                 std::vector<Command *> commands = GetCommands();
                 const auto optionType = ParseOption(chunk, true);
 
-                if (!commands.empty() && (chunk.empty() || optionType == OptionType::Positional))
+                // Once the terminator has been seen the parser treats every
+                // following chunk as positional, so only positional choices are
+                // valid completions here. Suggesting flags or commands past the
+                // terminator offers candidates the parser would then reject.
+                if (!terminated && !commands.empty() && (chunk.empty() || optionType == OptionType::Positional))
                 {
                     for (auto &cmd : commands)
                     {
@@ -2522,7 +3096,7 @@ namespace args
                 {
                     bool hasPositionalCompletion = true;
 
-                    if (!commands.empty())
+                    if (!terminated && !commands.empty())
                     {
                         for (auto &cmd : commands)
                         {
@@ -2544,7 +3118,7 @@ namespace args
                         }
                     }
 
-                    if (hasPositionalCompletion)
+                    if (!terminated && hasPositionalCompletion)
                     {
                         auto flags = GetAllFlags();
                         for (auto flag : flags)
@@ -2570,7 +3144,20 @@ namespace args
                         if (optionType == OptionType::LongFlag && allowJoinedLongValue)
                         {
                             const auto separator = longseparator.empty() ? chunk.npos : chunk.find(longseparator);
-                            if (separator != chunk.npos)
+                            // Only attempt joined-value completion when the
+                            // separator lies at or past the long prefix, so
+                            // there is a (possibly empty) flag name between
+                            // them. With a custom longseparator that overlaps
+                            // the prefix (e.g. LongSeparator("-") under the
+                            // default "--" prefix), an attacker-controlled
+                            // completion word like "--x" puts the separator
+                            // inside the prefix, making `arg` shorter than
+                            // longprefix. arg.substr(longprefix.size()) would
+                            // then throw std::out_of_range, which escapes the
+                            // parser as a non-args exception (bypassing the
+                            // documented catch(args::Error) idiom) and is
+                            // thrown even under ARGS_NOEXCEPT.
+                            if (separator != chunk.npos && separator >= longprefix.size())
                             {
                                 std::string arg(chunk, 0, separator);
                                 if (auto flag = this->Match(arg.substr(longprefix.size())))
@@ -2615,7 +3202,7 @@ namespace args
                 // Check all arg chunks
                 for (auto it = begin; it != end; ++it)
                 {
-                    if (Complete(it, end))
+                    if (Complete(it, end, terminated))
                     {
                         return end;
                     }
@@ -2688,6 +3275,12 @@ namespace args
                         if (pos)
                         {
                             pos->ParseValue(chunk);
+#ifdef ARGS_NOEXCEPT
+                            if (pos->GetError() != Error::None)
+                            {
+                                return it;
+                            }
+#endif
 
                             if (pos->KickOut())
                             {
@@ -2709,6 +3302,16 @@ namespace args
                     if (!readCompletion && completion != nullptr && completion->Matched())
                     {
 #ifdef ARGS_NOEXCEPT
+                        if (completion->GetError() != Error::None)
+                        {
+                            error = completion->GetError();
+                            if (errorMsg.empty())
+                            {
+                                errorMsg = completion->GetErrorMsg();
+                            }
+                            return it;
+                        }
+
                         error = Error::Completion;
 #endif
                         readCompletion = true;
@@ -2718,30 +3321,49 @@ namespace args
                         {
 #ifndef ARGS_NOEXCEPT
                             throw Completion("");
+#else
+                            return end;
 #endif
                         }
 
-                        std::vector<std::string> curArgs(++it, end);
-                        curArgs.resize(completion->cword);
+                        ++it;
+                        std::vector<std::string> curArgs;
+                        curArgs.reserve(completion->cword);
+                        auto curIt = it;
+                        for (size_t idx = 0; idx < completion->cword && curIt != end; ++idx, ++curIt)
+                        {
+                            curArgs.push_back(*curIt);
+                        }
 
                         if (completion->syntax == "bash")
                         {
                             // bash tokenizes --flag=value as --flag=value
+                            // Security fix: Use size_t arithmetic throughout to avoid conversion issues
                             for (size_t idx = 0; idx < curArgs.size(); )
                             {
                                 if (idx > 0 && curArgs[idx] == "=")
                                 {
-                                    curArgs[idx - 1] += "=";
-                                    // Avoid warnings from -Wsign-conversion
-                                    const auto signedIdx = static_cast<std::ptrdiff_t>(idx);
-                                    if (idx + 1 < curArgs.size())
+                                    size_t prev_idx = idx - 1;  // Safe since we checked idx > 0
+                                    curArgs[prev_idx] += "=";
+                                    size_t next_idx = 0;
+                                    if (SafeAdd<size_t>(idx, static_cast<size_t>(1), next_idx) && next_idx < curArgs.size())
                                     {
-                                        curArgs[idx - 1] += curArgs[idx + 1];
-                                        curArgs.erase(curArgs.begin() + signedIdx, curArgs.begin() + signedIdx + 2);
+                                        curArgs[prev_idx] += curArgs[next_idx];
+                                        // Erase the '=' token and the following value token.
+                                        size_t erase_end = 0;
+                                        if (SafeAdd<size_t>(next_idx, static_cast<size_t>(1), erase_end))
+                                        {
+                                            typedef std::vector<std::string>::difference_type diff_t;
+                                            curArgs.erase(curArgs.begin() + static_cast<diff_t>(idx),
+                                                         curArgs.begin() + static_cast<diff_t>(erase_end));
+                                        }
                                     } else
                                     {
-                                        curArgs.erase(curArgs.begin() + signedIdx);
+                                        // Safe erase of single '=' token at the end
+                                        typedef std::vector<std::string>::difference_type diff_t;
+                                        curArgs.erase(curArgs.begin() + static_cast<diff_t>(idx));
                                     }
+                                    // Do not increment idx - next element slides into current position
                                 } else
                                 {
                                     ++idx;
@@ -2764,7 +3386,17 @@ namespace args
                             throw Completion("");
                         }
 #else
-                        return Parse(curArgs.begin(), curArgs.end());
+                        // Discard the nested Parse's return value: it points
+                        // into the local curArgs vector, which is destroyed
+                        // when this function returns, leaving the caller with
+                        // a dangling iterator that would be compared against
+                        // the outer `end` in ParseCLI. Return the outer
+                        // `end` instead so the iterator stays in the caller's
+                        // container.
+                        Parse(curArgs.begin(), curArgs.end());
+                        error = Error::Completion;
+                        errorMsg.clear();
+                        return end;
 #endif
                     }
                 }
@@ -2790,8 +3422,11 @@ namespace args
 
             void AddCompletion(CompletionFlag &completionFlag)
             {
-                completion = &completionFlag;
+                // Only take the pointer once registration has succeeded: Add()
+                // throws on a duplicate flag, and the flag it was handed is
+                // gone by the time that error reaches the caller.
                 Add(completionFlag);
+                completion = &completionFlag;
             }
 
             /** The program name for help generation
@@ -2847,7 +3482,7 @@ namespace args
                 } else
                 {
                     this->longseparator = longseparator_;
-                    this->helpParams.longSeparator = allowJoinedLongValue ? longseparator_ : " ";
+                    this->helpParams.longSeparator = allowJoinedLongValue ? longseparator : " ";
                 }
             }
 
@@ -2904,8 +3539,10 @@ namespace args
             {
                 auto &command = SelectedCommand();
                 const auto &commandDescription = command.Description().empty() ? command.Help() : command.Description();
-                const auto description_text = Wrap(commandDescription, helpParams.width - helpParams.descriptionindent);
-                const auto epilog_text = Wrap(command.Epilog(), helpParams.width - helpParams.descriptionindent);
+                const auto desc_indent = helpParams.descriptionindent;
+                const auto effective_desc_width = (helpParams.width > desc_indent) ? helpParams.width - desc_indent : 0;
+                const auto description_text = Wrap(commandDescription, effective_desc_width);
+                const auto epilog_text = Wrap(command.Epilog(), effective_desc_width);
 
                 const bool hasoptions = command.HasFlag();
                 const bool hasarguments = command.HasPositional();
@@ -2916,9 +3553,12 @@ namespace args
                 auto commandProgLine = command.GetProgramLine(helpParams);
                 prognameline.insert(prognameline.end(), commandProgLine.begin(), commandProgLine.end());
 
+                const auto prog_sum = helpParams.progindent + helpParams.progtailindent;
+                const auto effective_prog_width = (helpParams.width > prog_sum) ? helpParams.width - prog_sum : 0;
+                const auto effective_prog_first = (helpParams.width > helpParams.progindent) ? helpParams.width - helpParams.progindent : 0;
                 const auto proglines = Wrap(prognameline.begin(), prognameline.end(),
-                                            helpParams.width - (helpParams.progindent + helpParams.progtailindent),
-                                            helpParams.width - helpParams.progindent);
+                                            effective_prog_width,
+                                            effective_prog_first);
                 auto progit = std::begin(proglines);
                 if (progit != std::end(proglines))
                 {
@@ -2952,8 +3592,12 @@ namespace args
                 {
                     lastDescriptionIsNewline = std::get<0>(desc).empty() && std::get<1>(desc).empty();
                     const auto groupindent = std::get<2>(desc) * helpParams.eachgroupindent;
-                    const auto flags = Wrap(std::get<0>(desc), helpParams.width - (helpParams.flagindent + helpParams.helpindent + helpParams.gutter));
-                    const auto info = Wrap(std::get<1>(desc), helpParams.width - (helpParams.helpindent + groupindent));
+                    const auto flag_sum = helpParams.flagindent + helpParams.helpindent + helpParams.gutter;
+                    const auto effective_flag_width = (helpParams.width > flag_sum) ? helpParams.width - flag_sum : 0;
+                    const auto flags = Wrap(std::get<0>(desc), effective_flag_width);
+                    const auto info_sum = helpParams.helpindent + groupindent;
+                    const auto effective_info_width = (helpParams.width > info_sum) ? helpParams.width - info_sum : 0;
+                    const auto info = Wrap(std::get<1>(desc), effective_info_width);
 
                     std::string::size_type flagssize = 0;
                     for (auto flagsit = std::begin(flags); flagsit != std::end(flags); ++flagsit)
@@ -2974,7 +3618,9 @@ namespace args
                     } else
                     {
                         // groupindent is on both sides of the minus sign, and therefore doesn't actually need to be in here
-                        help_ << std::string(helpParams.helpindent - (helpParams.flagindent + flagssize), ' ') << *infoit << '\n';
+                        const auto indent_sum = helpParams.flagindent + flagssize;
+                        const auto effective_space = (helpParams.helpindent > indent_sum) ? helpParams.helpindent - indent_sum : 0;
+                        help_ << std::string(effective_space, ' ') << *infoit << '\n';
                         ++infoit;
                     }
                     for (; infoit != std::end(info); ++infoit)
@@ -2985,7 +3631,8 @@ namespace args
                 if (hasoptions && hasarguments && helpParams.showTerminator)
                 {
                     lastDescriptionIsNewline = false;
-                    for (const auto &item: Wrap(std::string("\"") + terminator + "\" can be used to terminate flag options and force all following arguments to be treated as positional options", helpParams.width - helpParams.flagindent))
+                    const auto effective_term_width = (helpParams.width > helpParams.flagindent) ? helpParams.width - helpParams.flagindent : 0;
+                    for (const auto &item: Wrap(std::string("\"") + terminator + "\" can be used to terminate flag options and force all following arguments to be treated as positional options", effective_term_width))
                     {
                         help_ << std::string(helpParams.flagindent, ' ') << item << '\n';
                     }
@@ -3060,11 +3707,17 @@ namespace args
              */
             bool ParseCLI(const int argc, const char * const * argv)
             {
-                if (Prog().empty())
+                if (argc > 0 && argv != nullptr && argv[0] != nullptr && Prog().empty())
                 {
                     Prog(argv[0]);
                 }
-                const std::vector<std::string> args(argv + 1, argv + argc);
+
+                std::vector<std::string> args;
+                if (argc > 1 && argv != nullptr)
+                {
+                    args.assign(argv + 1, argv + argc);
+                }
+
                 return ParseArgs(args) == std::end(args);
             }
             
@@ -3201,6 +3854,16 @@ namespace args
                 auto me = FlagBase::Match(arg);
                 if (me)
                 {
+#ifdef ARGS_NOEXCEPT
+                    // Suppress increment when FlagBase::Match recorded an
+                    // error on this same call (e.g. Options::Single violated).
+                    // In non-noexcept mode that path would have thrown before
+                    // reaching here and the count would not have advanced.
+                    if (GetError() != Error::None)
+                    {
+                        return me;
+                    }
+#endif
                     ++count;
                 }
                 return me;
@@ -3210,6 +3873,14 @@ namespace args
              */
             int &Get() noexcept
             {
+                return count;
+            }
+
+            int &operator *() noexcept {
+                return count;
+            }
+            
+            const int &operator *() const noexcept {
                 return count;
             }
 
@@ -3264,19 +3935,156 @@ namespace args
      */
     struct ValueReader
     {
+      private:
+        template <typename T>
+        static typename std::enable_if<std::is_integral<T>::value && std::is_unsigned<T>::value, bool>::type
+        HasUnsignedNegativeSign(const std::string &value)
+        {
+            const auto firstNonSpace = std::find_if_not(value.begin(), value.end(), [](char c)
+            {
+                return std::isspace(static_cast<unsigned char>(c)) != 0;
+            });
+
+            return firstNonSpace != value.end() && *firstNonSpace == '-';
+        }
+
+        template <typename T>
+        static typename std::enable_if<!std::is_integral<T>::value || !std::is_unsigned<T>::value, bool>::type
+        HasUnsignedNegativeSign(const std::string &)
+        {
+            return false;
+        }
+
+      public:
+        template <typename T>
+        typename std::enable_if<
+            std::is_integral<T>::value &&
+            !std::is_same<T, bool>::value &&
+            !std::is_same<T, char>::value &&
+            !std::is_same<T, signed char>::value &&
+            !std::is_same<T, unsigned char>::value,
+            bool>::type
+        ParseNumericValue(const std::string &value, T &destination)
+        {
+            if (HasUnsignedNegativeSign<T>(value))
+            {
+                return false;
+            }
+
+            const char *begin = value.c_str();
+            // The true end of the value, derived from its length rather than
+            // from the first NUL. strtoull/strtoll treat the buffer as a C
+            // string and stop at an embedded '\0', so checking `*end == '\0'`
+            // for "no trailing data" is defeated by a value like "12\0junk":
+            // end lands on the embedded NUL and the junk after it is silently
+            // accepted. Comparing against `stop` validates the whole string
+            // and matches the istringstream-based reader used for other types.
+            const char *const stop = begin + value.size();
+
+            // C++11-compatible: use strtoull/strtoll. Hardening retained from
+            // the original from_chars draft (errno save/restore, ERANGE check,
+            // narrowing range check, trailing-whitespace tolerance). No
+            // unconditional dependency on <charconv> / C++17.
+            const int saved_errno = errno;
+            errno = 0;
+
+            char *end = nullptr;
+
+            if (std::is_unsigned<T>::value)
+            {
+                const unsigned long long parsed = std::strtoull(begin, &end, 0);
+                if (end == begin)
+                {
+                    errno = saved_errno;
+                    return false;
+                }
+                while (end != stop && std::isspace(static_cast<unsigned char>(*end)))
+                {
+                    ++end;
+                }
+                if (end != stop || errno == ERANGE ||
+                    parsed > static_cast<unsigned long long>(std::numeric_limits<T>::max()))
+                {
+                    errno = saved_errno;
+                    return false;
+                }
+
+                destination = static_cast<T>(parsed);
+            }
+            else
+            {
+                const long long parsed = std::strtoll(begin, &end, 0);
+                if (end == begin)
+                {
+                    errno = saved_errno;
+                    return false;
+                }
+                while (end != stop && std::isspace(static_cast<unsigned char>(*end)))
+                {
+                    ++end;
+                }
+                if (end != stop || errno == ERANGE ||
+                    parsed < static_cast<long long>(std::numeric_limits<T>::min()) ||
+                    parsed > static_cast<long long>(std::numeric_limits<T>::max()))
+                {
+                    errno = saved_errno;
+                    return false;
+                }
+
+                destination = static_cast<T>(parsed);
+            }
+
+            errno = saved_errno;
+            return true;
+        }
+
+        template <typename T>
+        typename std::enable_if<
+            !std::is_integral<T>::value ||
+            std::is_same<T, bool>::value ||
+            std::is_same<T, char>::value ||
+            std::is_same<T, signed char>::value ||
+            std::is_same<T, unsigned char>::value,
+            bool>::type
+        ParseNumericValue(const std::string &value, T &destination)
+        {
+            std::istringstream ss(value);
+            // Pin parsing to the C locale so that the decimal separator and
+            // thousands grouping behavior do not silently depend on whatever
+            // std::locale::global was last set to elsewhere in the process.
+            // Without this, e.g. "3.14" parses as 3 (with ".14" trailing) in
+            // any locale whose numpunct facet treats ',' as the decimal point.
+            ss.imbue(std::locale::classic());
+            ss >> destination;
+            if (ss.fail())
+            {
+                return false;
+            }
+
+            // Check for trailing garbage by attempting to extract any remaining characters.
+            // Do not use 'ss >> std::ws' followed by peek(), as std::ws can set failbit
+            // on EOF, causing false rejection of valid input.
+            char extra = '\0';
+            ss >> std::ws >> extra;
+            // If extraction succeeded, there's trailing garbage (return false).
+            // If extraction failed due to EOF only (goodbit after ws extraction), it's valid (return true).
+            // If extraction failed for other reasons, it's invalid (return false).
+            if (ss.fail())
+            {
+                // Clear the failbit to check if EOF is the only issue
+                ss.clear(ss.rdstate() & ~std::ios::failbit);
+                return ss.eof();
+            }
+            // Extraction succeeded, meaning there's trailing garbage
+            return false;
+        }
+
         template <typename T>
         typename std::enable_if<!std::is_assignable<T, std::string>::value, bool>::type
         operator ()(const std::string &name, const std::string &value, T &destination)
         {
-            std::istringstream ss(value);
-            bool failed = !(ss >> destination);
-
-            if (!failed)
-            {
-                ss >> std::ws;
-            }
-
-            if (ss.rdbuf()->in_avail() > 0 || failed)
+            const bool success = ParseNumericValue(value, destination);
+            if (!success)
             {
 #ifdef ARGS_NOEXCEPT
                 (void)name;
@@ -3365,6 +4173,34 @@ namespace args
                 return value;
             }
 
+            /** Get the value
+             */
+            T &operator *() noexcept
+            {
+                return value;
+            }
+
+            /** Get the value
+             */
+            const T &operator *() const noexcept
+            {
+                return value;
+            }
+
+            /** Get the value
+             */
+            T *operator ->() noexcept
+            {
+                return &value;
+            }
+
+            /** Get the value
+             */
+            const T *operator ->() const noexcept
+            {
+                return &value;
+            }
+
             /** Get the default value
              */
             const T &GetDefault() noexcept
@@ -3422,6 +4258,43 @@ namespace args
             }
     };
 
+    /** A boolean flag containing a retrievable constant.
+     * 
+     * \tparam T the type of the constant
+     */
+    template <typename T>
+    class ConstantFlag : public Flag
+    {
+        T value;
+
+        public:
+
+        ConstantFlag(Group &group_, const std::string &name_, const std::string &help_, Matcher &&matcher_, Options options_, const T& value_):
+        Flag(group_, name_, help_, std::move(matcher_), options_),
+        value(value_)
+        {}
+
+        ConstantFlag(Group &group_, const std::string &name_, const std::string &help_, Matcher &&matcher_, const T& value_, bool extraError_ = false):
+        Flag(group_, name_, help_, std::move(matcher_), extraError_),
+        value(value_)
+        {}
+
+        T operator * () const noexcept
+        {
+            return value;
+        }
+
+        T Get() const noexcept
+        {
+            return value;
+        }
+
+        const T *operator -> () const noexcept
+        {
+            return &value;
+        }
+    };
+
     /** A variadic arguments accepting flag class
      *
      * \tparam T the type to extract the argument as
@@ -3430,7 +4303,7 @@ namespace args
      */
     template <
         typename T,
-        template <typename...> class List = std::vector,
+        template <typename...> class List = detail::vector,
         typename Reader = ValueReader>
     class NargsValueFlag : public FlagBase
     {
@@ -3476,11 +4349,12 @@ namespace args
 
                 for (const std::string &value : values_)
                 {
-                    T v;
+                    T v {};
 #ifdef ARGS_NOEXCEPT
                     if (!reader(name, value, v))
                     {
                         error = Error::Parse;
+                        return;
                     }
 #else
                     reader(name, value, v);
@@ -3492,6 +4366,34 @@ namespace args
             List<T> &Get() noexcept
             {
                 return values;
+            }
+
+            /** Get the value
+             */
+            List<T> &operator *() noexcept
+            {
+                return values;
+            }
+
+            /** Get the values
+             */
+            const List<T> &operator *() const noexcept
+            {
+                return values;
+            }
+
+            /** Get the values
+             */
+            List<T> *operator ->() noexcept
+            {
+                return &values;
+            }
+
+            /** Get the values
+             */
+            const List<T> *operator ->() const noexcept
+            {
+                return &values;
             }
 
             iterator begin() noexcept
@@ -3550,7 +4452,7 @@ namespace args
      */
     template <
         typename T,
-        template <typename...> class List = std::vector,
+        template <typename...> class List = detail::vector,
         typename Reader = ValueReader>
     class ValueFlagList : public ValueFlagBase
     {
@@ -3587,11 +4489,12 @@ namespace args
             {
                 const std::string &value_ = values_.at(0);
 
-                T v;
+                T v{};
 #ifdef ARGS_NOEXCEPT
                 if (!reader(name, value_, v))
                 {
                     error = Error::Parse;
+                    return;
                 }
 #else
                 reader(name, value_, v);
@@ -3604,6 +4507,34 @@ namespace args
             Container &Get() noexcept
             {
                 return values;
+            }
+
+            /** Get the value
+             */
+            Container &operator *() noexcept
+            {
+                return values;
+            }
+
+            /** Get the values
+             */
+            const Container &operator *() const noexcept
+            {
+                return values;
+            }
+
+            /** Get the values
+             */
+            Container *operator ->() noexcept
+            {
+                return &values;
+            }
+
+            /** Get the values
+             */
+            const Container *operator ->() const noexcept
+            {
+                return &values;
             }
 
             virtual std::string Name() const override
@@ -3670,7 +4601,7 @@ namespace args
         typename K,
         typename T,
         typename Reader = ValueReader,
-        template <typename...> class Map = std::unordered_map>
+        template <typename...> class Map = detail::unordered_map>
     class MapFlag : public ValueFlagBase
     {
         private:
@@ -3706,11 +4637,12 @@ namespace args
             {
                 const std::string &value_ = values_.at(0);
 
-                K key;
+                K key{};
 #ifdef ARGS_NOEXCEPT
                 if (!reader(name, value_, key))
                 {
                     error = Error::Parse;
+                    return;
                 }
 #else
                 reader(name, value_, key);
@@ -3739,6 +4671,34 @@ namespace args
                 return value;
             }
 
+            /** Get the value
+             */
+            T &operator *() noexcept
+            {
+                return value;
+            }
+
+            /** Get the value
+             */
+            const T &operator *() const noexcept
+            {
+                return value;
+            }
+
+            /** Get the value
+             */
+            T *operator ->() noexcept
+            {
+                return &value;
+            }
+
+            /** Get the value
+             */
+            const T *operator ->() const noexcept
+            {
+                return &value;
+            }
+
             virtual void Reset() noexcept override
             {
                 ValueFlagBase::Reset();
@@ -3757,9 +4717,9 @@ namespace args
     template <
         typename K,
         typename T,
-        template <typename...> class List = std::vector,
+        template <typename...> class List = detail::vector,
         typename Reader = ValueReader,
-        template <typename...> class Map = std::unordered_map>
+        template <typename...> class Map = detail::unordered_map>
     class MapFlagList : public ValueFlagBase
     {
         private:
@@ -3789,7 +4749,8 @@ namespace args
             typedef std::reverse_iterator<iterator> reverse_iterator;
             typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-            MapFlagList(Group &group_, const std::string &name_, const std::string &help_, Matcher &&matcher_, const Map<K, T> &map_, const Container &defaultValues_ = Container()): ValueFlagBase(name_, help_, std::move(matcher_)), map(map_), values(defaultValues_), defaultValues(defaultValues_)
+            MapFlagList(Group &group_, const std::string &name_, const std::string &help_, Matcher &&matcher_, const Map<K, T> &map_, const Container &defaultValues_ = Container(), Options options_ = {}):
+                ValueFlagBase(name_, help_, std::move(matcher_), options_), map(map_), values(defaultValues_), defaultValues(defaultValues_)
             {
                 group_.Add(*this);
             }
@@ -3798,16 +4759,17 @@ namespace args
 
             virtual void ParseValue(const std::vector<std::string> &values_) override
             {
-                const std::string &value = values_.at(0);
+                const std::string &value_ = values_.at(0);
 
-                K key;
+                K key{};
 #ifdef ARGS_NOEXCEPT
-                if (!reader(name, value, key))
+                if (!reader(name, value_, key))
                 {
                     error = Error::Parse;
+                    return;
                 }
 #else
-                reader(name, value, key);
+                reader(name, value_, key);
 #endif
                 auto it = map.find(key);
                 if (it == std::end(map))
@@ -3822,7 +4784,7 @@ namespace args
 #endif
                 } else
                 {
-                    this->values.emplace_back(it->second);
+                    detail::AppendMappedValue(values, it->second, 0);
                 }
             }
 
@@ -3831,6 +4793,34 @@ namespace args
             Container &Get() noexcept
             {
                 return values;
+            }
+
+            /** Get the value
+             */
+            Container &operator *() noexcept
+            {
+                return values;
+            }
+
+            /** Get the values
+             */
+            const Container &operator *() const noexcept
+            {
+                return values;
+            }
+
+            /** Get the values
+             */
+            Container *operator ->() noexcept
+            {
+                return &values;
+            }
+
+            /** Get the values
+             */
+            const Container *operator ->() const noexcept
+            {
+                return &values;
             }
 
             virtual std::string Name() const override
@@ -3918,6 +4908,7 @@ namespace args
                 if (!reader(name, value_, this->value))
                 {
                     error = Error::Parse;
+                    return;
                 }
 #else
                 reader(name, value_, this->value);
@@ -3931,6 +4922,34 @@ namespace args
             T &Get() noexcept
             {
                 return value;
+            }
+
+            /** Get the value
+             */
+            T &operator *() noexcept
+            {
+                return value;
+            }
+
+            /** Get the value
+             */
+            const T &operator *() const noexcept
+            {
+                return value;
+            }
+
+            /** Get the value
+             */
+            T *operator ->() noexcept
+            {
+                return &value;
+            }
+
+            /** Get the value
+             */
+            const T *operator ->() const noexcept
+            {
+                return &value;
             }
 
             virtual void Reset() noexcept override
@@ -3948,7 +4967,7 @@ namespace args
      */
     template <
         typename T,
-        template <typename...> class List = std::vector,
+        template <typename...> class List = detail::vector,
         typename Reader = ValueReader>
     class PositionalList : public PositionalBase
     {
@@ -3985,11 +5004,12 @@ namespace args
 
             virtual void ParseValue(const std::string &value_) override
             {
-                T v;
+                T v{};
 #ifdef ARGS_NOEXCEPT
                 if (!reader(name, value_, v))
                 {
                     error = Error::Parse;
+                    return;
                 }
 #else
                 reader(name, value_, v);
@@ -4008,6 +5028,34 @@ namespace args
             Container &Get() noexcept
             {
                 return values;
+            }
+
+            /** Get the value
+             */
+            Container &operator *() noexcept
+            {
+                return values;
+            }
+
+            /** Get the values
+             */
+            const Container &operator *() const noexcept
+            {
+                return values;
+            }
+
+            /** Get the values
+             */
+            Container *operator ->() noexcept
+            {
+                return &values;
+            }
+
+            /** Get the values
+             */
+            const Container *operator ->() const noexcept
+            {
+                return &values;
             }
 
             virtual void Reset() noexcept override
@@ -4069,7 +5117,7 @@ namespace args
         typename K,
         typename T,
         typename Reader = ValueReader,
-        template <typename...> class Map = std::unordered_map>
+        template <typename...> class Map = detail::unordered_map>
     class MapPositional : public PositionalBase
     {
         private:
@@ -4096,11 +5144,12 @@ namespace args
 
             virtual void ParseValue(const std::string &value_) override
             {
-                K key;
+                K key{};
 #ifdef ARGS_NOEXCEPT
                 if (!reader(name, value_, key))
                 {
                     error = Error::Parse;
+                    return;
                 }
 #else
                 reader(name, value_, key);
@@ -4131,6 +5180,34 @@ namespace args
                 return value;
             }
 
+            /** Get the value
+             */
+            T &operator *() noexcept
+            {
+                return value;
+            }
+
+            /** Get the value
+             */
+            const T &operator *() const noexcept
+            {
+                return value;
+            }
+
+            /** Get the value
+             */
+            T *operator ->() noexcept
+            {
+                return &value;
+            }
+
+            /** Get the value
+             */
+            const T *operator ->() const noexcept
+            {
+                return &value;
+            }
+
             virtual void Reset() noexcept override
             {
                 PositionalBase::Reset();
@@ -4149,9 +5226,9 @@ namespace args
     template <
         typename K,
         typename T,
-        template <typename...> class List = std::vector,
+        template <typename...> class List = detail::vector,
         typename Reader = ValueReader,
-        template <typename...> class Map = std::unordered_map>
+        template <typename...> class Map = detail::unordered_map>
     class MapPositionalList : public PositionalBase
     {
         private:
@@ -4192,11 +5269,12 @@ namespace args
 
             virtual void ParseValue(const std::string &value_) override
             {
-                K key;
+                K key{};
 #ifdef ARGS_NOEXCEPT
                 if (!reader(name, value_, key))
                 {
                     error = Error::Parse;
+                    return;
                 }
 #else
                 reader(name, value_, key);
@@ -4214,7 +5292,7 @@ namespace args
 #endif
                 } else
                 {
-                    this->values.emplace_back(it->second);
+                    detail::AppendMappedValue(values, it->second, 0);
                     matched = true;
                 }
             }
@@ -4224,6 +5302,34 @@ namespace args
             Container &Get() noexcept
             {
                 return values;
+            }
+
+            /** Get the value
+             */
+            Container &operator *() noexcept
+            {
+                return values;
+            }
+
+            /** Get the values
+             */
+            const Container &operator *() const noexcept
+            {
+                return values;
+            }
+
+            /** Get the values
+             */
+            Container *operator ->() noexcept
+            {
+                return &values;
+            }
+
+            /** Get the values
+             */
+            const Container *operator ->() const noexcept
+            {
+                return &values;
             }
 
             virtual std::string Name() const override
@@ -4280,4 +5386,6 @@ namespace args
     };
 }
 
+#pragma pop_macro("min")
+#pragma pop_macro("max")
 #endif

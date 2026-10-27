@@ -34,6 +34,8 @@ release has not been established.
 | md4c | `481fbfb` (0.5.2+16) plus one local change | **0.6.0** | Unmodified; upstream now writes the same XHTML checkboxes the local change produced. |
 | utf8cpp | `aa3b12c` (3.2.1+4) | **4.2.1** | Unmodified; includes the `is_valid` fix for code points above U+10FFFF. |
 | HarfBuzz | 8.5.0 | **15.0.0** | Unmodified core sources; fixes for malformed fonts across seven majors. Clears the clang and MSVC warnings CI printed. |
+| args | `d877e96` (6.2.2+10) | **6.6.1** | Unmodified. |
+| cpp-unicodelib | `d68020d` (Unicode 16) plus MSVC patch | **18.0.0** (Unicode 18) | MSVC C++17 check reapplied. |
 | stb_image (SOIL2) | 2.30 with SOIL2's GIF disposal change | 2.30 plus a local CVE-2026-5185 fix (SOIL2 `116dfde`, 2026-10-26) | Fixed a stale frame pointer in the animated-GIF loader; no upstream fix exists. |
 
 ### Validation status — 2026-10-26
@@ -401,6 +403,30 @@ Gumbo `assert()` variables, and the full suite passes (2,128 passed, 2 audio tes
 lack of an audio device), including 322 HTML, Markdown and web-view tests and the regex tests
 with the JIT enabled.
 
+### Provenance of the remaining unversioned imports
+
+Matching each import against every upstream commit established its base, and whitespace-insensitive
+diffs separated real local changes from line-ending noise:
+
+| Import | Base | Local changes | Action |
+| --- | --- | --- | --- |
+| args | `d877e96` (6.2.2+10, 2019-08-18) | None | Updated to 6.6.1 |
+| cpp-unicodelib | `d68020d` (Unicode 16.0.0, 2024-10-13) | C++17 check also accepts `_MSVC_LANG` (eepp does not build with `/Zc:__cplusplus`) | Updated to v18.0.0 (Unicode 18.0.0); patch reapplied |
+| backward-cpp | `0bfd0a0` (v1.6+70, 2025-04-14) | Demangling and symbol names on Windows with GCC/MinGW, which upstream does not support | eepp-maintained fork |
+| portable-file-dialogs | `7f852d8` (0.1.0+67, 2022-11-11) | Windows owner window, save-dialog extension and flags, macOS save location/name, `_WIN32_WINNT` and POSIX/BSD macros | eepp-maintained fork; upstream is largely unmaintained |
+| jpeg-compressor | `aeb7d3b` (2020-05-07), upstream's latest | Drops `#include <malloc.h>` | None needed |
+| fts_fuzzy_match | `d541eb4` (2017-02-18), the file's latest | `[[maybe_unused]]` on three declarations | None needed |
+| emscripten-browser-clipboard | `633dc92` (2023-03-09) | Ctrl/Cmd+V and right-click paste for SDL2's Emscripten backend | eepp-maintained fork; upstream's later refactors are not tracked |
+
+backward-cpp, portable-file-dialogs and emscripten-browser-clipboard, like subprocess, are now
+eepp-maintained forks: their upstream bases are recorded for reference, but upstream is no longer
+tracked and they are reviewed as eepp code.
+
+The initial audit's NVD screening found no actionable advisories for these imports; it was not rerun in this pass. Validation: the macOS release build of
+all targets compiles them without warnings; the full suite passes (2,133 passed, 2 audio tests skipped),
+including 65 string and Unicode-boundary tests; `ecode`, `eterm`, `eefm` and `eproc` print `--help` and
+reject an unknown flag with args 6.6.1.
+
 ## High findings whose current eepp API conditions were not found
 
 ### HarfBuzz
@@ -502,24 +528,24 @@ and establish a verified tag/commit before calling a future update routine.
 
 | Component | Version established | Disposition | Local evidence |
 | --- | --- | --- | --- |
-| args | Unversioned/patched snapshot | Snapshot | [args.hxx](../../src/thirdparty/args/args.hxx) |
-| backward-cpp | Unversioned/patched snapshot | Snapshot | [backward.hpp](../../src/thirdparty/backward-cpp/backward.hpp) |
+| args | 6.6.1 | Screened | [args.hxx](../../src/thirdparty/args/args.hxx) |
+| backward-cpp | eepp-maintained fork (from `0bfd0a0`) | Owned | [backward.hpp](../../src/thirdparty/backward-cpp/backward.hpp) |
 | brotli | 1.2.1 | Fixed | [version.h](../../src/thirdparty/brotli/common/version.h) |
 | chipmunk | 6.1.4 | Screened | [chipmunk.h](../../src/modules/physics/include/eepp/thirdparty/chipmunk/chipmunk.h) |
-| cpp-unicodelib | Unversioned/patched snapshot | Snapshot | [unicodelib.h](../../src/thirdparty/cpp-unicodelib/unicodelib.h) |
+| cpp-unicodelib | 18.0.0 plus local patch | Screened | [unicodelib.h](../../src/thirdparty/cpp-unicodelib/unicodelib.h) |
 | dr_libs | dr_flac 0.13.2; dr_mp3 0.7.2 | Screened | [dr_flac.h](../../src/thirdparty/dr_libs/dr_flac.h) |
 | dtl | 1.21 | Screened | [variables.hpp](../../src/thirdparty/dtl/variables.hpp) |
 | efsw | 1.7.2 + 5 commits | Screened | [CMakeLists.txt](../../src/thirdparty/efsw/CMakeLists.txt) |
-| emscripten-browser-clipboard | Unversioned/patched snapshot | Snapshot | [emscripten_browser_clipboard.h](../../src/thirdparty/emscripten-browser-clipboard/emscripten_browser_clipboard.h) |
+| emscripten-browser-clipboard | eepp-maintained fork (from `633dc92`) | Owned | [emscripten_browser_clipboard.h](../../src/thirdparty/emscripten-browser-clipboard/emscripten_browser_clipboard.h) |
 | fast_float | 6.1.6 | Screened | [fast_float.h](../../src/thirdparty/fast_float/include/fast_float/fast_float.h) |
 | freetype2 | 2.14.1 | Screened | [freetype.h](../../src/thirdparty/freetype2/include/freetype/freetype.h) |
-| fts_fuzzy_match | Unversioned/patched snapshot | Snapshot | [fts_fuzzy_match.h](../../src/thirdparty/fts_fuzzy_match/fts_fuzzy_match.h) |
+| fts_fuzzy_match | `d541eb4` plus local patch | Screened | [fts_fuzzy_match.h](../../src/thirdparty/fts_fuzzy_match/fts_fuzzy_match.h) |
 | glew | 2.1.0 | Screened | [glew.h](../../src/thirdparty/glew/glew.h) |
 | glm | 0.9.4.0 | Screened | [setup.hpp](../../src/thirdparty/glm/core/setup.hpp) |
 | gumbo-parser | 0.14.1 | Fixed | [gumbo.h](../../src/thirdparty/gumbo-parser/gumbo.h) |
 | harfbuzz | 15.0.0 | Fixed | [hb-version.h](../../src/thirdparty/harfbuzz/hb-version.h) |
 | imageresampler | 2.2 | Screened | [resampler.h](../../src/thirdparty/imageresampler/resampler.h) |
-| jpeg-compressor | jpge 1.05; jpgd snapshot | Snapshot | [jpge.cpp](../../src/thirdparty/jpeg-compressor/jpge.cpp) |
+| jpeg-compressor | `aeb7d3b` (jpge 1.05) plus local patch | Screened | [jpge.cpp](../../src/thirdparty/jpeg-compressor/jpge.cpp) |
 | libogg | 1.3.3 | Screened | [framing.c](../../src/thirdparty/libogg/src/framing.c) |
 | libpng | 1.6.59 | Fixed | [png.h](../../src/thirdparty/libpng/png.h) |
 | libssh2 | 1.11.2_DEV @ 6e7b2076 + local integration | Fixed | [libssh2.h](../../src/thirdparty/libssh2/include/libssh2.h) |
@@ -536,7 +562,7 @@ and establish a verified tag/commit before calling a future update routine.
 | nlohmann | 3.12.0 | Screened | [json.hpp](../../src/thirdparty/nlohmann/json.hpp) |
 | oniguruma | 6.9.10 | Screened | [oniguruma.h](../../src/thirdparty/oniguruma/oniguruma.h) |
 | pcre2 | 10.49 | Fixed | [pcre2.h](../../src/thirdparty/pcre2/src/pcre2.h) |
-| portable-file-dialogs | Unversioned/patched snapshot | Snapshot | [portable-file-dialogs.h](../../src/thirdparty/portable-file-dialogs/portable-file-dialogs.h) |
+| portable-file-dialogs | eepp-maintained fork (from `7f852d8`) | Owned | [portable-file-dialogs.h](../../src/thirdparty/portable-file-dialogs/portable-file-dialogs.h) |
 | pugixml | 1.12 | Screened | [pugixml.hpp](../../src/thirdparty/pugixml/pugixml.hpp) |
 | SDL2 | 2.0.12 | Conditional | [SDL_version.h](../../src/thirdparty/SDL2/include/SDL_version.h) |
 | SheenBidi | 2.9.0 | Screened | [SBVersion.h](../../src/thirdparty/SheenBidi/Headers/SheenBidi/SBVersion.h) |
@@ -615,9 +641,10 @@ and build outputs were not treated as the authoritative source inventory.
 
 Coverage gaps that remain explicit:
 
-- Exact upstream releases/commits for unversioned modified snapshots need provenance
-  work. Their local content is fingerprinted, but that does not prove which upstream
-  fixes were imported.
+- Every import now has an identified upstream base except NanoSVG (FLTK-derived fork) and tinyexpr;
+  subprocess, backward-cpp, portable-file-dialogs and emscripten-browser-clipboard are
+  eepp-maintained forks, and dr_libs carries per-file versions. Their content is fingerprinted,
+  but that does not prove which upstream fixes were imported.
 - Database records can be incomplete, disputed or mis-scoped. "Screened" is dated
   evidence, not permanent clearance. The review does not replace code auditing or
   fuzzing for vulnerabilities without public advisories.
@@ -631,12 +658,9 @@ Coverage gaps that remain explicit:
 ## Remaining implementation batches
 
 1. **Platform maintenance:** reconcile the Android SDL2 source with the newer SDL2 pin.
-2. **Provenance:** establish verified upstream versions for the remaining snapshot imports
-   (args, backward-cpp, cpp-unicodelib, emscripten-browser-clipboard, fts_fuzzy_match,
-   jpeg-compressor, portable-file-dialogs).
-3. Replace the libssh2 development snapshot with a security-fixed stable release
+2. Replace the libssh2 development snapshot with a security-fixed stable release
    when one is available, retaining the recorded integration patches.
-4. **TLS 1.3:** enable PSA crypto and TLS 1.3 in eepp's Mbed TLS configuration and port
+3. **TLS 1.3:** enable PSA crypto and TLS 1.3 in eepp's Mbed TLS configuration and port
    `MbedTLSSocket`. The PSA sources are already vendored for this, and Mbed TLS 4.x drops
    the classic API that `MbedTLSSocket` and the libssh2 adapter use.
 

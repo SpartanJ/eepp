@@ -1,12 +1,13 @@
 //
 //  unicodelib_encodings.h
 //
-//  Copyright (c) 2020 Yuji Hirose. All rights reserved.
+//  Copyright (c) 2026 Yuji Hirose. All rights reserved.
 //  MIT License
 //
 
 #pragma once
 
+#include <cstdint>
 #include <cstdlib>
 #include <string>
 
@@ -83,26 +84,30 @@ inline size_t codepoint_length(char32_t cp) {
   return 0;
 }
 
+inline bool decode_codepoint(const char *s8, size_t l, size_t &bytes,
+                             char32_t &cp);
+
 inline size_t codepoint_length(const char *s8, size_t l) {
-  if (l) {
-    uint8_t b = s8[0];
-    if ((b & 0x80) == 0) {
-      return 1;
-    } else if ((b & 0xE0) == 0xC0) {
-      return 2;
-    } else if ((b & 0xF0) == 0xE0) {
-      return 3;
-    } else if ((b & 0xF8) == 0xF0) {
-      return 4;
-    }
+  size_t bytes;
+  char32_t cp;
+  if (decode_codepoint(s8, l, bytes, cp)) {
+    return bytes;
   }
   return 0;
 }
 
 inline size_t codepoint_count(const char *s8, size_t l) {
   size_t count = 0;
-  for (size_t i = 0; i < l; i += codepoint_length(s8 + i, l - i)) {
-    count++;
+  size_t i = 0;
+  while (i < l) {
+    auto bytes = codepoint_length(s8 + i, l - i);
+    if (bytes) {
+      count++;
+      i += bytes;
+    } else {
+      // skip an ill-formed byte, as decode() does
+      i++;
+    }
   }
   return count;
 }
@@ -160,28 +165,32 @@ inline bool decode_codepoint(const char *s8, size_t l, size_t &bytes,
       cp = b;
       return true;
     } else if ((b & 0xE0) == 0xC0) {
-      if (l >= 2) {
+      if (l >= 2 && (s8[1] & 0xC0) == 0x80) {
         bytes = 2;
         cp = ((static_cast<char32_t>(s8[0] & 0x1F)) << 6) |
              (static_cast<char32_t>(s8[1] & 0x3F));
-        return true;
+        // reject overlong sequences
+        return cp >= 0x0080;
       }
     } else if ((b & 0xF0) == 0xE0) {
-      if (l >= 3) {
+      if (l >= 3 && (s8[1] & 0xC0) == 0x80 && (s8[2] & 0xC0) == 0x80) {
         bytes = 3;
         cp = ((static_cast<char32_t>(s8[0] & 0x0F)) << 12) |
              ((static_cast<char32_t>(s8[1] & 0x3F)) << 6) |
              (static_cast<char32_t>(s8[2] & 0x3F));
-        return true;
+        // reject overlong sequences and surrogates
+        return cp >= 0x0800 && (cp < 0xD800 || cp >= 0xE000);
       }
     } else if ((b & 0xF8) == 0xF0) {
-      if (l >= 4) {
+      if (l >= 4 && (s8[1] & 0xC0) == 0x80 && (s8[2] & 0xC0) == 0x80 &&
+          (s8[3] & 0xC0) == 0x80) {
         bytes = 4;
         cp = ((static_cast<char32_t>(s8[0] & 0x07)) << 18) |
              ((static_cast<char32_t>(s8[1] & 0x3F)) << 12) |
              ((static_cast<char32_t>(s8[2] & 0x3F)) << 6) |
              (static_cast<char32_t>(s8[3] & 0x3F));
-        return true;
+        // reject overlong sequences and code points beyond U+10FFFF
+        return cp >= 0x10000 && cp < 0x110000;
       }
     }
   }
@@ -196,28 +205,15 @@ inline size_t decode_codepoint(const char *s8, size_t l, char32_t &out) {
   return 0;
 }
 
-template <typename T>
-inline void for_each(const char *s8, size_t l, T callback) {
-  size_t id = 0;
-  size_t i = 0;
-  while (i < l) {
-    auto beg = i++;
-    while (i < l && (s8[i] & 0xc0) == 0x80) {
-      i++;
-    }
-    callback(s8, l, beg, i, id++);
-  }
-}
-
 inline void decode(const char *s8, size_t l, std::u32string &out) {
-  for_each(
-      s8, l,
-      [&](const char *s, size_t /*l*/, size_t beg, size_t end, size_t /*i*/) {
-        size_t bytes;
-        char32_t cp;
-        decode_codepoint(&s[beg], (end - beg), bytes, cp);
-        out += cp;
-      });
+  for (size_t i = 0, bytes; i < l; i += bytes) {
+    char32_t cp;
+    if (decode_codepoint(&s8[i], l - i, bytes, cp)) {
+      out += cp;
+    } else {
+      bytes = 1;
+    }
+  }
 }
 
 }  // namespace utf8
@@ -229,7 +225,7 @@ inline void decode(const char *s8, size_t l, std::u32string &out) {
 namespace utf16 {
 
 inline bool is_surrogate_pair(const char16_t *s16, size_t l) {
-  if (l > 0) {
+  if (l >= 2) {
     auto first = s16[0];
     if (0xD800 <= first && first < 0xDC00) {
       auto second = s16[1];
@@ -241,22 +237,45 @@ inline bool is_surrogate_pair(const char16_t *s16, size_t l) {
   return false;
 }
 
-inline size_t codepoint_length(char32_t cp) { return cp <= 0xFFFF ? 1 : 2; }
+inline size_t codepoint_length(char32_t cp) {
+  if (cp < 0xD800) {
+    return 1;
+  } else if (cp < 0xE000) {
+    // D800 - DFFF is invalid...
+    return 0;
+  } else if (cp < 0x10000) {
+    return 1;
+  } else if (cp < 0x110000) {
+    return 2;
+  }
+  return 0;
+}
 
 inline size_t codepoint_length(const char16_t *s16, size_t l) {
   if (l > 0) {
     if (is_surrogate_pair(s16, l)) {
       return 2;
     }
-    return 1;
+    auto first = s16[0];
+    if (first < 0xD800 || first >= 0xE000) {
+      return 1;
+    }
   }
   return 0;
 }
 
 inline size_t codepoint_count(const char16_t *s16, size_t l) {
   size_t count = 0;
-  for (size_t i = 0; i < l; i += codepoint_length(s16 + i, l - i)) {
-    count++;
+  size_t i = 0;
+  while (i < l) {
+    auto length = codepoint_length(s16 + i, l - i);
+    if (length) {
+      count++;
+      i += length;
+    } else {
+      // skip an unpaired surrogate, as decode() does
+      i++;
+    }
   }
   return count;
 }
@@ -311,7 +330,7 @@ inline bool decode_codepoint(const char16_t *s16, size_t l, size_t &length,
     }
 
     // Non surrogate
-    else {
+    else if (first < 0xD800 || first >= 0xE000) {
       cp = first;
       length = 1;
       return true;
@@ -329,28 +348,15 @@ inline size_t decode_codepoint(const char16_t *s16, size_t l, char32_t &out) {
   return 0;
 }
 
-template <typename T>
-inline void for_each(const char16_t *s16, size_t l, T callback) {
-  size_t id = 0;
-  size_t i = 0;
-  while (i < l) {
-    auto beg = i++;
-    if (is_surrogate_pair(&s16[beg], l - beg)) {
-      i++;
-    }
-    callback(s16, l, beg, i, id++);
-  }
-}
-
 inline void decode(const char16_t *s16, size_t l, std::u32string &out) {
-  for_each(s16, l,
-           [&](const char16_t *s, size_t /*l*/, size_t beg, size_t end,
-               size_t /*i*/) {
-             size_t length;
-             char32_t cp;
-             decode_codepoint(&s[beg], (end - beg), length, cp);
-             out += cp;
-           });
+  for (size_t i = 0, length; i < l; i += length) {
+    char32_t cp;
+    if (decode_codepoint(&s16[i], l - i, length, cp)) {
+      out += cp;
+    } else {
+      length = 1;
+    }
+  }
 }
 
 }  // namespace utf16
