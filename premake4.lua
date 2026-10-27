@@ -240,6 +240,19 @@ function os.is_real( os_name )
 	return os.get_real() == os_name
 end
 
+-- premake4 has no os.getnumcpus(); returns 1 when the count is unavailable.
+function num_cpus()
+	local count = tonumber( os.getenv( "NUMBER_OF_PROCESSORS" ) or "" )
+	if not count then
+		local handle = io.popen( "nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null" )
+		if handle then
+			count = tonumber( handle:read( "*l" ) or "" )
+			handle:close()
+		end
+	end
+	return count or 1
+end
+
 function glew_supported()
 	return not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten")
 end
@@ -1527,7 +1540,15 @@ solution "eepp"
 			language "C++"
 			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 			defines { "HAVE_CONFIG_H" }
-			files { "src/thirdparty/harfbuzz/**.cc" }
+			-- harfbuzz.cc is upstream's single-unit build and includes every other source. It does
+			-- about a quarter of the total work, so it is faster on machines with few cores; with 8+
+			-- threads the separate sources compile in parallel and finish sooner.
+			if num_cpus() >= 8 then
+				files { "src/thirdparty/harfbuzz/**.cc" }
+				excludes { "src/thirdparty/harfbuzz/harfbuzz.cc" }
+			else
+				files { "src/thirdparty/harfbuzz/harfbuzz.cc" }
+			end
 			includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
 			build_base_cpp_configuration( "harfbuzz" )
 			if is_vs() then

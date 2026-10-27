@@ -366,12 +366,12 @@ LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
 
 LOCAL_MODULE			:= harfbuzz
 
-HARFBUZZ_SRCS			:=  harfbuzz/**.cc
-
 LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/harfbuzz/
 LOCAL_CFLAGS			:= -Os -DHAVE_CONFIG_H -I$(LOCAL_PATH)/freetype2/include
 
-LOCAL_SRC_FILES			:= $(foreach F, $(HARFBUZZ_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+# Upstream's single-unit build; it includes the core sources, which are not built separately.
+# Unlike the Premake builds, ndk-build always uses it.
+LOCAL_SRC_FILES			:= harfbuzz/harfbuzz.cc
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** HARFBUZZ *************

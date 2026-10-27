@@ -1561,7 +1561,15 @@ workspace "eepp"
 			kind "StaticLib"
 			language "C++"
 			defines { "HAVE_CONFIG_H" }
-			files { "src/thirdparty/harfbuzz/**.cc" }
+			-- harfbuzz.cc is upstream's single-unit build and includes every other source. It does
+			-- about a quarter of the total work, so it is faster on machines with few cores; with 8+
+			-- threads the separate sources compile in parallel and finish sooner.
+			if os.getnumcpus() >= 8 then
+				files { "src/thirdparty/harfbuzz/**.cc" }
+				excludes { "src/thirdparty/harfbuzz/harfbuzz.cc" }
+			else
+				files { "src/thirdparty/harfbuzz/harfbuzz.cc" }
+			end
 			incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
 			build_base_cpp_configuration( "harfbuzz" )
 			target_dir_thirdparty()
