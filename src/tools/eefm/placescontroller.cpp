@@ -11,7 +11,9 @@ PlacesController::PlacesController( App& app, const std::string& configPath ) :
 	mPlaces->load();
 }
 
-PlacesController::~PlacesController() = default;
+PlacesController::~PlacesController() {
+	mDeviceCancellation.cancel();
+}
 
 void PlacesController::createPanel( UIWidget* parent ) {
 	mPlacesPanel = PlacesPanel::New();
@@ -48,6 +50,23 @@ void PlacesController::createPanel( UIWidget* parent ) {
 								  mApp.panes().activeIndex() );
 	};
 	refresh();
+	refreshDevices();
+	// The timer only schedules work. Platform change checks and discovery both run on the
+	// pool, so the UI never depends on a backend check being nonblocking.
+	mPlacesPanel->setInterval( [this] { refreshDevices( false ); },
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+							   Seconds( 1 )
+#else
+							   Seconds( 3 )
+#endif
+	);
+}
+
+void PlacesController::shutdown() {
+	if ( mPlacesPanel )
+		mPlacesPanel->clearActions();
+	mDeviceCancellation.cancel();
+	mDeviceMonitor.stop();
 }
 
 void PlacesController::saveConfig() {
@@ -55,7 +74,6 @@ void PlacesController::saveConfig() {
 }
 
 void PlacesController::refresh() {
-	mDevices = Places::devices( mUI->getTranslator() );
 	std::vector<PlacesPanel::Entry> entries;
 	bool showHidden = mPlaces->showHidden();
 	auto listed = [&]( const Place& place ) {
@@ -89,21 +107,94 @@ void PlacesController::save() {
 	refreshDeviceUsage();
 }
 
+void PlacesController::refreshDevices( bool force ) {
+	if ( mDeviceCancellation.isCancellationRequested() )
+		return;
+	if ( mRefreshingDevices ) {
+		// Timer ticks never queue more work behind an in-flight check. An explicit refresh
+		// (including completion of an eject) must still get a fresh snapshot afterwards.
+		mRefreshDevicesAgain |= force;
+		return;
+	}
+	mRefreshingDevices = true;
+	// Snapshot only the labels: the worker must not borrow the scene's translator during
+	// shutdown, when the application's shared pool may still be draining. The controller and
+	// monitor outlive that pool; stop() keeps resources used by in-flight checks alive.
+	mApp.pool()
+		->submit( [monitor = &mDeviceMonitor, force,
+				   rootName = mUI->i18n( "eefm_root", "Root" ).toUtf8(),
+				   shareNameFormat = mUI->i18n( "eefm_share_on_server", "%s on %s" ).toUtf8(),
+				   token = mDeviceCancellation.token()]() -> std::optional<std::vector<Place>> {
+			if ( token.isCancellationRequested() || ( !force && !monitor->changed() ) )
+				return std::nullopt;
+			return Places::devices( rootName, shareNameFormat, token );
+		} )
+		.then( mApp.executor(), [this]( std::optional<std::vector<Place>>&& result ) {
+			mRefreshingDevices = false;
+			if ( mDeviceCancellation.isCancellationRequested() )
+				return;
+			if ( result ) {
+				auto& devices = *result;
+				bool same = devices.size() == mDevices.size() &&
+							std::equal( devices.begin(), devices.end(), mDevices.begin(),
+										[]( const Place& a, const Place& b ) {
+											return a.uri == b.uri && a.name == b.name &&
+												   a.icon == b.icon && a.section == b.section &&
+												   a.ejectable == b.ejectable;
+										} );
+				if ( !same ) {
+					mDevices = std::move( devices );
+					++mDeviceGeneration;
+					refresh();
+					refreshDeviceUsage();
+				}
+			}
+			if ( mRefreshDevicesAgain ) {
+				mRefreshDevicesAgain = false;
+				refreshDevices();
+			}
+		} );
+}
+
+void PlacesController::ejectDevice( const URI& uri ) {
+	if ( mEjecting || mDeviceCancellation.isCancellationRequested() )
+		return;
+	const auto device = std::find_if( mDevices.begin(), mDevices.end(), [&]( const Place& place ) {
+		return place.uri == uri && place.ejectable;
+	} );
+	if ( device == mDevices.end() )
+		return;
+	mEjecting = true;
+	mApp.pool()
+		->submit( [path = uri.getFSPath(), token = mDeviceCancellation.token()] {
+			return DeviceMonitor::eject( path, token );
+		} )
+		.then( mApp.executor(), [this]( std::string&& error ) {
+			mEjecting = false;
+			if ( mDeviceCancellation.isCancellationRequested() )
+				return;
+			refreshDevices();
+			if ( !error.empty() )
+				Dialogs::showError( mUI, String::fromUtf8( error ) );
+		} );
+}
+
 void PlacesController::refreshDeviceUsage() {
 	for ( const auto& device : mDevices ) {
 		// statvfs on a network share blocks while its server is unreachable.
 		if ( device.section != PlaceSection::Devices )
 			continue;
 		URI uri = device.uri;
-		mApp.vfs()->spaceInfo( uri ).then( mApp.executor(), [this,
-															 uri]( VFSResult<SpaceInfo>&& space ) {
-			if ( !space || space.value().capacity == 0 )
-				return;
-			const auto& info = space.value();
-			Float used =
-				1.f - static_cast<Float>( info.available ) / static_cast<Float>( info.capacity );
-			mPlacesPanel->setUsage( uri, used );
-		} );
+		mApp.vfs()->spaceInfo( uri ).then(
+			mApp.executor(), [this, uri = std::move( uri ),
+							  generation = mDeviceGeneration]( VFSResult<SpaceInfo>&& space ) {
+				if ( generation != mDeviceGeneration || !space || space.value().capacity == 0 )
+					return;
+				const auto& info = space.value();
+				Float used = 1.f - static_cast<Float>( info.available ) /
+									   static_cast<Float>( info.capacity );
+				mPlacesPanel->setUsage( uri, used );
+			} );
 	}
 }
 
@@ -143,6 +234,13 @@ void PlacesController::showPlaceMenu( const PlacesPanel::Entry& entry ) {
 				->setId( "move-down" );
 		}
 	}
+	bool ejectable = std::any_of( mDevices.begin(), mDevices.end(), [&]( const Place& device ) {
+		return device.uri == entry.place.uri && device.ejectable;
+	} );
+	if ( ejectable ) {
+		menu->addSeparator();
+		menu->add( mUI->i18n( "eefm_eject", "Eject" ) )->setId( "eject" )->setEnabled( !mEjecting );
+	}
 	if ( entry.place.section == PlaceSection::Devices ) {
 		menu->addSeparator();
 		menu->add( mUI->i18n( "eefm_refresh_devices", "Refresh Devices" ),
@@ -174,8 +272,10 @@ void PlacesController::showPlaceMenu( const PlacesPanel::Entry& entry ) {
 			mPlaces->move( index, id == "move-up" ? -1 : 1 );
 			save();
 		} else if ( id == "refresh-devices" ) {
-			refresh();
+			refreshDevices();
 			refreshDeviceUsage();
+		} else if ( id == "eject" ) {
+			ejectDevice( entry.place.uri );
 		}
 	} );
 	menu->showOverMouseCursor();

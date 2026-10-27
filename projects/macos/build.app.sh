@@ -131,8 +131,10 @@ bundle_dependencies() {
 bundle_dependencies "$BINARY" "$MACOS/$APP"
 chmod -R u+rwX,go+rX,go-w "$BUNDLE"
 xattr -cr "$BUNDLE"
+# codesign recognizes the main executable as its enclosing app. Sign every bundled
+# library first, including unsigned Intel cross-build outputs, then sign the app.
 for component in "$MACOS"/*; do
-	[ -f "$component" ] || continue
+	[ -f "$component" ] && [ "$component" != "$MACOS/$APP" ] || continue
 	codesign --force --sign - "$component"
 done
 codesign --force --sign - "$BUNDLE"

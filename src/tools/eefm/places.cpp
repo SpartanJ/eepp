@@ -1,4 +1,5 @@
 #include "places.hpp"
+#include "devicemonitor.hpp"
 #include "trash.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
@@ -89,7 +90,7 @@ bool isNetworkFileSystem( const std::string& type ) {
 /** "share on server", from the mount source: server:/path (NFS, sshfs), //server/share (SMB) or
  * user@server:/path. Falls back to the mount point's name. */
 std::string networkShareName( const std::string& source, const std::string& mountPoint,
-							  const Translator& translator ) {
+							  const std::string& nameFormat ) {
 	std::string server, share;
 	if ( String::startsWith( source, "//" ) ) {
 		size_t slash = source.find( '/', 2 );
@@ -109,10 +110,7 @@ std::string networkShareName( const std::string& source, const std::string& moun
 		share = FileSystem::fileNameFromPath( mountPoint );
 	if ( server.empty() )
 		return share.empty() ? mountPoint : share;
-	return share.empty() ? server
-						 : String::format(
-							   translator.getString( "eefm_share_on_server", "%s on %s" ).toUtf8(),
-							   share, server );
+	return share.empty() ? server : String::format( nameFormat, share, server );
 }
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
@@ -493,8 +491,11 @@ bool Places::hasHidden() const {
 						[]( const Place& place ) { return place.hidden; } );
 }
 
-std::vector<Place> Places::devices( const Translator& translator ) {
+std::vector<Place> Places::devices( const std::string& rootName, const std::string& shareNameFormat,
+									const CancellationToken& token ) {
 	std::vector<Place> devices;
+	if ( token.isCancellationRequested() )
+		return devices;
 	auto addDevice = [&]( std::string name, const std::string& path, const char* icon,
 						  PlaceSection section = PlaceSection::Devices ) {
 		URI uri = URI::fromFSPath( withSlash( path ) );
@@ -502,12 +503,12 @@ std::vector<Place> Places::devices( const Translator& translator ) {
 			if ( device.uri == uri )
 				return;
 		}
-		devices.push_back( Place{ std::move( name ), uri, icon, section, true } );
+		devices.push_back( Place{ std::move( name ), std::move( uri ), icon, section, true } );
 	};
 	// Network mounts are never touched here (no stat): an unreachable server would block.
 	auto addNetworkShare = [&]( const std::string& source, const std::string& mountPoint ) {
-		addDevice( networkShareName( source, mountPoint, translator ), mountPoint, "place-network",
-				   PlaceSection::Remote );
+		addDevice( networkShareName( source, mountPoint, shareNameFormat ), mountPoint,
+				   "place-network", PlaceSection::Remote );
 	};
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 	// Device node -> label, from the udev by-label links.
@@ -547,7 +548,7 @@ std::vector<Place> Places::devices( const Translator& translator ) {
 		if ( label != labels.end() )
 			name = label->second;
 		else if ( mountPoint == "/" )
-			name = translator.getString( "eefm_root", "Root" ).toUtf8();
+			name = rootName;
 		else
 			name = FileSystem::fileNameFromPath( mountPoint );
 		addDevice( name, mountPoint,
@@ -560,12 +561,26 @@ std::vector<Place> Places::devices( const Translator& translator ) {
 		addDevice( drive, drive, "device-drive" );
 #elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD
 #if defined( __NetBSD__ )
-	struct statvfs* mounts = nullptr;
+	using MountInfo = struct statvfs;
 #else
-	struct statfs* mounts = nullptr;
+	using MountInfo = struct statfs;
 #endif
+	// getmntinfo uses process-global storage also used by native file dialogs. Own the
+	// snapshot here, since discovery now runs concurrently with the UI thread.
+	auto readMounts = []( MountInfo* buffer, int size ) {
 	// MNT_NOWAIT: cached information, so unreachable network mounts do not block.
-	int count = getmntinfo( &mounts, MNT_NOWAIT );
+#if defined( __NetBSD__ )
+		return getvfsstat( buffer, size, MNT_NOWAIT );
+#else
+		return getfsstat( buffer, size, MNT_NOWAIT );
+#endif
+	};
+	int count = readMounts( nullptr, 0 );
+	std::vector<MountInfo> mountStorage( count > 0 ? count : 0 );
+	MountInfo* mounts = mountStorage.data();
+	if ( count > 0 ) {
+		count = readMounts( mounts, static_cast<int>( mountStorage.size() * sizeof( *mounts ) ) );
+	}
 	for ( int i = 0; i < count; ++i ) {
 		std::string type( mounts[i].f_fstypename );
 		std::string source( mounts[i].f_mntfromname );
@@ -583,8 +598,7 @@ std::vector<Place> Places::devices( const Translator& translator ) {
 #else
 		if ( !String::startsWith( source, "/dev/" ) )
 			continue;
-		addDevice( mountPoint == "/" ? translator.getString( "eefm_root", "Root" ).toUtf8()
-									 : FileSystem::fileNameFromPath( mountPoint ),
+		addDevice( mountPoint == "/" ? rootName : FileSystem::fileNameFromPath( mountPoint ),
 				   mountPoint,
 				   mountPoint == "/"							 ? "device-root"
 				   : String::startsWith( mountPoint, "/media/" ) ? "device-usb"
@@ -592,10 +606,11 @@ std::vector<Place> Places::devices( const Translator& translator ) {
 #endif
 	}
 	if ( devices.empty() )
-		addDevice( translator.getString( "eefm_root", "Root" ).toUtf8(), "/", "device-root" );
+		addDevice( rootName, "/", "device-root" );
 #else
-	addDevice( translator.getString( "eefm_root", "Root" ).toUtf8(), "/", "device-root" );
+	addDevice( rootName, "/", "device-root" );
 #endif
+	DeviceMonitor::updateCapabilities( devices, token );
 	return devices;
 }
 

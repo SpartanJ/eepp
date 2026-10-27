@@ -171,6 +171,46 @@ class AppPackaging(PackagingFixture):
             self.assertNotIn("sample/stale", package.getnames())
             self.assertIn("sample/sample", package.getnames())
 
+    def test_native_sdl_lookup_drains_ldd_output(self):
+        finished = self.root / "ldd-finished"
+        for backend, name in (("SDL2", "libSDL2-2.0.so.0"), ("SDL3", "libSDL3.so.0")):
+            runtime = Path(self.runtime.name) / name
+            runtime.write_text(backend)
+            # Output beyond the pipe buffer makes an early awk exit reliably cause SIGPIPE.
+            self.command("ldd", f'''
+echo '{name} => {runtime} (0x1)'
+i=0
+while [ "$i" -lt 5000 ]; do
+    echo 'libother.so.0 => /usr/lib/libother.so.0 (0x2)'
+    i=$((i + 1))
+done
+echo '{name} => /missing/duplicate-runtime (0x3)'
+touch "{finished}"
+''')
+            with self.subTest(backend=backend):
+                self.package("freebsd", "--backend", backend)
+                self.assertTrue(finished.exists())
+                finished.unlink()
+                with tarfile.open(self.output / "sample-freebsd-1.2.3-x86_64.tar.gz") as package:
+                    self.assertEqual(package.extractfile(f"sample/libs/{name}").read(), backend.encode())
+
+        # The SDK's native SDL3 lookup must also let ldd finish writing.
+        (self.root / "include").mkdir()
+        (self.root / "docs/articles").mkdir(parents=True)
+        libraries = self.root / "libs/linux"
+        libraries.mkdir(parents=True)
+        shutil.copy2(self.source / "libeepp.so", libraries)
+        self.run_script("scripts/package_sdk.sh", "linux", "x86_64")
+        self.assertTrue(finished.exists())
+        with tarfile.open(self.root / "projects/linux/sdk/eepp-sdk-linux-x86_64-nightly.tar.gz") as package:
+            self.assertEqual(package.extractfile("eepp-sdk/bin/libSDL3.so.0").read(), b"SDL3")
+
+        # Keep reporting real ldd failures even when its output includes a matching library.
+        self.command("ldd", f"echo 'libSDL3.so.0 => {runtime} (0x1)'\nexit 3")
+        self.assertEqual(self.package("freebsd", "--backend", "SDL3", check=False).returncode, 3)
+        self.assertEqual(self.run_script("scripts/package_sdk.sh", "linux", "x86_64",
+                                         check=False).returncode, 3)
+
     def test_mingw_zip(self):
         for name in ("sample.exe", "eepp.dll", "SDL3.dll"):
             (self.source / name).write_text(name)
@@ -185,6 +225,73 @@ class AppPackaging(PackagingFixture):
             self.assertNotEqual(self.package("linux", *args, check=False).returncode, 0)
         (self.app / "version.hpp").write_text("#define SAMPLE_MAJOR_VERSION invalid\n")
         self.assertNotEqual(self.package("linux", check=False).returncode, 0)
+
+    def test_macos_dmg_retries_only_resource_busy(self):
+        (self.output / "sample.app").mkdir(parents=True)
+        image = self.output / "sample-macos-1.2.3-x86_64.dmg"
+        attempts = self.root / "dmg-attempts"
+        temporary_image = self.root / "dmg-temporary-path"
+        self.command("sleep", "exit 0")
+        self.command("hdiutil", f'''
+case " $* " in *' -fs HFS+ '*) ;; *) echo 'Expected HFS+ image' >&2; exit 9 ;; esac
+count=$(cat "{attempts}" 2>/dev/null || echo 0)
+count=$((count + 1))
+echo "$count" > "{attempts}"
+for image do :; done
+printf '%s' "$image" > "{temporary_image}"
+printf partial > "$image"
+case "$EEPP_TEST_DMG_FAILURE" in
+    busy) [ "$count" -gt 2 ] || {{ echo 'hdiutil: create failed - Resource busy' >&2; exit 16; }} ;;
+    always-busy) echo 'hdiutil: create failed - Resource busy' >&2; exit 16 ;;
+    other) echo 'hdiutil: create failed - Permission denied' >&2; exit 7 ;;
+esac
+printf complete > "$image"
+''')
+        for failure, expected_attempts, status in (("busy", 3, 0), ("always-busy", 3, 16),
+                                                   ("other", 1, 7)):
+            with self.subTest(failure=failure):
+                attempts.unlink(missing_ok=True)
+                image.write_text("previous image")
+                self.env["EEPP_TEST_DMG_FAILURE"] = failure
+                result = self.run_script("macos/create.dmg.sh", "sample", "--arch", "x86_64",
+                                         "--output-dir", self.output, check=False)
+                self.assertEqual(result.returncode, status, result.stdout)
+                self.assertEqual(int(attempts.read_text()), expected_attempts)
+                self.assertEqual(image.read_text(), "complete" if status == 0 else "previous image")
+                self.assertFalse(Path(temporary_image.read_text()).exists())
+
+    @unittest.skipUnless(
+        platform.system() == "Darwin" and os.environ.get("EEPP_TEST_SDL3_DYLIB")
+        and shutil.which("premake5"),
+        "Set EEPP_TEST_SDL3_DYLIB to check unsigned Mach-O bundle signing",
+    )
+    def test_macos_signs_unsigned_dependencies_before_app(self):
+        binary = self.source / "sample"
+        runtime = self.source / "zz-runtime.dylib"
+        shutil.copyfile(shutil.which("premake5"), binary)
+        shutil.copyfile(os.environ["EEPP_TEST_SDL3_DYLIB"], runtime)
+        binary.chmod(0o755)
+        # A real Mach-O dependency after the main executable in directory order exposes
+        # codesign treating that executable as its enclosing bundle before the dylib is signed.
+        for command in (
+            ["install_name_tool", "-change",
+             "/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices",
+             "@rpath/zz-runtime.dylib", str(binary)],
+            ["install_name_tool", "-id", "@rpath/zz-runtime.dylib", str(runtime)],
+        ):
+            subprocess.run(command, check=True, capture_output=True)
+        # Emulate unsigned Intel outputs after relocation, immediately before signing.
+        # Removing a signature earlier can make install_name_tool reject Homebrew binaries.
+        self.command("xattr", '''
+/usr/bin/xattr "$@"
+/usr/bin/codesign --remove-signature "$2/Contents/MacOS/sample"
+/usr/bin/codesign --remove-signature "$2/Contents/MacOS/zz-runtime.dylib"
+''')
+        self.package("macos", "--arch", platform.machine())
+        bundle = self.output / "sample.app"
+        self.assertTrue((bundle / "Contents/MacOS/zz-runtime.dylib").is_file())
+        subprocess.run(["codesign", "--verify", "--deep", "--strict", str(bundle)],
+                       check=True, capture_output=True)
 
     @unittest.skipUnless(
         platform.system() in ("Darwin", "Linux", "FreeBSD")

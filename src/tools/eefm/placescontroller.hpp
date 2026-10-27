@@ -1,6 +1,7 @@
 #ifndef EEFM_PLACESCONTROLLER_HPP
 #define EEFM_PLACESCONTROLLER_HPP
 
+#include "devicemonitor.hpp"
 #include "places.hpp"
 #include "placespanel.hpp"
 
@@ -30,8 +31,15 @@ class PlacesController {
 	/** The panel, null before createPanel(). */
 	PlacesPanel* panel() const { return mPlacesPanel; }
 
-	/** Lists the places and devices again. */
+	/** Lists saved places and the cached devices again, without I/O. */
 	void refresh();
+
+	/** Discovers devices on the worker pool, coalescing concurrent requests. Scheduled calls
+	 * use force=false to check platform notifications before enumerating. */
+	void refreshDevices( bool force = true );
+
+	/** Cancels device work and stops notifications/timer before the executor is detached. */
+	void shutdown();
 
 	/** Usage bars of the local devices (asynchronous). */
 	void refreshDeviceUsage();
@@ -43,6 +51,8 @@ class PlacesController {
 	void saveConfig();
 
   private:
+	void ejectDevice( const URI& uri );
+
 	void showPlaceMenu( const PlacesPanel::Entry& entry );
 
 	void showSectionMenu( PlaceSection section );
@@ -64,7 +74,14 @@ class PlacesController {
 	UISceneNode* mUI;
 	std::unique_ptr<Places> mPlaces;
 	std::vector<Place> mDevices;
+	CancellationSource mDeviceCancellation;
 	PlacesPanel* mPlacesPanel{ nullptr };
+	Uint64 mDeviceGeneration{ 0 };
+	DeviceMonitor mDeviceMonitor;
+	// Main-thread-only: workers publish results through the executor, never these flags.
+	bool mRefreshingDevices{ false };
+	bool mRefreshDevicesAgain{ false };
+	bool mEjecting{ false };
 };
 
 } // namespace eefm

@@ -67,7 +67,9 @@ DESKTOP
 		[ -n "${CXX:-${CC:-}}" ] || package_error "Cross packaging requires CXX or CC for target $ARCH"
 		SDL_PATH=$("${CXX:-$CC}" "-print-file-name=$SDL_NAME")
 	else
-		SDL_PATH=$(ldd "$LIB_SOURCE" | awk -v name="$SDL_NAME" '$1 == name && $2 == "=>" {print $3; exit}')
+		# Drain ldd completely: an early awk exit can cause SIGPIPE on FreeBSD,
+		# which pipefail would treat as a dependency lookup failure.
+		SDL_PATH=$(ldd "$LIB_SOURCE" | awk -v name="$SDL_NAME" '$1 == name && $2 == "=>" && !found {print $3; found=1}')
 	fi
 	[ -f "$SDL_PATH" ] || package_error "Cannot resolve $SDL_NAME from libeepp.so"
 	cp -L "$SDL_PATH" "$LIB_DEST/$SDL_NAME"

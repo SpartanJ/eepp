@@ -2264,6 +2264,10 @@ solution "eepp"
 		eepp_module_backward_add( false )
 		includedirs { "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
 		files { "src/tools/eefm/*.cpp" }
+		if os.is("macosx") then
+			files { "src/tools/eefm/*.mm" }
+			links { "Cocoa.framework" }
+		end
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		eepp_module_vfs_add()
 		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
@@ -2356,6 +2360,9 @@ solution "eepp"
 		-- Exercise the actual libpng decoder, including its platform SIMD paths.
 		links { "libpng-static", "zlib-static" }
 		language "C++"
+		if os.is("linux") then
+			files { "src/tools/eefm/devicemonitor_linux.cpp" }
+		end
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end

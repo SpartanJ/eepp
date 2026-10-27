@@ -1,20 +1,22 @@
 #ifndef EEFM_PLACES_HPP
 #define EEFM_PLACES_HPP
 
+#include <eepp/core/cancellationtoken.hpp>
 #include <eepp/core/uri.hpp>
-#include <eepp/system/translator.hpp>
 #include <optional>
 #include <string>
 #include <vector>
 
 namespace eefm {
 
+using namespace EE;
+
 enum class PlaceSection { Places, Remote, Devices };
 
 struct Place {
 	std::string name;
 	/** Places are persisted as URIs, so remote locations behave like local ones. */
-	EE::URI uri;
+	URI uri;
 	/** Theme icon name. */
 	std::string icon;
 	PlaceSection section{ PlaceSection::Places };
@@ -25,6 +27,8 @@ struct Place {
 	/** Stable key of a built-in place ("home", "documents", "trash", ...), empty for the user's. */
 	std::string id;
 	bool hidden{ false };
+	/** Native ejection is available for this discovered volume. Never persisted. */
+	bool ejectable{ false };
 };
 
 /** @brief Bookmarked and built-in locations shown in the Places panel.
@@ -52,7 +56,7 @@ class Places {
 	void remove( size_t index );
 
 	/** Changes name, location and icon. The section follows the new location. */
-	void edit( size_t index, std::string name, const EE::URI& uri, std::string icon );
+	void edit( size_t index, std::string name, const URI& uri, std::string icon );
 
 	void setHidden( size_t index, bool hidden );
 
@@ -78,19 +82,21 @@ class Places {
 	bool hasHidden() const;
 
 	/** Mounted file systems worth showing: local disks and removable media (Devices section) and
-	 * network shares such as NFS, SMB or sshfs mounts (Remote section). Reads the mount table only
-	 * (never stats a mount), so it is cheap and does not block on unreachable servers. */
-	static std::vector<Place> devices( const EE::System::Translator& translator );
+	 * network shares such as NFS, SMB or sshfs mounts (Remote section). Never stats network
+	 * mounts. Call on a worker: local volume capabilities may require native I/O. */
+	static std::vector<Place> devices( const std::string& rootName,
+									   const std::string& shareNameFormat,
+									   const CancellationToken& token = {} );
 
-	static std::string defaultIcon( const EE::URI& uri );
+	static std::string defaultIcon( const URI& uri );
 
-	static PlaceSection sectionFor( const EE::URI& uri );
+	static PlaceSection sectionFor( const URI& uri );
 
 	/** Icons offered when editing a place. */
 	static const std::vector<std::string>& iconNames();
 
 	/** sftp:// locations of the concrete hosts in ~/.ssh/config, offered when adding a place. */
-	static std::vector<EE::URI> sshHosts();
+	static std::vector<URI> sshHosts();
 
   private:
 	/** The built-in places, in default order. */

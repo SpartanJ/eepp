@@ -591,6 +591,7 @@ int App::run( int argc, char* argv[] ) {
 	mFileOperations->cancelOperations();
 	mPreviewPanel->cancel();
 	mThumbnails->shutdown();
+	mPlacesController->shutdown();
 	mPaneManager->clearTabs();
 #ifdef EE_VFS_SFTP
 	if ( mSSHPrompts )

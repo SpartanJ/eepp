@@ -2262,6 +2262,10 @@ workspace "eepp"
 		eepp_module_backward_add( false )
 		incdirs { "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
 		files { "src/tools/eefm/*.cpp" }
+		filter "system:macosx"
+			files { "src/tools/eefm/*.mm" }
+			links { "Cocoa.framework" }
+		filter {}
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		eepp_module_vfs_add()
 		filter "system:windows"
@@ -2352,6 +2356,9 @@ workspace "eepp"
 		-- Exercise the actual libpng decoder, including its platform SIMD paths.
 		links { "libpng-static", "zlib-static" }
 		language "C++"
+		filter "system:linux"
+			files { "src/tools/eefm/devicemonitor_linux.cpp" }
+		filter {}
 		files { "src/tests/unit_tests/*.cpp",
 				"src/tools/eefm/location.cpp",
 				"src/tools/eproc/process_info.cpp",

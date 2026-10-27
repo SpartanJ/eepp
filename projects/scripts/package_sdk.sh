@@ -338,7 +338,8 @@ bundle_sdl3() {
 			sdl_path="$(brew --prefix sdl3)/lib/libSDL3.0.dylib"
 			;;
 		*)
-			sdl_path="$(ldd "$STAGING/bin/libeepp.so" | awk '/libSDL3\.so\.0 =>/ {print $3; exit}')"
+			# Consume all ldd output to avoid SIGPIPE under pipefail.
+			sdl_path="$(ldd "$STAGING/bin/libeepp.so" | awk '$1 == "libSDL3.so.0" && $2 == "=>" && !found {print $3; found=1}')"
 			;;
 	esac
 	if [ -z "$sdl_path" ] || [ ! -f "$sdl_path" ]; then
