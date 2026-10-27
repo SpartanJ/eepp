@@ -120,19 +120,17 @@ struct WheelPropagationTest {
 		if ( discrete ) {
 			// Native backends emit wheel button events as well as the precise wheel event.
 			event.Type = InputEvent::MouseButtonDown;
-			event.button.button =
+			const Uint8 button =
 				offset.y != 0.f ? ( offset.y > 0.f ? EE_BUTTON_WHEELUP : EE_BUTTON_WHEELDOWN )
 								: ( offset.x > 0.f ? EE_BUTTON_WHEELRIGHT : EE_BUTTON_WHEELLEFT );
-			event.button.state = 1;
+			event.button = { 0, button, 1, 0, 0 };
 			input->processEventForWindow( &event );
 			event.Type = InputEvent::MouseButtonUp;
 			event.button.state = 0;
 			input->processEventForWindow( &event );
 		}
 		event.Type = InputEvent::MouseWheel;
-		event.wheel.x = offset.x;
-		event.wheel.y = offset.y;
-		event.wheel.direction = InputEvent::WheelEvent::Normal;
+		event.wheel = { 0, offset.x, offset.y, InputEvent::WheelEvent::Normal };
 		input->processEventForWindow( &event );
 		app.getUI()->update( Milliseconds( 16 ) );
 	}
@@ -461,7 +459,10 @@ UTEST( UIScrolling, ImageZoomWheelDoesNotScrollAncestor ) {
 	auto* input = test.app.getWindow()->getInput();
 	InputEvent modifiers{};
 	modifiers.Type = InputEvent::KeyDown;
-	modifiers.key.keysym.mod = KeyMod::getDefaultModifier();
+	modifiers.WinID = test.app.getWindow()->getWindowID();
+	// InputEvent's constructor does not initialize its union payload. In particular, an invalid
+	// scancode can make Input skip the modifier update or write outside the key-state array.
+	modifiers.key = { 0, 1, 0, { SCANCODE_UNKNOWN, KEY_UNKNOWN, KeyMod::getDefaultModifier(), 0 } };
 	input->processEventForWindow( &modifiers );
 	const Float scale = viewer->getImage()->getScale().x;
 	test.wheel( { 0.f, 1.f } );
@@ -469,6 +470,7 @@ UTEST( UIScrolling, ImageZoomWheelDoesNotScrollAncestor ) {
 	test.wheel( { 0.f, -0.25f }, false );
 	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
 	modifiers.Type = InputEvent::KeyUp;
+	modifiers.key.state = 0;
 	modifiers.key.keysym.mod = 0;
 	input->processEventForWindow( &modifiers );
 }

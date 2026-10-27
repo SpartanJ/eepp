@@ -327,6 +327,11 @@ AccessibilityProperties& UIWidget::ensureAccessibilityProperties() {
 }
 
 void UIWidget::deliverAccessibilityEvent( AccessibilityEvent event ) {
+	// Async document loads can emit intermediate selection/value events from a worker. The
+	// main-thread load completion publishes the resulting document state; the manager's identity
+	// caches and event queue must never be mutated by those worker notifications.
+	if ( !Engine::isMainThread() )
+		return;
 	if ( !mUISceneNode || !mUISceneNode->hasActiveAccessibilityClients() )
 		return;
 	if ( isDestroying() )

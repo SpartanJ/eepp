@@ -244,7 +244,7 @@ UTEST( eterm_ui, applicationWheelDoesNotScrollHistoryOrAncestor ) {
 		InputEvent wheel{};
 		wheel.Type = InputEvent::MouseWheel;
 		wheel.WinID = app.getWindow()->getWindowID();
-		wheel.wheel.y = 1.f;
+		wheel.wheel = { 0, 0.f, 1.f, InputEvent::WheelEvent::Normal };
 		input->processEventForWindow( &wheel );
 		app.getUI()->update( Milliseconds( 16 ) );
 		EXPECT_NEAR( previousValue, terminal->getVerticalScrollBar()->getValue(), 0.0001f );

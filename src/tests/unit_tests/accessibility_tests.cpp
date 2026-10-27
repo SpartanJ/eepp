@@ -40,6 +40,7 @@
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/clipboard.hpp>
+#include <eepp/window/engine.hpp>
 
 #include <cstdlib>
 #include <future>
@@ -1708,6 +1709,65 @@ bool hasPendingEvent( const AccessibilityManager* manager, AccessibilityNodeRef 
 }
 
 } // namespace
+
+UTEST( Accessibility, AsyncDocumentLoadKeepsAccessibilityEventsOnMainThread ) {
+	class ThreadRecordingBackend : public RecordingBackend {
+	  public:
+		size_t workerEvents{ 0 };
+
+		void onEvent( const AccessibilityPendingEvent& event ) override {
+			if ( !Engine::isMainThread() ) {
+				++workerEvents;
+				return;
+			}
+			RecordingBackend::onEvent( event );
+		}
+	};
+
+	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
+	auto* scene = app.getUI();
+	auto* manager = scene->getAccessibilityManager();
+	auto backend = std::make_unique<ThreadRecordingBackend>();
+	auto* recorder = backend.get();
+	manager->setBackend( std::move( backend ) );
+	manager->onNativeClientObserved();
+	auto* editor = UICodeEditor::New();
+	editor->getDocument().textInput( "before loading" );
+	const auto ref = manager->getNodeRef( editor );
+	manager->getTextLength( ref );
+	recorder->events.clear();
+	recorder->changes.clear();
+	manager->clearPendingEvents();
+
+	const std::string slash = FileSystem::getOSSlash();
+	const std::string path = Sys::getProcessPath() + "assets" + slash + "textformat" + slash +
+							 "english.utf8.crlf.nobom.txt";
+	auto pool = ThreadPool::createShared( 1 );
+	bool loaded = false;
+	ASSERT_TRUE( editor->loadAsyncFromFile(
+		path, pool,
+		[&]( std::shared_ptr<Doc::TextDocument>, bool success ) { loaded = success; } ) );
+	// Join the loader before querying the recording backend, without processing UI completions.
+	// A native backend must never receive the worker's intermediate selection/value events.
+	pool.reset();
+	EXPECT_EQ( 0u, recorder->workerEvents );
+	EXPECT_FALSE( loaded );
+
+	Clock clock;
+	while ( !loaded && clock.getElapsedTime() < Seconds( 5 ) ) {
+		scene->update( Milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+	EXPECT_TRUE( loaded );
+	ASSERT_FALSE( recorder->changes.empty() );
+	EXPECT_TRUE( recorder->changes.back().isWholeText() );
+	bool valueChanged = false;
+	for ( const auto& event : recorder->events ) {
+		if ( event.ref == ref && event.type == AccessibilityEvent::ValueChanged )
+			valueChanged = true;
+	}
+	EXPECT_TRUE( valueChanged );
+}
 
 UTEST( Accessibility, CustomWidgetsExposeVirtualSemanticsAndActions ) {
 	UIApplication app( accessibilityTestWindow(), accessibilityTestSettings() );
