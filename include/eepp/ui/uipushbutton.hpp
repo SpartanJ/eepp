@@ -131,6 +131,9 @@ class EE_API UIPushButton : public UIWidget {
 
 	void updateTextBox();
 
+	/** Inner margins provide spacing only when another inner widget is visible. */
+	const Rectf& getInnerWidgetPixelsMargin( const UIWidget* widget ) const;
+
 	Vector2f packLayout( const std::array<UIWidget*, 3>& widgets, const Rectf& padding );
 
 	Vector2f calcLayoutSize( const std::array<UIWidget*, 3>& widgets, const Rectf& padding ) const;

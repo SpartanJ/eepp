@@ -310,6 +310,13 @@ Margins affect:
 - grid placement;
 - splitter/container alignment where relevant.
 
+`UIPushButton` uses inner-widget margins for spacing when multiple inner widgets are visible.
+With a single visible icon, label, or extra widget, it ignores that item's margins and uses the
+button's padding and alignment. Hidden inner widgets contribute no width or margin. With multiple
+visible items, both horizontal margins contribute, including the last item's trailing margin.
+The same rule applies to `UISelectButton` and tabs; declared margins remain unchanged when items
+are hidden or shown.
+
 ### Padding
 
 Padding belongs to the container/widget.

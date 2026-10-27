@@ -258,17 +258,18 @@ void UITab::onAutoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE ) == 0 )
 		return;
 
+	const Rectf iconMargin = PixelDensity::pxToDp( getInnerWidgetPixelsMargin( mIcon ) );
+	const Rectf closeMargin = PixelDensity::pxToDp( getInnerWidgetPixelsMargin( mCloseButton ) );
 	Float nonTextW =
-		( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
-							  mIcon->getLayoutMargin().Right
-						: 0 ) +
+		( NULL != mIcon && mIcon->isVisible()
+			  ? mIcon->getSize().getWidth() + iconMargin.Left + iconMargin.Right
+			  : 0 ) +
 		( NULL != mCloseButton && mCloseButton->isVisible()
-			  ? mCloseButton->getSize().getWidth() + mCloseButton->getLayoutMargin().Left +
-					mCloseButton->getLayoutMargin().Right
+			  ? mCloseButton->getSize().getWidth() + closeMargin.Left + closeMargin.Right
 			  : 0 ) +
 		getSkinSize().getWidth();
 
-	Float textW = mTextBox->getSize().getWidth();
+	Float textW = mTextBox->isVisible() ? mTextBox->getSize().getWidth() : 0.f;
 	Float w = textW + nonTextW;
 
 	if ( NULL != tTabW ) {

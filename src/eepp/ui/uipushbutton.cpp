@@ -67,9 +67,11 @@ UIPushButton::UIPushButton( const std::string& tag,
 	UIWidget( tag ), mIcon( NULL ), mTextBox( NULL ) {
 	mFlags |= ( UI_TAB_FOCUSABLE | UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
-	auto cb = [this]( const Event* ) {
-		if ( mTextBox->getLayoutWidthPolicy() != SizePolicy::Fixed )
+	auto cb = [this]( const Event* event ) {
+		if ( event->getType() == Event::OnVisibleChange ||
+			 mTextBox->getLayoutWidthPolicy() != SizePolicy::Fixed ) {
 			onSizeChange();
+		}
 	};
 
 	mTextBox = newTextViewCb ? newTextViewCb( this ) : UITextView::NewWithTag( tag + "::text" );
@@ -144,14 +146,14 @@ void UIPushButton::onAutoSize() {
 
 		if ( size.getWidth() != fsize.getWidth() ) {
 			UIWidget* eiw = getExtraInnerWidget();
+			const Rectf& iconMargin = getInnerWidgetPixelsMargin( mIcon );
+			const Rectf& extraMargin = getInnerWidgetPixelsMargin( eiw );
 			Float nonTextW =
-				( NULL != mIcon
-					  ? mIcon->getPixelsSize().getWidth() + mIcon->getLayoutPixelsMargin().Left +
-							mIcon->getLayoutPixelsMargin().Right
+				( NULL != mIcon && mIcon->isVisible()
+					  ? mIcon->getPixelsSize().getWidth() + iconMargin.Left + iconMargin.Right
 					  : 0 ) +
 				( NULL != eiw && eiw->isVisible()
-					  ? eiw->getPixelsSize().getWidth() + eiw->getLayoutPixelsMargin().Left +
-							eiw->getLayoutPixelsMargin().Right
+					  ? eiw->getPixelsSize().getWidth() + extraMargin.Left + extraMargin.Right
 					  : 0 ) +
 				getSkinSize().getWidth();
 
@@ -167,6 +169,18 @@ void UIPushButton::onAutoSize() {
 
 		setInternalPixelsWidth( size.getWidth() );
 	}
+}
+
+const Rectf& UIPushButton::getInnerWidgetPixelsMargin( const UIWidget* widget ) const {
+	if ( !widget || !widget->isVisible() )
+		return Rectf::Zero;
+	const UIWidget* extra = getExtraInnerWidget();
+	if ( ( mIcon && mIcon != widget && mIcon->isVisible() ) ||
+		 ( mTextBox && mTextBox != widget && mTextBox->isVisible() ) ||
+		 ( extra && extra != widget && extra->isVisible() ) ) {
+		return widget->getLayoutPixelsMargin();
+	}
+	return Rectf::Zero;
 }
 
 std::array<UIWidget*, 3>
@@ -193,8 +207,8 @@ Vector2f UIPushButton::calcLayoutSize( const std::array<UIWidget*, 3>& logicalWi
 								mTextBox->getPixelsPadding().Right
 						  : widget->getPixelsSize().getWidth();
 		if ( width > 0 ) {
-			totSize.x += widget->getLayoutPixelsMargin().Left + width +
-						 widget->getLayoutPixelsMargin().Right;
+			const Rectf& margin = getInnerWidgetPixelsMargin( widget );
+			totSize.x += margin.Left + width + margin.Right;
 		}
 		totSize.y = eemax<Float>( totSize.y, padding.Top + padding.Bottom +
 												 widget->getPixelsSize().getHeight() );
@@ -212,14 +226,13 @@ Vector2f UIPushButton::packLayout( const std::array<UIWidget*, 3>& logicalWidget
 
 		for ( const auto& widget : widgets ) {
 			if ( widget && widget->isVisible() && widget != mTextBox ) {
-				usedWidth += widget->getPixelsSize().getWidth() +
-							 widget->getLayoutPixelsMargin().Left +
-							 widget->getLayoutPixelsMargin().Right;
+				const Rectf& margin = getInnerWidgetPixelsMargin( widget );
+				usedWidth += widget->getPixelsSize().getWidth() + margin.Left + margin.Right;
 			}
 		}
 
-		usedWidth +=
-			mTextBox->getLayoutPixelsMargin().Left + mTextBox->getLayoutPixelsMargin().Right;
+		const Rectf& margin = getInnerWidgetPixelsMargin( mTextBox );
+		usedWidth += margin.Left + margin.Right;
 
 		Float textWidth = eemax( 0.f, availableWidth - usedWidth );
 
@@ -247,12 +260,12 @@ Vector2f UIPushButton::packLayout( const std::array<UIWidget*, 3>& logicalWidget
 				pos[i].y = padding.Top;
 				break;
 		}
-		pos[i].x += 0 == i || widget->isVisible() ? widget->getLayoutPixelsMargin().Left : 0;
-		if ( widget->isVisible() && widget->getPixelsSize().getWidth() > 0 ) {
+		const Rectf& margin = getInnerWidgetPixelsMargin( widget );
+		pos[i].x += margin.Left;
+		if ( widget->getPixelsSize().getWidth() > 0 ) {
 			// Both margins belong to the widget's extent, including the last widget's trailing
 			// margin, so measurement and alignment use the same space as packing.
-			totSize.x += widget->getLayoutPixelsMargin().Left + widget->getPixelsSize().getWidth() +
-						 widget->getLayoutPixelsMargin().Right;
+			totSize.x += margin.Left + widget->getPixelsSize().getWidth() + margin.Right;
 		}
 		totSize.y = eemax<Float>( totSize.y, padding.Top + padding.Bottom +
 												 widget->getPixelsSize().getHeight() );

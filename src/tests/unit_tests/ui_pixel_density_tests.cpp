@@ -4,12 +4,14 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/ninepatch.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/threadpool.hpp>
+#include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
@@ -22,7 +24,9 @@
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -191,7 +195,7 @@ UTEST( PixelDensityRegression, PixelMarginsUpdateAndRepeatedValues ) {
 
 UTEST( PixelDensityRegression, ButtonLayoutIncludesTrailingMargin ) {
 	DensityApplication fixture;
-	fixture.app.getUI()->setStyleSheet( "" );
+	fixture.app.getUI()->setStyleSheet( StyleSheet{} );
 	for ( Float density : { 1.f, 1.5f, 2.f, 3.f } ) {
 		PixelDensity::setPixelDensity( density );
 		auto* button = UIPushButton::New();
@@ -200,7 +204,9 @@ UTEST( PixelDensityRegression, ButtonLayoutIncludesTrailingMargin ) {
 		button->unsetFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
 		button->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		button->setPadding( Rectf::Zero );
-		button->setSize( 26, 24 );
+		// Keep two visible items: their outer margins must remain part of the packed extent.
+		button->setSize( 38, 24 );
+		button->getIcon()->setSize( 12, 12 );
 		auto* text = button->getTextView();
 		text->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		text->setSize( 20, 10 );
@@ -211,12 +217,63 @@ UTEST( PixelDensityRegression, ButtonLayoutIncludesTrailingMargin ) {
 			for ( auto alignment : { UIHorizontalAlignment::Left, UIHorizontalAlignment::Center,
 									 UIHorizontalAlignment::Right } ) {
 				button->setHorizontalAlignment( alignment );
-				EXPECT_EQ( button->getContentSize().x, PixelDensity::dpToPx( 26.f ) );
-				EXPECT_EQ( button->updateLayout().x, PixelDensity::dpToPx( 26.f ) );
+				EXPECT_EQ( button->getContentSize().x, PixelDensity::dpToPx( 38.f ) );
+				EXPECT_EQ( button->updateLayout().x, PixelDensity::dpToPx( 38.f ) );
 				EXPECT_EQ( text->getPixelsPosition().x,
-						   PixelDensity::dpToPx( button->isRTL() ? 4.f : 2.f ) );
+						   PixelDensity::dpToPx( button->isRTL() ? 4.f : 14.f ) );
 			}
 		}
+		eeDelete( button );
+	}
+}
+
+UTEST( PixelDensityRegression, ButtonLayoutIgnoresMarginsOfLoneVisibleItem ) {
+	DensityApplication fixture;
+	fixture.app.getUI()->setStyleSheet( StyleSheet{} );
+	for ( Float density : { 1.f, 1.5f, 2.f, 3.f } ) {
+		PixelDensity::setPixelDensity( density );
+		auto* button = UIPushButton::New();
+		button->setParent( fixture.app.getUI()->getRoot() );
+		button->removeSkin();
+		button->unsetFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
+		button->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		button->setPadding( Rectf( 4, 4, 4, 4 ) );
+		button->setSize( 80, 24 );
+		auto* icon = button->getIcon();
+		icon->setSize( 12, 12 );
+		auto* text = button->getTextView();
+		text->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		text->setSize( 20, 10 );
+		const Rectf declaredMargin( 2, 1, 6, 3 );
+		icon->setLayoutMargin( declaredMargin );
+		text->setLayoutMargin( declaredMargin );
+		for ( auto orientation : { InnerWidgetOrientation::WidgetIconTextBox,
+								   InnerWidgetOrientation::WidgetTextBoxIcon,
+								   InnerWidgetOrientation::IconTextBoxWidget,
+								   InnerWidgetOrientation::IconWidgetTextBox,
+								   InnerWidgetOrientation::TextBoxIconWidget,
+								   InnerWidgetOrientation::TextBoxWidgetIcon } ) {
+			button->setInnerWidgetOrientation( orientation );
+			for ( auto direction : { UIDirection::LeftToRight, UIDirection::RightToLeft } ) {
+				button->setDirection( direction );
+				for ( bool showIcon : { true, false } ) {
+					icon->setVisible( showIcon );
+					text->setVisible( !showIcon );
+					auto* visible = showIcon ? static_cast<UIWidget*>( icon ) : text;
+					const Float width = visible->getPixelsSize().x;
+					EXPECT_EQ( button->getContentSize().x, width + PixelDensity::dpToPx( 8.f ) );
+					EXPECT_EQ( button->updateLayout().x, width + PixelDensity::dpToPx( 8.f ) );
+					EXPECT_NEAR( visible->getPixelsPosition().x,
+								 ( button->getPixelsSize().x - width ) * 0.5f, 0.01f );
+					EXPECT_TRUE( visible->getLayoutMargin() == declaredMargin );
+				}
+			}
+		}
+		// An expanded lone label must also receive the space previously reserved for margins.
+		button->setExpandTextView( true );
+		EXPECT_EQ( button->updateLayout().x, button->getPixelsSize().x );
+		EXPECT_EQ( text->getPixelsPosition().x, PixelDensity::dpToPx( 4.f ) );
+		EXPECT_EQ( text->getPixelsSize().x, PixelDensity::dpToPx( 72.f ) );
 		eeDelete( button );
 	}
 }
@@ -282,6 +339,62 @@ UTEST( PixelDensityRegression, BreezeTabIconKeepsBalancedOuterMargins ) {
 			EXPECT_NEAR( trailingGap, PixelDensity::dpToPx( 4.f ), 1.f );
 		}
 		eeDelete( tabs );
+	}
+}
+
+UTEST( PixelDensityRegression, BreezeButtonIconGapRequiresVisibleText ) {
+	DensityApplication fixture;
+	auto* ui = fixture.app.getUI();
+	for ( Float density : { 1.f, 1.5f, 2.f, 3.f } ) {
+		PixelDensity::setPixelDensity( density );
+		for ( bool selectButton : { false, true } ) {
+			auto* button = selectButton ? UISelectButton::New() : UIPushButton::New();
+			button->setParent( ui->getRoot() );
+			button->setText( "Edit build" );
+			button->setTextAsFallback( true );
+			button->setIcon( DrawablePtr( RectangleDrawable::New( {}, Sizef( 12, 12 ) ) ) );
+			auto* icon = button->getIcon();
+			icon->setSize( 12, 12 );
+			auto* text = button->getTextView();
+			for ( auto direction : { UIDirection::LeftToRight, UIDirection::RightToLeft } ) {
+				button->setDirection( direction );
+				const auto check = [&]( bool labelVisible ) {
+					ui->flushDirtyStyleAndLayout();
+					button->updateLayout();
+					EXPECT_EQ( text->isVisible(), labelVisible );
+					const Rectf& margin = icon->getLayoutPixelsMargin();
+					EXPECT_EQ( button->isRTL() ? margin.Left : margin.Right,
+							   PixelDensity::dpToPx( 4.f ) );
+					if ( labelVisible ) {
+						const Float gap =
+							button->isRTL()
+								? icon->getPixelsPosition().x - text->getPixelsPosition().x -
+									  text->getPixelsSize().x
+								: text->getPixelsPosition().x - icon->getPixelsPosition().x -
+									  icon->getPixelsSize().x;
+						EXPECT_NEAR( gap, PixelDensity::dpToPx( 4.f ), 1.f );
+					} else {
+						const Float left = icon->getPixelsPosition().x;
+						const Float right =
+							button->getPixelsSize().x - left - icon->getPixelsSize().x;
+						EXPECT_NEAR( left, right, 1.f );
+					}
+				};
+				check( false );
+				button->setTextAsFallback( false );
+				check( true );
+				button->setText( "" );
+				check( false );
+				button->setText( "Edit build" );
+				check( true );
+				text->setVisible( false );
+				check( false );
+				text->setVisible( true );
+				check( true );
+				button->setTextAsFallback( true );
+			}
+			eeDelete( button );
+		}
 	}
 }
 
