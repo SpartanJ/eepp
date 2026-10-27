@@ -396,8 +396,9 @@ void UITextInput::updatePass() {
 
 void UITextInput::updateFontStyleConfig() {
 	if ( mPassCache ) {
-		mPassCache->setFontSize( mFontStyleConfig.CharacterSize );
+		// Text only accepts a font size once a font has been assigned.
 		mPassCache->setFont( mFontStyleConfig.getFont() );
+		mPassCache->setFontSize( mFontStyleConfig.CharacterSize );
 		mPassCache->setFillColor( mFontStyleConfig.getFontColor() );
 		mPassCache->setShadowColor( mFontStyleConfig.getFontShadowColor() );
 		mPassCache->setOutlineColor( mFontStyleConfig.getOutlineColor() );

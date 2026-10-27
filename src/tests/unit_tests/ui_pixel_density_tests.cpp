@@ -17,6 +17,7 @@
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uihtmltextinput.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uiloader.hpp>
@@ -48,6 +49,13 @@ struct DensityApplication {
 		WindowSettings( 1200, 1000, "Pixel Density Regression", WindowStyle::Default,
 						WindowBackend::Default, 32, {}, 1, false, true ),
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 2.f ) };
+};
+
+template <typename Base> class PasswordInputProbe : public Base {
+  public:
+	PasswordInputProbe() : Base() {}
+
+	Text& visibleText() { return this->getVisibleTextCache(); }
 };
 
 class PixelSetterWidget : public UIWidget {
@@ -86,6 +94,34 @@ class DensityWidgetTable : public UIWidgetTable {
 };
 
 } // namespace
+
+UTEST( PixelDensityRegression, PasswordTextUsesResolvedFontSize ) {
+	DensityApplication fixture;
+	static_assert( sizeof( PasswordInputProbe<UITextInput> ) == sizeof( UITextInput ) );
+	static_assert( sizeof( PasswordInputProbe<UIHTMLTextInput> ) == sizeof( UIHTMLTextInput ) );
+	for ( Float density : { 1.f, 1.5f, 2.f } ) {
+		PixelDensity::setPixelDensity( density );
+		auto checkInput = [&]( auto* input ) {
+			input->setParent( fixture.app.getUI() );
+			input->setFontSize( PixelDensity::dpToPx( 16.f ) );
+			input->setText( "secret" );
+			input->setMode( UITextInput::TextInputMode::Password );
+			EXPECT_EQ( input->visibleText().getCharacterSize(), input->getFontSize() );
+			EXPECT_TRUE( input->visibleText().getFont() == input->getFont() );
+			Text expected( input->visibleText().getString(), input->getFont(),
+						   input->getFontSize() );
+			EXPECT_NEAR( input->visibleText().getTextWidth(), expected.getTextWidth(), 0.01f );
+
+			input->setFontSize( PixelDensity::dpToPx( 20.f ) );
+			EXPECT_EQ( input->visibleText().getCharacterSize(), input->getFontSize() );
+			input->setMode( UITextInput::TextInputMode::Normal );
+			input->setMode( UITextInput::TextInputMode::Password );
+			EXPECT_EQ( input->visibleText().getCharacterSize(), input->getFontSize() );
+		};
+		checkInput( eeNew( PasswordInputProbe<UITextInput>, () ) );
+		checkInput( eeNew( PasswordInputProbe<UIHTMLTextInput>, () ) );
+	}
+}
 
 UTEST( PixelDensityRegression, PixelPaddingUpdatesAndRepeatedValues ) {
 	DensityApplication fixture;
