@@ -1,0 +1,60 @@
+/*
+ * Tokyo Night by Enkia (MIT).
+ * https://github.com/tokyo-night/tokyo-night-vscode-theme
+ * Upstream revision: 7c0f11eaef322f293621ca7befe462214b7ea468
+ * License: ../../colorschemes/tokyo-night.LICENSE.txt
+ *
+ * Palette only: widgets and layout inherit Breeze.
+ * Shared text uses the upstream editor foreground; hints keep 4.5:1 contrast.
+ * Shared control backgrounds use the upstream dropdown surface.
+ */
+:root {
+	--inherit-base-theme: true;
+	--color-scheme: dark;
+	--primary: #3d59a1;
+	--back: #1a1b26;
+	--font: #a9b1d6;
+	--font-highlight: #7dcfff;
+	--font-hint: #7d829c;
+	--font-selected-pressed: #ffffff;
+	--button-back: #14141b;
+	--button-border: #0f0f14;
+	--list-back: #16161e;
+	--list-back-alt: #1c1d29;
+	--separator: #101014;
+	--item-hover: #13131a;
+	--slider-back: #868bc415;
+	--slider-button: #3d59a1;
+	--slider-border: #0f0f14;
+	--scrollbar-border: #101014;
+	--scrollbar-button: #868bc415;
+	--scrollbar-hback-hover: #868bc410;
+	--tab-back: #16161e;
+	--tab-line: #101014;
+	--tab-active: #16161e;
+	--tab-hover: #202330;
+	--tab-close: #787c99;
+	--tab-close-hover: #db4b4b;
+	--tab-font-active: #a9b1d6;
+	--tab-font-inactive: #787c99;
+	--icon: #787c99;
+	--icon-active: #787c99;
+	--icon-back-hover: #202330;
+	--icon-line: #787c99;
+	--icon-line-hover: #7dcfff;
+	--icon-back-alert: #db4b4b;
+	--menu-back: #16161e;
+	--menu-font: #a9b1d6;
+	--menu-border: #101014;
+	--menu-font-active: #ffffff;
+	--menu-font-disabled: #545c7e;
+	--floating-icon: #787c99;
+	--term-back-color: #16161e;
+	--term-font-color: #787c99;
+	--highlight-primary: #515c7e4d;
+	--disabled-color: #545c7e;
+	--disabled-border: #0f0f14;
+	--theme-error: #db4b4b;
+	--theme-warning: #e0af68;
+	--theme-success: #449dab;
+}

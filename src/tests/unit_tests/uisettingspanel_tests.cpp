@@ -2,6 +2,7 @@
 
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
@@ -167,4 +168,79 @@ UTEST( UISettingsPanel, filtersAcrossUnmaterializedCategories ) {
 	panel->setFilter( {} );
 	EXPECT_TRUE( firstRow->isVisible() );
 	EXPECT_FALSE( secondRow->isVisible() );
+}
+
+UTEST( UISettingsPanel, preservesStylesAcrossThemeReplacement ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - UISettingsPanel Theme Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* scene = app.getUI();
+	auto* panel = UISettingsPanel::New( scene->getRoot() );
+	bool first = true;
+	EXPECT_TRUE( panel->addCategory( "general.behavior", "General", "Behavior" ) );
+	EXPECT_TRUE( panel->addCategory( "editor.document", "Editor", "Document" ) );
+	EXPECT_TRUE(
+		panel->addBool( { "first", "general.behavior", "First", "First option", {} }, &first ) );
+	EXPECT_TRUE( panel->addChoice(
+		{ "indent", "editor.document", "Indent", "Indent mode", {} }, { "None", "Smart" },
+		[] { return size_t{ 1 }; }, []( size_t ) {} ) );
+	panel->build();
+	EXPECT_EQ( nullptr, panel->find<UIWidget>( "setting_indent" ) );
+
+	// Theme replacement keeps marked component styles, as ecode does in App::setTheme().
+	CSS::StyleSheetParser parser;
+	ASSERT_TRUE( parser.loadFromFile( "assets/ui/breeze.css" ) );
+	auto components = scene->getStyleSheet().getAllWithMarkers();
+	scene->setStyleSheet( parser.getStyleSheet(), false );
+	scene->getStyleSheet().combineStyleSheet( components );
+	scene->getStyleSheet().updateMediaLists( scene->getMediaFeatures() );
+	scene->reloadStyle( true, true, true );
+	panel->selectCategory( "editor.document" );
+	scene->update( Milliseconds( 16 ) );
+
+	auto* row = panel->find<UIWidget>( "setting_indent" );
+	ASSERT_NE( nullptr, row );
+	EXPECT_GT( row->getPadding().Top, 0.f );
+	EXPECT_EQ( 190.f, row->find<UIWidget>( "setting_control_widget" )->getSize().getWidth() );
+
+	scene->setColorSchemePreference( ColorSchemePreference::Light );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_TRUE( panel->find<UIWidget>( "settings_sidebar" )->getBackgroundColor() ==
+				 Color( "#ffffff" ) );
+	EXPECT_EQ( 0u, row->find<UITextView>( "setting_name" )->getFontStyle() & Text::Shadow );
+	EXPECT_EQ( 0u, row->find<UITextView>( "setting_description" )->getFontStyle() & Text::Shadow );
+	// Existing rows must also adopt the light rules after replacing the theme.
+	auto* firstRow = panel->find<UIWidget>( "setting_first" );
+	EXPECT_EQ( 0u, firstRow->find<UITextView>( "setting_name" )->getFontStyle() & Text::Shadow );
+	EXPECT_EQ( 0u,
+			   firstRow->find<UITextView>( "setting_description" )->getFontStyle() & Text::Shadow );
+}
+
+UTEST( UISettingsPanel, updatesLightAndDarkStyles ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - UISettingsPanel Color Scheme Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* scene = app.getUI();
+	scene->setColorSchemePreference( ColorSchemePreference::Dark );
+	auto* panel = UISettingsPanel::New( scene->getRoot() );
+	bool value = true;
+	EXPECT_TRUE( panel->addCategory( "general.behavior", "General", "Behavior" ) );
+	EXPECT_TRUE( panel->addBool( { "enabled", "general.behavior", "Enabled", "Enable option", {} },
+								 &value ) );
+	panel->build();
+	auto* sidebar = panel->find<UIWidget>( "settings_sidebar" );
+	auto* name = panel->find<UITextView>( "setting_name" );
+	auto* description = panel->find<UITextView>( "setting_description" );
+
+	for ( auto scheme : { ColorSchemePreference::Dark, ColorSchemePreference::Light,
+						  ColorSchemePreference::Dark, ColorSchemePreference::Light } ) {
+		scene->setColorSchemePreference( scheme );
+		scene->update( Milliseconds( 16 ) );
+		const bool dark = scheme == ColorSchemePreference::Dark;
+		EXPECT_TRUE( sidebar->getBackgroundColor() == Color( dark ? "#232629" : "#ffffff" ) );
+		EXPECT_EQ( dark, ( name->getFontStyle() & Text::Shadow ) != 0 );
+		EXPECT_EQ( 0u, description->getFontStyle() & Text::Shadow );
+	}
 }

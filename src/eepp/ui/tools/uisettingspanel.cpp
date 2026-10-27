@@ -187,19 +187,15 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 	word-wrap: true;
 }
 .settings_panel .settings_option_description {
-	color: var(--disabled-color);
+	color: var(--font-hint);
 	font-size: 10dp;
 	margin-top: 3dp;
 	word-wrap: true;
 	font-style: normal;
 }
 @media (prefers-color-scheme: dark) {
-	.settings_panel .settings_option_name,
-	.settings_panel .settings_option_description {
+	.settings_panel .settings_option_name {
 		font-style: shadow;
-	}
-	.settings_panel .settings_option_description {
-		color: var(--font-hint);
 	}
 }
 .settings_panel .settings_boolean_option #setting_info,
@@ -407,7 +403,9 @@ UISettingsPanel::UISettingsPanel( UIWidget* parent ) :
 	UILinearLayout( "settingspanel", UIOrientation::Vertical ), mImpl( std::make_unique<Impl>() ) {
 	setParent( parent );
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-	auto* layout = getUISceneNode()->loadLayoutFromString( SETTINGS_PANEL_LAYOUT, this );
+	// Keep component rules when applications replace the theme stylesheet.
+	auto* layout = getUISceneNode()->loadLayoutFromString( SETTINGS_PANEL_LAYOUT, this,
+														   String::hash( "UISettingsPanel" ) );
 	mImpl->search = layout->find<UITextInput>( "settings_filter" );
 	mImpl->categories = layout->find<UITreeView>( "settings_categories" );
 	mImpl->settings = layout->find<UILinearLayout>( "settings_rows" );

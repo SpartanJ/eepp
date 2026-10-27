@@ -1030,11 +1030,7 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 	std::vector<String> themeNames{ mApp->i18n( "default_theme", "Default Theme" ),
 									mApp->i18n( "syntax_color_scheme", "Syntax Color Scheme" ) };
 	std::vector<std::string> themeIds{ "default_theme", "syntax_color_scheme" };
-	for ( const auto& file :
-		  FileSystem::filesInfoGetInPath( mApp->getThemesPath(), true, true, true ) ) {
-		if ( file.getExtension() != "css" )
-			continue;
-		auto name = FileSystem::fileRemoveExtension( file.getFileName() );
+	for ( auto& name : mApp->getUIThemes() ) {
 		themeNames.emplace_back( name );
 		themeIds.emplace_back( std::move( name ) );
 	}
@@ -1053,10 +1049,7 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 		[this, themeIds = std::move( themeIds )]( size_t selected ) {
 			const auto& id = themeIds[std::min( selected, themeIds.size() - 1 )];
 			mApp->getConfig().ui.theme = id == "default_theme" ? "" : id;
-			mApp->setTheme(
-				id == "default_theme"
-					? mApp->getDefaultThemePath()
-					: ( id == "syntax_color_scheme" ? id : mApp->getThemesPath() + id + ".css" ) );
+			mApp->setTheme( mApp->getThemePath( id ) );
 		} );
 	std::map<std::string, std::string> languages;
 	for ( const auto& file :

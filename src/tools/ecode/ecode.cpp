@@ -1339,7 +1339,7 @@ void App::setUIColorScheme( const ColorSchemeExtPreference& colorScheme ) {
 	if ( colorScheme == mUIColorScheme )
 		return;
 	mUIColorScheme = mConfig.ui.colorScheme = colorScheme;
-	mUISceneNode->setColorSchemePreference( colorScheme );
+	updateUIColorScheme( mConfig.ui.theme );
 	if ( !firstFrame ) {
 		tintTitleBar();
 		mPluginManager->setUIThemeReloaded();
@@ -1360,6 +1360,27 @@ void App::setUIColorSchemeFromUserInteraction( const ColorSchemeExtPreference& c
 
 ColorSchemeExtPreference App::getUIColorScheme() const {
 	return mUIColorScheme;
+}
+
+void App::updateUIColorScheme( const std::string& theme ) {
+	// Fixed UI palettes need matching media rules, whether generated or explicitly declared.
+	// Keep the configured preference to restore it when returning to a regular UI theme.
+	if ( theme == "syntax_color_scheme" ) {
+		if ( const auto* syntaxTheme = getCurrentColorScheme() ) {
+			mUISceneNode->setColorSchemePreference(
+				ColorSchemeTranslator::getColorSchemePreference( *syntaxTheme ) );
+			return;
+		}
+	}
+	if ( auto root = mUISceneNode->getStyleSheet().getStyleFromSelector( ":root" ) ) {
+		const auto preference = root->getVariableByName( "--color-scheme" ).getValue();
+		if ( preference == "light" || preference == "dark" ) {
+			mUISceneNode->setColorSchemePreference(
+				ColorSchemePreferences::fromString( preference ) );
+			return;
+		}
+	}
+	mUISceneNode->setColorSchemePreference( mUIColorScheme );
 }
 
 EE::Window::Window* App::getWindow() const {
@@ -1969,22 +1990,42 @@ const std::string& App::getThemesPath() const {
 	return mThemesPath;
 }
 
+std::vector<std::string> App::getUIThemes() const {
+	std::vector<std::string> themes;
+	const auto appendThemes = [&themes]( const std::string& path ) {
+		for ( const auto& file : FileSystem::filesInfoGetInPath( path, true, true, true ) ) {
+			if ( file.getExtension() == "css" )
+				themes.emplace_back( FileSystem::fileRemoveExtension( file.getFileName() ) );
+		}
+	};
+	appendThemes( mResPath + "ui/themes/" );
+	appendThemes( mThemesPath );
+	std::sort( themes.begin(), themes.end() );
+	themes.erase( std::unique( themes.begin(), themes.end() ), themes.end() );
+	return themes;
+}
+
 const std::string& App::geti18nPath() const {
 	return mi18nPath;
 }
 
 std::string App::getThemePath() const {
-	if ( mConfig.ui.theme.empty() || "default_theme" == mConfig.ui.theme )
+	return getThemePath( mConfig.ui.theme );
+}
+
+std::string App::getThemePath( const std::string& theme ) const {
+	if ( theme.empty() || "default_theme" == theme )
 		return getDefaultThemePath();
 
-	if ( "syntax_color_scheme" == mConfig.ui.theme )
-		return mConfig.ui.theme;
+	if ( "syntax_color_scheme" == theme )
+		return theme;
 
-	auto themePath( mThemesPath + mConfig.ui.theme + ".css" );
-	if ( !FileSystem::fileExists( themePath ) )
-		return getDefaultThemePath();
+	auto themePath( mThemesPath + theme + ".css" );
+	if ( FileSystem::fileExists( themePath ) )
+		return themePath;
 
-	return themePath;
+	themePath = mResPath + "ui/themes/" + theme + ".css";
+	return FileSystem::fileExists( themePath ) ? themePath : getDefaultThemePath();
 }
 
 std::string App::getDefaultThemePath() const {
@@ -2057,6 +2098,8 @@ void App::setTheme( const std::string& path ) {
 	mUISceneNode->setStyleSheet( theme->getStyleSheet(), false );
 
 	mUISceneNode->getStyleSheet().combineStyleSheet( oldMarkers );
+
+	updateUIColorScheme( path );
 
 	mUISceneNode->getStyleSheet().updateMediaLists( mUISceneNode->getMediaFeatures() );
 

@@ -1,6 +1,9 @@
 # Unit Testing Requirements & Guidelines
 
-This project relies on a comprehensive suite of unit tests to prevent regressions. You must ensure all existing tests pass after making modifications.
+This project uses unit tests to protect meaningful behavior and prevent regressions. Run relevant
+existing tests for the affected subsystem. Run the full suite when the scope or regression risk
+warrants it; application UI and styling changes normally need an appropriate build and targeted
+runtime checks instead.
 
 ## Running Tests
 The test binary manages its own current working directory, so you can execute it from anywhere.
@@ -83,9 +86,21 @@ relying on success on the development host alone.
   State any platforms that remain unverified.
 
 ## Writing New Tests
-Writing new tests is highly encouraged, but depends on the context of your changes:
-*   **Core Framework (`eepp`):** If you add new logic, math, or framework-level features, you are **expected** to write unit tests for them.
-*   **Application/Tools (`ecode`):** Application-level UI changes or tool integrations are often difficult to mock/test. Tests for these are **optional** and should only be added if practical to set up.
+Choose tests according to the behavior and regression risk, not merely because code changed.
+
+* **Core Framework (`eepp`):** Add focused tests for new nontrivial logic, math, framework
+  features, or reproducible behavioral regressions. Prefer extending an existing test harness.
+* **Applications/Tools (`ecode`, `eterm`, `eeiv`, `eefm`, etc.):** Do not add unit tests by
+  default for application-specific UI, styling, theme mappings, settings wiring, or simple
+  integrations. Validate these changes with an appropriate build and targeted runtime inspection
+  when useful. Ease of writing a test alone does not justify adding it.
+* Add application tests only when they protect substantial logic with meaningful edge cases,
+  such as parsing, state transitions, or data handling, and can exercise that behavior directly.
+  Do not introduce mocks, fixtures, new harnesses, or build dependencies just to test UI wiring
+  or assert that a property was assigned the value present in the implementation.
+* Small, reversible changes do not require new tests. Reuse relevant existing tests; avoid
+  tests that simply mirror the implementation and broad or repeated suite runs without a
+  concrete regression concern.
 
 **Testing Workflow:**
 1.  All tests are located in `src/tests/unit_tests/`.

@@ -1,6 +1,10 @@
 #include "colorschemetranslator.hpp"
 
+#include <algorithm>
+#include <cmath>
+
 using namespace EE;
+using namespace EE::UI;
 
 namespace ecode {
 
@@ -12,9 +16,9 @@ static const auto BASE_UI_THEME = R"css(
 	/* Main Colors */
 	--primary: type;
 	--back: background;
-	--font: text;
+	--font: ui_font;
 	--font-highlight: type;
-	--font-hint: line_number2;
+	--font-hint: ui_hint;
 	--font-selected-pressed: line_highlight;
 
 	/* Button styling */
@@ -56,7 +60,7 @@ static const auto BASE_UI_THEME = R"css(
 
 	/* Menus */
 	--menu-back: widget_background;
-	--menu-font: text;
+	--menu-font: ui_font;
 	--menu-border: line_number;
 	--menu-font-active: widget_background;
 	--menu-font-disabled: line_number2;
@@ -80,6 +84,14 @@ static const auto BASE_UI_THEME = R"css(
 
 std::string ColorSchemeTranslator::fromSyntaxColorScheme( const SyntaxColorScheme& colorScheme ) {
 	std::string output( BASE_UI_THEME );
+
+	const Color background( colorScheme.getEditorColor( SyntaxStyleTypes::Background ), 255 );
+	const Color foreground = getFontColor( colorScheme );
+	// Hints start at 65% of the UI text color, with the same minimum contrast as body text.
+	const Color hint =
+		ensureTextContrast( Color::blend( Color( foreground, 166 ), background ), background );
+	String::replaceAll( output, "ui_font", foreground.toHexString( true ) );
+	String::replaceAll( output, "ui_hint", hint.toHexString( true ) );
 
 	String::replaceAll( output, "widget_background",
 						colorScheme.getEditorSyntaxStyle( SyntaxStyleTypes::WidgetBackground )
@@ -178,6 +190,61 @@ std::string ColorSchemeTranslator::fromSyntaxColorScheme( const SyntaxColorSchem
 		colorScheme.getSyntaxStyle( SyntaxStyleTypes::Function ).color.toHexString( true ) );
 
 	return output;
+}
+
+ColorSchemePreference
+ColorSchemeTranslator::getColorSchemePreference( const SyntaxColorScheme& colorScheme ) {
+	return colorScheme.getEditorColor( SyntaxStyleTypes::Background ).perceivedLuminance() > 128
+			   ? ColorSchemePreference::Light
+			   : ColorSchemePreference::Dark;
+}
+
+Color ColorSchemeTranslator::getFontColor( const SyntaxColorScheme& colorScheme ) {
+	Color foreground = colorScheme.getEditorColor( SyntaxStyleTypes::Text );
+	// The shared UI foreground is also used on list/menu and button/tab surfaces.
+	for ( auto type : { SyntaxStyleTypes::Background, SyntaxStyleTypes::WidgetBackground,
+						SyntaxStyleTypes::LineHighlight } ) {
+		foreground =
+			ensureTextContrast( foreground, Color( colorScheme.getEditorColor( type ), 255 ) );
+	}
+	return foreground;
+}
+
+Color ColorSchemeTranslator::ensureTextContrast( Color foreground, const Color& background ) {
+	const auto luminance = []( const Color& color ) {
+		const auto linear = []( Uint8 channel ) {
+			const double value = channel / 255.0;
+			return value <= 0.04045 ? value / 12.92 : std::pow( ( value + 0.055 ) / 1.055, 2.4 );
+		};
+		return 0.2126 * linear( color.r ) + 0.7152 * linear( color.g ) + 0.0722 * linear( color.b );
+	};
+	const double backgroundLuminance = luminance( background );
+	const auto contrast = [backgroundLuminance, &luminance]( const Color& color ) {
+		const double foregroundLuminance = luminance( color );
+		return ( std::max( foregroundLuminance, backgroundLuminance ) + 0.05 ) /
+			   ( std::min( foregroundLuminance, backgroundLuminance ) + 0.05 );
+	};
+	// Account for translucent palette colors when deciding whether to keep them unchanged.
+	if ( contrast( Color::blend( foreground, background ) ) >= 4.5 )
+		return foreground;
+	foreground = Color::blend( foreground, background );
+	const Color target =
+		contrast( Color::White ) > contrast( Color::Black ) ? Color::White : Color::Black;
+
+	// Find the smallest correction toward a contrasting neutral, keeping the original hue.
+	// This runs only when generating a theme, with at most eight search iterations.
+	int low = 0;
+	int high = 255;
+	while ( low < high ) {
+		const int alpha = ( low + high ) / 2;
+		const Color corrected =
+			Color::blend( Color( target, static_cast<Uint8>( alpha ) ), foreground );
+		if ( contrast( corrected ) >= 4.5 )
+			high = alpha;
+		else
+			low = alpha + 1;
+	}
+	return Color::blend( Color( target, static_cast<Uint8>( low ) ), foreground );
 }
 
 } // namespace ecode

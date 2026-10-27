@@ -562,9 +562,13 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	const std::string& getThemesPath() const;
 
+	std::vector<std::string> getUIThemes() const;
+
 	const std::string& geti18nPath() const;
 
 	std::string getThemePath() const;
+
+	std::string getThemePath( const std::string& theme ) const;
 
 	std::string getDefaultThemePath() const;
 
@@ -940,6 +944,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::string firstInstanceIndicatorPath() const;
 
 	void tintTitleBar();
+
+	void updateUIColorScheme( const std::string& theme );
 
 	void discardEmptyTab();
 };
