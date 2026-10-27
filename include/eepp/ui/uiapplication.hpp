@@ -46,7 +46,7 @@ class EE_API UIApplication {
 				  Font* fallbackFont = nullptr,
 				  std::shared_ptr<System::ThreadPool> threadPool = nullptr );
 
-		//! By default it will use the current process path as the base path. This will set the
+		//! By default it will use Sys::getResourcePath() as the base path. This will set the
 		//! default working directory.
 		std::optional<std::string> basePath;
 		//! If unset, uses EEPP_PIXEL_DENSITY when valid, otherwise the main display density.

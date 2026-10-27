@@ -1,0 +1,8 @@
+#ifndef EEFM_VERSION_HPP
+#define EEFM_VERSION_HPP
+
+#define EEFM_MAJOR_VERSION 0
+#define EEFM_MINOR_VERSION 1
+#define EEFM_PATCH_LEVEL 0
+
+#endif

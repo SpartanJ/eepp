@@ -193,11 +193,8 @@ Vector2f UIPushButton::calcLayoutSize( const std::array<UIWidget*, 3>& logicalWi
 								mTextBox->getPixelsPadding().Right
 						  : widget->getPixelsSize().getWidth();
 		if ( width > 0 ) {
-			totSize.x += widget->getLayoutPixelsMargin().Left + width;
-			if ( ( i + 1 < widgets.size() && widgets[i + 1] && widgets[i + 1]->isVisible() ) ||
-				 ( i + 2 < widgets.size() && widgets[i + 2] && widgets[i + 2]->isVisible() ) ) {
-				totSize.x += widget->getLayoutPixelsMargin().Right;
-			}
+			totSize.x += widget->getLayoutPixelsMargin().Left + width +
+						 widget->getLayoutPixelsMargin().Right;
 		}
 		totSize.y = eemax<Float>( totSize.y, padding.Top + padding.Bottom +
 												 widget->getPixelsSize().getHeight() );
@@ -252,13 +249,10 @@ Vector2f UIPushButton::packLayout( const std::array<UIWidget*, 3>& logicalWidget
 		}
 		pos[i].x += 0 == i || widget->isVisible() ? widget->getLayoutPixelsMargin().Left : 0;
 		if ( widget->isVisible() && widget->getPixelsSize().getWidth() > 0 ) {
-			// The left margin is part of the widget's extent, as in calcLayoutSize: the next
-			// widget starts after it.
-			totSize.x += widget->getLayoutPixelsMargin().Left + widget->getPixelsSize().getWidth();
-			if ( ( i + 1 < widgets.size() && widgets[i + 1] && widgets[i + 1]->isVisible() ) ||
-				 ( i + 2 < widgets.size() && widgets[i + 2] && widgets[i + 2]->isVisible() ) ) {
-				totSize.x += widget->getLayoutPixelsMargin().Right;
-			}
+			// Both margins belong to the widget's extent, including the last widget's trailing
+			// margin, so measurement and alignment use the same space as packing.
+			totSize.x += widget->getLayoutPixelsMargin().Left + widget->getPixelsSize().getWidth() +
+						 widget->getLayoutPixelsMargin().Right;
 		}
 		totSize.y = eemax<Float>( totSize.y, padding.Top + padding.Bottom +
 												 widget->getPixelsSize().getHeight() );

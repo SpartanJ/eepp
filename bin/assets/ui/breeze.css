@@ -684,8 +684,8 @@ Tab:selected:hover {
 }
 
 tab::icon {
-	margin-left: 2dp;
-	margin-right: 2dp;
+	margin-inline-start: 4dp;
+	margin-inline-end: 2dp;
 }
 
 Tab::close {

@@ -340,7 +340,7 @@ bool App::init() {
 	const char* windowIcon = "assets/icon/eproc.png";
 #endif
 	WindowSettings ws( windowWidth, windowHeight, "", WindowStyle::Default, WindowBackend::Default,
-					   32, Sys::getProcessPath() + windowIcon );
+					   32, Sys::getResourcePath( "eproc" ) + windowIcon );
 	ContextSettings ctx;
 	ctx.Multisamples = mConfig->multisamples;
 	ctx.VSync = mConfig->vsync;
@@ -353,6 +353,7 @@ bool App::init() {
 			uiFont.reset();
 	}
 	UIApplication::Settings settings;
+	settings.basePath = Sys::getResourcePath( "eproc" );
 	settings.baseFont = uiFont.get();
 	settings.threadPool = ThreadPool::createShared( 2 );
 	settings.pixelDensity = mPixelDensity;

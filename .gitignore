@@ -92,3 +92,10 @@ ecode.dmg
 /projects/haiku/ecode/ecode.app/*
 
 /.eepp-dev/
+# Standalone application packaging output (all distributable tools).
+/projects/*/*/*.app/
+/projects/*/*/ecode/
+/projects/*/*/eterm/
+/projects/*/*/eeiv/
+/projects/*/*/eproc/
+/projects/*/*/eefm/

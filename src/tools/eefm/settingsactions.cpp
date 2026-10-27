@@ -71,7 +71,7 @@ void SettingsActions::openFontPicker( FontTarget target ) {
 		} else {
 			FontTrueType* terminalFont = mApp.terminal().terminalFont();
 			current = terminalFont ? FontTrueType::filePathOf( terminalFont )
-								   : FileSystem::getRealPath( Sys::getProcessPath() +
+								   : FileSystem::getRealPath( Sys::getResourcePath( "eefm" ) +
 															  "assets/fonts/DejaVuSansMono.ttf" );
 		}
 	}

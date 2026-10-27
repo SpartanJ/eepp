@@ -22,7 +22,7 @@ jobs:
         sudo add-apt-repository -y universe
         sudo add-apt-repository -y multiverse
         sudo apt update
-        sudo apt install -y gcc-13 g++-13 wget mesa-utils xvfb xauth gdb zstd \
+        sudo apt install -y gcc-13 g++-13 wget mesa-utils xvfb xauth gdb zstd zip \
           weston xdotool imagemagick \
           python3-gi gir1.2-atspi-2.0 at-spi2-core dbus-x11 \
           openssh-server openssh-client netcat-openbsd
@@ -35,6 +35,10 @@ jobs:
         ./premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 gmake
         cd make/linux
         make all -j$(nproc) -e config=release_x86_64
+    - name: Application packaging tests
+      run: |
+        EEPP_TEST_RESOURCE_BINARY="$PWD/bin/unit_tests/eepp-unit_tests" \
+          python3 projects/scripts/tests/test_app_packaging.py
     - name: Package development environment
       if: github.event_name == 'push'
       run: |

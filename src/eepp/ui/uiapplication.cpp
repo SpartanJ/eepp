@@ -100,7 +100,7 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	}
 
 	if ( !appSettings.basePath || appSettings.basePath->empty() ) {
-		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		FileSystem::changeWorkingDirectory( Sys::getResourcePath() );
 	} else {
 		std::string path( *appSettings.basePath );
 		FileSystem::dirAddSlashAtEnd( path );

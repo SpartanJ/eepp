@@ -1,0 +1,3 @@
+@include ../../../projects/scripts/app-assets.list
+assets/icon/eterm.png
+assets/colorschemes/terminalcolorschemes.conf

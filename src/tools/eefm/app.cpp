@@ -635,9 +635,15 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	}
 	mConfig = std::make_unique<AppConfig>( mConfigDir );
 	mConfig->load();
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	const char* windowIcon = "assets/icon/eefm-macos.png";
+#else
+	const char* windowIcon = "assets/icon/eefm.png";
+#endif
 	WindowSettings ws( width, height, "eefm", WindowStyle::Default, WindowBackend::Default, 32,
-					   Sys::getProcessPath() + "assets/icon/eefm.png" );
+					   Sys::getResourcePath( "eefm" ) + windowIcon );
 	UIApplication::Settings appSettings;
+	appSettings.basePath = Sys::getResourcePath( "eefm" );
 	if ( mConfig->window.pixelDensity > 0 )
 		appSettings.pixelDensity = mConfig->window.pixelDensity;
 	appSettings.fontHinting = mConfig->font.hinting;
@@ -677,7 +683,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	}
 	if ( mState.contains( "window" ) && mState["window"].value( "maximized", false ) )
 		mApp->getWindow()->maximize();
-	Icons::load( mUI, Sys::getProcessPath() + "assets/", ws.Icon );
+	Icons::load( mUI, Sys::getResourcePath( "eefm" ) + "assets/", ws.Icon );
 
 	// Theme detection and icon loading run on the pool: startup does not wait for them.
 	mSystemIcons = UISystemIconTheme::New( *mPool, *mExecutor );

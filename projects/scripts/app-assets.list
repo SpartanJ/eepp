@@ -1,0 +1,17 @@
+# Shared base fonts and UI theme. Paths are relative to the source bin directory.
+assets/fonts/DejaVuSansMono.ttf
+assets/fonts/DejaVuSansMono-Bold.ttf
+assets/fonts/DejaVuSansMono-Oblique.ttf
+assets/fonts/DejaVuSansMono-BoldOblique.ttf
+assets/fonts/DejaVuSansMonoNerdFontComplete.ttf
+assets/fonts/nonicons.ttf
+assets/fonts/codicon.ttf
+assets/fonts/NotoSans-Regular.ttf
+assets/fonts/NotoSans-Bold.ttf
+assets/fonts/NotoSans-Italic.ttf
+assets/fonts/NotoSans-BoldItalic.ttf
+assets/fonts/remixicon.ttf
+assets/fonts/NotoEmoji-Regular.ttf
+assets/fonts/NotoColorEmoji.ttf
+assets/fonts/DroidSansFallbackFull.ttf
+assets/ui/breeze.css

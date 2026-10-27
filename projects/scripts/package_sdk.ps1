@@ -58,10 +58,8 @@ try {
 	}
 
 	# -----------------------------------------------------------------------
-	# Binaries: every release executable in bin\ is packaged (any new
-	# "eepp-*" binary is picked up automatically) plus the fixed tool set:
-	# ecode, eterm, eeiv and eproc. Unit tests live in bin\unit_tests and benchmarks
-	# in bin\benchmarks; they are never matched by this filter.
+	# Binaries: release eepp-* executables and applications registered by asset manifests.
+	# Unit tests and benchmarks live in subdirectories and are never matched.
 	# -----------------------------------------------------------------------
 
 	function Add-Binary {
@@ -80,10 +78,9 @@ try {
 	foreach ($Name in $Binaries) {
 		Add-Binary -Name $Name
 	}
-	Add-Binary -Name "ecode.exe"
-	Add-Binary -Name "eterm.exe"
-	Add-Binary -Name "eeiv.exe"
-	Add-Binary -Name "eproc.exe"
+	Get-ChildItem "src/tools/*/assets.list" | ForEach-Object {
+		Add-Binary -Name "$($_.Directory.Name).exe"
+	}
 
 	# -----------------------------------------------------------------------
 	# Libraries: shared libraries required at runtime plus the import/static

@@ -23,6 +23,11 @@ jobs:
     - name: Build
       run: |
         bash projects/macos/make_no_fw.sh --backend=SDL3 --with-debug-symbols -e config=release_arm64
+    - name: Application packaging tests
+      run: |
+        EEPP_TEST_RESOURCE_BINARY="$PWD/bin/unit_tests/eepp-unit_tests" \
+          EEPP_TEST_SDL3_DYLIB="$(brew --prefix sdl3)/lib/libSDL3.0.dylib" \
+          python3 projects/scripts/tests/test_app_packaging.py
     - name: Set SDK version
       id: sdk_version
       run: |
@@ -40,7 +45,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: macos-eepp-sdk-arm64
-        path: projects/macos/sdk/eepp-sdk-*.tar.gz
+        path: |
+          projects/macos/sdk/eepp-sdk-*.tar.gz
+          projects/macos/sdk/*-macos-*.dmg
     - name: Publish nightly SDK package
       if: github.ref == 'refs/heads/develop'
       uses: softprops/action-gh-release@v3
@@ -52,6 +59,7 @@ jobs:
         fail_on_unmatched_files: true
         files: |
           projects/macos/sdk/eepp-sdk-macos-arm64-nightly.tar.gz
+          projects/macos/sdk/*-macos-nightly-arm64.dmg
     - name: Publish stable release package
       if: startsWith(github.ref, 'refs/tags/eepp-')
       uses: softprops/action-gh-release@v3
@@ -63,6 +71,7 @@ jobs:
         fail_on_unmatched_files: true
         files: |
           projects/macos/sdk/eepp-sdk-macos-arm64-*.tar.gz
+          projects/macos/sdk/*-macos-*-arm64.dmg
     - name: Unit Tests
       env:
         SDL_AUDIODRIVER: dummy

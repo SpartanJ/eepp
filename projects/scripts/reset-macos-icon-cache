@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euo pipefail
+
+if [[ "$(uname -s)" != Darwin ]]; then
+	printf 'This script only works on macOS.\n' >&2
+	exit 1
+fi
+
+cache_dir="$(getconf DARWIN_USER_CACHE_DIR 2>/dev/null || true)"
+if [[ -z "$cache_dir" ]]; then
+	if [[ -z "${TMPDIR:-}" ]]; then
+		printf 'Could not find the macOS user cache directory.\n' >&2
+		exit 1
+	fi
+	cache_dir="$(cd "${TMPDIR%/}/../C" && pwd -P)"
+fi
+
+temp_root="${TMPDIR:-/tmp}"
+backup_dir="$(mktemp -d "${temp_root%/}/macos-icon-cache-backup.XXXXXX")"
+for name in com.apple.dock.iconcache com.apple.iconservices; do
+	if [[ -e "$cache_dir/$name" ]]; then
+		mv "$cache_dir/$name" "$backup_dir/$name"
+	fi
+done
+
+killall iconservicesagent 2>/dev/null || true
+killall Finder 2>/dev/null || true
+killall Dock 2>/dev/null || true
+
+printf 'Icon caches moved to %s\n' "$backup_dir"
+printf 'Finder and Dock will restart with rebuilt icons.\n'

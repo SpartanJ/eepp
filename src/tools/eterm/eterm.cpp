@@ -18,20 +18,7 @@ void App::TerminalSplitterClient::onWidgetFocusChange( UIWidget* ) {
 }
 
 std::string App::getResourcePath() const {
-	std::string resPath = Sys::getProcessPath();
-#if EE_PLATFORM == EE_PLATFORM_MACOS
-	if ( String::contains( resPath, "ecode.app" ) ) {
-		resPath = FileSystem::getCurrentWorkingDirectory();
-		FileSystem::dirAddSlashAtEnd( resPath );
-	}
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
-	if ( String::contains( resPath, ".mount_" ) ) {
-		resPath = FileSystem::getCurrentWorkingDirectory();
-		FileSystem::dirAddSlashAtEnd( resPath );
-	}
-#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	resPath += "eterm/";
-#endif
+	std::string resPath = Sys::getResourcePath( "eterm" );
 	resPath += "assets";
 	FileSystem::dirAddSlashAtEnd( resPath );
 	return resPath;

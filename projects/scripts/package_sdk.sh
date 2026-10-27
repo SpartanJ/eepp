@@ -143,9 +143,8 @@ for entry in bin/assets/*; do
 done
 
 # ---------------------------------------------------------------------------
-# Binaries: every release executable in bin/ is packaged (any new "eepp-*"
-# binary is picked up automatically) plus the fixed tool set: ecode, eterm, eeiv
-# and eproc. Unit tests and benchmarks live outside bin/ and are never matched.
+# Binaries: release eepp-* executables and applications registered by asset manifests.
+# Unit tests and benchmarks live outside bin/ and are never matched.
 # ---------------------------------------------------------------------------
 
 # Only accept the executable format of the target platform: prevents stale
@@ -200,17 +199,17 @@ for entry in bin/eepp-*; do
 	copy_binary "$entry"
 done
 
-if [ "$PLATFORM" == "windows" ]; then
-	copy_binary bin/ecode.exe
-	copy_binary bin/eterm.exe
-	copy_binary bin/eeiv.exe
-	copy_binary bin/eproc.exe
-else
-	copy_binary bin/ecode
-	copy_binary bin/eterm
-	copy_binary bin/eeiv
-	copy_binary bin/eproc
-fi
+# Manifests define the distributable tool set; new tools need no SDK script edits.
+for manifest in src/tools/*/assets.list; do
+	app=$(basename "$(dirname "$manifest")")
+	suffix=
+	[ "$PLATFORM" != windows ] || suffix=.exe
+	if [ "$PLATFORM" = macos ] && [ ! -f "bin/$app" ] && [ -f "bin/$app.app/Contents/MacOS/$app" ]; then
+		copy_binary "bin/$app.app/Contents/MacOS/$app"
+	else
+		copy_binary "bin/$app$suffix"
+	fi
+done
 
 # ---------------------------------------------------------------------------
 # Libraries: shared libraries required at runtime plus the static libraries
@@ -405,6 +404,20 @@ fix_macos_ids() {
 
 bundle_sdl3
 fix_macos_ids
+
+# Build standalone app/DMG packages from the already relocated SDK binaries.
+# Use the release label for artifact names, and each app's header for bundle versions.
+if [ "$PLATFORM" = macos ]; then
+	mkdir -p "$STAGING/Applications"
+	for manifest in src/tools/*/assets.list; do
+		app=$(basename "$(dirname "$manifest")")
+		[ -f "$STAGING/bin/$app" ] || continue
+		bash projects/macos/build.app.sh "$app" --skip-build --dmg --arch "$ARCH" \
+			--source-dir "$ROOT/$STAGING/bin" --output-dir "$ROOT/projects/macos/sdk" \
+			--version "$ARCHIVE_SUFFIX"
+		mv "projects/macos/sdk/$app.app" "$STAGING/Applications/"
+	done
+fi
 
 # ---------------------------------------------------------------------------
 # Package archive: zip for Windows (keeps the +x bits intact in tar.gz for

@@ -23,6 +23,7 @@
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiviewpager.hpp>
@@ -138,7 +139,7 @@ UTEST( PixelDensityRegression, PixelPaddingUpdatesAndRepeatedValues ) {
 	widget->setPaddingPixels( logical );
 	EXPECT_EQ( widget->paddingChanges, changes + 1 );
 
-	using Setter = UIWidget* ( UIWidget::* )( const Float& );
+	using Setter = UIWidget* (UIWidget::*)( const Float& );
 	Setter setters[] = { &UIWidget::setPaddingPixelsLeft, &UIWidget::setPaddingPixelsTop,
 						 &UIWidget::setPaddingPixelsRight, &UIWidget::setPaddingPixelsBottom };
 	for ( auto setter : setters ) {
@@ -170,7 +171,7 @@ UTEST( PixelDensityRegression, PixelMarginsUpdateAndRepeatedValues ) {
 	widget->setLayoutPixelsMargin( logical );
 	EXPECT_EQ( widget->marginChanges, changes + 1 );
 
-	using Setter = UIWidget* ( UIWidget::* )( const Float& );
+	using Setter = UIWidget* (UIWidget::*)( const Float& );
 	Setter setters[] = { &UIWidget::setLayoutPixelsMarginLeft, &UIWidget::setLayoutPixelsMarginTop,
 						 &UIWidget::setLayoutPixelsMarginRight,
 						 &UIWidget::setLayoutPixelsMarginBottom };
@@ -185,6 +186,102 @@ UTEST( PixelDensityRegression, PixelMarginsUpdateAndRepeatedValues ) {
 		const Rectf pixels = widget->getLayoutPixelsMargin();
 		EXPECT_TRUE( widget->getLayoutMargin() == PixelDensity::pxToDp( pixels ).ceil() );
 		EXPECT_EQ( pixels.Left + pixels.Top + pixels.Right + pixels.Bottom, 29.f );
+	}
+}
+
+UTEST( PixelDensityRegression, ButtonLayoutIncludesTrailingMargin ) {
+	DensityApplication fixture;
+	fixture.app.getUI()->setStyleSheet( "" );
+	for ( Float density : { 1.f, 1.5f, 2.f, 3.f } ) {
+		PixelDensity::setPixelDensity( density );
+		auto* button = UIPushButton::New();
+		button->setParent( fixture.app.getUI()->getRoot() );
+		button->removeSkin();
+		button->unsetFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
+		button->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		button->setPadding( Rectf::Zero );
+		button->setSize( 26, 24 );
+		auto* text = button->getTextView();
+		text->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		text->setSize( 20, 10 );
+		text->applyProperty( StyleSheetProperty( "margin-inline-start", "2dp" ) );
+		text->applyProperty( StyleSheetProperty( "margin-inline-end", "4dp" ) );
+		for ( auto direction : { UIDirection::LeftToRight, UIDirection::RightToLeft } ) {
+			button->setDirection( direction );
+			for ( auto alignment : { UIHorizontalAlignment::Left, UIHorizontalAlignment::Center,
+									 UIHorizontalAlignment::Right } ) {
+				button->setHorizontalAlignment( alignment );
+				EXPECT_EQ( button->getContentSize().x, PixelDensity::dpToPx( 26.f ) );
+				EXPECT_EQ( button->updateLayout().x, PixelDensity::dpToPx( 26.f ) );
+				EXPECT_EQ( text->getPixelsPosition().x,
+						   PixelDensity::dpToPx( button->isRTL() ? 4.f : 2.f ) );
+			}
+		}
+		eeDelete( button );
+	}
+}
+
+UTEST( PixelDensityRegression, TabCloseInlineEndMarginScalesWithDensity ) {
+	DensityApplication fixture;
+	auto* ui = fixture.app.getUI();
+	ui->setStyleSheet( R"css(
+		tab { skin: none; padding: 0dp; }
+		tab::text { padding: 0dp; }
+		tab::close { width: 10dp; height: 10dp; margin-inline-end: 4dp; }
+	)css" );
+	for ( Float density : { 1.f, 1.5f, 2.f, 3.f } ) {
+		PixelDensity::setPixelDensity( density );
+		auto* tabs = UITabWidget::New();
+		tabs->setParent( ui->getRoot() );
+		tabs->setSize( 300, 100 );
+		tabs->setTabsClosable( true );
+		auto* tab = tabs->add( "Close margin", UIWidget::New() );
+		ui->flushDirtyStyleAndLayout();
+		auto* close = tab->getCloseButton();
+		for ( auto direction : { UIDirection::LeftToRight, UIDirection::RightToLeft } ) {
+			tabs->setDirection( direction );
+			tab->updateLayout();
+			const Float gap = tab->isRTL() ? close->getPixelsPosition().x
+										   : tab->getPixelsSize().x - close->getPixelsPosition().x -
+												 close->getPixelsSize().x;
+			const Rectf& margin = close->getLayoutPixelsMargin();
+			EXPECT_EQ( tab->isRTL() ? margin.Left : margin.Right, PixelDensity::dpToPx( 4.f ) );
+			EXPECT_NEAR( gap, PixelDensity::dpToPx( 4.f ), 1.f );
+		}
+		eeDelete( tabs );
+	}
+}
+
+UTEST( PixelDensityRegression, BreezeTabIconKeepsBalancedOuterMargins ) {
+	DensityApplication fixture;
+	auto* ui = fixture.app.getUI();
+	for ( Float density : { 1.f, 1.5f, 2.f, 3.f } ) {
+		PixelDensity::setPixelDensity( density );
+		auto* tabs = UITabWidget::New();
+		tabs->setParent( ui->getRoot() );
+		tabs->setSize( 300, 100 );
+		tabs->setTabsClosable( true );
+		auto* tab = tabs->add( "breeze.css", UIWidget::New() );
+		auto* icon = tab->getIcon();
+		icon->setSize( 16, 16 );
+		icon->setVisible( true );
+		for ( auto direction : { UIDirection::LeftToRight, UIDirection::RightToLeft } ) {
+			tabs->setDirection( direction );
+			ui->flushDirtyStyleAndLayout();
+			tab->updateLayout();
+			auto* close = tab->getCloseButton();
+			const Float leadingGap =
+				tab->isRTL()
+					? tab->getPixelsSize().x - icon->getPixelsPosition().x - icon->getPixelsSize().x
+					: icon->getPixelsPosition().x;
+			const Float trailingGap = tab->isRTL()
+										  ? close->getPixelsPosition().x
+										  : tab->getPixelsSize().x - close->getPixelsPosition().x -
+												close->getPixelsSize().x;
+			EXPECT_NEAR( leadingGap, PixelDensity::dpToPx( 4.f ), 1.f );
+			EXPECT_NEAR( trailingGap, PixelDensity::dpToPx( 4.f ), 1.f );
+		}
+		eeDelete( tabs );
 	}
 }
 

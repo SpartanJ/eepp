@@ -664,6 +664,52 @@ std::string Sys::getProcessPath() {
 	return path;
 }
 
+std::string Sys::getResourcePath( [[maybe_unused]] std::string_view appName ) {
+	std::string path = getProcessPath();
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	// UIApplication can change cwd to this base; previously resolved paths must stay valid.
+	path = FileSystem::getRealPath( path );
+	FileSystem::dirAddSlashAtEnd( path );
+	if ( !appName.empty() ) {
+		std::string appPath = path;
+		appPath.append( appName );
+		FileSystem::dirAddSlashAtEnd( appPath );
+		if ( FileSystem::isDirectory( appPath + "assets" ) )
+			return appPath;
+	}
+#endif
+	bool packaged = false;
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	const auto bundle = path.rfind( ".app/" );
+	if ( bundle != std::string::npos ) {
+		packaged = true;
+		std::string resources = path.substr( 0, bundle + 5 ) + "Contents/Resources/";
+		if ( FileSystem::isDirectory( resources + "assets" ) )
+			return resources;
+	}
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+	packaged = String::contains( path, ".mount_" );
+#endif
+	// Prefer assets beside the executable over an unrelated assets folder in the caller's cwd.
+	if ( !packaged || FileSystem::isDirectory( path + "assets" ) )
+		return path;
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+	// AppImages can place executables below the root exposed by their launcher.
+	const char* appDir = std::getenv( "APPDIR" );
+	if ( appDir && *appDir ) {
+		std::string root( appDir );
+		FileSystem::dirAddSlashAtEnd( root );
+		if ( FileSystem::isDirectory( root + "assets" ) )
+			return root;
+	}
+#endif
+	std::string workingDirectory = FileSystem::getCurrentWorkingDirectory();
+	FileSystem::dirAddSlashAtEnd( workingDirectory );
+	if ( FileSystem::isDirectory( workingDirectory + "assets" ) )
+		return workingDirectory;
+	return path;
+}
+
 Int64 Sys::getSystemTime() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	using GetSystemTimePreciseAsFileTimeType = VOID( WINAPI* )( LPFILETIME );

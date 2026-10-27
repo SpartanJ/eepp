@@ -41,6 +41,68 @@ UTEST( SystemPath, processPathMatchesExecutablePath ) {
 	EXPECT_STDSTREQ( FileSystem::fileRemoveFileName( executablePath ), Sys::getProcessPath() );
 }
 
+// EEPP_TEST_RESOURCE_PATH lets the same test executable verify a staged .app/AppImage layout.
+UTEST( SystemPath, resourcePathUsesExpectedDirectory ) {
+	const char* expected = std::getenv( "EEPP_TEST_RESOURCE_PATH" );
+	std::string expectedPath = expected ? std::string( expected ) : Sys::getProcessPath();
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	expectedPath = FileSystem::getRealPath( expectedPath );
+	FileSystem::dirAddSlashAtEnd( expectedPath );
+#endif
+	EXPECT_STDSTREQ( expectedPath, Sys::getResourcePath() );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	EXPECT_STDSTREQ( Sys::getResourcePath(), Sys::getResourcePath( "eterm" ) );
+#endif
+}
+
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+
+UTEST( SystemPath, resourcePathSelectsApplicationPreload ) {
+	TemporaryWorkingDirectory temp;
+	ASSERT_TRUE( temp.created );
+	ASSERT_TRUE( temp.changed );
+	ASSERT_TRUE( FileSystem::makeDir( "eterm" ) );
+	ASSERT_TRUE( FileSystem::makeDir( "eterm/assets" ) );
+	ASSERT_TRUE( FileSystem::makeDir( "assets" ) );
+	const std::string_view appName( "eterm-not-part-of-the-view", 5 );
+	const std::string sharedPath = FileSystem::getCurrentWorkingDirectory() + "/";
+	const std::string resourcePath = Sys::getResourcePath( appName );
+	EXPECT_STDSTREQ( sharedPath + "eterm/", resourcePath );
+	EXPECT_STDSTREQ( sharedPath, Sys::getResourcePath() );
+	ASSERT_TRUE( FileSystem::changeWorkingDirectory( resourcePath ) );
+	EXPECT_TRUE( FileSystem::isDirectory( resourcePath + "assets" ) );
+}
+
+UTEST( SystemPath, resourcePathFallsBackToSharedPreload ) {
+	TemporaryWorkingDirectory temp;
+	ASSERT_TRUE( temp.created );
+	ASSERT_TRUE( temp.changed );
+	ASSERT_TRUE( FileSystem::makeDir( "eterm" ) );
+	ASSERT_TRUE( FileSystem::makeDir( "assets" ) );
+	EXPECT_STDSTREQ( FileSystem::getCurrentWorkingDirectory() + "/",
+					 Sys::getResourcePath( "eterm" ) );
+}
+
+#endif
+
+UTEST( SystemPath, resourcePathPreservesWorkingDirectory ) {
+	const std::string resourcePath = Sys::getResourcePath();
+	ASSERT_FALSE( resourcePath.empty() );
+	TemporaryWorkingDirectory temp;
+	ASSERT_TRUE( temp.created );
+	ASSERT_TRUE( temp.changed );
+	std::string assetsPath = temp.path;
+	FileSystem::dirAddSlashAtEnd( assetsPath );
+	ASSERT_TRUE( FileSystem::makeDir( assetsPath + "assets" ) );
+	const std::string workingDirectory = FileSystem::getCurrentWorkingDirectory();
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	EXPECT_STDSTREQ( workingDirectory + "/", Sys::getResourcePath() );
+#else
+	EXPECT_STDSTREQ( resourcePath, Sys::getResourcePath() );
+#endif
+	EXPECT_STDSTREQ( workingDirectory, FileSystem::getCurrentWorkingDirectory() );
+}
+
 UTEST( SystemPath, workingDirectoryRoundTripsUnicode ) {
 	TemporaryWorkingDirectory temp;
 	ASSERT_TRUE( temp.created );

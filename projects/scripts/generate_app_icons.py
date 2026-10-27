@@ -7,7 +7,8 @@ COFF resource objects, and the macOS .icns container. The shared PNG uses
 Breeze-like small-icon margins; the macOS runtime PNG and larger ICNS entries
 use matching transparent insets to fit neighboring Dock icons. Smaller ICNS
 entries keep Breeze-like margins. Windows ICO entries retain their original
-full-size artwork.
+full-size artwork. SVG view boxes should fit the artwork; the generator adds
+the surrounding margins and centers non-square artwork on a square canvas.
 
 The binary layouts intentionally mirror the historical artifacts:
 
@@ -90,6 +91,8 @@ APPS = {
     'ecode': { 'svg': 'ecode-icon.svg', 'ico': [256, 128, 64, 48, 32, 16], 'icns': True, 'res': True },
     'eterm': { 'svg': 'eterm-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True },
     'eeiv': { 'svg': 'eeiv-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True },
+    # Optical adjustment for the wider folder silhouette, applied to PNG and ICNS alike.
+    'eefm': { 'svg': 'eefm-icon.svg', 'ico': [], 'icns': True, 'res': False, 'artwork_scale': 0.89 },
     'eproc': { 'svg': 'eproc-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True },
 }
 
@@ -272,16 +275,19 @@ def render_png( renderer, svg, size, out_path ):
         return handle.read()
 
 
-def inset_svg( source, destination, fraction ):
-    """Place the original artwork in the center of a transparent macOS canvas."""
+def inset_svg( source, destination, fraction, scale=1.0 ):
+    """Center artwork on a square canvas, sizing its height to match other icons."""
 
     tree = ET.parse( source )
     root = tree.getroot()
     x, y, width, height = map( float, root.attrib['viewBox'].split() )
-    margin_x = width * ( 1 / fraction - 1 ) / 2
-    margin_y = height * ( 1 / fraction - 1 ) / 2
-    root.set( 'viewBox', f'{x - margin_x} {y - margin_y} '
-                         f'{width + 2 * margin_x} {height + 2 * margin_y}' )
+    # Align visible heights without distorting rectangular artwork. Very wide icons
+    # still need enough horizontal room to avoid clipping.
+    canvas = max( width, height / fraction ) / scale
+    root.set( 'width', str( canvas ) )
+    root.set( 'height', str( canvas ) )
+    root.set( 'viewBox', f'{x + ( width - canvas ) / 2} {y + ( height - canvas ) / 2} '
+                         f'{canvas} {canvas}' )
     tree.write( destination, encoding='utf-8', xml_declaration=True )
 
 
@@ -307,21 +313,22 @@ def generate( app, icon_dir, tmp_dir, renderer, windres, macos_only ):
                 handle.write( build_ico( pngs, spec['ico'] ) )
             written.append( f'{app}.ico' )
     if spec['icns']:
+        scale = spec.get( 'artwork_scale', 1.0 )
         icns_sizes = {size for _, size, _ in ICNS_ENTRIES if size}
         macos_pngs = {}
         for size in sorted( icns_sizes ):
             macos_svg = os.path.join( tmp_dir, f'{app}-macos-{size}.svg' )
-            inset_svg( source, macos_svg, macos_artwork_fraction( size ) )
+            inset_svg( source, macos_svg, macos_artwork_fraction( size ), scale )
             macos_pngs[size] = render_png( renderer, macos_svg, size,
                                            os.path.join( tmp_dir, f'{app}-macos-{size}.png' ) )
         shared_svg = os.path.join( tmp_dir, f'{app}-shared.svg' )
-        inset_svg( source, shared_svg, SMALL_ARTWORK_FRACTION )
+        inset_svg( source, shared_svg, SMALL_ARTWORK_FRACTION, scale )
         with open( os.path.join( icon_dir, f'{app}.png' ), 'wb' ) as handle:
             handle.write( render_png( renderer, shared_svg, PNG_SIZE,
                                       os.path.join( tmp_dir, f'{app}-shared.png' ) ) )
         # SDL_SetWindowIcon uses this single PNG for the running Dock icon.
         runtime_svg = os.path.join( tmp_dir, f'{app}-runtime.svg' )
-        inset_svg( source, runtime_svg, MACOS_RUNTIME_ARTWORK_FRACTION )
+        inset_svg( source, runtime_svg, MACOS_RUNTIME_ARTWORK_FRACTION, scale )
         with open( os.path.join( icon_dir, f'{app}-macos.png' ), 'wb' ) as handle:
             handle.write( render_png( renderer, runtime_svg, PNG_SIZE,
                                       os.path.join( tmp_dir, f'{app}-runtime.png' ) ) )

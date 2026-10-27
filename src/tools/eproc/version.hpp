@@ -1,0 +1,8 @@
+#ifndef EPROC_VERSION_HPP
+#define EPROC_VERSION_HPP
+
+#define EPROC_MAJOR_VERSION 0
+#define EPROC_MINOR_VERSION 1
+#define EPROC_PATCH_LEVEL 0
+
+#endif

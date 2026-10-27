@@ -36,6 +36,12 @@ jobs:
       shell: cmd
       run: |
         msbuild .\make\windows\eepp.sln -m /p:Platform="x64" /p:Configuration="release"
+    - name: Application packaging tests
+      shell: pwsh
+      env:
+        EEPP_TEST_WINDOWS_APPS: eproc
+      run: |
+        python projects/scripts/tests/test_app_packaging.py
     - name: Set SDK version
       id: sdk_version
       shell: powershell

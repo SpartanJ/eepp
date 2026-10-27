@@ -1,0 +1,4 @@
+@include ../../../projects/scripts/app-assets.list
+assets/icon/eefm.png
+assets/colorschemes/terminalcolorschemes.conf
+assets/ca-bundle.pem

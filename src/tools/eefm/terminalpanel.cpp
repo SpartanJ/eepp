@@ -88,16 +88,16 @@ ShellState shellState( int pid ) {
 	if ( length > 0 )
 		state.directory.assign( buffer, length );
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
-	struct kinfo_proc info{};
+	struct kinfo_proc info {};
 	size_t size = sizeof( info );
 	int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, pid };
 	if ( sysctl( mib, 4, &info, &size, nullptr, 0 ) == 0 && size > 0 )
 		state.busy = info.kp_eproc.e_tpgid > 0 && info.kp_eproc.e_tpgid != info.kp_eproc.e_pgid;
-	struct proc_vnodepathinfo vnode{};
+	struct proc_vnodepathinfo vnode {};
 	if ( proc_pidinfo( pid, PROC_PIDVNODEPATHINFO, 0, &vnode, sizeof( vnode ) ) == sizeof( vnode ) )
 		state.directory = vnode.pvi_cdir.vip_path;
 #elif EE_PLATFORM == EE_PLATFORM_BSD && defined( __FreeBSD__ )
-	struct kinfo_proc info{};
+	struct kinfo_proc info {};
 	size_t size = sizeof( info );
 	int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, pid };
 	if ( sysctl( mib, 4, &info, &size, nullptr, 0 ) == 0 && size > 0 )
@@ -208,7 +208,7 @@ bool TerminalPanel::create() {
 		}
 		if ( !font ) {
 			auto bundled = FontTrueType::New( "eefm-monospace-default", scope );
-			if ( bundled->loadFromFile( Sys::getProcessPath() +
+			if ( bundled->loadFromFile( Sys::getResourcePath( "eefm" ) +
 										"assets/fonts/DejaVuSansMono.ttf" ) )
 				font = bundled.get();
 		}
@@ -314,7 +314,7 @@ const std::map<std::string, TerminalColorScheme>& TerminalPanel::colorSchemes() 
 		mTerminalColorSchemesLoaded = true;
 		// The schemes eterm ships, then the user's (eterm's config folder: shared with eterm).
 		auto schemes = TerminalColorScheme::loadFromFile(
-			Sys::getProcessPath() + "assets/colorschemes/terminalcolorschemes.conf" );
+			Sys::getResourcePath( "eefm" ) + "assets/colorschemes/terminalcolorschemes.conf" );
 		std::string userSchemes =
 			Sys::getConfigPath( "eterm" ) + FileSystem::getOSSlash() + "colorschemes";
 		if ( FileSystem::isDirectory( userSchemes ) ) {

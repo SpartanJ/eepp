@@ -3,6 +3,7 @@
 
 #include <eepp/system/time.hpp>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -71,6 +72,15 @@ class EE_API Sys {
 
 	/** @return The application path ( the executable path without the executable ) */
 	static std::string getProcessPath();
+
+	/** @return The application's resource base directory, with a trailing slash. Assets are
+	 * relative to this directory. Resolves macOS .app Contents/Resources and Linux/BSD AppImage
+	 * roots, including launchers that expose assets through the working directory. Ordinary
+	 * executables use getProcessPath(). On Emscripten, appName selects an app-specific preload
+	 * root when appName/assets exists, otherwise the shared assets layout is used. Emscripten
+	 * paths are absolute so they remain valid after a working-directory change. Other platforms
+	 * ignore appName. Does not change the working directory. */
+	static std::string getResourcePath( std::string_view appName = {} );
 
 	/** @return The process path ( the executable file path ) */
 	static std::string getProcessFilePath();

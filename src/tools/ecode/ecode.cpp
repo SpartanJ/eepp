@@ -4598,23 +4598,11 @@ void App::init( InitParameters& params ) {
 	mResPath = ECODE_SHAREDIR;
 	FileSystem::dirAddSlashAtEnd( mResPath );
 #else
-	mResPath = Sys::getProcessPath();
+	mResPath = Sys::getResourcePath( "ecode" );
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-	if ( String::contains( mResPath, ".mount_" ) )
-		FileSystem::dirAddSlashAtEnd( mResPath );
-#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	mResPath += "ecode/";
-#endif
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );
-
-#if EE_PLATFORM == EE_PLATFORM_MACOS
-	if ( !FileSystem::fileExists( mResPath ) ) {
-		mResPath = Sys::getProcessPath() + "/../Resources/assets/";
-	}
-#endif
 
 	bool firstRun = loadConfig( params.logLevel, currentDisplay->getSize(), params.prematureExit,
 								params.stdOutLogs, params.disableFileLogs );

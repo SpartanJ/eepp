@@ -16,6 +16,7 @@ bin/                    Runtime libraries co-located with the binaries
 libs/<platform>/<arch>/ Libraries for linking against eepp
 include/                Public C++ headers
 docs/articles/          Framework documentation articles
+Applications/           Standalone app bundles (macOS only)
 ```
 
 ## Running the demos and tools
@@ -28,7 +29,8 @@ Every binary in `bin/` is ready to run:
   location (`$ORIGIN` rpath), so the package can live anywhere on disk.
 - **macOS:** the shipped binaries and libraries are ad-hoc signed and resolve
   their dependencies through `@loader_path`, so they can be launched straight
-  from Finder or a terminal.
+  from Finder or a terminal. The macOS SDK also includes app bundles in
+  `Applications/`; individual DMGs are published alongside the SDK archive.
 
 The SDK uses the SDL3 backend and bundles its runtime library in `bin/`
 (`SDL3.dll`, `libSDL3.so.0`, or `libSDL3.0.dylib`). Applications linked against
@@ -70,6 +72,8 @@ Unix consumers do not need to link `X11` or `wayland-client`. Static Windows bui
 alongside eepp's OLE dependencies (`ole32`, `uuid`); the Premake scripts include them automatically.
 See `docs/articles/native_drag_and_drop.md` for usage examples, source lifetime rules and supported
 behavior.
+
+See `docs/articles/application_packaging.md` for standalone application packaging and asset manifests.
 
 ## Building an SDK snapshot
 

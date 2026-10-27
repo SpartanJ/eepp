@@ -1,0 +1,8 @@
+#ifndef ETERM_VERSION_HPP
+#define ETERM_VERSION_HPP
+
+#define ETERM_MAJOR_VERSION 0
+#define ETERM_MINOR_VERSION 1
+#define ETERM_PATCH_LEVEL 0
+
+#endif

@@ -1,0 +1,6 @@
+@include ../../../projects/scripts/app-assets.list
+assets/icon/ecode.png
+assets/i18n
+assets/colorschemes
+assets/plugins
+assets/ca-bundle.pem

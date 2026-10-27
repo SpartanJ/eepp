@@ -543,12 +543,12 @@ bool App::init() {
 	const char* windowIcon = "eeiv.png";
 	const char* fallbackIcon = "ee.png";
 #endif
-	windowSettings.Icon = Sys::getProcessPath() + "assets/icon/" + windowIcon;
+	windowSettings.Icon = Sys::getResourcePath( "eeiv" ) + "assets/icon/" + windowIcon;
 	if ( !FileSystem::fileExists( windowSettings.Icon ) )
-		windowSettings.Icon = Sys::getProcessPath() + "assets/icon/" + fallbackIcon;
+		windowSettings.Icon = Sys::getResourcePath( "eeiv" ) + "assets/icon/" + fallbackIcon;
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	if ( !FileSystem::fileExists( windowSettings.Icon ) )
-		windowSettings.Icon = Sys::getProcessPath() + "assets/icon/ee.png";
+		windowSettings.Icon = Sys::getResourcePath( "eeiv" ) + "assets/icon/ee.png";
 #endif
 
 	FontTrueTypePtr uiFont;
@@ -564,6 +564,7 @@ bool App::init() {
 			fallbackFont.reset();
 	}
 	UIApplication::Settings appSettings;
+	appSettings.basePath = Sys::getResourcePath( "eeiv" );
 	appSettings.baseFont = uiFont.get();
 	appSettings.fallbackFont = fallbackFont.get();
 	appSettings.fontHinting = mConfig.Hinting;

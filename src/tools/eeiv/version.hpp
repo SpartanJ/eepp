@@ -1,0 +1,8 @@
+#ifndef EEIV_VERSION_HPP
+#define EEIV_VERSION_HPP
+
+#define EEIV_MAJOR_VERSION 0
+#define EEIV_MINOR_VERSION 1
+#define EEIV_PATCH_LEVEL 0
+
+#endif

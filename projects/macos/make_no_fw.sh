@@ -1,13 +1,16 @@
 #!/bin/sh
-cd $(dirname "$0")
+cd "$(dirname "$0")" || exit 1
 
 BACKEND=SDL2
 DEBUG_SYMBOLS=
 FUZZ_OPTION=
 CRYPTO_OPTION=
+BUILD_ARCH=
 for arg do
     shift
     case "$arg" in
+        --arch=arm64|--arch=x86_64) BUILD_ARCH=${arg#*=} ;;
+        --arch=*) echo "Unsupported macOS architecture: ${arg#*=}" >&2; exit 1 ;;
         --backend=SDL2|--backend=sdl2) BACKEND=SDL2 ;;
         --backend=SDL3|--backend=sdl3) BACKEND=SDL3 ;;
         --backend=*) echo "Unsupported backend: ${arg#*=}" >&2; exit 1 ;;
@@ -19,7 +22,7 @@ for arg do
 done
 
 USE_ARCH=
-if command -v premake4 &> /dev/null
+if [ -z "$BUILD_ARCH" ] && command -v premake4 >/dev/null 2>&1
 then
     premake4 --file=../../premake4.lua --disable-static-build --with-backend="$BACKEND" ${DEBUG_SYMBOLS:+$DEBUG_SYMBOLS} ${CRYPTO_OPTION:+$CRYPTO_OPTION} ${FUZZ_OPTION:+$FUZZ_OPTION} gmake || exit 1
 elif command -v premake5 &> /dev/null
