@@ -39,6 +39,15 @@ typedef struct mbedtls_threading_mutex_t {
 } mbedtls_threading_mutex_t;
 #endif
 
+/* eepp: Win32 mutexes. The lock is an SRWLOCK, which is pointer-sized and valid when zeroed;
+ * it is stored as void * so this header does not include <windows.h>. */
+#if defined(MBEDTLS_THREADING_WIN32)
+typedef struct mbedtls_threading_mutex_t {
+    void *MBEDTLS_PRIVATE(lock);
+    char MBEDTLS_PRIVATE(state);
+} mbedtls_threading_mutex_t;
+#endif
+
 #if defined(MBEDTLS_THREADING_ALT)
 /* You should define the mbedtls_threading_mutex_t type in your header */
 #include "threading_alt.h"

@@ -1033,6 +1033,9 @@ function eepp_module_vfs_dependencies()
 			filter "system:windows"
 				links { "mbedtls-static" }
 			filter {}
+		else
+			-- libssh2's OpenSSL backend calls libcrypto directly.
+			links { get_backend_link_name( os.istarget("windows") and "libcrypto" or "crypto" ) }
 		end
 	end
 end
@@ -1563,8 +1566,10 @@ workspace "eepp"
 			defines { "HAVE_CONFIG_H" }
 			-- harfbuzz.cc is upstream's single-unit build and includes every other source. It does
 			-- about a quarter of the total work, so it is faster on machines with few cores; with 8+
-			-- threads the separate sources compile in parallel and finish sooner.
-			if os.getnumcpus() >= 8 then
+			-- threads the separate sources compile in parallel and finish sooner. os.getnumcpus()
+			-- returns nil where premake cannot count CPUs (Haiku); use the single unit there.
+			local cpus = os.getnumcpus and os.getnumcpus() or nil
+			if cpus ~= nil and cpus >= 8 then
 				files { "src/thirdparty/harfbuzz/**.cc" }
 				excludes { "src/thirdparty/harfbuzz/harfbuzz.cc" }
 			else

@@ -52,8 +52,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		"When enabled in the case of an atlas not having enough space in the image to fit all the "
 		"source input images it will create new child atlas images to save them.",
 		{ "allow-children" } );
-	args::ValueFlag<Uint32> height( parser, "max-width", "Texture Atlas maximum allowed height.",
-									{ 'h', "max-height" }, 4096, args::Options::Single );
+	// -h is --help; args rejects duplicate flag names.
+	args::ValueFlag<Uint32> height( parser, "max-height", "Texture Atlas maximum allowed height.",
+									{ "max-height" }, 4096, args::Options::Single );
 	args::ValueFlag<Uint32> width( parser, "max-width", "Texture Atlas maximum allowed width.",
 								   { 'w', "max-width" }, 4096, args::Options::Single );
 	args::ValueFlag<Uint32> pixelsBorder(

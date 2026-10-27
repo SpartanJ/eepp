@@ -4462,14 +4462,22 @@
 // Disable deprecated
 #define MBEDTLS_DEPRECATED_REMOVED
 
-// mbedTLS 3.6 finally enabled TLSv1.3 by default, but it requires some mobule
-// changes, and to enable PSA crypto (new "standard" API specification).
-// Disable it for now.
-#undef MBEDTLS_SSL_PROTO_TLS1_3
-
-// Disable PSA Crypto.
+// TLS 1.2 and 1.3 are both enabled (upstream defaults). TLS 1.3 uses PSA crypto, which
+// MbedTLSSocket initializes with psa_crypto_init(). Mechanisms come from this legacy config
+// (no MBEDTLS_PSA_CRYPTO_CONFIG), and the classic APIs keep their own implementations
+// (no MBEDTLS_USE_PSA_CRYPTO), so TLS 1.2 and libssh2 do not depend on PSA.
 #undef MBEDTLS_PSA_CRYPTO_CONFIG
-#undef MBEDTLS_PSA_CRYPTO_C
+// No persistent PSA keys: nothing is written to disk.
 #undef MBEDTLS_PSA_CRYPTO_STORAGE_C
 #undef MBEDTLS_PSA_ITS_FILE_C
 #undef MBEDTLS_LMS_C
+
+// With TLS 1.3, threads that each use their own TLS context still share PSA's global key
+// store, so a multithreaded program must enable MBEDTLS_THREADING_C. MBEDTLS_THREADING_WIN32 is
+// an eepp addition (threading.c) with statically initialized SRWLOCK mutexes.
+#define MBEDTLS_THREADING_C
+#if defined(_WIN32)
+#define MBEDTLS_THREADING_WIN32
+#else
+#define MBEDTLS_THREADING_PTHREAD
+#endif

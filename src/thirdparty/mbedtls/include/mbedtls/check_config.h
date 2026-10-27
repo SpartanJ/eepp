@@ -1004,6 +1004,13 @@
 #endif
 #define MBEDTLS_THREADING_IMPL // undef at the end of this paragraph
 #endif
+/* eepp: Win32 SRWLOCK mutexes, see threading.c. */
+#if defined(MBEDTLS_THREADING_WIN32)
+#if !defined(MBEDTLS_THREADING_C) || defined(MBEDTLS_THREADING_IMPL) || !defined(_WIN32)
+#error "MBEDTLS_THREADING_WIN32 defined, but not all prerequisites"
+#endif
+#define MBEDTLS_THREADING_IMPL // undef at the end of this paragraph
+#endif
 #if defined(MBEDTLS_THREADING_C) && !defined(MBEDTLS_THREADING_IMPL)
 #error "MBEDTLS_THREADING_C defined, single threading implementation required"
 #endif

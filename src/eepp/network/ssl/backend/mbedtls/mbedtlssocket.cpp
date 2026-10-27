@@ -6,15 +6,22 @@
 
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/packregistry.hpp>
 #include <mbedtls/error.h>
+#include <psa/crypto.h>
 
 namespace EE { namespace Network { namespace SSL {
 
 mbedtls_x509_crt MbedTLSSocket::sCACert;
 
 bool MbedTLSSocket::init() {
+	// TLS 1.3 handshakes run on PSA crypto, which must be initialized first.
+	psa_status_t psaStatus = psa_crypto_init();
+	if ( psaStatus != PSA_SUCCESS )
+		Log::error( "psa_crypto_init failed: %d. TLS 1.3 connections will fail.", (int)psaStatus );
+
 	mbedtls_x509_crt_init( &sCACert );
 
 	//! Load the certificates and config
@@ -55,8 +62,40 @@ bool MbedTLSSocket::init() {
 
 bool MbedTLSSocket::end() {
 	mbedtls_x509_crt_free( &sCACert );
+	// SSLSocket defers end() until no socket is alive, so no handshake still uses PSA.
+	mbedtls_psa_crypto_free();
 
 	return true;
+}
+
+void MbedTLSSocket::saveSession() {
+	mbedtls_ssl_session* session = (mbedtls_ssl_session*)eeMalloc( sizeof( mbedtls_ssl_session ) );
+	if ( !session )
+		return;
+
+	mbedtls_ssl_session_init( session );
+	if ( mbedtls_ssl_get_session( &mSSLContext, session ) != 0 ) {
+		mbedtls_ssl_session_free( session );
+		eeFree( session );
+		return;
+	}
+
+	Lock l( mSessionMutex );
+	if ( mSessionOwner && NULL != mSSLSession ) {
+		mbedtls_ssl_session_free( mSSLSession );
+		eeFree( mSSLSession );
+	}
+	mSSLSession = session;
+	mSessionOwner = true;
+}
+
+void MbedTLSSocket::releaseSession() {
+	Lock l( mSessionMutex );
+	if ( mSessionOwner && NULL != mSSLSession ) {
+		mbedtls_ssl_session_free( mSSLSession );
+		eeSAFE_FREE( mSSLSession );
+	}
+	mSessionOwner = false;
 }
 
 MbedTLSSocket::MbedTLSSocket( SSLSocket* socket ) :
@@ -71,6 +110,7 @@ MbedTLSSocket::MbedTLSSocket( SSLSocket* socket ) :
 
 MbedTLSSocket::~MbedTLSSocket() {
 	disconnect();
+	releaseSession();
 }
 
 int MbedTLSSocket::bio_send( void* ctx, const unsigned char* buf, size_t len ) {
@@ -116,8 +156,9 @@ int MbedTLSSocket::bio_recv( void* ctx, unsigned char* buf, size_t len ) {
 Socket::Status MbedTLSSocket::connect( const IpAddress& /*remoteAddress*/,
 									   unsigned short /*remotePort*/, Time timeout ) {
 	// A previous handshake may have initialized TLS state without ever reaching Connected.
-	// Always release it before starting a new handshake.
+	// Always release it, and the previous connection's session, before a new handshake.
 	disconnect();
+	releaseSession();
 
 	bool isBlocking = mSSLSocket->isBlocking();
 	if ( isBlocking && timeout != Time::Zero ) {
@@ -151,14 +192,24 @@ Socket::Status MbedTLSSocket::connect( const IpAddress& /*remoteAddress*/,
 	mbedtls_ssl_conf_authmode( &mSSLConfig, authmode );
 	mbedtls_ssl_conf_ca_chain( &mSSLConfig, &sCACert, NULL );
 	mbedtls_ssl_conf_rng( &mSSLConfig, mbedtls_ctr_drbg_random, &mCtrDrbg );
+	// TLS 1.2 resumes by session ID; TLS 1.3 can only resume from a NewSessionTicket, which the
+	// server sends after the handshake. Ask to be told about tickets so saveSession() can keep the
+	// latest one for sockets that restore this session (FTPS data connections).
+	mbedtls_ssl_conf_session_tickets( &mSSLConfig, MBEDTLS_SSL_SESSION_TICKETS_DISABLED );
+#if defined( MBEDTLS_SSL_PROTO_TLS1_3 ) && defined( MBEDTLS_SSL_SESSION_TICKETS )
+	mbedtls_ssl_conf_tls13_enable_signal_new_session_tickets(
+		&mSSLConfig, MBEDTLS_SSL_TLS1_3_SIGNAL_NEW_SESSION_TICKETS_ENABLED );
+#endif
 	mbedtls_ssl_setup( &mSSLContext, &mSSLConfig );
 	mbedtls_ssl_set_hostname( &mSSLContext, mSSLSocket->mHostName.c_str() );
 	mbedtls_ssl_set_bio( &mSSLContext, this, bio_send, bio_recv, NULL );
-	mbedtls_ssl_conf_session_tickets( &mSSLConfig, MBEDTLS_SSL_SESSION_TICKETS_DISABLED );
 
 	if ( mSSLSocket->mRestoreSession == NULL ) {
 		while ( ( ret = mbedtls_ssl_handshake( &mSSLContext ) ) != 0 ) {
-			if ( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE ) {
+			if ( ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET ) {
+				saveSession();
+				continue;
+			} else if ( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE ) {
 				mStatus = Socket::Error;
 				break;
 			} else if ( timeout != Time::Zero && clock.getElapsedTime() >= timeout ) {
@@ -181,21 +232,16 @@ Socket::Status MbedTLSSocket::connect( const IpAddress& /*remoteAddress*/,
 			return mStatus;
 		}
 
-		mSSLSession = (mbedtls_ssl_session*)eeMalloc( sizeof( mbedtls_ssl_session ) );
-		if ( mSSLSession ) {
-			mbedtls_ssl_session_init( mSSLSession );
-			ret = mbedtls_ssl_get_session( &mSSLContext, mSSLSession );
-			if ( ret ) {
-				mbedtls_ssl_session_free( mSSLSession );
-				eeSAFE_FREE( mSSLSession );
-			} else {
-				mSessionOwner = true;
-			}
-		}
+		// A TLS 1.2 session is resumable now; a TLS 1.3 one is replaced once a ticket arrives.
+		saveSession();
 	} else {
 		MbedTLSSocket* oldSocket =
 			reinterpret_cast<MbedTLSSocket*>( mSSLSocket->mRestoreSession->mImpl );
-		mbedtls_ssl_set_session( &mSSLContext, oldSocket->mSSLSession );
+		// set_session copies the session, so the old socket may replace it afterwards. The
+		// handshake runs on the first send or receive.
+		Lock l( oldSocket->mSessionMutex );
+		if ( NULL != oldSocket->mSSLSession )
+			mbedtls_ssl_set_session( &mSSLContext, oldSocket->mSSLSession );
 	}
 
 	mConnected = true;
@@ -213,13 +259,7 @@ void MbedTLSSocket::disconnect() {
 		mInitialized = false;
 	}
 
-	if ( mSessionOwner && NULL != mSSLSession ) {
-		mbedtls_ssl_session_free( mSSLSession );
-		eeSAFE_FREE( mSSLSession );
-	}
-
 	mConnected = false;
-	mSessionOwner = false;
 	mStatus = Socket::Disconnected;
 }
 
@@ -248,7 +288,10 @@ Socket::Status MbedTLSSocket::send( const void* data, std::size_t size, std::siz
 	if ( size == 0 )
 		return Socket::Done;
 
-	int ret = mbedtls_ssl_write( &mSSLContext, (const unsigned char*)data, size );
+	int ret;
+	while ( ( ret = mbedtls_ssl_write( &mSSLContext, (const unsigned char*)data, size ) ) ==
+			MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET )
+		saveSession();
 
 	if ( ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE ) {
 		ret = 0; // non blocking io
@@ -264,7 +307,20 @@ Socket::Status MbedTLSSocket::send( const void* data, std::size_t size, std::siz
 Socket::Status MbedTLSSocket::receive( void* data, std::size_t size, std::size_t& received ) {
 	received = 0;
 
-	int ret = mbedtls_ssl_read( &mSSLContext, (unsigned char*)data, size );
+	int ret;
+	for ( ;; ) {
+		ret = mbedtls_ssl_read( &mSSLContext, (unsigned char*)data, size );
+		if ( ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET ) {
+			saveSession();
+			continue;
+		}
+		// A TLS 1.3 NewSessionTicket is first reported as WANT_READ while Mbed TLS keeps the
+		// record buffered; nothing is left on the socket to wait for, so process it now.
+		if ( ret == MBEDTLS_ERR_SSL_WANT_READ && mbedtls_ssl_check_pending( &mSSLContext ) )
+			continue;
+		break;
+	}
+
 	if ( ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE ) {
 		return Socket::NotReady;
 	} else if ( ret <= 0 ) {

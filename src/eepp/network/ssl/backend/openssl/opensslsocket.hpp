@@ -2,6 +2,7 @@
 #define EE_NETWORKCOPENLSSLSOCKET_HPP
 
 #include <eepp/network/ssl/sslsocketimpl.hpp>
+#include <eepp/system/mutex.hpp>
 
 #ifdef EE_OPENSSL
 
@@ -22,6 +23,8 @@ extern "C" {
 }
 
 namespace EE { namespace Network { namespace SSL {
+
+using namespace EE::System;
 
 class OpenSSLSocket : public SSLSocketImpl {
   public:
@@ -50,8 +53,17 @@ class OpenSSLSocket : public SSLSocketImpl {
 	bool mConnected;
 	Socket::Status mStatus;
 	int mMaxCertChainDepth;
+	// The latest resumable session, delivered by newSessionCb: at the handshake for TLS 1.2, and
+	// in NewSessionTicket messages after it for TLS 1.3. Sockets restoring this session read it
+	// under mSessionMutex. It outlives the connection and is released on reconnect or destruction.
+	SSL_SESSION* mSession;
+	Mutex mSessionMutex;
+
+	void releaseSession();
 
   private:
+	static int newSessionCb( ::SSL* ssl, SSL_SESSION* session );
+
 	static int certVerifyCb( X509_STORE_CTX* x509_ctx, void* arg );
 
 	static bool matchHostname( const char* name, const char* hostname );

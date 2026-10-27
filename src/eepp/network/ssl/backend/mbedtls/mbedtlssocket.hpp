@@ -2,6 +2,7 @@
 #define EE_NETWORKCMBEDTLSSOCKET_HPP
 
 #include <eepp/network/ssl/sslsocketimpl.hpp>
+#include <eepp/system/mutex.hpp>
 
 #ifdef EE_MBEDTLS
 
@@ -12,6 +13,8 @@
 #include <mbedtls/ssl.h>
 
 namespace EE { namespace Network { namespace SSL {
+
+using namespace EE::System;
 
 class EE_API MbedTLSSocket : public SSLSocketImpl {
   public:
@@ -44,7 +47,14 @@ class EE_API MbedTLSSocket : public SSLSocketImpl {
 	bool mConnected;
 	bool mSessionOwner;
 	Socket::Status mStatus;
+	// The latest resumable session. TLS 1.3 delivers it in NewSessionTicket messages after the
+	// handshake, so it is replaced while the connection is read; sockets restoring this session
+	// copy it under mSessionMutex. It outlives the connection (disconnect() keeps it) and is
+	// released when this socket reconnects or is destroyed.
 	mbedtls_ssl_session* mSSLSession;
+	Mutex mSessionMutex;
+	void saveSession();
+	void releaseSession();
 	static int bio_send( void* ctx, const unsigned char* buf, size_t len );
 	static int bio_recv( void* ctx, unsigned char* buf, size_t len );
 };

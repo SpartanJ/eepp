@@ -240,12 +240,13 @@ function os.is_real( os_name )
 	return os.get_real() == os_name
 end
 
--- premake4 has no os.getnumcpus(); returns 1 when the count is unavailable.
+-- premake4 has no os.getnumcpus(). Returns 1 whenever the count cannot be read (no nproc or
+-- sysctl, as on Haiku, or no io.popen), which selects the single-unit HarfBuzz build.
 function num_cpus()
 	local count = tonumber( os.getenv( "NUMBER_OF_PROCESSORS" ) or "" )
-	if not count then
-		local handle = io.popen( "nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null" )
-		if handle then
+	if not count and io.popen then
+		local ok, handle = pcall( io.popen, "nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null" )
+		if ok and handle then
 			count = tonumber( handle:read( "*l" ) or "" )
 			handle:close()
 		end
@@ -1124,6 +1125,11 @@ function eepp_module_vfs_dependencies()
 			if not _OPTIONS["with-openssl"] then
 				links { "mbedtls-static" }
 			end
+		end
+		if _OPTIONS["with-openssl"] then
+			-- libssh2's OpenSSL backend calls libcrypto directly.
+			local windows = os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64")
+			links { get_backend_link_name( windows and "libcrypto" or "crypto" ) }
 		end
 	end
 end

@@ -8,6 +8,7 @@
 #include <eepp/network/packet.hpp>
 #include <eepp/network/ssl/backend/openssl/curl_hostcheck.h>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/packregistry.hpp>
 
@@ -210,18 +211,41 @@ OpenSSLSocket::OpenSSLSocket( SSLSocket* socket ) :
 	mBIO( NULL ),
 	mConnected( false ),
 	mStatus( Socket::Disconnected ),
-	mMaxCertChainDepth( 9 ) {
+	mMaxCertChainDepth( 9 ),
+	mSession( NULL ) {
 	mSSLSocket = socket;
 }
 
 OpenSSLSocket::~OpenSSLSocket() {
 	disconnect();
+	releaseSession();
+}
+
+int OpenSSLSocket::newSessionCb( ::SSL* ssl, SSL_SESSION* session ) {
+	OpenSSLSocket* socket = static_cast<OpenSSLSocket*>( SSL_get_app_data( ssl ) );
+	if ( !socket )
+		return 0;
+	Lock l( socket->mSessionMutex );
+	if ( socket->mSession )
+		SSL_SESSION_free( socket->mSession );
+	socket->mSession = session;
+	return 1; // We keep the reference OpenSSL passed in.
+}
+
+void OpenSSLSocket::releaseSession() {
+	Lock l( mSessionMutex );
+	if ( mSession ) {
+		SSL_SESSION_free( mSession );
+		mSession = NULL;
+	}
 }
 
 Socket::Status OpenSSLSocket::connect( const IpAddress& /*remoteAddress*/,
 									   unsigned short /*remotePort*/, Time /*timeout*/ ) {
-	// A failed handshake can own TLS state without having reached Connected.
+	// A failed handshake can own TLS state without having reached Connected. The previous
+	// connection's session is dropped too; a new one arrives with this handshake.
 	disconnect();
+	releaseSession();
 
 	// Set up a SSL_CTX object, which will tell our BIO object how to do its work
 	mCTX = SSL_CTX_new( SSLv23_client_method() );
@@ -229,6 +253,10 @@ Socket::Status OpenSSLSocket::connect( const IpAddress& /*remoteAddress*/,
 		return mStatus = Socket::Error;
 
 	SSL_CTX_set_options( mCTX, SSL_OP_NO_TICKET );
+	// Hand every resumable session to newSessionCb, for TLS 1.2 and for each TLS 1.3 ticket,
+	// so sockets restoring this one (FTPS data connections) can resume it.
+	SSL_CTX_set_session_cache_mode( mCTX, SSL_SESS_CACHE_CLIENT | SSL_SESS_CACHE_NO_INTERNAL_STORE );
+	SSL_CTX_sess_set_new_cb( mCTX, newSessionCb );
 
 	if ( mSSLSocket->mValidateCertificate ) {
 		if ( !sCerts.empty() ) {
@@ -277,6 +305,16 @@ Socket::Status OpenSSLSocket::connect( const IpAddress& /*remoteAddress*/,
 	}
 
 	SSL_set_fd( mSSL, (int)mSSLSocket->mSocket );
+	SSL_set_app_data( mSSL, this );
+
+	if ( mSSLSocket->mRestoreSession ) {
+		OpenSSLSocket* oldSocket =
+			reinterpret_cast<OpenSSLSocket*>( mSSLSocket->mRestoreSession->mImpl );
+		// SSL_set_session takes its own reference, so the old socket may replace it afterwards.
+		Lock l( oldSocket->mSessionMutex );
+		if ( oldSocket->mSession )
+			SSL_set_session( mSSL, oldSocket->mSession );
+	}
 
 	// Set the SSL to automatically retry on failure.
 	SSL_set_mode( mSSL, SSL_MODE_AUTO_RETRY );

@@ -1,6 +1,6 @@
 # Third-party security audit
 
-Last reviewed: **2026-10-26**. This document and its inventory are maintained over time; update
+Last reviewed: **2026-10-27**. This document and its inventory are maintained over time; update
 both whenever a dependency changes or is re-reviewed.
 
 Initial audit: **2026-10-24**, baseline `dfc1a1941` (Brotli 1.2.1 upgrade included).
@@ -25,7 +25,7 @@ release has not been established.
 | libpng | 1.6.37 | **1.6.59** | Imported upstream library sources, architecture implementations and the release's prebuilt configuration without source patches. |
 | NanoSVG | Modified FLTK-derived snapshot | Same snapshot plus manual security fixes | Patched the reported arc conversion, fixed-point conversion/advancement and stroke tessellation issues while retaining local style/currentColor behavior. 2026-10-26: fixed a single-stop gradient heap over-read, unbounded dashing, and NaN-to-int conversions in the rasterizer. |
 | libzip | 0.10 plus local hardening | **1.12.1** | Replaced the fork with the upstream release; only an include-path patch remains. `Zip` uses the current API. ZIP browsing limits were removed. |
-| Mbed TLS | 3.6.0 | **3.6.7** (LTS) | Library and headers match the release; eepp's `mbedtls_config.h` block is retained (PSA crypto, TLS 1.3 and weak algorithms remain disabled). |
+| Mbed TLS | 3.6.0 | **3.6.7** (LTS) | Library and headers match the release apart from three small threading patches; eepp's `mbedtls_config.h` block is retained. TLS 1.3 and PSA crypto enabled on 2026-10-27; weak algorithms remain disabled. |
 | libvorbis | 1.3.6 | **1.3.7** | Includes the CVE-2018-10393 encoder bounds fix and the channel validation changes; all imported files match the release. |
 | Monocypher | 4.0.2 | **4.0.3** | Fixes the compiler-dependent Ed25519 signing timing leak; imported sources match the release. |
 | simdutf | 9.2.0 | **9.2.1** | Regenerated amalgamation with the same UTF-8/UTF-32-only feature set; Base64 stays disabled. |
@@ -72,7 +72,7 @@ malformed-input vulnerabilities.
 
 | Order | Component | Current source | Action | Reason and qualification |
 | --- | --- | --- | --- | --- |
-| 1 | Bundled SDL2 source | 2.0.12 | Reconcile Android source with the newer SDL2 pin | Old source has high-severity surface/blit issues; an application exploit path was not established. |
+| 1 | Bundled SDL2 source | 2.0.12 | Remove the vendored copy; download the pinned SDL release before the Android build, as the MinGW and MSVC builds do, and port Android to SDL3 (recommended) | Old source has high-severity surface/blit issues; an application exploit path was not established. Its local changes are assessed below. |
 
 Orders indicate engineering priority for this repository, not a new CVSS score.
 Targets are releases verified during the initial audit; check upstream again before
@@ -256,22 +256,16 @@ Updated from 3.6.0 to the [3.6.7 LTS release](https://github.com/Mbed-TLS/mbedtl
 (`mbedtls-3.6.7.tar.bz2`, SHA-256
 `a7e8bcbec0e6f761b4af24f25677626b35f762f68eef79c08677a363212d11f6`), avoiding a simultaneous
 4.x migration. Every imported library source and header matches the release except
-`include/mbedtls/mbedtls_config.h`, whose trailing eepp block is retained: weak key exchanges,
-DES and DHM disabled, deprecated APIs removed, AESCE limited to AArch64 Linux, and
-`MBEDTLS_PSA_CRYPTO_C`, `MBEDTLS_SSL_PROTO_TLS1_3` and LMS disabled. The release's PSA
-sources are present again (3.6.0's import had deleted them as unused); with PSA disabled they
-compile to empty objects. They are kept deliberately: TLS 1.3 in Mbed TLS 3.6 requires PSA, and
-enabling it is planned as a separate migration. The libssh2 classic-API adapter is unchanged.
-
-The default TLS backend is selected in `premake5.lua`; OpenSSL is optional and was not
-built in this validation. [`tls_security_tests.cpp`](../../src/tests/unit_tests/tls_security_tests.cpp)
-connects to a loopback OpenSSL `s_server` (TLS 1.2), and checks that a trusted certificate is
-accepted while a wrong host name and an untrusted certificate are rejected.
+`include/mbedtls/mbedtls_config.h`, whose trailing eepp block is retained (weak key exchanges,
+DES and DHM disabled, deprecated APIs removed, AESCE limited to AArch64 Linux), and the threading
+patches described under "TLS 1.3" below. The release's PSA sources are present again (3.6.0's
+import had deleted them as unused) and are used since TLS 1.3 was enabled. The libssh2
+classic-API adapter is unchanged.
 
 The ordinary [`MbedTLSSocket`](../../src/eepp/network/ssl/backend/mbedtls/mbedtlssocket.cpp)
-is a stream TLS client. It sets the hostname, uses certificate verification when
-requested, and disables session tickets. This excludes several high findings from
-its usual configuration. The following is a triage of high upstream or high NVD
+is a stream TLS client. It sets the hostname and uses certificate verification when requested;
+it disables TLS 1.2 session tickets and, for TLS 1.3, only receives tickets to resume its own
+sessions. Its client role excludes several high findings. The following is a triage of high upstream or high NVD
 matches, not a claim they all affect that client:
 
 | Advisory | Assessment of current callers/configuration |
@@ -296,14 +290,58 @@ Advisory definitions and fixes: [official security index](https://mbed-tls.readt
 The individual documents were read from the official `Mbed-TLS/mbedtls-docs`
 source archive, including issues whose NVD descriptions omit configuration details.
 The [AESNI advisory](https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-1/)
-is particularly useful when assessing x86 distribution builds.
-
-Advisory definitions and fixes: [official security index](https://mbed-tls.readthedocs.io/en/latest/security-advisories/).
-The individual documents were read from the official `Mbed-TLS/mbedtls-docs`
-source archive, including issues whose NVD descriptions omit configuration details.
-The [AESNI advisory](https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-1/)
 is particularly useful when assessing x86 distribution builds. 3.6.7 also clears the low and
 medium fixes accumulated since 3.6.0.
+
+#### TLS 1.3 — 2026-10-27
+
+Both TLS backends now negotiate TLS 1.3, keeping TLS 1.2. In Mbed TLS 3.6, TLS 1.3 runs on PSA
+crypto: `MBEDTLS_PSA_CRYPTO_C` and `MBEDTLS_SSL_PROTO_TLS1_3` are no longer undefined, while
+`MBEDTLS_PSA_CRYPTO_CONFIG`, persistent key storage (`MBEDTLS_PSA_CRYPTO_STORAGE_C`,
+`MBEDTLS_PSA_ITS_FILE_C`), LMS and `MBEDTLS_USE_PSA_CRYPTO` stay off, so TLS 1.2 and libssh2 keep
+their classic implementations. `MbedTLSSocket::init()` calls `psa_crypto_init()` and `end()` calls
+`mbedtls_psa_crypto_free()`; `SSLSocket` defers `end()` until no socket is alive.
+
+Mbed TLS requires `MBEDTLS_THREADING_C` for TLS 1.3 in multithreaded programs, because threads
+with separate TLS contexts still share PSA's key store. POSIX builds use
+`MBEDTLS_THREADING_PTHREAD`. Mbed TLS has no Windows implementation, so eepp adds
+`MBEDTLS_THREADING_WIN32`, small local patches that keep every caller unchanged:
+
+| File | Local change |
+| --- | --- |
+| `include/mbedtls/check_config.h` | Accepts `MBEDTLS_THREADING_WIN32` as the single threading implementation (Windows only) |
+| `include/mbedtls/threading.h` | Mutex type holding an `SRWLOCK` as `void *`, so the public header does not include `<windows.h>` |
+| `library/threading.c` | `SRWLOCK` init/lock/unlock and statically initialized global mutexes (`MUTEX_INIT = { NULL, 1 }`), like the pthread path, so nothing must run before the library is first used |
+
+Session resumption, which FTPS data connections rely on (`SSLSocket`'s restore-session
+constructor; servers such as vsftpd with `require_ssl_reuse` reject data connections that do not
+resume), is implemented for TLS 1.3 in both backends. TLS 1.3 resumes only from NewSessionTicket
+messages, sent after the handshake:
+
+- `MbedTLSSocket` enables `mbedtls_ssl_conf_tls13_enable_signal_new_session_tickets` and keeps the
+  latest session whenever a ticket arrives. A ticket is first reported as `WANT_READ` while Mbed
+  TLS holds it buffered, so `receive()` processes it at once (`mbedtls_ssl_check_pending()`)
+  instead of returning `NotReady`.
+- `OpenSSLSocket` never restored sessions, for any TLS version; FTPS against servers requiring
+  reuse could not work with it. It now keeps every session OpenSSL issues through a client
+  session-cache callback and offers the latest with `SSL_set_session()`.
+- In both backends a socket keeps its session after its connection closes, and releases it when
+  it reconnects or is destroyed; restoring sockets copy it under a mutex.
+
+[`tls_security_tests.cpp`](../../src/tests/unit_tests/tls_security_tests.cpp) runs loopback
+OpenSSL `s_server` instances restricted to TLS 1.2 and to TLS 1.3. It checks the negotiated
+version, accepts a trusted certificate, and rejects a wrong host name and an untrusted
+certificate; it also checks that a restored session is reported as resumed (`Reused, TLSv1.x`)
+on both versions.
+
+Validation: macOS ARM64 with Mbed TLS, full suite (2,134 passed, 2 audio tests skipped); Linux
+ARM64 (Docker) with Mbed TLS, full suite (2,146 passed, one font test skipped) including the 35
+SFTP tests required; Linux ARM64 with the OpenSSL backend (OpenSSL 3.0.13), the TLS tests; MinGW-w64
+builds Mbed TLS and libssh2 with the `SRWLOCK` mutexes. eepp's HTTP client fetched google.com,
+github.com and cloudflare.com. MSVC is left to CI.
+
+Building with `--with-openssl` also needed `libcrypto` linked wherever libssh2 is, since libssh2's
+OpenSSL backend calls it directly; the unit tests did not link before.
 
 ### libvorbis
 
@@ -498,6 +536,36 @@ Updating the actual Android source is still preferable to carrying a 2.0.12 fork
 changing only a Premake download version does not update it.
 Source: [SDL surface-allocation fix](https://github.com/libsdl-org/SDL/commit/8c91cf7dba5193f5ce12d06db1336515851c9ee9).
 
+#### Android SDL2 local changes — assessed 2026-10-26
+
+Compared with the `SDL2-2.0.12.tar.gz` release (SHA-256
+`349268f695c02efbc9b9148a70b85e58cefbbf704abd3e91be654db7f1e2c863`), 900 of the 901 files in
+`src/thirdparty/SDL2` are identical. The Android build's SDL pieces carry three local changes:
+
+| Where | Local change | In SDL2 2.32.10 | In SDL3 3.4.10 |
+| --- | --- | --- | --- |
+| `src/thirdparty/SDL2/src/sensor/android/SDL_androidsensor.c` | `ALooper_pollAll` → `ALooper_pollOnce`; newer NDKs reject `pollAll` | Upstream | Upstream |
+| `projects/android-project/.../org/libsdl/app/HIDDeviceManager.java` | `PendingIntent.FLAG_MUTABLE` on Android 12+ | Upstream | Upstream |
+| `projects/android-project/.../org/libsdl/app/SDLActivity.java` | `getLibraries()` loads `BuildConfig.SO_NAME` instead of `"main"`, so each app flavor loads its own library | Still needed | Still needed |
+
+The SDL2 module in `projects/android-project/app/jni/eepp.mk` is 2.0.12's `Android.mk` unchanged
+apart from `LOCAL_PATH := $(SDL_PATH)`. 2.32.10's `Android.mk` adds `audio/aaudio`,
+`joystick/dummy`, `joystick/virtual`, `locale`, `misc` and their Android sources, builds hidapi
+into SDL2 (no separate `libhidapi` module) and adds `SDLSurface.java`. SDL3 3.4.10
+(`SDL3-3.4.10.zip`, SHA-256 `be8dafef3ecc956e736cfd1c242c10737f3ad589a866f25ba437b7f2f6d5ced2`)
+still ships an `Android.mk` (module `SDL3`) and its Java classes; its sample project uses
+`minSdkVersion 21` and `compileSdkVersion 35` (eepp: `minSdk 27`, `compileSdk 34`).
+
+Plan: remove `src/thirdparty/SDL2`. A Gradle `preBuild` task downloads the pinned SDL release into
+`src/thirdparty/SDL3-<version>`, the directory premake already uses and `.gitignore` already
+excludes, taking the version from the Premake pin. `eepp.mk` includes SDL's own `Android.mk`
+instead of a copy and builds the SDL3 backend and mojoAL-SDL3; SDL3's main is header-only, so the
+`src/main/android/*.c` entry goes. The library-name change moves into a small `SDLActivity`
+subclass so SDL's Java classes stay unmodified. Porting directly to SDL3 is recommended over SDL2
+2.32.10 first: the desktop default backend is already SDL3 and the SDL3 backend already has the
+same Android branches as SDL2's, so an SDL2 step would redo the Java, build-file and device-testing
+work. eepp on SDL3 has not run on Android yet, so input, text input and lifecycle need device testing.
+
 ## Important exclusions and already-fixed issues
 
 | Match | Reason it is not an outstanding high-CVE upgrade finding here |
@@ -657,12 +725,14 @@ Coverage gaps that remain explicit:
 
 ## Remaining implementation batches
 
-1. **Platform maintenance:** reconcile the Android SDL2 source with the newer SDL2 pin.
+1. **Android SDL:** remove the vendored SDL2 2.0.12 copy, download the pinned SDL release before
+   the Android build, and port Android to SDL3 (recommended; see "Android SDL2 local changes").
 2. Replace the libssh2 development snapshot with a security-fixed stable release
    when one is available, retaining the recorded integration patches.
-3. **TLS 1.3:** enable PSA crypto and TLS 1.3 in eepp's Mbed TLS configuration and port
-   `MbedTLSSocket`. The PSA sources are already vendored for this, and Mbed TLS 4.x drops
-   the classic API that `MbedTLSSocket` and the libssh2 adapter use.
+3. **Mbed TLS 4.x:** migrate from the 3.6 LTS. 4.x removes the classic crypto APIs (entropy,
+   `ctr_drbg`, `pk`/`md` contexts) that `MbedTLSSocket` and libssh2's Mbed TLS adapter use, in
+   favour of PSA, which now runs in production for TLS 1.3. Drop the local
+   `MBEDTLS_THREADING_WIN32` patches if 4.x provides Windows threading.
 
 For subsequent updates, record the upstream release/commit and retained patches
 next to the dependency, and regenerate the inventory after each batch. An automated

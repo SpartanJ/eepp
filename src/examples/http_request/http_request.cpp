@@ -25,7 +25,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 					   { 'c', "continue" } );
 	args::Flag compressed( parser, "compressed", "Request compressed response", { "compressed" } );
 	args::ValueFlagList<std::string> postData( parser, "data", "HTTP POST data",
-											   { 'd', "data", "data-raw" } );
+											   { 'd', "data" } );
 	args::ValueFlagList<std::string> postDataRaw( parser, "data-raw", "HTTP POST data RAW",
 												  { "data-raw" } );
 	args::ValueFlagList<std::string> postUrlEncode(

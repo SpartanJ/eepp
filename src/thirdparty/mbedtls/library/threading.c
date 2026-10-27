@@ -110,6 +110,65 @@ int (*mbedtls_mutex_unlock)(mbedtls_threading_mutex_t *) = threading_mutex_unloc
 
 #endif /* MBEDTLS_THREADING_PTHREAD */
 
+/* eepp: Win32 SRWLOCK mutexes. Like the pthread implementation, the global mutexes are
+ * initialized statically (a zeroed SRWLOCK is unlocked), so no setup call is needed before
+ * the library is used. Mbed TLS mutexes are not recursive, matching SRWLOCK. */
+#if defined(MBEDTLS_THREADING_WIN32)
+#if !defined(_WIN32_WINNT) || _WIN32_WINNT < 0x0600
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600 /* SRWLOCK requires Windows Vista */
+#endif
+#include <windows.h>
+
+static void threading_mutex_init_win32(mbedtls_threading_mutex_t *mutex)
+{
+    if (mutex == NULL) {
+        return;
+    }
+
+    InitializeSRWLock((PSRWLOCK) &mutex->MBEDTLS_PRIVATE(lock));
+    mutex->MBEDTLS_PRIVATE(state) = 1;
+}
+
+static void threading_mutex_free_win32(mbedtls_threading_mutex_t *mutex)
+{
+    if (mutex == NULL) {
+        return;
+    }
+
+    /* An SRWLOCK owns no resources. */
+    mutex->MBEDTLS_PRIVATE(state) = 0;
+}
+
+static int threading_mutex_lock_win32(mbedtls_threading_mutex_t *mutex)
+{
+    if (mutex == NULL) {
+        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    }
+
+    AcquireSRWLockExclusive((PSRWLOCK) &mutex->MBEDTLS_PRIVATE(lock));
+    return 0;
+}
+
+static int threading_mutex_unlock_win32(mbedtls_threading_mutex_t *mutex)
+{
+    if (mutex == NULL) {
+        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    }
+
+    ReleaseSRWLockExclusive((PSRWLOCK) &mutex->MBEDTLS_PRIVATE(lock));
+    return 0;
+}
+
+void (*mbedtls_mutex_init)(mbedtls_threading_mutex_t *) = threading_mutex_init_win32;
+void (*mbedtls_mutex_free)(mbedtls_threading_mutex_t *) = threading_mutex_free_win32;
+int (*mbedtls_mutex_lock)(mbedtls_threading_mutex_t *) = threading_mutex_lock_win32;
+int (*mbedtls_mutex_unlock)(mbedtls_threading_mutex_t *) = threading_mutex_unlock_win32;
+
+#define MUTEX_INIT  = { NULL, 1 }
+
+#endif /* MBEDTLS_THREADING_WIN32 */
+
 #if defined(MBEDTLS_THREADING_ALT)
 static int threading_mutex_fail(mbedtls_threading_mutex_t *mutex)
 {
