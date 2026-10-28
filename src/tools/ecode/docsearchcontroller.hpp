@@ -30,6 +30,10 @@ class UISearchBar;
 
 class DocSearchController {
   public:
+	std::vector<std::string> getCommandList() const;
+
+	void reloadKeybindings( const std::unordered_map<std::string, std::string>& bindings );
+
 	static std::unordered_map<std::string, std::string> getDefaultKeybindings() {
 		return { { "mod+g", "repeat-find" },
 				 { "escape", "close-searchbar" },

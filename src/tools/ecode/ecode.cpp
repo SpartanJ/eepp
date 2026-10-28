@@ -26,6 +26,7 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
 #include <eepp/ui/iconmanager.hpp>
+#include <eepp/ui/tools/keybindingsconfig.hpp>
 #include <eepp/ui/tools/uiaudioplayer.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
@@ -1520,125 +1521,128 @@ void App::debugDrawData() {
 	mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() );
 }
 
-void App::loadKeybindings() {
-	if ( !mKeybindings.empty() )
-		return;
-
+bool App::loadKeybindings( bool defaultsOnly ) {
 	KeyBindings bindings( mWindow->getInput() );
-	IniFile ini( mKeybindingsPath );
-
-	std::string defMod = ini.getValue( "modifier", "mod", "" );
-	if ( defMod.empty() ) {
-		defMod = KeyMod::getDefaultModifierString();
-		ini.setValue( "modifier", "mod", defMod );
-		ini.writeFile();
-	}
-	Uint32 defModKeyCode = KeyMod::getKeyMod( defMod );
-	if ( KEYMOD_NONE != defModKeyCode )
-		KeyMod::setDefaultModifier( defModKeyCode );
-
-	std::string defMod2 = ini.getValue( "modifier", "mod2", "" );
-	if ( defMod2.empty() ) {
-		defMod2 = KeyMod::getDefaultSecondaryModifierString();
-		ini.setValue( "modifier", "mod2", defMod2 );
-		ini.writeFile();
-	}
-	Uint32 defMod2KeyCode = KeyMod::getKeyMod( defMod2 );
-	if ( KEYMOD_NONE != defMod2KeyCode && !( defMod2KeyCode & KeyMod::getDefaultModifier() ) ) {
-		KeyMod::setDefaultSecondaryModifier( defMod2KeyCode );
-	} else {
-		defMod2 = KeyMod::getDefaultSecondaryModifierString();
-		ini.setValue( "modifier", "mod2", defMod2 );
-		ini.writeFile();
-	}
-
-	bool forceRebind = false;
-	auto version = ini.getValueU( "version", "version", 0 );
-	if ( version != ecode::Version::getVersionNum() ) {
-		ini.setValueU( "version", "version", ecode::Version::getVersionNum() );
-		ini.writeFile();
-		forceRebind = true;
-	}
-
-	KeybindingsHelper::updateKeybindings( ini, "editor", mWindow->getInput(), mKeybindings,
-										  mKeybindingsInvert, getDefaultKeybindings(), forceRebind,
-										  getMigrateKeybindings(), mConfig.iniState );
-
-	KeybindingsHelper::updateKeybindings( ini, "global_search", mWindow->getInput(),
-										  mGlobalSearchKeybindings,
-										  GlobalSearchController::getDefaultKeybindings(),
-										  forceRebind, getMigrateKeybindings(), mConfig.iniState );
-
-	KeybindingsHelper::updateKeybindings( ini, "document_search", mWindow->getInput(),
-										  mDocumentSearchKeybindings,
-										  DocSearchController::getDefaultKeybindings(), forceRebind,
-										  getMigrateKeybindings(), mConfig.iniState );
-
-	KeybindingsHelper::updateKeybindings( ini, "editor_mouse_bindings", mWindow->getInput(),
-										  mMousebindings, mMousebindingsInvert,
-										  UICodeEditor::getDefaultMousebindings(), forceRebind,
-										  getMigrateKeybindings(), mConfig.iniState );
-
-	KeybindingsHelper::updateKeybindings( ini, "statusbar", mWindow->getInput(),
-										  mStatusBarKeybindings,
-										  UIStatusBar::getDefaultKeybindings(), forceRebind,
-										  getMigrateKeybindings(), mConfig.iniState );
-
-	auto localKeybindings = getLocalKeybindings();
-	for ( const auto& shortcut : KeyBindings::getOrderedShortcuts( localKeybindings ) ) {
-		const auto& command = localKeybindings.find( shortcut )->second;
-		auto found = mKeybindingsInvert.find( command );
-		if ( found != mKeybindingsInvert.end() ) {
-			mRealLocalKeybindings[bindings.getShortcutFromString( found->second )] = command;
-		} else {
-			mRealLocalKeybindings[shortcut] = command;
-		}
-	}
-
-	auto localSplitterKeybindings = UICodeEditorSplitter::getLocalDefaultKeybindings();
-	for ( const auto& shortcut : KeyBindings::getOrderedShortcuts( localSplitterKeybindings ) ) {
-		const auto& command = localSplitterKeybindings.find( shortcut )->second;
-		auto found = mKeybindingsInvert.find( command );
-		if ( found != mKeybindingsInvert.end() ) {
-			mRealSplitterKeybindings[bindings.getShortcutFromString( found->second )] = command;
-		} else {
-			mRealSplitterKeybindings[shortcut] = command;
-		}
-	}
-
-	auto localTerminalKeybindings = TerminalManager::getTerminalKeybindings();
-	for ( const auto& shortcut : KeyBindings::getOrderedShortcuts( localTerminalKeybindings ) ) {
-		const auto& command = localTerminalKeybindings.find( shortcut )->second;
-		auto found = mKeybindingsInvert.find( command );
-		if ( found != mKeybindingsInvert.end() ) {
-			mRealTerminalKeybindings[bindings.getShortcutFromString( found->second )] = command;
-		} else {
-			mRealTerminalKeybindings[shortcut] = command;
-		}
-	}
-}
-
-void App::reloadKeybindings() {
+	auto fail = [&]( const std::string& error ) {
+		mKeybindingsError = error;
+		Log::error( "%s", error.c_str() );
+		if ( mNotificationCenter )
+			mNotificationCenter->addNotification( String( error ) );
+		return false;
+	};
+	KeybindingsConfig::LoadedFile file;
+	std::string configurationError;
+	if ( !KeybindingsConfig::loadFile( defaultsOnly ? "" : mKeybindingsPath,
+									   KeybindingsHelper::contexts(), mWindow->getInput(), file,
+									   configurationError ) )
+		return fail( configurationError );
+	auto& ini = file.ini;
+	// No failure beyond this point discards the currently active configuration. On reload,
+	// keep every live map intact until reading and metadata validation succeed.
 	mKeybindings.clear();
 	mKeybindingsInvert.clear();
+	mGlobalSearchKeybindings.clear();
+	mDocumentSearchKeybindings.clear();
+	mStatusBarKeybindings.clear();
 	mRealLocalKeybindings.clear();
 	mRealSplitterKeybindings.clear();
 	mRealTerminalKeybindings.clear();
 	mRealDefaultKeybindings.clear();
 	mMousebindings.clear();
 	mMousebindingsInvert.clear();
-	loadKeybindings();
-	mSplitter->forEachEditor( [this]( UICodeEditor* ed ) {
-		ed->getKeyBindings().reset();
-		ed->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
+
+	bool forceRebind = false;
+	auto version = ini.getValueU( "version", "version", 0 );
+	if ( version != ecode::Version::getVersionNum() ) {
+		ini.setValueU( "version", "version", ecode::Version::getVersionNum() );
+		// Migrations are recorded as done, so they only run when the file can be saved.
+		forceRebind = file.canSave();
+	}
+
+	std::optional<IniFile> previousState;
+	if ( forceRebind )
+		previousState = mConfig.iniState;
+	KeybindingsHelper::updateKeybindings( ini, "editor", mWindow->getInput(), mKeybindings,
+										  mKeybindingsInvert, getDefaultKeybindings(), forceRebind,
+										  getMigrateKeybindings(), mConfig.iniState, false );
+
+	KeybindingsHelper::updateKeybindings(
+		ini, "global_search", mWindow->getInput(), mGlobalSearchKeybindings,
+		getDefaultSearchKeybindings( "global_search" ), forceRebind, getMigrateKeybindings(),
+		mConfig.iniState, false );
+
+	KeybindingsHelper::updateKeybindings(
+		ini, "document_search", mWindow->getInput(), mDocumentSearchKeybindings,
+		getDefaultSearchKeybindings( "document_search" ), forceRebind, getMigrateKeybindings(),
+		mConfig.iniState, false );
+
+	KeybindingsHelper::updateKeybindings( ini, "editor_mouse_bindings", mWindow->getInput(),
+										  mMousebindings, mMousebindingsInvert,
+										  UICodeEditor::getDefaultMousebindings(), forceRebind,
+										  getMigrateKeybindings(), mConfig.iniState, false );
+
+	KeybindingsHelper::updateKeybindings( ini, "statusbar", mWindow->getInput(),
+										  mStatusBarKeybindings,
+										  UIStatusBar::getDefaultKeybindings(), forceRebind,
+										  getMigrateKeybindings(), mConfig.iniState, false );
+
+	auto route = [&]( const KeyBindings::ShortcutMap& defaults, KeyBindings::ShortcutMap& target ) {
+		UnorderedSet<std::string_view> commands;
+		commands.reserve( defaults.size() );
+		for ( const auto& [shortcut, command] : defaults )
+			commands.insert( command );
+		// Route every configured alternative, not only the primary shortcut in the reverse map.
+		for ( const auto& [expression, command] : mKeybindings ) {
+			if ( commands.count( command ) )
+				target[bindings.getShortcutFromString( expression )] = command;
+		}
+	};
+	route( getLocalKeybindings(), mRealLocalKeybindings );
+	route( UICodeEditorSplitter::getLocalDefaultKeybindings(), mRealSplitterKeybindings );
+	route( TerminalManager::getTerminalKeybindings(), mRealTerminalKeybindings );
+	// Save every context and the application version together. A failed write must not
+	// mark old shortcuts as already migrated or leave half of the contexts updated.
+	if ( !file.save() ) {
+		if ( previousState )
+			mConfig.iniState = std::move( *previousState );
+		fail( "Could not save recovered keybindings: " + mKeybindingsPath );
+	} else if ( file.canSave() ) {
+		if ( forceRebind && !mConfig.iniState.writeFileAtomic() )
+			Log::error( "Could not save keybinding version migration state" );
+		mKeybindingsError.clear();
+	}
+	if ( !file.warnings.empty() ) {
+		mKeybindingsError = String::join( file.warnings, '\n' );
+		if ( mNotificationCenter )
+			mNotificationCenter->addNotification( String( mKeybindingsError ) );
+	}
+	return true;
+}
+
+bool App::reloadKeybindings() {
+	KeyBindings previous( mWindow->getInput() );
+	previous.addKeybindsStringUnordered( mKeybindings );
+	auto previousMain = mRealDefaultKeybindings;
+	auto previousStatus = mStatusBarKeybindings;
+	if ( !loadKeybindings() )
+		return false;
+	KeyBindings next( mWindow->getInput() );
+	next.addKeybindsStringUnordered( mKeybindings );
+	mSplitter->forEachEditor( [this, &previous, &next]( UICodeEditor* ed ) {
+		KeybindingsConfig::replaceBindings( ed->getKeyBindings(), previous.getShortcutMap(),
+											next.getShortcutMap() );
 		ed->getMouseBindings().reset();
 		ed->getMouseBindings().addMousebindsString( mMousebindings );
 	} );
 	mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [this]( UIWidget* widget ) {
 		mTerminalManager->setKeybindings( widget->asType<UITerminal>() );
 	} );
-	mMainLayout->getKeyBindings().reset();
-	mMainLayout->getKeyBindings().addKeybinds( getRealDefaultKeybindings() );
+	KeybindingsConfig::replaceBindings( mMainLayout->getKeyBindings(), previousMain,
+										getRealDefaultKeybindings() );
+	mDocSearchController->reloadKeybindings( mDocumentSearchKeybindings );
+	mGlobalSearchController->reloadKeybindings( mGlobalSearchKeybindings );
+	mStatusBar->reloadKeybindings( previousStatus );
+	return true;
 }
 
 void App::onDocumentStateChanged( UICodeEditor*, TextDocument& ) {
@@ -2218,6 +2222,12 @@ const AppConfig& App::getConfig() const {
 
 const KeyBindings::ShortcutMap& App::getRealDefaultKeybindings() {
 	if ( mRealDefaultKeybindings.empty() ) {
+		// Commands without a default shortcut must become routable when assigned in settings.
+		for ( const auto& [expression, command] : mKeybindings ) {
+			if ( mMainLayout->hasCommand( command ) )
+				mRealDefaultKeybindings[KeyBindings::toShortcut( mWindow->getInput(),
+																 expression )] = command;
+		}
 		mRealDefaultKeybindings.insert( mRealLocalKeybindings.begin(),
 										mRealLocalKeybindings.end() );
 		mRealDefaultKeybindings.insert( mRealSplitterKeybindings.begin(),
@@ -2237,13 +2247,12 @@ KeyBindings::ShortcutMap App::getDefaultKeybindings() {
 	return local;
 }
 
-#if EE_PLATFORM == EE_PLATFORM_MACOS
-static Uint32 DefaultSwitchToStatusPanelModifier = KeyMod::getDefaultModifier();
-#else
-static Uint32 DefaultSwitchToStatusPanelModifier = KeyMod::getDefaultSecondaryModifier();
-#endif
-
 KeyBindings::ShortcutMap App::getLocalKeybindings() {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	const Uint32 defaultSwitchToStatusPanelModifier = KeyMod::getDefaultModifier();
+#else
+	const Uint32 defaultSwitchToStatusPanelModifier = KeyMod::getDefaultSecondaryModifier();
+#endif
 	return {
 		{ { KEY_PRINTSCREEN, KEYMOD_NONE }, "take-screenshot" },
 		{ { KEY_RETURN, KeyMod::getDefaultSecondaryModifier() | KeyMod::getDefaultModifier() },
@@ -2290,11 +2299,11 @@ KeyBindings::ShortcutMap App::getLocalKeybindings() {
 		{ { KEY_T,
 			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
 		  "reopen-closed-tab" },
-		{ { KEY_1, DefaultSwitchToStatusPanelModifier }, "toggle-status-locate-bar" },
-		{ { KEY_2, DefaultSwitchToStatusPanelModifier }, "toggle-status-global-search-bar" },
-		{ { KEY_3, DefaultSwitchToStatusPanelModifier }, "toggle-status-terminal" },
-		{ { KEY_4, DefaultSwitchToStatusPanelModifier }, "toggle-status-build-output" },
-		{ { KEY_5, DefaultSwitchToStatusPanelModifier }, "toggle-status-app-output" },
+		{ { KEY_1, defaultSwitchToStatusPanelModifier }, "toggle-status-locate-bar" },
+		{ { KEY_2, defaultSwitchToStatusPanelModifier }, "toggle-status-global-search-bar" },
+		{ { KEY_3, defaultSwitchToStatusPanelModifier }, "toggle-status-terminal" },
+		{ { KEY_4, defaultSwitchToStatusPanelModifier }, "toggle-status-build-output" },
+		{ { KEY_5, defaultSwitchToStatusPanelModifier }, "toggle-status-app-output" },
 		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start-cancel" },
 		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
 		{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
@@ -2319,6 +2328,25 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 #endif
 			 { "lock-toggle", "mod+shift+l" },		{ "debug-widget-tree-view", "f11" },
 			 { "project-build-and-run", "f5" },		{ "project-build-start", "mod+shift+b" } };
+}
+
+std::unordered_map<std::string, std::string>
+App::getDefaultSearchKeybindings( const std::string& context ) {
+	auto result = context == "document_search" ? DocSearchController::getDefaultKeybindings()
+											   : GlobalSearchController::getDefaultKeybindings();
+	const std::vector<std::string> inherited =
+		context == "document_search"
+			? std::vector<std::string>{ "repeat-find", "find-prev", "open-global-search",
+										"select-all-results" }
+			: std::vector<std::string>{ "find-replace" };
+	const auto defaults = getDefaultKeybindings();
+	for ( const auto& shortcut : KeyBindings::getOrderedShortcuts( defaults ) ) {
+		const auto& command = defaults.at( shortcut );
+		if ( std::find( inherited.begin(), inherited.end(), command ) != inherited.end() )
+			result.try_emplace( KeyBindings::fromShortcut( mWindow->getInput(), shortcut ),
+								command );
+	}
+	return result;
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
@@ -3306,7 +3334,20 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		updateEditorTabTitle( editor );
 		if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() == editor )
 			editor->setFocus();
-		if ( editor->getDocument().getFilePath() == mKeybindingsPath ) {
+		auto nativePath = []( const std::string& path ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+			return std::filesystem::path( String( path ).toWideString() );
+#else
+			return std::filesystem::path( path );
+#endif
+		};
+		std::error_code pathError;
+		const auto& savedPath = editor->getDocument().getFilePath();
+		// Opening a document can canonicalize its path. Recognize symlinked profiles and
+		// files as well as the original spelling (for example /tmp versus /private/tmp).
+		if ( savedPath == mKeybindingsPath ||
+			 std::filesystem::equivalent( nativePath( savedPath ), nativePath( mKeybindingsPath ),
+										  pathError ) ) {
 			reloadKeybindings();
 		} else if ( mFileSystemMatcher && mFileSystemMatcher->getIgnoreFilePath() ==
 											  editor->getDocument().getFilePath() ) {
@@ -3357,15 +3398,10 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		}
 	} );
 
-	if ( !mKeybindings.empty() ) {
-		editor->getKeyBindings().reset();
-		editor->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
-	}
-
-	if ( !mMousebindings.empty() ) {
-		editor->getMouseBindings().reset();
-		editor->getMouseBindings().addMousebindsString( mMousebindings );
-	}
+	editor->getKeyBindings().reset();
+	editor->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
+	editor->getMouseBindings().reset();
+	editor->getMouseBindings().addMousebindsString( mMousebindings );
 
 	editor->on( Event::OnClose, [this, editor]( auto ) {
 		if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() &&
@@ -4900,7 +4936,10 @@ void App::init( InitParameters& params ) {
 			mWindow->setPosition( borderSize.getWidth(), borderSize.getHeight() );
 		}
 
-		loadKeybindings();
+		// A broken or unwritable configuration must never disable basic editor input.
+		// Keep the user's file untouched and start with compiled defaults in memory.
+		if ( !loadKeybindings() )
+			loadKeybindings( true );
 
 		PixelDensity::setPixelDensity( mConfig.windowState.pixelDensity );
 
@@ -5256,6 +5295,8 @@ void App::init( InitParameters& params ) {
 
 		mNotificationCenter = std::make_unique<NotificationCenter>(
 			mUISceneNode->find<UILayout>( "notification_center" ), mPluginManager.get() );
+		if ( !mKeybindingsError.empty() )
+			mNotificationCenter->addNotification( String( mKeybindingsError ) );
 
 		mDocSearchController = std::make_unique<DocSearchController>( mSplitter, this );
 		mDocSearchController->initSearchBar( mUISceneNode->find<UISearchBar>( "search_bar" ),

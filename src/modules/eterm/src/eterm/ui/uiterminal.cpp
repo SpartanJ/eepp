@@ -1,3 +1,5 @@
+#include <eterm/ui/uiterminal.hpp>
+
 #include <cmath>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/scene/scenemanager.hpp>
@@ -9,7 +11,6 @@
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
-#include <eterm/ui/uiterminal.hpp>
 #include <eterm/ui/uiterminalfind.hpp>
 
 using namespace EE::Scene;
@@ -479,6 +480,14 @@ void UITerminal::setCommand( const std::string& command, const UITerminal::Termi
 
 bool UITerminal::hasCommand( const std::string& command ) {
 	return mCommands.find( command ) != mCommands.end();
+}
+
+std::vector<std::string> UITerminal::getCommandList() const {
+	std::vector<std::string> commands;
+	commands.reserve( mCommands.size() );
+	for ( const auto& [name, command] : mCommands )
+		commands.push_back( name );
+	return commands;
 }
 
 bool UITerminal::getExclusiveMode() const {

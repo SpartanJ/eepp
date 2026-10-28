@@ -82,6 +82,7 @@ struct EE_API ActionSetting {
 
 struct EE_API CustomWidgetSetting {
 	std::function<UIWidget*( UIWidget* parent )> create;
+	bool fillAvailableSpace{ false };
 };
 
 using SettingValue =
@@ -172,6 +173,12 @@ class EE_API UISettingsPanel : public UILinearLayout {
 
 	bool addCustomWidget( SettingDescriptor descriptor,
 						  std::function<UIWidget*( UIWidget* parent )> create );
+
+	/** A full-size custom widget occupies the content viewport when its category is selected.
+	 * It should be the category's only setting. Search/aggregate results use a bounded preview. */
+	bool addCustomWidget( SettingDescriptor descriptor,
+						  std::function<UIWidget*( UIWidget* parent )> create,
+						  bool fillAvailableSpace );
 
 	void build();
 

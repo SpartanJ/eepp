@@ -18,12 +18,21 @@ UIWindow* SettingsPanel::create( App& app ) {
 	settingsWindow->setId( "settings_panel" );
 	settingsWindow->setTitle( app.i18n( "settings", "Settings" ) );
 	const auto sceneSize = app.scene->getPixelsSize();
-	settingsWindow->setPixelsSize( { eeclamp( sceneSize.getWidth() * 0.82f, 720.f, 1200.f ),
-									 eeclamp( sceneSize.getHeight() * 0.82f, 520.f, 850.f ) } );
+	settingsWindow->setPixelsSize(
+		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
+		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
 	settingsWindow->setMinWindowSize( 640, 440 );
 	auto* panel = UISettingsPanel::New( settingsWindow->getContainer() );
 	panel->setId( "settings_panel_content" );
 	panel->setSearchResultsText( app.i18n( "search_results", "Search Results" ) );
+	panel->addCategory( "general.keybindings", app.i18n( "general", "General" ),
+						app.i18n( "kb_title", "Keyboard Shortcuts" ) );
+	panel->addCustomWidget(
+		{ "keybindingsEditor",
+		  "general.keybindings",
+		  app.i18n( "kb_title", "Keyboard Shortcuts" ),
+		  {} },
+		[&app]( UIWidget* parent ) { return app.createKeybindingsEditor( parent ); }, true );
 
 	panel->addCategory( "appearance.theme", app.i18n( "appearance", "Appearance" ),
 						app.i18n( "theme_and_language", "Theme & Language" ) );

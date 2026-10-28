@@ -45,6 +45,8 @@ class UIStatusBar : public UILinearLayout, public WidgetCommandExecuter {
 
 	void updateState();
 
+	void reloadKeybindings( const std::unordered_map<std::string, std::string>& previous );
+
 	UIPushButton* insertStatusBarElement( std::string id, const String& text,
 										  const std::string& icon,
 										  std::shared_ptr<StatusBarElement> element );

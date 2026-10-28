@@ -92,13 +92,21 @@ the generated files match the intended configuration. Generator options are not 
 dependencies, so when switching sanitizer mode, clean the affected configuration before rebuilding
 to avoid mixing instrumented and uninstrumented C++ objects.
 
-## Step 1a: Format Changed Files
-After editing any C or C++ source file (`.c`, `.cpp`, `.h`, `.hpp`), you **must** run `clang-format` on all modified files to ensure consistent formatting with the project's style (defined in `.clang-format` at the repository root).
+## Step 1a: Format Changed Lines
+After editing any C or C++ source file (`.c`, `.cpp`, `.h`, `.hpp`), you **must** format your
+changes with the project's pinned clang-format (style defined in `.clang-format` at the repository
+root). Run this **after** all edits and **before** attempting to compile:
 
-**Command (formats all currently modified tracked files at once):**
-`git diff --name-only -- '*.c' '*.cpp' '*.h' '*.hpp' | xargs clang-format -i`
+`projects/scripts/clang-format.sh`
 
-Run this **after** all edits and **before** attempting to compile.
+It formats only the lines changed since `HEAD`, using clang-format 23 or newer: major 23 is the
+oldest release whose output matches the maintainer's code. On a machine without it, the first run
+installs the official 23.1.3 PyPI wheel into `~/.cache/eepp/`. Preview with `--diff`; format a
+newly added file in full with `--file <path>`.
+
+Never run a bare `clang-format` from `PATH` on whole files. Each clang-format release formats the
+same configuration differently, and many existing files were formatted by older releases, so
+whole-file formatting rewrites unrelated lines and produces diffs the maintainer must revert.
 
 ---
 

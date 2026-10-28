@@ -1,6 +1,6 @@
 # Third-party security audit
 
-Last reviewed: **2026-10-27**. This document and its inventory are maintained over time; update
+Last reviewed: **2026-10-28**. This document and its inventory are maintained over time; update
 both whenever a dependency changes or is re-reviewed.
 
 Initial audit: **2026-10-24**, baseline `dfc1a1941` (Brotli 1.2.1 upgrade included).
@@ -603,7 +603,7 @@ and establish a verified tag/commit before calling a future update routine.
 | cpp-unicodelib | 18.0.0 plus local patch | Screened | [unicodelib.h](../../src/thirdparty/cpp-unicodelib/unicodelib.h) |
 | dr_libs | dr_flac 0.13.2; dr_mp3 0.7.2 | Screened | [dr_flac.h](../../src/thirdparty/dr_libs/dr_flac.h) |
 | dtl | 1.21 | Screened | [variables.hpp](../../src/thirdparty/dtl/variables.hpp) |
-| efsw | 1.7.2 + 5 commits | Screened | [CMakeLists.txt](../../src/thirdparty/efsw/CMakeLists.txt) |
+| efsw | 1.7.3 | Screened | [CMakeLists.txt](../../src/thirdparty/efsw/CMakeLists.txt) |
 | emscripten-browser-clipboard | eepp-maintained fork (from `633dc92`) | Owned | [emscripten_browser_clipboard.h](../../src/thirdparty/emscripten-browser-clipboard/emscripten_browser_clipboard.h) |
 | fast_float | 6.1.6 | Screened | [fast_float.h](../../src/thirdparty/fast_float/include/fast_float/fast_float.h) |
 | freetype2 | 2.14.1 | Screened | [freetype.h](../../src/thirdparty/freetype2/include/freetype/freetype.h) |

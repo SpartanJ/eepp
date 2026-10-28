@@ -45,11 +45,6 @@ void DocSearchController::initSearchBar(
 	};
 
 	auto& kbind = mSearchBarLayout->getKeyBindings();
-	kbind.addKeybindsString(
-		{ { mApp->getKeybind( "repeat-find" ), "repeat-find" },
-		  { mApp->getKeybind( "find-prev" ), "find-prev" },
-		  { mApp->getKeybind( "open-global-search" ), "open-global-search" },
-		  { mApp->getKeybind( "select-all-results" ), "select-all-results" } } );
 	kbind.addKeybindsStringUnordered( keybindings );
 
 	mFindInput = mSearchBarLayout->find<UITextInput>( "search_find" );
@@ -459,6 +454,19 @@ SearchBarConfig DocSearchController::getSearchBarConfig() const {
 	searchBarConfig.wholeWord = mWholeWordChk->isChecked();
 	searchBarConfig.escapeSequence = mEscapeSequenceChk->isChecked();
 	return searchBarConfig;
+}
+
+void DocSearchController::reloadKeybindings(
+	const std::unordered_map<std::string, std::string>& bindings ) {
+	if ( !mSearchBarLayout )
+		return;
+	auto& target = mSearchBarLayout->getKeyBindings();
+	target.reset();
+	target.addKeybindsStringUnordered( bindings );
+}
+
+std::vector<std::string> DocSearchController::getCommandList() const {
+	return mSearchBarLayout ? mSearchBarLayout->getCommandList() : std::vector<std::string>{};
 }
 
 } // namespace ecode

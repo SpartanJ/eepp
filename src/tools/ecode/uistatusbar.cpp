@@ -4,7 +4,9 @@
 #include "statusappoutputcontroller.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "statusterminalcontroller.hpp"
+#include "terminalmanager.hpp"
 #include "universallocator.hpp"
+#include <eepp/ui/tools/keybindingsconfig.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
 
@@ -278,6 +280,25 @@ void UIStatusBar::registerStatusBarPanel( WidgetCommandExecuter* container, UIWi
 			expCntPanelBtn->onClick( [container]( auto event ) {
 				container->execute( "statusbar-panel-expand-contract-toggle" );
 			} );
+		}
+	}
+}
+
+void UIStatusBar::reloadKeybindings(
+	const std::unordered_map<std::string, std::string>& previous ) {
+	KeyBindings before( getUISceneNode()->getWindow()->getInput() );
+	before.addKeybindsStringUnordered( previous );
+	KeyBindings next( getUISceneNode()->getWindow()->getInput() );
+	next.addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
+	for ( auto& [id, element] : mElements ) {
+		auto* widget = element.second->getWidget();
+		if ( !widget )
+			continue;
+		if ( widget->isType( UI_TYPE_TERMINAL ) )
+			mContext->getTerminalManager()->setKeybindings( widget->asType<UITerminal>() );
+		if ( auto* executer = dynamic_cast<WidgetCommandExecuter*>( widget ) ) {
+			KeybindingsConfig::replaceBindings( executer->getKeyBindings(), before.getShortcutMap(),
+												next.getShortcutMap() );
 		}
 	}
 }

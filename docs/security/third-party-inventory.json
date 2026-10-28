@@ -100,14 +100,14 @@
     {
       "name": "efsw",
       "path": "src/thirdparty/efsw",
-      "version": "1.7.2 + 6 commits",
+      "version": "1.7.3",
       "version_evidence": "src/thirdparty/efsw/CMakeLists.txt",
       "upstream": "https://github.com/SpartanJ/efsw",
       "assessment": "screened",
-      "notes": "Submodule 0712eec2787a98e2436cf83f0f52d0eedfe490fc; local agent implementation. efsw-agent now exits immediately when stdin closes, so SSH channels are released without waiting for the next poll.",
-      "source_revision": "0712eec2787a98e2436cf83f0f52d0eedfe490fc",
+      "notes": "Submodule fe4253e421bdcbd3d468fae80eb4191f5222cbd2; local agent implementation. efsw-agent now exits immediately when stdin closes, so SSH channels are released without waiting for the next poll. Updated 2026-10-28 from 0712eec (1.7.2 + 6 commits) to 1.7.3, which fixes watcher shutdown hangs and lifetime races (#222); not re-screened beyond the version bump.",
+      "source_revision": "fe4253e421bdcbd3d468fae80eb4191f5222cbd2",
       "source_revision_kind": "submodule commit",
-      "source_fingerprint_sha256": "5ed1bb6a1795defc14adc68183c94d7ea9f8f5b96b52e28e50bc19ee564fd7b1"
+      "source_fingerprint_sha256": "edba2060432c64de1665251d84032beb61612ec222421bfac543c9954b611eef"
     },
     {
       "name": "emscripten-browser-clipboard",
@@ -1055,7 +1055,7 @@
       "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=zlib&resultsPerPage=2000"
     }
   ],
-  "last_updated": "2026-10-27",
+  "last_updated": "2026-10-28",
   "remediation_base_commit": "49f5e179d6a89cf6713b3729a0fa59e3658748c9",
   "fingerprint_method": "SHA256 over sorted repository-relative paths, NUL, file bytes, NUL; tracked plus non-ignored untracked files, excluding deleted files. Submodule paths are relative to the submodule as in the initial inventory.",
   "remediation_validation": {

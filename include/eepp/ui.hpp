@@ -93,6 +93,8 @@
 #include <eepp/ui/splitdirection.hpp>
 #include <eepp/ui/tablelayouter.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
+#include <eepp/ui/tools/keybindingsconfig.hpp>
+#include <eepp/ui/tools/keybindingsconfigdata.hpp>
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/ui/tools/uiaudioplayer.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
@@ -101,6 +103,7 @@
 #include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
+#include <eepp/ui/tools/uikeybindingseditor.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/tools/uitabwidgetsplitter.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
@@ -138,7 +141,6 @@
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiicontheme.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
-#include <eepp/ui/uisystemicontheme.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 #include <eepp/ui/uilayout.hpp>
@@ -187,6 +189,7 @@
 #include <eepp/ui/uistate.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uisvg.hpp>
+#include <eepp/ui/uisystemicontheme.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitableheadercolumn.hpp>

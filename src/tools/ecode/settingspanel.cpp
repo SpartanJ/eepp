@@ -1,6 +1,9 @@
 #include "settingspanel.hpp"
 #include "datetimecontroller.hpp"
+#include "docsearchcontroller.hpp"
 #include "ecode.hpp"
+#include "globalsearchcontroller.hpp"
+#include "keybindingshelper.hpp"
 #include "plugins/plugin.hpp"
 #include "plugins/pluginmanager.hpp"
 #include "settingsdocument.hpp"
@@ -8,6 +11,8 @@
 #include "uitreeviewfs.hpp"
 #include <atomic>
 #include <eepp/system/fileassociation.hpp>
+#include <eepp/ui/tools/keybindingsconfig.hpp>
+#include <eepp/ui/tools/uikeybindingseditor.hpp>
 #include <limits>
 #include <unordered_set>
 
@@ -226,8 +231,9 @@ void SettingsPanel::create( Scope scope ) {
 								? mApp->i18n( "settings", "Settings" )
 								: mApp->i18n( "project_settings", "Project Settings" ) );
 	const auto sceneSize = mApp->getUISceneNode()->getPixelsSize();
-	state.window->setPixelsSize( { eeclamp( sceneSize.getWidth() * 0.82f, 720.f, 1200.f ),
-								   eeclamp( sceneSize.getHeight() * 0.82f, 520.f, 850.f ) } );
+	state.window->setPixelsSize(
+		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
+		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
 	state.window->setMinWindowSize( 640, 440 );
 	state.window->setKeyBindingCommand( "closeWindow", [window = state.window, this] {
 		if ( !SceneManager::instance()->isShuttingDown() ) {
@@ -351,6 +357,75 @@ void SettingsPanel::setCategoryEnabled( PanelState& state, const std::string& ca
 	state.panel->setCategoryEnabled( category, enabled, excludedSetting );
 }
 void SettingsPanel::addUserSettings( PanelState& panel ) {
+	addCategory( panel, "general.keybindings", mApp->i18n( "general", "General" ),
+				 mApp->i18n( "kb_title", "Keyboard Shortcuts" ) );
+	panel.panel->addCustomWidget(
+		{ "keybindingsEditor",
+		  "general.keybindings",
+		  mApp->i18n( "kb_title", "Keyboard Shortcuts" ),
+		  {} },
+		[this]( UIWidget* parent ) {
+			auto* app = mApp;
+			auto* window = mUser.window;
+			const auto* input = app->getWindow()->getInput();
+			return UIKeybindingsEditor::NewForFile(
+				parent,
+				{ .path = app->mKeybindingsPath,
+				  .contexts = KeybindingsHelper::contexts(),
+				  .catalog =
+					  [app]( KeybindingsConfig::Catalog& catalog ) {
+						  auto commands = app->getMainLayout()->getCommandList();
+						  auto* editor = app->getSplitter()->getCurEditor();
+						  auto docCommands = editor ? editor->getDocument().getCommandList()
+													: TextDocument::getDefaultCommandList();
+						  commands.insert( commands.end(), docCommands.begin(), docCommands.end() );
+						  catalog.add( "editor", app->getDefaultKeybindings(), commands );
+						  catalog.add( "global_search",
+									   app->getDefaultSearchKeybindings( "global_search" ),
+									   app->mGlobalSearchController->getCommandList() );
+						  catalog.add( "document_search",
+									   app->getDefaultSearchKeybindings( "document_search" ),
+									   app->mDocSearchController->getCommandList() );
+						  catalog.add( "statusbar", UIStatusBar::getDefaultKeybindings() );
+					  },
+				  .apply =
+					  [app] {
+						  return app->reloadKeybindings() ? String()
+														  : String( app->mKeybindingsError );
+					  },
+				  // New core assignments must not be shadowed by plugin or widget bindings.
+				  .validate = [app, input]( const KeybindingsConfigData& proposal ) -> String {
+					  KeyBindings previous( input );
+					  previous.addKeybindsStringUnordered( app->mKeybindings );
+					  const auto next = proposal.shortcuts( input, "editor" );
+					  std::string owner;
+					  auto check = [&]( const KeyBindings& bindings ) {
+						  if ( owner.empty() )
+							  KeybindingsConfig::validateOverrides( bindings.getShortcutMap(),
+																	previous.getShortcutMap(), next,
+																	owner );
+					  };
+					  check( app->getMainLayout()->getKeyBindings() );
+					  app->getSplitter()->forEachEditor(
+						  [&]( UICodeEditor* editor ) { check( editor->getKeyBindings() ); } );
+					  if ( owner.empty() )
+						  return {};
+					  return app->i18n( "kb_external_conflict",
+										"This shortcut is owned by a plugin or widget. "
+										"Change it in its own settings:" ) +
+							 " " + owner;
+				  },
+				  .manualEdit =
+					  [app, window] {
+						  window->closeWindow();
+						  app->loadFileFromPath( app->mKeybindingsPath );
+					  },
+				  .note = app->i18n( "keybindings_clarification",
+									 "More keybindings can be set for each active plugin at the "
+									 "Plugins Manager." ) } );
+		},
+		true );
+
 	addCategory( panel, "general.behavior", mApp->i18n( "general", "General" ),
 				 mApp->i18n( "behavior", "Behavior" ) );
 	addBool( panel,

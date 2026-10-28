@@ -155,7 +155,7 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 	padding: 20dp 28dp 28dp 28dp;
 	layout-gravity: center_horizontal;
 }
-.settings_panel #settings_page_title {
+.settings_panel #settings_page_title, .settings_panel #settings_full_page_title {
 	font-size: 18dp;
 	margin-bottom: 18dp;
 	font-weight: bold;
@@ -236,6 +236,14 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 	layout-width: 110dp;
 	layout-height: wrap_content;
 }
+.settings_panel .settings_option.settings_full_page_option {
+	border-bottom: 0dp;
+	padding: 0dp;
+	margin: 0dp;
+}
+.settings_panel #settings_full_page {
+	padding: 20dp 28dp 28dp 28dp;
+}
 ]]>
 </style>
 <vbox lw="mp" lh="mp" class="settings_panel">
@@ -244,11 +252,16 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 			<TextInput id="settings_filter" lw="mp" lh="wc" hint="@string(search_settings, Search settings...)" />
 			<TreeView id="settings_categories" lw="mp" lh="o" lw8="1" />
 		</vbox>
-		<ScrollView id="settings_scroll" lw="0" lw8="1" lh="mp" focusable="false">
+		<vbox lw="0" lw8="1" lh="mp">
+		<ScrollView id="settings_scroll" lw="mp" lh="mp" focusable="false">
 			<vbox id="settings_rows" lw="mp" lh="wc">
 				<TextView id="settings_page_title" lw="mp" lh="wc" focusable="false" />
 			</vbox>
 		</ScrollView>
+		<vbox id="settings_full_page" lw="mp" lh="mp" visible="false">
+			<TextView id="settings_full_page_title" lw="mp" lh="wc" focusable="false" />
+		</vbox>
+		</vbox>
 	</Splitter>
 </vbox>
 )xml";
@@ -337,6 +350,8 @@ struct UISettingsPanel::Impl {
 	UITextInput* search{ nullptr };
 	UITreeView* categories{ nullptr };
 	UIScrollView* scroll{ nullptr };
+	UILinearLayout* fullPage{ nullptr };
+	UITextView* fullPageTitle{ nullptr };
 	UILinearLayout* settings{ nullptr };
 	UITextView* pageTitle{ nullptr };
 	std::shared_ptr<Model> categoryModel;
@@ -411,6 +426,8 @@ UISettingsPanel::UISettingsPanel( UIWidget* parent ) :
 	mImpl->settings = layout->find<UILinearLayout>( "settings_rows" );
 	mImpl->pageTitle = layout->find<UITextView>( "settings_page_title" );
 	mImpl->scroll = layout->find<UIScrollView>( "settings_scroll" );
+	mImpl->fullPage = layout->find<UILinearLayout>( "settings_full_page" );
+	mImpl->fullPageTitle = layout->find<UITextView>( "settings_full_page_title" );
 	mImpl->scroll->setVerticalScrollMode( ScrollBarMode::Auto );
 	mImpl->scroll->setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
 	disableTabFocusTree( mImpl->categories->getVerticalScrollBar() );
@@ -511,9 +528,16 @@ bool UISettingsPanel::addAction( SettingDescriptor descriptor, String buttonText
 
 bool UISettingsPanel::addCustomWidget( SettingDescriptor descriptor,
 									   std::function<UIWidget*( UIWidget* parent )> create ) {
+	return addCustomWidget( std::move( descriptor ), std::move( create ), false );
+}
+
+bool UISettingsPanel::addCustomWidget( SettingDescriptor descriptor,
+									   std::function<UIWidget*( UIWidget* parent )> create,
+									   bool fillAvailableSpace ) {
 	return !mImpl->built && create &&
 		   mImpl->model.addSetting(
-			   { std::move( descriptor ), CustomWidgetSetting{ std::move( create ) } } );
+			   { std::move( descriptor ),
+				 CustomWidgetSetting{ std::move( create ), fillAvailableSpace } } );
 }
 
 void UISettingsPanel::build() {
@@ -947,6 +971,37 @@ void UISettingsPanel::filter( Impl& panel ) {
 		heading->setVisible( query.empty() && aggregate &&
 							 String::startsWith( category, aggregatePrefix ) );
 	const auto& settings = panel.model.settings();
+	bool fullPage = false;
+	for ( size_t i = 0; i < settings.size(); ++i ) {
+		const auto* custom = std::get_if<CustomWidgetSetting>( &settings[i].value );
+		if ( !custom || !custom->fillAvailableSpace || i >= panel.settingViews.size() ||
+			 !panel.settingViews[i].row )
+			continue;
+		auto* row = panel.settingViews[i].row;
+		auto* content = row->find<UIWidget>( "setting_custom_widget" );
+		bool fill = query.empty() && settings[i].descriptor.category == panel.selectedCategory;
+		row->setParent( fill ? static_cast<UIWidget*>( panel.fullPage )
+							 : panel.categoryContainers[settings[i].descriptor.category] );
+		row->find<UIWidget>( "setting_info" )->setVisible( !fill );
+		row->setLayoutSizePolicy( SizePolicy::MatchParent,
+								  fill ? SizePolicy::Fixed : SizePolicy::WrapContent );
+		row->setLayoutWeight( fill ? 1 : 0 );
+		content->setLayoutSizePolicy( SizePolicy::MatchParent,
+									  fill ? SizePolicy::MatchParent : SizePolicy::Fixed );
+		content->setLayoutMarginTop( fill ? 0 : 8 );
+		if ( fill ) {
+			row->addClass( "settings_full_page_option" );
+		} else {
+			row->removeClass( "settings_full_page_option" );
+			content->setSize( content->getSize().getWidth(), 440 );
+		}
+		fullPage |= fill;
+	}
+	panel.fullPageTitle->setText( panel.pageTitle->getText() );
+	panel.fullPage->setVisible( fullPage );
+	panel.fullPage->setEnabled( fullPage );
+	panel.scroll->setVisible( !fullPage );
+	panel.scroll->setEnabled( !fullPage );
 	for ( size_t i = 0; i < settings.size(); ++i ) {
 		const auto& binding = settings[i].descriptor;
 		const auto categoryName = panel.categorySearchText.find( binding.category );

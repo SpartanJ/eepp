@@ -1,6 +1,7 @@
 #pragma once
 
 #include <eepp/ee.hpp>
+#include <string>
 
 using namespace EE;
 using namespace EE::UI;
@@ -13,7 +14,9 @@ class SettingsActions {
   public:
 	explicit SettingsActions( App* app );
 
-	void showSettings();
+	void showSettings( const std::string& category = {} );
+
+	void closeSettings();
 
 	void openFontPicker( bool uiFont, bool fallbackFont = false );
 

@@ -507,7 +507,7 @@ void App::executeMenuCommand( const std::string& command ) {
 		return;
 	}
 	if ( command == "open-keybindings" ) {
-		openKeybindings();
+		settingsActions->showSettings( "general.keybindings" );
 		return;
 	}
 
@@ -641,9 +641,13 @@ int App::run( int argc, char* argv[] ) {
 	Log::instance()->setLogToStdOut( !Runtime::isOffscreen() );
 	Log::instance()->setLiveWrite( true );
 #endif
-	config = std::make_unique<eterm::AppConfig>( Sys::getConfigPath( "eterm" ) );
+	const auto configPath = Sys::getEnv( "ETERM_CONFIG_PATH" );
+	config = std::make_unique<eterm::AppConfig>( configPath.empty() ? Sys::getConfigPath( "eterm" )
+																	: configPath );
 	config->load();
-	args::ArgumentParser parser( "eterm" );
+	args::ArgumentParser parser(
+		"eterm", "Environment: set ETERM_CONFIG_PATH to use another configuration directory for "
+				 "preferences, window state, and keybindings." );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
 	args::ValueFlag<std::string> shell( parser, "shell", "Shell name or path", { 's', "shell" },
 										config->terminal.shell );
@@ -841,7 +845,8 @@ int App::run( int argc, char* argv[] ) {
 	scene->setSmoothScrollEnabled( config->ui.smoothScroll );
 	settingsActions = std::make_unique<SettingsActions>( this );
 	keybindingsPath = config->getConfigPath() + "keybindings.cfg";
-	loadKeybindings();
+	if ( !loadKeybindings() )
+		loadKeybindings( true );
 	fileWatcher = std::make_unique<efsw::FileWatcher>();
 	fileWatcher->addWatch( config->getConfigPath(), this );
 	fileWatcher->watch();

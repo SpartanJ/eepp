@@ -6,6 +6,7 @@
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
+#include <vector>
 
 using namespace EE::UI;
 using namespace eterm::Terminal;
@@ -78,6 +79,8 @@ class UITerminal : public UITouchDraggableWidget {
 	void setCommand( const std::string& command, const TerminalCommand& func );
 
 	bool hasCommand( const std::string& command );
+
+	std::vector<std::string> getCommandList() const;
 
 	static std::string getExclusiveModeToggleCommandName() {
 		return "terminal-toggle-exclusive-mode";

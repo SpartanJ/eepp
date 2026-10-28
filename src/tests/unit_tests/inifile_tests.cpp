@@ -1,7 +1,10 @@
 #include "utest.hpp"
 
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/iostreamstring.hpp>
+#include <eepp/system/sys.hpp>
+#include <filesystem>
 
 using namespace EE::System;
 
@@ -105,3 +108,51 @@ UTEST( IniFile, ecodeProjectStateRoundTripsByteForByte ) {
 	EXPECT_TRUE( reloaded.writeStream( secondWrite ) );
 	EXPECT_STDSTREQ( expected, secondWrite.getStream() );
 }
+
+UTEST( IniFile, AtomicSavePreservesOriginalOnFailureAndLeavesNoTemporaryFiles ) {
+	const auto directory = Sys::getTempPath() + "eepp_atomic_keybindings";
+	FileSystem::dirRemoveAll( directory );
+	ASSERT_TRUE( FileSystem::makeDir( directory ) );
+	const auto path = directory + FileSystem::getOSSlash() + "keybindings.cfg";
+	IniFile ini( path, false );
+	ini.setValue( "editor", "ctrl+c", "copy" );
+	ini.addHeaderComment( "custom shortcuts" );
+	ASSERT_TRUE( ini.writeFileAtomic() );
+	ini.setValue( "editor", "ctrl+c", "cut" );
+	ASSERT_TRUE( ini.writeFileAtomic() );
+	IniFile saved( path );
+	EXPECT_TRUE( saved.getValue( "editor", "ctrl+c" ) == "cut" );
+	EXPECT_TRUE( saved.getHeaderComment( 0 ) == "custom shortcuts" );
+	const auto blocked = path + ".directory";
+	ASSERT_TRUE( FileSystem::makeDir( blocked ) );
+	const auto before = FileSystem::filesGetInPath( directory ).size();
+	ini.path( blocked );
+	EXPECT_FALSE( ini.writeFileAtomic() );
+	EXPECT_EQ( before, FileSystem::filesGetInPath( directory ).size() );
+	IniFile original( path );
+	EXPECT_TRUE( original.getValue( "editor", "ctrl+c" ) == "cut" );
+	FileSystem::dirRemoveAll( blocked );
+	FileSystem::dirRemoveAll( directory );
+}
+#if defined( EE_PLATFORM_POSIX )
+UTEST( IniFile, AtomicSaveFollowsTheConfigurationSymlink ) {
+	const auto directory = Sys::getTempPath() + "eepp_symlink_keybindings";
+	FileSystem::dirRemoveAll( directory );
+	ASSERT_TRUE( FileSystem::makeDir( directory ) );
+	const auto path = directory + FileSystem::getOSSlash() + "actual.cfg";
+	const auto alias = directory + FileSystem::getOSSlash() + "keybindings.cfg";
+	IniFile ini( path, false );
+	ini.setValue( "editor", "ctrl+c", "copy" );
+	ASSERT_TRUE( ini.writeFileAtomic() );
+	std::error_code error;
+	std::filesystem::create_symlink( path, alias, error );
+	ASSERT_FALSE( static_cast<bool>( error ) );
+	ini.path( alias );
+	ini.setValue( "editor", "ctrl+c", "cut" );
+	ASSERT_TRUE( ini.writeFileAtomic() );
+	EXPECT_TRUE( std::filesystem::is_symlink( alias ) );
+	IniFile saved( path );
+	EXPECT_TRUE( saved.getValue( "editor", "ctrl+c" ) == "cut" );
+	FileSystem::dirRemoveAll( directory );
+}
+#endif

@@ -62,6 +62,11 @@ class EE_API KeyBindings {
 	static std::string fromShortcut( const EE::Window::Input* input, KeyBindings::Shortcut shortcut,
 									 bool format = false );
 
+	/** Serialize using caller-owned symbolic modifier masks. Zero disables a symbolic name.
+	 * Does not read or change process-wide modifier preferences. */
+	static std::string fromShortcut( const EE::Window::Input* input, KeyBindings::Shortcut shortcut,
+									 Uint32 modifier, Uint32 secondaryModifier );
+
 	KeyBindings( const EE::Window::Input* input );
 
 	/** Shares @p bindings storage while keeping this instance's input source. */

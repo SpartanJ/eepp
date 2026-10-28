@@ -70,6 +70,11 @@ class EE_API IniFile {
 	/** Writes data stored in class to ini file. */
 	bool writeFile();
 
+	/** Write a temporary sibling and replace the destination only after the complete write
+	 * succeeds. Follow existing symlinks, retain file permissions, and preserve the destination on
+	 * failure. Temporary files are removed on success or handled failure. */
+	bool writeFileAtomic();
+
 	/** Writes data stored in class to a IOStream. */
 	bool writeStream( IOStream& stream );
 

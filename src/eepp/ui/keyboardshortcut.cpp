@@ -210,29 +210,32 @@ const std::map<std::string, KeyBindings::Shortcut>& KeyBindings::getKeybindings(
 
 std::string KeyBindings::fromShortcut( const EE::Window::Input* input,
 									   KeyBindings::Shortcut shortcut, bool format ) {
+	auto expression = fromShortcut( input, shortcut, KeyMod::getDefaultModifier(),
+									KeyMod::getDefaultSecondaryModifier() );
+	return format ? keybindFormat( std::move( expression ) ) : expression;
+}
+
+std::string KeyBindings::fromShortcut( const EE::Window::Input* input,
+									   KeyBindings::Shortcut shortcut, Uint32 modifier,
+									   Uint32 secondaryModifier ) {
 	shortcut = sanitizeShortcut( shortcut );
-	std::vector<std::string> mods;
-	std::string keyname( String::toLower( input->getKeyName( shortcut.key ) ) );
-	const auto& MOD_MAP = KeyMod::getModMap();
-	if ( shortcut.mod & MOD_MAP.at( "mod" ) )
-		mods.emplace_back( "mod" );
-	if ( shortcut.mod & MOD_MAP.at( "mod2" ) )
-		mods.emplace_back( "mod2" );
-	const Uint32 abstractMods = MOD_MAP.at( "mod" ) | MOD_MAP.at( "mod2" );
-	if ( ( shortcut.mod & KEYMOD_CTRL ) && !( KEYMOD_CTRL & abstractMods ) )
-		mods.emplace_back( "ctrl" );
-	if ( ( shortcut.mod & KEYMOD_SHIFT ) && !( KEYMOD_SHIFT & abstractMods ) )
-		mods.emplace_back( "shift" );
-	if ( ( shortcut.mod & KEYMOD_LALT ) && !( KEYMOD_LALT & abstractMods ) )
-		mods.emplace_back( "alt" );
-	if ( ( shortcut.mod & KEYMOD_RALT ) && !( KEYMOD_RALT & abstractMods ) )
-		mods.emplace_back( "altgr" );
-	if ( ( shortcut.mod & KEYMOD_META ) && !( KEYMOD_META & abstractMods ) )
-		mods.emplace_back( "meta" );
-	if ( mods.empty() )
-		return format ? keybindFormat( keyname ) : keyname;
-	auto ret = String::join( mods, '+' ) + "+" + keyname;
-	return format ? keybindFormat( ret ) : ret;
+	std::string expression;
+	auto append = [&]( Uint32 mask, const char* name ) {
+		if ( mask && ( shortcut.mod & mask ) == mask ) {
+			expression += name;
+			expression += '+';
+			shortcut.mod &= ~mask;
+		}
+	};
+	append( sanitizeShortcut( { KEY_UNKNOWN, modifier } ).mod, "mod" );
+	append( sanitizeShortcut( { KEY_UNKNOWN, secondaryModifier } ).mod, "mod2" );
+	append( KEYMOD_CTRL, "ctrl" );
+	append( KEYMOD_SHIFT, "shift" );
+	append( KEYMOD_LALT, "alt" );
+	append( KEYMOD_RALT, "altgr" );
+	append( KEYMOD_META, "meta" );
+	expression += String::toLower( input->getKeyName( shortcut.key ) );
+	return expression;
 }
 
 std::string KeyBindings::getShortcutString( KeyBindings::Shortcut shortcut, bool format ) const {

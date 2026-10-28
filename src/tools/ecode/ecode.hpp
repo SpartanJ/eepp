@@ -189,6 +189,9 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::map<std::string, std::string> getMigrateKeybindings();
 
+	std::unordered_map<std::string, std::string>
+	getDefaultSearchKeybindings( const std::string& context );
+
 	void switchSidePanel();
 
 	void panelPosition( const PanelPosition& panelPosition );
@@ -232,19 +235,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	SettingsMenu* getSettingsMenu() const { return mSettings.get(); }
 
 	template <typename T> void registerUnlockedCommands( T& t ) {
-		t.setCommand( "keybindings", [this] {
-			loadFileFromPath( mKeybindingsPath );
-
-			if ( mNotificationCenter ) {
-				mNotificationCenter->addInteractiveNotification(
-					i18n( "keybindings_clarification",
-						  "More keybindings can be set for each active plugin at the Plugins "
-						  "Manager.\nBe aware that many of the core keybindings can be found "
-						  "there." ),
-					i18n( "plugin_manager_open", "Open Plugins Manager" ),
-					[this] { runCommand( "plugin-manager-open" ); }, Seconds( 10 ) );
-			}
-		} );
+		t.setCommand( "keybindings", [this] { openSettings( "general.keybindings" ); } );
+		t.setCommand( "keybindings-file", [this] { loadFileFromPath( mKeybindingsPath ); } );
 		t.setCommand( "close-folder", [this] { closeFolder(); } );
 		t.setCommand( "debug-draw-boxes-toggle", [this] { debugDrawBoxesToggle(); } );
 		t.setCommand( "debug-draw-highlight-toggle", [this] { debugDrawHighlightToggle(); } );
@@ -687,6 +679,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
   protected:
 	friend class FontPickerController;
 
+	friend class SettingsPanel;
+
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -729,6 +723,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::string mPluginsPath;
 	std::string mColorSchemesPath;
 	std::string mKeybindingsPath;
+	std::string mKeybindingsError;
 	std::string mResPath;
 	std::string mLanguagesPath;
 	std::string mThemesPath;
@@ -863,9 +858,9 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void saveDoc();
 
-	void loadKeybindings();
+	bool loadKeybindings( bool defaultsOnly = false );
 
-	void reloadKeybindings();
+	bool reloadKeybindings();
 
 	void onDocumentStateChanged( UICodeEditor*, TextDocument& );
 

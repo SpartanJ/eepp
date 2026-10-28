@@ -15,6 +15,10 @@ class App;
 
 class GlobalSearchController {
   public:
+	std::vector<std::string> getCommandList() const;
+
+	void reloadKeybindings( const std::unordered_map<std::string, std::string>& bindings );
+
 	static std::unordered_map<std::string, std::string> getDefaultKeybindings() {
 		return {
 			{ "escape", "close-global-searchbar" },

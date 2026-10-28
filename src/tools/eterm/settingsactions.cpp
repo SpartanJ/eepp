@@ -9,17 +9,28 @@ namespace eterm {
 
 SettingsActions::SettingsActions( App* app ) : mApp( app ) {}
 
-void SettingsActions::showSettings() {
+void SettingsActions::showSettings( const std::string& category ) {
 	if ( mSettingsWindow ) {
 		mSettingsWindow->show();
 		mSettingsWindow->toFront();
 		auto* panel = mSettingsWindow->find<Tools::UISettingsPanel>( "settings_panel_content" );
+		if ( !category.empty() )
+			panel->selectCategory( category );
 		panel->runOnMainThread( [panel] { panel->focusSearch(); } );
 		return;
 	}
 	mSettingsWindow = SettingsPanel::create( *mApp );
 	mSettingsWindow->on( Event::OnWindowClose,
 						 [this]( const Event* ) { mSettingsWindow = nullptr; } );
+	if ( !category.empty() ) {
+		mSettingsWindow->find<Tools::UISettingsPanel>( "settings_panel_content" )
+			->selectCategory( category );
+	}
+}
+
+void SettingsActions::closeSettings() {
+	if ( mSettingsWindow )
+		mSettingsWindow->closeWindow();
 }
 
 void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {

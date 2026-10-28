@@ -244,3 +244,41 @@ UTEST( UISettingsPanel, updatesLightAndDarkStyles ) {
 		EXPECT_EQ( 0u, description->getFontStyle() & Text::Shadow );
 	}
 }
+
+UTEST( UISettingsPanel, fullSizeCustomWidgetUsesViewportAndRestoresSettingsScroll ) {
+	UIApplication app( WindowSettings{ 1000, 760, "settings viewport test" } );
+	auto* panel = UISettingsPanel::New( app.getUI()->getRoot() );
+	panel->addCategory( "general.shortcuts", "General", "Shortcuts" );
+	panel->addCategory( "general.behavior", "General", "Behavior" );
+	panel->addCustomWidget(
+		{ "shortcuts", "general.shortcuts", "Shortcuts", {} },
+		[]( UIWidget* parent ) {
+			auto* widget = UILinearLayout::NewVertical();
+			widget->setParent( parent );
+			widget->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+			return widget;
+		},
+		true );
+	bool value = false;
+	panel->addBool( { "enabled", "general.behavior", "Enabled", {} }, &value );
+	panel->build();
+	panel->selectCategory( "general.shortcuts" );
+	app.getUI()->update( Milliseconds( 16 ) );
+	auto* page = panel->find<UIWidget>( "settings_full_page" );
+	auto* scroll = panel->find<UIWidget>( "settings_scroll" );
+	EXPECT_TRUE( page->isVisible() );
+	EXPECT_FALSE( scroll->isVisible() );
+	auto* row = panel->find<UIWidget>( "setting_shortcuts" );
+	EXPECT_EQ( page, row->getParent() );
+	EXPECT_FALSE( row->find<UIWidget>( "setting_info" )->isVisible() );
+	panel->selectCategory( "general.behavior" );
+	EXPECT_FALSE( page->isVisible() );
+	EXPECT_TRUE( scroll->isVisible() );
+	panel->setFilter( "Shortcuts" );
+	EXPECT_TRUE( scroll->isVisible() );
+	EXPECT_NE( page, row->getParent() );
+	panel->setFilter( "" );
+	panel->selectCategory( "general.shortcuts" );
+	EXPECT_TRUE( page->isVisible() );
+	EXPECT_EQ( page, row->getParent() );
+}

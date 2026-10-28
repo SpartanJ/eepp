@@ -103,7 +103,7 @@ std::string MouseBindings::getMouseButtonsName( MouseButtonsMask mask ) {
 	if ( mask & EE_BUTTON_WLMASK )
 		v.push_back( "mousewheelleft" );
 	if ( mask & EE_BUTTON_WRMASK )
-		v.push_back( "mousewheelrigt" );
+		v.push_back( "mousewheelright" );
 	return String::join( v, '+' );
 }
 
@@ -173,7 +173,8 @@ void MouseBindings::replaceMousebind( const MouseBindings::Shortcut& keys,
 MouseBindings::Shortcut MouseBindings::toShortcut( const std::string& keys ) {
 	Shortcut shortcut;
 	Uint32 mod = 0;
-	auto actionSplit = String::split( keys, ',' );
+	// Move/over/leave bindings can have an empty button field.
+	auto actionSplit = String::split( keys, ',', true );
 	if ( actionSplit.size() != 2 )
 		return shortcut;
 	shortcut.action = mouseActionFromString( actionSplit[0] );
@@ -305,9 +306,12 @@ std::string MouseBindings::fromShortcut( MouseBindings::Shortcut shortcut, bool 
 		mods.emplace_back( "altgr" );
 	if ( ( shortcut.mod & KEYMOD_META ) && !( KEYMOD_META & abstractMods ) )
 		mods.emplace_back( "meta" );
-	if ( mods.empty() )
-		return format ? mousebindFormat( keyname ) : keyname;
-	auto ret = actionname + "," + String::join( mods, '+' ) + "+" + keyname;
+	// The action is part of the expression even without modifiers; toShortcut() always
+	// expects action,buttons (for example mousedoubleclick,mouseleft).
+	auto ret = actionname + ",";
+	if ( !mods.empty() )
+		ret += String::join( mods, '+' ) + "+";
+	ret += keyname;
 	return format ? mousebindFormat( ret ) : ret;
 }
 

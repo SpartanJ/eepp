@@ -247,7 +247,6 @@ void GlobalSearchController::initGlobalSearchBar(
 		} );
 	};
 	auto& kbind = mGlobalSearchBarLayout->getKeyBindings();
-	kbind.addKeybindsString( { { mApp->getKeybind( "find-replace" ), "find-replace" } } );
 	kbind.addKeybindsStringUnordered( keybindings );
 
 	UIPushButton* searchButton = mGlobalSearchBarLayout->find<UIPushButton>( "global_search" );
@@ -965,6 +964,20 @@ PluginRequestHandle GlobalSearchController::processMessage( const PluginMessage&
 	} );
 
 	return {};
+}
+
+void GlobalSearchController::reloadKeybindings(
+	const std::unordered_map<std::string, std::string>& bindings ) {
+	if ( !mGlobalSearchBarLayout )
+		return;
+	auto& target = mGlobalSearchBarLayout->getKeyBindings();
+	target.reset();
+	target.addKeybindsStringUnordered( bindings );
+}
+
+std::vector<std::string> GlobalSearchController::getCommandList() const {
+	return mGlobalSearchBarLayout ? mGlobalSearchBarLayout->getCommandList()
+								  : std::vector<std::string>{};
 }
 
 } // namespace ecode

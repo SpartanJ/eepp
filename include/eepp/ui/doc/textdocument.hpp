@@ -684,6 +684,10 @@ class EE_API TextDocument {
 
 	String getAllSelectedText() const;
 
+	/** Built-in command names without constructing a document or including per-document commands.
+	 */
+	static std::vector<std::string> getDefaultCommandList();
+
 	std::vector<std::string> getCommandList() const;
 
 	bool isRunningTransaction() const;

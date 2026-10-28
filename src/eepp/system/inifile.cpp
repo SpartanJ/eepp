@@ -1,12 +1,21 @@
+#include <eepp/system/inifile.hpp>
+
 #include <cctype>
 #include <cstdarg>
+#include <cstdio>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
-#include <eepp/system/inifile.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/packregistry.hpp>
+#include <eepp/system/uuid.hpp>
+#include <filesystem>
+
+#if defined( EE_PLATFORM_POSIX )
+#include <unistd.h>
+#endif
 
 #define MAX_KEYNAME 128
 #define MAX_VALUENAME 128
@@ -171,6 +180,57 @@ bool IniFile::readFile() {
 bool IniFile::writeFile() {
 	IOStreamFile f( mPath, "w" );
 	return writeStream( f );
+}
+
+bool IniFile::writeFileAtomic() {
+	if ( mPath.empty() ||
+		 ( FileSystem::fileExists( mPath ) && !FileSystem::fileCanWrite( mPath ) ) )
+		return false;
+	// Write next to the destination so replacing it is atomic. Resolve existing symlinks
+	// rather than replacing the symlink itself (config files are often managed this way).
+	auto filePath = []( const std::string& path ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		return std::filesystem::path( String( path ).toWideString() );
+#else
+		return std::filesystem::path( path );
+#endif
+	};
+	std::error_code ec;
+	auto destination = std::filesystem::canonical( filePath( mPath ), ec );
+	if ( ec )
+		destination = filePath( mPath );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	const auto path = String( destination.wstring() ).toUtf8();
+#else
+	const auto path = destination.string();
+#endif
+	const auto temporary = path + "." + UUID().toString() + ".tmp";
+	IOStreamString contents;
+	if ( !writeStream( contents ) )
+		return false;
+	// Use portable fopen modes across Windows C runtimes; UUID names provide
+	// independent temporary paths.
+	auto* file = FileSystem::fopenUtf8( temporary, "wb" );
+	if ( !file )
+		return false;
+	const auto& data = contents.getStream();
+	bool written = std::fwrite( data.data(), 1, data.size(), file ) == data.size();
+	written = std::fflush( file ) == 0 && written;
+#if defined( EE_PLATFORM_POSIX )
+	written = fsync( fileno( file ) ) == 0 && written;
+#endif
+	written = std::fclose( file ) == 0 && written;
+	if ( written && FileSystem::fileExists( path ) ) {
+		auto permissions = std::filesystem::status( destination, ec ).permissions();
+		if ( !ec )
+			std::filesystem::permissions( filePath( temporary ), permissions, ec );
+		written = !ec;
+	}
+	if ( written )
+		written = FileSystem::fileMove( temporary, path );
+	if ( !written )
+		FileSystem::fileRemove( temporary );
+	return written;
 }
 
 bool IniFile::writeStream( IOStream& stream ) {

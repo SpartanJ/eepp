@@ -1,116 +1,95 @@
 #include "eterm.hpp"
 
+#include <array>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
+#include <eepp/ui/tools/keybindingsconfig.hpp>
+#include <eepp/ui/tools/uikeybindingseditor.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 
 namespace eterm {
 
+static constexpr std::array<KeybindingsConfig::Context, 1> keybindingContexts{ { { "eterm" } } };
+
 KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
+	const Uint32 modifier = KeyMod::getDefaultModifier();
+	const Uint32 secondary = KeyMod::getDefaultSecondaryModifier();
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	const Uint32 clipboardModifier = modifier;
+	const Uint32 actionModifier = modifier;
+	const Uint32 tabModifier = modifier;
+	const Uint32 splitModifier = modifier | KEYMOD_SHIFT;
+	const Uint32 navigationModifier = modifier;
+#else
+	const Uint32 clipboardModifier = KEYMOD_CTRL | KEYMOD_SHIFT;
+	const Uint32 actionModifier = modifier | KEYMOD_SHIFT;
+	const Uint32 tabModifier = secondary | KEYMOD_SHIFT;
+	const Uint32 splitModifier = secondary | KEYMOD_SHIFT;
+	const Uint32 navigationModifier = modifier | secondary;
+#endif
 	return {
-		{ { KEY_C, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-copy" },
-		{ { KEY_V, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-paste" },
-		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "terminal-find" },
-		{ { KEY_G, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "terminal-find-next" },
-		{ { KEY_G, KeyMod::getDefaultModifier() | KEYMOD_SHIFT | KEYMOD_ALT },
-		  "terminal-find-previous" },
-		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "create-new-terminal" },
-		{ { KEY_E,
-			KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT },
+		{ { KEY_C, clipboardModifier }, "terminal-copy" },
+		{ { KEY_V, clipboardModifier }, "terminal-paste" },
+		{ { KEY_F, actionModifier }, "terminal-find" },
+		{ { KEY_G, actionModifier }, "terminal-find-next" },
+		{ { KEY_G, modifier | secondary | KEYMOD_SHIFT }, "terminal-find-previous" },
+		{ { KEY_T, actionModifier }, "create-new-terminal" },
+		{ { KEY_E, modifier | secondary | KEYMOD_SHIFT },
 		  UITerminal::getExclusiveModeToggleCommandName() },
-		{ { KEY_S, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() },
-		  "terminal-rename" },
-		{ { KEY_COMMA, KeyMod::getDefaultModifier() }, "open-settings" },
-		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-tab" },
-		{ { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "debug-widget-tree-view" },
+		{ { KEY_S, modifier | secondary }, "terminal-rename" },
+		{ { KEY_COMMA, modifier }, "open-settings" },
+		{ { KEY_W, actionModifier }, "close-tab" },
+		{ { KEY_F11, modifier | KEYMOD_SHIFT }, "debug-widget-tree-view" },
 		{ { KEY_PAGEDOWN, KEYMOD_CTRL }, "next-tab" },
 		{ { KEY_PAGEUP, KEYMOD_CTRL }, "previous-tab" },
 		{ { KEY_TAB, KEYMOD_CTRL }, "next-tab" },
 		{ { KEY_TAB, KEYMOD_CTRL | KEYMOD_SHIFT }, "previous-tab" },
-		{ { KEY_1, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "switch-to-tab-1" },
-		{ { KEY_2, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "switch-to-tab-2" },
-		{ { KEY_3, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "switch-to-tab-3" },
-		{ { KEY_4, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "switch-to-tab-4" },
-		{ { KEY_5, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "switch-to-tab-5" },
-		{ { KEY_6, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "switch-to-tab-6" },
-		{ { KEY_7, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "switch-to-tab-7" },
-		{ { KEY_8, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "switch-to-tab-8" },
-		{ { KEY_9, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "switch-to-tab-9" },
-		{ { KEY_0, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "switch-to-last-tab" },
-		{ { KEY_LEFT, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "move-tab-left" },
-		{ { KEY_RIGHT, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "move-tab-right" },
-		{ { KEY_L, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "split-right" },
-		{ { KEY_K, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "split-bottom" },
-		{ { KEY_J, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "split-left" },
-		{ { KEY_I, KeyMod::getDefaultSecondaryModifier() | KEYMOD_SHIFT }, "split-top" },
-		{ { KEY_J, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() },
-		  "switch-to-previous-split" },
-		{ { KEY_L, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() },
-		  "switch-to-next-split" },
+		{ { KEY_1, tabModifier }, "switch-to-tab-1" },
+		{ { KEY_2, tabModifier }, "switch-to-tab-2" },
+		{ { KEY_3, tabModifier }, "switch-to-tab-3" },
+		{ { KEY_4, tabModifier }, "switch-to-tab-4" },
+		{ { KEY_5, tabModifier }, "switch-to-tab-5" },
+		{ { KEY_6, tabModifier }, "switch-to-tab-6" },
+		{ { KEY_7, tabModifier }, "switch-to-tab-7" },
+		{ { KEY_8, tabModifier }, "switch-to-tab-8" },
+		{ { KEY_9, tabModifier }, "switch-to-tab-9" },
+		{ { KEY_0, tabModifier }, "switch-to-last-tab" },
+		{ { KEY_LEFT, modifier | KEYMOD_SHIFT }, "move-tab-left" },
+		{ { KEY_RIGHT, modifier | KEYMOD_SHIFT }, "move-tab-right" },
+		{ { KEY_L, splitModifier }, "split-right" },
+		{ { KEY_K, splitModifier }, "split-bottom" },
+		{ { KEY_J, splitModifier }, "split-left" },
+		{ { KEY_I, splitModifier }, "split-top" },
+		{ { KEY_J, navigationModifier }, "switch-to-previous-split" },
+		{ { KEY_L, navigationModifier }, "switch-to-next-split" },
 	};
 }
 
-void App::loadKeybindings() {
-	IniFile ini( keybindingsPath );
-	bool changed = false;
-	std::string defaultModifier = ini.getValue( "modifier", "mod" );
-	if ( defaultModifier.empty() ) {
-		defaultModifier = KeyMod::getDefaultModifierString();
-		ini.setValue( "modifier", "mod", defaultModifier );
-		changed = true;
+bool App::loadKeybindings( bool defaultsOnly, std::string* outputError ) {
+	KeybindingsConfig::LoadedFile file;
+	KeybindingsConfig::Section section;
+	std::string error;
+	if ( !KeybindingsConfig::loadFile( defaultsOnly ? "" : keybindingsPath, keybindingContexts,
+									   appWindow->getInput(), file, error ) ||
+		 !KeybindingsConfig::readSection( file.ini, "eterm", section, &error ) ) {
+		Log::error( "%s", error.c_str() );
+		if ( outputError )
+			*outputError = error;
+		return false;
 	}
-	if ( const Uint32 modifier = KeyMod::getKeyMod( defaultModifier ); modifier != KEYMOD_NONE )
-		KeyMod::setDefaultModifier( modifier );
-
-	std::string defaultSecondaryModifier = ini.getValue( "modifier", "mod2" );
-	if ( defaultSecondaryModifier.empty() ) {
-		defaultSecondaryModifier = KeyMod::getDefaultSecondaryModifierString();
-		ini.setValue( "modifier", "mod2", defaultSecondaryModifier );
-		changed = true;
-	}
-	if ( const Uint32 modifier = KeyMod::getKeyMod( defaultSecondaryModifier );
-		 modifier != KEYMOD_NONE && !( modifier & KeyMod::getDefaultModifier() ) ) {
-		KeyMod::setDefaultSecondaryModifier( modifier );
-	} else {
-		defaultSecondaryModifier = KeyMod::getDefaultSecondaryModifierString();
-		ini.setValue( "modifier", "mod2", defaultSecondaryModifier );
-		changed = true;
-	}
-
-	KeyBindings formatter( appWindow->getInput() );
-	auto defaults = getDefaultKeybindings();
-	const bool hasKeybindings = ini.findKey( "eterm" ) != IniFile::noID;
-	if ( hasKeybindings ) {
-		keybindings = ini.getKeyUnorderedMap( "eterm" );
-	} else {
-		keybindings.clear();
-		for ( const auto& shortcut : KeyBindings::getOrderedShortcuts( defaults ) ) {
-			const auto& command = defaults.find( shortcut )->second;
-			const std::string shortcutString = formatter.getShortcutString( shortcut );
-			keybindings[shortcutString] = command;
-			ini.setValue( "eterm", shortcutString, command );
-		}
-		changed = true;
-	}
-
-	if ( hasKeybindings ) {
-		std::unordered_map<std::string, std::string> commands;
-		for ( const auto& [shortcut, command] : keybindings )
-			commands[command] = shortcut;
-		for ( const auto& shortcut : KeyBindings::getOrderedShortcuts( defaults ) ) {
-			const auto& command = defaults.find( shortcut )->second;
-			const std::string shortcutString = formatter.getShortcutString( shortcut );
-			if ( commands.find( command ) == commands.end() &&
-				 keybindings.find( shortcutString ) == keybindings.end() ) {
-				keybindings[shortcutString] = command;
-				commands[command] = shortcutString;
-				ini.setValue( "eterm", shortcutString, command );
-				changed = true;
-			}
-		}
-	}
-	if ( changed )
-		ini.writeFile();
+	// Keep eterm's existing policy: initialize every default alias on the first run,
+	// then restore one ordered shortcut for each missing command on later loads.
+	const bool firstRun = file.ini.findKey( "eterm" ) == IniFile::noID;
+	KeybindingsConfig::mergeDefaults( section, getDefaultKeybindings(), appWindow->getInput(),
+									  firstRun );
+	KeybindingsConfig::writeSection( file.ini, "eterm", section );
+	// A valid read-only configuration remains usable even when recovery cannot be persisted.
+	if ( !file.save() )
+		Log::error( "Could not save eterm keybindings: %s", keybindingsPath.c_str() );
+	section.apply( keybindings );
+	if ( outputError )
+		outputError->clear();
+	return true;
 }
 
 void App::applyKeybindings( UITerminal* terminal ) {
@@ -121,27 +100,63 @@ void App::applyKeybindings( UITerminal* terminal ) {
 void App::applyKeybindings( UICodeEditor* editor ) {
 	editor->getKeyBindings().setKeybinds( *UICodeEditor::getDefaultKeybindings() );
 	editor->addKeyBinding( { KEY_S, KeyMod::getDefaultModifier() }, "save-doc", true );
-	editor->getKeyBindings().addKeybindsStringUnordered( keybindings );
+	// Terminal-only commands must not shadow text editing (notably Meta+C and Meta+V).
+	for ( const auto& [shortcut, command] : keybindings ) {
+		if ( editor->getDocument().hasCommand( command ) )
+			editor->getKeyBindings().addKeybindString( shortcut, command );
+	}
 }
 
-void App::reloadKeybindings() {
-	if ( !FileSystem::fileExists( keybindingsPath ) )
-		return;
-	keybindings.clear();
-	loadKeybindings();
+bool App::reloadKeybindings( std::string* error ) {
+	if ( !FileSystem::fileExists( keybindingsPath ) ) {
+		if ( error )
+			*error = "Keybindings file does not exist: " + keybindingsPath;
+		return false;
+	}
+	if ( !loadKeybindings( false, error ) )
+		return false;
 	forEachTerminal( [this]( UITerminal* terminal ) { applyKeybindings( terminal ); } );
-	if ( keybindingsEditor && tabSplitter->ownedWidgetExists( keybindingsEditor ) )
-		applyKeybindings( keybindingsEditor );
+	if ( keybindingsFileEditor && tabSplitter->ownedWidgetExists( keybindingsFileEditor ) )
+		applyKeybindings( keybindingsFileEditor );
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	syncGlobalMenuKeybindings();
 #endif
+	return true;
 }
 
-void App::openKeybindings() {
-	if ( keybindingsEditor && tabSplitter->ownedWidgetExists( keybindingsEditor ) ) {
-		if ( auto* tabs = tabSplitter->tabWidgetFromWidget( keybindingsEditor ) )
-			tabs->setTabSelected( tabs->getTabFromOwnedWidget( keybindingsEditor ) );
-		keybindingsEditor->setFocus();
+UIWidget* App::createKeybindingsEditor( UIWidget* parent ) {
+	return UIKeybindingsEditor::NewForFile(
+		parent, { .path = keybindingsPath,
+				  .contexts = keybindingContexts,
+				  // eterm closes with its last terminal, so one is always available to list the
+				  // assignable commands that have no default shortcut.
+				  .catalog =
+					  [this]( KeybindingsConfig::Catalog& catalog ) {
+						  std::vector<std::string> commands;
+						  forEachTerminal( [&]( UITerminal* terminal ) {
+							  if ( commands.empty() )
+								  commands = terminal->getCommandList();
+						  } );
+						  catalog.add( "eterm", getDefaultKeybindings(), commands,
+									   i18n( "terminal", "Terminal" ) );
+					  },
+				  .apply =
+					  [this] {
+						  std::string error;
+						  return reloadKeybindings( &error ) ? String() : String( error );
+					  },
+				  .manualEdit =
+					  [this] {
+						  settingsActions->closeSettings();
+						  openKeybindingsFile();
+					  } } );
+}
+
+void App::openKeybindingsFile() {
+	if ( keybindingsFileEditor && tabSplitter->ownedWidgetExists( keybindingsFileEditor ) ) {
+		if ( auto* tabs = tabSplitter->tabWidgetFromWidget( keybindingsFileEditor ) )
+			tabs->setTabSelected( tabs->getTabFromOwnedWidget( keybindingsFileEditor ) );
+		keybindingsFileEditor->setFocus();
 		return;
 	}
 
@@ -157,14 +172,14 @@ void App::openKeybindings() {
 	registerTabCommands( editor->getDocument(), editor );
 	applyKeybindings( editor );
 	editor->on( Event::OnClose, [this, editor]( const Event* ) {
-		if ( keybindingsEditor == editor )
-			keybindingsEditor = nullptr;
+		if ( keybindingsFileEditor == editor )
+			keybindingsFileEditor = nullptr;
 	} );
 
 	auto* current = tabSplitter->getCurWidget();
 	auto* target =
 		current ? tabSplitter->tabWidgetFromWidget( current ) : tabSplitter->getFirstTabWidget();
-	keybindingsEditor = editor;
+	keybindingsFileEditor = editor;
 	auto* tab = tabSplitter->createWidgetInTabWidget( target, editor, "keybindings.cfg" ).first;
 	const auto updateTabState = [editor, tab]( const Event* ) {
 		const bool dirty = editor->getDocument().isDirty();

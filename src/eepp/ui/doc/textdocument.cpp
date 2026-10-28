@@ -1502,6 +1502,14 @@ std::string TextDocument::toUtf8String() {
 	return stream;
 }
 
+std::vector<std::string> TextDocument::getDefaultCommandList() {
+	std::vector<std::string> commands;
+	commands.reserve( getBuiltinCommands().size() );
+	for ( const auto& [name, command] : getBuiltinCommands() )
+		commands.push_back( name );
+	return commands;
+}
+
 std::vector<std::string> TextDocument::getCommandList() const {
 	std::vector<std::string> cmds;
 	cmds.reserve( getBuiltinCommands().size() + mCommands.size() + mRefCommands.size() +

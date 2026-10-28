@@ -746,12 +746,31 @@ void TerminalManager::setKeybindings( UITerminal* term ) {
 	term->addKeyBinds( mApp->getRealLocalKeybindings() );
 	term->addKeyBinds( mApp->getRealSplitterKeybindings() );
 	// Remove the keybinds that are problematic for a terminal
-	term->getKeyBindings().removeCommandsKeybind(
-		{ "open-file", "download-file-web", "open-folder", "debug-draw-highlight-toggle",
-		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
-		  "open-locatebar", "open-command-palette", "open-global-search", "menu-toggle",
-		  "console-toggle", "go-to-line", "editor-go-back", "editor-go-forward",
-		  "project-run-executable", "project-build-and-run" } );
+	static constexpr std::string_view excluded[] = { "open-file",
+													 "download-file-web",
+													 "open-folder",
+													 "debug-draw-highlight-toggle",
+													 "debug-draw-boxes-toggle",
+													 "debug-draw-debug-data",
+													 "debug-widget-tree-view",
+													 "open-locatebar",
+													 "open-command-palette",
+													 "open-global-search",
+													 "menu-toggle",
+													 "console-toggle",
+													 "go-to-line",
+													 "editor-go-back",
+													 "editor-go-forward",
+													 "project-run-executable",
+													 "project-build-and-run",
+													 "find-replace" };
+	for ( const auto& shortcut :
+		  KeyBindings::getOrderedShortcuts( term->getKeyBindings().getShortcutMap() ) ) {
+		const auto command = term->getKeyBindings().getCommandFromKeyBind( shortcut );
+		if ( std::find( std::begin( excluded ), std::end( excluded ), command ) !=
+			 std::end( excluded ) )
+			term->getKeyBindings().removeKeybind( shortcut );
+	}
 	// Terminal bindings must be installed last so they can intentionally reuse shortcuts removed
 	// from the editor/global context (for example mod+shift+f).
 	term->addKeyBinds( mApp->getRealTerminalKeybindings() );

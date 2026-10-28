@@ -5,6 +5,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/tools/keybindingsconfig.hpp>
 #include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -15,6 +16,7 @@
 
 using namespace EE;
 using namespace EE::UI;
+using namespace EE::UI::Tools;
 using namespace EE::UI::Doc;
 using namespace EE::Scene;
 using namespace EE::System;
@@ -716,4 +718,210 @@ UTEST( UICodeEditor, ReproduceFoldingCrash ) {
 		editor->getDocument().deleteSelection();
 		editor->getDocument().undo();
 	}
+}
+
+UTEST( KeybindingsHelper, UnboundStateSurvivesOlderEditorRestorationUntilExplicitlyRemoved ) {
+	const auto path = Sys::getTempPath() + "eepp_portable_unbound.cfg";
+	IniFile ini( path, false ), state( "", false );
+	ini.setValue( "editor.state", "unbound", R"(["copy"])" );
+	const std::unordered_map<std::string, std::string> defaults{ { "ctrl+c", "copy" },
+																 { "ctrl+v", "paste" } };
+	std::unordered_map<std::string, std::string> runtime;
+	ecode::KeybindingsHelper::updateKeybindings( ini, "editor", nullptr, runtime, defaults, false,
+												 {}, state );
+	EXPECT_FALSE( runtime.count( "ctrl+c" ) );
+	EXPECT_TRUE( runtime["ctrl+v"] == "paste" );
+	IniFile reopened( path );
+	ecode::KeybindingsHelper::updateKeybindings( reopened, "editor", nullptr, runtime, defaults,
+												 false, {}, state );
+	EXPECT_FALSE( runtime.count( "ctrl+c" ) );
+	// Older versions ignore state and restore defaults into their usual plain section.
+	reopened.setValue( "editor", "ctrl+c", "copy" );
+	ASSERT_TRUE( reopened.writeFile() );
+	reopened = IniFile( path );
+	ecode::KeybindingsHelper::updateKeybindings( reopened, "editor", nullptr, runtime, defaults,
+												 false, {}, state );
+	EXPECT_FALSE( runtime.count( "ctrl+c" ) );
+	EXPECT_TRUE( reopened.getValue( "editor.state", "unbound" ) == R"(["copy"])" );
+	// Manual re-enabling requires both removing the unbound entry and assigning a shortcut.
+	reopened.deleteValue( "editor.state", "unbound" );
+	reopened.setValue( "editor", "ctrl+k", "copy" );
+	ecode::KeybindingsHelper::updateKeybindings( reopened, "editor", nullptr, runtime, defaults,
+												 false, {}, state );
+	EXPECT_TRUE( runtime["ctrl+k"] == "copy" );
+	EXPECT_FALSE( runtime.count( "ctrl+c" ) );
+	EXPECT_EQ( IniFile::noID, reopened.findKey( "editor.state" ) );
+	EXPECT_EQ( 0u, state.getNumKeys() );
+	FileSystem::fileRemove( path );
+}
+
+UTEST( KeybindingsHelper, StatefulMouseBindingsUseTheSamePortableFormat ) {
+	IniFile ini( "", false ), state( "", false );
+	ini.setValue( "editor_mouse_bindings", "mod+mouseleft", "go-to-definition" );
+	ini.setValue( "editor_mouse_bindings.state", "unbound", R"(["select-word"])" );
+	const MouseBindings::ShortcutMap defaults{
+		{ { MouseAction::Click, EE_BUTTON_LMASK, KEYMOD_CTRL }, "select-word" } };
+	std::unordered_map<std::string, std::string> runtime, inverted;
+	ecode::KeybindingsHelper::updateKeybindings( ini, "editor_mouse_bindings", nullptr, runtime,
+												 inverted, defaults, false, {}, state );
+	EXPECT_EQ( 1u, runtime.size() );
+	EXPECT_TRUE( runtime["mod+mouseleft"] == "go-to-definition" );
+	EXPECT_TRUE( inverted["go-to-definition"] == "mod+mouseleft" );
+}
+
+UTEST( KeybindingsHelper, FirstRunWritesPlainDefaultsAndReloadsThem ) {
+	const auto path = Sys::getTempPath() + "eepp_first_run_keybindings.cfg";
+	FileSystem::fileRemove( path );
+	IniFile ini( path, false ), state( "", false );
+	const std::unordered_map<std::string, std::string> defaults{
+		{ "return", "new-line" },
+		{ "backspace", "delete-to-previous-char" },
+		{ "mod+w", "close-tab" },
+		{ "mod+f4", "close-tab" } };
+	std::unordered_map<std::string, std::string> runtime;
+	ecode::KeybindingsHelper::updateKeybindings( ini, "editor", nullptr, runtime, defaults, false,
+												 {}, state );
+	EXPECT_TRUE( runtime == defaults );
+	IniFile saved( path );
+	for ( const auto& [shortcut, command] : defaults )
+		EXPECT_TRUE( saved.getValue( "editor", shortcut ) == command );
+	EXPECT_EQ( IniFile::noID, saved.findKey( "editor.state" ) );
+	EXPECT_EQ( 0u, state.getNumKeys() );
+	ecode::KeybindingsHelper::updateKeybindings( saved, "editor", nullptr, runtime, defaults, false,
+												 {}, state );
+	EXPECT_TRUE( runtime == defaults );
+	FileSystem::fileRemove( path );
+}
+
+UTEST( KeybindingsHelper, InvalidStateArraysLeaveAllContextsUntouched ) {
+	for ( const char* context :
+		  { "editor", "global_search", "document_search", "statusbar", "editor_mouse_bindings" } ) {
+		for ( const char* key : { "order", "unbound" } ) {
+			for ( const char* invalid : { "", "{}", "null", "[false]", R"([""])" } ) {
+				IniFile ini( "", false );
+				ini.setValue( context, "ctrl+c", "copy" );
+				ini.setValue( std::string( context ) + ".state", key, invalid );
+				std::string error;
+				EXPECT_FALSE( ecode::KeybindingsHelper::validate( ini, error ) );
+				EXPECT_FALSE( error.empty() );
+				KeybindingsConfig::Section section;
+				section.bindings["ctrl+k"] = { "keep", 1 };
+				EXPECT_FALSE( KeybindingsConfig::readSection( ini, context, section ) );
+				EXPECT_EQ( 1u, section.bindings.size() );
+				EXPECT_TRUE( section.bindings.at( "ctrl+k" ).command == "keep" );
+			}
+		}
+	}
+}
+
+UTEST( KeybindingsHelper, DefaultRecoveryDoesNotOverwriteEquivalentPhysicalShortcut ) {
+	UIApplication app( WindowSettings{ 320, 240, "resolved shortcut recovery" } );
+	IniFile ini( "", false ), state( "", false );
+	const auto physical = KeyMod::getDefaultModifierString() + "+c";
+	ini.setValue( "editor", physical, "custom-command" );
+	const std::unordered_map<std::string, std::string> defaults{ { "mod+c", "copy" } };
+	std::unordered_map<std::string, std::string> runtime;
+	ecode::KeybindingsHelper::updateKeybindings( ini, "editor", app.getWindow()->getInput(),
+												 runtime, defaults, false, {}, state, false );
+	EXPECT_EQ( 1u, runtime.size() );
+	EXPECT_TRUE( runtime.at( physical ) == "custom-command" );
+	EXPECT_FALSE( ini.keyValueExists( "editor", "mod+c" ) );
+}
+
+UTEST( KeybindingsHelper, SparseFilesRecoverOrdinaryEnterBeforeKeypadAndModifiedAlternatives ) {
+	UIApplication app( WindowSettings{ 320, 240, "recover essential editing keys" } );
+	IniFile ini( "", false ), state( "", false );
+	ini.setValue( "editor", "mod+s", "save-doc" );
+	std::unordered_map<std::string, std::string> runtime, inverted;
+	const auto& defaults = UICodeEditor::getDefaultKeybindings()->getShortcutMap();
+	ecode::KeybindingsHelper::updateKeybindings( ini, "editor", app.getWindow()->getInput(),
+												 runtime, inverted, defaults, false, {}, state,
+												 false );
+	KeyBindings installed( app.getWindow()->getInput() );
+	installed.addKeybindsStringUnordered( runtime );
+	EXPECT_TRUE( installed.getCommandFromKeyBind( { KEY_RETURN, KEYMOD_NONE } ) == "new-line" );
+	EXPECT_TRUE( installed.getCommandFromKeyBind( { KEY_BACKSPACE, KEYMOD_NONE } ) ==
+				 "delete-to-previous-char" );
+	// An explicitly assigned alternative remains authoritative; recovery never extends it.
+	IniFile custom( "", false );
+	custom.setValue( "editor", "mod+j", "new-line" );
+	ecode::KeybindingsHelper::updateKeybindings( custom, "editor", app.getWindow()->getInput(),
+												 runtime, inverted, defaults, false, {}, state,
+												 false );
+	EXPECT_TRUE( runtime.at( "mod+j" ) == "new-line" );
+	EXPECT_FALSE( runtime.count( "return" ) );
+}
+
+UTEST( KeybindingsHelper, VersionMigrationDoesNotOverwriteAnAliasOfTheDestination ) {
+	UIApplication app( WindowSettings{ 320, 240, "resolved shortcut migration" } );
+	IniFile ini( "", false ), state( "", false );
+	const auto physical = KeyMod::getDefaultModifierString() + "+c";
+	ini.setValue( "editor", physical, "custom-command" );
+	ini.setValue( "editor", "f10", "copy" );
+	const std::unordered_map<std::string, std::string> defaults{ { "mod+c", "copy" } };
+	std::unordered_map<std::string, std::string> runtime;
+	ecode::KeybindingsHelper::updateKeybindings( ini, "editor", app.getWindow()->getInput(),
+												 runtime, defaults, true, { { "copy", "f10" } },
+												 state, false );
+	EXPECT_TRUE( runtime.at( physical ) == "custom-command" );
+	EXPECT_TRUE( runtime.at( "f10" ) == "copy" );
+	EXPECT_EQ( 0u, state.getNumKeys() );
+}
+
+UTEST( KeybindingsHelper,
+	   ValidationRejectsUnknownKeysAndResolvedConflictsBeforeChangingModifiers ) {
+	UIApplication app( WindowSettings{ 320, 240, "validate physical shortcuts" } );
+	auto* input = app.getWindow()->getInput();
+	const auto original = KeyMod::getDefaultModifier();
+	IniFile ini( "", false );
+	ini.setValue( "modifier", "mod", "meta" );
+	ini.setValue( "modifier", "mod2", "alt" );
+	ini.setValue( "editor", "mod+c", "copy" );
+	std::string error;
+	EXPECT_TRUE( ecode::KeybindingsHelper::validate( ini, error, input ) );
+	ini.setValue( "editor", "meta+c", "cut" );
+	EXPECT_FALSE( ecode::KeybindingsHelper::validate( ini, error, input ) );
+	EXPECT_TRUE( error.find( "Conflicting shortcut" ) != std::string::npos );
+	ini.setValue( "editor", "meta+c", "copy" );
+	EXPECT_TRUE( ecode::KeybindingsHelper::validate( ini, error, input ) );
+	ini.setValue( "document_search", "mod+this-key-does-not-exist", "repeat-find" );
+	EXPECT_FALSE( ecode::KeybindingsHelper::validate( ini, error, input ) );
+	EXPECT_TRUE( error.find( "Invalid shortcut" ) != std::string::npos );
+	EXPECT_EQ( original, KeyMod::getDefaultModifier() );
+	ini.deleteKey( "document_search" );
+	ini.setValue( "modifier", "mod2", "meta" );
+	EXPECT_FALSE( ecode::KeybindingsHelper::validate( ini, error, input ) );
+	ini.setValue( "modifier", "mod", "typo" );
+	EXPECT_FALSE( ecode::KeybindingsHelper::validate( ini, error, input ) );
+}
+
+UTEST( KeybindingsHelper, DefaultFallbackRequiresNoWritableConfiguration ) {
+	const auto path = Sys::getTempPath() + "eepp_readonly_fallback.cfg";
+	IniFile ini( path, false ), state( "", false );
+	ini.setValue( "editor.state", "unbound", "malformed" );
+	ASSERT_TRUE( ini.writeFile() );
+	std::string error;
+	EXPECT_FALSE( ecode::KeybindingsHelper::validate( ini, error ) );
+	IniFile defaultsOnly( "", false );
+	std::unordered_map<std::string, std::string> runtime;
+	const std::unordered_map<std::string, std::string> defaults{
+		{ "return", "new-line" }, { "backspace", "delete-to-previous-char" }, { "mod+s", "save" } };
+	ecode::KeybindingsHelper::updateKeybindings( defaultsOnly, "editor", nullptr, runtime, defaults,
+												 false, {}, state, false );
+	EXPECT_TRUE( runtime == defaults );
+	IniFile untouched( path );
+	EXPECT_TRUE( untouched.getValue( "editor.state", "unbound" ) == "malformed" );
+	EXPECT_EQ( 0u, state.getNumKeys() );
+	FileSystem::fileRemove( path );
+}
+
+UTEST( KeybindingsHelper, FailedBindingSaveDoesNotMarkAVersionMigrationComplete ) {
+	IniFile ini( "", false ), state( "", false );
+	ini.setValue( "editor", "f10", "copy" );
+	std::unordered_map<std::string, std::string> runtime;
+	const std::unordered_map<std::string, std::string> defaults{ { "f11", "copy" } };
+	ecode::KeybindingsHelper::updateKeybindings( ini, "editor", nullptr, runtime, defaults, true,
+												 { { "copy", "f10" } }, state );
+	EXPECT_TRUE( runtime.at( "f11" ) == "copy" );
+	EXPECT_FALSE( state.keyValueExists( "migrated_keybindings_editor", "copy" ) );
 }

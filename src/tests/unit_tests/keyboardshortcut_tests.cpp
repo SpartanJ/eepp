@@ -1,6 +1,7 @@
 #include "utest.h"
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/mouseshortcut.hpp>
+#include <eepp/ui/tools/keybindingsconfigdata.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
@@ -60,6 +61,28 @@ UTEST( KeyboardShortcut, AggregateAltUsesPrimaryAltAndKeepsAltGrDistinct ) {
 	EXPECT_EQ( static_cast<Uint32>( KEYMOD_LALT ), bindings.getShortcutFromString( "lalt+1" ).mod );
 }
 
+UTEST( KeyboardShortcut, ExplicitModifierSerializationRoundTripsWithoutChangingGlobalPreferences ) {
+	UIApplication app( WindowSettings{ 320, 240, "explicit shortcut serialization" } );
+	const auto primary = KeyMod::getDefaultModifier();
+	const auto secondary = KeyMod::getDefaultSecondaryModifier();
+	Tools::KeybindingsConfigData model{ {}, "altgr", "ctrl" };
+	for ( Uint32 modifiers : { Uint32( KEYMOD_NONE ), Uint32( KEYMOD_RALT ),
+							   Uint32( KEYMOD_CTRL | KEYMOD_RALT | KEYMOD_SHIFT ),
+							   Uint32( KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_META ) } ) {
+		const KeyBindings::Shortcut shortcut{ KEY_K, modifiers };
+		const auto symbolic = KeyBindings::fromShortcut( app.getWindow()->getInput(), shortcut,
+														 KEYMOD_RALT, KEYMOD_CTRL );
+		EXPECT_TRUE( model.resolve( app.getWindow()->getInput(), symbolic ) ==
+					 KeyBindings::sanitizeShortcut( shortcut ) );
+		const auto literal =
+			KeyBindings::fromShortcut( app.getWindow()->getInput(), shortcut, 0, 0 );
+		EXPECT_TRUE( model.resolve( app.getWindow()->getInput(), literal ) ==
+					 KeyBindings::sanitizeShortcut( shortcut ) );
+	}
+	EXPECT_EQ( primary, KeyMod::getDefaultModifier() );
+	EXPECT_EQ( secondary, KeyMod::getDefaultSecondaryModifier() );
+}
+
 UTEST( KeyboardShortcut, DefaultSecondaryModifierIsSerializableAndDoesNotOverlapDefault ) {
 	UIApplication app( WindowSettings{ 320, 240, "eepp - keyboard shortcut tests" } );
 	auto& bindings = app.getUI()->getKeyBindings();
@@ -91,4 +114,44 @@ UTEST( KeyboardShortcut, DefaultSecondaryModifierIsSerializableAndDoesNotOverlap
 	EXPECT_EQ( KeyMod::getDefaultSecondaryModifier(), KeyMod::getModMap().at( "mod2" ) );
 	KeyMod::setDefaultModifier( defaultModifier );
 	KeyMod::setDefaultSecondaryModifier( secondaryModifier );
+}
+
+UTEST( MouseBindings, ExpressionsRoundTripActionsButtonsAndModifiers ) {
+	const MouseAction actions[]{ MouseAction::Click, MouseAction::Down,		   MouseAction::Up,
+								 MouseAction::Move,	 MouseAction::DoubleClick, MouseAction::Over,
+								 MouseAction::Leave };
+	const MouseButtonsMask masks[]{ 0,
+									EE_BUTTON_LMASK,
+									EE_BUTTON_RMASK,
+									EE_BUTTON_MMASK,
+									EE_BUTTON_4MASK,
+									EE_BUTTON_5MASK,
+									EE_BUTTON_6MASK,
+									EE_BUTTON_7MASK,
+									EE_BUTTON_8MASK,
+									EE_BUTTON_WUMASK,
+									EE_BUTTON_WDMASK,
+									EE_BUTTON_WLMASK,
+									EE_BUTTON_WRMASK,
+									EE_BUTTON_LMASK | EE_BUTTON_RMASK };
+	const Uint32 modifiers[]{ KEYMOD_NONE,
+							  KEYMOD_CTRL,
+							  KEYMOD_SHIFT,
+							  KEYMOD_LALT,
+							  KEYMOD_RALT,
+							  KEYMOD_META,
+							  KEYMOD_CTRL | KEYMOD_SHIFT };
+	for ( auto action : actions ) {
+		for ( auto mask : masks ) {
+			for ( auto mod : modifiers ) {
+				const auto original = MouseBindings::sanitizeShortcut( { action, mask, mod } );
+				const auto restored = MouseBindings::sanitizeShortcut(
+					MouseBindings::toShortcut( MouseBindings::fromShortcut( original ) ) );
+				EXPECT_EQ( static_cast<int>( original.action ),
+						   static_cast<int>( restored.action ) );
+				EXPECT_EQ( original.key, restored.key );
+				EXPECT_EQ( original.mod, restored.mod );
+			}
+		}
+	}
 }

@@ -1,218 +1,150 @@
 #include "keybindingshelper.hpp"
+#include <algorithm>
+#include <array>
+#include <eepp/system/log.hpp>
+#include <eepp/ui/tools/keybindingsconfig.hpp>
+#include <vector>
+
+using namespace EE;
+using namespace EE::UI::Tools;
 
 namespace ecode {
 
-void KeybindingsHelper::updateKeybindings(
-	IniFile& ini, const std::string& group, Input* input,
-	std::unordered_map<std::string, std::string>& keybindings,
-	const std::unordered_map<std::string, std::string>& defKeybindings, bool forceRebind,
-	const std::map<std::string, std::string>& migrateKeyindings, IniFile& iniState ) {
-	KeyBindings bindings( input );
-	bool added = false;
-	bool migrated = false;
+using Section = KeybindingsConfig::Section;
 
-	if ( ini.findKey( group ) != IniFile::noID ) {
-		keybindings = ini.getKeyUnorderedMap( group );
+static constexpr std::array<KeybindingsConfig::Context, 5> keybindingContexts{
+	{ { "editor" },
+	  { "global_search" },
+	  { "document_search" },
+	  { "statusbar" },
+	  { "editor_mouse_bindings", KeybindingsConfig::InputType::Mouse } } };
+
+std::span<const KeybindingsConfig::Context> KeybindingsHelper::contexts() {
+	return keybindingContexts;
+}
+
+bool KeybindingsHelper::validate( const IniFile& ini, std::string& error, const Input* input ) {
+	return KeybindingsConfig::validate( ini, keybindingContexts, error, input );
+}
+
+void KeybindingsHelper::updateSection( IniFile& ini, const std::string& group, Input* input,
+									   std::unordered_map<std::string, std::string>& keybindings,
+									   const std::unordered_map<std::string, std::string>& defaults,
+									   bool forceRebind,
+									   const std::map<std::string, std::string>& migrations,
+									   IniFile& state, bool persist,
+									   std::unordered_map<std::string, std::string>* outputInverted,
+									   const KeyBindings::ShortcutMap* keyboardDefaults ) {
+	Section section;
+	std::string error;
+	if ( !KeybindingsConfig::readSection( ini, group, section, &error ) ) {
+		Log::error( "%s", error.c_str() );
+		return;
+	}
+	// An older ecode can restore disabled defaults into the mapping section. Unbound
+	// remains authoritative, and those mappings must not reserve shortcuts during recovery.
+	std::erase_if( section.bindings,
+				   [&]( const auto& entry ) { return section.isUnbound( entry.second.command ); } );
+	bool changed = false;
+	std::vector<std::pair<std::string_view, std::string_view>> migrated;
+	const bool newSection = ini.findKey( group ) == IniFile::noID;
+	std::unordered_map<std::string, std::string> inverted;
+	section.apply( keybindings, &inverted );
+	if ( !newSection && forceRebind ) {
+		for ( const auto& [command, previous] : migrations ) {
+			auto current = inverted.find( command );
+			if ( current == inverted.end() || current->second != previous ||
+				 section.bindings.at( previous ).priority > 1 ||
+				 state.keyValueExists( "migrated_keybindings_" + group, command ) )
+				continue;
+			auto next = std::min_element(
+				defaults.begin(), defaults.end(), [&]( const auto& a, const auto& b ) {
+					bool am = a.second == command, bm = b.second == command;
+					return am != bm ? am : a.first < b.first;
+				} );
+			if ( next == defaults.end() || next->second != command ||
+				 ( next->first != previous &&
+				   std::any_of(
+					   section.bindings.begin(), section.bindings.end(), [&]( const auto& entry ) {
+						   if ( entry.first == previous )
+							   return false;
+						   if ( group == "editor_mouse_bindings" )
+							   return MouseBindings::sanitizeShortcut(
+										  MouseBindings::toShortcut( entry.first ) ) ==
+									  MouseBindings::sanitizeShortcut(
+										  MouseBindings::toShortcut( next->first ) );
+						   return input ? KeyBindings::sanitizeShortcut(
+											  KeyBindings::toShortcut( input, entry.first ) ) ==
+											  KeyBindings::sanitizeShortcut(
+												  KeyBindings::toShortcut( input, next->first ) )
+										: entry.first == next->first;
+					   } ) ) )
+				continue;
+			auto binding = section.bindings.at( previous );
+			section.bindings.erase( previous );
+			section.bindings[next->first] = std::move( binding );
+			migrated.emplace_back( command, previous );
+			changed = true;
+		}
+	}
+	if ( keyboardDefaults ) {
+		changed |= KeybindingsConfig::mergeDefaults( section, *keyboardDefaults, input,
+													 section.bindings.empty() );
 	} else {
-		for ( const auto& it : defKeybindings )
-			ini.setValue( group, it.first, it.second );
-		added = true;
+		changed |= KeybindingsConfig::mergeDefaults( section, defaults, input,
+													 group == "editor_mouse_bindings"
+														 ? KeybindingsConfig::InputType::Mouse
+														 : KeybindingsConfig::InputType::Keyboard,
+													 section.bindings.empty() );
 	}
-	std::unordered_map<std::string, std::string> invertedKeybindings;
-	for ( const auto& key : keybindings )
-		invertedKeybindings[key.second] = key.first;
-
-	if ( !added && forceRebind ) {
-		for ( const auto& migrate : migrateKeyindings ) {
-			auto foundCmd = invertedKeybindings.find( migrate.first );
-			if ( foundCmd != invertedKeybindings.end() && foundCmd->second == migrate.second ) {
-				std::string shortcut;
-				for ( const auto& defKb : defKeybindings ) {
-					if ( defKb.second == foundCmd->first ) {
-						shortcut = defKb.first;
-						break;
-					}
-				}
-				if ( !shortcut.empty() &&
-					 !iniState.keyValueExists( "migrated_keybindings_" + group, migrate.first ) ) {
-					ini.setValue( group, shortcut, foundCmd->first );
-					ini.deleteValue( group, migrate.second );
-					keybindings.erase( migrate.second );
-					invertedKeybindings[foundCmd->first] = shortcut;
-					iniState.setValue( "migrated_keybindings_" + group, migrate.first,
-									   migrate.second );
-					added = true;
-					migrated = true;
-				}
-			}
-		}
+	changed |= KeybindingsConfig::writeSection( ini, group, section );
+	section.apply( keybindings, outputInverted );
+	// Persist the binding changes before recording the version migration as complete.
+	if ( persist && changed && !ini.writeFileAtomic() ) {
+		Log::error( "Could not save keybindings: %s", ini.path().c_str() );
+		return;
 	}
-
-	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
-		for ( const auto& key : defKeybindings ) {
-			auto foundCmd = invertedKeybindings.find( key.second );
-			auto& shortcutStr = key.first;
-			if ( foundCmd == invertedKeybindings.end() &&
-				 keybindings.find( shortcutStr ) == keybindings.end() ) {
-				keybindings[shortcutStr] = key.second;
-				invertedKeybindings[key.second] = shortcutStr;
-				ini.setValue( group, shortcutStr, key.second );
-				added = true;
-			}
-		}
-	}
-
-	if ( migrated )
-		iniState.writeFile();
-	if ( added )
-		ini.writeFile();
+	for ( const auto& [command, previous] : migrated )
+		state.setValue( "migrated_keybindings_" + group, command, previous );
+	if ( persist && !migrated.empty() && !state.writeFileAtomic() )
+		Log::error( "Could not save keybinding migration state: %s", state.path().c_str() );
 }
 
 void KeybindingsHelper::updateKeybindings(
 	IniFile& ini, const std::string& group, Input* input,
 	std::unordered_map<std::string, std::string>& keybindings,
-	std::unordered_map<std::string, std::string>& invertedKeybindings,
-	const KeyBindings::ShortcutMap& defKeybindings, bool forceRebind,
-	const std::map<std::string, std::string>& migrateKeyindings, IniFile& iniState ) {
-	KeyBindings bindings( input );
-	bool added = false;
-	bool migrated = false;
-	const auto orderedDefaultShortcuts = KeyBindings::getOrderedShortcuts( defKeybindings );
-
-	if ( ini.findKey( group ) != IniFile::noID ) {
-		keybindings = ini.getKeyUnorderedMap( group );
-	} else {
-		for ( const auto& shortcut : orderedDefaultShortcuts )
-			ini.setValue( group, bindings.getShortcutString( shortcut ),
-						  defKeybindings.find( shortcut )->second );
-		added = true;
-	}
-	for ( const auto& key : keybindings )
-		invertedKeybindings[key.second] = key.first;
-
-	if ( !added && forceRebind ) {
-		for ( const auto& migrate : migrateKeyindings ) {
-			auto foundCmd = invertedKeybindings.find( migrate.first );
-			if ( foundCmd != invertedKeybindings.end() && foundCmd->second == migrate.second ) {
-				KeyBindings::Shortcut shortcut;
-				for ( const auto& defaultShortcut : orderedDefaultShortcuts ) {
-					if ( defKeybindings.find( defaultShortcut )->second == foundCmd->first ) {
-						shortcut = defaultShortcut;
-						break;
-					}
-				}
-				if ( !iniState.keyValueExists( "migrated_keybindings_" + group, migrate.first ) ) {
-					if ( !shortcut.empty() ) {
-						auto newShortcutStr = bindings.getShortcutString( shortcut );
-						ini.setValue( group, newShortcutStr, foundCmd->first );
-						invertedKeybindings[foundCmd->first] = newShortcutStr;
-					} else {
-						invertedKeybindings.erase( foundCmd->first );
-					}
-					ini.deleteValue( group, migrate.second );
-					keybindings.erase( migrate.second );
-					iniState.setValue( "migrated_keybindings_" + group, migrate.first,
-									   migrate.second );
-					added = true;
-					migrated = true;
-				}
-			}
-		}
-	}
-
-	bool keybindingsWereEmpty = keybindings.empty();
-
-	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
-		for ( const auto& shortcut : orderedDefaultShortcuts ) {
-			const auto& command = defKeybindings.find( shortcut )->second;
-			auto foundCmd = invertedKeybindings.find( command );
-			auto shortcutStr = bindings.getShortcutString( shortcut );
-
-			if ( ( foundCmd == invertedKeybindings.end() || keybindingsWereEmpty ) &&
-				 keybindings.find( shortcutStr ) == keybindings.end() ) {
-				keybindings[shortcutStr] = command;
-				invertedKeybindings[command] = shortcutStr;
-				ini.setValue( group, shortcutStr, command );
-				added = true;
-			}
-		}
-	}
-	if ( migrated )
-		iniState.writeFile();
-	if ( added )
-		ini.writeFile();
+	const std::unordered_map<std::string, std::string>& defaults, bool forceRebind,
+	const std::map<std::string, std::string>& migrations, IniFile& state, bool persist ) {
+	updateSection( ini, group, input, keybindings, defaults, forceRebind, migrations, state,
+				   persist, nullptr, nullptr );
 }
 
 void KeybindingsHelper::updateKeybindings(
 	IniFile& ini, const std::string& group, Input* input,
 	std::unordered_map<std::string, std::string>& keybindings,
-	std::unordered_map<std::string, std::string>& invertedKeybindings,
-	const MouseBindings::ShortcutMap& defKeybindings, bool forceRebind,
-	const std::map<std::string, std::string>& migrateKeyindings, IniFile& iniState ) {
-	MouseBindings bindings;
-	bool added = false;
-	bool migrated = false;
-
-	if ( ini.findKey( group ) != IniFile::noID ) {
-		keybindings = ini.getKeyUnorderedMap( group );
-	} else {
-		for ( const auto& it : defKeybindings )
-			ini.setValue( group, bindings.getShortcutString( it.first ), it.second );
-		added = true;
+	std::unordered_map<std::string, std::string>& inverted,
+	const KeyBindings::ShortcutMap& defaults, bool forceRebind,
+	const std::map<std::string, std::string>& migrations, IniFile& state, bool persist ) {
+	std::unordered_map<std::string, std::string> expressions;
+	if ( forceRebind && !migrations.empty() ) {
+		for ( const auto& shortcut : KeyBindings::getOrderedShortcuts( defaults ) )
+			expressions[KeyBindings::fromShortcut( input, shortcut )] = defaults.at( shortcut );
 	}
-	for ( const auto& key : keybindings )
-		invertedKeybindings[key.second] = key.first;
+	updateSection( ini, group, input, keybindings, expressions, forceRebind, migrations, state,
+				   persist, &inverted, &defaults );
+}
 
-	if ( !added && forceRebind ) {
-		for ( const auto& migrate : migrateKeyindings ) {
-			auto foundCmd = invertedKeybindings.find( migrate.first );
-			if ( foundCmd != invertedKeybindings.end() && foundCmd->second == migrate.second ) {
-				MouseBindings::Shortcut shortcut;
-				for ( const auto& defKb : defKeybindings ) {
-					if ( defKb.second == foundCmd->first ) {
-						shortcut = defKb.first;
-						break;
-					}
-				}
-				if ( !iniState.keyValueExists( "migrated_keybindings_" + group, migrate.first ) ) {
-					if ( !shortcut.empty() ) {
-						auto newShortcutStr = bindings.getShortcutString( shortcut );
-						ini.setValue( group, newShortcutStr, foundCmd->first );
-						invertedKeybindings[foundCmd->first] = newShortcutStr;
-					} else {
-						invertedKeybindings.erase( foundCmd->first );
-					}
-					ini.deleteValue( group, migrate.second );
-					keybindings.erase( migrate.second );
-					iniState.setValue( "migrated_keybindings_" + group, migrate.first,
-									   migrate.second );
-					added = true;
-					migrated = true;
-				}
-			}
-		}
-	}
-
-	bool keybindingsWereEmpty = keybindings.empty();
-
-	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
-		for ( auto& key : defKeybindings ) {
-			auto foundCmd = invertedKeybindings.find( key.second );
-			auto shortcutStr = bindings.getShortcutString( key.first );
-
-			if ( ( foundCmd == invertedKeybindings.end() || keybindingsWereEmpty ) &&
-				 keybindings.find( shortcutStr ) == keybindings.end() ) {
-				keybindings[shortcutStr] = key.second;
-				invertedKeybindings[key.second] = shortcutStr;
-				ini.setValue( group, shortcutStr, key.second );
-				added = true;
-			}
-		}
-	}
-	if ( migrated )
-		iniState.writeFile();
-	if ( added )
-		ini.writeFile();
+void KeybindingsHelper::updateKeybindings(
+	IniFile& ini, const std::string& group, Input* input,
+	std::unordered_map<std::string, std::string>& keybindings,
+	std::unordered_map<std::string, std::string>& inverted,
+	const MouseBindings::ShortcutMap& defaults, bool forceRebind,
+	const std::map<std::string, std::string>& migrations, IniFile& state, bool persist ) {
+	std::unordered_map<std::string, std::string> expressions;
+	for ( const auto& [shortcut, command] : defaults )
+		expressions[MouseBindings::fromShortcut( shortcut )] = command;
+	updateSection( ini, group, input, keybindings, expressions, forceRebind, migrations, state,
+				   persist, &inverted, nullptr );
 }
 
 } // namespace ecode

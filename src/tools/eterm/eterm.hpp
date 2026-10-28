@@ -102,7 +102,10 @@ class App : private efsw::FileWatchListener {
 		tabSplitter->registerSplitterCommands( commandTarget );
 		commandTarget.setCommand( "create-new-terminal", [this] { createNewTerminal(); } );
 		commandTarget.setCommand( "open-settings", [this] { settingsActions->showSettings(); } );
-		commandTarget.setCommand( "open-keybindings", [this] { openKeybindings(); } );
+		commandTarget.setCommand( "open-keybindings", [this] {
+			settingsActions->showSettings( "general.keybindings" );
+		} );
+		commandTarget.setCommand( "open-keybindings-file", [this] { openKeybindingsFile(); } );
 		commandTarget.setCommand( "debug-widget-tree-view",
 								  [this] { UIWidgetInspector::create( scene ); } );
 		commandTarget.setCommand( "move-tab-left", [this, widget] { moveTab( widget, -1 ); } );
@@ -131,15 +134,17 @@ class App : private efsw::FileWatchListener {
 
 	KeyBindings::ShortcutMap getDefaultKeybindings() const;
 
-	void loadKeybindings();
+	bool loadKeybindings( bool defaultsOnly = false, std::string* error = nullptr );
 
-	void reloadKeybindings();
+	bool reloadKeybindings( std::string* error = nullptr );
+
+	UIWidget* createKeybindingsEditor( UIWidget* parent );
 
 	void applyKeybindings( UITerminal* terminal );
 
 	void applyKeybindings( UICodeEditor* editor );
 
-	void openKeybindings();
+	void openKeybindingsFile();
 
 	void handleFileAction( efsw::WatchID, const std::string& dir, const std::string& filename,
 						   efsw::Action action, const std::string& oldFilename ) override;
@@ -164,7 +169,7 @@ class App : private efsw::FileWatchListener {
 	FontTrueType* terminalFont{ nullptr };
 	UIIcon* terminalIcon{ nullptr };
 	UIMessageBox* closeDialog{ nullptr };
-	UICodeEditor* keybindingsEditor{ nullptr };
+	UICodeEditor* keybindingsFileEditor{ nullptr };
 	UIWidget* closeDialogWidget{ nullptr };
 	UIWindow* maximizedTabWidgetWindow{ nullptr };
 	UITabWidget* maximizedTabWidget{ nullptr };
