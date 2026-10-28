@@ -96,7 +96,21 @@ class App {
 
 	void registerConsoleCommands();
 
+	/** Registers the viewer's commands and loads their shortcuts. */
 	void registerKeyBindings();
+
+	/** Default shortcuts, including UIImageViewer's. Symbolic modifiers use the current ones. */
+	KeyBindings::ShortcutMap getDefaultKeybindings() const;
+
+	/** Load keybindings.cfg, or only the defaults, and install it. On failure the active
+	 * shortcuts are kept and the reason is stored in `error`. */
+	bool loadKeybindings( bool defaultsOnly = false, std::string* error = nullptr );
+
+	/** The Keyboard Shortcuts settings page. */
+	UIWidget* createKeybindingsEditor( UIWidget* parent );
+
+	/** Rebuild the help overlay from the active shortcuts. */
+	void updateHelp();
 
 	void loadImagePath( const std::string& path, bool loadGallery = true );
 
@@ -128,7 +142,8 @@ class App {
 
 	void setTextureFilter( Texture::Filter filter );
 
-	bool isViewerKeyEvent( const Event* event ) const;
+	/** Whether keyboard focus is outside dialogs, where viewer shortcuts apply. */
+	bool isViewerFocused() const;
 
 	std::string mInitialPath;
 	Config mConfig;

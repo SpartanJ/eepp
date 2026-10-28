@@ -59,7 +59,13 @@ case "$1" in
 	"$GIT_CLANG_FORMAT" --binary "$CLANG_FORMAT" --extensions "$EXTENSIONS" --diff HEAD
 	;;
 "")
-	"$GIT_CLANG_FORMAT" --binary "$CLANG_FORMAT" --extensions "$EXTENSIONS" HEAD
+	# git-clang-format refuses to modify files with unstaged changes, so apply its diff instead.
+	PATCH=$("$GIT_CLANG_FORMAT" --binary "$CLANG_FORMAT" --extensions "$EXTENSIONS" --diff HEAD) ||
+		true
+	case "$PATCH" in
+	diff*) printf '%s\n' "$PATCH" | git apply - ;;
+	*) echo "$PATCH" ;;
+	esac
 	;;
 *)
 	echo "Unknown option: $1" >&2

@@ -156,3 +156,16 @@ UTEST( IniFile, AtomicSaveFollowsTheConfigurationSymlink ) {
 	FileSystem::dirRemoveAll( directory );
 }
 #endif
+
+UTEST( IniFile, AtomicSaveCreatesTheMissingConfigurationDirectory ) {
+	std::string root =
+		Sys::getTempPath() + "eepp_inifile_missing_dir_" + std::to_string( Sys::getProcessID() );
+	FileSystem::dirAddSlashAtEnd( root );
+	const auto path = root + "app" + FileSystem::getOSSlash() + "settings.cfg";
+	IniFile ini( path, false );
+	ini.setValue( "section", "key", "value" );
+	ASSERT_TRUE( ini.writeFileAtomic() );
+	EXPECT_TRUE( IniFile( path ).getValue( "section", "key" ) == "value" );
+	std::error_code error;
+	std::filesystem::remove_all( std::filesystem::path( root ), error );
+}

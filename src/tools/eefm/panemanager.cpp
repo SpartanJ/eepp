@@ -278,8 +278,7 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 	p.newTabButton->setParent( p.tabs->getTabBar() );
 	p.newTabButton->addClass( "new_tab" );
 	p.newTabButton->setIcon( mApp.icon( "action-new-tab" ) );
-	p.newTabButton->setTooltipText(
-		mApp.shortcutTooltip( mUI->i18n( "eefm_new_tab", "New Tab" ), "new-tab" ) );
+	// App::updateShortcutLabels() sets the tooltip once the panes exist.
 	p.newTabButton->onClick( [this, index]( const MouseEvent* ) {
 		Pane& pane = this->pane( index );
 		focusPane( index );

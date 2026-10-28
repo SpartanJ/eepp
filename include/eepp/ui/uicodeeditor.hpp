@@ -392,6 +392,8 @@ class EE_API UICodeEditor : public UITouchDraggableWidget, public TextDocument::
 
 	KeyBindings& getKeyBindings();
 
+	virtual KeyBindings* getOwnKeyBindings();
+
 	MouseBindings& getMouseBindings();
 
 	void setKeyBindings( const KeyBindings& keyBindings );

@@ -144,6 +144,10 @@ KeyBindings& UIConsole::getKeyBindings() {
 	return mKeyBindings;
 }
 
+KeyBindings* UIConsole::getOwnKeyBindings() {
+	return &mKeyBindings;
+}
+
 TextDocument& UIConsole::getDoc() {
 	return mDoc;
 }

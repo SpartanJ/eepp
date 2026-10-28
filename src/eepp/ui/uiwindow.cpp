@@ -1951,6 +1951,10 @@ KeyBindings& UIWindow::getKeyBindings() {
 	return mKeyBindings;
 }
 
+KeyBindings* UIWindow::getOwnKeyBindings() {
+	return &mKeyBindings;
+}
+
 void UIWindow::setKeyBindings( const KeyBindings& keyBindings ) {
 	mKeyBindings = keyBindings;
 }

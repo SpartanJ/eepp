@@ -21,16 +21,11 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/tools/uiinspector.hpp>
-#include <eepp/ui/uicodeeditor.hpp>
-#include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uirichtext.hpp>
-#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextnode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiwebview.hpp>
-#include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/widgetcommandexecuter.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
@@ -777,20 +772,6 @@ struct UIInspectorServer::Impl {
 				 { "scenes", scenes } };
 	}
 
-	KeyBindings* widgetKeyBindings( UIWidget* widget ) {
-		if ( widget->isType( UI_TYPE_TEXTINPUT ) )
-			return &widget->asType<UITextInput>()->getKeyBindings();
-		if ( widget->isType( UI_TYPE_CODEEDITOR ) )
-			return &widget->asType<UICodeEditor>()->getKeyBindings();
-		if ( widget->isType( UI_TYPE_WINDOW ) )
-			return &widget->asType<UIWindow>()->getKeyBindings();
-		if ( widget->isType( UI_TYPE_CONSOLE ) )
-			return &widget->asType<UIConsole>()->getKeyBindings();
-		if ( auto* executer = dynamic_cast<WidgetCommandExecuter*>( widget ) )
-			return &executer->getKeyBindings();
-		return nullptr;
-	}
-
 	json execute( Uint64 client, const std::string& method, const json& params ) {
 		if ( method == "session.connect" ) {
 			auto context = contexts( false );
@@ -971,7 +952,7 @@ struct UIInspectorServer::Impl {
 							   ? resolveWidget( params )
 							   : nullptr;
 			auto* scene = widget ? widget->getUISceneNode() : resolveScene( params );
-			auto* bindings = widget ? widgetKeyBindings( widget ) : &scene->getKeyBindings();
+			auto* bindings = widget ? widget->getOwnKeyBindings() : &scene->getKeyBindings();
 			unsigned offset = boundedUnsigned( params, "offset", 0, 1000000 );
 			unsigned limit = boundedUnsigned( params, "limit", 50, 1000 );
 			json entries = json::array();

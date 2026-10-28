@@ -186,6 +186,11 @@ bool IniFile::writeFileAtomic() {
 	if ( mPath.empty() ||
 		 ( FileSystem::fileExists( mPath ) && !FileSystem::fileCanWrite( mPath ) ) )
 		return false;
+	// A first run can save before the application has created its configuration directory.
+	if ( const auto directory = FileSystem::fileRemoveFileName( mPath );
+		 !directory.empty() && !FileSystem::isDirectory( directory ) &&
+		 !FileSystem::makeDir( directory, true ) )
+		return false;
 	// Write next to the destination so replacing it is atomic. Resolve existing symlinks
 	// rather than replacing the symlink itself (config files are often managed this way).
 	auto filePath = []( const std::string& path ) {

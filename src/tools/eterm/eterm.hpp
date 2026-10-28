@@ -7,6 +7,7 @@
 #include <eepp/core/small_vector.hpp>
 #include <eepp/ee.hpp>
 #include <eepp/ui/iconmanager.hpp>
+#include <eepp/ui/tools/keybindingsconfig.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/tools/uitabwidgetsplitter.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
@@ -178,7 +179,7 @@ class App : private efsw::FileWatchListener {
 	std::unique_ptr<eterm::AppConfig> config;
 	std::unique_ptr<SettingsActions> settingsActions;
 	std::map<std::string, TerminalColorScheme> terminalColorSchemes;
-	std::unordered_map<std::string, std::string> keybindings;
+	KeybindingsConfig::Section keybindings;
 	std::string keybindingsPath;
 	std::unique_ptr<efsw::FileWatcher> fileWatcher;
 	std::atomic<bool> keybindingsChanged{ false };

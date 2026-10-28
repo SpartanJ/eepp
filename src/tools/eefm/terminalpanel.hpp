@@ -34,6 +34,10 @@ class TerminalPanel {
 
 	void show( bool show );
 
+	/** Bind the configured toggle-terminal shortcuts on the terminal too: it takes every key, so
+	 * the window's bindings never see them while it has focus. */
+	void applyKeybindings();
+
 	bool isVisible() const;
 
 	/** Remembers the panel's share of the window, while it is shown. */
@@ -72,6 +76,8 @@ class TerminalPanel {
 	UISceneNode* mUI;
 	UISplitter* mSplitter;
 	eterm::UI::UITerminal* mTerminal{ nullptr };
+	/** The terminal's own bindings, before the toggle shortcuts are added. */
+	KeyBindings::ShortcutMap mTerminalBindings;
 	FontTrueType* mTerminalFont{ nullptr };
 	std::map<std::string, eterm::Terminal::TerminalColorScheme> mTerminalColorSchemes;
 	/** Last directory the shell was sent to, and when (the shell needs a moment to run it). */

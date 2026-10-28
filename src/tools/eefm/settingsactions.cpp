@@ -135,12 +135,22 @@ void SettingsActions::showSettings() {
 	window->setId( "settings_panel" );
 	window->setTitle( mUI->i18n( "eefm_settings", "Configure eefm" ) );
 	const Sizef sceneSize = mUI->getPixelsSize();
-	window->setPixelsSize( { eeclamp( sceneSize.getWidth() * 0.82f, 720.f, 1200.f ),
-							 eeclamp( sceneSize.getHeight() * 0.82f, 520.f, 850.f ) } );
+	window->setPixelsSize(
+		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
+		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
 	window->setMinWindowSize( 640, 440 );
 	auto* panel = UISettingsPanel::New( window->getContainer() );
 	panel->setId( "settings_panel_content" );
 	panel->setSearchResultsText( mUI->i18n( "eefm_search_results", "Search Results" ) );
+
+	panel->addCategory( "general.keybindings", mUI->i18n( "eefm_general", "General" ),
+						mUI->i18n( "kb_title", "Keyboard Shortcuts" ) );
+	panel->addCustomWidget(
+		{ "keybindingsEditor",
+		  "general.keybindings",
+		  mUI->i18n( "kb_title", "Keyboard Shortcuts" ),
+		  {} },
+		[this]( UIWidget* parent ) { return mApp.createKeybindingsEditor( parent ); }, true );
 
 	// Appearance
 	panel->addCategory( "appearance.theme", mUI->i18n( "eefm_appearance", "Appearance" ),

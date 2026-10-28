@@ -109,6 +109,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	KeyBindings& getKeyBindings();
 
+	virtual KeyBindings* getOwnKeyBindings();
+
 	size_t getMenuIconSize() const;
 
 	void setMenuIconSize( size_t menuIconSize );

@@ -66,27 +66,16 @@ KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
 }
 
 bool App::loadKeybindings( bool defaultsOnly, std::string* outputError ) {
-	KeybindingsConfig::LoadedFile file;
-	KeybindingsConfig::Section section;
 	std::string error;
-	if ( !KeybindingsConfig::loadFile( defaultsOnly ? "" : keybindingsPath, keybindingContexts,
-									   appWindow->getInput(), file, error ) ||
-		 !KeybindingsConfig::readSection( file.ini, "eterm", section, &error ) ) {
+	if ( !KeybindingsConfig::loadContext(
+			 defaultsOnly ? "" : keybindingsPath, "eterm",
+			 [this] { return getDefaultKeybindings(); }, appWindow->getInput(), keybindings,
+			 error ) ) {
 		Log::error( "%s", error.c_str() );
 		if ( outputError )
 			*outputError = error;
 		return false;
 	}
-	// Keep eterm's existing policy: initialize every default alias on the first run,
-	// then restore one ordered shortcut for each missing command on later loads.
-	const bool firstRun = file.ini.findKey( "eterm" ) == IniFile::noID;
-	KeybindingsConfig::mergeDefaults( section, getDefaultKeybindings(), appWindow->getInput(),
-									  firstRun );
-	KeybindingsConfig::writeSection( file.ini, "eterm", section );
-	// A valid read-only configuration remains usable even when recovery cannot be persisted.
-	if ( !file.save() )
-		Log::error( "Could not save eterm keybindings: %s", keybindingsPath.c_str() );
-	section.apply( keybindings );
 	if ( outputError )
 		outputError->clear();
 	return true;
@@ -94,17 +83,16 @@ bool App::loadKeybindings( bool defaultsOnly, std::string* outputError ) {
 
 void App::applyKeybindings( UITerminal* terminal ) {
 	terminal->getKeyBindings().reset();
-	terminal->getKeyBindings().addKeybindsStringUnordered( keybindings );
+	keybindings.apply( terminal->getKeyBindings() );
 }
 
 void App::applyKeybindings( UICodeEditor* editor ) {
 	editor->getKeyBindings().setKeybinds( *UICodeEditor::getDefaultKeybindings() );
 	editor->addKeyBinding( { KEY_S, KeyMod::getDefaultModifier() }, "save-doc", true );
 	// Terminal-only commands must not shadow text editing (notably Meta+C and Meta+V).
-	for ( const auto& [shortcut, command] : keybindings ) {
-		if ( editor->getDocument().hasCommand( command ) )
-			editor->getKeyBindings().addKeybindString( shortcut, command );
-	}
+	keybindings.apply( editor->getKeyBindings(), [editor]( const std::string& command ) {
+		return editor->getDocument().hasCommand( command );
+	} );
 }
 
 bool App::reloadKeybindings( std::string* error ) {

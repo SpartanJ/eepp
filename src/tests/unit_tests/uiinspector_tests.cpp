@@ -7,6 +7,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uiinspector.hpp>
 #include <eepp/ui/tools/uiinspectorserver.hpp>
 #include <eepp/ui/uiapplication.hpp>
@@ -925,4 +926,38 @@ UTEST( UIInspector, ScreenshotCapturesRenderedPixelsAndCrop ) {
 	EXPECT_TRUE( invalidFormat["error"]["code"] == "invalid-params" );
 	UIInspectorServer::stop();
 	Engine::destroySingleton();
+}
+
+namespace {
+
+// Stands in for widgets from modules the inspector can't know about, such as eterm's terminal.
+class OwnBindingsWidget : public UIWidget {
+  public:
+	OwnBindingsWidget() : mBindings( getInput() ) {}
+
+	KeyBindings* getOwnKeyBindings() override { return &mBindings; }
+
+  protected:
+	KeyBindings mBindings;
+};
+
+} // namespace
+
+UTEST( UIInspector, WidgetsExposeTheirOwnKeyBindingsWithoutTypeChecks ) {
+	UIApplication app( WindowSettings{ 320, 240, "widget key bindings" } );
+	auto* custom = new OwnBindingsWidget();
+	custom->setParent( app.getUI()->getRoot() );
+	custom->getOwnKeyBindings()->addKeybind( { KEY_C, KEYMOD_CTRL }, "copy" );
+	EXPECT_TRUE( custom->getOwnKeyBindings()->getCommandFromKeyBind( { KEY_C, KEYMOD_CTRL } ) ==
+				 "copy" );
+	// WidgetCommandExecuter mix-ins expose their bindings without overriding.
+	auto* viewer = Tools::UIImageViewer::New();
+	viewer->setParent( app.getUI()->getRoot() );
+	EXPECT_TRUE( viewer->getOwnKeyBindings() == &viewer->getKeyBindings() );
+	auto* input = UITextInput::New();
+	input->setParent( app.getUI()->getRoot() );
+	EXPECT_TRUE( input->getOwnKeyBindings() == &input->getKeyBindings() );
+	auto* plain = UIWidget::New();
+	plain->setParent( app.getUI()->getRoot() );
+	EXPECT_TRUE( plain->getOwnKeyBindings() == nullptr );
 }

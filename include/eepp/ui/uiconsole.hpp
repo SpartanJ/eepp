@@ -151,6 +151,8 @@ class EE_API UIConsole : public UIWidget,
 
 	KeyBindings& getKeyBindings();
 
+	virtual KeyBindings* getOwnKeyBindings();
+
 	TextDocument& getDoc();
 
 	void setLigatureFeatures( Uint32 features );

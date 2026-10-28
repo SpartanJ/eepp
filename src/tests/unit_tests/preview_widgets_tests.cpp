@@ -29,6 +29,7 @@ using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
 using namespace EE::UI::Tools;
+using namespace EE::Window;
 
 namespace {
 
@@ -317,4 +318,26 @@ UTEST( PreviewWidgets, EXIFOrientationUsesDrawTransformsAndKeepsTexturePixelsUnc
 		EXPECT_GE( bounds.Top, parent.Top - 1.f );
 		EXPECT_LE( bounds.Bottom, parent.Bottom + 1.f );
 	}
+}
+
+UTEST( PreviewWidgets, ImageViewerKeysAreRebindableCommands ) {
+	UIApplication app( WindowSettings{ 400, 300, "Image viewer commands" } );
+	auto* viewer = UIImageViewer::New();
+	viewer->setParent( app.getUI() );
+	viewer->setFocus();
+	auto* dispatcher = app.getUI()->getEventDispatcher();
+	auto press = [&]( Keycode key ) {
+		dispatcher->sendKeyDown( key, SCANCODE_UNKNOWN, 0, KEYMOD_NONE );
+		dispatcher->sendKeyUp( key, SCANCODE_UNKNOWN, 0, KEYMOD_NONE );
+	};
+	press( KEY_R );
+	EXPECT_NEAR( 90.f, viewer->getImage()->getRotation(), 0.001f );
+
+	// Applications replace the defaults with configured shortcuts.
+	viewer->getKeyBindings().reset();
+	viewer->getKeyBindings().addKeybind( { KEY_O, KEYMOD_NONE }, "image-rotate" );
+	press( KEY_R );
+	EXPECT_NEAR( 90.f, viewer->getImage()->getRotation(), 0.001f );
+	press( KEY_O );
+	EXPECT_NEAR( 180.f, viewer->getImage()->getRotation(), 0.001f );
 }

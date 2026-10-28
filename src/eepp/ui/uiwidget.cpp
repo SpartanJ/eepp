@@ -19,6 +19,7 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/widgetcommandexecuter.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
 #include <optional>
@@ -42,6 +43,11 @@ struct AccessibilityProperties {
 	bool roleSet{ false };
 	bool hidden{ false };
 };
+
+KeyBindings* UIWidget::getOwnKeyBindings() {
+	auto* executer = dynamic_cast<WidgetCommandExecuter*>( this );
+	return executer ? &executer->getKeyBindings() : nullptr;
+}
 
 Uint32 UIWidget::getDefaultTextHints() const {
 	const UISceneNode* sceneNode = getUISceneNode();

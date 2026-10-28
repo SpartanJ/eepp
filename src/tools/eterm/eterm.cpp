@@ -527,17 +527,8 @@ void App::syncGlobalMenuKeybindings() {
 		return;
 
 	KeyBindings bindings( appWindow->getInput() );
-	bindings.addKeybindsStringUnordered( keybindings );
-	for ( Uint32 menuIndex = 0; menuIndex < menuBar->getButtonsCount(); ++menuIndex ) {
-		auto* menu = menuBar->getPopUpMenu( menuIndex );
-		for ( Uint32 itemIndex = 0; menu && itemIndex < menu->getCount(); ++itemIndex ) {
-			auto* item = menu->getItem( itemIndex );
-			if ( item->isType( UI_TYPE_MENUITEM ) && !item->getId().empty() ) {
-				item->asType<UIMenuItem>()->setShortcutText(
-					bindings.getCommandKeybindString( item->getId() ) );
-			}
-		}
-	}
+	keybindings.apply( bindings );
+	menuBar->updateShortcuts( bindings );
 }
 
 void App::createGlobalMenuBar() {

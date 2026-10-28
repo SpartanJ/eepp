@@ -200,6 +200,8 @@ class EE_API UIWindow : public UIWidget {
 
 	KeyBindings& getKeyBindings();
 
+	virtual KeyBindings* getOwnKeyBindings();
+
 	void setKeyBindings( const KeyBindings& keyBindings );
 
 	void addKeyBindingString( const std::string& shortcut, const std::string& command );

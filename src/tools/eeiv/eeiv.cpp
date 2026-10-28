@@ -1,7 +1,9 @@
 #include "eeiv.hpp"
 
 #include <eepp/network/http.hpp>
+#include <eepp/ui/tools/keybindingsconfig.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
+#include <eepp/ui/tools/uikeybindingseditor.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uiwindow.hpp>
@@ -132,6 +134,10 @@ UIWindow* App::createSettingsWindow() {
 
 	auto* panel = UISettingsPanel::New( window->getContainer() );
 	panel->setId( "settings_panel_content" );
+	panel->addCategory( "general.keybindings", "General", "Keyboard Shortcuts" );
+	panel->addCustomWidget(
+		{ "keybindingsEditor", "general.keybindings", "Keyboard Shortcuts", {} },
+		[this]( UIWidget* parent ) { return createKeybindingsEditor( parent ); }, true );
 	panel->addCategory( "appearance.theme", "Appearance", "Theme" );
 	panel->addChoice(
 		{ "uiColorScheme", "appearance.theme", "UI Prefers Color Scheme",
@@ -416,8 +422,9 @@ void App::setTextureFilter( Texture::Filter filter ) {
 	}
 }
 
-bool App::isViewerKeyEvent( const Event* event ) const {
-	for ( auto* node = event->getNode(); node; node = node->getParent() ) {
+bool App::isViewerFocused() const {
+	for ( auto* node = mUIApplication->getUI()->getEventDispatcher()->getFocusNode(); node;
+		  node = node->getParent() ) {
 		if ( node->isType( UI_TYPE_WINDOW ) )
 			return false;
 	}
@@ -631,36 +638,6 @@ bool App::init() {
 	setShowInfo( mConfig.ShowInfo );
 	mImageViewer->on( Event::OnResourceLoaded, [this]( auto ) { syncLoadedImage(); } );
 
-	mHelp->setText( "H: Toggle this help\n"
-					"F3: Toggle console\n"
-					"F11: Open UI inspector\n"
-					"F12: Take screenshot\n"
-					"Mouse wheel: Previous / next image\n"
-					"Page Up: Previous image\n"
-					"Page Down: Next image\n"
-					"Home: First image\n"
-					"End: Last image\n"
-					"Arrow keys: Move image\n"
-					"Keypad + / -: Zoom image\n"
-					"Z: Fit image\n"
-					"Keypad *: Fit image\n"
-					"Keypad /: Reset zoom\n"
-					"X: Flip image\n"
-					"C: Mirror image\n"
-					"R: Rotate image\n"
-					"T: Reset view\n"
-					"A: Toggle filtering\n"
-					"E: Start slideshow\n"
-					"D: Stop slideshow\n"
-					"L: Lock view\n"
-					"F5: Reload image\n"
-					"F: Toggle fullscreen\n"
-					"S: Toggle cursor\n"
-					"I: Toggle image info\n"
-					"Q: Quit\n"
-					"Escape: Quit\n" +
-					KeyMod::getDefaultModifierString() + ",: Open settings" );
-
 	// Quake-mode consoles are root overlays by design. Keeping it outside the content layout also
 	// preserves UIConsole's native show/hide animation.
 	mConsole = UIConsole::NewOpt( nullptr, true, true, 1024000 );
@@ -734,110 +711,246 @@ void App::registerConsoleCommands() {
 }
 
 void App::registerKeyBindings() {
-	mUIApplication->getUI()->on( Event::KeyUp, [this]( const Event* event ) {
-		const auto* keyEvent = event->asKeyEvent();
-		const Keycode key = keyEvent->getKeyCode();
-		if ( !isViewerKeyEvent( event ) )
-			return;
-		if ( key == KEY_COMMA && keyEvent->getMod() & KeyMod::getDefaultModifier() ) {
-			showSettings();
-			return;
-		}
-		if ( key == KEY_F11 ) {
-			UIWidgetInspector::create( mUIApplication->getUI() );
-			return;
-		}
-		if ( key == KEY_F3 ) {
-			mHelp->setVisible( false );
-			mConsole->toggle();
-			return;
-		}
-		if ( mConsole->isActive() )
-			return;
-		if ( key == KEY_ESCAPE || key == KEY_Q ) {
-			saveConfig();
-			getWindow()->close();
-		} else if ( key == KEY_TAB && keyEvent->getMod() & KeyMod::getDefaultSecondaryModifier() )
-			getWindow()->minimize();
-		else if ( key == KEY_F || ( key == KEY_RETURN &&
-									keyEvent->getMod() & KeyMod::getDefaultSecondaryModifier() ) )
-			getWindow()->toggleFullscreen();
-		else if ( key == KEY_F12 )
-			getWindow()->takeScreenshot();
-		else if ( key == KEY_H )
-			toggleHelp();
-		else if ( key == KEY_S || key == KEY_F4 ) {
-			mCursorVisible = !mCursorVisible;
-			getWindow()->getCursorManager()->setVisible( mCursorVisible );
-		} else if ( ( key == KEY_V && keyEvent->getMod() & KEYMOD_CTRL ) ||
-					( key == KEY_INSERT && keyEvent->getMod() & KEYMOD_SHIFT ) ) {
-			const std::string path( getWindow()->getClipboard()->getText() );
-			if ( isImage( path ) || isHttpUrl( path ) || FileSystem::isDirectory( path ) )
-				loadDir( path );
-		} else if ( key == KEY_HOME && !mFiles.empty() )
+	auto* ui = mUIApplication->getUI();
+	// Viewer shortcuts never act while a dialog has focus, and most are off while the console is
+	// open (it takes printable keys first).
+	const auto command = [this, ui]( const char* name, bool withConsole,
+									 std::function<void()> fn ) {
+		ui->setKeyBindingCommand( name, [this, withConsole, fn = std::move( fn )] {
+			if ( isViewerFocused() && ( withConsole || !mConsole->isActive() ) )
+				fn();
+		} );
+	};
+	const auto pan = [this]( Float x, Float y ) {
+		return [this, x, y] {
+			if ( mImageViewer->hasImage() ) {
+				auto* image = mImageViewer->getImage();
+				image->setPixelsPosition( image->getPixelsPosition() + Vector2f( x, y ) );
+			}
+		};
+	};
+	command( "open-settings", true, [this] { showSettings(); } );
+	command( "debug-widget-tree-view", true, [ui] { UIWidgetInspector::create( ui ); } );
+	command( "toggle-console", true, [this] {
+		mHelp->setVisible( false );
+		mConsole->toggle();
+	} );
+	command( "quit", false, [this] {
+		saveConfig();
+		getWindow()->close();
+	} );
+	command( "minimize", false, [this] { getWindow()->minimize(); } );
+	command( "toggle-fullscreen", false, [this] { getWindow()->toggleFullscreen(); } );
+	command( "screenshot", false, [this] { getWindow()->takeScreenshot(); } );
+	command( "toggle-help", false, [this] { toggleHelp(); } );
+	command( "toggle-cursor", false, [this] {
+		mCursorVisible = !mCursorVisible;
+		getWindow()->getCursorManager()->setVisible( mCursorVisible );
+	} );
+	command( "paste-path", false, [this] {
+		const std::string path( getWindow()->getClipboard()->getText() );
+		if ( isImage( path ) || isHttpUrl( path ) || FileSystem::isDirectory( path ) )
+			loadDir( path );
+	} );
+	command( "first-image", false, [this] {
+		if ( !mFiles.empty() )
 			fastLoadImage( 0 );
-		else if ( key == KEY_END && !mFiles.empty() )
+	} );
+	command( "last-image", false, [this] {
+		if ( !mFiles.empty() )
 			fastLoadImage( mFiles.size() - 1 );
-		else if ( key == KEY_PAGEUP && mCurImg > 0 ) {
+	} );
+	command( "previous-image", false, [this] {
+		if ( mCurImg > 0 ) {
 			mSlideShow = false;
 			fastLoadImage( mCurImg - 1 );
-		} else if ( key == KEY_PAGEDOWN && mCurImg + 1 < static_cast<Int32>( mFiles.size() ) ) {
-			mSlideShow = false;
-			fastLoadImage( mCurImg + 1 );
-		} else if ( key == KEY_I ) {
-			setShowInfo( !mConfig.ShowInfo );
-		} else if ( key == KEY_KP_MULTIPLY || key == KEY_Z ) {
-			fitImage();
-		} else if ( key == KEY_KP_DIVIDE ) {
-			resetImageZoom();
-		} else if ( key == KEY_N && mImageViewer->getImage()->getDrawable() ) {
-			const Sizef size( mImageViewer->getOrientedImageSize() );
-			getWindow()->setSize( size.getWidth(), size.getHeight() );
-		} else if ( key == KEY_A ) {
-			setTextureFilter( mTextureFilter == Texture::Filter::Linear ? Texture::Filter::Nearest
-																		: Texture::Filter::Linear );
-		} else if ( key == KEY_L ) {
-			mImageViewer->setPreserveImageView( !mImageViewer->getPreserveImageView() );
-		} else if ( key == KEY_M ) {
-			fitImage();
-			if ( getWindow()->isMaximized() && mImageViewer->getImage()->getDrawable() ) {
-				const Sizef size( mImageViewer->getOrientedImageSize() );
-				getWindow()->setSize( size.getWidth(), size.getHeight() );
-			}
-		} else if ( key == KEY_K ) {
-			if ( Sprite* sprite = getImageSprite() ) {
-				if ( TextureRegion* region = sprite->getCurrentTextureRegion() ) {
-					if ( Texture* texture = region->getTexture().get() ) {
-						texture->setMipmap( !texture->getMipmap() );
-						texture->reload();
-					}
-				}
-			}
-		} else if ( key == KEY_F5 && !getFilePath().empty() ) {
-			loadImagePath( getFilePath() );
-		} else if ( key == KEY_E ) {
-			createSlideShow( mSlideTime );
-		} else if ( key == KEY_D ) {
-			mSlideShow = false;
 		}
 	} );
-	mUIApplication->getUI()->on( Event::KeyDown, [this]( const Event* event ) {
-		if ( !isViewerKeyEvent( event ) || mConsole->isActive() || !mImageViewer->hasImage() )
-			return;
-		const Keycode key = event->asKeyEvent()->getKeyCode();
-		Vector2f position( mImageViewer->getImage()->getPixelsPosition() );
-		if ( key == KEY_LEFT )
-			position.x += 20.f;
-		else if ( key == KEY_RIGHT )
-			position.x -= 20.f;
-		else if ( key == KEY_UP )
-			position.y += 20.f;
-		else if ( key == KEY_DOWN )
-			position.y -= 20.f;
-		else
-			return;
-		mImageViewer->getImage()->setPixelsPosition( position );
+	command( "next-image", false, [this] {
+		if ( mCurImg + 1 < static_cast<Int32>( mFiles.size() ) ) {
+			mSlideShow = false;
+			fastLoadImage( mCurImg + 1 );
+		}
 	} );
+	command( "toggle-info", false, [this] { setShowInfo( !mConfig.ShowInfo ); } );
+	command( "fit-image", false, [this] { fitImage(); } );
+	command( "reset-zoom", false, [this] { resetImageZoom(); } );
+	command( "native-size", false, [this] {
+		if ( mImageViewer->getImage()->getDrawable() ) {
+			const Sizef size( mImageViewer->getOrientedImageSize() );
+			getWindow()->setSize( size.getWidth(), size.getHeight() );
+		}
+	} );
+	command( "toggle-filtering", false, [this] {
+		setTextureFilter( mTextureFilter == Texture::Filter::Linear ? Texture::Filter::Nearest
+																	: Texture::Filter::Linear );
+	} );
+	command( "lock-view", false, [this] {
+		mImageViewer->setPreserveImageView( !mImageViewer->getPreserveImageView() );
+	} );
+	command( "fit-window", false, [this] {
+		fitImage();
+		if ( getWindow()->isMaximized() && mImageViewer->getImage()->getDrawable() ) {
+			const Sizef size( mImageViewer->getOrientedImageSize() );
+			getWindow()->setSize( size.getWidth(), size.getHeight() );
+		}
+	} );
+	command( "toggle-mipmaps", false, [this] {
+		if ( Sprite* sprite = getImageSprite() ) {
+			if ( TextureRegion* region = sprite->getCurrentTextureRegion() ) {
+				if ( Texture* texture = region->getTexture().get() ) {
+					texture->setMipmap( !texture->getMipmap() );
+					texture->reload();
+				}
+			}
+		}
+	} );
+	command( "reload-image", false, [this] {
+		if ( !getFilePath().empty() )
+			loadImagePath( getFilePath() );
+	} );
+	command( "start-slideshow", false, [this] { createSlideShow( mSlideTime ); } );
+	command( "stop-slideshow", false, [this] { mSlideShow = false; } );
+	command( "pan-left", false, pan( 20.f, 0.f ) );
+	command( "pan-right", false, pan( -20.f, 0.f ) );
+	command( "pan-up", false, pan( 0.f, 20.f ) );
+	command( "pan-down", false, pan( 0.f, -20.f ) );
+	// A broken keybindings.cfg must not disable the keyboard: fall back to the defaults.
+	if ( !loadKeybindings() )
+		loadKeybindings( true );
+}
+
+KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
+	const Uint32 mod = KeyMod::getDefaultModifier();
+	const Uint32 mod2 = KeyMod::getDefaultSecondaryModifier();
+	auto defaults = UIImageViewer::getDefaultKeybindings();
+	defaults.insert( { { { KEY_COMMA, mod }, "open-settings" },
+					   { { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
+					   { { KEY_F3, KEYMOD_NONE }, "toggle-console" },
+					   { { KEY_ESCAPE, KEYMOD_NONE }, "quit" },
+					   { { KEY_Q, KEYMOD_NONE }, "quit" },
+					   { { KEY_TAB, mod2 }, "minimize" },
+					   { { KEY_F, KEYMOD_NONE }, "toggle-fullscreen" },
+					   { { KEY_RETURN, mod2 }, "toggle-fullscreen" },
+					   { { KEY_F12, KEYMOD_NONE }, "screenshot" },
+					   { { KEY_H, KEYMOD_NONE }, "toggle-help" },
+					   { { KEY_S, KEYMOD_NONE }, "toggle-cursor" },
+					   { { KEY_F4, KEYMOD_NONE }, "toggle-cursor" },
+					   { { KEY_V, KEYMOD_CTRL }, "paste-path" },
+					   { { KEY_INSERT, KEYMOD_SHIFT }, "paste-path" },
+					   { { KEY_HOME, KEYMOD_NONE }, "first-image" },
+					   { { KEY_END, KEYMOD_NONE }, "last-image" },
+					   { { KEY_PAGEUP, KEYMOD_NONE }, "previous-image" },
+					   { { KEY_PAGEDOWN, KEYMOD_NONE }, "next-image" },
+					   { { KEY_I, KEYMOD_NONE }, "toggle-info" },
+					   { { KEY_Z, KEYMOD_NONE }, "fit-image" },
+					   { { KEY_KP_MULTIPLY, KEYMOD_NONE }, "fit-image" },
+					   { { KEY_KP_DIVIDE, KEYMOD_NONE }, "reset-zoom" },
+					   { { KEY_N, KEYMOD_NONE }, "native-size" },
+					   { { KEY_A, KEYMOD_NONE }, "toggle-filtering" },
+					   { { KEY_L, KEYMOD_NONE }, "lock-view" },
+					   { { KEY_M, KEYMOD_NONE }, "fit-window" },
+					   { { KEY_K, KEYMOD_NONE }, "toggle-mipmaps" },
+					   { { KEY_F5, KEYMOD_NONE }, "reload-image" },
+					   { { KEY_E, KEYMOD_NONE }, "start-slideshow" },
+					   { { KEY_D, KEYMOD_NONE }, "stop-slideshow" },
+					   { { KEY_LEFT, KEYMOD_NONE }, "pan-left" },
+					   { { KEY_RIGHT, KEYMOD_NONE }, "pan-right" },
+					   { { KEY_UP, KEYMOD_NONE }, "pan-up" },
+					   { { KEY_DOWN, KEYMOD_NONE }, "pan-down" } } );
+	return defaults;
+}
+
+bool App::loadKeybindings( bool defaultsOnly, std::string* error ) {
+	KeybindingsConfig::Section bindings;
+	std::string message;
+	if ( !KeybindingsConfig::loadContext(
+			 defaultsOnly ? "" : mStorePath + "keybindings.cfg", "eeiv",
+			 [this] { return getDefaultKeybindings(); }, getWindow()->getInput(), bindings,
+			 message ) ) {
+		Log::error( "%s", message.c_str() );
+		if ( error )
+			*error = message;
+		return false;
+	}
+	// The image viewer runs its own commands; the scene runs the rest.
+	auto& scene = mUIApplication->getUI()->getKeyBindings();
+	auto& viewer = mImageViewer->getKeyBindings();
+	const auto ownedByViewer = [this]( const std::string& command ) {
+		return mImageViewer->hasCommand( command );
+	};
+	scene.reset();
+	viewer.reset();
+	bindings.apply( viewer, ownedByViewer );
+	bindings.apply( scene, std::not_fn( ownedByViewer ) );
+	updateHelp();
+	return true;
+}
+
+UIWidget* App::createKeybindingsEditor( UIWidget* parent ) {
+	static constexpr KeybindingsConfig::Context contexts[] = { { "eeiv" } };
+	const auto path = mStorePath + "keybindings.cfg";
+	return UIKeybindingsEditor::NewForFile(
+		parent,
+		{ .path = path,
+		  .contexts = contexts,
+		  .catalog =
+			  [this]( KeybindingsConfig::Catalog& catalog ) {
+				  catalog.add( "eeiv", getDefaultKeybindings(), {}, "Image Viewer" );
+			  },
+		  .apply =
+			  [this] {
+				  std::string error;
+				  return loadKeybindings( false, &error ) ? String() : String( error );
+			  },
+		  .manualEdit =
+			  [path] { Engine::instance()->openURI( URI::fromFSPath( path ).toString() ); } } );
+}
+
+void App::updateHelp() {
+	static constexpr std::pair<const char*, const char*> commands[] = {
+		{ "toggle-help", "Toggle this help" },
+		{ "toggle-console", "Toggle console" },
+		{ "debug-widget-tree-view", "Open UI inspector" },
+		{ "screenshot", "Take screenshot" },
+		{ "previous-image", "Previous image" },
+		{ "next-image", "Next image" },
+		{ "first-image", "First image" },
+		{ "last-image", "Last image" },
+		{ "pan-left", "Move image left" },
+		{ "pan-right", "Move image right" },
+		{ "pan-up", "Move image up" },
+		{ "pan-down", "Move image down" },
+		{ "image-zoom-in", "Zoom in" },
+		{ "image-zoom-out", "Zoom out" },
+		{ "fit-image", "Fit image" },
+		{ "reset-zoom", "Reset zoom" },
+		{ "image-flip", "Flip image" },
+		{ "image-mirror", "Mirror image" },
+		{ "image-rotate", "Rotate image" },
+		{ "image-reset-view", "Reset view" },
+		{ "toggle-filtering", "Toggle filtering" },
+		{ "start-slideshow", "Start slideshow" },
+		{ "stop-slideshow", "Stop slideshow" },
+		{ "lock-view", "Lock view" },
+		{ "reload-image", "Reload image" },
+		{ "toggle-fullscreen", "Toggle fullscreen" },
+		{ "toggle-cursor", "Toggle cursor" },
+		{ "toggle-info", "Toggle image info" },
+		{ "quit", "Quit" },
+		{ "open-settings", "Open settings" },
+	};
+	auto& scene = mUIApplication->getUI()->getKeyBindings();
+	auto& viewer = mImageViewer->getKeyBindings();
+	String text( "Mouse wheel: Previous / next image" );
+	for ( const auto& [command, label] : commands ) {
+		auto shortcut = scene.getCommandKeybindString( command );
+		if ( shortcut.empty() )
+			shortcut = viewer.getCommandKeybindString( command );
+		if ( !shortcut.empty() )
+			text += "\n" + shortcut + ": " + label;
+	}
+	mHelp->setText( text );
 }
 
 void App::toggleHelp() {

@@ -21,6 +21,8 @@ class UITreeViewFS : public UITreeView {
 
 	KeyBindings& getKeyBindings() { return mKeyBindings; }
 
+	KeyBindings* getOwnKeyBindings() override { return &mKeyBindings; }
+
 	std::vector<std::string>& getSourceDragMultiplePaths() { return mSrcDragMultiplePaths; }
 
 	std::string getSelectionPathAtIndex( int index ) const;

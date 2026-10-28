@@ -242,15 +242,29 @@ bool TerminalPanel::create() {
 	applyConfig();
 	mTerminalDirectory = directory;
 	mTerminalFollowed.clear();
-	// F4 reaches the terminal (it takes every key): it hides the panel from there too.
-	mTerminal->setCommand( "eefm-toggle-terminal", [this] { show( false ); } );
-	mTerminal->addKeyBinding( { KEY_F4 }, "eefm-toggle-terminal" );
-	// When the shell exits the panel closes; the next F4 starts a new one.
+	mTerminal->setCommand( "toggle-terminal", [this] { show( false ); } );
+	mTerminalBindings = mTerminal->getKeyBindings().getShortcutMap();
+	applyKeybindings();
+	// When the shell exits the panel closes; the next toggle starts a new one.
 	mTerminal->getTerm()->pushEventCallback( [this]( const TerminalDisplay::Event& event ) {
 		if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT )
 			mUI->runOnMainThread( [this] { close(); } );
 	} );
 	return true;
+}
+
+void TerminalPanel::applyKeybindings() {
+	if ( !mTerminal )
+		return;
+	// Start from the terminal's own bindings, so a toggle that moves or is unbound gives back
+	// any terminal shortcut it replaced (for example Ctrl+Shift+C for copy).
+	auto& bindings = mTerminal->getKeyBindings();
+	bindings.reset();
+	bindings.addKeybinds( mTerminalBindings );
+	for ( const auto& [shortcut, command] : mUI->getKeyBindings().getShortcutMap() ) {
+		if ( command == "toggle-terminal" )
+			bindings.addKeybind( shortcut, command );
+	}
 }
 
 void TerminalPanel::close() {

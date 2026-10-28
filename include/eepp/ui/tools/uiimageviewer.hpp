@@ -6,6 +6,7 @@
 
 #include <eepp/graphics/image.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/widgetcommandexecuter.hpp>
 
 namespace EE::Graphics {
 
@@ -31,7 +32,10 @@ namespace EE::UI::Tools {
 
 using namespace EE::Graphics;
 
-class EE_API UIImageViewer : public UIWidget {
+/** Image viewer with an optional gallery. Keyboard actions are commands (image-zoom-in,
+ * image-zoom-out, image-reset-view, image-flip, image-mirror, image-rotate) bound by
+ * getDefaultKeybindings(); applications may rebind them through getKeyBindings(). */
+class EE_API UIImageViewer : public UIWidget, public WidgetCommandExecuter {
   public:
 	enum DisplayOptions {
 		DisplayName = 1 << 0,
@@ -47,6 +51,8 @@ class EE_API UIImageViewer : public UIWidget {
 	static std::string displayOptionsToString( Uint32 opt );
 
 	static UIImageViewer* New();
+
+	static KeyBindings::ShortcutMap getDefaultKeybindings();
 
 	virtual ~UIImageViewer();
 
@@ -170,6 +176,11 @@ class EE_API UIImageViewer : public UIWidget {
 	void updateImageLayout();
 
 	void updateTextDisplay();
+
+	void zoomStep( Float direction );
+
+	/** Toggle the vertical (flip) or horizontal (mirror) component of the render mode. */
+	void toggleRenderMode( bool vertical );
 };
 
 } // namespace EE::UI::Tools

@@ -5,6 +5,7 @@
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/mouseshortcut.hpp>
 #include <eepp/ui/tools/keybindingsconfigdata.hpp>
+#include <functional>
 #include <map>
 #include <span>
 #include <string>
@@ -44,6 +45,12 @@ class EE_API KeybindingsConfig {
 		/** Replace output maps, ignoring explicitly unbound commands. */
 		void apply( std::unordered_map<std::string, std::string>& target,
 					std::unordered_map<std::string, std::string>* inverted = nullptr ) const;
+
+		/** Add the bindings to `target`, skipping explicitly unbound commands and, when a filter
+		 * is given, the commands it rejects. Each command's Main shortcut becomes the one
+		 * target.getCommandKeybindString() returns, as shown in menus and tooltips. */
+		void apply( KeyBindings& target,
+					const std::function<bool( const std::string& )>& filter = {} ) const;
 	};
 
 	/** Result of loadFile(): the tolerant configuration with normalized modifier entries. */
@@ -126,6 +133,15 @@ class EE_API KeybindingsConfig {
 	 * to KeyMod and normalizes `modifier.mod`/`mod2` in the INI. Failure changes nothing. */
 	static bool loadFile( const std::string& path, std::span<const Context> contexts,
 						  const Input* input, LoadedFile& output, std::string& error );
+
+	/** Runtime load for an application with a single keyboard context: loadFile(), restore
+	 * missing defaults (every default alias while the section doesn't exist yet), save the
+	 * recovered file, and replace `section` with the active configuration; install it with
+	 * Section::apply(). `defaults` runs after the file's modifiers are applied, so symbolic
+	 * defaults use them. Failure changes nothing. */
+	static bool loadContext( const std::string& path, std::string_view context,
+							 const std::function<KeyBindings::ShortcutMap()>& defaults,
+							 const Input* input, Section& section, std::string& error );
 
 	/** Opt-in recovery. Never overwrite occupied physical shortcuts, explicit assignments, or
 	 * unbindings. By default add one shortcut per missing command; restoreAllAliases also adds

@@ -108,6 +108,16 @@ class App {
 	/** Appends the registered shortcut to a tooltip when the command has one. */
 	String shortcutTooltip( String text, const std::string& command ) const;
 
+	/** Default shortcuts. Symbolic expressions resolve with the current modifiers. */
+	KeyBindings::ShortcutMap getDefaultKeybindings() const;
+
+	/** Load keybindings.cfg, or only the defaults, and install it. On failure the active
+	 * shortcuts are kept and the reason is stored in `error`. */
+	bool loadKeybindings( bool defaultsOnly = false, std::string* error = nullptr );
+
+	/** The Keyboard Shortcuts settings page. */
+	UIWidget* createKeybindingsEditor( UIWidget* parent );
+
 	/** Saves the state and closes the window. */
 	void quit();
 
@@ -164,6 +174,9 @@ class App {
 
 	void registerShortcuts();
 
+	/** Refresh menu bar and tooltip shortcut labels after the keybindings change. */
+	void updateShortcutLabels();
+
 	void createMenuBar();
 
 	void showAppMenu();
@@ -190,6 +203,7 @@ class App {
 	/** fileIcon() by MIME type; cleared when the icon settings change. */
 	std::unordered_map<std::string, UIIcon*> mFileIcons;
 	std::string mConfigDir;
+	std::string mKeybindingsPath;
 	nlohmann::json mState;
 
 	UIWidget* mToolbar{ nullptr };

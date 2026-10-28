@@ -16,6 +16,7 @@
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uitextview.hpp>
 
 using namespace EE;
 using namespace EE::System;
@@ -355,4 +356,26 @@ UTEST( UIUnits, AutoSizeAtHighDensity ) {
 		}
 	}
 	PixelDensity::setPixelDensity( previousDensity );
+}
+
+UTEST( UIMenuBar, ShortcutsFollowTheKeyBindingsOfEachItemCommand ) {
+	UIApplication app( WindowSettings{ 400, 300, "Menu bar shortcuts" } );
+	auto* bar = UIMenuBar::New();
+	bar->setParent( app.getUI() );
+	auto* popup = UIPopUpMenu::New();
+	auto* save = popup->add( "Save" );
+	save->setId( "save" );
+	auto* about = popup->add( "About" );
+	bar->addMenuButton( "File", popup );
+	KeyBindings bindings( app.getWindow()->getInput() );
+	bindings.addKeybind( { KEY_S, KEYMOD_CTRL }, "save" );
+	bar->updateShortcuts( bindings );
+	EXPECT_TRUE( save->getShortcutView() != nullptr );
+	EXPECT_TRUE( save->getShortcutView()->getText() == bindings.getCommandKeybindString( "save" ) );
+	EXPECT_TRUE( about->getShortcutView() == nullptr ||
+				 about->getShortcutView()->getText().empty() );
+
+	// A removed shortcut clears the label.
+	bar->updateShortcuts( KeyBindings( app.getWindow()->getInput() ) );
+	EXPECT_TRUE( save->getShortcutView()->getText().empty() );
 }

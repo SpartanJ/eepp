@@ -57,6 +57,21 @@ void KeybindingsConfig::Section::apply(
 	}
 }
 
+void KeybindingsConfig::Section::apply(
+	KeyBindings& target, const std::function<bool( const std::string& )>& filter ) const {
+	std::unordered_map<std::string, std::string> shortcuts, primary;
+	apply( shortcuts, &primary );
+	for ( const auto& [shortcut, command] : shortcuts ) {
+		if ( !filter || filter( command ) )
+			target.addKeybindString( shortcut, command );
+	}
+	// The last shortcut added for a command becomes its reverse lookup, so add Main again.
+	for ( const auto& [command, shortcut] : primary ) {
+		if ( !filter || filter( command ) )
+			target.addKeybindString( shortcut, command );
+	}
+}
+
 bool KeybindingsConfig::LoadedFile::canSave() const {
 	return !ini.path().empty() && warnings.empty();
 }
@@ -408,6 +423,26 @@ bool KeybindingsConfig::loadFile( const std::string& path, std::span<const Conte
 	file.ini.setValue( "modifier", "mod", modifier );
 	file.ini.setValue( "modifier", "mod2", secondary );
 	output = std::move( file );
+	return true;
+}
+
+bool KeybindingsConfig::loadContext( const std::string& path, std::string_view context,
+									 const std::function<KeyBindings::ShortcutMap()>& defaults,
+									 const Input* input, Section& output, std::string& error ) {
+	const Context contexts[] = { { context } };
+	LoadedFile file;
+	if ( !loadFile( path, contexts, input, file, error ) )
+		return false;
+	// loadFile() already validated the section, so reading it can't fail.
+	Section section;
+	readSection( file.ini, context, section );
+	const bool firstRun = file.ini.findKey( context ) == IniFile::noID;
+	mergeDefaults( section, defaults(), input, firstRun );
+	writeSection( file.ini, context, section );
+	// A valid read-only configuration remains usable even when recovery can't be persisted.
+	if ( !file.save() )
+		Log::error( "Could not save keybindings: %s", path.c_str() );
+	output = std::move( section );
 	return true;
 }
 

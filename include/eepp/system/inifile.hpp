@@ -71,8 +71,9 @@ class EE_API IniFile {
 	bool writeFile();
 
 	/** Write a temporary sibling and replace the destination only after the complete write
-	 * succeeds. Follow existing symlinks, retain file permissions, and preserve the destination on
-	 * failure. Temporary files are removed on success or handled failure. */
+	 * succeeds. Create the destination's directory if missing, follow existing symlinks, retain
+	 * file permissions, and preserve the destination on failure. Temporary files are removed on
+	 * success or handled failure. */
 	bool writeFileAtomic();
 
 	/** Writes data stored in class to a IOStream. */

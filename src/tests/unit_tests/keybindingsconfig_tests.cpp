@@ -1,4 +1,5 @@
 #include "utest.hpp"
+#include <algorithm>
 #include <array>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
@@ -404,4 +405,79 @@ UTEST( KeybindingsConfig, LoadFileSavesRecoveryOnlyWhenNothingWasSkipped ) {
 	KeyMod::setDefaultModifier( modifier );
 	KeyMod::setDefaultSecondaryModifier( secondary );
 	FileSystem::fileRemove( path );
+}
+
+UTEST( KeybindingsConfig, LoadContextRestoresDefaultsAndKeepsCustomBindings ) {
+	UIApplication app( WindowSettings{ 320, 240, "single context load" } );
+	auto* input = app.getWindow()->getInput();
+	const auto modifier = KeyMod::getDefaultModifier();
+	const auto secondary = KeyMod::getDefaultSecondaryModifier();
+	const auto path = Sys::getTempPath() + "eepp_keybindings_load_context.cfg";
+	FileSystem::fileRemove( path );
+	const KeyBindings::Shortcut open{ KEY_O, KEYMOD_CTRL };
+	const auto defaults = [&] {
+		return KeyBindings::ShortcutMap{ { open, "open" },
+										 { { KEY_F3, KEYMOD_NONE }, "find" },
+										 { { KEY_G, KEYMOD_CTRL }, "find" } };
+	};
+	KeybindingsConfig::Section bindings;
+	std::string error;
+
+	// The first run writes every default alias.
+	ASSERT_TRUE(
+		KeybindingsConfig::loadContext( path, "viewer", defaults, input, bindings, error ) );
+	EXPECT_EQ( 3u, bindings.bindings.size() );
+	EXPECT_TRUE( IniFile( path ).getValue( "viewer", KeyBindings::fromShortcut( input, open ) ) ==
+				 "open" );
+
+	// Later loads keep custom assignments and restore one shortcut for a missing command.
+	IniFile ini( path );
+	for ( const auto& [shortcut, command] : defaults() )
+		ini.deleteValue( "viewer", KeyBindings::fromShortcut( input, shortcut ) );
+	ini.setValue( "viewer", "alt+k", "open" );
+	ASSERT_TRUE( ini.writeFile() );
+	ASSERT_TRUE(
+		KeybindingsConfig::loadContext( path, "viewer", defaults, input, bindings, error ) );
+	EXPECT_EQ( 2u, bindings.bindings.size() );
+	EXPECT_TRUE( bindings.bindings.at( "alt+k" ).command == "open" );
+	EXPECT_EQ(
+		1, std::count_if( bindings.bindings.begin(), bindings.bindings.end(),
+						  []( const auto& entry ) { return entry.second.command == "find"; } ) );
+
+	// An invalid file changes nothing.
+	FileSystem::fileWrite( path, std::string_view( "[modifier]\nmod=not-a-modifier\n" ) );
+	EXPECT_FALSE(
+		KeybindingsConfig::loadContext( path, "viewer", defaults, input, bindings, error ) );
+	EXPECT_FALSE( error.empty() );
+	EXPECT_EQ( 2u, bindings.bindings.size() );
+	EXPECT_EQ( modifier, KeyMod::getDefaultModifier() );
+
+	KeyMod::setDefaultModifier( modifier );
+	KeyMod::setDefaultSecondaryModifier( secondary );
+	FileSystem::fileRemove( path );
+}
+
+UTEST( KeybindingsConfig, InstalledBindingsShowTheMainShortcutAndHonorTheFilter ) {
+	UIApplication app( WindowSettings{ 320, 240, "install bindings" } );
+	auto* input = app.getWindow()->getInput();
+	KeybindingsConfig::Section section;
+	// Main is the stored priority. One Main sorts after its Alternative and one before, so no
+	// fixed insertion order can pick both correctly.
+	section.bindings["ctrl+a"] = { "close", 2 };
+	section.bindings["ctrl+z"] = { "close", 1 };
+	section.bindings["ctrl+b"] = { "open", 1 };
+	section.bindings["ctrl+y"] = { "open", 2 };
+	section.bindings["ctrl+u"] = { "undo", 1 };
+	section.unbound = { "undo" };
+	KeyBindings all( input ), filtered( input );
+	section.apply( all );
+	EXPECT_TRUE( all.getShortcutFromCommand( "close" ) ==
+				 KeyBindings::toShortcut( input, "ctrl+z" ) );
+	EXPECT_TRUE( all.getShortcutFromCommand( "open" ) ==
+				 KeyBindings::toShortcut( input, "ctrl+b" ) );
+	EXPECT_TRUE( all.getCommandFromKeyBind( KeyBindings::toShortcut( input, "ctrl+a" ) ) ==
+				 "close" );
+	EXPECT_TRUE( all.getCommandFromKeyBind( KeyBindings::toShortcut( input, "ctrl+u" ) ).empty() );
+	section.apply( filtered, []( const std::string& command ) { return command == "open"; } );
+	EXPECT_EQ( 2u, filtered.getShortcutMap().size() );
 }

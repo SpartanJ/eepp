@@ -155,3 +155,18 @@ UTEST( MouseBindings, ExpressionsRoundTripActionsButtonsAndModifiers ) {
 		}
 	}
 }
+
+UTEST( KeyboardShortcut, KeyNamesEndingInPlusRoundTrip ) {
+	UIApplication app( WindowSettings{ 320, 240, "plus key names" } );
+	const auto* input = app.getWindow()->getInput();
+	const KeyBindings::Shortcut shortcuts[] = { { KEY_KP_PLUS, KEYMOD_NONE },
+												{ KEY_KP_PLUS, KEYMOD_CTRL | KEYMOD_SHIFT },
+												{ KEY_PLUS, KEYMOD_NONE },
+												{ KEY_PLUS, KEYMOD_CTRL },
+												{ KEY_KP_MINUS, KEYMOD_NONE } };
+	for ( const auto& shortcut : shortcuts ) {
+		const auto expression = KeyBindings::fromShortcut( input, shortcut );
+		EXPECT_TRUE( KeyBindings::toShortcut( input, expression ) ==
+					 KeyBindings::sanitizeShortcut( shortcut ) );
+	}
+}

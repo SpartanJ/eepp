@@ -89,7 +89,7 @@ UIImageViewer* UIImageViewer::New() {
 	return eeNew( UIImageViewer, () );
 }
 
-UIImageViewer::UIImageViewer() : UIWidget( "imageviewer" ) {
+UIImageViewer::UIImageViewer() : UIWidget( "imageviewer" ), WidgetCommandExecuter( getInput() ) {
 	mImage = UIImage::New();
 	mImage->setParent( this );
 	mImage->setVisible( false );
@@ -109,6 +109,22 @@ UIImageViewer::UIImageViewer() : UIWidget( "imageviewer" ) {
 	mTextView->setParent( this );
 	mTextView->setEnabled( false );
 	setClipType( ClipType::ContentBox );
+	setCommand( "image-zoom-in", [this] { zoomStep( 1.f ); } );
+	setCommand( "image-zoom-out", [this] { zoomStep( -1.f ); } );
+	setCommand( "image-reset-view", [this] { resetImageView(); } );
+	setCommand( "image-flip", [this] { toggleRenderMode( true ); } );
+	setCommand( "image-mirror", [this] { toggleRenderMode( false ); } );
+	setCommand( "image-rotate", [this] { mImage->setRotation( mImage->getRotation() + 90.0f ); } );
+	getKeyBindings().addKeybinds( getDefaultKeybindings() );
+}
+
+KeyBindings::ShortcutMap UIImageViewer::getDefaultKeybindings() {
+	return { { { KEY_KP_PLUS, KEYMOD_NONE }, "image-zoom-in" },
+			 { { KEY_KP_MINUS, KEYMOD_NONE }, "image-zoom-out" },
+			 { { KEY_T, KEYMOD_NONE }, "image-reset-view" },
+			 { { KEY_X, KEYMOD_NONE }, "image-flip" },
+			 { { KEY_C, KEYMOD_NONE }, "image-mirror" },
+			 { { KEY_R, KEYMOD_NONE }, "image-rotate" } };
 }
 
 UIImageViewer::~UIImageViewer() {
@@ -440,54 +456,32 @@ void UIImageViewer::resetImageView() {
 }
 
 Uint32 UIImageViewer::onKeyDown( const KeyEvent& event ) {
-	if ( event.getKeyCode() == KEY_KP_MINUS ) {
-		mImage->setScale(
-			eemax( mMinScale, mImage->getScale().x -
-								  (Float)getUISceneNode()->getElapsed().asSeconds() * 8.f ) );
+	if ( WidgetCommandExecuter::onKeyDown( event ) )
 		return 1;
-	} else if ( event.getKeyCode() == KEY_KP_PLUS ) {
-		mImage->setScale(
-			eemin( mMaxScale, mImage->getScale().x +
-								  (Float)getUISceneNode()->getElapsed().asSeconds() * 8.f ) );
-		return 1;
-	} else if ( event.getKeyCode() == KEY_T ) {
-		resetImageView();
-	} else if ( event.getKeyCode() == KEY_X ) {
-		if ( !mImage->getDrawable() )
-			return 1;
-		auto sprite = static_cast<Sprite*>( mImage->getDrawable().get() );
-		auto mode = sprite->getRenderMode();
-		if ( mode == RENDER_NORMAL )
-			mode = RENDER_FLIPPED;
-		else if ( mode == RENDER_MIRROR )
-			mode = RENDER_FLIPPED_MIRRORED;
-		else if ( mode == RENDER_FLIPPED_MIRRORED )
-			mode = RENDER_MIRROR;
-		else
-			mode = RENDER_NORMAL;
-		sprite->setRenderMode( mode );
-		invalidateDraw();
-	} else if ( event.getKeyCode() == KEY_C ) {
-		if ( !mImage->getDrawable() )
-			return 1;
-		auto sprite = static_cast<Sprite*>( mImage->getDrawable().get() );
-		auto mode = sprite->getRenderMode();
-		if ( mode == RENDER_NORMAL )
-			mode = RENDER_MIRROR;
-		else if ( mode == RENDER_FLIPPED )
-			mode = RENDER_FLIPPED_MIRRORED;
-		else if ( mode == RENDER_FLIPPED_MIRRORED )
-			mode = RENDER_FLIPPED;
-		else
-			mode = RENDER_NORMAL;
-		sprite->setRenderMode( mode );
-		invalidateDraw();
-	} else if ( event.getKeyCode() == KEY_R ) {
-		mImage->setRotation( mImage->getRotation() + 90.0f );
-	} else if ( event.getKeyCode() == KEY_T ) {
-		resetImageView();
-	}
 	return UIWidget::onKeyDown( event );
+}
+
+void UIImageViewer::zoomStep( Float direction ) {
+	// Called on every key repeat, so the step follows the frame time.
+	const Float scale =
+		mImage->getScale().x + (Float)getUISceneNode()->getElapsed().asSeconds() * 8.f * direction;
+	// Only cap the direction of travel: a fitted image may start outside [min, max].
+	mImage->setScale( direction > 0 ? eemin( mMaxScale, scale ) : eemax( mMinScale, scale ) );
+}
+
+void UIImageViewer::toggleRenderMode( bool vertical ) {
+	if ( !mImage->getDrawable() )
+		return;
+	auto* sprite = static_cast<Sprite*>( mImage->getDrawable().get() );
+	const auto mode = sprite->getRenderMode();
+	bool flipped = mode == RENDER_FLIPPED || mode == RENDER_FLIPPED_MIRRORED;
+	bool mirrored = mode == RENDER_MIRROR || mode == RENDER_FLIPPED_MIRRORED;
+	( vertical ? flipped : mirrored ) = !( vertical ? flipped : mirrored );
+	sprite->setRenderMode( flipped && mirrored ? RENDER_FLIPPED_MIRRORED
+						   : flipped		   ? RENDER_FLIPPED
+						   : mirrored		   ? RENDER_MIRROR
+											   : RENDER_NORMAL );
+	invalidateDraw();
 }
 
 const std::string& UIImageViewer::getGalleryPath() const {

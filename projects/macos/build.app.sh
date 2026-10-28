@@ -32,10 +32,6 @@ BUNDLE="$OUTPUT_DIR/$APP.app"
 MACOS="$BUNDLE/Contents/MacOS"
 RESOURCES="$BUNDLE/Contents/Resources"
 BINARY="$SOURCE_DIR/$APP"
-if [ ! -f "$BINARY" ]; then
-	# Premake emits WindowedApp targets (currently eeiv) inside a minimal bundle.
-	BINARY="$SOURCE_DIR/$APP.app/Contents/MacOS/$APP"
-fi
 EXECUTABLE_DIR=$(dirname "$BINARY")
 [ -f "$BINARY" ] || package_error "Missing executable: $BINARY"
 lipo "$BINARY" -verify_arch "$ARCH"

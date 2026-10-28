@@ -47,6 +47,8 @@ class UITerminal : public UITouchDraggableWidget {
 
 	KeyBindings& getKeyBindings();
 
+	virtual KeyBindings* getOwnKeyBindings();
+
 	Float getFontSize() const;
 
 	void setFontSize( Float fontSize );

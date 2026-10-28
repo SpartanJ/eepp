@@ -103,13 +103,18 @@ KeyBindings::Shortcut KeyBindings::toShortcut( const EE::Window::Input* input,
 											   const std::string& keys ) {
 	Shortcut shortcut;
 	Uint32 mod = 0;
-	auto keysSplit = String::split( keys, '+' );
-	if ( keysSplit.size() == 1 && KeyMod::getKeyMod( keysSplit[0] ) && keys.find( "++" ) )
-		keysSplit.emplace_back( "+" );
-	if ( keysSplit.size() == 2 && KeyMod::getKeyMod( keysSplit[0] ) &&
-		 keys.find( " +" ) != std::string::npos )
-		keysSplit[1] += "+";
-	for ( auto& part : keysSplit ) {
+	std::string_view modifiers( keys );
+	// A key name can itself end with '+' ("+", "keypad +"), so it can't be split on '+'. It runs
+	// from the separator before the trailing '+' to the end: "mod++", "ctrl+shift+keypad +".
+	if ( !modifiers.empty() && modifiers.back() == '+' ) {
+		const auto separator = modifiers.size() > 1
+								   ? modifiers.find_last_of( '+', modifiers.size() - 2 )
+								   : std::string_view::npos;
+		const auto keyStart = separator == std::string_view::npos ? 0 : separator + 1;
+		shortcut.key = input->getKeyFromName( std::string( modifiers.substr( keyStart ) ) );
+		modifiers = modifiers.substr( 0, separator == std::string_view::npos ? 0 : separator );
+	}
+	for ( auto& part : String::split( std::string( modifiers ), '+' ) ) {
 		if ( ( mod = KeyMod::getKeyMod( part ) ) ) {
 			shortcut.mod |= mod;
 		} else {

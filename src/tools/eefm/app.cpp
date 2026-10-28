@@ -11,6 +11,8 @@
 #include "terminalpanel.hpp"
 #include "thumbnails.hpp"
 #include <eepp/system/applications.hpp>
+#include <eepp/ui/tools/keybindingsconfig.hpp>
+#include <eepp/ui/tools/uikeybindingseditor.hpp>
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uimenuitem.hpp>
 
@@ -627,6 +629,7 @@ int App::run( int argc, char* argv[] ) {
 bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	mConfigDir = Sys::getConfigPath( "eefm" );
 	FileSystem::dirAddSlashAtEnd( mConfigDir );
+	mKeybindingsPath = mConfigDir + "keybindings.cfg";
 	loadState();
 
 	int width = 1400, height = 820;
@@ -726,7 +729,6 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	mPlacesController = std::make_unique<PlacesController>( *this, mConfigDir + "places.json" );
 	mPlacesController->createPanel( mPlacesScroll );
 
-	// Pane tooltips resolve their shortcuts while the panes are created.
 	registerShortcuts();
 	createMenuBar();
 
@@ -736,6 +738,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 		mUI->loadLayoutFromString( LocationLayout, box );
 		mPaneManager->createPane( i, mPaneSplitter );
 	}
+	updateShortcutLabels();
 	if ( mState.contains( "split_partition" ) && mState["split_partition"].is_string() ) {
 		mPaneSplitter->setSplitPartition(
 			StyleSheetLength( mState["split_partition"].get<std::string>() ) );
@@ -1244,6 +1247,18 @@ void App::registerShortcuts() {
 		if ( count > 1 )
 			p.tabs->setTabSelected( ( p.tabs->getTabSelectedIndex() + count - 1 ) % count );
 	} );
+	// As in ecode: switch-to-tab-N selects the active pane's Nth tab.
+	const auto switchToTab = [this]( Uint32 index ) {
+		auto* tabs = mPaneManager->activePane().tabs;
+		const Uint32 count = tabs->getTabCount();
+		if ( count > 0 )
+			tabs->setTabSelected( std::min( index, count - 1 ) );
+	};
+	for ( Uint32 tab = 1; tab <= 9; ++tab ) {
+		mUI->setKeyBindingCommand( "switch-to-tab-" + std::to_string( tab ),
+								   [switchToTab, tab] { switchToTab( tab - 1 ); } );
+	}
+	mUI->setKeyBindingCommand( "switch-to-last-tab", [switchToTab] { switchToTab( UINT32_MAX ); } );
 	mUI->setKeyBindingCommand( "focus-location", [this] {
 		auto* input = mPaneManager->activePane().location.input;
 		input->setFocus();
@@ -1303,7 +1318,14 @@ void App::registerShortcuts() {
 	mUI->setKeyBindingCommand( "quit", [this] { quit(); } );
 	mUI->setKeyBindingCommand( "debug-widget-tree-view",
 							   [this] { Tools::UIWidgetInspector::create( mUI ); } );
-	mUI->getKeyBindings().addKeybindsString( {
+	// A broken keybindings.cfg must not disable the keyboard: fall back to the defaults.
+	if ( !loadKeybindings() )
+		loadKeybindings( true );
+}
+
+KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
+	KeyBindings bindings( mUI->getWindow()->getInput() );
+	bindings.addKeybindsString( {
 		{ "mod+t", "new-tab" },
 		{ "mod+w", "close-tab" },
 		{ "mod+tab", "next-tab" },
@@ -1337,27 +1359,83 @@ void App::registerShortcuts() {
 		{ "mod+shift+,", "settings" },
 		{ "mod+q", "quit" },
 		{ "mod+shift+f11", "debug-widget-tree-view" },
-	} );
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-	mUI->getKeyBindings().addKeybindsString(
-		{ { "mod+backspace", "trash" }, { "mod+alt+backspace", "delete" } } );
+		{ "mod+backspace", "trash" },
+		{ "mod+alt+backspace", "delete" },
 #else
-	mUI->getKeyBindings().addKeybindsString(
-		{ { "delete", "trash" }, { "shift+delete", "delete" } } );
+		{ "delete", "trash" },
+		{ "shift+delete", "delete" },
 #endif
-	mUI->find<UIWidget>( "back" )->setTooltipText(
-		shortcutTooltip( mUI->i18n( "eefm_back", "Back" ), "go-back" ) );
-	mUI->find<UIWidget>( "forward" )
-		->setTooltipText( shortcutTooltip( mUI->i18n( "eefm_forward", "Forward" ), "go-forward" ) );
-	mUI->find<UIWidget>( "up" )->setTooltipText(
-		shortcutTooltip( mUI->i18n( "eefm_go_up", "Go Up" ), "go-up" ) );
-	mUI->find<UIWidget>( "refresh" )
-		->setTooltipText( shortcutTooltip( mUI->i18n( "eefm_refresh", "Reload" ), "refresh" ) );
-	mUI->find<UIWidget>( "places_toggle" )
-		->setTooltipText( shortcutTooltip( mUI->i18n( "eefm_show_places", "Show Places Panel" ),
-										   "toggle-places" ) );
-	mUI->find<UIWidget>( "split" )->setTooltipText(
-		shortcutTooltip( mUI->i18n( "eefm_split_view", "Split View" ), "toggle-split" ) );
+	} );
+	for ( int tab = 1; tab <= 9; ++tab ) {
+		bindings.addKeybindString( "mod+" + std::to_string( tab ),
+								   "switch-to-tab-" + std::to_string( tab ) );
+	}
+	bindings.addKeybindString( "mod+0", "switch-to-last-tab" );
+	return bindings.getShortcutMap();
+}
+
+bool App::loadKeybindings( bool defaultsOnly, std::string* error ) {
+	KeybindingsConfig::Section bindings;
+	std::string message;
+	if ( !KeybindingsConfig::loadContext(
+			 defaultsOnly ? "" : mKeybindingsPath, "eefm",
+			 [this] { return getDefaultKeybindings(); }, mUI->getWindow()->getInput(), bindings,
+			 message ) ) {
+		Log::error( "%s", message.c_str() );
+		if ( error )
+			*error = message;
+		return false;
+	}
+	mUI->getKeyBindings().reset();
+	bindings.apply( mUI->getKeyBindings() );
+	mTerminalPanel->applyKeybindings();
+	updateShortcutLabels();
+	return true;
+}
+
+void App::updateShortcutLabels() {
+	mUI->find<UIMenuBar>( "main_menubar" )->updateShortcuts( mUI->getKeyBindings() );
+	static constexpr struct {
+		const char* selector;
+		const char* key;
+		const char* text;
+		const char* command;
+	} tooltips[] = { { "#back", "eefm_back", "Back", "go-back" },
+					 { "#forward", "eefm_forward", "Forward", "go-forward" },
+					 { "#up", "eefm_go_up", "Go Up", "go-up" },
+					 { "#refresh", "eefm_refresh", "Reload", "refresh" },
+					 { "#places_toggle", "eefm_show_places", "Show Places Panel", "toggle-places" },
+					 { "#split", "eefm_split_view", "Split View", "toggle-split" },
+					 { ".new_tab", "eefm_new_tab", "New Tab", "new-tab" } };
+	for ( const auto& tooltip : tooltips ) {
+		for ( auto* widget : mUI->getRoot()->querySelectorAll( tooltip.selector ) ) {
+			widget->setTooltipText(
+				shortcutTooltip( mUI->i18n( tooltip.key, tooltip.text ), tooltip.command ) );
+		}
+	}
+}
+
+UIWidget* App::createKeybindingsEditor( UIWidget* parent ) {
+	static constexpr KeybindingsConfig::Context contexts[] = { { "eefm" } };
+	return UIKeybindingsEditor::NewForFile(
+		parent,
+		{ .path = mKeybindingsPath,
+		  .contexts = contexts,
+		  .catalog =
+			  [this]( KeybindingsConfig::Catalog& catalog ) {
+				  catalog.add( "eefm", getDefaultKeybindings(), {},
+							   mUI->i18n( "eefm_file_manager", "File Manager" ) );
+			  },
+		  .apply =
+			  [this] {
+				  std::string error;
+				  return loadKeybindings( false, &error ) ? String() : String( error );
+			  },
+		  .manualEdit =
+			  [this] {
+				  Engine::instance()->openURI( URI::fromFSPath( mKeybindingsPath ).toString() );
+			  } } );
 }
 
 void App::updateIconStyle() {

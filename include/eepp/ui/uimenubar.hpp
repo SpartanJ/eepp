@@ -39,6 +39,10 @@ class EE_API UIMenuBar : public UIWidget {
 
 	size_t getButtonsCount() const;
 
+	/** Set each menu item's shortcut text from `bindings`, for items whose id is a command.
+	 * Call after loading or changing keybindings. */
+	void updateShortcuts( const KeyBindings& bindings );
+
 	UIPopUpMenu* getMenuFromButton( UISelectButton* Button );
 
 	Uint32 getMenuHeight() const;

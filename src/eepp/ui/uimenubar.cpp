@@ -256,6 +256,19 @@ size_t UIMenuBar::getButtonsCount() const {
 	return mButtons.size();
 }
 
+void UIMenuBar::updateShortcuts( const KeyBindings& bindings ) {
+	for ( Uint32 menuIndex = 0; menuIndex < getButtonsCount(); ++menuIndex ) {
+		auto* menu = getPopUpMenu( menuIndex );
+		for ( Uint32 itemIndex = 0; menu && itemIndex < menu->getCount(); ++itemIndex ) {
+			auto* item = menu->getItem( itemIndex );
+			if ( item->isType( UI_TYPE_MENUITEM ) && !item->getId().empty() ) {
+				item->asType<UIMenuItem>()->setShortcutText(
+					bindings.getCommandKeybindString( item->getId() ) );
+			}
+		}
+	}
+}
+
 Uint32 UIMenuBar::getMenuHeight() const {
 	return mMenuHeight;
 }

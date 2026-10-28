@@ -1026,6 +1026,10 @@ KeyBindings& UITextInput::getKeyBindings() {
 	return mKeyBindings;
 }
 
+KeyBindings* UITextInput::getOwnKeyBindings() {
+	return &mKeyBindings;
+}
+
 size_t UITextInput::getMenuIconSize() const {
 	return mMenuIconSize;
 }

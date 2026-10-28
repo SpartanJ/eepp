@@ -401,6 +401,10 @@ KeyBindings& UITerminal::getKeyBindings() {
 	return mKeyBindings;
 }
 
+KeyBindings* UITerminal::getOwnKeyBindings() {
+	return &mKeyBindings;
+}
+
 Float UITerminal::getFontSize() const {
 	return mTerm->getFontSize();
 }

@@ -2245,7 +2245,7 @@ solution "eepp"
 		build_link_configuration( "eepp-TexturePacker", true )
 
 	project "eeiv"
-		kind "WindowedApp"
+		set_kind()
 		language "C++"
 		eepp_module_backward_add( false )
 		files { "src/tools/eeiv/*.cpp" }

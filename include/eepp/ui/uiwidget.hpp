@@ -23,6 +23,7 @@ using namespace EE::UI::CSS;
 
 namespace EE { namespace UI {
 
+class KeyBindings;
 class UITooltip;
 class UIStyle;
 class AccessibilityWidgetResolver;
@@ -159,6 +160,11 @@ class EE_API UIWidget : public UINode {
 	virtual bool isType( const Uint32& type ) const {
 		return UIWidget::getType() == type || UINode::isType( type );
 	}
+
+	/** The key bindings this widget dispatches itself, or null if it has none. Widgets that mix
+	 * in WidgetCommandExecuter return its bindings without overriding this. Tools such as the UI
+	 * inspector use it to list any widget's shortcuts without knowing its type. */
+	virtual KeyBindings* getOwnKeyBindings();
 
 	/** Returns the scene-level text rendering hints inherited by this widget. */
 	Uint32 getDefaultTextHints() const;

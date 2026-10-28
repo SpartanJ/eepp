@@ -113,7 +113,25 @@ if ( !KeybindingsConfig::readSection( ini, "viewer", section, &error ) )
 `KeyMod`. Applications explicitly apply validated preferences and choose when to install runtime
 bindings. Parsing a file never restores defaults automatically.
 
-For loading at startup or on reload, `loadFile()` combines these steps:
+An application with a single keyboard context loads its file with one call:
+
+```cpp
+std::unordered_map<std::string, std::string> bindings;
+std::string error;
+if ( !KeybindingsConfig::loadContext( path, "viewer", [this] { return getDefaultKeybindings(); },
+                                      input, bindings, error ) )
+    return error; // Keep the last working runtime configuration.
+ui->getKeyBindings().reset();
+ui->getKeyBindings().addKeybindsStringUnordered( bindings );
+```
+
+`loadContext()` writes every default alias while the section doesn't exist yet, later restores one
+shortcut for each missing command, saves the recovered file, and returns the active mappings. The
+defaults callback runs after the file's modifiers are applied, so `KeyMod::getDefaultModifier()`
+inside it returns the configured modifier. An empty path loads the defaults only, which is the
+usual fallback when the file can't be loaded. Saving creates the configuration directory if needed.
+
+For several contexts or a custom recovery policy, `loadFile()` provides the underlying steps:
 
 ```cpp
 KeybindingsConfig::LoadedFile file;
@@ -160,9 +178,17 @@ expression-map defaults are ordered lexically. `replaceBindings()` preserves the
 installed layer; `validateOverrides()` reports new assignments shadowed by that layer.
 `KeybindingsConfigData::shortcuts()` resolves one context of a proposal for that check.
 
-Both ecode and eterm use `loadFile()` and `NewForFile()`. ecode keeps its version migrations and
-command routing, and adds a `validate` callback that rejects assignments shadowed by plugin or
-widget shortcuts. eterm keeps its first-run alias and missing-command recovery policies.
+Applications that show shortcuts in a menu bar refresh them after loading with
+`UIMenuBar::updateShortcuts( bindings )`, which updates every item whose id is a command.
+
+`UIImageViewer` exposes its keys as commands (`image-zoom-in`, `image-zoom-out`,
+`image-reset-view`, `image-flip`, `image-mirror`, `image-rotate`) with
+`UIImageViewer::getDefaultKeybindings()` installed by default. Replace them through
+`getKeyBindings()` to make them configurable.
+
+ecode, eterm, eefm, and eeiv all use these helpers. ecode keeps its version migrations and command
+routing, and adds a `validate` callback that rejects assignments shadowed by plugin or widget
+shortcuts. eterm, eefm, and eeiv use `loadContext()`.
 
 ## Recovery and manual editing in ecode
 
@@ -198,6 +224,17 @@ macOS defaults use the default modifier, normally Meta, for copy/paste, find, ne
 numbered-tab selection, and split navigation. Splitting uses Meta+Shift with I/J/K/L. Other
 platforms retain the Ctrl/Shift combinations that avoid common terminal-input shortcuts. Existing
 configured assignments are retained; use **Restore All Shortcuts…** to adopt the new defaults.
+
+## Keyboard shortcuts in eefm and eeiv
+
+Both open the editor from **Settings → General → Keyboard Shortcuts** and store their shortcuts in
+`keybindings.cfg` in their configuration directory. **Edit keybindings manually…** opens that file
+in the system's default application; changes made there apply on the next start.
+
+eefm's menu bar, toolbar tooltips, and context menus show the configured shortcuts. eeiv's shortcuts
+include the image viewer's commands (zoom, flip, mirror, rotate, reset view), and its help overlay
+(**H** by default) lists the configured shortcuts. eeiv shortcuts don't act while a dialog has
+focus, and only opening settings, the console, and the UI inspector act while the console is open.
 
 ## Configuration format
 

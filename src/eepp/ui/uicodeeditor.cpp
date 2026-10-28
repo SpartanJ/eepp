@@ -2920,6 +2920,10 @@ KeyBindings& UICodeEditor::getKeyBindings() {
 	return mKeyBindings;
 }
 
+KeyBindings* UICodeEditor::getOwnKeyBindings() {
+	return &mKeyBindings;
+}
+
 MouseBindings& UICodeEditor::getMouseBindings() {
 	return mMouseBindings;
 }
