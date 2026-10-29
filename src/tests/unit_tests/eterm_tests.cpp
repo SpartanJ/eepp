@@ -2022,20 +2022,43 @@ UTEST( eterm, selection_redraw_while_idle ) {
 }
 
 UTEST( eterm, saturated_read_defers_only_intermediate_draw ) {
-	auto pty = std::make_unique<MockPty>();
-	pty->mMaxRead = 1;
-	auto process = std::make_unique<MockProcess>();
-	auto display = std::make_shared<MockDisplay>();
-	auto term = TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
+	for ( bool slowFirstRead : { false, true } ) {
+		auto pty = std::make_unique<MockPty>();
+		pty->mMaxRead = 1;
+		MockPty* ptyPtr = pty.get();
+		auto process = std::make_unique<MockProcess>();
+		auto display = std::make_shared<MockDisplay>();
+		auto term =
+			TerminalEmulator::create( std::move( pty ), std::move( process ), display, 100 );
 
-	std::string output( 1024, 'A' );
-	term->write( output.data(), output.size() );
-	display->mDrawLines = 0;
+		// Isolate read-budget deferral from the independent periodic presentation deadline.
+		term->setPresentationInterval( Seconds( 60 ) );
+		if ( slowFirstRead ) {
+			term->setDataCb( [firstRead = true]( const char*, size_t ) mutable {
+				if ( firstRead ) {
+					firstRead = false;
+					// Force the time budget to expire before the 1024-read limit.
+					std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+				}
+			} );
+		}
 
-	EXPECT_FALSE( term->update() );
-	EXPECT_EQ( 0, display->mDrawLines );
-	EXPECT_TRUE( term->update() );
-	EXPECT_TRUE( display->mDrawLines > 0 );
+		std::string output( 1024, 'A' );
+		term->write( output.data(), output.size() );
+		display->mDrawLines = 0;
+
+		EXPECT_FALSE( term->update() );
+		EXPECT_EQ( 0, display->mDrawLines );
+
+		// A time-limited slice can leave input for later updates. Even the update that drains
+		// it returns false so the producer gets a scheduling opportunity before the idle probe.
+		bool idle = false;
+		for ( size_t attempts = 0; !idle && attempts <= output.size(); ++attempts )
+			idle = term->update();
+		EXPECT_TRUE( idle );
+		EXPECT_EQ( output.size(), ptyPtr->mBytesRead.load() );
+		EXPECT_TRUE( display->mDrawLines > 0 );
+	}
 }
 
 UTEST( eterm, sustained_saturated_reads_present_periodically ) {
