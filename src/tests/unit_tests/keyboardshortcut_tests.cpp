@@ -4,6 +4,7 @@
 #include <eepp/ui/tools/keybindingsconfigdata.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/window/input.hpp>
 
 using namespace EE;
 using namespace EE::UI;
@@ -161,12 +162,20 @@ UTEST( KeyboardShortcut, KeyNamesEndingInPlusRoundTrip ) {
 	const auto* input = app.getWindow()->getInput();
 	const KeyBindings::Shortcut shortcuts[] = { { KEY_KP_PLUS, KEYMOD_NONE },
 												{ KEY_KP_PLUS, KEYMOD_CTRL | KEYMOD_SHIFT },
-												{ KEY_PLUS, KEYMOD_NONE },
-												{ KEY_PLUS, KEYMOD_CTRL },
 												{ KEY_KP_MINUS, KEYMOD_NONE } };
 	for ( const auto& shortcut : shortcuts ) {
 		const auto expression = KeyBindings::fromShortcut( input, shortcut );
 		EXPECT_TRUE( KeyBindings::toShortcut( input, expression ) ==
 					 KeyBindings::sanitizeShortcut( shortcut ) );
 	}
+	// SDL3 resolves "+" to its unshifted key ("=" on a US layout), while SDL2 returns
+	// KEY_PLUS. Preserve the backend's key-name mapping when parsing a literal trailing '+'.
+	const auto plus = input->getKeyFromName( "+" );
+	ASSERT_NE( KEY_UNKNOWN, plus );
+	EXPECT_TRUE( KeyBindings::toShortcut( input, "+" ) ==
+				 ( KeyBindings::Shortcut{ plus, KEYMOD_NONE } ) );
+	EXPECT_TRUE( KeyBindings::toShortcut( input, "ctrl++" ) ==
+				 ( KeyBindings::Shortcut{ plus, KEYMOD_CTRL } ) );
+	EXPECT_TRUE( KeyBindings::toShortcut( input, "ctrl+shift++" ) ==
+				 ( KeyBindings::Shortcut{ plus, KEYMOD_CTRL | KEYMOD_SHIFT } ) );
 }

@@ -20,6 +20,9 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL3 {
 
 WindowBackendSDL3::WindowBackendSDL3() : WindowBackendLibrary() {
+	// A window-close callback owns the decision to close, hide, or cancel. Keep native Quit
+	// independent rather than receiving a second quit event for the same close request.
+	SDL_SetHintWithPriority( SDL_HINT_QUIT_ON_LAST_WINDOW_CLOSE, "0", SDL_HINT_OVERRIDE );
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 	if ( Runtime::isOffscreen() ) {
 		// EGL dispatchers can retain thread state across unload/reload, leaving stale TLS

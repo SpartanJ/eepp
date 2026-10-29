@@ -6,6 +6,15 @@
 
 namespace EE { namespace Window {
 
+bool PlatformHelper::setApplicationReopenCallback( std::function<bool()> callback ) {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	return Private::ApplicationReopenHandler::setCallback( std::move( callback ) );
+#else
+	(void)callback;
+	return false;
+#endif
+}
+
 bool PlatformHelper::setNativeScrollMomentumEnabled( bool enabled ) {
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	return Private::setNativeScrollMomentumEnabled( enabled );

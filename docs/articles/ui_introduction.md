@@ -294,6 +294,36 @@ with the [UI Data Binding](ui_databinding.md) guide.
 
 For interactive line charts, live data, grids, and tooltip examples, see [UI Charts](ui_charts.md).
 
+## Closing windows and quitting
+
+`UIApplication` closes windows on user close requests by default on every operating system. Its
+`QuitPolicy` then determines when the application loop stops; the default stops it when the primary
+window closes.
+
+Applications that should retain their workspace when the user closes the primary window can opt in:
+
+```cpp
+UIApplication::Settings settings;
+settings.exitOnClose = false;
+UIApplication app( WindowSettings( 1280, 720, "My Application" ), settings );
+return app.run();
+```
+
+The window, UI scene, and workspace remain alive. On macOS the window is hidden; clicking the
+application's Dock icon or reopening it through Finder reveals the retained windows. On Windows,
+Linux, BSD, and Haiku the window is minimized and can be restored through the desktop's taskbar or
+window switcher. Scene updates continue for background work, but hidden or minimized workspaces are
+not drawn. Drawing resumes when the window is restored.
+
+Secondary application windows, including native dialogs, still close normally. Retaining the primary
+workspace must not leave an invisible modal dialog blocking it.
+
+Use `setExitOnClose()` to change the preference at runtime. Native Quit requests still terminate the
+application, and `closeWindow()` still explicitly destroys a window. Applications that override
+`Window::setCloseRequestCallback()` should call `app.handleCloseRequest(window)` first; a `false`
+result means the window was retained and shutdown checks should be skipped. Keep unsaved-work checks
+in the explicit Quit path.
+
 ## Environment overrides
 
 eepp UI applications accept these environment variables:

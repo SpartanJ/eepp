@@ -753,6 +753,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool mPortableMode{ false };
 	bool mPortableModeFailed{ false };
 	bool mClosing{ false };
+	bool mHiddenOnClose{ false };
 	bool mDestroyingApp{ false };
 	Time mFrameTime{ Time::Zero };
 	bool mIncognito{ false };
@@ -843,6 +844,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool isAnyTerminalDirty() const;
 
 	bool onCloseRequestCallback( EE::Window::Window* );
+
+	bool reopen();
 
 	void beginClosing();
 

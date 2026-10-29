@@ -71,6 +71,7 @@ struct WindowConfig {
 	Uint32 maxFPS{ static_cast<Uint32>( ContextSettings::FrameRateLimitScreenRefreshRate ) };
 	bool vsync{ false };
 	bool showMenuBar{ false };
+	bool exitOnClose{ EE_PLATFORM != EE_PLATFORM_MACOS };
 	GraphicsLibraryVersion rendererVersion{ GLv_default };
 	Uint32 multisamples{ 0 };
 };

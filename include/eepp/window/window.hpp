@@ -234,6 +234,10 @@ class EE_API Window {
 	/** This will attempt to hide the window */
 	virtual void hide();
 
+	/** Hide a retained window, leaving its native macOS fullscreen Space first.
+	 * A show() request cancels a hide waiting for the fullscreen transition. */
+	void hideForReopen();
+
 	/** This will attempt to raise the window */
 	virtual void raise();
 
@@ -592,6 +596,9 @@ class EE_API Window {
 	const std::function<void()>& getMainLoop() const;
 
   protected:
+	/** Cancel deferred native hiding before showing or destroying the native window. */
+	void cancelPendingHide();
+
 	friend class Engine;
 	friend class Input;
 	friend struct Private::NativeDragAccess;

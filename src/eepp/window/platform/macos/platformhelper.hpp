@@ -2,8 +2,22 @@
 #define EE_WINDOW_PLATFORM_MACOS_PLATFORMHELPER_HPP
 
 #include <eepp/config.hpp>
+#include <functional>
 
 namespace EE { namespace Window { namespace Private {
+
+class ApplicationReopenHandler {
+  public:
+	static bool setCallback( std::function<bool()> callback );
+};
+
+class WindowVisibility {
+  public:
+	static bool deferHide( void* window, Uint32 windowId, void ( *complete )( Uint32 ),
+						   bool requestNativeExit = true );
+
+	static void cancelHide( void* window );
+};
 
 bool setNativeScrollMomentumEnabled( bool enabled );
 

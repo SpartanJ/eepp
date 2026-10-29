@@ -20,6 +20,9 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 WindowBackendSDL2::WindowBackendSDL2() : WindowBackendLibrary() {
+	// eepp handles window-close requests separately from explicit application Quit. In
+	// particular, a close callback may retain the window or cancel to protect unsaved work.
+	SDL_SetHintWithPriority( "SDL_QUIT_ON_LAST_WINDOW_CLOSE", "0", SDL_HINT_OVERRIDE );
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 	if ( Runtime::isOffscreen() ) {
 		// EGL dispatchers can retain thread state across unload/reload, leaving stale TLS

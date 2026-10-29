@@ -51,7 +51,9 @@ void KeybindingsHelper::updateSection( IniFile& ini, const std::string& group, I
 	std::unordered_map<std::string, std::string> inverted;
 	section.apply( keybindings, &inverted );
 	if ( !newSection && forceRebind ) {
-		for ( const auto& [command, previous] : migrations ) {
+		for ( const auto& migration : migrations ) {
+			const auto& command = migration.first;
+			const auto& previous = migration.second;
 			auto current = inverted.find( command );
 			if ( current == inverted.end() || current->second != previous ||
 				 section.bindings.at( previous ).priority > 1 ||

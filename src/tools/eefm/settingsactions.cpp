@@ -509,6 +509,16 @@ void SettingsActions::showSettings() {
 		} );
 
 	// Window
+	panel->addCategory( "window.behavior", mUI->i18n( "eefm_window", "Window" ),
+						mUI->i18n( "behavior", "Behavior" ) );
+	panel->addBool(
+		{ "exitOnClose", "window.behavior", mUI->i18n( "exit_on_close", "Exit on Close" ),
+		  mUI->i18n( "exit_on_close_desc", "Exit when closing the window. Disable to keep the "
+										   "application and its workspace open." ) },
+		&mApp.config().window.exitOnClose, [this]( bool value ) {
+			mApp.application().setExitOnClose( value );
+			savePreferences();
+		} );
 	panel->addCategory( "window.renderer", mUI->i18n( "eefm_window", "Window" ),
 						mUI->i18n( "eefm_renderer", "Renderer" ) );
 	panel->addBool( { "vsync", "window.renderer", mUI->i18n( "eefm_vsync", "VSync" ),

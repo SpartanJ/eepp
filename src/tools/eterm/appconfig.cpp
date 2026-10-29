@@ -62,6 +62,7 @@ void AppConfig::load() {
 	window.pixelDensity = mIni.getValueF( "window", "pixel_density", window.pixelDensity );
 	window.maxFPS = mIni.getValueU( "window", "frame_rate_limit", window.maxFPS );
 	window.vsync = mIni.getValueB( "window", "vsync", window.vsync );
+	window.exitOnClose = mIni.getValueB( "window", "exit_on_close", window.exitOnClose );
 	window.benchmarkMode = mIni.getValueB( "window", "benchmark_mode", window.benchmarkMode );
 	window.warnBeforeClose =
 		mIni.getValueB( "window", "warn_before_closing", window.warnBeforeClose );
@@ -133,6 +134,7 @@ bool AppConfig::savePreferences() {
 	mIni.setValueF( "window", "pixel_density", window.pixelDensity );
 	mIni.setValueU( "window", "frame_rate_limit", window.maxFPS );
 	mIni.setValueB( "window", "vsync", window.vsync );
+	mIni.setValueB( "window", "exit_on_close", window.exitOnClose );
 	mIni.setValueB( "window", "benchmark_mode", window.benchmarkMode );
 	mIni.setValueB( "window", "warn_before_closing", window.warnBeforeClose );
 	mIni.setValueB( "window", "always_show_tab_bar", window.alwaysShowTabBar );

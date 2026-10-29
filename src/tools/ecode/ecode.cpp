@@ -958,8 +958,19 @@ bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
 }
 
 void App::closeApp() {
+	reopen();
 	if ( onCloseRequestCallback( mWindow ) )
 		mWindow->close();
+}
+
+bool App::reopen() {
+	if ( !mHiddenOnClose || !mWindow->isOpen() || mClosing )
+		return false;
+	mHiddenOnClose = false;
+	mWindow->show();
+	mWindow->raise();
+	mUISceneNode->invalidate( nullptr );
+	return true;
 }
 
 void App::onReady() {
@@ -988,7 +999,11 @@ void App::mainLoop() {
 		firstUpdate = false;
 	}
 
-	if ( SceneManager::instance()->getUISceneNode()->invalidated() || mBenchmarkMode ) {
+	// Complete one initialization frame even when launched minimized: onReady() enables plugin
+	// reload only after the first draw. Later minimized frames can remain idle.
+	if ( ( !mHiddenOnClose || mWindow->isVisible() ) && ( firstFrame || !mWindow->isMinimized() ) &&
+		 ( firstFrame || SceneManager::instance()->getUISceneNode()->invalidated() ||
+		   mBenchmarkMode ) ) {
 		mWindow->clear();
 		SceneManager::instance()->draw();
 		mWindow->display();
@@ -1097,6 +1112,8 @@ App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 }
 
 App::~App() {
+	if ( mWindow )
+		Engine::instance()->getPlatformHelper()->setApplicationReopenCallback( {} );
 	mLifetime.invalidate();
 	appInstance = nullptr;
 	mDestroyingApp = true;
@@ -2263,7 +2280,11 @@ KeyBindings::ShortcutMap App::getLocalKeybindings() {
 		{ { KEY_Z, KeyMod::getDefaultModifier() | KeyMod::getDefaultSecondaryModifier() },
 		  "zen-mode" },
 		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+		{ { KEY_Q, KeyMod::getDefaultModifier() }, "close-app" },
+#else
 		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
+#endif
 		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
 		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
 		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
@@ -2324,7 +2345,7 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 			 { "switch-to-tab-8", "alt+8" },		{ "switch-to-tab-9", "alt+9" },
 			 { "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-			 { "menu-toggle", "mod+shift+m" },
+			 { "close-app", "mod+shift+q" },		{ "menu-toggle", "mod+shift+m" },
 #endif
 			 { "lock-toggle", "mod+shift+l" },		{ "debug-widget-tree-view", "f11" },
 			 { "project-build-and-run", "f5" },		{ "project-build-start", "mod+shift+b" } };
@@ -4955,8 +4976,21 @@ void App::init( InitParameters& params ) {
 		}
 #endif
 
-		mWindow->setCloseRequestCallback(
-			[this]( EE::Window::Window* win ) -> bool { return onCloseRequestCallback( win ); } );
+		Engine::instance()->getPlatformHelper()->setApplicationReopenCallback(
+			[this] { return reopen(); } );
+		mWindow->setCloseRequestCallback( [this]( EE::Window::Window* win ) -> bool {
+			if ( !mConfig.ui.exitOnClose && !mClosing ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_HAIKU
+				win->minimize();
+#else
+				mHiddenOnClose = true;
+				win->hideForReopen();
+#endif
+				return false;
+			}
+			return onCloseRequestCallback( win );
+		} );
 
 		mWindow->setQuitCallback( [this]( EE::Window::Window* win ) {
 			if ( win->isOpen() )
@@ -4966,6 +5000,7 @@ void App::init( InitParameters& params ) {
 		mWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
 			switch ( event->Type ) {
 				case InputEvent::FileDropped: {
+					reopen();
 					std::string file( event->file.file );
 					if ( FileSystem::fileExtension( file ) == "lnk" ) {
 						auto target = Sys::getShortcutTarget( file );
@@ -5281,6 +5316,7 @@ void App::init( InitParameters& params ) {
 									if ( forcePosition )
 										forcePosition( editor, path );
 								} );
+							reopen();
 							if ( !mWindow->hasFocus() ) {
 								if ( mWindow->isMinimized() )
 									mWindow->restore();

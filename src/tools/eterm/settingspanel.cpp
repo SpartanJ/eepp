@@ -136,6 +136,16 @@ UIWindow* SettingsPanel::create( App& app ) {
 			app.savePreferences();
 		} );
 
+	panel->addCategory( "window.behavior", app.i18n( "window", "Window" ),
+						app.i18n( "behavior", "Behavior" ) );
+	panel->addBool(
+		{ "exitOnClose", "window.behavior", app.i18n( "exit_on_close", "Exit on Close" ),
+		  app.i18n( "exit_on_close_desc", "Exit when closing the window. Disable to keep the "
+										  "application and its workspace open." ) },
+		&app.config->window.exitOnClose, [&app]( bool value ) {
+			app.application->setExitOnClose( value );
+			app.savePreferences();
+		} );
 	panel->addCategory( "window.renderer", app.i18n( "window", "Window" ),
 						app.i18n( "renderer", "Renderer" ) );
 	panel->addBool(

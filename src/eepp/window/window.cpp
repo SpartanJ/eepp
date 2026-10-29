@@ -15,6 +15,10 @@
 #include <eepp/window/terminal/kittyframepresenter.hpp>
 #include <eepp/window/window.hpp>
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+#include <eepp/window/platform/macos/platformhelper.hpp>
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 #include <emscripten.h>
 #endif
@@ -700,13 +704,44 @@ bool Window::isMinimized() const {
 
 void Window::hide() {}
 
+void Window::hideForReopen() {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	// App-requested fullscreen belongs to SDL. Leave it through the backend so its flags
+	// agree with eepp before hiding. SDL2 waits for exit; SDL3 can queue it asynchronously.
+	const bool backendExitRequested = !isWindowed();
+	if ( backendExitRequested )
+		toggleFullscreen();
+	// Green-button fullscreen is native-only on SDL2 and still needs the deferred hide.
+	if ( Private::WindowVisibility::deferHide(
+			 getWindowHandler(), getWindowID(),
+			 []( Uint32 id ) {
+				 if ( !Engine::isEngineRunning() )
+					 return;
+				 auto* window = Engine::instance()->getWindowID( id );
+				 if ( window && window->isOpen() )
+					 window->hide();
+			 },
+			 !backendExitRequested ) )
+		return;
+#endif
+	hide();
+}
+
 void Window::raise() {}
 
 void Window::restore() {}
 
 void Window::flash( WindowFlashOperation ) {}
 
-void Window::show() {}
+void Window::show() {
+	cancelPendingHide();
+}
+
+void Window::cancelPendingHide() {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	Private::WindowVisibility::cancelHide( getWindowHandler() );
+#endif
+}
 
 void Window::setPosition( int, int ) {}
 

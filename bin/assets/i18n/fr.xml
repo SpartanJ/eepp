@@ -1337,4 +1337,6 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="kb_restore_all">Rétablir tous les raccourcis…</string>
 	<string name="kb_restore_all_confirm">Rétablir les raccourcis par défaut de toutes les commandes ? Les raccourcis personnalisés seront supprimés.</string>
 	<string name="kb_restore_all_action">Rétablir les valeurs par défaut</string>
+	<string name="exit_on_close">Quitter à la fermeture</string>
+	<string name="exit_on_close_desc">Quitter lors de la fermeture de la fenêtre. Désactivez cette option pour garder l’application et son espace de travail ouverts.</string>
 </resources>

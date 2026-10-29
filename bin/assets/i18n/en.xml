@@ -1338,4 +1338,6 @@ Restart ecode to see the changes.</string>
 	<string name="kb_restore_all">Restore All Shortcuts…</string>
 	<string name="kb_restore_all_confirm">Restore default shortcuts for all commands? Custom shortcuts will be removed.</string>
 	<string name="kb_restore_all_action">Restore Defaults</string>
+	<string name="exit_on_close">Exit on Close</string>
+	<string name="exit_on_close_desc">Exit when closing the window. Disable to keep the application and its workspace open.</string>
 </resources>

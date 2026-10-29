@@ -2348,13 +2348,21 @@ workspace "eepp"
 		kind "ConsoleApp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
 		defines { "EE_UNIT_TESTS" }
-		if os.istarget("macosx") and table.contains(backends, "SDL2") then
-			-- Inject native SDL2 drops to test Cocoa's modal pointer handling.
+		if table.contains(backends, "SDL2") then
+			-- Exercise native SDL2 event queues and window state.
 			defines { "EE_SDL_VERSION_2" }
-			if is_xcode() or _OPTIONS["use-frameworks"] then
+			if not os.istarget("macosx") or is_xcode() or _OPTIONS["use-frameworks"] then
 				links { get_backend_link_name( "SDL2" ) }
 			else
 				linkoptions { popen("sdl2-config --libs"):gsub("\n", "") }
+			end
+		elseif table.contains(backends, "SDL3") then
+			defines { "EE_SDL_VERSION_3" }
+			if os.istarget("macosx") and not is_xcode() and not _OPTIONS["use-frameworks"] then
+				buildoptions { popen("pkg-config --cflags sdl3"):gsub("\n", "") }
+				linkoptions { popen("pkg-config --libs sdl3"):gsub("\n", "") }
+			else
+				links { get_backend_link_name( "SDL3" ) }
 			end
 		end
 		links { "eterm-static", "languages-syntax-highlighting-static" }
@@ -2382,7 +2390,8 @@ workspace "eepp"
 				"src/tools/ecode/plugins/autocomplete/snippetparser.cpp",
 				"src/tools/ecode/plugins/autocomplete/usersnippetstore.cpp" }
 		if os.istarget("macosx") then
-			files { "src/tests/unit_tests/accessibility_macos_tests.mm" }
+			files { "src/tests/unit_tests/accessibility_macos_tests.mm",
+					"src/tests/unit_tests/uiapplication_macos_tests.mm" }
 			links { "Cocoa.framework" }
 		end
 		filter { "system:not windows", "system:not haiku" }

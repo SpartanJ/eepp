@@ -79,6 +79,8 @@ class App {
 
 	EE::Window::Window* window() const { return mApp->getWindow(); }
 
+	UIApplication& application() const { return *mApp; }
+
 	MainThreadExecutor& executor() const { return *mExecutor; }
 
 	/** Pool for blocking work (shared with the scene). */

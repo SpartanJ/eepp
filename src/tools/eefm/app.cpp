@@ -647,6 +647,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	WindowSettings ws( width, height, "eefm", WindowStyle::Default, WindowBackend::Default, 32,
 					   Sys::getResourcePath( "eefm" ) + windowIcon );
 	UIApplication::Settings appSettings;
+	appSettings.exitOnClose = mConfig->window.exitOnClose;
 	appSettings.basePath = Sys::getResourcePath( "eefm" );
 	if ( mConfig->window.pixelDensity > 0 )
 		appSettings.pixelDensity = mConfig->window.pixelDensity;
@@ -789,6 +790,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 			   event->window.type == InputEvent::WindowKeyboardFocusLost ) )
 			mFileOperations->cancelContextMenu();
 		if ( event->Type == InputEvent::FileDropped ) {
+			mApp->reopen();
 			// Files dropped from other applications: gathered, then copied in one transfer once
 			// the events of this frame were delivered (a drop sends one event per file).
 			std::string file( event->file.file );
@@ -813,7 +815,9 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 		}
 	} );
 
-	mApp->getWindow()->setCloseRequestCallback( [this]( EE::Window::Window* ) {
+	mApp->getWindow()->setCloseRequestCallback( [this]( EE::Window::Window* window ) {
+		if ( !mApp->handleCloseRequest( window ) )
+			return false;
 		quit();
 		// Keep the scene and its dispatcher alive until producers and the executor stop.
 		return false;

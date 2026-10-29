@@ -9,6 +9,7 @@
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
@@ -600,6 +601,125 @@ class TestUIApplication : public UIApplication {
 
 	void markRunning() { mRunning = true; }
 };
+
+UTEST( UIApplication, CloseCanRetainWorkspaceWhileExplicitCloseStillDestroysIt ) {
+	const std::string previous = Sys::getEnv( "EEPP_WINDOW_HIDDEN" );
+	ScopedOp environment( [] { Sys::setEnv( "EEPP_WINDOW_HIDDEN", "1" ); },
+						  [&previous] { Sys::setEnv( "EEPP_WINDOW_HIDDEN", previous.c_str() ); } );
+	TestUIApplication app(
+		WindowSettings( 320, 240, "Retained Workspace" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	auto* window = app.getWindow();
+	ASSERT_TRUE( window != nullptr );
+	auto* scene = app.getUI();
+	auto* input = UITextInput::New();
+	input->setText( "unsaved workspace" );
+	input->setParent( scene->getRoot() );
+	auto* drawProbe = eeNew( ContextTestSceneNode, ( window ) );
+	SceneManager::instance()->add( drawProbe );
+	SceneManager::instance()->setCurrentSceneNode( scene );
+	app.markRunning();
+	scene->invalidate( nullptr );
+	app.tickOnce();
+	const int initialDraws = drawProbe->drawCount;
+	EXPECT_GT( initialDraws, 0 );
+	EXPECT_TRUE( app.getExitOnClose() );
+	app.setExitOnClose( false );
+	InputEvent close( InputEvent::Window );
+	close.WinID = window->getWindowID();
+	close.window.type = InputEvent::WindowClose;
+	window->getInput()->pushEvent( close );
+	app.tickOnce();
+	EXPECT_TRUE( window->isOpen() );
+	EXPECT_TRUE( app.isRunning() );
+	EXPECT_FALSE( window->isVisible() );
+	EXPECT_EQ( app.getWindowCount(), 1u );
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_HAIKU
+	// Minimized windows are restored by the desktop, without the macOS reopen handler.
+	EXPECT_FALSE( app.reopen() );
+	window->restore();
+	app.tickOnce();
+#else
+	EXPECT_EQ( drawProbe->drawCount, initialDraws );
+	EXPECT_TRUE( app.reopen() );
+	EXPECT_FALSE( app.reopen() );
+#endif
+	scene->invalidate( nullptr );
+	app.tickOnce();
+	EXPECT_GT( drawProbe->drawCount, initialDraws );
+	EXPECT_EQ( app.getUI(), scene );
+	EXPECT_TRUE( input->getText() == String( "unsaved workspace" ) );
+	// Programmatic destruction is independent of the user-close preference.
+	app.closeWindow( window );
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 0u );
+	EXPECT_FALSE( app.isRunning() );
+}
+
+UTEST( UIApplication, RetainPolicyStillClosesSecondaryModalWindows ) {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		UTEST_SKIP( "Terminal runtime supports only one native window" );
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	UTEST_SKIP( "Emscripten supports only one native window" );
+#endif
+	TestUIApplication app(
+		WindowSettings( 320, 240, "Primary Workspace" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getUI() != nullptr );
+	app.setExitOnClose( false );
+	app.markRunning();
+	auto* primary = app.getWindow();
+	auto* dialog = UIWindow::NewInApplicationWindow(
+		app,
+		WindowSettings( 240, 180, "Secondary Modal", WindowStyle::Default | WindowStyle::Hidden ),
+		UIWindow::SIMPLE_LAYOUT, UIWindow::StyleConfig(),
+		ContextSettings( false, 0, 0, GLv_default, true, false ), true );
+	ASSERT_TRUE( dialog != nullptr );
+	auto* secondary = dialog->getUISceneNode()->getWindow();
+	ASSERT_NE( secondary, primary );
+	const auto secondaryId = secondary->getWindowID();
+	InputEvent close( InputEvent::Window );
+	close.WinID = secondaryId;
+	close.window.type = InputEvent::WindowClose;
+	secondary->getInput()->pushEvent( close );
+	EXPECT_FALSE( secondary->isOpen() );
+	app.tickOnce();
+	EXPECT_EQ( app.getWindowCount(), 1u );
+	EXPECT_TRUE( app.isRunning() );
+	EXPECT_TRUE( primary->isOpen() );
+	EXPECT_TRUE( Engine::instance()->getWindowID( secondaryId ) == nullptr );
+	EXPECT_FALSE( app.reopen() );
+}
+
+UTEST( UIApplication, ExitOnCloseCanBeEnabledAfterHidingAndQuitDoesNotHide ) {
+	TestUIApplication app(
+		WindowSettings( 320, 240, "Close Policy" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f,
+								 false ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	auto* window = app.getWindow();
+	ASSERT_TRUE( window != nullptr );
+	app.markRunning();
+	app.setExitOnClose( false );
+	EXPECT_FALSE( app.handleCloseRequest( window ) );
+	InputEvent quit( InputEvent::Quit );
+	quit.WinID = window->getWindowID();
+	window->getInput()->pushEvent( quit );
+	EXPECT_FALSE( app.isRunning() );
+	EXPECT_TRUE( window->isOpen() );
+	app.markRunning();
+	app.setExitOnClose( true );
+	InputEvent close( InputEvent::Window );
+	close.WinID = window->getWindowID();
+	close.window.type = InputEvent::WindowClose;
+	window->getInput()->pushEvent( close );
+	app.tickOnce();
+	EXPECT_FALSE( app.isRunning() );
+	EXPECT_EQ( app.getWindowCount(), 0u );
+}
 
 UTEST( UIApplication, NativeQuitStopsLoopWithoutClosingWindowsAndCanBeOverridden ) {
 	TestUIApplication app(

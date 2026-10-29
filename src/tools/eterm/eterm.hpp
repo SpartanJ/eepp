@@ -161,6 +161,7 @@ class App : private efsw::FileWatchListener {
 	bool closeWindow( EE::Window::Window* );
 
 	EE::Window::Window* appWindow{ nullptr };
+	UIApplication* application{ nullptr };
 	UISceneNode* scene{ nullptr };
 	UILinearLayout* mainLayout{ nullptr };
 #if EE_PLATFORM == EE_PLATFORM_MACOS

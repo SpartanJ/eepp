@@ -151,6 +151,7 @@ WindowSDL::~WindowSDL() {
 }
 
 void WindowSDL::destroySDLResources() {
+	cancelPendingHide();
 	Private::DragManager::invalidateWindow( this );
 #ifdef EE_HAS_WAYLAND_DRAG_SOURCE
 	Private::WaylandDragAndDrop::detachWindow( *this );
@@ -869,6 +870,7 @@ void WindowSDL::flash( WindowFlashOperation op ) {
 }
 
 void WindowSDL::show() {
+	Window::show();
 	if ( Runtime::forceHiddenWindows() )
 		return;
 	SDL_ShowWindow( mSDLWindow );

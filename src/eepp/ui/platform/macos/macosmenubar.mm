@@ -216,10 +216,6 @@ struct NativeMenuSource {
 	NSMenuItem* item;
 	if ( nullptr != source ) {
 		item = [self mirroredItemWithTitle:title source:source];
-		if ( source->getMenuRole() == MenuRole::Quit ) {
-			[item setKeyEquivalent:@"q"];
-			[item setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-		}
 	} else {
 		item = [[NSMenuItem alloc] initWithTitle:title action:defaultAction keyEquivalent:@""];
 		[item setTarget:NSApp];

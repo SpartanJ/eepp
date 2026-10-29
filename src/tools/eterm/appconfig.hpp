@@ -59,6 +59,7 @@ struct WindowConfig {
 	bool vsync{ false };
 	bool benchmarkMode{ false };
 	bool warnBeforeClose{ false };
+	bool exitOnClose{ EE_PLATFORM != EE_PLATFORM_MACOS };
 	bool alwaysShowTabBar{ false };
 	bool showTabBarWhenSplit{ true };
 	GraphicsLibraryVersion rendererVersion{ GLv_default };

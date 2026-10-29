@@ -80,6 +80,10 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	Engine::instance()->getPlatformHelper()->setNativeScrollMomentumEnabled( true );
 	mWindow->setDeferNativeResourceDestructionOnClose( true );
 	mWindow->setQuitCallback( [this]( EE::Window::Window* ) { requestQuit(); } );
+	mWindow->setCloseRequestCallback(
+		[this]( EE::Window::Window* window ) { return handleCloseRequest( window ); } );
+	Engine::instance()->getPlatformHelper()->setApplicationReopenCallback(
+		[this] { return reopen(); } );
 
 	mDidRun = true;
 
@@ -187,6 +191,7 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 }
 
 UIApplication::~UIApplication() {
+	Engine::instance()->getPlatformHelper()->setApplicationReopenCallback( {} );
 	mSystemFontState.reset();
 	Engine::destroySingleton();
 	if ( mShowMemoryManagerResult )
@@ -210,6 +215,8 @@ UIApplication::createWindowInternal( const WindowSettings& windowSettings,
 		return nullptr;
 	window->setDeferNativeResourceDestructionOnClose( true );
 	window->setQuitCallback( [this]( EE::Window::Window* ) { requestQuit(); } );
+	window->setCloseRequestCallback(
+		[this]( EE::Window::Window* window ) { return handleCloseRequest( window ); } );
 
 	auto* ui = UISceneNode::New(
 		window, true, mUISceneNode ? mUISceneNode->getThreadPool() : mSettings.threadPool );
@@ -304,6 +311,47 @@ UIApplication::QuitPolicy UIApplication::getQuitPolicy() const {
 	return mQuitPolicy;
 }
 
+void UIApplication::setExitOnClose( bool exitOnClose ) {
+	mSettings.exitOnClose = exitOnClose;
+}
+
+bool UIApplication::getExitOnClose() const {
+	return mSettings.exitOnClose;
+}
+
+bool UIApplication::handleCloseRequest( EE::Window::Window* window ) {
+	if ( mSettings.exitOnClose )
+		return true;
+	for ( auto& entry : mWindows ) {
+		if ( entry.window == window && entry.primary && window->isOpen() &&
+			 !entry.pendingDestroy ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_HAIKU
+			window->minimize();
+#else
+			entry.hiddenOnClose = true;
+			window->hideForReopen();
+#endif
+			return false;
+		}
+	}
+	return true;
+}
+
+bool UIApplication::reopen() {
+	bool revealed = false;
+	for ( auto& entry : mWindows ) {
+		if ( !entry.hiddenOnClose || entry.pendingDestroy || !entry.window->isOpen() )
+			continue;
+		entry.hiddenOnClose = false;
+		entry.window->show();
+		entry.window->raise();
+		entry.ui->invalidate( nullptr );
+		revealed = true;
+	}
+	return revealed;
+}
+
 int UIApplication::run() {
 	if ( !mDidRun )
 		return EXIT_FAILURE;
@@ -388,7 +436,11 @@ void UIApplication::tick() {
 
 	bool presented = false;
 	for ( auto& entry : mWindows ) {
-		if ( entry.pendingDestroy || !entry.window->isOpen() || !entry.ui->invalidated() )
+		// A retained close may still be leaving native fullscreen. Draw until it is hidden,
+		// including when AppKit rejects that transition and leaves the window visible.
+		if ( entry.pendingDestroy || !entry.window->isOpen() ||
+			 ( entry.hiddenOnClose && !entry.window->isVisible() ) || entry.window->isMinimized() ||
+			 !entry.ui->invalidated() )
 			continue;
 		auto context = entry.ui->makeCurrent();
 		entry.window->clear();

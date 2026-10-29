@@ -67,6 +67,7 @@ struct UIConfig {
 	bool showStatusBar{ true };
 	bool showMenuBar{ false };
 	bool welcomeScreen{ true };
+	bool exitOnClose{ EE_PLATFORM != EE_PLATFORM_MACOS };
 	bool openFilesInNewWindow{ false };
 	bool openProjectInNewWindow{ false };
 	bool nativeFileDialogs{ false };

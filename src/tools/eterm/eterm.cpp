@@ -596,6 +596,7 @@ void App::createGlobalMenuBar() {
 #endif
 
 bool App::closeWindow( EE::Window::Window* ) {
+	application->reopen();
 	if ( closeApproved || !warnBeforeClose ) {
 		saveWindowState();
 		return true;
@@ -802,6 +803,7 @@ int App::run( int argc, char* argv[] ) {
 			uiFont.reset();
 	}
 	UIApplication::Settings appSettings;
+	appSettings.exitOnClose = config->window.exitOnClose;
 	appSettings.basePath = FileSystem::removeLastFolderFromPath( resPath );
 	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
 	if ( config->window.pixelDensity > 0 ) {
@@ -830,6 +832,7 @@ int App::run( int argc, char* argv[] ) {
 		ContextSettings( config->window.vsync, frameRateLimit, config->window.multisamples,
 						 config->window.rendererVersion ) );
 	appWindow = app.getWindow();
+	application = &app;
 	scene = app.getUI();
 	if ( !appWindow || !appWindow->isOpen() || !scene )
 		return EXIT_FAILURE;
@@ -1021,8 +1024,9 @@ int App::run( int argc, char* argv[] ) {
 	}
 #endif
 
-	appWindow->setCloseRequestCallback(
-		[this]( EE::Window::Window* window ) { return closeWindow( window ); } );
+	appWindow->setCloseRequestCallback( [this]( EE::Window::Window* window ) {
+		return application->handleCloseRequest( window ) && closeWindow( window );
+	} );
 	appWindow->setQuitCallback( [this]( EE::Window::Window* window ) {
 		if ( window->isOpen() && closeWindow( window ) )
 			window->close();
@@ -1043,7 +1047,10 @@ int App::run( int argc, char* argv[] ) {
 		}
 		if ( !appWindow->isOpen() )
 			return;
-		if ( benchmarkMode || scene->invalidated() ) {
+		if ( !appWindow->isMinimized() &&
+			 ( appWindow->isVisible() || Runtime::forceHiddenWindows() ||
+			   Runtime::isOffscreen() ) &&
+			 ( benchmarkMode || scene->invalidated() ) ) {
 			appWindow->clear();
 			SceneManager::instance()->draw();
 			appWindow->display();

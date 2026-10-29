@@ -59,6 +59,9 @@ class EE_API UIApplication {
 		bool loadIconResources{ true };
 		//! Controls native accessibility for every application-owned UI scene.
 		AccessibilityPolicy accessibilityPolicy{ AccessibilityPolicy::Auto };
+		//! Set false to retain the primary window on user close: hide on macOS, minimize on
+		//! Windows/Linux/BSD/Haiku. Secondary windows close normally. Native Quit is independent.
+		bool exitOnClose{ true };
 		//! The default base font for the UI. If not provided it will load NotoSans-Regular ( will
 		//! look at "assets/fonts/NotoSans-Regular.ttf" )
 		Font* baseFont{ nullptr };
@@ -134,6 +137,24 @@ class EE_API UIApplication {
 	/** Returns the current window-close policy. */
 	QuitPolicy getQuitPolicy() const;
 
+	/** Controls whether user close requests close the primary window or retain it (hidden on macOS,
+	 * minimized on Windows/Linux/BSD/Haiku). The default
+	 * is true on every platform; applications choose their own platform-specific defaults.
+	 * Secondary windows and direct closeWindow() calls still close normally under QuitPolicy. */
+	void setExitOnClose( bool exitOnClose );
+
+	bool getExitOnClose() const;
+
+	/** Applies the user-close policy to an owned window. Returns true to continue closing, or
+	 * false when the window was retained. Custom Window::setCloseRequestCallback() handlers must
+	 * call this before performing shutdown checks. */
+	bool handleCloseRequest( EE::Window::Window* window );
+
+	/** Reveals windows hidden by close requests, retaining their UI and session state.
+	 * Called for native application reopen requests on macOS. Returns whether any were revealed.
+	 * Other platforms may call this from their own application activation mechanism. */
+	bool reopen();
+
 	//! Runs the application until window is closed
 	//! @return EXIT_SUCCESS if application run successfully
 	int run();
@@ -159,6 +180,7 @@ class EE_API UIApplication {
 		UISceneNode* ui{ nullptr };
 		bool primary{ false };
 		bool pendingDestroy{ false };
+		bool hiddenOnClose{ false };
 	};
 
 	/** Shared primary/secondary window creation implementation. */

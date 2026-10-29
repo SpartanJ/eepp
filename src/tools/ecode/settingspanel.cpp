@@ -1504,6 +1504,14 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 			mApp->getConfig().screenshot.saveFormat = format.toLower().toUtf8();
 		} );
 
+	addCategory( panel, "window.behavior", mApp->i18n( "window", "Window" ),
+				 mApp->i18n( "behavior", "Behavior" ) );
+	addBool(
+		panel,
+		{ "exitOnClose", "window.behavior", mApp->i18n( "exit_on_close", "Exit on Close" ),
+		  mApp->i18n( "exit_on_close_desc", "Exit when closing the window. Disable to keep the "
+											"application and its workspace open." ) },
+		&mApp->getConfig().ui.exitOnClose, [this]( bool ) { mApp->saveConfig(); } );
 	addCategory( panel, "window.renderer", mApp->i18n( "window", "Window" ),
 				 mApp->i18n( "renderer", "Renderer" ) );
 	addBool(

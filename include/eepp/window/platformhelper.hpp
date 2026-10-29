@@ -2,6 +2,7 @@
 #define EE_WINDOW_PLATFORM_HPP
 
 #include <eepp/config.hpp>
+#include <functional>
 #include <string>
 
 namespace EE { namespace Window {
@@ -34,6 +35,11 @@ class EE_API PlatformHelper {
 	 * @return true when the platform and window support changing this setting.
 	 */
 	virtual bool setWindowTitleBarColor( void* window, Uint8 red, Uint8 green, Uint8 blue );
+
+	/** Sets the process-wide handler for native application reopen requests (Dock/Finder on
+	 * macOS). Return true when the request was handled. Clear the callback before its owner is
+	 * destroyed. Unsupported platforms return false. Must be called on the main thread. */
+	bool setApplicationReopenCallback( std::function<bool()> callback );
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	/** @return The Activity object for the application */

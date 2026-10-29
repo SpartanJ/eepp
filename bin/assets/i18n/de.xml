@@ -1353,4 +1353,6 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="kb_restore_all">Alle Tastenkürzel zurücksetzen…</string>
 	<string name="kb_restore_all_confirm">Standard-Tastenkürzel für alle Befehle wiederherstellen? Benutzerdefinierte Tastenkürzel werden entfernt.</string>
 	<string name="kb_restore_all_action">Standardbelegung wiederherstellen</string>
+	<string name="exit_on_close">Beim Schließen beenden</string>
+	<string name="exit_on_close_desc">Die Anwendung beim Schließen des Fensters beenden. Deaktivieren, um die Anwendung und ihren Arbeitsbereich geöffnet zu lassen.</string>
 </resources>

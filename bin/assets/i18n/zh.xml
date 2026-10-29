@@ -1143,4 +1143,6 @@ file in the directory tree.</string>
 	<string name="kb_restore_all">恢复所有快捷键…</string>
 	<string name="kb_restore_all_confirm">恢复所有命令的默认快捷键？自定义快捷键将被删除。</string>
 	<string name="kb_restore_all_action">恢复默认设置</string>
+	<string name="exit_on_close">关闭窗口时退出</string>
+	<string name="exit_on_close_desc">关闭窗口时退出应用。禁用此选项可保持应用及其工作区运行。</string>
 </resources>

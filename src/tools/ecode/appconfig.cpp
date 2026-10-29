@@ -159,6 +159,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.showStatusBar = ini.getValueB( "ui", "show_status_bar", true );
 	ui.showMenuBar = ini.getValueB( "ui", "show_menu_bar", false );
 	ui.welcomeScreen = ini.getValueB( "ui", "welcome_screen", true );
+	ui.exitOnClose = ini.getValueB( "window", "exit_on_close", ui.exitOnClose );
 	ui.openFilesInNewWindow = ini.getValueB( "ui", "open_files_in_new_window", false );
 	ui.openProjectInNewWindow = ini.getValueB( "ui", "open_project_in_new_window", false );
 	ui.nativeFileDialogs = ini.getValueB( "ui", "native_file_dialogs", false );
@@ -380,6 +381,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "ui", "show_status_bar", ui.showStatusBar );
 	ini.setValueB( "ui", "show_menu_bar", ui.showMenuBar );
 	ini.setValueB( "ui", "welcome_screen", ui.welcomeScreen );
+	ini.setValueB( "window", "exit_on_close", ui.exitOnClose );
 	ini.setValueB( "ui", "open_files_in_new_window", ui.openFilesInNewWindow );
 	ini.setValueB( "ui", "open_project_in_new_window", ui.openProjectInNewWindow );
 	ini.setValueB( "ui", "native_file_dialogs", ui.nativeFileDialogs );
