@@ -3,6 +3,7 @@
 #include "../pluginmanager.hpp"
 #include "acp/agentsession.hpp"
 #include "llmchatcompletionrequest.hpp"
+#include "localmodeldiscovery.hpp"
 #include "protocol.hpp"
 
 #include <eepp/scene/mainthreadlifetime.hpp>
@@ -92,7 +93,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	bool isLocked() const { return mChatLocked; }
 
-	void setManager( PluginManager* manager ) { mManager = manager; }
+	void setManager( PluginManager* manager );
 
 	bool chatExistsInDisk() const;
 
@@ -104,6 +105,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	long mTimestamp{ 0 };
 	PluginManager* mManager{ nullptr };
 	MainThreadLifetime<LLMChatUI> mLifetime;
+	CancellationSource mLocalModelCancel;
+	Uint64 mLocalModelGeneration{ 0 };
 	UISplitter* mChatSplitter{ nullptr };
 	UIWidget* mChatsList{ nullptr };
 	UICodeEditor* mChatInput{ nullptr };
@@ -160,7 +163,6 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UIWidget* mThinkingBubble{ nullptr };
 	std::string mCurThinking;
 	std::string mCurToolCall;
-	int mPendingModelsToLoad{ 0 };
 	bool mChatIsPrivate{ false };
 	bool mIsAgentMode{ false };
 	bool mChatLocked{ false };
@@ -170,7 +172,6 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	bool mReasoningEnabled{ false };
 	std::string mSelectedReasoningEffort;
 	std::size_t mReasoningBudgetTokens{ 0 };
-	std::vector<LLMModel> mNewModels;
 
 	LLMModel findModel( const std::string& provider, const std::string& model );
 
@@ -219,7 +220,11 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	void addPermissionUI( const acp::RequestPermissionRequest& req,
 						  std::function<void( const acp::RequestPermissionResponse& )> cb );
 
-	void fillApiModels();
+	void cancelLocalModelRefresh();
+
+	void refreshLocalModels();
+
+	void applyDiscoveredLocalModels( LocalModelDiscovery::Batch&& batch );
 
 	String getModelDisplayName( const LLMModel& model ) const;
 
@@ -229,7 +234,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	bool selectAgent( const std::string& agent );
 
-	void fillModelDropDownList();
+	void rebuildModelList( bool keepUndiscoveredModel = true );
 
 	void loadSelectAgent();
 
@@ -268,8 +273,6 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	std::optional<LLMModel> getModel( Uint64 hash );
 
 	void saveChat();
-
-	void onInit();
 
 	void showChatHistory();
 

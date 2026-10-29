@@ -22,6 +22,8 @@ struct LLMReasoningConfiguration {
 	std::uint32_t minBudgetTokens{ 0 };
 	std::uint32_t maxBudgetTokens{ 0 };
 	LLMReasoningType type{ LLMReasoningType::None };
+
+	bool operator==( const LLMReasoningConfiguration& ) const = default;
 };
 
 struct LLMModel {

@@ -40,9 +40,9 @@ class LLMModelsModel : public Model {
 	enum Columns { Name, Provider, Hash };
 
 	LLMModelsModel( const std::vector<LLMModel>& models, UISceneNode* uiSceneNode = nullptr ) :
-		mModels( models ), mUISceneNode( uiSceneNode ) {
-		mCurModels.reserve( mModels.size() );
-		for ( const auto& model : mModels ) {
+		mModels( &models ), mUISceneNode( uiSceneNode ) {
+		mCurModels.reserve( mModels->size() );
+		for ( const auto& model : *mModels ) {
 			mCurModels.emplace_back( &model );
 		}
 	}
@@ -101,12 +101,12 @@ class LLMModelsModel : public Model {
 	}
 
 	void setFilter( const std::string& filter ) {
-		if ( mCurFilter == filter )
+		if ( !mModels || mCurFilter == filter )
 			return;
 		mCurFilter = filter;
 		mCurModels.clear();
 
-		for ( const auto& model : mModels ) {
+		for ( const auto& model : *mModels ) {
 			if ( filter.empty() ) {
 				mCurModels.emplace_back( &model );
 				continue;
@@ -127,10 +127,15 @@ class LLMModelsModel : public Model {
 
 	const std::vector<const LLMModel*>& getCurModels() const { return mCurModels; }
 
-	void refresh() { setFilter( mCurFilter ); }
+	// Retained model indexes/callbacks must not observe pointers into replaced storage.
+	void detachSource() {
+		mModels = nullptr;
+		mCurModels.clear();
+		invalidate();
+	}
 
   protected:
-	const std::vector<LLMModel>& mModels;
+	const std::vector<LLMModel>* mModels;
 	std::vector<const LLMModel*> mCurModels;
 	std::string mCurFilter;
 	UISceneNode* mUISceneNode;
@@ -1092,7 +1097,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		} );
 	} );
 
-	setCmd( "ai-refresh-local-models", [this] { fillApiModels(); } );
+	setCmd( "ai-refresh-local-models", [this] { refreshLocalModels(); } );
 
 	setCmd( "ai-agent-config", [this] {
 		if ( mAgentConfigBtn->isVisible() ) {
@@ -1116,7 +1121,6 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	auto providers = getPlugin()->getProviders();
 	setProviders( std::move( providers ) );
 	mCurModel = getDefaultModel();
-	updateReasoningControl();
 
 	mAgents = getPlugin()->getAgents();
 
@@ -1130,12 +1134,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	auto modelName = config.iniState.getValue( "aiassistant", "default_model", "" );
 	auto agentName = config.iniState.getValue( "aiassistant", "default_agent", "" );
 
-	if ( !modelProvider.empty() && !modelName.empty() ) {
-		auto modelOpt = getModel( modelProvider, modelName );
-		if ( modelOpt ) {
-			mCurModel = *modelOpt;
-		}
-	}
+	if ( !modelProvider.empty() && !modelName.empty() )
+		mCurModel = findModel( modelProvider, modelName );
+	updateReasoningControl();
 
 	if ( !agentName.empty() && mAgents.find( agentName ) != mAgents.end() ) {
 		selectAgent( agentName );
@@ -1143,7 +1144,8 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		selectAgent( mAgents.begin()->first );
 	}
 
-	fillModelDropDownList();
+	rebuildModelList();
+	refreshLocalModels();
 
 	const auto appendShortcutToTooltip = [this]( UIPushButton* but, const std::string& cmd ) {
 		auto kb = getKeyBindings().getCommandKeybindString( cmd );
@@ -1173,6 +1175,11 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 LLMChatUI::~LLMChatUI() {
 	mLifetime.invalidate();
+	mLocalModelCancel.cancel();
+	if ( mLocateModelTable && mLocateModelTable->getModel() ) {
+		static_cast<LLMModelsModel*>( mLocateModelTable->getModel() )->detachSource();
+		mLocateModelTable->setModel( nullptr );
+	}
 	if ( mRequest ) {
 		mRequest->cancelCb = nullptr;
 		mRequest->doneCb = nullptr;
@@ -1504,79 +1511,42 @@ void LLMChatUI::showChatHistory() {
 	} );
 }
 
-void LLMChatUI::fillApiModels() {
-	mPendingModelsToLoad = 0;
-	mNewModels.clear();
+void LLMChatUI::cancelLocalModelRefresh() {
+	mLocalModelCancel.cancel();
+	++mLocalModelGeneration;
+}
 
-	for ( auto& [name, data] : mProviders ) {
-		if ( !data.enabled || !data.fetchModelsUrl )
-			continue;
-
-		auto res = Http::get( *data.fetchModelsUrl, Milliseconds( 100 ) );
-		if ( res.getStatus() != Http::Response::Status::Ok )
-			continue;
-
-		nlohmann::json j = nlohmann::json::parse( res.getBody(), nullptr, false, true );
-
-		if ( !( j.contains( "data" ) && j["data"].is_array() ) &&
-			 !( j.contains( "models" ) && j["models"].is_array() ) )
-			continue;
-
-		data.models.erase(
-			std::remove_if( data.models.begin(), data.models.end(),
-							[]( const LLMModel& model ) { return model.isEphemeral; } ),
-			data.models.end() );
-
-		const auto& jdata = j.contains( "data" ) ? j["data"] : j["models"];
-
-		for ( const auto& el : jdata ) {
-			LLMModel model;
-			model.provider = name;
-			model.name = el.contains( "model" ) ? el.value( "model", "" )
-												: ( el.contains( "id" ) ? el.value( "id", "" )
-																		: el.value( "key", "" ) );
-
-			if ( el.contains( "name" ) )
-				model.displayName = el.value( "name", "" );
-
-			if ( !model.displayName && el.contains( "display_name" ) )
-				model.displayName = el.value( "display_name", "" );
-
-			model.isEphemeral = true;
-			model.hash = hashCombine( std::hash<std::string>()( model.name ),
-									  std::hash<std::string>()( model.provider ) );
-
-			if ( model.name.empty() )
-				continue;
-
-			if ( el.contains( "max_context_length" ) )
-				model.maxOutputTokens = el.value( "max_context_length", 0 );
-
-			data.models.emplace_back( model );
-			mNewModels.push_back( model );
-		}
-
-		mPendingModelsToLoad++;
-
-		runOnMainThread( [this] {
-			mPendingModelsToLoad--;
-			if ( mPendingModelsToLoad == 0 ) {
-				mModels.erase(
-					std::remove_if( mModels.begin(), mModels.end(),
-									[]( const LLMModel& model ) { return model.isEphemeral; } ),
-					mModels.end() );
-
-				mModels.insert( mModels.end(), mNewModels.begin(), mNewModels.end() );
-
-				if ( mLocateModelTable && mLocateModelTable->getModel() )
-					loadSelectModel();
-				onInit();
-			}
+void LLMChatUI::refreshLocalModels() {
+	cancelLocalModelRefresh();
+	if ( !getPlugin() )
+		return;
+	mLocalModelCancel = CancellationSource{};
+	auto endpoints = LocalModelDiscovery::snapshot( mProviders );
+	if ( endpoints.empty() )
+		return;
+	auto task = getUISceneNode()->getThreadPool()->submit(
+		[endpoints = std::move( endpoints ), token = mLocalModelCancel.token()] {
+			return LocalModelDiscovery::discover( endpoints, token );
 		} );
-	}
+	std::move( task ).then( [weak = mLifetime.weakHandle(), generation = mLocalModelGeneration](
+								LocalModelDiscovery::Batch&& batch ) {
+		weak.run( [generation, batch = std::move( batch )]( LLMChatUI* chat ) mutable {
+			if ( generation != chat->mLocalModelGeneration )
+				return;
+			chat->applyDiscoveredLocalModels( std::move( batch ) );
+		} );
+	} );
+}
 
-	if ( mPendingModelsToLoad == 0 )
-		onInit();
+void LLMChatUI::applyDiscoveredLocalModels( LocalModelDiscovery::Batch&& batch ) {
+	// Only a successful discovery of its provider proves that a selected local model is gone.
+	const bool currentProviderDiscovered =
+		mCurModel.isEphemeral &&
+		std::any_of( batch.begin(), batch.end(), [this]( const auto& result ) {
+			return result.provider == mCurModel.provider && result.models;
+		} );
+	LocalModelDiscovery::apply( mProviders, std::move( batch ) );
+	rebuildModelList( !currentProviderDiscovered );
 }
 
 String LLMChatUI::getModelDisplayName( const LLMModel& model ) const {
@@ -1637,7 +1607,19 @@ bool LLMChatUI::selectAgent( const std::string& agent ) {
 	}
 	return false;
 }
-void LLMChatUI::fillModelDropDownList() {
+
+void LLMChatUI::rebuildModelList( bool keepUndiscoveredModel ) {
+	const bool hasPicker = mLocateModelTable && mLocateModelTable->getModel();
+	Uint64 selectedHash = mCurModel.hash;
+	if ( hasPicker ) {
+		auto* model = static_cast<LLMModelsModel*>( mLocateModelTable->getModel() );
+		auto selected = mLocateModelTable->getSelection().first();
+		if ( selected.isValid() )
+			selectedHash =
+				model->data( model->index( selected.row(), LLMModelsModel::Hash ) ).asUint64();
+		model->detachSource();
+		mLocateModelTable->setModel( nullptr );
+	}
 	mModels.clear();
 	std::size_t reserve = 0;
 	for ( const auto& [_, data] : mProviders )
@@ -1660,7 +1642,31 @@ void LLMChatUI::fillModelDropDownList() {
 				mModels.push_back( model );
 		}
 	}
-	getUISceneNode()->getThreadPool()->run( [this] { fillApiModels(); } );
+	auto current = getModel( mCurModel.hash );
+	// A local model restored before discovery, or served by an unreachable server, stays selected
+	// until a successful discovery of its provider omits it.
+	auto provider = mProviders.find( mCurModel.provider );
+	const bool keepCurrent = !current && keepUndiscoveredModel && mCurModel.isEphemeral &&
+							 provider != mProviders.end() &&
+							 LocalModelDiscovery::isDiscoverable( provider->second );
+	if ( !keepCurrent ) {
+		if ( !current && !mModels.empty() )
+			current = mModels.front();
+		// Preserve the reasoning choice while the model and its reasoning capabilities remain.
+		const bool reasoningChanged =
+			!current || current->hash != mCurModel.hash ||
+			current->reasoningConfiguration != mCurModel.reasoningConfiguration;
+		mCurModel = current ? std::move( *current ) : LLMModel{};
+		if ( reasoningChanged )
+			updateReasoningControl();
+	}
+	mModelBtn->setText( getModelDisplayName( mCurModel ) );
+	if ( hasPicker ) {
+		loadSelectModel();
+		auto* model = static_cast<LLMModelsModel*>( mLocateModelTable->getModel() );
+		if ( model->rowCount() )
+			mLocateModelTable->setSelection( model->getFromHash( selectedHash ) );
+	}
 }
 
 // Agent Picker
@@ -2487,8 +2493,7 @@ std::string LLMChatUI::unserialize( const nlohmann::json& payload ) {
 			}
 		}
 	} else {
-		if ( !selectModel( mCurModel ) )
-			fillModelDropDownList();
+		selectModel( mCurModel );
 		if ( reasoningEnabled && mCurModel.reasoningConfiguration ) {
 			const auto& config = *mCurModel.reasoningConfiguration;
 			Int32 selection = 1;
@@ -2532,6 +2537,9 @@ LLMModel LLMChatUI::findModel( const std::string& provider, const std::string& m
 		if ( modelIt != providerIt->second.models.end() ) {
 			return *modelIt;
 		}
+		// Discovery may still be pending; keep the local model instead of replacing the choice.
+		if ( !model.empty() && LocalModelDiscovery::isDiscoverable( providerIt->second ) )
+			return LocalModelDiscovery::makeModel( provider, model );
 	}
 	if ( provider == DEFAULT_PROVIDER && model == DEFAULT_MODEL )
 		return mCurModel; // Do not stack-overflow if something is really wrong
@@ -3201,13 +3209,21 @@ void LLMChatUI::removeLastChat() {
 	}
 }
 
+void LLMChatUI::setManager( PluginManager* manager ) {
+	cancelLocalModelRefresh();
+	mManager = manager;
+}
+
 void LLMChatUI::setProviders( LLMProviders&& providers, bool refreshModels ) {
+	// Catalog providers carry no discovered models; keep them until rediscovery replaces them.
+	LocalModelDiscovery::carryOver( providers, mProviders );
 	mProviders = std::move( providers );
-	if ( !refreshModels )
+	if ( !refreshModels ) {
+		cancelLocalModelRefresh();
 		return;
-	fillModelDropDownList();
-	if ( mLocateModelTable && mLocateModelTable->getModel() )
-		loadSelectModel();
+	}
+	rebuildModelList();
+	refreshLocalModels();
 }
 
 void LLMChatUI::showMsg( String msg ) {
@@ -3243,15 +3259,6 @@ const LLMModel& LLMChatUI::getCheapestModelFromCurrentProvider() const {
 				return model;
 	}
 	return mCurModel;
-}
-
-void LLMChatUI::onInit() {
-	if ( !mModelBtn )
-		return;
-	mModelBtn->ensureMainThread( [this] {
-		if ( getModelDisplayName( mCurModel ) != mModelBtn->getText() )
-			selectModel( mCurModel );
-	} );
 }
 
 void LLMChatUI::updateTabTitle() {
@@ -3483,9 +3490,7 @@ void LLMChatUI::updateLocateModelBarColumns() {
 }
 
 void LLMChatUI::loadSelectModel() {
-	auto ctx = getPlugin()->getPluginContext();
-	mLocateModelTable->setModel(
-		std::make_shared<LLMModelsModel>( mModels, ctx->getUISceneNode() ) );
+	mLocateModelTable->setModel( std::make_shared<LLMModelsModel>( mModels, getUISceneNode() ) );
 
 	static_cast<LLMModelsModel*>( mLocateModelTable->getModel() )
 		->setFilter( mLocateModelInput->getText() );
