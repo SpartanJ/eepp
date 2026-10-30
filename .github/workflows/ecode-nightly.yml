@@ -282,7 +282,7 @@ jobs:
   build_macos:
     name: macOS arm64 Nightly
     needs: release
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       matrix:
         arch: [arm64]
@@ -352,7 +352,7 @@ jobs:
   build_macos_cross:
     name: macOS x86_64 Nightly
     needs: release
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       matrix:
         arch: [arm64]
