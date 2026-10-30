@@ -63,7 +63,7 @@ ZIP_EXTERN zip_int64_t zip_dir_add(zip_t *za, const char *name, zip_flags_t flag
             zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
             return -1;
         }
-        (void)strncpy_s(s, len + 2, name, len);
+        memcpy(s, name, len);
         s[len] = '/';
         s[len + 1] = '\0';
     }

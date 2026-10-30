@@ -4378,7 +4378,7 @@ template <typename T> struct simd16x32 {
   }
 }; // struct simd16x32<T>
 
-simd16<uint16_t> min(const simd16<uint16_t> a, simd16<uint16_t> b) {
+simdutf_unused simd16<uint16_t> min(const simd16<uint16_t> a, simd16<uint16_t> b) {
   return _mm256_min_epu16(a.value, b.value);
 }
 /* end file src/simdutf/haswell/simd16-inl.h */
@@ -5366,7 +5366,7 @@ template <typename T> struct simd16x32 {
   }
 }; // struct simd16x32<T>
 
-simd16<uint16_t> min(const simd16<uint16_t> a, simd16<uint16_t> b) {
+simdutf_unused simd16<uint16_t> min(const simd16<uint16_t> a, simd16<uint16_t> b) {
   return _mm_min_epu16(a.value, b.value);
 }
 /* end file src/simdutf/westmere/simd16-inl.h */
@@ -14138,7 +14138,7 @@ validating_utf8_to_fixed_length_with_constant_checks(const char *str,
 
 /* begin file src/icelake/icelake_convert_utf32_to_latin1.inl.cpp */
 // file included directly
-size_t icelake_convert_utf32_to_latin1(const char32_t *buf, size_t len,
+simdutf_unused size_t icelake_convert_utf32_to_latin1(const char32_t *buf, size_t len,
                                        char *latin1_output) {
   const char32_t *end = buf + len;
   __m512i v_0xFF = _mm512_set1_epi32(0xff);
@@ -14170,7 +14170,7 @@ size_t icelake_convert_utf32_to_latin1(const char32_t *buf, size_t len,
   return len;
 }
 
-std::pair<result, char *>
+simdutf_unused std::pair<result, char *>
 icelake_convert_utf32_to_latin1_with_errors(const char32_t *buf, size_t len,
                                             char *latin1_output) {
   const char32_t *end = buf + len;
@@ -14970,7 +14970,7 @@ static inline size_t latin1_to_utf8_avx512_branch(__m512i input,
   }
 }
 
-size_t latin1_to_utf8_avx512_start(const char *buf, size_t len,
+simdutf_unused size_t latin1_to_utf8_avx512_start(const char *buf, size_t len,
                                    char *utf8_output) {
   char *start = utf8_output;
   size_t pos = 0;
@@ -14995,7 +14995,7 @@ size_t latin1_to_utf8_avx512_start(const char *buf, size_t len,
 }
 /* end file src/icelake/icelake_convert_latin1_to_utf8.inl.cpp */
 /* begin file src/icelake/icelake_convert_latin1_to_utf32.inl.cpp */
-void avx512_convert_latin1_to_utf32(const char *buf, size_t len,
+simdutf_unused void avx512_convert_latin1_to_utf32(const char *buf, size_t len,
                                     char32_t *utf32_output) {
   while (len >= 16) {
     // Load 16 Latin1 characters into a 128-bit register
@@ -27967,14 +27967,14 @@ bool simdutf_base64_valid_utf16(char16_t input, simdutf_base64_options options);
 #endif /* SIMDUTF_C_H */
 /* end file include/simdutf_c.h */
 
-static simdutf_result to_c_result(const simdutf::result &r) {
+simdutf_unused static simdutf_result to_c_result(const simdutf::result &r) {
   simdutf_result out;
   out.error = static_cast<simdutf_error_code>(r.error);
   out.count = r.count;
   return out;
 }
 
-static simdutf_full_result to_c_full_result(const simdutf::full_result &r) {
+simdutf_unused static simdutf_full_result to_c_full_result(const simdutf::full_result &r) {
   simdutf_full_result out;
   out.error = static_cast<simdutf_error_code>(r.error);
   out.input_count = r.input_count;

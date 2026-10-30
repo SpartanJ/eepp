@@ -704,6 +704,8 @@ void _vp_noisemask(vorbis_look_psy *p,
                    float *logmask){
 
   int i,n=p->n;
+  if(n<=0)return;
+
   float *work=alloca(n*sizeof(*work));
 
   bark_noise_hybridmp(n,p->bark,logmdct,logmask,

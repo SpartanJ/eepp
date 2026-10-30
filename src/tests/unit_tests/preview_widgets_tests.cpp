@@ -59,7 +59,7 @@ std::unique_ptr<IOStream> wavStream( Uint32 seconds ) {
 	const auto bytes = wav( seconds );
 	auto stream = std::make_unique<IOStreamString>();
 	stream->write( reinterpret_cast<const char*>( bytes.data() ), bytes.size() );
-	stream->seek( 0 );
+	stream->IOStreamString::seek( 0 );
 	return stream;
 }
 

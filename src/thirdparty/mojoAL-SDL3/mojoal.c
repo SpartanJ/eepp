@@ -3597,16 +3597,16 @@ static void _alGetListeneri(const ALenum param, ALint *value)
 ENTRYPOINTVOID(alGetListeneri,(ALenum param, ALint *value),(param,value))
 
 
-static void _alGetListeneriv(const ALenum param, ALint *values)
+static ALboolean _alGetListeneriv(const ALenum param, ALint *values)
 {
     ALCcontext *ctx = get_current_context();
     if (!ctx) {
         set_al_error(ctx, AL_INVALID_OPERATION);
-        return;
+        return AL_FALSE;
     }
 
     if (!values) {
-        return;  // legal no-op
+        return AL_FALSE;  // legal no-op
     }
 
     switch (param) {
@@ -3631,8 +3631,9 @@ static void _alGetListeneriv(const ALenum param, ALint *values)
             values[5] = (ALint) ctx->listener.orientation[6];
             break;
 
-        default: set_al_error(ctx, AL_INVALID_ENUM); break;
+        default: set_al_error(ctx, AL_INVALID_ENUM); return AL_FALSE;
     }
+    return AL_TRUE;
 }
 ENTRYPOINTVOID(alGetListeneriv,(ALenum param, ALint *values),(param,values))
 
@@ -3642,7 +3643,9 @@ static void _alGetListener3i(const ALenum param, ALint *value1, ALint *value2, A
     switch (param) {
         case AL_POSITION:
         case AL_VELOCITY:
-            _alGetListeneriv(param, values);
+            if (!_alGetListeneriv(param, values)) {
+                return;
+            }
             if (value1) { *value1 = values[0]; }
             if (value2) { *value2 = values[1]; }
             if (value3) { *value3 = values[2]; }
@@ -4152,12 +4155,12 @@ static void _alGetSource3f(const ALuint name, const ALenum param, ALfloat *value
 }
 ENTRYPOINTVOID(alGetSource3f,(ALuint name, ALenum param, ALfloat *value1, ALfloat *value2, ALfloat *value3),(name,param,value1,value2,value3))
 
-static void _alGetSourceiv(const ALuint name, const ALenum param, ALint *values)
+static ALboolean _alGetSourceiv(const ALuint name, const ALenum param, ALint *values)
 {
     ALCcontext *ctx = get_current_context();
     ALsource *src = get_source(ctx, name, NULL);
     if (!src) {
-        return;
+        return AL_FALSE;
     }
 
     switch (param) {
@@ -4185,8 +4188,9 @@ static void _alGetSourceiv(const ALuint name, const ALenum param, ALint *values)
             *values = (ALint) source_get_offset(src, param);
             break;
 
-        default: set_al_error(ctx, AL_INVALID_ENUM); break;
+        default: set_al_error(ctx, AL_INVALID_ENUM); return AL_FALSE;
     }
+    return AL_TRUE;
 }
 ENTRYPOINTVOID(alGetSourceiv,(ALuint name, ALenum param, ALint *values),(name,param,values))
 
@@ -4220,7 +4224,9 @@ static void _alGetSource3i(const ALuint name, const ALenum param, ALint *value1,
     switch (param) {
         case AL_DIRECTION: {
             ALint values[3];
-            _alGetSourceiv(name, param, values);
+            if (!_alGetSourceiv(name, param, values)) {
+                return;
+            }
             if (value1) { *value1 = values[0]; }
             if (value2) { *value2 = values[1]; }
             if (value3) { *value3 = values[2]; }

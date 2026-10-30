@@ -81,8 +81,8 @@ ios_size IOStreamVFS::read( char* data, ios_size size ) {
 			total += count;
 			continue;
 		}
-		constexpr size_t CacheSize = 64 * 1024;
-		constexpr size_t ChunkSize = 256 * 1024;
+		constexpr ios_size CacheSize = 64 * 1024;
+		constexpr ios_size ChunkSize = 256 * 1024;
 		const bool buffered = requested - total < CacheSize;
 		size_t count = static_cast<size_t>( std::min<ios_size>(
 			buffered ? CacheSize : ChunkSize, buffered ? mSize - mPosition : requested - total ) );
