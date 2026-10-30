@@ -368,9 +368,16 @@ UTEST( ZipCreation, SymbolicLinksAreStoredWithoutFollowingThem ) {
 	std::filesystem::create_symlink( "missing-target",
 									 nativePath( root.withAppendedSegment( "broken" ) ), error );
 	ASSERT_FALSE( bool( error ) );
+	for ( const auto& name : { "loop", "broken" } ) {
+		auto link = waitFor( vfs.stat( root.withAppendedSegment( name ), StatOptions{ false } ) );
+		ASSERT_TRUE_MSG( link, link ? "" : link.error().toString().c_str() );
+		EXPECT_EQ( FileType::Symlink, link.value().type );
+		EXPECT_STDSTREQ( std::string( name ) == "loop" ? ".." : "missing-target",
+						 link.value().symlinkTarget );
+	}
 	const auto destination = temp.uri().withAppendedSegment( "links.zip" );
 	auto result = waitFor( vfs.createZip( { root }, destination ).completion() );
-	ASSERT_TRUE( result );
+	ASSERT_TRUE_MSG( result, result ? "" : result.error().toString().c_str() );
 	EXPECT_EQ( 2u, result.value().filesTransferred );
 	EXPECT_EQ( 1u, result.value().directoriesCreated );
 	Zip archive( false );

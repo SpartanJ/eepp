@@ -5,6 +5,7 @@
 #include "location.hpp"
 #include "mime.hpp"
 #include "openwithdialog.hpp"
+#include "operationspopup.hpp"
 #include "panemanager.hpp"
 #include "placescontroller.hpp"
 #include "propertiesdialog.hpp"
@@ -24,6 +25,9 @@ FileOperations::~FileOperations() = default;
 
 void FileOperations::cancelOperations() {
 	cancelContextMenu();
+	if ( auto popup = mOperationsPopup.lock() )
+		popup->close();
+	mOperationsPopup.reset();
 	for ( auto& transfer : mTransfers ) {
 		transfer.second.batch->cancelled = true;
 		transfer.second.transfer.cancel();
@@ -36,6 +40,32 @@ void FileOperations::cancelOperations() {
 	mProperties.clear();
 }
 
+void FileOperations::showOperations( int paneIndex ) {
+	if ( auto popup = mOperationsPopup.lock(); popup && popup->isOpen() ) {
+		const bool samePane = popup->pane() == paneIndex;
+		popup->close();
+		if ( samePane )
+			return;
+	}
+	if ( std::none_of( mTransfers.begin(), mTransfers.end(), [paneIndex]( const auto& entry ) {
+			 return entry.second.pane == paneIndex;
+		 } ) )
+		return;
+	auto popup = OperationsPopup::show( *mUI, *mApp.panes().pane( paneIndex ).transferText,
+										paneIndex, [this]( Uint64 id ) { cancelTransfer( id ); } );
+	mOperationsPopup = popup;
+	updateTransfers();
+}
+
+void FileOperations::cancelTransfer( Uint64 id ) {
+	auto it = mTransfers.find( id );
+	if ( it == mTransfers.end() )
+		return;
+	it->second.batch->cancelled = true;
+	it->second.transfer.cancel();
+	updateTransfers();
+}
+
 void FileOperations::cancelTransfers( int paneIndex ) {
 	for ( auto& transfer : mTransfers ) {
 		if ( transfer.second.pane == paneIndex ) {
@@ -43,6 +73,7 @@ void FileOperations::cancelTransfers( int paneIndex ) {
 			transfer.second.transfer.cancel();
 		}
 	}
+	updateTransfers();
 }
 
 void FileOperations::addDroppedFile( URI uri, std::optional<Vector2f> position ) {
@@ -64,6 +95,7 @@ void FileOperations::reportError( const String& action, const VFSError& error ) 
 
 void FileOperations::runInBackground( const std::string& path, std::function<std::string()> work,
 									  std::function<void()> refresh, String errorTitle ) {
+	++mPendingOperations;
 	// Where the VFS runs the calls on path: on a network mount that stopped answering, the work
 	// fails after the timeout instead of holding one of eefm's threads.
 	mVFS->localIO()
@@ -73,6 +105,7 @@ void FileOperations::runInBackground( const std::string& path, std::function<std
 		.then( mApp.executor(), [this, refresh = std::move( refresh ),
 								 errorTitle =
 									 std::move( errorTitle )]( VFSResult<std::string> result ) {
+			--mPendingOperations;
 			const std::string error =
 				result ? std::move( result ).value() : std::move( result ).error().message;
 			if ( !error.empty() )
@@ -894,7 +927,8 @@ void FileOperations::extractArchive( const URI& file, const URI& destination, in
 	startNextTransfer( batch );
 }
 
-void FileOperations::compressFiles( std::vector<URI> sources, URI destination, int paneIndex ) {
+void FileOperations::compressFiles( std::vector<URI> sources, URI destination, int paneIndex,
+									Uint64 suffix ) {
 	if ( destination.getScheme() != "file" ) {
 		reportError( mUI->i18n( "eefm_compress", "Compress" ),
 					 VFSError( VFSErrorCode::Unsupported, destination,
@@ -908,13 +942,44 @@ void FileOperations::compressFiles( std::vector<URI> sources, URI destination, i
 	}
 	if ( !validateName( destination.getLastPathSegment(), destination.getParent() ) )
 		return;
-	auto batch = std::make_shared<TransferBatch>();
-	batch->pane = paneIndex;
-	batch->kind = TransferKind::Compress;
-	String label = String::format( mUI->i18n( "eefm_compressing", "Compressing to %s" ).toUtf8(),
-								   destination.getLastPathSegment() );
-	auto transfer = mVFS->createZip( std::move( sources ), destination );
-	trackTransfer( std::move( transfer ), std::move( destination ), batch, std::move( label ) );
+	URI target = destination;
+	if ( suffix > 0 ) {
+		auto [base, extension] =
+			FileSystem::fileNameSplitExtension( destination.getLastPathSegment() );
+		target = destination.getParent().withAppendedSegment(
+			base + " (" + String::toString( suffix ) + ")" + extension );
+	}
+	++mPendingOperations;
+	mVFS->stat( target, StatOptions{ false } )
+		.then( mApp.executor(), [this, sources = std::move( sources ),
+								 destination = std::move( destination ),
+								 target = std::move( target ), paneIndex,
+								 suffix]( VFSResult<VFSFileInfo>&& existing ) mutable {
+			--mPendingOperations;
+			if ( !existing && !existing.error().is( VFSErrorCode::NotFound ) ) {
+				reportError( mUI->i18n( "eefm_compress", "Compress" ), existing.error() );
+				return;
+			}
+			// A running ZIP has not published its destination yet. Reserve its name too.
+			const bool pending =
+				std::any_of( mTransfers.begin(), mTransfers.end(), [&target]( const auto& entry ) {
+					return entry.second.batch->kind == TransferKind::Compress &&
+						   entry.second.progress.currentDestination == target;
+				} );
+			if ( existing || pending ) {
+				compressFiles( std::move( sources ), std::move( destination ), paneIndex,
+							   suffix + 1 );
+				return;
+			}
+			auto batch = std::make_shared<TransferBatch>();
+			batch->pane = paneIndex;
+			batch->kind = TransferKind::Compress;
+			String label =
+				String::format( mUI->i18n( "eefm_compressing", "Compressing to %s" ).toUtf8(),
+								target.getLastPathSegment() );
+			auto transfer = mVFS->createZip( std::move( sources ), target );
+			trackTransfer( std::move( transfer ), std::move( target ), batch, std::move( label ) );
+		} );
 }
 
 void FileOperations::startNextTransfer( const std::shared_ptr<TransferBatch>& batch ) {
@@ -994,9 +1059,15 @@ void FileOperations::startTransfer( const URI& source, const URI& destination,
 void FileOperations::trackTransfer( Transfer transfer, URI destination,
 									const std::shared_ptr<TransferBatch>& batch, String label ) {
 	const auto kind = batch->kind;
-	Uint64 id = ++mLastTransferId;
+	// A multi-entry paste is one operation: retain its identity as the next entry starts.
+	if ( batch->id == 0 )
+		batch->id = ++mLastTransferId;
+	const Uint64 id = batch->id;
 	ActiveTransfer active{ id, batch->pane, std::move( label ), std::move( transfer ), {},
 						   {}, batch };
+	// ZIP progress retains this destination once scanning finishes; reserve it while queued.
+	if ( kind == TransferKind::Compress )
+		active.progress.currentDestination = destination;
 	active.subscription = active.transfer.onProgress(
 		[this, id]( const TransferProgress& progress ) {
 			auto it = mTransfers.find( id );
@@ -1016,7 +1087,6 @@ void FileOperations::trackTransfer( Transfer transfer, URI destination,
 			String label = it != mTransfers.end() ? it->second.label : String();
 			if ( it != mTransfers.end() )
 				mTransfers.erase( it );
-			updateTransfers();
 			if ( result ) {
 				if ( result.value().filesSkipped > batch->conflictsSkipped ) {
 					Dialogs::showMessage(
@@ -1047,8 +1117,16 @@ void FileOperations::trackTransfer( Transfer transfer, URI destination,
 					}
 				}
 				startNextTransfer( batch );
+				if ( mTransfers.find( id ) == mTransfers.end() ) {
+					if ( auto popup = mOperationsPopup.lock() )
+						popup->remove( id );
+				}
+				updateTransfers();
 				return;
 			}
+			if ( auto popup = mOperationsPopup.lock() )
+				popup->remove( id );
+			updateTransfers();
 			if ( result.error().is( VFSErrorCode::Cancelled ) ) {
 				batch->cancelled = true;
 				if ( batch->dialog && !batch->dialog->isClosing() )
@@ -1061,6 +1139,7 @@ void FileOperations::trackTransfer( Transfer transfer, URI destination,
 }
 
 void FileOperations::updateTransfers() {
+	auto popup = mOperationsPopup.lock();
 	for ( auto& pane : mApp.panes().all() ) {
 		size_t count = 0;
 		Uint64 done = 0, total = 0;
@@ -1069,13 +1148,20 @@ void FileOperations::updateTransfers() {
 			if ( entry.second.pane != pane->index )
 				continue;
 			++count;
+			if ( popup && popup->isOpen() && popup->pane() == pane->index ) {
+				popup->update( entry.first, entry.second.label, entry.second.progress,
+							   entry.second.batch->cancelled );
+			}
 			label = entry.second.label;
 			done += entry.second.progress.bytesDone;
 			total += entry.second.progress.bytesTotal.value_or( 0 );
 		}
 		pane->transferBox->setVisible( count > 0 );
-		if ( count == 0 )
+		if ( count == 0 ) {
+			if ( popup && popup->pane() == pane->index )
+				popup->close();
 			continue;
+		}
 		if ( count > 1 )
 			label = String::format( mUI->i18n( "eefm_operations_count", "%zu operations" ).toUtf8(),
 									count );
@@ -1155,8 +1241,10 @@ void FileOperations::deleteSelection() {
 				return;
 			for ( const auto& uri : selection ) {
 				bool trashed = Trash::contains( uri );
+				++mPendingOperations;
 				mVFS->remove( uri, RemoveOptions{ true } )
 					.then( mApp.executor(), [this, uri, trashed]( VFSResult<void>&& result ) {
+						--mPendingOperations;
 						if ( !result ) {
 							reportError( String::format( mUI->i18n( "eefm_delete_failed",
 																	"Could not delete %s" )
@@ -1225,10 +1313,12 @@ void FileOperations::renameEntry( FileTab* tab, const VFSFileInfo& entry,
 	URI source = entry.uriIn( tab->model->uri() );
 	URI destination = source.getParent().withAppendedSegment( name );
 	tab->selectLater( name );
+	++mPendingOperations;
 	mVFS->rename( source, destination )
 		.then( mApp.executor(),
 			   [this, source = std::move( source ),
 				destination = std::move( destination )]( VFSResult<void>&& result ) {
+				   --mPendingOperations;
 				   if ( !result ) {
 					   reportError( mUI->i18n( "eefm_rename_failed", "Could not rename" ),
 									result.error() );
@@ -1249,8 +1339,10 @@ void FileOperations::newFolder( FileTab* tab ) {
 			if ( !name || !validateName( *name, parent ) )
 				return;
 			tab->selectLater( *name );
+			++mPendingOperations;
 			mVFS->makeDir( parent.withAppendedSegment( *name ) )
 				.then( mApp.executor(), [this]( VFSResult<void>&& result ) {
+					--mPendingOperations;
 					if ( !result ) {
 						reportError(
 							mUI->i18n( "eefm_new_folder_failed", "Could not create folder" ),
@@ -1270,9 +1362,11 @@ void FileOperations::newTextFile( FileTab* tab ) {
 			if ( !name || !validateName( *name, parent ) )
 				return;
 			tab->selectLater( *name );
+			++mPendingOperations;
 			mVFS->open( parent.withAppendedSegment( *name ),
 						OpenFlags::Write | OpenFlags::Create | OpenFlags::Exclusive )
 				.then( mApp.executor(), [this]( VFSResult<FileHandle>&& handle ) {
+					--mPendingOperations;
 					if ( !handle ) {
 						reportError( mUI->i18n( "eefm_new_file_failed", "Could not create file" ),
 									 handle.error() );

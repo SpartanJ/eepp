@@ -15,6 +15,7 @@
 #include <eepp/ui/tools/uikeybindingseditor.hpp>
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uimenuitem.hpp>
+#include <eepp/ui/uimessagebox.hpp>
 
 #include <args/args.hxx>
 #include <iostream>
@@ -961,8 +962,43 @@ void App::saveState() {
 }
 
 void App::quit() {
-	saveState();
-	mApp->requestQuit();
+	if ( mQuitDialog ) {
+		if ( !mQuitDialog->isClosing() ) {
+			mQuitDialog->toFront();
+			mQuitDialog->getButtonCancel()->setFocus();
+		}
+		return;
+	}
+	auto finish = [this] {
+		saveState();
+		mApp->requestQuit();
+	};
+	if ( !mFileOperations->hasRunningOperations() ) {
+		finish();
+		return;
+	}
+	// A native Quit can arrive while close-to-background has hidden the window.
+	mApp->reopen();
+	mQuitDialog = UIMessageBox::New(
+		UIMessageBox::OK_CANCEL,
+		mUI->i18n( "eefm_confirm_exit_operations",
+				   "File operations are still running. Exiting now will interrupt them and may "
+				   "leave files incomplete or cause data loss.\n\n"
+				   "Are you sure you want to exit?" ) );
+	mQuitDialog->setId( "quit_confirmation" );
+	mQuitDialog->setTitle( mUI->i18n( "eefm_operations_in_progress", "Operations in Progress" ) );
+	mQuitDialog->getTextBox()->setMaxWidthEq( "70vw" );
+	mQuitDialog->getTextBox()->setWordWrap( true );
+	mQuitDialog->getButtonOK()->setId( "quit_confirm" );
+	mQuitDialog->getButtonOK()->setText( mUI->i18n( "eefm_exit_anyway", "Exit Anyway" ) );
+	mQuitDialog->getButtonCancel()->setId( "quit_cancel" );
+	mQuitDialog->getButtonCancel()->setText( mUI->i18n( "eefm_keep_running", "Keep Running" ) );
+	mQuitDialog->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	mQuitDialog->on( Event::OnConfirm, [finish]( const Event* ) { finish(); } );
+	mQuitDialog->on( Event::OnWindowReady,
+					 [this]( const Event* ) { mQuitDialog->getButtonCancel()->setFocus(); } );
+	mQuitDialog->on( Event::OnWindowClose, [this]( const Event* ) { mQuitDialog = nullptr; } );
+	mQuitDialog->showWhenReady();
 }
 
 // ---------------------------------------------------------------------------------------------

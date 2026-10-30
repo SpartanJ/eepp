@@ -120,7 +120,7 @@ class App {
 	/** The Keyboard Shortcuts settings page. */
 	UIWidget* createKeybindingsEditor( UIWidget* parent );
 
-	/** Saves the state and closes the window. */
+	/** Confirms exit while file operations are running, then saves state and stops the loop. */
 	void quit();
 
 	bool isSplit() const { return mSplit; }
@@ -217,6 +217,8 @@ class App {
 	UISplitter* mPaneSplitter{ nullptr };
 	UIWidget* mPlacesScroll{ nullptr };
 	UIWidget* mParking{ nullptr };
+	/** Borrowed from the scene; repeated quit requests reuse this confirmation. */
+	UIMessageBox* mQuitDialog{ nullptr };
 #ifdef EE_VFS_SFTP
 	std::shared_ptr<SSHPrompts> mSSHPrompts;
 #endif

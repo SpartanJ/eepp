@@ -303,6 +303,23 @@ or link/unlink publication. Atomic writes and copies therefore do not authentica
 bytes against a hostile directory owner or another writer with permission to replace that name.
 Use a directory whose writers are trusted (or an application-private directory) for that guarantee.
 
+### Operation feedback in eefm
+
+Each pane's status bar summarizes its running copy, move, extraction and compression jobs.
+Click the operation name/count or progress bar to open a popup for that pane. Each row shows
+its current file, progress and a **Cancel** button that stops only that operation. A multi-file
+paste keeps one row as it advances through the selection. Jobs waiting to start or scan show
+**Preparing...**; cancellation stays visible as **Cancelling...** until the worker acknowledges it.
+
+Escape, the popup's close button, or clicking outside dismisses the popup while jobs keep running.
+Completed jobs disappear, and the popup closes when that pane has no remaining jobs. The status
+bar's separate **Cancel All Operations** button stops every operation assigned to that pane.
+
+Quitting while file operations are running asks for confirmation: **Keep Running** leaves the
+operations active, while **Exit Anyway** exits through normal shutdown. The warning includes
+background deletion and trash operations. Closing a window configured to stay in the background
+keeps its operations running without an exit prompt.
+
 ## Recursive size measurements
 
 `directoryStats()` measures a file, a directory tree, or a vector of selected URIs asynchronously.
@@ -570,8 +587,10 @@ or cancellation removes that temporary. Compression uses DEFLATE level 9 by defa
 
 In eefm, the **Compress** context submenu offers **Compress to "name.zip"** and **Compress To...**.
 The latter accepts a local path or file URI, including when the source is remote or inside an
-archive. Progress and cancellation appear in the originating pane. The finished ZIP is selected
-in views showing the destination folder.
+archive. If the requested name already exists or another compression job is creating it, eefm
+chooses the first available numbered name, such as `name (1).zip` or `name (2).zip`. Progress and
+cancellation appear in the originating pane. The finished ZIP is selected in views showing the
+destination folder.
 
 For direct ZIP writing, `addFile(path, name)` and `addStream(factory, size, name)` defer reads until
 `close()`. Stream factories open one input at a time, so an archive with many files does not keep

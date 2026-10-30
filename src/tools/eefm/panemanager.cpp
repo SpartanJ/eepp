@@ -21,13 +21,17 @@ const char* PaneLayout = R"xml(
 <vbox class="pane" layout_width="0" layout_height="match_parent" min-width="200dp">
 	<TabWidget class="pane_tabs" layout_width="match_parent" layout_height="0" layout_weight="1" />
 	<hbox class="pane_status_bar" layout_width="match_parent" layout_height="wrap_content">
-		<TextView class="pane_status" layout_width="wrap_content" layout_height="wrap_content" />
-		<!-- Let clicks in the empty area reach the status bar background menu. -->
-		<widget layout_width="0" layout_weight="1" layout_height="1dp" enabled="false" />
-		<hbox class="pane_transfer" layout_width="wrap_content" layout_height="wrap_content" visible="false">
-			<TextView class="transfer_text" layout_gravity="center_vertical" />
-			<ProgressBar class="transfer_bar" layout_width="140dp" layout_gravity="center_vertical" display-percent="false" />
-			<PushButton class="transfer_cancel tool" icon="action-close" tooltip='@string(eefm_cancel, "Cancel")' />
+		<TextView class="pane_status" layout_width="wrap_content" layout_height="wrap_content"
+		 max-width="50%" text-overflow="ellipsis" clip="content-box" />
+		<hbox class="pane_transfer" layout_width="0" layout_weight="1" gravity="right"
+		 layout_height="wrap_content" visible="false">
+			<PushButton class="transfer_text tool" layout_width="0" layout_weight="1"
+			 layout_gravity="center_vertical" expand-text="true" text-overflow="ellipsis"
+			 tooltip='@string(eefm_show_operations, "Show Operations")' />
+			<ProgressBar class="transfer_bar" layout_width="0" layout_weight="1" min-width="0" max-width="140dp"
+			 layout_gravity="center_vertical" display-percent="false" />
+			<PushButton class="transfer_cancel tool" icon="action-close"
+			 tooltip='@string(eefm_cancel_all_operations, "Cancel All Operations")' />
 		</hbox>
 	</hbox>
 	<hbox class="pane_filter_bar" layout_width="match_parent" layout_height="wrap_content">
@@ -183,6 +187,7 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 	// The status bar counts as empty space for the context menu (as Dolphin): with a full,
 	// scrolled list it is the only place to reach Create New, Paste...
 	for ( UIWidget* part : { p.root->findByClass<UIWidget>( "pane_status_bar" ),
+							 p.root->findByClass<UIWidget>( "pane_transfer" ),
 							 static_cast<UIWidget*>( p.status ) } ) {
 		part->on( Event::MouseClick, [this, index]( const Event* event ) {
 			if ( !( static_cast<const MouseEvent*>( event )->getFlags() & EE_BUTTON_RMASK ) )
@@ -194,7 +199,7 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 	}
 	p.transferBox = p.root->findByClass( "pane_transfer" );
 	p.transferBar = p.root->findByClass<UIProgressBar>( "transfer_bar" );
-	p.transferText = p.root->findByClass<UITextView>( "transfer_text" );
+	p.transferText = p.root->findByClass<UIPushButton>( "transfer_text" );
 	p.filterBar = p.root->findByClass( "pane_filter_bar" );
 	p.filterInput = p.root->findByClass<UITextInput>( "filter_input" );
 	p.filterLock = p.root->findByClass<UIPushButton>( "filter_lock" );
@@ -317,6 +322,12 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 			navigate( tab, Location::parse( pane.location.input->getText().toUtf8() ) );
 	} );
 
+	// The label is a keyboard-accessible trigger; the progress bar opens the same popup.
+	for ( UIWidget* trigger :
+		  { static_cast<UIWidget*>( p.transferText ), static_cast<UIWidget*>( p.transferBar ) } ) {
+		trigger->onClick(
+			[this, index]( const MouseEvent* ) { mApp.fileOps().showOperations( index ); } );
+	}
 	// Transfers
 	p.root->findByClass( "transfer_cancel" )->onClick( [this, index]( const MouseEvent* ) {
 		mApp.fileOps().cancelTransfers( index );

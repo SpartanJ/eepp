@@ -63,7 +63,7 @@ struct Pane {
 	UITextView* status{ nullptr };
 	UIWidget* transferBox{ nullptr };
 	UIProgressBar* transferBar{ nullptr };
-	UITextView* transferText{ nullptr };
+	UIPushButton* transferText{ nullptr };
 	UIWidget* filterBar{ nullptr };
 	UITextInput* filterInput{ nullptr };
 	UIPushButton* filterLock{ nullptr };

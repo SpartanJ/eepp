@@ -7,6 +7,7 @@
 #include <eepp/vfs/path.hpp>
 
 #include <atomic>
+#include <cstring>
 #include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <mutex>
@@ -19,6 +20,7 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#include <winioctl.h>
 
 using namespace EE::System;
 
@@ -139,6 +141,49 @@ HANDLE openForMetadata( const std::wstring& path, bool follow ) {
 		FILE_FLAG_BACKUP_SEMANTICS | ( follow ? 0 : FILE_FLAG_OPEN_REPARSE_POINT ), nullptr );
 }
 
+/** Reads the link itself, including dangling links, through its already-open metadata handle. */
+std::string readLink( HANDLE handle ) {
+	// The SDK's REPARSE_DATA_BUFFER declaration belongs to driver headers. Both supported tags
+	// share these fields; a symbolic link adds a ULONG Flags before its UTF-16 path buffer.
+	struct Header {
+		DWORD tag;
+		WORD dataLength;
+		WORD reserved;
+		WORD substituteOffset;
+		WORD substituteLength;
+		WORD printOffset;
+		WORD printLength;
+	};
+	static_assert( sizeof( Header ) == 16 );
+	alignas( WCHAR ) char buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+	DWORD returned = 0;
+	if ( !DeviceIoControl( handle, FSCTL_GET_REPARSE_POINT, nullptr, 0, buffer, sizeof( buffer ),
+						   &returned, nullptr ) ||
+		 returned < sizeof( Header ) )
+		return {};
+	Header header;
+	std::memcpy( &header, buffer, sizeof( header ) );
+	if ( header.tag != IO_REPARSE_TAG_SYMLINK && header.tag != IO_REPARSE_TAG_MOUNT_POINT )
+		return {};
+	const size_t pathStart =
+		sizeof( Header ) + ( header.tag == IO_REPARSE_TAG_SYMLINK ? sizeof( ULONG ) : 0 );
+	const size_t dataEnd = sizeof( DWORD ) + 2 * sizeof( WORD ) + header.dataLength;
+	const size_t offset = header.substituteOffset;
+	const size_t length = header.substituteLength;
+	if ( dataEnd > returned || dataEnd < pathStart || offset % sizeof( WCHAR ) ||
+		 length % sizeof( WCHAR ) || offset > dataEnd - pathStart ||
+		 length > dataEnd - pathStart - offset )
+		return {};
+	auto target = String::fromUtf16( buffer + pathStart + offset, length ).toUtf8();
+	// The substitute name is the actual target; the print name is only a display label.
+	// Absolute targets can use the NT namespace rather than a regular drive or UNC path.
+	if ( target.starts_with( "\\??\\UNC\\" ) )
+		target.replace( 0, 8, "\\\\" );
+	else if ( target.starts_with( "\\??\\" ) )
+		target.erase( 0, 4 );
+	return target;
+}
+
 /** The volume and file index identify a native file independently of its revision. Keep the
  * handles open while comparing, and inspect links themselves as rename() does. */
 VFSResult<bool> sameNativeFile( const std::string& from, const std::string& to ) {
@@ -183,6 +228,8 @@ VFSResult<VFSFileInfo> statHandle( HANDLE handle, const URI& uri, const std::str
 			tag = tagInfo.ReparseTag;
 	}
 	info.type = typeFromAttributes( data.dwFileAttributes, tag );
+	if ( info.type == FileType::Symlink )
+		info.symlinkTarget = readLink( handle );
 	Uint64 size = ( static_cast<Uint64>( data.nFileSizeHigh ) << 32 ) | data.nFileSizeLow;
 	fillInfo( info, data.dwFileAttributes, data.ftCreationTime, data.ftLastAccessTime,
 			  data.ftLastWriteTime, size );

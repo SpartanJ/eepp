@@ -22,6 +22,8 @@ class App;
 
 class PropertiesDialog;
 
+class OperationsPopup;
+
 /** @brief What eefm does with files: opening, the context menu, the clipboard, transfers, the
  * trash, renaming, creating and drops. */
 class FileOperations {
@@ -83,11 +85,17 @@ class FileOperations {
 	 * image). A remote folder is refused, with an error. */
 	std::optional<std::string> localDropFolder( Vector2f position );
 
+	/** Toggles the live operations popup anchored to this pane's status indicator. */
+	void showOperations( int paneIndex );
+
 	/** Cancels the transfers shown in pane paneIndex. */
 	void cancelTransfers( int paneIndex );
 
 	/** Cancels transfers and property measurements before the VFS is destroyed. */
 	void cancelOperations();
+
+	/** Includes transfers, archive-name checks, and background file changes. */
+	bool hasRunningOperations() const { return !mTransfers.empty() || mPendingOperations > 0; }
 
   private:
 	void buildContextMenu( FileTab* tab, bool background, Vector2f position,
@@ -100,6 +108,7 @@ class FileOperations {
 		std::vector<std::pair<URI, URI>> entries;
 		size_t next{ 0 };
 		Uint64 conflictsSkipped{ 0 };
+		Uint64 id{ 0 };
 		UIWindow* dialog{ nullptr };
 		std::optional<EE::VFS::ConflictAction> files;
 		std::optional<EE::VFS::ConflictAction> folders;
@@ -162,7 +171,9 @@ class FileOperations {
 
 	void extractArchive( const URI& file, const URI& destination, int paneIndex );
 
-	void compressFiles( std::vector<URI> sources, URI destination, int paneIndex );
+	/** Selects an unused ZIP name, numbering collisions before starting the transfer. */
+	void compressFiles( std::vector<URI> sources, URI destination, int paneIndex,
+						Uint64 suffix = 0 );
 
 	void trackTransfer( Transfer transfer, URI destination,
 						const std::shared_ptr<TransferBatch>& batch, String label );
@@ -171,6 +182,8 @@ class FileOperations {
 
 	void startTransfer( const URI& source, const URI& destination,
 						const std::shared_ptr<TransferBatch>& batch );
+
+	void cancelTransfer( Uint64 id );
 
 	void updateTransfers();
 
@@ -186,6 +199,7 @@ class FileOperations {
 	EE::VFS::VirtualFileSystem* mVFS;
 	std::map<Uint64, ActiveTransfer> mTransfers;
 	std::vector<std::weak_ptr<PropertiesDialog>> mProperties;
+	std::weak_ptr<OperationsPopup> mOperationsPopup;
 	Uint64 mLastTransferId{ 0 };
 	/** Rejects application discovery results from superseded context menu requests. */
 	Uint64 mContextMenuGeneration{ 0 };
@@ -194,6 +208,8 @@ class FileOperations {
 	std::vector<URI> mClipboard;
 	std::string mClipboardText;
 	bool mClipboardCut{ false };
+	/** UI-thread count for file operations that do not have a Transfer yet (or at all). */
+	Uint32 mPendingOperations{ 0 };
 	/** Files dropped from other applications in the current frame, and where. */
 	std::vector<URI> mDroppedFiles;
 	std::optional<Vector2f> mDropPosition;
