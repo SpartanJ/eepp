@@ -1,4 +1,5 @@
 #include "fileview.hpp"
+#include <algorithm>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/scene/eventdispatcher.hpp>
@@ -13,6 +14,7 @@
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitablerow.hpp>
 #include <eepp/ui/uitextview.hpp>
+#include <eepp/vfs/ui/vfsdirectorymodel.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/window/draganddrop.hpp>
 #include <eepp/window/engine.hpp>
@@ -23,6 +25,7 @@ using namespace EE::Graphics;
 using namespace EE::Scene;
 using namespace EE::UI::Doc;
 using namespace EE::UI::Models;
+using namespace EE::VFS;
 using namespace EE::Window;
 
 namespace eefm {
@@ -459,6 +462,55 @@ void FileTableView::onWidgetFocusLoss() {
 	// Abandon pending commands even if focus returns before the listing finishes.
 	mNavigationInput.clear();
 	UITableView::onWidgetFocusLoss();
+}
+
+void FileTableView::onModelIndexDeleted( const void* internalData ) {
+	auto* model = static_cast<VFSDirectoryModel*>( getModel() );
+	if ( model && mSelectionBeforeRemoval.empty() ) {
+		// The model still contains the old rows here. Keep names rather than shifting indexes.
+		for ( const auto& index : getSelection().indexes() ) {
+			if ( model->isValid( index ) ) {
+				mSelectionBeforeRemoval.push_back( model->entry( index.row() ).name );
+				mRowAfterRemoval = std::max( mRowAfterRemoval, static_cast<int>( index.row() ) );
+			}
+		}
+	}
+	UITableView::onModelIndexDeleted( internalData );
+}
+
+void FileTableView::onModelUpdate( unsigned flags ) {
+	UITableView::onModelUpdate( flags );
+	if ( mSelectionBeforeRemoval.empty() )
+		return;
+	auto* model = static_cast<VFSDirectoryModel*>( getModel() );
+	if ( model && !( flags & Model::InvalidateAllIndexes ) ) {
+		ModelIndex firstSurvivor;
+		std::vector<ModelIndex> surviving;
+		for ( const auto& name : mSelectionBeforeRemoval ) {
+			if ( auto row = model->rowOf( name ) ) {
+				if ( !firstSurvivor.isValid() ) {
+					firstSurvivor = model->index( *row );
+				} else {
+					if ( surviving.empty() ) {
+						surviving.reserve( mSelectionBeforeRemoval.size() );
+						surviving.push_back( firstSurvivor );
+					}
+					surviving.push_back( model->index( *row ) );
+				}
+			}
+		}
+		if ( !surviving.empty() ) {
+			getSelection().set( surviving );
+		} else if ( firstSurvivor.isValid() ) {
+			getSelection().set( firstSurvivor );
+		} else if ( model->rowCount() > 0 ) {
+			// The next item moves into the removed row; at the end, use the previous item.
+			setSelection( model->index(
+				std::min( mRowAfterRemoval, static_cast<int>( model->rowCount() - 1 ) ) ) );
+		}
+	}
+	mSelectionBeforeRemoval.clear();
+	mRowAfterRemoval = -1;
 }
 
 void FileTableView::releaseThumbnailIcons( size_t firstPooledRow ) {

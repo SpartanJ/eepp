@@ -111,6 +111,8 @@ class GitPlugin : public PluginBase {
 
 	std::string statusTypeToString( Git::GitStatusType type );
 
+	String branchWorktreeMessage( const Git::Branch& branch ) const;
+
 	std::vector<std::string> repos();
 
 	std::unordered_map<std::string, std::string> updateReposBranches();

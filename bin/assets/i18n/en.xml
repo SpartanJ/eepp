@@ -348,6 +348,7 @@ ecode will try to open an external terminal.</string>
 	<string name="git_commit_message">Commit Message:</string>
 	<string name="git_confirm">Confirm</string>
 	<string name="git_confirm_apply_stash">Apply a previously saved stash?</string>
+	<string name="git_branch_in_worktree">This branch is checked out in worktree '%s'. Switch that worktree to another branch or remove the worktree before deleting this branch.</string>
 	<string name="git_confirm_branch_delete">Are you sure you want to delete the branch "%s"?</string>
 	<string name="git_confirm_branch_merge">Are you sure you want to merge from branch "%s"?</string>
 	<string name="git_confirm_discard_changes">Are you sure you want to discard the changes in file: "%s"?</string>

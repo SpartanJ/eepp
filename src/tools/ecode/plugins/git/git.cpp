@@ -1129,8 +1129,8 @@ Git::Branch parseLocalBranch( const std::string_view& raw ) {
 	std::string name( std::string{ split[1] } );
 	std::string remote( std::string{ split[2] } );
 	std::string commitHash( std::string{ split[3] } );
-	auto ret = Git::Branch{ std::move( name ), std::move( remote ), Git::RefType::Head,
-							std::move( commitHash ), "" };
+	auto ret = Git::Branch{ std::move( name ), std::move( remote ), std::move( commitHash ) };
+	ret.type = Git::RefType::Head;
 	if ( split.size() > 4 )
 		parseAheadBehind( split[4], ret );
 	return ret;
@@ -1143,8 +1143,8 @@ static Git::Branch parseRemoteBranch( std::string_view raw ) {
 	std::string name( std::string{ split[1] } );
 	std::string remote( std::string{ split[1] } );
 	std::string commitHash( std::string{ split[3] } );
-	auto ret = Git::Branch{ std::move( name ), std::move( remote ), Git::RefType::Remote,
-							std::move( commitHash ), "" };
+	auto ret = Git::Branch{ std::move( name ), std::move( remote ), std::move( commitHash ) };
+	ret.type = Git::RefType::Remote;
 	if ( split.size() > 4 )
 		parseAheadBehind( split[4], ret );
 	return ret;
@@ -1166,7 +1166,7 @@ static Git::Branch parseTag( std::string_view raw ) {
 std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_view filterBranch,
 													 const std::string& projectDir ) {
 	// clang-format off
-	std::string args( "for-each-ref --format '%(refname)	%(refname:short)	%(upstream:short)	%(objectname)	%(upstream:track,nobracket)	%(symref)	%(refname:lstrip=3)' --sort=v:refname" );
+	std::string args( "for-each-ref --format '%(refname)	%(refname:short)	%(upstream:short)	%(objectname)	%(upstream:track,nobracket)	%(symref)	%(refname:lstrip=3)%00%(worktreepath)%00' --sort=v:refname" );
 	// clang-format on
 
 	if ( filterBranch.empty() ) {
@@ -1186,14 +1186,25 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 	std::string buf;
 
 	if ( EXIT_SUCCESS == git( args, projectDir, buf ) ) {
-		branches.reserve( String::countLines( buf ) );
+		branches.reserve( std::count( buf.begin(), buf.end(), '\0' ) / 2 );
 
-		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
+		// Worktree paths may contain tabs and newlines, so delimit them separately with NULs.
+		std::string_view remaining{ buf };
+		while ( !remaining.empty() ) {
+			const size_t refEnd = remaining.find( '\0' );
+			const size_t pathEnd =
+				refEnd == std::string_view::npos ? refEnd : remaining.find( '\0', refEnd + 1 );
+			if ( pathEnd == std::string_view::npos )
+				break;
+			const auto line = remaining.substr( 0, refEnd );
+			const auto worktreePath = remaining.substr( refEnd + 1, pathEnd - refEnd - 1 );
 			auto branch = String::trim( String::trim( line, '\'' ), '\t' );
 			if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
 				auto parsedBranch = parseLocalBranch( branch );
-				if ( !parsedBranch.isEmpty() )
+				if ( !parsedBranch.isEmpty() ) {
+					parsedBranch.worktreePath = worktreePath;
 					branches.emplace_back( std::move( parsedBranch ) );
+				}
 			} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
 				auto parsedBranch = parseRemoteBranch( branch );
 				if ( !parsedBranch.isEmpty() ) {
@@ -1205,7 +1216,11 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 				if ( !parsedBranch.isEmpty() )
 					branches.emplace_back( std::move( parsedBranch ) );
 			}
-		} );
+			remaining.remove_prefix( pathEnd + 1 );
+			// for-each-ref appends one newline after each formatted record.
+			if ( !remaining.empty() && remaining.front() == '\n' )
+				remaining.remove_prefix( 1 );
+		}
 		if ( ref & RefType::Remote ) {
 			for ( auto& branch : branches ) {
 				if ( branch.type == RefType::Head ) {

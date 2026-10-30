@@ -364,6 +364,7 @@ ecode versucht, externes Terminal zu öffnen.</string>
 	<string name="git_commit_message">Commit-Nachricht:</string>
 	<string name="git_confirm">Bestätigen</string>
 	<string name="git_confirm_apply_stash">Einen zuvor gespeicherten Stash anwenden?</string>
+	<string name="git_branch_in_worktree">Dieser Zweig ist im Worktree '%s' ausgecheckt. Wechseln Sie dort zu einem anderen Zweig oder entfernen Sie den Worktree, bevor Sie diesen Zweig löschen.</string>
 	<string name="git_confirm_branch_delete">Sind Sie sicher, dass Sie Zweig "%s" löschen möchten?</string>
 	<string name="git_confirm_branch_merge">Sind Sie sicher, dass Sie aus Zweig "%s" vereinigen möchten?</string>
 	<string name="git_confirm_discard_changes">Sind Sie sicher, dass Sie alle Änderungen verwerfen möchten in: "%s"?</string>

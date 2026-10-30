@@ -8,7 +8,8 @@ size_t GitBranchModel::hashBranches( const std::vector<Git::Branch>& branches ) 
 	for ( const auto& branch : branches )
 		hash = hashCombine( hash, String::hash( branch.name ), String::hash( branch.remote ),
 							String::hash( branch.lastCommit ), branch.type, branch.ahead,
-							branch.behind, String::hash( branch.date ), branch.localOnly );
+							branch.behind, String::hash( branch.date ), branch.localOnly,
+							String::hash( branch.worktreePath ) );
 	return hash;
 }
 
@@ -163,6 +164,8 @@ Variant GitBranchModel::data( const ModelIndex& index, ModelRole role ) const {
 				const Git::Branch& branch = mBranches[index.internalId()].data[index.row()];
 				switch ( index.column() ) {
 					case Column::Name: {
+						if ( !branch.worktreePath.empty() )
+							return Variant( mPlugin->branchWorktreeMessage( branch ) );
 						if ( branch.type == Git::Stash ) {
 							return Variant( String::format( "%s:\n%s", branch.date, branch.name ) );
 						}

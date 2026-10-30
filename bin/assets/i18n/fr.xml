@@ -347,6 +347,7 @@ ecode tentera d'ouvrir un terminal externe.</string>
 	<string name="git_commit_message">Message de commit :</string>
 	<string name="git_confirm">Confirmer</string>
 	<string name="git_confirm_apply_stash">Appliquer un stash précédemment sauvegardé ?</string>
+	<string name="git_branch_in_worktree">Cette branche est extraite dans l'arbre de travail « %s ». Passez cet arbre de travail sur une autre branche ou supprimez-le avant de supprimer cette branche.</string>
 	<string name="git_confirm_branch_delete">Êtes-vous sûr de vouloir supprimer la branche "%s" ?</string>
 	<string name="git_confirm_branch_merge">Êtes-vous sûr de vouloir fusionner à partir de la branche "%s" ?</string>
 	<string name="git_confirm_discard_changes">Êtes-vous sûr de vouloir annuler les modifications du fichier: "%s" ?</string>

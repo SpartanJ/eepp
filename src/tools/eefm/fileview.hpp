@@ -1,6 +1,7 @@
 #ifndef EEFM_FILEVIEW_HPP
 #define EEFM_FILEVIEW_HPP
 
+#include <eepp/core/small_vector.hpp>
 #include <eepp/core/uri.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <functional>
@@ -87,8 +88,15 @@ class FileTableView : public UITableView {
 
 	void onWidgetFocusLoss() override;
 
+	void onModelIndexDeleted( const void* internalData ) override;
+
+	void onModelUpdate( unsigned flags ) override;
+
   private:
 	String mNavigationInput;
+	/** Names survive row shifts; one selected file needs no container allocation. */
+	SmallVector<std::string, 1> mSelectionBeforeRemoval;
+	int mRowAfterRemoval{ -1 };
 	bool mLoading{ false };
 	bool mReplayingNavigation{ false };
 };

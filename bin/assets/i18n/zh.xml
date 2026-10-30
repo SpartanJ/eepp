@@ -269,6 +269,7 @@
 	<string name="git_commit_message">提交信息：</string>
 	<string name="git_confirm">确认</string>
 	<string name="git_confirm_apply_stash">Apply a previously saved stash?</string>
+	<string name="git_branch_in_worktree">此分支已在工作树“%s”中检出。删除此分支前，请将该工作树切换到其他分支或移除该工作树。</string>
 	<string name="git_confirm_branch_delete">Are you sure you want to delete the branch "%s"?</string>
 	<string name="git_confirm_branch_merge">Are you sure you want to merge from branch "%s"?</string>
 	<string name="git_confirm_discard_changes">Are you sure you want to discard the changes in file: "%s"?</string>

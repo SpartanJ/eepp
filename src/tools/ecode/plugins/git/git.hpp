@@ -287,17 +287,21 @@ class Git {
 		std::string name;
 		/** remote name, will be empty for local branches */
 		std::string remote;
-		/** Ref type @see RefType */
-		RefType type = All;
 		/** last commit on this branch, may be empty **/
 		std::string lastCommit;
 
 		/** date string in yyyy-mm-dd hh:mn */
 		std::string date;
 
+		/** Worktree where this local branch is checked out; empty when it is not in use. */
+		std::string worktreePath;
+
 		/** if it's HEAD how much ahead and behind the current local branch is against remote */
 		int64_t ahead{ 0 };
 		int64_t behind{ 0 };
+
+		/** Ref type @see RefType */
+		RefType type = All;
 
 		bool gone{ false };
 		/** No matching branch exists in the fetched remote refs. */

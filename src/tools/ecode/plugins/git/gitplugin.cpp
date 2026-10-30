@@ -1592,7 +1592,27 @@ void GitPlugin::branchRename( Git::Branch branch ) {
 	msgBox->showWhenReady();
 }
 
+String GitPlugin::branchWorktreeMessage( const Git::Branch& branch ) const {
+	return String::format(
+		i18n( "git_branch_in_worktree",
+			  "This branch is checked out in worktree '%s'. Switch that worktree to another "
+			  "branch or remove the worktree before deleting this branch." )
+			.toUtf8(),
+		branch.worktreePath );
+}
+
 void GitPlugin::branchDelete( Git::Branch branch ) {
+	if ( branch.type == Git::RefType::Head && !branch.worktreePath.empty() ) {
+		UIMessageBox* msgBox =
+			UIMessageBox::New( UIMessageBox::OK, branchWorktreeMessage( branch ) );
+		msgBox->setTitle( i18n( "git_delete_branch", "Delete" ) );
+		msgBox->getTextBox()->setMaxWidthEq( "70vw" );
+		msgBox->getTextBox()->setWordWrap( true );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } )->center();
+		msgBox->showWhenReady();
+		return;
+	}
+
 	if ( branch.type == Git::RefType::Tag ) {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
@@ -4494,6 +4514,11 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 					 branch.type == Git::RefType::Tag ? i18n( "git_delete_tag", "Delete Tag" )
 													  : i18n( "git_delete_branch", "Delete" ),
 					 "remove" );
+			if ( branch.type == Git::RefType::Head && !branch.worktreePath.empty() ) {
+				auto* deleteItem = menu->getItemId( "git-branch-delete" );
+				deleteItem->setTooltipText( branchWorktreeMessage( branch ) );
+				deleteItem->setEnabled( false );
+			}
 		}
 
 		if ( branch.type != Git::RefType::Tag )

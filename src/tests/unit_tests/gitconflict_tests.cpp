@@ -97,6 +97,60 @@ UTEST( GitBranch, RemoteCheckoutPreservesNamesAndTracking ) {
 	EXPECT_NE( EXIT_SUCCESS, run( { "show-ref", "--verify", "refs/heads/missing/branch" } ) );
 }
 
+UTEST( GitBranch, ReportsWorktreesAndReleasesDetachedBranches ) {
+	const std::string gitPath = Sys::which( "git" );
+	if ( gitPath.empty() )
+		UTEST_SKIP( "Git is not installed" );
+
+	GitTempDirectory temp;
+	const std::string repoPath = ( temp.path / "main repo" ).string();
+	std::string worktreeName = "linked with spaces-ñ";
+#if EE_PLATFORM != EE_PLATFORM_WIN
+	worktreeName += "\t\n'";
+#endif
+	const std::string worktreePath = ( temp.path / worktreeName ).string();
+	ASSERT_TRUE( FileSystem::makeDir( repoPath, true ) );
+	Git git( repoPath, gitPath );
+	std::string output;
+	auto run = [&]( std::vector<std::string> args ) { return git.git( args, repoPath, output ); };
+	ASSERT_EQ( EXIT_SUCCESS, run( { "init", "-b", "main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.name", "Branch Tester" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "config", "user.email", "branch@example.invalid" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "commit", "--allow-empty", "-m", "base" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "branch", "--no-track", "unused" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "worktree", "add", "-b", "hotfix/local", worktreePath } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "update-ref", "refs/remotes/origin/main", "HEAD" } ) );
+	ASSERT_EQ( EXIT_SUCCESS,
+			   run( { "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main" } ) );
+	ASSERT_EQ( EXIT_SUCCESS, run( { "tag", "v1" } ) );
+
+	const auto branches = git.getAllBranchesAndTags( Git::RefType::All, {}, repoPath );
+	ASSERT_EQ( 5u, branches.size() );
+	for ( const auto& branch : branches ) {
+		if ( branch.type == Git::RefType::Head && branch.name == "main" ) {
+			ASSERT_FALSE( branch.worktreePath.empty() );
+			EXPECT_TRUE( std::filesystem::equivalent( repoPath, branch.worktreePath ) );
+			EXPECT_FALSE( branch.localOnly );
+		} else if ( branch.type == Git::RefType::Head && branch.name == "hotfix/local" ) {
+			ASSERT_FALSE( branch.worktreePath.empty() );
+			EXPECT_TRUE( std::filesystem::equivalent( worktreePath, branch.worktreePath ) );
+			EXPECT_TRUE( branch.localOnly );
+		} else {
+			EXPECT_TRUE( branch.worktreePath.empty() );
+		}
+	}
+	EXPECT_TRUE( git.deleteBranch( "hotfix/local", repoPath ).fail() );
+	EXPECT_TRUE( git.deleteBranch( "unused", repoPath ).success() );
+
+	ASSERT_EQ( EXIT_SUCCESS, git.git( std::vector<std::string>{ "checkout", "--detach" },
+									  worktreePath, output ) );
+	const auto released =
+		git.getAllBranchesAndTags( Git::RefType::Head, "refs/heads/hotfix/local", repoPath );
+	ASSERT_EQ( 1u, released.size() );
+	EXPECT_TRUE( released.front().worktreePath.empty() );
+	EXPECT_TRUE( git.deleteBranch( "hotfix/local", repoPath ).success() );
+}
+
 UTEST( GitStatus, DecodesQuotedUntrackedPaths ) {
 	const std::string gitPath = Sys::which( "git" );
 	if ( gitPath.empty() )
