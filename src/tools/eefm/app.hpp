@@ -157,6 +157,9 @@ class App {
 	/** Popup menu icon at the UI font's pixel size, as in UICodeEditor. */
 	DrawablePtr menuIcon( const std::string& name ) const;
 
+	/** Shared platform application icon, loaded asynchronously with a theme fallback. */
+	UIIcon* applicationIcon( const Application& application );
+
 	/** Binds a menu item's asynchronously loaded application icon, with a theme fallback. */
 	void setApplicationIcon( UIPushButton* item, const Application& application );
 

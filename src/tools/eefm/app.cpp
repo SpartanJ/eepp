@@ -125,6 +125,18 @@ tableview::cell::icon {
 	text-align: center;
 	scale-type: fit-inside;
 }
+#open_with_applications listview::cell {
+	padding: 4dp 8dp;
+	min-icon-size: 0dp 0dp;
+}
+#open_with_applications listview::cell::icon {
+	min-size: 24dp 24dp;
+	max-size: 24dp 24dp;
+	gravity: center;
+	text-align: center;
+	scale-type: fit-inside;
+	margin-right: 8dp;
+}
 tableview::cell::icon.image_thumbnail { tint: white; }
 file_drag_label.image_thumbnail { tint: white; }
 /* The application logo keeps its colors in light, dark and selected menu states. */
@@ -132,7 +144,8 @@ file_drag_label.image_thumbnail { tint: white; }
 	tint: white;
 }
 /* Application images retain their native colors, including hovered and selected rows. */
-PopUpMenu Menu::Item > Menu::Item::icon.application_icon_loaded {
+PopUpMenu Menu::Item > Menu::Item::icon.application_icon_loaded,
+#open_with_applications listview::cell::icon.application_icon_loaded {
 	tint: white;
 }
 #places_scroll {
@@ -695,6 +708,8 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	mSystemIcons->setOnIconsLoaded( [this] {
 		for ( auto* image : mUI->getRoot()->findAllByClass( "application_icon" ) )
 			updateApplicationIcon( image->asType<UIImage>() );
+		for ( auto* list : mUI->getRoot()->findAllByClass( "application_list" ) )
+			list->invalidateDraw();
 		for ( int i = 0; i < PaneManager::Count; ++i ) {
 			if ( auto* tab = mPaneManager->currentTab( mPaneManager->pane( i ) ) )
 				tab->view->invalidateDraw();
@@ -749,16 +764,28 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 			StyleSheetLength( mState["places_width"].get<Float>(), StyleSheetLength::Dp ) );
 	}
 
-	auto onClick = [this]( const char* id, std::function<void()> fn ) {
-		mUI->find<UIWidget>( id )->onClick( [fn = std::move( fn )]( const MouseEvent* ) { fn(); } );
+	auto onClick = [this]( const char* id, std::function<void()> fn,
+						   MouseButton button = EE_BUTTON_LEFT ) {
+		mToolbar->find<UIWidget>( id )->onClick(
+			[fn = std::move( fn )]( const MouseEvent* ) { fn(); }, button );
 	};
 	onClick( "back", [this] { mPaneManager->goBack(); } );
+	onClick( "back", [this] { mPaneManager->goBack( true ); }, EE_BUTTON_MIDDLE );
 	onClick( "forward", [this] { mPaneManager->goForward(); } );
+	onClick( "forward", [this] { mPaneManager->goForward( true ); }, EE_BUTTON_MIDDLE );
 	onClick( "up", [this] { mPaneManager->goUp(); } );
+	onClick( "up", [this] { mPaneManager->goUp( true ); }, EE_BUTTON_MIDDLE );
 	onClick( "refresh", [this] {
 		if ( auto* tab = mPaneManager->currentTab() )
 			tab->model->refresh();
 	} );
+	onClick(
+		"refresh",
+		[this] {
+			if ( auto* tab = mPaneManager->currentTab() )
+				mPaneManager->openTab( *tab->pane, tab->model->uri(), false );
+		},
+		EE_BUTTON_MIDDLE );
 	onClick( "split", [this] { setSplit( !mSplit ); } );
 	onClick( "places_toggle", [this] { setPlacesVisible( !mPlacesVisible ); } );
 	onClick( "app_menu", [this] { showAppMenu(); } );
@@ -1529,19 +1556,21 @@ int App::menuIconSize() const {
 									  : manager->getDefaultFontSize() );
 }
 
-void App::setApplicationIcon( UIPushButton* item, const Application& application ) {
+UIIcon* App::applicationIcon( const Application& application ) {
 	UIIcon* fallback = mUI->findIcon( "action-open-with" );
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-	UIIcon* icon = mSystemIcons->getPathIcon( application.exec, {}, fallback );
+	return mSystemIcons->getPathIcon( application.exec, {}, fallback );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-	UIIcon* icon = application.icon.empty()
-					   ? fallback
-					   : mSystemIcons->getIconResource( application.icon, fallback );
+	return application.icon.empty() ? fallback
+									: mSystemIcons->getIconResource( application.icon, fallback );
 #else
-	UIIcon* icon = application.icon.empty()
-					   ? fallback
-					   : mSystemIcons->getIcon( { application.icon }, fallback );
+	return application.icon.empty() ? fallback
+									: mSystemIcons->getIcon( { application.icon }, fallback );
 #endif
+}
+
+void App::setApplicationIcon( UIPushButton* item, const Application& application ) {
+	UIIcon* icon = applicationIcon( application );
 	auto* image = item->getIcon();
 	image->addClass( "application_icon" );
 	// The theme owns this icon until shutdown. Binding to the live widget avoids keeping

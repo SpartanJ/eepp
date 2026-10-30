@@ -149,8 +149,14 @@ void Applications::Registry::load() {
 	// mimeapps.list: user config first, so its defaults come first.
 	auto configDirs = xdgDirs( "XDG_CONFIG_HOME", ".config", "XDG_CONFIG_DIRS", "/etc/xdg" );
 	std::vector<std::string> lists;
-	for ( const auto& dir : configDirs )
+	for ( const auto& dir : configDirs ) {
+		for ( auto desktop : String::split( Sys::getEnv( "XDG_CURRENT_DESKTOP" ), ':' ) ) {
+			String::toLowerInPlace( desktop );
+			if ( !desktop.empty() && desktop.find_first_of( "/\\" ) == std::string::npos )
+				lists.push_back( dir + desktop + "-mimeapps.list" );
+		}
 		lists.push_back( dir + "mimeapps.list" );
+	}
 	for ( const auto& dir : dataDirs )
 		lists.push_back( dir + "applications/mimeapps.list" );
 	for ( const auto& list : lists ) {
@@ -223,6 +229,18 @@ std::optional<Application> Applications::defaultFor( const URI& uri,
 	if ( apps.empty() )
 		return std::nullopt;
 	return std::move( apps.front() );
+}
+
+void Applications::invalidateCache() {
+#if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_WIN
+	auto& data = registry();
+	std::lock_guard<std::mutex> lock( data.mutex );
+	data.apps.clear();
+	data.byMime.clear();
+	data.defaults.clear();
+	data.removed.clear();
+	data.loaded = false;
+#endif
 }
 
 std::vector<std::string> Applications::splitExec( const std::string& exec ) {

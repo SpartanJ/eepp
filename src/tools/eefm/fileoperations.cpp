@@ -4,6 +4,7 @@
 #include "desktopintegration.hpp"
 #include "location.hpp"
 #include "mime.hpp"
+#include "openwithdialog.hpp"
 #include "panemanager.hpp"
 #include "placescontroller.hpp"
 #include "propertiesdialog.hpp"
@@ -323,7 +324,7 @@ void FileOperations::openDocuments( const std::vector<URI>& uris ) {
 	} );
 }
 
-void FileOperations::openWith( const std::vector<URI>& uris ) {
+void FileOperations::openWithCommand( const std::vector<URI>& uris ) {
 	Dialogs::promptText(
 		mUI, mUI->i18n( "eefm_open_with", "Open With" ),
 		mUI->i18n( "eefm_open_with_command", "Command to open the files with:" ), "", false,
@@ -491,21 +492,26 @@ void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f p
 			}
 			if ( !apps.empty() )
 				with->addSeparator();
-			with->add( mUI->i18n( "eefm_other_application", "Other Application..." ) )
+			with->add( mUI->i18n( "eefm_choose_application", "Choose Application..." ) )
 				->setId( "other-app" );
 			menu->addSubMenu( mUI->i18n( "eefm_open_with", "Open With" ), nullptr, with )
 				->setId( "open-with" );
-			with->on( Event::OnItemClicked,
-					  [this, uris, apps = std::move( apps )]( const Event* event ) {
-						  std::string id( event->getNode()->getId() );
-						  if ( id == "app" ) {
-							  size_t index = static_cast<size_t>( event->getNode()->getData() );
-							  if ( index < apps.size() )
-								  openWith( uris, apps[index] );
-						  } else if ( id == "other-app" ) {
-							  openWith( uris );
-						  }
-					  } );
+			with->on( Event::OnItemClicked, [this, uris, apps = std::move( apps )](
+												const Event* event ) mutable {
+				std::string id( event->getNode()->getId() );
+				if ( id == "app" ) {
+					size_t index = static_cast<size_t>( event->getNode()->getData() );
+					if ( index < apps.size() )
+						openWith( uris, apps[index] );
+				} else if ( id == "other-app" ) {
+					OpenWithDialog::show(
+						mApp, std::move( uris ), std::move( apps ),
+						[this]( const std::vector<URI>& files, Application application ) {
+							openWith( files, std::move( application ) );
+						},
+						[this]( const std::vector<URI>& files ) { openWithCommand( files ); } );
+				}
+			} );
 		} else if ( allFolders ) {
 			menu->add( mUI->i18n( "eefm_open", "Open" ), mApp.menuIcon( "mime-folder" ),
 					   openShortcut )

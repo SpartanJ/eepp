@@ -141,7 +141,7 @@ class FileOperations {
 	/** Opens the files with their default applications. */
 	void openDocuments( const std::vector<URI>& uris );
 
-	void openWith( const std::vector<URI>& uris );
+	void openWithCommand( const std::vector<URI>& uris );
 
 	/** Opens files with the chosen application, including archives. */
 	void openWith( const std::vector<URI>& uris, Application app );

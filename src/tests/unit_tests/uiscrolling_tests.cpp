@@ -12,6 +12,7 @@
 #include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
+#include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
@@ -25,6 +26,7 @@
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
+using namespace EE::UI::Models;
 
 class ScrollingTestEditor : public UICodeEditor {
   public:
@@ -623,6 +625,8 @@ UTEST( UIScrolling, MouseWheelOverrideCanSuppressListenerDispatch ) {
 }
 
 UTEST( UIScrolling, XmlOffModesHideScrollBarsEvenWhenContentOverflows ) {
+	// The model borrows its rows, which must outlive the scene and its list view.
+	const std::vector<std::string> rows( 8, "Overflow row" );
 	UIApplication app(
 		WindowSettings{ 320, 240, "eepp - XML scroll modes" },
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
@@ -640,4 +644,20 @@ UTEST( UIScrolling, XmlOffModesHideScrollBarsEvenWhenContentOverflows ) {
 	EXPECT_TRUE( scroll->getVerticalScrollMode() == ScrollBarMode::AlwaysOff );
 	EXPECT_FALSE( scroll->getHorizontalScrollBar()->isVisible() );
 	EXPECT_FALSE( scroll->getVerticalScrollBar()->isVisible() );
+
+	auto* list = scene
+					 ->loadLayoutFromString( R"xml(
+		<ListView lw="120dp" lh="100dp" row-height="30dp" hscroll-mode="off" vscroll-mode="off" />
+	)xml" )
+					 ->asType<UIListView>();
+	list->setModel( ItemListModel<std::string>::create( rows ) );
+	list->setAutoExpandOnSingleColumn( false );
+	list->setColumnWidth( 0, PixelDensity::dpToPx( 400 ) );
+	scene->flushDirtyStyleAndLayout();
+	EXPECT_GT( list->getContentSize().getWidth(), list->getPixelsSize().getWidth() );
+	EXPECT_GT( list->getContentSize().getHeight(), list->getPixelsSize().getHeight() );
+	EXPECT_TRUE( list->getHorizontalScrollMode() == ScrollBarMode::AlwaysOff );
+	EXPECT_TRUE( list->getVerticalScrollMode() == ScrollBarMode::AlwaysOff );
+	EXPECT_FALSE( list->getHorizontalScrollBar()->isVisible() );
+	EXPECT_FALSE( list->getVerticalScrollBar()->isVisible() );
 }

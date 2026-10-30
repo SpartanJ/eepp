@@ -8,6 +8,8 @@
 
 namespace EE::System {
 
+struct Application;
+
 struct EE_API FileAssociationApplication {
 	std::string id;
 	std::string name;
@@ -15,22 +17,42 @@ struct EE_API FileAssociationApplication {
 	std::string iconPath;
 };
 
-/** Registers a desktop application as a handler for filename extensions.
+/** Registers desktop file handlers and changes per-user default applications.
  *
- * Registrations are per-user. On Windows this adds the application to the Open With list, since
- * current Windows versions do not allow applications to silently change the user's default app.
- * XDG desktops use a generated desktop entry and the shared MIME database. macOS uses Launch
+ * Extension registrations are per-user. On Windows this adds the application to the Open With list,
+ * since current Windows versions do not allow applications to silently change the user's default
+ * app. XDG desktops use a generated desktop entry and the shared MIME database. macOS uses Launch
  * Services and therefore treats a selected extension as a request to make the application its
  * editor.
  */
 class EE_API FileAssociation {
   public:
+	enum class DefaultResult : Uint8 {
+		Failed,
+		Applied,
+		/** Windows opened Default Apps settings; the user must choose the app there. */
+		UserActionRequired
+	};
+
 	explicit FileAssociation( FileAssociationApplication application );
 
 	static bool isSupported();
 
 	/** XDG platforms can additionally expose the generated desktop entry in application menus. */
 	static bool supportsDesktopEntries();
+
+	/** Makes an installed handler the per-user default for a file type. Call off the UI thread.
+	 * @p extension is a filename suffix, with or without a leading dot; @p mimeType is the exact
+	 * MIME type (not a parent type). XDG desktops require the MIME type and use the existing
+	 * desktop id without rewriting the application's entry. macOS requires an extension and uses
+	 * the selected application's bundle. Windows requires an extension and opens Default Apps
+	 * settings: UserActionRequired does not mean that the association has changed.
+	 * No document is opened. On failure, @p error describes the problem; otherwise it is cleared.
+	 * Type associations may cover several extensions sharing a MIME type or macOS content type.
+	 */
+	static DefaultResult setDefaultApplication( const Application& application,
+												std::string_view extension,
+												const std::string& mimeType, std::string& error );
 
 	/** Returns the extensions from @p supportedExtensions currently registered for this app. */
 	std::vector<std::string>

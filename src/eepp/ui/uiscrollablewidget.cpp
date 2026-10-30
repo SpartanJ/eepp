@@ -331,7 +331,7 @@ bool UIScrollableWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( "on" == val )
 				setVerticalScrollMode( ScrollBarMode::AlwaysOn );
 			else if ( "off" == val )
-				setVerticalScrollMode( ScrollBarMode::AlwaysOn );
+				setVerticalScrollMode( ScrollBarMode::AlwaysOff );
 			else if ( "auto" == val )
 				setVerticalScrollMode( ScrollBarMode::Auto );
 			break;
@@ -343,7 +343,7 @@ bool UIScrollableWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( "on" == val )
 				setHorizontalScrollMode( ScrollBarMode::AlwaysOn );
 			else if ( "off" == val )
-				setHorizontalScrollMode( ScrollBarMode::AlwaysOn );
+				setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
 			else if ( "auto" == val )
 				setHorizontalScrollMode( ScrollBarMode::Auto );
 			break;

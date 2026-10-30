@@ -65,11 +65,13 @@ class PaneManager {
 	/** Rewrites live locations and navigation history after an entry is renamed. */
 	void onEntryRenamed( const URI& from, const URI& to );
 
-	void goBack();
+	/** Opens the destination in a background tab when newTab is true, preserving current history.
+	 */
+	void goBack( bool newTab = false );
 
-	void goForward();
+	void goForward( bool newTab = false );
 
-	void goUp();
+	void goUp( bool newTab = false );
 
 	void goHome();
 

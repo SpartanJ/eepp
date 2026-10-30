@@ -39,6 +39,10 @@ class EE_API Applications {
 	static std::optional<Application> defaultFor( const URI& uri,
 												  const std::vector<std::string>& mimeTypes = {} );
 
+	/** Invalidates cached XDG application discovery and preferences after external changes.
+	 * Thread-safe; the next query reloads them. Native platforms query the OS directly. */
+	static void invalidateCache();
+
 	/** Opens local files using the selected registered handler. */
 	static bool launch( const Application& app, const std::vector<std::string>& paths );
 

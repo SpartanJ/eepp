@@ -657,32 +657,44 @@ void PaneManager::onEntryRenamed( const URI& from, const URI& to ) {
 	}
 }
 
-void PaneManager::goBack() {
+void PaneManager::goBack( bool newTab ) {
 	auto* tab = currentTab();
 	if ( tab && tab->historyIndex > 0 ) {
-		tab->selectLater( Location::entryName( tab->model->uri() ) );
-		--tab->historyIndex;
-		navigate( tab, tab->history[tab->historyIndex], false );
+		if ( newTab ) {
+			openTab( *tab->pane, tab->history[tab->historyIndex - 1], false );
+		} else {
+			tab->selectLater( Location::entryName( tab->model->uri() ) );
+			--tab->historyIndex;
+			navigate( tab, tab->history[tab->historyIndex], false );
+		}
 	}
 }
 
-void PaneManager::goForward() {
+void PaneManager::goForward( bool newTab ) {
 	auto* tab = currentTab();
 	if ( tab && tab->historyIndex + 1 < tab->history.size() ) {
-		++tab->historyIndex;
-		navigate( tab, tab->history[tab->historyIndex], false );
+		if ( newTab ) {
+			openTab( *tab->pane, tab->history[tab->historyIndex + 1], false );
+		} else {
+			++tab->historyIndex;
+			navigate( tab, tab->history[tab->historyIndex], false );
+		}
 	}
 }
 
-void PaneManager::goUp() {
+void PaneManager::goUp( bool newTab ) {
 	auto* tab = currentTab();
 	if ( !tab )
 		return;
 	URI parent = Location::parent( tab->model->uri() );
 	if ( parent != tab->model->uri() ) {
-		// Like Dolphin, the folder we leave stays selected in its parent.
-		tab->selectLater( Location::entryName( tab->model->uri() ) );
-		navigate( tab, parent );
+		if ( newTab ) {
+			openTab( *tab->pane, parent, false );
+		} else {
+			// Like Dolphin, the folder we leave stays selected in its parent.
+			tab->selectLater( Location::entryName( tab->model->uri() ) );
+			navigate( tab, parent );
+		}
 	}
 }
 

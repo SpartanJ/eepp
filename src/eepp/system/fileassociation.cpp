@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <eepp/core/string.hpp>
+#include <eepp/system/applications.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
@@ -16,6 +17,7 @@
 #endif
 #include <windows.h>
 
+#include <shellapi.h>
 #include <shlobj.h>
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 #include <CoreServices/CoreServices.h>
@@ -326,9 +328,9 @@ static bool updateMimeAppsFile( const std::string& path,
 	updateMimeAppsSection( lines, "Default Applications", selected, removed, desktopName, true );
 	updateMimeAppsSection( lines, "Added Associations", selected, removed, desktopName, true );
 	updateMimeAppsSection( lines, "Removed Associations", selected, removed, desktopName, false );
-	std::string updated;
-	for ( const auto& line : lines )
-		updated += line + '\n';
+	auto updated = String::join( lines, '\n' );
+	if ( !updated.empty() && updated.back() != '\n' )
+		updated += '\n';
 	if ( updated == contents )
 		return true;
 	if ( !FileSystem::fileWrite( path, updated ) ) {
@@ -338,7 +340,7 @@ static bool updateMimeAppsFile( const std::string& path,
 	return true;
 }
 
-static bool updateMimeAppsRegistration( const FileAssociationApplication& application,
+static bool updateMimeAppsRegistration( const std::string& desktopName,
 										const std::unordered_set<std::string>& selected,
 										const std::unordered_set<std::string>& removed,
 										std::string& error ) {
@@ -350,7 +352,7 @@ static bool updateMimeAppsRegistration( const FileAssociationApplication& applic
 	std::vector<std::string> paths{ configHome + "/mimeapps.list" };
 	for ( auto desktop : String::split( Sys::getEnv( "XDG_CURRENT_DESKTOP" ), ':' ) ) {
 		String::toLowerInPlace( desktop );
-		if ( !desktop.empty() )
+		if ( !desktop.empty() && desktop.find_first_of( "/\\" ) == std::string::npos )
 			paths.emplace_back( configHome + '/' + desktop + "-mimeapps.list" );
 	}
 	const auto legacyPath = Sys::getDataPath() + "/applications/mimeapps.list";
@@ -359,10 +361,13 @@ static bool updateMimeAppsRegistration( const FileAssociationApplication& applic
 	std::sort( paths.begin(), paths.end() );
 	paths.erase( std::unique( paths.begin(), paths.end() ), paths.end() );
 	for ( const auto& path : paths ) {
-		if ( !updateMimeAppsFile( path, selected, removed, desktopEntryName( application ),
-								  error ) )
+		if ( !updateMimeAppsFile( path, selected, removed, desktopName, error ) ) {
+			// Earlier files may already have changed even when a later write fails.
+			Applications::invalidateCache();
 			return false;
+		}
 	}
+	Applications::invalidateCache();
 	return true;
 }
 
@@ -461,7 +466,8 @@ static bool writeXdgRegistration( const FileAssociationApplication& application,
 		if ( !selectedMimeTypes.contains( mime ) )
 			removedMimeTypes.emplace( mime );
 	}
-	if ( !updateMimeAppsRegistration( application, selectedMimeTypes, removedMimeTypes, error ) )
+	if ( !updateMimeAppsRegistration( desktopEntryName( application ), selectedMimeTypes,
+									  removedMimeTypes, error ) )
 		return false;
 	return true;
 }
@@ -579,6 +585,113 @@ bool FileAssociation::supportsDesktopEntries() {
 	return true;
 #else
 	return false;
+#endif
+}
+
+FileAssociation::DefaultResult
+FileAssociation::setDefaultApplication( const Application& application, std::string_view extension,
+										const std::string& mimeType, std::string& error ) {
+	error.clear();
+	if ( application.id.empty() ) {
+		error = "No installed application was selected.";
+		return DefaultResult::Failed;
+	}
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+	(void)extension;
+	const auto slash = mimeType.find( '/' );
+	if ( slash == std::string::npos || slash == 0 || slash + 1 == mimeType.size() ||
+		 std::any_of( mimeType.begin(), mimeType.end(),
+					  []( unsigned char c ) {
+						  return c <= ' ' || c >= 127 ||
+								 std::string_view( ";=[]" ).find( c ) != std::string_view::npos;
+					  } ) ||
+		 mimeType.find( '/', slash + 1 ) != std::string::npos ||
+		 std::any_of( application.id.begin(), application.id.end(),
+					  []( unsigned char c ) { return c < ' ' || c == 127; } ) ||
+		 application.id.find_first_of( "/\\\r\n;=" ) != std::string::npos ||
+		 !String::endsWith( application.id, ".desktop" ) ) {
+		error = "A valid MIME type and installed desktop application id are required.";
+		return DefaultResult::Failed;
+	}
+	bool installed = false;
+	for ( const auto& directory : Sys::getDataSearchPaths() ) {
+		if ( FileSystem::fileExists( directory + "/applications/" + application.id ) ) {
+			installed = true;
+			break;
+		}
+	}
+	if ( !installed ) {
+		error = "The selected desktop application is no longer installed.";
+		return DefaultResult::Failed;
+	}
+	// Keep Exec, arguments, terminal handling and icons in the original desktop entry.
+	return updateMimeAppsRegistration( application.id, { mimeType }, {}, error )
+			   ? DefaultResult::Applied
+			   : DefaultResult::Failed;
+#elif EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS
+	(void)mimeType;
+	const auto normalized = normalizeExtension( extension );
+	if ( normalized.empty() ) {
+		error = "A valid filename extension is required.";
+		return DefaultResult::Failed;
+	}
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	// Windows protects UserChoice. Neither registry registration nor SHOpenWithDialog can
+	// silently set the default on Windows 10+. Let the user finish in the supported settings UI.
+	const auto apartment = CoInitializeEx( nullptr, COINIT_APARTMENTTHREADED );
+	if ( FAILED( apartment ) && apartment != RPC_E_CHANGED_MODE ) {
+		error = "Could not initialize the Windows Shell.";
+		return DefaultResult::Failed;
+	}
+	SHELLEXECUTEINFOW settings{};
+	settings.cbSize = sizeof( settings );
+	settings.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOASYNC;
+	settings.lpVerb = L"open";
+	settings.lpFile = L"ms-settings:defaultapps";
+	settings.nShow = SW_SHOWNORMAL;
+	const bool opened = ShellExecuteExW( &settings );
+	const auto status = opened ? ERROR_SUCCESS : GetLastError();
+	if ( SUCCEEDED( apartment ) )
+		CoUninitialize();
+	if ( !opened ) {
+		error = "Could not open Default Apps settings (error " + std::to_string( status ) + ").";
+		return DefaultResult::Failed;
+	}
+	return DefaultResult::UserActionRequired;
+#else
+	CFRef type( typeForExtension( normalized ) );
+	CFRef path( cfString( application.exec ) );
+	CFRef url( path.get() ? CFURLCreateWithFileSystemPath( kCFAllocatorDefault,
+														   static_cast<CFStringRef>( path.get() ),
+														   kCFURLPOSIXPathStyle, true )
+						  : nullptr );
+	auto bundle = url.get()
+					  ? CFBundleCreate( kCFAllocatorDefault, static_cast<CFURLRef>( url.get() ) )
+					  : nullptr;
+	CFRef ownedBundle( bundle );
+	const auto identifier = bundle ? CFBundleGetIdentifier( bundle ) : nullptr;
+	if ( !type.get() || !identifier ) {
+		error = "The file type or selected application bundle is invalid.";
+		return DefaultResult::Failed;
+	}
+	// Use the selected bundle's metadata, never the file manager's main bundle.
+	auto status = LSRegisterURL( static_cast<CFURLRef>( url.get() ), true );
+	if ( status == noErr ) {
+		status = LSSetDefaultRoleHandlerForContentType( static_cast<CFStringRef>( type.get() ),
+														kLSRolesAll, identifier );
+	}
+	if ( status != noErr ) {
+		error = "Launch Services could not set the default application (error " +
+				std::to_string( status ) + ").";
+		return DefaultResult::Failed;
+	}
+	return DefaultResult::Applied;
+#endif
+#else
+	(void)extension;
+	(void)mimeType;
+	error = "Default applications are not supported on this platform.";
+	return DefaultResult::Failed;
 #endif
 }
 
