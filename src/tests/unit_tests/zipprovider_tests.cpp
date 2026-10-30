@@ -29,7 +29,7 @@ bool makeZip( const std::string& path,
 	return archive.close();
 }
 
-/** Bulk empty-entry fixture: Zip::addFile() rewrites/reopens the archive for every entry. */
+/** Bulk empty-entry fixture builds directory records directly without per-source allocations. */
 template <typename Name> bool makeEmptyZip( const std::string& path, Uint32 count, Name&& nameOf ) {
 	std::string local, central;
 	const auto initialLength = nameOf( 0 ).size();
@@ -120,7 +120,7 @@ UTEST( ZipProvider, listsImplicitAndEmptyDirectoriesWithMetadata ) {
 	EXPECT_EQ( 5u, file.value().size().value_or( 0 ) );
 	EXPECT_TRUE( file.value().modifiedTime().has_value() );
 	EXPECT_FALSE( file.value().revision.empty() );
-	EXPECT_FALSE( file.value().permissions().has_value() );
+	EXPECT_EQ( 0644u, file.value().permissions().value_or( 0 ) );
 	EXPECT_FALSE( folder.value().permissions().has_value() );
 	auto empty = waitFor( vfs.listAll( root.withAppendedSegment( "empty" ) ) );
 	ASSERT_TRUE( empty.hasValue() );

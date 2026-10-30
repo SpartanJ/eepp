@@ -562,6 +562,56 @@ void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f p
 			menu->addSubMenu( mUI->i18n( "eefm_extract", "Extract" ),
 							  mApp.menuIcon( "mime-archive" ), extract );
 		}
+		if ( !inTrash && !uris.empty() ) {
+			std::string name = uris.size() == 1
+								   ? ( allFolders ? uris.front().getLastPathSegment()
+												  : FileSystem::fileNameSplitExtension(
+														uris.front().getLastPathSegment() )
+														.first )
+								   : Location::entryName( tab->model->uri() );
+			// A ZIP selected for recompression must not suggest replacing itself.
+			if ( uris.size() == 1 && !allFolders &&
+				 FileSystem::fileExtension( uris.front().getLastPathSegment(), true ) == "zip" )
+				name = uris.front().getLastPathSegment();
+			if ( name.empty() )
+				name = "Archive";
+			name += ".zip";
+			const URI directory = tab->model->uri();
+			const URI target =
+				( directory.getScheme() == "file" ? directory
+												  : URI::fromFSPath( Sys::getUserDirectory() ) )
+					.withAppendedSegment( name );
+			const int paneIndex = tab->pane->index;
+			auto* compress = UIPopUpMenu::New();
+			compress
+				->add( String::format(
+					mUI->i18n( "eefm_compress_named", "Compress to \"%s\"" ).toUtf8(), name ) )
+				->setId( "compress-zip" )
+				->setEnabled( directory.getScheme() == "file" );
+			compress->add( mUI->i18n( "eefm_compress_to", "Compress To..." ) )
+				->setId( "compress-to" );
+			compress->on( Event::OnItemClicked,
+						  [this, sources = uris, target, paneIndex]( const Event* event ) mutable {
+							  if ( event->getNode()->getId() == "compress-zip" ) {
+								  compressFiles( std::move( sources ), target, paneIndex );
+							  } else {
+								  Dialogs::promptText(
+									  mUI, mUI->i18n( "eefm_compress_to", "Compress To..." ),
+									  mUI->i18n( "eefm_compress_destination",
+												 "Archive destination (local path or file URI):" ),
+									  Location::clipboardText( target ), false,
+									  [this, sources = std::move( sources ),
+									   paneIndex]( std::optional<std::string> name ) mutable {
+										  if ( name && !String::trim( *name ).empty() )
+											  compressFiles( std::move( sources ),
+															 Location::parse( *name ), paneIndex );
+									  } );
+							  }
+						  } );
+			menu->addSubMenu( mUI->i18n( "eefm_compress", "Compress" ),
+							  mApp.menuIcon( "mime-archive" ), compress )
+				->setId( "compress" );
+		}
 		// After the open actions, as Dolphin.
 		if ( menu->getCount() > 0 )
 			menu->addSeparator();
@@ -844,6 +894,29 @@ void FileOperations::extractArchive( const URI& file, const URI& destination, in
 	startNextTransfer( batch );
 }
 
+void FileOperations::compressFiles( std::vector<URI> sources, URI destination, int paneIndex ) {
+	if ( destination.getScheme() != "file" ) {
+		reportError( mUI->i18n( "eefm_compress", "Compress" ),
+					 VFSError( VFSErrorCode::Unsupported, destination,
+							   "Choose a local destination for the ZIP archive." ) );
+		return;
+	}
+	auto path = destination.getPath();
+	if ( !String::toLower( path ).ends_with( ".zip" ) ) {
+		path += ".zip";
+		destination.setPath( path );
+	}
+	if ( !validateName( destination.getLastPathSegment(), destination.getParent() ) )
+		return;
+	auto batch = std::make_shared<TransferBatch>();
+	batch->pane = paneIndex;
+	batch->kind = TransferKind::Compress;
+	String label = String::format( mUI->i18n( "eefm_compressing", "Compressing to %s" ).toUtf8(),
+								   destination.getLastPathSegment() );
+	auto transfer = mVFS->createZip( std::move( sources ), destination );
+	trackTransfer( std::move( transfer ), std::move( destination ), batch, std::move( label ) );
+}
+
 void FileOperations::startNextTransfer( const std::shared_ptr<TransferBatch>& batch ) {
 	if ( batch->cancelled || batch->next == batch->entries.size() )
 		return;
@@ -854,7 +927,6 @@ void FileOperations::startNextTransfer( const std::shared_ptr<TransferBatch>& ba
 void FileOperations::startTransfer( const URI& source, const URI& destination,
 									const std::shared_ptr<TransferBatch>& batch ) {
 	const auto kind = batch->kind;
-	const int paneIndex = batch->pane;
 	CopyOptions options;
 	if ( kind == TransferKind::Extract )
 		options.overwrite = OverwritePolicy::MergeDirectories;
@@ -914,16 +986,17 @@ void FileOperations::startTransfer( const URI& source, const URI& destination,
 							 : move ? mUI->i18n( "eefm_moving", "Moving %s" )
 									: mUI->i18n( "eefm_copying", "Copying %s" );
 	String label = String::format( labelFormat.toUtf8(), Location::displayName( source ).toUtf8() );
+	auto transfer = move ? mVFS->move( source, destination, options, std::move( onConflict ) )
+						 : mVFS->copy( source, destination, options, std::move( onConflict ) );
+	trackTransfer( std::move( transfer ), destination, batch, std::move( label ) );
+}
+
+void FileOperations::trackTransfer( Transfer transfer, URI destination,
+									const std::shared_ptr<TransferBatch>& batch, String label ) {
+	const auto kind = batch->kind;
 	Uint64 id = ++mLastTransferId;
-	ActiveTransfer active{
-		id,
-		paneIndex,
-		std::move( label ),
-		move ? mVFS->move( source, destination, options, std::move( onConflict ) )
-			 : mVFS->copy( source, destination, options, std::move( onConflict ) ),
-		{},
-		{},
-		batch };
+	ActiveTransfer active{ id, batch->pane, std::move( label ), std::move( transfer ), {},
+						   {}, batch };
 	active.subscription = active.transfer.onProgress(
 		[this, id]( const TransferProgress& progress ) {
 			auto it = mTransfers.find( id );
@@ -963,6 +1036,10 @@ void FileOperations::startTransfer( const URI& source, const URI& destination,
 				URI folder = destination.getParent();
 				for ( auto& pane : mApp.panes().all() ) {
 					for ( auto& tab : pane->tabList ) {
+						if ( kind == TransferKind::Compress && tab->model->uri() == folder ) {
+							tab->selectLater( destination.getLastPathSegment() );
+							tab->model->refresh();
+						}
 						if ( ( tab->model->uri() == folder.getParent() &&
 							   folder != tab->model->uri() ) ||
 							 ( kind == TransferKind::Extract && tab->model->uri() == destination ) )

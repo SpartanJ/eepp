@@ -1,8 +1,12 @@
 #ifndef EE_SYSTEMCZIP_HPP
 #define EE_SYSTEMCZIP_HPP
 
+#include <eepp/core/cancellationtoken.hpp>
 #include <eepp/system/pack.hpp>
+#include <functional>
 #include <memory>
+#include <optional>
+#include <span>
 
 struct zip;
 
@@ -20,6 +24,8 @@ class EE_API Zip : public Pack {
 		Uint64 size{ 0 };
 		Int64 modified{ 0 };
 		Uint32 crc{ 0 };
+		/** POSIX file type and permissions, or zero when the archive does not provide them. */
+		Uint32 unixMode{ 0 };
 	};
 
 	enum class OpenMode : Uint8 { ReadOnly, ReadWrite };
@@ -31,7 +37,22 @@ class EE_API Zip : public Pack {
 		InvalidArchive,
 		Unsupported,
 		ReadOnly,
-		IO
+		IO,
+		Cancelled
+	};
+
+	/** Deferred entries are consumed only by close(). Factories open one stream at a time and
+	 * may be called again if libzip retries. They run synchronously on the thread calling close().
+	 */
+	using StreamFactory = std::function<std::unique_ptr<IOStream>()>;
+
+	struct EntryOptions {
+		std::optional<Int64> modified;
+		std::optional<Uint32> permissions;
+		int compressionLevel;
+		bool symbolicLink;
+
+		EntryOptions( int level = 9 ) : compressionLevel( level ), symbolicLink( false ) {}
 	};
 
 	Zip();
@@ -42,6 +63,30 @@ class EE_API Zip : public Pack {
 
 	/** Creates a new pack file */
 	bool create( const std::string& path );
+
+	/** Creates a standalone archive in an empty, writable, seekable stream. The caller owns
+	 * the output through close()/discard() and handles publication/rollback. Requires Zip(false).
+	 * No whole-archive buffer or intermediate copy is used. */
+	bool create( IOStream& output );
+
+	/** Discards all pending changes without writing. */
+	void discard();
+
+	/** Cancellation is polled during finalization, including compression of a single large file. */
+	bool setCancellationToken( CancellationToken token );
+
+	/** Finalization progress in [0,1], delivered synchronously on the close() thread. */
+	bool setProgressCallback( std::function<void( double )> callback );
+
+	/** Queues a sized stream. Its factory and owned state survive until close()/discard(). */
+	bool addStream( StreamFactory open, Uint64 size, const std::string& name,
+					const EntryOptions& options = EntryOptions() );
+
+	/** Copies memory into an owned deferred source; the caller may immediately release it. */
+	bool addData( std::span<const Uint8> data, const std::string& name,
+				  const EntryOptions& options = EntryOptions() );
+
+	bool addDirectory( const std::string& name, const EntryOptions& options = EntryOptions() );
 
 	/** Opens an existing archive for reading and writing. Missing files are never created;
 	 * use create() explicitly. */
@@ -62,10 +107,13 @@ class EE_API Zip : public Pack {
 
 	const std::string& errorMessage() const { return mErrorMessage; }
 
-	/** Close the pack file */
+	/** Finalizes all queued entries once. Check the result: data is not committed until this
+	 * succeeds. */
 	bool close();
 
-	/** Add a file to the pack file
+	/** Queues a file for streaming at close(); the path must remain valid until then.
+	 * No file contents are copied into memory.
+	 * Add a file to the pack file
 	 * @param path Path to the file in the disk
 	 * @param inpack Path that will have the file inside the pak
 	 * @return True if success
@@ -127,6 +175,8 @@ class EE_API Zip : public Pack {
 	struct zip* getZip();
 
   private:
+	bool configureEntry( Int64 index, const EntryOptions& options, bool directory );
+
 	void setError( int code, int systemCode = 0 );
 
 	bool writable();

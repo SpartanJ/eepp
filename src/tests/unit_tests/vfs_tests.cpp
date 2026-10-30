@@ -1100,8 +1100,8 @@ UTEST( VFSResource, zipPackWithSeveralFiles ) {
 	TempDir tmp;
 	std::string zipPath = tmp.path + "pack.zip";
 	{
-		// Every addFile() rewrites the archive; the later ones replace an existing file, which
-		// used to fail on Windows and silently drop the file.
+		// All queued sources must survive until finalization, including empty entries.
+		// Older per-entry rewrites could fail on Windows and silently drop later files.
 		Zip zip;
 		ASSERT_TRUE( zip.create( zipPath ) );
 		std::vector<Uint8> a{ 'a', '1' }, b{ 'b', '2' }, c{ 'c', '3' };

@@ -1,6 +1,7 @@
 #include <eepp/vfs/virtualfilesystem.hpp>
 
 #include "permissionsengine.hpp"
+#include "zipcreation.hpp"
 #include <algorithm>
 #include <eepp/core/string.hpp>
 #include <eepp/vfs/detail/await.hpp>
@@ -497,6 +498,11 @@ VFSTask<void> VirtualFileSystem::remove( const URI& uri, const RemoveOptions& op
 
 VFSTask<WatchHandle> VirtualFileSystem::watch( const URI& root, const WatchOptions& options ) {
 	return mWatchManager->watch( root, options );
+}
+
+Transfer VirtualFileSystem::createZip( std::vector<URI> sources, URI destination ) {
+	return ZipCreation::start( *this, mTransferPool, std::move( sources ),
+							   std::move( destination ) );
 }
 
 Transfer VirtualFileSystem::copy( const URI& source, const URI& destination,

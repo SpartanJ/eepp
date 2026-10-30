@@ -542,6 +542,50 @@ callers sharing an archive across threads must serialize access. `open()` never 
 file; writing starts explicitly with `create()`. The default constructor retains resource-pack
 registration for the engine and other existing pack consumers.
 
+### Creating ZIP archives
+
+`createZip()` creates a new archive at a local `file://` destination from a selection of VFS
+files and folders. Input can come from any readable provider. It returns the same `Transfer`
+handle used by copy/move, with cancellation, coalesced progress and a completion task:
+
+```cpp
+auto operation = vfs.createZip( { URI::fromFSPath( "/home/me/project" ) },
+                               URI::fromFSPath( "/home/me/project.zip" ) );
+auto subscription = operation.onProgress( []( const TransferProgress& progress ) {
+    // bytesDone / bytesTotal describe uncompressed input.
+}, &uiExecutor );
+operation.completion().then( uiExecutor, []( VFSResult<TransferResult>&& result ) {
+    // Success means that the completed archive has been published.
+} );
+// operation.cancel();
+```
+
+Selected folders retain their top-level name. Files, hidden entries, empty folders, stored
+permission bits and modification times are preserved. Symbolic links are stored as links and
+never traversed. Unsupported special files fail the operation rather than silently disappearing.
+Sources must remain stable while compression runs; observed changes fail before publication.
+Existing destinations are never overwritten, including files that appear during compression.
+The archive is written into an exclusive temporary sibling, then published on success; failure
+or cancellation removes that temporary. Compression uses DEFLATE level 9 by default.
+
+In eefm, the **Compress** context submenu offers **Compress to "name.zip"** and **Compress To...**.
+The latter accepts a local path or file URI, including when the source is remote or inside an
+archive. Progress and cancellation appear in the originating pane. The finished ZIP is selected
+in views showing the destination folder.
+
+For direct ZIP writing, `addFile(path, name)` and `addStream(factory, size, name)` defer reads until
+`close()`. Stream factories open one input at a time, so an archive with many files does not keep
+all of them open. `addData()` copies its input into owned storage; use it for small memory data,
+not large files. `addDirectory()` preserves empty folders. Always check `close()` for finalization
+errors, and use `discard()` to abandon queued changes without writing. `EntryOptions` controls
+stored metadata and compression level. The legacy `Pack` memory overload remains available;
+`addData()` and streaming sources accept lengths beyond its 32-bit limit.
+
+`Zip(false).create(output)` can write directly into an empty, seekable `IOStream`. The caller
+retains the output until `close()` or `discard()` and owns flushing and publication/rollback.
+`setCancellationToken()` and `setProgressCallback()` apply during finalization, including within
+one large entry. These operations run synchronously: call them from a worker, not the UI thread.
+
 ## Runtime archives (`archive://`)
 
 `ArchiveProvider` is registered by default but loads libarchive only when used, on an I/O worker.

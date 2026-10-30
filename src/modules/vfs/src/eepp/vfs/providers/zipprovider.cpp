@@ -71,9 +71,11 @@ struct ZipArchive {
 		value.name = std::move( name );
 		value.type = directory ? FileType::Directory : FileType::Regular;
 		value.hidden = !value.name.empty() && value.name[0] == '.';
-		// Read-only is a provider capability, not the stored entry's mode. The archive API does
-		// not expose Unix permissions: leave them unknown so copies use writable native defaults.
+		// Read-only is a provider capability, not the stored entry's mode. Preserve stored Unix
+		// permissions; archives without them keep unknown modes so copies use native defaults.
 		if ( metadata ) {
+			if ( metadata->unixMode )
+				value.setPermissions( metadata->unixMode & 07777 );
 			value.setModifiedTime( metadata->modified );
 			if ( !directory )
 				value.setSize( metadata->size );

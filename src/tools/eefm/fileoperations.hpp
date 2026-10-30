@@ -15,7 +15,8 @@
 
 namespace eefm {
 
-using EE::System::Application;
+using namespace EE::System;
+using namespace EE::VFS;
 
 class App;
 
@@ -92,7 +93,7 @@ class FileOperations {
 	void buildContextMenu( FileTab* tab, bool background, Vector2f position,
 						   std::vector<Application> apps );
 
-	enum class TransferKind : Uint8 { Copy, Move, Extract };
+	enum class TransferKind : Uint8 { Copy, Move, Extract, Compress };
 
 	/** One paste/drop/extraction: conflicts share decisions, and prompts are sequential. */
 	struct TransferBatch {
@@ -160,6 +161,11 @@ class FileOperations {
 						int paneIndex );
 
 	void extractArchive( const URI& file, const URI& destination, int paneIndex );
+
+	void compressFiles( std::vector<URI> sources, URI destination, int paneIndex );
+
+	void trackTransfer( Transfer transfer, URI destination,
+						const std::shared_ptr<TransferBatch>& batch, String label );
 
 	void startNextTransfer( const std::shared_ptr<TransferBatch>& batch );
 

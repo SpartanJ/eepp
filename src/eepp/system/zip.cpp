@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <cstdlib>
+#include <cstring>
+#include <eepp/system/fileinfo.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamzip.hpp>
 #include <eepp/system/lock.hpp>
@@ -9,6 +12,271 @@
 #include <limits>
 
 namespace EE { namespace System {
+
+namespace {
+
+/** One deferred entry, or a borrowed fresh output stream. Only the current input is open. */
+class ZipStreamSource {
+  public:
+	Zip::StreamFactory open;
+	std::unique_ptr<IOStream> input;
+	IOStream* output{ nullptr };
+	Uint64 size{ 0 };
+	zip_error_t error;
+
+	ZipStreamSource() { zip_error_init( &error ); }
+
+	~ZipStreamSource() { zip_error_fini( &error ); }
+
+	static zip_int64_t callback( void* context, void* data, zip_uint64_t length,
+								 zip_source_cmd_t command ) {
+		auto& self = *static_cast<ZipStreamSource*>( context );
+		auto fail = [&]( int code ) -> zip_int64_t {
+			zip_error_set( &self.error, code, 0 );
+			return -1;
+		};
+		IOStream* stream = self.output ? self.output : self.input.get();
+		switch ( command ) {
+			case ZIP_SOURCE_SUPPORTS:
+				return self.output
+						   ? ZIP_SOURCE_SUPPORTS_WRITABLE
+						   : ZIP_SOURCE_SUPPORTS_SEEKABLE |
+								 ZIP_SOURCE_MAKE_COMMAND_BITMASK( ZIP_SOURCE_SUPPORTS_REOPEN );
+			case ZIP_SOURCE_STAT: {
+				if ( length < sizeof( zip_stat_t ) )
+					return fail( ZIP_ER_INVAL );
+				auto* stat = static_cast<zip_stat_t*>( data );
+				zip_stat_init( stat );
+				stat->size = self.size;
+				stat->valid = ZIP_STAT_SIZE;
+				return sizeof( *stat );
+			}
+			case ZIP_SOURCE_OPEN:
+				if ( self.output )
+					return self.output->seek( 0 ) == 0 ? 0 : fail( ZIP_ER_SEEK );
+				self.input = self.open();
+				if ( !self.input || !self.input->isOpen() )
+					return fail( ZIP_ER_OPEN );
+				if ( self.input->getSize() < 0 ||
+					 static_cast<Uint64>( self.input->getSize() ) != self.size )
+					return fail( ZIP_ER_DATA_LENGTH );
+				return 0;
+			case ZIP_SOURCE_READ: {
+				if ( !stream )
+					return fail( ZIP_ER_READ );
+				auto count = stream->read(
+					static_cast<char*>( data ),
+					std::min<Uint64>( length, std::numeric_limits<ios_size>::max() ) );
+				if ( count < 0 || !stream->isOpen() )
+					return fail( ZIP_ER_READ );
+				return count;
+			}
+			case ZIP_SOURCE_CLOSE:
+				self.input.reset();
+				return 0;
+			case ZIP_SOURCE_SEEK:
+			case ZIP_SOURCE_SEEK_WRITE: {
+				if ( !stream || stream->tell() < 0 )
+					return fail( ZIP_ER_SEEK );
+				const auto size = self.size;
+				auto position = zip_source_seek_compute_offset( stream->tell(), size, data, length,
+																&self.error );
+				return position >= 0 && stream->seek( position ) == position ? 0
+																			 : fail( ZIP_ER_SEEK );
+			}
+			case ZIP_SOURCE_TELL:
+			case ZIP_SOURCE_TELL_WRITE:
+				return stream ? stream->tell() : fail( ZIP_ER_SEEK );
+			case ZIP_SOURCE_BEGIN_WRITE:
+				return self.output && self.size == 0 && self.output->seek( 0 ) == 0
+						   ? 0
+						   : fail( ZIP_ER_WRITE );
+			case ZIP_SOURCE_WRITE: {
+				if ( !self.output ||
+					 length > static_cast<Uint64>( std::numeric_limits<ios_size>::max() ) )
+					return fail( ZIP_ER_WRITE );
+				auto count = self.output->write( static_cast<const char*>( data ), length );
+				if ( count != static_cast<ios_size>( length ) || self.output->tell() < 0 )
+					return fail( ZIP_ER_WRITE );
+				self.size = std::max<Uint64>( self.size, self.output->tell() );
+				return count;
+			}
+			case ZIP_SOURCE_COMMIT_WRITE:
+				return self.output && self.output->isOpen() ? 0 : fail( ZIP_ER_WRITE );
+			case ZIP_SOURCE_ROLLBACK_WRITE:
+			case ZIP_SOURCE_REMOVE:
+				// The output belongs to the caller's transaction, which handles rollback.
+				return 0;
+			case ZIP_SOURCE_ERROR:
+				return zip_error_to_data( &self.error, data, length );
+			case ZIP_SOURCE_FREE:
+				delete &self;
+				return 0;
+			default:
+				return fail( ZIP_ER_OPNOTSUPP );
+		}
+	}
+};
+
+} // namespace
+
+bool Zip::create( IOStream& output ) {
+	if ( !close() )
+		return false;
+	if ( mRegisterResource || !output.isOpen() || output.getSize() != 0 ) {
+		setError( ZIP_ER_INVAL );
+		return false;
+	}
+	auto context = std::make_unique<ZipStreamSource>();
+	context->output = &output;
+	zip_error_t error;
+	zip_error_init( &error );
+	auto* source = zip_source_function_create( ZipStreamSource::callback, context.get(), &error );
+	if ( source ) {
+		context.release();
+		mZip = zip_open_from_source( source, ZIP_CREATE | ZIP_TRUNCATE, &error );
+		if ( !mZip )
+			zip_source_free( source );
+	}
+	if ( !mZip )
+		setError( zip_error_code_zip( &error ), zip_error_code_system( &error ) );
+	zip_error_fini( &error );
+	if ( !mZip )
+		return false;
+	mOpenMode = OpenMode::ReadWrite;
+	mError = Error::None;
+	mErrorMessage.clear();
+	mIsOpen = true;
+	return true;
+}
+
+void Zip::discard() {
+	if ( !mZip )
+		return;
+	zip_discard( mZip );
+	mZip = nullptr;
+	mIsOpen = false;
+	mZipPath.clear();
+	onPackClosed();
+}
+
+bool Zip::setCancellationToken( CancellationToken token ) {
+	if ( !writable() )
+		return false;
+	auto owned = std::make_unique<CancellationToken>( std::move( token ) );
+	if ( zip_register_cancel_callback_with_state(
+			 mZip,
+			 []( zip_t*, void* state ) {
+				 return static_cast<CancellationToken*>( state )->isCancellationRequested() ? 1 : 0;
+			 },
+			 []( void* state ) { delete static_cast<CancellationToken*>( state ); },
+			 owned.get() ) != 0 ) {
+		setError( ZIP_ER_MEMORY );
+		return false;
+	}
+	owned.release();
+	return true;
+}
+
+bool Zip::setProgressCallback( std::function<void( double )> callback ) {
+	if ( !writable() )
+		return false;
+	if ( !callback )
+		return zip_register_progress_callback_with_state( mZip, 0.001, nullptr, nullptr,
+														  nullptr ) == 0;
+	auto owned = std::make_unique<std::function<void( double )>>( std::move( callback ) );
+	if ( zip_register_progress_callback_with_state(
+			 mZip, 0.001,
+			 []( zip_t*, double progress, void* state ) {
+				 ( *static_cast<std::function<void( double )>*>( state ) )( progress );
+			 },
+			 []( void* state ) { delete static_cast<std::function<void( double )>*>( state ); },
+			 owned.get() ) != 0 ) {
+		setError( ZIP_ER_MEMORY );
+		return false;
+	}
+	owned.release();
+	return true;
+}
+
+bool Zip::configureEntry( Int64 index, const EntryOptions& options, bool directory ) {
+	if ( index < 0 ||
+		 zip_set_file_compression( mZip, index, ZIP_CM_DEFLATE, options.compressionLevel ) != 0 ||
+		 ( options.modified && zip_file_set_mtime( mZip, index, *options.modified, 0 ) != 0 ) ||
+		 zip_file_set_external_attributes(
+			 mZip, index, 0, ZIP_OPSYS_UNIX,
+			 ( ( options.symbolicLink ? 0120000u
+				 : directory		  ? 0040000u
+									  : 0100000u ) |
+			   ( options.permissions.value_or( options.symbolicLink ? 0777
+											   : directory			? 0755
+																	: 0644 ) &
+				 07777 ) )
+				 << 16 ) != 0 ) {
+		auto* error = zip_get_error( mZip );
+		setError( zip_error_code_zip( error ), zip_error_code_system( error ) );
+		return false;
+	}
+	return true;
+}
+
+bool Zip::addStream( StreamFactory open, Uint64 size, const std::string& name,
+					 const EntryOptions& options ) {
+	if ( !writable() )
+		return false;
+	if ( !open || size > static_cast<Uint64>( std::numeric_limits<ios_size>::max() ) ||
+		 options.compressionLevel < 0 || options.compressionLevel > 9 ) {
+		setError( ZIP_ER_INVAL );
+		return false;
+	}
+	auto context = std::make_unique<ZipStreamSource>();
+	context->open = std::move( open );
+	context->size = size;
+	auto* source = zip_source_function( mZip, ZipStreamSource::callback, context.get() );
+	if ( !source ) {
+		auto* error = zip_get_error( mZip );
+		setError( zip_error_code_zip( error ), zip_error_code_system( error ) );
+		return false;
+	}
+	context.release();
+	auto index = zip_file_add( mZip, name.c_str(), source, ZIP_FL_ENC_UTF_8 );
+	if ( index < 0 )
+		zip_source_free( source );
+	return configureEntry( index, options, false );
+}
+
+bool Zip::addData( std::span<const Uint8> data, const std::string& name,
+				   const EntryOptions& options ) {
+	if ( !writable() )
+		return false;
+	if ( options.compressionLevel < 0 || options.compressionLevel > 9 ) {
+		setError( ZIP_ER_INVAL );
+		return false;
+	}
+	// Deferred memory sources own their bytes: stack buffers and temporary strings are safe.
+	void* bytes = data.empty() ? nullptr : std::malloc( data.size() );
+	if ( !data.empty() && !bytes ) {
+		setError( ZIP_ER_MEMORY );
+		return false;
+	}
+	if ( !data.empty() )
+		std::memcpy( bytes, data.data(), data.size() );
+	auto* source = zip_source_buffer( mZip, bytes, data.size(), 1 );
+	if ( !source ) {
+		std::free( bytes );
+		auto* error = zip_get_error( mZip );
+		setError( zip_error_code_zip( error ), zip_error_code_system( error ) );
+		return false;
+	}
+	auto index = zip_file_add( mZip, name.c_str(), source, ZIP_FL_ENC_UTF_8 );
+	if ( index < 0 )
+		zip_source_free( source );
+	return configureEntry( index, options, !name.empty() && name.back() == '/' );
+}
+
+bool Zip::addDirectory( const std::string& name, const EntryOptions& options ) {
+	return addData( {}, !name.empty() && name.back() == '/' ? name : name + '/', options );
+}
 
 Zip* Zip::New() {
 	return eeNew( Zip, () );
@@ -70,8 +338,11 @@ bool Zip::close() {
 		// (and unchanged on disk): release it without writing and report the failure.
 		bool written = zip_close( mZip ) == 0;
 
-		if ( !written )
+		if ( !written ) {
+			auto* error = zip_get_error( mZip );
+			setError( zip_error_code_zip( error ), zip_error_code_system( error ) );
 			zip_discard( mZip );
+		}
 
 		mIsOpen = false;
 
@@ -88,40 +359,31 @@ bool Zip::close() {
 }
 
 bool Zip::addFile( const std::string& path, const std::string& inpack ) {
-	ScopedBuffer file;
-
-	if ( !writable() || !FileSystem::fileGet( path, file ) )
+	if ( !writable() )
 		return false;
-
-	return addFile( file.get(), file.length(), inpack );
+	// libzip owns the deferred filename source and uses checked 64-bit UTF-8 file I/O on Windows.
+	auto* source = zip_source_file( mZip, path.c_str(), 0, ZIP_LENGTH_TO_END );
+	if ( !source ) {
+		auto* error = zip_get_error( mZip );
+		setError( zip_error_code_zip( error ), zip_error_code_system( error ) );
+		return false;
+	}
+	auto index = zip_file_add( mZip, inpack.c_str(), source, ZIP_FL_ENC_UTF_8 );
+	if ( index < 0 )
+		zip_source_free( source );
+	FileInfo info( path );
+	EntryOptions options;
+	options.modified = info.getModificationTime();
+	options.permissions = info.getPermissions() & 07777;
+	return configureEntry( index, options, false );
 }
 
 bool Zip::addFile( const Uint8* data, const Uint32& dataSize, const std::string& inpack ) {
-	if ( !writable() )
-		return false;
-	if ( 0 == checkPack() ) {
-		struct zip_source* zs = zip_source_buffer( mZip, (const void*)data, dataSize, 0 );
-
-		if ( NULL != zs ) {
-			if ( zip_file_add( mZip, inpack.c_str(), zs, ZIP_FL_ENC_GUESS ) < 0 ) {
-				zip_source_free( zs );
-				return false;
-			}
-
-			std::string path = mZipPath;
-			bool written = close();
-			bool reopened = open( path );
-
-			if ( written && reopened )
-				return true;
-		}
-	}
-
-	return false;
+	return addData( { data, dataSize }, inpack );
 }
 
 bool Zip::addFile( std::vector<Uint8>& data, const std::string& inpack ) {
-	return addFile( data.data(), (Uint32)data.size(), inpack );
+	return addData( data, inpack );
 }
 
 bool Zip::addFiles( std::map<std::string, std::string> paths ) {
@@ -267,6 +529,13 @@ bool Zip::entry( Uint64 index, Entry& result ) {
 	result.size = info.size;
 	result.modified = static_cast<Int64>( info.mtime );
 	result.crc = info.crc;
+	zip_uint8_t system = 0;
+	zip_uint32_t attributes = 0;
+	result.unixMode =
+		zip_file_get_external_attributes( mZip, index, 0, &system, &attributes ) == 0 &&
+				system == ZIP_OPSYS_UNIX
+			? attributes >> 16
+			: 0;
 	return true;
 }
 
@@ -294,7 +563,9 @@ void Zip::setError( int code, int systemCode ) {
 	zip_error_t error;
 	zip_error_init( &error );
 	zip_error_set( &error, code, systemCode );
-	if ( code == ZIP_ER_NOENT )
+	if ( code == ZIP_ER_CANCELLED )
+		mError = Error::Cancelled;
+	else if ( code == ZIP_ER_NOENT )
 		mError = Error::NotFound;
 	else if ( zip_error_system_type( &error ) == ZIP_ET_SYS &&
 			  ( systemCode == EACCES || systemCode == EPERM ) )

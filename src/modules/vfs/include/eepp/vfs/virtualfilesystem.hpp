@@ -203,6 +203,13 @@ class EE_VFS_API VirtualFileSystem {
 	Transfer move( const URI& source, const URI& destination, const CopyOptions& options,
 				   TransferConflictResolver onConflict );
 
+	/** Creates a new ZIP at a local destination from VFS files/folders. Streams at DEFLATE level 9,
+	 * preserves empty folders, timestamps, permissions and symbolic links (without following them).
+	 * Existing destinations are never replaced. Cancellation/failure removes only the temporary
+	 * output. Source trees must remain stable; observed changes fail before publication.
+	 * Progress counts uncompressed input bytes. The output is not published until completion. */
+	Transfer createZip( std::vector<URI> sources, URI destination );
+
 	/** Convenience for watchManager().watch(). */
 	VFSTask<WatchHandle> watch( const URI& root, const WatchOptions& options = {} );
 

@@ -93,11 +93,11 @@ class EE_VFS_API TransferProgressSubscription {
 	Uint64 mId{ 0 };
 };
 
-/** @brief A running copy or move orchestrated by the VFS.
+/** @brief A running copy, move, or ZIP creation orchestrated by the VFS.
  *
  * Progress is domain specific and therefore lives here instead of on Task. Progress updates are
  * coalesced: a slow subscriber receives the latest snapshot rather than every intermediate one.
- * Transfers keep running when the Transfer object is destroyed; call cancel() to stop them.
+ * Operations keep running when the Transfer object is destroyed; call cancel() to stop them.
  */
 class EE_VFS_API Transfer {
   public:
@@ -115,7 +115,8 @@ class EE_VFS_API Transfer {
 	TransferProgressSubscription onProgress( TransferProgressCallback callback,
 											 Executor* deliveryExecutor = nullptr );
 
-	/** Requests cancellation. The transfer completes with VFSErrorCode::Cancelled; files fully
+	/** Requests cancellation. ZIP creation discards its temporary output. Copy/move complete
+	 * with VFSErrorCode::Cancelled; files fully
 	 * copied so far remain at the destination, the source of a move is never removed for
 	 * entries that were not completely copied. */
 	void cancel();
