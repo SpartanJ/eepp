@@ -1507,7 +1507,7 @@ void TerminalEmulator::treset( void ) {
 		mTerm.tabs[i] = 1;
 	mTerm.top = 0;
 	mTerm.bot = mTerm.row - 1;
-	mTerm.mode = MODE_WRAP | MODE_UTF8;
+	mTerm.mode = MODE_WRAP | MODE_UTF8 | ( mGraphemeClustering ? MODE_GRAPHEME : 0 );
 	memset( mTerm.trantbl, CS_USA, sizeof( mTerm.trantbl ) );
 	mTerm.charset = 0;
 
@@ -3010,6 +3010,11 @@ const TerminalHyperlink* TerminalEmulator::getHyperlink( uint16_t id ) const {
 	return id != 0 && id < mHyperlinks.size() && mHyperlinks[id].uri ? &mHyperlinks[id] : nullptr;
 }
 
+void TerminalEmulator::setGraphemeClusteringEnabled( bool enabled ) {
+	mGraphemeClustering = enabled;
+	MODBIT( mTerm.mode, enabled, MODE_GRAPHEME );
+}
+
 void TerminalEmulator::setOsc8HyperlinksEnabled( bool enabled ) {
 	if ( mEnableOsc8Hyperlinks == enabled )
 		return;
@@ -4050,7 +4055,7 @@ bool TerminalEmulator::tattach( Rune u, int width ) {
 
 	char32_t codepoints[MaxClusterCodepoints + 1];
 	const size_t count = tclusterCodepoints( line[x], codepoints );
-	if ( count == 0 || count == MaxClusterCodepoints )
+	if ( count == 0 )
 		return true;
 	const char32_t previous = codepoints[count - 1];
 	codepoints[count] = static_cast<char32_t>( u );
@@ -4068,6 +4073,10 @@ bool TerminalEmulator::tattach( Rune u, int width ) {
 		if ( width > 0 )
 			effect = WidthEffect::Wide;
 	}
+	/* Only extensions of a full cluster are dropped; a codepoint that starts a new cluster was
+	 * printed above. */
+	if ( count == MaxClusterCodepoints )
+		return true;
 
 	const uint32_t id = internCluster( std::u32string_view( codepoints, count + 1 ) );
 	if ( id == 0 )
@@ -4635,14 +4644,17 @@ int TerminalEmulator::tpututf8( const char* buf, int begin, int end ) {
 		}
 		return begin;
 	}
-	/* Under mode 2027 the run's first codepoint may extend the previous cell's cluster. */
+	/* Under mode 2027 the run's first codepoint may extend the previous cell's cluster. A single
+	 * codepoint can only pull it in through its Attracts bit; a cluster can through context its
+	 * last codepoint does not show (GB9c Indic conjuncts: consonant + linker [+ extend] +
+	 * consonant), so after one the full UAX #29 rules decide. */
 	if ( grapheme && run.codepoints[0] > 0xFF ) {
 		const int x = tattachColumn();
 		if ( x >= 0 ) {
-			Rune last = 0;
-			visitGlyphCodepoints( TLINE( mTerm.c.y )[x],
-								  [&last]( Rune codepoint ) { last = codepoint; } );
-			if ( last > 0xFF && ( GlyphProperties::of( last ) & GlyphProperties::Attracts ) )
+			const TerminalGlyph& previous = TLINE( mTerm.c.y )[x];
+			if ( isGlyphCluster( previous ) ||
+				 ( previous.u > 0xFF &&
+				   ( GlyphProperties::of( previous.u ) & GlyphProperties::Attracts ) ) )
 				return begin;
 		}
 	}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <eepp/config.hpp>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/core/string.hpp>
 
 namespace EE::Graphics {
@@ -31,6 +32,12 @@ class EE_API TextShapeRun {
   protected:
 	void findNextEnd();
 
+	std::size_t clusterEnd( std::size_t start ) const;
+
+	std::size_t clusterStart( std::size_t last ) const;
+
+	Font* clusterFont( std::size_t start, std::size_t end ) const;
+
 	String::View mString;
 	std::size_t mIndex{ 0 };
 	std::size_t mLen{ 0 };
@@ -41,6 +48,8 @@ class EE_API TextShapeRun {
 	Float mOutlineThickness;
 	Font* mCurFont{ nullptr };
 	Font* mStartFont{ nullptr };
+	/* Right-to-left only: short segments stay inline, longer ones spill to the heap. */
+	SmallVector<std::size_t, 8> mClusterStarts;
 	bool mIsNewLine : 1 { false };
 	bool mIsRTL : 1 { false };
 };

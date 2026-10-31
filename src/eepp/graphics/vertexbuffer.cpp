@@ -181,6 +181,42 @@ void VertexBuffer::addQuad( const Vector2f& pos, const Sizef& size, const Color&
 	}
 }
 
+void VertexBuffer::addQuadFree( const Vector2f& pos0, const Vector2f& pos1, const Vector2f& pos2,
+								const Vector2f& pos3, const Color& color ) {
+	const Uint32 vertices = GLi->quadVertex();
+	for ( Uint32 i = 0; i < vertices; ++i )
+		addColor( color );
+	if ( vertices == 6 ) {
+		addVertex( pos1 );
+		addVertex( pos0 );
+		addVertex( pos3 );
+		addVertex( pos1 );
+		addVertex( pos2 );
+		addVertex( pos3 );
+	} else {
+		addVertex( pos0 );
+		addVertex( pos1 );
+		addVertex( pos2 );
+		addVertex( pos3 );
+	}
+}
+
+void VertexBuffer::addQuadTexCoords( const Rectf& coords, const Uint32& textureLevel ) {
+	if ( GLi->quadVertex() == 6 ) {
+		addTextureCoord( { coords.Left, coords.Bottom }, textureLevel );
+		addTextureCoord( { coords.Left, coords.Top }, textureLevel );
+		addTextureCoord( { coords.Right, coords.Top }, textureLevel );
+		addTextureCoord( { coords.Left, coords.Bottom }, textureLevel );
+		addTextureCoord( { coords.Right, coords.Bottom }, textureLevel );
+		addTextureCoord( { coords.Right, coords.Top }, textureLevel );
+	} else {
+		addTextureCoord( { coords.Left, coords.Top }, textureLevel );
+		addTextureCoord( { coords.Left, coords.Bottom }, textureLevel );
+		addTextureCoord( { coords.Right, coords.Bottom }, textureLevel );
+		addTextureCoord( { coords.Right, coords.Top }, textureLevel );
+	}
+}
+
 void VertexBuffer::setQuad( const Vector2u& gridPos, const Vector2f& pos, const Sizef& size,
 							const Color& color ) {
 	eeASSERT( mDrawType == PrimitiveType::PRIMITIVE_QUADS ||

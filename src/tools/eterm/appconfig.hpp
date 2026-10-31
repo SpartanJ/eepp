@@ -36,6 +36,7 @@ struct TerminalConfig {
 	bool inheritWorkingDirectory{ true };
 	bool allowOsc52ClipboardWrite{ true };
 	bool enableOsc8Hyperlinks{ true };
+	bool graphemeClustering{ true };
 	NewTerminalBehavior newTerminalBehavior{ NewTerminalBehavior::CurrentTabBar };
 	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
 	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };

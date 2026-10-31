@@ -153,7 +153,8 @@ UITerminal* StatusTerminalController::createTerminal(
 		initialSize, std::move( program ), std::move( args ), directory,
 		mContext->termConfig().scrollback, nullptr, false, true, env,
 		TerminalSessionOptions{ mContext->termConfig().allowOsc52ClipboardWrite,
-								mContext->termConfig().enableOsc8Hyperlinks } );
+								mContext->termConfig().enableOsc8Hyperlinks,
+								mContext->termConfig().graphemeClustering } );
 	UITerminal* term = display ? UITerminal::New( display ) : nullptr;
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {

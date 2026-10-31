@@ -664,7 +664,8 @@ UITerminal* TerminalManager::createNewTerminal(
 		std::move( program ), std::move( args ), directory, mApp->termConfig().scrollback, nullptr,
 		mUseFrameBuffer, keepAlive, env,
 		TerminalSessionOptions{ mApp->termConfig().allowOsc52ClipboardWrite,
-								mApp->termConfig().enableOsc8Hyperlinks } );
+								mApp->termConfig().enableOsc8Hyperlinks,
+								mApp->termConfig().graphemeClustering } );
 	UITerminal* term = display ? UITerminal::New( display ) : nullptr;
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {

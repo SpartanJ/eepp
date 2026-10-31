@@ -40,14 +40,13 @@ void VertexBufferOGL::setVertexStates() {
 	if ( GLi->isExtension( EEGL_ARB_multitexture ) ) {
 		for ( Int32 i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
 			if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 + i ) ) {
-				if ( mTexCoordArray[VERTEX_FLAG_TEXTURE0 + i].empty() )
+				if ( mTexCoordArray[i].empty() )
 					return;
 				GLi->clientActiveTexture( GL_TEXTURE0 + i );
 				GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 
 				GLi->texCoordPointer( VertexElementCount[VERTEX_FLAG_TEXTURE0 + i], GL_FP,
-									  sizeof( Vector2f ),
-									  &mTexCoordArray[VERTEX_FLAG_TEXTURE0 + i][0], alloc );
+									  sizeof( Vector2f ), &mTexCoordArray[i][0], alloc );
 			} else {
 				if ( 0 == i ) {
 					GLi->disable( GL_TEXTURE_2D );
@@ -58,12 +57,11 @@ void VertexBufferOGL::setVertexStates() {
 		}
 	} else {
 		if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
-			if ( mTexCoordArray[VERTEX_FLAG_TEXTURE0].empty() )
+			if ( mTexCoordArray[0].empty() )
 				return;
 			GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 			GLi->texCoordPointer( VertexElementCount[VERTEX_FLAG_TEXTURE0], GL_FP,
-								  sizeof( Vector2f ), &mTexCoordArray[VERTEX_FLAG_TEXTURE0][0],
-								  alloc );
+								  sizeof( Vector2f ), &mTexCoordArray[0][0], alloc );
 		} else {
 			GLi->disable( GL_TEXTURE_2D );
 			GLi->disableClientState( GL_TEXTURE_COORD_ARRAY );

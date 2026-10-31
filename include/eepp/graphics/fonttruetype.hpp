@@ -15,6 +15,7 @@ namespace EE { namespace Graphics {
 
 enum class FontWeight : Uint16;
 struct FontDesc;
+struct ShapedGlyph;
 class ResourceScope;
 
 class FontTrueType;
@@ -76,6 +77,23 @@ class EE_API FontTrueType : public Font {
 	GlyphDrawable* getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex, unsigned int characterSize,
 												   bool bold = false, bool italic = false,
 												   Float outlineThickness = 0 ) const;
+
+	/** The font that shapes the grapheme cluster @p cluster as one run: the color emoji font for
+	 * an emoji sequence it fully covers (variation selector 16, keycap, skin tone, ZWJ, flag or
+	 * tag sequence), this font for a text presentation sequence (variation selector 15) it covers,
+	 * otherwise the font of its first codepoint, or else the first fallback font that covers
+	 * every codepoint. Joiners and variation selectors need no glyph. Emoji and fallback fonts
+	 * are used only while setEnableEmojiFallback() and setEnableFallbackFont() allow them. A
+	 * single codepoint gets the font getGlyph() resolves for it. */
+	Font* getClusterFont( String::View cluster, unsigned int characterSize, bool bold = false,
+						  bool italic = false, Float outlineThickness = 0 ) const;
+
+	/** The drawable of a glyph that TextLayout shaped with this font, whichever fallback font
+	 * provided it. It is stored in this font's page, so it shares getTexture( characterSize ) with
+	 * the glyphs of getGlyphDrawable(). */
+	GlyphDrawable* getShapedGlyphDrawable( const ShapedGlyph& glyph, unsigned int characterSize,
+										   bool bold = false, bool italic = false,
+										   Float outlineThickness = 0 ) const;
 
 	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
 					  bool italic, Float outlineThickness = 0 ) const;

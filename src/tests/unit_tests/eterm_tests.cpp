@@ -6,6 +6,9 @@
 #include <cstdlib>
 #include <deque>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/glyphdrawable.hpp>
+#include <eepp/graphics/text.hpp>
+#include <eepp/graphics/textlayout.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/compression.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -161,6 +164,55 @@ UTEST( eterm_display, scene_fonts_fall_back_to_the_application_emoji_font ) {
 				 font->getFontService()->getEmojiFont() != nullptr );
 	const Glyph emoji = font->getGlyph( 0x1F600, 24, false, false );
 	EXPECT_TRUE( emoji.bounds.getWidth() > 0 && emoji.bounds.getHeight() > 0 );
+}
+
+UTEST( eterm_display, shaped_cluster_glyphs_share_the_terminal_font_texture ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 320, 240, "eterm cluster shaping", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto font = FontTrueType::New( "eterm-test-clusters", *app.getUI()->getResourceScope() );
+	ASSERT_TRUE( font->loadFromFile( "assets/fonts/DejaVuSansMono.ttf" ) );
+	if ( !Text::TextShaperEnabled )
+		UTEST_SKIP( "Built without the text shaper" );
+	// The display draws every cluster glyph with the terminal font's texture bound, including
+	// glyphs that shaping took from a fallback font such as the emoji font.
+	const std::u32string clusters[] = { U"e\u0301", U"\u2764\uFE0F", U"\U0001F1E6\U0001F1F7" };
+	bool usedFallbackFont = false;
+	for ( const auto& cluster : clusters ) {
+		auto layout = TextLayout::layout( String::View( cluster.data(), cluster.size() ),
+										  font.get(), 24, Text::Regular );
+		ASSERT_FALSE( layout->paragraphs.empty() );
+		ASSERT_FALSE( layout->paragraphs.front().shapedGlyphs.empty() );
+		for ( const ShapedGlyph& shaped : layout->paragraphs.front().shapedGlyphs ) {
+			EXPECT_NE( 0u, shaped.glyphIndex );
+			usedFallbackFont = usedFallbackFont || shaped.font != font.get();
+			GlyphDrawable* drawable = font->getShapedGlyphDrawable( shaped, 24 );
+			ASSERT_TRUE( drawable != nullptr );
+			EXPECT_TRUE( drawable->getTexture().get() == font->getTexture( 24 ).get() );
+		}
+	}
+	EXPECT_TRUE( usedFallbackFont );
+
+	// An emoji sequence is shaped by the emoji font as a whole, even when the terminal font has
+	// some of its codepoints (DejaVu has U+2764 and the digits), so it forms one glyph.
+	if ( !font->getFontService()->getColorEmojiFont() )
+		return;
+	const std::u32string sequences[] = { U"\U0001F469\u200D\u2764\uFE0F\u200D\U0001F468",
+										 U"1\uFE0F\u20E3", U"\u2764\uFE0F" };
+	for ( const auto& sequence : sequences ) {
+		auto layout = TextLayout::layout( String::View( sequence.data(), sequence.size() ),
+										  font.get(), 24, Text::Regular );
+		ASSERT_FALSE( layout->paragraphs.empty() );
+		const auto& glyphs = layout->paragraphs.front().shapedGlyphs;
+		ASSERT_EQ( static_cast<size_t>( 1 ), glyphs.size() );
+		EXPECT_NE( 0u, glyphs[0].glyphIndex );
+		EXPECT_TRUE( glyphs[0].font == font->getFontService()->getColorEmojiFont() );
+	}
+	// Text presentation keeps the terminal font.
+	const std::u32string text = U"\u2764\uFE0E";
+	auto layout = TextLayout::layout( String::View( text.data(), text.size() ), font.get(), 24, 0 );
+	ASSERT_FALSE( layout->paragraphs.front().shapedGlyphs.empty() );
+	EXPECT_TRUE( layout->paragraphs.front().shapedGlyphs[0].font == font.get() );
 }
 
 UTEST( eterm_display, startup_uses_grid_from_available_pixels ) {
@@ -2751,6 +2803,8 @@ struct ClusterTerminal {
 
 UTEST( eterm, zero_width_codepoints_attach_to_the_previous_cell ) {
 	ClusterTerminal t;
+	// The wcwidth() widths used with grapheme clustering turned off.
+	t.term->setGraphemeClusteringEnabled( false );
 	// e + COMBINING ACUTE ACCENT, x; then a mark with nothing before it on a new row.
 	t.feed( "e\xCC\x81x\r\n\xCC\x81"
 			"a" );
@@ -2808,6 +2862,21 @@ UTEST( eterm, mode_2027_clusters_change_widths ) {
 	EXPECT_TRUE( t.text( 0, 3 ) == U"❤️" );
 	EXPECT_EQ( static_cast<Rune>( 'e' ), t.cell( 2, 3 ).u );
 
+	// An Indic conjunct (GB9c: consonant + virama + consonant) is one cluster, even though the
+	// second consonant arrives as the start of a new run.
+	t.feed( "\033[2J\033[H\xE0\xA4\x95\xE0\xA5\x8D\xE0\xA4\x95"
+			"f" );
+	EXPECT_TRUE( t.text( 0 ) == U"क्क" );
+	EXPECT_EQ( static_cast<Rune>( 'f' ), t.cell( 2 ).u );
+
+	// A full cluster drops only its own extensions: a codepoint that starts a new cluster prints.
+	std::string full = "\r\ne";
+	for ( int mark = 0; mark < 31; ++mark )
+		full += "\xCC\x81";
+	t.feed( full + "\xCC\x81\xF0\x9F\x87\xA6" );
+	EXPECT_EQ( static_cast<size_t>( 32 ), t.text( 0, 1 ).size() );
+	EXPECT_TRUE( t.text( 1, 1 ) == U"\U0001F1E6" );
+
 	// Without the mode the same ZWJ sequence keeps per-codepoint widths.
 	t.feed( "\033[?2027l\033[2J\033[H\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA9" );
 	EXPECT_TRUE( t.text( 0 ) == U"\U0001F468‍" );
@@ -2816,8 +2885,31 @@ UTEST( eterm, mode_2027_clusters_change_widths ) {
 
 UTEST( eterm, decrqm_reports_mode_2027_and_ansi_modes ) {
 	ClusterTerminal t;
-	t.feed( "\033[?2027$p\033[?2027h\033[?2027$p\033[4$p\033[?9999$p" );
-	EXPECT_STDSTREQ( "\033[?2027;2$y\033[?2027;1$y\033[4;2$y\033[?9999;0$y", t.input->mWrites );
+	// Grapheme clustering is on by default.
+	t.feed( "\033[?2027$p\033[?2027l\033[?2027$p\033[4$p\033[?9999$p" );
+	EXPECT_STDSTREQ( "\033[?2027;1$y\033[?2027;2$y\033[4;2$y\033[?9999;0$y", t.input->mWrites );
+}
+
+UTEST( eterm, grapheme_clustering_setting_is_the_mode_after_reset ) {
+	ClusterTerminal t;
+	// A reset restores the configured mode, not whatever the last program left.
+	t.feed( "\033[?2027l\033c\033[?2027$p" );
+	EXPECT_STDSTREQ( "\033[?2027;1$y", t.input->mWrites );
+	t.input->mWrites.clear();
+
+	// Turning the setting off applies to the current mode and to resets.
+	t.term->setGraphemeClusteringEnabled( false );
+	t.feed( "\033[?2027$p\033[?2027h\033c\033[?2027$p" );
+	EXPECT_STDSTREQ( "\033[?2027;2$y\033[?2027;2$y", t.input->mWrites );
+	t.feed( "\033[2J\033[H\xF0\x9F\x87\xA6\xF0\x9F\x87\xB7" );
+	EXPECT_TRUE( t.text( 0 ) == U"\U0001F1E6" );
+	EXPECT_TRUE( t.text( 1 ) == U"\U0001F1F7" );
+
+	// Turned back on, a flag is one wide cluster.
+	t.term->setGraphemeClusteringEnabled( true );
+	t.feed( "\033[2J\033[H\xF0\x9F\x87\xA6\xF0\x9F\x87\xB7" );
+	EXPECT_TRUE( t.text( 0 ) == U"\U0001F1E6\U0001F1F7" );
+	EXPECT_TRUE( ( t.cell( 0 ).mode & ATTR_WIDE ) != 0 );
 }
 
 UTEST( eterm, clusters_are_reclaimed_and_published_in_snapshots ) {

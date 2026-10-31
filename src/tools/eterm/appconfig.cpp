@@ -40,6 +40,8 @@ void AppConfig::load() {
 														terminal.allowOsc52ClipboardWrite );
 	terminal.enableOsc8Hyperlinks =
 		mIni.getValueB( "terminal", "enable_osc8_hyperlinks", terminal.enableOsc8Hyperlinks );
+	terminal.graphemeClustering =
+		mIni.getValueB( "terminal", "grapheme_clustering", terminal.graphemeClustering );
 	ui.smoothScroll = mIni.getValueB(
 		"ui", "smooth_scroll", mIni.getValueB( "terminal", "smooth_scroll", ui.smoothScroll ) );
 	const auto newTerminalBehavior =
@@ -120,6 +122,7 @@ bool AppConfig::savePreferences() {
 	mIni.setValueB( "terminal", "inherit_working_directory", terminal.inheritWorkingDirectory );
 	mIni.setValueB( "terminal", "allow_osc52_clipboard_write", terminal.allowOsc52ClipboardWrite );
 	mIni.setValueB( "terminal", "enable_osc8_hyperlinks", terminal.enableOsc8Hyperlinks );
+	mIni.setValueB( "terminal", "grapheme_clustering", terminal.graphemeClustering );
 	mIni.setValueB( "ui", "smooth_scroll", ui.smoothScroll );
 	mIni.deleteValue( "terminal", "smooth_scroll" );
 	mIni.setValue( "terminal", "new_terminal_behavior",

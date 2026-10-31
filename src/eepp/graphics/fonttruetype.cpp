@@ -1008,6 +1008,84 @@ GlyphDrawable* FontTrueType::getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex,
 										   outlineThickness, getPage( characterSize ) );
 }
 
+/* Codepoints a shaping run hides when the font has no glyph for them. */
+static bool isClusterJoiner( String::StringBaseType codepoint ) {
+	return codepoint == 0x200C || codepoint == 0x200D ||
+		   ( codepoint >= 0xFE00 && codepoint <= 0xFE0F ) ||
+		   ( codepoint >= 0xE0100 && codepoint <= 0xE01EF );
+}
+
+static bool isEmojiSequence( String::View cluster ) {
+	if ( cluster.size() < 2 || !String::hasEmojiProperty( cluster[0] ) )
+		return false;
+	bool emoji = false;
+	for ( std::size_t i = 1; i < cluster.size(); ++i ) {
+		const auto codepoint = cluster[i];
+		if ( codepoint == 0xFE0E )
+			return false; /* Text presentation. */
+		if ( codepoint == 0xFE0F || codepoint == 0x20E3 || codepoint == 0x200D ||
+			 ( codepoint >= 0x1F3FB && codepoint <= 0x1F3FF ) ||
+			 ( codepoint >= 0x1F1E6 && codepoint <= 0x1F1FF ) ||
+			 ( codepoint >= 0xE0020 && codepoint <= 0xE007F ) )
+			emoji = true;
+	}
+	return emoji;
+}
+
+static bool coversCluster( const FontTrueType* font, String::View cluster ) {
+	for ( const auto codepoint : cluster ) {
+		if ( !isClusterJoiner( codepoint ) && font->getGlyphIndex( codepoint ) == 0 )
+			return false;
+	}
+	return true;
+}
+
+static inline const FontTrueType* asTrueType( const Font* font ) {
+	return font && font->getType() == FontType::TTF ? static_cast<const FontTrueType*>( font )
+													: nullptr;
+}
+
+Font* FontTrueType::getClusterFont( String::View cluster, unsigned int characterSize, bool bold,
+									bool italic, Float outlineThickness ) const {
+	if ( cluster.empty() )
+		return nullptr;
+	Font* base = getGlyph( cluster[0], characterSize, bold, italic, outlineThickness ).font;
+	if ( cluster.size() == 1 )
+		return base;
+	/* Variation selector 15 asks for text presentation, which emoji fallback would override. */
+	if ( cluster.find( 0xFE0E ) != String::View::npos && coversCluster( this, cluster ) )
+		return const_cast<FontTrueType*>( this );
+	/* The same fallback policies as getGlyph(). */
+	if ( mEnableEmojiFallback && !mIsColorEmojiFont && !mHasSvgGlyphs && !mHasColrGlyphs &&
+		 !mIsEmojiFont && mFontService && isEmojiSequence( cluster ) ) {
+		for ( Font* emoji : { mFontService->getColorEmojiFont(), mFontService->getEmojiFont() } ) {
+			if ( const FontTrueType* font = asTrueType( emoji );
+				 font && coversCluster( font, cluster ) )
+				return emoji;
+		}
+	}
+	if ( const FontTrueType* font = asTrueType( base ); !font || coversCluster( font, cluster ) )
+		return base;
+	if ( coversCluster( this, cluster ) )
+		return const_cast<FontTrueType*>( this );
+	if ( mEnableFallbackFont && mFontService ) {
+		for ( const FontPtr& fallback : mFontService->getFallbackFonts() ) {
+			if ( const FontTrueType* font = asTrueType( fallback.get() );
+				 font && coversCluster( font, cluster ) )
+				return fallback.get();
+		}
+	}
+	return base;
+}
+
+GlyphDrawable* FontTrueType::getShapedGlyphDrawable( const ShapedGlyph& glyph,
+													 unsigned int characterSize, bool bold,
+													 bool italic, Float outlineThickness ) const {
+	const FontTrueType* font = glyph.font ? glyph.font : this;
+	return font->getGlyphDrawableFromGlyphIndex( glyph.glyphIndex, characterSize, bold, italic,
+												 outlineThickness, getPage( characterSize ) );
+}
+
 Float FontTrueType::getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
 								bool italic, Float outlineThickness ) const {
 	// Special case where first or second is 0 (null character)

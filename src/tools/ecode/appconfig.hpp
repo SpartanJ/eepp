@@ -280,6 +280,7 @@ struct TerminalConfig {
 	bool inheritWorkingDirectory{ true };
 	bool enableOsc8Hyperlinks{ true };
 	bool allowOsc52ClipboardWrite{ true };
+	bool graphemeClustering{ true };
 	TerminalCursorMode cursorStyle{ TerminalCursorMode::SteadyUnderline };
 	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
 	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };

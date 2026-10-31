@@ -7,6 +7,7 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/math/math.hpp>
 #include <eepp/system/color.hpp>
@@ -1000,6 +1001,11 @@ void TerminalDisplay::setOsc8HyperlinksEnabled( bool enabled ) {
 		mSession->setOsc8HyperlinksEnabled( enabled );
 }
 
+void TerminalDisplay::setGraphemeClusteringEnabled( bool enabled ) {
+	if ( mSession )
+		mSession->setGraphemeClusteringEnabled( enabled );
+}
+
 std::string TerminalDisplay::getCurrentWorkingDirectory() const {
 	return mSnapshot ? mSnapshot->currentWorkingDirectory : std::string{};
 }
@@ -1670,6 +1676,10 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 		if ( !mVBStyles.empty() )
 			mVBStyles[j]->clearData();
+		VertexBuffer* clusterVBO =
+			foregroundVBO && !mVBClusters.empty() ? mVBClusters[j].get() : nullptr;
+		if ( clusterVBO )
+			clusterVBO->clearData();
 
 		for ( Uint32 i = 0; i < mColumns; i++ ) {
 			mCurGridPos = { i, j };
@@ -1731,29 +1741,35 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 					dirtyFG = true;
 				}
 			} else {
-				// A grapheme cluster draws its base codepoint until clusters are shaped.
-				auto* gd =
-					mFont->getGlyphDrawable( mSnapshot->glyphBaseCodepoint( glyph ), mFontSize,
-											 glyph.mode & ATTR_BOLD, glyph.mode & ATTR_ITALIC, 0 );
-
-				FontService* fontService =
-					mFont->getType() == FontType::TTF
-						? static_cast<FontTrueType*>( mFont )->getFontService()
-						: nullptr;
-				if ( ( glyph.mode & ATTR_EMOJI ) && fontService &&
-					 fontService->getColorEmojiFont() ) {
-					gd->setColor( Color::White );
+				if ( isGlyphCluster( glyph ) &&
+					 drawCluster( glyph, x, y, advanceX, fg, clusterVBO ) ) {
+					if ( foregroundVBO )
+						foregroundVBO->setQuadColor( mCurGridPos, Color::Transparent );
 				} else {
-					gd->setColor( fg );
-				}
+					// A cluster the font cannot show in its cells draws its base codepoint.
+					auto* gd = mFont->getGlyphDrawable( mSnapshot->glyphBaseCodepoint( glyph ),
+														mFontSize, glyph.mode & ATTR_BOLD,
+														glyph.mode & ATTR_ITALIC, 0 );
 
-				gd->setDrawMode( glyph.mode & ATTR_ITALIC ? GlyphDrawable::DrawMode::TextItalic
-														  : GlyphDrawable::DrawMode::Text );
+					FontService* fontService =
+						mFont->getType() == FontType::TTF
+							? static_cast<FontTrueType*>( mFont )->getFontService()
+							: nullptr;
+					if ( ( glyph.mode & ATTR_EMOJI ) && fontService &&
+						 fontService->getColorEmojiFont() ) {
+						gd->setColor( Color::White );
+					} else {
+						gd->setColor( fg );
+					}
 
-				if ( foregroundVBO ) {
-					gd->drawIntoVertexBuffer( foregroundVBO, mCurGridPos, { x, y } );
-				} else {
-					gd->draw( { x, y } );
+					gd->setDrawMode( glyph.mode & ATTR_ITALIC ? GlyphDrawable::DrawMode::TextItalic
+															  : GlyphDrawable::DrawMode::Text );
+
+					if ( foregroundVBO ) {
+						gd->drawIntoVertexBuffer( foregroundVBO, mCurGridPos, { x, y } );
+					} else {
+						gd->draw( { x, y } );
+					}
 				}
 				dirtyFG = true;
 
@@ -1875,6 +1891,23 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		foregroundVBO->unbind();
 	}
 
+	if ( foregroundVBO && !mVBClusters.empty() ) {
+		bool textureBound = false;
+		for ( const auto& vbo : mVBClusters ) {
+			if ( vbo->getVertexCount() == 0 )
+				continue;
+			if ( !textureBound ) {
+				mFont->getTexture( mFontSize )->bind();
+				textureBound = true;
+			}
+			if ( dirtyFG )
+				vbo->update( VERTEX_FLAGS_DEFAULT, false );
+			vbo->bind();
+			vbo->draw();
+			vbo->unbind();
+		}
+	}
+
 	if ( !mVBStyles.empty() ) {
 		if ( dirtyFG ) {
 			for ( const auto& vbo : mVBStyles ) {
@@ -1911,6 +1944,71 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 	if ( mFrameBuffer )
 		mFrameBuffer->unbind();
+}
+
+/* Joiners, variation selectors and tags: shaping hides them when the font lacks them. */
+static bool isInvisibleInCluster( char32_t codepoint ) {
+	return codepoint == 0x200C || codepoint == 0x200D ||
+		   ( codepoint >= 0xFE00 && codepoint <= 0xFE0F ) ||
+		   ( codepoint >= 0xE0000 && codepoint <= 0xE01EF );
+}
+
+bool TerminalDisplay::drawCluster( const TerminalGlyph& glyph, Float x, Float y, Float width,
+								   const Color& fg, VertexBuffer* vbo ) {
+	if ( !Text::TextShaperEnabled || mFont->getType() != FontType::TTF )
+		return false;
+	const std::u32string* cluster = mSnapshot->findCluster( glyphClusterId( glyph ) );
+	if ( !cluster || cluster->empty() )
+		return false;
+	const bool bold = glyph.mode & ATTR_BOLD;
+	const bool italic = glyph.mode & ATTR_ITALIC;
+	FontTrueType* font = static_cast<FontTrueType*>( mFont );
+	const auto layout =
+		TextLayout::layout( String::View( cluster->data(), cluster->size() ), font, mFontSize,
+							( bold ? Text::Bold : 0 ) | ( italic ? Text::Italic : 0 ) );
+	if ( layout->paragraphs.empty() || layout->paragraphs.front().shapedGlyphs.empty() )
+		return false;
+	const auto& glyphs = layout->paragraphs.front().shapedGlyphs;
+
+	/* Joiners and selectors left unligated draw nothing and take no width, whether the font
+	 * lacks them (glyph 0) or maps them to a visible glyph. */
+	const auto isInvisible = [cluster]( const ShapedGlyph& shaped ) {
+		return shaped.stringIndex < cluster->size() &&
+			   isInvisibleInCluster( ( *cluster )[shaped.stringIndex] );
+	};
+
+	/* A font without a ligature for the whole cluster (a ZWJ sequence it does not know) lays it
+	 * out as separate glyphs that would cover the neighbor cells; draw the base codepoint then, as
+	 * for a missing glyph. */
+	Float advance = 0;
+	for ( const ShapedGlyph& shaped : glyphs ) {
+		if ( isInvisible( shaped ) )
+			continue;
+		if ( shaped.glyphIndex == 0 )
+			return false;
+		advance = eemax( advance, shaped.position.x + shaped.advance.x );
+	}
+	if ( advance > width * 1.5f )
+		return false;
+
+	const Float offset = advance < width ? std::floor( ( width - advance ) * 0.5f ) : 0.f;
+	for ( const ShapedGlyph& shaped : glyphs ) {
+		if ( isInvisible( shaped ) )
+			continue;
+		GlyphDrawable* gd = font->getShapedGlyphDrawable( shaped, mFontSize, bold, italic );
+		if ( !gd )
+			continue;
+		gd->setColor( gd->getGlyphRenderMode() == GlyphRenderMode::Color ? Color::White : fg );
+		gd->setDrawMode( italic ? GlyphDrawable::DrawMode::TextItalic
+								: GlyphDrawable::DrawMode::Text );
+		const Vector2f position = ( Vector2f( x + offset, y ) + shaped.position ).trunc();
+		if ( vbo ) {
+			gd->appendToVertexBuffer( vbo, position );
+		} else {
+			gd->draw( position );
+		}
+	}
+	return true;
 }
 
 void TerminalDisplay::drawBg( bool toFBO ) {
@@ -2492,8 +2590,11 @@ void TerminalDisplay::initVBOs() {
 	createVBO( mVBBackground, false );
 	createVBO( mVBForeground, true );
 	mVBStyles.clear();
-	for ( Uint32 i = 0; i < mRows; ++i )
+	mVBClusters.clear();
+	for ( Uint32 i = 0; i < mRows; ++i ) {
 		mVBStyles.emplace_back( createRowVBO( false ) );
+		mVBClusters.emplace_back( createRowVBO( true ) );
+	}
 }
 
 Rectf TerminalDisplay::updateIMELocation() {

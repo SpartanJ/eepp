@@ -730,6 +730,8 @@ file in the directory tree.</string>
 	<string name="uiterminal_copy_hyperlink">复制超链接地址</string>
 	<string name="enable_osc8_hyperlinks">启用超链接 (OSC 8)</string>
 	<string name="enable_osc8_hyperlinks_desc">允许终端程序为文本添加可点击的链接。</string>
+	<string name="grapheme_clustering">字素簇</string>
+	<string name="grapheme_clustering_desc">将表情符号序列、旗帜和组合字符合并为单个字符（DEC 模式 2027）。</string>
 	<string name="inherit_working_directory">继承工作目录</string>
 	<string name="inherit_working_directory_desc">在源终端报告的本地目录中启动新标签页和分割窗格。</string>
 	<string name="allow_osc52_clipboard_write">允许程序写入剪贴板 (OSC 52)</string>

@@ -345,6 +345,7 @@ TerminalSession::TerminalSession( PtyPtr&& pty, ProcPtr&& process, size_t histor
 	// Establish a complete generation before the session becomes concurrently visible.
 	mEmulator->setAllowOsc52ClipboardWrite( options.allowOsc52ClipboardWrite );
 	mEmulator->setOsc8HyperlinksEnabled( options.enableOsc8Hyperlinks );
+	mEmulator->setGraphemeClusteringEnabled( options.graphemeClustering );
 	mEmulator->redraw();
 }
 
@@ -458,6 +459,10 @@ void TerminalSession::setAllowOsc52ClipboardWrite( bool allow ) {
 
 void TerminalSession::setOsc8HyperlinksEnabled( bool enabled ) {
 	enqueue( Osc8PolicyCommand{ { enabled } } );
+}
+
+void TerminalSession::setGraphemeClusteringEnabled( bool enabled ) {
+	enqueue( GraphemeClusteringCommand{ { enabled } } );
 }
 
 void TerminalSession::setPresentationRate( Uint32 framesPerSecond ) {
@@ -662,6 +667,8 @@ void TerminalSession::processCommand( Command&& command ) {
 			} else if constexpr ( std::is_same_v<T, Osc8PolicyCommand> ) {
 				mEmulator->setOsc8HyperlinksEnabled( value.value );
 				mEmulator->redraw();
+			} else if constexpr ( std::is_same_v<T, GraphemeClusteringCommand> ) {
+				mEmulator->setGraphemeClusteringEnabled( value.value );
 			} else if constexpr ( std::is_same_v<T, DataEventsCommand> ) {
 				if ( value.value ) {
 					mEmulator->setDataCb( [this]( const char* data, size_t size ) {

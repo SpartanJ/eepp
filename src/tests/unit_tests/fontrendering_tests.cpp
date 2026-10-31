@@ -15,7 +15,9 @@
 #include <eepp/graphics/richtext.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -255,6 +257,106 @@ UTEST( FontRendering, scaledSubpixelGlyphAtlas ) {
 		x += 30.f;
 	}
 	compareImages( utest_state, utest_result, window, "eepp-scaled-subpixel-glyph-atlas" );
+}
+
+UTEST( FontRendering, appendedGlyphQuadsDrawFromVertexArrays ) {
+	UIApplication app(
+		WindowSettings( 160, 100, "eepp - Glyph Vertex Array Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ResourceScope& scope = *app.getUI()->getResourceScope();
+	FontTrueTypePtr font = FontTrueType::New( "GlyphVertexArray-Regular", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Regular.ttf" ) );
+	GlyphDrawable* glyph = font->getGlyphDrawable( 'H', 48 );
+	ASSERT_TRUE( glyph );
+	glyph->setColor( Color::White );
+	const PrimitiveType primitive = GLi->quadVertex() == 6 ? PRIMITIVE_TRIANGLES : PRIMITIVE_QUADS;
+
+	// An appended quad has the vertices and texture coordinates of the same glyph set into a grid
+	// cell, for both draw modes.
+	for ( auto mode : { GlyphDrawable::DrawMode::Text, GlyphDrawable::DrawMode::TextItalic } ) {
+		glyph->setDrawMode( mode );
+		VertexBufferUniquePtr grid = VertexBuffer::New(
+			VERTEX_FLAGS_DEFAULT, primitive, GLi->quadVertex(), 0, VertexBufferUsageType::Stream );
+		grid->resizeArray( VERTEX_FLAG_POSITION, GLi->quadVertex() );
+		grid->resizeArray( VERTEX_FLAG_COLOR, GLi->quadVertex() );
+		grid->resizeArray( VERTEX_FLAG_TEXTURE0, GLi->quadVertex() );
+		grid->setGridSize( Sizei( 1, 1 ) );
+		glyph->drawIntoVertexBuffer( grid.get(), { 0, 0 }, { 20.f, 10.f } );
+		VertexBufferUniquePtr appended = VertexBuffer::NewVertexArray(
+			VERTEX_FLAGS_DEFAULT, primitive, GLi->quadVertex(), 0, VertexBufferUsageType::Stream );
+		glyph->appendToVertexBuffer( appended.get(), { 20.f, 10.f } );
+		EXPECT_TRUE( grid->getPositionArray() == appended->getPositionArray() );
+		EXPECT_TRUE( grid->getTextureCoordArray( 0 ) == appended->getTextureCoordArray( 0 ) );
+		EXPECT_TRUE( grid->getColorArray() == appended->getColorArray() );
+	}
+
+	// A textured vertex array reads its texture coordinates from level 0.
+	glyph->setDrawMode( GlyphDrawable::DrawMode::Text );
+	VertexBufferUniquePtr vertexArray = VertexBuffer::NewVertexArray(
+		VERTEX_FLAGS_DEFAULT, primitive, GLi->quadVertex(), 0, VertexBufferUsageType::Stream );
+	glyph->appendToVertexBuffer( vertexArray.get(), { 20.f, 10.f } );
+	EE::Window::Window* window = app.getWindow();
+	window->setClearColor( Color::Black );
+	window->clear();
+	font->getTexture( 48 )->bind();
+	vertexArray->bind();
+	vertexArray->draw();
+	vertexArray->unbind();
+	Image image = window->getFrontBufferImage();
+	bool drewGlyph = false;
+	for ( Uint32 y = 0; y < image.getHeight() && !drewGlyph; ++y )
+		for ( Uint32 x = 0; x < image.getWidth() && !drewGlyph; ++x )
+			drewGlyph = image.getPixel( x, y ).r > 128;
+	EXPECT_TRUE( drewGlyph );
+}
+
+UTEST( FontRendering, graphemeClustersAreShapedWithOneFont ) {
+	UIApplication app(
+		WindowSettings( 160, 100, "eepp - Grapheme Font Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	if ( !Text::TextShaperEnabled )
+		UTEST_SKIP( "Built without the text shaper" );
+	FontTrueTypePtr font =
+		FontTrueType::New( "GraphemeFont-Mono", *app.getUI()->getResourceScope() );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/DejaVuSansMono.ttf" ) );
+	Font* emoji = font->getFontService()->getColorEmojiFont();
+	if ( !emoji )
+		UTEST_SKIP( "No color emoji font" );
+	const auto glyphsOf = [&]( const std::u32string& text, TextDirection direction ) {
+		auto layout = TextLayout::layout( String::View( text.data(), text.size() ), font.get(), 24,
+										  0, 4, 0.f, {}, 0, direction );
+		std::vector<ShapedGlyph> glyphs;
+		for ( const auto& paragraph : layout->paragraphs )
+			glyphs.insert( glyphs.end(), paragraph.shapedGlyphs.begin(),
+						   paragraph.shapedGlyphs.end() );
+		return glyphs;
+	};
+
+	// A ZWJ joins U+00A9 (an Extended_Pictographic below U+0300) into the emoji's cluster.
+	for ( const ShapedGlyph& glyph :
+		  glyphsOf( U"\U0001F469\u200D\u00A9", TextDirection::LeftToRight ) )
+		EXPECT_TRUE( glyph.font == emoji );
+
+	// Thousands of flags pair up from the front, in both directions.
+	std::u32string flags;
+	for ( int i = 0; i < 4000; ++i )
+		flags += U"\U0001F1E6\U0001F1F7";
+	for ( auto direction : { TextDirection::LeftToRight, TextDirection::RightToLeft } ) {
+		const auto glyphs = glyphsOf( U"\u05D0" + flags + U"\U0001F1E6", direction );
+		size_t emojiGlyphs = 0;
+		for ( const ShapedGlyph& glyph : glyphs )
+			emojiGlyphs += glyph.font == emoji;
+		EXPECT_EQ( static_cast<size_t>( 4001 ), emojiGlyphs );
+	}
+
+	// Without emoji fallback a sequence stays with the font's own glyphs.
+	font->setEnableEmojiFallback( false );
+	for ( const ShapedGlyph& glyph : glyphsOf( U"\u2764\uFE0F", TextDirection::LeftToRight ) )
+		EXPECT_TRUE( glyph.font == font.get() );
 }
 
 UTEST( FontRendering, loadingFontFamilyDoesNotCreateTexturePages ) {

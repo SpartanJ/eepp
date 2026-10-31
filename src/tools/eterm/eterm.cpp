@@ -431,7 +431,8 @@ UITerminal* App::createTerminal( UITabWidget* target, std::string workingDirecto
 		terminalConfig.arguments, workingDirectory, terminalConfig.historySize, nullptr,
 		terminalConfig.useFrameBuffer, terminalConfig.keepAlive, {},
 		TerminalSessionOptions{ config->terminal.allowOsc52ClipboardWrite,
-								config->terminal.enableOsc8Hyperlinks } );
+								config->terminal.enableOsc8Hyperlinks,
+								config->terminal.graphemeClustering } );
 	if ( !display )
 		return nullptr;
 	auto* terminal = UITerminal::New( display );

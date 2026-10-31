@@ -115,6 +115,14 @@ class EE_API VertexBuffer {
 
 	void addQuad( const Vector2f& pos, const Sizef& size, const Color& color );
 
+	/** Appends a quad with corners @p pos0 (top left), @p pos1 (bottom left), @p pos2 (bottom
+	 * right) and @p pos3 (top right), in the vertex order addQuad() uses. */
+	void addQuadFree( const Vector2f& pos0, const Vector2f& pos1, const Vector2f& pos2,
+					  const Vector2f& pos3, const Color& color );
+
+	/** Appends the texture coordinates of one quad added by addQuad() or addQuadFree(). */
+	void addQuadTexCoords( const Rectf& coords, const Uint32& textureLevel = 0 );
+
 	void setQuad( const Vector2u& gridPos, const Vector2f& pos, const Sizef& size,
 				  const Color& color );
 

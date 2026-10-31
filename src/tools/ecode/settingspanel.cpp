@@ -1626,6 +1626,17 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 					 terminal->getTerm()->setOsc8HyperlinksEnabled( value );
 				 } );
 			 } );
+	addBool( panel,
+			 { "graphemeClustering", "terminal.behavior",
+			   mApp->i18n( "grapheme_clustering", "Grapheme Clustering" ),
+			   mApp->i18n( "grapheme_clustering_desc",
+						   "Join emoji sequences, flags and combining characters into single "
+						   "characters (DEC mode 2027)." ) },
+			 &mApp->termConfig().graphemeClustering, [this]( bool value ) {
+				 mApp->getTerminalManager()->forEachTerminal( [value]( UITerminal* terminal ) {
+					 terminal->getTerm()->setGraphemeClusteringEnabled( value );
+				 } );
+			 } );
 	addBool(
 		panel,
 		{ "inheritWorkingDirectory", "terminal.behavior",

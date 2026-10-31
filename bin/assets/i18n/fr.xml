@@ -930,6 +930,8 @@ dans l'arborescence de répertoires ainsi que dans les boites de dialogues de s�
 	<string name="uiterminal_copy_hyperlink">Copier l’adresse de l’hyperlien</string>
 	<string name="enable_osc8_hyperlinks">Activer les hyperliens (OSC 8)</string>
 	<string name="enable_osc8_hyperlinks_desc">Autoriser les programmes du terminal à associer des liens cliquables au texte.</string>
+	<string name="grapheme_clustering">Groupes de graphèmes</string>
+	<string name="grapheme_clustering_desc">Réunir les séquences d’emoji, les drapeaux et les caractères combinants en caractères uniques (mode DEC 2027).</string>
 	<string name="inherit_working_directory">Hériter du répertoire de travail</string>
 	<string name="inherit_working_directory_desc">Ouvrir les nouveaux onglets et volets dans le répertoire local signalé par le terminal source.</string>
 	<string name="allow_osc52_clipboard_write">Autoriser les programmes à écrire dans le presse-papiers (OSC 52)</string>

@@ -214,6 +214,12 @@ class TerminalEmulator final {
 
 	void setAllowOsc52ClipboardWrite( bool allow ) { mAllowOsc52ClipboardWrite = allow; }
 
+	bool getGraphemeClusteringEnabled() const { return mGraphemeClustering; }
+
+	/** Grapheme clustering (DEC mode 2027) at startup and after a reset; also sets the current
+	 * mode, which programs can still change. */
+	void setGraphemeClusteringEnabled( bool enabled );
+
 	void logError( const char* err );
 
 	/** @return If the tty read was completed or there's still buffer to read (true completed) */
@@ -405,6 +411,7 @@ class TerminalEmulator final {
 	bool mColorSchemeNotifications{ false };
 	bool mAllowOsc52ClipboardWrite{ true };
 	bool mEnableOsc8Hyperlinks{ true };
+	bool mGraphemeClustering{ true };
 	int mColorScheme{ 0 };
 
 	std::string mCurrentWorkingDirectory;

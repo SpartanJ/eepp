@@ -2072,7 +2072,8 @@ void LLMChatUI::setupAgentSession() {
 				req.cwd ? *req.cwd : getPlugin()->getPluginContext()->getCurrentProject(), 10000,
 				nullptr, false, false, env,
 				eterm::Terminal::TerminalSessionOptions{ config.allowOsc52ClipboardWrite,
-														 config.enableOsc8Hyperlinks } );
+														 config.enableOsc8Hyperlinks,
+														 config.graphemeClustering } );
 			if ( !display )
 				return;
 			auto* uiTerm = eterm::UI::UITerminal::New( display );

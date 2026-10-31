@@ -315,6 +315,8 @@ class TerminalDisplay {
 
 	bool getOsc8HyperlinksEnabled() const { return mEnableOsc8Hyperlinks; }
 
+	void setGraphemeClusteringEnabled( bool enabled );
+
 	void setDataCallback( DataFunc callback );
 
 	void setPromptStateChangedCallback( PromptStateChangedFunc callback );
@@ -423,6 +425,9 @@ class TerminalDisplay {
 	VertexBufferUniquePtr mVBBackground;
 	VertexBufferUniquePtr mVBForeground;
 	std::vector<VertexBufferUniquePtr> mVBStyles;
+	/* Per row: the shaped glyphs of grapheme clusters, which may need more quads than their cells.
+	 */
+	std::vector<VertexBufferUniquePtr> mVBClusters;
 	TerminalColorScheme mColorScheme;
 	TerminalColorScheme mInitialColorScheme;
 	Uint32 mQuadVertex{ 6 };
@@ -478,6 +483,9 @@ class TerminalDisplay {
 	void initVBOs();
 
 	void drawbox( float x, float y, float w, float h, Color fg, Color bg, ushort bd );
+
+	bool drawCluster( const TerminalGlyph& glyph, Float x, Float y, Float width, const Color& fg,
+					  VertexBuffer* vbo );
 
 	void drawrect( const Color& col, const float& x, const float& y, const float& w,
 				   const float& h );

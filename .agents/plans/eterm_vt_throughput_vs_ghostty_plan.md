@@ -2,8 +2,9 @@
 
 ## Status
 
-Investigation and measurement are done. Items 1-5 are implemented (2026-10-31, uncommitted); item 6
-(grapheme clustering) is pending a design decision.
+Items 1-5 are committed in `cef605021`; grapheme phase 1 is committed in `b4b4aa8c1`.
+Grapheme shaping and review fixes are in the working tree. The mode-controlled follow-up below
+corrects the apparent performance regression caused by comparing different reset defaults.
 
 Context: the OSC 8 hyperlink / OSC 7 working-directory / OSC 52 policy work (see
 `docs/articles/eterm_integration.md`) made eterm comparable with Ghostty's feature set, so the next
@@ -396,14 +397,77 @@ like the hyperlink registry (IDs, mark/sweep), not per-cell heap data.
   zero-width input identical to the previous commit; batched attaches identical to per-codepoint
   attaches on 60 streams (compared by cluster codepoints, IDs differ); 30 cluster-heavy streams
   (mode 2027 toggles, ZWJ, flags, VS, Indic, jamo, Prepend) clean under ASan + UBSan.
-- Throughput (M2 Pro, MB/s): Unique Unicode 372 -> 122 (Ghostty 104; now comparable, doing the
-  same clustering work), Unicode 404 -> 370 (Ghostty 724): about half of that is attaching the
-  stream's combining marks; the rest persisted with forced alignment and an out-of-line decoder
-  and is not yet explained. Others unchanged.
+- Historical throughput (M2 Pro, MB/s): Unique Unicode 372 -> 122, Unicode 404 -> 370. These
+  captures contain RIS resets, so the bulk of the committed parser's run uses its default mode
+  2027 setting (off), even if the file starts with DECSET 2027. They do not measure full mode 2027
+  processing. See the mode-controlled follow-up below before comparing with the working tree.
 
 **Phase 2:** shape cluster cells through `TextLayout` (HarfBuzz with font fallback and its LRU cache)
 and draw them with `getGlyphDrawableFromGlyphIndex()`; clusters that shape to several glyphs need
 quads beyond the renderer's one-per-cell VBO slot.
+
+### Mode-controlled follow-up (2026-10-31)
+
+The apparent Unique Unicode regression from ~121 to ~47 MB/s was a benchmark-state mismatch.
+The captured Unicode and Unique Unicode files contain three RIS (`ESC c`) resets: the first is
+at byte 12,629 / 12,621, before almost all the payload, and two follow the payload. A single
+DECSET/DECRST 2027 prefix is undone by the first reset. Committed `b4b4aa8c1` resets mode 2027 off;
+the working tree resets it to its configured default, on. Thus both of the earlier "on" and "off"
+tests mostly measured each binary's reset default. Ghostty's earlier mode comparison was affected
+by the same reset trap.
+
+Fresh release harnesses for HEAD and the working tree, sharing the same current `libeepp.dylib`;
+M2 Pro; whole-process hyperfine, one warmup and five measured runs. These numbers keep mode 2027
+**on after every reset** for all three terminals, using identical bytes:
+
+| Workload (MB/s) | HEAD | Working tree | Ghostty |
+| --- | ---: | ---: | ---: |
+| ASCII | 298.0 | 290.4 | 457.2 |
+| Unicode | 347.9 | 344.1 | 665.5 |
+| Unique Unicode | 48.9 | 48.8 | 79.3 |
+| CSI | 202.3 | 201.9 | 159.1 |
+| Images | 2,354.3 | 2,356.7 | 2,553.6 |
+| Long escape codes | 3,121.8 | 3,100.6 | 4,564.8 |
+
+With mode 2027 held **off after every reset**:
+
+| Workload (MB/s) | HEAD | Working tree | Ghostty |
+| --- | ---: | ---: | ---: |
+| Unicode | 380.7 | 370.6 | 740.4 |
+| Unique Unicode | 120.8 | 122.4 | 103.4 |
+
+All eterm runs passed the harness's byte-consumption and six-DSR-response completeness checks.
+The large reported regression disappears at equal modes. Small differences elsewhere in this
+round are not enough to attribute a code regression on Apple Silicon; use alternating rounds and
+different link orders before acting on them (see measurement pitfalls below).
+
+For these captured VT streams, generate mode-controlled copies without changing the originals:
+
+```python
+from pathlib import Path
+
+source = Path("data")
+for enabled in (False, True):
+    target = Path("data-mode-on" if enabled else "data-mode-off")
+    target.mkdir(exist_ok=True)
+    mode = b"\x1b[?2027h" if enabled else b"\x1b[?2027l"
+    for name in ("ascii", "unicode", "unique_unicode", "csi", "images", "long_escape_codes"):
+        captured = (source / (name + ".vt")).read_bytes()
+        controlled = mode + captured.replace(b"\x1bc", b"\x1bc" + mode)
+        assert controlled.count(b"\x1bc" + mode) == captured.count(b"\x1bc")
+        (target / (name + ".vt")).write_bytes(controlled)
+```
+
+Original tools, captures and the previous agent's JSON are in `~/programming/vtbench/`.
+This follow-up's fresh binaries, controlled captures, `final-*.json`, `measure.py`, `report.md`
+and `profile.txt` are in `/tmp/negen-vtbench/`.
+
+A separate three-second `sample` of mode-on Unique Unicode points to `tattach()` and
+`internCluster()` (allocation, hashing and reference collection) as the main cost. Mode-off
+processing batches zero-width bursts; mode-on processing interns intermediate cluster prefixes
+one codepoint at a time. Batching extensions that cannot change width or cross a grapheme
+boundary is the next candidate, while retaining VS/ZWJ, Indic, full-cluster and fragmented-read
+semantics. No parser changes were needed to resolve this apparent regression.
 
 ### Also noticed
 

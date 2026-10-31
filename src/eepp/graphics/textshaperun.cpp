@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/textshaperun.hpp>
@@ -13,8 +14,15 @@ TextShapeRun::TextShapeRun( String::View str, FontTrueType* font, Uint32 charact
 	mOutlineThickness( outlineThickness ),
 	mCurFont( mFont ),
 	mIsRTL( isRTL ) {
-	if ( mIsRTL )
+	if ( mIsRTL ) {
 		mIndex = mString.size();
+#ifdef EE_TEXT_SHAPER_ENABLED
+		/* Walking backwards cannot tell where a cluster starts (regional indicators pair from
+		 * the front), so segment once forwards. */
+		for ( std::size_t start = 0; start < mString.size(); start = clusterEnd( start ) )
+			mClusterStarts.push_back( start );
+#endif
+	}
 	findNextEnd();
 }
 
@@ -53,6 +61,36 @@ bool TextShapeRun::runIsNewLine() const {
 	return mIsNewLine;
 }
 
+#ifdef EE_TEXT_SHAPER_ENABLED
+/* @p start must be a cluster start. Boundaries are tested within the cluster only, so a long run
+ * of regional indicators is not rescanned for each pair. No rule joins two codepoints below
+ * U+0300 except CR LF, which stays split at the newline. */
+std::size_t TextShapeRun::clusterEnd( std::size_t start ) const {
+	const String::View rest = mString.substr( start );
+	std::size_t end = 1;
+	while ( end < rest.size() && ( rest[end - 1] >= 0x300 || rest[end] >= 0x300 ) &&
+			!String::isGraphemeBoundary( rest, end ) )
+		++end;
+	return start + end;
+}
+
+std::size_t TextShapeRun::clusterStart( std::size_t last ) const {
+	auto next = std::upper_bound( mClusterStarts.begin(), mClusterStarts.end(), last );
+	return next == mClusterStarts.begin() ? 0 : *( next - 1 );
+}
+
+/* One font shapes a whole cluster, so its joiners and selectors stay in its run. */
+Font* TextShapeRun::clusterFont( std::size_t start, std::size_t end ) const {
+	const bool bold = mStyle & Text::Bold;
+	const bool italic = mStyle & Text::Italic;
+	if ( end - start == 1 )
+		return mFont->getGlyph( mString[start], mCharacterSize, bold, italic, mOutlineThickness )
+			.font;
+	return static_cast<FontTrueType*>( mFont )->getClusterFont(
+		mString.substr( start, end - start ), mCharacterSize, bold, italic, mOutlineThickness );
+}
+#endif
+
 FontTrueType* TextShapeRun::font() {
 	return static_cast<FontTrueType*>( mCurFont );
 }
@@ -69,12 +107,10 @@ void TextShapeRun::findNextEnd() {
 		std::size_t len = mString.size();
 		std::size_t pos = 0;
 
-		for ( std::size_t idx = mIndex; idx < len; ++idx, ++pos ) {
+		for ( std::size_t idx = mIndex; idx < len; ) {
+			const std::size_t end = clusterEnd( idx );
 			auto ch = mString[idx];
-			auto font = mFont
-							->getGlyph( ch, mCharacterSize, mStyle & Text::Bold,
-										mStyle & Text::Italic, mOutlineThickness )
-							.font;
+			auto font = clusterFont( idx, end );
 			mIsNewLine = ( ch == '\n' );
 
 			if ( idx == mIndex ) {
@@ -94,6 +130,8 @@ void TextShapeRun::findNextEnd() {
 
 			lFont = font;
 			mCurFont = font;
+			pos += end - idx;
+			idx = end;
 		}
 
 		mLen = len - mIndex;
@@ -101,13 +139,11 @@ void TextShapeRun::findNextEnd() {
 		Font* lFont = mStartFont ? mStartFont : mFont;
 		std::size_t pos = 0;
 
-		for ( ; pos < mIndex; ++pos ) {
+		while ( pos < mIndex ) {
 			std::size_t idx = mIndex - 1 - pos;
+			const std::size_t start = clusterStart( idx );
 			auto ch = mString[idx];
-			auto font = mFont
-							->getGlyph( ch, mCharacterSize, mStyle & Text::Bold,
-										mStyle & Text::Italic, mOutlineThickness )
-							.font;
+			auto font = clusterFont( start, idx + 1 );
 			mIsNewLine = ( ch == '\n' );
 
 			if ( pos == 0 ) {
@@ -124,6 +160,7 @@ void TextShapeRun::findNextEnd() {
 
 			lFont = font;
 			mCurFont = font;
+			pos += idx + 1 - start;
 		}
 
 		mLen = mIndex;

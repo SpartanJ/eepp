@@ -117,6 +117,8 @@ struct TerminalColorPalette {
 struct TerminalSessionOptions {
 	bool allowOsc52ClipboardWrite{ true };
 	bool enableOsc8Hyperlinks{ true };
+	/** DEC mode 2027 at startup and after a reset. */
+	bool graphemeClustering{ true };
 };
 
 /**
@@ -194,6 +196,8 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	void setAllowOsc52ClipboardWrite( bool allow );
 
 	void setOsc8HyperlinksEnabled( bool enabled );
+
+	void setGraphemeClusteringEnabled( bool enabled );
 	void setPresentationRate( Uint32 framesPerSecond );
 	void setDataEventsEnabled( bool enabled );
 	void setPromptEventsEnabled( bool enabled );
@@ -293,6 +297,7 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	struct AllowTrimCommand : BoolCommand {};
 	struct Osc52PolicyCommand : BoolCommand {};
 	struct Osc8PolicyCommand : BoolCommand {};
+	struct GraphemeClusteringCommand : BoolCommand {};
 	struct DataEventsCommand : BoolCommand {};
 	struct PromptEventsCommand : BoolCommand {};
 	struct FocusCommand : BoolCommand {};
@@ -303,7 +308,7 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 		FocusCommand, CursorModeCommand, PaletteCommand, PresentationRateCommand, AllowTrimCommand,
 		DataEventsCommand, PromptEventsCommand, TerminateCommand, RestartCommand, ResetCommand,
 		SelectionRequestCommand, GraphicsResyncCommand, SearchQueryCommand, SearchNavigateCommand,
-		SearchClearCommand, Osc52PolicyCommand, Osc8PolicyCommand>;
+		SearchClearCommand, Osc52PolicyCommand, Osc8PolicyCommand, GraphemeClusteringCommand>;
 
 	TerminalSession( PtyPtr&& pty, ProcPtr&& process, size_t historySize,
 					 TerminalColorPalette palette, TerminalSessionOptions options );

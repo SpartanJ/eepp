@@ -77,6 +77,19 @@ void GlyphDrawable::drawIntoVertexBuffer( VertexBuffer* vbo, const Vector2u& gri
 	}
 }
 
+void GlyphDrawable::appendToVertexBuffer( VertexBuffer* vbo, const Vector2f& pos,
+										  const Uint32& textureLevel ) {
+	vbo->addQuadTexCoords( Rectf( mSrcRect.Left, mSrcRect.Top, mSrcRect.Left + mSrcRect.Right,
+								  mSrcRect.Top + mSrcRect.Bottom ),
+						   textureLevel );
+	Sizef size( mDestSize != Sizef::Zero ? mDestSize : Sizef( mSrcRect.Right, mSrcRect.Bottom ) );
+	Vector2f origin( mDrawMode == DrawMode::Image ? pos : pos + mGlyphOffset );
+	Float italic = mDrawMode == DrawMode::TextItalic && !mIsItalic ? 0.208f * size.getWidth() : 0.f;
+	vbo->addQuadFree( { origin.x + italic, origin.y }, { origin.x, origin.y + size.getHeight() },
+					  { origin.x + size.getWidth(), origin.y + size.getHeight() },
+					  { origin.x + size.getWidth() + italic, origin.y }, mColor );
+}
+
 bool GlyphDrawable::isStateful() {
 	return false;
 }

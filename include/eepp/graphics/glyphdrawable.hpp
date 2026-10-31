@@ -35,6 +35,10 @@ class EE_API GlyphDrawable : public DrawableResource {
 	virtual void drawIntoVertexBuffer( VertexBuffer* vbo, const Vector2u& gridPos,
 									   const Vector2f& pos, const Uint32& textureLevel = 0 );
 
+	/** Like drawIntoVertexBuffer(), but appends a quad instead of setting a grid cell's quad. */
+	void appendToVertexBuffer( VertexBuffer* vbo, const Vector2f& pos,
+							   const Uint32& textureLevel = 0 );
+
 	virtual bool isStateful();
 
 	DrawablePtr clone() const;

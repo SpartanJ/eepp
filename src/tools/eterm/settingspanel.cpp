@@ -242,6 +242,17 @@ UIWindow* SettingsPanel::create( App& app ) {
 						} );
 						app.savePreferences();
 					} );
+	panel->addBool( { "graphemeClustering", "terminal.behavior",
+					  app.i18n( "grapheme_clustering", "Grapheme Clustering" ),
+					  app.i18n( "grapheme_clustering_desc",
+								"Join emoji sequences, flags and combining characters into single "
+								"characters (DEC mode 2027)." ) },
+					&app.config->terminal.graphemeClustering, [&app]( bool value ) {
+						app.forEachTerminal( [value]( UITerminal* terminal ) {
+							terminal->getTerm()->setGraphemeClusteringEnabled( value );
+						} );
+						app.savePreferences();
+					} );
 	panel->addBool(
 		{ "inheritWorkingDirectory", "terminal.behavior",
 		  app.i18n( "inherit_working_directory", "Inherit Working Directory" ),

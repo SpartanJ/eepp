@@ -8,6 +8,7 @@ by default and saved in the `[terminal]` section of each application's `config.c
 inherit_working_directory = true
 enable_osc8_hyperlinks = true
 allow_osc52_clipboard_write = true
+grapheme_clustering = true
 ```
 
 ## Hyperlinks (OSC 8)
@@ -58,7 +59,7 @@ priority over inheritance.
 ## Clipboard writes (OSC 52)
 
 Terminal programs, including programs running over SSH, can write text to the local system clipboard
-using OSC 52. Writes are allowed by default, matching Ghostty's `clipboard-write` default. Turn off
+using OSC 52. Writes are allowed by default. Turn off
 **Allow Programs to Write to Clipboard (OSC 52)** to deny them in existing and future terminals.
 
 Every xterm selection target (`c`, `p`, `q`, `s`, `0`–`7`, any combination, or an empty selector)
@@ -74,13 +75,13 @@ with a skin-tone modifier or variation selector, a family joined with zero-width
 flag made of two regional indicators. eterm keeps such a grapheme cluster in one cell (two for wide
 characters), so copying, searching and word selection return it whole.
 
-By default eterm keeps the widths most programs compute with `wcwidth()`: zero-width codepoints
-such as combining marks join the previous character, and every other codepoint takes its own
-cells. Emoji variation selectors join only emoji pictographs and are ignored after other text.
+Clusters are shaped with the terminal font and its fallback fonts, so accents, Indic conjuncts,
+emoji with skin tones, emoji ZWJ sequences and flags are drawn the way the font combines them. When
+the font would draw a cluster wider than its cells (for example an emoji ZWJ sequence it does not
+know, which falls apart into separate emoji), eterm draws the cluster's first codepoint instead.
 
-Programs that measure text by grapheme cluster can enable DEC private mode 2027
-(`printf '\033[?2027h'`; disable with `\033[?2027l`). eterm then segments text with the
-[UAX #29](https://www.unicode.org/reports/tr29/) rules and gives each cluster one width:
+eterm segments text with the [UAX #29](https://www.unicode.org/reports/tr29/) rules
+by default (DEC private mode 2027) and gives each cluster one width:
 
 - a cluster that contains another codepoint with its own width is two cells wide, so emoji ZWJ
   sequences and flags take two cells;
@@ -88,8 +89,16 @@ Programs that measure text by grapheme cluster can enable DEC private mode 2027
   15 (U+FE0E) makes it one cell wide;
 - a zero-width codepoint that does not continue the previous cluster is ignored.
 
-Check support with DECRQM: `printf '\033[?2027$p'` is answered with `\033[?2027;2$y` while the
-mode is off and `\033[?2027;1$y` while it is on. Clusters keep at most 32 codepoints; further
+Programs that measure text with `wcwidth()` count such clusters per codepoint, so a line editor can
+misplace its cursor on a line that contains them. A program can turn the mode off with
+`printf '\033[?2027l'` (and back on with `\033[?2027h`); a reset restores the configured mode. Turn
+off **Grapheme Clustering** under **Settings → Terminal → Behavior** to start every terminal with
+the mode off. eterm then keeps the widths `wcwidth()` computes: zero-width codepoints such as
+combining marks join the previous character, every other codepoint takes its own cells, and emoji
+variation selectors join only emoji pictographs.
+
+Check support with DECRQM: `printf '\033[?2027$p'` is answered with `\033[?2027;1$y` while the
+mode is on and `\033[?2027;2$y` while it is off. Clusters keep at most 32 codepoints; further
 codepoints are dropped.
 
 Protocol references: [OSC 8](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda),
