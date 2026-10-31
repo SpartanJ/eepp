@@ -298,18 +298,28 @@ function popen( executable_path )
 end
 
 function download_and_extract_sdl(sdl_url, sdl_version_dir)
-	print("Downloading: " .. sdl_url)
 	local dest_dir = "src/thirdparty/"
 	local local_file = dest_dir .. sdl_version_dir .. ".zip"
-	local res, response_code = http.download(sdl_url, local_file)
-	if response_code == 200 then
-		print("Downloaded successfully to: " .. local_file)
-		zip.extract(local_file, dest_dir)
-		print("Extracted " .. local_file .. " into " .. dest_dir)
-	else
-		print("Failed to download: " .. sdl_url .. " res: " .. res)
-		exit(1)
+	local urls = { sdl_url }
+	local filename = sdl_url:match("^https://libsdl%.org/release/(.+)$") or
+		sdl_url:match("^https://www%.libsdl%.org/release/(.+)$")
+	if filename then
+		local version = is_sdl3_backend() and remote_sdl3_version_number or remote_sdl2_version_number
+		table.insert(urls, "https://github.com/libsdl-org/SDL/releases/download/release-" .. version .. "/" .. filename)
 	end
+	for _, url in ipairs(urls) do
+		print("Downloading: " .. url)
+		local res, response_code = http.download(url, local_file, { timeout = 60 })
+		if res == "OK" and response_code == 200 then
+			print("Downloaded successfully to: " .. local_file)
+			zip.extract(local_file, dest_dir)
+			print("Extracted " .. local_file .. " into " .. dest_dir)
+			return
+		end
+		os.remove(local_file)
+		print("Failed to download: " .. url .. " HTTP: " .. tostring(response_code) .. " res: " .. tostring(res))
+	end
+	error("Failed to download " .. sdl_version_dir .. " from all available sources")
 end
 
 function copy_sdl()

@@ -465,9 +465,52 @@ and `profile.txt` are in `/tmp/negen-vtbench/`.
 A separate three-second `sample` of mode-on Unique Unicode points to `tattach()` and
 `internCluster()` (allocation, hashing and reference collection) as the main cost. Mode-off
 processing batches zero-width bursts; mode-on processing interns intermediate cluster prefixes
-one codepoint at a time. Batching extensions that cannot change width or cross a grapheme
-boundary is the next candidate, while retaining VS/ZWJ, Indic, full-cluster and fragmented-read
-semantics. No parser changes were needed to resolve this apparent regression.
+one codepoint at a time. This motivated the batching experiment below. No parser changes were
+needed to resolve the apparent regression caused by the different reset defaults.
+
+### Batched mode-2027 extensions (2026-10-31)
+
+Implemented on top of `482156091`: the existing zero-width burst decoder and attachment helper
+now also batch mode-2027 codepoints whose width is zero and whose grapheme-break property is
+Extend, except VS15/VS16. One spare bit in `GlyphProperties` classifies them in the existing BMP
+table. The first boundary is checked once (GB4 must still reject Extend after a Control base such
+as soft hyphen); GB9 then joins the rest without changing width. Only the final cluster is
+interned, avoiding allocations and IDs for every intermediate prefix.
+
+Width-changing selectors, ZWJ, non-Extend input, malformed/incomplete UTF-8 and pending Kitty
+placeholder diacritics keep their existing handling. Clusters still retain at most 32 codepoints.
+No class/cell layout or heap scratch storage changes: the path reuses the existing 32-codepoint
+stack buffers and the 64 KiB properties table. Registry exhaustion retains the existing rule of
+dropping extensions when no ID is available; fewer transient prefixes now compete for those IDs.
+
+M2 Pro, fresh release binaries, mode 2027 on after every RIS, identical streams, whole-process
+hyperfine with one warmup and five measured runs; MB/s:
+
+| Workload | Before | Batched | Ghostty |
+| --- | ---: | ---: | ---: |
+| ASCII | 279.3 | 282.1 | 453.4 |
+| Unicode | 343.1 | 365.7 | 663.2 |
+| Unique Unicode | 47.6 | 121.9 | 79.3 |
+| CSI | 201.4 | 200.1 | 158.4 |
+| Images | 2,334.2 | 2,313.8 | 2,556.8 |
+| Long escape codes | 3,104.4 | 3,083.2 | 4,519.1 |
+
+Unique Unicode improves 2.56x; Unicode improves 6.6% in this round. The other workload differences
+are around 1% or less. Mode-off controls: Unicode 376.1 -> 383.2 MB/s; Unique Unicode 122.5 ->
+127.8 MB/s (do not attribute small mode-off differences to batching, since its algorithm is
+unchanged there).
+
+Validation: all 160 eterm tests pass on macOS, including a bulk-versus-byte-at-a-time regression
+case for selection clearing, Control bases, the cluster cap, VS15/VS16, ZWJ, Indic conjuncts,
+pending wrap, malformed UTF-8 and Kitty diacritics. Before/after resolved cells, cluster
+codepoints, modes, colors and cursors match on 100 random 120 KiB streams with read sizes of 1,
+7, 4093 and 65536 bytes, and at six checkpoints inside the Unicode/Unique Unicode payloads
+before their cleanup/reset sequences. Every benchmark passes byte-consumption and DSR checks.
+
+Fresh binaries, correctness driver, hyperfine JSON/logs, post-change profile and report are in
+`/tmp/negen-batch/` (`compare.py`, `measure.py`, `profile-after.txt`, `report.md`). Captures are
+the reset-controlled copies in `/tmp/negen-vtbench/`. Linux and Windows were not run in this
+experiment.
 
 ### Also noticed
 

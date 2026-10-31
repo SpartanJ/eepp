@@ -499,7 +499,8 @@ class TerminalEmulator final {
 	/* The column of the character a codepoint attaches to (see tattach()), or -1. */
 	int tattachColumn() const;
 
-	/* tattach() without mode 2027, for a burst of zero-width codepoints. */
+	/* Attaches a zero-width burst once. With mode 2027, the caller supplies only Extend
+	 * codepoints that cannot change width (not VS15/VS16); the first boundary is checked here. */
 	void tattachZeroWidth( const char32_t* codepoints, size_t count );
 
 	/* Copies the codepoints a cell shows (at most the cluster limit) into @p codepoints. */

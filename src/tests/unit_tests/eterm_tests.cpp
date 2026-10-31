@@ -2830,6 +2830,60 @@ UTEST( eterm, zero_width_codepoints_attach_to_the_previous_cell ) {
 	EXPECT_TRUE( t.text( 0, 1 ) == U"❤́️" );
 }
 
+UTEST( eterm, mode_2027_zero_width_bursts_match_fragmented_reads ) {
+	ClusterTerminal bulk;
+	ClusterTerminal fragmented;
+	// Feed the same text one byte at a time to prevent batching and split UTF-8 sequences.
+	const auto feed = [&]( const std::string& text ) {
+		bulk.feed( text );
+		for ( char byte : text )
+			fragmented.feed( std::string( 1, byte ) );
+	};
+	feed( "e" );
+	for ( const auto& term : { bulk.term, fragmented.term } ) {
+		term->selstart( 0, 0, 0 );
+		term->selextend( 0, 0, SEL_REGULAR, false );
+	}
+	feed( "\xCC\x81\xCC\x82\xCC\x83" );
+	EXPECT_FALSE( bulk.term->hasSelection() );
+	EXPECT_FALSE( fragmented.term->hasSelection() );
+	EXPECT_TRUE( bulk.text( 0 ) == U"e\u0301\u0302\u0303" );
+
+	// GB4 overrides GB9 after a Control base (soft hyphen); a burst cannot attach there.
+	feed( "\r\n\xC2\xAD\xCC\x81\xCC\x82x" );
+	EXPECT_TRUE( bulk.text( 0, 1 ) == U"\u00AD" );
+	EXPECT_EQ( static_cast<Rune>( 'x' ), bulk.cell( 1, 1 ).u );
+
+	std::string full = "\r\ne";
+	for ( int mark = 0; mark < 40; ++mark )
+		full += "\xCC\x81";
+	feed( full + "\xF0\x9F\x87\xA6x" );
+	EXPECT_EQ( static_cast<size_t>( 32 ), bulk.text( 0, 2 ).size() );
+	EXPECT_TRUE( bulk.text( 1, 2 ) == U"\U0001F1E6" );
+
+	// Width-changing selectors, ZWJ, Indic linkers and a pending wrap retain their scalar rules.
+	feed( "\r\n\xE2\x9D\xA4\xEF\xB8\x8F\xCC\x81\xCC\x82\xEF\xB8\x8E"
+		  "\xE2\x80\x8D\xF0\x9F\x91\xA9"
+		  "\r\n\xE0\xA4\x95\xE0\xA5\x8D\xE0\xA4\x95\xCC\x81"
+		  "\033[6;80He\xCC\x81\xCC\x82x"
+		  "\r\n\xCC\x81x\x80\xCC\x82"
+		  "\r\n\033[38;5;72m\xF4\x8E\xBB\xAE\xCC\x85\xCC\x85\033[m"
+		  "\033[6n" );
+	EXPECT_TRUE( bulk.input->mWrites == fragmented.input->mWrites );
+	// Publish every row to compare the final parser state across different read boundaries.
+	bulk.term->redraw();
+	fragmented.term->redraw();
+	ASSERT_EQ( bulk.display->mCells.size(), fragmented.display->mCells.size() );
+	for ( int y = 0; y < 24; ++y ) {
+		for ( int x = 0; x < 80; ++x ) {
+			EXPECT_TRUE( bulk.text( x, y ) == fragmented.text( x, y ) );
+			EXPECT_EQ( bulk.cell( x, y ).mode, fragmented.cell( x, y ).mode );
+			EXPECT_EQ( bulk.cell( x, y ).fg, fragmented.cell( x, y ).fg );
+			EXPECT_EQ( bulk.cell( x, y ).bg, fragmented.cell( x, y ).bg );
+		}
+	}
+}
+
 UTEST( eterm, mode_2027_clusters_change_widths ) {
 	ClusterTerminal t;
 	t.feed( "\033[?2027h" );

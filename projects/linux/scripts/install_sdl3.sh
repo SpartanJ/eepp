@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # Use the same SDL3 release as the Windows SDK build.
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 SDL_VERSION="$(awk -F '"' '/^remote_sdl3_version_number =/ { print $2; exit }' "$ROOT_DIR/premake5.lua")"
 KEEP_BUILD=false
 for arg in "$@"; do
@@ -22,7 +23,7 @@ sudo apt-get install -y build-essential cmake pkg-config unzip wget wayland-prot
 BUILD_DIR="$ROOT_DIR/sdl3_build"
 SOURCE_DIR="$BUILD_DIR/SDL3-$SDL_VERSION"
 mkdir -p "$BUILD_DIR"
-wget "https://libsdl.org/release/SDL3-$SDL_VERSION.zip" -O "$BUILD_DIR/SDL3.zip"
+bash "$SCRIPT_DIR/download_sdl.sh" 3 "$SDL_VERSION" "$BUILD_DIR/SDL3.zip"
 unzip -q -o "$BUILD_DIR/SDL3.zip" -d "$BUILD_DIR"
 
 cmake -S "$SOURCE_DIR" -B "$SOURCE_DIR/build" \

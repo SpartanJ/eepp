@@ -695,9 +695,9 @@ UTEST( Http, redirectBodyIsDrainedAndPostBodyIsRemovedFor303 ) {
 	EXPECT_EQ( server.accepted.load(), 1u );
 }
 
-UTEST( Http, idleConnectionsClosedByServerAreReplacedForEveryMethod ) {
-	// A server keep-alive timeout: the connection is closed while idle in the pool. The FIN is
-	// already readable at reuse time, so even a POST gets a fresh connection.
+UTEST( Http, idleConnectionsClosedByServerAreDiscardedForEveryMethod ) {
+	// A server keep-alive timeout: the connection is closed while idle in the pool. Waiting for
+	// the server's close does not guarantee its FIN is already readable by the client.
 	for ( const auto method : { Http::Request::Get, Http::Request::Post } ) {
 		HTTPTest::Server server( []( TcpSocket& socket, const std::string&, unsigned id ) {
 			const bool sent = HTTPTest::Server::respond( socket );
@@ -710,8 +710,17 @@ UTEST( Http, idleConnectionsClosedByServerAreReplacedForEveryMethod ) {
 				   Http::Response::Ok );
 		EXPECT_TRUE( server.waitForClosed( 1 ) );
 		auto response = client->sendRequest( Http::Request( "/", method, "a=1" ), Seconds( 1 ) );
+		if ( method == Http::Request::Post &&
+			 response.getStatus() == Http::Response::ConnectionFailed ) {
+			// If the FIN arrived after the pre-use check, the POST must fail without replay.
+			// This server never read it, so an explicit caller retry is safe for this test.
+			EXPECT_EQ( server.accepted.load(), 1u );
+			EXPECT_EQ( server.requests.load(), 1u );
+			response = client->sendRequest( Http::Request( "/", method, "a=1" ), Seconds( 1 ) );
+		}
 		EXPECT_EQ( response.getStatus(), Http::Response::Ok );
 		EXPECT_EQ( server.accepted.load(), 2u );
+		EXPECT_EQ( server.requests.load(), 2u );
 	}
 }
 

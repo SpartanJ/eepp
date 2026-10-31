@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Define SDL version and download URL
+# Define SDL version and locate the shared downloader before changing directories.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SDL_VERSION="2.32.10"
-SDL_URL="https://libsdl.org/release/SDL2-${SDL_VERSION}.zip"
 ARCH="x86_64" # Default architecture for host
 KEEP_BUILD=false
 
@@ -103,7 +103,7 @@ install_dependencies
 
 # Download SDL2 source code
 echo "Downloading SDL2 version ${SDL_VERSION}..."
-wget "${SDL_URL}" -O SDL2.zip || exit
+bash "$SCRIPT_DIR/download_sdl.sh" 2 "$SDL_VERSION" SDL2.zip
 
 # Unzip the SDL2 source code
 echo "Extracting SDL2..."

@@ -4006,7 +4006,9 @@ void TerminalEmulator::tattachZeroWidth( const char32_t* added, size_t addedCoun
 	/* Without mode 2027, Ghostty's rules: zero-width codepoints attach to the previous character
 	 * without boundary rules or width changes; emoji variation selectors attach only when the
 	 * character's base is a pictograph and are ignored otherwise; with nothing to attach to they
-	 * are dropped. A burst of them is interned once. */
+	 * are dropped. With mode 2027 the caller restricts the burst to zero-width Extend codepoints
+	 * other than VS15/VS16: after the first boundary check, GB9 joins the whole burst without
+	 * changing width. A burst is interned once, without allocating its intermediate prefixes. */
 	const int x = tattachColumn();
 	const int y = mTerm.c.y;
 	if ( x < 0 )
@@ -4016,9 +4018,16 @@ void TerminalEmulator::tattachZeroWidth( const char32_t* added, size_t addedCoun
 		return;
 	char32_t codepoints[MaxClusterCodepoints];
 	size_t count = tclusterCodepoints( glyph, codepoints );
-	if ( count == 0 )
+	if ( count == 0 || count == MaxClusterCodepoints )
 		return;
 	const size_t baseCount = count;
+	if ( IS_SET( MODE_GRAPHEME ) && addedCount > 0 ) {
+		codepoints[count] = added[0];
+		/* GB4 takes precedence over GB9: e.g. a rendered soft hyphen is a Control, so all
+		 * following Extend codepoints are dropped instead of attaching to it. */
+		if ( String::isGraphemeBoundary( String::View( codepoints, count + 1 ), count ) )
+			return;
+	}
 	for ( size_t i = 0; i < addedCount && count < MaxClusterCodepoints; ++i ) {
 		const char32_t codepoint = added[i];
 		if ( ( codepoint == 0xFE0F || codepoint == 0xFE0E ) &&
@@ -4321,6 +4330,8 @@ struct GlyphProperties {
 	static constexpr uint8_t Attracts = 32;
 	/* Width 0: attaches to the previous cell instead of taking one (tattach()). */
 	static constexpr uint8_t ZeroWidth = 64;
+	/* A zero-width Extend that can join a mode-2027 burst without changing cell width. */
+	static constexpr uint8_t PlainExtend = 128;
 
 	static uint8_t compute( Rune u ) {
 		bool emoji = false;
@@ -4337,6 +4348,10 @@ struct GlyphProperties {
 		using Break = String::GraphemeBreakProperty;
 		switch ( String::graphemeBreakProperty( static_cast<String::StringBaseType>( u ) ) ) {
 			case Break::Extend:
+				properties |= Joins;
+				if ( width == 0 && u != 0xFE0E && u != 0xFE0F )
+					properties |= PlainExtend;
+				break;
 			case Break::SpacingMark:
 			case Break::RegionalIndicator:
 			case Break::V:
@@ -4439,9 +4454,13 @@ static ETERM_ALWAYS_INLINE int decodeUtf8Codepoint( const unsigned char* bytes, 
 }
 
 /* Decodes the zero-width codepoints at [begin, end) (at most capacity) that tattachZeroWidth()
- * attaches in one go. Returns the end of the decoded bytes. */
+ * attaches in one go. Mode 2027 admits only width-preserving Extend codepoints; other zero-width
+ * characters and width-changing selectors still take tputc(). Returns the decoded byte end. */
+template <bool Grapheme>
 static int decodeZeroWidthRun( const char* data, int begin, int end, char32_t* codepoints,
 							   size_t capacity, size_t& count ) {
+	constexpr uint8_t required =
+		Grapheme ? GlyphProperties::PlainExtend : GlyphProperties::ZeroWidth;
 	const auto* bytes = reinterpret_cast<const unsigned char*>( data );
 	int offset = begin;
 	count = 0;
@@ -4449,7 +4468,7 @@ static int decodeZeroWidthRun( const char* data, int begin, int end, char32_t* c
 		Rune u;
 		const int size = decodeUtf8Codepoint( bytes, offset, end, u );
 		if ( size == 0 || u < 0xA0 || u == KittyGraphicsPlaceholder ||
-			 !( GlyphProperties::of( u ) & GlyphProperties::ZeroWidth ) )
+			 !( GlyphProperties::of( u ) & required ) )
 			break;
 		codepoints[count++] = static_cast<char32_t>( u );
 		offset += size;
@@ -4630,13 +4649,16 @@ int TerminalEmulator::tpututf8( const char* buf, int begin, int end ) {
 	const int decodedEnd = grapheme ? decodeUnicodeRun<true>( buf, begin, end, run, count )
 									: decodeUnicodeRun<false>( buf, begin, end, run, count );
 	if ( count == 0 ) {
-		/* Without mode 2027 (and no kitty placeholder awaiting diacritics), a burst of zero-width
-		 * codepoints attaches at once instead of one tputc() each. */
-		if ( !grapheme && mKittyPlaceholderCell.x < 0 ) {
+		/* With no kitty placeholder awaiting diacritics, attach compatible zero-width codepoints
+		 * in one go. Mode 2027 limits the decoder to width-preserving Extend codepoints. */
+		if ( mKittyPlaceholderCell.x < 0 ) {
 			char32_t marks[MaxClusterCodepoints];
 			size_t markCount;
-			const int marksEnd =
-				decodeZeroWidthRun( buf, begin, end, marks, MaxClusterCodepoints, markCount );
+			const int marksEnd = grapheme
+									 ? decodeZeroWidthRun<true>( buf, begin, end, marks,
+																 MaxClusterCodepoints, markCount )
+									 : decodeZeroWidthRun<false>( buf, begin, end, marks,
+																  MaxClusterCodepoints, markCount );
 			if ( markCount > 0 ) {
 				tattachZeroWidth( marks, markCount );
 				return marksEnd;
