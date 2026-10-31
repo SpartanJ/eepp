@@ -291,16 +291,22 @@ void Input::processEventForWindow( InputEvent* Event ) {
 
 bool Input::enqueueEvent( InputEvent event ) {
 	static constexpr size_t MaxInjectedEvents = 4096;
-	std::lock_guard<std::mutex> lock( mInjectedEventsMutex );
-	if ( mInjectedEvents.size() >= MaxInjectedEvents ) {
-		auto motion = std::find_if(
-			mInjectedEvents.begin(), mInjectedEvents.end(),
-			[]( const InputEvent& queued ) { return queued.Type == InputEvent::MouseMotion; } );
-		if ( motion == mInjectedEvents.end() )
-			return false;
-		mInjectedEvents.erase( motion );
+	{
+		std::lock_guard<std::mutex> lock( mInjectedEventsMutex );
+		if ( mInjectedEvents.size() >= MaxInjectedEvents ) {
+			auto motion = std::find_if(
+				mInjectedEvents.begin(), mInjectedEvents.end(),
+				[]( const InputEvent& queued ) { return queued.Type == InputEvent::MouseMotion; } );
+			if ( motion == mInjectedEvents.end() )
+				return false;
+			mInjectedEvents.erase( motion );
+		}
+		mInjectedEvents.emplace_back( std::move( event ) );
 	}
-	mInjectedEvents.emplace_back( std::move( event ) );
+	// Injected events come from other threads (the terminal runtime's input reader). An idle
+	// application blocks in waitEvent() until a native event or its timeout, so wake it now
+	// instead of delaying the event by up to that timeout.
+	wakeUpEventLoop();
 	return true;
 }
 

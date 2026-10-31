@@ -59,6 +59,7 @@ using namespace EE::System;
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <limits>
 #include <memory.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -140,12 +141,35 @@ static inline bool isTrailingBlank( const TerminalGlyph& glyph ) {
 	return glyph.u == ' ' && ( glyph.mode & GLYPH_LINK_MASK ) == 0;
 }
 
+/* A byte that the string-sequence state of tputc() would not simply append as one character: BEL,
+ * CAN, SUB and ESC end or abort the string. In UTF-8 mode every non-ASCII byte qualifies, so
+ * multi-byte characters (including the two-byte C1 controls such as U+009C ST) and malformed input
+ * are decoded on the normal path; otherwise only the raw C1 bytes 0x80-0x9F do. Both cases are
+ * ( byte & highBitsMask ) == 0x80. */
+static inline unsigned char stringSequenceHighBitsMask( bool utf8 ) {
+	return utf8 ? 0x80 : 0xE0;
+}
+
+static inline bool isStringSequenceStop( unsigned char byte, unsigned char highBitsMask ) {
+	return byte == '\a' || byte == 030 || byte == 032 || byte == 033 ||
+		   ( byte & highBitsMask ) == 0x80;
+}
+
+static int findStringSequenceStopScalar( const char* data, int begin, int end,
+										 unsigned char highBitsMask ) {
+	while ( begin < end &&
+			!isStringSequenceStop( static_cast<unsigned char>( data[begin] ), highBitsMask ) )
+		++begin;
+	return begin;
+}
+
 #if defined( EE_ARCH_X86_64 )
 #if defined( __GNUC__ ) || defined( __clang__ )
 __attribute__( ( target( "avx2" ) ) )
 #endif
-static int findKittyAPCControlAVX2( const char* data, int begin, int end ) {
-	const __m256i highThreeBitMask = _mm256_set1_epi8( static_cast<char>( 0xE0 ) );
+static int findStringSequenceStopAVX2( const char* data, int begin, int end,
+									   unsigned char highBitsMask ) {
+	const __m256i highBits = _mm256_set1_epi8( static_cast<char>( highBitsMask ) );
 	const __m256i c1Prefix = _mm256_set1_epi8( static_cast<char>( 0x80 ) );
 	const __m256i bell = _mm256_set1_epi8( 0x07 );
 	const __m256i cancel = _mm256_set1_epi8( 0x18 );
@@ -155,25 +179,163 @@ static int findKittyAPCControlAVX2( const char* data, int begin, int end ) {
 	for ( ; offset + 32 <= end; offset += 32 ) {
 		const __m256i bytes =
 			_mm256_loadu_si256( reinterpret_cast<const __m256i*>( data + offset ) );
-		const __m256i c1 =
-			_mm256_cmpeq_epi8( _mm256_and_si256( bytes, highThreeBitMask ), c1Prefix );
+		const __m256i high = _mm256_cmpeq_epi8( _mm256_and_si256( bytes, highBits ), c1Prefix );
 		const __m256i explicitControls = _mm256_or_si256(
 			_mm256_or_si256( _mm256_cmpeq_epi8( bytes, bell ), _mm256_cmpeq_epi8( bytes, cancel ) ),
 			_mm256_or_si256( _mm256_cmpeq_epi8( bytes, substitute ),
 							 _mm256_cmpeq_epi8( bytes, escape ) ) );
-		if ( _mm256_movemask_epi8( _mm256_or_si256( c1, explicitControls ) ) != 0 )
+		if ( _mm256_movemask_epi8( _mm256_or_si256( high, explicitControls ) ) != 0 )
 			break;
 	}
-	while ( offset < end ) {
-		const unsigned char byte = static_cast<unsigned char>( data[offset] );
-		if ( byte == '\a' || byte == 030 || byte == 032 || byte == 033 ||
-			 ( byte >= 0x80 && byte <= 0x9F ) )
+	return findStringSequenceStopScalar( data, offset, end, highBitsMask );
+}
+#elif defined( EE_ARCH_ARM64 )
+static int findStringSequenceStopNEON( const char* data, int begin, int end,
+									   unsigned char highBitsMask ) {
+	const uint8x16_t highBits = vdupq_n_u8( highBitsMask );
+	const uint8x16_t c1Prefix = vdupq_n_u8( 0x80 );
+	/* TBL yields 0 for indices >= 32, so one lookup flags BEL, CAN, SUB and ESC and clears every
+	 * other byte. */
+	alignas( 16 ) static constexpr uint8_t c0Stops[32] = {
+		0, 0, 0, 0, 0, 0, 0, 0xFF, 0,	 0, 0,	  0,	0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,	   0xFF, 0, 0xFF, 0xFF, 0, 0, 0, 0 };
+	const uint8x16x2_t c0Table = { { vld1q_u8( c0Stops ), vld1q_u8( c0Stops + 16 ) } };
+	const auto stops = [&]( uint8x16_t bytes ) {
+		return vorrq_u8( vqtbl2q_u8( c0Table, bytes ),
+						 vceqq_u8( vandq_u8( bytes, highBits ), c1Prefix ) );
+	};
+	const auto* bytes = reinterpret_cast<const uint8_t*>( data );
+	int offset = begin;
+	for ( ; offset + 64 <= end; offset += 64 ) {
+		const uint8x16_t any = vorrq_u8( vorrq_u8( stops( vld1q_u8( bytes + offset ) ),
+												   stops( vld1q_u8( bytes + offset + 16 ) ) ),
+										 vorrq_u8( stops( vld1q_u8( bytes + offset + 32 ) ),
+												   stops( vld1q_u8( bytes + offset + 48 ) ) ) );
+		if ( vmaxvq_u8( any ) != 0 )
 			break;
-		++offset;
 	}
-	return offset;
+	return findStringSequenceStopScalar( data, offset, end, highBitsMask );
+}
+#endif
+
+typedef int ( *string_sequence_stop_func )( const char*, int, int, unsigned char );
+
+static string_sequence_stop_func resolveStringSequenceStopFn() {
+#if defined( EE_ARCH_ARM64 )
+	return findStringSequenceStopNEON;
+#elif defined( EE_ARCH_X86_64 )
+	if ( CPU::hasAVX2() )
+		return findStringSequenceStopAVX2;
+#endif
+	return findStringSequenceStopScalar;
 }
 
+/* The scanners run for every parsed chunk: resolve them once at load time, at file scope, so calls
+ * pay no CPU check or function-local static guard. */
+static const string_sequence_stop_func findStringSequenceStopImpl = resolveStringSequenceStopFn();
+
+/* Returns the end of the run in [begin, end) that a string sequence appends verbatim. */
+static inline int findStringSequenceStop( const char* data, int begin, int end, bool utf8 ) {
+	return findStringSequenceStopImpl( data, begin, end, stringSequenceHighBitsMask( utf8 ) );
+}
+
+/* Printable ASCII is 0x20-0x7E: ( byte - 0x20 ) wraps every other byte to >= 0x5F. */
+static inline bool isPrintableAscii( unsigned char byte ) {
+	return static_cast<unsigned char>( byte - 0x20 ) < 0x5F;
+}
+
+static int findPrintableAsciiEndScalar( const char* data, int begin, int end ) {
+	while ( begin < end && isPrintableAscii( static_cast<unsigned char>( data[begin] ) ) )
+		++begin;
+	return begin;
+}
+
+#if defined( EE_ARCH_X86_64 )
+#if defined( __GNUC__ ) || defined( __clang__ )
+__attribute__( ( target( "avx2" ) ) )
+#endif
+static int findPrintableAsciiEndAVX2( const char* data, int begin, int end ) {
+	const __m256i space = _mm256_set1_epi8( 0x20 );
+	const __m256i printableCount = _mm256_set1_epi8( 0x5F );
+	int offset = begin;
+	for ( ; offset + 32 <= end; offset += 32 ) {
+		const __m256i shifted = _mm256_sub_epi8(
+			_mm256_loadu_si256( reinterpret_cast<const __m256i*>( data + offset ) ), space );
+		/* AVX2 has no unsigned byte compare: shifted >= 0x5F exactly when max() keeps it. */
+		const __m256i stops =
+			_mm256_cmpeq_epi8( _mm256_max_epu8( shifted, printableCount ), shifted );
+		if ( _mm256_movemask_epi8( stops ) != 0 )
+			break;
+	}
+	return findPrintableAsciiEndScalar( data, offset, end );
+}
+#elif defined( EE_ARCH_ARM64 )
+static int findPrintableAsciiEndNEON( const char* data, int begin, int end ) {
+	const uint8x16_t space = vdupq_n_u8( 0x20 );
+	const uint8x16_t printableCount = vdupq_n_u8( 0x5F );
+	const auto stops = [&]( uint8x16_t bytes ) {
+		return vcgeq_u8( vsubq_u8( bytes, space ), printableCount );
+	};
+	const auto* bytes = reinterpret_cast<const uint8_t*>( data );
+	int offset = begin;
+	for ( ; offset + 64 <= end; offset += 64 ) {
+		const uint8x16_t any = vorrq_u8( vorrq_u8( stops( vld1q_u8( bytes + offset ) ),
+												   stops( vld1q_u8( bytes + offset + 16 ) ) ),
+										 vorrq_u8( stops( vld1q_u8( bytes + offset + 32 ) ),
+												   stops( vld1q_u8( bytes + offset + 48 ) ) ) );
+		if ( vmaxvq_u8( any ) != 0 )
+			break;
+	}
+	return findPrintableAsciiEndScalar( data, offset, end );
+}
+#endif
+
+typedef int ( *printable_ascii_end_func )( const char*, int, int );
+
+static printable_ascii_end_func resolvePrintableAsciiEndFn() {
+#if defined( EE_ARCH_ARM64 )
+	return findPrintableAsciiEndNEON;
+#elif defined( EE_ARCH_X86_64 )
+	if ( CPU::hasAVX2() )
+		return findPrintableAsciiEndAVX2;
+#endif
+	return findPrintableAsciiEndScalar;
+}
+
+/* Returns the end of the printable ASCII run that starts at begin. Resolved like
+ * findStringSequenceStopImpl. */
+static const printable_ascii_end_func findPrintableAsciiEnd = resolvePrintableAsciiEndFn();
+
+namespace {
+
+/* Printable ASCII bytes as a run for TerminalEmulator::tputrun(). */
+struct AsciiRun {
+	/* Every character is one column wide, so a row segment's length is known up front. */
+	static constexpr bool Narrow = true;
+	const char* text;
+
+	Rune codepoint( int i ) const { return static_cast<uchar>( text[i] ); }
+
+	int width( int ) const { return 1; }
+
+	uint32_t mode( int ) const { return 0; }
+};
+
+/* One printable ASCII character repeated, for REP. */
+struct RepeatRun {
+	static constexpr bool Narrow = true;
+	Rune character;
+
+	Rune codepoint( int ) const { return character; }
+
+	int width( int ) const { return 1; }
+
+	uint32_t mode( int ) const { return 0; }
+};
+
+} // namespace
+
+#if defined( EE_ARCH_X86_64 )
 #if defined( __GNUC__ ) || defined( __clang__ )
 __attribute__( ( target( "avx2" ) ) )
 #endif
@@ -225,21 +387,6 @@ static int trailingNonSpaceWidthNEON( Line line, int width, int minimumWidth ) {
 	return width;
 }
 #endif
-
-static int findKittyAPCControl( const char* data, int begin, int end ) {
-#if defined( EE_ARCH_X86_64 )
-	if ( CPU::hasAVX2() )
-		return findKittyAPCControlAVX2( data, begin, end );
-#endif
-	while ( begin < end ) {
-		const unsigned char byte = static_cast<unsigned char>( data[begin] );
-		if ( byte == '\a' || byte == 030 || byte == 032 || byte == 033 ||
-			 ( byte >= 0x80 && byte <= 0x9F ) )
-			break;
-		++begin;
-	}
-	return begin;
-}
 
 /* identification sequence returned in DA and DECID */
 static const char* vtiden = "\033[?6c";
@@ -399,19 +546,18 @@ static const emoji_range_t smp_emoji_block = {
 	  0x00, 0x00, 0x00, 0xf0, 0x71, 0xf0, 0x07, 0xf0, 0xff, 0xff, 0x1f, 0xf0, 0x07, 0x70, 0x00,
 	  0xf0, 0x07 } };
 
-static const emoji_range_t* emoji_ranges[] = { &bmp_emoji_block, &smp_emoji_block, 0 };
+static inline bool is_emoji_in( const emoji_range_t& range, int32_t code ) {
+	const int ofs = code - range.min_code;
+	return ( range.bitmap[ofs / 8] >> ( ofs % 8 ) ) & 1;
+}
 
+/* Called for every non-ASCII character: the two blocks are tested directly, so most text (CJK
+ * included) is rejected with range compares alone. */
 static inline bool is_emoji( int32_t code ) {
-	const emoji_range_t** curr = emoji_ranges;
-	while ( *curr != 0 ) {
-		if ( code >= ( *curr )->min_code && code <= ( *curr )->max_code ) {
-			int ofs = code - ( *curr )->min_code;
-			int byteOffset = ofs / 8;
-			int bit = 1 << ( ofs % 8 );
-			return ( ( *curr )->bitmap[byteOffset] & bit ) == bit;
-		}
-		++curr;
-	}
+	if ( code >= bmp_emoji_block.min_code && code <= bmp_emoji_block.max_code )
+		return is_emoji_in( bmp_emoji_block, code );
+	if ( code >= smp_emoji_block.min_code && code <= smp_emoji_block.max_code )
+		return is_emoji_in( smp_emoji_block, code );
 	return false;
 }
 
@@ -866,10 +1012,6 @@ char* TerminalEmulator::getsel( void ) const {
 	}
 	*ptr = 0;
 	return str;
-}
-
-bool TerminalEmulator::hasSelection() const {
-	return mSel.mode != SEL_EMPTY && mSel.ob.x != -1;
 }
 
 std::string TerminalEmulator::getSelection() const {
@@ -1861,6 +2003,25 @@ void TerminalEmulator::tnewline( int first_col ) {
 	tmoveto( first_col ? 0 : mTerm.c.x, y );
 }
 
+/* strtol( p, end, 10 ) for the plain decimals CSI parameters nearly always are. Up to digits10
+ * digits always fit in a long (9 where long is 32 bits, as on Windows; 18 where it is 64). A sign,
+ * leading whitespace, no digits or more digits (possible overflow) take strtol() itself from the
+ * start, so overflow still yields LONG_MAX. */
+static inline long parseCsiNumber( char* p, char** end ) {
+	constexpr int MaxSafeDigits = std::numeric_limits<long>::digits10;
+	if ( *p >= '0' && *p <= '9' ) {
+		long value = 0;
+		char* digit = p;
+		while ( *digit >= '0' && *digit <= '9' && digit - p < MaxSafeDigits )
+			value = value * 10 + ( *digit++ - '0' );
+		if ( *digit < '0' || *digit > '9' ) {
+			*end = digit;
+			return value;
+		}
+	}
+	return strtol( p, end, 10 );
+}
+
 void TerminalEmulator::csiparse( void ) {
 	char *p = mCsiescseq.buf, *np;
 	long int v;
@@ -1874,7 +2035,7 @@ void TerminalEmulator::csiparse( void ) {
 	mCsiescseq.buf[mCsiescseq.len] = '\0';
 	while ( p < mCsiescseq.buf + mCsiescseq.len && mCsiescseq.narg < ESC_ARG_SIZ ) {
 		np = NULL;
-		v = strtol( p, &np, 10 );
+		v = parseCsiNumber( p, &np );
 		if ( np == p )
 			v = 0;
 		if ( v == LONG_MAX || v == LONG_MIN )
@@ -1984,12 +2145,12 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2, bool skip_c
 	}
 
 	/*
-	 * Fast path for the common full-row clear performed while scrolling: no
-	 * selection can be affected and every cleared cell gets the exact same
-	 * glyph, so fill complete glyph objects instead of touching four scattered
-	 * members per cell and running a per-cell selected() check.
+	 * Fast path for clears that cannot affect the selection (scrolling skips the test, and
+	 * selected() is false without a selection), which is nearly all of them: every cleared cell
+	 * gets the exact same glyph, so fill complete glyph objects instead of touching four
+	 * scattered members per cell and running a per-cell selected() check.
 	 */
-	if ( skip_clear && mSel.ob.x == -1 && x1 == 0 && x2 == mTerm.col - 1 ) {
+	if ( skip_clear || !hasSelection() ) {
 		static_assert( sizeof( TerminalGlyph ) == 16,
 					   "tclearregion fast path expects 16-byte glyphs" );
 		TerminalGlyph blank = mTerm.c.attr;
@@ -1998,7 +2159,7 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2, bool skip_c
 		for ( y = y1; y <= y2; y++ ) {
 			gp = TLINE( y );
 			mTerm.dirty[y] = 1;
-			std::fill_n( gp, mTerm.col, blank );
+			std::fill_n( gp + x1, x2 - x1 + 1, blank );
 			mDirty = true;
 		}
 		return;
@@ -2499,9 +2660,14 @@ void TerminalEmulator::csihandle( void ) {
 			break;
 		case 'b': /* REP -- if last char is printable print it <n> more times */
 			DEFAULT( mCsiescseq.arg[0], 1 );
-			if ( mTerm.lastc )
+			/* DEFAULT() keeps negative counts, which repeat nothing. */
+			if ( mCsiescseq.arg[0] > 0 && mTerm.lastc < 0x80 && isPrintableAscii( mTerm.lastc ) &&
+				 canPutPrintable() ) {
+				tputrun( RepeatRun{ mTerm.lastc }, mCsiescseq.arg[0] );
+			} else if ( mTerm.lastc ) {
 				while ( mCsiescseq.arg[0]-- > 0 )
 					tputc( mTerm.lastc );
+			}
 			break;
 		case 'C': /* CUF -- Cursor <n> Forward */
 		case 'a': /* HPR -- Cursor <n> Forward */
@@ -2750,7 +2916,15 @@ void TerminalEmulator::csidump( void ) {
 }
 
 void TerminalEmulator::csireset( void ) {
-	memset( &mCsiescseq, 0, sizeof( mCsiescseq ) );
+	/* Runs for every escape sequence, so the 512-byte buffer is not cleared: it is only read up to
+	 * len, and csiparse() terminates it there. Arguments are cleared in full because DEFAULT()
+	 * writes past narg. */
+	mCsiescseq.len = 0;
+	mCsiescseq.priv = 0;
+	mCsiescseq.narg = 0;
+	memset( mCsiescseq.arg, 0, sizeof( mCsiescseq.arg ) );
+	memset( mCsiescseq.sep, 0, sizeof( mCsiescseq.sep ) );
+	mCsiescseq.mode[0] = mCsiescseq.mode[1] = 0;
 }
 
 static size_t hyperlinkHash( std::string_view uri, std::string_view externalId ) {
@@ -3201,22 +3375,40 @@ void TerminalEmulator::strhandle( void ) {
 }
 
 void TerminalEmulator::strparse( void ) {
-	int c;
-	char* p = mStrescseq.buf;
+	char* const begin = mStrescseq.buf;
+	char* const end = begin + mStrescseq.len;
 
 	mStrescseq.narg = 0;
-	mStrescseq.buf[mStrescseq.len] = '\0';
+	*end = '\0';
 
-	if ( *p == '\0' )
+	if ( *begin == '\0' )
 		return;
 
-	while ( mStrescseq.narg < STR_ARG_SIZ ) {
-		mStrescseq.args[mStrescseq.narg++] = p;
-		while ( ( c = *p ) != ';' && c != '\0' )
-			++p;
-		if ( c == '\0' )
-			return;
-		*p++ = '\0';
+	/* Every argument ends at a ';' (the last one used is terminated too) or at the end of the
+	 * string. memchr() keeps long payloads (OSC 52, unknown OSCs) off a per-byte loop. */
+	char* separators[STR_ARG_SIZ];
+	int count = 0;
+	for ( char* p = begin; count < STR_ARG_SIZ; ) {
+		char* separator = static_cast<char*>( memchr( p, ';', end - p ) );
+		if ( !separator )
+			break;
+		separators[count++] = separator;
+		p = separator + 1;
+	}
+	/* String sequences may carry embedded NUL bytes, and arguments stop at the first one. It
+	 * only drops separators that follow it, so the scan ends at the last separator used. */
+	if ( count > 0 ) {
+		const char* nul =
+			static_cast<const char*>( memchr( begin, '\0', separators[count - 1] - begin ) );
+		while ( nul && count > 0 && separators[count - 1] > nul )
+			--count;
+	}
+
+	mStrescseq.args[mStrescseq.narg++] = begin;
+	for ( int i = 0; i < count; ++i ) {
+		*separators[i] = '\0';
+		if ( mStrescseq.narg < STR_ARG_SIZ )
+			mStrescseq.args[mStrescseq.narg++] = separators[i] + 1;
 	}
 }
 
@@ -3250,7 +3442,9 @@ void TerminalEmulator::strdump( void ) {
 void TerminalEmulator::strreset( void ) {
 	char* buffer = mStrescseq.buf;
 	size_t capacity = mStrescseq.siz;
-	constexpr size_t MaxRetainedStringCapacity = 128 * 1024;
+	/* Large enough to keep the buffer a 128 KiB kitty graphics chunk grows (doubling) to, so a
+	 * stream of chunks does not shrink and regrow it every time. */
+	constexpr size_t MaxRetainedStringCapacity = 256 * 1024;
 	if ( !buffer || capacity > MaxRetainedStringCapacity ) {
 		buffer = (char*)xrealloc( buffer, STR_BUF_SIZ );
 		capacity = STR_BUF_SIZ;
@@ -3258,6 +3452,38 @@ void TerminalEmulator::strreset( void ) {
 	mStrescseq = STREscape{};
 	mStrescseq.buf = buffer;
 	mStrescseq.siz = capacity;
+}
+
+void TerminalEmulator::strappend( const char* data, size_t len ) {
+	if ( mStrescseq.discarded )
+		return;
+
+	const bool kittyGraphics =
+		mStrescseq.type == '_' && mStrescseq.len > 0 && mStrescseq.buf[0] == 'G';
+	const size_t sequenceLimit =
+		kittyGraphics ? MAX_KITTY_GRAPHICS_APC_SIZE : MAX_GENERIC_STRING_SEQUENCE_SIZE;
+	/* strparse() needs room for a NUL terminator, so at most sequenceLimit - 1 bytes are kept.
+	 * An oversized string keeps the prefix that fits: strhandle() still inspects the leading
+	 * "8;" / "7;" of a discarded OSC. */
+	const size_t room = sequenceLimit - 1 - mStrescseq.len;
+	if ( len > room ) {
+		len = room;
+		mStrescseq.discarded = true;
+	}
+	if ( len == 0 )
+		return;
+
+	const size_t required = mStrescseq.len + len + 1;
+	if ( required > mStrescseq.siz ) {
+		size_t newSize = mStrescseq.siz;
+		while ( newSize < required )
+			newSize = eemin( newSize * 2, sequenceLimit );
+		mStrescseq.siz = newSize;
+		mStrescseq.buf = (char*)xrealloc( mStrescseq.buf, mStrescseq.siz );
+	}
+
+	memcpy( &mStrescseq.buf[mStrescseq.len], data, len );
+	mStrescseq.len += len;
 }
 
 void TerminalEmulator::sendbreak( const TerminalArg* ) {
@@ -3466,7 +3692,10 @@ void TerminalEmulator::tcontrolcode( uchar ascii ) {
 			ttywrite( vtiden, strlen( vtiden ), 0 );
 			break;
 		case 0x9b: /* TODO: CSI */
-		case 0x9c: /* TODO: ST */
+			break;
+		case 0x9c: /* ST -- String Terminator */
+			if ( mTerm.esc & ESC_STR_END )
+				strhandle();
 			break;
 		case 0x90: /* DCS -- Device Control String */
 		case 0x9d: /* OSC -- Operating System Command */
@@ -3573,12 +3802,16 @@ static const unsigned char wtable[] = {
 #include "wide.hpp"
 };
 
-static int wcwidth( Rune wc ) {
+/* emoji, when given, reports is_emoji( wc ); emoji are always 2 columns wide. */
+static int wcwidth( Rune wc, bool* emoji = nullptr ) {
 	if ( wc < 0xffU )
 		return ( ( wc + 1 ) & 0x7f ) >= 0x21 ? 1 : wc ? -1 : 0;
 
-	if ( is_emoji( wc ) )
+	if ( is_emoji( wc ) ) {
+		if ( emoji )
+			*emoji = true;
 		return 2;
+	}
 
 	if ( ( wc & 0xfffeffffU ) < 0xfffe ) {
 		if ( ( table[table[wc >> 8] * 32 + ( ( wc & 255 ) >> 3 )] >> ( wc & 7 ) ) & 1 )
@@ -3604,35 +3837,6 @@ void TerminalEmulator::tputc( Rune u ) {
 	int width = 1;
 	size_t len;
 	TerminalGlyph* gp;
-
-	/*
-	 * Fast path for plain printable ASCII while idle (no escape sequence in
-	 * progress, no special print/insert mode): the checks below are all
-	 * invariant for this class of input, so the glyph is written and the
-	 * cursor advanced directly. This is the hot loop when large amounts of
-	 * text stream through the terminal.
-	 */
-	if ( u >= ' ' && u < 127 && !mTerm.esc && !( mTerm.c.state & CURSOR_WRAPNEXT ) &&
-		 !IS_SET( MODE_PRINT ) && !IS_SET( MODE_INSERT ) && mTerm.c.x + 1 < mTerm.col &&
-		 mTerm.c.x < mTerm.col && mTerm.c.y < mTerm.row &&
-		 mTerm.trantbl[mTerm.charset] != CS_GRAPHIC0 ) {
-		gp = &TLINE( mTerm.c.y )[mTerm.c.x];
-		/* tsetchar() repairs both halves when overwriting a wide glyph. Keep that
-		 * uncommon case on the complete path. */
-		if ( !( gp->mode & ( ATTR_WIDE | ATTR_WDUMMY ) ) ) {
-			if ( selected( mTerm.c.x, mTerm.c.y ) )
-				selclear();
-			gp->u = u;
-			gp->mode = mPrintAttributes.mode;
-			gp->fg = mPrintAttributes.fg;
-			gp->bg = mPrintAttributes.bg;
-			mDirty = true;
-			mTerm.dirty[mTerm.c.y] = 1;
-			mTerm.lastc = u;
-			mTerm.c.x++;
-			return;
-		}
-	}
 
 	control = ISCONTROL( u );
 	if ( u < 127 || !IS_SET( MODE_UTF8 ) ) {
@@ -3665,33 +3869,7 @@ void TerminalEmulator::tputc( Rune u ) {
 			goto check_control_code;
 		}
 
-		if ( mStrescseq.discarded )
-			return;
-
-		const bool kittyGraphics =
-			mStrescseq.type == '_' && mStrescseq.len > 0 && mStrescseq.buf[0] == 'G';
-		const size_t sequenceLimit =
-			kittyGraphics ? MAX_KITTY_GRAPHICS_APC_SIZE : MAX_GENERIC_STRING_SEQUENCE_SIZE;
-		if ( len > sequenceLimit - mStrescseq.len ) {
-			mStrescseq.discarded = true;
-			return;
-		}
-
-		if ( mStrescseq.len + len >= mStrescseq.siz ) {
-			const size_t required = mStrescseq.len + len + 1;
-			size_t newSize = mStrescseq.siz;
-			while ( newSize < required && newSize < sequenceLimit )
-				newSize = eemin( newSize * 2, sequenceLimit );
-			if ( newSize < required ) {
-				mStrescseq.discarded = true;
-				return;
-			}
-			mStrescseq.siz = newSize;
-			mStrescseq.buf = (char*)xrealloc( mStrescseq.buf, mStrescseq.siz );
-		}
-
-		memmove( &mStrescseq.buf[mStrescseq.len], c, len );
-		mStrescseq.len += len;
+		strappend( c, len );
 		return;
 	}
 
@@ -3815,42 +3993,335 @@ check_control_code:
 	}
 }
 
+bool TerminalEmulator::canPutPrintable() const {
+	/* The excluded modes change what a printable character does to the line. */
+	return !mTerm.esc && IS_SET( MODE_WRAP ) && !IS_SET( MODE_INSERT ) && !IS_SET( MODE_PRINT ) &&
+		   mTerm.trantbl[mTerm.charset] != CS_GRAPHIC0;
+}
+
+namespace {
+
+/* The cell properties tputc() derives per character: its width (wcwidth() with negative widths
+ * mapped as tputc() does, so 0, 1 or 2) and the emoji / box-drawing flags. */
+struct GlyphProperties {
+	static constexpr uint8_t WidthMask = 3;
+	static constexpr uint8_t Emoji = 4;
+	static constexpr uint8_t BoxDraw = 8;
+
+	static uint8_t compute( Rune u ) {
+		bool emoji = false;
+		int width = wcwidth( u, &emoji );
+		if ( width < 0 )
+			width = width == -1 ? 0 : 1;
+		uint8_t properties = static_cast<uint8_t>( width );
+		if ( width == 2 && emoji )
+			properties |= Emoji;
+		if ( isboxdraw( u ) )
+			properties |= BoxDraw;
+		return properties;
+	}
+
+	/* Every BMP codepoint, where nearly all non-ASCII terminal text lives: one load instead of
+	 * wcwidth(), is_emoji() and isboxdraw() per character. Built on first use (65536 compute()
+	 * calls, well under a millisecond) so startup and ASCII-only sessions never pay for it; the
+	 * function-local static makes that thread-safe across terminal workers. */
+	static const uint8_t* bmp() {
+		static const std::unique_ptr<uint8_t[]> table = [] {
+			auto properties = std::make_unique<uint8_t[]>( 0x10000 );
+			for ( Rune u = 0; u < 0x10000; ++u )
+				properties[u] = compute( u );
+			return properties;
+		}();
+		return table.get();
+	}
+};
+
+/* Decoded text for TerminalEmulator::tputrun(): printable codepoints with their GlyphProperties,
+ * from which the width tputc() uses (0, 1 or 2) and the mode bits it adds to the cell follow.
+ * Left uninitialized; decodeUnicodeRun() fills it. */
+struct UnicodeRun {
+	static constexpr bool Narrow = false;
+	static constexpr int Capacity = 512;
+	Rune codepoints[Capacity];
+	uint8_t properties[Capacity];
+
+	Rune codepoint( int i ) const { return codepoints[i]; }
+
+	int width( int i ) const { return properties[i] & GlyphProperties::WidthMask; }
+
+	uint32_t mode( int i ) const {
+		const uint8_t glyph = properties[i];
+		uint32_t mode = ( glyph & GlyphProperties::BoxDraw ) ? ATTR_BOXDRAW : 0;
+		if ( ( glyph & GlyphProperties::WidthMask ) == 2 )
+			mode |= ATTR_WIDE | ( ( glyph & GlyphProperties::Emoji ) ? ATTR_EMOJI : 0 );
+		return mode;
+	}
+};
+
+} // namespace
+
+/* Decodes the text at [begin, end) that tputrun() can write directly: printable ASCII and the
+ * well-formed UTF-8 sequences utf8decode() accepts. It stops before anything tputc() treats
+ * specially (controls, C1, malformed or incomplete input, kitty placeholders) or when the run is
+ * full. Returns the end of the decoded bytes. */
+static int decodeUnicodeRun( const char* data, int begin, int end, UnicodeRun& run, int& count ) {
+	const auto* bytes = reinterpret_cast<const unsigned char*>( data );
+	const auto continuation = [bytes]( int offset ) { return ( bytes[offset] & 0xC0 ) == 0x80; };
+	const uint8_t* bmpProperties = GlyphProperties::bmp();
+	int offset = begin;
+	count = 0;
+	while ( offset < end && count < UnicodeRun::Capacity ) {
+		const unsigned char lead = bytes[offset];
+		Rune u;
+		int size;
+		if ( lead < 0x80 ) {
+			if ( !isPrintableAscii( lead ) )
+				break;
+			run.codepoints[count] = lead;
+			run.properties[count++] = 1;
+			++offset;
+			continue;
+		} else if ( lead < 0xC2 ) {
+			break;
+		} else if ( lead < 0xE0 ) {
+			if ( offset + 1 >= end || !continuation( offset + 1 ) )
+				break;
+			u = ( ( lead & 0x1F ) << 6 ) | ( bytes[offset + 1] & 0x3F );
+			size = 2;
+		} else if ( lead < 0xF0 ) {
+			if ( offset + 2 >= end || !continuation( offset + 1 ) || !continuation( offset + 2 ) )
+				break;
+			u = ( ( lead & 0x0F ) << 12 ) | ( ( bytes[offset + 1] & 0x3F ) << 6 ) |
+				( bytes[offset + 2] & 0x3F );
+			if ( u < 0x800 || BETWEEN( u, 0xD800, 0xDFFF ) )
+				break;
+			size = 3;
+		} else if ( lead < 0xF5 ) {
+			if ( offset + 3 >= end || !continuation( offset + 1 ) || !continuation( offset + 2 ) ||
+				 !continuation( offset + 3 ) )
+				break;
+			u = ( ( lead & 0x07 ) << 18 ) | ( ( bytes[offset + 1] & 0x3F ) << 12 ) |
+				( ( bytes[offset + 2] & 0x3F ) << 6 ) | ( bytes[offset + 3] & 0x3F );
+			if ( !BETWEEN( u, 0x10000, 0x10FFFF ) )
+				break;
+			size = 4;
+		} else {
+			break;
+		}
+		if ( u < 0xA0 || u == KittyGraphicsPlaceholder )
+			break;
+		run.codepoints[count] = u;
+		run.properties[count++] = u < 0x10000 ? bmpProperties[u] : GlyphProperties::compute( u );
+		offset += size;
+	}
+	return offset;
+}
+
+template <typename Run> void TerminalEmulator::tputrun( const Run& run, int len ) {
+	/* Equivalent to tputc() for each character, one row segment at a time. Glyph stores may alias
+	 * the int fields of mTerm, so state read per cell is copied into locals first. */
+	const int columns = mTerm.col;
+	const TerminalGlyph attributes = mPrintAttributes;
+	const bool checkPlaceholders = !mKittyPlaceholderMetadata.empty();
+	/* selected() is false without a selection; skip it per cell then. */
+	bool selectionActive = hasSelection();
+	/* tsetchar() repairs both halves of an overwritten wide glyph and drops placeholder metadata;
+	 * characters over those cells take the complete path. */
+	const auto needsCompletePath = [checkPlaceholders]( const TerminalGlyph& glyph ) {
+		return ( glyph.mode & ( ATTR_WIDE | ATTR_WDUMMY ) ) ||
+			   ( checkPlaceholders && glyph.u == KittyGraphicsPlaceholder );
+	};
+	const auto clearSelectionAt = [this, &selectionActive]( int x, int y ) {
+		if ( selectionActive && selected( x, y ) ) {
+			selclear();
+			selectionActive = false;
+		}
+	};
+
+	int i = 0;
+	while ( i < len ) {
+		/* A pending kitty placeholder may take the next characters as diacritics. In origin mode
+		 * tmoveto() clamps y into the scroll region, which would move a cursor outside it
+		 * mid-segment; inside the region, tnewline() keeps it there. A wide character needs at
+		 * least two columns to fit after a wrap. */
+		if ( mKittyPlaceholderCell.x >= 0 ||
+			 ( ( mTerm.c.state & CURSOR_ORIGIN ) && !BETWEEN( mTerm.c.y, mTerm.top, mTerm.bot ) ) ||
+			 columns < 2 ) {
+			tputc( run.codepoint( i++ ) );
+			continue;
+		}
+		/* tputc() tests the selection at the cursor cell before wrapping, so after a wrap the
+		 * first character's own cell is not tested. A pending wrap and a wide character that does
+		 * not fit in the last column wrap the same way (the cursor is on that column). */
+		int checkFrom = mTerm.c.x;
+		if ( ( mTerm.c.state & CURSOR_WRAPNEXT ) || mTerm.c.x + run.width( i ) > columns ) {
+			clearSelectionAt( mTerm.c.x, mTerm.c.y );
+			mTerm.line[mTerm.c.y][mTerm.c.x].mode |= ATTR_WRAP;
+			tnewline( 1 );
+			checkFrom = mTerm.c.x + 1;
+		}
+		const int x = mTerm.c.x;
+		const int y = mTerm.c.y;
+
+		Line line = TLINE( y );
+		const int first = i;
+		int column = x;
+		int lastColumn = x;
+		bool completePath = false;
+		/* Narrow runs stop at the row end by count and test the selection in one pass up front
+		 * (clearing it earlier in the segment changes nothing else); others check each
+		 * character's width and test the selection per cell. */
+		const int segmentEnd = Run::Narrow ? i + eemin( len - i, columns - x ) : len;
+		if constexpr ( Run::Narrow ) {
+			for ( int cell = eemax( checkFrom, x ); selectionActive && cell < x + segmentEnd - i;
+				  ++cell )
+				clearSelectionAt( cell, y );
+		}
+		while ( i < segmentEnd ) {
+			const int width = run.width( i );
+			if constexpr ( !Run::Narrow ) {
+				if ( column + width > columns )
+					break;
+			}
+			TerminalGlyph* gp = &line[column];
+			if ( needsCompletePath( gp[0] ) || ( width == 2 && needsCompletePath( gp[1] ) ) ) {
+				completePath = true;
+				break;
+			}
+			if constexpr ( !Run::Narrow ) {
+				if ( selectionActive && column >= checkFrom )
+					clearSelectionAt( column, y );
+			}
+			TerminalGlyph glyph = attributes;
+			glyph.u = run.codepoint( i );
+			glyph.mode |= run.mode( i );
+			*gp = glyph;
+			if ( width == 2 ) {
+				gp[1].u = '\0';
+				gp[1].mode = ATTR_WDUMMY;
+				setGlyphLinkId( gp[1], mActiveHyperlinkId );
+			}
+			lastColumn = column;
+			column += width;
+			++i;
+			if constexpr ( !Run::Narrow ) {
+				if ( column == columns )
+					break;
+			}
+		}
+
+		if ( i > first ) {
+			mTerm.dirty[y] = 1;
+			mDirty = true;
+			mTerm.lastc = run.codepoint( i - 1 );
+			/* tputc() moves past each character (a zero-width one stays put), or stays on the last
+			 * one with a pending wrap. */
+			if ( column < columns ) {
+				tmoveto( column, y );
+			} else {
+				if ( lastColumn != x )
+					tmoveto( lastColumn, y );
+				mTerm.c.state |= CURSOR_WRAPNEXT;
+			}
+		}
+		/* After a wrap onto such a cell, tputc() also tests the selection at the new cell; the
+		 * only difference is clearing a selection that covers exactly that cell. */
+		if ( completePath ) {
+			tputc( run.codepoint( i++ ) );
+			selectionActive = hasSelection();
+		}
+	}
+}
+
+int TerminalEmulator::tpututf8( const char* buf, int begin, int end ) {
+	/* Kept out of twrite(): its per-byte loop still carries escape sequences, and inlining the
+	 * decoder and its stack buffer there slowed CSI-heavy output by ~12%. */
+	UnicodeRun run;
+	int count;
+	const int decodedEnd = decodeUnicodeRun( buf, begin, end, run, count );
+	if ( count > 0 )
+		tputrun( run, count );
+	return decodedEnd;
+}
+
 int TerminalEmulator::twrite( const char* buf, int buflen, int show_ctrl ) {
 	size_t charsize;
 	Rune u;
 	int n;
 
 	for ( n = 0; n < buflen; n += charsize ) {
-		/* Kitty control data and payload are ASCII transport bytes. Once ESC _ G has been
-		 * recognized, append ordinary bytes in bulk instead of routing every Base64 byte through
-		 * UTF-8 decoding and the terminal character state machine. Control bytes remain on the
-		 * normal path so fragmented ESC \\ termination and malformed strings retain their exact
-		 * behavior. */
-		if ( !show_ctrl && ( mTerm.esc & ESC_STR ) && mStrescseq.type == '_' &&
-			 mStrescseq.len > 0 && mStrescseq.buf[0] == 'G' ) {
-			const int end = findKittyAPCControl( buf, n, buflen );
-			const size_t bytes = static_cast<size_t>( end - n );
-			if ( bytes != 0 ) {
-				if ( !mStrescseq.discarded ) {
-					if ( mStrescseq.len > MAX_KITTY_GRAPHICS_APC_SIZE ||
-						 bytes > MAX_KITTY_GRAPHICS_APC_SIZE - mStrescseq.len ) {
-						mStrescseq.discarded = true;
-					} else {
-						const size_t required = mStrescseq.len + bytes + 1;
-						if ( required > mStrescseq.siz ) {
-							size_t capacity = mStrescseq.siz;
-							while ( capacity < required )
-								capacity = eemin( capacity * 2, MAX_KITTY_GRAPHICS_APC_SIZE + 1 );
-							mStrescseq.buf = (char*)xrealloc( mStrescseq.buf, capacity );
-							mStrescseq.siz = capacity;
-						}
-						std::memcpy( mStrescseq.buf + mStrescseq.len, buf + n, bytes );
-						mStrescseq.len += bytes;
-					}
-				}
+		/* Each bulk path below consumes at least one byte, then restarts the loop with
+		 * charsize 0 so the next byte can take any path. */
+		charsize = 0;
+		/* A string sequence (OSC, DCS, APC, PM) consumes every byte up to its terminator. Append
+		 * runs of single-byte characters in bulk instead of routing each one through UTF-8
+		 * decoding and the terminal character state machine. Terminators and the bytes that need
+		 * decoding stay on the normal path (see isStringSequenceStop()), so fragmented ESC \\
+		 * termination, malformed strings and multi-byte characters retain their exact behavior.
+		 * The first APC byte also takes the normal path: it selects the kitty graphics size
+		 * limit that strappend() applies to the rest. */
+		if ( !show_ctrl && ( mTerm.esc & ESC_STR ) &&
+			 ( mStrescseq.type != '_' || mStrescseq.len > 0 ) ) {
+			const int end = findStringSequenceStop( buf, n, buflen, IS_SET( MODE_UTF8 ) );
+			if ( end != n ) {
+				const size_t bytes = static_cast<size_t>( end - n );
+				if ( IS_SET( MODE_PRINT ) )
+					tprinter( buf + n, bytes );
+				strappend( buf + n, bytes );
 				n = end;
-				if ( n == buflen )
-					return buflen;
+				continue;
+			}
+		}
+		/* CSI sequences are collected and dispatched here instead of through a tputc() call per
+		 * byte, with tputc()'s exact steps: ESC [ from the ground state is what tcontrolcode()
+		 * and eschandle() do for those bytes; parameter and intermediate bytes (0x20-0x3F) only
+		 * accumulate; a final byte (0x40-0x7E) is appended and dispatched. Controls, other bytes
+		 * and the byte that would fill the buffer (tputc() dispatches then) take tputc(). */
+		if ( !IS_SET( MODE_PRINT ) ) {
+			if ( !mTerm.esc && !show_ctrl && buf[n] == 033 && n + 1 < buflen &&
+				 buf[n + 1] == '[' ) {
+				csireset();
+				mTerm.esc = ESC_START | ESC_CSI;
+				n += 2;
+				continue;
+			}
+			if ( ( mTerm.esc & ( ESC_START | ESC_CSI | ESC_STR ) ) == ( ESC_START | ESC_CSI ) ) {
+				const int room = static_cast<int>( sizeof( mCsiescseq.buf ) ) - 2 -
+								 static_cast<int>( mCsiescseq.len );
+				const int limit = eemin( buflen, n + room );
+				int end = n;
+				while ( end < limit &&
+						BETWEEN( static_cast<unsigned char>( buf[end] ), 0x20, 0x3F ) )
+					mCsiescseq.buf[mCsiescseq.len++] = buf[end++];
+				if ( end < buflen &&
+					 BETWEEN( static_cast<unsigned char>( buf[end] ), 0x40, 0x7E ) &&
+					 mCsiescseq.len < sizeof( mCsiescseq.buf ) - 1 ) {
+					mCsiescseq.buf[mCsiescseq.len++] = buf[end++];
+					mTerm.esc = 0;
+					csiparse();
+					csihandle();
+				}
+				if ( end != n ) {
+					n = end;
+					continue;
+				}
+			}
+		}
+		/* Printable text in the ground state is the hot path when large amounts of text stream
+		 * through the terminal: write whole runs instead of dispatching every character through
+		 * tputc(). The inline byte tests keep the run setup off control input. */
+		const unsigned char lead = static_cast<unsigned char>( buf[n] );
+		if ( isPrintableAscii( lead ) && canPutPrintable() ) {
+			const int end = findPrintableAsciiEnd( buf, n + 1, buflen );
+			tputrun( AsciiRun{ buf + n }, end - n );
+			n = end;
+			continue;
+		}
+		if ( lead >= 0xC2 && IS_SET( MODE_UTF8 ) && canPutPrintable() ) {
+			const int end = tpututf8( buf, n, buflen );
+			if ( end != n ) {
+				n = end;
+				continue;
 			}
 		}
 		if ( IS_SET( MODE_UTF8 ) ) {

@@ -1,6 +1,9 @@
 #include "utest.hpp"
+#include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <climits>
+#include <cstdlib>
 #include <deque>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/compression.hpp>
@@ -759,6 +762,7 @@ class MockDisplay : public ITerminalDisplay {
 	int mDrawLines{ 0 };
 	int mDrawEnds{ 0 };
 	std::vector<int> mPublishedScrollPositions;
+	std::string mTitle;
 	uint32_t mFirstMode{ 0 };
 	uint32_t mSecondMode{ 0 };
 	TerminalGlyph mFirstGlyph;
@@ -788,6 +792,7 @@ class MockDisplay : public ITerminalDisplay {
 		if ( mEmulator )
 			mPublishedScrollPositions.emplace_back( mEmulator->scrollPos() );
 	}
+	void setTitle( const char* title ) override { mTitle = title ? title : ""; }
 	void resetColors() override { ++mResetColorsCount; }
 	void drawGraphics( std::shared_ptr<TerminalGraphicsPresentation> presentation,
 					   std::vector<TerminalGraphicsUpdate> ) override {
@@ -1559,6 +1564,28 @@ UTEST( eterm, kitty_graphics_unicode_placeholder_uses_color_and_diacritics ) {
 	EXPECT_EQ( static_cast<KittyImageId>( 72 ), display->mGraphics->placements[0].imageId );
 }
 
+UTEST( eterm, printable_runs_replace_kitty_placeholders ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033_Ga=t,f=32,s=2,v=2,i=72,q=2;AAAAAAAAAAAAAAAAAAAAAA==\033\\"
+				   "\033_Ga=p,i=72,p=3,U=1,c=2,r=2,q=2\033\\"
+				   "\033[38;5;72m\033[58;5;3m\xF4\x8E\xBB\xAE\xCC\x85\xCC\x85";
+	pty->mLoopWrites = false;
+	MockPty* input = pty.get();
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 100 );
+	term->update();
+	ASSERT_TRUE( display->mGraphics != nullptr );
+	ASSERT_EQ( static_cast<size_t>( 1 ), display->mGraphics->placements.size() );
+
+	input->mBuffer += "\033[m\rXY";
+	term->update();
+	ASSERT_TRUE( display->mGraphics != nullptr );
+	EXPECT_EQ( static_cast<size_t>( 0 ), display->mGraphics->placements.size() );
+	EXPECT_EQ( static_cast<Rune>( 'X' ), display->mFirstGlyph.u );
+	EXPECT_EQ( static_cast<Rune>( 'Y' ), display->mSecondGlyph.u );
+}
+
 UTEST( eterm, kitty_graphics_apc_is_fragmentation_safe_and_not_terminal_text ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer = "\033_Ga=q,i=31,f=32,s=1,v=1;AAAAAA==\033\\OK";
@@ -1761,6 +1788,61 @@ UTEST( eterm, oversized_kitty_graphics_apc_is_discarded_until_terminator ) {
 
 	EXPECT_EQ( static_cast<Rune>( 'O' ), display->mFirstGlyph.u );
 	EXPECT_EQ( static_cast<Rune>( 'K' ), display->mSecondGlyph.u );
+}
+
+UTEST( eterm, string_sequence_bodies_survive_fragmented_reads_and_terminators ) {
+	std::string clipboard( 150000, '\0' );
+	for ( size_t i = 0; i < clipboard.size(); ++i )
+		clipboard[i] = static_cast<char>( 'a' + i % 26 );
+	std::string encoded;
+	ASSERT_TRUE( Base64::encode( clipboard, encoded ) );
+	// The title ends with U+009C (ST), a C1 control that only exists after UTF-8 decoding;
+	// missing it would swallow the trailing text into the title.
+	const std::string prefix = "\033]52;c;" + encoded + "\033";
+	const std::string stream = prefix + "\\\033]2;h\xC3\xA9llo\xC2\x9COK";
+
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = stream;
+	pty->mLoopWrites = false;
+	// Irregular reads, with one boundary between the ESC and the backslash of ST.
+	for ( size_t offset = 0; offset < prefix.size(); offset += 997 )
+		pty->mReadSizes.emplace_back( std::min<size_t>( 997, prefix.size() - offset ) );
+	for ( size_t offset = prefix.size(); offset < stream.size(); offset += 3 )
+		pty->mReadSizes.emplace_back( 3 );
+	MockPty* input = pty.get();
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display );
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	while ( !term->update() ) {
+	}
+
+	ASSERT_EQ( static_cast<size_t>( 1 ), display->mClipboardWrites.size() );
+	EXPECT_TRUE( clipboard == display->mClipboardWrites[0] );
+	EXPECT_STDSTREQ( "h\xC3\xA9llo", display->mTitle );
+	EXPECT_EQ( static_cast<Rune>( 'O' ), display->mFirstGlyph.u );
+	EXPECT_EQ( static_cast<Rune>( 'K' ), display->mSecondGlyph.u );
+}
+
+UTEST( eterm, oversized_osc_hyperlink_clears_the_active_link ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]8;;https://example.com/\aX\033]8;;https://example.com/" +
+				   std::string( MAX_GENERIC_STRING_SEQUENCE_SIZE, 'x' ) + "\aY";
+	pty->mLoopWrites = false;
+	MockPty* input = pty.get();
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display );
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	while ( !term->update() ) {
+	}
+
+	EXPECT_EQ( static_cast<Rune>( 'X' ), display->mFirstGlyph.u );
+	EXPECT_NE( 0, glyphLinkId( display->mFirstGlyph ) );
+	EXPECT_EQ( static_cast<Rune>( 'Y' ), display->mSecondGlyph.u );
+	EXPECT_EQ( 0, glyphLinkId( display->mSecondGlyph ) );
 }
 
 UTEST( eterm, cursor_style_and_xterm_version_queries ) {
@@ -2551,6 +2633,108 @@ UTEST( eterm, basic_write ) {
 	term->selextend( 2, 0, 1, 0 );
 	EXPECT_TRUE( term->hasSelection() );
 	EXPECT_STDSTREQ( "ABC", term->getSelection() );
+}
+
+UTEST( eterm, printable_runs_clear_only_overwritten_selections ) {
+	auto pty = std::make_unique<MockPty>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 100 );
+	term->write( "ABCDEFGH", 8 );
+	term->update();
+
+	term->selstart( 5, 0, 0 );
+	term->selextend( 7, 0, SEL_REGULAR, false );
+	term->write( "\r12", 3 );
+	term->update();
+	EXPECT_STDSTREQ( "FGH", term->getSelection() );
+
+	term->write( "\r\033[4Cxyz", 8 );
+	term->update();
+	EXPECT_FALSE( term->hasSelection() );
+
+	// A full row leaves the cursor pending a wrap on the last column; the next character tests
+	// the selection there before wrapping, as tputc() does.
+	const std::string row = "\r\n" + std::string( 80, 'a' );
+	term->write( row.data(), row.size() );
+	term->update();
+	term->selstart( 79, 1, 0 );
+	term->selextend( 79, 1, SEL_REGULAR, false );
+	EXPECT_TRUE( term->hasSelection() );
+	term->write( "b", 1 );
+	term->update();
+	EXPECT_FALSE( term->hasSelection() );
+	EXPECT_EQ( static_cast<Rune>( 'b' ), display->mCells[2 * display->mColumns].u );
+}
+
+UTEST( eterm, unicode_runs_keep_wide_cell_and_wrap_semantics ) {
+	auto pty = std::make_unique<MockPty>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 100 );
+	// 79 narrow cells leave one column: the wide character wraps and marks the row as wrapped.
+	const std::string text = std::string( 79, 'a' ) + "\xE7\x95\x8C\xF0\x9F\x98\x80\xE2\x94\x80"
+													  "b";
+	term->write( text.data(), text.size() );
+	term->update();
+	const auto cell = [&]( int x, int y ) { return display->mCells[y * display->mColumns + x]; };
+	EXPECT_TRUE( ( cell( 79, 0 ).mode & ATTR_WRAP ) != 0 );
+	EXPECT_EQ( static_cast<Rune>( 0x754C ), cell( 0, 1 ).u );
+	EXPECT_TRUE( ( cell( 0, 1 ).mode & ATTR_WIDE ) != 0 );
+	EXPECT_TRUE( ( cell( 1, 1 ).mode & ATTR_WDUMMY ) != 0 );
+	EXPECT_EQ( static_cast<Rune>( 0x1F600 ), cell( 2, 1 ).u );
+	EXPECT_TRUE( ( cell( 2, 1 ).mode & ( ATTR_WIDE | ATTR_EMOJI ) ) == ( ATTR_WIDE | ATTR_EMOJI ) );
+	EXPECT_EQ( static_cast<Rune>( 0x2500 ), cell( 4, 1 ).u );
+	EXPECT_TRUE( ( cell( 4, 1 ).mode & ATTR_BOXDRAW ) != 0 );
+	EXPECT_EQ( static_cast<Rune>( 'b' ), cell( 5, 1 ).u );
+
+	// Overwriting the second half of a wide character clears its first half.
+	term->write( "\033[2;2Hx", 7 );
+	term->update();
+	EXPECT_EQ( static_cast<Rune>( ' ' ), cell( 0, 1 ).u );
+	EXPECT_TRUE( ( cell( 0, 1 ).mode & ATTR_WIDE ) == 0 );
+	EXPECT_EQ( static_cast<Rune>( 'x' ), cell( 1, 1 ).u );
+}
+
+UTEST( eterm, rep_ignores_negative_counts_and_defaults_zero ) {
+	auto pty = std::make_unique<MockPty>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 100 );
+	term->write( "A\033[-1bB\033[0bC", 13 );
+	term->update();
+	const std::string expected = "ABBC ";
+	for ( size_t x = 0; x < expected.size(); ++x )
+		EXPECT_EQ( static_cast<Rune>( expected[x] ), display->mCells[x].u );
+}
+
+UTEST( eterm, csi_numbers_parse_like_strtol_for_this_platforms_long ) {
+	auto pty = std::make_unique<MockPty>();
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 100 );
+	// Values around 9 digits (32-bit long, as on Windows) and 18 digits (64-bit long), where the
+	// hand-written parser hands over to strtol(). CHA moves to the parsed column, clamped.
+	for ( const char* number :
+		  { "7", "999999999", "1000000000", "9999999999", "4294967296", "4294967297",
+			"999999999999999999", "1000000000000000000", "9999999999999999999",
+			"0000000000000000000000005", "99999999999999999999999999" } ) {
+		long value = std::strtol( number, nullptr, 10 );
+		if ( value == LONG_MAX || value == LONG_MIN )
+			value = -1;
+		int argument = static_cast<int>( value );
+		if ( argument == 0 )
+			argument = 1;
+		const int expectedColumn = std::clamp( argument - 1, 0, 79 );
+		const std::string sequence = std::string( "\033[2J\033[H\033[" ) + number + "GX";
+		term->write( sequence.data(), sequence.size() );
+		term->update();
+		int column = -1;
+		for ( int x = 0; x < 80; ++x )
+			if ( display->mCells[x].u == 'X' )
+				column = x;
+		EXPECT_EQ( expectedColumn, column );
+	}
 }
 
 UTEST( eterm, synchronized_updates_publish_only_complete_frames ) {

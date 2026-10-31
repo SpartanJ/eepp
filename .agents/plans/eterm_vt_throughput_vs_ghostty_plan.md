@@ -2,7 +2,8 @@
 
 ## Status
 
-Investigation and measurement are done; no throughput optimization is implemented yet.
+Investigation and measurement are done. Items 1-5 are implemented (2026-10-31, uncommitted); item 6
+(grapheme clustering) is pending a design decision.
 
 Context: the OSC 8 hyperlink / OSC 7 working-directory / OSC 52 policy work (see
 `docs/articles/eterm_integration.md`) made eterm comparable with Ghostty's feature set, so the next
@@ -50,8 +51,23 @@ written into the cell at the cursor instead of attaching to the previous base ch
 does less work than Ghostty, which stores the whole grapheme per cell. Ghostty's stream benchmark
 does execute kitty graphics commands (`stream_terminal.zig` `apcEnd`), so Images is comparable.
 
-**First task on the Mac: re-run this baseline there** (M-series). Expect higher absolute numbers for
-both terminals; keep using ratios.
+## Baseline (macOS, Apple M2 Pro)
+
+Fresh captures with kitten 0.49.2 (66-75 MB each), Ghostty main `c911f96`, eterm at `9eee2afca`,
+hyperfine `--warmup 1 --runs 5`, two rounds with the command order swapped (agreed within ~2%).
+Work tree: `~/programming/vtbench` (`ghostty/`, `data/*.vt`, `capture.py`, `vtbench.cpp`,
+`build-vtbench.sh`, `report.py`).
+
+| Workload | Ghostty MB/s | eterm MB/s | Gap |
+| --- | ---: | ---: | ---: |
+| ASCII | 436 | 125 | 3.5x |
+| Unicode | 721 | 162 | 4.5x |
+| Unique Unicode | 102 | 140 | not comparable |
+| CSI | 153 | 67 | 2.3x |
+| Images | 2,399 | 646 | 3.7x |
+| Long escape codes | 4,157 | 145 | 28.7x |
+
+All six eterm runs pass the completeness check.
 
 ## Where eterm spends the time (Superluminal, Linux release build)
 
@@ -100,6 +116,45 @@ run to `mStrescseq` at once, respecting `STR_BUF_SIZE`/discard limits and the ex
 - Tests: existing OSC 8/52/7 and kitty tests cover most edges; add one for a long OSC split across
   many reads with the terminator split too.
 
+**Done.** What landed in `terminalemulator.cpp`:
+
+- `findStringSequenceStop()` (AVX2 / NEON / scalar) replaces the kitty-only `findKittyAPCControl()`
+  and serves every `ESC_STR` type. Stops: `BEL`, `CAN`, `SUB`, `ESC`, plus every byte >= 0x80 in
+  UTF-8 mode (so multi-byte characters, malformed input and the two-byte C1 `U+009C` go through
+  `utf8decode()`/`tputc()`), or raw C1 0x80-0x9F otherwise. This also fixed a latent kitty-path bug:
+  it copied a `0xC2` lead byte in bulk and then decoded the following `0x9C` alone, so a UTF-8
+  encoded ST did not end the APC. The NEON scanner classifies C0 stops with one `vqtbl2q_u8` and
+  scans 64 bytes per iteration.
+- `strappend()` is the single size-limit/growth path for `tputc()` and the bulk path. An oversized
+  string keeps the prefix that fits (at most limit - 1 bytes), so a discarded `OSC 8`/`OSC 7` is
+  still recognized by `strhandle()`. The first APC byte stays on the slow path because it selects
+  the kitty size limit.
+- `strparse()` splits with `memchr()` and checks for embedded NUL only up to the last separator
+  used (differentially tested against the old loop on 5M random inputs).
+- C1 ST (`0x9C`, raw or decoded) now dispatches the pending string like `ESC \`; it used to abort
+  it silently.
+- Tests: `string_sequence_bodies_survive_fragmented_reads_and_terminators`,
+  `oversized_osc_hyperlink_clears_the_active_link`.
+- Verified: eterm tests 147/147 on macOS ARM64 and on Linux x86_64 (Docker `eepp-linux-amd64`,
+  Rosetta; it reports no AVX2, so that run covers the scalar scanner). The SIMD scanners are
+  differentially tested against the scalar one by `~/programming/vtbench/scan` (it extracts the
+  scanner from the source): NEON natively, AVX2 as a static x86_64 binary under arm64
+  `qemu-x86_64 -cpu max` (SIGILL under `-cpu qemu64` confirms the AVX2 path runs). Do not run
+  `qemu-x86_64` inside the amd64 (Rosetta) container: it hangs.
+
+Results, M2 Pro (whole process, streamed harness):
+
+| Workload | HEAD MB/s | Item 1 MB/s | Ghostty MB/s | Gap now |
+| --- | ---: | ---: | ---: | ---: |
+| Long escape codes | 150 | 2,726 | 3,629 | 1.33x |
+| Images | 748 | 1,296 | 2,222 | 1.71x |
+| ASCII / Unicode / CSI | unchanged | unchanged | | |
+
+In-process parse rate on long escape codes is ~5.4 GB/s. What remains is fixed process cost
+(startup ~9.7 ms vs Ghostty's ~7.9 ms), kernel `read()` copies, and `strparse()` on unknown OSCs.
+Skipping `strparse()` for OSC numbers `strhandle()` does not handle would close most of the rest, but
+needs a handled-number check that does not duplicate the dispatch switch.
+
 ### 2. Printable-run fast path for ASCII
 
 In `twrite()`, when not in a string/escape state, not `MODE_PRINT`/`MODE_INSERT`, charset is not
@@ -114,6 +169,39 @@ the byte that stops the run.
   `mDirty`/`mTerm.dirty[y]`.
 - Expected: roughly 2x on ASCII.
 
+**Done.** `twrite()` tests the current byte inline, then `findPrintableAsciiEnd()` (AVX2 / NEON /
+scalar, 0x20-0x7E) finds the run and `tputprintable()` writes it one row segment at a time when
+`canPutPrintable()` holds (ground state, `MODE_WRAP`, no `MODE_INSERT`/`MODE_PRINT`, charset not DEC
+graphics). It keeps `tputc()`'s exact semantics: wrap via `ATTR_WRAP` + `tnewline()`, the selection
+test at the cursor cell *before* wrapping, one `tmoveto()` per segment then `CURSOR_WRAPNEXT` at the
+edge, `lastc`, dirty marking. Wide cells, wide dummies and kitty placeholders stop the segment and
+take `tputc()`; so does origin mode with the cursor outside the scroll region. The per-character
+ASCII fast path in `tputc()` is gone (it now only fired with wraparound off, and it overwrote
+placeholder cells without dropping their metadata).
+
+- REP (`CSI b`) of printable ASCII goes through `tputprintable()` in 256-byte stack chunks. The
+  kitten CSI stream is dominated by `CSI 100 b`; without this CSI regressed 27%.
+- x86_64 scanners are resolved once into file-scope function pointers (like
+  `String::stripAnsiCodes()`, but outside the function so calls pay no static guard).
+- Unicode / Unique Unicode measure 2-6% below HEAD with the default link order and within 1% (or
+  ahead) with the object order reversed: code placement, not work.
+- Verified: final screens identical to HEAD on the six kitten streams and on 60 random streams from
+  `~/programming/vtbench/fuzz/gen.py` (wraps, wide cells, DECAWM, IRM, origin mode + DECSTBM, REP,
+  DEC graphics, OSC 8, alt screen); scanner differential test on NEON and AVX2; eterm tests 149/149
+  on macOS and Linux x86_64. New tests: `printable_runs_clear_only_overwritten_selections`,
+  `printable_runs_replace_kitty_placeholders`.
+
+Results after items 1+2 (superseded by the table under item 3), M2 Pro (whole process, MB/s):
+
+| Workload | HEAD | Now | Ghostty | Gap now |
+| --- | ---: | ---: | ---: | ---: |
+| ASCII | 127 | 288 | 437 | 1.51x |
+| Unicode | 168 | 158 | 721 | 4.58x |
+| Unique Unicode | 143 | 140 | 102 | not comparable |
+| CSI | 68 | 90 | 153 | 1.69x |
+| Images | 715 | 1,186 | 2,301 | 1.94x |
+| Long escape codes | 150 | 2,953 | 4,122 | 1.40x |
+
 ### 3. Bulk UTF-8 decode, faster widths, batched non-ASCII runs
 
 Use simdutf (already vendored, `simdutf-static`) to decode runs up to the next control/ESC, then
@@ -123,16 +211,147 @@ Avoid the per-character `utf8encode()` in `tputc()`; it only matters for `MODE_P
 
 - Expected: most of the 5.2x Unicode gap.
 
+**Done** (scalar decode; simdutf was not needed yet). The item 2 writer became
+`template <typename Run> tputrun()`, shared by `AsciiRun` (the bytes, `Narrow`) and `UnicodeRun`
+(512 decoded codepoints with width and cell mode, on the stack of the out-of-line `tpututf8()`).
+
+- `decodeUnicodeRun()` accepts printable ASCII and exactly the well-formed sequences
+  `utf8decode()` accepts; it stops at controls, C1 (U+0080-009F), malformed or incomplete input
+  and the kitty placeholder U+10EEEE.
+- Widths come from `GlyphProperties`: a 64 KiB BMP table (width with `tputc()`'s negative-width
+  mapping, emoji and box-drawing flags), built lazily in a function-local static (~0.17 ms, first
+  non-ASCII character only); non-BMP codepoints use `GlyphProperties::compute()`, which also fills
+  the table. That was worth ~25% on Unicode. `is_emoji()` now tests its two blocks directly.
+- Zero-width characters stay in runs: `tputc()` writes them at the cursor without advancing
+  (the item 6 grapheme behavior is unchanged). While a kitty placeholder is pending, characters
+  go through `tputc()` so diacritics still attach.
+- Wide characters match `tputc()`: one that does not fit in the last column wraps like a pending
+  wrap; the dummy cell gets `\0`, `ATTR_WDUMMY` and the link ID but keeps its colors; the cursor
+  stays on a wide character that reaches the edge. Wide/dummy/placeholder cells under either half
+  fall back to `tputc()`. Known difference: after a wrap onto such a cell, the fallback also tests
+  the selection at the new cell (it can only clear a selection covering exactly that cell).
+- `tputrun()` copies `mTerm.col`, `mPrintAttributes` and the selection state into locals: glyph
+  stores are `uint32_t` and may alias `mTerm`'s `int` fields, which forced reloads per cell (~10%
+  on ASCII). Narrow runs test the selection in one pass before the fill.
+- `hasSelection()` is inline in the header.
+- Codegen sensitivity: adding the Unicode path made `tputc()` ~15% slower on CSI-heavy input even
+  though CSI never reaches it (inlining `wcwidth()` into `tputc()` changed with a second caller). The
+  robust fix was the CSI parameter collection below, not compiler tuning.
+- Verified: kitten screens identical to HEAD; 80 random streams identical, including combining
+  marks, emoji, box drawing, encoded C1, malformed UTF-8 (overlong, surrogates, stray and truncated
+  sequences) and wide characters at the last column, with read sizes of 1-7, 4093 and 64 KiB
+  (`CHUNK=` in the harness); eterm tests 150/150 on macOS and Linux x86_64. New test:
+  `unicode_runs_keep_wide_cell_and_wrap_semantics`.
+
+Results after items 1-3 and the CSI collection, M2 Pro (whole process, MB/s):
+
+| Workload | HEAD | Now | Ghostty | Gap now |
+| --- | ---: | ---: | ---: | ---: |
+| ASCII | 125 | 284 | 436 | 1.53x |
+| Unicode | 167 | 397 | 723 | 1.82x |
+| Unique Unicode | 143 | 368 | 103 | not comparable |
+| CSI | 68 | 100 | 153 | 1.53x |
+| Images | 764 | 1,360 | 2,428 | 1.78x |
+| Long escape codes | 151 | 2,968 | 4,192 | 1.41x |
+
 ### 4. Images: SIMD base64 and buffer reuse
 
 Profile `KittyGraphicsProtocol` transmit: replace scalar `Base64::decode` on the hot path with a
 SIMD decoder (or simdutf's base64), and reuse the decode/image buffer across transmissions of the
 same size instead of allocating and freeing 4 MiB each time.
 
+**Done.**
+
+- `EE::System::Base64::decode()` (eepp core) gained SIMD block decoders (NEON: `vld4q`/two
+  `vqtbl4q` lookups/`vst3q`, 64 digits per block; AVX2: Muła's pshufb validation as in
+  aklomp/base64, 32 digits per block), resolved once into a file-scope function pointer. They
+  decode only whole blocks of valid digits and stop at the first block with padding, whitespace or
+  an invalid byte; the scalar decoders finish from that 4-digit-group boundary, so all three modes
+  return exactly what they returned before. simdutf's base64 was not used: it always skips
+  whitespace (WHATWG forgiving base64), and kitty/OSC 52 need strict rejection.
+- `KittyGraphicsProtocol`: deleted images and `reset()` return uniquely owned pixel buffers to
+  `mDecodedScratch` (`recyclePixels()`); the transfer reserve has 4 bytes of slack so the final
+  chunk no longer reallocates and copies the whole image; `strreset()` retains up to 256 KiB so a
+  128 KiB chunk's buffer is not shrunk and regrown per chunk.
+- Verified: new `base64_tests.cpp` (round trips in all modes, invalid bytes/whitespace at every
+  position, truncation), written and passed against the scalar decoder first; a differential
+  check of SIMD+scalar against pure scalar on 180k random decodes (NEON native; AVX2 under arm64
+  `qemu-x86_64 -cpu max`, and `-cpu qemu64` confirming the scalar fallback); ArchiveProvider, SFTP,
+  Zip* and FontRendering suites; eterm 150/150 on macOS and Linux x86_64.
+- The vtbench HEAD binary links the same `libeepp.dylib`, so HEAD numbers measured after this
+  change include the SIMD decoder; compare Images against the 764 MB/s baseline.
+
 ### 5. CSI dispatch (only after 1-4)
 
 Profile first. Candidates: consuming back-to-back escape sequences without returning through
 `twrite()`'s per-byte loop, and cheaper parameter parsing in `csiparse()`.
+
+**Done.** `twrite()` handles whole CSI sequences with `tputc()`'s exact steps: `ESC [` from the
+ground state (what `tcontrolcode()` + `eschandle()` do; not with `show_ctrl`), parameter and
+intermediate bytes (0x20-0x3F, stopping one byte before the length at which `tputc()` dispatches),
+and the final byte (0x40-0x7E) appended and dispatched. Not with `MODE_PRINT`; controls and other
+bytes still take `tputc()`. Also:
+
+- `csireset()` no longer clears the 512-byte buffer (read only up to `len`); `arg`/`sep` are still
+  cleared in full because `DEFAULT()` writes past `narg`.
+- `csiparse()` parses plain decimals by hand (`parseCsiNumber()`); signs, leading whitespace, no
+  digits or 19+ digits go to `strtol()` from the start, so overflow behaves as before.
+- `tclearregion()`'s fill fast path now covers any range when `skip_clear || !hasSelection()`
+  (EL/ED on partial rows), not only full-row scroll clears.
+- REP (`CSI b`) of printable ASCII goes through `tputrun()`.
+- Verified: 100 random streams identical to HEAD including intermediates, private prefixes,
+  subparameters, signs, leading whitespace, 19-25 digit numbers, 40 and 300 parameters
+  (buffer limit), controls inside sequences and sequences cut by ESC, with 1-byte to 64 KiB reads.
+
+CSI: 68 to 197 MB/s (Ghostty 153).
+
+### Notes for later
+
+- Row clears: each scroll clears a recycled 120-cell row (`tclearregion()` fast path, ~1.9 KB at
+  16 bytes per cell) that is then mostly overwritten; on ASCII it costs ~70% as much as writing the
+  text. Ghostty's cells are 8 bytes. Not a fairness problem: eterm measured the same with 10 and
+  10000 history lines on the M2 (Ghostty's bench uses its default 10 kB scrollback; harness option
+  `HISTORY=`).
+- In-loop paths in `twrite()` restart with `charsize = 0; continue;` so the next byte can take any
+  path; each must consume at least one byte.
+
+### Results after items 1-5
+
+M2 Pro, whole process, MB/s. "HEAD" is `9eee2afca`; for Images the HEAD figure is from before the
+SIMD Base64 decoder landed in the shared `libeepp.dylib`.
+
+| Workload | HEAD | Now | Ghostty | Gap now |
+| --- | ---: | ---: | ---: | ---: |
+| ASCII | 127 | 290 | 442 | 1.52x |
+| Unicode | 168 | 398 | 724 | 1.82x |
+| Unique Unicode | 144 | 372 | 102 | not comparable |
+| CSI | 69 | 201 | 155 | eterm 1.29x ahead |
+| Images | 764 | 2,243 | 2,231 | parity |
+| Long escape codes | 152 | 3,027 | 4,010 | 1.32x |
+
+Structural option for the remaining ASCII/Unicode gap: Ghostty's cell is a packed `u64`
+(21-bit codepoint, 16-bit style ID into a deduplicated, reference-counted per-page style set,
+wide/hyperlink/grapheme flags with side tables), half of `TerminalGlyph`'s 16 bytes. That halves
+the row-clear and fill traffic but changes every reader (renderer, history/reflow, snapshots,
+selection, search) and the public `TerminalGlyph` ABI: a separate project.
+
+### Follow-up candidates (review, 2026-10-31)
+
+- REP through a `RepeatRun` (one character, any count) instead of a 256-byte stack buffer: within
+  noise on CSI (196 vs 193 MB/s), kept because it is simpler.
+- `UnicodeRun` stores the `GlyphProperties` byte per codepoint (5 bytes per character instead of 9)
+  and derives width and mode bits in the writer: Unicode +3% (389 to 400 MB/s, both link orders),
+  Unique Unicode flat. Item 6 can carry its "joins" bit in the same byte.
+- Profiles after both: Unicode is writer 46%, decode 40%, row clear 13%; ASCII is scan + writer
+  (inlined into `twrite()`) ~60%, row clear 34%.
+- simdutf `convert_utf8_to_utf32_with_errors()` decode (exact, screens identical): Unicode -9%,
+  Unique Unicode -25%, because it converts a whole 512-byte span and discards everything after the
+  first newline or control byte. Rejected; it would also need an exported eepp API for eterm to
+  link simdutf on Windows.
+- Not done: skipping `strparse()` for unhandled OSCs (mostly helps the synthetic long-escape
+  benchmark), removing `decodeBase64()`'s zero fill (minor after buffer recycling), fusing row
+  clears with the following writes (largest ASCII lever; needs its own design because snapshots,
+  selection, search and history observe the cleared row).
 
 ### 6. Grapheme clustering (correctness, not speed)
 
@@ -143,8 +362,9 @@ like the hyperlink registry (IDs, mark/sweep), not per-cell heap data.
 
 ### Also noticed
 
-- eterm prints an `erresc: unknown csi` diagnostic for every unknown sequence (kitten sends
-  `CSI * x` and `CSI ? r`). Consider rate-limiting or debug-only logging.
+- `erresc: unknown csi` diagnostics (kitten sends `CSI * x` and `CSI ? r`) only print in debug
+  builds or with `ETERM_LOG_ERRORS` set (`terminalDiagnosticsEnabled()`); release runs are quiet
+  and pay one cached check. Nothing to do.
 
 ## How to test and compare against Ghostty
 
@@ -167,6 +387,9 @@ ls zig-out/bin   # ghostty-bench, ghostty-gen
 
 Record the Ghostty commit used. `ghostty-bench` options use `--key=value` syntax (`--data=file`,
 not `--data file`).
+
+On macOS the bench binaries link the Metal renderer; if the build fails with "missing Metal
+Toolchain", run `xcodebuild -downloadComponent MetalToolchain` (~700 MB) and rebuild.
 
 ### 2. Capture the kitten payloads once
 
@@ -350,14 +573,19 @@ import json, os
 print(f"{'workload':18s} {'ghostty MB/s':>13s} {'eterm MB/s':>11s} {'ratio':>6s}")
 for b in ['ascii', 'unicode', 'unique_unicode', 'csi', 'images', 'long_escape_codes']:
     size = os.path.getsize(f'{b}.vt')
-    r = {x['command']: x['median'] for x in json.load(open(f'h-{b}.json'))['results']}
+    # Older hyperfine: {x['command']: x['median'] ...}; newer exports use name + summary.
+    r = {x['name']: x['summary']['time_wall_clock']['median'] for x in json.load(open(f'h-{b}.json'))['results']}
     g = size / r['ghostty'] / 1e6; e = size / r['eterm'] / 1e6
     print(f"{b:18s} {g:13.1f} {e:11.1f} {g / e:5.1f}x")
 EOF
 ```
 
-On Linux prefix both commands with `taskset -c 2`. Both are timed as whole processes: Ghostty
-streams its file while parsing, eterm reads it up front with one `read()`. Do not load the file with
+On Linux prefix both commands with `taskset -c 2`. Both are timed as whole processes and both must
+stream the file: the `vtbench.cpp` above loads it up front, which was harmless at ~150 MB/s but
+cost eterm ~30% once string bodies ran at GB/s. The current harness in `~/programming/vtbench`
+(Mac) reads the file in 64 KiB `read()` calls inside `Pty::read()` and has a `DUMP=<file>` mode
+that writes the final cells and cursor, used to diff screens between parser revisions (extract a
+pristine tree with `git archive HEAD src/modules/eterm | tar -x -C head`). Never use
 `std::istreambuf_iterator`; that alone made eterm look ~2x slower on Images.
 
 ### Measurement pitfalls seen so far

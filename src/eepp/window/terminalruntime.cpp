@@ -13,6 +13,10 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+#include <sys/stat.h>
+#include <sys/sysctl.h>
+#endif
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -45,6 +49,20 @@ TerminalRuntime::~TerminalRuntime() {
 	shutdown();
 }
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+static int openControllingTerminalDevice() {
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid() };
+	kinfo_proc info{};
+	size_t size = sizeof( info );
+	if ( sysctl( mib, 4, &info, &size, nullptr, 0 ) != 0 || info.kp_eproc.e_tdev == NODEV )
+		return -1;
+	const char* name = devname( info.kp_eproc.e_tdev, S_IFCHR );
+	if ( !name )
+		return -1;
+	return ::open( ( std::string( "/dev/" ) + name ).c_str(), O_RDWR | O_CLOEXEC );
+}
+#endif
+
 bool TerminalRuntime::initialize() {
 	if ( mState )
 		return true;
@@ -54,6 +72,15 @@ bool TerminalRuntime::initialize() {
 		Log::error( "Terminal runtime could not open /dev/tty" );
 		return false;
 	}
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	// macOS poll() rejects /dev/tty (POLLNVAL) instead of waiting, which left readInput() spinning
+	// without ever reading input, and ttyname() reports /dev/tty itself. Open the controlling
+	// terminal's own device instead, as the kernel reports it; that one polls normally.
+	if ( const int deviceFd = openControllingTerminalDevice(); deviceFd >= 0 ) {
+		::close( mFd );
+		mFd = deviceFd;
+	}
+#endif
 	mState = new State;
 	mState->hasTermios = 0 == tcgetattr( mFd, &mState->termiosState );
 	if ( mState->hasTermios ) {
@@ -413,11 +440,18 @@ void TerminalRuntime::readInput() {
 	while ( mReading.load( std::memory_order_relaxed ) ) {
 #if defined( EE_PLATFORM_POSIX )
 		pollfd descriptor{ mFd, POLLIN, 0 };
-		if ( ::poll( &descriptor, 1, 50 ) > 0 && descriptor.revents & POLLIN ) {
-			char data[256];
-			const ssize_t count = ::read( mFd, data, sizeof( data ) );
-			if ( count > 0 )
-				pending.append( data, static_cast<size_t>( count ) );
+		if ( ::poll( &descriptor, 1, 50 ) > 0 ) {
+			if ( descriptor.revents & POLLIN ) {
+				char data[256];
+				const ssize_t count = ::read( mFd, data, sizeof( data ) );
+				if ( count > 0 )
+					pending.append( data, static_cast<size_t>( count ) );
+			} else if ( descriptor.revents & ( POLLERR | POLLHUP | POLLNVAL ) ) {
+				// The terminal is gone or cannot be polled; poll() would return at once forever.
+				Log::warning( "Terminal runtime stopped reading input: poll() events 0x%x",
+							  static_cast<unsigned>( descriptor.revents ) );
+				break;
+			}
 		}
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 		if ( WAIT_OBJECT_0 == WaitForSingleObject( mState->input, 50 ) ) {

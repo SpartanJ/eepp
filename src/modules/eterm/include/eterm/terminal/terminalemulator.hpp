@@ -239,7 +239,7 @@ class TerminalEmulator final {
 
 	char* getsel() const;
 
-	bool hasSelection() const;
+	bool hasSelection() const { return mSel.mode != SEL_EMPTY && mSel.ob.x != -1; }
 
 	std::string getSelection() const;
 
@@ -454,6 +454,9 @@ class TerminalEmulator final {
 	void strparse();
 	void strreset();
 
+	/* Appends to the pending string sequence, enforcing its size limit. */
+	void strappend( const char* data, size_t len );
+
 	void tprinter( const char*, size_t );
 	void tdumpsel();
 	void tdumpline( int );
@@ -472,6 +475,17 @@ class TerminalEmulator final {
 	void tnewline( int );
 	void tputtab( int );
 	void tputc( Rune );
+
+	/* Whether tputrun() may replace tputc() for printable text in the current state. */
+	bool canPutPrintable() const;
+
+	/* tputc() for each character of a run of printable text (codepoint, width and cell mode per
+	 * index); requires canPutPrintable(). */
+	template <typename Run> void tputrun( const Run& run, int len );
+
+	/* Decodes and writes the printable UTF-8 text at buf[begin, end) through tputrun(); returns
+	 * the end of what it wrote (begin when the first character needs tputc()). */
+	int tpututf8( const char* buf, int begin, int end );
 	void treset();
 	void tscrollup( int, int, int );
 	void tscrolldown( int, int );

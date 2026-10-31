@@ -341,8 +341,13 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	SDL_GetWindowSizeInPixels( mSDLWindow, &w, &h );
 
 	if ( w > 0 && h > 0 ) {
-		mWindow.WindowConfig.Width = w;
-		mWindow.WindowConfig.Height = h;
+		// Terminal mode renders into a logical framebuffer of the terminal's pixel size, already
+		// in WindowConfig; the hidden window only hosts the GL context. SDL sizes it in points,
+		// so its drawable is that size times the display scale (2x on Retina), not the terminal's.
+		if ( Runtime::mode() != RuntimeMode::Terminal ) {
+			mWindow.WindowConfig.Width = w;
+			mWindow.WindowConfig.Height = h;
+		}
 		mWindow.WindowSize = Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 		mLastWindowedSize = mWindow.WindowSize;
 	} else {

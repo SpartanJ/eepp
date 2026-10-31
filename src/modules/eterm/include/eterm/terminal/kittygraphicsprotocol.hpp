@@ -213,6 +213,9 @@ class KittyGraphicsProtocol {
 	bool ensureCapacity( size_t bytes, KittyImageId replacingId, bool addingImage );
 	bool ensureRootRGBA( KittyImageId imageId, Image& image );
 	bool isImagePlaced( KittyImageId imageId ) const;
+
+	void recyclePixels( Image& image );
+
 	void eraseImage( KittyImageId imageId );
 	std::string response( const KittyGraphicsCommandData& data, KittyGraphicsError error,
 						  KittyImageId imageId = 0 ) const;

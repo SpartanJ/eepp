@@ -364,7 +364,9 @@ KittyGraphicsProtocol::handleTransmit( const KittyGraphicsCommandData& data, boo
 		if ( data.width && data.height &&
 			 checkedPixelBytes( *data.width, *data.height, format == 24 ? 3 : 4, expectedBytes ) &&
 			 expectedBytes <= 64 * 1024 * 1024 )
-			transfer.decodedData.reserve( expectedBytes );
+			// decodeBase64() sizes each chunk with decodeSafeOutLen(), which overshoots by up to
+			// 4 bytes; without the slack the final chunk reallocates and copies the whole image.
+			transfer.decodedData.reserve( expectedBytes + 4 );
 	}
 	if ( !decodeBase64( data.payload, !more, transfer.decodedData ) )
 		return { response( data, KittyGraphicsError::InvalidData ), KittyGraphicsError::InvalidData,
@@ -1284,6 +1286,7 @@ void KittyGraphicsProtocol::eraseImage( KittyImageId imageId ) {
 	mStorageBytes -= image->second.pixels->size();
 	for ( const auto& frame : image->second.frames )
 		mFrameStorageBytes -= frame.second.rgba.size();
+	recyclePixels( image->second );
 	mImages.erase( image );
 	TerminalGraphicsUpdate update;
 	update.type = TerminalGraphicsUpdateType::DeleteImage;
@@ -1482,7 +1485,16 @@ bool KittyGraphicsProtocol::hasVirtualPlacements() const {
 						[]( const Placement& placement ) { return placement.virtualPlacement; } );
 }
 
+void KittyGraphicsProtocol::recyclePixels( Image& image ) {
+	// Programs that transmit, show and delete images in a loop would otherwise allocate (and fault
+	// in) a fresh buffer per image. A buffer still referenced by a queued UI update stays there.
+	if ( image.pixels && image.pixels.use_count() == 1 )
+		recycleBuffer( *image.pixels, mDecodedScratch );
+}
+
 void KittyGraphicsProtocol::reset() {
+	for ( auto& image : mImages )
+		recyclePixels( image.second );
 	mImages.clear();
 	mPlacements.clear();
 	mPrimaryPlacements.clear();
