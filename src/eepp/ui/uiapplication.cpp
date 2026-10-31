@@ -32,6 +32,20 @@ using namespace EE::Scene;
 
 namespace EE { namespace UI {
 
+/* Font roles are per FontService and every UI scene has its own, so fonts loaded into a scene's
+ * scope (an application's terminal or editor font) never fell back to the emoji fonts configured
+ * on the default scope, and emoji rendered blank. The scene imports the default catalog, so its
+ * service can resolve them. */
+static void shareDefaultEmojiFonts( FontService& target ) {
+	const FontService& source = defaultResourceScope().getFontService();
+	if ( &target == &source )
+		return;
+	if ( !target.getColorEmojiFont() && source.getColorEmojiFont() )
+		target.setColorEmojiFont( source.getColorEmojiFont() );
+	if ( !target.getEmojiFont() && source.getEmojiFont() )
+		target.setEmojiFont( source.getEmojiFont() );
+}
+
 namespace Private {
 
 class UIApplicationSystemFontState {
@@ -156,6 +170,7 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	if ( appSettings.fallbackFont == nullptr &&
 		 FileSystem::fileExists( "assets/fonts/DroidSansFallbackFull.ttf" ) )
 		FontTrueType::New( "DroidSansFallbackFull", "assets/fonts/DroidSansFallbackFull.ttf" );
+	shareDefaultEmojiFonts( uiFontService );
 
 	mUISceneNode->getUIThemeManager()->setDefaultFont( font );
 	mUISceneNode->getRoot()->addClass( "appbackground" );
@@ -231,6 +246,7 @@ void UIApplication::configureUIScene( UISceneNode* ui ) {
 	FontService& uiFontService = ui->getResourceScope()->getFontService();
 	uiFontService.setHinting( mSettings.fontHinting );
 	uiFontService.setAntialiasing( mSettings.fontAntialiasing );
+	shareDefaultEmojiFonts( uiFontService );
 	if ( !mUISceneNode || ui == mUISceneNode || !mSettings.loadBaseResources )
 		return;
 

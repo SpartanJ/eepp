@@ -9,6 +9,7 @@
 #include <eterm/terminal/terminalgraphics.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -36,6 +37,12 @@ struct TerminalSnapshot {
 		uint16_t id{ 0 };
 	};
 
+	struct VisibleCluster {
+		// Shares the worker registry's immutable codepoints, like VisibleHyperlink's URI.
+		TerminalCluster codepoints;
+		uint32_t id{ 0 };
+	};
+
 	struct SearchCellRange {
 		Vector2i start;
 		Vector2i end;
@@ -47,6 +54,8 @@ struct TerminalSnapshot {
 	std::vector<Uint8> dirtyRows;
 	std::vector<SearchCellRange> visibleSearchMatches;
 	std::vector<VisibleHyperlink> visibleHyperlinks;
+	/** Clusters shown by cells or the cursor, sorted by ID. */
+	std::vector<VisibleCluster> visibleClusters;
 	std::string title;
 	std::string currentWorkingDirectory;
 	std::string selection;
@@ -73,6 +82,23 @@ struct TerminalSnapshot {
 	bool hasSelection{ false };
 	bool altScreen{ false };
 	bool processExited{ false };
+
+	/** The codepoints of cluster @p id (base first), or nullptr. */
+	const std::u32string* findCluster( uint32_t id ) const {
+		auto found = std::lower_bound(
+			visibleClusters.begin(), visibleClusters.end(), id,
+			[]( const VisibleCluster& cluster, uint32_t value ) { return cluster.id < value; } );
+		return found != visibleClusters.end() && found->id == id ? found->codepoints.get()
+																 : nullptr;
+	}
+
+	/** The codepoint a cell shows on its own, or its cluster's base. */
+	Rune glyphBaseCodepoint( const TerminalGlyph& glyph ) const {
+		if ( !isGlyphCluster( glyph ) )
+			return glyph.u;
+		const auto* cluster = findCluster( glyphClusterId( glyph ) );
+		return cluster && !cluster->empty() ? static_cast<Rune>( ( *cluster )[0] ) : ' ';
+	}
 
 	/** Dirty rows describe only the transition from the immediately preceding generation. */
 	bool dirtyRowsFollow( Uint64 previousGeneration ) const {

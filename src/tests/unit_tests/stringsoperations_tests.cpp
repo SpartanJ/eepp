@@ -716,3 +716,34 @@ UTEST( String, stripAnsiCodes ) {
 	String::stripAnsiCodes( adjacent );
 	EXPECT_STREQ( "DoubleColor", adjacent.c_str() );
 }
+
+UTEST( String, graphemePropertiesForTerminalClustering ) {
+	using Break = String::GraphemeBreakProperty;
+	EXPECT_TRUE( String::graphemeBreakProperty( U'a' ) == Break::Other );
+	EXPECT_TRUE( String::graphemeBreakProperty( 0x4E16 ) == Break::Other );
+	EXPECT_TRUE( String::graphemeBreakProperty( 0x0301 ) == Break::Extend );
+	EXPECT_TRUE( String::graphemeBreakProperty( 0x200D ) == Break::ZWJ );
+	EXPECT_TRUE( String::graphemeBreakProperty( 0x1F1E6 ) == Break::RegionalIndicator );
+	EXPECT_TRUE( String::graphemeBreakProperty( 0x093F ) == Break::SpacingMark );
+	EXPECT_TRUE( String::graphemeBreakProperty( 0x0600 ) == Break::Prepend );
+	EXPECT_TRUE( String::graphemeBreakProperty( 0x1100 ) == Break::L );
+	EXPECT_TRUE( String::graphemeBreakProperty( 0x1161 ) == Break::V );
+	EXPECT_TRUE( String::graphemeBreakProperty( 0x11A8 ) == Break::T );
+	EXPECT_TRUE( String::graphemeBreakProperty( 0xAC00 ) == Break::LV );
+	EXPECT_TRUE( String::graphemeBreakProperty( 0xAC01 ) == Break::LVT );
+	EXPECT_TRUE( String::graphemeBreakProperty( U'\n' ) == Break::LF );
+
+	// Emoji that are also Extended_Pictographic report it, and so do text-default pictographs.
+	EXPECT_TRUE( String::isExtendedPictographic( 0x1F600 ) );
+	EXPECT_TRUE( String::isExtendedPictographic( 0x2764 ) );
+	EXPECT_TRUE( String::isExtendedPictographic( 0x00A9 ) );
+	EXPECT_FALSE( String::isExtendedPictographic( U'#' ) );
+	EXPECT_FALSE( String::isExtendedPictographic( U'a' ) );
+
+	// Keycap and flag bases carry other emoji properties.
+	EXPECT_TRUE( String::hasEmojiProperty( U'#' ) );
+	EXPECT_TRUE( String::hasEmojiProperty( U'7' ) );
+	EXPECT_TRUE( String::hasEmojiProperty( 0x1F1E6 ) );
+	EXPECT_TRUE( String::hasEmojiProperty( 0x2764 ) );
+	EXPECT_FALSE( String::hasEmojiProperty( U'a' ) );
+}

@@ -108,6 +108,25 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 						snapshot->visibleHyperlinks.push_back( { link->uri, id } );
 				}
 			}
+			if ( mEmulator->hasClusters() ) {
+				// Like hyperlinks: the snapshot owns its mapping, so later ID reuse cannot change
+				// it.
+				SmallVector<uint32_t, 16> ids;
+				const auto addCluster = [&ids]( const TerminalGlyph& glyph ) {
+					if ( isGlyphCluster( glyph ) )
+						ids.push_back( glyphClusterId( glyph ) );
+				};
+				for ( const auto& glyph : snapshot->cells )
+					addCluster( glyph );
+				addCluster( snapshot->cursorGlyph );
+				std::sort( ids.begin(), ids.end() );
+				ids.erase( std::unique( ids.begin(), ids.end() ), ids.end() );
+				snapshot->visibleClusters.reserve( ids.size() );
+				for ( auto id : ids ) {
+					if ( const auto* cluster = mEmulator->getCluster( id ) )
+						snapshot->visibleClusters.push_back( { *cluster, id } );
+				}
+			}
 			snapshot->historyLength = mEmulator->scrollSize();
 			snapshot->scrollPosition = mEmulator->scrollPos();
 			snapshot->hasSelection = mEmulator->hasSelection();

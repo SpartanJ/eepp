@@ -56,8 +56,11 @@ class TerminalSearch {
 		return query.text.size() >= MinimumQueryLength;
 	}
 
-	const std::vector<TerminalSearchMatch>& search( const std::vector<TerminalSearchRowView>& rows,
-													const TerminalSearchQuery& query );
+	/** @p clusters resolves grapheme cluster cells (indexed by cluster ID); without it they are
+	 * skipped. */
+	const std::vector<TerminalSearchMatch>&
+	search( const std::vector<TerminalSearchRowView>& rows, const TerminalSearchQuery& query,
+			const std::vector<TerminalCluster>* clusters = nullptr );
 
 	const std::vector<TerminalSearchMatch>& matches() const { return mMatches; }
 

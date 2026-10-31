@@ -67,6 +67,32 @@ primary selection. Unknown targets, invalid Base64, embedded NUL and writes exce
 decoded text are ignored. Clipboard reads are unsupported; a read query never returns local
 clipboard content.
 
+## Grapheme clusters (mode 2027)
+
+A character can be written as several codepoints: a letter followed by combining accents, an emoji
+with a skin-tone modifier or variation selector, a family joined with zero-width joiners, or a
+flag made of two regional indicators. eterm keeps such a grapheme cluster in one cell (two for wide
+characters), so copying, searching and word selection return it whole.
+
+By default eterm keeps the widths most programs compute with `wcwidth()`: zero-width codepoints
+such as combining marks join the previous character, and every other codepoint takes its own
+cells. Emoji variation selectors join only emoji pictographs and are ignored after other text.
+
+Programs that measure text by grapheme cluster can enable DEC private mode 2027
+(`printf '\033[?2027h'`; disable with `\033[?2027l`). eterm then segments text with the
+[UAX #29](https://www.unicode.org/reports/tr29/) rules and gives each cluster one width:
+
+- a cluster that contains another codepoint with its own width is two cells wide, so emoji ZWJ
+  sequences and flags take two cells;
+- a variation selector 16 (U+FE0F) after an emoji makes it two cells wide, and a variation selector
+  15 (U+FE0E) makes it one cell wide;
+- a zero-width codepoint that does not continue the previous cluster is ignored.
+
+Check support with DECRQM: `printf '\033[?2027$p'` is answered with `\033[?2027;2$y` while the
+mode is off and `\033[?2027;1$y` while it is on. Clusters keep at most 32 codepoints; further
+codepoints are dropped.
+
 Protocol references: [OSC 8](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda),
-[OSC 7 shell integration](https://wezterm.org/shell-integration.html), and
-[Ghostty clipboard defaults](https://ghostty.org/docs/config/reference#clipboard-write).
+[OSC 7 shell integration](https://wezterm.org/shell-integration.html),
+[Ghostty clipboard defaults](https://ghostty.org/docs/config/reference#clipboard-write) and
+[mode 2027](https://github.com/contour-terminal/terminal-unicode-core).

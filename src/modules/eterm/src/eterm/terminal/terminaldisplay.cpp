@@ -1731,8 +1731,10 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 					dirtyFG = true;
 				}
 			} else {
-				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD,
-													glyph.mode & ATTR_ITALIC, 0 );
+				// A grapheme cluster draws its base codepoint until clusters are shaped.
+				auto* gd =
+					mFont->getGlyphDrawable( mSnapshot->glyphBaseCodepoint( glyph ), mFontSize,
+											 glyph.mode & ATTR_BOLD, glyph.mode & ATTR_ITALIC, 0 );
 
 				FontService* fontService =
 					mFont->getType() == FontType::TTF

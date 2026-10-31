@@ -360,6 +360,51 @@ cell. Needed before the Unique Unicode workload means anything, and important fo
 storage carefully: `TerminalGlyph` must stay 16 bytes, so extra codepoints need a side table keyed
 like the hyperlink registry (IDs, mark/sweep), not per-cell heap data.
 
+**Phase 1 done (storage, segmentation, mode 2027, text).** Renderer shaping is phase 2.
+
+- Storage: a cluster cell's codepoint is `GLYPH_CLUSTER_BASE` (0x110000) + ID; the worker
+  registry (`mClusters`, `TerminalCluster` = `shared_ptr<const std::u32string>`, base first)
+  interns identical clusters through a content-hash index. Up to 65535 live IDs and 32
+  codepoints per cluster; beyond that codepoints are dropped and the base kept. One mark pass
+  (`collectGlyphReferences()`, renamed from `collectHyperlinks()`) reclaims link and cluster IDs
+  with the same triggers; a full registry retries collection every 256 attaches instead of reading
+  the clock per attach.
+- Rules (Ghostty's): without mode 2027 zero-width codepoints attach to the previous character
+  (cursor cell with a pending wrap, else the one to the left; a wide dummy points at its base),
+  VS15/VS16 only after Extended_Pictographic, nothing to attach to drops them. With mode 2027 a
+  codepoint above U+00FF joins when `String::isGraphemeBoundary()` finds no boundary; VS16 widens
+  and VS15 narrows (base must have an emoji property), a codepoint with its own width widens the
+  cluster, a widening cluster in the last column moves to the next row, and zero-width
+  codepoints at a boundary are dropped. `tattach()` interns before changing any layout.
+- eepp `String` gained `graphemeBreakProperty()`, `isExtendedPictographic()` and
+  `hasEmojiProperty()` (cpp-unicodelib). Its emoji table keeps one property per codepoint (the
+  last listed), so "has the Emoji property" cannot be read exactly; any emoji property is used as
+  the variation-sequence base check. `Font::isEmojiCodePoint()` stays a font-fallback heuristic.
+- Fast paths: `GlyphProperties` gains ZeroWidth, Joins (Extend, ZWJ, SpacingMark, RI, Hangul V/T)
+  and Attracts (Prepend, ZWJ, Hangul L) bits. The run decoder (templated on the mode) stops at
+  zero-width codepoints and, in mode 2027, at Joins or after Attracts; `tpututf8()` checks the
+  previous cell before a run's first codepoint above U+00FF. Any other pair is a UAX #29 boundary,
+  so precomposed Hangul and CJK stay on the fast path. Without mode 2027 a burst of zero-width
+  codepoints attaches in one `tattachZeroWidth()` call (one intern).
+- Readers: `getSelection()` builds a `std::string` (the old `getsel()` assumed 4 bytes per cell,
+  which clusters would overflow; removed), dump and word snap expand or use the base, search maps
+  every cluster codepoint to its cell, snapshots publish `visibleClusters` (`findCluster()`,
+  `glyphBaseCodepoint()`), and the display draws the base codepoint for now.
+- DECSET/DECRST 2027 and DECRQM (`CSI ? Ps $ p`, `CSI Ps $ p`) for the modes `tsetmode()`
+  implements.
+- Verified: eterm 156/156 and String tests on macOS; kitten screens and 60 fuzz streams without
+  zero-width input identical to the previous commit; batched attaches identical to per-codepoint
+  attaches on 60 streams (compared by cluster codepoints, IDs differ); 30 cluster-heavy streams
+  (mode 2027 toggles, ZWJ, flags, VS, Indic, jamo, Prepend) clean under ASan + UBSan.
+- Throughput (M2 Pro, MB/s): Unique Unicode 372 -> 122 (Ghostty 104; now comparable, doing the
+  same clustering work), Unicode 404 -> 370 (Ghostty 724): about half of that is attaching the
+  stream's combining marks; the rest persisted with forced alignment and an out-of-line decoder
+  and is not yet explained. Others unchanged.
+
+**Phase 2:** shape cluster cells through `TextLayout` (HarfBuzz with font fallback and its LRU cache)
+and draw them with `getGlyphDrawableFromGlyphIndex()`; clusters that shape to several glyphs need
+quads beyond the renderer's one-per-cell VBO slot.
+
 ### Also noticed
 
 - `erresc: unknown csi` diagnostics (kitten sends `CSI * x` and `CSI ? r`) only print in debug

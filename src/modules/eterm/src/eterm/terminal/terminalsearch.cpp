@@ -98,7 +98,8 @@ void TerminalSearch::searchLogicalLine( const TerminalSearchQuery& query, Patter
 
 const std::vector<TerminalSearchMatch>&
 TerminalSearch::search( const std::vector<TerminalSearchRowView>& rows,
-						const TerminalSearchQuery& query ) {
+						const TerminalSearchQuery& query,
+						const std::vector<TerminalCluster>* clusters ) {
 	mMatches.clear();
 	mText.clear();
 	mPositions.clear();
@@ -135,10 +136,20 @@ TerminalSearch::search( const std::vector<TerminalSearchRowView>& rows,
 			const auto& glyph = row.cells[column];
 			if ( glyph.mode & ATTR_WDUMMY )
 				continue;
-			mText += glyph.u;
-			mPositions.push_back(
-				{ { row.source, row.row, column },
-				  { row.source, row.row, column + ( ( glyph.mode & ATTR_WIDE ) ? 1 : 0 ) } } );
+			const CellSpan span{
+				{ row.source, row.row, column },
+				{ row.source, row.row, column + ( ( glyph.mode & ATTR_WIDE ) ? 1 : 0 ) } };
+			if ( !isGlyphCluster( glyph ) ) {
+				mText += glyph.u;
+				mPositions.push_back( span );
+			} else if ( clusters && glyphClusterId( glyph ) < clusters->size() &&
+						( *clusters )[glyphClusterId( glyph )] ) {
+				/* Every codepoint of a cluster maps back to its cell. */
+				for ( char32_t codepoint : *( *clusters )[glyphClusterId( glyph )] ) {
+					mText += codepoint;
+					mPositions.push_back( span );
+				}
+			}
 		}
 		if ( !row.wrapped ) {
 			searchLogicalLine( query, pattern, needle );

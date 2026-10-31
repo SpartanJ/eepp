@@ -186,6 +186,23 @@ inline void setGlyphLinkId( TerminalGlyph& glyph, uint16_t id ) {
 				 ( ( static_cast<uint32_t>( id ) << GLYPH_LINK_SHIFT ) & GLYPH_LINK_MASK );
 }
 
+/* Grapheme clusters. A cell whose codepoint is GLYPH_CLUSTER_BASE + id shows the cluster with that
+ * ID: its codepoints, base first, are in the worker's registry (TerminalEmulator::getCluster()) and
+ * in snapshots (TerminalSnapshot::findCluster()). Values above U+10FFFF are never codepoints. */
+constexpr Rune GLYPH_CLUSTER_BASE = 0x110000;
+
+inline bool isGlyphCluster( const TerminalGlyph& glyph ) {
+	return glyph.u >= GLYPH_CLUSTER_BASE;
+}
+
+inline uint32_t glyphClusterId( const TerminalGlyph& glyph ) {
+	return glyph.u - GLYPH_CLUSTER_BASE;
+}
+
+// A cluster's codepoints, base first. Shared with snapshots like hyperlink URIs: the worker can
+// reclaim and reuse an ID while the UI still displays it.
+using TerminalCluster = std::shared_ptr<const std::u32string>;
+
 struct TerminalHyperlink {
 	// Shared with snapshots: the worker can reclaim and reuse an ID while the UI still displays it.
 	std::shared_ptr<const std::string> uri;
@@ -217,6 +234,7 @@ enum TermMode {
 	MODE_ECHO = 1 << 4,
 	MODE_PRINT = 1 << 5,
 	MODE_UTF8 = 1 << 6,
+	MODE_GRAPHEME = 1 << 7, /* DEC mode 2027: Unicode grapheme clustering and widths */
 };
 
 enum TerminalCursorMovement { CURSOR_SAVE, CURSOR_LOAD };

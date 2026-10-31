@@ -5,6 +5,7 @@
 #include <climits>
 #include <cstdlib>
 #include <deque>
+#include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/compression.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -145,6 +146,21 @@ UTEST( eterm_display, startup_uses_default_grid_before_layout ) {
 		display->update( false );
 		EXPECT_EQ( 24, display->rowCount() );
 	}
+}
+
+UTEST( eterm_display, scene_fonts_fall_back_to_the_application_emoji_font ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 320, 240, "eterm emoji fallback", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	// eterm loads its terminal font into the UI scene's scope; that scope's FontService must find
+	// the emoji font UIApplication loads into the default scope, or emoji render blank.
+	auto font = FontTrueType::New( "eterm-test-monospace", *app.getUI()->getResourceScope() );
+	ASSERT_TRUE( font->loadFromFile( "assets/fonts/DejaVuSansMono.ttf" ) );
+	ASSERT_TRUE( font->getFontService() != nullptr );
+	EXPECT_TRUE( font->getFontService()->getColorEmojiFont() != nullptr ||
+				 font->getFontService()->getEmojiFont() != nullptr );
+	const Glyph emoji = font->getGlyph( 0x1F600, 24, false, false );
+	EXPECT_TRUE( emoji.bounds.getWidth() > 0 && emoji.bounds.getHeight() > 0 );
 }
 
 UTEST( eterm_display, startup_uses_grid_from_available_pixels ) {
@@ -2694,6 +2710,135 @@ UTEST( eterm, unicode_runs_keep_wide_cell_and_wrap_semantics ) {
 	EXPECT_EQ( static_cast<Rune>( ' ' ), cell( 0, 1 ).u );
 	EXPECT_TRUE( ( cell( 0, 1 ).mode & ATTR_WIDE ) == 0 );
 	EXPECT_EQ( static_cast<Rune>( 'x' ), cell( 1, 1 ).u );
+}
+
+namespace {
+
+struct ClusterTerminal {
+	MockPty* input{ nullptr };
+	std::shared_ptr<MockDisplay> display{ std::make_shared<MockDisplay>() };
+	std::shared_ptr<TerminalEmulator> term;
+
+	ClusterTerminal() {
+		auto pty = std::make_unique<MockPty>();
+		pty->mLoopWrites = false;
+		input = pty.get();
+		term = TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display,
+										 100 );
+	}
+
+	void feed( const std::string& text ) {
+		input->mBuffer += text;
+		while ( input->mReadOffset < input->mBuffer.size() )
+			term->update();
+		term->update();
+	}
+
+	const TerminalGlyph& cell( int x, int y = 0 ) const {
+		return display->mCells[y * display->mColumns + x];
+	}
+
+	std::u32string text( int x, int y = 0 ) const {
+		std::u32string codepoints;
+		term->visitGlyphCodepoints( cell( x, y ), [&]( Rune codepoint ) {
+			codepoints += static_cast<char32_t>( codepoint );
+		} );
+		return codepoints;
+	}
+};
+
+} // namespace
+
+UTEST( eterm, zero_width_codepoints_attach_to_the_previous_cell ) {
+	ClusterTerminal t;
+	// e + COMBINING ACUTE ACCENT, x; then a mark with nothing before it on a new row.
+	t.feed( "e\xCC\x81x\r\n\xCC\x81"
+			"a" );
+	EXPECT_TRUE( isGlyphCluster( t.cell( 0 ) ) );
+	EXPECT_TRUE( t.text( 0 ) == U"é" );
+	EXPECT_EQ( static_cast<Rune>( 'x' ), t.cell( 1 ).u );
+	EXPECT_EQ( static_cast<Rune>( 'a' ), t.cell( 0, 1 ).u );
+	t.term->selstart( 0, 0, 0 );
+	t.term->selextend( 1, 0, SEL_REGULAR, false );
+	EXPECT_STDSTREQ( "e\xCC\x81x", t.term->getSelection() );
+
+	// Without mode 2027 a variation selector attaches only to a pictograph and changes no width.
+	t.feed( "\033[2J\033[Ha\xEF\xB8\x8F"
+			"b\xE2\x9D\xA4\xEF\xB8\x8F"
+			"c" );
+	EXPECT_EQ( static_cast<Rune>( 'a' ), t.cell( 0 ).u );
+	EXPECT_EQ( static_cast<Rune>( 'b' ), t.cell( 1 ).u );
+	EXPECT_TRUE( t.text( 2 ) == U"❤️" );
+	EXPECT_EQ( static_cast<Rune>( 'c' ), t.cell( 3 ).u );
+
+	// The selector is checked against the character's base, not its last mark.
+	t.feed( "\r\n\xE2\x9D\xA4\xCC\x81\xEF\xB8\x8F" );
+	EXPECT_TRUE( t.text( 0, 1 ) == U"❤́️" );
+}
+
+UTEST( eterm, mode_2027_clusters_change_widths ) {
+	ClusterTerminal t;
+	t.feed( "\033[?2027h" );
+	// HEAVY BLACK HEART + VS16 becomes wide; GRINNING FACE + VS15 becomes narrow.
+	t.feed( "\xE2\x9D\xA4\xEF\xB8\x8F"
+			"a\xF0\x9F\x98\x80\xEF\xB8\x8E"
+			"b" );
+	EXPECT_TRUE( t.text( 0 ) == U"❤️" );
+	EXPECT_TRUE( ( t.cell( 0 ).mode & ATTR_WIDE ) != 0 );
+	EXPECT_TRUE( ( t.cell( 1 ).mode & ATTR_WDUMMY ) != 0 );
+	EXPECT_EQ( static_cast<Rune>( 'a' ), t.cell( 2 ).u );
+	EXPECT_TRUE( t.text( 3 ) == U"\U0001F600︎" );
+	EXPECT_TRUE( ( t.cell( 3 ).mode & ATTR_WIDE ) == 0 );
+	EXPECT_EQ( static_cast<Rune>( 'b' ), t.cell( 4 ).u );
+
+	// A ZWJ family and a flag are one wide cluster each.
+	t.feed( "\r\n\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA9\xE2\x80\x8D\xF0\x9F\x91\xA7"
+			"c\xF0\x9F\x87\xA6\xF0\x9F\x87\xB7"
+			"d" );
+	EXPECT_TRUE( t.text( 0, 1 ) == U"\U0001F468‍\U0001F469‍\U0001F467" );
+	EXPECT_EQ( static_cast<Rune>( 'c' ), t.cell( 2, 1 ).u );
+	EXPECT_TRUE( t.text( 3, 1 ) == U"\U0001F1E6\U0001F1F7" );
+	EXPECT_EQ( static_cast<Rune>( 'd' ), t.cell( 5, 1 ).u );
+
+	// A cluster that becomes wide in the last column moves to the next row.
+	t.feed( "\033[3;80H\xE2\x9D\xA4\xEF\xB8\x8F"
+			"e" );
+	EXPECT_TRUE( ( t.cell( 79, 2 ).mode & ATTR_WRAP ) != 0 );
+	EXPECT_EQ( static_cast<Rune>( ' ' ), t.cell( 79, 2 ).u );
+	EXPECT_TRUE( t.text( 0, 3 ) == U"❤️" );
+	EXPECT_EQ( static_cast<Rune>( 'e' ), t.cell( 2, 3 ).u );
+
+	// Without the mode the same ZWJ sequence keeps per-codepoint widths.
+	t.feed( "\033[?2027l\033[2J\033[H\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA9" );
+	EXPECT_TRUE( t.text( 0 ) == U"\U0001F468‍" );
+	EXPECT_TRUE( t.text( 2 ) == U"\U0001F469" );
+}
+
+UTEST( eterm, decrqm_reports_mode_2027_and_ansi_modes ) {
+	ClusterTerminal t;
+	t.feed( "\033[?2027$p\033[?2027h\033[?2027$p\033[4$p\033[?9999$p" );
+	EXPECT_STDSTREQ( "\033[?2027;2$y\033[?2027;1$y\033[4;2$y\033[?9999;0$y", t.input->mWrites );
+}
+
+UTEST( eterm, clusters_are_reclaimed_and_published_in_snapshots ) {
+	ClusterTerminal t;
+	t.feed( "e\xCC\x81" );
+	EXPECT_TRUE( t.term->hasClusters() );
+	t.feed( "\033c" );
+	EXPECT_FALSE( t.term->hasClusters() );
+
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "o\xCC\x88";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	auto snapshot = waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+		return !snapshot.cells.empty() && isGlyphCluster( snapshot.cells[0] );
+	} );
+	ASSERT_TRUE( snapshot != nullptr );
+	const auto* cluster = snapshot->findCluster( glyphClusterId( snapshot->cells[0] ) );
+	ASSERT_TRUE( cluster != nullptr );
+	EXPECT_TRUE( *cluster == U"ö" );
+	EXPECT_EQ( static_cast<Rune>( 'o' ), snapshot->glyphBaseCodepoint( snapshot->cells[0] ) );
 }
 
 UTEST( eterm, rep_ignores_negative_counts_and_defaults_zero ) {

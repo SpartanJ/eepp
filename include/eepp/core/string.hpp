@@ -1230,6 +1230,35 @@ class EE_API String {
 	bool isGraphemeBoundary( std::size_t position ) const;
 	static bool isGraphemeBoundary( String::View string, std::size_t position );
 
+	/** UAX #29 Grapheme_Cluster_Break property values. */
+	enum class GraphemeBreakProperty : Uint8 {
+		Other,
+		Prepend,
+		CR,
+		LF,
+		Control,
+		Extend,
+		RegionalIndicator,
+		SpacingMark,
+		L,
+		V,
+		T,
+		LV,
+		LVT,
+		ZWJ,
+	};
+
+	/** \return The UAX #29 Grapheme_Cluster_Break property of a codepoint. */
+	static GraphemeBreakProperty graphemeBreakProperty( StringBaseType codepoint );
+
+	/** \return `true` if the codepoint has the Extended_Pictographic property (UTS #51). */
+	static bool isExtendedPictographic( StringBaseType codepoint );
+
+	/** \return `true` if the codepoint has any UTS #51 emoji property (Emoji, Emoji_Presentation,
+	** Emoji_Modifier, Emoji_Modifier_Base, Emoji_Component or Extended_Pictographic). Every base of
+	** an emoji variation sequence qualifies. */
+	static bool hasEmojiProperty( StringBaseType codepoint );
+
 	/* \brief Check if the position before a character is a word boundary
 	**
 	** When breaking text into multiple lines, it is important to know

@@ -2855,6 +2855,51 @@ bool String::isGraphemeBoundary( String::View string, std::size_t position ) {
 	return unicode::is_grapheme_boundary( string.data(), string.size(), position );
 }
 
+String::GraphemeBreakProperty String::graphemeBreakProperty( StringBaseType codepoint ) {
+	switch ( unicode::_grapheme_break_properties::get_value( codepoint ) ) {
+		case unicode::GraphemeBreak::Prepend:
+			return GraphemeBreakProperty::Prepend;
+		case unicode::GraphemeBreak::CR:
+			return GraphemeBreakProperty::CR;
+		case unicode::GraphemeBreak::LF:
+			return GraphemeBreakProperty::LF;
+		case unicode::GraphemeBreak::Control:
+			return GraphemeBreakProperty::Control;
+		case unicode::GraphemeBreak::Extend:
+			return GraphemeBreakProperty::Extend;
+		case unicode::GraphemeBreak::Regional_Indicator:
+			return GraphemeBreakProperty::RegionalIndicator;
+		case unicode::GraphemeBreak::SpacingMark:
+			return GraphemeBreakProperty::SpacingMark;
+		case unicode::GraphemeBreak::L:
+			return GraphemeBreakProperty::L;
+		case unicode::GraphemeBreak::V:
+			return GraphemeBreakProperty::V;
+		case unicode::GraphemeBreak::T:
+			return GraphemeBreakProperty::T;
+		case unicode::GraphemeBreak::LV:
+			return GraphemeBreakProperty::LV;
+		case unicode::GraphemeBreak::LVT:
+			return GraphemeBreakProperty::LVT;
+		case unicode::GraphemeBreak::ZWJ:
+			return GraphemeBreakProperty::ZWJ;
+		case unicode::GraphemeBreak::Unassigned:
+		default:
+			return GraphemeBreakProperty::Other;
+	}
+}
+
+bool String::isExtendedPictographic( StringBaseType codepoint ) {
+	// The table keeps one property per codepoint, the last listed in emoji-data.txt;
+	// Extended_Pictographic is listed last, so it is exact (the GB11 rule relies on it too).
+	return unicode::_emoji_properties::get_value( codepoint ) ==
+		   unicode::Emoji::Extended_Pictographic;
+}
+
+bool String::hasEmojiProperty( StringBaseType codepoint ) {
+	return unicode::_emoji_properties::get_value( codepoint ) != unicode::Emoji::Unassigned;
+}
+
 bool String::isWordBoundary( std::size_t position ) const {
 	return unicode::is_word_boundary( mString.data(), mString.size(), position );
 }

@@ -112,6 +112,9 @@ class EE_API Font {
 		return flags & TEXT_VALIGN_MASK;
 	}
 
+	/** Font-fallback heuristic: whether a codepoint is likely drawn by a color emoji font (whole
+	 * emoji blocks, plus VS16 and ZWJ). For Unicode emoji properties use
+	 * String::isExtendedPictographic() or String::hasEmojiProperty(). */
 	static bool isEmojiCodePoint( const Uint32& codePoint );
 
 	static bool containsEmojiCodePoint( const String& string );

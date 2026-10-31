@@ -178,6 +178,36 @@ class TerminalEmulator final {
 
 	bool hasHyperlinks() const { return mHyperlinkBytes != 0; }
 
+	/** Worker-only lookup of a grapheme cluster's codepoints (base first); nullptr when @p id is
+	 * not live. The result is borrowed until the next parser mutation. */
+	const TerminalCluster* getCluster( uint32_t id ) const {
+		return id != 0 && id < mClusters.size() && mClusters[id] ? &mClusters[id] : nullptr;
+	}
+
+	bool hasClusters() const { return mClusterCount != 0; }
+
+	/** Worker-only: the registry indexed by cluster ID, for TerminalSearch. */
+	const std::vector<TerminalCluster>& getClusters() const { return mClusters; }
+
+	/** Calls @p visit with each codepoint a cell shows: its own, or its cluster's, base first. */
+	template <typename Visitor>
+	void visitGlyphCodepoints( const TerminalGlyph& glyph, Visitor&& visit ) const {
+		if ( !isGlyphCluster( glyph ) ) {
+			visit( glyph.u );
+		} else if ( const auto* cluster = getCluster( glyphClusterId( glyph ) ) ) {
+			for ( char32_t codepoint : **cluster )
+				visit( static_cast<Rune>( codepoint ) );
+		}
+	}
+
+	/** The codepoint a cell shows on its own, or its cluster's base. */
+	Rune glyphBaseCodepoint( const TerminalGlyph& glyph ) const {
+		if ( !isGlyphCluster( glyph ) )
+			return glyph.u;
+		const auto* cluster = getCluster( glyphClusterId( glyph ) );
+		return cluster ? static_cast<Rune>( ( **cluster )[0] ) : ' ';
+	}
+
 	bool getOsc8HyperlinksEnabled() const { return mEnableOsc8Hyperlinks; }
 
 	void setOsc8HyperlinksEnabled( bool enabled );
@@ -236,8 +266,6 @@ class TerminalEmulator final {
 	void selextend( int, int, int, int );
 
 	int selected( int, int );
-
-	char* getsel() const;
 
 	bool hasSelection() const { return mSel.mode != SEL_EMPTY && mSel.ob.x != -1; }
 
@@ -384,11 +412,19 @@ class TerminalEmulator final {
 	std::vector<uint16_t> mFreeHyperlinkIds;
 	UnorderedMap<size_t, SmallVector<uint16_t, 2>> mExplicitHyperlinks;
 	size_t mHyperlinkBytes{ 0 };
-	Clock mHyperlinkGcClock;
-	Time mHyperlinkCollectionCost; // Duration of the last collection; bounds the GC duty cycle.
 	uint16_t mActiveHyperlinkId{ 0 };
+	// Grapheme clusters, indexed by the ID stored in cluster cells (ID 0 unused). Identical
+	// clusters share one ID through mClusterIndex (content hash to IDs).
+	std::vector<TerminalCluster> mClusters;
+	std::vector<uint32_t> mFreeClusterIds;
+	UnorderedMap<size_t, SmallVector<uint32_t, 2>> mClusterIndex;
+	size_t mClusterCount{ 0 };
+	uint32_t mClusterRetryCountdown{ 0 };
+	// One mark pass reclaims both hyperlink and cluster IDs (collectGlyphReferences()).
+	Clock mGlyphReferenceGcClock;
+	Time mGlyphReferenceCollectionCost; // Duration of the last collection; bounds the duty cycle.
 	// Set by output/allocation; idle terminals never rescan unchanged buffers.
-	bool mHyperlinkCollectionPending{ false };
+	bool mGlyphReferenceCollectionPending{ false };
 	Vector2i mLastMousePosition{ -1, -1 };
 	PromptState mPromptState{ PromptState::Unknown };
 	PromptStateChangedCb mPromptStateChangedCb;
@@ -439,7 +475,31 @@ class TerminalEmulator final {
 
 	void handleClipboardWrite( std::string_view sequence );
 
-	void collectHyperlinks();
+	void collectGlyphReferences();
+
+	/* Runs collectGlyphReferences() when a registry is full, at most ~20% of the time. */
+	void collectExhaustedGlyphReferences();
+
+	/* The ID of the cluster with these codepoints, allocating one if needed; 0 when the registry is
+	 * full even after a collection. */
+	uint32_t internCluster( std::u32string_view codepoints );
+
+	/* tputc() for a codepoint that may extend the previous cell's grapheme cluster: zero-width
+	 * codepoints always, and with mode 2027 any codepoint above U+00FF. Returns false when it must
+	 * be printed in its own cell instead. */
+	bool tattach( Rune u, int width );
+
+	/* The column of the character a codepoint attaches to (see tattach()), or -1. */
+	int tattachColumn() const;
+
+	/* tattach() without mode 2027, for a burst of zero-width codepoints. */
+	void tattachZeroWidth( const char32_t* codepoints, size_t count );
+
+	/* Copies the codepoints a cell shows (at most the cluster limit) into @p codepoints. */
+	size_t tclusterCodepoints( const TerminalGlyph& glyph, char32_t* codepoints ) const;
+
+	/* Makes the cell at x, y show cluster @p id. */
+	void tsetcluster( int x, int y, uint32_t id );
 
 	void refreshPrintAttributes() {
 		mPrintAttributes = mTerm.c.attr;
@@ -503,6 +563,9 @@ class TerminalEmulator final {
 	void tsetscroll( int, int );
 	void tswapscreen();
 	void tsetmode( int, int, int*, int );
+
+	/* DECRPM state of a DEC private (@p priv) or ANSI mode: 1 set, 2 reset, 0 not recognized. */
+	int modeReport( bool priv, int mode );
 	int twrite( const char*, int, int );
 	void tfulldirt();
 	void tcontrolcode( uchar );

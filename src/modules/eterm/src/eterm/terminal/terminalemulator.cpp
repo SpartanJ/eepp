@@ -92,6 +92,11 @@ namespace {
 
 constexpr Rune KittyGraphicsPlaceholder = 0x10EEEE;
 
+// Grapheme cluster registry bounds: live cluster IDs, and codepoints kept per cluster (more are
+// dropped, keeping the cluster's base).
+constexpr uint32_t MaxClusterIds = 0xFFFF;
+constexpr size_t MaxClusterCodepoints = 32;
+
 bool terminalDiagnosticsEnabled() {
 #ifdef EE_DEBUG
 	return true;
@@ -716,7 +721,7 @@ void TerminalEmulator::setSearchQuery( TerminalSearchQuery query ) {
 	mSearchRefreshClock.restart();
 	mSearchRows.clear();
 	if ( !TerminalSearch::isQuerySearchable( mSearchQuery ) ) {
-		mSearch.search( mSearchRows, mSearchQuery );
+		mSearch.search( mSearchRows, mSearchQuery, &mClusters );
 		mCurrentSearchMatch = -1;
 		redraw();
 		return;
@@ -742,7 +747,7 @@ void TerminalEmulator::setSearchQuery( TerminalSearchQuery query ) {
 				  row, mTerm.col, length, length > 0 && ( line[length - 1].mode & ATTR_WRAP ) } );
 		}
 	}
-	mSearch.search( mSearchRows, mSearchQuery );
+	mSearch.search( mSearchRows, mSearchQuery, &mClusters );
 	mCurrentSearchMatch = mSearch.matches().empty() ? -1 : 0;
 	if ( preserveCurrent ) {
 		const auto& matches = mSearch.matches();
@@ -903,7 +908,7 @@ void TerminalEmulator::selsnap( int* x, int* y, int direction ) {
 			 * beginning of a line.
 			 */
 			prevgp = &TLINE( *y )[*x];
-			prevdelim = ISDELIM( prevgp->u );
+			prevdelim = ISDELIM( glyphBaseCodepoint( *prevgp ) );
 			for ( ;; ) {
 				newx = *x + direction;
 				newy = *y;
@@ -925,7 +930,7 @@ void TerminalEmulator::selsnap( int* x, int* y, int direction ) {
 					break;
 
 				gp = &TLINE( newy )[newx];
-				delim = ISDELIM( gp->u );
+				delim = ISDELIM( glyphBaseCodepoint( *gp ) );
 				if ( !( gp->mode & ATTR_WDUMMY ) &&
 					 ( delim != prevdelim || ( delim && gp->u != prevgp->u ) ) )
 					break;
@@ -958,24 +963,22 @@ void TerminalEmulator::selsnap( int* x, int* y, int direction ) {
 	}
 }
 
-char* TerminalEmulator::getsel( void ) const {
-	char *str, *ptr;
-	int y, bufsize, lastx, linelen;
-	TerminalGlyph *gp, *last, *it;
-
+std::string TerminalEmulator::getSelection() const {
+	std::string selection;
 	if ( mSel.ob.x == -1 )
-		return NULL;
-
-	bufsize = ( mTerm.col + 1 ) * ( mSel.ne.y - mSel.nb.y + 1 ) * UTF_SIZ;
-	ptr = str = (char*)xmalloc( bufsize );
+		return selection;
 
 	/* append every set & selected glyph to the selection */
-	for ( y = mSel.nb.y; y <= mSel.ne.y; y++ ) {
-		if ( ( linelen = tlinelen( y ) ) == 0 ) {
-			*ptr++ = '\n';
+	char encoded[UTF_SIZ];
+	for ( int y = mSel.nb.y; y <= mSel.ne.y; y++ ) {
+		const int linelen = tlinelen( y );
+		if ( linelen == 0 ) {
+			selection += '\n';
 			continue;
 		}
 
+		const TerminalGlyph *gp, *last;
+		int lastx;
 		if ( mSel.type == SEL_RECTANGULAR ) {
 			gp = &TLINE( y )[mSel.nb.x];
 			lastx = mSel.ne.x;
@@ -990,11 +993,12 @@ char* TerminalEmulator::getsel( void ) const {
 				--last;
 		}
 
-		for ( it = gp; it <= last; ++it ) {
+		for ( const TerminalGlyph* it = gp; it <= last; ++it ) {
 			if ( it->mode & ATTR_WDUMMY )
 				continue;
-
-			ptr += utf8encode( it->u, ptr );
+			visitGlyphCodepoints( *it, [&]( Rune codepoint ) {
+				selection.append( encoded, utf8encode( codepoint, encoded ) );
+			} );
 		}
 
 		/*
@@ -1008,20 +1012,9 @@ char* TerminalEmulator::getsel( void ) const {
 		 */
 		if ( ( y < mSel.ne.y || lastx >= linelen ) &&
 			 ( last < gp || !wrapped || mSel.type == SEL_RECTANGULAR ) )
-			*ptr++ = '\n';
+			selection += '\n';
 	}
-	*ptr = 0;
-	return str;
-}
-
-std::string TerminalEmulator::getSelection() const {
-	char* sel = getsel();
-	if ( sel ) {
-		std::string selection( sel );
-		xfree( sel );
-		return selection;
-	}
-	return "";
+	return selection;
 }
 
 void TerminalEmulator::selclear( void ) {
@@ -1189,7 +1182,7 @@ void TerminalEmulator::clearHistory() {
 	mTerm.max_width = 0;
 	mTerm.histcapacity = 0;
 	mTerm.scr = 0;
-	collectHyperlinks();
+	collectGlyphReferences();
 	trimMemory();
 }
 
@@ -1525,7 +1518,7 @@ void TerminalEmulator::treset( void ) {
 		tswapscreen();
 	}
 	// RIS preserves scrollback. Reclaim only descriptors that neither buffer nor history uses.
-	collectHyperlinks();
+	collectGlyphReferences();
 
 	xsetmode( 0, MODE_MOUSE | MODE_MOUSESGR | MODE_MOUSESGR_PIXELS | MODE_APPKEYPAD |
 					 MODE_APPCURSOR | MODE_FOCUS | MODE_BRCKTPASTE | MODE_MOUSEX10 |
@@ -2540,6 +2533,9 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 					}
 					break;
 				}
+				case 2027: /* Grapheme clustering: Unicode clusters and widths (see tattach()). */
+					MODBIT( mTerm.mode, set, MODE_GRAPHEME );
+					break;
 				case 2031: /* Light/dark color-scheme change notifications. */
 					mColorSchemeNotifications = set;
 					mColorScheme = colorScheme();
@@ -2569,6 +2565,69 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 					break;
 			}
 		}
+	}
+}
+
+int TerminalEmulator::modeReport( bool priv, int mode ) {
+	/* DECRPM values: 1 set, 2 reset, 0 not recognized. Only modes tsetmode() implements. */
+	const auto state = []( bool set ) { return set ? 1 : 2; };
+	if ( !priv ) {
+		switch ( mode ) {
+			case 2: /* KAM */
+				return state( xgetmode( MODE_KBDLOCK ) );
+			case 4: /* IRM */
+				return state( IS_SET( MODE_INSERT ) );
+			case 12: /* SRM: set means local echo off */
+				return state( !IS_SET( MODE_ECHO ) );
+			case 20: /* LNM */
+				return state( IS_SET( MODE_CRLF ) );
+			default:
+				return 0;
+		}
+	}
+	switch ( mode ) {
+		case 1:
+			return state( xgetmode( MODE_APPCURSOR ) );
+		case 5:
+			return state( xgetmode( MODE_REVERSE ) );
+		case 6:
+			return state( mTerm.c.state & CURSOR_ORIGIN );
+		case 7:
+			return state( IS_SET( MODE_WRAP ) );
+		case 9:
+			return state( xgetmode( MODE_MOUSEX10 ) );
+		case 25:
+			return state( !xgetmode( MODE_HIDE ) );
+		case 47:
+		case 1047:
+		case 1049:
+			return state( IS_SET( MODE_ALTSCREEN ) );
+		case 1000:
+			return state( xgetmode( MODE_MOUSEBTN ) );
+		case 1002:
+			return state( xgetmode( MODE_MOUSEMOTION ) );
+		case 1003:
+			return state( xgetmode( MODE_MOUSEMANY ) );
+		case 1004:
+			return state( xgetmode( MODE_FOCUS ) );
+		case 1006:
+			return state( xgetmode( MODE_MOUSESGR ) );
+		case 1007:
+			return state( xgetmode( MODE_ALTSCRROLL ) );
+		case 1016:
+			return state( xgetmode( MODE_MOUSESGR_PIXELS ) );
+		case 1034:
+			return state( xgetmode( MODE_8BIT ) );
+		case 2004:
+			return state( xgetmode( MODE_BRCKTPASTE ) );
+		case 2026:
+			return state( mTerm.is_syncing );
+		case 2027:
+			return state( IS_SET( MODE_GRAPHEME ) );
+		case 2031:
+			return state( mColorSchemeNotifications );
+		default:
+			return 0;
 	}
 }
 
@@ -2828,6 +2887,21 @@ void TerminalEmulator::csihandle( void ) {
 				tcursor( CURSOR_LOAD );
 			}
 			break;
+		case '$':
+			switch ( mCsiescseq.mode[1] ) {
+				case 'p': { /* DECRQM -- Request mode */
+					if ( mCsiescseq.priv && mCsiescseq.priv != '?' )
+						goto unknown;
+					const bool priv = mCsiescseq.priv == '?';
+					len = snprintf( buf, sizeof( buf ), priv ? "\033[?%d;%d$y" : "\033[%d;%d$y",
+									mCsiescseq.arg[0], modeReport( priv, mCsiescseq.arg[0] ) );
+					ttywrite( buf, len, 0 );
+					break;
+				}
+				default:
+					goto unknown;
+			}
+			break;
 		case ' ':
 			switch ( mCsiescseq.mode[1] ) {
 				case 'q': /* DECSCUSR -- Set Cursor Style */
@@ -2995,14 +3069,8 @@ void TerminalEmulator::handleHyperlink( std::string_view sequence ) {
 		return mHyperlinkBytes + bytes > maxRegistryBytes ||
 			   ( mFreeHyperlinkIds.empty() && mHyperlinks.size() > GLYPH_LINK_MAX );
 	};
-	// A collection scans every live buffer, including cold history (~15 ms for 10k x 120 rows),
-	// so run it only when the ID space or byte budget is exhausted, never per N opens. Bound its
-	// duty cycle to ~20%: a producer that keeps the registry full while churning links must not
-	// turn every OSC 8 open into a full scan. No reference counting or registry work is
-	// performed in the character/scroll hot paths.
-	if ( exhausted() && mHyperlinkCollectionPending &&
-		 mHyperlinkGcClock.getElapsedTime() >= mHyperlinkCollectionCost * 5.0 )
-		collectHyperlinks();
+	if ( exhausted() )
+		collectExhaustedGlyphReferences();
 	if ( exhausted() )
 		return;
 	if ( mHyperlinks.empty() )
@@ -3017,23 +3085,38 @@ void TerminalEmulator::handleHyperlink( std::string_view sequence ) {
 	}
 	mHyperlinks[id] = { std::make_shared<const std::string>( uri ), std::string( externalId ) };
 	mHyperlinkBytes += bytes;
-	mHyperlinkCollectionPending = true;
+	mGlyphReferenceCollectionPending = true;
 	if ( !externalId.empty() )
 		mExplicitHyperlinks[hash].push_back( id );
 	setActiveHyperlink( id );
 }
 
-void TerminalEmulator::collectHyperlinks() {
-	mHyperlinkGcClock.restart();
-	mHyperlinkCollectionPending = false;
-	if ( mHyperlinks.empty() )
+void TerminalEmulator::collectExhaustedGlyphReferences() {
+	// A collection scans every live buffer, including cold history (~15 ms for 10k x 120 rows),
+	// so run it only when an ID space or byte budget is exhausted, never per N allocations. Bound
+	// its duty cycle to ~20%: a producer that keeps a registry full while churning links or
+	// clusters must not turn every allocation into a full scan. No reference counting or registry
+	// work is performed in the character/scroll hot paths.
+	if ( mGlyphReferenceCollectionPending &&
+		 mGlyphReferenceGcClock.getElapsedTime() >= mGlyphReferenceCollectionCost * 5.0 )
+		collectGlyphReferences();
+}
+
+void TerminalEmulator::collectGlyphReferences() {
+	mGlyphReferenceGcClock.restart();
+	mGlyphReferenceCollectionPending = false;
+	if ( mHyperlinks.empty() && mClusters.empty() )
 		return;
-	// 4 KiB on the worker stack, rather than another dense per-cell allocation.
+	// 12 KiB on the worker stack, rather than more dense per-cell allocations.
 	std::bitset<GLYPH_LINK_MAX + 1> live;
+	std::bitset<MaxClusterIds + 1> liveClusters;
 	live.set( mActiveHyperlinkId );
-	auto markLine = [&live]( Line line, int columns ) {
-		for ( int x = 0; x < columns; ++x )
+	auto markLine = [&live, &liveClusters]( Line line, int columns ) {
+		for ( int x = 0; x < columns; ++x ) {
 			live.set( glyphLinkId( line[x] ) );
+			if ( isGlyphCluster( line[x] ) && glyphClusterId( line[x] ) <= MaxClusterIds )
+				liveClusters.set( glyphClusterId( line[x] ) );
+		}
 	};
 	for ( int y = 0; y < mTerm.row; ++y ) {
 		markLine( mTerm.line[y], mTerm.col );
@@ -3064,7 +3147,62 @@ void TerminalEmulator::collectHyperlinks() {
 			}
 		}
 	}
-	mHyperlinkCollectionCost = mHyperlinkGcClock.getElapsedTime();
+	mFreeClusterIds.clear();
+	mClusterIndex.clear();
+	mClusterCount = 0;
+	for ( uint32_t id = 1; id < mClusters.size(); ++id ) {
+		auto& cluster = mClusters[id];
+		if ( !cluster || !liveClusters.test( id ) ) {
+			// Retained snapshots keep their own reference to the codepoints.
+			cluster.reset();
+			mFreeClusterIds.push_back( id );
+		} else {
+			++mClusterCount;
+			mClusterIndex[std::hash<std::u32string_view>()( *cluster )].push_back( id );
+		}
+	}
+	mGlyphReferenceCollectionCost = mGlyphReferenceGcClock.getElapsedTime();
+}
+
+uint32_t TerminalEmulator::internCluster( std::u32string_view codepoints ) {
+	const size_t hash = std::hash<std::u32string_view>()( codepoints );
+	if ( auto found = mClusterIndex.find( hash ); found != mClusterIndex.end() ) {
+		for ( auto id : found->second ) {
+			if ( *mClusters[id] == codepoints )
+				return id;
+		}
+	}
+	const auto exhausted = [this] {
+		return mFreeClusterIds.empty() && mClusters.size() > MaxClusterIds;
+	};
+	if ( exhausted() ) {
+		/* While a stream keeps the registry full, a clock read per attach would cost more than the
+		 * attach; retry the collection every 256 calls instead. */
+		if ( mClusterRetryCountdown > 0 ) {
+			--mClusterRetryCountdown;
+			return 0;
+		}
+		collectExhaustedGlyphReferences();
+		if ( exhausted() ) {
+			mClusterRetryCountdown = 255;
+			return 0;
+		}
+	}
+	if ( mClusters.empty() )
+		mClusters.emplace_back(); // ID zero is never a cluster.
+	uint32_t id;
+	if ( !mFreeClusterIds.empty() ) {
+		id = mFreeClusterIds.back();
+		mFreeClusterIds.pop_back();
+	} else {
+		id = static_cast<uint32_t>( mClusters.size() );
+		mClusters.emplace_back();
+	}
+	mClusters[id] = std::make_shared<const std::u32string>( codepoints );
+	mClusterIndex[hash].push_back( id );
+	++mClusterCount;
+	mGlyphReferenceCollectionPending = true;
+	return id;
 }
 
 void TerminalEmulator::handleWorkingDirectory( std::string_view value ) {
@@ -3515,12 +3653,9 @@ void TerminalEmulator::printsel( const TerminalArg* ) {
 }
 
 void TerminalEmulator::tdumpsel( void ) {
-	char* ptr;
-
-	if ( ( ptr = getsel() ) ) {
-		tprinter( ptr, strlen( ptr ) );
-		xfree( ptr );
-	}
+	const std::string selection = getSelection();
+	if ( !selection.empty() )
+		tprinter( selection.data(), selection.size() );
 }
 
 void TerminalEmulator::tdumpline( int n ) {
@@ -3530,8 +3665,10 @@ void TerminalEmulator::tdumpline( int n ) {
 	bp = &mTerm.line[n][0];
 	end = &bp[MIN( tlinelen( n ), mTerm.col ) - 1];
 	if ( bp != end || bp->u != ' ' ) {
-		for ( ; bp <= end; ++bp )
-			tprinter( buf, utf8encode( bp->u, buf ) );
+		for ( ; bp <= end; ++bp ) {
+			visitGlyphCodepoints(
+				*bp, [&]( Rune codepoint ) { tprinter( buf, utf8encode( codepoint, buf ) ); } );
+		}
 	}
 	tprinter( "\n", 1 );
 }
@@ -3803,7 +3940,9 @@ static const unsigned char wtable[] = {
 };
 
 /* emoji, when given, reports is_emoji( wc ); emoji are always 2 columns wide. */
-static int wcwidth( Rune wc, bool* emoji = nullptr ) {
+/* Named apart from libc's wcwidth(): some C libraries (FreeBSD) define that as a one-argument
+ * function-like macro. */
+static int codepointWidth( Rune wc, bool* emoji = nullptr ) {
 	if ( wc < 0xffU )
 		return ( ( wc + 1 ) & 0x7f ) >= 0x21 ? 1 : wc ? -1 : 0;
 
@@ -3831,6 +3970,162 @@ static int wcwidth( Rune wc, bool* emoji = nullptr ) {
 	return 1;
 }
 
+int TerminalEmulator::tattachColumn() const {
+	/* The previous character is under the cursor with a pending wrap, otherwise to its left; a
+	 * wide character's dummy half points at its first half. */
+	int x = mTerm.c.x - ( ( mTerm.c.state & CURSOR_WRAPNEXT ) ? 0 : 1 );
+	if ( x > 0 && ( TLINE( mTerm.c.y )[x].mode & ATTR_WDUMMY ) )
+		--x;
+	return x;
+}
+
+size_t TerminalEmulator::tclusterCodepoints( const TerminalGlyph& glyph,
+											 char32_t* codepoints ) const {
+	size_t count = 0;
+	visitGlyphCodepoints( glyph, [&]( Rune codepoint ) {
+		if ( count < MaxClusterCodepoints )
+			codepoints[count++] = static_cast<char32_t>( codepoint );
+	} );
+	return count;
+}
+
+void TerminalEmulator::tsetcluster( int x, int y, uint32_t id ) {
+	/* Box drawing is drawn per codepoint; a cluster is drawn by the font. */
+	TLINE( y )[x].u = GLYPH_CLUSTER_BASE + id;
+	TLINE( y )[x].mode &= ~ATTR_BOXDRAW;
+	mTerm.dirty[y] = 1;
+	mDirty = true;
+}
+
+void TerminalEmulator::tattachZeroWidth( const char32_t* added, size_t addedCount ) {
+	/* Without mode 2027, Ghostty's rules: zero-width codepoints attach to the previous character
+	 * without boundary rules or width changes; emoji variation selectors attach only when the
+	 * character's base is a pictograph and are ignored otherwise; with nothing to attach to they
+	 * are dropped. A burst of them is interned once. */
+	const int x = tattachColumn();
+	const int y = mTerm.c.y;
+	if ( x < 0 )
+		return;
+	const TerminalGlyph& glyph = TLINE( y )[x];
+	if ( glyph.u == 0 || glyph.u == KittyGraphicsPlaceholder )
+		return;
+	char32_t codepoints[MaxClusterCodepoints];
+	size_t count = tclusterCodepoints( glyph, codepoints );
+	if ( count == 0 )
+		return;
+	const size_t baseCount = count;
+	for ( size_t i = 0; i < addedCount && count < MaxClusterCodepoints; ++i ) {
+		const char32_t codepoint = added[i];
+		if ( ( codepoint == 0xFE0F || codepoint == 0xFE0E ) &&
+			 !String::isExtendedPictographic( codepoints[0] ) )
+			continue;
+		codepoints[count++] = codepoint;
+	}
+	if ( count == baseCount )
+		return;
+	const uint32_t id = internCluster( std::u32string_view( codepoints, count ) );
+	if ( id == 0 )
+		return; /* Registry full: keep the cluster as it was. */
+	if ( hasSelection() && selected( x, y ) )
+		selclear();
+	tsetcluster( x, y, id );
+}
+
+bool TerminalEmulator::tattach( Rune u, int width ) {
+	if ( !IS_SET( MODE_GRAPHEME ) ) {
+		const char32_t codepoint = static_cast<char32_t>( u );
+		tattachZeroWidth( &codepoint, 1 );
+		return true;
+	}
+	/* With mode 2027, Ghostty's rules: a codepoint above U+00FF joins the previous cluster when
+	 * UAX #29 finds no boundary, and may widen or narrow it; a zero-width codepoint at a boundary
+	 * is dropped. */
+	int x = tattachColumn();
+	int y = mTerm.c.y;
+	if ( x < 0 )
+		return width == 0;
+	Line line = TLINE( y );
+	if ( line[x].u == 0 || line[x].u == KittyGraphicsPlaceholder )
+		return width == 0;
+
+	char32_t codepoints[MaxClusterCodepoints + 1];
+	const size_t count = tclusterCodepoints( line[x], codepoints );
+	if ( count == 0 || count == MaxClusterCodepoints )
+		return true;
+	const char32_t previous = codepoints[count - 1];
+	codepoints[count] = static_cast<char32_t>( u );
+
+	enum class WidthEffect { None, Wide, Narrow } effect = WidthEffect::None;
+	if ( u == 0xFE0F || u == 0xFE0E ) {
+		/* A variation selector without a valid base is ignored, not stored. */
+		if ( !String::hasEmojiProperty( previous ) )
+			return true;
+		effect = u == 0xFE0F ? WidthEffect::Wide : WidthEffect::Narrow;
+	} else {
+		if ( String::isGraphemeBoundary( String::View( codepoints, count + 1 ), count ) )
+			return width == 0;
+		/* A codepoint that has width of its own makes the whole cluster wide. */
+		if ( width > 0 )
+			effect = WidthEffect::Wide;
+	}
+
+	const uint32_t id = internCluster( std::u32string_view( codepoints, count + 1 ) );
+	if ( id == 0 )
+		return true; /* Registry full: keep the cluster as it was. */
+	if ( hasSelection() && selected( x, y ) )
+		selclear();
+
+	const int columns = mTerm.col;
+	if ( effect == WidthEffect::Wide && !( line[x].mode & ATTR_WIDE ) ) {
+		if ( x + 1 >= columns ) {
+			/* No second column: like a wide character at the last column, the cluster moves to
+			 * the next row, leaving a blank. */
+			if ( !IS_SET( MODE_WRAP ) || columns < 2 )
+				return true;
+			const TerminalGlyph moved = line[x];
+			line[x].u = ' ';
+			line[x].mode = ( line[x].mode & ~( ATTR_EMOJI | ATTR_BOXDRAW ) ) | ATTR_WRAP;
+			mTerm.dirty[y] = 1;
+			tnewline( 1 );
+			x = 0;
+			y = mTerm.c.y;
+			line = TLINE( y );
+			if ( line[0].u == KittyGraphicsPlaceholder )
+				mKittyPlaceholderMetadata.erase( &line[0] );
+			line[0] = moved;
+		}
+		/* The new dummy half overwrites the next cell; repair a wide character it splits. */
+		TerminalGlyph& dummy = line[x + 1];
+		if ( ( dummy.mode & ATTR_WIDE ) && x + 2 < columns ) {
+			line[x + 2].u = ' ';
+			line[x + 2].mode &= ~( ATTR_WDUMMY | GLYPH_LINK_MASK );
+		}
+		if ( dummy.u == KittyGraphicsPlaceholder )
+			mKittyPlaceholderMetadata.erase( &dummy );
+		line[x].mode |= ATTR_WIDE;
+		dummy.u = '\0';
+		dummy.mode = ATTR_WDUMMY;
+		setGlyphLinkId( dummy, glyphLinkId( line[x] ) );
+		if ( x + 2 < columns ) {
+			tmoveto( x + 2, y );
+		} else {
+			tmoveto( x + 1, y );
+			mTerm.c.state |= CURSOR_WRAPNEXT;
+		}
+	} else if ( effect == WidthEffect::Narrow && ( line[x].mode & ATTR_WIDE ) ) {
+		line[x].mode &= ~( ATTR_WIDE | ATTR_EMOJI );
+		if ( x + 1 < columns ) {
+			line[x + 1].u = ' ';
+			line[x + 1].mode &= ~( ATTR_WDUMMY | GLYPH_LINK_MASK );
+		}
+		tmoveto( eemin( x + 1, columns - 1 ), y );
+	}
+	if ( effect == WidthEffect::Wide && u == 0xFE0F )
+		line[x].mode |= ATTR_EMOJI;
+	tsetcluster( x, y, id );
+	return true;
+}
+
 void TerminalEmulator::tputc( Rune u ) {
 	char c[UTF_SIZ];
 	int control;
@@ -3844,7 +4139,7 @@ void TerminalEmulator::tputc( Rune u ) {
 		width = (int)( len = 1 );
 	} else {
 		len = utf8encode( u, c );
-		if ( !control && ( width = wcwidth( u ) ) < 0 ) {
+		if ( !control && ( width = codepointWidth( u ) ) < 0 ) {
 			if ( width == -1 ) {
 				width = 0;
 			} else {
@@ -3943,6 +4238,8 @@ check_control_code:
 		}
 		mKittyPlaceholderCell = Vector2i( -1, -1 );
 	}
+	if ( ( width == 0 || ( IS_SET( MODE_GRAPHEME ) && u > 0xFF ) ) && tattach( u, width ) )
+		return;
 	if ( selected( mTerm.c.x, mTerm.c.y ) )
 		selclear();
 
@@ -4001,30 +4298,61 @@ bool TerminalEmulator::canPutPrintable() const {
 
 namespace {
 
-/* The cell properties tputc() derives per character: its width (wcwidth() with negative widths
- * mapped as tputc() does, so 0, 1 or 2) and the emoji / box-drawing flags. */
+/* The cell properties tputc() derives per character: its width (codepointWidth() with negative
+ * widths mapped as tputc() does, so 0, 1 or 2) and the emoji / box-drawing flags. */
 struct GlyphProperties {
 	static constexpr uint8_t WidthMask = 3;
 	static constexpr uint8_t Emoji = 4;
 	static constexpr uint8_t BoxDraw = 8;
+	/* UAX #29 classes that only mode 2027 consults. Joins: may extend whatever precedes it
+	 * (Extend, ZWJ, SpacingMark, Regional_Indicator, Hangul V and T). Attracts: may be extended
+	 * by an otherwise ordinary codepoint (Prepend, ZWJ before an emoji, Hangul L). Any other pair
+	 * is a grapheme boundary, so runs never need the full rules. */
+	static constexpr uint8_t Joins = 16;
+	static constexpr uint8_t Attracts = 32;
+	/* Width 0: attaches to the previous cell instead of taking one (tattach()). */
+	static constexpr uint8_t ZeroWidth = 64;
 
 	static uint8_t compute( Rune u ) {
 		bool emoji = false;
-		int width = wcwidth( u, &emoji );
+		int width = codepointWidth( u, &emoji );
 		if ( width < 0 )
 			width = width == -1 ? 0 : 1;
 		uint8_t properties = static_cast<uint8_t>( width );
+		if ( width == 0 )
+			properties |= ZeroWidth;
 		if ( width == 2 && emoji )
 			properties |= Emoji;
 		if ( isboxdraw( u ) )
 			properties |= BoxDraw;
+		using Break = String::GraphemeBreakProperty;
+		switch ( String::graphemeBreakProperty( static_cast<String::StringBaseType>( u ) ) ) {
+			case Break::Extend:
+			case Break::SpacingMark:
+			case Break::RegionalIndicator:
+			case Break::V:
+			case Break::T:
+				properties |= Joins;
+				break;
+			case Break::ZWJ:
+				properties |= Joins | Attracts;
+				break;
+			case Break::Prepend:
+			case Break::L:
+				properties |= Attracts;
+				break;
+			default:
+				break;
+		}
 		return properties;
 	}
 
+	static uint8_t of( Rune u ) { return u < 0x10000 ? bmp()[u] : compute( u ); }
+
 	/* Every BMP codepoint, where nearly all non-ASCII terminal text lives: one load instead of
-	 * wcwidth(), is_emoji() and isboxdraw() per character. Built on first use (65536 compute()
-	 * calls, well under a millisecond) so startup and ASCII-only sessions never pay for it; the
-	 * function-local static makes that thread-safe across terminal workers. */
+	 * codepointWidth(), is_emoji() and isboxdraw() per character. Built on first use (65536
+	 * compute() calls, well under a millisecond) so startup and ASCII-only sessions never pay for
+	 * it; the function-local static makes that thread-safe across terminal workers. */
 	static const uint8_t* bmp() {
 		static const std::unique_ptr<uint8_t[]> table = [] {
 			auto properties = std::make_unique<uint8_t[]>( 0x10000 );
@@ -4060,20 +4388,84 @@ struct UnicodeRun {
 
 } // namespace
 
+/* Shared by the run decoders; with two callers compilers stop inlining it, which cost the CJK run
+ * decoder ~14%. */
+#if defined( __GNUC__ ) || defined( __clang__ )
+#define ETERM_ALWAYS_INLINE inline __attribute__( ( always_inline ) )
+#elif defined( _MSC_VER )
+#define ETERM_ALWAYS_INLINE __forceinline
+#else
+#define ETERM_ALWAYS_INLINE inline
+#endif
+
+/* Decodes one well-formed multi-byte UTF-8 sequence at bytes[offset] as utf8decode() accepts it
+ * (no overlongs, surrogates or values above U+10FFFF). Returns its size, or 0 when it is malformed
+ * or incomplete before end. */
+static ETERM_ALWAYS_INLINE int decodeUtf8Codepoint( const unsigned char* bytes, int offset, int end,
+													Rune& u ) {
+	const auto continuation = [bytes]( int at ) { return ( bytes[at] & 0xC0 ) == 0x80; };
+	const unsigned char lead = bytes[offset];
+	if ( lead < 0xC2 ) {
+		return 0;
+	} else if ( lead < 0xE0 ) {
+		if ( offset + 1 >= end || !continuation( offset + 1 ) )
+			return 0;
+		u = ( ( lead & 0x1F ) << 6 ) | ( bytes[offset + 1] & 0x3F );
+		return 2;
+	} else if ( lead < 0xF0 ) {
+		if ( offset + 2 >= end || !continuation( offset + 1 ) || !continuation( offset + 2 ) )
+			return 0;
+		u = ( ( lead & 0x0F ) << 12 ) | ( ( bytes[offset + 1] & 0x3F ) << 6 ) |
+			( bytes[offset + 2] & 0x3F );
+		return u < 0x800 || BETWEEN( u, 0xD800, 0xDFFF ) ? 0 : 3;
+	} else if ( lead < 0xF5 ) {
+		if ( offset + 3 >= end || !continuation( offset + 1 ) || !continuation( offset + 2 ) ||
+			 !continuation( offset + 3 ) )
+			return 0;
+		u = ( ( lead & 0x07 ) << 18 ) | ( ( bytes[offset + 1] & 0x3F ) << 12 ) |
+			( ( bytes[offset + 2] & 0x3F ) << 6 ) | ( bytes[offset + 3] & 0x3F );
+		return BETWEEN( u, 0x10000, 0x10FFFF ) ? 4 : 0;
+	}
+	return 0;
+}
+
+/* Decodes the zero-width codepoints at [begin, end) (at most capacity) that tattachZeroWidth()
+ * attaches in one go. Returns the end of the decoded bytes. */
+static int decodeZeroWidthRun( const char* data, int begin, int end, char32_t* codepoints,
+							   size_t capacity, size_t& count ) {
+	const auto* bytes = reinterpret_cast<const unsigned char*>( data );
+	int offset = begin;
+	count = 0;
+	while ( offset < end && count < capacity ) {
+		Rune u;
+		const int size = decodeUtf8Codepoint( bytes, offset, end, u );
+		if ( size == 0 || u < 0xA0 || u == KittyGraphicsPlaceholder ||
+			 !( GlyphProperties::of( u ) & GlyphProperties::ZeroWidth ) )
+			break;
+		codepoints[count++] = static_cast<char32_t>( u );
+		offset += size;
+	}
+	return offset;
+}
+
 /* Decodes the text at [begin, end) that tputrun() can write directly: printable ASCII and the
  * well-formed UTF-8 sequences utf8decode() accepts. It stops before anything tputc() treats
  * specially (controls, C1, malformed or incomplete input, kitty placeholders) or when the run is
  * full. Returns the end of the decoded bytes. */
+template <bool Grapheme>
 static int decodeUnicodeRun( const char* data, int begin, int end, UnicodeRun& run, int& count ) {
+	/* One mask test per codepoint: zero-width codepoints always end the run, and under mode 2027
+	 * so do codepoints that may extend a cluster. */
+	constexpr uint8_t stops =
+		GlyphProperties::ZeroWidth | ( Grapheme ? GlyphProperties::Joins : 0 );
 	const auto* bytes = reinterpret_cast<const unsigned char*>( data );
-	const auto continuation = [bytes]( int offset ) { return ( bytes[offset] & 0xC0 ) == 0x80; };
 	const uint8_t* bmpProperties = GlyphProperties::bmp();
+	bool previousAttracts = false;
 	int offset = begin;
 	count = 0;
 	while ( offset < end && count < UnicodeRun::Capacity ) {
 		const unsigned char lead = bytes[offset];
 		Rune u;
-		int size;
 		if ( lead < 0x80 ) {
 			if ( !isPrintableAscii( lead ) )
 				break;
@@ -4081,37 +4473,24 @@ static int decodeUnicodeRun( const char* data, int begin, int end, UnicodeRun& r
 			run.properties[count++] = 1;
 			++offset;
 			continue;
-		} else if ( lead < 0xC2 ) {
-			break;
-		} else if ( lead < 0xE0 ) {
-			if ( offset + 1 >= end || !continuation( offset + 1 ) )
-				break;
-			u = ( ( lead & 0x1F ) << 6 ) | ( bytes[offset + 1] & 0x3F );
-			size = 2;
-		} else if ( lead < 0xF0 ) {
-			if ( offset + 2 >= end || !continuation( offset + 1 ) || !continuation( offset + 2 ) )
-				break;
-			u = ( ( lead & 0x0F ) << 12 ) | ( ( bytes[offset + 1] & 0x3F ) << 6 ) |
-				( bytes[offset + 2] & 0x3F );
-			if ( u < 0x800 || BETWEEN( u, 0xD800, 0xDFFF ) )
-				break;
-			size = 3;
-		} else if ( lead < 0xF5 ) {
-			if ( offset + 3 >= end || !continuation( offset + 1 ) || !continuation( offset + 2 ) ||
-				 !continuation( offset + 3 ) )
-				break;
-			u = ( ( lead & 0x07 ) << 18 ) | ( ( bytes[offset + 1] & 0x3F ) << 12 ) |
-				( ( bytes[offset + 2] & 0x3F ) << 6 ) | ( bytes[offset + 3] & 0x3F );
-			if ( !BETWEEN( u, 0x10000, 0x10FFFF ) )
-				break;
-			size = 4;
-		} else {
-			break;
 		}
+		const int size = decodeUtf8Codepoint( bytes, offset, end, u );
+		if ( size == 0 )
+			break;
 		if ( u < 0xA0 || u == KittyGraphicsPlaceholder )
 			break;
+		const uint8_t properties = u < 0x10000 ? bmpProperties[u] : GlyphProperties::compute( u );
+		/* Zero-width codepoints attach to the previous cell (tattach()); so do codepoints that
+		 * may extend a cluster under mode 2027 (ASCII never does, as in tattach()). */
+		if ( properties & stops )
+			break;
+		if constexpr ( Grapheme ) {
+			if ( count > 0 && previousAttracts )
+				break;
+			previousAttracts = properties & GlyphProperties::Attracts;
+		}
 		run.codepoints[count] = u;
-		run.properties[count++] = u < 0x10000 ? bmpProperties[u] : GlyphProperties::compute( u );
+		run.properties[count++] = properties;
 		offset += size;
 	}
 	return offset;
@@ -4238,9 +4617,36 @@ int TerminalEmulator::tpututf8( const char* buf, int begin, int end ) {
 	 * decoder and its stack buffer there slowed CSI-heavy output by ~12%. */
 	UnicodeRun run;
 	int count;
-	const int decodedEnd = decodeUnicodeRun( buf, begin, end, run, count );
-	if ( count > 0 )
-		tputrun( run, count );
+	const bool grapheme = IS_SET( MODE_GRAPHEME );
+	const int decodedEnd = grapheme ? decodeUnicodeRun<true>( buf, begin, end, run, count )
+									: decodeUnicodeRun<false>( buf, begin, end, run, count );
+	if ( count == 0 ) {
+		/* Without mode 2027 (and no kitty placeholder awaiting diacritics), a burst of zero-width
+		 * codepoints attaches at once instead of one tputc() each. */
+		if ( !grapheme && mKittyPlaceholderCell.x < 0 ) {
+			char32_t marks[MaxClusterCodepoints];
+			size_t markCount;
+			const int marksEnd =
+				decodeZeroWidthRun( buf, begin, end, marks, MaxClusterCodepoints, markCount );
+			if ( markCount > 0 ) {
+				tattachZeroWidth( marks, markCount );
+				return marksEnd;
+			}
+		}
+		return begin;
+	}
+	/* Under mode 2027 the run's first codepoint may extend the previous cell's cluster. */
+	if ( grapheme && run.codepoints[0] > 0xFF ) {
+		const int x = tattachColumn();
+		if ( x >= 0 ) {
+			Rune last = 0;
+			visitGlyphCodepoints( TLINE( mTerm.c.y )[x],
+								  [&last]( Rune codepoint ) { last = codepoint; } );
+			if ( last > 0xFF && ( GlyphProperties::of( last ) & GlyphProperties::Attracts ) )
+				return begin;
+		}
+	}
+	tputrun( run, count );
 	return decodedEnd;
 }
 
@@ -5103,8 +5509,9 @@ void TerminalEmulator::resize( int columns, int rows, int pixelWidth, int pixelH
 bool TerminalEmulator::update() {
 	// Reclaim erased/evicted links even if no further OSC 8 opens arrive. Never scan per frame,
 	// and never rescan buffers that received no output since the previous collection.
-	if ( mHyperlinkCollectionPending && mHyperlinkGcClock.getElapsedTime() >= Seconds( 5 ) )
-		collectHyperlinks();
+	if ( mGlyphReferenceCollectionPending &&
+		 mGlyphReferenceGcClock.getElapsedTime() >= Seconds( 5 ) )
+		collectGlyphReferences();
 	if ( mKittyGraphics.updateAnimations() )
 		mDirty = true;
 	if ( mPendingPtyResize && mPendingPtyResizeClock.getElapsedTime() >= Milliseconds( 100 ) ) {
@@ -5145,8 +5552,8 @@ bool TerminalEmulator::update() {
 		if ( readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) )
 			break;
 	}
-	if ( reads > 0 && mHyperlinkBytes != 0 )
-		mHyperlinkCollectionPending = true;
+	if ( reads > 0 && ( mHyperlinkBytes != 0 || mClusterCount != 0 ) )
+		mGlyphReferenceCollectionPending = true;
 	bool readBudgetSaturated =
 		reads == MAX_TTY_READS || presentationDeadlineReached ||
 		( reads > 0 && readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) );
