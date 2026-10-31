@@ -35,6 +35,8 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
+#include <eepp/core/containers.hpp>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/math/vector2.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/window/keycodes.hpp>
@@ -170,6 +172,17 @@ class TerminalEmulator final {
 
 	/** Worker-owned terminal state reset (RIS semantics without replacing the PTY/process). */
 	void reset();
+
+	/** Worker-only lookup. The result is borrowed until the next parser mutation. */
+	const TerminalHyperlink* getHyperlink( uint16_t id ) const;
+
+	bool hasHyperlinks() const { return mHyperlinkBytes != 0; }
+
+	bool getOsc8HyperlinksEnabled() const { return mEnableOsc8Hyperlinks; }
+
+	void setOsc8HyperlinksEnabled( bool enabled );
+
+	void setAllowOsc52ClipboardWrite( bool allow ) { mAllowOsc52ClipboardWrite = allow; }
 
 	void logError( const char* err );
 
@@ -342,6 +355,8 @@ class TerminalEmulator final {
 	int mBuflen;
 
 	Term mTerm;
+	// Printed attributes include the packed link; saved cursor/SGR attributes never do.
+	TerminalGlyph mPrintAttributes;
 	TerminalSelection mSel;
 	CSIEscape mCsiescseq;
 	STREscape mStrescseq;
@@ -358,12 +373,22 @@ class TerminalEmulator final {
 	uint32_t mDefaultRCs;
 
 	int mAllowAltScreen;
-	int mAllowWindowOps;
 	TerminalCursorMode mDefaultCursorMode{ SteadyUnderline };
 	bool mColorSchemeNotifications{ false };
+	bool mAllowOsc52ClipboardWrite{ true };
+	bool mEnableOsc8Hyperlinks{ true };
 	int mColorScheme{ 0 };
 
 	std::string mCurrentWorkingDirectory;
+	std::vector<TerminalHyperlink> mHyperlinks;
+	std::vector<uint16_t> mFreeHyperlinkIds;
+	UnorderedMap<size_t, SmallVector<uint16_t, 2>> mExplicitHyperlinks;
+	size_t mHyperlinkBytes{ 0 };
+	Clock mHyperlinkGcClock;
+	Time mHyperlinkCollectionCost; // Duration of the last collection; bounds the GC duty cycle.
+	uint16_t mActiveHyperlinkId{ 0 };
+	// Set by output/allocation; idle terminals never rescan unchanged buffers.
+	bool mHyperlinkCollectionPending{ false };
 	Vector2i mLastMousePosition{ -1, -1 };
 	PromptState mPromptState{ PromptState::Unknown };
 	PromptStateChangedCb mPromptStateChangedCb;
@@ -407,6 +432,25 @@ class TerminalEmulator final {
 
 	void strdump();
 	void strhandle();
+
+	void handleHyperlink( std::string_view sequence );
+
+	void handleWorkingDirectory( std::string_view uri );
+
+	void handleClipboardWrite( std::string_view sequence );
+
+	void collectHyperlinks();
+
+	void refreshPrintAttributes() {
+		mPrintAttributes = mTerm.c.attr;
+		setGlyphLinkId( mPrintAttributes, mActiveHyperlinkId );
+	}
+
+	void setActiveHyperlink( uint16_t id ) {
+		mActiveHyperlinkId = id;
+		refreshPrintAttributes();
+	}
+
 	void strparse();
 	void strreset();
 
@@ -440,7 +484,7 @@ class TerminalEmulator final {
 	void historyReflow( int old_col, int new_col );
 	void historyPopToScreen( int loaded, int col );
 	void tsetattr( int*, int, const char* );
-	void tsetchar( Rune, TerminalGlyph*, int, int );
+	void tsetchar( Rune, int, int );
 	void tsetdirt( int, int );
 	void tsetscroll( int, int );
 	void tswapscreen();

@@ -1,8 +1,10 @@
 #ifndef ECODE_TERMINALMANAGER_HPP
 #define ECODE_TERMINALMANAGER_HPP
 
+#include <eepp/ui/splitdirection.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eterm/ui/uiterminal.hpp>
+#include <functional>
 
 using namespace eterm::UI;
 using namespace EE::UI;
@@ -29,6 +31,14 @@ class TerminalManager {
 								   bool fallback = true, bool keepAlive = true );
 
 	void applyTerminalColorScheme( const TerminalColorScheme& colorScheme );
+
+	void forEachTerminal( const std::function<void( UITerminal* )>& fn ) const;
+
+	UITerminal* getCurrentTerminal() const;
+
+	std::string getWorkingDir( UITerminal* source ) const;
+
+	UITerminal* createTerminalSplit( SplitDirection direction );
 
 	void setTerminalColorScheme( const std::string& name );
 

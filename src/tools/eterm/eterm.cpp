@@ -1,6 +1,10 @@
 #include "eterm.hpp"
 #include <iostream>
 
+#if EE_PLATFORM != EE_PLATFORM_WIN
+#include <unistd.h>
+#endif
+
 namespace eterm {
 
 struct TabWidgetSplitterDeleter {
@@ -85,7 +89,7 @@ void App::createNewTerminal() {
 			createTerminalSplit( SplitDirection::Bottom, terminal );
 			break;
 		default:
-			createTerminal();
+			createTerminal( nullptr, resolveWorkingDirectory( terminal ) );
 			break;
 	}
 }
@@ -384,7 +388,29 @@ void App::configureTab( UITab* tab ) {
 	} );
 }
 
-UITerminal* App::createTerminal( UITabWidget* target ) {
+std::string App::resolveWorkingDirectory( UITerminal* source ) const {
+	if ( config->terminal.inheritWorkingDirectory && source && !terminalConfig.launchExecutable &&
+		 terminalConfig.executeInShell.empty() ) {
+		const auto usable = []( const std::string& path ) {
+			if ( !FileSystem::isDirectory( path ) )
+				return false;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+			return FileInfo( path ).isReadable();
+#else
+			return access( path.c_str(), X_OK ) == 0;
+#endif
+		};
+		auto directory = source->getTerm()->getCurrentWorkingDirectory();
+		if ( usable( directory ) )
+			return directory;
+		const auto& launchDirectory = source->getTerm()->getWorkingDir();
+		if ( usable( launchDirectory ) )
+			return launchDirectory;
+	}
+	return terminalConfig.workingDirectory;
+}
+
+UITerminal* App::createTerminal( UITabWidget* target, std::string workingDirectory ) {
 	if ( !target && tabSplitter ) {
 		auto* current = tabSplitter->getCurWidget();
 		target = current ? tabSplitter->tabWidgetFromWidget( current )
@@ -398,10 +424,17 @@ UITerminal* App::createTerminal( UITabWidget* target ) {
 		initialSize = target->getContainerNode()->getPixelsSize();
 	}
 
-	auto* terminal = UITerminal::New(
-		terminalFont, terminalFontSize, initialSize, terminalConfig.program,
-		terminalConfig.arguments, {}, terminalConfig.workingDirectory, terminalConfig.historySize,
-		nullptr, terminalConfig.useFrameBuffer, terminalConfig.keepAlive );
+	if ( workingDirectory.empty() )
+		workingDirectory = terminalConfig.workingDirectory;
+	auto display = TerminalDisplay::create(
+		appWindow, terminalFont, terminalFontSize, initialSize, terminalConfig.program,
+		terminalConfig.arguments, workingDirectory, terminalConfig.historySize, nullptr,
+		terminalConfig.useFrameBuffer, terminalConfig.keepAlive, {},
+		TerminalSessionOptions{ config->terminal.allowOsc52ClipboardWrite,
+								config->terminal.enableOsc8Hyperlinks } );
+	if ( !display )
+		return nullptr;
+	auto* terminal = UITerminal::New( display );
 	if ( !terminal || !terminal->getTerm() ) {
 		eeSAFE_DELETE( terminal );
 		return nullptr;
@@ -448,16 +481,8 @@ UITerminal* App::createTerminal( UITabWidget* target ) {
 		menu->addSeparator();
 		addItem( i18n( "settings", "Settings" ), "settings", "open-settings" );
 		addItem( i18n( "key_bindings", "Keybindings" ), "keybindings", "open-keybindings" );
-		menu->on( Event::OnItemClicked, [this, terminal]( const Event* itemEvent ) {
-			if ( !itemEvent->getNode()->isType( UI_TYPE_MENUITEM ) )
-				return;
-			const auto& command = itemEvent->getNode()->getId();
-			auto* previous = tabSplitter->getCurWidget();
-			tabSplitter->setCurrentWidget( terminal );
-			terminal->execute( command );
-			if ( previous && tabSplitter->ownedWidgetExists( previous ) )
-				tabSplitter->setCurrentWidget( previous );
-		} );
+		// UITerminal dispatches menu commands once; make this terminal their source context.
+		tabSplitter->setCurrentWidget( terminal );
 	} );
 	tabSplitter->setCurrentWidget( terminal );
 	if ( !terminalConfig.executeInShell.empty() )
@@ -469,8 +494,13 @@ UITerminal* App::createTerminal( UITabWidget* target ) {
 
 UITerminal* App::createTerminalSplit( SplitDirection direction, UIWidget* widget ) {
 	auto* source = widget ? tabSplitter->tabWidgetFromWidget( widget ) : nullptr;
+	auto* terminal = widget && widget->isType( UI_TYPE_TERMINAL )
+						 ? widget->asType<UITerminal>()
+						 : ( source ? terminalFromTab( source->getTabSelected() ) : nullptr );
+	// Splitting can change focus/current-tab references. Resolve from the original source first.
+	auto directory = resolveWorkingDirectory( terminal );
 	auto* target = source ? tabSplitter->splitTabWidget( direction, source ) : nullptr;
-	return target ? createTerminal( target ) : nullptr;
+	return target ? createTerminal( target, std::move( directory ) ) : nullptr;
 }
 
 void App::moveTab( UIWidget* widget, int offset ) {
@@ -928,6 +958,7 @@ int App::run( int argc, char* argv[] ) {
 	}
 	FileInfo launchFile( launchPath );
 	const bool launchExecutable = launchFile.isRegularFile() && launchFile.isExecutable();
+	terminalConfig.launchExecutable = launchExecutable;
 	terminalConfig.program = launchExecutable ? launchFile.getFilepath() : config->terminal.shell;
 	terminalConfig.arguments = config->terminal.shellArguments.empty()
 								   ? std::vector<std::string>{}

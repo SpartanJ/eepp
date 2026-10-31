@@ -33,12 +33,14 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
+#include <eterm/terminal/terminalemulator.hpp>
+
 #include <eterm/terminal/boxdrawdata.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
-#include <eterm/terminal/terminalemulator.hpp>
 
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/network/uri.hpp>
+#include <eepp/system/base64.hpp>
 #include <eepp/system/cpu.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
@@ -51,6 +53,7 @@ using namespace EE::System;
 #include <algorithm>
 #include <assert.h>
 #include <bit>
+#include <bitset>
 #include <cmath>
 #include <ctype.h>
 #include <errno.h>
@@ -64,6 +67,10 @@ using namespace EE::System;
 #include <string.h>
 #include <sys/types.h>
 #include <thread>
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+#include <unistd.h>
+#endif
 
 #if defined( EE_ARCH_X86_64 )
 #include <immintrin.h>
@@ -128,6 +135,11 @@ TerminalCursorMode blinkingCursorVariant( TerminalCursorMode mode ) {
 
 } // namespace
 
+// Linked spaces are content: line-length, reflow and max-width scans must keep them.
+static inline bool isTrailingBlank( const TerminalGlyph& glyph ) {
+	return glyph.u == ' ' && ( glyph.mode & GLYPH_LINK_MASK ) == 0;
+}
+
 #if defined( EE_ARCH_X86_64 )
 #if defined( __GNUC__ ) || defined( __clang__ )
 __attribute__( ( target( "avx2" ) ) )
@@ -166,38 +178,49 @@ static int findKittyAPCControlAVX2( const char* data, int begin, int end ) {
 __attribute__( ( target( "avx2" ) ) )
 #endif
 static int trailingNonSpaceWidthAVX2( Line line, int width, int minimumWidth ) {
-	const __m256i offsets = _mm256_set_epi32( 112, 96, 80, 64, 48, 32, 16, 0 );
-	const __m256i spaces = _mm256_set1_epi32( ' ' );
+	// Contiguous loads of two glyphs each (u, mode, fg, bg) are cheaper than gathers. A glyph is
+	// blank when its codepoint is a space and its mode carries no hyperlink; fg/bg are ignored.
+	const __m256i keep = _mm256_setr_epi32( -1, static_cast<int>( GLYPH_LINK_MASK ), 0, 0, -1,
+											static_cast<int>( GLYPH_LINK_MASK ), 0, 0 );
+	const __m256i blank = _mm256_setr_epi32( ' ', 0, 0, 0, ' ', 0, 0, 0 );
 	while ( width - minimumWidth >= 8 ) {
 		int start = width - 8;
-		const __m256i codepoints =
-			_mm256_i32gather_epi32( reinterpret_cast<const int*>( line + start ), offsets, 1 );
-		unsigned int nonSpaces =
-			( ~static_cast<unsigned int>( _mm256_movemask_ps(
-				_mm256_castsi256_ps( _mm256_cmpeq_epi32( codepoints, spaces ) ) ) ) ) &
-			0xFFu;
+		unsigned int nonSpaces = 0;
+		for ( int pair = 0; pair < 4; ++pair ) {
+			const __m256i glyphs =
+				_mm256_loadu_si256( reinterpret_cast<const __m256i*>( line + start + pair * 2 ) );
+			const auto equal = static_cast<unsigned int>( _mm256_movemask_epi8(
+				_mm256_cmpeq_epi32( _mm256_and_si256( glyphs, keep ), blank ) ) );
+			nonSpaces |= static_cast<unsigned int>( ( equal & 0xFFFFu ) != 0xFFFFu )
+						 << ( pair * 2 );
+			nonSpaces |= static_cast<unsigned int>( ( equal >> 16 ) != 0xFFFFu )
+						 << ( pair * 2 + 1 );
+		}
 		if ( nonSpaces != 0 )
 			return start + std::bit_width( nonSpaces );
 		width = start;
 	}
-	while ( width > minimumWidth && line[width - 1].u == ' ' )
+	while ( width > minimumWidth && isTrailingBlank( line[width - 1] ) )
 		--width;
 	return width;
 }
 #elif defined( EE_ARCH_ARM64 )
 static int trailingNonSpaceWidthNEON( Line line, int width, int minimumWidth ) {
 	const uint32x4_t spaces = vdupq_n_u32( ' ' );
+	const uint32x4_t linkMask = vdupq_n_u32( GLYPH_LINK_MASK );
 	while ( width - minimumWidth >= 4 ) {
 		int start = width - 4;
 		const uint32x4x4_t glyphs = vld4q_u32( reinterpret_cast<const uint32_t*>( line + start ) );
-		if ( vminvq_u32( vceqq_u32( glyphs.val[0], spaces ) ) != UINT32_MAX ) {
+		const uint32x4_t blanks = vandq_u32( vceqq_u32( glyphs.val[0], spaces ),
+											 vceqzq_u32( vandq_u32( glyphs.val[1], linkMask ) ) );
+		if ( vminvq_u32( blanks ) != UINT32_MAX ) {
 			for ( int x = width - 1; x >= start; --x )
-				if ( line[x].u != ' ' )
+				if ( !isTrailingBlank( line[x] ) )
 					return x + 1;
 		}
 		width = start;
 	}
-	while ( width > minimumWidth && line[width - 1].u == ' ' )
+	while ( width > minimumWidth && isTrailingBlank( line[width - 1] ) )
 		--width;
 	return width;
 }
@@ -436,9 +459,6 @@ static char utf8encodebyte( Rune, size_t );
 static size_t utf8validate( Rune*, size_t );
 static size_t utf8encode( Rune, char* );
 
-static char* base64dec( const char* );
-static char base64dec_getc( const char** );
-
 // static intmax_t xwrite( int, const char*, size_t );
 
 size_t utf8decode( const char* c, Rune* u, size_t clen ) {
@@ -501,55 +521,6 @@ size_t utf8validate( Rune* u, size_t i ) {
 	return i;
 }
 
-static const char base64_digits[] = {
-	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,		  0,  0,  0,  0,
-	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,		  0,  0,  0,  62,
-	0,	0,	0,	63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 0,	0,	0,	(char)-1, 0,  0,  0,  0,
-	1,	2,	3,	4,	5,	6,	7,	8,	9,	10, 11, 12, 13, 14, 15, 16, 17, 18,		  19, 20, 21, 22,
-	23, 24, 25, 0,	0,	0,	0,	0,	0,	26, 27, 28, 29, 30, 31, 32, 33, 34,		  35, 36, 37, 38,
-	39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 0,	0,	0,	0,	0,		  0,  0,  0,  0,
-	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,		  0,  0,  0,  0,
-	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,		  0,  0,  0,  0,
-	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,		  0,  0,  0,  0,
-	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,		  0,  0,  0,  0,
-	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,		  0,  0,  0,  0,
-	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0 };
-
-char base64dec_getc( const char** src ) {
-	while ( **src && !isprint( **src ) )
-		( *src )++;
-	return **src ? *( ( *src )++ ) : '='; /* emulate padding if string ends */
-}
-
-char* base64dec( const char* src ) {
-	size_t in_len = strlen( src );
-	char *result, *dst;
-
-	if ( in_len % 4 )
-		in_len += 4 - ( in_len % 4 );
-	result = dst = (char*)xmalloc( in_len / 4 * 3 + 1 );
-	while ( *src ) {
-		int a = base64_digits[(unsigned char)base64dec_getc( &src )];
-		int b = base64_digits[(unsigned char)base64dec_getc( &src )];
-		int c = base64_digits[(unsigned char)base64dec_getc( &src )];
-		int d = base64_digits[(unsigned char)base64dec_getc( &src )];
-
-		/* invalid input. 'a' can be -1, e.g. if src is "\n" (c-str) */
-		if ( a == -1 || b == -1 )
-			break;
-
-		*dst++ = ( a << 2 ) | ( ( b & 0x30 ) >> 4 );
-		if ( c == -1 )
-			break;
-		*dst++ = ( ( b & 0x0f ) << 4 ) | ( ( c & 0x3c ) >> 2 );
-		if ( d == -1 )
-			break;
-		*dst++ = ( ( c & 0x03 ) << 6 ) | d;
-	}
-	*dst = '\0';
-	return result;
-}
-
 void TerminalEmulator::selinit( void ) {
 	mSel.mode = SEL_IDLE;
 	mSel.snap = 0;
@@ -565,7 +536,7 @@ int TerminalEmulator::tlinelen( int y ) const {
 	if ( TLINE( y )[i - 1].mode & ATTR_WRAP )
 		return i;
 
-	while ( i > 0 && TLINE( y )[i - 1].u == ' ' )
+	while ( i > 0 && isTrailingBlank( TLINE( y )[i - 1] ) )
 		--i;
 
 	return i;
@@ -579,10 +550,10 @@ int TerminalEmulator::tlinelen( Line line, int col ) const {
 	 * branch-light and the common cases are either a full-width wrapped line
 	 * or a short trailing space run, so this keeps the scan cheap without
 	 * changing semantics. */
-	while ( i >= 4 && line[i - 1].u == ' ' && line[i - 2].u == ' ' && line[i - 3].u == ' ' &&
-			line[i - 4].u == ' ' )
+	while ( i >= 4 && isTrailingBlank( line[i - 1] ) && isTrailingBlank( line[i - 2] ) &&
+			isTrailingBlank( line[i - 3] ) && isTrailingBlank( line[i - 4] ) )
 		i -= 4;
-	while ( i > 0 && line[i - 1].u == ' ' )
+	while ( i > 0 && isTrailingBlank( line[i - 1] ) )
 		--i;
 	return i;
 }
@@ -1076,6 +1047,7 @@ void TerminalEmulator::clearHistory() {
 	mTerm.max_width = 0;
 	mTerm.histcapacity = 0;
 	mTerm.scr = 0;
+	collectHyperlinks();
 	trimMemory();
 }
 
@@ -1372,11 +1344,16 @@ void TerminalEmulator::tcursor( int mode ) {
 		mTerm.c = c[alt];
 		tmoveto( c[alt].x, c[alt].y );
 	}
+	refreshPrintAttributes();
 }
 
 void TerminalEmulator::treset( void ) {
 	uint i;
 
+	setActiveHyperlink( 0 );
+	// Region operations address the displayed viewport; RIS must clear the screens, not history.
+	mTerm.scr = 0;
+	mCurrentWorkingDirectory.clear();
 	resetKittyKeyboardProtocol();
 	mColorSchemeNotifications = false;
 	mTerm.is_syncing = false;
@@ -1405,6 +1382,8 @@ void TerminalEmulator::treset( void ) {
 		tclearregion( 0, 0, mTerm.col - 1, mTerm.row - 1 );
 		tswapscreen();
 	}
+	// RIS preserves scrollback. Reclaim only descriptors that neither buffer nor history uses.
+	collectHyperlinks();
 
 	xsetmode( 0, MODE_MOUSE | MODE_MOUSESGR | MODE_MOUSESGR_PIXELS | MODE_APPKEYPAD |
 					 MODE_APPCURSOR | MODE_FOCUS | MODE_BRCKTPASTE | MODE_MOUSEX10 |
@@ -1578,7 +1557,7 @@ void TerminalEmulator::historyUpdateMaxWidth( Line line, int col ) {
 		width = trailingNonSpaceWidthNEON( line, width, mTerm.max_width );
 	else
 #endif
-		while ( width > mTerm.max_width && line[width - 1].u == ' ' )
+		while ( width > mTerm.max_width && isTrailingBlank( line[width - 1] ) )
 			--width;
 	if ( width > mTerm.max_width )
 		mTerm.max_width = width;
@@ -1711,7 +1690,8 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 			continue;
 		while ( logical_len > 0 ) {
 			TerminalGlyph* g = &logical[logical_len - 1];
-			if ( g->u == ' ' && g->bg == mDefaultBg && ( g->mode & ATTR_BOLD ) == 0 )
+			if ( g->u == ' ' && g->bg == mDefaultBg && ( g->mode & ATTR_BOLD ) == 0 &&
+				 glyphLinkId( *g ) == 0 )
 				logical_len--;
 			else
 				break;
@@ -1930,7 +1910,7 @@ void TerminalEmulator::tmoveto( int x, int y ) {
 	mTerm.c.y = LIMIT( y, miny, maxy );
 }
 
-void TerminalEmulator::tsetchar( Rune u, TerminalGlyph* attr, int x, int y ) {
+void TerminalEmulator::tsetchar( Rune u, int x, int y ) {
 	static const char* vt100_0[62] = {
 		/* 0x41 - 0x7e */
 		"↑", "↓", "→", "←", "█", "▚", "☃",		/* A - G */
@@ -1953,17 +1933,17 @@ void TerminalEmulator::tsetchar( Rune u, TerminalGlyph* attr, int x, int y ) {
 	if ( TLINE( y )[x].mode & ATTR_WIDE ) {
 		if ( x + 1 < mTerm.col ) {
 			TLINE( y )[x + 1].u = ' ';
-			TLINE( y )[x + 1].mode &= ~ATTR_WDUMMY;
+			TLINE( y )[x + 1].mode &= ~( ATTR_WDUMMY | GLYPH_LINK_MASK );
 		}
 	} else if ( TLINE( y )[x].mode & ATTR_WDUMMY ) {
 		TLINE( y )[x - 1].u = ' ';
-		TLINE( y )[x - 1].mode &= ~ATTR_WIDE;
+		TLINE( y )[x - 1].mode &= ~( ATTR_WIDE | GLYPH_LINK_MASK );
 	}
 
 	if ( TLINE( y )[x].u == KittyGraphicsPlaceholder )
 		mKittyPlaceholderMetadata.erase( &TLINE( y )[x] );
 	mTerm.dirty[y] = 1;
-	TLINE( y )[x] = *attr;
+	TLINE( y )[x] = mPrintAttributes;
 	TLINE( y )[x].u = u;
 	mDirty = true;
 
@@ -1983,6 +1963,17 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2, bool skip_c
 	LIMIT( x2, 0, mTerm.col - 1 );
 	LIMIT( y1, 0, mTerm.row - 1 );
 	LIMIT( y2, 0, mTerm.row - 1 );
+	// A partial wide-cell erase must not leave the other half pointing at an old URI. Full-width
+	// erases (the scroll path) have no outside half.
+	if ( hasHyperlinks() && ( x1 > 0 || x2 + 1 < mTerm.col ) ) {
+		for ( int row = y1; row <= y2; ++row ) {
+			Line line = TLINE( row );
+			if ( x1 > 0 && ( line[x1].mode & ATTR_WDUMMY ) )
+				setGlyphLinkId( line[x1 - 1], 0 );
+			if ( x2 + 1 < mTerm.col && ( line[x2].mode & ATTR_WIDE ) )
+				setGlyphLinkId( line[x2 + 1], 0 );
+		}
+	}
 	if ( !mKittyPlaceholderMetadata.empty() ) {
 		for ( int clearY = y1; clearY <= y2; ++clearY ) {
 			for ( int clearX = x1; clearX <= x2; ++clearX ) {
@@ -2250,6 +2241,7 @@ void TerminalEmulator::tsetattr( int* attr, int l, const char* separators ) {
 				break;
 		}
 	}
+	refreshPrintAttributes();
 }
 
 void TerminalEmulator::tsetscroll( int t, int b ) {
@@ -2642,6 +2634,9 @@ void TerminalEmulator::csihandle( void ) {
 		case 'n': /* DSR – Device Status Report (cursor position) */
 			if ( mCsiescseq.priv == '?' && mCsiescseq.arg[0] == 996 ) {
 				reportColorScheme();
+			} else if ( !mCsiescseq.priv && mCsiescseq.arg[0] == 5 ) {
+				// Operating status: always "OK". Programs use it as an ordered parse barrier.
+				ttywrite( "\033[0n", 4, 0 );
 			} else if ( !mCsiescseq.priv && mCsiescseq.arg[0] == 6 ) {
 				len = snprintf( buf, sizeof( buf ), "\033[%i;%iR", mTerm.c.y + 1, mTerm.c.x + 1 );
 				ttywrite( buf, len, 0 );
@@ -2758,13 +2753,270 @@ void TerminalEmulator::csireset( void ) {
 	memset( &mCsiescseq, 0, sizeof( mCsiescseq ) );
 }
 
+static size_t hyperlinkHash( std::string_view uri, std::string_view externalId ) {
+	return hashCombine( std::hash<std::string_view>{}( uri ),
+						std::hash<std::string_view>{}( externalId ) );
+}
+
+const TerminalHyperlink* TerminalEmulator::getHyperlink( uint16_t id ) const {
+	return id != 0 && id < mHyperlinks.size() && mHyperlinks[id].uri ? &mHyperlinks[id] : nullptr;
+}
+
+void TerminalEmulator::setOsc8HyperlinksEnabled( bool enabled ) {
+	if ( mEnableOsc8Hyperlinks == enabled )
+		return;
+	mEnableOsc8Hyperlinks = enabled;
+	if ( !enabled )
+		setActiveHyperlink( 0 );
+	tfulldirt();
+}
+
+void TerminalEmulator::handleHyperlink( std::string_view sequence ) {
+	// OSC 8 replaces the active run, independently of SGR and saved cursor attributes.
+	setActiveHyperlink( 0 );
+	if ( !mEnableOsc8Hyperlinks )
+		return;
+	const size_t separator = sequence.find( ';' );
+	if ( separator == std::string_view::npos )
+		return;
+	const auto params = sequence.substr( 0, separator );
+	const auto uri = sequence.substr( separator + 1 );
+	constexpr size_t maxUriSize = 8192;
+	constexpr size_t maxExternalIdSize = 1024;
+	constexpr size_t maxRegistryBytes = 8 * 1024 * 1024;
+	if ( uri.empty() || uri.size() > maxUriSize || uri.find( ':' ) == std::string_view::npos )
+		return;
+	for ( unsigned char c : sequence ) {
+		if ( c < 0x20 || c == 0x7F )
+			return;
+	}
+	std::string_view externalId;
+	for ( size_t start = 0; start < params.size(); ) {
+		const auto end = params.find( ':', start );
+		const auto param =
+			params.substr( start, end == std::string_view::npos ? end : end - start );
+		if ( param.substr( 0, 3 ) == "id=" )
+			externalId = param.substr( 3 );
+		if ( end == std::string_view::npos )
+			break;
+		start = end + 1;
+	}
+	if ( externalId.size() > maxExternalIdSize )
+		return;
+	const size_t hash = hyperlinkHash( uri, externalId );
+	if ( !externalId.empty() ) {
+		auto found = mExplicitHyperlinks.find( hash );
+		if ( found != mExplicitHyperlinks.end() ) {
+			for ( auto id : found->second ) {
+				const auto& link = mHyperlinks[id];
+				if ( *link.uri == uri && link.externalId == externalId ) {
+					setActiveHyperlink( id );
+					return;
+				}
+			}
+		}
+	}
+	const size_t bytes = uri.size() + externalId.size();
+	const auto exhausted = [&] {
+		return mHyperlinkBytes + bytes > maxRegistryBytes ||
+			   ( mFreeHyperlinkIds.empty() && mHyperlinks.size() > GLYPH_LINK_MAX );
+	};
+	// A collection scans every live buffer, including cold history (~15 ms for 10k x 120 rows),
+	// so run it only when the ID space or byte budget is exhausted, never per N opens. Bound its
+	// duty cycle to ~20%: a producer that keeps the registry full while churning links must not
+	// turn every OSC 8 open into a full scan. No reference counting or registry work is
+	// performed in the character/scroll hot paths.
+	if ( exhausted() && mHyperlinkCollectionPending &&
+		 mHyperlinkGcClock.getElapsedTime() >= mHyperlinkCollectionCost * 5.0 )
+		collectHyperlinks();
+	if ( exhausted() )
+		return;
+	if ( mHyperlinks.empty() )
+		mHyperlinks.emplace_back(); // ID zero always means no hyperlink.
+	uint16_t id;
+	if ( !mFreeHyperlinkIds.empty() ) {
+		id = mFreeHyperlinkIds.back();
+		mFreeHyperlinkIds.pop_back();
+	} else {
+		id = static_cast<uint16_t>( mHyperlinks.size() );
+		mHyperlinks.emplace_back();
+	}
+	mHyperlinks[id] = { std::make_shared<const std::string>( uri ), std::string( externalId ) };
+	mHyperlinkBytes += bytes;
+	mHyperlinkCollectionPending = true;
+	if ( !externalId.empty() )
+		mExplicitHyperlinks[hash].push_back( id );
+	setActiveHyperlink( id );
+}
+
+void TerminalEmulator::collectHyperlinks() {
+	mHyperlinkGcClock.restart();
+	mHyperlinkCollectionPending = false;
+	if ( mHyperlinks.empty() )
+		return;
+	// 4 KiB on the worker stack, rather than another dense per-cell allocation.
+	std::bitset<GLYPH_LINK_MAX + 1> live;
+	live.set( mActiveHyperlinkId );
+	auto markLine = [&live]( Line line, int columns ) {
+		for ( int x = 0; x < columns; ++x )
+			live.set( glyphLinkId( line[x] ) );
+	};
+	for ( int y = 0; y < mTerm.row; ++y ) {
+		markLine( mTerm.line[y], mTerm.col );
+		markLine( mTerm.alt[y], mTerm.col );
+	}
+	for ( int row = 0; row < mTerm.histlen; ++row ) {
+		const int index =
+			( mTerm.histi - mTerm.histlen + 1 + row + mTerm.histsize ) % mTerm.histsize;
+		// histcapacity is only an upper bound: a narrowing resize without reflow shrinks each
+		// history line to mTerm.col but keeps the larger capacity.
+		markLine( mTerm.hist[index], mTerm.col );
+	}
+	mFreeHyperlinkIds.clear();
+	mExplicitHyperlinks.clear();
+	mHyperlinkBytes = 0;
+	for ( size_t id = 1; id < mHyperlinks.size(); ++id ) {
+		auto& link = mHyperlinks[id];
+		if ( !link.uri || !live.test( id ) ) {
+			// Retained snapshots keep their own reference to the URI.
+			link.uri.reset();
+			std::string{}.swap( link.externalId );
+			mFreeHyperlinkIds.push_back( static_cast<uint16_t>( id ) );
+		} else {
+			mHyperlinkBytes += link.uri->size() + link.externalId.size();
+			if ( !link.externalId.empty() ) {
+				mExplicitHyperlinks[hyperlinkHash( *link.uri, link.externalId )].push_back(
+					static_cast<uint16_t>( id ) );
+			}
+		}
+	}
+	mHyperlinkCollectionCost = mHyperlinkGcClock.getElapsedTime();
+}
+
+void TerminalEmulator::handleWorkingDirectory( std::string_view value ) {
+	// Clear a prior local report when a process starts reporting a remote or invalid origin.
+	mCurrentWorkingDirectory.clear();
+	mDirty = true; // Publish reports even when the shell emits no printable text afterwards.
+	if ( value.size() < 8 || value.size() > 8192 || value.substr( 4, 3 ) != "://" )
+		return;
+	for ( size_t i = 0; i < value.size(); ++i ) {
+		const auto c = static_cast<unsigned char>( value[i] );
+		if ( c <= 0x20 || c == 0x7F || c == '\\' )
+			return;
+		if ( c == '%' ) {
+			if ( i + 2 >= value.size() || !isxdigit( static_cast<unsigned char>( value[i + 1] ) ) ||
+				 !isxdigit( static_cast<unsigned char>( value[i + 2] ) ) )
+				return;
+			i += 2;
+		}
+	}
+	URI uri{ std::string( value ) };
+	if ( uri.getScheme() != "file" || !uri.getQuery().empty() || !uri.getFragment().empty() )
+		return;
+	const auto slash = value.find( '/', 7 );
+	if ( slash == std::string_view::npos )
+		return;
+	const auto authority = value.substr( 7, slash - 7 );
+	if ( !authority.empty() && !String::iequals( authority, "localhost" ) ) {
+		static const std::string localHost = [] {
+			char host[256]{};
+#if EE_PLATFORM == EE_PLATFORM_WIN
+			DWORD size = sizeof( host );
+			if ( !GetComputerNameExA( ComputerNameDnsHostname, host, &size ) )
+				return std::string{};
+#else
+			if ( gethostname( host, sizeof( host ) - 1 ) != 0 )
+				return std::string{};
+#endif
+			return std::string( host );
+		}();
+		// Shells report either the short name or the FQDN, independently of gethostname(). Accept
+		// one being the other's short form, but never two different domains.
+		const auto shortName = []( std::string_view host ) {
+			return host.substr( 0, host.find( '.' ) );
+		};
+		const bool authorityShort = authority.find( '.' ) == std::string_view::npos;
+		const bool localShort = localHost.find( '.' ) == std::string::npos;
+		if ( localHost.empty() ||
+			 ( !String::iequals( authority, localHost ) &&
+			   ( authorityShort == localShort ||
+				 !String::iequals( shortName( authority ), shortName( localHost ) ) ) ) )
+			return;
+	}
+	// A matching hostname denotes a local drive, not a Windows UNC share.
+	uri.setHost( "" );
+	auto path = uri.getFSPath();
+	if ( path.empty() || path.find( '\0' ) != std::string::npos ||
+		 FileSystem::isRelativePath( path ) )
+		return;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( path.size() < 3 || !String::isLetter( path[0] ) || path[1] != ':' ||
+		 ( path[2] != '/' && path[2] != '\\' ) )
+		return;
+#endif
+	mCurrentWorkingDirectory = std::move( path );
+}
+
+void TerminalEmulator::handleClipboardWrite( std::string_view sequence ) {
+	if ( !mAllowOsc52ClipboardWrite )
+		return;
+	const auto separator = sequence.find( ';' );
+	if ( separator == std::string_view::npos )
+		return;
+	const auto selector = sequence.substr( 0, separator );
+	// Accept every xterm target (clipboard, primary, secondary, select and cut buffers 0-7), as
+	// Ghostty does: eterm writes all of them to the system clipboard. Neovim, for example, sends
+	// `s` for its "* register. Primary-selection integration and reads are not supported.
+	for ( char target : selector ) {
+		if ( std::string_view( "cpqs01234567" ).find( target ) == std::string_view::npos )
+			return;
+	}
+	const auto encoded = sequence.substr( separator + 1 );
+	constexpr size_t maxDecodedSize = 256 * 1024;
+	constexpr size_t maxEncodedSize = ( ( maxDecodedSize + 2 ) / 3 ) * 4;
+	if ( encoded == "?" || encoded.size() > maxEncodedSize )
+		return;
+	std::string decoded;
+	const auto length = Base64::decode( encoded, decoded, Base64::DecodeMode::NoWhitespaceStrict );
+	if ( length == static_cast<size_t>( -1 ) || length > maxDecodedSize ||
+		 decoded.find( '\0' ) != std::string::npos )
+		return;
+	setClipboard( decoded.c_str() );
+}
+
 void TerminalEmulator::strhandle( void ) {
-	char *p = NULL, *dec;
+	char* p = NULL;
 	int j, narg, par;
 
 	mTerm.esc &= ~( ESC_STR_END | ESC_STR );
-	if ( mStrescseq.discarded )
+	if ( mStrescseq.discarded ) {
+		// An oversized OSC 8 must not leave a previous hyperlink active.
+		if ( mStrescseq.type == ']' && mStrescseq.len >= 2 && mStrescseq.buf[0] == '8' &&
+			 mStrescseq.buf[1] == ';' )
+			setActiveHyperlink( 0 );
+		if ( mStrescseq.type == ']' && mStrescseq.len >= 2 && mStrescseq.buf[0] == '7' &&
+			 mStrescseq.buf[1] == ';' ) {
+			mCurrentWorkingDirectory.clear();
+			mDirty = true;
+		}
 		return;
+	}
+	if ( mStrescseq.type == ']' && mStrescseq.len >= 2 && mStrescseq.buf[0] == '8' &&
+		 mStrescseq.buf[1] == ';' ) {
+		handleHyperlink( { mStrescseq.buf + 2, mStrescseq.len - 2 } );
+		return;
+	}
+	if ( mStrescseq.type == ']' ) {
+		const std::string_view sequence{ mStrescseq.buf, mStrescseq.len };
+		if ( sequence.substr( 0, 2 ) == "7;" ) {
+			handleWorkingDirectory( sequence.substr( 2 ) );
+			return;
+		}
+		if ( sequence.substr( 0, 3 ) == "52;" ) {
+			handleClipboardWrite( sequence.substr( 3 ) );
+			return;
+		}
+	}
 	if ( mStrescseq.type == '_' && mStrescseq.len > 0 && mStrescseq.buf[0] == 'G' ) {
 		auto result =
 			mKittyGraphics.handle( std::string_view{ mStrescseq.buf + 1, mStrescseq.len - 1 },
@@ -2812,17 +3064,6 @@ void TerminalEmulator::strhandle( void ) {
 					if ( narg > 1 ) {
 						dpy->setTitle( mStrescseq.args[1] );
 						mTerm.title = mStrescseq.args[1];
-					}
-					return;
-				case 52: /* manipulate selection data */
-					if ( narg > 2 && mAllowWindowOps ) {
-						dec = base64dec( mStrescseq.args[2] );
-						if ( dec ) {
-							setClipboard( dec );
-							xfree( dec );
-						} else {
-							terminalDiagnostic( "erresc: invalid base64\n" );
-						}
 					}
 					return;
 				case 10: /* set dynamic VT100 text foreground color */
@@ -2901,18 +3142,14 @@ void TerminalEmulator::strhandle( void ) {
 						tfulldirt();
 					}
 					return;
-				case 7: {
-					if ( narg > 1 )
-						mCurrentWorkingDirectory = URI( mStrescseq.args[1] ).getPath();
+				case 7:
+					mCurrentWorkingDirectory.clear();
+					mDirty = true;
 					return;
-				}
 				case 8: /* Hyperlink: OSC 8 ; params ; URI ST */
-					// Hyperlink metadata is not stored in terminal cells yet. Recognize valid open
-					// and close markers so applications can emit OSC 8 without producing
-					// diagnostics.
-					if ( narg >= 3 )
-						return;
-					break;
+					// Valid OSC 8 is handled before destructive generic argument splitting.
+					setActiveHyperlink( 0 );
+					return;
 				case 133: {
 					if ( narg > 1 ) {
 						j = ( narg > 1 ) ? mStrescseq.args[1][0] : -1;
@@ -3120,7 +3357,7 @@ void TerminalEmulator::tdectest( char c ) {
 	if ( c == '8' ) { /* DEC screen alignment test. */
 		for ( x = 0; x < mTerm.col; ++x ) {
 			for ( y = 0; y < mTerm.row; ++y )
-				tsetchar( 'E', &mTerm.c.attr, x, y );
+				tsetchar( 'E', x, y );
 		}
 	}
 }
@@ -3182,7 +3419,7 @@ void TerminalEmulator::tcontrolcode( uchar ascii ) {
 			mTerm.charset = 1 - ( ascii - '\016' );
 			return;
 		case '\032': /* SUB */
-			tsetchar( '?', &mTerm.c.attr, mTerm.c.x, mTerm.c.y );
+			tsetchar( '?', mTerm.c.x, mTerm.c.y );
 			/* FALLTHROUGH */
 		case '\030': /* CAN */
 			csireset();
@@ -3386,9 +3623,9 @@ void TerminalEmulator::tputc( Rune u ) {
 			if ( selected( mTerm.c.x, mTerm.c.y ) )
 				selclear();
 			gp->u = u;
-			gp->mode = mTerm.c.attr.mode;
-			gp->fg = mTerm.c.attr.fg;
-			gp->bg = mTerm.c.attr.bg;
+			gp->mode = mPrintAttributes.mode;
+			gp->fg = mPrintAttributes.fg;
+			gp->bg = mPrintAttributes.bg;
 			mDirty = true;
 			mTerm.dirty[mTerm.c.y] = 1;
 			mTerm.lastc = u;
@@ -3547,7 +3784,7 @@ check_control_code:
 		gp = &mTerm.line[mTerm.c.y][mTerm.c.x];
 	}
 
-	tsetchar( u, &mTerm.c.attr, mTerm.c.x, mTerm.c.y );
+	tsetchar( u, mTerm.c.x, mTerm.c.y );
 	if ( u == KittyGraphicsPlaceholder ) {
 		mKittyPlaceholderCell = Vector2i( mTerm.c.x, mTerm.c.y );
 		const Uint32 placementId = IS_TRUECOL( mKittyUnderlineColor )
@@ -3564,6 +3801,7 @@ check_control_code:
 		if ( mTerm.c.x + 1 < mTerm.col ) {
 			gp[1].u = '\0';
 			gp[1].mode = ATTR_WDUMMY;
+			setGlyphLinkId( gp[1], mActiveHyperlinkId );
 		}
 		if ( is_emoji( u ) ) {
 			gp->mode |= ATTR_EMOJI;
@@ -4201,6 +4439,8 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type,
 }
 
 void TerminalEmulator::setPtyAndProcess( PtyPtr&& pty, ProcPtr&& process ) {
+	setActiveHyperlink( 0 );
+	mCurrentWorkingDirectory.clear();
 	mKittyGraphics.reset();
 	resetKittyKeyboardProtocol();
 	mKittyPlaceholderMetadata.clear();
@@ -4242,8 +4482,7 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 	mDefaultBg( 0 ),
 	mDefaultCs( 7 ),
 	mDefaultRCs( 0 ),
-	mAllowAltScreen( 1 ),
-	mAllowWindowOps( 1 ) {
+	mAllowAltScreen( 1 ) {
 	memset( mBuf, 0, sizeof( mBuf ) );
 	memset( &mSel, 0, sizeof( mSel ) );
 	memset( &mCsiescseq, 0, sizeof( mCsiescseq ) );
@@ -4263,6 +4502,9 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 }
 
 TerminalEmulator::~TerminalEmulator() {
+	// Nothing can observe the registry anymore: skip clearHistory()'s collection scan.
+	mHyperlinks.clear();
+	clearHistory();
 	for ( int i = 0; i < mTerm.row; i++ ) {
 		eeSAFE_FREE( mTerm.line[i] );
 		eeSAFE_FREE( mTerm.alt[i] );
@@ -4270,8 +4512,6 @@ TerminalEmulator::~TerminalEmulator() {
 	eeSAFE_FREE( mTerm.dirty );
 	eeSAFE_FREE( mTerm.tabs );
 	eeSAFE_FREE( mStrescseq.buf );
-
-	clearHistory();
 
 	{
 		auto dpy = mDpy.lock();
@@ -4390,6 +4630,10 @@ void TerminalEmulator::resize( int columns, int rows, int pixelWidth, int pixelH
 #define MAX_TTY_READS ( 1024 )
 
 bool TerminalEmulator::update() {
+	// Reclaim erased/evicted links even if no further OSC 8 opens arrive. Never scan per frame,
+	// and never rescan buffers that received no output since the previous collection.
+	if ( mHyperlinkCollectionPending && mHyperlinkGcClock.getElapsedTime() >= Seconds( 5 ) )
+		collectHyperlinks();
 	if ( mKittyGraphics.updateAnimations() )
 		mDirty = true;
 	if ( mPendingPtyResize && mPendingPtyResizeClock.getElapsedTime() >= Milliseconds( 100 ) ) {
@@ -4430,6 +4674,8 @@ bool TerminalEmulator::update() {
 		if ( readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) )
 			break;
 	}
+	if ( reads > 0 && mHyperlinkBytes != 0 )
+		mHyperlinkCollectionPending = true;
 	bool readBudgetSaturated =
 		reads == MAX_TTY_READS || presentationDeadlineReached ||
 		( reads > 0 && readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) );

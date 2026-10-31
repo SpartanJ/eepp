@@ -926,6 +926,14 @@ dans l'arborescence de répertoires ainsi que dans les boites de dialogues de s�
 	<string name="uitable_free_column_widths">Largeurs de colonnes libres</string>
 	<string name="uiterminal_copy">Copier</string>
 	<string name="uiterminal_open_link">Ouvrir un lien</string>
+	<string name="uiterminal_open_hyperlink">Ouvrir un hyperlien</string>
+	<string name="uiterminal_copy_hyperlink">Copier l’adresse de l’hyperlien</string>
+	<string name="enable_osc8_hyperlinks">Activer les hyperliens (OSC 8)</string>
+	<string name="enable_osc8_hyperlinks_desc">Autoriser les programmes du terminal à associer des liens cliquables au texte.</string>
+	<string name="inherit_working_directory">Hériter du répertoire de travail</string>
+	<string name="inherit_working_directory_desc">Ouvrir les nouveaux onglets et volets dans le répertoire local signalé par le terminal source.</string>
+	<string name="allow_osc52_clipboard_write">Autoriser les programmes à écrire dans le presse-papiers (OSC 52)</string>
+	<string name="allow_osc52_clipboard_write_desc">Autoriser les programmes du terminal, y compris via SSH, à modifier le presse-papiers local.</string>
 	<string name="uiterminal_paste">Coller</string>
 	<string name="undo">Annuler</string>
 	<string name="unindent">Désindenter</string>

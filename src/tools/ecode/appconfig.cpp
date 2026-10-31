@@ -285,6 +285,10 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.closeTerminalTabOnExit = ini.getValueB( "terminal", "close_terminal_tab_on_exit", false );
 	term.warnBeforeClosingTab = ini.getValueB( "terminal", "warn_before_closing_tab", true );
 	term.exclusiveMode = ini.getValueB( "terminal", "exclusive_mode", false );
+	term.inheritWorkingDirectory = ini.getValueB( "terminal", "inherit_working_directory", true );
+	term.enableOsc8Hyperlinks = ini.getValueB( "terminal", "enable_osc8_hyperlinks", true );
+	term.allowOsc52ClipboardWrite =
+		ini.getValueB( "terminal", "allow_osc52_clipboard_write", true );
 	term.cursorStyle = TerminalCursorHelper::modeFromString(
 		ini.getValue( "terminal", "cursor_style", "steady_underline" ) );
 	term.scrollBarType = ini.getValue( "terminal", "scrollbar_type", "overlay" ) == "overlay"
@@ -486,6 +490,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "terminal", "close_terminal_tab_on_exit", term.closeTerminalTabOnExit );
 	ini.setValueB( "terminal", "warn_before_closing_tab", term.warnBeforeClosingTab );
 	ini.setValueB( "terminal", "exclusive_mode", term.exclusiveMode );
+	ini.setValueB( "terminal", "inherit_working_directory", term.inheritWorkingDirectory );
+	ini.setValueB( "terminal", "enable_osc8_hyperlinks", term.enableOsc8Hyperlinks );
+	ini.setValueB( "terminal", "allow_osc52_clipboard_write", term.allowOsc52ClipboardWrite );
 	ini.setValue( "terminal", "cursor_style",
 				  TerminalCursorHelper::modeToString( term.cursorStyle ) );
 	ini.setValue( "terminal", "scrollbar_type",

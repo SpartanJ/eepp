@@ -947,6 +947,14 @@ in der Baumansicht und in Öffen-/Schließdialogen aktivieren.</string>
 	<string name="uitable_free_column_widths">Freie Spaltenbreiten</string>
 	<string name="uiterminal_copy">Kopieren</string>
 	<string name="uiterminal_open_link">Link öffnen</string>
+	<string name="uiterminal_open_hyperlink">Hyperlink öffnen</string>
+	<string name="uiterminal_copy_hyperlink">Hyperlink-Adresse kopieren</string>
+	<string name="enable_osc8_hyperlinks">Hyperlinks aktivieren (OSC 8)</string>
+	<string name="enable_osc8_hyperlinks_desc">Terminalprogramme dürfen Text mit anklickbaren Links versehen.</string>
+	<string name="inherit_working_directory">Arbeitsverzeichnis übernehmen</string>
+	<string name="inherit_working_directory_desc">Neue Tabs und Teilungen im gemeldeten lokalen Verzeichnis des ursprünglichen Terminals starten.</string>
+	<string name="allow_osc52_clipboard_write">Programmen das Schreiben in die Zwischenablage erlauben (OSC 52)</string>
+	<string name="allow_osc52_clipboard_write_desc">Terminalprogramme, einschließlich Programmen über SSH, dürfen die lokale Zwischenablage ändern.</string>
 	<string name="uiterminal_paste">Einfügen</string>
 	<string name="undo">Rückgängig</string>
 	<string name="unindent">Entrücken</string>

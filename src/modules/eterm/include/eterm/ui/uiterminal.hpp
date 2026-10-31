@@ -125,7 +125,11 @@ class UITerminal : public UITouchDraggableWidget {
 
   protected:
 	std::string mTitle;
+	std::string mContextHyperlink;
+	std::string mPressedHyperlink;
 	bool mIsCustomTitle{ false };
+	bool mForwardedLeftButton{ false };
+	bool mHyperlinkHandCursor{ false };
 	bool mExclusiveMode{ false };
 	bool mCreateDefaultContextMenuOptions{ true };
 	KeyBindings mKeyBindings;
@@ -156,11 +160,17 @@ class UITerminal : public UITouchDraggableWidget {
 
 	virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	bool isHyperlinkModifierPressed() const;
+
+	void updateHyperlinkHover( const Vector2i& position );
 
 	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
 

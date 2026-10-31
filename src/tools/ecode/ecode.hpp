@@ -253,26 +253,14 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		t.setCommand( "move-panel-right", [this] { panelPosition( PanelPosition::Right ); } );
 		t.setCommand( "create-new-terminal",
 					  [this] { mTerminalManager->createTerminalInSplitter(); } );
-		t.setCommand( "terminal-split-right", [this] {
-			auto cwd = getCurrentWorkingDir();
-			mSplitter->split( SplitDirection::Right, mSplitter->getCurWidget(), false );
-			mTerminalManager->createNewTerminal( "", nullptr, cwd );
-		} );
-		t.setCommand( "terminal-split-bottom", [this] {
-			auto cwd = getCurrentWorkingDir();
-			mSplitter->split( SplitDirection::Bottom, mSplitter->getCurWidget(), false );
-			mTerminalManager->createNewTerminal( "", nullptr, cwd );
-		} );
-		t.setCommand( "terminal-split-left", [this] {
-			auto cwd = getCurrentWorkingDir();
-			mSplitter->split( SplitDirection::Left, mSplitter->getCurWidget(), false );
-			mTerminalManager->createNewTerminal( "", nullptr, cwd );
-		} );
-		t.setCommand( "terminal-split-top", [this] {
-			auto cwd = getCurrentWorkingDir();
-			mSplitter->split( SplitDirection::Top, mSplitter->getCurWidget(), false );
-			mTerminalManager->createNewTerminal( "", nullptr, cwd );
-		} );
+		t.setCommand( "terminal-split-right",
+					  [this] { mTerminalManager->createTerminalSplit( SplitDirection::Right ); } );
+		t.setCommand( "terminal-split-bottom",
+					  [this] { mTerminalManager->createTerminalSplit( SplitDirection::Bottom ); } );
+		t.setCommand( "terminal-split-left",
+					  [this] { mTerminalManager->createTerminalSplit( SplitDirection::Left ); } );
+		t.setCommand( "terminal-split-top",
+					  [this] { mTerminalManager->createTerminalSplit( SplitDirection::Top ); } );
 		t.setCommand( "reopen-closed-tab", [this] { reopenClosedTab(); } );
 		t.setCommand( "plugin-manager-open", [this] { createPluginManagerUI(); } );
 		t.setCommand( "close-app", [this] { closeApp(); } );

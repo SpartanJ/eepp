@@ -12,6 +12,11 @@ using namespace ecode;
 
 namespace {
 
+std::filesystem::path nativePath( std::string_view utf8 ) {
+	// Git and eepp use UTF-8; a narrow filesystem path uses the Windows ANSI code page.
+	return std::filesystem::path( std::u8string( utf8.begin(), utf8.end() ) );
+}
+
 struct GitTempDirectory {
 	GitTempDirectory() {
 		path = std::filesystem::temp_directory_path() /
@@ -108,7 +113,9 @@ UTEST( GitBranch, ReportsWorktreesAndReleasesDetachedBranches ) {
 #if EE_PLATFORM != EE_PLATFORM_WIN
 	worktreeName += "\t\n'";
 #endif
-	const std::string worktreePath = ( temp.path / worktreeName ).string();
+	const auto worktreeDirectory = temp.path / nativePath( worktreeName );
+	const auto worktreeUtf8 = worktreeDirectory.u8string();
+	const std::string worktreePath( worktreeUtf8.begin(), worktreeUtf8.end() );
 	ASSERT_TRUE( FileSystem::makeDir( repoPath, true ) );
 	Git git( repoPath, gitPath );
 	std::string output;
@@ -129,11 +136,17 @@ UTEST( GitBranch, ReportsWorktreesAndReleasesDetachedBranches ) {
 	for ( const auto& branch : branches ) {
 		if ( branch.type == Git::RefType::Head && branch.name == "main" ) {
 			ASSERT_FALSE( branch.worktreePath.empty() );
-			EXPECT_TRUE( std::filesystem::equivalent( repoPath, branch.worktreePath ) );
+			std::error_code error;
+			EXPECT_TRUE_MSG( std::filesystem::equivalent(
+								 nativePath( repoPath ), nativePath( branch.worktreePath ), error ),
+							 error.message().c_str() );
 			EXPECT_FALSE( branch.localOnly );
 		} else if ( branch.type == Git::RefType::Head && branch.name == "hotfix/local" ) {
 			ASSERT_FALSE( branch.worktreePath.empty() );
-			EXPECT_TRUE( std::filesystem::equivalent( worktreePath, branch.worktreePath ) );
+			std::error_code error;
+			EXPECT_TRUE_MSG( std::filesystem::equivalent(
+								 worktreeDirectory, nativePath( branch.worktreePath ), error ),
+							 error.message().c_str() );
 			EXPECT_TRUE( branch.localOnly );
 		} else {
 			EXPECT_TRUE( branch.worktreePath.empty() );

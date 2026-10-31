@@ -277,6 +277,9 @@ struct TerminalConfig {
 	bool closeTerminalTabOnExit{ false };
 	bool warnBeforeClosingTab{ true };
 	bool exclusiveMode{ false };
+	bool inheritWorkingDirectory{ true };
+	bool enableOsc8Hyperlinks{ true };
+	bool allowOsc52ClipboardWrite{ true };
 	TerminalCursorMode cursorStyle{ TerminalCursorMode::SteadyUnderline };
 	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
 	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };

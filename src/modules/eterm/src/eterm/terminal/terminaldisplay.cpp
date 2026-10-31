@@ -1,3 +1,8 @@
+#include <eterm/terminal/terminaldisplay.hpp>
+
+#include <cctype>
+#include <eepp/core/small_vector.hpp>
+#include <eepp/core/uri.hpp>
 #include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -11,10 +16,26 @@
 #include <eterm/system/processfactory.hpp>
 #include <eterm/terminal/boxdrawdata.hpp>
 #include <eterm/terminal/kittygraphicsrenderer.hpp>
-#include <eterm/terminal/terminaldisplay.hpp>
 #include <limits.h>
 
 namespace eterm { namespace Terminal {
+
+// Allocate presentation caches only after the first hover. Plain terminal output pays no
+// per-cell metadata, text shaping, or hover-range allocation cost.
+struct TerminalDisplay::HyperlinkHover {
+	struct Span {
+		int row;
+		int first;
+		int end;
+	};
+
+	Text preview;
+	SmallVector<Span, 4> spans;
+	std::shared_ptr<const std::string> uri; // Shared immutable snapshot string.
+	Uint64 generation{ 0 };
+	Float previewWidth{ -1 };
+	uint16_t id{ 0 };
+};
 
 #define BETWEEN( x, a, b ) ( ( a ) <= ( x ) && ( x ) <= ( b ) )
 #define IS_SET( flag ) ( ( mMode & ( flag ) ) != 0 )
@@ -383,6 +404,16 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 	std::string program, std::vector<std::string> args, const std::string& workingDir,
 	const size_t& historySize, IProcessFactory* processFactory, bool useFrameBuffer, bool keepAlive,
 	const std::unordered_map<std::string, std::string>& env ) {
+	return create( window, font, fontSize, pixelsSize, std::move( program ), std::move( args ),
+				   workingDir, historySize, processFactory, useFrameBuffer, keepAlive, env,
+				   TerminalSessionOptions{} );
+}
+
+std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
+	EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
+	std::string program, std::vector<std::string> args, const std::string& workingDir,
+	const size_t& historySize, IProcessFactory* processFactory, bool useFrameBuffer, bool keepAlive,
+	const std::unordered_map<std::string, std::string>& env, TerminalSessionOptions options ) {
 	if ( program.empty() ) {
 		const char* shellenv = getenv( "SHELL" );
 #ifdef _WIN32
@@ -434,8 +465,9 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 	std::shared_ptr<TerminalDisplay> terminal = std::shared_ptr<TerminalDisplay>(
 		new TerminalDisplay( window, font, fontSize, pixelsSize, useFrameBuffer ) );
 
-	terminal->mSession = TerminalSession::create( std::move( pseudoTerminal ), std::move( process ),
-												  historySize, terminal->makeColorPalette() );
+	terminal->mSession =
+		TerminalSession::create( std::move( pseudoTerminal ), std::move( process ), historySize,
+								 terminal->makeColorPalette(), options );
 	if ( !terminal->mSession ) {
 		if ( freeProcessFactory )
 			eeSAFE_DELETE( processFactory );
@@ -445,8 +477,8 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 								terminal->getGridPixelSize().getWidth(),
 								terminal->getGridPixelSize().getHeight() );
 	terminal->mSession->setPresentationRate( presentationRateForWindow( window ) );
-	terminal->mProgram = program;
-	terminal->mArgs = args;
+	terminal->mProgram = std::move( program );
+	terminal->mArgs = std::move( args );
 	terminal->mEnv = env;
 	terminal->mWorkingDir = workingDir;
 	terminal->mKeepAlive = keepAlive;
@@ -954,6 +986,24 @@ void TerminalDisplay::setAllowMemoryTrimming( bool allow ) {
 		mSession->setAllowMemoryTrimming( allow );
 }
 
+void TerminalDisplay::setAllowOsc52ClipboardWrite( bool allow ) {
+	if ( mSession )
+		mSession->setAllowOsc52ClipboardWrite( allow );
+}
+
+void TerminalDisplay::setOsc8HyperlinksEnabled( bool enabled ) {
+	// Disable hit testing immediately, including a retained snapshot/menu while the command queues.
+	mEnableOsc8Hyperlinks = enabled;
+	if ( !enabled )
+		clearHyperlinkHover();
+	if ( mSession )
+		mSession->setOsc8HyperlinksEnabled( enabled );
+}
+
+std::string TerminalDisplay::getCurrentWorkingDirectory() const {
+	return mSnapshot ? mSnapshot->currentWorkingDirectory : std::string{};
+}
+
 void TerminalDisplay::setDataCallback( DataFunc callback ) {
 	mDataCallback = std::move( callback );
 	if ( mSession )
@@ -1290,6 +1340,26 @@ static inline void applySearchHighlight( Int32 mode, const std::vector<Color>& c
 		highlight.a = 90;
 		bg = Color::blend( highlight, bg );
 	}
+}
+
+// The displayed text color of a cell, following drawGrid()'s attribute order. Used for
+// decorations that must match the glyph they sit under.
+static Color glyphForeground( const TerminalGlyph& glyph, const std::vector<Color>& colors,
+							  bool screenReverse, const Color& defaultFg, const Color& defaultBg ) {
+	auto fg = termColor( glyph.fg, colors );
+	auto bg = termColor( glyph.bg, colors );
+	if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_BOLD && glyph.fg <= 7 )
+		fg = termColor( glyph.fg + 8, colors );
+	if ( screenReverse ) {
+		fg = fg == defaultFg ? defaultBg : fg.invert();
+		bg = bg == defaultBg ? defaultFg : bg.invert();
+	}
+	if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_FAINT )
+		fg = fg.div( 2 );
+	if ( glyph.mode & ATTR_REVERSE )
+		fg = bg;
+	applySearchHighlight( glyph.mode, colors, fg, bg );
+	return fg;
 }
 
 void TerminalDisplay::drawrect( const Color& col, const float& x, const float& y, const float& w,
@@ -1868,6 +1938,9 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 	if ( mFrameBuffer )
 		drawFrameBuffer();
 
+	// Hover decorations stay outside the framebuffer and never modify terminal cells/SGR.
+	drawHyperlinkHover();
+
 	if ( hasFocus() && mWindow->getIME().isEditing() ) {
 		Rectf r = updateIMELocation();
 		FontStyleConfig config;
@@ -1881,6 +1954,186 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 	mDrawing = false;
 	mDirty = false;
 	mFullDirty = false;
+}
+
+const TerminalSnapshot::VisibleHyperlink* TerminalDisplay::findHyperlinkAt( const Vector2i& pos ) {
+	if ( !mEnableOsc8Hyperlinks || !mSnapshot || mSnapshot->visibleHyperlinks.empty() )
+		return nullptr;
+	const Float x = pos.x - mPosition.x - mPadding.Left;
+	const Float y = pos.y - mPosition.y - mPadding.Top;
+	const Float cellWidth = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
+	const Float cellHeight = mFont->getFontHeight( mFontSize );
+	if ( x < 0 || y < 0 || cellWidth <= 0 || cellHeight <= 0 ||
+		 x >= mSnapshot->columns * cellWidth || y >= mSnapshot->rows * cellHeight )
+		return nullptr;
+	const auto cell = positionToGrid( pos );
+	const auto offset = cell.y * mSnapshot->columns + cell.x;
+	const auto& glyph = mSnapshot->cells[offset];
+	const auto id = glyphLinkId( glyph );
+	if ( id == 0 )
+		return nullptr;
+	if ( glyph.mode & ATTR_WDUMMY ) {
+		// Character insertion/deletion can split a wide pair. An orphan dummy has no target.
+		if ( cell.x == 0 || !( mSnapshot->cells[offset - 1].mode & ATTR_WIDE ) ||
+			 glyphLinkId( mSnapshot->cells[offset - 1] ) != id )
+			return nullptr;
+	}
+	const auto& links = mSnapshot->visibleHyperlinks;
+	const auto found =
+		std::lower_bound( links.begin(), links.end(), id,
+						  []( const auto& link, uint16_t value ) { return link.id < value; } );
+	if ( found == links.end() || found->id != id )
+		return nullptr;
+	return &*found;
+}
+
+std::optional<std::string> TerminalDisplay::getHyperlinkAt( const Vector2i& pos ) {
+	if ( const auto* link = findHyperlinkAt( pos ) )
+		return *link->uri;
+	return std::nullopt;
+}
+
+void TerminalDisplay::updateHyperlinkHover( const Vector2i& pos, bool active ) {
+	const auto* link = active ? findHyperlinkAt( pos ) : nullptr;
+	if ( !link ) {
+		clearHyperlinkHover();
+		return;
+	}
+	if ( mHyperlinkHover && mHyperlinkHover->id == link->id &&
+		 mHyperlinkHover->generation == mSnapshotGeneration )
+		return;
+	if ( !isHyperlinkAllowed( *link->uri ) ) {
+		clearHyperlinkHover();
+		return;
+	}
+	if ( !mHyperlinkHover )
+		mHyperlinkHover = std::make_unique<HyperlinkHover>();
+	auto& hover = *mHyperlinkHover;
+	if ( !hover.uri || *hover.uri != *link->uri ) {
+		hover.uri = link->uri;
+		hover.previewWidth = -1;
+	}
+	hover.id = link->id;
+	hover.generation = mSnapshotGeneration;
+	hover.spans.clear();
+	for ( int row = 0; row < mSnapshot->rows; ++row ) {
+		const auto* cells = mSnapshot->cells.data() + row * mSnapshot->columns;
+		for ( int column = 0; column < mSnapshot->columns; ) {
+			if ( glyphLinkId( cells[column] ) != hover.id ) {
+				++column;
+				continue;
+			}
+			const int first = column++;
+			while ( column < mSnapshot->columns && glyphLinkId( cells[column] ) == hover.id )
+				++column;
+			hover.spans.push_back( { row, first, column } );
+		}
+	}
+	invalidate();
+}
+
+void TerminalDisplay::clearHyperlinkHover() {
+	if ( mHyperlinkHover && mHyperlinkHover->id != 0 ) {
+		mHyperlinkHover->id = 0;
+		invalidate();
+	}
+}
+
+std::string_view TerminalDisplay::getHoveredHyperlink() const {
+	return mHyperlinkHover && mHyperlinkHover->id != 0 &&
+				   mHyperlinkHover->generation == mSnapshotGeneration
+			   ? std::string_view( *mHyperlinkHover->uri )
+			   : std::string_view{};
+}
+
+void TerminalDisplay::drawHyperlinkHover() {
+	if ( !mHyperlinkHover || mHyperlinkHover->id == 0 || !mSnapshot ||
+		 mHyperlinkHover->generation != mSnapshotGeneration )
+		return;
+	auto& hover = *mHyperlinkHover;
+	const Float cellWidth = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
+	const Float cellHeight = mFont->getFontHeight( mFontSize );
+	const Float thickness = eemax( 1.f, Math::roundDown( PixelDensity::dpToPx( 1.f ) ) );
+	const Vector2f grid = mPosition.floor() + Vector2f( mPadding.Left, mPadding.Top );
+	Primitives primitives;
+	for ( const auto& span : hover.spans ) {
+		const auto& glyph = mSnapshot->cells[span.row * mSnapshot->columns + span.first];
+		primitives.setColor( glyphForeground( glyph, mColors, IS_SET( MODE_REVERSE ),
+											  mColorScheme.getForeground(),
+											  mColorScheme.getBackground() ) );
+		// Thicken the normal bottom underline without adding a separate line through descenders.
+		const Float bottom = grid.y + ( span.row + 1 ) * cellHeight;
+		primitives.drawRectangle(
+			Rectf( { grid.x + span.first * cellWidth, bottom - 2 * thickness },
+				   { ( span.end - span.first ) * cellWidth, 2 * thickness } ) );
+	}
+	const Float padding = PixelDensity::dpToPx( 4.f );
+	const Float width = mSize.getWidth();
+	if ( width <= 2 * padding || mSize.getHeight() < cellHeight + 2 * padding )
+		return;
+	const Float available = width - 2 * padding;
+	if ( hover.previewWidth != available || hover.preview.getFont() != mFont ||
+		 hover.preview.getCharacterSize() != static_cast<unsigned int>( mFontSize ) ) {
+		hover.preview.setFont( mFont );
+		hover.preview.setFontSize( mFontSize );
+		hover.preview.setDirection( TextDirection::LeftToRight );
+		auto text = String::fromUtf8( *hover.uri );
+		const auto count =
+			Text::findLastCharPosWithinLength( mFont, mFontSize, text, available, 0 );
+		if ( count < text.size() ) {
+			const String ellipsis( "…" );
+			const Float suffix = Text::getTextWidth( mFont, mFontSize, ellipsis, 0 );
+			text.resize( Text::findLastCharPosWithinLength( mFont, mFontSize, text,
+															eemax( 0.f, available - suffix ), 0 ) );
+			text += ellipsis;
+		}
+		hover.preview.setString( std::move( text ) );
+		hover.previewWidth = available;
+	}
+	const Sizef size( eemin( width, hover.preview.getTextWidth() + 2 * padding ),
+					  cellHeight + 2 * padding );
+	const Vector2f position =
+		mPosition.floor() + Vector2f( 0, mSize.getHeight() - size.getHeight() );
+	const auto foreground = mColorScheme.getForeground();
+	auto background = mColorScheme.getBackground();
+	background.a = 255;
+	const Float border = 1.f;
+	const Float radius = eemin( PixelDensity::dpToPx( 4.f ), size.getHeight() * 0.5f );
+	const Vector2f corner( position.x + size.getWidth() - radius, position.y + radius );
+	// Inset only the top and right edges: the preview meets the pane's left/bottom edges
+	// without a border. Filled quadrants keep the rounded corner independent of GL line widths.
+	const auto fillPreview = [&]( const Color& color, Float inset ) {
+		primitives.setColor( color );
+		primitives.drawRectangle( Rectf( { position.x, position.y + inset },
+										 { size.getWidth() - radius, size.getHeight() - inset } ) );
+		primitives.drawRectangle( Rectf( corner, { radius - inset, size.getHeight() - radius } ) );
+		primitives.drawArc( corner, radius - inset, 32, 90, 90 );
+	};
+	fillPreview( foreground, 0 );
+	fillPreview( background, border );
+	hover.preview.setFillColor( foreground );
+	hover.preview.draw( position.x + padding, position.y + padding );
+}
+
+bool TerminalDisplay::isHyperlinkAllowed( const std::string& uri ) {
+	if ( uri.empty() || uri.size() > 8192 )
+		return false;
+	for ( size_t i = 0; i < uri.size(); ++i ) {
+		const auto c = static_cast<unsigned char>( uri[i] );
+		if ( c <= 0x20 || c == 0x7F || c == '\\' )
+			return false;
+		if ( c == '%' ) {
+			if ( i + 2 >= uri.size() ||
+				 !std::isxdigit( static_cast<unsigned char>( uri[i + 1] ) ) ||
+				 !std::isxdigit( static_cast<unsigned char>( uri[i + 2] ) ) )
+				return false;
+			i += 2;
+		}
+	}
+	URI parsed( uri );
+	const auto& scheme = parsed.getScheme();
+	return ( ( scheme == "http" || scheme == "https" ) && !parsed.getHost().empty() ) ||
+		   ( scheme == "mailto" && !parsed.getPath().empty() );
 }
 
 Vector2i TerminalDisplay::positionToGrid( const Vector2i& pos ) {

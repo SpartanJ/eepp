@@ -232,6 +232,35 @@ UIWindow* SettingsPanel::create( App& app ) {
 
 	panel->addCategory( "terminal.behavior", app.i18n( "terminal", "Terminal" ),
 						app.i18n( "behavior", "Behavior" ) );
+	panel->addBool( { "enableOsc8Hyperlinks", "terminal.behavior",
+					  app.i18n( "enable_osc8_hyperlinks", "Enable Hyperlinks (OSC 8)" ),
+					  app.i18n( "enable_osc8_hyperlinks_desc",
+								"Allow terminal programs to attach clickable links to text." ) },
+					&app.config->terminal.enableOsc8Hyperlinks, [&app]( bool value ) {
+						app.forEachTerminal( [value]( UITerminal* terminal ) {
+							terminal->getTerm()->setOsc8HyperlinksEnabled( value );
+						} );
+						app.savePreferences();
+					} );
+	panel->addBool(
+		{ "inheritWorkingDirectory", "terminal.behavior",
+		  app.i18n( "inherit_working_directory", "Inherit Working Directory" ),
+		  app.i18n(
+			  "inherit_working_directory_desc",
+			  "Start new tabs and splits in the source terminal's reported local directory." ) },
+		&app.config->terminal.inheritWorkingDirectory, [&app]( bool ) { app.savePreferences(); } );
+	panel->addBool( { "allowOsc52ClipboardWrite", "terminal.behavior",
+					  app.i18n( "allow_osc52_clipboard_write",
+								"Allow Programs to Write to Clipboard (OSC 52)" ),
+					  app.i18n( "allow_osc52_clipboard_write_desc",
+								"Allow terminal programs, including programs over SSH, to change "
+								"the local clipboard." ) },
+					&app.config->terminal.allowOsc52ClipboardWrite, [&app]( bool value ) {
+						app.forEachTerminal( [value]( UITerminal* terminal ) {
+							terminal->getTerm()->setAllowOsc52ClipboardWrite( value );
+						} );
+						app.savePreferences();
+					} );
 	panel->addChoice(
 		{ "newTerminalBehavior", "terminal.behavior",
 		  app.i18n( "new_terminal_behavior", "New Terminal Behavior" ),

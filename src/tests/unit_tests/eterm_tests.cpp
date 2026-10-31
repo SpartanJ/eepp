@@ -11,8 +11,10 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/cursormanager.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/inputevent.hpp>
+#include <eepp/window/runtime.hpp>
 #include <eterm/system/iprocess.hpp>
 #include <eterm/system/processfactory.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
@@ -748,6 +750,12 @@ UTEST( eterm_session, concurrent_shutdown_is_idempotent ) {
 
 class MockDisplay : public ITerminalDisplay {
   public:
+	std::vector<std::string> mClipboardWrites;
+
+	void setClipboard( const char* text ) override { mClipboardWrites.emplace_back( text ); }
+
+	std::vector<TerminalGlyph> mCells;
+	int mColumns{ 0 };
 	int mDrawLines{ 0 };
 	int mDrawEnds{ 0 };
 	std::vector<int> mPublishedScrollPositions;
@@ -759,8 +767,13 @@ class MockDisplay : public ITerminalDisplay {
 	int mResetColorsCount{ 0 };
 	Uint32 mBackground{ 0x101010FF };
 	std::shared_ptr<TerminalGraphicsPresentation> mGraphics;
-	bool drawBegin( Uint32, Uint32 ) override { return true; }
-	void drawLine( Line line, int, int y, int ) override {
+	bool drawBegin( Uint32 columns, Uint32 rows ) override {
+		mColumns = columns;
+		mCells.resize( columns * rows );
+		return true;
+	}
+	void drawLine( Line line, int x1, int y, int x2 ) override {
+		std::copy( line + x1, line + x2, mCells.begin() + y * mColumns + x1 );
 		++mDrawLines;
 		if ( y == 0 ) {
 			mFirstMode = line[0].mode;
@@ -1829,6 +1842,656 @@ UTEST( eterm, osc_hyperlink_markers_are_recognized ) {
 	EXPECT_EQ( static_cast<Rune>( 'O' ), display->mFirstGlyph.u );
 	EXPECT_EQ( static_cast<Rune>( 'K' ), display->mSecondGlyph.u );
 	EXPECT_TRUE( ptyPtr->mWrites.empty() );
+	const auto id = glyphLinkId( display->mFirstGlyph );
+	ASSERT_NE( 0, id );
+	EXPECT_EQ( id, glyphLinkId( display->mSecondGlyph ) );
+	ASSERT_TRUE( term->getHyperlink( id ) != nullptr );
+	EXPECT_STDSTREQ( "https://example.com/", *term->getHyperlink( id )->uri );
+	EXPECT_STDSTREQ( "codex", term->getHyperlink( id )->externalId );
+}
+
+UTEST( eterm, packed_hyperlinks_preserve_glyph_layout_and_attributes ) {
+	EXPECT_EQ( static_cast<size_t>( 16 ), sizeof( TerminalGlyph ) );
+	TerminalGlyph glyph{ 'x', ATTR_BOLD | ATTR_SEARCH_ACTIVE | ATTR_WIDE, 42, 7 };
+	for ( uint16_t id : { uint16_t{ 1 }, uint16_t{ GLYPH_LINK_MAX }, uint16_t{ 0 } } ) {
+		setGlyphLinkId( glyph, id );
+		EXPECT_EQ( id, glyphLinkId( glyph ) );
+		EXPECT_EQ( static_cast<uint32_t>( ATTR_BOLD | ATTR_SEARCH_ACTIVE | ATTR_WIDE ),
+				   glyph.mode & GLYPH_ATTRIBUTE_MASK );
+		EXPECT_EQ( static_cast<uint32_t>( 42 ), glyph.fg );
+		EXPECT_EQ( static_cast<uint32_t>( 7 ), glyph.bg );
+	}
+}
+
+UTEST( eterm, osc_hyperlinks_parse_fragments_parameters_and_uri_remainder ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mMaxRead = 1;
+	pty->mBuffer = "a\033]8;other=yes:id=one:future=x;https://example.com/a;b?q=%20é\a"
+				   "B\033[0mC\033]8;;\033\\d"
+				   "\033]8;id=two;https://example.com/\033\\E"
+				   "\033]8;id=two;https://example.com/\aF"
+				   "\033]8;;https://example.com/\aG"
+				   "\033]8;;https://example.com/\aH\033]8;;\aI";
+	MockPty* input = pty.get();
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display );
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	term->redraw();
+	const auto& cells = display->mCells;
+	EXPECT_EQ( 0, glyphLinkId( cells[0] ) );
+	const auto first = glyphLinkId( cells[1] );
+	ASSERT_NE( 0, first );
+	EXPECT_EQ( first, glyphLinkId( cells[2] ) ); // SGR 0 does not close OSC 8.
+	EXPECT_EQ( 0, glyphLinkId( cells[3] ) );
+	ASSERT_TRUE( term->getHyperlink( first ) != nullptr );
+	EXPECT_STDSTREQ( "https://example.com/a;b?q=%20é", *term->getHyperlink( first )->uri );
+	EXPECT_STDSTREQ( "one", term->getHyperlink( first )->externalId );
+	EXPECT_EQ( glyphLinkId( cells[4] ), glyphLinkId( cells[5] ) );
+	EXPECT_NE( glyphLinkId( cells[5] ), glyphLinkId( cells[6] ) );
+	EXPECT_NE( glyphLinkId( cells[6] ), glyphLinkId( cells[7] ) );
+	EXPECT_EQ( 0, glyphLinkId( cells[8] ) );
+}
+
+UTEST( eterm, osc_hyperlinks_replace_invalid_runs_without_leaking_to_text ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]8;;https://old.example/\aA\033]8;malformed\aB"
+				   "\033]8;;relative/path\aC\033]8;;\aD\033]8;;https://example.com/" +
+				   std::string( 8192, 'x' ) + "\aE";
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display );
+	term->update();
+	ASSERT_NE( 0, glyphLinkId( display->mCells[0] ) );
+	for ( int x = 1; x <= 4; ++x )
+		EXPECT_EQ( 0, glyphLinkId( display->mCells[x] ) );
+}
+
+UTEST( eterm, osc_hyperlinks_follow_edits_and_clear_wide_cell_remnants ) {
+	auto pty = std::make_unique<MockPty>();
+	MockPty* input = pty.get();
+	input->mBuffer = "\033]8;;https://example.com/\aAB界\033]8;;\a";
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display );
+	term->update();
+	const auto id = glyphLinkId( display->mCells[0] );
+	ASSERT_NE( 0, id );
+	EXPECT_EQ( id, glyphLinkId( display->mCells[2] ) );
+	EXPECT_EQ( id, glyphLinkId( display->mCells[3] ) );
+	input->mBuffer += "\033[H\033[@";
+	term->update();
+	EXPECT_EQ( 0, glyphLinkId( display->mCells[0] ) );
+	EXPECT_EQ( id, glyphLinkId( display->mCells[1] ) );
+	input->mBuffer += "\033[P\033[1;4HX"; // Delete the inserted blank, overwrite the wide dummy.
+	term->update();
+	EXPECT_EQ( id, glyphLinkId( display->mCells[0] ) );
+	EXPECT_EQ( 0, glyphLinkId( display->mCells[2] ) );
+	EXPECT_EQ( 0, glyphLinkId( display->mCells[3] ) );
+	input->mBuffer += "\033[1;3H\033]8;;https://example.com/\a界\033]8;;\a\033[1;3H\033[X";
+	term->update();
+	EXPECT_EQ( 0, glyphLinkId( display->mCells[2] ) );
+	EXPECT_EQ( 0, glyphLinkId( display->mCells[3] ) );
+	input->mBuffer += "\033[2J";
+	term->update();
+	for ( const auto& glyph : display->mCells )
+		EXPECT_EQ( 0, glyphLinkId( glyph ) );
+}
+
+UTEST( eterm, osc_hyperlinks_survive_history_reflow_and_registry_churn ) {
+	auto pty = std::make_unique<MockPty>();
+	MockPty* input = pty.get();
+	input->mCols = 20;
+	input->mRows = 4;
+	input->mBuffer = "\033]8;id=pinned;https://pinned.example/\a";
+	for ( int line = 0; line < 10020; ++line )
+		input->mBuffer += "linked history  \r\n";
+	input->mBuffer += "\033]8;;\a";
+	auto display = std::make_shared<MockDisplay>();
+	auto term = TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(),
+										  display, 10000 );
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	term->redraw();
+	const auto pinned = glyphLinkId( display->mCells[0] );
+	ASSERT_NE( 0, pinned );
+	input->mBuffer += "\033[?1049h";
+	for ( int link = 0; link < 34000; ++link ) {
+		input->mBuffer +=
+			"\033[H\033]8;;https://churn.example/" + std::to_string( link ) + "\aX\033]8;;\a";
+	}
+	input->mBuffer += "\033[?1049l";
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	ASSERT_TRUE( term->getHyperlink( pinned ) != nullptr );
+	EXPECT_STDSTREQ( "https://pinned.example/", *term->getHyperlink( pinned )->uri );
+	for ( int columns : { 10, 40, 20 } ) {
+		term->resize( columns, 4 );
+		TerminalArg amount( term->scrollSize() );
+		term->kscrollup( &amount );
+		term->redraw();
+		ASSERT_NE( 0, glyphLinkId( display->mCells[0] ) );
+		for ( const auto& glyph : display->mCells ) {
+			if ( auto id = glyphLinkId( glyph ) ) {
+				ASSERT_TRUE( term->getHyperlink( id ) != nullptr );
+				EXPECT_STDSTREQ( "https://pinned.example/", *term->getHyperlink( id )->uri );
+			}
+		}
+	}
+	term->reset(); // Scrollback remains live across RIS.
+	ASSERT_TRUE( term->getHyperlink( pinned ) != nullptr );
+	term->clearHistory();
+	EXPECT_FALSE( term->hasHyperlinks() );
+}
+
+UTEST( eterm, osc_hyperlink_collection_scans_history_at_its_narrowed_width ) {
+	auto pty = std::make_unique<MockPty>();
+	MockPty* input = pty.get();
+	input->mCols = 40;
+	input->mRows = 4;
+	input->mBuffer = "\033]8;;https://short.example/\aab\033]8;;\a\r\n";
+	for ( int line = 0; line < 8; ++line )
+		input->mBuffer += "cd\r\n";
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 100 );
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	// Short history narrows without reflow: each line shrinks to 20 columns while the history
+	// capacity remains 40. Collection must not read the released tail (ASan regression).
+	term->resize( 20, 4 );
+	term->reset();
+	TerminalArg amount( term->scrollSize() );
+	term->kscrollup( &amount );
+	term->redraw();
+	const auto id = glyphLinkId( display->mCells[0] );
+	ASSERT_NE( 0, id );
+	ASSERT_TRUE( term->getHyperlink( id ) != nullptr );
+	EXPECT_STDSTREQ( "https://short.example/", *term->getHyperlink( id )->uri );
+}
+
+UTEST( eterm_session, osc_hyperlinks_are_owned_by_each_snapshot_after_id_reuse ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]8;;https://original.example/\aOLD\033]8;;\a";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	auto original = waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+		return !snapshot.visibleHyperlinks.empty() && snapshot.cells[0].u == 'O';
+	} );
+	ASSERT_TRUE( original != nullptr );
+	session->reset();
+	session->writeRaw( "\033]8;;https://replacement.example/\aNEW\033]8;;\a" );
+	auto replacement = waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+		return !snapshot.visibleHyperlinks.empty() && snapshot.cells[0].u == 'N';
+	} );
+	ASSERT_TRUE( replacement != nullptr );
+	EXPECT_EQ( glyphLinkId( original->cells[0] ), glyphLinkId( replacement->cells[0] ) );
+	EXPECT_STDSTREQ( "https://original.example/", *original->visibleHyperlinks[0].uri );
+	EXPECT_STDSTREQ( "https://replacement.example/", *replacement->visibleHyperlinks[0].uri );
+}
+
+UTEST( eterm, linked_trailing_spaces_survive_narrow_and_wide_reflow ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mCols = 20;
+	pty->mRows = 4;
+	pty->mBuffer = "\033]8;;https://example.com/\aAB            \033]8;;\a";
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display );
+	term->update();
+	for ( int columns : { 10, 30, 20 } ) {
+		term->resize( columns, 4 );
+		term->redraw();
+		EXPECT_EQ( static_cast<std::ptrdiff_t>( 14 ),
+				   std::count_if( display->mCells.begin(), display->mCells.end(),
+								  []( const auto& glyph ) { return glyphLinkId( glyph ) != 0; } ) );
+	}
+}
+
+UTEST( eterm, full_hyperlink_id_pool_omits_new_links_without_aliasing_live_cells ) {
+	auto pty = std::make_unique<MockPty>();
+	auto* input = pty.get();
+	pty->mCols = 256;
+	pty->mRows = 128;
+	for ( uint32_t id = 0; id <= GLYPH_LINK_MAX; ++id )
+		pty->mBuffer += "\033]8;;https://example.com/" + std::to_string( id ) + "\aX";
+	pty->mBuffer += "\033]8;;\a";
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 0 );
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	term->redraw();
+	ASSERT_TRUE( term->getHyperlink( glyphLinkId( display->mCells.front() ) ) != nullptr );
+	EXPECT_STDSTREQ( "https://example.com/0",
+					 *term->getHyperlink( glyphLinkId( display->mCells.front() ) )->uri );
+	EXPECT_EQ( 0, glyphLinkId( display->mCells.back() ) );
+	EXPECT_EQ( static_cast<Rune>( 'X' ), display->mCells.back().u );
+	EXPECT_EQ( static_cast<std::ptrdiff_t>( GLYPH_LINK_MAX ),
+			   std::count_if( display->mCells.begin(), display->mCells.end(),
+							  []( const auto& glyph ) { return glyphLinkId( glyph ) != 0; } ) );
+	term->reset();
+	EXPECT_FALSE( term->hasHyperlinks() );
+}
+
+UTEST( eterm_session, osc8_policy_disables_existing_links_and_future_output ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]8;;https://example.com/\aA\033]8;;\a";
+	auto session = TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100,
+											{}, TerminalSessionOptions{ true, false } );
+	auto disabled = waitForSnapshot( session, []( const TerminalSnapshot& value ) {
+		return !value.cells.empty() && value.cells[0].u == 'A';
+	} );
+	ASSERT_TRUE( disabled != nullptr );
+	EXPECT_TRUE( disabled->visibleHyperlinks.empty() );
+	EXPECT_EQ( 0, glyphLinkId( disabled->cells[0] ) );
+	session->setOsc8HyperlinksEnabled( true );
+	session->writeRaw( "\033]8;;https://example.com/\aB\033]8;;\a" );
+	auto enabled = waitForSnapshot( session, []( const TerminalSnapshot& value ) {
+		return !value.visibleHyperlinks.empty() && value.cells[1].u == 'B';
+	} );
+	ASSERT_TRUE( enabled != nullptr );
+	session->setOsc8HyperlinksEnabled( false );
+	session->writeRaw( "\033]8;;https://example.com/\aC\033]8;;\a" );
+	auto again = waitForSnapshot( session, []( const TerminalSnapshot& value ) {
+		return !value.cells.empty() && value.cells[2].u == 'C';
+	} );
+	ASSERT_TRUE( again != nullptr );
+	EXPECT_TRUE( again->visibleHyperlinks.empty() );
+	EXPECT_EQ( 0, glyphLinkId( again->cells[2] ) );
+	EXPECT_FALSE( enabled->visibleHyperlinks.empty() ); // Retained snapshots remain immutable.
+}
+
+UTEST( eterm_display, osc_hyperlink_lookup_rejects_padding_and_grid_edges ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm hyperlink bounds", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]8;;https://example.com/\a界\033]8;;\a";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return !snapshot.visibleHyperlinks.empty();
+				 } ) != nullptr );
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	display.setPosition( { 100, 100 } );
+	const auto cell = display.getCellPixelSize();
+	EXPECT_TRUE( display.getHyperlinkAt( { 111, 111 } ) == "https://example.com/" );
+	EXPECT_TRUE( display.getHyperlinkAt( { 111, 111 } ) ==
+				 display.getHyperlinkAt( { 111 + cell.getWidth(), 111 } ) );
+	for ( const Vector2i& point :
+		  { Vector2i{ 109, 111 }, Vector2i{ 111, 109 }, Vector2i{ 110 + 80 * cell.getWidth(), 111 },
+			Vector2i{ 111, 110 + 24 * cell.getHeight() } } )
+		EXPECT_FALSE( display.getHyperlinkAt( point ).has_value() );
+	const auto generation = session->snapshot()->generation;
+	session->writeRaw( "\033[H\033[P" ); // Delete only the leading half of the wide glyph.
+	ASSERT_TRUE( waitForSnapshot( session, [generation]( const TerminalSnapshot& value ) {
+					 return value.generation > generation;
+				 } ) != nullptr );
+	display.update( false );
+	EXPECT_FALSE( display.getHyperlinkAt( { 111, 111 } ).has_value() );
+}
+
+UTEST( eterm_display, osc_hyperlinks_only_allow_explicit_safe_uri_schemes ) {
+	for ( const auto* uri :
+		  { "https://example.com/a;b?q=%20", "HTTP://example.com/", "mailto:user@example.com" } )
+		EXPECT_TRUE( TerminalDisplay::isHyperlinkAllowed( uri ) );
+	for ( const auto* uri :
+		  { "file:///tmp/file", "ssh://host/", "javascript:alert(1)", "https:///",
+			"https://example.com/%", "https://example.com/%GG", "https://example.com/\n" } )
+		EXPECT_FALSE( TerminalDisplay::isHyperlinkAllowed( uri ) );
+	EXPECT_FALSE(
+		TerminalDisplay::isHyperlinkAllowed( std::string( "https://example.com/\0x", 22 ) ) );
+}
+
+UTEST( eterm_display, hyperlink_hover_tracks_snapshot_policy_and_pointer_bounds ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm hyperlink hover", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]8;id=group;https://example.com/target\a\033[4mFirst\033[0m"
+				   "\033]8;;\a plain\r\n\033]8;id=group;https://example.com/target\a界"
+				   "\033]8;;\a\033]8;;file:///tmp/file\aF\033]8;;\a";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.visibleHyperlinks.size() == 2 && snapshot.cells[82].u == 'F';
+				 } ) != nullptr );
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	display.setPosition( { 100, 100 } );
+	const auto cell = display.getCellPixelSize();
+	const Vector2i first{ 111, 111 };
+	display.updateHyperlinkHover( first, false );
+	EXPECT_TRUE( display.getHoveredHyperlink().empty() );
+	display.updateHyperlinkHover( first, true );
+	EXPECT_TRUE( display.getHoveredHyperlink() == "https://example.com/target" );
+	// Moving within the same logical link retains the owned URI/cache rather than copying per
+	// event.
+	const char* target = display.getHoveredHyperlink().data();
+	display.updateHyperlinkHover( { first.x + cell.getWidth(), first.y }, true );
+	EXPECT_TRUE( target == display.getHoveredHyperlink().data() );
+	display.updateHyperlinkHover( { first.x + cell.getWidth(), first.y + cell.getHeight() }, true );
+	EXPECT_TRUE( display.getHoveredHyperlink() == "https://example.com/target" );
+	for ( const Vector2i& point :
+		  { Vector2i{ 109, 111 }, Vector2i{ 111, 109 }, Vector2i{ 111 + 6 * cell.getWidth(), 111 },
+			Vector2i{ 111 + 2 * cell.getWidth(), 111 + cell.getHeight() } } ) {
+		display.updateHyperlinkHover( point, true );
+		EXPECT_TRUE( display.getHoveredHyperlink().empty() );
+	}
+	display.updateHyperlinkHover( first, true );
+	display.setOsc8HyperlinksEnabled( false );
+	EXPECT_TRUE( display.getHoveredHyperlink().empty() );
+	display.updateHyperlinkHover( first, true );
+	EXPECT_TRUE( display.getHoveredHyperlink().empty() );
+	display.setOsc8HyperlinksEnabled( true );
+	session->reset();
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.visibleHyperlinks.empty();
+				 } ) != nullptr );
+	display.update( false );
+	display.updateHyperlinkHover( first, true );
+	EXPECT_TRUE( display.getHoveredHyperlink().empty() );
+}
+
+class HyperlinkTestWidget : public eterm::UI::UITerminal {
+  public:
+	explicit HyperlinkTestWidget( const std::shared_ptr<TerminalDisplay>& display ) :
+		UITerminal( display ) {}
+
+	using UITerminal::isHyperlinkModifierPressed;
+	using UITerminal::onCreateContextMenu;
+	using UITerminal::onMouseDown;
+	using UITerminal::onMouseMove;
+	using UITerminal::onMouseUp;
+	using UITerminal::updateHyperlinkHover;
+
+	const std::string& contextHyperlink() const { return mContextHyperlink; }
+
+	void destroyMenu() {
+		auto* menu = mCurrentMenu;
+		eeDelete( menu );
+	}
+};
+
+UTEST( eterm_ui, hyperlink_hover_updates_when_modifiers_change_over_a_stationary_pointer ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm stationary hover", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]8;;https://example.com/\aLink\033]8;;\a";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return !snapshot.visibleHyperlinks.empty();
+				 } ) != nullptr );
+	auto display = std::make_shared<SelectionTestDisplay>(
+		app.getWindow(), app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	auto* terminal = eeNew( HyperlinkTestWidget, ( display ) );
+	terminal->setParent( app.getUI()->getRoot() );
+	terminal->setPixelsSize( 400, 200 );
+	app.getUI()->flushDirtyStyleAndLayout();
+	const auto point = terminal->convertToWorldSpace( { 5, 5 } ).asInt();
+	ASSERT_TRUE( display->getHyperlinkAt( point ).has_value() );
+	terminal->getEventDispatcher()->setMouseOverNode( terminal );
+	auto* input = app.getWindow()->getInput();
+	InputEvent key( InputEvent::KeyDown );
+	key.key = {};
+	const auto defaultModifier = KeyMod::getDefaultModifier();
+	const auto modifierKeys = KeyMod::getKeyCodesFromModifier( defaultModifier );
+	ASSERT_FALSE( modifierKeys.empty() );
+	key.key.keysym.sym = modifierKeys.front();
+	key.key.keysym.scancode = input->getScancodeFromKey( modifierKeys.front() );
+	key.key.keysym.mod = defaultModifier;
+	input->processEvent( &key );
+	terminal->updateHyperlinkHover( point );
+	// Hidden native hosts have no input focus. Offscreen inspection supports logical input;
+	// validate both behaviors with native and headless focused runs.
+	const bool active = app.getWindow()->hasInputFocus() || Runtime::isOffscreen();
+	EXPECT_EQ( active, !display->getHoveredHyperlink().empty() );
+	if ( active )
+		EXPECT_EQ( Cursor::SysHand, app.getWindow()->getCursorManager()->getCurrentSysCursor() );
+	key.Type = InputEvent::KeyUp;
+	key.key.keysym.mod = 0;
+	input->processEvent( &key );
+	terminal->updateHyperlinkHover( point );
+	EXPECT_TRUE( display->getHoveredHyperlink().empty() );
+	EXPECT_NE( Cursor::SysHand, app.getWindow()->getCursorManager()->getCurrentSysCursor() );
+	key.Type = InputEvent::KeyDown;
+	key.key.keysym.mod = defaultModifier;
+	input->processEvent( &key );
+	terminal->updateHyperlinkHover( point );
+	terminal->updateHyperlinkHover( { -1, -1 } );
+	EXPECT_TRUE( display->getHoveredHyperlink().empty() );
+	EXPECT_NE( Cursor::SysHand, app.getWindow()->getCursorManager()->getCurrentSysCursor() );
+	key.Type = InputEvent::KeyUp;
+	key.key.keysym.mod = 0;
+	input->processEvent( &key );
+	eeDelete( terminal );
+}
+
+UTEST( eterm_ui, hyperlink_gestures_balance_mouse_reports_and_retain_menu_context ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm hyperlink input", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto pty = std::make_unique<MockPty>();
+	auto* inputPty = pty.get();
+	pty->mLoopWrites = false;
+	pty->mBuffer = "\033[?1000h\033[?1006h\033]8;;https://example.com/\a" + std::string( 40, 'X' ) +
+				   "\033]8;;\a";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& value ) {
+					 return !value.visibleHyperlinks.empty();
+				 } ) != nullptr );
+	auto display = std::make_shared<SelectionTestDisplay>(
+		app.getWindow(), app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	auto* terminal = eeNew( HyperlinkTestWidget, ( display ) );
+	terminal->setParent( app.getUI()->getRoot() );
+	terminal->setPixelsSize( 400, 200 );
+	app.getUI()->flushDirtyStyleAndLayout();
+	const auto point = terminal->convertToWorldSpace( { 20, 5 } ).asInt();
+	ASSERT_TRUE( display->getHyperlinkAt( point ).has_value() );
+	auto* input = app.getWindow()->getInput();
+	InputEvent key( InputEvent::KeyDown );
+	key.key = {};
+	const auto defaultModifier = KeyMod::getDefaultModifier();
+	const auto modifierKeys = KeyMod::getKeyCodesFromModifier( defaultModifier );
+	ASSERT_FALSE( modifierKeys.empty() );
+	key.key.keysym.sym = modifierKeys.front();
+	key.key.keysym.scancode = input->getScancodeFromKey( modifierKeys.front() );
+	key.key.keysym.mod = defaultModifier;
+	input->processEvent( &key );
+	EXPECT_TRUE( terminal->isHyperlinkModifierPressed() );
+	key.key.keysym.mod = defaultModifier | KeyMod::getDefaultSecondaryModifier();
+	input->processEvent( &key );
+	EXPECT_FALSE( terminal->isHyperlinkModifierPressed() );
+	key.key.keysym.mod = KeyMod::getDefaultSecondaryModifier();
+	input->processEvent( &key );
+	EXPECT_FALSE( terminal->isHyperlinkModifierPressed() );
+	key.key.keysym.mod = defaultModifier;
+	input->processEvent( &key );
+	terminal->onMouseDown( point, EE_BUTTON_LMASK );
+	terminal->onMouseMove( point, EE_BUTTON_LMASK );
+	key.Type = InputEvent::KeyUp;
+	key.key.keysym.mod = 0;
+	input->processEvent( &key );
+	terminal->onMouseUp( { -100, -100 },
+						 EE_BUTTON_LMASK ); // Cancel navigation; never launch a browser.
+	session->requestSelection();			// Ordered barrier after mouse commands.
+	EXPECT_TRUE( inputPty->mWrites.empty() );
+	// The button really is held: a forwarded press is forgotten once Input reports a release.
+	InputEvent button;
+	button.Type = InputEvent::MouseButtonDown;
+	button.button.button = EE_BUTTON_LEFT;
+	input->processEvent( &button );
+	terminal->onMouseDown( point, EE_BUTTON_LMASK );
+	key.Type = InputEvent::KeyDown;
+	key.key.keysym.mod = defaultModifier;
+	input->processEvent( &key );
+	// Held buttons can produce repeated downs. Adding the modifier must not turn an existing app
+	// press into a hyperlink gesture and steal its release.
+	terminal->onMouseDown( point, EE_BUTTON_LMASK );
+	button.Type = InputEvent::MouseButtonUp;
+	input->processEvent( &button );
+	terminal->onMouseUp( { -100, -100 }, EE_BUTTON_LMASK );
+	session->requestSelection();
+	EXPECT_EQ( static_cast<std::ptrdiff_t>( 2 ),
+			   std::count( inputPty->mWrites.begin(), inputPty->mWrites.end(), '\033' ) );
+	EXPECT_NE( std::string::npos, inputPty->mWrites.find( 'M' ) );
+	EXPECT_NE( std::string::npos, inputPty->mWrites.find( 'm' ) );
+	ASSERT_TRUE( terminal->onCreateContextMenu( point, EE_BUTTON_RMASK ) );
+	EXPECT_STDSTREQ( "https://example.com/", terminal->contextHyperlink() );
+	session->reset();
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& value ) {
+					 return value.visibleHyperlinks.empty();
+				 } ) != nullptr );
+	display->update( false );
+	EXPECT_FALSE( display->getHyperlinkAt( point ).has_value() );
+	EXPECT_STDSTREQ( "https://example.com/", terminal->contextHyperlink() );
+	key.Type = InputEvent::KeyUp;
+	key.key.keysym.mod = 0;
+	input->processEvent( &key );
+	terminal->destroyMenu();
+	eeDelete( terminal );
+}
+
+UTEST( eterm, osc7_only_publishes_valid_local_directories ) {
+	auto pty = std::make_unique<MockPty>();
+	auto* input = pty.get();
+	input->mMaxRead = 1;
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display );
+	const auto path = Sys::getTempPath() + "eterm spaces;é";
+	auto uri = URI::fromFSPath( path );
+	uri.setHost( "localhost" );
+	input->mBuffer = "\033]7;" + uri.toString() + "\033\\";
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	EXPECT_STDSTREQ( uri.getFSPath(), term->getCurrentWorkingDirectory() );
+	for ( const auto* value :
+		  { "file://remote.invalid/tmp/", "file://localhost/abc%00def", "file://localhost/abc%GG",
+			"file://localhost/abc%", "https://localhost/tmp/", "file:relative", "file://localhost",
+			"file://localhost/tmp/?query", "file://localhost/tmp/#fragment",
+			"file://localhost:123/tmp/", "file://user@localhost/tmp/" } ) {
+		input->mBuffer += "\033]7;" + uri.toString() + "\a\033]7;" + value + "\a";
+		while ( input->mReadOffset < input->mBuffer.size() )
+			term->update();
+		EXPECT_TRUE( term->getCurrentWorkingDirectory().empty() );
+	}
+	uri.setHost( "" );
+	input->mBuffer += "\033]7;" + uri.toString() + "\a";
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	EXPECT_STDSTREQ( uri.getFSPath(), term->getCurrentWorkingDirectory() );
+	term->reset();
+	EXPECT_TRUE( term->getCurrentWorkingDirectory().empty() );
+}
+
+UTEST( eterm, device_status_reports_operating_status_and_cursor_position ) {
+	auto pty = std::make_unique<MockPty>();
+	// Benchmarks such as `kitten __benchmark__` wait for DSR 5 replies as a parse barrier.
+	pty->mBuffer = "ab\033[5n\033[6n\033[5n";
+	pty->mLoopWrites = false;
+	MockPty* ptyPtr = pty.get();
+	auto term = TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(),
+										  std::make_shared<MockDisplay>(), 100 );
+	term->update();
+	EXPECT_STDSTREQ( "\033[0n\033[1;3R\033[0n", ptyPtr->mWrites );
+}
+
+UTEST( eterm, osc52_validates_payload_selection_and_terminators ) {
+	auto pty = std::make_unique<MockPty>();
+	auto* input = pty.get();
+	input->mMaxRead = 1;
+	input->mLoopWrites = false;
+	input->mBuffer = "\033]52;c;SGVsbG8=\a\033]52;;V29ybGQ=\033\\\033]52;c;\a";
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display );
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	ASSERT_EQ( static_cast<size_t>( 3 ), display->mClipboardWrites.size() );
+	EXPECT_STDSTREQ( "Hello", display->mClipboardWrites[0] );
+	EXPECT_STDSTREQ( "World", display->mClipboardWrites[1] );
+	EXPECT_TRUE( display->mClipboardWrites[2].empty() );
+	for ( const auto* value : { "c;?", "x;SGVsbG8=", "cx;SGVsbG8=", "c;!!!!", "c;SGVsbG8=;ignored",
+								"c;SGVs bG8=", "c;SGVsbG8===", "c;AA==", "c;SGVsbG8=AA" } )
+		input->mBuffer += std::string( "\033]52;" ) + value + "\a";
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	EXPECT_EQ( static_cast<size_t>( 3 ), display->mClipboardWrites.size() );
+	// Every xterm target writes the single system clipboard (Neovim sends `s` for "*).
+	for ( const auto* value : { "p;cA==", "s;cw==", "pc;cGM=", "0;MA==" } )
+		input->mBuffer += std::string( "\033]52;" ) + value + "\a";
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	ASSERT_EQ( static_cast<size_t>( 7 ), display->mClipboardWrites.size() );
+	EXPECT_STDSTREQ( "p", display->mClipboardWrites[3] );
+	EXPECT_STDSTREQ( "s", display->mClipboardWrites[4] );
+	EXPECT_STDSTREQ( "pc", display->mClipboardWrites[5] );
+	EXPECT_STDSTREQ( "0", display->mClipboardWrites[6] );
+	EXPECT_TRUE( input->mWrites.empty() ); // Queries cannot disclose clipboard contents.
+	input->mMaxRead = std::numeric_limits<size_t>::max();
+	input->mBuffer += "\033]52;c;" + std::string( 350000, 'A' ) + "\a";
+	while ( input->mReadOffset < input->mBuffer.size() )
+		term->update();
+	EXPECT_EQ( static_cast<size_t>( 7 ), display->mClipboardWrites.size() );
+}
+
+UTEST( eterm_session, osc7_reports_publish_without_following_printable_output ) {
+	auto pty = std::make_unique<MockPty>();
+	const auto uri = URI::fromFSPath( Sys::getTempPath() );
+	pty->mBuffer = "\033]7;" + uri.toString() + "\a";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	auto local = waitForSnapshot( session, []( const TerminalSnapshot& value ) {
+		return !value.currentWorkingDirectory.empty();
+	} );
+	ASSERT_TRUE( local != nullptr );
+	EXPECT_STDSTREQ( uri.getFSPath(), local->currentWorkingDirectory );
+	session->writeRaw( "\033]7;file://remote.invalid/tmp/\a" );
+	auto remote = waitForSnapshot(
+		session, [generation = local->generation]( const TerminalSnapshot& value ) {
+			return value.generation > generation && value.currentWorkingDirectory.empty();
+		} );
+	ASSERT_TRUE( remote != nullptr );
+}
+
+UTEST( eterm_session, osc52_policy_applies_before_startup_and_hot_updates_on_worker ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "\033]52;c;SGVsbG8=\aA";
+	auto session = TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100,
+											{}, TerminalSessionOptions{ false, true } );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& value ) {
+					 return !value.cells.empty() && value.cells[0].u == 'A';
+				 } ) != nullptr );
+	for ( const auto& event : session->drainEvents() )
+		EXPECT_NE( TerminalSession::EventType::Clipboard, event.type );
+	session->setAllowOsc52ClipboardWrite( true );
+	session->writeRaw( "\033]52;c;SGVsbG8=\033\\B" );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& value ) {
+					 return !value.cells.empty() && value.cells[1].u == 'B';
+				 } ) != nullptr );
+	int clipboardEvents = 0;
+	for ( const auto& event : session->drainEvents() ) {
+		if ( event.type == TerminalSession::EventType::Clipboard ) {
+			++clipboardEvents;
+			EXPECT_STDSTREQ( "Hello", event.data );
+		}
+	}
+	EXPECT_EQ( 1, clipboardEvents );
+	session->setAllowOsc52ClipboardWrite( false );
+	session->reset();
+	session->writeRaw( "\033]52;c;SGVsbG8=\aC" );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& value ) {
+					 return !value.cells.empty() && value.cells[0].u == 'C';
+				 } ) != nullptr );
+	for ( const auto& event : session->drainEvents() )
+		EXPECT_NE( TerminalSession::EventType::Clipboard, event.type );
 }
 
 UTEST( eterm, alternate_scroll_mode_controls_wheel_key_translation ) {

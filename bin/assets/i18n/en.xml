@@ -932,6 +932,14 @@ the directory tree and in file dialogs to open a folder or file.</string>
 	<string name="uitable_free_column_widths">Free Column Widths</string>
 	<string name="uiterminal_copy">Copy</string>
 	<string name="uiterminal_open_link">Open Link</string>
+	<string name="uiterminal_open_hyperlink">Open Hyperlink</string>
+	<string name="uiterminal_copy_hyperlink">Copy Hyperlink Address</string>
+	<string name="enable_osc8_hyperlinks">Enable Hyperlinks (OSC 8)</string>
+	<string name="enable_osc8_hyperlinks_desc">Allow terminal programs to attach clickable links to text.</string>
+	<string name="inherit_working_directory">Inherit Working Directory</string>
+	<string name="inherit_working_directory_desc">Start new tabs and splits in the source terminal's reported local directory.</string>
+	<string name="allow_osc52_clipboard_write">Allow Programs to Write to Clipboard (OSC 52)</string>
+	<string name="allow_osc52_clipboard_write_desc">Allow terminal programs, including programs over SSH, to change the local clipboard.</string>
 	<string name="uiterminal_paste">Paste</string>
 	<string name="undo">Undo</string>
 	<string name="unindent">Unindent</string>

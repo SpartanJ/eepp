@@ -614,7 +614,9 @@ bool Engine::openURI( const std::string& url ) {
 	if ( nullptr == getPlatformHelper() )
 		return false;
 
-	if ( !LuaPattern::hasMatches( url, "^%w+://" ) )
+	// URI schemes need not have an authority (for example mailto:). A single letter before the
+	// colon is a Windows drive (C:, C:/x, C:x), never a registered scheme.
+	if ( !LuaPattern::hasMatches( url, "^%a[%w+.-]*:" ) || ( url.size() >= 2 && url[1] == ':' ) )
 		return openURI( "file://" + url );
 
 	if ( String::startsWith( url, "file://" ) ) {

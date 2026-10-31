@@ -726,6 +726,14 @@ file in the directory tree.</string>
 	<string name="uitable_free_column_widths">自由调整列宽</string>
 	<string name="uiterminal_copy">复制</string>
 	<string name="uiterminal_open_link">打开链接</string>
+	<string name="uiterminal_open_hyperlink">打开超链接</string>
+	<string name="uiterminal_copy_hyperlink">复制超链接地址</string>
+	<string name="enable_osc8_hyperlinks">启用超链接 (OSC 8)</string>
+	<string name="enable_osc8_hyperlinks_desc">允许终端程序为文本添加可点击的链接。</string>
+	<string name="inherit_working_directory">继承工作目录</string>
+	<string name="inherit_working_directory_desc">在源终端报告的本地目录中启动新标签页和分割窗格。</string>
+	<string name="allow_osc52_clipboard_write">允许程序写入剪贴板 (OSC 52)</string>
+	<string name="allow_osc52_clipboard_write_desc">允许终端程序（包括通过 SSH 运行的程序）修改本地剪贴板。</string>
 	<string name="uiterminal_paste">粘贴</string>
 	<string name="undo">撤销</string>
 	<string name="unindent">取消缩进</string>

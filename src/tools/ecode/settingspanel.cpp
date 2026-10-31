@@ -1616,6 +1616,36 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 
 	addCategory( panel, "terminal.behavior", mApp->i18n( "terminal", "Terminal" ),
 				 mApp->i18n( "behavior", "Behavior" ) );
+	addBool( panel,
+			 { "enableOsc8Hyperlinks", "terminal.behavior",
+			   mApp->i18n( "enable_osc8_hyperlinks", "Enable Hyperlinks (OSC 8)" ),
+			   mApp->i18n( "enable_osc8_hyperlinks_desc",
+						   "Allow terminal programs to attach clickable links to text." ) },
+			 &mApp->termConfig().enableOsc8Hyperlinks, [this]( bool value ) {
+				 mApp->getTerminalManager()->forEachTerminal( [value]( UITerminal* terminal ) {
+					 terminal->getTerm()->setOsc8HyperlinksEnabled( value );
+				 } );
+			 } );
+	addBool(
+		panel,
+		{ "inheritWorkingDirectory", "terminal.behavior",
+		  mApp->i18n( "inherit_working_directory", "Inherit Working Directory" ),
+		  mApp->i18n(
+			  "inherit_working_directory_desc",
+			  "Start new tabs and splits in the source terminal's reported local directory." ) },
+		&mApp->termConfig().inheritWorkingDirectory );
+	addBool( panel,
+			 { "allowOsc52ClipboardWrite", "terminal.behavior",
+			   mApp->i18n( "allow_osc52_clipboard_write",
+						   "Allow Programs to Write to Clipboard (OSC 52)" ),
+			   mApp->i18n( "allow_osc52_clipboard_write_desc",
+						   "Allow terminal programs, including programs over SSH, to change the "
+						   "local clipboard." ) },
+			 &mApp->termConfig().allowOsc52ClipboardWrite, [this]( bool value ) {
+				 mApp->getTerminalManager()->forEachTerminal( [value]( UITerminal* terminal ) {
+					 terminal->getTerm()->setAllowOsc52ClipboardWrite( value );
+				 } );
+			 } );
 	addChoice(
 		panel,
 		{ "newTerminalOrientation", "terminal.behavior",

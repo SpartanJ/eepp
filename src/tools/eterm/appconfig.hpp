@@ -33,6 +33,9 @@ struct TerminalConfig {
 	bool useFrameBuffer{ false };
 	bool closeOnExit{ false };
 	bool exclusiveMode{ false };
+	bool inheritWorkingDirectory{ true };
+	bool allowOsc52ClipboardWrite{ true };
+	bool enableOsc8Hyperlinks{ true };
 	NewTerminalBehavior newTerminalBehavior{ NewTerminalBehavior::CurrentTabBar };
 	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
 	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };

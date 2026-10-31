@@ -34,6 +34,12 @@ void AppConfig::load() {
 	terminal.closeOnExit = mIni.getValueB( "terminal", "close_on_exit", terminal.closeOnExit );
 	terminal.initialTabs = mIni.getValueU( "terminal", "initial_tabs", terminal.initialTabs );
 	terminal.exclusiveMode = mIni.getValueB( "terminal", "exclusive_mode", terminal.exclusiveMode );
+	terminal.inheritWorkingDirectory =
+		mIni.getValueB( "terminal", "inherit_working_directory", terminal.inheritWorkingDirectory );
+	terminal.allowOsc52ClipboardWrite = mIni.getValueB( "terminal", "allow_osc52_clipboard_write",
+														terminal.allowOsc52ClipboardWrite );
+	terminal.enableOsc8Hyperlinks =
+		mIni.getValueB( "terminal", "enable_osc8_hyperlinks", terminal.enableOsc8Hyperlinks );
 	ui.smoothScroll = mIni.getValueB(
 		"ui", "smooth_scroll", mIni.getValueB( "terminal", "smooth_scroll", ui.smoothScroll ) );
 	const auto newTerminalBehavior =
@@ -111,6 +117,9 @@ bool AppConfig::savePreferences() {
 	mIni.setValueB( "terminal", "close_on_exit", terminal.closeOnExit );
 	mIni.setValueU( "terminal", "initial_tabs", terminal.initialTabs );
 	mIni.setValueB( "terminal", "exclusive_mode", terminal.exclusiveMode );
+	mIni.setValueB( "terminal", "inherit_working_directory", terminal.inheritWorkingDirectory );
+	mIni.setValueB( "terminal", "allow_osc52_clipboard_write", terminal.allowOsc52ClipboardWrite );
+	mIni.setValueB( "terminal", "enable_osc8_hyperlinks", terminal.enableOsc8Hyperlinks );
 	mIni.setValueB( "ui", "smooth_scroll", ui.smoothScroll );
 	mIni.deleteValue( "terminal", "smooth_scroll" );
 	mIni.setValue( "terminal", "new_terminal_behavior",

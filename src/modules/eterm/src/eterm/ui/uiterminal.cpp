@@ -11,6 +11,7 @@
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
+#include <eepp/window/runtime.hpp>
 #include <eterm/ui/uiterminalfind.hpp>
 
 using namespace EE::Scene;
@@ -35,6 +36,18 @@ UITerminal* UITerminal::New( const std::shared_ptr<TerminalDisplay>& terminalDis
 }
 
 UITerminal::~UITerminal() {
+	if ( mTerm )
+		mTerm->clearHyperlinkHover();
+	if ( mHyperlinkHandCursor && getEventDispatcher()->getMouseOverNode() == this )
+		getUISceneNode()->setCursor( getCursor() );
+	if ( mCurrentMenu ) {
+		// The popup lives under the scene, so its callbacks must not outlive this terminal.
+		mCurrentMenu->removeEventsOfType( Event::OnItemClicked );
+		mCurrentMenu->removeEventsOfType( Event::OnClose );
+		mCurrentMenu->close();
+	}
+	if ( !mPressedHyperlink.empty() )
+		getInput()->captureMouse( false );
 	if ( mTerm && mTerminalEventCallbackId )
 		mTerm->popEventCallback( mTerminalEventCallbackId );
 }
@@ -129,6 +142,15 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	mKeyBindings.addKeybind( { KEY_C, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-copy" );
 	setCommand( "terminal-open-link",
 				[this] { Engine::instance()->openURI( mTerm->getSelection() ); } );
+	setCommand( "terminal-open-hyperlink", [this] {
+		if ( mTerm->getOsc8HyperlinksEnabled() &&
+			 TerminalDisplay::isHyperlinkAllowed( mContextHyperlink ) )
+			Engine::instance()->openURI( mContextHyperlink );
+	} );
+	setCommand( "terminal-copy-hyperlink", [this] {
+		if ( mTerm->getOsc8HyperlinksEnabled() && !mContextHyperlink.empty() )
+			getUISceneNode()->getWindow()->getClipboard()->setText( mContextHyperlink );
+	} );
 	subscribeScheduledUpdate();
 }
 
@@ -365,6 +387,8 @@ void UITerminal::scheduledUpdate( const Time& time ) {
 	bool mouseOutsideBounds =
 		mousePos.y < 0 || mousePos.y > getUISceneNode()->getWindow()->getSize().getHeight();
 	terminal->update( isMouseOverMeOrChildren() && !mouseOutsideBounds );
+	// Also react to modifiers pressed/released over a stationary pointer and new snapshots.
+	updateHyperlinkHover( mousePos );
 	if ( mFindBar && mFindBar->isVisible() )
 		mFindBar->refreshStatus();
 	if ( !mVScroll->isDragging() && ( mScrollByBar || mPendingContentSizeChange ) ) {
@@ -527,6 +551,7 @@ Uint32 UITerminal::onTextEditing( const TextEditingEvent& event ) {
 }
 
 Uint32 UITerminal::onKeyDown( const KeyEvent& event ) {
+	updateHyperlinkHover( getInput()->getRelativeMousePos() );
 	if ( mUISceneNode->getUIEventDispatcher()->justGainedFocus() )
 		return 0;
 
@@ -546,12 +571,16 @@ Uint32 UITerminal::onKeyDown( const KeyEvent& event ) {
 }
 
 Uint32 UITerminal::onKeyUp( const KeyEvent& event ) {
+	updateHyperlinkHover( getInput()->getRelativeMousePos() );
 	if ( mTerm )
 		mTerm->onKeyUp( event.getKeyCode(), event.getChar(), event.getMod(), event.getScancode() );
 	return 1;
 }
 
 Uint32 UITerminal::onMouseMove( const Vector2i& position, const Uint32& flags ) {
+	updateHyperlinkHover( position );
+	if ( !mPressedHyperlink.empty() )
+		return 1;
 	if ( mViewType == ScrollViewType::Overlay && ScrollBarMode::Auto == mVScrollMode ) {
 		mMouseClock.restart();
 		bool visible = !mTerm->isAltScr() && getContentSize() > getVisibleArea();
@@ -565,20 +594,79 @@ Uint32 UITerminal::onMouseMove( const Vector2i& position, const Uint32& flags ) 
 	return 1;
 }
 
+Uint32 UITerminal::onMouseLeave( const Vector2i& position, const Uint32& flags ) {
+	mTerm->clearHyperlinkHover();
+	if ( mHyperlinkHandCursor && getEventDispatcher()->getMouseOverNode() == this )
+		getUISceneNode()->setCursor( getCursor() );
+	mHyperlinkHandCursor = false;
+	invalidateDraw();
+	return UITouchDraggableWidget::onMouseLeave( position, flags );
+}
+
+bool UITerminal::isHyperlinkModifierPressed() const {
+	return getInput()->getSanitizedModState() == KeyMod::getDefaultModifier();
+}
+
+void UITerminal::updateHyperlinkHover( const Vector2i& position ) {
+	// A release outside the widget, or one lost to another window, must not keep links disabled.
+	if ( mForwardedLeftButton && !getInput()->isMouseLeftPressed() )
+		mForwardedLeftButton = false;
+	const bool over = getEventDispatcher()->getMouseOverNode() == this;
+	const bool focusedWindow =
+		getUISceneNode()->getWindow()->hasInputFocus() || Runtime::isOffscreen();
+	mTerm->updateHyperlinkHover( position,
+								 over && focusedWindow && !mCurrentMenu && !mForwardedLeftButton &&
+									 !getUISceneNode()->getUIEventDispatcher()->isNodeDragging() &&
+									 isHyperlinkModifierPressed() );
+	const bool hand = !mTerm->getHoveredHyperlink().empty();
+	if ( over && ( hand || mHyperlinkHandCursor ) )
+		getUISceneNode()->setCursor( hand ? Cursor::Hand : getCursor() );
+	mHyperlinkHandCursor = hand;
+	if ( mTerm->isDirty() )
+		invalidateDraw();
+}
+
 Uint32 UITerminal::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	if ( getUISceneNode()->getUIEventDispatcher()->isNodeDragging() )
 		return 0;
 
+	if ( !mPressedHyperlink.empty() && ( flags & EE_BUTTON_LMASK ) )
+		return 1;
+	if ( !mForwardedLeftButton && flags == EE_BUTTON_LMASK && isHyperlinkModifierPressed() ) {
+		auto link = mTerm->getHyperlinkAt( position );
+		if ( link && TerminalDisplay::isHyperlinkAllowed( *link ) ) {
+			mPressedHyperlink = std::move( *link );
+			getInput()->captureMouse( true );
+			return 1;
+		}
+	}
+	if ( flags & EE_BUTTON_LMASK )
+		mForwardedLeftButton = true;
+	updateHyperlinkHover( position );
 	mTerm->onMouseDown( position, flags );
 	return 1;
 }
 
 Uint32 UITerminal::onMouseDoubleClick( const Vector2i& position, const Uint32& flags ) {
+	if ( !mPressedHyperlink.empty() && ( flags & EE_BUTTON_LMASK ) )
+		return 1;
 	mTerm->onMouseDoubleClick( position, flags );
 	return 1;
 }
 
 Uint32 UITerminal::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( !mPressedHyperlink.empty() && ( flags & EE_BUTTON_LMASK ) ) {
+		// Consume the matching release even if the modifier or snapshot changed while held.
+		auto pressed = std::move( mPressedHyperlink );
+		mPressedHyperlink.clear();
+		getInput()->captureMouse( false );
+		if ( mTerm->getHyperlinkAt( position ) == pressed )
+			Engine::instance()->openURI( pressed );
+		return 1;
+	}
+	if ( flags & EE_BUTTON_LMASK )
+		mForwardedLeftButton = false;
+	updateHyperlinkHover( position );
 	if ( ( flags & EE_BUTTON_RMASK ) && !mTerm->isAppCapturingMouse() ) {
 		onCreateContextMenu( position, flags );
 		return 1;
@@ -677,6 +765,16 @@ Uint32 UITerminal::onFocus( NodeFocusReason reason ) {
 }
 
 Uint32 UITerminal::onFocusLoss() {
+	mTerm->clearHyperlinkHover();
+	if ( mHyperlinkHandCursor && getEventDispatcher()->getMouseOverNode() == this )
+		getUISceneNode()->setCursor( getCursor() );
+	mHyperlinkHandCursor = false;
+	mForwardedLeftButton = false;
+	if ( !mPressedHyperlink.empty() ) {
+		// The matching release can be delivered elsewhere; do not swallow the next click.
+		mPressedHyperlink.clear();
+		getInput()->captureMouse( false );
+	}
 	getUISceneNode()->getWindow()->stopTextInput();
 	Node* focusNode = getEventDispatcher()->getFocusNode();
 	const bool scrollBarFocus = focusNode == mVScroll || mVScroll->isParentOf( focusNode );
@@ -702,6 +800,13 @@ void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
 
+	if ( !mContextHyperlink.empty() ) {
+		menuAdd( menu, i18n( "uiterminal_open_hyperlink", "Open Hyperlink" ), "earth",
+				 "terminal-open-hyperlink" )
+			->setEnabled( TerminalDisplay::isHyperlinkAllowed( mContextHyperlink ) );
+		menuAdd( menu, i18n( "uiterminal_copy_hyperlink", "Copy Hyperlink Address" ), "copy",
+				 "terminal-copy-hyperlink" );
+	}
 	if ( mTerm->hasSelection() ) {
 		auto sel( mTerm->getSelection() );
 
@@ -738,12 +843,14 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 
+	mContextHyperlink = mTerm->getHyperlinkAt( position ).value_or( "" );
 	createDefaultContextMenuOptions( menu );
 
 	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
 	sendEvent( &event );
 
 	if ( menu->getCount() == 0 ) {
+		mContextHyperlink.clear();
 		menu->close();
 		return false;
 	}
@@ -762,7 +869,10 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 	UIMenu::findBestMenuPos( pos, menu );
 	menu->setPixelsPosition( pos );
 	menu->show();
-	menu->on( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
+	menu->on( Event::OnClose, [this]( const Event* ) {
+		mCurrentMenu = nullptr;
+		mContextHyperlink.clear();
+	} );
 	mCurrentMenu = menu;
 	return true;
 }

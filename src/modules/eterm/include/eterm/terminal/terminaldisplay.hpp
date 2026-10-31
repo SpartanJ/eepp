@@ -16,6 +16,7 @@
 
 #include <bitset>
 #include <memory>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -161,6 +162,14 @@ class TerminalDisplay {
 			IProcessFactory* processFactory = nullptr, bool useFrameBuffer = false,
 			bool keepAlive = true, const std::unordered_map<std::string, std::string>& env = {} );
 
+	/** Creates a session with its clipboard policy set before child output is parsed. */
+	static std::shared_ptr<TerminalDisplay>
+	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
+			std::string program, std::vector<std::string> args, const std::string& workingDir,
+			const size_t& historySize, IProcessFactory* processFactory, bool useFrameBuffer,
+			bool keepAlive, const std::unordered_map<std::string, std::string>& env,
+			TerminalSessionOptions options );
+
 	~TerminalDisplay();
 
 	void resetColors();
@@ -193,6 +202,20 @@ class TerminalDisplay {
 	void onMouseDown( const Vector2i& pos, const Uint32& flags );
 
 	void onMouseUp( const Vector2i& pos, const Uint32& flags );
+
+	/** Uses only the current immutable snapshot; pos has the same coordinates as mouse events. */
+	std::optional<std::string> getHyperlinkAt( const Vector2i& pos );
+
+	/** UI-only hover feedback; no session command or worker lookup is performed. */
+	void updateHyperlinkHover( const Vector2i& pos, bool active );
+
+	void clearHyperlinkHover();
+
+	/** Borrowed until the hover target changes or this display is destroyed. */
+	std::string_view getHoveredHyperlink() const;
+
+	/** Explicit URI policy for user-initiated OSC 8 navigation. */
+	static bool isHyperlinkAllowed( const std::string& uri );
 
 	void onTextInput( const Uint32& chr );
 
@@ -286,6 +309,12 @@ class TerminalDisplay {
 
 	void setAllowMemoryTrimming( bool allow );
 
+	void setAllowOsc52ClipboardWrite( bool allow );
+
+	void setOsc8HyperlinksEnabled( bool enabled );
+
+	bool getOsc8HyperlinksEnabled() const { return mEnableOsc8Hyperlinks; }
+
 	void setDataCallback( DataFunc callback );
 
 	void setPromptStateChangedCallback( PromptStateChangedFunc callback );
@@ -334,6 +363,9 @@ class TerminalDisplay {
 
 	const std::string& getWorkingDir() const { return mWorkingDir; }
 
+	/** Last validated local OSC 7 path, or empty if the origin is unknown/remote. */
+	std::string getCurrentWorkingDirectory() const;
+
 	bool isAppCapturingMouse() const;
 
 	std::size_t getHistorySize() const { return mHistorySize; }
@@ -344,6 +376,8 @@ class TerminalDisplay {
 	std::shared_ptr<TerminalSession> mSession;
 	std::shared_ptr<const TerminalSnapshot> mSnapshot;
 	std::unique_ptr<KittyGraphicsRenderer> mGraphicsRenderer;
+	struct HyperlinkHover;
+	std::unique_ptr<HyperlinkHover> mHyperlinkHover;
 	mutable std::string mClipboardUtf8;
 	Uint32 mNumCallBacks{ 0 };
 	std::map<Uint32, EventFunc> mCallbacks;
@@ -363,6 +397,7 @@ class TerminalDisplay {
 	bool mFullDirty{ false };
 	Vector2i mCursor;
 	TerminalGlyph mCursorGlyph;
+	bool mEnableOsc8Hyperlinks{ true };
 	bool mUseColorEmoji{ true };
 	bool mPasteNewlineFix{ true };
 	bool mFocus{ true };
@@ -407,6 +442,10 @@ class TerminalDisplay {
 	void draw( const Vector2f& pos );
 
 	void drawGrid( const Vector2f& pos );
+
+	const TerminalSnapshot::VisibleHyperlink* findHyperlinkAt( const Vector2i& pos );
+
+	void drawHyperlinkHover();
 
 	Vector2i positionToGrid( const Vector2i& pos );
 

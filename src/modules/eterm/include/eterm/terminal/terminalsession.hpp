@@ -30,6 +30,12 @@ namespace eterm { namespace Terminal {
 
 /** Immutable worker-to-UI presentation state. Cell selection is already applied as ATTR_REVERSE. */
 struct TerminalSnapshot {
+	struct VisibleHyperlink {
+		// Shares the worker registry's immutable URI instead of copying it for every frame.
+		std::shared_ptr<const std::string> uri;
+		uint16_t id{ 0 };
+	};
+
 	struct SearchCellRange {
 		Vector2i start;
 		Vector2i end;
@@ -40,6 +46,7 @@ struct TerminalSnapshot {
 	std::vector<TerminalGlyph> cells;
 	std::vector<Uint8> dirtyRows;
 	std::vector<SearchCellRange> visibleSearchMatches;
+	std::vector<VisibleHyperlink> visibleHyperlinks;
 	std::string title;
 	std::string currentWorkingDirectory;
 	std::string selection;
@@ -78,6 +85,12 @@ struct TerminalColorPalette {
 	Uint32 cursor{ 0 };
 	Uint32 foreground{ 0 };
 	Uint32 background{ 0 };
+};
+
+/** Parser permissions applied before reading child output. */
+struct TerminalSessionOptions {
+	bool allowOsc52ClipboardWrite{ true };
+	bool enableOsc8Hyperlinks{ true };
 };
 
 /**
@@ -119,6 +132,12 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 													size_t historySize,
 													TerminalColorPalette palette = {} );
 
+	/** Initial policy is applied before the worker can parse any child output. */
+	static std::shared_ptr<TerminalSession> create( PtyPtr&& pty, ProcPtr&& process,
+													size_t historySize,
+													TerminalColorPalette palette,
+													TerminalSessionOptions options );
+
 	~TerminalSession();
 
 	TerminalSession( const TerminalSession& ) = delete;
@@ -145,6 +164,10 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	void setCursorMode( TerminalCursorMode mode );
 	void setColorPalette( TerminalColorPalette palette );
 	void setAllowMemoryTrimming( bool allow );
+
+	void setAllowOsc52ClipboardWrite( bool allow );
+
+	void setOsc8HyperlinksEnabled( bool enabled );
 	void setPresentationRate( Uint32 framesPerSecond );
 	void setDataEventsEnabled( bool enabled );
 	void setPromptEventsEnabled( bool enabled );
@@ -242,21 +265,22 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	struct ResetCommand {};
 	struct TerminateCommand {};
 	struct AllowTrimCommand : BoolCommand {};
+	struct Osc52PolicyCommand : BoolCommand {};
+	struct Osc8PolicyCommand : BoolCommand {};
 	struct DataEventsCommand : BoolCommand {};
 	struct PromptEventsCommand : BoolCommand {};
 	struct FocusCommand : BoolCommand {};
 
-	using Command =
-		std::variant<WriteCommand, WriteRawCommand, KeyCommand, TextInputCommand, ResizeCommand,
-					 ScrollCommand, SelectionStartCommand, SelectionExtendCommand,
-					 SelectionClearCommand, MouseCommand, FocusCommand, CursorModeCommand,
-					 PaletteCommand, PresentationRateCommand, AllowTrimCommand, DataEventsCommand,
-					 PromptEventsCommand, TerminateCommand, RestartCommand, ResetCommand,
-					 SelectionRequestCommand, GraphicsResyncCommand, SearchQueryCommand,
-					 SearchNavigateCommand, SearchClearCommand>;
+	using Command = std::variant<
+		WriteCommand, WriteRawCommand, KeyCommand, TextInputCommand, ResizeCommand, ScrollCommand,
+		SelectionStartCommand, SelectionExtendCommand, SelectionClearCommand, MouseCommand,
+		FocusCommand, CursorModeCommand, PaletteCommand, PresentationRateCommand, AllowTrimCommand,
+		DataEventsCommand, PromptEventsCommand, TerminateCommand, RestartCommand, ResetCommand,
+		SelectionRequestCommand, GraphicsResyncCommand, SearchQueryCommand, SearchNavigateCommand,
+		SearchClearCommand, Osc52PolicyCommand, Osc8PolicyCommand>;
 
 	TerminalSession( PtyPtr&& pty, ProcPtr&& process, size_t historySize,
-					 TerminalColorPalette palette );
+					 TerminalColorPalette palette, TerminalSessionOptions options );
 
 	void start();
 	bool enqueue( Command&& command );

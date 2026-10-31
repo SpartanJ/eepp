@@ -1,6 +1,11 @@
 #include "terminalmanager.hpp"
 #include "ecode.hpp"
 #include <eepp/system/filesystem.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+#include <unistd.h>
+#endif
 
 using namespace std::literals;
 
@@ -22,74 +27,90 @@ UITerminal* TerminalManager::createTerminalInSplitter(
 	}
 #endif
 
-	UITerminal* term = nullptr;
-	auto splitter = mApp->getSplitter();
-	auto& config = mApp->getConfig();
+	auto* splitter = mApp->getSplitter();
+	const auto orientation = mApp->termConfig().newTerminalOrientation;
+	// Resolve before show()/split(): both may change the active terminal or editor.
+	const auto directory = workingDir.empty()
+							   ? getWorkingDir( program.empty() ? getCurrentTerminal() : nullptr )
+							   : workingDir;
 
-	if ( config.term.newTerminalOrientation == NewTerminalOrientation::StatusBarPanel &&
+	if ( orientation == NewTerminalOrientation::StatusBarPanel &&
 		 mApp->getStatusTerminalController() ) {
 		mApp->getStatusTerminalController()->show();
-		mApp->getStatusTerminalController()->createTerminal();
-	} else if ( splitter && splitter->hasSplit() ) {
-		if ( splitter->getTabWidgets().size() == 2 ) {
-			UIOrientation orientation = splitter->getMainSplitOrientation();
-			if ( config.term.newTerminalOrientation == NewTerminalOrientation::Vertical &&
-				 orientation == UIOrientation::Horizontal ) {
-				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir, program,
-										  args, env, fallback, keepAlive );
-			} else if ( config.term.newTerminalOrientation == NewTerminalOrientation::Horizontal &&
-						orientation == UIOrientation::Vertical ) {
-				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir, program,
-										  args, env, fallback, keepAlive );
-			} else {
-				term = createNewTerminal( "", nullptr, workingDir, program, args );
-			}
-		} else {
-			term = createNewTerminal( "", nullptr, workingDir, program, args );
-		}
-	} else if ( splitter ) {
-		switch ( config.term.newTerminalOrientation ) {
-			case NewTerminalOrientation::Vertical: {
-				auto cwd = workingDir.empty() ? getSelectedWorkingDir() : workingDir;
-				splitter->split( SplitDirection::Right, splitter->getCurWidget(), false );
-				term =
-					createNewTerminal( "", nullptr, cwd, program, args, env, fallback, keepAlive );
-				break;
-			}
-			case NewTerminalOrientation::Horizontal: {
-				auto cwd = workingDir.empty() ? getSelectedWorkingDir() : workingDir;
-				splitter->split( SplitDirection::Bottom, splitter->getCurWidget(), false );
-				term =
-					createNewTerminal( "", nullptr, cwd, program, args, env, fallback, keepAlive );
-				break;
-			}
-			case NewTerminalOrientation::Same: {
-				term =
-					createNewTerminal( "", nullptr, "", program, args, env, fallback, keepAlive );
-				break;
-			}
-			case NewTerminalOrientation::StatusBarPanel:
-				break;
-		}
+		return mApp->getStatusTerminalController()->createTerminal( directory, std::move( program ),
+																	std::move( args ), env );
 	}
-	return term;
+	if ( !splitter )
+		return nullptr;
+	UITabWidget* target = nullptr;
+	if ( splitter->hasSplit() ) {
+		if ( splitter->getTabWidgets().size() == 2 ) {
+			const auto splitOrientation = splitter->getMainSplitOrientation();
+			if ( ( orientation == NewTerminalOrientation::Vertical &&
+				   splitOrientation == UIOrientation::Horizontal ) ||
+				 ( orientation == NewTerminalOrientation::Horizontal &&
+				   splitOrientation == UIOrientation::Vertical ) )
+				target = splitter->getTabWidgets()[1];
+		}
+	} else if ( orientation == NewTerminalOrientation::Vertical ) {
+		splitter->split( SplitDirection::Right, splitter->getCurWidget(), false );
+	} else if ( orientation == NewTerminalOrientation::Horizontal ) {
+		splitter->split( SplitDirection::Bottom, splitter->getCurWidget(), false );
+	} else if ( orientation == NewTerminalOrientation::StatusBarPanel ) {
+		return nullptr;
+	}
+	return createNewTerminal( "", target, directory, std::move( program ), std::move( args ), env,
+							  fallback, keepAlive );
 }
 
 void TerminalManager::applyTerminalColorScheme( const TerminalColorScheme& colorScheme ) {
-	mApp->getSplitter()->forEachWidget( [colorScheme]( UIWidget* widget ) {
-		if ( widget->isType( UI_TYPE_TERMINAL ) )
-			widget->asType<UITerminal>()->setColorScheme( colorScheme );
-	} );
+	forEachTerminal(
+		[&colorScheme]( UITerminal* terminal ) { terminal->setColorScheme( colorScheme ); } );
+}
 
-	if ( mApp->getStatusTerminalController() &&
-		 mApp->getStatusTerminalController()->getTabWidget() ) {
-		mApp->getStatusTerminalController()->getTabWidget()->forEachTab(
-			[colorScheme]( UITab* tab ) {
-				tab->getOwnedWidget()->asType<UITerminal>()->getTerm()->setColorScheme(
-					colorScheme );
-			},
-			UI_TYPE_TERMINAL );
+void TerminalManager::forEachTerminal( const std::function<void( UITerminal* )>& fn ) const {
+	mApp->getUISceneNode()->forEachNode( [&fn]( Node* node ) {
+		if ( node->isType( UI_TYPE_TERMINAL ) )
+			fn( node->asType<UITerminal>() );
+	} );
+}
+
+UITerminal* TerminalManager::getCurrentTerminal() const {
+	for ( auto* node = mApp->getUISceneNode()->getUIEventDispatcher()->getFocusNode(); node;
+		  node = node->getParent() ) {
+		if ( node->isType( UI_TYPE_TERMINAL ) )
+			return node->asType<UITerminal>();
 	}
+	auto* current = mApp->getSplitter()->getCurWidget();
+	return current && current->isType( UI_TYPE_TERMINAL ) ? current->asType<UITerminal>() : nullptr;
+}
+
+std::string TerminalManager::getWorkingDir( UITerminal* source ) const {
+	if ( source && mApp->termConfig().inheritWorkingDirectory ) {
+		const auto usable = []( const std::string& path ) {
+			if ( !FileSystem::isDirectory( path ) )
+				return false;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+			return FileInfo( path ).isReadable();
+#else
+			return access( path.c_str(), X_OK ) == 0;
+#endif
+		};
+		auto directory = source->getTerm()->getCurrentWorkingDirectory();
+		if ( usable( directory ) )
+			return directory;
+		const auto& directoryAtLaunch = source->getTerm()->getWorkingDir();
+		if ( usable( directoryAtLaunch ) )
+			return directoryAtLaunch;
+	}
+	return getSelectedWorkingDir();
+}
+
+UITerminal* TerminalManager::createTerminalSplit( SplitDirection direction ) {
+	auto directory = getWorkingDir( getCurrentTerminal() );
+	auto* splitter = mApp->getSplitter();
+	splitter->split( direction, splitter->getCurWidget(), false );
+	return createNewTerminal( "", nullptr, directory );
 }
 
 void TerminalManager::setTerminalColorScheme( const std::string& name ) {
@@ -597,6 +618,9 @@ UITerminal* TerminalManager::createNewTerminal(
 	msgBox->showWhenReady();
 	return nullptr;
 #else
+	const auto directory = workingDir.empty()
+							   ? getWorkingDir( program.empty() ? getCurrentTerminal() : nullptr )
+							   : workingDir;
 	UITabWidget* tabWidget = nullptr;
 
 	if ( !inTabWidget ) {
@@ -633,11 +657,15 @@ UITerminal* TerminalManager::createNewTerminal(
 	if ( args.empty() && !mApp->termConfig().shellArgs.empty() )
 		args = Process::parseArgs( mApp->termConfig().shellArgs );
 
-	UITerminal* term = UITerminal::New(
+	auto display = TerminalDisplay::create(
+		mApp->getUISceneNode()->getWindow(),
 		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),
 		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
-		program, args, env, !workingDir.empty() ? workingDir : getSelectedWorkingDir(),
-		mApp->termConfig().scrollback, nullptr, mUseFrameBuffer, keepAlive );
+		std::move( program ), std::move( args ), directory, mApp->termConfig().scrollback, nullptr,
+		mUseFrameBuffer, keepAlive, env,
+		TerminalSessionOptions{ mApp->termConfig().allowOsc52ClipboardWrite,
+								mApp->termConfig().enableOsc8Hyperlinks } );
+	UITerminal* term = display ? UITerminal::New( display ) : nullptr;
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
 		if ( fallback )

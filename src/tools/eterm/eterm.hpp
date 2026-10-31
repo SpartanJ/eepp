@@ -42,6 +42,7 @@ struct TerminalLaunchConfig {
 	bool useFrameBuffer{ false };
 	bool keepAlive{ true };
 	bool closeOnExit{ false };
+	bool launchExecutable{ false };
 };
 
 class App : private efsw::FileWatchListener {
@@ -93,7 +94,9 @@ class App : private efsw::FileWatchListener {
 
 	void configureTab( UITab* tab );
 
-	UITerminal* createTerminal( UITabWidget* target = nullptr );
+	std::string resolveWorkingDirectory( UITerminal* source ) const;
+
+	UITerminal* createTerminal( UITabWidget* target = nullptr, std::string workingDirectory = {} );
 
 	UITerminal* createTerminalSplit( SplitDirection direction, UIWidget* widget );
 

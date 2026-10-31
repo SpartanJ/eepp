@@ -23,6 +23,7 @@
 //  DEALINGS IN THE SOFTWARE.
 #pragma once
 
+#include <memory>
 #include <stdint.h>
 #include <string.h>
 #include <string>
@@ -164,6 +165,31 @@ struct TerminalGlyph {
 	}
 
 	bool operator!=( const TerminalGlyph& r ) { return !( *this == r ); }
+};
+
+// Bits 0..15 belong to attributes (bit 15 is reserved). Keep bit 31 clear for legacy
+// signed mode consumers. Hyperlink identity travels with glyph copies, history and reflow.
+constexpr uint32_t GLYPH_LINK_SHIFT = 16;
+constexpr uint32_t GLYPH_LINK_MAX = 0x7FFFu;
+constexpr uint32_t GLYPH_LINK_MASK = GLYPH_LINK_MAX << GLYPH_LINK_SHIFT;
+constexpr uint32_t GLYPH_ATTRIBUTE_MASK = 0xFFFFu;
+static_assert( sizeof( TerminalGlyph ) == 16, "Terminal glyphs must remain 16 bytes" );
+static_assert( ( GLYPH_LINK_MASK & GLYPH_ATTRIBUTE_MASK ) == 0 );
+static_assert( ( ATTR_SEARCH_ACTIVE & ~GLYPH_ATTRIBUTE_MASK ) == 0 );
+
+inline uint16_t glyphLinkId( const TerminalGlyph& glyph ) {
+	return static_cast<uint16_t>( ( glyph.mode & GLYPH_LINK_MASK ) >> GLYPH_LINK_SHIFT );
+}
+
+inline void setGlyphLinkId( TerminalGlyph& glyph, uint16_t id ) {
+	glyph.mode = ( glyph.mode & ~GLYPH_LINK_MASK ) |
+				 ( ( static_cast<uint32_t>( id ) << GLYPH_LINK_SHIFT ) & GLYPH_LINK_MASK );
+}
+
+struct TerminalHyperlink {
+	// Shared with snapshots: the worker can reclaim and reuse an ID while the UI still displays it.
+	std::shared_ptr<const std::string> uri;
+	std::string externalId;
 };
 
 typedef TerminalGlyph* Line;

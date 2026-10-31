@@ -4,6 +4,7 @@
 #include <eepp/system/log.hpp>
 
 #include <algorithm>
+#include <bitset>
 #include <cstring>
 
 using namespace EE::System;
@@ -89,6 +90,24 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 		snapshot->cursorMode = mCursorMode;
 		snapshot->cursorVisible = mCursorVisible;
 		if ( mEmulator ) {
+			if ( mEmulator->getOsc8HyperlinksEnabled() && mEmulator->hasHyperlinks() ) {
+				// Own the mapping alongside the cells: later worker GC/ID reuse cannot change it.
+				SmallVector<uint16_t, 16> ids;
+				std::bitset<GLYPH_LINK_MAX + 1> seen;
+				for ( const auto& glyph : snapshot->cells ) {
+					const auto id = glyphLinkId( glyph );
+					if ( id != 0 && !seen.test( id ) ) {
+						seen.set( id );
+						ids.push_back( id );
+					}
+				}
+				std::sort( ids.begin(), ids.end() );
+				snapshot->visibleHyperlinks.reserve( ids.size() );
+				for ( auto id : ids ) {
+					if ( const auto* link = mEmulator->getHyperlink( id ) )
+						snapshot->visibleHyperlinks.push_back( { link->uri, id } );
+				}
+			}
 			snapshot->historyLength = mEmulator->scrollSize();
 			snapshot->scrollPosition = mEmulator->scrollPos();
 			snapshot->hasSelection = mEmulator->hasSelection();
@@ -283,20 +302,30 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 std::shared_ptr<TerminalSession> TerminalSession::create( PtyPtr&& pty, ProcPtr&& process,
 														  size_t historySize,
 														  TerminalColorPalette palette ) {
+	return create( std::move( pty ), std::move( process ), historySize, std::move( palette ),
+				   TerminalSessionOptions{} );
+}
+
+std::shared_ptr<TerminalSession> TerminalSession::create( PtyPtr&& pty, ProcPtr&& process,
+														  size_t historySize,
+														  TerminalColorPalette palette,
+														  TerminalSessionOptions options ) {
 	if ( !pty || !process )
 		return nullptr;
 	auto session = std::shared_ptr<TerminalSession>( new TerminalSession(
-		std::move( pty ), std::move( process ), historySize, std::move( palette ) ) );
+		std::move( pty ), std::move( process ), historySize, std::move( palette ), options ) );
 	session->start();
 	return session;
 }
 
 TerminalSession::TerminalSession( PtyPtr&& pty, ProcPtr&& process, size_t historySize,
-								  TerminalColorPalette palette ) {
+								  TerminalColorPalette palette, TerminalSessionOptions options ) {
 	mWorkerDisplay = std::make_shared<WorkerDisplay>( *this, std::move( palette ) );
 	mEmulator = TerminalEmulator::create( std::move( pty ), std::move( process ), mWorkerDisplay,
 										  historySize );
 	// Establish a complete generation before the session becomes concurrently visible.
+	mEmulator->setAllowOsc52ClipboardWrite( options.allowOsc52ClipboardWrite );
+	mEmulator->setOsc8HyperlinksEnabled( options.enableOsc8Hyperlinks );
 	mEmulator->redraw();
 }
 
@@ -402,6 +431,14 @@ void TerminalSession::setColorPalette( TerminalColorPalette palette ) {
 
 void TerminalSession::setAllowMemoryTrimming( bool allow ) {
 	enqueue( AllowTrimCommand{ { allow } } );
+}
+
+void TerminalSession::setAllowOsc52ClipboardWrite( bool allow ) {
+	enqueue( Osc52PolicyCommand{ { allow } } );
+}
+
+void TerminalSession::setOsc8HyperlinksEnabled( bool enabled ) {
+	enqueue( Osc8PolicyCommand{ { enabled } } );
 }
 
 void TerminalSession::setPresentationRate( Uint32 framesPerSecond ) {
@@ -601,6 +638,11 @@ void TerminalSession::processCommand( Command&& command ) {
 				mEmulator->redraw();
 			} else if constexpr ( std::is_same_v<T, AllowTrimCommand> ) {
 				mEmulator->setAllowMemoryTrimnming( value.value );
+			} else if constexpr ( std::is_same_v<T, Osc52PolicyCommand> ) {
+				mEmulator->setAllowOsc52ClipboardWrite( value.value );
+			} else if constexpr ( std::is_same_v<T, Osc8PolicyCommand> ) {
+				mEmulator->setOsc8HyperlinksEnabled( value.value );
+				mEmulator->redraw();
 			} else if constexpr ( std::is_same_v<T, DataEventsCommand> ) {
 				if ( value.value ) {
 					mEmulator->setDataCb( [this]( const char* data, size_t size ) {

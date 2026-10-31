@@ -131,18 +131,30 @@ UITerminal* StatusTerminalController::createTerminal(
 	const std::string& workingDir, std::string program, std::vector<std::string> args,
 	const std::unordered_map<std::string, std::string>& env ) {
 	Sizef initialSize( 16, 16 );
+	const auto* sourceTab = mTabWidget->getTabSelected();
+	auto* sourceWidget = sourceTab ? sourceTab->getOwnedWidget() : nullptr;
+	auto* source = sourceWidget && sourceWidget->isType( UI_TYPE_TERMINAL )
+					   ? sourceWidget->asType<UITerminal>()
+					   : mContext->getTerminalManager()->getCurrentTerminal();
+	const auto directory =
+		workingDir.empty()
+			? mContext->getTerminalManager()->getWorkingDir( program.empty() ? source : nullptr )
+			: workingDir;
 	if ( program.empty() && !mContext->termConfig().shell.empty() )
 		program = mContext->termConfig().shell;
 
 	if ( args.empty() && !mContext->termConfig().shellArgs.empty() )
 		args = Process::parseArgs( mContext->termConfig().shellArgs );
 
-	UITerminal* term = UITerminal::New(
+	auto display = TerminalDisplay::create(
+		mUISceneNode->getWindow(),
 		mContext->getTerminalFont() ? mContext->getTerminalFont() : mContext->getFontMono(),
 		mContext->termConfig().fontSize.asPixels( 0, Sizef(), mContext->getDisplayDPI() ),
-		initialSize, program, args, env,
-		!workingDir.empty() ? workingDir : mContext->getTerminalManager()->getSelectedWorkingDir(),
-		10000, nullptr, false );
+		initialSize, std::move( program ), std::move( args ), directory,
+		mContext->termConfig().scrollback, nullptr, false, true, env,
+		TerminalSessionOptions{ mContext->termConfig().allowOsc52ClipboardWrite,
+								mContext->termConfig().enableOsc8Hyperlinks } );
+	UITerminal* term = display ? UITerminal::New( display ) : nullptr;
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
 		mContext->getTerminalManager()->displayError( workingDir );

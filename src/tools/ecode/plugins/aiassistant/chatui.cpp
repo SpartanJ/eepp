@@ -2061,15 +2061,21 @@ void LLMChatUI::setupAgentSession() {
 			for ( const auto& e : req.env )
 				env[e.name] = e.value;
 
-			auto* uiTerm = eterm::UI::UITerminal::New(
-				getPlugin()->getPluginContext()->getTerminalFont(),
-				getPlugin()->getPluginContext()->termConfig().fontSize.asPixels(
+			const auto& config = getPlugin()->getPluginContext()->termConfig();
+			auto display = eterm::Terminal::TerminalDisplay::create(
+				getUISceneNode()->getWindow(), getPlugin()->getPluginContext()->getTerminalFont(),
+				config.fontSize.asPixels(
 					getUISceneNode()->getPixelsSize().getWidth(), getUISceneNode()->getPixelsSize(),
 					getUISceneNode()->getDPI(),
 					getUISceneNode()->getUIThemeManager()->getDefaultFontSize() ),
-				Sizef( 0, 0 ), req.command, req.args, env,
+				Sizef( 0, 0 ), req.command, req.args,
 				req.cwd ? *req.cwd : getPlugin()->getPluginContext()->getCurrentProject(), 10000,
-				nullptr, false, false );
+				nullptr, false, false, env,
+				eterm::Terminal::TerminalSessionOptions{ config.allowOsc52ClipboardWrite,
+														 config.enableOsc8Hyperlinks } );
+			if ( !display )
+				return;
+			auto* uiTerm = eterm::UI::UITerminal::New( display );
 			uiTerm->setClass( "eterm" );
 			uiTerm->setParent( bubble );
 			uiTerm->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
