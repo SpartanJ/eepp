@@ -6,6 +6,7 @@
 #include <eepp/scene/eventconnection.hpp>
 #include <eepp/vfs/directorystats.hpp>
 #include <eepp/vfs/fileinfo.hpp>
+#include <eepp/vfs/permissionchanges.hpp>
 #include <memory>
 #include <optional>
 #include <string>
@@ -54,6 +55,10 @@ class PropertiesDialog : public std::enable_shared_from_this<PropertiesDialog> {
 
 	void updateInfo();
 
+	void updateExecute( bool syncModes = false );
+
+	EE::VFS::PermissionChanges permissionChanges() const;
+
 	void updateActions();
 
 	void apply( bool close );
@@ -94,6 +99,7 @@ class PropertiesDialog : public std::enable_shared_from_this<PropertiesDialog> {
 	EE::UI::UIPushButton* mApply{ nullptr };
 	EE::UI::UIPushButton* mOK{ nullptr };
 	EE::UI::UICheckBox* mRecursive{ nullptr };
+	EE::UI::UICheckBox* mExecute{ nullptr };
 	std::array<EE::UI::UIDropDownList*, 6> mModes{};
 	std::array<EE::Uint32, 6> mInitialModes{};
 	EE::Uint64 mGeneration{ 0 };
@@ -101,6 +107,8 @@ class PropertiesDialog : public std::enable_shared_from_this<PropertiesDialog> {
 	EE::Uint32 mModeValue{ 0 };
 	std::optional<EE::Uint32> mNewUid;
 	std::optional<EE::Uint32> mNewGid;
+	std::optional<bool> mExecutable;
+	bool mUpdatingExecute{ false };
 	bool mRunning{ false };
 	bool mStopped{ false };
 	bool mCalculated{ false };

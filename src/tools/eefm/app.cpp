@@ -518,7 +518,8 @@ tableview::cell.dragged {
 }
 .file_properties.narrow .properties_value,
 .file_properties.narrow dropdownlist,
-.file_properties.narrow textinput {
+.file_properties.narrow textinput,
+.file_properties.narrow #properties_execute {
 	layout_width: match_parent;
 	layout_weight: 0;
 }

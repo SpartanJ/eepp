@@ -404,10 +404,12 @@ UTEST( eterm_ui, precise_wheel_burst_preserves_distance_without_duplicate_button
 	ASSERT_TRUE( waitForSnapshot( session, [barrier]( const TerminalSnapshot& s ) {
 					 return s.lastAppliedScrollCommand >= barrier;
 				 } ) != nullptr );
-	EXPECT_EQ( static_cast<size_t>( 4 ),
-			   std::count( source->mWrites.begin(), source->mWrites.end(), 'M' ) );
-	EXPECT_EQ( static_cast<size_t>( 4 ),
-			   std::count( source->mWrites.begin(), source->mWrites.end(), '<' ) );
+	EXPECT_EQ(
+		static_cast<size_t>( 4 ),
+		static_cast<size_t>( std::count( source->mWrites.begin(), source->mWrites.end(), 'M' ) ) );
+	EXPECT_EQ(
+		static_cast<size_t>( 4 ),
+		static_cast<size_t>( std::count( source->mWrites.begin(), source->mWrites.end(), '<' ) ) );
 	auto* dispatcher = app.getUI()->getUIEventDispatcher();
 	dispatcher->setNodeDragging( terminal );
 	dispatcher->sendMouseWheel( { 0.f, 1.f }, false );
@@ -416,8 +418,9 @@ UTEST( eterm_ui, precise_wheel_burst_preserves_distance_without_duplicate_button
 	ASSERT_TRUE( waitForSnapshot( session, [dragBarrier]( const TerminalSnapshot& s ) {
 					 return s.lastAppliedScrollCommand >= dragBarrier;
 				 } ) != nullptr );
-	EXPECT_EQ( static_cast<size_t>( 4 ),
-			   std::count( source->mWrites.begin(), source->mWrites.end(), 'M' ) );
+	EXPECT_EQ(
+		static_cast<size_t>( 4 ),
+		static_cast<size_t>( std::count( source->mWrites.begin(), source->mWrites.end(), 'M' ) ) );
 
 	eeDelete( terminal );
 }
@@ -1054,8 +1057,9 @@ UTEST( eterm, wheel_bounds_reports_and_keeps_only_fractional_remainder ) {
 		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 100 );
 	term->update();
 	term->mouseWheel( { 1000000.5f, -1000000.25f }, {}, {}, 0 );
-	EXPECT_EQ( static_cast<size_t>( 256 ),
-			   std::count( source->mWrites.begin(), source->mWrites.end(), 'M' ) );
+	EXPECT_EQ(
+		static_cast<size_t>( 256 ),
+		static_cast<size_t>( std::count( source->mWrites.begin(), source->mWrites.end(), 'M' ) ) );
 	source->mWrites.clear();
 	term->mouseWheel( { .5f, -.75f }, {}, {}, 0 );
 	EXPECT_STDSTREQ( "\033[<65;1;1M\033[<67;1;1M", source->mWrites );

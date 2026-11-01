@@ -117,6 +117,11 @@ R"xml(
         <item>@string(eefm_permissions_read_write_execute, "Read, write and execute")</item>
        </DropDownList>
       </hbox>
+      <hbox class="properties_row" visible="false">
+       <TextView class="properties_label" text='@string(eefm_properties_label_execute, "Execute:")' />
+       <CheckBox id="properties_execute" lw="0" layout_weight="1" lh="wc" word-wrap="true"
+        text='@string(eefm_properties_execute, "Allow executing file as program")' />
+      </hbox>
       <hbox class="properties_row">
        <widget class="properties_label" />
        <PushButton id="properties_advanced_toggle" text='@string(eefm_properties_advanced, "Advanced Permissions...")' />

@@ -31,6 +31,19 @@ bool parseNumber( const String& text, Uint32& value, int base, Uint32 maximum ) 
 	return result.ec == std::errc() && result.ptr == str.data() + str.size() && value <= maximum;
 }
 
+// Dolphin's shortcut represents only ordinary read/read-write modes, with execute
+// consistently granted to every class that has access. Other modes use the bit editor.
+bool simpleFileMode( Uint32 mode ) {
+	if ( mode & 07000 )
+		return false;
+	for ( unsigned shift : { 6, 3, 0 } ) {
+		const Uint32 access = ( mode >> shift ) & 7;
+		if ( access && ( !( access & 4 ) || ( ( mode & 0111 ) && !( access & 1 ) ) ) )
+			return false;
+	}
+	return true;
+}
+
 String octal( Uint32 mode ) {
 	return String::format( "%04o", mode & 07777 );
 }
@@ -80,6 +93,7 @@ void PropertiesDialog::populate( FileTab* tab ) {
 	mApply = mBox->find<UIPushButton>( "properties_apply" );
 	mOK = mBox->find<UIPushButton>( "properties_ok" );
 	mRecursive = mBox->find<UICheckBox>( "properties_recursive" );
+	mExecute = mBox->find<UICheckBox>( "properties_execute" );
 	for ( size_t i = 0; i < mModes.size(); ++i )
 		mModes[i] = mBox->find<UIDropDownList>( "properties_mode_" + std::to_string( i ) );
 	mBox->find<UIWidget>( "properties_timestamps" )->setVisible( mRoots.size() == 1 );
@@ -116,12 +130,38 @@ void PropertiesDialog::populate( FileTab* tab ) {
 		else
 			self->calculate();
 	} );
+	mExecute->on( Event::OnValueChange, [self]( const Event* ) {
+		if ( self->mLoading || self->mUpdatingExecute )
+			return;
+		self->mExecutable = self->mExecute->isChecked();
+		self->mUpdatingExecute = true;
+		Uint32 mode;
+		if ( parseNumber( self->mOctal->getText(), mode, 8, 07777 ) ) {
+			for ( size_t i = 0; i < self->mModes.size(); ++i ) {
+				self->mModes[i]->getListBox()->setSelected(
+					( ( mode & ModeMasks[i] ) >> ModeShifts[i] ) + 1 );
+			}
+		}
+		self->mOctal->setText( "" );
+		self->mUpdatingExecute = false;
+		self->updateExecute( true );
+		self->updateActions();
+	} );
+	mOctal->on( Event::OnTextChanged, [self]( const Event* ) {
+		if ( !self->mLoading && !self->mUpdatingExecute ) {
+			self->mExecutable.reset();
+			self->updateExecute();
+		}
+	} );
 	for ( auto* input : { mName, mOctal, mUser, mGroup } )
 		input->on( Event::OnTextChanged, [self]( const Event* ) { self->updateActions(); } );
 	for ( auto* mode : mModes ) {
 		mode->on( Event::OnItemSelected, [self]( const Event* ) {
-			if ( !self->mLoading )
-				self->mOctal->setText( "" );
+			if ( self->mLoading || self->mUpdatingExecute )
+				return;
+			self->mExecutable.reset();
+			self->mOctal->setText( "" );
+			self->updateExecute();
 			self->updateActions();
 		} );
 	}
@@ -310,7 +350,9 @@ void PropertiesDialog::updateInfo() {
 		mModes[i]->getListBox()->setSelected( selection );
 		mModes[i]->setEnabled( mCanPermissions );
 	}
+	mExecutable.reset();
 	mOctal->setText( "" );
+	updateExecute();
 	mOctal->setHint( single && first.permissions()
 						 ? octal( *first.permissions() )
 						 : ui->i18n( "eefm_permissions_unchanged", "Leave unchanged" ) );
@@ -373,6 +415,69 @@ void PropertiesDialog::updateInfo() {
 	}
 }
 
+PermissionChanges PropertiesDialog::permissionChanges() const {
+	PermissionChanges changes;
+	if ( !mCanPermissions )
+		return changes;
+	for ( size_t i = 0; i < mModes.size(); ++i ) {
+		const Uint32 selected = mModes[i]->getListBox()->getItemSelectedIndex();
+		if ( selected && selected != mInitialModes[i] ) {
+			changes.mask |= ModeMasks[i];
+			changes.value |= ( selected - 1 ) << ModeShifts[i];
+		}
+	}
+	if ( !mOctal->getText().empty() ) {
+		changes.mask = 07777;
+		parseNumber( mOctal->getText(), changes.value, 8, 07777 );
+	} else {
+		changes.executable = mExecutable;
+	}
+	return changes;
+}
+
+void PropertiesDialog::updateExecute( bool syncModes ) {
+	if ( mInfo.empty() )
+		return;
+	const auto changes = permissionChanges();
+	Uint32 common = 07777, combined = 0;
+	bool files = true, simple = mCanPermissions;
+	for ( const auto& info : mInfo ) {
+		files &= info.type != FileType::Directory && !info.isSymlink();
+		simple &= info.permissions().has_value();
+		const Uint32 mode = changes.modeFor( info.permissions().value_or( 0 ), false );
+		common &= mode;
+		combined |= mode;
+		simple &= simpleFileMode( mode );
+	}
+	Uint32 number;
+	simple &= mOctal->getText().empty() || parseNumber( mOctal->getText(), number, 8, 07777 );
+	const bool varying = !changes.executable && ( ( combined & ~common ) & 0111 ) != 0;
+	mUpdatingExecute = true;
+	mExecute->getParent()->setVisible( files );
+	mExecute->setEnabled( files && simple );
+	mExecute->setChecked( changes.executable.value_or( !varying && ( common & 0111 ) != 0 ) );
+	mExecute->setText(
+		varying ? mApp.ui()->i18n( "eefm_properties_execute_varying",
+								   "Allow executing file as program (varying; leave unchanged)" )
+				: mApp.ui()->i18n( "eefm_properties_execute", "Allow executing file as program" ) );
+	mExecute->setTooltipText(
+		simple ? mApp.ui()->i18n(
+					 "eefm_properties_execute_hint",
+					 "Mark programs and scripts as executable for users with read access." )
+			   : mApp.ui()->i18n( "eefm_properties_execute_advanced",
+								  "These files use advanced permissions. Use the individual access "
+								  "choices or Advanced Permissions to edit them." ) );
+	if ( syncModes ) {
+		for ( size_t i = 0; i < 3; ++i ) {
+			const Uint32 selection = ( ( combined & ~common ) & ModeMasks[i] )
+										 ? 0
+										 : ( ( common & ModeMasks[i] ) >> ModeShifts[i] ) + 1;
+			mModes[i]->getListBox()->setSelected( selection );
+		}
+	}
+	mUpdatingExecute = false;
+}
+
 void PropertiesDialog::updateActions() {
 	if ( !mBox )
 		return;
@@ -387,6 +492,13 @@ void PropertiesDialog::updateActions() {
 		if ( mModes[i] && mCanPermissions ) {
 			const auto selected = mModes[i]->getListBox()->getItemSelectedIndex();
 			dirty |= selected != 0 && selected != mInitialModes[i];
+		}
+	}
+	if ( mCanPermissions && mExecutable ) {
+		const auto changes = permissionChanges();
+		for ( const auto& info : mInfo ) {
+			if ( info.permissions() )
+				dirty |= changes.modeFor( *info.permissions(), false ) != *info.permissions();
 		}
 	}
 	Uint32 number;
@@ -421,17 +533,9 @@ void PropertiesDialog::apply( bool close ) {
 	mNewUid.reset();
 	mNewGid.reset();
 	mRecursiveApply = mRecursive->isEnabled() && mRecursive->isChecked();
-	for ( size_t i = 0; i < mModes.size(); ++i ) {
-		const Uint32 selected = mModes[i]->getListBox()->getItemSelectedIndex();
-		if ( mCanPermissions && selected && selected != mInitialModes[i] ) {
-			mModeMask |= ModeMasks[i];
-			mModeValue |= ( selected - 1 ) << ModeShifts[i];
-		}
-	}
-	if ( mCanPermissions && !mOctal->getText().empty() ) {
-		mModeMask = 07777;
-		parseNumber( mOctal->getText(), mModeValue, 8, 07777 );
-	}
+	const auto changes = permissionChanges();
+	mModeMask = changes.mask;
+	mModeValue = changes.value;
 
 	mStatus->setVisible( true );
 	mStatus->setText( mApp.ui()->i18n( "eefm_properties_applying", "Applying changes..." ) );
@@ -490,7 +594,7 @@ void PropertiesDialog::applyRename() {
 }
 
 void PropertiesDialog::applyPermissions() {
-	if ( !mModeMask && !mNewUid && !mNewGid ) {
+	if ( !mModeMask && !mExecutable && !mNewUid && !mNewGid ) {
 		finishApply();
 		return;
 	}
@@ -500,6 +604,7 @@ void PropertiesDialog::applyPermissions() {
 	changes.uid = mNewUid;
 	changes.gid = mNewGid;
 	changes.recursive = mRecursiveApply;
+	changes.executable = mExecutable;
 	mApp.vfs()
 		->changePermissions( mRoots, changes, mOperationCancel.token() )
 		.then( mApp.executor(), [weak = weak_from_this()]( VFSResult<void>&& result ) {

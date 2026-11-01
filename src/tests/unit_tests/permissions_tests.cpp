@@ -22,6 +22,62 @@ UTEST( VFSPermissions, MaskedChangesPreserveEachSelectionsOtherBits ) {
 	EXPECT_EQ( 0775u, *waitFor( vfs.stat( b ) ).value().permissions() );
 }
 
+UTEST( VFSPermissions, ExecutableShortcutUsesEachFilesReadPermissions ) {
+	VirtualFileSystem vfs;
+	auto memory = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( memory );
+	const URI a( "mem:///a" ), b( "mem:///b" ), c( "mem:///c" );
+	memory->putFile( a, "a", 0644 );
+	memory->putFile( b, "b", 0600 );
+	memory->putFile( c, "c", 0000 );
+	PermissionChanges changes;
+	changes.executable = true;
+	ASSERT_TRUE( waitFor( vfs.changePermissions( { a, b, c }, changes ) ).hasValue() );
+	EXPECT_EQ( 0755u, *waitFor( vfs.stat( a ) ).value().permissions() );
+	EXPECT_EQ( 0700u, *waitFor( vfs.stat( b ) ).value().permissions() );
+	EXPECT_EQ( 0000u, *waitFor( vfs.stat( c ) ).value().permissions() );
+	changes.executable = false;
+	ASSERT_TRUE( waitFor( vfs.changePermissions( { a, b }, changes ) ).hasValue() );
+	EXPECT_EQ( 0644u, *waitFor( vfs.stat( a ) ).value().permissions() );
+	EXPECT_EQ( 0600u, *waitFor( vfs.stat( b ) ).value().permissions() );
+}
+
+UTEST( VFSPermissions, ExecutableShortcutUsesEditedAccessAndPreservesSpecialBits ) {
+	VirtualFileSystem vfs;
+	auto memory = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( memory );
+	const URI file( "mem:///file" );
+	memory->putFile( file, "data", 04600 );
+	PermissionChanges changes;
+	changes.mask = 0070;
+	changes.value = 0040;
+	changes.executable = true;
+	ASSERT_TRUE( waitFor( vfs.changePermissions( { file }, changes ) ).hasValue() );
+	EXPECT_EQ( 04750u, *waitFor( vfs.stat( file ) ).value().permissions() );
+	changes.mask = 0;
+	changes.executable = false;
+	ASSERT_TRUE( waitFor( vfs.changePermissions( { file }, changes ) ).hasValue() );
+	EXPECT_EQ( 04640u, *waitFor( vfs.stat( file ) ).value().permissions() );
+}
+
+UTEST( VFSPermissions, ExecutableShortcutLeavesDirectorySearchPermissionsUnchanged ) {
+	VirtualFileSystem vfs;
+	auto memory = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( memory );
+	const URI root( "mem:///tree" ), file( "mem:///tree/file" );
+	memory->putFile( file, "data", 0640 );
+	PermissionChanges changes;
+	changes.recursive = true;
+	changes.executable = true;
+	ASSERT_TRUE( waitFor( vfs.changePermissions( { root }, changes ) ).hasValue() );
+	EXPECT_EQ( 0755u, *waitFor( vfs.stat( root ) ).value().permissions() );
+	EXPECT_EQ( 0750u, *waitFor( vfs.stat( file ) ).value().permissions() );
+	changes.executable = false;
+	ASSERT_TRUE( waitFor( vfs.changePermissions( { root }, changes ) ).hasValue() );
+	EXPECT_EQ( 0755u, *waitFor( vfs.stat( root ) ).value().permissions() );
+	EXPECT_EQ( 0640u, *waitFor( vfs.stat( file ) ).value().permissions() );
+}
+
 UTEST( VFSPermissions, RecursiveChangesStreamMultipleBatches ) {
 	VirtualFileSystem::Config config;
 	// The traversal must not wait on an orchestration task submitted to its own pool.

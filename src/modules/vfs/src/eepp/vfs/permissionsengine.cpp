@@ -17,7 +17,7 @@ VFSResult<void> PermissionsEngine::run( VirtualFileSystem& vfs, const std::vecto
 		Uint32 mode;
 	};
 	SmallVector<Frame, 4> stack;
-	auto apply = [&]( const URI& uri, Uint32 mode ) -> VFSResult<void> {
+	auto apply = [&]( const URI& uri, Uint32 mode, bool isDirectory ) -> VFSResult<void> {
 		if ( token.isCancellationRequested() )
 			return Err( cancelledError( uri ) );
 		if ( changes.uid || changes.gid ) {
@@ -26,9 +26,8 @@ VFSResult<void> PermissionsEngine::run( VirtualFileSystem& vfs, const std::vecto
 				return result;
 		}
 		// chown may clear set-ID bits. Apply the requested mode afterwards.
-		if ( changes.mask ) {
-			return await( vfs.setPermissions(
-				uri, ( mode & ~changes.mask ) | ( changes.value & changes.mask ), token ) );
+		if ( changes.mask || ( changes.executable && !isDirectory ) ) {
+			return await( vfs.setPermissions( uri, changes.modeFor( mode, isDirectory ), token ) );
 		}
 		return Ok();
 	};
@@ -40,7 +39,7 @@ VFSResult<void> PermissionsEngine::run( VirtualFileSystem& vfs, const std::vecto
 			return Err( std::move( info ).error() );
 		if ( info.value().isSymlink() )
 			return Ok();
-		if ( changes.mask && !info.value().permissions() ) {
+		if ( ( changes.mask || changes.executable ) && !info.value().permissions() ) {
 			return Err(
 				VFSError( VFSErrorCode::Unsupported, uri, "Permission metadata is unavailable" ) );
 		}
@@ -64,7 +63,7 @@ VFSResult<void> PermissionsEngine::run( VirtualFileSystem& vfs, const std::vecto
 			stack.push_back( { std::move( opened ).value(), {}, 0, mode } );
 			return Ok();
 		}
-		return apply( uri, mode );
+		return apply( uri, mode, info.value().type == FileType::Directory );
 	};
 	for ( const auto& root : roots ) {
 		auto result = visit( root );
@@ -90,7 +89,7 @@ VFSResult<void> PermissionsEngine::run( VirtualFileSystem& vfs, const std::vecto
 				result = await( finished.directory.close() );
 				if ( !result )
 					return result;
-				result = apply( finished.directory.uri(), finished.mode );
+				result = apply( finished.directory.uri(), finished.mode, true );
 				if ( !result )
 					return result;
 			} else {

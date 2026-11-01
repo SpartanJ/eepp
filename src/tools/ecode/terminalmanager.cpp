@@ -42,24 +42,17 @@ UITerminal* TerminalManager::createTerminalInSplitter(
 	}
 	if ( !splitter )
 		return nullptr;
-	UITabWidget* target = nullptr;
-	if ( splitter->hasSplit() ) {
-		if ( splitter->getTabWidgets().size() == 2 ) {
-			const auto splitOrientation = splitter->getMainSplitOrientation();
-			if ( ( orientation == NewTerminalOrientation::Vertical &&
-				   splitOrientation == UIOrientation::Horizontal ) ||
-				 ( orientation == NewTerminalOrientation::Horizontal &&
-				   splitOrientation == UIOrientation::Vertical ) )
-				target = splitter->getTabWidgets()[1];
+	// Existing panes follow focus; the orientation preference only creates the first split.
+	if ( !splitter->hasSplit() ) {
+		if ( orientation == NewTerminalOrientation::Vertical ) {
+			splitter->split( SplitDirection::Right, splitter->getCurWidget(), false );
+		} else if ( orientation == NewTerminalOrientation::Horizontal ) {
+			splitter->split( SplitDirection::Bottom, splitter->getCurWidget(), false );
+		} else if ( orientation == NewTerminalOrientation::StatusBarPanel ) {
+			return nullptr;
 		}
-	} else if ( orientation == NewTerminalOrientation::Vertical ) {
-		splitter->split( SplitDirection::Right, splitter->getCurWidget(), false );
-	} else if ( orientation == NewTerminalOrientation::Horizontal ) {
-		splitter->split( SplitDirection::Bottom, splitter->getCurWidget(), false );
-	} else if ( orientation == NewTerminalOrientation::StatusBarPanel ) {
-		return nullptr;
 	}
-	return createNewTerminal( "", target, directory, std::move( program ), std::move( args ), env,
+	return createNewTerminal( "", nullptr, directory, std::move( program ), std::move( args ), env,
 							  fallback, keepAlive );
 }
 

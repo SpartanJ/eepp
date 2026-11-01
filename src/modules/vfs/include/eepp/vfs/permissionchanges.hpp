@@ -15,6 +15,17 @@ struct EE_VFS_API PermissionChanges {
 	Uint32 mask{ 0 };
 	Uint32 value{ 0 };
 	bool recursive{ false };
+	/** For files, grant execute only where read is granted, or clear all execute bits.
+	 * An unset value preserves the execute bits selected by mask/value. Directories are unaffected.
+	 */
+	std::optional<bool> executable;
+
+	Uint32 modeFor( Uint32 mode, bool isDirectory ) const {
+		mode = ( mode & ~mask ) | ( value & mask );
+		if ( executable && !isDirectory )
+			mode = ( mode & ~0111u ) | ( *executable ? ( mode & 0444u ) >> 2 : 0 );
+		return mode;
+	}
 };
 
 }} // namespace EE::VFS
