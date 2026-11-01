@@ -140,6 +140,31 @@ struct WheelPropagationTest {
 
 } // namespace
 
+UTEST( UIScrolling, WheelButtonsArePressedOnceWithAndWithoutHeldButton ) {
+	WheelPropagationTest fixture;
+	auto* widget = eeNew( WheelOverrideWidget, () );
+	fixture.add( widget );
+	fixture.hover( widget );
+	auto* input = fixture.app.getWindow()->getInput();
+	int wheelPresses = 0;
+	widget->on( Event::MouseDown, [&]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & ( EE_BUTTONS_WUWD | EE_BUTTONS_WLWR ) )
+			++wheelPresses;
+	} );
+	for ( bool heldButton : { false, true } ) {
+		if ( heldButton )
+			input->injectButtonPress( EE_BUTTON_LEFT );
+		for ( const Vector2f offset :
+			  { Vector2f( 0, 1 ), Vector2f( 0, -1 ), Vector2f( 1, 0 ), Vector2f( -1, 0 ) } ) {
+			wheelPresses = 0;
+			fixture.wheel( offset );
+			EXPECT_EQ( 1, wheelPresses );
+		}
+		if ( heldButton )
+			input->injectButtonRelease( EE_BUTTON_LEFT );
+	}
+}
+
 UTEST( UIScrolling, SceneSmoothScrollingDefaultsCanBeInheritedSnapshottedAndAppliedNow ) {
 	UIApplication app(
 		WindowSettings{ 320, 240, "eepp - scrolling test" },

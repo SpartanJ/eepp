@@ -786,7 +786,6 @@ int App::run( int argc, char* argv[] ) {
 		}
 		config->theme.uiColorScheme = ColorSchemePreferences::fromStringExt( scheme );
 	}
-	config->terminal.executeInShell = executeInShell.Get();
 	config->theme.colorScheme = colorScheme.Get();
 	config->window.maxFPS = maxFPS.Get();
 	config->terminal.cursorStyle = cursorStyle.Get();
@@ -966,7 +965,7 @@ int App::run( int argc, char* argv[] ) {
 								   ? std::vector<std::string>{}
 								   : String::split( config->terminal.shellArguments );
 	terminalConfig.workingDirectory = launchFile.getDirectoryPath();
-	terminalConfig.executeInShell = config->terminal.executeInShell;
+	terminalConfig.executeInShell = executeInShell.Get();
 	terminalConfig.historySize = config->terminal.historySize;
 	terminalConfig.cursorStyle = config->terminal.cursorStyle;
 	terminalConfig.fontHinting = config->font.hinting;

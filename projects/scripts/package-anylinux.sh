@@ -9,6 +9,16 @@ ARCH=$5
 APPIMAGE_ARCH=$ARCH
 [ "$APPIMAGE_ARCH" != arm64 ] || APPIMAGE_ARCH=aarch64
 
+# Sharun passes --argv0 to the bundled loader; glibc added it in 2.33.
+# This is a packaging-host requirement, not a requirement on the user's libc.
+LIBC_VERSION=$(getconf GNU_LIBC_VERSION 2>/dev/null || true)
+if [[ "$LIBC_VERSION" =~ ^glibc\ ([0-9]+)\.([0-9]+) ]]; then
+	if (( BASH_REMATCH[1] < 2 || ( BASH_REMATCH[1] == 2 && BASH_REMATCH[2] < 33 ) )); then
+		echo "AnyLinux packaging requires glibc >= 2.33 for the loader's --argv0 option (found $LIBC_VERSION)" >&2
+		exit 1
+	fi
+fi
+
 # Isolate downloads and deployment: quick-sharun patches its copies of binaries and
 # libraries. Never let those changes reach the conventional AppImage or tarball.
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/eepp-anylinux.XXXXXX")

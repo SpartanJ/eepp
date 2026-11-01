@@ -1038,56 +1038,56 @@ void TerminalEmulator::_die( const char* errstr, ... ) {
 }
 
 size_t TerminalEmulator::ttyread( void ) {
-	int ret, written;
-
 	/* append read bytes to unprocessed bytes */
-	ret = mPty->read( mBuf + mBuflen, LEN( mBuf ) - mBuflen );
-
-	switch ( ret ) {
-		case 0:
-			return 0;
-		case -1:
-			_die( "couldn't read from shell: %s\n", strerror( errno ) );
-			return 0;
-		default: {
-			if ( mDataCb )
-				mDataCb( mBuf + mBuflen, ret );
-
-			int old_scr = mTerm.scr;
-			// Selection coordinates share the viewport's coordinate space. Translate them before
-			// the temporary live-screen switch so parser writes cannot mistake historical text for
-			// a live cell and clear the selection.
-			if ( old_scr > 0 )
-				selmove( -old_scr );
-			mTerm.scr = 0;
-
-			mBuflen += ret;
-			// Parsing must update the live screen at scr == 0, but that temporary viewport is not
-			// presentation state. In particular, DECRST 2026 can call draw() from inside twrite().
-			// Publishing there lets the asynchronous UI mistake the live-screen override for a user
-			// scroll and feed it back through the scrollbar before the viewport is restored below.
-			mPtyHistoryLinesPushed = 0;
-			mProcessingPtyInput = true;
-			written = twrite( mBuf, mBuflen, 0 );
-			mProcessingPtyInput = false;
-			mBuflen -= written;
-			/* keep any incomplete UTF-8 byte sequence for the next call */
-			if ( mBuflen > 0 )
-				memmove( mBuf, mBuf + written, mBuflen );
-
-			if ( old_scr > 0 ) {
-				const int lines_pushed = mPtyHistoryLinesPushed;
-				mTerm.scr = eemin( mTerm.histlen, old_scr + lines_pushed );
-				selmove( mTerm.scr );
-				if ( mTerm.scr != old_scr )
-					onScrollPositionChange();
-			}
-
-			return ret;
-		}
+	const int ret = mPty->read( mBuf + mBuflen, LEN( mBuf ) - mBuflen );
+	if ( ret < 0 ) {
+		_die( "couldn't read from shell: %s\n", strerror( errno ) );
+		return 0;
 	}
+	if ( ret == 0 )
+		return 0;
+	if ( mDataCb )
+		mDataCb( mBuf + mBuflen, ret );
 
-	return 0;
+	mBuflen += ret;
+	int consumed = 0;
+	do {
+		const int old_scr = mTerm.scr;
+		// Selection coordinates share the viewport's coordinate space. Translate them before
+		// the temporary live-screen switch so parser writes cannot mistake historical text for
+		// a live cell and clear the selection.
+		if ( old_scr > 0 )
+			selmove( -old_scr );
+		mTerm.scr = 0;
+
+		// Parsing must update the live screen at scr == 0, but that temporary viewport is not
+		// presentation state. Publishing there lets the UI mistake it for a user scroll and
+		// feed it back through the scrollbar. Stop at DECRST 2026 and restore the viewport first:
+		// a following DECSET in the same read must not hide a completed frame indefinitely.
+		mPtyHistoryLinesPushed = 0;
+		mPtyFrameComplete = false;
+		mProcessingPtyInput = true;
+		consumed += twrite( mBuf + consumed, mBuflen - consumed, 0 );
+		mProcessingPtyInput = false;
+
+		if ( old_scr > 0 ) {
+			const int lines_pushed = mPtyHistoryLinesPushed;
+			mTerm.scr = eemin( mTerm.histlen, old_scr + lines_pushed );
+			selmove( mTerm.scr );
+			if ( mTerm.scr != old_scr )
+				onScrollPositionChange();
+		}
+		if ( mPtyFrameComplete )
+			draw();
+		// Consume the next frame from the same buffer without another read or a copy. The
+		// producer may be waiting for input and never write another byte.
+	} while ( mPtyFrameComplete && consumed < mBuflen );
+
+	mBuflen -= consumed;
+	/* keep any incomplete UTF-8 byte sequence for the next call */
+	if ( mBuflen > 0 )
+		memmove( mBuf, mBuf + consumed, mBuflen );
+	return ret;
 }
 
 void TerminalEmulator::kscrolldown( const TerminalArg* a ) {
@@ -2541,9 +2541,11 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 						mSynchronizedUpdateClock.restart();
 					} else if ( mTerm.is_syncing ) {
 						mTerm.is_syncing = false;
-						// Publish the complete frame immediately instead of waiting for the next
-						// presentation deadline.
-						draw();
+						// Publish this frame immediately after PTY parsing restores the viewport.
+						if ( mProcessingPtyInput )
+							mPtyFrameComplete = true;
+						else
+							draw();
 					}
 					break;
 				}
@@ -4762,6 +4764,8 @@ int TerminalEmulator::twrite( const char* buf, int buflen, int show_ctrl ) {
 					mTerm.esc = 0;
 					csiparse();
 					csihandle();
+					if ( mProcessingPtyInput && mPtyFrameComplete )
+						return end;
 				}
 				if ( end != n ) {
 					n = end;
@@ -4807,6 +4811,8 @@ int TerminalEmulator::twrite( const char* buf, int buflen, int show_ctrl ) {
 			}
 		}
 		tputc( u );
+		if ( mProcessingPtyInput && mPtyFrameComplete )
+			return n + charsize;
 	}
 	return (int)n;
 }
@@ -5379,6 +5385,7 @@ void TerminalEmulator::setPtyAndProcess( PtyPtr&& pty, ProcPtr&& process ) {
 	mKittyPlaceholderMetadata.clear();
 	mKittyPlaceholderCell = Vector2i( -1, -1 );
 	mBuflen = 0;
+	mPtyFrameComplete = false;
 	mStatus = STARTING;
 	mExitCode = 1;
 	mPty = std::move( pty );

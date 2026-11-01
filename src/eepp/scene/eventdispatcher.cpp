@@ -137,6 +137,8 @@ void EventDispatcher::update( const Time& time ) {
 
 	mJustPressed = false;
 
+	const Uint32 wheelButtons = EE_BUTTONS_WUWD | EE_BUTTONS_WLWR;
+
 	if ( mInput->getPressTrigger() ) {
 		if ( !mFirstPress ) {
 			mDownNode = mOverNode;
@@ -166,8 +168,13 @@ void EventDispatcher::update( const Time& time ) {
 			mFirstPress = true;
 			mJustPressed = true;
 		}
-		mOverNode->onMouseDown( mMousePosi, mInput->getReleaseTrigger() );
-		sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getReleaseTrigger() );
+		// Wheel releases get their press below, including when a physical button is held.
+		// Keep quick-tap bookkeeping here, but do not dispatch the wheel twice.
+		const Uint32 releasedButtons = mInput->getReleaseTrigger() & ~wheelButtons;
+		if ( releasedButtons ) {
+			mOverNode->onMouseDown( mMousePosi, releasedButtons );
+			sendMsg( mOverNode, NodeMessage::MouseDown, releasedButtons );
+		}
 
 		if ( NULL != mFocusNode && mDownNode == mOverNode &&
 			 ( mInput->getReleaseTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) &&
@@ -185,12 +192,12 @@ void EventDispatcher::update( const Time& time ) {
 				mLastFocusNode = mFocusNode;
 
 				if ( NULL != mOverNode ) {
-					if ( mInput->getReleaseTrigger() & EE_BUTTONS_WUWD ) {
+					if ( mInput->getReleaseTrigger() & wheelButtons ) {
 						mOverNode->onMouseDown( mMousePosi,
-												mInput->getReleaseTrigger() & EE_BUTTONS_WUWD );
+												mInput->getReleaseTrigger() & wheelButtons );
 						if ( NULL != mOverNode )
 							sendMsg( mOverNode, NodeMessage::MouseDown,
-									 mInput->getReleaseTrigger() & EE_BUTTONS_WUWD );
+									 mInput->getReleaseTrigger() & wheelButtons );
 					}
 
 					mOverNode->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );

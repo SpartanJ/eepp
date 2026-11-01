@@ -376,6 +376,7 @@ class TerminalEmulator final {
 	bool mDirty{ true };
 	bool mAllDirty{ true };
 	bool mProcessingPtyInput{ false };
+	bool mPtyFrameComplete{ false };
 	int mPtyHistoryLinesPushed{ 0 };
 	Clock mPresentationClock;
 	Time mPresentationInterval{ Microseconds( 1000000.0 / 60.0 ) };

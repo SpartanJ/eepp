@@ -61,6 +61,7 @@ class AppPackaging(PackagingFixture):
         self.env = dict(os.environ, PATH=str(self.commands) + os.pathsep + os.environ["PATH"])
         self.command("strip", "exit 0")
         self.command("nproc", "echo 2")
+        self.command("getconf", 'if [ "$1" = GNU_LIBC_VERSION ]; then echo "glibc 2.35"; else /usr/bin/getconf "$@"; fi')
         self.command("appimagetool", '[ -f "$1/sample.desktop" ] && touch "$2"')
         # ldd's paths are whitespace-delimited; use an external no-space runtime fixture.
         self.runtime = tempfile.TemporaryDirectory(prefix="eepp-sdl-")
@@ -213,6 +214,15 @@ fi
         self.assertEqual(result.returncode, 42, result.stdout)
         for suffix in ("AppImage", "tar.gz"):
             self.assertTrue((self.output / f"sample-linux-1.2.3-arm64.{suffix}").is_file())
+
+    def test_anylinux_rejects_loader_without_argv0(self):
+        self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')
+        self.command("getconf", 'echo "glibc 2.31"')
+        self.env["QUICK_SHARUN"] = str(self.commands / "must-not-run")
+        result = self.package("linux", "--backend", "SDL3", "--anylinux", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("requires glibc >= 2.33", result.stdout)
+        self.assertIn("found glibc 2.31", result.stdout)
 
     def test_freebsd_version_and_fresh_staging(self):
         self.package("freebsd", "--backend", "SDL3")

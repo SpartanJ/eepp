@@ -3124,6 +3124,38 @@ UTEST( eterm, synchronized_updates_publish_only_complete_frames ) {
 	EXPECT_STDSTREQ( "complete", term->getSelection() );
 }
 
+UTEST( eterm, synchronized_frame_is_published_before_next_frame_in_same_pty_read ) {
+	auto pty = std::make_unique<MockPty>();
+	auto* source = pty.get();
+	pty->mLoopWrites = false;
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 100 );
+	term->update();
+	display->mDrawEnds = 0;
+	// The second frame starts in the same read that finishes the first. Only A is complete.
+	source->mBuffer += "\033[?1049h\033[?2026h\033[HA\033[?2026l\033[?2026h\033[HB";
+	term->update();
+	EXPECT_TRUE( display->mDrawEnds > 0 );
+	EXPECT_EQ( static_cast<Rune>( 'A' ), display->mCells[0].u );
+
+	// A fragmented end marker still publishes B before parsing the following partial frame.
+	source->mBuffer += "\033[?20";
+	term->update();
+	EXPECT_EQ( static_cast<Rune>( 'A' ), display->mCells[0].u );
+	source->mBuffer += "26l\033[?2026h\033[HC";
+	term->update();
+	EXPECT_EQ( static_cast<Rune>( 'B' ), display->mCells[0].u );
+
+	// Buffered bytes must be drained without waiting for another PTY write, including UTF-8.
+	source->mBuffer += "\033[?2026l\033[?2026h\033[H\xC3";
+	term->update();
+	EXPECT_EQ( static_cast<Rune>( 'C' ), display->mCells[0].u );
+	source->mBuffer += "\xA9\033[?2026l";
+	term->update();
+	EXPECT_EQ( static_cast<Rune>( 0xE9 ), display->mCells[0].u );
+}
+
 UTEST( eterm, pty_parsing_does_not_publish_temporary_bottom_viewport ) {
 	auto pty = std::make_unique<MockPty>();
 	auto process = std::make_unique<MockProcess>();
@@ -3141,14 +3173,16 @@ UTEST( eterm, pty_parsing_does_not_publish_temporary_bottom_viewport ) {
 	ASSERT_EQ( 5, term->scrollPos() );
 	display->mPublishedScrollPositions.clear();
 
-	const char synchronizedOutput[] = "\033[?2026hnew output\r\n\033[?2026l";
+	const char synchronizedOutput[] =
+		"\033[?2026hnew output\r\n\033[?2026l\033[?2026hmore output\r\n\033[?2026l";
 	term->write( synchronizedOutput, sizeof( synchronizedOutput ) - 1 );
 	term->update();
 
-	ASSERT_FALSE( display->mPublishedScrollPositions.empty() );
+	ASSERT_TRUE( display->mPublishedScrollPositions.size() >= 2 );
 	for ( int scrollPosition : display->mPublishedScrollPositions )
 		EXPECT_TRUE( scrollPosition > 0 );
-	EXPECT_EQ( 6, display->mPublishedScrollPositions.back() );
+	EXPECT_EQ( 6, display->mPublishedScrollPositions.front() );
+	EXPECT_EQ( 7, display->mPublishedScrollPositions.back() );
 }
 
 UTEST( eterm, sgr_colon_subparameters_preserve_groups_and_optional_color_space ) {

@@ -39,7 +39,10 @@ projects/linux/build.app.sh ecode --anylinux
 ```
 
 Install `curl`, `patchelf`, `binutils`, `xvfb` and `xauth` in the build environment, as well
-as the application's SDL runtime and Mesa OpenGL drivers. The packager downloads a pinned,
+as the application's SDL runtime and Mesa OpenGL drivers. When packaging on glibc, use
+glibc 2.33 or newer (for example Ubuntu 22.04): sharun requires the loader's `--argv0`
+option. This requirement applies to the build environment, not to the user's system.
+The packager downloads a pinned,
 checksum-verified [quick-sharun](https://github.com/pkgforge-dev/Anylinux-AppImages)
 script, which downloads its versioned packaging tools and checks their checksums. `QUICK_SHARUN`
 can point to a local script for development instead of using the pinned download.
@@ -57,8 +60,10 @@ including when the image is extracted. AnyLinux images contain stripped binaries
 existing `--with-debug-symbols` archive remains the source of debug symbols.
 
 Dependency collection runs the application under Xvfb, so cross-packaging is rejected.
-The ecode x86_64 nightly attempts the additional build and checks `--version`; failure of this
-optional step does not block the conventional downloads. The ARM64 nightly continues to use the
+The ecode x86_64 nightly stages its conventional tarball as an artifact. A separate optional
+Ubuntu 22.04 job repackages those exact binaries with newer runtime libraries and checks
+`--version` before uploading the AnyLinux image to the same release. Failure of this job does
+not block the conventional downloads. The ARM64 nightly continues to use the
 conventional format because it is cross-compiled on x86_64. Native arm64 builds can opt in
 with the same flag.
 
