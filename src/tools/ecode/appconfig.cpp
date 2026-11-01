@@ -290,6 +290,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.allowOsc52ClipboardWrite =
 		ini.getValueB( "terminal", "allow_osc52_clipboard_write", true );
 	term.graphemeClustering = ini.getValueB( "terminal", "grapheme_clustering", true );
+	term.detectLinks = ini.getValueB( "terminal", "detect_links", true );
 	term.cursorStyle = TerminalCursorHelper::modeFromString(
 		ini.getValue( "terminal", "cursor_style", "steady_underline" ) );
 	term.scrollBarType = ini.getValue( "terminal", "scrollbar_type", "overlay" ) == "overlay"
@@ -495,6 +496,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "terminal", "enable_osc8_hyperlinks", term.enableOsc8Hyperlinks );
 	ini.setValueB( "terminal", "allow_osc52_clipboard_write", term.allowOsc52ClipboardWrite );
 	ini.setValueB( "terminal", "grapheme_clustering", term.graphemeClustering );
+	ini.setValueB( "terminal", "detect_links", term.detectLinks );
 	ini.setValue( "terminal", "cursor_style",
 				  TerminalCursorHelper::modeToString( term.cursorStyle ) );
 	ini.setValue( "terminal", "scrollbar_type",

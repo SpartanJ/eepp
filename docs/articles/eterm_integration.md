@@ -9,6 +9,7 @@ inherit_working_directory = true
 enable_osc8_hyperlinks = true
 allow_osc52_clipboard_write = true
 grapheme_clustering = true
+detect_links = true
 ```
 
 ## Hyperlinks (OSC 8)
@@ -34,6 +35,30 @@ eterm does not remove text sent by a terminal program.
 Hyperlinks are enabled by default. Turning off **Enable Hyperlinks (OSC 8)** disables actions on
 existing links and ignores new OSC 8 sequences in every open terminal. Turning it back on makes
 previously recorded links available again; text printed while disabled has no link metadata.
+
+## Links and paths in text
+
+eterm also finds URLs and file paths in plain output, without any escape sequence. Hold the default
+modifier over one to underline it and preview its target, then click to open it; right-click it
+for **Open Link** and **Copy Link Address**. An OSC 8 hyperlink on the same text takes precedence.
+
+Matching uses Ghostty's default link pattern:
+
+- URLs with a scheme: `http`, `https`, `mailto`, `ftp`, `file`, `ssh`, `git`, `tel`, `magnet`,
+  `ipfs`, `ipns`, `gemini`, `gopher` and `news`;
+- absolute and relative paths: `/tmp/file`, `./build`, `../notes.md`, `~/.config/eterm`,
+  `$HOME/src`, and paths with a directory and an extension such as `src/main.cpp`;
+- Windows drive paths with either separator: `C:/Users/me/notes.md`, `D:\src\main.cpp`.
+
+Text soft-wrapped across rows is matched as one line. A link is only offered when all of it is in
+view: one that continues past the bottom of the viewport, or longer than about a kilobyte, is not
+opened truncated. Relative paths resolve against the shell's
+reported directory (OSC 7), or else the directory the terminal started in, and `~/` and a leading
+`$VAR/` expand. A path is a link only if the file or directory exists; a trailing `:line` or
+`:line:column`, as printed by compilers and `grep -n`, is ignored when needed to find it. URLs and
+files open with the system's default application.
+
+Turn off **Detect Links and Paths** to disable this in every open terminal.
 
 ## Working directories (OSC 7)
 

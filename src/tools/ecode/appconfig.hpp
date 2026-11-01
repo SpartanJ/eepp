@@ -281,6 +281,7 @@ struct TerminalConfig {
 	bool enableOsc8Hyperlinks{ true };
 	bool allowOsc52ClipboardWrite{ true };
 	bool graphemeClustering{ true };
+	bool detectLinks{ true };
 	TerminalCursorMode cursorStyle{ TerminalCursorMode::SteadyUnderline };
 	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
 	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };

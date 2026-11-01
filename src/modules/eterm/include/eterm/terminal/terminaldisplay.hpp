@@ -2,6 +2,7 @@
 #define ETERM_TERMINALDISPLAY_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -16,6 +17,7 @@
 
 #include <bitset>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -205,6 +207,22 @@ class TerminalDisplay {
 
 	/** Uses only the current immutable snapshot; pos has the same coordinates as mouse events. */
 	std::optional<std::string> getHyperlinkAt( const Vector2i& pos );
+
+	/** A link under the pointer: an OSC 8 hyperlink, or a URL or file path detected in the text
+	 * (see TerminalLinks). */
+	struct Link {
+		std::string uri;	 // What opens.
+		std::string address; // What the preview shows and copying copies.
+		bool detected{ false };
+	};
+
+	/** Like getHyperlinkAt(), falling back to a detected link; an OSC 8 hyperlink wins. */
+	std::optional<Link> getLinkAt( const Vector2i& pos );
+
+	/** Detect URLs and file paths in the text (on by default). */
+	void setLinkDetectionEnabled( bool enabled );
+
+	bool getLinkDetectionEnabled() const { return mDetectLinks; }
 
 	/** UI-only hover feedback; no session command or worker lookup is performed. */
 	void updateHyperlinkHover( const Vector2i& pos, bool active );
@@ -400,6 +418,7 @@ class TerminalDisplay {
 	Vector2i mCursor;
 	TerminalGlyph mCursorGlyph;
 	bool mEnableOsc8Hyperlinks{ true };
+	bool mDetectLinks{ true };
 	bool mUseColorEmoji{ true };
 	bool mPasteNewlineFix{ true };
 	bool mFocus{ true };
@@ -448,7 +467,32 @@ class TerminalDisplay {
 
 	void drawGrid( const Vector2f& pos );
 
+	/* A run of link cells on one row, [first, end). */
+	struct LinkSpan {
+		int row;
+		int first;
+		int end;
+	};
+
+	bool gridCellAt( const Vector2i& pos, Vector2i& cell );
+
 	const TerminalSnapshot::VisibleHyperlink* findHyperlinkAt( const Vector2i& pos );
+
+	std::optional<Link> detectLinkAt( const Vector2i& pos, SmallVector<LinkSpan, 4>* spans );
+
+	void detectLink( const Vector2i& cell );
+
+	/* The last detection, hit or miss: hovering asks again every frame, and a miss costs as
+	 * much as a hit. Valid for one snapshot generation and cell. */
+	struct LinkDetection {
+		Uint64 generation{ 0 };
+		Vector2i cell{ -1, -1 };
+		std::optional<Link> link;
+		SmallVector<LinkSpan, 4> spans;
+	};
+	LinkDetection mLinkDetection;
+
+	std::string linkWorkingDirectory() const;
 
 	void drawHyperlinkHover();
 

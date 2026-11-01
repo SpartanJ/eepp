@@ -727,9 +727,12 @@ file in the directory tree.</string>
 	<string name="uiterminal_copy">复制</string>
 	<string name="uiterminal_open_link">打开链接</string>
 	<string name="uiterminal_open_hyperlink">打开超链接</string>
+	<string name="uiterminal_copy_link_address">复制链接地址</string>
 	<string name="uiterminal_copy_hyperlink">复制超链接地址</string>
 	<string name="enable_osc8_hyperlinks">启用超链接 (OSC 8)</string>
 	<string name="enable_osc8_hyperlinks_desc">允许终端程序为文本添加可点击的链接。</string>
+	<string name="detect_links">检测链接和路径</string>
+	<string name="detect_links_desc">按住默认修饰键时为文本中的 URL 和文件路径添加下划线，并在单击时打开。</string>
 	<string name="grapheme_clustering">字素簇</string>
 	<string name="grapheme_clustering_desc">将表情符号序列、旗帜和组合字符合并为单个字符（DEC 模式 2027）。</string>
 	<string name="inherit_working_directory">继承工作目录</string>

@@ -948,9 +948,12 @@ in der Baumansicht und in Öffen-/Schließdialogen aktivieren.</string>
 	<string name="uiterminal_copy">Kopieren</string>
 	<string name="uiterminal_open_link">Link öffnen</string>
 	<string name="uiterminal_open_hyperlink">Hyperlink öffnen</string>
+	<string name="uiterminal_copy_link_address">Link-Adresse kopieren</string>
 	<string name="uiterminal_copy_hyperlink">Hyperlink-Adresse kopieren</string>
 	<string name="enable_osc8_hyperlinks">Hyperlinks aktivieren (OSC 8)</string>
 	<string name="enable_osc8_hyperlinks_desc">Terminalprogramme dürfen Text mit anklickbaren Links versehen.</string>
+	<string name="detect_links">Links und Pfade erkennen</string>
+	<string name="detect_links_desc">URLs und Dateipfade im Text unterstreichen, solange die Standard-Zusatztaste gedrückt ist, und sie per Klick öffnen.</string>
 	<string name="grapheme_clustering">Graphem-Cluster</string>
 	<string name="grapheme_clustering_desc">Emoji-Sequenzen, Flaggen und kombinierende Zeichen zu einzelnen Zeichen zusammenfassen (DEC-Modus 2027).</string>
 	<string name="inherit_working_directory">Arbeitsverzeichnis übernehmen</string>

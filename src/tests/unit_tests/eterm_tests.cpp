@@ -29,9 +29,11 @@
 #include <eterm/terminal/terminaldisplay.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
 #include <eterm/terminal/terminalgraphics.hpp>
+#include <eterm/terminal/terminallinks.hpp>
 #include <eterm/terminal/terminalsearch.hpp>
 #include <eterm/terminal/terminalsession.hpp>
 #include <eterm/ui/uiterminal.hpp>
+#include <filesystem>
 #include <limits>
 #include <thread>
 
@@ -2833,12 +2835,16 @@ UTEST( eterm, zero_width_codepoints_attach_to_the_previous_cell ) {
 UTEST( eterm, mode_2027_zero_width_bursts_match_fragmented_reads ) {
 	ClusterTerminal bulk;
 	ClusterTerminal fragmented;
-	// Feed the same text one byte at a time to prevent batching and split UTF-8 sequences.
+	// Feed the same text one byte at a time. Incomplete UTF-8 waits for its remaining bytes, so
+	// the fragmented terminal attaches every burst one codepoint at a time; this checks that the
+	// result does not depend on burst size. The expectations below pin the attached text itself.
 	const auto feed = [&]( const std::string& text ) {
 		bulk.feed( text );
 		for ( char byte : text )
 			fragmented.feed( std::string( 1, byte ) );
 	};
+	// Explicit, so the test keeps covering mode 2027 if the default changes.
+	feed( "\033[?2027h" );
 	feed( "e" );
 	for ( const auto& term : { bulk.term, fragmented.term } ) {
 		term->selstart( 0, 0, 0 );
@@ -4181,4 +4187,444 @@ UTEST( eterm_search, emulator_history_navigation_and_clear ) {
 	term->clearSearch();
 	EXPECT_TRUE( term->getSearchMatches().empty() );
 	EXPECT_EQ( -1, term->getCurrentSearchMatch() );
+}
+
+// Ghostty's link pattern tests (src/config/url.zig, MIT License, Copyright (c) 2024 Mitchell
+// Hashimoto, Ghostty contributors).
+UTEST( eterm, implicit_link_pattern_matches_ghostty_cases ) {
+	const std::pair<std::string_view, std::string_view> cases[] = {
+		{ "hello https://example.com world", "https://example.com" },
+		{ "https://example.com/foo(bar) more", "https://example.com/foo(bar)" },
+		{ "https://example.com/foo(bar)baz more", "https://example.com/foo(bar)baz" },
+		{ "Link inside (https://example.com) parens", "https://example.com" },
+		{ "Link period https://example.com. More text.", "https://example.com" },
+		{ "Link trailing comma https://example.com, more text.", "https://example.com" },
+		{ "Link in double quotes \"https://example.com\" and more", "https://example.com" },
+		{ "Link in single quotes 'https://example.com' and more", "https://example.com" },
+		{ "some file with https://google.com https://duckduckgo.com links.", "https://google.com" },
+		{ "and links in it. links https://yahoo.com mailto:test@example.com ssh://1.2.3.4",
+		  "https://yahoo.com" },
+		{ "also match http://example.com non-secure links", "http://example.com" },
+		{ "match tel://+12123456789 phone numbers", "tel://+12123456789" },
+		{ "match with query url https://example.com?query=1&other=2 and more text.",
+		  "https://example.com?query=1&other=2" },
+		{ "url with dashes [mode 2027](https://github.com/contour-terminal/terminal-unicode-core) "
+		  "for better unicode support",
+		  "https://github.com/contour-terminal/terminal-unicode-core" },
+		{ "dot.http://example.com", "http://example.com" },
+		{ "weird characters https://example.com/~user/?query=1&other=2#hash and more",
+		  "https://example.com/~user/?query=1&other=2#hash" },
+		{ "square brackets https://example.com/[foo] and more", "https://example.com/[foo]" },
+		{ "[13]:TooManyStatements: TempFile#assign_temp_file_to_entity has approx 7 statements "
+		  "[https://example.com/docs/Too-Many-Statements.md]",
+		  "https://example.com/docs/Too-Many-Statements.md" },
+		{ "match ftp://example.com ftp links", "ftp://example.com" },
+		{ "match file://example.com file links", "file://example.com" },
+		{ "match ssh://example.com ssh links", "ssh://example.com" },
+		{ "match git://example.com git links", "git://example.com" },
+		{ "/tmp/test.txt http://www.google.com", "/tmp/test.txt" },
+		{ "match tel:+18005551234 tel links", "tel:+18005551234" },
+		{ "match magnet:?xt=urn:btih:1234567890 magnet links", "magnet:?xt=urn:btih:1234567890" },
+		{ "match ipfs://QmSomeHashValue ipfs links", "ipfs://QmSomeHashValue" },
+		{ "match ipns://QmSomeHashValue ipns links", "ipns://QmSomeHashValue" },
+		{ "match gemini://example.com gemini links", "gemini://example.com" },
+		{ "match gopher://example.com gopher links", "gopher://example.com" },
+		{ "match news:comp.infosystems.www.servers.unix news links",
+		  "news:comp.infosystems.www.servers.unix" },
+		{ "/Users/ghostty.user/code/example.py", "/Users/ghostty.user/code/example.py" },
+		{ "/Users/ghostty.user/code/../example.py", "/Users/ghostty.user/code/../example.py" },
+		{ "/Users/ghostty.user/code/../example.py hello world",
+		  "/Users/ghostty.user/code/../example.py" },
+		{ "../example.py", "../example.py" },
+		{ "../example.py ", "../example.py" },
+		{ "first time ../example.py contributor ", "../example.py" },
+		{ "[link](/home/user/ghostty.user/example)", "/home/user/ghostty.user/example" },
+		{ "Serving HTTP on :: port 8000 (http://[::]:8000/)", "http://[::]:8000/" },
+		{ "IPv6 address https://[2001:db8::1]:8080/path", "https://[2001:db8::1]:8080/path" },
+		{ "IPv6 localhost http://[::1]:3000", "http://[::1]:3000" },
+		{ "Complex IPv6 https://[2001:db8:85a3:8d3:1319:8a2e:370:7348]:443/",
+		  "https://[2001:db8:85a3:8d3:1319:8a2e:370:7348]:443/" },
+		{ "IPv6 with path https://[2001:db8::1]/path/to/resource",
+		  "https://[2001:db8::1]/path/to/resource" },
+		{ "IPv6 with query https://[2001:db8::1]:8080/api?param=value&other=123",
+		  "https://[2001:db8::1]:8080/api?param=value&other=123" },
+		{ "IPv6 compressed http://[2001:db8::]:80/", "http://[2001:db8::]:80/" },
+		{ "IPv6 multiple zeros http://[2001:0:0:0:0:0:0:1]", "http://[2001:0:0:0:0:0:0:1]" },
+		{ "IPv6 link-local https://[fe80::1234:5678:9abc]", "https://[fe80::1234:5678:9abc]" },
+		{ "IPv6 multicast http://[ff02::1]/stream", "http://[ff02::1]/stream" },
+		{ "IPv6 in markdown [link](http://[2001:db8::1]/docs)", "http://[2001:db8::1]/docs" },
+		{ "./spaces-end.   ", "./spaces-end." },
+		{ "./space middle", "./space middle" },
+		{ "../test folder/file.txt", "../test folder/file.txt" },
+		{ "/tmp/test folder/file.txt", "/tmp/test folder/file.txt" },
+		{ "/tmp/test  folder/file.txt", "/tmp/test" },
+		{ "diff --git a/src/font/shaper/harfbuzz.zig b/src/font/shaper/harfbuzz.zig",
+		  "a/src/font/shaper/harfbuzz.zig" },
+		{ "/tmp/foo /tmp/bar", "/tmp/foo" },
+		{ "/tmp/foo.txt /tmp/bar.txt", "/tmp/foo.txt" },
+		{ "src/config/url.zig", "src/config/url.zig" },
+		{ "app/folder/file.rb:1", "app/folder/file.rb:1" },
+		{ "modified:   src/config/url.zig", "src/config/url.zig" },
+		{ "lib/ghostty/terminal.zig:42:10", "lib/ghostty/terminal.zig:42:10" },
+		{ "some-pkg/src/file.txt more text", "some-pkg/src/file.txt" },
+		{ "src/foo.c,baz.txt", "src/foo.c" },
+		{ "~/foo/bar.txt", "~/foo/bar.txt" },
+		{ "open ~/Documents/notes.md please", "~/Documents/notes.md" },
+		{ "~/.config/ghostty/config", "~/.config/ghostty/config" },
+		{ "directory: ~/src/ghostty-org/ghostty", "~/src/ghostty-org/ghostty" },
+		{ "$HOME/src/config/url.zig", "$HOME/src/config/url.zig" },
+		{ "project dir: $PWD/src/ghostty/main.zig", "$PWD/src/ghostty/main.zig" },
+		{ "foo/$BAR/baz", "foo/$BAR/baz" },
+		{ ".foo/bar/$VAR", ".foo/bar/$VAR" },
+		{ ".config/ghostty/config", ".config/ghostty/config" },
+		{ "loaded from .local/share/ghostty/state.db now", ".local/share/ghostty/state.db" },
+		{ "../some/where", "../some/where" },
+		{ "  - shared/src/foo/SomeItem.m:12, shared/src/", "shared/src/foo/SomeItem.m:12" },
+		{ "foo.local/share", "foo.local/share" },
+		{ "2024/report.txt", "2024/report.txt" },
+		{ "./foo bar,baz", "./foo bar" },
+		{ "/tmp/foo bar,baz", "/tmp/foo bar" },
+		{ "./.config/ghostty: Needs upstream (main)", "./.config/ghostty" },
+		{ "./Downloads: Operation not permitted", "./Downloads" },
+	};
+	for ( const auto& [input, expect] : cases ) {
+		const auto at = input.find( expect );
+		ASSERT_NE( std::string_view::npos, at );
+		// The link is found from any byte inside it.
+		for ( size_t offset = at; offset < at + expect.size(); ++offset ) {
+			const auto match = TerminalLinks::findAt( input, offset );
+			ASSERT_TRUE_MSG( match.has_value(), std::string( input ).c_str() );
+			EXPECT_STDSTREQ_MSG(
+				std::string( expect ),
+				std::string( input.substr( match->start, match->end - match->start ) ),
+				std::string( input ).c_str() );
+		}
+	}
+	const std::string_view noMatches[] = {
+		"input/output",	   "foo/bar",		  "$10/bar",	  "$10/$20",	"$10/bar.txt",
+		"foo/bar,baz.txt", "foo$BAR/baz.txt", "foo~/bar.txt", "// foo bar", "//foo",
+	};
+	for ( const auto& input : noMatches )
+		for ( size_t offset = 0; offset < input.size(); ++offset )
+			EXPECT_FALSE_MSG( TerminalLinks::findAt( input, offset ).has_value(),
+							  std::string( input ).c_str() );
+}
+
+UTEST( eterm, implicit_links_resolve_urls_and_existing_paths ) {
+	std::string root = Sys::getTempPath() + "eterm-links-" + std::to_string( Sys::getProcessID() );
+	FileSystem::dirAddSlashAtEnd( root );
+	ASSERT_TRUE( FileSystem::makeDir( root + "dir with space", true ) );
+	ASSERT_TRUE( FileSystem::fileWrite( root + "dir with space/main.cpp", std::string( "x" ) ) );
+	std::string path;
+	EXPECT_STDSTREQ( "https://example.com/x",
+					 TerminalLinks::resolve( "https://example.com/x", root, &path ) );
+	EXPECT_TRUE( path.empty() );
+	// Relative paths resolve against the directory; a trailing location is dropped.
+	const auto uri = TerminalLinks::resolve( "dir with space/main.cpp:12:3", root, &path );
+	EXPECT_STDSTREQ( root + "dir with space/main.cpp", path );
+	EXPECT_TRUE( String::startsWith( uri, "file://" ) );
+	EXPECT_NE( std::string::npos, uri.find( "dir%20with%20space/main.cpp" ) );
+	EXPECT_TRUE( TerminalLinks::resolve( "./dir with space", root ).size() > 0 );
+	EXPECT_TRUE( TerminalLinks::resolve( "dir with space/missing.cpp", root ).empty() );
+	EXPECT_TRUE( TerminalLinks::resolve( "dir with space/main.cpp", "" ).empty() );
+	// A leading variable expands; an unset one does not resolve.
+	Sys::setEnv( "ETERM_LINK_TEST_ROOT", root.c_str() );
+	EXPECT_STDSTREQ(
+		TerminalLinks::resolve( root + "dir with space/main.cpp", "" ),
+		TerminalLinks::resolve( "$ETERM_LINK_TEST_ROOT/dir with space/main.cpp", "" ) );
+	EXPECT_TRUE( TerminalLinks::resolve( "$ETERM_LINK_TEST_UNSET/x.cpp", root ).empty() );
+	std::filesystem::remove_all( root );
+}
+
+UTEST( eterm_display, implicit_links_are_detected_across_wrapped_rows ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm implicit links", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	std::string root =
+		Sys::getTempPath() + "eterm-links-display-" + std::to_string( Sys::getProcessID() );
+	FileSystem::dirAddSlashAtEnd( root );
+	ASSERT_TRUE( FileSystem::makeDir( root + "src", true ) );
+	ASSERT_TRUE( FileSystem::fileWrite( root + "src/main.cpp", std::string( "x" ) ) );
+	std::string rootUri = root;
+	String::replaceAll( rootUri, "\\", "/" );
+	if ( rootUri.front() != '/' )
+		rootUri = "/" + rootUri;
+
+	auto pty = std::make_unique<MockPty>();
+	// The shell reports its directory; the second path wraps onto the next row.
+	pty->mBuffer = "\033]7;file://localhost" + rootUri + "\aat src/main.cpp:12 and " +
+				   "https://example.com/x src/missing.cpp\r\n" + std::string( 76, 'x' ) +
+				   " src/main.cpp";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return !snapshot.currentWorkingDirectory.empty() &&
+							snapshot.cells.size() > 2 * 80 + 8 &&
+							snapshot.cells[2 * 80 + 8].u == 'p';
+				 } ) != nullptr );
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	display.setPosition( { 100, 100 } );
+	const auto cell = display.getCellPixelSize();
+	const auto at = [&]( int column, int row ) {
+		return Vector2i( 110 + column * cell.getWidth() + cell.getWidth() / 2,
+						 110 + row * cell.getHeight() + cell.getHeight() / 2 );
+	};
+
+	const auto file = display.getLinkAt( at( 5, 0 ) );
+	ASSERT_TRUE( file.has_value() );
+	EXPECT_TRUE( file->detected );
+	EXPECT_STDSTREQ( root + "src/main.cpp", file->address );
+	EXPECT_TRUE( String::startsWith( file->uri, "file://" ) );
+	const auto url = display.getLinkAt( at( 25, 0 ) );
+	ASSERT_TRUE( url.has_value() );
+	EXPECT_STDSTREQ( "https://example.com/x", url->uri );
+	EXPECT_FALSE( display.getLinkAt( at( 0, 0 ) ).has_value() );
+	EXPECT_FALSE( display.getLinkAt( at( 45, 0 ) ).has_value() ); // missing.cpp does not exist
+
+	// Both halves of the wrapped path are the same link, hovered or not.
+	for ( const auto& point : { at( 78, 1 ), at( 5, 2 ) } ) {
+		const auto wrapped = display.getLinkAt( point );
+		ASSERT_TRUE( wrapped.has_value() );
+		EXPECT_STDSTREQ( root + "src/main.cpp", wrapped->address );
+		display.updateHyperlinkHover( point, true );
+		EXPECT_TRUE( display.getHoveredHyperlink() == root + "src/main.cpp" );
+	}
+	display.updateHyperlinkHover( at( 70, 1 ), true );
+	EXPECT_TRUE( display.getHoveredHyperlink().empty() );
+
+	display.updateHyperlinkHover( at( 5, 0 ), true );
+	display.setLinkDetectionEnabled( false );
+	EXPECT_TRUE( display.getHoveredHyperlink().empty() );
+	EXPECT_FALSE( display.getLinkAt( at( 5, 0 ) ).has_value() );
+
+	std::filesystem::remove_all( root );
+}
+
+UTEST( eterm_display, implicit_links_longer_than_the_match_window_are_rejected ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm long links", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto pty = std::make_unique<MockPty>();
+	// Matching is bounded around the pointer; a link cut by that bound is not opened truncated.
+	pty->mBuffer = "https://example.com/" + std::string( 1400, 'a' ) + " https://example.com/b";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.cells.size() > 1441 && snapshot.cells[1441].u == 'b';
+				 } ) != nullptr );
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	display.setPosition( { 100, 100 } );
+	const auto cell = display.getCellPixelSize();
+	const auto at = [&]( int index ) {
+		return Vector2i( 110 + ( index % 80 ) * cell.getWidth() + cell.getWidth() / 2,
+						 110 + ( index / 80 ) * cell.getHeight() + cell.getHeight() / 2 );
+	};
+	EXPECT_FALSE( display.getLinkAt( at( 700 ) ).has_value() );
+	display.updateHyperlinkHover( at( 700 ), true );
+	EXPECT_TRUE( display.getHoveredHyperlink().empty() );
+	const auto link = display.getLinkAt( at( 1435 ) );
+	ASSERT_TRUE( link.has_value() );
+	EXPECT_STDSTREQ( "https://example.com/b", link->uri );
+}
+
+UTEST( eterm, implicit_links_match_windows_drive_paths ) {
+	const std::pair<std::string_view, std::string_view> cases[] = {
+		{ "error at C:/Users/test/src/main.cpp:12", "C:/Users/test/src/main.cpp:12" },
+		{ "D:\\src\\main.cpp:12: warning", "D:\\src\\main.cpp:12" },
+		// Like Ghostty's /tmp/test folder/file.txt: an undotted first segment admits spaces.
+		{ "run C:\\Program Files\\App\\app.exe", "C:\\Program Files\\App\\app.exe" },
+		{ "(c:\\temp\\notes.txt)", "c:\\temp\\notes.txt" },
+		{ "C:\\one.txt D:\\two.txt", "C:\\one.txt" },
+	};
+	for ( const auto& [input, expect] : cases ) {
+		const auto at = input.find( expect );
+		ASSERT_NE( std::string_view::npos, at );
+		const auto match = TerminalLinks::findAt( input, at + 3 );
+		ASSERT_TRUE_MSG( match.has_value(), std::string( input ).c_str() );
+		EXPECT_STDSTREQ_MSG( std::string( expect ),
+							 std::string( input.substr( match->start, match->end - match->start ) ),
+							 std::string( input ).c_str() );
+	}
+	// A drive letter inside a word or a URL is not a drive.
+	for ( std::string_view input : { "abc:/x.txt", "http://C:/x.txt" } )
+		EXPECT_TRUE( !TerminalLinks::findAt( input, 1 ).has_value() ||
+					 TerminalLinks::findAt( input, 1 )->start == 0 );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::string root = Sys::getTempPath() + "eterm-links-drive\\";
+	ASSERT_TRUE( FileSystem::makeDir( root, true ) );
+	ASSERT_TRUE( FileSystem::fileWrite( root + "main.cpp", std::string( "x" ) ) );
+	std::string path;
+	const auto uri = TerminalLinks::resolve( root + "main.cpp:12", "", &path );
+	EXPECT_STDSTREQ( root + "main.cpp", path );
+	EXPECT_TRUE( String::startsWith( uri, "file:///" ) && uri.find( '\\' ) == std::string::npos );
+	std::filesystem::remove_all( root );
+#endif
+}
+
+UTEST( eterm_display, implicit_links_skip_wide_wrap_padding_and_reject_cut_lines ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm link wrapping", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto pty = std::make_unique<MockPty>();
+	// 界 does not fit in the last column, so it wraps and leaves that column blank.
+	pty->mBuffer = std::string( 59, ' ' ) + "https://example.com/\xE7\x95\x8C/next";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.cells.size() > 86 && snapshot.cells[80 + 6].u == 't';
+				 } ) != nullptr );
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	display.setPosition( { 100, 100 } );
+	const auto cell = display.getCellPixelSize();
+	const auto at = [&]( int column, int row ) {
+		return Vector2i( 110 + column * cell.getWidth() + cell.getWidth() / 2,
+						 110 + row * cell.getHeight() + cell.getHeight() / 2 );
+	};
+	for ( const auto& point : { at( 65, 0 ), at( 3, 1 ) } ) {
+		const auto link = display.getLinkAt( point );
+		ASSERT_TRUE( link.has_value() );
+		EXPECT_STDSTREQ( "https://example.com/\xE7\x95\x8C/next", link->uri );
+	}
+
+	// Scrolled back one line, the URL's last row is below the viewport: no truncated link.
+	session->writeRaw( "\033[2J\033[24;1H" + std::string( 60, ' ' ) + "https://example.com/" +
+					   std::string( 70, 'a' ) );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.cells.size() == 80 * 24 &&
+							snapshot.cells[23 * 80 + 69].u == 'a';
+				 } ) != nullptr );
+	display.update( false );
+	ASSERT_TRUE( display.getLinkAt( at( 70, 22 ) ).has_value() );
+	session->scrollUp( 1 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.scrollPosition != 0;
+				 } ) != nullptr );
+	display.update( false );
+	EXPECT_FALSE( display.getLinkAt( at( 70, 23 ) ).has_value() );
+}
+
+UTEST( eterm, implicit_links_match_unicode_words ) {
+	// \w is Unicode-aware, as in Ghostty, so non-ASCII text does not end or hide a link.
+	const std::pair<std::string_view, std::string_view> cases[] = {
+		{ "see https://example.com/café now", "https://example.com/café" },
+		{ "https://例子.测试/a", "https://例子.测试/a" },
+		{ "edit src/日本語.cpp please", "src/日本語.cpp" },
+		{ "open ~/Документы/заметки.md", "~/Документы/заметки.md" },
+	};
+	for ( const auto& [input, expect] : cases ) {
+		const auto at = input.find( expect );
+		ASSERT_NE( std::string_view::npos, at );
+		const auto match = TerminalLinks::findAt( input, at + expect.size() - 1 );
+		ASSERT_TRUE_MSG( match.has_value(), std::string( input ).c_str() );
+		EXPECT_STDSTREQ_MSG( std::string( expect ),
+							 std::string( input.substr( match->start, match->end - match->start ) ),
+							 std::string( input ).c_str() );
+	}
+}
+
+UTEST( eterm_display, implicit_links_keep_real_spaces_and_reject_trimmed_cuts ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm link cuts", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto pty = std::make_unique<MockPty>();
+	// A real space in the last column separates the URL from the wide character after it.
+	const std::string url = "https://example.com/" + std::string( 59, 'a' );
+	pty->mBuffer = url + " \xE7\x95\x8C/next";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.cells.size() > 86 && snapshot.cells[80 + 6].u == 't';
+				 } ) != nullptr );
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	display.setPosition( { 100, 100 } );
+	const auto cell = display.getCellPixelSize();
+	const auto at = [&]( int index ) {
+		return Vector2i( 110 + ( index % 80 ) * cell.getWidth() + cell.getWidth() / 2,
+						 110 + ( index / 80 ) * cell.getHeight() + cell.getHeight() / 2 );
+	};
+	const auto link = display.getLinkAt( at( 10 ) );
+	ASSERT_TRUE( link.has_value() );
+	EXPECT_STDSTREQ( url, link->uri );
+	EXPECT_FALSE( display.getLinkAt( at( 80 + 3 ) ).has_value() );
+
+	// A URL cut by the matching window or the viewport right after a dot, which the pattern trims,
+	// is still cut.
+	std::string dotted = "https://example.com/";
+	while ( dotted.size() < 1500 )
+		dotted += "a.";
+	session->writeRaw( "\033[2J\033[H" + dotted );
+	ASSERT_TRUE( waitForSnapshot( session, [&]( const TerminalSnapshot& snapshot ) {
+					 return snapshot.cells.size() == 80 * 24 && snapshot.cells[1499].u == '.' &&
+							snapshot.cells[0].u == 'h';
+				 } ) != nullptr );
+	display.update( false );
+	for ( int index : { 5, 6 } )
+		EXPECT_FALSE( display.getLinkAt( at( index ) ).has_value() );
+
+	session->writeRaw( "\033[2J\033[24;1H" + std::string( 58, ' ' ) + "https://example.com/a.b" );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.cells.size() == 80 * 24 && snapshot.cells[23 * 80].u == 'b';
+				 } ) != nullptr );
+	display.update( false );
+	ASSERT_TRUE( display.getLinkAt( at( 22 * 80 + 65 ) ).has_value() );
+	session->scrollUp( 1 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.scrollPosition != 0;
+				 } ) != nullptr );
+	display.update( false );
+	EXPECT_FALSE( display.getLinkAt( at( 23 * 80 + 65 ) ).has_value() );
+}
+
+UTEST( eterm_display, implicit_links_keep_skipped_text_and_reflowed_padding ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm link padding", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto pty = std::make_unique<MockPty>();
+	// The cursor returns to the last column, which shows text, before a wide character wraps:
+	// that text is not padding.
+	const std::string url = "https://example.com/" + std::string( 59, 'a' ) + "b";
+	pty->mBuffer = url + "\033[1;80H\xE7\x95\x8C/next";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.cells.size() > 86 && snapshot.cells[80 + 6].u == 't';
+				 } ) != nullptr );
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	display.setPosition( { 100, 100 } );
+	const auto cell = display.getCellPixelSize();
+	const auto at = [&]( int column, int row ) {
+		return Vector2i( 110 + column * cell.getWidth() + cell.getWidth() / 2,
+						 110 + row * cell.getHeight() + cell.getHeight() / 2 );
+	};
+	auto link = display.getLinkAt( at( 10, 0 ) );
+	ASSERT_TRUE( link.has_value() );
+	EXPECT_STDSTREQ( url + "\xE7\x95\x8C/next", link->uri );
+
+	// Padding scrolled into history disappears when the line is reflowed to a new width.
+	session->writeRaw( "\033[2J\033[H" + std::string( 59, ' ' ) +
+					   "https://example.com/\xE7\x95\x8C/next" + std::string( 30, '\n' ) );
+	session->resize( 100, 24 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 100;
+				 } ) != nullptr );
+	session->scrollUp( 40 );
+	auto scrolled = waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+		return snapshot.columns == 100 && snapshot.scrollPosition != 0;
+	} );
+	ASSERT_TRUE( scrolled != nullptr );
+	display.update( false );
+	int row = -1;
+	for ( int y = 0; y < scrolled->rows && row < 0; ++y )
+		if ( scrolled->cells[y * 100 + 59].u == 'h' && scrolled->cells[y * 100 + 60].u == 't' )
+			row = y;
+	ASSERT_GE( row, 0 );
+	EXPECT_EQ( static_cast<Rune>( 0x754C ), scrolled->cells[row * 100 + 79].u );
+	link = display.getLinkAt( at( 65, row ) );
+	ASSERT_TRUE( link.has_value() );
+	EXPECT_STDSTREQ( "https://example.com/\xE7\x95\x8C/next", link->uri );
 }

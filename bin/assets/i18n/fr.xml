@@ -927,9 +927,12 @@ dans l'arborescence de répertoires ainsi que dans les boites de dialogues de s�
 	<string name="uiterminal_copy">Copier</string>
 	<string name="uiterminal_open_link">Ouvrir un lien</string>
 	<string name="uiterminal_open_hyperlink">Ouvrir un hyperlien</string>
+	<string name="uiterminal_copy_link_address">Copier l’adresse du lien</string>
 	<string name="uiterminal_copy_hyperlink">Copier l’adresse de l’hyperlien</string>
 	<string name="enable_osc8_hyperlinks">Activer les hyperliens (OSC 8)</string>
 	<string name="enable_osc8_hyperlinks_desc">Autoriser les programmes du terminal à associer des liens cliquables au texte.</string>
+	<string name="detect_links">Détecter les liens et les chemins</string>
+	<string name="detect_links_desc">Souligner les URL et les chemins de fichiers dans le texte tant que la touche de modification par défaut est maintenue, et les ouvrir d’un clic.</string>
 	<string name="grapheme_clustering">Groupes de graphèmes</string>
 	<string name="grapheme_clustering_desc">Réunir les séquences d’emoji, les drapeaux et les caractères combinants en caractères uniques (mode DEC 2027).</string>
 	<string name="inherit_working_directory">Hériter du répertoire de travail</string>

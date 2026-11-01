@@ -242,6 +242,17 @@ UIWindow* SettingsPanel::create( App& app ) {
 						} );
 						app.savePreferences();
 					} );
+	panel->addBool( { "detectLinks", "terminal.behavior",
+					  app.i18n( "detect_links", "Detect Links and Paths" ),
+					  app.i18n( "detect_links_desc",
+								"Underline URLs and file paths in the text while the default "
+								"modifier is held, and open them on click." ) },
+					&app.config->terminal.detectLinks, [&app]( bool value ) {
+						app.forEachTerminal( [value]( UITerminal* terminal ) {
+							terminal->getTerm()->setLinkDetectionEnabled( value );
+						} );
+						app.savePreferences();
+					} );
 	panel->addBool( { "graphemeClustering", "terminal.behavior",
 					  app.i18n( "grapheme_clustering", "Grapheme Clustering" ),
 					  app.i18n( "grapheme_clustering_desc",

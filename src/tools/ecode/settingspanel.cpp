@@ -1627,6 +1627,17 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 				 } );
 			 } );
 	addBool( panel,
+			 { "detectLinks", "terminal.behavior",
+			   mApp->i18n( "detect_links", "Detect Links and Paths" ),
+			   mApp->i18n( "detect_links_desc",
+						   "Underline URLs and file paths in the text while the default modifier "
+						   "is held, and open them on click." ) },
+			 &mApp->termConfig().detectLinks, [this]( bool value ) {
+				 mApp->getTerminalManager()->forEachTerminal( [value]( UITerminal* terminal ) {
+					 terminal->getTerm()->setLinkDetectionEnabled( value );
+				 } );
+			 } );
+	addBool( panel,
 			 { "graphemeClustering", "terminal.behavior",
 			   mApp->i18n( "grapheme_clustering", "Grapheme Clustering" ),
 			   mApp->i18n( "grapheme_clustering_desc",

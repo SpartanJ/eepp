@@ -138,6 +138,9 @@ enum TerminalGlyphAttribute {
 	ATTR_EMOJI = 1 << 12,
 	ATTR_SEARCH_MATCH = 1 << 13,
 	ATTR_SEARCH_ACTIVE = 1 << 14,
+	/* With ATTR_WRAP: the last column left blank when a wide character (or a cluster that widens)
+	 * moved to the next row. Not text: link detection skips it. */
+	ATTR_WRAP_PADDING = 1 << 15,
 	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
 };
 
@@ -167,7 +170,7 @@ struct TerminalGlyph {
 	bool operator!=( const TerminalGlyph& r ) { return !( *this == r ); }
 };
 
-// Bits 0..15 belong to attributes (bit 15 is reserved). Keep bit 31 clear for legacy
+// Bits 0..15 belong to attributes. Keep bit 31 clear for legacy
 // signed mode consumers. Hyperlink identity travels with glyph copies, history and reflow.
 constexpr uint32_t GLYPH_LINK_SHIFT = 16;
 constexpr uint32_t GLYPH_LINK_MAX = 0x7FFFu;
@@ -175,7 +178,7 @@ constexpr uint32_t GLYPH_LINK_MASK = GLYPH_LINK_MAX << GLYPH_LINK_SHIFT;
 constexpr uint32_t GLYPH_ATTRIBUTE_MASK = 0xFFFFu;
 static_assert( sizeof( TerminalGlyph ) == 16, "Terminal glyphs must remain 16 bytes" );
 static_assert( ( GLYPH_LINK_MASK & GLYPH_ATTRIBUTE_MASK ) == 0 );
-static_assert( ( ATTR_SEARCH_ACTIVE & ~GLYPH_ATTRIBUTE_MASK ) == 0 );
+static_assert( ( ATTR_WRAP_PADDING & ~GLYPH_ATTRIBUTE_MASK ) == 0 );
 
 inline uint16_t glyphLinkId( const TerminalGlyph& glyph ) {
 	return static_cast<uint16_t>( ( glyph.mode & GLYPH_LINK_MASK ) >> GLYPH_LINK_SHIFT );

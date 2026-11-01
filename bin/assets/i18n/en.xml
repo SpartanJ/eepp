@@ -933,9 +933,12 @@ the directory tree and in file dialogs to open a folder or file.</string>
 	<string name="uiterminal_copy">Copy</string>
 	<string name="uiterminal_open_link">Open Link</string>
 	<string name="uiterminal_open_hyperlink">Open Hyperlink</string>
+	<string name="uiterminal_copy_link_address">Copy Link Address</string>
 	<string name="uiterminal_copy_hyperlink">Copy Hyperlink Address</string>
 	<string name="enable_osc8_hyperlinks">Enable Hyperlinks (OSC 8)</string>
 	<string name="enable_osc8_hyperlinks_desc">Allow terminal programs to attach clickable links to text.</string>
+	<string name="detect_links">Detect Links and Paths</string>
+	<string name="detect_links_desc">Underline URLs and file paths in the text while the default modifier is held, and open them on click.</string>
 	<string name="grapheme_clustering">Grapheme Clustering</string>
 	<string name="grapheme_clustering_desc">Join emoji sequences, flags and combining characters into single characters (DEC mode 2027).</string>
 	<string name="inherit_working_directory">Inherit Working Directory</string>

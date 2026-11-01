@@ -2076,6 +2076,7 @@ void LLMChatUI::setupAgentSession() {
 														 config.graphemeClustering } );
 			if ( !display )
 				return;
+			display->setLinkDetectionEnabled( config.detectLinks );
 			auto* uiTerm = eterm::UI::UITerminal::New( display );
 			uiTerm->setClass( "eterm" );
 			uiTerm->setParent( bubble );

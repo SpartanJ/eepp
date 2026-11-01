@@ -143,13 +143,17 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	setCommand( "terminal-open-link",
 				[this] { Engine::instance()->openURI( mTerm->getSelection() ); } );
 	setCommand( "terminal-open-hyperlink", [this] {
-		if ( mTerm->getOsc8HyperlinksEnabled() &&
-			 TerminalDisplay::isHyperlinkAllowed( mContextHyperlink ) )
+		if ( mContextLinkDetected ? mTerm->getLinkDetectionEnabled() && !mContextHyperlink.empty()
+								  : mTerm->getOsc8HyperlinksEnabled() &&
+										TerminalDisplay::isHyperlinkAllowed( mContextHyperlink ) )
 			Engine::instance()->openURI( mContextHyperlink );
 	} );
 	setCommand( "terminal-copy-hyperlink", [this] {
-		if ( mTerm->getOsc8HyperlinksEnabled() && !mContextHyperlink.empty() )
-			getUISceneNode()->getWindow()->getClipboard()->setText( mContextHyperlink );
+		if ( mContextLinkDetected
+				 ? mTerm->getLinkDetectionEnabled()
+				 : mTerm->getOsc8HyperlinksEnabled() && !mContextHyperlink.empty() )
+			getUISceneNode()->getWindow()->getClipboard()->setText(
+				mContextLinkDetected ? mContextLinkAddress : mContextHyperlink );
 	} );
 	subscribeScheduledUpdate();
 }
@@ -633,9 +637,9 @@ Uint32 UITerminal::onMouseDown( const Vector2i& position, const Uint32& flags ) 
 	if ( !mPressedHyperlink.empty() && ( flags & EE_BUTTON_LMASK ) )
 		return 1;
 	if ( !mForwardedLeftButton && flags == EE_BUTTON_LMASK && isHyperlinkModifierPressed() ) {
-		auto link = mTerm->getHyperlinkAt( position );
-		if ( link && TerminalDisplay::isHyperlinkAllowed( *link ) ) {
-			mPressedHyperlink = std::move( *link );
+		auto link = mTerm->getLinkAt( position );
+		if ( link && ( link->detected || TerminalDisplay::isHyperlinkAllowed( link->uri ) ) ) {
+			mPressedHyperlink = std::move( link->uri );
 			getInput()->captureMouse( true );
 			return 1;
 		}
@@ -660,7 +664,7 @@ Uint32 UITerminal::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 		auto pressed = std::move( mPressedHyperlink );
 		mPressedHyperlink.clear();
 		getInput()->captureMouse( false );
-		if ( mTerm->getHyperlinkAt( position ) == pressed )
+		if ( auto link = mTerm->getLinkAt( position ); link && link->uri == pressed )
 			Engine::instance()->openURI( pressed );
 		return 1;
 	}
@@ -800,7 +804,12 @@ void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
 
-	if ( !mContextHyperlink.empty() ) {
+	if ( mContextLinkDetected ) {
+		menuAdd( menu, i18n( "uiterminal_open_link", "Open Link" ), "earth",
+				 "terminal-open-hyperlink" );
+		menuAdd( menu, i18n( "uiterminal_copy_link_address", "Copy Link Address" ), "copy",
+				 "terminal-copy-hyperlink" );
+	} else if ( !mContextHyperlink.empty() ) {
 		menuAdd( menu, i18n( "uiterminal_open_hyperlink", "Open Hyperlink" ), "earth",
 				 "terminal-open-hyperlink" )
 			->setEnabled( TerminalDisplay::isHyperlinkAllowed( mContextHyperlink ) );
@@ -843,7 +852,10 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 
-	mContextHyperlink = mTerm->getHyperlinkAt( position ).value_or( "" );
+	auto link = mTerm->getLinkAt( position );
+	mContextHyperlink = link ? std::move( link->uri ) : std::string{};
+	mContextLinkAddress = link && link->detected ? std::move( link->address ) : std::string{};
+	mContextLinkDetected = link && link->detected;
 	createDefaultContextMenuOptions( menu );
 
 	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
@@ -851,6 +863,8 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 
 	if ( menu->getCount() == 0 ) {
 		mContextHyperlink.clear();
+		mContextLinkAddress.clear();
+		mContextLinkDetected = false;
 		menu->close();
 		return false;
 	}
@@ -872,6 +886,8 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 	menu->on( Event::OnClose, [this]( const Event* ) {
 		mCurrentMenu = nullptr;
 		mContextHyperlink.clear();
+		mContextLinkAddress.clear();
+		mContextLinkDetected = false;
 	} );
 	mCurrentMenu = menu;
 	return true;

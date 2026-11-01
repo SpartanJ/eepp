@@ -1767,6 +1767,12 @@ void TerminalEmulator::historyStealPush( Line* lineSlot, int col ) {
 	}
 }
 
+/* The last column a wide character skips is padding only while it shows nothing: the cursor may
+ * have been moved onto text there before the character was printed. */
+static bool isWrapPaddingCandidate( const TerminalGlyph& glyph ) {
+	return ( glyph.u == ' ' || glyph.u == 0 ) && !( glyph.mode & ( ATTR_WIDE | ATTR_WDUMMY ) );
+}
+
 void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 	int i, j;
 	int new_len = 0;
@@ -1817,9 +1823,12 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 
 		memcpy( logical + logical_len, line, old_col * sizeof( TerminalGlyph ) );
 		for ( j = 0; j < old_col; j++ )
-			logical[logical_len + j].mode &= ~ATTR_WRAP;
+			logical[logical_len + j].mode &= ~( ATTR_WRAP | ATTR_WRAP_PADDING );
 
 		logical_len += old_col;
+		/* The column a wide character skipped is not content: it disappears when rewrapped. */
+		if ( is_wrapped && ( line[old_col - 1].mode & ATTR_WRAP_PADDING ) )
+			logical_len--;
 
 		if ( is_wrapped )
 			continue;
@@ -1864,9 +1873,11 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 			if ( copy_width > new_col )
 				copy_width = new_col;
 
+			bool widePadding = false;
 			if ( copy_width > 1 && copy_width == new_col && copy_width < logical_len - cursor &&
 				 ( logical[cursor + copy_width - 1].mode & ATTR_WIDE ) ) {
 				copy_width--;
+				widePadding = true;
 			}
 
 			if ( has_sel ) {
@@ -1904,6 +1915,9 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 				nl[j].u = ' ';
 				nl[j].mode = 0;
 			}
+			/* A wide character moved to the next row leaves this column as padding. */
+			if ( widePadding )
+				nl[new_col - 1].mode |= ATTR_WRAP | ATTR_WRAP_PADDING;
 
 			new_histi = ( new_histi + 1 ) % mTerm.histsize;
 			if ( new_len < mTerm.histsize ) {
@@ -4102,7 +4116,8 @@ bool TerminalEmulator::tattach( Rune u, int width ) {
 				return true;
 			const TerminalGlyph moved = line[x];
 			line[x].u = ' ';
-			line[x].mode = ( line[x].mode & ~( ATTR_EMOJI | ATTR_BOXDRAW ) ) | ATTR_WRAP;
+			line[x].mode =
+				( line[x].mode & ~( ATTR_EMOJI | ATTR_BOXDRAW ) ) | ATTR_WRAP | ATTR_WRAP_PADDING;
 			mTerm.dirty[y] = 1;
 			tnewline( 1 );
 			x = 0;
@@ -4272,7 +4287,10 @@ check_control_code:
 		memmove( gp + width, gp, ( mTerm.col - mTerm.c.x - width ) * sizeof( TerminalGlyph ) );
 
 	if ( mTerm.c.x + width > mTerm.col ) {
-		mTerm.line[mTerm.c.y][mTerm.col - 1].mode |= ATTR_WRAP;
+		auto& last = mTerm.line[mTerm.c.y][mTerm.col - 1];
+		last.mode |= ATTR_WRAP;
+		if ( isWrapPaddingCandidate( last ) )
+			last.mode |= ATTR_WRAP_PADDING;
 		tnewline( 1 );
 		gp = &mTerm.line[mTerm.c.y][mTerm.c.x];
 	}
@@ -4563,7 +4581,11 @@ template <typename Run> void TerminalEmulator::tputrun( const Run& run, int len 
 		int checkFrom = mTerm.c.x;
 		if ( ( mTerm.c.state & CURSOR_WRAPNEXT ) || mTerm.c.x + run.width( i ) > columns ) {
 			clearSelectionAt( mTerm.c.x, mTerm.c.y );
-			mTerm.line[mTerm.c.y][mTerm.c.x].mode |= ATTR_WRAP;
+			auto& last = mTerm.line[mTerm.c.y][mTerm.c.x];
+			last.mode |= ATTR_WRAP;
+			/* Without a pending wrap, a wide character skips this column: as in tputc(). */
+			if ( !( mTerm.c.state & CURSOR_WRAPNEXT ) && isWrapPaddingCandidate( last ) )
+				last.mode |= ATTR_WRAP_PADDING;
 			tnewline( 1 );
 			checkFrom = mTerm.c.x + 1;
 		}

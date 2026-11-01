@@ -11,12 +11,14 @@
 #include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/math/math.hpp>
 #include <eepp/system/color.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/window.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/input.hpp>
 #include <eterm/system/processfactory.hpp>
 #include <eterm/terminal/boxdrawdata.hpp>
 #include <eterm/terminal/kittygraphicsrenderer.hpp>
+#include <eterm/terminal/terminallinks.hpp>
 #include <limits.h>
 
 namespace eterm { namespace Terminal {
@@ -24,18 +26,15 @@ namespace eterm { namespace Terminal {
 // Allocate presentation caches only after the first hover. Plain terminal output pays no
 // per-cell metadata, text shaping, or hover-range allocation cost.
 struct TerminalDisplay::HyperlinkHover {
-	struct Span {
-		int row;
-		int first;
-		int end;
-	};
-
 	Text preview;
-	SmallVector<Span, 4> spans;
-	std::shared_ptr<const std::string> uri; // Shared immutable snapshot string.
+	SmallVector<LinkSpan, 4> spans;
+	// The previewed address: the shared snapshot URI of an OSC 8 link, or a detected link's.
+	std::shared_ptr<const std::string> uri;
 	Uint64 generation{ 0 };
 	Float previewWidth{ -1 };
-	uint16_t id{ 0 };
+	uint16_t id{ 0 }; // OSC 8 link ID; 0 for a detected link.
+	bool active{ false };
+	bool detected{ false };
 };
 
 #define BETWEEN( x, a, b ) ( ( a ) <= ( x ) && ( x ) <= ( b ) )
@@ -1706,10 +1705,11 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 			}
 			applySearchHighlight( glyph.mode, mColors, fg, bg );
 
-			if ( glyph.mode & ATTR_BLINK && ( mMode & MODE_BLINK ) )
-				fg = bg;
-
-			if ( glyph.mode & ATTR_INVISIBLE )
+			/* Concealed text and blinking text in its off phase take the background color; color
+			 * glyphs ignore that color, so a hidden cell draws no glyph at all. */
+			const bool hidden = ( glyph.mode & ATTR_INVISIBLE ) ||
+								( ( glyph.mode & ATTR_BLINK ) && ( mMode & MODE_BLINK ) );
+			if ( hidden )
 				fg = bg;
 
 			bool isWide = glyph.mode & ATTR_WIDE;
@@ -1741,8 +1741,8 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 					dirtyFG = true;
 				}
 			} else {
-				if ( isGlyphCluster( glyph ) &&
-					 drawCluster( glyph, x, y, advanceX, fg, clusterVBO ) ) {
+				if ( hidden || ( isGlyphCluster( glyph ) &&
+								 drawCluster( glyph, x, y, advanceX, fg, clusterVBO ) ) ) {
 					if ( foregroundVBO )
 						foregroundVBO->setQuadColor( mCurGridPos, Color::Transparent );
 				} else {
@@ -2057,16 +2057,10 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 }
 
 const TerminalSnapshot::VisibleHyperlink* TerminalDisplay::findHyperlinkAt( const Vector2i& pos ) {
-	if ( !mEnableOsc8Hyperlinks || !mSnapshot || mSnapshot->visibleHyperlinks.empty() )
+	Vector2i cell;
+	if ( !mEnableOsc8Hyperlinks || !mSnapshot || mSnapshot->visibleHyperlinks.empty() ||
+		 !gridCellAt( pos, cell ) )
 		return nullptr;
-	const Float x = pos.x - mPosition.x - mPadding.Left;
-	const Float y = pos.y - mPosition.y - mPadding.Top;
-	const Float cellWidth = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
-	const Float cellHeight = mFont->getFontHeight( mFontSize );
-	if ( x < 0 || y < 0 || cellWidth <= 0 || cellHeight <= 0 ||
-		 x >= mSnapshot->columns * cellWidth || y >= mSnapshot->rows * cellHeight )
-		return nullptr;
-	const auto cell = positionToGrid( pos );
 	const auto offset = cell.y * mSnapshot->columns + cell.x;
 	const auto& glyph = mSnapshot->cells[offset];
 	const auto id = glyphLinkId( glyph );
@@ -2087,6 +2081,156 @@ const TerminalSnapshot::VisibleHyperlink* TerminalDisplay::findHyperlinkAt( cons
 	return &*found;
 }
 
+bool TerminalDisplay::gridCellAt( const Vector2i& pos, Vector2i& cell ) {
+	if ( !mSnapshot )
+		return false;
+	const Float x = pos.x - mPosition.x - mPadding.Left;
+	const Float y = pos.y - mPosition.y - mPadding.Top;
+	const Float cellWidth = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
+	const Float cellHeight = mFont->getFontHeight( mFontSize );
+	if ( x < 0 || y < 0 || cellWidth <= 0 || cellHeight <= 0 ||
+		 x >= mSnapshot->columns * cellWidth || y >= mSnapshot->rows * cellHeight )
+		return false;
+	cell = positionToGrid( pos );
+	return cell.x >= 0 && cell.y >= 0 && cell.x < mSnapshot->columns && cell.y < mSnapshot->rows;
+}
+
+std::string TerminalDisplay::linkWorkingDirectory() const {
+	// The shell's reported directory (OSC 7), else where the terminal started.
+	if ( mSnapshot && !mSnapshot->currentWorkingDirectory.empty() )
+		return mSnapshot->currentWorkingDirectory;
+	return !mWorkingDir.empty() ? mWorkingDir : FileSystem::getCurrentWorkingDirectory();
+}
+
+std::optional<TerminalDisplay::Link>
+TerminalDisplay::detectLinkAt( const Vector2i& pos, SmallVector<LinkSpan, 4>* spans ) {
+	Vector2i cell;
+	if ( !mDetectLinks || !gridCellAt( pos, cell ) )
+		return std::nullopt;
+	auto& cache = mLinkDetection;
+	if ( cache.generation != mSnapshotGeneration || cache.cell != cell ) {
+		cache.generation = mSnapshotGeneration;
+		cache.cell = cell;
+		cache.link.reset();
+		cache.spans.clear();
+		detectLink( cell );
+	}
+	if ( spans )
+		*spans = cache.spans;
+	return cache.link;
+}
+
+void TerminalDisplay::detectLink( const Vector2i& cell ) {
+	// Match within the logical line: the rows soft-wrapped into the hovered one.
+	const int columns = mSnapshot->columns;
+	const auto& cells = mSnapshot->cells;
+	const auto wraps = [&]( int row ) {
+		return ( cells[row * columns + columns - 1].mode & ATTR_WRAP ) != 0;
+	};
+	int first = cell.y;
+	int last = cell.y;
+	while ( first > 0 && wraps( first - 1 ) )
+		--first;
+	while ( last + 1 < mSnapshot->rows && wraps( last ) )
+		++last;
+
+	const std::size_t base = static_cast<std::size_t>( first ) * columns;
+	const std::size_t count = static_cast<std::size_t>( last - first + 1 ) * columns;
+	std::string text;
+	std::vector<std::size_t> offsets( count );
+	for ( std::size_t i = 0; i < count; ++i ) {
+		const auto& glyph = cells[base + i];
+		offsets[i] = text.size();
+		if ( glyph.mode & ATTR_WDUMMY )
+			continue;
+		// A wide character that does not fit in the last column wraps and leaves that column
+		// blank: padding, not text.
+		if ( ( glyph.mode & ( ATTR_WRAP | ATTR_WRAP_PADDING ) ) ==
+			 ( ATTR_WRAP | ATTR_WRAP_PADDING ) )
+			continue;
+		if ( isGlyphCluster( glyph ) ) {
+			if ( const auto* cluster = mSnapshot->findCluster( glyphClusterId( glyph ) ) ) {
+				String::appendUtf8( String::View( cluster->data(), cluster->size() ), text );
+				continue;
+			}
+		}
+		const String::StringBaseType codepoint =
+			glyph.u == 0 || glyph.u == 0x10EEEE /* kitty placeholder */ || glyph.u > 0x10FFFF
+				? U' '
+				: static_cast<String::StringBaseType>( glyph.u );
+		String::appendUtf8( String::View( &codepoint, 1 ), text );
+	}
+
+	std::size_t hovered = static_cast<std::size_t>( cell.y - first ) * columns + cell.x;
+	if ( ( cells[base + hovered].mode & ATTR_WDUMMY ) && cell.x > 0 )
+		--hovered;
+
+	// Match only within whole cells around the pointer: the pattern's cost grows with the square
+	// of a long run without a match. A match reaching a cut edge would be truncated: no link.
+	constexpr std::size_t WindowBytes = 512;
+	std::size_t lo = hovered;
+	std::size_t hi = hovered + 1;
+	while ( lo > 0 && offsets[hovered] - offsets[lo - 1] <= WindowBytes )
+		--lo;
+	while ( hi < count && offsets[hi] - offsets[hovered] <= WindowBytes )
+		++hi;
+	const std::size_t windowStart = offsets[lo];
+	const std::size_t windowEnd = hi < count ? offsets[hi] : text.size();
+	const std::string_view window( text.data() + windowStart, windowEnd - windowStart );
+	// The line also continues past the viewport when its last visible row still wraps. Where text
+	// was cut, more of it could have extended the match, even when it stops short of the cut
+	// (the pattern trims trailing punctuation): only whitespace before the cut ends a link.
+	const bool cutBefore = lo > 0;
+	const bool cutAfter = hi < count || wraps( last );
+	auto match = TerminalLinks::findAt( window, offsets[hovered] - windowStart );
+	const auto separated = []( std::string_view text ) {
+		return text.find_first_of( " \t" ) != std::string_view::npos;
+	};
+	if ( !match || ( cutBefore && !separated( window.substr( 0, match->start ) ) ) ||
+		 ( cutAfter && !separated( window.substr( match->end ) ) ) )
+		return;
+	const std::size_t start = windowStart + match->start;
+	const std::size_t end = windowStart + match->end;
+	const std::string_view linkText( text.data() + start, end - start );
+	std::string path;
+	std::string uri = TerminalLinks::resolve( linkText, linkWorkingDirectory(), &path );
+	if ( uri.empty() )
+		return;
+
+	auto& spans = mLinkDetection.spans;
+	bool previousInLink = false;
+	for ( std::size_t i = 0; i < count; ++i ) {
+		const int row = first + static_cast<int>( i / columns );
+		const int column = static_cast<int>( i % columns );
+		// A wide character's dummy half belongs to the link with its first half.
+		const bool inLink = ( cells[base + i].mode & ATTR_WDUMMY )
+								? previousInLink && column > 0
+								: offsets[i] >= start && offsets[i] < end;
+		previousInLink = inLink;
+		if ( !inLink )
+			continue;
+		if ( !spans.empty() && spans.back().row == row && spans.back().end == column )
+			++spans.back().end;
+		else
+			spans.push_back( { row, column, column + 1 } );
+	}
+	mLinkDetection.link =
+		Link{ std::move( uri ), path.empty() ? std::string( linkText ) : std::move( path ), true };
+}
+
+std::optional<TerminalDisplay::Link> TerminalDisplay::getLinkAt( const Vector2i& pos ) {
+	if ( const auto* link = findHyperlinkAt( pos ) )
+		return Link{ *link->uri, *link->uri, false };
+	return detectLinkAt( pos, nullptr );
+}
+
+void TerminalDisplay::setLinkDetectionEnabled( bool enabled ) {
+	mDetectLinks = enabled;
+	mLinkDetection = {};
+	if ( !enabled && mHyperlinkHover && mHyperlinkHover->detected )
+		clearHyperlinkHover();
+}
+
 std::optional<std::string> TerminalDisplay::getHyperlinkAt( const Vector2i& pos ) {
 	if ( const auto* link = findHyperlinkAt( pos ) )
 		return *link->uri;
@@ -2094,60 +2238,94 @@ std::optional<std::string> TerminalDisplay::getHyperlinkAt( const Vector2i& pos 
 }
 
 void TerminalDisplay::updateHyperlinkHover( const Vector2i& pos, bool active ) {
-	const auto* link = active ? findHyperlinkAt( pos ) : nullptr;
-	if ( !link ) {
+	if ( !active ) {
 		clearHyperlinkHover();
 		return;
 	}
-	if ( mHyperlinkHover && mHyperlinkHover->id == link->id &&
-		 mHyperlinkHover->generation == mSnapshotGeneration )
+	if ( const auto* link = findHyperlinkAt( pos ) ) {
+		if ( mHyperlinkHover && mHyperlinkHover->active && mHyperlinkHover->id == link->id &&
+			 mHyperlinkHover->generation == mSnapshotGeneration )
+			return;
+		if ( !isHyperlinkAllowed( *link->uri ) ) {
+			clearHyperlinkHover();
+			return;
+		}
+		if ( !mHyperlinkHover )
+			mHyperlinkHover = std::make_unique<HyperlinkHover>();
+		auto& hover = *mHyperlinkHover;
+		if ( !hover.uri || *hover.uri != *link->uri ) {
+			hover.uri = link->uri;
+			hover.previewWidth = -1;
+		}
+		hover.id = link->id;
+		hover.active = true;
+		hover.detected = false;
+		hover.generation = mSnapshotGeneration;
+		hover.spans.clear();
+		for ( int row = 0; row < mSnapshot->rows; ++row ) {
+			const auto* cells = mSnapshot->cells.data() + row * mSnapshot->columns;
+			for ( int column = 0; column < mSnapshot->columns; ) {
+				if ( glyphLinkId( cells[column] ) != hover.id ) {
+					++column;
+					continue;
+				}
+				const int first = column++;
+				while ( column < mSnapshot->columns && glyphLinkId( cells[column] ) == hover.id )
+					++column;
+				hover.spans.push_back( { row, first, column } );
+			}
+		}
+		invalidate();
 		return;
-	if ( !isHyperlinkAllowed( *link->uri ) ) {
+	}
+
+	// A detected link keeps its hover while the pointer stays on it in the same snapshot.
+	Vector2i cell;
+	if ( mHyperlinkHover && mHyperlinkHover->active && mHyperlinkHover->detected &&
+		 mHyperlinkHover->generation == mSnapshotGeneration && gridCellAt( pos, cell ) ) {
+		for ( const auto& span : mHyperlinkHover->spans )
+			if ( span.row == cell.y && cell.x >= span.first && cell.x < span.end )
+				return;
+	}
+	SmallVector<LinkSpan, 4> spans;
+	auto link = detectLinkAt( pos, &spans );
+	if ( !link ) {
 		clearHyperlinkHover();
 		return;
 	}
 	if ( !mHyperlinkHover )
 		mHyperlinkHover = std::make_unique<HyperlinkHover>();
 	auto& hover = *mHyperlinkHover;
-	if ( !hover.uri || *hover.uri != *link->uri ) {
-		hover.uri = link->uri;
+	if ( !hover.uri || *hover.uri != link->address ) {
+		hover.uri = std::make_shared<const std::string>( std::move( link->address ) );
 		hover.previewWidth = -1;
 	}
-	hover.id = link->id;
+	hover.id = 0;
+	hover.active = true;
+	hover.detected = true;
 	hover.generation = mSnapshotGeneration;
-	hover.spans.clear();
-	for ( int row = 0; row < mSnapshot->rows; ++row ) {
-		const auto* cells = mSnapshot->cells.data() + row * mSnapshot->columns;
-		for ( int column = 0; column < mSnapshot->columns; ) {
-			if ( glyphLinkId( cells[column] ) != hover.id ) {
-				++column;
-				continue;
-			}
-			const int first = column++;
-			while ( column < mSnapshot->columns && glyphLinkId( cells[column] ) == hover.id )
-				++column;
-			hover.spans.push_back( { row, first, column } );
-		}
-	}
+	hover.spans = std::move( spans );
 	invalidate();
 }
 
 void TerminalDisplay::clearHyperlinkHover() {
-	if ( mHyperlinkHover && mHyperlinkHover->id != 0 ) {
+	if ( mHyperlinkHover && mHyperlinkHover->active ) {
+		mHyperlinkHover->active = false;
+		mHyperlinkHover->detected = false;
 		mHyperlinkHover->id = 0;
 		invalidate();
 	}
 }
 
 std::string_view TerminalDisplay::getHoveredHyperlink() const {
-	return mHyperlinkHover && mHyperlinkHover->id != 0 &&
+	return mHyperlinkHover && mHyperlinkHover->active &&
 				   mHyperlinkHover->generation == mSnapshotGeneration
 			   ? std::string_view( *mHyperlinkHover->uri )
 			   : std::string_view{};
 }
 
 void TerminalDisplay::drawHyperlinkHover() {
-	if ( !mHyperlinkHover || mHyperlinkHover->id == 0 || !mSnapshot ||
+	if ( !mHyperlinkHover || !mHyperlinkHover->active || !mSnapshot ||
 		 mHyperlinkHover->generation != mSnapshotGeneration )
 		return;
 	auto& hover = *mHyperlinkHover;

@@ -675,6 +675,7 @@ UITerminal* TerminalManager::createNewTerminal(
 	}
 
 	term->getTerm()->setCursorMode( mApp->termConfig().cursorStyle );
+	term->getTerm()->setLinkDetectionEnabled( mApp->termConfig().detectLinks );
 	term->setExclusiveMode( mApp->termConfig().exclusiveMode );
 	term->setScrollViewType( mApp->termConfig().scrollBarType );
 	term->setVerticalScrollMode( mApp->termConfig().scrollBarMode );

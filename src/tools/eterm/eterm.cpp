@@ -443,6 +443,7 @@ UITerminal* App::createTerminal( UITabWidget* target, std::string workingDirecto
 
 	terminal->getTerm()->setAllowMemoryTrimming( true );
 	terminal->getTerm()->setCursorMode( terminalConfig.cursorStyle );
+	terminal->getTerm()->setLinkDetectionEnabled( config->terminal.detectLinks );
 	terminal->getTerm()->setFontHinting( terminalConfig.fontHinting );
 	terminal->getTerm()->setFontAntialiasing( terminalConfig.fontAntialiasing );
 	terminal->setExclusiveMode( config->terminal.exclusiveMode );

@@ -125,7 +125,9 @@ class UITerminal : public UITouchDraggableWidget {
 
   protected:
 	std::string mTitle;
-	std::string mContextHyperlink;
+	std::string mContextHyperlink;	 // The URI the context menu opens.
+	std::string mContextLinkAddress; // A detected link's address (URL or local path).
+	bool mContextLinkDetected{ false };
 	std::string mPressedHyperlink;
 	bool mIsCustomTitle{ false };
 	bool mForwardedLeftButton{ false };
