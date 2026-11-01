@@ -62,8 +62,21 @@ Turn off **Detect Links and Paths** to disable this in every open terminal.
 
 ## Working directories (OSC 7)
 
-New tabs and splits inherit their source terminal's reported local directory. This requires the
-shell or prompt to emit OSC 7 when its directory changes. A report looks like
+New tabs and splits inherit their source terminal's reported local directory. On Unix systems,
+eterm automatically enables directory reporting for interactive Bash, zsh and fish sessions,
+including the initial directory and subsequent `cd` commands. Bash and zsh retain the user's
+startup files and prompt hooks; modern Bash/zsh login sessions and custom `ZDOTDIR` locations
+are supported. Apple's legacy `/bin/bash` 3.2 login invocation is left unchanged; use an
+ordinary interactive session or a current Bash for automatic reporting there.
+Explicit commands/scripts and unsupported custom startup flags retain their original invocation.
+PowerShell (`pwsh` and Windows `powershell.exe`) also reports its initial directory and each
+subsequent prompt's directory. Profiles and existing prompts are retained, and `-NoProfile`,
+`-NoLogo`, `-NoExit` and PowerShell login options are supported. Explicit commands, scripts and
+other startup options retain their original invocation. Reporting covers local filesystem
+directories, excluding UNC shares and virtual providers such as `Env:`. Windows execution
+policies are respected; automatic reporting requires permission to run the bundled script.
+Set `ETERM_SHELL_INTEGRATION=0` before launching eterm to disable automatic integration.
+Other shells or prompts must emit OSC 7 when their directory changes. A report looks like
 `OSC 7 ; file://localhost/absolute/path ST`; URI-encode spaces and other special characters.
 For Windows drives, use a URI such as `file://localhost/C:/Users/name`.
 

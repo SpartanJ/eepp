@@ -20,8 +20,9 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 
+#include "shellintegration.hpp"
+
 #ifndef _WIN32
-#include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/version.hpp>
@@ -113,6 +114,7 @@ Process::Process( int pid ) : mPID( pid ) {}
 struct ProcessLaunchData {
 	std::string executable;
 	std::string workingDirectory;
+	std::vector<std::string> shellArguments; // Owns rewritten arguments until exec.
 	std::vector<char*> arguments;
 	std::vector<std::string> environmentStorage;
 	std::vector<char*> environment;
@@ -144,12 +146,6 @@ static bool prepareProcessLaunch( const std::string& program, const std::vector<
 		launch.executable = program;
 	launch.workingDirectory = workingDirectory.empty() ? pw->pw_dir : workingDirectory;
 
-	launch.arguments.reserve( args.size() + 2 );
-	launch.arguments.emplace_back( const_cast<char*>( program.c_str() ) );
-	for ( const auto& argument : args )
-		launch.arguments.emplace_back( const_cast<char*>( argument.c_str() ) );
-	launch.arguments.emplace_back( nullptr );
-
 	auto environment = Sys::getEnvironmentVariables();
 	environment.erase( "COLUMNS" );
 	environment.erase( "LINES" );
@@ -165,6 +161,14 @@ static bool prepareProcessLaunch( const std::string& program, const std::vector<
 	environment["COLORTERM"] = "24bit";
 	for ( const auto& entry : env )
 		environment[entry.first] = entry.second;
+
+	launch.shellArguments = ShellIntegration::prepare( launch.executable, args, environment );
+	const auto& arguments = launch.shellArguments.empty() ? args : launch.shellArguments;
+	launch.arguments.reserve( arguments.size() + 2 );
+	launch.arguments.emplace_back( const_cast<char*>( program.c_str() ) );
+	for ( const auto& argument : arguments )
+		launch.arguments.emplace_back( const_cast<char*>( argument.c_str() ) );
+	launch.arguments.emplace_back( nullptr );
 
 	launch.environmentStorage.reserve( environment.size() );
 	for ( const auto& entry : environment )
@@ -283,6 +287,27 @@ static std::wstring stringToWideString( const std::string& str ) {
 	std::wstring wstrTo( size_needed, 0 );
 	MultiByteToWideChar( CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed );
 	return wstrTo;
+}
+
+// Quote one argv element using Windows' backslash-before-quote rules. Unlike std::quoted,
+// backslashes are escaped only before a quote or the closing delimiter.
+static void appendQuotedArgument( std::ostream& output, const std::string& argument ) {
+	output << " \"";
+	size_t backslashes = 0;
+	for ( char character : argument ) {
+		if ( character == '\\' ) {
+			++backslashes;
+			continue;
+		}
+		const size_t count = character == '"' ? backslashes * 2 + 1 : backslashes;
+		for ( size_t i = 0; i < count; ++i )
+			output << '\\';
+		output << character;
+		backslashes = 0;
+	}
+	for ( size_t i = 0; i < backslashes * 2; ++i )
+		output << '\\';
+	output << '"';
 }
 
 #define HANDLE_WIN_ERR( err ) HRESULT_FROM_WIN32( err ), PrintWinApiError( err )
@@ -449,10 +474,16 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 
 	PROCESS_INFORMATION piClient{};
 
+	auto shellEnvironment = env;
+	const auto shellArguments = ShellIntegration::prepare( program, args, shellEnvironment );
 	std::ostringstream oss;
 	oss << std::quoted( program );
-	for ( auto& arg : args ) {
-		oss << ' ' << arg;
+	if ( shellArguments.empty() ) {
+		for ( const auto& argument : args )
+			oss << ' ' << argument;
+	} else {
+		for ( const auto& argument : shellArguments )
+			appendQuotedArgument( oss, argument );
 	}
 	std::wstring commandLine = stringToWideString( oss.str() );
 	std::wstring workingDir = stringToWideString( workingDirectory );

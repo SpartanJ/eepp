@@ -217,7 +217,8 @@ void TerminalManager::configureTerminalShell() {
 	UIPushButton* ok = window->find<UIPushButton>( "ok" );
 	UIPushButton* cancel = window->find<UIPushButton>( "cancel" );
 	const std::vector<std::string> list{
-		"bash", "sh", "zsh", "fish", "nu", "csh", "tcsh", "ksh", "dash", "cmd", "powershell",
+		"bash", "sh",  "zsh",  "fish", "nu",		 "csh",
+		"tcsh", "ksh", "dash", "cmd",  "powershell", "pwsh",
 	};
 	std::vector<String> found;
 	for ( const auto& i : list ) {

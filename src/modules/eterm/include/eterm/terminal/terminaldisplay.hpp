@@ -467,6 +467,10 @@ class TerminalDisplay {
 
 	void drawGrid( const Vector2f& pos );
 
+	Color termColor( unsigned int color ) const;
+
+	Color glyphForeground( const TerminalGlyph& glyph ) const;
+
 	/* A run of link cells on one row, [first, end). */
 	struct LinkSpan {
 		int row;

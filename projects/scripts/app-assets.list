@@ -1,4 +1,5 @@
 # Shared base fonts and UI theme. Paths are relative to the source bin directory.
+assets/shell-integration
 assets/fonts/DejaVuSansMono.ttf
 assets/fonts/DejaVuSansMono-Bold.ttf
 assets/fonts/DejaVuSansMono-Oblique.ttf

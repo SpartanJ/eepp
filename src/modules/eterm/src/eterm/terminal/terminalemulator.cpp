@@ -3363,8 +3363,8 @@ void TerminalEmulator::strhandle( void ) {
 	strparse();
 	par = ( narg = mStrescseq.narg ) ? atoi( mStrescseq.args[0] ) : 0;
 
-	static constexpr unsigned int defaultfg = 258;
-	static constexpr unsigned int defaultbg = 259;
+	static constexpr unsigned int defaultfg = GLYPH_COLOR_DEFAULT_FG;
+	static constexpr unsigned int defaultbg = GLYPH_COLOR_DEFAULT_BG;
 	static constexpr unsigned int defaultcs = 256;
 	const struct {
 		int idx;
@@ -5242,7 +5242,7 @@ void TerminalEmulator::osc_color_response( int num, int index, int is_osc4 ) {
 
 int TerminalEmulator::colorScheme() {
 	unsigned char red, green, blue;
-	if ( xgetcolor( 259, &red, &green, &blue ) )
+	if ( xgetcolor( GLYPH_COLOR_DEFAULT_BG, &red, &green, &blue ) )
 		return 0;
 	// The protocol describes the OS preference, which eterm does not store separately. The active
 	// background is the useful equivalent for applications choosing contrasting colors.
@@ -5411,8 +5411,8 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 	mExitCode( 1 ),
 	mStatus( STARTING ),
 	mBuflen( 0 ),
-	mDefaultFg( 7 ),
-	mDefaultBg( 0 ),
+	mDefaultFg( GLYPH_COLOR_DEFAULT_FG ),
+	mDefaultBg( GLYPH_COLOR_DEFAULT_BG ),
 	mDefaultCs( 7 ),
 	mDefaultRCs( 0 ),
 	mAllowAltScreen( 1 ) {

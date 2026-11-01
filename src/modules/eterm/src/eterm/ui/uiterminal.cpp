@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
@@ -835,7 +836,7 @@ void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 
 DrawablePtr UITerminal::findIcon( const std::string& name ) {
 	UIIcon* icon = getUISceneNode()->findIcon( name );
-	return icon ? icon->createDrawable( mMenuIconSize ) : DrawablePtr{};
+	return icon ? icon->createDrawable( PixelDensity::dpToPxI( mMenuIconSize ) ) : DrawablePtr{};
 }
 
 UIMenuItem* UITerminal::menuAdd( UIPopUpMenu* menu, const String& translateString,

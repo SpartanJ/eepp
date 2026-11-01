@@ -137,7 +137,7 @@ class UITerminal : public UITouchDraggableWidget {
 	KeyBindings mKeyBindings;
 	std::map<std::string, TerminalCommand> mCommands;
 	UIPopUpMenu* mCurrentMenu{ nullptr };
-	size_t mMenuIconSize{ 16 };
+	size_t mMenuIconSize{ 12 }; // dp, matching the application-added context-menu icons.
 	ScrollViewType mViewType{ ScrollViewType::Overlay };
 	ScrollBarMode mVScrollMode{ ScrollBarMode::Auto };
 	UIScrollBar* mVScroll{ nullptr };

@@ -176,6 +176,9 @@ constexpr uint32_t GLYPH_LINK_SHIFT = 16;
 constexpr uint32_t GLYPH_LINK_MAX = 0x7FFFu;
 constexpr uint32_t GLYPH_LINK_MASK = GLYPH_LINK_MAX << GLYPH_LINK_SHIFT;
 constexpr uint32_t GLYPH_ATTRIBUTE_MASK = 0xFFFFu;
+// Default colors must remain distinct from explicit ANSI palette entries 7 and 0.
+constexpr uint32_t GLYPH_COLOR_DEFAULT_FG = 258;
+constexpr uint32_t GLYPH_COLOR_DEFAULT_BG = 259;
 static_assert( sizeof( TerminalGlyph ) == 16, "Terminal glyphs must remain 16 bytes" );
 static_assert( ( GLYPH_LINK_MASK & GLYPH_ATTRIBUTE_MASK ) == 0 );
 static_assert( ( ATTR_WRAP_PADDING & ~GLYPH_ATTRIBUTE_MASK ) == 0 );

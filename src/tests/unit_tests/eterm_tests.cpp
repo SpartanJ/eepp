@@ -273,8 +273,46 @@ class SelectionTestDisplay : public TerminalDisplay {
 		consumeSnapshot();
 	}
 
+	using TerminalDisplay::glyphForeground;
 	using TerminalDisplay::positionToGrid;
+	using TerminalDisplay::termColor;
+
+	void reverseScreen() { mMode |= MODE_REVERSE; }
 };
+
+UTEST( eterm_display, default_colors_follow_the_scheme_without_changing_ansi_colors ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 320, 240, "eterm default colors", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), nullptr );
+	std::vector<Color> palette( 16, Color::White );
+	palette[0] = Color( "#21222c" );
+	display.setColorScheme(
+		{ "Dracula", Color( "#f8f8f2" ), Color( "#282a36" ), Color( "#f8f8f2" ), palette } );
+	EXPECT_TRUE( display.termColor( GLYPH_COLOR_DEFAULT_BG ) == Color( "#282a36" ) );
+	EXPECT_TRUE( display.termColor( GLYPH_COLOR_DEFAULT_FG ) == Color( "#f8f8f2" ) );
+	EXPECT_TRUE( display.termColor( 0 ) == Color( "#21222c" ) );
+	EXPECT_TRUE( display.termColor( 7 ) == Color::White );
+	// OSC 10/11 and their resets change default-colored cells, independently of the palette.
+	ASSERT_EQ( 0, display.resetColor( GLYPH_COLOR_DEFAULT_BG, "#123456" ) );
+	ASSERT_EQ( 0, display.resetColor( GLYPH_COLOR_DEFAULT_FG, "#abcdef" ) );
+	EXPECT_TRUE( display.termColor( GLYPH_COLOR_DEFAULT_BG ) == Color( "#123456" ) );
+	EXPECT_TRUE( display.termColor( GLYPH_COLOR_DEFAULT_FG ) == Color( "#abcdef" ) );
+	EXPECT_TRUE( display.termColor( 0 ) == Color( "#21222c" ) );
+	EXPECT_TRUE( display.termColor( 7 ) == Color::White );
+	ASSERT_EQ( 0, display.resetColor( GLYPH_COLOR_DEFAULT_BG, nullptr ) );
+	EXPECT_TRUE( display.termColor( GLYPH_COLOR_DEFAULT_BG ) == Color( "#282a36" ) );
+	ASSERT_EQ( 0, display.resetColor( GLYPH_COLOR_DEFAULT_FG, nullptr ) );
+	ASSERT_EQ( 0, display.resetColor( 7, "#f8f8f2" ) );
+	display.reverseScreen();
+	TerminalGlyph glyph;
+	glyph.fg = GLYPH_COLOR_DEFAULT_FG;
+	glyph.bg = GLYPH_COLOR_DEFAULT_BG;
+	EXPECT_TRUE( display.glyphForeground( glyph ) == Color( "#282a36" ) );
+	glyph.fg = 7; // Same RGB as the scheme foreground, but explicitly selected.
+	EXPECT_TRUE( display.glyphForeground( glyph ) == Color( "#f8f8f2" ).invert() );
+}
 
 UTEST( eterm_ui, applicationWheelDoesNotScrollHistoryOrAncestor ) {
 	EE::UI::UIApplication app(
@@ -888,6 +926,24 @@ class MockDisplay : public ITerminalDisplay {
 		return true;
 	}
 };
+
+UTEST( eterm, default_colors_are_distinct_from_ansi_black_and_white ) {
+	auto pty = std::make_unique<MockPty>();
+	pty->mLoopWrites = false;
+	pty->mBuffer = "a\033[30;40mb\033[39;49mc\033[31;41md\033[0me";
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display );
+	term->update();
+	for ( size_t column : { 0u, 2u, 4u } ) {
+		EXPECT_EQ( GLYPH_COLOR_DEFAULT_FG, display->mCells[column].fg );
+		EXPECT_EQ( GLYPH_COLOR_DEFAULT_BG, display->mCells[column].bg );
+	}
+	EXPECT_EQ( 0u, display->mCells[1].fg );
+	EXPECT_EQ( 0u, display->mCells[1].bg );
+	EXPECT_EQ( 1u, display->mCells[3].fg );
+	EXPECT_EQ( 1u, display->mCells[3].bg );
+}
 
 UTEST( eterm, kitty_graphics_parser_preserves_payload_and_types_action ) {
 	auto result = KittyGraphicsProtocol::parse(

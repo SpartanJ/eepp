@@ -550,10 +550,10 @@ int TerminalDisplay::resetColor( const Uint32& index, const char* name ) {
 		} else if ( index == 256 || index == 257 ) {
 			mColorScheme.setCursor( mInitialColorScheme.getCursor() );
 			return 0;
-		} else if ( index == 258 ) {
+		} else if ( index == GLYPH_COLOR_DEFAULT_FG ) {
 			mColorScheme.setForeground( mInitialColorScheme.getForeground() );
 			return 0;
-		} else if ( index == 259 ) {
+		} else if ( index == GLYPH_COLOR_DEFAULT_BG ) {
 			mColorScheme.setBackground( mInitialColorScheme.getBackground() );
 			return 0;
 		}
@@ -596,10 +596,10 @@ int TerminalDisplay::resetColor( const Uint32& index, const char* name ) {
 		} else if ( index == 256 || index == 257 ) {
 			mColorScheme.setCursor( col );
 			return 0;
-		} else if ( index == 258 ) {
+		} else if ( index == GLYPH_COLOR_DEFAULT_FG ) {
 			mColorScheme.setForeground( col );
 			return 0;
-		} else if ( index == 259 ) {
+		} else if ( index == GLYPH_COLOR_DEFAULT_BG ) {
 			mColorScheme.setBackground( col );
 			return 0;
 		}
@@ -620,12 +620,12 @@ bool TerminalDisplay::getColor( const Uint32& index, unsigned char* r, unsigned 
 		*g = mColorScheme.getCursor().g;
 		*b = mColorScheme.getCursor().b;
 		return true;
-	} else if ( index == 258 ) {
+	} else if ( index == GLYPH_COLOR_DEFAULT_FG ) {
 		*r = mColorScheme.getForeground().r;
 		*g = mColorScheme.getForeground().g;
 		*b = mColorScheme.getForeground().b;
 		return true;
-	} else if ( index == 259 ) {
+	} else if ( index == GLYPH_COLOR_DEFAULT_BG ) {
 		*r = mColorScheme.getBackground().r;
 		*g = mColorScheme.getBackground().g;
 		*b = mColorScheme.getBackground().b;
@@ -1331,9 +1331,13 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 	}
 }
 
-static inline Color termColor( unsigned int terminalColor, const std::vector<Color>& colors ) {
+Color TerminalDisplay::termColor( unsigned int terminalColor ) const {
+	if ( terminalColor == GLYPH_COLOR_DEFAULT_FG )
+		return mColorScheme.getForeground();
+	if ( terminalColor == GLYPH_COLOR_DEFAULT_BG )
+		return mColorScheme.getBackground();
 	if ( ( terminalColor & ( 1 << 24 ) ) == 0 ) {
-		return colors[terminalColor & 0xFF];
+		return mColors[terminalColor & 0xFF];
 	}
 	return Color( ( terminalColor >> 16 ) & 0xFF, ( terminalColor >> 8 ) & 0xFF,
 				  terminalColor & 0xFF, ( ~( ( terminalColor >> 25 ) & 0xFF ) ) & 0xFF );
@@ -1342,10 +1346,10 @@ static inline Color termColor( unsigned int terminalColor, const std::vector<Col
 static inline void applySearchHighlight( Int32 mode, const std::vector<Color>& colors, Color& fg,
 										 Color& bg ) {
 	if ( mode & ATTR_SEARCH_ACTIVE ) {
-		fg = termColor( 0, colors );
-		bg = termColor( 3, colors );
+		fg = colors[0];
+		bg = colors[3];
 	} else if ( mode & ATTR_SEARCH_MATCH ) {
-		Color highlight = termColor( 3, colors );
+		Color highlight = colors[3];
 		highlight.a = 90;
 		bg = Color::blend( highlight, bg );
 	}
@@ -1353,21 +1357,22 @@ static inline void applySearchHighlight( Int32 mode, const std::vector<Color>& c
 
 // The displayed text color of a cell, following drawGrid()'s attribute order. Used for
 // decorations that must match the glyph they sit under.
-static Color glyphForeground( const TerminalGlyph& glyph, const std::vector<Color>& colors,
-							  bool screenReverse, const Color& defaultFg, const Color& defaultBg ) {
-	auto fg = termColor( glyph.fg, colors );
-	auto bg = termColor( glyph.bg, colors );
+Color TerminalDisplay::glyphForeground( const TerminalGlyph& glyph ) const {
+	const auto defaultFg = mColorScheme.getForeground();
+	const auto defaultBg = mColorScheme.getBackground();
+	auto fg = termColor( glyph.fg );
+	auto bg = termColor( glyph.bg );
 	if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_BOLD && glyph.fg <= 7 )
-		fg = termColor( glyph.fg + 8, colors );
-	if ( screenReverse ) {
-		fg = fg == defaultFg ? defaultBg : fg.invert();
-		bg = bg == defaultBg ? defaultFg : bg.invert();
+		fg = termColor( glyph.fg + 8 );
+	if ( IS_SET( MODE_REVERSE ) ) {
+		fg = glyph.fg == GLYPH_COLOR_DEFAULT_FG ? defaultBg : fg.invert();
+		bg = glyph.bg == GLYPH_COLOR_DEFAULT_BG ? defaultFg : bg.invert();
 	}
 	if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_FAINT )
 		fg = fg.div( 2 );
 	if ( glyph.mode & ATTR_REVERSE )
 		fg = bg;
-	applySearchHighlight( glyph.mode, colors, fg, bg );
+	applySearchHighlight( glyph.mode, mColors, fg, bg );
 	return fg;
 }
 
@@ -1577,12 +1582,12 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		for ( Uint32 i = 0; i < mColumns; i++ ) {
 			mCurGridPos = { i, j };
 			const auto& glyph = mSnapshot->cells[j * mColumns + i];
-			auto fg = termColor( glyph.fg, mColors );
-			auto bg = termColor( glyph.bg, mColors );
+			auto fg = termColor( glyph.fg );
+			auto bg = termColor( glyph.bg );
 
 			if ( IS_SET( MODE_REVERSE ) ) {
-				fg = fg == defaultFg ? defaultBg : fg.invert();
-				bg = bg == defaultBg ? defaultFg : bg.invert();
+				fg = glyph.fg == GLYPH_COLOR_DEFAULT_FG ? defaultBg : fg.invert();
+				bg = glyph.bg == GLYPH_COLOR_DEFAULT_BG ? defaultFg : bg.invert();
 			}
 
 			if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_FAINT )
@@ -1637,11 +1642,13 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				const auto& glyph = mSnapshot->cells[row * mColumns + column];
 				if ( glyph.mode & ATTR_WDUMMY )
 					continue;
-				auto foreground = termColor( glyph.fg, mColors );
-				auto background = termColor( glyph.bg, mColors );
+				auto foreground = termColor( glyph.fg );
+				auto background = termColor( glyph.bg );
 				if ( IS_SET( MODE_REVERSE ) ) {
-					foreground = foreground == defaultFg ? defaultBg : foreground.invert();
-					background = background == defaultBg ? defaultFg : background.invert();
+					foreground =
+						glyph.fg == GLYPH_COLOR_DEFAULT_FG ? defaultBg : foreground.invert();
+					background =
+						glyph.bg == GLYPH_COLOR_DEFAULT_BG ? defaultFg : background.invert();
 				}
 				if ( glyph.mode & ATTR_REVERSE )
 					background = foreground;
@@ -1687,16 +1694,16 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		for ( Uint32 i = 0; i < mColumns; i++ ) {
 			mCurGridPos = { i, j };
 			const auto& glyph = mSnapshot->cells[j * mColumns + i];
-			auto fg = termColor( glyph.fg, mColors );
-			auto bg = termColor( glyph.bg, mColors );
+			auto fg = termColor( glyph.fg );
+			auto bg = termColor( glyph.bg );
 			Color temp{ Color::Transparent };
 
 			if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_BOLD && BETWEEN( glyph.fg, 0, 7 ) )
-				fg = termColor( glyph.fg + 8, mColors );
+				fg = termColor( glyph.fg + 8 );
 
 			if ( IS_SET( MODE_REVERSE ) ) {
-				fg = fg == defaultFg ? defaultBg : fg.invert();
-				bg = bg == defaultBg ? defaultFg : bg.invert();
+				fg = glyph.fg == GLYPH_COLOR_DEFAULT_FG ? defaultBg : fg.invert();
+				bg = glyph.bg == GLYPH_COLOR_DEFAULT_BG ? defaultFg : bg.invert();
 			}
 
 			if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_FAINT )
@@ -1834,7 +1841,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				case StExtension: {
 					auto* gd = mFont->getGlyphDrawable(
 						mCursorMode == StExtension ? 0xFB04 /* TUX */ : mCursorGlyph.u, mFontSize );
-					gd->setColor( termColor( mCursorGlyph.fg, mColors ) );
+					gd->setColor( termColor( mCursorGlyph.fg ) );
 					gd->setDrawMode( GlyphDrawable::DrawMode::Text );
 					gd->draw(
 						{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight } );
@@ -2050,9 +2057,9 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 		FontStyleConfig config;
 		config.Font = mFont;
 		config.CharacterSize = mFontSize;
-		config.FontColor = termColor( mCursorGlyph.bg, mColors );
+		config.FontColor = termColor( mCursorGlyph.bg );
 		mWindow->getIME().draw( r.getPosition(), r.getHeight(), config, config.FontColor,
-								termColor( mCursorGlyph.fg, mColors ), true );
+								termColor( mCursorGlyph.fg ), true );
 	}
 
 	mDrawing = false;
@@ -2340,9 +2347,7 @@ void TerminalDisplay::drawHyperlinkHover() {
 	Primitives primitives;
 	for ( const auto& span : hover.spans ) {
 		const auto& glyph = mSnapshot->cells[span.row * mSnapshot->columns + span.first];
-		primitives.setColor( glyphForeground( glyph, mColors, IS_SET( MODE_REVERSE ),
-											  mColorScheme.getForeground(),
-											  mColorScheme.getBackground() ) );
+		primitives.setColor( glyphForeground( glyph ) );
 		// Thicken the normal bottom underline without adding a separate line through descenders.
 		const Float bottom = grid.y + ( span.row + 1 ) * cellHeight;
 		primitives.drawRectangle(

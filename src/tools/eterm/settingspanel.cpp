@@ -332,8 +332,9 @@ UIWindow* SettingsPanel::create( App& app ) {
 						app.warnBeforeClose = value;
 						app.savePreferences();
 					} );
-	const std::vector<std::string> knownShells{ "bash", "sh",  "zsh",  "fish", "nu",		"csh",
-												"tcsh", "ksh", "dash", "cmd",  "powershell" };
+	const std::vector<std::string> knownShells{ "bash", "sh",  "zsh",		 "fish",
+												"nu",	"csh", "tcsh",		 "ksh",
+												"dash", "cmd", "powershell", "pwsh" };
 	std::vector<String> installedShells;
 	for ( const auto& shell : knownShells ) {
 		auto path = Sys::which( shell );

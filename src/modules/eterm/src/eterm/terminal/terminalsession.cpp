@@ -212,10 +212,10 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 			} else if ( index == 256 || index == 257 ) {
 				color = mInitialPalette.cursor;
 				parsed = true;
-			} else if ( index == 258 ) {
+			} else if ( index == GLYPH_COLOR_DEFAULT_FG ) {
 				color = mInitialPalette.foreground;
 				parsed = true;
-			} else if ( index == 259 ) {
+			} else if ( index == GLYPH_COLOR_DEFAULT_BG ) {
 				color = mInitialPalette.background;
 				parsed = true;
 			}
@@ -239,9 +239,9 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 			color = mPalette.colors[index];
 		else if ( index == 256 || index == 257 )
 			color = mPalette.cursor;
-		else if ( index == 258 )
+		else if ( index == GLYPH_COLOR_DEFAULT_FG )
 			color = mPalette.foreground;
-		else if ( index == 259 )
+		else if ( index == GLYPH_COLOR_DEFAULT_BG )
 			color = mPalette.background;
 		else
 			return false;
@@ -295,9 +295,9 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 			mPalette.colors[index] = color;
 		else if ( index == 256 || index == 257 )
 			mPalette.cursor = color;
-		else if ( index == 258 )
+		else if ( index == GLYPH_COLOR_DEFAULT_FG )
 			mPalette.foreground = color;
-		else if ( index == 259 )
+		else if ( index == GLYPH_COLOR_DEFAULT_BG )
 			mPalette.background = color;
 	}
 
