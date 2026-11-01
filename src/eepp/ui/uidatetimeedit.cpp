@@ -1317,6 +1317,10 @@ Uint32 UIDateTimeEdit::onTextInput( const TextInputEvent& event ) {
 
 Uint32 UIDateTimeEdit::onMouseClick( const Vector2i& position, const Uint32& flags ) {
 	const Uint32 result = UITextInput::onMouseClick( position, flags );
+	if ( mWheelEditing && hasFocus() && isMouseOver() && ( flags & EE_BUTTONS_WUWD ) ) {
+		stepActiveSection( flags & EE_BUTTON_WUMASK ? 1 : -1 );
+		return 1;
+	}
 	if ( hasValue() && ( flags & EE_BUTTON_LMASK ) &&
 		 !( getInput()->getModState() & KEYMOD_SHIFT ) ) {
 		// Focus and mouse-down handling can replace the document selection before this event.
@@ -1334,10 +1338,10 @@ Uint32 UIDateTimeEdit::onMouseClick( const Vector2i& position, const Uint32& fla
 }
 
 Uint32 UIDateTimeEdit::onMouseWheel( const Vector2f& offset, bool flipped ) {
-	if ( !mWheelEditing || !hasFocus() || offset.y == 0.f )
+	if ( !mWheelEditing || !hasFocus() || !isEditingAllowed() || offset.y == 0.f )
 		return UITextInput::onMouseWheel( offset, flipped );
-	const Float value = flipped ? -offset.y : offset.y;
-	return stepActiveSection( value > 0 ? 1 : -1 ) ? 1 : 0;
+	// Whole-tick MouseClick events edit the value; consume fractional movement without stepping.
+	return 1;
 }
 
 void UIDateTimeEdit::onTextChanged() {

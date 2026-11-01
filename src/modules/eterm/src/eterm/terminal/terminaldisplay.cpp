@@ -1274,6 +1274,14 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 	}
 }
 
+void TerminalDisplay::onMouseWheel( const Vector2f& offset ) {
+	if ( mSession ) {
+		const auto position = mWindow->getInput()->getRelativeMousePos();
+		mSession->mouseWheel( offset, positionToGrid( position ), positionToPixel( position ),
+							  mWindow->getInput()->getModState() );
+	}
+}
+
 void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 	const Uint32 modifiers = mWindow->getInput()->getModState();
 	const bool shiftPressed = ( modifiers & KEYMOD_SHIFT ) != 0;

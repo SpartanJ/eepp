@@ -167,32 +167,60 @@ class AppPackaging(PackagingFixture):
     def test_anylinux_is_additional_and_keeps_conventional_runtime(self):
         self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')
         self.env["QUICK_SHARUN"] = str(self.commands / "quick-sharun")
+        companion = Path(self.runtime.name) / "libdecor-0.so.0"
+        companion.write_text("SDL companion")
+        self.command("ldconfig", f'echo "libdecor-0.so.0 (libc6,x86-64) => {companion}"')
         self.command("quick-sharun", '''
 [ "$APPIMAGE_ARCH" = x86_64 ]
 [ "$DEPLOY_OPENGL" = 1 ] && [ "$ANYLINUX_LIB" = 1 ]
+[ "$DEPLOY_SDL" = 0 ] && [ "$DEPLOY_PULSE" = 1 ] && [ "$DEPLOY_COMMON_LIBS" = 1 ]
 if [ "$1" = --make-appimage ]; then
     [ -f "$APPDIR/bin/assets/ui/theme.css" ]
     [ -f "$APPDIR/shared/bin/assets/ui/theme.css" ]
     [ "$(cat "$APPDIR/shared/bin/sample.bin")" = patched ]
     [ -f "$APPDIR/.DirIcon" ]
-    touch "$OUTPATH/$OUTNAME"
+    cat "$APPDIR/selected-sdl" > "$OUTPATH/$OUTNAME"
 else
     [ "$MAIN_BIN" = sample.bin ]
     [ -f "$DESKTOP" ] && [ -f "$ICON" ]
     [ -f "$2" ] && [ -f "$3" ]
+    selected_sdl=
+    for input do
+        [ "${input##*/}" != "$EEPP_TEST_SDL_NAME" ] || selected_sdl=$input
+    done
+    [ -n "$selected_sdl" ]
+    [ "$(cat "$selected_sdl")" = "$EEPP_TEST_SDL_RUNTIME" ]
+    [ "$(cat "$4")" = 'SDL companion' ]
     mkdir -p "$APPDIR/bin" "$APPDIR/shared/bin"
+    cp "$selected_sdl" "$APPDIR/selected-sdl"
     cp "$ICON" "$APPDIR/.DirIcon"
     echo patched > "$APPDIR/shared/bin/sample.bin"
 fi
 ''')
-        self.package("linux", "--backend", "SDL3", "--anylinux")
-        for name in ("sample-linux-1.2.3-x86_64.AppImage", "sample-anylinux-1.2.3-x86_64.AppImage"):
-            self.assertTrue((self.output / name).is_file())
-        with tarfile.open(self.output / "sample-linux-1.2.3-x86_64.tar.gz") as package:
-            self.assertEqual(package.extractfile("sample/sample.bin").read(),
-                             (self.source / "sample").read_bytes())
-            self.assertEqual(package.extractfile("sample/libs/libeepp.so").read(), b"eepp runtime")
-        self.assertFalse((self.output / "sample.app/shared").exists())
+        # Reuse the output directory to cover backend changes and SDL upgrades;
+        # neither the host's SDL nor an earlier build's runtime may replace it.
+        for backend, library, payload in (
+            ("SDL2", "libSDL2-2.0.so.0", "SDL2 selected runtime"),
+            ("SDL3", "libSDL3.so.0", "SDL3 selected runtime"),
+            ("SDL3", "libSDL3.so.0", "SDL3 updated runtime"),
+        ):
+            with self.subTest(backend=backend, runtime=payload):
+                runtime = Path(self.runtime.name) / library
+                runtime.write_text(payload)
+                self.command("ldd", f'echo "{library} => {runtime} (0x1)"')
+                self.env["EEPP_TEST_SDL_NAME"] = library
+                self.env["EEPP_TEST_SDL_RUNTIME"] = payload
+                self.package("linux", "--backend", backend, "--anylinux")
+                self.assertTrue((self.output / "sample-linux-1.2.3-x86_64.AppImage").is_file())
+                self.assertEqual((self.output / "sample-anylinux-1.2.3-x86_64.AppImage").read_text(), payload)
+                with tarfile.open(self.output / "sample-linux-1.2.3-x86_64.tar.gz") as package:
+                    self.assertEqual(package.extractfile("sample/sample.bin").read(),
+                                     (self.source / "sample").read_bytes())
+                    self.assertEqual(package.extractfile("sample/libs/libeepp.so").read(), b"eepp runtime")
+                    self.assertEqual(package.extractfile(f"sample/libs/{library}").read(), payload.encode())
+                    other = "libSDL3.so.0" if backend == "SDL2" else "libSDL2-2.0.so.0"
+                    self.assertNotIn(f"sample/libs/{other}", package.getnames())
+                self.assertFalse((self.output / "sample.app/shared").exists())
 
     def test_anylinux_requires_supported_native_linux(self):
         self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')

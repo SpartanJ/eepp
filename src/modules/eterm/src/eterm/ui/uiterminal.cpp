@@ -640,6 +640,10 @@ void UITerminal::updateHyperlinkHover( const Vector2i& position ) {
 }
 
 Uint32 UITerminal::onMouseDown( const Vector2i& position, const Uint32& flags ) {
+	// The precise wheel path retains magnitude and fractions; legacy button bits do neither.
+	if ( flags && !( flags & ~( EE_BUTTONS_WUWD | EE_BUTTONS_WLWR ) ) )
+		return 1;
+
 	if ( getUISceneNode()->getUIEventDispatcher()->isNodeDragging() )
 		return 0;
 
@@ -696,16 +700,20 @@ Uint32 UITerminal::onMouseWheel( const Vector2f& offset, bool ) {
 	if ( !mTerm )
 		return 0;
 	const Uint32 modifiers = getInput()->getSanitizedModState();
-	if ( modifiers != 0 && modifiers != KEYMOD_SHIFT )
-		return 1;
 	if ( offset == Vector2f::Zero )
 		return 0;
-	// Discrete button events have already been sent to the terminal application. Do not also
-	// scroll local history or an ancestor when the application owns the wheel. Shift overrides
-	// mouse capture for local selection and scrolling on the main screen.
-	if ( mTerm->isAltScr() || ( mTerm->isAppCapturingMouse() && modifiers != KEYMOD_SHIFT ) ) {
+	// Shift overrides application mouse capture for local selection and main-screen scrolling.
+	const bool selectionOverride =
+		mTerm->isAppCapturingMouse() && ( modifiers & KEYMOD_SHIFT ) != 0;
+	if ( mTerm->isAltScr() || ( mTerm->isAppCapturingMouse() && !selectionOverride ) ) {
+		if ( getUISceneNode()->getUIEventDispatcher()->isNodeDragging() )
+			return 1;
+		if ( !selectionOverride )
+			mTerm->onMouseWheel( offset );
 		return 1;
 	}
+	if ( modifiers != 0 && modifiers != KEYMOD_SHIFT )
+		return 1;
 	if ( offset.y == 0.f )
 		return 0;
 

@@ -55,8 +55,12 @@ on the target distributions and GPUs; bundling userspace libraries does not remo
 or driver requirements. See the [upstream guide](https://pkgforge-dev.github.io/Anylinux-AppImages/HOW-TO-MAKE-THESE.html).
 
 Deployment uses a temporary AppDir and leaves the conventional package's binaries and
-launcher untouched. Assets remain accessible next to both sharun executable locations,
-including when the image is extracted. AnyLinux images contain stripped binaries; the
+launcher untouched. It preserves the SDL runtime supplied by the conventional build rather
+than substituting the packaging host's SDL version. This applies to both SDL2 and SDL3;
+changing the conventional build's backend or SDL version needs no separate AnyLinux setting.
+SDL's audio, device and window-decoration
+dependencies are collected separately. Assets remain accessible next to both sharun executable
+locations, including when the image is extracted. AnyLinux images contain stripped binaries; the
 existing `--with-debug-symbols` archive remains the source of debug symbols.
 
 Dependency collection runs the application under Xvfb, so cross-packaging is rejected.

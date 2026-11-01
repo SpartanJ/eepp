@@ -15,6 +15,7 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -369,6 +370,56 @@ UTEST( eterm_ui, applicationWheelDoesNotScrollHistoryOrAncestor ) {
 		EXPECT_NEAR( 0.f, scroll->getVerticalScrollBar()->getValue(), 0.0001f );
 		eeDelete( scroll );
 	}
+}
+
+UTEST( eterm_ui, precise_wheel_burst_preserves_distance_without_duplicate_buttons ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm precise wheel", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto pty = std::make_unique<MockPty>();
+	auto* source = pty.get();
+	pty->mLoopWrites = false;
+	pty->mBuffer = "\033[?1049h\033[?1000h\033[?1006h";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& s ) {
+					 return s.altScreen && ( s.windowMode & MODE_MOUSEBTN );
+				 } ) != nullptr );
+	auto display = std::make_shared<SelectionTestDisplay>(
+		app.getWindow(), app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	auto* terminal = eterm::UI::UITerminal::New( display );
+	terminal->setParent( app.getUI()->getRoot() );
+	terminal->setPixelsSize( 400, 200 );
+	app.getUI()->flushDirtyStyleAndLayout();
+	auto* input = app.getWindow()->getInput();
+	for ( Float delta : { .25f, .25f, .25f, .25f, 3.f } ) {
+		InputEvent wheel( InputEvent::MouseWheel );
+		wheel.WinID = app.getWindow()->getWindowID();
+		wheel.wheel = { 0, 0, delta, InputEvent::WheelEvent::Normal };
+		ASSERT_TRUE( input->pushEvent( wheel ) );
+	}
+	input->setMousePos( terminal->convertToWorldSpace( { 40.f, 40.f } ).asInt() );
+	app.getUI()->update( Milliseconds( 16 ) );
+	const auto barrier = session->scrollTo( 0 );
+	ASSERT_TRUE( waitForSnapshot( session, [barrier]( const TerminalSnapshot& s ) {
+					 return s.lastAppliedScrollCommand >= barrier;
+				 } ) != nullptr );
+	EXPECT_EQ( static_cast<size_t>( 4 ),
+			   std::count( source->mWrites.begin(), source->mWrites.end(), 'M' ) );
+	EXPECT_EQ( static_cast<size_t>( 4 ),
+			   std::count( source->mWrites.begin(), source->mWrites.end(), '<' ) );
+	auto* dispatcher = app.getUI()->getUIEventDispatcher();
+	dispatcher->setNodeDragging( terminal );
+	dispatcher->sendMouseWheel( { 0.f, 1.f }, false );
+	dispatcher->setNodeDragging( nullptr );
+	const auto dragBarrier = session->scrollTo( 0 );
+	ASSERT_TRUE( waitForSnapshot( session, [dragBarrier]( const TerminalSnapshot& s ) {
+					 return s.lastAppliedScrollCommand >= dragBarrier;
+				 } ) != nullptr );
+	EXPECT_EQ( static_cast<size_t>( 4 ),
+			   std::count( source->mWrites.begin(), source->mWrites.end(), 'M' ) );
+
+	eeDelete( terminal );
 }
 
 UTEST( eterm_display, selection_clamps_each_axis_independently ) {
@@ -926,6 +977,103 @@ class MockDisplay : public ITerminalDisplay {
 		return true;
 	}
 };
+
+UTEST( eterm, wheel_accumulates_fractions_reversals_and_both_axes ) {
+	auto pty = std::make_unique<MockPty>();
+	auto* source = pty.get();
+	pty->mLoopWrites = false;
+	pty->mBuffer = "\033[?1049h\033[?1000h\033[?1006h";
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 100 );
+	term->update();
+	term->mouseWheel( { .25f, .25f }, { 2, 3 }, { 20, 30 }, 0 );
+	term->mouseWheel( { .25f, .25f }, { 2, 3 }, { 20, 30 }, 0 );
+	EXPECT_TRUE( source->mWrites.empty() );
+	term->mouseWheel( { .5f, .5f }, { 2, 3 }, { 20, 30 }, 0 );
+	EXPECT_STDSTREQ( "\033[<64;3;4M\033[<67;3;4M", source->mWrites );
+	source->mWrites.clear();
+	term->mouseWheel( { 0, .75f }, {}, {}, 0 );
+	term->mouseWheel( { 0, -.5f }, {}, {}, 0 );
+	term->mouseWheel( { 0, -.75f }, {}, {}, 0 );
+	EXPECT_TRUE( source->mWrites.empty() );
+	term->mouseWheel( { 0, -.5f }, {}, {}, 0 );
+	EXPECT_STDSTREQ( "\033[<65;1;1M", source->mWrites );
+	source->mWrites.clear();
+	term->mouseWheel( { -2.5f, 3.25f }, {}, {}, 0 );
+	EXPECT_STDSTREQ( "\033[<64;1;1M\033[<64;1;1M\033[<64;1;1M\033[<66;1;1M\033[<66;1;1M",
+					 source->mWrites );
+	source->mWrites.clear();
+	term->mouseWheel( { -.5f, .75f }, {}, {}, 0 );
+	EXPECT_STDSTREQ( "\033[<64;1;1M\033[<66;1;1M", source->mWrites );
+	source->mWrites.clear();
+	term->mouseWheel( { 0, 1 }, {}, {}, KEYMOD_LCTRL );
+	EXPECT_STDSTREQ( "\033[<80;1;1M", source->mWrites );
+}
+
+UTEST( eterm, wheel_fraction_resets_on_focus_and_mode_changes_and_alternate_scroll_uses_arrows ) {
+	auto pty = std::make_unique<MockPty>();
+	auto* source = pty.get();
+	pty->mLoopWrites = false;
+	pty->mBuffer = "\033[?1049h";
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 100 );
+	term->update();
+	term->mouseWheel( { 0, .75f }, {}, {}, 0 );
+	term->reportFocus( false );
+	term->mouseWheel( { 0, .25f }, {}, {}, 0 );
+	EXPECT_TRUE( source->mWrites.empty() );
+	term->mouseWheel( { 0, .75f }, {}, {}, 0 );
+	EXPECT_STDSTREQ( "\033[A", source->mWrites );
+	source->mWrites.clear();
+	term->mouseWheel( { 0, .75f }, {}, {}, 0 );
+	source->mBuffer += "\033[?1000h\033[?1006h";
+	term->update();
+	term->mouseWheel( { 0, .25f }, {}, {}, 0 );
+	EXPECT_TRUE( source->mWrites.empty() );
+	term->mouseWheel( { 0, .75f }, {}, {}, 0 );
+	EXPECT_STDSTREQ( "\033[<64;1;1M", source->mWrites );
+	source->mWrites.clear();
+	term->mouseWheel( { 0, .75f }, {}, {}, 0 );
+	source->mBuffer += "\033[?1049l\033[?1049h";
+	term->update();
+	term->mouseWheel( { 0, .25f }, {}, {}, 0 );
+	EXPECT_TRUE( source->mWrites.empty() );
+	term->mouseWheel( { 0, .75f }, {}, {}, 0 );
+	EXPECT_STDSTREQ( "\033[<64;1;1M", source->mWrites );
+}
+
+UTEST( eterm, wheel_bounds_reports_and_keeps_only_fractional_remainder ) {
+	auto pty = std::make_unique<MockPty>();
+	auto* source = pty.get();
+	pty->mLoopWrites = false;
+	pty->mBuffer = "\033[?1000h\033[?1006h";
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 100 );
+	term->update();
+	term->mouseWheel( { 1000000.5f, -1000000.25f }, {}, {}, 0 );
+	EXPECT_EQ( static_cast<size_t>( 256 ),
+			   std::count( source->mWrites.begin(), source->mWrites.end(), 'M' ) );
+	source->mWrites.clear();
+	term->mouseWheel( { .5f, -.75f }, {}, {}, 0 );
+	EXPECT_STDSTREQ( "\033[<65;1;1M\033[<67;1;1M", source->mWrites );
+
+	source->mWrites.clear();
+	// Reasserting either the tracking mode or encoding must preserve the pending fraction.
+	for ( const char* mode : { "\033[?9h", "\033[?1000h", "\033[?1002h", "\033[?1003h" } ) {
+		source->mBuffer += mode;
+		term->update();
+		term->mouseWheel( { 0, .75f }, {}, {}, 0 );
+		source->mBuffer += mode;
+		source->mBuffer += "\033[?1006h";
+		term->update();
+		term->mouseWheel( { 0, .25f }, {}, {}, 0 );
+		EXPECT_STDSTREQ( "\033[<64;1;1M", source->mWrites );
+		source->mWrites.clear();
+	}
+}
 
 UTEST( eterm, default_colors_are_distinct_from_ansi_black_and_white ) {
 	auto pty = std::make_unique<MockPty>();

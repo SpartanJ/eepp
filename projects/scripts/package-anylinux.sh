@@ -40,10 +40,20 @@ export TMPDIR="$WORK" APPIMAGETOOL="$WORK/appimagetool"
 # dependencies under Xvfb. Library search overrides are confined to deployment;
 # the generated launcher uses sharun and does not export LD_LIBRARY_PATH.
 export DEPLOY_OPENGL=1 ANYLINUX_LIB=1
+# quick-sharun's SDL deployment adds every system libSDL*.so, even when the
+# caller supplies its own SDL. Those copies land earlier in sharun's search path
+# and can silently downgrade the runtime. Supply SDL ourselves and retain the
+# companion libraries that quick-sharun normally adds for SDL's dlopen calls.
+export DEPLOY_SDL=0 DEPLOY_PULSE=1 DEPLOY_COMMON_LIBS=1
+DEPLOY_INPUTS=("$STAGING/$APP.bin" "$STAGING/libs/"*.so*)
+for library in libudev.so.1 libusb-1.0.so.0 libdecor-0.so.0; do
+	resolved=$(ldconfig -p 2>/dev/null | awk -v name="$library" '$1 == name && !found {print $NF; found=1}' || true)
+	[ ! -f "$resolved" ] || DEPLOY_INPUTS+=("$resolved")
+done
 mkdir -p "$APPDIR" "$OUTPATH"
 cp -R "$STAGING/assets" "$APPDIR/assets"
 LD_LIBRARY_PATH="$STAGING/libs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
-	sh "$QUICK_SHARUN" "$STAGING/$APP.bin" "$STAGING/libs/"*.so*
+	sh "$QUICK_SHARUN" "${DEPLOY_INPUTS[@]}"
 
 # Resource lookup also works when extracted or when uruntime's mount name differs
 # from the traditional .mount_* convention. Both executable layouts see assets.

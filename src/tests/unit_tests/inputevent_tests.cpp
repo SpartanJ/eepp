@@ -8,6 +8,10 @@
 #include "../../eepp/window/backend/SDL2/base.hpp"
 #endif
 
+#if defined( EE_SDL_VERSION_3 )
+#include "../../eepp/window/backend/SDL3/base.hpp"
+#endif
+
 using namespace EE;
 using namespace EE::UI;
 using namespace EE::Window;
@@ -144,3 +148,89 @@ UTEST( InputEvent, clipboardChangedReachesCallbacksWithoutWindowID ) {
 	EXPECT_TRUE( input->pushEvent( event ) );
 	EXPECT_EQ( received, 3u );
 }
+
+UTEST( InputEvent, fractionalWheelRetainsBothAxesAndTargetWindow ) {
+	WindowSettings settings{ 320, 240, "Precise Wheel Test" };
+	settings.Style |= WindowStyle::Hidden;
+	UIApplication app( settings );
+	auto* input = app.getWindow()->getInput();
+	int received = 0;
+	const auto callback = input->pushCallback( [&]( InputEvent* event ) {
+		if ( event->Type != InputEvent::MouseWheel )
+			return;
+		++received;
+		EXPECT_EQ( app.getWindow()->getWindowID(), event->WinID );
+		EXPECT_NEAR( .125f, event->wheel.x, .00001f );
+		EXPECT_NEAR( -.25f, event->wheel.y, .00001f );
+	} );
+	InputEvent wheel( InputEvent::MouseWheel );
+	wheel.WinID = app.getWindow()->getWindowID();
+	wheel.wheel = { 0, .125f, -.25f, InputEvent::WheelEvent::Normal };
+	EXPECT_TRUE( input->pushEvent( wheel ) );
+	EXPECT_EQ( 1, received );
+	wheel.wheel.x = wheel.wheel.y = 0.f;
+	EXPECT_TRUE( input->pushEvent( wheel ) );
+	EXPECT_EQ( 1, received );
+	input->popCallback( callback );
+}
+
+#if defined( EE_SDL_VERSION_3 )
+UTEST( InputEvent, sdl3QueuedWheelPreservesWholeTicksAndDropsZeroMotion ) {
+	WindowSettings settings{ 320, 240, "SDL3 Wheel Queue Test" };
+	settings.Style |= WindowStyle::Hidden;
+	UIApplication app( settings );
+	auto* input = app.getWindow()->getInput();
+	input->update();
+	unsigned wheels = 0, presses = 0, releases = 0;
+	const auto callback = input->pushCallback( [&]( InputEvent* event ) {
+		if ( event->WinID != app.getWindow()->getWindowID() )
+			return;
+		if ( event->Type == InputEvent::MouseWheel ) {
+			++wheels;
+			EXPECT_NE( 0.f, event->wheel.y );
+		} else if ( event->Type == InputEvent::MouseButtonDown &&
+					event->button.button == EE_BUTTON_WHEELUP ) {
+			++presses;
+		} else if ( event->Type == InputEvent::MouseButtonUp &&
+					event->button.button == EE_BUTTON_WHEELUP ) {
+			++releases;
+		}
+	} );
+	SDL_Event wheel{};
+	wheel.type = SDL_EVENT_MOUSE_WHEEL;
+	wheel.wheel.windowID = app.getWindow()->getWindowID();
+	wheel.wheel.direction = SDL_MOUSEWHEEL_NORMAL;
+	wheel.wheel.y = 1.f;
+#if SDL_VERSION_ATLEAST( 3, 2, 12 )
+	wheel.wheel.integer_y = 1;
+#endif
+	ASSERT_TRUE( SDL_PushEvent( &wheel ) );
+	input->update();
+	EXPECT_EQ( 1u, wheels );
+	EXPECT_EQ( 1u, presses );
+	EXPECT_EQ( 1u, releases );
+
+	wheel.wheel.y = 0.f;
+#if SDL_VERSION_ATLEAST( 3, 2, 12 )
+	wheel.wheel.integer_y = 0;
+#endif
+	ASSERT_TRUE( SDL_PushEvent( &wheel ) );
+	input->update();
+	EXPECT_EQ( 1u, wheels );
+	EXPECT_EQ( 1u, presses );
+	EXPECT_EQ( 1u, releases );
+
+	wheel.wheel.y = .25f;
+	ASSERT_TRUE( SDL_PushEvent( &wheel ) );
+	input->update();
+	EXPECT_EQ( 2u, wheels );
+#if SDL_VERSION_ATLEAST( 3, 2, 12 )
+	EXPECT_EQ( 1u, presses );
+	EXPECT_EQ( 1u, releases );
+#else
+	EXPECT_EQ( 2u, presses );
+	EXPECT_EQ( 2u, releases );
+#endif
+	input->popCallback( callback );
+}
+#endif

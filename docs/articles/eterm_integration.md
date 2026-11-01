@@ -12,6 +12,19 @@ grapheme_clustering = true
 detect_links = true
 ```
 
+## Mouse wheel and trackpads
+
+Wheel input retains fractional movement on both axes. When an application captures the mouse,
+eterm accumulates fractional wheel ticks and sends whole ticks using the application's mouse
+protocol. Larger deltas can produce multiple reports, including when several input events arrive
+in one UI frame. A traditional wheel tick still produces one report. Applications that use
+alternate-screen scrolling without mouse capture receive cursor keys instead. Extremely large
+events are limited to 128 reports per axis; excess whole ticks are discarded and the fractional
+remainder is retained.
+
+Shift overrides mouse capture for local selection and main-screen history scrolling. The existing
+Ctrl+wheel font-size shortcuts remain available.
+
 ## Hyperlinks (OSC 8)
 
 Programs can attach a target URI to text without printing the address:

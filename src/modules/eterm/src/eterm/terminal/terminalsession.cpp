@@ -437,6 +437,11 @@ void TerminalSession::mouseReport( TerminalMouseEventType type, Vector2i cellPos
 	enqueue( MouseCommand{ type, cellPosition, pixelPosition, flags, modifiers } );
 }
 
+void TerminalSession::mouseWheel( Vector2f offset, Vector2i cellPosition, Vector2i pixelPosition,
+								  Uint32 modifiers ) {
+	enqueue( WheelCommand{ offset, cellPosition, pixelPosition, modifiers } );
+}
+
 void TerminalSession::setFocus( bool focus ) {
 	enqueue( FocusCommand{ { focus } } );
 }
@@ -643,6 +648,9 @@ void TerminalSession::processCommand( Command&& command ) {
 			} else if constexpr ( std::is_same_v<T, MouseCommand> ) {
 				mEmulator->mousereport( value.type, value.cellPosition, value.pixelPosition,
 										value.flags, value.modifiers );
+			} else if constexpr ( std::is_same_v<T, WheelCommand> ) {
+				mEmulator->mouseWheel( value.offset, value.cellPosition, value.pixelPosition,
+									   value.modifiers );
 			} else if constexpr ( std::is_same_v<T, FocusCommand> ) {
 				mEmulator->reportFocus( value.value );
 				mWorkerDisplay->setFocused( value.value );

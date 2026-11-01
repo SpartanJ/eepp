@@ -387,6 +387,9 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_EVENT_MOUSE_WHEEL: {
+			if ( SDLEvent.wheel.x == 0.f && SDLEvent.wheel.y == 0.f )
+				return;
+			event.WinID = SDLEvent.wheel.windowID;
 			Uint8 button;
 			const Float eventWindowScale = getEventWindowScale( mWindow, SDLEvent.wheel.windowID );
 #if SDL_VERSION_ATLEAST( 3, 2, 12 )
@@ -399,35 +402,34 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 				SDLEvent.wheel.y > 0.f ? 1 : ( SDLEvent.wheel.y < 0.f ? -1 : 0 );
 #endif
 
-			if ( integerY == 0 && integerX == 0 )
-				break;
+			// Legacy buttons require whole ticks; fractional movement still reaches MouseWheel.
+			if ( integerY != 0 || integerX != 0 ) {
+				if ( integerY > 0 ) {
+					button = EE_BUTTON_WHEELUP;
+				} else if ( integerY < 0 ) {
+					button = EE_BUTTON_WHEELDOWN;
+				} else if ( integerX > 0 ) {
+					button = EE_BUTTON_WHEELRIGHT;
+				} else if ( integerX < 0 ) {
+					button = EE_BUTTON_WHEELLEFT;
+				} else {
+					return;
+				}
 
-			if ( integerY > 0 ) {
-				button = EE_BUTTON_WHEELUP;
-			} else if ( integerY < 0 ) {
-				button = EE_BUTTON_WHEELDOWN;
-			} else if ( integerX > 0 ) {
-				button = EE_BUTTON_WHEELRIGHT;
-			} else if ( integerX < 0 ) {
-				button = EE_BUTTON_WHEELLEFT;
-			} else {
-				return;
+				// Get mouse position from the event (mouse_x, mouse_y are in window coordinates)
+				event.button.button = button;
+				event.button.x = static_cast<Int16>( SDLEvent.wheel.mouse_x * eventWindowScale );
+				event.button.y = static_cast<Int16>( SDLEvent.wheel.mouse_y * eventWindowScale );
+				event.button.which = SDLEvent.wheel.windowID;
+
+				event.Type = InputEvent::MouseButtonDown;
+				event.button.state = 1;
+				processEventForWindow( &event );
+
+				event.Type = InputEvent::MouseButtonUp;
+				event.button.state = 0;
+				processEventForWindow( &event );
 			}
-
-			// Get mouse position from the event (mouse_x, mouse_y are in window coordinates)
-			event.button.button = button;
-			event.button.x = static_cast<Int16>( SDLEvent.wheel.mouse_x * eventWindowScale );
-			event.button.y = static_cast<Int16>( SDLEvent.wheel.mouse_y * eventWindowScale );
-			event.button.which = SDLEvent.wheel.windowID;
-			event.WinID = SDLEvent.wheel.windowID;
-
-			event.Type = InputEvent::MouseButtonDown;
-			event.button.state = 1;
-			processEventForWindow( &event );
-
-			event.Type = InputEvent::MouseButtonUp;
-			event.button.state = 0;
-			processEventForWindow( &event );
 
 			event.Type = InputEvent::MouseWheel;
 			event.wheel.which = SDLEvent.wheel.windowID;

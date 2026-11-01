@@ -277,6 +277,10 @@ class TerminalEmulator final {
 
 	std::string getSelection() const;
 
+	/** Accumulates fractional wheel ticks and reports whole ticks to the active application. */
+	void mouseWheel( Vector2f offset, Vector2i cellPosition, Vector2i pixelPosition,
+					 Uint32 modifiers );
+
 	void mousereport( const TerminalMouseEventType& type, const Vector2i& cellPosition,
 					  const Vector2i& pixelPosition, const Uint32& flags, const Uint32& mod );
 
@@ -453,6 +457,8 @@ class TerminalEmulator final {
 	Int32 mCurrentSearchMatch{ -1 };
 	Clock mSearchRefreshClock;
 	bool mSearchDirty{ false };
+	// Worker-owned fractional ticks; appended to retain existing member offsets.
+	Vector2f mPendingWheel;
 
 	void setClipboard( const char* str );
 
@@ -611,6 +617,8 @@ class TerminalEmulator final {
 	void xseticontitle( char* );
 	void xsettitle( char* );
 	int xsetcursor( int );
+	void xsetmousemode( int set, TerminalWinMode mode );
+
 	void xsetmode( int, unsigned int );
 	bool xgetmode( const TerminalWinMode& );
 

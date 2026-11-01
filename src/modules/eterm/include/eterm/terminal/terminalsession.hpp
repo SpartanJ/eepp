@@ -188,6 +188,10 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	void selectionClear();
 	void mouseReport( TerminalMouseEventType type, Vector2i cellPosition, Vector2i pixelPosition,
 					  Uint32 flags, Uint32 modifiers );
+
+	void mouseWheel( Vector2f offset, Vector2i cellPosition, Vector2i pixelPosition,
+					 Uint32 modifiers );
+
 	void setFocus( bool focus );
 	void setCursorMode( TerminalCursorMode mode );
 	void setColorPalette( TerminalColorPalette palette );
@@ -264,6 +268,12 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 		Uint32 flags{ 0 };
 		Uint32 modifiers{ 0 };
 	};
+	struct WheelCommand {
+		Vector2f offset;
+		Vector2i cellPosition;
+		Vector2i pixelPosition;
+		Uint32 modifiers{ 0 };
+	};
 	struct BoolCommand {
 		bool value{ false };
 	};
@@ -302,13 +312,15 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	struct PromptEventsCommand : BoolCommand {};
 	struct FocusCommand : BoolCommand {};
 
-	using Command = std::variant<
-		WriteCommand, WriteRawCommand, KeyCommand, TextInputCommand, ResizeCommand, ScrollCommand,
-		SelectionStartCommand, SelectionExtendCommand, SelectionClearCommand, MouseCommand,
-		FocusCommand, CursorModeCommand, PaletteCommand, PresentationRateCommand, AllowTrimCommand,
-		DataEventsCommand, PromptEventsCommand, TerminateCommand, RestartCommand, ResetCommand,
-		SelectionRequestCommand, GraphicsResyncCommand, SearchQueryCommand, SearchNavigateCommand,
-		SearchClearCommand, Osc52PolicyCommand, Osc8PolicyCommand, GraphemeClusteringCommand>;
+	using Command =
+		std::variant<WriteCommand, WriteRawCommand, KeyCommand, TextInputCommand, ResizeCommand,
+					 ScrollCommand, SelectionStartCommand, SelectionExtendCommand,
+					 SelectionClearCommand, MouseCommand, WheelCommand, FocusCommand,
+					 CursorModeCommand, PaletteCommand, PresentationRateCommand, AllowTrimCommand,
+					 DataEventsCommand, PromptEventsCommand, TerminateCommand, RestartCommand,
+					 ResetCommand, SelectionRequestCommand, GraphicsResyncCommand,
+					 SearchQueryCommand, SearchNavigateCommand, SearchClearCommand,
+					 Osc52PolicyCommand, Osc8PolicyCommand, GraphemeClusteringCommand>;
 
 	TerminalSession( PtyPtr&& pty, ProcPtr&& process, size_t historySize,
 					 TerminalColorPalette palette, TerminalSessionOptions options );

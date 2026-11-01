@@ -414,40 +414,46 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_MOUSEWHEEL: {
+#if SDL_VERSION_ATLEAST( 2, 0, 18 )
+			if ( SDLEvent.wheel.preciseX == 0.f && SDLEvent.wheel.preciseY == 0.f )
+				return;
+#else
+			if ( SDLEvent.wheel.x == 0 && SDLEvent.wheel.y == 0 )
+				return;
+#endif
+			event.WinID = SDLEvent.wheel.windowID;
 			Uint8 button;
 			int x, y;
 
-			if ( SDLEvent.wheel.y == 0 && SDLEvent.wheel.x == 0 ) {
-				break;
+			// Legacy buttons require whole ticks; fractional movement still reaches MouseWheel.
+			if ( SDLEvent.wheel.y != 0 || SDLEvent.wheel.x != 0 ) {
+				SDL_GetMouseState( &x, &y );
+
+				if ( SDLEvent.wheel.y > 0 ) {
+					button = EE_BUTTON_WHEELUP;
+				} else if ( SDLEvent.wheel.y < 0 ) {
+					button = EE_BUTTON_WHEELDOWN;
+				} else if ( SDLEvent.wheel.x > 0 ) {
+					button = EE_BUTTON_WHEELRIGHT;
+				} else if ( SDLEvent.wheel.x < 0 ) {
+					button = EE_BUTTON_WHEELLEFT;
+				} else {
+					return;
+				}
+
+				event.button.button = button;
+				event.button.x = x;
+				event.button.y = y;
+				event.button.which = SDLEvent.wheel.windowID;
+
+				event.Type = InputEvent::MouseButtonDown;
+				event.button.state = 1;
+				processEventForWindow( &event );
+
+				event.Type = InputEvent::MouseButtonUp;
+				event.button.state = 0;
+				processEventForWindow( &event );
 			}
-
-			SDL_GetMouseState( &x, &y );
-
-			if ( SDLEvent.wheel.y > 0 ) {
-				button = EE_BUTTON_WHEELUP;
-			} else if ( SDLEvent.wheel.y < 0 ) {
-				button = EE_BUTTON_WHEELDOWN;
-			} else if ( SDLEvent.wheel.x > 0 ) {
-				button = EE_BUTTON_WHEELRIGHT;
-			} else if ( SDLEvent.wheel.x < 0 ) {
-				button = EE_BUTTON_WHEELLEFT;
-			} else {
-				return;
-			}
-
-			event.button.button = button;
-			event.button.x = x;
-			event.button.y = y;
-			event.button.which = SDLEvent.wheel.windowID;
-			event.WinID = SDLEvent.wheel.windowID;
-
-			event.Type = InputEvent::MouseButtonDown;
-			event.button.state = 1;
-			processEventForWindow( &event );
-
-			event.Type = InputEvent::MouseButtonUp;
-			event.button.state = 0;
-			processEventForWindow( &event );
 
 			event.Type = InputEvent::MouseWheel;
 			event.wheel.which = SDLEvent.wheel.which;

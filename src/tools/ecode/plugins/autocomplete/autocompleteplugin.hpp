@@ -154,6 +154,8 @@ class AutoCompletePlugin : public Plugin {
 							  const Uint32& flags ) override;
 
   protected:
+	bool isOverSuggestionBox( UICodeEditor* editor, const Vector2i& position ) const;
+
 	std::string mSymbolPattern;
 	Rectf mBoxPadding;
 	Clock mClock;

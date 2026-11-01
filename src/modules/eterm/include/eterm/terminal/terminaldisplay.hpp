@@ -203,6 +203,8 @@ class TerminalDisplay {
 
 	void onMouseDown( const Vector2i& pos, const Uint32& flags );
 
+	void onMouseWheel( const Vector2f& offset );
+
 	void onMouseUp( const Vector2i& pos, const Uint32& flags );
 
 	/** Uses only the current immutable snapshot; pos has the same coordinates as mouse events. */

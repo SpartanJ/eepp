@@ -1405,8 +1405,10 @@ void TerminalEmulator::clearPendingKeyboardInput() {
 }
 
 void TerminalEmulator::reportFocus( bool focused ) {
-	if ( !focused )
+	if ( !focused ) {
+		mPendingWheel = Vector2f::Zero;
 		clearPendingKeyboardInput();
+	}
 	if ( xgetmode( MODE_FOCUS ) )
 		ttywriteInternal( focused ? "\033[I" : "\033[O", 3, false, false );
 }
@@ -1546,6 +1548,7 @@ void TerminalEmulator::tnew( int col, int row, size_t historySize ) {
 }
 
 void TerminalEmulator::tswapscreen( void ) {
+	mPendingWheel = Vector2f::Zero;
 	Line* tmp = mTerm.line;
 
 	mTerm.line = mTerm.alt;
@@ -2462,23 +2465,19 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 					break;
 				case 9: /* X10 mouse compatibility mode */
 					xsetpointermotion( 0 );
-					xsetmode( 0, MODE_MOUSE );
-					xsetmode( set, MODE_MOUSEX10 );
+					xsetmousemode( set, MODE_MOUSEX10 );
 					break;
 				case 1000: /* 1000: report button press */
 					xsetpointermotion( 0 );
-					xsetmode( 0, MODE_MOUSE );
-					xsetmode( set, MODE_MOUSEBTN );
+					xsetmousemode( set, MODE_MOUSEBTN );
 					break;
 				case 1002: /* 1002: report motion on button press */
 					xsetpointermotion( 0 );
-					xsetmode( 0, MODE_MOUSE );
-					xsetmode( set, MODE_MOUSEMOTION );
+					xsetmousemode( set, MODE_MOUSEMOTION );
 					break;
 				case 1003: /* 1003: enable all mouse motions */
 					xsetpointermotion( set );
-					xsetmode( 0, MODE_MOUSE );
-					xsetmode( set, MODE_MOUSEMANY );
+					xsetmousemode( set, MODE_MOUSEMANY );
 					break;
 				case 1004: /* 1004: send focus events to tty */
 					xsetmode( set, MODE_FOCUS );
@@ -5203,10 +5202,28 @@ int TerminalEmulator::xsetcolorname( int x, const char* name ) {
 	return resetColor( x, name );
 }
 
+void TerminalEmulator::xsetmousemode( int set, TerminalWinMode mode ) {
+	// Mouse modes are mutually exclusive. Reasserting the active mode must not perform a
+	// transient disable/re-enable, which would discard the fractional wheel remainder.
+	if ( set && xgetmode( mode ) )
+		return;
+	xsetmode( 0, MODE_MOUSE );
+	xsetmode( set, mode );
+}
+
 void TerminalEmulator::xsetmode( int set, unsigned int mode ) {
 	auto dpy = mDpy.lock();
-	if ( dpy )
+	if ( dpy ) {
+		for ( const TerminalWinMode wheelMode :
+			  { MODE_MOUSEX10, MODE_MOUSEBTN, MODE_MOUSEMOTION, MODE_MOUSEMANY, MODE_MOUSESGR,
+				MODE_MOUSESGR_PIXELS, MODE_ALTSCRROLL } ) {
+			if ( ( mode & wheelMode ) && dpy->getMode( wheelMode ) != ( set != 0 ) ) {
+				mPendingWheel = Vector2f::Zero;
+				break;
+			}
+		}
 		dpy->setMode( (TerminalWinMode)mode, set );
+	}
 }
 
 bool TerminalEmulator::xgetmode( const TerminalWinMode& mode ) {
@@ -5262,6 +5279,35 @@ void TerminalEmulator::reportColorScheme() {
 	char buf[16];
 	const int len = snprintf( buf, sizeof( buf ), "\033[?997;%dn", scheme );
 	ttywrite( buf, len, 0 );
+}
+
+void TerminalEmulator::mouseWheel( Vector2f offset, Vector2i cellPosition, Vector2i pixelPosition,
+								   Uint32 modifiers ) {
+	if ( !std::isfinite( offset.x ) || !std::isfinite( offset.y ) )
+		return;
+	if ( !xgetmode( static_cast<TerminalWinMode>( MODE_MOUSE ) ) &&
+		 !( tisaltscr() && xgetmode( MODE_ALTSCRROLL ) ) ) {
+		mPendingWheel = Vector2f::Zero;
+		return;
+	}
+	const Vector2f pending = mPendingWheel + offset;
+	const Vector2f whole( std::trunc( pending.x ), std::trunc( pending.y ) );
+	mPendingWheel = pending - whole;
+	// Bound the worker's writes for injected or abnormal events. Drop excess whole ticks,
+	// retaining only the fractional remainder so no delayed scrolling backlog survives.
+	constexpr Float maxTicksPerAxis = 128.f;
+	const Vector2i ticks(
+		static_cast<int>( eeclamp( whole.x, -maxTicksPerAxis, maxTicksPerAxis ) ),
+		static_cast<int>( eeclamp( whole.y, -maxTicksPerAxis, maxTicksPerAxis ) ) );
+	const auto report = [&]( int count, Uint32 positive, Uint32 negative ) {
+		const Uint32 button = count > 0 ? positive : negative;
+		for ( int i = 0; i < std::abs( count ); ++i ) {
+			mousereport( TerminalMouseEventType::MouseButtonDown, cellPosition, pixelPosition,
+						 button, modifiers );
+		}
+	};
+	report( ticks.y, EE_BUTTON_WUMASK, EE_BUTTON_WDMASK );
+	report( ticks.x, EE_BUTTON_WRMASK, EE_BUTTON_WLMASK );
 }
 
 void TerminalEmulator::mousereport( const TerminalMouseEventType& type,
@@ -5386,6 +5432,7 @@ void TerminalEmulator::setPtyAndProcess( PtyPtr&& pty, ProcPtr&& process ) {
 	mKittyPlaceholderCell = Vector2i( -1, -1 );
 	mBuflen = 0;
 	mPtyFrameComplete = false;
+	mPendingWheel = Vector2f::Zero;
 	mStatus = STARTING;
 	mExitCode = 1;
 	mPty = std::move( pty );

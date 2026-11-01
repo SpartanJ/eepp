@@ -2414,6 +2414,17 @@ Rectf AutoCompletePlugin::findBestDocumentationPlacement(
 
 bool AutoCompletePlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position,
 									  const Uint32& flags ) {
+	if ( ( flags & EE_BUTTONS_WUWD ) && isOverSuggestionBox( editor, position ) ) {
+		if ( flags & EE_BUTTON_WUMASK ) {
+			mSuggestionsStartIndex = eemax( 0, mSuggestionsStartIndex - mSuggestionsMaxVisible );
+		} else {
+			mSuggestionsStartIndex =
+				eemax( 0, eemin( (int)mSuggestions.size() - mSuggestionsMaxVisible,
+								 mSuggestionsStartIndex + mSuggestionsMaxVisible ) );
+		}
+		editor->invalidateDraw();
+		return true;
+	}
 	if ( flags & EE_BUTTON_LMASK ) {
 		if ( !mSuggestions.empty() && mSuggestionsEditor == editor ) {
 			Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
@@ -2429,26 +2440,16 @@ bool AutoCompletePlugin::onMouseDown( UICodeEditor* editor, const Vector2i& posi
 	return false;
 }
 
+bool AutoCompletePlugin::isOverSuggestionBox( UICodeEditor* editor,
+											  const Vector2i& position ) const {
+	return !mSuggestions.empty() && mSuggestionsEditor == editor &&
+		   mBoxRect.contains( editor->convertToNodeSpace( position.asFloat() ) );
+}
+
 bool AutoCompletePlugin::onMouseWheel( UICodeEditor* editor, const Vector2i& position,
 									   const Vector2f& offset, bool ) {
-	if ( mSuggestions.empty() || !mSuggestionsEditor || mSuggestionsEditor != editor )
-		return false;
-
-	Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
-	if ( mBoxRect.contains( localPos ) ) {
-		if ( offset.y > 0.f ) {
-			mSuggestionsStartIndex = eemax( 0, mSuggestionsStartIndex - mSuggestionsMaxVisible );
-			editor->invalidateDraw();
-			return true;
-		} else if ( offset.y < 0.f ) {
-			mSuggestionsStartIndex =
-				eemax( 0, eemin( (int)mSuggestions.size() - mSuggestionsMaxVisible,
-								 mSuggestionsStartIndex + mSuggestionsMaxVisible ) );
-			editor->invalidateDraw();
-			return true;
-		}
-	}
-	return false;
+	// Page only on discrete wheel presses; fractional events must not scroll the editor below.
+	return offset.y != 0.f && isOverSuggestionBox( editor, position );
 }
 
 bool AutoCompletePlugin::onMouseDoubleClick( UICodeEditor* editor, const Vector2i& position,

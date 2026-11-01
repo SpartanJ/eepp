@@ -154,7 +154,7 @@ UTEST( UIScrolling, WheelButtonsArePressedOnceWithAndWithoutHeldButton ) {
 	for ( bool heldButton : { false, true } ) {
 		if ( heldButton )
 			input->injectButtonPress( EE_BUTTON_LEFT );
-		for ( const Vector2f offset :
+		for ( const Vector2f& offset :
 			  { Vector2f( 0, 1 ), Vector2f( 0, -1 ), Vector2f( 1, 0 ), Vector2f( -1, 0 ) } ) {
 			wheelPresses = 0;
 			fixture.wheel( offset );
@@ -502,7 +502,7 @@ UTEST( UIScrolling, ImageZoomWheelDoesNotScrollAncestor ) {
 	input->processEventForWindow( &modifiers );
 }
 
-UTEST( UIScrolling, DateTimeWheelEditingConsumesOnlyWhenItChangesTheValue ) {
+UTEST( UIScrolling, DateTimeWheelEditingUsesDiscreteStepsAndConsumesFractions ) {
 	WheelPropagationTest test;
 	auto* edit = UIDateTimeEdit::New( DateTimeEditMode::Date );
 	test.add( edit );
@@ -516,10 +516,45 @@ UTEST( UIScrolling, DateTimeWheelEditingConsumesOnlyWhenItChangesTheValue ) {
 	EXPECT_EQ( 25, edit->getDate()->day );
 	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
 
+	for ( int i = 0; i < 8; ++i )
+		test.wheel( { 0.f, -.125f }, false );
+	EXPECT_EQ( 25, edit->getDate()->day );
+	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
+
 	edit->setWheelEditingEnabled( false );
 	test.wheel( { 0.f, -1.f } );
 	EXPECT_EQ( 25, edit->getDate()->day );
 	EXPECT_GT( test.scrollView->getVerticalScrollBar()->getValue(), 0.f );
+}
+
+UTEST( UIScrolling, FocusedDateTimeDoesNotStepWhenWheelTargetsAnotherList ) {
+	WheelPropagationTest test;
+	auto* edit = UIDateTimeEdit::New( DateTimeEditMode::Date );
+	test.add( edit );
+	edit->setDate( CalendarDate{ 2026, 10, 26 } );
+	edit->setWheelEditingEnabled( true );
+	edit->setActiveSection( DateTimeSection::Day );
+	auto* list = UIListBox::New();
+	test.add( list, { 200.f, 80.f } );
+	list->setPixelsPosition( { 0.f, 50.f } );
+	for ( int i = 0; i < 20; ++i )
+		list->addListBoxItem( "Row" );
+	test.app.getUI()->flushDirtyStyleAndLayout();
+	edit->setFocus();
+	test.hover( list->getItem( 0 ) );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_TRUE( edit->hasFocus() );
+	EXPECT_FALSE( edit->isMouseOver() );
+	EXPECT_GT( list->getVerticalScrollBar()->getValue(), 0.f );
+	ASSERT_TRUE( edit->getDate().has_value() );
+	EXPECT_EQ( 26, edit->getDate()->day );
+
+	// Wheel editing still works when the pointer returns to the focused field.
+	test.hover( edit );
+	test.wheel( { 0.f, -.125f }, false );
+	EXPECT_EQ( 26, edit->getDate()->day );
+	test.wheel( { 0.f, -1.f } );
+	EXPECT_EQ( 25, edit->getDate()->day );
 }
 
 UTEST( UIScrolling, ChartWheelZoomConsumesOnlyInsideThePlot ) {
