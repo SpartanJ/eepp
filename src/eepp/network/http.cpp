@@ -942,8 +942,7 @@ Http::Request::Request( const std::string& uri, Method method, const std::string
 	mCompressedResponse( compressedResponse ),
 	mContinue( false ),
 	mCancel( std::make_shared<std::atomic<bool>>( false ) ),
-	mMaxRedirections( 10 ),
-	mRedirectionCount( 0 ) {
+	mMaxRedirections( 10 ) {
 	setMethod( method );
 	setUri( uri );
 	setHttpVersion( 1, 1 );

@@ -386,6 +386,13 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 						  catalog.add( "document_search",
 									   app->getDefaultSearchKeybindings( "document_search" ),
 									   app->mDocSearchController->getCommandList() );
+						  std::vector<std::string> terminalCommands;
+						  app->getTerminalManager()->forEachTerminal( [&]( UITerminal* terminal ) {
+							  if ( terminalCommands.empty() )
+								  terminalCommands = terminal->getCommandList();
+						  } );
+						  catalog.add( "terminal", TerminalManager::getTerminalContextKeybindings(),
+									   terminalCommands, app->i18n( "terminal", "Terminal" ) );
 						  catalog.add( "statusbar", UIStatusBar::getDefaultKeybindings() );
 					  },
 				  .apply =

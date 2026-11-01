@@ -109,3 +109,6 @@ if [ "$PLATFORM" != haiku ]; then
 fi
 tar -czf "$OUTPUT_DIR/$PACKAGE_NAME.tar.gz" -C "$ARCHIVE_STAGE" "$APP"
 echo "Generated $OUTPUT_DIR/$PACKAGE_NAME.tar.gz"
+if $ANYLINUX; then
+	bash "$PACKAGE_SCRIPTS/package-anylinux.sh" "$APP" "$STAGING" "$OUTPUT_DIR" "$VERSION" "$ARCH"
+fi

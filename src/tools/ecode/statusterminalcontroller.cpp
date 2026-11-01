@@ -176,7 +176,6 @@ UITerminal* StatusTerminalController::createTerminal(
 	term->setColorScheme( csIt != terminalColorSchemes.end()
 							  ? terminalColorSchemes.at( currentTerminalColorScheme )
 							  : TerminalColorScheme::getDefault() );
-	mContext->getTerminalManager()->setKeybindings( term );
 
 	mApp->registerUnlockedCommands( *term );
 
@@ -248,10 +247,10 @@ UITerminal* StatusTerminalController::createTerminal(
 
 	term->setCommand( "statusbar-panel-expand-contract-toggle",
 					  [this] { mContext->getStatusBar()->togglePanelExpansion(); } );
-	term->getKeyBindings().addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
 
 	term->setFocus();
 	term->setParent( mTabWidget );
+	mContext->getTerminalManager()->setKeybindings( term );
 
 	UIIcon* icon = mUISceneNode->findIcon( "terminal" );
 	auto tab = mTabWidget->add(

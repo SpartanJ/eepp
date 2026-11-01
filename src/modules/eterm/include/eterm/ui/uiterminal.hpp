@@ -84,6 +84,8 @@ class UITerminal : public UITouchDraggableWidget {
 
 	std::vector<std::string> getCommandList() const;
 
+	static KeyBindings::ShortcutMap getDefaultKeybindings();
+
 	static std::string getExclusiveModeToggleCommandName() {
 		return "terminal-toggle-exclusive-mode";
 	}

@@ -26,6 +26,42 @@ Linux cross builds require `CC` and `CXX` to select the target toolchain, along 
 `STRIP` tool. The packager locates SDL using the target compiler's library search paths;
 install the target SDL runtime there before packaging. This also applies to `--skip-build`.
 
+### Additional AnyLinux images
+
+On native Linux x86_64 or arm64, add `--anylinux` to generate a separate AnyLinux image
+alongside the conventional AppImage and tarball:
+
+```sh
+projects/linux/build.app.sh ecode --anylinux
+# ecode-linux-<version>-<arch>.AppImage
+# ecode-anylinux-<version>-<arch>.AppImage
+# ecode-linux-<version>-<arch>.tar.gz
+```
+
+Install `curl`, `patchelf`, `binutils`, `xvfb` and `xauth` in the build environment, as well
+as the application's SDL runtime and Mesa OpenGL drivers. The packager downloads a pinned,
+checksum-verified [quick-sharun](https://github.com/pkgforge-dev/Anylinux-AppImages)
+script, which downloads its versioned packaging tools and checks their checksums. `QUICK_SHARUN`
+can point to a local script for development instead of using the pinned download.
+
+AnyLinux bundles libc, its loader and graphics dependencies and uses sharun with the DwarFS
+uruntime. This broadens compatibility to musl and non-FHS systems and provides automatic
+fallback when FUSE is unavailable. Bundled Mesa can substantially increase download size;
+the conventional downloads remain available. Runtime compatibility still needs verification
+on the target distributions and GPUs; bundling userspace libraries does not remove kernel
+or driver requirements. See the [upstream guide](https://pkgforge-dev.github.io/Anylinux-AppImages/HOW-TO-MAKE-THESE.html).
+
+Deployment uses a temporary AppDir and leaves the conventional package's binaries and
+launcher untouched. Assets remain accessible next to both sharun executable locations,
+including when the image is extracted. AnyLinux images contain stripped binaries; the
+existing `--with-debug-symbols` archive remains the source of debug symbols.
+
+Dependency collection runs the application under Xvfb, so cross-packaging is rejected.
+The ecode x86_64 nightly attempts the additional build and checks `--version`; failure of this
+optional step does not block the conventional downloads. The ARM64 nightly continues to use the
+conventional format because it is cross-compiled on x86_64. Native arm64 builds can opt in
+with the same flag.
+
 ## Assets
 
 An application's `src/tools/<app>/assets.list` declares its packaged files, one path per line,

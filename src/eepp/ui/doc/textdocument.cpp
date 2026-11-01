@@ -608,6 +608,8 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 							mLineEnding = TextFormat::LineEnding::CRLF;
 						} else if ( lastChar == '\r' ) {
 							mLineEnding = TextFormat::LineEnding::CR;
+						} else {
+							mLineEnding = TextFormat::LineEnding::LF;
 						}
 
 						static constexpr auto BINARY_STR = "\0\0\0\0"sv;

@@ -20,12 +20,14 @@
 #include "universallocator.hpp"
 #include <eepp/ee.hpp>
 #include <eepp/scene/mainthreadlifetime.hpp>
+#include <eepp/ui/tools/keybindingsconfig.hpp>
 #include <eepp/ui/uinodelink.hpp>
 #include <efsw/efsw.hpp>
 #include <eterm/ui/uiterminal.hpp>
 #include <stack>
 
 using namespace eterm::UI;
+using namespace EE::UI::Tools;
 
 namespace ecode {
 
@@ -622,6 +624,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	const KeyBindings::ShortcutMap& getRealTerminalKeybindings() const;
 
+	const KeybindingsConfig::Section& getTerminalKeybindings() const;
+
 	const std::string& getFileToOpen() const;
 
 	void saveProject( bool onlyIfNeeded = false, bool sessionSnapshotEnabled = true );
@@ -704,6 +708,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	KeyBindings::ShortcutMap mRealLocalKeybindings;
 	KeyBindings::ShortcutMap mRealSplitterKeybindings;
 	KeyBindings::ShortcutMap mRealTerminalKeybindings;
+	KeybindingsConfig::Section mTerminalKeybindings;
 	KeyBindings::ShortcutMap mRealDefaultKeybindings;
 	std::unordered_map<std::string, std::string> mMousebindings;
 	std::unordered_map<std::string, std::string> mMousebindingsInvert;

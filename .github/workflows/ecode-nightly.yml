@@ -77,7 +77,7 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
-          apt-get install -y curl libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev sudo file appstream
+          apt-get install -y curl libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev sudo file appstream patchelf xvfb xauth
           curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
           apt-get install -y nodejs
           add-apt-repository -y universe
@@ -116,6 +116,12 @@ jobs:
       - name: Build ecode
         run: |
           bash projects/linux/ecode/build.app.sh --with-static-cpp --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
+      - name: Build additional AnyLinux image
+        continue-on-error: true
+        run: |
+          bash projects/linux/ecode/build.app.sh --skip-build --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }} --anylinux
+          anylinux_image=projects/linux/ecode/ecode-anylinux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.AppImage
+          timeout 60s "$anylinux_image" --version || { rm -f "$anylinux_image"; exit 1; }
       - name: Upload Files
         uses: softprops/action-gh-release@v3
         with:
@@ -124,6 +130,7 @@ jobs:
           prerelease: true
           files: |
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.AppImage
+            projects/linux/ecode/ecode-anylinux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.AppImage
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.tar.gz
 
   build_linux_arm64:

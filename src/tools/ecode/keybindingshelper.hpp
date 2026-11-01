@@ -21,6 +21,9 @@ class KeybindingsHelper {
 	/** ecode's complete context schema; migration and recovery policy remains local. */
 	static std::span<const EE::UI::Tools::KeybindingsConfig::Context> contexts();
 
+	/** Preserve terminal assignments from released profiles when creating the new context. */
+	static void migrateTerminalKeybindings( IniFile& ini, const KeyBindings::ShortcutMap& legacy );
+
 	static bool validate( const IniFile& ini, std::string& error, const Input* input = nullptr );
 
 	static void

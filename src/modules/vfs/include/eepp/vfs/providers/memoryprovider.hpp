@@ -89,7 +89,6 @@ class EE_VFS_API MemoryProvider : public VFSProvider {
 	Executor* mExecutor;
 	mutable std::mutex mMutex;
 	std::map<std::string, std::shared_ptr<Node>, std::less<>> mNodes;
-	Uint64 mGeneration{ 0 };
 	mutable Uint64 mOperations{ 0 };
 };
 

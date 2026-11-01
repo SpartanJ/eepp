@@ -46,6 +46,8 @@ class TerminalManager {
 
 	static KeyBindings::ShortcutMap getTerminalKeybindings();
 
+	static KeyBindings::ShortcutMap getTerminalContextKeybindings();
+
 	const std::string& getTerminalColorSchemesPath() const;
 
 	void setTerminalColorSchemesPath( const std::string& terminalColorSchemesPath );

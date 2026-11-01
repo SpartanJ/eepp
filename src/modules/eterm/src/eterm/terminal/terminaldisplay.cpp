@@ -77,8 +77,6 @@ TerminalKeyMap::TerminalKeyMap( const TerminalKey keys[], size_t keysLen,
 
 static TerminalShortcut shortcuts[] = {
 	{ KEY_INSERT, KEYMOD_SHIFT, TerminalShortcutAction::PASTE_SELECTION, 0, 0 },
-	{ KEY_V, KEYMOD_SHIFT | KEYMOD_CTRL, TerminalShortcutAction::PASTE, 0, 0 },
-	{ KEY_C, KEYMOD_SHIFT | KEYMOD_CTRL, TerminalShortcutAction::COPY, 0, 0 },
 	{ KEY_PAGEUP, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLUP_SCREEN, 0, 0, -1 },
 	{ KEY_PAGEDOWN, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLDOWN_SCREEN, 0, 0, -1 },
 	{ KEY_UP, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLUP_ROW, 0, 0, -1 },
@@ -2346,13 +2344,27 @@ void TerminalDisplay::drawHyperlinkHover() {
 	const Vector2f grid = mPosition.floor() + Vector2f( mPadding.Left, mPadding.Top );
 	Primitives primitives;
 	for ( const auto& span : hover.spans ) {
-		const auto& glyph = mSnapshot->cells[span.row * mSnapshot->columns + span.first];
-		primitives.setColor( glyphForeground( glyph ) );
-		// Thicken the normal bottom underline without adding a separate line through descenders.
+		const auto row = span.row * mSnapshot->columns;
 		const Float bottom = grid.y + ( span.row + 1 ) * cellHeight;
-		primitives.drawRectangle(
-			Rectf( { grid.x + span.first * cellWidth, bottom - 2 * thickness },
-				   { ( span.end - span.first ) * cellWidth, 2 * thickness } ) );
+		for ( auto first = span.first; first < span.end; ) {
+			const auto& glyph = mSnapshot->cells[row + first];
+			const bool underlined = glyph.mode & ATTR_UNDERLINE;
+			auto end = first + 1;
+			while ( end < span.end ) {
+				const auto mode = mSnapshot->cells[row + end].mode;
+				// A wide glyph's trailing cell shares its leading cell's decoration.
+				if ( !( mode & ATTR_WDUMMY ) && bool( mode & ATTR_UNDERLINE ) != underlined )
+					break;
+				++end;
+			}
+			primitives.setColor( glyphForeground( glyph ) );
+			// Plain links use the normal underline position. Already underlined text gets a
+			// separate line below it, with a one-pixel gap instead of a thicker underline.
+			const Float top = underlined ? bottom + 1.f : bottom - thickness;
+			primitives.drawRectangle( Rectf( { grid.x + first * cellWidth, top },
+											 { ( end - first ) * cellWidth, thickness } ) );
+			first = end;
+		}
 	}
 	const Float padding = PixelDensity::dpToPx( 4.f );
 	const Float width = mSize.getWidth();

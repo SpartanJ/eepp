@@ -15,11 +15,6 @@ namespace EE { namespace UI { namespace Private {
 
 namespace {
 
-std::string withSlash( std::string path ) {
-	FileSystem::dirAddSlashAtEnd( path );
-	return path;
-}
-
 using IniSections = std::unordered_map<std::string, std::unordered_map<std::string, std::string>>;
 
 /** Minimal desktop-file style parser: [Section] and key=value lines. */

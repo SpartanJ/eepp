@@ -163,6 +163,57 @@ class AppPackaging(PackagingFixture):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Cannot resolve libSDL2-2.0.so.0", result.stdout)
 
+    def test_anylinux_is_additional_and_keeps_conventional_runtime(self):
+        self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')
+        self.env["QUICK_SHARUN"] = str(self.commands / "quick-sharun")
+        self.command("quick-sharun", '''
+[ "$APPIMAGE_ARCH" = x86_64 ]
+[ "$DEPLOY_OPENGL" = 1 ] && [ "$ANYLINUX_LIB" = 1 ]
+if [ "$1" = --make-appimage ]; then
+    [ -f "$APPDIR/bin/assets/ui/theme.css" ]
+    [ -f "$APPDIR/shared/bin/assets/ui/theme.css" ]
+    [ "$(cat "$APPDIR/shared/bin/sample.bin")" = patched ]
+    [ -f "$APPDIR/.DirIcon" ]
+    touch "$OUTPATH/$OUTNAME"
+else
+    [ "$MAIN_BIN" = sample.bin ]
+    [ -f "$DESKTOP" ] && [ -f "$ICON" ]
+    [ -f "$2" ] && [ -f "$3" ]
+    mkdir -p "$APPDIR/bin" "$APPDIR/shared/bin"
+    cp "$ICON" "$APPDIR/.DirIcon"
+    echo patched > "$APPDIR/shared/bin/sample.bin"
+fi
+''')
+        self.package("linux", "--backend", "SDL3", "--anylinux")
+        for name in ("sample-linux-1.2.3-x86_64.AppImage", "sample-anylinux-1.2.3-x86_64.AppImage"):
+            self.assertTrue((self.output / name).is_file())
+        with tarfile.open(self.output / "sample-linux-1.2.3-x86_64.tar.gz") as package:
+            self.assertEqual(package.extractfile("sample/sample.bin").read(),
+                             (self.source / "sample").read_bytes())
+            self.assertEqual(package.extractfile("sample/libs/libeepp.so").read(), b"eepp runtime")
+        self.assertFalse((self.output / "sample.app/shared").exists())
+
+    def test_anylinux_requires_supported_native_linux(self):
+        self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')
+        result = self.package("linux", "--arch", "arm64", "--anylinux", check=False)
+        self.assertIn("requires a native build", result.stdout)
+        self.assertNotEqual(result.returncode, 0)
+        result = self.package("linux", "--arch", "x86", "--anylinux", check=False)
+        self.assertIn("requires x86_64 or arm64", result.stdout)
+        self.assertNotEqual(result.returncode, 0)
+        result = self.package("freebsd", "--anylinux", check=False)
+        self.assertIn("requires Linux", result.stdout)
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_anylinux_failure_preserves_standard_packages(self):
+        self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo aarch64')
+        self.env["QUICK_SHARUN"] = str(self.commands / "quick-sharun")
+        self.command("quick-sharun", '[ "$APPIMAGE_ARCH" = aarch64 ] && [ "$ARCH" = arm64 ] || exit 43\nexit 42')
+        result = self.package("linux", "--arch", "arm64", "--backend", "SDL3", "--anylinux", check=False)
+        self.assertEqual(result.returncode, 42, result.stdout)
+        for suffix in ("AppImage", "tar.gz"):
+            self.assertTrue((self.output / f"sample-linux-1.2.3-arm64.{suffix}").is_file())
+
     def test_freebsd_version_and_fresh_staging(self):
         self.package("freebsd", "--backend", "SDL3")
         (self.output / "sample.app/stale").touch()

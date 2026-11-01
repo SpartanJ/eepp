@@ -12,8 +12,9 @@ namespace ecode {
 
 using Section = KeybindingsConfig::Section;
 
-static constexpr std::array<KeybindingsConfig::Context, 5> keybindingContexts{
+static constexpr std::array<KeybindingsConfig::Context, 6> keybindingContexts{
 	{ { "editor" },
+	  { "terminal" },
 	  { "global_search" },
 	  { "document_search" },
 	  { "statusbar" },
@@ -21,6 +22,29 @@ static constexpr std::array<KeybindingsConfig::Context, 5> keybindingContexts{
 
 std::span<const KeybindingsConfig::Context> KeybindingsHelper::contexts() {
 	return keybindingContexts;
+}
+
+void KeybindingsHelper::migrateTerminalKeybindings( IniFile& ini,
+													const KeyBindings::ShortcutMap& legacy ) {
+	if ( ini.findKey( "terminal" ) != IniFile::noID )
+		return;
+	// Seed the new context from legacy editor mappings, retaining aliases and unbindings.
+	KeybindingsConfig::Section editor, terminal;
+	KeybindingsConfig::readSection( ini, "editor", editor );
+
+	auto isTerminalCommand = [&]( const std::string& command ) {
+		return std::any_of( legacy.begin(), legacy.end(),
+							[&]( const auto& binding ) { return binding.second == command; } );
+	};
+	for ( const auto& [shortcut, binding] : editor.bindings ) {
+		if ( isTerminalCommand( binding.command ) )
+			terminal.bindings.emplace( shortcut, binding );
+	}
+	for ( const auto& command : editor.unbound ) {
+		if ( isTerminalCommand( command ) )
+			terminal.unbound.emplace_back( command );
+	}
+	KeybindingsConfig::writeSection( ini, "terminal", terminal );
 }
 
 bool KeybindingsHelper::validate( const IniFile& ini, std::string& error, const Input* input ) {

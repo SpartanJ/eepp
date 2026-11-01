@@ -62,7 +62,6 @@ class MimeDatabase {
 
 	std::mutex mMutex;
 	bool mLoaded{ false };
-	bool mHasDatabase{ false };
 	std::vector<std::string> mDataDirs;
 	/** Lowercase extension (without the dot, may contain dots: "tar.gz") -> type. */
 	std::unordered_map<std::string, Glob> mExtensions;

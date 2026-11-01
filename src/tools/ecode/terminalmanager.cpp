@@ -167,6 +167,13 @@ KeyBindings::ShortcutMap TerminalManager::getTerminalKeybindings() {
 	};
 }
 
+KeyBindings::ShortcutMap TerminalManager::getTerminalContextKeybindings() {
+	auto defaults = getTerminalKeybindings();
+	const auto clipboard = UITerminal::getDefaultKeybindings();
+	defaults.insert( clipboard.begin(), clipboard.end() );
+	return defaults;
+}
+
 const std::string& TerminalManager::getTerminalColorSchemesPath() const {
 	return mTerminalColorSchemesPath;
 }
@@ -805,6 +812,23 @@ void TerminalManager::setKeybindings( UITerminal* term ) {
 	// Terminal bindings must be installed last so they can intentionally reuse shortcuts removed
 	// from the editor/global context (for example mod+shift+f).
 	term->addKeyBinds( mApp->getRealTerminalKeybindings() );
+	if ( auto* controller = mApp->getStatusTerminalController(); controller ) {
+		if ( auto* tabs = controller->getTabWidget(); tabs && tabs->inParentTreeOf( term ) )
+			term->getKeyBindings().addKeybindsStringUnordered( mApp->getStatusBarKeybindings() );
+	}
+	const auto& section = mApp->getTerminalKeybindings();
+	// Rebuild both lookups after removing every inherited alias of a terminal-owned command.
+	// Merely removing the Main shortcut leaves alternatives and stale context-menu labels.
+	auto inherited = term->getKeyBindings().getShortcutMap();
+	std::erase_if( inherited, [&]( const auto& entry ) {
+		return section.isUnbound( entry.second ) ||
+			   std::any_of(
+				   section.bindings.begin(), section.bindings.end(),
+				   [&]( const auto& binding ) { return binding.second.command == entry.second; } );
+	} );
+	term->getKeyBindings().reset();
+	term->addKeyBinds( inherited );
+	section.apply( term->getKeyBindings() );
 }
 
 } // namespace ecode

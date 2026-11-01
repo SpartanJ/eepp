@@ -10,6 +10,27 @@
 using namespace EE::UI::Doc;
 using namespace EE::System;
 
+UTEST( TextDocument, DetectedLineEndingsOverrideTheDefaultForNewDocuments ) {
+	for ( const auto initial : { TextFormat::LineEnding::CR, TextFormat::LineEnding::CRLF,
+								 TextFormat::LineEnding::LF } ) {
+		for ( const std::string ending : { "\n", "\r\n", "\r" } ) {
+			const std::string input = "first" + ending + "second" + ending;
+			TextDocument document( false );
+			document.setLineEnding( initial );
+			ASSERT_TRUE(
+				document.loadFromMemory( reinterpret_cast<const EE::Uint8*>( input.data() ),
+										 input.size() ) == TextDocument::LoadStatus::Loaded );
+			const auto expected = ending == "\n"	 ? TextFormat::LineEnding::LF
+								  : ending == "\r\n" ? TextFormat::LineEnding::CRLF
+													 : TextFormat::LineEnding::CR;
+			EXPECT_TRUE( document.getLineEnding() == expected );
+			IOStreamString output;
+			ASSERT_TRUE( document.save( output ) );
+			EXPECT_TRUE( output.getStream() == input );
+		}
+	}
+}
+
 UTEST( TextDocument, ShortMemoryBuffersAreNotCompleteByteOrderMarks ) {
 	for ( const auto& bytes :
 		  { std::vector<EE::Uint8>{ 0xef }, std::vector<EE::Uint8>{ 0xef, 0xbb },

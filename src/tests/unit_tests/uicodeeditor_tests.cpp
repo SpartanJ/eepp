@@ -925,3 +925,30 @@ UTEST( KeybindingsHelper, FailedBindingSaveDoesNotMarkAVersionMigrationComplete 
 	EXPECT_TRUE( runtime.at( "f11" ) == "copy" );
 	EXPECT_FALSE( state.keyValueExists( "migrated_keybindings_editor", "copy" ) );
 }
+
+UTEST( KeybindingsHelper, TerminalMigrationPreservesAliasesUnbindingsAndExistingContext ) {
+	IniFile ini( "", false );
+	KeybindingsConfig::Section editor;
+	editor.bindings["f10"] = { "terminal-find", 2 };
+	editor.bindings["f11"] = { "terminal-find", 1 };
+	editor.bindings["mod+c"] = { "copy", 1 };
+	editor.unbound.emplace_back( "terminal-rename" );
+	KeybindingsConfig::writeSection( ini, "editor", editor );
+	const KeyBindings::ShortcutMap legacy{
+		{ { KEY_F, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-find" },
+		{ { KEY_S, KEYMOD_CTRL | KEYMOD_ALT }, "terminal-rename" } };
+	ecode::KeybindingsHelper::migrateTerminalKeybindings( ini, legacy );
+	KeybindingsConfig::Section terminal;
+	ASSERT_TRUE( KeybindingsConfig::readSection( ini, "terminal", terminal ) );
+	EXPECT_EQ( 2u, terminal.bindings.size() );
+	EXPECT_TRUE( terminal.orderedBindings( "terminal-find" ) ==
+				 std::vector<std::string>( { "f11", "f10" } ) );
+	EXPECT_TRUE( terminal.isUnbound( "terminal-rename" ) );
+	terminal.bindings.clear();
+	terminal.bindings["f12"] = { "terminal-find", 1 };
+	KeybindingsConfig::writeSection( ini, "terminal", terminal );
+	ecode::KeybindingsHelper::migrateTerminalKeybindings( ini, legacy );
+	ASSERT_TRUE( KeybindingsConfig::readSection( ini, "terminal", terminal ) );
+	EXPECT_EQ( 1u, terminal.bindings.size() );
+	EXPECT_TRUE( terminal.bindings.at( "f12" ).command == "terminal-find" );
+}

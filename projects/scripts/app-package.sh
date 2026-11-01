@@ -14,6 +14,7 @@ package_init() {
 		echo "Usage: build.app.sh <app> [--version <label>] [--arch <arch>] [--backend SDL2|SDL3]"
 		echo "  [--skip-build] [--source-dir <bin>] [--output-dir <dir>] [--dmg] (macOS)"
 		echo "  [--use-frameworks] [--with-debug-symbols] [--with-static-cpp] [--buildtype=release|debug]"
+		echo "  [--anylinux] (additional AnyLinux AppImage; native Linux x86_64/arm64 only)"
 		exit 0
 	fi
 	APP=$1
@@ -25,6 +26,7 @@ package_init() {
 	VERSION=
 	BACKEND=SDL2
 	SKIP_BUILD=false
+	ANYLINUX=false
 	DMG=false
 	USE_FRAMEWORKS=false
 	DEBUG_SYMBOLS=
@@ -48,6 +50,7 @@ package_init() {
 			--backend=*) BACKEND=${1#*=}; shift ;;
 			--buildtype=*) BUILDTYPE=${1#*=}; shift ;;
 			--skip-build) SKIP_BUILD=true; shift ;;
+			--anylinux) ANYLINUX=true; shift ;;
 			--dmg) DMG=true; shift ;;
 			--use-frameworks) USE_FRAMEWORKS=true; shift ;;
 			--with-debug-symbols) DEBUG_SYMBOLS=--with-debug-symbols; shift ;;
@@ -57,6 +60,14 @@ package_init() {
 	done
 	case "$ARCH" in aarch64) ARCH=arm64 ;; amd64) ARCH=x86_64 ;; i686) ARCH=x86 ;; esac
 	case "$ARCH" in arm64|x86_64|x86) ;; *) package_error "Unsupported architecture: $ARCH" ;; esac
+	if $ANYLINUX; then
+		[ "$PLATFORM" = linux ] && [ "$(uname -s)" = Linux ] || package_error "--anylinux requires Linux"
+		local native_arch
+		native_arch=$(uname -m)
+		[ "$native_arch" != aarch64 ] || native_arch=arm64
+		case "$ARCH" in x86_64|arm64) ;; *) package_error "--anylinux requires x86_64 or arm64" ;; esac
+		[ "$ARCH" = "$native_arch" ] || package_error "--anylinux requires a native build (host $native_arch, target $ARCH)"
+	fi
 	case "$BACKEND" in SDL2|sdl2) BACKEND=SDL2 ;; SDL3|sdl3) BACKEND=SDL3 ;; *) package_error "Unsupported backend: $BACKEND" ;; esac
 	if [ "$PLATFORM" = macos ] && [ "$ARCH" = x86 ]; then
 		package_error "macOS packages require arm64 or x86_64"

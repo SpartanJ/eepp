@@ -208,6 +208,16 @@ profile path. External changes are loaded on restart or an explicit reload. If t
 while the settings editor is open, close and reopen the settings window before applying another
 change; the editor refuses to overwrite a newer file.
 
+## Terminal shortcuts in ecode
+
+Open **Settings → General → Keyboard Shortcuts** and select the **Terminal** context to
+configure terminal actions, including Copy and Paste. Changes apply to open terminal tabs,
+splits, the status-bar terminal panel, and new terminals. On macOS, Copy and Paste default
+to Cmd+C and Cmd+V; other platforms use Ctrl+Shift+C and Ctrl+Shift+V. Terminal context
+bindings take precedence over inherited application shortcuts while a terminal has focus.
+The context menu displays the configured Main shortcut. Existing terminal assignments from
+older profiles are retained when the Terminal context is first created.
+
 ## Keyboard shortcuts in eterm
 
 Open **Settings → General → Keyboard Shortcuts**, or choose **Keybindings** from a terminal's

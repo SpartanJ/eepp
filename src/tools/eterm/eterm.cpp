@@ -1064,7 +1064,6 @@ int App::run( int argc, char* argv[] ) {
 		if ( window->isOpen() && closeWindow( window ) )
 			window->close();
 	} );
-	app.setShowMemoryManagerResult( true );
 	appWindow->runMainLoop( [this] {
 		appWindow->getInput()->update();
 		SceneManager::instance()->update();
@@ -1107,6 +1106,13 @@ int App::run( int argc, char* argv[] ) {
 } // namespace eterm
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
-	App app;
-	return app.run( argc, argv );
+	int result;
+	{
+		App app;
+		result = app.run( argc, argv );
+	}
+	// UIApplication and its caller's settings both own the background thread pool. Report only
+	// after their destruction so live worker implementations are not mistaken for leaks.
+	MemoryManager::showResults();
+	return result;
 }

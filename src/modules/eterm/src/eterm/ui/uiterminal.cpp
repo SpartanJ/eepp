@@ -53,6 +53,15 @@ UITerminal::~UITerminal() {
 		mTerm->popEventCallback( mTerminalEventCallbackId );
 }
 
+KeyBindings::ShortcutMap UITerminal::getDefaultKeybindings() {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	const Uint32 modifier = KEYMOD_META;
+#else
+	const Uint32 modifier = KEYMOD_CTRL | KEYMOD_SHIFT;
+#endif
+	return { { { KEY_C, modifier }, "terminal-copy" }, { { KEY_V, modifier }, "terminal-paste" } };
+}
+
 Uint32 UITerminal::getType() const {
 	return UI_TYPE_TERMINAL;
 }
@@ -139,8 +148,7 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	setCommand( "terminal-find-next", [this] { mTerm->navigateSearch( 1 ); } );
 	setCommand( "terminal-find-previous", [this] { mTerm->navigateSearch( -1 ); } );
 	setCommand( "terminal-find-close", [this] { mFindBar->hide(); } );
-	mKeyBindings.addKeybind( { KEY_V, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-paste" );
-	mKeyBindings.addKeybind( { KEY_C, KEYMOD_CTRL | KEYMOD_SHIFT }, "terminal-copy" );
+	mKeyBindings.addKeybinds( getDefaultKeybindings() );
 	setCommand( "terminal-open-link",
 				[this] { Engine::instance()->openURI( mTerm->getSelection() ); } );
 	setCommand( "terminal-open-hyperlink", [this] {

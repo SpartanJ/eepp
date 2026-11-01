@@ -419,7 +419,6 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 		ProgressCallback mProgressCallback;			///< Progress callback
 		CancelCallback mCancelCallback;				///< Cancel callback
 		unsigned int mMaxRedirections;				///< Maximum number of redirections allowed
-		mutable unsigned int mRedirectionCount; ///< Number of redirections followed by the request
 		URI mProxy;								///< Proxy information
 	};
 

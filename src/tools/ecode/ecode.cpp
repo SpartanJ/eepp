@@ -1297,6 +1297,10 @@ const KeyBindings::ShortcutMap& App::getRealSplitterKeybindings() const {
 	return mRealSplitterKeybindings;
 }
 
+const KeybindingsConfig::Section& App::getTerminalKeybindings() const {
+	return mTerminalKeybindings;
+}
+
 const KeyBindings::ShortcutMap& App::getRealTerminalKeybindings() const {
 	return mRealTerminalKeybindings;
 }
@@ -1603,6 +1607,13 @@ bool App::loadKeybindings( bool defaultsOnly ) {
 										  UIStatusBar::getDefaultKeybindings(), forceRebind,
 										  getMigrateKeybindings(), mConfig.iniState, false );
 
+	KeybindingsHelper::migrateTerminalKeybindings( ini, TerminalManager::getTerminalKeybindings() );
+	std::unordered_map<std::string, std::string> terminalBindings, terminalInverted;
+	KeybindingsHelper::updateKeybindings(
+		ini, "terminal", mWindow->getInput(), terminalBindings, terminalInverted,
+		TerminalManager::getTerminalContextKeybindings(), false, {}, mConfig.iniState, false );
+	KeybindingsConfig::readSection( ini, "terminal", mTerminalKeybindings );
+
 	auto route = [&]( const KeyBindings::ShortcutMap& defaults, KeyBindings::ShortcutMap& target ) {
 		UnorderedSet<std::string_view> commands;
 		commands.reserve( defaults.size() );
@@ -1651,14 +1662,13 @@ bool App::reloadKeybindings() {
 		ed->getMouseBindings().reset();
 		ed->getMouseBindings().addMousebindsString( mMousebindings );
 	} );
-	mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [this]( UIWidget* widget ) {
-		mTerminalManager->setKeybindings( widget->asType<UITerminal>() );
-	} );
 	KeybindingsConfig::replaceBindings( mMainLayout->getKeyBindings(), previousMain,
 										getRealDefaultKeybindings() );
 	mDocSearchController->reloadKeybindings( mDocumentSearchKeybindings );
 	mGlobalSearchController->reloadKeybindings( mGlobalSearchKeybindings );
 	mStatusBar->reloadKeybindings( previousStatus );
+	mTerminalManager->forEachTerminal(
+		[this]( UITerminal* terminal ) { mTerminalManager->setKeybindings( terminal ); } );
 	return true;
 }
 
@@ -3218,7 +3228,9 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
 	doc.setTabOutEnabled( mConfig.doc.tabOutEnabled );
 	doc.setTabOutChars( String::fromUtf8( mConfig.doc.tabOutChars ) );
-	doc.setLineEnding( docc.lineEndings );
+	// The configured default applies to new files; loaded files retain their detected format.
+	if ( !doc.hasFilepath() )
+		doc.setLineEnding( docc.lineEndings );
 	doc.setTrimTrailingWhitespaces( docc.trimTrailingWhitespaces );
 	doc.setForceNewLineAtEndOfFile( docc.forceNewLineAtEndOfFile );
 	doc.setIndentType( docc.indentSpaces ? TextDocument::IndentType::IndentSpaces
