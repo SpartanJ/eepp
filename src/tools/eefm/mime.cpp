@@ -138,7 +138,6 @@ void MimeDatabase::load() {
 		FileSystem::dirAddSlashAtEnd( base );
 		std::string globs;
 		if ( FileSystem::fileGet( base + "mime/globs2", globs ) ) {
-			mHasDatabase = true;
 			for ( const auto& line : String::split( globs, '\n' ) ) {
 				if ( line.empty() || line[0] == '#' )
 					continue;
