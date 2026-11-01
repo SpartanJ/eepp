@@ -156,6 +156,10 @@ static TerminalKey keys[] = {
 	{ KEY_DELETE, KEYMOD_CTRL_SHIFT_ALT_META, "\033[3~", +1, 0 },
 	{ KEY_BACKSPACE, KEYMOD_NONE, "\177", 0, 0 },
 	{ KEY_BACKSPACE, KEYMOD_LALT, "\033\177", 0, 0 },
+	/* Ctrl+Backspace is ^H, as in xterm and Ghostty: line editors bind it to deleting a word. */
+	{ KEY_BACKSPACE, KEYMOD_CTRL, "\010", 0, 0 },
+	{ KEY_BACKSPACE, KEYMOD_CTRL | KEYMOD_SHIFT, "\010", 0, 0 },
+	{ KEY_BACKSPACE, KEYMOD_CTRL | KEYMOD_LALT, "\033\010", 0, 0 },
 	{ KEY_HOME, KEYMOD_SHIFT, "\033[2J", 0, -1 },
 	{ KEY_HOME, KEYMOD_SHIFT, "\033[1;2H", 0, +1 },
 	{ KEY_HOME, KEYMOD_CTRL_SHIFT_ALT_META, "\033[H", 0, -1 },

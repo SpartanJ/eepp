@@ -277,10 +277,17 @@ KittyEncodedKey KittyKeyboardEncoder::encode( const KittyKeyEvent& event, Uint32
 	const bool disambiguate =
 		flags & kittyKeyboardFlag( KittyKeyboardFlag::DisambiguateEscapeCodes );
 	const bool reportEvents = flags & kittyKeyboardFlag( KittyKeyboardFlag::ReportEventTypes );
-	if ( event.type != KittyKeyEventType::Press && !reportEvents )
+	// Without event reporting a repeat is sent like a press, and a release is not sent.
+	if ( event.type == KittyKeyEventType::Release && !reportEvents )
 		return result;
 	const MappedKey key = mapKey( event );
-	if ( key.code == 0 || ( key.resetKey && !reportAll ) )
+	// Enter, Tab and Backspace keep their legacy bytes when unmodified, so a shell stays usable
+	// after a program leaves the mode on; with a modifier they disambiguate (Shift+Enter is
+	// ESC [13;2u), as in kitty and Ghostty. Their releases are reported only with report-all.
+	const bool modified = event.modifiers & KEYMOD_CTRL_SHIFT_ALT_META;
+	if ( key.code == 0 ||
+		 ( key.resetKey && !reportAll &&
+		   ( !disambiguate || !modified || event.type == KittyKeyEventType::Release ) ) )
 		return result;
 	const Uint32 modifiers = encodeModifiers( event.modifiers );
 	// Shift-only printable keys still use committed text under disambiguation. Encoding them here
@@ -292,8 +299,9 @@ KittyEncodedKey KittyKeyboardEncoder::encode( const KittyKeyEvent& event, Uint32
 										( !altGr && ( event.modifiers & KEYMOD_CTRL ) != 0 );
 	if ( key.printable && !reportAll && !( disambiguate && disambiguatingModifier ) )
 		return result;
-	const bool mustEncode = reportAll || event.type != KittyKeyEventType::Press ||
-							( disambiguate && ( disambiguatingModifier || key.code == 27 ) );
+	const bool mustEncode =
+		reportAll || ( reportEvents && event.type != KittyKeyEventType::Press ) ||
+		( disambiguate && ( disambiguatingModifier || key.code == 27 || key.resetKey ) );
 	if ( !mustEncode )
 		return result;
 	const bool associated =

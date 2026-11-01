@@ -1392,7 +1392,7 @@ UTEST( eterm, kitty_keyboard_encoder_modifiers_and_enter ) {
 			   KittyKeyboardEncoder::encodeModifiers( KEYMOD_CTRL | KEYMOD_SHIFT ) );
 
 	KittyKeyEvent enter{ KEY_RETURN, SCANCODE_RETURN, '\r', KEYMOD_CTRL, KittyKeyEventType::Press };
-	EXPECT_FALSE( KittyKeyboardEncoder::encode( enter, 1 ).handled );
+	EXPECT_STDSTREQ( "\033[13;5u", KittyKeyboardEncoder::encode( enter, 1 ).bytes );
 	EXPECT_STDSTREQ( "\033[13;5u", KittyKeyboardEncoder::encode( enter, 8 ).bytes );
 	EXPECT_STDSTREQ( "\033[13;5:1u", KittyKeyboardEncoder::encode( enter, 10 ).bytes );
 	enter.type = KittyKeyEventType::Repeat;
@@ -1512,20 +1512,30 @@ UTEST( eterm, tab_and_backtab_preserve_physical_modifiers ) {
 
 			const bool shifted = modifiers & KEYMOD_SHIFT;
 			const bool reportAll = flags & 8;
-			const bool reportEvents = reportAll && ( flags & 2 );
+			// Disambiguation encodes a modified Tab (Shift+Tab is ESC [9;2u, as in Ghostty); an
+			// unmodified Tab and its release stay legacy unless every key is reported.
+			const bool encoded = reportAll || ( ( flags & 1 ) && shifted );
+			const bool events = flags & 2;
 			const std::string prefix = shifted ? "\033[9;2" : "\033[9;1";
-			const std::string press = reportAll ? prefix + ( reportEvents ? ":1u" : "u" )
+			const std::string press = encoded	? prefix + ( events ? ":1u" : "u" )
 									  : shifted ? "\033[Z"
 												: "\t";
-			const std::string release = reportEvents ? prefix + ":3u" : "";
+			const std::string release = reportAll && events ? prefix + ":3u" : "";
 			KittyKeyEvent event{ KEY_TAB, SCANCODE_TAB, 0, modifiers, KittyKeyEventType::Press };
 			term->keyEvent( event );
 			EXPECT_STDSTREQ( press, ptyPtr->mWrites );
 			event.type = KittyKeyEventType::Release;
 			term->keyEvent( event );
 			EXPECT_STDSTREQ( press + release, ptyPtr->mWrites );
+			if ( encoded && !reportAll ) {
+				// A repeat is encoded like the press.
+				ptyPtr->mWrites.clear();
+				event.type = KittyKeyEventType::Repeat;
+				term->keyEvent( event );
+				EXPECT_STDSTREQ( prefix + ( events ? ":2u" : "u" ), ptyPtr->mWrites );
+			}
 			// Lock bits must not prevent a legacy keymap match.
-			if ( !reportAll ) {
+			if ( !encoded ) {
 				ptyPtr->mWrites.clear();
 				event.type = KittyKeyEventType::Repeat;
 				term->keyEvent( event );
@@ -4627,4 +4637,52 @@ UTEST( eterm_display, implicit_links_keep_skipped_text_and_reflowed_padding ) {
 	link = display.getLinkAt( at( 65, row ) );
 	ASSERT_TRUE( link.has_value() );
 	EXPECT_STDSTREQ( "https://example.com/\xE7\x95\x8C/next", link->uri );
+}
+
+UTEST( eterm, kitty_disambiguation_encodes_modified_enter_tab_and_backspace ) {
+	// Ghostty's cases: with a modifier these keys are told apart (Shift+Enter inserts a newline in
+	// line editors such as Claude Code's); unmodified they keep their legacy bytes.
+	const auto encode = []( Keycode keycode, Scancode scancode, Uint32 modifiers,
+							KittyKeyEventType type = KittyKeyEventType::Press, Uint32 flags = 1 ) {
+		return KittyKeyboardEncoder::encode( { keycode, scancode, 0, modifiers, type }, flags );
+	};
+	EXPECT_STDSTREQ( "\033[13;2u", encode( KEY_RETURN, SCANCODE_RETURN, KEYMOD_LSHIFT ).bytes );
+	EXPECT_STDSTREQ( "\033[9;2u", encode( KEY_TAB, SCANCODE_TAB, KEYMOD_LSHIFT ).bytes );
+	EXPECT_STDSTREQ( "\033[127;2u",
+					 encode( KEY_BACKSPACE, SCANCODE_BACKSPACE, KEYMOD_LSHIFT ).bytes );
+	EXPECT_STDSTREQ( "\033[127;3u",
+					 encode( KEY_BACKSPACE, SCANCODE_BACKSPACE, KEYMOD_LALT ).bytes );
+	EXPECT_STDSTREQ( "\033[127;9u",
+					 encode( KEY_BACKSPACE, SCANCODE_BACKSPACE, KEYMOD_LMETA ).bytes );
+	for ( auto [keycode, scancode] :
+		  { std::pair{ KEY_RETURN, SCANCODE_RETURN }, std::pair{ KEY_TAB, SCANCODE_TAB },
+			std::pair{ KEY_BACKSPACE, SCANCODE_BACKSPACE } } ) {
+		EXPECT_FALSE( encode( keycode, scancode, KEYMOD_NONE ).handled );
+		EXPECT_FALSE( encode( keycode, scancode, KEYMOD_CAPS | KEYMOD_NUM ).handled );
+		EXPECT_FALSE(
+			encode( keycode, scancode, KEYMOD_LSHIFT, KittyKeyEventType::Release, 3 ).handled );
+	}
+}
+
+UTEST( eterm, legacy_ctrl_backspace_sends_backspace_control ) {
+	// As in xterm and Ghostty; it used to send nothing.
+	const std::pair<Uint32, const char*> cases[] = {
+		{ KEYMOD_NONE, "\177" },
+		{ KEYMOD_LALT, "\033\177" },
+		{ KEYMOD_LCTRL, "\010" },
+		{ KEYMOD_RCTRL, "\010" },
+		{ KEYMOD_LCTRL | KEYMOD_LSHIFT, "\010" },
+		{ KEYMOD_LCTRL | KEYMOD_LALT, "\033\010" },
+	};
+	for ( const auto& [modifiers, expected] : cases ) {
+		auto pty = std::make_unique<MockPty>();
+		pty->mLoopWrites = false;
+		MockPty* ptyPtr = pty.get();
+		auto term = TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(),
+											  std::make_shared<MockDisplay>(), 100 );
+		term->update();
+		term->keyEvent(
+			{ KEY_BACKSPACE, SCANCODE_BACKSPACE, 0, modifiers, KittyKeyEventType::Press } );
+		EXPECT_STDSTREQ( expected, ptyPtr->mWrites );
+	}
 }
