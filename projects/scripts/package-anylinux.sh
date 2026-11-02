@@ -61,5 +61,12 @@ ln -s ../assets "$APPDIR/bin/assets"
 ln -s ../../assets "$APPDIR/shared/bin/assets"
 sh "$QUICK_SHARUN" --make-appimage
 [ -f "$OUTPATH/$OUTNAME" ] || { echo "AnyLinux image was not produced: $OUTNAME" >&2; exit 1; }
+if [ -n "${UPINFO:-}" ] && [ ! -s "$OUTPATH/$OUTNAME.zsync" ]; then
+	echo "AnyLinux update metadata was not produced: $OUTNAME.zsync" >&2
+	exit 1
+fi
 mv "$OUTPATH/$OUTNAME" "$OUTPUT_DIR/$OUTNAME"
+if [ -f "$OUTPATH/$OUTNAME.zsync" ]; then
+	mv "$OUTPATH/$OUTNAME.zsync" "$OUTPUT_DIR/$OUTNAME.zsync"
+fi
 echo "Generated $OUTPUT_DIR/$OUTNAME"

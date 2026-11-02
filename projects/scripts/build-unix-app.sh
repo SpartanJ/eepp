@@ -97,7 +97,16 @@ if [ "$PLATFORM" = linux ]; then
 		objcopy -S "$LIB_DEST/libeepp.so" "$LIB_DEST/libeepp.so"
 	fi
 	# The AppImage architecture environment is consumed by appimagetool.
-	ARCH="$ARCH" "$APPIMAGETOOL" "$STAGING" "$OUTPUT_DIR/$PACKAGE_NAME.AppImage"
+	APPIMAGE_ARGS=("$STAGING" "$OUTPUT_DIR/$PACKAGE_NAME.AppImage")
+	if [ -n "${UPINFO:-}" ]; then
+		APPIMAGE_ARGS=(-u "$UPINFO" "${APPIMAGE_ARGS[@]}")
+	fi
+	# An earlier image's checksums must never accompany a regenerated image.
+	rm -f "$OUTPUT_DIR/$PACKAGE_NAME.AppImage.zsync"
+	ARCH="$ARCH" "$APPIMAGETOOL" "${APPIMAGE_ARGS[@]}"
+	if [ -n "${UPINFO:-}" ] && [ ! -s "$OUTPUT_DIR/$PACKAGE_NAME.AppImage.zsync" ]; then
+		package_error "appimagetool did not generate .zsync metadata; install zsyncmake"
+	fi
 fi
 
 # Archive with an application-named launcher and top-level directory.

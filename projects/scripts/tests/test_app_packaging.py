@@ -62,7 +62,12 @@ class AppPackaging(PackagingFixture):
         self.command("strip", "exit 0")
         self.command("nproc", "echo 2")
         self.command("getconf", 'if [ "$1" = GNU_LIBC_VERSION ]; then echo "glibc 2.35"; else /usr/bin/getconf "$@"; fi')
-        self.command("appimagetool", '[ -f "$1/sample.desktop" ] && touch "$2"')
+        self.command("appimagetool", '''
+update_info=
+if [ "$1" = -u ]; then update_info=$2; shift 2; fi
+[ -f "$1/sample.desktop" ] && touch "$2"
+[ -z "$update_info" ] || printf '%s\\n' "$update_info" > "$2.zsync"
+''')
         # ldd's paths are whitespace-delimited; use an external no-space runtime fixture.
         self.runtime = tempfile.TemporaryDirectory(prefix="eepp-sdl-")
         self.addCleanup(self.runtime.cleanup)
@@ -167,6 +172,7 @@ class AppPackaging(PackagingFixture):
     def test_anylinux_is_additional_and_keeps_conventional_runtime(self):
         self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')
         self.env["QUICK_SHARUN"] = str(self.commands / "quick-sharun")
+        self.env["UPINFO"] = "gh-releases-zsync|example|sample|nightly|sample-anylinux-*-x86_64.AppImage.zsync"
         companion = Path(self.runtime.name) / "libdecor-0.so.0"
         companion.write_text("SDL companion")
         self.command("ldconfig", f'echo "libdecor-0.so.0 (libc6,x86-64) => {companion}"')
@@ -180,6 +186,7 @@ if [ "$1" = --make-appimage ]; then
     [ "$(cat "$APPDIR/shared/bin/sample.bin")" = patched ]
     [ -f "$APPDIR/.DirIcon" ]
     cat "$APPDIR/selected-sdl" > "$OUTPATH/$OUTNAME"
+    printf '%s\\n' "$UPINFO" > "$OUTPATH/$OUTNAME.zsync"
 else
     [ "$MAIN_BIN" = sample.bin ]
     [ -f "$DESKTOP" ] && [ -f "$ICON" ]
@@ -213,6 +220,9 @@ fi
                 self.package("linux", "--backend", backend, "--anylinux")
                 self.assertTrue((self.output / "sample-linux-1.2.3-x86_64.AppImage").is_file())
                 self.assertEqual((self.output / "sample-anylinux-1.2.3-x86_64.AppImage").read_text(), payload)
+                for flavor in ("linux", "anylinux"):
+                    metadata = self.output / f"sample-{flavor}-1.2.3-x86_64.AppImage.zsync"
+                    self.assertEqual(metadata.read_text().strip(), self.env["UPINFO"])
                 with tarfile.open(self.output / "sample-linux-1.2.3-x86_64.tar.gz") as package:
                     self.assertEqual(package.extractfile("sample/sample.bin").read(),
                                      (self.source / "sample").read_bytes())
@@ -251,6 +261,28 @@ fi
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("requires glibc >= 2.33", result.stdout)
         self.assertIn("found glibc 2.31", result.stdout)
+
+    def test_requested_update_metadata_is_required(self):
+        self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')
+        self.env["UPINFO"] = "zsync|https://example.com/sample.AppImage.zsync"
+        self.output.mkdir()
+        (self.output / "sample-linux-1.2.3-x86_64.AppImage.zsync").write_text("stale metadata")
+        self.command("appimagetool", 'shift 2; touch "$2"')
+        result = self.package("linux", "--backend", "SDL3", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("did not generate .zsync", result.stdout)
+        self.command("appimagetool", 'shift 2; touch "$2"; echo metadata > "$2.zsync"')
+        self.env["QUICK_SHARUN"] = str(self.commands / "quick-sharun")
+        self.command("quick-sharun", '''
+if [ "$1" = --make-appimage ]; then
+    touch "$OUTPATH/$OUTNAME"
+else
+    mkdir -p "$APPDIR/bin" "$APPDIR/shared/bin"
+fi
+''')
+        result = self.package("linux", "--backend", "SDL3", "--anylinux", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("update metadata was not produced", result.stdout)
 
     def test_freebsd_version_and_fresh_staging(self):
         self.package("freebsd", "--backend", "SDL3")

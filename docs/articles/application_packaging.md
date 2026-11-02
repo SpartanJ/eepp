@@ -71,6 +71,31 @@ not block the conventional downloads. The ARM64 nightly continues to use the
 conventional format because it is cross-compiled on x86_64. Native arm64 builds can opt in
 with the same flag.
 
+### AppImage updates
+
+Set `UPINFO` to embed an AppImageUpdate update source when packaging. For example:
+
+```sh
+UPINFO='gh-releases-zsync|SpartanJ|eepp|nightly|ecode-linux-*-x86_64.AppImage.zsync' \
+    projects/linux/build.app.sh ecode --version nightly
+```
+
+Conventional images need `zsyncmake` (Ubuntu's `zsync` package) to generate the accompanying
+`.AppImage.zsync` file. AnyLinux's tool includes its generator. Publish the image and its
+matching `.zsync` together; both packagers require metadata when `UPINFO` is specified.
+Use a separate `ecode-anylinux-*` pattern when invoking `package-anylinux.sh` directly.
+The nightly and tagged-release workflows configure their own repository, channel, format
+and architecture patterns and upload both files. Tagged releases use `latest-all`, supported
+by [pkgforge-dev/AppImageUpdate](https://github.com/pkgforge-dev/AppImageUpdate), because
+the release workflow currently marks its releases as prereleases.
+
+### Checking AnyLinux fallback
+
+The AnyLinux file is named `ecode-anylinux-<version>-<arch>.AppImage`; conventional images
+use `ecode-linux-<version>-<arch>.AppImage`. Check `--appimage-version` to identify the runtime.
+AnyLinux uses uruntime and can fall back without FUSE. When namespaces are also unavailable,
+it can extract and run; `--appimage-extract-and-run` explicitly selects that mode.
+
 ## Assets
 
 An application's `src/tools/<app>/assets.list` declares its packaged files, one path per line,
