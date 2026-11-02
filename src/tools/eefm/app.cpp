@@ -607,6 +607,7 @@ int App::run( int argc, char* argv[] ) {
 	// reference. Running transfers are cancelled (destroying the VFS waits for them).
 	mFileOperations->cancelOperations();
 	mPreviewPanel->cancel();
+	mQuickPreview->cancel();
 	mThumbnails->shutdown();
 	mPlacesController->shutdown();
 	mPaneManager->clearTabs();
@@ -634,6 +635,7 @@ int App::run( int argc, char* argv[] ) {
 	mSettingsActions.reset();
 	mTerminalPanel.reset();
 	mPreviewPanel.reset();
+	mQuickPreview.reset();
 	mThumbnails.reset();
 	mFileOperations.reset();
 	mPaneManager.reset();
@@ -739,6 +741,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	mPaneSplitter = mUI->find<UISplitter>( "pane_splitter" );
 	mPlacesScroll = mUI->find<UIWidget>( "places_scroll" );
 	mParking = mUI->find<UIWidget>( "parking" );
+	mQuickPreview = std::make_unique<PreviewPanel>( *this, nullptr );
 	mPreviewPanel =
 		std::make_unique<PreviewPanel>( *this, mUI->find<UISplitter>( "preview_splitter" ) );
 	if ( mState.contains( "preview_partition" ) && mState["preview_partition"].is_string() )
@@ -1244,6 +1247,7 @@ void App::createMenuBar() {
 	add( edit, mUI->i18n( "eefm_delete", "Delete" ), "delete" );
 
 	auto* view = menu( mUI->i18n( "eefm_view_menu", "View" ) );
+	add( view, mUI->i18n( "eefm_quick_look", "Quick Look" ), "quick-look" );
 	add( view, mUI->i18n( "eefm_refresh", "Reload" ), "refresh" );
 	add( view, mUI->i18n( "eefm_show_hidden", "Show Hidden Files" ), "toggle-hidden" );
 	add( view, mUI->i18n( "eefm_split_view", "Split View" ), "toggle-split" );
@@ -1380,6 +1384,9 @@ void App::registerShortcuts() {
 	mUI->setKeyBindingCommand(
 		"terminal", onTab( [this]( FileTab* tab ) { mFileOperations->openTerminalHere( tab ); } ) );
 	mUI->setKeyBindingCommand( "toggle-terminal", [this] { mTerminalPanel->toggle(); } );
+	mUI->setKeyBindingCommand( "quick-look", fileCommand( [this] {
+								   mQuickPreview->show( !mQuickPreview->isVisible() );
+							   } ) );
 	mUI->setKeyBindingCommand( "toggle-preview",
 							   [this] { mPreviewPanel->show( !mPreviewPanel->isVisible() ); } );
 	mUI->setKeyBindingCommand( "settings", [this] { mSettingsActions->showSettings(); } );
@@ -1424,6 +1431,7 @@ KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
 		{ "shift+f4", "terminal" },
 		{ "f4", "toggle-terminal" },
 		{ "f11", "toggle-preview" },
+		{ "space", "quick-look" },
 		{ "mod+shift+,", "settings" },
 		{ "mod+q", "quit" },
 		{ "mod+shift+f11", "debug-widget-tree-view" },

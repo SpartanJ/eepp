@@ -100,6 +100,8 @@ class App {
 
 	PreviewPanel& preview() const { return *mPreviewPanel; }
 
+	PreviewPanel& quickPreview() const { return *mQuickPreview; }
+
 	Thumbnails& thumbnails() const { return *mThumbnails; }
 
 	SettingsActions& settings() const { return *mSettingsActions; }
@@ -201,6 +203,7 @@ class App {
 	std::unique_ptr<PlacesController> mPlacesController;
 	std::unique_ptr<TerminalPanel> mTerminalPanel;
 	std::unique_ptr<PreviewPanel> mPreviewPanel;
+	std::unique_ptr<PreviewPanel> mQuickPreview;
 	std::unique_ptr<Thumbnails> mThumbnails;
 	std::unique_ptr<SettingsActions> mSettingsActions;
 	/** Colored icons from the user's icon theme / the OS shell (glyph icons until loaded). */

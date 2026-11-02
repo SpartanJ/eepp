@@ -35,6 +35,9 @@ class FileOperations {
 	/** Opens a folder row (navigates there) or the selected files. */
 	void openRow( FileTab* tab, size_t row );
 
+	/** Opens files with the chosen application, including archives. */
+	void openWith( const std::vector<URI>& uris, Application app );
+
 	void showContextMenu( FileTab* tab, bool background );
 
 	/** Discards handler discovery for a context menu superseded by further input. */
@@ -152,9 +155,6 @@ class FileOperations {
 	void openDocuments( const std::vector<URI>& uris );
 
 	void openWithCommand( const std::vector<URI>& uris );
-
-	/** Opens files with the chosen application, including archives. */
-	void openWith( const std::vector<URI>& uris, Application app );
 
 	/** Files in the clipboard: copied here or in another file manager (text/uri-list, with the
 	 * GNOME / KDE cut markers). */

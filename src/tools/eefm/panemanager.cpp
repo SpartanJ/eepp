@@ -905,8 +905,10 @@ void PaneManager::updateStatus( Pane& pane ) {
 		status = String::fromUtf8( text );
 	}
 	pane.status->setText( status );
-	if ( pane.index == activeIndex() )
+	if ( pane.index == activeIndex() ) {
 		mApp.preview().syncSelection();
+		mApp.quickPreview().syncSelection();
+	}
 }
 
 void PaneManager::rememberViewState( FileTab* tab ) {
