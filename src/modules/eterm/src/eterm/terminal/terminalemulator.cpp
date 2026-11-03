@@ -4363,6 +4363,7 @@ check_control_code:
 	gp = &mTerm.line[mTerm.c.y][mTerm.c.x];
 	if ( IS_SET( MODE_WRAP ) && ( mTerm.c.state & CURSOR_WRAPNEXT ) ) {
 		gp->mode |= ATTR_WRAP;
+		mTerm.dirty[mTerm.c.y] = 1;
 		tnewline( 1 );
 		gp = &mTerm.line[mTerm.c.y][mTerm.c.x];
 	}
@@ -4375,6 +4376,7 @@ check_control_code:
 		last.mode |= ATTR_WRAP;
 		if ( isWrapPaddingCandidate( last ) )
 			last.mode |= ATTR_WRAP_PADDING;
+		mTerm.dirty[mTerm.c.y] = 1;
 		tnewline( 1 );
 		gp = &mTerm.line[mTerm.c.y][mTerm.c.x];
 	}
@@ -4496,7 +4498,7 @@ struct GlyphProperties {
 struct UnicodeRun {
 	static constexpr bool Narrow = false;
 	static constexpr int Capacity = 512;
-	Rune codepoints[Capacity];
+	char32_t codepoints[Capacity];
 	uint8_t properties[Capacity];
 
 	Rune codepoint( int i ) const { return codepoints[i]; }
@@ -4518,10 +4520,13 @@ struct UnicodeRun {
  * decoder ~14%. */
 #if defined( __GNUC__ ) || defined( __clang__ )
 #define ETERM_ALWAYS_INLINE inline __attribute__( ( always_inline ) )
+#define ETERM_NOINLINE __attribute__( ( noinline ) )
 #elif defined( _MSC_VER )
 #define ETERM_ALWAYS_INLINE __forceinline
+#define ETERM_NOINLINE __declspec( noinline )
 #else
 #define ETERM_ALWAYS_INLINE inline
+#define ETERM_NOINLINE
 #endif
 
 /* Decodes one well-formed multi-byte UTF-8 sequence at bytes[offset] as utf8decode() accepts it
@@ -4564,18 +4569,88 @@ static int decodeZeroWidthRun( const char* data, int begin, int end, char32_t* c
 	constexpr uint8_t required =
 		Grapheme ? GlyphProperties::PlainExtend : GlyphProperties::ZeroWidth;
 	const auto* bytes = reinterpret_cast<const unsigned char*>( data );
+	const uint8_t* bmp = GlyphProperties::bmp();
 	int offset = begin;
 	count = 0;
 	while ( offset < end && count < capacity ) {
 		Rune u;
 		const int size = decodeUtf8Codepoint( bytes, offset, end, u );
 		if ( size == 0 || u < 0xA0 || u == KittyGraphicsPlaceholder ||
-			 !( GlyphProperties::of( u ) & required ) )
+			 !( ( u < 0x10000 ? bmp[u] : GlyphProperties::compute( u ) ) & required ) )
 			break;
 		codepoints[count++] = static_cast<char32_t>( u );
 		offset += size;
 	}
 	return offset;
+}
+
+struct UnicodeSimdResult {
+	int end;
+	int count;
+};
+
+static_assert( sizeof( UnicodeSimdResult ) == 8 );
+
+/* Convert only a bounded span after a scalar prefix established printable text.
+ * An end of -1 retains the scalar decoder; otherwise return the accepted input byte end/count. */
+template <bool Grapheme>
+static ETERM_NOINLINE UnicodeSimdResult tryDecodeUnicodeSimd( const char* data, int begin, int end,
+															  UnicodeRun& run, int count,
+															  bool previousAttracts,
+															  const uint8_t* bmp ) {
+	int limit = begin + eemin( end - begin, UnicodeRun::Capacity - count );
+	// Bound the common line/escape terminators before conversion. Other controls and grapheme
+	// boundaries are checked below and never consumed past, even if conversion saw more text.
+	for ( char stop : { '\n', '\033' } ) {
+		if ( const auto* at =
+				 static_cast<const char*>( memchr( data + begin, stop, limit - begin ) ) )
+			limit = static_cast<int>( at - data );
+	}
+	if ( limit < end ) {
+		while ( limit > begin && ( static_cast<unsigned char>( data[limit] ) & 0xC0 ) == 0x80 )
+			--limit;
+	}
+	if ( limit - begin < 64 )
+		return { -1, count };
+	const int first = count;
+	const size_t written =
+		String::tryToUtf32( std::string_view( data + begin, limit - begin ), run.codepoints + first,
+							UnicodeRun::Capacity - first );
+	if ( written == 0 )
+		return {
+			-1, count }; // Ignore partial output on malformed input; the scalar path overwrites it.
+	const int convertedEnd = first + static_cast<int>( written );
+	constexpr uint8_t stops =
+		GlyphProperties::ZeroWidth | ( Grapheme ? GlyphProperties::Joins : 0 );
+	while ( count < convertedEnd ) {
+		const Rune u = run.codepoints[count];
+		if ( u < 0x80 ) {
+			if ( !isPrintableAscii( static_cast<unsigned char>( u ) ) )
+				break;
+			run.properties[count++] = 1;
+			continue;
+		}
+		if ( u < 0xA0 || u == KittyGraphicsPlaceholder )
+			break;
+		const uint8_t properties = u < 0x10000 ? bmp[u] : GlyphProperties::compute( u );
+		if ( properties & stops )
+			break;
+		if constexpr ( Grapheme ) {
+			if ( previousAttracts )
+				break;
+			previousAttracts = properties & GlyphProperties::Attracts;
+		}
+		run.properties[count++] = properties;
+	}
+	if ( count == convertedEnd )
+		return { limit, count };
+	// Only the uncommon stopped prefix needs a codepoint-to-byte offset calculation.
+	int consumed = 0;
+	for ( int i = first; i < count; ++i ) {
+		const Rune u = run.codepoints[i];
+		consumed += 1 + ( u >= 0x80 ) + ( u >= 0x800 ) + ( u >= 0x10000 );
+	}
+	return { begin + consumed, count };
 }
 
 /* Decodes the text at [begin, end) that tputrun() can write directly: printable ASCII and the
@@ -4594,6 +4669,7 @@ static int decodeUnicodeRun( const char* data, int begin, int end, UnicodeRun& r
 	int offset = begin;
 	count = 0;
 	while ( offset < end && count < UnicodeRun::Capacity ) {
+
 		const unsigned char lead = bytes[offset];
 		Rune u;
 		if ( lead < 0x80 ) {
@@ -4622,6 +4698,14 @@ static int decodeUnicodeRun( const char* data, int begin, int end, UnicodeRun& r
 		run.codepoints[count] = u;
 		run.properties[count++] = properties;
 		offset += size;
+		if ( count == 4 && end - offset >= 64 ) {
+			const auto bulk = tryDecodeUnicodeSimd<Grapheme>( data, offset, end, run, count,
+															  previousAttracts, bmpProperties );
+			if ( bulk.end >= 0 ) {
+				count = bulk.count;
+				return bulk.end;
+			}
+		}
 	}
 	return offset;
 }
@@ -4645,6 +4729,14 @@ template <typename Run> void TerminalEmulator::tputrun( const Run& run, int len 
 	const auto needsCompletePath = [checkPlaceholders]( const TerminalGlyph& glyph ) {
 		return ( glyph.mode & ( ATTR_WIDE | ATTR_WDUMMY ) ) ||
 			   ( checkPlaceholders && glyph.u == KittyGraphicsPlaceholder );
+	};
+	const auto fourNeedCompletePath = [checkPlaceholders]( const TerminalGlyph* glyphs ) {
+		const uint32_t modes = glyphs[0].mode | glyphs[1].mode | glyphs[2].mode | glyphs[3].mode;
+		return ( modes & ( ATTR_WIDE | ATTR_WDUMMY ) ) ||
+			   ( checkPlaceholders && ( glyphs[0].u == KittyGraphicsPlaceholder ||
+										glyphs[1].u == KittyGraphicsPlaceholder ||
+										glyphs[2].u == KittyGraphicsPlaceholder ||
+										glyphs[3].u == KittyGraphicsPlaceholder ) );
 	};
 	const auto clearSelectionAt = [this, &selectionActive]( int x, int y ) {
 		if ( selectionActive && selected( x, y ) ) {
@@ -4676,6 +4768,7 @@ template <typename Run> void TerminalEmulator::tputrun( const Run& run, int len 
 			/* Without a pending wrap, a wide character skips this column: as in tputc(). */
 			if ( !( mTerm.c.state & CURSOR_WRAPNEXT ) && isWrapPaddingCandidate( last ) )
 				last.mode |= ATTR_WRAP_PADDING;
+			mTerm.dirty[mTerm.c.y] = 1;
 			tnewline( 1 );
 			checkFrom = mTerm.c.x + 1;
 		}
@@ -4695,25 +4788,43 @@ template <typename Run> void TerminalEmulator::tputrun( const Run& run, int len 
 			for ( int cell = eemax( checkFrom, x ); selectionActive && cell < x + segmentEnd - i;
 				  ++cell )
 				clearSelectionAt( cell, y );
-			// Check four cells before writing any of them. A wide half or placeholder keeps the
-			// existing per-cell path, which repairs it before continuing through the segment.
-			while ( segmentEnd - i >= 4 ) {
-				TerminalGlyph* gp = &line[column];
-				const uint32_t modes = gp[0].mode | gp[1].mode | gp[2].mode | gp[3].mode;
-				if ( ( modes & ( ATTR_WIDE | ATTR_WDUMMY ) ) ||
-					 ( checkPlaceholders && ( gp[0].u == KittyGraphicsPlaceholder ||
-											  gp[1].u == KittyGraphicsPlaceholder ||
-											  gp[2].u == KittyGraphicsPlaceholder ||
-											  gp[3].u == KittyGraphicsPlaceholder ) ) )
+		}
+		// Check four cells before writing any of them. A wide half or placeholder keeps the
+		// existing per-cell path, which repairs it before continuing through the segment.
+		while ( segmentEnd - i >= 4 ) {
+			const int width = run.width( i );
+			if constexpr ( !Run::Narrow ) {
+				if ( ( width != 1 && width != 2 ) || columns - column < 4 * width ||
+					 ( ( run.width( i + 1 ) ^ width ) | ( run.width( i + 2 ) ^ width ) |
+					   ( run.width( i + 3 ) ^ width ) ) )
 					break;
-				gp[0] = glyphAt( i );
-				gp[1] = glyphAt( i + 1 );
-				gp[2] = glyphAt( i + 2 );
-				gp[3] = glyphAt( i + 3 );
-				lastColumn = column + 3;
-				column += 4;
-				i += 4;
 			}
+			TerminalGlyph* gp = &line[column];
+			if ( fourNeedCompletePath( gp ) || ( width == 2 && fourNeedCompletePath( gp + 4 ) ) )
+				break;
+			if constexpr ( !Run::Narrow ) {
+				for ( int cell = column; selectionActive && cell < column + 4 * width;
+					  cell += width ) {
+					if ( cell >= checkFrom )
+						clearSelectionAt( cell, y );
+				}
+			}
+			gp[0] = glyphAt( i );
+			gp[width] = glyphAt( i + 1 );
+			gp[2 * width] = glyphAt( i + 2 );
+			gp[3 * width] = glyphAt( i + 3 );
+			if ( width == 2 ) {
+				TerminalGlyph dummy{ 0, ATTR_WDUMMY };
+				setGlyphLinkId( dummy, mActiveHyperlinkId );
+				// As in the scalar writer, dummy cells retain their existing foreground/background.
+				for ( int cell = 1; cell < 8; cell += 2 ) {
+					gp[cell].u = dummy.u;
+					gp[cell].mode = dummy.mode;
+				}
+			}
+			lastColumn = column + 3 * width;
+			column += 4 * width;
+			i += 4;
 		}
 		while ( i < segmentEnd ) {
 			const int width = run.width( i );

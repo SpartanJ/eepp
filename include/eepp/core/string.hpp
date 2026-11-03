@@ -689,6 +689,14 @@ class EE_API String {
 	static size_t toUtf32( std::string_view utf8str, String::StringBaseType* buffer,
 						   size_t bufferSize );
 
+	/** Validates UTF-8 and converts it into caller-provided UTF-32 storage without allocating.
+	 * bufferSize is the capacity in codepoints. No terminator is appended and a BOM is preserved.
+	 * @return The number of codepoints written, or zero for empty input, invalid UTF-8 or
+	 * insufficient capacity. On failure the buffer contents are unspecified.
+	 */
+	static size_t tryToUtf32( std::string_view utf8str, String::StringBaseType* buffer,
+							  size_t bufferSize );
+
 	/** glob matches a string against a glob
 	** @return True if matches
 	*/

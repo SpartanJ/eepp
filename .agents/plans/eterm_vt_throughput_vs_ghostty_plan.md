@@ -6,7 +6,8 @@ Items 1-5 are committed in `cef605021`; grapheme phase 1 is committed in `b4b4aa
 Grapheme shaping and review fixes are committed, including mode-2027 extension batching in
 `5bd79ba75`. The latest controlled-scrollback baseline (2026-11-03) pins Ghostty `91973f2b2`
 and supersedes the older comparison with unlike history budgets. Runtime-dispatched SIMD
-row clears are committed in `620c74bfc`. Local changes now batch four narrow glyph writes;
+row clears are committed in `620c74bfc` and four-cell narrow writes in `a996bb737`.
+Local changes extend batching to equal-width Unicode glyphs and add bounded SIMD UTF-8 decoding;
 measurements and validation are recorded below. The mode-controlled follow-up explains the
 apparent regression caused by comparing different reset defaults.
 
@@ -775,8 +776,124 @@ Artifacts: `/tmp/negen-vt-writer/` contains `eterm-before`, `eterm-after`,
 disassembly. `*-batch.json` is the initial portable comparison and `*-simd.json`
 is the rejected NEON trial. `metadata.json` records revisions and capture hashes.
 
+### Equal-width Unicode batches and bounded SIMD decoding (2026-11-03)
+
+Baseline: `a996bb7371898124e1f34fc37fe7cc57a105145f`, which committed the
+four-cell narrow writer above. The current local change extends that writer to
+four equal-width Unicode glyphs (one or two cells each), and uses bounded
+simdutf conversion behind an exported, nonallocating `String::tryToUtf32()` API.
+`TerminalGlyph` remains 16 bytes; no style table or cell representation change.
+
+A diagnostic profile with the decoder and writer outlined puts regular Unicode
+roughly evenly between `decodeUnicodeRun<true>` and `tputrun<UnicodeRun>` (1,171
+and 1,169 leaf samples, respectively; NEON clears 141). These are sampling
+counts from a diagnostic binary, not precise percentages for the final binary.
+Unique Unicode remains dominated by combining-mark attachment, cluster
+interning and allocation/GC. Batching narrow Unicode alone gained about 2%;
+including four wide glyphs gained about 21% before SIMD decoding. The wide
+batch checks all eight old cells for wide/dummy/placeholder repairs before
+writing, preserves the scalar selection rules and retains dummy-cell colors.
+Apple Clang unrolls the four dummy writes into four paired stores; no loop
+branch remains. Forcing `tpututf8()` inline was tried and removed: regular
+Unicode measured about 2.3% slower without a useful CSI gain.
+
+The SIMD helper is deliberately out of line. After four accepted scalar
+codepoints, it considers at most the remaining output capacity in input bytes,
+bounded before LF/ESC and trimmed to a UTF-8 boundary. It requires at least
+64 bytes. The converted codepoints still pass the same control, width and
+grapheme-property checks; a stopped prefix is mapped back to its byte end.
+Malformed conversion discards partial output and keeps the scalar recovery
+path. No controls or cluster boundaries are consumed early. Mark-leading and
+short runs keep the scalar path without calling the helper.
+
+`String::tryToUtf32()` validates while converting into caller-provided storage,
+without a terminator or BOM removal. eterm bounds input bytes by output slots,
+so its call needs only that validating conversion. Tighter general-purpose
+buffers first validate/count to establish capacity. Keeping simdutf in core
+avoids depending on private third-party symbols across Windows DLL boundaries.
+The library's existing runtime SIMD dispatch selects the implementation.
+`UnicodeRun` uses `char32_t` storage rather than aliasing a `Rune` buffer; it is
+still 2,560 bytes. The helper returns an 8-byte end/count result by value.
+Native ARM64 and x86-64 Clang checks verify those sizes and the 16-byte glyph.
+
+Final whole-process medians on M2 Pro: one warmup, five runs, 120x80, mode 2027
+enabled after every RIS, 10,000 requested history rows in both engines, same
+captures and pinned Ghostty `91973f2b2` as above. MB = 1,000,000 bytes. All heavy
+work ran serially. Every timed eterm run passed the full-byte and six-DSR gates.
+
+| Workload | Committed eterm | Local eterm | Change | Ghostty | eterm / Ghostty |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ASCII | 398.3 | 392.3 | -1.5% | 438.0 | 0.90x |
+| Unicode | 375.0 | 480.1 | +28.0% | 628.0 | 0.76x |
+| Unique Unicode | 113.7 | 114.8 | +0.9% | 80.6 | 1.42x |
+| CSI | 247.8 | 246.1 | -0.6% | 176.5 | 1.39x |
+| Images | 2,181.1 | 2,225.3 | +2.0% | 2,170.1 | 1.03x |
+| Long escape codes | 2,877.6 | 2,871.6 | -0.2% | 4,238.4 | 0.68x |
+
+Reversed Unicode order measured 371.5 -> 481.4 MB/s (+29.6%), Ghostty 612.7
+(0.79x). Reversed Unique Unicode measured 113.5 -> 112.2 MB/s (-1.1%),
+Ghostty 79.9 (1.41x). Thus the final pair of rounds shows a 28-30% regular
+Unicode gain and about +/-1% on Unique Unicode. Absolute rates vary with the
+host; the earlier direct-call prototype reached 504.4 MB/s, but use the matched
+final table rather than mixing its rate with another Ghostty run.
+
+The first SIMD prototype added about 5% over the wide writer but cost about
+3.6% on Unique Unicode; the user explicitly accepted that tradeoff for the
+regular-text gain. Outlining the helper, returning count by value and hoisting
+the BMP lookup in zero-width runs reduced that cost in subsequent rounds.
+The initial exported-API matrix had a noisy Unique result of -8.3% overall;
+three alternating direct-call/API checks then put the API build +0.5%, +6.6%
+and +3.0% ahead of the prototype. These do not establish a wrapper penalty.
+All those runs remain in the artifacts; the final matrix and reverse checks
+above are a separate complete measurement, not substituted favorable rows.
+
+Correctness also uncovered an existing display-update bug: setting ATTR_WRAP
+or ATTR_WRAP_PADDING when output arrived in separate reads did not mark the
+previous row dirty. The same eight test assertions failed on the committed
+baseline. Both `tputc()` wrap cases and `tputrun()` now dirty that row before
+moving on; the fragmented/bulk write test passes without forcing redraw.
+
+Validation:
+
+- All 180 terminal and 20 String tests pass; release eterm, ecode and unit tests
+  build with the project's no-framework script.
+- New terminal tests cover equal-width writes, old dummy colors, selections,
+  padding/wrap snapshots and mixed UTF-8 across the SIMD limit, with mode 2027
+  on and off. Controls, marks, ZWJ, C1, malformed/incomplete UTF-8, truecolor
+  and hyperlink metadata survive fragmented reads.
+- The String test covers tight/insufficient capacity with guards, invalid UTF-8,
+  embedded NUL, BOM preservation, empty input and a 256-byte ASCII buffer.
+- 100 random streams (read sizes 1, 7, 4,093 and 65,536) and 12 workload
+  checkpoints match the committed parser's canonical full-model cells,
+  resolved cluster text, modes, colors and cursor. The dump harness forces a
+  redraw to distinguish the old snapshot-dirty bug from parser state.
+- History capacities 0, 1, 1,000 and 10,000 match cells/cursor, bytes, DSR
+  responses and retained rows. Image update counts, pixel bytes and hash match.
+- Allocation audit: no new heap allocations or retained state in the parser or
+  conversion API. Existing lazy BMP storage is reused; the run stack size is
+  unchanged. Local lambdas capture references or the existing boolean flag,
+  with no ownership handoffs or dynamic function wrappers.
+- Native ARM64 builds/tests and x86-64 Clang syntax/layout checks pass.
+  Native x86 performance, Linux/GCC and Windows remain unverified.
+
+Artifacts: `/tmp/negen-vt-unicode/` contains `eterm-before`, `eterm-after`,
+`eterm-value` (direct-vendor prototype), source snapshots, `measure-accepted.py`,
+`accepted-summary.json`, all `*-accepted.json`/logs, preliminary trial matrices,
+`final-summary.json`, `wrapper-recheck-summary.json`, diagnostic samples and
+assembly. `compare-final.py`/log, `extra-checks.log`, test/build logs and
+`layout-check.cpp` preserve validation. `metadata.json` records source revisions,
+capture/binary hashes and the final source snapshot; `report.md` has this record.
+
 ### Also noticed
 
+- The framework retry linked the test binary against `@rpath/SDL2.framework`,
+  but its runtime lookup failed. SDL2 is installed at
+  `/Library/Frameworks/SDL2.framework`; it is not missing. The generated macOS
+  makefiles carry a literal `$ORIGIN` RPATH, and the framework setup supplies
+  `-F /Library/Frameworks` without the corresponding runtime search path.
+  Rebuilding the test target through `make_no_fw.sh` restored its Homebrew SDL2
+  linkage and all tests passed. The framework RPATH issue is recorded separately;
+  this performance change does not modify the build scripts.
 - `erresc: unknown csi` diagnostics (kitten sends `CSI * x` and `CSI ? r`) only print in debug
   builds or with `ETERM_LOG_ERRORS` set (`terminalDiagnosticsEnabled()`); release runs are quiet
   and pay one cached check. Nothing to do.

@@ -1,4 +1,5 @@
 #include "utest.hpp"
+#include <array>
 #include <cstdlib>
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
@@ -414,6 +415,51 @@ UTEST( String, acceleratedUtf8Decoding ) {
 	String::StringType expected;
 	Utf8::toUtf32( malformed.begin(), malformed.end(), std::back_inserter( expected ) );
 	EXPECT_TRUE( String( malformed ).getString() == expected );
+}
+
+UTEST( String, validatedUtf32BufferConversion ) {
+	std::array<char32_t, 16> output{};
+	const std::string_view input = "A\xC3\xA9\xE7\x95\x8C\xF0\x9F\x9A\x80"sv;
+	const auto written = String::tryToUtf32( input, output.data(), output.size() );
+	ASSERT_EQ( static_cast<size_t>( 4 ), written );
+	EXPECT_TRUE( String::View( output.data(), written ) == U"A\u00E9\u754C\U0001F680" );
+
+	// A tight buffer still fits the decoded codepoints even though it is shorter than the bytes.
+	std::array<char32_t, 6> guarded;
+	guarded.fill( U'?' );
+	EXPECT_EQ( static_cast<size_t>( 4 ), String::tryToUtf32( input, guarded.data() + 1, 4 ) );
+	EXPECT_EQ( static_cast<Uint32>( U'?' ), static_cast<Uint32>( guarded.front() ) );
+	EXPECT_EQ( static_cast<Uint32>( U'?' ), static_cast<Uint32>( guarded.back() ) );
+	guarded.fill( U'?' );
+	EXPECT_EQ( static_cast<size_t>( 0 ), String::tryToUtf32( input, guarded.data() + 1, 3 ) );
+	EXPECT_EQ( static_cast<Uint32>( U'?' ), static_cast<Uint32>( guarded[0] ) );
+	EXPECT_EQ( static_cast<Uint32>( U'?' ), static_cast<Uint32>( guarded[4] ) );
+	EXPECT_EQ( static_cast<Uint32>( U'?' ), static_cast<Uint32>( guarded[5] ) );
+
+	EXPECT_EQ( static_cast<size_t>( 0 ), String::tryToUtf32( {}, nullptr, 0 ) );
+	for ( std::string_view malformed : { "\xC0\x80"sv, "\xED\xA0\x80"sv, "\xF4\x90\x80\x80"sv,
+										 "\xE7\x95"sv, "\x80"sv, "\xE0\x80\x80"sv } ) {
+		EXPECT_EQ( static_cast<size_t>( 0 ),
+				   String::tryToUtf32( malformed, output.data(), output.size() ) );
+	}
+	EXPECT_EQ( static_cast<size_t>( 4 ), String::tryToUtf32( "\xEF\xBB\xBF"
+															 "A\0B"sv,
+															 output.data(), output.size() ) );
+	EXPECT_EQ( static_cast<Uint32>( U'\uFEFF' ), static_cast<Uint32>( output[0] ) );
+	EXPECT_EQ( static_cast<Uint32>( U'A' ), static_cast<Uint32>( output[1] ) );
+	EXPECT_EQ( static_cast<Uint32>( U'\0' ), static_cast<Uint32>( output[2] ) );
+	EXPECT_EQ( static_cast<Uint32>( U'B' ), static_cast<Uint32>( output[3] ) );
+
+	std::array<char, 256> ascii;
+	ascii.fill( 'x' );
+	std::array<char32_t, 258> largeOutput;
+	largeOutput.fill( U'?' );
+	EXPECT_EQ( ascii.size(), String::tryToUtf32( { ascii.data(), ascii.size() },
+												 largeOutput.data() + 1, ascii.size() ) );
+	EXPECT_EQ( static_cast<Uint32>( U'?' ), static_cast<Uint32>( largeOutput.front() ) );
+	EXPECT_EQ( static_cast<Uint32>( U'?' ), static_cast<Uint32>( largeOutput.back() ) );
+	for ( size_t i = 1; i <= ascii.size(); ++i )
+		EXPECT_EQ( static_cast<Uint32>( U'x' ), static_cast<Uint32>( largeOutput[i] ) );
 }
 
 UTEST( String, byteStringEscapeAndUnescape ) {

@@ -2727,6 +2727,18 @@ size_t String::toUtf32( std::string_view utf8str, String::StringBaseType* buffer
 	return pos;
 }
 
+size_t String::tryToUtf32( std::string_view utf8str, String::StringBaseType* buffer,
+						   size_t bufferSize ) {
+	if ( utf8str.empty() || bufferSize == 0 )
+		return 0;
+	// The byte count bounds the output codepoints. Tight buffers need a validated count first.
+	if ( utf8str.size() > bufferSize &&
+		 ( !simdutf::validate_utf8( utf8str.data(), utf8str.size() ) ||
+		   simdutf::count_utf8( utf8str.data(), utf8str.size() ) > bufferSize ) )
+		return 0;
+	return simdutf::convert_utf8_to_utf32( utf8str.data(), utf8str.size(), buffer );
+}
+
 void String::readBySeparator( std::string_view buf,
 							  std::function<void( std::string_view )> onSepChunkRead, char sep ) {
 	// An empty buffer holds no chunks, so the callback is never handed a spurious empty one.

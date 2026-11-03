@@ -3021,6 +3021,86 @@ struct ClusterTerminal {
 
 } // namespace
 
+UTEST( eterm, unicode_batches_match_fragmented_reads ) {
+	for ( bool grapheme : { false, true } ) {
+		for ( int columns : { 8, 9 } ) {
+			for ( bool selectDummy : { false, true } ) {
+				ClusterTerminal bulk;
+				ClusterTerminal fragmented;
+				for ( auto* terminal : { &bulk, &fragmented } ) {
+					terminal->term->resize( columns, 4 );
+					terminal->term->setGraphemeClusteringEnabled( grapheme );
+					// Keep the selection on text before that cell becomes a wide-glyph dummy.
+					terminal->feed( "\033[44m\033[2J\033[Hxx\r\nxx\033[H" );
+					terminal->term->selstart( 1, selectDummy ? 1 : 0, 0 );
+					terminal->term->selextend( selectDummy ? 1 : 2, selectDummy ? 1 : 0,
+											   SEL_REGULAR, false );
+				}
+				// Four narrow glyphs (including box drawing), then four wide glyphs (including
+				// emoji). The fifth wide glyph wraps, with padding only in the nine-column case.
+				const std::string text =
+					"\033[41m\033]8;;https://example.test/\033\\"
+					"\xC3\xA9\xC3\x9F\xE2\x94\x80\xE2\x94\x82\r\n"
+					"\xE7\x95\x8C\xF0\x9F\x9A\x80\xE6\xBC\xA2\xF0\x9F\x98\x80\xE8\xAA\x9E"
+					"\033]8;;\033\\";
+				bulk.feed( text );
+				for ( char byte : text )
+					fragmented.feed( std::string( 1, byte ) );
+				EXPECT_EQ( selectDummy, bulk.term->hasSelection() );
+				EXPECT_EQ( selectDummy, fragmented.term->hasSelection() );
+				for ( int y = 0; y < 4; ++y ) {
+					for ( int x = 0; x < columns; ++x ) {
+						auto actual = bulk.cell( x, y );
+						EXPECT_TRUE( actual == fragmented.cell( x, y ) );
+					}
+				}
+				// Dummy colors are retained from the erased row, independently of the new style.
+				EXPECT_EQ( 1u, bulk.cell( 0, 1 ).bg );
+				EXPECT_EQ( 4u, bulk.cell( 1, 1 ).bg );
+			}
+		}
+	}
+}
+
+UTEST( eterm, unicode_bulk_decoding_matches_fragmented_reads ) {
+	for ( bool grapheme : { false, true } ) {
+		ClusterTerminal bulk;
+		ClusterTerminal fragmented;
+		bulk.term->setGraphemeClusteringEnabled( grapheme );
+		fragmented.term->setGraphemeClusteringEnabled( grapheme );
+		std::string text = "\033[38;2;7;11;17m\033]8;;https://example.test/\033\\";
+		// Cross the SIMD byte limit with mixed two-, three- and four-byte codepoints.
+		for ( int i = 0; i < 70; ++i )
+			text += "\xE7\x95\x8C\xC3\xA9\xF0\x9F\x9A\x80";
+		text += "\t";
+		for ( int i = 0; i < 40; ++i )
+			text += "\xC3\xA9";
+		// A combining mark and a ZWJ sequence must stop the printable run at the right byte.
+		text += "\xCC\x81\xF0\x9F\x91\xA9\xE2\x80\x8D\xF0\x9F\x92\xBB";
+		text += "\xC2\x85"; // UTF-8 C1 NEL, which conversion accepts but the terminal handles.
+		for ( int i = 0; i < 40; ++i )
+			text += "\xE6\xBC\xA2";
+		text += "\xED\xA0\x80";				  // Invalid surrogate encoding: retain scalar recovery.
+		text += "\033]8;;\033\\\r\n\xE7\x95"; // End with an incomplete character.
+		bulk.feed( text );
+		for ( char byte : text )
+			fragmented.feed( std::string( 1, byte ) );
+		bulk.feed( "\x8C!" );
+		fragmented.feed( "\x8C" );
+		fragmented.feed( "!" );
+		bulk.term->redraw();
+		fragmented.term->redraw();
+		for ( int y = 0; y < 24; ++y ) {
+			for ( int x = 0; x < 80; ++x ) {
+				EXPECT_TRUE( bulk.text( x, y ) == fragmented.text( x, y ) );
+				EXPECT_EQ( bulk.cell( x, y ).mode, fragmented.cell( x, y ).mode );
+				EXPECT_EQ( bulk.cell( x, y ).fg, fragmented.cell( x, y ).fg );
+				EXPECT_EQ( bulk.cell( x, y ).bg, fragmented.cell( x, y ).bg );
+			}
+		}
+	}
+}
+
 UTEST( eterm, zero_width_codepoints_attach_to_the_previous_cell ) {
 	ClusterTerminal t;
 	// The wcwidth() widths used with grapheme clustering turned off.
