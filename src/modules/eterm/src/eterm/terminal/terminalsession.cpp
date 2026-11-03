@@ -581,18 +581,28 @@ void TerminalSession::publishSnapshot( std::shared_ptr<const TerminalSnapshot> s
 }
 
 void TerminalSession::workerLoop() {
+	auto lastInput = std::chrono::steady_clock::now();
 	while ( !mShutdownRequested.load( std::memory_order_acquire ) ) {
 		processCommands();
 		if ( mShutdownRequested.load( std::memory_order_acquire ) )
 			break;
 
 		const bool inputDrained = mEmulator->update();
-		if ( !inputDrained )
+		if ( !inputDrained ) {
+			lastInput = std::chrono::steady_clock::now();
 			continue;
+		}
 
+		// Short producer pauses are common during TUI repaints. An 8 ms sleep on each one
+		// backpressures the child; keep polling promptly for 15 ms after input, then
+		// restore the idle wait so quiet tabs do not keep waking at the active rate.
+		const auto wait =
+			std::chrono::steady_clock::now() - lastInput < std::chrono::milliseconds( 15 )
+				? std::chrono::milliseconds( 1 )
+				: std::chrono::milliseconds( 8 );
 		std::unique_lock<std::mutex> lock( mCommandMutex );
 		if ( mCommands.empty() && !mShutdownRequested.load( std::memory_order_relaxed ) )
-			mCommandCondition.wait_for( lock, std::chrono::milliseconds( 8 ) );
+			mCommandCondition.wait_for( lock, wait );
 	}
 	mShutdownRequested.store( true, std::memory_order_release );
 	mEmulator.reset();

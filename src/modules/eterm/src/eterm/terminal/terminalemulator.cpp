@@ -5107,7 +5107,9 @@ void TerminalEmulator::tresize( int col, int row ) {
 
 	save_end = mTerm.row;
 	if ( mTerm.row != 0 && mTerm.col != 0 ) {
-		if ( !is_alt ) {
+		// Prompt reflow clears the cursor tail only when the width changes. A height-only
+		// resize must retain text and background cells that a TUI may not repaint.
+		if ( !is_alt && col != mTerm.col ) {
 			tclearregion( mTerm.c.x, mTerm.c.y, mTerm.col - 1, mTerm.c.y, true );
 		}
 

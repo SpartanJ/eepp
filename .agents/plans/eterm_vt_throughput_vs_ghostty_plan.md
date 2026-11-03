@@ -1014,6 +1014,112 @@ all raw JSON/logs, baseline and five trial binaries/source snapshots, the final
 `tpututf8-before.asm`/`tpututf8-after.asm`. `metadata.json` records hashes;
 `report.md` contains this record. No benchmark scaffolding is in production.
 
+### Real-PTY repaint latency after producer gaps (2026-11-03)
+
+A user reproduction exposed temporary blank frames with the cursor at (0,0)
+while a large Codex session repaints after showing/hiding the tab bar. The user
+also observed the intermediate frame in Ghostty, but it recovers much faster.
+Bulk parsing benchmarks do not measure producer/consumer wakeup latency.
+
+The worker polls the PTY nonblockingly, then waits on its command condition
+variable for 8 ms when drained. PTY output does not notify that condition. A
+single yield/reprobe already exists in `TerminalEmulator::update()`, but when
+it misses the producer's next write, every new gap can pay the idle interval
+and backpressure the child.
+
+An external harness replays the recorded 302 KiB Codex stream through a real
+`ProcessFactory` PTY and `TerminalSession`, at 177x52 with 10,000 history rows.
+The child writes an OSC title marker after the data; the harness waits for a
+snapshot containing it. Producer duration is logged separately. This is a
+paced replay benchmark, not a measurement of live Codex's complete relayout.
+The requested 0.2 ms sleeps can oversleep under macOS scheduling; compare
+interleaved runs rather than assuming the requested sleep is the elapsed time.
+
+A permanent 1 ms wait trial showed a large gain but would increase idle-tab
+wakeups. The initial adaptive candidate used 1 ms for 50 ms after any input
+was read, then returned to the original 8 ms. The spinner review below shortens
+that activity window to 15 ms. Command enqueue notifications still
+interrupt either wait. There is no busy loop and presentation/synchronization
+semantics are unchanged. It adds one local steady-clock time point; no heap
+allocation, capture, async ownership handoff, class-layout or public ABI change.
+
+Initial 50 ms-window native M2 Pro medians of three alternating before/after runs:
+
+| Producer write size | Producer gap | Before | Adaptive | Speedup |
+| --- | --- | ---: | ---: | ---: |
+| 65,536 bytes | none | 41.3 ms | 32.4 ms | 1.27x |
+| 1,024 bytes | 0.2 ms requested | 1388.7 ms | 212.7 ms | 6.53x |
+| 128 bytes | 0.2 ms requested | 2443.0 ms | 641.8 ms | 3.81x |
+
+The producer itself stalls longer with the old wait, establishing transport
+backpressure rather than just delayed snapshot observation. A quiet-session
+read counter measured 107 polls/second after a 200 ms idle settling period,
+confirming fallback to the 8 ms idle cadence rather than permanent 1 ms polling.
+The initial trials sometimes reported a TTY reply failure during child teardown;
+the final producer keeps its PTY open briefly after the completion marker and
+all final runs are free of those diagnostics.
+
+Release eterm, ecode and unit tests build; all 181 terminal tests pass, including
+session wakeup, command latency, synchronization, concurrent shutdown and the
+separate height-only resize regression. The user subsequently confirmed that
+live Codex relayout appeared fixed. This remains separate from the paced replay
+measurement; it does not establish that every possible flicker is eliminated.
+
+Artifacts in `/tmp/negen-pty-latency/`: `latency.cpp`, `producer.py`, the local
+capture, `before`, rejected `idle1ms`, retained `adaptive`, trial and final
+comparison JSON, `idle.cpp`/`idle-probe`, build/test logs and source snapshots.
+`metadata.json` records hashes and the benchmark setup. No harness scaffolding
+is added to production.
+
+#### Spinner-cost review and 15 ms active window
+
+Review identified that a spinner updating every 100 ms repeatedly restarts the
+active window. A fully quiet session is therefore not sufficient to assess
+polling overhead. An external `SpinnerPty` injects one synchronized short repaint
+every 100 ms for four seconds and counts calls to `read()`. This measures PTY
+polls, not kernel wakeups or CPU energy, and simulates the periodic update
+pattern rather than running Claude Code itself.
+
+| Session pattern | 50 ms active window | 15 ms active window |
+| --- | ---: | ---: |
+| Fully quiet, after settling | 106.5 polls/s | 108.6 polls/s |
+| Spinner output every 100 ms | 474.2 polls/s | 233.2 polls/s |
+
+The shorter window reduces spinner polling by 50.8% overall; compared with the
+quiet baseline, the excess polls fall about 66%. Repeated producer gaps within
+a repaint still refresh the activity time. The retained implementation now uses
+15 ms, preserving the original 8 ms wait after activity subsides.
+
+A new matched comparison, medians of three alternating runs over the same
+captured stream, confirms that repaint speed is retained. The 1,024- and
+128-byte cases request 0.2 ms producer gaps; 65,536-byte writes are continuous.
+
+| Producer write size | Original 8 ms wait | 50 ms window | 15 ms window | 15 ms / original speedup |
+| --- | ---: | ---: | ---: | ---: |
+| 65,536 bytes | 43.5 ms | 31.5 ms | 32.8 ms | 1.33x |
+| 1,024 bytes | 1374.5 ms | 213.2 ms | 213.8 ms | 6.43x |
+| 128 bytes | 2456.3 ms | 642.0 ms | 642.3 ms | 3.82x |
+
+All 181 terminal tests pass with the 15 ms window; release eterm and ecode build.
+The user reported that live Codex relayout appeared fixed with the earlier
+adaptive wait; the later shorter-window comparison above is a paced replay.
+No additional allocation or layout changes were introduced by tuning the window.
+
+Follow-up: replace timer polling with a wait for PTY readability plus command
+notification. Unix needs a PTY/command-wakeup descriptor wait (poll/kqueue or the
+existing platform event mechanism); Windows needs the corresponding ConPTY
+read-completion and command wakeup handling. That can remove both the output
+latency and repeated idle polling. Windows execution and timer granularity for
+SDL2/SDL3 remain unverified; this review does not establish their effective wait
+resolution.
+
+The complete local experiment is also preserved outside `/tmp` at
+`/Users/prognoz/programming/vtbench/pty-latency/`, including the capture,
+harness/producer/spinner sources, measured binaries, core dylib, raw measurement
+JSON/logs and source snapshots. `REPLAY.txt` explains how to restore the original
+temporary paths and rebuild the harnesses. The private conversation capture is
+kept in that local benchmark directory, not added to the eepp repository.
+
 ### Also noticed
 
 - The framework retry linked the test binary against `@rpath/SDL2.framework`,

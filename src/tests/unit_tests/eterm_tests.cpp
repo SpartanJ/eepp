@@ -3021,6 +3021,21 @@ struct ClusterTerminal {
 
 } // namespace
 
+UTEST( eterm, height_only_resize_preserves_cursor_row_contents ) {
+	ClusterTerminal t;
+	// Codex keeps a colored input row, then parks the cursor inside it with default SGR.
+	t.feed( "\033[48;2;57;59;64m\033[2Kinput text after cursor\033[0m\r\033[2C" );
+	for ( int rows : { 26, 24, 26 } ) {
+		t.term->resize( 80, rows );
+		t.term->redraw();
+		for ( int x = 0; x < 80; ++x ) {
+			EXPECT_EQ( static_cast<uint32_t>( ( 1u << 24 ) | ( 57u << 16 ) | ( 59u << 8 ) | 64u ),
+					   t.cell( x ).bg );
+		}
+		EXPECT_EQ( static_cast<Rune>( 'p' ), t.cell( 2 ).u );
+	}
+}
+
 UTEST( eterm, unicode_batches_match_fragmented_reads ) {
 	for ( bool grapheme : { false, true } ) {
 		for ( int columns : { 8, 9 } ) {
