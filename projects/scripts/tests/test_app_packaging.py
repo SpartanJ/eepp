@@ -75,7 +75,13 @@ if [ "$1" = -u ]; then update_info=$2; shift 2; fi
         runtime.write_text("SDL3 runtime")
         self.crypt = Path(self.runtime.name) / "libcrypt.so.1"
         self.crypt.write_text("glibc libcrypt")
-        self.command("ldconfig", f'echo "libcrypt.so.1 (libc6,x86-64) => {self.crypt}"')
+        self.fontconfig = Path(self.runtime.name) / "libfontconfig.so.1"
+        self.fontconfig.write_text("glibc fontconfig")
+        self.dbus = Path(self.runtime.name) / "libdbus-1.so.3"
+        self.dbus.write_text("glibc dbus")
+        self.command("ldconfig", f'echo "libcrypt.so.1 (libc6,x86-64) => {self.crypt}"\n'
+                     f'echo "libfontconfig.so.1 (libc6,x86-64) => {self.fontconfig}"\n'
+                     f'echo "libdbus-1.so.3 (libc6,x86-64) => {self.dbus}"')
         self.command("ldd", f'echo "libSDL3.so.0 => {runtime} (0x1)"')
         (self.source / "libeepp.so").write_text("eepp runtime")
         (self.source / "sample").write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n')
@@ -178,12 +184,18 @@ if [ "$1" = -u ]; then update_info=$2; shift 2; fi
         self.env["UPINFO"] = "gh-releases-zsync|example|sample|nightly|sample-anylinux-*-x86_64.AppImage.zsync"
         companion = Path(self.runtime.name) / "libdecor-0.so.0"
         companion.write_text("SDL companion")
+        pipewire = Path(self.runtime.name) / "libpipewire-0.3.so.0"
+        pipewire.write_text("PipeWire client")
         self.command("ldconfig", f'echo "libcrypt.so.1 (libc6,x86-64) => {self.crypt}"\n'
+                     f'echo "libfontconfig.so.1 (libc6,x86-64) => {self.fontconfig}"\n'
+                     f'echo "libdbus-1.so.3 (libc6,x86-64) => {self.dbus}"\n'
+                     f'echo "libpipewire-0.3.so.0 (libc6,x86-64) => {pipewire}"\n'
                      f'echo "libdecor-0.so.0 (libc6,x86-64) => {companion}"')
         self.command("quick-sharun", '''
 [ "$APPIMAGE_ARCH" = x86_64 ]
 [ "$DEPLOY_OPENGL" = 1 ] && [ "$ANYLINUX_LIB" = 1 ]
 [ "$DEPLOY_SDL" = 0 ] && [ "$DEPLOY_PULSE" = 1 ] && [ "$DEPLOY_COMMON_LIBS" = 1 ]
+[ "$DEPLOY_PIPEWIRE" = 1 ]
 if [ "$1" = --make-appimage ]; then
     [ -f "$APPDIR/bin/assets/ui/theme.css" ]
     [ -f "$APPDIR/shared/bin/assets/ui/theme.css" ]
@@ -197,16 +209,25 @@ else
     [ -f "$2" ] && [ -f "$3" ]
     selected_sdl=
     selected_crypt=
+    selected_fontconfig=
+    selected_dbus=
+    selected_pipewire=
     selected_companion=
     for input do
         [ "${input##*/}" != "$EEPP_TEST_SDL_NAME" ] || selected_sdl=$input
         [ "${input##*/}" != libcrypt.so.1 ] || selected_crypt=$input
+        [ "${input##*/}" != libfontconfig.so.1 ] || selected_fontconfig=$input
+        [ "${input##*/}" != libdbus-1.so.3 ] || selected_dbus=$input
+        [ "${input##*/}" != libpipewire-0.3.so.0 ] || selected_pipewire=$input
         [ "${input##*/}" != libdecor-0.so.0 ] || selected_companion=$input
     done
     [ -n "$selected_sdl" ]
     [ "$(cat "$selected_sdl")" = "$EEPP_TEST_SDL_RUNTIME" ]
     [ "$(cat "$selected_companion")" = 'SDL companion' ]
     [ "$(cat "$selected_crypt")" = 'glibc libcrypt' ]
+    [ "$(cat "$selected_fontconfig")" = 'glibc fontconfig' ]
+    [ "$(cat "$selected_dbus")" = 'glibc dbus' ]
+    [ "$(cat "$selected_pipewire")" = 'PipeWire client' ]
     mkdir -p "$APPDIR/bin" "$APPDIR/shared/bin"
     cp "$selected_sdl" "$APPDIR/selected-sdl"
     cp "$ICON" "$APPDIR/.DirIcon"
@@ -280,6 +301,55 @@ fi
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("requires the build host's libcrypt.so.1", result.stdout)
         self.assertNotIn("Deployment must not start", result.stdout)
+
+    def test_anylinux_requires_bundled_fontconfig(self):
+        self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')
+        self.command("ldconfig", f'echo "libcrypt.so.1 (libc6,x86-64) => {self.crypt}"')
+        self.env["QUICK_SHARUN"] = str(self.commands / "quick-sharun")
+        self.command("quick-sharun", 'echo "Deployment must not start"; exit 42')
+        result = self.package("linux", "--backend", "SDL3", "--anylinux", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("requires the build host's libfontconfig.so.1", result.stdout)
+        self.assertNotIn("Deployment must not start", result.stdout)
+
+    def test_anylinux_requires_explicit_dbus(self):
+        self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')
+        self.command("ldconfig", f'echo "libcrypt.so.1 (libc6,x86-64) => {self.crypt}"\n'
+                     f'echo "libfontconfig.so.1 (libc6,x86-64) => {self.fontconfig}"')
+        self.env["QUICK_SHARUN"] = str(self.commands / "quick-sharun")
+        self.command("quick-sharun", 'echo "Deployment must not start"; exit 42')
+        result = self.package("linux", "--backend", "SDL3", "--anylinux", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("requires the build host's libdbus-1.so.3", result.stdout)
+        self.assertNotIn("Deployment must not start", result.stdout)
+
+    def test_anylinux_file_manager_runtime_roots(self):
+        self.command("uname", "echo x86_64")
+        self.package("linux", "--backend", "SDL3")
+        staging = self.output / "sample.app"
+        for source, target in (("sample.bin", "eefm.bin"), ("sample.png", "eefm.png"),
+                               ("sample.desktop", "eefm.desktop")):
+            shutil.copy2(staging / source, staging / target)
+        roots = (self.crypt, self.fontconfig, self.dbus,
+                 Path(self.runtime.name) / "libturbojpeg.so.0",
+                 Path(self.runtime.name) / "libarchive.so.13")
+        for library in roots[3:]:
+            library.write_text(library.name)
+        self.command("ldconfig", "\n".join(f'echo "{lib.name} => {lib}"' for lib in roots))
+        self.env["QUICK_SHARUN"] = str(self.commands / "quick-sharun")
+        self.command("quick-sharun", '''
+if [ "$1" = --make-appimage ]; then
+    touch "$OUTPATH/$OUTNAME"
+else
+    found=
+    for input do found="$found ${input##*/}"; done
+    case "$found" in *libturbojpeg.so.0*) ;; *) exit 41 ;; esac
+    case "$found" in *libarchive.so.13*) ;; *) exit 42 ;; esac
+    mkdir -p "$APPDIR/bin" "$APPDIR/shared/bin"
+fi
+''')
+        self.run_script("scripts/package-anylinux.sh", "eefm", staging, self.output, "nightly", "x86_64")
+        self.assertTrue((self.output / "eefm-anylinux-nightly-x86_64.AppImage").is_file())
 
     def test_requested_update_metadata_is_required(self):
         self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')

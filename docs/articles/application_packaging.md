@@ -40,8 +40,11 @@ projects/linux/build.app.sh ecode --anylinux
 
 Install `curl`, `patchelf`, `binutils`, `xvfb` and `xauth` in the build environment, as well
 as the application's SDL runtime, Mesa OpenGL drivers and the build host's `libcrypt.so.1`
-(`libcrypt1` on Ubuntu). This library is bundled so the compatibility shim does not load
-Alpine's gcompat into the glibc process at startup. When packaging on glibc, use
+and `libfontconfig.so.1` and `libdbus-1.so.3` (`libcrypt1`, `libfontconfig1` and
+`libdbus-1-3` on Ubuntu). Compatible copies
+are bundled to avoid loading Alpine's musl libraries into the glibc process. Fontconfig
+remains optional for eepp; the AnyLinux package includes it for system-font support.
+When packaging on glibc, use
 glibc 2.33 or newer (for example Ubuntu 22.04): sharun requires the loader's `--argv0`
 option. This requirement applies to the build environment, not to the user's system.
 The packager downloads a pinned,
@@ -72,6 +75,23 @@ Ubuntu 22.04 job repackages those exact binaries with newer runtime libraries an
 not block the conventional downloads. The ARM64 nightly continues to use the
 conventional format because it is cross-compiled on x86_64. Native arm64 builds can opt in
 with the same flag.
+
+The Alpine regression environment includes gcompat and host Fontconfig. The workflow also
+checks hidden native-window and UI startup under Xvfb, both with bundled Fontconfig and with
+Fontconfig loading blocked to exercise eepp's optional-dependency fallback.
+
+Runtime-loaded libraries need explicit deployment roots because startup tracing may never
+exercise their feature. Fontconfig, D-Bus and libcrypt are always included. quick-sharun
+collects their linked dependencies recursively, including Fontconfig's FreeType, PNG,
+compression and Brotli libraries; these must come from the same build environment.
+Available SDL device and audio clients are passed explicitly as well, including ALSA,
+PipeWire, sndio and JACK. Existing OpenGL, X11/Wayland and PulseAudio deployment handles
+their associated libraries and data. D-Bus's client library connects to the host's session
+and system buses; the package does not start a separate D-Bus daemon.
+
+For `eefm`, the packager also requires `libturbojpeg.so.0` and `libarchive.so.13`
+(`libturbojpeg0` and `libarchive13` on Ubuntu) for JPEG thumbnails and archive browsing.
+These libraries are not required by ecode's current runtime paths.
 
 ### AppImage updates
 

@@ -48,11 +48,27 @@ export DEPLOY_SDL=0 DEPLOY_PULSE=1 DEPLOY_COMMON_LIBS=1
 DEPLOY_INPUTS=("$STAGING/$APP.bin" "$STAGING/libs/"*.so*)
 # cross-libc-dlopen also preloads libcrypt at startup. Without a bundled copy,
 # Alpine's gcompat can satisfy that name and load musl into our glibc process.
-for library in libcrypt.so.1 libudev.so.1 libusb-1.0.so.0 libdecor-0.so.0; do
+# SystemFontResolver and AT-SPI dlopen Fontconfig and D-Bus. Startup tracing
+# cannot guarantee that either feature is exercised. Passing these roots to
+# quick-sharun also collects their full linked dependency chains.
+RUNTIME_LIBRARIES=(libcrypt.so.1 libfontconfig.so.1 libdbus-1.so.3)
+if [ "$APP" = eefm ]; then
+	# The file manager loads these for JPEG thumbnails and archive browsing.
+	RUNTIME_LIBRARIES+=(libturbojpeg.so.0 libarchive.so.13)
+fi
+for library in "${RUNTIME_LIBRARIES[@]}" libudev.so.1 libusb-1.0.so.0 libdecor-0.so.0 \
+	libasound.so.2 libpipewire-0.3.so.0 libsndio.so.7 libsndio.so.7.0 libjack.so.0; do
 	resolved=$(ldconfig -p 2>/dev/null | awk -v name="$library" '$1 == name && !found {print $NF; found=1}' || true)
-	if [ "$library" = libcrypt.so.1 ] && [ ! -f "$resolved" ]; then
-		echo "AnyLinux packaging requires the build host's libcrypt.so.1 (Ubuntu: libcrypt1)" >&2
-		exit 1
+	case "$library" in
+		libcrypt.so.1|libfontconfig.so.1|libdbus-1.so.3|libturbojpeg.so.0|libarchive.so.13)
+			if [ ! -f "$resolved" ]; then
+				echo "AnyLinux packaging requires the build host's $library; see docs/articles/application_packaging.md" >&2
+				exit 1
+			fi ;;
+	esac
+	if [ "$library" = libpipewire-0.3.so.0 ] && [ -f "$resolved" ]; then
+		# Include PipeWire's client modules and SPA plugins along with the library.
+		export DEPLOY_PIPEWIRE=1
 	fi
 	[ ! -f "$resolved" ] || DEPLOY_INPUTS+=("$resolved")
 done
