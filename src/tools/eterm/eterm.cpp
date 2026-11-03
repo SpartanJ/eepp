@@ -429,7 +429,7 @@ UITerminal* App::createTerminal( UITabWidget* target, std::string workingDirecto
 	auto display = TerminalDisplay::create(
 		appWindow, terminalFont, terminalFontSize, initialSize, terminalConfig.program,
 		terminalConfig.arguments, workingDirectory, terminalConfig.historySize, nullptr,
-		terminalConfig.useFrameBuffer, terminalConfig.keepAlive, {},
+		terminalConfig.useFrameBuffer, !terminalConfig.closeOnExit, {},
 		TerminalSessionOptions{ config->terminal.allowOsc52ClipboardWrite,
 								config->terminal.enableOsc8Hyperlinks,
 								config->terminal.graphemeClustering } );
@@ -971,7 +971,6 @@ int App::run( int argc, char* argv[] ) {
 	terminalConfig.fontHinting = config->font.hinting;
 	terminalConfig.fontAntialiasing = config->font.antialiasing;
 	terminalConfig.useFrameBuffer = config->terminal.useFrameBuffer;
-	terminalConfig.keepAlive = !launchExecutable && config->terminal.shell.empty();
 	terminalConfig.closeOnExit = config->terminal.closeOnExit;
 	warnBeforeClose = config->window.warnBeforeClose;
 	benchmarkMode = config->window.benchmarkMode;

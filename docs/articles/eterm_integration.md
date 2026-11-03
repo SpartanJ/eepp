@@ -12,6 +12,22 @@ grapheme_clustering = true
 detect_links = true
 ```
 
+## Shell exit behavior
+
+In eterm, **Settings → Terminal → Behavior → Close Terminal Tab on Exit** is enabled by
+default for new profiles. When the shell exits, including through Ctrl+D at an empty prompt,
+its tab closes. Closing the last tab exits eterm.
+
+Disable the option to restart a successfully exited shell in the same tab. A nonzero exit code
+keeps the exited terminal visible so its output can be inspected. This policy also applies to an
+explicitly configured shell. The setting is saved as `close_on_exit` in `[terminal]`; existing
+saved values are honored, and `--close-on-exit` enables closing for the launch.
+
+In ecode, the corresponding setting is `close_terminal_tab_on_exit` and defaults to disabled.
+It uses the same close-or-restart policy for terminal tabs; closing one does not exit the editor.
+The status-bar terminal panel always keeps at least one tab, creating a replacement when its
+last tab closes.
+
 ## Mouse wheel and trackpads
 
 Wheel input retains fractional movement on both axes. When an application captures the mouse,

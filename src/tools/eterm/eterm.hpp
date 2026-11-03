@@ -40,8 +40,7 @@ struct TerminalLaunchConfig {
 	FontHinting fontHinting{ FontHinting::Full };
 	FontAntialiasing fontAntialiasing{ FontAntialiasing::Grayscale };
 	bool useFrameBuffer{ false };
-	bool keepAlive{ true };
-	bool closeOnExit{ false };
+	bool closeOnExit{ true };
 	bool launchExecutable{ false };
 };
 

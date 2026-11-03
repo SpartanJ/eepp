@@ -31,7 +31,7 @@ struct TerminalConfig {
 	size_t initialTabs{ 1 };
 	Terminal::TerminalCursorMode cursorStyle{ Terminal::TerminalCursorMode::SteadyUnderline };
 	bool useFrameBuffer{ false };
-	bool closeOnExit{ false };
+	bool closeOnExit{ true };
 	bool exclusiveMode{ false };
 	bool inheritWorkingDirectory{ true };
 	bool allowOsc52ClipboardWrite{ true };
