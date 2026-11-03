@@ -4631,6 +4631,12 @@ template <typename Run> void TerminalEmulator::tputrun( const Run& run, int len 
 	 * the int fields of mTerm, so state read per cell is copied into locals first. */
 	const int columns = mTerm.col;
 	const TerminalGlyph attributes = mPrintAttributes;
+	const auto glyphAt = [&run, &attributes]( int index ) {
+		TerminalGlyph glyph = attributes;
+		glyph.u = run.codepoint( index );
+		glyph.mode |= run.mode( index );
+		return glyph;
+	};
 	const bool checkPlaceholders = !mKittyPlaceholderMetadata.empty();
 	/* selected() is false without a selection; skip it per cell then. */
 	bool selectionActive = hasSelection();
@@ -4689,6 +4695,25 @@ template <typename Run> void TerminalEmulator::tputrun( const Run& run, int len 
 			for ( int cell = eemax( checkFrom, x ); selectionActive && cell < x + segmentEnd - i;
 				  ++cell )
 				clearSelectionAt( cell, y );
+			// Check four cells before writing any of them. A wide half or placeholder keeps the
+			// existing per-cell path, which repairs it before continuing through the segment.
+			while ( segmentEnd - i >= 4 ) {
+				TerminalGlyph* gp = &line[column];
+				const uint32_t modes = gp[0].mode | gp[1].mode | gp[2].mode | gp[3].mode;
+				if ( ( modes & ( ATTR_WIDE | ATTR_WDUMMY ) ) ||
+					 ( checkPlaceholders && ( gp[0].u == KittyGraphicsPlaceholder ||
+											  gp[1].u == KittyGraphicsPlaceholder ||
+											  gp[2].u == KittyGraphicsPlaceholder ||
+											  gp[3].u == KittyGraphicsPlaceholder ) ) )
+					break;
+				gp[0] = glyphAt( i );
+				gp[1] = glyphAt( i + 1 );
+				gp[2] = glyphAt( i + 2 );
+				gp[3] = glyphAt( i + 3 );
+				lastColumn = column + 3;
+				column += 4;
+				i += 4;
+			}
 		}
 		while ( i < segmentEnd ) {
 			const int width = run.width( i );
@@ -4705,10 +4730,7 @@ template <typename Run> void TerminalEmulator::tputrun( const Run& run, int len 
 				if ( selectionActive && column >= checkFrom )
 					clearSelectionAt( column, y );
 			}
-			TerminalGlyph glyph = attributes;
-			glyph.u = run.codepoint( i );
-			glyph.mode |= run.mode( i );
-			*gp = glyph;
+			*gp = glyphAt( i );
 			if ( width == 2 ) {
 				gp[1].u = '\0';
 				gp[1].mode = ATTR_WDUMMY;

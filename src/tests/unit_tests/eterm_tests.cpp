@@ -1866,7 +1866,7 @@ UTEST( eterm, printable_runs_replace_kitty_placeholders ) {
 	ASSERT_TRUE( display->mGraphics != nullptr );
 	ASSERT_EQ( static_cast<size_t>( 1 ), display->mGraphics->placements.size() );
 
-	input->mBuffer += "\033[m\rXY";
+	input->mBuffer += "\033[m\rXYab";
 	term->update();
 	ASSERT_TRUE( display->mGraphics != nullptr );
 	EXPECT_EQ( static_cast<size_t>( 0 ), display->mGraphics->placements.size() );
@@ -2933,11 +2933,11 @@ UTEST( eterm, printable_runs_clear_only_overwritten_selections ) {
 
 	term->selstart( 5, 0, 0 );
 	term->selextend( 7, 0, SEL_REGULAR, false );
-	term->write( "\r12", 3 );
+	term->write( "\r1234", 5 );
 	term->update();
 	EXPECT_STDSTREQ( "FGH", term->getSelection() );
 
-	term->write( "\r\033[4Cxyz", 8 );
+	term->write( "\r\033[4Cwxyz", 9 );
 	term->update();
 	EXPECT_FALSE( term->hasSelection() );
 
@@ -2949,7 +2949,7 @@ UTEST( eterm, printable_runs_clear_only_overwritten_selections ) {
 	term->selstart( 79, 1, 0 );
 	term->selextend( 79, 1, SEL_REGULAR, false );
 	EXPECT_TRUE( term->hasSelection() );
-	term->write( "b", 1 );
+	term->write( "bcde", 4 );
 	term->update();
 	EXPECT_FALSE( term->hasSelection() );
 	EXPECT_EQ( static_cast<Rune>( 'b' ), display->mCells[2 * display->mColumns].u );
@@ -3532,6 +3532,21 @@ UTEST( eterm, ascii_overwrite_clears_wide_glyph_state ) {
 
 	EXPECT_EQ( 0u, display->mFirstMode & ATTR_WIDE );
 	EXPECT_EQ( 0u, display->mSecondMode & ATTR_WDUMMY );
+
+	// The last cell in a batch can be the first half of a wide glyph; its other half lies
+	// outside the overwritten range and still needs to be repaired.
+	const std::string_view rightEdge = "\r\033[3C\xF0\x9F\x9A\x80\rABCD";
+	term->write( rightEdge.data(), rightEdge.size() );
+	term->update();
+	EXPECT_EQ( 0u, display->mCells[4].mode & ATTR_WDUMMY );
+	EXPECT_EQ( static_cast<Rune>( ' ' ), display->mCells[4].u );
+
+	// Starting on a wide glyph's second half must also clear the first half outside the batch.
+	const std::string_view leftEdge = "\r\xF0\x9F\x9A\x80\033[2GABCD";
+	term->write( leftEdge.data(), leftEdge.size() );
+	term->update();
+	EXPECT_EQ( 0u, display->mCells[0].mode & ATTR_WIDE );
+	EXPECT_EQ( static_cast<Rune>( ' ' ), display->mCells[0].u );
 }
 
 UTEST( eterm, ascii_respects_vt100_graphics_charset ) {

@@ -5,10 +5,10 @@
 Items 1-5 are committed in `cef605021`; grapheme phase 1 is committed in `b4b4aa8c1`.
 Grapheme shaping and review fixes are committed, including mode-2027 extension batching in
 `5bd79ba75`. The latest controlled-scrollback baseline (2026-11-03) pins Ghostty `91973f2b2`
-and supersedes the older comparison with unlike history budgets. Local changes now include
-runtime-dispatched SIMD row clears; the final table and validation are recorded below.
-The mode-controlled follow-up
-below explains the apparent regression caused by comparing different reset defaults.
+and supersedes the older comparison with unlike history budgets. Runtime-dispatched SIMD
+row clears are committed in `620c74bfc`. Local changes now batch four narrow glyph writes;
+measurements and validation are recorded below. The mode-controlled follow-up explains the
+apparent regression caused by comparing different reset defaults.
 
 Context: the OSC 8 hyperlink / OSC 7 working-directory / OSC 52 policy work (see
 `docs/articles/eterm_integration.md`) made eterm comparable with Ghostty's feature set, so the next
@@ -699,6 +699,81 @@ Artifacts in `/tmp/negen-vt-clear/`: `measure-simd-final.py`,
 `fill-probe.cpp`, native/x86 probe binaries/logs and `x86-syntax.log`.
 The abandoned inline-SIMD measurements remain in `*-simd.json`; the intermediate
 dispatched run is in `*-dispatch.json`. Use `*-simd-final.json` for the final table.
+
+### Portable four-cell printable batches (2026-11-03)
+
+Baseline: committed eterm `620c74bfc0cf76e764d1a61b86c806295dc661cf`, including
+runtime-dispatched SIMD clears. The working-tree change batches four narrow glyphs
+in `tputrun()` for both ASCII and REP. Four old mode fields are combined into one
+wide/dummy test; placeholder checks still run when metadata exists. If any of the
+four cells needs repair, the existing per-cell path handles it. Selection checks
+remain before the segment, including the existing pending-wrap behavior. Glyph
+construction is shared through an inlined lambda capturing only references.
+
+No new allocations, persistent state, ABI changes or ISA-specific code remain.
+The original scalar path handles the tail and all exceptional cells. Apple Clang
+emits four paired general-register stores per batch, replacing per-cell branches;
+it does not need explicit SIMD for the measured improvement.
+
+Fresh ASCII and Unicode profiles support targeting the writer: ASCII is still
+primarily `twrite()` (including its inlined writer) and the printable scanner;
+Unicode remains primarily in `tpututf8()` (decoder and writer). The baseline
+profiles and disassembly are saved with the artifacts below.
+
+Final whole-process median MB/s on M2 Pro, one warmup and five runs, 120x80,
+mode 2027 enabled after every RIS, 10,000 requested history rows in both engines.
+Ghostty is the pinned `91973f2b2` build from the controlled comparison above. All
+builds, profiles, tests and timings ran serially.
+
+| Workload | eterm before | Portable batch | Change | Ghostty |
+| --- | ---: | ---: | ---: | ---: |
+| ASCII | 347.9 | 401.6 | +15.4% | 448.6 |
+| Unicode | 378.8 | 385.2 | +1.7% | 649.7 |
+| Unique Unicode | 119.6 | 122.1 | +2.1% | 83.6 |
+| CSI | 215.3 | 254.4 | +18.1% | 181.2 |
+| Images | 2,511.1 | 2,526.0 | +0.6% | 2,489.1 |
+| Long escape codes | 3,052.2 | 2,965.5 | -2.8% | 4,342.6 |
+
+Reversing ASCII command order measured 350.7 before, 406.0 after,
+and Ghostty 452.9 MB/s (+15.8% over eterm before). The earlier
+portable-only round improved ASCII 17.0% and CSI 18.4%. The final forward/reverse
+ASCII rounds improve 15.4-15.8%, reaching about 90% of Ghostty throughput.
+
+The final short long-escape case measured 2.8% lower, with a higher after-run
+standard deviation. Three additional alternating-order comparisons measured
++0.3%, +1.8% and -2.7%; they do not show a consistent regression. Keep the final
+full-matrix number visible rather than substituting a favorable recheck.
+
+An explicit NEON writer was also tried using the existing startup function-pointer
+dispatch pattern. It widened exactly four input bytes and stored interleaved
+codepoint/mode/fg/bg vectors. It passed the extended terminal tests, but ASCII
+was flat (403.4 -> 403.9 MB/s), Unique Unicode measured -3.5%, and long escapes
+-3.1%. The trial was removed; its implementation and measurements remain in
+`terminalemulator-neon-trial.cpp` and `*-simd.json` under the artifact directory.
+This rejects that concrete implementation, not every possible SIMD writer.
+
+Correctness: all 178 terminal tests pass. Existing tests now exercise four-
+character writes over kitty placeholders and selected/unselected text, including
+a pending wrap. The wide-overwrite test also checks a wide glyph whose second
+half lies beyond the batch, and a write starting on a dummy whose first half
+lies before the batch. Test inputs use string views and allocate nothing.
+
+The portable candidate matches the committed baseline on 100 random streams
+(read sizes 1, 7, 4,093 and 65,536) and 12 workload checkpoints before cleanup:
+cursor, cells, cluster codepoints, modes and colors. The final rebuilt writer
+has identical assembly to that validated candidate. Four normal-screen history
+probes (capacities 0, 1, 1,000, 10,000) match final cells/cursor, consumed bytes,
+DSR replies and retained-row counts; image update counts, pixel bytes and sampled
+hashes also match. Every timed eterm run consumes the full input and passes the
+six-DSR-response gate. The parser translation unit passes x86-64 Clang syntax
+checking; native x86 performance, Linux/GCC and Windows were not run.
+
+Artifacts: `/tmp/negen-vt-writer/` contains `eterm-before`, `eterm-after`,
+`measure-final.py`, `final-summary.json`, `*-final.json`/logs,
+`long-recheck-summary.json`, `compare-batch.py`/log, `extra-checks.log`,
+`final-tests.log`, `x86-syntax.log`, baseline profiles and before/after writer
+disassembly. `*-batch.json` is the initial portable comparison and `*-simd.json`
+is the rejected NEON trial. `metadata.json` records revisions and capture hashes.
 
 ### Also noticed
 
