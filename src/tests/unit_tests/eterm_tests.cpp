@@ -3069,6 +3069,11 @@ UTEST( eterm, unicode_bulk_decoding_matches_fragmented_reads ) {
 		bulk.term->setGraphemeClusteringEnabled( grapheme );
 		fragmented.term->setGraphemeClusteringEnabled( grapheme );
 		std::string text = "\033[38;2;7;11;17m\033]8;;https://example.test/\033\\";
+		// Mix narrow and wide groups in the same row, retaining colors and link metadata.
+		text += "\xC3\xA9";
+		for ( int i = 0; i < 8; ++i )
+			text += "\xE7\x95\x8C";
+		text += "abcdefgh";
 		// Cross the SIMD byte limit with mixed two-, three- and four-byte codepoints.
 		for ( int i = 0; i < 70; ++i )
 			text += "\xE7\x95\x8C\xC3\xA9\xF0\x9F\x9A\x80";

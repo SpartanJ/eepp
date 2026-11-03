@@ -95,6 +95,35 @@ echo "Using signing identity: $SIGNING_IDENTITY"
 
 # --- MAIN LOGIC ---
 
+# notarytool can exit successfully even when Apple rejects the submission.
+# Require an Accepted verdict before stapling, and retrieve the actual rejection log.
+notarize() {
+    local artifact="$1" notary_output_file submit_status=0 verdict request_uuid
+    notary_output_file=$(mktemp)
+    xcrun notarytool submit "$artifact" \
+        --apple-id "$MACOS_APPLE_ID" \
+        --password "$MACOS_NOTARIZATION_PASSWORD" \
+        --team-id "$MACOS_TEAM_ID" \
+        --wait --output-format json > "$notary_output_file" 2>&1 || submit_status=$?
+
+    cat "$notary_output_file"
+    verdict=$(plutil -extract status raw -o - "$notary_output_file" 2>/dev/null) || verdict=
+    if [[ "$submit_status" -ne 0 || "$verdict" != Accepted ]]; then
+        echo "Error: Notarization failed for $artifact (status: ${verdict:-unknown}, exit: $submit_status)."
+        request_uuid=$(plutil -extract id raw -o - "$notary_output_file" 2>/dev/null) || request_uuid=
+        if [[ -n "$request_uuid" ]]; then
+            echo "Fetching notarization logs for UUID: $request_uuid"
+            xcrun notarytool log "$request_uuid" \
+                --apple-id "$MACOS_APPLE_ID" \
+                --password "$MACOS_NOTARIZATION_PASSWORD" \
+                --team-id "$MACOS_TEAM_ID" || true
+        fi
+        rm -f "$notary_output_file"
+        return 1
+    fi
+    rm -f "$notary_output_file"
+}
+
 # Function to sign the .app bundle
 sign_app() {
     echo "Signing application bundle at: $ARTIFACT_PATH"
@@ -115,34 +144,11 @@ sign_app() {
     echo "Zipping app for notarization: $ZIP_PATH"
     ditto -c -k --sequesterRsrc --keepParent "$ARTIFACT_PATH" "$ZIP_PATH"
 
-    local notary_output_file
-    notary_output_file=$(mktemp)
-
     echo "Notarizing app zip..."
-    if ! xcrun notarytool submit "$ZIP_PATH" \
-        --apple-id "$MACOS_APPLE_ID" \
-        --password "$MACOS_NOTARIZATION_PASSWORD" \
-        --team-id "$MACOS_TEAM_ID" \
-        --wait > "$notary_output_file" 2>&1; then
-
-        echo "Error: App notarization failed."
-        cat "$notary_output_file"
-        REQUEST_UUID=$(grep "id:" "$notary_output_file" | head -n 1 | awk '{print $2}')
-        if [[ -n "$REQUEST_UUID" ]]; then
-            echo "Fetching notarization logs for UUID: $REQUEST_UUID"
-            xcrun notarytool log "$REQUEST_UUID" \
-                --apple-id "$MACOS_APPLE_ID" \
-                --password "$MACOS_NOTARIZATION_PASSWORD" \
-                --team-id "$MACOS_TEAM_ID"
-        fi
-        rm "$notary_output_file"
+    if ! notarize "$ZIP_PATH"; then
         rm -f "$ZIP_PATH"
-        exit 1
+        return 1
     fi
-
-    echo "App notarization successful. Full log:"
-    cat "$notary_output_file"
-    rm "$notary_output_file"
 
     echo "Stapling ticket to app..."
     xcrun stapler staple "$ARTIFACT_PATH"
@@ -175,33 +181,8 @@ notarize_dmg() {
     codesign --verify --verbose "$ARTIFACT_PATH"
 
     # Notarize the DMG
-    local notary_output_file
-    notary_output_file=$(mktemp)
-
     echo "Notarizing DMG..."
-    if ! xcrun notarytool submit "$ARTIFACT_PATH" \
-        --apple-id "$MACOS_APPLE_ID" \
-        --password "$MACOS_NOTARIZATION_PASSWORD" \
-        --team-id "$MACOS_TEAM_ID" \
-        --wait > "$notary_output_file" 2>&1; then
-
-        echo "Error: Notarization failed."
-        cat "$notary_output_file"
-        REQUEST_UUID=$(grep "id:" "$notary_output_file" | head -n 1 | awk '{print $2}')
-        if [[ -n "$REQUEST_UUID" ]]; then
-            echo "Fetching notarization logs for UUID: $REQUEST_UUID"
-            xcrun notarytool log "$REQUEST_UUID" \
-                --apple-id "$MACOS_APPLE_ID" \
-                --password "$MACOS_NOTARIZATION_PASSWORD" \
-                --team-id "$MACOS_TEAM_ID"
-        fi
-        rm "$notary_output_file"
-        exit 1
-    fi
-
-    echo "Notarization successful. Full log:"
-    cat "$notary_output_file"
-    rm "$notary_output_file"
+    notarize "$ARTIFACT_PATH"
 
     echo "Stapling ticket to DMG..."
     xcrun stapler staple "$ARTIFACT_PATH"
