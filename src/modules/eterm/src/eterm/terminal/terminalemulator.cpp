@@ -311,6 +311,89 @@ static printable_ascii_end_func resolvePrintableAsciiEndFn() {
  * findStringSequenceStopImpl. */
 static const printable_ascii_end_func findPrintableAsciiEnd = resolvePrintableAsciiEndFn();
 
+static void fillGlyphsScalar( Line glyphs, int count, const TerminalGlyph& blank ) {
+	const TerminalGlyph pattern = blank;
+	// Copy four glyphs per iteration to reduce loop overhead when std::fill_n remains scalar.
+	while ( count >= 4 ) {
+		glyphs[0] = pattern;
+		glyphs[1] = pattern;
+		glyphs[2] = pattern;
+		glyphs[3] = pattern;
+		glyphs += 4;
+		count -= 4;
+	}
+	std::fill_n( glyphs, count, pattern );
+}
+
+#if defined( EE_ARCH_ARM64 )
+static void fillGlyphsNEON( Line glyphs, int count, const TerminalGlyph& blank ) {
+	const uint8x16_t pattern = vld1q_u8( reinterpret_cast<const uint8_t*>( &blank ) );
+	while ( count >= 4 ) {
+		vst1q_u8( reinterpret_cast<uint8_t*>( glyphs ), pattern );
+		vst1q_u8( reinterpret_cast<uint8_t*>( glyphs + 1 ), pattern );
+		vst1q_u8( reinterpret_cast<uint8_t*>( glyphs + 2 ), pattern );
+		vst1q_u8( reinterpret_cast<uint8_t*>( glyphs + 3 ), pattern );
+		glyphs += 4;
+		count -= 4;
+	}
+	while ( count-- > 0 )
+		vst1q_u8( reinterpret_cast<uint8_t*>( glyphs++ ), pattern );
+}
+#elif defined( EE_ARCH_X86_64 )
+static void fillGlyphsSSE2( Line glyphs, int count, const TerminalGlyph& blank ) {
+	const __m128i pattern = _mm_loadu_si128( reinterpret_cast<const __m128i*>( &blank ) );
+	while ( count >= 4 ) {
+		_mm_storeu_si128( reinterpret_cast<__m128i*>( glyphs ), pattern );
+		_mm_storeu_si128( reinterpret_cast<__m128i*>( glyphs + 1 ), pattern );
+		_mm_storeu_si128( reinterpret_cast<__m128i*>( glyphs + 2 ), pattern );
+		_mm_storeu_si128( reinterpret_cast<__m128i*>( glyphs + 3 ), pattern );
+		glyphs += 4;
+		count -= 4;
+	}
+	while ( count-- > 0 )
+		_mm_storeu_si128( reinterpret_cast<__m128i*>( glyphs++ ), pattern );
+}
+
+#if defined( __GNUC__ ) || defined( __clang__ )
+__attribute__( ( target( "avx2" ) ) )
+#endif
+static void fillGlyphsAVX2( Line glyphs, int count, const TerminalGlyph& blank ) {
+	const __m256i pattern = _mm256_broadcastsi128_si256(
+		_mm_loadu_si128( reinterpret_cast<const __m128i*>( &blank ) ) );
+	while ( count >= 4 ) {
+		_mm256_storeu_si256( reinterpret_cast<__m256i*>( glyphs ), pattern );
+		_mm256_storeu_si256( reinterpret_cast<__m256i*>( glyphs + 2 ), pattern );
+		glyphs += 4;
+		count -= 4;
+	}
+	if ( count >= 2 ) {
+		_mm256_storeu_si256( reinterpret_cast<__m256i*>( glyphs ), pattern );
+		glyphs += 2;
+		count -= 2;
+	}
+	if ( count ) {
+		_mm_storeu_si128( reinterpret_cast<__m128i*>( glyphs ), _mm256_castsi256_si128( pattern ) );
+	}
+}
+#endif
+
+typedef void ( *fill_glyphs_func )( Line, int, const TerminalGlyph& );
+
+static fill_glyphs_func resolveFillGlyphsFn() {
+#if defined( EE_ARCH_ARM64 )
+	if ( CPU::hasNEON() )
+		return fillGlyphsNEON;
+#elif defined( EE_ARCH_X86_64 )
+	if ( CPU::hasAVX2() )
+		return fillGlyphsAVX2;
+	return fillGlyphsSSE2; // SSE2 is part of the x86-64 baseline.
+#endif
+	return fillGlyphsScalar;
+}
+
+// Resolve once like the scanners above: no feature checks or local-static guards per clear.
+static const fill_glyphs_func fillGlyphsImpl = resolveFillGlyphsFn();
+
 namespace {
 
 /* Printable ASCII bytes as a run for TerminalEmulator::tputrun(). */
@@ -2169,7 +2252,7 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2, bool skip_c
 		for ( y = y1; y <= y2; y++ ) {
 			gp = TLINE( y );
 			mTerm.dirty[y] = 1;
-			std::fill_n( gp + x1, x2 - x1 + 1, blank );
+			fillGlyphsImpl( gp + x1, x2 - x1 + 1, blank );
 			mDirty = true;
 		}
 		return;

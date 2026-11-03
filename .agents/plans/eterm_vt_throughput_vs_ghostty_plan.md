@@ -3,8 +3,12 @@
 ## Status
 
 Items 1-5 are committed in `cef605021`; grapheme phase 1 is committed in `b4b4aa8c1`.
-Grapheme shaping and review fixes are in the working tree. The mode-controlled follow-up below
-corrects the apparent performance regression caused by comparing different reset defaults.
+Grapheme shaping and review fixes are committed, including mode-2027 extension batching in
+`5bd79ba75`. The latest controlled-scrollback baseline (2026-11-03) pins Ghostty `91973f2b2`
+and supersedes the older comparison with unlike history budgets. Local changes now include
+runtime-dispatched SIMD row clears; the final table and validation are recorded below.
+The mode-controlled follow-up
+below explains the apparent regression caused by comparing different reset defaults.
 
 Context: the OSC 8 hyperlink / OSC 7 working-directory / OSC 52 policy work (see
 `docs/articles/eterm_integration.md`) made eterm comparable with Ghostty's feature set, so the next
@@ -511,6 +515,190 @@ Fresh binaries, correctness driver, hyperfine JSON/logs, post-change profile and
 `/tmp/negen-batch/` (`compare.py`, `measure.py`, `profile-after.txt`, `report.md`). Captures are
 the reset-controlled copies in `/tmp/negen-vtbench/`. Linux and Windows were not run in this
 experiment.
+
+### Controlled-scrollback baseline (2026-11-03)
+
+Fresh optimized binaries on the Apple M2 Pro: eterm `b416667db`, Ghostty
+`91973f2b29be42a2a8713406e18c56238b5f6c19` (the commit in Mitchell's November 2
+Hotaru comparison). eterm uses the project's release `-O3` archive; Ghostty uses
+`ReleaseFast`. Same captured kitten payloads, 120x80 cells, mode 2027 on after every
+RIS; Ghostty also has `--grapheme-width=unicode`. Whole-process hyperfine medians,
+one warmup and five runs; MB = 1,000,000 bytes. Builds and measurements ran serially.
+Every eterm measurement passed full-byte-consumption and six-DSR-response checks.
+
+These are still the kitten workloads, not Mitchell's newer Hotaru/ghostty-gen corpus.
+The earlier refresh in `/tmp/negen-vt-refresh/` used Ghostty `c911f96` and unlike
+history budgets; use this controlled baseline for subsequent comparisons instead.
+
+Ghostty's benchmark CLI was extended only in an isolated `/tmp` copy to expose its
+existing history byte/row options, plus an opt-in diagnostic. No Ghostty parser or
+eterm production code changed. The isolated archive lacks Git metadata, so its
+version string ends in `0000000`; the source is pinned to the full SHA above.
+
+#### Requested history limits in physical rows
+
+Zero means disabled in both engines. Nonzero Ghostty row caps round at page
+boundaries, whereas eterm retains exactly the requested cap. A separate 50,000-row
+probe verified actual retained rows: 0/0, 1,000/817, and 10,000/9,925
+(eterm/Ghostty). Thus the nonzero columns match requested content limits, not exact
+retained-row counts or memory budgets. Ghostty's more compact storage is retained.
+
+| Workload | eterm 0 rows | Ghostty 0 rows | eterm 1,000 rows | Ghostty 1,000 rows | eterm 10,000 rows | Ghostty 10,000 rows |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| ASCII | 292.0 | 448.8 | 298.6 | 440.5 | 295.4 | 439.9 |
+| Unicode | 367.4 | 649.8 | 364.4 | 626.6 | 360.6 | 634.3 |
+| Unique Unicode | 120.7 | 82.7 | 118.7 | 82.7 | 119.4 | 82.7 |
+| CSI | 195.0 | 181.5 | 193.7 | 180.9 | 195.0 | 180.5 |
+| Images | 2,521.5 | 2,519.6 | 2,534.3 | 2,516.3 | 2,493.8 | 2,471.6 |
+| Long escape codes | 2,842.2 | 4,501.3 | 3,053.3 | 4,474.4 | 2,905.1 | 4,226.6 |
+
+At 10,000 requested rows, eterm/Ghostty ratios are 0.67x ASCII, 0.57x Unicode,
+1.44x Unique Unicode, 1.08x CSI, 1.01x Images (effectively tied), and 0.69x long
+escape codes. There is no large history-size slowdown in eterm on these captures;
+small differences between cases are not enough to claim an optimization or regression.
+This result does not establish history-size complexity on arbitrary workloads.
+
+#### Ghostty byte-budget presets (separate sensitivity measurement)
+
+These do not imply equal memory or retained content in eterm. The scrolling probe
+retained 421 rows at 10,000 bytes and 47,941 at 50,000,000 bytes. Zero/nonzero
+history selects different Ghostty scroll paths even when effective capacities are small.
+
+| Workload | Ghostty 10 KB | Ghostty 50 MB |
+| --- | ---: | ---: |
+| ASCII | 440.3 | 440.1 |
+| Unicode | 636.3 | 634.8 |
+| Unique Unicode | 82.3 | 81.7 |
+| CSI | 177.1 | 178.9 |
+| Images | 2,468.6 | 2,494.5 |
+| Long escape codes | 4,496.7 | 4,272.2 |
+
+Artifacts: `/tmp/negen-vt-controlled/` contains `report.md`, `metadata.json` (capture
+SHA-256 hashes and revisions), `summary.json`, all hyperfine JSON/logs, `probes.json`,
+`probe.py`, `measure.py`, `vtbench.cpp`, the optimized binaries and source archive,
+and `ghostty-benchmark-controls.patch`. Captures remain in `/tmp/negen-vtbench/`.
+Run `python3 /tmp/negen-vt-controlled/measure.py` to repeat the timing matrix.
+
+Example for the 10,000-row case:
+
+```sh
+HISTORY=10000 DYLD_LIBRARY_PATH=libs/macosx /tmp/negen-vt-controlled/eterm-current /tmp/negen-vtbench/ascii-on.vt 1
+/tmp/negen-vt-controlled/ghostty-91973f2b2/zig-out/bin/ghostty-bench +terminal-stream --data=/tmp/negen-vtbench/ascii-on.vt --terminal-cols=120 --terminal-rows=80 --grapheme-width=unicode --scrollback-lines=10000
+```
+
+### Scalar clear-loop unrolling (2026-11-03)
+
+First measured a portable four-glyph unroll in `tclearregion()`; its scalar tail
+clears one to three remaining cells. The SIMD follow-up below supersedes this
+inline implementation while retaining the unroll in its scalar fallback. This changes loop overhead only: clearing remains
+eager, every cell receives the same blank as before, and the 16-byte glyph layout
+is unchanged. No allocations or additional persistent state are introduced.
+
+The refreshed ASCII profile had 989/3,430 top-of-stack samples in `tclearregion()`
+(28.8%). Disassembly showed two 8-byte stores and a branch per cell in the old
+`std::fill_n` loop. Four explicit assignments reduce branches to one per four
+cells; Apple Clang still emits scalar stores. A fixed-size `memcpy` block compiled
+into the same loop, so the direct assignments were retained. The optimized sample
+had 861/3,442 samples in clearing (25.0%). These profiles do not establish DRAM
+bandwidth saturation, and the gain does not depend on changing the cell size.
+
+Same source revisions, captured streams, mode-2027 handling, release settings and
+120x80 dimensions as the controlled baseline above; 10,000 requested history rows
+in both engines, one warmup and five runs, whole-process median MB/s. The saved
+baseline binary was measured again beside the candidate and Ghostty; do not
+calculate the improvement from the earlier table measured at another time.
+
+| Workload | eterm before | eterm after | Change | Ghostty |
+| --- | ---: | ---: | ---: | ---: |
+| ASCII | 300.0 | 317.4 | +5.8% | 455.4 |
+| Unicode | 367.8 | 375.5 | +2.1% | 649.7 |
+| Unique Unicode | 122.2 | 121.6 | -0.5% | 84.6 |
+| CSI | 199.6 | 206.9 | +3.6% | 180.9 |
+| Images | 2,507.7 | 2,541.1 | +1.3% | 2,511.3 |
+| Long escape codes | 3,020.9 | 3,050.1 | +1.0% | 4,339.3 |
+
+Across three timing rounds ASCII improved 5.5-6.5%, Unicode 2.1-2.7%, and CSI
+3.4-3.9%. Unique Unicode measured 0.5-0.8% lower; its final timing distributions
+overlap, so this remains a small possible tradeoff rather than evidence of no
+regression. Images and long escape codes stayed near baseline. Linux/GCC and
+Windows were not measured.
+
+Correctness: all 178 terminal tests passed before and after. The candidate matched
+the baseline on 100 random parser streams (read sizes 1, 7, 4,093 and 65,536), plus
+12 ASCII/Unicode/Unique Unicode/CSI checkpoints before final cleanup; comparisons
+include cursor, visible cells, cluster codepoints, modes and colors. Four normal-
+screen history probes (capacities 0, 1, 1,000, 10,000) matched final cells/cursor,
+consumed bytes, DSR replies and retained-row counts. Image update counts, pixel
+bytes and sampled hashes also matched. Every benchmark consumed the full input
+and passed the six-DSR-response gate.
+
+The timing captures predominantly scroll the alternate screen, so the separate
+normal-screen probes are necessary; their history-limit sensitivity alone does
+not characterize history performance. Avoiding the clear entirely was not
+implemented: recycled history buffers can be uninitialized, and selection and
+scroll callbacks must not observe a partly initialized row. That remains a
+separate, more involved candidate.
+
+Artifacts: `/tmp/negen-vt-clear/` contains `measure-final.py`, `final-summary.json`,
+`*-final.json`/logs, both profiles and disassembly, `compare.py`, the optimized
+binary, build/test logs and `extra-checks.log`. The saved baseline and pinned
+Ghostty build remain in `/tmp/negen-vt-controlled/`.
+
+### Runtime-dispatched SIMD clears (2026-11-03)
+
+The current implementation supersedes the inline scalar unroll above with file-local
+fill helpers. A file-scope `static const` function pointer resolves the CPU once at
+startup, matching the existing scanners. ARM64 checks `CPU::hasNEON()`; x86-64
+checks `CPU::hasAVX2()` and otherwise uses baseline SSE2. Other architectures use
+a scalar fallback retaining the four-glyph unroll. There are no CPU checks or
+function-local static guards per clear.
+
+NEON/SSE2 store four 16-byte cells per iteration; AVX2 stores two 32-byte blocks.
+All paths handle the exact remaining cells, use unaligned-safe accesses and stay
+inside the requested region. ARM64 disassembly contains paired vector stores;
+`tclearregion()` calls the cached pointer once per row. The change adds no heap
+allocations and preserves the cell layout. The measured change includes outlining
+and vector tails as well as the wider bulk stores.
+
+Final serial comparison, same setup and pinned Ghostty build as above:
+
+| Workload | eterm HEAD | Scalar unroll | Runtime SIMD | SIMD vs scalar | Ghostty |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ASCII | 299.3 | 318.3 | 350.9 | +10.3% | 446.9 |
+| Unicode | 367.0 | 373.2 | 384.8 | +3.1% | 648.6 |
+| Unique Unicode | 122.3 | 121.3 | 120.8 | -0.4% | 82.9 |
+| CSI | 201.1 | 207.7 | 215.8 | +3.9% | 180.5 |
+| Images | 2,521.8 | 2,535.6 | 2,529.4 | -0.2% | 2,492.7 |
+| Long escape codes | 3,043.8 | 2,989.0 | 3,022.8 | +1.1% | 4,315.8 |
+
+The additional reversed-order ASCII round measured HEAD 300.4, scalar
+317.8, SIMD 349.7, Ghostty 446.9 MB/s:
+SIMD improved 10.1% over scalar and 16.4% over HEAD.
+The forward round improved 10.3% over scalar and 17.3% over HEAD. Unique Unicode
+measured 0.4% below scalar (1.2% below HEAD); images and long escapes remained
+near scalar, without the larger apparent losses from the abandoned inline-SIMD
+experiment. These are M2 Pro results, not native x86 performance measurements.
+
+Validation: all 178 terminal tests pass. The final runtime-dispatched parser
+matches HEAD on 100 random streams and 12 workload checkpoints, plus the four
+normal-screen history probes and image checks described above. Full-byte and
+six-DSR-response gates passed for every timed eterm run.
+
+An external probe extracted the actual helper implementations from the source
+and compared them with `std::fill_n`, including surrounding guards: counts 0..260,
+four valid alignments, eight offsets and four patterns. Scalar and NEON passed
+66,816 cases natively; scalar and SSE2 passed 66,816 under Rosetta. The full
+parser translation unit passes x86-64 syntax checking, and the probe compiles
+AVX2 machine code. This host does not advertise AVX2, so its runtime checks were
+skipped; native x86 performance, AVX2 execution, Linux/GCC and Windows remain
+unverified. No probe scaffolding was added to production code.
+
+Artifacts in `/tmp/negen-vt-clear/`: `measure-simd-final.py`,
+`simd-final-summary.json`, `*-simd-final.json`/logs, `eterm-dispatch`,
+`compare-dispatch.py`/log, `extra-checks-dispatch.log`, `dispatch-tests.log`,
+`fill-probe.cpp`, native/x86 probe binaries/logs and `x86-syntax.log`.
+The abandoned inline-SIMD measurements remain in `*-simd.json`; the intermediate
+dispatched run is in `*-dispatch.json`. Use `*-simd-final.json` for the final table.
 
 ### Also noticed
 
