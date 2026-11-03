@@ -1,0 +1,62 @@
+/*
+ * Catppuccin Macchiato by Catppuccin (MIT).
+ * https://github.com/catppuccin/vscode
+ * VS Code revision: befc9e6fc41980f4241408f7049755d47c06ff45
+ * Palette revision: 07d02aa110ef9eb7e7427afca5c73ba9cf7f8ebd
+ * License: ../../colorschemes/catppuccin.LICENSE.txt
+ *
+ * Default mauve accent; widgets and layout inherit Breeze.
+ * Shared control surfaces use the upstream dropdown background.
+ * Hint text keeps 4.5:1 contrast against the main and sidebar backgrounds.
+ * Latte uses base-colored selected text for contrast against mauve.
+ */
+:root {
+	--inherit-base-theme: true;
+	--color-scheme: dark;
+	--primary: #c6a0f6;
+	--back: #24273a;
+	--font: #cad3f5;
+	--font-highlight: #91d7e3;
+	--font-hint: #a5adcb;
+	--font-selected-pressed: #181926;
+	--button-back: #1e2030;
+	--button-border: #5b6078;
+	--list-back: #1e2030;
+	--list-back-alt: #363a4f;
+	--separator: #5b6078;
+	--item-hover: #363a4f80;
+	--slider-back: #494d64;
+	--slider-button: #c6a0f6;
+	--slider-border: #5b6078;
+	--scrollbar-border: #181926;
+	--scrollbar-button: #5b607880;
+	--scrollbar-hback-hover: #6e738d;
+	--tab-back: #1e2030;
+	--tab-line: #1e2030;
+	--tab-active: #24273a;
+	--tab-hover: #2e324a;
+	--tab-close: #a5adcb;
+	--tab-close-hover: #ed8796;
+	--tab-font-active: #c6a0f6;
+	--tab-font-inactive: #6e738d;
+	--icon: #c6a0f6;
+	--icon-active: #c6a0f6;
+	--icon-back-hover: #363a4f80;
+	--icon-line: #a5adcb;
+	--icon-line-hover: #c6a0f6;
+	--icon-back-alert: #ed8796;
+	--menu-back: #24273a;
+	--menu-font: #cad3f5;
+	--menu-border: #24273a80;
+	--menu-font-active: #181926;
+	--menu-font-disabled: #a5adcb;
+	--floating-icon: #c6a0f6;
+	--term-back-color: #24273a;
+	--term-font-color: #cad3f5;
+	--highlight-primary: #c6a0f666;
+	--disabled-color: #a5adcb;
+	--disabled-border: #494d64;
+	--theme-error: #ed8796;
+	--theme-warning: #f5a97f;
+	--theme-success: #a6da95;
+}

@@ -1,4 +1,5 @@
 @include ../../../projects/scripts/app-assets.list
+assets/ui/themes
 assets/icon/ecode.png
 assets/i18n
 assets/colorschemes
