@@ -73,6 +73,9 @@ if [ "$1" = -u ]; then update_info=$2; shift 2; fi
         self.addCleanup(self.runtime.cleanup)
         runtime = Path(self.runtime.name) / "libSDL3.so.0"
         runtime.write_text("SDL3 runtime")
+        self.crypt = Path(self.runtime.name) / "libcrypt.so.1"
+        self.crypt.write_text("glibc libcrypt")
+        self.command("ldconfig", f'echo "libcrypt.so.1 (libc6,x86-64) => {self.crypt}"')
         self.command("ldd", f'echo "libSDL3.so.0 => {runtime} (0x1)"')
         (self.source / "libeepp.so").write_text("eepp runtime")
         (self.source / "sample").write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n')
@@ -175,7 +178,8 @@ if [ "$1" = -u ]; then update_info=$2; shift 2; fi
         self.env["UPINFO"] = "gh-releases-zsync|example|sample|nightly|sample-anylinux-*-x86_64.AppImage.zsync"
         companion = Path(self.runtime.name) / "libdecor-0.so.0"
         companion.write_text("SDL companion")
-        self.command("ldconfig", f'echo "libdecor-0.so.0 (libc6,x86-64) => {companion}"')
+        self.command("ldconfig", f'echo "libcrypt.so.1 (libc6,x86-64) => {self.crypt}"\n'
+                     f'echo "libdecor-0.so.0 (libc6,x86-64) => {companion}"')
         self.command("quick-sharun", '''
 [ "$APPIMAGE_ARCH" = x86_64 ]
 [ "$DEPLOY_OPENGL" = 1 ] && [ "$ANYLINUX_LIB" = 1 ]
@@ -192,12 +196,17 @@ else
     [ -f "$DESKTOP" ] && [ -f "$ICON" ]
     [ -f "$2" ] && [ -f "$3" ]
     selected_sdl=
+    selected_crypt=
+    selected_companion=
     for input do
         [ "${input##*/}" != "$EEPP_TEST_SDL_NAME" ] || selected_sdl=$input
+        [ "${input##*/}" != libcrypt.so.1 ] || selected_crypt=$input
+        [ "${input##*/}" != libdecor-0.so.0 ] || selected_companion=$input
     done
     [ -n "$selected_sdl" ]
     [ "$(cat "$selected_sdl")" = "$EEPP_TEST_SDL_RUNTIME" ]
-    [ "$(cat "$4")" = 'SDL companion' ]
+    [ "$(cat "$selected_companion")" = 'SDL companion' ]
+    [ "$(cat "$selected_crypt")" = 'glibc libcrypt' ]
     mkdir -p "$APPDIR/bin" "$APPDIR/shared/bin"
     cp "$selected_sdl" "$APPDIR/selected-sdl"
     cp "$ICON" "$APPDIR/.DirIcon"
@@ -261,6 +270,16 @@ fi
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("requires glibc >= 2.33", result.stdout)
         self.assertIn("found glibc 2.31", result.stdout)
+
+    def test_anylinux_requires_bundled_libcrypt(self):
+        self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')
+        self.command("ldconfig", 'exit 0')
+        self.env["QUICK_SHARUN"] = str(self.commands / "quick-sharun")
+        self.command("quick-sharun", 'echo "Deployment must not start"; exit 42')
+        result = self.package("linux", "--backend", "SDL3", "--anylinux", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("requires the build host's libcrypt.so.1", result.stdout)
+        self.assertNotIn("Deployment must not start", result.stdout)
 
     def test_requested_update_metadata_is_required(self):
         self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')

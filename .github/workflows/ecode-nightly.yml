@@ -172,11 +172,17 @@ jobs:
         env:
           VERSION: ${{ needs.release.outputs.version }}
         run: |
-          version_output=$(docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges --user 65534:65534 \
-            -v "$PWD/projects/linux/ecode:/images:ro" alpine:3.22 \
-            "/images/ecode-anylinux-$VERSION-x86_64.AppImage" --version)
-          printf '%s\n' "$version_output"
-          [[ "$version_output" == "ecode version "* ]] || { echo 'Missing ecode version output on Alpine' >&2; exit 1; }
+          docker build -t eepp-anylinux-alpine-gcompat - <<'DOCKERFILE'
+          FROM alpine:3.24.3
+          RUN apk add --no-cache gcompat
+          DOCKERFILE
+          for test_image in alpine:3.22 eepp-anylinux-alpine-gcompat; do
+            version_output=$(docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges --user 65534:65534 \
+              -v "$PWD/projects/linux/ecode:/images:ro" "$test_image" \
+              "/images/ecode-anylinux-$VERSION-x86_64.AppImage" --version)
+            printf '%s: %s\n' "$test_image" "$version_output"
+            [[ "$version_output" == "ecode version "* ]] || { echo "Missing ecode version output on $test_image" >&2; exit 1; }
+          done
       - name: Upload AnyLinux image
         uses: softprops/action-gh-release@v3
         with:

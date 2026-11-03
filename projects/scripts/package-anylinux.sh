@@ -46,8 +46,14 @@ export DEPLOY_OPENGL=1 ANYLINUX_LIB=1
 # companion libraries that quick-sharun normally adds for SDL's dlopen calls.
 export DEPLOY_SDL=0 DEPLOY_PULSE=1 DEPLOY_COMMON_LIBS=1
 DEPLOY_INPUTS=("$STAGING/$APP.bin" "$STAGING/libs/"*.so*)
-for library in libudev.so.1 libusb-1.0.so.0 libdecor-0.so.0; do
+# cross-libc-dlopen also preloads libcrypt at startup. Without a bundled copy,
+# Alpine's gcompat can satisfy that name and load musl into our glibc process.
+for library in libcrypt.so.1 libudev.so.1 libusb-1.0.so.0 libdecor-0.so.0; do
 	resolved=$(ldconfig -p 2>/dev/null | awk -v name="$library" '$1 == name && !found {print $NF; found=1}' || true)
+	if [ "$library" = libcrypt.so.1 ] && [ ! -f "$resolved" ]; then
+		echo "AnyLinux packaging requires the build host's libcrypt.so.1 (Ubuntu: libcrypt1)" >&2
+		exit 1
+	fi
 	[ ! -f "$resolved" ] || DEPLOY_INPUTS+=("$resolved")
 done
 mkdir -p "$APPDIR" "$OUTPATH"

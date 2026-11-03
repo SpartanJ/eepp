@@ -39,7 +39,9 @@ projects/linux/build.app.sh ecode --anylinux
 ```
 
 Install `curl`, `patchelf`, `binutils`, `xvfb` and `xauth` in the build environment, as well
-as the application's SDL runtime and Mesa OpenGL drivers. When packaging on glibc, use
+as the application's SDL runtime, Mesa OpenGL drivers and the build host's `libcrypt.so.1`
+(`libcrypt1` on Ubuntu). This library is bundled so the compatibility shim does not load
+Alpine's gcompat into the glibc process at startup. When packaging on glibc, use
 glibc 2.33 or newer (for example Ubuntu 22.04): sharun requires the loader's `--argv0`
 option. This requirement applies to the build environment, not to the user's system.
 The packager downloads a pinned,
