@@ -7,7 +7,8 @@ Grapheme shaping and review fixes are committed, including mode-2027 extension b
 `5bd79ba75`. The latest controlled-scrollback baseline (2026-11-03) pins Ghostty `91973f2b2`
 and supersedes the older comparison with unlike history budgets. Runtime-dispatched SIMD
 row clears are committed in `620c74bfc` and four-cell narrow writes in `a996bb737`.
-Local changes extend batching to equal-width Unicode glyphs and add bounded SIMD UTF-8 decoding;
+Equal-width Unicode batching and bounded SIMD UTF-8 decoding are committed in `ad9365499`.
+Local tuning increases the bounded decode buffer to 2,048 slots;
 measurements and validation are recorded below. The mode-controlled follow-up explains the
 apparent regression caused by comparing different reset defaults.
 
@@ -883,6 +884,135 @@ Artifacts: `/tmp/negen-vt-unicode/` contains `eterm-before`, `eterm-after`,
 assembly. `compare-final.py`/log, `extra-checks.log`, test/build logs and
 `layout-check.cpp` preserve validation. `metadata.json` records source revisions,
 capture/binary hashes and the final source snapshot; `report.md` has this record.
+
+### Mixed-width batching retry experiment (2026-11-03, rejected)
+
+Baseline `ad936549912b5e12bf764b9e4df93b9a6cb53e1d`. A small writer-only
+prototype retried four-glyph batches after scalar Unicode writes, rather than
+leaving the rest of the row scalar after the first width mismatch. Every row
+clear, scroll and snapshot boundary stayed unchanged. No delayed clearing was
+implemented; the user requested preserving that behavior.
+
+All 180 terminal tests passed, and 100 random streams plus 12 workload
+checkpoints matched the committed parser (cells, resolved clusters, modes,
+colors and cursor). The existing fragmented-input test now also includes a
+narrow glyph followed by eight wide glyphs and eight narrow glyphs in one row.
+That coverage remains after removing the prototype.
+
+Performance did not justify keeping the change. The first two-engine matrix
+measured Unicode +4.0% forward and +2.3% reverse, Unique Unicode -3.9%, ASCII
++0.05% forward and -1.4% reverse. The final matched three-engine matrix below
+measured Unicode +0.4% forward and +3.7% reverse, with repeatable losses on
+Unique Unicode and a lower ASCII result. These are whole-process median MB/s,
+one warmup/five runs, serial native M2 Pro, 120x80, mode 2027 on after RIS,
+10,000 requested history rows, and pinned Ghostty `91973f2b2` as above.
+
+| Workload | Committed eterm | Rejected trial | Change | Ghostty |
+| --- | ---: | ---: | ---: | ---: |
+| ascii | 406.3 | 396.7 | -2.4% | 444.6 |
+| unicode | 495.9 | 498.0 | +0.4% | 646.6 |
+| unique_unicode | 120.0 | 114.7 | -4.4% | 84.7 |
+| csi | 252.4 | 252.0 | -0.2% | 180.8 |
+| images | 2,492.3 | 2,486.6 | -0.2% | 2,460.9 |
+| long_escape_codes | 3,027.3 | 3,062.1 | +1.2% | 4,296.7 |
+| unicode-reverse | 490.2 | 508.4 | +3.7% | 649.6 |
+| unique_unicode-reverse | 118.6 | 115.4 | -2.6% | 83.2 |
+
+The production writer was restored to the committed implementation. The trial
+introduced no allocations or object-layout changes, but its additional loop
+checks and changed code placement did not produce a strong enough net result.
+Do not describe it as a retained optimization or mix its rates into the accepted
+table above.
+
+Artifacts: `/tmp/negen-vt-mixed/` contains baseline/trial binaries and sources,
+`measure.py`/`summary.json` (initial pairwise matrix),
+`measure-final.py`/`accepted-summary.json` (final, despite the filename the
+trial was rejected), raw JSON/logs, `compare.py`/log and `tests.log`.
+`restored-build.log` and `restored-tests.log` validate the restored writer with
+the expanded mixed-width test. All timed runs passed byte and DSR gates.
+
+### SIMD span/threshold tuning (2026-11-03)
+
+The parser baseline is committed `ad9365499`; measurements started from the
+same parser at `a62d81f9f`. The user was using the OS lightly, so all builds and
+measurements ran serially, each candidate was compared with the baseline in the
+same hyperfine invocation, and promising candidates were rechecked together
+with reversed command order. Small deltas and absolute MB/s remain subject to
+host activity; the larger reverse-order gain is not a promised steady-state gain.
+
+Five configurations were screened against the current 512-codepoint buffer,
+four-codepoint scalar seed and 64-byte minimum. Initial matched percentage changes:
+
+| Trial | Unicode | Unique Unicode | ASCII | CSI |
+| --- | ---: | ---: | ---: | ---: |
+| seed2 | +3.4% | -1.7% | +2.1% | +0.8% |
+| min128 | -0.9% | -1.3% | -0.7% | +0.4% |
+| min32 | +3.6% | +1.5% | +0.9% | -2.0% |
+| span1024 | +1.5% | -10.3% | -3.8% | -1.7% |
+| span2048 | +6.4% | +1.3% | +1.1% | -4.7% |
+
+`seed2` lowers the scalar prefix from four to two codepoints. `min128`/`min32`
+change both minimum-byte checks. `span1024`/`span2048` increase the existing
+codepoint capacity, which also bounds the input byte span. All other behavior
+stays unchanged. Threshold-only candidates offered smaller or inconsistent
+benefits; the 1,024-slot trial lost substantially on Unique Unicode.
+
+A second comparison used seven runs, included baseline/seed2/min32/span2048 in
+one invocation, and repeated Unicode in reverse order. The 2,048-slot candidate
+improved Unicode 7.1% forward and 4.7% reverse; seed2 improved 3.6%/2.1% and
+min32 1.2%/0.4%. For span2048, Unique Unicode measured -1.5%, ASCII -1.3% and
+CSI +0.7%. The larger span was selected; thresholds remain at their committed
+values. No row clears, scrolling behavior, writer grouping or snapshot timing
+changed.
+
+Final whole-process median MB/s, one warmup/five runs, native M2 Pro, 120x80,
+mode 2027 enabled after every RIS, 10,000 requested history rows in both engines,
+same captures and pinned Ghostty `91973f2b2` as above:
+
+| Workload | Committed eterm | Local eterm | Change | Ghostty | eterm / Ghostty |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ASCII | 398.4 | 401.9 | +0.9% | 435.0 | 0.92x |
+| Unicode | 495.6 | 514.0 | +3.7% | 634.4 | 0.81x |
+| Unique Unicode | 120.8 | 115.4 | -4.5% | 82.4 | 1.40x |
+| CSI | 247.0 | 249.9 | +1.2% | 177.9 | 1.40x |
+| Images | 2,492.5 | 2,535.3 | +1.7% | 2,495.6 | 1.02x |
+| Long escape codes | 3,042.9 | 3,072.6 | +1.0% | 4,375.6 | 0.70x |
+
+Reverse-order Unicode: 470.0 -> 521.4 MB/s (+10.9%), Ghostty 646.0 (0.81x).
+Reverse-order Unique Unicode: 119.0 -> 117.0 MB/s (-1.6%), Ghostty 83.3 (1.40x).
+Unicode improved in every matched pass for this candidate (+3.7% to +10.9%),
+with +4.7%/+7.1% in the multi-candidate recheck. Unique Unicode varied from
++1.3% in screening to -1.5%, -4.5% and -1.6% in subsequent checks. Keep that
+tradeoff visible: the user accepted combining-mark throughput losses for
+regular Unicode gains, but these are separate workloads.
+
+The retained production change is `UnicodeRun::Capacity = 2048`. It amortizes
+conversion and run setup with a 10,240-byte local buffer instead of 2,560 bytes.
+ARM64 and x86-64 Clang syntax/layout checks confirm those sizes, the unchanged
+8-byte helper result and 16-byte cell. ARM64 disassembly shows `tpututf8()`'s
+stack frame growing from 2,944 to 10,624 bytes including saved registers, and
+introduces a Darwin stack-probe call. This is bounded per invocation, with no
+recursion added. It is a real stack/call cost, not a free buffer increase.
+Allocation audit: no new heap allocations, persistent state, copies, captures,
+async handoffs or public ABI changes. Existing buffer storage alone grows.
+
+Validation: release eterm, ecode and tests build; all 180 terminal tests pass.
+The fragmented UTF-8 test now crosses the 2,048-byte limit using mixed 2/3/4-byte
+codepoints (250 repetitions). Both grapheme modes still cover controls, marks,
+ZWJ, C1, malformed/incomplete input, links and colors. 100 random streams
+(chunks 1, 7, 4,093, 65,536) and 12 workload checkpoints match baseline cells,
+resolved cluster text, modes, colors and cursor. History capacities 0, 1,
+1,000 and 10,000, and image update/pixel/hash checks match. All timed runs
+pass byte-consumption and six-DSR gates. Windows/Linux/GCC execution and native
+x86 performance remain unverified.
+
+Artifacts: `/tmp/negen-vt-tuning/` holds `screen.py`/`screen-summary.json`,
+`recheck.py`/`recheck-summary.json`, `measure-final.py`/`accepted-summary.json`,
+all raw JSON/logs, baseline and five trial binaries/source snapshots, the final
+`eterm-after` and `terminalemulator-after.cpp`, `compare.py`/log,
+`extra-checks.log`, `final-tests.log`, `final-build.log`, layout checks and
+`tpututf8-before.asm`/`tpututf8-after.asm`. `metadata.json` records hashes;
+`report.md` contains this record. No benchmark scaffolding is in production.
 
 ### Also noticed
 

@@ -185,13 +185,15 @@ jobs:
           done
           # Exercise real UI startup with compatible Fontconfig and with the
           # optional library disabled. Neither case may load the host's musl copy.
-          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges --user 65534:65534 \
-            -v "$PWD/projects/linux/ecode:/images:ro" \
-            -v "$PWD/projects/scripts/test-anylinux-gui.sh:/test-gui.sh:ro" \
-            eepp-anylinux-alpine-gcompat sh -ec '
-              sh /test-gui.sh "$1"
-              ANYLINUX_DO_NOT_LOAD_LIBS="libfontconfig.so*" sh /test-gui.sh "$1"
-            ' sh "/images/ecode-anylinux-$VERSION-x86_64.AppImage"
+          # Separate containers ensure each test's AppImage descendants and
+          # temporary caches are discarded before the next test starts.
+          for disabled_libs in '' 'libfontconfig.so*'; do
+            docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges --user 65534:65534 \
+              -e ANYLINUX_DO_NOT_LOAD_LIBS="$disabled_libs" \
+              -v "$PWD/projects/linux/ecode:/images:ro" \
+              -v "$PWD/projects/scripts/test-anylinux-gui.sh:/test-gui.sh:ro" \
+              eepp-anylinux-alpine-gcompat sh /test-gui.sh "/images/ecode-anylinux-$VERSION-x86_64.AppImage"
+          done
       - name: Upload AnyLinux image
         uses: softprops/action-gh-release@v3
         with:

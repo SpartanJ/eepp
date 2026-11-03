@@ -3074,8 +3074,8 @@ UTEST( eterm, unicode_bulk_decoding_matches_fragmented_reads ) {
 		for ( int i = 0; i < 8; ++i )
 			text += "\xE7\x95\x8C";
 		text += "abcdefgh";
-		// Cross the SIMD byte limit with mixed two-, three- and four-byte codepoints.
-		for ( int i = 0; i < 70; ++i )
+		// Cross the 2,048-byte SIMD limit with mixed two-, three- and four-byte codepoints.
+		for ( int i = 0; i < 250; ++i )
 			text += "\xE7\x95\x8C\xC3\xA9\xF0\x9F\x9A\x80";
 		text += "\t";
 		for ( int i = 0; i < 40; ++i )

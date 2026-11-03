@@ -4497,7 +4497,8 @@ struct GlyphProperties {
  * Left uninitialized; decodeUnicodeRun() fills it. */
 struct UnicodeRun {
 	static constexpr bool Narrow = false;
-	static constexpr int Capacity = 512;
+	// A 10 KiB stack buffer amortizes conversion/run setup on sustained Unicode output.
+	static constexpr int Capacity = 2048;
 	char32_t codepoints[Capacity];
 	uint8_t properties[Capacity];
 

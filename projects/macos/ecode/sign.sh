@@ -124,6 +124,27 @@ notarize() {
     rm -f "$notary_output_file"
 }
 
+# CloudKit ticket retrieval can fail transiently after an Accepted submission.
+staple() {
+    local attempt status
+    for attempt in 1 2 3; do
+        if xcrun stapler staple "$ARTIFACT_PATH"; then
+            return 0
+        else
+            status=$?
+        fi
+        case "$status" in
+            68|69) ;; # Host/service unavailable, including a lost network connection.
+            *) return "$status" ;;
+        esac
+        if [[ "$attempt" -eq 3 ]]; then
+            return "$status"
+        fi
+        echo "Retrying ticket stapling after service error $status (attempt $attempt/3)..." >&2
+        sleep "$((attempt * 5))"
+    done
+}
+
 # Function to sign the .app bundle
 sign_app() {
     echo "Signing application bundle at: $ARTIFACT_PATH"
@@ -151,7 +172,7 @@ sign_app() {
     fi
 
     echo "Stapling ticket to app..."
-    xcrun stapler staple "$ARTIFACT_PATH"
+    staple
     echo "App stapling complete."
 
     rm -f "$ZIP_PATH"
@@ -185,7 +206,7 @@ notarize_dmg() {
     notarize "$ARTIFACT_PATH"
 
     echo "Stapling ticket to DMG..."
-    xcrun stapler staple "$ARTIFACT_PATH"
+    staple
     echo "Stapling complete."
 }
 

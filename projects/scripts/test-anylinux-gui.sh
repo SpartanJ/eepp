@@ -11,7 +11,9 @@ cleanup() {
 	# cleanup bounded even in that case; this test runs in a disposable container.
 	[ -z "$app_pid" ] || { kill -KILL "$app_pid" 2>/dev/null || :; wait "$app_pid" 2>/dev/null || :; }
 	[ -z "$server_pid" ] || { kill "$server_pid" 2>/dev/null || :; wait "$server_pid" 2>/dev/null || :; }
-	rm -rf "$work"
+	# Run each invocation in its own disposable container. AppImage children can
+	# outlive the runtime and still write Mesa caches; let container teardown
+	# stop every descendant and discard the temporary directory together.
 }
 trap cleanup EXIT
 trap 'exit 1' HUP INT TERM
