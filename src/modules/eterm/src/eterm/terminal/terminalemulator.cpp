@@ -5835,6 +5835,38 @@ void TerminalEmulator::resize( int columns, int rows, int pixelWidth, int pixelH
 
 #define MAX_TTY_READS ( 1024 )
 
+std::intptr_t TerminalEmulator::getPtyWaitHandle() const {
+	return mPty ? mPty->getWaitHandle() : -1;
+}
+
+bool TerminalEmulator::hasPtyPendingWrites() const {
+	return mPty && mPty->hasPendingWrites();
+}
+
+bool TerminalEmulator::hasPtyHungUp() const {
+	return mPty && mPty->hasHungUp();
+}
+
+std::intptr_t TerminalEmulator::getProcessWaitHandle() const {
+	return mProcess && isRunning() ? mProcess->getWaitHandle() : -1;
+}
+
+Time TerminalEmulator::getMaximumIdleWait() const {
+	// Child exit is detected by waitpid() polling, and another process can keep the PTY open after
+	// the child exits: bound every wait.
+	Time wait = Milliseconds( 250 );
+	const auto until = [&wait]( const Clock& clock, Time interval ) {
+		wait = eemin( wait, eemax( Time::Zero, interval - clock.getElapsedTime() ) );
+	};
+	if ( mGlyphReferenceCollectionPending )
+		until( mGlyphReferenceGcClock, Seconds( 5 ) );
+	if ( mPendingPtyResize )
+		until( mPendingPtyResizeClock, Milliseconds( 100 ) );
+	if ( mTerm.is_syncing )
+		until( mSynchronizedUpdateClock, Seconds( 1 ) );
+	return eemin( wait, mKittyGraphics.getNextAnimationDelay() );
+}
+
 bool TerminalEmulator::update() {
 	// Reclaim erased/evicted links even if no further OSC 8 opens arrive. Never scan per frame,
 	// and never rescan buffers that received no output since the previous collection.

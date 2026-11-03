@@ -59,6 +59,16 @@ class PseudoTerminal final : public IPseudoTerminal {
 	virtual int write( const char* s, size_t n ) override;
 	virtual int read( char* buf, size_t n, bool block = false ) override;
 
+#ifdef _WIN32
+	virtual std::intptr_t getWaitHandle() const override;
+
+	virtual bool hasHungUp() const override;
+#else
+	virtual std::intptr_t getWaitHandle() const override { return mMaster.handle(); }
+
+	virtual bool hasPendingWrites() const override { return !mWriteBuffer.empty(); }
+#endif
+
 	static std::unique_ptr<PseudoTerminal> create( int columns, int rows );
 
   private:
@@ -71,6 +81,10 @@ class PseudoTerminal final : public IPseudoTerminal {
 	void* mPHPC;
 
 	bool mAttached;
+
+	/* Drains the ConPTY output pipe on its own thread, which anonymous pipes need to be waited
+	 * on: they cannot be read asynchronously. */
+	std::unique_ptr<struct PseudoTerminalReader> mReader;
 
 	PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput,
 					void* hPC ) noexcept;

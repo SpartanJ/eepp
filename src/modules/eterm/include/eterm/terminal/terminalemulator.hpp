@@ -231,6 +231,21 @@ class TerminalEmulator final {
 
 	bool isRunning() const;
 
+	/** The PTY's handle to wait on (see IPseudoTerminal::getWaitHandle()), or -1. */
+	std::intptr_t getPtyWaitHandle() const;
+
+	bool hasPtyPendingWrites() const;
+
+	bool hasPtyHungUp() const;
+
+	/** The child's handle to wait on while it runs (see IProcess::getWaitHandle()), or -1. */
+	std::intptr_t getProcessWaitHandle() const;
+
+	/** How long the worker may wait without missing update()'s own timers: the deferred resize,
+	 * the synchronized-update timeout, image animations and deferred reference collection.
+	 * Output and commands wake it otherwise. */
+	Time getMaximumIdleWait() const;
+
 	bool hasExited() const;
 
 	int getExitCode() const;

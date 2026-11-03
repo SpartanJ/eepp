@@ -7,6 +7,14 @@
 #include <bitset>
 #include <cstring>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <fcntl.h>
+#include <poll.h>
+#include <unistd.h>
+#endif
+
 using namespace EE::System;
 
 namespace eterm { namespace Terminal {
@@ -347,10 +355,33 @@ TerminalSession::TerminalSession( PtyPtr&& pty, ProcPtr&& process, size_t histor
 	mEmulator->setOsc8HyperlinksEnabled( options.enableOsc8Hyperlinks );
 	mEmulator->setGraphemeClusteringEnabled( options.graphemeClustering );
 	mEmulator->redraw();
+#ifdef _WIN32
+	mWakeupEvent = CreateEventW( nullptr, FALSE, FALSE, nullptr );
+#else
+	int descriptors[2];
+	if ( ::pipe( descriptors ) == 0 ) {
+		for ( int descriptor : descriptors ) {
+			::fcntl( descriptor, F_SETFL, ::fcntl( descriptor, F_GETFL ) | O_NONBLOCK );
+			::fcntl( descriptor, F_SETFD, ::fcntl( descriptor, F_GETFD ) | FD_CLOEXEC );
+		}
+		mWakeupRead = descriptors[0];
+		mWakeupWrite = descriptors[1];
+	}
+#endif
 }
 
 TerminalSession::~TerminalSession() {
 	shutdown();
+	// The worker has exited, so nothing waits on or signals the wakeup any more.
+#ifdef _WIN32
+	if ( mWakeupEvent )
+		CloseHandle( mWakeupEvent );
+#else
+	if ( mWakeupRead >= 0 )
+		::close( mWakeupRead );
+	if ( mWakeupWrite >= 0 )
+		::close( mWakeupWrite );
+#endif
 }
 
 void TerminalSession::start() {
@@ -359,8 +390,10 @@ void TerminalSession::start() {
 
 void TerminalSession::shutdown() {
 	std::lock_guard<std::mutex> shutdownLock( mShutdownMutex );
-	if ( !mShutdownRequested.exchange( true, std::memory_order_acq_rel ) )
+	if ( !mShutdownRequested.exchange( true, std::memory_order_acq_rel ) ) {
 		mCommandCondition.notify_all();
+		wakeWorker();
+	}
 	if ( mWorker.joinable() && mWorker.get_id() != std::this_thread::get_id() )
 		mWorker.join();
 }
@@ -376,6 +409,77 @@ bool TerminalSession::enqueue( Command&& command ) {
 	}
 
 	mCommandCondition.notify_one();
+	wakeWorker();
+	return true;
+}
+
+void TerminalSession::wakeWorker() {
+#ifdef _WIN32
+	if ( mWakeupEvent )
+		SetEvent( mWakeupEvent );
+#else
+	// One byte per wakeup: the worker clears the flag after draining the pipe and before taking the
+	// queue, so a command queued after that clear writes again, and one queued before it is taken.
+	// A full pipe already guarantees a wakeup.
+	if ( mWakeupWrite >= 0 && !mWakeupPending.exchange( true, std::memory_order_acq_rel ) ) {
+		const char byte = 1;
+		while ( ::write( mWakeupWrite, &byte, 1 ) < 0 && errno == EINTR ) {
+		}
+	}
+#endif
+}
+
+bool TerminalSession::waitForActivity() {
+	const std::intptr_t ptyHandle = mEmulator->getPtyWaitHandle();
+#ifdef _WIN32
+	if ( !mWakeupEvent || ptyHandle == -1 )
+		return false;
+#else
+	if ( mWakeupRead < 0 || ptyHandle < 0 )
+		return false;
+#endif
+	{
+		std::lock_guard<std::mutex> lock( mCommandMutex );
+		if ( !mCommands.empty() || mShutdownRequested.load( std::memory_order_relaxed ) )
+			return true;
+	}
+	// After a hangup the PTY stays ready forever (Linux may also report it readable, with reads
+	// failing). Every wait follows an update() that drained it, so its buffered output has been
+	// read: wait for commands and timers only. While the child still runs, its exit is found by
+	// polling at the former idle interval (Windows also waits on the process).
+	if ( mPtyHangupReported || mEmulator->hasPtyHungUp() )
+		mPtyHungUp = true;
+	Time wait = mEmulator->getMaximumIdleWait();
+	if ( mPtyHungUp && mEmulator->isRunning() )
+		wait = eemin( wait, Milliseconds( 8 ) );
+	const auto timeout = static_cast<int>( ( wait.asMicroseconds() + 999 ) / 1000 );
+#ifdef _WIN32
+	HANDLE handles[3];
+	DWORD count = 0;
+	handles[count++] = mWakeupEvent;
+	if ( !mPtyHungUp )
+		handles[count++] = reinterpret_cast<HANDLE>( ptyHandle );
+	// Signaled once the child exits; no longer offered after update() noticed that.
+	if ( const std::intptr_t process = mEmulator->getProcessWaitHandle(); process != -1 )
+		handles[count++] = reinterpret_cast<HANDLE>( process );
+	WaitForMultipleObjects( count, handles, FALSE, static_cast<DWORD>( timeout ) );
+#else
+	pollfd descriptors[2] = { { mWakeupRead, POLLIN, 0 },
+							  { static_cast<int>( ptyHandle ), POLLIN, 0 } };
+	if ( mEmulator->hasPtyPendingWrites() )
+		descriptors[1].events |= POLLOUT;
+	const nfds_t count = mPtyHungUp ? 1 : 2;
+	if ( ::poll( descriptors, count, timeout ) <= 0 )
+		return true;
+	if ( descriptors[0].revents & POLLIN ) {
+		char buffer[64];
+		while ( ::read( mWakeupRead, buffer, sizeof( buffer ) ) > 0 ) {
+		}
+		mWakeupPending.store( false, std::memory_order_release );
+	}
+	if ( count == 2 && ( descriptors[1].revents & ( POLLHUP | POLLERR | POLLNVAL ) ) )
+		mPtyHangupReported = true;
+#endif
 	return true;
 }
 
@@ -593,9 +697,14 @@ void TerminalSession::workerLoop() {
 			continue;
 		}
 
-		// Short producer pauses are common during TUI repaints. An 8 ms sleep on each one
-		// backpressures the child; keep polling promptly for 15 ms after input, then
-		// restore the idle wait so quiet tabs do not keep waking at the active rate.
+		if ( waitForActivity() )
+			continue;
+
+		// Without a handle to wait on (mock PTYs, or a ConPTY reader that failed to start), poll
+		// on a timer. Short producer pauses are common
+		// during TUI repaints. An 8 ms sleep on each one backpressures the child; keep polling
+		// promptly for 15 ms after input, then restore the idle wait so quiet tabs do not keep
+		// waking at the active rate.
 		const auto wait =
 			std::chrono::steady_clock::now() - lastInput < std::chrono::milliseconds( 15 )
 				? std::chrono::milliseconds( 1 )
@@ -714,6 +823,8 @@ void TerminalSession::processCommand( Command&& command ) {
 			} else if constexpr ( std::is_same_v<T, RestartCommand> ) {
 				mEmulator->clearHistory();
 				mEmulator->setPtyAndProcess( std::move( value.pty ), std::move( value.process ) );
+				mPtyHangupReported = false;
+				mPtyHungUp = false;
 				mEmulator->redraw();
 			} else if constexpr ( std::is_same_v<T, SelectionRequestCommand> ) {
 				std::lock_guard<std::mutex> lock( value.response->mutex );

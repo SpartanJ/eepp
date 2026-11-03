@@ -329,6 +329,11 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	bool enqueue( Command&& command );
 	void workerLoop();
 	void processCommands();
+	/* Waits until output, pending input can be written (POSIX), a command arrives, the child exits
+	 * (Windows) or update()'s next timer. Returns false where the PTY has no handle to wait on
+	 * (mock PTYs, or a ConPTY reader that failed to start); the worker then polls on a timer. */
+	bool waitForActivity();
+	void wakeWorker();
 	void processCommand( Command&& command );
 	void enqueueEvent( Event event, bool coalescable );
 	void publishSnapshot( std::shared_ptr<const TerminalSnapshot> snapshot );
@@ -347,6 +352,20 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	mutable std::mutex mPublishedSnapshotMutex;
 	std::shared_ptr<const TerminalSnapshot> mPublishedSnapshot;
 	std::atomic<bool> mShutdownRequested{ false };
+#ifdef _WIN32
+	/* An auto-reset event that interrupts the worker's wait: enqueue() sets it. */
+	void* mWakeupEvent{ nullptr };
+#else
+	/* A self-pipe that interrupts the worker's poll(): enqueue() writes one byte while no wakeup
+	 * is pending. */
+	int mWakeupRead{ -1 };
+	int mWakeupWrite{ -1 };
+	std::atomic<bool> mWakeupPending{ false };
+#endif
+	/* The PTY reported a hangup; at the next wait, which follows an update() that read everything
+	 * buffered, it stops being polled. Both are cleared on restart. */
+	bool mPtyHangupReported{ false };
+	bool mPtyHungUp{ false };
 	std::atomic<Uint64> mNextScrollCommand{ 0 };
 	std::atomic<Uint64> mLatestSearchRequest{ 0 };
 };

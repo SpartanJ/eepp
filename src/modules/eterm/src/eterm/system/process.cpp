@@ -330,6 +330,11 @@ Process::~Process() {
 	}
 }
 
+std::intptr_t Process::getWaitHandle() const {
+	return mProcessHandle.handle() ? reinterpret_cast<std::intptr_t>( mProcessHandle.handle() )
+								   : -1;
+}
+
 void Process::checkExitStatus() {
 	if ( mStatus == ProcessStatus::RUNNING ) {
 		DWORD exitCode;

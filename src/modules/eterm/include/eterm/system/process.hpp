@@ -55,6 +55,10 @@ class Process final : public IProcess {
 
 	virtual int pid() override;
 
+#ifdef _WIN32
+	virtual std::intptr_t getWaitHandle() const override;
+#endif
+
 	static std::unique_ptr<Process> createWithPipe( const std::string& program,
 													const std::vector<std::string>& args,
 													const std::string& workingDirectory,

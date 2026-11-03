@@ -1131,6 +1131,33 @@ bool KittyGraphicsProtocol::updateAnimations() {
 	return changed;
 }
 
+Time KittyGraphicsProtocol::getNextAnimationDelay() const {
+	Time delay = Seconds( 3600 ); // No animation: callers bound the wait themselves.
+	for ( const auto& entry : mImages ) {
+		const auto& image = entry.second;
+		if ( image.animationState < 2 || image.frames.empty() )
+			continue;
+		Int32 gap = image.rootGapMs;
+		if ( image.currentFrame != 1 ) {
+			auto current = image.frames.find( image.currentFrame );
+			if ( current == image.frames.end() )
+				continue;
+			gap = current->second.gapMs;
+		}
+		// While loading (s=2) the last frame waits for another to be uploaded: updateAnimations()
+		// cannot advance it, so there is no deadline until a frame arrives.
+		if ( image.animationState == 2 &&
+			 std::none_of( image.frames.begin(), image.frames.end(), [&image]( const auto& frame ) {
+				 return frame.first > image.currentFrame;
+			 } ) )
+			continue;
+		const Time remaining =
+			gap > 0 ? Milliseconds( gap ) - image.frameClock.getElapsedTime() : Milliseconds( 8 );
+		delay = eemin( delay, eemax( Time::Zero, remaining ) );
+	}
+	return delay;
+}
+
 void KittyGraphicsProtocol::setCellPixelSize( Uint32 width, Uint32 height ) {
 	mCellPixelWidth = width;
 	mCellPixelHeight = height;

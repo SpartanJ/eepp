@@ -22,6 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 
+#include <cstdint>
+
 namespace eterm { namespace System {
 
 enum class ProcessStatus { RUNNING = 0, EXITED };
@@ -51,6 +53,10 @@ class IProcess {
 	virtual void waitForExit() = 0;
 
 	virtual int pid() = 0;
+
+	/** Windows: the process HANDLE, signaled when it exits, for the session to wait on; -1
+	 * elsewhere. */
+	virtual std::intptr_t getWaitHandle() const { return -1; }
 };
 
 }} // namespace EE::System

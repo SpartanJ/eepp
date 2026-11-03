@@ -249,9 +249,15 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 }} // namespace eterm::Terminal
 
 #else
+#include <algorithm>
 #include <assert.h>
+#include <condition_variable>
+#include <cstring>
 #include <eterm/terminal/pseudoterminal.hpp>
+#include <eterm/terminal/ptyoutputqueue.hpp>
 #include <eterm/terminal/windowserrors.hpp>
+#include <mutex>
+#include <vector>
 #include <windows.h>
 
 typedef HRESULT( WINAPI* _CreatePseudoConsole )( COORD size, HANDLE hInput, HANDLE hOutput,
@@ -276,9 +282,70 @@ static void initConsoleFunctions() {
 
 namespace eterm { namespace Terminal {
 
+/* ConPTY output arrives through an anonymous pipe, which cannot be read asynchronously or waited
+ * on. A thread blocks in ReadFile() and hands the output over through a buffer and a manual-reset
+ * event that is signaled while output (or the hangup) is pending. */
+struct PseudoTerminalReader {
+	/* Above this the reader stops reading, so a child that outpaces the terminal is held back by
+	 * the pipe, as without the thread. */
+	static constexpr size_t BufferLimit = 4 * 1024 * 1024;
+
+	HANDLE pipe{ nullptr };
+	HANDLE readable{ nullptr };
+	HANDLE thread{ nullptr };
+	std::mutex mutex;
+	std::condition_variable space;
+	PtyOutputQueue output;
+	bool hungUp{ false };
+	bool closing{ false };
+
+	size_t pending() const { return output.pending(); }
+};
+
+static DWORD WINAPI pseudoTerminalReaderMain( LPVOID parameter ) {
+	auto* reader = static_cast<PseudoTerminalReader*>( parameter );
+	std::vector<char> chunk( 64 * 1024 );
+	for ( ;; ) {
+		DWORD count = 0;
+		if ( !ReadFile( reader->pipe, chunk.data(), static_cast<DWORD>( chunk.size() ), &count,
+						nullptr ) ||
+			 count == 0 )
+			break; // Broken pipe after the console closed, or cancelled.
+		std::unique_lock<std::mutex> lock( reader->mutex );
+		// While closing, keep draining so ClosePseudoConsole() cannot block on a full pipe.
+		reader->space.wait( lock, [reader] {
+			return reader->closing || reader->pending() < PseudoTerminalReader::BufferLimit;
+		} );
+		if ( reader->closing )
+			continue;
+		reader->output.append( chunk.data(), count );
+		SetEvent( reader->readable );
+	}
+	std::lock_guard<std::mutex> lock( reader->mutex );
+	reader->hungUp = true;
+	SetEvent( reader->readable );
+	return 0;
+}
+
 PseudoTerminal::~PseudoTerminal() {
+	if ( mReader ) {
+		std::lock_guard<std::mutex> lock( mReader->mutex );
+		mReader->closing = true;
+	}
+	if ( mReader )
+		mReader->space.notify_all();
 	if ( pCreatePseudoConsole )
 		pClosePseudoConsole( mPHPC );
+	if ( mReader && mReader->thread ) {
+		// Closing the console breaks the pipe; cancel the read if something else keeps it open.
+		if ( WaitForSingleObject( mReader->thread, 1000 ) == WAIT_TIMEOUT ) {
+			CancelSynchronousIo( mReader->thread );
+			WaitForSingleObject( mReader->thread, INFINITE );
+		}
+		CloseHandle( mReader->thread );
+	}
+	if ( mReader && mReader->readable )
+		CloseHandle( mReader->readable );
 }
 
 PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput,
@@ -291,6 +358,29 @@ PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& hInput, Auto
 	mSize.y = (SHORT)rows;
 	if ( !ConsoleFunctionsInit )
 		initConsoleFunctions();
+	auto reader = std::make_unique<PseudoTerminalReader>();
+	reader->pipe = mInputHandle.handle();
+	reader->readable = CreateEventW( nullptr, TRUE, FALSE, nullptr );
+	if ( reader->readable ) {
+		reader->thread =
+			CreateThread( nullptr, 0, pseudoTerminalReaderMain, reader.get(), 0, nullptr );
+		if ( reader->thread ) {
+			mReader = std::move( reader );
+		} else {
+			CloseHandle( reader->readable );
+		}
+	}
+}
+
+std::intptr_t PseudoTerminal::getWaitHandle() const {
+	return mReader ? reinterpret_cast<std::intptr_t>( mReader->readable ) : -1;
+}
+
+bool PseudoTerminal::hasHungUp() const {
+	if ( !mReader )
+		return false;
+	std::lock_guard<std::mutex> lock( mReader->mutex );
+	return mReader->hungUp && mReader->pending() == 0;
 }
 
 bool PseudoTerminal::isTTY() const {
@@ -329,6 +419,24 @@ int PseudoTerminal::write( const char* s, size_t n ) {
 }
 
 int PseudoTerminal::read( char* buf, size_t n, bool block ) {
+	if ( mReader ) {
+		auto& reader = *mReader;
+		std::unique_lock<std::mutex> lock( reader.mutex );
+		if ( block && reader.pending() == 0 && !reader.hungUp ) {
+			lock.unlock();
+			WaitForSingleObject( reader.readable, INFINITE );
+			lock.lock();
+		}
+		const size_t count = reader.output.read( buf, n );
+		if ( count == 0 )
+			return reader.hungUp ? -1 : 0;
+		// The reader sets it again under this lock when more output arrives.
+		if ( reader.pending() == 0 && !reader.hungUp )
+			ResetEvent( reader.readable );
+		reader.space.notify_one();
+		return static_cast<int>( count );
+	}
+
 	DWORD available = 0;
 	DWORD read = 0;
 

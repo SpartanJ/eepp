@@ -14,6 +14,7 @@
 #include <eterm/terminal/terminalgraphics.hpp>
 
 using namespace EE;
+using namespace EE::System;
 
 namespace eterm { namespace Terminal {
 
@@ -157,6 +158,10 @@ class KittyGraphicsProtocol {
 
 	bool updateAnimations();
 
+	/** Until updateAnimations() next advances a frame; an hour without running animations.
+	 * A frame without a gap advances on every update, so it waits the former 8 ms idle interval. */
+	Time getNextAnimationDelay() const;
+
 	void setCellPixelSize( Uint32 width, Uint32 height );
 
 	void setPlaceholderCells( std::vector<TerminalGraphicsPlaceholderCell> cells );
@@ -172,7 +177,7 @@ class KittyGraphicsProtocol {
 		std::unordered_map<Uint32, Frame> frames;
 		Sizei size;
 		Uint64 creationSerial{ 0 };
-		EE::System::Clock frameClock;
+		Clock frameClock;
 		Uint32 imageNumber{ 0 };
 		Uint32 usageHint{ 0 };
 		Uint32 currentFrame{ 1 };

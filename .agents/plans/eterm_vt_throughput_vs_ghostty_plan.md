@@ -1120,6 +1120,66 @@ JSON/logs and source snapshots. `REPLAY.txt` explains how to restore the origina
 temporary paths and rebuild the harnesses. The private conversation capture is
 kept in that local benchmark directory, not added to the eepp repository.
 
+### Readiness-based PTY waits (2026-11-03)
+
+Implements the follow-up above on POSIX and Windows. The worker no longer sleeps on a timer while
+idle; it waits until output arrives, pending input can be written, a command is queued, or the
+next timer that `update()` services is due (`TerminalEmulator::getMaximumIdleWait()`: deferred
+PTY resize, synchronized-update timeout, image animations, deferred link/cluster collection,
+capped at 250 ms because child exit is polled).
+
+- POSIX: `poll()` on the PTY master and a nonblocking self-pipe. `enqueue()` and `shutdown()`
+  write one byte while no wakeup is pending; the worker drains the pipe and clears the flag
+  before taking the queue, so no command wakeup is lost and a full pipe already implies one.
+  `POLLOUT` is requested while `PseudoTerminal` buffers input. After `POLLHUP` the PTY is dropped
+  from the wait set at the next wait, which always follows an `update()` that drained it, so
+  buffered output survives and a kept-open exited terminal does not spin (Linux may report the
+  hung-up master readable). Restart clears the state; the PTY handle is re-read every iteration.
+- Windows: anonymous ConPTY pipes cannot be read asynchronously, so `PseudoTerminal` runs a reader
+  thread blocked in `ReadFile()`, buffering at most 4 MiB (beyond that the pipe holds the child
+  back, as before) and signaling a manual-reset event under the buffer lock. The session waits on
+  an auto-reset command event, that event and the child's process handle (while running) with
+  `WaitForMultipleObjects()`. Destruction stops buffering, closes the console while the reader
+  keeps draining, and cancels the blocked read if the pipe stays open.
+- Mock PTYs (and a ConPTY reader that fails to start) keep the 15 ms adaptive timer path.
+- Review fixes: the ConPTY buffer is a `PtyOutputQueue` that reclaims consumed bytes once they
+  are at least as many as the unread ones (it previously compacted only when emptied, so a queue
+  that never drained grew without bound); and an animation loading (`s=2`) on its last frame no
+  longer yields a zero deadline, which made the worker poll with a zero timeout.
+
+Real-PTY harness (`~/programming/vtbench/pty-wait/wake.cpp`): a pass-through PTY counts reads
+(one per worker iteration); a child is quiet, then prints a synchronized spinner frame every
+100 ms; an idle raw `cat` echoes single bytes. Baseline is HEAD `8e4fbd1e7` (15 ms adaptive
+wait), built from the same harness. M2 Pro:
+
+| Measure | 15 ms adaptive | Readiness |
+| --- | ---: | ---: |
+| Quiet tab, worker reads/s | 106 | 4 |
+| 100 ms spinner, reads/s | 220 | 27-28 |
+| Idle command to echoed output, median | 9.2 ms | 0.20 ms |
+| Exited child, kept-open tab, iterations/s | n/a | 4 |
+
+Paced Codex replay (same capture and producer as above), medians of three alternating runs:
+
+| Producer writes | 15 ms adaptive | Readiness | Speedup |
+| --- | ---: | ---: | ---: |
+| 64 KiB, continuous | 39.7 ms | 30.2 ms | 1.31x |
+| 1 KiB, 0.2 ms gaps | 221.8 ms | 103.2 ms | 2.15x |
+| 128 B, 0.2 ms gaps | 648.8 ms | 645.4 ms | producer-bound |
+
+Native Linux x86_64 (openSUSE, kernel 7.2): quiet 4 reads/s, spinner 30/s, echo 0.04 ms,
+exited 4 iterations/s. Haiku R1/beta6+ (hrev60147) runs the same POSIX path: its TTY driver
+selects readable and disconnected on master and slave (src/add-ons/kernel/generic/tty/tty.cpp),
+and poll() maps disconnected to POLLHUP (src/system/kernel/events/wait_for_objects.cpp).
+Measured there: quiet 4 reads/s, spinner 30/s, echo 0.10 ms, exited 4 iterations/s. Windows (MinGW x86_64 under Wine 11.19): the real-ConPTY tests pass,
+including 3,000 lines followed by exit and command-to-output under 150 ms after a warm-up
+command; Wine's `cmd` takes ~0.65 s for its first command. Native Windows timing is unmeasured.
+
+Tests: `idle_wait_is_bounded_by_update_timers`, `readiness_wait_wakes_for_commands_and_shutdown`
+(fails without the wakeup signal) and `readiness_wait_keeps_output_buffered_at_hangup`, the
+latter two on POSIX and ConPTY. macOS, Linux and Wine pass all `eterm.*` and `eterm_session.*`
+tests; Wine cannot run the UI tests without a display.
+
 ### Also noticed
 
 - The framework retry linked the test binary against `@rpath/SDL2.framework`,

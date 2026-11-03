@@ -27,6 +27,7 @@
 #include <eterm/system/processfactory.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
+#include <eterm/terminal/ptyoutputqueue.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
 #include <eterm/terminal/terminalgraphics.hpp>
@@ -1354,6 +1355,23 @@ UTEST( eterm, kitty_graphics_rgb24_root_converts_only_when_mutated ) {
 	EXPECT_EQ( TerminalGraphicsUpdateType::ReplaceImage, updates[0].type );
 	EXPECT_EQ( static_cast<Uint8>( 4 ), updates[0].channels );
 	EXPECT_EQ( TerminalGraphicsUpdateType::UpdateRegion, updates[1].type );
+}
+
+UTEST( eterm, kitty_graphics_animation_delay_waits_for_frames_while_loading ) {
+	KittyGraphicsProtocol protocol;
+	protocol.handle( "a=T,f=32,s=2,v=1,i=40;AQIDBAUGBwg=" );
+	protocol.handle( "a=f,i=40,c=1,f=32,s=1,v=1,x=1,y=0,X=1,z=1;CQoLDA==" );
+	// Loading (s=2) on the last frame: nothing advances until another frame is uploaded, so the
+	// worker gets no deadline even after the frame's 1 ms gap expires.
+	EXPECT_TRUE( protocol.handle( "a=a,i=40,c=2,s=2" ).changed );
+	std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+	EXPECT_FALSE( protocol.updateAnimations() );
+	EXPECT_GE( protocol.getNextAnimationDelay().asMilliseconds(), 1000.0 );
+	// Looping (s=3) wraps to the first frame, so the frame's gap is a deadline again.
+	EXPECT_TRUE( protocol.handle( "a=a,i=40,s=3" ).changed );
+	EXPECT_LE( protocol.getNextAnimationDelay().asMilliseconds(), 1.0 );
+	std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+	EXPECT_TRUE( protocol.updateAnimations() );
 }
 
 UTEST( eterm, kitty_graphics_animation_frame_create_control_and_compose ) {
@@ -4700,7 +4718,10 @@ UTEST( eterm, implicit_links_resolve_urls_and_existing_paths ) {
 		TerminalLinks::resolve( root + "dir with space/main.cpp", "" ),
 		TerminalLinks::resolve( "$ETERM_LINK_TEST_ROOT/dir with space/main.cpp", "" ) );
 	EXPECT_TRUE( TerminalLinks::resolve( "$ETERM_LINK_TEST_UNSET/x.cpp", root ).empty() );
-	std::filesystem::remove_all( root );
+	// Without the trailing slash, which Haiku refuses to remove; failing cleanup is not a failure.
+	FileSystem::dirRemoveSlashAtEnd( root );
+	std::error_code removeError;
+	std::filesystem::remove_all( root, removeError );
 }
 
 UTEST( eterm_display, implicit_links_are_detected_across_wrapped_rows ) {
@@ -4765,7 +4786,10 @@ UTEST( eterm_display, implicit_links_are_detected_across_wrapped_rows ) {
 	EXPECT_TRUE( display.getHoveredHyperlink().empty() );
 	EXPECT_FALSE( display.getLinkAt( at( 5, 0 ) ).has_value() );
 
-	std::filesystem::remove_all( root );
+	// Without the trailing slash, which Haiku refuses to remove; failing cleanup is not a failure.
+	FileSystem::dirRemoveSlashAtEnd( root );
+	std::error_code removeError;
+	std::filesystem::remove_all( root, removeError );
 }
 
 UTEST( eterm_display, implicit_links_longer_than_the_match_window_are_rejected ) {
@@ -4826,7 +4850,10 @@ UTEST( eterm, implicit_links_match_windows_drive_paths ) {
 	const auto uri = TerminalLinks::resolve( root + "main.cpp:12", "", &path );
 	EXPECT_STDSTREQ( root + "main.cpp", path );
 	EXPECT_TRUE( String::startsWith( uri, "file:///" ) && uri.find( '\\' ) == std::string::npos );
-	std::filesystem::remove_all( root );
+	// Without the trailing slash, which Haiku refuses to remove; failing cleanup is not a failure.
+	FileSystem::dirRemoveSlashAtEnd( root );
+	std::error_code removeError;
+	std::filesystem::remove_all( root, removeError );
 #endif
 }
 
@@ -5042,4 +5069,149 @@ UTEST( eterm, legacy_ctrl_backspace_sends_backspace_control ) {
 			{ KEY_BACKSPACE, SCANCODE_BACKSPACE, 0, modifiers, KittyKeyEventType::Press } );
 		EXPECT_STDSTREQ( expected, ptyPtr->mWrites );
 	}
+}
+
+UTEST( eterm, idle_wait_is_bounded_by_update_timers ) {
+	auto term =
+		TerminalEmulator::create( std::make_unique<MockPty>(), std::make_unique<MockProcess>(),
+								  std::make_shared<MockDisplay>(), 100 );
+	term->update();
+	// Child exit is polled, so even a quiet terminal wakes at least four times a second.
+	EXPECT_EQ( Milliseconds( 250 ).asMicroseconds(), term->getMaximumIdleWait().asMicroseconds() );
+	// A deferred PTY resize is due 100 ms after it was requested.
+	term->resize( 70, 20 );
+	const Time wait = term->getMaximumIdleWait();
+	EXPECT_TRUE( wait > Time::Zero && wait <= Milliseconds( 100 ) );
+}
+
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+/* Runs @p script in the platform shell on a real PTY (ConPTY on Windows). */
+static std::shared_ptr<TerminalSession> spawnShellSession( const std::string& script ) {
+	ProcessFactory factory;
+	std::unique_ptr<IPseudoTerminal> pty;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	// /k keeps cmd reading commands after the script; /c exits after it.
+	const bool interactive = script.size() > 3 && script.compare( 0, 3, "/k " ) == 0;
+	auto process = factory.createWithPseudoTerminal(
+		"cmd.exe",
+		{ "/d", "/q", interactive ? "/k" : "/c", interactive ? script.substr( 3 ) : script }, "",
+		80, 24, pty, {} );
+#else
+	auto process =
+		factory.createWithPseudoTerminal( "/bin/sh", { "-c", script }, "", 80, 24, pty, {} );
+#endif
+	if ( !process || !pty )
+		return nullptr;
+	return TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+}
+
+static bool snapshotContains( const TerminalSnapshot& snapshot, std::string_view text ) {
+	for ( int row = 0; row < snapshot.rows; ++row ) {
+		std::string line;
+		for ( int column = 0; column < snapshot.columns; ++column ) {
+			const Rune u = snapshot.cells[row * snapshot.columns + column].u;
+			line += u > 0 && u < 0x80 ? static_cast<char>( u ) : ' ';
+		}
+		if ( line.find( text ) != std::string::npos )
+			return true;
+	}
+	return false;
+}
+
+UTEST( eterm_session, readiness_wait_wakes_for_commands_and_shutdown ) {
+	// The worker sleeps in poll() on the PTY and a wakeup pipe; a command must interrupt that
+	// wait well before the 250 ms timer bound.
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	// An interactive cmd echoes each typed command and prints it again.
+	auto session = spawnShellSession( "/k echo READY" );
+#else
+	auto session = spawnShellSession( "printf READY; exec cat" );
+#endif
+	ASSERT_TRUE( session != nullptr );
+	// Starting the shell is not what this measures (cmd under Wine starts slowly).
+	ASSERT_TRUE( waitForSnapshot(
+					 session,
+					 []( const TerminalSnapshot& snapshot ) {
+						 return snapshotContains( snapshot, "READY" );
+					 },
+					 std::chrono::milliseconds( 5000 ) ) != nullptr );
+	// The shell's first command is not timed either: cmd under Wine runs it slowly.
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	session->write( "echo WARM\r", true );
+#else
+	session->write( "WARM\n", true );
+#endif
+	ASSERT_TRUE(
+		waitForSnapshot(
+			session,
+			[]( const TerminalSnapshot& snapshot ) { return snapshotContains( snapshot, "WARM" ); },
+			std::chrono::milliseconds( 5000 ) ) != nullptr );
+	std::this_thread::sleep_for( std::chrono::milliseconds( 300 ) ); // Let the worker go idle.
+	for ( int i = 0; i < 3; ++i ) {
+		const std::string marker = "PING" + std::to_string( i );
+		const auto start = std::chrono::steady_clock::now();
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		session->write( "echo " + marker + "\r", true );
+#else
+		session->write( marker + "\n", true );
+#endif
+		ASSERT_TRUE( waitForSnapshot( session, [&marker]( const TerminalSnapshot& snapshot ) {
+						 return snapshotContains( snapshot, marker );
+					 } ) != nullptr );
+		EXPECT_TRUE( std::chrono::steady_clock::now() - start < std::chrono::milliseconds( 150 ) );
+		std::this_thread::sleep_for( std::chrono::milliseconds( 300 ) );
+	}
+	const auto start = std::chrono::steady_clock::now();
+	session->shutdown();
+	EXPECT_TRUE( std::chrono::steady_clock::now() - start < std::chrono::milliseconds( 150 ) );
+}
+
+UTEST( eterm_session, readiness_wait_keeps_output_buffered_at_hangup ) {
+	// The child writes more than the PTY buffers and exits at once: the hangup arrives with
+	// output still unread, all of which must be shown.
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	auto session = spawnShellSession( "(for /L %i in (0,1,2999) do @echo line%i)& echo DONE" );
+#else
+	auto session = spawnShellSession(
+		"i=0; while [ $i -lt 3000 ]; do echo line$i; i=$((i+1)); done; printf DONE" );
+#endif
+	ASSERT_TRUE( session != nullptr );
+	auto snapshot = waitForSnapshot(
+		session,
+		[]( const TerminalSnapshot& snapshot ) {
+			return snapshot.processExited && snapshotContains( snapshot, "DONE" );
+		},
+		std::chrono::milliseconds( 5000 ) );
+	ASSERT_TRUE( snapshot != nullptr );
+	EXPECT_TRUE( snapshotContains( *snapshot, "line2999" ) );
+}
+#endif
+
+UTEST( eterm, pty_output_queue_reclaims_consumed_bytes_under_sustained_output ) {
+	// The ConPTY reader appends 64 KiB chunks while the worker reads less each time, so the queue
+	// never empties: storage must stay bounded by the unread bytes, in order.
+	PtyOutputQueue queue;
+	std::vector<char> chunk( 64 * 1024 );
+	std::vector<char> out( 48 * 1024 );
+	Uint32 written = 0;
+	Uint32 expected = 0;
+	bool ordered = true;
+	for ( int iteration = 0; iteration < 2000; ++iteration ) {
+		for ( auto& byte : chunk )
+			byte = static_cast<char>( written++ * 31 );
+		queue.append( chunk.data(), chunk.size() );
+		const size_t count = queue.read( out.data(), out.size() );
+		for ( size_t i = 0; i < count; ++i )
+			ordered = ordered && out[i] == static_cast<char>( expected++ * 31 );
+		EXPECT_LT( queue.storedSize(), 2 * queue.pending() + chunk.size() );
+	}
+	EXPECT_TRUE( ordered );
+	while ( queue.pending() > 0 ) {
+		const size_t count = queue.read( out.data(), out.size() );
+		for ( size_t i = 0; i < count; ++i )
+			ordered = ordered && out[i] == static_cast<char>( expected++ * 31 );
+	}
+	EXPECT_TRUE( ordered );
+	EXPECT_EQ( written, expected );
+	EXPECT_EQ( static_cast<size_t>( 0 ), queue.storedSize() );
 }

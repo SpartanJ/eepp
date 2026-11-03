@@ -703,7 +703,7 @@ function generate_os_links()
 	elseif os.istarget("bsd") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.istarget("haiku") then
-		multiple_insert( os_links, { "GL", "network" } )
+		multiple_insert( os_links, { "GL", "network", "bsd" } )
 	elseif os.istarget("ios") then
 		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "CoreText.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework", "CoreMotion.framework", "AVFoundation.framework", "GameController.framework" } )
 	elseif os.istarget("android") then

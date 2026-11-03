@@ -21,6 +21,10 @@
 #include <ws2tcpip.h>
 #else
 #include <arpa/inet.h>
+#if EE_PLATFORM == EE_PLATFORM_HAIKU && !defined( _DEFAULT_SOURCE )
+// Haiku declares getifaddrs() in its BSD compatibility headers (libbsd) only with this defined.
+#define _DEFAULT_SOURCE
+#endif
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -1458,10 +1462,17 @@ SSHConfigContext SSHConfigContext::system( std::string originalHost ) {
 		{ context.homeDirectory + "/.ssh/config", context.homeDirectory + "/.ssh" } );
 	context.sources.push_back( { programData + "/ssh/ssh_config", programData + "/ssh" } );
 #else
-	if ( struct passwd* pw = getpwuid( getuid() ) )
+	if ( struct passwd* pw = getpwuid( getuid() ) ) {
 		context.localUser = pw->pw_name;
-	else
+		// Like ssh(1), which reads ~/.ssh/config and expands ~ and %d from the password entry,
+		// not from $HOME.
+		if ( pw->pw_dir && *pw->pw_dir ) {
+			context.homeDirectory = pw->pw_dir;
+			System::FileSystem::dirRemoveSlashAtEnd( context.homeDirectory );
+		}
+	} else {
 		context.localUser = systemGetEnv( "USER" ).value_or( "user" );
+	}
 	context.localUid = String::toString( static_cast<Uint64>( getuid() ) );
 	context.sources.push_back(
 		{ context.homeDirectory + "/.ssh/config", context.homeDirectory + "/.ssh" } );

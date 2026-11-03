@@ -21,6 +21,7 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
+#include <cstdint>
 #include <eterm/system/ipipe.hpp>
 #include <stdint.h>
 
@@ -47,6 +48,18 @@ class IPseudoTerminal : public eterm::System::IPipe {
 	virtual bool resize( int columns, int rows, int pixelWidth, int pixelHeight ) = 0;
 
 	bool resize( int columns, int rows ) { return resize( columns, rows, 0, 0 ); }
+
+	/** What the session waits on for output, or -1 to poll on a timer: on POSIX a descriptor for
+	 * poll() (readable for output, writable for pending input); on Windows an event HANDLE that is
+	 * signaled while output is buffered. */
+	virtual std::intptr_t getWaitHandle() const { return -1; }
+
+	/** POSIX: input is buffered until the descriptor becomes writable (read() flushes it). */
+	virtual bool hasPendingWrites() const { return false; }
+
+	/** Windows: no more output can arrive and none is left to read. POSIX reports a hangup
+	 * through poll(). */
+	virtual bool hasHungUp() const { return false; }
 };
 
 }} // namespace eterm::Terminal
