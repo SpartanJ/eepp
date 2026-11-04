@@ -137,30 +137,78 @@ int PseudoTerminal::getNumRows() const {
 	return mRows;
 }
 
+void PseudoTerminal::queueWrite( const char* data, size_t size ) {
+	mWriteBuffer.append( data, size );
+	mBytesQueued += size;
+}
+
+void PseudoTerminal::deliverQueuedWrite( size_t size ) {
+	mWriteBuffer.consume( size );
+	mBytesDelivered += size;
+	while ( !mReplySpans.empty() ) {
+		auto& span = mReplySpans.front();
+		const Uint64 delivered = eemin( mBytesDelivered, span.end );
+		if ( delivered > span.start ) {
+			mPendingReplyBytes -= static_cast<size_t>( delivered - span.start );
+			span.start = delivered;
+		}
+		if ( span.start != span.end )
+			break;
+		mReplySpans.pop_front();
+	}
+}
+
+bool PseudoTerminal::beginReply( size_t size ) {
+	if ( size > ReplyBudget - mPendingReplyBytes )
+		return false;
+	mReplyStart = mBytesQueued;
+	return true;
+}
+
+void PseudoTerminal::endReply() {
+	if ( mBytesQueued == mReplyStart )
+		return;
+	mPendingReplyBytes += static_cast<size_t>( mBytesQueued - mReplyStart );
+	if ( !mReplySpans.empty() && mReplySpans.back().end == mReplyStart )
+		mReplySpans.back().end = mBytesQueued;
+	else
+		mReplySpans.push_back( { mReplyStart, mBytesQueued } );
+}
+
+static ssize_t writePtyDescriptor( int descriptor, const char* data, size_t size ) {
+#if EE_PLATFORM == EE_PLATFORM_HAIKU
+	// Haiku's TTY wrapper copies in 256-byte blocks. If a later block gets EAGAIN, it returns
+	// the error despite having delivered earlier blocks. Stay within one block so a retry
+	// cannot duplicate bytes whose successful delivery the driver failed to report.
+	size = eemin( size, size_t{ 256 } );
+#endif
+	return ::write( descriptor, data, size );
+}
+
 int PseudoTerminal::write( const char* s, size_t n ) {
-	if ( !mWriteBuffer.empty() ) {
-		mWriteBuffer.append( s, n );
+	if ( mWriteBuffer.pending() != 0 ) {
+		queueWrite( s, n );
 		return n;
 	}
 
-	ssize_t r = ::write( (int)mMaster, s, n );
+	ssize_t r = writePtyDescriptor( mMaster.handle(), s, n );
 	if ( r < 0 ) {
-		if ( errno == EAGAIN || errno == EWOULDBLOCK ) {
-			mWriteBuffer.append( s, n );
+		if ( errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR ) {
+			queueWrite( s, n );
 			return n;
 		}
 		return -1;
 	}
 
 	if ( (size_t)r < n ) {
-		mWriteBuffer.append( s + r, n - r );
+		queueWrite( s + r, n - r );
 	}
 
 	return n;
 }
 
 int PseudoTerminal::read( char* s, size_t n, bool block ) {
-	if ( mWriteBuffer.empty() && !block ) {
+	if ( mWriteBuffer.pending() == 0 && !block ) {
 		struct pollfd pfd;
 		pfd.fd = mMaster.handle();
 		pfd.events = POLLIN;
@@ -173,11 +221,11 @@ int PseudoTerminal::read( char* s, size_t n, bool block ) {
 			perror( "PseudoTerminal::read(poll)" );
 			return -1;
 		}
-	} else if ( !mWriteBuffer.empty() || block ) {
+	} else if ( mWriteBuffer.pending() != 0 || block ) {
 		struct pollfd pfd;
 		pfd.fd = mMaster.handle();
 		pfd.events = POLLIN;
-		if ( !mWriteBuffer.empty() )
+		if ( mWriteBuffer.pending() != 0 )
 			pfd.events |= POLLOUT;
 		pfd.revents = 0;
 		auto i = poll( &pfd, 1, block ? -1 : 0 );
@@ -186,15 +234,12 @@ int PseudoTerminal::read( char* s, size_t n, bool block ) {
 			return -1;
 		}
 
-		if ( ( pfd.revents & POLLOUT ) && !mWriteBuffer.empty() ) {
-			ssize_t r = ::write( (int)mMaster, mWriteBuffer.c_str(), mWriteBuffer.size() );
+		if ( ( pfd.revents & POLLOUT ) && mWriteBuffer.pending() != 0 ) {
+			ssize_t r =
+				writePtyDescriptor( mMaster.handle(), mWriteBuffer.data(), mWriteBuffer.pending() );
 			if ( r > 0 ) {
-				if ( (size_t)r == mWriteBuffer.size() ) {
-					mWriteBuffer.clear();
-				} else {
-					mWriteBuffer = mWriteBuffer.substr( r );
-				}
-			} else if ( r < 0 && errno != EAGAIN && errno != EWOULDBLOCK ) {
+				deliverQueuedWrite( static_cast<size_t>( r ) );
+			} else if ( r < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR ) {
 				perror( "PseudoTerminal::read(write)" ); // Log error but don't fail read
 			}
 		}

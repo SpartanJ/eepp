@@ -1502,6 +1502,16 @@ void TerminalEmulator::ttywriteraw( const char* s, size_t n ) {
 	}
 }
 
+void TerminalEmulator::ttyreply( const char* s, size_t n, int may_echo, bool raw ) {
+	if ( !mPty->beginReply( n ) )
+		return;
+	if ( raw )
+		write( s, n );
+	else
+		ttywrite( s, n, may_echo );
+	mPty->endReply();
+}
+
 void TerminalEmulator::ttyhangup() {
 	if ( mProcess )
 		mProcess->terminate();
@@ -1661,7 +1671,7 @@ bool TerminalEmulator::handleKittyKeyboardProtocol() {
 		if ( omitted ) {
 			char response[24];
 			const int len = snprintf( response, sizeof( response ), "\033[?%uu", state.flags );
-			ttywrite( response, static_cast<size_t>( len ), 0 );
+			ttyreply( response, static_cast<size_t>( len ), 0 );
 		}
 	} else if ( mCsiescseq.priv == '>' ) {
 		if ( mCsiescseq.narg == 1 && mCsiescseq.arg[0] >= 0 )
@@ -2205,6 +2215,51 @@ void TerminalEmulator::tsetchar( Rune u, int x, int y ) {
 		TLINE( y )[x].mode |= ATTR_BOXDRAW;
 }
 
+TerminalGlyph TerminalEmulator::blankGlyph() const {
+	TerminalGlyph blank = mTerm.c.attr;
+	blank.mode = 0;
+	blank.u = ' ';
+	return blank;
+}
+
+void TerminalEmulator::terase( int x1, int y1, int x2, int y2 ) {
+	// A selection may need clearing, and a scrolled viewport is not the rows the marks describe.
+	if ( hasSelection() || mTerm.scr != 0 ) {
+		tclearregion( x1, y1, x2, y2 );
+		return;
+	}
+	if ( y1 > y2 )
+		std::swap( y1, y2 );
+	if ( x1 > x2 )
+		std::swap( x1, x2 );
+	LIMIT( y1, 0, mTerm.row - 1 );
+	LIMIT( y2, 0, mTerm.row - 1 );
+	LIMIT( x1, 0, mTerm.col - 1 );
+	LIMIT( x2, 0, mTerm.col - 1 );
+
+	const TerminalGlyph blank = blankGlyph();
+	bool sameBlank = std::memcmp( &blank, &mBlankRowGlyph, sizeof( blank ) ) == 0;
+	const bool wholeRow = x1 == 0 && x2 == mTerm.col - 1;
+	for ( int y = y1; y <= y2; ++y ) {
+		if ( sameBlank && ( mTerm.dirty[y] & RowBlank ) )
+			continue;
+		tclearregion( x1, y, x2, y );
+		if ( !wholeRow )
+			continue;
+		// Marks describe one glyph. Other rows stay marked through partial erases of another
+		// color, which programs do constantly, and are only given up to mark a row in it.
+		if ( !sameBlank ) {
+			for ( int row = 0; row < mTerm.row; ++row )
+				mTerm.dirty[row] &= ~RowBlank;
+			mBlankRowGlyph = blank;
+			sameBlank = true;
+		}
+		mTerm.dirty[y] |= RowBlank;
+		// tsetdirt() must keep walking the rows, or it would leave this mark behind.
+		mAllDirty = false;
+	}
+}
+
 void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2, bool skip_clear ) {
 	int x, y, temp;
 	TerminalGlyph* gp;
@@ -2246,9 +2301,7 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2, bool skip_c
 	if ( skip_clear || !hasSelection() ) {
 		static_assert( sizeof( TerminalGlyph ) == 16,
 					   "tclearregion fast path expects 16-byte glyphs" );
-		TerminalGlyph blank = mTerm.c.attr;
-		blank.mode = 0;
-		blank.u = ' ';
+		const TerminalGlyph blank = blankGlyph();
 		for ( y = y1; y <= y2; y++ ) {
 			gp = TLINE( y );
 			mTerm.dirty[y] = 1;
@@ -2735,7 +2788,7 @@ void TerminalEmulator::handleDeviceAttributes() {
 		const auto version = EE::Version::getVersion();
 		const int revision = version.major * 10000 + version.minor * 100 + version.patch;
 		const int len = snprintf( buf, sizeof( buf ), "\033[>0;%d;0c", revision );
-		ttywrite( buf, len, 0 );
+		ttyreply( buf, len, 0 );
 	} else if ( mCsiescseq.priv == '?' ) {
 		char buf[64];
 		int len;
@@ -2745,12 +2798,12 @@ void TerminalEmulator::handleDeviceAttributes() {
 			case 1: // Secondary DA
 				// Respond with VT220 emulation
 				len = snprintf( buf, sizeof( buf ), "\033[?1;2c" );
-				ttywrite( buf, len, 0 );
+				ttyreply( buf, len, 0 );
 				break;
 			case 62: // Request terminfo/termcap name
 				// Respond with our terminal name
 				len = snprintf( buf, sizeof( buf ), "\033P1+r%s\033\\", "st-256color" );
-				ttywrite( buf, len, 0 );
+				ttyreply( buf, len, 0 );
 				break;
 			case 63: // Request terminfo/termcap name (secondary)
 				// Similar response
@@ -2761,7 +2814,7 @@ void TerminalEmulator::handleDeviceAttributes() {
 		}
 	} else if ( !mCsiescseq.priv ) {
 		// Standard DA - respond with VT100 identification
-		ttywrite( vtiden, strlen( vtiden ), 0 );
+		ttyreply( vtiden, strlen( vtiden ), 0 );
 	}
 }
 
@@ -2873,21 +2926,21 @@ void TerminalEmulator::csihandle( void ) {
 		case 'J': /* ED -- Clear screen */
 			switch ( mCsiescseq.arg[0] ) {
 				case 0: /* below */
-					tclearregion( mTerm.c.x, mTerm.c.y, mTerm.col - 1, mTerm.c.y );
+					terase( mTerm.c.x, mTerm.c.y, mTerm.col - 1, mTerm.c.y );
 					if ( mTerm.c.y < mTerm.row - 1 ) {
-						tclearregion( 0, mTerm.c.y + 1, mTerm.col - 1, mTerm.row - 1 );
+						terase( 0, mTerm.c.y + 1, mTerm.col - 1, mTerm.row - 1 );
 					}
 					break;
 				case 1: /* above */
 					if ( mTerm.c.y > 0 )
-						tclearregion( 0, 0, mTerm.col - 1, mTerm.c.y - 1 );
-					tclearregion( 0, mTerm.c.y, mTerm.c.x, mTerm.c.y );
+						terase( 0, 0, mTerm.col - 1, mTerm.c.y - 1 );
+					terase( 0, mTerm.c.y, mTerm.c.x, mTerm.c.y );
 					break;
 				case 3:
 					clearHistory();
 					// fallthrough
 				case 2: /* all */
-					tclearregion( 0, 0, mTerm.col - 1, mTerm.row - 1 );
+					terase( 0, 0, mTerm.col - 1, mTerm.row - 1 );
 					mKittyGraphics.clearScreen();
 					break;
 				default:
@@ -2897,13 +2950,13 @@ void TerminalEmulator::csihandle( void ) {
 		case 'K': /* EL -- Clear line */
 			switch ( mCsiescseq.arg[0] ) {
 				case 0: /* right */
-					tclearregion( mTerm.c.x, mTerm.c.y, mTerm.col - 1, mTerm.c.y );
+					terase( mTerm.c.x, mTerm.c.y, mTerm.col - 1, mTerm.c.y );
 					break;
 				case 1: /* left */
-					tclearregion( 0, mTerm.c.y, mTerm.c.x, mTerm.c.y );
+					terase( 0, mTerm.c.y, mTerm.c.x, mTerm.c.y );
 					break;
 				case 2: /* all */
-					tclearregion( 0, mTerm.c.y, mTerm.col - 1, mTerm.c.y );
+					terase( 0, mTerm.c.y, mTerm.col - 1, mTerm.c.y );
 					break;
 			}
 			break;
@@ -2930,7 +2983,7 @@ void TerminalEmulator::csihandle( void ) {
 			break;
 		case 'X': /* ECH -- Erase <n> char */
 			DEFAULT( mCsiescseq.arg[0], 1 );
-			tclearregion( mTerm.c.x, mTerm.c.y, mTerm.c.x + mCsiescseq.arg[0] - 1, mTerm.c.y );
+			terase( mTerm.c.x, mTerm.c.y, mTerm.c.x + mCsiescseq.arg[0] - 1, mTerm.c.y );
 			break;
 		case 'P': /* DCH -- Delete <n> char */
 			DEFAULT( mCsiescseq.arg[0], 1 );
@@ -2959,10 +3012,10 @@ void TerminalEmulator::csihandle( void ) {
 				reportColorScheme();
 			} else if ( !mCsiescseq.priv && mCsiescseq.arg[0] == 5 ) {
 				// Operating status: always "OK". Programs use it as an ordered parse barrier.
-				ttywrite( "\033[0n", 4, 0 );
+				ttyreply( "\033[0n", 4, 0 );
 			} else if ( !mCsiescseq.priv && mCsiescseq.arg[0] == 6 ) {
 				len = snprintf( buf, sizeof( buf ), "\033[%i;%iR", mTerm.c.y + 1, mTerm.c.x + 1 );
-				ttywrite( buf, len, 0 );
+				ttyreply( buf, len, 0 );
 			}
 			break;
 		case 'r': /* DECSTBM -- Set Scrolling Region */
@@ -2993,7 +3046,7 @@ void TerminalEmulator::csihandle( void ) {
 					const bool priv = mCsiescseq.priv == '?';
 					len = snprintf( buf, sizeof( buf ), priv ? "\033[?%d;%d$y" : "\033[%d;%d$y",
 									mCsiescseq.arg[0], modeReport( priv, mCsiescseq.arg[0] ) );
-					ttywrite( buf, len, 0 );
+					ttyreply( buf, len, 0 );
 					break;
 				}
 				default:
@@ -3023,20 +3076,20 @@ void TerminalEmulator::csihandle( void ) {
 				goto unknown;
 			len = snprintf( buf, sizeof( buf ), "\033P>|eterm %s\033\\",
 							EE::Version::getVersionName( false ).c_str() );
-			ttywrite( buf, len, 0 );
+			ttyreply( buf, len, 0 );
 			break;
 		case 't': /* Window manipulation */
 			switch ( mCsiescseq.arg[0] ) {
 				case 14: /* Report terminal grid size in pixels. */
 					len =
 						snprintf( buf, sizeof( buf ), "\033[4;%d;%dt", mPixelHeight, mPixelWidth );
-					ttywrite( buf, len, 0 );
+					ttyreply( buf, len, 0 );
 					break;
 				case 16: { /* Report terminal cell size in pixels. */
 					const int cellWidth = mTerm.col > 0 ? mPixelWidth / mTerm.col : 0;
 					const int cellHeight = mTerm.row > 0 ? mPixelHeight / mTerm.row : 0;
 					len = snprintf( buf, sizeof( buf ), "\033[6;%d;%dt", cellHeight, cellWidth );
-					ttywrite( buf, len, 0 );
+					ttyreply( buf, len, 0 );
 					break;
 				}
 				case 22: /* Save window title */
@@ -3437,7 +3490,7 @@ void TerminalEmulator::strhandle( void ) {
 			mKittyGraphics.handle( std::string_view{ mStrescseq.buf + 1, mStrescseq.len - 1 },
 								   Vector2i( mTerm.c.x, mTerm.c.y ) );
 		if ( !result.response.empty() )
-			write( result.response.data(), result.response.size() );
+			ttyreply( result.response.data(), result.response.size(), 0, true );
 		if ( result.changed )
 			mDirty = true;
 		if ( result.cursorMovement != Vector2i::Zero )
@@ -3929,7 +3982,7 @@ void TerminalEmulator::tcontrolcode( uchar ascii ) {
 		case 0x99: /* TODO: SGCI */
 			break;
 		case 0x9a: /* DECID -- Identify Terminal */
-			ttywrite( vtiden, strlen( vtiden ), 0 );
+			ttyreply( vtiden, strlen( vtiden ), 0 );
 			break;
 		case 0x9b: /* TODO: CSI */
 			break;
@@ -4002,7 +4055,7 @@ int TerminalEmulator::eschandle( uchar ascii ) {
 			}
 			break;
 		case 'Z': /* DECID -- Identify Terminal */
-			ttywrite( vtiden, strlen( vtiden ), 0 );
+			ttyreply( vtiden, strlen( vtiden ), 0 );
 			break;
 		case 'c': /* RIS -- Reset to initial state */
 			mKittyGraphics.reset();
@@ -5307,10 +5360,10 @@ void TerminalEmulator::drawregion( ITerminalDisplay& dpy, int x1, int y1, int x2
 	int y;
 
 	for ( y = y1; y < y2; y++ ) {
-		if ( !mTerm.dirty[y] )
+		if ( !( mTerm.dirty[y] & RowDirty ) )
 			continue;
 
-		mTerm.dirty[y] = 0;
+		mTerm.dirty[y] &= ~RowDirty;
 
 		dpy.drawLine( TLINE( y ), x1, y, x2 );
 	}
@@ -5489,7 +5542,7 @@ void TerminalEmulator::osc_color_response( int num, int index, int is_osc4 ) {
 							n < 0 ? "snprintf failed" : "truncation occurred",
 							is_osc4 ? "osc4" : "osc" );
 	} else {
-		ttywrite( buf, n, 1 );
+		ttyreply( buf, n, 1 );
 	}
 }
 
@@ -5508,7 +5561,7 @@ void TerminalEmulator::reportColorScheme() {
 		return;
 	char buf[16];
 	const int len = snprintf( buf, sizeof( buf ), "\033[?997;%dn", scheme );
-	ttywrite( buf, len, 0 );
+	ttyreply( buf, len, 0 );
 }
 
 void TerminalEmulator::mouseWheel( Vector2f offset, Vector2i cellPosition, Vector2i pixelPosition,

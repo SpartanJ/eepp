@@ -57,6 +57,13 @@ class IPseudoTerminal : public eterm::System::IPipe {
 	/** POSIX: input is buffered until the descriptor becomes writable (read() flushes it). */
 	virtual bool hasPendingWrites() const { return false; }
 
+	/** Starts a terminal-generated reply of the given size, which is written whole until
+	 * endReply(), or dropped whole if this returns false. Replies are bounded because a child can
+	 * request them forever without reading; user input is not. */
+	virtual bool beginReply( size_t /*size*/ ) { return true; }
+
+	virtual void endReply() {}
+
 	/** Windows: no more output can arrive and none is left to read. POSIX reports a hangup
 	 * through poll(). */
 	virtual bool hasHungUp() const { return false; }

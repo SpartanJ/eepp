@@ -86,7 +86,7 @@ struct Term {
 	int histcapacity{ 0 };
 	int max_width{ 0 };			   /* max width of lines in history */
 	int scr{ 0 };				   /* scroll back */
-	int* dirty{ nullptr };		   /* dirtyness of lines */
+	int* dirty{ nullptr };		   /* RowDirty and RowBlank of lines */
 	TerminalCursor c{};			   /* cursor */
 	int ocx{ 0 };				   /* old cursor col */
 	int ocy{ 0 };				   /* old cursor row */
@@ -392,6 +392,7 @@ class TerminalEmulator final {
 	int mPixelHeight{ 0 };
 	Clock mPendingPtyResizeClock;
 
+	TerminalGlyph mBlankRowGlyph{};
 	bool mDirty{ true };
 	bool mAllDirty{ true };
 	bool mProcessingPtyInput{ false };
@@ -554,6 +555,11 @@ class TerminalEmulator final {
 	void tdumpline( int );
 	void tdump();
 	void tclearregion( int, int, int, int, bool skip_clear = false );
+	/** tclearregion() for the erase sequences: skips rows that are already blank. Internal callers
+	 * must not use it: they clear rows whose marks no longer describe them, such as a recycled
+	 * history buffer. */
+	void terase( int x1, int y1, int x2, int y2 );
+	TerminalGlyph blankGlyph() const;
 	void tcursor( int );
 	void tdeletechar( int );
 	void tdeleteline( int );
@@ -623,7 +629,15 @@ class TerminalEmulator final {
 
 	void ttyhangup();
 	size_t ttyread();
+	/** Set while a row needs drawing. */
+	static constexpr int RowDirty = 1;
+	/** Set while a row is all mBlankRowGlyph, so erasing it again can be skipped. Every write to a
+	 * row assigns RowDirty and so clears this; only terase() sets it. */
+	static constexpr int RowBlank = 2;
+
 	void ttywriteraw( const char*, size_t );
+	/** Answers the child: unlike user input through ttywrite(), it is bounded. */
+	void ttyreply( const char* s, size_t n, int may_echo, bool raw = false );
 
 	void resettitle();
 

@@ -42,6 +42,7 @@
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
 #include <fcntl.h>
+#include <termios.h>
 #include <unistd.h>
 #endif
 
@@ -58,6 +59,9 @@ class MockPty : public IPseudoTerminal {
 	std::deque<size_t> mReadSizes;
 	size_t mReadOffset{ 0 };
 	std::atomic<size_t> mBytesRead{ 0 };
+	bool mAcceptReplies{ true };
+	int mRefusedReplies{ 0 };
+	int mOpenReplies{ 0 };
 	int mCols = 80;
 	int mRows = 24;
 	int mPixelWidth = 0;
@@ -78,6 +82,15 @@ class MockPty : public IPseudoTerminal {
 			mBuffer.append( s, n );
 		return n;
 	}
+	bool beginReply( size_t ) override {
+		if ( !mAcceptReplies ) {
+			++mRefusedReplies;
+			return false;
+		}
+		++mOpenReplies;
+		return true;
+	}
+	void endReply() override { --mOpenReplies; }
 	int read( char* buf, size_t n, bool ) override {
 		if ( mReadOffset == mBuffer.size() )
 			return 0;
@@ -3490,6 +3503,134 @@ UTEST( eterm, invalid_indexed_color_keeps_the_previous_color ) {
 	EXPECT_EQ( 1u, display->mSecondGlyph.fg );
 }
 
+struct EraseFixture {
+	EraseFixture() {
+		auto pty = std::make_unique<MockPty>();
+		mock = pty.get();
+		mock->mLoopWrites = false;
+		display = std::make_shared<MockDisplay>();
+		term = TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display,
+										 100 );
+	}
+
+	void feed( const std::string& text ) {
+		mock->mBuffer += text;
+		term->update();
+	}
+
+	/** Whether every cell shown equals the blank of a cleared default-colored screen. */
+	bool screenIsBlank() const {
+		const TerminalGlyph blank = display->mCells.front();
+		if ( blank.u != ' ' )
+			return false;
+		for ( const auto& cell : display->mCells ) {
+			if ( std::memcmp( &cell, &blank, sizeof( blank ) ) != 0 )
+				return false;
+		}
+		return true;
+	}
+
+	MockPty* mock{ nullptr };
+	std::shared_ptr<MockDisplay> display;
+	std::shared_ptr<TerminalEmulator> term;
+};
+
+UTEST( eterm, erasing_again_clears_whatever_wrote_to_a_blank_row ) {
+	const std::vector<std::string> writers = {
+		"\033[5;1Htext",
+		"\033[5;1H\xe7\x95\x8c",
+		"\033]8;;https://e.com/\033\\\033[5;1Hx\033]8;;\033\\",
+		std::string( 200, 'x' ),
+		"\033#8",
+		"\033[5;1Hx\033[24;1H\n\n\n",
+		"\033[5;1Hx\033[3;1H\033[2L",
+		"\033[5;1Hx\033[3;1H\033[2M",
+		"\033[5;1Hx\033[2S",
+		"\033[5;1Hx\033[2T",
+		"\033[5;1Hx\033[1;1H\033M",
+		"\033[5;1Hx\033[5;1H\033[3@",
+		"\033[5;3Hxy\033[5;1H\033[1P",
+		"\033[3;6r\033[5;1Hx\033[6;1H\n\n\033[r",
+		"\033[?1049h\033[2J\033[5;1Hx\033[?1049l\033[5;1Hy",
+		"\033[?47h\033[5;1Hx\033[?47l\033[6;1Hy",
+	};
+	for ( const auto& writer : writers ) {
+		// A separate draw keeps marks across drawing; one update leaves mAllDirty set by the
+		// scroll in front, which must not let later scrolls skip clearing the moved rows' marks.
+		for ( const bool drawBetween : { false, true } ) {
+			EraseFixture fixture;
+			const std::string scrolls = std::string( 30, '\n' ) + "\033[2J";
+			if ( drawBetween ) {
+				fixture.feed( scrolls );
+				fixture.feed( writer );
+				fixture.feed( "\033[2J" );
+			} else {
+				fixture.feed( scrolls + writer + "\033[2J" );
+			}
+			EXPECT_TRUE( fixture.screenIsBlank() );
+		}
+	}
+}
+
+UTEST( eterm, erasing_in_another_color_writes_the_new_blank ) {
+	EraseFixture fixture;
+	fixture.feed( "\033[2J" );
+	const TerminalGlyph blank = fixture.display->mCells.front();
+
+	fixture.feed( "\033[41m\033[2J" );
+	EXPECT_TRUE( fixture.display->mCells.front().bg != blank.bg );
+	EXPECT_TRUE( fixture.display->mCells.back().bg != blank.bg );
+	fixture.feed( "\033[2J" );
+	EXPECT_TRUE( fixture.display->mCells.back().bg != blank.bg );
+
+	fixture.feed( "\033[0m\033[2J" );
+	EXPECT_TRUE( fixture.screenIsBlank() );
+	EXPECT_EQ( blank.bg, fixture.display->mCells.front().bg );
+
+	// Part of a row in another color leaves that row unmarked and the rest of the screen marked.
+	fixture.feed( "\033[42m\033[5;10H\033[K\033[0m" );
+	const int drawn = fixture.display->mDrawLines;
+	fixture.feed( "\033[2J" );
+	EXPECT_EQ( drawn + 1, fixture.display->mDrawLines );
+	EXPECT_TRUE( fixture.screenIsBlank() );
+}
+
+UTEST( eterm, erasing_blank_rows_does_not_redraw_them ) {
+	EraseFixture fixture;
+	fixture.feed( "\033[2J" );
+	const int drawn = fixture.display->mDrawLines;
+	EXPECT_TRUE( drawn > 0 );
+
+	fixture.feed( "\033[2J\033[5;10H\033[K\033[1K\033[2K\033[J\033[1J\033[3X" );
+	EXPECT_EQ( drawn, fixture.display->mDrawLines );
+
+	fixture.feed( "\033[5;1Hx" );
+	const int written = fixture.display->mDrawLines;
+	EXPECT_EQ( drawn + 1, written );
+	fixture.feed( "\033[2J" );
+	EXPECT_EQ( written + 1, fixture.display->mDrawLines );
+	EXPECT_TRUE( fixture.screenIsBlank() );
+}
+
+UTEST( eterm, erasing_a_blank_row_still_clears_a_selection_on_it ) {
+	EraseFixture fixture;
+	fixture.feed( "\033[2J" );
+	fixture.term->selstart( 0, 4, 0 );
+	fixture.term->selextend( 5, 4, 1, 0 );
+	ASSERT_TRUE( fixture.term->hasSelection() );
+	fixture.feed( "\033[2J" );
+	EXPECT_FALSE( fixture.term->hasSelection() );
+}
+
+UTEST( eterm, erasing_after_a_resize_clears_rows_written_since ) {
+	EraseFixture fixture;
+	fixture.feed( "\033[2J" );
+	fixture.term->resize( 60, 30 );
+	fixture.feed( "\033[28;1Htext" );
+	fixture.feed( "\033[2J" );
+	EXPECT_TRUE( fixture.screenIsBlank() );
+}
+
 UTEST( eterm, osc_palette_queries_return_each_requested_color ) {
 	auto pty = std::make_unique<MockPty>();
 	pty->mBuffer = "\033]4;0;?;1;?\a";
@@ -5271,6 +5412,185 @@ UTEST( eterm, pty_descriptors_are_nonblocking_and_close_on_exec ) {
 	EXPECT_TRUE( ( fcntl( master, F_GETFD ) & FD_CLOEXEC ) != 0 );
 	EXPECT_EQ( stdoutFlags, fcntl( STDOUT_FILENO, F_GETFL ) );
 	EXPECT_EQ( stdoutDescriptorFlags, fcntl( STDOUT_FILENO, F_GETFD ) );
+}
+
+UTEST( eterm, pending_pty_writes_preserve_order ) {
+	auto pty = PseudoTerminal::create( 80, 24 );
+	ASSERT_TRUE( pty != nullptr );
+	ASSERT_TRUE( ( fcntl( static_cast<int>( pty->getWaitHandle() ), F_GETFL ) & O_NONBLOCK ) != 0 );
+	const char* name = ptsname( static_cast<int>( pty->getWaitHandle() ) );
+	ASSERT_TRUE( name != nullptr );
+	AutoHandle slave( open( name, O_RDWR | O_NOCTTY | O_NONBLOCK ) );
+	ASSERT_TRUE( static_cast<bool>( slave ) );
+	struct termios settings;
+	ASSERT_EQ( 0, tcgetattr( slave.handle(), &settings ) );
+	cfmakeraw( &settings );
+	ASSERT_EQ( 0, tcsetattr( slave.handle(), TCSANOW, &settings ) );
+
+	std::vector<char> chunk( 64 * 1024 );
+	for ( size_t i = 0; i < chunk.size(); ++i )
+		chunk[i] = static_cast<char>( i % 251 );
+	constexpr size_t chunks = 16;
+	for ( size_t i = 0; i < chunks; ++i )
+		ASSERT_EQ( static_cast<int>( chunk.size() ), pty->write( chunk.data(), chunk.size() ) );
+	EXPECT_TRUE( pty->hasPendingWrites() );
+
+	// Read far less than we queued, forcing repeated partial writes and compaction.
+	char received[8192];
+	char output[64];
+	size_t consumed = 0;
+	bool ordered = true;
+	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 5 );
+	while ( consumed < chunk.size() * chunks && std::chrono::steady_clock::now() < deadline ) {
+		const ssize_t count = ::read( slave.handle(), received, sizeof( received ) );
+		if ( count > 0 ) {
+			for ( ssize_t i = 0; i < count; ++i )
+				ordered = ordered && received[i] == chunk[( consumed + i ) % chunk.size()];
+			consumed += static_cast<size_t>( count );
+		} else {
+			ASSERT_TRUE( count < 0 && ( errno == EAGAIN || errno == EWOULDBLOCK ) );
+			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		}
+		ASSERT_GE( pty->read( output, sizeof( output ) ), 0 );
+	}
+	EXPECT_TRUE( ordered );
+	ASSERT_EQ( chunk.size() * chunks, consumed );
+	EXPECT_FALSE( pty->hasPendingWrites() );
+}
+
+UTEST( eterm, pending_replies_have_a_budget_that_input_does_not_use ) {
+	auto pty = PseudoTerminal::create( 80, 24 );
+	ASSERT_TRUE( pty != nullptr );
+	const char* name = ptsname( static_cast<int>( pty->getWaitHandle() ) );
+	ASSERT_TRUE( name != nullptr );
+	AutoHandle slave( open( name, O_RDWR | O_NOCTTY | O_NONBLOCK ) );
+	ASSERT_TRUE( static_cast<bool>( slave ) );
+	struct termios settings;
+	ASSERT_EQ( 0, tcgetattr( slave.handle(), &settings ) );
+	cfmakeraw( &settings );
+	ASSERT_EQ( 0, tcsetattr( slave.handle(), TCSANOW, &settings ) );
+
+	const size_t budget = PseudoTerminal::ReplyBudget;
+	EXPECT_FALSE( pty->beginReply( budget + 1 ) );
+
+	// Input beyond the budget queues, and leaves all of it to replies.
+	const std::string input( budget + 1024 * 1024, 'i' );
+	ASSERT_EQ( static_cast<int>( input.size() ), pty->write( input.data(), input.size() ) );
+	ASSERT_TRUE( pty->beginReply( budget ) );
+	const std::string reply( budget, 'r' );
+	ASSERT_EQ( static_cast<int>( reply.size() ), pty->write( reply.data(), reply.size() ) );
+	pty->endReply();
+
+	EXPECT_FALSE( pty->beginReply( 1 ) );
+	EXPECT_TRUE( pty->beginReply( 0 ) );
+	pty->endReply();
+
+	const auto drainTo = [&]( size_t target, size_t& received, bool& ordered ) {
+		std::vector<char> buffer( 64 * 1024 );
+		char output[64];
+		const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 5 );
+		while ( received < target && std::chrono::steady_clock::now() < deadline ) {
+			const ssize_t count =
+				::read( slave.handle(), buffer.data(), eemin( buffer.size(), target - received ) );
+			for ( ssize_t i = 0; i < count; ++i )
+				ordered = ordered && buffer[i] == ( received + i < input.size() ? 'i' : 'r' );
+			if ( count > 0 )
+				received += static_cast<size_t>( count );
+			pty->read( output, sizeof( output ) );
+		}
+	};
+	size_t received = 0;
+	bool ordered = true;
+
+	// Delivering the input ahead of the replies frees nothing.
+	drainTo( input.size(), received, ordered );
+	ASSERT_EQ( input.size(), received );
+	EXPECT_FALSE( pty->beginReply( budget / 2 ) );
+
+	// The budget comes back as replies are delivered, including part of a queued run.
+	drainTo( input.size() + budget / 2, received, ordered );
+	ASSERT_EQ( input.size() + budget / 2, received );
+	EXPECT_TRUE( pty->beginReply( budget / 2 ) );
+	pty->endReply();
+	EXPECT_FALSE( pty->beginReply( budget ) );
+
+	drainTo( input.size() + budget, received, ordered );
+	ASSERT_EQ( input.size() + budget, received );
+	EXPECT_TRUE( ordered );
+	EXPECT_FALSE( pty->hasPendingWrites() );
+	EXPECT_TRUE( pty->beginReply( budget ) );
+	pty->endReply();
+}
+
+UTEST( eterm, replies_over_budget_are_dropped_whole_and_input_is_not ) {
+	auto pty = std::make_unique<MockPty>();
+	auto* mock = pty.get();
+	mock->mLoopWrites = false;
+	mock->mAcceptReplies = false;
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display, 100 );
+	ASSERT_TRUE( term != nullptr );
+
+	// Color queries echo-enable their reply: it is not mayEcho that makes them replies.
+	const std::string queries =
+		"\033[c\033[5n\033]4;0;?\a\033_Ga=q,i=31,f=32,s=1,v=1;AAAAAA==\033\\";
+	mock->mBuffer += queries;
+	term->update();
+	EXPECT_EQ( 4, mock->mRefusedReplies );
+	EXPECT_TRUE( mock->mWrites.empty() );
+
+	term->ttywrite( "typed", 5, 0 );
+	term->ttywrite( "keys", 4, 1 );
+	EXPECT_STREQ( "typedkeys", mock->mWrites.c_str() );
+	EXPECT_EQ( 4, mock->mRefusedReplies );
+
+	mock->mAcceptReplies = true;
+	mock->mWrites.clear();
+	mock->mBuffer += queries;
+	term->update();
+	EXPECT_EQ( 4, mock->mRefusedReplies );
+	EXPECT_EQ( 0, mock->mOpenReplies );
+	EXPECT_TRUE( mock->mWrites.find( "\033[0n" ) != std::string::npos );
+	EXPECT_TRUE( mock->mWrites.find( "\033]4;0;rgb:" ) != std::string::npos );
+	EXPECT_TRUE( mock->mWrites.find( "\033_Gi=31;OK\033\\" ) != std::string::npos );
+}
+
+UTEST( eterm_session, large_paste_reaches_a_reading_child_intact ) {
+	constexpr size_t size = 8 * 1024 * 1024;
+	auto session = spawnShellSession( "stty raw -echo; printf READY; head -c " +
+									  std::to_string( size ) + " | tail -c 9; sleep 2" );
+	ASSERT_TRUE( session != nullptr );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshotContains( snapshot, "READY" );
+				 } ) != nullptr );
+	std::string paste( size, 'x' );
+	paste.replace( size - 9, 9, "LAST-BYTE" );
+	session->writeRaw( std::move( paste ) );
+	auto snapshot = waitForSnapshot(
+		session,
+		[]( const TerminalSnapshot& candidate ) {
+			return snapshotContains( candidate, "LAST-BYTE" );
+		},
+		std::chrono::milliseconds( 5000 ) );
+	ASSERT_TRUE( snapshot != nullptr );
+	EXPECT_FALSE( snapshot->processExited );
+}
+
+UTEST( eterm_session, reply_flood_past_the_budget_leaves_the_session_responsive ) {
+	// About 4.8 MB of replies pile up behind a child that does not read until it has sent them.
+	// It then drains what was kept and needs a new reply, which only arrives if replies resumed.
+	auto session = spawnShellSession(
+		"stty raw -echo; exec 3<&0; yes \"$(printf '\\033[5n')\" | head -c 6000000; "
+		"printf FLOODED; cat <&3 >/dev/null & drain=$!; sleep 1; kill $drain; wait $drain; "
+		"printf '\\033[5n'; head -c 4 >/dev/null; printf ALIVE; sleep 2" );
+	ASSERT_TRUE( session != nullptr );
+	auto snapshot = waitForSnapshot(
+		session,
+		[]( const TerminalSnapshot& candidate ) { return snapshotContains( candidate, "ALIVE" ); },
+		std::chrono::milliseconds( 10000 ) );
+	ASSERT_TRUE( snapshot != nullptr );
+	EXPECT_FALSE( snapshot->processExited );
 }
 
 UTEST( eterm_session, replies_to_a_child_that_never_reads_do_not_block_the_worker ) {

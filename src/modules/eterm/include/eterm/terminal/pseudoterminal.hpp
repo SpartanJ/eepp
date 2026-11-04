@@ -24,9 +24,13 @@
 #include <eepp/math/vector2.hpp>
 #include <eterm/system/autohandle.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
+#include <eterm/terminal/ptyoutputqueue.hpp>
 #include <memory>
-#include <string>
+#ifndef _WIN32
+#include <deque>
+#endif
 
+using namespace EE;
 using namespace EE::Math;
 using namespace eterm::System;
 
@@ -66,7 +70,14 @@ class PseudoTerminal final : public IPseudoTerminal {
 #else
 	virtual std::intptr_t getWaitHandle() const override { return mMaster.handle(); }
 
-	virtual bool hasPendingWrites() const override { return !mWriteBuffer.empty(); }
+	virtual bool hasPendingWrites() const override { return mWriteBuffer.pending() != 0; }
+
+	virtual bool beginReply( size_t size ) override;
+
+	virtual void endReply() override;
+
+	/** Most bytes of replies that can wait for the child to read. Input does not count. */
+	static constexpr size_t ReplyBudget = 4 * 1024 * 1024;
 #endif
 
 	static std::unique_ptr<PseudoTerminal> create( int columns, int rows );
@@ -95,7 +106,22 @@ class PseudoTerminal final : public IPseudoTerminal {
 	AutoHandle mMaster;
 	AutoHandle mSlave;
 
-	std::string mWriteBuffer;
+	/** A run of replies in mWriteBuffer, as offsets into everything ever queued. */
+	struct ReplySpan {
+		Uint64 start;
+		Uint64 end;
+	};
+
+	PtyOutputQueue mWriteBuffer;
+	Uint64 mBytesQueued{ 0 };
+	Uint64 mBytesDelivered{ 0 };
+	std::deque<ReplySpan> mReplySpans;
+	size_t mPendingReplyBytes{ 0 };
+	Uint64 mReplyStart{ 0 };
+
+	void queueWrite( const char* data, size_t size );
+
+	void deliverQueuedWrite( size_t size );
 
 	PseudoTerminal( int columns, int rows, AutoHandle&& master, AutoHandle&& slave ) noexcept;
 #endif

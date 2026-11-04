@@ -12,6 +12,10 @@ Local tuning increases the bounded decode buffer to 2,048 slots;
 measurements and validation are recorded below. The mode-controlled follow-up explains the
 apparent regression caused by comparing different reset defaults.
 
+The latest head-to-head is the [refreshed workload matrix](#refreshed-workload-matrix-2026-11-04)
+after adaptive decoding, snapshot reuse, reply budgeting and blank-row tracking. Older tables
+below retain their original binaries and measurements.
+
 Context: the OSC 8 hyperlink / OSC 7 working-directory / OSC 52 policy work (see
 `docs/articles/eterm_integration.md`) made eterm comparable with Ghostty's feature set, so the next
 step is comparing raw VT processing throughput. That work also produced these fixes, which are part
@@ -1223,7 +1227,7 @@ from profiling these:
   to fd 1, so the master was never `O_NONBLOCK` or `FD_CLOEXEC`, and stdout was changed instead. A
   child that does not read its input could block the worker in `write()` forever.
 
-Remaining candidates: blank-row tracking, reusing snapshot buffers or copying dirty rows only.
+Snapshot reuse, bounded pending PTY writes and blank-row tracking are implemented below.
 
 ### Snapshot cell reuse (2026-11-04)
 
@@ -1244,6 +1248,133 @@ evidence only, not a GPU measurement:
 Stale-row bugs are covered by tests that fail with an off-by-one row generation. The highlight mark
 is defensive: every search change currently redraws all rows, so no test can force it. The same
 applies to marking rows on resize.
+
+### Bounded pending PTY input (2026-11-04)
+
+User input and terminal-generated replies share one FIFO, so they stay in order, but only replies
+are bounded. User input, including a large paste, always queues: it is already in memory and a
+paste must not be lost. Replies have a 4 MiB POSIX budget, counted per byte of queued reply and not
+reduced by queued input, so a paste delays a reply instead of dropping it.
+
+`TerminalEmulator::ttyreply()` marks replies explicitly, independently of `mayEcho` (the OSC color
+reply enables echo). Its `beginReply()` decides before any byte is written: a reply that does not
+fit is dropped whole, so the child never sees a truncated sequence. Overflow never terminates the
+child, and replies resume as queued ones are delivered. Mouse, key and focus reports count as input.
+ConPTY's write path is unchanged and accepts every reply.
+
+Review also routed Kitty graphics acknowledgements through this budget. They previously called
+raw `write()` directly, bypassing it. They retain their raw semantics (no local echo, newline
+translation or viewport scroll); the whole-reply test covers refusing and accepting them.
+
+An earlier version of this patch terminated the child when pending input passed 4 MiB. It rejected
+writes by size alone, so a 5 MiB paste into a healthy `cat` killed it within 3 ms.
+
+Pending input uses the existing `PtyOutputQueue` with direct access and consumption of its unread
+span. Partial writes advance its offset; compaction happens only after at least half the stored
+bytes have been consumed, replacing the previous allocating `substr()` after every partial write.
+
+Regression coverage uses a real raw-mode PTY for partial-drain ordering and the budget's boundaries
+and release, a mock PTY for dropping whole replies while input passes, and sessions for an 8 MiB
+paste delivered intact and for a reply flood past the budget that leaves the child responsive. The
+existing sustained queue test also exercises compaction. Parser-only benchmarks do not exercise
+pending writes. Pasting into a reading child, one run each, before and after the offset change:
+3 MiB 0.44 -> 0.17 s, 8 MiB 2.78 -> 0.49 s, 32 MiB from a timeout at 20 s to 1.80 s. The old
+`substr()` copied the remainder after every partial write.
+
+Remote verification found a Haiku TTY-driver bug on hrev60147: a nonblocking master write can
+deliver earlier 256-byte blocks and then return EAGAIN for a later block without reporting those
+earlier bytes. Retrying duplicates input. A standalone 1 MiB probe reproduced this outside eterm;
+limiting each native Haiku write to one 256-byte block delivered the stream exactly. The same
+bound now applies to initial and queued PTY writes on Haiku only. Ordinary pipes delivered the
+same probe exactly, and core `EE::System::Process` uses pipes, so that path needs no such bound.
+
+Final targeted validation: macOS passes all 196 terminal tests; Linux x86_64/GCC/SDL3 passes
+142 `eterm.*` and 32 `eterm_session.*`; MinGW x86_64/Wine 11.19 passes 138 and 29; Haiku passes
+142 and 32, including the 8 MiB paste (0.74-0.84 s) and flood recovery (1.30-1.34 s). Haiku's
+session suite passed under a PTY; two redirected-output runs aborted with
+`std::system_error: No such process`, whose cause remains unconfirmed. Wine uses the project's
+SDL2.dll: the system MinGW SDL2.dll failed during initialization. Native Windows/MSVC and Wine
+UI tests were not run. Remote copies are `/home/programming/eepp-negen` and
+`/boot/home/programming/eepp-negen`; user checkouts were left unchanged. Logs and standalone
+probes are under `/tmp/negen-reply-budget-*` and `/tmp/negen-haiku-*` on the respective hosts.
+
+### Blank-row tracking (2026-11-04)
+
+The erase workload spent 77% of its time rewriting cells that were already blank, and the Codex
+stream 14%. A row is now marked once a whole-row erase leaves it all one blank glyph, and erasing a
+marked row in that glyph does nothing, including no redraw.
+
+The mark is a second bit in `mTerm.dirty`. Every write to a row assigns `dirty[y] = 1`, which has
+to happen for the row to be drawn, so the same assignment clears the mark and a new writer is safe
+by default. Three rules keep that true:
+
+- Only `terase()`, used by ED, EL and ECH, reads or sets marks. `tclearregion()` keeps filling
+  unconditionally: `tscrollup()` calls it on recycled history buffers, whose rows are not what a
+  mark described.
+- Marking resets `mAllDirty`, because `tsetdirt()` returns early under it and would leave marks on
+  rows that a scroll moved. So `mAllDirty` implies there are no marks.
+- Marks describe one glyph. Partial erases in another color leave other rows marked; the marks are
+  only given up to mark a row in a new blank. Resetting on every color change walked all rows per
+  `CSI K` and cost Codex 2%.
+
+120x80, 10,000 history rows, M2 Pro, medians of three to five runs (Ghostty main: erase 194.8, Codex 265.1 MB/s
+in the matrix above, not re-measured):
+
+| Stream | Before | After |
+|---|---|---|
+| Erase | 51.7 MB/s | 235-238 MB/s (4.6x) |
+| Codex capture | 288-292 MB/s | 304-306 MB/s (+5%) |
+
+Final screens and cursors matched the previous build for the erase, Codex, styled, styled links
+and wide UTF-8 streams, and for 120 comparisons of a fuzz stream weighted toward erases mixed with
+scroll regions, IL/DL, ICH/DCH, DECALN, alternate screens, BCE colors, wide cells and RIS, at three
+chunk sizes. Unit tests fail for seven of eight mutations, including using `terase()` in
+`tscrollup()`, keeping `mAllDirty` and `|=` in `tsetdirt()`. The survivor removes the selection
+guard, which is redundant: changing a selection dirties its rows, which clears their marks.
+
+### Refreshed workload matrix (2026-11-04)
+
+Fresh matched measurements of the working tree based on `103773956` plus the staged reply-budget
+and blank-row erase changes, against the same Ghostty main `c7f68a7f4` and older pinned
+`91973f2b2`. Both Ghostty binaries retain their benchmark controls patch. The eterm harness was
+linked against the actual release `libeterm.a`, rebuilt through
+`projects/macos/make_no_fw.sh config=release eterm-static eepp-shared`.
+
+M2 Pro, 120x80, 10,000 requested history rows, mode 2027 enabled, the same captures and seed-42
+generated streams as the previous matrix. Each workload ran all three engines in one hyperfine
+invocation with one warmup and five measured runs; engine order alternates between workloads.
+These are whole-process wall-clock medians in decimal MB/s, including process setup and teardown.
+`erase_scroll` remains excluded because eterm does not implement its `CSI 22 J` operation.
+
+| Workload | eterm | Ghostty main | Ghostty pinned | eterm / main |
+| --- | ---: | ---: | ---: | ---: |
+| ASCII | 404.4 | 504.8 | 447.7 | 0.80x |
+| Unicode | 514.2 | 644.2 | 641.7 | 0.80x |
+| Unique Unicode | 115.5 | 82.4 | 83.6 | 1.40x |
+| CSI | 255.7 | 195.6 | 179.9 | 1.31x |
+| Images | 2,485.5 | 2,344.6 | 2,444.5 | 1.06x |
+| Long escape codes | 3,017.3 | 4,289.6 | 4,239.2 | 0.70x |
+| Styled | 270.1 | 275.2 | 255.4 | 0.98x |
+| Styled Unicode | 137.9 | 141.5 | 143.6 | 0.97x |
+| Styled with links | 136.3 | 118.3 | 117.9 | 1.15x |
+| Dense links | 156.0 | 63.7 | 61.3 | 2.45x |
+| Erase | 226.7 | 193.7 | 130.9 | 1.17x |
+| Random wide UTF-8 | 85.1 | 256.6 | 261.2 | 0.33x |
+| Codex capture | 283.3 | 254.5 | 232.2 | 1.11x |
+
+Reversing each headline workload's engine order, again one warmup and five runs, confirmed the
+ratios: erase 225.7 vs 194.1 MB/s (1.16x), Codex 284.5 vs 258.4 (1.10x), and dense links
+158.2 vs 63.5 (2.49x). These confirmation runs are separate from the primary matrix above.
+
+All 13 eterm preflights passed byte-consumption and trailing-DSR checks; Ghostty main's state
+report confirmed grapheme mode remained enabled. Executable, library and C++ source hashes were
+unchanged across the run. This is parser/file throughput: snapshots, real PTY backpressure and
+rendering are not measured here, so this matrix cannot quantify the snapshot or paste improvements.
+
+Artifacts: `~/programming/vtbench/matrix/refresh-20261104-xvcd31oj/` contains the harness source
+and executable, `measure.py`, `reverse-check.py`, per-workload raw JSON, preflight/timing logs,
+`summary.json`, `reverse-summary.json`, `matrix.md`, source/control patches and `metadata.json`
+with commits, flags, capture sizes and SHA-256 hashes. Previous matrix results were not overwritten.
 
 ### Also noticed
 

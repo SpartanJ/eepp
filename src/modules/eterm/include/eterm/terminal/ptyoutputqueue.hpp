@@ -8,7 +8,7 @@
 
 namespace eterm { namespace Terminal {
 
-/** PTY output handed from a reader thread to the session worker, in arrival order. Consumed bytes
+/** Bytes awaiting delivery to a PTY or from its reader thread, in arrival order. Consumed bytes
  * are reclaimed once they are at least as many as the unread ones, so storage stays below twice
  * the unread bytes even when the queue never empties, at an amortized constant cost per byte. Not
  * synchronized: callers hold their own lock. */
@@ -17,8 +17,16 @@ class PtyOutputQueue {
 	void append( const char* data, std::size_t size ) { mBuffer.append( data, size ); }
 
 	std::size_t read( char* out, std::size_t size ) {
-		const std::size_t count = std::min( size, pending() );
-		std::memcpy( out, mBuffer.data() + mOffset, count );
+		const std::size_t count = std::min<std::size_t>( size, pending() );
+		std::memcpy( out, data(), count );
+		consume( count );
+		return count;
+	}
+
+	const char* data() const { return mBuffer.data() + mOffset; }
+
+	/** Advance past bytes successfully delivered, compacting only when amortized cheap. */
+	void consume( std::size_t count ) {
 		mOffset += count;
 		if ( mOffset == mBuffer.size() ) {
 			mBuffer.clear();
@@ -27,7 +35,6 @@ class PtyOutputQueue {
 			mBuffer.erase( 0, mOffset );
 			mOffset = 0;
 		}
-		return count;
 	}
 
 	std::size_t pending() const { return mBuffer.size() - mOffset; }
