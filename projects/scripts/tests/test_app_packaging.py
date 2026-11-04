@@ -27,6 +27,7 @@ class PackagingFixture(unittest.TestCase):
             destination.mkdir(parents=True)
             shutil.copy2(ROOT / "projects" / target / "build.app.sh", destination)
         shutil.copy2(ROOT / "projects/macos/create.dmg.sh", self.root / "projects/macos")
+        shutil.copy2(ROOT / "projects/macos/build.and.create.dmg.sh", self.root / "projects/macos")
         (self.root / "projects/windows").mkdir()
         shutil.copy2(ROOT / "projects/windows/build.app.ps1", self.root / "projects/windows")
         self.app = self.root / "src/tools/sample"
@@ -470,6 +471,37 @@ printf complete > "$image"
                 self.assertEqual(image.read_text(), "complete" if status == 0 else "previous image")
                 self.assertFalse(Path(temporary_image.read_text()).exists())
 
+    def test_macos_multi_app_dmg(self):
+        calls = self.root / "app-calls"
+        # Isolate orchestration from compilation, signing and disk-image creation.
+        (self.root / "projects/macos/build.app.sh").write_text(
+            '#!/bin/bash\nset -eu\nprintf "%s\\n" "$@" >> "$EEPP_TEST_APP_CALLS"\n'
+            '[ "$1" != "${EEPP_TEST_FAIL_APP:-}" ] || exit 7\n'
+        )
+        self.env["EEPP_TEST_APP_CALLS"] = str(calls)
+        options = ["--skip-build", "--output-dir", str(self.output), "--version", "nightly"]
+        for selection, expected in (
+            (["eproc", "ecode", "eeiv"], ["eproc", "ecode", "eeiv"]),
+            (["all"], ["ecode", "eefm", "eeiv", "eproc"]),
+            (["eeiv"], ["eeiv"]),
+        ):
+            with self.subTest(selection=selection):
+                calls.unlink(missing_ok=True)
+                self.run_script("macos/build.and.create.dmg.sh", *selection, *options)
+                self.assertEqual(calls.read_text().splitlines(),
+                                 [arg for app in expected for arg in [app, "--dmg", *options]])
+        calls.unlink()
+        self.env["EEPP_TEST_FAIL_APP"] = "eefm"
+        result = self.run_script("macos/build.and.create.dmg.sh", "all", check=False)
+        self.assertEqual(result.returncode, 7, result.stdout)
+        self.assertEqual(calls.read_text().splitlines(), ["ecode", "--dmg", "eefm", "--dmg"])
+        calls.unlink()
+        for args in ((), ("--skip-build",)):
+            self.assertNotEqual(self.run_script("macos/build.and.create.dmg.sh", *args,
+                                               check=False).returncode, 0)
+        self.run_script("macos/build.and.create.dmg.sh", "--help")
+        self.assertFalse(calls.exists())
+
     @unittest.skipUnless(
         platform.system() == "Darwin" and os.environ.get("EEPP_TEST_SDL3_DYLIB")
         and shutil.which("premake5"),
@@ -577,6 +609,12 @@ printf complete > "$image"
         (self.source / "sample").unlink()
         shutil.copyfile(shutil.which("premake5"), minimal_bundle / "sample")
         (minimal_bundle / "sample").chmod(0o755)
+        second = self.root / "src/tools/second"
+        shutil.copytree(self.app, second)
+        (second / "version.hpp").write_text(
+            (second / "version.hpp").read_text().replace("SAMPLE_", "SECOND_")
+        )
+        shutil.copy2(minimal_bundle / "sample", self.source / "second")
         vendor = self.root / "sdl3"
         (vendor / "lib").mkdir(parents=True)
         shutil.copy2(os.environ["EEPP_TEST_SDL3_DYLIB"], vendor / "lib/libSDL3.0.dylib")
@@ -588,6 +626,7 @@ printf complete > "$image"
         self.run_script("scripts/package_sdk.sh", "macos", arch, "--version", "eepp-9.8.7")
         sdk = self.root / "projects/macos/sdk"
         self.assertTrue((sdk / f"sample-macos-9.8.7-{arch}.dmg").is_file())
+        self.assertTrue((sdk / f"second-macos-9.8.7-{arch}.dmg").is_file())
         bundle = sdk / "eepp-sdk/Applications/sample.app"
         plist = plistlib.loads((bundle / "Contents/Info.plist").read_bytes())
         self.assertEqual(plist["CFBundleShortVersionString"], "1.2.3")
@@ -595,6 +634,7 @@ printf complete > "$image"
         subprocess.run(["codesign", "--verify", "--deep", "--strict", str(bundle)], check=True)
         with tarfile.open(sdk / f"eepp-sdk-macos-{arch}-9.8.7.tar.gz") as package:
             self.assertIn("eepp-sdk/Applications/sample.app/Contents/MacOS/sample", package.getnames())
+            self.assertIn("eepp-sdk/Applications/second.app/Contents/MacOS/second", package.getnames())
 
 
 @unittest.skipUnless(

@@ -250,6 +250,14 @@ DMG creation uses macOS's built-in `hdiutil` and includes the app and an Applica
 `--dmg` creates it immediately; the separate `create.dmg.sh` supports the existing release
 signing/notarization sequence.
 
+To build and create DMGs for several applications in sequence, pass their names before any
+shared packaging options. `all` selects ecode, eefm, eeiv and eproc:
+
+```sh
+projects/macos/build.and.create.dmg.sh eproc ecode eeiv --backend SDL3
+projects/macos/build.and.create.dmg.sh all --backend SDL3
+```
+
 For an existing build, skip compilation and optionally select a staged source/output directory:
 
 ```sh

@@ -410,14 +410,20 @@ fix_macos_ids
 # Use the release label for artifact names, and each app's header for bundle versions.
 if [ "$PLATFORM" = macos ]; then
 	mkdir -p "$STAGING/Applications"
+	APPS=()
 	for manifest in src/tools/*/assets.list; do
 		app=$(basename "$(dirname "$manifest")")
 		[ -f "$STAGING/bin/$app" ] || continue
-		bash projects/macos/build.app.sh "$app" --skip-build --dmg --arch "$ARCH" \
+		APPS+=("$app")
+	done
+	if [ ${#APPS[@]} -gt 0 ]; then
+		bash projects/macos/build.and.create.dmg.sh "${APPS[@]}" --skip-build --arch "$ARCH" \
 			--source-dir "$ROOT/$STAGING/bin" --output-dir "$ROOT/projects/macos/sdk" \
 			--version "$ARCHIVE_SUFFIX"
-		mv "projects/macos/sdk/$app.app" "$STAGING/Applications/"
-	done
+		for app in "${APPS[@]}"; do
+			mv "projects/macos/sdk/$app.app" "$STAGING/Applications/"
+		done
+	fi
 fi
 
 # ---------------------------------------------------------------------------

@@ -125,10 +125,12 @@ settings UI, dialogs and application chrome are all built on the eepp GUI.
 * **[eproc](src/tools/eproc/)** - system monitor built with the eepp application and UI stack.
 * **[eterm](src/tools/eterm/)** - terminal emulator demonstrating tabs, splits, settings UI and
   the reusable `eterm` terminal module.
+* **[eefm](src/tools/eefm/)** - dual panel file manager inspired in Dolphin and classical dual panel
+  file managers.
 * **[eeiv](src/tools/eeiv/)** - image viewer implemented on the current eepp GUI stack.
 
 These applications are developed alongside the framework and serve as practical test beds for
-its desktop application APIs.
+its desktop application APIs. They can currently be downloaded from the eepp sdk [nightly builds](https://github.com/SpartanJ/eepp/releases/tag/nightly).
 
 ### UI Editor
 

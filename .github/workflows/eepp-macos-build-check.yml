@@ -40,6 +40,10 @@ jobs:
       if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
       run: |
         bash projects/scripts/package_sdk.sh macos arm64 --version ${{ steps.sdk_version.outputs.version }}
+        version="${{ steps.sdk_version.outputs.version }}"
+        for app in ecode eefm eeiv eproc; do
+          test -f "projects/macos/sdk/$app-macos-${version#eepp-}-arm64.dmg"
+        done
     - name: Upload SDK package
       if: always()
       uses: actions/upload-artifact@v4

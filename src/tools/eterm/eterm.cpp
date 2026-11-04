@@ -588,8 +588,7 @@ void App::createGlobalMenuBar() {
 	addCommand( fileMenu, i18n( "new_terminal", "New Terminal" ), "create-new-terminal" );
 	addCommand( fileMenu, i18n( "close_tab", "Close Tab" ), "close-tab" );
 	fileMenu->addSeparator();
-	addCommand( fileMenu, i18n( "settings", "Settings..." ), "open-settings" )
-		->setMenuRole( MenuRole::Preferences );
+	addCommand( fileMenu, i18n( "settings", "Settings..." ), "open-settings" );
 	addCommand( fileMenu, i18n( "key_bindings", "Keybindings..." ), "open-keybindings" );
 	fileMenu->on( Event::OnItemClicked, onItemClicked );
 	menuBar->addMenuButton( i18n( "file", "File" ), fileMenu );

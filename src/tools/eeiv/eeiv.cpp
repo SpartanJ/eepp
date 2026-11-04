@@ -612,6 +612,10 @@ bool App::init() {
 		saveConfig();
 		return true;
 	} );
+	getWindow()->setQuitCallback( [this]( EE::Window::Window* window ) {
+		saveConfig();
+		window->close();
+	} );
 
 	mMainLayout = mUIApplication->getUI()->loadLayoutFromString( R"xml(
 		<RelativeLayout id="eeiv_layout" lw="mp" lh="mp" background-color="#000">
