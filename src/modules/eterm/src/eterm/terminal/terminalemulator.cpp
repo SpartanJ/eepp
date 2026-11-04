@@ -4145,6 +4145,15 @@ size_t TerminalEmulator::tclusterCodepoints( const TerminalGlyph& glyph,
 	return count;
 }
 
+bool TerminalEmulator::isClusterBoundary( const TerminalGlyph& cluster, char32_t next ) const {
+	char32_t codepoints[MaxClusterCodepoints + 1];
+	const size_t count = tclusterCodepoints( cluster, codepoints );
+	if ( count == 0 )
+		return false;
+	codepoints[count] = next;
+	return String::isGraphemeBoundary( String::View( codepoints, count + 1 ), count );
+}
+
 void TerminalEmulator::tsetcluster( int x, int y, uint32_t id ) {
 	/* Box drawing is drawn per codepoint; a cluster is drawn by the font. */
 	TLINE( y )[x].u = GLYPH_CLUSTER_BASE + id;
@@ -4973,14 +4982,17 @@ int TerminalEmulator::tpututf8( const char* buf, int begin, int end ) {
 	/* Under mode 2027 the run's first codepoint may extend the previous cell's cluster. A single
 	 * codepoint can only pull it in through its Attracts bit; a cluster can through context its
 	 * last codepoint does not show (GB9c Indic conjuncts: consonant + linker [+ extend] +
-	 * consonant), so after one the full UAX #29 rules decide. */
+	 * consonant), so after one the full UAX #29 rules decide. Most runs start a new cluster there:
+	 * finding that here keeps the run, instead of discarding it for tputc() and decoding it again.
+	 */
 	if ( grapheme && run.codepoints[0] > 0xFF ) {
 		const int x = tattachColumn();
 		if ( x >= 0 ) {
 			const TerminalGlyph& previous = TLINE( mTerm.c.y )[x];
-			if ( isGlyphCluster( previous ) ||
-				 ( previous.u > 0xFF &&
-				   ( GlyphProperties::of( previous.u ) & GlyphProperties::Attracts ) ) )
+			if ( isGlyphCluster( previous )
+					 ? !isClusterBoundary( previous, run.codepoints[0] )
+					 : previous.u > 0xFF &&
+						   ( GlyphProperties::of( previous.u ) & GlyphProperties::Attracts ) )
 				return begin;
 		}
 	}

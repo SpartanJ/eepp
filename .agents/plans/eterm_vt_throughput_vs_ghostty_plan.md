@@ -1217,8 +1217,8 @@ from profiling these:
 - Random UTF-8 spent 61% re-converting: each run converted up to 2,048 codepoints, kept the prefix
   before the first stop and converted the rest again. The conversion span now halves when a stop
   wasted most of it and doubles when fully used: 37.8 -> 88.2 MB/s (2.38x), other streams within
-  1%. The remaining cost is very short runs; 23% of that stream is unassigned/private-use, so it
-  is not worth chasing further.
+  1%. See "Random wide UTF-8 breakdown" for what remained: unassigned and private-use codepoints
+  turned out not to be the cause.
 - Real repaint (paced Codex replay in a hidden window): about 16% of a core, mostly on the worker,
   not rendering. 47% of busy samples were `memmove`, largely from copying the grid to publish each
   snapshot, and 16% were `selected()` per cell without a selection, now skipped (busy samples
@@ -1375,6 +1375,30 @@ Artifacts: `~/programming/vtbench/matrix/refresh-20261104-xvcd31oj/` contains th
 and executable, `measure.py`, `reverse-check.py`, per-workload raw JSON, preflight/timing logs,
 `summary.json`, `reverse-summary.json`, `matrix.md`, source/control patches and `metadata.json`
 with commits, flags, capture sizes and SHA-256 hashes. Previous matrix results were not overwritten.
+
+### Random wide UTF-8 breakdown (2026-11-04)
+
+At 0.33x, half of the gap was combining marks and half the base print cost. Against Ghostty main,
+same machine; removing one property from the stream at a time:
+
+| Stream | eterm | Ghostty | Ratio |
+|---|---|---|---|
+| Full stream (26.8M codepoints) | 87.1 | 261.0 | 0.33x |
+| No combining marks or format characters | 151.8 | 389.2 | 0.39x |
+| No unassigned or private-use | 77.5 | 212.1 | 0.37x |
+| Assigned BMP without marks | 149.2 | 341.6 | 0.44x |
+| Same, wide characters only | 276.3 | 569.1 | 0.49x |
+| Same, alternating narrow and wide | 225.1 | 387.6 | 0.58x |
+
+Marks are 3-4% of the codepoints and took 44% of eterm's time. After a mark the previous cell is a
+cluster, and `tpututf8()` discarded the whole decoded run for `tputc()`: 525,057 times, 33.4M
+codepoints decoded for 26.8M in the stream. It now asks UAX #29 about the first codepoint and keeps
+the run at a boundary, the same answer `tattach()` reaches: 89 -> 115 MB/s (+29%). Final screens
+matched `HEAD` in 240 fuzz comparisons, half weighted toward clusters that must grow.
+
+The rest is the base print path: about 14 vs 6 ns per codepoint on clean text. History size and
+scrolling (5% of samples) do not explain it, and neither do random widths. 55% of the time is in the
+inlined `tputrun()` cell loop and 23% in decoding, but the profile does not divide that loop.
 
 ### Also noticed
 

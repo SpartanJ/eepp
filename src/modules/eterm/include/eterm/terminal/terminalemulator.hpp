@@ -531,6 +531,9 @@ class TerminalEmulator final {
 	/* Copies the codepoints a cell shows (at most the cluster limit) into @p codepoints. */
 	size_t tclusterCodepoints( const TerminalGlyph& glyph, char32_t* codepoints ) const;
 
+	/* Whether next starts a new cluster after this one, by the full UAX #29 rules. */
+	bool isClusterBoundary( const TerminalGlyph& cluster, char32_t next ) const;
+
 	/* Makes the cell at x, y show cluster @p id. */
 	void tsetcluster( int x, int y, uint32_t id );
 
