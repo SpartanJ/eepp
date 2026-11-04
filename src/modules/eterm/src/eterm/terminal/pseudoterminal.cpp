@@ -229,17 +229,17 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 
 	// The selected slave is duplicated onto standard input/output/error before exec. The original
 	// PTY descriptors must not otherwise survive exec or leak into unrelated child processes.
-	const int masterDescriptorFlags = fcntl( master, F_GETFD );
-	const int slaveDescriptorFlags = fcntl( slave, F_GETFD );
+	const int masterDescriptorFlags = fcntl( master.handle(), F_GETFD );
+	const int slaveDescriptorFlags = fcntl( slave.handle(), F_GETFD );
 	if ( masterDescriptorFlags < 0 || slaveDescriptorFlags < 0 ||
-		 fcntl( master, F_SETFD, masterDescriptorFlags | FD_CLOEXEC ) < 0 ||
-		 fcntl( slave, F_SETFD, slaveDescriptorFlags | FD_CLOEXEC ) < 0 ) {
+		 fcntl( master.handle(), F_SETFD, masterDescriptorFlags | FD_CLOEXEC ) < 0 ||
+		 fcntl( slave.handle(), F_SETFD, slaveDescriptorFlags | FD_CLOEXEC ) < 0 ) {
 		perror( "PseudoTerminal::create(fcntl FD_CLOEXEC)" );
 		Log::error( "PseudoTerminal::create(fcntl FD_CLOEXEC)" );
 		return nullptr;
 	}
-	int flags = fcntl( master, F_GETFL, 0 );
-	fcntl( master, F_SETFL, flags | O_NONBLOCK );
+	int flags = fcntl( master.handle(), F_GETFL, 0 );
+	fcntl( master.handle(), F_SETFL, flags | O_NONBLOCK );
 
 	return std::unique_ptr<PseudoTerminal>(
 		new PseudoTerminal( columns, rows, std::move( master ), std::move( slave ) ) );

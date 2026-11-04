@@ -432,6 +432,8 @@ class TerminalEmulator final {
 	bool mAllowOsc52ClipboardWrite{ true };
 	bool mEnableOsc8Hyperlinks{ true };
 	bool mGraphemeClustering{ true };
+	/* Input bytes the next bulk UTF-8 conversion may cover (see tryDecodeUnicodeSimd()). */
+	int mSimdSpan{ 2048 };
 	int mColorScheme{ 0 };
 
 	std::string mCurrentWorkingDirectory;

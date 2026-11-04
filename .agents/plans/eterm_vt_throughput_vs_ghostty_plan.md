@@ -1180,6 +1180,71 @@ Tests: `idle_wait_is_bounded_by_update_timers`, `readiness_wait_wakes_for_comman
 latter two on POSIX and ConPTY. macOS, Linux and Wine pass all `eterm.*` and `eterm_session.*`
 tests; Wine cannot run the UI tests without a display.
 
+### Workload matrix against Ghostty main (2026-11-03)
+
+Ghostty `c7f68a7f4` (main, 1.4.1-dev) with the benchmark controls patch, `ReleaseFast`, against
+eterm `98d0f6817` and the earlier pinned `91973f2b2`, in the same hyperfine invocation: M2 Pro,
+120x80, 10,000 history rows, mode 2027 on, one warmup, five runs. New streams are 64 MB from
+Ghostty's `ghostty-gen` (seed 42), plus the private Codex capture repeated with a reset between
+repeats. Scripts and streams: `~/programming/vtbench/matrix/` (`gen.sh`, `measure.py`, `ab.py`).
+
+| Workload | eterm | Ghostty main | pinned | eterm / main | main / pinned |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ASCII | 403.0 | 482.0 | 439.7 | 0.84x | 1.10x |
+| Unicode | 519.3 | 624.9 | 616.2 | 0.83x | 1.01x |
+| Unique Unicode | 114.0 | 82.0 | 83.6 | 1.39x | 0.98x |
+| CSI | 250.9 | 197.0 | 180.9 | 1.27x | 1.09x |
+| Images | 2,533.0 | 2,227.4 | 2,214.9 | 1.14x | 1.01x |
+| Long escape codes | 3,076.0 | 3,825.0 | 3,849.9 | 0.80x | 0.99x |
+| Styled | 274.8 | 276.5 | 256.7 | 0.99x | 1.08x |
+| Styled Unicode | 144.7 | 145.3 | 144.8 | 1.00x | 1.00x |
+| Styled with links | 139.8 | 122.8 | 123.2 | 1.14x | 1.00x |
+| Dense links | 169.3 | 63.7 | 61.4 | 2.66x | 1.04x |
+| Erase (CSI 2J, line clears) | 51.4 | 194.8 | 132.7 | 0.26x | 1.47x |
+| Random wide UTF-8 | 37.8 | 264.3 | 264.1 | 0.14x | 1.00x |
+| Codex capture | 269.7 | 265.1 | 240.4 | 1.02x | 1.10x |
+
+`erase_scroll` is excluded: it uses `CSI 22 J`, which eterm ignores, so eterm did less work.
+The real Codex stream is level; the plain-text gaps remain only in the kitten streams. Findings
+from profiling these:
+
+- Erase: 77% in `fillGlyphsNEON` refilling cells that are already blank. This is the case for
+  blank-row tracking; the Codex stream also spends 14% there.
+- Random UTF-8 spent 61% re-converting: each run converted up to 2,048 codepoints, kept the prefix
+  before the first stop and converted the rest again. The conversion span now halves when a stop
+  wasted most of it and doubles when fully used: 37.8 -> 88.2 MB/s (2.38x), other streams within
+  1%. The remaining cost is very short runs; 23% of that stream is unassigned/private-use, so it
+  is not worth chasing further.
+- Real repaint (paced Codex replay in a hidden window): about 16% of a core, mostly on the worker,
+  not rendering. 47% of busy samples were `memmove`, largely from copying the grid to publish each
+  snapshot, and 16% were `selected()` per cell without a selection, now skipped (busy samples
+  532 -> 447). vtbench cannot see either cost: it has no session or snapshots.
+- That replay found a hang: `fcntl( master, ... )` converted `AutoHandle` through `operator bool`
+  to fd 1, so the master was never `O_NONBLOCK` or `FD_CLOEXEC`, and stdout was changed instead. A
+  child that does not read its input could block the worker in `write()` forever.
+
+Remaining candidates: blank-row tracking, reusing snapshot buffers or copying dirty rows only.
+
+### Snapshot cell reuse (2026-11-04)
+
+Publishing copied the whole grid every time, about half of the worker's busy samples in the paced
+Codex replay. A snapshot's cells now go back to a pool when nobody holds it, and the next publish
+copies only the rows changed since those cells were written. Rows record the first generation that
+shows them as they are now. A resize marks every row, and a search highlight marks its row, since
+highlights exist only in the snapshot's cells. Held snapshots stay immutable.
+
+Paced replay in a hidden window, 5 s `sample`, three runs before and six after, M2 Pro. This is CPU
+evidence only, not a GPU measurement:
+
+| | Before | After |
+|---|---|---|
+| Busy samples | 567-613 (mean 596) | 365-494 (mean 430, -28%) |
+| `memmove` samples | 280-300 (mean 287) | 115-151 (mean 127, -56%) |
+
+Stale-row bugs are covered by tests that fail with an off-by-one row generation. The highlight mark
+is defensive: every search change currently redraws all rows, so no test can force it. The same
+applies to marking rows on resize.
+
 ### Also noticed
 
 - The framework retry linked the test binary against `@rpath/SDL2.framework`,

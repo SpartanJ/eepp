@@ -27,6 +27,7 @@
 #include <eterm/system/processfactory.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
+#include <eterm/terminal/pseudoterminal.hpp>
 #include <eterm/terminal/ptyoutputqueue.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
@@ -38,6 +39,11 @@
 #include <filesystem>
 #include <limits>
 #include <thread>
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+#include <fcntl.h>
+#include <unistd.h>
+#endif
 
 using namespace eterm::Terminal;
 using namespace eterm::System;
@@ -5118,6 +5124,93 @@ static bool snapshotContains( const TerminalSnapshot& snapshot, std::string_view
 	return false;
 }
 
+UTEST( eterm_session, snapshots_reusing_cells_show_rows_changed_in_skipped_generations ) {
+	auto session = TerminalSession::create( std::make_unique<MockPty>(),
+											std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( session != nullptr );
+
+	std::shared_ptr<const TerminalSnapshot> held;
+	for ( int row = 0; row < 16; ++row ) {
+		const std::string text = "row" + std::to_string( row );
+		session->writeRaw( "\033[" + std::to_string( row + 1 ) + ";1H" + text );
+		auto snapshot = waitForSnapshot( session, [&text]( const TerminalSnapshot& candidate ) {
+			return snapshotContains( candidate, text );
+		} );
+		ASSERT_TRUE( snapshot != nullptr );
+		for ( int previous = 0; previous < row; ++previous )
+			EXPECT_TRUE( snapshotContains( *snapshot, "row" + std::to_string( previous ) ) );
+		// Held snapshots keep their cells while the others are reused, in varying orders.
+		if ( row % 3 == 0 )
+			held = snapshot;
+		ASSERT_TRUE( held != nullptr );
+		EXPECT_TRUE( snapshotContains( *held, "row" + std::to_string( row - row % 3 ) ) );
+		EXPECT_FALSE( snapshotContains( *held, "row" + std::to_string( row - row % 3 + 1 ) ) );
+	}
+}
+
+UTEST( eterm_session, snapshots_reusing_cells_drop_search_highlights ) {
+	auto session = TerminalSession::create( std::make_unique<MockPty>(),
+											std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( session != nullptr );
+	const auto highlighted = []( const TerminalSnapshot& snapshot ) {
+		for ( const auto& glyph : snapshot.cells ) {
+			if ( glyph.mode & ( ATTR_SEARCH_MATCH | ATTR_SEARCH_ACTIVE ) )
+				return true;
+		}
+		return false;
+	};
+
+	session->writeRaw( "needle" );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshotContains( snapshot, "needle" );
+				 } ) != nullptr );
+	session->setSearchQuery( { "needle", 1, true, false } );
+	ASSERT_TRUE( waitForSnapshot( session, [&highlighted]( const TerminalSnapshot& snapshot ) {
+					 return highlighted( snapshot );
+				 } ) != nullptr );
+	// Rewrites of another row publish without redrawing the highlighted one, cycling the buffers.
+	for ( int step = 0; step < 8; ++step )
+		session->writeRaw( "\033[5;1Hstep" + std::to_string( step ) );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshotContains( snapshot, "step7" );
+				 } ) != nullptr );
+	session->clearSearch();
+	for ( int step = 0; step < 8; ++step ) {
+		const std::string text = "next" + std::to_string( step );
+		session->writeRaw( "\033[6;1H" + text );
+		auto snapshot = waitForSnapshot( session, [&text]( const TerminalSnapshot& candidate ) {
+			return candidate.searchMatchCount == 0 && snapshotContains( candidate, text );
+		} );
+		ASSERT_TRUE( snapshot != nullptr );
+		EXPECT_FALSE( highlighted( *snapshot ) );
+	}
+}
+
+UTEST( eterm_session, snapshots_do_not_reuse_cells_across_a_resize_of_equal_area ) {
+	auto session = TerminalSession::create( std::make_unique<MockPty>(),
+											std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( session != nullptr );
+
+	session->writeRaw( "\033[20;1Hbelow" );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshotContains( snapshot, "below" );
+				 } ) != nullptr );
+	session->resize( 24, 80, 240, 800 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.columns == 24 && snapshot.rows == 80;
+				 } ) != nullptr );
+	session->writeRaw( "\033[H\033[2J\033[1;1Hfresh" );
+	auto snapshot = waitForSnapshot( session, []( const TerminalSnapshot& candidate ) {
+		return candidate.columns == 24 && snapshotContains( candidate, "fresh" );
+	} );
+	ASSERT_TRUE( snapshot != nullptr );
+	EXPECT_FALSE( snapshotContains( *snapshot, "below" ) );
+	for ( size_t cell = 0; cell < snapshot->cells.size(); ++cell ) {
+		if ( cell >= 5 )
+			EXPECT_TRUE( snapshot->cells[cell].u == 0 || snapshot->cells[cell].u == ' ' );
+	}
+}
+
 UTEST( eterm_session, readiness_wait_wakes_for_commands_and_shutdown ) {
 	// The worker sleeps in poll() on the PTY and a wakeup pipe; a command must interrupt that
 	// wait well before the 250 ms timer bound.
@@ -5165,6 +5258,38 @@ UTEST( eterm_session, readiness_wait_wakes_for_commands_and_shutdown ) {
 	session->shutdown();
 	EXPECT_TRUE( std::chrono::steady_clock::now() - start < std::chrono::milliseconds( 150 ) );
 }
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+UTEST( eterm, pty_descriptors_are_nonblocking_and_close_on_exec ) {
+	// An AutoHandle once converted to int through bool, so these applied to stdout instead.
+	const int stdoutFlags = fcntl( STDOUT_FILENO, F_GETFL );
+	const int stdoutDescriptorFlags = fcntl( STDOUT_FILENO, F_GETFD );
+	auto pty = PseudoTerminal::create( 80, 24 );
+	ASSERT_TRUE( pty != nullptr );
+	const int master = static_cast<int>( pty->getWaitHandle() );
+	EXPECT_TRUE( ( fcntl( master, F_GETFL ) & O_NONBLOCK ) != 0 );
+	EXPECT_TRUE( ( fcntl( master, F_GETFD ) & FD_CLOEXEC ) != 0 );
+	EXPECT_EQ( stdoutFlags, fcntl( STDOUT_FILENO, F_GETFL ) );
+	EXPECT_EQ( stdoutDescriptorFlags, fcntl( STDOUT_FILENO, F_GETFD ) );
+}
+
+UTEST( eterm_session, replies_to_a_child_that_never_reads_do_not_block_the_worker ) {
+	// The child floods color queries and never reads the replies: they fill its input queue.
+	auto session = spawnShellSession(
+		"stty raw; i=0; while [ $i -lt 2000 ]; do printf '\\033]11;?\\033\\\\'; i=$((i+1)); done; "
+		"printf DONE; sleep 2" );
+	ASSERT_TRUE( session != nullptr );
+	const bool finished =
+		waitForSnapshot(
+			session,
+			[]( const TerminalSnapshot& snapshot ) { return snapshotContains( snapshot, "DONE" ); },
+			std::chrono::milliseconds( 5000 ) ) != nullptr;
+	EXPECT_TRUE( finished );
+	// A worker stuck in a write cannot be joined: leak it to fail instead of hanging the suite.
+	if ( !finished )
+		new std::shared_ptr<TerminalSession>( session );
+}
+#endif
 
 UTEST( eterm_session, readiness_wait_keeps_output_buffered_at_hangup ) {
 	// The child writes more than the PTY buffers and exits at once: the hangup arrives with

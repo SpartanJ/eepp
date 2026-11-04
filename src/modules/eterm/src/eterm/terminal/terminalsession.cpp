@@ -45,6 +45,7 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 			mColumns = columns;
 			mRows = rows;
 			mCells.assign( cellCount, TerminalGlyph{} );
+			mRowGenerations.assign( rows, mGeneration + 1 );
 			mDirtyRows.assign( rows, 1 );
 		} else {
 			mDirtyRows.assign( rows, 0 );
@@ -58,13 +59,14 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 			return;
 		TerminalGlyph* destination = mCells.data() + static_cast<size_t>( y ) * mColumns + x1;
 		std::memcpy( destination, line + x1, static_cast<size_t>( x2 - x1 ) * sizeof( *line ) );
-		if ( mEmulator ) {
+		if ( mEmulator && mEmulator->hasSelection() ) {
 			for ( int column = x1; column < x2; ++column ) {
 				if ( mEmulator->isSelected( column, y ) )
 					mCells[static_cast<size_t>( y ) * mColumns + column].mode |= ATTR_REVERSE;
 			}
 		}
 		mDirtyRows[y] = 1;
+		mRowGenerations[y] = mGeneration + 1;
 	}
 
 	void drawCursor( int cx, int cy, TerminalGlyph glyph, int, int, TerminalGlyph ) {
@@ -85,12 +87,17 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 	}
 
 	void drawEnd() {
-		auto snapshot = std::make_shared<TerminalSnapshot>();
+		const auto pool = mCellPool;
+		std::shared_ptr<TerminalSnapshot> snapshot(
+			new TerminalSnapshot(), [pool]( TerminalSnapshot* released ) {
+				pool->release( std::move( released->cells ), released->generation );
+				delete released;
+			} );
 		snapshot->graphics = mGraphics;
-		snapshot->cells = mCells;
+		snapshot->generation = ++mGeneration;
+		acquireCells( *snapshot );
 		snapshot->dirtyRows = mDirtyRows;
 		snapshot->title = mTitle;
-		snapshot->generation = ++mGeneration;
 		snapshot->lastAppliedScrollCommand = mLastAppliedScrollCommand;
 		snapshot->cursor = mCursor;
 		snapshot->cursorGlyph = mCursorGlyph;
@@ -179,6 +186,9 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 										  ? ATTR_SEARCH_ACTIVE
 										  : ATTR_SEARCH_MATCH;
 					}
+					// Highlights exist only in these cells: whoever reuses them must rewrite the
+					// row.
+					mRowGenerations[visibleRow] = snapshot->generation + 1;
 				}
 			}
 			if ( auto* process = mEmulator->getProcess() )
@@ -315,7 +325,56 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 	TerminalSession& mSession;
 	TerminalColorPalette mInitialPalette;
 	TerminalColorPalette mPalette;
+	/** Cell storage of snapshots nobody holds, kept to copy only what changed since them. */
+	struct SnapshotCellPool {
+		static constexpr size_t MaxEntries = 4;
+
+		void release( std::vector<TerminalGlyph>&& cells, Uint64 generation ) {
+			std::lock_guard<std::mutex> lock( mutex );
+			if ( entries.size() == MaxEntries )
+				entries.erase( entries.begin() );
+			entries.push_back( { std::move( cells ), generation } );
+		}
+
+		bool acquire( std::vector<TerminalGlyph>& cells, Uint64& generation ) {
+			std::lock_guard<std::mutex> lock( mutex );
+			if ( entries.empty() )
+				return false;
+			cells = std::move( entries.back().cells );
+			generation = entries.back().generation;
+			entries.pop_back();
+			return true;
+		}
+
+		struct Entry {
+			std::vector<TerminalGlyph> cells;
+			Uint64 generation{ 0 };
+		};
+		std::mutex mutex;
+		SmallVector<Entry, MaxEntries> entries;
+	};
+
+	void acquireCells( TerminalSnapshot& snapshot ) {
+		Uint64 generation = 0;
+		if ( !mCellPool->acquire( snapshot.cells, generation ) ||
+			 snapshot.cells.size() != mCells.size() ) {
+			snapshot.cells = mCells;
+			return;
+		}
+		for ( int row = 0; row < mRows; ++row ) {
+			if ( mRowGenerations[row] > generation ) {
+				const size_t offset = static_cast<size_t>( row ) * mColumns;
+				std::memcpy( snapshot.cells.data() + offset, mCells.data() + offset,
+							 mColumns * sizeof( TerminalGlyph ) );
+			}
+		}
+	}
+
 	std::vector<TerminalGlyph> mCells;
+	/** The first generation that shows each row as it is now. */
+	std::vector<Uint64> mRowGenerations;
+	/** Shared with the deleters of snapshots, which can outlive this display. */
+	std::shared_ptr<SnapshotCellPool> mCellPool{ std::make_shared<SnapshotCellPool>() };
 	std::vector<Uint8> mDirtyRows;
 	std::string mTitle;
 	std::shared_ptr<const TerminalGraphicsPresentation> mGraphics;

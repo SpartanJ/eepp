@@ -4592,14 +4592,16 @@ struct UnicodeSimdResult {
 
 static_assert( sizeof( UnicodeSimdResult ) == 8 );
 
+static constexpr int UnicodeRunMinimumSimdSpan = 64;
+
 /* Convert only a bounded span after a scalar prefix established printable text.
  * An end of -1 retains the scalar decoder; otherwise return the accepted input byte end/count. */
 template <bool Grapheme>
 static ETERM_NOINLINE UnicodeSimdResult tryDecodeUnicodeSimd( const char* data, int begin, int end,
 															  UnicodeRun& run, int count,
 															  bool previousAttracts,
-															  const uint8_t* bmp ) {
-	int limit = begin + eemin( end - begin, UnicodeRun::Capacity - count );
+															  const uint8_t* bmp, int& span ) {
+	int limit = begin + eemin( end - begin, eemin( span, UnicodeRun::Capacity - count ) );
 	// Bound the common line/escape terminators before conversion. Other controls and grapheme
 	// boundaries are checked below and never consumed past, even if conversion saw more text.
 	for ( char stop : { '\n', '\033' } ) {
@@ -4611,7 +4613,7 @@ static ETERM_NOINLINE UnicodeSimdResult tryDecodeUnicodeSimd( const char* data, 
 		while ( limit > begin && ( static_cast<unsigned char>( data[limit] ) & 0xC0 ) == 0x80 )
 			--limit;
 	}
-	if ( limit - begin < 64 )
+	if ( limit - begin < UnicodeRunMinimumSimdSpan )
 		return { -1, count };
 	const int first = count;
 	const size_t written =
@@ -4643,8 +4645,15 @@ static ETERM_NOINLINE UnicodeSimdResult tryDecodeUnicodeSimd( const char* data, 
 		}
 		run.properties[count++] = properties;
 	}
-	if ( count == convertedEnd )
+	// A stop discards the rest of the conversion and the next run converts it again. Halve the
+	// span when that wasted most of it, so text that stops all the time (combining marks, joiners)
+	// converts little, while an occasional stop costs almost nothing.
+	if ( count == convertedEnd ) {
+		span = eemin( span * 2, UnicodeRun::Capacity );
 		return { limit, count };
+	}
+	if ( ( count - first ) * 4 < span )
+		span = eemax( span / 2, UnicodeRunMinimumSimdSpan );
 	// Only the uncommon stopped prefix needs a codepoint-to-byte offset calculation.
 	int consumed = 0;
 	for ( int i = first; i < count; ++i ) {
@@ -4659,7 +4668,8 @@ static ETERM_NOINLINE UnicodeSimdResult tryDecodeUnicodeSimd( const char* data, 
  * specially (controls, C1, malformed or incomplete input, kitty placeholders) or when the run is
  * full. Returns the end of the decoded bytes. */
 template <bool Grapheme>
-static int decodeUnicodeRun( const char* data, int begin, int end, UnicodeRun& run, int& count ) {
+static int decodeUnicodeRun( const char* data, int begin, int end, UnicodeRun& run, int& count,
+							 int& simdSpan ) {
 	/* One mask test per codepoint: zero-width codepoints always end the run, and under mode 2027
 	 * so do codepoints that may extend a cluster. */
 	constexpr uint8_t stops =
@@ -4700,8 +4710,8 @@ static int decodeUnicodeRun( const char* data, int begin, int end, UnicodeRun& r
 		run.properties[count++] = properties;
 		offset += size;
 		if ( count == 4 && end - offset >= 64 ) {
-			const auto bulk = tryDecodeUnicodeSimd<Grapheme>( data, offset, end, run, count,
-															  previousAttracts, bmpProperties );
+			const auto bulk = tryDecodeUnicodeSimd<Grapheme>(
+				data, offset, end, run, count, previousAttracts, bmpProperties, simdSpan );
 			if ( bulk.end >= 0 ) {
 				count = bulk.count;
 				return bulk.end;
@@ -4886,8 +4896,9 @@ int TerminalEmulator::tpututf8( const char* buf, int begin, int end ) {
 	UnicodeRun run;
 	int count;
 	const bool grapheme = IS_SET( MODE_GRAPHEME );
-	const int decodedEnd = grapheme ? decodeUnicodeRun<true>( buf, begin, end, run, count )
-									: decodeUnicodeRun<false>( buf, begin, end, run, count );
+	const int decodedEnd = grapheme
+							   ? decodeUnicodeRun<true>( buf, begin, end, run, count, mSimdSpan )
+							   : decodeUnicodeRun<false>( buf, begin, end, run, count, mSimdSpan );
 	if ( count == 0 ) {
 		/* With no kitty placeholder awaiting diacritics, attach compatible zero-width codepoints
 		 * in one go. Mode 2027 limits the decoder to width-preserving Extend codepoints. */

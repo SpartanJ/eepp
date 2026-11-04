@@ -53,7 +53,8 @@ class AutoHandle final {
 
 	explicit operator type() const noexcept;
 
-	operator bool() const noexcept;
+	/* Explicit: an implicit conversion would let an AutoHandle pass for an int, as 1. */
+	explicit operator bool() const noexcept;
 
 	type* get();
 
