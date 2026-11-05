@@ -78,6 +78,10 @@ When working on this project, rely on the following resources to understand exis
     *   UI data binding or charts: `ui_databinding.md` or `ui_charts.md`, respectively.
     *   `eterm` Kitty protocol work: `eterm_kitty_keyboard.md` and
         `eterm_kitty_graphics.md` for the corresponding supported behavior.
+    *   Terminal throughput work: `projects/benchmarks/vtbench/README.md` and
+        `.agents/plans/eterm_vt_throughput_vs_ghostty_plan.md`. Refresh the generated current
+        matrix after relevant changes, keep detailed next steps and concise rejected experiments,
+        and keep machine-local paths, historical matrices and embedded scripts out of the plan.
 *   **Implementation Examples:** A wide variety of examples showing how to use the library are located in `src/examples/`.
 *   **General Context:** The `README.md` at the root directory contains deeper project details.
 

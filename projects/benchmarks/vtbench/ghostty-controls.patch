@@ -1,0 +1,42 @@
+diff --git a/src/benchmark/TerminalStream.zig b/src/benchmark/TerminalStream.zig
+index 1667fe371..5639ca845 100644
+--- a/src/benchmark/TerminalStream.zig
++++ b/src/benchmark/TerminalStream.zig
+@@ -37,6 +37,11 @@ pub const Options = struct {
+     @"terminal-rows": u16 = 80,
+     @"terminal-cols": u16 = 120,
+ 
++    // Benchmark-only controls; a row limit takes precedence over the byte limit.
++    @"scrollback-bytes": usize = 10_000,
++    @"scrollback-lines": ?usize = null,
++    @"report-state": bool = false,
++
+     /// How the terminal computes the width of multi-codepoint graphemes.
+     /// `unicode` enables mode 2027 (grapheme clustering) as the default
+     /// mode, matching the app's `grapheme-width-method = unicode` default.
+@@ -79,6 +84,11 @@ pub fn create(
+         .terminal = try .init(global.io(), alloc, .{
+             .rows = opts.@"terminal-rows",
+             .cols = opts.@"terminal-cols",
++            .max_scrollback_bytes = if (opts.@"scrollback-lines") |lines|
++                (if (lines == 0) @as(?usize, 0) else null)
++            else
++                opts.@"scrollback-bytes",
++            .max_scrollback_lines = opts.@"scrollback-lines",
+             // A default mode so that the fullReset in setup keeps it,
+             // like the app's Termio does.
+             .default_modes = .{
+@@ -147,6 +157,13 @@ fn setup(ptr: *anyopaque) Benchmark.Error!void {
+ 
+ fn teardown(ptr: *anyopaque) void {
+     const self: *TerminalStream = @ptrCast(@alignCast(ptr));
++    if (self.opts.@"report-state") {
++        const pages = &self.terminal.screens.active.pages;
++        std.debug.print("state history_rows={d} grapheme={}\n", .{
++            pages.total_rows - pages.rows,
++            self.terminal.modes.get(.grapheme_cluster),
++        });
++    }
+     if (self.data_f) |f| {
+         f.close(global.io());
+         self.data_f = null;

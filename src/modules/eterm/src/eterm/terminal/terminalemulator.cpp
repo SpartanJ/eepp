@@ -4570,10 +4570,12 @@ struct UnicodeRun {
 
 	uint32_t mode( int i ) const {
 		const uint8_t glyph = properties[i];
-		uint32_t mode = ( glyph & GlyphProperties::BoxDraw ) ? ATTR_BOXDRAW : 0;
-		if ( ( glyph & GlyphProperties::WidthMask ) == 2 )
-			mode |= ATTR_WIDE | ( ( glyph & GlyphProperties::Emoji ) ? ATTR_EMOJI : 0 );
-		return mode;
+		// Width is 0, 1 or 2, and compute() only marks wide glyphs as emoji.
+		static_assert( ( 2 << 8 ) == ATTR_WIDE &&
+					   ( GlyphProperties::BoxDraw << 8 ) == ATTR_BOXDRAW &&
+					   ( GlyphProperties::Emoji << 10 ) == ATTR_EMOJI );
+		return ( ( glyph & ( 2 | GlyphProperties::BoxDraw ) ) << 8 ) |
+			   ( ( glyph & GlyphProperties::Emoji ) << 10 );
 	}
 };
 

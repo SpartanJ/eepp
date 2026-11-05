@@ -2349,6 +2349,18 @@ solution "eepp"
 		-- UTEST_MAIN supplies a native main instead of eepp's SDL_main.
 		build_link_configuration( "eepp-benchmarks", true, false )
 
+	-- File-streamed VT processing benchmark; Ghostty's comparison tools require POSIX too.
+	if os.is_real("macosx") or os.is_real("linux") then
+	project "eterm-vtbench"
+		kind "ConsoleApp"
+		targetdir("./bin/benchmarks")
+		language "C++"
+		files { "src/benchmarks/vtbench/main.cpp" }
+		includedirs { "src/modules/eterm/include/" }
+		links { "eterm-static" }
+		build_link_configuration( "eterm-vtbench", true, false )
+	end
+
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
 		targetdir("./bin/unit_tests")

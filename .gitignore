@@ -71,6 +71,8 @@ ecode.dmg
 /.ecode/.fstreeviewignore
 /.ecode/.prjallowed
 /.cache/
+# Generated local VT benchmark report; the current matrix lives in the plan.
+/projects/benchmarks/vtbench/results.json
 /compile_commands.json
 /bin/benchmarks*
 /bin/security*
