@@ -132,6 +132,7 @@ void UIBorderDrawable::setLineWidth( const Float& width ) {
 			mBorders.top.style = mBorders.left.style = mBorders.right.style =
 				mBorders.bottom.style = BorderStyle::Solid;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -162,6 +163,7 @@ void UIBorderDrawable::setRadius( const Int32& radius ) {
 		mBorders.radius.bottomRight.x = radius;
 		mBorders.radius.bottomRight.y = radius;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -174,6 +176,7 @@ void UIBorderDrawable::setColorLeft( const Color& colorLeft ) {
 		mBorders.left.color = Color( colorLeft ).blendAlpha( mColor.a );
 		mBorders.left.realColor = colorLeft;
 		mColorNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -186,6 +189,7 @@ void UIBorderDrawable::setColorRight( const Color& colorRight ) {
 		mBorders.right.color = Color( colorRight ).blendAlpha( mColor.a );
 		mBorders.right.realColor = colorRight;
 		mColorNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -198,6 +202,7 @@ void UIBorderDrawable::setColorTop( const Color& colorTop ) {
 		mBorders.top.color = Color( colorTop ).blendAlpha( mColor.a );
 		mBorders.top.realColor = colorTop;
 		mColorNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -210,6 +215,7 @@ void UIBorderDrawable::setColorBottom( const Color& colorBottom ) {
 		mBorders.bottom.color = Color( colorBottom ).blendAlpha( mColor.a );
 		mBorders.bottom.realColor = colorBottom;
 		mColorNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -221,6 +227,7 @@ void UIBorderDrawable::setBorderType( const BorderType& borderType ) {
 	if ( mBorderType != borderType ) {
 		mBorderType = borderType;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -228,10 +235,16 @@ void UIBorderDrawable::invalidate() {
 	mNeedsUpdate = true;
 }
 
+void UIBorderDrawable::invalidateOwner() {
+	if ( NULL != mOwner )
+		const_cast<UINode*>( mOwner )->invalidateDraw();
+}
+
 void UIBorderDrawable::setLeftWidth( const std::string& leftWidth ) {
 	if ( mBorderStr.width.left != leftWidth ) {
 		mBorderStr.width.left = leftWidth;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -239,6 +252,7 @@ void UIBorderDrawable::setRightWidth( const std::string& rightWidth ) {
 	if ( mBorderStr.width.right != rightWidth ) {
 		mBorderStr.width.right = rightWidth;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -246,6 +260,7 @@ void UIBorderDrawable::setTopWidth( const std::string& topWidth ) {
 	if ( mBorderStr.width.top != topWidth ) {
 		mBorderStr.width.top = topWidth;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -253,6 +268,7 @@ void UIBorderDrawable::setBottomWidth( const std::string& bottomWidth ) {
 	if ( mBorderStr.width.bottom != bottomWidth ) {
 		mBorderStr.width.bottom = bottomWidth;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -261,6 +277,7 @@ void UIBorderDrawable::setLeftStyle( const std::string& style ) {
 	if ( mBorders.left.style != value ) {
 		mBorders.left.style = value;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -269,6 +286,7 @@ void UIBorderDrawable::setRightStyle( const std::string& style ) {
 	if ( mBorders.right.style != value ) {
 		mBorders.right.style = value;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -277,6 +295,7 @@ void UIBorderDrawable::setTopStyle( const std::string& style ) {
 	if ( mBorders.top.style != value ) {
 		mBorders.top.style = value;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -285,6 +304,7 @@ void UIBorderDrawable::setBottomStyle( const std::string& style ) {
 	if ( mBorders.bottom.style != value ) {
 		mBorders.bottom.style = value;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -292,6 +312,7 @@ void UIBorderDrawable::setTopLeftRadius( const std::string& radius ) {
 	if ( mBorderStr.radius.topLeft != radius ) {
 		mBorderStr.radius.topLeft = radius;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -299,6 +320,7 @@ void UIBorderDrawable::setTopRightRadius( const std::string& radius ) {
 	if ( mBorderStr.radius.topRight != radius ) {
 		mBorderStr.radius.topRight = radius;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -306,6 +328,7 @@ void UIBorderDrawable::setBottomLeftRadius( const std::string& radius ) {
 	if ( mBorderStr.radius.bottomLeft != radius ) {
 		mBorderStr.radius.bottomLeft = radius;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 
@@ -313,6 +336,7 @@ void UIBorderDrawable::setBottomRightRadius( const std::string& radius ) {
 	if ( mBorderStr.radius.bottomRight != radius ) {
 		mBorderStr.radius.bottomRight = radius;
 		mNeedsUpdate = true;
+		invalidateOwner();
 	}
 }
 

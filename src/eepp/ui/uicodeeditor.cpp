@@ -6055,8 +6055,10 @@ bool UICodeEditor::needsHorizontalLength() const {
 }
 
 void UICodeEditor::setUseDefaultStyle( bool use ) {
-	mUseDefaultStyle = use;
-	invalidateDraw();
+	if ( mUseDefaultStyle != use ) {
+		mUseDefaultStyle = use;
+		invalidateDraw();
+	}
 }
 
 void UICodeEditor::setDynamicTheming( bool set ) {

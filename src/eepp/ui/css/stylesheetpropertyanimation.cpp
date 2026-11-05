@@ -10,18 +10,31 @@ using namespace EE::Math::easing;
 
 namespace EE { namespace UI { namespace CSS {
 
+inline double stepsProgress( const TimingFunction::Parameters& timingFunctionParameters,
+							 const double& t ) {
+	if ( timingFunctionParameters.size() != 2 )
+		return stepsInterpolation( 1, StepPosition::JumpEnd, t );
+	return stepsInterpolation( static_cast<int>( timingFunctionParameters[0] ),
+							   static_cast<StepPosition>( timingFunctionParameters[1] ), t );
+}
+
 inline Float easingFn( const Ease::Interpolation& timingFunction,
 					   const TimingFunction::Parameters& timingFunctionParameters, const double& t,
 					   const double& b, const double& c, const double& d ) {
+	if ( timingFunction == Ease::Interpolation::Steps )
+		return b + c * stepsProgress( timingFunctionParameters, t / d );
+
 	if ( timingFunction != Ease::Interpolation::CubizBezier )
 		return easingCb[timingFunction]( t, b, c, d );
 
-	if ( timingFunctionParameters.size() == 4 )
-		return cubicBezierInterpolation( timingFunctionParameters[0], timingFunctionParameters[1],
-										 timingFunctionParameters[2], timingFunctionParameters[3],
-										 t );
+	// Timing functions map progress to progress: the value still spans the start and the end.
+	if ( timingFunctionParameters.size() == 4 ) {
+		return b + c * cubicBezierInterpolation(
+						   timingFunctionParameters[0], timingFunctionParameters[1],
+						   timingFunctionParameters[2], timingFunctionParameters[3], t / d );
+	}
 
-	return t;
+	return b + c * ( t / d );
 }
 
 void StyleSheetPropertyAnimation::tweenProperty(
@@ -402,6 +415,12 @@ void StyleSheetPropertyAnimation::onUpdate( const Time& ) {
 			Float relTime = mAnimationStepsTime[curPos] - mAnimationStepsTime[curPos - 1];
 			Float curTime = normalizedProgress - mAnimationStepsTime[curPos - 1];
 			Float relativeProgress = curTime / relTime;
+			// Don't advance what nobody can see: a new step invalidates the scene even under a
+			// hidden parent. Held steps need no such care, since unchanged values don't redraw,
+			// and they must still apply: relative values depend on more than the progress.
+			if ( mAnimation.getTimingFunction() == Ease::Interpolation::Steps && !isDone() &&
+				 !widget->isMeOrParentTreeVisible() )
+				return;
 			tweenProperty( widget, relativeProgress, mPropertyDef, mStates[curPos - 1],
 						   mStates[curPos], mAnimation.getTimingFunction(),
 						   mAnimation.getTimingFunctionParametersInline(), mPropertyIndex,

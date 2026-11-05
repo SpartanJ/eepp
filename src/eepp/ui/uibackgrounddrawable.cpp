@@ -102,6 +102,8 @@ void UIBackgroundDrawable::setTopLeftRadius( const std::string& radius ) {
 	if ( mRadiusesStr.topLeft != radius ) {
 		mRadiusesStr.topLeft = radius;
 		mNeedsRadiusUpdate = true;
+		if ( NULL != mOwner )
+			const_cast<UINode*>( mOwner )->invalidateDraw();
 	}
 }
 
@@ -109,6 +111,8 @@ void UIBackgroundDrawable::setTopRightRadius( const std::string& radius ) {
 	if ( mRadiusesStr.topRight != radius ) {
 		mRadiusesStr.topRight = radius;
 		mNeedsRadiusUpdate = true;
+		if ( NULL != mOwner )
+			const_cast<UINode*>( mOwner )->invalidateDraw();
 	}
 }
 
@@ -116,6 +120,8 @@ void UIBackgroundDrawable::setBottomLeftRadius( const std::string& radius ) {
 	if ( mRadiusesStr.bottomLeft != radius ) {
 		mRadiusesStr.bottomLeft = radius;
 		mNeedsRadiusUpdate = true;
+		if ( NULL != mOwner )
+			const_cast<UINode*>( mOwner )->invalidateDraw();
 	}
 }
 
@@ -123,6 +129,8 @@ void UIBackgroundDrawable::setBottomRightRadius( const std::string& radius ) {
 	if ( mRadiusesStr.bottomRight != radius ) {
 		mRadiusesStr.bottomRight = radius;
 		mNeedsRadiusUpdate = true;
+		if ( NULL != mOwner )
+			const_cast<UINode*>( mOwner )->invalidateDraw();
 	}
 }
 

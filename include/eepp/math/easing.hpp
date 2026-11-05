@@ -25,8 +25,26 @@ inline double noneInterpolation( double t, double b, double c, double d ) {
 
 double EE_API cubicBezierInterpolation( double x1, double y1, double x2, double y2, double t );
 
-inline double cubicBezierNoParams( double t, double, double, double ) {
-	return cubicBezierInterpolation( 0, 0, 1, 1, t );
+inline double cubicBezierNoParams( double t, double b, double c, double d ) {
+	return b + c * cubicBezierInterpolation( 0, 0, 1, 1, t / d );
+}
+
+/** Where a steps() timing function jumps, as named by CSS. */
+enum class StepPosition { JumpEnd, JumpStart, JumpNone, JumpBoth };
+
+/**
+ * The CSS steps() timing function.
+ *
+ * @param steps The number of steps. At least 1, or 2 for StepPosition::JumpNone.
+ * @param position Where the jumps happen.
+ * @param t The progress, between 0 and 1.
+ * @return The output progress, between 0 and 1.
+ */
+double EE_API stepsInterpolation( int steps, StepPosition position, double t );
+
+/** steps(1, jump-end), for interpolations that carry no parameters. */
+inline double stepsNoParams( double t, double b, double c, double d ) {
+	return b + c * stepsInterpolation( 1, StepPosition::JumpEnd, t / d );
 }
 
 /**

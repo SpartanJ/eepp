@@ -28,6 +28,8 @@ class StatusTerminalController : public StatusBarElement {
 
 	UIWidget* createWidget();
 
+	void show();
+
 	UITerminal* getUITerminal();
 
 	UITabWidget* getTabWidget();

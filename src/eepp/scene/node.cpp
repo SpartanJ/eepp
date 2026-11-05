@@ -9,6 +9,8 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/window/engine.hpp>
 
+#include <cmath>
+
 namespace EE { namespace Scene {
 
 Node* Node::New() {
@@ -422,8 +424,10 @@ Node* Node::setData( const UintPtr& data ) {
 }
 
 Node* Node::setBlendMode( const BlendMode& blend ) {
-	mBlend = blend;
-	invalidateDraw();
+	if ( mBlend != blend ) {
+		mBlend = blend;
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -478,6 +482,8 @@ void Node::onPositionChange() {
 
 void Node::onSizeChange() {
 	updateOriginPoint();
+	applyRotationOrigin();
+	applyScaleOrigin();
 
 	invalidateDraw();
 }
@@ -1335,6 +1341,8 @@ void Node::nodeToWorld( Vector2f& pos ) const {
 }
 
 void Node::setReverseDraw( bool reverseDraw ) {
+	if ( reverseDraw == ( 0 != ( mNodeFlags & NODE_FLAG_REVERSE_DRAW ) ) )
+		return;
 	writeNodeFlag( NODE_FLAG_REVERSE_DRAW, reverseDraw ? 1 : 0 );
 	invalidateDraw();
 }
@@ -1431,28 +1439,47 @@ const OriginPoint& Node::getRotationOriginPoint() const {
 	return mRotationOriginPoint;
 }
 
+void Node::applyRotationOrigin() {
+	const Vector2f origin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+	if ( origin != getRotationOrigin() ) {
+		Transformable::setRotationOrigin( origin.x, origin.y );
+		setDirty();
+		invalidateDraw();
+	}
+}
+
+void Node::applyScaleOrigin() {
+	// In node coordinates, as Transformable applies it. getScaleCenter() is in screen coordinates.
+	const Vector2f origin( getScaleOriginPoint().x, getScaleOriginPoint().y );
+	if ( origin != getScaleOrigin() ) {
+		Transformable::setScaleOrigin( origin.x, origin.y );
+		setDirty();
+		invalidateDraw();
+	}
+}
+
 void Node::setRotationOriginPointPixels( const OriginPoint& center ) {
 	mRotationOriginPoint = center;
 	updateOriginPoint();
-	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+	applyRotationOrigin();
 }
 
 void Node::setRotationOriginPoint( const OriginPoint& center ) {
 	mRotationOriginPoint = PixelDensity::dpToPx( center );
 	updateOriginPoint();
-	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+	applyRotationOrigin();
 }
 
 void Node::setRotationOriginPointX( const std::string& xEq ) {
 	mRotationOriginPoint.setXEq( xEq );
 	updateOriginPoint();
-	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+	applyRotationOrigin();
 }
 
 void Node::setRotationOriginPointY( const std::string& yEq ) {
 	mRotationOriginPoint.setYEq( yEq );
 	updateOriginPoint();
-	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+	applyRotationOrigin();
 }
 
 Vector2f Node::getRotationCenter() const {
@@ -1468,10 +1495,17 @@ Vector2f Node::getRotationCenter() const {
 }
 
 void Node::setRotation( float angle ) {
-	Transformable::setRotation( angle );
-
 	updateOriginPoint();
-	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+
+	// The origin counts as a change too: a resize only updates the origin point, so this is what
+	// applies it. The angle is compared as Transformable will store it.
+	const Vector2f origin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+	if ( static_cast<float>( std::fmod( angle, 360.f ) ) == getRotation() &&
+		 origin == getRotationOrigin() )
+		return;
+
+	Transformable::setRotation( angle );
+	Transformable::setRotationOrigin( origin.x, origin.y );
 
 	if ( getRotation() != 0.f ) {
 		mNodeFlags |= NODE_FLAG_ROTATED;
@@ -1493,10 +1527,15 @@ void Node::setRotation( const Float& angle, const OriginPoint& center ) {
 
 void Node::setScale( const Vector2f& scale ) {
 	eeASSERT( !std::isnan( scale.x ) && !std::isnan( scale.y ) );
-	Transformable::setScale( scale.x, scale.y );
-
 	updateOriginPoint();
-	Transformable::setScaleOrigin( getScaleOriginPoint().x, getScaleOriginPoint().y );
+
+	// Like setRotation(): the origin counts as a change too.
+	const Vector2f origin( getScaleOriginPoint().x, getScaleOriginPoint().y );
+	if ( scale == getScale() && origin == getScaleOrigin() )
+		return;
+
+	Transformable::setScale( scale.x, scale.y );
+	Transformable::setScaleOrigin( origin.x, origin.y );
 
 	if ( getScale() != 1.f ) {
 		mNodeFlags |= NODE_FLAG_SCALED;
@@ -1517,25 +1556,25 @@ const OriginPoint& Node::getScaleOriginPoint() const {
 void Node::setScaleOriginPointPixels( const OriginPoint& center ) {
 	mScaleOriginPoint = center;
 	updateOriginPoint();
-	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
+	applyScaleOrigin();
 }
 
 void Node::setScaleOriginPoint( const OriginPoint& center ) {
 	mScaleOriginPoint = PixelDensity::dpToPx( center );
 	updateOriginPoint();
-	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
+	applyScaleOrigin();
 }
 
 void Node::setScaleOriginPointX( const std::string& xEq ) {
 	mScaleOriginPoint.setXEq( xEq );
 	updateOriginPoint();
-	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
+	applyScaleOrigin();
 }
 
 void Node::setScaleOriginPointY( const std::string& yEq ) {
 	mScaleOriginPoint.setYEq( yEq );
 	updateOriginPoint();
-	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
+	applyScaleOrigin();
 }
 
 Vector2f Node::getScaleCenter() const {
@@ -1551,9 +1590,7 @@ Vector2f Node::getScaleCenter() const {
 }
 
 void Node::setScale( const Vector2f& scale, const OriginPoint& center ) {
-	mScaleOriginPoint = center;
-	updateOriginPoint();
-	Transformable::setScaleOrigin( getScaleOriginPoint().x, getScaleOriginPoint().y );
+	mScaleOriginPoint = PixelDensity::dpToPx( center );
 	setScale( Vector2f( scale.x, scale.y ) );
 }
 

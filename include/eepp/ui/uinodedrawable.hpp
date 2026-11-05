@@ -76,7 +76,8 @@ class EE_API UINodeDrawable : public Drawable {
 
 		void setPositionEq( const std::string& offset );
 
-		void setSizeEq( const std::string& size );
+		/** @return True if the value changed. */
+		bool setSizeEq( const std::string& size );
 
 		const std::string& getSizeEq() const;
 
@@ -84,9 +85,11 @@ class EE_API UINodeDrawable : public Drawable {
 
 		RepeatY getRepeatY() const;
 
-		void setRepeatX( RepeatX repeatX );
+		/** @return True if the value changed. */
+		bool setRepeatX( RepeatX repeatX );
 
-		void setRepeatY( RepeatY repeatY );
+		/** @return True if the value changed. */
+		bool setRepeatY( RepeatY repeatY );
 
 		void invalidate();
 
@@ -100,17 +103,22 @@ class EE_API UINodeDrawable : public Drawable {
 
 		const std::string& getPositionX() const;
 
-		void setPositionX( const std::string& positionX );
+		/** @return True if the value changed. */
+		bool setPositionX( const std::string& positionX );
 
 		const std::string& getPositionY() const;
 
-		void setPositionY( const std::string& positionY );
+		/** @return True if the value changed. */
+		bool setPositionY( const std::string& positionY );
 
-		void setOrigin( const std::string& origin );
+		/** @return True if the value changed. */
+		bool setOrigin( const std::string& origin );
 
-		void setClip( const std::string& clip );
+		/** @return True if the value changed. */
+		bool setClip( const std::string& clip );
 
-		void setAttachment( const std::string& attachment );
+		/** @return True if the value changed. */
+		bool setAttachment( const std::string& attachment );
 
 		Origin getOrigin() const;
 
@@ -136,6 +144,7 @@ class EE_API UINodeDrawable : public Drawable {
 		bool mColorWasSet{ false };
 		DrawablePtr mDrawable;
 		std::string mDrawableRef;
+		Sizef mDrawableRefSize;
 		DrawableResourceConnection mResourceChangeConnection;
 		RepeatX mRepeatX{ RepeatX::NoRepeat };
 		RepeatY mRepeatY{ RepeatY::NoRepeat };
@@ -235,6 +244,9 @@ class EE_API UINodeDrawable : public Drawable {
 	BackgroundMode getBackgroundMode() const;
 
   protected:
+	/** Redraws the owner. Only for style changes: drawing also updates this drawable. */
+	void invalidateOwner();
+
 	UINode* mOwner;
 	UIBackgroundDrawable mBackgroundColor;
 	using LayerDrawablePtr = std::unique_ptr<LayerDrawable, ResourceDeleter<LayerDrawable>>;

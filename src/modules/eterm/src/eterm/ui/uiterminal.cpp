@@ -410,7 +410,7 @@ void UITerminal::scheduledUpdate( const Time& time ) {
 			onContentSizeChange();
 	}
 
-	if ( terminal->isDirty() && isVisible() )
+	if ( terminal->isDirty() && hasVisibility() )
 		invalidateDraw();
 
 	if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
@@ -635,7 +635,9 @@ void UITerminal::updateHyperlinkHover( const Vector2i& position ) {
 	if ( over && ( hand || mHyperlinkHandCursor ) )
 		getUISceneNode()->setCursor( hand ? Cursor::Hand : getCursor() );
 	mHyperlinkHandCursor = hand;
-	if ( mTerm->isDirty() )
+	// Hidden tabs and panels retain dirty content until they are drawn again. Do not let
+	// their hover updates continuously invalidate the visible scene in the meantime.
+	if ( mTerm->isDirty() && hasVisibility() )
 		invalidateDraw();
 }
 

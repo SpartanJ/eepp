@@ -36,7 +36,29 @@ easingCbFunc easingCb[] = { linearInterpolation,
 							elasticOut,
 							elasticInOut,
 							cubicBezierNoParams,
-							noneInterpolation };
+							noneInterpolation,
+							stepsNoParams };
+
+double stepsInterpolation( int steps, StepPosition position, double t ) {
+	// Doubles hold every step of any count, and adding a jump to the largest one can't overflow.
+	double currentStep = std::floor( t * steps );
+	double jumps = steps;
+	switch ( position ) {
+		case StepPosition::JumpEnd:
+			break;
+		case StepPosition::JumpStart:
+			currentStep += 1;
+			break;
+		case StepPosition::JumpNone:
+			jumps -= 1;
+			break;
+		case StepPosition::JumpBoth:
+			currentStep += 1;
+			jumps += 1;
+			break;
+	}
+	return std::clamp( currentStep, 0.0, jumps ) / jumps;
+}
 
 /**
  * https://github.com/gre/bezier-easing

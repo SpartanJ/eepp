@@ -138,7 +138,10 @@ void UINodeDrawable::clearDrawables() {
 }
 
 void UINodeDrawable::setBorderRadius( const Uint32& radius ) {
-	mBackgroundColor.setRadius( radius );
+	if ( mBackgroundColor.getRadius() != radius ) {
+		mBackgroundColor.setRadius( radius );
+		invalidateOwner();
+	}
 }
 
 Uint32 UINodeDrawable::getBorderRadius() const {
@@ -171,29 +174,34 @@ UINodeDrawable::LayerDrawable* UINodeDrawable::getLayer( int index ) {
 void UINodeDrawable::setDrawable( int index, DrawablePtr drawable ) {
 	if ( drawable != getLayer( index )->getDrawable() ) {
 		getLayer( index )->setDrawable( std::move( drawable ) );
+		invalidateOwner();
 	}
 }
 
 void UINodeDrawable::setDrawable( int index, const std::string& drawable ) {
 	if ( drawable != getLayer( index )->getDrawableRef() ) {
 		getLayer( index )->setDrawable( drawable );
+		invalidateOwner();
 	}
 }
 
 void UINodeDrawable::setDrawablePositionX( int index, const std::string& positionX ) {
-	getLayer( index )->setPositionX( positionX );
+	if ( getLayer( index )->setPositionX( positionX ) )
+		invalidateOwner();
 }
 
 void UINodeDrawable::setDrawablePositionY( int index, const std::string& positionY ) {
-	getLayer( index )->setPositionY( positionY );
+	if ( getLayer( index )->setPositionY( positionY ) )
+		invalidateOwner();
 }
 
 void UINodeDrawable::setDrawableRepeat( int index, const std::string& repeatRule ) {
 	RepeatX rx;
 	RepeatY ry;
 	repeatFromText( repeatRule, rx, ry );
-	getLayer( index )->setRepeatX( rx );
-	getLayer( index )->setRepeatY( ry );
+	const bool repeatXChanged = getLayer( index )->setRepeatX( rx );
+	if ( getLayer( index )->setRepeatY( ry ) || repeatXChanged )
+		invalidateOwner();
 
 	for ( auto& layIt : mGroup ) {
 		if ( layIt.second->getRepeatX() != RepeatX::NoRepeat ||
@@ -205,27 +213,38 @@ void UINodeDrawable::setDrawableRepeat( int index, const std::string& repeatRule
 }
 
 void UINodeDrawable::setDrawableSize( int index, const std::string& sizeEq ) {
-	getLayer( index )->setSizeEq( sizeEq );
+	if ( getLayer( index )->setSizeEq( sizeEq ) )
+		invalidateOwner();
 }
 
 void UINodeDrawable::setDrawableOrigin( int index, const std::string& origin ) {
-	getLayer( index )->setOrigin( origin );
+	if ( getLayer( index )->setOrigin( origin ) )
+		invalidateOwner();
 }
 
 void UINodeDrawable::setDrawableClip( int index, const std::string& clip ) {
-	getLayer( index )->setClip( clip );
+	if ( getLayer( index )->setClip( clip ) )
+		invalidateOwner();
 }
 
 void UINodeDrawable::setDrawableAttachment( int index, const std::string& attachment ) {
-	getLayer( index )->setAttachment( attachment );
+	if ( getLayer( index )->setAttachment( attachment ) )
+		invalidateOwner();
 }
 
 void UINodeDrawable::setDrawableColor( int index, const Color& color ) {
-	getLayer( index )->setColor( color );
+	auto* layer = getLayer( index );
+	if ( layer->getColor() != color ) {
+		layer->setColor( color );
+		invalidateOwner();
+	}
 }
 
 void UINodeDrawable::setBackgroundColor( const Color& color ) {
-	mBackgroundColor.setColor( color );
+	if ( mBackgroundColor.getColor() != color ) {
+		mBackgroundColor.setColor( color );
+		invalidateOwner();
+	}
 }
 
 Color UINodeDrawable::getBackgroundColor() const {
@@ -243,6 +262,11 @@ void UINodeDrawable::setClipEnabled( bool clipEnabled ) {
 void UINodeDrawable::invalidate() {
 	mNeedsUpdate = true;
 	mBackgroundColor.invalidate();
+}
+
+void UINodeDrawable::invalidateOwner() {
+	if ( NULL != mOwner )
+		mOwner->invalidateDraw();
 }
 
 UINode* UINodeDrawable::getOwner() const {
@@ -661,6 +685,8 @@ void UINodeDrawable::LayerDrawable::setDrawable( const std::string& drawableRef 
 		return;
 	}
 
+	mDrawableRefSize = mSize;
+
 	if ( loadRemoteDrawable( drawableRef ) ) {
 		mDrawableRef = drawableRef;
 		return;
@@ -759,18 +785,22 @@ UINodeDrawable::RepeatY UINodeDrawable::LayerDrawable::getRepeatY() const {
 	return mRepeatY;
 }
 
-void UINodeDrawable::LayerDrawable::setRepeatX( RepeatX repeatX ) {
+bool UINodeDrawable::LayerDrawable::setRepeatX( RepeatX repeatX ) {
 	if ( mRepeatX != repeatX ) {
 		mRepeatX = repeatX;
 		invalidate();
+		return true;
 	}
+	return false;
 }
 
-void UINodeDrawable::LayerDrawable::setRepeatY( RepeatY repeatY ) {
+bool UINodeDrawable::LayerDrawable::setRepeatY( RepeatY repeatY ) {
 	if ( mRepeatY != repeatY ) {
 		mRepeatY = repeatY;
 		invalidate();
+		return true;
 	}
+	return false;
 }
 
 void UINodeDrawable::LayerDrawable::invalidate() {
@@ -953,35 +983,43 @@ const std::string& UINodeDrawable::LayerDrawable::getSizeEq() const {
 	return mSizeEq;
 }
 
-void UINodeDrawable::LayerDrawable::setSizeEq( const std::string& sizeEq ) {
+bool UINodeDrawable::LayerDrawable::setSizeEq( const std::string& sizeEq ) {
 	if ( mSizeEq != sizeEq ) {
 		mSizeEq = sizeEq;
 		invalidate();
+		return true;
 	}
+	return false;
 }
 
-void UINodeDrawable::LayerDrawable::setOrigin( const std::string& origin ) {
+bool UINodeDrawable::LayerDrawable::setOrigin( const std::string& origin ) {
 	if ( mOriginEq != origin ) {
 		mOriginEq = origin;
 		mOrigin = originFromText( origin );
 		invalidate();
+		return true;
 	}
+	return false;
 }
 
-void UINodeDrawable::LayerDrawable::setClip( const std::string& clip ) {
+bool UINodeDrawable::LayerDrawable::setClip( const std::string& clip ) {
 	if ( mClipEq != clip ) {
 		mClipEq = clip;
 		mClip = clipFromText( clip );
 		invalidate();
+		return true;
 	}
+	return false;
 }
 
-void UINodeDrawable::LayerDrawable::setAttachment( const std::string& attachment ) {
+bool UINodeDrawable::LayerDrawable::setAttachment( const std::string& attachment ) {
 	if ( mAttachmentEq != attachment ) {
 		mAttachmentEq = attachment;
 		mAttachment = attachmentFromText( attachment );
 		invalidate();
+		return true;
 	}
+	return false;
 }
 
 UINodeDrawable::LayerDrawable::Origin UINodeDrawable::LayerDrawable::getOrigin() const {
@@ -1012,22 +1050,26 @@ const std::string& UINodeDrawable::LayerDrawable::getPositionY() const {
 	return mPositionY;
 }
 
-void UINodeDrawable::LayerDrawable::setPositionY( const std::string& positionY ) {
+bool UINodeDrawable::LayerDrawable::setPositionY( const std::string& positionY ) {
 	if ( mPositionY != positionY ) {
 		mPositionY = positionY;
 		invalidate();
+		return true;
 	}
+	return false;
 }
 
 const std::string& UINodeDrawable::LayerDrawable::getPositionX() const {
 	return mPositionX;
 }
 
-void UINodeDrawable::LayerDrawable::setPositionX( const std::string& positionX ) {
+bool UINodeDrawable::LayerDrawable::setPositionX( const std::string& positionX ) {
 	if ( mPositionX != positionX ) {
 		mPositionX = positionX;
 		invalidate();
+		return true;
 	}
+	return false;
 }
 
 void UINodeDrawable::LayerDrawable::setOffset( const Vector2f& offset ) {
@@ -1051,8 +1093,11 @@ void UINodeDrawable::LayerDrawable::update() {
 	if ( mDrawable == NULL )
 		return;
 
-	if ( !mDrawableRef.empty() ) {
-		setDrawable( mDrawableRef );
+	// Drawables built from a reference can depend on the layer size. A copy, because the setter
+	// resets the member it would otherwise be reading.
+	if ( !mDrawableRef.empty() && mDrawableRefSize != mSize ) {
+		const std::string drawableRef = mDrawableRef;
+		setDrawable( drawableRef );
 	}
 
 	mDrawableSize = calcDrawableSize( mSizeEq );

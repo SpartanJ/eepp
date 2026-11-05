@@ -474,8 +474,6 @@ void UINode::updateOriginPoint() {
 			mRotationOriginPoint.y = lengthFromValue( mRotationOriginPoint.getYEq(),
 													  PropertyRelativeTarget::LocalBlockHeight );
 		}
-
-		Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
 	}
 
 	if ( mScaleOriginPoint.OriginType == OriginPoint::OriginEquation ) {
@@ -488,8 +486,6 @@ void UINode::updateOriginPoint() {
 			mScaleOriginPoint.y = lengthFromValue( mScaleOriginPoint.getYEq(),
 												   PropertyRelativeTarget::LocalBlockHeight );
 		}
-
-		Transformable::setScaleOrigin( getScaleOriginPoint().x, getScaleOriginPoint().y );
 	}
 }
 
@@ -707,13 +703,15 @@ UINode* UINode::setGravity( Uint32 hvalign ) {
 }
 
 UINodeDrawable* UINode::setBackgroundFillEnabled( bool enabled ) {
+	const bool changed = enabled != ( 0 != ( mFlags & UI_FILL_BACKGROUND ) );
 	writeFlag( UI_FILL_BACKGROUND, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBackground ) {
 		getBackground();
 	}
 
-	invalidateDraw();
+	if ( changed )
+		invalidateDraw();
 
 	return mBackground;
 }
@@ -790,28 +788,24 @@ UINode* UINode::setBorderRadius( const unsigned int& corners ) {
 UINode* UINode::setTopLeftRadius( const std::string& radius ) {
 	setBorderEnabled( true )->setTopLeftRadius( radius );
 	setBackgroundFillEnabled( true )->getBackgroundDrawable().setTopLeftRadius( radius );
-	invalidateDraw();
 	return this;
 }
 
 UINode* UINode::setTopRightRadius( const std::string& radius ) {
 	setBorderEnabled( true )->setTopRightRadius( radius );
 	setBackgroundFillEnabled( true )->getBackgroundDrawable().setTopRightRadius( radius );
-	invalidateDraw();
 	return this;
 }
 
 UINode* UINode::setBottomLeftRadius( const std::string& radius ) {
 	setBorderEnabled( true )->setBottomLeftRadius( radius );
 	setBackgroundFillEnabled( true )->getBackgroundDrawable().setBottomLeftRadius( radius );
-	invalidateDraw();
 	return this;
 }
 
 UINode* UINode::setBottomRightRadius( const std::string& radius ) {
 	setBorderEnabled( true )->setBottomRightRadius( radius );
 	setBackgroundFillEnabled( true )->getBackgroundDrawable().setBottomRightRadius( radius );
-	invalidateDraw();
 	return this;
 }
 
@@ -820,13 +814,15 @@ Uint32 UINode::getBorderRadius() const {
 }
 
 UINodeDrawable* UINode::setForegroundFillEnabled( bool enabled ) {
+	const bool changed = enabled != ( 0 != ( mFlags & UI_FILL_FOREGROUND ) );
 	writeFlag( UI_FILL_FOREGROUND, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mForeground ) {
 		getForeground();
 	}
 
-	invalidateDraw();
+	if ( changed )
+		invalidateDraw();
 
 	return mForeground;
 }
@@ -937,6 +933,8 @@ const Sizef& UINode::getForegroundBottomRightRadius() const {
 }
 
 UIBorderDrawable* UINode::setBorderEnabled( bool enabled ) const {
+	// Getters call this too, so it can't invalidate unless something changed.
+	const bool changed = enabled != ( 0 != ( mFlags & UI_BORDER ) );
 	const_cast<UINode*>( this )->writeFlag( UI_BORDER, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBorder ) {
@@ -947,13 +945,18 @@ UIBorderDrawable* UINode::setBorderEnabled( bool enabled ) const {
 		}
 	}
 
-	const_cast<UINode*>( this )->invalidateDraw();
+	if ( changed )
+		const_cast<UINode*>( this )->invalidateDraw();
 
 	return NULL != mBorder ? mBorder : NULL;
 }
 
 UINode* UINode::setBorderColor( const Color& color ) {
-	setBorderEnabled( true )->setColor( color );
+	auto* border = setBorderEnabled( true );
+	if ( border->getColor() != color ) {
+		border->setColor( color );
+		invalidateDraw();
+	}
 	return this;
 }
 

@@ -144,8 +144,10 @@ const RenderMode& UITextureRegion::getRenderMode() const {
 }
 
 void UITextureRegion::setRenderMode( const RenderMode& render ) {
-	mRender = render;
-	invalidateDraw();
+	if ( mRender != render ) {
+		mRender = render;
+		invalidateDraw();
+	}
 }
 
 void UITextureRegion::autoAlign() {
@@ -257,8 +259,10 @@ const UIScaleType& UITextureRegion::getScaleType() const {
 }
 
 UITextureRegion* UITextureRegion::setScaleType( const UIScaleType& scaleType ) {
-	mScaleType = scaleType;
-	invalidateDraw();
+	if ( mScaleType != scaleType ) {
+		mScaleType = scaleType;
+		invalidateDraw();
+	}
 	return this;
 }
 

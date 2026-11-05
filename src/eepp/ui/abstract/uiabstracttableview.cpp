@@ -1343,7 +1343,10 @@ DrawablePtr UIAbstractTableView::createCellIcon( UITableCell* cell, UIIcon* icon
 													 ? cell->getTextView()->getFontSize()
 													 : image->getPixelsSize().getWidth() ) );
 	}
-	return size == mIconSize ? source->clone() : icon->createDrawable( size );
+	const auto& sizedSource = size == mIconSize ? source : icon->getSource( size );
+	if ( !sizedSource )
+		return {};
+	return cell->getIconInstance( sizedSource );
 }
 
 void UIAbstractTableView::updateTableCellData( UITableCell* cell, const ModelIndex& index ) {

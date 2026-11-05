@@ -11,14 +11,75 @@ struct TabWidgetSplitterDeleter {
 	void operator()( UITabWidgetSplitter* splitter ) const { eeDelete( splitter ); }
 };
 
+namespace {
+
+/** How a tab shows a program status. Each style class has one icon, and none means no status. */
+struct ProgramStatusVisual {
+	const char* icon{ nullptr };
+	const char* styleClass{ nullptr };
+};
+
+constexpr ProgramStatusVisual ProgramStatusWorking{ "loader-2", "program_status_working" };
+constexpr ProgramStatusVisual ProgramStatusBlocked{ "warning", "program_status_blocked" };
+constexpr ProgramStatusVisual ProgramStatusDone{ "ok", "program_status_done" };
+constexpr ProgramStatusVisual ProgramStatusError{ "error", "program_status_error" };
+constexpr ProgramStatusVisual ProgramStatusPaused{ "pause-fill", "program_status_paused" };
+
+constexpr const char* ProgramStatusProgressClass = "program_status_progress";
+constexpr const char* ProgramStatusUnreadClass = "program_status_unread";
+
+constexpr size_t MaxProgramStatusMessageLength = 256;
+
+/** Results wait for the user. Other states are live: looking at a blocked program doesn't unblock
+ * it, and OSC 9;4 errors expire by themselves. */
+bool isProgramStatusResult( const PresentedProgramStatus& status ) {
+	return status.source == ProgramStatusSource::Osc7501 &&
+		   ( status.state == ProgramState::Done || status.state == ProgramState::Error );
+}
+
+ProgramStatusVisual programStatusVisual( const PresentedProgramStatus& status ) {
+	if ( status.source == ProgramStatusSource::Osc9_4 ) {
+		switch ( status.legacyState ) {
+			case LegacyProgressState::Normal:
+			case LegacyProgressState::Indeterminate:
+				return ProgramStatusWorking;
+			case LegacyProgressState::Error:
+				return ProgramStatusError;
+			case LegacyProgressState::PausedOrWarning:
+				return ProgramStatusPaused;
+			case LegacyProgressState::Inactive:
+				break;
+		}
+		return {};
+	}
+	if ( status.source != ProgramStatusSource::Osc7501 )
+		return {};
+	switch ( status.state ) {
+		case ProgramState::Working:
+			return ProgramStatusWorking;
+		case ProgramState::Blocked:
+			return ProgramStatusBlocked;
+		case ProgramState::Done:
+			return ProgramStatusDone;
+		case ProgramState::Error:
+			return ProgramStatusError;
+		case ProgramState::Idle:
+			break;
+	}
+	return {};
+}
+
+} // namespace
+
 void App::TerminalSplitterClient::onTabCreated( UITab* tab, UIWidget* widget ) {
 	if ( mApp.terminalIcon && widget && widget->isType( UI_TYPE_TERMINAL ) )
 		tab->setIcon( mApp.terminalIcon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
 	mApp.configureTab( tab );
 }
 
-void App::TerminalSplitterClient::onWidgetFocusChange( UIWidget* ) {
+void App::TerminalSplitterClient::onWidgetFocusChange( UIWidget* widget ) {
 	mApp.updateWindowTitle();
+	mApp.updateWidgetProgramStatus( widget );
 }
 
 std::string App::getResourcePath() const {
@@ -305,7 +366,158 @@ void App::restoreMaximizedTabWidget() {
 		win->close();
 }
 
+void App::updateTabProgramStatus( UITab* tab ) {
+	auto* terminal = terminalFromTab( tab );
+	if ( !terminal || !terminal->getTerm() )
+		return;
+	static const PresentedProgramStatus noStatus;
+	const auto& status = terminal->getTerm()->getProgramStatus();
+	const auto& presented =
+		config->terminal.showProgramStatus && status ? status->presentation : noStatus;
+
+	const bool isResult = isProgramStatusResult( presented );
+	bool seen = false;
+	if ( isResult ) {
+		const auto found = seenProgramStatus.find( tab );
+		seen = found != seenProgramStatus.end() && found->second->presentation == presented;
+		if ( !seen && isTerminalActive( terminal ) ) {
+			seenProgramStatus[tab] = status;
+			seen = true;
+		}
+	} else if ( config->terminal.showProgramStatus ) {
+		// Anything else in between makes the next result a new one, even with the same text.
+		seenProgramStatus.erase( tab );
+	}
+	const bool unread = isResult && !seen;
+	// A seen error keeps its icon until the program clears it: only done means "not seen yet".
+	const auto visual = seen && presented.state == ProgramState::Done
+							? ProgramStatusVisual{}
+							: programStatusVisual( presented );
+	if ( unread != tab->hasClass( ProgramStatusUnreadClass ) ) {
+		if ( unread )
+			tab->addClass( ProgramStatusUnreadClass );
+		else
+			tab->removeClass( ProgramStatusUnreadClass );
+	}
+
+	// Progress updates keep the class, so they only reach the tooltip.
+	bool changed = false;
+	for ( const auto& other : { ProgramStatusWorking, ProgramStatusBlocked, ProgramStatusDone,
+								ProgramStatusError, ProgramStatusPaused } ) {
+		if ( other.styleClass != visual.styleClass && tab->hasClass( other.styleClass ) ) {
+			tab->removeClass( other.styleClass );
+			changed = true;
+		}
+	}
+	if ( visual.styleClass && !tab->hasClass( visual.styleClass ) ) {
+		tab->addClass( visual.styleClass );
+		changed = true;
+	}
+	if ( changed ) {
+		auto* icon = visual.icon ? scene->findIcon( visual.icon ) : terminalIcon;
+		if ( icon )
+			tab->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
+	}
+
+	// The bar's width is the only thing CSS can't know. Without the class, the theme's tab remains.
+	if ( visual.styleClass && presented.percentage ) {
+		tab->getUIStyle()->setStyleSheetVariable( StyleSheetVariable(
+			"--program-status-progress",
+			String::format( "%d%%", static_cast<int>( *presented.percentage ) ) ) );
+		if ( !tab->hasClass( ProgramStatusProgressClass ) )
+			tab->addClass( ProgramStatusProgressClass );
+		tab->reloadStyle( false, false, true, true, true );
+	} else if ( tab->hasClass( ProgramStatusProgressClass ) ) {
+		tab->removeClass( ProgramStatusProgressClass );
+	}
+	String description = describeProgramStatus( presented );
+	if ( unread )
+		description += " · " + i18n( "program_status_unread", "Not seen yet" );
+	tab->setTooltipText( description );
+}
+
+bool App::isTerminalActive( const UITerminal* terminal ) const {
+	return appWindow->hasInputFocus() && tabSplitter->getCurWidget() == terminal;
+}
+
+void App::updateWidgetProgramStatus( UIWidget* widget ) {
+	// Selecting a new tab gets here from inside UITabWidget::add(), so the splitter can't tell the
+	// widget's tab yet.
+	if ( auto* tabWidget = widget ? UITabWidget::fromOwnedNode( widget ) : nullptr )
+		updateTabProgramStatus( tabWidget->getTabFromOwnedWidget( widget ) );
+}
+
+String App::describeProgramStatus( const PresentedProgramStatus& status ) const {
+	String description;
+	if ( status.source == ProgramStatusSource::Osc9_4 ) {
+		switch ( status.legacyState ) {
+			case LegacyProgressState::Normal:
+				description = i18n( "program_status_progress", "Progress" );
+				break;
+			case LegacyProgressState::Indeterminate:
+				description = i18n( "program_status_running", "Running" );
+				break;
+			case LegacyProgressState::Error:
+				description = i18n( "program_status_progress_error", "Progress error" );
+				break;
+			case LegacyProgressState::PausedOrWarning:
+				// The protocol doesn't tell them apart: terminals disagree on this state's meaning.
+				description = i18n( "program_status_paused_or_warning", "Paused / warning" );
+				break;
+			case LegacyProgressState::Inactive:
+				break;
+		}
+	} else if ( status.source == ProgramStatusSource::Osc7501 ) {
+		switch ( status.state ) {
+			case ProgramState::Working:
+				description = i18n( "program_status_working", "Working" );
+				break;
+			case ProgramState::Blocked:
+				switch ( status.kind ) {
+					case ProgramBlockKind::Permission:
+						description =
+							i18n( "program_status_blocked_permission", "Needs your permission" );
+						break;
+					case ProgramBlockKind::Question:
+						description =
+							i18n( "program_status_blocked_question", "Has a question for you" );
+						break;
+					case ProgramBlockKind::Auth:
+						description = i18n( "program_status_blocked_auth", "Needs authentication" );
+						break;
+					case ProgramBlockKind::None:
+						description = i18n( "program_status_blocked", "Waiting for you" );
+						break;
+				}
+				break;
+			case ProgramState::Done:
+				description = i18n( "program_status_done", "Done" );
+				break;
+			case ProgramState::Error:
+				description = i18n( "program_status_error", "Failed" );
+				break;
+			case ProgramState::Idle:
+				break;
+		}
+	}
+	if ( description.empty() )
+		return description;
+
+	// The fixed label leads, so a program's own text can't pose as the terminal's report.
+	const auto addPart = [&description]( const String& part ) {
+		if ( !part.empty() )
+			description += " · " + part;
+	};
+	addPart( String::fromUtf8( status.app ) );
+	addPart( String::fromUtf8( status.title ) );
+	addPart( String::fromUtf8( status.message ).substr( 0, MaxProgramStatusMessageLength ) );
+	if ( status.percentage )
+		addPart( String::format( "%d%%", static_cast<int>( *status.percentage ) ) );
+	return description;
+}
+
 void App::configureTab( UITab* tab ) {
+	tab->on( Event::OnClose, [this, tab]( const Event* ) { seenProgramStatus.erase( tab ); } );
 	tab->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
 		const auto* menuEvent = static_cast<const ContextMenuEvent*>( event );
 		auto* menu = menuEvent->getMenu();
@@ -476,6 +688,8 @@ UITerminal* App::createTerminal( UITabWidget* target, std::string workingDirecto
 	terminal->getTerm()->pushEventCallback( [this, tab]( const TerminalDisplay::Event& event ) {
 		if ( terminalConfig.closeOnExit && event.type == TerminalDisplay::EventType::PROCESS_EXIT )
 			queueExitCloseTab( tab );
+		else if ( event.type == TerminalDisplay::EventType::PROGRAM_STATUS_CHANGE )
+			updateTabProgramStatus( tab );
 	} );
 	terminal->on( Event::OnCreateContextMenu, [this, terminal]( const Event* event ) {
 		auto menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
@@ -925,6 +1139,53 @@ int App::run( int argc, char* argv[] ) {
 		Tab > Tab::Text {
 			text-overflow: ellipsis;
 		}
+		Tab.program_status_working {
+			--program-status-color: var(--primary);
+		}
+		Tab.program_status_blocked,
+		Tab.program_status_paused {
+			--program-status-color: var(--theme-warning);
+		}
+		Tab.program_status_done {
+			--program-status-color: var(--theme-success);
+		}
+		Tab.program_status_error {
+			--program-status-color: var(--theme-error);
+		}
+		/* A variable of the tab doesn't reach its icon, and the theme's hover rule is specific. */
+		Tab.program_status_working > Tab::icon {
+			tint: var(--primary) !important;
+		}
+		Tab.program_status_blocked > Tab::icon,
+		Tab.program_status_paused > Tab::icon {
+			tint: var(--theme-warning) !important;
+		}
+		Tab.program_status_done > Tab::icon {
+			tint: var(--theme-success) !important;
+		}
+		Tab.program_status_error > Tab::icon {
+			tint: var(--theme-error) !important;
+		}
+		Tab.program_status_unread.program_status_done > Tab::text {
+			color: var(--theme-success) !important;
+		}
+		Tab.program_status_unread.program_status_error > Tab::text {
+			color: var(--theme-error) !important;
+		}
+		/* The icon has eight equal spokes: a turn would look still, and 45 degrees wraps unnoticed. */
+		@keyframes program-status-spin {
+			from { rotation: 0; }
+			to { rotation: 45; }
+		}
+		Tab.program_status_working > Tab::icon {
+			animation: program-status-spin 1s steps(6) infinite;
+		}
+		Tab.program_status_progress,
+		Tab.program_status_progress:selected {
+			background-image: rectangle(solid, var(--program-status-color));
+			background-size: var(--program-status-progress) 2dp;
+			background-position: left bottom;
+		}
 		.pseudo_anchor {
 			tint: var(--floating-icon);
 			cursor: arrow;
@@ -1097,6 +1358,11 @@ int App::run( int argc, char* argv[] ) {
 	}
 #endif
 
+	appWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
+		if ( event->Type == InputEvent::Window &&
+			 event->window.type == InputEvent::WindowKeyboardFocusGain )
+			updateWidgetProgramStatus( tabSplitter ? tabSplitter->getCurWidget() : nullptr );
+	} );
 	appWindow->setCloseRequestCallback( [this]( EE::Window::Window* window ) {
 		return application->handleCloseRequest( window ) && closeWindow( window );
 	} );

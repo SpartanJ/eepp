@@ -43,6 +43,8 @@ void AppConfig::load() {
 	terminal.graphemeClustering =
 		mIni.getValueB( "terminal", "grapheme_clustering", terminal.graphemeClustering );
 	terminal.detectLinks = mIni.getValueB( "terminal", "detect_links", terminal.detectLinks );
+	terminal.showProgramStatus =
+		mIni.getValueB( "terminal", "show_program_status", terminal.showProgramStatus );
 	ui.smoothScroll = mIni.getValueB(
 		"ui", "smooth_scroll", mIni.getValueB( "terminal", "smooth_scroll", ui.smoothScroll ) );
 	const auto newTerminalBehavior =
@@ -129,6 +131,7 @@ bool AppConfig::savePreferences() {
 	mIni.setValueB( "terminal", "enable_osc8_hyperlinks", terminal.enableOsc8Hyperlinks );
 	mIni.setValueB( "terminal", "grapheme_clustering", terminal.graphemeClustering );
 	mIni.setValueB( "terminal", "detect_links", terminal.detectLinks );
+	mIni.setValueB( "terminal", "show_program_status", terminal.showProgramStatus );
 	mIni.setValueB( "ui", "smooth_scroll", ui.smoothScroll );
 	mIni.deleteValue( "terminal", "smooth_scroll" );
 	mIni.setValue( "terminal", "new_terminal_behavior",

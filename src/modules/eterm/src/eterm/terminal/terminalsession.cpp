@@ -292,6 +292,12 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 		mSession.enqueueEvent( std::move( event ), false );
 	}
 
+	void onProgramStatusChange( std::shared_ptr<const ProgramStatusSnapshot> status ) {
+		Event event{ EventType::ProgramStatus };
+		event.programStatus = std::move( status );
+		mSession.enqueueEvent( std::move( event ), true );
+	}
+
 	void setPalette( TerminalColorPalette palette ) {
 		mInitialPalette = palette;
 		mPalette = std::move( palette );
@@ -721,9 +727,9 @@ void TerminalSession::enqueueEvent( Event event, bool coalescable ) {
 	std::lock_guard<std::mutex> lock( mEventMutex );
 	if ( coalescable ) {
 		for ( auto it = mEvents.rbegin(); it != mEvents.rend(); ++it ) {
-			const bool replaceable = it->type == EventType::Title ||
-									 it->type == EventType::IconTitle ||
-									 it->type == EventType::SnapshotReady;
+			const bool replaceable =
+				it->type == EventType::Title || it->type == EventType::IconTitle ||
+				it->type == EventType::SnapshotReady || it->type == EventType::ProgramStatus;
 			if ( !replaceable )
 				break;
 			if ( it->type == event.type ) {

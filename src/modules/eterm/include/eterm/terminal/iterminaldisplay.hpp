@@ -30,6 +30,7 @@ using namespace EE;
 namespace eterm { namespace Terminal {
 
 class TerminalEmulator;
+struct ProgramStatusSnapshot;
 
 class ITerminalDisplay {
   public:
@@ -94,6 +95,9 @@ class ITerminalDisplay {
 	TerminalEmulator* mEmulator;
 
 	virtual void onProcessExit( int exitCode );
+
+	/** Program status changed. No frame is drawn for it: it does not touch the screen. */
+	virtual void onProgramStatusChange( std::shared_ptr<const ProgramStatusSnapshot> status );
 
 	virtual void onScrollPositionChange();
 };

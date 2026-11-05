@@ -116,8 +116,10 @@ const RenderMode& UISprite::getRenderMode() const {
 }
 
 UISprite* UISprite::setRenderMode( const RenderMode& render ) {
-	mRender = render;
-	invalidateDraw();
+	if ( mRender != render ) {
+		mRender = render;
+		invalidateDraw();
+	}
 	return this;
 }
 

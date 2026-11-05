@@ -253,6 +253,17 @@ UIWindow* SettingsPanel::create( App& app ) {
 						} );
 						app.savePreferences();
 					} );
+	panel->addBool( { "showProgramStatus", "terminal.behavior",
+					  app.i18n( "show_program_status", "Show Program Status" ),
+					  app.i18n( "show_program_status_desc",
+								"Show in each tab whether its program is working, waiting for you, "
+								"finished or failed, when the program reports it." ) },
+					&app.config->terminal.showProgramStatus, [&app]( bool ) {
+						app.forEachTerminal( [&app]( UITerminal* terminal ) {
+							app.updateWidgetProgramStatus( terminal );
+						} );
+						app.savePreferences();
+					} );
 	panel->addBool( { "graphemeClustering", "terminal.behavior",
 					  app.i18n( "grapheme_clustering", "Grapheme Clustering" ),
 					  app.i18n( "grapheme_clustering_desc",

@@ -93,6 +93,17 @@ class App : private efsw::FileWatchListener {
 
 	void configureTab( UITab* tab );
 
+	/** Shows the terminal's program status in its tab, leaving the title and the terminal alone. */
+	void updateTabProgramStatus( UITab* tab );
+
+	/** Only the terminal the user is using can have its status seen: not a visible split, and not
+	 * one in a window that lost the keyboard to another application. */
+	bool isTerminalActive( const UITerminal* terminal ) const;
+
+	void updateWidgetProgramStatus( UIWidget* widget );
+
+	String describeProgramStatus( const PresentedProgramStatus& status ) const;
+
 	std::string resolveWorkingDirectory( UITerminal* source ) const;
 
 	UITerminal* createTerminal( UITabWidget* target = nullptr, std::string workingDirectory = {} );
@@ -193,6 +204,8 @@ class App : private efsw::FileWatchListener {
 	bool benchmarkMode{ false };
 	Clock secondsCounter;
 	SmallVector<UITab*, 8> pendingExitCloseTabs;
+	/** UI-only memory of the done or error each tab's user has seen: the programs' records stay. */
+	UnorderedMap<UITab*, std::shared_ptr<const ProgramStatusSnapshot>> seenProgramStatus;
 	TerminalSplitterClient splitterClient{ *this };
 };
 

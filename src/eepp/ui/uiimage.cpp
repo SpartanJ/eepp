@@ -565,9 +565,11 @@ const UIScaleType& UIImage::getScaleType() const {
 }
 
 UIImage* UIImage::setScaleType( const UIScaleType& scaleType ) {
-	mScaleType = scaleType;
-	calcDestSize();
-	invalidateDraw();
+	if ( mScaleType != scaleType ) {
+		mScaleType = scaleType;
+		calcDestSize();
+		invalidateDraw();
+	}
 	return this;
 }
 

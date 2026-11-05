@@ -43,7 +43,8 @@ class Ease {
 		ElasticOut,
 		ElasticInOut,
 		CubizBezier,
-		None
+		None,
+		Steps
 	};
 
 	static std::string toString( const Interpolation& interpolation ) {
@@ -114,6 +115,8 @@ class Ease {
 				return "cubic-bezier";
 			case Ease::None:
 				return "none";
+			case Ease::Steps:
+				return "steps";
 		}
 		return "";
 	}
@@ -184,6 +187,8 @@ class Ease {
 			return Ease::ElasticInOut;
 		if ( "cubicbezier" == name || "cubic-bezier" == name )
 			return Ease::CubizBezier;
+		if ( "steps" == name )
+			return Ease::Steps;
 		// Function parameters do not participate in interpolation-name lookup.
 		const auto functionStart = name.find_first_of( '(' );
 		if ( functionStart != std::string_view::npos )

@@ -275,8 +275,11 @@ Read [animation-play-state](https://developer.mozilla.org/en-US/docs/Web/CSS/ani
 
 Read [animation-timing-function](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-timing-function) documentation.
 
-Timing function names are custom, and not the same as the standard, but `cubic-bezier` will be added
-soon. Current timing functions supported: linear, quadratic-in, quadratic-out, quadratic-in-out,
+Timing function names are custom, and not the same as the standard. `cubic-bezier()` and `steps()`
+follow the standard, including `step-start`, `step-end` and the `start`, `end`, `jump-start`,
+`jump-end`, `jump-none` and `jump-both` positions. A `steps()` animation only redraws when it reaches
+a new step, and not while its element is hidden, so it suits low frame rate animations. Current
+timing functions supported: linear, quadratic-in, quadratic-out, quadratic-in-out,
 sine-in, sine-out, sine-in-out, exponential-in, exponential-out, exponential-in-out, quartic-in,
 quartic-out, quartic-in-out, circular-in, circular-out, circular-in-out, cubic-in, cubic-out,
 cubic-in-out, back-in, back-out, back-in-out, bounce-in, bounce-out, bounce-in-out, elastic-in,
@@ -3003,7 +3006,8 @@ Read [transition-property](https://developer.mozilla.org/en-US/docs/Web/CSS/tran
 
 Read [transition-timing-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-timing-function) documentation.
 
-Timing function names are custom, and not the same as the standard, but `cubic-bezier` is supported.
+Timing function names are custom, and not the same as the standard, but `cubic-bezier()` and
+`steps()` are supported, as in [animation-timing-function](#animation-timing-function).
 Current timing functions supported: linear, quadratic-in, quadratic-out, quadratic-in-out,
 sine-in, sine-out, sine-in-out, exponential-in, exponential-out, exponential-in-out, quartic-in,
 quartic-out, quartic-in-out, circular-in, circular-out, circular-in-out, cubic-in, cubic-out,

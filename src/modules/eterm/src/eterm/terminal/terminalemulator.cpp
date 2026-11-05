@@ -1131,6 +1131,9 @@ size_t TerminalEmulator::ttyread( void ) {
 		return 0;
 	if ( mDataCb )
 		mDataCb( mBuf + mBuflen, ret );
+	if ( !mProgramStatusScanner.isMetadataOnly( mBuf + mBuflen, ret,
+												mTerm.esc == 0 && mBuflen == 0 ) )
+		mPtyPresentationPending = true;
 
 	mBuflen += ret;
 	int consumed = 0;
@@ -3452,6 +3455,30 @@ void TerminalEmulator::handleClipboardWrite( std::string_view sequence ) {
 	setClipboard( decoded.c_str() );
 }
 
+void TerminalEmulator::handleProgramStatus( std::string_view body ) {
+	if ( body == "?" ) {
+		ttyreply( ProgramStatusTracker::ProbeReply.data(), ProgramStatusTracker::ProbeReply.size(),
+				  0 );
+		return;
+	}
+	mProgramStatus.handleReport( body );
+}
+
+void TerminalEmulator::handleLegacyProgress( std::string_view body ) {
+	if ( mProgramStatus.handleLegacyProgress( body ) )
+		mLegacyProgressClock.restart();
+}
+
+void TerminalEmulator::publishProgramStatus() {
+	if ( !mProgramStatus.hasPendingChange() )
+		return;
+	mProgramStatusPublishClock.restart();
+	auto dpy = mDpy.lock();
+	auto status = mProgramStatus.takeSnapshot();
+	if ( dpy )
+		dpy->onProgramStatusChange( std::move( status ) );
+}
+
 void TerminalEmulator::strhandle( void ) {
 	char* p = NULL;
 	int j, narg, par;
@@ -3482,6 +3509,16 @@ void TerminalEmulator::strhandle( void ) {
 		}
 		if ( sequence.substr( 0, 3 ) == "52;" ) {
 			handleClipboardWrite( sequence.substr( 3 ) );
+			return;
+		}
+		// Before strparse(), which overwrites the separators. These match whole prefixes, unlike
+		// its atoi(): OSC 75010 is not OSC 7501, and other OSC 9 forms are not progress.
+		if ( const auto body = ProgramStatusTracker::reportBody( sequence ) ) {
+			handleProgramStatus( *body );
+			return;
+		}
+		if ( const auto body = ProgramStatusTracker::legacyProgressBody( sequence ) ) {
+			handleLegacyProgress( *body );
 			return;
 		}
 	}
@@ -3621,23 +3658,29 @@ void TerminalEmulator::strhandle( void ) {
 				case 133: {
 					if ( narg > 1 ) {
 						j = ( narg > 1 ) ? mStrescseq.args[1][0] : -1;
+						if ( j == 'A' )
+							mProgramStatus.onPromptStart();
 						bool valid = false;
 						switch ( j ) {
 							case 'A': {
 								mPromptState = PromptState::WaitingPrompt;
 								valid = true;
+								break;
 							}
 							case 'B': {
 								mPromptState = PromptState::PromptEnded;
 								valid = true;
+								break;
 							}
 							case 'C': {
 								mPromptState = PromptState::CommandExecuting;
 								valid = true;
+								break;
 							}
 							case 'D': {
 								mPromptState = PromptState::CommandExecuted;
 								valid = true;
+								break;
 							}
 						}
 
@@ -3778,6 +3821,10 @@ void TerminalEmulator::strappend( const char* data, size_t len ) {
 
 	memcpy( &mStrescseq.buf[mStrescseq.len], data, len );
 	mStrescseq.len += len;
+	// Checked after appending: only then does a chunk's first bytes identify the sequence.
+	if ( mStrescseq.type == ']' &&
+		 ProgramStatusTracker::isOversized( { mStrescseq.buf, mStrescseq.len } ) )
+		mStrescseq.discarded = true;
 }
 
 void TerminalEmulator::sendbreak( const TerminalArg* ) {
@@ -4059,6 +4106,7 @@ int TerminalEmulator::eschandle( uchar ascii ) {
 			break;
 		case 'c': /* RIS -- Reset to initial state */
 			mKittyGraphics.reset();
+			mProgramStatus.reset();
 			treset();
 			resettitle();
 			loadColors();
@@ -5491,6 +5539,7 @@ void TerminalEmulator::redraw() {
 
 void TerminalEmulator::reset() {
 	mKittyGraphics.reset();
+	mProgramStatus.reset();
 	treset();
 	redraw();
 }
@@ -5724,6 +5773,8 @@ void TerminalEmulator::setPtyAndProcess( PtyPtr&& pty, ProcPtr&& process ) {
 	setActiveHyperlink( 0 );
 	mCurrentWorkingDirectory.clear();
 	mKittyGraphics.reset();
+	mProgramStatus.reset();
+	mProgramStatusScanner.reset();
 	resetKittyKeyboardProtocol();
 	mKittyPlaceholderMetadata.clear();
 	mKittyPlaceholderCell = Vector2i( -1, -1 );
@@ -5814,10 +5865,15 @@ void TerminalEmulator::terminate() {
 		mProcess->terminate();
 		mExitCode = 1;
 		mStatus = TERMINATED;
+		mProgramStatus.onProcessExit();
 	}
 }
 
 void TerminalEmulator::onProcessExit( int exitCode ) {
+	// After the final PTY output, whose done or error must survive, and before the ordered exit
+	// event: the UI must never see a stale working state after it.
+	mProgramStatus.onProcessExit();
+	publishProgramStatus();
 	auto dpy = mDpy.lock();
 	if ( dpy )
 		dpy->onProcessExit( exitCode );
@@ -5942,6 +5998,8 @@ Time TerminalEmulator::getMaximumIdleWait() const {
 		until( mPendingPtyResizeClock, Milliseconds( 100 ) );
 	if ( mTerm.is_syncing )
 		until( mSynchronizedUpdateClock, Seconds( 1 ) );
+	if ( mProgramStatus.isLegacyProgressActive() )
+		until( mLegacyProgressClock, mLegacyProgressTimeout );
 	return eemin( wait, mKittyGraphics.getNextAnimationDelay() );
 }
 
@@ -5970,11 +6028,16 @@ bool TerminalEmulator::update() {
 		redraw();
 	}
 
+	if ( mProgramStatus.isLegacyProgressActive() &&
+		 mLegacyProgressClock.getElapsedTime() >= mLegacyProgressTimeout )
+		mProgramStatus.expireLegacyProgress();
+
 	if ( mStatus == TerminalEmulator::STARTING ) {
 		mStatus = TerminalEmulator::RUNNING;
 	} else if ( mStatus != TerminalEmulator::RUNNING ) {
 		if ( mDirty )
 			draw();
+		publishProgramStatus();
 
 		return true;
 	}
@@ -5996,7 +6059,7 @@ bool TerminalEmulator::update() {
 	bool readBudgetSaturated =
 		reads == MAX_TTY_READS || presentationDeadlineReached ||
 		( reads > 0 && readBudgetClock.getElapsedTime() >= Milliseconds( 4 ) );
-	if ( reads > 0 && TerminalSearch::isQuerySearchable( mSearchQuery ) )
+	if ( mPtyPresentationPending && TerminalSearch::isQuerySearchable( mSearchQuery ) )
 		mSearchDirty = true;
 	if ( mSearchDirty &&
 		 ( !readBudgetSaturated || mSearchRefreshClock.getElapsedTime() >= Milliseconds( 100 ) ) )
@@ -6005,8 +6068,16 @@ bool TerminalEmulator::update() {
 	/* Keep presentation decoupled from every PTY read batch. Sustained output publishes on the
 	 * host frame deadline, while a drained/idle burst still publishes immediately. */
 	bool presentationDue = !readBudgetSaturated || presentationDeadlineReached;
-	if ( presentationDue && ( reads > 0 || mDirty ) )
+	if ( presentationDue && ( mPtyPresentationPending || mDirty ) ) {
 		draw();
+		mPtyPresentationPending = false;
+	}
+
+	/* Status is published once per drained slice. A producer that never lets the PTY drain still
+	 * publishes at about frame rate: a saturated update() returns without waiting, so a report
+	 * held back here is never stranded. */
+	if ( !readBudgetSaturated || mProgramStatusPublishClock.getElapsedTime() >= Milliseconds( 16 ) )
+		publishProgramStatus();
 
 	mProcess->checkExitStatus();
 

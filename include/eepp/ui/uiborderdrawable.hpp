@@ -95,6 +95,9 @@ class EE_API UIBorderDrawable : public Drawable {
 	void setSmooth( bool smooth );
 
   protected:
+	/** Redraws the owner. Only for style changes: drawing also updates this drawable. */
+	void invalidateOwner();
+
 	const UINode* mOwner;
 	Graphics::VertexBufferUniquePtr mVertexBuffer;
 	mutable Borders mBorders;

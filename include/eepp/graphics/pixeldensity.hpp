@@ -3,6 +3,7 @@
 
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/math/originpoint.hpp>
 #include <eepp/math/rect.hpp>
 #include <eepp/math/size.hpp>
 #include <eepp/math/vector2.hpp>
@@ -74,6 +75,9 @@ class EE_API PixelDensity {
 	static Vector2i pxToDpI( Vector2i pos );
 
 	static Vector2f dpToPx( Vector2f pos );
+
+	/** Converts the coordinates, keeping the origin type and equations of @p point. */
+	static OriginPoint dpToPx( OriginPoint point );
 
 	static Vector2f pxToDp( Vector2f pos );
 

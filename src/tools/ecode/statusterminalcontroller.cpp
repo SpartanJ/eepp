@@ -17,8 +17,14 @@ UIWidget* StatusTerminalController::createWidget() {
 	return getWidget();
 }
 
+void StatusTerminalController::show() {
+	StatusBarElement::show();
+	if ( mTabWidget && mTabWidget->getTabCount() == 0 )
+		createTerminal();
+}
+
 bool StatusTerminalController::tryTabClose( UITab* tab ) {
-	if ( !tab->getOwnedWidget()->isWidget() || tab->getOwnedWidget() == nullptr )
+	if ( tab->getOwnedWidget() == nullptr || !tab->getOwnedWidget()->isWidget() )
 		return true;
 
 	UIWidget* widget = tab->getOwnedWidget()->asType<UIWidget>();
@@ -90,8 +96,6 @@ UIHLinearLayoutCommandExecuter* StatusTerminalController::createContainer() {
 			return tryTabClose( tab );
 		} );
 
-	createTerminal();
-
 	mAddBtn->onClick( [this]( auto ) { createTerminal(); } );
 
 	auto kb = mContext->getKeybind( "create-new-terminal" );
@@ -100,16 +104,14 @@ UIHLinearLayoutCommandExecuter* StatusTerminalController::createContainer() {
 			String::format( "%s (%s)", mAddBtn->getTooltipText().toUtf8(), kb ) );
 	}
 
-	const auto onTabCountChange = [this]( auto ) {
+	mTabWidget->on( Event::OnTabClosed, [this]( auto ) {
 		if ( SceneManager::instance()->isShuttingDown() )
 			return;
-		auto tabCount = mTabWidget->getTabCount();
-		if ( tabCount == 0 )
-			createTerminal();
-	};
-
-	mTabWidget->on( Event::OnTabAdded, onTabCountChange );
-	mTabWidget->on( Event::OnTabClosed, onTabCountChange );
+		// Closing the last tab must release its session, not immediately start a new shell.
+		// Reopening the panel creates a terminal on demand.
+		if ( mTabWidget->getTabCount() == 0 )
+			hide();
+	} );
 
 	mContext->getStatusBar()->registerStatusBarPanel( mContainer, mContainer );
 
@@ -121,7 +123,7 @@ UITabWidget* StatusTerminalController::getTabWidget() {
 }
 
 UITerminal* StatusTerminalController::getUITerminal() {
-	return mTabWidget->getTabCount() > 0 &&
+	return mTabWidget && mTabWidget->getTabCount() > 0 &&
 				   mTabWidget->getTab( 0 )->getOwnedWidget()->isType( UI_TYPE_TERMINAL )
 			   ? mTabWidget->getTab( 0 )->getOwnedWidget()->asType<UITerminal>()
 			   : nullptr;
@@ -130,6 +132,8 @@ UITerminal* StatusTerminalController::getUITerminal() {
 UITerminal* StatusTerminalController::createTerminal(
 	const std::string& workingDir, std::string program, std::vector<std::string> args,
 	const std::unordered_map<std::string, std::string>& env ) {
+	if ( !mContainer )
+		createContainer();
 	Sizef initialSize( 16, 16 );
 	const auto* sourceTab = mTabWidget->getTabSelected();
 	auto* sourceWidget = sourceTab ? sourceTab->getOwnedWidget() : nullptr;

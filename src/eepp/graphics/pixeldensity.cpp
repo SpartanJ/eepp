@@ -152,6 +152,12 @@ Vector2i PixelDensity::pxToDpI( Vector2i pos ) {
 	return Sizei( pxToDpI( pos.x ), pxToDpI( pos.y ) );
 }
 
+OriginPoint PixelDensity::dpToPx( OriginPoint point ) {
+	point.x = dpToPx( point.x );
+	point.y = dpToPx( point.y );
+	return point;
+}
+
 Vector2f PixelDensity::dpToPx( Vector2f pos ) {
 	return Vector2f( dpToPx( pos.x ), dpToPx( pos.y ) );
 }

@@ -39,6 +39,7 @@ struct TerminalConfig {
 	bool enableOsc8Hyperlinks{ true };
 	bool graphemeClustering{ true };
 	bool detectLinks{ true };
+	bool showProgramStatus{ true };
 	NewTerminalBehavior newTerminalBehavior{ NewTerminalBehavior::CurrentTabBar };
 	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
 	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };

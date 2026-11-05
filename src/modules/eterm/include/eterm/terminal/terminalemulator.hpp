@@ -45,6 +45,7 @@
 #include <eterm/terminal/iterminaldisplay.hpp>
 #include <eterm/terminal/kittygraphicsprotocol.hpp>
 #include <eterm/terminal/kittykeyboardprotocol.hpp>
+#include <eterm/terminal/programstatus.hpp>
 #include <eterm/terminal/terminalsearch.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 #include <memory>
@@ -242,8 +243,8 @@ class TerminalEmulator final {
 	std::intptr_t getProcessWaitHandle() const;
 
 	/** How long the worker may wait without missing update()'s own timers: the deferred resize,
-	 * the synchronized-update timeout, image animations and deferred reference collection.
-	 * Output and commands wake it otherwise. */
+	 * the synchronized-update timeout, image animations, deferred reference collection and the
+	 * expiry of OSC 9;4 progress. Output and commands wake it otherwise. */
 	Time getMaximumIdleWait() const;
 
 	bool hasExited() const;
@@ -360,6 +361,11 @@ class TerminalEmulator final {
 		mPromptStateChangedCb = promptStateChangedCb;
 	}
 
+	const ProgramStatusTracker& getProgramStatus() const { return mProgramStatus; }
+
+	/** OSC 9;4 cannot tell when its program exits, so it expires unless it is refreshed. */
+	void setLegacyProgressTimeout( Time timeout ) { mLegacyProgressTimeout = timeout; }
+
 	using DataCb = std::function<void( const char*, size_t )>;
 
 	void setDataCb( DataCb cb ) { mDataCb = cb; }
@@ -458,6 +464,13 @@ class TerminalEmulator final {
 	Vector2i mLastMousePosition{ -1, -1 };
 	PromptState mPromptState{ PromptState::Unknown };
 	PromptStateChangedCb mPromptStateChangedCb;
+	ProgramStatusTracker mProgramStatus;
+	ProgramStatusScanner mProgramStatusScanner;
+	Clock mProgramStatusPublishClock;
+	Clock mLegacyProgressClock;
+	Time mLegacyProgressTimeout{ Seconds( 15 ) };
+	// PTY output that can change the screen waits to be presented. Status-only reads don't set it.
+	bool mPtyPresentationPending{ false };
 	DataCb mDataCb;
 	Vector2i mKittyPlaceholderCell{ -1, -1 };
 	struct KittyPlaceholderMetadata {
@@ -506,6 +519,12 @@ class TerminalEmulator final {
 	void handleWorkingDirectory( std::string_view uri );
 
 	void handleClipboardWrite( std::string_view sequence );
+
+	void handleProgramStatus( std::string_view body );
+
+	void handleLegacyProgress( std::string_view body );
+
+	void publishProgramStatus();
 
 	void collectGlyphReferences();
 

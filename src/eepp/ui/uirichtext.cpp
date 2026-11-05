@@ -2570,8 +2570,10 @@ const Color& UIRichText::getSelectionBackColor() const {
 }
 
 void UIRichText::setSelectionBackColor( const Color& color ) {
-	mRichText.setSelectionBackColor( color );
-	invalidateDraw();
+	if ( mRichText.getSelectionBackColor() != color ) {
+		mRichText.setSelectionBackColor( color );
+		invalidateDraw();
+	}
 }
 
 const Color& UIRichText::getSelectionColor() const {
@@ -2579,8 +2581,10 @@ const Color& UIRichText::getSelectionColor() const {
 }
 
 void UIRichText::setSelectionColor( const Color& color ) {
-	mRichText.setSelectionColor( color );
-	invalidateDraw();
+	if ( mRichText.getSelectionColor() != color ) {
+		mRichText.setSelectionColor( color );
+		invalidateDraw();
+	}
 }
 
 std::pair<Int64, Int64> UIRichText::getTextSelectionRange() const {

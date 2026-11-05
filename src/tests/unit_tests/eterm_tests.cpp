@@ -5660,3 +5660,864 @@ UTEST( eterm, pty_output_queue_reclaims_consumed_bytes_under_sustained_output ) 
 	EXPECT_EQ( written, expected );
 	EXPECT_EQ( static_cast<size_t>( 0 ), queue.storedSize() );
 }
+
+static std::string programStatusBase64( std::string_view text ) {
+	std::string encoded;
+	Base64::encode( text, encoded );
+	return encoded;
+}
+
+static ProgramStatusRecord const* findStatusRecord( const ProgramStatusTracker& tracker,
+													const std::string& id ) {
+	for ( const auto& record : tracker.getRecords() ) {
+		if ( record.id == id )
+			return &record;
+	}
+	return nullptr;
+}
+
+UTEST( eterm_program_status, report_grammar_and_full_replacement ) {
+	ProgramStatusTracker tracker;
+	const auto message = programStatusBase64( "Approve deployment? ✅" );
+	tracker.handleReport( "state=blocked:kind=permission:progress=40:app=demo:msg=" + message );
+	ASSERT_EQ( static_cast<size_t>( 1 ), tracker.getRecords().size() );
+	const auto& root = tracker.getRecords().front();
+	EXPECT_TRUE( root.id.empty() );
+	EXPECT_TRUE( root.state == ProgramState::Blocked );
+	EXPECT_TRUE( root.kind == ProgramBlockKind::Permission );
+	EXPECT_EQ( 40, static_cast<int>( *root.progress ) );
+	EXPECT_STDSTREQ( "demo", root.app );
+	EXPECT_STDSTREQ( "Approve deployment? ✅", root.message );
+
+	// A report replaces its record: nothing merges with the omitted keys.
+	tracker.handleReport( "state=working" );
+	ASSERT_EQ( static_cast<size_t>( 1 ), tracker.getRecords().size() );
+	const auto& replaced = tracker.getRecords().front();
+	EXPECT_TRUE( replaced.state == ProgramState::Working );
+	EXPECT_TRUE( replaced.kind == ProgramBlockKind::None );
+	EXPECT_FALSE( replaced.progress.has_value() );
+	EXPECT_TRUE( replaced.app.empty() );
+	EXPECT_TRUE( replaced.message.empty() );
+
+	// Whitespace, unknown keys, malformed pairs and repeated keys.
+	const auto parsed =
+		ProgramStatusTracker::parseReport( " state = idle :future=x:nope:=y:BAD=1:state=done" );
+	ASSERT_TRUE( parsed.has_value() );
+	EXPECT_TRUE( parsed->record.state == ProgramState::Done );
+
+	// Meaningless, unknown or out of range optional values are absent, never fatal or clamped.
+	for ( const char* progress : { "101", "-1", "+5", "abc", "1000", "" } ) {
+		const auto report = ProgramStatusTracker::parseReport(
+			std::string( "state=working:progress=" ) + progress );
+		ASSERT_TRUE( report.has_value() );
+		EXPECT_FALSE( report->record.progress.has_value() );
+	}
+	for ( const char* progress : { "0", "1", "99", "100" } ) {
+		const auto report = ProgramStatusTracker::parseReport(
+			std::string( "state=working:progress=" ) + progress );
+		ASSERT_TRUE( report.has_value() && report->record.progress.has_value() );
+		EXPECT_EQ( atoi( progress ), static_cast<int>( *report->record.progress ) );
+	}
+	const auto kindless =
+		ProgramStatusTracker::parseReport( "state=blocked:kind=future:app=bad!app" );
+	ASSERT_TRUE( kindless.has_value() );
+	EXPECT_TRUE( kindless->record.kind == ProgramBlockKind::None );
+	EXPECT_TRUE( kindless->record.app.empty() );
+	const auto done = ProgramStatusTracker::parseReport( "state=done:kind=permission:progress=50" );
+	ASSERT_TRUE( done.has_value() );
+	EXPECT_TRUE( done->record.kind == ProgramBlockKind::None );
+	EXPECT_FALSE( done->record.progress.has_value() );
+}
+
+UTEST( eterm_program_status, invalid_reports_are_discarded_whole ) {
+	const auto segment = std::string( 32, 'a' );
+	std::vector<std::string> rejected = {
+		"",
+		"kind=auth",
+		"state=future",
+		"state=working:id=",
+		"state=working:id=/a",
+		"state=working:id=a/",
+		"state=working:id=a//b",
+		"state=working:id=a!b",
+		"state=working:id=a b",
+		"state=working:id=a/b/c/d/e/f/g/h/i",
+		"state=working:id=" + segment + "a",
+		"state=working:" + std::string( 17, 'k' ) + "=1",
+		"state=done:msg=@@@@",
+		"state=done:msg=A",
+		"state=done:msg=QQ=Q",
+		"state=done:msg=" + std::string( 2733, 'A' ),
+		"state=done:title=" + std::string( 257, 'A' ),
+		"state=done:title=" + programStatusBase64( std::string( 193, 'x' ) ),
+		"state=done:msg=" + programStatusBase64( std::string( "a\0b", 3 ) ),
+		"state=done:msg=" + programStatusBase64( "a\nb" ),
+		"state=done:msg=" + programStatusBase64( "a\tb" ),
+		"state=done:msg=" + programStatusBase64( "a\x7F"
+												 "b" ),
+		"state=done:msg=" + programStatusBase64( "a\xC2\x85"
+												 "b" ),
+		"state=done:title=" + programStatusBase64( "\xC2\x9F" ),
+		"state=done:msg=" + programStatusBase64( "\xFF" ),
+		"state=done:msg=" + programStatusBase64( "\xC0\xAF" ),
+		"state=done:msg=" + programStatusBase64( "\xED\xA0\x80" ),
+		"state=clear:msg=@@@@",
+		"state=done:app=" + std::string( ProgramStatusTracker::MaxReportSize, 'a' ),
+	};
+	ProgramStatusTracker tracker;
+	tracker.handleReport( "state=working:app=keep" );
+	const auto serial = tracker.getRecords().front().updateSerial;
+	for ( const auto& report : rejected ) {
+		EXPECT_FALSE( ProgramStatusTracker::parseReport( report ).has_value() );
+		tracker.handleReport( report );
+	}
+	ASSERT_EQ( static_cast<size_t>( 1 ), tracker.getRecords().size() );
+	EXPECT_EQ( serial, tracker.getRecords().front().updateSerial );
+	EXPECT_STDSTREQ( "keep", tracker.getRecords().front().app );
+
+	EXPECT_TRUE( ProgramStatusTracker::parseReport( "state=working:id=" + segment + "/" + segment +
+													"/" + segment )
+					 .has_value() );
+	std::string encoded = programStatusBase64( std::string( 2048, 'x' ) );
+	EXPECT_TRUE( ProgramStatusTracker::parseReport( "state=done:msg=" + encoded ).has_value() );
+	// Standard padding is optional.
+	for ( const char* text : { "QQ==", "QQ", "QUI=", "QUI", "QUJD" } ) {
+		EXPECT_TRUE( ProgramStatusTracker::parseReport( std::string( "state=done:msg=" ) + text )
+						 .has_value() );
+	}
+}
+
+UTEST( eterm_program_status, hierarchy_clear_inheritance_and_eviction ) {
+	ProgramStatusTracker tracker;
+	tracker.handleReport( "state=working:app=root" );
+	tracker.handleReport( "state=working:id=build/test" );
+	tracker.handleReport( "state=working:id=build/deep/er" );
+	tracker.handleReport( "state=working:id=build:app=make" );
+	tracker.handleReport( "state=working:id=builder" );
+	tracker.handleReport( "state=working:id=orphan/child" );
+	const auto& records = tracker.getRecords();
+	EXPECT_STDSTREQ( "make", std::string( ProgramStatusTracker::effectiveApp(
+								 records, *findStatusRecord( tracker, "build/deep/er" ) ) ) );
+	EXPECT_STDSTREQ( "root", std::string( ProgramStatusTracker::effectiveApp(
+								 records, *findStatusRecord( tracker, "orphan/child" ) ) ) );
+
+	tracker.handleReport( "state=clear:id=build" );
+	EXPECT_TRUE( findStatusRecord( tracker, "build" ) == nullptr );
+	EXPECT_TRUE( findStatusRecord( tracker, "build/test" ) == nullptr );
+	EXPECT_TRUE( findStatusRecord( tracker, "build/deep/er" ) == nullptr );
+	EXPECT_TRUE( findStatusRecord( tracker, "builder" ) != nullptr );
+	EXPECT_TRUE( findStatusRecord( tracker, "" ) != nullptr );
+	tracker.handleReport( "state=clear" );
+	EXPECT_TRUE( tracker.getRecords().empty() );
+
+	// An update refreshes recency, so the oldest record is the one evicted.
+	for ( size_t index = 0; index < ProgramStatusTracker::MaxRecords; ++index )
+		tracker.handleReport( "state=idle:id=record" + std::to_string( index ) );
+	tracker.handleReport( "state=working:id=record0" );
+	tracker.handleReport( "state=idle:id=newest" );
+	EXPECT_EQ( ProgramStatusTracker::MaxRecords, tracker.getRecords().size() );
+	EXPECT_TRUE( findStatusRecord( tracker, "record0" ) != nullptr );
+	EXPECT_TRUE( findStatusRecord( tracker, "record1" ) == nullptr );
+	EXPECT_TRUE( findStatusRecord( tracker, "newest" ) != nullptr );
+}
+
+UTEST( eterm_program_status, presentation_selects_one_record_deterministically ) {
+	ProgramStatusTracker tracker;
+	tracker.handleReport( "state=idle" );
+	tracker.handleReport( "state=done:id=a" );
+	EXPECT_TRUE( tracker.resolvePresentation().state == ProgramState::Done );
+	tracker.handleReport( "state=working:id=b:progress=10" );
+	tracker.handleReport( "state=working:id=c:progress=20" );
+	EXPECT_STDSTREQ( "c", tracker.resolvePresentation().recordId );
+	EXPECT_EQ( 20, static_cast<int>( *tracker.resolvePresentation().percentage ) );
+	tracker.handleReport( "state=error:id=d" );
+	EXPECT_TRUE( tracker.resolvePresentation().state == ProgramState::Error );
+	tracker.handleReport( "state=blocked:id=e/child:kind=auth" );
+	const auto presented = tracker.resolvePresentation();
+	EXPECT_TRUE( presented.source == ProgramStatusSource::Osc7501 );
+	EXPECT_TRUE( presented.state == ProgramState::Blocked );
+	EXPECT_TRUE( presented.kind == ProgramBlockKind::Auth );
+	EXPECT_STDSTREQ( "e/child", presented.recordId );
+
+	// Text reaches the UI without bidi overrides or invisible formatting, joiners kept.
+	EXPECT_STDSTREQ( "abc", ProgramStatusTracker::sanitizeForDisplay( "a\xE2\x80\xAE"
+																	  "b\xE2\x81\xA6"
+																	  "c" ) );
+	EXPECT_STDSTREQ( "👩\xE2\x80\x8D💻",
+					 ProgramStatusTracker::sanitizeForDisplay( "👩\xE2\x80\x8D💻" ) );
+	tracker.handleReport( "state=clear" );
+	tracker.handleReport( "state=done:msg=" + programStatusBase64( "safe\xE2\x80\xAE.exe" ) );
+	EXPECT_STDSTREQ( "safe.exe", tracker.resolvePresentation().message );
+	EXPECT_STDSTREQ( "safe\xE2\x80\xAE.exe", tracker.getRecords().front().message );
+}
+
+UTEST( eterm_program_status, repeated_text_keys_are_each_validated ) {
+	const auto nul = programStatusBase64( std::string( 1, '\0' ) );
+	const auto oversized = std::string( ProgramStatusTracker::MaxEncodedTitleSize + 1, 'A' );
+	ProgramStatusTracker tracker;
+	tracker.handleReport( "state=working" );
+	for ( const std::string& report :
+		  { "state=clear:msg=" + nul + ":msg=QQ==", "state=clear:title=" + nul + ":title=QQ==",
+			"state=clear:title=" + oversized + ":title=QQ==",
+			std::string( "state=clear:msg=@@@@:msg=QQ==" ),
+			"state=done:msg=QQ==:msg=" + nul + ":msg=QQ==" } ) {
+		EXPECT_FALSE( ProgramStatusTracker::parseReport( report ).has_value() );
+		tracker.handleReport( report );
+	}
+	ASSERT_EQ( static_cast<size_t>( 1 ), tracker.getRecords().size() );
+	EXPECT_TRUE( tracker.getRecords().front().state == ProgramState::Working );
+
+	// The last valid value still wins, even an empty one.
+	const auto last = ProgramStatusTracker::parseReport( "state=done:msg=QQ==:msg=Qg==" );
+	ASSERT_TRUE( last.has_value() );
+	EXPECT_STDSTREQ( "B", last->record.message );
+	const auto empty = ProgramStatusTracker::parseReport( "state=done:msg=QQ==:msg=" );
+	ASSERT_TRUE( empty.has_value() );
+	EXPECT_TRUE( empty->record.message.empty() );
+}
+
+UTEST( eterm_program_status, overlong_apps_are_a_hard_limit ) {
+	const std::string longest( ProgramStatusTracker::MaxIdentifierSegmentSize, 'a' );
+	const std::string overlong = longest + "a";
+	ProgramStatusTracker tracker;
+	tracker.handleReport( "state=working:app=keep" );
+	for ( const std::string& report :
+		  { "state=clear:app=" + overlong, "state=done:app=" + overlong,
+			"state=done:app=" + overlong + ":app=short", "state=done:app=short:app=" + overlong,
+			"state=done:app=" + overlong + "!" } ) {
+		EXPECT_FALSE( ProgramStatusTracker::parseReport( report ).has_value() );
+		tracker.handleReport( report );
+	}
+	ASSERT_EQ( static_cast<size_t>( 1 ), tracker.getRecords().size() );
+	EXPECT_STDSTREQ( "keep", tracker.getRecords().front().app );
+
+	const auto accepted = ProgramStatusTracker::parseReport( "state=done:app=" + longest );
+	ASSERT_TRUE( accepted.has_value() );
+	EXPECT_STDSTREQ( longest, accepted->record.app );
+
+	// Only the limit is fatal: bad characters within it still just make the app absent.
+	const auto invalid = ProgramStatusTracker::parseReport( "state=done:app=bad!app" );
+	ASSERT_TRUE( invalid.has_value() );
+	EXPECT_TRUE( invalid->record.app.empty() );
+}
+
+UTEST( eterm_program_status, a_new_result_is_distinct_even_with_the_same_text ) {
+	ProgramStatusTracker tracker;
+	tracker.handleReport( "state=done:msg=QQ==" );
+	const auto seen = tracker.takeSnapshot();
+
+	// A repeat is the same result, even if something else forces a publication.
+	tracker.handleReport( "state=done:msg=QQ==" );
+	EXPECT_TRUE( tracker.handleLegacyProgress( "1;5" ) );
+	EXPECT_TRUE( tracker.takeSnapshot()->presentation == seen->presentation );
+
+	// A run in between is a new result, though coalescing hides the state in between.
+	tracker.handleReport( "state=working" );
+	tracker.handleReport( "state=done:msg=QQ==" );
+	const auto next = tracker.takeSnapshot();
+	EXPECT_FALSE( next->presentation == seen->presentation );
+	EXPECT_STDSTREQ( seen->presentation.message, next->presentation.message );
+
+	// As is a record that was cleared and reported again.
+	tracker.handleReport( "state=clear" );
+	tracker.handleReport( "state=done:msg=QQ==" );
+	EXPECT_FALSE( tracker.takeSnapshot()->presentation == next->presentation );
+}
+
+UTEST( eterm_program_status, repeated_reports_do_not_publish ) {
+	ProgramStatusTracker tracker;
+	EXPECT_FALSE( tracker.hasPendingChange() );
+	tracker.reset();
+	EXPECT_FALSE( tracker.hasPendingChange() );
+
+	tracker.handleReport( "state=working:progress=5" );
+	EXPECT_TRUE( tracker.hasPendingChange() );
+	const auto first = tracker.takeSnapshot();
+	tracker.handleReport( "state=working:progress=5" );
+	EXPECT_FALSE( tracker.hasPendingChange() );
+
+	// Recency decides between equal states, so a repeat that changes the selection does publish.
+	tracker.handleReport( "state=working:id=other" );
+	tracker.takeSnapshot();
+	tracker.handleReport( "state=working:progress=5" );
+	EXPECT_TRUE( tracker.hasPendingChange() );
+	const auto last = tracker.takeSnapshot();
+	EXPECT_TRUE( last->generation > first->generation );
+
+	// Snapshots are immutable, and legacy-only changes share the same records.
+	EXPECT_EQ( static_cast<size_t>( 1 ), first->records->size() );
+	EXPECT_TRUE( tracker.handleLegacyProgress( "1;10" ) );
+	EXPECT_TRUE( tracker.hasPendingChange() );
+	const auto legacy = tracker.takeSnapshot();
+	EXPECT_TRUE( legacy->records == last->records );
+	EXPECT_EQ( 10, static_cast<int>( *legacy->legacy.percentage ) );
+	EXPECT_TRUE( tracker.handleLegacyProgress( "1;10" ) ); // A heartbeat, but not a change.
+	EXPECT_FALSE( tracker.hasPendingChange() );
+}
+
+UTEST( eterm_program_status, legacy_progress_sequence_matrix ) {
+	ProgramStatusTracker tracker;
+	const auto state = [&tracker] { return tracker.getLegacyProgress().state; };
+	const auto percentage = [&tracker] { return tracker.getLegacyProgress().percentage; };
+
+	EXPECT_TRUE( tracker.handleLegacyProgress( "1;50" ) );
+	EXPECT_TRUE( state() == LegacyProgressState::Normal );
+	EXPECT_EQ( 50, static_cast<int>( *percentage() ) );
+	EXPECT_EQ( 50, static_cast<int>( *tracker.resolvePresentation().percentage ) );
+
+	// Error and paused keep the previous value unless they carry one.
+	EXPECT_TRUE( tracker.handleLegacyProgress( "2" ) );
+	EXPECT_TRUE( state() == LegacyProgressState::Error );
+	EXPECT_EQ( 50, static_cast<int>( *percentage() ) );
+	EXPECT_TRUE( tracker.handleLegacyProgress( "4;70" ) );
+	EXPECT_TRUE( state() == LegacyProgressState::PausedOrWarning );
+	EXPECT_EQ( 70, static_cast<int>( *percentage() ) );
+	EXPECT_TRUE( tracker.resolvePresentation().legacyState ==
+				 LegacyProgressState::PausedOrWarning );
+	EXPECT_TRUE( tracker.resolvePresentation().state == ProgramState::Idle );
+
+	// Indeterminate keeps the number but never presents it.
+	EXPECT_TRUE( tracker.handleLegacyProgress( "3" ) );
+	EXPECT_EQ( 70, static_cast<int>( *percentage() ) );
+	EXPECT_FALSE( tracker.resolvePresentation().percentage.has_value() );
+
+	// A percentage-less normal report is indeterminate rather than a stale number.
+	EXPECT_TRUE( tracker.handleLegacyProgress( "1" ) );
+	EXPECT_FALSE( percentage().has_value() );
+	EXPECT_TRUE( tracker.handleLegacyProgress( "3;" ) );
+
+	EXPECT_TRUE( tracker.handleLegacyProgress( "1;50" ) );
+	EXPECT_FALSE( tracker.handleLegacyProgress( "0" ) );
+	EXPECT_FALSE( tracker.isLegacyProgressActive() );
+	EXPECT_FALSE( percentage().has_value() );
+	EXPECT_TRUE( tracker.resolvePresentation().source == ProgramStatusSource::None );
+
+	for ( const char* body : { "", "5", "12", "a", "-1", "1;101", "1;-1", "1;+1", "1;5x",
+							   "1;99999999999999", "1;2;3", " 1", "1; 5" } ) {
+		EXPECT_FALSE( ProgramStatusTracker::parseLegacyProgress( body ).has_value() );
+		EXPECT_FALSE( tracker.handleLegacyProgress( body ) );
+	}
+	EXPECT_FALSE( tracker.isLegacyProgressActive() );
+	for ( const char* body : { "0", "0;", "0;0", "1;0", "1;100", "3;0", "4;" } )
+		EXPECT_TRUE( ProgramStatusTracker::parseLegacyProgress( body ).has_value() );
+}
+
+UTEST( eterm_program_status, arbitration_keeps_both_stores_independent ) {
+	const auto source = []( const ProgramStatusTracker& tracker ) {
+		return tracker.resolvePresentation().source;
+	};
+	const auto percent = []( const ProgramStatusTracker& tracker ) {
+		return static_cast<int>( *tracker.resolvePresentation().percentage );
+	};
+
+	ProgramStatusTracker tracker;
+	tracker.handleLegacyProgress( "1;25" );
+	EXPECT_TRUE( source( tracker ) == ProgramStatusSource::Osc9_4 );
+	EXPECT_EQ( 25, percent( tracker ) );
+
+	tracker.handleReport( "state=working:progress=60" );
+	EXPECT_TRUE( source( tracker ) == ProgramStatusSource::Osc7501 );
+	EXPECT_EQ( 60, percent( tracker ) );
+
+	tracker.handleReport( "state=blocked:kind=question:msg=QQ" );
+	tracker.handleLegacyProgress( "1;90" );
+	auto presented = tracker.resolvePresentation();
+	EXPECT_TRUE( presented.state == ProgramState::Blocked );
+	EXPECT_TRUE( presented.kind == ProgramBlockKind::Question );
+	EXPECT_STDSTREQ( "A", presented.message );
+	// The losing protocol is still recorded.
+	EXPECT_EQ( 90, static_cast<int>( *tracker.getLegacyProgress().percentage ) );
+
+	// A clear never resurrects older progress...
+	tracker.handleReport( "state=clear" );
+	EXPECT_TRUE( source( tracker ) == ProgramStatusSource::None );
+	EXPECT_TRUE( tracker.isLegacyProgressActive() );
+	// ...but a fresh report can fall back, even if it repeats the same values.
+	EXPECT_TRUE( tracker.handleLegacyProgress( "1;90" ) );
+	EXPECT_TRUE( tracker.hasPendingChange() );
+	EXPECT_TRUE( source( tracker ) == ProgramStatusSource::Osc9_4 );
+
+	// So does a clear of nothing: it must still hide legacy progress.
+	tracker.takeSnapshot();
+	tracker.handleReport( "state=clear" );
+	EXPECT_TRUE( tracker.hasPendingChange() );
+	EXPECT_TRUE( source( tracker ) == ProgramStatusSource::None );
+
+	// Stored records win over fresh progress.
+	tracker.handleReport( "state=done" );
+	tracker.handleLegacyProgress( "1;10" );
+	EXPECT_TRUE( source( tracker ) == ProgramStatusSource::Osc7501 );
+	EXPECT_TRUE( tracker.resolvePresentation().state == ProgramState::Done );
+
+	// A rejected report or a probe is not a report, and doesn't suppress progress.
+	ProgramStatusTracker invalid;
+	invalid.handleReport( "state=future" );
+	invalid.handleReport( "?" );
+	invalid.handleLegacyProgress( "1;30" );
+	EXPECT_TRUE( source( invalid ) == ProgramStatusSource::Osc9_4 );
+	invalid.handleReport( "state=working:id=bad!" );
+	EXPECT_TRUE( source( invalid ) == ProgramStatusSource::Osc9_4 );
+
+	// Reset starts a new epoch.
+	tracker.reset();
+	EXPECT_TRUE( tracker.getRecords().empty() );
+	EXPECT_FALSE( tracker.isLegacyProgressActive() );
+	tracker.handleLegacyProgress( "1;40" );
+	EXPECT_TRUE( source( tracker ) == ProgramStatusSource::Osc9_4 );
+}
+
+UTEST( eterm_program_status, scanner_proves_only_complete_status_sequences ) {
+	const auto scan = []( std::string_view data, bool parserAtGround = true ) {
+		ProgramStatusScanner scanner;
+		return scanner.isMetadataOnly( data.data(), data.size(), parserAtGround );
+	};
+	EXPECT_TRUE( scan( "\033]7501;state=done\a" ) );
+	EXPECT_TRUE( scan( "\033]7501;state=done\033\\" ) );
+	EXPECT_TRUE( scan( "\033]9;4;1;50\a\033]7501;?\033\\\033]9;4;0\a" ) );
+	for ( const char* visual :
+		  { "text", "", "\033[1m", "\033]0;title\a", "\033]75010;x\a", "\033]7501\a", "\033]9;5\a",
+			"\033]90;4;1\a", "\033]7501;state=done\ax", "\033]7501;a\nb\a", "\033]7501;\xC3\xA9\a",
+			"\033]7501;a\033x", "\033]9;4;1\a\033c" } ) {
+		EXPECT_FALSE( scan( visual ) );
+	}
+	// The same bytes mean something else if the parser is already inside a sequence.
+	EXPECT_FALSE( scan( "\033]9;4;1\a", false ) );
+
+	// A sequence survives every split into two reads, and ends the proof at the same point.
+	const std::string sequence = "\033]7501;state=done\033\\";
+	for ( size_t split = 1; split < sequence.size(); ++split ) {
+		ProgramStatusScanner scanner;
+		EXPECT_TRUE( scanner.isMetadataOnly( sequence.data(), split, true ) );
+		EXPECT_TRUE(
+			scanner.isMetadataOnly( sequence.data() + split, sequence.size() - split, false ) );
+		EXPECT_FALSE( scanner.isMetadataOnly( "x", 1, true ) );
+	}
+	ProgramStatusScanner aborted;
+	EXPECT_TRUE( aborted.isMetadataOnly( "\033]7501;st", 9, true ) );
+	EXPECT_FALSE( aborted.isMetadataOnly( "\x18text", 5, false ) );
+	EXPECT_FALSE( aborted.isMetadataOnly( "text", 4, true ) );
+}
+
+static std::unique_ptr<TerminalEmulator>
+makeStatusEmulator( const std::shared_ptr<MockDisplay>& display, MockPty*& pty,
+					MockProcess*& process ) {
+	auto ownedPty = std::make_unique<MockPty>();
+	auto ownedProcess = std::make_unique<MockProcess>();
+	ownedPty->mLoopWrites = false;
+	pty = ownedPty.get();
+	process = ownedProcess.get();
+	auto terminal =
+		TerminalEmulator::create( std::move( ownedPty ), std::move( ownedProcess ), display, 100 );
+	terminal->update();
+	return terminal;
+}
+
+UTEST( eterm_program_status, emulator_routes_exact_prefixes_without_printing ) {
+	auto display = std::make_shared<MockDisplay>();
+	MockPty* pty = nullptr;
+	MockProcess* process = nullptr;
+	auto terminal = makeStatusEmulator( display, pty, process );
+
+	const std::vector<std::string> ignored = {
+		"\033]75010;state=done\a",
+		"\033]7501\a",
+		"\033]9;Build finished\a",
+		"\033]9;5\a",
+		"\033]9;40;1\a",
+		"\033]90;4;1\a",
+		"\033]9;4\a",
+	};
+	for ( const auto& sequence : ignored )
+		pty->mBuffer += sequence;
+	terminal->update();
+	EXPECT_TRUE( terminal->getProgramStatus().getRecords().empty() );
+	EXPECT_FALSE( terminal->getProgramStatus().isLegacyProgressActive() );
+
+	const std::string stream = "A\033]7501;state=working:id=a\aB\033]7501;state=done:id=b\033\\C"
+							   "\033]9;4;1;50\033\\D\033]9;4;2\aE";
+	pty->mBuffer += stream;
+	terminal->update();
+	const std::string expected = "ABCDE";
+	for ( size_t index = 0; index < expected.size(); ++index )
+		EXPECT_EQ( static_cast<Rune>( expected[index] ), display->mCells[index].u );
+	EXPECT_EQ( static_cast<Rune>( ' ' ), display->mCells[expected.size()].u );
+	EXPECT_EQ( static_cast<size_t>( 2 ), terminal->getProgramStatus().getRecords().size() );
+	EXPECT_TRUE( terminal->getProgramStatus().getLegacyProgress().state ==
+				 LegacyProgressState::Error );
+	EXPECT_EQ( 50,
+			   static_cast<int>( *terminal->getProgramStatus().getLegacyProgress().percentage ) );
+}
+
+UTEST( eterm_program_status, emulator_applies_reports_fragmented_at_every_byte ) {
+	for ( const std::string sequence :
+		  { std::string( "\033]7501;state=done:id=x\033\\" ), std::string( "\033]9;4;1;7\a" ) } ) {
+		for ( size_t split = 1; split < sequence.size(); ++split ) {
+			auto display = std::make_shared<MockDisplay>();
+			MockPty* pty = nullptr;
+			MockProcess* process = nullptr;
+			auto terminal = makeStatusEmulator( display, pty, process );
+			const int drawEnds = display->mDrawEnds;
+			pty->mBuffer = sequence;
+			pty->mReadSizes = { split, sequence.size() - split };
+			terminal->update();
+			terminal->update();
+			const bool applied = !terminal->getProgramStatus().getRecords().empty() ||
+								 terminal->getProgramStatus().isLegacyProgressActive();
+			EXPECT_TRUE( applied );
+			EXPECT_EQ( drawEnds, display->mDrawEnds );
+		}
+	}
+}
+
+UTEST( eterm_program_status, oversized_sequences_are_consumed_without_applying ) {
+	auto display = std::make_shared<MockDisplay>();
+	MockPty* pty = nullptr;
+	MockProcess* process = nullptr;
+	auto terminal = makeStatusEmulator( display, pty, process );
+
+	// The largest accepted sequence, with both terminators.
+	const auto padded = []( size_t total, const std::string& terminator ) {
+		const std::string head = "\033]7501;state=done:pad=";
+		return head + std::string( total - head.size() - terminator.size(), 'x' ) + terminator;
+	};
+	pty->mBuffer = padded( ProgramStatusTracker::MaxSequenceSize, "\033\\" );
+	terminal->update();
+	EXPECT_EQ( static_cast<size_t>( 1 ), terminal->getProgramStatus().getRecords().size() );
+
+	pty->mBuffer += "\033]7501;state=clear\a";
+	terminal->update();
+	EXPECT_TRUE( terminal->getProgramStatus().getRecords().empty() );
+
+	pty->mBuffer += padded( ProgramStatusTracker::MaxSequenceSize + 1, "\033\\" ) + "A";
+	terminal->update();
+	EXPECT_TRUE( terminal->getProgramStatus().getRecords().empty() );
+	EXPECT_EQ( static_cast<Rune>( 'A' ), display->mCells[0].u );
+
+	// Far beyond what fits in one read, arriving in small fragments.
+	pty->mBuffer += "\033]7501;state=done:pad=" + std::string( 300 * 1024, 'x' ) + "\aB";
+	pty->mMaxRead = 1024;
+	for ( int update = 0; update < 1024 && pty->mReadOffset != pty->mBuffer.size(); ++update )
+		terminal->update();
+	terminal->update();
+	EXPECT_TRUE( terminal->getProgramStatus().getRecords().empty() );
+	EXPECT_EQ( static_cast<Rune>( 'B' ), display->mCells[1].u );
+
+	pty->mMaxRead = std::numeric_limits<size_t>::max();
+	pty->mBuffer += "\033]9;4;1;" + std::string( 100, '0' ) + "5\a";
+	terminal->update();
+	EXPECT_FALSE( terminal->getProgramStatus().isLegacyProgressActive() );
+}
+
+UTEST( eterm_program_status, probe_replies_in_order_without_a_record ) {
+	auto display = std::make_shared<MockDisplay>();
+	MockPty* pty = nullptr;
+	MockProcess* process = nullptr;
+	auto terminal = makeStatusEmulator( display, pty, process );
+	const int drawEnds = display->mDrawEnds;
+	pty->mWrites.clear();
+
+	pty->mBuffer = "\033]7501;?\033\\";
+	terminal->update();
+	EXPECT_STDSTREQ( "\033]7501;?\033\\", pty->mWrites );
+	EXPECT_EQ( drawEnds, display->mDrawEnds );
+	EXPECT_FALSE( terminal->getProgramStatus().hasPendingChange() );
+
+	pty->mWrites.clear();
+	pty->mBuffer += "\033]7501;?\a\033[c";
+	terminal->update();
+	const auto probe = pty->mWrites.find( "\033]7501;?\033\\" );
+	const auto attributes = pty->mWrites.find( "\033[?" );
+	ASSERT_TRUE( probe != std::string::npos && attributes != std::string::npos );
+	EXPECT_TRUE( probe < attributes );
+	EXPECT_EQ( 0, pty->mOpenReplies );
+
+	// Replies stay within the PTY's reply budget, and a malformed query gets none.
+	pty->mWrites.clear();
+	pty->mAcceptReplies = false;
+	pty->mBuffer += "\033]7501;?\a";
+	terminal->update();
+	EXPECT_EQ( 1, pty->mRefusedReplies );
+	pty->mAcceptReplies = true;
+	pty->mBuffer += "\033]7501;?x\a\033]7501; ?\a";
+	terminal->update();
+	EXPECT_TRUE( pty->mWrites.empty() );
+}
+
+UTEST( eterm_program_status, lifecycle_follows_prompts_resets_and_exit ) {
+	auto display = std::make_shared<MockDisplay>();
+	MockPty* pty = nullptr;
+	MockProcess* process = nullptr;
+	auto terminal = makeStatusEmulator( display, pty, process );
+	const auto& status = terminal->getProgramStatus();
+
+	const std::string reports = "\033]7501;state=working:id=w\a\033]7501;state=blocked:id=b\a"
+								"\033]7501;state=idle:id=i\a\033]7501;state=done:id=d\a"
+								"\033]7501;state=error:id=e\a\033]9;4;1;5\a";
+	pty->mBuffer += reports + "\033]133;A\a";
+	terminal->update();
+	ASSERT_EQ( static_cast<size_t>( 2 ), status.getRecords().size() );
+	EXPECT_TRUE( findStatusRecord( status, "d" ) != nullptr );
+	EXPECT_TRUE( findStatusRecord( status, "e" ) != nullptr );
+	EXPECT_FALSE( status.isLegacyProgressActive() );
+
+	// Other prompt marks, soft resets and screen switches leave everything alone.
+	pty->mBuffer += reports + "\033]133;B\a\033]133;C\a\033]133;D;0\a\033[!p\033[?1049h\033[?1049l";
+	terminal->update();
+	EXPECT_EQ( static_cast<size_t>( 5 ), status.getRecords().size() );
+	EXPECT_TRUE( status.isLegacyProgressActive() );
+
+	pty->mBuffer += "\033c";
+	terminal->update();
+	EXPECT_TRUE( status.getRecords().empty() );
+	EXPECT_FALSE( status.isLegacyProgressActive() );
+
+	// Final output is parsed first, so its done survives the cleanup of its exit.
+	pty->mBuffer += "\033]7501;state=working:id=w\a\033]9;4;3\a\033]7501;state=done:id=final\a";
+	process->mExited.store( true );
+	terminal->update();
+	terminal->update();
+	ASSERT_EQ( static_cast<size_t>( 1 ), status.getRecords().size() );
+	EXPECT_STDSTREQ( "final", status.getRecords().front().id );
+	EXPECT_FALSE( status.isLegacyProgressActive() );
+
+	// A new process starts a new epoch.
+	auto newPty = std::make_unique<MockPty>();
+	terminal->setPtyAndProcess( std::move( newPty ), std::make_unique<MockProcess>() );
+	EXPECT_TRUE( status.getRecords().empty() );
+}
+
+UTEST( eterm, prompt_marks_set_their_own_prompt_state ) {
+	auto display = std::make_shared<MockDisplay>();
+	MockPty* pty = nullptr;
+	MockProcess* process = nullptr;
+	auto terminal = makeStatusEmulator( display, pty, process );
+	std::vector<PromptState> reported;
+	terminal->setPromptStateChangedCb(
+		[&reported]( PromptState state, std::string_view ) { reported.push_back( state ); } );
+
+	const std::pair<const char*, PromptState> marks[] = {
+		{ "\033]133;A\a", PromptState::WaitingPrompt },
+		{ "\033]133;B\a", PromptState::PromptEnded },
+		{ "\033]133;C\a", PromptState::CommandExecuting },
+		{ "\033]133;D;0\a", PromptState::CommandExecuted },
+	};
+	for ( const auto& [sequence, state] : marks ) {
+		pty->mBuffer += sequence;
+		terminal->update();
+		EXPECT_TRUE( terminal->getPromptState() == state );
+		ASSERT_FALSE( reported.empty() );
+		EXPECT_TRUE( reported.back() == state );
+	}
+	EXPECT_EQ( static_cast<size_t>( 4 ), reported.size() );
+}
+
+UTEST( eterm_program_status, legacy_progress_expires_unless_refreshed ) {
+	auto display = std::make_shared<MockDisplay>();
+	MockPty* pty = nullptr;
+	MockProcess* process = nullptr;
+	auto terminal = makeStatusEmulator( display, pty, process );
+	EXPECT_EQ( Milliseconds( 250 ).asMilliseconds(),
+			   terminal->getMaximumIdleWait().asMilliseconds() );
+
+	terminal->setLegacyProgressTimeout( Milliseconds( 40 ) );
+	pty->mBuffer = "\033]7501;state=working\a\033]9;4;1;5\a";
+	terminal->update();
+	EXPECT_TRUE( terminal->getProgramStatus().isLegacyProgressActive() );
+	EXPECT_TRUE( terminal->getMaximumIdleWait() <= Milliseconds( 40 ) );
+
+	// A heartbeat restarts the deadline, even though it changes nothing.
+	for ( int beat = 0; beat < 4; ++beat ) {
+		Sys::sleep( Milliseconds( 15 ) );
+		pty->mBuffer += "\033]9;4;1;5\a";
+		terminal->update();
+		EXPECT_TRUE( terminal->getProgramStatus().isLegacyProgressActive() );
+	}
+
+	Sys::sleep( Milliseconds( 60 ) );
+	terminal->update();
+	EXPECT_FALSE( terminal->getProgramStatus().isLegacyProgressActive() );
+	// Without a heartbeat requirement of its own, OSC 7501 doesn't expire with it.
+	EXPECT_EQ( static_cast<size_t>( 1 ), terminal->getProgramStatus().getRecords().size() );
+	EXPECT_EQ( Milliseconds( 250 ).asMilliseconds(),
+			   terminal->getMaximumIdleWait().asMilliseconds() );
+}
+
+UTEST( eterm_program_status, status_only_reads_do_not_draw_but_visual_output_does ) {
+	auto display = std::make_shared<MockDisplay>();
+	MockPty* pty = nullptr;
+	MockProcess* process = nullptr;
+	auto terminal = makeStatusEmulator( display, pty, process );
+	int drawEnds = display->mDrawEnds;
+
+	for ( int report = 0; report < 1000; ++report ) {
+		pty->mBuffer += "\033]7501;state=working:progress=" + String::toString( report % 100 ) +
+						"\a\033]9;4;1;" + String::toString( report % 100 ) + "\033\\";
+		terminal->update();
+	}
+	EXPECT_EQ( drawEnds, display->mDrawEnds );
+
+	const auto expectDraws = [&]( const std::string& sequence ) {
+		const int before = display->mDrawEnds;
+		pty->mBuffer += sequence;
+		terminal->update();
+		return display->mDrawEnds > before;
+	};
+	EXPECT_TRUE( expectDraws( "text" ) );
+	EXPECT_TRUE( expectDraws( "\033]0;title\a" ) );
+	EXPECT_TRUE( expectDraws( "\033[5;5H" ) );
+	EXPECT_TRUE( expectDraws( "\033]7501;state=done\aX" ) );
+	EXPECT_TRUE( expectDraws( "X\033]7501;state=done\a" ) );
+	EXPECT_TRUE( expectDraws( "\033_Ga=d\033\\" ) );
+
+	// Output that a saturated update left unpresented isn't lost to a status-only read after it.
+	terminal->setPresentationInterval( Seconds( 10 ) );
+	terminal->redraw();
+	terminal->update();
+	drawEnds = display->mDrawEnds;
+	pty->mMaxRead = 1;
+	pty->mBuffer += std::string( 1024, 'Q' );
+	terminal->update();
+	EXPECT_EQ( drawEnds, display->mDrawEnds );
+	pty->mMaxRead = std::numeric_limits<size_t>::max();
+	pty->mBuffer += "\033]9;4;1;9\a";
+	terminal->update();
+	EXPECT_TRUE( display->mDrawEnds > drawEnds );
+}
+
+UTEST( eterm_session, program_status_uses_an_ordered_metadata_channel ) {
+	auto pty = std::make_unique<MockPty>();
+	auto process = std::make_unique<MockProcess>();
+	MockProcess* processPtr = process.get();
+	pty->mLoopWrites = true;
+	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
+	session->drainEvents();
+	const auto initial = waitForSnapshot(
+		session, []( const TerminalSnapshot& snapshot ) { return !snapshot.cells.empty(); } );
+	ASSERT_TRUE( initial != nullptr );
+
+	const auto drainStatus = [&session]( std::vector<TerminalSession::Event>* all = nullptr ) {
+		std::shared_ptr<const ProgramStatusSnapshot> status;
+		for ( auto& event : session->drainEvents() ) {
+			if ( event.type == TerminalSession::EventType::ProgramStatus )
+				status = event.programStatus;
+			if ( all )
+				all->emplace_back( std::move( event ) );
+		}
+		return status;
+	};
+	const auto waitForStatus =
+		[&]( const std::function<bool( const ProgramStatusSnapshot& )>& done ) {
+			const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
+			std::shared_ptr<const ProgramStatusSnapshot> latest;
+			while ( std::chrono::steady_clock::now() < deadline ) {
+				if ( auto status = drainStatus() )
+					latest = std::move( status );
+				if ( latest && done( *latest ) )
+					return latest;
+				std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+			}
+			return latest;
+		};
+
+	Uint64 generation = 0;
+	session->writeRaw( "\033]7501;state=working:progress=1\a" );
+	auto first = waitForStatus( []( const ProgramStatusSnapshot& status ) {
+		return status.presentation.state == ProgramState::Working;
+	} );
+	ASSERT_TRUE( first != nullptr );
+	generation = first->generation;
+	EXPECT_EQ( initial->generation, session->snapshot()->generation );
+
+	// A burst coalesces, keeps the last state, and doesn't touch the cell snapshots.
+	std::string burst;
+	for ( int report = 0; report <= 100; ++report )
+		burst += "\033]7501;state=working:progress=" + String::toString( report ) + "\a";
+	session->writeRaw( std::move( burst ) );
+	int statusEvents = 0;
+	std::shared_ptr<const ProgramStatusSnapshot> latest;
+	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
+	while ( std::chrono::steady_clock::now() < deadline ) {
+		for ( auto& event : session->drainEvents() ) {
+			if ( event.type == TerminalSession::EventType::ProgramStatus ) {
+				++statusEvents;
+				latest = event.programStatus;
+			}
+		}
+		if ( latest && latest->presentation.percentage == 100 )
+			break;
+		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	}
+	ASSERT_TRUE( latest != nullptr );
+	EXPECT_EQ( 100, static_cast<int>( *latest->presentation.percentage ) );
+	EXPECT_TRUE( statusEvents <= 101 );
+	EXPECT_TRUE( latest->generation > generation );
+	EXPECT_EQ( initial->generation, session->snapshot()->generation );
+
+	// The retained snapshot never changes, whatever happens to the worker's records.
+	EXPECT_EQ( 1, static_cast<int>( *first->presentation.percentage ) );
+
+	// done in the final output survives, and status arrives before the exit it depends on.
+	session->writeRaw( "\033]7501;state=done:id=final\a" );
+	ASSERT_TRUE( waitForStatus( []( const ProgramStatusSnapshot& status ) {
+					 return status.records->size() == 2;
+				 } ) != nullptr );
+	processPtr->mExited.store( true );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.processExited;
+				 } ) != nullptr );
+	std::vector<TerminalSession::Event> events;
+	drainStatus( &events );
+	int statusIndex = -1;
+	int exitIndex = -1;
+	std::shared_ptr<const ProgramStatusSnapshot> final;
+	for ( size_t index = 0; index < events.size(); ++index ) {
+		if ( events[index].type == TerminalSession::EventType::ProgramStatus ) {
+			statusIndex = static_cast<int>( index );
+			final = events[index].programStatus;
+		} else if ( events[index].type == TerminalSession::EventType::ProcessExit ) {
+			exitIndex = static_cast<int>( index );
+		}
+	}
+	ASSERT_TRUE( statusIndex >= 0 && exitIndex >= 0 );
+	EXPECT_TRUE( statusIndex < exitIndex );
+	ASSERT_EQ( static_cast<size_t>( 1 ), final->records->size() );
+	EXPECT_STDSTREQ( "final", final->records->front().id );
+	EXPECT_TRUE( final->presentation.state == ProgramState::Done );
+}
+
+UTEST( eterm_ui, hidden_dirty_terminals_do_not_request_frames ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm hidden invalidation", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	SizingProcessFactory factory;
+	auto display = TerminalDisplay::create( app.getWindow(),
+											app.getUI()->getUIThemeManager()->getDefaultFont(), 12,
+											{ 400, 200 }, "shell", {}, "", 100, &factory, false );
+	ASSERT_TRUE( display != nullptr );
+	auto* panel = EE::UI::UIWidget::New();
+	panel->setParent( app.getUI()->getRoot() );
+	panel->setPixelsSize( 400, 200 );
+	auto* terminal = eterm::UI::UITerminal::New( display );
+	terminal->setParent( panel );
+	terminal->setPixelsSize( 400, 200 );
+	for ( bool hideParent : { false, true } ) {
+		panel->setVisible( !hideParent );
+		terminal->setVisible( hideParent );
+		app.getUI()->update( Milliseconds( 1 ) );
+		app.getUI()->draw();
+		display->invalidate();
+		for ( int frame = 0; frame < 5; ++frame ) {
+			terminal->scheduledUpdate( Milliseconds( 16 ) );
+			EXPECT_TRUE( display->isDirty() );
+			EXPECT_FALSE( app.getUI()->invalidated() );
+		}
+	}
+	panel->setVisible( true );
+	terminal->setVisible( true );
+	app.getUI()->draw();
+	display->invalidate();
+	terminal->scheduledUpdate( Milliseconds( 16 ) );
+	EXPECT_TRUE( app.getUI()->invalidated() );
+	app.getUI()->draw();
+	EXPECT_FALSE( display->isDirty() );
+}

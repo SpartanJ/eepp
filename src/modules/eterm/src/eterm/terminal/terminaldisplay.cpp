@@ -937,6 +937,10 @@ void TerminalDisplay::drainSessionEvents() {
 				Log::error( "Terminal worker error: %s", event.data.c_str() );
 				sendEvent( { EventType::WORKER_ERROR, std::move( event.data ) } );
 				break;
+			case TerminalSession::EventType::ProgramStatus:
+				mProgramStatus = std::move( event.programStatus );
+				sendEvent( { EventType::PROGRAM_STATUS_CHANGE } );
+				break;
 			case TerminalSession::EventType::SnapshotReady:
 				break;
 		}

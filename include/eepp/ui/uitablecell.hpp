@@ -46,8 +46,24 @@ class EE_API UITableCell : public UIPushButton {
 
 	virtual void updateCell( Model* ){};
 
+	/** Retains a private mutable instance of shared model icon data across cell redraws. */
+	DrawablePtr getIconInstance( const DrawablePtr& source ) {
+		if ( mIconSource == source ) {
+			if ( auto instance = mIconInstance.lock() )
+				return instance;
+		}
+		// Source identity also detects font-cache resets and replacement icon resources.
+		// Keep the source alive so an address cannot be recycled underneath the cache.
+		auto instance = source ? source->clone() : DrawablePtr{};
+		mIconSource = source;
+		mIconInstance = instance;
+		return instance;
+	}
+
   protected:
 	ModelIndex mCurIndex;
+	DrawablePtr mIconSource;
+	DrawableWeakPtr mIconInstance;
 
 	UITableCell() : UITableCell( "table::cell" ) {}
 

@@ -145,6 +145,7 @@ class TerminalDisplay {
 		CLIPBOARD,
 		RESTART_FAILURE,
 		WORKER_ERROR,
+		PROGRAM_STATUS_CHANGE,
 		UNKNOWN
 	};
 
@@ -341,6 +342,13 @@ class TerminalDisplay {
 
 	void setPromptStateChangedCallback( PromptStateChangedFunc callback );
 
+	/** The latest status reported by the programs in this terminal (OSC 7501 and OSC 9;4), or
+	 * nullptr if none ever was. Immutable, so it can be retained. PROGRAM_STATUS_CHANGE announces a
+	 * new one, on the UI thread. */
+	const std::shared_ptr<const ProgramStatusSnapshot>& getProgramStatus() const {
+		return mProgramStatus;
+	}
+
 	void setCursorMode( TerminalCursorMode mode );
 
 	TerminalCursorMode getCursorMode() const;
@@ -397,6 +405,7 @@ class TerminalDisplay {
 	std::vector<Color> mColors;
 	std::shared_ptr<TerminalSession> mSession;
 	std::shared_ptr<const TerminalSnapshot> mSnapshot;
+	std::shared_ptr<const ProgramStatusSnapshot> mProgramStatus;
 	std::unique_ptr<KittyGraphicsRenderer> mGraphicsRenderer;
 	struct HyperlinkHover;
 	std::unique_ptr<HyperlinkHover> mHyperlinkHover;

@@ -84,6 +84,8 @@ void ITerminalDisplay::drawGraphics( std::shared_ptr<TerminalGraphicsPresentatio
 
 void ITerminalDisplay::onProcessExit( int /*exitCode*/ ) {}
 
+void ITerminalDisplay::onProgramStatusChange( std::shared_ptr<const ProgramStatusSnapshot> ) {}
+
 void ITerminalDisplay::onScrollPositionChange() {}
 
 }} // namespace eterm::Terminal

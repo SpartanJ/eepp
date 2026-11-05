@@ -135,6 +135,59 @@ primary selection. Unknown targets, invalid Base64, embedded NUL and writes exce
 decoded text are ignored. Clipboard reads are unsupported; a read query never returns local
 clipboard content.
 
+## Program status (OSC 7501 and OSC 9;4)
+
+Programs can report what they are doing without eterm reading their output or guessing from
+activity. eterm supports two independent protocols:
+
+```sh
+# OSC 7501 (revision 0.4): records with state, optional kind, progress, app, title and msg.
+msg=$(printf '%s' 'Approve deployment?' | base64 | tr -d '\n')
+printf '\033]7501;state=working:app=demo:progress=40\033\\'
+printf '\033]7501;state=blocked:kind=permission:app=demo:msg=%s\033\\' "$msg"
+printf '\033]7501;state=done:id=build/test\033\\'
+printf '\033]7501;state=clear\033\\'
+
+# OSC 9;4: a single progress value. 0 clears, 1 normal, 2 error, 3 indeterminate, 4 paused/warning.
+printf '\033]9;4;1;75\a'
+printf '\033]9;4;0\a'
+```
+
+`OSC 7501;?` is answered with `OSC 7501;?`, which means the default state and kind sets. Reports
+over a limit of the protocol, with invalid base64, invalid UTF-8 or control characters in `msg` or
+`title`, or with an invalid `id` are discarded whole. eterm accepts up to 4095 bytes when a report
+ends in BEL, and up to 4096 when it ends in `ESC \\`. Other `OSC 9` sequences, such as desktop
+notifications, are not supported.
+
+Records and progress are never merged. A terminal's single indicator is chosen like this:
+
+- If any record exists, one record is shown. `blocked` wins, then `error`, `working`, `done` and
+  `idle`; the latest update decides between equal states.
+- Otherwise OSC 9;4 progress is shown. After an OSC 7501 report, this needs a new OSC 9;4 report
+  that arrives while no record exists: clearing the records doesn't bring back older progress.
+
+| Event | OSC 7501 records | OSC 9;4 progress |
+| --- | --- | --- |
+| New prompt (OSC 133 `A`) or process exit | Keeps `done` and `error` only | Cleared |
+| No new report for 15 seconds | Kept: they need no heartbeat | Cleared |
+| Full reset (RIS) or restart | Cleared | Cleared |
+| Soft reset (DECSTR) or screen switch | Kept | Kept |
+
+With `close_on_exit`, a tab whose shell exits closes as usual, status included.
+
+In eterm, the status replaces the tab's icon, a reported percentage draws a bar along the tab's
+bottom edge, and the details appear in the tab's tooltip, without changing the title. A `done` or
+`error` that arrives while its terminal isn't the focused one in the focused window also colors the
+tab's title until you focus that terminal. Then `done` returns to the normal icon, and `error` keeps
+its icon until the program clears it. Seeing a result changes only the tab: the program's record
+stays, and nothing is sent to the program. `working` and `blocked` always show. `show_program_status` in `[terminal]` (**Show Program Status** in Settings →
+Terminal) hides it, and doesn't change what programs can report or query.
+
+Applications that embed the terminal get `TerminalDisplay::getProgramStatus()`, and
+`EventType::PROGRAM_STATUS_CHANGE` on the UI thread. A snapshot is immutable, holds both protocols'
+state, and offers `presentation` with the selection above. Its presented text has bidi overrides
+and invisible formatting removed, but remains untrusted: never treat it as markup or a command.
+
 ## Grapheme clusters (mode 2027)
 
 A character can be written as several codepoints: a letter followed by combining accents, an emoji

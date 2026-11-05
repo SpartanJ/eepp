@@ -145,12 +145,14 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 		Data = 9,
 		PromptState = 10,
 		Color = 11,
-		Error = 12
+		Error = 12,
+		ProgramStatus = 13
 	};
 
 	struct Event {
 		EventType type{ EventType::Error };
 		std::string data;
+		std::shared_ptr<const ProgramStatusSnapshot> programStatus;
 		Uint64 generation{ 0 };
 		int value{ 0 };
 		PromptState promptState{ PromptState::Unknown };

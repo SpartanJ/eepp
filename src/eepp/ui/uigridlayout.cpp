@@ -32,6 +32,8 @@ Sizei UIGridLayout::getBoxMargin() const {
 }
 
 UIGridLayout* UIGridLayout::setBoxMargin( const Sizei& span ) {
+	if ( mBoxMargin == span )
+		return this;
 	mBoxMargin = span;
 	invalidateDraw();
 	return this;
@@ -42,6 +44,8 @@ UIGridLayout::ElementMode UIGridLayout::getColumnMode() const {
 }
 
 UIGridLayout* UIGridLayout::setColumnMode( const UIGridLayout::ElementMode& mode ) {
+	if ( mColumnMode == mode )
+		return this;
 	mColumnMode = mode;
 	updateLayout();
 	invalidateDraw();
@@ -53,6 +57,8 @@ UIGridLayout::ElementMode UIGridLayout::getRowMode() const {
 }
 
 UIGridLayout* UIGridLayout::setRowMode( const UIGridLayout::ElementMode& mode ) {
+	if ( mRowMode == mode )
+		return this;
 	mRowMode = mode;
 	tryUpdateLayout();
 	invalidateDraw();
@@ -64,6 +70,8 @@ Float UIGridLayout::getColumnWeight() const {
 }
 
 UIGridLayout* UIGridLayout::setColumnWeight( const Float& columnWeight ) {
+	if ( mColumnWeight == columnWeight )
+		return this;
 	mColumnWeight = columnWeight;
 	if ( mColumnMode == Weight )
 		tryUpdateLayout();
@@ -76,6 +84,8 @@ int UIGridLayout::getColumnWidth() const {
 }
 
 UIGridLayout* UIGridLayout::setColumnWidth( int columnWidth ) {
+	if ( mColumnWidth == columnWidth )
+		return this;
 	mColumnWidth = columnWidth;
 	if ( mColumnMode == Size )
 		tryUpdateLayout();
@@ -88,6 +98,8 @@ int UIGridLayout::getRowHeight() const {
 }
 
 UIGridLayout* UIGridLayout::setRowHeight( int rowHeight ) {
+	if ( mRowHeight == rowHeight )
+		return this;
 	mRowHeight = rowHeight;
 	if ( mRowMode == Size )
 		tryUpdateLayout();
@@ -100,6 +112,8 @@ Float UIGridLayout::getRowWeight() const {
 }
 
 UIGridLayout* UIGridLayout::setRowWeight( const Float& rowWeight ) {
+	if ( mRowWeight == rowWeight )
+		return this;
 	mRowWeight = rowWeight;
 	if ( mRowMode == Weight )
 		tryUpdateLayout();

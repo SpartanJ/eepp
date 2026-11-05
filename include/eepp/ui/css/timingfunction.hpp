@@ -21,6 +21,7 @@ class EE_API TimingFunction {
 		return parse( std::string_view{ timingFunction } );
 	}
 
+	/** Ease::CubizBezier: x1, y1, x2, y2. Ease::Steps: the step count and its StepPosition. */
 	Ease::Interpolation interpolation{ Ease::None };
 	Parameters parameters;
 };

@@ -36,9 +36,11 @@ UITerminal* TerminalManager::createTerminalInSplitter(
 
 	if ( orientation == NewTerminalOrientation::StatusBarPanel &&
 		 mApp->getStatusTerminalController() ) {
-		mApp->getStatusTerminalController()->show();
-		return mApp->getStatusTerminalController()->createTerminal( directory, std::move( program ),
-																	std::move( args ), env );
+		auto* controller = mApp->getStatusTerminalController();
+		auto* terminal =
+			controller->createTerminal( directory, std::move( program ), std::move( args ), env );
+		controller->show();
+		return terminal;
 	}
 	if ( !splitter )
 		return nullptr;

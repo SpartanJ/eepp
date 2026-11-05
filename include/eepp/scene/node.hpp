@@ -2540,6 +2540,11 @@ class EE_API Node : public Transformable {
 	 */
 	void setChildrenDirty();
 
+	/** Applies the current origin point, which is a change like any other for a transform. */
+	void applyRotationOrigin();
+
+	void applyScaleOrigin();
+
 	/**
 	 * @brief Enables clipping planes for specific rectangle.
 	 *
