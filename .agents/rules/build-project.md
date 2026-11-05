@@ -21,6 +21,15 @@ there. From the repository root, run `projects/macos/make_no_fw.sh` first, forwa
 * Debug unit tests: `projects/macos/make_no_fw.sh config=debug eepp-unit_tests`
 * Release unit tests: `projects/macos/make_no_fw.sh config=release eepp-unit_tests`
 * Clean: `projects/macos/make_no_fw.sh config=<build_type> clean`
+* AddressSanitizer, for memory-safety checks only: `projects/macos/make_no_fw.sh --address-sanitizer config=debug eepp-unit_tests`
+
+Debug builds on macOS don't use AddressSanitizer unless `--address-sanitizer` is passed, which is
+only supported in debug builds. Instrumented objects stay in `obj/<os>/asan/`, so switching only
+recompiles what changed and doesn't need a clean. On macOS the scripts also relink: they remove the
+shared debug libraries and binaries when the flavour changes, so a debug target that isn't rebuilt
+after a switch is missing rather than stale. Run the tests with
+`ASAN_OPTIONS=detect_odr_violation=0`, because libpng is linked into both the test binary and the
+shared library.
 
 If `make_no_fw.sh` fails, retry once with `projects/macos/make.sh`, preserving the exact same
 arguments. Do not add sanitizer, linker, framework, generator, architecture, or parallelism flags

@@ -79,6 +79,8 @@ void AppConfig::load() {
 		mIni.getValueB( "window", "always_show_tab_bar", window.alwaysShowTabBar );
 	window.showTabBarWhenSplit =
 		mIni.getValueB( "window", "show_tab_bar_when_split", window.showTabBarWhenSplit );
+	window.tabPosition = UITabWidget::tabPositionFromString( mIni.getValue(
+		"window", "tab_position", UITabWidget::tabPositionToString( window.tabPosition ) ) );
 	window.rendererVersion = Renderer::glVersionFromString(
 		mIni.getValue( "window", "renderer_version",
 					   Renderer::graphicsLibraryVersionToString( window.rendererVersion ) ) );
@@ -95,6 +97,8 @@ void AppConfig::load() {
 	windowState.displayIndex =
 		mState.getValueI( "window", "display_index", windowState.displayIndex );
 	windowState.maximized = mState.getValueB( "window", "maximized", windowState.maximized );
+	windowState.tabBarWidth =
+		mState.getValueF( "window", "tab_bar_width", windowState.tabBarWidth );
 }
 
 bool AppConfig::save() {
@@ -152,6 +156,8 @@ bool AppConfig::savePreferences() {
 	mIni.setValueB( "window", "benchmark_mode", window.benchmarkMode );
 	mIni.setValueB( "window", "warn_before_closing", window.warnBeforeClose );
 	mIni.setValueB( "window", "always_show_tab_bar", window.alwaysShowTabBar );
+	mIni.setValue( "window", "tab_position",
+				   UITabWidget::tabPositionToString( window.tabPosition ) );
 	mIni.setValueB( "window", "show_tab_bar_when_split", window.showTabBarWhenSplit );
 	mIni.setValue( "window", "renderer_version",
 				   Renderer::graphicsLibraryVersionToString( window.rendererVersion ) );
@@ -171,6 +177,7 @@ bool AppConfig::saveWindowState() {
 	mState.setValueI( "window", "y", windowState.position.y );
 	mState.setValueI( "window", "display_index", windowState.displayIndex );
 	mState.setValueB( "window", "maximized", windowState.maximized );
+	mState.setValueF( "window", "tab_bar_width", windowState.tabBarWidth );
 	return mState.writeFile();
 }
 

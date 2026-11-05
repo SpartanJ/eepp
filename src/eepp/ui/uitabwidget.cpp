@@ -6,6 +6,7 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -51,14 +52,52 @@ class TabsModel final : public Model {
 	bool mInvertView{ false };
 };
 
+// Minimum width of the panes of Left/Right tabs, and the width they need to fit with the separator.
+static constexpr const char* SidePaneMinWidth = "64dp";
+static constexpr Float SidePanesFitWidth = 132.f;
+
+static const char* tabPositionClass( UITabWidget::TabPosition position ) {
+	switch ( position ) {
+		case UITabWidget::TabPosition::Bottom:
+			return "tabs-bottom";
+		case UITabWidget::TabPosition::Left:
+			return "tabs-left";
+		case UITabWidget::TabPosition::Right:
+			return "tabs-right";
+		case UITabWidget::TabPosition::Top:
+		default:
+			return "tabs-top";
+	}
+}
+
+static const char* tabOrientationClass( UITabWidget::TabPosition position ) {
+	return position == UITabWidget::TabPosition::Left || position == UITabWidget::TabPosition::Right
+			   ? "tabs-vertical"
+			   : "tabs-horizontal";
+}
+
 UITabWidget* UITabWidget::New() {
 	return eeNew( UITabWidget, () );
+}
+
+UITabWidget* UITabWidget::fromOwnedNode( const Node* node ) {
+	Node* container = node ? node->getParent() : nullptr;
+	Node* parent = container ? container->getParent() : nullptr;
+	// Left/Right tabs keep the container inside the internal splitter.
+	if ( parent && parent->isType( UI_TYPE_SPLITTER ) )
+		parent = parent->getParent();
+	if ( parent && parent->isType( UI_TYPE_TABWIDGET ) &&
+		 parent->asType<UITabWidget>()->getContainerNode() == container ) {
+		return parent->asType<UITabWidget>();
+	}
+	return nullptr;
 }
 
 UITabWidget::UITabWidget() :
 	UIWidget( "tabwidget" ),
 	mNodeContainer( NULL ),
 	mTabBar( NULL ),
+	mTabScroll( NULL ),
 	mTabSelected( NULL ),
 	mTabSelectedIndex( eeINDEX_NOT_FOUND ),
 	mHideTabBarOnSingleTab( false ),
@@ -71,6 +110,8 @@ UITabWidget::UITabWidget() :
 	mFlags |= UI_SCROLLABLE;
 	setHorizontalAlign( UI_HALIGN_CENTER );
 	setClipType( ClipType::ContentBox );
+	addClass( tabPositionClass( mTabPosition ) );
+	addClass( tabOrientationClass( mTabPosition ) );
 
 	mTabBar = UIWidget::NewWithTag( "tabwidget::tabbar" );
 	mTabBar->setPixelsSize( mSize.getWidth(), mStyleConfig.TabHeight )
@@ -84,13 +125,7 @@ UITabWidget::UITabWidget() :
 		->setParent( this )
 		->setPosition( 0, mStyleConfig.TabHeight );
 
-	mTabScroll = UIScrollBar::NewHorizontalWithTag( "scrollbarmini" );
-	mTabScroll->setParent( mTabBar );
-	mTabScroll->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
-	mEventConnections +=
-		mTabScroll->connect( Event::OnSizeChange, [this]( const Event* ) { updateScrollBar(); } );
-	mEventConnections +=
-		mTabScroll->connect( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
+	createTabScroll();
 
 	onSizeChange();
 
@@ -142,8 +177,130 @@ void UITabWidget::onThemeLoaded() {
 	UIWidget::onThemeLoaded();
 }
 
+bool UITabWidget::isTabBarHidden() const {
+	return mHideTabBar || ( getTabCount() < 2 && mHideTabBarOnSingleTab );
+}
+
+void UITabWidget::createTabScroll() {
+	// A scrollbar keeps sizes of its orientation that don't apply to the other one, so a change of
+	// orientation replaces it.
+	if ( mTabScroll ) {
+		mEventConnections.clear();
+		mTabScroll->setVisible( false );
+		mTabScroll->setEnabled( false );
+		mTabScroll->close();
+	}
+
+	const bool vertical = isTabBarVertical();
+	mTabScroll = vertical ? UIScrollBar::NewVerticalWithTag( "scrollbarmini" )
+						  : UIScrollBar::NewHorizontalWithTag( "scrollbarmini" );
+	mTabScroll->setParent( mTabBar );
+	mTabScroll->setLayoutSizePolicy( vertical ? SizePolicy::WrapContent : SizePolicy::Fixed,
+									 vertical ? SizePolicy::Fixed : SizePolicy::WrapContent );
+	mEventConnections +=
+		mTabScroll->connect( Event::OnSizeChange, [this]( const Event* ) { updateScrollBar(); } );
+	mEventConnections +=
+		mTabScroll->connect( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
+}
+
+bool UITabWidget::isSideTabBarCollapsed() const {
+	// A widget's minimum size always wins over the size the splitter gives it, so when the panes
+	// don't fit they would push the content out of the widget. The content takes priority.
+	return isTabBarHidden() || mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right <
+								   PixelDensity::dpToPx( SidePanesFitWidth );
+}
+
+void UITabWidget::createInternalSplitter() {
+	mInternalSplitter = UISplitter::New();
+	mTabBarViewport = UIWidget::NewWithTag( "tabwidget::viewport" );
+	mInternalSplitter->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	// A hidden tab bar collapses its pane to a 0dp edge partition, which also hides the divider.
+	mInternalSplitter->setAlwaysShowSplitter( false );
+	mInternalSplitter->setHideSplitterOnEdge( true );
+	mInternalSplitter->setParent( this );
+	mTabBarViewport->setClipType( ClipType::ContentBox );
+	mTabBarViewport->setParent( mInternalSplitter );
+	mTabBar->setParent( mTabBarViewport );
+	mTabBar->setPixelsPosition( 0, 0 );
+	mNodeContainer->setParent( mInternalSplitter );
+
+	// A separator drag resizes the panes without resizing this widget.
+	mTabBarViewport->on( Event::OnSizeChange, [this]( const Event* ) {
+		posTabs();
+		updateScroll( true );
+	} );
+	mContainerSizeCb = mNodeContainer->on( Event::OnSizeChange, [this]( const Event* ) {
+		// Hidden pages are sized when they're selected: a drag must not resize all of them.
+		refreshOwnedWidget( mTabSelected );
+	} );
+	mInternalSplitter->on( Event::OnValueChange, [this]( const Event* ) {
+		mTabBarWidth = mInternalSplitter->getSplitPartition().getValue();
+		sendCommonEvent( Event::OnValueChange );
+	} );
+}
+
+void UITabWidget::removeInternalSplitter() {
+	mNodeContainer->removeEventListener( mContainerSizeCb );
+	mContainerSizeCb = 0;
+	// Clearing the equation doesn't clear the minimum size that it resolved to.
+	mNodeContainer->setMinWidthEq( "" );
+	mNodeContainer->setMinWidth( 0 );
+	mInternalSplitter->setResizable( false );
+	mTabBar->setParent( this );
+	mNodeContainer->setParent( this );
+	// The viewport closes with the splitter, that can remain until the end of the tick.
+	mInternalSplitter->setVisible( false );
+	mInternalSplitter->setEnabled( false );
+	mInternalSplitter->close();
+	mInternalSplitter = nullptr;
+	mTabBarViewport = nullptr;
+}
+
+void UITabWidget::updateInternalSplitterOrder() {
+	const bool left = mTabPosition == TabPosition::Left;
+	if ( mInternalSplitter->getFirstWidget() != ( left ? mTabBarViewport : mNodeContainer ) )
+		mInternalSplitter->swap();
+	mInternalSplitter->setPartitionOrigin( left ? UISplitter::PartitionOrigin::Start
+												: UISplitter::PartitionOrigin::End );
+}
+
+void UITabWidget::updateInternalSplitterLayout() {
+	const bool collapsed = isSideTabBarCollapsed();
+	mTabBarViewport->setVisible( !collapsed );
+	mTabBarViewport->setEnabled( !collapsed );
+	mTabBar->setVisible( !collapsed );
+	mTabBar->setEnabled( !collapsed );
+	mTabBarViewport->setMinWidthEq( collapsed ? "" : SidePaneMinWidth );
+	mNodeContainer->setMinWidthEq( collapsed ? "" : SidePaneMinWidth );
+	if ( collapsed ) {
+		mTabBarViewport->setMinWidth( 0 );
+		mNodeContainer->setMinWidth( 0 );
+	}
+	mInternalSplitter->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
+	mInternalSplitter->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+									  mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
+
+	// A collapsing bar takes its separator away, so a drag can't keep owning the layout.
+	if ( collapsed )
+		mInternalSplitter->cancelSeparatorDrag();
+
+	// While dragging, the separator owns the partition and the layout of the panes.
+	if ( mInternalSplitter->isSeparatorDragging() )
+		return;
+
+	mInternalSplitter->setSplitPartition(
+		StyleSheetLength( collapsed ? 0.f : mTabBarWidth, StyleSheetLength::Dp ) );
+	if ( mInternalSplitter->isLayoutDirty() )
+		mInternalSplitter->updateLayout();
+}
+
 void UITabWidget::setContainerSize() {
-	if ( mHideTabBar || ( getTabCount() < 2 && mHideTabBarOnSingleTab ) ) {
+	if ( isTabBarVertical() ) {
+		updateInternalSplitterLayout();
+		return;
+	}
+
+	if ( isTabBarHidden() ) {
 		mTabBar->setVisible( false );
 		mTabBar->setEnabled( false );
 		mNodeContainer->setPosition( mPadding.Left, mPadding.Top );
@@ -163,8 +320,15 @@ void UITabWidget::setContainerSize() {
 		Float totalSize = totalTabsWidth > mSize.getWidth() ? totalTabsWidth : mSize.getWidth();
 		mTabBar->setPixelsSize( totalSize - mPaddingPx.Left - mPaddingPx.Right,
 								PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
-		mTabBar->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
-		mNodeContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
+		if ( mTabPosition == TabPosition::Bottom ) {
+			mTabBar->setPixelsPosition( mPaddingPx.Left,
+										mSize.getHeight() - mPaddingPx.Bottom -
+											PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
+			mNodeContainer->setPosition( mPadding.Left, mPadding.Top );
+		} else {
+			mTabBar->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
+			mNodeContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
+		}
 		Sizef s( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 				 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) -
 					 mPaddingPx.Top - mPaddingPx.Bottom );
@@ -219,6 +383,10 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 			return getAllowSwitchTabsInEmptySpaces() ? "true" : "false";
 		case PropertyId::TabCloseButtonVisible:
 			return getTabCloseButtonVisible() ? "true" : "false";
+		case PropertyId::TabPosition:
+			return tabPositionToString( getTabPosition() );
+		case PropertyId::TabBarWidth:
+			return String::fromFloat( getTabBarWidth(), "dp" );
 		case PropertyId::DroppableHoveringColor:
 			return !mDroppableHoveringColorWasSet
 					   ? UIWidget::getPropertyString( propertyDef, propertyIndex )
@@ -242,7 +410,9 @@ std::vector<PropertyId> UITabWidget::getPropertiesImplemented() const {
 				   PropertyId::TabBarAllowDragAndDrop,
 				   PropertyId::TabAllowSwitchTabsInEmptySpaces,
 				   PropertyId::DroppableHoveringColor,
-				   PropertyId::TabCloseButtonVisible };
+				   PropertyId::TabCloseButtonVisible,
+				   PropertyId::TabPosition,
+				   PropertyId::TabBarWidth };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -266,6 +436,14 @@ void UITabWidget::invalidate( Node* invalidator ) {
 		} else if ( invalidator->getParent() == mNodeContainer ) {
 			if ( invalidator->isVisible() )
 				mNodeDrawInvalidator->invalidate( mNodeContainer );
+		} else if ( mInternalSplitter && ( invalidator == mInternalSplitter ||
+										   invalidator->getParent() == mInternalSplitter ) ) {
+			// The separator and the viewport are outside of both the tab bar and the container.
+			if ( NULL != mNodeDrawInvalidator ) {
+				mNodeDrawInvalidator->invalidate( this );
+			} else if ( NULL != mSceneNode ) {
+				mSceneNode->invalidate( this );
+			}
 		} else {
 			Node* container = invalidator->getParent();
 			while ( container->getParent() != NULL && container->getParent() != mNodeContainer ) {
@@ -322,6 +500,12 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::TabCloseButtonVisible:
 			setTabCloseButtonVisible( attribute.asBool() );
+			break;
+		case PropertyId::TabPosition:
+			setTabPosition( tabPositionFromString( attribute.value() ) );
+			break;
+		case PropertyId::TabBarWidth:
+			setTabBarWidth( attribute.asDpDimension( this ) );
 			break;
 		case PropertyId::DroppableHoveringColor:
 			setDroppableHoveringColor( attribute.asColor() );
@@ -428,7 +612,77 @@ Float UITabWidget::getTabsHeight() const {
 	return mStyleConfig.TabHeight;
 }
 
+void UITabWidget::setTabPosition( TabPosition position ) {
+	if ( position == mTabPosition )
+		return;
+
+	const char* previousClass = tabPositionClass( mTabPosition );
+	const char* previousOrientationClass = tabOrientationClass( mTabPosition );
+	const bool wasVertical = isTabBarVertical();
+	mTabPosition = position;
+	const bool vertical = isTabBarVertical();
+
+	if ( vertical != wasVertical ) {
+		if ( vertical ) {
+			createInternalSplitter();
+		} else {
+			removeInternalSplitter();
+		}
+		createTabScroll();
+	}
+
+	if ( vertical )
+		updateInternalSplitterOrder();
+
+	removeClass( previousClass );
+	if ( vertical != wasVertical )
+		removeClass( previousOrientationClass );
+	addClass( tabPositionClass( mTabPosition ) );
+	addClass( tabOrientationClass( mTabPosition ) );
+
+	orderTabs();
+}
+
+void UITabWidget::setTabBarWidth( Float widthDp ) {
+	if ( widthDp != mTabBarWidth ) {
+		mTabBarWidth = widthDp;
+		setContainerSize();
+	}
+}
+
+void UITabWidget::posTabRows() {
+	if ( isSideTabBarCollapsed() )
+		return;
+
+	const Sizef viewportSize( mTabBarViewport->getPixelsSize() );
+	Float y = mTabBar->getPixelsPadding().Top;
+
+	// Each row resizing itself would reorder every tab.
+	mPositioningTabRows = true;
+	for ( UITab* tab : mTabs ) {
+		const Float rowHeight = mStyleConfig.TabHeight != 0
+									? PixelDensity::dpToPx( mStyleConfig.TabHeight )
+									: tab->getPixelsSize().getHeight();
+		if ( tab->getPixelsSize() != Sizef( viewportSize.getWidth(), rowHeight ) )
+			tab->setPixelsSize( viewportSize.getWidth(), rowHeight );
+		if ( !tab->isDragging() )
+			tab->setPixelsPosition( 0, y );
+		y += rowHeight + mStyleConfig.TabSeparation;
+	}
+	mPositioningTabRows = false;
+
+	mTabBar->setPixelsSize( viewportSize.getWidth(),
+							eemax( viewportSize.getHeight(), getTabsExtent() ) );
+
+	updateScrollBar();
+}
+
 void UITabWidget::posTabs() {
+	if ( isTabBarVertical() ) {
+		posTabRows();
+		return;
+	}
+
 	Int32 x = 0;
 	Int32 y = 0;
 	Int32 alignOffset = 0;
@@ -519,6 +773,9 @@ void UITabWidget::zorderTabs() {
 }
 
 void UITabWidget::orderTabs() {
+	for ( UITab* tab : mTabs )
+		tab->setVerticalRow( isTabBarVertical() );
+
 	applyThemeToTabs();
 
 	setContainerSize();
@@ -1087,7 +1344,7 @@ void UITabWidget::onSizeChange() {
 
 void UITabWidget::onChildCountChange( Node* child, const bool& removed ) {
 	if ( !removed && child != mTabBar && child != mNodeContainer && child != mTabScroll &&
-		 child != mTabSwitcher ) {
+		 child != mTabSwitcher && child != mInternalSplitter ) {
 		if ( child->isType( UI_TYPE_TAB ) ) {
 			// This must be a tab that was dragging.
 			if ( std::find( mTabs.begin(), mTabs.end(), child->asType<UITab>() ) != mTabs.end() )
@@ -1121,6 +1378,14 @@ void UITabWidget::onPaddingChange() {
 	onSizeChange();
 
 	UIWidget::onPaddingChange();
+}
+
+void UITabWidget::onClassChange() {
+	// Replacing the widget classes must not lose the ones that theme the tab position.
+	addClass( tabPositionClass( mTabPosition ) );
+	addClass( tabOrientationClass( mTabPosition ) );
+
+	UIWidget::onClassChange();
 }
 
 Uint32 UITabWidget::onMessage( const NodeMessage* msg ) {
@@ -1170,27 +1435,53 @@ Uint32 UITabWidget::onMouseWheel( const Vector2f& offset, bool flipped ) {
 	return UIWidget::onMouseWheel( offset, flipped );
 }
 
+Rectf UITabWidget::getDropBounds() const {
+	Rectf bounds( 0, 0, mSize.x, mSize.y );
+
+	if ( !mTabBar->isVisible() )
+		return bounds;
+
+	// Top tabs measure the split edges from the whole widget, excluding only the strip itself.
+	if ( mTabPosition == TabPosition::Bottom ) {
+		bounds.Bottom = mTabBar->getPixelsPosition().y;
+	} else if ( isTabBarVertical() ) {
+		bounds.Left =
+			mInternalSplitter->getPixelsPosition().x + mNodeContainer->getPixelsPosition().x;
+		bounds.Right = bounds.Left + mNodeContainer->getPixelsSize().getWidth();
+	}
+
+	return bounds;
+}
+
 std::optional<SplitDirection> UITabWidget::getDropDirection() const {
 	Vector2f mousePos( getEventDispatcher()->getMousePosf() );
 	mousePos = convertToNodeSpace( mousePos );
 
-	if ( mTabBar->isVisible() && mousePos.y <= mTabBar->getPixelsSize().y )
+	if ( mTabPosition == TabPosition::Top && mTabBar->isVisible() &&
+		 mousePos.y <= mTabBar->getPixelsSize().y )
+		return {};
+
+	const Rectf bounds( getDropBounds() );
+
+	if ( !bounds.contains( mousePos ) )
 		return {};
 
 	// Tab still attached to parent?
 	Node* nodeDragging = getUISceneNode()->getEventDispatcher()->getNodeDragging();
 	if ( nodeDragging && nodeDragging->isType( UI_TYPE_TAB ) &&
-		 !( nodeDragging->asType<UINode>()->getFlags() & UI_DRAG_VERTICAL ) ) {
+		 !nodeDragging->asType<UITab>()->mDragDetached ) {
 		return {};
 	}
 
-	if ( mousePos.y <= mSize.y * mSplitEdgePercent ) {
+	const Sizef size( bounds.getSize() );
+
+	if ( mousePos.y <= bounds.Top + size.y * mSplitEdgePercent ) {
 		return SplitDirection::Top;
-	} else if ( mousePos.y >= mSize.y - mSize.y * mSplitEdgePercent ) {
+	} else if ( mousePos.y >= bounds.Bottom - size.y * mSplitEdgePercent ) {
 		return SplitDirection::Bottom;
-	} else if ( mousePos.x <= mSize.x * mSplitEdgePercent ) {
+	} else if ( mousePos.x <= bounds.Left + size.x * mSplitEdgePercent ) {
 		return SplitDirection::Left;
-	} else if ( mousePos.x >= mSize.x - mSize.x * mSplitEdgePercent ) {
+	} else if ( mousePos.x >= bounds.Right - size.x * mSplitEdgePercent ) {
 		return SplitDirection::Right;
 	}
 
@@ -1201,23 +1492,32 @@ void UITabWidget::drawDroppableHovering() {
 	if ( mSplitFn ) {
 		auto dir = getDropDirection();
 		auto rect( getScreenBounds() );
-		if ( mTabBar->isVisible() )
-			rect.Top += mTabBar->getPixelsSize().getHeight();
+		const Rectf bounds( getDropBounds() );
+		const Sizef size( bounds.getSize() );
+		if ( mTabPosition == TabPosition::Top ) {
+			if ( mTabBar->isVisible() )
+				rect.Top += mTabBar->getPixelsSize().getHeight();
+		} else {
+			rect.Right = rect.Left + bounds.Right;
+			rect.Bottom = rect.Top + bounds.Bottom;
+			rect.Left += bounds.Left;
+			rect.Top += bounds.Top;
+		}
 
 		if ( dir ) {
 			constexpr auto splitSize = 0.5f;
 			switch ( *dir ) {
 				case SplitDirection::Top:
-					rect.Bottom = rect.Top + mSize.y * splitSize;
+					rect.Bottom = rect.Top + size.y * splitSize;
 					break;
 				case SplitDirection::Bottom:
-					rect.Top = rect.Bottom - mSize.y * splitSize;
+					rect.Top = rect.Bottom - size.y * splitSize;
 					break;
 				case SplitDirection::Left:
-					rect.Right = rect.Left + mSize.x * splitSize;
+					rect.Right = rect.Left + size.x * splitSize;
 					break;
 				case SplitDirection::Right:
-					rect.Left = rect.Right - mSize.x * splitSize;
+					rect.Left = rect.Right - size.x * splitSize;
 					break;
 			}
 		} else if ( std::any_of( mTabs.begin(), mTabs.end(),
@@ -1253,6 +1553,15 @@ UIWidget* UITabWidget::getContainerNode() const {
 }
 
 Float UITabWidget::getTabsExtent() const {
+	if ( isTabBarVertical() ) {
+		// Summed rather than read from the last tab, which can be the one being dragged.
+		Float extent = 0;
+		for ( const UITab* tab : mTabs )
+			extent += tab->getPixelsSize().getHeight() + mStyleConfig.TabSeparation;
+		return mTabBar->getPixelsPadding().Top + mTabBar->getPixelsPadding().Bottom +
+			   ( mTabs.empty() ? 0 : extent - mStyleConfig.TabSeparation );
+	}
+
 	// Rightmost edge of the tab strip content. In LTR it is the end of the last tab; in RTL the
 	// last tab is the leftmost one, so take the rightmost tab edge instead.
 	if ( !isRTL() ) {
@@ -1271,7 +1580,32 @@ void UITabWidget::onDirectionChanged() {
 	orderTabs();
 }
 
+void UITabWidget::updateVerticalScrollBar() {
+	const Sizef viewportSize( mTabBarViewport->getPixelsSize() );
+
+	mTabScroll->setPixelsSize(
+		{ mTabScroll->getPixelsSize().getWidth(), viewportSize.getHeight() } );
+	mTabScroll->setPixelsPosition(
+		{ viewportSize.getWidth() - mTabScroll->getPixelsSize().getWidth(),
+		  -mTabBar->getPixelsPosition().y } );
+
+	Float totalSize = getTabsExtent();
+	mTabScroll->setVisible( totalSize > viewportSize.getHeight() );
+
+	if ( mTabScroll->isVisible() ) {
+		mTabScroll->setMaxValue( totalSize - viewportSize.getHeight() );
+		mTabScroll->setClickStep( eefloor( mTabScroll->getMaxValue() * 0.2f ) );
+		mTabScroll->setPageStep( ( totalSize - viewportSize.getHeight() ) *
+								 ( viewportSize.getHeight() / totalSize ) );
+	}
+}
+
 void UITabWidget::updateScrollBar() {
+	if ( isTabBarVertical() ) {
+		updateVerticalScrollBar();
+		return;
+	}
+
 	mTabScroll->setPixelsSize(
 		{ getPixelsSize().getWidth(), mTabScroll->getPixelsSize().getHeight() } );
 	mTabScroll->setPixelsPosition(
@@ -1289,7 +1623,36 @@ void UITabWidget::updateScrollBar() {
 	}
 }
 
+void UITabWidget::updateVerticalScroll( bool updateFocus ) {
+	// With every row in view, the strip can't remain scrolled from when it overflowed.
+	const Float offset = mTabScroll->isVisible() ? mTabScroll->getValue() : 0.f;
+
+	mTabBar->setPixelsPosition( 0, -offset );
+	mTabScroll->setPixelsPosition( mTabScroll->getPixelsPosition().x, offset );
+
+	if ( updateFocus && mTabSelected && mTabScroll->isVisible() ) {
+		const Float viewportHeight = mTabBarViewport->getPixelsSize().getHeight();
+		// Reveal the padding of the tab bar too, or the first and last rows lose their margin.
+		const Float top = mTabSelected->getPixelsPosition().y - mTabBar->getPixelsPadding().Top;
+		const Float bottom = mTabSelected->getPixelsPosition().y +
+							 mTabSelected->getPixelsSize().getHeight() +
+							 mTabBar->getPixelsPadding().Bottom;
+
+		if ( top < offset ) {
+			mTabScroll->setValue( eeclamp( top, 0.f, mTabScroll->getMaxValue() ) );
+		} else if ( bottom > offset + viewportHeight ) {
+			mTabScroll->setValue(
+				eeclamp( bottom - viewportHeight, 0.f, mTabScroll->getMaxValue() ) );
+		}
+	}
+}
+
 void UITabWidget::updateScroll( bool updateFocus ) {
+	if ( isTabBarVertical() ) {
+		updateVerticalScroll( updateFocus );
+		return;
+	}
+
 	if ( !mTabScroll->isVisible() )
 		return;
 

@@ -117,6 +117,8 @@ enum class PropertyId : Uint16 {
 	TabSeparation,
 	TabHeight,
 	TabCloseButtonVisible,
+	TabPosition,
+	TabBarWidth,
 	Selected,
 	/** Compatibility spelling: "checked" is an alias of the canonical "selected" property. */
 	Checked = Selected,
@@ -241,6 +243,8 @@ enum class PropertyId : Uint16 {
 	SplitterPartition,
 	SplitterAlwaysShow,
 	SplitterHideOnEdge,
+	SplitterResizable,
+	SplitterPartitionOrigin,
 	DroppableHoveringColor,
 	TextAsFallback,
 	SelectOnClick,

@@ -135,7 +135,7 @@ always follow document order.
 | Menu items | Shortcut at the inline-end (left); icon gutter at the right |
 | Submenus | Arrow at the left, mirrored; the submenu prefers opening to the left and still flips when it does not fit |
 | MenuBar | First menu at the right; menus hang from the button's right edge; Left/Right keys move to the visually adjacent menu |
-| TabWidget | Tab 0 at the right; indexes, next/previous and drag reordering stay logical |
+| TabWidget | Tab 0 at the right; indexes, next/previous and drag reordering stay logical. `tab-position: left` and `right` are physical edges, and their rows stay top to bottom |
 | TreeView | Indentation and expander at the right; expanders mirrored; cells default to `start` |
 | TableView, ListView | Cells default to `start`; column order is not reversed |
 | Window chrome | Title buttons mirrored to the left (custom eepp decorations only) |

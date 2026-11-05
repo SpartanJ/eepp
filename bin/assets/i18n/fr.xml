@@ -662,6 +662,8 @@ détermine si une nouvelle fenêtre est créée ou non.</string>
 	<string name="pluginsmodel_id">ID</string>
 	<string name="pluginsmodel_title">Titre</string>
 	<string name="pluginsmodel_version">Version</string>
+	<string name="profile_path_is_file">Le chemin du profil est un fichier, pas un répertoire :
+%s</string>
 	<string name="portable_mode_failed">Le mode portable a échoué.
 Veuillez vérifier que le répertoire de l'application dispose des autorisations d'écriture.</string>
 	<string name="preferences">Préférences</string>

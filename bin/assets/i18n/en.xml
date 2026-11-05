@@ -663,6 +663,8 @@ controls whether a new window is created or not.</string>
 	<string name="pluginsmodel_id">Id</string>
 	<string name="pluginsmodel_title">Title</string>
 	<string name="pluginsmodel_version">Version</string>
+	<string name="profile_path_is_file">The profile path is a file, not a directory:
+%s</string>
 	<string name="portable_mode_failed">Portable Mode failed.
 Please check that the application directory has write permissions.</string>
 	<string name="preferences">Preferences</string>

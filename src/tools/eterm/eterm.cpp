@@ -35,8 +35,7 @@ String App::i18n( const std::string& key, const String& defaultValue ) const {
 void App::loadColorSchemes( const std::string& resPath ) {
 	auto colorSchemes =
 		TerminalColorScheme::loadFromFile( resPath + "colorschemes/terminalcolorschemes.conf" );
-	const std::string configColorSchemesPath =
-		Sys::getConfigPath( "eterm" ) + FileSystem::getOSSlash() + "colorschemes";
+	const std::string configColorSchemesPath = config->getConfigPath() + "colorschemes";
 	if ( FileSystem::isDirectory( configColorSchemesPath ) ) {
 		for ( const auto& file : FileSystem::filesGetInPath( configColorSchemesPath ) ) {
 			auto fileColorSchemes = TerminalColorScheme::loadFromFile( file );
@@ -255,9 +254,21 @@ void App::maximizeTabWidget( UITabWidget* tabWidget ) {
 	fullscreenImg->unsetFlags( UI_AUTO_SIZE );
 	fullscreenImg->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	fullscreenImg->setParent( win );
-	fullscreenImg->setSize( { 24, tabWidget->getTabBar()->getSize().getHeight() } );
-	fullscreenImg->setPosition( { tabWidget->getSize().getWidth() - 24, 0 } );
-	fullscreenImg->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
+	const auto tabPosition = tabWidget->getTabPosition();
+	const Float imgHeight = tabWidget->isTabBarVertical()
+								? tabWidget->getTabsHeight()
+								: tabWidget->getTabBar()->getSize().getHeight();
+	fullscreenImg->setSize( { 24, imgHeight } );
+	if ( tabPosition == UITabWidget::TabPosition::Top ) {
+		fullscreenImg->setPosition( { tabWidget->getSize().getWidth() - 24, 0 } );
+		fullscreenImg->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
+	} else {
+		// At the end of the tab bar: the top of a side bar holds the first tabs.
+		const bool left = tabPosition == UITabWidget::TabPosition::Left;
+		fullscreenImg->setPosition( { left ? 0 : tabWidget->getSize().getWidth() - 24,
+									  tabWidget->getSize().getHeight() - imgHeight } );
+		fullscreenImg->setAnchors( UI_ANCHOR_BOTTOM | ( left ? UI_ANCHOR_LEFT : UI_ANCHOR_RIGHT ) );
+	}
 	if ( auto* icon = scene->findIcon( "fullscreen" ) )
 		fullscreenImg->setDrawable( icon->createDrawable( PixelDensity::dpToPxI( 16 ) ) );
 	fullscreenImg->setVerticalAlign( UI_VALIGN_CENTER );
@@ -659,19 +670,45 @@ bool App::closeWindow( EE::Window::Window* ) {
 	return false;
 }
 
+// The configuration provides the defaults of the other arguments, so its path must be known before
+// the parser that needs those defaults exists.
+static std::string profileFromArguments( int argc, char* argv[] ) {
+	constexpr std::string_view Prefix = "--profile=";
+	for ( int i = 1; i < argc; i++ ) {
+		std::string_view arg( argv[i] );
+		if ( arg == "--" )
+			break;
+		if ( arg == "--profile" )
+			return i + 1 < argc ? argv[i + 1] : "";
+		if ( String::startsWith( arg, Prefix ) )
+			return std::string( arg.substr( Prefix.size() ) );
+	}
+	return "";
+}
+
 int App::run( int argc, char* argv[] ) {
 #ifdef EE_DEBUG
 	Log::instance()->setLogToStdOut( !Runtime::isOffscreen() );
 	Log::instance()->setLiveWrite( true );
 #endif
-	const auto configPath = Sys::getEnv( "ETERM_CONFIG_PATH" );
+	auto configPath = profileFromArguments( argc, argv );
+	if ( !configPath.empty() ) {
+		if ( !FileSystem::isDirectory( configPath ) && !FileSystem::makeDir( configPath, true ) ) {
+			std::cerr << "Could not create profile directory: " << configPath << std::endl;
+			return EXIT_FAILURE;
+		}
+	} else {
+		configPath = Sys::getEnv( "ETERM_CONFIG_PATH" );
+	}
 	config = std::make_unique<eterm::AppConfig>( configPath.empty() ? Sys::getConfigPath( "eterm" )
 																	: configPath );
 	config->load();
 	args::ArgumentParser parser(
 		"eterm", "Environment: set ETERM_CONFIG_PATH to use another configuration directory for "
-				 "preferences, window state, and keybindings." );
+				 "preferences, window state, and keybindings. --profile takes precedence." );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
+	args::ValueFlag<std::string> profile( parser, "profile", "Start with profile at <path>",
+										  { "profile" }, "" );
 	args::ValueFlag<std::string> shell( parser, "shell", "Shell name or path", { 's', "shell" },
 										config->terminal.shell );
 	args::ValueFlag<std::string> shellArgs( parser, "shell-args", "Shell command line arguments",
@@ -1005,6 +1042,12 @@ int App::run( int argc, char* argv[] ) {
 		return true;
 	} );
 	tabSplitter->setOnTabWidgetCreateCb( [this]( UITabWidget* tabs ) {
+		tabs->setTabBarWidth( config->windowState.tabBarWidth );
+		tabs->setTabPosition( config->window.tabPosition );
+		tabs->on( Event::OnValueChange, [this]( const Event* event ) {
+			config->windowState.tabBarWidth =
+				event->getNode()->asType<UITabWidget>()->getTabBarWidth();
+		} );
 		tabs->on( Event::OnTabSelected, [this]( const Event* ) { updateWindowTitle(); } );
 		tabs->on( Event::OnTabClosed, [this]( const Event* event ) {
 			auto* closedTab = static_cast<const TabEvent*>( event )->getTab();

@@ -1308,7 +1308,8 @@ workspace "eepp"
 	parse_args()
 
 	location("./make/" .. os.target() .. "/")
-	objdir("obj/" .. os.target() .. "/")
+	-- Instrumented objects can't be mixed with the others: keep both to not rebuild on each switch.
+	objdir("obj/" .. os.target() .. "/" .. ( _OPTIONS["address-sanitizer"] and "asan/" or "" ))
 
 	filter "platforms:x86"
 		architecture "x86"

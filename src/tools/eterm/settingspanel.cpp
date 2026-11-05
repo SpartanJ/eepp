@@ -540,6 +540,21 @@ UIWindow* SettingsPanel::create( App& app ) {
 						app.savePreferences();
 					} );
 
+	panel->addChoice(
+		{ "tabPosition", "terminal.appearance", app.i18n( "tab_position", "Tab Bar Position" ),
+		  app.i18n( "tab_position_desc", "Choose the edge of the terminal that holds the tabs." ) },
+		{ app.i18n( "tab_position_top", "Top" ), app.i18n( "tab_position_bottom", "Bottom" ),
+		  app.i18n( "tab_position_left", "Left" ), app.i18n( "tab_position_right", "Right" ) },
+		[&app] { return static_cast<size_t>( app.config->window.tabPosition ); },
+		[&app]( size_t selected ) {
+			const auto position =
+				static_cast<UITabWidget::TabPosition>( std::min( selected, size_t{ 3 } ) );
+			app.config->window.tabPosition = position;
+			app.tabSplitter->forEachTabWidget(
+				[position]( UITabWidget* tabs ) { tabs->setTabPosition( position ); } );
+			app.savePreferences();
+		} );
+
 	panel->addBool(
 		{ "showTabBarWhenSplit", "terminal.appearance",
 		  app.i18n( "show_tab_bar_when_split", "Show Tab Bar When Split" ),

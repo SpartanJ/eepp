@@ -625,14 +625,22 @@ TabWidget {
 	gravity: start|bottom;
 }
 
+/* Rules that stop matching only roll back to a declared value, so everything the tabs-bottom and
+ * tabs-vertical rules change needs one here for the tabs to recover from a position change. */
 TabWidget::TabBar {
 	background-image: rectangle(solid, var(--tab-line));
 	background-size: 100% 1dp;
 	background-position-y: bottom;
+	padding-top: 0dp;
+	padding-bottom: 0dp;
 }
 
 Tab {
 	background-color: var(--tab-back);
+	padding-left: 0dp;
+	padding-right: 0dp;
+	border-width: 0dp;
+	border-radius: 0dp;
 	border-left-color: transparent;
 	border-right-color: transparent;
 	border-top-color: transparent;
@@ -660,6 +668,7 @@ Tab:hover {
 Tab::text {
 	padding-left: 4dp;
 	padding-right: 4dp;
+	text-overflow: clip;
 }
 
 Tab:selected {
@@ -683,6 +692,119 @@ Tab:selected:hover {
 	background-color: var(--tab-active);
 }
 
+TabWidget.tabs-bottom > TabWidget::TabBar,
+TabWidget.tabs-bottom > TabWidget::TabBar > Tab {
+	background-position-y: top;
+}
+
+TabWidget.tabs-bottom > TabWidget::TabBar > Tab:selected {
+	border-top-width: 0dp;
+	border-bottom-color: var(--tab-line);
+	border-bottom-width: 1dp;
+	border-top-left-radius: 0dp;
+	border-top-right-radius: 0dp;
+	border-bottom-left-radius: 2dp;
+	border-bottom-right-radius: 2dp;
+}
+
+/* The children combinators leave alone the top tabs of the pages of a side tab bar. */
+TabWidget.tabs-vertical {
+	tab-height: 30dp;
+}
+
+TabWidget::Viewport {
+	background-color: var(--list-back);
+}
+
+/* With the 3dp inset of the rows, the first and last pills also look 6dp away from the edges. */
+TabWidget::Viewport > TabWidget::TabBar {
+	background-image: none;
+	padding-top: 3dp;
+	padding-bottom: 3dp;
+}
+
+TabWidget::Viewport > TabWidget::TabBar > Tab > Tab::Text {
+	text-overflow: ellipsis;
+}
+
+/* Rows are inset pills: the border takes the color of the tab bar. */
+TabWidget::Viewport > TabWidget::TabBar > Tab,
+TabWidget::Viewport > TabWidget::TabBar > Tab:selected {
+	background-image: none;
+	border-width: 3dp;
+	border-left-width: 6dp;
+	border-right-width: 2dp;
+	border-color: var(--list-back);
+	border-radius: 6dp;
+}
+
+/* Both sides look 6dp wide: the 4dp handle of the separator reads as part of the tab bar. */
+TabWidget.tabs-right > Splitter > TabWidget::Viewport > TabWidget::TabBar > Tab,
+TabWidget.tabs-right > Splitter > TabWidget::Viewport > TabWidget::TabBar > Tab:selected {
+	border-left-width: 2dp;
+	border-right-width: 6dp;
+}
+
+TabWidget::Viewport > TabWidget::TabBar > Tab {
+	background-color: transparent;
+	foreground-image: none;
+	padding-left: 8dp;
+	padding-right: 8dp;
+}
+
+TabWidget::Viewport > TabWidget::TabBar > Tab:not(:selected):hover {
+	background-color: var(--list-back-alt);
+	color: var(--font);
+}
+
+TabWidget::Viewport > TabWidget::TabBar > Tab:not(:selected):hover > tab::icon {
+	tint: var(--font);
+}
+
+TabWidget::Viewport > TabWidget::TabBar > Tab > Tab::close {
+	opacity: 0;
+}
+
+TabWidget::Viewport > TabWidget::TabBar > Tab:selected > Tab::close,
+TabWidget::Viewport > TabWidget::TabBar > Tab:hover > Tab::close {
+	opacity: 1;
+}
+
+/* A foreground, because the border would hide or round a second background. */
+TabWidget::Viewport > TabWidget::TabBar > Tab:selected,
+TabWidget::Viewport > TabWidget::TabBar > Tab:selected:hover {
+	background-color: var(--back);
+	foreground-image: rectangle(solid, var(--primary));
+	foreground-size: 2dp 14dp;
+	foreground-position: 6dp center;
+}
+
+TabWidget.tabs-right > Splitter > TabWidget::Viewport > TabWidget::TabBar > Tab:selected,
+TabWidget.tabs-right > Splitter > TabWidget::Viewport > TabWidget::TabBar > Tab:selected:hover {
+	foreground-position: 2dp center;
+}
+
+/* A line on the 4dp handle, which keeps the bar's color so the drag area stays. */
+TabWidget.tabs-vertical > Splitter > Splitter::separator {
+	background-color: var(--list-back);
+	background-image: rectangle(solid, var(--separator));
+	background-size: 1dp 100%;
+}
+
+TabWidget.tabs-left > Splitter > Splitter::separator {
+	background-position-x: right;
+}
+
+TabWidget.tabs-right > Splitter > Splitter::separator {
+	background-position-x: left;
+}
+
+TabWidget.tabs-vertical > Splitter > Splitter::separator:hover,
+TabWidget.tabs-vertical > Splitter > Splitter::separator:selected {
+	background-color: var(--primary);
+	background-image: none;
+}
+
 tab::icon {
 	margin-inline-start: 4dp;
 	margin-inline-end: 2dp;
@@ -695,6 +817,7 @@ Tab::close {
 	foreground-tint: var(--tab-close);
 	foreground-size: 10dp 10dp;
 	margin-inline-end: 4dp;
+	opacity: 1;
 	transition: all 0.15s;
 }
 
@@ -1260,7 +1383,7 @@ DiffView > SelectButton:focus {
 	--tab-line: #e6e6e6;
 	--tab-active: #fcfcfc;
 	--tab-hover: #93cee9;
-	--tab-close: #e6e6e6;
+	--tab-close: #8a8d90;
 	--tab-close-hover: #e49aa2;
 	--tab-font-active: white;
 	--tab-font-inactive: #444;

@@ -8,6 +8,19 @@ namespace EE { namespace UI {
 
 class EE_API UISplitter : public UILayout {
   public:
+	/** The physical edge of the layout axis that the split partition is measured from. It does not
+	 * follow the text direction: End is the right pane of a horizontal splitter and the bottom
+	 * pane of a vertical one. */
+	enum class PartitionOrigin : Uint8 { Start, End };
+
+	static PartitionOrigin partitionOriginFromString( std::string_view origin ) {
+		return String::iequals( origin, "end" ) ? PartitionOrigin::End : PartitionOrigin::Start;
+	}
+
+	static std::string partitionOriginToString( PartitionOrigin origin ) {
+		return origin == PartitionOrigin::End ? "end" : "start";
+	}
+
 	static UISplitter* New();
 
 	~UISplitter();
@@ -28,10 +41,30 @@ class EE_API UISplitter : public UILayout {
 
 	void setHideSplitterOnEdge( bool hideSplitterOnEdge );
 
+	bool isResizable() const;
+
+	/** Enables or disables dragging the separator. A non resizable splitter keeps its separator
+	 * as a decorative divider, and an active drag is cancelled. */
+	void setResizable( bool resizable );
+
+	PartitionOrigin getPartitionOrigin() const;
+
+	/** Sets the edge the split partition is measured from. The partition keeps its value, so a
+	 * 200dp partition with the End origin makes the last pane 200dp wide. */
+	void setPartitionOrigin( PartitionOrigin origin );
+
+	bool isSeparatorDragging() const;
+
+	/** Ends an active separator drag, keeping the partition reached so far. */
+	void cancelSeparatorDrag();
+
+	/** @return The partition, measured from the partition origin. User drags keep its unit. */
 	const StyleSheetLength& getSplitPartition() const;
 
 	void setSplitPartition( const StyleSheetLength& divisionSplit );
 
+	/** Swaps the panes. The partition origin never changes.
+	 * @param swapSplitPartition Also mirrors the partition, so each pane keeps its size. */
 	void swap( bool swapSplitPartition = false );
 
 	bool isEmpty();
@@ -55,6 +88,8 @@ class EE_API UISplitter : public UILayout {
 	UIOrientation mOrientation;
 	bool mAlwaysShowSplitter;
 	bool mHideSplitterOnEdge;
+	bool mResizable{ true };
+	PartitionOrigin mPartitionOrigin{ PartitionOrigin::Start };
 	StyleSheetLength mSplitPartition;
 	UIWidget* mSplitter;
 	UIWidget* mFirstWidget;
@@ -72,6 +107,20 @@ class EE_API UISplitter : public UILayout {
 	void updateSplitterDragFlags();
 
 	bool shouldShowSplitter() const;
+
+	void updateSeparatorState();
+
+	Float getAxisContentSize() const;
+
+	Float getUsableSplitSpace() const;
+
+	Float getAxisMinSize( const UIWidget* widget ) const;
+
+	bool isPartitionOnEdge( Float extent ) const;
+
+	Float getFirstPaneSize( Float totalSpace ) const;
+
+	StyleSheetLength partitionFromPixels( Float pixels, Float totalSpace ) const;
 };
 
 }} // namespace EE::UI

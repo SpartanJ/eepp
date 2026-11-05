@@ -534,6 +534,8 @@ Restart ecode to see the changes.</string>
 	<string name="pluginsmodel_id">Id</string>
 	<string name="pluginsmodel_title">标题</string>
 	<string name="pluginsmodel_version">版本号</string>
+	<string name="profile_path_is_file">配置文件路径是一个文件，而不是文件夹：
+%s</string>
 	<string name="portable_mode_failed">使用便携版模式失败，请察看是否有应用文件夹的权限。</string>
 	<string name="preferences">偏好设置</string>
 	<string name="press_enter">按下回车</string>

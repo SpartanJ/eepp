@@ -7,11 +7,13 @@
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/inputevent.hpp>
 #include <nlohmann/json.hpp>
+#include <optional>
 
 using namespace EE;
 using namespace EE::UI;
@@ -164,6 +166,1087 @@ UTEST( UISplitter, ControlsMatchParentChildWidth ) {
 				 first->getPixelsSize().getWidth() < 600.f );
 	EXPECT_TRUE( last->getPixelsSize().getWidth() > 190.f &&
 				 last->getPixelsSize().getWidth() < 200.f );
+}
+
+static void dragSeparator( UIWidget* separator, const Vector2f& position ) {
+	separator->setDragging( true, false );
+	separator->setPixelsPosition( position );
+	separator->setDragging( false, false );
+}
+
+static UIWidget* findSeparator( UIWidget* node ) {
+	return node->findByTag( "splitter::separator" )->asType<UIWidget>();
+}
+
+UTEST( UISplitter, DragPreservesPartitionUnit ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	for ( const auto orientation : { UIOrientation::Horizontal, UIOrientation::Vertical } ) {
+		const bool horizontal = orientation == UIOrientation::Horizontal;
+		auto* splitter = UISplitter::New();
+		splitter->setParent( app.getUI() );
+		splitter->setPixelsSize( 800, 800 );
+		splitter->setOrientation( orientation );
+		UIWidget::New()->setParent( splitter );
+		UIWidget::New()->setParent( splitter );
+		auto* separator = findSeparator( splitter );
+		int changes = 0;
+		splitter->on( Event::OnValueChange, [&changes]( const Event* ) { changes++; } );
+
+		const auto dragAndGetUnit = [&]( const char* partition ) {
+			splitter->setSplitPartition( StyleSheetLength( partition ) );
+			splitter->updateLayout();
+			dragSeparator( separator, horizontal ? Vector2f( 300, 0 ) : Vector2f( 0, 300 ) );
+			return splitter->getSplitPartition();
+		};
+
+		EXPECT_TRUE( dragAndGetUnit( "50%" ).getUnit() == StyleSheetLength::Percentage );
+		EXPECT_NEAR( splitter->getSplitPartition().getValue(), 300.f / 796.f * 100.f, 0.01f );
+		EXPECT_TRUE( dragAndGetUnit( "200dp" ).getUnit() == StyleSheetLength::Dp );
+		EXPECT_NEAR( splitter->getSplitPartition().getValue(), 300.f, 0.01f );
+		EXPECT_TRUE( dragAndGetUnit( "150px" ).getUnit() == StyleSheetLength::Px );
+		EXPECT_NEAR( splitter->getSplitPartition().getValue(), 300.f, 0.01f );
+		// Units that can't follow a drag materialize as a dp size.
+		EXPECT_TRUE( dragAndGetUnit( "10em" ).getUnit() == StyleSheetLength::Dp );
+		EXPECT_NEAR( splitter->getSplitPartition().getValue(), 300.f, 0.01f );
+		EXPECT_EQ( changes, 4 );
+
+		splitter->setSplitPartition( StyleSheetLength( "120dp" ) );
+		splitter->updateLayout();
+		EXPECT_EQ( changes, 4 );
+
+		// An absolute partition doesn't scale with the splitter after being dragged.
+		dragSeparator( separator, horizontal ? Vector2f( 250, 0 ) : Vector2f( 0, 250 ) );
+		splitter->setPixelsSize( 1000, 1000 );
+		splitter->updateLayout();
+		EXPECT_NEAR( horizontal ? splitter->getFirstWidget()->getPixelsSize().getWidth()
+								: splitter->getFirstWidget()->getPixelsSize().getHeight(),
+					 250.f, 0.01f );
+		splitter->close();
+		app.getUI()->update( Milliseconds( 16 ) );
+	}
+}
+
+UTEST( UISplitter, DragConversionExcludesPadding ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	auto* splitter = UISplitter::New();
+	splitter->setParent( app.getUI() );
+	splitter->setPixelsSize( 800, 600 );
+	splitter->setPadding( Rectf( 20, 0, 20, 0 ) );
+	UIWidget::New()->setParent( splitter );
+	UIWidget::New()->setParent( splitter );
+	splitter->updateLayout();
+
+	dragSeparator( findSeparator( splitter ), { 400, 0 } );
+	EXPECT_NEAR( splitter->getFirstWidget()->getPixelsSize().getWidth(), 380.f, 0.01f );
+
+	// Laying out the stored partition must keep the separator where the user dropped it.
+	splitter->setLayoutDirty();
+	splitter->updateLayout();
+	EXPECT_NEAR( findSeparator( splitter )->getPixelsPosition().x, 400.f, 0.01f );
+}
+
+UTEST( UISplitter, EndOriginMeasuresTheTrailingPane ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	for ( const auto orientation : { UIOrientation::Horizontal, UIOrientation::Vertical } ) {
+		const bool horizontal = orientation == UIOrientation::Horizontal;
+		auto* splitter = UISplitter::New();
+		splitter->setParent( app.getUI() );
+		splitter->setPixelsSize( 804, 804 );
+		splitter->setOrientation( orientation );
+		auto* first = UIWidget::New();
+		first->setParent( splitter );
+		auto* last = UIWidget::New();
+		last->setParent( splitter );
+		const auto axis = [horizontal]( UIWidget* widget ) {
+			return horizontal ? widget->getPixelsSize().getWidth()
+							  : widget->getPixelsSize().getHeight();
+		};
+
+		splitter->setPartitionOrigin( UISplitter::PartitionOrigin::End );
+		splitter->setSplitPartition( StyleSheetLength( "200dp" ) );
+		splitter->updateLayout();
+		EXPECT_NEAR( axis( last ), 200.f, 0.01f );
+		EXPECT_NEAR( axis( first ), 600.f, 0.01f );
+
+		splitter->setPixelsSize( 1004, 1004 );
+		splitter->updateLayout();
+		EXPECT_NEAR( axis( last ), 200.f, 0.01f );
+		EXPECT_NEAR( axis( first ), 800.f, 0.01f );
+
+		dragSeparator( findSeparator( splitter ),
+					   horizontal ? Vector2f( 750, 0 ) : Vector2f( 0, 750 ) );
+		EXPECT_TRUE( splitter->getSplitPartition().getUnit() == StyleSheetLength::Dp );
+		EXPECT_NEAR( splitter->getSplitPartition().getValue(), 250.f, 0.01f );
+
+		splitter->setSplitPartition( StyleSheetLength( "25%" ) );
+		splitter->setPixelsSize( 804, 804 );
+		splitter->updateLayout();
+		EXPECT_NEAR( axis( last ), 200.f, 0.01f );
+		dragSeparator( findSeparator( splitter ),
+					   horizontal ? Vector2f( 400, 0 ) : Vector2f( 0, 400 ) );
+		EXPECT_TRUE( splitter->getSplitPartition().getUnit() == StyleSheetLength::Percentage );
+		EXPECT_NEAR( splitter->getSplitPartition().getValue(), 50.f, 0.01f );
+
+		// Swapping keeps the origin: the partition now sizes the pane that took the trailing edge.
+		splitter->setSplitPartition( StyleSheetLength( "200dp" ) );
+		splitter->swap();
+		splitter->updateLayout();
+		EXPECT_TRUE( splitter->getLastWidget() == first );
+		EXPECT_NEAR( axis( first ), 200.f, 0.01f );
+		splitter->close();
+		app.getUI()->update( Milliseconds( 16 ) );
+	}
+}
+
+UTEST( UISplitter, SwapPartitionKeepsAbsolutePaneSizes ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	auto* splitter = UISplitter::New();
+	splitter->setParent( app.getUI() );
+	splitter->setPixelsSize( 804, 600 );
+	auto* first = UIWidget::New();
+	first->setParent( splitter );
+	auto* last = UIWidget::New();
+	last->setParent( splitter );
+	splitter->setSplitPartition( StyleSheetLength( "200dp" ) );
+	splitter->updateLayout();
+
+	splitter->swap( true );
+	splitter->updateLayout();
+	EXPECT_TRUE( splitter->getSplitPartition().getUnit() == StyleSheetLength::Dp );
+	EXPECT_NEAR( first->getPixelsSize().getWidth(), 200.f, 0.01f );
+	EXPECT_NEAR( last->getPixelsSize().getWidth(), 600.f, 0.01f );
+
+	splitter->setSplitPartition( StyleSheetLength( "30%" ) );
+	splitter->swap( true );
+	EXPECT_TRUE( splitter->getSplitPartition().getUnit() == StyleSheetLength::Percentage );
+	EXPECT_NEAR( splitter->getSplitPartition().getValue(), 70.f, 0.01f );
+}
+
+UTEST( UISplitter, NonResizableKeepsDivider ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	auto* splitter = UISplitter::New();
+	splitter->setParent( app.getUI() );
+	splitter->setPixelsSize( 800, 600 );
+	UIWidget::New()->setParent( splitter );
+	UIWidget::New()->setParent( splitter );
+	splitter->updateLayout();
+	auto* separator = findSeparator( splitter );
+	EXPECT_TRUE( splitter->isResizable() );
+	EXPECT_TRUE( separator->isEnabled() );
+
+	separator->setDragging( true, false );
+	splitter->setResizable( false );
+	EXPECT_FALSE( separator->isDragging() );
+	EXPECT_FALSE( splitter->isSeparatorDragging() );
+	EXPECT_TRUE( separator->isVisible() );
+	EXPECT_FALSE( separator->isEnabled() );
+
+	// A later layout must not enable the separator again.
+	splitter->setSplitPartition( StyleSheetLength( "40%" ) );
+	splitter->updateLayout();
+	EXPECT_TRUE( separator->isVisible() );
+	EXPECT_FALSE( separator->isEnabled() );
+
+	splitter->setResizable( true );
+	EXPECT_TRUE( separator->isEnabled() );
+	EXPECT_TRUE( separator->isDragEnabled() );
+}
+
+UTEST( UISplitter, HideOnEdgeSupportsAbsolutePartitions ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	auto* splitter = UISplitter::New();
+	splitter->setParent( app.getUI() );
+	splitter->setPixelsSize( 800, 600 );
+	auto* first = UIWidget::New();
+	first->setParent( splitter );
+	auto* last = UIWidget::New();
+	last->setParent( splitter );
+	auto* separator = findSeparator( splitter );
+	splitter->setHideSplitterOnEdge( true );
+	splitter->setAlwaysShowSplitter( false );
+
+	splitter->setSplitPartition( StyleSheetLength( "0dp" ) );
+	splitter->updateLayout();
+	EXPECT_FALSE( separator->isVisible() );
+	EXPECT_EQ( first->getPixelsSize().getWidth(), 0.f );
+	EXPECT_EQ( last->getPixelsSize().getWidth(), 800.f );
+	EXPECT_EQ( last->getPixelsPosition().x, 0.f );
+
+	splitter->setPartitionOrigin( UISplitter::PartitionOrigin::End );
+	splitter->setLayoutDirty();
+	splitter->updateLayout();
+	EXPECT_FALSE( separator->isVisible() );
+	EXPECT_EQ( first->getPixelsSize().getWidth(), 800.f );
+	EXPECT_EQ( last->getPixelsSize().getWidth(), 0.f );
+
+	splitter->setSplitPartition( StyleSheetLength( "900dp" ) );
+	splitter->updateLayout();
+	EXPECT_FALSE( separator->isVisible() );
+	EXPECT_EQ( last->getPixelsSize().getWidth(), 800.f );
+
+	// A pane with a minimum can't be squeezed out by a partition that doesn't fit.
+	first->setMinWidthEq( "100dp" );
+	splitter->setLayoutDirty();
+	splitter->updateLayout();
+	EXPECT_TRUE( separator->isVisible() );
+	EXPECT_NEAR( first->getPixelsSize().getWidth(), 100.f, 0.01f );
+	EXPECT_NEAR( last->getPixelsSize().getWidth(), 696.f, 0.01f );
+}
+
+UTEST( UISplitter, LayoutHonorsBothMinimumsWithoutNegativeGeometry ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	auto* splitter = UISplitter::New();
+	splitter->setParent( app.getUI() );
+	splitter->setPixelsSize( 804, 600 );
+	auto* first = UIWidget::New();
+	first->setParent( splitter );
+	auto* last = UIWidget::New();
+	last->setParent( splitter );
+	first->setMinWidthEq( "100dp" );
+	last->setMinWidthEq( "150dp" );
+
+	splitter->setSplitPartition( StyleSheetLength( "95%" ) );
+	splitter->updateLayout();
+	EXPECT_NEAR( last->getPixelsSize().getWidth(), 150.f, 0.01f );
+	EXPECT_NEAR( first->getPixelsSize().getWidth(), 650.f, 0.01f );
+
+	splitter->setSplitPartition( StyleSheetLength( "1%" ) );
+	splitter->updateLayout();
+	EXPECT_NEAR( first->getPixelsSize().getWidth(), 100.f, 0.01f );
+
+	// When both can't fit the first pane wins, and nothing is ever negative.
+	splitter->setPixelsSize( 124, 600 );
+	splitter->updateLayout();
+	EXPECT_NEAR( first->getPixelsSize().getWidth(), 100.f, 0.01f );
+	EXPECT_TRUE( last->getPixelsSize().getWidth() >= 0.f );
+
+	dragSeparator( findSeparator( splitter ), { 500, 0 } );
+	EXPECT_TRUE( first->getPixelsSize().getWidth() >= 0.f );
+	EXPECT_TRUE( last->getPixelsSize().getWidth() >= 0.f );
+
+	// A collapsed edge partition still hides a pane with a minimum (ecode's closed right panel).
+	splitter->setPixelsSize( 804, 600 );
+	splitter->setHideSplitterOnEdge( true );
+	splitter->setAlwaysShowSplitter( false );
+	splitter->setSplitPartition( StyleSheetLength( "100%" ) );
+	splitter->updateLayout();
+	EXPECT_EQ( first->getPixelsSize().getWidth(), 804.f );
+}
+
+class TabPositionTest {
+  public:
+	static constexpr Float TabHeight = 24.f;
+	UIApplication app{
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) };
+	TransferTestTabWidget* tabs{ TransferTestTabWidget::New() };
+	std::vector<UIWidget*> pages;
+
+	explicit TabPositionTest( size_t tabCount, const Sizef& size = { 800, 600 } ) {
+		tabs->setParent( app.getUI() );
+		tabs->setPixelsSize( size );
+		tabs->setTabsHeight( TabHeight );
+		for ( size_t i = 0; i < tabCount; i++ ) {
+			pages.push_back( UIWidget::New() );
+			tabs->add( String::format( "Tab %zu", i ), pages.back() );
+		}
+	}
+
+	void tick() { app.getUI()->update( Milliseconds( 16 ) ); }
+
+	size_t countSplitters() {
+		size_t count = 0;
+		for ( Node* node = tabs->getFirstChild(); node; node = node->getNextNode() )
+			count += node->isType( UI_TYPE_SPLITTER ) ? 1 : 0;
+		return count;
+	}
+};
+
+static bool hasNoDraggingNode( TabPositionTest& test ) {
+	return test.app.getUI()->getEventDispatcher()->getNodeDragging() == nullptr;
+}
+
+UTEST( UITabWidget, PositionsLayOutTabBarAndContainer ) {
+	TabPositionTest test( 3 );
+	auto* tabs = test.tabs;
+	auto* container = tabs->getContainerNode();
+	auto* selected = test.pages[0];
+	const Float height = TabPositionTest::TabHeight;
+
+	EXPECT_TRUE( tabs->getTabPosition() == UITabWidget::TabPosition::Top );
+	EXPECT_TRUE( tabs->hasClass( "tabs-top" ) );
+	EXPECT_TRUE( tabs->hasClass( "tabs-horizontal" ) );
+	EXPECT_FALSE( tabs->hasClass( "tabs-vertical" ) );
+	EXPECT_TRUE( tabs->getTabBar()->getParent() == tabs );
+	EXPECT_EQ( test.countSplitters(), size_t{ 0 } );
+	EXPECT_TRUE( Vector2f( 0, 0 ) == tabs->getTabBar()->getPixelsPosition() );
+	EXPECT_TRUE( Vector2f( 0, height ) == container->getPixelsPosition() );
+	EXPECT_TRUE( Sizef( 800, 600 - height ) == container->getPixelsSize() );
+
+	tabs->setTabPosition( UITabWidget::TabPosition::Bottom );
+	EXPECT_TRUE( tabs->hasClass( "tabs-bottom" ) );
+	EXPECT_FALSE( tabs->hasClass( "tabs-top" ) );
+	EXPECT_TRUE( tabs->hasClass( "tabs-horizontal" ) );
+	EXPECT_EQ( test.countSplitters(), size_t{ 0 } );
+	EXPECT_TRUE( Vector2f( 0, 600 - height ) == tabs->getTabBar()->getPixelsPosition() );
+	EXPECT_TRUE( Vector2f( 0, 0 ) == container->getPixelsPosition() );
+	EXPECT_TRUE( Sizef( 800, 600 - height ) == selected->getPixelsSize() );
+
+	tabs->setTabPosition( UITabWidget::TabPosition::Left );
+	EXPECT_TRUE( tabs->hasClass( "tabs-left" ) );
+	EXPECT_TRUE( tabs->hasClass( "tabs-vertical" ) );
+	EXPECT_FALSE( tabs->hasClass( "tabs-horizontal" ) );
+	EXPECT_TRUE( tabs->isTabBarVertical() );
+	EXPECT_EQ( test.countSplitters(), size_t{ 1 } );
+	EXPECT_TRUE( tabs->isParentOf( tabs->getTabBar() ) );
+	EXPECT_TRUE( tabs->isParentOf( container ) );
+	EXPECT_EQ( tabs->getTab( 0 )->getTabWidget(), (UITabWidget*)tabs );
+	EXPECT_EQ( UITabWidget::fromOwnedNode( selected ), (UITabWidget*)tabs );
+	EXPECT_NEAR( tabs->getTabBar()->getPixelsSize().getWidth(), 200.f, 0.01f );
+	EXPECT_NEAR( container->convertToWorldSpace( Vector2f::Zero ).x, 204.f, 0.01f );
+	EXPECT_NEAR( selected->getPixelsSize().getWidth(), 596.f, 0.01f );
+	EXPECT_NEAR( selected->getPixelsSize().getHeight(), 600.f, 0.01f );
+	for ( Uint32 i = 0; i < tabs->getTabCount(); i++ ) {
+		EXPECT_NEAR( tabs->getTab( i )->getPixelsSize().getWidth(), 200.f, 0.01f );
+		EXPECT_NEAR( tabs->getTab( i )->getPixelsSize().getHeight(), height, 0.01f );
+		EXPECT_NEAR( tabs->getTab( i )->getPixelsPosition().y, i * height, 0.01f );
+		EXPECT_NEAR( tabs->getTab( i )->getPixelsPosition().x, 0.f, 0.01f );
+	}
+
+	tabs->setTabPosition( UITabWidget::TabPosition::Right );
+	EXPECT_TRUE( tabs->hasClass( "tabs-right" ) );
+	EXPECT_EQ( test.countSplitters(), size_t{ 1 } );
+	EXPECT_NEAR( container->convertToWorldSpace( Vector2f::Zero ).x, 0.f, 0.01f );
+	EXPECT_NEAR( tabs->getTabBar()->convertToWorldSpace( Vector2f::Zero ).x, 600.f, 0.01f );
+	EXPECT_NEAR( tabs->getTabBar()->getPixelsSize().getWidth(), 200.f, 0.01f );
+	EXPECT_NEAR( selected->getPixelsSize().getWidth(), 596.f, 0.01f );
+
+	// The side width doesn't scale with the widget.
+	tabs->setPixelsSize( 1000, 600 );
+	EXPECT_NEAR( tabs->getTabBar()->getPixelsSize().getWidth(), 200.f, 0.01f );
+	EXPECT_NEAR( selected->getPixelsSize().getWidth(), 796.f, 0.01f );
+}
+
+UTEST( UITabWidget, PositionCyclePreservesTabsAndTopGeometry ) {
+	TabPositionTest test( 4 );
+	auto* tabs = test.tabs;
+	tabs->setTabsClosable( true );
+	tabs->setTabSelected( Uint32{ 2 } );
+	tabs->setTabSelected( Uint32{ 1 } );
+	test.tick();
+
+	std::vector<UITab*> identity;
+	std::vector<Rectf> geometry;
+	for ( Uint32 i = 0; i < tabs->getTabCount(); i++ ) {
+		auto* tab = tabs->getTab( i );
+		identity.push_back( tab );
+		geometry.emplace_back( tab->getPixelsPosition(), tab->getPixelsSize() );
+	}
+	const auto history = tabs->getFocusHistory();
+	const Sizef containerSize( tabs->getContainerNode()->getPixelsSize() );
+	int selections = 0;
+	tabs->on( Event::OnTabSelected, [&selections]( const Event* ) { selections++; } );
+
+	using Position = UITabWidget::TabPosition;
+	for ( int cycle = 0; cycle < 2; cycle++ ) {
+		for ( const auto position : { Position::Left, Position::Right, Position::Bottom,
+									  Position::Left, Position::Top } ) {
+			tabs->setTabPosition( position );
+			test.tick();
+			EXPECT_LE( test.countSplitters(), size_t{ 1 } );
+			EXPECT_TRUE( tabs->getTabSelected() == identity[1] );
+			EXPECT_EQ( tabs->getTabSelectedIndex(), Uint32{ 1 } );
+			EXPECT_TRUE( test.pages[1]->isVisible() );
+			EXPECT_TRUE( tabs->isParentOf( test.pages[1] ) );
+		}
+	}
+
+	EXPECT_EQ( selections, 0 );
+	EXPECT_TRUE( history == tabs->getFocusHistory() );
+	EXPECT_EQ( test.countSplitters(), size_t{ 0 } );
+	EXPECT_TRUE( tabs->getTabBar()->getParent() == tabs );
+	EXPECT_TRUE( tabs->getContainerNode()->getParent() == tabs );
+	EXPECT_TRUE( containerSize == tabs->getContainerNode()->getPixelsSize() );
+	EXPECT_TRUE( tabs->getContainerNode()->getMinWidthEq().empty() );
+	tabs->setPixelsSize( 40, 600 );
+	EXPECT_NEAR( tabs->getContainerNode()->getPixelsSize().getWidth(), 40.f, 0.01f );
+	tabs->setPixelsSize( 800, 600 );
+	EXPECT_TRUE( tabs->getTabScroll()->getOrientation() == UIOrientation::Horizontal );
+	for ( Uint32 i = 0; i < tabs->getTabCount(); i++ ) {
+		auto* tab = tabs->getTab( i );
+		EXPECT_TRUE( tab == identity[i] );
+		EXPECT_FALSE( tab->expandTextView() );
+		EXPECT_NEAR( tab->getPixelsPosition().x, geometry[i].Left, 0.01f );
+		EXPECT_NEAR( tab->getPixelsSize().getWidth(), geometry[i].getWidth(), 0.01f );
+		EXPECT_NEAR( tab->getPixelsSize().getHeight(), geometry[i].getHeight(), 0.01f );
+	}
+}
+
+UTEST( UITabWidget, PositionCycleRestoresTabTheming ) {
+	TabPositionTest test( 3 );
+	auto* tabs = test.tabs;
+	tabs->setTabsClosable( true );
+	tabs->setTabSelected( Uint32{ 1 } );
+	test.tick();
+	// Past the color transition of the tabs.
+	test.app.getUI()->update( Milliseconds( 500 ) );
+	test.tick();
+
+	// The properties that the side rows of the theme change.
+	static constexpr const char* themed[] = {
+		"padding-left",
+		"padding-right",
+		"padding-top",
+		"padding-bottom",
+		"border-left-width",
+		"border-right-width",
+		"border-top-width",
+		"border-bottom-width",
+		"border-top-left-radius",
+		"border-top-right-radius",
+		"border-bottom-left-radius",
+		"border-bottom-right-radius",
+		"background-image",
+		"background-size",
+		"background-position-x",
+		"background-position-y",
+		"foreground-image",
+		"foreground-size",
+		"foreground-position-x",
+		"foreground-position-y",
+		"color",
+		"background-color",
+	};
+	const auto property = []( UIWidget* widget, const char* name ) {
+		return widget->getPropertyString(
+			StyleSheetSpecification::instance()->getProperty( name ) );
+	};
+	const auto snapshot = [&]( UITab* tab ) {
+		std::vector<std::string> values;
+		for ( const char* name : themed )
+			values.push_back( property( tab, name ) );
+		values.push_back( property( tab->getCloseButton(), "opacity" ) );
+		values.push_back( property( tab->getTextView(), "text-overflow" ) );
+		values.push_back( property( tab->getParent()->asType<UIWidget>(), "padding-top" ) );
+		values.push_back( property( tab->getParent()->asType<UIWidget>(), "background-image" ) );
+		return values;
+	};
+	const auto selected = snapshot( tabs->getTab( 1 ) );
+	// Not the first tab, which is under the mouse once it's back at the top.
+	const auto unselected = snapshot( tabs->getTab( 2 ) );
+	const Rectf selectedPadding( tabs->getTab( 1 )->getPixelsPadding() );
+
+	using Position = UITabWidget::TabPosition;
+	for ( const auto position : { Position::Left, Position::Right, Position::Bottom } ) {
+		tabs->setTabPosition( position );
+		test.tick();
+		test.tick();
+		EXPECT_TRUE( position == Position::Bottom || snapshot( tabs->getTab( 2 ) ) != unselected );
+		tabs->setTabPosition( Position::Top );
+		test.tick();
+		// Past the color transition of the tabs.
+		test.app.getUI()->update( Milliseconds( 500 ) );
+		test.tick();
+
+		const auto selectedAfter = snapshot( tabs->getTab( 1 ) );
+		const auto unselectedAfter = snapshot( tabs->getTab( 2 ) );
+		for ( size_t i = 0; i < selected.size(); i++ ) {
+			EXPECT_STREQ( selected[i].c_str(), selectedAfter[i].c_str() );
+			EXPECT_STREQ( unselected[i].c_str(), unselectedAfter[i].c_str() );
+		}
+		EXPECT_TRUE( selectedPadding == tabs->getTab( 1 )->getPixelsPadding() );
+	}
+}
+
+UTEST( UITabWidget, PositionChangeKeepsPageFocus ) {
+	TabPositionTest test( 2 );
+	auto* tabs = test.tabs;
+	test.pages[0]->setFocus();
+	EXPECT_TRUE( test.pages[0]->hasFocus() );
+
+	for ( const auto position :
+		  { UITabWidget::TabPosition::Left, UITabWidget::TabPosition::Right,
+			UITabWidget::TabPosition::Top, UITabWidget::TabPosition::Bottom } ) {
+		tabs->setTabPosition( position );
+		test.tick();
+		EXPECT_TRUE( test.pages[0]->hasFocus() );
+	}
+}
+
+UTEST( UITabWidget, HiddenSideBarReleasesItsSpaceAndKeepsItsWidth ) {
+	using Position = UITabWidget::TabPosition;
+	for ( const auto position : { Position::Left, Position::Right } ) {
+		TabPositionTest test( 1 );
+		auto* tabs = test.tabs;
+		tabs->setTabPosition( position );
+		tabs->setTabBarWidth( 260 );
+		auto* separator = findSeparator( tabs );
+		tabs->setHideTabBarOnSingleTab( true );
+		EXPECT_FALSE( tabs->getTabBar()->isVisible() );
+		EXPECT_FALSE( separator->isVisible() );
+		EXPECT_FALSE( separator->isEnabled() );
+		EXPECT_NEAR( test.pages[0]->getPixelsSize().getWidth(), 800.f, 0.01f );
+		EXPECT_NEAR( tabs->getContainerNode()->convertToWorldSpace( Vector2f::Zero ).x, 0.f,
+					 0.01f );
+
+		for ( int i = 0; i < 2; i++ ) {
+			auto* page = UIWidget::New();
+			auto* tab = tabs->add( "Second", page );
+			EXPECT_TRUE( tabs->getTabBar()->isVisible() );
+			EXPECT_TRUE( separator->isVisible() );
+			EXPECT_TRUE( separator->isEnabled() );
+			EXPECT_NEAR( tabs->getTabBar()->getPixelsSize().getWidth(), 260.f, 0.01f );
+			EXPECT_NEAR( tabs->getTab( 1 )->getPixelsSize().getWidth(), 260.f, 0.01f );
+			EXPECT_NEAR( test.pages[0]->getPixelsSize().getWidth(), 536.f, 0.01f );
+
+			tabs->removeTab( tab );
+			EXPECT_FALSE( tabs->getTabBar()->isVisible() );
+			EXPECT_FALSE( separator->isVisible() );
+			EXPECT_NEAR( test.pages[0]->getPixelsSize().getWidth(), 800.f, 0.01f );
+			EXPECT_NEAR( tabs->getTabBarWidth(), 260.f, 0.01f );
+			test.tick();
+		}
+
+		tabs->removeAllTabs();
+		test.tick();
+		EXPECT_FALSE( tabs->getTabBar()->isVisible() );
+	}
+}
+
+UTEST( UITabWidget, SeparatorDragResizesRowsAndRemembersWidth ) {
+	TabPositionTest test( 30 );
+	auto* tabs = test.tabs;
+	tabs->setTabPosition( UITabWidget::TabPosition::Right );
+	auto* separator = findSeparator( tabs );
+	test.tick();
+	EXPECT_TRUE( separator->isEnabled() );
+	int widthChanges = 0;
+	tabs->on( Event::OnValueChange, [&widthChanges]( const Event* ) { widthChanges++; } );
+
+	tabs->setTabBarWidth( 210 );
+	EXPECT_EQ( widthChanges, 0 );
+
+	dragSeparator( separator, { 500, 0 } );
+
+	EXPECT_EQ( widthChanges, 1 );
+	EXPECT_NEAR( tabs->getTabBarWidth(), 296.f, 0.01f );
+	EXPECT_NEAR( tabs->getTabBar()->getPixelsSize().getWidth(), 296.f, 0.01f );
+	EXPECT_NEAR( tabs->getTab( 29 )->getPixelsSize().getWidth(), 296.f, 0.01f );
+	EXPECT_NEAR( test.pages[0]->getPixelsSize().getWidth(), 500.f, 0.01f );
+	EXPECT_NEAR( tabs->getTabScroll()->getPixelsPosition().x,
+				 296.f - tabs->getTabScroll()->getPixelsSize().getWidth(), 0.01f );
+
+	// The width survives leaving the vertical positions.
+	tabs->setTabPosition( UITabWidget::TabPosition::Top );
+	test.tick();
+	tabs->setTabPosition( UITabWidget::TabPosition::Left );
+	EXPECT_NEAR( tabs->getTabBar()->getPixelsSize().getWidth(), 296.f, 0.01f );
+}
+
+UTEST( UITabWidget, CollapsingTheSideBarCancelsSeparatorDrag ) {
+	using Position = UITabWidget::TabPosition;
+	for ( const auto position : { Position::Left, Position::Right } ) {
+		TabPositionTest test( 2 );
+		auto* tabs = test.tabs;
+		tabs->setTabPosition( position );
+		auto* separator = findSeparator( tabs );
+		test.tick();
+		const Vector2f dragPosition( position == Position::Left ? 260 : 500, 0 );
+
+		const auto expectCollapsed = [&]() {
+			EXPECT_FALSE( separator->isDragging() );
+			EXPECT_TRUE( hasNoDraggingNode( test ) );
+			EXPECT_FALSE( separator->isVisible() );
+			EXPECT_FALSE( separator->isEnabled() );
+			EXPECT_NEAR( tabs->getContainerNode()->convertToWorldSpace( Vector2f::Zero ).x, 0.f,
+						 0.01f );
+		};
+
+		separator->setDragging( true, false );
+		test.app.getUI()->getEventDispatcher()->setNodeDragging( separator );
+		separator->setPixelsPosition( dragPosition );
+		const Float draggedWidth = tabs->getTabBarWidth();
+		EXPECT_NE( draggedWidth, 200.f );
+
+		tabs->setHideTabBar( true );
+		expectCollapsed();
+		EXPECT_NEAR( test.pages[0]->getPixelsSize().getWidth(), 800.f, 0.01f );
+		EXPECT_NEAR( tabs->getTabBarWidth(), draggedWidth, 0.01f );
+
+		tabs->setHideTabBar( false );
+		EXPECT_TRUE( separator->isVisible() );
+		EXPECT_TRUE( separator->isEnabled() );
+		EXPECT_NEAR( tabs->getTabBar()->getPixelsSize().getWidth(), draggedWidth, 0.01f );
+
+		separator->setDragging( true, false );
+		test.app.getUI()->getEventDispatcher()->setNodeDragging( separator );
+		tabs->setPixelsSize( 40, 600 );
+		expectCollapsed();
+		EXPECT_NEAR( test.pages[0]->getPixelsSize().getWidth(), 40.f, 0.01f );
+
+		tabs->setPixelsSize( 800, 600 );
+		EXPECT_NEAR( tabs->getTabBar()->getPixelsSize().getWidth(), draggedWidth, 0.01f );
+	}
+}
+
+UTEST( UITabWidget, NarrowSideTabsKeepUsablePanes ) {
+	using Position = UITabWidget::TabPosition;
+	for ( const auto position : { Position::Left, Position::Right } ) {
+		TabPositionTest test( 2, { 150, 300 } );
+		auto* tabs = test.tabs;
+		tabs->setTabPosition( position );
+		auto* separator = findSeparator( tabs );
+		EXPECT_TRUE( separator->isVisible() );
+		EXPECT_TRUE( tabs->getTabBar()->getPixelsSize().getWidth() >= 64.f );
+		EXPECT_TRUE( test.pages[0]->getPixelsSize().getWidth() >= 64.f );
+
+		// Without room for both panes the content takes the whole widget, instead of being pushed
+		// out of it by the minimum sizes.
+		tabs->setPixelsSize( 40, 300 );
+		EXPECT_FALSE( tabs->getTabBar()->isVisible() );
+		EXPECT_FALSE( separator->isVisible() );
+		EXPECT_NEAR( tabs->getContainerNode()->convertToWorldSpace( Vector2f::Zero ).x, 0.f,
+					 0.01f );
+		EXPECT_NEAR( test.pages[0]->getPixelsSize().getWidth(), 40.f, 0.01f );
+
+		tabs->setPixelsSize( 800, 300 );
+		EXPECT_TRUE( tabs->getTabBar()->isVisible() );
+		EXPECT_TRUE( separator->isVisible() );
+		EXPECT_NEAR( tabs->getTabBar()->getPixelsSize().getWidth(), 200.f, 0.01f );
+		EXPECT_NEAR( tabs->getTab( 0 )->getPixelsSize().getWidth(), 200.f, 0.01f );
+		EXPECT_NEAR( tabs->getTabBarWidth(), 200.f, 0.01f );
+	}
+}
+
+UTEST( UITabWidget, VerticalRowsIgnoreHorizontalWidthLimits ) {
+	TabPositionTest test( 2 );
+	auto* tabs = test.tabs;
+	tabs->setMinTabWidth( "300dp" );
+	EXPECT_NEAR( tabs->getTab( 0 )->getPixelsSize().getWidth(), 300.f, 0.01f );
+
+	tabs->setTabPosition( UITabWidget::TabPosition::Left );
+	EXPECT_NEAR( tabs->getTab( 0 )->getPixelsSize().getWidth(), 200.f, 0.01f );
+	EXPECT_NEAR( tabs->getTab( 1 )->getPixelsSize().getWidth(), 200.f, 0.01f );
+
+	tabs->setMaxTabWidth( "100dp" );
+	tabs->setMinTabWidth( "32dp" );
+	EXPECT_NEAR( tabs->getTab( 0 )->getPixelsSize().getWidth(), 200.f, 0.01f );
+
+	tabs->setTabPosition( UITabWidget::TabPosition::Top );
+	EXPECT_TRUE( tabs->getTab( 0 )->getPixelsSize().getWidth() <= 100.f );
+
+	tabs->setMaxTabWidth( "300dp" );
+	tabs->setMinTabWidth( "300dp" );
+	EXPECT_NEAR( tabs->getTab( 0 )->getPixelsSize().getWidth(), 300.f, 0.01f );
+}
+
+UTEST( UITabWidget, VerticalOverflowScrollsSelectedRowIntoView ) {
+	TabPositionTest test( 40, { 800, 240 } );
+	auto* tabs = test.tabs;
+	tabs->setTabPosition( UITabWidget::TabPosition::Left );
+	test.tick();
+	// The theme can pad the tab bar, which scrolls with the rows.
+	const Float rowsHeight = 40.f * tabs->getTabsHeight() +
+							 tabs->getTabBar()->getPixelsPadding().Top +
+							 tabs->getTabBar()->getPixelsPadding().Bottom;
+	auto* scroll = tabs->getTabScroll();
+	EXPECT_TRUE( scroll->getOrientation() == UIOrientation::Vertical );
+	EXPECT_TRUE( scroll->isVisible() );
+	EXPECT_NEAR( tabs->getTabBar()->getPixelsSize().getHeight(), rowsHeight, 0.01f );
+	EXPECT_NEAR( scroll->getMaxValue(), rowsHeight - 240.f, 0.01f );
+	EXPECT_NEAR( scroll->getPixelsSize().getHeight(), 240.f, 0.01f );
+
+	tabs->setTabSelected( Uint32{ 39 } );
+	EXPECT_NEAR( tabs->getTabBar()->getPixelsPosition().y, -( rowsHeight - 240.f ), 0.01f );
+	EXPECT_NEAR( scroll->getPixelsPosition().y, rowsHeight - 240.f, 0.01f );
+
+	tabs->setTabSelected( Uint32{ 0 } );
+	EXPECT_NEAR( tabs->getTabBar()->getPixelsPosition().y, 0.f, 0.01f );
+
+	tabs->setTabSelected( Uint32{ 20 } );
+	Float rowTop = tabs->getTab( 20 )->convertToWorldSpace( Vector2f::Zero ).y;
+	EXPECT_TRUE( rowTop >= 0.f && rowTop + tabs->getTabsHeight() <= 240.f );
+
+	// Once everything fits the strip can't stay scrolled.
+	tabs->setPixelsSize( 800, 2000 );
+	EXPECT_FALSE( scroll->isVisible() );
+	EXPECT_NEAR( tabs->getTabBar()->getPixelsPosition().y, 0.f, 0.01f );
+	EXPECT_NEAR( tabs->getTabBar()->getPixelsSize().getHeight(), 2000.f, 0.01f );
+
+	// Back to horizontal the scrollbar must behave as a strip scrollbar again.
+	tabs->setPixelsSize( 200, 240 );
+	tabs->setTabPosition( UITabWidget::TabPosition::Top );
+	scroll = tabs->getTabScroll();
+	EXPECT_TRUE( scroll->getOrientation() == UIOrientation::Horizontal );
+	EXPECT_NEAR( scroll->getPixelsSize().getWidth(), 200.f, 0.01f );
+	EXPECT_TRUE( scroll->isVisible() );
+}
+
+UTEST( UITabWidget, SidePositionsAreIndependentOfTextDirection ) {
+	using Position = UITabWidget::TabPosition;
+	for ( const auto position : { Position::Left, Position::Right } ) {
+		TabPositionTest test( 3 );
+		auto* tabs = test.tabs;
+		tabs->setDirection( UIDirection::RightToLeft );
+		tabs->setTabPosition( position );
+
+		const Float barX = tabs->getTabBar()->convertToWorldSpace( Vector2f::Zero ).x;
+		EXPECT_NEAR( barX, position == Position::Left ? 0.f : 600.f, 0.01f );
+		for ( Uint32 i = 0; i < tabs->getTabCount(); i++ ) {
+			EXPECT_NEAR( tabs->getTab( i )->getPixelsPosition().y, i * 24.f, 0.01f );
+			EXPECT_NEAR( tabs->getTab( i )->getPixelsPosition().x, 0.f, 0.01f );
+		}
+
+		tabs->setDirection( UIDirection::LeftToRight );
+		EXPECT_NEAR( tabs->getTabBar()->convertToWorldSpace( Vector2f::Zero ).x, barX, 0.01f );
+	}
+}
+
+UTEST( UITabWidget, PositionClassStylesFollowThePosition ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	app.getUI()->loadLayoutFromString( R"xml(
+		<style>
+			TabWidget { tab-height: 24dp; }
+			TabWidget.tabs-vertical { tab-height: 30dp; }
+		</style>
+		<TabWidget id="tabs" layout_width="400dp" layout_height="300dp">
+			<Tab text="First" owns="page_a" />
+			<widget id="page_a" />
+		</TabWidget>
+	)xml" );
+	app.getUI()->update( Milliseconds( 16 ) );
+
+	auto* tabs = app.getUI()->find( "tabs" )->asType<UITabWidget>();
+	EXPECT_NEAR( tabs->getTabsHeight(), 24.f, 0.01f );
+
+	tabs->setTabPosition( UITabWidget::TabPosition::Left );
+	app.getUI()->update( Milliseconds( 16 ) );
+	EXPECT_NEAR( tabs->getTabsHeight(), 30.f, 0.01f );
+	EXPECT_NEAR( tabs->getTab( 0 )->getPixelsSize().getHeight(), 30.f, 0.01f );
+
+	tabs->setTabPosition( UITabWidget::TabPosition::Top );
+	app.getUI()->update( Milliseconds( 16 ) );
+	EXPECT_NEAR( tabs->getTabsHeight(), 24.f, 0.01f );
+	EXPECT_NEAR( tabs->getTabBar()->getPixelsSize().getHeight(), 24.f, 0.01f );
+	EXPECT_NEAR( tabs->getContainerNode()->getPixelsPosition().y, 24.f, 0.01f );
+	EXPECT_NEAR( tabs->getTab( 0 )->getPixelsSize().getHeight(), 24.f, 0.01f );
+}
+
+UTEST( UITabWidget, TabScrollBarFollowsTheOrientation ) {
+	TabPositionTest test( 40, { 400, 240 } );
+	auto* tabs = test.tabs;
+	test.tick();
+	EXPECT_TRUE( tabs->getTabScroll()->isVisible() );
+	const Float thickness = tabs->getTabScroll()->getPixelsSize().getHeight();
+	EXPECT_TRUE( thickness > 0.f && thickness < 40.f );
+
+	for ( int cycle = 0; cycle < 2; cycle++ ) {
+		for ( const auto position :
+			  { UITabWidget::TabPosition::Left, UITabWidget::TabPosition::Right } ) {
+			tabs->setTabPosition( position );
+			test.tick();
+			auto* scroll = tabs->getTabScroll();
+			const Sizef barSize( tabs->getTabBar()->getPixelsSize() );
+			EXPECT_TRUE( scroll->isVisible() );
+			EXPECT_NEAR( scroll->getPixelsSize().getWidth(), thickness, 0.01f );
+			EXPECT_NEAR( scroll->getPixelsSize().getHeight(), 240.f, 0.01f );
+			EXPECT_NEAR( scroll->getPixelsPosition().x, barSize.getWidth() - thickness, 0.01f );
+			EXPECT_NEAR( scroll->getSlider()->getPixelsSize().getHeight(), 240.f, 0.01f );
+			EXPECT_NEAR( scroll->getSlider()->getPixelsSize().getWidth(), thickness, 0.01f );
+
+			tabs->setTabPosition( UITabWidget::TabPosition::Top );
+			test.tick();
+			scroll = tabs->getTabScroll();
+			EXPECT_TRUE( scroll->isVisible() );
+			EXPECT_TRUE( scroll->getOrientation() == UIOrientation::Horizontal );
+			EXPECT_NEAR( scroll->getPixelsSize().getHeight(), thickness, 0.01f );
+			EXPECT_NEAR( scroll->getPixelsSize().getWidth(), 400.f, 0.01f );
+			EXPECT_NEAR( scroll->getPixelsPosition().y,
+						 tabs->getTabBar()->getPixelsSize().getHeight() - thickness, 0.01f );
+			EXPECT_NEAR( scroll->getSlider()->getPixelsSize().getWidth(), 400.f, 0.01f );
+			EXPECT_NEAR( scroll->getSlider()->getPixelsSize().getHeight(), thickness, 0.01f );
+
+			// The bar only spans its own edge, so it must not cover the tabs above it.
+			const Vector2f tabCenter = tabs->getTab( 1 )->convertToWorldSpace(
+				tabs->getTab( 1 )->getPixelsSize().asFloat() * Vector2f( 0.5f, 0.25f ) );
+			EXPECT_TRUE( test.app.getUI()->overFind( tabCenter ) == tabs->getTab( 1 ) ||
+						 tabs->getTab( 1 )->isParentOf( test.app.getUI()->overFind( tabCenter ) ) );
+
+			// Each replaced scrollbar leaves with the tick.
+			test.tick();
+			size_t scrollBars = 0;
+			for ( Node* node = tabs->getTabBar()->getFirstChild(); node;
+				  node = node->getNextNode() ) {
+				scrollBars += node->isType( UI_TYPE_SCROLLBAR ) ? 1 : 0;
+			}
+			EXPECT_EQ( scrollBars, size_t{ 1 } );
+		}
+	}
+}
+
+UTEST( UITabWidget, TabPositionFromStyleSheet ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	auto* root = app.getUI()->loadLayoutFromString( R"xml(
+		<style>
+			.side { tab-position: right; tab-bar-width: 150dp; }
+		</style>
+		<TabWidget id="tabs" class="side" layout_width="400dp" layout_height="300dp" tab-height="24dp">
+			<Tab id="first" text="First" owns="page_a" />
+			<Tab id="second" text="Second" owns="page_b" />
+			<widget id="page_a" />
+			<widget id="page_b" />
+		</TabWidget>
+	)xml" );
+	ASSERT_TRUE( root != nullptr );
+	app.getUI()->update( Milliseconds( 16 ) );
+
+	auto* tabs = app.getUI()->find( "tabs" )->asType<UITabWidget>();
+	EXPECT_TRUE( tabs->getTabPosition() == UITabWidget::TabPosition::Right );
+	EXPECT_TRUE( tabs->hasClass( "tabs-right" ) );
+	EXPECT_TRUE( tabs->hasClass( "side" ) );
+	EXPECT_NEAR( tabs->getTabBarWidth(), 150.f, 0.01f );
+	EXPECT_EQ( tabs->getTabCount(), Uint32{ 2 } );
+	EXPECT_TRUE( tabs->getTab( 1 )->getOwnedWidget() == app.getUI()->find( "page_b" ) );
+	EXPECT_TRUE( tabs->getContainerNode()->isParentOf( app.getUI()->find( "page_a" ) ) );
+
+	// Replacing the classes can't lose the one of the current position.
+	tabs->setClass( "other" );
+	EXPECT_TRUE( tabs->hasClass( "tabs-right" ) );
+	EXPECT_TRUE( tabs->hasClass( "tabs-vertical" ) );
+	EXPECT_TRUE( tabs->hasClass( "other" ) );
+}
+
+class TabDragTest : public TabPositionTest {
+  public:
+	explicit TabDragTest( size_t tabCount ) : TabPositionTest( tabCount ) {
+		tabs->setAllowRearrangeTabs( true );
+		tabs->setAllowDragAndDropTabs( true );
+		tabs->setSplitFunction(
+			[this]( SplitDirection direction, UITabWidget* ) -> UITabWidget* {
+				splitDirection = direction;
+				splits++;
+				auto* newTabs = UITabWidget::New();
+				newTabs->setParent( app.getUI() );
+				newTabs->setPixelsSize( 400, 300 );
+				newTabs->setAllowDragAndDropTabs( true );
+				return newTabs;
+			},
+			0.1f );
+		tick();
+	}
+
+	int splits{ 0 };
+	std::optional<SplitDirection> splitDirection;
+
+	void moveMouse( const Vector2f& position ) {
+		app.getWindow()->getInput()->setMousePos( position.asInt() );
+		tick();
+	}
+
+	void mouseButton( bool down ) {
+		auto* input = app.getWindow()->getInput();
+		input->cleanStates();
+		InputEvent event{};
+		event.WinID = app.getWindow()->getWindowID();
+		event.Type = down ? InputEvent::MouseButtonDown : InputEvent::MouseButtonUp;
+		const Vector2i pos( input->getMousePos() );
+		event.button = { 0, EE_BUTTON_LEFT, static_cast<Uint8>( down ? 1 : 0 ),
+						 static_cast<Int16>( pos.x ), static_cast<Int16>( pos.y ) };
+		input->processEventForWindow( &event );
+		tick();
+	}
+
+	void dragTab( UITab* tab, const std::vector<Vector2f>& path ) {
+		moveMouse( tab->convertToWorldSpace( tab->getPixelsSize().asFloat() * 0.5f ) );
+		mouseButton( true );
+		// Multiple steps: the first ones start the drag.
+		for ( const auto& position : path )
+			moveMouse( position );
+		mouseButton( false );
+		tick();
+	}
+
+	bool allTabsEnabled() {
+		for ( Uint32 i = 0; i < tabs->getTabCount(); i++ ) {
+			if ( !tabs->getTab( i )->isEnabled() )
+				return false;
+		}
+		return true;
+	}
+};
+
+UTEST( UITabWidget, TopTabDragStillReordersAndSplits ) {
+	TabDragTest test( 3 );
+	auto* tabs = test.tabs;
+	auto* first = tabs->getTab( 0 );
+
+	// Along the strip it reorders, without detaching.
+	const Vector2f barCenter =
+		first->convertToWorldSpace( first->getPixelsSize().asFloat() * 0.5f );
+	const Float endX = tabs->getTab( 1 )->convertToWorldSpace( Vector2f::Zero ).x +
+					   tabs->getTab( 1 )->getPixelsSize().getWidth() * 0.75f;
+	test.dragTab( first, { barCenter + Vector2f( 8, 0 ), barCenter + Vector2f( 16, 0 ),
+						   Vector2f( endX, barCenter.y ), Vector2f( endX, barCenter.y ) } );
+	EXPECT_EQ( tabs->getTabIndex( first ), Uint32{ 1 } );
+	EXPECT_EQ( test.splits, 0 );
+	EXPECT_TRUE( test.allTabsEnabled() );
+	EXPECT_TRUE( first->getParent() == tabs->getTabBar() );
+
+	// Across the strip it detaches, and the right content edge requests a split.
+	test.dragTab( first, { { 400, 100 }, { 400, 200 }, { 500, 300 }, { 790, 300 }, { 790, 301 } } );
+	EXPECT_EQ( test.splits, 1 );
+	EXPECT_TRUE( test.splitDirection == SplitDirection::Right );
+	EXPECT_EQ( tabs->getTabCount(), Uint32{ 2 } );
+	EXPECT_EQ( tabs->getTabIndex( first ), eeINDEX_NOT_FOUND );
+	EXPECT_TRUE( test.allTabsEnabled() );
+}
+
+UTEST( UITabWidget, VerticalTabDragUsesTheOppositeAxes ) {
+	TabDragTest test( 4 );
+	auto* tabs = test.tabs;
+	tabs->setTabPosition( UITabWidget::TabPosition::Left );
+	test.tick();
+	auto* first = tabs->getTab( 0 );
+
+	// Down the bar it reorders: the X coordinate must not move the row.
+	test.dragTab( first, { { 100, 20 }, { 100, 26 }, { 104, 30 }, { 104, 36 }, { 104, 36 } } );
+	EXPECT_EQ( tabs->getTabIndex( first ), Uint32{ 1 } );
+	EXPECT_EQ( test.splits, 0 );
+	EXPECT_NEAR( first->getPixelsPosition().x, 0.f, 0.01f );
+	EXPECT_NEAR( first->getPixelsPosition().y,
+				 tabs->getTabBar()->getPixelsPadding().Top + tabs->getTabsHeight(), 0.01f );
+	EXPECT_TRUE( test.allTabsEnabled() );
+	EXPECT_TRUE( first->getParent() == tabs->getTabBar() );
+
+	// Dragged into the content, inside its central area, it doesn't request a split.
+	auto* second = tabs->getTab( 2 );
+	test.dragTab( second, { { 100, 70 }, { 200, 70 }, { 300, 100 }, { 500, 300 }, { 501, 300 } } );
+	EXPECT_EQ( test.splits, 0 );
+	EXPECT_TRUE( second->getTabWidget() == tabs );
+	EXPECT_EQ( tabs->getTabCount(), Uint32{ 4 } );
+	EXPECT_TRUE( second->getParent() == tabs->getTabBar() );
+	EXPECT_TRUE( test.allTabsEnabled() );
+
+	// The left edge of the content, not of the widget, requests the split.
+	test.dragTab( second, { { 100, 70 }, { 200, 70 }, { 300, 100 }, { 230, 300 }, { 231, 300 } } );
+	EXPECT_EQ( test.splits, 1 );
+	EXPECT_TRUE( test.splitDirection == SplitDirection::Left );
+	EXPECT_EQ( tabs->getTabCount(), Uint32{ 3 } );
+}
+
+UTEST( UITabWidget, VerticalDropOnTheTabBarDoesNotSplit ) {
+	TabDragTest test( 3 );
+	auto* tabs = test.tabs;
+	tabs->setTabPosition( UITabWidget::TabPosition::Right );
+	test.tick();
+	auto* tab = tabs->getTab( 0 );
+
+	// Out of the bar and back to it, and over the separator.
+	test.dragTab( tab, { { 700, 20 }, { 600, 20 }, { 500, 300 }, { 700, 300 }, { 701, 300 } } );
+	EXPECT_EQ( test.splits, 0 );
+	test.dragTab( tab, { { 700, 20 }, { 600, 20 }, { 500, 300 }, { 598, 300 }, { 598, 301 } } );
+	EXPECT_EQ( test.splits, 0 );
+	EXPECT_TRUE( tab->getTabWidget() == tabs );
+	EXPECT_EQ( tabs->getTabCount(), Uint32{ 3 } );
+}
+
+UTEST( UITabWidget, TransferBetweenPositionsAdaptsTheTab ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	auto* source = UITabWidget::New();
+	source->setParent( app.getUI() );
+	source->setPixelsSize( 400, 300 );
+	source->setTabsHeight( 24 );
+	source->setAllowDragAndDropTabs( true );
+	source->setTabPosition( UITabWidget::TabPosition::Left );
+	auto* destination = UITabWidget::New();
+	destination->setParent( app.getUI() );
+	destination->setPixelsSize( 400, 300 );
+	destination->setTabsHeight( 24 );
+	destination->setAllowDragAndDropTabs( true );
+	destination->add( "Existing", UIWidget::New() );
+	auto* page = UIWidget::New();
+	auto* tab = source->add( "Moved", page );
+	EXPECT_NEAR( tab->getPixelsSize().getWidth(), 200.f, 0.01f );
+
+	transferTabTo( tab, destination );
+
+	EXPECT_TRUE( tab->getTabWidget() == destination );
+	EXPECT_FALSE( tab->expandTextView() );
+	EXPECT_TRUE( tab->getPixelsSize().getWidth() < 200.f );
+	EXPECT_TRUE( destination->getContainerNode()->isParentOf( page ) );
+
+	destination->setTabPosition( UITabWidget::TabPosition::Right );
+	EXPECT_NEAR( tab->getPixelsSize().getWidth(), 200.f, 0.01f );
+	transferTabTo( tab, source );
+	EXPECT_TRUE( tab->getTabWidget() == source );
+	EXPECT_NEAR( tab->getPixelsSize().getWidth(), 200.f, 0.01f );
+	EXPECT_NEAR( page->getPixelsSize().getWidth(), 196.f, 0.01f );
+}
+
+UTEST( UITabWidgetSplitter, SideTabsDoNotAlterTheSplitTree ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	splitter->setHideTabBarOnSingleTab( false );
+	auto* container = UILayout::New();
+	container->setParent( app.getUI() );
+	splitter->setOnTabWidgetCreateCb( []( UITabWidget* tabWidget ) {
+		tabWidget->setTabPosition( UITabWidget::TabPosition::Left );
+	} );
+	auto* firstTabs = splitter->createTabWidget( container );
+	auto* firstWidget = UIWidget::New();
+	splitter->createWidgetInTabWidget( firstTabs, firstWidget, "First" );
+	auto* secondTabs = splitter->splitTabWidget( SplitDirection::Right, firstTabs );
+	ASSERT_TRUE( secondTabs != nullptr );
+	auto* secondWidget = UIWidget::New();
+	splitter->createWidgetInTabWidget( secondTabs, secondWidget, "Second" );
+
+	EXPECT_TRUE( secondTabs->getTabPosition() == UITabWidget::TabPosition::Left );
+	EXPECT_TRUE( splitter->splitterFromWidget( firstWidget ) == firstTabs->getParent() );
+	EXPECT_TRUE( splitter->splitterFromWidget( secondWidget ) == secondTabs->getParent() );
+
+	const auto layout = splitter->toJSON();
+	EXPECT_TRUE( layout["type"] == "splitter" );
+	EXPECT_TRUE( layout["first"]["type"] == "tabwidget" );
+	EXPECT_TRUE( layout["last"]["type"] == "tabwidget" );
+
+	splitter->closeTab( secondWidget, UITabWidget::FocusTabBehavior::Default );
+	app.getUI()->update( Milliseconds( 16 ) );
+	EXPECT_EQ( splitter->getTabWidgets().size(), 1UL );
+	EXPECT_TRUE( firstTabs->getParent() == container );
+	eeDelete( splitter );
 }
 
 UTEST( UIAbstractTableView, PercentageColumnWidthsScaleAndPreserveAdjacentTotal ) {

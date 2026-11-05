@@ -52,9 +52,15 @@ class EE_API UITab : public UISelectButton {
 	std::string mOwnedName;
 	mutable UIWidget* mCloseButton{ nullptr };
 	Float mDragTotalDiff{ 0.f };
+	// The height to restore when the tab stops being a vertical row, which sizes it by tab-height.
+	Float mHorizontalHeight{ 0.f };
 	UITabWidget* mTabWidget{ nullptr };
 	UIWidget* mCurDropWidget{ nullptr };
 	bool mWasToolipEnabled{ true };
+	bool mVerticalRow{ false };
+	// The tab left the tab bar, and can be dropped on a split. It stays set until the next drag
+	// starts, because the drop is delivered after onDragStop.
+	bool mDragDetached{ false };
 
 	UITab();
 
@@ -85,6 +91,8 @@ class EE_API UITab : public UISelectButton {
 	void setOwnedNode();
 
 	void updateTab();
+
+	void setVerticalRow( bool verticalRow );
 };
 
 }} // namespace EE::UI

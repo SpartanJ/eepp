@@ -329,6 +329,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::NumberLength );
 	registerProperty( PropertyId::TabHeight, "tab-height", "" )
 		.setType( PropertyType::NumberLength );
+	registerProperty( PropertyId::TabPosition, "tab-position", "" ).setType( PropertyType::String );
+	registerProperty( PropertyId::TabBarWidth, "tab-bar-width", "" )
+		.setType( PropertyType::NumberLength );
 	registerProperty( PropertyId::Selected, "selected", "" )
 		.setType( PropertyType::Bool )
 		.addAlias( "active" )
@@ -655,6 +658,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::Bool );
 	registerProperty( PropertyId::SplitterHideOnEdge, "splitter-hide-on-edge", "false" )
 		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::SplitterResizable, "splitter-resizable", "true" )
+		.setType( PropertyType::Bool );
+	registerProperty( PropertyId::SplitterPartitionOrigin, "splitter-partition-origin", "start" )
+		.setType( PropertyType::String );
 
 	registerProperty( PropertyId::DroppableHoveringColor, "droppable-hovering-color", "#FFFFFF20" )
 		.setType( PropertyType::Color );

@@ -43,13 +43,19 @@ bool UITab::isType( const Uint32& type ) const {
 }
 
 UITabWidget* UITab::getTabWidget() const {
-	if ( NULL != getParent() && NULL != getParent()->getParent() &&
-		 getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) ) {
-		return getParent()->getParent()->asType<UITabWidget>();
-	} else if ( mTabWidget ) {
-		return mTabWidget;
+	Node* owner = NULL != getParent() ? getParent()->getParent() : NULL;
+	if ( NULL != owner ) {
+		if ( owner->isType( UI_TYPE_TABWIDGET ) )
+			return owner->asType<UITabWidget>();
+
+		// Left/Right tab bars are inside a viewport of the tab widget's internal splitter.
+		Node* splitter = owner->getParent();
+		if ( NULL != splitter && splitter->isType( UI_TYPE_SPLITTER ) &&
+			 NULL != splitter->getParent() && splitter->getParent()->isType( UI_TYPE_TABWIDGET ) ) {
+			return splitter->getParent()->asType<UITabWidget>();
+		}
 	}
-	return NULL;
+	return mTabWidget;
 }
 
 Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff ) {
@@ -57,20 +63,26 @@ Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff 
 	if ( !tabW )
 		return 0;
 	Vector2f newPos( mPosition - dragDiff );
-	if ( mFlags & UI_DRAG_VERTICAL )
+	if ( mDragDetached )
 		newPos = tabW->getTabBar()->convertToNodeSpace( newPos );
 
 	// Swap with the visually adjacent tab once the dragged tab crosses its middle. The previous
-	// tab is on the inline-start side: left in LTR, right in RTL.
+	// tab is on the inline-start side: left in LTR, right in RTL, and always above in vertical
+	// tabs.
 	Uint32 index = tabW->getTabIndex( this );
-	const bool rtl = tabW->isRTL();
+	const bool vertical = tabW->isTabBarVertical();
+	const bool rtl = !vertical && tabW->isRTL();
+	const Float dragStart = vertical ? newPos.y : newPos.x;
+	const Float dragEnd = dragStart + ( vertical ? mSize.getHeight() : mSize.getWidth() );
+	auto tabMiddle = [vertical]( UITab* tab ) {
+		return vertical ? tab->getPixelsPosition().y + tab->getPixelsSize().getHeight() * 0.5f
+						: tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f;
+	};
 	auto crossesStartSide = [&]( UITab* tab ) {
-		Float tabMiddle = tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f;
-		return rtl ? newPos.x + mSize.getWidth() > tabMiddle : newPos.x < tabMiddle;
+		return rtl ? dragEnd > tabMiddle( tab ) : dragStart < tabMiddle( tab );
 	};
 	auto crossesEndSide = [&]( UITab* tab ) {
-		Float tabMiddle = tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f;
-		return rtl ? newPos.x < tabMiddle : newPos.x + mSize.getWidth() > tabMiddle;
+		return rtl ? dragStart < tabMiddle( tab ) : dragEnd > tabMiddle( tab );
 	};
 	bool swapped = false;
 	if ( index > 0 ) {
@@ -86,11 +98,14 @@ Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff 
 			tabW->swapTabs( tab, this );
 	}
 
-	if ( tabW->allowDragAndDropTabs() && !( mFlags & UI_DRAG_VERTICAL ) ) {
-		mDragTotalDiff += mDragPoint.y - pos.y;
+	if ( tabW->allowDragAndDropTabs() && !mDragDetached ) {
+		// The tab detaches when dragged across the tab bar axis.
+		mDragTotalDiff += vertical ? mDragPoint.x - pos.x : mDragPoint.y - pos.y;
 		if ( eeabs( mDragTotalDiff ) >= tabW->getTabVerticalDragResistance() ) {
-			setFlags( UI_DRAG_VERTICAL );
-			setPixelsPosition( mPosition.x, mPosition.y - mDragTotalDiff );
+			mDragDetached = true;
+			setFlags( UI_DRAG_VERTICAL | UI_DRAG_HORIZONTAL );
+			setPixelsPosition( vertical ? mPosition.x - mDragTotalDiff : mPosition.x,
+							   vertical ? mPosition.y : mPosition.y - mDragTotalDiff );
 			mDragPoint = pos;
 			mTabWidget = getTabWidget();
 			Vector2f posDiff( pos );
@@ -127,10 +142,14 @@ Uint32 UITab::onDragStart( const Vector2i& position, const Uint32& flags ) {
 	UITabWidget* tabW = getTabWidget();
 	mTabWidget = NULL;
 	mDragTotalDiff = 0;
+	mDragDetached = false;
 	mWasToolipEnabled = isTooltipEnabled();
 	if ( mWasToolipEnabled )
 		setTooltipEnabled( false );
-	unsetFlags( UI_DRAG_VERTICAL );
+	// An attached tab only moves along the tab bar.
+	const bool vertical = tabW && tabW->isTabBarVertical();
+	setFlags( vertical ? UI_DRAG_VERTICAL : UI_DRAG_HORIZONTAL );
+	unsetFlags( vertical ? UI_DRAG_HORIZONTAL : UI_DRAG_VERTICAL );
 	if ( tabW ) {
 		for ( size_t i = 0; i < tabW->getTabCount(); i++ ) {
 			UITab* tab = tabW->getTab( i );
@@ -174,7 +193,7 @@ void UITab::onParentChange() {
 
 void UITab::onSizeChange() {
 	onAutoSize();
-	if ( NULL != getTabWidget() )
+	if ( NULL != getTabWidget() && !getTabWidget()->mPositioningTabRows )
 		getTabWidget()->orderTabs();
 	UISelectButton::onSizeChange();
 }
@@ -256,6 +275,10 @@ void UITab::onAutoSize() {
 	UITabWidget* tTabW = getTabWidget();
 
 	if ( ( mFlags & UI_AUTO_SIZE ) == 0 )
+		return;
+
+	// Vertical rows are as wide as the tab bar, and the expanded text takes the remaining space.
+	if ( mVerticalRow )
 		return;
 
 	const Rectf iconMargin = PixelDensity::pxToDp( getInnerWidgetPixelsMargin( mIcon ) );
@@ -443,7 +466,11 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 }
 
 void UITab::setOwnedNode() {
-	Node* node = getParent()->getParent()->find( mOwnedName );
+	Node* owner = getTabWidget();
+	if ( NULL == owner )
+		owner = getParent()->getParent();
+
+	Node* node = owner->find( mOwnedName );
 
 	if ( NULL != node ) {
 		setOwnedWidget( node );
@@ -454,8 +481,11 @@ void UITab::updateTab() {
 	UITabWidget* tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
-		setMinWidthEq( tTabW->getMinTabWidth() );
-		setMaxWidthEq( tTabW->getMaxTabWidth() );
+		setMinWidthEq( mVerticalRow ? std::string() : tTabW->getMinTabWidth() );
+		setMaxWidthEq( mVerticalRow ? std::string() : tTabW->getMaxTabWidth() );
+		// Clearing the equation doesn't clear the minimum size that it resolved to.
+		if ( mVerticalRow )
+			setMinWidth( 0 );
 		if ( mText.size() > tTabW->getMaxTextLength() ) {
 			UIPushButton::setText( mText.substr( 0, tTabW->getMaxTextLength() ) );
 		} else {
@@ -464,6 +494,26 @@ void UITab::updateTab() {
 		setDragEnabled( tTabW->getAllowRearrangeTabs() || tTabW->allowDragAndDropTabs() );
 		onAutoSize();
 	}
+}
+
+void UITab::setVerticalRow( bool verticalRow ) {
+	if ( verticalRow == mVerticalRow )
+		return;
+
+	mVerticalRow = verticalRow;
+	if ( mVerticalRow ) {
+		mHorizontalHeight = getSize().getHeight();
+	} else {
+		setSize( getSize().getWidth(), mHorizontalHeight );
+	}
+	getTextView()->setMaxWidthEq( "" );
+	if ( mVerticalRow ) {
+		getTextView()->setHorizontalAlignment( UIHorizontalAlignment::Start );
+	} else {
+		getTextView()->setHorizontalAlign( getHorizontalAlign() );
+	}
+	setExpandTextView( mVerticalRow );
+	updateTab();
 }
 
 Node* UITab::getOwnedWidget() const {

@@ -2525,8 +2525,10 @@ overrides `splitter-hide-on-edge`.
 
 ### splitter-hide-on-edge
 
-Hides the splitter divisor when its percentage partition is exactly `0%` or `100%`, allowing one
-view to consume the complete splitter. This has no effect when `splitter-always-show` is `true`.
+Hides the splitter divisor when its partition is at an edge, allowing one view to consume the
+complete splitter: a percentage of `0%` or `100%`, an absolute size of `0`, or an absolute size that
+exceeds the splitter when the other view has no minimum size. This has no effect when
+`splitter-always-show` is `true`.
 
 * Applicable to: EE::UI::UISplitter (Splitter)
 * Data Type: [boolean](#boolean-data-type)
@@ -2536,11 +2538,38 @@ view to consume the complete splitter. This has no effect when `splitter-always-
 
 ### splitter-partition
 
-Sets the space occupied by the first view contained by the splitter.
+Sets the space occupied by the first view contained by the splitter, or by the last view when
+[splitter-partition-origin](#splitter-partition-origin) is `end`. Dragging the separator keeps
+percentage, `dp` and `px` values in their unit; any other unit becomes `dp`.
 
 * Applicable to: EE::UI::UISplitter (Splitter)
 * Data Type: [length-percentage](#length-percentage-data-type)
 * Default value: `50%`
+
+---
+
+### splitter-partition-origin
+
+Sets the physical edge that `splitter-partition` is measured from. `end` is the right view of a
+horizontal splitter and the bottom view of a vertical one, regardless of the text direction.
+
+* Applicable to: EE::UI::UISplitter (Splitter)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `start`
+  * `end`
+* Default value: `start`
+
+---
+
+### splitter-resizable
+
+Enables/disables dragging the separator. A non resizable splitter keeps a visible separator as a
+divider.
+
+* Applicable to: EE::UI::UISplitter (Splitter)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `true`
 
 ---
 
@@ -2625,6 +2654,36 @@ skin height.
 * Applicable to: EE::UI::UITabWidget (TabWidget)
 * Data Type: [length](#length-data-type)
 * Default value: `0dp`
+
+### tab-position
+
+Sets the edge of the tab widget that holds the tab bar. `left` and `right` stack the tabs in
+horizontal-text rows inside a side pane, and scroll them vertically when they overflow. They are
+physical edges: they don't follow the text direction. The tab widget has the class `tabs-top`,
+`tabs-bottom`, `tabs-left` or `tabs-right`, according to its position, and `tabs-horizontal` or
+`tabs-vertical`, according to its orientation.
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `top`
+  * `bottom`
+  * `left`
+  * `right`
+* Default value: `top`
+
+---
+
+### tab-bar-width
+
+Sets the initial width of a `left` or `right` tab bar, which the user can resize with its separator.
+`tab-height` remains the height of its rows.
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Data Type: [length](#length-data-type)
+* Default value: `200dp`
+
+---
 
 ### tab-separation
 

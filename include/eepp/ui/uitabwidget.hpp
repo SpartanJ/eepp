@@ -13,6 +13,7 @@ namespace EE { namespace UI {
 class UIPopUpMenu;
 class UIScrollBar;
 class UIListView;
+class UISplitter;
 
 class EE_API TabEvent : public Event {
   public:
@@ -45,6 +46,34 @@ class EE_API UITabWidget : public UIWidget {
 		return mode == TabJumpMode::Chronological ? "chronological" : "linear";
 	}
 
+	/** The edge of the widget that holds the tab bar. Left and Right stack the tabs in rows inside
+	 * a side pane. Left and Right are physical edges: they don't follow the text direction. */
+	enum class TabPosition : Uint8 { Top, Bottom, Left, Right };
+
+	static TabPosition tabPositionFromString( std::string_view position ) {
+		if ( String::iequals( position, "bottom" ) )
+			return TabPosition::Bottom;
+		if ( String::iequals( position, "left" ) )
+			return TabPosition::Left;
+		if ( String::iequals( position, "right" ) )
+			return TabPosition::Right;
+		return TabPosition::Top;
+	}
+
+	static std::string tabPositionToString( TabPosition position ) {
+		switch ( position ) {
+			case TabPosition::Bottom:
+				return "bottom";
+			case TabPosition::Left:
+				return "left";
+			case TabPosition::Right:
+				return "right";
+			case TabPosition::Top:
+			default:
+				return "top";
+		}
+	}
+
 	class StyleConfig {
 	  public:
 		Float TabSeparation = 0;
@@ -62,6 +91,9 @@ class EE_API UITabWidget : public UIWidget {
 	typedef std::function<bool( UITab*, FocusTabBehavior )> TabTryCloseCallback;
 
 	static UITabWidget* New();
+
+	/** @return The tab widget that holds node as a tab page, or nullptr if it isn't a page. */
+	static UITabWidget* fromOwnedNode( const Node* node );
 
 	virtual ~UITabWidget();
 
@@ -141,6 +173,24 @@ class EE_API UITabWidget : public UIWidget {
 
 	Float getTabsHeight() const;
 
+	TabPosition getTabPosition() const { return mTabPosition; }
+
+	/** Moves the tab bar to another edge. Tabs, pages, selection and focus history are preserved.
+	 * The widget also holds the class of its position (tabs-top, tabs-bottom, tabs-left or
+	 * tabs-right) and of its orientation (tabs-horizontal or tabs-vertical). */
+	void setTabPosition( TabPosition position );
+
+	bool isTabBarVertical() const {
+		return mTabPosition == TabPosition::Left || mTabPosition == TabPosition::Right;
+	}
+
+	/** @return The width in dp of the Left/Right tab bar, including the last user resize. It's
+	 * retained while the bar is hidden or the tabs are in a horizontal position. Dragging the
+	 * separator sends Event::OnValueChange, so the owner can remember the width. */
+	Float getTabBarWidth() const { return mTabBarWidth; }
+
+	void setTabBarWidth( Float widthDp );
+
 	const StyleConfig& getStyleConfig() const;
 
 	void setStyleConfig( const StyleConfig& styleConfig );
@@ -184,6 +234,8 @@ class EE_API UITabWidget : public UIWidget {
 
 	void setAllowDragAndDropTabs( bool allowDragAndDropTabs );
 
+	/** @return The distance a tab must be dragged away from the tab bar to detach it. It's vertical
+	 * for Top/Bottom tabs and horizontal for Left/Right tabs. */
 	const Float& getTabVerticalDragResistance() const;
 
 	void setTabVerticalDragResistance( const Float& tabVerticalDragResistance );
@@ -208,6 +260,8 @@ class EE_API UITabWidget : public UIWidget {
 
 	void setEnabledCreateContextMenu( bool enabledCreateContextMenu );
 
+	/** @return The tab bar scrollbar. Changing between horizontal and vertical positions replaces
+	 * it, so don't keep the pointer across position changes. */
 	UIScrollBar* getTabScroll() const;
 
 	bool swapTabs( UITab* left, UITab* right );
@@ -250,7 +304,10 @@ class EE_API UITabWidget : public UIWidget {
 	bool mEnabledCreateContextMenu{ false };
 	bool mEnableTabSwitcher{ false };
 	bool mTabSwitcherRunning{ false };
+	bool mPositioningTabRows{ false };
+	TabPosition mTabPosition{ TabPosition::Top };
 	Float mTabVerticalDragResistance;
+	Float mTabBarWidth{ 200.f };
 	Color mDroppableHoveringColor{ Color::Transparent };
 	FocusTabBehavior mFocusTabBehavior{ FocusTabBehavior::Closest };
 	std::deque<UITab*> mFocusHistory;
@@ -259,6 +316,11 @@ class EE_API UITabWidget : public UIWidget {
 	SplitFunctionCb mSplitFn;
 	Float mSplitEdgePercent{ 0.1 };
 	UIListView* mTabSwitcher{ nullptr };
+	// Only exist while the tabs are Left/Right: mInternalSplitter holds mNodeContainer and
+	// mTabBarViewport, which holds and clips the vertically scrolled mTabBar.
+	UISplitter* mInternalSplitter{ nullptr };
+	UIWidget* mTabBarViewport{ nullptr };
+	Uint32 mContainerSizeCb{ 0 };
 	TabJumpMode mTabJumpMode{ TabJumpMode::Linear };
 	std::function<bool( const UIWidget* widget )> mAcceptsDropOfWidgetFn;
 	Scene::EventConnectionList mEventConnections;
@@ -282,15 +344,33 @@ class EE_API UITabWidget : public UIWidget {
 
 	virtual void onPaddingChange();
 
+	virtual void onClassChange();
+
 	virtual Uint32 onMessage( const NodeMessage* msg );
 
 	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
 
 	virtual void drawDroppableHovering();
 
+	void createTabScroll();
+
 	void setContainerSize();
 
+	bool isTabBarHidden() const;
+
+	bool isSideTabBarCollapsed() const;
+
+	void createInternalSplitter();
+
+	void removeInternalSplitter();
+
+	void updateInternalSplitterOrder();
+
+	void updateInternalSplitterLayout();
+
 	void posTabs();
+
+	void posTabRows();
 
 	void zorderTabs();
 
@@ -306,17 +386,23 @@ class EE_API UITabWidget : public UIWidget {
 
 	void updateScrollBar();
 
+	void updateVerticalScrollBar();
+
 	Float getTabsExtent() const;
 
 	virtual void onDirectionChanged();
 
 	void updateScroll( bool updateFocus = false );
 
+	void updateVerticalScroll( bool updateFocus );
+
 	void updateTabSelected( FocusTabBehavior tabBehavior );
 
 	void insertFocusHistory( UITab* tab );
 
 	void eraseFocusHistory( UITab* tab );
+
+	Rectf getDropBounds() const;
 
 	std::optional<SplitDirection> getDropDirection() const;
 

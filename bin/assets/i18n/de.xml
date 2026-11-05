@@ -679,6 +679,8 @@ in einem neuen Fenster geöffnet werden.</string>
 	<string name="pluginsmodel_id">Id</string>
 	<string name="pluginsmodel_title">Titel</string>
 	<string name="pluginsmodel_version">Version</string>
+	<string name="profile_path_is_file">Der Profilpfad ist eine Datei, kein Verzeichnis:
+%s</string>
 	<string name="portable_mode_failed">Portabler Modus schlug fehl.
 Bitte das Programmverzeichnis auf Schreibrechte überprüfen.</string>
 	<string name="preferences">Eigenschaften</string>

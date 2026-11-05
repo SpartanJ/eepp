@@ -92,6 +92,48 @@ void UISplitter::setHideSplitterOnEdge( bool hideSplitterOnEdge ) {
 	}
 }
 
+bool UISplitter::isResizable() const {
+	return mResizable;
+}
+
+void UISplitter::setResizable( bool resizable ) {
+	if ( resizable == mResizable )
+		return;
+
+	mResizable = resizable;
+
+	if ( !mResizable ) {
+		cancelSeparatorDrag();
+		// A disabled separator receives no MouseLeave.
+		if ( mSplitter->isMouseOver() )
+			getUISceneNode()->setCursor( Cursor::Arrow );
+	}
+
+	updateSeparatorState();
+}
+
+UISplitter::PartitionOrigin UISplitter::getPartitionOrigin() const {
+	return mPartitionOrigin;
+}
+
+void UISplitter::setPartitionOrigin( PartitionOrigin origin ) {
+	if ( origin != mPartitionOrigin ) {
+		mPartitionOrigin = origin;
+		setLayoutDirty( LayoutInvalidation::ContainerLayout );
+	}
+}
+
+bool UISplitter::isSeparatorDragging() const {
+	return mSplitter->isDragging();
+}
+
+void UISplitter::cancelSeparatorDrag() {
+	if ( mSplitter->isDragging() ) {
+		mSplitter->setDragging( false, false );
+		getEventDispatcher()->setNodeDragging( nullptr );
+	}
+}
+
 const StyleSheetLength& UISplitter::getSplitPartition() const {
 	return mSplitPartition;
 }
@@ -108,9 +150,16 @@ void UISplitter::swap( bool swapSplitPartition ) {
 		UIWidget* tmp = mFirstWidget;
 		mFirstWidget = mLastWidget;
 		mLastWidget = tmp;
-		if ( swapSplitPartition )
-			mSplitPartition.setValue( 100.f - mSplitPartition.getValue(),
-									  StyleSheetLength::Percentage );
+		if ( swapSplitPartition ) {
+			if ( mSplitPartition.getUnit() == StyleSheetLength::Percentage ) {
+				mSplitPartition.setValue( 100.f - mSplitPartition.getValue(),
+										  StyleSheetLength::Percentage );
+			} else {
+				Float totalSpace = getUsableSplitSpace();
+				mSplitPartition = partitionFromPixels(
+					totalSpace - convertLength( mSplitPartition, totalSpace ), totalSpace );
+			}
+		}
 		setLayoutDirty( LayoutInvalidation::ContainerLayout );
 	}
 }
@@ -145,6 +194,12 @@ bool UISplitter::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::SplitterHideOnEdge:
 			setHideSplitterOnEdge( attribute.asBool() );
 			break;
+		case PropertyId::SplitterResizable:
+			setResizable( attribute.asBool() );
+			break;
+		case PropertyId::SplitterPartitionOrigin:
+			setPartitionOrigin( partitionOriginFromString( attribute.value() ) );
+			break;
 		case PropertyId::Orientation:
 			setOrientation( String::iequals( attribute.getValue(), "horizontal" )
 								? UIOrientation::Horizontal
@@ -169,6 +224,10 @@ std::string UISplitter::getPropertyString( const PropertyDefinition* propertyDef
 			return alwaysShowSplitter() ? "true" : "false";
 		case PropertyId::SplitterHideOnEdge:
 			return hideSplitterOnEdge() ? "true" : "false";
+		case PropertyId::SplitterResizable:
+			return isResizable() ? "true" : "false";
+		case PropertyId::SplitterPartitionOrigin:
+			return partitionOriginToString( getPartitionOrigin() );
 		case PropertyId::Orientation:
 			return getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
 		default:
@@ -178,8 +237,9 @@ std::string UISplitter::getPropertyString( const PropertyDefinition* propertyDef
 
 std::vector<PropertyId> UISplitter::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = { PropertyId::SplitterPartition, PropertyId::SplitterAlwaysShow,
-				   PropertyId::SplitterHideOnEdge, PropertyId::Orientation };
+	auto local = { PropertyId::SplitterPartition,		PropertyId::SplitterAlwaysShow,
+				   PropertyId::SplitterHideOnEdge,		PropertyId::SplitterResizable,
+				   PropertyId::SplitterPartitionOrigin, PropertyId::Orientation };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -224,8 +284,7 @@ void UISplitter::onChildCountChange( Node* child, const bool& removed ) {
 
 void UISplitter::updateFromDrag() {
 	mDirtyLayout = true;
-	mSplitter->setVisible( shouldShowSplitter() );
-	mSplitter->setEnabled( mSplitter->isVisible() );
+	updateSeparatorState();
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
 		Float fMinSize = mFirstWidget ? mFirstWidget->getMinSize().getWidth() : 0.f;
@@ -242,6 +301,10 @@ void UISplitter::updateFromDrag() {
 										mSplitter->getSize().getWidth(),
 									mSplitter->getPosition().y );
 		}
+
+		// Minimums wider than the splitter must not push the separator past its start edge.
+		if ( mSplitter->getPosition().x < mPadding.Left )
+			mSplitter->setPosition( mPadding.Left, mSplitter->getPosition().y );
 
 		mSplitter->setPixelsSize( mSplitter->getPixelsSize().getWidth(),
 								  mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
@@ -260,6 +323,9 @@ void UISplitter::updateFromDrag() {
 									mDpSize.getHeight() - mPadding.Bottom - lMinSize -
 										mSplitter->getSize().getHeight() );
 		}
+
+		if ( mSplitter->getPosition().y < mPadding.Top )
+			mSplitter->setPosition( mSplitter->getPosition().x, mPadding.Top );
 
 		mSplitter->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 								  mSplitter->getPixelsSize().getHeight() );
@@ -296,25 +362,21 @@ void UISplitter::updateFromDrag() {
 		}
 	}
 
-	if ( UIOrientation::Horizontal == mOrientation ) {
-		mSplitPartition = StyleSheetLength(
-			eeclamp<Float>( mSplitter->getPixelsPosition().x /
-								( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
-								  mSplitter->getPixelsSize().getWidth() ) *
-								100,
-							0, 100 ),
-			StyleSheetLength::Percentage );
-	} else {
-		mSplitPartition = StyleSheetLength(
-			eeclamp<Float>( mSplitter->getPixelsPosition().y /
-								( mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom -
-								  mSplitter->getPixelsSize().getHeight() ) *
-								100,
-							0, 100 ),
-			StyleSheetLength::Percentage );
-	}
+	Float totalSpace = getUsableSplitSpace();
+	Float firstSplit = UIOrientation::Horizontal == mOrientation
+						   ? mSplitter->getPixelsPosition().x - mPaddingPx.Left
+						   : mSplitter->getPixelsPosition().y - mPaddingPx.Top;
+	StyleSheetLength partition = partitionFromPixels(
+		mPartitionOrigin == PartitionOrigin::Start ? firstSplit : totalSpace - firstSplit,
+		totalSpace );
+	bool partitionChanged = partition != mSplitPartition;
+	mSplitPartition = partition;
 
 	mDirtyLayout = false;
+
+	// Only user drags notify: an owner can store the new size without reacting to its own changes.
+	if ( partitionChanged )
+		sendCommonEvent( Event::OnValueChange );
 }
 
 void UISplitter::updateLayout() {
@@ -371,29 +433,20 @@ void UISplitter::updateLayout() {
 		return;
 	}
 
-	mSplitter->setVisible( shouldShowSplitter() );
-	mSplitter->setEnabled( mSplitter->isVisible() );
-	Float totalSpace = mOrientation == UIOrientation::Horizontal
-						   ? mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right
-						   : mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom;
-	if ( mSplitter->isVisible() ) {
-		totalSpace -= UIOrientation::Horizontal == mOrientation
-						  ? mSplitter->getPixelsSize().getWidth()
-						  : mSplitter->getPixelsSize().getHeight();
-	}
-
-	Float firstSplit = convertLength( mSplitPartition, totalSpace );
-	Float secondSplit = totalSpace - firstSplit;
+	updateSeparatorState();
+	Float totalSpace = getUsableSplitSpace();
+	Float firstSplit = getFirstPaneSize( totalSpace );
+	Float secondSplit = eemax( totalSpace - firstSplit, 0.f );
+	// A hidden separator takes no space: the last pane starts where the first one ends.
+	Float separatorSize = !mSplitter->isVisible() ? 0.f
+						  : UIOrientation::Horizontal == mOrientation
+							  ? mSplitter->getPixelsSize().getWidth()
+							  : mSplitter->getPixelsSize().getHeight();
 
 	if ( mFirstWidget ) {
 		mFirstWidget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
 
 		if ( UIOrientation::Horizontal == mOrientation ) {
-			Float fMinSize = mFirstWidget ? mFirstWidget->getMinSize().getWidth() : 0.f;
-
-			firstSplit = eemax( firstSplit, fMinSize );
-			secondSplit = totalSpace - firstSplit;
-
 			mFirstWidget->setPixelsSize( firstSplit,
 										 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 
@@ -403,12 +456,6 @@ void UISplitter::updateLayout() {
 			mSplitter->setPixelsSize( mSplitter->getPixelsSize().getWidth(),
 									  mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 		} else {
-
-			Float fMinSize = mFirstWidget ? mFirstWidget->getMinSize().getHeight() : 0.f;
-
-			firstSplit = eemax( firstSplit, fMinSize );
-			secondSplit = totalSpace - firstSplit;
-
 			mFirstWidget->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 										 firstSplit );
 
@@ -422,15 +469,13 @@ void UISplitter::updateLayout() {
 
 	if ( mLastWidget ) {
 		if ( UIOrientation::Horizontal == mOrientation ) {
-			mLastWidget->setPixelsPosition( mSplitter->getPixelsPosition().x +
-												mSplitter->getPixelsSize().getWidth(),
+			mLastWidget->setPixelsPosition( mSplitter->getPixelsPosition().x + separatorSize,
 											mPaddingPx.Top );
 			mLastWidget->setPixelsSize( secondSplit,
 										mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 		} else {
 			mLastWidget->setPixelsPosition( mPaddingPx.Left,
-											mSplitter->getPixelsPosition().y +
-												mSplitter->getPixelsSize().getHeight() );
+											mSplitter->getPixelsPosition().y + separatorSize );
 			mLastWidget->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 										secondSplit );
 		}
@@ -450,8 +495,79 @@ bool UISplitter::shouldShowSplitter() const {
 	if ( !mLastWidget )
 		return false;
 	return mAlwaysShowSplitter || !mHideSplitterOnEdge ||
-		   mSplitPartition.getUnit() != StyleSheetLength::Percentage ||
-		   ( mSplitPartition.getValue() > 0.f && mSplitPartition.getValue() < 100.f );
+		   !isPartitionOnEdge( getAxisContentSize() );
+}
+
+void UISplitter::updateSeparatorState() {
+	mSplitter->setVisible( shouldShowSplitter() );
+	mSplitter->setEnabled( mSplitter->isVisible() && mResizable );
+}
+
+Float UISplitter::getAxisContentSize() const {
+	return UIOrientation::Horizontal == mOrientation
+			   ? mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right
+			   : mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom;
+}
+
+Float UISplitter::getUsableSplitSpace() const {
+	Float totalSpace = getAxisContentSize();
+	if ( mSplitter->isVisible() ) {
+		totalSpace -= UIOrientation::Horizontal == mOrientation
+						  ? mSplitter->getPixelsSize().getWidth()
+						  : mSplitter->getPixelsSize().getHeight();
+	}
+	return totalSpace;
+}
+
+Float UISplitter::getAxisMinSize( const UIWidget* widget ) const {
+	if ( !widget )
+		return 0.f;
+	return UIOrientation::Horizontal == mOrientation ? widget->getMinSizePx().getWidth()
+													 : widget->getMinSizePx().getHeight();
+}
+
+bool UISplitter::isPartitionOnEdge( Float extent ) const {
+	if ( mSplitPartition.getUnit() == StyleSheetLength::Percentage )
+		return mSplitPartition.getValue() <= 0.f || mSplitPartition.getValue() >= 100.f;
+
+	Float specified = convertLength( mSplitPartition, extent );
+	if ( specified <= 0.f )
+		return true;
+
+	// An absolute partition that doesn't fit is only an edge when the pane it would squeeze accepts
+	// that: a narrow splitter must still clamp to that pane's minimum and keep its divider.
+	const UIWidget* opposite =
+		mPartitionOrigin == PartitionOrigin::Start ? mLastWidget : mFirstWidget;
+	return specified >= extent && getAxisMinSize( opposite ) <= 0.f;
+}
+
+Float UISplitter::getFirstPaneSize( Float totalSpace ) const {
+	Float specified = convertLength( mSplitPartition, totalSpace );
+	Float firstSplit =
+		mPartitionOrigin == PartitionOrigin::Start ? specified : totalSpace - specified;
+
+	// A partition on the edge collapses a pane on purpose, so that pane's minimum doesn't apply.
+	if ( !isPartitionOnEdge( getAxisContentSize() ) )
+		firstSplit = eemin( firstSplit, totalSpace - getAxisMinSize( mLastWidget ) );
+
+	firstSplit = eemax( firstSplit, getAxisMinSize( mFirstWidget ) );
+
+	return eeclamp( firstSplit, 0.f, eemax( totalSpace, 0.f ) );
+}
+
+StyleSheetLength UISplitter::partitionFromPixels( Float pixels, Float totalSpace ) const {
+	switch ( mSplitPartition.getUnit() ) {
+		case StyleSheetLength::Percentage:
+			return StyleSheetLength(
+				totalSpace > 0.f ? eeclamp<Float>( pixels / totalSpace * 100, 0, 100 ) : 0.f,
+				StyleSheetLength::Percentage );
+		case StyleSheetLength::Px:
+			return StyleSheetLength( pixels, StyleSheetLength::Px );
+		default:
+			// Dp, and any unit that can't follow a drag: materialized as a density independent
+			// size.
+			return StyleSheetLength( PixelDensity::pxToDp( pixels ), StyleSheetLength::Dp );
+	}
 }
 
 Uint32 UISplitter::onMessage( const NodeMessage* Msg ) {

@@ -8,6 +8,7 @@
 #include <eepp/system/inifile.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uitabwidget.hpp>
 #include <eepp/window/window.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 #include <string>
@@ -67,6 +68,7 @@ struct WindowConfig {
 	bool exitOnClose{ EE_PLATFORM != EE_PLATFORM_MACOS };
 	bool alwaysShowTabBar{ false };
 	bool showTabBarWhenSplit{ true };
+	UITabWidget::TabPosition tabPosition{ UITabWidget::TabPosition::Top };
 	GraphicsLibraryVersion rendererVersion{ GLv_default };
 	Uint32 multisamples{ 0 };
 };
@@ -80,6 +82,7 @@ struct WindowStateConfig {
 	Sizei size{ 1280, 720 };
 	Vector2i position{ -1, -1 };
 	int displayIndex{ 0 };
+	Float tabBarWidth{ 200.f };
 	bool maximized{ false };
 };
 

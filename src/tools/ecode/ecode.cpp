@@ -806,12 +806,8 @@ std::pair<bool, std::string> App::generateConfigPath() {
 		FileSystem::dirAddSlashAtEnd( path );
 		bool fileExists = FileSystem::fileExists( path );
 
-		if ( fileExists && !FileSystem::isDirectory( path ) ) {
-			if ( FileSystem::fileRemove( path ) )
-				fileExists = false;
-			else
-				return { false, Sys::getConfigPath( "ecode" ) };
-		}
+		if ( fileExists && !FileSystem::isDirectory( path ) )
+			return { false, Sys::getConfigPath( "ecode" ) };
 
 		if ( !fileExists && !FileSystem::makeDir( path ) ) {
 			path = Sys::getTempPath();
@@ -980,10 +976,19 @@ void App::onReady() {
 	Log::info( "App Ready" );
 
 	if ( mPortableModeFailed ) {
+		const bool profileIsFile = !mProfilePath.empty() &&
+								   FileSystem::fileExists( mProfilePath ) &&
+								   !FileSystem::isDirectory( mProfilePath );
 		UIMessageBox* msg = UIMessageBox::New(
 			UIMessageBox::OK,
-			i18n( "portable_mode_failed", "Portable Mode failed.\nPlease check that the "
-										  "application directory has write permissions." ) );
+			profileIsFile
+				? String( String::format( i18n( "profile_path_is_file",
+												"The profile path is a file, not a directory:\n%s" )
+											  .toUtf8()
+											  .c_str(),
+										  mProfilePath.c_str() ) )
+				: i18n( "portable_mode_failed", "Portable Mode failed.\nPlease check that the "
+												"application directory has write permissions." ) );
 		msg->setTitle( "Error" );
 		msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
 		msg->showWhenReady();
@@ -4697,8 +4702,8 @@ void App::init( InitParameters& params ) {
 	}
 
 	mIncognito = params.incognito;
-	mPortableMode = params.portable || !params.profile.empty();
-	mProfilePath = params.profile;
+	mProfilePath = params.profile.empty() ? Sys::getEnv( "ECODE_CONFIG_PATH" ) : params.profile;
+	mPortableMode = params.portable || !mProfilePath.empty();
 	mDisplayDPI = currentDisplay->getDPI();
 	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
 	mUseFrameBuffer = params.frameBuffer;
@@ -5494,7 +5499,9 @@ static void exportLanguages( const std::string& path, const std::string& langs,
 using namespace ecode;
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
-	args::ArgumentParser parser( "ecode" );
+	args::ArgumentParser parser(
+		"ecode", "Environment: set ECODE_CONFIG_PATH to use another configuration directory. "
+				 "--profile takes precedence." );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', '?', "help" } );
 	args::PositionalList<std::string> fileOrFolderPos( parser, "file_or_folder",
 													   "The file/s or folder/s path to open" );

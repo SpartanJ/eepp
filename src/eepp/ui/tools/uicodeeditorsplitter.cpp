@@ -157,16 +157,13 @@ UITabWidget* UICodeEditorSplitter::tabWidgetFromWidget( UIWidget* widget ) const
 }
 
 UISplitter* UICodeEditorSplitter::splitterFromEditor( UICodeEditor* editor ) const {
-	if ( editor && editor->getParent()->getParent()->getParent()->isType( UI_TYPE_SPLITTER ) )
-		return editor->getParent()->getParent()->getParent()->asType<UISplitter>();
-	return nullptr;
+	return splitterFromWidget( editor );
 }
 
 UISplitter* UICodeEditorSplitter::splitterFromWidget( UIWidget* widget ) const {
-	if ( widget && widget->getParent() && widget->getParent()->getParent() &&
-		 widget->getParent()->getParent()->getParent() &&
-		 widget->getParent()->getParent()->getParent()->isType( UI_TYPE_SPLITTER ) )
-		return widget->getParent()->getParent()->getParent()->asType<UISplitter>();
+	UITabWidget* tabWidget = UITabWidget::fromOwnedNode( widget );
+	if ( tabWidget && tabWidget->getParent() && tabWidget->getParent()->isType( UI_TYPE_SPLITTER ) )
+		return tabWidget->getParent()->asType<UISplitter>();
 	return nullptr;
 }
 
@@ -1430,8 +1427,7 @@ void UICodeEditorSplitter::focusSomeEditor( Node* searchFrom ) {
 							: nullptr );
 
 	UITabWidget* tabW = nullptr;
-	if ( editor && editor->getParent() && editor->getParent()->getParent() &&
-		 editor->getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) &&
+	if ( editor && UITabWidget::fromOwnedNode( editor ) &&
 		 ( tabW = tabWidgetFromEditor( editor ) ) && !tabW->isClosing() &&
 		 tabW->getTabCount() > 1 ) {
 		if ( tabW && ( tabW->getTabSelected()->getOwnedWidget() != editor ||

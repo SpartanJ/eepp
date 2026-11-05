@@ -32,10 +32,9 @@ UITabWidget* UITabWidgetSplitter::tabWidgetFromWidget( UIWidget* widget ) const 
 }
 
 UISplitter* UITabWidgetSplitter::splitterFromWidget( UIWidget* widget ) const {
-	if ( widget && widget->getParent() && widget->getParent()->getParent() &&
-		 widget->getParent()->getParent()->getParent() &&
-		 widget->getParent()->getParent()->getParent()->isType( UI_TYPE_SPLITTER ) )
-		return widget->getParent()->getParent()->getParent()->asType<UISplitter>();
+	UITabWidget* tabWidget = UITabWidget::fromOwnedNode( widget );
+	if ( tabWidget && tabWidget->getParent() && tabWidget->getParent()->isType( UI_TYPE_SPLITTER ) )
+		return tabWidget->getParent()->asType<UISplitter>();
 	return nullptr;
 }
 
@@ -466,8 +465,7 @@ void UITabWidgetSplitter::focusSomeWidget( Node* searchFrom ) {
 			: ( mBaseLayout ? mBaseLayout->findByType<UIWidget>( UI_TYPE_WIDGET ) : nullptr );
 
 	UITabWidget* tabW = nullptr;
-	if ( widget && widget->getParent() && widget->getParent()->getParent() &&
-		 widget->getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) &&
+	if ( widget && UITabWidget::fromOwnedNode( widget ) &&
 		 ( tabW = tabWidgetFromWidget( widget ) ) && !tabW->isClosing() &&
 		 tabW->getTabCount() > 1 ) {
 		if ( tabW && ( tabW->getTabSelected()->getOwnedWidget() != widget ||

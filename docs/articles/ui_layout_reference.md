@@ -1256,7 +1256,8 @@ Default:
 
 Meaning:
 
-> Desired space occupied by the first pane along the splitter axis.
+> Desired space occupied by the first pane along the splitter axis, or by the last pane when
+> `splitter-partition-origin` is `end`.
 
 The separator's own size is removed from available split space when visible.
 
@@ -1267,7 +1268,8 @@ totalSpace =
     splitter content axis size
     - visible separator size
 
-first = resolve(splitter-partition, totalSpace)
+specified = resolve(splitter-partition, totalSpace)
+first = origin == start ? specified : totalSpace - specified
 second = totalSpace - first
 ```
 
@@ -1275,9 +1277,11 @@ second = totalSpace - first
 
 ## 40. Splitter minimum sizes
 
-The first pane's minimum size constrains the initial partition.
+Both pane minimum sizes constrain the layout and the separator movement. When they don't fit
+together the first pane's minimum wins, and no pane gets a negative size.
 
-During dragging, both pane minimum sizes constrain separator movement.
+A partition on an edge collapses a pane on purpose, so that pane's minimum size is ignored, except
+when it's the first pane.
 
 A requested partition may therefore not be achievable when it violates minimum sizes.
 
@@ -1309,8 +1313,9 @@ Default:
 false
 ```
 
-When enabled and `splitter-always-show` is false, percentage partitions exactly at `0%` or `100%`
-can hide the divider so one pane consumes the full splitter.
+When enabled and `splitter-always-show` is false, a partition on an edge hides the divider so one
+pane consumes the full splitter: `0%`, `100%`, an absolute `0`, or an absolute size that exceeds the
+splitter while the other pane has no minimum size.
 
 ---
 
@@ -1332,7 +1337,11 @@ cursor = vertical resize
 
 Dragging immediately resizes both children.
 
-After a drag, the stored split partition is recalculated as a percentage of available split space.
+After a drag, the stored split partition keeps its unit: percentages of the available split space,
+`dp` and `px`. Any other unit becomes `dp`. Each user drag step that changes the partition sends
+`Event::OnValueChange`; programmatic changes don't.
+
+`splitter-resizable: false` disables dragging while keeping the separator visible.
 
 ---
 
@@ -1341,6 +1350,8 @@ After a drag, the stored split partition is recalculated as a percentage of avai
 ```text
 orientation
 splitter-partition
+splitter-partition-origin
+splitter-resizable
 splitter-always-show
 splitter-hide-on-edge
 ```

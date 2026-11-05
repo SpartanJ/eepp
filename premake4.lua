@@ -1320,7 +1320,8 @@ solution "eepp"
 		objdir("obj/" .. os.get_real() .. "/" .. get_ios_arch() .. "/" )
 	else
 		location("./make/" .. os.get_real() .. "/")
-		objdir("obj/" .. os.get_real() .. "/")
+		-- Instrumented objects can't be mixed with the others: keep both to not rebuild on each switch.
+		objdir("obj/" .. os.get_real() .. "/" .. ( _OPTIONS["address-sanitizer"] and "asan/" or "" ))
 	end
 
 	generate_os_links()
