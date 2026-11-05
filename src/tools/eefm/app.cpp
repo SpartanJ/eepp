@@ -710,6 +710,10 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	// Theme detection and icon loading run on the pool: startup does not wait for them.
 	mSystemIcons = UISystemIconTheme::New( *mPool, *mExecutor );
 	mSystemIcons->setOnIconsLoaded( [this] {
+		if ( mPreviewPanel )
+			mPreviewPanel->refreshIcon();
+		if ( mQuickPreview )
+			mQuickPreview->refreshIcon();
 		for ( auto* image : mUI->getRoot()->findAllByClass( "application_icon" ) )
 			updateApplicationIcon( image->asType<UIImage>() );
 		for ( auto* list : mUI->getRoot()->findAllByClass( "application_list" ) )

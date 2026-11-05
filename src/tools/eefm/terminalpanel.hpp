@@ -17,7 +17,10 @@ namespace eefm {
 
 using namespace EE;
 using namespace EE::Graphics;
+using namespace EE::System;
 using namespace EE::UI;
+using namespace eterm::Terminal;
+using namespace eterm::UI;
 
 class App;
 
@@ -55,7 +58,7 @@ class TerminalPanel {
 	void applyConfig();
 
 	/** The terminal color schemes bundled with eterm and the user's (lazily loaded). */
-	const std::map<std::string, eterm::Terminal::TerminalColorScheme>& colorSchemes();
+	const std::map<std::string, TerminalColorScheme>& colorSchemes();
 
 	/** The font in use, null until the terminal was first created. */
 	FontTrueType* terminalFont() const { return mTerminalFont; }
@@ -75,14 +78,14 @@ class TerminalPanel {
 	App& mApp;
 	UISceneNode* mUI;
 	UISplitter* mSplitter;
-	eterm::UI::UITerminal* mTerminal{ nullptr };
+	UITerminal* mTerminal{ nullptr };
 	/** The terminal's own bindings, before the toggle shortcuts are added. */
 	KeyBindings::ShortcutMap mTerminalBindings;
 	FontTrueType* mTerminalFont{ nullptr };
-	std::map<std::string, eterm::Terminal::TerminalColorScheme> mTerminalColorSchemes;
+	std::map<std::string, TerminalColorScheme> mTerminalColorSchemes;
 	/** Last directory the shell was sent to, and when (the shell needs a moment to run it). */
 	std::string mTerminalDirectory;
-	EE::System::Clock mTerminalDirectorySent;
+	Clock mTerminalDirectorySent;
 	/** Active pane and folder last followed: the shell follows changes only, so a directory
 	 * changed in the shell stays until the files move. */
 	std::string mTerminalFollowed;

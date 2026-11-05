@@ -12,6 +12,7 @@ namespace eefm {
 
 using namespace EE;
 using namespace EE::UI;
+using namespace EE::VFS;
 
 /** Modal message boxes. UI thread only. */
 class Dialogs {
@@ -30,9 +31,8 @@ class Dialogs {
 	static void showMessage( const String& title, const String& message );
 
 	/** Resolve one transfer collision; the repeat choice applies only to the current batch. */
-	static UIMessageBox*
-	transferConflict( UISceneNode* ui, const EE::VFS::TransferConflict& conflict,
-					  std::function<void( EE::VFS::ConflictResolution, bool )> done );
+	static UIMessageBox* transferConflict( UISceneNode* ui, const TransferConflict& conflict,
+										   std::function<void( ConflictResolution, bool )> done );
 };
 
 } // namespace eefm

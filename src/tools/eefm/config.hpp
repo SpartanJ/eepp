@@ -19,6 +19,7 @@ using namespace EE::Graphics;
 using namespace EE::System;
 using namespace EE::UI;
 using namespace EE::Window;
+using namespace eterm::Terminal;
 
 struct ThemeConfig {
 	ColorSchemeExtPreference uiColorScheme{ ColorSchemeExtPreference::System };
@@ -58,8 +59,7 @@ struct TerminalConfig {
 	std::string shell;
 	std::string shellArguments;
 	size_t historySize{ 10000 };
-	eterm::Terminal::TerminalCursorMode cursorStyle{
-		eterm::Terminal::TerminalCursorMode::SteadyBlock };
+	TerminalCursorMode cursorStyle{ TerminalCursorMode::SteadyBlock };
 	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };
 	/** The shell follows the active pane (cd), as Dolphin. */
 	bool followActivePane{ true };

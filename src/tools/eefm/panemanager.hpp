@@ -114,8 +114,7 @@ class PaneManager {
 	/** Command context while a toolbar, popup, dialog, places or terminal owns keyboard focus.
 	 * Only updated from actual pane focus; activeIndex() always prefers the current focus. */
 	int mLastFocusedPane{ 0 };
-	EE::VFS::VFSDirectoryModel::NameFilterMode mFilterMode{
-		EE::VFS::VFSDirectoryModel::NameFilterMode::Glob };
+	VFSDirectoryModel::NameFilterMode mFilterMode{ VFSDirectoryModel::NameFilterMode::Glob };
 	bool mFilterCaseSensitive{ false };
 };
 

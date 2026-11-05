@@ -10,6 +10,9 @@
 
 namespace eefm {
 
+using namespace EE::System;
+using namespace EE::VFS;
+
 /** @brief Name-based MIME types, descriptions and icons.
  *
  * Uses the freedesktop.org shared-mime-info database where it exists (globs2, subclasses and the
@@ -22,7 +25,7 @@ class MimeDatabase {
 
 	/** MIME type of an entry ("inode/directory" for directories). The tables are immutable once
 	 * loaded, so the reference stays valid. */
-	const std::string& typeOf( const EE::VFS::VFSFileInfo& info );
+	const std::string& typeOf( const VFSFileInfo& info );
 
 	/** MIME type of a file name (not a path). */
 	const std::string& typeForName( const std::string& name );
@@ -30,14 +33,13 @@ class MimeDatabase {
 	/** Human readable description ("Markdown document"). Optional translations use the MIME
 	 * type as their key. Consult the translator only on its owning thread. */
 	std::string description( const std::string& mime, const std::string& name = {},
-							 const EE::System::Translator* translator = nullptr );
+							 const Translator* translator = nullptr );
 
 	/** Description of an entry, cached by type: cheap enough for sorting. */
-	std::string describe( const EE::VFS::VFSFileInfo& info,
-						  const EE::System::Translator* translator = nullptr );
+	std::string describe( const VFSFileInfo& info, const Translator* translator = nullptr );
 
 	/** Name of eefm's glyph icon for an entry (the fallback icon set). */
-	std::string iconName( const EE::VFS::VFSFileInfo& info );
+	std::string iconName( const VFSFileInfo& info );
 
 	/** Freedesktop icon names for a type, most specific first: the shared-mime-info icon, the
 	 * type's own name ("text-x-python"), its parents', its generic icon and the media's generic
@@ -45,7 +47,7 @@ class MimeDatabase {
 	std::vector<std::string> iconNames( const std::string& mime );
 
 	/** iconNames() of an entry, cached by type (never evicted: the types are a closed set). */
-	const std::vector<std::string>& iconNames( const EE::VFS::VFSFileInfo& info );
+	const std::vector<std::string>& iconNames( const VFSFileInfo& info );
 
 	/** The type and its parents (text/markdown -> text/plain), most specific first. */
 	std::vector<std::string> withParents( const std::string& mime );

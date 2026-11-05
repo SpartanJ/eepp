@@ -18,6 +18,9 @@
 
 namespace eefm {
 
+using namespace EE::System;
+using namespace EE::VFS;
+
 struct Pane;
 
 /** One tab: a directory view with its own history and filter. */
@@ -25,7 +28,7 @@ struct FileTab {
 	Pane* pane{ nullptr };
 	UITab* tab{ nullptr };
 	FileTableView* view{ nullptr };
-	std::shared_ptr<EE::VFS::VFSDirectoryModel> model;
+	std::shared_ptr<VFSDirectoryModel> model;
 	std::vector<URI> history;
 	size_t historyIndex{ 0 };
 	/** Filter text of this tab (the filter bar shows the current tab's). */
@@ -35,7 +38,7 @@ struct FileTab {
 	std::string selectWhenListed;
 	/** Since when selectWhenListed waits: changes can arrive in steps (a rename is a removal,
 	 * then an addition), so it is dropped only after a while without appearing. */
-	EE::System::Clock selectWhenListedSince;
+	Clock selectWhenListedSince;
 
 	void selectLater( std::string name ) {
 		selectWhenListed = std::move( name );

@@ -6,10 +6,12 @@
 
 namespace eefm {
 
+using namespace EE;
+
 /** eefm's terminal preference and executable-file policy. */
 class DesktopIntegration {
   public:
-	enum class ExecutableKind : EE::Uint8 {
+	enum class ExecutableKind : Uint8 {
 		/** Open with an application. */
 		None,
 		/** A native executable (ELF / Mach-O) the user may execute. */

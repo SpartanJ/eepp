@@ -13,6 +13,7 @@
 #include <vector>
 
 namespace EE { namespace UI {
+
 class UIWindow;
 class UIWidget;
 class UITextView;
@@ -20,12 +21,20 @@ class UITextInput;
 class UIPushButton;
 class UIDropDownList;
 class UICheckBox;
+
 }} // namespace EE::UI
 namespace EE { namespace VFS {
+
 class VFSDirectoryModel;
+
 }} // namespace EE::VFS
 
 namespace eefm {
+
+using namespace EE;
+using namespace EE::Scene;
+using namespace EE::UI;
+using namespace EE::VFS;
 
 class App;
 struct FileTab;
@@ -57,7 +66,7 @@ class PropertiesDialog : public std::enable_shared_from_this<PropertiesDialog> {
 
 	void updateExecute( bool syncModes = false );
 
-	EE::VFS::PermissionChanges permissionChanges() const;
+	PermissionChanges permissionChanges() const;
 
 	void updateActions();
 
@@ -76,37 +85,37 @@ class PropertiesDialog : public std::enable_shared_from_this<PropertiesDialog> {
 	void updateTotals();
 
 	App& mApp;
-	std::vector<EE::URI> mRoots;
-	std::vector<EE::VFS::VFSFileInfo> mInfo;
-	std::weak_ptr<EE::VFS::VFSDirectoryModel> mModel;
+	std::vector<URI> mRoots;
+	std::vector<VFSFileInfo> mInfo;
+	std::weak_ptr<VFSDirectoryModel> mModel;
 	std::string mResultMessage;
 	std::string mInitialUser;
 	std::string mInitialGroup;
-	EE::Scene::EventConnection mSceneResize;
-	EE::CancellationSource mCancel;
-	EE::CancellationSource mOperationCancel;
-	EE::VFS::DirectoryStats mStats;
-	EE::UI::UIWindow* mBox{ nullptr };
-	EE::UI::UIWidget* mGeneral{ nullptr };
-	EE::UI::UIWidget* mPermissions{ nullptr };
-	EE::UI::UITextInput* mName{ nullptr };
-	EE::UI::UITextInput* mOctal{ nullptr };
-	EE::UI::UITextInput* mUser{ nullptr };
-	EE::UI::UITextInput* mGroup{ nullptr };
-	EE::UI::UITextView* mStatus{ nullptr };
-	EE::UI::UITextView* mTotals{ nullptr };
-	EE::UI::UIPushButton* mCalculate{ nullptr };
-	EE::UI::UIPushButton* mApply{ nullptr };
-	EE::UI::UIPushButton* mOK{ nullptr };
-	EE::UI::UICheckBox* mRecursive{ nullptr };
-	EE::UI::UICheckBox* mExecute{ nullptr };
-	std::array<EE::UI::UIDropDownList*, 6> mModes{};
-	std::array<EE::Uint32, 6> mInitialModes{};
-	EE::Uint64 mGeneration{ 0 };
-	EE::Uint32 mModeMask{ 0 };
-	EE::Uint32 mModeValue{ 0 };
-	std::optional<EE::Uint32> mNewUid;
-	std::optional<EE::Uint32> mNewGid;
+	EventConnection mSceneResize;
+	CancellationSource mCancel;
+	CancellationSource mOperationCancel;
+	DirectoryStats mStats;
+	UIWindow* mBox{ nullptr };
+	UIWidget* mGeneral{ nullptr };
+	UIWidget* mPermissions{ nullptr };
+	UITextInput* mName{ nullptr };
+	UITextInput* mOctal{ nullptr };
+	UITextInput* mUser{ nullptr };
+	UITextInput* mGroup{ nullptr };
+	UITextView* mStatus{ nullptr };
+	UITextView* mTotals{ nullptr };
+	UIPushButton* mCalculate{ nullptr };
+	UIPushButton* mApply{ nullptr };
+	UIPushButton* mOK{ nullptr };
+	UICheckBox* mRecursive{ nullptr };
+	UICheckBox* mExecute{ nullptr };
+	std::array<UIDropDownList*, 6> mModes{};
+	std::array<Uint32, 6> mInitialModes{};
+	Uint64 mGeneration{ 0 };
+	Uint32 mModeMask{ 0 };
+	Uint32 mModeValue{ 0 };
+	std::optional<Uint32> mNewUid;
+	std::optional<Uint32> mNewGid;
 	std::optional<bool> mExecutable;
 	bool mUpdatingExecute{ false };
 	bool mRunning{ false };

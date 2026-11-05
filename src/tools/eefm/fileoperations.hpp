@@ -17,6 +17,7 @@ namespace eefm {
 
 using namespace EE::System;
 using namespace EE::VFS;
+using namespace EE::Window;
 
 class App;
 
@@ -57,7 +58,7 @@ class FileOperations {
 	void renameSelection();
 
 	/** A name typed in place: renames the entry. */
-	void renameEntry( FileTab* tab, const EE::VFS::VFSFileInfo& entry, const std::string& name );
+	void renameEntry( FileTab* tab, const VFSFileInfo& entry, const std::string& name );
 
 	void newFolder( FileTab* tab );
 
@@ -81,7 +82,7 @@ class FileOperations {
 
 	/** Entries dragged out of Ark: Ark extracts them into the pane (or the folder row) where
 	 * they were dropped. */
-	void dropArchiveEntries( EE::Window::DataDrop drop );
+	void dropArchiveEntries( DataDrop drop );
 
 	/** The local folder of the pane (or the folder row) under position, for a drop whose source
 	 * writes the files itself (an archive manager extracting entries, a browser saving an
@@ -113,8 +114,8 @@ class FileOperations {
 		Uint64 conflictsSkipped{ 0 };
 		Uint64 id{ 0 };
 		UIWindow* dialog{ nullptr };
-		std::optional<EE::VFS::ConflictAction> files;
-		std::optional<EE::VFS::ConflictAction> folders;
+		std::optional<ConflictAction> files;
+		std::optional<ConflictAction> folders;
 		int pane{ 0 };
 		TransferKind kind{ TransferKind::Copy };
 		bool cancelled{ false };
@@ -124,9 +125,9 @@ class FileOperations {
 		Uint64 id;
 		int pane;
 		String label;
-		EE::VFS::Transfer transfer;
-		EE::VFS::TransferProgressSubscription subscription;
-		EE::VFS::TransferProgress progress;
+		Transfer transfer;
+		TransferProgressSubscription subscription;
+		TransferProgress progress;
 		std::shared_ptr<TransferBatch> batch;
 	};
 
@@ -187,7 +188,7 @@ class FileOperations {
 
 	void updateTransfers();
 
-	void reportError( const String& action, const EE::VFS::VFSError& error );
+	void reportError( const String& action, const VFSError& error );
 
 	/** Runs work (blocking, it returns an error message) on the pool, then refresh on the UI
 	 * thread; a failure is reported under errorTitle. */
@@ -196,7 +197,7 @@ class FileOperations {
 
 	App& mApp;
 	UISceneNode* mUI;
-	EE::VFS::VirtualFileSystem* mVFS;
+	VirtualFileSystem* mVFS;
 	std::map<Uint64, ActiveTransfer> mTransfers;
 	std::vector<std::weak_ptr<PropertiesDialog>> mProperties;
 	std::weak_ptr<OperationsPopup> mOperationsPopup;

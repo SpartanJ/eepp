@@ -20,6 +20,8 @@
 
 namespace eefm {
 
+using namespace EE::Audio;
+
 using namespace EE::UI::Doc;
 using namespace EE::UI::Tools;
 
@@ -66,7 +68,7 @@ class QuickLookEditor : public UICodeEditor {
 enum class PreviewKind : Uint8 { Text, Image, Audio, Unsupported };
 
 struct Preview {
-	VFSResult<std::unique_ptr<EE::VFS::IOStreamVFS>> stream;
+	VFSResult<std::unique_ptr<IOStreamVFS>> stream;
 	std::shared_ptr<TextDocument> document;
 	std::unique_ptr<Music> audio;
 	PreviewKind kind;
@@ -75,7 +77,7 @@ struct Preview {
 PreviewKind kindForName( const std::string& name ) {
 	if ( Image::isImageExtension( name ) )
 		return PreviewKind::Image;
-	if ( EE::Audio::SoundFileFactory::isKnownFileExtension( name ) )
+	if ( SoundFileFactory::isKnownFileExtension( name ) )
 		return PreviewKind::Audio;
 	return PreviewKind::Text;
 }
@@ -188,6 +190,13 @@ void PreviewPanel::moveSelection( int direction ) {
 	tab->view->setSelection( tab->model->index( row ) );
 }
 
+void PreviewPanel::refreshIcon() {
+	if ( isVisible() && mFileIcon ) {
+		mRoot->find<UIImage>( "preview_icon" )
+			->setDrawable( mFileIcon->getSource( PixelDensity::dpToPxI( 96 ) ) );
+	}
+}
+
 void PreviewPanel::rememberSize() {
 	if ( !mSplitter || !isVisible() || mSplitter->getPixelsSize().x <= 0 )
 		return;
@@ -213,6 +222,7 @@ void PreviewPanel::cancel() {
 void PreviewPanel::clear() {
 	cancel();
 	mURI.reset();
+	mFileIcon = nullptr;
 	mLoader->setVisible( false );
 	mFallback->setVisible( false );
 	mDetails.clear();
@@ -277,10 +287,8 @@ void PreviewPanel::syncSelection() {
 					   Sys::epochToString( static_cast<Uint64>( *info.modifiedTime() ) ) ) );
 	}
 	mDetails += "\n" + String::fromUtf8( Location::clipboardText( *mURI ) );
-	if ( auto* icon = mApp.fileIcon( info ) ) {
-		mRoot->find<UIImage>( "preview_icon" )
-			->setDrawable( icon->getSource( PixelDensity::dpToPxI( 96 ) ) );
-	}
+	mFileIcon = mApp.fileIcon( info );
+	refreshIcon();
 	if ( info.isDirectory() || ( !info.isRegularFile() && !info.isSymlink() ) ) {
 		showMessage(
 			mApp.ui()->i18n( "eefm_preview_not_file", "Select a regular file to preview." ) );
@@ -336,8 +344,8 @@ void PreviewPanel::load() {
 	mApp.vfs()
 		->openStream( *mURI, {}, token, limit )
 		.then( *mApp.pool(),
-			   [kind, token, name = std::move( name )](
-				   VFSResult<std::unique_ptr<EE::VFS::IOStreamVFS>>&& stream ) {
+			   [kind, token,
+				name = std::move( name )]( VFSResult<std::unique_ptr<IOStreamVFS>>&& stream ) {
 				   Preview preview{ std::move( stream ), {}, {}, kind };
 				   if ( !preview.stream || token.isCancellationRequested() )
 					   return preview;

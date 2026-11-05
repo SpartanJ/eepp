@@ -101,7 +101,7 @@ bool ArkDrop::isArkDrop( const DataDrop& drop ) {
 }
 
 std::string ArkDrop::extract( const DataDrop& drop, const std::string& folder,
-							  const EE::System::Translator& translator ) {
+							  const Translator& translator ) {
 	const std::string* service = drop.find( ServiceType );
 	const std::string* path = drop.find( PathType );
 	const auto& dbus = DBusFunctions::get();

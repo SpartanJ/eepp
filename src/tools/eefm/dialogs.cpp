@@ -72,9 +72,8 @@ void Dialogs::showMessage( const String& title, const String& message ) {
 	box->showWhenReady();
 }
 
-UIMessageBox*
-Dialogs::transferConflict( UISceneNode* ui, const EE::VFS::TransferConflict& conflict,
-						   std::function<void( EE::VFS::ConflictResolution, bool )> done ) {
+UIMessageBox* Dialogs::transferConflict( UISceneNode* ui, const TransferConflict& conflict,
+										 std::function<void( ConflictResolution, bool )> done ) {
 	using namespace EE::VFS;
 	const bool folders =
 		conflict.sourceInfo.isDirectory() && conflict.destinationInfo.isDirectory();

@@ -11,6 +11,7 @@
 namespace EE::UI {
 
 class UICodeEditor;
+class UIIcon;
 class UILoader;
 class UIPushButton;
 class UITextView;
@@ -26,6 +27,12 @@ class UIImageViewer;
 
 namespace eefm {
 
+using namespace EE;
+using namespace EE::System;
+using namespace EE::UI;
+using namespace EE::UI::Tools;
+using namespace EE::VFS;
+
 class App;
 
 /** Selection preview in a sidebar or a floating Quick Look window. Widgets are created on first
@@ -33,7 +40,7 @@ class App;
 class PreviewPanel {
   public:
 	/** A null splitter creates a floating preview instead of the sidebar. */
-	explicit PreviewPanel( App& app, EE::UI::UISplitter* splitter );
+	explicit PreviewPanel( App& app, UISplitter* splitter );
 
 	~PreviewPanel();
 
@@ -46,6 +53,9 @@ class PreviewPanel {
 
 	/** Cancels pending work and stops playback before the application shuts down. */
 	void cancel();
+
+	/** Rebinds the selected file icon after the system theme loads a sharper source. */
+	void refreshIcon();
 
 	void rememberSize();
 
@@ -65,29 +75,31 @@ class PreviewPanel {
 
 	void loadApplication( std::string mime );
 
-	void showMessage( const EE::String& text );
+	void showMessage( const String& text );
 
 	App& mApp;
-	EE::UI::UISplitter* mSplitter;
-	EE::UI::UIWindow* mWindow{ nullptr };
-	EE::UI::UIWidget* mFallback{ nullptr };
-	EE::UI::UIWidget* mRoot{ nullptr };
-	EE::UI::UIWidget* mContent{ nullptr };
-	EE::UI::UIPushButton* mOpen{ nullptr };
-	EE::UI::UITextView* mName{ nullptr };
-	EE::UI::UITextView* mMessage{ nullptr };
-	EE::UI::UILoader* mLoader{ nullptr };
-	EE::UI::UICodeEditor* mEditor{ nullptr };
-	EE::UI::Tools::UIImageViewer* mImage{ nullptr };
-	EE::UI::Tools::UIAudioPlayer* mAudio{ nullptr };
-	std::optional<EE::System::Application> mDefaultApplication;
-	std::optional<EE::URI> mURI;
-	EE::VFS::FileRevision mRevision;
-	std::optional<EE::CancellationSource> mCancellation;
-	EE::String mDetails;
+	UISplitter* mSplitter;
+	/** Borrowed from App's icon themes; cleared when the selection is discarded. */
+	UIIcon* mFileIcon{ nullptr };
+	UIWindow* mWindow{ nullptr };
+	UIWidget* mFallback{ nullptr };
+	UIWidget* mRoot{ nullptr };
+	UIWidget* mContent{ nullptr };
+	UIPushButton* mOpen{ nullptr };
+	UITextView* mName{ nullptr };
+	UITextView* mMessage{ nullptr };
+	UILoader* mLoader{ nullptr };
+	UICodeEditor* mEditor{ nullptr };
+	UIImageViewer* mImage{ nullptr };
+	UIAudioPlayer* mAudio{ nullptr };
+	std::optional<Application> mDefaultApplication;
+	std::optional<URI> mURI;
+	FileRevision mRevision;
+	std::optional<CancellationSource> mCancellation;
+	String mDetails;
 	std::string mPartition{ "72%" };
-	EE::Uint64 mGeneration{ 0 };
-	EE::Uint64 mSize{ 0 };
+	Uint64 mGeneration{ 0 };
+	Uint64 mSize{ 0 };
 };
 
 } // namespace eefm

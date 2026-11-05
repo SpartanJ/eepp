@@ -209,7 +209,7 @@ const std::string& MimeDatabase::typeForName( const std::string& name ) {
 	return unknown;
 }
 
-const std::string& MimeDatabase::typeOf( const EE::VFS::VFSFileInfo& info ) {
+const std::string& MimeDatabase::typeOf( const VFSFileInfo& info ) {
 	static const std::string directory( "inode/directory" );
 	if ( info.isDirectory() )
 		return directory;
@@ -278,8 +278,7 @@ std::string MimeDatabase::description( const std::string& mime, const std::strin
 	return translator ? translator->getString( "eefm_file", "File" ).toUtf8() : "File";
 }
 
-std::string MimeDatabase::describe( const EE::VFS::VFSFileInfo& info,
-									const Translator* translator ) {
+std::string MimeDatabase::describe( const VFSFileInfo& info, const Translator* translator ) {
 	// The type decides (not the extension: "CMakeLists.txt" is not a text file); description()
 	// caches the system/built-in fallback by type and checks optional MIME translations first.
 	return description( typeOf( info ), info.name, translator );
@@ -315,7 +314,7 @@ std::vector<std::string> MimeDatabase::iconNames( const std::string& mime ) {
 	return names;
 }
 
-const std::vector<std::string>& MimeDatabase::iconNames( const EE::VFS::VFSFileInfo& info ) {
+const std::vector<std::string>& MimeDatabase::iconNames( const VFSFileInfo& info ) {
 	const std::string& mime = typeOf( info );
 	{
 		std::lock_guard<std::mutex> lock( mMutex );
@@ -328,7 +327,7 @@ const std::vector<std::string>& MimeDatabase::iconNames( const EE::VFS::VFSFileI
 	return mIconNamesByType.emplace( mime, std::move( names ) ).first->second;
 }
 
-std::string MimeDatabase::iconName( const EE::VFS::VFSFileInfo& info ) {
+std::string MimeDatabase::iconName( const VFSFileInfo& info ) {
 	if ( info.isDirectory() )
 		return "mime-folder";
 	const std::string& mime = typeOf( info );

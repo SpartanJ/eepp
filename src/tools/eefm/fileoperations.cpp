@@ -801,7 +801,7 @@ void FileOperations::copySelection( bool cut ) {
 	};
 	if ( cut )
 		data.emplace_back( "application/x-kde-cutselection", "1" );
-	for ( const auto& mimeType : EE::Window::Clipboard::getTextMimeTypes() )
+	for ( const auto& mimeType : Clipboard::getTextMimeTypes() )
 		data.emplace_back( mimeType, text );
 	auto* clipboard = mApp.window()->getClipboard();
 	mClipboard = std::move( uris );
