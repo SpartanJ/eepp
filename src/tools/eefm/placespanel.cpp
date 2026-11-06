@@ -4,8 +4,12 @@
 #include <eepp/scene/nodemessage.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uitextview.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
 
 using namespace EE::Scene;
 
@@ -22,6 +26,8 @@ class PlaceRow : public UILinearLayout {
 	PlaceRow() : UILinearLayout( "placerow", UIOrientation::Vertical ) {
 		// Dragging only marks the insertion point: the row itself stays in place.
 		unsetFlags( UI_DRAG_VERTICAL | UI_DRAG_HORIZONTAL );
+		// Tab leaves the panel (OnTabNavigate) instead of stepping through the rows.
+		setTabStop();
 	}
 
 	PlacesPanel* panel() const { return getParent()->asType<PlacesPanel>(); }
@@ -83,6 +89,20 @@ class PlaceRow : public UILinearLayout {
 
 	Vector2f mPressPosition;
 	bool mDragActive{ false };
+};
+
+/** The line of a place row. It never takes the mouse itself: the row handles it, except for the
+ * enabled parts of the line. A disabled line would hide those from the mouse too. */
+class PlaceLine : public UILinearLayout {
+  public:
+	static PlaceLine* New() { return eeNew( PlaceLine, () ); }
+
+	PlaceLine() : UILinearLayout( "placeline", UIOrientation::Horizontal ) {}
+
+	Node* overFind( const Vector2f& point ) override {
+		Node* over = UILinearLayout::overFind( point );
+		return over == this ? nullptr : over;
+	}
 };
 
 const char* sectionTitle( PlaceSection section ) {
@@ -148,6 +168,10 @@ PlacesPanel::PlacesPanel() : UILinearLayout( "placespanel", UIOrientation::Verti
 }
 
 void PlacesPanel::setEntries( std::vector<Entry> entries ) {
+	// The rows are about to be replaced: the focus follows the place, not the widget.
+	std::optional<URI> focused;
+	if ( auto row = focusedRow() )
+		focused = mEntries[*row].place.uri;
 	mEntries = std::move( entries );
 	mRows.clear();
 	mIcons.clear();
@@ -189,7 +213,7 @@ void PlacesPanel::setEntries( std::vector<Entry> entries ) {
 		row->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 		row->setTooltipText( place.uri.getScheme() == "file" ? place.uri.getFSPath()
 															 : place.uri.toString() );
-		auto* line = UILinearLayout::NewHorizontal();
+		auto* line = PlaceLine::New();
 		line->setParent( row );
 		line->addClass( "place_line" );
 		line->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
@@ -206,7 +230,35 @@ void PlacesPanel::setEntries( std::vector<Entry> entries ) {
 		label->addClass( "place_name" );
 		label->setText( placeLabel( getUISceneNode(), place ) );
 		label->setLayoutGravity( UI_VALIGN_CENTER );
-		std::vector<UIWidget*> parts{ row, line, icon, label };
+		if ( place.ejectable ) {
+			// The name takes the rest of the line: the button stays on its right edge.
+			label->setLayoutWidthPolicy( SizePolicy::Fixed );
+			label->setLayoutWeight( 1.f );
+			UIPushButton* eject = UIPushButton::New();
+			eject->setParent( line );
+			eject->addClass( "tool" );
+			eject->addClass( "place_eject" );
+			eject->setIcon(
+				getUISceneNode()->findIconDrawable( "eject-fill", PixelDensity::dpToPxI( 14 ) ) );
+			eject->setTooltipText( getUISceneNode()->i18n( "eefm_eject", "Eject" ) );
+			eject->setLayoutGravity( UI_VALIGN_CENTER );
+			eject->onClick( [this, i]( const MouseEvent* ) {
+				if ( i >= mEntries.size() )
+					return;
+				// The button is about to disappear with the device: the focus must not follow it.
+				if ( onDismiss )
+					onDismiss();
+				if ( onEject )
+					onEject( mEntries[i] );
+			} );
+			eject->onClick(
+				[this, i]( const MouseEvent* ) {
+					if ( i < mEntries.size() && onContextMenu )
+						onContextMenu( mEntries[i], std::nullopt );
+				},
+				EE_BUTTON_RIGHT );
+		}
+		std::vector<UIWidget*> parts{ row, icon, label };
 		if ( place.section == PlaceSection::Devices ) {
 			UIProgressBar* usage = UIProgressBar::New();
 			usage->setParent( row );
@@ -234,16 +286,24 @@ void PlacesPanel::setEntries( std::vector<Entry> entries ) {
 			if ( i >= mEntries.size() )
 				return;
 			Uint32 flags = static_cast<const MouseEvent*>( event )->getFlags();
-			if ( ( flags & EE_BUTTON_LMASK ) && onActivate )
-				onActivate( mEntries[i], false );
-			else if ( ( flags & EE_BUTTON_MMASK ) && onActivate )
-				onActivate( mEntries[i], true );
-			else if ( ( flags & EE_BUTTON_RMASK ) && onContextMenu )
-				onContextMenu( mEntries[i] );
+			if ( ( flags & ( EE_BUTTON_LMASK | EE_BUTTON_MMASK ) ) && onActivate ) {
+				const Uint32 mods =
+					getUISceneNode()->getWindow()->getInput()->getSanitizedModState();
+				onActivate( mEntries[i], ( flags & EE_BUTTON_MMASK ) ||
+											 ( mods & KeyMod::getDefaultModifier() ) );
+			} else if ( ( flags & EE_BUTTON_RMASK ) && onContextMenu ) {
+				onContextMenu( mEntries[i], std::nullopt );
+			}
+		} );
+		row->on( Event::OnTabNavigate, [this]( const Event* ) {
+			if ( onDismiss )
+				onDismiss();
 		} );
 		row->setData( i );
 		mRows.push_back( row );
 	}
+	if ( focused )
+		focusPlace( *focused );
 }
 
 UIIcon* PlacesPanel::iconOf( const Place& place ) const {
@@ -304,6 +364,47 @@ void PlacesPanel::setCurrent( const URI& uri ) {
 	}
 }
 
+void PlacesPanel::focusCurrent() {
+	for ( size_t i = 0; i < mRows.size(); ++i ) {
+		if ( mRows[i]->hasClass( "selected" ) ) {
+			focusRow( i );
+			return;
+		}
+	}
+	if ( !mRows.empty() )
+		focusRow( 0 );
+}
+
+void PlacesPanel::focusPlace( const URI& uri ) {
+	for ( size_t i = 0; i < mEntries.size(); ++i ) {
+		if ( mEntries[i].place.uri == uri ) {
+			focusRow( i );
+			return;
+		}
+	}
+	// The place is gone (hidden or removed from its own menu).
+	if ( !mRows.empty() )
+		focusRow( 0 );
+	else if ( onDismiss )
+		onDismiss();
+}
+
+void PlacesPanel::activateFocused( bool newTab ) {
+	auto row = focusedRow();
+	if ( row && onActivate )
+		onActivate( mEntries[*row], newTab );
+}
+
+std::optional<size_t> PlacesPanel::focusedRow() const {
+	return getEventDispatcher() ? entryOf( getEventDispatcher()->getFocusNode() ) : std::nullopt;
+}
+
+void PlacesPanel::focusRow( size_t row ) {
+	mRows[row]->setFocus();
+	if ( auto* scroll = getParentOfType( UI_TYPE_SCROLLVIEW ) )
+		scroll->asType<UIScrollView>()->scrollIntoView( mRows[row] );
+}
+
 std::optional<size_t> PlacesPanel::entryOf( Node* node ) const {
 	while ( node && node != this ) {
 		for ( size_t i = 0; i < mRows.size(); ++i ) {
@@ -331,6 +432,43 @@ Uint32 PlacesPanel::onMessage( const NodeMessage* msg ) {
 		}
 	}
 	return UILinearLayout::onMessage( msg );
+}
+
+Uint32 PlacesPanel::onKeyDown( const KeyEvent& event ) {
+	const auto row = focusedRow();
+	if ( !row || event.getSanitizedMod() != 0 )
+		return UILinearLayout::onKeyDown( event );
+	switch ( event.getKeyCode() ) {
+		case KEY_UP:
+			focusRow( *row > 0 ? *row - 1 : 0 );
+			return 1;
+		case KEY_DOWN:
+			focusRow( std::min( *row + 1, mRows.size() - 1 ) );
+			return 1;
+		case KEY_HOME:
+			focusRow( 0 );
+			return 1;
+		case KEY_END:
+			focusRow( mRows.size() - 1 );
+			return 1;
+		case KEY_RETURN:
+		case KEY_KP_ENTER:
+			activateFocused( false );
+			return 1;
+		case KEY_ESCAPE:
+			if ( onDismiss )
+				onDismiss();
+			return 1;
+		case KEY_MENU:
+		case KEY_APPLICATION:
+			if ( onContextMenu ) {
+				const Rectf rect = mRows[*row]->getScreenRect();
+				onContextMenu( mEntries[*row], Vector2f( rect.Left, rect.Bottom ) );
+			}
+			return 1;
+		default:
+			return UILinearLayout::onKeyDown( event );
+	}
 }
 
 void PlacesPanel::trackDrag() {

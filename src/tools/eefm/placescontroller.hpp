@@ -53,7 +53,9 @@ class PlacesController {
   private:
 	void ejectDevice( const URI& uri );
 
-	void showPlaceMenu( const PlacesPanel::Entry& entry );
+	void openInNewTab( const URI& uri );
+
+	void showPlaceMenu( const PlacesPanel::Entry& entry, std::optional<Vector2f> position );
 
 	void showSectionMenu( PlaceSection section );
 

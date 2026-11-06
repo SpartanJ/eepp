@@ -275,7 +275,7 @@ UIWindow* SettingsPanel::create( App& app ) {
 					  app.i18n( "programStatusNotifications", "OS Notifications" ),
 					  app.i18n( "programStatusNotifications_desc",
 								"Send OS notifications when a program needs attention, finishes or "
-								"fails. Disabled by default." ) },
+								"fails." ) },
 					&app.config->terminal.programStatusNotifications,
 					[&app]( bool ) { app.savePreferences(); } );
 	panel->addAction(
@@ -314,15 +314,14 @@ UIWindow* SettingsPanel::create( App& app ) {
 	panel->addBool(
 		{ "programStatusSounds", "terminal.alerts", app.i18n( "programStatusSounds", "Play Sound" ),
 		  app.i18n( "programStatusSounds_desc",
-					"Play the selected sound on program status changes. Disabled by default." ) },
+					"Play the selected sound on program status changes." ) },
 		&app.config->terminal.programStatusSounds, [&app]( bool ) { app.savePreferences(); } );
-	panel->addBool(
-		{ "programStatusAlertsWhenActive", "terminal.alerts",
-		  app.i18n( "programStatusAlertsWhenActive", "Alert for Active Terminal" ),
-		  app.i18n( "programStatusAlertsWhenActive_desc",
-					"Also alert while you are using that terminal. Disabled by default." ) },
-		&app.config->terminal.programStatusAlertsWhenActive,
-		[&app]( bool ) { app.savePreferences(); } );
+	panel->addBool( { "programStatusAlertsWhenActive", "terminal.alerts",
+					  app.i18n( "programStatusAlertsWhenActive", "Alert for Active Terminal" ),
+					  app.i18n( "programStatusAlertsWhenActive_desc",
+								"Also alert while you are using that terminal." ) },
+					&app.config->terminal.programStatusAlertsWhenActive,
+					[&app]( bool ) { app.savePreferences(); } );
 	panel->addBool( { "programStatusAlertsAllStates", "terminal.alerts",
 					  app.i18n( "programStatusAlertsAllStates", "Include Working and Idle" ),
 					  app.i18n( "programStatusAlertsAllStates_desc",

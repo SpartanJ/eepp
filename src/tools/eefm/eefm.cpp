@@ -200,11 +200,25 @@ PopUpMenu Menu::Item > Menu::Item::icon.application_icon_loaded,
 .place.selected {
 	background-color: rgba( var(--primary), 0.3 );
 }
+.place:focus {
+	border-width: 1dp;
+	border-color: var(--primary);
+}
 .place_icon {
 	margin-right: 6dp;
 	tint: var(--icon);
 	min-width: 16dp;
 	min-height: 16dp;
+}
+.place_name {
+	text-overflow: ellipsis;
+}
+PushButton.place_eject {
+	padding: 1dp;
+	margin-left: 4dp;
+	margin-right: 0dp;
+	icon-size: 14dp;
+	tint: var(--icon);
 }
 .device_usage {
 	min-height: 3dp;
@@ -1030,7 +1044,14 @@ void App::setSplit( bool split ) {
 	layoutLocationBars();
 }
 
+bool App::placesFocused() const {
+	auto* panel = mPlacesController->panel();
+	return panel && panel->hasFocusWithin();
+}
+
 void App::setPlacesVisible( bool visible ) {
+	if ( !visible && placesFocused() )
+		mPaneManager->focusPane( mPaneManager->activeIndex() );
 	mPlacesVisible = visible;
 	if ( visible && mPlacesScroll->getParent() != mMainSplitter ) {
 		// The splitter keeps its children in insertion order: re-add the panes after places.
@@ -1269,6 +1290,7 @@ void App::createMenuBar() {
 	add( go, mUI->i18n( "eefm_go_up", "Go Up" ), "go-up" );
 	add( go, mUI->i18n( "eefm_home", "Home" ), "go-home" );
 	add( go, mUI->i18n( "eefm_location", "Location" ), "focus-location" );
+	add( go, mUI->i18n( "eefm_panel_places", "Places" ), "focus-places" );
 	go->addSeparator();
 	add( go, mUI->i18n( "eefm_open_terminal", "Open Terminal" ), "terminal" );
 
@@ -1292,8 +1314,8 @@ void App::registerShortcuts() {
 	auto fileCommand = [this]( std::function<void()> fn ) {
 		return [this, fn = std::move( fn )] {
 			Node* focus = mUI->getEventDispatcher()->getFocusNode();
-			if ( !focus ||
-				 ( !focus->isType( UI_TYPE_TEXTINPUT ) && !focus->isType( UI_TYPE_CODEEDITOR ) ) )
+			if ( !focus || ( !focus->isType( UI_TYPE_TEXTINPUT ) &&
+							 !focus->isType( UI_TYPE_CODEEDITOR ) && !placesFocused() ) )
 				fn();
 		};
 	};
@@ -1309,9 +1331,14 @@ void App::registerShortcuts() {
 							   tab ? tab->model->uri()
 								   : URI::fromFSPath( Sys::getUserDirectory() ) );
 	} );
-	mUI->setKeyBindingCommand( "open-new-tab", fileCommand( onTab( [this]( FileTab* tab ) {
-								   mFileOperations->openSelectionInNewTabs( tab );
-							   } ) ) );
+	auto openSelection = fileCommand(
+		onTab( [this]( FileTab* tab ) { mFileOperations->openSelectionInNewTabs( tab ); } ) );
+	mUI->setKeyBindingCommand( "open-new-tab", [this, openSelection = std::move( openSelection )] {
+		if ( placesFocused() )
+			mPlacesController->panel()->activateFocused( true );
+		else
+			openSelection();
+	} );
 	mUI->setKeyBindingCommand( "close-tab",
 							   onTab( [this]( FileTab* tab ) { mPaneManager->closeTab( tab ); } ) );
 	mUI->setKeyBindingCommand( "next-tab", [this] {
@@ -1342,6 +1369,10 @@ void App::registerShortcuts() {
 		auto* input = mPaneManager->activePane().location.input;
 		input->setFocus();
 		input->getDocument().selectAll();
+	} );
+	mUI->setKeyBindingCommand( "focus-places", [this] {
+		setPlacesVisible( true );
+		mPlacesController->panel()->focusCurrent();
 	} );
 	mUI->setKeyBindingCommand( "toggle-hidden", [this] { setShowHidden( !mShowHidden ); } );
 	mUI->setKeyBindingCommand( "toggle-split", [this] { setSplit( !mSplit ); } );
@@ -1409,12 +1440,12 @@ KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
 	KeyBindings bindings( mUI->getWindow()->getInput() );
 	bindings.addKeybindsString( {
 		{ "mod+t", "new-tab" },
-		{ "shift+return", "open-new-tab" },
 		{ "mod+w", "close-tab" },
 		{ "mod+tab", "next-tab" },
 		{ "mod+shift+tab", "previous-tab" },
 		{ "mod+l", "focus-location" },
 		{ "f6", "focus-location" },
+		{ "mod+p", "focus-places" },
 		{ "mod+h", "toggle-hidden" },
 		{ "alt+.", "toggle-hidden" },
 		{ "f3", "toggle-split" },
@@ -1434,7 +1465,6 @@ KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
 		{ "mod+v", "paste" },
 		{ "mod+a", "select-all" },
 		{ "f2", "rename" },
-		{ "mod+return", "properties" },
 		{ "alt+return", "properties" },
 		{ "shift+f4", "terminal" },
 		{ "f4", "toggle-terminal" },
@@ -1456,6 +1486,9 @@ KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
 								   "switch-to-tab-" + std::to_string( tab ) );
 	}
 	bindings.addKeybindString( "mod+0", "switch-to-last-tab" );
+	// Where the modifier is Alt (Haiku), mod+return would take Properties' alt+return.
+	bindings.addKeybindString(
+		KeyMod::getDefaultModifier() & KEYMOD_ALT ? "ctrl+return" : "mod+return", "open-new-tab" );
 	return bindings.getShortcutMap();
 }
 

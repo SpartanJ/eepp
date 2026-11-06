@@ -190,6 +190,9 @@ class App {
 
 	void setPlacesVisible( bool visible );
 
+	/** The keyboard is in the Places panel: file commands do not apply to the selection. */
+	bool placesFocused() const;
+
 	void layoutLocationBars();
 
 	std::unique_ptr<UIApplication> mApp;

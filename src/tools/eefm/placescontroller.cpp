@@ -20,14 +20,22 @@ void PlacesController::createPanel( UIWidget* parent ) {
 	mPlacesPanel->iconProvider = [this]( const Place& place ) { return mApp.placeIcon( place ); };
 	mPlacesPanel->setParent( parent );
 	mPlacesPanel->onActivate = [this]( const PlacesPanel::Entry& entry, bool newTab ) {
-		if ( newTab )
-			mApp.panes().openTab( mApp.panes().activePane(), entry.place.uri );
-		else if ( auto* tab = mApp.panes().currentTab() )
+		// Activating a place is going there: the keyboard continues in its files.
+		if ( newTab ) {
+			openInNewTab( entry.place.uri );
+		} else if ( auto* tab = mApp.panes().currentTab() ) {
 			mApp.panes().navigate( tab, entry.place.uri );
+			tab->view->setFocus();
+		}
 	};
-	mPlacesPanel->onContextMenu = [this]( const PlacesPanel::Entry& entry ) {
-		showPlaceMenu( entry );
+	mPlacesPanel->onContextMenu = [this]( const PlacesPanel::Entry& entry,
+										  std::optional<Vector2f> position ) {
+		showPlaceMenu( entry, position );
 	};
+	mPlacesPanel->onEject = [this]( const PlacesPanel::Entry& entry ) {
+		ejectDevice( entry.place.uri );
+	};
+	mPlacesPanel->onDismiss = [this] { mApp.panes().focusPane( mApp.panes().activeIndex() ); };
 	mPlacesPanel->onPlaceMoved = [this]( size_t index, std::optional<size_t> before ) {
 		mPlaces->moveBefore( index, before );
 		save();
@@ -198,9 +206,16 @@ void PlacesController::refreshDeviceUsage() {
 	}
 }
 
-void PlacesController::showPlaceMenu( const PlacesPanel::Entry& entry ) {
+void PlacesController::openInNewTab( const URI& uri ) {
+	if ( auto* tab = mApp.panes().openTab( mApp.panes().activePane(), uri ) )
+		tab->view->setFocus();
+}
+
+void PlacesController::showPlaceMenu( const PlacesPanel::Entry& entry,
+									  std::optional<Vector2f> position ) {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->add( mUI->i18n( "eefm_open_new_tab", "Open in New Tab" ), mApp.icon( "action-new-tab" ) )
+	menu->add( mUI->i18n( "eefm_open_new_tab", "Open in New Tab" ), mApp.icon( "action-new-tab" ),
+			   mApp.getKeybind( "open-new-tab" ) )
 		->setId( "open-tab" );
 	if ( mApp.isSplit() ) {
 		menu->add( mUI->i18n( "eefm_open_other_pane", "Open in Other Pane" ) )
@@ -239,7 +254,9 @@ void PlacesController::showPlaceMenu( const PlacesPanel::Entry& entry ) {
 	} );
 	if ( ejectable ) {
 		menu->addSeparator();
-		menu->add( mUI->i18n( "eefm_eject", "Eject" ) )->setId( "eject" )->setEnabled( !mEjecting );
+		menu->add( mUI->i18n( "eefm_eject", "Eject" ), mApp.icon( "eject-fill" ) )
+			->setId( "eject" )
+			->setEnabled( !mEjecting );
 	}
 	if ( entry.place.section == PlaceSection::Devices ) {
 		menu->addSeparator();
@@ -253,7 +270,7 @@ void PlacesController::showPlaceMenu( const PlacesPanel::Entry& entry ) {
 		size_t index = static_cast<size_t>( std::max( entry.index, 0 ) );
 		if ( onPanelItem( id, entry.place.section ) ) {
 		} else if ( id == "open-tab" ) {
-			mApp.panes().openTab( mApp.panes().activePane(), entry.place.uri );
+			openInNewTab( entry.place.uri );
 		} else if ( id == "open-other" ) {
 			if ( auto* tab = mApp.panes().currentTab(
 					 mApp.panes().pane( 1 - mApp.panes().activeIndex() ) ) )
@@ -278,7 +295,21 @@ void PlacesController::showPlaceMenu( const PlacesPanel::Entry& entry ) {
 			ejectDevice( entry.place.uri );
 		}
 	} );
-	menu->showOverMouseCursor();
+	if ( position ) {
+		// Menus do not give the focus back, and the row may be rebuilt by the item chosen. Items
+		// that moved the focus elsewhere (a new tab, a dialog) keep it.
+		menu->on( Event::OnMenuHide, [this, uri = entry.place.uri]( const Event* ) {
+			mUI->runOnMainThread( [this, uri] {
+				Node* focus = mUI->getEventDispatcher()->getFocusNode();
+				if ( !focus || focus == mUI || focus->isType( UI_TYPE_MENU ) ||
+					 focus->isType( UI_TYPE_POPUPMENU ) )
+					mPlacesPanel->focusPlace( uri );
+			} );
+		} );
+		menu->showAtScreenPosition( *position );
+	} else {
+		menu->showOverMouseCursor();
+	}
 }
 
 void PlacesController::showSectionMenu( PlaceSection section ) {

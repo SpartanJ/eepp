@@ -15,10 +15,13 @@ using namespace EE::UI;
 
 /** @brief Dolphin-like Places sidebar: sections of places, remote hosts and devices.
  *
- * Rows are activated with the left button (middle button: in a new tab), offer a context menu and
- * accept files dragged from file views. Saved places can be dragged to reorder them within their
- * section, and folders dropped between places are added there, like Dolphin. Hidden places and
- * sections are drawn dimmed when listed.
+ * Rows are activated with the left button (with the modifier or the middle button: in a new tab),
+ * offer a context menu and accept files dragged from file views. Saved places can be dragged to
+ * reorder them within their section, and folders dropped between places are added there, like
+ * Dolphin. Hidden places and sections are drawn dimmed when listed.
+ *
+ * A row holds the keyboard focus: the arrows, Home and End move between rows, Return activates and
+ * the menu key opens the context menu. Tab and Escape give the focus back through onDismiss.
  */
 class PlacesPanel : public UILinearLayout {
   public:
@@ -43,9 +46,25 @@ class PlacesPanel : public UILinearLayout {
 	/** Highlights the entry that best matches uri (the longest containing place). */
 	void setCurrent( const URI& uri );
 
+	/** Moves the focus to the highlighted row, or to the first one. */
+	void focusCurrent();
+
+	/** Moves the focus to the row of a place, or to the first one if it is not listed anymore. */
+	void focusPlace( const URI& uri );
+
+	/** Activates the row that has the focus, if any. */
+	void activateFocused( bool newTab );
+
 	std::function<void( const Entry&, bool newTab )> onActivate;
 
-	std::function<void( const Entry& )> onContextMenu;
+	/** The position is where to show the menu, or nullopt for the mouse cursor. */
+	std::function<void( const Entry&, std::optional<Vector2f> position )> onContextMenu;
+
+	/** The eject button of an ejectable place was clicked. */
+	std::function<void( const Entry& )> onEject;
+
+	/** The keyboard left the panel. */
+	std::function<void()> onDismiss;
 
 	std::function<void( const Entry& )> onFilesDropped;
 
@@ -81,6 +100,8 @@ class PlacesPanel : public UILinearLayout {
 
 	Uint32 onMessage( const NodeMessage* msg ) override;
 
+	Uint32 onKeyDown( const KeyEvent& event ) override;
+
 	void scheduledUpdate( const Time& time ) override;
 
   private:
@@ -94,6 +115,10 @@ class PlacesPanel : public UILinearLayout {
 	};
 
 	std::optional<size_t> entryOf( Node* node ) const;
+
+	std::optional<size_t> focusedRow() const;
+
+	void focusRow( size_t row );
 
 	/** Rows of saved places of a section, in display order. */
 	std::vector<size_t> sectionRows( PlaceSection section ) const;
