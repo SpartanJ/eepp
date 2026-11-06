@@ -1,7 +1,10 @@
 #include "settingspanel.hpp"
 #include "eterm.hpp"
 
+#include <eepp/ui/tools/fileassociationssettings.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
+#include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
@@ -33,6 +36,8 @@ UIWindow* SettingsPanel::create( App& app ) {
 		  app.i18n( "kb_title", "Keyboard Shortcuts" ),
 		  {} },
 		[&app]( UIWidget* parent ) { return app.createKeybindingsEditor( parent ); }, true );
+
+	FileAssociationsSettings::addLauncherTo( panel, "eterm" );
 
 	panel->addCategory( "appearance.theme", app.i18n( "appearance", "Appearance" ),
 						app.i18n( "theme_and_language", "Theme & Language" ) );
@@ -264,6 +269,172 @@ UIWindow* SettingsPanel::create( App& app ) {
 						} );
 						app.savePreferences();
 					} );
+	panel->addCategory( "terminal.alerts", app.i18n( "terminal", "Terminal" ),
+						app.i18n( "program_status_alerts", "Program Status Alerts" ) );
+	panel->addBool( { "programStatusNotifications", "terminal.alerts",
+					  app.i18n( "programStatusNotifications", "OS Notifications" ),
+					  app.i18n( "programStatusNotifications_desc",
+								"Send OS notifications when a program needs attention, finishes or "
+								"fails. Disabled by default." ) },
+					&app.config->terminal.programStatusNotifications,
+					[&app]( bool ) { app.savePreferences(); } );
+	panel->addAction(
+		{ "testProgramStatusNotification", "terminal.alerts",
+		  app.i18n( "test_notification", "Test Notification" ),
+		  app.i18n( "test_notification_desc",
+					"Send one OS notification, even when automatic notifications are disabled." ) },
+		app.i18n( "test", "Test" ), [&app] {
+			const auto feedback = [&app]( const String& text ) {
+				// Resolve on the UI thread: settings may have been closed while the helper ran.
+				if ( auto* row =
+						 app.scene->find<UIWidget>( "setting_testProgramStatusNotification" ) )
+					row->find<UITextView>( "setting_description" )->setText( text );
+			};
+			feedback( app.i18n( "sending_notification", "Sending test notification…" ) );
+			const bool accepted = app.programStatusAlerts.deliver(
+				app.i18n( "test_notification_title", "eterm · Test notification" ).toUtf8(),
+				app.i18n( "test_notification_message", "This is a test notification from eterm." )
+					.toUtf8(),
+				true, false, {}, 0, true, [&app, feedback]( bool success, std::string error ) {
+					// App joins the alert worker before destroying the scene.
+					app.scene->runOnMainThread( [&app, feedback, success,
+												 error = std::move( error )] {
+						feedback( success
+									  ? app.i18n( "notification_submitted",
+												  "Notification submitted. If no banner appears, "
+												  "check OS notification permissions and Do Not "
+												  "Disturb (eterm on macOS)." )
+									  : String::fromUtf8( error ) );
+					} );
+				} );
+			if ( !accepted )
+				feedback( app.i18n( "notification_busy",
+									"Another alert is being delivered. Try again shortly." ) );
+		} );
+	panel->addBool(
+		{ "programStatusSounds", "terminal.alerts", app.i18n( "programStatusSounds", "Play Sound" ),
+		  app.i18n( "programStatusSounds_desc",
+					"Play the selected sound on program status changes. Disabled by default." ) },
+		&app.config->terminal.programStatusSounds, [&app]( bool ) { app.savePreferences(); } );
+	panel->addBool(
+		{ "programStatusAlertsWhenActive", "terminal.alerts",
+		  app.i18n( "programStatusAlertsWhenActive", "Alert for Active Terminal" ),
+		  app.i18n( "programStatusAlertsWhenActive_desc",
+					"Also alert while you are using that terminal. Disabled by default." ) },
+		&app.config->terminal.programStatusAlertsWhenActive,
+		[&app]( bool ) { app.savePreferences(); } );
+	panel->addBool( { "programStatusAlertsAllStates", "terminal.alerts",
+					  app.i18n( "programStatusAlertsAllStates", "Include Working and Idle" ),
+					  app.i18n( "programStatusAlertsAllStates_desc",
+								"Also alert when programs start working or become idle. Percentage "
+								"and text updates stay silent." ) },
+					&app.config->terminal.programStatusAlertsAllStates,
+					[&app]( bool ) { app.savePreferences(); } );
+	panel->addCustomWidget(
+		{ "programStatusSound", "terminal.alerts", app.i18n( "alert_sound", "Sound" ),
+		  app.i18n( "alert_sound_desc",
+					"Choose a built-in sound or an MP3, WAV (PCM), Ogg/Vorbis or FLAC file." ) },
+		[&app]( UIWidget* parent ) {
+			auto* layout = app.scene->loadLayoutFromString( R"xml(
+				<vbox lw="mp" lh="wc">
+					<hbox lw="mp" lh="wc">
+						<DropDownList id="program_status_sound_choice" lw="0" lw8="1" lh="wc" />
+						<PushButton id="program_status_sound_browse" lw="wc" lh="wc" margin-left="4dp" />
+					</hbox>
+					<TextView id="program_status_sound_path" lw="mp" lh="wc" word-wrap="true" />
+				</vbox>
+			)xml",
+															parent );
+			auto* choice = layout->find<UIDropDownList>( "program_status_sound_choice" );
+			choice->getListBox()->addListBoxItems( { app.i18n( "chime", "Chime" ),
+													 app.i18n( "bell", "Bell" ),
+													 app.i18n( "pulse", "Pulse" ) } );
+			const auto sync = [&app] {
+				auto* drop = app.scene->find<UIDropDownList>( "program_status_sound_choice" );
+				auto* path = app.scene->find<UITextView>( "program_status_sound_path" );
+				if ( !drop || !path )
+					return;
+				const auto& sound = app.config->terminal.programStatusSound;
+				const Uint32 selected = sound == "chime"   ? 0
+										: sound == "bell"  ? 1
+										: sound == "pulse" ? 2
+														   : 3;
+				// This widget's data is a local guard against programmatic selection callbacks.
+				drop->setData( 1 );
+				if ( selected == 3 ) {
+					const auto filename = String::fromUtf8( FileSystem::fileNameFromPath( sound ) );
+					if ( drop->getListBox()->getItemsCount() == 3 )
+						drop->getListBox()->addListBoxItem( filename );
+					else
+						drop->getListBox()->setItemText( 3, filename );
+				} else if ( drop->getListBox()->getItemsCount() > 3 ) {
+					drop->getListBox()->removeListBoxItem( 3 );
+				}
+				drop->getListBox()->setSelected( selected );
+				drop->setData( 0 );
+				path->setText( selected == 3 ? String::fromUtf8( sound ) : String{} );
+				path->setTooltipText( path->getText() );
+				path->setVisible( selected == 3 );
+			};
+			sync();
+			const auto browse = [&app, sync] {
+				if ( app.scene->find<UIFileDialog>( "program_status_sound_dialog" ) )
+					return;
+				const auto& sound = app.config->terminal.programStatusSound;
+				const std::string directory = FileSystem::fileExists( sound )
+												  ? FileSystem::fileRemoveFileName( sound )
+												  : Sys::getUserDirectory();
+				auto* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags,
+												  "*.mp3;*.wav;*.ogg;*.flac", directory );
+				dialog->setId( "program_status_sound_dialog" );
+				dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
+										UI_WIN_MODAL );
+				dialog->setTitle( app.i18n( "select_alert_sound", "Select Alert Sound" ) );
+				dialog->setCloseShortcut( KEY_ESCAPE );
+				dialog->on( Event::OpenFile, [&app, sync]( const Event* event ) {
+					app.config->terminal.programStatusSound =
+						event->getNode()->asType<UIFileDialog>()->getFullPath();
+					app.savePreferences();
+					sync();
+				} );
+				dialog->on( Event::OnWindowClose, [sync]( const Event* ) { sync(); } );
+				dialog->center();
+				dialog->show();
+			};
+			auto* browseButton = layout->find<UIPushButton>( "program_status_sound_browse" );
+			browseButton->setText( app.i18n( "browse", "Browse…" ) );
+			browseButton->onClick( [browse]( const Event* ) { browse(); } );
+			choice->on( Event::OnValueChange, [&app, choice, sync]( const Event* ) {
+				if ( choice->getData() )
+					return;
+				const auto selected = choice->getListBox()->getItemSelectedIndex();
+				if ( selected < 3 ) {
+					static constexpr const char* sounds[] = { "chime", "bell", "pulse" };
+					app.config->terminal.programStatusSound = sounds[selected];
+					app.savePreferences();
+					sync();
+				}
+			} );
+			return layout;
+		} );
+	panel->addInteger(
+		{ "programStatusSoundVolume", "terminal.alerts", app.i18n( "alert_volume", "Sound Volume" ),
+		  app.i18n( "alert_volume_desc", "Volume from 0 to 100." ) },
+		0, 100, [&app] { return app.config->terminal.programStatusSoundVolume; },
+		[&app]( int value ) {
+			app.config->terminal.programStatusSoundVolume = value;
+			app.savePreferences();
+		} );
+	panel->addAction(
+		{ "previewProgramStatusSound", "terminal.alerts",
+		  app.i18n( "preview_sound", "Preview Sound" ),
+		  app.i18n( "preview_sound_desc",
+					"Play the selected sound once, even when sound alerts are disabled." ) },
+		app.i18n( "play", "Play" ), [&app] {
+			app.programStatusAlerts.deliver( {}, {}, false, true,
+											 app.config->terminal.programStatusSound,
+											 app.config->terminal.programStatusSoundVolume, true );
+		} );
 	panel->addBool(
 		{ "restoreLastSession", "terminal.behavior",
 		  app.i18n( "restore_last_session", "Restore Last Session" ),

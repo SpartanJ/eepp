@@ -250,6 +250,11 @@ class EE_API Window {
 	/** This will attempt to show the window */
 	virtual void show();
 
+	/** Restores a minimized window, shows it, and requests foreground activation.
+	 * Maximized windows keep their size. Activation is requested even if the window has mouse
+	 * focus, since mouse focus does not imply keyboard focus. */
+	void activate();
+
 	/** This will attempt to move the window over the desktop to the position */
 	virtual void setPosition( int Left, int Top );
 

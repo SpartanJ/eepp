@@ -1,6 +1,7 @@
 #pragma once
 
 #include "appconfig.hpp"
+#include "programstatusalerts.hpp"
 #include "settingsactions.hpp"
 #include <args/args.hxx>
 #include <atomic>
@@ -99,6 +100,8 @@ class App : private efsw::FileWatchListener {
 	/** Only the terminal the user is using can have its status seen: not a visible split, and not
 	 * one in a window that lost the keyboard to another application. */
 	bool isTerminalActive( const UITerminal* terminal ) const;
+
+	void alertProgramStatus( UITab* tab );
 
 	void updateWidgetProgramStatus( UIWidget* widget );
 
@@ -223,6 +226,8 @@ class App : private efsw::FileWatchListener {
 	SmallVector<UITab*, 8> pendingExitCloseTabs;
 	/** UI-only memory of the done or error each tab's user has seen: the programs' records stay. */
 	UnorderedMap<UITab*, std::shared_ptr<const ProgramStatusSnapshot>> seenProgramStatus;
+	UnorderedMap<UITab*, std::shared_ptr<const ProgramStatusSnapshot>> lastAlertStatus;
+	ProgramStatusAlerts programStatusAlerts;
 	TerminalSplitterClient splitterClient{ *this };
 };
 

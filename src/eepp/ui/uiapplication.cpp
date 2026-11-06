@@ -360,8 +360,7 @@ bool UIApplication::reopen() {
 		if ( !entry.hiddenOnClose || entry.pendingDestroy || !entry.window->isOpen() )
 			continue;
 		entry.hiddenOnClose = false;
-		entry.window->show();
-		entry.window->raise();
+		entry.window->activate();
 		entry.ui->invalidate( nullptr );
 		revealed = true;
 	}

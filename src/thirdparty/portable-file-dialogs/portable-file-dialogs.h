@@ -347,6 +347,12 @@ public:
     notify(std::string const &title,
            std::string const &message,
            icon _icon = icon::info);
+
+	// eepp: report helper/native submission failures after ready() completes.
+	int result();
+
+  private:
+	int m_result = 0;
 };
 
 //
@@ -1584,7 +1590,7 @@ inline notify::notify(std::string const &title,
     StringCchCopyW(nid->szInfo, ARRAYSIZE(nid->szInfo), internal::str2wstr(message).c_str());
 
     // Display the new icon
-    Shell_NotifyIconW(NIM_ADD, nid.get());
+	m_result = Shell_NotifyIconW( NIM_ADD, nid.get() ) ? 0 : -1;
 #elif __EMSCRIPTEN__
     // FIXME: do something
     (void)title;
@@ -1621,6 +1627,16 @@ inline notify::notify(std::string const &title,
         std::cerr << "pfd: " << command << std::endl;
 
     m_async->start_process(command);
+#endif
+}
+
+// eepp: reuse the existing executor result rather than duplicating process handling.
+inline int notify::result() {
+#if _WIN32
+	return m_result;
+#else
+	m_async->result( &m_result );
+	return m_result;
 #endif
 }
 

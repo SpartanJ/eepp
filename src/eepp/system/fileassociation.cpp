@@ -432,12 +432,12 @@ static bool writeXdgRegistration( const FileAssociationApplication& application,
 		std::sort( sortedMimeTypes.begin(), sortedMimeTypes.end() );
 		std::string desktop = "[Desktop Entry]\nType=Application\nVersion=1.0\n";
 		desktop += "Name=" + desktopEscape( application.name ) + "\n";
-		desktop += "Comment=Edit source code and text files\n";
+		desktop += "Comment=Open files with " + desktopEscape( application.name ) + "\n";
 		desktop += "Exec=" + desktopExecPath( application.executablePath ) + " %F\n";
 		desktop += "TryExec=" + application.executablePath + "\n";
 		if ( !application.iconPath.empty() )
 			desktop += "Icon=" + application.iconPath + "\n";
-		desktop += "Terminal=false\nCategories=Development;TextEditor;\n";
+		desktop += "Terminal=false\nCategories=Utility;\n";
 		desktop += std::string( "NoDisplay=" ) + ( visible ? "false\n" : "true\n" );
 		desktop += "MimeType=";
 		for ( const auto& mime : sortedMimeTypes )

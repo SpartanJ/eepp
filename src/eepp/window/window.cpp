@@ -737,6 +737,13 @@ void Window::show() {
 	cancelPendingHide();
 }
 
+void Window::activate() {
+	if ( isMinimized() )
+		restore();
+	show();
+	raise();
+}
+
 void Window::cancelPendingHide() {
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	Private::WindowVisibility::cancelHide( getWindowHandler() );

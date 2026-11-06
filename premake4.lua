@@ -643,7 +643,7 @@ function build_link_configuration( package_name, use_ee_icon, use_sdl_main )
 	end
 
 	if os.is_real("macosx") then
-		linkoptions { "-weak_framework UniformTypeIdentifiers" }
+		linkoptions { "-weak_framework UniformTypeIdentifiers", "-weak_framework UserNotifications" }
 	end
 
 	if _OPTIONS["with-mold-linker"] then
@@ -1881,6 +1881,7 @@ solution "eepp"
 				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm",
 				"src/eepp/system/fileassociation_macos.mm",
 				"src/eepp/system/applications_macos.mm",
+				"src/eepp/system/notification_macos.mm",
 				"src/eepp/ui/icons/macosiconimage.mm",
 				"src/eepp/window/draganddrop/cocoadraganddrop.mm" }
 		buildoptions { "-x objective-c++" }

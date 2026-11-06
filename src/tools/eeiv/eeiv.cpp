@@ -1,11 +1,13 @@
 #include "eeiv.hpp"
 
 #include <eepp/network/http.hpp>
+#include <eepp/ui/tools/fileassociationssettings.hpp>
 #include <eepp/ui/tools/keybindingsconfig.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uikeybindingseditor.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/uifiledialog.hpp>
+#include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
 using namespace EE::Network;
@@ -128,8 +130,9 @@ UIWindow* App::createSettingsWindow() {
 	window->setId( "settings_panel" );
 	window->setTitle( "Settings" );
 	const auto sceneSize = scene->getPixelsSize();
-	window->setPixelsSize( { eeclamp( sceneSize.getWidth() * 0.82f, 720.f, 1200.f ),
-							 eeclamp( sceneSize.getHeight() * 0.82f, 520.f, 850.f ) } );
+	window->setPixelsSize(
+		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
+		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
 	window->setMinWindowSize( 640, 440 );
 
 	auto* panel = UISettingsPanel::New( window->getContainer() );
@@ -138,6 +141,25 @@ UIWindow* App::createSettingsWindow() {
 	panel->addCustomWidget(
 		{ "keybindingsEditor", "general.keybindings", "Keyboard Shortcuts", {} },
 		[this]( UIWidget* parent ) { return createKeybindingsEditor( parent ); }, true );
+	if ( FileAssociation::isSupported() ) {
+		panel->addCategory( "general.file_associations", "General", "File Associations" );
+		FileAssociationsSettings::addTo(
+			panel,
+			{ "systemFileAssociations", "general.file_associations", "System File Associations",
+			  "Make eeiv available for the selected image extensions. The operating system may "
+			  "still ask you to confirm the default application." },
+			FileAssociationsSettings::applicationForCurrentProcess( "eeiv" ),
+			Image::getImageExtensionsSupported(), mThreadPool, {},
+			[]( bool success, const std::string& error ) {
+				auto* message = UIMessageBox::New(
+					UIMessageBox::OK, success ? String( "File associations updated." )
+											  : String( "Could not update file associations.\n" ) +
+													String::fromUtf8( error ) );
+				message->setTitle( "File Associations" );
+				message->center();
+				message->showWhenReady();
+			} );
+	}
 	panel->addCategory( "appearance.theme", "Appearance", "Theme" );
 	panel->addChoice(
 		{ "uiColorScheme", "appearance.theme", "UI Prefers Color Scheme",
@@ -494,8 +516,11 @@ void App::loadConfig() {
 void App::updateConfig() {
 	if ( !getWindow() || !getWindow()->isOpen() )
 		return;
-	mIni.setValueI( "window", "width", getWindow()->getWidth() );
-	mIni.setValueI( "window", "height", getWindow()->getHeight() );
+	// WindowSettings uses screen coordinates; saving drawable pixels doubles the next Retina
+	// window.
+	const Sizei size = getWindow()->getSizeInScreenCoordinates();
+	mIni.setValueI( "window", "width", size.getWidth() );
+	mIni.setValueI( "window", "height", size.getHeight() );
 	mConfig.MaximizeAtStart = getWindow()->isMaximized();
 }
 
@@ -667,6 +692,12 @@ bool App::init() {
 	mUIApplication->getWindow()->getInput()->pushCallback( [this]( InputEvent* event ) {
 		switch ( event->Type ) {
 			case InputEvent::FileDropped: {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+				// Finder sends application-level opens without a destination window. Its earlier
+				// activation may have been lost while the application was starting.
+				if ( event->WinID == 0 )
+					getWindow()->activate();
+#endif
 				mPathsToLoad.emplace_back( event->file.file );
 				break;
 			}

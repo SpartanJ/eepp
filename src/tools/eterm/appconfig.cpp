@@ -1,4 +1,5 @@
 #include "appconfig.hpp"
+#include <algorithm>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/window/window.hpp>
 #include <nlohmann/json.hpp>
@@ -46,6 +47,20 @@ void AppConfig::load() {
 	terminal.detectLinks = mIni.getValueB( "terminal", "detect_links", terminal.detectLinks );
 	terminal.showProgramStatus =
 		mIni.getValueB( "terminal", "show_program_status", terminal.showProgramStatus );
+	terminal.programStatusNotifications = mIni.getValueB(
+		"terminal", "program_status_notifications", terminal.programStatusNotifications );
+	terminal.programStatusSounds =
+		mIni.getValueB( "terminal", "program_status_sounds", terminal.programStatusSounds );
+	terminal.programStatusAlertsWhenActive = mIni.getValueB(
+		"terminal", "program_status_alerts_when_active", terminal.programStatusAlertsWhenActive );
+	terminal.programStatusAlertsAllStates = mIni.getValueB(
+		"terminal", "program_status_alerts_all_states", terminal.programStatusAlertsAllStates );
+	terminal.programStatusSound =
+		mIni.getValue( "terminal", "program_status_sound", terminal.programStatusSound );
+	terminal.programStatusSoundVolume =
+		std::clamp( mIni.getValueI( "terminal", "program_status_sound_volume",
+									terminal.programStatusSoundVolume ),
+					0, 100 );
 	terminal.restoreLastSession =
 		mIni.getValueB( "terminal", "restore_last_session", terminal.restoreLastSession );
 	ui.smoothScroll = mIni.getValueB(
@@ -135,6 +150,15 @@ bool AppConfig::savePreferences() {
 	mIni.setValueB( "terminal", "grapheme_clustering", terminal.graphemeClustering );
 	mIni.setValueB( "terminal", "detect_links", terminal.detectLinks );
 	mIni.setValueB( "terminal", "show_program_status", terminal.showProgramStatus );
+	mIni.setValueB( "terminal", "program_status_notifications",
+					terminal.programStatusNotifications );
+	mIni.setValueB( "terminal", "program_status_sounds", terminal.programStatusSounds );
+	mIni.setValueB( "terminal", "program_status_alerts_when_active",
+					terminal.programStatusAlertsWhenActive );
+	mIni.setValueB( "terminal", "program_status_alerts_all_states",
+					terminal.programStatusAlertsAllStates );
+	mIni.setValue( "terminal", "program_status_sound", terminal.programStatusSound );
+	mIni.setValueI( "terminal", "program_status_sound_volume", terminal.programStatusSoundVolume );
 	mIni.setValueB( "terminal", "restore_last_session", terminal.restoreLastSession );
 	mIni.setValueB( "ui", "smooth_scroll", ui.smoothScroll );
 	mIni.deleteValue( "terminal", "smooth_scroll" );

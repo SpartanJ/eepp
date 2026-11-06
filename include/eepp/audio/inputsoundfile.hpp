@@ -28,7 +28,7 @@ class EE_API InputSoundFile : NonCopyable {
 	////////////////////////////////////////////////////////////
 	/// \brief Open a sound file from the disk for reading
 	///
-	/// The supported audio formats are: WAV (PCM only), OGG/Vorbis, FLAC.
+	/// The supported audio formats are: WAV (PCM only), OGG/Vorbis, FLAC, MP3.
 	/// The supported sample sizes for FLAC and WAV are 8, 16, 24 and 32 bit.
 	///
 	/// \param filename Path of the sound file to load
@@ -41,7 +41,7 @@ class EE_API InputSoundFile : NonCopyable {
 	////////////////////////////////////////////////////////////
 	/// \brief Open a sound file in memory for reading
 	///
-	/// The supported audio formats are: WAV (PCM only), OGG/Vorbis, FLAC.
+	/// The supported audio formats are: WAV (PCM only), OGG/Vorbis, FLAC, MP3.
 	/// The supported sample sizes for FLAC and WAV are 8, 16, 24 and 32 bit.
 	///
 	/// \param data		Pointer to the file data in memory
@@ -55,7 +55,7 @@ class EE_API InputSoundFile : NonCopyable {
 	////////////////////////////////////////////////////////////
 	/// \brief Open a sound file from a custom stream for reading
 	///
-	/// The supported audio formats are: WAV (PCM only), OGG/Vorbis, FLAC.
+	/// The supported audio formats are: WAV (PCM only), OGG/Vorbis, FLAC, MP3.
 	/// The supported sample sizes for FLAC and WAV are 8, 16, 24 and 32 bit.
 	///
 	/// \param stream Source stream to read from

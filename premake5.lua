@@ -571,7 +571,7 @@ function build_link_configuration( package_name, use_ee_icon, use_sdl_main )
 		end
 
 	filter "system:macosx"
-		linkoptions { "-weak_framework UniformTypeIdentifiers" }
+		linkoptions { "-weak_framework UniformTypeIdentifiers", "-weak_framework UserNotifications" }
 
 	filter { "system:bsd" }
 		if package_name ~= "eepp" and package_name ~= "eepp-static" then
@@ -1899,6 +1899,7 @@ workspace "eepp"
 				"src/eepp/ui/accessibility/accessibilitybackendmacos.mm",
 				"src/eepp/system/fileassociation_macos.mm",
 				"src/eepp/system/applications_macos.mm",
+				"src/eepp/system/notification_macos.mm",
 				"src/eepp/ui/icons/macosiconimage.mm",
 				"src/eepp/window/draganddrop/cocoadraganddrop.mm" }
 		buildoptions { "-x objective-c++" }

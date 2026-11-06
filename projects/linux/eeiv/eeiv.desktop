@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=eeiv
+Comment=Image Viewer
+Exec=eeiv %f
+Icon=eeiv
+Terminal=false
+StartupNotify=true
+Categories=Graphics;Viewer;
+MimeType=image/png;image/x-tga;image/bmp;image/jpeg;image/gif;image/x-dds;image/vnd.adobe.photoshop;image/vnd.radiance;image/x-hdr;image/x-pic;image/x-pvr;image/x-pkm;image/svg+xml;image/qoi;image/webp;image/astc;

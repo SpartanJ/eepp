@@ -202,6 +202,36 @@ Applications that embed the terminal get `TerminalDisplay::getProgramStatus()`, 
 state, and offers `presentation` with the selection above. Its presented text has bidi overrides
 and invisible formatting removed, but remains untrusted: never treat it as markup or a command.
 
+### Optional alerts
+
+Settings → Terminal → Program Status Alerts has independent **OS Notifications** and **Play Sound**
+switches. Both are off by default. Alerts normally cover OSC 7501 blocked, done and error, and OSC
+9;4 error and paused/warning. **Include Working and Idle** adds other reported state changes.
+**Alert for Active Terminal** is another opt-in: normally only terminals you are not currently
+using can alert. These controls work independently of **Show Program Status**.
+**Test Notification** sends one OS notification even when automatic notifications are disabled,
+so you can check delivery without waiting for a program status change. Its description shows
+submission status, errors, or a busy message. If submission succeeds without a banner, check OS
+notification permissions and Do Not Disturb; macOS attributes these requests to eterm. Launch the signed `.app` and allow notifications
+when the first request prompts you. Standalone binaries report that the app bundle is required.
+
+Repeated reports and percentage/text refreshes stay silent. A new completion can alert even when
+its text matches the previous completion. Alerts are limited to one every two seconds across the
+application, and changes suppressed by focus or rate limiting are not replayed later. Only the
+current resolved status is considered; intermediate states coalesced by the worker may be omitted.
+
+Sound can be `chime`, `bell` or `pulse` (built-in synthesized cues), or a local MP3, PCM WAV, Ogg/Vorbis
+or FLAC file. **Browse…** opens the file picker. The selected filename appears in the dropdown,
+with its full path below it. Volume and a preview button are available in Settings. Audio loading and notification
+helpers run outside the UI thread. Desktop delivery uses
+[`EE::System::Notification`](desktop_notifications.md). OS notification delivery depends on system permissions, Do Not
+Disturb, and a supported desktop notification helper (Zenity, MateDialog, Qarma or KDialog on Linux/BSD); on macOS
+these notifications are delivered through eterm's native notification center. System notification sounds follow OS preferences; the separate sound option controls eterm audio.
+
+The corresponding `[terminal]` keys are `program_status_notifications`, `program_status_sounds`,
+`program_status_alerts_when_active`, `program_status_alerts_all_states`, `program_status_sound`
+(default `chime`) and `program_status_sound_volume` (default `50`).
+
 ## Grapheme clusters (mode 2027)
 
 A character can be written as several codepoints: a letter followed by combining accents, an emoji

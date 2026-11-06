@@ -34,6 +34,7 @@
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/mutex.hpp>
+#include <eepp/system/notification.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packfileindex.hpp>
 #include <eepp/system/packregistry.hpp>

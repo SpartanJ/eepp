@@ -29,6 +29,8 @@ struct TerminalConfig {
 	std::string shellArguments;
 	std::string defaultWorkingDirectory;
 	std::string executeInShell;
+	std::string programStatusSound{ "chime" };
+	int programStatusSoundVolume{ 50 };
 	size_t historySize{ 10000 };
 	size_t initialTabs{ 1 };
 	Terminal::TerminalCursorMode cursorStyle{ Terminal::TerminalCursorMode::SteadyUnderline };
@@ -41,6 +43,10 @@ struct TerminalConfig {
 	bool graphemeClustering{ true };
 	bool detectLinks{ true };
 	bool showProgramStatus{ true };
+	bool programStatusNotifications{ false };
+	bool programStatusSounds{ false };
+	bool programStatusAlertsWhenActive{ false };
+	bool programStatusAlertsAllStates{ false };
 	bool restoreLastSession{ true };
 	NewTerminalBehavior newTerminalBehavior{ NewTerminalBehavior::CurrentTabBar };
 	ScrollViewType scrollBarType{ ScrollViewType::Overlay };

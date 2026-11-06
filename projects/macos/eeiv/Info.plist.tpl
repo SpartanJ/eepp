@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>eeiv</string>
+	<key>CFBundleIdentifier</key>
+	<string>dev.ensoft.eeiv</string>
+	<key>CFBundleName</key>
+	<string>eeiv</string>
+	<key>CFBundleIconFile</key>
+	<string>eeiv.icns</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>APP_VERSION_STRING</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Image</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>png</string>
+				<string>tga</string>
+				<string>bmp</string>
+				<string>jpg</string>
+				<string>gif</string>
+				<string>jpeg</string>
+				<string>dds</string>
+				<string>psd</string>
+				<string>hdr</string>
+				<string>pic</string>
+				<string>pvr</string>
+				<string>pkm</string>
+				<string>svg</string>
+				<string>qoi</string>
+				<string>webp</string>
+				<string>jpe</string>
+				<string>astc</string>
+				<string>jfif</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

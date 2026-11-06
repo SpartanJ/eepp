@@ -963,8 +963,7 @@ bool App::reopen() {
 	if ( !mHiddenOnClose || !mWindow->isOpen() || mClosing )
 		return false;
 	mHiddenOnClose = false;
-	mWindow->show();
-	mWindow->raise();
+	mWindow->activate();
 	mUISceneNode->invalidate( nullptr );
 	return true;
 }
@@ -5017,6 +5016,12 @@ void App::init( InitParameters& params ) {
 		mWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
 			switch ( event->Type ) {
 				case InputEvent::FileDropped: {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+					// Finder sends application-level opens without a destination window. Its
+					// earlier activation may have been lost while the application was starting.
+					if ( event->WinID == 0 )
+						mWindow->activate();
+#endif
 					reopen();
 					std::string file( event->file.file );
 					if ( FileSystem::fileExtension( file ) == "lnk" ) {
@@ -5323,6 +5328,10 @@ void App::init( InitParameters& params ) {
 				if ( FileSystem::fileExists( path ) ) {
 					mUISceneNode->runOnMainThread(
 						[this, path = std::move( path ), initialPosition, readOnly] {
+							// Opening through IPC is an explicit activation request, even when
+							// the pointer is over this window but another app has keyboard focus.
+							if ( !reopen() )
+								mWindow->activate();
 							loadFileFromPathOrFocus(
 								path, true, nullptr,
 								[this, initialPosition, readOnly]( UICodeEditor* editor,
@@ -5333,12 +5342,6 @@ void App::init( InitParameters& params ) {
 									if ( forcePosition )
 										forcePosition( editor, path );
 								} );
-							reopen();
-							if ( !mWindow->hasFocus() ) {
-								if ( mWindow->isMinimized() )
-									mWindow->restore();
-								mWindow->raise();
-							}
 						} );
 				}
 			} );

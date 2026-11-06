@@ -521,6 +521,36 @@ void App::updateTabProgramStatus( UITab* tab ) {
 	tab->setTooltipText( description );
 }
 
+void App::alertProgramStatus( UITab* tab ) {
+	auto* terminal = terminalFromTab( tab );
+	if ( !terminal || !terminal->getTerm() )
+		return;
+	const auto status = terminal->getTerm()->getProgramStatus();
+	if ( !status )
+		return;
+	auto& previous = lastAlertStatus[tab];
+	const bool transition = ProgramStatusAlerts::isTransition(
+		previous ? &previous->presentation : nullptr, status->presentation,
+		config->terminal.programStatusAlertsAllStates );
+	previous = status; // Track even suppressed changes: focus/settings never replay old alerts.
+	if ( !transition ||
+		 ( !config->terminal.programStatusAlertsWhenActive && isTerminalActive( terminal ) ) )
+		return;
+	if ( !config->terminal.programStatusNotifications && !config->terminal.programStatusSounds )
+		return;
+	const String title =
+		"eterm · " +
+		String::fromUtf8( ProgramStatusTracker::sanitizeForDisplay( terminal->getTitle() ) )
+			.substr( 0, 80 );
+	String message = describeProgramStatus( status->presentation );
+	if ( message.empty() )
+		message = i18n( "program_status_idle", "Idle" );
+	programStatusAlerts.deliver(
+		title.toUtf8(), message.toUtf8(), config->terminal.programStatusNotifications,
+		config->terminal.programStatusSounds, config->terminal.programStatusSound,
+		config->terminal.programStatusSoundVolume );
+}
+
 bool App::isTerminalActive( const UITerminal* terminal ) const {
 	return appWindow->hasInputFocus() && tabSplitter->getCurWidget() == terminal;
 }
@@ -614,11 +644,15 @@ void App::configureTab( UITab* tab ) {
 				 event.type == TerminalDisplay::EventType::PROCESS_EXIT ) {
 				queueExitCloseTab( tab );
 			} else if ( event.type == TerminalDisplay::EventType::PROGRAM_STATUS_CHANGE ) {
+				alertProgramStatus( tab );
 				updateTabProgramStatus( tab );
 			}
 		} );
 	}
-	tab->on( Event::OnClose, [this, tab]( const Event* ) { seenProgramStatus.erase( tab ); } );
+	tab->on( Event::OnClose, [this, tab]( const Event* ) {
+		seenProgramStatus.erase( tab );
+		lastAlertStatus.erase( tab );
+	} );
 	tab->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
 		const auto* menuEvent = static_cast<const ContextMenuEvent*>( event );
 		auto* menu = menuEvent->getMenu();
@@ -1501,6 +1535,7 @@ int App::run( int argc, char* argv[] ) {
 	// Hide first: stopping the file watcher can wait for its polling thread.
 	appWindow->hide();
 	fileWatcher.reset();
+	programStatusAlerts.shutdown();
 	return EXIT_SUCCESS;
 }
 

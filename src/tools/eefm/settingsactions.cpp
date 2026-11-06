@@ -6,6 +6,7 @@
 #include "terminalpanel.hpp"
 #include "thumbnails.hpp"
 
+#include <eepp/ui/tools/fileassociationssettings.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eterm/ui/uiterminal.hpp>
@@ -151,6 +152,8 @@ void SettingsActions::showSettings() {
 		  mUI->i18n( "kb_title", "Keyboard Shortcuts" ),
 		  {} },
 		[this]( UIWidget* parent ) { return mApp.createKeybindingsEditor( parent ); }, true );
+
+	FileAssociationsSettings::addLauncherTo( panel, "eefm" );
 
 	// Appearance
 	panel->addCategory( "appearance.theme", mUI->i18n( "eefm_appearance", "Appearance" ),

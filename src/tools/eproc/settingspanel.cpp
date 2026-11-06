@@ -2,6 +2,7 @@
 #include "eproc.hpp"
 
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/ui/tools/fileassociationssettings.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwindow.hpp>
@@ -21,12 +22,15 @@ UIWindow* SettingsPanel::create( App& app ) {
 	auto* scene = app.mApp->getUI();
 	window->setTitle( scene->i18n( "settings", "Settings" ) );
 	const auto sceneSize = scene->getPixelsSize();
-	window->setPixelsSize( { eeclamp( sceneSize.getWidth() * 0.82f, 720.f, 1200.f ),
-							 eeclamp( sceneSize.getHeight() * 0.82f, 520.f, 850.f ) } );
+	window->setPixelsSize(
+		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
+		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
 	window->setMinWindowSize( 640, 440 );
 	auto* panel = UISettingsPanel::New( window->getContainer() );
 	panel->setId( "settings_panel_content" );
 	panel->setSearchResultsText( scene->i18n( "search_results", "Search Results" ) );
+
+	FileAssociationsSettings::addLauncherTo( panel, "eproc" );
 
 	panel->addCategory( "monitoring.refresh", scene->i18n( "monitoring", "Monitoring" ),
 						scene->i18n( "refresh", "Refresh" ) );
