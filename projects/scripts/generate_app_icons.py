@@ -24,7 +24,8 @@ The binary layouts intentionally mirror the historical artifacts:
            pe-i386 and pe-x86-64 targets.
 
 Requires: python3 (stdlib only), inkscape or rsvg-convert, and a mingw-w64
-windres for Windows resources ($WINDRES, x86_64-w64-mingw32-windres, or windres).
+windres for Windows resources ($WINDRES, x86_64-w64-mingw32-windres, windres, or
+the local eepp-mingw-arm64 Docker image when neither is installed).
 """
 
 import argparse
@@ -39,6 +40,8 @@ import xml.etree.ElementTree as ET
 import zlib
 
 PNG_SIZE = 256
+# Provides windres on hosts without mingw-w64, such as macOS.
+WINDRES_DOCKER_IMAGE = 'eepp-mingw-arm64:latest'
 # Breeze's colorful icon grid uses 2px margins at 32px and 4px at 64px.
 # Larger macOS icons match the runtime PNG's artwork bounds so the Dock icon
 # does not change size when the application starts or exits. These are visual
@@ -91,8 +94,9 @@ APPS = {
     'ecode': { 'svg': 'ecode-icon.svg', 'ico': [256, 128, 64, 48, 32, 16], 'icns': True, 'res': True },
     'eterm': { 'svg': 'eterm-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True },
     'eeiv': { 'svg': 'eeiv-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True },
-    # Optical adjustment for the wider folder silhouette, applied to PNG and ICNS alike.
-    'eefm': { 'svg': 'eefm-icon.svg', 'ico': [], 'icns': True, 'res': False, 'artwork_scale': 0.89 },
+    # The 58:52 folder fills the width of its square view box. Scaling by that ratio
+    # gives it the same height as the other icons, applied to PNG and ICNS alike.
+    'eefm': { 'svg': 'eefm-icon.svg', 'ico': [], 'icns': True, 'res': False, 'artwork_scale': 58 / 52 },
     'eproc': { 'svg': 'eproc-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True },
 }
 
@@ -291,12 +295,23 @@ def inset_svg( source, destination, fraction, scale=1.0 ):
     tree.write( destination, encoding='utf-8', xml_declaration=True )
 
 
-def find_windres():
+def find_windres( icon_dir ):
+    """Return the windres command as an argument list, to run with cwd at icon_dir."""
+
     candidates = [os.environ.get( 'WINDRES' ), 'x86_64-w64-mingw32-windres', 'windres']
     for candidate in candidates:
         if candidate and shutil.which( candidate ):
-            return candidate
-    raise SystemExit( 'windres not found (install mingw-w64 binutils or set $WINDRES)' )
+            return [candidate]
+    docker = shutil.which( 'docker' )
+    if docker and subprocess.run( [docker, 'image', 'inspect', WINDRES_DOCKER_IMAGE],
+                                  stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL ).returncode == 0:
+        # Keep the generated files owned by the host user on native Linux Docker.
+        user = ['--user', f'{os.getuid()}:{os.getgid()}'] if hasattr( os, 'getuid' ) else []
+        return [docker, 'run', '--rm', *user, '-v', f'{icon_dir}:/icons', '-w', '/icons',
+                WINDRES_DOCKER_IMAGE, 'x86_64-w64-mingw32-windres']
+    raise SystemExit( 'windres not found (install mingw-w64 binutils, set $WINDRES, or provide '
+                      f'the {WINDRES_DOCKER_IMAGE} Docker image)' )
 
 
 def generate( app, icon_dir, tmp_dir, renderer, windres, macos_only ):
@@ -337,7 +352,7 @@ def generate( app, icon_dir, tmp_dir, renderer, windres, macos_only ):
         written.extend( ( f'{app}.png', f'{app}-macos.png', f'{app}.icns' ) )
     if spec['res'] and not macos_only:
         for target, output in ( ( 'pe-i386', f'{app}.res' ), ( 'pe-x86-64', f'{app}.x64.res' ) ):
-            subprocess.run( [windres, f'--target={target}', '-O', 'coff', f'{app}.rc', output],
+            subprocess.run( [*windres, f'--target={target}', '-O', 'coff', f'{app}.rc', output],
                             check=True, cwd=icon_dir )
         written.append( f'{app}.res, {app}.x64.res' )
     print( f'{app}: {", ".join( written )}' )
@@ -359,7 +374,7 @@ def main():
     if not renderer:
         raise SystemExit( 'inkscape or rsvg-convert not found' )
     apps = args.app or list( APPS )
-    windres = find_windres() if not args.macos_only and any( APPS[app]['res'] for app in apps ) else None
+    windres = find_windres( icon_dir ) if not args.macos_only and any( APPS[app]['res'] for app in apps ) else None
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         for app in apps:

@@ -2,6 +2,7 @@
 #import <AppKit/AppKit.h>
 #undef Rect
 #undef BSD
+#import <objc/runtime.h>
 
 #include "cocoadraganddrop.hpp"
 #include <cstring>
@@ -187,6 +188,29 @@ class CocoaDragSource : public DragSource {
 	bool sessionEnded{ false };
 	bool cancelled{ false };
 };
+
+void CocoaDragAndDrop::enableFileCopies( void* window ) {
+	if ( !window )
+		return;
+	static IMP previousHandler = nullptr;
+	auto entered = +[]( id target, SEL selector, id<NSDraggingInfo> sender ) -> NSDragOperation {
+		// SDL2 requires Generic, but a copy-only source must not offer that operation to Finder:
+		// Finder can interpret it as a move. Accept Copy here and keep SDL's file delivery intact.
+		if ( ( [sender draggingSourceOperationMask] & NSDragOperationCopy ) &&
+			 [[sender draggingPasteboard].types containsObject:NSFilenamesPboardType] )
+			return NSDragOperationCopy;
+		using Handler = NSDragOperation ( * )( id, SEL, id<NSDraggingInfo> );
+		return reinterpret_cast<Handler>( previousHandler )( target, selector, sender );
+	};
+	Class windowClass = object_getClass( static_cast<NSWindow*>( window ) );
+	SEL selector = @selector( draggingEntered: );
+	Method method = class_getInstanceMethod( windowClass, selector );
+	if ( method && method_getImplementation( method ) != reinterpret_cast<IMP>( entered ) ) {
+		previousHandler = method_getImplementation( method );
+		class_replaceMethod( windowClass, selector, reinterpret_cast<IMP>( entered ),
+							 method_getTypeEncoding( method ) );
+	}
+}
 
 std::unique_ptr<DragSource> CocoaDragAndDrop::createSource( NativeWindowContext context,
 															const DragOffer& offer,

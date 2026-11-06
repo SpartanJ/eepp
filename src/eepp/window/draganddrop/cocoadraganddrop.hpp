@@ -13,6 +13,9 @@ class CocoaDragAndDrop {
   public:
 	CocoaDragAndDrop() = delete;
 
+	/** Let SDL2 windows receive copy-only file drags from other applications. */
+	static void enableFileCopies( void* window );
+
 	static std::unique_ptr<DragSource> createSource( NativeWindowContext context,
 													 const DragOffer& offer,
 													 DragCompletionCallback completion,

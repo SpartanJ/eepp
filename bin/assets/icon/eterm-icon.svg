@@ -9,13 +9,15 @@
  <!-- Squircle background -->
  <rect x=".0019365" y=".00060254" width="12.698" height="12.7" rx="2.3822" ry="2.3826" fill="url(#eterm-bg)" stroke-width="1.1081"/>
  <!-- Main spiral -->
- <g transform="matrix(.82 0 0 .82 .78 .82)" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width=".8px">
+ <g transform="matrix(.82 0 0 .82 .2271 .3756)" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width=".8537">
   <path transform="matrix(1 0 0 -1 .19808 11.984)" d="m6.0943 5.9899c0.16457 0.1173 0.0098785 0.35997-0.11145 0.43612-0.40848 0.25638-0.89022-0.11622-1.039-0.4965-0.32983-0.84299 0.37932-1.6794 1.1646-1.8967 1.4211-0.39338 2.7295 0.77904 3.0093 2.1158 0.36822 1.7593-0.79537 3.4576-2.3989 4.1096"/>
   <path transform="matrix(1 0 0 -1 .030284 12.252)" d="m6.3163 6.3608c-0.14689-0.18552 0.10611-0.40806 0.26737-0.45419 0.54289-0.15532 0.96335 0.42061 1.0068 0.89674 0.096424 1.0555-0.97349 1.7652-1.9275 1.7539-1.7263-0.020368-2.8161-1.765-2.6954-3.3595 0.15881-2.0986 2.0205-3.6297 4.0363-3.8406"/>
  </g>
- <!-- >_ prompt cue -->
- <g transform="matrix(1.3274 0 0 1.3274 -2.518 -2.5978)" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width=".52">
-  <path d="m7.95 8.1 0.8 0.62-0.8 0.62"/>
-  <path d="m9.15 9.34h1"/>
+ <!-- Dark badge, its rim in the tile color separates it from the spiral -->
+ <rect x="6.55" y="6.75" width="5.25" height="4.75" rx="1.05" fill="#2a1250" stroke="url(#eterm-bg)" stroke-width=".42"/>
+ <!-- >_ prompt -->
+ <g fill="none" stroke="#fff" stroke-width=".8" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M7.35 7.9L8.713 9.075 7.35 10.25"/>
+  <path d="M9.371 10.25H10.721"/>
  </g>
 </svg>

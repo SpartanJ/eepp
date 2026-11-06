@@ -20,6 +20,98 @@ namespace EE { namespace Window { namespace Private {
 
 namespace {
 
+constexpr wchar_t FileDropTargetProperty[] = L"eepp.FileDropTarget";
+
+/** Bridge OLE's CF_HDROP to SDL2's existing WM_DROPFILES receiver. SDL queues the file events,
+ * so application callbacks run in the input update, outside OLE's modal callback. */
+class FileDropTarget final : public IDropTarget {
+  public:
+	explicit FileDropTarget( HWND window ) : window( window ) {}
+
+	HRESULT STDMETHODCALLTYPE QueryInterface( REFIID iid, void** result ) override {
+		if ( !result )
+			return E_POINTER;
+		*result = nullptr;
+		if ( iid != IID_IUnknown && iid != IID_IDropTarget )
+			return E_NOINTERFACE;
+		*result = static_cast<IDropTarget*>( this );
+		AddRef();
+		return S_OK;
+	}
+
+	ULONG STDMETHODCALLTYPE AddRef() override { return InterlockedIncrement( &references ); }
+
+	ULONG STDMETHODCALLTYPE Release() override {
+		ULONG count = InterlockedDecrement( &references );
+		if ( !count )
+			delete this;
+		return count;
+	}
+
+	HRESULT STDMETHODCALLTYPE DragEnter( IDataObject* data, DWORD, POINTL,
+										 DWORD* effect ) override {
+		FORMATETC format{ CF_HDROP, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+		acceptsFiles = data && data->QueryGetData( &format ) == S_OK;
+		return DragOver( 0, {}, effect );
+	}
+
+	HRESULT STDMETHODCALLTYPE DragOver( DWORD, POINTL, DWORD* effect ) override {
+		if ( !effect )
+			return E_POINTER;
+		*effect = acceptsFiles ? ( *effect & DROPEFFECT_COPY ) : DROPEFFECT_NONE;
+		return S_OK;
+	}
+
+	HRESULT STDMETHODCALLTYPE DragLeave() override {
+		acceptsFiles = false;
+		return S_OK;
+	}
+
+	HRESULT STDMETHODCALLTYPE Drop( IDataObject* data, DWORD, POINTL position,
+									DWORD* effect ) override {
+		if ( !effect )
+			return E_POINTER;
+		const bool copy = ( *effect & DROPEFFECT_COPY ) != 0;
+		*effect = DROPEFFECT_NONE;
+		acceptsFiles = false;
+		if ( !copy || !data )
+			return S_OK;
+		FORMATETC format{ CF_HDROP, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+		STGMEDIUM medium{};
+		HRESULT status = data->GetData( &format, &medium );
+		if ( FAILED( status ) )
+			return status;
+		// SDL calls DragFinish, so give it an independent handle. OLE retains ownership of the
+		// source medium; transferring it directly would double-free it or corrupt later drops.
+		HDROP files = medium.tymed == TYMED_HGLOBAL && medium.hGlobal
+						  ? static_cast<HDROP>( OleDuplicateData( medium.hGlobal, CF_HDROP, 0 ) )
+						  : nullptr;
+		ReleaseStgMedium( &medium );
+		if ( !files )
+			return E_OUTOFMEMORY;
+		auto* header = static_cast<DROPFILES*>( GlobalLock( files ) );
+		if ( !header || GlobalSize( files ) < sizeof( DROPFILES ) ) {
+			if ( header )
+				GlobalUnlock( files );
+			GlobalFree( files );
+			return DV_E_FORMATETC;
+		}
+		POINT point{ position.x, position.y };
+		ScreenToClient( window, &point );
+		header->pt = point;
+		header->fNC = FALSE;
+		GlobalUnlock( files );
+		SendMessageW( window, WM_DROPFILES, reinterpret_cast<WPARAM>( files ), 0 );
+		*effect = DROPEFFECT_COPY;
+		return S_OK;
+	}
+
+  private:
+	HWND window;
+	LONG references{ 1 };
+	bool acceptsFiles{ false };
+};
+
 class FileDataObject final : public IDataObject {
   public:
 	explicit FileDataObject( HGLOBAL files ) : files( files ) {}
@@ -298,6 +390,43 @@ class Win32DragSource : public DragSource {
 	bool modal{ false };
 };
 } // namespace
+
+bool Win32DragAndDrop::attachWindow( void* nativeWindow ) {
+	HWND window = static_cast<HWND>( nativeWindow );
+	if ( !window )
+		return false;
+	if ( GetPropW( window, FileDropTargetProperty ) )
+		return true;
+	if ( FAILED( OleInitialize( nullptr ) ) )
+		return false;
+	auto* target = new ( std::nothrow ) FileDropTarget( window );
+	if ( !target ) {
+		OleUninitialize();
+		return false;
+	}
+	const HRESULT status = RegisterDragDrop( window, target );
+	if ( FAILED( status ) || !SetPropW( window, FileDropTargetProperty, target ) ) {
+		if ( SUCCEEDED( status ) )
+			RevokeDragDrop( window );
+		target->Release();
+		OleUninitialize();
+		return false;
+	}
+	// The HWND property owns the initial reference; OLE owns its registration reference.
+	return true;
+}
+
+void Win32DragAndDrop::detachWindow( void* nativeWindow ) {
+	HWND window = static_cast<HWND>( nativeWindow );
+	if ( !window )
+		return;
+	auto* target = static_cast<FileDropTarget*>( RemovePropW( window, FileDropTargetProperty ) );
+	if ( !target )
+		return;
+	RevokeDragDrop( window );
+	target->Release();
+	OleUninitialize();
+}
 
 std::unique_ptr<DragSource> Win32DragAndDrop::createSource( NativeWindowContext context,
 															const DragOffer& offer,

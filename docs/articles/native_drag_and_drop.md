@@ -247,9 +247,9 @@ subcompositor protocol. File reception continues through SDL's ordinary drop eve
 into another window of the same application. Compositors must provide version 3 of the core
 data-device protocol for Copy negotiation and completion.
 
-On Windows, SDL2 receives files through its legacy file-drop path, which cannot receive the outgoing
-OLE gesture used by this source. Use SDL3 for eepp-window-to-eepp-window native drops. Both backends
-can drag files out to native OLE targets. On X11, the source window itself is excluded as a native
+On Windows, SDL2 registers an OLE file receiver and delivers incoming files through its existing
+file-drop events. Both SDL2 and SDL3 support native file drops between eepp applications and can
+drag files out to native OLE targets. On X11, the source window itself is excluded as a native
 target; keep same-window operations in your internal UI drag handling. On macOS and Wayland, a drag
 that returns to the source window can deliver ordinary `FileDropped` events there; keep same-window
 operations internal on those platforms as well.

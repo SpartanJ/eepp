@@ -260,3 +260,81 @@ UTEST( UIApplicationMacOS, NativeQuitMenuMatchesConfiguredShortcut ) {
 	EXPECT_TRUE( [[NSApp mainMenu] performKeyEquivalent:key( @"q", NSEventModifierFlagCommand )] );
 	EXPECT_EQ( activations, 2 );
 }
+
+#if defined( EE_SDL_VERSION_2 )
+// Only the selectors used by SDL's drop negotiation and delivery are needed here.
+@interface EEPPFileCopyTestDrag : NSObject
+@property( nonatomic ) NSDragOperation operation;
+@property( nonatomic, retain ) NSPasteboard* pasteboard;
+
+- (NSDragOperation)draggingSourceOperationMask;
+
+- (NSPasteboard*)draggingPasteboard;
+
+- (NSPoint)draggingLocation;
+@end
+
+@implementation EEPPFileCopyTestDrag
+
+- (NSDragOperation)draggingSourceOperationMask {
+	return self.operation;
+}
+
+- (NSPasteboard*)draggingPasteboard {
+	return self.pasteboard;
+}
+
+- (NSPoint)draggingLocation {
+	return NSMakePoint( 20, 20 );
+}
+
+- (void)dealloc {
+	[self.pasteboard releaseGlobally];
+	[_pasteboard release];
+	[super dealloc];
+}
+
+@end
+
+UTEST( InputEvent, cocoaSDL2ReceivesCopyOnlyFilesFromOtherApplications ) {
+	WindowSettings settings{ 320, 240, "Copy-only File Drop" };
+	settings.Style |= WindowStyle::Hidden;
+	UIApplication app( settings );
+	auto* window = app.getWindow();
+	ASSERT_TRUE( window != nullptr );
+	id<NSDraggingDestination> native =
+		static_cast<id<NSDraggingDestination>>( window->getWindowHandler() );
+	EEPPFileCopyTestDrag* drag = [[EEPPFileCopyTestDrag alloc] init];
+	ScopedOp cleanup( [] {}, [drag] { [drag release]; } );
+	drag.operation = NSDragOperationCopy;
+	drag.pasteboard = [NSPasteboard pasteboardWithUniqueName];
+	// Match eefm's NSURL pasteboard writer, including paths needing URL escaping.
+	NSString* path = @"/tmp/eepp copy #画像.png";
+	[drag.pasteboard writeObjects:@[ [NSURL fileURLWithPath:path] ]];
+	id<NSDraggingInfo> info = static_cast<id<NSDraggingInfo>>( drag );
+	EXPECT_EQ( [native draggingEntered:info], NSDragOperationCopy );
+
+	unsigned received = 0;
+	auto* input = window->getInput();
+	const auto callback = input->pushCallback( [&]( InputEvent* event ) {
+		if ( event->Type == InputEvent::FileDropped ) {
+			++received;
+			EXPECT_STREQ( event->file.file, [path UTF8String] );
+		}
+	} );
+	EXPECT_TRUE( [native performDragOperation:info] );
+	input->update();
+	EXPECT_EQ( received, 1u );
+	input->popCallback( callback );
+
+	// Preserve SDL's Generic handling and reject unsupported operation masks and text-only data.
+	drag.operation = NSDragOperationGeneric;
+	EXPECT_EQ( [native draggingEntered:info], NSDragOperationGeneric );
+	drag.operation = NSDragOperationNone;
+	EXPECT_EQ( [native draggingEntered:info], NSDragOperationNone );
+	drag.operation = NSDragOperationCopy;
+	[drag.pasteboard clearContents];
+	[drag.pasteboard setString:@"not a file" forType:NSPasteboardTypeString];
+	EXPECT_EQ( [native draggingEntered:info], NSDragOperationNone );
+}
+#endif

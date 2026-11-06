@@ -2373,6 +2373,9 @@ workspace "eepp"
 		kind "ConsoleApp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
 		defines { "EE_UNIT_TESTS" }
+		if os.istarget("windows") and table.contains(backends, "SDL2") then
+			defines { "EE_SDL_VERSION_2" }
+		end
 		if os.istarget("macosx") and table.contains(backends, "SDL2") then
 			-- Native macOS tests call SDL directly; other platforms use the normal backend links.
 			defines { "EE_SDL_VERSION_2" }

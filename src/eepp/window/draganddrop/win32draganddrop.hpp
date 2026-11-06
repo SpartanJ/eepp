@@ -13,6 +13,11 @@ class Win32DragAndDrop {
   public:
 	Win32DragAndDrop() = delete;
 
+	/** Register an OLE file receiver for an SDL2 HWND. Existing OLE targets are preserved. */
+	static bool attachWindow( void* window );
+
+	static void detachWindow( void* window );
+
 	static std::unique_ptr<DragSource> createSource( NativeWindowContext context,
 													 const DragOffer& offer,
 													 DragCompletionCallback completion,

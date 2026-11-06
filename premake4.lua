@@ -2367,6 +2367,9 @@ solution "eepp"
 		kind "ConsoleApp"
 		targetdir("./bin/unit_tests")
 		defines { "EE_UNIT_TESTS" }
+		if os.is("windows") and table.contains(backends, "SDL2") then
+			defines { "EE_SDL_VERSION_2" }
+		end
 		if os.is("macosx") and table.contains(backends, "SDL2") then
 			-- Native macOS tests call SDL directly; other platforms use the normal backend links.
 			defines { "EE_SDL_VERSION_2" }

@@ -26,8 +26,13 @@
 
 #include <cstdlib>
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+#include <eepp/window/draganddrop/cocoadraganddrop.hpp>
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
+#include <eepp/window/draganddrop/win32draganddrop.hpp>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
@@ -153,6 +158,10 @@ WindowSDL::~WindowSDL() {
 void WindowSDL::destroySDLResources() {
 	cancelPendingHide();
 	Private::DragManager::invalidateWindow( this );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( mSDLWindow )
+		Private::Win32DragAndDrop::detachWindow( getWindowHandler() );
+#endif
 #ifdef EE_HAS_WAYLAND_DRAG_SOURCE
 	Private::WaylandDragAndDrop::detachWindow( *this );
 #endif
@@ -432,6 +441,8 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	Backend::BackendHelper::setUserTheme( (HWND)getWindowHandler() );
+	if ( !Private::Win32DragAndDrop::attachWindow( getWindowHandler() ) )
+		Log::warning( "Could not register the OLE file drop target" );
 #endif
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Hidden )
@@ -439,6 +450,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 #ifdef EE_HAS_WAYLAND_DRAG_SOURCE
 	Private::WaylandDragAndDrop::attachWindow( getNativeDragContext() );
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	Private::CocoaDragAndDrop::enableFileCopies( getNativeDragContext().handles.window );
 #endif
 
 	logSuccessfulInit( getVersion() );
