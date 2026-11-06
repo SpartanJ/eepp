@@ -75,7 +75,12 @@ class PreviewPanel {
 
 	void loadApplication( std::string mime );
 
+	/** Measures the selected folder, updating its size line as the worker reports progress. */
+	void measureFolder();
+
 	void showMessage( const String& text );
+
+	void updateMessage();
 
 	App& mApp;
 	UISplitter* mSplitter;
@@ -96,7 +101,11 @@ class PreviewPanel {
 	std::optional<URI> mURI;
 	FileRevision mRevision;
 	std::optional<CancellationSource> mCancellation;
+	/** The fallback text, from top to bottom: mType, mSizeText, mDetails, mNotice. */
+	String mType;
+	String mSizeText;
 	String mDetails;
+	String mNotice;
 	std::string mPartition{ "72%" };
 	Uint64 mGeneration{ 0 };
 	Uint64 mSize{ 0 };

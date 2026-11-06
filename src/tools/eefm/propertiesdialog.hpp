@@ -21,6 +21,7 @@ class UITextInput;
 class UIPushButton;
 class UIDropDownList;
 class UICheckBox;
+class UISceneNode;
 
 }} // namespace EE::UI
 namespace EE { namespace VFS {
@@ -44,6 +45,13 @@ struct FileTab;
 class PropertiesDialog : public std::enable_shared_from_this<PropertiesDialog> {
   public:
 	static std::shared_ptr<PropertiesDialog> show( App& app, FileTab* tab );
+
+	/** Whether a recursive measurement of this location can start without being asked for: never
+	 * for remote locations or for a whole file system. */
+	static bool measuresAutomatically( const URI& root );
+
+	/** A measured size, as "At least ..." when the total is not final. */
+	static String sizeText( UISceneNode& ui, Uint64 bytes, bool partial );
 
 	explicit PropertiesDialog( App& app );
 

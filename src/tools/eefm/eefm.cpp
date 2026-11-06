@@ -1,4 +1,4 @@
-#include "app.hpp"
+#include "eefm.hpp"
 #include "arkdrop.hpp"
 #include "fileoperations.hpp"
 #include "icons.hpp"
@@ -1309,6 +1309,9 @@ void App::registerShortcuts() {
 							   tab ? tab->model->uri()
 								   : URI::fromFSPath( Sys::getUserDirectory() ) );
 	} );
+	mUI->setKeyBindingCommand( "open-new-tab", fileCommand( onTab( [this]( FileTab* tab ) {
+								   mFileOperations->openSelectionInNewTabs( tab );
+							   } ) ) );
 	mUI->setKeyBindingCommand( "close-tab",
 							   onTab( [this]( FileTab* tab ) { mPaneManager->closeTab( tab ); } ) );
 	mUI->setKeyBindingCommand( "next-tab", [this] {
@@ -1406,6 +1409,7 @@ KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
 	KeyBindings bindings( mUI->getWindow()->getInput() );
 	bindings.addKeybindsString( {
 		{ "mod+t", "new-tab" },
+		{ "shift+return", "open-new-tab" },
 		{ "mod+w", "close-tab" },
 		{ "mod+tab", "next-tab" },
 		{ "mod+shift+tab", "previous-tab" },

@@ -742,6 +742,27 @@ UTEST( Task, droppedExecutorWorkAbandonsChain ) {
 	EXPECT_EQ( 1, DiagnosticCapture::abandoned.load() );
 }
 
+UTEST( Task, droppedDroppableWorkAbandonsChainSilently ) {
+	DiagnosticCapture capture;
+	QueueExecutor executor;
+	auto t = makeReadyTask( 1 ).thenDroppable( executor, []( int v ) { return v; } );
+	auto tail = std::move( t ).then( []( int v ) { return v; } );
+	executor.clear();
+	EXPECT_EQ( TaskState::Abandoned, tail.state() );
+	EXPECT_EQ( 0, DiagnosticCapture::abandoned.load() );
+}
+
+UTEST( Task, droppableContinuationRunsThroughExecutor ) {
+	DiagnosticCapture capture;
+	QueueExecutor executor;
+	auto t = makeReadyTask( 20 ).thenDroppable( executor, []( int v ) { return v + 1; } );
+	EXPECT_EQ( TaskState::Pending, t.state() );
+	executor.drain();
+	EXPECT_EQ( TaskState::Ready, t.state() );
+	EXPECT_EQ( 21, std::move( t ).takeValue() );
+	EXPECT_EQ( 0, DiagnosticCapture::abandoned.load() );
+}
+
 UTEST( Task, doubleResolveIsRejected ) {
 	DiagnosticCapture capture;
 	TaskResolver<int> resolve;

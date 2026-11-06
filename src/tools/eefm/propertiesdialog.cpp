@@ -1,10 +1,11 @@
 #include "propertiesdialog.hpp"
-#include "app.hpp"
+#include "eefm.hpp"
 #include "location.hpp"
 #include "mime.hpp"
 #include "pane.hpp"
 #include "panemanager.hpp"
 #include "trash.hpp"
+#include <algorithm>
 #include <charconv>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
@@ -229,19 +230,20 @@ void PropertiesDialog::loadNext() {
 	}
 	mApp.vfs()
 		->stat( mRoots[mInfo.size()], StatOptions{ false }, mOperationCancel.token() )
-		.then( mApp.executor(), [weak = weak_from_this()]( VFSResult<VFSFileInfo>&& result ) {
-			auto self = weak.lock();
-			if ( !self || !self->mBox || self->mOperationCancel.isCancellationRequested() )
-				return;
-			if ( !result ) {
-				self->mStatus->setText( result.error().toString() );
-				self->mStatus->setVisible( true );
-				self->setLoading( false );
-				return;
-			}
-			self->mInfo.push_back( std::move( result ).value() );
-			self->loadNext();
-		} );
+		.thenDroppable(
+			mApp.executor(), [weak = weak_from_this()]( VFSResult<VFSFileInfo>&& result ) {
+				auto self = weak.lock();
+				if ( !self || !self->mBox || self->mOperationCancel.isCancellationRequested() )
+					return;
+				if ( !result ) {
+					self->mStatus->setText( result.error().toString() );
+					self->mStatus->setVisible( true );
+					self->setLoading( false );
+					return;
+				}
+				self->mInfo.push_back( std::move( result ).value() );
+				self->loadNext();
+			} );
 }
 
 void PropertiesDialog::updateInfo() {
@@ -377,7 +379,8 @@ void PropertiesDialog::updateInfo() {
 	if ( mApp.vfs()->capabilities( mRoots[0] ).has( VFSCapability::FreeSpace ) ) {
 		mApp.vfs()
 			->spaceInfo( mRoots[0], mOperationCancel.token() )
-			.then( mApp.executor(), [weak = weak_from_this()]( VFSResult<SpaceInfo>&& result ) {
+			.thenDroppable( mApp.executor(), [weak = weak_from_this()](
+												 VFSResult<SpaceInfo>&& result ) {
 				if ( auto self = weak.lock(); self && self->mBox && result ) {
 					self->mBox->find<UITextView>( "properties_space" )
 						->setText( String::format(
@@ -389,14 +392,7 @@ void PropertiesDialog::updateInfo() {
 				}
 			} );
 	}
-	bool automatic = true;
-	for ( const auto& root : mRoots ) {
-		const auto& path = root.getPath();
-		const bool driveRoot = path.size() >= 3 && path[2] == ':' &&
-							   ( path.size() == 3 || ( path.size() == 4 && path.back() == '/' ) );
-		if ( root.getScheme() != "file" || path == "/" || driveRoot )
-			automatic = false;
-	}
+	const bool automatic = std::all_of( mRoots.begin(), mRoots.end(), measuresAutomatically );
 	if ( !mCalculated && single && first.type == FileType::Regular && first.size() ) {
 		// A regular file's storage metadata needs no traversal and is already in the listing.
 		mStats.size = *first.size();
@@ -667,7 +663,8 @@ void PropertiesDialog::calculate() {
 			} );
 		},
 		mCancel.token() );
-	std::move( task ).then( *executor, [weak, generation]( VFSResult<DirectoryStats>&& result ) {
+	std::move( task ).thenDroppable( *executor, [weak,
+												 generation]( VFSResult<DirectoryStats>&& result ) {
 		auto self = weak.lock();
 		if ( !self || !self->mBox || self->mGeneration != generation )
 			return;
@@ -696,6 +693,22 @@ void PropertiesDialog::stopCalculation() {
 	}
 }
 
+bool PropertiesDialog::measuresAutomatically( const URI& root ) {
+	const auto& path = root.getPath();
+	const bool driveRoot = path.size() >= 3 && path[2] == ':' &&
+						   ( path.size() == 3 || ( path.size() == 4 && path.back() == '/' ) );
+	return root.getScheme() == "file" && path != "/" && !driveRoot;
+}
+
+String PropertiesDialog::sizeText( UISceneNode& ui, Uint64 bytes, bool partial ) {
+	return String::format(
+		( partial ? ui.i18n( "eefm_properties_size_at_least", "At least %s (%llu bytes)" )
+				  : ui.i18n( "eefm_properties_size_bytes", "%s (%llu bytes)" ) )
+			.toUtf8(),
+		FileSystem::sizeToString( static_cast<Int64>( bytes ) ),
+		static_cast<unsigned long long>( bytes ) );
+}
+
 void PropertiesDialog::updateTotals() {
 	if ( !mBox )
 		return;
@@ -710,20 +723,10 @@ void PropertiesDialog::updateTotals() {
 			set( id, text );
 	} else {
 		const bool partial = mRunning || mStopped || mStats.incomplete();
-		const auto sizeFormat =
-			( partial ? ui->i18n( "eefm_properties_size_at_least", "At least %s (%llu bytes)" )
-					  : ui->i18n( "eefm_properties_size_bytes", "%s (%llu bytes)" ) )
-				.toUtf8();
-		auto size = [&sizeFormat]( Uint64 bytes ) {
-			return String::format( sizeFormat,
-								   FileSystem::sizeToString( static_cast<Int64>( bytes ) ),
-								   static_cast<unsigned long long>( bytes ) );
-		};
-		set( "properties_size", size( mStats.size ) );
-		set( "properties_disk",
-			 mStats.allocatedSize
-				 ? size( *mStats.allocatedSize )
-				 : ui->i18n( "eefm_properties_unavailable", "Unavailable" ).toUtf8() );
+		set( "properties_size", sizeText( *ui, mStats.size, partial ) );
+		set( "properties_disk", mStats.allocatedSize
+									? sizeText( *ui, *mStats.allocatedSize, partial )
+									: ui->i18n( "eefm_properties_unavailable", "Unavailable" ) );
 		const auto files = String::format(
 			( mStats.files == 1 ? ui->i18n( "eefm_properties_file_one", "%llu file" )
 								: ui->i18n( "eefm_properties_file_many", "%llu files" ) )

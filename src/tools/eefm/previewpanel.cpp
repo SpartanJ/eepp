@@ -1,9 +1,10 @@
 #include "previewpanel.hpp"
-#include "app.hpp"
+#include "eefm.hpp"
 #include "fileoperations.hpp"
 #include "location.hpp"
 #include "mime.hpp"
 #include "panemanager.hpp"
+#include "propertiesdialog.hpp"
 
 #include <eepp/audio/music.hpp>
 #include <eepp/audio/soundfilefactory.hpp>
@@ -225,7 +226,10 @@ void PreviewPanel::clear() {
 	mFileIcon = nullptr;
 	mLoader->setVisible( false );
 	mFallback->setVisible( false );
+	mType.clear();
+	mSizeText.clear();
 	mDetails.clear();
+	mNotice.clear();
 	mDefaultApplication.reset();
 	mOpen->setVisible( false );
 	if ( mEditor && mEditor->isVisible() ) {
@@ -244,9 +248,21 @@ void PreviewPanel::showMessage( const String& text ) {
 	mLoader->setVisible( false );
 	if ( mImage )
 		mImage->setVisible( false );
-	mRoot->find<UIImage>( "preview_icon" )->setVisible( !mDetails.empty() );
-	mMessage->setText( mDetails.empty() ? text : mDetails + "\n\n" + text );
+	mRoot->find<UIImage>( "preview_icon" )->setVisible( !mType.empty() );
+	mNotice = text;
+	updateMessage();
 	mFallback->setVisible( true );
+}
+
+void PreviewPanel::updateMessage() {
+	if ( mType.empty() ) {
+		mMessage->setText( mNotice );
+		return;
+	}
+	String text( mType );
+	if ( !mSizeText.empty() )
+		text += "\n" + mSizeText;
+	mMessage->setText( text + mDetails + "\n\n" + mNotice );
 }
 
 void PreviewPanel::syncSelection() {
@@ -276,10 +292,15 @@ void PreviewPanel::syncSelection() {
 	mSize = info.size().value_or( 0 );
 	mName->setText( String::fromUtf8( info.name ) );
 	mName->setTooltipText( Location::text( *mURI ) );
-	mDetails =
+	mType =
 		String::fromUtf8( MimeDatabase::instance().describe( info, &mApp.ui()->getTranslator() ) );
-	if ( info.size() )
-		mDetails += "\n" + FileSystem::sizeToString( *info.size() );
+	// The size a listing reports for a folder is that of its own metadata, not of its contents.
+	const bool folder = info.type == FileType::Directory;
+	const bool measure = folder && PropertiesDialog::measuresAutomatically( *mURI );
+	if ( measure )
+		mSizeText = mApp.ui()->i18n( "eefm_properties_calculating", "Calculating..." );
+	else if ( !folder && info.size() )
+		mSizeText = FileSystem::sizeToString( *info.size() );
 	if ( info.modifiedTime() ) {
 		mDetails +=
 			"\n" + String::fromUtf8( String::format(
@@ -292,6 +313,9 @@ void PreviewPanel::syncSelection() {
 	if ( info.isDirectory() || ( !info.isRegularFile() && !info.isSymlink() ) ) {
 		showMessage(
 			mApp.ui()->i18n( "eefm_preview_not_file", "Select a regular file to preview." ) );
+		// Arrow-key navigation need not start a traversal for every folder crossed.
+		if ( measure )
+			mRoot->runOnMainThread( [this] { measureFolder(); }, Milliseconds( 100 ), LoadAction );
 		return;
 	}
 	mFallback->setVisible( false );
@@ -311,7 +335,7 @@ void PreviewPanel::loadApplication( std::string mime ) {
 					? mApp.vfs()->localIO().submitResolved<std::optional<Application>>(
 						  mURI->getFSPath(), true, std::move( discover ) )
 					: mApp.pool()->submit( std::move( discover ) );
-	std::move( task ).then(
+	std::move( task ).thenDroppable(
 		mApp.executor(), [this, generation]( VFSResult<std::optional<Application>>&& result ) {
 			if ( generation != mGeneration || !isVisible() || !result || !result.value() )
 				return;
@@ -321,6 +345,33 @@ void PreviewPanel::loadApplication( std::string mime ) {
 				mDefaultApplication->name ) );
 			mApp.setApplicationIcon( mOpen, *mDefaultApplication );
 			mOpen->setVisible( true );
+		} );
+}
+
+void PreviewPanel::measureFolder() {
+	mCancellation.emplace();
+	const Uint64 generation = mGeneration;
+	auto* executor = &mApp.executor();
+	mApp.vfs()
+		->directoryStats(
+			*mURI,
+			[this, generation, executor]( const DirectoryStats& stats ) {
+				// The worker snapshot must be owned until the UI executor consumes it.
+				executor->execute( [this, generation, stats] {
+					if ( generation != mGeneration )
+						return;
+					mSizeText = PropertiesDialog::sizeText( *mApp.ui(), stats.size, true );
+					updateMessage();
+				} );
+			},
+			mCancellation->token() )
+		.thenDroppable( *executor, [this, generation]( VFSResult<DirectoryStats>&& result ) {
+			if ( generation != mGeneration )
+				return;
+			mSizeText = result ? PropertiesDialog::sizeText( *mApp.ui(), result.value().size,
+															 result.value().incomplete() )
+							   : mApp.ui()->i18n( "eefm_properties_unavailable", "Unavailable" );
+			updateMessage();
 		} );
 }
 
@@ -369,7 +420,7 @@ void PreviewPanel::load() {
 				   }
 				   return preview;
 			   } )
-		.then( mApp.executor(), [this, generation]( Preview&& preview ) {
+		.thenDroppable( mApp.executor(), [this, generation]( Preview&& preview ) {
 			if ( generation != mGeneration || !isVisible() )
 				return;
 			if ( !preview.stream ) {

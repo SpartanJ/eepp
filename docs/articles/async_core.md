@@ -106,6 +106,12 @@ use `Task<Result<T, E>>`.
 
 `TaskDiagnostics` also reports `ResolvedTwice`.
 
+Some results are not worth keeping once their executor stops taking work, such as a preview that
+would refresh a window that is closing. Deliver those with `thenDroppable( executor, fn )`: it
+behaves like `then( executor, fn )`, but when the executor drops the continuation the chain is
+abandoned without a report. Keep `then()` for anything that must not be lost silently, such as the
+outcome of an operation that modifies files.
+
 ### Blocking
 
 `wait()`, `waitFor()` and `get()` block the calling thread (`get()` returns `std::optional<T>`,
@@ -188,7 +194,8 @@ never by abandoning their task.
 - Capture `std::weak_ptr`s (or a generation counter) in continuations of objects that may die or
   move on before the operation completes, and ignore stale results.
 - Make sure executors outlive the chains dispatched through them (see above).
-- Treat `Abandoned` and `TaskDiagnostics` reports as bugs to fix, not states to handle.
+- Treat `Abandoned` and `TaskDiagnostics` reports as bugs to fix, not states to handle. Use
+  `thenDroppable()` only where discarding the result is correct.
 
 ## See also
 

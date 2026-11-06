@@ -1,5 +1,5 @@
 #include "openwithdialog.hpp"
-#include "app.hpp"
+#include "eefm.hpp"
 #include "mime.hpp"
 #include <algorithm>
 #include <eepp/system/fileassociation.hpp>
@@ -212,7 +212,7 @@ void OpenWithDialog::loadFileType() {
 			type.canSetDefault = type.canSetDefault && FileAssociation::isSupported();
 			return type;
 		} )
-		.then( mApp.executor(), [weak = weak_from_this()]( FileType&& type ) {
+		.thenDroppable( mApp.executor(), [weak = weak_from_this()]( FileType&& type ) {
 			if ( auto self = weak.lock(); self && self->mBox ) {
 				self->mType = std::move( type );
 				self->mReady = true;

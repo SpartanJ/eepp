@@ -64,8 +64,12 @@ UTEST( AccessibilityMacOS, HTMLHeadingsLinksAndListsExposeNativeSemantics ) {
 	EXPECT_TRUE( [heading.accessibilityRole isEqualToString:@"AXHeading"] );
 	EXPECT_TRUE( [heading.accessibilityLabel isEqualToString:@"HTML heading"] );
 	EXPECT_TRUE( [heading.accessibilityValue isEqual:@2] );
+	// Also verify that the legacy bridge advertises the heading's value to native clients.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	EXPECT_TRUE(
 		[[heading accessibilityAttributeNames] containsObject:NSAccessibilityValueAttribute] );
+#pragma clang diagnostic pop
 	NSObject<NSAccessibility>* link = children[1];
 	EXPECT_TRUE( [link.accessibilityRole isEqualToString:NSAccessibilityLinkRole] );
 	EXPECT_TRUE( [link.accessibilityLabel isEqualToString:@"HTML link"] );
@@ -200,17 +204,27 @@ UTEST( AccessibilityMacOS, ApplicationWindowBridgeIdentityActionTextAndLifecycle
 	NSArray* children = [windowRoot accessibilityChildren];
 	EXPECT_TRUE( children != nil );
 	EXPECT_EQ( children.count, 5u );
+	NSObject<NSAccessibility>* element = children.firstObject;
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101300
+	if ( @available( macOS 10.13, * ) ) {
+		EXPECT_TRUE( [windowRoot.accessibilityChildrenInNavigationOrder isEqualToArray:children] );
+		EXPECT_EQ( element.accessibilityChildrenInNavigationOrder.count, 0u );
+	}
+#endif
+	// Keep legacy attribute discovery and paged queries covered alongside the modern properties.
 	// Use the native AX name so this also builds with SDKs predating the AppKit constant.
 	NSString* navigationOrder = @"AXChildrenInNavigationOrder";
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	EXPECT_TRUE( [[windowRoot accessibilityAttributeNames] containsObject:navigationOrder] );
 	EXPECT_EQ( [windowRoot accessibilityArrayAttributeCount:navigationOrder], children.count );
 	EXPECT_TRUE(
 		[[windowRoot accessibilityAttributeValue:navigationOrder] isEqualToArray:children] );
 	EXPECT_TRUE( [[windowRoot accessibilityArrayAttributeValues:navigationOrder index:1 maxCount:2]
 		isEqualToArray:[children subarrayWithRange:NSMakeRange( 1, 2 )]] );
-	NSObject<NSAccessibility>* element = children.firstObject;
 	EXPECT_TRUE( [[element accessibilityAttributeNames] containsObject:navigationOrder] );
 	EXPECT_EQ( [element accessibilityArrayAttributeCount:navigationOrder], 0u );
+#pragma clang diagnostic pop
 	NSObject<NSAccessibility>* sameElement = [windowRoot.accessibilityChildren firstObject];
 	EXPECT_TRUE( element == sameElement );
 	EXPECT_TRUE( [element.accessibilityRole isEqualToString:NSAccessibilityButtonRole] );

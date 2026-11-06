@@ -1,5 +1,5 @@
 #include "thumbnails.hpp"
-#include "app.hpp"
+#include "eefm.hpp"
 #include "pane.hpp"
 #include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
@@ -185,9 +185,9 @@ void Thumbnails::updateVisible( FileTab* tab, size_t first, size_t end ) {
 		};
 		mService
 			->request( std::move( source ), { bucket, bucket }, entry->cancellation.token(), 100 )
-			.then( mApp.executor(), [weak = std::weak_ptr<View::Entry>( entry ),
-									 view = std::weak_ptr<View>( state )](
-										ImageThumbnailer::Result&& result ) {
+			.thenDroppable( mApp.executor(), [weak = std::weak_ptr<View::Entry>( entry ),
+											  view = std::weak_ptr<View>( state )](
+												 ImageThumbnailer::Result&& result ) {
 				auto current = weak.lock();
 				auto owner = view.lock();
 				if ( !current || !owner || !owner->widget ||

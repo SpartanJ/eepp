@@ -198,12 +198,13 @@ void VFSDirectoryModel::startSession() {
 	// The watch is established before listing so no change between the two can be missed.
 	std::weak_ptr<VFSDirectoryModel> weak = weak_from_this();
 	mConfig.vfs->watch( mURI, WatchOptions{} )
-		.then( *mExecutor, [gate = mExecutor, weak, generation]( VFSResult<WatchHandle>&& watch ) {
-			auto self = weak.lock();
-			if ( !self || self->mGeneration != generation )
-				return;
-			self->onWatchReady( generation, std::move( watch ) );
-		} );
+		.thenDroppable( *mExecutor,
+						[gate = mExecutor, weak, generation]( VFSResult<WatchHandle>&& watch ) {
+							auto self = weak.lock();
+							if ( !self || self->mGeneration != generation )
+								return;
+							self->onWatchReady( generation, std::move( watch ) );
+						} );
 }
 
 void VFSDirectoryModel::onWatchReady( Uint64 generation, VFSResult<WatchHandle>&& watch ) {
@@ -227,66 +228,66 @@ void VFSDirectoryModel::startListing( Uint64 generation ) {
 	options.metadata = mConfig.metadata;
 	std::weak_ptr<VFSDirectoryModel> weak = weak_from_this();
 	mConfig.vfs->openDirectory( mURI, options, mSession->cancel.token() )
-		.then( *mExecutor,
-			   [gate = mExecutor, weak, generation]( VFSResult<DirectoryHandle>&& handle ) {
-				   auto self = weak.lock();
-				   if ( !self || self->mGeneration != generation )
-					   return;
-				   if ( !handle ) {
-					   self->mSession->listing = false;
-					   self->setLoadState( LoadState::Error, std::move( handle ).error() );
-					   return;
-				   }
-				   self->mSession->handle = std::move( handle ).value();
-				   self->readNext( generation, true );
-			   } );
+		.thenDroppable( *mExecutor, [gate = mExecutor, weak,
+									 generation]( VFSResult<DirectoryHandle>&& handle ) {
+			auto self = weak.lock();
+			if ( !self || self->mGeneration != generation )
+				return;
+			if ( !handle ) {
+				self->mSession->listing = false;
+				self->setLoadState( LoadState::Error, std::move( handle ).error() );
+				return;
+			}
+			self->mSession->handle = std::move( handle ).value();
+			self->readNext( generation, true );
+		} );
 }
 
 void VFSDirectoryModel::readNext( Uint64 generation, bool first ) {
 	std::weak_ptr<VFSDirectoryModel> weak = weak_from_this();
 	size_t count = first ? mConfig.firstBatchSize : mConfig.batchSize;
 	mSession->handle.read( count, mSession->cancel.token() )
-		.then( *mExecutor,
-			   [gate = mExecutor, weak, generation, first]( VFSResult<DirectoryBatch>&& batch ) {
-				   auto self = weak.lock();
-				   if ( !self || self->mGeneration != generation )
-					   return;
-				   if ( !batch ) {
-					   self->mSession->handle.close();
-					   self->mSession->listing = false;
-					   self->setLoadState( LoadState::Error, std::move( batch ).error() );
-					   return;
-				   }
-				   bool done = batch.value().endOfDirectory;
-				   auto& session = *self->mSession;
-				   auto& pending = session.pendingEntries;
-				   auto& entries = batch.value().entries;
-				   if ( pending.empty() ) {
-					   pending = std::move( entries );
-				   } else {
-					   pending.insert( pending.end(), std::make_move_iterator( entries.begin() ),
-									   std::make_move_iterator( entries.end() ) );
-				   }
-				   auto now = std::chrono::steady_clock::now();
-				   // Keep the small first batch immediate. While data arrives quickly, each
-				   // merge grows with the visible listing, up to a bounded batch; slow listings
-				   // show new rows at the next batch after 50 ms, and EOF always flushes the tail.
-				   if ( first || done ||
-						pending.size() >= std::min( self->mEntries.size(), MaxCoalescedEntries ) ||
-						now - session.lastMerge >= std::chrono::milliseconds( 50 ) ) {
-					   auto merged = std::move( pending );
-					   self->mergeBatch( std::move( merged ) );
-					   if ( self->mGeneration != generation )
-						   return;
-					   self->mSession->lastMerge = std::chrono::steady_clock::now();
-				   }
-				   if ( self->mGeneration != generation )
-					   return;
-				   if ( done )
-					   self->finishListing( generation );
-				   else
-					   self->readNext( generation, false );
-			   } );
+		.thenDroppable( *mExecutor, [gate = mExecutor, weak, generation,
+									 first]( VFSResult<DirectoryBatch>&& batch ) {
+			auto self = weak.lock();
+			if ( !self || self->mGeneration != generation )
+				return;
+			if ( !batch ) {
+				self->mSession->handle.close();
+				self->mSession->listing = false;
+				self->setLoadState( LoadState::Error, std::move( batch ).error() );
+				return;
+			}
+			bool done = batch.value().endOfDirectory;
+			auto& session = *self->mSession;
+			auto& pending = session.pendingEntries;
+			auto& entries = batch.value().entries;
+			if ( pending.empty() ) {
+				pending = std::move( entries );
+			} else {
+				pending.insert( pending.end(), std::make_move_iterator( entries.begin() ),
+								std::make_move_iterator( entries.end() ) );
+			}
+			auto now = std::chrono::steady_clock::now();
+			// Keep the small first batch immediate. While data arrives quickly, each
+			// merge grows with the visible listing, up to a bounded batch; slow listings
+			// show new rows at the next batch after 50 ms, and EOF always flushes the tail.
+			if ( first || done ||
+				 pending.size() >= std::min( self->mEntries.size(), MaxCoalescedEntries ) ||
+				 now - session.lastMerge >= std::chrono::milliseconds( 50 ) ) {
+				auto merged = std::move( pending );
+				self->mergeBatch( std::move( merged ) );
+				if ( self->mGeneration != generation )
+					return;
+				self->mSession->lastMerge = std::chrono::steady_clock::now();
+			}
+			if ( self->mGeneration != generation )
+				return;
+			if ( done )
+				self->finishListing( generation );
+			else
+				self->readNext( generation, false );
+		} );
 }
 
 void VFSDirectoryModel::finishListing( Uint64 generation ) {
@@ -381,8 +382,8 @@ void VFSDirectoryModel::statAndUpsert( const std::string& name ) {
 	// Describe links as links (like the listing does), with their target type resolved.
 	mConfig.vfs
 		->stat( mURI.withAppendedSegment( name ), StatOptions{ false }, mSession->cancel.token() )
-		.then( *mExecutor, [gate = mExecutor, weak, generation, revision,
-							name]( VFSResult<VFSFileInfo>&& info ) {
+		.thenDroppable( *mExecutor, [gate = mExecutor, weak, generation, revision,
+									 name]( VFSResult<VFSFileInfo>&& info ) {
 			auto self = weak.lock();
 			if ( !self || self->mGeneration != generation )
 				return;
@@ -414,8 +415,8 @@ void VFSDirectoryModel::rescan() {
 	options.metadata = mConfig.metadata;
 	std::weak_ptr<VFSDirectoryModel> weak = weak_from_this();
 	mConfig.vfs->listAll( mURI, options, mSession->cancel.token() )
-		.then( *mExecutor, [gate = mExecutor, weak,
-							generation]( VFSResult<std::vector<VFSFileInfo>>&& entries ) {
+		.thenDroppable( *mExecutor, [gate = mExecutor, weak,
+									 generation]( VFSResult<std::vector<VFSFileInfo>>&& entries ) {
 			auto self = weak.lock();
 			if ( !self || self->mGeneration != generation )
 				return;
@@ -759,8 +760,8 @@ void VFSDirectoryModel::pumpItemCounts() {
 				state->token = token;
 				return readCount<ItemCount>( std::move( state ) );
 			} )
-			.then( *mExecutor, [gate = mExecutor, weak, generation,
-								name]( VFSResult<ItemCount>&& count ) mutable {
+			.thenDroppable( *mExecutor, [gate = mExecutor, weak, generation,
+										 name]( VFSResult<ItemCount>&& count ) mutable {
 				auto self = weak.lock();
 				if ( !self || self->mGeneration != generation )
 					return;

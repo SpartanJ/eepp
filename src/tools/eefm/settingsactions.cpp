@@ -1,5 +1,5 @@
 #include "settingsactions.hpp"
-#include "app.hpp"
+#include "eefm.hpp"
 #include "panemanager.hpp"
 #include "placescontroller.hpp"
 #include "previewpanel.hpp"

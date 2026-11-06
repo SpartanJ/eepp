@@ -115,6 +115,11 @@ template <typename T> class TaskSharedState {
 
 	TaskState state() const noexcept { return mState.load( std::memory_order_acquire ); }
 
+	/** Only called before the task is shared, so it needs no synchronization of its own. */
+	void setDroppable() noexcept { mDroppable = true; }
+
+	bool droppable() const noexcept { return mDroppable; }
+
 	template <typename... Args> bool resolve( Args&&... args ) {
 		Continuation continuation;
 		{
@@ -192,6 +197,7 @@ template <typename T> class TaskSharedState {
 	std::atomic<Uint32> mRefs{ 1 };
 	std::atomic<Uint32> mResolvers{ 1 };
 	std::atomic<TaskState> mState{ TaskState::Pending };
+	bool mDroppable{ false };
 };
 
 /** Intrusive owning pointer to a TaskSharedState. */
@@ -284,8 +290,9 @@ struct TaskAccess {
  * (then( fn ), onComplete( fn )) on the calling thread before it returns.
  *
  * When the last copy is destroyed without having been called, the task is abandoned and
- * TaskDiagnostic::Abandoned is reported: its consumer is still told (then() skips its function,
- * onComplete() receives std::nullopt), so it never waits forever.
+ * TaskDiagnostic::Abandoned is reported (except for a task returned by thenDroppable()): its
+ * consumer is still told (then() skips its function, onComplete() receives std::nullopt), so it
+ * never waits forever.
  *
  * A default-constructed resolver belongs to no task until create() fills it; calling it before
  * that only reports ResolvedTwice.
@@ -343,7 +350,7 @@ template <typename T> class TaskResolver {
 	void release() {
 		if ( !mState )
 			return;
-		if ( mState->releaseResolver() && mState->abandon() )
+		if ( mState->releaseResolver() && mState->abandon() && !mState->droppable() )
 			TaskDiagnostics::report( TaskDiagnostic::Abandoned );
 		mState.reset();
 	}
@@ -369,6 +376,8 @@ template <typename T> class TaskResolver {
  *
  * - then( executor, fn ): runs fn through the executor (for example the UI thread's), even if the
  *   task has already completed. This is the normal way to use a result.
+ * - thenDroppable( executor, fn ): the same, for a result nobody needs once the executor stops
+ *   taking work (refreshing a view, for example). Dropping it is expected, so it reports nothing.
  * - then( fn ): runs fn on whichever thread completes the task, or right away on the calling
  *   thread if it already has. For cheap transformations that touch no thread-bound state.
  * - fn may return a value, void, or a Task<U>; nested tasks are flattened into Task<U>.
@@ -457,22 +466,14 @@ template <typename T> class Task {
 	/** Runs fn( value ) through executor once the task completes, even if it already has. The
 	 * executor must outlive the task chain. See the class documentation. */
 	template <typename F> auto then( Executor& executor, F&& fn ) && {
-		using Fn = std::decay_t<F>;
-		using Out = detail::ContinuationValue<T, Fn>;
-		TaskResolver<Out> next;
-		Task<Out> result = Task<Out>::create( next );
-		attach( [executor = &executor, fn = Fn( std::forward<F>( fn ) ),
-				 next = std::move( next )]( detail::TaskSharedState<T>& state ) mutable {
-			if ( state.state() != TaskState::Ready ) {
-				// No user code runs for abandoned tasks, so there is nothing to dispatch.
-				detail::TaskAccess::abandonSilently( next );
-				return;
-			}
-			executor->execute(
-				[ref = detail::TaskStateRef<T>::retain( &state ), fn = std::move( fn ),
-				 next = std::move( next )]() mutable { Task::runContinuation( *ref, fn, next ); } );
-		} );
-		return result;
+		return std::move( *this ).thenOn( executor, std::forward<F>( fn ), false );
+	}
+
+	/** then( executor, fn ) for a result that may be discarded: if the executor drops the
+	 * continuation, the chain is abandoned without reporting TaskDiagnostic::Abandoned. Work that
+	 * must not be lost silently, such as modifying files, uses then( executor, fn ). */
+	template <typename F> auto thenDroppable( Executor& executor, F&& fn ) && {
+		return std::move( *this ).thenOn( executor, std::forward<F>( fn ), true );
 	}
 
 	/** Runs fn( value ) on the thread that completes the task, or right away on the calling
@@ -512,6 +513,27 @@ template <typename T> class Task {
 	friend struct detail::TaskAccess;
 
 	explicit Task( detail::TaskStateRef<T> state ) noexcept : mState( std::move( state ) ) {}
+
+	template <typename F> auto thenOn( Executor& executor, F&& fn, bool droppable ) && {
+		using Fn = std::decay_t<F>;
+		using Out = detail::ContinuationValue<T, Fn>;
+		TaskResolver<Out> next;
+		Task<Out> result = Task<Out>::create( next );
+		if ( droppable )
+			result.mState->setDroppable();
+		attach( [executor = &executor, fn = Fn( std::forward<F>( fn ) ),
+				 next = std::move( next )]( detail::TaskSharedState<T>& state ) mutable {
+			if ( state.state() != TaskState::Ready ) {
+				// No user code runs for abandoned tasks, so there is nothing to dispatch.
+				detail::TaskAccess::abandonSilently( next );
+				return;
+			}
+			executor->execute(
+				[ref = detail::TaskStateRef<T>::retain( &state ), fn = std::move( fn ),
+				 next = std::move( next )]() mutable { Task::runContinuation( *ref, fn, next ); } );
+		} );
+		return result;
+	}
 
 	void attach( typename detail::TaskSharedState<T>::Continuation continuation ) {
 		if ( !mState ) {

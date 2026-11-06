@@ -36,6 +36,10 @@ class FileOperations {
 	/** Opens a folder row (navigates there) or the selected files. */
 	void openRow( FileTab* tab, size_t row );
 
+	/** Opens the selected folders in new tabs of the pane. A single folder's tab is selected; a
+	 * multiple selection stays in the background. Selections with files open nothing. */
+	void openSelectionInNewTabs( FileTab* tab );
+
 	/** Opens files with the chosen application, including archives. */
 	void openWith( const std::vector<URI>& uris, Application app );
 

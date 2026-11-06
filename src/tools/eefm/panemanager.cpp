@@ -1,5 +1,5 @@
 #include "panemanager.hpp"
-#include "app.hpp"
+#include "eefm.hpp"
 #include "fileoperations.hpp"
 #include "location.hpp"
 #include "mime.hpp"

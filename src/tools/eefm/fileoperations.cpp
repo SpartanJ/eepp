@@ -1,7 +1,7 @@
 #include "fileoperations.hpp"
-#include "app.hpp"
 #include "arkdrop.hpp"
 #include "desktopintegration.hpp"
+#include "eefm.hpp"
 #include "location.hpp"
 #include "mime.hpp"
 #include "openwithdialog.hpp"
@@ -143,6 +143,20 @@ void FileOperations::openRow( FileTab* tab, size_t row ) {
 			files.push_back( tab->model->entryURI( selected ) );
 	}
 	openFiles( files );
+}
+
+void FileOperations::openSelectionInNewTabs( FileTab* tab ) {
+	const auto rows = tab->selectedRows();
+	for ( size_t row : rows ) {
+		if ( !tab->model->entry( row ).isDirectory() )
+			return;
+	}
+	const bool select = rows.size() == 1;
+	for ( size_t row : rows ) {
+		FileTab* opened = mApp.panes().openTab( *tab->pane, tab->model->entryURI( row ), select );
+		if ( select && opened )
+			opened->view->setFocus();
+	}
 }
 
 namespace {
@@ -301,7 +315,7 @@ void FileOperations::openFiles( const std::vector<URI>& uris ) {
 								   [path]() -> VFSResult<Kind> {
 									   return Ok( DesktopIntegration::executableKind( path ) );
 								   } )
-			.then( mApp.executor(), [pending, checked, i]( VFSResult<Kind> kind ) {
+			.thenDroppable( mApp.executor(), [pending, checked, i]( VFSResult<Kind> kind ) {
 				if ( kind )
 					pending->kinds[i] = kind.value();
 				checked();
@@ -441,18 +455,19 @@ void FileOperations::showContextMenu( FileTab* tab, bool background ) {
 					? mVFS->localIO().submitResolved<std::vector<Application>>(
 						  uris.front().getFSPath(), true, std::move( discover ) )
 					: mApp.pool()->submit( std::move( discover ) );
-	std::move( task ).then( mApp.executor(), [this, tab, model, generation, position,
-											  uris = std::move( uris )](
-												 VFSResult<std::vector<Application>>&& result ) {
-		// A tab may close or navigate while discovery runs. The weak model is checked
-		// before dereferencing the borrowed tab, and a changed selection invalidates it.
-		auto owner = model.lock();
-		if ( generation != mContextMenuGeneration || !owner || mApp.panes().currentTab() != tab ||
-			 tab->model != owner || !tab->view->hasFocusWithin() || tab->selectedURIs() != uris )
-			return;
-		buildContextMenu( tab, false, position,
-						  result ? std::move( result ).value() : std::vector<Application>{} );
-	} );
+	std::move( task ).thenDroppable(
+		mApp.executor(), [this, tab, model, generation, position, uris = std::move( uris )](
+							 VFSResult<std::vector<Application>>&& result ) {
+			// A tab may close or navigate while discovery runs. The weak model is checked
+			// before dereferencing the borrowed tab, and a changed selection invalidates it.
+			auto owner = model.lock();
+			if ( generation != mContextMenuGeneration || !owner ||
+				 mApp.panes().currentTab() != tab || tab->model != owner ||
+				 !tab->view->hasFocusWithin() || tab->selectedURIs() != uris )
+				return;
+			buildContextMenu( tab, false, position,
+							  result ? std::move( result ).value() : std::vector<Application>{} );
+		} );
 }
 
 void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f position,
@@ -550,7 +565,7 @@ void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f p
 					   openShortcut )
 				->setId( "open" );
 			menu->add( mUI->i18n( "eefm_open_new_tab", "Open in New Tab" ),
-					   mApp.menuIcon( "action-new-tab" ) )
+					   mApp.menuIcon( "action-new-tab" ), mApp.getKeybind( "open-new-tab" ) )
 				->setId( "open-tab" );
 			if ( mApp.isSplit() ) {
 				menu->add( mUI->i18n( "eefm_open_other_pane", "Open in Other Pane" ),
@@ -731,8 +746,7 @@ void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f p
 			if ( defaultApp )
 				openWith( uris, *defaultApp );
 		} else if ( id == "open-tab" ) {
-			for ( const auto& uri : uris )
-				mApp.panes().openTab( *tab->pane, uri, uris.size() == 1 );
+			openSelectionInNewTabs( tab );
 		} else if ( id == "open-other" ) {
 			if ( auto* other =
 					 mApp.panes().currentTab( mApp.panes().pane( 1 - tab->pane->index ) ) )

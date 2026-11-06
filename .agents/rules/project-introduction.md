@@ -26,7 +26,7 @@ not `eTerm`. Its implementation lives under `src/modules/eterm/`.
 ## 5. eefm (File Manager)
 
 `eefm` is the repository's file manager, a Dolphin-like application built on the `eepp-vfs`
-module (`src/modules/vfs/`). Its implementation lives under `src/tools/eefm/`. `App` (`app.cpp`)
+module (`src/modules/vfs/`). Its implementation lives under `src/tools/eefm/`. `App` (`eefm.cpp`)
 owns the window, layout, state and shortcuts, and the parts, which reach each other through it (as
 in ecode): `PaneManager` (split panes, tabs, navigation, status and filter bars),
 `FileOperations` (context menus, clipboard, drag and drop, transfers, trash), `PlacesController`

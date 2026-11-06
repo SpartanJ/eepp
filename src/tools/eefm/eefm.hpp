@@ -1,5 +1,5 @@
-#ifndef EEFM_APP_HPP
-#define EEFM_APP_HPP
+#ifndef EEFM_EEFM_HPP
+#define EEFM_EEFM_HPP
 
 #include "config.hpp"
 #include "dialogs.hpp"

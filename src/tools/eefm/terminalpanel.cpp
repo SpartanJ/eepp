@@ -1,5 +1,5 @@
 #include "terminalpanel.hpp"
-#include "app.hpp"
+#include "eefm.hpp"
 #include "panemanager.hpp"
 
 #include <eepp/graphics/fontfamily.hpp>

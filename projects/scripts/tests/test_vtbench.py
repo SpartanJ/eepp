@@ -120,13 +120,13 @@ class VtBenchTests(unittest.TestCase):
                          'projects/macos/make_no_fw.sh', 'projects/macos/make.sh',
                          'projects/benchmarks/vtbench/run.py',
                          'projects/benchmarks/vtbench/ghostty-controls.patch',
-                         'src/modules/eterm/parser.cpp', 'src/tools/eefm/app.cpp']:
+                         'src/modules/eterm/parser.cpp', 'src/tools/eefm/eefm.cpp']:
                 p = root / name
                 p.parent.mkdir(parents=True, exist_ok=True)
                 p.write_text('initial')
             with patch.object(bench, 'ROOT', root):
                 original = bench.source_fingerprint()
-                (root / 'src/tools/eefm/app.cpp').write_text('application edit')
+                (root / 'src/tools/eefm/eefm.cpp').write_text('application edit')
                 self.assertEqual(original, bench.source_fingerprint())
                 (root / 'src/modules/eterm/parser.cpp').write_text('parser edit')
                 self.assertNotEqual(original, bench.source_fingerprint())

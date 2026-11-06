@@ -1,5 +1,5 @@
 #include "placescontroller.hpp"
-#include "app.hpp"
+#include "eefm.hpp"
 #include "fileoperations.hpp"
 #include "location.hpp"
 #include "panemanager.hpp"
@@ -129,7 +129,7 @@ void PlacesController::refreshDevices( bool force ) {
 				return std::nullopt;
 			return Places::devices( rootName, shareNameFormat, token );
 		} )
-		.then( mApp.executor(), [this]( std::optional<std::vector<Place>>&& result ) {
+		.thenDroppable( mApp.executor(), [this]( std::optional<std::vector<Place>>&& result ) {
 			mRefreshingDevices = false;
 			if ( mDeviceCancellation.isCancellationRequested() )
 				return;
@@ -185,7 +185,7 @@ void PlacesController::refreshDeviceUsage() {
 		if ( device.section != PlaceSection::Devices )
 			continue;
 		URI uri = device.uri;
-		mApp.vfs()->spaceInfo( uri ).then(
+		mApp.vfs()->spaceInfo( uri ).thenDroppable(
 			mApp.executor(), [this, uri = std::move( uri ),
 							  generation = mDeviceGeneration]( VFSResult<SpaceInfo>&& space ) {
 				if ( generation != mDeviceGeneration || !space || space.value().capacity == 0 )
