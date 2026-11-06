@@ -264,6 +264,12 @@ UIWindow* SettingsPanel::create( App& app ) {
 						} );
 						app.savePreferences();
 					} );
+	panel->addBool(
+		{ "restoreLastSession", "terminal.behavior",
+		  app.i18n( "restore_last_session", "Restore Last Session" ),
+		  app.i18n( "restore_last_session_desc", "Reopen the tabs, splits and working directories "
+												 "of the previous session at startup." ) },
+		&app.config->terminal.restoreLastSession, [&app]( bool ) { app.savePreferences(); } );
 	panel->addBool( { "graphemeClustering", "terminal.behavior",
 					  app.i18n( "grapheme_clustering", "Grapheme Clustering" ),
 					  app.i18n( "grapheme_clustering_desc",

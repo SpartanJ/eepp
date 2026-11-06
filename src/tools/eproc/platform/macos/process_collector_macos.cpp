@@ -1,11 +1,17 @@
 #include "process_collector_macos.hpp"
 
+#include <CoreFoundation/CFNumber.h>
+#include <IOKit/IOKitLib.h>
 #include <algorithm>
 #include <cmath>
+#include <ifaddrs.h>
 #include <libproc.h>
 #include <limits>
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <net/if_var.h>
 #include <sys/proc.h>
 #include <sys/proc_info.h>
 #include <sys/resource.h>
@@ -46,6 +52,40 @@ Uint64 machTicksToMicroseconds( Uint64 ticks ) {
 
 } // namespace
 
+void ProcessCollectorMacOS::collectGpu( SystemInfo& sysInfo ) {
+	// IOAccelerator publishes these counters on supported drivers. Treat the property as
+	// optional: it is driver-provided and is not a per-process accounting API.
+	io_iterator_t iterator = IO_OBJECT_NULL;
+	if ( IOServiceGetMatchingServices( kIOMainPortDefault, IOServiceMatching( "IOAccelerator" ),
+									   &iterator ) != KERN_SUCCESS )
+		return;
+	for ( io_service_t service = IOIteratorNext( iterator ); service != IO_OBJECT_NULL;
+		  service = IOIteratorNext( iterator ) ) {
+		CFTypeRef stats = IORegistryEntryCreateCFProperty(
+			service, CFSTR( "PerformanceStatistics" ), kCFAllocatorDefault, 0 );
+		if ( stats && CFGetTypeID( stats ) == CFDictionaryGetTypeID() ) {
+			auto* dictionary = static_cast<CFDictionaryRef>( stats );
+			auto number = [&]( CFStringRef key, Int64& value ) {
+				CFTypeRef item = CFDictionaryGetValue( dictionary, key );
+				return item && CFGetTypeID( item ) == CFNumberGetTypeID() &&
+					   CFNumberGetValue( static_cast<CFNumberRef>( item ), kCFNumberSInt64Type,
+										 &value );
+			};
+			Int64 usage = 0;
+			if ( number( CFSTR( "Device Utilization %" ), usage ) )
+				sysInfo.gpuUsage = std::max(
+					sysInfo.gpuUsage, static_cast<int>( std::clamp<Int64>( usage, 0, 100 ) ) );
+			Int64 bytes = 0;
+			if ( number( CFSTR( "In use system memory" ), bytes ) && bytes >= 0 )
+				sysInfo.gpuMemory = std::max<Int64>( 0, sysInfo.gpuMemory ) + bytes / 1024;
+		}
+		if ( stats )
+			CFRelease( stats );
+		IOObjectRelease( service );
+	}
+	IOObjectRelease( iterator );
+}
+
 bool ProcessCollectorMacOS::collect( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo ) {
 	const auto sampledAt = std::chrono::steady_clock::now();
 	const Int64 elapsedUs =
@@ -58,6 +98,43 @@ bool ProcessCollectorMacOS::collect( std::vector<ProcessInfo>& processes, System
 	processes.clear();
 	sysInfo = {};
 	sysInfo.clockTicksPerSecond = kMicrosecondsPerSecond;
+	collectGpu( sysInfo );
+	// getifaddrs exposes per-interface byte counters, but no process attribution. The first
+	// sample establishes a baseline; subsequent samples feed the system Network chart.
+	ifaddrs* interfaces = nullptr;
+	if ( getifaddrs( &interfaces ) == 0 ) {
+		Uint64 received = 0;
+		Uint64 sent = 0;
+		bool havePrevious = false;
+		for ( const ifaddrs* iface = interfaces; iface; iface = iface->ifa_next ) {
+			if ( !iface->ifa_name || !iface->ifa_addr || iface->ifa_addr->sa_family != AF_LINK ||
+				 !iface->ifa_data || !( iface->ifa_flags & IFF_UP ) ||
+				 ( iface->ifa_flags & IFF_LOOPBACK ) )
+				continue;
+			const auto* data = static_cast<const if_data*>( iface->ifa_data );
+			auto [it, inserted] = mNetworkCounters.try_emplace( iface->ifa_name );
+			NetworkCounter& previous = it->second;
+			if ( !inserted && previous.pass == mPass - 1 && elapsedUs > 0 ) {
+				received += static_cast<Uint32>( data->ifi_ibytes - previous.received );
+				sent += static_cast<Uint32>( data->ifi_obytes - previous.sent );
+				havePrevious = true;
+			}
+			previous = { data->ifi_ibytes, data->ifi_obytes, mPass };
+		}
+		freeifaddrs( interfaces );
+		for ( auto it = mNetworkCounters.begin(); it != mNetworkCounters.end(); ) {
+			if ( it->second.pass != mPass )
+				it = mNetworkCounters.erase( it );
+			else
+				++it;
+		}
+		if ( havePrevious ) {
+			sysInfo.networkDownload = static_cast<Int64>( received * kMicrosecondsPerSecond /
+														  static_cast<Uint64>( elapsedUs ) );
+			sysInfo.networkUpload = static_cast<Int64>( sent * kMicrosecondsPerSecond /
+														static_cast<Uint64>( elapsedUs ) );
+		}
+	}
 
 	int cpuCount = 0;
 	if ( readSysctl( "hw.logicalcpu", cpuCount ) && cpuCount > 0 )
@@ -272,6 +349,7 @@ bool ProcessCollectorMacOS::collect( std::vector<ProcessInfo>& processes, System
 		else
 			++it;
 	}
+	mNetworkMonitor.applyRates( processes );
 	return true;
 }
 

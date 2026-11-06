@@ -952,9 +952,12 @@ nlohmann::json UITabWidgetSplitter::serializeNode( Node* node ) const {
 }
 
 void UITabWidgetSplitter::unserializeNode( const nlohmann::json& j, UITabWidget* curTabWidget ) {
-	if ( j["type"] == "tabwidget" ) {
+	// A missing key must throw: the const operator[] is undefined behavior for one, and this reads
+	// files that can be edited or damaged.
+	const auto& type = j.at( "type" );
+	if ( type == "tabwidget" ) {
 		Int64 currentPage = j.value( "current_page", (Int64)0 );
-		const auto& filesArr = j["files"];
+		const auto& filesArr = j.at( "files" );
 		for ( const auto& file : filesArr ) {
 			if ( !file.contains( "type" ) )
 				continue;
@@ -963,6 +966,8 @@ void UITabWidgetSplitter::unserializeNode( const nlohmann::json& j, UITabWidget*
 			auto it = mWidgetTypes.find( type );
 			if ( it != mWidgetTypes.end() ) {
 				WidgetLoadResult result = it->second.onLoad( file );
+				if ( !result.widget )
+					continue;
 				std::string title =
 					!result.title.empty() ? result.title : file.value( "title", "" );
 				auto [tab, _] = createWidgetInTabWidget( curTabWidget, result.widget, title );
@@ -974,7 +979,7 @@ void UITabWidgetSplitter::unserializeNode( const nlohmann::json& j, UITabWidget*
 			curTabWidget->setTabSelected(
 				eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
 		}
-	} else if ( j["type"] == "splitter" ) {
+	} else if ( type == "splitter" ) {
 		SplitDirection dir = j.value( "orientation", "vertical" ) == "horizontal"
 								 ? SplitDirection::Right
 								 : SplitDirection::Bottom;
@@ -982,15 +987,16 @@ void UITabWidgetSplitter::unserializeNode( const nlohmann::json& j, UITabWidget*
 		if ( !newTabWidget )
 			return;
 
-		unserializeNode( j["first"], curTabWidget );
-		unserializeNode( j["last"], newTabWidget );
+		// Resolved now: splitting a child moves its tab widget into a nested splitter.
+		Node* parent = newTabWidget->getParent();
 
-		if ( j.contains( "split" ) && j["split"].is_string() ) {
-			Node* parent = curTabWidget->getParent();
-			if ( parent && parent->isType( UI_TYPE_SPLITTER ) ) {
-				UISplitter* splitter = parent->asType<UISplitter>();
-				splitter->setSplitPartition( StyleSheetLength( j["split"].get<std::string>() ) );
-			}
+		unserializeNode( j.at( "first" ), curTabWidget );
+		unserializeNode( j.at( "last" ), newTabWidget );
+
+		if ( j.contains( "split" ) && j["split"].is_string() &&
+			 parent->isType( UI_TYPE_SPLITTER ) ) {
+			parent->asType<UISplitter>()->setSplitPartition(
+				StyleSheetLength( j["split"].get<std::string>() ) );
 		}
 	}
 }

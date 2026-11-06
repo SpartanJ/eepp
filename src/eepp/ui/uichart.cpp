@@ -366,6 +366,8 @@ void UIChart::setFollowX( double span ) {
 }
 
 void UIChart::setChartStyle( ChartStyle style ) {
+	style.seriesWidthScale =
+		std::isfinite( style.seriesWidthScale ) ? std::max( 0.f, style.seriesWidthScale ) : 1.f;
 	mChartStyle = std::move( style );
 	++mLayoutRevision;
 	++mViewRevision;
@@ -523,10 +525,12 @@ void UIChart::updateLayout() {
 		const double step =
 			axisLayout.ticks.size() > 1 ? axisLayout.ticks[1] - axisLayout.ticks[0] : 1.0;
 		Float labelWidth = 0.f;
-		for ( double tick : axisLayout.ticks ) {
-			axisLayout.labels.emplace_back( axisLayout.axis->formatTick( tick, step ) );
-			labelWidth =
-				std::max( labelWidth, chartTextWidth( font, axisLayout.labels.back(), fontSize ) );
+		if ( mChartStyle.showTickLabels ) {
+			for ( double tick : axisLayout.ticks ) {
+				axisLayout.labels.emplace_back( axisLayout.axis->formatTick( tick, step ) );
+				labelWidth = std::max( labelWidth,
+									   chartTextWidth( font, axisLayout.labels.back(), fontSize ) );
+			}
 		}
 		axisLayout.width = labelWidth > 0.f
 							   ? std::max( dp( mChartStyle.minimumAxisMargin ),
@@ -553,10 +557,12 @@ void UIChart::updateLayout() {
 			mLayout.xTicks.size() > 1 ? mLayout.xTicks[1] - mLayout.xTicks[0] : 1.0;
 		const double yStep =
 			mLayout.yTicks.size() > 1 ? mLayout.yTicks[1] - mLayout.yTicks[0] : 1.0;
-		for ( double tick : mLayout.xTicks ) {
-			mLayout.xLabels.emplace_back( xAxis().formatTick( tick, xStep ) );
-			mLayout.xLabelWidths.emplace_back(
-				chartTextWidth( font, mLayout.xLabels.back(), fontSize ) );
+		if ( mChartStyle.showTickLabels ) {
+			for ( double tick : mLayout.xTicks ) {
+				mLayout.xLabels.emplace_back( xAxis().formatTick( tick, xStep ) );
+				mLayout.xLabelWidths.emplace_back(
+					chartTextWidth( font, mLayout.xLabels.back(), fontSize ) );
+			}
 		}
 		Float rotatedHeight = 0.f;
 		for ( Float labelWidth : mLayout.xLabelWidths ) {
@@ -573,11 +579,13 @@ void UIChart::updateLayout() {
 		if ( pass == 0 && rotatedHeight > 0.f ) {
 			bottomMargin = std::max( bottomMargin, requiredBottom );
 		}
-		for ( double tick : mLayout.yTicks ) {
-			mLayout.yLabels.emplace_back( yAxis().formatTick( tick, yStep ) );
-			const Float labelWidth = chartTextWidth( font, mLayout.yLabels.back(), fontSize );
-			mLayout.yLabelWidths.emplace_back( labelWidth );
-			maximumLabelWidth = std::max( maximumLabelWidth, labelWidth );
+		if ( mChartStyle.showTickLabels ) {
+			for ( double tick : mLayout.yTicks ) {
+				mLayout.yLabels.emplace_back( yAxis().formatTick( tick, yStep ) );
+				const Float labelWidth = chartTextWidth( font, mLayout.yLabels.back(), fontSize );
+				mLayout.yLabelWidths.emplace_back( labelWidth );
+				maximumLabelWidth = std::max( maximumLabelWidth, labelWidth );
+			}
 		}
 		const Float measuredMargin =
 			maximumLabelWidth > 0.f
@@ -616,8 +624,9 @@ void UIChart::updateGeometry( SeriesCache& cache, const XYDataRead& read ) {
 		cache.geometry = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLES );
 	if ( cache.fillGeometry )
 		cache.fillGeometry->clear();
+	const Float strokeWidth = cache.series->width() * mChartStyle.seriesWidthScale;
 	if ( !cache.series->visible() || read.size() < 2 ||
-		 ( cache.series->width() <= 0 && !cache.series->filled() ) )
+		 ( strokeWidth <= 0 && !cache.series->filled() ) )
 		return;
 	if ( cache.series->filled() && !cache.fillGeometry )
 		cache.fillGeometry = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLES );
@@ -646,7 +655,7 @@ void UIChart::updateGeometry( SeriesCache& cache, const XYDataRead& read ) {
 				chunk.xs, chunk.ys );
 		}
 	}
-	const Float halfWidth = PixelDensity::dpToPx( cache.series->width() ) * 0.5f;
+	const Float halfWidth = PixelDensity::dpToPx( strokeWidth ) * 0.5f;
 	bool previousValid = false;
 	bool priorSegment = false;
 	Vector2f previous;
@@ -706,7 +715,7 @@ void UIChart::updateGeometry( SeriesCache& cache, const XYDataRead& read ) {
 					addFillTriangle( previous, { previous.x, bottom }, current );
 					addFillTriangle( current, { previous.x, bottom }, { current.x, bottom } );
 				}
-				if ( cache.series->width() <= 0 ) {
+				if ( strokeWidth <= 0 ) {
 					previous = current;
 					previousValid = true;
 					return;
@@ -815,7 +824,7 @@ void UIChart::drawAxes() {
 			mLayout.xTicks[i], plot.Left, plot.getWidth(), false, xAxis() ) );
 		primitive.drawLine( Line2f( { origin.x + x, origin.y + plot.Bottom },
 									{ origin.x + x, origin.y + plot.Bottom + tickLength } ) );
-		if ( font ) {
+		if ( font && mChartStyle.showTickLabels ) {
 			const Float textWidth = mLayout.xLabelWidths[i];
 			const String& label = mLayout.xLabels[i];
 			if ( angle == 0.f ) {
@@ -845,7 +854,7 @@ void UIChart::drawAxes() {
 			mLayout.yTicks[i], plot.Top, plot.getHeight(), true, yAxis() ) );
 		primitive.drawLine( Line2f( { origin.x + plot.Left - tickLength, origin.y + y },
 									{ origin.x + plot.Left, origin.y + y } ) );
-		if ( font ) {
+		if ( font && mChartStyle.showTickLabels ) {
 			const Float textWidth = mLayout.yLabelWidths[i];
 			const String& label = mLayout.yLabels[i];
 			drawText( label, { origin.x + plot.Left - tickLength - tickLabelGap - textWidth,
@@ -866,7 +875,7 @@ void UIChart::drawAxes() {
 												  true, *axisLayout.axis ) );
 			primitive.drawLine( Line2f( { origin.x + axisX, origin.y + y },
 										{ origin.x + axisX + tickLength, origin.y + y } ) );
-			if ( font ) {
+			if ( font && mChartStyle.showTickLabels ) {
 				const String& label = axisLayout.labels[i];
 				drawText( label, { origin.x + axisX + tickLength + tickLabelGap,
 								   origin.y + y - textStyle.CharacterSize * 0.6f } );

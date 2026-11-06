@@ -1,5 +1,6 @@
 #include "eterm.hpp"
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
 #include <unistd.h>
@@ -29,6 +30,19 @@ constexpr const char* ProgramStatusProgressClass = "program_status_progress";
 constexpr const char* ProgramStatusUnreadClass = "program_status_unread";
 
 constexpr size_t MaxProgramStatusMessageLength = 256;
+
+bool isUsableDirectory( const std::string& path ) {
+	if ( !FileSystem::isDirectory( path ) )
+		return false;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return FileInfo( path ).isReadable();
+#else
+	return access( path.c_str(), X_OK ) == 0;
+#endif
+}
+
+/** The class that makes the tab splitter save a widget as a terminal. */
+constexpr const char* SessionTerminalType = "terminal";
 
 /** Results wait for the user. Other states are live: looking at a blocked program doesn't unblock
  * it, and OSC 9;4 errors expire by themselves. */
@@ -128,6 +142,77 @@ void App::saveWindowState() {
 	config->captureWindowState( appWindow );
 	if ( !config->saveWindowState() )
 		Log::error( "Could not save eterm window state to %s", config->getConfigPath() );
+	saveSession();
+}
+
+void App::registerSessionWidgetType() {
+	tabSplitter->registerWidgetType(
+		SessionTerminalType,
+		{ []( UIWidget* widget ) {
+			 auto session = nlohmann::json::object();
+			 // Other titles belong to whatever was running, which the restored shell won't be.
+			 auto* terminal = widget->asType<UITerminal>();
+			 if ( terminal->isUsingCustomTitle() )
+				 session["custom_title"] = terminal->getTitle();
+			 if ( auto directory = terminalDirectory( terminal ); !directory.empty() )
+				 session["working_directory"] = std::move( directory );
+			 return session;
+		 },
+		  [this]( const nlohmann::json& session ) -> WidgetLoadResult {
+			  // The panes have no size yet. The window is closer to it than an empty terminal, and
+			  // the layout corrects it before the shell's first prompt.
+			  // The directory can be gone by now.
+			  const std::string directory = session.value( "working_directory", "" );
+			  auto* terminal = newTerminal(
+				  mainLayout->getPixelsSize(),
+				  isUsableDirectory( directory ) ? directory : terminalConfig.workingDirectory );
+			  if ( !terminal )
+				  return {};
+			  std::string title = session.value( "custom_title", "" );
+			  if ( !title.empty() )
+				  terminal->setTitle( title );
+			  else
+				  title = i18n( "terminal", "Terminal" ).toUtf8();
+			  return { terminal, nullptr, std::move( title ) };
+		  } } );
+}
+
+void App::saveSession() {
+	// Nothing is written for a session that ended with its last terminal: the next start is a new
+	// one, because restoreSession() already took the previous file.
+	if ( !managesSession || !config->terminal.restoreLastSession || !tabSplitter ||
+		 !hasTerminals() )
+		return;
+	// From the base layout, as toJSON() would miss the rest of the tree from a maximized tab
+	// widget.
+	if ( !config->saveSession(
+			 tabSplitter->serializeNode( tabSplitter->getBaseLayout()->getFirstChild() ) ) ) {
+		Log::error( "Could not save eterm session to %s", config->getConfigPath() );
+	}
+}
+
+bool App::restoreSession() {
+	if ( !managesSession )
+		return false;
+	// Taken even if disabled, so enabling it later doesn't bring back a forgotten session.
+	const auto session = config->takeSession();
+	if ( !config->terminal.restoreLastSession || !session.contains( "type" ) )
+		return false;
+	try {
+		tabSplitter->fromJSON( session );
+	} catch ( const nlohmann::json::exception& error ) {
+		Log::error( "Could not fully restore eterm session: %s", error.what() );
+	}
+	// A pane can have nothing to restore: terminals that failed, or only non-terminal tabs.
+	for ( auto* tabs : tabSplitter->getTabWidgets() ) {
+		if ( tabs->getTabCount() == 0 )
+			createTerminal( tabs );
+	}
+	if ( !hasTerminals() )
+		return false;
+	tabSplitter->focusSomeWidget();
+	updateWindowTitle();
+	return true;
 }
 
 void App::forEachTerminal( const std::function<void( UITerminal* )>& fn ) {
@@ -517,6 +602,22 @@ String App::describeProgramStatus( const PresentedProgramStatus& status ) const 
 }
 
 void App::configureTab( UITab* tab ) {
+	if ( auto* terminal = terminalFromTab( tab ) ) {
+		terminal->on( Event::OnTitleChange, [this, tab, terminal]( const Event* ) {
+			tab->setText( terminal->getTitle().empty() ? i18n( "terminal", "Terminal" )
+													   : String( terminal->getTitle() ) );
+			if ( tabSplitter->getCurWidget() == terminal )
+				updateWindowTitle();
+		} );
+		terminal->getTerm()->pushEventCallback( [this, tab]( const TerminalDisplay::Event& event ) {
+			if ( terminalConfig.closeOnExit &&
+				 event.type == TerminalDisplay::EventType::PROCESS_EXIT ) {
+				queueExitCloseTab( tab );
+			} else if ( event.type == TerminalDisplay::EventType::PROGRAM_STATUS_CHANGE ) {
+				updateTabProgramStatus( tab );
+			}
+		} );
+	}
 	tab->on( Event::OnClose, [this, tab]( const Event* ) { seenProgramStatus.erase( tab ); } );
 	tab->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
 		const auto* menuEvent = static_cast<const ContextMenuEvent*>( event );
@@ -611,44 +712,25 @@ void App::configureTab( UITab* tab ) {
 	} );
 }
 
+std::string App::terminalDirectory( UITerminal* terminal ) {
+	auto directory = terminal->getTerm()->getCurrentWorkingDirectory();
+	if ( isUsableDirectory( directory ) )
+		return directory;
+	const auto& launchDirectory = terminal->getTerm()->getWorkingDir();
+	return isUsableDirectory( launchDirectory ) ? launchDirectory : std::string{};
+}
+
 std::string App::resolveWorkingDirectory( UITerminal* source ) const {
 	if ( config->terminal.inheritWorkingDirectory && source && !terminalConfig.launchExecutable &&
 		 terminalConfig.executeInShell.empty() ) {
-		const auto usable = []( const std::string& path ) {
-			if ( !FileSystem::isDirectory( path ) )
-				return false;
-#if EE_PLATFORM == EE_PLATFORM_WIN
-			return FileInfo( path ).isReadable();
-#else
-			return access( path.c_str(), X_OK ) == 0;
-#endif
-		};
-		auto directory = source->getTerm()->getCurrentWorkingDirectory();
-		if ( usable( directory ) )
+		auto directory = terminalDirectory( source );
+		if ( !directory.empty() )
 			return directory;
-		const auto& launchDirectory = source->getTerm()->getWorkingDir();
-		if ( usable( launchDirectory ) )
-			return launchDirectory;
 	}
 	return terminalConfig.workingDirectory;
 }
 
-UITerminal* App::createTerminal( UITabWidget* target, std::string workingDirectory ) {
-	if ( !target && tabSplitter ) {
-		auto* current = tabSplitter->getCurWidget();
-		target = current ? tabSplitter->tabWidgetFromWidget( current )
-						 : tabSplitter->getFirstTabWidget();
-	}
-	if ( !target )
-		return nullptr;
-	Sizef initialSize{ 16, 16 };
-	if ( target->getContainerNode() &&
-		 target->getContainerNode()->getPixelsSize() != Sizef::Zero ) {
-		initialSize = target->getContainerNode()->getPixelsSize();
-	}
-
-	if ( workingDirectory.empty() )
-		workingDirectory = terminalConfig.workingDirectory;
+UITerminal* App::newTerminal( const Sizef& initialSize, const std::string& workingDirectory ) {
 	auto display = TerminalDisplay::create(
 		appWindow, terminalFont, terminalFontSize, initialSize, terminalConfig.program,
 		terminalConfig.arguments, workingDirectory, terminalConfig.historySize, nullptr,
@@ -674,23 +756,9 @@ UITerminal* App::createTerminal( UITabWidget* target, std::string workingDirecto
 	terminal->setVerticalScrollMode( config->terminal.scrollBarMode );
 	if ( selectedColorScheme )
 		terminal->setColorScheme( *selectedColorScheme );
+	terminal->addClass( SessionTerminalType );
 
-	auto* tab =
-		tabSplitter->createWidgetInTabWidget( target, terminal, i18n( "terminal", "Terminal" ) )
-			.first;
 	addTabKeyBindings( terminal );
-	terminal->on( Event::OnTitleChange, [this, tab, terminal]( const Event* ) {
-		tab->setText( terminal->getTitle().empty() ? i18n( "terminal", "Terminal" )
-												   : String( terminal->getTitle() ) );
-		if ( tabSplitter->getCurWidget() == terminal )
-			updateWindowTitle();
-	} );
-	terminal->getTerm()->pushEventCallback( [this, tab]( const TerminalDisplay::Event& event ) {
-		if ( terminalConfig.closeOnExit && event.type == TerminalDisplay::EventType::PROCESS_EXIT )
-			queueExitCloseTab( tab );
-		else if ( event.type == TerminalDisplay::EventType::PROGRAM_STATUS_CHANGE )
-			updateTabProgramStatus( tab );
-	} );
 	terminal->on( Event::OnCreateContextMenu, [this, terminal]( const Event* event ) {
 		auto menu = static_cast<const ContextMenuEvent*>( event )->getMenu();
 		const auto addItem = [this, menu, terminal]( const String& text, const std::string& icon,
@@ -711,6 +779,29 @@ UITerminal* App::createTerminal( UITabWidget* target, std::string workingDirecto
 		// UITerminal dispatches menu commands once; make this terminal their source context.
 		tabSplitter->setCurrentWidget( terminal );
 	} );
+	return terminal;
+}
+
+UITerminal* App::createTerminal( UITabWidget* target, std::string workingDirectory ) {
+	if ( !target && tabSplitter ) {
+		auto* current = tabSplitter->getCurWidget();
+		target = current ? tabSplitter->tabWidgetFromWidget( current )
+						 : tabSplitter->getFirstTabWidget();
+	}
+	if ( !target )
+		return nullptr;
+	Sizef initialSize{ 16, 16 };
+	if ( target->getContainerNode() &&
+		 target->getContainerNode()->getPixelsSize() != Sizef::Zero ) {
+		initialSize = target->getContainerNode()->getPixelsSize();
+	}
+
+	if ( workingDirectory.empty() )
+		workingDirectory = terminalConfig.workingDirectory;
+	auto* terminal = newTerminal( initialSize, workingDirectory );
+	if ( !terminal )
+		return nullptr;
+	tabSplitter->createWidgetInTabWidget( target, terminal, i18n( "terminal", "Terminal" ) );
 	tabSplitter->setCurrentWidget( terminal );
 	if ( !terminalConfig.executeInShell.empty() )
 		terminal->executeFile( terminalConfig.executeInShell );
@@ -1271,6 +1362,7 @@ int App::run( int argc, char* argv[] ) {
 	terminalConfig.closeOnExit = config->terminal.closeOnExit;
 	warnBeforeClose = config->window.warnBeforeClose;
 	benchmarkMode = config->window.benchmarkMode;
+	managesSession = !wd && !initialTabs && terminalConfig.executeInShell.empty();
 	terminalFontSize = PixelDensity::dpToPx( config->font.size );
 
 	mainLayout = UILinearLayout::NewVertical();
@@ -1331,14 +1423,17 @@ int App::run( int argc, char* argv[] ) {
 		return EXIT_FAILURE;
 	}
 	mainLayout->updateLayout();
+	registerSessionWidgetType();
 
-	for ( size_t tab = 0; tab < eemax( static_cast<size_t>( 1 ), config->terminal.initialTabs );
-		  ++tab ) {
-		if ( !createTerminal( tabs ) ) {
-			appWindow->showMessageBox(
-				EE::Window::Window::MessageBoxType::Error, "eterm",
-				i18n( "operating_system_not_supported", "Operating System not supported." ) );
-			return EXIT_FAILURE;
+	if ( !restoreSession() ) {
+		for ( size_t tab = 0; tab < eemax( static_cast<size_t>( 1 ), config->terminal.initialTabs );
+			  ++tab ) {
+			if ( !createTerminal( tabs ) ) {
+				appWindow->showMessageBox(
+					EE::Window::Window::MessageBoxType::Error, "eterm",
+					i18n( "operating_system_not_supported", "Operating System not supported." ) );
+				return EXIT_FAILURE;
+			}
 		}
 	}
 #if EE_PLATFORM == EE_PLATFORM_MACOS

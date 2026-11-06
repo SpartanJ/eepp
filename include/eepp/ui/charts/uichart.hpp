@@ -83,6 +83,7 @@ struct ChartStyle {
 	Float fontSize{ 12.f };
 	Float tickLength{ 4.f };
 	Float tickLabelGap{ 6.f };
+	bool showTickLabels{ true }; //!< False omits tick labels and their layout space.
 	Float axisLabelGap{ 25.f };
 	Float axisLabelInset{ 2.f };
 	Float leftMargin{ 50.f };
@@ -102,6 +103,7 @@ struct ChartStyle {
 	Float yTickSpacing{ 50.f };
 	Float hoverDistance{ 10.f };
 	Float axisWidth{ 1.f };
+	Float seriesWidthScale{ 1.f }; //!< Multiplies stroke widths for this chart view.
 	std::optional<Color> axisColor;
 	std::optional<Color> tickColor;
 	std::optional<Color> tickLabelColor;

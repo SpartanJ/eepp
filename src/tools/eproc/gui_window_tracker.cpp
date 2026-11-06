@@ -400,7 +400,7 @@ bool GuiWindowTracker::isAvailable() const {
 	return mDisplay != nullptr;
 }
 
-#else // X11 backend
+#elif EE_PLATFORM != EE_PLATFORM_MACOS // X11 backend
 
 // Stub backend ---------------------------------------------------------------------------------
 

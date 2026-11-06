@@ -2321,8 +2321,10 @@ workspace "eepp"
 			links { "psapi", "advapi32" }
 		filter "system:macosx"
 			files { "src/tools/eproc/platform/macos/process_collector_macos.cpp",
-				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
-			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+				"src/tools/eproc/platform/macos/process_network_monitor_macos.cpp",
+				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp",
+				"src/tools/eproc/gui_window_tracker_macos.mm" }
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework", "Cocoa.framework", "IOKit.framework" }
 		filter "system:bsd"
 			files { "src/tools/eproc/platform/freebsd/process_collector_freebsd.cpp",
 				"src/tools/eproc/platform/posix/process_icon_resolver.cpp" }
@@ -2421,9 +2423,10 @@ workspace "eepp"
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 		filter "system:macosx"
-			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework", "IOKit.framework" }
 			files { "src/tools/eproc/process_collector.cpp",
 				"src/tools/eproc/platform/macos/process_collector_macos.cpp",
+				"src/tools/eproc/platform/macos/process_network_monitor_macos.cpp",
 				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
 		filter "system:haiku"
 			links { "bsd", "network" }

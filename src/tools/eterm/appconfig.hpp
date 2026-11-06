@@ -6,6 +6,7 @@
 #include <eepp/math/size.hpp>
 #include <eepp/math/vector2.hpp>
 #include <eepp/system/inifile.hpp>
+#include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
@@ -40,6 +41,7 @@ struct TerminalConfig {
 	bool graphemeClustering{ true };
 	bool detectLinks{ true };
 	bool showProgramStatus{ true };
+	bool restoreLastSession{ true };
 	NewTerminalBehavior newTerminalBehavior{ NewTerminalBehavior::CurrentTabBar };
 	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
 	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };
@@ -107,9 +109,17 @@ struct AppConfig {
 
 	void captureWindowState( EE::Window::Window* window );
 
+	/** Hands over the saved session and removes it, so another instance won't open it again.
+	 * @return null without a readable session. */
+	nlohmann::json takeSession();
+
+	bool saveSession( const nlohmann::json& session );
+
 	const std::string& getConfigPath() const { return mConfigPath; }
 
   private:
+	std::string sessionPath() const { return mConfigPath + "session.json"; }
+
 	std::string mConfigPath;
 	IniFile mIni;
 	IniFile mState;

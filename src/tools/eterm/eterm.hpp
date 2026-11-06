@@ -104,7 +104,14 @@ class App : private efsw::FileWatchListener {
 
 	String describeProgramStatus( const PresentedProgramStatus& status ) const;
 
+	/** Where the terminal's shell reported to be, else where it started. Empty if neither of them
+	 * can be used as a working directory. */
+	static std::string terminalDirectory( UITerminal* terminal );
+
 	std::string resolveWorkingDirectory( UITerminal* source ) const;
+
+	/** Builds a configured terminal that isn't in any tab yet: see configureTab(). */
+	UITerminal* newTerminal( const Sizef& initialSize, const std::string& workingDirectory );
 
 	UITerminal* createTerminal( UITabWidget* target = nullptr, std::string workingDirectory = {} );
 
@@ -169,6 +176,13 @@ class App : private efsw::FileWatchListener {
 
 	void saveWindowState();
 
+	void registerSessionWidgetType();
+
+	void saveSession();
+
+	/** @return Whether the session left terminals open: otherwise the initial tabs are needed. */
+	bool restoreSession();
+
 	void createNewTerminal();
 
 	bool closeWindow( EE::Window::Window* );
@@ -202,6 +216,9 @@ class App : private efsw::FileWatchListener {
 	bool warnBeforeClose{ false };
 	bool closeApproved{ false };
 	bool benchmarkMode{ false };
+	/** A launch for a directory, a program or a tab count neither resumes nor replaces the
+	 * session. */
+	bool managesSession{ false };
 	Clock secondsCounter;
 	SmallVector<UITab*, 8> pendingExitCloseTabs;
 	/** UI-only memory of the done or error each tab's user has seen: the programs' records stay. */

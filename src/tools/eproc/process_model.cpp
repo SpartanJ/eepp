@@ -512,8 +512,8 @@ bool ProcessModel::accepts( const ProcessInfo& proc ) const {
 			return proc.ownedByCurrentUser;
 
 		case ProgramsOnly:
-			// A controlling terminal also belongs to shells and short-lived commands. Keep only
-			// processes that own a managed or embedded GUI window, including XEmbed tray icons.
+			// The tracker supplies visible GUI application PIDs on macOS and managed/embedded
+			// window owners on X11. A controlling terminal alone does not identify either.
 			return mGuiPids.count( proc.pid ) != 0;
 
 		default:

@@ -217,6 +217,42 @@ UTEST( UIChart, styleUsesDeviceIndependentMeasurements ) {
 	PixelDensity::setPixelDensity( previousDensity );
 }
 
+UTEST( UIChart, hiddenTickLabelsDoNotShrinkSmallPlot ) {
+	const Float previousDensity = PixelDensity::getPixelDensity();
+	WindowSettings window( 220, 140, "Chart Preview Test" );
+	window.DisableHiDPI = true;
+	UIApplication app( window, UIApplication::Settings(
+								   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	auto* chart = UIChart::New();
+	chart->setPixelsSize( 160, 100 );
+	chart->setParent( app.getUI()->getRoot() );
+	ChartStyle style = chart->chartStyle();
+	style.leftMargin = style.rightMargin = style.topMargin = style.bottomMargin =
+		style.minimumAxisMargin = 2.f;
+	style.tickLength = 0.f;
+	style.showTickLabels = false;
+	style.axisColor = Color( 0, 0, 0, 0 );
+	chart->setChartStyle( style );
+	chart->xAxis().setFormatter( []( double, double ) { return String( "-0:59" ); } );
+	chart->yAxis().setFormatter( []( double, double ) { return String( "100%" ); } );
+	chart->setAxisRange( chart->xAxis(), { 0, 1 } );
+	chart->setAxisRange( chart->yAxis(), { 0, 1 } );
+	auto& line = chart->addLineSeries( "Preview" );
+	line.setFilled( true );
+	line.setFillColor( Color( 255, 0, 0 ) );
+	line.setPoints( std::vector<ChartPoint>{ { 0, 0.5 }, { 1, 0.5 } } );
+	app.getUI()->flushDirtyStyleAndLayout();
+	app.getWindow()->setClearColor( Color( 20, 20, 20 ) );
+	app.getWindow()->clear();
+	app.getUI()->draw();
+	GlobalBatchRenderer::instance()->draw();
+	Image image = app.getWindow()->getFrontBufferImage();
+	ASSERT_TRUE( image.getWidth() > 100 && image.getHeight() > 90 );
+	const Color nearBottom = image.getPixel( 80, 90 );
+	EXPECT_TRUE( nearBottom.r > 180 && nearBottom.g < 80 );
+	PixelDensity::setPixelDensity( previousDensity );
+}
+
 UTEST( UIChart, miterJoinFillsInnerWedgeAtHighDensity ) {
 	const Float previousDensity = PixelDensity::getPixelDensity();
 	UIApplication app(

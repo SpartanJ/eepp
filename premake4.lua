@@ -2314,8 +2314,10 @@ solution "eepp"
 		end
 		if os.is("macosx") then
 			files { "src/tools/eproc/platform/macos/process_collector_macos.cpp",
-				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
-			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+				"src/tools/eproc/platform/macos/process_network_monitor_macos.cpp",
+				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp",
+				"src/tools/eproc/gui_window_tracker_macos.mm" }
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework", "Cocoa.framework", "IOKit.framework" }
 		end
 		if os.is("bsd") then
 			files { "src/tools/eproc/platform/freebsd/process_collector_freebsd.cpp",
@@ -2400,9 +2402,10 @@ solution "eepp"
 			links { "bsd", "network" }
 		end
 		if os.is("macosx") then
-			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework" }
+			links { "CoreFoundation.framework", "CoreGraphics.framework", "ImageIO.framework", "IOKit.framework" }
 			files { "src/tools/eproc/process_collector.cpp",
 				"src/tools/eproc/platform/macos/process_collector_macos.cpp",
+				"src/tools/eproc/platform/macos/process_network_monitor_macos.cpp",
 				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
 		end
 		if os.is_real("bsd") then

@@ -1,4 +1,5 @@
 #include "eproc.hpp"
+#include "performance_layout.hpp"
 #include "process_table_state.hpp"
 #include "process_view.hpp"
 #include "settingspanel.hpp"
@@ -392,6 +393,7 @@ bool App::init() {
 
 	UIWidgetCreator::registerWidget( "eproc-table-view", ProcessTableView::New );
 	UIWidgetCreator::registerWidget( "eproc-tree-view", ProcessTreeView::New );
+	UIWidgetCreator::registerWidget( "eproc-performance-layout", PerformanceLayout::New );
 	mRoot = ui->loadLayoutFromString( R"xml(
 	<style>
 	<![CDATA[
@@ -586,7 +588,7 @@ bool App::init() {
 					<TextView id="swap_text" lw="0" lw8="0.25" lh="wc" />
 				</hbox>
 			</vbox>
-			<hbox id="performance_area" lw="mp" lh="mp">
+			<eproc-performance-layout id="performance_area" lw="mp" lh="mp">
 				<vbox class="eproc-performance-sidebar" lw="276dp" lh="mp" padding="8dp">
 					<hbox id="perf_cpu_card" class="eproc-performance-card" lw="mp" lh="72dp" padding="5dp" margin-bottom="6dp">
 						<Chart id="perf_cpu_preview" class="eproc-performance-preview" lw="80dp" lh="mp" margin-right="8dp" />
@@ -620,7 +622,7 @@ bool App::init() {
 					</ScrollView>
 					<TextView id="perf_detail" lw="mp" lh="wc" margin-top="12dp" />
 				</vbox>
-			</hbox>
+			</eproc-performance-layout>
 			<!-- Tab definitions -->
 			<Tab id="tab_process_table" owns="process_table_area" />
 			<Tab id="tab_performance" text="Performance" owns="performance_area" />
@@ -926,8 +928,16 @@ void App::setupUI() {
 	auto* ui = mApp->getUI();
 	ui->setKeyBindingCommand( "next-tab", [this] { mTabWidget->focusNextTab(); } );
 	ui->setKeyBindingCommand( "previous-tab", [this] { mTabWidget->focusPreviousTab(); } );
+	const auto selectTab = [this]( Uint32 index ) {
+		if ( mTabWidget->getTabSelectedIndex() != index )
+			mTabWidget->setTabSelected( index );
+	};
+	ui->setKeyBindingCommand( "switch-to-tab-1", [selectTab] { selectTab( 0 ); } );
+	ui->setKeyBindingCommand( "switch-to-tab-2", [selectTab] { selectTab( 1 ); } );
 	ui->addKeyBindingString( "mod+tab", "next-tab" );
 	ui->addKeyBindingString( "mod+shift+tab", "previous-tab" );
+	ui->addKeyBindingString( "mod+1", "switch-to-tab-1" );
+	ui->addKeyBindingString( "mod+2", "switch-to-tab-2" );
 	mRoot->find<UITab>( "tab_process_table" )
 		->setText( ui->i18n( "eproc_process_table_tab", "Process Table" ) );
 	mRoot->find<UITab>( "tab_performance" )
@@ -974,7 +984,11 @@ void App::setupUI() {
 		{ "eproc_filter_system_processes", "System Processes" },
 		{ "eproc_filter_user_processes", "User Processes" },
 		{ "eproc_filter_own_processes", "Own Processes" },
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+		{ "eproc_filter_applications", "Applications" },
+#else
 		{ "eproc_filter_programs_only", "Programs Only" },
+#endif
 	};
 	auto* filterListBox = mFilterDropdown->getListBox();
 	for ( size_t i = 0; i < std::size( filters ); ++i ) {
@@ -1109,6 +1123,8 @@ void App::setupPerformance() {
 		smallStyle.leftMargin = smallStyle.rightMargin = smallStyle.topMargin =
 			smallStyle.bottomMargin = smallStyle.minimumAxisMargin = 2.f;
 		smallStyle.tickLength = 0.f;
+		smallStyle.showTickLabels = false;
+		smallStyle.seriesWidthScale = 0.5f;
 		smallStyle.axisColor = Color( 0, 0, 0, 0 );
 		smallStyle.tickColor = Color( 0, 0, 0, 0 );
 		smallStyle.tickLabelColor = Color( 0, 0, 0, 0 );
@@ -1123,6 +1139,17 @@ void App::setupPerformance() {
 		metric.card->onClick( [this, i]( const MouseEvent* ) { selectPerformanceMetric( i ); } );
 		metric.value->setText( i < 2 ? "0%" : "Unavailable" );
 	}
+	auto* performanceLayout = mRoot->find<PerformanceLayout>( "performance_area" );
+	performanceLayout->setCommand( "previous-performance-metric", [this] {
+		if ( mSelectedPerformanceMetric > 0 )
+			selectPerformanceMetric( mSelectedPerformanceMetric - 1 );
+	} );
+	performanceLayout->setCommand( "next-performance-metric", [this] {
+		if ( mSelectedPerformanceMetric + 1 < mPerformanceMetrics.size() )
+			selectPerformanceMetric( mSelectedPerformanceMetric + 1 );
+	} );
+	performanceLayout->getKeyBindings().addKeybindString( "up", "previous-performance-metric" );
+	performanceLayout->getKeyBindings().addKeybindString( "down", "next-performance-metric" );
 	selectPerformanceMetric( 0 );
 }
 
@@ -1202,6 +1229,7 @@ void App::rebuildCoreCharts( size_t count ) {
 		style.bottomMargin = 0.f;
 		style.minimumAxisMargin = 0.f;
 		style.tickLength = 0.f;
+		style.showTickLabels = false;
 		style.axisColor = Color( 0, 0, 0, 0 );
 		style.tickColor = Color( 0, 0, 0, 0 );
 		style.tickLabelColor = Color( 0, 0, 0, 0 );
@@ -1223,6 +1251,7 @@ void App::rebuildCoreCharts( size_t count ) {
 
 void App::updatePerformance( const SystemInfo& sysInfo,
 							 const std::vector<ProcessInfo>& processes ) {
+	auto* ui = mApp->getUI();
 	const double now = mPerformanceClock.getElapsedTime().asSeconds();
 	const double memoryPercent =
 		sysInfo.totalMemory > 0 ? 100.0 * sysInfo.getUsedMemoryKB() / sysInfo.totalMemory : 0.0;
@@ -1247,6 +1276,18 @@ void App::updatePerformance( const SystemInfo& sysInfo,
 			hasGpu = true;
 		}
 	}
+	const bool systemNetwork = sysInfo.networkDownload >= 0 && sysInfo.networkUpload >= 0;
+	if ( systemNetwork ) {
+		download = sysInfo.networkDownload;
+		upload = sysInfo.networkUpload;
+		hasNetwork = true;
+	}
+	const bool systemGpu = !hasGpu && sysInfo.gpuUsage >= 0;
+	if ( systemGpu ) {
+		gpuUsage = sysInfo.gpuUsage;
+		gpuMemory = sysInfo.gpuMemory;
+		hasGpu = true;
+	}
 	mPerformanceMetrics[0].primary->append( { now, sysInfo.cpuUsage } );
 	mPerformanceMetrics[1].primary->append( { now, memoryPercent } );
 	if ( hasGpu )
@@ -1258,11 +1299,19 @@ void App::updatePerformance( const SystemInfo& sysInfo,
 	}
 	mPerformanceMetrics[0].value->setText( String::format( "%.1f%%", sysInfo.cpuUsage ) );
 	mPerformanceMetrics[1].value->setText( String::format( "%.1f%%", memoryPercent ) );
-	mPerformanceMetrics[2].value->setText(
-		hasGpu ? String::format( "%d%% tracked", std::min( gpuUsage, 100 ) ) : "Unavailable" );
+	if ( hasGpu ) {
+		mPerformanceMetrics[2].value->setText( String::format(
+			ui->i18n( systemGpu ? "eproc_gpu_system_value" : "eproc_gpu_tracked_value",
+					  systemGpu ? "%d%% system" : "%d%% tracked" )
+				.toUtf8(),
+			std::min( gpuUsage, 100 ) ) );
+	} else {
+		mPerformanceMetrics[2].value->setText( ui->i18n( "eproc_unavailable", "Unavailable" ) );
+	}
 	mPerformanceMetrics[3].value->setText(
-		hasNetwork ? String::format( "%s down", formatPerformanceRate( download ).c_str() )
-				   : "Unavailable" );
+		hasNetwork ? String::format( ui->i18n( "eproc_network_value", "%s down" ).toUtf8(),
+									 formatPerformanceRate( download ).c_str() )
+				   : ui->i18n( "eproc_unavailable", "Unavailable" ).toUtf8() );
 
 	if ( mCoreHistory.size() < sysInfo.coreCpuUsage.size() ) {
 		mCoreHistory.reserve( sysInfo.coreCpuUsage.size() );
@@ -1288,7 +1337,8 @@ void App::updatePerformance( const SystemInfo& sysInfo,
 		mCoreLabels[i]->setText(
 			String::format( "CPU %zu    %.1f%%", i, sysInfo.coreCpuUsage[i] ) );
 
-	mPerformanceSummaries[0] = String::format( "%.1f%% utilization", sysInfo.cpuUsage );
+	mPerformanceSummaries[0] = String::format(
+		ui->i18n( "eproc_cpu_summary", "%.1f%% utilization" ).toUtf8(), sysInfo.cpuUsage );
 	mPerformanceDetails[0] =
 		String::format( mApp->getUI()
 							->i18n( "eproc_performance_cpu_details",
@@ -1296,24 +1346,45 @@ void App::updatePerformance( const SystemInfo& sysInfo,
 							.toUtf8(),
 						sysInfo.cpuCount, processes.size(),
 						formatUptime( mApp->getUI(), sysInfo.uptimeSeconds ).toUtf8().c_str() );
-	mPerformanceSummaries[1] = String::format( "%.1f%% physical memory", memoryPercent );
+	mPerformanceSummaries[1] = String::format(
+		ui->i18n( "eproc_memory_summary", "%.1f%% physical memory" ).toUtf8(), memoryPercent );
 	mPerformanceDetails[1] =
-		String::format( "In use  %s    Available  %s    Total  %s    Swap  %s / %s",
+		String::format( ui->i18n( "eproc_memory_details",
+								  "In use  %s    Available  %s    Total  %s    Swap  %s / %s" )
+							.toUtf8(),
 						formatKiBIEC( sysInfo.getUsedMemoryKB() ).c_str(),
 						formatKiBIEC( sysInfo.availableMemory ).c_str(),
 						formatKiBIEC( sysInfo.totalMemory ).c_str(),
 						formatKiBIEC( sysInfo.getUsedSwapKB() ).c_str(),
 						formatKiBIEC( sysInfo.totalSwap ).c_str() );
-	mPerformanceSummaries[2] = "Tracked process GPU usage";
-	mPerformanceDetails[2] =
-		hasGpu ? String::format( "Usage  %d%%    Tracked GPU memory  %s", std::min( gpuUsage, 100 ),
-								 formatKiBIEC( gpuMemory ).c_str() )
-			   : "GPU data is unavailable on this system";
-	mPerformanceSummaries[3] = "Tracked process network traffic";
-	mPerformanceDetails[3] = hasNetwork ? String::format( "Download  %s    Upload  %s",
-														  formatPerformanceRate( download ).c_str(),
-														  formatPerformanceRate( upload ).c_str() )
-										: "Network data is unavailable on this system";
+	mPerformanceSummaries[2] =
+		ui->i18n( systemGpu ? "eproc_gpu_system_summary" : "eproc_gpu_tracked_summary",
+				  systemGpu ? "System GPU usage" : "Tracked process GPU usage" );
+	if ( hasGpu ) {
+		const std::string memory = gpuMemory >= 0
+									   ? formatKiBIEC( gpuMemory )
+									   : ui->i18n( "eproc_unavailable", "Unavailable" ).toUtf8();
+		mPerformanceDetails[2] = String::format(
+			ui->i18n( systemGpu ? "eproc_gpu_system_details" : "eproc_gpu_tracked_details",
+					  systemGpu ? "Usage  %d%%    GPU memory  %s"
+								: "Usage  %d%%    Tracked GPU memory  %s" )
+				.toUtf8(),
+			std::min( gpuUsage, 100 ), memory.c_str() );
+	} else {
+		mPerformanceDetails[2] =
+			ui->i18n( "eproc_gpu_unavailable", "GPU data is unavailable on this system" );
+	}
+	mPerformanceSummaries[3] =
+		ui->i18n( systemNetwork ? "eproc_network_system_summary" : "eproc_network_tracked_summary",
+				  systemNetwork ? "System network traffic" : "Tracked process network traffic" );
+	if ( hasNetwork ) {
+		mPerformanceDetails[3] = String::format(
+			ui->i18n( "eproc_network_details", "Download  %s    Upload  %s" ).toUtf8(),
+			formatPerformanceRate( download ).c_str(), formatPerformanceRate( upload ).c_str() );
+	} else {
+		mPerformanceDetails[3] =
+			ui->i18n( "eproc_network_unavailable", "Network data is unavailable on this system" );
+	}
 	mPerformanceSummary->setText( mPerformanceSummaries[mSelectedPerformanceMetric] );
 	mPerformanceDetail->setText( mPerformanceDetails[mSelectedPerformanceMetric] );
 }

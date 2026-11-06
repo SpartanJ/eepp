@@ -1,6 +1,7 @@
 #include "appconfig.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/window/window.hpp>
+#include <nlohmann/json.hpp>
 
 using namespace EE::Graphics;
 using namespace EE::System;
@@ -45,6 +46,8 @@ void AppConfig::load() {
 	terminal.detectLinks = mIni.getValueB( "terminal", "detect_links", terminal.detectLinks );
 	terminal.showProgramStatus =
 		mIni.getValueB( "terminal", "show_program_status", terminal.showProgramStatus );
+	terminal.restoreLastSession =
+		mIni.getValueB( "terminal", "restore_last_session", terminal.restoreLastSession );
 	ui.smoothScroll = mIni.getValueB(
 		"ui", "smooth_scroll", mIni.getValueB( "terminal", "smooth_scroll", ui.smoothScroll ) );
 	const auto newTerminalBehavior =
@@ -132,6 +135,7 @@ bool AppConfig::savePreferences() {
 	mIni.setValueB( "terminal", "grapheme_clustering", terminal.graphemeClustering );
 	mIni.setValueB( "terminal", "detect_links", terminal.detectLinks );
 	mIni.setValueB( "terminal", "show_program_status", terminal.showProgramStatus );
+	mIni.setValueB( "terminal", "restore_last_session", terminal.restoreLastSession );
 	mIni.setValueB( "ui", "smooth_scroll", ui.smoothScroll );
 	mIni.deleteValue( "terminal", "smooth_scroll" );
 	mIni.setValue( "terminal", "new_terminal_behavior",
@@ -195,6 +199,24 @@ void AppConfig::captureWindowState( EE::Window::Window* window ) {
 	windowState.position.y = eemax( 0, windowState.position.y );
 	windowState.displayIndex = window->getCurrentDisplayIndex();
 	windowState.maximized = window->isMaximized();
+}
+
+nlohmann::json AppConfig::takeSession() {
+	const std::string path = sessionPath();
+	std::string data;
+	if ( !FileSystem::fileGet( path, data ) )
+		return {};
+	FileSystem::fileRemove( path );
+	auto session = nlohmann::json::parse( data, nullptr, false );
+	return session.is_discarded() ? nlohmann::json{} : session;
+}
+
+bool AppConfig::saveSession( const nlohmann::json& session ) {
+	if ( !FileSystem::isDirectory( mConfigPath ) && !FileSystem::makeDir( mConfigPath, true ) )
+		return false;
+	// Titles can come from programs, so an invalid sequence must not fail the whole session.
+	return FileSystem::fileWrite(
+		sessionPath(), session.dump( -1, ' ', false, nlohmann::json::error_handler_t::replace ) );
 }
 
 } // namespace eterm

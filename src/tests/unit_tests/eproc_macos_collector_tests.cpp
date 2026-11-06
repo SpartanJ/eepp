@@ -2,6 +2,7 @@
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 #include "../../tools/eproc/platform/macos/process_icon_resolver_macos.hpp"
+#include "../../tools/eproc/platform/macos/process_network_monitor_macos.hpp"
 #include "../../tools/eproc/process_collector.hpp"
 #include "utest.hpp"
 
@@ -14,6 +15,22 @@
 #include <unistd.h>
 
 using namespace eproc;
+
+UTEST( EProcMacOSNetwork, ParsesNettopProcessRows ) {
+	Int64 pid = 0;
+	Uint64 received = 0, sent = 0;
+	ASSERT_TRUE( ProcessNetworkMonitorMacOS::parseRow( "Brave Browser H.2274,421741,277000,", pid,
+													   received, sent ) );
+	EXPECT_EQ( pid, 2274 );
+	EXPECT_EQ( received, 421741u );
+	EXPECT_EQ( sent, 277000u );
+	EXPECT_TRUE( ProcessNetworkMonitorMacOS::parseRow( "Acme, Inc.42,0,5,", pid, received, sent ) );
+	EXPECT_EQ( pid, 42 );
+	EXPECT_FALSE(
+		ProcessNetworkMonitorMacOS::parseRow( ",bytes_in,bytes_out,", pid, received, sent ) );
+	EXPECT_FALSE( ProcessNetworkMonitorMacOS::parseRow( "app.42,-1,5,", pid, received, sent ) );
+	EXPECT_FALSE( ProcessNetworkMonitorMacOS::parseRow( "app.0,1,5,", pid, received, sent ) );
+}
 
 UTEST( EProcMacOSCollector, CollectsCurrentProcessAndUsesMicrosecondCpuTime ) {
 	auto collector = ProcessCollector::create();

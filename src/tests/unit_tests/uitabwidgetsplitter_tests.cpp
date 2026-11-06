@@ -2119,6 +2119,88 @@ UTEST( UITabWidgetSplitter, Serialization ) {
 	}
 }
 
+UTEST( UITabWidgetSplitter, RestoresNestedSplitPartitions ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	const WidgetTypeCallback widgetType{ []( UIWidget* ) { return nlohmann::json::object(); },
+										 []( const nlohmann::json& j ) -> WidgetLoadResult {
+											 auto* widget = UIWidget::New();
+											 widget->addClass( "nestedwidget" );
+											 return { widget, nullptr, j.value( "title", "" ) };
+										 } };
+	const auto addWidget = []( UITabWidgetSplitter* splitter, UITabWidget* tabs ) {
+		auto* widget = UIWidget::New();
+		widget->addClass( "nestedwidget" );
+		splitter->createWidgetInTabWidget( tabs, widget, "Pane" );
+	};
+
+	TestClient client1;
+	auto* splitter1 = UITabWidgetSplitter::New( &client1, app.getUI() );
+	splitter1->registerWidgetType( "nestedwidget", widgetType );
+	auto* left = splitter1->createTabWidget( (Node*)app.getUI() );
+	addWidget( splitter1, left );
+	auto* right = splitter1->splitTabWidget( SplitDirection::Right, left );
+	addWidget( splitter1, right );
+	auto* top = splitter1->splitTabWidget( SplitDirection::Bottom, left );
+	addWidget( splitter1, top );
+
+	auto* inner = left->getParent()->asType<UISplitter>();
+	auto* outer = right->getParent()->asType<UISplitter>();
+	ASSERT_TRUE( inner != outer );
+	inner->setSplitPartition( StyleSheetLength( "30%" ) );
+	outer->setSplitPartition( StyleSheetLength( "70%" ) );
+	const nlohmann::json saved = splitter1->toJSON();
+
+	TestClient client2;
+	auto* splitter2 = UITabWidgetSplitter::New( &client2, app.getUI() );
+	splitter2->registerWidgetType( "nestedwidget", widgetType );
+	splitter2->createTabWidget( (Node*)app.getUI() );
+	splitter2->fromJSON( saved );
+
+	ASSERT_EQ( splitter2->getTabWidgets().size(), 3UL );
+	auto* restoredInner = splitter2->getFirstTabWidget()->getParent()->asType<UISplitter>();
+	auto* restoredOuter = restoredInner->getParent()->asType<UISplitter>();
+	EXPECT_STDSTREQ( restoredInner->getSplitPartition().toString(), "30%" );
+	EXPECT_STDSTREQ( restoredOuter->getSplitPartition().toString(), "70%" );
+
+	eeDelete( splitter1 );
+	eeDelete( splitter2 );
+}
+
+UTEST( UITabWidgetSplitter, UnserializeRejectsWhatItCannotRestore ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	auto* tabs = splitter->createTabWidget( (Node*)app.getUI() );
+	splitter->registerWidgetType( "failing",
+								  { []( UIWidget* ) { return nlohmann::json::object(); },
+									[]( const nlohmann::json& ) { return WidgetLoadResult{}; } } );
+
+	// A widget that couldn't be created leaves no tab behind.
+	splitter->fromJSON( nlohmann::json::parse(
+		R"({"type":"tabwidget","current_page":0,"files":[{"type":"failing"}]})" ) );
+	EXPECT_EQ( tabs->getTabCount(), (Uint32)0 );
+
+	// Damaged data reports an error instead of reading missing keys.
+	const auto throws = [&splitter]( const char* text ) {
+		try {
+			splitter->fromJSON( nlohmann::json::parse( text ) );
+		} catch ( const nlohmann::json::exception& ) {
+			return true;
+		}
+		return false;
+	};
+	EXPECT_TRUE( throws( R"({"type":"tabwidget"})" ) );
+	EXPECT_TRUE( throws( R"({"type":"splitter","orientation":"horizontal"})" ) );
+
+	eeDelete( splitter );
+}
+
 UTEST( UITabWidgetSplitter, WidgetMovedBetweenSplitsKeepsFocusAndTitleTracking ) {
 	UIApplication app(
 		WindowSettings( 800, 600, "eepp - unit tests" ),

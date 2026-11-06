@@ -16,6 +16,11 @@ struct SystemInfo {
 	Int64 freeSwap{ 0 };
 	int cpuCount{ 1 };
 	float cpuUsage{ 0.f };
+	// System-wide interface rates; per-process rates remain in ProcessInfo when available.
+	Int64 networkDownload{ -1 };
+	Int64 networkUpload{ -1 };
+	int gpuUsage{ -1 };
+	Int64 gpuMemory{ -1 };
 	// Per-logical-CPU usage, indexed by CPU number when the platform provides it.
 	std::vector<float> coreCpuUsage;
 	// Number of units in ProcessInfo::{userTime,sysTime,startTime} per second.

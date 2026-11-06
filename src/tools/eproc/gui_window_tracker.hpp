@@ -18,7 +18,8 @@ namespace eproc {
  *  filters (the equivalent of ksysguard's hasGUIWindow()). The X11 backend reads the
  *  _NET_CLIENT_LIST property of the root window and the owner of each window from its _NET_WM_PID
  *  property. It also finds XEmbed windows (including tray icons) in the X11 window hierarchy.
- *  Without an X display, the tracker reports no window PIDs. X11 is loaded at runtime when
+ *  On macOS it reads running GUI applications from NSWorkspace. Without an X display, the X11
+ *  tracker reports no window PIDs. X11 is loaded at runtime when
  *  available, keeping it optional for Wayland and headless systems. Where no backend is built,
  *  the tracker compiles to a stub that reports itself unavailable and lists no window PIDs.
  *

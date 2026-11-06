@@ -62,7 +62,7 @@ struct ProcessInfo {
 	// True when the kernel reported the shared-memory breakdown, so vmURSS could be derived.
 	bool hasSharedInfo{ false };
 
-	// Network (bytes, -1 if not available)
+	// Network rates (bytes per second, -1 if not available)
 	Int64 netDownload{ -1 };
 	Int64 netUpload{ -1 };
 

@@ -38,12 +38,10 @@ constexpr std::array<size_t, 8> kUnavailableProcessColumns = { {
 	ProcessModel::ColTty,
 } };
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
-constexpr std::array<size_t, 6> kUnavailableProcessColumns = { {
+constexpr std::array<size_t, 4> kUnavailableProcessColumns = { {
 	ProcessModel::ColSharedMem,
 	ProcessModel::ColGpuUsage,
 	ProcessModel::ColGpuMemory,
-	ProcessModel::ColDownload,
-	ProcessModel::ColUpload,
 	ProcessModel::ColTty,
 } };
 #elif EE_PLATFORM == EE_PLATFORM_BSD

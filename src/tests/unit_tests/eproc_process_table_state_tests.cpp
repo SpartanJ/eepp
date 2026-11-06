@@ -78,3 +78,12 @@ UTEST( EProcProcessTableState, RejectedWidthsKeepDefaultVisibility ) {
 	state.erase( "widths" );
 	EXPECT_FALSE( showsFamilyMemory( parse( state.dump() ), false ) );
 }
+
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+UTEST( EProcProcessTableState, MacOSExposesNetworkButHidesUnavailableGpuColumns ) {
+	EXPECT_TRUE( isProcessColumnSupported( ProcessModel::ColDownload ) );
+	EXPECT_TRUE( isProcessColumnSupported( ProcessModel::ColUpload ) );
+	EXPECT_FALSE( isProcessColumnSupported( ProcessModel::ColGpuUsage ) );
+	EXPECT_FALSE( isProcessColumnSupported( ProcessModel::ColGpuMemory ) );
+}
+#endif

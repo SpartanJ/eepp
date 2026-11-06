@@ -114,9 +114,23 @@ encoding, relative paths and embedded NUL are rejected. Before creating a child,
 directory locally. Missing or inaccessible directories fall back to that terminal's launch directory,
 then the configured launch default. This does not infer a remote SSH directory as a local path.
 
-The initial terminals retain the configured or command-line launch directory. Launching an executable
-or using an explicit execute-in-shell command retains its launch behavior. Disable **Inherit Working
-Directory** to always use the configured launch default for new tabs and splits.
+Without a session to restore, the initial terminals retain the configured or command-line launch
+directory. Launching an executable or using an explicit execute-in-shell command retains its launch
+behavior. Disable **Inherit Working Directory** to always use the configured launch default for new
+tabs and splits.
+
+## Restoring the last session
+
+In eterm, **Settings → Terminal → Behavior → Restore Last Session** is enabled by default and saved
+as `restore_last_session` in `[terminal]`. Closing the window remembers its tabs, splits, renamed
+tabs and each terminal's working directory, and the next start reopens them with new shells. Running
+programs and scrollback are not restored. A directory that no longer exists falls back to the
+configured launch default.
+
+Starting eterm with a directory, an executable, `--execute` or `--tabs` neither restores nor replaces
+the saved session. A session is restored once, so further windows open as new ones; when several are
+open, the last one closed is remembered. Closing the last tab ends the session, and the next start is
+a new one.
 
 In ecode, these options apply to editor terminals and the status-bar terminal panel. When no source
 directory is available or inheritance is disabled, ecode uses its configured project, current-file,
