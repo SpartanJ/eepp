@@ -86,6 +86,13 @@ void App::applyKeybindings( UITerminal* terminal ) {
 	keybindings.apply( terminal->getKeyBindings() );
 }
 
+void App::applyKeybindings() {
+	mainLayout->getKeyBindings().reset();
+	keybindings.apply( mainLayout->getKeyBindings(), [this]( const std::string& command ) {
+		return mainLayout->hasCommand( command );
+	} );
+}
+
 void App::applyKeybindings( UICodeEditor* editor ) {
 	editor->getKeyBindings().setKeybinds( *UICodeEditor::getDefaultKeybindings() );
 	editor->addKeyBinding( { KEY_S, KeyMod::getDefaultModifier() }, "save-doc", true );
@@ -103,6 +110,7 @@ bool App::reloadKeybindings( std::string* error ) {
 	}
 	if ( !loadKeybindings( false, error ) )
 		return false;
+	applyKeybindings();
 	forEachTerminal( [this]( UITerminal* terminal ) { applyKeybindings( terminal ); } );
 	if ( keybindingsFileEditor && tabSplitter->ownedWidgetExists( keybindingsFileEditor ) )
 		applyKeybindings( keybindingsFileEditor );

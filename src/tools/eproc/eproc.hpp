@@ -15,6 +15,7 @@
 #include <eepp/ui/models/sortingproxymodel.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
@@ -110,6 +111,11 @@ class App {
 	void restoreTreeExpansion();
 
 	void updateStatusBar();
+
+	void setStatusExpanded( bool expanded );
+
+	void updateStatusDetails();
+
 	void setupPerformance();
 	void updatePerformance( const SystemInfo& sysInfo, const std::vector<ProcessInfo>& processes );
 	void selectPerformanceMetric( size_t metric );
@@ -164,6 +170,16 @@ class App {
 	UITextView* mCpuText{ nullptr };
 	UITextView* mMemText{ nullptr };
 	UITextView* mSwapText{ nullptr };
+	UIWidget* mStatusDetails{ nullptr };
+	UIImage* mStatusToggle{ nullptr };
+	struct StatusMetric {
+		UIWidget* card{ nullptr };
+		UIChart* chart{ nullptr };
+		UITextView* value{ nullptr };
+		UITextView* detail{ nullptr };
+	};
+	static_assert( sizeof( StatusMetric ) == 4 * sizeof( void* ) );
+	std::array<StatusMetric, 4> mStatusMetrics;
 	UIChart* mPerformanceDetailChart{ nullptr };
 	UIWidget* mCoreChartScroll{ nullptr };
 	UIWidget* mCoreChartStack{ nullptr };
@@ -187,10 +203,12 @@ class App {
 	std::vector<UITextView*> mCoreLabels;
 	std::vector<std::shared_ptr<RingXYDataSource>> mCoreHistory;
 	Clock mPerformanceClock;
+	size_t mPerformanceProcessCount{ 0 };
 	size_t mSelectedPerformanceMetric{ 0 };
 	bool mPerCoreView{ false };
 	bool mTabFocusRestorePending{ false };
 	bool mInitialCollection{ true };
+	std::array<bool, 4> mMetricAvailable{};
 
 	std::shared_ptr<ProcessModel> mProcessModel;
 	std::shared_ptr<ProcessTreeModel> mTreeModel;

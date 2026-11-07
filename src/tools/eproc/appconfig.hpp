@@ -44,6 +44,7 @@ class AppConfig {
 	std::string fallbackFontPath;
 	bool divideCpuUsage{ false };
 	bool performancePerCore{ false };
+	bool statusExpanded{ false };
 	bool treeView{ false };
 	bool vsync{ false };
 	int filterMode{ 0 };

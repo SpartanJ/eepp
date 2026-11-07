@@ -845,6 +845,8 @@ UITerminal* App::createTerminal( UITabWidget* target, std::string workingDirecto
 }
 
 UITerminal* App::createTerminalSplit( SplitDirection direction, UIWidget* widget ) {
+	if ( !widget )
+		widget = tabSplitter->getCurWidget();
 	auto* source = widget ? tabSplitter->tabWidgetFromWidget( widget ) : nullptr;
 	auto* terminal = widget && widget->isType( UI_TYPE_TERMINAL )
 						 ? widget->asType<UITerminal>()
@@ -856,6 +858,8 @@ UITerminal* App::createTerminalSplit( SplitDirection direction, UIWidget* widget
 }
 
 void App::moveTab( UIWidget* widget, int offset ) {
+	if ( !widget )
+		widget = tabSplitter->getCurWidget();
 	if ( !widget || offset == 0 )
 		return;
 	auto* tabs = tabSplitter->tabWidgetFromWidget( widget );
@@ -1399,7 +1403,7 @@ int App::run( int argc, char* argv[] ) {
 	managesSession = !wd && !initialTabs && terminalConfig.executeInShell.empty();
 	terminalFontSize = PixelDensity::dpToPx( config->font.size );
 
-	mainLayout = UILinearLayout::NewVertical();
+	mainLayout = UIMainLayout::New();
 	mainLayout->setParent( scene->getRoot() );
 	mainLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	mainLayout->setPixelsSize( appWindow->getSize().asFloat() );
@@ -1407,6 +1411,8 @@ int App::run( int argc, char* argv[] ) {
 	std::unique_ptr<UITabWidgetSplitter, TabWidgetSplitterDeleter> tabSplitterOwner(
 		UITabWidgetSplitter::New( &splitterClient, scene ) );
 	tabSplitter = tabSplitterOwner.get();
+	registerTabCommands( *mainLayout, nullptr );
+	applyKeybindings();
 	tabSplitter->setHideTabBarOnSingleTab( !config->window.alwaysShowTabBar );
 	tabSplitter->setShowTabBarWhenSplit( config->window.showTabBarWhenSplit );
 	tabSplitter->setCanCreateSplitFn( [this]( SplitDirection, UIWidget* ) {

@@ -3,6 +3,7 @@
 #include "appconfig.hpp"
 #include "programstatusalerts.hpp"
 #include "settingsactions.hpp"
+#include "uimainlayout.hpp"
 #include <args/args.hxx>
 #include <atomic>
 #include <eepp/core/small_vector.hpp>
@@ -166,6 +167,8 @@ class App : private efsw::FileWatchListener {
 
 	void applyKeybindings( UITerminal* terminal );
 
+	void applyKeybindings();
+
 	void applyKeybindings( UICodeEditor* editor );
 
 	void openKeybindingsFile();
@@ -193,7 +196,7 @@ class App : private efsw::FileWatchListener {
 	EE::Window::Window* appWindow{ nullptr };
 	UIApplication* application{ nullptr };
 	UISceneNode* scene{ nullptr };
-	UILinearLayout* mainLayout{ nullptr };
+	UIMainLayout* mainLayout{ nullptr };
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	UIMenuBar* menuBar{ nullptr };
 #endif

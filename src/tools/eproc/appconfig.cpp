@@ -33,6 +33,7 @@ void AppConfig::load() {
 		mState.getValueB( "process_table", "divide_cpu_usage",
 						  mState.getValueB( "window", "divide_cpu_usage", divideCpuUsage ) );
 	performancePerCore = mState.getValueB( "performance", "cpu_per_core", performancePerCore );
+	statusExpanded = mState.getValueB( "process_table", "status_expanded", statusExpanded );
 	treeView = mState.getValueB( "process_table", "tree_view", treeView );
 	filterMode = mState.getValueI( "process_table", "filter_mode", treeView ? 1 : filterMode );
 	refreshIntervalMs =
@@ -86,6 +87,7 @@ bool AppConfig::save() {
 	mState.setValue( "process_table", "state", processTableState );
 	mState.setValueB( "process_table", "divide_cpu_usage", divideCpuUsage );
 	mState.setValueB( "performance", "cpu_per_core", performancePerCore );
+	mState.setValueB( "process_table", "status_expanded", statusExpanded );
 	mState.setValueB( "process_table", "tree_view", treeView );
 	mState.setValueI( "process_table", "filter_mode", filterMode );
 	mState.setValueI( "monitoring", "refresh_interval_ms", refreshIntervalMs );
