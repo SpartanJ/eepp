@@ -13,6 +13,7 @@
 #include "utest.hpp"
 #include "vfs_test_utils.hpp"
 #include <atomic>
+#include <cerrno>
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
@@ -1469,7 +1470,10 @@ UTEST( VFSSafety, copyOntoAHardLinkKeepsTheSource ) {
 	URI source = tmp.uri().withAppendedSegment( "file" );
 	URI alias = tmp.uri().withAppendedSegment( "hardlink" );
 	ASSERT_TRUE( waitFor( vfs.writeAll( source, std::string_view( "valuable data" ) ) ) );
-	ASSERT_EQ( 0, ::link( source.getFSPath().c_str(), alias.getFSPath().c_str() ) );
+	const int linked = ::link( source.getFSPath().c_str(), alias.getFSPath().c_str() );
+	if ( linked != 0 && ( errno == EPERM || errno == ENOTSUP || errno == EOPNOTSUPP ) )
+		UTEST_SKIP( "File system has no hard links" );
+	ASSERT_EQ( 0, linked );
 	CopyOptions options;
 	options.overwrite = OverwritePolicy::Overwrite;
 	waitFor( vfs.copy( source, alias, options ).completion() );
@@ -1915,8 +1919,9 @@ UTEST( LocalIOScheduler, renameBetweenRoutesNeverWaitsOnTheOtherMount ) {
 	EXPECT_EQ( VFSErrorCode::Unsupported, codeOf( across ) );
 	EXPECT_TRUE( FileSystem::fileExists( tmp.path + "local.txt" ) );
 	// Within the mount it renames, on the mount's lane.
+	// Overwrite: the destination is absent, and the route is under test, not no-replace support.
 	auto within = waitFor( provider.rename( URI::fromFSPath( mount + "/a.txt" ),
-											URI::fromFSPath( mount + "/b.txt" ), {}, {} ) );
+											URI::fromFSPath( mount + "/b.txt" ), { true }, {} ) );
 	EXPECT_TRUE( within.hasValue() );
 	EXPECT_TRUE( FileSystem::fileExists( mount + "/b.txt" ) );
 }

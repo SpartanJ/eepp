@@ -1,5 +1,6 @@
 #include <eepp/system/clock.hpp>
 
+#include <algorithm>
 #include <chrono>
 
 namespace EE { namespace System {
@@ -24,7 +25,10 @@ void Clock::restart() {
 }
 
 Time Clock::getElapsedTime() const {
-	return Microseconds( nowMicroseconds() - mRefPoint );
+	// A clock started on one CPU and read on another can appear to run backwards where the
+	// steady clock is not synchronized across CPUs (Haiku on KVM: several ms). Elapsed time is
+	// never negative, and zero-delay actions must not wait for an extra frame.
+	return Microseconds( std::max<Int64>( 0, nowMicroseconds() - mRefPoint ) );
 }
 
 Time Clock::getElapsedTimeAndReset() {

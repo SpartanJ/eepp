@@ -269,6 +269,8 @@ UTEST( VFSSafety, equivalentLocalAuthoritiesNeverReplaceTheSource ) {
 	std::filesystem::create_hard_link(
 		std::filesystem::path( std::u8string( nativeFile.begin(), nativeFile.end() ) ),
 		std::filesystem::path( std::u8string( nativeLink.begin(), nativeLink.end() ) ), error );
+	if ( error == std::errc::operation_not_permitted || error == std::errc::not_supported )
+		UTEST_SKIP( "File system has no hard links" );
 	ASSERT_FALSE( error );
 	URI alias = file;
 	alias.setHost( "localhost" );
@@ -312,6 +314,8 @@ UTEST( VFSSafety, overwriteMovesBetweenHardLinksAreRejected ) {
 	};
 	std::error_code error;
 	std::filesystem::create_hard_link( nativePath( source ), nativePath( link ), error );
+	if ( error == std::errc::operation_not_permitted || error == std::errc::not_supported )
+		UTEST_SKIP( "File system has no hard links" );
 	ASSERT_FALSE( error );
 	const auto revision = waitFor( vfs.stat( source ) ).value().revision;
 	CopyOptions options;

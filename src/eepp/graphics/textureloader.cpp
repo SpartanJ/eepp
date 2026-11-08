@@ -331,7 +331,13 @@ void TextureLoader::loadFromPixels() {
 					if ( !Engine::isEngineRunning() )
 						return;
 
-					if ( mDirectUpload ) {
+					if ( threadedLoad && !threadedWindow ) {
+						// A worker thread without a shared GL context has no context at all:
+						// every GL call would be lost, and SOIL divides by the maximum texture
+						// size it then reads as 0. Callers must upload on the main thread.
+						Log::error( "TextureLoader: cannot upload a texture from a worker thread "
+									"without a shared GL context" );
+					} else if ( mDirectUpload ) {
 						if ( Image::Format::DDS == mImgType ) {
 							textureHandle = SOIL_direct_load_DDS_from_memory(
 								mPixels, mSize, SOIL_CREATE_NEW_ID, flags, 0 );
@@ -361,7 +367,7 @@ void TextureLoader::loadFromPixels() {
 					}
 				}
 
-				if ( threadedLoad ) {
+				if ( threadedWindow ) {
 					GLi->waitForIdle(); // Lock the thread until the texture has been uploaded to
 										// the GPU VRAM
 				}

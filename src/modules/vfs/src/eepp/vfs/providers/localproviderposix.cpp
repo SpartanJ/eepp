@@ -970,8 +970,32 @@ VFSTask<void> LocalProvider::publishTemporary( const URI& from, const URI& to,
 			// The writer owns this exclusive temporary name. linkat() publishes the complete
 			// inode atomically and fails if the destination already exists; flags 0 never follow
 			// a source symlink. This is not an atomic move of an arbitrary public pathname.
-			if ( ::linkat( AT_FDCWD, path.c_str(), AT_FDCWD, to.c_str(), 0 ) != 0 )
-				return Err( errnoError( path, "No-replace publication failed" ) );
+			if ( ::linkat( AT_FDCWD, path.c_str(), AT_FDCWD, to.c_str(), 0 ) != 0 ) {
+				const int linkError = errno;
+				if ( linkError != EPERM && linkError != ENOTSUP && linkError != EOPNOTSUPP )
+					return Err( errnoError( path, "No-replace publication failed", linkError ) );
+				// No hard links on this file system (Haiku's BFS, FAT). Reserve the destination
+				// with an exclusive placeholder, which fails like linkat() if anything exists,
+				// then rename the temporary over it. Readers may briefly see the empty
+				// placeholder, and a crash can leave it behind.
+				const int placeholder = ::open(
+					to.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600 );
+				if ( placeholder < 0 )
+					return Err( errnoError( to, "No-replace publication failed" ) );
+				struct stat reserved;
+				const bool identified = ::fstat( placeholder, &reserved ) == 0;
+				::close( placeholder );
+				if ( ::rename( path.c_str(), to.c_str() ) != 0 ) {
+					const int renameError = errno;
+					// Remove the placeholder only while it is still the file created above.
+					struct stat current;
+					if ( identified && ::lstat( to.c_str(), &current ) == 0 &&
+						 current.st_dev == reserved.st_dev && current.st_ino == reserved.st_ino )
+						::unlink( to.c_str() );
+					return Err( errnoError( path, "No-replace publication failed", renameError ) );
+				}
+				return Ok();
+			}
 			if ( ::unlink( path.c_str() ) != 0 ) {
 				// Publication succeeded. Never roll back the destination or request a copy
 				// fallback.

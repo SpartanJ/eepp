@@ -1,6 +1,7 @@
 #include "utest.hpp"
 #include "vfs_test_utils.hpp"
 #include <atomic>
+#include <cerrno>
 #include <eepp/system/zip.hpp>
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
@@ -255,8 +256,11 @@ UTEST( VFSDirectoryStats, NativeAllocationHandlesSparseFilesHardLinksAndSymlinks
 	const URI sparse = root.withAppendedSegment( "sparse" );
 	ASSERT_TRUE( waitFor( vfs.makeDirs( nested ) ) );
 	ASSERT_TRUE( waitFor( vfs.writeAll( file, "abc" ) ) );
-	ASSERT_EQ( 0, ::link( file.getFSPath().c_str(),
-						  root.withAppendedSegment( "hardlink" ).getFSPath().c_str() ) );
+	const int linked = ::link( file.getFSPath().c_str(),
+							   root.withAppendedSegment( "hardlink" ).getFSPath().c_str() );
+	if ( linked != 0 && ( errno == EPERM || errno == ENOTSUP || errno == EOPNOTSUPP ) )
+		UTEST_SKIP( "File system has no hard links" );
+	ASSERT_EQ( 0, linked );
 	ASSERT_EQ( 0, ::symlink( "file", root.withAppendedSegment( "link" ).getFSPath().c_str() ) );
 	ASSERT_EQ( 0, ::symlink( "..", root.withAppendedSegment( "cycle" ).getFSPath().c_str() ) );
 	const int fd = ::open( sparse.getFSPath().c_str(), O_CREAT | O_WRONLY | O_EXCL, 0600 );

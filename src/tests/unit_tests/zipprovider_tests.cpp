@@ -627,8 +627,10 @@ UTEST( ZipProvider, emptyArchivesAndUnicodeBackingFiles ) {
 	const auto source = temp.path + "source.zip";
 	ASSERT_TRUE( makeZip(
 		source, { { "file", "unicode archive" }, { "directorio-ñ/雪.txt", "unicode member" } } ) );
-	ASSERT_TRUE(
-		waitFor( vfs.rename( URI::fromFSPath( source ), URI::fromFSPath( unicode ) ) ).hasValue() );
+	// Overwrite: the destination is absent, and this must not need a native no-replace rename.
+	ASSERT_TRUE( waitFor( vfs.rename( URI::fromFSPath( source ), URI::fromFSPath( unicode ),
+									  RenameOptions{ true } ) )
+					 .hasValue() );
 	EXPECT_STDSTREQ( "unicode archive",
 					 readString( vfs, ZipProvider::makeURI( URI::fromFSPath( unicode ) )
 										  .withAppendedSegment( "file" ) ) );

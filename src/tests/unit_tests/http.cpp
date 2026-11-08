@@ -471,6 +471,13 @@ UTEST( Http, tcpConnectTimeoutHandlesFdAboveFdSetSize ) {
 #endif
 
 UTEST( Http, persistentResponsesReuseConnectionAcrossWorkers ) {
+#if EE_PLATFORM == EE_PLATFORM_HAIKU
+	// Haiku's system_time() can run backwards across CPUs (several ms on KVM guests), and its TCP
+	// timestamps come straight from it. PAWS then drops a loopback handshake's final ACK as stale:
+	// connect() reports success but the listener never sees the connection, so the first send
+	// fails. These tests assert the exact outcome of a fresh connection and fail intermittently.
+	UTEST_SKIP( "Haiku loopback TCP drops handshakes when timestamps go backwards across CPUs" );
+#endif
 	HTTPTest::Server server( []( TcpSocket& socket, const std::string&, unsigned id ) {
 		return HTTPTest::Server::respond( socket, String::toString( id ) );
 	} );
@@ -644,6 +651,13 @@ UTEST( Http, malformedAndTruncatedMessagesAreNeverReused ) {
 }
 
 UTEST( Http, readTimeoutAndCancellationDiscardPartialConnections ) {
+#if EE_PLATFORM == EE_PLATFORM_HAIKU
+	// Haiku's system_time() can run backwards across CPUs (several ms on KVM guests), and its TCP
+	// timestamps come straight from it. PAWS then drops a loopback handshake's final ACK as stale:
+	// connect() reports success but the listener never sees the connection, so the first send
+	// fails. These tests assert the exact outcome of a fresh connection and fail intermittently.
+	UTEST_SKIP( "Haiku loopback TCP drops handshakes when timestamps go backwards across CPUs" );
+#endif
 	HTTPTest::Server server( []( TcpSocket& socket, const std::string&, unsigned id ) {
 		if ( id == 1 )
 			return HTTPTest::Server::send( socket,

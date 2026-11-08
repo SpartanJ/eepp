@@ -12,6 +12,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uitextview.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 
 using namespace EE::Graphics;
@@ -262,26 +263,40 @@ void UIImageViewer::loadImage( std::string path, bool isContents, bool loadGalle
 		if ( mClosing || generation != mLoadGeneration )
 			return;
 
-		SpritePtr sprite = Sprite::New();
-		for ( const Image& decoded : decodedImages ) {
-			auto texture = TextureFactory::instance()->loadFromPixels(
-				decoded.getPixelsPtr(), decoded.getWidth(), decoded.getHeight(),
-				decoded.getChannels(), false, Texture::ClampMode::ClampToEdge, false, false,
-				filePath );
-			if ( texture )
-				sprite->addFrame( std::move( texture ) );
-			else
-				Log::error( "UIImageViewer: texture upload failed for a %ux%u image",
-							decoded.getWidth(), decoded.getHeight() );
+		auto makeSprite = [filePath = std::move( filePath )]( const std::vector<Image>& images ) {
+			SpritePtr sprite = Sprite::New();
+			for ( const Image& decoded : images ) {
+				auto texture = TextureFactory::instance()->loadFromPixels(
+					decoded.getPixelsPtr(), decoded.getWidth(), decoded.getHeight(),
+					decoded.getChannels(), false, Texture::ClampMode::ClampToEdge, false, false,
+					filePath );
+				if ( texture )
+					sprite->addFrame( std::move( texture ) );
+				else
+					Log::error( "UIImageViewer: texture upload failed for a %ux%u image",
+								decoded.getWidth(), decoded.getHeight() );
+			}
+			return sprite;
+		};
+		// Uploading needs a current GL context. When shared worker contexts are unavailable (a
+		// platform without them, or SharedGLContext disabled), this thread has none: upload on the
+		// main thread instead. Decoding, the expensive part, stays on the worker either way.
+		SpritePtr sprite;
+		if ( EE::Window::Engine::instance()->isSharedGLContextEnabled() ) {
+			sprite = makeSprite( decodedImages );
+			decodedImages.clear();
 		}
 
 		runOnMainThread( [this, format, fileSize, gifDelay, generation, hasGallery, reuseGallery,
 						  galleryPath = std::move( galleryPath ),
 						  galleryFiles = std::move( galleryFiles ), galleryIndex,
-						  orientation = metadata.orientation,
-						  sprite = std::move( sprite )]() mutable {
+						  orientation = metadata.orientation, sprite = std::move( sprite ),
+						  decodedImages = std::move( decodedImages ),
+						  makeSprite = std::move( makeSprite )]() mutable {
 			if ( generation != mLoadGeneration )
 				return;
+			if ( !sprite )
+				sprite = makeSprite( decodedImages );
 			mHasGallery = hasGallery;
 			DrawablePtr image;
 			if ( sprite->getNumFrames() ) {

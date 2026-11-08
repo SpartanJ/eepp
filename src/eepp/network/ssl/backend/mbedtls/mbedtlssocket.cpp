@@ -252,6 +252,11 @@ Socket::Status MbedTLSSocket::connect( const IpAddress& /*remoteAddress*/,
 
 void MbedTLSSocket::disconnect() {
 	if ( mInitialized ) {
+		// End the session with close_notify, as OpenSSL's SSL_shutdown() does: peers such as
+		// OpenSSL's s_server wait for it, and an abrupt close can invalidate the session for
+		// resumption. Best effort; sends never raise SIGPIPE, and failures are ignored.
+		if ( mConnected )
+			mbedtls_ssl_close_notify( &mSSLContext );
 		mbedtls_ssl_free( &mSSLContext );
 		mbedtls_ssl_config_free( &mSSLConfig );
 		mbedtls_ctr_drbg_free( &mCtrDrbg );
@@ -293,9 +298,12 @@ Socket::Status MbedTLSSocket::send( const void* data, std::size_t size, std::siz
 			MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET )
 		saveSession();
 
-	if ( ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE ) {
-		ret = 0; // non blocking io
-	} else if ( ret <= 0 ) {
+	// Nothing was written. Non-blocking sockets retry later; on a blocking socket the send or
+	// receive timeout expired (a resumed handshake can need to read). Reporting Done with nothing
+	// sent made the blocking send() above retry forever.
+	if ( ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE )
+		return Socket::NotReady;
+	if ( ret <= 0 ) {
 		disconnect();
 		return Socket::Disconnected;
 	}

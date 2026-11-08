@@ -293,9 +293,12 @@ writers cannot be coordinated and the source must never be deleted after a concu
 Only the internal writer's exclusively created temporary siblings may use atomic hard-link
 publication followed by unlinking the temporary name. Both names can briefly exist; if temporary
 cleanup fails, the operation returns `IO` explaining that publication succeeded and both names may
-remain. The destination is never removed to roll back that failure. File systems must support hard
-links for this publication fallback. No link/unlink move of an arbitrary public source, or
-existence-check-then-replacing-rename fallback, is used.
+remain. The destination is never removed to roll back that failure. File systems without hard
+links (Haiku's BFS, FAT) instead reserve the destination with an exclusively created empty
+placeholder, which fails like the link if anything exists, and rename the temporary over it.
+Readers can briefly see the empty placeholder, a crash can leave it behind, and a writer that
+deliberately overwrites the placeholder in that window is itself replaced. No link/unlink move of
+an arbitrary public source, or existence-check-then-replacing-rename fallback, is used.
 
 Temporary publication assumes other writers cannot replace the writer's temporary pathname.
 Exclusive creation prevents initial name collisions, but does not reserve the name until rename
