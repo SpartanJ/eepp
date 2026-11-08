@@ -39,10 +39,10 @@ export TMPDIR="$WORK" APPIMAGETOOL="$WORK/appimagetool"
 # SDL loads OpenGL dynamically. Collect Mesa explicitly, and trace other dlopen
 # dependencies under Xvfb. Library search overrides are confined to deployment;
 # the generated launcher uses sharun and does not export LD_LIBRARY_PATH.
-export DEPLOY_OPENGL=1 ANYLINUX_LIB=1
-# Retain LLVM-backed llvmpipe for usable software rendering when GPU access or
-# drivers are unavailable. Accept the larger image explicitly in quick-sharun.
-export I_WANT_FAT_APPIMAGE=1
+export DEPLOY_OPENGL=1 DEPLOY_VULKAN=1 ANYLINUX_LIB=1
+# Prefer LLVM-free Mesa with hardware drivers and softpipe. Keep the upstream
+# fat override available only when explicitly requested for a local llvmpipe build.
+export I_WANT_FAT_APPIMAGE=${I_WANT_FAT_APPIMAGE:-0}
 # quick-sharun's SDL deployment adds every system libSDL*.so, even when the
 # caller supplies its own SDL. Those copies land earlier in sharun's search path
 # and can silently downgrade the runtime. Supply SDL ourselves and retain the
@@ -54,7 +54,7 @@ DEPLOY_INPUTS=("$STAGING/$APP.bin" "$STAGING/libs/"*.so*)
 # SystemFontResolver and AT-SPI dlopen Fontconfig and D-Bus. Startup tracing
 # cannot guarantee that either feature is exercised. Passing these roots to
 # quick-sharun also collects their full linked dependency chains.
-RUNTIME_LIBRARIES=(libcrypt.so.1 libfontconfig.so.1 libdbus-1.so.3)
+RUNTIME_LIBRARIES=(libcrypt.so.1 libfontconfig.so.1 libdbus-1.so.3 libvulkan.so.1)
 if [ "$APP" = eefm ]; then
 	# The file manager loads these for JPEG thumbnails and archive browsing.
 	RUNTIME_LIBRARIES+=(libturbojpeg.so.0 libarchive.so.13)
@@ -63,7 +63,7 @@ for library in "${RUNTIME_LIBRARIES[@]}" libudev.so.1 libusb-1.0.so.0 libdecor-0
 	libasound.so.2 libpipewire-0.3.so.0 libsndio.so.7 libsndio.so.7.0 libjack.so.0; do
 	resolved=$(ldconfig -p 2>/dev/null | awk -v name="$library" '$1 == name && !found {print $NF; found=1}' || true)
 	case "$library" in
-		libcrypt.so.1|libfontconfig.so.1|libdbus-1.so.3|libturbojpeg.so.0|libarchive.so.13)
+		libcrypt.so.1|libfontconfig.so.1|libdbus-1.so.3|libvulkan.so.1|libturbojpeg.so.0|libarchive.so.13)
 			if [ ! -f "$resolved" ]; then
 				echo "AnyLinux packaging requires the build host's $library; see docs/articles/application_packaging.md" >&2
 				exit 1
@@ -79,6 +79,25 @@ mkdir -p "$APPDIR" "$OUTPATH"
 cp -R "$STAGING/assets" "$APPDIR/assets"
 LD_LIBRARY_PATH="$STAGING/libs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
 	sh "$QUICK_SHARUN" "${DEPLOY_INPUTS[@]}"
+
+# The pinned quick-sharun only warns about LLVM, and its check covers newer
+# monolithic libgallium layouts. Enforce our policy for older DRI layouts too,
+# before creating or publishing an image. Inspect the actual deployed closure,
+# including libraries that tracing may have brought in indirectly.
+if [ "$I_WANT_FAT_APPIMAGE" != 1 ]; then
+	for directory in "$APPDIR/lib" "$APPDIR/shared/lib" "$APPDIR/shared/bin"; do
+		[ -d "$directory" ] || continue
+		while IFS= read -r -d '' library; do
+			dynamic=$(LC_ALL=C readelf -d "$library" 2>/dev/null || true)
+			case "${library##*/}:$dynamic" in
+				libLLVM*:*|*'Shared library: [libLLVM'*)
+					echo "AnyLinux requires LLVM-free Mesa; deployed LLVM dependency in $library" >&2
+					echo 'Use projects/scripts/package-anylinux-container.sh, or explicitly request I_WANT_FAT_APPIMAGE=1 for a local llvmpipe build.' >&2
+					exit 1 ;;
+			esac
+		done < <(find "$directory" -type f -print0)
+	done
+fi
 
 # Resource lookup also works when extracted or when uruntime's mount name differs
 # from the traditional .mount_* convention. Both executable layouts see assets.

@@ -119,5 +119,9 @@ fi
 tar -czf "$OUTPUT_DIR/$PACKAGE_NAME.tar.gz" -C "$ARCHIVE_STAGE" "$APP"
 echo "Generated $OUTPUT_DIR/$PACKAGE_NAME.tar.gz"
 if $ANYLINUX; then
-	bash "$PACKAGE_SCRIPTS/package-anylinux.sh" "$APP" "$STAGING" "$OUTPUT_DIR" "$VERSION" "$ARCH"
+	ANYLINUX_PACKAGER=package-anylinux.sh
+	if [ "$ARCH" = x86_64 ] && [ "${I_WANT_FAT_APPIMAGE:-0}" != 1 ]; then
+		ANYLINUX_PACKAGER=package-anylinux-container.sh
+	fi
+	bash "$PACKAGE_SCRIPTS/$ANYLINUX_PACKAGER" "$APP" "$STAGING" "$OUTPUT_DIR" "$VERSION" "$ARCH"
 fi

@@ -29,7 +29,8 @@ install the target SDL runtime there before packaging. This also applies to `--s
 ### Additional AnyLinux images
 
 On native Linux x86_64 or arm64, add `--anylinux` to generate a separate AnyLinux image
-alongside the conventional AppImage and tarball:
+alongside the conventional AppImage and tarball. Native x86_64 uses the isolated Docker
+builder by default:
 
 ```sh
 projects/linux/build.app.sh ecode --anylinux
@@ -38,28 +39,66 @@ projects/linux/build.app.sh ecode --anylinux
 # ecode-linux-<version>-<arch>.tar.gz
 ```
 
-Install `curl`, `patchelf`, `binutils`, `xvfb` and `xauth` in the build environment, as well
-as the application's SDL runtime, Mesa OpenGL drivers and the build host's `libcrypt.so.1`
-and `libfontconfig.so.1` and `libdbus-1.so.3` (`libcrypt1`, `libfontconfig1` and
-`libdbus-1-3` on Ubuntu). Compatible copies
-are bundled to avoid loading Alpine's musl libraries into the glibc process. Fontconfig
-remains optional for eepp; the AnyLinux package includes it for system-font support.
-When packaging on glibc, use
-glibc 2.33 or newer (for example Ubuntu 22.04): sharun requires the loader's `--argv0`
-option. This requirement applies to the build environment, not to the user's system.
-The packager downloads a pinned,
-checksum-verified [quick-sharun](https://github.com/pkgforge-dev/Anylinux-AppImages)
-script, which downloads its versioned packaging tools and checks their checksums. `QUICK_SHARUN`
-can point to a local script for development instead of using the pinned download.
+Published x86_64 AnyLinux images repackage the conventional tarball in an isolated,
+pinned Arch Linux container with upstream LLVM-free `mesa-mini` and Vulkan drivers.
+The Ubuntu 22.04 release job runs the container through:
 
-AnyLinux bundles libc, its loader and graphics dependencies and uses sharun with the DwarFS
-uruntime. This broadens compatibility to musl and non-FHS systems and provides automatic
-fallback when FUSE is unavailable. Bundled Mesa can substantially increase download size;
-the conventional downloads remain available. The package deliberately retains LLVM-backed
-llvmpipe for software rendering when GPU access or drivers are unavailable, using
-quick-sharun's `I_WANT_FAT_APPIMAGE=1` override. Runtime compatibility still needs verification
-on the target distributions and GPUs; bundling userspace libraries does not remove kernel
-or driver requirements. See the [upstream guide](https://pkgforge-dev.github.io/Anylinux-AppImages/HOW-TO-MAKE-THESE.html).
+```sh
+projects/scripts/package-anylinux-container.sh ecode /path/to/staged/ecode ./output nightly x86_64
+```
+
+This requires Docker and native Linux x86_64. Inputs and packaging scripts are mounted
+read-only; only the output directory is writable. The builder image digest, Arch repository
+snapshot and upstream package SHA-256 values are pinned in `projects/scripts/anylinux/`.
+The upstream `continuous` assets can be rebuilt or removed: a changed checksum fails the build
+until the package pins have been reviewed and tested. The builder never replaces host packages
+or the conventional build's SDL.
+
+The bundled container runtime requires **Linux 4.4 or newer**, including on musl hosts.
+Individual GPU drivers may require newer kernels.
+Bundled libc removes a host-libc version requirement, not the kernel requirement. Conventional
+AppImages and tarballs retain their existing build environment and remain available in parallel.
+The AnyLinux jobs are optional (`continue-on-error`) in both nightly and tagged releases.
+
+For direct packaging without the container, install `curl`, `patchelf`, `binutils`, `xvfb`
+and `xauth`, LLVM-free Mesa OpenGL drivers, a Vulkan loader, the application's SDL runtime,
+`libcrypt.so.1`, `libfontconfig.so.1` and `libdbus-1.so.3`. Compatible copies of these dependencies
+are bundled to avoid loading Alpine's musl client libraries into the glibc process. The Vulkan
+loader is an explicit root because SDL does not link it directly. The packaging host needs
+glibc 2.33 or newer: sharun uses the loader's `--argv0` option. The container helper currently
+supports x86_64; native arm64 direct builds need compatible LLVM-free drivers supplied by their
+build environment.
+
+The packager downloads pinned, checksum-verified
+[quick-sharun](https://github.com/pkgforge-dev/Anylinux-AppImages), which also checks its
+versioned packaging tools. `QUICK_SHARUN` can point to a local script for development.
+OpenGL and Vulkan deployment are explicit. Packaging rejects a deployed LLVM library or
+LLVM-linked DRI/Gallium library before creating the image. A local build can deliberately
+retain llvmpipe with `I_WANT_FAT_APPIMAGE=1`; published builds do not enable that override.
+
+AnyLinux uses sharun, bundled libc and the DwarFS uruntime, including automatic extraction
+when FUSE is unavailable. LLVM-free Mesa retains hardware drivers, including VirGL/SVGA for
+suitable VMs, and softpipe as the software fallback. A VM needs working host 3D acceleration;
+installing an AppImage cannot enable it. Softpipe is slower than llvmpipe, and the smaller
+image does not provide a self-contained fast CPU renderer.
+
+Zink can use the **host's** Lavapipe for faster CPU rendering. It is opt-in: older host drivers
+may be incompatible, and forced Zink does not automatically retry softpipe if Vulkan is absent.
+Discover the host Lavapipe ICD, then select it explicitly; Zink by itself can select a GPU.
+For example, in an Xvfb/X11 environment with this discovered ICD path:
+
+```sh
+SHARUN_ALLOW_SYS_VKICD=1 MESA_LOADER_DRIVER_OVERRIDE=zink \
+LIBGL_ALWAYS_SOFTWARE=1 LIBGL_KOPPER_DRI2=1 \
+VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json \
+VK_LOADER_DRIVERS_SELECT='*lvp*' ./ecode-anylinux-nightly-x86_64.AppImage
+```
+
+Verify ecode's verbose `GL Renderer` output names Zink and the CPU Lavapipe/llvmpipe device.
+LLVM stays on the host; cross-libc-dlopen bridges compatible host drivers, including musl-built
+Lavapipe, into the bundled glibc application. To restore the normal fallback, remove the Zink
+and Vulkan-selection overrides; `LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=softpipe` explicitly
+selects bundled softpipe. No renderer overrides are imposed by the normal launcher.
 
 Deployment uses a temporary AppDir and leaves the conventional package's binaries and
 launcher untouched. It preserves the SDL runtime supplied by the conventional build rather
@@ -72,15 +111,18 @@ existing `--with-debug-symbols` archive remains the source of debug symbols.
 
 Dependency collection runs the application under Xvfb, so cross-packaging is rejected.
 The ecode x86_64 nightly stages its conventional tarball as an artifact. A separate optional
-Ubuntu 22.04 job repackages those exact binaries with newer runtime libraries and checks
-`--version` before uploading the AnyLinux image to the same release. Failure of this job does
-not block the conventional downloads. The ARM64 nightly continues to use the
+Ubuntu 22.04 job repackages those exact binaries in the pinned container and checks
+`--version` and actual UI startup before uploading the AnyLinux image to the same release.
+Failure of this job does not block the conventional downloads. The ARM64 nightly continues to use the
 conventional format because it is cross-compiled on x86_64. Native arm64 builds can opt in
 with the same flag.
 
 The Alpine regression environment includes gcompat and host Fontconfig. The workflow also
 checks hidden native-window and UI startup under Xvfb, both with bundled Fontconfig and with
-Fontconfig loading blocked to exercise eepp's optional-dependency fallback.
+Fontconfig loading blocked to exercise eepp's optional-dependency fallback. Both cases run
+with the normal software fallback and with Zink plus the explicitly selected host musl
+Lavapipe ICD. The Zink mode verifies the CPU renderer in the editor log; these are startup
+regression tests, not rendering-performance benchmarks.
 
 Runtime-loaded libraries need explicit deployment roots because startup tracing may never
 exercise their feature. Fontconfig, D-Bus and libcrypt are always included. quick-sharun
