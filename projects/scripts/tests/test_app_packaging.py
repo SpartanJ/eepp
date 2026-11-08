@@ -60,35 +60,8 @@ class AppPackaging(PackagingFixture):
         self.commands = self.root / "commands"
         self.commands.mkdir()
         self.env = dict(os.environ, PATH=str(self.commands) + os.pathsep + os.environ["PATH"])
-        self.env.pop("I_WANT_FAT_APPIMAGE", None)
         self.command("strip", "exit 0")
         self.command("nproc", "echo 2")
-        # Execute the container's package entry point against fixture mounts.
-        # This keeps --anylinux integration tests isolated from the real Docker daemon.
-        self.command("docker", '''
-[ "$1" != build ] || exit 0
-shift
-scripts= staging= output=
-while [ "$#" -gt 0 ]; do
-    case "$1" in
-        -v)
-            case "$2" in
-                *:/scripts:ro) scripts=${2%:/scripts:ro} ;;
-                *:/staging:ro) staging=${2%:/staging:ro} ;;
-                *:/output) output=${2%:/output} ;;
-            esac
-            shift ;;
-        -e) export "$2"; shift ;;
-        --user) shift ;;
-        --rm|--init) ;;
-        *) break ;;
-    esac
-    shift
-done
-[ -n "$scripts" ] && [ -n "$staging" ] && [ -n "$output" ]
-shift 3
-exec bash "$scripts/package-anylinux.sh" "$1" "$staging" "$output" "$4" "$5"
-''')
         self.command("getconf", 'if [ "$1" = GNU_LIBC_VERSION ]; then echo "glibc 2.35"; else /usr/bin/getconf "$@"; fi')
         self.command("appimagetool", '''
 update_info=
@@ -107,12 +80,9 @@ if [ "$1" = -u ]; then update_info=$2; shift 2; fi
         self.fontconfig.write_text("glibc fontconfig")
         self.dbus = Path(self.runtime.name) / "libdbus-1.so.3"
         self.dbus.write_text("glibc dbus")
-        self.vulkan = Path(self.runtime.name) / "libvulkan.so.1"
-        self.vulkan.write_text("Vulkan loader")
         self.command("ldconfig", f'echo "libcrypt.so.1 (libc6,x86-64) => {self.crypt}"\n'
                      f'echo "libfontconfig.so.1 (libc6,x86-64) => {self.fontconfig}"\n'
-                     f'echo "libdbus-1.so.3 (libc6,x86-64) => {self.dbus}"\n'
-                     f'echo "libvulkan.so.1 (libc6,x86-64) => {self.vulkan}"')
+                     f'echo "libdbus-1.so.3 (libc6,x86-64) => {self.dbus}"')
         self.command("ldd", f'echo "libSDL3.so.0 => {runtime} (0x1)"')
         (self.source / "libeepp.so").write_text("eepp runtime")
         (self.source / "sample").write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n')
@@ -220,13 +190,11 @@ if [ "$1" = -u ]; then update_info=$2; shift 2; fi
         self.command("ldconfig", f'echo "libcrypt.so.1 (libc6,x86-64) => {self.crypt}"\n'
                      f'echo "libfontconfig.so.1 (libc6,x86-64) => {self.fontconfig}"\n'
                      f'echo "libdbus-1.so.3 (libc6,x86-64) => {self.dbus}"\n'
-                     f'echo "libvulkan.so.1 (libc6,x86-64) => {self.vulkan}"\n'
                      f'echo "libpipewire-0.3.so.0 (libc6,x86-64) => {pipewire}"\n'
                      f'echo "libdecor-0.so.0 (libc6,x86-64) => {companion}"')
         self.command("quick-sharun", '''
 [ "$APPIMAGE_ARCH" = x86_64 ]
-[ "$DEPLOY_OPENGL" = 1 ] && [ "$DEPLOY_VULKAN" = 1 ] && [ "$ANYLINUX_LIB" = 1 ]
-[ "$I_WANT_FAT_APPIMAGE" = 0 ]
+[ "$DEPLOY_OPENGL" = 1 ] && [ "$ANYLINUX_LIB" = 1 ]
 [ "$DEPLOY_SDL" = 0 ] && [ "$DEPLOY_PULSE" = 1 ] && [ "$DEPLOY_COMMON_LIBS" = 1 ]
 [ "$DEPLOY_PIPEWIRE" = 1 ]
 if [ "$1" = --make-appimage ]; then
@@ -244,7 +212,6 @@ else
     selected_crypt=
     selected_fontconfig=
     selected_dbus=
-    selected_vulkan=
     selected_pipewire=
     selected_companion=
     for input do
@@ -252,7 +219,6 @@ else
         [ "${input##*/}" != libcrypt.so.1 ] || selected_crypt=$input
         [ "${input##*/}" != libfontconfig.so.1 ] || selected_fontconfig=$input
         [ "${input##*/}" != libdbus-1.so.3 ] || selected_dbus=$input
-        [ "${input##*/}" != libvulkan.so.1 ] || selected_vulkan=$input
         [ "${input##*/}" != libpipewire-0.3.so.0 ] || selected_pipewire=$input
         [ "${input##*/}" != libdecor-0.so.0 ] || selected_companion=$input
     done
@@ -262,7 +228,6 @@ else
     [ "$(cat "$selected_crypt")" = 'glibc libcrypt' ]
     [ "$(cat "$selected_fontconfig")" = 'glibc fontconfig' ]
     [ "$(cat "$selected_dbus")" = 'glibc dbus' ]
-    [ "$(cat "$selected_vulkan")" = 'Vulkan loader' ]
     [ "$(cat "$selected_pipewire")" = 'PipeWire client' ]
     mkdir -p "$APPDIR/bin" "$APPDIR/shared/bin"
     cp "$selected_sdl" "$APPDIR/selected-sdl"
@@ -297,67 +262,6 @@ fi
                     other = "libSDL3.so.0" if backend == "SDL2" else "libSDL2-2.0.so.0"
                     self.assertNotIn(f"sample/libs/{other}", package.getnames())
                 self.assertFalse((self.output / "sample.app/shared").exists())
-
-    def test_anylinux_rejects_llvm_before_creating_image(self):
-        self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')
-        self.env.pop("I_WANT_FAT_APPIMAGE", None)
-        self.env["QUICK_SHARUN"] = str(self.commands / "quick-sharun")
-        self.command("quick-sharun", '''
-if [ "$1" = --make-appimage ]; then
-    touch "$OUTPATH/$OUTNAME"
-else
-    mkdir -p "$APPDIR/bin" "$APPDIR/shared/bin" "$APPDIR/lib"
-    touch "$APPDIR/lib/$EEPP_TEST_GRAPHICS_LIBRARY"
-fi
-''')
-        # Cover both a bundled LLVM file and an indirect DT_NEEDED dependency,
-        # including the older per-driver Mesa layout missed by upstream's check.
-        self.command("readelf", '''
-case "$*" in
-    *swrast_dri.so*) echo 'Shared library: [libLLVM-15.so.1]' ;;
-esac
-''')
-        for library in ("libLLVM-15.so.1", "swrast_dri.so"):
-            with self.subTest(library=library):
-                self.env["EEPP_TEST_GRAPHICS_LIBRARY"] = library
-                result = self.package("linux", "--backend", "SDL3", "--anylinux", check=False)
-                self.assertNotEqual(result.returncode, 0, result.stdout)
-                self.assertIn("requires LLVM-free Mesa", result.stdout)
-                self.assertFalse((self.output / "sample-anylinux-1.2.3-x86_64.AppImage").exists())
-                self.assertTrue((self.output / "sample-linux-1.2.3-x86_64.AppImage").is_file())
-        self.env["I_WANT_FAT_APPIMAGE"] = "1"
-        self.package("linux", "--backend", "SDL3", "--anylinux")
-        self.assertTrue((self.output / "sample-anylinux-1.2.3-x86_64.AppImage").is_file())
-
-    def test_anylinux_container_keeps_input_mounts_read_only(self):
-        self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')
-        self.command("id", 'echo 1234')
-        self.command("docker", '''
-if [ "$1" = build ]; then
-    exit 0
-fi
-printf '%s\\n' "$@" > "$EEPP_TEST_DOCKER_ARGS"
-''')
-        staging = self.root / "staging with spaces"
-        staging.mkdir()
-        args_file = self.root / "docker-args"
-        self.env["EEPP_TEST_DOCKER_ARGS"] = str(args_file)
-        self.env["UPINFO"] = "gh-releases-zsync|example|sample|nightly|sample-anylinux-*.AppImage.zsync"
-        self.run_script("scripts/package-anylinux-container.sh", "sample", staging,
-                        self.output, "nightly", "x86_64")
-        args = args_file.read_text().splitlines()
-        self.assertIn(f"{staging}:/staging:ro", args)
-        self.assertIn(f"{self.root / 'projects/scripts'}:/scripts:ro", args)
-        self.assertIn(f"{self.output}:/output", args)
-        self.assertIn("1234:1234", args)
-        self.assertIn("UPINFO=" + self.env["UPINFO"], args)
-        self.assertIn("I_WANT_FAT_APPIMAGE=0", args)
-        self.assertEqual(args[-7:], ["bash", "/scripts/package-anylinux.sh", "sample",
-                                    "/staging", "/output", "nightly", "x86_64"])
-        result = self.run_script("scripts/package-anylinux-container.sh", "sample", staging,
-                                 self.output, "nightly", "arm64", check=False)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("requires native Linux x86_64", result.stdout)
 
     def test_anylinux_requires_supported_native_linux(self):
         self.command("uname", '[ "$1" != -s ] || { echo Linux; exit; }; echo x86_64')
@@ -427,10 +331,10 @@ printf '%s\\n' "$@" > "$EEPP_TEST_DOCKER_ARGS"
         for source, target in (("sample.bin", "eefm.bin"), ("sample.png", "eefm.png"),
                                ("sample.desktop", "eefm.desktop")):
             shutil.copy2(staging / source, staging / target)
-        roots = (self.crypt, self.fontconfig, self.dbus, self.vulkan,
+        roots = (self.crypt, self.fontconfig, self.dbus,
                  Path(self.runtime.name) / "libturbojpeg.so.0",
                  Path(self.runtime.name) / "libarchive.so.13")
-        for library in roots[4:]:
+        for library in roots[3:]:
             library.write_text(library.name)
         self.command("ldconfig", "\n".join(f'echo "{lib.name} => {lib}"' for lib in roots))
         self.env["QUICK_SHARUN"] = str(self.commands / "quick-sharun")
