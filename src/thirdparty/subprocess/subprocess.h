@@ -78,7 +78,11 @@ enum subprocess_option_e {
   // Search for program names in the PATH variable. Always enabled on Windows.
   // Note: this will **not** search for paths in any provided custom environment
   // and instead uses the PATH of the spawning process.
-  subprocess_option_search_user_path = 0x10
+  subprocess_option_search_user_path = 0x10,
+
+  // Inherit the caller's terminal handles; no owned pipes are created.
+  subprocess_option_inherit_stdio = 0x40,
+  subprocess_option_new_process_group = 0x80
 };
 
 #if defined(__cplusplus)
@@ -375,6 +379,7 @@ __declspec(dllimport) int __stdcall ReadFile(void *, void *, unsigned long,
 __declspec(dllimport) int __stdcall WriteFile(void *, const void *, unsigned long,
                                               unsigned long *, LPOVERLAPPED);
 __declspec(dllimport) unsigned long __stdcall GetCurrentProcessId(void);
+__declspec(dllimport) void *__stdcall GetStdHandle(unsigned long);
 __declspec(dllimport) unsigned long __stdcall GetCurrentThreadId(void);
 __declspec(dllimport) void *__stdcall CreateFileA(const char *, unsigned long,
                                                   unsigned long,
@@ -606,6 +611,14 @@ int subprocess_create_ex(const char *const commandLine[], int options,
                          const char *const environment[],
                          const char* working_directory,
                          struct subprocess_s *const out_process) {
+  if ((options & subprocess_option_inherit_stdio) &&
+      (options & (subprocess_option_enable_async |
+                  subprocess_option_combined_stdout_stderr))) {
+    return -1;
+  }
+  out_process->stdin_file = SUBPROCESS_NULL;
+  out_process->stdout_file = SUBPROCESS_NULL;
+  out_process->stderr_file = SUBPROCESS_NULL;
 #if defined(_WIN32)
   int fd;
   void *rd, *wr;
@@ -642,8 +655,12 @@ int subprocess_create_ex(const char *const commandLine[], int options,
 
   startInfo.cb = sizeof(startInfo);
   startInfo.dwFlags = startFUseStdHandles;
+  if (options & subprocess_option_new_process_group) {
+    flags |= 0x00000200; /* CREATE_NEW_PROCESS_GROUP */
+  }
 
-  if (subprocess_option_no_window == (options & subprocess_option_no_window)) {
+  if (!(options & subprocess_option_inherit_stdio) &&
+      subprocess_option_no_window == (options & subprocess_option_no_window)) {
     flags |= createNoWindow;
   }
 
@@ -708,59 +725,32 @@ int subprocess_create_ex(const char *const commandLine[], int options,
     }
   }
 
-  if (!CreatePipe(&rd, &wr, SUBPROCESS_PTR_CAST(LPSECURITY_ATTRIBUTES, &saAttr),
-                  0)) {
-    return -1;
-  }
-
-  if (!SetHandleInformation(wr, handleFlagInherit, 0)) {
-    return -1;
-  }
-
-  fd = _open_osfhandle(SUBPROCESS_PTR_CAST(subprocess_intptr_t, wr), 0);
-
-  if (-1 != fd) {
-    out_process->stdin_file = _fdopen(fd, "wb");
-
-    if (SUBPROCESS_NULL == out_process->stdin_file) {
-      return -1;
-    }
-  }
-
-  startInfo.hStdInput = rd;
-
-  if (options & subprocess_option_enable_async) {
-    if (subprocess_create_named_pipe_helper(&rd, &wr)) {
-      return -1;
-    }
+  if (options & subprocess_option_inherit_stdio) {
+    startInfo.hStdInput = GetStdHandle(SUBPROCESS_CAST(unsigned long, -10));
+    startInfo.hStdOutput = GetStdHandle(SUBPROCESS_CAST(unsigned long, -11));
+    startInfo.hStdError = GetStdHandle(SUBPROCESS_CAST(unsigned long, -12));
   } else {
     if (!CreatePipe(&rd, &wr,
                     SUBPROCESS_PTR_CAST(LPSECURITY_ATTRIBUTES, &saAttr), 0)) {
       return -1;
     }
-  }
 
-  if (!SetHandleInformation(rd, handleFlagInherit, 0)) {
-    return -1;
-  }
-
-  fd = _open_osfhandle(SUBPROCESS_PTR_CAST(subprocess_intptr_t, rd), 0);
-
-  if (-1 != fd) {
-    out_process->stdout_file = _fdopen(fd, "rb");
-
-    if (SUBPROCESS_NULL == out_process->stdout_file) {
+    if (!SetHandleInformation(wr, handleFlagInherit, 0)) {
       return -1;
     }
-  }
 
-  startInfo.hStdOutput = wr;
+    fd = _open_osfhandle(SUBPROCESS_PTR_CAST(subprocess_intptr_t, wr), 0);
 
-  if (subprocess_option_combined_stdout_stderr ==
-      (options & subprocess_option_combined_stdout_stderr)) {
-    out_process->stderr_file = out_process->stdout_file;
-    startInfo.hStdError = startInfo.hStdOutput;
-  } else {
+    if (-1 != fd) {
+      out_process->stdin_file = _fdopen(fd, "wb");
+
+      if (SUBPROCESS_NULL == out_process->stdin_file) {
+        return -1;
+      }
+    }
+
+    startInfo.hStdInput = rd;
+
     if (options & subprocess_option_enable_async) {
       if (subprocess_create_named_pipe_helper(&rd, &wr)) {
         return -1;
@@ -779,14 +769,48 @@ int subprocess_create_ex(const char *const commandLine[], int options,
     fd = _open_osfhandle(SUBPROCESS_PTR_CAST(subprocess_intptr_t, rd), 0);
 
     if (-1 != fd) {
-      out_process->stderr_file = _fdopen(fd, "rb");
+      out_process->stdout_file = _fdopen(fd, "rb");
 
-      if (SUBPROCESS_NULL == out_process->stderr_file) {
+      if (SUBPROCESS_NULL == out_process->stdout_file) {
         return -1;
       }
     }
 
-    startInfo.hStdError = wr;
+    startInfo.hStdOutput = wr;
+
+    if (subprocess_option_combined_stdout_stderr ==
+        (options & subprocess_option_combined_stdout_stderr)) {
+      out_process->stderr_file = out_process->stdout_file;
+      startInfo.hStdError = startInfo.hStdOutput;
+    } else {
+      if (options & subprocess_option_enable_async) {
+        if (subprocess_create_named_pipe_helper(&rd, &wr)) {
+          return -1;
+        }
+      } else {
+        if (!CreatePipe(&rd, &wr,
+                        SUBPROCESS_PTR_CAST(LPSECURITY_ATTRIBUTES, &saAttr),
+                        0)) {
+          return -1;
+        }
+      }
+
+      if (!SetHandleInformation(rd, handleFlagInherit, 0)) {
+        return -1;
+      }
+
+      fd = _open_osfhandle(SUBPROCESS_PTR_CAST(subprocess_intptr_t, rd), 0);
+
+      if (-1 != fd) {
+        out_process->stderr_file = _fdopen(fd, "rb");
+
+        if (SUBPROCESS_NULL == out_process->stderr_file) {
+          return -1;
+        }
+      }
+
+      startInfo.hStdError = wr;
+    }
   }
 
   if (options & subprocess_option_enable_async) {
@@ -905,12 +929,15 @@ int subprocess_create_ex(const char *const commandLine[], int options,
 
   out_process->hProcess = processInfo.hProcess;
 
-  out_process->hStdInput = startInfo.hStdInput;
+  out_process->hStdInput = (options & subprocess_option_inherit_stdio)
+                               ? SUBPROCESS_NULL
+                               : startInfo.hStdInput;
 
   // We don't need the handle of the primary thread in the called process.
   CloseHandle(processInfo.hThread);
 
-  if (SUBPROCESS_NULL != startInfo.hStdOutput) {
+  if (!(options & subprocess_option_inherit_stdio) &&
+      SUBPROCESS_NULL != startInfo.hStdOutput) {
     CloseHandle(startInfo.hStdOutput);
 
     if (startInfo.hStdError != startInfo.hStdOutput) {
@@ -937,18 +964,20 @@ int subprocess_create_ex(const char *const commandLine[], int options,
     }
   }
 
-  if (0 != pipe(stdinfd)) {
-    return -1;
-  }
-
-  if (0 != pipe(stdoutfd)) {
-    return -1;
-  }
-
-  if (subprocess_option_combined_stdout_stderr !=
-      (options & subprocess_option_combined_stdout_stderr)) {
-    if (0 != pipe(stderrfd)) {
+  if (!(options & subprocess_option_inherit_stdio)) {
+    if (0 != pipe(stdinfd)) {
       return -1;
+    }
+
+    if (0 != pipe(stdoutfd)) {
+      return -1;
+    }
+
+    if (subprocess_option_combined_stdout_stderr !=
+        (options & subprocess_option_combined_stdout_stderr)) {
+      if (0 != pipe(stderrfd)) {
+        return -1;
+      }
     }
   }
 
@@ -979,46 +1008,53 @@ int subprocess_create_ex(const char *const commandLine[], int options,
   }
 
   // Close the stdin write end
-  if (0 != posix_spawn_file_actions_addclose(&actions, stdinfd[1])) {
+  if (!(options & subprocess_option_inherit_stdio) &&
+      0 != posix_spawn_file_actions_addclose(&actions, stdinfd[1])) {
     posix_spawn_file_actions_destroy(&actions);
     return -1;
   }
 
   // Map the read end to stdin
-  if (0 !=
-      posix_spawn_file_actions_adddup2(&actions, stdinfd[0], STDIN_FILENO)) {
+  if (!(options & subprocess_option_inherit_stdio) &&
+      0 != posix_spawn_file_actions_adddup2(&actions, stdinfd[0],
+                                            STDIN_FILENO)) {
     posix_spawn_file_actions_destroy(&actions);
     return -1;
   }
 
   // Close the stdout read end
-  if (0 != posix_spawn_file_actions_addclose(&actions, stdoutfd[0])) {
+  if (!(options & subprocess_option_inherit_stdio) &&
+      0 != posix_spawn_file_actions_addclose(&actions, stdoutfd[0])) {
     posix_spawn_file_actions_destroy(&actions);
     return -1;
   }
 
   // Map the write end to stdout
-  if (0 !=
-      posix_spawn_file_actions_adddup2(&actions, stdoutfd[1], STDOUT_FILENO)) {
+  if (!(options & subprocess_option_inherit_stdio) &&
+      0 != posix_spawn_file_actions_adddup2(&actions, stdoutfd[1],
+                                            STDOUT_FILENO)) {
     posix_spawn_file_actions_destroy(&actions);
     return -1;
   }
 
   if (subprocess_option_combined_stdout_stderr ==
       (options & subprocess_option_combined_stdout_stderr)) {
-    if (0 != posix_spawn_file_actions_adddup2(&actions, STDOUT_FILENO,
+    if (!(options & subprocess_option_inherit_stdio) &&
+        0 != posix_spawn_file_actions_adddup2(&actions, STDOUT_FILENO,
                                               STDERR_FILENO)) {
       posix_spawn_file_actions_destroy(&actions);
       return -1;
     }
   } else {
     // Close the stderr read end
-    if (0 != posix_spawn_file_actions_addclose(&actions, stderrfd[0])) {
+    if (!(options & subprocess_option_inherit_stdio) &&
+        0 != posix_spawn_file_actions_addclose(&actions, stderrfd[0])) {
       posix_spawn_file_actions_destroy(&actions);
       return -1;
     }
     // Map the write end to stdout
-    if (0 != posix_spawn_file_actions_adddup2(&actions, stderrfd[1],
+    if (!(options & subprocess_option_inherit_stdio) &&
+        0 != posix_spawn_file_actions_adddup2(&actions, stderrfd[1],
                                               STDERR_FILENO)) {
       posix_spawn_file_actions_destroy(&actions);
       return -1;
@@ -1062,24 +1098,26 @@ int subprocess_create_ex(const char *const commandLine[], int options,
 #pragma clang diagnostic pop
 #endif
 
-  // Close the stdin read end
-  close(stdinfd[0]);
-  // Store the stdin write end
-  out_process->stdin_file = fdopen(stdinfd[1], "wb");
+  if (!(options & subprocess_option_inherit_stdio)) {
+    // Close the stdin read end
+    close(stdinfd[0]);
+    // Store the stdin write end
+    out_process->stdin_file = fdopen(stdinfd[1], "wb");
 
-  // Close the stdout write end
-  close(stdoutfd[1]);
-  // Store the stdout read end
-  out_process->stdout_file = fdopen(stdoutfd[0], "rb");
+    // Close the stdout write end
+    close(stdoutfd[1]);
+    // Store the stdout read end
+    out_process->stdout_file = fdopen(stdoutfd[0], "rb");
 
-  if (subprocess_option_combined_stdout_stderr ==
-      (options & subprocess_option_combined_stdout_stderr)) {
-    out_process->stderr_file = out_process->stdout_file;
-  } else {
-    // Close the stderr write end
-    close(stderrfd[1]);
-    // Store the stderr read end
-    out_process->stderr_file = fdopen(stderrfd[0], "rb");
+    if (subprocess_option_combined_stdout_stderr ==
+        (options & subprocess_option_combined_stdout_stderr)) {
+      out_process->stderr_file = out_process->stdout_file;
+    } else {
+      // Close the stderr write end
+      close(stderrfd[1]);
+      // Store the stderr read end
+      out_process->stderr_file = fdopen(stderrfd[0], "rb");
+    }
   }
 
   // Store the child's pid
@@ -1102,24 +1140,26 @@ int subprocess_create_ex(const char *const commandLine[], int options,
   }
 
   if (0 == child) {
-    // Close the stdin write end
-    close(stdinfd[1]);
-    // Map the read end to stdin
-    dup2(stdinfd[0], STDIN_FILENO);
+    if (!(options & subprocess_option_inherit_stdio)) {
+      // Close the stdin write end
+      close(stdinfd[1]);
+      // Map the read end to stdin
+      dup2(stdinfd[0], STDIN_FILENO);
 
-    // Close the stdout read end
-    close(stdoutfd[0]);
-    // Map the write end to stdout
-    dup2(stdoutfd[1], STDOUT_FILENO);
-
-    if (subprocess_option_combined_stdout_stderr ==
-        (options & subprocess_option_combined_stdout_stderr)) {
-      dup2(STDOUT_FILENO, STDERR_FILENO);
-    } else {
-      // Close the stderr read end
-      close(stderrfd[0]);
+      // Close the stdout read end
+      close(stdoutfd[0]);
       // Map the write end to stdout
-      dup2(stderrfd[1], STDERR_FILENO);
+      dup2(stdoutfd[1], STDOUT_FILENO);
+
+      if (subprocess_option_combined_stdout_stderr ==
+          (options & subprocess_option_combined_stdout_stderr)) {
+        dup2(STDOUT_FILENO, STDERR_FILENO);
+      } else {
+        // Close the stderr read end
+        close(stderrfd[0]);
+        // Map the write end to stdout
+        dup2(stderrfd[1], STDERR_FILENO);
+      }
     }
 
 #ifdef __clang__
@@ -1145,24 +1185,26 @@ int subprocess_create_ex(const char *const commandLine[], int options,
 #pragma clang diagnostic pop
 #endif
   } else {
-    // Close the stdin read end
-    close(stdinfd[0]);
-    // Store the stdin write end
-    out_process->stdin_file = fdopen(stdinfd[1], "wb");
+    if (!(options & subprocess_option_inherit_stdio)) {
+      // Close the stdin read end
+      close(stdinfd[0]);
+      // Store the stdin write end
+      out_process->stdin_file = fdopen(stdinfd[1], "wb");
 
-    // Close the stdout write end
-    close(stdoutfd[1]);
-    // Store the stdout read end
-    out_process->stdout_file = fdopen(stdoutfd[0], "rb");
+      // Close the stdout write end
+      close(stdoutfd[1]);
+      // Store the stdout read end
+      out_process->stdout_file = fdopen(stdoutfd[0], "rb");
 
-    if (subprocess_option_combined_stdout_stderr ==
-        (options & subprocess_option_combined_stdout_stderr)) {
-      out_process->stderr_file = out_process->stdout_file;
-    } else {
-      // Close the stderr write end
-      close(stderrfd[1]);
-      // Store the stderr read end
-      out_process->stderr_file = fdopen(stderrfd[0], "rb");
+      if (subprocess_option_combined_stdout_stderr ==
+          (options & subprocess_option_combined_stdout_stderr)) {
+        out_process->stderr_file = out_process->stdout_file;
+      } else {
+        // Close the stderr write end
+        close(stderrfd[1]);
+        // Store the stderr read end
+        out_process->stderr_file = fdopen(stderrfd[0], "rb");
+      }
     }
 
     // Store the child's pid
@@ -1243,6 +1285,8 @@ int subprocess_join(struct subprocess_s *const process,
 
     if (WIFEXITED(status)) {
       process->return_status = WEXITSTATUS(status);
+    } else if (WIFSIGNALED(status)) {
+      process->return_status = 128 + WTERMSIG(status);
     } else {
       process->return_status = EXIT_FAILURE;
     }
@@ -1453,13 +1497,19 @@ int subprocess_alive(struct subprocess_s *const process) {
   }
 #else
   {
-    int status;
-    is_alive = 0 == waitpid(process->child, &status, WNOHANG);
+    int status = 0;
+    pid_t waited;
+    do {
+      waited = waitpid(process->child, &status, WNOHANG);
+    } while (waited < 0 && errno == EINTR);
+    is_alive = waited == 0;
 
     // If the process was successfully waited on we need to cleanup now.
     if (!is_alive) {
-      if (WIFEXITED(status)) {
+      if (waited == process->child && WIFEXITED(status)) {
         process->return_status = WEXITSTATUS(status);
+      } else if (waited == process->child && WIFSIGNALED(status)) {
+        process->return_status = 128 + WTERMSIG(status);
       } else {
         process->return_status = EXIT_FAILURE;
       }

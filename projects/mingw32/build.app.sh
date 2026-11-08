@@ -14,6 +14,9 @@ package_copy_assets "$STAGING"
 SUFFIX=
 [ "$BUILDTYPE" != debug ] || SUFFIX=-debug
 cp "$SOURCE_DIR/$APP$SUFFIX.exe" "$STAGING/"
+if [ "$APP" = eterm ]; then
+    cp "$SOURCE_DIR/eterm-session$SUFFIX.exe" "$STAGING/"
+fi
 cp "$SOURCE_DIR/eepp$SUFFIX.dll" "$STAGING/"
 SDL_DLL="$BACKEND.dll"
 if [ -f "$SOURCE_DIR/$SDL_DLL" ]; then

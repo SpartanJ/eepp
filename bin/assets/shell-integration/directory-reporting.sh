@@ -17,3 +17,18 @@ __eterm_report_working_directory() {
     printf '\033]7;file://localhost%s\007' "$eterm_encoded"
     return "$eterm_result"
 }
+
+# Bash 5.0 accepts array assignments but only executes element zero. Array prompt hooks require
+# 5.1; older Bash must retain the user's scalar command and the status seen by every hook.
+__eterm_add_prompt_hook() {
+    if [[ -n ${BASH_VERSION-} ]]; then
+        if (( BASH_VERSINFO[0] > 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 1) )); then
+            PROMPT_COMMAND=("$1" "${PROMPT_COMMAND[@]}")
+        else
+            PROMPT_COMMAND="$1${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
+        fi
+    else
+        autoload -Uz add-zsh-hook
+        add-zsh-hook precmd "$1"
+    fi
+}

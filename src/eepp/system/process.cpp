@@ -1,6 +1,9 @@
+#include <eepp/system/process.hpp>
+
 #include <bitset>
 #include <cerrno>
 #include <chrono>
+#include <csignal>
 #include <eepp/core/debug.hpp>
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/core/string.hpp>
@@ -8,8 +11,8 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
-#include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
+#include <mutex>
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
 #define SUBPROCESS_USE_POSIX_SPAWN
@@ -30,6 +33,7 @@
 #ifndef _IO_APISET_H_
 extern "C" __declspec( dllimport ) int __stdcall CancelIoEx( void* file, void* overlapped );
 #endif
+extern "C" __declspec( dllimport ) unsigned long __stdcall GetProcessId( void* process );
 #endif
 
 #define CHUNK_SIZE 4096
@@ -86,6 +90,123 @@ std::vector<std::string> Process::parseArgs( const std::string& str ) {
 	return res;
 }
 
+namespace {
+
+std::mutex foregroundMutex;
+std::atomic<int> foregroundSignal{ 0 };
+static_assert( std::atomic<int>::is_always_lock_free );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+std::atomic<bool> foregroundRunning{ false };
+// The console delivers every event to all attached processes, the child included, so the runner
+// only has to survive them: Ctrl-C stays with the child, and stop events start the grace timer.
+BOOL WINAPI foregroundConsoleSignal( DWORD event ) {
+	if ( event == CTRL_C_EVENT )
+		return TRUE;
+	if ( event != CTRL_BREAK_EVENT && event != CTRL_CLOSE_EVENT && event != CTRL_LOGOFF_EVENT &&
+		 event != CTRL_SHUTDOWN_EVENT )
+		return FALSE;
+	foregroundSignal = SIGTERM;
+	// Console close handlers must stay alive while the main thread gives the child time to flush.
+	if ( event == CTRL_CLOSE_EVENT || event == CTRL_LOGOFF_EVENT || event == CTRL_SHUTDOWN_EVENT ) {
+		for ( unsigned i = 0; i < 400 && foregroundRunning.load(); ++i )
+			Sys::sleep( Milliseconds( 10 ) );
+	}
+	return TRUE;
+}
+#elif defined( EE_PLATFORM_POSIX )
+void foregroundStopSignal( int signal ) {
+	if ( signal != SIGINT )
+		foregroundSignal.store( signal, std::memory_order_relaxed );
+}
+#endif
+
+} // namespace
+
+bool Process::requestStop() {
+	if ( !mProcess || !PROCESS_PTR->alive )
+		return false;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	const auto pid = GetProcessId( PROCESS_PTR->hProcess );
+	return pid != 0 && GenerateConsoleCtrlEvent( CTRL_BREAK_EVENT, pid ) != 0;
+#elif defined( EE_PLATFORM_POSIX )
+	return PROCESS_PTR->child > 0 && ::kill( PROCESS_PTR->child, SIGTERM ) == 0;
+#else
+	return false;
+#endif
+}
+
+int Process::runForeground( const std::string& executable,
+							const std::vector<std::string>& arguments,
+							const std::unordered_map<std::string, std::string>& environment,
+							const std::string& workingDirectory, Time grace ) {
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	(void)executable;
+	(void)arguments;
+	(void)environment;
+	(void)workingDirectory;
+	(void)grace;
+	return 127;
+#else
+	std::unique_lock<std::mutex> lock( foregroundMutex, std::try_to_lock );
+	if ( !lock.owns_lock() || executable.empty() )
+		return 127;
+	foregroundSignal = 0;
+	struct Handlers {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		Handlers() {
+			foregroundRunning = true;
+			SetConsoleCtrlHandler( foregroundConsoleSignal, TRUE );
+		}
+		~Handlers() {
+			foregroundRunning = false;
+			SetConsoleCtrlHandler( foregroundConsoleSignal, FALSE );
+		}
+#else
+		struct sigaction previous[3]{};
+		int signals[3]{ SIGINT, SIGTERM, SIGHUP };
+		Handlers() {
+			struct sigaction action{};
+			action.sa_handler = foregroundStopSignal;
+			sigemptyset( &action.sa_mask );
+			for ( unsigned i = 0; i < 3; ++i )
+				sigaction( signals[i], &action, &previous[i] );
+		}
+		~Handlers() {
+			for ( unsigned i = 0; i < 3; ++i )
+				sigaction( signals[i], &previous[i], nullptr );
+		}
+#endif
+	} handlers;
+	Process child;
+	// No NewProcessGroup: on Windows it disables Ctrl-C in the child, which must receive the
+	// console's events itself, like the terminal's foreground process group on POSIX.
+	if ( !child.create( executable, arguments, InheritEnvironment | InheritStdio | SearchUserPath,
+						environment, workingDirectory ) )
+		return 127;
+	Clock stopping;
+	bool requested = false;
+	while ( child.isAlive() ) {
+		const int signal = foregroundSignal.load( std::memory_order_relaxed );
+		if ( signal && !requested ) {
+#if EE_PLATFORM != EE_PLATFORM_WIN
+			// A signal sent to this runner alone does not reach the child: forward it. Windows
+			// already delivered the same console event to the child.
+			::kill( static_cast<subprocess_s*>( child.mProcess )->child, signal );
+#endif
+			stopping.restart();
+			requested = true;
+		}
+		if ( requested && stopping.getElapsedTime() >= grace ) {
+			child.kill();
+			return 128 + signal;
+		}
+		Sys::sleep( Milliseconds( 10 ) );
+	}
+	int code = 1;
+	return child.join( &code ) ? code : 1;
+#endif
+}
+
 Process::Process() {}
 
 Process::Process( const std::string& command, Uint32 options,
@@ -130,6 +251,8 @@ bool Process::create( const std::string& command, const std::vector<std::string>
 					  Uint32 options,
 					  const std::unordered_map<std::string, std::string>& environment,
 					  const std::string& workingDirectory ) {
+	if ( ( options & InheritStdio ) && ( options & ( EnableAsync | CombinedStdoutStderr ) ) )
+		return false;
 	if ( mProcess ) {
 		if ( !mKilled )
 			return false;
@@ -236,6 +359,8 @@ size_t Process::readStdOut( std::string& buffer ) {
 
 size_t Process::readStdOut( char* const buffer, const size_t& size ) {
 	eeASSERT( mProcess != nullptr );
+	if ( !PROCESS_PTR->stdout_file )
+		return 0;
 	return subprocess_read_stdout( PROCESS_PTR, buffer, size );
 }
 
@@ -249,13 +374,15 @@ size_t Process::readStdErr( std::string& buffer ) {
 
 size_t Process::readStdErr( char* const buffer, const size_t& size ) {
 	eeASSERT( mProcess != nullptr );
+	if ( !PROCESS_PTR->stderr_file )
+		return 0;
 	return subprocess_read_stderr( PROCESS_PTR, buffer, size );
 }
 
 size_t Process::write( const char* buffer, const size_t& size ) {
 	eeASSERT( mProcess != nullptr );
 	eeASSERT( isAlive() );
-	if ( mShuttingDown )
+	if ( mShuttingDown || !PROCESS_PTR->stdin_file )
 		return 0;
 	Lock l( mStdInMutex );
 	return subprocess_write_stdin( PROCESS_PTR, (char* const)buffer, size );
@@ -520,6 +647,8 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 
 void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 	eeASSERT( mProcess != nullptr );
+	if ( !PROCESS_PTR->stdout_file && !PROCESS_PTR->stderr_file )
+		return;
 	// The readers call both unconditionally: a missing one would throw std::bad_function_call
 	// on the reader thread (terminating the program) as soon as the child wrote to that stream.
 	auto ignore = []( const char*, size_t ) {};

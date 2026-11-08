@@ -117,3 +117,57 @@ UTEST( SocketSelector, emptySelectorWaitsForTimeoutButNeverForever ) {
 	EXPECT_FALSE( selector.wait() );
 	EXPECT_TRUE( clock.getElapsedTime() < Seconds( 1 ) );
 }
+
+UTEST( SocketSelector, writableInterestsMergeWithoutChangingReadReadiness ) {
+	TcpListener listener;
+	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
+	TcpSocket client;
+	ASSERT_EQ( client.connect( IpAddress::LocalHost, listener.getLocalPort(), Seconds( 2 ) ),
+			   Socket::Done );
+	TcpSocket peer;
+	ASSERT_EQ( listener.accept( peer ), Socket::Done );
+	SocketSelector selector;
+	selector.add( client, SocketSelector::Event::Write );
+	selector.add( client );
+	ASSERT_TRUE( selector.wait( Seconds( 2 ) ) );
+	EXPECT_TRUE( selector.isReady( client, SocketSelector::Event::Write ) );
+	EXPECT_FALSE( selector.isReady( client ) );
+	selector.remove( client );
+	EXPECT_FALSE( selector.wait( Milliseconds( 1 ) ) );
+}
+
+#if defined( EE_PLATFORM_POSIX ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#include <eepp/system/sys.hpp>
+#include <pthread.h>
+#include <signal.h>
+#include <thread>
+
+UTEST( SocketSelector, interruptedWaitRetainsItsDeadline ) {
+	TcpListener listener;
+	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );
+	SocketSelector selector;
+	selector.add( listener );
+	struct sigaction action{}, previous{};
+	action.sa_handler = +[]( int ) {};
+	sigemptyset( &action.sa_mask );
+	ASSERT_EQ( sigaction( SIGUSR1, &action, &previous ), 0 );
+	struct Restore {
+		struct sigaction previous;
+		~Restore() { sigaction( SIGUSR1, &previous, nullptr ); }
+	} restore{ previous };
+	const auto target = pthread_self();
+	std::thread interrupt( [target] {
+		for ( unsigned i = 0; i < 3; ++i ) {
+			Sys::sleep( Milliseconds( 10 ) );
+			pthread_kill( target, SIGUSR1 );
+		}
+	} );
+	Clock clock;
+	const bool ready = selector.wait( Milliseconds( 80 ) );
+	const auto elapsed = clock.getElapsedTime();
+	interrupt.join();
+	EXPECT_FALSE( ready );
+	EXPECT_TRUE( elapsed >= Milliseconds( 70 ) );
+	EXPECT_TRUE( elapsed < Seconds( 1 ) );
+}
+#endif

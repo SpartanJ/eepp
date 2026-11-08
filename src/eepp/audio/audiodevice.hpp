@@ -36,6 +36,9 @@ class AudioDevice {
 	////////////////////////////////////////////////////////////
 	static bool isExtensionSupported( const std::string& extension );
 
+	/** @return True if an output device and context can be opened (or already are). */
+	static bool isPlaybackAvailable();
+
 	////////////////////////////////////////////////////////////
 	/// \brief Get the OpenAL format that matches the given number of channels
 	///

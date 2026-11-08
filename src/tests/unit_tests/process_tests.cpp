@@ -1,7 +1,8 @@
 #include <eepp/config.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX || \
-	EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD
+	EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_HAIKU
 
 #include "utest.hpp"
 #include "vfs_test_utils.hpp"
@@ -9,6 +10,7 @@
 #include <condition_variable>
 #include <cstdlib>
 #include <eepp/system/process.hpp>
+#include <eepp/system/sys.hpp>
 #include <optional>
 #if EE_PLATFORM != EE_PLATFORM_WIN
 #include <fcntl.h>
@@ -20,6 +22,153 @@
 
 using namespace vfstest;
 using EE::System::Process;
+
+UTEST( Process, foregroundReturnsExitCodeAndRestoresHandlers ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	EXPECT_EQ( Process::runForeground( "cmd.exe", { "/D", "/Q", "/C", "exit /B 23" } ), 23 );
+#else
+	EXPECT_EQ( Process::runForeground( "/bin/sh", { "-c", "exit 23" } ), 23 );
+#endif
+	EXPECT_EQ( Process::runForeground( "", {} ), 127 );
+}
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+UTEST( Process, signalExitCodesSurviveJoinAndAlivePolling ) {
+	for ( bool poll : { false, true } ) {
+		Process child;
+		ASSERT_TRUE( child.create( "/bin/sh", std::vector<std::string>{ "-c", "kill -TERM $$" } ) );
+		if ( poll ) {
+			for ( unsigned i = 0; i < 200 && child.isAlive(); ++i )
+				Sys::sleep( EE::System::Milliseconds( 10 ) );
+			ASSERT_FALSE( child.isAlive() );
+		}
+		int code = 0;
+		ASSERT_TRUE( child.join( &code ) );
+		EXPECT_EQ( code, 128 + SIGTERM );
+	}
+	EXPECT_EQ( Process::runForeground( "/bin/sh", { "-c", "kill -TERM $$" } ), 128 + SIGTERM );
+}
+
+UTEST( Process, gracefulStopLetsTheChildFlush ) {
+	TempDir temp;
+	Process child;
+	ASSERT_TRUE( child.create(
+		"/bin/sh",
+		std::vector<std::string>{ "-c", "trap 'printf flushed > \"$FLUSH_PATH\"; exit 23' TERM; "
+										"printf ready; while :; do sleep 0.1; done" },
+		Process::getDefaultOptions() | Process::EnableAsync,
+		{ { "FLUSH_PATH", temp.path + "flushed" } } ) );
+	std::string ready;
+	child.readAllStdOut( ready, EE::System::Seconds( 2 ) );
+	ASSERT_STREQ( ready.c_str(), "ready" );
+	ASSERT_TRUE( child.requestStop() );
+	for ( unsigned i = 0; i < 200 && child.isAlive(); ++i )
+		EE::System::Sys::sleep( EE::System::Milliseconds( 10 ) );
+	ASSERT_FALSE( child.isAlive() );
+	int code = 0;
+	ASSERT_TRUE( child.join( &code ) );
+	EXPECT_EQ( code, 23 );
+	std::string flushed;
+	ASSERT_TRUE( FileSystem::fileGet( temp.path + "flushed", flushed ) );
+	EXPECT_STREQ( flushed.c_str(), "flushed" );
+}
+
+UTEST( Process, foregroundForwardsHangupAndBoundsAnUncooperativeChild ) {
+	TempDir temp;
+	const auto ready = temp.path + "ready";
+	std::atomic<bool> finished{ false };
+	std::thread stop( [&] {
+		while ( !finished && !FileSystem::fileExists( ready ) )
+			EE::System::Sys::sleep( EE::System::Milliseconds( 5 ) );
+		if ( !finished )
+			::kill( getpid(), SIGHUP );
+	} );
+	const int result = Process::runForeground(
+		"/bin/sh",
+		{ "-c", "trap '' HUP; printf ready > \"$READY_PATH\"; while :; do sleep 0.1; done" },
+		{ { "READY_PATH", ready } }, "", EE::System::Milliseconds( 100 ) );
+	finished = true;
+	stop.join();
+	EXPECT_EQ( result, 128 + SIGHUP );
+}
+#endif
+
+UTEST( Process, inheritedStdioDoesNotCreateOrCloseBorrowedPipes ) {
+	int code = -1;
+	{
+		Process child;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		const std::string executable = "cmd.exe";
+		const std::vector<std::string> arguments{ "/D", "/Q", "/C", "exit /B 23" };
+#else
+		const std::string executable = "/bin/sh";
+		const std::vector<std::string> arguments{ "-c", "exit 23" };
+#endif
+		ASSERT_TRUE( child.create( executable, arguments,
+								   Process::getDefaultOptions() | Process::InheritStdio ) );
+		EXPECT_TRUE( child.getStdIn() == nullptr );
+		EXPECT_TRUE( child.getStdOut() == nullptr );
+		EXPECT_TRUE( child.getStdErr() == nullptr );
+		ASSERT_TRUE( child.join( &code ) );
+		EXPECT_FALSE( child.requestStop() );
+	}
+	EXPECT_EQ( code, 23 );
+	// Destruction must not fclose or otherwise take ownership of our inherited standard streams.
+	EXPECT_EQ( fflush( stdout ), 0 );
+	EXPECT_EQ( fflush( stderr ), 0 );
+}
+
+UTEST( Process, inheritedStdioRejectsPipeOnlyOptions ) {
+	Process child;
+	EXPECT_FALSE( child.create( "unused", std::vector<std::string>{},
+								Process::InheritStdio | Process::EnableAsync ) );
+	EXPECT_FALSE( child.create( "unused", std::vector<std::string>{},
+								Process::InheritStdio | Process::CombinedStdoutStderr ) );
+	EXPECT_FALSE( child.isAlive() );
+}
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+UTEST( Process, inheritedStdinReadsFromTheCallersDescriptor ) {
+	TempDir temp;
+	const auto inputPath = temp.path + "input";
+	const auto outputPath = temp.path + "output";
+	ASSERT_TRUE( EE::System::FileSystem::fileWrite( inputPath, "inherited marker\n" ) );
+	const int input = open( inputPath.c_str(), O_RDONLY );
+	ASSERT_GE( input, 0 );
+	const int original = dup( STDIN_FILENO );
+	ASSERT_GE( original, 0 );
+	Process child;
+	bool created = false;
+	{
+		struct Restore {
+			int original;
+			int input;
+
+			~Restore() {
+				dup2( original, STDIN_FILENO );
+				close( original );
+				close( input );
+			}
+		} restore{ original, input };
+		ASSERT_GE( dup2( input, STDIN_FILENO ), 0 );
+		created = child.create(
+			"/bin/sh", { "-c", "read token; printf '%s' \"$token\" > \"$1\"", "sh", outputPath },
+			Process::InheritEnvironment | Process::InheritStdio );
+	}
+	ASSERT_TRUE( created );
+	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
+	while ( child.isAlive() && std::chrono::steady_clock::now() < deadline )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	if ( child.isAlive() )
+		child.kill();
+	int code = -1;
+	ASSERT_TRUE( child.join( &code ) );
+	EXPECT_EQ( code, 0 );
+	std::string data;
+	ASSERT_TRUE( EE::System::FileSystem::fileGet( outputPath, data ) );
+	EXPECT_STREQ( data.c_str(), "inherited marker" );
+}
+#endif
 
 UTEST( Process, asyncReaderTeardownDoesNotWaitForChildInput ) {
 	std::mutex mutex;

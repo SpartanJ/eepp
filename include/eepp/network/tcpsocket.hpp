@@ -4,6 +4,7 @@
 #include <eepp/network/socket.hpp>
 #include <eepp/system/time.hpp>
 #include <functional>
+#include <string>
 #include <thread>
 #include <vector>
 using namespace EE::System;

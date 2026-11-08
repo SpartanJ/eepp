@@ -52,6 +52,9 @@ if status is-interactive; and test "$ETERM_SHELL_INTEGRATION" != 0
         end
     end
     __eterm_report_working_directory
+    if set -q ETERM_HARNESS_FISH; and test -n "$ETERM_HARNESS_FISH"
+        source "$ETERM_HARNESS_FISH"
+    end
 end
 )fish";
 

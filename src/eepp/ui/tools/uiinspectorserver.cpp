@@ -9,7 +9,6 @@
 #undef KEY_EXECUTE
 #endif
 
-#include <bcrypt.h>
 #endif
 
 #include <eepp/network/ipaddress.hpp>
@@ -40,7 +39,6 @@
 #include <deque>
 #include <map>
 #include <mutex>
-#include <random>
 #include <set>
 #include <string_view>
 #include <thread>
@@ -72,22 +70,8 @@ json errorObject( const InspectorError& error ) {
 
 std::string tokenFromOS() {
 	std::array<Uint32, 8> values;
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	if ( !BCRYPT_SUCCESS( BCryptGenRandom( nullptr, reinterpret_cast<PUCHAR>( values.data() ),
-										   static_cast<ULONG>( sizeof( values ) ),
-										   BCRYPT_USE_SYSTEM_PREFERRED_RNG ) ) )
+	if ( !Sys::getRandomBytes( values.data(), sizeof( values ) ) )
 		return {};
-#else
-	try {
-		std::random_device random;
-		if ( random.entropy() <= 0 )
-			return {};
-		for ( auto& value : values )
-			value = random();
-	} catch ( const std::exception& ) {
-		return {};
-	}
-#endif
 	static const char* hex = "0123456789abcdef";
 	std::string token( 64, '0' );
 	for ( size_t i = 0; i < values.size(); ++i ) {

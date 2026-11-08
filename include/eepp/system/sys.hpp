@@ -150,6 +150,11 @@ class EE_API Sys {
 	 */
 	static bool setEnv( const char* name, const char* value );
 
+	/** Fill caller-owned storage using the OS cryptographic random source. Returns false for
+	 * invalid storage, an unavailable source, or unsupported platforms. Zero bytes succeeds.
+	 * No pseudo-random fallback is used. */
+	static bool getRandomBytes( void* data, size_t size );
+
 	/** @return A split environment variable */
 	static std::vector<std::string> getEnvSplit( const std::string& name );
 
@@ -157,6 +162,9 @@ class EE_API Sys {
 	 * Other platforms will do nothing.
 	 */
 	static bool windowAttachConsole();
+
+	/** @return True if the process is a Windows build running under Wine. */
+	static bool isRunningOnWine();
 
 	/** Executes a command */
 	static int execute( const std::string& cmd, const std::string& workingDir = "" );
@@ -172,6 +180,18 @@ class EE_API Sys {
 
 	/** @return A list of the current running processes */
 	static std::vector<std::pair<ProcessID, std::string>> listProcesses();
+
+	/** A process's accounting name and parent. Optional arguments include argv[0]; inaccessible
+	 * or unsupported process information returns an empty name/arguments and parentID zero. */
+	struct ProcessInfo {
+		std::string name;
+		std::vector<std::string> arguments;
+		ProcessID parentID{ 0 };
+	};
+
+	/** Inspect one process without polling. Arguments are bounded to 64 KiB and are read only
+	 * when requested; environment variables are not returned. */
+	static ProcessInfo getProcessInfo( ProcessID pid, bool includeArguments = false );
 
 	/** @returns The unix timestamp of the process creation time */
 	static Int64 getProcessCreationTime( ProcessID pid );

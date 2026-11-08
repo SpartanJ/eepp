@@ -84,6 +84,9 @@ try {
   $eeppDll = Join-Path $SourceDir "eepp.dll"
   if (-not (Test-Path $eeppDll)) { $eeppDll = "libs/windows/$archSuffix/eepp.dll" }
   Copy-Item -LiteralPath "$SourceDir/$sdlDll", $eeppDll, "$SourceDir/$App.exe" -Destination $Staging
+  if ($App -eq "eterm") {
+    Copy-Item -LiteralPath "$SourceDir/eterm-session.exe" -Destination $Staging
+  }
   $ArchiveBase = Join-Path $OutputDir "$App-windows-$Version-msvc-$archSuffix"
   Compress-Archive -LiteralPath $Staging -DestinationPath "$ArchiveBase.zip" -Force
   if (Test-Path "$SourceDir/$App.pdb") {

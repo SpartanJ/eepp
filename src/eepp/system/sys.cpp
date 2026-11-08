@@ -48,6 +48,9 @@
 #undef GetTempPath
 
 // clang-format off
+#include <winternl.h>
+// ntsecapi.h (RtlGenRandom) redeclares winternl.h's UNICODE_STRING under MSVC: use bcrypt.
+#include <bcrypt.h>
 #include <psapi.h>
 #include <tlhelp32.h>
 // clang-format on
@@ -60,7 +63,7 @@ typedef DWORD( WINAPI* GetModuleBaseName_t )( HANDLE, HMODULE, LPSTR, DWORD );
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <libgen.h>
 #include <mntent.h>
-#include <sys/sysinfo.h>
+#include <sys/syscall.h>
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
 #include <Directory.h>
 #include <OS.h>
@@ -1364,20 +1367,24 @@ static ULONG_PTR GetParentProcessId() {
 	}
 	return (ULONG_PTR)-1;
 }
+#endif
 
-static bool isWineRunning() {
+bool Sys::isRunningOnWine() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	HMODULE hntdll = GetModuleHandle( TEXT( "ntdll.dll" ) );
 	if ( !hntdll )
 		return false;
 	void* pwine_get_version = (void*)GetProcAddress( hntdll, "wine_get_version" );
 	return pwine_get_version != NULL;
-}
+#else
+	return false;
 #endif
+}
 
 bool Sys::windowAttachConsole() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	// WINE doesn't need to attach any console
-	if ( isWineRunning() )
+	if ( isRunningOnWine() )
 		return true;
 	ULONG_PTR ppid = GetParentProcessId();
 	if ( ppid == (ULONG_PTR)-1 ) {
@@ -1556,6 +1563,241 @@ std::string Sys::getProcessFilePath() {
 #endif
 }
 
+bool Sys::getRandomBytes( void* data, size_t size ) {
+	if ( size == 0 )
+		return true;
+	if ( !data )
+		return false;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( size > ULONG_MAX )
+		return false;
+	return BCRYPT_SUCCESS( BCryptGenRandom( nullptr, static_cast<PUCHAR>( data ),
+											static_cast<ULONG>( size ),
+											BCRYPT_USE_SYSTEM_PREFERRED_RNG ) );
+#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS || \
+	EE_PLATFORM == EE_PLATFORM_BSD
+	arc4random_buf( data, size );
+	return true;
+#elif defined( EE_PLATFORM_POSIX ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if ( EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID ) && \
+	defined( SYS_getrandom )
+	size_t received = 0;
+	while ( received < size ) {
+		const auto count =
+			syscall( SYS_getrandom, static_cast<char*>( data ) + received, size - received, 0 );
+		if ( count > 0 ) {
+			received += static_cast<size_t>( count );
+			continue;
+		}
+		if ( count < 0 && errno == EINTR )
+			continue;
+		if ( count < 0 && errno == ENOSYS )
+			break;
+		return false;
+	}
+	if ( received == size )
+		return true;
+#endif
+
+	FILE* source = FileSystem::fopenUtf8( "/dev/urandom", "rb" );
+	if ( !source )
+		return false;
+	size_t offset = 0;
+	while ( offset < size ) {
+		const auto count = fread( static_cast<char*>( data ) + offset, 1, size - offset, source );
+		if ( count == 0 )
+			break;
+		offset += count;
+	}
+	fclose( source );
+	return offset == size;
+#else
+	return false;
+#endif
+}
+
+namespace {
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+std::vector<std::string> windowsArguments( HANDLE process ) {
+	// Read only the SDK-defined PEB/process-parameters fields. A process we cannot inspect is
+	// skipped, including incompatible bitness, rather than guessing its invocation mode.
+	using Query = LONG( NTAPI* )( HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG );
+	const auto query = reinterpret_cast<Query>(
+		GetProcAddress( GetModuleHandleW( L"ntdll.dll" ), "NtQueryInformationProcess" ) );
+	PROCESS_BASIC_INFORMATION info{};
+	PEB peb{};
+	RTL_USER_PROCESS_PARAMETERS parameters{};
+	SIZE_T read = 0;
+	if ( !query || query( process, ProcessBasicInformation, &info, sizeof( info ), nullptr ) < 0 ||
+		 !ReadProcessMemory( process, info.PebBaseAddress, &peb, sizeof( peb ), &read ) ||
+		 !ReadProcessMemory( process, peb.ProcessParameters, &parameters, sizeof( parameters ),
+							 &read ) ||
+		 parameters.CommandLine.Length > 65534 ||
+		 parameters.CommandLine.Length % sizeof( wchar_t ) )
+		return {};
+	std::wstring command( parameters.CommandLine.Length / sizeof( wchar_t ), L'\0' );
+	if ( !ReadProcessMemory( process, parameters.CommandLine.Buffer, command.data(),
+							 parameters.CommandLine.Length, &read ) )
+		return {};
+	int count = 0;
+	wchar_t** argv = CommandLineToArgvW( command.c_str(), &count );
+	std::vector<std::string> result;
+	if ( argv ) {
+		result.reserve( count );
+		for ( int i = 0; i < count; ++i )
+			result.emplace_back( String( argv[i] ).toUtf8() );
+		LocalFree( argv );
+	}
+	return result;
+}
+#endif
+
+} // namespace
+
+Sys::ProcessInfo Sys::getProcessInfo( ProcessID pid, bool arguments ) {
+	ProcessInfo info;
+	if ( pid == 0 || pid > INT_MAX )
+		return info;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	HANDLE snapshot = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 );
+	if ( snapshot == INVALID_HANDLE_VALUE )
+		return info;
+	PROCESSENTRY32W entry{};
+	entry.dwSize = sizeof( entry );
+	if ( Process32FirstW( snapshot, &entry ) ) {
+		do {
+			if ( entry.th32ProcessID == static_cast<DWORD>( pid ) ) {
+				info.parentID = static_cast<int>( entry.th32ParentProcessID );
+				info.name = String( entry.szExeFile ).toUtf8();
+				break;
+			}
+		} while ( Process32NextW( snapshot, &entry ) );
+	}
+	CloseHandle( snapshot );
+	if ( arguments ) {
+		HANDLE process = OpenProcess( PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid );
+		if ( process ) {
+			info.arguments = windowsArguments( process );
+			CloseHandle( process );
+		}
+	}
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	proc_bsdinfo process{};
+	if ( proc_pidinfo( pid, PROC_PIDTBSDINFO, 0, &process, sizeof( process ) ) !=
+		 sizeof( process ) )
+		return info;
+	info.parentID = process.pbi_ppid;
+	info.name = process.pbi_comm;
+	if ( arguments ) {
+		std::vector<char> data( 65536 );
+		size_t size = data.size();
+		int mib[]{ CTL_KERN, KERN_PROCARGS2, static_cast<int>( pid ) };
+		if ( sysctl( mib, 3, data.data(), &size, nullptr, 0 ) == 0 && size > sizeof( int ) ) {
+			int count = 0;
+			memcpy( &count, data.data(), sizeof( count ) );
+			size_t offset = sizeof( count );
+			while ( offset < size && data[offset] )
+				++offset;
+			while ( offset < size && !data[offset] )
+				++offset;
+			for ( int i = 0; i < count && offset < size; ++i ) {
+				const auto end = strnlen( data.data() + offset, size - offset );
+				info.arguments.emplace_back( data.data() + offset, end );
+				offset += end + 1;
+			}
+		}
+	}
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
+	std::ifstream stat( "/proc/" + std::to_string( pid ) + "/stat" );
+	std::string line;
+	std::getline( stat, line );
+	const auto first = line.find( '(' );
+	const auto last = line.rfind( ')' );
+	if ( first == std::string::npos || last == std::string::npos || last + 2 >= line.size() )
+		return info;
+	info.name = line.substr( first + 1, last - first - 1 );
+	char state = 0;
+	std::istringstream( line.substr( last + 2 ) ) >> state >> info.parentID;
+	if ( arguments ) {
+		std::ifstream command( "/proc/" + std::to_string( pid ) + "/cmdline", std::ios::binary );
+		std::vector<char> data( 65537 );
+		command.read( data.data(), data.size() );
+		const auto size = static_cast<size_t>( command.gcount() );
+		if ( size <= 65536 ) {
+			for ( size_t offset = 0; offset < size; ) {
+				const auto length = strnlen( data.data() + offset, size - offset );
+				if ( length == size - offset ) {
+					info.arguments.clear();
+					break;
+				}
+				info.arguments.emplace_back( data.data() + offset, length );
+				offset += length + 1;
+			}
+		}
+	}
+#elif EE_PLATFORM == EE_PLATFORM_IOS
+	// Mobile sandboxes can deny inspection of other processes. The kernel query returns what
+	// is permitted; do not use a subprocess or a private framework to bypass that boundary.
+	int mib[]{ CTL_KERN, KERN_PROC, KERN_PROC_PID, static_cast<int>( pid ) };
+	kinfo_proc process{};
+	size_t size = sizeof( process );
+	if ( sysctl( mib, 4, &process, &size, nullptr, 0 ) == 0 && size == sizeof( process ) ) {
+		info.parentID = process.kp_eproc.e_ppid;
+		info.name = process.kp_proc.p_comm;
+	}
+	if ( info.name.empty() && pid == getProcessID() ) {
+		info.name = FileSystem::fileNameFromPath( getProcessFilePath() );
+		info.parentID = getppid();
+	}
+	(void)arguments; // Exact argv of another team is not a public iOS capability.
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+	int mib[]{ CTL_KERN, KERN_PROC, KERN_PROC_PID, static_cast<int>( pid ) };
+	kinfo_proc process{};
+	size_t size = sizeof( process );
+	if ( sysctl( mib, 4, &process, &size, nullptr, 0 ) != 0 || size != sizeof( process ) )
+		return info;
+	info.parentID = process.ki_ppid;
+	info.name = process.ki_comm;
+	if ( arguments ) {
+		mib[2] = KERN_PROC_ARGS;
+		std::vector<char> data( 65536 );
+		size = data.size();
+		if ( sysctl( mib, 4, data.data(), &size, nullptr, 0 ) == 0 ) {
+			for ( size_t offset = 0; offset < size; ) {
+				const auto length = strnlen( data.data() + offset, size - offset );
+				if ( length == size - offset ) {
+					info.arguments.clear();
+					break;
+				}
+				info.arguments.emplace_back( data.data() + offset, length );
+				offset += length + 1;
+			}
+		}
+	}
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	team_info team{};
+	if ( get_team_info( static_cast<team_id>( pid ), &team ) != B_OK )
+		return info;
+	info.parentID = team.parent;
+	info.name = team.name;
+	int32 cookie = 0;
+	image_info image{};
+	while ( get_next_image_info( static_cast<team_id>( pid ), &cookie, &image ) == B_OK ) {
+		if ( image.type == B_APP_IMAGE ) {
+			info.name = FileSystem::fileNameFromPath( image.name );
+			break;
+		}
+	}
+	// team_info.args is a lossy 64-byte display summary, not argv. Returning it as tokens
+	// would misclassify quoted or truncated commands. Leave optional exact arguments empty.
+	(void)arguments;
+#else
+	(void)arguments;
+#endif
+	return info;
+}
+
 Int64 Sys::getProcessCreationTime( ProcessID pid ) {
 	Int64 creationTime = -1;
 
@@ -1583,30 +1825,41 @@ Int64 Sys::getProcessCreationTime( ProcessID pid ) {
 	CloseHandle( hProcess );
 
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
+	// Boot time plus the start offset is stable for a process. Deriving it from the current time
+	// minus a rounded uptime made repeated reads of the same process differ by a second.
+	// /proc files report a zero size, so read them as streams.
 	std::ifstream statFile( "/proc/" + std::to_string( pid ) + "/stat" );
-	if ( !statFile.is_open() ) {
+	std::string stat;
+	if ( !std::getline( statFile, stat ) )
 		return -1;
-	}
-
+	// The command name (field 2) may contain spaces and parentheses: fields resume after the
+	// last ')'. The start time in clock ticks since boot is field 22.
+	const auto nameEnd = stat.rfind( ')' );
+	if ( nameEnd == std::string::npos )
+		return -1;
+	std::istringstream fields( stat.substr( nameEnd + 1 ) );
 	std::string token;
-	long startTimeTicks = 0;
-	int field = 1;
-	while ( statFile >> token ) {
-		if ( field == 22 ) { // The 22nd field is the start time in clock ticks
-			startTimeTicks = std::stol( token );
+	for ( int field = 3; field <= 22; ++field ) {
+		if ( !( fields >> token ) )
+			return -1;
+	}
+	Uint64 startTimeTicks = 0;
+	if ( !String::fromString( startTimeTicks, token ) )
+		return -1;
+
+	std::ifstream systemStat( "/proc/stat" );
+	std::string line;
+	Int64 bootTime = -1;
+	while ( std::getline( systemStat, line ) ) {
+		if ( String::startsWith( line, "btime " ) ) {
+			String::fromString( bootTime, line.substr( 6 ) );
 			break;
 		}
-		field++;
 	}
-
-	struct sysinfo sysInfo;
-	sysinfo( &sysInfo );
-	long uptime = sysInfo.uptime;
-
-	long clockTicksPerSecond = sysconf( _SC_CLK_TCK );
-	creationTime = time( NULL ) - uptime + ( startTimeTicks / clockTicksPerSecond );
-
-	statFile.close();
+	const long clockTicksPerSecond = sysconf( _SC_CLK_TCK );
+	if ( bootTime < 0 || clockTicksPerSecond <= 0 )
+		return -1;
+	creationTime = bootTime + static_cast<Int64>( startTimeTicks / clockTicksPerSecond );
 
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 	struct proc_bsdinfo procInfo;

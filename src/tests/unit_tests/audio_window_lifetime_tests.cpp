@@ -1,6 +1,7 @@
 #include "utest.h"
 #include <array>
 #include <condition_variable>
+#include <eepp/audio/listener.hpp>
 #include <eepp/audio/sound.hpp>
 #include <eepp/audio/soundbuffer.hpp>
 #include <eepp/system/clock.hpp>
@@ -21,13 +22,6 @@ struct AudioWindowFixture {
 
 	~AudioWindowFixture() { Engine::destroySingleton(); }
 
-	static bool isSDL3() {
-		// The settings factory resolves the backend compiled into the library without
-		// requiring backend-specific headers or defines in the test executable.
-		return Engine::instance()->createWindowSettings( std::string{} ).Backend ==
-			   WindowBackend::SDL3;
-	}
-
 	static EE::Window::Window* createWindow() {
 		return Engine::instance()->createWindow( WindowSettings{
 			64, 64, "Audio/window lifetime", WindowStyle::Default, WindowBackend::Default } );
@@ -40,8 +34,8 @@ UTEST( AudioWindowLifetime, PlaybackContinuesAcrossEngineRecreation ) {
 	AudioWindowFixture fixture;
 	auto* window = fixture.createWindow();
 	ASSERT_TRUE( window != nullptr );
-	if ( !fixture.isSDL3() )
-		UTEST_SKIP( "SDL3 lifecycle regression" );
+	if ( !EE::Audio::Listener::isPlaybackAvailable() )
+		UTEST_SKIP( "No audio output device" );
 
 	std::array<Int16, 8192> samples{};
 	SoundBuffer buffer;
@@ -66,8 +60,9 @@ UTEST( AudioWindowLifetime, WorkerCanReleaseLastAudioResourceDuringEngineShutdow
 	AudioWindowFixture fixture;
 	auto* window = fixture.createWindow();
 	ASSERT_TRUE( window != nullptr );
-	if ( !fixture.isSDL3() )
-		UTEST_SKIP( "SDL3 lifecycle regression" );
+	// Without an output device there is no device to release, and each failed open can be slow.
+	if ( !EE::Audio::Listener::isPlaybackAvailable() )
+		UTEST_SKIP( "No audio output device" );
 
 	for ( int cycle = 0; cycle < 16; ++cycle ) {
 		std::mutex mutex;

@@ -12,6 +12,7 @@
 #include <thread>
 
 #include <eepp/audio/inputsoundfile.hpp>
+#include <eepp/audio/listener.hpp>
 #include <eepp/audio/music.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/system/clock.hpp>
@@ -143,6 +144,8 @@ UTEST( PreviewWidgets, ResetAndReplacementDiscardQueuedImageCompletions ) {
 }
 
 UTEST( PreviewWidgets, AudioOwnsStreamStartsStoppedAndReleasesOnReset ) {
+	if ( !EE::Audio::Listener::isPlaybackAvailable() )
+		UTEST_SKIP( "No audio output device" );
 	UIApplication app( WindowSettings{ 400, 300, "Preview widgets" } );
 	auto* player = UIAudioPlayer::New();
 	player->setParent( app.getUI() );
@@ -185,6 +188,8 @@ UTEST( PreviewWidgets, OwnedWebPStreamLoadsThroughTheImageViewer ) {
 }
 
 UTEST( PreviewWidgets, AudioSeeksAndCleanupStayOnTheWorkerAfterOwnershipTransfer ) {
+	if ( !EE::Audio::Listener::isPlaybackAvailable() )
+		UTEST_SKIP( "No audio output device" );
 	auto probe = std::make_shared<StreamProbe>();
 	UIApplication::Settings settings;
 	settings.threadPool = ThreadPool::createShared( 2 );

@@ -18,4 +18,7 @@ if [[ ${ETERM_SHELL_INTEGRATION-1} != 0 ]]; then
     add-zsh-hook precmd __eterm_report_working_directory
     add-zsh-hook chpwd __eterm_report_working_directory
 fi
+if [[ ${ETERM_SHELL_INTEGRATION-1} != 0 && -n ${ETERM_HARNESS_DIRECTORY-} ]]; then
+    source "$__eterm_startup_dir/harness-session.sh"
+fi
 unset __eterm_startup_dir

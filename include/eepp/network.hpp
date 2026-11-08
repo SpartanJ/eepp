@@ -5,14 +5,18 @@
 #include <eepp/network/ftp.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/ipaddress.hpp>
+#include <eepp/network/locallistener.hpp>
+#include <eepp/network/localsocket.hpp>
 #include <eepp/network/packet.hpp>
 #include <eepp/network/socket.hpp>
 #include <eepp/network/sockethandle.hpp>
 #include <eepp/network/socketselector.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
+#include <eepp/network/streamrelay.hpp>
 #include <eepp/network/tcplistener.hpp>
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/network/udpsocket.hpp>
 #include <eepp/network/uri.hpp>
+#include <eepp/network/websocket.hpp>
 
 #endif

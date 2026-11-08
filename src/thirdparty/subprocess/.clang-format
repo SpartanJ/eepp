@@ -1,0 +1,3 @@
+# Preserve the bundled library's upstream C style when applying local fixes.
+DisableFormat: true
+SortIncludes: false

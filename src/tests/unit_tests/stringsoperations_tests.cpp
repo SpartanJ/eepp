@@ -793,3 +793,13 @@ UTEST( String, graphemePropertiesForTerminalClustering ) {
 	EXPECT_TRUE( String::hasEmojiProperty( 0x2764 ) );
 	EXPECT_FALSE( String::hasEmojiProperty( U'a' ) );
 }
+
+UTEST( String, constantTimeEqualsBytes ) {
+	EXPECT_TRUE( String::constantTimeEquals( "", "" ) );
+	EXPECT_TRUE( String::constantTimeEquals( "token", "token" ) );
+	EXPECT_FALSE( String::constantTimeEquals( "Token", "token" ) );
+	EXPECT_FALSE( String::constantTimeEquals( "token", "tokem" ) );
+	EXPECT_FALSE( String::constantTimeEquals( "token", "token-long" ) );
+	EXPECT_TRUE( String::constantTimeEquals( "a\0b"sv, "a\0b"sv ) );
+	EXPECT_FALSE( String::constantTimeEquals( "a\0b"sv, "a\0c"sv ) );
+}

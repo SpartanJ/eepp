@@ -1,5 +1,6 @@
 #include "utest.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -13,6 +14,11 @@
 #include <vector>
 
 #if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#include <array>
+#include <cerrno>
+#include <eepp/network/locallistener.hpp>
+#include <fcntl.h>
+#include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -20,6 +26,9 @@
 
 using namespace EE;
 using namespace EE::System;
+#if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+using namespace EE::Network;
+#endif
 
 namespace {
 
@@ -152,6 +161,75 @@ UTEST( IPC, CloseAndRelistenWhileBlocked ) {
 }
 
 #if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+
+UTEST( IPC, CloseSurvivesDeletedOrReplacedEndpoint ) {
+	for ( bool replace : { false, true } ) {
+		IPC listener;
+		const std::string endpoint = uniqueEndpoint( "removed-close" );
+		ASSERT_EQ( IPC::Status::Done,
+				   listener.listen( endpoint, []( const void*, std::size_t ) {} ) );
+		const std::string path = nativePath( endpoint );
+		ASSERT_EQ( unlink( path.c_str() ), 0 );
+		LocalListener replacement;
+		if ( replace )
+			ASSERT_EQ( replacement.listen( path ), Socket::Done );
+		const auto start = std::chrono::steady_clock::now();
+		listener.close();
+		EXPECT_TRUE( std::chrono::steady_clock::now() - start < std::chrono::seconds( 1 ) );
+		EXPECT_FALSE( listener.isListening() );
+		if ( replace ) {
+			LocalSocket client;
+			EXPECT_EQ( client.connect( path ), Socket::Done );
+		}
+	}
+}
+
+UTEST( IPC, KeepsListeningThroughDescriptorExhaustion ) {
+	IPC listener;
+	Messages messages;
+	const std::string endpoint = uniqueEndpoint( "exhaustion" );
+	ASSERT_EQ( IPC::Status::Done,
+			   listener.listen( endpoint, [&]( const void* data, std::size_t size ) {
+				   messages.receive( data, size );
+			   } ) );
+	const int client = socket( AF_UNIX, SOCK_STREAM, 0 );
+	ASSERT_TRUE( client >= 0 );
+	sockaddr_un address{};
+	address.sun_family = AF_UNIX;
+	const std::string path = nativePath( endpoint );
+	std::memcpy( address.sun_path, path.c_str(), path.size() + 1 );
+	struct rlimit original{};
+	ASSERT_EQ( getrlimit( RLIMIT_NOFILE, &original ), 0 );
+	struct rlimit limited = original;
+	limited.rlim_cur = std::min<rlim_t>( original.rlim_cur, 256 );
+	ASSERT_EQ( setrlimit( RLIMIT_NOFILE, &limited ), 0 );
+	std::array<int, 256> descriptors;
+	size_t count = 0;
+	while ( count < descriptors.size() ) {
+		const int fd = open( "/dev/null", O_RDONLY );
+		if ( fd < 0 )
+			break;
+		descriptors[count++] = fd;
+	}
+	const int exhausted = errno;
+	const int connected =
+		connect( client, reinterpret_cast<sockaddr*>( &address ), sizeof( address ) );
+	// Several back-off periods, each failing accept() with EMFILE.
+	std::this_thread::sleep_for( std::chrono::milliseconds( 350 ) );
+	const bool listening = listener.isListening();
+	// Restore the process-wide limit before any assertion can return or allocate diagnostics.
+	for ( size_t i = 0; i < count; ++i )
+		close( descriptors[i] );
+	const int restored = setrlimit( RLIMIT_NOFILE, &original );
+	close( client );
+	ASSERT_EQ( restored, 0 );
+	ASSERT_EQ( exhausted, EMFILE );
+	ASSERT_EQ( connected, 0 );
+	EXPECT_TRUE( listening );
+	EXPECT_EQ( IPC::Status::Done, IPC::send( endpoint, "after-exhaustion" ) );
+	ASSERT_TRUE( messages.waitFor( 1 ) );
+	EXPECT_STDSTREQ( messages.values.back(), std::string( "after-exhaustion" ) );
+}
 
 UTEST( IPC, RejectsInvalidFramesAndPartialDisconnects ) {
 	IPC listener;

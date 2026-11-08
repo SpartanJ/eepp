@@ -35,6 +35,15 @@ void SocketImpl::close( SocketHandle sock ) {
 	::close( sock );
 }
 
+SocketHandle SocketImpl::accept( SocketHandle listener, sockaddr* address, AddrLength* length ) {
+#if EE_SOCKET_CLOEXEC
+	// Atomic: a concurrent fork/exec cannot inherit the descriptor before it is marked.
+	return ::accept4( listener, address, length, SOCK_CLOEXEC );
+#else
+	return ::accept( listener, address, length );
+#endif
+}
+
 void SocketImpl::setBlocking( SocketHandle sock, bool block ) {
 	int status = fcntl( sock, F_GETFL );
 	if ( block )

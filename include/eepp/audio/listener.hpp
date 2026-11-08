@@ -11,6 +11,10 @@ namespace EE { namespace Audio {
 ///		from where all the sounds are heard
 class EE_API Listener {
   public:
+	/** @return True if an audio output device can be opened. Without one, sounds and music
+	 * load but never play; for example a Windows SSH session or a host without audio. */
+	static bool isPlaybackAvailable();
+
 	////////////////////////////////////////////////////////////
 	/// \brief Change the global volume of all the sounds and musics
 	///

@@ -22,6 +22,10 @@ SocketHandle SocketImpl::invalidSocket() {
 	return INVALID_SOCKET;
 }
 
+SocketHandle SocketImpl::accept( SocketHandle listener, sockaddr* address, AddrLength* length ) {
+	return ::accept( listener, address, length );
+}
+
 void SocketImpl::close( SocketHandle sock ) {
 	closesocket( sock );
 }

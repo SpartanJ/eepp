@@ -67,7 +67,8 @@ Socket::Status TcpListener::accept( TcpSocket& socket ) {
 	// Accept a new connection
 	sockaddr_in address;
 	Private::SocketImpl::AddrLength length = sizeof( address );
-	SocketHandle remote = ::accept( getHandle(), reinterpret_cast<sockaddr*>( &address ), &length );
+	SocketHandle remote = Private::SocketImpl::accept(
+		getHandle(), reinterpret_cast<sockaddr*>( &address ), &length );
 
 	// Check for errors
 	if ( remote == Private::SocketImpl::invalidSocket() )

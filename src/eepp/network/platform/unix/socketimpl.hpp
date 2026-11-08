@@ -15,6 +15,15 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+// Linux, Android and the BSDs can create and accept descriptors close-on-exec atomically.
+#if defined( SOCK_CLOEXEC ) &&                                                  \
+	( EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID || \
+	  EE_PLATFORM == EE_PLATFORM_BSD )
+#define EE_SOCKET_CLOEXEC 1
+#else
+#define EE_SOCKET_CLOEXEC 0
+#endif
+
 using namespace EE::System;
 
 namespace EE { namespace Network { namespace Private {
@@ -47,6 +56,9 @@ class SocketImpl {
 	/** Get the last socket error status
 	**  @return Status corresponding to the last socket error */
 	static Socket::Status getErrorStatus();
+
+	/** Accept a connection, close-on-exec from creation where the platform allows it. */
+	static SocketHandle accept( SocketHandle listener, sockaddr* address, AddrLength* length );
 
 	/** Set the send timeout */
 	static void setSendTimeout( SocketHandle sock, const Time& timeout );

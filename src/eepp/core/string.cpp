@@ -2833,6 +2833,17 @@ size_t String::countLines( String::View text ) {
 	return count;
 }
 
+bool String::constantTimeEquals( std::string_view first, std::string_view second ) {
+	if ( first.size() != second.size() )
+		return false;
+	// Volatile prevents replacing the complete scan with an early-exit memcmp.
+	volatile unsigned difference = 0;
+	for ( size_t i = 0; i < first.size(); ++i )
+		difference = difference | ( static_cast<unsigned char>( first[i] ) ^
+									static_cast<unsigned char>( second[i] ) );
+	return difference == 0;
+}
+
 bool String::iequals( std::string_view str1, std::string_view str2 ) {
 	return str1.length() == str2.length() &&
 		   std::equal( str1.begin(), str1.end(), str2.begin(), []( char c1, char c2 ) {

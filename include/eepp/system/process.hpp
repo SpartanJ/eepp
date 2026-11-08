@@ -35,7 +35,17 @@ class EE_API Process {
 
 		// If command path is not absolute it will try to resolve the absolute path
 		// and use that.
-		UseAbsolutePath = 0x20
+		UseAbsolutePath = 0x20,
+
+		// Inherit stdin/stdout/stderr directly, preserving terminal/console behavior. No pipes
+		// are created: getStdIn/Out/Err return nullptr. NoWindow is ignored; combining this
+		// with EnableAsync or CombinedStdoutStderr is invalid. The caller's handles are borrowed
+		// at creation and are never closed by Process.
+		InheritStdio = 0x40,
+
+		// Create a Windows console process group so requestStop can target only this child.
+		// Has no effect on POSIX, where signals can address a child directly.
+		NewProcessGroup = 0x80
 	};
 
 	static inline constexpr Uint32 getDefaultOptions() {
@@ -50,6 +60,23 @@ class EE_API Process {
 	typedef std::function<void( const char* bytes, size_t n )> ReadFn;
 
 	static std::vector<std::string> parseArgs( const std::string& str );
+
+	/** Run an interactive child on the caller's terminal. Installs temporary process-wide signal
+	 * handlers: Ctrl-C stays with the foreground terminal group on POSIX; TERM/HUP are forwarded.
+	 * On Windows the child shares the console, which delivers Ctrl-C and stop events to it
+	 * directly; Ctrl-C never starts the forced-shutdown timer on either platform. Waits grace after
+	 * a stop request before force-killing. Only one call may run per process; intended for CLI main
+	 * threads, not application/render threads. Returns 127 on launch failure, and 128 + signal for
+	 * a signal-terminated POSIX child. Restores handlers before returning. Emscripten does not
+	 * support foreground execution. */
+	static int runForeground( const std::string& executable,
+							  const std::vector<std::string>& arguments,
+							  const std::unordered_map<std::string, std::string>& environment = {},
+							  const std::string& workingDirectory = "", Time grace = Seconds( 2 ) );
+
+	/** Request graceful termination (SIGTERM on POSIX, CTRL_BREAK on Windows). Windows children
+	 * must have been created with NewProcessGroup. Does not wait or force-kill. */
+	bool requestStop();
 
 	Process();
 

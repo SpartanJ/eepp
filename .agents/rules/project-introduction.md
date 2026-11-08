@@ -1,7 +1,7 @@
 # Project Architecture: eepp & ecode
 
 This repository contains the core framework (`eepp`) and several applications and tools built on
-top of it, including `ecode`, `eterm`, and `eeiv`.
+top of it, including `ecode`, `eterm`, `eeiv`, `eefm`, and `eproc`.
 
 ## 1. eepp (Core Framework)
 
@@ -16,7 +16,8 @@ top of it, including `ecode`, `eterm`, and `eeiv`.
 ## 3. eterm (Terminal Emulator)
 
 `eterm` is the repository's terminal emulator. Its name is always written in lowercase: `eterm`,
-not `eTerm`. Its implementation lives under `src/modules/eterm/`.
+not `eTerm`. The reusable terminal emulator module, also used by `ecode`, lives under
+`src/modules/eterm/`; the standalone application lives under `src/tools/eterm/`.
 
 ## 4. eeiv (Image Viewer)
 
@@ -35,6 +36,15 @@ with `PlacesPanel` / `Places`, `TerminalPanel` and `SettingsActions`. `FileTable
 `Applications` and `Trash`. Browsing and file operations must go through the VFS so local, packed and remote
 (`sftp://`) locations behave the same; only desktop integration (trash, mounted devices, MIME
 database, launching applications) may use local platform APIs. See `docs/articles/vfs.md`.
+
+## 6. eproc (System Monitor)
+
+`eproc` is the repository's system monitor. Its implementation lives under `src/tools/eproc/`. `App`
+(`eproc.cpp`) owns the window, layout, configuration and asynchronous collection. `ProcessCollector`
+is the shared backend contract, with one concrete collector per platform and the other native
+monitoring code under `platform/<os>/`. Collection runs off the UI thread; `ProcessModel` and
+`ProcessTreeModel` only present the snapshots handed to them. `PerformanceLayout` is the system
+metrics view, and `GuiWindowTracker` answers which processes own a GUI window.
 
 ## AI Agent Runtime Checks
 
@@ -84,6 +94,40 @@ When working on this project, rely on the following resources to understand exis
         and keep machine-local paths, historical matrices and embedded scripts out of the plan.
 *   **Implementation Examples:** A wide variety of examples showing how to use the library are located in `src/examples/`.
 *   **General Context:** The `README.md` at the root directory contains deeper project details.
+
+## Framework First
+
+eepp is the product; the applications drive it. Work in an application is also a chance to improve
+the framework, so treat both directions below as part of every task, not as optional cleanup.
+
+**Look before implementing.** Before writing a helper, parser, container, protocol client, platform
+wrapper, widget, or async mechanism, search for an existing implementation:
+
+- `include/eepp/`: `core` (containers, strings, async primitives), `system` (filesystem, processes,
+  threads, compression, hashing, IPC, patterns), `network` (sockets, HTTP, TLS), `window`,
+  `graphics`, `scene`, and `ui`.
+- `src/modules/`: reusable modules such as `vfs` and `eterm`.
+- The other applications in `src/tools/`: a second need for code that lives in one application is
+  a candidate for moving it down into the framework, not for copying it.
+
+Search by concept, not only by the name you expect, and read `docs/articles/` when the area has a
+guide. Use what exists. If it almost fits, prefer extending it over wrapping it, working around it,
+or writing a parallel version.
+
+**Recognize framework features.** Before implementing a capability inside an application, ask
+whether it depends on that application. It is probably a framework candidate when it implements a
+protocol or file format, wraps an operating-system facility, or is a general widget, data structure,
+or algorithm, or when another application could plausibly use it. For example, WebSocket support
+belongs in `EE::Network`, not privately inside the first application that needs it.
+
+**Ask when it is a candidate.** Unless the request already settles it, stop before implementing and
+tell the user what could be generalized, where it would live, and what the application would keep.
+Do not silently choose the application-local path, and do not grow the public API without asking.
+This applies to capabilities, not to small file-local helpers. Ordinary internal reuse needs no
+question, and a framework feature still needs a real use: ask about it rather than adding speculative
+abstraction. When a capability moves to the framework, the framework owns the mechanism and the
+application keeps its own policy and UI. The framework's documentation and testing expectations then
+apply.
 
 ## Architecture and Human Readability
 

@@ -156,6 +156,12 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 		**  @return The response body */
 		const std::string& getBody() const;
 
+		/** @brief Read values passed in the answer header
+		**  This function is used by Http to extract values passed
+		**  in the response.
+		**  @param in String stream containing the header values */
+		bool parseFields( std::istream& in );
+
 	  private:
 		friend class Http;
 
@@ -164,12 +170,6 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 		**  of a request.
 		**  @param data Content of the response to parse */
 		void parse( const std::string& data );
-
-		/** @brief Read values passed in the answer header
-		**  This function is used by Http to extract values passed
-		**  in the response.
-		**  @param in String stream containing the header values */
-		bool parseFields( std::istream& in );
 
 		// Member data
 		FieldTable mFields;			///< Fields of the header

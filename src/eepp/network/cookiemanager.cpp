@@ -3,6 +3,7 @@
 #include <eepp/system/lock.hpp>
 #include <fstream>
 #include <iomanip>
+#include <sstream>
 
 namespace EE { namespace Network {
 
@@ -68,31 +69,17 @@ bool CookieManager::loadFromFile( const std::string& path ) {
 }
 
 bool CookieManager::saveToFile( const std::string& path ) const {
-	const std::string temporaryPath = path + ".tmp";
+	std::ostringstream file;
+	file << "eepp-cookies-1\n";
 	{
-		std::ofstream file( temporaryPath, std::ios::binary | std::ios::trunc );
-		if ( !file )
-			return false;
-		file << "eepp-cookies-1\n";
-		{
-			Lock l( mMutex );
-			for ( const auto& domain : mCookies ) {
-				for ( const auto& cookie : domain.second )
-					file << std::quoted( domain.first ) << ' ' << std::quoted( cookie.first ) << ' '
-						 << std::quoted( cookie.second ) << '\n';
-			}
-		}
-		file.flush();
-		if ( !file ) {
-			FileSystem::fileRemove( temporaryPath );
-			return false;
+		Lock l( mMutex );
+		for ( const auto& domain : mCookies ) {
+			for ( const auto& cookie : domain.second )
+				file << std::quoted( domain.first ) << ' ' << std::quoted( cookie.first ) << ' '
+					 << std::quoted( cookie.second ) << '\n';
 		}
 	}
-	if ( !FileSystem::fileMove( temporaryPath, path ) ) {
-		FileSystem::fileRemove( temporaryPath );
-		return false;
-	}
-	return true;
+	return file && FileSystem::fileWriteAtomic( path, file.str() );
 }
 
 size_t CookieManager::size() const {

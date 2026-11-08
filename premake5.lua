@@ -559,7 +559,7 @@ function build_link_configuration( package_name, use_ee_icon, use_sdl_main )
 	set_apple_config()
 	build_arch_configuration()
 
-	filter { "system:linux or system:macosx or system:haiku or system:bsd", "action:not vs*" }
+	filter { "system:linux or system:haiku or system:bsd", "action:not vs*" }
 		if package_name ~= "eepp" and package_name ~= "eepp-static" then
 			linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
 		end
@@ -571,7 +571,9 @@ function build_link_configuration( package_name, use_ee_icon, use_sdl_main )
 		end
 
 	filter "system:macosx"
-		linkoptions { "-weak_framework UniformTypeIdentifiers", "-weak_framework UserNotifications" }
+		-- Resolve bundled dylibs relative to the loading binary and SDL framework builds in
+		-- /Library/Frameworks, independently of the working directory. Mach-O uses @loader_path.
+		linkoptions { "-Wl,-rpath,@loader_path", "-Wl,-rpath,/Library/Frameworks", "-weak_framework UniformTypeIdentifiers", "-weak_framework UserNotifications" }
 
 	filter { "system:bsd" }
 		if package_name ~= "eepp" and package_name ~= "eepp-static" then
@@ -624,7 +626,11 @@ function build_link_configuration( package_name, use_ee_icon, use_sdl_main )
 
 	filter { "system:windows", "action:vs*" }
 		if table.contains( backends, "SDL2" ) then
-			links { "SDL2", "SDL2main" }
+			links { "SDL2" }
+			-- Console helpers that opt out keep their own main (see eterm-session).
+			if use_sdl_main ~= false then
+				links { "SDL2main" }
+			end
 		end
 		if table.contains( backends, "SDL3" ) then
 			links { "SDL3" }
@@ -941,7 +947,10 @@ function backend_is( name, libname )
 
 	local ret_val = os_findlib( libname ) and backend_sel
 
-	if os.istarget("mingw32") or os.istarget("emscripten") then
+	-- Windows VC/MinGW builds download the selected SDL (download_and_extract_dependencies), so
+	-- it need not be installed: otherwise an installed SDL2 would replace a requested SDL3.
+	if os.istarget("mingw32") or os.istarget("emscripten") or _OPTIONS["windows-vc-build"] or
+		_OPTIONS["windows-mingw-build"] then
 		ret_val = backend_sel
 	end
 
@@ -1927,6 +1936,9 @@ workspace "eepp"
 			build_eepp( "eepp" )
 			postsymlinklib_arch( "eepp" )
 			target_dir_lib("")
+			filter { "system:macosx" }
+				linkoptions { "-Wl,-install_name,@rpath/%{cfg.buildtarget.name}" }
+			filter {}
 			-- Bind calls between libeepp's own functions directly instead of through the PLT. ELF
 			-- only: Mach-O and PE already bind them directly.
 			if os.istarget("linux") or os.istarget("bsd") or os.istarget("haiku") then
@@ -2221,8 +2233,21 @@ workspace "eepp"
 		filter { "system:windows", "action:not vs*", "configurations:release*" }
 			buildoptions { "-g1" }
 
+	if os.istarget("windows") then
+		project "eterm-session"
+			kind "ConsoleApp"
+			language "C++"
+			files { "src/tools/eterm-session/main.cpp", "src/tools/eterm/harnesssessionrecovery.cpp",
+				"src/tools/eterm/codexsessionrelay.cpp", "src/tools/eterm/codexinvocation.cpp" }
+			incdirs { "src/thirdparty" }
+			build_link_configuration( "eterm-session", false, false )
+	end
+
 	project "eterm"
 		set_kind()
+		if os.istarget("windows") then
+			dependson { "eterm-session" }
+		end
 		language "C++"
 		eepp_module_backward_add( false )
 		incdirs { "src/thirdparty/efsw/include", "src/modules/eterm/include/", "src/thirdparty" }
@@ -2374,6 +2399,10 @@ workspace "eepp"
 		kind "ConsoleApp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
 		defines { "EE_UNIT_TESTS" }
+		if os.istarget("windows") then
+			-- Native drag-and-drop regression tests call OLE directly and reference COM GUIDs.
+			links { "ole32", "uuid" }
+		end
 		if os.istarget("windows") and table.contains(backends, "SDL2") then
 			defines { "EE_SDL_VERSION_2" }
 		end

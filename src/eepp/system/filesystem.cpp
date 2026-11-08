@@ -1,8 +1,11 @@
+#include <eepp/system/filesystem.hpp>
+
 #include <algorithm>
 #include <climits>
-#include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/uuid.hpp>
+#include <fcntl.h>
 #include <filesystem>
 #include <sys/stat.h>
 
@@ -14,6 +17,9 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+
+#include <io.h>
+#include <sddl.h>
 #else
 #include <unistd.h>
 #endif
@@ -199,6 +205,97 @@ bool FileSystem::fileWrite( const std::string& filepath, const std::vector<Uint8
 
 bool FileSystem::fileWrite( const std::string& filepath, std::string_view data ) {
 	return fileWrite( filepath, (const Uint8*)data.data(), (Uint32)data.size() );
+}
+
+bool FileSystem::fileWriteAtomic( const std::string& filepath, std::string_view data, bool sync ) {
+	if ( filepath.empty() || filepath.find( '\0' ) != std::string::npos )
+		return false;
+	const auto temporary = filepath + "." + UUID().toString() + ".tmp";
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	const int descriptor =
+		_wopen( String( temporary ).toWideString().c_str(),
+				_O_WRONLY | _O_CREAT | _O_EXCL | _O_BINARY | _O_NOINHERIT, _S_IREAD | _S_IWRITE );
+#else
+	int flags = O_WRONLY | O_CREAT | O_EXCL;
+#ifdef O_CLOEXEC
+	flags |= O_CLOEXEC;
+#endif
+	const int descriptor = ::open( temporary.c_str(), flags, 0600 );
+#endif
+	if ( descriptor < 0 )
+		return false;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	FILE* file = _fdopen( descriptor, "wb" );
+#else
+	FILE* file = fdopen( descriptor, "wb" );
+#endif
+	if ( !file ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		_close( descriptor );
+#else
+		::close( descriptor );
+#endif
+		fileRemove( temporary );
+		return false;
+	}
+	bool written = data.empty() || std::fwrite( data.data(), 1, data.size(), file ) == data.size();
+#if defined( EE_PLATFORM_POSIX )
+	struct stat existing{};
+	if ( ::stat( filepath.c_str(), &existing ) == 0 )
+		written = fchmod( fileno( file ), existing.st_mode & 0777 ) == 0 && written;
+#endif
+	if ( sync ) {
+		written = std::fflush( file ) == 0 && written;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		written = FlushFileBuffers(
+					  reinterpret_cast<HANDLE>( _get_osfhandle( _fileno( file ) ) ) ) != 0 &&
+				  written;
+#elif defined( EE_PLATFORM_POSIX )
+		written = fsync( fileno( file ) ) == 0 && written;
+#endif
+	}
+	const bool closed = std::fclose( file ) == 0;
+	if ( written && closed ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if ( MoveFileExW( String( temporary ).toWideString().c_str(),
+						  String( filepath ).toWideString().c_str(), MOVEFILE_REPLACE_EXISTING ) )
+			return true;
+#else
+		if ( fileMove( temporary, filepath ) )
+			return true;
+#endif
+	}
+	fileRemove( temporary );
+	return false;
+}
+
+std::string FileSystem::createTempDirectory( std::string_view prefix ) {
+	if ( prefix.find_first_of( "/\\" ) != std::string_view::npos ||
+		 prefix.find( '\0' ) != std::string_view::npos )
+		return {};
+	auto base = Sys::getTempPath();
+	if ( base.empty() )
+		return {};
+	dirAddSlashAtEnd( base );
+	for ( unsigned attempt = 0; attempt < 8; ++attempt ) {
+		const auto path = base + std::string( prefix ) + UUID().toString();
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		PSECURITY_DESCRIPTOR descriptor = nullptr;
+		if ( !ConvertStringSecurityDescriptorToSecurityDescriptorW(
+				 L"D:P(A;OICI;FA;;;OW)", SDDL_REVISION_1, &descriptor, nullptr ) )
+			return {};
+		SECURITY_ATTRIBUTES attributes{ sizeof( SECURITY_ATTRIBUTES ), descriptor, FALSE };
+		const bool created =
+			CreateDirectoryW( String( path ).toWideString().c_str(), &attributes ) != 0;
+		LocalFree( descriptor );
+		if ( created )
+			return path;
+#else
+		if ( makeDir( path, false, 0700 ) )
+			return path;
+#endif
+	}
+	return {};
 }
 
 bool FileSystem::fileRemove( const std::string& filepath ) {
@@ -744,6 +841,8 @@ bool FileSystem::isRelativePath( const std::string& path ) {
 		if ( path[0] == '/' )
 			return false;
 #if EE_PLATFORM == EE_PLATFORM_WIN
+		if ( path.size() >= 2 && path[0] == '\\' && path[1] == '\\' )
+			return false;
 		if ( path.size() >= 2 && String::isLetter( path[0] ) && path[1] == ':' )
 			return false;
 #endif

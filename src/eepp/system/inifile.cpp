@@ -10,12 +10,7 @@
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/packregistry.hpp>
-#include <eepp/system/uuid.hpp>
 #include <filesystem>
-
-#if defined( EE_PLATFORM_POSIX )
-#include <unistd.h>
-#endif
 
 #define MAX_KEYNAME 128
 #define MAX_VALUENAME 128
@@ -209,33 +204,10 @@ bool IniFile::writeFileAtomic() {
 #else
 	const auto path = destination.string();
 #endif
-	const auto temporary = path + "." + UUID().toString() + ".tmp";
 	IOStreamString contents;
 	if ( !writeStream( contents ) )
 		return false;
-	// Use portable fopen modes across Windows C runtimes; UUID names provide
-	// independent temporary paths.
-	auto* file = FileSystem::fopenUtf8( temporary, "wb" );
-	if ( !file )
-		return false;
-	const auto& data = contents.getStream();
-	bool written = std::fwrite( data.data(), 1, data.size(), file ) == data.size();
-	written = std::fflush( file ) == 0 && written;
-#if defined( EE_PLATFORM_POSIX )
-	written = fsync( fileno( file ) ) == 0 && written;
-#endif
-	written = std::fclose( file ) == 0 && written;
-	if ( written && FileSystem::fileExists( path ) ) {
-		auto permissions = std::filesystem::status( destination, ec ).permissions();
-		if ( !ec )
-			std::filesystem::permissions( filePath( temporary ), permissions, ec );
-		written = !ec;
-	}
-	if ( written )
-		written = FileSystem::fileMove( temporary, path );
-	if ( !written )
-		FileSystem::fileRemove( temporary );
-	return written;
+	return FileSystem::fileWriteAtomic( path, contents.getStream(), true );
 }
 
 bool IniFile::writeStream( IOStream& stream ) {

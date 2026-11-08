@@ -539,6 +539,9 @@ class EE_API String {
 
 	static bool iequals( String::View str1, String::View str2 );
 
+	/** Compare byte strings without content-dependent early exit. Length is not secret. */
+	static bool constantTimeEquals( std::string_view first, std::string_view second );
+
 	/** Compares ignoring ASCII case, without allocating (as comparing String::toLower() copies
 	 * would). @return Negative, zero or positive, like std::string::compare(). */
 	static int icompare( std::string_view str1, std::string_view str2 );

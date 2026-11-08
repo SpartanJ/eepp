@@ -84,6 +84,18 @@ class EE_API FileSystem {
 	/** Write a file in binary mode and close it. */
 	static bool fileWrite( const std::string& filepath, std::string_view data );
 
+	/** Atomically replace a local file through an exclusively created sibling. Readers see the
+	 * old or complete new file. New POSIX files are owner-only; existing POSIX permissions are
+	 * retained. sync flushes file contents before rename; directory-entry durability after power
+	 * loss is not guaranteed. */
+	static bool fileWriteAtomic( const std::string& filepath, std::string_view data,
+								 bool sync = false );
+
+	/** Create an exclusive, owner-only directory in the user's temporary directory. Returns its
+	 * path, or empty on failure. The caller owns removal. Prefix must be a single path component.
+	 */
+	static std::string createTempDirectory( std::string_view prefix = "eepp-" );
+
 	/** Deletes a file from the file system. */
 	static bool fileRemove( const std::string& filepath );
 

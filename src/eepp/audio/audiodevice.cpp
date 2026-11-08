@@ -1,4 +1,5 @@
 #include <eepp/audio/alcheck.hpp>
+#include <eepp/audio/alresource.hpp>
 #include <eepp/audio/audiodevice.hpp>
 #include <eepp/audio/listener.hpp>
 #include <eepp/core/core.hpp>
@@ -14,6 +15,11 @@ float listenerVolume = 100.f;
 Vector3f listenerPosition( 0.f, 0.f, 0.f );
 Vector3f listenerDirection( 0.f, 0.f, -1.f );
 Vector3f listenerUpVector( 0.f, 1.f, 0.f );
+
+// Holds the shared device open for the duration of a static query. Going through AlResource
+// keeps its lock and count authoritative: a temporary AudioDevice created outside them could
+// overwrite, and on deletion close, a device a concurrent resource has just opened.
+struct DeviceReference : EE::Audio::AlResource {};
 } // namespace
 
 using namespace EE::System;
@@ -61,41 +67,30 @@ AudioDevice::~AudioDevice() {
 	alcMakeContextCurrent( NULL );
 	if ( audioContext )
 		alcDestroyContext( audioContext );
+	audioContext = NULL;
 
-	// Destroy the device
+	// Destroy the device, leaving no dangling globals for later queries.
 	if ( audioDevice )
 		alcCloseDevice( audioDevice );
+	audioDevice = NULL;
+}
+
+bool AudioDevice::isPlaybackAvailable() {
+	DeviceReference reference;
+	return audioDevice != NULL && audioContext != NULL;
 }
 
 bool AudioDevice::isExtensionSupported( const std::string& extension ) {
-	// Create a temporary audio device in case none exists yet.
-	// This device will not be used in this function and merely
-	// makes sure there is a valid OpenAL device for extension
-	// queries if none has been created yet.
-	bool ret = false;
-
-	AudioDevice* device = NULL;
-	if ( !audioDevice )
-		device = AudioDevice::New();
-
+	// Makes sure there is a valid OpenAL device for extension queries.
+	DeviceReference reference;
 	if ( ( extension.length() > 2 ) && ( extension.substr( 0, 3 ) == "ALC" ) )
-		ret = alcIsExtensionPresent( audioDevice, extension.c_str() ) != AL_FALSE;
-	else
-		ret = alIsExtensionPresent( extension.c_str() ) != AL_FALSE;
-
-	eeSAFE_DELETE( device );
-
-	return ret;
+		return alcIsExtensionPresent( audioDevice, extension.c_str() ) != AL_FALSE;
+	return alIsExtensionPresent( extension.c_str() ) != AL_FALSE;
 }
 
 int AudioDevice::getFormatFromChannelCount( unsigned int channelCount ) {
-	// Create a temporary audio device in case none exists yet.
-	// This device will not be used in this function and merely
-	// makes sure there is a valid OpenAL device for format
-	// queries if none has been created yet.
-	AudioDevice* device = NULL;
-	if ( !audioDevice )
-		device = AudioDevice::New();
+	// Makes sure there is a valid OpenAL device for format queries.
+	DeviceReference reference;
 
 	// Find the good format according to the number of channels
 	int format = 0;
@@ -126,8 +121,6 @@ int AudioDevice::getFormatFromChannelCount( unsigned int channelCount ) {
 	// Fixes a bug on OS X
 	if ( format == -1 )
 		format = 0;
-
-	eeSAFE_DELETE( device );
 
 	return format;
 }

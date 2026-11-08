@@ -63,6 +63,8 @@ void AppConfig::load() {
 					0, 100 );
 	terminal.restoreLastSession =
 		mIni.getValueB( "terminal", "restore_last_session", terminal.restoreLastSession );
+	terminal.recoverHarnessSessions =
+		mIni.getValueB( "terminal", "recover_harness_sessions", terminal.recoverHarnessSessions );
 	ui.smoothScroll = mIni.getValueB(
 		"ui", "smooth_scroll", mIni.getValueB( "terminal", "smooth_scroll", ui.smoothScroll ) );
 	const auto newTerminalBehavior =
@@ -160,6 +162,7 @@ bool AppConfig::savePreferences() {
 	mIni.setValue( "terminal", "program_status_sound", terminal.programStatusSound );
 	mIni.setValueI( "terminal", "program_status_sound_volume", terminal.programStatusSoundVolume );
 	mIni.setValueB( "terminal", "restore_last_session", terminal.restoreLastSession );
+	mIni.setValueB( "terminal", "recover_harness_sessions", terminal.recoverHarnessSessions );
 	mIni.setValueB( "ui", "smooth_scroll", ui.smoothScroll );
 	mIni.deleteValue( "terminal", "smooth_scroll" );
 	mIni.setValue( "terminal", "new_terminal_behavior",

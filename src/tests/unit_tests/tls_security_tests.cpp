@@ -83,11 +83,25 @@ class LocalTLSServer {
 
 class TLSCertificateScope {
   public:
-	TLSCertificateScope() : mOriginal( SSL::SSLSocket::CertificatesPath ) { SSL::SSLSocket::end(); }
+	TLSCertificateScope() :
+		mOriginal( SSL::SSLSocket::CertificatesPath ),
+		mEnvironment( Sys::getEnv( "SSL_CERT_DIR" ) ),
+		mHadEnvironment( std::getenv( "SSL_CERT_DIR" ) != nullptr ) {
+		SSL::SSLSocket::end();
+		// User overrides take precedence over CertificatesPath. Keep this loopback fixture's
+		// trust independent of the invoking shell without changing that production behavior.
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		_putenv_s( "SSL_CERT_DIR", "" );
+#else
+		unsetenv( "SSL_CERT_DIR" );
+#endif
+	}
 
 	~TLSCertificateScope() {
 		SSL::SSLSocket::end();
 		SSL::SSLSocket::CertificatesPath = std::move( mOriginal );
+		if ( mHadEnvironment )
+			Sys::setEnv( "SSL_CERT_DIR", mEnvironment.c_str() );
 	}
 
 	static std::unique_ptr<SSL::SSLSocket> socket( const std::string& certificate,
@@ -99,6 +113,8 @@ class TLSCertificateScope {
 
   private:
 	std::string mOriginal;
+	std::string mEnvironment;
+	bool mHadEnvironment;
 };
 
 // Sends a status-page request and returns its "New, ..." or "Reused, ..." line. It stops reading

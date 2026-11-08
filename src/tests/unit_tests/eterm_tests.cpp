@@ -3756,7 +3756,10 @@ UTEST( eterm, process_exit_drains_buffered_pty_output ) {
 	display->mDrawLines = 0;
 
 	EXPECT_FALSE( term->update() );
-	EXPECT_EQ( static_cast<size_t>( 1024 ), bytesRead );
+	// A slice ends at either 1024 reads or the 4 ms deadline. Slower hosts can reach
+	// the time limit first; complete draining below must still preserve every byte.
+	EXPECT_GT( bytesRead, static_cast<size_t>( 0 ) );
+	EXPECT_LE( bytesRead, static_cast<size_t>( 1024 ) );
 	while ( !term->update() ) {
 	}
 

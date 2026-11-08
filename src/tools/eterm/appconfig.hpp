@@ -48,6 +48,7 @@ struct TerminalConfig {
 	bool programStatusAlertsWhenActive{ false };
 	bool programStatusAlertsAllStates{ false };
 	bool restoreLastSession{ true };
+	bool recoverHarnessSessions{ false };
 	NewTerminalBehavior newTerminalBehavior{ NewTerminalBehavior::CurrentTabBar };
 	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
 	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };

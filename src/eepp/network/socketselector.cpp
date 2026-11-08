@@ -1,9 +1,11 @@
 #include <algorithm>
+#include <cerrno>
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/core/small_vector.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
 #include <eepp/network/socket.hpp>
 #include <eepp/network/socketselector.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/system/sys.hpp>
 #include <limits>
 #include <utility>
@@ -35,16 +37,30 @@ struct SocketSelector::SocketSelectorImpl {
 // Mirrors select() read readiness: hang-ups and errors are reported as readable so the
 // caller performs the receive() that discovers the disconnection or error. Windows reports a
 // graceful peer shutdown as POLLHUP without POLLIN.
-static constexpr short SOCKET_READY_EVENTS = POLLIN | POLLERR | POLLHUP;
 
 // WSAPoll() (Windows Vista+) has the same contract as poll(). Unlike select(), neither limits the
 // number of sockets (Winsock FD_SETSIZE) or their descriptor values (POSIX FD_SETSIZE).
 static int pollSockets( pollfd* sockets, size_t count, int timeout ) {
+	Clock clock;
+	int remaining = timeout;
+	for ( ;; ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	return WSAPoll( sockets, static_cast<ULONG>( count ), timeout );
+		const int result = WSAPoll( sockets, static_cast<ULONG>( count ), remaining );
+		const bool interrupted = result < 0 && WSAGetLastError() == WSAEINTR;
 #else
-	return poll( sockets, static_cast<nfds_t>( count ), timeout );
+		const int result = poll( sockets, static_cast<nfds_t>( count ), remaining );
+		const bool interrupted = result < 0 && errno == EINTR;
 #endif
+		if ( !interrupted )
+			return result;
+		if ( timeout >= 0 ) {
+			remaining = static_cast<int>(
+				std::max<Int64>( 0, static_cast<Int64>( timeout ) -
+										clock.getElapsedTime().asMicroseconds() / 1000 ) );
+			if ( !remaining )
+				return 0;
+		}
+	}
 }
 
 SocketSelector::SocketSelector() : mImpl( eeNew( SocketSelectorImpl, () ) ) {
@@ -59,10 +75,21 @@ SocketSelector::~SocketSelector() {
 }
 
 void SocketSelector::add( Socket& socket ) {
+	add( socket, Event::Read );
+}
+
+void SocketSelector::add( Socket& socket, Event event ) {
 	SocketHandle handle = socket.getHandle();
 
-	if ( handle != Private::SocketImpl::invalidSocket() && !mImpl->find( handle ) )
-		mImpl->Sockets.push_back( { handle, POLLIN, 0 } );
+	const short events = event == Event::Read	 ? POLLIN
+						 : event == Event::Write ? POLLOUT
+												 : POLLIN | POLLOUT;
+	if ( handle != Private::SocketImpl::invalidSocket() ) {
+		if ( auto* descriptor = mImpl->find( handle ) )
+			descriptor->events |= events;
+		else
+			mImpl->Sockets.push_back( { handle, events, 0 } );
+	}
 }
 
 void SocketSelector::remove( Socket& socket ) {
@@ -114,7 +141,7 @@ bool SocketSelector::wait( Time timeout ) {
 	}
 
 	for ( const auto& descriptor : mImpl->Sockets ) {
-		if ( descriptor.revents & SOCKET_READY_EVENTS )
+		if ( descriptor.revents & ( descriptor.events | POLLERR | POLLHUP ) )
 			return true;
 	}
 
@@ -122,13 +149,20 @@ bool SocketSelector::wait( Time timeout ) {
 }
 
 bool SocketSelector::isReady( Socket& socket ) const {
+	return isReady( socket, Event::Read );
+}
+
+bool SocketSelector::isReady( Socket& socket, Event event ) const {
 	SocketHandle handle = socket.getHandle();
 
 	if ( handle == Private::SocketImpl::invalidSocket() )
 		return false;
 
 	const pollfd* descriptor = mImpl->find( handle );
-	return descriptor && ( descriptor->revents & SOCKET_READY_EVENTS );
+	const short events = event == Event::Read	 ? POLLIN
+						 : event == Event::Write ? POLLOUT
+												 : POLLIN | POLLOUT;
+	return descriptor && ( descriptor->revents & ( events | POLLERR | POLLHUP ) );
 }
 
 SocketSelector& SocketSelector::operator=( const SocketSelector& right ) {

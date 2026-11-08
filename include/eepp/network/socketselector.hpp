@@ -12,6 +12,9 @@ class Socket;
 /** Multiplexer that allows to read from multiple sockets */
 class EE_API SocketSelector {
   public:
+	/** Readiness to observe. ReadWrite combines both events; errors/hang-ups wake either. */
+	enum class Event { Read, Write, ReadWrite };
+
 	/** @brief Default constructor */
 	SocketSelector();
 
@@ -30,6 +33,9 @@ class EE_API SocketSelector {
 	**  @param socket Reference to the socket to add
 	**  @see Remove, Clear */
 	void add( Socket& socket );
+
+	/** Add readiness interests, merging them when a socket is already registered. */
+	void add( Socket& socket, Event events );
 
 	/** @brief Remove a socket from the selector
 	**  This function doesn't destroy the socket, it simply
@@ -69,6 +75,8 @@ class EE_API SocketSelector {
 	**  @return True if the socket is ready to read, false otherwise
 	**  @see IsReady */
 	bool isReady( Socket& socket ) const;
+
+	bool isReady( Socket& socket, Event event ) const;
 
 	/** @brief Overload of assignment operator
 	**  @param right Instance to assign

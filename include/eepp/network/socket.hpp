@@ -4,6 +4,8 @@
 #include <eepp/config.hpp>
 #include <eepp/core/noncopyable.hpp>
 #include <eepp/network/sockethandle.hpp>
+#include <eepp/system/time.hpp>
+#include <string>
 
 namespace EE { namespace Network {
 class SocketSelector;
@@ -46,24 +48,23 @@ class EE_API Socket : NonCopyable {
 	**  @see SetBlocking */
 	bool isBlocking() const;
 
+	/** Borrow the native socket handle for OS polling/interoperability. It can be invalid before
+	 * creation or after close. Ownership stays with this socket: never close the handle, and
+	 * finish all native operations before disconnecting or destroying the socket. */
+	SocketHandle getHandle() const;
+
   protected:
 	/** @brief Types of protocols that the socket can use */
 	enum Type {
-		Tcp, ///< TCP protocol
-		Udp	 ///< UDP protocol
+		Tcp,  ///< TCP protocol
+		Udp,  ///< UDP protocol
+		Local ///< Local stream protocol
 	};
 
 	/** @brief Default constructor
 	**  This constructor can only be accessed by derived classes.
 	**  @param type Type of the socket (TCP or UDP) */
 	Socket( Type type );
-
-	/** @brief Return the internal handle of the socket
-	**  The returned handle may be invalid if the socket
-	**  was not created yet (or already destroyed).
-	**  This function can only be accessed by derived classes.
-	**  @return The internal (OS-specific) handle of the socket */
-	SocketHandle getHandle() const;
 
 	/** @brief Create the internal representation of the socket
 	///
@@ -75,6 +76,16 @@ class EE_API Socket : NonCopyable {
 	**  This function can only be accessed by derived classes.
 	**  @param handle OS-specific handle of the socket to wrap */
 	void create( SocketHandle handle );
+
+	static bool makeLocalAddress( const std::string& path, void* address, size_t size );
+
+	Status connectAddress( const void* address, size_t size, System::Time timeout );
+
+	Status connectionStatus() const;
+
+	Status sendStream( const void* data, size_t size, size_t& sent );
+
+	Status receiveStream( void* data, size_t size, size_t& received );
 
 	/** @brief Close the socket gracefully
 	**  This function can only be accessed by derived classes. */

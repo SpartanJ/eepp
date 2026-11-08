@@ -510,7 +510,7 @@ end
 function fix_shared_lib_linking_path( package_name, libname )
 	if ( "4.4-beta5" == _PREMAKE_VERSION or "HEAD" == _PREMAKE_VERSION ) and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
 		if os.is("macosx") then
-			linkoptions { "-install_name " .. libname .. ".dylib" }
+			linkoptions { "-install_name @rpath/" .. libname .. ".dylib" }
 		elseif os.is("linux") or os.is("bsd") or os.is("haiku") then
 			linkoptions { "-Wl,-soname=\"" .. libname .. ".so" .. "\"" }
 		end
@@ -628,7 +628,7 @@ function build_link_configuration( package_name, use_ee_icon, use_sdl_main )
 			extension = ".x86_64.ios"
 		end
 
-		if os.is_real("linux") or os.is_real("haiku") or os.is_real("bsd") or os.is_real("macosx") then
+		if os.is_real("linux") or os.is_real("haiku") or os.is_real("bsd") then
 			if _ACTION == "gmake" then
 				linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
 			elseif _ACTION == "codeblocks" then
@@ -643,7 +643,9 @@ function build_link_configuration( package_name, use_ee_icon, use_sdl_main )
 	end
 
 	if os.is_real("macosx") then
-		linkoptions { "-weak_framework UniformTypeIdentifiers", "-weak_framework UserNotifications" }
+		-- Resolve bundled dylibs relative to the loading binary and SDL framework builds in
+		-- /Library/Frameworks, independently of the working directory. Mach-O uses @loader_path.
+		linkoptions { "-Wl,-rpath,@loader_path", "-Wl,-rpath,/Library/Frameworks", "-weak_framework UniformTypeIdentifiers", "-weak_framework UserNotifications" }
 	end
 
 	if _OPTIONS["with-mold-linker"] then
@@ -2209,8 +2211,23 @@ solution "eepp"
 				buildoptions { "-g1", "-fvisibility=default" }
 			end
 
+	if os.is("windows") then
+		project "eterm-session"
+			kind "ConsoleApp"
+			language "C++"
+			files { "src/tools/eterm-session/main.cpp", "src/tools/eterm/harnesssessionrecovery.cpp",
+				"src/tools/eterm/codexsessionrelay.cpp", "src/tools/eterm/codexinvocation.cpp" }
+			includedirs { "src/thirdparty" }
+			build_link_configuration( "eterm-session", false, false )
+	end
+
 	project "eterm"
 		set_kind()
+		if os.is("windows") then
+			-- Premake 4 derives build dependencies from project links and excludes executables
+			-- from the linker input list.
+			links { "eterm-session" }
+		end
 		language "C++"
 		eepp_module_backward_add( false )
 		files { "src/tools/eterm/**.cpp" }
@@ -2368,6 +2385,10 @@ solution "eepp"
 		kind "ConsoleApp"
 		targetdir("./bin/unit_tests")
 		defines { "EE_UNIT_TESTS" }
+		if os.is("windows") then
+			-- Native drag-and-drop regression tests call OLE directly and reference COM GUIDs.
+			links { "ole32", "uuid" }
+		end
 		if os.is("windows") and table.contains(backends, "SDL2") then
 			defines { "EE_SDL_VERSION_2" }
 		end

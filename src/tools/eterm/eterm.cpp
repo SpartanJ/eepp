@@ -148,7 +148,7 @@ void App::saveWindowState() {
 void App::registerSessionWidgetType() {
 	tabSplitter->registerWidgetType(
 		SessionTerminalType,
-		{ []( UIWidget* widget ) {
+		{ [this]( UIWidget* widget ) {
 			 auto session = nlohmann::json::object();
 			 // Other titles belong to whatever was running, which the restored shell won't be.
 			 auto* terminal = widget->asType<UITerminal>();
@@ -156,6 +156,11 @@ void App::registerSessionWidgetType() {
 				 session["custom_title"] = terminal->getTitle();
 			 if ( auto directory = terminalDirectory( terminal ); !directory.empty() )
 				 session["working_directory"] = std::move( directory );
+			 if ( config->terminal.recoverHarnessSessions ) {
+				 auto resume = harnessRecovery.capture( terminal );
+				 if ( !resume.is_null() )
+					 session["harness_session"] = std::move( resume );
+			 }
 			 return session;
 		 },
 		  [this]( const nlohmann::json& session ) -> WidgetLoadResult {
@@ -165,7 +170,8 @@ void App::registerSessionWidgetType() {
 			  const std::string directory = session.value( "working_directory", "" );
 			  auto* terminal = newTerminal(
 				  mainLayout->getPixelsSize(),
-				  isUsableDirectory( directory ) ? directory : terminalConfig.workingDirectory );
+				  isUsableDirectory( directory ) ? directory : terminalConfig.workingDirectory,
+				  session.contains( "harness_session" ) ? &session["harness_session"] : nullptr );
 			  if ( !terminal )
 				  return {};
 			  std::string title = session.value( "custom_title", "" );
@@ -764,20 +770,48 @@ std::string App::resolveWorkingDirectory( UITerminal* source ) const {
 	return terminalConfig.workingDirectory;
 }
 
-UITerminal* App::newTerminal( const Sizef& initialSize, const std::string& workingDirectory ) {
+UITerminal* App::newTerminal( const Sizef& initialSize, const std::string& workingDirectory,
+							  const nlohmann::json* resume ) {
+	std::unordered_map<std::string, std::string> environment;
+	// Nested eterm launches must not consume their parent's request or inherit a relay's bearer
+	// token. A relay child deliberately has an empty directory, so inspect every current key.
+	for ( const auto* key :
+		  { "ETERM_HARNESS_DIRECTORY", "ETERM_HARNESS_BINARY", "ETERM_RESUME_SESSION",
+			"ETERM_HARNESS_FISH", "ETERM_HARNESS_EMULATOR_PID", "ETERM_HARNESS_SHELL_PID",
+			"ETERM_CODEX_SOCKET", "ETERM_CODEX_RELAY_TOKEN", "ETERM_HARNESS_POWERSHELL" } ) {
+		if ( !Sys::getEnv( key ).empty() )
+			environment[key] = "";
+	}
+	std::string recoveryDirectory;
+	// ShellIntegration resolves the default shell and sources adapters only for supported shells.
+	if ( config->terminal.recoverHarnessSessions && !terminalConfig.launchExecutable &&
+		 terminalConfig.executeInShell.empty() ) {
+		recoveryDirectory =
+			HarnessSessionRecovery::prepare( environment, resume ? *resume : nlohmann::json{} );
+	}
 	auto display = TerminalDisplay::create(
 		appWindow, terminalFont, terminalFontSize, initialSize, terminalConfig.program,
 		terminalConfig.arguments, workingDirectory, terminalConfig.historySize, nullptr,
-		terminalConfig.useFrameBuffer, !terminalConfig.closeOnExit, {},
+		terminalConfig.useFrameBuffer, !terminalConfig.closeOnExit, environment,
 		TerminalSessionOptions{ config->terminal.allowOsc52ClipboardWrite,
 								config->terminal.enableOsc8Hyperlinks,
 								config->terminal.graphemeClustering } );
-	if ( !display )
+	if ( !display ) {
+		if ( !recoveryDirectory.empty() )
+			FileSystem::dirRemoveAll( recoveryDirectory );
 		return nullptr;
+	}
 	auto* terminal = UITerminal::New( display );
 	if ( !terminal || !terminal->getTerm() ) {
 		eeSAFE_DELETE( terminal );
+		if ( !recoveryDirectory.empty() )
+			FileSystem::dirRemoveAll( recoveryDirectory );
 		return nullptr;
+	}
+	if ( !recoveryDirectory.empty() ) {
+		harnessRecovery.track( terminal, std::move( recoveryDirectory ) );
+		terminal->on( Event::OnClose,
+					  [this, terminal]( const Event* ) { harnessRecovery.remove( terminal ); } );
 	}
 
 	terminal->getTerm()->setAllowMemoryTrimming( true );
@@ -1548,6 +1582,8 @@ int App::run( int argc, char* argv[] ) {
 } // namespace eterm
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+	if ( const auto result = HarnessSessionRecovery::command( argc, argv ) )
+		return *result;
 	int result;
 	{
 		App app;

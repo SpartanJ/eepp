@@ -57,6 +57,9 @@ class SocketImpl {
 	**  @return Status corresponding to the last socket error */
 	static Socket::Status getErrorStatus();
 
+	/** Accept a connection, close-on-exec from creation where the platform allows it. */
+	static SocketHandle accept( SocketHandle listener, sockaddr* address, AddrLength* length );
+
 	/** Set the send timeout */
 	static void setSendTimeout( SocketHandle sock, const Time& timeout );
 

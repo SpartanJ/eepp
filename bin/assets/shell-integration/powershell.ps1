@@ -11,6 +11,9 @@ function global:prompt {
     # Invoke the user's prompt first so it sees the original $? and LASTEXITCODE. Capture its
     # result before emitting OSC 7 so the visible prompt still ends at the input position.
     $etermPrompt = & $global:__etermOriginalPrompt
+    if ($env:ETERM_HARNESS_DIRECTORY -and (Get-Command __etermClearHarness -CommandType Function -ErrorAction SilentlyContinue)) {
+        __etermClearHarness
+    }
     try {
         if ($pwd.Provider.Name -eq 'FileSystem') {
             $etermPath = $pwd.ProviderPath
@@ -30,4 +33,9 @@ function global:prompt {
         # Reporting is optional; an unavailable output stream must not break the user's prompt.
     }
     $etermPrompt
+}
+
+# Recovery stays entirely absent when its separate option is disabled.
+if ($env:ETERM_HARNESS_DIRECTORY -and $env:ETERM_HARNESS_POWERSHELL) {
+    . $env:ETERM_HARNESS_POWERSHELL
 }

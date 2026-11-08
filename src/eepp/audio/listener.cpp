@@ -3,6 +3,10 @@
 
 namespace EE { namespace Audio {
 
+bool Listener::isPlaybackAvailable() {
+	return Private::AudioDevice::isPlaybackAvailable();
+}
+
 void Listener::setGlobalVolume( float volume ) {
 	Private::AudioDevice::setGlobalVolume( volume );
 }

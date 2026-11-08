@@ -137,6 +137,116 @@ directory is available or inheritance is disabled, ecode uses its configured pro
 home, or custom directory preference. Explicit build/run and context-menu launch directories take
 priority over inheritance.
 
+## Experimental Codex and Claude session recovery
+
+Standalone eterm can try to reopen a local Codex or Claude conversation when restoring its window.
+This is an optional convenience, not a guarantee of recovery. It resumes a saved conversation;
+it does not preserve live tools, pending approvals, unsent input or process memory. OpenCode and
+other harnesses are not supported by this prototype.
+
+Enable **Settings → Terminal → Behavior → Try to Recover Agent Sessions (Experimental)** and open
+new panes. Alternatively set these options in `config.cfg` and restart eterm:
+
+```ini
+[terminal]
+restore_last_session = true
+recover_harness_sessions = true
+```
+
+Recovery uses eterm's native CLI; Python is not required. Shell adapters support local fish, Bash
+and zsh on macOS/Linux/FreeBSD, and PowerShell 5.1/7 on Windows. Automatic shell integration must
+be enabled. Shell profiles load before the resume attempt.
+
+When disabled, new panes receive no recovery wrapper or relay. Changing the setting does not
+unload functions already installed in open panes: close and reopen those panes. Enabling it does
+not install harness hooks or change account settings. Ordinary working-directory shell integration
+is independent of recovery.
+
+### Claude and standalone Codex hooks
+
+Add this entry to the `hooks.SessionStart` array in Codex's `hooks.json` (normally
+`~/.codex/hooks.json`), preserving existing entries:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"$ETERM_HARNESS_DIRECTORY\" ] && [ -n \"$ETERM_HARNESS_BINARY\" ]; then \"$ETERM_HARNESS_BINARY\" --harness-session hook codex; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Review and trust the hook through Codex's `/hooks` interface. No hook-trust or permission bypass
+is added to restored commands.
+
+For Claude, add the same entry to `hooks.SessionStart` in `~/.claude/settings.json`, replacing the
+final `codex` argument with `claude`. The command is executed by the harness's hook shell, so it
+also works when your interactive shell is fish. Hook reports store metadata only; they do not
+read or copy conversations and produce no model-visible stdout.
+
+On Windows, use a fixed native executable path in the hook command, for example:
+
+```json
+"command": "\"C:/path/to/eterm-session.exe\" --harness-session hook codex"
+```
+
+Use your actual executable path, and `claude` as the final argument for Claude's hook. The native
+helper returns silently outside a recovery-enabled pane. Installed hooks remain configured after
+disabling recovery, but do no recovery work without its pane environment. eterm does not change
+PowerShell execution policies. Windows packages include `eterm-session.exe`, the console helper
+these commands run, beside `eterm.exe`. If it is missing, eterm logs a warning and new panes start
+without recovery.
+
+### Codex with or without its daemon
+
+Plain `codex` in a newly enabled pane uses a private, bearer-token-protected loopback WebSocket
+relay to the existing local Codex daemon. The native relay records the exact thread selected by
+that pane from matched protocol responses. The normal TUI and daemon handle authentication,
+configuration, tools and approvals. This mode needs no capture hook. If the default daemon is
+absent, eterm asks Codex to start it; it never restarts a running daemon.
+
+`codex --no-daemon` uses standalone operation and the trusted SessionStart hook. Recovery saves
+and restores the mode. On Windows, daemon mode requires native `codex.exe` on PATH; npm-only shims without an accessible
+native executable are not resolved automatically.
+
+The adapter preserves existing `codex` aliases/functions. `command codex`, explicit remote
+invocations, one-shot subcommands and unrecognized options bypass the relay and run unchanged.
+An initial prompt is recognized when it contains a space, as in `codex "fix the build"`; for a
+single-word prompt, write `codex -- word`. The prototype targets Codex 0.167.0 and its local
+control socket. Other transports and incompatible versions may not be captured. Provider
+configuration must exist on the daemon; client-only provider definitions may not be available.
+
+If the default daemon socket is stale, eterm asks Codex to start the daemon once and reconnects.
+A saved non-default daemon socket must be started by its owner before the pane can resume.
+
+After installing the hook, start a fresh harness and begin a conversation before testing recovery.
+Standalone Codex registers a conversation on its first turn, not when its interface opens. Hook
+setup does not register a conversation that was already open.
+
+Close the eterm window while the conversation is open, then reopen it. eterm tries the saved
+exact session ID using daemon-connected `codex resume`, standalone `codex resume --no-daemon`, or
+`claude --resume`. Returning to the shell prompt clears the association. Switching conversations
+inside Codex updates it; if eterm cannot confirm which conversation a switch selected, it saves none
+rather than an older one. Closing the last tab still ends the saved window session.
+
+Missing hooks and unrecognized launches produce ordinary shell restoration. Missing transcripts,
+directories or executables leave the shell available with a short message. The helper never selects
+“latest” or replays the original task. It retains reported `CODEX_HOME`/`CLAUDE_CONFIG_DIR`
+overrides, but does not reconstruct other one-off profiles, flags or environment overrides. The
+harness can still require its own authentication or trust prompts.
+
+Nested/background agents, SSH, containers, multiplexers, custom shell startup modes, Windows
+cmd.exe shells and crash recovery are outside this prototype's supported scope. Haiku has no
+claimed harness support. Recovery depends on each harness's persistence and version compatibility.
+
 ## Clipboard writes (OSC 52)
 
 Terminal programs, including programs running over SSH, can write text to the local system clipboard

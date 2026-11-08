@@ -55,7 +55,10 @@ WindowBackendSDL2::~WindowBackendSDL2() {
 	Private::WaylandDragAndDrop::shutdown();
 #endif
 #if EE_PLATFORM != EE_PLATFORM_MACOS
-	SDL_Quit();
+	// Audio belongs to MojoAL, independently of the Engine, and its last resource can be
+	// released on a worker. Global SDL_Quit() ignores those references and races with
+	// alcCloseDevice() (as with SDL3, and with sdl2-compat running on SDL3).
+	SDL_QuitSubSystem( SDL_INIT_VIDEO );
 #endif
 }
 

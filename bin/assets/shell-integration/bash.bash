@@ -29,11 +29,9 @@ elif [[ $__eterm_norc != 1 ]]; then
 fi
 if [[ ${ETERM_SHELL_INTEGRATION-1} != 0 ]]; then
     source "$__eterm_startup_dir/directory-reporting.sh"
-    # Preserve the existing command's status, and support modern PROMPT_COMMAND arrays.
-    if (( BASH_VERSINFO[0] >= 5 )); then
-        PROMPT_COMMAND=(__eterm_report_working_directory "${PROMPT_COMMAND[@]}")
-    else
-        PROMPT_COMMAND="__eterm_report_working_directory${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
-    fi
+    __eterm_add_prompt_hook __eterm_report_working_directory
+fi
+if [[ ${ETERM_SHELL_INTEGRATION-1} != 0 && -n ${ETERM_HARNESS_DIRECTORY-} ]]; then
+    source "$__eterm_startup_dir/harness-session.sh"
 fi
 unset __eterm_startup_dir __eterm_noprofile __eterm_norc __eterm_rcfile __eterm_profile

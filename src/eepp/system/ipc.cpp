@@ -4,6 +4,7 @@
 #include <array>
 #include <atomic>
 #include <cstring>
+#include <eepp/network/locallistener.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
 #include <memory>
@@ -27,6 +28,8 @@
 #endif
 
 namespace EE { namespace System {
+
+using namespace Network;
 
 namespace {
 
@@ -115,9 +118,10 @@ class IPC::Impl {
 	NativeName nativeName{};
 	PSECURITY_DESCRIPTOR securityDescriptor{ nullptr };
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	int listener{ -1 };
-	int client{ -1 };
-	sockaddr_un nativeAddress{};
+	LocalListener listener;
+	LocalSocket* client{ nullptr };
+	std::string nativePath;
+	std::array<int, 2> wake{ -1, -1 };
 #endif
 };
 
@@ -222,99 +226,33 @@ const std::string& runtimeDirectory() {
 	return directory;
 }
 
-bool makeAddress( std::string_view endpoint, sockaddr_un& address ) {
-	const std::string& directory = runtimeDirectory();
+std::string nativePath( std::string_view endpoint ) {
+	const auto& directory = runtimeDirectory();
 	if ( directory.empty() )
-		return false;
-	const EndpointHash hash = endpointHash( endpoint );
-	const std::size_t pathSize = directory.size() + 1 + hash.size() - 1;
-	if ( pathSize >= sizeof( address.sun_path ) )
-		return false;
-	std::memset( &address, 0, sizeof( address ) );
-	address.sun_family = AF_UNIX;
-	std::memcpy( address.sun_path, directory.data(), directory.size() );
-	address.sun_path[directory.size()] = '/';
-	std::memcpy( address.sun_path + directory.size() + 1, hash.data(), hash.size() - 1 );
-	return true;
+		return {};
+	const auto hash = endpointHash( endpoint );
+	return directory + '/' + hash.data();
 }
 
-bool readExact( int fd, void* data, std::size_t size ) {
+bool readExact( LocalSocket& socket, void* data, std::size_t size ) {
 	auto* bytes = static_cast<Uint8*>( data );
 	while ( size > 0 ) {
-		const ssize_t readSize = recv( fd, bytes, size, 0 );
-		if ( readSize == 0 )
+		size_t count = 0;
+		if ( socket.receive( bytes, size, count ) != Socket::Done )
 			return false;
-		if ( readSize < 0 ) {
-			if ( errno == EINTR )
-				continue;
-			return false;
-		}
-		bytes += readSize;
-		size -= static_cast<std::size_t>( readSize );
+		bytes += count;
+		size -= count;
 	}
 	return true;
 }
 
-bool writeExact( int fd, const void* data, std::size_t size ) {
-	const auto* bytes = static_cast<const Uint8*>( data );
-	while ( size > 0 ) {
-#ifdef MSG_NOSIGNAL
-		const ssize_t written = send( fd, bytes, size, MSG_NOSIGNAL );
-#else
-		const ssize_t written = send( fd, bytes, size, 0 );
-#endif
-		if ( written < 0 ) {
-			if ( errno == EINTR )
-				continue;
-			return false;
-		}
-		if ( written == 0 )
-			return false;
-		bytes += written;
-		size -= static_cast<std::size_t>( written );
-	}
-	return true;
-}
-
-IPC::Status connectSocket( const sockaddr_un& address, Time timeout, int& fd ) {
-	fd = socket( AF_UNIX, SOCK_STREAM, 0 );
-	if ( fd < 0 )
-		return IPC::Status::Error;
-
-	const int oldFlags = fcntl( fd, F_GETFL, 0 );
-	if ( oldFlags >= 0 )
-		fcntl( fd, F_SETFL, oldFlags | O_NONBLOCK );
-	if ( connect( fd, reinterpret_cast<const sockaddr*>( &address ), sizeof( address ) ) != 0 ) {
-		if ( errno != EINPROGRESS ) {
-			const int error = errno;
-			::close( fd );
-			fd = -1;
-			return error == ENOENT || error == ECONNREFUSED ? IPC::Status::NotFound
-															: IPC::Status::Error;
-		}
-		pollfd wait{ fd, POLLOUT, 0 };
-		const int timeoutMs = static_cast<int>( eemax<double>( 0, timeout.asMilliseconds() ) );
-		int result;
-		do {
-			result = poll( &wait, 1, timeoutMs );
-		} while ( result < 0 && errno == EINTR );
-		if ( result <= 0 ) {
-			::close( fd );
-			fd = -1;
-			return result == 0 ? IPC::Status::Timeout : IPC::Status::Error;
-		}
-		int error = 0;
-		socklen_t errorSize = sizeof( error );
-		if ( getsockopt( fd, SOL_SOCKET, SO_ERROR, &error, &errorSize ) != 0 || error != 0 ) {
-			::close( fd );
-			fd = -1;
-			return error == ENOENT || error == ECONNREFUSED ? IPC::Status::NotFound
-															: IPC::Status::Error;
-		}
-	}
-	if ( oldFlags >= 0 )
-		fcntl( fd, F_SETFL, oldFlags );
-	return IPC::Status::Done;
+IPC::Status connectSocket( LocalSocket& socket, const std::string& path, Time timeout ) {
+	const auto status = socket.connect( path, timeout );
+	if ( status == Socket::Done )
+		return IPC::Status::Done;
+	if ( status == Socket::NotReady )
+		return IPC::Status::Timeout;
+	return errno == ENOENT || errno == ECONNREFUSED ? IPC::Status::NotFound : IPC::Status::Error;
 }
 
 } // namespace
@@ -378,8 +316,14 @@ IPC::Status IPC::listen( std::string_view endpoint, MessageFn callback ) {
 									   ? TRUE
 									   : GetLastError() == ERROR_PIPE_CONNECTED;
 			if ( !connected ) {
+				const DWORD error = GetLastError();
 				if ( !impl->running )
 					break;
+				// The instance must be disconnected before it can accept again. ERROR_NO_DATA
+				// means a client connected and closed first; back off on anything unexpected.
+				DisconnectNamedPipe( current );
+				if ( error != ERROR_NO_DATA )
+					Sleep( 100 );
 				continue;
 			}
 			if ( !impl->running )
@@ -409,65 +353,63 @@ IPC::Status IPC::listen( std::string_view endpoint, MessageFn callback ) {
 	} );
 	return Status::Done;
 #else
-	if ( !makeAddress( endpoint, mImpl->nativeAddress ) )
+	mImpl->nativePath = nativePath( endpoint );
+	if ( mImpl->nativePath.empty() )
 		return Status::Error;
-	mImpl->listener = socket( AF_UNIX, SOCK_STREAM, 0 );
-	if ( mImpl->listener < 0 )
-		return Status::Error;
-	if ( bind( mImpl->listener, reinterpret_cast<sockaddr*>( &mImpl->nativeAddress ),
-			   sizeof( mImpl->nativeAddress ) ) != 0 ) {
-		if ( errno != EADDRINUSE ) {
-			::close( mImpl->listener );
-			mImpl->listener = -1;
+	if ( mImpl->listener.listen( mImpl->nativePath, SOMAXCONN ) != Socket::Done ) {
+		if ( errno != EADDRINUSE )
 			return Status::Error;
-		}
-		int probe = -1;
-		const Status probeStatus =
-			connectSocket( mImpl->nativeAddress, Milliseconds( 100 ), probe );
-		if ( probeStatus == Status::Done ) {
-			::close( probe );
-			::close( mImpl->listener );
-			mImpl->listener = -1;
+		LocalSocket probe;
+		const auto status = connectSocket( probe, mImpl->nativePath, Milliseconds( 100 ) );
+		if ( status == Status::Done )
 			return Status::AlreadyExists;
-		}
-		if ( probeStatus != Status::NotFound || unlink( mImpl->nativeAddress.sun_path ) != 0 ||
-			 bind( mImpl->listener, reinterpret_cast<sockaddr*>( &mImpl->nativeAddress ),
-				   sizeof( mImpl->nativeAddress ) ) != 0 ) {
-			::close( mImpl->listener );
-			mImpl->listener = -1;
+		if ( status != Status::NotFound || unlink( mImpl->nativePath.c_str() ) != 0 ||
+			 mImpl->listener.listen( mImpl->nativePath, SOMAXCONN ) != Socket::Done )
 			return Status::Error;
-		}
 	}
-	chmod( mImpl->nativeAddress.sun_path, 0600 );
-	if ( ::listen( mImpl->listener, SOMAXCONN ) != 0 ) {
-		::close( mImpl->listener );
-		mImpl->listener = -1;
-		unlink( mImpl->nativeAddress.sun_path );
+	if ( pipe( mImpl->wake.data() ) != 0 ) {
+		mImpl->listener.close();
 		return Status::Error;
 	}
+	for ( const int fd : mImpl->wake )
+		fcntl( fd, F_SETFD, FD_CLOEXEC );
+	// Only the worker accepts; readiness races cannot turn accept into a blocking call.
+	mImpl->listener.setBlocking( false );
+	chmod( mImpl->nativePath.c_str(), 0600 );
 	mImpl->callback = std::move( callback );
 	mImpl->running = true;
 	mImpl->worker = std::thread( [impl = mImpl.get()] {
+		pollfd handles[]{ { impl->listener.getHandle(), POLLIN, 0 }, { impl->wake[0], POLLIN, 0 } };
 		while ( impl->running ) {
-			const int client = accept( impl->listener, nullptr, nullptr );
-			if ( client < 0 ) {
-				if ( !impl->running )
-					break;
-				if ( errno == EINTR )
-					continue;
+			int ready;
+			do {
+				ready = poll( handles, 2, -1 );
+			} while ( ready < 0 && errno == EINTR && impl->running );
+			if ( ready < 0 || !impl->running || handles[1].revents )
 				break;
+			if ( !( handles[0].revents & POLLIN ) )
+				break;
+			LocalSocket client;
+			const auto status = impl->listener.accept( client );
+			const int error = errno;
+			if ( status == Socket::NotReady || status == Socket::Disconnected )
+				continue;
+			if ( status != Socket::Done ) {
+				// Only an unusable listener stops the service. Descriptor or memory exhaustion is
+				// transient: the connection stays queued, so back off instead of spinning, and
+				// keep the close pipe able to interrupt the wait.
+				if ( error == EBADF || error == EINVAL || error == ENOTSOCK )
+					break;
+				pollfd closeRequest{ impl->wake[0], POLLIN, 0 };
+				if ( poll( &closeRequest, 1, 100 ) > 0 )
+					break;
+				continue;
 			}
 			{
 				std::lock_guard<std::mutex> lock( impl->handlesMutex );
-				impl->client = client;
-			}
-			if ( !impl->running ) {
-				{
-					std::lock_guard<std::mutex> lock( impl->handlesMutex );
-					impl->client = -1;
-				}
-				::close( client );
-				break;
+				if ( !impl->running )
+					break;
+				impl->client = &client;
 			}
 			std::array<Uint8, IPCHeaderSize> header;
 			Uint32 payloadSize = 0;
@@ -481,24 +423,19 @@ IPC::Status IPC::listen( std::string_view endpoint, MessageFn callback ) {
 			}
 			{
 				std::lock_guard<std::mutex> lock( impl->handlesMutex );
-				if ( impl->client == client )
-					impl->client = -1;
+				impl->client = nullptr;
 			}
-			::close( client );
 		}
+		impl->running = false;
 	} );
 	return Status::Done;
 #endif
 }
 
 void IPC::close() {
-	if ( !mImpl->running.exchange( false ) ) {
-		if ( mImpl->worker.joinable() )
-			mImpl->worker.join();
-		return;
-	}
+	const bool wasRunning = mImpl->running.exchange( false );
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	{
+	if ( wasRunning ) {
 		std::lock_guard<std::mutex> lock( mImpl->handlesMutex );
 		cancelSynchronousIO( reinterpret_cast<HANDLE>( mImpl->worker.native_handle() ) );
 		HANDLE wake = CreateFileW( mImpl->nativeName.data(), GENERIC_WRITE, 0, nullptr,
@@ -509,13 +446,14 @@ void IPC::close() {
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	{
 		std::lock_guard<std::mutex> lock( mImpl->handlesMutex );
-		if ( mImpl->client >= 0 )
-			shutdown( mImpl->client, SHUT_RDWR );
+		if ( mImpl->client )
+			mImpl->client->shutdown();
 	}
-	if ( mImpl->listener >= 0 ) {
-		shutdown( mImpl->listener, SHUT_RDWR );
-		::close( mImpl->listener );
-		mImpl->listener = -1;
+	// Wake the worker through an owned handle, independent of deletion/replacement of the path.
+	if ( wasRunning && mImpl->wake[1] >= 0 ) {
+		const char byte = 0;
+		while ( write( mImpl->wake[1], &byte, 1 ) < 0 && errno == EINTR ) {
+		}
 	}
 #endif
 	if ( mImpl->worker.joinable() )
@@ -539,8 +477,14 @@ void IPC::close() {
 	}
 #endif
 #if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	if ( mImpl->nativeAddress.sun_path[0] != '\0' )
-		unlink( mImpl->nativeAddress.sun_path );
+	mImpl->listener.close();
+	for ( int& fd : mImpl->wake ) {
+		if ( fd >= 0 )
+			::close( fd );
+		fd = -1;
+	}
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	(void)wasRunning;
 #endif
 	mImpl->callback = {};
 }
@@ -587,16 +531,15 @@ IPC::Status IPC::send( std::string_view endpoint, const void* data, std::size_t 
 	CloseHandle( pipe );
 	return written ? Status::Done : Status::Disconnected;
 #else
-	sockaddr_un address;
-	if ( !makeAddress( endpoint, address ) )
+	const auto path = nativePath( endpoint );
+	if ( path.empty() )
 		return Status::Error;
-	int fd = -1;
-	const Status connected = connectSocket( address, timeout, fd );
+	LocalSocket socket;
+	const auto connected = connectSocket( socket, path, timeout );
 	if ( connected != Status::Done )
 		return connected;
-	const bool written = writeExact( fd, header.data(), header.size() ) &&
-						 ( size == 0 || writeExact( fd, data, size ) );
-	::close( fd );
+	const bool written = socket.send( header.data(), header.size() ) == Socket::Done &&
+						 ( size == 0 || socket.send( data, size ) == Socket::Done );
 	return written ? Status::Done : Status::Disconnected;
 #endif
 }

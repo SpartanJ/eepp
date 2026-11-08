@@ -1,6 +1,7 @@
 #pragma once
 
 #include "appconfig.hpp"
+#include "harnesssessionrecovery.hpp"
 #include "programstatusalerts.hpp"
 #include "settingsactions.hpp"
 #include "uimainlayout.hpp"
@@ -115,7 +116,8 @@ class App : private efsw::FileWatchListener {
 	std::string resolveWorkingDirectory( UITerminal* source ) const;
 
 	/** Builds a configured terminal that isn't in any tab yet: see configureTab(). */
-	UITerminal* newTerminal( const Sizef& initialSize, const std::string& workingDirectory );
+	UITerminal* newTerminal( const Sizef& initialSize, const std::string& workingDirectory,
+							 const nlohmann::json* resume = nullptr );
 
 	UITerminal* createTerminal( UITabWidget* target = nullptr, std::string workingDirectory = {} );
 
@@ -231,6 +233,7 @@ class App : private efsw::FileWatchListener {
 	UnorderedMap<UITab*, std::shared_ptr<const ProgramStatusSnapshot>> seenProgramStatus;
 	UnorderedMap<UITab*, std::shared_ptr<const ProgramStatusSnapshot>> lastAlertStatus;
 	ProgramStatusAlerts programStatusAlerts;
+	HarnessSessionRecovery harnessRecovery;
 	TerminalSplitterClient splitterClient{ *this };
 };
 
