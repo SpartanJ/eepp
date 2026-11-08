@@ -40,6 +40,9 @@ export TMPDIR="$WORK" APPIMAGETOOL="$WORK/appimagetool"
 # dependencies under Xvfb. Library search overrides are confined to deployment;
 # the generated launcher uses sharun and does not export LD_LIBRARY_PATH.
 export DEPLOY_OPENGL=1 ANYLINUX_LIB=1
+# Retain LLVM-backed llvmpipe for usable software rendering when GPU access or
+# drivers are unavailable. Accept the larger image explicitly in quick-sharun.
+export I_WANT_FAT_APPIMAGE=1
 # quick-sharun's SDL deployment adds every system libSDL*.so, even when the
 # caller supplies its own SDL. Those copies land earlier in sharun's search path
 # and can silently downgrade the runtime. Supply SDL ourselves and retain the

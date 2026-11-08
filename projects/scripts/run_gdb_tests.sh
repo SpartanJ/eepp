@@ -7,13 +7,15 @@ cd ../../bin/unit_tests
 
 echo "=== Running eepp unit tests under GDB (xvfb) ==="
 
-# Process.joinRetriesInterruptedWaits sends SIGUSR1 to interrupt waitpid(). Deliver it to
-# the installed test handler without stopping the batch debugger before the suite finishes.
+# Process.joinRetriesInterruptedWaits sends SIGUSR1 to interrupt waitpid(), and
+# Process.foregroundForwardsHangupAndBoundsAnUncooperativeChild sends SIGHUP to its handler.
+# Deliver both without stopping the batch debugger before the suite finishes.
 sh "$DIRPATH/xvfb-run-eepp" \
   gdb --batch --quiet --return-child-result \
     -ex "set confirm off" \
     -ex "set print thread-events off" \
     -ex "handle SIGUSR1 nostop noprint pass" \
+    -ex "handle SIGHUP nostop noprint pass" \
     -ex "run" \
     -ex "bt full" \
     -ex "thread apply all bt full" \

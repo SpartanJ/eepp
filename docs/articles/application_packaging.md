@@ -55,7 +55,9 @@ can point to a local script for development instead of using the pinned download
 AnyLinux bundles libc, its loader and graphics dependencies and uses sharun with the DwarFS
 uruntime. This broadens compatibility to musl and non-FHS systems and provides automatic
 fallback when FUSE is unavailable. Bundled Mesa can substantially increase download size;
-the conventional downloads remain available. Runtime compatibility still needs verification
+the conventional downloads remain available. The package deliberately retains LLVM-backed
+llvmpipe for software rendering when GPU access or drivers are unavailable, using
+quick-sharun's `I_WANT_FAT_APPIMAGE=1` override. Runtime compatibility still needs verification
 on the target distributions and GPUs; bundling userspace libraries does not remove kernel
 or driver requirements. See the [upstream guide](https://pkgforge-dev.github.io/Anylinux-AppImages/HOW-TO-MAKE-THESE.html).
 
