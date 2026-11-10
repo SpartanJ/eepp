@@ -4,6 +4,7 @@
 
 #include "utest.hpp"
 
+#include "../../modules/vfs/src/eepp/vfs/sftp/remotewatchbackend.hpp"
 #include "../../modules/vfs/src/eepp/vfs/sftp/sftpproviderimpl.hpp"
 #include "../../modules/vfs/src/eepp/vfs/sftp/sshagent.hpp"
 #include "vfs_test_utils.hpp"
@@ -12,6 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <eepp/system/base64.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/vfs/path.hpp>
 #include <eepp/vfs/sftp/sftpprovider.hpp>
@@ -27,6 +29,7 @@
 #endif
 
 using namespace vfstest;
+using EE::System::Log;
 using EE::System::Process;
 
 namespace {
@@ -472,6 +475,15 @@ class ScriptedAuthenticator : public SSHAuthenticationHandler {
 	std::mutex mMutex;
 	std::vector<std::optional<std::string>> mAnswers;
 	size_t mNext{ 0 };
+};
+
+/** Include backend fallback reasons in CI output for the channel-restart regressions. */
+struct WatchDiagnosticOutput {
+	bool previous{ Log::instance()->isLoggingToStdOut() };
+
+	WatchDiagnosticOutput() { Log::instance()->setLogToStdOut( true ); }
+
+	~WatchDiagnosticOutput() { Log::instance()->setLogToStdOut( previous ); }
 };
 
 struct SFTPFixture {
@@ -1639,8 +1651,103 @@ UTEST( SFTP, remoteWatchThroughAgent ) {
 		loop.runUntil( [&] { return events.has( WatchEventType::Added, "after.txt" ); } ) );
 }
 
+UTEST( SFTP, refusedWatchChannelsRetryUntilTheEstablishmentDeadline ) {
+	REQUIRE_SSHD();
+	WatchDiagnosticOutput diagnostics;
+	const std::string agent = Sys::getProcessPath() + "../efsw-agent";
+	if ( !FileSystem::fileExists( agent ) )
+		UTEST_SKIP( "efsw-agent not built" );
+	class StatusSink : public WatchSink {
+	  public:
+		explicit StatusSink( URI uri ) : uri( std::move( uri ) ) {}
+
+		void push( WatchEvent&& ) override {}
+
+		void push( std::vector<WatchEvent>&& ) override {}
+
+		void rescanRequired() override {}
+
+		void setStatus( WatchStatus value ) override { status = value; }
+
+		const URI& root() const override { return uri; }
+
+		URI uri;
+		std::atomic<WatchStatus> status{ WatchStatus::Reconnecting };
+	};
+	for ( bool releaseBeforeDeadline : { true, false } ) {
+		SFTPProviderConfig config;
+		config.watchAgentCommand = agent + " --stdio";
+		config.configContextFactory = [dir = server.dir()]( const std::string& host ) {
+			auto context = SSHConfigContext::system( host );
+			context.sources = { { dir + "ssh_config", dir } };
+			return context;
+		};
+		auto impl = std::make_shared<sftp::SFTPProviderImpl>( std::move( config ) );
+		const URI directory = server.uri( "testhost" );
+		auto connected = waitFor( impl->connection( directory ) );
+		REQUIRE_OK( connected );
+		auto connection = std::move( connected ).value();
+		// The SFTP subsystem occupies one of OpenSSH's ten session slots. Keep the other
+		// nine open to force an actual channel refusal, without relying on runner load.
+		auto channels = std::make_shared<std::vector<LIBSSH2_CHANNEL*>>();
+		auto filled = waitFor( connection->submit<void>(
+			{}, directory, [channels]( sftp::SSHConnection& c ) -> std::optional<VFSResult<void>> {
+				while ( channels->size() < 9 ) {
+					auto* channel = libssh2_channel_open_session( c.session() );
+					if ( !channel ) {
+						if ( libssh2_session_last_errno( c.session() ) == LIBSSH2_ERROR_EAGAIN )
+							return std::nullopt;
+						return Err( c.lastError( URI(), "Filling session channels" ) );
+					}
+					channels->push_back( channel );
+				}
+				return Ok();
+			} ) );
+		REQUIRE_OK( filled );
+		VirtualFileSystem vfs;
+		vfs.registerProvider( server.provider() ); // The fallback can enumerate the remote root.
+		RemoteWatchBackend backend( impl, vfs, System::Milliseconds( 1200 ) );
+		auto sink = std::make_shared<StatusSink>( directory );
+		auto watched = backend.watch( directory, {}, sink );
+		// Hold the slots past the old 25+50+100 ms budget. It must still be retrying.
+		EXPECT_EQ( TaskState::Pending, watched.waitFor( std::chrono::milliseconds( 400 ) ) );
+		auto release = [&] {
+			return waitFor( connection->submit<void>(
+				{}, directory,
+				[channels]( sftp::SSHConnection& ) -> std::optional<VFSResult<void>> {
+					while ( !channels->empty() ) {
+						if ( libssh2_channel_free( channels->back() ) == LIBSSH2_ERROR_EAGAIN )
+							return std::nullopt;
+						channels->pop_back();
+					}
+					return Ok();
+				} ) );
+		};
+		if ( releaseBeforeDeadline ) {
+			auto released = release();
+			REQUIRE_OK( released );
+		}
+		ASSERT_EQ( TaskState::Ready, watched.waitFor( std::chrono::seconds( 3 ) ) );
+		auto registration = waitFor( std::move( watched ) );
+		REQUIRE_OK( registration );
+		EXPECT_EQ( releaseBeforeDeadline ? WatchStatus::Active : WatchStatus::Polling,
+				   sink->status.load() );
+		registration.value().reset();
+		if ( !releaseBeforeDeadline ) {
+			auto released = release();
+			REQUIRE_OK( released );
+			// A refusal must not mark the host's agent unavailable for subsequent watches.
+			auto recovered = waitFor( backend.watch( directory, {}, sink ) );
+			REQUIRE_OK( recovered );
+			EXPECT_EQ( WatchStatus::Active, sink->status.load() );
+		}
+		EXPECT_TRUE( connection->isReady() );
+	}
+}
+
 UTEST( SFTP, repeatedWatchStartsFreeTheirChannelsWithoutClosingSFTP ) {
 	REQUIRE_SSHD();
+	WatchDiagnosticOutput diagnostics;
 	std::string agent = Sys::getProcessPath();
 	FileSystem::dirAddSlashAtEnd( agent );
 	agent += "../efsw-agent";
@@ -1662,6 +1769,9 @@ UTEST( SFTP, repeatedWatchStartsFreeTheirChannelsWithoutClosingSFTP ) {
 	for ( int i = 0; i < 24; ++i ) {
 		auto watched = waitFor( fx.vfs.watch( directory ) );
 		REQUIRE_OK( watched );
+		if ( watched.value().status() != WatchStatus::Active )
+			printf( "  Watch restart %d/24 returned %s\n", i + 1,
+					toString( watched.value().status() ) );
 		ASSERT_EQ( WatchStatus::Active, watched.value().status() );
 		watched.value().reset();
 		// A server normally permits ten session channels; repeatedly abandoning them would
