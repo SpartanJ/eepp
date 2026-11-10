@@ -1544,6 +1544,25 @@ For weighted linear layouts, inspect all siblings participating in the same axis
 
 ---
 
+### Waiting for layout before creating size-dependent content
+
+Use `UISceneNode::onLayoutReady()` for work that needs settled page geometry. Keep its returned
+`EventConnection` alive while waiting; destroying or disconnecting it cancels the callback. It fires
+once at the end of a normal scene update after style and layout queues are clear, and disconnects
+before invoking your code. Registration never invokes it immediately.
+
+```cpp
+layoutReady = scene->onLayoutReady( [this] {
+    createSizeDependentContent();
+} );
+```
+
+Store `layoutReady` in the object that owns the pending operation. There is no per-frame application
+check, fixed delay or forced layout pass. A callback that dirties layout postpones other waiters,
+and callbacks registered during dispatch wait for another normal update. Register, cancel and
+execute callbacks on the scene's owning thread. Avoid calling `flushDirtyStyleAndLayout()` from
+widget code. `isStyleAndLayoutReady()` remains available for inspecting the current queue state.
+
 ## 49. Layout debugging checklist
 
 When size is wrong:

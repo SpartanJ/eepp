@@ -2,12 +2,14 @@
 #define EE_UI_TOOLS_UITABWIDGETSPLITTER_HPP
 
 #include <eepp/core/containers.hpp>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/scene/eventconnection.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/ui/splitdirection.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uitabwidget.hpp>
+#include <memory>
 
 #include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 
@@ -16,6 +18,8 @@ class Drawable;
 }} // namespace EE::Graphics
 
 namespace EE { namespace UI { namespace Tools {
+
+using namespace EE::Scene;
 
 struct WidgetLoadResult {
 	UIWidget* widget{ nullptr };
@@ -244,6 +248,47 @@ class EE_API UITabWidgetSplitter {
 
 	void fromJSON( const nlohmann::json& j );
 
+	using WidgetLoadCallback =
+		std::function<WidgetLoadResult( const nlohmann::json&, UITabWidget* )>;
+
+	/** Owns a prepared split layout and its saved pages until they can be loaded.
+	 * The splitter must outlive this handle. Destruction cancels the restore and releases
+	 * reserved tab-bar space. No page factory runs while preparing or cancelling it. */
+	class EE_API Restoration {
+	  public:
+		Restoration();
+
+		~Restoration();
+
+		Restoration( Restoration&& ) noexcept;
+
+		Restoration& operator=( Restoration&& ) noexcept;
+
+		explicit operator bool() const;
+
+		/** Check after the scene's normal update, before loading pages. */
+		bool isReady() const;
+
+		/** The saved session while this handle is pending, e.g. for saving on early shutdown. */
+		const nlohmann::json& getSession() const;
+
+		/** Loads once when ready; returns false without invoking factories otherwise.
+		 * The callback receives each destination and replaces the registered loader for that
+		 * call. A missing callback uses the registered loaders. Exceptions propagate to the
+		 * caller after cancellation cleanup; the handle is consumed even when a loader fails. */
+		bool loadWidgets( const WidgetLoadCallback& loadWidget = {} );
+
+	  private:
+		friend class UITabWidgetSplitter;
+		struct State;
+		std::unique_ptr<State> mState;
+	};
+
+	/** Builds the split tree and reserves tab-bar space without forcing scene layout.
+	 * Keep the returned handle until isReady() after a normal scene update, then loadWidgets().
+	 * The saved JSON is moved into the handle and released on completion or cancellation. */
+	Restoration prepareRestore( nlohmann::json session );
+
 	using TabTryCloseCallback = std::function<bool( UIWidget*, UITabWidget::FocusTabBehavior,
 													std::function<void()> onMsgBoxCloseCb )>;
 
@@ -270,8 +315,8 @@ class EE_API UITabWidgetSplitter {
 	TabTryCloseCallback mTabTryCloseCb;
 	mutable Mutex mWidgetTypesMutex;
 	UnorderedMap<std::string, WidgetTypeCallback> mWidgetTypes;
-	UnorderedMap<UITabWidget*, Scene::EventConnectionList> mTabWidgetEventConnections;
-	UnorderedMap<UIWidget*, Scene::EventConnectionList> mWidgetEventConnections;
+	UnorderedMap<UITabWidget*, EventConnectionList> mTabWidgetEventConnections;
+	UnorderedMap<UIWidget*, EventConnectionList> mWidgetEventConnections;
 
 	UITabWidgetSplitter( Client* client, UISceneNode* sceneNode );
 
@@ -284,6 +329,24 @@ class EE_API UITabWidgetSplitter {
 	void updateTabBarVisibility();
 
 	void closeAllTabs( std::vector<UITab*> tabs, UITabWidget::FocusTabBehavior focusTabBehavior );
+
+	struct RestorePane {
+		const nlohmann::json* session;
+		UITabWidget* tabs;
+		bool hideSingleTabBar{ false };
+	};
+
+	void restoreLayout( const nlohmann::json& j, UITabWidget* tabs,
+						SmallVector<RestorePane, 4>& panes );
+
+	void restoreNodes( const nlohmann::json& j, UITabWidget* tabs );
+
+	void prepareRestorePanes( SmallVector<RestorePane, 4>& panes, bool useRegisteredLoaders );
+
+	static void releaseRestorePanes( SmallVector<RestorePane, 4>& panes );
+
+	void loadRestorePanes( const SmallVector<RestorePane, 4>& panes,
+						   const WidgetLoadCallback& loadWidget );
 
 	void updateTabWidgetVisualSplitting();
 };

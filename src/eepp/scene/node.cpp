@@ -1211,8 +1211,14 @@ Uint32 Node::onDoubleClick( const std::function<void( const MouseEvent* )>& call
 }
 
 bool Node::hasEventsOfType( const Uint32& eventType ) const {
-	return mEventConnectionState &&
-		   mEventConnectionState->events.find( eventType ) != mEventConnectionState->events.end();
+	if ( !mEventConnectionState )
+		return false;
+	const auto event = mEventConnectionState->events.find( eventType );
+	return event != mEventConnectionState->events.end() && !event->second.empty();
+}
+
+bool Node::hasEventListener( Uint32 eventType, Uint32 callbackId ) const {
+	return mEventConnectionState && mEventConnectionState->contains( eventType, callbackId );
 }
 
 void Node::removeEventsOfType( const Uint32& eventType ) {

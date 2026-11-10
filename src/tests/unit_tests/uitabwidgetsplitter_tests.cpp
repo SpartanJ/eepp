@@ -2169,6 +2169,255 @@ UTEST( UITabWidgetSplitter, RestoresNestedSplitPartitions ) {
 	eeDelete( splitter2 );
 }
 
+UTEST( UITabWidgetSplitter, RestoreFactoriesUseSettledTabBarGeometry ) {
+	UIApplication app(
+		WindowSettings( 1000, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+
+	for ( auto position : { UITabWidget::TabPosition::Top, UITabWidget::TabPosition::Bottom,
+							UITabWidget::TabPosition::Left, UITabWidget::TabPosition::Right } ) {
+		for ( Uint32 pageCount : { 1u, 2u } ) {
+			auto* root = UILinearLayout::New();
+			root->setParent( app.getUI()->getRoot() );
+			root->setPixelsSize( 1000, 600 );
+			TestClient client;
+			auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+			splitter->setOnTabWidgetCreateCb( [position]( UITabWidget* tabs ) {
+				tabs->setTabBarWidth( 160 );
+				tabs->setTabPosition( position );
+			} );
+			auto* tabs = splitter->createTabWidget( root );
+			splitter->registerWidgetType( "page", { {}, {} } );
+			auto files = nlohmann::json::array();
+			for ( Uint32 page = 0; page < pageCount; ++page )
+				files.push_back( { { "type", "page" } } );
+			// Unknown pages must not make a single restored page reserve a tab bar.
+			files.push_back( { { "type", "unknown" } } );
+			const nlohmann::json saved = {
+				{ "type", "tabwidget" }, { "files", files }, { "current_page", pageCount - 1 } };
+			SmallVector<Sizef, 2> initialSizes;
+			bool correctDestination = true;
+			auto restore = splitter->prepareRestore( saved );
+			EXPECT_FALSE( restore.isReady() );
+			for ( int tick = 0; tick < 8 && !restore.isReady(); ++tick )
+				app.getUI()->update( Milliseconds( 16 ) );
+			ASSERT_TRUE( restore.isReady() );
+			restore.loadWidgets(
+				[&]( const nlohmann::json&, UITabWidget* destination ) -> WidgetLoadResult {
+					correctDestination &= destination == tabs;
+					initialSizes.push_back( destination->getContainerNode()->getPixelsSize() );
+					return { UIWidget::New(), nullptr, "Page" };
+				} );
+			app.getUI()->update( Milliseconds( 16 ) );
+			ASSERT_EQ( initialSizes.size(), static_cast<size_t>( pageCount ) );
+			EXPECT_TRUE( correctDestination );
+			const auto finalSize = tabs->getContainerNode()->getPixelsSize();
+			EXPECT_TRUE( finalSize.getWidth() > 0 && finalSize.getHeight() > 0 );
+			for ( const auto& size : initialSizes )
+				EXPECT_TRUE( size == finalSize );
+			EXPECT_TRUE( tabs->getHideTabBarOnSingleTab() );
+			EXPECT_EQ( tabs->getTabSelectedIndex(), pageCount - 1 );
+			EXPECT_EQ( tabs->getTabBar()->isVisible(), pageCount > 1 );
+			eeDelete( splitter );
+			root->close();
+			app.getUI()->update( Milliseconds( 16 ) );
+		}
+	}
+}
+
+UTEST( UITabWidgetSplitter, RestoreFactoriesSeeFinalNestedPartitions ) {
+	UIApplication app(
+		WindowSettings( 1000, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* root = UILinearLayout::New();
+	root->setParent( app.getUI()->getRoot() );
+	root->setPixelsSize( 1000, 600 );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	splitter->setShowTabBarWhenSplit( true );
+	splitter->setOnTabWidgetCreateCb( []( UITabWidget* tabs ) {
+		tabs->setTabBarWidth( 100 );
+		tabs->setTabPosition( UITabWidget::TabPosition::Right );
+	} );
+	splitter->createTabWidget( root );
+	splitter->registerWidgetType( "page", { {}, {} } );
+	const auto leaf = nlohmann::json::parse( R"({"type":"tabwidget","files":[{"type":"page"}]})" );
+	const nlohmann::json saved = { { "type", "splitter" },
+								   { "orientation", "horizontal" },
+								   { "split", "70%" },
+								   { "first",
+									 { { "type", "splitter" },
+									   { "orientation", "vertical" },
+									   { "split", "30%" },
+									   { "first", leaf },
+									   { "last", leaf } } },
+								   { "last", leaf } };
+	SmallVector<std::pair<UITabWidget*, Sizef>, 4> initialSizes;
+	bool completeTree = true;
+	auto restore = splitter->prepareRestore( saved );
+	for ( int tick = 0; tick < 8 && !restore.isReady(); ++tick )
+		app.getUI()->update( Milliseconds( 16 ) );
+	ASSERT_TRUE( restore.isReady() );
+	restore.loadWidgets( [&]( const nlohmann::json&, UITabWidget* tabs ) -> WidgetLoadResult {
+		completeTree &= splitter->getTabWidgets().size() == 3;
+		initialSizes.emplace_back( tabs, tabs->getContainerNode()->getPixelsSize() );
+		return { UIWidget::New(), nullptr, "Page" };
+	} );
+	app.getUI()->update( Milliseconds( 16 ) );
+	ASSERT_EQ( initialSizes.size(), size_t{ 3 } );
+	EXPECT_TRUE( completeTree );
+	for ( const auto& [tabs, size] : initialSizes ) {
+		EXPECT_TRUE( size.getWidth() > 0 && size.getHeight() > 0 );
+		EXPECT_TRUE( size == tabs->getContainerNode()->getPixelsSize() );
+		EXPECT_FALSE( tabs->getHideTabBarOnSingleTab() );
+	}
+	EXPECT_TRUE( initialSizes[0].second.getHeight() < initialSizes[1].second.getHeight() );
+	EXPECT_TRUE( initialSizes[0].second.getWidth() > initialSizes[2].second.getWidth() );
+	eeDelete( splitter );
+	root->close();
+	app.getUI()->update( Milliseconds( 16 ) );
+}
+
+UTEST( UITabWidgetSplitter, RestoreLoaderFailureRestoresTabBarPolicy ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	auto* tabs = splitter->createTabWidget( app.getUI()->getRoot() );
+	tabs->setTabPosition( UITabWidget::TabPosition::Right );
+	splitter->registerWidgetType( "page", { {}, {} } );
+	const auto saved = nlohmann::json::parse(
+		R"({"type":"tabwidget","files":[{"type":"page"},{"type":"page"}]})" );
+	auto restore = splitter->prepareRestore( saved );
+	for ( int tick = 0; tick < 8 && !restore.isReady(); ++tick )
+		app.getUI()->update( Milliseconds( 16 ) );
+	ASSERT_TRUE( restore.isReady() );
+	bool threw = false;
+	try {
+		restore.loadWidgets( []( const nlohmann::json& file, UITabWidget* ) -> WidgetLoadResult {
+			file.at( "missing" );
+			return {};
+		} );
+	} catch ( const nlohmann::json::exception& ) {
+		threw = true;
+	}
+	EXPECT_TRUE( threw );
+	EXPECT_TRUE( tabs->getHideTabBarOnSingleTab() );
+	EXPECT_EQ( tabs->getTabCount(), Uint32{ 0 } );
+	eeDelete( splitter );
+}
+
+UTEST( UITabWidgetSplitter, PreparedRestoreWaitsForNormalLayoutTicks ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	app.getUI()->setMaxInvalidationDepth( 0 );
+	auto* root = UILinearLayout::New();
+	root->setParent( app.getUI()->getRoot() );
+	root->setPixelsSize( 800, 600 );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	splitter->createTabWidget( root );
+	splitter->registerWidgetType( "page", { {}, {} } );
+	int layoutUpdates = 0;
+	root->on( Event::OnLayoutUpdate, [root, &layoutUpdates]( const Event* ) {
+		if ( ++layoutUpdates < 3 )
+			root->setLayoutDirty();
+	} );
+	auto restore = splitter->prepareRestore(
+		nlohmann::json::parse( R"({"type":"tabwidget","files":[{"type":"page"}]})" ) );
+	int loads = 0;
+	const auto load = [&loads]( const nlohmann::json&, UITabWidget* ) -> WidgetLoadResult {
+		++loads;
+		return { UIWidget::New(), nullptr, "Page" };
+	};
+	bool completed = false;
+	auto ready = app.getUI()->onLayoutReady( [&] { completed = restore.loadWidgets( load ); } );
+	EXPECT_EQ( layoutUpdates, 0 );
+	EXPECT_FALSE( restore.loadWidgets( load ) );
+	EXPECT_EQ( loads, 0 );
+	app.getUI()->update( Milliseconds( 16 ) );
+	EXPECT_FALSE( restore.isReady() );
+	EXPECT_FALSE( restore.loadWidgets( load ) );
+	app.getUI()->update( Milliseconds( 16 ) );
+	EXPECT_FALSE( restore.isReady() );
+	EXPECT_EQ( loads, 0 );
+	app.getUI()->update( Milliseconds( 16 ) );
+	EXPECT_TRUE( completed );
+	EXPECT_FALSE( static_cast<bool>( ready ) );
+	EXPECT_EQ( loads, 1 );
+	EXPECT_FALSE( static_cast<bool>( restore ) );
+	EXPECT_FALSE( restore.loadWidgets( load ) );
+	eeDelete( splitter );
+}
+
+UTEST( UITabWidgetSplitter, PreparedRestoreCancellationAndClosedPane ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	auto* root = UIWidget::New();
+	root->setParent( app.getUI()->getRoot() );
+	auto* tabs = splitter->createTabWidget( root );
+	splitter->registerWidgetType( "page", { {}, {} } );
+	const auto saved = nlohmann::json::parse(
+		R"({"type":"tabwidget","files":[{"type":"page"},{"type":"page"}]})" );
+	{
+		auto restore = splitter->prepareRestore( saved );
+		EXPECT_FALSE( tabs->getHideTabBarOnSingleTab() );
+		EXPECT_EQ( tabs->getTabCount(), Uint32{ 0 } );
+		auto moved = std::move( restore );
+		EXPECT_FALSE( static_cast<bool>( restore ) );
+		EXPECT_TRUE( static_cast<bool>( moved ) );
+	}
+	EXPECT_TRUE( tabs->getHideTabBarOnSingleTab() );
+	auto restore = splitter->prepareRestore( saved );
+	root->close();
+	app.getUI()->update( Milliseconds( 16 ) );
+	int loads = 0;
+	ASSERT_TRUE( restore.isReady() );
+	EXPECT_TRUE(
+		restore.loadWidgets( [&loads]( const nlohmann::json&, UITabWidget* ) -> WidgetLoadResult {
+			++loads;
+			return {};
+		} ) );
+	EXPECT_EQ( loads, 0 );
+	eeDelete( splitter );
+}
+
+UTEST( UITabWidgetSplitter, PreparedRestoreBindsItsSceneWhenLoading ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	TestClient client;
+	auto* splitter = UITabWidgetSplitter::New( &client, app.getUI() );
+	splitter->createTabWidget( app.getUI()->getRoot() );
+	splitter->registerWidgetType( "page", { {}, {} } );
+	auto restore = splitter->prepareRestore(
+		nlohmann::json::parse( R"({"type":"tabwidget","files":[{"type":"page"}]})" ) );
+	for ( int tick = 0; tick < 8 && !restore.isReady(); ++tick )
+		app.getUI()->update( Milliseconds( 16 ) );
+	ASSERT_TRUE( restore.isReady() );
+	auto* otherScene = UISceneNode::New( app.getWindow() );
+	UISceneNode* factoryScene = nullptr;
+	{
+		auto context = otherScene->makeCurrent();
+		restore.loadWidgets( [&factoryScene]( const nlohmann::json&, UITabWidget* ) {
+			auto* widget = UIWidget::New();
+			factoryScene = widget->getUISceneNode();
+			return WidgetLoadResult{ widget, nullptr, "Page" };
+		} );
+		EXPECT_TRUE( factoryScene == app.getUI() );
+		// Factory execution must restore the caller's ambient scene as well.
+		auto* widget = UIWidget::New();
+		EXPECT_TRUE( widget->getUISceneNode() == otherScene );
+	}
+	eeDelete( otherScene );
+	eeDelete( splitter );
+}
+
 UTEST( UITabWidgetSplitter, UnserializeRejectsWhatItCannotRestore ) {
 	UIApplication app(
 		WindowSettings( 800, 600, "eepp - unit tests" ),

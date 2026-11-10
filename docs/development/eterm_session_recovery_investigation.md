@@ -742,3 +742,100 @@ These supersede the corresponding statements in the second review corrections ab
 - Known limitation: the prompt hook clears the saved record whenever the shell prompt returns,
   including after a harness is suspended with Ctrl-Z. After `fg`, recovery is restored only by the
   next thread selection (Codex relay) or SessionStart (hooks).
+
+### Fish startup prompt duplication with vertical tabs
+
+Restoring a terminal with vertical tabs can start fish with the full layout width before the tab
+bar reduces the terminal's width. The emulator resized its grid immediately but deferred the PTY's
+size notification for 100 ms. Fish could therefore draw its first right prompt using the old width
+into the narrower grid. The right prompt wrapped onto another row; the later SIGWINCH repaint drew
+a second left prompt on that row, leaving the first one visible.
+
+An isolated copy of the local fish prompt functions reproduced this with harness recovery both
+on and off. A PTY trace showed fish reading 182 columns, drawing its right prompt at column 175
+into an already 153-column grid, then receiving the 153-column size notification. The startup
+injection in `ShellIntegration` and `harness-session.fish` did not generate an extra command.
+
+An initial experiment removed the PTY-only debounce and updated the PTY and grid together. It
+eliminated the reproduced duplicate prompt, but also removed coalescing of shell/application resize
+notifications. That implementation and its test changes were backed out after reviewing the original
+rationale: Codex and Claude can perform expensive relayout work on each notification. The existing
+100 ms debounce and its regression coverage are retained.
+
+The fix changes restoration order instead. `UITabWidgetSplitter::prepareRestore()` builds the
+complete split tree, applies saved proportions, and reserves tab-bar space for registered saved
+pages. It returns a move-only `Restoration` handle without invoking page loaders or flushing the
+scene. eterm retains that handle and registers one cancellable `UISceneNode::onLayoutReady()`
+subscription. The scene dispatches readiness work after its normal layout passes only when waiters
+exist and style/layout queues are clear. A callback that dirties geometry defers remaining waiters;
+callbacks registered during dispatch wait for a later normal update. Subscriptions are removed before
+invocation, and cancellation is rechecked against the listener registry even during snapshot-based
+dispatch. There is no permanent eterm update hook, forced scene pass, timer, or fixed frame count.
+
+Once ready, `loadWidgets()` invokes the destination-aware factories in the owning scene's context.
+Each shell starts with its tab widget's content size rather than `mainLayout` dimensions. Page
+creation happens outside scheduled-widget traversal, so subscribing the new terminal is safe.
+The registered-loader `fromJSON()` API remains synchronous and does not flush scene layout.
+The normal 100 ms PTY resize debounce is unchanged.
+
+The pending state owns the saved JSON by move across ticks. Its pane descriptors borrow that JSON;
+close listeners invalidate widget pointers if panes disappear. Completion consumes the state once,
+and cancellation or loader exceptions restore the original tab-bar policy and disconnect listeners.
+The splitter must outlive the handle; eterm enforces that order with scope cleanup. Closing eterm
+before readiness saves the owned original session instead of overwriting it with an empty layout.
+A page that fails to load can still change the final tab count and therefore the bar's visibility.
+
+Validation of the final implementation:
+
+- Release eterm and unit-test builds succeeded through the configured Linux Ninja workflow.
+- All 310 focused native tests passed: 34 tab-widget, nine splitter, 223 terminal, 27 scene, six
+  invalidation and 11 event-connection cases. The 15 splitter cases also passed separately.
+- New regressions use normal scene ticks for every tab position and nested split. A deliberately
+  dirty layout takes three ticks; factories cannot run early and load only once. Other checks cover
+  cancellation/moves, a destroyed pending pane, loader exceptions and restoring the caller's scene
+  context after a factory executes under another ambient scene. The existing deferred-resize timer
+  regression remains unchanged. Readiness-specific checks cover single firing, multi-tick layouts,
+  safe scheduled-widget creation, cancellation during dispatch, new subscriptions during dispatch,
+  scene destruction and throwing callbacks.
+- Native recovery passed five checks; shell integration and prompt hooks passed three applicable
+  checks, with two PowerShell checks skipped because PowerShell is absent.
+- Offscreen fish restores with the user's datetime prompt showed one prompt per visible terminal,
+  in a single pane and restored splits. The PTY trace starts fish at 153 columns and keeps that
+  width through the first prompt instead of starting at 182 columns and then shrinking.
+- Cross-platform runtime validation was not repeated for this fix.
+
+Allocation/API audit: `UITabWidgetSplitter`, `UISceneNode` and `WidgetTypeCallback` retain their
+496-, 4,360- and 64-byte Linux x86_64 layouts (compiler sizeof checks). The new move-only handle is
+eight bytes. Its one pending state allocation is 240 bytes (compiler debug layout); pane and close
+connection vectors each keep four entries inline and grow only for larger trees. JSON moves preserve
+ownership without copying the document. Close callbacks capture two pointers and the shutdown guard
+captures one pointer, fitting inline callback storage. The state and connections are released when
+loading finishes or is cancelled. eterm keeps one readiness EventConnection and disconnects it
+before splitter teardown; no restore hook remains in its render loop. The UI readiness facility
+reuses the existing event registry and adds no Node or UISceneNode data members. Its callback wrapper
+moves the user's callable into registry storage; the normal event snapshot copies it only when
+settled callbacks are dispatched, never on pending dirty-layout ticks. Small wrapper allocations
+at registration/dispatch follow the existing std::function event machinery. An empty event bucket
+is not considered an active listener, so completed or cancelled waiters do not keep dispatching.
+
+#### Resize debounce history and remaining validation
+
+- `fe1149ffc` (2026-03-09, "Terminal Reflow WIP") introduced history reflow and the new grid
+  resizing implementation, before the debounce existed.
+- `a8384f183` (2026-03-12) introduced the 100 ms delay. Its message explicitly describes
+  primary-screen reflow debouncing and better prompt readjustment. The code set `is_syncing`
+  before grid restructuring, cleared the prompt tail, sent a prompt-refresh sequence, restarted
+  the delay on each resize, and notified the PTY once the delay expired. Alternate-screen
+  resizes bypassed the delay. The draw guard using `is_syncing` was commented out in that commit,
+  so suppressing intermediate frames was an expressed intention rather than an active guard.
+- `afb055405` (2026-03-15, "Do not change terminal scroll position on terminal resize") removed
+  the forced prompt-refresh sequence and preserved scroll position, while retaining the delay.
+- `c5c635092` (2026-08-31, "eterm: harden threaded presentation and terminal protocol handling")
+  implemented real DEC mode 2026 synchronized presentation and removed the resize path's writes
+  to that synchronization flag. The PTY debounce remained.
+- `b14379ed3` (2026-11-03) explicitly retained the deferred-resize deadline when replacing worker
+  polling with readiness waits, and added a timer regression for it.
+
+The 100 ms interval is a practical coalescing window: the user confirmed that it avoids repeated,
+expensive relayout in applications such as Codex and Claude. That behavior is preserved by fixing
+the initial restore geometry instead of changing subsequent resize notifications.

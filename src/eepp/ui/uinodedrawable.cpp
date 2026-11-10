@@ -138,7 +138,7 @@ void UINodeDrawable::clearDrawables() {
 }
 
 void UINodeDrawable::setBorderRadius( const Uint32& radius ) {
-	if ( mBackgroundColor.getRadius() != radius ) {
+	if ( mBackgroundColor.getRadius() != (Int32)radius ) {
 		mBackgroundColor.setRadius( radius );
 		invalidateOwner();
 	}

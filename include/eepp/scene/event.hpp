@@ -143,6 +143,7 @@ class EE_API Event {
 		OnFocusedDateChange,
 		OnDirectionChange,
 		OnResourceLoadFailed,
+		OnLayoutReady,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

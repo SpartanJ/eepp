@@ -1,4 +1,5 @@
 #include "eterm.hpp"
+#include <eepp/system/scopedop.hpp>
 #include <iostream>
 #include <nlohmann/json.hpp>
 
@@ -146,53 +147,38 @@ void App::saveWindowState() {
 }
 
 void App::registerSessionWidgetType() {
-	tabSplitter->registerWidgetType(
-		SessionTerminalType,
-		{ [this]( UIWidget* widget ) {
-			 auto session = nlohmann::json::object();
-			 // Other titles belong to whatever was running, which the restored shell won't be.
-			 auto* terminal = widget->asType<UITerminal>();
-			 if ( terminal->isUsingCustomTitle() )
-				 session["custom_title"] = terminal->getTitle();
-			 if ( auto directory = terminalDirectory( terminal ); !directory.empty() )
-				 session["working_directory"] = std::move( directory );
-			 if ( config->terminal.recoverHarnessSessions ) {
-				 auto resume = harnessRecovery.capture( terminal );
-				 if ( !resume.is_null() )
-					 session["harness_session"] = std::move( resume );
-			 }
-			 return session;
-		 },
-		  [this]( const nlohmann::json& session ) -> WidgetLoadResult {
-			  // The panes have no size yet. The window is closer to it than an empty terminal, and
-			  // the layout corrects it before the shell's first prompt.
-			  // The directory can be gone by now.
-			  const std::string directory = session.value( "working_directory", "" );
-			  auto* terminal = newTerminal(
-				  mainLayout->getPixelsSize(),
-				  isUsableDirectory( directory ) ? directory : terminalConfig.workingDirectory,
-				  session.contains( "harness_session" ) ? &session["harness_session"] : nullptr );
-			  if ( !terminal )
-				  return {};
-			  std::string title = session.value( "custom_title", "" );
-			  if ( !title.empty() )
-				  terminal->setTitle( title );
-			  else
-				  title = i18n( "terminal", "Terminal" ).toUtf8();
-			  return { terminal, nullptr, std::move( title ) };
-		  } } );
+	tabSplitter->registerWidgetType( SessionTerminalType,
+									 { [this]( UIWidget* widget ) {
+										  auto session = nlohmann::json::object();
+										  // Other titles belong to whatever was running, which the
+										  // restored shell won't be.
+										  auto* terminal = widget->asType<UITerminal>();
+										  if ( terminal->isUsingCustomTitle() )
+											  session["custom_title"] = terminal->getTitle();
+										  if ( auto directory = terminalDirectory( terminal );
+											   !directory.empty() )
+											  session["working_directory"] = std::move( directory );
+										  if ( config->terminal.recoverHarnessSessions ) {
+											  auto resume = harnessRecovery.capture( terminal );
+											  if ( !resume.is_null() )
+												  session["harness_session"] = std::move( resume );
+										  }
+										  return session;
+									  },
+									   {} } );
 }
 
 void App::saveSession() {
 	// Nothing is written for a session that ended with its last terminal: the next start is a new
 	// one, because restoreSession() already took the previous file.
 	if ( !managesSession || !config->terminal.restoreLastSession || !tabSplitter ||
-		 !hasTerminals() )
+		 ( !pendingSessionRestore && !hasTerminals() ) )
 		return;
 	// From the base layout, as toJSON() would miss the rest of the tree from a maximized tab
 	// widget.
-	if ( !config->saveSession(
-			 tabSplitter->serializeNode( tabSplitter->getBaseLayout()->getFirstChild() ) ) ) {
+	if ( !( pendingSessionRestore ? config->saveSession( pendingSessionRestore.getSession() )
+								  : config->saveSession( tabSplitter->serializeNode(
+										tabSplitter->getBaseLayout()->getFirstChild() ) ) ) ) {
 		Log::error( "Could not save eterm session to %s", config->getConfigPath() );
 	}
 }
@@ -201,11 +187,42 @@ bool App::restoreSession() {
 	if ( !managesSession )
 		return false;
 	// Taken even if disabled, so enabling it later doesn't bring back a forgotten session.
-	const auto session = config->takeSession();
+	auto session = config->takeSession();
 	if ( !config->terminal.restoreLastSession || !session.contains( "type" ) )
 		return false;
 	try {
-		tabSplitter->fromJSON( session );
+		pendingSessionRestore = tabSplitter->prepareRestore( std::move( session ) );
+		if ( pendingSessionRestore )
+			sessionRestoreReady = scene->onLayoutReady( [this] { finishSessionRestore(); } );
+		return static_cast<bool>( pendingSessionRestore );
+	} catch ( const nlohmann::json::exception& error ) {
+		Log::error( "Could not prepare eterm session: %s", error.what() );
+		return false;
+	}
+}
+
+void App::finishSessionRestore() {
+	if ( !appWindow->isOpen() || !pendingSessionRestore )
+		return;
+	try {
+		pendingSessionRestore.loadWidgets(
+			[this]( const nlohmann::json& saved, UITabWidget* tabs ) -> WidgetLoadResult {
+				// Split proportions and tab-bar space have settled before starting this shell.
+				// The saved directory can have disappeared.
+				const std::string directory = saved.value( "working_directory", "" );
+				auto* terminal = newTerminal(
+					tabs->getContainerNode()->getPixelsSize(),
+					isUsableDirectory( directory ) ? directory : terminalConfig.workingDirectory,
+					saved.contains( "harness_session" ) ? &saved["harness_session"] : nullptr );
+				if ( !terminal )
+					return {};
+				std::string title = saved.value( "custom_title", "" );
+				if ( !title.empty() )
+					terminal->setTitle( title );
+				else
+					title = i18n( "terminal", "Terminal" ).toUtf8();
+				return { terminal, nullptr, std::move( title ) };
+			} );
 	} catch ( const nlohmann::json::exception& error ) {
 		Log::error( "Could not fully restore eterm session: %s", error.what() );
 	}
@@ -215,10 +232,9 @@ bool App::restoreSession() {
 			createTerminal( tabs );
 	}
 	if ( !hasTerminals() )
-		return false;
+		return;
 	tabSplitter->focusSomeWidget();
 	updateWindowTitle();
-	return true;
 }
 
 void App::forEachTerminal( const std::function<void( UITerminal* )>& fn ) {
@@ -1445,6 +1461,11 @@ int App::run( int argc, char* argv[] ) {
 	std::unique_ptr<UITabWidgetSplitter, TabWidgetSplitterDeleter> tabSplitterOwner(
 		UITabWidgetSplitter::New( &splitterClient, scene ) );
 	tabSplitter = tabSplitterOwner.get();
+	// The pending restore borrows the splitter and its scene; cancel before that owner unwinds.
+	ScopedOp cancelSessionRestore( nullptr, [this] {
+		sessionRestoreReady.disconnect();
+		pendingSessionRestore = {};
+	} );
 	registerTabCommands( *mainLayout, nullptr );
 	applyKeybindings();
 	tabSplitter->setHideTabBarOnSingleTab( !config->window.alwaysShowTabBar );

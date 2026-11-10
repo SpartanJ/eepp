@@ -24,6 +24,7 @@ UTEST( EventConnection, disconnectsWhenDestroyed ) {
 		emitter.emit( TestEvent );
 	}
 
+	EXPECT_FALSE( emitter.hasEventsOfType( TestEvent ) );
 	emitter.emit( TestEvent );
 	EXPECT_EQ( callbackCount, 1 );
 }

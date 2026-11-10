@@ -5,13 +5,15 @@
 #include <eepp/system/scopedop.hpp>
 #include <eepp/vfs/detail/await.hpp>
 
+using namespace EE::System;
+
 namespace EE { namespace VFS {
 
 using detail::await;
 
 VFSResult<std::unique_ptr<IOStreamVFS>>
 IOStreamVFS::create( FileHandle handle, OpenFlags flags, CancellationToken token, Uint64 maxSize ) {
-	System::ScopedOp cleanup( nullptr, [&handle] {
+	ScopedOp cleanup( nullptr, [&handle] {
 		if ( handle.isOpen() )
 			handle.close();
 	} );

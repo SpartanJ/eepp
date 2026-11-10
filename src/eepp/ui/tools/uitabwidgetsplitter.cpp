@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/tools/uitabwidgetsplitter.hpp>
 #include <eepp/ui/uinodelink.hpp>
@@ -7,6 +8,8 @@
 #include <nlohmann/json.hpp>
 
 namespace EE { namespace UI { namespace Tools {
+
+using namespace EE::Scene;
 
 UITabWidgetSplitter* UITabWidgetSplitter::New( UITabWidgetSplitter::Client* client,
 											   UISceneNode* sceneNode ) {
@@ -952,51 +955,101 @@ nlohmann::json UITabWidgetSplitter::serializeNode( Node* node ) const {
 }
 
 void UITabWidgetSplitter::unserializeNode( const nlohmann::json& j, UITabWidget* curTabWidget ) {
+	restoreNodes( j, curTabWidget );
+}
+
+void UITabWidgetSplitter::restoreLayout( const nlohmann::json& j, UITabWidget* tabs,
+										 SmallVector<RestorePane, 4>& panes ) {
 	// A missing key must throw: the const operator[] is undefined behavior for one, and this reads
 	// files that can be edited or damaged.
 	const auto& type = j.at( "type" );
 	if ( type == "tabwidget" ) {
-		Int64 currentPage = j.value( "current_page", (Int64)0 );
-		const auto& filesArr = j.at( "files" );
-		for ( const auto& file : filesArr ) {
-			if ( !file.contains( "type" ) )
-				continue;
-			std::string type = file["type"];
-			Lock l( mWidgetTypesMutex );
-			auto it = mWidgetTypes.find( type );
-			if ( it != mWidgetTypes.end() ) {
-				WidgetLoadResult result = it->second.onLoad( file );
-				if ( !result.widget )
-					continue;
-				std::string title =
-					!result.title.empty() ? result.title : file.value( "title", "" );
-				auto [tab, _] = createWidgetInTabWidget( curTabWidget, result.widget, title );
-				if ( result.icon )
-					tab->setIcon( result.icon->clone() );
-			}
-		}
-		if ( curTabWidget->getTabCount() > 0 ) {
-			curTabWidget->setTabSelected(
-				eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
-		}
+		panes.push_back( { &j, tabs } );
 	} else if ( type == "splitter" ) {
-		SplitDirection dir = j.value( "orientation", "vertical" ) == "horizontal"
-								 ? SplitDirection::Right
-								 : SplitDirection::Bottom;
-		UITabWidget* newTabWidget = splitTabWidget( dir, curTabWidget );
-		if ( !newTabWidget )
+		const SplitDirection dir = j.value( "orientation", "vertical" ) == "horizontal"
+									   ? SplitDirection::Right
+									   : SplitDirection::Bottom;
+		auto* newTabs = splitTabWidget( dir, tabs );
+		if ( !newTabs )
 			return;
 
-		// Resolved now: splitting a child moves its tab widget into a nested splitter.
-		Node* parent = newTabWidget->getParent();
-
-		unserializeNode( j.at( "first" ), curTabWidget );
-		unserializeNode( j.at( "last" ), newTabWidget );
-
+		// Resolve and configure this split before recursion can move its children into nested ones.
+		auto* parent = newTabs->getParent();
 		if ( j.contains( "split" ) && j["split"].is_string() &&
 			 parent->isType( UI_TYPE_SPLITTER ) ) {
 			parent->asType<UISplitter>()->setSplitPartition(
 				StyleSheetLength( j["split"].get<std::string>() ) );
+		}
+		restoreLayout( j.at( "first" ), tabs, panes );
+		restoreLayout( j.at( "last" ), newTabs, panes );
+	}
+}
+
+void UITabWidgetSplitter::restoreNodes( const nlohmann::json& j, UITabWidget* tabs ) {
+	SmallVector<RestorePane, 4> panes;
+	restoreLayout( j, tabs, panes );
+	ScopedOp restoreVisibility( nullptr, [&panes] { releaseRestorePanes( panes ); } );
+	prepareRestorePanes( panes, true );
+	loadRestorePanes( panes, {} );
+}
+
+void UITabWidgetSplitter::releaseRestorePanes( SmallVector<RestorePane, 4>& panes ) {
+	for ( const auto& pane : panes ) {
+		if ( pane.tabs && !pane.tabs->isClosing() )
+			pane.tabs->setHideTabBarOnSingleTab( pane.hideSingleTabBar );
+	}
+}
+
+void UITabWidgetSplitter::prepareRestorePanes( SmallVector<RestorePane, 4>& panes,
+											   bool useRegisteredLoaders ) {
+	// Reserve the second saved page's bar before the first page's process starts.
+	// Save every policy first so exception cleanup can restore panes not yet prepared.
+	for ( auto& pane : panes )
+		pane.hideSingleTabBar = pane.tabs->getHideTabBarOnSingleTab();
+	for ( const auto& pane : panes ) {
+		size_t pageCount = pane.tabs->getTabCount();
+		{
+			Lock l( mWidgetTypesMutex );
+			for ( const auto& file : pane.session->at( "files" ) ) {
+				if ( !file.contains( "type" ) )
+					continue;
+				const auto it = mWidgetTypes.find( file["type"].get_ref<const std::string&>() );
+				if ( it != mWidgetTypes.end() && ( !useRegisteredLoaders || it->second.onLoad ) )
+					++pageCount;
+			}
+		}
+		if ( pageCount > 1 )
+			pane.tabs->setHideTabBarOnSingleTab( false );
+	}
+}
+
+void UITabWidgetSplitter::loadRestorePanes( const SmallVector<RestorePane, 4>& panes,
+											const WidgetLoadCallback& loadWidget ) {
+	for ( const auto& pane : panes ) {
+		if ( !pane.tabs || pane.tabs->isClosing() )
+			continue;
+		const auto& session = *pane.session;
+		const Int64 currentPage = session.value( "current_page", (Int64)0 );
+		for ( const auto& file : session.at( "files" ) ) {
+			if ( !file.contains( "type" ) )
+				continue;
+			const auto& type = file["type"].get_ref<const std::string&>();
+			Lock l( mWidgetTypesMutex );
+			auto it = mWidgetTypes.find( type );
+			if ( it == mWidgetTypes.end() || ( !loadWidget && !it->second.onLoad ) )
+				continue;
+			WidgetLoadResult result =
+				loadWidget ? loadWidget( file, pane.tabs ) : it->second.onLoad( file );
+			if ( !result.widget )
+				continue;
+			std::string title = !result.title.empty() ? result.title : file.value( "title", "" );
+			auto [tab, _] = createWidgetInTabWidget( pane.tabs, result.widget, title );
+			if ( result.icon )
+				tab->setIcon( result.icon->clone() );
+		}
+		if ( pane.tabs->getTabCount() > 0 ) {
+			pane.tabs->setTabSelected(
+				eeclamp<Int32>( currentPage, 0, pane.tabs->getTabCount() - 1 ) );
 		}
 	}
 }
@@ -1014,12 +1067,79 @@ nlohmann::json UITabWidgetSplitter::toJSON() const {
 }
 
 void UITabWidgetSplitter::fromJSON( const nlohmann::json& j ) {
-	if ( mTabWidgets.empty() )
+	if ( mTabWidgets.empty() || !j.contains( "type" ) )
 		return;
-	if ( !j.contains( "type" ) )
-		return;
-	UITabWidget* initialTabWidget = getFirstTabWidget();
-	unserializeNode( j, initialTabWidget );
+	unserializeNode( j, getFirstTabWidget() );
+}
+
+struct UITabWidgetSplitter::Restoration::State {
+	UITabWidgetSplitter& owner;
+	nlohmann::json session;
+	SmallVector<RestorePane, 4> panes;
+	EventConnectionList connections;
+	bool policiesPrepared{ false };
+
+	State( UITabWidgetSplitter& owner, nlohmann::json session ) :
+		owner( owner ), session( std::move( session ) ) {}
+
+	~State() {
+		if ( policiesPrepared )
+			releaseRestorePanes( panes );
+	}
+};
+
+UITabWidgetSplitter::Restoration::Restoration() = default;
+
+UITabWidgetSplitter::Restoration::~Restoration() = default;
+
+UITabWidgetSplitter::Restoration::Restoration( Restoration&& ) noexcept = default;
+
+UITabWidgetSplitter::Restoration&
+UITabWidgetSplitter::Restoration::operator=( Restoration&& ) noexcept = default;
+
+UITabWidgetSplitter::Restoration::operator bool() const {
+	return static_cast<bool>( mState );
+}
+
+bool UITabWidgetSplitter::Restoration::isReady() const {
+	return mState && mState->owner.mUISceneNode->isStyleAndLayoutReady();
+}
+
+const nlohmann::json& UITabWidgetSplitter::Restoration::getSession() const {
+	return mState->session;
+}
+
+bool UITabWidgetSplitter::Restoration::loadWidgets( const WidgetLoadCallback& loadWidget ) {
+	if ( !isReady() )
+		return false;
+	// Consume before invoking factories: errors cannot leave a partially loaded restore pending.
+	auto state = std::move( mState );
+	auto context = state->owner.mUISceneNode->makeCurrent();
+	state->owner.loadRestorePanes( state->panes, loadWidget );
+	return true;
+}
+
+UITabWidgetSplitter::Restoration UITabWidgetSplitter::prepareRestore( nlohmann::json session ) {
+	Restoration restoration;
+	if ( mTabWidgets.empty() || !session.contains( "type" ) )
+		return restoration;
+	auto state = std::make_unique<Restoration::State>( *this, std::move( session ) );
+	restoreLayout( state->session, getFirstTabWidget(), state->panes );
+	// A pane may close while normal scene ticks are settling its geometry. Invalidate its
+	// borrowed widget pointer before destruction; the saved JSON stays owned by the state.
+	for ( const auto& pane : state->panes ) {
+		state->connections += pane.tabs->connect(
+			Event::OnClose, [pending = state.get(), tabs = pane.tabs]( const Event* ) {
+				for ( auto& pane : pending->panes ) {
+					if ( pane.tabs == tabs )
+						pane.tabs = nullptr;
+				}
+			} );
+	}
+	state->policiesPrepared = true;
+	prepareRestorePanes( state->panes, false );
+	restoration.mState = std::move( state );
+	return restoration;
 }
 
 }}} // namespace EE::UI::Tools

@@ -19,6 +19,7 @@
 #include <eepp/ui/uihtmlinput.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uilayout.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -34,6 +35,7 @@
 #include <eepp/window/input.hpp>
 #include <eepp/window/runtime.hpp>
 #include <memory>
+#include <stdexcept>
 #include <thread>
 #include <type_traits>
 
@@ -42,6 +44,139 @@ using namespace EE::Graphics;
 using namespace EE::Window;
 using namespace EE::Scene;
 using namespace EE::UI;
+
+UTEST( UISceneNode, LayoutReadyWaitsForSettledNormalTicksAndRunsOnce ) {
+	UIApplication app( WindowSettings( 400, 300, "Layout readiness" ),
+					   UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto* scene = app.getUI();
+	scene->setMaxInvalidationDepth( 0 );
+	auto* layout = UILinearLayout::New();
+	layout->setParent( scene->getRoot() );
+	layout->setPixelsSize( 400, 300 );
+	int layouts = 0;
+	layout->on( Event::OnLayoutUpdate, [layout, &layouts]( const Event* ) {
+		if ( ++layouts < 3 )
+			layout->setLayoutDirty();
+	} );
+	int calls = 0;
+	int scheduledUpdates = 0;
+	bool readyInCallback = false;
+	bool disconnectedInCallback = false;
+	struct ScheduledWidget : UIWidget {
+		int& updates;
+		explicit ScheduledWidget( int& updates ) : UIWidget( "widget" ), updates( updates ) {
+			subscribeScheduledUpdate();
+		}
+		void scheduledUpdate( const Time& ) override { ++updates; }
+	};
+	EventConnection ready;
+	ready = scene->onLayoutReady( [&] {
+		++calls;
+		readyInCallback = scene->isStyleAndLayoutReady();
+		disconnectedInCallback = !static_cast<bool>( ready );
+		// Adding scheduled widgets is safe here because scheduled traversal has finished.
+		eeNew( ScheduledWidget, ( scheduledUpdates ) );
+	} );
+	EXPECT_EQ( layouts, 0 );
+	EXPECT_EQ( calls, 0 );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_EQ( calls, 0 );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_EQ( calls, 0 );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_EQ( calls, 1 );
+	EXPECT_TRUE( readyInCallback );
+	EXPECT_TRUE( disconnectedInCallback );
+	EXPECT_EQ( scheduledUpdates, 0 );
+	EXPECT_FALSE( scene->hasEventsOfType( Event::OnLayoutReady ) );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_EQ( calls, 1 );
+	EXPECT_EQ( scheduledUpdates, 1 );
+}
+
+UTEST( UISceneNode, LayoutReadyCancellationAndSceneDestruction ) {
+	UIApplication app( WindowSettings( 400, 300, "Layout readiness" ),
+					   UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto* scene = app.getUI();
+	int calls = 0;
+	{
+		auto ready = scene->onLayoutReady( [&calls] { ++calls; } );
+		EXPECT_TRUE( scene->hasEventsOfType( Event::OnLayoutReady ) );
+	}
+	EXPECT_FALSE( scene->hasEventsOfType( Event::OnLayoutReady ) );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_EQ( calls, 0 );
+	auto* otherScene = UISceneNode::New( app.getWindow() );
+	auto ready = otherScene->onLayoutReady( [&calls] { ++calls; } );
+	eeDelete( otherScene );
+	EXPECT_FALSE( static_cast<bool>( ready ) );
+	EXPECT_EQ( calls, 0 );
+}
+
+UTEST( UISceneNode, LayoutReadyDefersAfterInvalidationAndDuringRegistration ) {
+	UIApplication app( WindowSettings( 400, 300, "Layout readiness" ),
+					   UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto* scene = app.getUI();
+	auto* layout = UILinearLayout::New();
+	layout->setParent( scene->getRoot() );
+	layout->setPixelsSize( 400, 300 );
+	SmallVector<int, 4> order;
+	EventConnection nested;
+	auto first = scene->onLayoutReady( [&] {
+		order.push_back( 1 );
+		layout->setLayoutDirty();
+	} );
+	auto second = scene->onLayoutReady( [&] {
+		order.push_back( 2 );
+		nested = scene->onLayoutReady( [&] { order.push_back( 3 ); } );
+	} );
+	scene->update( Milliseconds( 16 ) );
+	ASSERT_EQ( order.size(), size_t{ 1 } );
+	EXPECT_EQ( order[0], 1 );
+	EXPECT_TRUE( static_cast<bool>( second ) );
+	scene->update( Milliseconds( 16 ) );
+	ASSERT_EQ( order.size(), size_t{ 2 } );
+	EXPECT_EQ( order[1], 2 );
+	EXPECT_TRUE( static_cast<bool>( nested ) );
+	scene->update( Milliseconds( 16 ) );
+	ASSERT_EQ( order.size(), size_t{ 3 } );
+	EXPECT_EQ( order[2], 3 );
+	EXPECT_FALSE( scene->hasEventsOfType( Event::OnLayoutReady ) );
+}
+
+UTEST( UISceneNode, LayoutReadyCanCancelAnotherWaiterDuringDispatch ) {
+	UIApplication app( WindowSettings( 400, 300, "Layout readiness" ),
+					   UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto* scene = app.getUI();
+	EventConnection second;
+	int calls = 0;
+	auto first = scene->onLayoutReady( [&] { second.disconnect(); } );
+	second = scene->onLayoutReady( [&] { ++calls; } );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_EQ( calls, 0 );
+	EXPECT_FALSE( scene->hasEventsOfType( Event::OnLayoutReady ) );
+}
+
+UTEST( UISceneNode, LayoutReadyDisconnectsBeforeThrowingCallback ) {
+	UIApplication app( WindowSettings( 400, 300, "Layout readiness" ),
+					   UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto* scene = app.getUI();
+	int calls = 0;
+	auto ready = scene->onLayoutReady( [&] {
+		++calls;
+		throw std::runtime_error( "readiness fixture" );
+	} );
+	bool threw = false;
+	try {
+		scene->update( Milliseconds( 16 ) );
+	} catch ( const std::runtime_error& ) {
+		threw = true;
+	}
+	EXPECT_TRUE( threw );
+	EXPECT_FALSE( static_cast<bool>( ready ) );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_EQ( calls, 1 );
+}
 
 UTEST( FontPreferences, updatesExistingAndFutureTextWithoutOverridingStyles ) {
 	UIApplication app(

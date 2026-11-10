@@ -1995,6 +1995,9 @@ class EE_API Node : public Transformable {
 	OriginPoint mRotationOriginPoint;
 	OriginPoint mScaleOriginPoint;
 
+	/** Whether a listener is still registered, including during snapshot-based dispatch. */
+	bool hasEventListener( Uint32 eventType, Uint32 callbackId ) const;
+
 	Node();
 
 	/**

@@ -48,6 +48,7 @@
 
 using namespace EE::Graphics;
 using namespace EE::Network;
+using namespace EE::Scene;
 
 namespace EE { namespace UI {
 
@@ -1275,6 +1276,27 @@ void UISceneNode::flushDirtyStyleAndLayout() {
 	}
 }
 
+bool UISceneNode::isStyleAndLayoutReady() const {
+	return !mIsLoading && !mUpdatingLayouts && mDirtyStyle.empty() && mDirtyStyleState.empty() &&
+		   mDirtyLayouts.empty();
+}
+
+EventConnection UISceneNode::onLayoutReady( std::function<void()> callback ) {
+	if ( !callback )
+		return {};
+	return connect( Event::OnLayoutReady,
+					[this, callback = std::move( callback )]( const Event* event ) {
+						// Event dispatch copies listeners. An earlier callback can cancel this
+						// waiter or dirty geometry, so validate both immediately before consuming
+						// the subscription.
+						if ( !hasEventListener( Event::OnLayoutReady, event->getCallbackId() ) ||
+							 !isStyleAndLayoutReady() )
+							return;
+						removeEventListener( event->getCallbackId() );
+						callback();
+					} );
+}
+
 void UISceneNode::update( const Time& elapsed ) {
 	auto context = makeCurrent();
 	// Native accessibility calls can invoke user callbacks that change policy. Resetting their
@@ -1343,6 +1365,11 @@ void UISceneNode::update( const Time& elapsed ) {
 		updateDirtyLayouts();
 		invalidationDepth--;
 	}
+
+	// Readiness work runs outside scheduled-widget traversal and only while waiters exist.
+	// Normal invalidation limits still apply: an unsettled scene waits for another tick.
+	if ( isStyleAndLayoutReady() && hasEventsOfType( Event::OnLayoutReady ) )
+		sendCommonEvent( Event::OnLayoutReady );
 
 	if ( mFirstUpdate && mVerbose ) {
 		mFirstUpdate = false;

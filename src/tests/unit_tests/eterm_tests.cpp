@@ -6153,7 +6153,7 @@ UTEST( eterm_program_status, emulator_routes_exact_prefixes_without_printing ) {
 }
 
 UTEST( eterm_program_status, emulator_applies_reports_fragmented_at_every_byte ) {
-	for ( const std::string sequence :
+	for ( const std::string& sequence :
 		  { std::string( "\033]7501;state=done:id=x\033\\" ), std::string( "\033]9;4;1;7\a" ) } ) {
 		for ( size_t split = 1; split < sequence.size(); ++split ) {
 			auto display = std::make_shared<MockDisplay>();

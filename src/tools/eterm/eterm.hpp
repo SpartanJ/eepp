@@ -188,8 +188,10 @@ class App : private efsw::FileWatchListener {
 
 	void saveSession();
 
-	/** @return Whether the session left terminals open: otherwise the initial tabs are needed. */
+	/** @return Whether a restore was prepared; its pages load after normal scene layout ticks. */
 	bool restoreSession();
+
+	void finishSessionRestore();
 
 	void createNewTerminal();
 
@@ -203,6 +205,8 @@ class App : private efsw::FileWatchListener {
 	UIMenuBar* menuBar{ nullptr };
 #endif
 	UITabWidgetSplitter* tabSplitter{ nullptr };
+	UITabWidgetSplitter::Restoration pendingSessionRestore;
+	EventConnection sessionRestoreReady;
 	FontTrueType* terminalFont{ nullptr };
 	UIIcon* terminalIcon{ nullptr };
 	UIMessageBox* closeDialog{ nullptr };

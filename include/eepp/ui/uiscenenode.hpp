@@ -5,6 +5,7 @@
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/network/cookiemanager.hpp>
 #include <eepp/network/uri.hpp>
+#include <eepp/scene/eventconnection.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/translator.hpp>
@@ -34,6 +35,8 @@ class Engine;
 }} // namespace EE::Window
 
 namespace EE { namespace UI {
+
+using namespace EE::Scene;
 
 class UITheme;
 class UIThemeManager;
@@ -233,6 +236,19 @@ class EE_API UISceneNode : public SceneNode {
 	 * arbitrary node update callbacks.
 	 */
 	void flushDirtyStyleAndLayout();
+
+	/** Whether style and layout queues are clear and no layout pass is active.
+	 * This only inspects queue state; it does not perform any work. Check after update()
+	 * when an operation needs the geometry settled by the scene's normal layout passes. */
+	bool isStyleAndLayoutReady() const;
+
+	/** Runs once at the end of a normal scene update after styles and layouts have settled.
+	 * Keep the returned connection alive to wait; destroying it cancels the callback.
+	 * Registration never runs the callback immediately. A callback that dirties layout defers
+	 * remaining waiters, and callbacks registered during dispatch wait for a later update.
+	 * The subscription disconnects before invoking the callback, including if it throws.
+	 * No layout pass or timer is forced. Use only on the scene's owning thread. */
+	EventConnection onLayoutReady( std::function<void()> callback );
 
 	/**
 	 * @brief Sets the translator for internationalization.
