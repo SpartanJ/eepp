@@ -1,18 +1,22 @@
 #include <eepp/config.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS
+
 #include "../../tools/eproc/platform/macos/process_icon_resolver_macos.hpp"
 #include "../../tools/eproc/platform/macos/process_network_monitor_macos.hpp"
 #include "../../tools/eproc/process_collector.hpp"
 #include "utest.hpp"
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/time.hpp>
 
 #include <algorithm>
-#include <chrono>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <sys/resource.h>
 #include <unistd.h>
+
+using namespace EE::System;
 
 using namespace eproc;
 
@@ -60,8 +64,8 @@ UTEST( EProcMacOSCollector, CollectsCurrentProcessAndUsesMicrosecondCpuTime ) {
 		EXPECT_TRUE( current->userTime > userUs / 2 );
 		EXPECT_TRUE( current->userTime < userUs * 2 + 1'000'000 );
 	}
-	const auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds( 100 );
-	while ( std::chrono::steady_clock::now() < end ) {
+	const auto end = MonotonicClock::now() + Milliseconds( 100 );
+	while ( MonotonicClock::now() < end ) {
 		// Keep the process busy across a second CPU sample.
 	}
 	ASSERT_TRUE( collector->collect( processes, system ) );

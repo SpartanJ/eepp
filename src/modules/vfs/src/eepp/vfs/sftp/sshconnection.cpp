@@ -6,12 +6,14 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <mutex>
 
-namespace EE { namespace VFS { namespace sftp {
+using namespace EE::System;
 
-using System::FileSystem;
+namespace EE { namespace VFS { namespace sftp {
 
 namespace {
 
@@ -246,12 +248,10 @@ SSHConnection::SSHConnection( std::shared_ptr<SSHIOContext> context, SSHResolved
 	mHooks( std::move( hooks ) ),
 	mTransport( std::move( transport ) ),
 	mPeerEndpoint( mTransport ? mTransport->peerEndpoint() : std::nullopt ),
-	mLastUse( std::chrono::steady_clock::now() ),
+	mLastUse( MonotonicClock::now() ),
 	mOperationTimeout( operationTimeout ),
 	mConnectTimeout( connectTimeout ) {
-	mDeadline =
-		std::chrono::steady_clock::now() +
-		std::chrono::milliseconds( std::max<Int64>( 1000, connectTimeout.asMilliseconds() ) );
+	mDeadline = MonotonicClock::now() + std::max( Seconds( 1 ), connectTimeout );
 }
 
 bool SSHConnection::hasDistinctPeer( const SSHConnection& other ) const {
@@ -343,14 +343,14 @@ void SSHConnection::close() {
 	} );
 }
 
-std::chrono::steady_clock::time_point SSHConnection::lastUse() const {
+MonotonicClock::TimePoint SSHConnection::lastUse() const {
 	std::lock_guard<std::mutex> lock( mQueueMutex );
 	return mLastUse;
 }
 
 void SSHConnection::markUsed() {
 	std::lock_guard<std::mutex> lock( mQueueMutex );
-	mLastUse = std::chrono::steady_clock::now();
+	mLastUse = MonotonicClock::now();
 }
 
 void SSHConnection::enqueue( std::unique_ptr<SSHOperation> operation ) {
@@ -362,7 +362,7 @@ void SSHConnection::enqueue( std::unique_ptr<SSHOperation> operation ) {
 		if ( mQueueFailure ) {
 			failure = mQueueFailure;
 		} else {
-			mLastUse = std::chrono::steady_clock::now();
+			mLastUse = MonotonicClock::now();
 			mQueue.push_back( std::move( operation ) );
 		}
 	}
@@ -451,11 +451,10 @@ void SSHConnection::collectPoll( std::vector<PollFd>& fds ) const {
 }
 
 int SSHConnection::nextTimeoutMs() const {
-	auto now = std::chrono::steady_clock::now();
+	auto now = MonotonicClock::now();
 	int timeout = -1;
-	auto consider = [&]( std::chrono::steady_clock::time_point when ) {
-		int ms = static_cast<int>( std::max<Int64>(
-			0, std::chrono::duration_cast<std::chrono::milliseconds>( when - now ).count() ) );
+	auto consider = [&]( MonotonicClock::TimePoint when ) {
+		int ms = static_cast<int>( std::max<Int64>( 0, ( when - now ).asMicroseconds() / 1000 ) );
 		if ( timeout < 0 || ms < timeout )
 			timeout = ms;
 	};
@@ -472,27 +471,26 @@ int SSHConnection::nextTimeoutMs() const {
 	return timeout;
 }
 
-std::chrono::milliseconds SSHConnection::idleTimeout() const {
-	return std::chrono::milliseconds( static_cast<Int64>( mIdleTimeout.asMilliseconds() ) );
+Time SSHConnection::idleTimeout() const {
+	return mIdleTimeout;
 }
 
 bool SSHConnection::idleExpired() const {
 	return mState.load() == State::Ready && mIdleTimeout != Time::Zero && isIdle() &&
-		   std::chrono::steady_clock::now() - lastUse() > idleTimeout();
+		   MonotonicClock::now() - lastUse() > idleTimeout();
 }
 
 void SSHConnection::drive() {
 	if ( mTransport && !mTransport->alive() && isUsable() )
 		fail( VFSError( VFSErrorCode::ConnectionLost, URI(), "Transport closed" ) );
-	if ( isReady() && mOperationDeadline &&
-		 std::chrono::steady_clock::now() >= *mOperationDeadline ) {
+	if ( isReady() && mOperationDeadline && MonotonicClock::now() >= *mOperationDeadline ) {
 		// libssh2 retains request state across EAGAIN: expiring just the operation and
 		// reusing the session would corrupt subsequent requests. Retire the whole session.
 		fail( VFSError( VFSErrorCode::TimedOut, URI(), "SFTP operation timed out" ) );
 	}
 
 	if ( isUsable() && mState.load() != State::Ready ) {
-		if ( !mWaitingExternal && std::chrono::steady_clock::now() > mDeadline ) {
+		if ( !mWaitingExternal && MonotonicClock::now() > mDeadline ) {
 			fail( VFSError( VFSErrorCode::TimedOut, URI(),
 							"Timed out connecting to " + mConfig.hostName ) );
 		} else if ( establish() == Step::Again ) {
@@ -526,9 +524,8 @@ void SSHConnection::drive() {
 			operation = mQueue.front().get();
 		}
 		if ( !mOperationDeadline ) {
-			mOperationDeadline = std::chrono::steady_clock::now() +
-								 std::chrono::microseconds(
-									 std::max<Int64>( 1, mOperationTimeout.asMicroseconds() ) );
+			mOperationDeadline =
+				MonotonicClock::now() + std::max( Microseconds( 1 ), mOperationTimeout );
 		}
 		if ( operation->step( *this ) == Step::Again )
 			break;
@@ -538,7 +535,7 @@ void SSHConnection::drive() {
 			std::lock_guard<std::mutex> lock( mQueueMutex );
 			done = std::move( mQueue.front() );
 			mQueue.pop_front();
-			mLastUse = std::chrono::steady_clock::now();
+			mLastUse = MonotonicClock::now();
 		}
 		if ( !isUsable() ) {
 			// The operation detected a dead transport: fail the rest.
@@ -566,15 +563,14 @@ void SSHConnection::drive() {
 		return;
 	}
 
-	if ( mConfig.serverAliveInterval && std::chrono::steady_clock::now() >= mNextKeepalive ) {
+	if ( mConfig.serverAliveInterval && MonotonicClock::now() >= mNextKeepalive ) {
 		int seconds = 0;
 		int rc = libssh2_keepalive_send( mSession, &seconds );
 		if ( rc != 0 && rc != LIBSSH2_ERROR_EAGAIN && isSocketError( rc ) ) {
 			fail( VFSError( VFSErrorCode::ConnectionLost, URI(), "Keepalive failed" ) );
 			return;
 		}
-		mNextKeepalive =
-			std::chrono::steady_clock::now() + std::chrono::seconds( std::max( 1, seconds ) );
+		mNextKeepalive = MonotonicClock::now() + Seconds( std::max( 1, seconds ) );
 	}
 }
 
@@ -732,7 +728,7 @@ Step SSHConnection::establish() {
 					mSession, 1,
 					static_cast<unsigned>( std::max<Int64>(
 						1, static_cast<Int64>( mConfig.serverAliveInterval->asSeconds() ) ) ) );
-				mNextKeepalive = std::chrono::steady_clock::now();
+				mNextKeepalive = MonotonicClock::now();
 			}
 			mState = State::Ready;
 			markUsed();
@@ -893,9 +889,8 @@ Step SSHConnection::stepHostKey() {
 					self->mHostKeyDecision = decision;
 					self->mWaitingExternal = false;
 					// User think time does not count against the connect timeout.
-					self->mDeadline = std::chrono::steady_clock::now() +
-									  std::chrono::milliseconds( std::max<Int64>(
-										  1000, self->mConnectTimeout.asMilliseconds() ) );
+					self->mDeadline =
+						MonotonicClock::now() + std::max( Seconds( 1 ), self->mConnectTimeout );
 				}
 			} );
 		} );
@@ -1078,9 +1073,8 @@ void SSHConnection::requestExternal( SSHAuthenticationRequest request, AuthPhase
 				if ( auto self = weak.lock() ) {
 					self->mExternalAnswer = std::move( *answers );
 					self->mWaitingExternal = false;
-					self->mDeadline = std::chrono::steady_clock::now() +
-									  std::chrono::milliseconds( std::max<Int64>(
-										  1000, self->mConnectTimeout.asMilliseconds() ) );
+					self->mDeadline =
+						MonotonicClock::now() + std::max( Seconds( 1 ), self->mConnectTimeout );
 				}
 				if ( answers->has_value() )
 					scrub( **answers );

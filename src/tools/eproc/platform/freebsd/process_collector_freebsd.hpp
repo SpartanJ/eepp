@@ -4,11 +4,13 @@
 #include "../../process_collector.hpp"
 #include "../posix/process_account.hpp"
 #include "../posix/process_icon_resolver.hpp"
-#include <chrono>
+#include <eepp/system/monotonicclock.hpp>
 #include <unordered_map>
 #include <vector>
 
 namespace eproc {
+
+using namespace EE::System;
 
 class ProcessCollectorFreeBSD final : public ProcessCollector {
   public:
@@ -26,7 +28,7 @@ class ProcessCollectorFreeBSD final : public ProcessCollector {
 	std::unordered_map<Int64, TickEntry> mProcessTicks;
 	ProcessAccounts mAccounts;
 	ProcessIconResolver mIconResolver;
-	std::chrono::steady_clock::time_point mPrevSampleTime;
+	MonotonicClock::TimePoint mPrevSampleTime;
 	std::vector<long> mCoreCpuTicks;
 	std::vector<long> mPrevCoreCpuTicks;
 	std::vector<float> mLastCoreCpuUsage;

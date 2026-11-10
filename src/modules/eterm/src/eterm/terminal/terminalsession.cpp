@@ -2,6 +2,8 @@
 
 #include <eepp/system/color.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/time.hpp>
 
 #include <algorithm>
 #include <bitset>
@@ -693,15 +695,20 @@ std::shared_ptr<const TerminalSnapshot> TerminalSession::snapshot() const {
 	return mPublishedSnapshot;
 }
 
-std::optional<std::string> TerminalSession::requestSelection( std::chrono::milliseconds timeout ) {
+std::optional<std::string> TerminalSession::requestSelection( Time timeout ) {
 	if ( mShutdownRequested.load( std::memory_order_acquire ) )
 		return std::nullopt;
 	auto response = std::make_shared<SelectionResponse>();
 	enqueue( SelectionRequestCommand{ response } );
 	std::unique_lock<std::mutex> lock( response->mutex );
-	if ( !response->condition.wait_for( lock, timeout, [&response] { return response->ready; } ) )
+	if ( !response->condition.wait_for( lock, timeout.toChrono(),
+										[&response] { return response->ready; } ) )
 		return std::nullopt;
 	return std::move( response->selection );
+}
+
+std::optional<std::string> TerminalSession::requestSelection( std::chrono::milliseconds timeout ) {
+	return requestSelection( Milliseconds( timeout.count() ) );
 }
 
 std::vector<TerminalSession::Event> TerminalSession::drainEvents() {
@@ -753,7 +760,7 @@ void TerminalSession::publishSnapshot( std::shared_ptr<const TerminalSnapshot> s
 }
 
 void TerminalSession::workerLoop() {
-	auto lastInput = std::chrono::steady_clock::now();
+	auto lastInput = MonotonicClock::now();
 	while ( !mShutdownRequested.load( std::memory_order_acquire ) ) {
 		processCommands();
 		if ( mShutdownRequested.load( std::memory_order_acquire ) )
@@ -761,7 +768,7 @@ void TerminalSession::workerLoop() {
 
 		const bool inputDrained = mEmulator->update();
 		if ( !inputDrained ) {
-			lastInput = std::chrono::steady_clock::now();
+			lastInput = MonotonicClock::now();
 			continue;
 		}
 
@@ -773,13 +780,12 @@ void TerminalSession::workerLoop() {
 		// during TUI repaints. An 8 ms sleep on each one backpressures the child; keep polling
 		// promptly for 15 ms after input, then restore the idle wait so quiet tabs do not keep
 		// waking at the active rate.
-		const auto wait =
-			std::chrono::steady_clock::now() - lastInput < std::chrono::milliseconds( 15 )
-				? std::chrono::milliseconds( 1 )
-				: std::chrono::milliseconds( 8 );
+		const auto wait = MonotonicClock::now() - lastInput < Milliseconds( 15 )
+							  ? Milliseconds( 1 )
+							  : Milliseconds( 8 );
 		std::unique_lock<std::mutex> lock( mCommandMutex );
 		if ( mCommands.empty() && !mShutdownRequested.load( std::memory_order_relaxed ) )
-			mCommandCondition.wait_for( lock, wait );
+			mCommandCondition.wait_for( lock, wait.toChrono() );
 	}
 	mShutdownRequested.store( true, std::memory_order_release );
 	mEmulator.reset();

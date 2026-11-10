@@ -1,11 +1,14 @@
 #include "testexitcode.hpp"
-#include <chrono>
+#include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/window.hpp>
 #include <iostream>
 #include <ole2.h>
 #include <shellapi.h>
 #include <thread>
 #include <windows.h>
+
+using namespace EE::System;
 
 using namespace EE;
 using namespace EE::Window;
@@ -246,7 +249,7 @@ int runAutomatedNativeDragTests() {
 			mouseAt( origin, MOUSEEVENTF_LEFTDOWN );
 			for ( int pump = 0; pump < 20; ++pump ) {
 				window->getInput()->update();
-				std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+				Sys::sleep( Milliseconds( 5 ) );
 			}
 			// Leave SDL's native press intact while clearing eepp's press without a modal drag.
 			// Its real button-up must still reach callbacks and produce ordinary click feedback.
@@ -258,7 +261,7 @@ int runAutomatedNativeDragTests() {
 			for ( int pump = 0; pump < 20; ++pump ) {
 				window->getInput()->update();
 				clicked |= ( window->getInput()->getClickTrigger() & EE_BUTTON_LMASK ) != 0;
-				std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+				Sys::sleep( Milliseconds( 5 ) );
 			}
 			ordinaryReleasePassed &= releases == 1 && clicked;
 			window->getInput()->popCallback( callback );
@@ -266,7 +269,7 @@ int runAutomatedNativeDragTests() {
 		mouseAt( origin, MOUSEEVENTF_LEFTDOWN );
 		for ( int pump = 0; pump < 20; ++pump ) {
 			window->getInput()->update();
-			std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+			Sys::sleep( Milliseconds( 5 ) );
 		}
 		SetWindowPos( nativeTarget, HWND_TOPMOST, 700, 100, 300, 240, SWP_SHOWWINDOW );
 		target->source = window;
@@ -311,9 +314,9 @@ int runAutomatedNativeDragTests() {
 				ReleaseDC( preview, dc );
 		}
 		std::thread gesture( [=] {
-			std::this_thread::sleep_for( std::chrono::milliseconds( 150 ) );
+			Sys::sleep( Milliseconds( 150 ) );
 			mouseAt( nativeTarget, 0 );
-			std::this_thread::sleep_for( std::chrono::milliseconds( 150 ) );
+			Sys::sleep( Milliseconds( 150 ) );
 			if ( scenario == Scenario::Escape ) {
 				INPUT input{};
 				input.type = INPUT_KEYBOARD;
@@ -348,18 +351,18 @@ int runAutomatedNativeDragTests() {
 			for ( int pump = 0; pump < 20; ++pump ) {
 				window->getInput()->update();
 				reentryPassed &= !( window->getInput()->getClickTrigger() & EE_BUTTON_LMASK );
-				std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+				Sys::sleep( Milliseconds( 5 ) );
 			}
 			reentryPassed &= !clicks && !( sdlMouseState() & EE_BUTTON_LMASK );
 			mouseAt( origin, MOUSEEVENTF_LEFTDOWN );
 			for ( int pump = 0; pump < 10; ++pump ) {
 				window->getInput()->update();
-				std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+				Sys::sleep( Milliseconds( 5 ) );
 			}
 			mouseAt( origin, MOUSEEVENTF_LEFTUP );
 			for ( int pump = 0; pump < 10; ++pump ) {
 				window->getInput()->update();
-				std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+				Sys::sleep( Milliseconds( 5 ) );
 			}
 			reentryPassed &= clicks == 1;
 			window->getInput()->popCallback( callback );

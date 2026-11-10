@@ -1,6 +1,7 @@
 #include "process_network_monitor.hpp"
 
 #include <eepp/system/log.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/sys.hpp>
 
 #include <arpa/inet.h>
@@ -191,7 +192,7 @@ ProcessNetworkMonitor::EndpointHash::operator()( const Endpoint& endpoint ) cons
 	return hash;
 }
 
-ProcessNetworkMonitor::ProcessNetworkMonitor() : mLastSnapshot( std::chrono::steady_clock::now() ) {
+ProcessNetworkMonitor::ProcessNetworkMonitor() : mLastSnapshot( MonotonicClock::now() ) {
 	mCaptureThread = std::thread( &ProcessNetworkMonitor::captureLoop, this );
 }
 
@@ -532,8 +533,8 @@ void ProcessNetworkMonitor::processPacket( int dataLink, const Uint8* data, size
 		traffic.download += wireLength;
 }
 
-long ProcessNetworkMonitor::rateFor( Uint64 bytes, std::chrono::steady_clock::duration elapsed ) {
-	const long double seconds = std::chrono::duration<long double>( elapsed ).count();
+long ProcessNetworkMonitor::rateFor( Uint64 bytes, Time elapsed ) {
+	const long double seconds = static_cast<long double>( elapsed.asMicroseconds() ) / 1000000.0L;
 	if ( seconds <= 0.0L )
 		return 0;
 
@@ -544,7 +545,7 @@ long ProcessNetworkMonitor::rateFor( Uint64 bytes, std::chrono::steady_clock::du
 }
 
 void ProcessNetworkMonitor::applyRates( std::vector<ProcessInfo>& processes ) {
-	const auto now = std::chrono::steady_clock::now();
+	const auto now = MonotonicClock::now();
 	std::lock_guard<std::mutex> lock( mMutex );
 
 	const bool available = mAvailable.load();

@@ -4,13 +4,14 @@
 #include <cstdlib>
 #include <eepp/graphics/image.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/window.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <poll.h>
-#include <thread>
 #include <unistd.h>
 
 using namespace EE;
@@ -18,7 +19,7 @@ using namespace EE::Window;
 using namespace EE::System;
 
 namespace {
-using TestClock = std::chrono::steady_clock;
+using TestClock = MonotonicClock;
 const RGB sourceColor( 180, 30, 50 ), targetColor( 30, 80, 190 ), externalColor( 135, 45, 185 );
 enum Scenario : size_t {
 	Snapshot,
@@ -48,7 +49,7 @@ struct WaylandChecks {
 	Graphics::Image image{ pixels.data(), 64, 40, 4 };
 	Graphics::Image rgbImage{ pixels.data(), 64, 40, 3 };
 	Vector2i press;
-	TestClock::time_point deadline;
+	MonotonicClock::TimePoint deadline;
 	size_t scenario{}, completions{};
 	size_t clickPresses{}, clickReleases{};
 	bool armed{}, done{}, reported{}, passed{ true }, cancelPending{}, destroyPending{},
@@ -76,9 +77,10 @@ struct WaylandChecks {
 	}
 
 	bool initialize() {
-		auto candidate = std::filesystem::temp_directory_path() /
-						 ( "eepp-wayland-dnd-" + std::to_string( Sys::getProcessID() ) + "-" +
-						   std::to_string( TestClock::now().time_since_epoch().count() ) );
+		auto candidate =
+			std::filesystem::temp_directory_path() /
+			( "eepp-wayland-dnd-" + std::to_string( Sys::getProcessID() ) + "-" +
+			  std::to_string( std::chrono::steady_clock::now().time_since_epoch().count() ) );
 		if ( !std::filesystem::create_directory( candidate ) )
 			return false;
 		fixtureDirectory = std::move( candidate );
@@ -164,7 +166,7 @@ struct WaylandChecks {
 		received.clear();
 		completions = 0;
 		armed = done = reported = false;
-		deadline = TestClock::now() + std::chrono::seconds( 20 );
+		deadline = TestClock::now() + Seconds( 20 );
 		if ( scenario == Snapshot ) {
 			const auto* snapshot = offer.preview.image;
 			std::array<Uint8, 2> monochrome{};
@@ -321,7 +323,7 @@ struct WaylandChecks {
 				return 1;
 			}
 			draw();
-			std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+			Sys::sleep( Milliseconds( 5 ) );
 		}
 		return passed ? 0 : 1;
 	}
@@ -344,12 +346,12 @@ int runAutomatedWaylandDragTests( bool receiver, bool processExit ) {
 			received.emplace_back( FileSystem::fileNameFromPath( event->file.file ) );
 	} );
 	std::cout << "WAYLAND_DND_EXTERNAL_READY" << std::endl;
-	const auto deadline = TestClock::now() + std::chrono::seconds( 20 );
+	const auto deadline = TestClock::now() + Seconds( 20 );
 	while ( received.size() < 2 && TestClock::now() < deadline ) {
 		Engine::instance()->updateInput();
 		window->clear();
 		window->display();
-		std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+		Sys::sleep( Milliseconds( 5 ) );
 	}
 	const bool passed =
 		received == SmallVector<std::string, 2>{ "sample #\xc3\xa9-one.txt", "sample two.txt" };

@@ -2,12 +2,13 @@
 #define EE_TEST_HTTP_SERVER_HPP
 
 #include <atomic>
-#include <chrono>
 #include <condition_variable>
 #include <eepp/network/socketselector.hpp>
 #include <eepp/network/tcplistener.hpp>
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/network/uri.hpp>
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/time.hpp>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -132,9 +133,9 @@ class Server {
 		std::unique_lock<std::mutex> lock( mMutex );
 		// The atomic predicate may change independently of this mutex. Bounded polling avoids
 		// missing a notification between evaluating it and entering the condition wait.
-		const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 3 );
-		while ( !predicate() && std::chrono::steady_clock::now() < deadline )
-			mCondition.wait_for( lock, std::chrono::milliseconds( 10 ) );
+		const auto deadline = MonotonicClock::now() + Seconds( 3 );
+		while ( !predicate() && MonotonicClock::now() < deadline )
+			mCondition.wait_for( lock, Milliseconds( 10 ).toChrono() );
 		return predicate();
 	}
 

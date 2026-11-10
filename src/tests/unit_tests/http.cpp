@@ -2,6 +2,7 @@
 #include "httpserver.hpp"
 #include "utest.hpp"
 #include <eepp/system/compression.hpp>
+#include <eepp/system/time.hpp>
 #include <sstream>
 
 #include <atomic>
@@ -23,6 +24,8 @@
 
 #include "highfiledescriptors.hpp"
 
+using namespace EE::System;
+
 using namespace EE;
 using namespace EE::Network;
 using EE::Window::Engine;
@@ -39,7 +42,7 @@ struct ThreadGate {
 
 	bool waitUntilEntered() {
 		std::unique_lock<std::mutex> lock( mutex );
-		return condition.wait_for( lock, std::chrono::seconds( 5 ), [this] { return entered; } );
+		return condition.wait_for( lock, Seconds( 5 ).toChrono(), [this] { return entered; } );
 	}
 
 	void release() {
@@ -249,12 +252,12 @@ UTEST( Http, poolClearAllowsCallbackReentry ) {
 	http.reset(); // Leave the Pool as the only Http owner.
 	{
 		std::unique_lock<std::mutex> lock( callbackMutex );
-		ASSERT_TRUE( callbackCondition.wait_for( lock, std::chrono::seconds( 5 ),
+		ASSERT_TRUE( callbackCondition.wait_for( lock, Seconds( 5 ).toChrono(),
 												 [&] { return callbackEntered; } ) );
 	}
 
 	std::thread clearThread( [] { Http::Pool::getGlobal().clear(); } );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+	Sys::sleep( Milliseconds( 50 ) );
 	{
 		std::lock_guard<std::mutex> lock( callbackMutex );
 		allowPoolReentry = true;
@@ -263,7 +266,7 @@ UTEST( Http, poolClearAllowsCallbackReentry ) {
 
 	{
 		std::unique_lock<std::mutex> lock( callbackMutex );
-		ASSERT_TRUE( callbackCondition.wait_for( lock, std::chrono::seconds( 5 ),
+		ASSERT_TRUE( callbackCondition.wait_for( lock, Seconds( 5 ).toChrono(),
 												 [&] { return callbackCompleted; } ) );
 	}
 
@@ -303,7 +306,7 @@ UTEST( Http, sharedThreadPoolJoinsQueuedRequestsOnPoolClear ) {
 		Http::Pool::getGlobal().clear();
 		clearCompleted.store( true, std::memory_order_release );
 	} );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+	Sys::sleep( Milliseconds( 50 ) );
 	EXPECT_FALSE( clearCompleted.load( std::memory_order_acquire ) );
 
 	workerGate.release();
@@ -355,7 +358,7 @@ UTEST( Http, sharedThreadPoolJoinsRunningRequestOnPoolClear ) {
 		Http::Pool::getGlobal().clear();
 		clearCompleted.store( true, std::memory_order_release );
 	} );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+	Sys::sleep( Milliseconds( 50 ) );
 	EXPECT_FALSE( clearCompleted.load( std::memory_order_acquire ) );
 
 	progressGate.release();
@@ -428,7 +431,7 @@ UTEST( Http, sharedThreadPoolAllowsPoolClearFromCallback ) {
 
 	{
 		std::unique_lock<std::mutex> lock( callbackMutex );
-		ASSERT_TRUE( callbackCondition.wait_for( lock, std::chrono::seconds( 5 ),
+		ASSERT_TRUE( callbackCondition.wait_for( lock, Seconds( 5 ).toChrono(),
 												 [&] { return callbackCompleted; } ) );
 	}
 	ThreadGate completionGate;
@@ -586,7 +589,7 @@ UTEST( Http, compressedChunkedResponseConsumesTrailerAfterDecoderEnd ) {
 			return false;
 		{
 			std::unique_lock<std::mutex> lock( mutex );
-			if ( !condition.wait_for( lock, std::chrono::seconds( 2 ),
+			if ( !condition.wait_for( lock, Seconds( 2 ).toChrono(),
 									  [&] { return bodyObserved > 0; } ) ) {
 				aborted = true;
 				return false;
@@ -1107,7 +1110,7 @@ struct AsyncResults {
 
 	template <class Predicate> bool waitFor( Predicate predicate, Time timeout = Seconds( 3 ) ) {
 		std::unique_lock<std::mutex> lock( mutex );
-		return condition.wait_for( lock, std::chrono::microseconds( timeout.asMicroseconds() ),
+		return condition.wait_for( lock, Microseconds( timeout.asMicroseconds() ).toChrono(),
 								   [&] { return predicate(); } );
 	}
 
@@ -1175,7 +1178,7 @@ UTEST( Http, queuedAsyncRequestsDoNotTimeOutWhileWaitingForAConnection ) {
 			// Queued far longer than its own timeout; its transfer is fast once it is leased.
 			client->sendAsyncRequest( results.callback( "/queued" ), Http::Request( "/queued" ),
 									  Milliseconds( 200 ) );
-			std::this_thread::sleep_for( std::chrono::milliseconds( 500 ) );
+			Sys::sleep( Milliseconds( 500 ) );
 			origin.gate.release();
 			EXPECT_TRUE( results.waitFor( [&] { return results.completed.size() == 2; } ) );
 			std::lock_guard<std::mutex> lock( results.mutex );
@@ -1431,7 +1434,7 @@ UTEST( Http, discardingAGrantedTaskInsideTheExecutorLockDoesNotDeadlock ) {
 		System::Clock clock;
 		while ( !threadPool->existsIdInQueue( discardedId ) &&
 				clock.getElapsedTime() < Seconds( 3 ) )
-			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+			Sys::sleep( Milliseconds( 1 ) );
 		ASSERT_TRUE( threadPool->existsIdInQueue( discardedId ) );
 		client->sendAsyncRequest( results.callback( "/next" ), Http::Request( "/next" ),
 								  Seconds( 5 ) );
@@ -1443,7 +1446,7 @@ UTEST( Http, discardingAGrantedTaskInsideTheExecutorLockDoesNotDeadlock ) {
 		} );
 		clock.restart();
 		while ( !removed->load() && clock.getElapsedTime() < Seconds( 3 ) )
-			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+			Sys::sleep( Milliseconds( 1 ) );
 		const bool returned = removed->load();
 		if ( returned )
 			remover.join();
@@ -1481,7 +1484,7 @@ UTEST( Http, requestsNeverOwnTheirExecutor ) {
 	ASSERT_TRUE( gate.waitUntilEntered() );
 	Http::setThreadPool( nullptr );
 	std::thread releaser( [&] {
-		std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+		Sys::sleep( Milliseconds( 50 ) );
 		gate.release();
 	} );
 	// Joins the worker, which finishes the request once the gate opens.
@@ -1534,7 +1537,7 @@ UTEST( Http, budgetWaitersProceedWhenAnActiveSocketBecomesIdle ) {
 
 UTEST( Http, resumedBlockingDownloadKeepsItsDeadlineAcrossTheProbe ) {
 	HTTPTest::Server server( []( TcpSocket& socket, const std::string& request, unsigned ) {
-		std::this_thread::sleep_for( std::chrono::milliseconds( 80 ) );
+		Sys::sleep( Milliseconds( 80 ) );
 		if ( request.find( "HEAD " ) == 0 ) {
 			return HTTPTest::Server::send( socket, "HTTP/1.1 200 OK\r\nContent-Length: 6\r\n"
 												   "Accept-Ranges: bytes\r\n\r\n" );
@@ -1641,7 +1644,7 @@ UTEST( Http, sslEndDuringSocketConstructionKeepsTheBackend ) {
 		// Gives end() the chance to finish here; it may only proceed once the socket is live.
 		System::Clock clock;
 		while ( !ended.load() && clock.getElapsedTime() < Milliseconds( 100 ) )
-			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+			Sys::sleep( Milliseconds( 1 ) );
 	} );
 	std::unique_ptr<SSL::SSLSocket> socket( SSL::SSLSocket::New( "localhost", true, true ) );
 	SSL::SSLSocket::setConstructionHook( {} );
@@ -1711,7 +1714,7 @@ UTEST( Http, engineShutdownCancelsRequestsAndClosesTheirSockets ) {
 	// must have closed the socket within the shutdown's short wait.
 	clock.restart();
 	while ( !finished.load() && clock.getElapsedTime() < Seconds( 1 ) )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 1 ) );
 	const bool endedByShutdown = finished.load();
 	gate.release();
 	caller.join();

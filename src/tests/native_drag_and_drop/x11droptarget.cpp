@@ -22,13 +22,16 @@
 
 #include "../../eepp/window/draganddrop/dragaccess.hpp"
 #include "../../eepp/window/draganddrop/x11library.hpp"
-#include <chrono>
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/window.hpp>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <optional>
-#include <thread>
+
+using namespace EE::System;
 
 using namespace EE;
 using namespace EE::Window;
@@ -242,11 +245,11 @@ int runAutomatedNativeDropTests() {
 	const int rootX = window->getPosition().x + 20, rootY = window->getPosition().y + 20;
 
 	auto pumpUntil = [&]( const std::function<bool()>& done ) {
-		const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 5 );
-		while ( !done() && std::chrono::steady_clock::now() < deadline ) {
+		const auto deadline = MonotonicClock::now() + Seconds( 5 );
+		while ( !done() && MonotonicClock::now() < deadline ) {
 			Engine::instance()->updateInput();
 			source->pump();
-			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+			Sys::sleep( Milliseconds( 1 ) );
 		}
 		return done();
 	};
@@ -255,7 +258,7 @@ int runAutomatedNativeDropTests() {
 		for ( int i = 0; i < 200; ++i ) {
 			Engine::instance()->updateInput();
 			source->pump();
-			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+			Sys::sleep( Milliseconds( 1 ) );
 		}
 	};
 	auto report = [&]( const char* name, bool success ) {

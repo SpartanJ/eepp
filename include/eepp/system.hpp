@@ -33,6 +33,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/md5.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/notification.hpp>
 #include <eepp/system/pack.hpp>

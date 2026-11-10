@@ -1,10 +1,11 @@
+#include <eepp/system/time.hpp>
 #include <eepp/vfs/providers/localioscheduler.hpp>
 
 #include <algorithm>
 #include <array>
-#include <chrono>
 #include <condition_variable>
 #include <deque>
+#include <eepp/system/monotonicclock.hpp>
 #include <mutex>
 #include <system_error>
 #include <thread>
@@ -15,8 +16,6 @@ using namespace EE::System;
 
 namespace EE { namespace VFS {
 
-using Clock = std::chrono::steady_clock;
-
 /** The calls of one network mount, on threads of their own. */
 class MountLane : public std::enable_shared_from_this<MountLane> {
   public:
@@ -24,7 +23,7 @@ class MountLane : public std::enable_shared_from_this<MountLane> {
 	 * unreachable server blocks no more threads than this. */
 	static constexpr size_t Threads = 2;
 
-	MountLane( LocalIOScheduler::NetworkMount mount, Clock::duration timeout ) :
+	MountLane( LocalIOScheduler::NetworkMount mount, Time timeout ) :
 		mMount( std::move( mount ) ), mTimeout( timeout ) {}
 
 	void start() {
@@ -41,7 +40,7 @@ class MountLane : public std::enable_shared_from_this<MountLane> {
 				VFSError( VFSErrorCode::Cancelled, {}, "The file system is shutting down" ) );
 			return;
 		}
-		if ( stuck( Clock::now() ) ) {
+		if ( stuck( MonotonicClock::now() ) ) {
 			lock.unlock();
 			call->fail( notResponding() );
 			return;
@@ -53,7 +52,7 @@ class MountLane : public std::enable_shared_from_this<MountLane> {
 	/** Collects in expired the calls running for longer than the timeout, and every call queued
 	 * behind them, for the caller to fail.
 	 * @return Whether the lane still has calls, queued or running. */
-	bool expire( Clock::time_point now,
+	bool expire( MonotonicClock::TimePoint now,
 				 std::vector<std::shared_ptr<LocalIOScheduler::Call>>& expired ) {
 		bool busy = false;
 		{
@@ -109,7 +108,7 @@ class MountLane : public std::enable_shared_from_this<MountLane> {
 	struct Worker {
 		std::thread thread;
 		std::shared_ptr<LocalIOScheduler::Call> running;
-		Clock::time_point started;
+		MonotonicClock::TimePoint started;
 	};
 
 	void work( size_t index ) {
@@ -121,7 +120,7 @@ class MountLane : public std::enable_shared_from_this<MountLane> {
 				return;
 			worker.running = std::move( mQueue.front() );
 			mQueue.pop_front();
-			worker.started = Clock::now();
+			worker.started = MonotonicClock::now();
 			auto call = worker.running;
 			lock.unlock();
 			call->run();
@@ -136,7 +135,7 @@ class MountLane : public std::enable_shared_from_this<MountLane> {
 	}
 
 	/** Whether a call has been running for longer than the timeout. Under mMutex. */
-	bool stuck( Clock::time_point now ) const {
+	bool stuck( MonotonicClock::TimePoint now ) const {
 		for ( const auto& worker : mWorkers ) {
 			if ( worker.running && now - worker.started > mTimeout )
 				return true;
@@ -145,7 +144,7 @@ class MountLane : public std::enable_shared_from_this<MountLane> {
 	}
 
 	LocalIOScheduler::NetworkMount mMount;
-	Clock::duration mTimeout;
+	Time mTimeout;
 	std::mutex mMutex;
 	std::condition_variable mWork;
 	std::deque<std::shared_ptr<LocalIOScheduler::Call>> mQueue;
@@ -157,8 +156,7 @@ class MountLane : public std::enable_shared_from_this<MountLane> {
  * thread sleeps while no lane has calls. */
 class MountWatchdog {
   public:
-	explicit MountWatchdog( Clock::duration timeout ) :
-		mState( std::make_shared<State>( timeout ) ) {}
+	explicit MountWatchdog( Time timeout ) : mState( std::make_shared<State>( timeout ) ) {}
 
 	~MountWatchdog() {
 		std::vector<std::shared_ptr<MountLane>> lanes;
@@ -203,9 +201,9 @@ class MountWatchdog {
   private:
 	/** What the thread uses, shared with it so that it outlives the watchdog if needed. */
 	struct State {
-		explicit State( Clock::duration timeout ) : timeout( timeout ) {}
+		explicit State( Time timeout ) : timeout( timeout ) {}
 
-		const Clock::duration timeout;
+		const Time timeout;
 		std::mutex mutex;
 		std::condition_variable wake;
 		std::unordered_map<std::string, std::shared_ptr<MountLane>> lanes;
@@ -215,12 +213,11 @@ class MountWatchdog {
 
 	static void watch( State& state ) {
 		// Often enough that a call fails close to its timeout, rarely enough to cost nothing.
-		const auto interval =
-			std::max<Clock::duration>( std::chrono::milliseconds( 50 ), state.timeout / 8 );
+		const auto interval = std::max( Milliseconds( 50 ), state.timeout / Int64{ 8 } );
 		std::unique_lock<std::mutex> lock( state.mutex );
 		for ( ;; ) {
 			if ( state.busy )
-				state.wake.wait_for( lock, interval );
+				state.wake.wait_for( lock, interval.toChrono() );
 			else
 				state.wake.wait( lock, [&state] { return state.stopping || state.busy; } );
 			if ( state.stopping )
@@ -231,7 +228,7 @@ class MountWatchdog {
 			state.busy = false;
 			lock.unlock();
 			bool busy = false;
-			const auto now = Clock::now();
+			const auto now = MonotonicClock::now();
 			for ( auto& lane : lanes ) {
 				std::vector<std::shared_ptr<LocalIOScheduler::Call>> expired;
 				busy |= lane->expire( now, expired );
@@ -279,8 +276,8 @@ LocalIOScheduler::LocalIOScheduler( std::weak_ptr<ThreadPool> pool, Time timeout
 		return !function || *function != &LocalIOScheduler::findNetworkMount;
 	}() ) {
 	mRouting = std::make_shared<const Routing>(
-		Routing{ std::move( lookup ), std::make_shared<MountWatchdog>( std::chrono::microseconds(
-										  std::max<Int64>( 1, timeout.asMicroseconds() ) ) ) } );
+		Routing{ std::move( lookup ),
+				 std::make_shared<MountWatchdog>( std::max( Microseconds( 1 ), timeout ) ) } );
 }
 
 LocalIOScheduler::~LocalIOScheduler() = default;

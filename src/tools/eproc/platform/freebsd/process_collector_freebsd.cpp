@@ -1,5 +1,6 @@
 #ifdef __FreeBSD__
 #include "process_collector_freebsd.hpp"
+#include <eepp/system/monotonicclock.hpp>
 
 #include <algorithm>
 #include <array>
@@ -12,6 +13,8 @@
 #include <sys/time.h>
 #include <sys/user.h>
 #include <unistd.h>
+
+using namespace EE::System;
 
 namespace eproc {
 
@@ -50,12 +53,10 @@ std::string executablePath( pid_t pid ) {
 } // namespace
 
 bool ProcessCollectorFreeBSD::collect( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo ) {
-	const auto sampledAt = std::chrono::steady_clock::now();
-	const Int64 elapsedUs =
-		mPrevSampleTime.time_since_epoch().count() == 0
-			? 0
-			: std::chrono::duration_cast<std::chrono::microseconds>( sampledAt - mPrevSampleTime )
-				  .count();
+	const auto sampledAt = MonotonicClock::now();
+	const Int64 elapsedUs = mPrevSampleTime == MonotonicClock::TimePoint{}
+								? 0
+								: ( sampledAt - mPrevSampleTime ).asMicroseconds();
 	mPrevSampleTime = sampledAt;
 	++mPass;
 	processes.clear();

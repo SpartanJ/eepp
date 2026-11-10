@@ -1,9 +1,13 @@
 #include "utest.hpp"
 #include "vfs_test_utils.hpp"
 #include <eepp/scene/mainthreadexecutor.hpp>
+#include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/vfs/ui/vfsdirectorymodel.hpp>
+
+using namespace EE::System;
 
 using namespace vfstest;
 using EE::UI::UIApplication;
@@ -171,7 +175,7 @@ UTEST( VFSDirectoryModel, navigationDiscardsStaleResultsAndReportsErrors ) {
 	model->setURI( URI( "mem://n/b" ) );
 	EXPECT_TRUE( loop.runUntil(
 		[&] { return model->loadState() == VFSDirectoryModel::LoadState::Ready; } ) );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+	Sys::sleep( Milliseconds( 50 ) );
 	loop.drain();
 	EXPECT_EQ( 1u, model->rowCount() );
 	EXPECT_STDSTREQ( "only", model->entry( 0 ).name );

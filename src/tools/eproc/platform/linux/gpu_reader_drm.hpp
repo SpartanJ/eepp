@@ -1,13 +1,15 @@
 #ifndef EPROC_GPU_READER_DRM_HPP
 #define EPROC_GPU_READER_DRM_HPP
 
-#include <chrono>
 #include <eepp/core/containers.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <string>
 
 using namespace EE;
 
 namespace eproc {
+
+using namespace EE::System;
 
 /** Reads the standard DRM client counters from /proc/<pid>/fdinfo. Worker-thread only. */
 class DrmGpuReader {
@@ -21,12 +23,12 @@ class DrmGpuReader {
 
 	struct ClientSample {
 		unsigned long long engineNs{ 0 };
-		std::chrono::steady_clock::time_point sampledAt{};
+		MonotonicClock::TimePoint sampledAt{};
 		unsigned int pass{ 0 };
 	};
 
 	UnorderedMap<std::string, ClientSample> mPrevious;
-	std::chrono::steady_clock::time_point mSampleTime{};
+	MonotonicClock::TimePoint mSampleTime{};
 	unsigned int mPass{ 0 };
 	bool mAvailable{ false };
 };

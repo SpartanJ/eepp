@@ -2,10 +2,12 @@
 #define EPROC_PROCESS_COLLECTOR_WINDOWS_HPP
 
 #include "../../process_collector.hpp"
-#include <chrono>
+#include <eepp/system/monotonicclock.hpp>
 #include <unordered_map>
 
 namespace eproc {
+
+using namespace EE::System;
 
 class ProcessCollectorWindows final : public ProcessCollector {
   public:
@@ -28,7 +30,7 @@ class ProcessCollectorWindows final : public ProcessCollector {
 	Uint64 mPrevSystemIdle{ 0 };
 	Uint64 mPrevSystemKernel{ 0 };
 	Uint64 mPrevSystemUser{ 0 };
-	std::chrono::steady_clock::time_point mPrevSampleTime;
+	MonotonicClock::TimePoint mPrevSampleTime;
 	float mLastCpuUsage{ 0.f };
 	Uint32 mPass{ 0 };
 

@@ -5,7 +5,10 @@
 #include <eepp/core/result.hpp>
 #include <eepp/core/small_unique_function.hpp>
 #include <eepp/core/task.hpp>
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/sys.hpp>
 #include <eepp/system/threadpool.hpp>
+#include <eepp/system/time.hpp>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -492,7 +495,7 @@ UTEST( Cancellation, unregisterRaceWaitsForRunningCallback ) {
 		std::atomic<bool> callbackStarted{ false };
 		auto reg = source.token().onCancel( [&, alive] {
 			callbackStarted = true;
-			std::this_thread::sleep_for( std::chrono::microseconds( 50 ) );
+			Sys::sleep( Microseconds( 50 ) );
 			if ( !alive->load() )
 				usedAfterRelease = true;
 		} );
@@ -815,9 +818,9 @@ UTEST( Task, resolveVersusThenRaceRunsContinuationExactlyOnce ) {
 UTEST( Task, waitBlocksUntilResolvedFromAnotherThread ) {
 	TaskResolver<int> resolve;
 	auto task = Task<int>::create( resolve );
-	EXPECT_EQ( TaskState::Pending, task.waitFor( std::chrono::milliseconds( 1 ) ) );
+	EXPECT_EQ( TaskState::Pending, task.waitFor( Milliseconds( 1 ).toChrono() ) );
 	std::thread producer( [&] {
-		std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+		Sys::sleep( Milliseconds( 5 ) );
 		resolve( 11 );
 	} );
 	EXPECT_EQ( TaskState::Ready, task.wait() );
@@ -844,7 +847,7 @@ UTEST( Task, concurrentWaitersObserveResolutionAndAbandonment ) {
 			} );
 			while ( started.load() != 2 )
 				std::this_thread::yield();
-			std::this_thread::sleep_for( std::chrono::milliseconds( 2 ) );
+			Sys::sleep( Milliseconds( 2 ) );
 			if ( abandon )
 				resolve = {};
 			else
@@ -861,16 +864,13 @@ UTEST( Task, oneWaiterTimingOutDoesNotUnregisterAnother ) {
 	TaskResolver<int> resolve;
 	const auto task = Task<int>::create( resolve );
 	TaskState longer{};
-	std::thread thread( [&] { longer = task.waitFor( std::chrono::seconds( 1 ) ); } );
-	EXPECT_EQ( TaskState::Pending, task.waitFor( std::chrono::milliseconds( 20 ) ) );
-	auto start = std::chrono::steady_clock::now();
+	std::thread thread( [&] { longer = task.waitFor( Seconds( 1 ).toChrono() ); } );
+	EXPECT_EQ( TaskState::Pending, task.waitFor( Milliseconds( 20 ).toChrono() ) );
+	auto start = MonotonicClock::now();
 	resolve( 1 );
 	thread.join();
 	EXPECT_EQ( TaskState::Ready, longer );
-	EXPECT_LT( std::chrono::duration_cast<std::chrono::milliseconds>(
-				   std::chrono::steady_clock::now() - start )
-				   .count(),
-			   500 );
+	EXPECT_LT( ( MonotonicClock::now() - start ).asMilliseconds(), 500 );
 }
 
 UTEST( Task, layout ) {

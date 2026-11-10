@@ -4,6 +4,9 @@
 
 #include "accessibilitybackendatspi.hpp"
 
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/time.hpp>
+
 #include <algorithm>
 #include <cerrno>
 #include <cstdio>
@@ -14,6 +17,8 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
+
+using namespace EE::System;
 
 namespace EE { namespace UI { namespace AtSpi {
 
@@ -184,8 +189,8 @@ void AtSpiApplication::update() {
 	}
 	mDBus.connectionReadWrite( mConnection, 0 );
 	constexpr size_t MaxMessagesPerUpdate = 256;
-	constexpr auto DispatchBudget = std::chrono::milliseconds( 2 );
-	const auto dispatchStart = std::chrono::steady_clock::now();
+	constexpr auto DispatchBudget = Milliseconds( 2 );
+	const auto dispatchStart = MonotonicClock::now();
 	size_t messages = 0;
 	double maximumMessage = 0;
 	while ( messages < MaxMessagesPerUpdate &&
@@ -201,7 +206,7 @@ void AtSpiApplication::update() {
 		// Always make progress, but do not drain a costly request burst in one dispatch. A
 		// single synchronous callback can exceed the budget; this is not a whole-frame cap,
 		// since the application connection is also serviced by other live scenes' updates.
-		if ( std::chrono::steady_clock::now() - dispatchStart >= DispatchBudget )
+		if ( MonotonicClock::now() - dispatchStart >= DispatchBudget )
 			break;
 	}
 	mDBus.connectionReadWrite( mConnection, 0 );

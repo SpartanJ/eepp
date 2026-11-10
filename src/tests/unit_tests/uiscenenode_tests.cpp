@@ -1,7 +1,6 @@
 #include "utest.hpp"
 
 #include <array>
-#include <chrono>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -9,9 +8,11 @@
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/threadpool.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiapplication.hpp>
@@ -38,6 +39,8 @@
 #include <stdexcept>
 #include <thread>
 #include <type_traits>
+
+using namespace EE::System;
 
 using namespace EE;
 using namespace EE::Graphics;
@@ -654,9 +657,9 @@ UTEST( UISceneNode, AsyncResourceConcurrentProducersDeliverExactlyOnce ) {
 			completed.fetch_add( 1, std::memory_order_release );
 		} );
 	}
-	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
+	const auto deadline = MonotonicClock::now() + Seconds( 2 );
 	while ( completed.load( std::memory_order_acquire ) != producerCount &&
-			std::chrono::steady_clock::now() < deadline ) {
+			MonotonicClock::now() < deadline ) {
 		scene->update( Time::Zero );
 		std::this_thread::yield();
 	}
@@ -694,10 +697,10 @@ UTEST( UISceneNode, AsyncResourceDelayedWorkRemainsPendingAndInvalidationRelease
 	const auto currentGeneration = state->generation.load( std::memory_order_acquire );
 	UISceneNode::runAsyncResourceOnMainThread(
 		state, currentGeneration, [&]( UISceneNode* ) { ++delivered; }, Milliseconds( 20 ) );
-	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
-	while ( !delivered && std::chrono::steady_clock::now() < deadline ) {
+	const auto deadline = MonotonicClock::now() + Seconds( 2 );
+	while ( !delivered && MonotonicClock::now() < deadline ) {
 		scene->update( Time::Zero );
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 1 ) );
 	}
 	EXPECT_EQ( delivered, 1 );
 	scene->update( Time::Zero );

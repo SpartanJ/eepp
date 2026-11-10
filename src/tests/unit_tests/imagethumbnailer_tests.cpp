@@ -9,6 +9,7 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <mutex>
 
 using namespace EE;
@@ -71,12 +72,12 @@ struct Gate {
 		std::unique_lock<std::mutex> lock( mutex );
 		entered = true;
 		changed.notify_all();
-		changed.wait_for( lock, std::chrono::seconds( 5 ), [&] { return released; } );
+		changed.wait_for( lock, Seconds( 5 ).toChrono(), [&] { return released; } );
 	}
 
 	void enteredWait() {
 		std::unique_lock<std::mutex> lock( mutex );
-		changed.wait_for( lock, std::chrono::seconds( 5 ), [&] { return entered; } );
+		changed.wait_for( lock, Seconds( 5 ).toChrono(), [&] { return entered; } );
 	}
 
 	void release() {

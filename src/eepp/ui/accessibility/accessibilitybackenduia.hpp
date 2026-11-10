@@ -2,6 +2,7 @@
 #define EE_UI_ACCESSIBILITY_ACCESSIBILITYBACKENDUIA_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/system/time.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
@@ -13,7 +14,6 @@
 #include <eepp/window/window.hpp>
 
 #include <atomic>
-#include <chrono>
 #include <cmath>
 #include <condition_variable>
 #include <cwctype>
@@ -69,6 +69,8 @@ extern "C" BOOL WINAPI UiaClientsAreListening( void );
  *  - accessibilitybackenduiatext.cpp:     ITextRangeProvider and UTF-16 text unit navigation.
  */
 
+using namespace EE::System;
+
 namespace EE { namespace UI { namespace Uia {
 
 using namespace EE::Scene;
@@ -112,7 +114,7 @@ class UIAutomationProviderContext final
 		HRESULT wait() {
 			std::unique_lock<std::mutex> lock( mMutex );
 			if ( !mCondition.wait_for( lock,
-									   std::chrono::milliseconds( ProviderCallTimeoutMilliseconds ),
+									   Milliseconds( ProviderCallTimeoutMilliseconds ).toChrono(),
 									   [&] { return mComplete; } ) ) {
 				mResult = UIA_E_TIMEOUT;
 				mComplete = true;

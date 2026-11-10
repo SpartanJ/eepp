@@ -1,7 +1,6 @@
 #ifndef EE_NETWORKCHTTP_HPP
 #define EE_NETWORKCHTTP_HPP
 
-#include <chrono>
 #include <condition_variable>
 #include <eepp/config.hpp>
 #include <eepp/core/containers.hpp>
@@ -11,6 +10,7 @@
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/system/threadpool.hpp>
@@ -887,8 +887,7 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 	 * generation means the current one: the request starts now. */
 	Response transfer( const Request& request, IOStream& writeTo, Time timeout,
 					   ConnectionLease* granted, bool async,
-					   std::chrono::steady_clock::time_point* clockOrigin = nullptr,
-					   Uint64 generation = 0 );
+					   MonotonicClock::TimePoint* clockOrigin = nullptr, Uint64 generation = 0 );
 
 	void onCancel( const Http::Request& request );
 };

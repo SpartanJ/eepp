@@ -9,9 +9,11 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/threadpool.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/vfs.hpp>
 #include <mutex>
-#include <thread>
+
+using namespace EE::System;
 
 using namespace EE;
 using namespace EE::VFS;
@@ -240,7 +242,7 @@ UTEST( VFSBenchmark, watchBurstDelivery ) {
 	while ( events.load() < static_cast<size_t>( Count ) &&
 			clock.getElapsedTime().asSeconds() < 10 ) {
 		loop.drain();
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 1 ) );
 	}
 	double deliveredMs = ms( clock );
 	printf( "  %d file creations: created in %.1f ms, %zu events delivered in %.1f ms in %zu "

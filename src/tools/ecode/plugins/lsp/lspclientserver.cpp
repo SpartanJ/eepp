@@ -9,9 +9,12 @@
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/window/engine.hpp>
 #include <list>
+
+using namespace EE::System;
 
 namespace ecode {
 
@@ -1283,7 +1286,7 @@ LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String:
 LSPClientServer::~LSPClientServer() {
 	shutdown();
 	std::unique_lock<std::mutex> lock( mShutdownMutex );
-	mShutdownCond.wait_for( lock, std::chrono::milliseconds( 275 ), [this]() { return !mReady; } );
+	mShutdownCond.wait_for( lock, Milliseconds( 275 ).toChrono(), [this]() { return !mReady; } );
 
 	if ( mUsingProcess )
 		mProcess.kill();

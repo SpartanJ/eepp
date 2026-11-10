@@ -1,5 +1,6 @@
-#include <chrono>
 #include <condition_variable>
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/vfs/detail/await.hpp>
 #include <eepp/vfs/path.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
@@ -8,6 +9,8 @@
 #include <mutex>
 #include <thread>
 #include <unordered_map>
+
+using namespace EE::System;
 
 namespace EE { namespace VFS {
 
@@ -38,7 +41,7 @@ class PollingWatchBackendImpl : public std::enable_shared_from_this<PollingWatch
 		WatchOptions options;
 		std::weak_ptr<WatchSink> sink;
 		Snapshot snapshot;
-		std::chrono::steady_clock::time_point due;
+		MonotonicClock::TimePoint due;
 		Uint64 id{ 0 };
 		bool failed{ false };
 		bool terminal{ false };
@@ -115,7 +118,7 @@ class PollingWatchBackendImpl : public std::enable_shared_from_this<PollingWatch
 					continue;
 				}
 				pending.watch->snapshot = std::move( snapshot ).value();
-				pending.watch->due = std::chrono::steady_clock::now() + interval( *pending.watch );
+				pending.watch->due = MonotonicClock::now() + interval( *pending.watch );
 				mWatches[pending.watch->id] = pending.watch;
 				Uint64 id = pending.watch->id;
 				lock.unlock();
@@ -126,7 +129,7 @@ class PollingWatchBackendImpl : public std::enable_shared_from_this<PollingWatch
 				continue;
 			}
 
-			auto now = std::chrono::steady_clock::now();
+			auto now = MonotonicClock::now();
 			std::shared_ptr<Watch> next;
 			for ( auto& watch : mWatches ) {
 				if ( watch.second->terminal )
@@ -139,7 +142,7 @@ class PollingWatchBackendImpl : public std::enable_shared_from_this<PollingWatch
 				continue;
 			}
 			if ( next->due > now ) {
-				mWake.wait_until( lock, next->due );
+				mWake.wait_for( lock, ( next->due - now ).toChrono() );
 				continue;
 			}
 			next->due = now + interval( *next );
@@ -158,9 +161,8 @@ class PollingWatchBackendImpl : public std::enable_shared_from_this<PollingWatch
 		}
 	}
 
-	static std::chrono::milliseconds interval( const Watch& watch ) {
-		return std::chrono::milliseconds(
-			std::max<Int64>( 50, watch.options.pollingInterval.asMilliseconds() ) );
+	static Time interval( const Watch& watch ) {
+		return std::max( Milliseconds( 50 ), watch.options.pollingInterval );
 	}
 
 	VFSResult<Snapshot> take( const Watch& watch ) {

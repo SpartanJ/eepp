@@ -1,7 +1,8 @@
 #include "sshsocket.hpp"
-#include <chrono>
 #include <cstring>
 #include <eepp/core/string.hpp>
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/time.hpp>
 #include <mutex>
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
@@ -14,6 +15,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #endif
+
+using namespace EE::System;
 
 namespace EE { namespace VFS { namespace sftp {
 
@@ -146,7 +149,7 @@ SocketHandle SSHSocket::connect( const std::string& host, Uint16 port, int timeo
 		String::formatTo( error, "Could not resolve hostname %s: %s", host, gai_strerror( gai ) );
 		return InvalidSocket;
 	}
-	auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( timeoutMs );
+	auto deadline = MonotonicClock::now() + Milliseconds( timeoutMs );
 	SocketHandle result = InvalidSocket;
 	for ( auto* ai = addresses; ai && result == InvalidSocket; ai = ai->ai_next ) {
 		SocketHandle sock = ::socket( ai->ai_family, ai->ai_socktype, ai->ai_protocol );
@@ -167,9 +170,8 @@ SocketHandle SSHSocket::connect( const std::string& host, Uint16 port, int timeo
 			close( sock );
 			continue;
 		}
-		int remaining = static_cast<int>( std::chrono::duration_cast<std::chrono::milliseconds>(
-											  deadline - std::chrono::steady_clock::now() )
-											  .count() );
+		int remaining =
+			static_cast<int>( ( deadline - MonotonicClock::now() ).asMicroseconds() / 1000 );
 		if ( remaining <= 0 ) {
 			String::formatTo( error, "connect to %s port %s: Connection timed out", host, service );
 			close( sock );

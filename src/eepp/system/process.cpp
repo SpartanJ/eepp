@@ -2,7 +2,6 @@
 
 #include <bitset>
 #include <cerrno>
-#include <chrono>
 #include <csignal>
 #include <eepp/core/debug.hpp>
 #include <eepp/core/memorymanager.hpp>
@@ -11,7 +10,9 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <mutex>
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
@@ -37,6 +38,8 @@ extern "C" __declspec( dllimport ) unsigned long __stdcall GetProcessId( void* p
 #endif
 
 #define CHUNK_SIZE 4096
+
+using namespace EE::System;
 
 namespace EE { namespace System {
 
@@ -436,7 +439,7 @@ static void reapChild( pid_t child ) {
 		if ( result == child || ( result < 0 && errno != EINTR ) )
 			return;
 		if ( result == 0 )
-			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+			Sys::sleep( Milliseconds( 1 ) );
 	}
 	try {
 		std::thread( [child] {
@@ -502,7 +505,7 @@ void Process::stopReaders() {
 				CancelIoEx( stdOut, nullptr );
 			if ( stdErr && stdErr != stdOut )
 				CancelIoEx( stdErr, nullptr );
-			std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+			Sys::sleep( Milliseconds( 5 ) );
 		}
 	}
 #endif
@@ -529,9 +532,9 @@ bool Process::destroy() {
 		// end of the pipe), then stop them: a grandchild can keep the pipe open. Readers that
 		// already ended are joined too, so that startAsyncRead() can start new ones.
 		if ( !readersStopped() && !isAlive() ) {
-			const auto until = std::chrono::steady_clock::now() + std::chrono::seconds( 1 );
-			while ( !readersStopped() && std::chrono::steady_clock::now() < until )
-				std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+			const auto until = MonotonicClock::now() + Seconds( 1 );
+			while ( !readersStopped() && MonotonicClock::now() < until )
+				Sys::sleep( Milliseconds( 1 ) );
 		}
 		stopReaders();
 	}

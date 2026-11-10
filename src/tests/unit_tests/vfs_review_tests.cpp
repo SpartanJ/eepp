@@ -2,6 +2,8 @@
 #include "vfs_test_utils.hpp"
 #include <condition_variable>
 #include <cstring>
+#include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/vfs/path.hpp>
 #include <eepp/vfs/watchers/earlywatchevents.hpp>
 #include <eepp/vfs/watchers/pollingwatchbackend.hpp>
@@ -9,6 +11,8 @@
 #include <functional>
 #include <limits>
 #include <utility>
+
+using namespace EE::System;
 
 using namespace EE;
 using namespace EE::VFS;
@@ -726,7 +730,7 @@ UTEST( VFSWatch, liveEventsDuringRegistrationCannotBeFollowedByStaleReplay ) {
 	{
 		std::unique_lock<std::mutex> lock( sink.mutex );
 		replaying =
-			sink.wake.wait_for( lock, std::chrono::seconds( 2 ), [&] { return sink.replaying; } );
+			sink.wake.wait_for( lock, Seconds( 2 ).toChrono(), [&] { return sink.replaying; } );
 		// The newer native event arrives after publication while registration is paused.
 		sink.push( WatchEvent{ "entry", {}, WatchEventType::Removed } );
 		sink.release = true;
@@ -767,7 +771,7 @@ UTEST( VFSWatch, pollingCoverageLossFailsOnceAndStopsPolling ) {
 	} ) );
 	const unsigned listings = provider->listings.load();
 	const int batches = collector.batches.load();
-	std::this_thread::sleep_for( std::chrono::milliseconds( 200 ) );
+	Sys::sleep( Milliseconds( 200 ) );
 	loop.drain();
 	EXPECT_EQ( listings, provider->listings.load() );
 	EXPECT_EQ( batches, collector.batches.load() );

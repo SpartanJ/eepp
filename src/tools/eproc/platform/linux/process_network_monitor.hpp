@@ -2,16 +2,18 @@
 #define EPROC_PROCESS_NETWORK_MONITOR_HPP
 
 #include "../../process_info.hpp"
+#include <eepp/system/monotonicclock.hpp>
 
 #include <array>
 #include <atomic>
-#include <chrono>
 #include <mutex>
 #include <string_view>
 #include <thread>
 #include <vector>
 
 namespace eproc {
+
+using namespace EE::System;
 
 /** Collects per-process network traffic on Linux.
  *
@@ -69,7 +71,7 @@ class ProcessNetworkMonitor {
 									EndpointMap& endpoints );
 
 	long findPid( const Endpoint& endpoint ) const;
-	static long rateFor( Uint64 bytes, std::chrono::steady_clock::duration elapsed );
+	static long rateFor( Uint64 bytes, Time elapsed );
 
 	std::atomic<bool> mRunning{ true };
 	std::atomic<bool> mAvailable{ false };
@@ -79,7 +81,7 @@ class ProcessNetworkMonitor {
 	mutable std::mutex mMutex;
 	EndpointMap mEndpoints;
 	TrafficMap mTraffic;
-	std::chrono::steady_clock::time_point mLastSnapshot;
+	MonotonicClock::TimePoint mLastSnapshot;
 };
 
 } // namespace eproc

@@ -1,12 +1,13 @@
 #include "utest.hpp"
 
 #include <array>
-#include <chrono>
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uiinspector.hpp>
 #include <eepp/ui/tools/uiinspectorserver.hpp>
@@ -20,7 +21,8 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/engine.hpp>
 #include <nlohmann/json.hpp>
-#include <thread>
+
+using namespace EE::System;
 
 using namespace EE;
 using namespace EE::Network;
@@ -48,9 +50,9 @@ class InspectorClient {
 	}
 
 	json receive() {
-		using namespace std::chrono;
-		auto deadline = steady_clock::now() + seconds( 3 );
-		while ( steady_clock::now() < deadline ) {
+
+		auto deadline = MonotonicClock::now() + Seconds( 3 );
+		while ( MonotonicClock::now() < deadline ) {
 			auto end = input.find( '\n' );
 			if ( end != std::string::npos ) {
 				std::string line = input.substr( 0, end );
@@ -63,7 +65,7 @@ class InspectorClient {
 			size_t length = 0;
 			if ( socket.receive( bytes, sizeof( bytes ), length ) == Socket::Done )
 				input.append( bytes, length );
-			std::this_thread::sleep_for( milliseconds( 1 ) );
+			Sys::sleep( Milliseconds( 1 ) );
 		}
 		return nullptr;
 	}

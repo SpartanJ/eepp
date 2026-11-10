@@ -1,12 +1,14 @@
 #include "utest.hpp"
 #include <atomic>
-#include <chrono>
 #include <condition_variable>
+#include <eepp/system/time.hpp>
 #include <eepp/vfs/detail/coalesceddelivery.hpp>
 #include <future>
 #include <stdexcept>
 #include <thread>
 #include <utility>
+
+using namespace EE::System;
 
 using namespace EE;
 
@@ -44,7 +46,7 @@ class GatedExecutor : public Executor {
 
 	bool waitUntilEntered() {
 		std::unique_lock<std::mutex> lock( mMutex );
-		return mChanged.wait_for( lock, std::chrono::seconds( 5 ), [this] { return mEntered; } );
+		return mChanged.wait_for( lock, Seconds( 5 ).toChrono(), [this] { return mEntered; } );
 	}
 
 	void release() {
@@ -107,7 +109,7 @@ UTEST( CoalescedDelivery, closeDrainsExecutorSubmissionBeforeTeardown ) {
 		executor.closeReturned = true;
 	} );
 	started.wait();
-	const auto early = closed.wait_for( std::chrono::milliseconds( 50 ) );
+	const auto early = closed.wait_for( Milliseconds( 50 ).toChrono() );
 	// Always release and join before asserting, including on a regressed implementation.
 	executor.release();
 	producer.join();
@@ -135,7 +137,7 @@ UTEST( CoalescedDelivery, targetReplacementDrainsOldSubmissionAndDiscardsOldQueu
 		delivery->setTarget( &newExecutor, [&]( int&& value ) { newCalls += value; } );
 	} );
 	started.wait();
-	const auto early = changed.wait_for( std::chrono::milliseconds( 50 ) );
+	const auto early = changed.wait_for( Milliseconds( 50 ).toChrono() );
 	oldExecutor.release();
 	producer.join();
 	changed.get();
@@ -271,7 +273,7 @@ UTEST( CoalescedDelivery, closeAndReplacementDrainAnAlreadyQueuedCallback ) {
 			else
 				delivery->close();
 		} );
-		const auto early = changed.wait_for( std::chrono::milliseconds( 50 ) );
+		const auto early = changed.wait_for( Milliseconds( 50 ).toChrono() );
 		release.set_value();
 		consumer.join();
 		changed.get();
@@ -299,7 +301,7 @@ UTEST( CoalescedDelivery, waitingRetargetDoesNotBlockReentrantRetarget ) {
 	auto changed = std::async( std::launch::async, [&] {
 		delivery->setTarget( &next, [&]( int&& value ) { finalCalls += value; } );
 	} );
-	const auto early = changed.wait_for( std::chrono::milliseconds( 50 ) );
+	const auto early = changed.wait_for( Milliseconds( 50 ).toChrono() );
 	release.set_value();
 	producer.join();
 	changed.get();

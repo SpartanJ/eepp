@@ -4,6 +4,9 @@
 	EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_HAIKU
 
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/time.hpp>
+
 #include "utest.hpp"
 #include "vfs_test_utils.hpp"
 #include <atomic>
@@ -19,6 +22,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
+
+using namespace EE::System;
 
 using namespace vfstest;
 using EE::System::Process;
@@ -156,9 +161,9 @@ UTEST( Process, inheritedStdinReadsFromTheCallersDescriptor ) {
 			Process::InheritEnvironment | Process::InheritStdio );
 	}
 	ASSERT_TRUE( created );
-	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
-	while ( child.isAlive() && std::chrono::steady_clock::now() < deadline )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	const auto deadline = MonotonicClock::now() + Seconds( 2 );
+	while ( child.isAlive() && MonotonicClock::now() < deadline )
+		Sys::sleep( Milliseconds( 1 ) );
 	if ( child.isAlive() )
 		child.kill();
 	int code = -1;
@@ -192,17 +197,17 @@ UTEST( Process, asyncReaderTeardownDoesNotWaitForChildInput ) {
 	} );
 	{
 		std::unique_lock<std::mutex> lock( mutex );
-		ASSERT_TRUE( changed.wait_for( lock, std::chrono::seconds( 2 ), [&] {
+		ASSERT_TRUE( changed.wait_for( lock, Seconds( 2 ).toChrono(), [&] {
 			return output.find( "ready" ) != std::string::npos;
 		} ) );
 	}
 	ASSERT_TRUE( process->isAlive() );
-	const auto started = std::chrono::steady_clock::now();
+	const auto started = MonotonicClock::now();
 	process.reset();
-	const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::steady_clock::now() - started );
-	printf( "  Async process teardown: %lld ms\n", static_cast<long long>( elapsed.count() ) );
-	EXPECT_LT( elapsed.count(), 1000 );
+	const auto elapsed = ( MonotonicClock::now() - started );
+	printf( "  Async process teardown: %lld ms\n",
+			static_cast<long long>( elapsed.asMilliseconds() ) );
+	EXPECT_LT( elapsed.asMilliseconds(), 1000 );
 }
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
@@ -235,7 +240,7 @@ UTEST( Process, joinRetriesInterruptedWaits ) {
 	pid_t pid;
 	{
 		std::unique_lock<std::mutex> lock( mutex );
-		ASSERT_TRUE( changed.wait_for( lock, std::chrono::seconds( 2 ),
+		ASSERT_TRUE( changed.wait_for( lock, Seconds( 2 ).toChrono(),
 									   [&] { return output.find( '\n' ) != std::string::npos; } ) );
 		pid = static_cast<pid_t>( std::strtol( output.c_str(), nullptr, 10 ) );
 	}
@@ -249,10 +254,10 @@ UTEST( Process, joinRetriesInterruptedWaits ) {
 	} );
 	// The child waits on a separate FIFO: join's closing stdin cannot release it. Send
 	// non-restarting signals while waitpid is blocked, then release the child explicitly.
-	const auto until = std::chrono::steady_clock::now() + std::chrono::milliseconds( 20 );
-	while ( !finished && std::chrono::steady_clock::now() < until ) {
+	const auto until = MonotonicClock::now() + Milliseconds( 20 );
+	while ( !finished && MonotonicClock::now() < until ) {
 		::pthread_kill( joining.native_handle(), SIGUSR1 );
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 1 ) );
 	}
 	int release = ::open( fifo.c_str(), O_RDWR | O_NONBLOCK );
 	if ( release >= 0 ) {
@@ -310,7 +315,7 @@ UTEST( Process, aMissingReadCallbackIsIgnored ) {
 		changed.notify_all();
 	} );
 	std::unique_lock<std::mutex> lock( mutex );
-	EXPECT_TRUE( changed.wait_for( lock, std::chrono::seconds( 10 ),
+	EXPECT_TRUE( changed.wait_for( lock, Seconds( 10 ).toChrono(),
 								   [&] { return output.find( "done" ) != std::string::npos; } ) );
 	EXPECT_EQ( std::string::npos, output.find( "warning" ) );
 }
@@ -354,17 +359,17 @@ UTEST( Process, destroyStopsTheReadersBeforeClosingTheirPipes ) {
 		if ( destroyed )
 			++afterDestroy;
 		delivered = true;
-		std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+		Sys::sleep( Milliseconds( 5 ) );
 		--active;
 	} );
-	const auto until = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
-	while ( !delivered && std::chrono::steady_clock::now() < until )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	const auto until = MonotonicClock::now() + Seconds( 2 );
+	while ( !delivered && MonotonicClock::now() < until )
+		Sys::sleep( Milliseconds( 1 ) );
 	ASSERT_TRUE( delivered.load() );
 	process.destroy();
 	destroyed = true;
 	EXPECT_EQ( 0, active.load() );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+	Sys::sleep( Milliseconds( 20 ) );
 	EXPECT_EQ( 0, afterDestroy.load() );
 }
 
@@ -386,7 +391,7 @@ UTEST( Process, destroyAfterJoinKeepsTheLastOutput ) {
 			// Still delivering "first" when the child exits: "last" is unread when destroy()
 			// starts.
 			if ( first )
-				std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+				Sys::sleep( Milliseconds( 50 ) );
 		} );
 		int code = -1;
 		EXPECT_TRUE( process.join( &code ) );
@@ -416,7 +421,7 @@ UTEST( Process, aKilledProcessCanBeReused ) {
 	} );
 	{
 		std::unique_lock<std::mutex> lock( mutex );
-		ASSERT_TRUE( changed.wait_for( lock, std::chrono::seconds( 10 ),
+		ASSERT_TRUE( changed.wait_for( lock, Seconds( 10 ).toChrono(),
 									   [&] { return output.find( '\n' ) != std::string::npos; } ) );
 	}
 	ASSERT_TRUE( process.isAlive() );
@@ -426,12 +431,12 @@ UTEST( Process, aKilledProcessCanBeReused ) {
 #if EE_PLATFORM != EE_PLATFORM_WIN
 	const pid_t pid = static_cast<pid_t>( std::strtol( output.c_str(), nullptr, 10 ) );
 	ASSERT_GT( pid, 0 );
-	const auto until = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
+	const auto until = MonotonicClock::now() + Seconds( 2 );
 	bool gone = false;
-	while ( !gone && std::chrono::steady_clock::now() < until ) {
+	while ( !gone && MonotonicClock::now() < until ) {
 		gone = ::kill( pid, 0 ) != 0 && errno == ESRCH;
 		if ( !gone )
-			std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+			Sys::sleep( Milliseconds( 5 ) );
 	}
 	EXPECT_TRUE( gone );
 #endif
@@ -448,18 +453,18 @@ UTEST( Process, killNeverWaitsForAReadCallback ) {
 		std::lock_guard<std::mutex> lock( mutex );
 	} );
 	std::unique_lock<std::mutex> lock( mutex );
-	const auto until = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
-	while ( !delivering && std::chrono::steady_clock::now() < until )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	const auto until = MonotonicClock::now() + Seconds( 2 );
+	while ( !delivering && MonotonicClock::now() < until )
+		Sys::sleep( Milliseconds( 1 ) );
 	ASSERT_TRUE( delivering.load() );
 	std::atomic<bool> killed{ false };
 	std::thread killing( [&] {
 		process.kill();
 		killed = true;
 	} );
-	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
-	while ( !killed && std::chrono::steady_clock::now() < deadline )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	const auto deadline = MonotonicClock::now() + Seconds( 2 );
+	while ( !killed && MonotonicClock::now() < deadline )
+		Sys::sleep( Milliseconds( 1 ) );
 	EXPECT_TRUE( killed.load() );
 	lock.unlock();
 	killing.join();
@@ -482,19 +487,19 @@ UTEST( Process, killedChildrenAreReaped ) {
 	pid_t pid;
 	{
 		std::unique_lock<std::mutex> lock( mutex );
-		ASSERT_TRUE( changed.wait_for( lock, std::chrono::seconds( 2 ),
+		ASSERT_TRUE( changed.wait_for( lock, Seconds( 2 ).toChrono(),
 									   [&] { return output.find( '\n' ) != std::string::npos; } ) );
 		pid = static_cast<pid_t>( std::strtol( output.c_str(), nullptr, 10 ) );
 	}
 	ASSERT_GT( pid, 0 );
 	EXPECT_TRUE( child.kill() );
 	// A zombie still answers kill( pid, 0 ); a reaped child is gone.
-	const auto until = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
+	const auto until = MonotonicClock::now() + Seconds( 2 );
 	bool gone = false;
-	while ( !gone && std::chrono::steady_clock::now() < until ) {
+	while ( !gone && MonotonicClock::now() < until ) {
 		gone = ::kill( pid, 0 ) != 0 && errno == ESRCH;
 		if ( !gone )
-			std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+			Sys::sleep( Milliseconds( 5 ) );
 	}
 	EXPECT_TRUE( gone );
 }
@@ -517,16 +522,15 @@ UTEST( Process, teardownDoesNotWaitForAGrandchildHoldingThePipe ) {
 	} );
 	{
 		std::unique_lock<std::mutex> lock( mutex );
-		ASSERT_TRUE( changed.wait_for( lock, std::chrono::seconds( 10 ), [&] {
+		ASSERT_TRUE( changed.wait_for( lock, Seconds( 10 ).toChrono(), [&] {
 			return output.find( "ready" ) != std::string::npos;
 		} ) );
 	}
-	const auto started = std::chrono::steady_clock::now();
+	const auto started = MonotonicClock::now();
 	process->kill();
 	process.reset();
-	const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::steady_clock::now() - started );
-	EXPECT_LT( elapsed.count(), 1000 );
+	const auto elapsed = ( MonotonicClock::now() - started );
+	EXPECT_LT( elapsed.asMilliseconds(), 1000 );
 }
 
 #endif

@@ -1,13 +1,16 @@
 #include <algorithm>
-#include <chrono>
 #include <eepp/core/containers.hpp>
 #include <eepp/core/small_vector.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/vfs/ui/vfsdirectorymodel.hpp>
 #include <unordered_map>
 #include <unordered_set>
+
+using namespace EE::System;
 
 namespace EE { namespace VFS {
 
@@ -60,7 +63,7 @@ struct VFSDirectoryModel::Session {
 	std::vector<WatchEvent> buffered;
 	/** Coalesce fast listings geometrically instead of moving every accumulated row per batch. */
 	std::vector<VFSFileInfo> pendingEntries;
-	std::chrono::steady_clock::time_point lastMerge;
+	MonotonicClock::TimePoint lastMerge;
 	UnorderedMap<std::string, Uint64> pendingStats;
 	Uint64 nextStat{ 0 };
 	Uint64 generation{ 0 };
@@ -268,18 +271,18 @@ void VFSDirectoryModel::readNext( Uint64 generation, bool first ) {
 				pending.insert( pending.end(), std::make_move_iterator( entries.begin() ),
 								std::make_move_iterator( entries.end() ) );
 			}
-			auto now = std::chrono::steady_clock::now();
+			auto now = MonotonicClock::now();
 			// Keep the small first batch immediate. While data arrives quickly, each
 			// merge grows with the visible listing, up to a bounded batch; slow listings
 			// show new rows at the next batch after 50 ms, and EOF always flushes the tail.
 			if ( first || done ||
 				 pending.size() >= std::min( self->mEntries.size(), MaxCoalescedEntries ) ||
-				 now - session.lastMerge >= std::chrono::milliseconds( 50 ) ) {
+				 now - session.lastMerge >= Milliseconds( 50 ) ) {
 				auto merged = std::move( pending );
 				self->mergeBatch( std::move( merged ) );
 				if ( self->mGeneration != generation )
 					return;
-				self->mSession->lastMerge = std::chrono::steady_clock::now();
+				self->mSession->lastMerge = MonotonicClock::now();
 			}
 			if ( self->mGeneration != generation )
 				return;

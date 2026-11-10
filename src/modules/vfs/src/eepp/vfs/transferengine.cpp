@@ -1,11 +1,13 @@
+#include <eepp/system/time.hpp>
 #include <eepp/vfs/transferengine.hpp>
 
-#include <chrono>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/vfs/detail/filewriter.hpp>
 #include <eepp/vfs/detail/transferstate.hpp>
 #include <eepp/vfs/path.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
+
+using namespace EE::System;
 
 namespace EE { namespace VFS {
 
@@ -542,7 +544,7 @@ VFSResult<ConflictResolution> TransferEngine::resolveConflict( const VFSFileInfo
 		return Err( std::move( cancelled ).error() );
 	TransferConflict conflict{ source, destination, sourceInfo, destinationInfo };
 	auto task = mOnConflict( std::move( conflict ), mToken );
-	while ( task.waitFor( std::chrono::milliseconds( 20 ) ) == TaskState::Pending ) {
+	while ( task.waitFor( Milliseconds( 20 ).toChrono() ) == TaskState::Pending ) {
 		if ( auto cancelled = checkCancelled( source ); !cancelled )
 			return Err( std::move( cancelled ).error() );
 	}

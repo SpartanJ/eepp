@@ -1,9 +1,11 @@
+#include <eepp/system/time.hpp>
 #include <eepp/vfs/sftp/remotewatchbackend.hpp>
 
 #include "sftpproviderimpl.hpp"
 #include "sshconnection.hpp"
 #include <condition_variable>
 #include <eepp/system/log.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/vfs/virtualfilesystem.hpp>
 #include <eepp/vfs/watchers/pollingwatchbackend.hpp>
 #include <efsw/agent_protocol.hpp>
@@ -32,7 +34,7 @@ struct RemoteWatch {
 	std::shared_ptr<AgentClient> agent;
 	std::unique_ptr<WatchRegistration> polling;
 	std::optional<TaskResolver<VFSResult<void>>> establishment;
-	std::chrono::steady_clock::time_point establishDeadline;
+	MonotonicClock::TimePoint establishDeadline;
 	Uint32 retries{ 0 };
 	Mode mode{ Mode::Establishing };
 	bool established{ false };
@@ -123,10 +125,10 @@ class DelayedRunner {
 		mThread.join();
 	}
 
-	void runAfter( std::chrono::milliseconds delay, std::function<void()> fn ) {
+	void runAfter( Time delay, std::function<void()> fn ) {
 		{
 			std::lock_guard<std::mutex> lock( mMutex );
-			mQueue.emplace( std::chrono::steady_clock::now() + delay, std::move( fn ) );
+			mQueue.emplace( MonotonicClock::now() + delay, std::move( fn ) );
 		}
 		mWake.notify_all();
 	}
@@ -140,8 +142,9 @@ class DelayedRunner {
 				continue;
 			}
 			auto next = mQueue.begin();
-			if ( next->first > std::chrono::steady_clock::now() ) {
-				mWake.wait_until( lock, next->first );
+			const Time remaining = next->first - MonotonicClock::now();
+			if ( remaining > Time::Zero ) {
+				mWake.wait_for( lock, remaining.toChrono() );
 				continue;
 			}
 			auto fn = std::move( next->second );
@@ -154,7 +157,7 @@ class DelayedRunner {
 
 	std::mutex mMutex;
 	std::condition_variable mWake;
-	std::multimap<std::chrono::steady_clock::time_point, std::function<void()>> mQueue;
+	std::multimap<MonotonicClock::TimePoint, std::function<void()>> mQueue;
 	bool mStop{ false };
 	std::thread mThread;
 };
@@ -163,7 +166,7 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
   public:
 	/** An agent that failed before its handshake is not retried for this long (probably not
 	 * installed); watches use polling meanwhile. */
-	static constexpr auto UnavailableFor = std::chrono::minutes( 5 );
+	static constexpr auto UnavailableFor = Minutes( 5 );
 
 	static constexpr Uint32 MaxReconnectDelaySeconds = 30;
 
@@ -171,14 +174,14 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 	 * deadline. A busy server may take longer to reap an old agent than a few milliseconds. */
 	static constexpr Uint8 MaxChannelBackoff = 3;
 
-	static constexpr std::chrono::milliseconds ChannelRetryDelay{ 25 };
+	static constexpr Time ChannelRetryDelay = Milliseconds( 25 );
 
 	RemoteWatchBackendImpl( std::shared_ptr<SFTPProviderImpl> provider, VirtualFileSystem& vfs,
 							Time establishmentTimeout ) :
 		mProvider( provider ),
 		mPolling( std::make_shared<PollingWatchBackend>( vfs ) ),
 		mCommand( provider->config().watchAgentCommand ),
-		mEstablishTimeout( std::max<Int64>( 1, establishmentTimeout.asMilliseconds() ) ) {}
+		mEstablishTimeout( std::max( Milliseconds( 1 ), establishmentTimeout ) ) {}
 
 	~RemoteWatchBackendImpl() { shutdown(); }
 
@@ -285,7 +288,7 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 				if ( !wasReady && usable && !refused ) {
 					// The SSH session is fine but the agent never answered: not installed or
 					// not runnable on that host.
-					it->second.unavailableUntil = std::chrono::steady_clock::now() + UnavailableFor;
+					it->second.unavailableUntil = MonotonicClock::now() + UnavailableFor;
 				}
 			}
 			for ( auto& watch : mWatches ) {
@@ -407,7 +410,7 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
   private:
 	struct AgentEntry {
 		std::shared_ptr<AgentClient> agent;
-		std::chrono::steady_clock::time_point unavailableUntil;
+		MonotonicClock::TimePoint unavailableUntil;
 		std::string lastError;
 		Uint32 failures{ 0 };
 	};
@@ -458,7 +461,7 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 	}
 
 	void usePolling( const std::shared_ptr<RemoteWatch>& watch, std::string_view reason,
-					 std::chrono::steady_clock::time_point expectedDeadline = {} ) {
+					 MonotonicClock::TimePoint expectedDeadline = {} ) {
 		auto sink = watch->sink.lock();
 		std::shared_ptr<AgentClient> previousAgent;
 		bool established;
@@ -466,7 +469,7 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 			std::lock_guard<std::mutex> lock( mMutex );
 			if ( watch->mode == RemoteWatch::Mode::Closed ||
 				 watch->mode == RemoteWatch::Mode::Polling ||
-				 ( expectedDeadline != std::chrono::steady_clock::time_point{} &&
+				 ( expectedDeadline != MonotonicClock::TimePoint{} &&
 				   watch->establishDeadline != expectedDeadline ) )
 				return;
 			established = watch->established;
@@ -520,20 +523,19 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 	/** A refused channel does not mark the host unavailable. Keep retrying within the same
 	 * deadline; otherwise a loaded server can exhaust the old fixed 175 ms retry budget. */
 	void retryRefusedChannel( const std::shared_ptr<RemoteWatch>& watch ) {
-		std::chrono::milliseconds delay;
-		std::chrono::steady_clock::time_point deadline;
+		Time delay;
+		MonotonicClock::TimePoint deadline;
 		{
 			std::lock_guard<std::mutex> lock( mMutex );
 			if ( watch->mode != RemoteWatch::Mode::Establishing &&
 				 watch->mode != RemoteWatch::Mode::Reconnecting )
 				return;
 			deadline = watch->establishDeadline;
-			delay = ChannelRetryDelay * ( 1 << watch->channelBackoff );
+			delay = ChannelRetryDelay * static_cast<Int64>( 1 << watch->channelBackoff );
 			watch->channelBackoff = std::min<Uint8>( watch->channelBackoff + 1, MaxChannelBackoff );
 		}
-		auto remaining = std::chrono::ceil<std::chrono::milliseconds>(
-			deadline - std::chrono::steady_clock::now() );
-		if ( remaining <= std::chrono::milliseconds::zero() ) {
+		const Time remaining = deadline - MonotonicClock::now();
+		if ( remaining <= Time::Zero ) {
 			usePolling( watch, "SSH channel refusals exhausted the establishment deadline",
 						deadline );
 			return;
@@ -550,7 +552,7 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 				if ( watch->establishDeadline != deadline )
 					return;
 			}
-			if ( std::chrono::steady_clock::now() >= deadline )
+			if ( MonotonicClock::now() >= deadline )
 				self->usePolling(
 					watch, "SSH channel refusals exhausted the establishment deadline", deadline );
 			else
@@ -568,7 +570,7 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 			std::min<Uint32>( MaxReconnectDelaySeconds, 1u << std::min<Uint32>( retries, 5 ) );
 		std::weak_ptr<RemoteWatchBackendImpl> weak = weak_from_this();
 		std::weak_ptr<RemoteWatch> weakWatch = watch;
-		mRunner.runAfter( std::chrono::seconds( seconds ), [weak, weakWatch] {
+		mRunner.runAfter( Seconds( seconds ), [weak, weakWatch] {
 			auto self = weak.lock();
 			auto watch = weakWatch.lock();
 			if ( !self || !watch )
@@ -637,12 +639,12 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 			if ( watch->mode != RemoteWatch::Mode::Establishing &&
 				 watch->mode != RemoteWatch::Mode::Reconnecting )
 				return;
-			if ( watch->establishDeadline == std::chrono::steady_clock::time_point{} ) {
-				watch->establishDeadline = std::chrono::steady_clock::now() + mEstablishTimeout;
+			if ( watch->establishDeadline == MonotonicClock::TimePoint{} ) {
+				watch->establishDeadline = MonotonicClock::now() + mEstablishTimeout;
 				scheduleTimeout = true;
 			}
 			auto& entry = mAgents[key];
-			if ( entry.unavailableUntil > std::chrono::steady_clock::now() ) {
+			if ( entry.unavailableUntil > MonotonicClock::now() ) {
 				unavailable = true;
 			} else {
 				if ( !entry.agent || entry.agent->state() == AgentClient::State::Dead ||
@@ -673,20 +675,17 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 	/** An agent that never answers (stalled, or a command that is not the agent) must not keep
 	 * the watch, and the listing waiting on it, pending forever. */
 	void scheduleEstablishTimeout( const std::shared_ptr<RemoteWatch>& watch ) {
-		std::chrono::steady_clock::time_point deadline;
+		MonotonicClock::TimePoint deadline;
 		{
 			std::lock_guard<std::mutex> lock( mMutex );
 			deadline = watch->establishDeadline;
 		}
-		if ( deadline == std::chrono::steady_clock::time_point{} )
+		if ( deadline == MonotonicClock::TimePoint{} )
 			return;
 		std::weak_ptr<RemoteWatchBackendImpl> weak = weak_from_this();
 		std::weak_ptr<RemoteWatch> weakWatch = watch;
 		mRunner.runAfter(
-			std::max( std::chrono::milliseconds::zero(),
-					  std::chrono::ceil<std::chrono::milliseconds>(
-						  deadline - std::chrono::steady_clock::now() ) ),
-			[weak, weakWatch, deadline] {
+			std::max( Time::Zero, deadline - MonotonicClock::now() ), [weak, weakWatch, deadline] {
 				auto self = weak.lock();
 				auto watch = weakWatch.lock();
 				if ( !self || !watch )
@@ -713,7 +712,7 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 	std::shared_ptr<PollingWatchBackend> mPolling;
 	std::string mCommand;
 	/** Bounds agent handshake/watch confirmation: the directory listing waits for it. */
-	const std::chrono::milliseconds mEstablishTimeout;
+	const Time mEstablishTimeout;
 	std::mutex mMutex;
 	std::map<Uint32, std::shared_ptr<RemoteWatch>> mWatches;
 	std::map<std::string, AgentEntry> mAgents;

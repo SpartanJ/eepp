@@ -1,6 +1,9 @@
 #include <eepp/config.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/time.hpp>
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -14,7 +17,6 @@
 #include "vfs_test_utils.hpp"
 #include <atomic>
 #include <cerrno>
-#include <chrono>
 #include <condition_variable>
 #include <cstdio>
 #include <eepp/system/directorypack.hpp>
@@ -1155,7 +1157,7 @@ UTEST( VFSWatch, localEventsAreDeliveredThroughExecutor ) {
 
 	FileSystem::makeDir( tmp.path + "sub" );
 	EXPECT_TRUE( loop.runUntil( [&] { return collector.has( WatchEventType::Added, "sub" ); } ) );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+	Sys::sleep( Milliseconds( 50 ) );
 	EXPECT_TRUE( FileSystem::fileWrite( tmp.path + "sub/b.txt", std::string_view( "2" ) ) );
 	EXPECT_TRUE(
 		loop.runUntil( [&] { return collector.has( WatchEventType::Added, "sub/b.txt" ); } ) );
@@ -1178,7 +1180,7 @@ UTEST( VFSWatch, localEventsAreDeliveredThroughExecutor ) {
 	watch.reset();
 	int after = collector.batches.load();
 	FileSystem::fileWrite( tmp.path + "late.txt", std::string_view( "x" ) );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 200 ) );
+	Sys::sleep( Milliseconds( 200 ) );
 	loop.drain();
 	EXPECT_EQ( after, collector.batches.load() );
 }
@@ -1418,7 +1420,7 @@ UTEST( VFSSafety, writeAllCreateParentsWithOneOrchestrationThread ) {
 	WriteOptions options;
 	options.createParents = true;
 	auto task = vfs.writeAll( URI( "mem://t/new/dir/file" ), std::string_view( "data" ), options );
-	ASSERT_EQ( TaskState::Ready, task.waitFor( std::chrono::seconds( 5 ) ) );
+	ASSERT_EQ( TaskState::Ready, task.waitFor( Seconds( 5 ).toChrono() ) );
 	EXPECT_TRUE( std::move( task ).takeValue().hasValue() );
 	EXPECT_STDSTREQ( "data", readString( vfs, URI( "mem://t/new/dir/file" ) ) );
 }
@@ -1541,7 +1543,7 @@ UTEST( VFSWatch, localRegistrationRunsOnThePool ) {
 	auto task = manager.watch( tmp.uri() );
 	EXPECT_EQ( TaskState::Pending, task.state() );
 	hold.unlock();
-	ASSERT_EQ( TaskState::Ready, task.waitFor( std::chrono::seconds( 5 ) ) );
+	ASSERT_EQ( TaskState::Ready, task.waitFor( Seconds( 5 ).toChrono() ) );
 	auto handle = std::move( task ).takeValue();
 	ASSERT_TRUE( handle.hasValue() );
 	EXPECT_EQ( WatchStatus::Active, handle.value().status() );
@@ -1568,7 +1570,7 @@ class GatedProvider : public MemoryProvider {
 
 	void waitOpened() {
 		std::unique_lock<std::mutex> lock( mMutex );
-		mChanged.wait_for( lock, std::chrono::seconds( 5 ), [this] { return mOpened; } );
+		mChanged.wait_for( lock, Seconds( 5 ).toChrono(), [this] { return mOpened; } );
 	}
 
 	void release() {
@@ -1601,10 +1603,10 @@ UTEST( VFSSafety, transfersDoNotDelayOtherOperations ) {
 	Transfer transfer = vfs.copy( URI( "gated://t/big" ), URI( "mem://t/copy" ) );
 	gated->waitOpened();
 	auto saved = vfs.writeAll( URI( "mem://t/other" ), std::string_view( "data" ) );
-	EXPECT_EQ( TaskState::Ready, saved.waitFor( std::chrono::seconds( 5 ) ) );
+	EXPECT_EQ( TaskState::Ready, saved.waitFor( Seconds( 5 ).toChrono() ) );
 	gated->release();
 	auto done = transfer.completion();
-	ASSERT_EQ( TaskState::Ready, done.waitFor( std::chrono::seconds( 5 ) ) );
+	ASSERT_EQ( TaskState::Ready, done.waitFor( Seconds( 5 ).toChrono() ) );
 	EXPECT_TRUE( std::move( done ).takeValue().hasValue() );
 }
 
@@ -1623,9 +1625,9 @@ class Gate {
 	}
 
 	/** @return Whether it opened within timeout. */
-	bool waitFor( std::chrono::milliseconds timeout ) {
+	bool waitFor( Time timeout ) {
 		std::unique_lock<std::mutex> lock( mMutex );
-		return mOpened.wait_for( lock, timeout, [this] { return mOpen; } );
+		return mOpened.wait_for( lock, timeout.toChrono(), [this] { return mOpen; } );
 	}
 
 	void open() {
@@ -1669,7 +1671,7 @@ UTEST( LocalIOScheduler, hungMountTimesOutWithoutBlockingLocalCalls ) {
 	ASSERT_FALSE( scheduler->routeFor( "/home/user" ).isNetworkMount() );
 
 	// Both lane threads hang, and a third call waits behind them.
-	const auto started = std::chrono::steady_clock::now();
+	const auto started = MonotonicClock::now();
 	auto first = scheduler->submit<int>( "/net/a", hung );
 	auto second = scheduler->submit<int>( "/net/b", hung );
 	auto queued = scheduler->submit<int>( "/net/c", []() -> VFSResult<int> { return Ok( 3 ); } );
@@ -1684,31 +1686,31 @@ UTEST( LocalIOScheduler, hungMountTimesOutWithoutBlockingLocalCalls ) {
 	auto firstResult = waitFor( std::move( first ) );
 	auto queuedResult = waitFor( std::move( queued ) );
 	auto secondResult = waitFor( std::move( second ) );
-	const auto waited = std::chrono::steady_clock::now() - started;
+	const auto waited = MonotonicClock::now() - started;
 	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( firstResult ) );
 	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( secondResult ) );
 	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( queuedResult ) );
 	EXPECT_TRUE( !firstResult &&
 				 firstResult.error().message == "server:/export is not responding" );
-	EXPECT_TRUE( waited >= std::chrono::milliseconds( 200 ) );
-	EXPECT_TRUE( waited < std::chrono::seconds( 5 ) );
+	EXPECT_TRUE( waited >= Milliseconds( 200 ) );
+	EXPECT_TRUE( waited < Seconds( 5 ) );
 
 	// While the mount does not answer, new calls fail at once instead of waiting.
-	const auto rejectedAt = std::chrono::steady_clock::now();
+	const auto rejectedAt = MonotonicClock::now();
 	auto rejected =
 		waitFor( scheduler->submit<int>( "/net/d", []() -> VFSResult<int> { return Ok( 4 ); } ) );
 	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( rejected ) );
-	EXPECT_TRUE( std::chrono::steady_clock::now() - rejectedAt < std::chrono::milliseconds( 100 ) );
+	EXPECT_TRUE( MonotonicClock::now() - rejectedAt < Milliseconds( 100 ) );
 
 	// The server answers again: the late results are discarded, and the mount works again.
 	gate->open();
 	VFSResult<int> recovered = Err( VFSError( VFSErrorCode::Unknown ) );
-	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 5 );
-	while ( !recovered && std::chrono::steady_clock::now() < deadline ) {
+	const auto deadline = MonotonicClock::now() + Seconds( 5 );
+	while ( !recovered && MonotonicClock::now() < deadline ) {
 		recovered = waitFor(
 			scheduler->submit<int>( "/net/e", []() -> VFSResult<int> { return Ok( 5 ); } ) );
 		if ( !recovered )
-			std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+			Sys::sleep( Milliseconds( 10 ) );
 	}
 	ASSERT_TRUE( recovered.hasValue() );
 	EXPECT_EQ( 5, recovered.value() );
@@ -1729,11 +1731,11 @@ UTEST( LocalIOScheduler, shutdownLeavesHungCallsBehind ) {
 	auto first = scheduler->submit<int>( "/net/a", hung );
 	auto second = scheduler->submit<int>( "/net/b", hung );
 	auto queued = scheduler->submit<int>( "/net/c", []() -> VFSResult<int> { return Ok( 3 ); } );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+	Sys::sleep( Milliseconds( 50 ) );
 	// Destroying the scheduler does not wait for the hung calls, and fails the queued one.
-	const auto destroyedAt = std::chrono::steady_clock::now();
+	const auto destroyedAt = MonotonicClock::now();
 	scheduler.reset();
-	EXPECT_TRUE( std::chrono::steady_clock::now() - destroyedAt < std::chrono::seconds( 1 ) );
+	EXPECT_TRUE( MonotonicClock::now() - destroyedAt < Seconds( 1 ) );
 	EXPECT_EQ( VFSErrorCode::Cancelled, codeOf( waitFor( std::move( queued ) ) ) );
 	// The detached threads still complete their calls when the server answers.
 	gate->open();
@@ -1764,12 +1766,12 @@ UTEST( LocalIOScheduler, timedOutCallNeverWritesIntoTheCallersMemory ) {
 	EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( task ) ) ) );
 	gate->open();
 	finished->wait();
-	std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+	Sys::sleep( Milliseconds( 50 ) );
 	EXPECT_FALSE( committed->load() );
 	// In time, it commits.
 	VFSResult<int> late = Err( VFSError( VFSErrorCode::Unknown ) );
-	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 5 );
-	while ( !late && std::chrono::steady_clock::now() < deadline ) {
+	const auto deadline = MonotonicClock::now() + Seconds( 5 );
+	while ( !late && MonotonicClock::now() < deadline ) {
 		late = waitFor( scheduler->submitCommitted<int>(
 			scheduler->routeFor( "/net/file" ), []() -> VFSResult<int> { return Ok( 2 ); },
 			[committed]( VFSResult<int>&& result ) {
@@ -1815,10 +1817,10 @@ UTEST( LocalIOScheduler, slowTimeoutCompletionNeverDelaysOtherMounts ) {
 			slowStarted->open();
 			slowFinish->wait();
 		} );
-	ASSERT_TRUE( slowStarted->waitFor( std::chrono::seconds( 5 ) ) );
+	ASSERT_TRUE( slowStarted->waitFor( Seconds( 5 ) ) );
 	// Meanwhile the other mount's calls still time out on time.
 	auto other = scheduler->submit<int>( "/netb/x", hung );
-	const auto state = other.waitFor( std::chrono::seconds( 2 ) );
+	const auto state = other.waitFor( Seconds( 2 ).toChrono() );
 	EXPECT_EQ( TaskState::Ready, state );
 	if ( state == TaskState::Ready )
 		EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( other ) ) ) );
@@ -1855,7 +1857,7 @@ UTEST( LocalIOScheduler, lastOwnerReleasedByALaneCallTearsDown ) {
 	// scheduler down.
 	scheduler.reset();
 	gate->open();
-	EXPECT_TRUE( destroyed->waitFor( std::chrono::seconds( 5 ) ) );
+	EXPECT_TRUE( destroyed->waitFor( Seconds( 5 ) ) );
 }
 
 UTEST( LocalIOScheduler, neverOwnsThePool ) {
@@ -2037,7 +2039,7 @@ UTEST( VFSWatch, pollingCallbackCanReleaseTheLastBackendOwner ) {
 	std::unique_lock<std::mutex> hold( sink->gate );
 	auto task = sink->backend->watch( root, {}, sink );
 	hold.unlock();
-	ASSERT_EQ( TaskState::Ready, task.waitFor( std::chrono::seconds( 5 ) ) );
+	ASSERT_EQ( TaskState::Ready, task.waitFor( Seconds( 5 ).toChrono() ) );
 	ASSERT_TRUE( waitFor( std::move( task ) ).hasValue() );
 	EXPECT_TRUE( weak.expired() );
 }
