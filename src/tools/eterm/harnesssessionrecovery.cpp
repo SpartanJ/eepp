@@ -18,6 +18,12 @@ namespace eterm {
 
 namespace {
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+constexpr char PluginPathSeparator = ';';
+#else
+constexpr char PluginPathSeparator = ':';
+#endif
+
 bool validPath( const std::string& path, bool allowEmpty = false ) {
 	if ( path.empty() )
 		return allowEmpty;
@@ -323,6 +329,29 @@ HarnessSessionRecovery::~HarnessSessionRecovery() {
 		FileSystem::dirRemoveAll( entry.second );
 }
 
+void HarnessSessionRecovery::resetEnvironment(
+	std::unordered_map<std::string, std::string>& environment ) {
+	// A nested eterm must not retain a plugin owned by the parent's disposable directory.
+	// The relay clears ETERM_HARNESS_DIRECTORY in its child, so track the plugin separately.
+	const auto plugin = Sys::getEnv( "ETERM_HARNESS_CLAUDE_PLUGIN" );
+	if ( !plugin.empty() ) {
+		auto plugins =
+			String::split( Sys::getEnv( "CLAUDE_CODE_PLUGIN_DIRS" ), PluginPathSeparator );
+		plugins.erase( std::remove( plugins.begin(), plugins.end(), plugin ), plugins.end() );
+		environment["CLAUDE_CODE_PLUGIN_DIRS"] = String::join( plugins, PluginPathSeparator );
+	}
+	// Nested eterm launches must not consume their parent's request or inherit a relay's bearer
+	// token. Inspect every key, including when a relay child has an empty directory.
+	for ( const auto* key :
+		  { "ETERM_HARNESS_DIRECTORY", "ETERM_HARNESS_BINARY", "ETERM_RESUME_SESSION",
+			"ETERM_HARNESS_FISH", "ETERM_HARNESS_EMULATOR_PID", "ETERM_HARNESS_SHELL_PID",
+			"ETERM_CODEX_SOCKET", "ETERM_CODEX_RELAY_TOKEN", "ETERM_HARNESS_POWERSHELL",
+			"ETERM_HARNESS_CLAUDE_PLUGIN" } ) {
+		if ( !Sys::getEnv( key ).empty() )
+			environment[key] = "";
+	}
+}
+
 std::string
 HarnessSessionRecovery::prepare( std::unordered_map<std::string, std::string>& environment,
 								 const nlohmann::json& resume ) {
@@ -354,6 +383,29 @@ HarnessSessionRecovery::prepare( std::unordered_map<std::string, std::string>& e
 #else
 	environment["ETERM_HARNESS_BINARY"] = Sys::getProcessFilePath();
 #endif
+	// Claude loads this hook only for the pane's session, alongside the user's settings and
+	// plugins. Exec-form arguments keep helper paths literal on every platform, with no shell.
+	nlohmann::json plugin{ { "name", "eterm-session-recovery" }, { "version", "1.0.0" } };
+	plugin["hooks"]["SessionStart"][0]["hooks"][0] = {
+		{ "type", "command" },
+		{ "command", environment["ETERM_HARNESS_BINARY"] },
+		{ "args", { "--harness-session", "hook", "claude" } } };
+	if ( directory.find( PluginPathSeparator ) != std::string::npos ||
+		 !FileSystem::makeDir( directory + "/.claude-plugin" ) ||
+		 !FileSystem::fileWrite( directory + "/.claude-plugin/plugin.json", plugin.dump() ) ) {
+		Log::warning( "eterm: harness session recovery could not prepare the Claude hook." );
+		FileSystem::dirRemoveAll( directory );
+		environment["ETERM_HARNESS_BINARY"] = "";
+		return {};
+	}
+	auto found = environment.find( "CLAUDE_CODE_PLUGIN_DIRS" );
+	auto plugins = found == environment.end() ? Sys::getEnv( "CLAUDE_CODE_PLUGIN_DIRS" )
+											  : std::move( found->second );
+	if ( !plugins.empty() )
+		plugins += PluginPathSeparator;
+	plugins += directory;
+	environment["CLAUDE_CODE_PLUGIN_DIRS"] = std::move( plugins );
+	environment["ETERM_HARNESS_CLAUDE_PLUGIN"] = directory;
 	environment["ETERM_HARNESS_DIRECTORY"] = directory;
 	environment["ETERM_HARNESS_EMULATOR_PID"] = std::to_string( Sys::getProcessID() );
 	environment["ETERM_HARNESS_POWERSHELL"] =

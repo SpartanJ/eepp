@@ -34,6 +34,9 @@ class HarnessSessionRecovery {
 
 	static void publish( const std::string& directory, const nlohmann::json& record );
 
+	/** Remove inherited pane state, retaining the user's unrelated Claude plugins. */
+	static void resetEnvironment( std::unordered_map<std::string, std::string>& environment );
+
 	static std::string prepare( std::unordered_map<std::string, std::string>& environment,
 								const nlohmann::json& resume );
 

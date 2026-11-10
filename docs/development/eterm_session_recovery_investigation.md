@@ -277,10 +277,69 @@ made during this successful check. The prior failure's exact cause remains unpro
 that had not emitted its trusted hook is a plausible explanation. Codex 0.167.0 capture was observed
 at its first turn, rather than merely on displaying the initial interface.
 
-Linux behavior is not runtime-verified. Automated full real conversation recovery after closure,
-custom launch flags/profiles, shared servers, remote sessions, Windows and crash recovery remain
-outside the validation completed here. This remains a convenience prototype, not a universal
-recovery promise.
+Linux behavior was not runtime-verified in the initial prototype; see the Linux follow-up below.
+Automated full real conversation recovery after closure, custom launch flags/profiles, shared
+servers, remote sessions, Windows and crash recovery remain outside the validation completed here.
+This remains a convenience prototype, not a universal recovery promise.
+
+## Linux Claude capture follow-up (2026-11-10)
+
+The reported Linux failure was missing Claude hook configuration. The running native Claude
+2.1.322 process inherited `ETERM_HARNESS_DIRECTORY`, `ETERM_HARNESS_BINARY` and the pane shell PID,
+but its active settings contained no `hooks.SessionStart` entry and its private directory contained
+no `active.json`. Codex's daemon relay does not require that hook, so working Codex recovery did
+not establish that Claude was configured.
+
+A fresh native Claude TUI, using the existing login and a temporary settings file with a
+SessionStart hook, successfully registered its assigned UUID through the existing eterm helper.
+The recorded owner PID matched the real Claude process. The hook payload supplied the expected
+cwd and transcript path, and the helper returned silently. No prompt was submitted, authentication
+or trust dialog accepted, model call made, or existing conversation opened. The five existing
+Python recovery checks also passed on Linux, covering npm launchers, one-shot rejection, foreign
+hooks, descriptor validation, exact resume argv and shell prompt cleanup.
+
+This confirmed native Linux hook capture worked, but the manual setup requirement left eterm's
+recovery setting incomplete. New opted-in panes now get a private `.claude-plugin/plugin.json`
+inside the existing disposable hook directory. Its inline SessionStart hook invokes eterm's helper
+with a fixed executable and an argument array, avoiding shell quoting on POSIX and Windows.
+
+The pane appends its plugin directory to `CLAUDE_CODE_PLUGIN_DIRS`, supported since Claude
+2.1.280. This leaves user settings, hooks, plugins, aliases and CLI flags intact, and also reaches
+`claude --resume` during restoration. No account configuration is edited and no `claude` function
+is installed. Claude's hook/plugin restrictions remain in effect. `resetEnvironment()` removes
+only the inherited eterm plugin before creating a nested terminal; the separate
+`ETERM_HARNESS_CLAUDE_PLUGIN` marker also survives Codex's relay clearing its capture directory.
+Pane teardown removes the plugin along with the existing runtime record.
+
+Before implementation, a real Claude 2.1.322 TUI loaded a temporary environment-supplied plugin
+from a path containing spaces, an apostrophe, a dollar sign and Unicode. Its exec-form hook
+captured the exact assigned ID while a separate SessionStart hook from explicit `--settings`
+also ran. No model prompt was submitted. Full durable conversation contents after window
+close/reopen remain outside this no-prompt capture check.
+
+Validation of the implementation on Linux:
+
+- The regenerated SDL3 release Ninja build of eterm passed.
+- Real Claude 2.1.322 launched inside rebuilt headless eterm captured its assigned UUID with no
+  manually installed hook. Normal Claude/shell exit closed the pane and removed the plugin.
+- Headless pane checks verified opt-in/opt-out, preservation of unrelated plugin paths, removal
+  of a parent pane's plugin in a nested terminal, and isolation when inherited relay state had
+  an empty capture directory. Enabled panes removed their plugin directories on normal exit.
+- Eight existing recovery/prompt/shell integration checks passed. Three PowerShell checks were
+  skipped because PowerShell was unavailable. macOS and Windows runtime behavior was not retested.
+
+Allocation/layout review: no instance members or object layouts changed. Plugin JSON, its serialized
+manifest, path buffers and environment values are allocated only during opted-in pane creation.
+The combined plugin list is moved into the environment map. Inherited lists are split/rebuilt only
+when launching eterm from a pane that already carries its plugin. There is no per-frame work,
+process polling, async capture or new long-lived allocation outside the existing pane environment
+and private directory lifetime. Existing FileSystem and String operations provide the mechanism;
+Claude-specific plugin policy stays in the application recovery owner.
+
+[RexAgentRestore's installer](https://github.com/pattont/RexAgentRestore/blob/6668bde8be2bbb50fb6352f0dc4630517d718986/bin/rex-agent-restore)
+also adds a Claude `SessionStart` hook to the agent's settings. That reference supports checking
+per-agent hook installation separately from the terminal's recovery setting, but eterm's automatic
+integration uses Claude's session-scoped plugin mechanism instead of editing those settings.
 
 ## Shared Codex daemon IPC follow-up (2026-11-07)
 

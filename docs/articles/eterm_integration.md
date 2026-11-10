@@ -157,12 +157,26 @@ Recovery uses eterm's native CLI; Python is not required. Shell adapters support
 and zsh on macOS/Linux/FreeBSD, and PowerShell 5.1/7 on Windows. Automatic shell integration must
 be enabled. Shell profiles load before the resume attempt.
 
-When disabled, new panes receive no recovery wrapper or relay. Changing the setting does not
-unload functions already installed in open panes: close and reopen those panes. Enabling it does
-not install harness hooks or change account settings. Ordinary working-directory shell integration
+When disabled, new panes receive no recovery plugin, wrapper or relay. Changing the setting does
+not update the environment or functions already installed in open panes: close and reopen those
+panes. Enabling it does not change account settings. Ordinary working-directory shell integration
 is independent of recovery.
 
-### Claude and standalone Codex hooks
+### Claude
+
+Claude capture is automatic in newly enabled panes, including restored panes. eterm supplies a
+private, temporary plugin containing its SessionStart hook through `CLAUDE_CODE_PLUGIN_DIRS`.
+There is no manual hook installation or `claude` wrapper. Existing aliases, launch flags, settings,
+hooks and plugin directories are preserved. The plugin is removed with the pane.
+
+This requires Claude Code 2.1.280 or later, which supports the
+[session plugin environment variable](https://code.claude.com/docs/en/env-vars).
+Claude's own hook/plugin restrictions still apply: disabling hooks or starting with `--bare` or
+`--safe-mode` prevents automatic capture. A manually installed eterm hook from an older setup can
+be removed from Claude's settings; it is no longer required. Capture stores metadata only, without
+reading conversations or producing model-visible stdout.
+
+### Standalone Codex hooks
 
 Add this entry to the `hooks.SessionStart` array in Codex's `hooks.json` (normally
 `~/.codex/hooks.json`), preserving existing entries:
@@ -187,21 +201,16 @@ Add this entry to the `hooks.SessionStart` array in Codex's `hooks.json` (normal
 Review and trust the hook through Codex's `/hooks` interface. No hook-trust or permission bypass
 is added to restored commands.
 
-For Claude, add the same entry to `hooks.SessionStart` in `~/.claude/settings.json`, replacing the
-final `codex` argument with `claude`. The command is executed by the harness's hook shell, so it
-also works when your interactive shell is fish. Hook reports store metadata only; they do not
-read or copy conversations and produce no model-visible stdout.
-
 On Windows, use a fixed native executable path in the hook command, for example:
 
 ```json
 "command": "\"C:/path/to/eterm-session.exe\" --harness-session hook codex"
 ```
 
-Use your actual executable path, and `claude` as the final argument for Claude's hook. The native
-helper returns silently outside a recovery-enabled pane. Installed hooks remain configured after
-disabling recovery, but do no recovery work without its pane environment. eterm does not change
-PowerShell execution policies. Windows packages include `eterm-session.exe`, the console helper
+Use your actual executable path. The native helper returns silently outside a recovery-enabled
+pane. Installed Codex hooks remain configured after disabling recovery, but do no recovery work
+without its pane environment. eterm does not change PowerShell execution policies. Windows packages
+include `eterm-session.exe`, the console helper
 these commands run, beside `eterm.exe`. If it is missing, eterm logs a warning and new panes start
 without recovery.
 
@@ -227,9 +236,9 @@ configuration must exist on the daemon; client-only provider definitions may not
 If the default daemon socket is stale, eterm asks Codex to start the daemon once and reconnects.
 A saved non-default daemon socket must be started by its owner before the pane can resume.
 
-After installing the hook, start a fresh harness and begin a conversation before testing recovery.
-Standalone Codex registers a conversation on its first turn, not when its interface opens. Hook
-setup does not register a conversation that was already open.
+Start a fresh harness in a newly enabled pane and begin a conversation before testing recovery.
+Standalone Codex requires the hook above and registers a conversation on its first turn, not when
+its interface opens. Enabling recovery does not register a conversation that was already open.
 
 Close the eterm window while the conversation is open, then reopen it. eterm tries the saved
 exact session ID using daemon-connected `codex resume`, standalone `codex resume --no-daemon`, or
@@ -237,11 +246,21 @@ exact session ID using daemon-connected `codex resume`, standalone `codex resume
 inside Codex updates it; if eterm cannot confirm which conversation a switch selected, it saves none
 rather than an older one. Closing the last tab still ends the saved window session.
 
-Missing hooks and unrecognized launches produce ordinary shell restoration. Missing transcripts,
-directories or executables leave the shell available with a short message. The helper never selects
-“latest” or replays the original task. It retains reported `CODEX_HOME`/`CLAUDE_CONFIG_DIR`
+Missing standalone Codex hooks and unrecognized launches produce ordinary shell restoration.
+Missing transcripts, directories or executables leave the shell available with a short message.
+The helper never selects “latest” or replays the original task. It retains reported `CODEX_HOME`/`CLAUDE_CONFIG_DIR`
 overrides, but does not reconstruct other one-off profiles, flags or environment overrides. The
 harness can still require its own authentication or trust prompts.
+
+To diagnose missing capture on macOS/Linux, check `echo "$ETERM_HARNESS_DIRECTORY"` in the pane
+before starting Claude. It should name an existing private directory. After Claude starts, inspect
+that directory's `active.json` from another pane while Claude remains open. It should contain
+`"harness":"claude"` and the selected session's ID. Returning to the original shell prompt clears
+the file, so checking it after exiting Claude cannot confirm capture. If the file is missing,
+verify the pane's `CLAUDE_CODE_PLUGIN_DIRS` includes its recovery directory, Claude is recent
+enough, and hooks/plugins are enabled. Settings or shell startup files that replace that variable
+must retain eterm's entry. Claude's `/plugin` interface can show errors loading
+`eterm-session-recovery`.
 
 Nested/background agents, SSH, containers, multiplexers, custom shell startup modes, Windows
 cmd.exe shells and crash recovery are outside this prototype's supported scope. Haiku has no

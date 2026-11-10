@@ -789,15 +789,7 @@ std::string App::resolveWorkingDirectory( UITerminal* source ) const {
 UITerminal* App::newTerminal( const Sizef& initialSize, const std::string& workingDirectory,
 							  const nlohmann::json* resume ) {
 	std::unordered_map<std::string, std::string> environment;
-	// Nested eterm launches must not consume their parent's request or inherit a relay's bearer
-	// token. A relay child deliberately has an empty directory, so inspect every current key.
-	for ( const auto* key :
-		  { "ETERM_HARNESS_DIRECTORY", "ETERM_HARNESS_BINARY", "ETERM_RESUME_SESSION",
-			"ETERM_HARNESS_FISH", "ETERM_HARNESS_EMULATOR_PID", "ETERM_HARNESS_SHELL_PID",
-			"ETERM_CODEX_SOCKET", "ETERM_CODEX_RELAY_TOKEN", "ETERM_HARNESS_POWERSHELL" } ) {
-		if ( !Sys::getEnv( key ).empty() )
-			environment[key] = "";
-	}
+	HarnessSessionRecovery::resetEnvironment( environment );
 	std::string recoveryDirectory;
 	// ShellIntegration resolves the default shell and sources adapters only for supported shells.
 	if ( config->terminal.recoverHarnessSessions && !terminalConfig.launchExecutable &&
