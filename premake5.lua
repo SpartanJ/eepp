@@ -2297,6 +2297,14 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		eepp_module_backward_add( false )
+		filter { "system:windows", "action:vs*" }
+			files { "bin/assets/icon/eefm.rc", "bin/assets/icon/eefm.ico" }
+			vpaths { ['Resources/*'] = { "eefm.rc", "eefm.ico" } }
+		filter { "system:windows", "action:not vs*", "architecture:x86" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eefm.res" }
+		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eefm.x64.res" }
+		filter {}
 		incdirs { "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
 		files { "src/tools/eefm/*.cpp" }
 		filter "system:macosx"

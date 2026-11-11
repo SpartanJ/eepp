@@ -2283,6 +2283,13 @@ solution "eepp"
 		eepp_module_backward_add( false )
 		includedirs { "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
 		files { "src/tools/eefm/*.cpp" }
+		if os.is("windows") and not is_vs() then
+			if os.is64bit() then
+				linkoptions { "../../bin/assets/icon/eefm.x64.res" }
+			else
+				linkoptions { "../../bin/assets/icon/eefm.res" }
+			end
+		end
 		if os.is("macosx") then
 			files { "src/tools/eefm/*.mm" }
 			links { "Cocoa.framework" }

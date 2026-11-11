@@ -23,7 +23,7 @@ The binary layouts intentionally mirror the historical artifacts:
   .res     compiled from <app>.rc + <app>.ico with mingw windres, for both the
            pe-i386 and pe-x86-64 targets.
 
-Requires: python3 (stdlib only), inkscape or rsvg-convert, and a mingw-w64
+Requires: python3 (stdlib only), rsvg-convert (or inkscape), and a mingw-w64
 windres for Windows resources ($WINDRES, x86_64-w64-mingw32-windres, windres, or
 the local eepp-mingw-arm64 Docker image when neither is installed).
 """
@@ -95,8 +95,10 @@ APPS = {
     'eterm': { 'svg': 'eterm-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True },
     'eeiv': { 'svg': 'eeiv-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True },
     # The 58:52 folder fills the width of its square view box. Scaling by that ratio
-    # gives it the same height as the other icons, applied to PNG and ICNS alike.
-    'eefm': { 'svg': 'eefm-icon.svg', 'ico': [], 'icns': True, 'res': False, 'artwork_scale': 58 / 52 },
+    # gives it the same height as the other icons, applied to PNG and ICNS alike; the
+    # ICO keeps the full-width folder, like the other applications' full-size artwork.
+    'eefm': { 'svg': 'eefm-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True,
+              'artwork_scale': 58 / 52 },
     'eproc': { 'svg': 'eproc-icon.svg', 'ico': [16, 24, 32, 48, 64, 72, 96, 128, 256], 'icns': True, 'res': True },
 }
 
@@ -370,7 +372,9 @@ def main():
     script_dir = os.path.dirname( os.path.abspath( __file__ ) )
     icon_dir = os.path.join( os.path.abspath( os.path.join( script_dir, '..', '..' ) ),
                              'bin', 'assets', 'icon' )
-    renderer = shutil.which( 'inkscape' ) or shutil.which( 'rsvg-convert' )
+    # Renderers antialias edges differently, so prefer the one the committed icons
+    # were rendered with; inkscape output differs along every curved edge.
+    renderer = shutil.which( 'rsvg-convert' ) or shutil.which( 'inkscape' )
     if not renderer:
         raise SystemExit( 'inkscape or rsvg-convert not found' )
     apps = args.app or list( APPS )
