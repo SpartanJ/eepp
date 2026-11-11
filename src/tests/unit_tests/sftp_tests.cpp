@@ -2,8 +2,13 @@
 
 #if defined( EE_VFS_SFTP ) && EE_PLATFORM != EE_PLATFORM_WIN
 
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
+
 #include "utest.hpp"
 
+#include "../../modules/vfs/src/eepp/vfs/sftp/remotewatchbackend.hpp"
 #include "../../modules/vfs/src/eepp/vfs/sftp/sftpproviderimpl.hpp"
 #include "../../modules/vfs/src/eepp/vfs/sftp/sshagent.hpp"
 #include "vfs_test_utils.hpp"
@@ -12,6 +17,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <eepp/system/base64.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/vfs/path.hpp>
 #include <eepp/vfs/sftp/sftpprovider.hpp>
@@ -26,7 +32,10 @@
 #include <dirent.h>
 #endif
 
+using namespace EE::System;
+
 using namespace vfstest;
+using EE::System::Log;
 using EE::System::Process;
 
 namespace {
@@ -208,7 +217,7 @@ class TestSSHServer {
 			if ( !server->create( sshd, { "-D", "-e", "-f", mDir + "sshd_config" } ) )
 				continue;
 			for ( int i = 0; i < 100 && server->isAlive() && !portOpen( mPort ); ++i )
-				std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+				Sys::sleep( Milliseconds( 50 ) );
 			if ( portOpen( mPort ) )
 				mServer = std::move( server );
 			else
@@ -460,7 +469,7 @@ class ScriptedAuthenticator : public SSHAuthenticationHandler {
 		TaskResolver<Answers> resolve;
 		auto task = Task<Answers>::create( resolve );
 		std::thread( [resolve, answer] {
-			std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+			Sys::sleep( Milliseconds( 10 ) );
 			resolve( answer );
 		} ).detach();
 		return task;
@@ -472,6 +481,15 @@ class ScriptedAuthenticator : public SSHAuthenticationHandler {
 	std::mutex mMutex;
 	std::vector<std::optional<std::string>> mAnswers;
 	size_t mNext{ 0 };
+};
+
+/** Include backend fallback reasons in CI output for the channel-restart regressions. */
+struct WatchDiagnosticOutput {
+	bool previous{ Log::instance()->isLoggingToStdOut() };
+
+	WatchDiagnosticOutput() { Log::instance()->setLogToStdOut( true ); }
+
+	~WatchDiagnosticOutput() { Log::instance()->setLogToStdOut( previous ); }
 };
 
 struct SFTPFixture {
@@ -783,7 +801,7 @@ UTEST( SFTP, blackholedSessionReclaimsHandlesBeforeConsumerDisposal ) {
 			} ) );
 		REQUIRE_OK( opened );
 		proxy.drop( true );
-		const auto start = std::chrono::steady_clock::now();
+		const auto start = MonotonicClock::now();
 		if ( stop ) {
 			impl->ioContext()->stop();
 			EXPECT_TRUE( connection->session() == nullptr );
@@ -801,17 +819,14 @@ UTEST( SFTP, blackholedSessionReclaimsHandlesBeforeConsumerDisposal ) {
 								 connection->transport() == nullptr ) );
 				} );
 			} );
-			ASSERT_EQ( TaskState::Ready, reclaimed.waitFor( std::chrono::seconds( 2 ) ) );
+			ASSERT_EQ( TaskState::Ready, reclaimed.waitFor( Seconds( 2 ).toChrono() ) );
 			auto result = waitFor( std::move( reclaimed ) );
 			EXPECT_TRUE( result && result.value() );
 		}
 		// Releasing the final consumer reference on this thread must not run protocol closes.
 		connection.reset();
 		impl.reset();
-		EXPECT_LT( std::chrono::duration_cast<std::chrono::milliseconds>(
-					   std::chrono::steady_clock::now() - start )
-					   .count(),
-				   1000 );
+		EXPECT_LT( ( MonotonicClock::now() - start ).asMilliseconds(), 1000 );
 	}
 }
 
@@ -868,9 +883,9 @@ UTEST( SFTP, blackholedReadyOperationsFailTheSessionAndReconnect ) {
 						break;
 				}
 			}
-			ASSERT_EQ( TaskState::Ready, stat.waitFor( std::chrono::seconds( 5 ) ) );
-			ASSERT_EQ( TaskState::Ready, read.waitFor( std::chrono::seconds( 5 ) ) );
-			ASSERT_EQ( TaskState::Ready, list.waitFor( std::chrono::seconds( 5 ) ) );
+			ASSERT_EQ( TaskState::Ready, stat.waitFor( Seconds( 5 ).toChrono() ) );
+			ASSERT_EQ( TaskState::Ready, read.waitFor( Seconds( 5 ).toChrono() ) );
+			ASSERT_EQ( TaskState::Ready, list.waitFor( Seconds( 5 ).toChrono() ) );
 			EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( stat ) ) ) );
 			EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( read ) ) ) );
 			EXPECT_EQ( VFSErrorCode::TimedOut, codeOf( waitFor( std::move( list ) ) ) );
@@ -1171,7 +1186,7 @@ UTEST( SFTP, blackholedProxyCommandTeardownKeepsOtherSessionsResponsive ) {
 	REQUIRE_OK( live );
 	ASSERT_TRUE( tunnel.value() != live.value() );
 	proxy.drop( true );
-	const auto started = std::chrono::steady_clock::now();
+	const auto started = MonotonicClock::now();
 	tunnel.value()->close();
 	// The second context turn runs after the first session's transport has been destroyed.
 	TaskResolver<VFSResult<bool>> resolve;
@@ -1184,7 +1199,7 @@ UTEST( SFTP, blackholedProxyCommandTeardownKeepsOtherSessionsResponsive ) {
 			resolve( Ok( connection->session() == nullptr && connection->transport() == nullptr ) );
 		} );
 	} );
-	ASSERT_EQ( TaskState::Ready, retired.waitFor( std::chrono::seconds( 2 ) ) );
+	ASSERT_EQ( TaskState::Ready, retired.waitFor( Seconds( 2 ).toChrono() ) );
 	auto done = waitFor( std::move( retired ) );
 	REQUIRE_OK( done );
 	EXPECT_TRUE( done.value() );
@@ -1201,14 +1216,13 @@ UTEST( SFTP, blackholedProxyCommandTeardownKeepsOtherSessionsResponsive ) {
 				return Err( connection.lastError( URI(), "Independent session stalled" ) );
 			return Ok();
 		} );
-	ASSERT_EQ( TaskState::Ready, stat.waitFor( std::chrono::seconds( 2 ) ) );
+	ASSERT_EQ( TaskState::Ready, stat.waitFor( Seconds( 2 ).toChrono() ) );
 	auto response = waitFor( std::move( stat ) );
 	REQUIRE_OK( response );
-	const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::steady_clock::now() - started );
+	const auto elapsed = ( MonotonicClock::now() - started );
 	printf( "  ProxyCommand retirement and independent stat: %lld ms\n",
-			static_cast<long long>( elapsed.count() ) );
-	EXPECT_LT( elapsed.count(), 1000 );
+			static_cast<long long>( elapsed.asMilliseconds() ) );
+	EXPECT_LT( elapsed.asMilliseconds(), 1000 );
 }
 
 UTEST( SFTP, connectionReuseReconnectAndErrors ) {
@@ -1247,10 +1261,10 @@ UTEST( SFTP, operationsOnAClosedConnectionFail ) {
 	// Closing and subsequent handle operations are serialized by the SSH I/O context.
 	Uint8 buffer[8];
 	auto read = handle.read( 0, buffer );
-	ASSERT_EQ( TaskState::Ready, read.waitFor( std::chrono::seconds( 5 ) ) );
+	ASSERT_EQ( TaskState::Ready, read.waitFor( Seconds( 5 ).toChrono() ) );
 	EXPECT_EQ( VFSErrorCode::ConnectionLost, codeOf( std::move( read ).takeValue() ) );
 	auto closed = handle.close();
-	ASSERT_EQ( TaskState::Ready, closed.waitFor( std::chrono::seconds( 5 ) ) );
+	ASSERT_EQ( TaskState::Ready, closed.waitFor( Seconds( 5 ).toChrono() ) );
 }
 
 UTEST( SFTP, idleConnectionsCloseButNotWhileInUse ) {
@@ -1264,7 +1278,7 @@ UTEST( SFTP, idleConnectionsCloseButNotWhileInUse ) {
 	REQUIRE_OK( opened );
 	FileHandle handle( std::move( opened ).value() );
 	// An open handle keeps the connection.
-	std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+	Sys::sleep( Milliseconds( 100 ) );
 	EXPECT_EQ( 1u, fx.sftp->connectionCount() );
 	Uint8 buffer[4];
 	auto read = waitFor( handle.read( 0, buffer ) );
@@ -1274,7 +1288,7 @@ UTEST( SFTP, idleConnectionsCloseButNotWhileInUse ) {
 	// Unused, it closes after the idle timeout; the next operation reconnects.
 	bool closed = false;
 	for ( int i = 0; i < 200 && !closed; ++i ) {
-		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+		Sys::sleep( Milliseconds( 10 ) );
 		closed = fx.sftp->connectionCount() == 0;
 	}
 	EXPECT_TRUE( closed );
@@ -1310,7 +1324,7 @@ UTEST( SFTP, idleConnectionReleasesItsSocket ) {
 	REQUIRE_OK( waitFor( fx.vfs.stat( server.uri( "testhost" ) ) ) );
 	EXPECT_EQ( before + 1, connectedSockets() );
 	for ( int i = 0; i < 200 && connectedSockets() != before; ++i )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+		Sys::sleep( Milliseconds( 10 ) );
 	EXPECT_EQ( before, connectedSockets() );
 }
 #endif
@@ -1364,14 +1378,14 @@ UTEST( SFTP, pendingPromptsDoNotBlockOtherConnections ) {
 	auto pw = fx.vfs.stat( server.uri( "pw" ) );
 	auto secret = fx.vfs.stat( server.uri( "secret" ) );
 	for ( int i = 0; i < 100 && prompts->pending() < 2; ++i )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+		Sys::sleep( Milliseconds( 50 ) );
 	EXPECT_EQ( 2u, prompts->pending() );
 	auto other = fx.vfs.stat( server.uri( "testhost" ) );
-	ASSERT_EQ( TaskState::Ready, other.waitFor( std::chrono::seconds( 10 ) ) );
+	ASSERT_EQ( TaskState::Ready, other.waitFor( Seconds( 10 ).toChrono() ) );
 	EXPECT_TRUE( std::move( other ).takeValue().hasValue() );
 	prompts->release();
-	EXPECT_EQ( TaskState::Ready, pw.waitFor( std::chrono::seconds( 10 ) ) );
-	EXPECT_EQ( TaskState::Ready, secret.waitFor( std::chrono::seconds( 10 ) ) );
+	EXPECT_EQ( TaskState::Ready, pw.waitFor( Seconds( 10 ).toChrono() ) );
+	EXPECT_EQ( TaskState::Ready, secret.waitFor( Seconds( 10 ).toChrono() ) );
 }
 
 UTEST( SFTP, disconnectCompletesOperationsWaitingForAPrompt ) {
@@ -1382,10 +1396,10 @@ UTEST( SFTP, disconnectCompletesOperationsWaitingForAPrompt ) {
 	SFTPFixture fx( config );
 	auto pending = fx.vfs.stat( server.uri( "pw" ) );
 	for ( int i = 0; i < 200 && auth->pending() == 0; ++i )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+		Sys::sleep( Milliseconds( 10 ) );
 	EXPECT_GT( auth->pending(), 0u );
 	fx.sftp->disconnectAll();
-	auto state = pending.waitFor( std::chrono::seconds( 2 ) );
+	auto state = pending.waitFor( Seconds( 2 ).toChrono() );
 	auth->release();
 	ASSERT_EQ( TaskState::Ready, state );
 	EXPECT_EQ( VFSErrorCode::ConnectionLost, codeOf( std::move( pending ).takeValue() ) );
@@ -1534,7 +1548,7 @@ UTEST( SFTP, agentAuthentication ) {
 	Process agent;
 	ASSERT_TRUE( agent.create( agentBinary, { "-D", "-a", socket } ) );
 	for ( int i = 0; i < 100 && !FileSystem::fileExists( socket ); ++i )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+		Sys::sleep( Milliseconds( 20 ) );
 	Process add;
 	ASSERT_TRUE( add.create( "/bin/sh", { "-c", "SSH_AUTH_SOCK='" + socket + "' '" + addBinary +
 													"' '" + server.dir() + "id_ecdsa'" } ) );
@@ -1556,15 +1570,15 @@ UTEST( SFTP, stalledAgentDoesNotBlockOtherConnections ) {
 	SFTPFixture fx;
 	auto stalled = fx.vfs.stat( server.uri( "stalledagent" ) );
 	for ( int i = 0; i < 200 && !agent.signRequested(); ++i )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 25 ) );
+		Sys::sleep( Milliseconds( 25 ) );
 	EXPECT_TRUE( agent.signRequested() );
 	// The agent waits for a touch: every other session keeps working meanwhile.
 	auto other = fx.vfs.stat( server.uri( "testhost" ) );
-	ASSERT_EQ( TaskState::Ready, other.waitFor( std::chrono::seconds( 10 ) ) );
+	ASSERT_EQ( TaskState::Ready, other.waitFor( Seconds( 10 ).toChrono() ) );
 	EXPECT_TRUE( std::move( other ).takeValue().hasValue() );
 	EXPECT_TRUE( stalled.isPending() );
 	agent.release();
-	ASSERT_EQ( TaskState::Ready, stalled.waitFor( std::chrono::seconds( 10 ) ) );
+	ASSERT_EQ( TaskState::Ready, stalled.waitFor( Seconds( 10 ).toChrono() ) );
 	EXPECT_EQ( VFSErrorCode::AuthenticationFailed, codeOf( std::move( stalled ).takeValue() ) );
 }
 
@@ -1582,10 +1596,10 @@ UTEST( SFTP, cancelledAgentRequestDoesNotWaitForTheAgent ) {
 		resolve( client.sign( keys.value()[0].blob, "payload", "ecdsa-sha2-nistp256" ) );
 	} );
 	for ( int i = 0; i < 200 && !agent.signRequested(); ++i )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+		Sys::sleep( Milliseconds( 10 ) );
 	EXPECT_TRUE( agent.signRequested() );
 	client.cancel();
-	auto state = task.waitFor( std::chrono::seconds( 2 ) );
+	auto state = task.waitFor( Seconds( 2 ).toChrono() );
 	// Also release on failure so a regression cannot hang the suite during thread destruction.
 	agent.release();
 	worker.join();
@@ -1619,7 +1633,7 @@ UTEST( SFTP, remoteWatchThroughAgent ) {
 	EXPECT_TRUE(
 		loop.runUntil( [&] { return events.has( WatchEventType::Added, "remote.txt" ); } ) );
 	FileSystem::makeDir( local + "/sub" );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+	Sys::sleep( Milliseconds( 50 ) );
 	FileSystem::fileWrite( local + "/sub/deep.txt", std::string_view( "x" ) );
 	EXPECT_TRUE(
 		loop.runUntil( [&] { return events.has( WatchEventType::Added, "sub/deep.txt" ); } ) );
@@ -1639,8 +1653,103 @@ UTEST( SFTP, remoteWatchThroughAgent ) {
 		loop.runUntil( [&] { return events.has( WatchEventType::Added, "after.txt" ); } ) );
 }
 
+UTEST( SFTP, refusedWatchChannelsRetryUntilTheEstablishmentDeadline ) {
+	REQUIRE_SSHD();
+	WatchDiagnosticOutput diagnostics;
+	const std::string agent = Sys::getProcessPath() + "../efsw-agent";
+	if ( !FileSystem::fileExists( agent ) )
+		UTEST_SKIP( "efsw-agent not built" );
+	class StatusSink : public WatchSink {
+	  public:
+		explicit StatusSink( URI uri ) : uri( std::move( uri ) ) {}
+
+		void push( WatchEvent&& ) override {}
+
+		void push( std::vector<WatchEvent>&& ) override {}
+
+		void rescanRequired() override {}
+
+		void setStatus( WatchStatus value ) override { status = value; }
+
+		const URI& root() const override { return uri; }
+
+		URI uri;
+		std::atomic<WatchStatus> status{ WatchStatus::Reconnecting };
+	};
+	for ( bool releaseBeforeDeadline : { true, false } ) {
+		SFTPProviderConfig config;
+		config.watchAgentCommand = agent + " --stdio";
+		config.configContextFactory = [dir = server.dir()]( const std::string& host ) {
+			auto context = SSHConfigContext::system( host );
+			context.sources = { { dir + "ssh_config", dir } };
+			return context;
+		};
+		auto impl = std::make_shared<sftp::SFTPProviderImpl>( std::move( config ) );
+		const URI directory = server.uri( "testhost" );
+		auto connected = waitFor( impl->connection( directory ) );
+		REQUIRE_OK( connected );
+		auto connection = std::move( connected ).value();
+		// The SFTP subsystem occupies one of OpenSSH's ten session slots. Keep the other
+		// nine open to force an actual channel refusal, without relying on runner load.
+		auto channels = std::make_shared<std::vector<LIBSSH2_CHANNEL*>>();
+		auto filled = waitFor( connection->submit<void>(
+			{}, directory, [channels]( sftp::SSHConnection& c ) -> std::optional<VFSResult<void>> {
+				while ( channels->size() < 9 ) {
+					auto* channel = libssh2_channel_open_session( c.session() );
+					if ( !channel ) {
+						if ( libssh2_session_last_errno( c.session() ) == LIBSSH2_ERROR_EAGAIN )
+							return std::nullopt;
+						return Err( c.lastError( URI(), "Filling session channels" ) );
+					}
+					channels->push_back( channel );
+				}
+				return Ok();
+			} ) );
+		REQUIRE_OK( filled );
+		VirtualFileSystem vfs;
+		vfs.registerProvider( server.provider() ); // The fallback can enumerate the remote root.
+		RemoteWatchBackend backend( impl, vfs, System::Milliseconds( 1200 ) );
+		auto sink = std::make_shared<StatusSink>( directory );
+		auto watched = backend.watch( directory, {}, sink );
+		// Hold the slots past the old 25+50+100 ms budget. It must still be retrying.
+		EXPECT_EQ( TaskState::Pending, watched.waitFor( Milliseconds( 400 ).toChrono() ) );
+		auto release = [&] {
+			return waitFor( connection->submit<void>(
+				{}, directory,
+				[channels]( sftp::SSHConnection& ) -> std::optional<VFSResult<void>> {
+					while ( !channels->empty() ) {
+						if ( libssh2_channel_free( channels->back() ) == LIBSSH2_ERROR_EAGAIN )
+							return std::nullopt;
+						channels->pop_back();
+					}
+					return Ok();
+				} ) );
+		};
+		if ( releaseBeforeDeadline ) {
+			auto released = release();
+			REQUIRE_OK( released );
+		}
+		ASSERT_EQ( TaskState::Ready, watched.waitFor( Seconds( 3 ).toChrono() ) );
+		auto registration = waitFor( std::move( watched ) );
+		REQUIRE_OK( registration );
+		EXPECT_EQ( releaseBeforeDeadline ? WatchStatus::Active : WatchStatus::Polling,
+				   sink->status.load() );
+		registration.value().reset();
+		if ( !releaseBeforeDeadline ) {
+			auto released = release();
+			REQUIRE_OK( released );
+			// A refusal must not mark the host's agent unavailable for subsequent watches.
+			auto recovered = waitFor( backend.watch( directory, {}, sink ) );
+			REQUIRE_OK( recovered );
+			EXPECT_EQ( WatchStatus::Active, sink->status.load() );
+		}
+		EXPECT_TRUE( connection->isReady() );
+	}
+}
+
 UTEST( SFTP, repeatedWatchStartsFreeTheirChannelsWithoutClosingSFTP ) {
 	REQUIRE_SSHD();
+	WatchDiagnosticOutput diagnostics;
 	std::string agent = Sys::getProcessPath();
 	FileSystem::dirAddSlashAtEnd( agent );
 	agent += "../efsw-agent";
@@ -1662,6 +1771,9 @@ UTEST( SFTP, repeatedWatchStartsFreeTheirChannelsWithoutClosingSFTP ) {
 	for ( int i = 0; i < 24; ++i ) {
 		auto watched = waitFor( fx.vfs.watch( directory ) );
 		REQUIRE_OK( watched );
+		if ( watched.value().status() != WatchStatus::Active )
+			printf( "  Watch restart %d/24 returned %s\n", i + 1,
+					toString( watched.value().status() ) );
 		ASSERT_EQ( WatchStatus::Active, watched.value().status() );
 		watched.value().reset();
 		// A server normally permits ten session channels; repeatedly abandoning them would
@@ -1715,11 +1827,11 @@ UTEST( SFTP, closingTheLastWatchAllowsIdleCleanup ) {
 	auto opened = waitFor( fx.vfs.watch( server.uri( "testhost" ) ) );
 	REQUIRE_OK( opened );
 	WatchHandle watch( std::move( opened ).value() );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+	Sys::sleep( Milliseconds( 100 ) );
 	EXPECT_EQ( 1u, fx.sftp->connectionCount() );
 	watch.reset();
 	for ( int i = 0; i < 200 && fx.sftp->connectionCount() != 0; ++i )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+		Sys::sleep( Milliseconds( 10 ) );
 	EXPECT_EQ( 0u, fx.sftp->connectionCount() );
 }
 
@@ -1733,7 +1845,7 @@ UTEST( SFTP, silentWatchAgentFallsBackToPolling ) {
 	std::string name = uniqueName( "silentwatch" );
 	FileSystem::makeDir( server.remoteRoot() + "/" + name );
 	auto task = fx.vfs.watch( server.uri( "testhost", name ) );
-	ASSERT_EQ( TaskState::Ready, task.waitFor( std::chrono::seconds( 2 ) ) );
+	ASSERT_EQ( TaskState::Ready, task.waitFor( Seconds( 2 ).toChrono() ) );
 	auto opened = std::move( task ).takeValue();
 	REQUIRE_OK( opened );
 	EXPECT_EQ( WatchStatus::Polling, opened.value().status() );

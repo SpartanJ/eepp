@@ -2,13 +2,13 @@
 #define EE_SYSTEMCTIMER_H
 
 #include <eepp/config.hpp>
-#include <eepp/system/time.hpp>
+#include <eepp/system/monotonicclock.hpp>
 
 namespace EE { namespace System {
 
 class EE_API Clock {
   public:
-	/** Clock constructor. Must be called from the same thread that calls GetElapsedTime() */
+	/** Starts an elapsed-time clock. Concurrent reads are safe when no thread restarts it. */
 	Clock();
 
 	~Clock();
@@ -25,7 +25,7 @@ class EE_API Clock {
 	Time getElapsedTimeAndReset();
 
   private:
-	Int64 mRefPoint{ 0 }; //!< Time of last reset in microseconds
+	MonotonicClock::TimePoint mRefPoint; //!< Instant of the last reset
 };
 
 }} // namespace EE::System

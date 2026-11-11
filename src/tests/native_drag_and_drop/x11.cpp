@@ -24,11 +24,14 @@
 #include "../../eepp/window/draganddrop/dragaccess.hpp"
 #include "../../eepp/window/draganddrop/dragmanager.hpp"
 #include "../../eepp/window/draganddrop/x11library.hpp"
-#include <chrono>
 #include <dlfcn.h>
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/window.hpp>
 #include <iostream>
-#include <thread>
+
+using namespace EE::System;
 
 using namespace EE;
 using namespace EE::Window;
@@ -141,7 +144,7 @@ int runAutomatedNativeDragTests() {
 	window->show();
 	window->clear();
 	window->display();
-	std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+	Sys::sleep( Milliseconds( 100 ) );
 	auto drag = DragAndDrop::forWindow( *window );
 	if ( Private::NativeDragAccess::getNativeDragContext( *window ).kind !=
 			 NativeWindowContext::Kind::X11 ||
@@ -276,7 +279,7 @@ int runAutomatedNativeDragTests() {
 		x11.XSync( peer, False );
 		for ( int pump = 0; pump < 10; ++pump ) {
 			window->getInput()->update();
-			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+			Sys::sleep( Milliseconds( 1 ) );
 		}
 		int completions = 0;
 		DragResult result;
@@ -369,10 +372,9 @@ int runAutomatedNativeDragTests() {
 		};
 		x11.XWarpPointer( peer, 0, target, 0, 0, 0, 0, 120, 100 );
 		x11.XFlush( peer );
-		const auto deadline =
-			std::chrono::steady_clock::now() +
-			std::chrono::seconds( scenario == Scenario::StalledIncrementalTransfer ? 15 : 5 );
-		while ( !completions && std::chrono::steady_clock::now() < deadline ) {
+		const auto deadline = MonotonicClock::now() +
+							  Seconds( scenario == Scenario::StalledIncrementalTransfer ? 15 : 5 );
+		while ( !completions && MonotonicClock::now() < deadline ) {
 			window->getInput()->update();
 			while ( x11.XPending( peer ) ) {
 				XEvent event;
@@ -406,14 +408,13 @@ int runAutomatedNativeDragTests() {
 										   : getCursor() != rejectedCursor &&
 												 getCursor() != requestedCursor;
 						};
-						const auto feedbackDeadline =
-							std::chrono::steady_clock::now() + std::chrono::milliseconds( 100 );
+						const auto feedbackDeadline = MonotonicClock::now() + Milliseconds( 100 );
 						do {
 							window->getInput()->update();
 							if ( feedbackMatches() )
 								break;
-							std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
-						} while ( std::chrono::steady_clock::now() < feedbackDeadline );
+							Sys::sleep( Milliseconds( 1 ) );
+						} while ( MonotonicClock::now() < feedbackDeadline );
 						previewPassed &= feedbackMatches();
 						if ( scenario == Scenario::StalledIncrementalTransfer ) {
 							x11.XConvertSelection( peer, selection, uri, property, target,
@@ -526,7 +527,7 @@ int runAutomatedNativeDragTests() {
 					 event.xproperty.state == PropertyNewValue && incremental && !finishedSent )
 					read( false );
 			}
-			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+			Sys::sleep( Milliseconds( 1 ) );
 		}
 		const bool success =
 			completions == 1 &&
@@ -580,7 +581,7 @@ int runAutomatedNativeDragTests() {
 	x11.XSync( peer, False );
 	for ( int pump = 0; pump < 10; ++pump ) {
 		Engine::instance()->updateInput();
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 1 ) );
 	}
 	int legacyCompletions = 0;
 	DragResult legacyResult;
@@ -594,14 +595,14 @@ int runAutomatedNativeDragTests() {
 	x11.XFlush( peer );
 	for ( int pump = 0; pump < 100; ++pump ) {
 		Engine::instance()->updateInput();
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 1 ) );
 	}
 	fakeButton( peer, 1, False, CurrentTime );
 	x11.XFlush( peer );
-	const auto legacyDeadline = std::chrono::steady_clock::now() + std::chrono::seconds( 5 );
-	while ( !legacyCompletions && std::chrono::steady_clock::now() < legacyDeadline ) {
+	const auto legacyDeadline = MonotonicClock::now() + Seconds( 5 );
+	while ( !legacyCompletions && MonotonicClock::now() < legacyDeadline ) {
 		Engine::instance()->updateInput();
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 1 ) );
 	}
 	const bool legacyPassed =
 		legacyStart.status == DragStartStatus::Started && legacyCompletions == 1 &&
@@ -622,7 +623,7 @@ int runAutomatedNativeDragTests() {
 	x11.XSync( peer, False );
 	for ( int pump = 0; pump < 10; ++pump ) {
 		Engine::instance()->updateInput();
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 1 ) );
 	}
 	int destructionCompletions = 0;
 	bool destructionPassed = false;
@@ -653,7 +654,7 @@ int runAutomatedNativeDragTests() {
 	x11.XSync( peer, False );
 	for ( int pump = 0; pump < 10; ++pump ) {
 		Engine::instance()->updateInput();
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 1 ) );
 	}
 	int shutdownCompletions = 0;
 	const auto shutdownStart = DragAndDrop::forWindow( *shutdownWindow )

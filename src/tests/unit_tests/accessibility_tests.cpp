@@ -8,6 +8,7 @@
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/threadpool.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/models/itemlistmodel.hpp>
@@ -781,7 +782,7 @@ UTEST( Accessibility, QueuedNativeInitializationOutlivesRemovedWindows ) {
 	std::promise<void> finished;
 	auto completion = finished.get_future();
 	pool->run( [&finished] { finished.set_value(); } );
-	EXPECT_TRUE( completion.wait_for( std::chrono::seconds( 5 ) ) == std::future_status::ready );
+	EXPECT_TRUE( completion.wait_for( Seconds( 5 ).toChrono() ) == std::future_status::ready );
 	// Join before destroying the callback's promise, including on a failed timeout assertion.
 	pool.reset();
 }

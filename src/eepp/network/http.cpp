@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cctype>
 #include <charconv>
-#include <chrono>
 #include <cstring>
 #include <eepp/core/small_vector.hpp>
 #include <eepp/network/http.hpp>
@@ -16,7 +15,9 @@
 #include <eepp/system/iostreaminflate.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <iostream>
 #include <limits>
 #include <list>
@@ -27,6 +28,8 @@
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 #include <emscripten.h>
 #endif
+
+using namespace EE::System;
 
 using namespace EE::Network::SSL;
 using namespace EE::Network::Private;
@@ -39,8 +42,6 @@ static std::string sDefaultUserAgent = "Mozilla/5.0 (Linux; x86_64) eepp-network
 									   "Chrome/146.0.0.0 AppleWebKit/537.36 Safari/537.36";
 
 namespace {
-
-using SteadyClock = std::chrono::steady_clock;
 
 // How often a request waiting on its socket rechecks cancellation. Well inside the 100 ms Engine
 // shutdown allows running requests to drop their sockets.
@@ -152,7 +153,7 @@ struct Http::ConnectionBudget {
 	 * socket held for queued work that has not started; it waits only while every socket is in
 	 * active use, and those requests make progress. */
 	template <class Abandoned>
-	bool acquire( Abandoned abandoned, std::optional<SteadyClock::time_point> deadline ) {
+	bool acquire( Abandoned abandoned, std::optional<MonotonicClock::TimePoint> deadline ) {
 		for ( ;; ) {
 			Uint64 changes;
 			{
@@ -171,15 +172,14 @@ struct Http::ConnectionBudget {
 			// so it is rechecked at a coarse interval.
 			if ( mWaitHook )
 				mWaitHook();
-			auto wakeAt = SteadyClock::now() +
-						  std::chrono::microseconds( mWaitRecheckInterval.asMicroseconds() );
+			auto wakeAt = MonotonicClock::now() + mWaitRecheckInterval;
 			if ( deadline && *deadline < wakeAt )
 				wakeAt = *deadline;
-			mReleased.wait_until( lock, wakeAt, [&] {
+			mReleased.wait_for( lock, ( wakeAt - MonotonicClock::now() ).toChrono(), [&] {
 				return mChanges != changes || mOpen.load( std::memory_order_acquire ) < getLimit();
 			} );
 			lock.unlock();
-			if ( abandoned() || ( deadline && SteadyClock::now() >= *deadline ) )
+			if ( abandoned() || ( deadline && MonotonicClock::now() >= *deadline ) )
 				return false;
 		}
 	}
@@ -207,14 +207,15 @@ struct Http::ConnectionBudget {
 	void cancelAll();
 
 	/** @return True once no pooled socket is open, waiting at most until the deadline. */
-	bool waitUntilClosed( SteadyClock::time_point deadline ) {
+	bool waitUntilClosed( MonotonicClock::TimePoint deadline ) {
 		std::unique_lock<std::mutex> lock( mMutex );
-		return mReleased.wait_until(
-			lock, deadline, [this] { return mOpen.load( std::memory_order_acquire ) == 0; } );
+		return mReleased.wait_for( lock, ( deadline - MonotonicClock::now() ).toChrono(), [this] {
+			return mOpen.load( std::memory_order_acquire ) == 0;
+		} );
 	}
 
 	/** Arranges for the background timer to expire idle connections no later than when. */
-	void scheduleExpiry( SteadyClock::time_point when );
+	void scheduleExpiry( MonotonicClock::TimePoint when );
 
   private:
 	bool tryAcquire() {
@@ -239,7 +240,7 @@ struct Http::ConnectionBudget {
 	std::condition_variable mServiceCondition;
 	std::vector<std::weak_ptr<ConnectionPool>> mPools;
 	std::vector<std::function<void()>> mTasks;
-	std::optional<SteadyClock::time_point> mNextExpiry;
+	std::optional<MonotonicClock::TimePoint> mNextExpiry;
 	std::thread mServiceThread;
 	std::function<void()> mWaitHook;
 	Time mWaitRecheckInterval{ Milliseconds( 250 ) };
@@ -252,7 +253,7 @@ struct Http::PooledConnection {
 	std::unique_ptr<TcpSocket> socket;
 	SocketSelector selector;
 	std::string key;
-	SteadyClock::time_point lastUsed;
+	MonotonicClock::TimePoint lastUsed;
 	// The lease of queued work this slot is reserved for, until that work starts running.
 	ConnectionLease* parked{ nullptr };
 	bool busy{ true };
@@ -335,7 +336,7 @@ struct Http::ConnectionPool {
 	/** Blocks until a connection is leased, the request is abandoned, or the deadline passes.
 	 * Waiters are served in arrival order per host, so a blocked host never starves another. */
 	bool acquire( Lease& lease, const Http& http, const Request& request,
-				  std::optional<SteadyClock::time_point> deadline ) {
+				  std::optional<MonotonicClock::TimePoint> deadline ) {
 		Discarded discarded;
 		Granted granted;
 		bool done = false;
@@ -351,13 +352,13 @@ struct Http::ConnectionPool {
 		while ( !done ) {
 			// Cancellation through Http wakes waiters at once. A Request copy cancelled directly
 			// cannot reach this pool, so a blocking waiter rechecks it at a coarse interval.
-			auto wakeAt = SteadyClock::now() + std::chrono::milliseconds( 250 );
+			auto wakeAt = MonotonicClock::now() + Milliseconds( 250 );
 			if ( deadline && *deadline < wakeAt )
 				wakeAt = *deadline;
-			condition.wait_until( lock, wakeAt );
+			condition.wait_for( lock, ( wakeAt - MonotonicClock::now() ).toChrono() );
 			if ( done )
 				break;
-			if ( deadline && SteadyClock::now() >= *deadline ) {
+			if ( deadline && MonotonicClock::now() >= *deadline ) {
 				waiters.erase( self );
 				return false;
 			}
@@ -428,9 +429,9 @@ struct Http::ConnectionPool {
 	}
 
 	/** @return When this pool's least recently used idle socket was last used, if it has one. */
-	std::optional<SteadyClock::time_point> oldestIdleSocket() {
+	std::optional<MonotonicClock::TimePoint> oldestIdleSocket() {
 		std::lock_guard<std::mutex> lock( mutex );
-		std::optional<SteadyClock::time_point> oldest;
+		std::optional<MonotonicClock::TimePoint> oldest;
 		for ( const auto& connection : connections ) {
 			if ( !connection->busy && connection->socket &&
 				 ( !oldest || connection->lastUsed < *oldest ) )
@@ -475,14 +476,14 @@ struct Http::ConnectionPool {
 	}
 
 	/** Closes expired idle connections now. @return The next idle expiry, if any remain. */
-	std::optional<SteadyClock::time_point> expireIdleNow() {
+	std::optional<MonotonicClock::TimePoint> expireIdleNow() {
 		Discarded discarded;
 		Granted granted;
-		std::optional<SteadyClock::time_point> next;
+		std::optional<MonotonicClock::TimePoint> next;
 		{
 			std::lock_guard<std::mutex> lock( mutex );
 			expireIdle( discarded );
-			const auto lifetime = std::chrono::microseconds( options.idleTimeout.asMicroseconds() );
+			const auto lifetime = options.idleTimeout;
 			for ( const auto& connection : connections ) {
 				if ( !connection->busy && ( !next || connection->lastUsed + lifetime < *next ) )
 					next = connection->lastUsed + lifetime;
@@ -669,8 +670,8 @@ struct Http::ConnectionPool {
 	}
 
 	void expireIdle( Discarded& discarded ) {
-		const auto now = SteadyClock::now();
-		const auto lifetime = std::chrono::microseconds( options.idleTimeout.asMicroseconds() );
+		const auto now = MonotonicClock::now();
+		const auto lifetime = options.idleTimeout;
 		for ( auto it = connections.begin(); it != connections.end(); ) {
 			if ( !( *it )->busy && now - ( *it )->lastUsed >= lifetime ) {
 				discarded.emplace_back( std::move( *it ) );
@@ -744,7 +745,7 @@ bool Http::ConnectionBudget::reclaimOne() {
 	// Pool mutexes are only ever taken one at a time, never with the budget mutex held.
 	auto pools = livePools();
 	ConnectionPool* oldest = nullptr;
-	SteadyClock::time_point oldestUse;
+	MonotonicClock::TimePoint oldestUse;
 	for ( const auto& pool : pools ) {
 		const auto used = pool->oldestIdleSocket();
 		if ( used && ( !oldest || *used < oldestUse ) ) {
@@ -767,7 +768,7 @@ void Http::ConnectionBudget::cancelAll() {
 	wake();
 }
 
-void Http::ConnectionBudget::scheduleExpiry( SteadyClock::time_point when ) {
+void Http::ConnectionBudget::scheduleExpiry( MonotonicClock::TimePoint when ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	std::lock_guard<std::mutex> lock( mMutex );
 	if ( mNextExpiry && *mNextExpiry <= when )
@@ -812,10 +813,10 @@ void Http::ConnectionBudget::serviceLoop() {
 			lock.lock();
 			continue;
 		}
-		if ( mNextExpiry && SteadyClock::now() >= *mNextExpiry ) {
+		if ( mNextExpiry && MonotonicClock::now() >= *mNextExpiry ) {
 			mNextExpiry.reset();
 			lock.unlock();
-			std::optional<SteadyClock::time_point> next;
+			std::optional<MonotonicClock::TimePoint> next;
 			for ( const auto& pool : livePools() ) {
 				const auto expiresAt = pool->expireIdleNow();
 				if ( expiresAt && ( !next || *expiresAt < *next ) )
@@ -827,7 +828,7 @@ void Http::ConnectionBudget::serviceLoop() {
 			continue;
 		}
 		if ( mNextExpiry )
-			mServiceCondition.wait_until( lock, *mNextExpiry );
+			mServiceCondition.wait_for( lock, ( *mNextExpiry - MonotonicClock::now() ).toChrono() );
 		else
 			mServiceCondition.wait( lock );
 	}
@@ -836,7 +837,7 @@ void Http::ConnectionBudget::serviceLoop() {
 void Http::ConnectionLease::release() {
 	ConnectionPool::Discarded discarded;
 	ConnectionPool::Granted granted;
-	std::optional<SteadyClock::time_point> expiresAt;
+	std::optional<MonotonicClock::TimePoint> expiresAt;
 	{
 		// A reservation can be revoked concurrently, under this mutex: read it only here.
 		std::lock_guard<std::mutex> lock( pool.mutex );
@@ -847,9 +848,8 @@ void Http::ConnectionLease::release() {
 		// so it is not an idle connection.
 		if ( reusable && connection->socket && !pool.closed.load( std::memory_order_acquire ) ) {
 			connection->busy = false;
-			connection->lastUsed = SteadyClock::now();
-			expiresAt = connection->lastUsed +
-						std::chrono::microseconds( pool.options.idleTimeout.asMicroseconds() );
+			connection->lastUsed = MonotonicClock::now();
+			expiresAt = connection->lastUsed + pool.options.idleTimeout;
 		} else {
 			pool.erase( connection, discarded );
 		}
@@ -1598,24 +1598,21 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 
 Http::Response Http::transfer( const Http::Request& request, IOStream& writeTo, Time timeout,
 							   ConnectionPool::Lease* granted, bool async,
-							   std::chrono::steady_clock::time_point* clockOrigin,
-							   Uint64 generation ) {
+							   MonotonicClock::TimePoint* clockOrigin, Uint64 generation ) {
 	// Async requests carry the generation they were created under; a blocking call starts now.
 	if ( !generation )
 		generation = mConnections->generation.load( std::memory_order_acquire );
 	// A blocking call's timeout bounds the whole call, including any wait for a connection. An
 	// async request's clock starts once it holds its first connection: like browsers, requests
 	// queued behind a busy origin only wait, and leave the queue when cancelled or closed.
-	auto started = SteadyClock::now();
+	auto started = MonotonicClock::now();
 	bool clockStarted = !async;
 	if ( clockOrigin )
 		*clockOrigin = started;
 	auto remaining = [&]() {
 		if ( timeout <= Time::Zero )
 			return Time::Zero;
-		const auto elapsed =
-			std::chrono::duration_cast<std::chrono::microseconds>( SteadyClock::now() - started )
-				.count();
+		const auto elapsed = ( MonotonicClock::now() - started ).asMicroseconds();
 		return Microseconds( std::max<Int64>( 1, timeout.asMicroseconds() - elapsed ) );
 	};
 	// Ordinary requests need only the prepared wire-header copy below. Own another Request
@@ -1664,9 +1661,7 @@ Http::Response Http::transfer( const Http::Request& request, IOStream& writeTo, 
 			return current.isCancelled();
 		};
 		auto expired = [&]() {
-			return timeout > Time::Zero &&
-				   SteadyClock::now() - started >=
-					   std::chrono::microseconds( timeout.asMicroseconds() );
+			return timeout > Time::Zero && MonotonicClock::now() - started >= timeout;
 		};
 		auto progress = [&]( const Response& response, Request::Status status, Uint64 total,
 							 Uint64 count ) {
@@ -1681,15 +1676,15 @@ Http::Response Http::transfer( const Http::Request& request, IOStream& writeTo, 
 			if ( granted && granted->connection ) {
 				lease.adopt( *granted );
 			} else {
-				std::optional<SteadyClock::time_point> deadline;
+				std::optional<MonotonicClock::TimePoint> deadline;
 				if ( clockStarted && timeout > Time::Zero )
-					deadline = started + std::chrono::microseconds( timeout.asMicroseconds() );
+					deadline = started + timeout;
 				if ( !connections->acquire( lease, *target, current, deadline ) )
 					return false;
 			}
 			granted = nullptr;
 			if ( !clockStarted ) {
-				started = SteadyClock::now();
+				started = MonotonicClock::now();
 				clockStarted = true;
 				if ( clockOrigin )
 					*clockOrigin = started;
@@ -1730,9 +1725,9 @@ Http::Response Http::transfer( const Http::Request& request, IOStream& writeTo, 
 						return received;
 					// Every open socket counts against the process-wide budget. This request
 					// already holds its slot; it only waits on sockets in active use.
-					std::optional<SteadyClock::time_point> deadline;
+					std::optional<MonotonicClock::TimePoint> deadline;
 					if ( timeout > Time::Zero )
-						deadline = started + std::chrono::microseconds( timeout.asMicroseconds() );
+						deadline = started + timeout;
 					if ( !ConnectionBudget::instance().acquire(
 							 [&] { return cancelled() || expired(); }, deadline ) )
 						return received;
@@ -2106,9 +2101,8 @@ void Http::cancelAllRequests() {
 }
 
 bool Http::waitForConnectionsToClose( Time timeout ) {
-	return ConnectionBudget::instance().waitUntilClosed(
-		SteadyClock::now() +
-		std::chrono::microseconds( std::max<Int64>( 0, timeout.asMicroseconds() ) ) );
+	return ConnectionBudget::instance().waitUntilClosed( MonotonicClock::now() +
+														 std::max( Time::Zero, timeout ) );
 }
 
 void Http::setMaxOpenConnections( std::size_t count ) {

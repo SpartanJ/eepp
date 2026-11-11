@@ -1,4 +1,5 @@
 #include "process_collector_windows.hpp"
+#include <eepp/system/monotonicclock.hpp>
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -16,6 +17,8 @@
 #include <climits>
 #include <cwchar>
 #include <limits>
+
+using namespace EE::System;
 
 namespace eproc {
 
@@ -169,12 +172,10 @@ bool ProcessCollectorWindows::collect( std::vector<ProcessInfo>& processes, Syst
 	++mPass;
 	if ( mPass == 0 )
 		++mPass;
-	const auto sampledAt = std::chrono::steady_clock::now();
-	const Int64 elapsedMicroseconds =
-		mPrevSampleTime.time_since_epoch().count() == 0
-			? 0
-			: std::chrono::duration_cast<std::chrono::microseconds>( sampledAt - mPrevSampleTime )
-				  .count();
+	const auto sampledAt = MonotonicClock::now();
+	const Int64 elapsedMicroseconds = mPrevSampleTime == MonotonicClock::TimePoint{}
+										  ? 0
+										  : ( sampledAt - mPrevSampleTime ).asMicroseconds();
 	mPrevSampleTime = sampledAt;
 
 	SYSTEM_INFO system;

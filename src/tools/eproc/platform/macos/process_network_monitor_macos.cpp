@@ -3,12 +3,15 @@
 #include <charconv>
 #include <csignal>
 #include <eepp/system/log.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <limits>
 #include <string>
 #include <string_view>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <util.h>
+
+using namespace EE::System;
 
 namespace eproc {
 
@@ -84,11 +87,9 @@ void ProcessNetworkMonitorMacOS::applyRates( std::vector<ProcessInfo>& processes
 }
 
 void ProcessNetworkMonitorMacOS::publish( std::unordered_map<Int64, Counters>& current,
-										  std::chrono::steady_clock::time_point sampledAt ) {
+										  MonotonicClock::TimePoint sampledAt ) {
 	mNextRates.clear();
-	const auto elapsed =
-		std::chrono::duration_cast<std::chrono::microseconds>( sampledAt - mPreviousSample )
-			.count();
+	const auto elapsed = ( sampledAt - mPreviousSample ).asMicroseconds();
 	if ( elapsed > 0 ) {
 		mNextRates.reserve( current.size() );
 		for ( const auto& [pid, counters] : current ) {
@@ -136,7 +137,7 @@ void ProcessNetworkMonitorMacOS::readLoop() {
 				line.remove_suffix( 1 );
 			if ( line == ",bytes_in,bytes_out," ) {
 				if ( inSample )
-					publish( current, std::chrono::steady_clock::now() );
+					publish( current, MonotonicClock::now() );
 				current.clear();
 				inSample = true;
 			} else if ( line.starts_with( "nettop:" ) ) {

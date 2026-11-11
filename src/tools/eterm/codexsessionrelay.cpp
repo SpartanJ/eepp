@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
-#include <chrono>
 #include <eepp/core/small_vector.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/network/localsocket.hpp>
@@ -14,8 +13,10 @@
 #include <eepp/network/websocket.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <iostream>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -291,7 +292,7 @@ struct Connection {
 	Direction incoming;
 	const std::string& token;
 	StreamRelay<TcpSocket, LocalSocket> transport;
-	std::chrono::steady_clock::time_point opened{ std::chrono::steady_clock::now() };
+	MonotonicClock::TimePoint opened{ MonotonicClock::now() };
 	bool connected{ false };
 
 	Connection( SelectionState& state, const std::string& token ) :
@@ -351,8 +352,7 @@ struct Relay {
 				if ( !connection )
 					continue;
 				auto& c = *connection;
-				if ( !c.incoming.upgraded &&
-					 std::chrono::steady_clock::now() - c.opened > std::chrono::seconds( 5 ) ) {
+				if ( !c.incoming.upgraded && MonotonicClock::now() - c.opened > Seconds( 5 ) ) {
 					connection.reset();
 					continue;
 				}

@@ -1,6 +1,7 @@
 #ifndef EE_SYSTEM_TIME_HPP
 #define EE_SYSTEM_TIME_HPP
 
+#include <chrono>
 #include <eepp/config.hpp>
 #include <string>
 
@@ -31,6 +32,9 @@ class EE_API Time {
 	**	@return Time in microseconds
 	**	@see asSeconds, asMilliseconds */
 	constexpr Int64 asMicroseconds() const;
+
+	/** Exact microsecond duration for standard-library waits. Preserves negative values. */
+	constexpr std::chrono::microseconds toChrono() const noexcept;
 
 	static const Time Zero; ///< Predefined "zero" time value
 
@@ -66,6 +70,10 @@ constexpr double Time::asMilliseconds() const {
 
 constexpr Int64 Time::asMicroseconds() const {
 	return mMicroseconds;
+}
+
+constexpr std::chrono::microseconds Time::toChrono() const noexcept {
+	return std::chrono::microseconds( mMicroseconds );
 }
 
 constexpr Time Minutes( double amount ) {

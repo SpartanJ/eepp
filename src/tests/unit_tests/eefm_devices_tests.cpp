@@ -2,15 +2,16 @@
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/time.hpp>
+
 #include "../../tools/eefm/devicemonitor.hpp"
 #include "../../tools/eefm/places.hpp"
 #include "utest.hpp"
-#include <chrono>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <mutex>
-#include <thread>
 
 using namespace eefm;
 using namespace EE;
@@ -26,14 +27,14 @@ Place device( const char* path ) {
 }
 
 bool waitForCall( const char* marker ) {
-	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 5 );
+	const auto deadline = MonotonicClock::now() + Seconds( 5 );
 	const auto path = Sys::getEnv( "EEFM_TEST_UDISKS_LOG" );
 	do {
 		std::string calls;
 		if ( FileSystem::fileGet( path, calls ) && calls.find( marker ) != std::string::npos )
 			return true;
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
-	} while ( std::chrono::steady_clock::now() < deadline );
+		Sys::sleep( Milliseconds( 1 ) );
+	} while ( MonotonicClock::now() < deadline );
 	return false;
 }
 
@@ -125,11 +126,11 @@ UTEST( EEFMDevices, UDisksCancellationReleasesTheWorkerPool ) {
 		} );
 		// Cancel only after the service accepted the blocking call, not during discovery.
 		const bool reached = waitForCall( operation.marker );
-		const auto start = std::chrono::steady_clock::now();
+		const auto start = MonotonicClock::now();
 		cancellation.cancel();
 		pool.reset();
 		EXPECT_TRUE( reached );
-		EXPECT_TRUE( std::chrono::steady_clock::now() - start < std::chrono::seconds( 5 ) );
+		EXPECT_TRUE( MonotonicClock::now() - start < Seconds( 5 ) );
 		auto error = std::move( task ).get();
 		ASSERT_TRUE( error.has_value() );
 		EXPECT_FALSE( error->empty() );
@@ -150,11 +151,11 @@ UTEST( EEFMDevices, UDisksDiscoveryCancellationReleasesTheWorkerPool ) {
 		return devices[0].ejectable;
 	} );
 	const bool reached = waitForCall( "GetManagedObjects" );
-	const auto start = std::chrono::steady_clock::now();
+	const auto start = MonotonicClock::now();
 	cancellation.cancel();
 	pool.reset();
 	EXPECT_TRUE( reached );
-	EXPECT_TRUE( std::chrono::steady_clock::now() - start < std::chrono::seconds( 5 ) );
+	EXPECT_TRUE( MonotonicClock::now() - start < Seconds( 5 ) );
 	auto capability = std::move( task ).get();
 	ASSERT_TRUE( capability.has_value() );
 	EXPECT_FALSE( *capability );

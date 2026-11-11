@@ -1,12 +1,14 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+#include <eepp/system/monotonicclock.hpp>
+#include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <uiautomation.h>
 #include <windows.h>
 
 #include <algorithm>
 #include <atomic>
-#include <chrono>
 #include <condition_variable>
 #include <filesystem>
 #include <fstream>
@@ -19,8 +21,9 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <thread>
 #include <vector>
+
+using namespace EE::System;
 
 void testProviderSelectionTeardown();
 
@@ -36,7 +39,7 @@ void testProviderHTMLSemantics();
 
 namespace {
 
-using Clock = std::chrono::steady_clock;
+using TestClock = MonotonicClock;
 
 template <typename T> class ComPtr {
   public:
@@ -182,9 +185,9 @@ class EventRecorder final : public IUIAutomationEventHandler,
 	}
 
 	bool waitFor( size_t marker, const std::function<bool( const ObservedEvent& )>& predicate,
-				  std::chrono::milliseconds timeout ) const {
+				  Time timeout ) const {
 		std::unique_lock<std::mutex> lock( mMutex );
-		return mCondition.wait_for( lock, timeout, [&] {
+		return mCondition.wait_for( lock, timeout.toChrono(), [&] {
 			return std::any_of( mEvents.begin() + std::min( marker, mEvents.size() ), mEvents.end(),
 								predicate );
 		} );
@@ -442,30 +445,29 @@ bool activateWindow( HWND window ) {
 		AttachThreadInput( currentThread, windowThread, FALSE );
 	if ( attachedForeground )
 		AttachThreadInput( currentThread, foregroundThread, FALSE );
-	const auto deadline = Clock::now() + std::chrono::seconds( 2 );
+	const auto deadline = TestClock::now() + Seconds( 2 );
 	do {
 		if ( GetForegroundWindow() == window )
 			return true;
-		std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
-	} while ( Clock::now() < deadline );
+		Sys::sleep( Milliseconds( 20 ) );
+	} while ( TestClock::now() < deadline );
 	return GetForegroundWindow() == window;
 }
 
-template <typename Predicate>
-bool pollUntil( std::chrono::milliseconds timeout, Predicate predicate ) {
-	const auto deadline = Clock::now() + timeout;
+template <typename Predicate> bool pollUntil( Time timeout, Predicate predicate ) {
+	const auto deadline = TestClock::now() + timeout;
 	do {
 		if ( predicate() )
 			return true;
-		std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
-	} while ( Clock::now() < deadline );
+		Sys::sleep( Milliseconds( 20 ) );
+	} while ( TestClock::now() < deadline );
 	return predicate();
 }
 
 ComPtr<IUIAutomationElement> waitForRoot( IUIAutomation* automation, DWORD processId,
 										  const std::wstring& title ) {
 	ComPtr<IUIAutomationElement> result;
-	const bool ready = pollUntil( std::chrono::seconds( 10 ), [&] {
+	const bool ready = pollUntil( Seconds( 10 ), [&] {
 		const HWND window = findWindow( processId, title );
 		if ( !window )
 			return false;
@@ -611,7 +613,7 @@ int wmain( int argc, wchar_t** argv ) {
 	bool processExitedCleanly = false;
 
 	auto record = [&]( const std::string& name, const std::function<void()>& test ) {
-		const auto started = Clock::now();
+		const auto started = TestClock::now();
 		Result result{ name };
 		try {
 			test();
@@ -620,8 +622,7 @@ int wmain( int argc, wchar_t** argv ) {
 		} catch ( const std::exception& exception ) {
 			result.detail = exception.what();
 		}
-		result.milliseconds =
-			std::chrono::duration<double, std::milli>( Clock::now() - started ).count();
+		result.milliseconds = ( TestClock::now() - started ).asMilliseconds();
 		results.emplace_back( result );
 		std::cout << ( result.passed ? "PASS " : "FAIL " ) << result.name << " (" << std::fixed
 				  << std::setprecision( 2 ) << result.milliseconds << " ms)";
@@ -712,7 +713,7 @@ int wmain( int argc, wchar_t** argv ) {
 					save.get(), UIA_InvokePatternId, __uuidof( IUIAutomationInvokePattern ),
 					"Invoke" );
 				requireResult( invoke->Invoke(), "Invoke" );
-				require( pollUntil( std::chrono::seconds( 2 ),
+				require( pollUntil( Seconds( 2 ),
 									[&] {
 										try {
 											auto status =
@@ -735,7 +736,7 @@ int wmain( int argc, wchar_t** argv ) {
 				requireResult( toggle->get_CurrentToggleState( &before ), "CurrentToggleState" );
 				requireResult( toggle->Toggle(), "Toggle" );
 				ToggleState after{};
-				require( pollUntil( std::chrono::seconds( 2 ),
+				require( pollUntil( Seconds( 2 ),
 									[&] {
 										return SUCCEEDED(
 												   toggle->get_CurrentToggleState( &after ) ) &&
@@ -813,7 +814,7 @@ int wmain( int argc, wchar_t** argv ) {
 											event.sender &&
 											runtimeId( event.sender.get() ) == passwordId;
 								 },
-								 std::chrono::seconds( 5 ) ),
+								 Seconds( 5 ) ),
 							 "missing password protection property event" );
 					BOOL actual{};
 					requireResult( password->get_CurrentIsPassword( &actual ),
@@ -870,7 +871,7 @@ int wmain( int argc, wchar_t** argv ) {
 					__uuidof( IUIAutomationExpandCollapsePattern ), "ExpandCollapse" );
 				requireResult( expand->Expand(), "ExpandCollapse.Expand" );
 				ExpandCollapseState state{};
-				require( pollUntil( std::chrono::seconds( 2 ),
+				require( pollUntil( Seconds( 2 ),
 									[&] {
 										return SUCCEEDED( expand->get_CurrentExpandCollapseState(
 												   &state ) ) &&
@@ -917,10 +918,9 @@ int wmain( int argc, wchar_t** argv ) {
 				};
 				auto expect = [&]( const std::function<bool( const ObservedEvent& )>& predicate,
 								   const char* message ) {
-					require(
-						eventRecorder->waitFor( eventMarker, predicate, std::chrono::seconds( 5 ) ),
-						std::string( message ) + "; observed " +
-							eventRecorder->describe( eventMarker ) );
+					require( eventRecorder->waitFor( eventMarker, predicate, Seconds( 5 ) ),
+							 std::string( message ) + "; observed " +
+								 eventRecorder->describe( eventMarker ) );
 				};
 
 				const HWND primaryWindow = findWindow( processId, L"eepp - Accessibility" );
@@ -1005,7 +1005,7 @@ int wmain( int argc, wchar_t** argv ) {
 								 []( const ObservedEvent& event ) {
 									 return event.kind == ObservedEventKind::Focus;
 								 },
-								 std::chrono::seconds( 5 ) ),
+								 Seconds( 5 ) ),
 							 "missing focus changed event" );
 				}
 				expect(
@@ -1053,7 +1053,7 @@ int wmain( int argc, wchar_t** argv ) {
 					close.get(), UIA_InvokePatternId, __uuidof( IUIAutomationInvokePattern ),
 					"Invoke" );
 				requireResult( closeInvoke->Invoke(), "close dynamic window" );
-				require( pollUntil( std::chrono::seconds( 5 ),
+				require( pollUntil( Seconds( 5 ),
 									[&] {
 										return findWindow( processId,
 														   L"eepp - Accessibility Dynamic" ) ==
@@ -1080,7 +1080,7 @@ int wmain( int argc, wchar_t** argv ) {
 			} );
 
 			record( "repeated dynamic window lifecycle", [&] {
-				require( pollUntil( std::chrono::seconds( 5 ),
+				require( pollUntil( Seconds( 5 ),
 									[&] {
 										return findWindow( processId,
 														   L"eepp - Accessibility Dynamic" ) ==
@@ -1105,7 +1105,7 @@ int wmain( int argc, wchar_t** argv ) {
 						close.get(), UIA_InvokePatternId, __uuidof( IUIAutomationInvokePattern ),
 						"Invoke" );
 					requireResult( closeInvoke->Invoke(), "stress close dynamic window" );
-					require( pollUntil( std::chrono::seconds( 5 ),
+					require( pollUntil( Seconds( 5 ),
 										[&] {
 											return findWindow( processId,
 															   L"eepp - Accessibility Dynamic" ) ==
@@ -1117,13 +1117,11 @@ int wmain( int argc, wchar_t** argv ) {
 
 			record( "individual query latency", [&] {
 				for ( size_t index = 0; index < 200; ++index ) {
-					const auto started = Clock::now();
+					const auto started = TestClock::now();
 					BSTR name{};
 					requireResult( primary->get_CurrentName( &name ), "latency name query" );
 					SysFreeString( name );
-					queryLatency.emplace_back(
-						std::chrono::duration<double, std::milli>( Clock::now() - started )
-							.count() );
+					queryLatency.emplace_back( ( TestClock::now() - started ).asMilliseconds() );
 				}
 			} );
 		}
@@ -1136,7 +1134,7 @@ int wmain( int argc, wchar_t** argv ) {
 					close.get(), UIA_InvokePatternId, __uuidof( IUIAutomationInvokePattern ),
 					"Invoke" );
 				requireResult( invoke->Invoke(), "close secondary" );
-				require( pollUntil( std::chrono::seconds( 5 ),
+				require( pollUntil( Seconds( 5 ),
 									[&] {
 										return findWindow( processId,
 														   L"eepp - Accessibility Secondary" ) ==

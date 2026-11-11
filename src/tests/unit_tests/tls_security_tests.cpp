@@ -7,7 +7,7 @@
 #include <eepp/system/clock.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
-#include <thread>
+#include <eepp/system/time.hpp>
 
 using namespace EE;
 using namespace EE::Network;
@@ -45,7 +45,7 @@ class LocalTLSServer {
 				mAvailable = true;
 				break;
 			}
-			std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+			Sys::sleep( Milliseconds( 20 ) );
 		}
 	}
 

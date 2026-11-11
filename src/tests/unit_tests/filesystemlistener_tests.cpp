@@ -2,9 +2,12 @@
 #include "../../tools/ecode/filesystemlisteneroptions.hpp"
 #include "utest.h"
 #include <condition_variable>
+#include <eepp/system/time.hpp>
 #include <future>
 #include <mutex>
 #include <thread>
+
+using namespace EE::System;
 
 using namespace ecode;
 
@@ -74,7 +77,7 @@ UTEST( FileSystemListener, removalWaitsForActiveCallback ) {
 	}
 
 	auto removal = std::async( std::launch::async, [&] { callbackState.removeAndWait( false ); } );
-	EXPECT_EQ( removal.wait_for( std::chrono::milliseconds( 20 ) ), std::future_status::timeout );
+	EXPECT_EQ( removal.wait_for( Milliseconds( 20 ).toChrono() ), std::future_status::timeout );
 	{
 		std::lock_guard<std::mutex> lock( mutex );
 		releaseCallback = true;

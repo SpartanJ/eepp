@@ -7,12 +7,14 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
-#include <chrono>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/vfs.hpp>
 #include <mutex>
-#include <thread>
+
+using namespace EE::System;
 
 namespace vfstest {
 
@@ -74,12 +76,12 @@ class TestLoop : public Executor {
 
 	/** Drains until pred() holds or the timeout expires. */
 	template <typename Pred> bool runUntil( Pred pred, int timeoutMs = 5000 ) {
-		auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds( timeoutMs );
-		while ( std::chrono::steady_clock::now() < end ) {
+		auto end = MonotonicClock::now() + Milliseconds( timeoutMs );
+		while ( MonotonicClock::now() < end ) {
 			drain();
 			if ( pred() )
 				return true;
-			std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+			Sys::sleep( Milliseconds( 5 ) );
 		}
 		drain();
 		return pred();

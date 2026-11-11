@@ -6,11 +6,13 @@
 #include "process_icon_resolver_macos.hpp"
 #include "process_network_monitor_macos.hpp"
 #include <array>
-#include <chrono>
+#include <eepp/system/monotonicclock.hpp>
 #include <unordered_map>
 #include <vector>
 
 namespace eproc {
+
+using namespace EE::System;
 
 class ProcessCollectorMacOS final : public ProcessCollector {
   public:
@@ -41,7 +43,7 @@ class ProcessCollectorMacOS final : public ProcessCollector {
 	ProcessAccounts mAccounts;
 	ProcessIconResolverMacOS mIconResolver;
 	ProcessNetworkMonitorMacOS mNetworkMonitor;
-	std::chrono::steady_clock::time_point mPrevSampleTime;
+	MonotonicClock::TimePoint mPrevSampleTime;
 	std::array<Uint32, 4> mPrevCpuTicks{};
 	std::vector<std::array<Uint32, 4>> mPrevCoreCpuTicks;
 	std::vector<float> mLastCoreCpuUsage;

@@ -1,4 +1,5 @@
 #include "gpu_reader_drm.hpp"
+#include <eepp/system/monotonicclock.hpp>
 
 #include <algorithm>
 #include <cstdio>
@@ -7,6 +8,8 @@
 #include <dirent.h>
 #include <limits.h>
 #include <unistd.h>
+
+using namespace EE::System;
 
 namespace eproc {
 
@@ -118,7 +121,7 @@ bool DrmGpuReader::hasSupportedDevice( const char* drmClassPath ) {
 }
 
 void DrmGpuReader::beginSample() {
-	mSampleTime = std::chrono::steady_clock::now();
+	mSampleTime = MonotonicClock::now();
 	// /dev/dri also exists with the proprietary NVIDIA driver, whose fdinfo is ignored
 	// by readClient(). Avoid walking every process's descriptors when only that driver exists.
 	// Recheck each sample for hotplug; mixed-GPU systems retain the ordinary DRM path.
@@ -185,11 +188,10 @@ void DrmGpuReader::query( long pid, long long startTime, int& usagePercent, long
 			auto& previous = mPrevious[key];
 			if ( previous.pass != 0 && previous.pass + 1 == mPass &&
 				 client.engineNs >= previous.engineNs ) {
-				const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-					mSampleTime - previous.sampledAt );
-				if ( elapsed.count() > 0 ) {
+				const Time elapsed = mSampleTime - previous.sampledAt;
+				if ( elapsed > Time::Zero ) {
 					usage += std::min( 100.0, ( client.engineNs - previous.engineNs ) * 100.0 /
-												  elapsed.count() );
+												  ( elapsed.asSeconds() * 1e9 ) );
 					hasDelta = true;
 				}
 			}

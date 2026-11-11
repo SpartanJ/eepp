@@ -564,6 +564,8 @@ Uint64 Sys::getTicks() {
 }
 
 void Sys::sleep( const Time& time ) {
+	if ( time <= Time::Zero )
+		return;
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	HANDLE timer;
 	LARGE_INTEGER ft;

@@ -1,8 +1,8 @@
 #ifndef EPROC_PROCESS_NETWORK_MONITOR_MACOS_HPP
 #define EPROC_PROCESS_NETWORK_MONITOR_MACOS_HPP
 
-#include <chrono>
 #include <eepp/core/core.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <mutex>
 #include <string_view>
 #include <thread>
@@ -12,6 +12,8 @@
 #include "../../process_info.hpp"
 
 namespace eproc {
+
+using namespace EE::System;
 
 /** Reads nettop's unprivileged per-process byte counters in a background thread. */
 class ProcessNetworkMonitorMacOS {
@@ -36,14 +38,14 @@ class ProcessNetworkMonitorMacOS {
 
 	void readLoop();
 	void publish( std::unordered_map<Int64, Counters>& current,
-				  std::chrono::steady_clock::time_point sampledAt );
+				  MonotonicClock::TimePoint sampledAt );
 
 	mutable std::mutex mMutex;
 	std::unordered_map<Int64, Counters> mPrevious;
 	std::unordered_map<Int64, Rates> mRates;
 	std::unordered_map<Int64, Rates> mNextRates;
 	std::thread mReader;
-	std::chrono::steady_clock::time_point mPreviousSample;
+	MonotonicClock::TimePoint mPreviousSample;
 	int mMaster{ -1 };
 	int mChildPid{ -1 };
 };

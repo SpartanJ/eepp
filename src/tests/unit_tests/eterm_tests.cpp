@@ -2,7 +2,6 @@
 #include "utest.hpp"
 #include <algorithm>
 #include <atomic>
-#include <chrono>
 #include <climits>
 #include <cstdlib>
 #include <deque>
@@ -14,7 +13,9 @@
 #include <eepp/system/compression.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -142,13 +143,13 @@ class SizingProcessFactory : public ProcessFactory {
 static std::shared_ptr<const TerminalSnapshot>
 waitForSnapshot( const std::shared_ptr<TerminalSession>& session,
 				 const std::function<bool( const TerminalSnapshot& )>& predicate,
-				 std::chrono::milliseconds timeout = std::chrono::milliseconds( 1000 ) ) {
-	const auto deadline = std::chrono::steady_clock::now() + timeout;
-	while ( std::chrono::steady_clock::now() < deadline ) {
+				 Time timeout = Milliseconds( 1000 ) ) {
+	const auto deadline = MonotonicClock::now() + timeout;
+	while ( MonotonicClock::now() < deadline ) {
 		auto snapshot = session->snapshot();
 		if ( snapshot && predicate( *snapshot ) )
 			return snapshot;
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 1 ) );
 	}
 	return nullptr;
 }
@@ -497,7 +498,7 @@ UTEST( eterm_display, selection_auto_scroll_uses_only_vertical_widget_bounds ) {
 	display.onMouseDown( { 150, 150 }, EE_BUTTON_LMASK );
 
 	// Keep the auto-scroll timer eligible and leave the input position stale deliberately.
-	std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+	Sys::sleep( Milliseconds( 20 ) );
 	for ( const Vector2i& point :
 		  { Vector2i{ -50, 150 }, Vector2i{ 700, 150 }, Vector2i{ -50, 100 }, Vector2i{ 700, 105 },
 			Vector2i{ -50, 295 }, Vector2i{ 700, 300 } } ) {
@@ -511,7 +512,7 @@ UTEST( eterm_display, selection_auto_scroll_uses_only_vertical_widget_bounds ) {
 	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
 					 return snapshot.scrollPosition == 1;
 				 } ) != nullptr );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+	Sys::sleep( Milliseconds( 20 ) );
 	display.onMouseMove( { 700, 301 }, EE_BUTTON_LMASK );
 	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
 					 return snapshot.scrollPosition == 0;
@@ -524,7 +525,7 @@ UTEST( eterm_display, selection_auto_scroll_uses_only_vertical_widget_bounds ) {
 	motion.motion.x = -50;
 	motion.motion.y = -1;
 	input->processEvent( &motion );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+	Sys::sleep( Milliseconds( 20 ) );
 	display.update( false );
 	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
 					 return snapshot.scrollPosition == 1;
@@ -650,17 +651,17 @@ UTEST( eterm_session, loaded_command_latency_stays_bounded ) {
 	MockPty* ptyPtr = pty.get();
 	auto process = std::make_unique<MockProcess>();
 	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
-	const auto readDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( 100 );
+	const auto readDeadline = MonotonicClock::now() + Milliseconds( 100 );
 	while ( ptyPtr->mBytesRead.load( std::memory_order_relaxed ) == 0 &&
-			std::chrono::steady_clock::now() < readDeadline )
+			MonotonicClock::now() < readDeadline )
 		std::this_thread::yield();
 	ASSERT_TRUE( ptyPtr->mBytesRead.load( std::memory_order_relaxed ) > 0 );
 
-	const auto start = std::chrono::steady_clock::now();
+	const auto start = MonotonicClock::now();
 	auto selection = session->requestSelection();
-	const auto latency = std::chrono::steady_clock::now() - start;
+	const auto latency = MonotonicClock::now() - start;
 	EXPECT_TRUE( selection.has_value() );
-	EXPECT_TRUE( latency < std::chrono::milliseconds( 50 ) );
+	EXPECT_TRUE( latency < Milliseconds( 50 ) );
 }
 
 UTEST( eterm_session, resize_and_output_are_serialized ) {
@@ -880,9 +881,9 @@ UTEST( eterm_session, process_exit_follows_buffered_output_and_final_snapshot ) 
 	auto session = TerminalSession::create( std::move( pty ), std::move( process ), 100 );
 	session->setDataEventsEnabled( true );
 	session->writeRaw( std::string( 3 * 1024, 'Q' ) );
-	const auto readDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( 100 );
+	const auto readDeadline = MonotonicClock::now() + Milliseconds( 100 );
 	while ( ptyPtr->mBytesRead.load( std::memory_order_relaxed ) == 0 &&
-			std::chrono::steady_clock::now() < readDeadline )
+			MonotonicClock::now() < readDeadline )
 		std::this_thread::yield();
 	ASSERT_TRUE( ptyPtr->mBytesRead.load( std::memory_order_relaxed ) > 0 );
 	processPtr->mExited.store( true );
@@ -1384,13 +1385,13 @@ UTEST( eterm, kitty_graphics_animation_delay_waits_for_frames_while_loading ) {
 	// Loading (s=2) on the last frame: nothing advances until another frame is uploaded, so the
 	// worker gets no deadline even after the frame's 1 ms gap expires.
 	EXPECT_TRUE( protocol.handle( "a=a,i=40,c=2,s=2" ).changed );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+	Sys::sleep( Milliseconds( 5 ) );
 	EXPECT_FALSE( protocol.updateAnimations() );
 	EXPECT_GE( protocol.getNextAnimationDelay().asMilliseconds(), 1000.0 );
 	// Looping (s=3) wraps to the first frame, so the frame's gap is a deadline again.
 	EXPECT_TRUE( protocol.handle( "a=a,i=40,s=3" ).changed );
 	EXPECT_LE( protocol.getNextAnimationDelay().asMilliseconds(), 1.0 );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+	Sys::sleep( Milliseconds( 5 ) );
 	EXPECT_TRUE( protocol.updateAnimations() );
 }
 
@@ -3700,7 +3701,7 @@ UTEST( eterm, saturated_read_defers_only_intermediate_draw ) {
 				if ( firstRead ) {
 					firstRead = false;
 					// Force the time budget to expire before the 1024-read limit.
-					std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+					Sys::sleep( Milliseconds( 5 ) );
 				}
 			} );
 		}
@@ -3735,8 +3736,8 @@ UTEST( eterm, sustained_saturated_reads_present_periodically ) {
 	std::string output( 1024 * 1024, 'A' );
 	term->write( output.data(), output.size() );
 
-	const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( 100 );
-	while ( display->mDrawLines == 0 && std::chrono::steady_clock::now() < deadline )
+	const auto deadline = MonotonicClock::now() + Milliseconds( 100 );
+	while ( display->mDrawLines == 0 && MonotonicClock::now() < deadline )
 		term->update();
 	EXPECT_TRUE( display->mDrawLines > 0 );
 }
@@ -5372,7 +5373,7 @@ UTEST( eterm_session, readiness_wait_wakes_for_commands_and_shutdown ) {
 					 []( const TerminalSnapshot& snapshot ) {
 						 return snapshotContains( snapshot, "READY" );
 					 },
-					 std::chrono::milliseconds( 5000 ) ) != nullptr );
+					 Milliseconds( 5000 ) ) != nullptr );
 	// The shell's first command is not timed either: cmd under Wine runs it slowly.
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	session->write( "echo WARM\r", true );
@@ -5383,11 +5384,11 @@ UTEST( eterm_session, readiness_wait_wakes_for_commands_and_shutdown ) {
 		waitForSnapshot(
 			session,
 			[]( const TerminalSnapshot& snapshot ) { return snapshotContains( snapshot, "WARM" ); },
-			std::chrono::milliseconds( 5000 ) ) != nullptr );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 300 ) ); // Let the worker go idle.
+			Milliseconds( 5000 ) ) != nullptr );
+	Sys::sleep( Milliseconds( 300 ) ); // Let the worker go idle.
 	for ( int i = 0; i < 3; ++i ) {
 		const std::string marker = "PING" + std::to_string( i );
-		const auto start = std::chrono::steady_clock::now();
+		const auto start = MonotonicClock::now();
 #if EE_PLATFORM == EE_PLATFORM_WIN
 		session->write( "echo " + marker + "\r", true );
 #else
@@ -5396,12 +5397,12 @@ UTEST( eterm_session, readiness_wait_wakes_for_commands_and_shutdown ) {
 		ASSERT_TRUE( waitForSnapshot( session, [&marker]( const TerminalSnapshot& snapshot ) {
 						 return snapshotContains( snapshot, marker );
 					 } ) != nullptr );
-		EXPECT_TRUE( std::chrono::steady_clock::now() - start < std::chrono::milliseconds( 150 ) );
-		std::this_thread::sleep_for( std::chrono::milliseconds( 300 ) );
+		EXPECT_TRUE( MonotonicClock::now() - start < Milliseconds( 150 ) );
+		Sys::sleep( Milliseconds( 300 ) );
 	}
-	const auto start = std::chrono::steady_clock::now();
+	const auto start = MonotonicClock::now();
 	session->shutdown();
-	EXPECT_TRUE( std::chrono::steady_clock::now() - start < std::chrono::milliseconds( 150 ) );
+	EXPECT_TRUE( MonotonicClock::now() - start < Milliseconds( 150 ) );
 }
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
@@ -5444,8 +5445,8 @@ UTEST( eterm, pending_pty_writes_preserve_order ) {
 	char output[64];
 	size_t consumed = 0;
 	bool ordered = true;
-	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 5 );
-	while ( consumed < chunk.size() * chunks && std::chrono::steady_clock::now() < deadline ) {
+	const auto deadline = MonotonicClock::now() + Seconds( 5 );
+	while ( consumed < chunk.size() * chunks && MonotonicClock::now() < deadline ) {
 		const ssize_t count = ::read( slave.handle(), received, sizeof( received ) );
 		if ( count > 0 ) {
 			for ( ssize_t i = 0; i < count; ++i )
@@ -5453,7 +5454,7 @@ UTEST( eterm, pending_pty_writes_preserve_order ) {
 			consumed += static_cast<size_t>( count );
 		} else {
 			ASSERT_TRUE( count < 0 && ( errno == EAGAIN || errno == EWOULDBLOCK ) );
-			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+			Sys::sleep( Milliseconds( 1 ) );
 		}
 		ASSERT_GE( pty->read( output, sizeof( output ) ), 0 );
 	}
@@ -5492,8 +5493,8 @@ UTEST( eterm, pending_replies_have_a_budget_that_input_does_not_use ) {
 	const auto drainTo = [&]( size_t target, size_t& received, bool& ordered ) {
 		std::vector<char> buffer( 64 * 1024 );
 		char output[64];
-		const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 5 );
-		while ( received < target && std::chrono::steady_clock::now() < deadline ) {
+		const auto deadline = MonotonicClock::now() + Seconds( 5 );
+		while ( received < target && MonotonicClock::now() < deadline ) {
 			const ssize_t count =
 				::read( slave.handle(), buffer.data(), eemin( buffer.size(), target - received ) );
 			for ( ssize_t i = 0; i < count; ++i )
@@ -5576,7 +5577,7 @@ UTEST( eterm_session, large_paste_reaches_a_reading_child_intact ) {
 		[]( const TerminalSnapshot& candidate ) {
 			return snapshotContains( candidate, "LAST-BYTE" );
 		},
-		std::chrono::milliseconds( 5000 ) );
+		Milliseconds( 5000 ) );
 	ASSERT_TRUE( snapshot != nullptr );
 	EXPECT_FALSE( snapshot->processExited );
 }
@@ -5592,7 +5593,7 @@ UTEST( eterm_session, reply_flood_past_the_budget_leaves_the_session_responsive 
 	auto snapshot = waitForSnapshot(
 		session,
 		[]( const TerminalSnapshot& candidate ) { return snapshotContains( candidate, "ALIVE" ); },
-		std::chrono::milliseconds( 10000 ) );
+		Milliseconds( 10000 ) );
 	ASSERT_TRUE( snapshot != nullptr );
 	EXPECT_FALSE( snapshot->processExited );
 }
@@ -5607,7 +5608,7 @@ UTEST( eterm_session, replies_to_a_child_that_never_reads_do_not_block_the_worke
 		waitForSnapshot(
 			session,
 			[]( const TerminalSnapshot& snapshot ) { return snapshotContains( snapshot, "DONE" ); },
-			std::chrono::milliseconds( 5000 ) ) != nullptr;
+			Milliseconds( 5000 ) ) != nullptr;
 	EXPECT_TRUE( finished );
 	// A worker stuck in a write cannot be joined: leak it to fail instead of hanging the suite.
 	if ( !finished )
@@ -5630,7 +5631,7 @@ UTEST( eterm_session, readiness_wait_keeps_output_buffered_at_hangup ) {
 		[]( const TerminalSnapshot& snapshot ) {
 			return snapshot.processExited && snapshotContains( snapshot, "DONE" );
 		},
-		std::chrono::milliseconds( 5000 ) );
+		Milliseconds( 5000 ) );
 	ASSERT_TRUE( snapshot != nullptr );
 	EXPECT_TRUE( snapshotContains( *snapshot, "line2999" ) );
 }
@@ -6411,14 +6412,14 @@ UTEST( eterm_session, program_status_uses_an_ordered_metadata_channel ) {
 	};
 	const auto waitForStatus =
 		[&]( const std::function<bool( const ProgramStatusSnapshot& )>& done ) {
-			const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
+			const auto deadline = MonotonicClock::now() + Seconds( 2 );
 			std::shared_ptr<const ProgramStatusSnapshot> latest;
-			while ( std::chrono::steady_clock::now() < deadline ) {
+			while ( MonotonicClock::now() < deadline ) {
 				if ( auto status = drainStatus() )
 					latest = std::move( status );
 				if ( latest && done( *latest ) )
 					return latest;
-				std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+				Sys::sleep( Milliseconds( 1 ) );
 			}
 			return latest;
 		};
@@ -6439,8 +6440,8 @@ UTEST( eterm_session, program_status_uses_an_ordered_metadata_channel ) {
 	session->writeRaw( std::move( burst ) );
 	int statusEvents = 0;
 	std::shared_ptr<const ProgramStatusSnapshot> latest;
-	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds( 2 );
-	while ( std::chrono::steady_clock::now() < deadline ) {
+	const auto deadline = MonotonicClock::now() + Seconds( 2 );
+	while ( MonotonicClock::now() < deadline ) {
 		for ( auto& event : session->drainEvents() ) {
 			if ( event.type == TerminalSession::EventType::ProgramStatus ) {
 				++statusEvents;
@@ -6449,7 +6450,7 @@ UTEST( eterm_session, program_status_uses_an_ordered_metadata_channel ) {
 		}
 		if ( latest && latest->presentation.percentage == 100 )
 			break;
-		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 1 ) );
 	}
 	ASSERT_TRUE( latest != nullptr );
 	EXPECT_EQ( 100, static_cast<int>( *latest->presentation.percentage ) );

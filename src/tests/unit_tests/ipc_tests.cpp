@@ -2,15 +2,15 @@
 
 #include <algorithm>
 #include <atomic>
-#include <chrono>
 #include <condition_variable>
 #include <cstring>
 #include <eepp/system/ipc.hpp>
 #include <eepp/system/md5.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/time.hpp>
 #include <mutex>
 #include <string>
-#include <thread>
 #include <vector>
 
 #if EE_PLATFORM != EE_PLATFORM_WIN && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -47,7 +47,7 @@ struct Messages {
 
 	bool waitFor( std::size_t count ) {
 		std::unique_lock<std::mutex> lock( mutex );
-		return condition.wait_for( lock, std::chrono::seconds( 3 ),
+		return condition.wait_for( lock, Seconds( 3 ).toChrono(),
 								   [&] { return values.size() >= count; } );
 	}
 
@@ -173,9 +173,9 @@ UTEST( IPC, CloseSurvivesDeletedOrReplacedEndpoint ) {
 		LocalListener replacement;
 		if ( replace )
 			ASSERT_EQ( replacement.listen( path ), Socket::Done );
-		const auto start = std::chrono::steady_clock::now();
+		const auto start = MonotonicClock::now();
 		listener.close();
-		EXPECT_TRUE( std::chrono::steady_clock::now() - start < std::chrono::seconds( 1 ) );
+		EXPECT_TRUE( MonotonicClock::now() - start < Seconds( 1 ) );
 		EXPECT_FALSE( listener.isListening() );
 		if ( replace ) {
 			LocalSocket client;
@@ -215,7 +215,7 @@ UTEST( IPC, KeepsListeningThroughDescriptorExhaustion ) {
 	const int connected =
 		connect( client, reinterpret_cast<sockaddr*>( &address ), sizeof( address ) );
 	// Several back-off periods, each failing accept() with EMFILE.
-	std::this_thread::sleep_for( std::chrono::milliseconds( 350 ) );
+	Sys::sleep( Milliseconds( 350 ) );
 	const bool listening = listener.isListening();
 	// Restore the process-wide limit before any assertion can return or allocate diagnostics.
 	for ( size_t i = 0; i < count; ++i )
@@ -260,7 +260,7 @@ UTEST( IPC, CloseInterruptsPartialClient ) {
 	ASSERT_TRUE( fd >= 0 );
 	const Uint8 partial[]{ 'E', 'E' };
 	ASSERT_EQ( static_cast<ssize_t>( sizeof( partial ) ), write( fd, partial, sizeof( partial ) ) );
-	std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) );
+	Sys::sleep( Milliseconds( 20 ) );
 	listener.close();
 	close( fd );
 }

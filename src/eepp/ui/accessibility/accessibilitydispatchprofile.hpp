@@ -16,6 +16,8 @@ namespace EE { namespace UI {
  * rather than adding console I/O to every native request. */
 class AccessibilityDispatchProfile {
   public:
+	// Preserve fractional microseconds in profiling output; Time intentionally has
+	// integer-microsecond resolution.
 	using Clock = std::chrono::steady_clock;
 
 	explicit AccessibilityDispatchProfile( const char* backend ) : mBackend( backend ) {}

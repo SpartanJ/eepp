@@ -2,11 +2,13 @@
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
 
+#include <eepp/system/time.hpp>
+
 #include <eepp/vfs/providers/localioscheduler.hpp>
 
 #include <algorithm>
-#include <chrono>
 #include <cstring>
+#include <eepp/system/monotonicclock.hpp>
 #include <mutex>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -21,6 +23,8 @@
 #include <sys/mount.h>
 #include <sys/param.h>
 #endif
+
+using namespace EE::System;
 
 namespace EE { namespace VFS {
 
@@ -143,11 +147,10 @@ bool isUnder( const std::string& path, const std::string& root ) {
 template <typename F> auto withMounts( F&& fn ) {
 	static std::mutex mutex;
 	static std::vector<Mount> mounts;
-	static std::chrono::steady_clock::time_point loaded;
+	static MonotonicClock::TimePoint loaded;
 	std::lock_guard<std::mutex> lock( mutex );
-	const auto now = std::chrono::steady_clock::now();
-	if ( loaded == std::chrono::steady_clock::time_point() ||
-		 now - loaded > std::chrono::seconds( 2 ) ) {
+	const auto now = MonotonicClock::now();
+	if ( loaded == MonotonicClock::TimePoint() || now - loaded > Seconds( 2 ) ) {
 		mounts = loadMounts();
 		// The deepest mount first: the one a path is on is the first that contains it. The
 		// tables list mounts oldest first, and a later mount on the same point hides an earlier

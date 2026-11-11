@@ -14,6 +14,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <deque>
+#include <eepp/system/time.hpp>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -28,6 +29,8 @@ using namespace EE::Window;
 using namespace eterm::System;
 
 namespace eterm { namespace Terminal {
+
+using namespace EE::System;
 
 /** Immutable worker-to-UI presentation state. Cell selection is already applied as ATTR_REVERSE. */
 struct TerminalSnapshot {
@@ -221,8 +224,10 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	void clearSearch();
 
 	/** Bounded exact-selection request. Returns no value on timeout or during shutdown. */
-	std::optional<std::string>
-	requestSelection( std::chrono::milliseconds timeout = std::chrono::milliseconds( 50 ) );
+	std::optional<std::string> requestSelection( Time timeout = Milliseconds( 50 ) );
+
+	/** Compatibility overload for callers using standard durations. */
+	std::optional<std::string> requestSelection( std::chrono::milliseconds timeout );
 
   private:
 	class WorkerDisplay;

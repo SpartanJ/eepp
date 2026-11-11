@@ -1,4 +1,5 @@
 #include "process_collector_macos.hpp"
+#include <eepp/system/monotonicclock.hpp>
 
 #include <CoreFoundation/CFNumber.h>
 #include <IOKit/IOKitLib.h>
@@ -17,6 +18,8 @@
 #include <sys/resource.h>
 #include <sys/sysctl.h>
 #include <unistd.h>
+
+using namespace EE::System;
 
 namespace eproc {
 
@@ -87,12 +90,10 @@ void ProcessCollectorMacOS::collectGpu( SystemInfo& sysInfo ) {
 }
 
 bool ProcessCollectorMacOS::collect( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo ) {
-	const auto sampledAt = std::chrono::steady_clock::now();
-	const Int64 elapsedUs =
-		mPrevSampleTime.time_since_epoch().count() == 0
-			? 0
-			: std::chrono::duration_cast<std::chrono::microseconds>( sampledAt - mPrevSampleTime )
-				  .count();
+	const auto sampledAt = MonotonicClock::now();
+	const Int64 elapsedUs = mPrevSampleTime == MonotonicClock::TimePoint{}
+								? 0
+								: ( sampledAt - mPrevSampleTime ).asMicroseconds();
 	mPrevSampleTime = sampledAt;
 	++mPass;
 	processes.clear();

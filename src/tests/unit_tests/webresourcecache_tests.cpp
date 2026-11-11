@@ -1,6 +1,7 @@
 #include "httpserver.hpp"
 #include "utest.hpp"
 
+#include <eepp/system/time.hpp>
 #include <eepp/ui/webresourcecache.hpp>
 
 #include <optional>
@@ -359,7 +360,7 @@ UTEST( WebResourceCache, transportReusesAcrossNavigationAndSharedSessionsButIsol
 								completion->condition.notify_all();
 							} );
 		std::unique_lock<std::mutex> lock( completion->mutex );
-		if ( !completion->condition.wait_for( lock, std::chrono::seconds( 3 ),
+		if ( !completion->condition.wait_for( lock, Seconds( 3 ).toChrono(),
 											  [&] { return completion->done; } ) )
 			completion->data = "timeout";
 		return completion->data;
@@ -385,7 +386,7 @@ UTEST( WebResourceCache, destroyingFinalSessionCancelsRunningTransportWithoutJoi
 	bool releaseServer = false;
 	HTTPTest::Server server( [&]( TcpSocket& socket, const std::string&, unsigned ) {
 		std::unique_lock<std::mutex> lock( serverMutex );
-		serverCondition.wait_for( lock, std::chrono::seconds( 3 ), [&] { return releaseServer; } );
+		serverCondition.wait_for( lock, Seconds( 3 ).toChrono(), [&] { return releaseServer; } );
 		return HTTPTest::Server::respond( socket );
 	} );
 	ASSERT_TRUE( server.isListening() );
@@ -414,7 +415,7 @@ UTEST( WebResourceCache, destroyingFinalSessionCancelsRunningTransportWithoutJoi
 	{
 		std::unique_lock<std::mutex> lock( mutex );
 		cancelledWithoutServerResponse =
-			condition.wait_for( lock, std::chrono::seconds( 2 ), [&] { return workerAvailable; } );
+			condition.wait_for( lock, Seconds( 2 ).toChrono(), [&] { return workerAvailable; } );
 	}
 	{
 		std::lock_guard<std::mutex> lock( serverMutex );
@@ -441,7 +442,7 @@ UTEST( WebResourceCache, destroyingFinalSessionCancelsRunningTransportWithoutJoi
 	{
 		std::unique_lock<std::mutex> lock( resultMutex );
 		EXPECT_TRUE(
-			resultCondition.wait_for( lock, std::chrono::seconds( 2 ), [&] { return done; } ) );
+			resultCondition.wait_for( lock, Seconds( 2 ).toChrono(), [&] { return done; } ) );
 	}
 	cache->destroySession( replacement );
 }
@@ -502,7 +503,7 @@ UTEST( WebResourceCache, redirectCookiesAreAttributedToTheOriginThatSetThem ) {
 						} );
 	{
 		std::unique_lock<std::mutex> lock( mutex );
-		ASSERT_TRUE( condition.wait_for( lock, std::chrono::seconds( 3 ),
+		ASSERT_TRUE( condition.wait_for( lock, Seconds( 3 ).toChrono(),
 										 [&] { return received.has_value(); } ) );
 	}
 	ASSERT_TRUE( received->success );
@@ -544,7 +545,7 @@ UTEST( WebResourceCache, rejectedRedirectNeverLendsCookiesToItsTarget ) {
 						} );
 	{
 		std::unique_lock<std::mutex> lock( mutex );
-		ASSERT_TRUE( condition.wait_for( lock, std::chrono::seconds( 3 ),
+		ASSERT_TRUE( condition.wait_for( lock, Seconds( 3 ).toChrono(),
 										 [&] { return received.has_value(); } ) );
 	}
 	EXPECT_FALSE( received->success );

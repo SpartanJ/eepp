@@ -2,10 +2,14 @@
 #include "vfs_test_utils.hpp"
 #include <condition_variable>
 #include <deque>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/process.hpp>
+#include <eepp/system/time.hpp>
 #include <efsw/agent_protocol.hpp>
 #include <map>
 #include <set>
+
+using namespace EE::System;
 
 using namespace vfstest;
 using EE::System::Process;
@@ -54,7 +58,7 @@ class AgentProcess {
 	std::optional<agent::Frame> waitFor( Uint16 type, int timeoutMs = 5000 ) {
 		std::unique_lock<std::mutex> lock( mMutex );
 		std::optional<agent::Frame> found;
-		mReady.wait_for( lock, std::chrono::milliseconds( timeoutMs ), [&] {
+		mReady.wait_for( lock, Milliseconds( timeoutMs ).toChrono(), [&] {
 			for ( auto it = mFrames.begin(); it != mFrames.end(); ++it ) {
 				if ( it->type == type ) {
 					found = std::move( *it );
@@ -69,8 +73,8 @@ class AgentProcess {
 
 	/** Collects event paths per watch id until pred is satisfied or the timeout expires. */
 	template <typename Pred> bool collectEvents( Pred pred, int timeoutMs = 5000 ) {
-		auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( timeoutMs );
-		while ( std::chrono::steady_clock::now() < deadline ) {
+		auto deadline = MonotonicClock::now() + Milliseconds( timeoutMs );
+		while ( MonotonicClock::now() < deadline ) {
 			auto frame = waitFor( agent::MessageEventBatch, 100 );
 			if ( frame ) {
 				agent::Reader r( frame->payload );

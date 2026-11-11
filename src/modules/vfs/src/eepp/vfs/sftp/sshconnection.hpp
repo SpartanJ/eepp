@@ -9,8 +9,8 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
-#include <chrono>
 #include <deque>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/vfs/sftp/sftpprovider.hpp>
 #include <eepp/vfs/ssh/sshconfig.hpp>
 #include <libssh2_sftp.h>
@@ -19,6 +19,8 @@
 #include <vector>
 
 namespace EE { namespace VFS { namespace sftp {
+
+using namespace EE::System;
 
 /** Callbacks used during connection setup. */
 struct SSHConnectionHooks {
@@ -88,7 +90,7 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	const std::shared_ptr<SSHIOContext>& ioContext() const { return mContext; }
 
 	/** Last activity time (any thread), for idle pooling. */
-	std::chrono::steady_clock::time_point lastUse() const;
+	MonotonicClock::TimePoint lastUse() const;
 
 	// I/O thread API -------------------------------------------------------------------------
 
@@ -100,7 +102,7 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	/** @return Milliseconds until a timer of this connection fires, -1 if none. */
 	int nextTimeoutMs() const;
 
-	std::chrono::milliseconds idleTimeout() const;
+	Time idleTimeout() const;
 
 	/** @return True when the connection stayed idle longer than its idle timeout. */
 	bool idleExpired() const;
@@ -279,10 +281,10 @@ class SSHConnection : public std::enable_shared_from_this<SSHConnection> {
 	std::vector<std::shared_ptr<SSHChannelPump>> mPumps;
 	std::vector<LIBSSH2_SFTP_HANDLE*> mHandles;
 	std::vector<TaskResolver<VFSResult<void>>> mReadyWaiters;
-	std::chrono::steady_clock::time_point mLastUse;
-	std::chrono::steady_clock::time_point mDeadline;
-	std::chrono::steady_clock::time_point mNextKeepalive;
-	std::optional<std::chrono::steady_clock::time_point> mOperationDeadline;
+	MonotonicClock::TimePoint mLastUse;
+	MonotonicClock::TimePoint mDeadline;
+	MonotonicClock::TimePoint mNextKeepalive;
+	std::optional<MonotonicClock::TimePoint> mOperationDeadline;
 	Time mOperationTimeout;
 	Time mConnectTimeout;
 	VFSError mFailure;
