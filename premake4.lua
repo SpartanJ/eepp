@@ -2299,7 +2299,7 @@ solution "eepp"
 		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 			links { "shell32" } -- Recycle Bin (SHFileOperationW)
 		end
-		build_link_configuration( "eefm", true )
+		build_link_configuration( "eefm", false )
 
 	project "eproc"
 		set_kind()

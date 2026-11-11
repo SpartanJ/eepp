@@ -2316,7 +2316,7 @@ workspace "eepp"
 		filter "system:windows"
 			links { "shell32" } -- Recycle Bin (SHFileOperationW)
 		filter {}
-		build_link_configuration( "eefm", true )
+		build_link_configuration( "eefm", false )
 
 	project "eproc"
 		set_kind()
