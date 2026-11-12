@@ -898,3 +898,57 @@ is not considered an active listener, so completed or cancelled waiters do not k
 The 100 ms interval is a practical coalescing window: the user confirmed that it avoids repeated,
 expensive relayout in applications such as Codex and Claude. That behavior is preserved by fixing
 the initial restore geometry instead of changing subsequent resize notifications.
+
+## Codex launch directory regression (2026-11-12)
+
+The local recovery relay passed `--remote` with its loopback endpoint but no explicit cwd. Codex
+0.167.2 treats that endpoint as a remote workspace, so its default directory came from the daemon
+instead of the invoking shell. Starting the daemon in directory A, changing to directory B, and
+running `codex` therefore still opened A. Relative `-C`/`--cd` overrides also resolved at the server.
+This changed workspace selection before any session recovery took place.
+
+`CodexSessionRelay::run()` now supplies the helper process's current directory through `--cd`.
+The existing invocation parser also reports the index of an explicit directory option, so the
+relay preserves that option and resolves a relative value against the invoking shell. It handles
+separate and equals forms without confusing option values or text after `--` with directory flags.
+Standalone, one-shot, explicit-remote and otherwise bypassed invocations retain their original argv.
+Restoration still changes to the saved descriptor's cwd before launching, which is now forwarded
+explicitly to the daemon as well. Failure to determine the launch cwd stops the attempt with a
+message instead of falling back to an unrelated daemon workspace.
+
+Validation:
+
+- The new regression failed against the old binary before implementation. After the configured
+  SDL3 release Ninja rebuild, all six relay tests passed, covering shell `cd` through Bash, zsh
+  and fish, quoted/Unicode paths, explicit absolute/relative directory flags, resume, daemon
+  startup, unchanged bypass argv, and the existing transport/selection cases.
+- The six applicable hook/prompt recovery checks also passed; one PowerShell check was skipped
+  because PowerShell was unavailable.
+- An isolated real Codex 0.167.2 app server started in A reproduced the wrong directory with a
+  remote TUI launched from B. The rebuilt eterm helper displayed B against that same server;
+  a relative `-C` selected B's requested subdirectory. The disposable server used a refused
+  localhost provider endpoint, with no account credentials, prompt submission or model calls.
+- macOS and Windows runtime checks were not repeated. New path expectations resolve temporary
+  directories to account for macOS's `/tmp` symlink.
+
+Allocation/layout review: no instance members, object layouts or framework APIs changed. Cwd
+resolution and option inspection run once in the CLI helper, outside the application/render path.
+The argv vector reserves its final capacity once; its endpoint and resolved directory strings are
+moved into it where possible. Existing explicit argv is copied for child-process ownership;
+inline directory options retain their prefix while replacing only the path. No new async handoff,
+polling, transcript reads or daemon lifecycle changes were added.
+
+### Claude cwd verification
+
+Claude does not use the Codex relay or a launch wrapper. Real Claude 2.1.322 was checked in
+headless eterm with Bash and fish: each shell started in A, changed to B (containing spaces, an
+apostrophe and Unicode), and launched a fresh Claude session. Both the native process cwd and
+the SessionStart descriptor's cwd were B. Pane teardown removed the private plugin directory.
+The five existing recovery checks also passed, including exact Claude resume argv and execution
+in a saved cwd that differs from the shell's startup cwd. Restore changes cwd before invoking
+`claude --resume <id>`, so no corresponding launch-directory fix was necessary.
+
+These real launches used the existing login without submitting a prompt or accepting authentication
+or trust dialogs. They produced no durable conversation transcript, so real conversation reopening
+was not exercised; resume cwd/argv was checked with the existing executable fixtures. macOS and
+Windows runtime verification was not repeated.

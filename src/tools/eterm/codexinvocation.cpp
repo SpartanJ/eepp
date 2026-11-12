@@ -4,7 +4,10 @@
 
 namespace eterm {
 
-bool CodexInvocation::interactive( const std::vector<std::string>& arguments ) {
+bool CodexInvocation::interactive( const std::vector<std::string>& arguments,
+								   size_t* directoryOption ) {
+	if ( directoryOption )
+		*directoryOption = std::string::npos;
 	bool selection = false;
 	bool prompt = false;
 	for ( size_t i = 0; i < arguments.size(); ++i ) {
@@ -41,6 +44,8 @@ bool CodexInvocation::interactive( const std::vector<std::string>& arguments ) {
 			"--no-alt-screen", "--search",
 			"--last",		   "--all" };
 		if ( std::find( std::begin( Values ), std::end( Values ), flag ) != std::end( Values ) ) {
+			if ( directoryOption && ( flag == "-C" || flag == "--cd" ) )
+				*directoryOption = i;
 			if ( equals == std::string_view::npos && ++i >= arguments.size() )
 				return false;
 		} else if ( std::find( std::begin( Flags ), std::end( Flags ), flag ) ==
@@ -52,8 +57,8 @@ bool CodexInvocation::interactive( const std::vector<std::string>& arguments ) {
 	return true;
 }
 
-bool CodexInvocation::relay( const std::vector<std::string>& arguments ) {
-	if ( !interactive( arguments ) )
+bool CodexInvocation::relay( const std::vector<std::string>& arguments, size_t* directoryOption ) {
+	if ( !interactive( arguments, directoryOption ) )
 		return false;
 	return std::find( arguments.begin(), arguments.end(), "--no-daemon" ) == arguments.end();
 }

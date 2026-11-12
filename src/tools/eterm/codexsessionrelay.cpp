@@ -420,12 +420,12 @@ struct Relay {
 	}
 };
 
-bool bypass( const std::vector<std::string>& arguments ) {
+bool bypass( const std::vector<std::string>& arguments, size_t& directoryOption ) {
 	const auto shell = Sys::getEnv( "ETERM_HARNESS_SHELL_PID" );
 	if ( Sys::getEnv( "ETERM_HARNESS_DIRECTORY" ).empty() || shell.empty() ||
 		 std::to_string( Sys::getProcessInfo( Sys::getProcessID() ).parentID ) != shell )
 		return true;
-	return !CodexInvocation::relay( arguments );
+	return !CodexInvocation::relay( arguments, &directoryOption );
 }
 
 } // namespace
@@ -436,8 +436,36 @@ int CodexSessionRelay::run( const std::vector<std::string>& arguments ) {
 		std::cerr << "eterm: codex executable is unavailable.\n";
 		return 127;
 	}
-	if ( bypass( arguments ) )
+	size_t directoryOption = std::string::npos;
+	if ( bypass( arguments, directoryOption ) )
 		return Process::runForeground( executable, arguments );
+	// The loopback relay makes Codex treat the local daemon as a remote workspace. Without
+	// --cd it uses the daemon's cwd, not this shell's cwd; relative overrides resolve there too.
+	// Forward the local launch directory explicitly, retaining any user-supplied override.
+	size_t directoryValue = directoryOption;
+	size_t directoryPrefix = 0;
+	std::string workingDirectory;
+	if ( directoryOption != std::string::npos ) {
+		const auto equals = arguments[directoryOption].find( '=' );
+		if ( equals == std::string::npos )
+			++directoryValue;
+		else
+			directoryPrefix = equals + 1;
+		workingDirectory = arguments[directoryValue].substr( directoryPrefix );
+	}
+	if ( directoryOption == std::string::npos ||
+		 ( !workingDirectory.empty() && FileSystem::isRelativePath( workingDirectory ) ) ) {
+		auto current = FileSystem::getCurrentWorkingDirectory();
+		if ( current.empty() ) {
+			std::cerr << "eterm: could not determine the Codex launch directory.\n";
+			return 1;
+		}
+		if ( !workingDirectory.empty() ) {
+			FileSystem::dirAddSlashAtEnd( current );
+			current += workingDirectory;
+		}
+		workingDirectory = std::move( current );
+	}
 	const auto home = Sys::getEnv( "CODEX_HOME" );
 	const auto defaultSocket = ( home.empty() ? Sys::getUserDirectory() + "/.codex" : home ) +
 							   "/app-server-control/app-server-control.sock";
@@ -462,7 +490,7 @@ int CodexSessionRelay::run( const std::vector<std::string>& arguments ) {
 	}
 	probe.disconnect();
 	Relay relay( Sys::getEnv( "ETERM_HARNESS_DIRECTORY" ), home, upstream );
-	const auto remote = relay.listen();
+	auto remote = relay.listen();
 	if ( remote.empty() ) {
 		std::cerr << "eterm: could not create the private Codex relay.\n";
 		return 1;
@@ -474,14 +502,31 @@ int CodexSessionRelay::run( const std::vector<std::string>& arguments ) {
 			std::cerr << "eterm: Codex relay transport failed.\n";
 		}
 	} );
-	std::vector<std::string> args{ "--remote", remote };
+	std::vector<std::string> args;
+	args.reserve( arguments.size() + 6 );
+	args.emplace_back( "--remote" );
+	args.emplace_back( std::move( remote ) );
 	std::unordered_map<std::string, std::string> environment{ { "ETERM_HARNESS_DIRECTORY", "" } };
 	if ( !relay.token.empty() ) {
 		environment["ETERM_CODEX_RELAY_TOKEN"] = relay.token;
 		args.emplace_back( "--remote-auth-token-env" );
 		args.emplace_back( "ETERM_CODEX_RELAY_TOKEN" );
 	}
+	if ( directoryOption == std::string::npos ) {
+		args.emplace_back( "--cd" );
+		args.emplace_back( std::move( workingDirectory ) );
+	}
+	const auto firstArgument = args.size();
 	args.insert( args.end(), arguments.begin(), arguments.end() );
+	if ( directoryOption != std::string::npos ) {
+		auto& value = args[firstArgument + directoryValue];
+		if ( directoryPrefix ) {
+			value.resize( directoryPrefix );
+			value += workingDirectory;
+		} else {
+			value = std::move( workingDirectory );
+		}
+	}
 	return Process::runForeground( executable, args, environment );
 }
 

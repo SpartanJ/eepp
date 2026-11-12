@@ -222,6 +222,10 @@ that pane from matched protocol responses. The normal TUI and daemon handle auth
 configuration, tools and approvals. This mode needs no capture hook. If the default daemon is
 absent, eterm asks Codex to start it; it never restarts a running daemon.
 
+Each launch passes the shell's current directory explicitly, so changing directories before running
+`codex` selects that workspace even when the daemon started elsewhere. Explicit `-C`/`--cd`
+overrides are retained; relative overrides resolve against the launching shell's directory.
+
 `codex --no-daemon` uses standalone operation and the trusted SessionStart hook. Recovery saves
 and restores the mode. On Windows, daemon mode requires native `codex.exe` on PATH; npm-only shims without an accessible
 native executable are not resolved automatically.

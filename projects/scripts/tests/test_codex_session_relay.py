@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import socket
 import struct
 import subprocess
@@ -11,7 +12,7 @@ import tempfile
 import threading
 import time
 import unittest
-from test_harness_session_recovery import BINARY, SESSION, descriptor, environment
+from test_harness_session_recovery import ASSETS, BINARY, SESSION, descriptor, environment
 
 OTHER=SESSION[:-1]+'0'
 
@@ -59,6 +60,9 @@ def header(sock):
 def mock_client():
     """The fixture only talks to its test server; it never launches an actual Codex process."""
     args=sys.argv[1:]
+    if os.environ.get('TEST_REPORT_LAUNCH'):
+        print(json.dumps(dict(args=args,cwd=os.getcwd())),flush=True)
+        return
     if args==['app-server','daemon','start']:
         root=Path(os.environ['TEST_RECORD_DIRECTORY'])
         with (root/'daemon-started').open('a') as log: log.write('start\n')
@@ -70,6 +74,8 @@ def mock_client():
         print(json.dumps(args),flush=True)
         return
     remote=args[1]
+    # A loopback --remote connection must explicitly retain this local launch's cwd.
+    assert args[4:6]==['--cd',os.environ['TEST_EXPECT_CWD']],args
     from urllib.parse import urlparse
     parsed=urlparse(remote);endpoint=(parsed.hostname,parsed.port)
     probe=socket.socket(socket.AF_INET,socket.SOCK_STREAM);probe.connect(endpoint);probe.close()
@@ -229,6 +235,64 @@ class CodexRelay(unittest.TestCase):
     def test_transport_probes_fragmentation_connections_approvals_and_capture(self):
         self.transport(False)
 
+    def test_relay_uses_current_directory_and_respects_explicit_cd(self):
+        with tempfile.TemporaryDirectory(dir='/tmp') as temp:
+            root=Path(temp).resolve();env=self.make_cli(root)
+            current=root/"changed directory ' é";current.mkdir()
+            relative="override ' é";(current/relative).mkdir()
+            absolute=str(root/'absolute override');Path(absolute).mkdir()
+            upstream=root/'server.sock';server=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
+            server.bind(str(upstream));server.listen(64)
+            env.update(ETERM_CODEX_SOCKET=str(upstream),TEST_REPORT_LAUNCH='1')
+            cases=[([],['--cd',str(current)]),
+                   (['--','--cd'],['--cd',str(current),'--','--cd']),
+                   (['-c','--cd'],['--cd',str(current),'-c','--cd']),
+                   (['fix the build'],['--cd',str(current),'fix the build'])]
+            for flag in ('-C','--cd'):
+                cases.extend([([flag,relative],[flag,str(current/relative)]),
+                              ([flag+'='+relative],[flag+'='+str(current/relative)]),
+                              ([flag,absolute],[flag,absolute]),
+                              (['resume',SESSION,flag,relative],
+                               ['resume',SESSION,flag,str(current/relative)])])
+            try:
+                for arguments,expected in cases:
+                    with self.subTest(arguments=arguments):
+                        result=subprocess.run([str(BINARY),'--harness-session','codex','--',*arguments],
+                            cwd=current,env=env,capture_output=True,text=True,timeout=5)
+                        self.assertEqual(result.returncode,0,result.stderr)
+                        launched=json.loads(result.stdout)
+                        self.assertEqual(launched['cwd'],str(current))
+                        self.assertEqual(launched['args'][4:],expected)
+            finally:
+                server.close()
+
+    def test_shell_cd_before_codex_reaches_the_relay(self):
+        for shell in filter(None,(shutil.which('bash'),shutil.which('zsh'),shutil.which('fish'))):
+            with self.subTest(shell=shell),tempfile.TemporaryDirectory(dir='/tmp') as temp:
+                root=Path(temp).resolve();env=self.make_cli(root)
+                initial=root/'initial';initial.mkdir();changed=root/"changed ' é";changed.mkdir()
+                upstream=root/'server.sock';server=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
+                server.bind(str(upstream));server.listen(4)
+                env.update(ETERM_CODEX_SOCKET=str(upstream),TEST_REPORT_LAUNCH='1',
+                    ETERM_HARNESS_EMULATOR_PID=str(os.getpid()),LAUNCH_DIRECTORY=str(changed))
+                if Path(shell).name=='fish':
+                    env['ADAPTER']=str(ASSETS/'harness-session.fish')
+                    command=[shell,'--no-config','-c',
+                             'source "$ADAPTER"; cd "$LAUNCH_DIRECTORY"; codex; set result $status; exit $result']
+                else:
+                    env.update(ADAPTER=str(ASSETS/'harness-session.sh'),
+                               COMMON=str(ASSETS/'directory-reporting.sh'))
+                    command=[shell,'-c','source "$COMMON"; source "$ADAPTER"; '
+                             'cd "$LAUNCH_DIRECTORY"; codex; result=$?; exit $result']
+                try:
+                    result=subprocess.run(command,cwd=initial,env=env,capture_output=True,text=True,timeout=5)
+                    self.assertEqual(result.returncode,0,result.stderr)
+                    launched=json.loads(result.stdout)
+                    self.assertEqual(launched['cwd'],str(changed))
+                    self.assertEqual(launched['args'][4:],['--cd',str(changed)])
+                finally:
+                    server.close()
+
     def test_daemon_resume_uses_exact_id_and_same_transport(self):
         self.transport(True)
 
@@ -323,6 +387,7 @@ class CodexRelay(unittest.TestCase):
                 record=descriptor(root,mode='daemon');record['socket']=str(upstream)
                 env.update(ETERM_RESUME_SESSION=json.dumps(record),EXPECT_RESUME='1')
             command=[str(BINARY),'--harness-session',*(['resume'] if resume else ['codex','--'])]
+            env['TEST_EXPECT_CWD']=str(root.resolve()) if resume else os.getcwd()
             child=subprocess.Popen(command,env=env,
                 stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
             try:
