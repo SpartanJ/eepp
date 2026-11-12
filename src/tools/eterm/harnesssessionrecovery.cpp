@@ -225,9 +225,18 @@ void HarnessSessionRecovery::publish( const std::string& directory, const nlohma
 		FileSystem::fileRemove( path );
 }
 
+const std::string& HarnessSessionRecovery::executablePath() {
+	static const std::string path = Sys::getProcessFilePath();
+	return path;
+}
+
 std::optional<int> HarnessSessionRecovery::command( int argc, char* argv[] ) {
-	if ( argc < 2 || std::string_view( argv[1] ) != "--harness-session" )
+	if ( argc < 2 || std::string_view( argv[1] ) != "--harness-session" ) {
+		// Resolve before App starts: after a rebuild, Linux's /proc/self/exe follows the old
+		// unlinked inode and appends " (deleted)" even when a replacement exists at this path.
+		executablePath();
 		return {};
+	}
 	const std::string_view operation = argc > 2 ? argv[2] : "";
 	const auto directory = Sys::getEnv( "ETERM_HARNESS_DIRECTORY" );
 	try {
@@ -366,23 +375,23 @@ HarnessSessionRecovery::prepare( std::unordered_map<std::string, std::string>& e
 	}
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	const auto helper = FileSystem::fileRemoveFileName( Sys::getProcessFilePath() ) +
+	const auto helper = FileSystem::fileRemoveFileName( executablePath() ) +
 #ifdef EE_DEBUG
 						"eterm-session-debug.exe";
 #else
 						"eterm-session.exe";
 #endif
-	if ( !FileSystem::fileExists( helper ) ) {
-		Log::warning( "eterm: harness session recovery could not start: console helper '%s' is "
-					  "missing. Reinstall eterm with eterm-session.exe beside the application.",
+#else
+	const auto& helper = executablePath();
+#endif
+	if ( helper.empty() || !FileSystem::fileExists( helper ) ) {
+		Log::warning( "eterm: harness session recovery could not start: helper '%s' is "
+					  "missing. Restore the eterm installation and restart the application.",
 					  helper.c_str() );
 		FileSystem::dirRemoveAll( directory );
 		return {};
 	}
 	environment["ETERM_HARNESS_BINARY"] = helper;
-#else
-	environment["ETERM_HARNESS_BINARY"] = Sys::getProcessFilePath();
-#endif
 	// Claude loads this hook only for the pane's session, alongside the user's settings and
 	// plugins. Exec-form arguments keep helper paths literal on every platform, with no shell.
 	nlohmann::json plugin{ { "name", "eterm-session-recovery" }, { "version", "1.0.0" } };

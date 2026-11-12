@@ -952,3 +952,31 @@ These real launches used the existing login without submitting a prompt or accep
 or trust dialogs. They produced no durable conversation transcript, so real conversation reopening
 was not exercised; resume cwd/argv was checked with the existing executable fixtures. macOS and
 Windows runtime verification was not repeated.
+
+## Executable replacement while eterm is running (2026-11-12)
+
+Opening a new recovery-enabled fish tab after rebuilding eterm could print
+`bin/eterm (deleted): command not found`. `prepare()` queried `Sys::getProcessFilePath()` for
+each pane. On Linux that reads `/proc/self/exe`, which keeps referring to the old executable inode
+after replacement. Its ` (deleted)` annotation lasts for the running process's lifetime even while
+a replacement exists at the original pathname. Linkers that move aside the previous executable
+can also leave the kernel reporting that temporary name instead of the launch name.
+
+`HarnessSessionRecovery::command()` now retains the executable path before constructing App.
+New panes use this saved launch path for the native helper and the temporary Claude plugin, so
+they execute the replacement installed at that path. The helper's existence is checked before
+publishing the recovery environment. If it is missing, the private directory is removed and the
+pane starts without recovery; a log message identifies the missing helper. This remains
+application launch policy and does not change the framework's executable-path API semantics.
+
+Validation: the new Linux regression reproduced the old failure with a disposable running binary,
+then used the inspector to open another fish tab. After the release Ninja rebuild, direct
+replacement, moving aside/unlinking the old executable, and removal without replacement all
+passed. Checks cover successful shell attachment, the Claude plugin's executable path, clean
+opt-out when the helper is missing, and private-directory teardown. The existing recovery and
+relay checks also passed. These checks use headless windows and no harness accounts or model calls.
+
+Allocation/layout review: one immutable path string is retained for the process lifetime, avoiding
+repeated executable-path queries and temporary strings during pane creation. No instance members,
+object layouts or async captures changed. The existence check runs only when preparing a pane;
+there is no per-frame work or background polling.

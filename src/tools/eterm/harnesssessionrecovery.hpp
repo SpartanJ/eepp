@@ -25,7 +25,8 @@ class HarnessSessionRecovery {
   public:
 	~HarnessSessionRecovery();
 
-	/** Dispatch before constructing App. Hook mode is silent and reads bounded JSON from stdin. */
+	/** Dispatch before constructing App, retaining the executable's launch path before a rebuild
+	 * can replace it. Hook mode is silent and reads bounded JSON from stdin. */
 	static std::optional<int> command( int argc, char* argv[] );
 
 	/** Shared metadata operations for hooks and daemon thread-selection responses. */
@@ -47,6 +48,8 @@ class HarnessSessionRecovery {
 	nlohmann::json capture( const UITerminal* terminal ) const;
 
   private:
+	static const std::string& executablePath();
+
 	UnorderedMap<const UITerminal*, std::string> mDirectories;
 };
 

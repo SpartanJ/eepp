@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -29,6 +30,97 @@ def descriptor(directory, kind='codex', mode='standalone'):
 
 @unittest.skipUnless(BINARY.exists(), 'Build eterm first')
 class HarnessRecovery(unittest.TestCase):
+    @unittest.skipUnless(sys.platform=='linux' and shutil.which('fish'),
+                         'Executable replacement regression needs Linux /proc and fish')
+    def test_new_tabs_after_executable_replacement(self):
+        for operation in ('replace','rename','remove'):
+            with self.subTest(operation=operation),tempfile.TemporaryDirectory() as temp:
+                root=Path(temp).resolve();bindir=root/'bin';bindir.mkdir()
+                executable=bindir/'eterm';shutil.copy2(BINARY,executable)
+                (bindir/'assets').symlink_to(ROOT/'bin/assets',target_is_directory=True)
+                (root/'libs').symlink_to(ROOT/'libs',target_is_directory=True)
+                profile=root/'profile';profile.mkdir();records=root/'records';records.mkdir()
+                (profile/'config.cfg').write_text('[terminal]\nshell='+shutil.which('fish')+
+                    '\nrecover_harness_sessions=true\nrestore_last_session=false\n')
+                writer=root/'writer.py'
+                writer.write_text('import os,json\nfrom pathlib import Path\n'
+                    'directory=os.getenv("ETERM_HARNESS_DIRECTORY","")\n'
+                    'manifest=Path(directory,".claude-plugin/plugin.json")\n'
+                    'plugin=json.loads(manifest.read_text()) if directory and manifest.exists() else None\n'
+                    'value=dict(helper=os.getenv("ETERM_HARNESS_BINARY",""),directory=directory,'
+                    'shell=os.getenv("ETERM_HARNESS_SHELL_PID",""),plugin=plugin)\n'
+                    'Path(os.environ["ETERM_TEST_RECORDS"],str(os.getppid())+".json").write_text(json.dumps(value))\n')
+                env=dict(os.environ,ETERM_CONFIG_PATH=str(profile),EEPP_RUNTIME='headless',
+                    EEPP_INSPECTOR='1',EEPP_INSPECTOR_PORT='0',
+                    EEPP_INSPECTOR_TOKEN='eterm-rebuild-regression',
+                    ETERM_TEST_RECORDS=str(records),ETERM_TEST_WRITER=str(writer),
+                    ETERM_TEST_PYTHON=sys.executable)
+                for key in tuple(env):
+                    if key.startswith('ETERM_HARNESS_') or key in (
+                            'ETERM_RESUME_SESSION','ETERM_SHELL_INTEGRATION','CLAUDE_CODE_PLUGIN_DIRS'):
+                        env.pop(key,None)
+                log_path=root/'log';log=log_path.open('w')
+                child=subprocess.Popen([str(executable),'--shell-args=--no-config\n--init-command\n'
+                    'command "$ETERM_TEST_PYTHON" "$ETERM_TEST_WRITER"'],
+                    env=env,stdout=log,stderr=log)
+                inspector=None
+                def wait_for(predicate):
+                    deadline=time.monotonic()+10
+                    while time.monotonic()<deadline and child.poll() is None:
+                        if predicate(): return
+                        time.sleep(.02)
+                    self.fail('Timed out waiting for eterm: '+log_path.read_text()[-2000:])
+                def key(value):
+                    result=subprocess.run([sys.executable,str(ROOT/'projects/scripts/eepp-inspect.py'),
+                        '--port',str(inspector['port']),'--token',env['EEPP_INSPECTOR_TOKEN'],
+                        'raw',json.dumps(dict(method='input.key',params=dict(key=value,
+                            modifiers=['Ctrl','Shift'])))],capture_output=True,text=True,timeout=5)
+                    if child.poll() is None:
+                        self.assertEqual(result.returncode,0,result.stderr)
+                try:
+                    wait_for(lambda: len(list(records.glob('*.json')))==1)
+                    for line in log_path.read_text().splitlines():
+                        if line.startswith('EEPP_INSPECTOR='):
+                            inspector=json.loads(line.split('=',1)[1]);break
+                    self.assertIsNotNone(inspector)
+                    initial=next(records.glob('*.json'))
+                    self.assertEqual(json.loads(initial.read_text())['helper'],str(executable))
+                    if operation=='remove':
+                        executable.unlink()
+                    else:
+                        replacement=bindir/'replacement';shutil.copy2(BINARY,replacement)
+                        if operation=='rename':
+                            previous=bindir/'old-eterm';executable.rename(previous)
+                        os.replace(replacement,executable)
+                        if operation=='rename': previous.unlink()
+                    self.assertTrue(os.readlink('/proc/'+str(child.pid)+'/exe').endswith(' (deleted)'))
+                    key('t')
+                    wait_for(lambda: len(list(records.glob('*.json')))==2)
+                    latest=next(p for p in records.glob('*.json') if p!=initial)
+                    value=json.loads(latest.read_text())
+                    if operation=='remove':
+                        self.assertEqual((value['helper'],value['directory'],value['shell']),('','',''))
+                        self.assertIsNone(value['plugin'])
+                    else:
+                        self.assertEqual(value['helper'],str(executable))
+                        self.assertEqual(value['shell'],latest.stem)
+                        self.assertEqual(value['plugin']['hooks']['SessionStart'][0]['hooks'][0]['command'],
+                                         str(executable))
+                finally:
+                    if inspector:
+                        for _ in range(2):
+                            if child.poll() is not None: break
+                            try: key('w')
+                            except (subprocess.TimeoutExpired,AssertionError): break
+                    try: child.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        child.terminate();child.wait(timeout=5)
+                    log.close()
+                self.assertEqual(child.returncode,0)
+                for path in records.glob('*.json'):
+                    directory=json.loads(path.read_text())['directory']
+                    if directory: self.assertFalse(Path(directory).exists())
+
     def test_cli_dispatch_and_disabled_hook_are_silent_without_app_configuration(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
