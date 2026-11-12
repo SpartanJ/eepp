@@ -8,6 +8,16 @@
 
 namespace eproc {
 
+/** Availability of per-process byte accounting, independent of interface-wide counters. */
+enum class ProcessNetworkStatus : Uint8 {
+	NotReported,
+	Starting,
+	Available,
+	AccessDenied,
+	Unavailable,
+	DataLost
+};
+
 struct SystemInfo {
 	Int64 totalMemory{ 0 };
 	Int64 freeMemory{ 0 };
@@ -20,6 +30,7 @@ struct SystemInfo {
 	Int64 networkDownload{ -1 };
 	Int64 networkUpload{ -1 };
 	int gpuUsage{ -1 };
+	ProcessNetworkStatus processNetworkStatus{ ProcessNetworkStatus::NotReported };
 	Int64 gpuMemory{ -1 };
 	// Per-logical-CPU usage, indexed by CPU number when the platform provides it.
 	std::vector<float> coreCpuUsage;

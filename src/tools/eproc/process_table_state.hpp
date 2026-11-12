@@ -27,12 +27,8 @@ constexpr std::array<size_t, 12> kOptionalProcessColumns = { {
 } };
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-constexpr std::array<size_t, 8> kUnavailableProcessColumns = { {
+constexpr std::array<size_t, 4> kUnavailableProcessColumns = { {
 	ProcessModel::ColSharedMem,
-	ProcessModel::ColGpuUsage,
-	ProcessModel::ColGpuMemory,
-	ProcessModel::ColDownload,
-	ProcessModel::ColUpload,
 	ProcessModel::ColVirtualSize,
 	ProcessModel::ColNiceness,
 	ProcessModel::ColTty,

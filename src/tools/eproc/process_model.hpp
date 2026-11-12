@@ -13,6 +13,8 @@
 
 namespace EE::UI {
 class UISceneNode;
+class UISystemIconTheme;
+class UIIcon;
 }
 
 using namespace EE;
@@ -93,6 +95,9 @@ class ProcessModel : public Model {
 
 	void setFilter( FilterMode mode );
 
+	/** Optional native shell icons. The theme owns asynchronous loading and its cache. */
+	void setSystemIconTheme( std::shared_ptr<UISystemIconTheme> theme );
+
 	/** Quick search: a case-insensitive regular expression matched against the name, command,
 	 *  username and PID columns (the original also lets the user search by PID). */
 	void setTextFilter( const std::string& text );
@@ -169,6 +174,8 @@ class ProcessModel : public Model {
 	std::string mTextLiteral;
 	UnorderedSet<Int64> mGuiPids;
 	mutable UnorderedMap<std::string, DrawablePtr> mIconCache;
+	std::shared_ptr<UISystemIconTheme> mSystemIcons;
+	mutable UnorderedMap<std::string, UIIcon*> mNativeIconCache;
 };
 
 /** Hierarchical view of the visible rows owned by ProcessModel. Sorting changes only sibling

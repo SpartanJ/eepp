@@ -2334,8 +2334,10 @@ solution "eepp"
 			}
 		end
 		if os.is("windows") then
-			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp" }
-			links { "psapi", "advapi32" }
+			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp",
+				"src/tools/eproc/platform/windows/performance_counters_windows.cpp",
+				"src/tools/eproc/platform/windows/process_network_monitor_windows.cpp" }
+			links { "psapi", "advapi32", "pdh", "iphlpapi" }
 		end
 		if os.is("macosx") then
 			files { "src/tools/eproc/platform/macos/process_collector_macos.cpp",
@@ -2439,6 +2441,14 @@ solution "eepp"
 				"src/tools/eproc/platform/macos/process_collector_macos.cpp",
 				"src/tools/eproc/platform/macos/process_network_monitor_macos.cpp",
 				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
+		end
+		if os.is("windows") then
+			files { "src/tools/eproc/process_collector.cpp",
+				"src/tools/eproc/gui_window_tracker.cpp",
+				"src/tools/eproc/platform/windows/process_collector_windows.cpp",
+				"src/tools/eproc/platform/windows/performance_counters_windows.cpp",
+				"src/tools/eproc/platform/windows/process_network_monitor_windows.cpp" }
+			links { "psapi", "advapi32", "pdh", "iphlpapi" }
 		end
 		if os.is_real("bsd") then
 			-- libutil provides openpty(3) on FreeBSD.

@@ -273,6 +273,10 @@ App::~App() {
 	// The worker may still publish a snapshot through mStagingMutex. Join it before member
 	// destruction reaches the staging state and mutex.
 	mThreadPool.reset();
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( mIconExecutor )
+		mIconExecutor->shutdown();
+#endif
 }
 
 int App::run( int argc, char* argv[] ) {
@@ -633,7 +637,7 @@ bool App::init() {
 					<ScrollView id="perf_cores_scroll" lw="mp" lh="0" lw8="1" visible="false">
 						<FlowLayout id="perf_cores_stack" lw="mp" lh="wc" row-valign="top" />
 					</ScrollView>
-					<TextView id="perf_detail" lw="mp" lh="wc" margin-top="12dp" />
+					<TextView id="perf_detail" lw="mp" lh="wc" margin-top="12dp" word-wrap="true" />
 				</vbox>
 			</eproc-performance-layout>
 			<!-- Tab definitions -->
@@ -1372,9 +1376,62 @@ void App::rebuildCoreCharts( size_t count ) {
 	}
 }
 
+void App::updateProcessNetworkStatus( ProcessNetworkStatus status ) {
+	if ( status == mLastNetworkStatus )
+		return;
+	mLastNetworkStatus = status;
+	auto* ui = mApp->getUI();
+	switch ( status ) {
+		case ProcessNetworkStatus::Starting:
+			mProcessNetworkDetails = ui->i18n( "eproc_process_network_starting",
+											   "Per-process network monitoring is starting." );
+			break;
+		case ProcessNetworkStatus::Available:
+			mProcessNetworkDetails =
+				ui->i18n( "eproc_process_network_available",
+						  "Per-process TCP/UDP send and receive monitoring is active." );
+			break;
+		case ProcessNetworkStatus::AccessDenied:
+			mProcessNetworkDetails = ui->i18n(
+				"eproc_process_network_access_denied",
+				"Windows denied per-process network monitoring. Check the account's tracing "
+				"permissions or run with administrator access. Retrying automatically." );
+			break;
+		case ProcessNetworkStatus::Unavailable:
+			mProcessNetworkDetails = ui->i18n(
+				"eproc_process_network_unavailable",
+				"Per-process network monitoring is unavailable. Retrying automatically." );
+			break;
+		case ProcessNetworkStatus::DataLost:
+			mProcessNetworkDetails =
+				ui->i18n( "eproc_process_network_data_lost",
+						  "Per-process network data was incomplete during this interval. "
+						  "The next complete sample will resume monitoring." );
+			break;
+		default:
+			mProcessNetworkDetails.clear();
+			break;
+	}
+	// Header tooltips change only with monitoring state, never on every row or render tick.
+	for ( auto* view : { static_cast<UIAbstractTableView*>( mTableView ),
+						 static_cast<UIAbstractTableView*>( mTreeView ) } ) {
+		if ( !view )
+			continue;
+		for ( size_t column : { ProcessModel::ColDownload, ProcessModel::ColUpload } ) {
+			if ( auto* header = view->getHeaderColumn( column ) ) {
+				String text = processColumnTooltip( ui, column );
+				if ( !mProcessNetworkDetails.empty() )
+					text += "\n" + mProcessNetworkDetails;
+				header->setTooltipText( text );
+			}
+		}
+	}
+}
+
 void App::updatePerformance( const SystemInfo& sysInfo,
 							 const std::vector<ProcessInfo>& processes ) {
 	mPerformanceProcessCount = processes.size();
+	updateProcessNetworkStatus( sysInfo.processNetworkStatus );
 	auto* ui = mApp->getUI();
 	const double now = mPerformanceClock.getElapsedTime().asSeconds();
 	const double memoryPercent =
@@ -1406,7 +1463,9 @@ void App::updatePerformance( const SystemInfo& sysInfo,
 		upload = sysInfo.networkUpload;
 		hasNetwork = true;
 	}
-	const bool systemGpu = !hasGpu && sysInfo.gpuUsage >= 0;
+	// Prefer adapter totals when available. Independent processes can saturate different GPU
+	// engines, and allocations shared by processes must only be counted once in system charts.
+	const bool systemGpu = sysInfo.gpuUsage >= 0;
 	if ( systemGpu ) {
 		gpuUsage = sysInfo.gpuUsage;
 		gpuMemory = sysInfo.gpuMemory;
@@ -1518,6 +1577,17 @@ void App::updatePerformance( const SystemInfo& sysInfo,
 
 void App::setupProcessTable() {
 	mProcessModel = ProcessModel::create( mApp->getUI() );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	mIconExecutor = std::make_unique<MainThreadExecutor>( mApp->getUI() );
+	mSystemIcons = UISystemIconTheme::New( *mThreadPool, *mIconExecutor );
+	mSystemIcons->setOnIconsLoaded( [this] {
+		if ( mTableView )
+			mTableView->invalidateDraw();
+		if ( mTreeView )
+			mTreeView->invalidateDraw();
+	} );
+	mProcessModel->setSystemIconTheme( mSystemIcons );
+#endif
 	mProcessModel->setDivideCpuUsage( mConfig->divideCpuUsage );
 	mTreeModel = ProcessTreeModel::create( mProcessModel );
 	mSortProxy = SortingProxyModel::New( mProcessModel );

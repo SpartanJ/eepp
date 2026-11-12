@@ -2351,8 +2351,10 @@ workspace "eepp"
 				"src/tools/eproc/platform/linux/process_network_monitor.cpp",
 			}
 		filter "system:windows"
-			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp" }
-			links { "psapi", "advapi32" }
+			files { "src/tools/eproc/platform/windows/process_collector_windows.cpp",
+				"src/tools/eproc/platform/windows/performance_counters_windows.cpp",
+				"src/tools/eproc/platform/windows/process_network_monitor_windows.cpp" }
+			links { "psapi", "advapi32", "pdh", "iphlpapi" }
 		filter "system:macosx"
 			files { "src/tools/eproc/platform/macos/process_collector_macos.cpp",
 				"src/tools/eproc/platform/macos/process_network_monitor_macos.cpp",
@@ -2469,6 +2471,13 @@ workspace "eepp"
 				"src/tools/eproc/platform/macos/process_collector_macos.cpp",
 				"src/tools/eproc/platform/macos/process_network_monitor_macos.cpp",
 				"src/tools/eproc/platform/macos/process_icon_resolver_macos.cpp" }
+		filter "system:windows"
+			files { "src/tools/eproc/process_collector.cpp",
+				"src/tools/eproc/gui_window_tracker.cpp",
+				"src/tools/eproc/platform/windows/process_collector_windows.cpp",
+				"src/tools/eproc/platform/windows/performance_counters_windows.cpp",
+				"src/tools/eproc/platform/windows/process_network_monitor_windows.cpp" }
+			links { "psapi", "advapi32", "pdh", "iphlpapi" }
 		filter "system:haiku"
 			links { "bsd", "network" }
 		filter "system:bsd"

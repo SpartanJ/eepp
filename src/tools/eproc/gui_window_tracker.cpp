@@ -7,6 +7,16 @@
 #undef None
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
+
 #include "gui_window_tracker.hpp"
 #include "window_icon.hpp"
 
@@ -18,12 +28,14 @@
 // Which processes own a top-level window is read through a backend selected at runtime, so the
 // class keeps the very same interface whether or not X11 is available on the platform.
 //
-//  - X11: the only backend implemented today. It relies on an X11 session, reading the EWMH
+//  - X11: relies on an X11 session, reading the EWMH
 //    properties the running window manager publishes on the root window. On Wayland it therefore
 //    only ever sees XWayland clients, since a native Wayland compositor does not expose its
 //    toplevels over X11. A Wayland backend would have to speak a compositor protocol instead
 //    (wlr-foreign-toplevel-management, or KDE's plasma-window-management) and is not implemented
 //    yet.
+//  - Windows: enumerates visible top-level windows and their process owners.
+//  - macOS: reads running GUI applications through NSWorkspace in gui_window_tracker_macos.mm.
 //  - Anywhere else: the stub backend at the bottom of this file, which no X11 header or library is
 //    needed for.
 //
@@ -398,6 +410,41 @@ DrawablePtr GuiWindowTracker::iconForPid( long pid ) {
 
 bool GuiWindowTracker::isAvailable() const {
 	return mDisplay != nullptr;
+}
+
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+
+namespace {
+
+BOOL CALLBACK collectWindowPid( HWND window, LPARAM context ) {
+	if ( !IsWindowVisible( window ) ||
+		 ( GetWindowLongPtrW( window, GWL_EXSTYLE ) & WS_EX_TOOLWINDOW ) != 0 )
+		return TRUE;
+	DWORD pid = 0;
+	GetWindowThreadProcessId( window, &pid );
+	if ( pid > 0 && pid <= static_cast<DWORD>( std::numeric_limits<long>::max() ) ) {
+		reinterpret_cast<UnorderedSet<long>*>( context )->insert( static_cast<long>( pid ) );
+	}
+	return TRUE;
+}
+
+} // namespace
+
+GuiWindowTracker::GuiWindowTracker() = default;
+
+GuiWindowTracker::~GuiWindowTracker() = default;
+
+void GuiWindowTracker::refresh() {
+	mPids.clear();
+	mAvailable = EnumWindows( collectWindowPid, reinterpret_cast<LPARAM>( &mPids ) ) != FALSE;
+}
+
+DrawablePtr GuiWindowTracker::iconForPid( long ) {
+	return {};
+}
+
+bool GuiWindowTracker::isAvailable() const {
+	return mAvailable;
 }
 
 #elif EE_PLATFORM != EE_PLATFORM_MACOS // X11 backend

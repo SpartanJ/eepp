@@ -14,6 +14,7 @@
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uisystemicontheme.hpp>
 #include <fstream>
 #include <string_view>
 
@@ -417,6 +418,11 @@ void ProcessModel::applySnapshot( std::vector<ProcessInfo>&& processes, const Sy
 	onModelUpdate();
 }
 
+void ProcessModel::setSystemIconTheme( std::shared_ptr<UISystemIconTheme> theme ) {
+	mNativeIconCache.clear();
+	mSystemIcons = std::move( theme );
+}
+
 void ProcessModel::setFilter( FilterMode mode ) {
 	mFilterMode = mode;
 	applyFilters();
@@ -637,6 +643,13 @@ static Image loadMacIcon( const std::string& path, Uint32 iconPx ) {
 #endif
 
 DrawablePtr ProcessModel::iconFor( const std::string& path ) const {
+	if ( mSystemIcons ) {
+		auto [it, inserted] = mNativeIconCache.try_emplace( path, nullptr );
+		if ( inserted )
+			it->second = mSystemIcons->getPathIcon( path, {} );
+		return it->second ? it->second->getSource( PixelDensity::dpToPxI( kIconSizeDp ) )
+						  : DrawablePtr{};
+	}
 	auto it = mIconCache.find( path );
 	if ( it != mIconCache.end() )
 		return it->second;

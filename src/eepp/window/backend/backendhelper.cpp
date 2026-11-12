@@ -166,9 +166,17 @@ void BackendHelper::setUserTheme( HWND hwnd ) {
 	}
 
 	BOOL darkMode = isDarkModeEnabled() ? TRUE : FALSE;
-	DwmSetWindowAttribute( hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof( darkMode ) );
+	const HRESULT result =
+		DwmSetWindowAttribute( hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof( darkMode ) );
 
 	FreeLibrary( hDwmapi );
+	if ( SUCCEEDED( result ) ) {
+		// Windows 10 can retain the old caption background despite a frame repaint. Refresh
+		// its active/inactive appearance, restoring the real state without activating the window.
+		const bool active = GetForegroundWindow() == hwnd;
+		SendMessageW( hwnd, WM_NCACTIVATE, active ? FALSE : TRUE, 0 );
+		SendMessageW( hwnd, WM_NCACTIVATE, active ? TRUE : FALSE, 0 );
+	}
 }
 
 }}} // namespace EE::Window::Backend

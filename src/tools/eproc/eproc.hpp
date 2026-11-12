@@ -11,6 +11,10 @@
 #include <eepp/system/lock.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/threadpool.hpp>
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#include <eepp/scene/mainthreadexecutor.hpp>
+#include <eepp/ui/uisystemicontheme.hpp>
+#endif
 #include <eepp/ui/charts/uichart.hpp>
 #include <eepp/ui/models/sortingproxymodel.hpp>
 #include <eepp/ui/uiapplication.hpp>
@@ -117,7 +121,12 @@ class App {
 	void updateStatusDetails();
 
 	void setupPerformance();
+
+	/** Updates network permission/availability text and the two process-column tooltips. */
+	void updateProcessNetworkStatus( ProcessNetworkStatus status );
+
 	void updatePerformance( const SystemInfo& sysInfo, const std::vector<ProcessInfo>& processes );
+
 	void selectPerformanceMetric( size_t metric );
 	void setPerCoreView( bool perCore );
 	void rebuildCoreCharts( size_t count );
@@ -199,6 +208,7 @@ class App {
 	std::array<PerformanceMetric, 4> mPerformanceMetrics;
 	std::array<String, 4> mPerformanceSummaries;
 	std::array<String, 4> mPerformanceDetails;
+	String mProcessNetworkDetails;
 	std::vector<UIChart*> mCoreCharts;
 	std::vector<UITextView*> mCoreLabels;
 	std::vector<std::shared_ptr<RingXYDataSource>> mCoreHistory;
@@ -209,6 +219,7 @@ class App {
 	bool mTabFocusRestorePending{ false };
 	bool mInitialCollection{ true };
 	std::array<bool, 4> mMetricAvailable{};
+	ProcessNetworkStatus mLastNetworkStatus{ ProcessNetworkStatus::NotReported };
 
 	std::shared_ptr<ProcessModel> mProcessModel;
 	std::shared_ptr<ProcessTreeModel> mTreeModel;
@@ -228,6 +239,11 @@ class App {
 	// Collection runs on a worker thread so the render loop never blocks on /proc. The worker
 	// owns mCollector exclusively; the UI thread only ever reads staged snapshots.
 	std::unique_ptr<ProcessCollector> mCollector;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	// Workers must stop before the UI executor and the scene used to dispatch icon uploads.
+	std::unique_ptr<MainThreadExecutor> mIconExecutor;
+	std::shared_ptr<UISystemIconTheme> mSystemIcons;
+#endif
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::atomic<bool> mCollectInFlight{ false };
 	Mutex mStagingMutex;

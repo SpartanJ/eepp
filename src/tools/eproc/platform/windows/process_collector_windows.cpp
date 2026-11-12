@@ -9,6 +9,10 @@
 #endif
 #include <windows.h>
 
+// IP Helper exposes MIB_IF_TABLE2 after Winsock's IPv6 types have been declared.
+#include <ws2tcpip.h>
+
+#include <iphlpapi.h>
 #include <psapi.h>
 #include <tlhelp32.h>
 
@@ -177,10 +181,13 @@ bool ProcessCollectorWindows::collect( std::vector<ProcessInfo>& processes, Syst
 										  ? 0
 										  : ( sampledAt - mPrevSampleTime ).asMicroseconds();
 	mPrevSampleTime = sampledAt;
+	sysInfo = {};
+	mNetworkMonitor.sample();
+	sysInfo.processNetworkStatus = mNetworkMonitor.status();
+	readNetwork( sysInfo, elapsedMicroseconds );
 
-	SYSTEM_INFO system;
-	GetNativeSystemInfo( &system );
-	sysInfo.cpuCount = static_cast<int>( std::max<DWORD>( 1, system.dwNumberOfProcessors ) );
+	sysInfo.cpuCount =
+		static_cast<int>( std::max<DWORD>( 1, GetActiveProcessorCount( ALL_PROCESSOR_GROUPS ) ) );
 	sysInfo.clockTicksPerSecond = kMicrosecondsPerSecond;
 	sysInfo.uptimeSeconds = static_cast<double>( GetTickCount64() ) / 1000.0;
 
@@ -193,7 +200,8 @@ bool ProcessCollectorWindows::collect( std::vector<ProcessInfo>& processes, Syst
 		const Uint64 deltaUser = positiveDelta( userNow, mPrevSystemUser );
 		const Uint64 deltaIdle = positiveDelta( idleNow, mPrevSystemIdle );
 		const Uint64 deltaTotal = deltaKernel + deltaUser;
-		if ( mPrevSystemKernel && deltaTotal > deltaIdle && elapsedMicroseconds >= 200000 )
+		if ( mPrevSystemKernel && deltaTotal > 0 && deltaTotal >= deltaIdle &&
+			 elapsedMicroseconds >= 200000 )
 			mLastCpuUsage = static_cast<float>( deltaTotal - deltaIdle ) * 100.f / deltaTotal;
 		mPrevSystemIdle = idleNow;
 		mPrevSystemKernel = kernelNow;
@@ -262,6 +270,7 @@ bool ProcessCollectorWindows::collect( std::vector<ProcessInfo>& processes, Syst
 						positiveDelta( kernel100ns, previous.kernelTime ), elapsedMicroseconds );
 				}
 				previous = { user100ns, kernel100ns, creation100ns, process.startTime, mPass };
+				mNetworkMonitor.apply( process, creation100ns );
 			}
 
 			PROCESS_MEMORY_COUNTERS_EX counters{};
@@ -285,6 +294,7 @@ bool ProcessCollectorWindows::collect( std::vector<ProcessInfo>& processes, Syst
 			DWORD pathLength = static_cast<DWORD>( path.size() );
 			if ( QueryFullProcessImageNameW( handle.get(), 0, path.data(), &pathLength ) )
 				process.commandLine = utf8( path.data(), static_cast<int>( pathLength ) );
+			process.iconPath = process.commandLine;
 
 			readIdentity( handle.get(), process );
 		}
@@ -301,7 +311,46 @@ bool ProcessCollectorWindows::collect( std::vector<ProcessInfo>& processes, Syst
 				++it;
 		}
 	}
+	mPerformance.collect( processes, sysInfo );
 	return true;
+}
+
+void ProcessCollectorWindows::readNetwork( SystemInfo& system, Int64 elapsedMicroseconds ) {
+	MIB_IF_TABLE2* interfaces = nullptr;
+	if ( GetIfTable2( &interfaces ) != NO_ERROR )
+		return;
+	Uint64 received = 0, sent = 0;
+	bool havePrevious = false;
+	for ( ULONG i = 0; i < interfaces->NumEntries; ++i ) {
+		const auto& row = interfaces->Table[i];
+		if ( row.OperStatus != IfOperStatusUp || row.Type == IF_TYPE_SOFTWARE_LOOPBACK ||
+			 row.InterfaceAndOperStatusFlags.FilterInterface ||
+			 row.InterfaceAndOperStatusFlags.EndPointInterface )
+			continue;
+		auto [it, inserted] = mNetworkCounters.try_emplace( row.InterfaceLuid.Value );
+		auto& previous = it->second;
+		// Interface-local baselines prevent spikes when adapters connect, disconnect or reset.
+		if ( !inserted && previous.pass == mPass - 1 && elapsedMicroseconds > 0 &&
+			 row.InOctets >= previous.received && row.OutOctets >= previous.sent ) {
+			received += row.InOctets - previous.received;
+			sent += row.OutOctets - previous.sent;
+			havePrevious = true;
+		}
+		previous = { row.InOctets, row.OutOctets, mPass };
+	}
+	FreeMibTable( interfaces );
+	for ( auto it = mNetworkCounters.begin(); it != mNetworkCounters.end(); ) {
+		if ( it->second.pass != mPass )
+			it = mNetworkCounters.erase( it );
+		else
+			++it;
+	}
+	if ( havePrevious ) {
+		system.networkDownload = static_cast<Int64>( static_cast<double>( received ) *
+													 kMicrosecondsPerSecond / elapsedMicroseconds );
+		system.networkUpload = static_cast<Int64>( static_cast<double>( sent ) *
+												   kMicrosecondsPerSecond / elapsedMicroseconds );
+	}
 }
 
 } // namespace eproc
