@@ -614,10 +614,16 @@ String UISceneNode::i18n( const std::string& key, const String& defaultValue ) {
 }
 
 void UISceneNode::setFocusLastWindow( UIWindow* window ) {
-	if ( NULL == mParentNode && NULL != mEventDispatcher && !mWindowsList.empty() &&
-		 window != mWindowsList.front() ) {
-		mEventDispatcher->setFocusNode( mWindowsList.front() );
+	if ( NULL != mParentNode || NULL == mEventDispatcher )
+		return;
+	// Reusable windows remain registered while hidden and must not take focus on dialog close.
+	for ( auto* candidate : mWindowsList ) {
+		if ( candidate != window && candidate->isVisible() && candidate->isEnabled() ) {
+			mEventDispatcher->setFocusNode( candidate );
+			return;
+		}
 	}
+	mEventDispatcher->setFocusNode( this );
 }
 
 void UISceneNode::windowAdd( UIWindow* win ) {

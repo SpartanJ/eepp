@@ -22,6 +22,7 @@
 #include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextinput.hpp>
@@ -1916,6 +1917,52 @@ UTEST( UIWindow, ShadowSurvivesRepeatedTranslucentDraws ) {
 		const auto farX = static_cast<unsigned int>( bounds.Left - PixelDensity::dpToPx( 16.f ) );
 		EXPECT_LT( pixels.getPixel( nearX, y ).r, pixels.getPixel( farX, y ).r );
 	}
+}
+
+UTEST( UIWindow, ClosingDialogSkipsHiddenAndDisabledWindowsWhenRestoringFocus ) {
+	UIApplication app(
+		WindowSettings{ 320, 240, "Window focus restoration" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	auto* scene = app.getUI();
+	scene->getUIThemeManager()->setDefaultEffectsEnabled( false );
+	auto* visible = UIWindow::New();
+	visible->show();
+	auto* hidden = UIWindow::New();
+	hidden->show();
+	hidden->hide( true );
+	auto* disabled = UIWindow::New();
+	disabled->show();
+	disabled->setEnabled( false );
+
+	auto* dialog = UIMessageBox::New( UIMessageBox::OK_CANCEL, "Confirm" );
+	dialog->show();
+	dialog->getButtonOK()->setFocus();
+	dialog->closeWindow();
+	SceneManager::instance()->update();
+
+	EXPECT_EQ( scene->getEventDispatcher()->getFocusNode(), visible );
+	EXPECT_FALSE( hidden->isVisible() );
+	EXPECT_FALSE( disabled->isEnabled() );
+}
+
+UTEST( UIWindow, ClosingDialogWithOnlyHiddenWindowsReturnsFocusToScene ) {
+	UIApplication app(
+		WindowSettings{ 320, 240, "Window focus fallback" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	auto* scene = app.getUI();
+	scene->getUIThemeManager()->setDefaultEffectsEnabled( false );
+	auto* hidden = UIWindow::New();
+	hidden->show();
+	hidden->hide( true );
+	auto* dialog = UIMessageBox::New( UIMessageBox::OK_CANCEL, "Confirm" );
+	dialog->show();
+	dialog->getButtonOK()->setFocus();
+	dialog->closeWindow();
+	SceneManager::instance()->update();
+
+	EXPECT_EQ( scene->getEventDispatcher()->getFocusNode(), scene );
+	EXPECT_FALSE( hidden->isVisible() );
+	EXPECT_FALSE( hidden->isEnabled() );
 }
 
 UTEST( UIWindow, ModalWindowStopsKeyBindingsFromReachingScene ) {

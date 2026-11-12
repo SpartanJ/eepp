@@ -1212,7 +1212,7 @@ class EE_API UISceneNode : public SceneNode {
 	/**
 	 * @brief Manages focus when a window loses focus.
 	 *
-	 * Ensures proper focus restoration when switching windows.
+	 * Restores focus to the most recent visible, enabled window, or to this scene if none remain.
 	 *
 	 * @param window The window that was focused.
 	 */
