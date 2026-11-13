@@ -19,6 +19,14 @@ namespace {
 // Bound sorting work in one UI dispatch even when a provider streams millions of entries.
 constexpr size_t MaxCoalescedEntries = 32 * 1024;
 
+std::string_view extensionOf( const VFSFileInfo& info ) {
+	if ( info.isDirectory() )
+		return {};
+	const size_t dot = info.name.find_last_of( '.' );
+	return dot == std::string::npos || dot == 0 ? std::string_view{}
+												: std::string_view( info.name ).substr( dot + 1 );
+}
+
 struct CountState {
 	DirectoryHandle handle;
 	CancellationToken token;
@@ -152,6 +160,8 @@ VFSDirectoryModel::~VFSDirectoryModel() {
 
 void VFSDirectoryModel::setURI( URI uri ) {
 	mURI = std::move( uri );
+	mDisplayPath = mURI.getScheme() == "file" ? mURI.getFSPath() : mURI.toString();
+	mFolderName = mURI.getLastPathSegment();
 	startSession();
 }
 
@@ -463,6 +473,18 @@ bool VFSDirectoryModel::less( const VFSFileInfo& a, const VFSFileInfo& b, const 
 			break;
 		case Modified:
 			cmp = compareNumbers( a.modifiedTime().value_or( 0 ), b.modifiedTime().value_or( 0 ) );
+			break;
+		case Created:
+			cmp = compareNumbers( a.createdTime().value_or( 0 ), b.createdTime().value_or( 0 ) );
+			break;
+		case Accessed:
+			cmp = compareNumbers( a.accessedTime().value_or( 0 ), b.accessedTime().value_or( 0 ) );
+			break;
+		case Extension:
+			cmp = String::icompare( extensionOf( a ), extensionOf( b ) );
+			break;
+		case LinkDestination:
+			cmp = a.symlinkTarget.compare( b.symlinkTarget );
 			break;
 		case Permissions:
 			cmp = compareNumbers( a.permissions().value_or( 0 ), b.permissions().value_or( 0 ) );
@@ -902,6 +924,18 @@ std::string VFSDirectoryModel::columnName( const size_t& column ) const {
 			return "Owner";
 		case Group:
 			return "Group";
+		case Created:
+			return "Created";
+		case Accessed:
+			return "Accessed";
+		case Extension:
+			return "File Extension";
+		case LinkDestination:
+			return "Link Destination";
+		case Path:
+			return "Path";
+		case FolderName:
+			return "Folder Name";
 		default:
 			return {};
 	}
@@ -976,9 +1010,19 @@ Variant VFSDirectoryModel::data( const ModelIndex& index, ModelRole role ) const
 	}
 	if ( role == ModelRole::Class ) {
 		// Per column classes, for styling (for example right aligned sizes).
-		static const std::string Classes[ColumnCount] = {
-			"vfs_name",		   "vfs_size",	"vfs_modified", "vfs_type",
-			"vfs_permissions", "vfs_owner", "vfs_group" };
+		static const std::string Classes[ColumnCount] = { "vfs_name",
+														  "vfs_size",
+														  "vfs_modified",
+														  "vfs_type",
+														  "vfs_permissions",
+														  "vfs_owner",
+														  "vfs_group",
+														  "vfs_created",
+														  "vfs_accessed",
+														  "vfs_extension",
+														  "vfs_link_destination",
+														  "vfs_path",
+														  "vfs_folder_name" };
 		static const std::string FolderName = "vfs_folder";
 		if ( index.column() == Name && info.isDirectory() )
 			return Variant( &FolderName );
@@ -1007,14 +1051,19 @@ Variant VFSDirectoryModel::data( const ModelIndex& index, ModelRole role ) const
 				System::FileSystem::sizeToString( static_cast<Int64>( *info.size() ) ) );
 		}
 		case Modified:
+		case Created:
+		case Accessed: {
+			auto time = index.column() == Created	 ? info.createdTime()
+						: index.column() == Accessed ? info.accessedTime()
+													 : info.modifiedTime();
 			if ( role == ModelRole::Sort )
-				return Variant( info.modifiedTime().value_or( 0 ) );
-			if ( !info.modifiedTime() )
+				return Variant( time.value_or( 0 ) );
+			if ( !time )
 				return Variant( std::string() );
 			if ( mTimeFormatter )
-				return Variant( mTimeFormatter( *info.modifiedTime() ) );
-			return Variant(
-				System::Sys::epochToString( static_cast<Uint64>( *info.modifiedTime() ) ) );
+				return Variant( mTimeFormatter( *time ) );
+			return Variant( System::Sys::epochToString( static_cast<Uint64>( *time ) ) );
+		}
 		case Type:
 			return Variant( typeOf( info ) );
 		case Permissions:
@@ -1023,6 +1072,14 @@ Variant VFSDirectoryModel::data( const ModelIndex& index, ModelRole role ) const
 			return Variant::fromRef( info.owner );
 		case Group:
 			return Variant::fromRef( info.group );
+		case Extension:
+			return Variant( std::string( extensionOf( info ) ) );
+		case LinkDestination:
+			return Variant::fromRef( info.symlinkTarget );
+		case Path:
+			return Variant::fromRef( mDisplayPath );
+		case FolderName:
+			return Variant::fromRef( mFolderName );
 		default:
 			return {};
 	}

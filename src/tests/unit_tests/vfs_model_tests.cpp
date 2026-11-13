@@ -5,6 +5,7 @@
 #include <eepp/system/time.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/vfs/detail/memoryhandles.hpp>
 #include <eepp/vfs/ui/vfsdirectorymodel.hpp>
 
 using namespace EE::System;
@@ -50,7 +51,81 @@ class DelayedStatProvider : public MemoryProvider {
 	}
 };
 
+class MetadataListingProvider : public MemoryProvider {
+  public:
+	std::vector<VFSFileInfo> entries;
+
+	VFSTask<DirectoryHandle> openDirectory( const URI& uri, const DirectoryOpenOptions&,
+											CancellationToken ) override {
+		return readyValue<DirectoryHandle>(
+			uri, std::make_shared<EE::VFS::detail::VectorDirectoryImpl>( entries ) );
+	}
+};
+
 } // namespace
+
+UTEST( VFSDirectoryModel, optionalColumnsDisplayAndSortWithoutFetchingMetadata ) {
+	VirtualFileSystem vfs;
+	auto provider = std::make_shared<MetadataListingProvider>();
+	for ( const char* name :
+		  { "folder.with.dot", ".profile", "a.TXT", "archive.tar.gz", "link", "z.txt" } ) {
+		auto& entry = provider->entries.emplace_back();
+		entry.name = name;
+		entry.type = FileType::Regular;
+	}
+	provider->entries[0].type = FileType::Directory;
+	provider->entries[2].setCreatedTime( 200 ).setAccessedTime( 10 );
+	provider->entries[3].setCreatedTime( 100 ).setAccessedTime( 30 );
+	provider->entries[4].type = FileType::Symlink;
+	provider->entries[4].symlinkTarget = "../target";
+	provider->entries[5].setCreatedTime( 0 ).setAccessedTime( 20 );
+	vfs.registerProvider( provider );
+	TestLoop loop;
+	VFSDirectoryModel::Config config;
+	config.vfs = &vfs;
+	config.watch = false;
+	auto model = VFSDirectoryModel::New( loop, config );
+	model->setTimeFormatter( []( Int64 time ) { return "epoch:" + String::toString( time ); } );
+	model->setURI( URI( "mem://m/dir%20name/" ) );
+	ASSERT_TRUE( loop.runUntil(
+		[&] { return model->loadState() == VFSDirectoryModel::LoadState::Ready; } ) );
+	const auto operations = provider->operationCount();
+	auto display = [&]( const char* name, VFSDirectoryModel::Column column ) {
+		return model->data( model->index( *model->rowOf( name ), column ) ).toString();
+	};
+	EXPECT_STDSTREQ( "epoch:200", display( "a.TXT", VFSDirectoryModel::Created ) );
+	EXPECT_STDSTREQ( "epoch:0", display( "z.txt", VFSDirectoryModel::Created ) );
+	EXPECT_STDSTREQ( "", display( ".profile", VFSDirectoryModel::Created ) );
+	EXPECT_STDSTREQ( "epoch:10", display( "a.TXT", VFSDirectoryModel::Accessed ) );
+	EXPECT_STDSTREQ( "", display( "link", VFSDirectoryModel::Accessed ) );
+	EXPECT_STDSTREQ( "TXT", display( "a.TXT", VFSDirectoryModel::Extension ) );
+	EXPECT_STDSTREQ( "gz", display( "archive.tar.gz", VFSDirectoryModel::Extension ) );
+	EXPECT_STDSTREQ( "", display( ".profile", VFSDirectoryModel::Extension ) );
+	EXPECT_STDSTREQ( "", display( "folder.with.dot", VFSDirectoryModel::Extension ) );
+	EXPECT_STDSTREQ( "../target", display( "link", VFSDirectoryModel::LinkDestination ) );
+	EXPECT_STDSTREQ( "", display( "a.TXT", VFSDirectoryModel::LinkDestination ) );
+	EXPECT_STDSTREQ( "mem://m/dir%20name/", display( "a.TXT", VFSDirectoryModel::Path ) );
+	EXPECT_STDSTREQ( "dir name", display( "a.TXT", VFSDirectoryModel::FolderName ) );
+	model->sort( VFSDirectoryModel::Created, SortOrder::Ascending );
+	EXPECT_LT( *model->rowOf( "archive.tar.gz" ), *model->rowOf( "a.TXT" ) );
+	model->sort( VFSDirectoryModel::Created, SortOrder::Descending );
+	EXPECT_LT( *model->rowOf( "a.TXT" ), *model->rowOf( "archive.tar.gz" ) );
+	model->sort( VFSDirectoryModel::Accessed, SortOrder::Ascending );
+	EXPECT_LT( *model->rowOf( "a.TXT" ), *model->rowOf( "z.txt" ) );
+	EXPECT_LT( *model->rowOf( "z.txt" ), *model->rowOf( "archive.tar.gz" ) );
+	model->sort( VFSDirectoryModel::Extension, SortOrder::Ascending );
+	EXPECT_LT( *model->rowOf( "archive.tar.gz" ), *model->rowOf( "a.TXT" ) );
+	EXPECT_LT( *model->rowOf( "a.TXT" ), *model->rowOf( "z.txt" ) );
+	model->sort( VFSDirectoryModel::LinkDestination, SortOrder::Descending );
+	EXPECT_EQ( 1u, *model->rowOf( "link" ) );
+	EXPECT_STDSTREQ( "folder.with.dot", model->entry( 0 ).name );
+	EXPECT_EQ( operations, provider->operationCount() );
+	model->setURI( URI( "mem://m/" ) );
+	ASSERT_TRUE( loop.runUntil(
+		[&] { return model->loadState() == VFSDirectoryModel::LoadState::Ready; } ) );
+	EXPECT_STDSTREQ( "mem://m/", display( "a.TXT", VFSDirectoryModel::Path ) );
+	EXPECT_STDSTREQ( "", display( "a.TXT", VFSDirectoryModel::FolderName ) );
+}
 
 UTEST( VFSDirectoryModel, listsIncrementallySortsAndFiltersHidden ) {
 	VirtualFileSystem vfs;

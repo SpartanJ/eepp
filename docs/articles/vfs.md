@@ -179,6 +179,11 @@ options.expectedRevision = lastKnown.revision;   // from a previous stat/writeAl
 vfs.writeAll( uri, text, options );              // fails with ChangedExternally if modified
 ```
 
+Local metadata includes creation time where supported (including Haiku's `st_crtime`). Linux requests
+birth time together with the usual metadata through `statx`, falling back to `fstatat` when
+unavailable. Missing birth time stays unknown; metadata-change time is never used as a substitute.
+SFTP v3 does not supply birth time.
+
 Atomic writes go to a sibling temporary file, are flushed and renamed over the destination; a
 symlinked destination is written through to its target. Providers report what they can do through
 `capabilities( uri )` (for example `AtomicReplace`, `Fsync`, `Permissions`).
@@ -411,8 +416,13 @@ exposes `loadState()`, `error()` and `watchStatus()`.
 Fast listings coalesce subsequent batches before merging them into the sorted rows; slow listings
 publish new rows at the next batch after 50 ms, and the last batch always flushes pending entries.
 
-Columns are Name, Size, Modified, Type, Permissions, Owner and Group; cells carry a per-column CSS
-class (`vfs_size`, ...). Applications customize the text with `setTypeProvider()`,
+Columns are Name, Size, Modified, Type, Permissions, Owner, Group, Created, Accessed, File Extension,
+Link Destination, Path and Folder Name; cells carry a per-column CSS class (`vfs_size`, ...).
+Unknown timestamps and unavailable link targets display as empty cells. File Extension preserves
+case, sorts without case sensitivity, and is empty for directories and extensionless dotfiles.
+Path is the containing directory (a native path for local files, a URI for other providers);
+Folder Name is its last path segment. Both are shared by every row of the current directory.
+Applications customize the text with `setTypeProvider()`,
 `setTimeFormatter()` and `setItemCountFormatter()`. With `Config::countDirectoryItems` (or
 `setCountDirectoryItems()`), directories are counted in the background and the Size column shows
 "N items". `setNameFilter( pattern, mode, caseSensitive )` filters rows by name with unanchored

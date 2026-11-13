@@ -373,6 +373,7 @@ tableview::row:nth-child(even) {
 }
 /* The inactive pane's view is a little dimmer; its text stays the same, both panes are read
    during operations. */
+.pane:not(.active) .pane_status_bar,
 .pane:not(.active) TableView,
 .pane:not(.active) TableView > ScrollBar,
 .pane:not(.active) tableview::row {

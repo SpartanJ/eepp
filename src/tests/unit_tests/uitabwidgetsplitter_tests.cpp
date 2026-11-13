@@ -1557,6 +1557,12 @@ UTEST( UIAbstractTableView, SmoothScrollingSurvivesRubberBandCleanup ) {
 		table->drawChildren();
 		ASSERT_TRUE( table->getVerticalScrollBar()->isEnabled() );
 
+		// Growing the row pool after a rubber band must keep rows consecutive for nth-child.
+		auto rows = table->querySelectorAll( "tableview::row" );
+		ASSERT_GT( rows.size(), 1u );
+		for ( size_t i = 1; i < rows.size(); ++i )
+			EXPECT_EQ( rows[i]->getElementIndex(), rows[i - 1]->getElementIndex() + 1 );
+
 		// Wheel routing uses the hovered row even while another widget owns keyboard focus.
 		scene->getRoot()->setFocus();
 		auto* cell = table->getCellFromIndex( model->index( 0, 0 ) );

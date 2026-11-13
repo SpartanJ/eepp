@@ -44,7 +44,23 @@ using UI::Models::Variant;
 class EE_VFS_API VFSDirectoryModel : public Model,
 									 public std::enable_shared_from_this<VFSDirectoryModel> {
   public:
-	enum Column : Uint8 { Name, Size, Modified, Type, Permissions, Owner, Group, ColumnCount };
+	// Append columns to preserve the IDs stored by applications in their view state.
+	enum Column : Uint8 {
+		Name,
+		Size,
+		Modified,
+		Type,
+		Permissions,
+		Owner,
+		Group,
+		Created,
+		Accessed,
+		Extension,
+		LinkDestination,
+		Path,
+		FolderName,
+		ColumnCount
+	};
 
 	/** How setNameFilter() patterns match entry names (all of them unanchored). */
 	enum class NameFilterMode : Uint8 { PlainText, Glob, RegEx };
@@ -74,7 +90,7 @@ class EE_VFS_API VFSDirectoryModel : public Model,
 	/** Text for an entry (used by the Type column). */
 	using TextProvider = std::function<std::string( const VFSFileInfo& )>;
 
-	/** Formats a Unix timestamp in seconds (used by the Modified column). */
+	/** Formats a Unix timestamp in seconds (used by the timestamp columns). */
 	using TimeFormatter = std::function<std::string( Int64 )>;
 
 	/** Formats the number of entries of a directory (used by the Size column). */
@@ -299,6 +315,9 @@ class EE_VFS_API VFSDirectoryModel : public Model,
 	std::unordered_set<std::string> mCountQueued;
 	size_t mCountsInFlight{ 0 };
 	std::string mFilterPattern;
+	/** Shared by every row; derived once per navigation, without per-entry storage. */
+	std::string mDisplayPath;
+	std::string mFolderName;
 	std::string mFilterGlob;
 	/** Case-insensitive plain text filter: the pattern's search table. */
 	String::BMH::OccTable mFilterOccurrences;

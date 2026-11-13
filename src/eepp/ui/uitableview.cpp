@@ -454,6 +454,14 @@ void UITableView::setRubberBandSelection( bool enabled ) {
 		mTableFlags |= TableFlagRubberBandSelection;
 	else
 		mTableFlags &= ~TableFlagRubberBandSelection;
+	if ( enabled && !mRubberBand ) {
+		// Keep the overlay before the row pool so growing it cannot interrupt nth-child striping.
+		mRubberBand = UIWidget::NewWithTag( mTag + "::rubberband" );
+		mRubberBand->setParent( this );
+		mRubberBand->toBack();
+		mRubberBand->setEnabled( false );
+		mRubberBand->setVisible( false );
+	}
 	if ( !enabled )
 		endRubberBand();
 }
@@ -561,11 +569,6 @@ void UITableView::updateRubberBand( const Vector2f& localPosition ) {
 			getSelection().set( selection );
 	}
 
-	if ( !mRubberBand ) {
-		mRubberBand = UIWidget::NewWithTag( mTag + "::rubberband" );
-		mRubberBand->setParent( this );
-		mRubberBand->setEnabled( false );
-	}
 	// Drawn within the rows area: the band (in view coordinates) intersected with it.
 	Float left = std::max( min.x - mScrollOffset.x, 0.f );
 	Float top = std::max( min.y - mScrollOffset.y, header );

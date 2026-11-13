@@ -7,6 +7,7 @@
 #include "previewpanel.hpp"
 #include "terminalpanel.hpp"
 #include "thumbnails.hpp"
+#include <algorithm>
 #include <ctime>
 
 namespace eefm {
@@ -114,6 +115,18 @@ class FileDirectoryModel : public VFSDirectoryModel {
 				return mUI.i18n( "eefm_column_owner", "Owner" ).toUtf8();
 			case Group:
 				return mUI.i18n( "eefm_column_group", "Group" ).toUtf8();
+			case Created:
+				return mUI.i18n( "eefm_column_created", "Created" ).toUtf8();
+			case Accessed:
+				return mUI.i18n( "eefm_column_accessed", "Accessed" ).toUtf8();
+			case Extension:
+				return mUI.i18n( "eefm_column_extension", "File Extension" ).toUtf8();
+			case LinkDestination:
+				return mUI.i18n( "eefm_column_link_destination", "Link Destination" ).toUtf8();
+			case Path:
+				return mUI.i18n( "eefm_column_path", "Path" ).toUtf8();
+			case FolderName:
+				return mUI.i18n( "eefm_column_folder_name", "Folder Name" ).toUtf8();
 			default:
 				return {};
 		}
@@ -523,6 +536,7 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 	view->setIconSize( PixelDensity::dpToPxI( 16 ) );
 	mApp.thumbnails().attach( raw );
 	view->setColumnReorderingEnabled( true );
+	view->setColumnWidthModeMenuEnabled( true );
 	// Like Dolphin, the name keeps most of the width: the other columns are capped to a share
 	// of the view (they still use less when their content is narrower).
 	auto capColumns = [view] {
@@ -531,8 +545,12 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 			return;
 		view->setColumnMaxWidth( VFSDirectoryModel::Size,
 								 eemax( eefloor( width * 0.14f ), PixelDensity::dpToPx( 64 ) ) );
-		view->setColumnMaxWidth( VFSDirectoryModel::Modified, eefloor( width * 0.27f ) );
+		for ( auto column : { VFSDirectoryModel::Modified, VFSDirectoryModel::Created,
+							  VFSDirectoryModel::Accessed } )
+			view->setColumnMaxWidth( column, eefloor( width * 0.27f ) );
 		view->setColumnMaxWidth( VFSDirectoryModel::Type, eefloor( width * 0.18f ) );
+		for ( auto column : { VFSDirectoryModel::Path, VFSDirectoryModel::LinkDestination } )
+			view->setColumnMaxWidth( column, eefloor( width * 0.35f ) );
 	};
 	view->on( Event::OnSizeChange, [capColumns]( const Event* ) { capColumns(); } );
 	view->onModelEvent( [this, raw]( const ModelEvent* event ) {
@@ -924,6 +942,7 @@ void PaneManager::rememberViewState( FileTab* tab ) {
 			hidden.push_back( col );
 	}
 	view["hidden"] = hidden;
+	view["main_column"] = tab->view->getMainColumn();
 	view["order"] = tab->view->getColumnOrder();
 	view["sort_column"] = tab->model->keyColumn();
 	view["sort_order"] = sortOrderName( tab->model->sortOrder() );
@@ -932,12 +951,10 @@ void PaneManager::rememberViewState( FileTab* tab ) {
 
 void PaneManager::applyViewState( FileTab* tab ) {
 	auto* view = tab->view;
-	if ( !mViewState.is_object() || mViewState.empty() ) {
-		view->setColumnsHidden(
-			{ VFSDirectoryModel::Permissions, VFSDirectoryModel::Owner, VFSDirectoryModel::Group },
-			true );
+	view->setColumnsVisible( { VFSDirectoryModel::Name, VFSDirectoryModel::Size,
+							   VFSDirectoryModel::Modified, VFSDirectoryModel::Type } );
+	if ( !mViewState.is_object() || mViewState.empty() )
 		return;
-	}
 	if ( mViewState.contains( "hidden" ) && mViewState["hidden"].is_array() ) {
 		for ( size_t col = 0; col < VFSDirectoryModel::ColumnCount; ++col ) {
 			bool hidden = false;
@@ -954,9 +971,21 @@ void PaneManager::applyViewState( FileTab* tab ) {
 		}
 		view->setColumnOrder( std::move( order ) );
 	}
+	size_t mainColumn = mViewState.value( "main_column", size_t( VFSDirectoryModel::Name ) );
+	if ( mainColumn < VFSDirectoryModel::ColumnCount && !view->isColumnHidden( mainColumn ) ) {
+		view->setMainColumn( mainColumn );
+	} else {
+		for ( size_t col : view->getColumnOrder() ) {
+			if ( !view->isColumnHidden( col ) ) {
+				view->setMainColumn( col );
+				break;
+			}
+		}
+	}
 	if ( mViewState.contains( "columns" ) ) {
 		view->setAutoColumnsWidth( false );
-		view->unserializeColumnWidths( mViewState["columns"] );
+		if ( !view->unserializeColumnWidths( mViewState["columns"] ) )
+			view->setAutoColumnsWidth( true );
 	}
 	size_t column = mViewState.value( "sort_column", 0 );
 	if ( column < VFSDirectoryModel::ColumnCount ) {

@@ -177,6 +177,94 @@ UTEST( VFSProvider, localMetadataAndRevisions ) {
 	EXPECT_TRUE( space && space.value().capacity > 0 );
 }
 
+#if defined( __HAIKU__ )
+UTEST( VFSLocal, birthTimeMatchesNativeHaikuStatInStatAndListings ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	const URI file = tmp.uri().withAppendedSegment( "birth.txt" );
+	ASSERT_TRUE( writeString( vfs, file, "created" ) );
+	struct stat native;
+	ASSERT_EQ( 0, ::lstat( file.getFSPath().c_str(), &native ) );
+	auto info = waitFor( vfs.stat( file ) );
+	ASSERT_TRUE( info );
+	ASSERT_TRUE( info.value().createdTime() );
+	EXPECT_EQ( native.st_crtime, *info.value().createdTime() );
+	auto entries = waitFor( vfs.listAll( tmp.uri() ) );
+	ASSERT_TRUE( entries );
+	ASSERT_EQ( 1u, entries.value().size() );
+	EXPECT_TRUE( info.value().createdTime() == entries.value()[0].createdTime() );
+}
+#endif
+
+#if defined( __linux__ ) && defined( SYS_statx ) && defined( STATX_BTIME )
+UTEST( VFSLocal, birthTimeMatchesNativeStatxInStatAndListings ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	URI file = tmp.uri().withAppendedSegment( "birth.txt" );
+	ASSERT_TRUE( writeString( vfs, file, "created" ) );
+	struct statx native;
+	if ( ::syscall( SYS_statx, AT_FDCWD, file.getFSPath().c_str(), AT_SYMLINK_NOFOLLOW,
+					STATX_BASIC_STATS | STATX_BTIME, &native ) != 0 )
+		UTEST_SKIP( "statx is unavailable on this kernel" );
+	auto info = waitFor( vfs.stat( file ) );
+	ASSERT_TRUE( info );
+	EXPECT_EQ( bool( native.stx_mask & STATX_BTIME ), info.value().createdTime().has_value() );
+	if ( native.stx_mask & STATX_BTIME )
+		EXPECT_EQ( native.stx_btime.tv_sec, *info.value().createdTime() );
+	auto entries = waitFor( vfs.listAll( tmp.uri() ) );
+	ASSERT_TRUE( entries );
+	ASSERT_EQ( 1u, entries.value().size() );
+	EXPECT_TRUE( info.value().createdTime() == entries.value()[0].createdTime() );
+	EXPECT_TRUE( info.value().revision.matches( entries.value()[0].revision ) );
+	EXPECT_EQ( native.stx_atime.tv_sec, *info.value().accessedTime() );
+	// procfs exposes no birth time; it must remain unknown rather than becoming ctime.
+	URI proc( "file:///proc/self/status" );
+	if ( ::syscall( SYS_statx, AT_FDCWD, proc.getFSPath().c_str(), 0,
+					STATX_BASIC_STATS | STATX_BTIME, &native ) == 0 &&
+		 !( native.stx_mask & STATX_BTIME ) ) {
+		auto procInfo = waitFor( vfs.stat( proc ) );
+		ASSERT_TRUE( procInfo );
+		EXPECT_FALSE( procInfo.value().createdTime() );
+	}
+	// Force the old-kernel path only on this disposable I/O worker.
+	auto pool = ThreadPool::createShared( 1 );
+	auto installed = pool->submit( [] {
+		sock_filter instructions[] = {
+			BPF_STMT( BPF_LD | BPF_W | BPF_ABS, offsetof( seccomp_data, nr ) ),
+			BPF_JUMP( BPF_JMP | BPF_JEQ | BPF_K, SYS_statx, 0, 1 ),
+			BPF_STMT( BPF_RET | BPF_K, SECCOMP_RET_ERRNO | ENOSYS ),
+			BPF_STMT( BPF_RET | BPF_K, SECCOMP_RET_ALLOW ),
+		};
+		sock_fprog program{ 4, instructions };
+		return ::prctl( PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0 ) == 0 &&
+			   ::prctl( PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &program ) == 0;
+	} );
+	auto supported = std::move( installed ).get();
+	if ( !supported || !*supported ) {
+		printf( "  seccomp unavailable: cannot force statx ENOSYS\n" );
+		return;
+	}
+	auto scheduler = std::make_shared<LocalIOScheduler>(
+		pool, Seconds( 1 ),
+		[]( const std::string& ) -> std::optional<LocalIOScheduler::NetworkMount> {
+			return std::nullopt;
+		} );
+	LocalProvider provider( scheduler );
+	auto fallback = waitFor( provider.stat( file, {}, {} ) );
+	ASSERT_TRUE( fallback );
+	EXPECT_FALSE( fallback.value().createdTime() );
+	EXPECT_TRUE( fallback.value().size() == info.value().size() );
+	EXPECT_TRUE( fallback.value().revision.matches( info.value().revision ) );
+	auto directory = waitFor( provider.openDirectory( tmp.uri(), {}, {} ) );
+	ASSERT_TRUE( directory );
+	auto batch = waitFor( directory.value().read() );
+	ASSERT_TRUE( batch );
+	ASSERT_EQ( 1u, batch.value().entries.size() );
+	EXPECT_FALSE( batch.value().entries[0].createdTime() );
+	EXPECT_TRUE( batch.value().entries[0].revision.matches( info.value().revision ) );
+}
+#endif
+
 #if EE_PLATFORM != EE_PLATFORM_WIN
 UTEST( VFSLocal, recursiveRemovalThroughParentSymlinksHasAnExplicitMountPolicy ) {
 	TempDir tmp;
@@ -355,6 +443,7 @@ UTEST( VFSProvider, localSymlinks ) {
 
 	auto followed = waitFor( vfs.stat( link ) );
 	EXPECT_TRUE( followed && followed.value().type == FileType::Directory );
+	EXPECT_FALSE( followed.value().size() );
 	auto lstat = waitFor( vfs.stat( link, StatOptions{ false } ) );
 	EXPECT_TRUE( lstat && lstat.value().type == FileType::Symlink );
 	EXPECT_EQ( FileType::Directory, lstat.value().targetType );

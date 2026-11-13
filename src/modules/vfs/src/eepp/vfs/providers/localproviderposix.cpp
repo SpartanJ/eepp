@@ -24,6 +24,7 @@
 #include <unistd.h>
 #if defined( __linux__ )
 #include <sys/syscall.h>
+#include <sys/sysmacros.h>
 #ifndef RENAME_NOREPLACE
 #define RENAME_NOREPLACE ( 1 << 0 )
 #endif
@@ -154,6 +155,8 @@ void fillFromStat( VFSFileInfo& info, const struct stat& st ) {
 	info.setAccessedTime( static_cast<Int64>( st.st_atime ) );
 #if defined( __APPLE__ ) || defined( __FreeBSD__ ) || defined( __NetBSD__ )
 	info.setCreatedTime( static_cast<Int64>( st.st_birthtime ) );
+#elif defined( __HAIKU__ )
+	info.setCreatedTime( static_cast<Int64>( st.st_crtime ) );
 #endif
 	info.setPermissions( static_cast<Uint32>( st.st_mode & 07777 ) );
 	info.setUid( static_cast<Uint32>( st.st_uid ) );
@@ -161,6 +164,39 @@ void fillFromStat( VFSFileInfo& info, const struct stat& st ) {
 	info.revision = FileRevision::fromValues(
 		{ static_cast<Uint64>( st.st_dev ), static_cast<Uint64>( st.st_ino ),
 		  modifiedNanoseconds( st ), static_cast<Uint64>( st.st_size ) } );
+}
+
+bool fillFromPath( VFSFileInfo& info, int dirFd, const char* path, int flags ) {
+	struct stat st;
+#if defined( __linux__ ) && defined( SYS_statx ) && defined( STATX_BTIME )
+	struct statx extended;
+	// One metadata lookup, including birth time when the filesystem provides it. Match
+	// stat/fstatat's automount behavior and fall back on kernels without statx support.
+	if ( ::syscall( SYS_statx, dirFd, path, flags | AT_NO_AUTOMOUNT,
+					STATX_BASIC_STATS | STATX_BTIME, &extended ) == 0 &&
+		 ( extended.stx_mask & STATX_BASIC_STATS ) == STATX_BASIC_STATS ) {
+		st.st_mode = extended.stx_mode;
+		st.st_size = extended.stx_size;
+		st.st_blocks = extended.stx_blocks;
+		st.st_dev = makedev( extended.stx_dev_major, extended.stx_dev_minor );
+		st.st_ino = extended.stx_ino;
+		st.st_nlink = extended.stx_nlink;
+		st.st_uid = extended.stx_uid;
+		st.st_gid = extended.stx_gid;
+		st.st_mtim.tv_sec = extended.stx_mtime.tv_sec;
+		st.st_mtim.tv_nsec = extended.stx_mtime.tv_nsec;
+		st.st_atim.tv_sec = extended.stx_atime.tv_sec;
+		st.st_atim.tv_nsec = extended.stx_atime.tv_nsec;
+		fillFromStat( info, st );
+		if ( extended.stx_mask & STATX_BTIME )
+			info.setCreatedTime( extended.stx_btime.tv_sec );
+		return true;
+	}
+#endif
+	if ( ::fstatat( dirFd, path, &st, flags ) != 0 )
+		return false;
+	fillFromStat( info, st );
+	return true;
 }
 
 std::string readLink( int dirFd, const char* name ) {
@@ -291,9 +327,7 @@ class LocalDirectoryImpl : public DirectoryHandleImpl,
 #endif
 			if ( full || mOptions.metadata == DirectoryMetadata::Storage ||
 				 info.type == FileType::Unknown ) {
-				struct stat st;
-				if ( fstatat( dirFd, name, &st, AT_SYMLINK_NOFOLLOW ) == 0 ) {
-					fillFromStat( info, st );
+				if ( fillFromPath( info, dirFd, name, AT_SYMLINK_NOFOLLOW ) ) {
 					if ( full )
 						fillOwnerNames( info );
 				}
@@ -579,14 +613,13 @@ std::string LocalProvider::groupNameUncached( Uint32 gid ) {
 
 VFSResult<VFSFileInfo> LocalProvider::statSync( const URI& uri, const std::string& path,
 												bool followSymlinks ) {
-	struct stat st;
-	if ( ::lstat( path.c_str(), &st ) != 0 )
-		return Err( errnoError( path, "stat failed" ) );
 	VFSFileInfo info;
+	if ( !fillFromPath( info, AT_FDCWD, path.c_str(), AT_SYMLINK_NOFOLLOW ) )
+		return Err( errnoError( path, "stat failed" ) );
 	// The root keeps its name ("/"): it has no last component.
 	info.name = path == "/" ? path : FileSystem::fileNameFromPath( path );
 	info.hidden = !info.name.empty() && info.name[0] == '.';
-	if ( S_ISLNK( st.st_mode ) ) {
+	if ( info.type == FileType::Symlink ) {
 		info.symlinkTarget = readLink( -1, path.c_str() );
 		// Without following, the target's type is a detail: not worth asking a network mount's
 		// server for it. Following is what the caller asked for.
@@ -597,19 +630,19 @@ VFSResult<VFSFileInfo> LocalProvider::statSync( const URI& uri, const std::strin
 				LocalIOScheduler::resolvePath(
 					link[0] == '/' ? link : FileSystem::fileRemoveFileName( path ) + link, true ) )
 				.has_value();
-		struct stat target;
-		bool resolved = !intoNetworkMount && ::stat( path.c_str(), &target ) == 0;
 		if ( followSymlinks ) {
-			if ( !resolved )
+			VFSFileInfo target;
+			if ( !fillFromPath( target, AT_FDCWD, path.c_str(), 0 ) )
 				return Err( errnoError( path, "stat failed" ) );
-			fillFromStat( info, target );
+			target.name = std::move( info.name );
+			target.symlinkTarget = std::move( info.symlinkTarget );
+			target.hidden = info.hidden;
+			info = std::move( target );
 		} else {
-			fillFromStat( info, st );
-			if ( resolved )
+			struct stat target;
+			if ( !intoNetworkMount && ::stat( path.c_str(), &target ) == 0 )
 				info.targetType = typeFromMode( target.st_mode );
 		}
-	} else {
-		fillFromStat( info, st );
 	}
 	fillOwnerNames( info );
 	return Ok( std::move( info ) );
