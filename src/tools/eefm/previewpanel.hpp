@@ -78,6 +78,8 @@ class PreviewPanel {
 	/** Measures the selected folder, updating its size line as the worker reports progress. */
 	void measureFolder();
 
+	void hideLoader();
+
 	void showMessage( const String& text );
 
 	void updateMessage();

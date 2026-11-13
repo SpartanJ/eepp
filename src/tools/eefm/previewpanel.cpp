@@ -34,7 +34,7 @@ const char* Layout =
 
 constexpr Uint64 MaxTextSize = 2 * 1024 * 1024;
 constexpr Uint64 MaxMediaSize = 128 * 1024 * 1024;
-const auto LoadAction = String::hash( "eefm-preview-load" );
+const auto LoaderAction = String::hash( "eefm-preview-loader" );
 
 /** Handle file navigation before the editor consumes it as cursor movement. */
 class QuickLookEditor : public UICodeEditor {
@@ -208,12 +208,11 @@ void PreviewPanel::rememberSize() {
 
 void PreviewPanel::cancel() {
 	++mGeneration;
+	hideLoader();
 	if ( mCancellation ) {
 		mCancellation->cancel();
 		mCancellation.reset();
 	}
-	if ( mRoot )
-		mRoot->removeActionsByTag( LoadAction );
 	if ( mImage )
 		mImage->reset();
 	if ( mAudio )
@@ -224,7 +223,6 @@ void PreviewPanel::clear() {
 	cancel();
 	mURI.reset();
 	mFileIcon = nullptr;
-	mLoader->setVisible( false );
 	mFallback->setVisible( false );
 	mType.clear();
 	mSizeText.clear();
@@ -244,8 +242,15 @@ void PreviewPanel::clear() {
 	}
 }
 
+void PreviewPanel::hideLoader() {
+	if ( mRoot )
+		mRoot->removeActionsByTag( LoaderAction );
+	if ( mLoader )
+		mLoader->setVisible( false );
+}
+
 void PreviewPanel::showMessage( const String& text ) {
-	mLoader->setVisible( false );
+	hideLoader();
 	if ( mImage )
 		mImage->setVisible( false );
 	mRoot->find<UIImage>( "preview_icon" )->setVisible( !mType.empty() );
@@ -313,15 +318,20 @@ void PreviewPanel::syncSelection() {
 	if ( info.isDirectory() || ( !info.isRegularFile() && !info.isSymlink() ) ) {
 		showMessage(
 			mApp.ui()->i18n( "eefm_preview_not_file", "Select a regular file to preview." ) );
-		// Arrow-key navigation need not start a traversal for every folder crossed.
+		// Measurement runs in the background and is canceled when the selection changes.
 		if ( measure )
-			mRoot->runOnMainThread( [this] { measureFolder(); }, Milliseconds( 100 ), LoadAction );
+			measureFolder();
 		return;
 	}
 	mFallback->setVisible( false );
-	mLoader->setVisible( true );
-	// Arrow-key navigation need not start a read and decode for every row crossed.
-	mRoot->runOnMainThread( [this] { load(); }, Milliseconds( 100 ), LoadAction );
+	// Start the read immediately; fast loads finish before the indicator is needed.
+	mRoot->runOnMainThread(
+		[this, generation = mGeneration] {
+			if ( generation == mGeneration && isVisible() )
+				mLoader->setVisible( true );
+		},
+		Milliseconds( 50 ), LoaderAction );
+	load();
 }
 
 void PreviewPanel::loadApplication( std::string mime ) {
@@ -451,7 +461,7 @@ void PreviewPanel::load() {
 
 				mEditor->setDocument( std::move( preview.document ) );
 				mEditor->setVisible( true );
-				mLoader->setVisible( false );
+				hideLoader();
 			} else if ( preview.kind == PreviewKind::Image ) {
 				if ( !mImage ) {
 					mImage = UIImageViewer::New();
@@ -460,8 +470,7 @@ void PreviewPanel::load() {
 					mImage->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 					mImage->setAutoFitOnSizeChange( true );
 					mImage->setUseNativeImageSize( true );
-					mImage->on( Event::OnResourceLoaded,
-								[this]( const Event* ) { mLoader->setVisible( false ); } );
+					mImage->on( Event::OnResourceLoaded, [this]( const Event* ) { hideLoader(); } );
 					mImage->on( Event::OnResourceLoadFailed, [this]( const Event* ) {
 						if ( isVisible() && mImage->isVisible() ) {
 							showMessage( mApp.ui()->i18n( "eefm_preview_invalid_image",
@@ -484,7 +493,7 @@ void PreviewPanel::load() {
 				if ( preview.audio ) {
 					mAudio->setAudio( std::move( preview.audio ), false );
 					mAudio->setVisible( true );
-					mLoader->setVisible( false );
+					hideLoader();
 				} else {
 					mAudio->reset();
 					showMessage( mApp.ui()->i18n( "eefm_preview_invalid_audio",

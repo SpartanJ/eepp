@@ -1064,10 +1064,9 @@ void App::setPlacesVisible( bool visible ) {
 		mPaneManager->focusPane( mPaneManager->activeIndex() );
 	mPlacesVisible = visible;
 	if ( visible && mPlacesScroll->getParent() != mMainSplitter ) {
-		// The splitter keeps its children in insertion order: re-add the panes after places.
-		mPaneSplitter->setParent( mParking );
+		// Places is appended after the content wrapper; put it back on the left.
 		mPlacesScroll->setParent( mMainSplitter );
-		mPaneSplitter->setParent( mMainSplitter );
+		mMainSplitter->swap();
 	} else if ( !visible && mPlacesScroll->getParent() == mMainSplitter ) {
 		mPlacesScroll->setParent( mParking );
 	}
