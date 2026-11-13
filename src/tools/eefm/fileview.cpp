@@ -1,4 +1,5 @@
 #include "fileview.hpp"
+#include "icons.hpp"
 #include <algorithm>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/image.hpp>
@@ -120,6 +121,12 @@ class FileCell : public UITableCell {
 		return getType() == type || UITableCell::isType( type );
 	}
 
+	UIPushButton* setIcon( DrawablePtr icon ) override {
+		UITableCell::setIcon( std::move( icon ) );
+		Icons::updateColorClass( this, getIcon()->getDrawable() );
+		return this;
+	}
+
 	FileTableView* view() const {
 		Node* node = getParent();
 		while ( node && !node->isType( UI_TYPE_TABLEVIEW ) )
@@ -206,6 +213,7 @@ class FileCell : public UITableCell {
 			else if ( UIIcon* found = rowIcon( table, iconRow ) )
 				icon = found->createDrawable( table->getIconSize() );
 			label->setIcon( icon );
+			Icons::updateColorClass( label, label->getIcon()->getDrawable() );
 			if ( data.is( Variant::Type::Drawable ) )
 				label->addClass( "image_thumbnail" );
 			else

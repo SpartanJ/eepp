@@ -597,7 +597,7 @@ bool App::init() {
 				<eproc-tree-view id="process_tree" lw="mp" lh="0" lw8="1" visible="false"
 					 column-width-mode-menu="true"
 					 table-flags="headers|row-search|focus-on-selection|auto-columns" />
-				<hbox id="status_bar" lw="mp" lh="wc" padding="4dp">
+				<hbox id="status_bar" lw="mp" lh="wc" padding="2dp 4dp 2dp 4dp">
 					<TextView id="process_count" lw="0" lw8="0.25" lh="wc" />
 					<TextView id="cpu_text" lw="0" lw8="0.25" lh="wc" />
 					<TextView id="mem_text" lw="0" lw8="0.25" lh="wc" halign="right" />

@@ -128,16 +128,26 @@ Run only one build at a time. Finish the current build before starting another c
 platform build, or compiler-based diagnostic. Each build already uses the available processors;
 overlapping builds can exhaust the developer's machine.
 
-Always use all processors reported by the platform when selecting the parallel job count. On Linux
-and other systems with `nproc`, use `-j$(nproc)` exactly; do not substitute an arbitrary fixed value
-such as `-j4`. Use the platform-equivalent processor-count command where `nproc` is unavailable.
+On non-macOS hosts, check both the processor count and available system memory before selecting the
+parallel job count. Virtual machines can report many CPUs while having too little memory to run that
+many compiler or linker processes. Treat the processor count as an upper bound, and leave memory
+headroom for the OS, other applications, and linking; debug builds with symbols can require
+substantial memory per job.
+
+When memory permits, use all reported processors: on Linux and other systems with `nproc`, use
+`-j$(nproc)`. Otherwise, choose a lower job count based on the available memory and observed build
+memory usage, respecting any count explicitly selected by the user. Reduce concurrency if the build
+causes heavy paging, approaches the system's committed-memory limit, or stops making useful progress.
+Do not select an arbitrary fixed count without checking these constraints. Use the platform-equivalent
+processor-count command where `nproc` is unavailable.
 
 On macOS, do not query `sysctl` or select a job count separately; the required scripts above own
 parallelism and invoke the platform query themselves.
 
 The valid OS directory names are: `windows`, `macosx`, `linux`, `bsd`, `haiku`.
 
-Run the following command, replacing `<os_name>` with the correct environment:
+When memory permits using all processors, run the following command, replacing `<os_name>` with the
+correct environment. Otherwise, replace `$(nproc)` with the memory-appropriate count selected above:
 `make -C make/<os_name> -j$(nproc)`
 
 **Examples:**

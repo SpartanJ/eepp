@@ -1,5 +1,6 @@
 #include "placespanel.hpp"
 #include "fileview.hpp"
+#include "icons.hpp"
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/nodemessage.hpp>
 #include <eepp/ui/uiimage.hpp>
@@ -223,6 +224,7 @@ void PlacesPanel::setEntries( std::vector<Entry> entries ) {
 		UIIcon* placeIcon = iconOf( place );
 		if ( placeIcon )
 			icon->setDrawable( placeIcon->getSource( PixelDensity::dpToPxI( 16 ) ) );
+		Icons::updateColorClass( icon, icon->getDrawable() );
 		mIcons.emplace_back( icon, placeIcon );
 		icon->setLayoutGravity( UI_VALIGN_CENTER );
 		UITextView* label = UITextView::New();
@@ -315,8 +317,10 @@ void PlacesPanel::refreshIcons() {
 		if ( !icon )
 			continue;
 		const DrawablePtr& source = icon->getSource( PixelDensity::dpToPxI( 16 ) );
-		if ( source && image->getDrawable() != source )
+		if ( source && image->getDrawable() != source ) {
 			image->setDrawable( source );
+			Icons::updateColorClass( image, source );
+		}
 	}
 }
 

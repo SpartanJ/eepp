@@ -1,11 +1,13 @@
 #include "icons.hpp"
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/glyphdrawable.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/uiicontheme.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 using namespace EE;
 using namespace EE::Graphics;
@@ -112,6 +114,17 @@ void Icons::load( UISceneNode* ui, const std::string& assetsPath,
 		theme->add( std::move( appIcon ) );
 	}
 	ui->getUIIconThemeManager()->setCurrentTheme( theme );
+}
+
+void Icons::updateColorClass( UIWidget* widget, const DrawablePtr& drawable ) {
+	const bool colored =
+		drawable && ( drawable->getDrawableType() != Drawable::GLYPH ||
+					  static_cast<GlyphDrawable*>( drawable.get() )->getGlyphRenderMode() ==
+						  GlyphRenderMode::Color );
+	if ( colored )
+		widget->addClass( "color_icon" );
+	else
+		widget->removeClass( "color_icon" );
 }
 
 } // namespace eefm

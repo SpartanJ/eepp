@@ -1035,6 +1035,9 @@ function eepp_module_vfs_dependencies()
 	-- The ssh_config evaluator (always built) resolves host names through Winsock.
 	filter "system:windows"
 		links { "ws2_32" }
+	-- Haiku's resolver and socket APIs live in libnetwork, including the ssh_config evaluator.
+	filter "system:haiku"
+		links { "network" }
 	-- efsw watches directories through FSEvents.
 	filter "system:macosx"
 		links { "CoreFoundation.framework", "CoreServices.framework" }
@@ -2313,6 +2316,8 @@ workspace "eepp"
 		filter {}
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		eepp_module_vfs_add()
+		filter "system:haiku"
+			links { "bsd" }
 		filter "system:windows"
 			links { "shell32" } -- Recycle Bin (SHFileOperationW)
 		filter {}

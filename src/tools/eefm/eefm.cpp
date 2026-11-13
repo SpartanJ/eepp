@@ -56,6 +56,7 @@ PushButton.tool:hover, SelectButton.tool:hover {
 SelectButton.tool:selected {
 	background-color: var(--list-back);
 	border-color: transparent;
+	tint: var(--font);
 }
 .location {
 	margin-left: 4dp;
@@ -140,6 +141,14 @@ tableview::cell::icon {
 }
 tableview::cell::icon.image_thumbnail { tint: white; }
 file_drag_label.image_thumbnail { tint: white; }
+/* System and fallback images keep their colors; only monochrome glyphs use theme tints.
+   The class follows the current drawable as cells are recycled and async icons arrive. */
+tableview::cell.color_icon,
+tableview::row:selected tableview::cell.color_icon,
+.place_icon.color_icon,
+file_drag_label.color_icon {
+	tint: white;
+}
 /* The application logo keeps its colors in light, dark and selected menu states. */
 #open-in-eefm > Menu::Item::icon {
 	tint: white;
@@ -416,8 +425,8 @@ tableview::row:selected tableview::cell.vfs_group {
 tableview::cell.vfs_size {
 	text-align: right;
 }
-.glyph_icons tableview::cell.vfs_folder,
-.glyph_icons file_drag_label.vfs_folder {
+.glyph_icons tableview::cell.vfs_folder:not(.color_icon),
+.glyph_icons file_drag_label.vfs_folder:not(.color_icon) {
 	tint: var(--primary);
 }
 tableview::cell.dragged {

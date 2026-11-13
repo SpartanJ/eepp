@@ -1112,6 +1112,10 @@ function eepp_module_vfs_dependencies()
 	if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 		links { "ws2_32" }
 	end
+	-- Haiku's resolver and socket APIs live in libnetwork, including the ssh_config evaluator.
+	if os.is_real("haiku") then
+		links { "network" }
+	end
 	-- efsw watches directories through FSEvents.
 	if os.is_real("macosx") then
 		links { "CoreFoundation.framework", "CoreServices.framework" }
@@ -2296,6 +2300,9 @@ solution "eepp"
 		end
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		eepp_module_vfs_add()
+		if os.is("haiku") then
+			links { "bsd" }
+		end
 		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 			links { "shell32" } -- Recycle Bin (SHFileOperationW)
 		end
