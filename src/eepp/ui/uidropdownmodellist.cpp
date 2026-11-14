@@ -3,6 +3,7 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uidropdownmodellist.hpp>
+#include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
@@ -37,8 +38,8 @@ UIDropDownModelList::UIDropDownModelList( const std::string& tag ) :
 		mListView->on( Event::OnClose, [this]( const Event* ) { mListView = nullptr; } );
 
 	mListView->setOnSelectionChange( [this]() {
+		updateSelectionIndex();
 		if ( !mListView->getSelection().isEmpty() ) {
-			updateSelectionIndex();
 			sendCommonEvent( Event::OnSelectionChanged );
 		}
 	} );
@@ -95,6 +96,7 @@ void UIDropDownModelList::setListView( UIAbstractTableView* listView ) {
 		mListView->on( Event::OnClose, [this]( const Event* ) { mListView = nullptr; } );
 
 	mListView->setOnSelectionChange( [this]() {
+		updateSelectionIndex();
 		if ( !mListView->getSelection().isEmpty() ) {
 			sendCommonEvent( Event::OnSelectionChanged );
 		}
@@ -103,6 +105,7 @@ void UIDropDownModelList::setListView( UIAbstractTableView* listView ) {
 	if ( mModel ) {
 		mListView->setModel( mModel );
 	}
+	updateSelectionIndex();
 }
 
 std::shared_ptr<Model> UIDropDownModelList::getModel() const {
@@ -110,10 +113,17 @@ std::shared_ptr<Model> UIDropDownModelList::getModel() const {
 }
 
 void UIDropDownModelList::setModel( std::shared_ptr<Model> model ) {
-	mModel = model;
+	if ( mModel == model )
+		return;
+	updateSelectedIcon( {} );
+	mModel = std::move( model );
 	if ( mListView ) {
 		mListView->setModel( mModel );
 	}
+}
+
+UIImage* UIDropDownModelList::getIcon() const {
+	return mIcon;
 }
 
 Uint32 UIDropDownModelList::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
@@ -160,8 +170,6 @@ UIDropDownModelList* UIDropDownModelList::showList() {
 											  ? ScrollBarMode::AlwaysOn
 											  : ScrollBarMode::AlwaysOff );
 
-		Rectf tPadding = mListView->getPadding();
-
 		Float sliderValue = 0;
 		if ( mListView->getVerticalScrollBar() )
 			sliderValue = mListView->getVerticalScrollBar()->getValue();
@@ -178,15 +186,18 @@ UIDropDownModelList* UIDropDownModelList::showList() {
 
 		Float width = getPopUpWidth( contentsWidth );
 
-		Float height = std::ceil( std::ceil( eemin( itemCount, mStyleConfig.MaxNumVisibleItems ) *
-											 PixelDensity::pxToDp( mListView->getRowHeight() ) ) +
-								  tPadding.Top + tPadding.Bottom + mListView->getHeaderHeight() +
-								  ( mListView->getHorizontalScrollBar() &&
-											mListView->getHorizontalScrollBar()->isVisible()
-										? mListView->getHorizontalScrollBar()->getSize().getHeight()
-										: 0.f ) );
-
-		mListView->setSize( width, height );
+		const Rectf padding = mListView->getPixelsPadding();
+		const Float height = std::ceil(
+			eemin( itemCount, mStyleConfig.MaxNumVisibleItems ) * mListView->getRowHeight() +
+			padding.Top + padding.Bottom + mListView->getHeaderHeight() );
+		// Resolve columns and scrollbars at the new width before reserving scrollbar height.
+		// The previous viewport can need a horizontal scrollbar even when this popup does not.
+		mListView->setSize( width, PixelDensity::pxToDp( height ) );
+		if ( auto* scrollBar = mListView->getHorizontalScrollBar();
+			 scrollBar && scrollBar->isVisible() ) {
+			mListView->setSize(
+				width, PixelDensity::pxToDp( height + scrollBar->getPixelsSize().getHeight() ) );
+		}
 
 		if ( mListView->getVerticalScrollBar() )
 			mListView->getVerticalScrollBar()->setValue( sliderValue );
@@ -218,16 +229,108 @@ void UIDropDownModelList::onItemClicked( const Event* ) {
 }
 
 void UIDropDownModelList::updateSelectionIndex() {
-	if ( mListView->getSelection().isEmpty() )
+	if ( !mListView || !mModel || mListView->getSelection().isEmpty() ) {
+		updateSelectedIcon( {} );
 		return;
+	}
 	ModelIndex idx = mListView->getSelection().first();
 	if ( idx.isValid() ) {
+		updateSelectedIcon( idx );
 		Variant var = mModel->data( idx, ModelRole::Display );
 		if ( var.isValid() && var.isString() )
 			setText( var.toString() );
 		sendCommonEvent( Event::OnItemSelected );
 		sendCommonEvent( Event::OnValueChange );
 	}
+}
+
+void UIDropDownModelList::updateSelectedIcon( const ModelIndex& index ) {
+	DrawablePtr drawable;
+	if ( mModel && index.isValid() ) {
+		Variant icon = mModel->data( index, ModelRole::Icon );
+		if ( icon.is( Variant::Type::Icon ) && icon.asIcon() )
+			drawable = icon.asIcon()->createDrawable( mListView->getIconSize() );
+		else if ( icon.is( Variant::Type::Drawable ) )
+			drawable = icon.asDrawable();
+	}
+	if ( drawable && !mIcon ) {
+		mIcon = UIImage::NewWithTag( mTag + "::icon" );
+		mIcon->setScaleType( UIScaleType::FitInside );
+		mIcon->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		mIcon->setEnabled( false );
+		mIcon->setParent( this );
+		mIcon->setAlpha( mAlpha );
+		mIcon->on( Event::OnSizeChange, [this]( const Event* ) {
+			onAutoSize();
+			alignFix();
+		} );
+	}
+	if ( mIcon ) {
+		if ( drawable )
+			mIcon->setPixelsSize( drawable->getPixelsSize() );
+		mIcon->setDrawable( std::move( drawable ) );
+		mIcon->setVisible( mIcon->getDrawable() != nullptr );
+		onAutoSize();
+		alignFix();
+	}
+}
+
+void UIDropDownModelList::alignFix() {
+	if ( !mIcon || !mIcon->isVisible() ) {
+		if ( mIcon )
+			updateTextOverflow();
+		UIDropDown::alignFix();
+		return;
+	}
+	const bool rtl = isRTL();
+	const Float space = mIcon->getPixelsSize().getWidth() + PixelDensity::dpToPx( 4 );
+	mIcon->setPixelsPosition( rtl ? mSize.x - mPaddingPx.Right - mIcon->getPixelsSize().getWidth()
+								  : mPaddingPx.Left,
+							  ( mSize.y - mIcon->getPixelsSize().getHeight() ) * 0.5f );
+	// Measure overflow and alignment in the space after the icon. Keep authored padding intact;
+	// the icon itself remains inside the content box used to clip this widget and its children.
+	const Rectf padding = mPaddingPx;
+	if ( rtl )
+		mPaddingPx.Right += space;
+	else
+		mPaddingPx.Left += space;
+	updateTextOverflow();
+	UIDropDown::alignFix();
+	// The input aligns using the full label width. With ellipsis, align the visible label instead.
+	if ( hasTextOverflow() ) {
+		const Float width = mSize.x - mPaddingPx.Left - mPaddingPx.Right;
+		const Float textWidth = mTextCache.getTextWidth();
+		if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT )
+			mRealAlignOffset.x = width - textWidth;
+		else if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_CENTER )
+			mRealAlignOffset.x = std::trunc( ( width - textWidth ) * 0.5f );
+	}
+	mPaddingPx = padding;
+	if ( !rtl )
+		mRealAlignOffset.x += space;
+}
+
+void UIDropDownModelList::onAutoSize() {
+	if ( mFlags & UI_AUTO_SIZING )
+		return;
+	UIDropDown::onAutoSize();
+	mFlags |= UI_AUTO_SIZING;
+	if ( mIcon && mIcon->isVisible() && mHeightPolicy == SizePolicy::WrapContent ) {
+		setInternalPixelsHeight( eemax( mSize.y, mIcon->getPixelsSize().getHeight() +
+													 mPaddingPx.Top + mPaddingPx.Bottom ) );
+	}
+	mFlags &= ~UI_AUTO_SIZING;
+}
+
+void UIDropDownModelList::onAlphaChange() {
+	UIDropDown::onAlphaChange();
+	if ( mIcon )
+		mIcon->setAlpha( mAlpha );
+}
+
+void UIDropDownModelList::onWidgetClear( const Event* event ) {
+	updateSelectedIcon( {} );
+	UIDropDown::onWidgetClear( event );
 }
 
 void UIDropDownModelList::onItemSelected( const Event* event ) {

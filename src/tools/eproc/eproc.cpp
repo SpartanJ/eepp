@@ -46,8 +46,58 @@ constexpr int kEndProcessSignal = SIGTERM;
 constexpr int kEndProcessSignal = kForceKillSignal;
 #endif
 
+class ProcessFilterModel final : public Model {
+  public:
+	ProcessFilterModel( UISceneNode* ui, bool programsOnlySupported ) :
+		mCount( programsOnlySupported ? ProcessModel::FilterModeCount
+									  : ProcessModel::ProgramsOnly ) {
+		// Entries mirror ProcessModel::FilterMode; the optional Programs Only entry is last.
+		static constexpr const char* filters[][3] = {
+			{ "eproc_filter_all_processes", "All Processes", "list-view" },
+			{ "eproc_filter_all_processes_tree", "All Processes, Tree", "node-tree" },
+			{ "eproc_filter_system_processes", "System Processes", "computer" },
+			{ "eproc_filter_user_processes", "User Processes", "group" },
+			{ "eproc_filter_own_processes", "Own Processes", "user" },
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+			{ "eproc_filter_applications", "Applications", "window" },
+#else
+			{ "eproc_filter_programs_only", "Programs Only", "window" },
+#endif
+		};
+		static_assert( std::size( filters ) == ProcessModel::FilterModeCount );
+		for ( size_t i = 0; i < mCount; ++i )
+			mEntries[i] = { ui->i18n( filters[i][0], filters[i][1] ),
+							ui->findIcon( filters[i][2] ) };
+	}
+
+	size_t rowCount( const ModelIndex& parent = {} ) const override {
+		return parent.isValid() ? 0 : mCount;
+	}
+
+	size_t columnCount( const ModelIndex& = {} ) const override { return 1; }
+
+	Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const override {
+		if ( !isValid( index ) )
+			return {};
+		const auto& entry = mEntries[index.row()];
+		if ( role == ModelRole::Display )
+			return Variant( &entry.text );
+		if ( role == ModelRole::Icon )
+			return Variant( entry.icon );
+		return {};
+	}
+
+  private:
+	struct Entry {
+		String text;
+		UIIcon* icon{ nullptr };
+	};
+	std::array<Entry, ProcessModel::FilterModeCount> mEntries;
+	size_t mCount;
+};
+
 String endProcessLabel( UISceneNode* ui, size_t count ) {
-	return count == 1 ? ui->i18n( "eproc_end_process", "End Process" )
+	return count <= 1 ? ui->i18n( "eproc_end_process", "End Process" )
 					  : ui->i18n( "eproc_end_processes", "End Processes" );
 }
 
@@ -577,6 +627,8 @@ bool App::init() {
 		scale-type: expand;
 	}
 	#settings:hover { tint: var(--primary); }
+	#end_process_btn { tint: var(--theme-error); }
+	#end_process_btn:disabled { tint: var(--disabled-color); }
 	#status_toggle { cursor: pointer; tint: var(--font); }
 	#status_toggle:hover { tint: var(--primary); }
 	]]>
@@ -589,7 +641,8 @@ bool App::init() {
 				<hbox id="toolbar" lw="mp" lh="wc" padding="4dp">
 					<PushButton id="end_process_btn" lw="wc" lh="wc" margin-right="4dp" />
 					<TextInput id="search_input" lw="0" lw8="1" lh="wc" margin-right="4dp" />
-					<DropDownList id="filter_dropdown" lw="120dp" lh="wc" margin-right="4dp" />
+					<DropDownModelList id="filter_dropdown" lw="180dp" lh="wc" margin-right="4dp"
+						menu-width-mode="expand-if-needed" />
 				</hbox>
 				<eproc-table-view id="process_table" lw="mp" lh="0" lw8="1"
 					 column-width-mode-menu="true"
@@ -933,7 +986,7 @@ void App::setupUI() {
 	auto* settingsBtn = mRoot->find<UIWidget>( "settings" );
 	mEndProcessBtn = mRoot->find<UIPushButton>( "end_process_btn" );
 	mSearchInput = mRoot->find<UITextInput>( "search_input" );
-	mFilterDropdown = mRoot->find<UIDropDownList>( "filter_dropdown" );
+	mFilterDropdown = mRoot->find<UIDropDownModelList>( "filter_dropdown" );
 	mTableView = mRoot->find<UITableView>( "process_table" );
 	mTreeView = mRoot->find<UITreeView>( "process_tree" );
 	static_cast<ProcessTableView*>( mTableView )->setSearchInput( mSearchInput );
@@ -966,6 +1019,8 @@ void App::setupUI() {
 	mRoot->find<UITab>( "tab_performance" )
 		->setText( ui->i18n( "eproc_performance_tab", "Performance" ) );
 	mEndProcessBtn->setText( endProcessLabel( ui, 0 ) );
+	mEndProcessBtn->setIcon(
+		ui->findIconDrawable( "indeterminate-circle", PixelDensity::dpToPxI( 16 ) ) );
 	mSearchInput->setHint( ui->i18n( "eproc_quick_search_hint", "Quick search" ) );
 	mStatusText->setText( ui->i18n( "eproc_process_count", "0 processes" ) );
 	mCpuText->setText( ui->i18n( "eproc_cpu_status", "CPU: 0%" ) );
@@ -1000,27 +1055,10 @@ void App::setupUI() {
 		mTabWidget->runOnMainThread( [this] { restoreTabFocus(); } );
 	} );
 
-	// Filter entries mirror the original's ProcessFilter::State order.
-	static const std::pair<const char*, const char*> filters[] = {
-		{ "eproc_filter_all_processes", "All Processes" },
-		{ "eproc_filter_all_processes_tree", "All Processes, Tree" },
-		{ "eproc_filter_system_processes", "System Processes" },
-		{ "eproc_filter_user_processes", "User Processes" },
-		{ "eproc_filter_own_processes", "Own Processes" },
-#if EE_PLATFORM == EE_PLATFORM_MACOS
-		{ "eproc_filter_applications", "Applications" },
-#else
-		{ "eproc_filter_programs_only", "Programs Only" },
-#endif
-	};
-	auto* filterListBox = mFilterDropdown->getListBox();
-	for ( size_t i = 0; i < std::size( filters ); ++i ) {
-		if ( i == ProcessModel::ProgramsOnly &&
-			 ( !mCollector || !mCollector->supportsProgramsOnly() ) )
-			continue;
-		filterListBox->addListBoxItem( ui->i18n( filters[i].first, filters[i].second ) );
-	}
-	filterListBox->setSelected( 0 );
+	mFilterDropdown->getListView()->setIconSize( PixelDensity::dpToPxI( 16 ) );
+	mFilterDropdown->setModel( std::make_shared<ProcessFilterModel>(
+		ui, mCollector && mCollector->supportsProgramsOnly() ) );
+	mFilterDropdown->getListView()->setSelection( mFilterDropdown->getModel()->index( 0, 0 ) );
 
 	// Connect events
 	settingsBtn->on( Event::MouseClick, [this]( const Event* ) { showSettings(); } );
@@ -1676,7 +1714,8 @@ void App::setupProcessTable() {
 		mConfig->filterMode = ProcessModel::AllProcesses;
 	if ( mConfig->filterMode > ProcessModel::AllProcesses &&
 		 mConfig->filterMode < ProcessModel::FilterModeCount ) {
-		mFilterDropdown->getListBox()->setSelected( mConfig->filterMode );
+		mFilterDropdown->getListView()->setSelection(
+			mFilterDropdown->getModel()->index( mConfig->filterMode, 0 ) );
 		if ( mProcessModel->getFilter() != mConfig->filterMode )
 			onFilterChanged();
 	}
@@ -2055,14 +2094,15 @@ void App::onSearchChanged() {
 
 void App::onFilterChanged() {
 	if ( mFilterDropdown && mProcessModel ) {
-		Uint32 selected = mFilterDropdown->getListBox()->getItemSelectedIndex();
-		if ( selected >= ProcessModel::FilterModeCount )
+		const ModelIndex index = mFilterDropdown->getListView()->getSelection().first();
+		if ( !index.isValid() || index.row() < 0 || index.row() >= ProcessModel::FilterModeCount )
 			return;
+		const auto selected = static_cast<ProcessModel::FilterMode>( index.row() );
 		std::vector<Int64> selectedPidsBeforeSwitch = selectedPids();
 		captureTreeExpansion();
 		if ( mTreeView )
 			mTreeView->clearViewMetadata();
-		mProcessModel->setFilter( static_cast<ProcessModel::FilterMode>( selected ) );
+		mProcessModel->setFilter( selected );
 		mTreeMode = selected == ProcessModel::AllProcessesInTreeForm;
 		mTableView->setVisible( !mTreeMode );
 		mTreeView->setVisible( mTreeMode );

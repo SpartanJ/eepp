@@ -267,6 +267,14 @@ DropDownModelList:disabled {
 	border-color: var(--disabled-border);
 }
 
+DropDownModelList::icon {
+	tint: var(--font);
+}
+
+DropDownModelList:disabled > DropDownModelList::icon {
+	tint: var(--disabled-color);
+}
+
 checkbox:disabled {
 	color: var(--disabled-color);
 }

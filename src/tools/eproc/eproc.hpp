@@ -18,7 +18,7 @@
 #include <eepp/ui/charts/uichart.hpp>
 #include <eepp/ui/models/sortingproxymodel.hpp>
 #include <eepp/ui/uiapplication.hpp>
-#include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uimessagebox.hpp>
@@ -172,7 +172,7 @@ class App {
 	UIWidget* mProcessTableLayout{ nullptr };
 	UIPushButton* mEndProcessBtn{ nullptr };
 	UITextInput* mSearchInput{ nullptr };
-	UIDropDownList* mFilterDropdown{ nullptr };
+	UIDropDownModelList* mFilterDropdown{ nullptr };
 	UITableView* mTableView{ nullptr };
 	UITreeView* mTreeView{ nullptr };
 	UITextView* mStatusText{ nullptr };

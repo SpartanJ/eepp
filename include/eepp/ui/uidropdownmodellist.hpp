@@ -6,6 +6,10 @@
 
 namespace EE { namespace UI {
 
+class UIImage;
+
+/** A model-backed dropdown. ModelRole::Icon accepts UIIcon* or DrawablePtr for both the popup
+ *  rows and the selected value. Models without icons retain the text-only presentation. */
 class EE_API UIDropDownModelList : public UIDropDown {
   public:
 	using MenuWidthMode = UIDropDown::MenuWidthMode;
@@ -28,6 +32,9 @@ class EE_API UIDropDownModelList : public UIDropDown {
 
 	virtual void setModel( std::shared_ptr<Model> model );
 
+	/** @return The selected-value icon widget, or nullptr until an icon has been selected. */
+	UIImage* getIcon() const;
+
 	UIDropDownModelList* showList();
 
 	virtual UIDropDownModelList* setMaxNumVisibleItems( const Uint32& maxNumVisibleItems );
@@ -41,6 +48,7 @@ class EE_API UIDropDownModelList : public UIDropDown {
 	UIAbstractTableView* mListView;
 	Uint32 mListViewCloseCb{ 0 };
 	std::shared_ptr<Model> mModel;
+	UIImage* mIcon{ nullptr };
 
 	UIDropDownModelList( const std::string& tag = "dropdownmodellist" );
 
@@ -56,11 +64,21 @@ class EE_API UIDropDownModelList : public UIDropDown {
 
 	virtual void onClassChange();
 
+	virtual void alignFix();
+
+	virtual void onAutoSize();
+
+	virtual void onAlphaChange();
+
+	virtual void onWidgetClear( const Event* event );
+
 	void destroyListView();
 
 	UIWidget* createDefaultListView();
 
 	void updateSelectionIndex();
+
+	void updateSelectedIcon( const ModelIndex& index );
 };
 
 }} // namespace EE::UI
