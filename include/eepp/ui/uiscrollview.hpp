@@ -110,6 +110,8 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 
 	void containerUpdate();
 
+	Sizef containerSize() const;
+
 	void updateScroll();
 
 	virtual void onTouchDragValueChange( Vector2f diff );

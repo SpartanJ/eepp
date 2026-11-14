@@ -39,6 +39,10 @@ constexpr BuiltinType BuiltinTypes[] = {
 	{ "zip", "application/zip", "Zip archive" },
 	{ "gz", "application/gzip", "Gzip archive" },
 	{ "tar", "application/x-tar", "Tar archive" },
+	{ "tar.gz", "application/x-compressed-tar", "Gzip-compressed tar archive" },
+	{ "tar.bz2", "application/x-bzip-compressed-tar", "Bzip-compressed tar archive" },
+	{ "tar.xz", "application/x-xz-compressed-tar", "XZ-compressed tar archive" },
+	{ "tar.zst", "application/x-zstd-compressed-tar", "Zstd-compressed tar archive" },
 	{ "7z", "application/x-7z-compressed", "7-zip archive" },
 	{ "rar", "application/vnd.rar", "RAR archive" },
 	{ "xz", "application/x-xz", "XZ archive" },
@@ -187,6 +191,26 @@ void MimeDatabase::load() {
 #endif
 }
 
+std::unordered_map<std::string, MimeDatabase::Glob>::const_iterator
+MimeDatabase::findSuffix( const std::string& lowerName ) const {
+	// Longest extension first ("tar.gz" before "gz").
+	for ( size_t dot = lowerName.find( '.', 1 ); dot != std::string::npos;
+		  dot = lowerName.find( '.', dot + 1 ) ) {
+		auto found = mExtensions.find( lowerName.substr( dot + 1 ) );
+		if ( found != mExtensions.end() )
+			return found;
+	}
+	return mExtensions.end();
+}
+
+std::string MimeDatabase::suffixForName( const std::string& name ) {
+	std::lock_guard<std::mutex> lock( mMutex );
+	load();
+	auto found = findSuffix( String::toLower( name ) );
+	return found == mExtensions.end() ? std::string()
+									  : name.substr( name.size() - found->first.size() );
+}
+
 const std::string& MimeDatabase::typeForName( const std::string& name ) {
 	static const std::string unknown( "application/octet-stream" );
 	std::lock_guard<std::mutex> lock( mMutex );
@@ -194,14 +218,9 @@ const std::string& MimeDatabase::typeForName( const std::string& name ) {
 	auto exact = mNames.find( name );
 	if ( exact != mNames.end() )
 		return exact->second.mime;
-	// Longest extension first ("tar.gz" before "gz").
-	std::string lower = String::toLower( name );
-	for ( size_t dot = lower.find( '.', 1 ); dot != std::string::npos;
-		  dot = lower.find( '.', dot + 1 ) ) {
-		auto found = mExtensions.find( lower.substr( dot + 1 ) );
-		if ( found != mExtensions.end() )
-			return found->second.mime;
-	}
+	auto suffix = findSuffix( String::toLower( name ) );
+	if ( suffix != mExtensions.end() )
+		return suffix->second.mime;
 	for ( const auto& pattern : mPatterns ) {
 		if ( String::globMatch( name, pattern.first, true ) )
 			return pattern.second.mime;

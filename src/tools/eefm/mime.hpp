@@ -30,6 +30,10 @@ class MimeDatabase {
 	/** MIME type of a file name (not a path). */
 	const std::string& typeForName( const std::string& name );
 
+	/** Longest recognized suffix without the dot, preserving case (for example "tar.gz").
+	 * Unknown suffixes and extensionless dotfiles return empty. May load desktop MIME data. */
+	std::string suffixForName( const std::string& name );
+
 	/** Human readable description ("Markdown document"). Optional translations use the MIME
 	 * type as their key. Consult the translator only on its owning thread. */
 	std::string description( const std::string& mime, const std::string& name = {},
@@ -61,6 +65,9 @@ class MimeDatabase {
 		int weight{ 0 };
 		std::string mime;
 	};
+
+	std::unordered_map<std::string, Glob>::const_iterator
+	findSuffix( const std::string& lowerName ) const;
 
 	std::mutex mMutex;
 	bool mLoaded{ false };

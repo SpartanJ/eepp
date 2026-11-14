@@ -77,6 +77,50 @@ UTEST( String, icompare ) {
 	EXPECT_TRUE( String::icompare( "z", "\xC3\xA1" ) < 0 );
 }
 
+UTEST( String, naturalCompare ) {
+	const struct {
+		std::string_view first;
+		std::string_view second;
+		int order;
+	} cases[] = {
+		{ "", "", 0 },
+		{ "", "0", -1 },
+		{ "file2", "file10", -1 },
+		{ "file10", "file2", 1 },
+		{ "file002", "file2", 0 },
+		{ "file000", "file0", 0 },
+		{ "file0", "file", 1 },
+		{ "file02a", "file2b", -1 },
+		{ "v1.2.12", "v1.10.1", -1 },
+		{ "x999999999999999999999999999999", "x1000000000000000000000000000000", -1 },
+		{ "x999999999999999999999999999998", "x999999999999999999999999999999", -1 },
+		{ "A2", "a2", -1 },
+		{ "z", "\xC3\xA1", -1 },
+		{ "a\0b2"sv, "a\0b10"sv, -1 },
+	};
+	for ( const auto& item : cases ) {
+		int actual = String::naturalCompare( item.first, item.second );
+		EXPECT_EQ( item.order, ( actual > 0 ) - ( actual < 0 ) );
+	}
+	EXPECT_EQ( 0, String::naturalCompare( "FILE002", "file2", false ) );
+	EXPECT_TRUE( String::naturalCompare( "File2", "file10", false ) < 0 );
+	// Equivalent padding and case must not break the ordering contract of std::sort.
+	const std::string_view values[] = { "",	   "0",	   "000", "a",	 "A0",	"a00",	"a01",	"A1",
+										"a1a", "a01b", "a2",  "a10", "a2a", "a2.1", "a2.10" };
+	for ( auto a : values ) {
+		for ( auto b : values ) {
+			int ab = String::naturalCompare( a, b, false );
+			int ba = String::naturalCompare( b, a, false );
+			EXPECT_EQ( ( ab > 0 ) - ( ab < 0 ), ( ba < 0 ) - ( ba > 0 ) );
+			for ( auto c : values ) {
+				int bc = String::naturalCompare( b, c, false );
+				if ( ab <= 0 && bc <= 0 )
+					EXPECT_TRUE( String::naturalCompare( a, c, false ) <= 0 );
+			}
+		}
+	}
+}
+
 UTEST( String, countLines ) {
 	EXPECT_EQ( static_cast<size_t>( 0 ), String::countLines( "" ) );
 	EXPECT_EQ( static_cast<size_t>( 1 ), String::countLines( "A" ) );

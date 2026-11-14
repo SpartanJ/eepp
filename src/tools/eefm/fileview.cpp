@@ -127,6 +127,14 @@ class FileCell : public UITableCell {
 		return this;
 	}
 
+	void updateCell( Model* model ) override {
+		// Keep the text class separate from the model's per-column cell classes.
+		if ( static_cast<VFSDirectoryModel*>( model )->entry( getCurIndex().row() ).isSymlink() )
+			getTextView()->addClass( "symlink" );
+		else
+			getTextView()->removeClass( "symlink" );
+	}
+
 	FileTableView* view() const {
 		Node* node = getParent();
 		while ( node && !node->isType( UI_TYPE_TABLEVIEW ) )

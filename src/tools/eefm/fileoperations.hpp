@@ -23,6 +23,8 @@ class App;
 
 class PropertiesDialog;
 
+class BulkRenameDialog;
+
 class OperationsPopup;
 
 /** @brief What eefm does with files: opening, the context menu, the clipboard, transfers, the
@@ -40,6 +42,12 @@ class FileOperations {
 	 * multiple selection stays in the background. Selections with files open nothing. */
 	void openSelectionInNewTabs( FileTab* tab );
 
+	/** Whether exactly one symbolic link is selected in the active tab. */
+	bool canShowTarget() const;
+
+	/** Resolves the selected link through the VFS and reveals its target in this tab. */
+	void showTarget();
+
 	/** Opens files with the chosen application, including archives. */
 	void openWith( const std::vector<URI>& uris, Application app );
 
@@ -50,6 +58,12 @@ class FileOperations {
 
 	void copySelection( bool cut );
 
+	/** Copies the selected entries into their current folder without changing the clipboard. */
+	void duplicateSelection();
+
+	/** Copies or moves the selection to the other pane's current folder, preserving clipboard. */
+	void transferSelectionToOtherPane( bool move );
+
 	void paste( FileTab* tab, std::optional<URI> into = std::nullopt );
 
 	void moveToTrash();
@@ -58,7 +72,7 @@ class FileOperations {
 
 	void emptyTrash();
 
-	/** Renames the selected item in place (an editor over its name). */
+	/** Renames one item in place, or opens the bulk dialog for multiple items. */
 	void renameSelection();
 
 	/** A name typed in place: renames the entry. */
@@ -103,7 +117,7 @@ class FileOperations {
 	void cancelOperations();
 
 	/** Includes transfers, archive-name checks, and background file changes. */
-	bool hasRunningOperations() const { return !mTransfers.empty() || mPendingOperations > 0; }
+	bool hasRunningOperations() const;
 
   private:
 	void buildContextMenu( FileTab* tab, bool background, Vector2f position,
@@ -204,6 +218,7 @@ class FileOperations {
 	VirtualFileSystem* mVFS;
 	std::map<Uint64, ActiveTransfer> mTransfers;
 	std::vector<std::weak_ptr<PropertiesDialog>> mProperties;
+	std::vector<std::weak_ptr<BulkRenameDialog>> mRenames;
 	std::weak_ptr<OperationsPopup> mOperationsPopup;
 	Uint64 mLastTransferId{ 0 };
 	/** Rejects application discovery results from superseded context menu requests. */

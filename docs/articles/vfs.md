@@ -400,6 +400,41 @@ Backends:
 To establish a consistent view, watch first, list second, then apply the events that arrived during
 the listing; `VFSDirectoryModel` does exactly that.
 
+## Batch rename
+
+`batchRename()` renames siblings using the provider's existing rename operation. It runs planning,
+metadata preflight and execution on the orchestration pool, with cooperative cancellation:
+
+```cpp
+BatchRenamePattern pattern;
+pattern.text = "Photo ###";
+pattern.startIndex = 1;
+auto task = vfs.batchRename( folder,
+    { { "first.tar.gz", "tar.gz" }, { "second.txt", "txt" } }, pattern );
+```
+
+`BatchRenameItem` contains the original basename and a recognized extension without its dot. The
+caller supplies its MIME/extension policy and passes an empty extension for directories. The
+numbering follows input order. A consecutive `#` group sets zero padding; `Position::Before` and
+`After` retain the old stem. `Mode::ReplaceText` performs literal, case-sensitive replacement and
+trims leading spaces; `Mode::AddText` prepends/appends literal text. Extensions retain their case
+and are appended only once. `BatchRenamePattern::apply()` exposes the same pure transformation for
+previews, with no filesystem access. `allowUnnumbered` permits replacing names without a number
+when the caller has established that their extensions distinguish the results.
+
+The complete plan is checked for invalid/duplicate names, missing sources and existing destinations
+before the first rename. Existing entries, including symbolic links, are never overwritten. The
+provider still enforces collisions if a concurrent writer creates a target after preflight. Swaps
+and cycles are not staged through temporary names; targets occupied by other batch items fail
+preflight too.
+
+The task's `BatchRenameResult` owns the original `items`, proposed `names`, a `completed` prefix
+(including unchanged items), and an optional operation `error`. Inspect that error even when the
+task result is successful. Planning errors have no completed items; cancellation or an execution
+error may follow earlier completed renames, which remain applied. The result retains those names
+so callers can refresh selection and relocate open locations after partial completion. This is a
+sequence of provider operations, not a transaction against concurrent writers.
+
 ## VFSDirectoryModel
 
 A `UI::Models::Model` for one directory of any scheme:
@@ -413,6 +448,10 @@ model->setURI( URI( "sftp://makyo/home/black" ) );
 It enumerates incrementally (the first rows appear after the first batch), discards results of
 previous navigations, stays live through watches (row inserts/deletes keep the selection), and
 exposes `loadState()`, `error()` and `watchStatus()`.
+`Config::naturalSort` orders ASCII digit runs in names by numeric value (`file2` before `file10`),
+including name tie-breaks when sorting other columns. It defaults to false. Name comparisons ignore
+ASCII case, with a bytewise tie-break for equal numbers/case; directories precede files in either
+sort direction. The natural comparator does not allocate or overflow on long digit runs.
 Fast listings coalesce subsequent batches before merging them into the sorted rows; slow listings
 publish new rows at the next batch after 50 ms, and the last batch always flushes pending entries.
 

@@ -1,5 +1,6 @@
 #include <eepp/vfs/virtualfilesystem.hpp>
 
+#include "batchrenameengine.hpp"
 #include "permissionsengine.hpp"
 #include "zipcreation.hpp"
 #include <algorithm>
@@ -214,6 +215,19 @@ VFSTask<Ownership> VirtualFileSystem::resolveOwnership( const URI& uri, std::str
 
 VFSTask<SpaceInfo> VirtualFileSystem::spaceInfo( const URI& uri, CancellationToken token ) {
 	EE_VFS_FORWARD( SpaceInfo, uri, spaceInfo( uri, std::move( token ) ) );
+}
+
+VFSTask<BatchRenameResult> VirtualFileSystem::batchRename( URI directory,
+														   std::vector<BatchRenameItem> items,
+														   BatchRenamePattern pattern,
+														   CancellationToken token ) {
+	return orchestrate<BatchRenameResult>(
+		[this, directory = std::move( directory ), items = std::move( items ),
+		 pattern = std::move( pattern ),
+		 token = std::move( token )]() mutable -> VFSResult<BatchRenameResult> {
+			return Ok( BatchRenameEngine::run( *this, directory, std::move( items ), pattern,
+											   std::move( token ) ) );
+		} );
 }
 
 VFSTask<void> VirtualFileSystem::changePermissions( std::vector<URI> roots,

@@ -684,6 +684,48 @@ UTEST( UIScrolling, MouseWheelOverrideCanSuppressListenerDispatch ) {
 	EXPECT_EQ( wheelEvents, 0 );
 }
 
+UTEST( UIScrolling, DeferredViewportResizeUsesLatestGeometry ) {
+	unsigned staleResizes = 0;
+	UIApplication app(
+		WindowSettings{ 320, 240, "eepp - deferred scroll viewport resize" },
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* scene = app.getUI();
+	ASSERT_NE( scene, nullptr );
+	auto* scroll = scene
+					   ->loadLayoutFromString( R"xml(
+		<ScrollView lw="120dp" lh="100dp" hscroll-mode="off" vscroll-mode="off">
+			<widget lw="400dp" lh="300dp" />
+		</ScrollView>
+	)xml" )
+					   ->asType<UIScrollView>();
+	for ( int frame = 0; frame < 4; ++frame )
+		SceneManager::instance()->update();
+	ASSERT_TRUE( scroll->getContainer()->getPixelsSize() == Sizef( 120, 100 ) );
+	scroll->getContainer()->on( Event::OnSizeChange, [scroll, &staleResizes]( const Event* ) {
+		if ( scroll->getContainer()->getPixelsSize() != scroll->getPixelsSize() )
+			++staleResizes;
+	} );
+	// Layout can request several sizes in one frame, ending at the existing viewport size.
+	// Pending resizes must not replay earlier widths (which can rewrap content and oscillate).
+	scroll->setPixelsSize( 80, 100 );
+	scroll->setPixelsSize( 140, 100 );
+	scroll->setPixelsSize( 120, 100 );
+	for ( int frame = 0; frame < 8; ++frame )
+		SceneManager::instance()->update();
+	EXPECT_EQ( staleResizes, 0u );
+	EXPECT_TRUE( scroll->getContainer()->getPixelsSize() == Sizef( 120, 100 ) );
+
+	// Mode changes can also make a pending outside-scrollbar size obsolete.
+	scroll->setVerticalScrollMode( ScrollBarMode::AlwaysOn );
+	scroll->setHorizontalScrollMode( ScrollBarMode::AlwaysOn );
+	scroll->setVerticalScrollMode( ScrollBarMode::AlwaysOff );
+	scroll->setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
+	for ( int frame = 0; frame < 8; ++frame )
+		SceneManager::instance()->update();
+	EXPECT_EQ( staleResizes, 0u );
+	EXPECT_TRUE( scroll->getContainer()->getPixelsSize() == Sizef( 120, 100 ) );
+}
+
 UTEST( UIScrolling, XmlOffModesHideScrollBarsEvenWhenContentOverflows ) {
 	// The model borrows its rows, which must outlive the scene and its list view.
 	const std::vector<std::string> rows( 8, "Overflow row" );

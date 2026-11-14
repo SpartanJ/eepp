@@ -455,7 +455,8 @@ bool VFSDirectoryModel::less( const VFSFileInfo& a, const VFSFileInfo& b, const 
 	int cmp = 0;
 	// Runs O(n log n) times per sort on the UI thread: no allocations.
 	auto compareNames = [&] {
-		int c = String::icompare( a.name, b.name );
+		int c = mConfig.naturalSort ? String::naturalCompare( a.name, b.name, false )
+									: String::icompare( a.name, b.name );
 		return c != 0 ? c : a.name.compare( b.name );
 	};
 	auto compareNumbers = []( auto x, auto y ) { return x < y ? -1 : ( y < x ? 1 : 0 ); };

@@ -546,6 +546,13 @@ class EE_API String {
 	 * would). @return Negative, zero or positive, like std::string::compare(). */
 	static int icompare( std::string_view str1, std::string_view str2 );
 
+	/** Compares byte strings with ASCII digit runs ordered by numeric value, without allocating
+	 * or converting to bounded integers. Equal numbers compare equally regardless of leading
+	 * zeros; caseSensitive=false ignores ASCII case. Other bytes compare unsigned.
+	 * @return Negative, zero or positive, like std::string::compare(). */
+	static int naturalCompare( std::string_view first, std::string_view second,
+							   bool caseSensitive = true );
+
 	/** Creates a random string using the dictionary characters. */
 	static std::string randString(
 		size_t len,

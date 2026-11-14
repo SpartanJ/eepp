@@ -83,6 +83,8 @@ class EE_VFS_API VFSDirectoryModel : public Model,
 		/** Count the entries of each listed directory in the background (shown in the Size
 		 * column). Each count lists a directory, so enable it where listings are cheap. */
 		bool countDirectoryItems{ false };
+		/** Order digit runs in names by value (file2 before file10). */
+		bool naturalSort{ false };
 	};
 
 	using IconProvider = std::function<Variant( const VFSFileInfo& )>;

@@ -7,6 +7,7 @@
 #include <eepp/system/inifile.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/vfs/batchrename.hpp>
 #include <eepp/window/window.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 
@@ -47,6 +48,7 @@ struct FilesConfig {
 	bool cacheThumbnails{ true };
 	bool remoteThumbnails{ false };
 	ImageThumbnailer::CacheFormat thumbnailCacheFormat{ ImageThumbnailer::CacheFormat::QOI };
+	EE::VFS::BatchRenamePattern::Mode renameMode{ EE::VFS::BatchRenamePattern::Mode::Enumerate };
 };
 
 struct TerminalConfig {

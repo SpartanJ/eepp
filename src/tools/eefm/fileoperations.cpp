@@ -1,5 +1,6 @@
 #include "fileoperations.hpp"
 #include "arkdrop.hpp"
+#include "bulkrenamedialog.hpp"
 #include "desktopintegration.hpp"
 #include "eefm.hpp"
 #include "location.hpp"
@@ -38,6 +39,20 @@ void FileOperations::cancelOperations() {
 			dialog->cancel();
 	}
 	mProperties.clear();
+	for ( auto& weak : mRenames ) {
+		if ( auto dialog = weak.lock() )
+			dialog->cancel();
+	}
+	mRenames.clear();
+}
+
+bool FileOperations::hasRunningOperations() const {
+	if ( !mTransfers.empty() || mPendingOperations > 0 )
+		return true;
+	return std::any_of( mRenames.begin(), mRenames.end(), []( const auto& weak ) {
+		auto dialog = weak.lock();
+		return dialog && dialog->isRunning();
+	} );
 }
 
 void FileOperations::showOperations( int paneIndex ) {
@@ -157,6 +172,64 @@ void FileOperations::openSelectionInNewTabs( FileTab* tab ) {
 		if ( select && opened )
 			opened->view->setFocus();
 	}
+}
+
+bool FileOperations::canShowTarget() const {
+	if ( !mApp.panes().ready() )
+		return false;
+	auto* tab = mApp.panes().currentTab();
+	if ( !tab || tab->view->getSelection().size() != 1 )
+		return false;
+	const auto index = tab->view->getSelection().first();
+	return index.row() >= 0 && static_cast<size_t>( index.row() ) < tab->model->rowCount() &&
+		   tab->model->entry( index.row() ).isSymlink();
+}
+
+void FileOperations::showTarget() {
+	if ( !canShowTarget() )
+		return;
+	auto* tab = mApp.panes().currentTab();
+	URI link = tab->model->entryURI( tab->view->getSelection().first().row() );
+	std::weak_ptr<VFSDirectoryModel> model = tab->model;
+	// Keep only the resolved URI and hidden flag; metadata reads stay with the provider.
+	using Target = std::pair<URI, bool>;
+	mVFS->canonicalize( link )
+		.thenDroppable(
+			mApp.executor(),
+			[vfs = mVFS]( VFSResult<URI>&& resolved ) -> VFSTask<Target> {
+				if ( !resolved )
+					return VFSTask<Target>::ready( Err( std::move( resolved ).error() ) );
+				URI uri = std::move( resolved ).value();
+				auto metadata = vfs->stat( uri );
+				return std::move( metadata )
+					.then( [uri = std::move( uri )](
+							   VFSResult<VFSFileInfo>&& info ) mutable -> VFSResult<Target> {
+						if ( !info )
+							return Err( std::move( info ).error() );
+						return Ok( Target{ std::move( uri ), info.value().hidden } );
+					} );
+			} )
+		.thenDroppable( mApp.executor(), [this, tab, model,
+										  link = std::move( link )]( VFSResult<Target>&& result ) {
+			// Closing/navigating the tab or changing its selection supersedes this reveal.
+			auto owner = model.lock();
+			if ( !owner || mApp.panes().currentTab() != tab || tab->model != owner ||
+				 !canShowTarget() ||
+				 tab->model->entryURI( tab->view->getSelection().first().row() ) != link )
+				return;
+			if ( !result ) {
+				reportError( mUI->i18n( "eefm_show_target", "Show Target" ), result.error() );
+				return;
+			}
+			auto [target, hidden] = std::move( result ).value();
+			// A reveal must remain visible even with a locked name filter or hidden files off.
+			tab->pane->filterInput->setText( "" );
+			if ( hidden )
+				mApp.setShowHidden( true );
+			tab->selectLater( Location::entryName( target ) );
+			mApp.panes().navigate( tab, Location::parent( target ) );
+			tab->view->setFocus();
+		} );
 }
 
 namespace {
@@ -573,6 +646,11 @@ void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f p
 					->setId( "open-other" );
 			}
 		}
+		if ( rows.size() == 1 && tab->model->entry( rows[0] ).isSymlink() ) {
+			menu->add( mUI->i18n( "eefm_show_target", "Show Target" ), mApp.menuIcon( "go-parent" ),
+					   mApp.getKeybind( "show-target" ) )
+				->setId( "show-target" );
+		}
 		if ( !inTrash && uris.size() == 1 && archive ) {
 			const URI file = uris[0];
 			const std::string folderName = Location::archiveFolderName( file );
@@ -670,6 +748,19 @@ void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f p
 		menu->add( mUI->i18n( "eefm_copy", "Copy" ), mApp.menuIcon( "copy" ),
 				   mApp.getKeybind( "copy" ) )
 			->setId( "copy" );
+		if ( !inTrash ) {
+			menu->add( mUI->i18n( "eefm_duplicate_here", "Duplicate Here" ),
+					   mApp.menuIcon( "copy" ), mApp.getKeybind( "duplicate" ) )
+				->setId( "duplicate" );
+		}
+		menu->add( mUI->i18n( "eefm_copy_to_other_view", "Copy to Other View" ),
+				   mApp.menuIcon( "copy" ), mApp.getKeybind( "copy-to-other-view" ) )
+			->setId( "copy-to-other-view" )
+			->setEnabled( mApp.isSplit() );
+		menu->add( mUI->i18n( "eefm_move_to_other_view", "Move to Other View" ),
+				   mApp.menuIcon( "cut" ), mApp.getKeybind( "move-to-other-view" ) )
+			->setId( "move-to-other-view" )
+			->setEnabled( mApp.isSplit() );
 		menu->add( mUI->i18n( "eefm_copy_location", "Copy Location" ),
 				   mApp.menuIcon( "action-copy-location" ) )
 			->setId( "copy-location" );
@@ -679,7 +770,7 @@ void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f p
 				->setId( "paste-into" );
 		}
 		menu->addSeparator();
-		if ( rows.size() == 1 ) {
+		if ( !inTrash && mVFS->capabilities( tab->model->uri() ).has( VFSCapability::Rename ) ) {
 			menu->add( mUI->i18n( "eefm_rename", "Rename..." ), mApp.menuIcon( "edit" ),
 					   mApp.getKeybind( "rename" ) )
 				->setId( "rename" );
@@ -747,12 +838,18 @@ void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f p
 				openWith( uris, *defaultApp );
 		} else if ( id == "open-tab" ) {
 			openSelectionInNewTabs( tab );
+		} else if ( id == "show-target" ) {
+			showTarget();
 		} else if ( id == "open-other" ) {
 			if ( auto* other =
 					 mApp.panes().currentTab( mApp.panes().pane( 1 - tab->pane->index ) ) )
 				mApp.panes().navigate( other, uris[0] );
 		} else if ( id == "cut" || id == "copy" ) {
 			copySelection( id == "cut" );
+		} else if ( id == "duplicate" ) {
+			duplicateSelection();
+		} else if ( id == "copy-to-other-view" || id == "move-to-other-view" ) {
+			transferSelectionToOtherPane( id == "move-to-other-view" );
 		} else if ( id == "copy-location" ) {
 			std::string text;
 			for ( const auto& uri : uris )
@@ -823,6 +920,30 @@ void FileOperations::copySelection( bool cut ) {
 	mClipboardText = text;
 	if ( !clipboard->setMimeData( std::move( data ) ) )
 		clipboard->setText( text );
+}
+
+void FileOperations::duplicateSelection() {
+	auto* tab = mApp.panes().currentTab();
+	if ( !tab || Trash::contains( tab->model->uri() ) )
+		return;
+	const auto uris = tab->selectedURIs();
+	if ( !uris.empty() )
+		transferFiles( uris, tab->model->uri(), false, tab->pane->index );
+}
+
+void FileOperations::transferSelectionToOtherPane( bool move ) {
+	if ( !mApp.isSplit() )
+		return;
+	auto& panes = mApp.panes();
+	auto* source = panes.currentTab();
+	if ( !source )
+		return;
+	auto* target = panes.currentTab( panes.pane( 1 - source->pane->index ) );
+	if ( !target )
+		return;
+	const auto uris = source->selectedURIs();
+	if ( !uris.empty() )
+		transferFiles( uris, target->model->uri(), move, target->pane->index );
 }
 
 FileOperations::ClipboardFiles FileOperations::clipboardFiles() const {
@@ -1315,9 +1436,16 @@ void FileOperations::renameSelection() {
 	auto* tab = mApp.panes().currentTab();
 	if ( !tab )
 		return;
+	if ( Trash::contains( tab->model->uri() ) ||
+		 !mVFS->capabilities( tab->model->uri() ).has( VFSCapability::Rename ) )
+		return;
 	auto rows = tab->selectedRows();
-	if ( rows.size() == 1 )
+	if ( rows.size() == 1 ) {
 		tab->view->beginRename( rows[0] );
+	} else if ( rows.size() > 1 ) {
+		std::erase_if( mRenames, []( const auto& dialog ) { return dialog.expired(); } );
+		mRenames.push_back( BulkRenameDialog::show( mApp, *tab ) );
+	}
 }
 
 void FileOperations::renameEntry( FileTab* tab, const VFSFileInfo& entry,

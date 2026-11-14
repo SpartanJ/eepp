@@ -37,6 +37,10 @@ void AppConfig::load() {
 					   ImageThumbnailer::cacheFormatToString( files.thumbnailCacheFormat ) ) );
 	files.systemIcons = mIni.getValueB( "files", "system_icons", files.systemIcons );
 	files.smoothScroll = mIni.getValueB( "files", "smooth_scroll", files.smoothScroll );
+	const auto renameMode = mIni.getValue( "files", "bulk_rename_mode", "enumerate" );
+	files.renameMode = renameMode == "replace" ? EE::VFS::BatchRenamePattern::Mode::ReplaceText
+					   : renameMode == "add"   ? EE::VFS::BatchRenamePattern::Mode::AddText
+											   : EE::VFS::BatchRenamePattern::Mode::Enumerate;
 
 	terminal.fontPath = mIni.getValue( "terminal", "font_path", terminal.fontPath );
 	terminal.fontSize = mIni.getValueF( "terminal", "font_size", terminal.fontSize );
@@ -88,6 +92,10 @@ bool AppConfig::save() {
 	mIni.setValue( "files", "thumbnail_cache_format",
 				   ImageThumbnailer::cacheFormatToString( files.thumbnailCacheFormat ) );
 	mIni.setValueB( "files", "smooth_scroll", files.smoothScroll );
+	mIni.setValue( "files", "bulk_rename_mode",
+				   files.renameMode == EE::VFS::BatchRenamePattern::Mode::ReplaceText ? "replace"
+				   : files.renameMode == EE::VFS::BatchRenamePattern::Mode::AddText ? "add"
+																					: "enumerate" );
 
 	mIni.setValue( "terminal", "font_path", terminal.fontPath );
 	mIni.setValueF( "terminal", "font_size", terminal.fontSize );

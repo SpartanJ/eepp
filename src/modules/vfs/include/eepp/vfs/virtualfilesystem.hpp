@@ -3,6 +3,7 @@
 
 #include <eepp/core/containers.hpp>
 #include <eepp/system/threadpool.hpp>
+#include <eepp/vfs/batchrename.hpp>
 #include <eepp/vfs/config.hpp>
 #include <eepp/vfs/directorystats.hpp>
 #include <eepp/vfs/iostreamvfs.hpp>
@@ -135,6 +136,14 @@ class EE_VFS_API VirtualFileSystem {
 	VFSTask<SpaceInfo> spaceInfo( const URI& uri, CancellationToken token = {} );
 
 	// Orchestrated operations.
+
+	/** Renames siblings in input order on the orchestration pool. Preflights every name and
+	 * existing destination before mutation; never overwrites. Stops on cancellation/error and
+	 * returns the completed prefix with its error in BatchRenameResult. Earlier changes remain.
+	 * Concurrent writers can still cause execution-time failure. No cycle/swap staging occurs. */
+	VFSTask<BatchRenameResult> batchRename( URI directory, std::vector<BatchRenameItem> items,
+											BatchRenamePattern pattern,
+											CancellationToken token = {} );
 
 	/** Applies permission/ownership edits off the caller thread. Stops at the first error;
 	 * earlier changes remain applied. Cancellation is cooperative. Recursive traversal skips

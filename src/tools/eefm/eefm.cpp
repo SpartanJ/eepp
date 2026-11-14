@@ -360,6 +360,10 @@ tableview::cell {
 }
 tableview::cell::text {
 	text-overflow: ellipsis;
+	font-style: normal;
+}
+tableview::cell::text.symlink {
+	font-style: italic;
 }
 tableview::row {
 	opacity: 1;
@@ -1155,8 +1159,33 @@ void App::showAppMenu() {
 	menu->add( mUI->i18n( "eefm_new_tab", "New Tab" ), menuIcon( "action-new-tab" ),
 			   getKeybind( "new-tab" ) )
 		->setId( "new-tab" );
-	if ( mPaneManager->currentTab() &&
-		 mPaneManager->currentTab()->model->uri().getScheme() == "file" ) {
+	menu->add( mUI->i18n( "eefm_reopen_closed_tab", "Reopen Closed Tab" ), nullptr,
+			   getKeybind( "reopen-closed-tab" ) )
+		->setId( "reopen-closed-tab" )
+		->setEnabled( mPaneManager->hasClosedTabs() );
+	auto* tab = mPaneManager->currentTab();
+	menu->add( mUI->i18n( "eefm_duplicate_here", "Duplicate Here" ), menuIcon( "copy" ),
+			   getKeybind( "duplicate" ) )
+		->setId( "duplicate" )
+		->setEnabled( tab && !tab->view->getSelection().isEmpty() );
+	const bool canTransfer = mSplit && tab && !tab->view->getSelection().isEmpty();
+	menu->add( mUI->i18n( "eefm_copy_to_other_view", "Copy to Other View" ), menuIcon( "copy" ),
+			   getKeybind( "copy-to-other-view" ) )
+		->setId( "copy-to-other-view" )
+		->setEnabled( canTransfer );
+	menu->add( mUI->i18n( "eefm_move_to_other_view", "Move to Other View" ), menuIcon( "cut" ),
+			   getKeybind( "move-to-other-view" ) )
+		->setId( "move-to-other-view" )
+		->setEnabled( canTransfer );
+	menu->add( mUI->i18n( "eefm_invert_selection", "Invert Selection" ), nullptr,
+			   getKeybind( "invert-selection" ) )
+		->setId( "invert-selection" )
+		->setEnabled( tab && tab->model->rowCount() > 0 );
+	menu->add( mUI->i18n( "eefm_show_target", "Show Target" ), menuIcon( "go-parent" ),
+			   getKeybind( "show-target" ) )
+		->setId( "show-target" )
+		->setEnabled( mFileOperations->canShowTarget() );
+	if ( tab && tab->model->uri().getScheme() == "file" ) {
 		menu->add( mUI->i18n( "eefm_open_terminal", "Open Terminal" ),
 				   menuIcon( "action-terminal" ), getKeybind( "terminal" ) )
 			->setId( "open-terminal" );
@@ -1209,6 +1238,17 @@ void App::showAppMenu() {
 			mPaneManager->openTab( mPaneManager->activePane(),
 								   tab ? tab->model->uri()
 									   : URI::fromFSPath( Sys::getUserDirectory() ) );
+		} else if ( id == "reopen-closed-tab" ) {
+			mPaneManager->reopenClosedTab();
+		} else if ( id == "duplicate" ) {
+			mFileOperations->duplicateSelection();
+		} else if ( id == "copy-to-other-view" || id == "move-to-other-view" ) {
+			mFileOperations->transferSelectionToOtherPane( id == "move-to-other-view" );
+		} else if ( id == "invert-selection" ) {
+			if ( auto* tab = mPaneManager->currentTab() )
+				tab->invertSelection();
+		} else if ( id == "show-target" ) {
+			mFileOperations->showTarget();
 		} else if ( id == "hidden" ) {
 			setShowHidden( !mShowHidden );
 		} else if ( id == "split" ) {
@@ -1264,8 +1304,16 @@ void App::createMenuBar() {
 	auto* file = menu( mUI->i18n( "eefm_file_menu", "File" ) );
 	add( file, mUI->i18n( "eefm_new_tab", "New Tab" ), "new-tab" );
 	add( file, mUI->i18n( "eefm_close_tab", "Close Tab" ), "close-tab" );
+	auto* reopen = add( file, mUI->i18n( "eefm_reopen_closed_tab", "Reopen Closed Tab" ),
+						"reopen-closed-tab" );
+	reopen->setEnabled( mPaneManager->hasClosedTabs() );
+	file->on( Event::OnMenuShow, [this, file]( const Event* ) {
+		file->find<UIWidget>( "reopen-closed-tab" )->setEnabled( mPaneManager->hasClosedTabs() );
+		file->find<UIWidget>( "show-target" )->setEnabled( mFileOperations->canShowTarget() );
+	} );
 	file->addSeparator();
 	add( file, mUI->i18n( "eefm_new_folder_title", "New Folder" ), "new-folder" );
+	add( file, mUI->i18n( "eefm_show_target", "Show Target" ), "show-target" )->setEnabled( false );
 	add( file, mUI->i18n( "eefm_properties", "Properties" ), "properties" );
 	file->addSeparator();
 	add( file, mUI->i18n( "eefm_quit", "Quit" ), "quit" )->setMenuRole( MenuRole::Quit );
@@ -1274,8 +1322,20 @@ void App::createMenuBar() {
 	add( edit, mUI->i18n( "eefm_cut", "Cut" ), "cut" );
 	add( edit, mUI->i18n( "eefm_copy", "Copy" ), "copy" );
 	add( edit, mUI->i18n( "eefm_paste", "Paste" ), "paste" );
+	add( edit, mUI->i18n( "eefm_duplicate_here", "Duplicate Here" ), "duplicate" );
+	add( edit, mUI->i18n( "eefm_copy_to_other_view", "Copy to Other View" ), "copy-to-other-view" )
+		->setEnabled( false );
+	add( edit, mUI->i18n( "eefm_move_to_other_view", "Move to Other View" ), "move-to-other-view" )
+		->setEnabled( false );
+	edit->on( Event::OnMenuShow, [this, edit]( const Event* ) {
+		auto* tab = mPaneManager->currentTab();
+		const bool enabled = mSplit && tab && !tab->view->getSelection().isEmpty();
+		edit->find<UIWidget>( "copy-to-other-view" )->setEnabled( enabled );
+		edit->find<UIWidget>( "move-to-other-view" )->setEnabled( enabled );
+	} );
 	edit->addSeparator();
 	add( edit, mUI->i18n( "eefm_select_all", "Select All" ), "select-all" );
+	add( edit, mUI->i18n( "eefm_invert_selection", "Invert Selection" ), "invert-selection" );
 	add( edit, mUI->i18n( "eefm_rename", "Rename..." ), "rename" );
 	add( edit, mUI->i18n( "eefm_move_to_trash", "Move to Trash" ), "trash" );
 	add( edit, mUI->i18n( "eefm_delete", "Delete" ), "delete" );
@@ -1350,6 +1410,7 @@ void App::registerShortcuts() {
 	} );
 	mUI->setKeyBindingCommand( "close-tab",
 							   onTab( [this]( FileTab* tab ) { mPaneManager->closeTab( tab ); } ) );
+	mUI->setKeyBindingCommand( "reopen-closed-tab", [this] { mPaneManager->reopenClosedTab(); } );
 	mUI->setKeyBindingCommand( "next-tab", [this] {
 		Pane& p = mPaneManager->activePane();
 		Uint32 count = p.tabs->getTabCount();
@@ -1412,6 +1473,17 @@ void App::registerShortcuts() {
 								   if ( auto* tab = mPaneManager->currentTab() )
 									   mFileOperations->paste( tab );
 							   } ) );
+	mUI->setKeyBindingCommand( "duplicate",
+							   fileCommand( [this] { mFileOperations->duplicateSelection(); } ) );
+	mUI->setKeyBindingCommand( "copy-to-other-view", fileCommand( [this] {
+								   mFileOperations->transferSelectionToOtherPane( false );
+							   } ) );
+	mUI->setKeyBindingCommand( "move-to-other-view", fileCommand( [this] {
+								   mFileOperations->transferSelectionToOtherPane( true );
+							   } ) );
+	mUI->setKeyBindingCommand( "invert-selection", fileCommand( onTab( []( FileTab* tab ) {
+								   tab->invertSelection();
+							   } ) ) );
 	mUI->setKeyBindingCommand( "select-all", fileCommand( [this] {
 								   if ( auto* tab = mPaneManager->currentTab() ) {
 									   std::vector<ModelIndex> all;
@@ -1425,6 +1497,8 @@ void App::registerShortcuts() {
 							   fileCommand( [this] { mFileOperations->deleteSelection(); } ) );
 	mUI->setKeyBindingCommand( "rename",
 							   fileCommand( [this] { mFileOperations->renameSelection(); } ) );
+	mUI->setKeyBindingCommand( "show-target",
+							   fileCommand( [this] { mFileOperations->showTarget(); } ) );
 	mUI->setKeyBindingCommand( "properties", fileCommand( onTab( [this]( FileTab* tab ) {
 								   mFileOperations->showProperties( tab );
 							   } ) ) );
@@ -1450,6 +1524,7 @@ KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
 	bindings.addKeybindsString( {
 		{ "mod+t", "new-tab" },
 		{ "mod+w", "close-tab" },
+		{ "mod+shift+t", "reopen-closed-tab" },
 		{ "mod+tab", "next-tab" },
 		{ "mod+shift+tab", "previous-tab" },
 		{ "mod+l", "focus-location" },
@@ -1473,6 +1548,10 @@ KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
 		{ "mod+x", "cut" },
 		{ "mod+v", "paste" },
 		{ "mod+a", "select-all" },
+		{ "mod+shift+a", "invert-selection" },
+		{ "mod+d", "duplicate" },
+		{ "shift+f5", "copy-to-other-view" },
+		{ "shift+f6", "move-to-other-view" },
 		{ "f2", "rename" },
 		{ "alt+return", "properties" },
 		{ "shift+f4", "terminal" },
@@ -1550,7 +1629,7 @@ UIWidget* App::createKeybindingsEditor( UIWidget* parent ) {
 		  .contexts = contexts,
 		  .catalog =
 			  [this]( KeybindingsConfig::Catalog& catalog ) {
-				  catalog.add( "eefm", getDefaultKeybindings(), {},
+				  catalog.add( "eefm", getDefaultKeybindings(), { "show-target" },
 							   mUI->i18n( "eefm_file_manager", "File Manager" ) );
 			  },
 		  .apply =

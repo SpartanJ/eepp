@@ -4,6 +4,7 @@
 #include "pane.hpp"
 
 #include <array>
+#include <eepp/core/small_vector.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -50,6 +51,11 @@ class PaneManager {
 	FileTab* openTab( Pane& pane, const URI& uri, bool select = true );
 
 	void closeTab( FileTab* tab );
+
+	/** Reopens the most recently closed location in the active pane, as in ecode. */
+	void reopenClosedTab();
+
+	bool hasClosedTabs() const { return !mRecentClosedTabs.empty(); }
 
 	/** Closes every tab (their models stop listing and watching). */
 	void clearTabs();
@@ -111,6 +117,8 @@ class PaneManager {
 	std::unique_ptr<FileTab> mMovingTab;
 	/** Column widths / visibility / sort shared by new tabs. */
 	nlohmann::json mViewState;
+	/** Session-only LIFO history, shared by both panes. Owns URIs, never closed views/models. */
+	SmallVector<URI, 1> mRecentClosedTabs;
 	/** Command context while a toolbar, popup, dialog, places or terminal owns keyboard focus.
 	 * Only updated from actual pane focus; activeIndex() always prefers the current focus. */
 	int mLastFocusedPane{ 0 };

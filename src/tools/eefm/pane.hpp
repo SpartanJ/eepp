@@ -33,17 +33,23 @@ struct FileTab {
 	size_t historyIndex{ 0 };
 	/** Filter text of this tab (the filter bar shows the current tab's). */
 	std::string filter;
-	/** Entry to select once it is listed (the folder we came from when going up, a created or
-	 * renamed item). */
-	std::string selectWhenListed;
+	/** Entries to select once listed (navigation, creation or rename). A single name stays
+	 * inline; batches are sorted once for linear view traversal with binary-search membership. */
+	SmallVector<std::string, 1> selectWhenListed;
 	/** Since when selectWhenListed waits: changes can arrive in steps (a rename is a removal,
 	 * then an addition), so it is dropped only after a while without appearing. */
 	Clock selectWhenListedSince;
 
 	void selectLater( std::string name ) {
-		selectWhenListed = std::move( name );
+		selectWhenListed.clear();
+		selectWhenListed.push_back( std::move( name ) );
 		selectWhenListedSince.restart();
 	}
+
+	void selectLater( SmallVector<std::string, 1> names );
+
+	/** Inverts the selection among the entries visible in this tab. */
+	void invertSelection();
 
 	/** @return The selected rows, sorted. */
 	std::vector<size_t> selectedRows() const;

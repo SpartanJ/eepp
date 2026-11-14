@@ -2862,6 +2862,45 @@ int String::icompare( std::string_view str1, std::string_view str2 ) {
 	return str1.size() < str2.size() ? -1 : ( str1.size() > str2.size() ? 1 : 0 );
 }
 
+int String::naturalCompare( std::string_view first, std::string_view second, bool caseSensitive ) {
+	size_t a = 0, b = 0;
+	auto digit = []( unsigned char c ) { return c >= '0' && c <= '9'; };
+	while ( a < first.size() && b < second.size() ) {
+		unsigned char ac = static_cast<unsigned char>( first[a] );
+		unsigned char bc = static_cast<unsigned char>( second[b] );
+		if ( digit( ac ) && digit( bc ) ) {
+			while ( a < first.size() && first[a] == '0' )
+				++a;
+			while ( b < second.size() && second[b] == '0' )
+				++b;
+			size_t aEnd = a, bEnd = b;
+			while ( aEnd < first.size() && digit( first[aEnd] ) )
+				++aEnd;
+			while ( bEnd < second.size() && digit( second[bEnd] ) )
+				++bEnd;
+			if ( aEnd - a != bEnd - b )
+				return aEnd - a < bEnd - b ? -1 : 1;
+			int cmp = first.substr( a, aEnd - a ).compare( second.substr( b, bEnd - b ) );
+			if ( cmp != 0 )
+				return cmp;
+			a = aEnd;
+			b = bEnd;
+			continue;
+		}
+		if ( !caseSensitive ) {
+			if ( ac >= 'A' && ac <= 'Z' )
+				ac += 'a' - 'A';
+			if ( bc >= 'A' && bc <= 'Z' )
+				bc += 'a' - 'A';
+		}
+		if ( ac != bc )
+			return ac < bc ? -1 : 1;
+		++a;
+		++b;
+	}
+	return a < first.size() ? 1 : ( b < second.size() ? -1 : 0 );
+}
+
 bool String::iequals( String::View str1, String::View str2 ) {
 	return str1.length() == str2.length() &&
 		   std::equal( str1.begin(), str1.end(), str2.begin(),

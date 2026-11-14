@@ -1,6 +1,7 @@
 #ifndef EE_VFS_HPP
 #define EE_VFS_HPP
 
+#include <eepp/vfs/batchrename.hpp>
 #include <eepp/vfs/capabilities.hpp>
 #include <eepp/vfs/directoryhandle.hpp>
 #include <eepp/vfs/directorystats.hpp>

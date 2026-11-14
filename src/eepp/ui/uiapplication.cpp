@@ -157,6 +157,8 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 
 	if ( monospaceFont && monospaceFont->getType() == FontType::TTF ) {
 		static_cast<FontTrueType*>( monospaceFont )->setEnableDynamicMonospace( true );
+		// Code editors place styled tokens in regular-width cells, as in ecode's font setup.
+		static_cast<FontTrueType*>( monospaceFont )->setBoldAdvanceSameAsRegular( true );
 		FontFamily::loadFromRegular( static_cast<FontTrueType*>( monospaceFont ) );
 	}
 

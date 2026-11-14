@@ -212,6 +212,17 @@ Node* UIScrollView::getScrollView() const {
 	return mScrollView;
 }
 
+Sizef UIScrollView::containerSize() const {
+	Sizef size = getSize() - mPadding;
+	if ( ScrollViewType::Outside == mViewType ) {
+		if ( mVScroll->isVisible() )
+			size.x -= mVScroll->getSize().getWidth();
+		if ( mHScroll->isVisible() )
+			size.y -= mHScroll->getSize().getHeight();
+	}
+	return size;
+}
+
 void UIScrollView::containerUpdate() {
 	if ( NULL == mScrollView )
 		return;
@@ -244,20 +255,14 @@ void UIScrollView::containerUpdate() {
 		mVScroll->setEnabled( visible );
 	}
 
-	Sizef size = getSize() - mPadding;
-
-	if ( ScrollViewType::Outside == mViewType ) {
-		if ( mVScroll->isVisible() )
-			size.x -= mVScroll->getSize().getWidth();
-
-		if ( mHScroll->isVisible() )
-			size.y -= mHScroll->getSize().getHeight();
-	}
-
 	mContainer->setPosition( mPadding.Left, mPadding.Top );
 
-	if ( size != mContainer->getSize() )
-		runOnMainThread( [this, size]() { mContainer->setSize( size ); } );
+	if ( containerSize() != mContainer->getSize() ) {
+		// Layout can change scrollbar visibility several times before this runs. Apply the
+		// latest viewport size once: replaying captured sizes can keep wrapped content oscillating.
+		debounce( [this] { mContainer->setSize( containerSize() ); }, Time::Zero,
+				  String::hash( "scrollview::container::resize" ) );
+	}
 
 	mVScroll->setPosition( getSize().getWidth() - mVScroll->getSize().getWidth() - mPadding.Right,
 						   mPadding.Top );

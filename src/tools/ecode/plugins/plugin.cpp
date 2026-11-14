@@ -151,30 +151,39 @@ UIListView* Plugin::createListViewHelper( UICodeEditor* editor, std::shared_ptr<
 	auto lvs = editor->findAllByClass( "editor_listview" );
 	for ( auto* ilv : lvs )
 		ilv->close();
-	std::string id = editor->getId(); // ID must be stable and unique
 	UIListView* lv = UIListView::New();
 	lv->setParent( editor );
 	lv->addClass( "editor_listview" );
-	auto pos =
-		editor->getRelativeScreenPosition( editor->getDocumentRef()->getSelection().start() );
-	lv->setPixelsPosition( { pos.x, pos.y + editor->getLineHeight() } );
-	if ( !lv->getParent()->getLocalBounds().contains(
-			 lv->getLocalBounds().setPosition( lv->getPixelsPosition() ) ) ) {
-		lv->setPixelsPosition( { pos.x, pos.y - lv->getPixelsSize().getHeight() } );
-	}
 	lv->setVisible( true );
-	lv->getVerticalScrollBar()->reloadStyle( true, true, true );
+	lv->reloadStyle( true, true, true );
 	lv->setAutoExpandOnSingleColumn( false );
 	lv->setModel( model );
-	Float height = std::min( lv->getContentSize().y, lv->getRowHeight() * 8 );
 	Float colWidth = lv->getMaxColumnContentWidth( 0 ) + PixelDensity::dpToPx( 4 );
-	bool needsVScroll = lv->getContentSize().y > lv->getRowHeight() * 8;
-	Float width = colWidth + lv->getPixelsPadding().getWidth() +
-				  ( needsVScroll ? lv->getVerticalScrollBar()->getPixelsSize().getWidth() : 0 );
-	lv->setPixelsSize( { width, height } );
-	lv->setColumnWidth( 0, colWidth );
-	lv->setScrollMode( needsVScroll ? ScrollBarMode::Auto : ScrollBarMode::AlwaysOff,
-					   ScrollBarMode::AlwaysOff );
+	auto updateBounds = [lv, editor, colWidth] {
+		if ( lv->isClosing() )
+			return;
+		Float contentHeight = lv->getContentSize().y;
+		Float maxHeight = lv->getRowHeight() * 8;
+		const auto& padding = lv->getPixelsPadding();
+		Float height = std::min( contentHeight, maxHeight ) + padding.Top + padding.Bottom;
+		bool needsVScroll = contentHeight > maxHeight;
+		Float width = colWidth + padding.Left + padding.Right +
+					  ( needsVScroll ? lv->getVerticalScrollBar()->getPixelsSize().getWidth() : 0 );
+		lv->setPixelsSize( { width, height } );
+		lv->setColumnWidth( 0, colWidth );
+		lv->setScrollMode( needsVScroll ? ScrollBarMode::Auto : ScrollBarMode::AlwaysOff,
+						   ScrollBarMode::AlwaysOff );
+		auto pos =
+			editor->getRelativeScreenPosition( editor->getDocumentRef()->getSelection().start() );
+		lv->setPixelsPosition( { pos.x, pos.y + editor->getLineHeight() } );
+		if ( !editor->getLocalBounds().contains(
+				 lv->getLocalBounds().setPosition( lv->getPixelsPosition() ) ) ) {
+			lv->setPixelsPosition( { pos.x, pos.y - lv->getPixelsSize().getHeight() } );
+		}
+	};
+	updateBounds();
+	// Cell measurement queues automatic row-height resolution. Resize again after it runs.
+	lv->runOnMainThread( updateBounds );
 	lv->on( Event::OnModelEvent, [onModelEventCb]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( onModelEventCb )

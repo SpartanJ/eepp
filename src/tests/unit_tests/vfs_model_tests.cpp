@@ -127,6 +127,49 @@ UTEST( VFSDirectoryModel, optionalColumnsDisplayAndSortWithoutFetchingMetadata )
 	EXPECT_STDSTREQ( "", display( "a.TXT", VFSDirectoryModel::FolderName ) );
 }
 
+UTEST( VFSDirectoryModel, naturalNamesAcrossBatchesSortDirectionsAndColumnTies ) {
+	VirtualFileSystem vfs;
+	auto mem = std::make_shared<MemoryProvider>();
+	vfs.registerProvider( mem );
+	for ( const char* name : { "file10", "file2", "file1", "file02", "File2" } )
+		mem->putFile( URI( std::string( "mem://m/dir/" ) + name ), "" );
+	mem->putDirectory( URI( "mem://m/dir/folder10" ) );
+	mem->putDirectory( URI( "mem://m/dir/folder2" ) );
+	TestLoop loop;
+	VFSDirectoryModel::Config config;
+	config.vfs = &vfs;
+	config.watch = false;
+	config.naturalSort = true;
+	config.firstBatchSize = 1;
+	config.batchSize = 2;
+	auto model = VFSDirectoryModel::New( loop, config );
+	model->setURI( URI( "mem://m/dir" ) );
+	ASSERT_TRUE( loop.runUntil(
+		[&] { return model->loadState() == VFSDirectoryModel::LoadState::Ready; } ) );
+	const std::vector<std::string> ascending{ "folder2", "folder10", "file1", "File2",
+											  "file02",	 "file2",	 "file10" };
+	const std::vector<std::string> descending{ "folder10", "folder2", "file10", "file2",
+											   "file02",   "File2",	  "file1" };
+	EXPECT_TRUE( modelNames( *model ) == ascending );
+	model->sort( VFSDirectoryModel::Name, SortOrder::Descending );
+	EXPECT_TRUE( modelNames( *model ) == descending );
+	model->sort( VFSDirectoryModel::Size, SortOrder::Ascending );
+	EXPECT_TRUE( modelNames( *model ) == ascending );
+	model->sort( VFSDirectoryModel::Size, SortOrder::Descending );
+	EXPECT_TRUE( modelNames( *model ) == descending );
+	model->setNameFilter( "file", VFSDirectoryModel::NameFilterMode::PlainText );
+	EXPECT_TRUE( modelNames( *model ) ==
+				 std::vector<std::string>( descending.begin() + 2, descending.end() ) );
+	config.naturalSort = false;
+	auto lexical = VFSDirectoryModel::New( loop, config );
+	lexical->setURI( URI( "mem://m/dir" ) );
+	ASSERT_TRUE( loop.runUntil(
+		[&] { return lexical->loadState() == VFSDirectoryModel::LoadState::Ready; } ) );
+	EXPECT_TRUE( modelNames( *lexical ) ==
+				 std::vector<std::string>(
+					 { "folder10", "folder2", "file02", "file1", "file10", "File2", "file2" } ) );
+}
+
 UTEST( VFSDirectoryModel, listsIncrementallySortsAndFiltersHidden ) {
 	VirtualFileSystem vfs;
 	auto mem = std::make_shared<MemoryProvider>();

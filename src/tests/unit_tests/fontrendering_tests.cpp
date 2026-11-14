@@ -378,6 +378,35 @@ UTEST( FontRendering, loadingFontFamilyDoesNotCreateTexturePages ) {
 	EXPECT_EQ( textureCount, textureFactory->getTextureCount() );
 }
 
+UTEST( FontRendering, applicationMonospaceStylesKeepCellAdvances ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Monospace Style Advances", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* font = app.getUI()->getFontFromNamesList( "monospace" );
+	ASSERT_NE( font, nullptr );
+	ASSERT_TRUE( font->getType() == FontType::TTF );
+	auto* mono = static_cast<FontTrueType*>( font );
+	ASSERT_TRUE( mono->isIdentifiedAsMonospace() );
+	ASSERT_TRUE( mono->getBoldFont() );
+	ASSERT_TRUE( mono->getItalicFont() );
+	ASSERT_TRUE( mono->getBoldItalicFont() );
+	constexpr Uint32 Styles[] = { Text::Regular, Text::Bold, Text::Italic,
+								  Text::Bold | Text::Italic };
+	for ( Uint32 size : { 11u, 16u, 17u, 22u } ) {
+		const Float cell = mono->getGlyphAdvance( ' ', size );
+		for ( Uint32 character : { ' ', '*', 'M', 'i', '.' } ) {
+			for ( Uint32 style : Styles ) {
+				const bool bold = ( style & Text::Bold ) != 0;
+				const bool italic = ( style & Text::Italic ) != 0;
+				const auto& glyph = mono->getGlyph( character, size, bold, italic );
+				EXPECT_EQ( cell, glyph.advance );
+				EXPECT_EQ( cell, mono->getGlyphAdvance( character, size, bold, italic ) );
+			}
+		}
+	}
+}
+
 UTEST( FontRendering, systemResolverPreservesRelatedBoldFont ) {
 	UIApplication app(
 		WindowSettings( 320, 240, "eepp - Preserve Related Bold Font", WindowStyle::Default,

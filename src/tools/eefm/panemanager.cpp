@@ -248,6 +248,8 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 		bool moving = it != pane.tabList.end() && !tabEvent->getTab()->isClosing();
 		if ( moving )
 			mMovingTab = std::move( *it );
+		else if ( it != pane.tabList.end() )
+			mRecentClosedTabs.push_back( ( *it )->model->uri() );
 		if ( it != pane.tabList.end() )
 			pane.tabList.erase( it );
 		positionNewTabButton( pane );
@@ -260,8 +262,10 @@ void PaneManager::createPane( int index, UIWidget* parent ) {
 		}
 		// The last tab of a pane closes the pane (or the window when it is the only one).
 		if ( index == 1 ) {
-			mApp.setSplit( false );
 			openTab( pane, URI::fromFSPath( Sys::getUserDirectory() ), true );
+			// Selecting the replacement tab takes focus; hide its pane afterwards so focus
+			// returns to the visible pane rather than staying in the parked tab.
+			mApp.setSplit( false );
 		} else if ( mApp.isSplit() ) {
 			Pane& right = this->pane( 1 );
 			for ( auto& tab : right.tabList )
@@ -500,6 +504,7 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 	FileTab* raw = tab.get();
 	raw->pane = &pane;
 	VFSDirectoryModel::Config config;
+	config.naturalSort = true;
 	config.vfs = mApp.vfs();
 	config.showHidden = mApp.showHidden();
 	raw->model = std::make_shared<FileDirectoryModel>( mApp.executor(), config, *mUI );
@@ -630,6 +635,15 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 void PaneManager::closeTab( FileTab* tab ) {
 	if ( tab && tab->pane )
 		tab->pane->tabs->removeTab( tab->tab );
+}
+
+void PaneManager::reopenClosedTab() {
+	if ( mRecentClosedTabs.empty() )
+		return;
+
+	URI uri = std::move( mRecentClosedTabs.back() );
+	mRecentClosedTabs.pop_back();
+	openTab( activePane(), uri )->view->setFocus();
 }
 
 void PaneManager::updateTabTitle( FileTab* tab ) {
@@ -794,11 +808,29 @@ void PaneManager::onTabStateChanged( FileTab* tab ) {
 	if ( tab->model->loadState() != VFSDirectoryModel::LoadState::Loading )
 		tab->view->endNavigation();
 	if ( !tab->selectWhenListed.empty() ) {
-		if ( auto row = tab->model->rowOf( tab->selectWhenListed ) ) {
-			tab->view->setSelection( tab->model->index( *row ) );
-			tab->selectWhenListed.clear();
-		} else if ( tab->model->loadState() != VFSDirectoryModel::LoadState::Loading &&
-					tab->selectWhenListedSince.getElapsedTime() > Seconds( 5 ) ) {
+		if ( tab->selectWhenListed.size() == 1 ) {
+			if ( auto row = tab->model->rowOf( tab->selectWhenListed.front() ) ) {
+				tab->view->setSelection( tab->model->index( *row ) );
+				tab->selectWhenListed.clear();
+			}
+		} else if ( tab->model->loadState() != VFSDirectoryModel::LoadState::Loading ) {
+			std::vector<ModelIndex> indexes;
+			indexes.reserve( tab->selectWhenListed.size() );
+			for ( size_t row = 0; row < tab->model->rowCount(); ++row ) {
+				if ( std::binary_search( tab->selectWhenListed.begin(), tab->selectWhenListed.end(),
+										 tab->model->entry( row ).name ) ) {
+					indexes.push_back( tab->model->index( row ) );
+				}
+			}
+			if ( !indexes.empty() ) {
+				tab->view->getSelection().set( indexes );
+				tab->view->scrollToIndex( indexes.front() );
+			}
+			if ( indexes.size() == tab->selectWhenListed.size() )
+				tab->selectWhenListed.clear();
+		}
+		if ( tab->model->loadState() != VFSDirectoryModel::LoadState::Loading &&
+			 tab->selectWhenListedSince.getElapsedTime() > Seconds( 5 ) ) {
 			tab->selectWhenListed.clear();
 		}
 	}
