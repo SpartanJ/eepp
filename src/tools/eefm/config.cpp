@@ -62,6 +62,8 @@ void AppConfig::load() {
 	window.maxFPS = mIni.getValueU( "window", "frame_rate_limit", window.maxFPS );
 	window.vsync = mIni.getValueB( "window", "vsync", window.vsync );
 	window.exitOnClose = mIni.getValueB( "window", "exit_on_close", window.exitOnClose );
+	window.openFoldersInNewWindow =
+		mIni.getValueB( "window", "open_folders_in_new_window", window.openFoldersInNewWindow );
 	window.showMenuBar = mIni.getValueB( "window", "show_menu_bar", window.showMenuBar );
 	window.rendererVersion = Renderer::glVersionFromString(
 		mIni.getValue( "window", "renderer_version",
@@ -115,6 +117,7 @@ bool AppConfig::save() {
 	mIni.setValueU( "window", "frame_rate_limit", window.maxFPS );
 	mIni.setValueB( "window", "vsync", window.vsync );
 	mIni.setValueB( "window", "exit_on_close", window.exitOnClose );
+	mIni.setValueB( "window", "open_folders_in_new_window", window.openFoldersInNewWindow );
 	mIni.setValueB( "window", "show_menu_bar", window.showMenuBar );
 	mIni.setValue( "window", "renderer_version",
 				   Renderer::graphicsLibraryVersionToString( window.rendererVersion ) );

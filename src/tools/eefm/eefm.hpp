@@ -10,6 +10,7 @@
 #include <eepp/ee.hpp>
 #include <eepp/scene/mainthreadexecutor.hpp>
 #include <eepp/system/applications.hpp>
+#include <eepp/system/ipc.hpp>
 #include <eepp/ui/uisystemicontheme.hpp>
 #include <eepp/vfs.hpp>
 #include <eepp/vfs/ui/vfsdirectorymodel.hpp>
@@ -175,6 +176,10 @@ class App {
 
 	bool init( const std::vector<std::string>& locations, bool forceSplit );
 
+	bool redirectToRunningProcess( const std::vector<std::string>& locations, bool forceSplit );
+
+	void listenForOpenRequests();
+
 	void loadState();
 
 	void saveState();
@@ -214,6 +219,8 @@ class App {
 	/** fileIcon() by MIME type; cleared when the icon settings change. */
 	std::unordered_map<std::string, UIIcon*> mFileIcons;
 	std::string mConfigDir;
+	std::string mIPCPrefix;
+	IPC mIPC;
 	std::string mKeybindingsPath;
 	nlohmann::json mState;
 

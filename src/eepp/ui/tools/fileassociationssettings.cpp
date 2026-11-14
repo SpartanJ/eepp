@@ -193,6 +193,28 @@ struct FileAssociationsViewState {
 	}
 };
 
+struct MimeAssociationsViewState {
+	MainThreadLifetime<MimeAssociationsViewState> lifetime;
+	FileAssociationsSettings::Completion completion;
+	std::string rowId;
+	UISettingsPanel* panel;
+	bool checked{ false };
+	bool applying{ false };
+	bool updating{ false };
+
+	MimeAssociationsViewState( UISettingsPanel* panel, std::string rowId ) :
+		lifetime( this, panel->getUISceneNode() ), rowId( std::move( rowId ) ), panel( panel ) {}
+
+	void refresh() {
+		if ( auto* row = panel->find<UIWidget>( rowId ) ) {
+			updating = true;
+			row->find<UICheckBox>( "setting_control_widget" )->setChecked( checked );
+			row->setEnabled( !applying );
+			updating = false;
+		}
+	}
+};
+
 } // namespace
 
 FileAssociationApplication
@@ -361,6 +383,53 @@ void FileAssociationsSettings::addTo( UISettingsPanel* panel, SettingDescriptor 
 			} );
 			viewState->setControlsEnabled( !viewState->applying );
 			return layout;
+		} );
+}
+
+void FileAssociationsSettings::addMimeTypesTo( UISettingsPanel* panel, SettingDescriptor descriptor,
+											   FileAssociationApplication application,
+											   std::vector<std::string> mimeTypes,
+											   std::shared_ptr<ThreadPool> threadPool,
+											   Completion completion ) {
+	if ( !FileAssociation::supportsMimeTypes() || mimeTypes.empty() )
+		return;
+	for ( auto& type : mimeTypes )
+		String::toLowerInPlace( type );
+	std::sort( mimeTypes.begin(), mimeTypes.end() );
+	mimeTypes.erase( std::unique( mimeTypes.begin(), mimeTypes.end() ), mimeTypes.end() );
+	FileAssociation association( application );
+	auto registered = association.getRegisteredMimeTypes( mimeTypes );
+	auto state = std::make_shared<MimeAssociationsViewState>( panel, "setting_" + descriptor.id );
+	state->completion = std::move( completion );
+	state->checked = registered == mimeTypes;
+	panel->on( Event::OnClose, [state]( const Event* ) { state->lifetime.invalidate(); } );
+	panel->addBool(
+		std::move( descriptor ), [state] { return state->checked; },
+		[application = std::move( application ), mimeTypes = std::move( mimeTypes ),
+		 threadPool = std::move( threadPool ), state]( bool enabled ) {
+			if ( state->updating || state->applying )
+				return;
+			const bool previous = state->checked;
+			state->checked = enabled;
+			state->applying = true;
+			state->refresh();
+			auto lifetime = state->lifetime.weakHandle();
+			// Keep the inputs alive independently of the panel while registration runs.
+			threadPool->run( [application, mimeTypes, enabled, previous, lifetime]() mutable {
+				FileAssociation association( std::move( application ) );
+				const bool success =
+					enabled ? association.setRegisteredMimeTypes( mimeTypes, mimeTypes )
+							: association.setRegisteredMimeTypes( {}, mimeTypes );
+				auto error = association.getLastError();
+				lifetime.run(
+					[enabled, previous, success, error = std::move( error )]( auto* state ) {
+						state->checked = success ? enabled : previous;
+						state->applying = false;
+						state->refresh();
+						if ( state->completion )
+							state->completion( success, error );
+					} );
+			} );
 		} );
 }
 

@@ -46,6 +46,33 @@ static std::vector<std::string> normalizeExtensions( const std::vector<std::stri
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 
+static bool isValidMimeType( std::string_view type ) {
+	const auto slash = type.find( '/' );
+	if ( slash == std::string_view::npos || slash == 0 || slash + 1 == type.size() )
+		return false;
+	for ( size_t i = 0; i < type.size(); ++i ) {
+		const unsigned char c = type[i];
+		if ( i != slash &&
+			 !( ( c >= 'a' && c <= 'z' ) || ( c >= 'A' && c <= 'Z' ) || ( c >= '0' && c <= '9' ) ||
+				std::string_view( "!#$&^_.+-" ).find( c ) != std::string_view::npos ) )
+			return false;
+	}
+	return true;
+}
+
+static bool normalizeMimeTypes( const std::vector<std::string>& types,
+								std::vector<std::string>& normalized ) {
+	normalized.reserve( types.size() );
+	for ( const auto& type : types ) {
+		if ( !isValidMimeType( type ) )
+			return false;
+		normalized.emplace_back( String::toLower( type ) );
+	}
+	std::sort( normalized.begin(), normalized.end() );
+	normalized.erase( std::unique( normalized.begin(), normalized.end() ), normalized.end() );
+	return true;
+}
+
 static std::string applicationSlug( std::string_view id ) {
 	std::string slug;
 	slug.reserve( id.size() );
@@ -134,18 +161,28 @@ static std::string xmlEscape( std::string_view value ) {
 	return escaped;
 }
 
-static std::vector<std::string> desktopExtensions( const FileAssociationApplication& application ) {
+static std::vector<std::string> desktopValues( const FileAssociationApplication& application,
+											   std::string_view key ) {
 	std::string contents;
 	if ( !FileSystem::fileGet( desktopEntryPath( application ), contents ) )
 		return {};
-	constexpr std::string_view key = "X-EEPP-File-Extensions=";
 	auto position = contents.find( key );
 	if ( position == std::string::npos )
 		return {};
 	position += key.size();
 	auto end = contents.find( '\n', position );
-	auto values = String::split( contents.substr( position, end - position ), ';' );
-	return normalizeExtensions( values );
+	return String::split( contents.substr( position, end - position ), ';' );
+}
+
+static std::vector<std::string> desktopExtensions( const FileAssociationApplication& application ) {
+	return normalizeExtensions( desktopValues( application, "X-EEPP-File-Extensions=" ) );
+}
+
+static std::vector<std::string> desktopMimeTypes( const FileAssociationApplication& application ) {
+	std::vector<std::string> types;
+	if ( !normalizeMimeTypes( desktopValues( application, "X-EEPP-Mime-Types=" ), types ) )
+		types.clear();
+	return types;
 }
 
 static bool desktopEntryVisible( const FileAssociationApplication& application ) {
@@ -193,6 +230,8 @@ static void loadMimeGlobs( const std::string& path, const std::unordered_set<std
 static std::unordered_map<std::string, std::string>
 mimeTypesForExtensions( const std::vector<std::string>& extensions,
 						const FileAssociationApplication& application ) {
+	if ( extensions.empty() )
+		return {};
 	std::unordered_set<std::string> wanted( extensions.begin(), extensions.end() );
 	std::unordered_map<std::string, std::pair<int, std::string>> weightedTypes;
 	for ( const auto& directory : Sys::getDataSearchPaths() ) {
@@ -372,9 +411,11 @@ static bool updateMimeAppsRegistration( const std::string& desktopName,
 }
 
 static bool writeXdgRegistration( const FileAssociationApplication& application,
-								  const std::vector<std::string>& extensions, bool visible,
+								  const std::vector<std::string>& extensions,
+								  const std::vector<std::string>& directMimeTypes, bool visible,
 								  std::string& error ) {
 	const auto previousExtensions = desktopExtensions( application );
+	const auto previousDirectMimeTypes = desktopMimeTypes( application );
 	const auto dataHome = Sys::getDataPath();
 	const auto applicationsDirectory = dataHome + "/applications";
 	const auto mimeDirectory = dataHome + "/mime";
@@ -389,7 +430,8 @@ static bool writeXdgRegistration( const FileAssociationApplication& application,
 
 	const auto previousMimeTypes = mimeTypesForExtensions( previousExtensions, application );
 	const auto mimeTypes = mimeTypesForExtensions( extensions, application );
-	std::unordered_set<std::string> uniqueMimeTypes;
+	std::unordered_set<std::string> selectedMimeTypes( directMimeTypes.begin(),
+													   directMimeTypes.end() );
 	std::string package =
 		"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 		"<mime-info xmlns=\"http://www.freedesktop.org/standards/shared-mime-info\">\n";
@@ -397,7 +439,7 @@ static bool writeXdgRegistration( const FileAssociationApplication& application,
 	bool hasCustomMimeTypes = false;
 	for ( const auto& extension : extensions ) {
 		const auto& mime = mimeTypes.at( extension );
-		uniqueMimeTypes.insert( mime );
+		selectedMimeTypes.insert( mime );
 		if ( !String::startsWith( mime, "application/x-" + slug + '-' ) )
 			continue;
 		hasCustomMimeTypes = true;
@@ -422,13 +464,14 @@ static bool writeXdgRegistration( const FileAssociationApplication& application,
 
 	const auto desktopPath = desktopEntryPath( application );
 	bool desktopDatabaseChanged = false;
-	if ( extensions.empty() && !visible ) {
+	if ( extensions.empty() && directMimeTypes.empty() && !visible ) {
 		if ( !removeFileIfExists( desktopPath, desktopDatabaseChanged ) ) {
 			error = "Could not remove the XDG desktop entry.";
 			return false;
 		}
 	} else {
-		std::vector<std::string> sortedMimeTypes( uniqueMimeTypes.begin(), uniqueMimeTypes.end() );
+		std::vector<std::string> sortedMimeTypes( selectedMimeTypes.begin(),
+												  selectedMimeTypes.end() );
 		std::sort( sortedMimeTypes.begin(), sortedMimeTypes.end() );
 		std::string desktop = "[Desktop Entry]\nType=Application\nVersion=1.0\n";
 		desktop += "Name=" + desktopEscape( application.name ) + "\n";
@@ -445,6 +488,9 @@ static bool writeXdgRegistration( const FileAssociationApplication& application,
 		desktop += "\nX-EEPP-File-Extensions=";
 		for ( const auto& extension : extensions )
 			desktop += extension + ';';
+		desktop += "\nX-EEPP-Mime-Types=";
+		for ( const auto& mime : directMimeTypes )
+			desktop += mime + ';';
 		desktop += '\n';
 		if ( !writeFileIfChanged( desktopPath, desktop, desktopDatabaseChanged ) ) {
 			error = "Could not write the XDG desktop entry.";
@@ -458,11 +504,12 @@ static bool writeXdgRegistration( const FileAssociationApplication& application,
 		error = "The XDG registration was written, but a desktop database update failed.";
 		return false;
 	}
-	std::unordered_set<std::string> selectedMimeTypes;
-	for ( const auto& [extension, mime] : mimeTypes )
-		selectedMimeTypes.emplace( mime );
 	std::unordered_set<std::string> removedMimeTypes;
 	for ( const auto& [extension, mime] : previousMimeTypes ) {
+		if ( !selectedMimeTypes.contains( mime ) )
+			removedMimeTypes.emplace( mime );
+	}
+	for ( const auto& mime : previousDirectMimeTypes ) {
 		if ( !selectedMimeTypes.contains( mime ) )
 			removedMimeTypes.emplace( mime );
 	}
@@ -588,6 +635,10 @@ bool FileAssociation::supportsDesktopEntries() {
 #endif
 }
 
+bool FileAssociation::supportsMimeTypes() {
+	return supportsDesktopEntries();
+}
+
 FileAssociation::DefaultResult
 FileAssociation::setDefaultApplication( const Application& application, std::string_view extension,
 										const std::string& mimeType, std::string& error ) {
@@ -598,14 +649,7 @@ FileAssociation::setDefaultApplication( const Application& application, std::str
 	}
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 	(void)extension;
-	const auto slash = mimeType.find( '/' );
-	if ( slash == std::string::npos || slash == 0 || slash + 1 == mimeType.size() ||
-		 std::any_of( mimeType.begin(), mimeType.end(),
-					  []( unsigned char c ) {
-						  return c <= ' ' || c >= 127 ||
-								 std::string_view( ";=[]" ).find( c ) != std::string_view::npos;
-					  } ) ||
-		 mimeType.find( '/', slash + 1 ) != std::string::npos ||
+	if ( !isValidMimeType( mimeType ) ||
 		 std::any_of( application.id.begin(), application.id.end(),
 					  []( unsigned char c ) { return c < ' ' || c == 127; } ) ||
 		 application.id.find_first_of( "/\\\r\n;=" ) != std::string::npos ||
@@ -767,7 +811,8 @@ bool FileAssociation::setRegisteredExtensions( const std::vector<std::string>& r
 	std::set_intersection( requested.begin(), requested.end(), supported.begin(), supported.end(),
 						   std::back_inserter( selected ) );
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
-	return writeXdgRegistration( mApplication, selected, desktopEntryInstalled, mLastError );
+	return writeXdgRegistration( mApplication, selected, desktopMimeTypes( mApplication ),
+								 desktopEntryInstalled, mLastError );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	(void)desktopEntryInstalled;
 	const auto progId = toWide( mApplication.id );
@@ -877,6 +922,57 @@ bool FileAssociation::setRegisteredExtensions( const std::vector<std::string>& r
 #endif
 }
 
+std::vector<std::string> FileAssociation::getRegisteredMimeTypes(
+	const std::vector<std::string>& supportedMimeTypes ) const {
+	mLastError.clear();
+	std::vector<std::string> registered;
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+	std::vector<std::string> supported;
+	if ( !normalizeMimeTypes( supportedMimeTypes, supported ) ) {
+		mLastError = "A valid, exact MIME type is required.";
+		return {};
+	}
+	const auto current = desktopMimeTypes( mApplication );
+	std::set_intersection( supported.begin(), supported.end(), current.begin(), current.end(),
+						   std::back_inserter( registered ) );
+#else
+	(void)supportedMimeTypes;
+	mLastError = "Direct MIME associations are not supported on this platform.";
+#endif
+	return registered;
+}
+
+bool FileAssociation::setRegisteredMimeTypes( const std::vector<std::string>& registeredMimeTypes,
+											  const std::vector<std::string>& supportedMimeTypes ) {
+	return setRegisteredMimeTypes( registeredMimeTypes, supportedMimeTypes,
+								   supportsDesktopEntries() ? isDesktopEntryInstalled() : false );
+}
+
+bool FileAssociation::setRegisteredMimeTypes( const std::vector<std::string>& registeredMimeTypes,
+											  const std::vector<std::string>& supportedMimeTypes,
+											  bool desktopEntryInstalled ) {
+	mLastError.clear();
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+	std::vector<std::string> supported, requested, selected;
+	if ( !normalizeMimeTypes( supportedMimeTypes, supported ) ||
+		 !normalizeMimeTypes( registeredMimeTypes, requested ) ) {
+		mLastError = "A valid, exact MIME type is required.";
+		return false;
+	}
+	selected.reserve( (std::min)( requested.size(), supported.size() ) );
+	std::set_intersection( requested.begin(), requested.end(), supported.begin(), supported.end(),
+						   std::back_inserter( selected ) );
+	return writeXdgRegistration( mApplication, desktopExtensions( mApplication ), selected,
+								 desktopEntryInstalled, mLastError );
+#else
+	(void)registeredMimeTypes;
+	(void)supportedMimeTypes;
+	(void)desktopEntryInstalled;
+	mLastError = "Direct MIME associations are not supported on this platform.";
+	return false;
+#endif
+}
+
 bool FileAssociation::isDesktopEntryInstalled() const {
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 	return desktopEntryVisible( mApplication );
@@ -888,8 +984,8 @@ bool FileAssociation::isDesktopEntryInstalled() const {
 bool FileAssociation::setDesktopEntryInstalled( bool installed ) {
 	mLastError.clear();
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
-	return writeXdgRegistration( mApplication, desktopExtensions( mApplication ), installed,
-								 mLastError );
+	return writeXdgRegistration( mApplication, desktopExtensions( mApplication ),
+								 desktopMimeTypes( mApplication ), installed, mLastError );
 #else
 	(void)installed;
 	mLastError = "Desktop entry installation is not supported on this platform.";

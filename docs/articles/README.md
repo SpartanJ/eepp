@@ -18,6 +18,7 @@ supported behavior; class headers and current source code remain the reference f
 | Add an interactive chart | [UI charts](ui_charts.md) | [Application UI authoring](ui_authoring.md) for placement and sizing |
 | Run async work: tasks, results, executors, cancellation | [Async core](async_core.md) | `include/eepp/core/task.hpp` and the other headers it lists |
 | Read or write files through URIs (local, packs, SFTP), watch directories | [Virtual file system](vfs.md) | [Async core](async_core.md), the `src/modules/vfs/include/eepp/vfs/` headers |
+| Register file or folder handlers and expose association settings | [File and folder associations](file_associations.md) | `include/eepp/system/fileassociation.hpp`, `include/eepp/ui/tools/fileassociationssettings.hpp` |
 | Work on `eterm` Kitty support | [Keyboard protocol](eterm_kitty_keyboard.md), [graphics protocol](eterm_kitty_graphics.md) | The corresponding `src/modules/eterm/` implementation and tests |
 
 Native application widgets and HTML documents have different layout behavior. Start with

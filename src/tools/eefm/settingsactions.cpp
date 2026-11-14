@@ -154,6 +154,26 @@ void SettingsActions::showSettings() {
 		[this]( UIWidget* parent ) { return mApp.createKeybindingsEditor( parent ); }, true );
 
 	FileAssociationsSettings::addLauncherTo( panel, "eefm" );
+	if ( FileAssociation::supportsMimeTypes() ) {
+		FileAssociationsSettings::addMimeTypesTo(
+			panel,
+			{ "systemFolderAssociations", "general.desktop_integration",
+			  mUI->i18n( "eefm_default_file_manager", "Use eefm as the Default File Manager" ),
+			  mUI->i18n( "eefm_default_file_manager_desc",
+						 "Open folders from other applications in eefm." ) },
+			FileAssociationsSettings::applicationForCurrentProcess( "eefm" ), { "inode/directory" },
+			mApp.pool(), [this]( bool success, const std::string& error ) {
+				if ( success )
+					return;
+				auto* message = UIMessageBox::New(
+					UIMessageBox::OK, mUI->i18n( "eefm_folder_associations_failed",
+												 "Could not update folder associations.\n" ) +
+										  String::fromUtf8( error ) );
+				message->setTitle( mUI->i18n( "desktop_integration", "Desktop Integration" ) );
+				message->center();
+				message->showWhenReady();
+			} );
+	}
 
 	// Appearance
 	panel->addCategory( "appearance.theme", mUI->i18n( "eefm_appearance", "Appearance" ),
@@ -514,6 +534,13 @@ void SettingsActions::showSettings() {
 	// Window
 	panel->addCategory( "window.behavior", mUI->i18n( "eefm_window", "Window" ),
 						mUI->i18n( "behavior", "Behavior" ) );
+	panel->addBool(
+		{ "openFoldersInNewWindow", "window.behavior",
+		  mUI->i18n( "eefm_open_folders_in_new_window", "Open Folders in New Window" ),
+		  mUI->i18n( "eefm_open_folders_in_new_window_desc",
+					 "Open command-line locations in a new window instead of new tabs in the "
+					 "active pane of a running eefm window." ) },
+		&mApp.config().window.openFoldersInNewWindow, [this]( bool ) { savePreferences(); } );
 	panel->addBool(
 		{ "exitOnClose", "window.behavior", mUI->i18n( "exit_on_close", "Exit on Close" ),
 		  mUI->i18n( "exit_on_close_desc", "Exit when closing the window. Disable to keep the "

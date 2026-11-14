@@ -41,6 +41,9 @@ class EE_API FileAssociation {
 	/** XDG platforms can additionally expose the generated desktop entry in application menus. */
 	static bool supportsDesktopEntries();
 
+	/** Direct MIME registrations, including inode/directory, are supported on XDG platforms. */
+	static bool supportsMimeTypes();
+
 	/** Makes an installed handler the per-user default for a file type. Call off the UI thread.
 	 * @p extension is a filename suffix, with or without a leading dot; @p mimeType is the exact
 	 * MIME type (not a parent type). XDG desktops require the MIME type and use the existing
@@ -68,6 +71,24 @@ class EE_API FileAssociation {
 	bool setRegisteredExtensions( const std::vector<std::string>& registeredExtensions,
 								  const std::vector<std::string>& supportedExtensions,
 								  bool desktopEntryInstalled );
+
+	/** Returns this app's directly registered subset of @p supportedMimeTypes, sorted and
+	 * lower-case. Extension registrations are independent. Call off the UI thread when needed. */
+	std::vector<std::string>
+	getRegisteredMimeTypes( const std::vector<std::string>& supportedMimeTypes ) const;
+
+	/** Registers the selected subset as per-user defaults on XDG desktops, preserving extension
+	 * registrations and launcher visibility. Exact MIME types are required; wildcards and invalid
+	 * types fail without writing. Removing a type removes only this app from its associations,
+	 * leaving other handlers available. Call off the UI thread; see getLastError() on failure. */
+	bool setRegisteredMimeTypes( const std::vector<std::string>& registeredMimeTypes,
+								 const std::vector<std::string>& supportedMimeTypes );
+
+	/** Updates MIME registrations and launcher visibility together. A selected type retains a
+	 * desktop entry even when its launcher is hidden. Unsupported platforms report failure. */
+	bool setRegisteredMimeTypes( const std::vector<std::string>& registeredMimeTypes,
+								 const std::vector<std::string>& supportedMimeTypes,
+								 bool desktopEntryInstalled );
 
 	bool isDesktopEntryInstalled() const;
 

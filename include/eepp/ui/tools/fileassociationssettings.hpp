@@ -28,6 +28,16 @@ class EE_API FileAssociationsSettings {
 					   std::vector<std::string> extensions,
 					   std::shared_ptr<System::ThreadPool> threadPool, Translate translate = {},
 					   Completion completion = {} );
+
+	/** Adds one checkbox that enables/disables the supplied exact MIME types together.
+	 * Checking it registers the types in the background; unchecking removes the associations.
+	 * Launcher visibility is preserved in both cases. Completion runs on the UI
+	 * thread while the panel lives. A failed change restores the previous checkbox value. */
+	static void addMimeTypesTo( UISettingsPanel* panel, SettingDescriptor descriptor,
+								System::FileAssociationApplication application,
+								std::vector<std::string> mimeTypes,
+								std::shared_ptr<System::ThreadPool> threadPool,
+								Completion completion = {} );
 };
 
 } // namespace EE::UI::Tools

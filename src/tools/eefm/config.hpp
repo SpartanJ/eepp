@@ -74,6 +74,8 @@ struct WindowConfig {
 	bool vsync{ false };
 	bool showMenuBar{ false };
 	bool exitOnClose{ EE_PLATFORM != EE_PLATFORM_MACOS };
+	/** Disable forwarding command-line locations to an existing eefm window. */
+	bool openFoldersInNewWindow{ false };
 	GraphicsLibraryVersion rendererVersion{ GLv_default };
 	Uint32 multisamples{ 0 };
 };

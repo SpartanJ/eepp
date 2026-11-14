@@ -10,13 +10,16 @@
 #include "settingsactions.hpp"
 #include "terminalpanel.hpp"
 #include "thumbnails.hpp"
+#include <eepp/core/small_vector.hpp>
 #include <eepp/system/applications.hpp>
+#include <eepp/system/md5.hpp>
 #include <eepp/ui/tools/keybindingsconfig.hpp>
 #include <eepp/ui/tools/uikeybindingseditor.hpp>
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uimenuitem.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 
+#include <algorithm>
 #include <args/args.hxx>
 #include <iostream>
 #ifdef EE_VFS_SFTP
@@ -600,7 +603,9 @@ const char* LocationLayout = R"xml(
 
 App::App() = default;
 
-App::~App() = default;
+App::~App() {
+	mIPC.close();
+}
 
 int App::run( int argc, char* argv[] ) {
 	const Translator translator;
@@ -628,9 +633,20 @@ int App::run( int argc, char* argv[] ) {
 		std::cerr << error.what() << '\n' << parser;
 		return EXIT_FAILURE;
 	}
+	mConfigDir = Sys::getConfigPath( "eefm" );
+	FileSystem::dirAddSlashAtEnd( mConfigDir );
+	// Canonicalize the same existing directory on the first launch and subsequent launches.
+	FileSystem::makeDir( mConfigDir, true );
+	mConfig = std::make_unique<AppConfig>( mConfigDir );
+	mConfig->load();
+	mIPCPrefix =
+		"eefm." + MD5::fromString( FileSystem::getRealPath( mConfigDir ) ).toHexString() + ".";
+	if ( redirectToRunningProcess( locations.Get(), split.Get() ) )
+		return EXIT_SUCCESS;
 	if ( !init( locations.Get(), split.Get() ) )
 		return EXIT_FAILURE;
 	int result = mApp->run();
+	mIPC.close();
 	// Producers stop before the executor they deliver to goes away: continuations hold it by
 	// reference. Running transfers are cancelled (destroying the VFS waits for them).
 	mFileOperations->cancelOperations();
@@ -672,8 +688,6 @@ int App::run( int argc, char* argv[] ) {
 }
 
 bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
-	mConfigDir = Sys::getConfigPath( "eefm" );
-	FileSystem::dirAddSlashAtEnd( mConfigDir );
 	mKeybindingsPath = mConfigDir + "keybindings.cfg";
 	loadState();
 
@@ -682,8 +696,6 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 		width = std::max( 640, mState["window"].value( "width", width ) );
 		height = std::max( 400, mState["window"].value( "height", height ) );
 	}
-	mConfig = std::make_unique<AppConfig>( mConfigDir );
-	mConfig->load();
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	const char* windowIcon = "assets/icon/eefm-macos.png";
 #else
@@ -937,7 +949,89 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	setPlacesVisible( mPlacesVisible );
 	setFilterBarVisible( mFilterBarVisible );
 	mPlacesController->refreshDeviceUsage();
+	listenForOpenRequests();
 	return true;
+}
+
+bool App::redirectToRunningProcess( const std::vector<std::string>& locations, bool forceSplit ) {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	if ( mConfig->window.openFoldersInNewWindow )
+		return false;
+	const auto pids = Sys::pidof( FileSystem::fileNameFromPath( Sys::getProcessFilePath() ) );
+	const auto ownPid = Sys::getProcessID();
+	SmallVector<std::pair<Int64, ProcessID>, 4> candidates;
+	candidates.reserve( pids.size() );
+	for ( auto pid : pids ) {
+		if ( pid != ownPid )
+			candidates.emplace_back( Sys::getProcessCreationTime( pid ), pid );
+	}
+	if ( candidates.empty() )
+		return false;
+	// Like ecode, prefer the most recently started window when several instances exist.
+	std::sort( candidates.begin(), candidates.end(),
+			   []( const auto& left, const auto& right ) { return left.first > right.first; } );
+	nlohmann::json paths = nlohmann::json::array();
+	for ( const auto& location : locations ) {
+		// Resolve relative paths here: the receiver may have a different working directory.
+		paths.push_back( Location::parse( location ).toString() );
+	}
+	const std::string payload = nlohmann::json{
+		{ "type", "open" },
+		{ "locations", std::move( paths ) },
+		{ "split", forceSplit } }.dump();
+	for ( const auto& candidate : candidates ) {
+		const auto status = IPC::send( mIPCPrefix + String::toString( candidate.second ), payload );
+		if ( status == IPC::Status::Done )
+			return true;
+		if ( status != IPC::Status::NotFound ) {
+			Log::warning( "Failed to send eefm open request to process %llu",
+						  static_cast<unsigned long long>( candidate.second ) );
+		}
+	}
+#endif
+	return false;
+}
+
+void App::listenForOpenRequests() {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	const auto status = mIPC.listen(
+		mIPCPrefix + String::toString( Sys::getProcessID() ),
+		[this]( const void* data, std::size_t size ) {
+			auto message = nlohmann::json::parse(
+				std::string_view( static_cast<const char*>( data ), size ), nullptr, false );
+			if ( !message.is_object() )
+				return;
+			const auto type = message.find( "type" );
+			const auto locations = message.find( "locations" );
+			const auto split = message.find( "split" );
+			if ( type == message.end() || *type != "open" || locations == message.end() ||
+				 !locations->is_array() || split == message.end() || !split->is_boolean() )
+				return;
+			for ( const auto& location : *locations ) {
+				if ( !location.is_string() )
+					return;
+			}
+			// The executor owns the parsed request until the UI can open its tabs. Stop the IPC
+			// worker before shutting down this executor or destroying its scene.
+			mExecutor->execute( [this, message = std::move( message )] {
+				if ( !mApp->reopen() )
+					window()->activate();
+				const int active = mPaneManager->activeIndex();
+				const bool split = message["split"].get<bool>();
+				if ( split )
+					setSplit( true );
+				const auto& locations = message["locations"];
+				for ( size_t i = 0; i < locations.size(); ++i ) {
+					auto& pane = mPaneManager->pane(
+						split && locations.size() >= 2 ? ( i == 0 ? 0 : 1 ) : active );
+					mPaneManager->openTab( pane,
+										   URI( locations[i].get_ref<const std::string&>() ) );
+				}
+			} );
+		} );
+	if ( status != IPC::Status::Done )
+		Log::warning( "Failed to initialize eefm IPC listener" );
+#endif
 }
 
 // ---------------------------------------------------------------------------------------------
