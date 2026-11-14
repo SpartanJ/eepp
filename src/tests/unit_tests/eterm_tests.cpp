@@ -4870,6 +4870,36 @@ UTEST( eterm, implicit_links_resolve_urls_and_existing_paths ) {
 		TerminalLinks::resolve( root + "dir with space/main.cpp", "" ),
 		TerminalLinks::resolve( "$ETERM_LINK_TEST_ROOT/dir with space/main.cpp", "" ) );
 	EXPECT_TRUE( TerminalLinks::resolve( "$ETERM_LINK_TEST_UNSET/x.cpp", root ).empty() );
+	// Prose adds a sentence period after a path; the pattern includes it in the match.
+	ASSERT_TRUE( FileSystem::makeDir( root + "scratchpad", true ) );
+	for ( const auto* name : { "review_brief.md", "branch_description.md" } ) {
+		const std::string relative = std::string( "scratchpad/" ) + name;
+		ASSERT_TRUE( FileSystem::fileWrite( root + relative, std::string( "x" ) ) );
+		// Windows can resolve a trailing period as an alias for the undotted file.
+		const std::string expectedPath =
+			root + relative + ( FileSystem::fileExists( root + relative + "." ) ? "." : "" );
+		const auto expected = TerminalLinks::resolve( expectedPath, root );
+		for ( const auto& link : { relative + ".", root + relative + "." } ) {
+			const std::string text = "Everything is in place: " + link;
+			const auto match = TerminalLinks::findAt( text, text.size() - 2 );
+			ASSERT_TRUE( match.has_value() );
+			EXPECT_STDSTREQ( expected,
+							 TerminalLinks::resolve( std::string_view( text ).substr(
+														 match->start, match->end - match->start ),
+													 root, &path ) );
+			EXPECT_STDSTREQ( expectedPath, path );
+		}
+		EXPECT_STDSTREQ( TerminalLinks::resolve( relative, root ),
+						 TerminalLinks::resolve( relative + ":12:3.", root, &path ) );
+		EXPECT_STDSTREQ( root + relative, path );
+	}
+	EXPECT_TRUE( TerminalLinks::resolve( "dir with space/missing.md.", root ).empty() );
+#if EE_PLATFORM != EE_PLATFORM_WIN
+	// Unix filenames can really end in a dot: prefer the complete path when both exist.
+	ASSERT_TRUE( FileSystem::fileWrite( root + "dir with space/main.cpp.", std::string( "x" ) ) );
+	EXPECT_FALSE( TerminalLinks::resolve( "dir with space/main.cpp.", root, &path ).empty() );
+	EXPECT_STDSTREQ( root + "dir with space/main.cpp.", path );
+#endif
 	// Without the trailing slash, which Haiku refuses to remove; failing cleanup is not a failure.
 	FileSystem::dirRemoveSlashAtEnd( root );
 	std::error_code removeError;

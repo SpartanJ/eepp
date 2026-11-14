@@ -85,7 +85,8 @@ opened truncated. Relative paths resolve against the shell's
 reported directory (OSC 7), or else the directory the terminal started in, and `~/` and a leading
 `$VAR/` expand. A path is a link only if the file or directory exists; a trailing `:line` or
 `:line:column`, as printed by compilers and `grep -n`, is ignored when needed to find it. URLs and
-files open with the system's default application.
+files open with the system's default application. A sentence period immediately after a path is
+ignored if the full path does not exist; an existing filename ending in a period takes precedence.
 
 Turn off **Detect Links and Paths** to disable this in every open terminal.
 

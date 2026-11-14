@@ -30,7 +30,8 @@ class TerminalLinks {
 	/** Where a matched link opens: a URL with a scheme as written, or a file URI for an existing
 	 * file or directory. Relative paths resolve against @p workingDirectory, and leading `~/`
 	 * and `$VAR/` expand; a trailing `:line` or `:line:column` is dropped when only the file
-	 * without it exists. @p path receives the local path of a file link. Returns an empty
+	 * without it exists. A sentence's final period is also dropped if the full path does not exist.
+	 * @p path receives the local path of a file link. Returns an empty
 	 * string when the link does not resolve. */
 	static std::string resolve( std::string_view link, const std::string& workingDirectory,
 								std::string* path = nullptr );

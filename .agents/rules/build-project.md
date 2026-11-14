@@ -128,26 +128,24 @@ Run only one build at a time. Finish the current build before starting another c
 platform build, or compiler-based diagnostic. Each build already uses the available processors;
 overlapping builds can exhaust the developer's machine.
 
-On non-macOS hosts, check both the processor count and available system memory before selecting the
-parallel job count. Virtual machines can report many CPUs while having too little memory to run that
-many compiler or linker processes. Treat the processor count as an upper bound, and leave memory
-headroom for the OS, other applications, and linking; debug builds with symbols can require
-substantial memory per job.
+On non-macOS hosts, choose parallelism to use as many processors as practical while leaving memory
+headroom for the OS, other applications, and linking. Make a quick check of processor count and
+available memory, accounting for VM or container limits. Prefer `-j$(nproc)` for Make and Ninja on
+well-provisioned hosts; use the platform-equivalent processor-count command where `nproc` is
+unavailable.
 
-When memory permits, use all reported processors: on Linux and other systems with `nproc`, use
-`-j$(nproc)`. Otherwise, choose a lower job count based on the available memory and observed build
-memory usage, respecting any count explicitly selected by the user. Reduce concurrency if the build
-causes heavy paging, approaches the system's committed-memory limit, or stops making useful progress.
-Do not select an arbitrary fixed count without checking these constraints. Use the platform-equivalent
-processor-count command where `nproc` is unavailable.
+Be conservative on memory-constrained machines, but avoid arbitrary reductions or speculative fixed
+memory budgets per compiler job. Reduce concurrency if the build causes heavy paging, approaches
+memory limits, or stops making useful progress because of memory pressure. Respect any job count
+explicitly selected by the user.
 
 On macOS, do not query `sysctl` or select a job count separately; the required scripts above own
 parallelism and invoke the platform query themselves.
 
 The valid OS directory names are: `windows`, `macosx`, `linux`, `bsd`, `haiku`.
 
-When memory permits using all processors, run the following command, replacing `<os_name>` with the
-correct environment. Otherwise, replace `$(nproc)` with the memory-appropriate count selected above:
+Run the following command, replacing `<os_name>` with the correct environment. Use a lower job count
+when the memory considerations above warrant it:
 `make -C make/<os_name> -j$(nproc)`
 
 **Examples:**

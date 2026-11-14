@@ -193,11 +193,20 @@ std::string TerminalLinks::resolve( std::string_view link, const std::string& wo
 		path += link;
 	}
 
-	if ( !exists( path ) ) {
+	bool found = exists( path );
+	// A sentence can end with a path and a period. Prefer a real dot-ending filename,
+	// otherwise retry without the period before stripping a compiler's :line:column.
+	if ( !found && path.back() == '.' ) {
+		path.pop_back();
+		found = exists( path );
+	}
+	if ( !found ) {
 		const auto trimmed = withoutLocation( path );
-		if ( trimmed.size() == path.size() || !exists( std::string( trimmed ) ) )
+		if ( trimmed.size() == path.size() )
 			return {};
 		path.resize( trimmed.size() );
+		if ( !exists( path ) )
+			return {};
 	}
 	if ( resolvedPath )
 		*resolvedPath = path;
