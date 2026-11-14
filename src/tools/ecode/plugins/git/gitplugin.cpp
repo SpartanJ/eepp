@@ -111,6 +111,17 @@ bool GitHistoryRefModel::isRevision( size_t index, std::string_view revision ) c
 		   revision.starts_with( prefix ) && revision.substr( prefix.size() ) == branch.name;
 }
 
+std::string_view GitHistoryRefModel::lastCommit( std::string_view revision,
+												 std::string_view headBranch ) const {
+	for ( size_t i = 0; i < mSourceIndexes.size(); ++i ) {
+		const auto& branch = mSource->branchRef( mSourceIndexes[i] );
+		if ( revision == "HEAD" ? branch.type == Git::RefType::Head && branch.name == headBranch
+								: isRevision( i + 1, revision ) )
+			return branch.lastCommit;
+	}
+	return {};
+}
+
 void GitPlugin::registerSettings( SettingsPage& page ) {
 	page.addGroup( i18n( "general", "General" ) );
 	page.addText( "ui-refresh-frequency", "/config/ui_refresh_frequency",
@@ -1715,23 +1726,26 @@ void GitPlugin::pull( const std::string& repoPath ) {
 	runMergeLikeAsync( [repoPath]( Git& git ) { return git.pull( repoPath ); }, repoPath );
 }
 
-void GitPlugin::push( const std::string& repoPath ) {
+void GitPlugin::push( const std::string& repoPath, std::string branchName ) {
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK_CANCEL,
 		i18n( "git_confirm_push_changes",
 			  "Are you sure you want to push the local changes to the remote server?" ) );
 
-	msgBox->on( Event::OnConfirm, [this, repoPath]( auto ) {
-		runAsync(
-			[this, repoPath]() {
-				std::optional<Git::Branch> branch = getBranchFromRepoPath( repoPath );
-				bool pushNewBranch = branch && !branch->name.empty() && branch->remote.empty();
-				if ( pushNewBranch )
-					return mGit->pushNewBranch( branch->name, repoPath );
-				return mGit->push( repoPath );
-			},
-			true, true, true, true );
-	} );
+	msgBox->on(
+		Event::OnConfirm, [this, repoPath, branchName = std::move( branchName )]( auto ) mutable {
+			runAsync(
+				[this, repoPath, branchName = std::move( branchName )]() {
+					if ( !branchName.empty() )
+						return mGit->pushBranch( branchName, repoPath );
+					std::optional<Git::Branch> branch = getBranchFromRepoPath( repoPath );
+					bool pushNewBranch = branch && !branch->name.empty() && branch->remote.empty();
+					if ( pushNewBranch )
+						return mGit->pushNewBranch( branch->name, repoPath );
+					return mGit->push( repoPath );
+				},
+				true, true, true, true );
+		} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
 	msgBox->center();
@@ -3047,7 +3061,8 @@ void GitPlugin::invalidateHistory() {
 	++mHistoryGeneration;
 	mHistoryLoaded = false;
 	mHistoryRepo.clear();
-	if ( mPanelSwicher && mPanelSwicher->getListBox()->getItemSelectedIndex() == 2 )
+	if ( mDetachedHistory.tree ||
+		 ( mPanelSwicher && mPanelSwicher->getListBox()->getItemSelectedIndex() == 2 ) )
 		reloadHistory();
 }
 
@@ -3090,6 +3105,9 @@ void GitPlugin::updateHistoryRefs( const std::shared_ptr<GitBranchModel>& model 
 			break;
 		}
 	}
+	const bool commitChanged =
+		mHistoryRefModel && mHistoryRefModel->lastCommit( mHistoryRevision, currentBranch ) !=
+								historyRefModel->lastCommit( mHistoryRevision, currentBranch );
 	const bool revisionChanged = !found && mHistoryRevision != "HEAD";
 	if ( !found )
 		mHistoryRevision = "HEAD";
@@ -3100,7 +3118,7 @@ void GitPlugin::updateHistoryRefs( const std::shared_ptr<GitBranchModel>& model 
 		mHistoryRefModel->index( selected, 0 ) );
 	mUpdatingHistoryRefs = false;
 	updateDetachedHistoryTitle();
-	if ( revisionChanged )
+	if ( revisionChanged || commitChanged )
 		invalidateHistory();
 }
 
@@ -4501,7 +4519,7 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 		if ( branch.type == Git::RefType::Head ) {
 			menuAdd( menu, "git-branch-rename", i18n( "git_rename", "Rename" ), "", { KEY_F2 } );
 			menuAdd( menu, "git-pull", i18n( "git_pull", "Pull" ), "repo-pull" );
-			if ( branch.ahead )
+			if ( branch.ahead || branch.remote.empty() )
 				menuAdd( menu, "git-push", i18n( "git_push", "Push" ), "repo-push" );
 			if ( branch.behind )
 				menuAdd( menu, "git-fast-forward-merge",
@@ -4542,7 +4560,7 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 		} else if ( id == "git-pull" ) {
 			pull( repoSelected() );
 		} else if ( id == "git-push" ) {
-			push( repoSelected() );
+			push( repoSelected(), branch.name );
 		} else if ( id == "git-branch-delete" ) {
 			branchDelete( branch );
 		} else if ( id == "git-branch-rename" ) {

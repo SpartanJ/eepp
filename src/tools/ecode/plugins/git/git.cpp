@@ -781,6 +781,32 @@ Git::Result Git::push( const std::string& projectDir ) {
 	return gitSimple( "push", projectDir );
 }
 
+Git::Result Git::pushBranch( const std::string& branch, const std::string& projectDir ) {
+	Result result;
+	result.returnCode =
+		git( { "for-each-ref", "--format=%(upstream:remotename)%09%(upstream:remoteref)", "--",
+			   "refs/heads/" + branch },
+			 projectDir, result.result );
+	if ( result.fail() )
+		return result;
+
+	const auto separator = result.result.find( '\t' );
+	if ( separator == std::string::npos ) {
+		result.returnCode = EXIT_FAILURE;
+		result.result = "Local branch not found: " + branch;
+		return result;
+	}
+	if ( separator == 0 )
+		return pushNewBranch( branch, projectDir );
+
+	const auto remote = result.result.substr( 0, separator );
+	const auto remoteRef = String::rTrim( result.result.substr( separator + 1 ), '\n' );
+	result.returnCode = git( { "push", "--porcelain", "--recurse-submodules=check", "--", remote,
+							   "refs/heads/" + branch + ":" + remoteRef },
+							 projectDir, result.result );
+	return result;
+}
+
 Git::Result Git::pushNewBranch( const std::string& branch, const std::string& projectDir ) {
 	auto res = gitSimple(
 		String::format(

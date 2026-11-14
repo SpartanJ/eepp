@@ -50,6 +50,8 @@ class GitHistoryRefModel : public Model {
 
 	bool isRevision( size_t index, std::string_view revision ) const;
 
+	std::string_view lastCommit( std::string_view revision, std::string_view headBranch ) const;
+
   private:
 	std::shared_ptr<GitBranchModel> mSource;
 	std::vector<ModelIndex> mSourceIndexes;
@@ -374,7 +376,7 @@ class GitPlugin : public PluginBase {
 
 	void pull( const std::string& repoPath );
 
-	void push( const std::string& repoPath );
+	void push( const std::string& repoPath, std::string branchName = {} );
 
 	void fetch( const std::string& repoPath );
 
