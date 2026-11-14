@@ -135,7 +135,7 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 	Float lastWordWrapWidth = 0.f;
 	bool isMonospace = font && ( font->isMonospace() ||
 								 ( font->getType() == FontType::TTF &&
-								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
+								   static_cast<FontTrueType*>( font )->isMonospaceForAscii() &&
 								   Text::canSkipShaping( textDrawHints ) ) );
 
 	size_t lastSpace = std::string::npos;

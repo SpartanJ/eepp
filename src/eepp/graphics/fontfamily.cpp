@@ -63,14 +63,15 @@ void FontFamily::setFont( FontTrueType* font, const std::string& fontpath,
 		fontService ? FontTrueType::New( font->getName() + "-" + fontType, fontpath,
 										 fontService->getResourceScope() )
 					: FontTrueType::New( font->getName() + "-" + fontType, fontpath );
+	// Configure the face before attachment computes the family's cached compatibility.
+	loadedFont->setBoldAdvanceSameAsRegular( font->getBoldAdvanceSameAsRegular() );
+	loadedFont->setEnableDynamicMonospace( font->getEnableDynamicMonospace() );
 	if ( fontType == "bold"sv )
 		font->setBoldFont( loadedFont );
 	else if ( fontType == "italic"sv )
 		font->setItalicFont( loadedFont );
 	else if ( fontType == "bolditalic"sv )
 		font->setBoldItalicFont( loadedFont );
-	loadedFont->setBoldAdvanceSameAsRegular( font->getBoldAdvanceSameAsRegular() );
-	loadedFont->setEnableDynamicMonospace( font->getEnableDynamicMonospace() );
 }
 
 }} // namespace EE::Graphics

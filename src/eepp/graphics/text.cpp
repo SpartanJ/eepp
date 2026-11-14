@@ -378,7 +378,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 								 fontService->getColorEmojiFont()->getType() == FontType::TTF;
 	bool isMonospace = font && ( font->isMonospace() ||
 								 ( font->getType() == FontType::TTF &&
-								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
+								   static_cast<FontTrueType*>( font )->isMonospaceForAscii() &&
 								   canSkipShaping( textDrawHints ) ) );
 	Float kerning = 0;
 	Float width = 0;
@@ -1059,7 +1059,7 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 	bool italic = ( style & Text::Italic ) != 0;
 	bool isMonospace = font && ( font->isMonospace() ||
 								 ( font->getType() == FontType::TTF &&
-								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
+								   static_cast<FontTrueType*>( font )->isMonospaceForAscii() &&
 								   canSkipShaping( textDrawHints ) ) );
 	Float hspace = static_cast<Float>(
 		font->getGlyphAdvance( L' ', fontSize, bold, italic, outlineThickness ) );

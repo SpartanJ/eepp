@@ -354,7 +354,7 @@ FontTrueType::FontTrueType( const std::string& FontName, FontService& fontServic
 	mEnableDynamicMonospace( false ),
 	mIsBold( false ),
 	mIsItalic( false ),
-	mIsMonospaceCompletePending( false ),
+	mMonospaceFlags( 0 ),
 	mHinting( fontService.getHinting() ),
 	mAntialiasing( fontService.getAntialiasing() ),
 	mFontService( &fontService ),
@@ -601,6 +601,8 @@ bool FontTrueType::setFontFace( void* _face ) {
 
 	updateFontInternalId();
 
+	updateMonospaceState();
+
 	sendEvent( Event::Load );
 
 	return true;
@@ -676,6 +678,7 @@ bool FontTrueType::setVariableFontWeight( FontWeight weight ) {
 	if ( mHBFont )
 		hb_ft_font_changed( static_cast<hb_font_t*>( mHBFont ) );
 #endif
+	updateMonospaceState();
 	return true;
 }
 
@@ -1343,7 +1346,7 @@ void FontTrueType::cleanup() {
 	mEnableDynamicMonospace = false;
 	mIsBold = false;
 	mIsItalic = false;
-	mIsMonospaceCompletePending = false;
+	mMonospaceFlags = 0;
 	mFontBold.reset();
 	mFontItalic.reset();
 	mFontBoldItalic.reset();
@@ -1584,7 +1587,7 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 	// Compute the glyph's advance offset
 	glyph.advance = static_cast<Float>( slot->metrics.horiAdvance ) / static_cast<Float>( 1 << 6 );
 
-	if ( bold && !mBoldAdvanceSameAsRegular )
+	if ( bold && !mIsBold && !mBoldAdvanceSameAsRegular )
 		glyph.advance += static_cast<Float>( weight ) / static_cast<Float>( 1 << 6 );
 
 	glyph.lsbDelta = static_cast<int>( slot->lsb_delta );
@@ -2023,6 +2026,7 @@ void FontTrueType::setAntialiasing( FontAntialiasing antialiasing ) {
 	if ( antialiasing != mAntialiasing ) {
 		mAntialiasing = antialiasing;
 		clearCache();
+		updateMonospaceState();
 	}
 }
 
@@ -2035,6 +2039,7 @@ void FontTrueType::setHinting( FontHinting hinting ) {
 	if ( hinting != mHinting ) {
 		mHinting = hinting;
 		clearCache();
+		updateMonospaceState();
 	}
 }
 
@@ -2100,9 +2105,15 @@ bool FontTrueType::isColorEmojiFont() const {
 }
 
 bool FontTrueType::isMonospace() const {
-	if ( mIsMonospaceCompletePending )
+	if ( mMonospaceFlags & MonospacePending )
 		updateMonospaceState();
 	return mIsMonospaceComplete;
+}
+
+bool FontTrueType::isMonospaceForAscii() const {
+	if ( mMonospaceFlags & MonospacePending )
+		updateMonospaceState();
+	return ( mMonospaceFlags & MonospaceStylesCompatible ) != 0;
 }
 
 bool FontTrueType::isIdentifiedAsMonospace() const {
@@ -2124,48 +2135,67 @@ bool FontTrueType::getBoldAdvanceSameAsRegular() const {
 void FontTrueType::setBoldAdvanceSameAsRegular( bool boldAdvanceSameAsRegular ) {
 	if ( mBoldAdvanceSameAsRegular != boldAdvanceSameAsRegular ) {
 		mBoldAdvanceSameAsRegular = boldAdvanceSameAsRegular;
-		mGlyphAdvanceCache.clear();
+		// The policy applies to the related faces too, including already rasterized glyphs.
+		if ( mFontBold )
+			mFontBold->setBoldAdvanceSameAsRegular( boldAdvanceSameAsRegular );
+		if ( mFontItalic )
+			mFontItalic->setBoldAdvanceSameAsRegular( boldAdvanceSameAsRegular );
+		if ( mFontBoldItalic )
+			mFontBoldItalic->setBoldAdvanceSameAsRegular( boldAdvanceSameAsRegular );
+		clearCache();
+		updateMonospaceState();
 	}
 }
 
 void FontTrueType::updateMonospaceState() const {
-	mIsMonospaceComplete = mIsMonospace && !mUsingFallback;
+	mMonospaceFlags = 0;
+	mIsMonospaceComplete = false;
 	if ( !Engine::isEngineRunning() || !Engine::instance()->isMainThread() ) {
-		mIsMonospaceCompletePending = true;
+		mMonospaceFlags = MonospacePending;
 		return;
 	}
-	mIsMonospaceCompletePending = false;
-	if ( mIsMonospaceComplete && mFontBold ) {
-		mIsMonospaceComplete = mIsMonospaceComplete && mFontBold->isMonospace() &&
-							   getGlyphAdvance( ' ', 10 ) == mFontBold->getGlyphAdvance( ' ', 10 );
-	}
-	if ( mIsMonospaceComplete && mFontItalic ) {
-		mIsMonospaceComplete =
-			mIsMonospaceComplete && mFontItalic->isMonospace() &&
-			getGlyphAdvance( ' ', 10 ) == mFontItalic->getGlyphAdvance( ' ', 10 );
-	}
-	if ( mIsMonospaceComplete && mFontBoldItalic ) {
-		mIsMonospaceComplete =
-			mIsMonospaceComplete && mFontBoldItalic->isMonospace() &&
-			getGlyphAdvance( ' ', 10 ) == mFontBoldItalic->getGlyphAdvance( ' ', 10 );
+	if ( !mIsMonospace || !mFace )
+		return;
+	const Float advance = getGlyphAdvance( ' ', 10 );
+	const auto compatible = [this, advance]( const FontTrueTypePtr& related, bool bold,
+											 bool italic ) {
+		const auto* style = related ? related.get() : this;
+		if ( !style->mIsMonospace || !style->mFace )
+			return false;
+		// A synthetic bold advance adds a pixel unless explicitly kept at the regular width.
+		if ( bold && !style->mIsBold && !style->mBoldAdvanceSameAsRegular )
+			return false;
+		const auto regularFace = static_cast<FT_Face>( mFace );
+		const auto styleFace = static_cast<FT_Face>( style->mFace );
+		// Matching rounded widths at size 10 alone can conceal different fixed-pitch faces.
+		if ( FT_IS_SCALABLE( regularFace ) && FT_IS_SCALABLE( styleFace ) &&
+			 static_cast<Int64>( regularFace->max_advance_width ) * styleFace->units_per_EM !=
+				 static_cast<Int64>( styleFace->max_advance_width ) * regularFace->units_per_EM )
+			return false;
+		return getGlyphAdvance( ' ', 10, bold, italic ) == advance;
+	};
+	if ( compatible( mFontBold, true, false ) && compatible( mFontItalic, false, true ) &&
+		 compatible( mFontBoldItalic, true, true ) ) {
+		mMonospaceFlags |= MonospaceStylesCompatible;
+		mIsMonospaceComplete = !mUsingFallback;
 	}
 }
 
 void FontTrueType::setBoldFont( const FontTrueTypePtr& fontBold ) {
 	mFontBold = fontBold;
-	mGlyphAdvanceCache.clear();
+	clearCache();
 	updateMonospaceState();
 }
 
 void FontTrueType::setItalicFont( const FontTrueTypePtr& fontItalic ) {
 	mFontItalic = fontItalic;
-	mGlyphAdvanceCache.clear();
+	clearCache();
 	updateMonospaceState();
 }
 
 void FontTrueType::setBoldItalicFont( const FontTrueTypePtr& fontBoldItalic ) {
 	mFontBoldItalic = fontBoldItalic;
-	mGlyphAdvanceCache.clear();
+	clearCache();
 	updateMonospaceState();
 }
 

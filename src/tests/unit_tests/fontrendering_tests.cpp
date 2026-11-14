@@ -45,6 +45,29 @@ using namespace EE::Window;
 using namespace EE::UI;
 using namespace EE::UI::CSS;
 
+namespace {
+
+class MonospaceQueryFont : public FontTrueType {
+  public:
+	explicit MonospaceQueryFont( FontService& service ) :
+		FontTrueType( "MonospaceQueryFont", service ) {}
+
+	Float getGlyphAdvance( Uint32 codePoint, unsigned int size, bool bold = false,
+						   bool italic = false, Float outline = 0 ) const override {
+		++queries;
+		return FontTrueType::getGlyphAdvance( codePoint, size, bold, italic, outline );
+	}
+
+	mutable size_t queries{ 0 };
+};
+
+class MonospaceQueryEditor : public UICodeEditor {
+  public:
+	using UICodeEditor::isMonospaceLine;
+};
+
+} // namespace
+
 UTEST( FontRendering, drawingEmptyTextDoesNotCreateFontPage ) {
 	UIApplication app(
 		WindowSettings( 320, 240, "eepp - Empty Text Test", WindowStyle::Default,
@@ -378,6 +401,157 @@ UTEST( FontRendering, loadingFontFamilyDoesNotCreateTexturePages ) {
 	EXPECT_EQ( textureCount, textureFactory->getTextureCount() );
 }
 
+UTEST( FontRendering, nativeBoldMetricsMatchRasterizedAdvances ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Native Bold Advances", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto& scope = *app.getUI()->getResourceScope();
+	auto font = FontTrueType::New( "NativeBoldMetrics", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/DejaVuSansMono.ttf" ) );
+	FontFamily::loadFromRegular( font.get() );
+	EXPECT_FALSE( font->getBoldAdvanceSameAsRegular() );
+	ASSERT_TRUE( font->getBoldFont() );
+	ASSERT_TRUE( font->getBoldItalicFont() );
+	EXPECT_TRUE( font->isMonospaceForAscii() );
+	EXPECT_TRUE( font->isMonospace() );
+	for ( Uint32 size : { 10u, 11u, 16u, 17u, 22u } ) {
+		for ( Uint32 character : { ' ', '*', 'M', 'i', '.' } ) {
+			for ( bool italic : { false, true } ) {
+				const Float measured = font->getGlyphAdvance( character, size, true, italic );
+				const Float rendered = font->getGlyph( character, size, true, italic ).advance;
+				EXPECT_EQ( measured, rendered );
+				EXPECT_EQ( font->getGlyphAdvance( ' ', size ), rendered );
+			}
+		}
+	}
+}
+
+UTEST( FontRendering, syntheticBoldPolicyInvalidatesStyledDrawables ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Synthetic Bold Advances", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto font = FontTrueType::New( "SyntheticBoldMetrics", *app.getUI()->getResourceScope() );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/DejaVuSansMono.ttf" ) );
+	const Float regular = font->getGlyphAdvance( '*', 16 );
+	EXPECT_TRUE( font->isIdentifiedAsMonospace() );
+	EXPECT_FALSE( font->isMonospaceForAscii() );
+	EXPECT_FALSE( font->isMonospace() );
+	EXPECT_EQ( regular + 1, font->getGlyphAdvance( '*', 16, true ) );
+	EXPECT_EQ( regular + 1, font->getGlyphDrawable( '*', 16, true )->getAdvance() );
+	font->setBoldAdvanceSameAsRegular( true );
+	EXPECT_TRUE( font->isMonospaceForAscii() );
+	EXPECT_TRUE( font->isMonospace() );
+	EXPECT_EQ( regular, font->getGlyphAdvance( '*', 16, true ) );
+	EXPECT_EQ( regular, font->getGlyphDrawable( '*', 16, true )->getAdvance() );
+	font->setBoldAdvanceSameAsRegular( false );
+	EXPECT_FALSE( font->isMonospaceForAscii() );
+	EXPECT_EQ( regular + 1, font->getGlyphAdvance( '*', 16, true ) );
+	EXPECT_EQ( regular + 1, font->getGlyphDrawable( '*', 16, true )->getAdvance() );
+}
+
+UTEST( FontRendering, asciiMonospaceRejectsIncompatibleRelatedStyles ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Related Monospace Styles", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto& scope = *app.getUI()->getResourceScope();
+	auto font = FontTrueType::New( "RelatedStyleRegular", scope );
+	auto proportional = FontTrueType::New( "RelatedStyleProportional", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/DejaVuSansMono.ttf" ) );
+	ASSERT_TRUE(
+		proportional->loadFromFile( Sys::getProcessPath() + "../assets/fonts/NotoSans-Bold.ttf" ) );
+	font->setBoldAdvanceSameAsRegular( true );
+	EXPECT_TRUE( font->isMonospaceForAscii() );
+	font->getGlyphDrawable( 'M', 16, true );
+	font->setBoldFont( proportional );
+	EXPECT_TRUE( font->isIdentifiedAsMonospace() );
+	EXPECT_FALSE( font->isMonospaceForAscii() );
+	EXPECT_FALSE( font->isMonospace() );
+	EXPECT_EQ( proportional->getGlyphAdvance( 'M', 16, true ),
+			   font->getGlyphDrawable( 'M', 16, true )->getAdvance() );
+	font->setBoldFont( {} );
+	EXPECT_TRUE( font->isMonospaceForAscii() );
+	font->setItalicFont( proportional );
+	EXPECT_FALSE( font->isMonospaceForAscii() );
+	font->setItalicFont( {} );
+	font->setBoldItalicFont( proportional );
+	EXPECT_FALSE( font->isMonospaceForAscii() );
+	font->setBoldItalicFont( {} );
+	EXPECT_TRUE( font->isMonospaceForAscii() );
+}
+
+UTEST( FontRendering, asciiMonospaceSurvivesNonAsciiFallback ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - ASCII Monospace Fallback", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto& scope = *app.getUI()->getResourceScope();
+	auto font = FontTrueType::New( "AsciiFallbackRegular", scope );
+	auto fallback = FontTrueType::New( "AsciiFallbackKorean", scope );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/DejaVuSansMono.ttf" ) );
+	ASSERT_TRUE(
+		fallback->loadFromFile( Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf" ) );
+	font->setBoldAdvanceSameAsRegular( true );
+	font->setEnableDynamicMonospace( true );
+	font->setEnableSystemFallback( false );
+	font->setEnableEmojiFallback( false );
+	scope.getFontService().addFallbackFont( fallback );
+	ASSERT_TRUE( font->isMonospace() );
+	ASSERT_FALSE( font->hasGlyph( 0xAC00 ) );
+	ASSERT_TRUE( fallback->hasGlyph( 0xAC00 ) );
+	EXPECT_EQ( fallback.get(), font->getGlyph( 0xAC00, 16, false, false ).font );
+	EXPECT_FALSE( font->isMonospace() );
+	EXPECT_TRUE( font->isMonospaceForAscii() );
+	// A later incompatible style must not be mistaken for merely using a fallback elsewhere.
+	font->setBoldFont( fallback );
+	EXPECT_FALSE( font->isMonospaceForAscii() );
+}
+
+UTEST( FontRendering, editorMonospaceClassificationOnlyReadsCachedState ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Cached Editor Monospace Flags", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto& scope = *app.getUI()->getResourceScope();
+	auto font = std::make_shared<MonospaceQueryFont>( scope.getFontService() );
+	scope.publishLocalFont( "MonospaceQueryFont", font );
+	ASSERT_TRUE(
+		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/DejaVuSansMono.ttf" ) );
+	font->setBoldAdvanceSameAsRegular( true );
+	FontFamily::loadFromRegular( font.get() );
+	auto fallback = FontTrueType::New( "MonospaceQueryFallback", scope );
+	ASSERT_TRUE(
+		fallback->loadFromFile( Sys::getProcessPath() + "assets/fonts/NotoSansKR-Regular.ttf" ) );
+	scope.getFontService().addFallbackFont( fallback );
+	font->setEnableDynamicMonospace( true );
+	font->setEnableSystemFallback( false );
+	font->setEnableEmojiFallback( false );
+	font->getGlyph( 0xAC00, 16, false, false );
+	ASSERT_FALSE( font->isMonospace() );
+	ASSERT_TRUE( font->isMonospaceForAscii() );
+	auto* editor = eeNew( MonospaceQueryEditor, () );
+	editor->setParent( app.getUI()->getRoot() );
+	editor->setFont( font.get() );
+	editor->getDocument().textInput( "ASCII **bold**\n한글" );
+	font->queries = 0;
+	for ( int i = 0; i < 1024; ++i ) {
+		EXPECT_TRUE( editor->isMonospaceLine( 0 ) );
+		EXPECT_FALSE( editor->isMonospaceLine( 1 ) );
+	}
+	EXPECT_EQ( 0u, font->queries );
+	font->setBoldFont( fallback );
+	font->queries = 0;
+	for ( int i = 0; i < 1024; ++i )
+		EXPECT_FALSE( editor->isMonospaceLine( 0 ) );
+	EXPECT_EQ( 0u, font->queries );
+}
+
 UTEST( FontRendering, applicationMonospaceStylesKeepCellAdvances ) {
 	UIApplication app(
 		WindowSettings( 320, 240, "eepp - Monospace Style Advances", WindowStyle::Default,
@@ -614,6 +788,7 @@ UTEST( FontRendering, codeEditorUsesSelectedLigatureFeatures ) {
 	FontTrueTypePtr font = FontTrueType::New( "MonospaceLigatures-Regular", scope );
 	ASSERT_TRUE(
 		font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/DejaVuSansMono.ttf" ) );
+	font->setBoldAdvanceSameAsRegular( true );
 	ASSERT_TRUE( font->isMonospace() );
 
 	auto* editor = UICodeEditor::New();

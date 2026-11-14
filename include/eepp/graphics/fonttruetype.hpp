@@ -133,9 +133,14 @@ class EE_API FontTrueType : public Font {
 
 	bool hasColrGlyphs() const;
 
-	/** @return True if the font identifies itself as a monospace font and currently does not hold
-	 * any non-monospaced glyph (from a fallback font) */
+	/** @return True if the face and its configured styles share fixed advances and the font
+	 * currently does not hold fallback glyphs. Compatibility is cached when the family changes. */
 	bool isMonospace() const;
+
+	/** Like isMonospace(), but ignores fallback use outside ASCII. Related styles must still
+	 * share the regular face's advances. Reads cached state; compatibility is evaluated when
+	 * the font family changes (deferred to the main thread for worker-loaded families). */
+	bool isMonospaceForAscii() const;
 
 	/** @return True if the font identifies itself as a monospace font */
 	bool isIdentifiedAsMonospace() const;
@@ -301,7 +306,8 @@ class EE_API FontTrueType : public Font {
 	bool mEnableDynamicMonospace{ false };
 	bool mIsBold{ false };
 	bool mIsItalic{ false };
-	mutable bool mIsMonospaceCompletePending{ false };
+	enum MonospaceFlags : Uint8 { MonospacePending = 1, MonospaceStylesCompatible = 2 };
+	mutable Uint8 mMonospaceFlags{ 0 };
 	mutable UnorderedMap<unsigned int, unsigned int> mClosestCharacterSize;
 	mutable UnorderedMap<Uint32, Uint32> mCodePointIndexCache;
 	mutable UnorderedMap<Uint32, std::tuple<Uint32, Uint32, bool>> mKeyCache;

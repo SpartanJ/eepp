@@ -5875,7 +5875,7 @@ bool UICodeEditor::isMonospaceLine( Int64 lineIndex ) const {
 		   ( ( mFont->isMonospace() &&
 			   ( !Text::TextShaperEnabled || mDoc->line( lineIndex ).isAscii() ) ) ||
 			 ( mFont->getType() == FontType::TTF &&
-			   static_cast<FontTrueType*>( mFont )->isIdentifiedAsMonospace() &&
+			   static_cast<FontTrueType*>( mFont )->isMonospaceForAscii() &&
 			   mDoc->line( lineIndex ).isAscii() ) );
 }
 
