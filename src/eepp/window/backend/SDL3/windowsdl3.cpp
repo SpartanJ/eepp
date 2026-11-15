@@ -292,6 +292,9 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	}
 #endif
 
+	if ( Runtime::forceSoftwareRendering() )
+		SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 0 );
+
 	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Title.c_str(), mWindow.WindowConfig.Width,
 								   mWindow.WindowConfig.Height, tmpFlags );
 

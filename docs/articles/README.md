@@ -12,6 +12,7 @@ supported behavior; class headers and current source code remain the reference f
 | Preview and edit native XML/CSS layouts | [UI editor](ui_editor.md) | [Application UI authoring](ui_authoring.md), [Runtime UI inspector](ui_inspector.md) |
 | Support right-to-left languages or logical `start`/`end` layouts | [UI direction and RTL](ui_rtl.md) | [CSS specification](css_specification.md#direction) for `direction` and flow-relative properties |
 | Inspect or automate a running UI | [Runtime UI inspector](ui_inspector.md) | [Application UI authoring](ui_authoring.md) for a layout debugging workflow |
+| Look up environment variables, defaults, or runtime overrides | [Environment variables](environment_variables.md) | [Runtime UI inspector](ui_inspector.md) for automation, [UI introduction](ui_introduction.md) for rendering preferences |
 | Bind application data or commands to widgets | [UI data binding](ui_databinding.md) | [Application UI authoring](ui_authoring.md) for screen structure |
 | Make native widgets accessible | [UI accessibility](ui_accessibility.md) | [Application UI authoring](ui_authoring.md) for screen structure |
 | Work on the accessibility implementation | [UI accessibility architecture](ui_accessibility_architecture.md) | [UI accessibility](ui_accessibility.md) for the application-facing behavior |

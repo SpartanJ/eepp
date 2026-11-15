@@ -151,6 +151,7 @@ and focused guides for the GUI framework:
 * [UI introduction](docs/articles/ui_introduction.md)
 * [UI data binding](docs/articles/ui_databinding.md)
 * [Runtime UI inspector](docs/articles/ui_inspector.md)
+* [Environment variables](docs/articles/environment_variables.md)
 * [CSS specification](docs/articles/css_specification.md)
 
 Contributions and pull requests are welcome. Before participating, please read the

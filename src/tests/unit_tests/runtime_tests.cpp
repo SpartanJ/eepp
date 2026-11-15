@@ -3,6 +3,7 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/window/runtime.hpp>
 
 using namespace EE;
@@ -20,6 +21,60 @@ UTEST( Runtime, hiddenWindowOverrideRequiresOneAndPreservesRuntime ) {
 		EXPECT_EQ( Runtime::forceHiddenWindows(), value[0] == '1' && value[1] == '\0' );
 		EXPECT_EQ( Runtime::mode(), mode );
 	}
+}
+
+UTEST( Runtime, softwareRenderingOverrideUsesNonemptyNonzeroValues ) {
+	const std::string previous = Sys::getEnv( "EEPP_FORCE_SOFTWARE_RENDERING" );
+	ScopedOp environment( nullptr, [&previous] {
+		Sys::setEnv( "EEPP_FORCE_SOFTWARE_RENDERING", previous.c_str() );
+	} );
+	for ( const char* value : { "", "0" } ) {
+		EXPECT_TRUE( Sys::setEnv( "EEPP_FORCE_SOFTWARE_RENDERING", value ) );
+		EXPECT_FALSE( Runtime::forceSoftwareRendering() );
+	}
+	for ( const char* value : { "1", "true", "false", "off", "00" } ) {
+		EXPECT_TRUE( Sys::setEnv( "EEPP_FORCE_SOFTWARE_RENDERING", value ) );
+		EXPECT_TRUE( Runtime::forceSoftwareRendering() );
+	}
+}
+
+UTEST( Runtime, multisampleOverrideParsesLevelsAndRejectsInvalidValues ) {
+	const std::string previous = Sys::getEnv( "EEPP_MSAA" );
+	ScopedOp environment( nullptr, [&previous] { Sys::setEnv( "EEPP_MSAA", previous.c_str() ); } );
+	const auto mode = Runtime::mode();
+	for ( Uint32 samples : { 0u, 1u, 2u, 4u, 8u, 16u, 2147483647u } ) {
+		EXPECT_TRUE( Sys::setEnv( "EEPP_MSAA", String::toString( samples ).c_str() ) );
+		EXPECT_EQ( Runtime::resolveMultisamples( 8 ), samples );
+		EXPECT_EQ( Runtime::resolveMultisamples( 0 ), samples );
+		EXPECT_EQ( Runtime::mode(), mode );
+	}
+	for ( const char* value :
+		  { "", "true", "-1", "+4", " 4", "4 ", "4x", "0x4", "4.0", "2147483648", "4294967295",
+			"4294967296", "9999999999999999999999999999999999999999" } ) {
+		EXPECT_TRUE( Sys::setEnv( "EEPP_MSAA", value ) );
+		EXPECT_EQ( Runtime::resolveMultisamples( 8 ), 8u );
+		EXPECT_EQ( Runtime::resolveMultisamples( 0 ), 0u );
+		EXPECT_EQ( Runtime::mode(), mode );
+	}
+}
+
+UTEST( Runtime, multisampleOverrideAppliesToPrimaryAndSecondaryWindows ) {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return;
+	const std::string previous = Sys::getEnv( "EEPP_MSAA" );
+	ScopedOp environment( [] { Sys::setEnv( "EEPP_MSAA", "0" ); },
+						  [&previous] { Sys::setEnv( "EEPP_MSAA", previous.c_str() ); } );
+	ScopedOp cleanup( nullptr, [] { Engine::destroySingleton(); } );
+	const ContextSettings context( false, 0, 4 );
+	auto* primary =
+		Engine::instance()->createWindow( { 64, 64, "MSAA Override Primary" }, context );
+	ASSERT_TRUE( primary != nullptr && primary->isOpen() );
+	auto* secondary =
+		Engine::instance()->createWindow( { 64, 64, "MSAA Override Secondary" }, context );
+	ASSERT_TRUE( secondary != nullptr && secondary->isOpen() );
+	for ( auto* window : { primary, secondary } )
+		EXPECT_EQ( window->getWindowInfo()->ContextConfig.Multisamples, 0u );
+	EXPECT_EQ( context.Multisamples, 4u );
 }
 
 UTEST( UIApplication, forcedHiddenWindowsIgnorePresentationRequests ) {

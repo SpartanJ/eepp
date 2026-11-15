@@ -299,6 +299,7 @@ EE::Window::Window* Engine::createDefaultWindow( const WindowSettings& Settings,
 }
 
 EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettings Context ) {
+	Context.Multisamples = Runtime::resolveMultisamples( Context.Multisamples );
 	if ( Runtime::forceHiddenWindows() ) {
 		Settings.Style |= WindowStyle::Hidden;
 		Settings.Style &= ~( WindowStyle::Fullscreen | WindowStyle::UseDesktopResolution );

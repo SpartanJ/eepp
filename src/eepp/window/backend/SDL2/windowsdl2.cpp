@@ -24,8 +24,6 @@
 #include <eepp/window/runtime.hpp>
 #include <eepp/window/terminal/terminalruntime.hpp>
 
-#include <cstdlib>
-
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 #include <eepp/window/draganddrop/cocoadraganddrop.hpp>
 #endif
@@ -309,11 +307,8 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	}
 #endif
 
-	if ( const char* forceSoftwareRendering = std::getenv( "EEPP_FORCE_SOFTWARE_RENDERING" ) ) {
-		if ( forceSoftwareRendering[0] != '\0' &&
-			 !( forceSoftwareRendering[0] == '0' && forceSoftwareRendering[1] == '\0' ) )
-			SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 0 );
-	}
+	if ( Runtime::forceSoftwareRendering() )
+		SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 0 );
 
 	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Title.c_str(), SDL_WINDOWPOS_UNDEFINED,
 								   SDL_WINDOWPOS_UNDEFINED, mWindow.WindowConfig.Width,

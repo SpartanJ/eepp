@@ -2,6 +2,9 @@
 
 The eepp inspector is a small TCP interface for inspecting and interacting with a running eepp UI. It is useful for debugging layout, CSS, focus, input delivery, multiple windows, and HTML inside `UIWebView`. Its compact JSON replies and server side batches are designed to reduce tool round trips for automated agents.
 
+See [environment variables](environment_variables.md) for the complete framework environment
+reference, including runtime, MSAA, scaling, font, and accessibility overrides.
+
 ## Security and activation
 
 The capability can be compiled into every eepp application. **It is disabled by default:** a normal run has no inspector listener, token, network thread, or reachable parser. Enabling it starts an explicit developer debugging interface. In control mode, authenticated clients can click and type into the application.
@@ -58,6 +61,19 @@ usable native display, but keeps the windows hidden. Use this when the headless 
 unavailable (for example, on macOS) or when checking native rendering without interrupting desktop
 focus. `EEPP_RUNTIME=headless` instead selects an offscreen video driver. The visibility flag does
 not suppress operating-system dialogs opened outside eepp's window API.
+
+## Overriding MSAA
+
+Use `EEPP_MSAA=0` when a software renderer or offscreen display cannot create the application's
+configured multisampled context. Positive values request a different sample count for every window.
+See [runtime and window environment variables](environment_variables.md#runtime-and-window-creation)
+for accepted values, fallback behavior, and backend scope.
+
+```sh
+EEPP_MSAA=0 ./bin/eeiv
+EEPP_MSAA=4 ./bin/eeiv
+EEPP_MSAA=0 LIBGL_ALWAYS_SOFTWARE=1 __GLX_VENDOR_LIBRARY_NAME=mesa GALLIUM_DRIVER=llvmpipe ./bin/eeiv
+```
 
 ## Python client
 
