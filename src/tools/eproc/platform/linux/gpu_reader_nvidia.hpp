@@ -1,6 +1,7 @@
 #ifndef EPROC_GPU_READER_NVIDIA_HPP
 #define EPROC_GPU_READER_NVIDIA_HPP
 
+#include "../../process_collector.hpp"
 #include <eepp/core/containers.hpp>
 #include <vector>
 
@@ -22,9 +23,12 @@ class NvidiaGpuReader {
 	/** True when libnvidia-ml loaded and nvmlInit() succeeded. */
 	bool isAvailable() const;
 
+	const SmallVector<Uint32, 2>* devicesForProcess( long pid ) const;
+
 	/** Fills per-PID GPU utilization in percent (0..100) and per-PID GPU memory in KiB.
 	 *  Entries are only present for processes actually using the GPU. */
-	void query( UnorderedMap<long, int>& usagePercent, UnorderedMap<long, long>& memoryKiB );
+	void query( UnorderedMap<long, int>& usagePercent, UnorderedMap<long, long>& memoryKiB,
+				std::vector<GpuInfo>& gpus );
 
   private:
 	// Only the NVML declarations this reader uses are mirrored here, the rest of the API lives in
@@ -53,6 +57,24 @@ class NvidiaGpuReader {
 	};
 	static_assert( sizeof( RunningProcessInfo ) == 16, "must match nvmlProcessInfo_v1_t" );
 
+	struct Utilization {
+		unsigned int gpu;
+		unsigned int memory;
+	};
+	static_assert( sizeof( Utilization ) == 8 );
+
+	struct MemoryInfo {
+		unsigned long long total;
+		unsigned long long free;
+		unsigned long long used;
+	};
+	static_assert( sizeof( MemoryInfo ) == 24 );
+
+	using NvmlDeviceGetStringFn = NvmlReturn ( * )( NvmlDevice, char*, unsigned int );
+	using NvmlDeviceGetHandleByPciBusIdFn = NvmlReturn ( * )( const char*, NvmlDevice* );
+	using NvmlDeviceGetUtilizationRatesFn = NvmlReturn ( * )( NvmlDevice, Utilization* );
+	using NvmlDeviceGetMemoryInfoFn = NvmlReturn ( * )( NvmlDevice, MemoryInfo* );
+
 	using NvmlInitFn = NvmlReturn ( * )();
 	using NvmlShutdownFn = NvmlReturn ( * )();
 	using NvmlDeviceGetCountFn = NvmlReturn ( * )( unsigned int* );
@@ -74,9 +96,14 @@ class NvidiaGpuReader {
 	void collectRunningProcesses( NvmlDevice device, NvmlDeviceGetRunningProcessesFn entryPoint,
 								  UnorderedMap<long, long>& memoryKiB );
 
+	void recordDevice( long pid );
+
 	void* mLib{ nullptr };
+	Uint32 mDeviceIndex{ 0 };
 	bool mInitialized{ false };
 	unsigned long long mLastTimestamp{ 0 };
+	// Each adapter samples on its own clock cadence; one GPU must not advance another's baseline.
+	UnorderedMap<std::string, unsigned long long> mLastTimestamps;
 	// resolved function pointers
 	NvmlInitFn mNvmlInit{ nullptr };
 	NvmlShutdownFn mNvmlShutdown{ nullptr };
@@ -87,6 +114,14 @@ class NvidiaGpuReader {
 	NvmlDeviceGetRunningProcessesFn mNvmlGraphicsProcesses{ nullptr };
 	// Optional: drivers without MPS support do not export this entry point.
 	NvmlDeviceGetRunningProcessesFn mNvmlMpsComputeProcesses{ nullptr };
+
+	NvmlDeviceGetStringFn mNvmlDeviceGetName{ nullptr };
+	NvmlDeviceGetStringFn mNvmlDeviceGetUUID{ nullptr };
+	NvmlDeviceGetHandleByPciBusIdFn mNvmlDeviceGetHandleByPciBusId{ nullptr };
+	NvmlDeviceGetUtilizationRatesFn mNvmlDeviceGetUtilizationRates{ nullptr };
+	NvmlDeviceGetMemoryInfoFn mNvmlDeviceGetMemoryInfo{ nullptr };
+
+	UnorderedMap<long, SmallVector<Uint32, 2>> mProcessDevices;
 
 	// Reused across queries, so polling does not allocate per device.
 	std::vector<ProcessUtilizationSample> mSampleBuffer;

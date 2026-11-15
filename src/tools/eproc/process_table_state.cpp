@@ -1,4 +1,5 @@
 #include "process_table_state.hpp"
+#include <iterator>
 
 namespace eproc::ProcessTableState {
 
@@ -28,6 +29,33 @@ nlohmann::json parse( const std::string& savedState ) {
 	if ( !state.is_object() || !state.contains( "version" ) ||
 		 !state["version"].is_number_integer() )
 		return nullptr;
+	if ( state["version"] == 6 ) {
+		// GPU Device was appended to preserve the indexes of all saved columns.
+		auto migrate = []( nlohmann::json& view ) {
+			if ( !view.is_object() )
+				return;
+			if ( view.contains( "widths" ) && view["widths"].is_object() &&
+				 view["widths"].contains( "widths" ) && view["widths"]["widths"].is_array() &&
+				 view["widths"]["widths"].size() == ProcessModel::ColCount - 1 ) {
+				// Percentage widths are normalized by the view; reserve a modest share.
+				const bool percentage =
+					view["widths"].contains( "mode" ) && view["widths"]["mode"] == "percentage";
+				view["widths"]["widths"].push_back( percentage ? 5 : 100 );
+			}
+			if ( view.contains( "column_order" ) && view["column_order"].is_array() &&
+				 view["column_order"].size() == ProcessModel::ColCount - 1 ) {
+				auto& order = view["column_order"];
+				auto afterMemory = std::find( order.begin(), order.end(),
+											  nlohmann::json( ProcessModel::ColGpuMemory ) );
+				order.insert( afterMemory != order.end() ? std::next( afterMemory ) : order.end(),
+							  ProcessModel::ColGpuDevice );
+			}
+		};
+		migrate( state );
+		if ( state.contains( "tree" ) )
+			migrate( state["tree"] );
+		state["version"] = kProcessTableStateVersion;
+	}
 	if ( state["version"] != kProcessTableStateVersion )
 		return nullptr;
 	return state;

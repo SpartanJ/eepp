@@ -57,6 +57,7 @@ class ProcessModel : public Model {
 		ColMemoryPercent,
 		ColFamilyMemory,
 		ColFamilyMemoryPercent,
+		ColGpuDevice,
 		ColCount
 	};
 

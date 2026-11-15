@@ -122,6 +122,15 @@ class App {
 
 	void setupPerformance();
 
+	enum class PerformanceMetricType : Uint8 { Cpu, Memory, Gpu, Network };
+
+	struct PerformanceMetric;
+
+	PerformanceMetric createPerformanceMetric( PerformanceMetricType type, const String& name,
+											   std::string id = {} );
+
+	void reconcileGpuMetrics( const std::vector<GpuInfo>& gpus );
+
 	/** Updates network permission/availability text and the two process-column tooltips. */
 	void updateProcessNetworkStatus( ProcessNetworkStatus status );
 
@@ -188,7 +197,6 @@ class App {
 		UITextView* detail{ nullptr };
 	};
 	static_assert( sizeof( StatusMetric ) == 4 * sizeof( void* ) );
-	std::array<StatusMetric, 4> mStatusMetrics;
 	UIChart* mPerformanceDetailChart{ nullptr };
 	UIWidget* mCoreChartScroll{ nullptr };
 	UIWidget* mCoreChartStack{ nullptr };
@@ -202,12 +210,19 @@ class App {
 		UIWidget* card{ nullptr };
 		UIChart* preview{ nullptr };
 		UITextView* value{ nullptr };
+		UITextView* title{ nullptr };
+		UITextView* model{ nullptr };
 		std::shared_ptr<RingXYDataSource> primary;
 		std::shared_ptr<RingXYDataSource> secondary;
+		String name;
+		String summary;
+		String detail;
+		std::string gpuId;
+		StatusMetric status;
+		PerformanceMetricType type{ PerformanceMetricType::Cpu };
+		bool available{ false };
 	};
-	std::array<PerformanceMetric, 4> mPerformanceMetrics;
-	std::array<String, 4> mPerformanceSummaries;
-	std::array<String, 4> mPerformanceDetails;
+	std::vector<PerformanceMetric> mPerformanceMetrics;
 	String mProcessNetworkDetails;
 	std::vector<UIChart*> mCoreCharts;
 	std::vector<UITextView*> mCoreLabels;
@@ -218,7 +233,6 @@ class App {
 	bool mPerCoreView{ false };
 	bool mTabFocusRestorePending{ false };
 	bool mInitialCollection{ true };
-	std::array<bool, 4> mMetricAvailable{};
 	ProcessNetworkStatus mLastNetworkStatus{ ProcessNetworkStatus::NotReported };
 
 	std::shared_ptr<ProcessModel> mProcessModel;

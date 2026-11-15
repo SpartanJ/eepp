@@ -35,6 +35,7 @@ class PerformanceCountersWindows {
 
 	struct GpuSample {
 		Int64 memory{ -1 };
+		SmallVector<Uint32, 2> devices;
 		int usage{ -1 };
 	};
 
@@ -45,7 +46,15 @@ class PerformanceCountersWindows {
 
 	void initialize();
 
+	void readAdapterNames();
+
+	static std::string adapterId( std::wstring_view instance );
+
+	static Uint32 adapterIndex( SystemInfo& system, std::wstring_view instance );
+
 	PDH_FMT_COUNTERVALUE_ITEM_W* read( PDH_HCOUNTER counter, DWORD format, DWORD& count );
+
+	static void recordDevice( GpuSample& process, Uint32 adapter );
 
 	void readGpuUsage( SystemInfo& system );
 
@@ -66,6 +75,7 @@ class PerformanceCountersWindows {
 	std::vector<Uint64> mBuffer;
 	std::vector<CoreSample> mCores;
 	UnorderedMap<Int64, GpuSample> mProcesses;
+	std::vector<GpuInfo> mAdapters;
 	UnorderedMap<std::wstring_view, double> mEngines;
 	bool mInitialized{ false };
 };

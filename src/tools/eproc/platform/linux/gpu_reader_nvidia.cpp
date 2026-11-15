@@ -52,6 +52,16 @@ NvidiaGpuReader::NvidiaGpuReader() {
 	mNvmlMpsComputeProcesses = resolveSymbol<NvmlDeviceGetRunningProcessesFn>(
 		mLib, "nvmlDeviceGetMPSComputeRunningProcesses" );
 
+	// Adapter queries are optional; older drivers can still provide process accounting.
+	mNvmlDeviceGetName = resolveSymbol<NvmlDeviceGetStringFn>( mLib, "nvmlDeviceGetName" );
+	mNvmlDeviceGetUUID = resolveSymbol<NvmlDeviceGetStringFn>( mLib, "nvmlDeviceGetUUID" );
+	mNvmlDeviceGetHandleByPciBusId =
+		resolveSymbol<NvmlDeviceGetHandleByPciBusIdFn>( mLib, "nvmlDeviceGetHandleByPciBusId_v2" );
+	mNvmlDeviceGetUtilizationRates =
+		resolveSymbol<NvmlDeviceGetUtilizationRatesFn>( mLib, "nvmlDeviceGetUtilizationRates" );
+	mNvmlDeviceGetMemoryInfo =
+		resolveSymbol<NvmlDeviceGetMemoryInfoFn>( mLib, "nvmlDeviceGetMemoryInfo" );
+
 	if ( !mNvmlInit || !mNvmlShutdown || !mNvmlDeviceGetCount || !mNvmlDeviceGetHandleByIndex ||
 		 !mNvmlDeviceGetProcessUtilization || !mNvmlComputeProcesses || !mNvmlGraphicsProcesses )
 		return;
@@ -75,9 +85,10 @@ bool NvidiaGpuReader::isAvailable() const {
 }
 
 void NvidiaGpuReader::query( UnorderedMap<long, int>& usagePercent,
-							 UnorderedMap<long, long>& memoryKiB ) {
+							 UnorderedMap<long, long>& memoryKiB, std::vector<GpuInfo>& gpus ) {
 	usagePercent.clear();
 	memoryKiB.clear();
+	mProcessDevices.clear();
 
 	if ( !mInitialized )
 		return;
@@ -87,19 +98,73 @@ void NvidiaGpuReader::query( UnorderedMap<long, int>& usagePercent,
 	if ( mNvmlDeviceGetCount( &deviceCount ) != NvmlSuccess )
 		return;
 
-	unsigned long long newestTimestamp = mLastTimestamp;
 	for ( unsigned int index = 0; index < deviceCount; index++ ) {
 		NvmlDevice device = nullptr;
 		// A device that cannot be queried is skipped, the remaining ones are still reported.
 		if ( mNvmlDeviceGetHandleByIndex( index, &device ) != NvmlSuccess || !device )
 			continue;
 
+		// Match sysfs by PCI address, so NVML and DRM never create two cards for one GPU.
+		auto found = std::find_if( gpus.begin(), gpus.end(), [&]( const GpuInfo& gpu ) {
+			NvmlDevice candidate = nullptr;
+			return mNvmlDeviceGetHandleByPciBusId &&
+				   mNvmlDeviceGetHandleByPciBusId( gpu.id.c_str(), &candidate ) == NvmlSuccess &&
+				   candidate == device;
+		} );
+		if ( found == gpus.end() ) {
+			char uuid[96]{};
+			if ( !mNvmlDeviceGetUUID ||
+				 mNvmlDeviceGetUUID( device, uuid, sizeof( uuid ) ) != NvmlSuccess ) {
+				// Optional identity queries must not suppress existing process accounting.
+				mDeviceIndex = UINT32_MAX;
+				unsigned long long newestTimestamp = mLastTimestamp;
+				collectUtilization( device, usagePercent, newestTimestamp );
+				collectMemory( device, memoryKiB );
+				mLastTimestamp = newestTimestamp;
+				continue;
+			}
+			gpus.emplace_back();
+			found = std::prev( gpus.end() );
+			found->id = uuid;
+		}
+		char name[128]{};
+		if ( mNvmlDeviceGetName &&
+			 mNvmlDeviceGetName( device, name, sizeof( name ) ) == NvmlSuccess )
+			found->name = name;
+		Utilization utilization{};
+		if ( mNvmlDeviceGetUtilizationRates &&
+			 mNvmlDeviceGetUtilizationRates( device, &utilization ) == NvmlSuccess ) {
+			found->usage = static_cast<int>( std::min( utilization.gpu, 100u ) );
+			found->usageTracked = false;
+		}
+		MemoryInfo memory{};
+		if ( mNvmlDeviceGetMemoryInfo &&
+			 mNvmlDeviceGetMemoryInfo( device, &memory ) == NvmlSuccess ) {
+			found->memory = memory.used / BytesPerKiB;
+			found->totalMemory = memory.total / BytesPerKiB;
+			found->memoryTracked = false;
+		}
+		mLastTimestamp = mLastTimestamps[found->id];
+		unsigned long long newestTimestamp = mLastTimestamp;
+		mDeviceIndex = static_cast<Uint32>( found - gpus.begin() );
 		collectUtilization( device, usagePercent, newestTimestamp );
 		collectMemory( device, memoryKiB );
+		// Only samples newer than this adapter's timestamp are requested next time.
+		mLastTimestamps[found->id] = newestTimestamp;
 	}
+}
 
-	// Only samples newer than this timestamp are requested on the next query.
-	mLastTimestamp = newestTimestamp;
+const SmallVector<Uint32, 2>* NvidiaGpuReader::devicesForProcess( long pid ) const {
+	auto found = mProcessDevices.find( pid );
+	return found != mProcessDevices.end() ? &found->second : nullptr;
+}
+
+void NvidiaGpuReader::recordDevice( long pid ) {
+	if ( mDeviceIndex == UINT32_MAX )
+		return;
+	auto& devices = mProcessDevices[pid];
+	if ( devices.empty() || devices.back() != mDeviceIndex )
+		devices.push_back( mDeviceIndex );
 }
 
 void NvidiaGpuReader::collectUtilization( NvmlDevice device, UnorderedMap<long, int>& usagePercent,
@@ -139,6 +204,7 @@ void NvidiaGpuReader::collectUtilization( NvmlDevice device, UnorderedMap<long, 
 			newestTimestamp = sample.timeStamp;
 
 		const long pid = static_cast<long>( sample.pid );
+		recordDevice( pid );
 		const int utilization = static_cast<int>( sample.smUtil );
 		auto found = usagePercent.find( pid );
 		if ( found == usagePercent.end() )
@@ -191,6 +257,7 @@ void NvidiaGpuReader::collectRunningProcesses( NvmlDevice device,
 		std::min<unsigned int>( filled, static_cast<unsigned int>( mProcessBuffer.size() ) );
 	for ( unsigned int i = 0; i < processes; i++ ) {
 		const RunningProcessInfo& process = mProcessBuffer[i];
+		recordDevice( static_cast<long>( process.pid ) );
 		// Windows and some of the older drivers do not report the used memory of a process.
 		if ( process.usedGpuMemory == NvmlValueNotAvailable )
 			continue;

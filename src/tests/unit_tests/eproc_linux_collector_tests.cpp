@@ -152,4 +152,27 @@ UTEST( EProcLinuxCollector, HiddenStartupDoesNotPublishPartialSnapshotOrCollectP
 	EXPECT_FALSE( Access::cached( collector, current->pid ) );
 }
 
+UTEST( EProcLinuxCollector, AdapterSnapshotsHaveUniqueIdentitiesAndMatchingProcessDevices ) {
+	ProcessCollectorLinux collector;
+	std::vector<ProcessInfo> processes;
+	SystemInfo system;
+	ASSERT_TRUE( collector.collect( processes, system ) );
+	for ( size_t i = 0; i < system.gpus.size(); ++i ) {
+		const auto& gpu = system.gpus[i];
+		EXPECT_FALSE( gpu.id.empty() );
+		EXPECT_TRUE( gpu.usage >= -1 && gpu.usage <= 100 );
+		EXPECT_TRUE( gpu.memory >= -1 );
+		EXPECT_TRUE( gpu.totalMemory >= -1 );
+		for ( size_t j = i + 1; j < system.gpus.size(); ++j )
+			EXPECT_TRUE( gpu.id != system.gpus[j].id );
+	}
+	for ( const auto& process : processes ) {
+		for ( size_t i = 0; i < process.gpuDevices.size(); ++i ) {
+			EXPECT_TRUE( process.gpuDevices[i] < system.gpus.size() );
+			if ( i > 0 )
+				EXPECT_TRUE( process.gpuDevices[i - 1] < process.gpuDevices[i] );
+		}
+	}
+}
+
 #endif

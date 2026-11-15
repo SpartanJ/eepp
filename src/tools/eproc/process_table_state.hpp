@@ -9,7 +9,7 @@
 
 namespace eproc::ProcessTableState {
 
-inline constexpr int kProcessTableStateVersion = 6;
+inline constexpr int kProcessTableStateVersion = 7;
 
 constexpr std::array<size_t, 12> kOptionalProcessColumns = { {
 	ProcessModel::ColTotalMemory,
@@ -34,17 +34,19 @@ constexpr std::array<size_t, 4> kUnavailableProcessColumns = { {
 	ProcessModel::ColTty,
 } };
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
-constexpr std::array<size_t, 4> kUnavailableProcessColumns = { {
+constexpr std::array<size_t, 5> kUnavailableProcessColumns = { {
 	ProcessModel::ColSharedMem,
 	ProcessModel::ColGpuUsage,
 	ProcessModel::ColGpuMemory,
+	ProcessModel::ColGpuDevice,
 	ProcessModel::ColTty,
 } };
 #elif EE_PLATFORM == EE_PLATFORM_BSD
-constexpr std::array<size_t, 8> kUnavailableProcessColumns = { {
+constexpr std::array<size_t, 9> kUnavailableProcessColumns = { {
 	ProcessModel::ColSharedMem,
 	ProcessModel::ColGpuUsage,
 	ProcessModel::ColGpuMemory,
+	ProcessModel::ColGpuDevice,
 	ProcessModel::ColDownload,
 	ProcessModel::ColUpload,
 	ProcessModel::ColTty,

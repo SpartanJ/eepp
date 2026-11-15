@@ -120,7 +120,125 @@ bool DrmGpuReader::hasSupportedDevice( const char* drmClassPath ) {
 	return supported || !foundDevice;
 }
 
-void DrmGpuReader::beginSample() {
+std::string DrmGpuReader::deviceName( const std::string& path ) {
+	auto hex = [&]( const char* leaf ) {
+		unsigned value = 0;
+		if ( FILE* file = fopen( ( path + '/' + leaf ).c_str(), "r" ) ) {
+			if ( fscanf( file, "%x", &value ) != 1 )
+				value = 0;
+			fclose( file );
+		}
+		return value;
+	};
+	const unsigned vendor = hex( "vendor" ), device = hex( "device" ), revision = hex( "revision" );
+	char line[1024];
+	if ( vendor == 0x1002 ) {
+		if ( FILE* file = fopen( "/usr/share/libdrm/amdgpu.ids", "r" ) ) {
+			while ( fgets( line, sizeof( line ), file ) ) {
+				unsigned id, rev;
+				int offset = 0;
+				if ( sscanf( line, "%x, %x, %n", &id, &rev, &offset ) == 2 && offset > 0 &&
+					 id == device && rev == revision ) {
+					fclose( file );
+					line[strcspn( line, "\r\n" )] = '\0';
+					return line + offset;
+				}
+			}
+			fclose( file );
+		}
+	}
+	// The PCI database also covers integrated devices absent from amdgpu.ids.
+	for ( const char* database : { "/usr/share/hwdata/pci.ids", "/usr/share/misc/pci.ids" } ) {
+		FILE* file = fopen( database, "r" );
+		if ( !file )
+			continue;
+		bool matchingVendor = false;
+		while ( fgets( line, sizeof( line ), file ) ) {
+			unsigned id;
+			int offset = 0;
+			if ( line[0] != '\t' && sscanf( line, "%x %n", &id, &offset ) == 1 ) {
+				matchingVendor = id == vendor;
+			} else if ( matchingVendor && line[0] == '\t' && line[1] != '\t' &&
+						sscanf( line + 1, "%x %n", &id, &offset ) == 1 && id == device &&
+						offset > 0 ) {
+				fclose( file );
+				line[strcspn( line, "\r\n" )] = '\0';
+				std::string name = line + 1 + offset;
+				if ( vendor == 0x1002 ) {
+					const size_t start = name.find( '[' ), end = name.find( ']' );
+					if ( start != std::string::npos && end != std::string::npos && end > start )
+						return "AMD " + name.substr( start + 1, end - start - 1 );
+				}
+				return name;
+			}
+		}
+		fclose( file );
+	}
+	return {};
+}
+
+void DrmGpuReader::collectDevices( std::vector<GpuInfo>& gpus ) {
+	gpus.clear();
+	DIR* dir = opendir( "/sys/class/drm" );
+	if ( !dir )
+		return;
+	struct dirent* entry;
+	while ( ( entry = readdir( dir ) ) != nullptr ) {
+		unsigned card;
+		int end = 0;
+		if ( sscanf( entry->d_name, "card%u%n", &card, &end ) != 1 || end == 0 ||
+			 entry->d_name[end] )
+			continue;
+		char devicePath[PATH_MAX];
+		char link[PATH_MAX];
+		const int length =
+			snprintf( link, sizeof( link ), "/sys/class/drm/%s/device", entry->d_name );
+		if ( length <= 0 || static_cast<size_t>( length ) >= sizeof( link ) ||
+			 !realpath( link, devicePath ) )
+			continue;
+		const std::string id = strrchr( devicePath, '/' ) + 1;
+		auto cached = std::find_if( mDevices.begin(), mDevices.end(),
+									[&]( const Device& device ) { return device.id == id; } );
+		if ( cached == mDevices.end() ) {
+			mDevices.push_back( { id, deviceName( devicePath ) } );
+			cached = std::prev( mDevices.end() );
+		}
+		GpuInfo gpu;
+		gpu.id = id;
+		gpu.name = cached->name;
+		auto counter = [&]( const char* leaf ) -> Int64 {
+			unsigned long long value;
+			char path[PATH_MAX];
+			const int length = snprintf( path, sizeof( path ), "%s/%s", link, leaf );
+			if ( length <= 0 || static_cast<size_t>( length ) >= sizeof( path ) )
+				return -1;
+			FILE* file = fopen( path, "r" );
+			if ( !file )
+				return -1;
+			const bool valid = fscanf( file, "%llu", &value ) == 1;
+			fclose( file );
+			return valid && value <= static_cast<unsigned long long>( INT64_MAX )
+					   ? static_cast<Int64>( value )
+					   : -1;
+		};
+		const Int64 busy = counter( "gpu_busy_percent" );
+		gpu.usage = busy >= 0 ? static_cast<int>( std::min<Int64>( busy, 100 ) ) : -1;
+		const Int64 used = counter( "mem_info_vram_used" );
+		const Int64 total = counter( "mem_info_vram_total" );
+		gpu.memory = used >= 0 ? used / 1024 : -1;
+		gpu.totalMemory = total >= 0 ? total / 1024 : -1;
+		gpu.usageTracked = gpu.usage < 0;
+		gpu.memoryTracked = gpu.memory < 0;
+		gpus.push_back( std::move( gpu ) );
+	}
+	closedir( dir );
+	std::sort( gpus.begin(), gpus.end(),
+			   []( const GpuInfo& a, const GpuInfo& b ) { return a.id < b.id; } );
+}
+
+void DrmGpuReader::beginSample( std::vector<GpuInfo>& gpus ) {
+	collectDevices( gpus );
+	mSampleClients.clear();
 	mSampleTime = MonotonicClock::now();
 	// /dev/dri also exists with the proprietary NVIDIA driver, whose fdinfo is ignored
 	// by readClient(). Avoid walking every process's descriptors when only that driver exists.
@@ -139,7 +257,8 @@ void DrmGpuReader::beginSample() {
 	}
 }
 
-void DrmGpuReader::query( long pid, long long startTime, int& usagePercent, long& memoryKiB ) {
+void DrmGpuReader::query( long pid, long long startTime, int& usagePercent, long& memoryKiB,
+						  std::vector<GpuInfo>& gpus, SmallVector<Uint32, 2>& devices ) {
 	if ( !mAvailable )
 		return;
 	char dirPath[64];
@@ -179,7 +298,20 @@ void DrmGpuReader::query( long pid, long long startTime, int& usagePercent, long
 						  client.driver + ':' + client.device + ':' + client.id;
 		if ( !seenClients.emplace( key ).second )
 			continue;
+		auto gpu = std::find_if( gpus.begin(), gpus.end(),
+								 [&]( const GpuInfo& gpu ) { return gpu.id == client.device; } );
+		if ( gpu != gpus.end() ) {
+			const auto index = static_cast<Uint32>( gpu - gpus.begin() );
+			if ( std::find( devices.begin(), devices.end(), index ) == devices.end() )
+				devices.push_back( index );
+		}
+		// Descriptors can be shared across processes; count a DRM client once per adapter.
+		const bool firstClient =
+			gpu != gpus.end() && ( gpu->usageTracked || gpu->memoryTracked ) &&
+			mSampleClients.emplace( client.driver + ':' + client.device + ':' + client.id ).second;
 		if ( client.hasMemory ) {
+			if ( firstClient && gpu != gpus.end() && gpu->memoryTracked )
+				gpu->memory = std::max<Int64>( gpu->memory, 0 ) + client.memoryBytes / 1024;
 			memoryBytes += client.memoryBytes;
 			hasMemory = true;
 		}
@@ -190,8 +322,13 @@ void DrmGpuReader::query( long pid, long long startTime, int& usagePercent, long
 				 client.engineNs >= previous.engineNs ) {
 				const Time elapsed = mSampleTime - previous.sampledAt;
 				if ( elapsed > Time::Zero ) {
-					usage += std::min( 100.0, ( client.engineNs - previous.engineNs ) * 100.0 /
-												  ( elapsed.asSeconds() * 1e9 ) );
+					const double clientUsage =
+						std::min( 100.0, ( client.engineNs - previous.engineNs ) * 100.0 /
+											 ( elapsed.asSeconds() * 1e9 ) );
+					usage += clientUsage;
+					if ( firstClient && gpu != gpus.end() && gpu->usageTracked )
+						gpu->usage = std::min( 100, std::max( gpu->usage, 0 ) +
+														static_cast<int>( clientUsage ) );
 					hasDelta = true;
 				}
 			}

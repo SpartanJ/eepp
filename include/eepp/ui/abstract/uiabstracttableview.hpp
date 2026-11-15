@@ -334,6 +334,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void onSizeChange();
 
+	/** Starts a manual resize from the rendered widths, including min/max clamping. */
+	void syncColumnPercentages();
+
 	virtual void onColumnSizeChange( const size_t& colIndex, bool fromUserInteraction = false );
 
 	virtual void onColumnResizeToContent( const size_t& colIndex );

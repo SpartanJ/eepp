@@ -1358,6 +1358,58 @@ UTEST( UIAbstractTableView, PercentageColumnResizeToContentPreservesAdjacentTota
 	EXPECT_TRUE( std::abs( table->getColumnWidthPercentage( 2 ) - 25.f ) < 0.01f );
 }
 
+UTEST( UIAbstractTableView, FittedResizeStartsFromDisplayedWidthsAfterMinimumClamping ) {
+	UIApplication app(
+		WindowSettings( 1200, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* scene = app.getUI();
+	auto* table = PercentageTestTable::New();
+	auto model = std::make_shared<ThreeColumnModel>();
+	table->setParent( scene->getRoot() );
+	table->setPixelsSize( 1000, 200 );
+	table->setModel( model );
+	table->setColumnsWidthPercentage( { 5.f, 40.f, 55.f } );
+	table->setColumnMinimumWidth( 0, 200 );
+	table->setColumnMinimumWidth( 1, 100 );
+	table->setColumnMinimumWidth( 2, 100 );
+	EXPECT_TRUE( table->setColumnOrder( { 0, 2, 1 } ) );
+	scene->flushDirtyStyleAndLayout();
+	scene->update( Milliseconds( 16 ) );
+	const Float initial = table->getColumnWidth( 2 );
+	const Float neighbor = table->getColumnWidth( 1 );
+	const Float preceding = table->getColumnWidth( 0 );
+	auto* header = table->header( 2 );
+	const Vector2i start = header
+							   ->convertToWorldSpace( { header->getPixelsSize().x - 6,
+														header->getPixelsSize().y * 0.5f } )
+							   .asInt();
+	auto* input = app.getWindow()->getInput();
+	auto move = [&]( int delta ) {
+		input->cleanStates();
+		input->setMousePos( start + Vector2i( delta, 0 ) );
+		scene->update( Milliseconds( 16 ) );
+	};
+	move( 0 );
+	input->injectButtonPress( EE_BUTTON_LEFT );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_TRUE( header->isDragging() );
+	move( 50 );
+	EXPECT_NEAR( table->getColumnWidth( 2 ), initial + 50, 1.f );
+	EXPECT_NEAR( table->getColumnWidth( 1 ), neighbor - 50, 1.f );
+	EXPECT_NEAR( table->getColumnWidth( 0 ), preceding, 1.f );
+	model->invalidate();
+	scene->update( Milliseconds( 16 ) );
+	move( 0 );
+	EXPECT_NEAR( table->getColumnWidth( 2 ), initial, 1.f );
+	EXPECT_NEAR( table->getColumnWidth( 1 ), neighbor, 1.f );
+	input->cleanStates();
+	input->injectButtonRelease( EE_BUTTON_LEFT );
+	scene->update( Milliseconds( 16 ) );
+	input->cleanStates();
+	EXPECT_NEAR( table->getColumnWidth( 2 ), initial, 1.f );
+	EXPECT_NEAR( table->getColumnWidth( 1 ), neighbor, 1.f );
+}
+
 UTEST( UIAbstractTableView, ColumnWidthModeAndMenuCanBeConfiguredFromXML ) {
 	UIApplication app(
 		WindowSettings( 800, 600, "eepp - unit tests" ),

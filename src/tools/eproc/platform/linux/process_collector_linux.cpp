@@ -732,9 +732,9 @@ bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, System
 	// The maps are members so the per-pass queries do not reallocate them.
 	mGpuUsage.clear();
 	mGpuMemory.clear();
+	mDrmGpuReader.beginSample( sysInfo.gpus );
 	if ( mGpuReader.isAvailable() )
-		mGpuReader.query( mGpuUsage, mGpuMemory );
-	mDrmGpuReader.beginSample();
+		mGpuReader.query( mGpuUsage, mGpuMemory, sysInfo.gpus );
 
 	// Network packet capture runs continuously in its own thread; this refresh only joins the
 	// current procfs socket ownership with the endpoints seen by that capture thread.
@@ -835,15 +835,16 @@ bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, System
 		auto memoryIt = mGpuMemory.find( pid );
 		if ( memoryIt != mGpuMemory.end() )
 			proc.gpuMemory = memoryIt->second;
-		if ( proc.gpuUsage < 0 || proc.gpuMemory < 0 ) {
-			int drmUsage = -1;
-			long drmMemory = -1;
-			mDrmGpuReader.query( pid, proc.startTime, drmUsage, drmMemory );
-			if ( proc.gpuUsage < 0 )
-				proc.gpuUsage = drmUsage;
-			if ( proc.gpuMemory < 0 )
-				proc.gpuMemory = drmMemory;
-		}
+		if ( const auto* devices = mGpuReader.devicesForProcess( pid ) )
+			proc.gpuDevices = *devices;
+		int drmUsage = -1;
+		long drmMemory = -1;
+		mDrmGpuReader.query( pid, proc.startTime, drmUsage, drmMemory, sysInfo.gpus,
+							 proc.gpuDevices );
+		std::sort( proc.gpuDevices.begin(), proc.gpuDevices.end() );
+		proc.gpuUsage = std::max( proc.gpuUsage, drmUsage );
+		if ( drmMemory >= 0 )
+			proc.gpuMemory = std::max<Int64>( proc.gpuMemory, 0 ) + drmMemory;
 
 		// Icons are resolved once per process, not once per pass: the executable behind a pid does
 		// not change, and the resolver walks the desktop index on a miss. A pid that was reused by

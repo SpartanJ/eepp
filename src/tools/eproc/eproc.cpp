@@ -165,6 +165,10 @@ String processColumnTooltip( UISceneNode* ui, size_t column ) {
 							 "File-backed and shared resident memory (RssFile + RssShmem)." );
 		case ProcessModel::ColGpuUsage:
 			return ui->i18n( "eproc_tip_gpu_usage", "GPU engine usage reported for this process." );
+		case ProcessModel::ColGpuDevice:
+			return ui->i18n( "eproc_tip_gpu_device",
+							 "Adapters used by this process; GPU numbers match the Performance "
+							 "tab. A listed device may be idle." );
 		case ProcessModel::ColGpuMemory:
 			return ui->i18n( "eproc_tip_gpu_memory", "GPU memory reported for this process." );
 		case ProcessModel::ColDownload:
@@ -659,24 +663,9 @@ bool App::init() {
 				</hbox>
 			</vbox>
 			<eproc-performance-layout id="performance_area" lw="mp" lh="mp">
-				<vbox class="eproc-performance-sidebar" lw="276dp" lh="mp" padding="8dp">
-					<hbox id="perf_cpu_card" class="eproc-performance-card" lw="mp" lh="72dp" padding="5dp" margin-bottom="6dp">
-						<Chart id="perf_cpu_preview" class="eproc-performance-preview" lw="80dp" lh="mp" margin-right="8dp" />
-						<vbox lw="0" lw8="1" lh="mp"><TextView id="perf_cpu_title" lw="mp" lh="wc" /><TextView id="perf_cpu_value" lw="mp" lh="wc" /></vbox>
-					</hbox>
-					<hbox id="perf_memory_card" class="eproc-performance-card" lw="mp" lh="72dp" padding="5dp" margin-bottom="6dp">
-						<Chart id="perf_memory_preview" class="eproc-performance-preview" lw="80dp" lh="mp" margin-right="8dp" />
-						<vbox lw="0" lw8="1" lh="mp"><TextView id="perf_memory_title" lw="mp" lh="wc" /><TextView id="perf_memory_value" lw="mp" lh="wc" /></vbox>
-					</hbox>
-					<hbox id="perf_gpu_card" class="eproc-performance-card" lw="mp" lh="72dp" padding="5dp" margin-bottom="6dp">
-						<Chart id="perf_gpu_preview" class="eproc-performance-preview" lw="80dp" lh="mp" margin-right="8dp" />
-						<vbox lw="0" lw8="1" lh="mp"><TextView id="perf_gpu_title" lw="mp" lh="wc" /><TextView id="perf_gpu_value" lw="mp" lh="wc" /></vbox>
-					</hbox>
-					<hbox id="perf_network_card" class="eproc-performance-card" lw="mp" lh="72dp" padding="5dp">
-						<Chart id="perf_network_preview" class="eproc-performance-preview" lw="80dp" lh="mp" margin-right="8dp" />
-						<vbox lw="0" lw8="1" lh="mp"><TextView id="perf_network_title" lw="mp" lh="wc" /><TextView id="perf_network_value" lw="mp" lh="wc" /></vbox>
-					</hbox>
-				</vbox>
+				<ScrollView class="eproc-performance-sidebar" lw="276dp" lh="mp">
+					<vbox id="perf_cards" lw="mp" lh="wc" padding="8dp" />
+				</ScrollView>
 				<vbox lw="0" lw8="1" lh="mp" padding="14dp">
 					<hbox lw="mp" lh="wc" margin-bottom="8dp">
 						<TextView id="perf_title" lw="0" lw8="1" lh="wc" />
@@ -1128,7 +1117,8 @@ void App::setStatusExpanded( bool expanded ) {
 			mStatusDetails->setVisible( false );
 			mStatusDetails->close();
 			mStatusDetails = nullptr;
-			mStatusMetrics = {};
+			for ( auto& metric : mPerformanceMetrics )
+				metric.status = {};
 		}
 		return;
 	}
@@ -1145,9 +1135,10 @@ void App::setStatusExpanded( bool expanded ) {
 void App::updateStatusDetails() {
 	if ( !mStatusDetails )
 		return;
-	for ( size_t i = 0; i < mStatusMetrics.size(); ++i ) {
-		auto& metric = mStatusMetrics[i];
-		if ( !mMetricAvailable[i] ) {
+	for ( size_t i = 0; i < mPerformanceMetrics.size(); ++i ) {
+		auto& performance = mPerformanceMetrics[i];
+		auto& metric = performance.status;
+		if ( !performance.available ) {
 			if ( metric.card )
 				metric.card->setVisible( false );
 			continue;
@@ -1167,10 +1158,9 @@ void App::updateStatusDetails() {
 			// Keep CPU / memory / GPU / network order when a metric first appears later.
 			Uint32 position = 0;
 			for ( size_t preceding = 0; preceding < i; ++preceding )
-				position += mStatusMetrics[preceding].card != nullptr;
+				position += mPerformanceMetrics[preceding].status.card != nullptr;
 			metric.card->toPosition( position );
-			metric.card->find<UITextView>( "title" )->setText(
-				performanceMetricName( mApp->getUI(), i ) );
+			metric.card->find<UITextView>( "title" )->setText( performance.name );
 			metric.value = metric.card->find<UITextView>( "value" );
 			metric.detail = metric.card->find<UITextView>( "detail" );
 			metric.chart = metric.card->find<UIChart>( "chart" );
@@ -1178,10 +1168,11 @@ void App::updateStatusDetails() {
 			// Chart viewports and styling remain local to this panel.
 			metric.chart->setModel( mPerformanceMetrics[i].preview->sharedModel() );
 			metric.chart->setChartStyle( mPerformanceMetrics[i].preview->chartStyle() );
-			if ( i != 3 )
+			if ( performance.type != PerformanceMetricType::Network )
 				metric.chart->setAxisRange( metric.chart->yAxis(), { 0.0, 100.0 } );
 		}
 		metric.card->setVisible( true );
+		metric.card->find<UITextView>( "title" )->setText( performance.name );
 		metric.value->setText( mPerformanceMetrics[i].value->getText() );
 		String detail;
 		const auto& sys = mProcessModel->getSystemInfo();
@@ -1199,30 +1190,23 @@ void App::updateStatusDetails() {
 				formatKiBIEC( sys.getUsedMemoryKB() ).c_str(),
 				formatKiBIEC( sys.totalMemory ).c_str() );
 		} else {
-			detail = mPerformanceDetails[i];
+			detail = mPerformanceMetrics[i].detail;
 			String::replaceAll( detail, "    ", "\n" );
 		}
 		metric.detail->setText( detail );
-		metric.card->setTooltipText( mPerformanceSummaries[i] );
+		metric.card->setTooltipText( mPerformanceMetrics[i].summary );
 		const double now = mPerformanceClock.getElapsedTime().asSeconds();
 		metric.chart->setAxisRange( metric.chart->xAxis(),
 									{ now - kPerformanceVisibleSeconds, now } );
 	}
-	mStatusDetails->setVisible( std::any_of( mMetricAvailable.begin(), mMetricAvailable.end(),
-											 []( bool available ) { return available; } ) );
+	mStatusDetails->setVisible(
+		std::any_of( mPerformanceMetrics.begin(), mPerformanceMetrics.end(),
+					 []( const PerformanceMetric& metric ) { return metric.available; } ) );
 }
 
 void App::setupPerformance() {
-	constexpr std::array<const char*, 4> ids = { "cpu", "memory", "gpu", "network" };
-	const Color primary = themeColor( mApp->getUI(), "--primary", Color( 49, 178, 224 ) );
 	const Color gridColor =
 		Color( themeColor( mApp->getUI(), "--separator", Color( 100, 113, 124 ) ), 45 );
-	const std::array<Color, 4> colors = {
-		primary,
-		themeColor( mApp->getUI(), "--theme-warning", Color( 190, 151, 226 ) ),
-		themeColor( mApp->getUI(), "--theme-success", Color( 119, 203, 135 ) ),
-		themeColor( mApp->getUI(), "--font-highlight", Color( 91, 196, 223 ) ),
-	};
 	mPerformanceDetailChart = mRoot->find<UIChart>( "perf_detail_chart" );
 	mPerformanceTitle = mRoot->find<UITextView>( "perf_title" );
 	mPerformanceSummary = mRoot->find<UITextView>( "perf_summary" );
@@ -1248,61 +1232,15 @@ void App::setupPerformance() {
 	detailStyle.minimumAxisMargin = 46.f;
 	mPerformanceDetailChart->setChartStyle( detailStyle );
 
-	for ( size_t i = 0; i < ids.size(); ++i ) {
-		auto& metric = mPerformanceMetrics[i];
-		const std::string prefix = std::string( "perf_" ) + ids[i];
-		metric.card = mRoot->find<UIWidget>( prefix + "_card" );
-		metric.preview = mRoot->find<UIChart>( prefix + "_preview" );
-		metric.value = mRoot->find<UITextView>( prefix + "_value" );
-		metric.primary = std::make_shared<RingXYDataSource>( kPerformanceHistorySamples );
-		const String name = performanceMetricName( mApp->getUI(), i );
-		mRoot->find<UITextView>( prefix + "_title" )->setText( name );
-		auto& line = metric.preview->addLineSeries( name );
-		line.setDataSource( metric.primary );
-		line.setColor( colors[i] );
-		line.setFilled( true );
-		metric.preview->xAxis().setFormatter(
-			[this]( double value, double ) { return formatPerformanceTime( value ); } );
-		if ( i == 3 ) {
-			metric.preview->yAxis().setFormatter( []( double value, double ) {
-				if ( !std::isfinite( value ) || value <= 0 )
-					return String( "0 B/s" );
-				return String( formatPerformanceRate( static_cast<Int64>( std::min(
-					value, static_cast<double>( std::numeric_limits<Int64>::max() ) ) ) ) );
-			} );
-		} else {
-			metric.preview->yAxis().setFormatter(
-				[]( double value, double ) { return String::format( "%.0f%%", value ); } );
-		}
-		if ( i == 3 ) {
-			metric.secondary = std::make_shared<RingXYDataSource>( kPerformanceHistorySamples );
-			auto& upload =
-				metric.preview->addLineSeries( mApp->getUI()->i18n( "eproc_upload", "Upload" ) );
-			upload.setDataSource( metric.secondary );
-			upload.setColor( themeColor( mApp->getUI(), "--theme-error", Color( 236, 115, 103 ) ) );
-			upload.setFilled( true );
-		}
-		ChartStyle smallStyle = metric.preview->chartStyle();
-		smallStyle.leftMargin = smallStyle.rightMargin = smallStyle.topMargin =
-			smallStyle.bottomMargin = smallStyle.minimumAxisMargin = 2.f;
-		smallStyle.tickLength = 0.f;
-		smallStyle.showTickLabels = false;
-		smallStyle.seriesWidthScale = 0.5f;
-		smallStyle.axisColor = Color( 0, 0, 0, 0 );
-		smallStyle.tickColor = Color( 0, 0, 0, 0 );
-		smallStyle.tickLabelColor = Color( 0, 0, 0, 0 );
-		metric.preview->setChartStyle( smallStyle );
-		if ( i != 3 )
-			metric.preview->setAxisRange( metric.preview->yAxis(), { 0.0, 100.0 } );
-		metric.preview->setAxisRange( metric.preview->xAxis(),
-									  { -kPerformanceVisibleSeconds, 0.0 } );
-		// The chart and text are display-only. Let the card receive clicks anywhere inside it.
-		for ( Node* child = metric.card->getFirstChild(); child; child = child->getNextNode() )
-			child->writeNodeFlag( NODE_FLAG_OVER_FIND_ALLOWED, 0 );
-		metric.card->onClick( [this, i]( const MouseEvent* ) { selectPerformanceMetric( i ); } );
-		metric.value->setText( i < 2 ? "0%"
-									 : mApp->getUI()->i18n( "eproc_unavailable", "Unavailable" ) );
-	}
+	mPerformanceMetrics.push_back( createPerformanceMetric(
+		PerformanceMetricType::Cpu, performanceMetricName( mApp->getUI(), 0 ) ) );
+	mPerformanceMetrics.push_back( createPerformanceMetric(
+		PerformanceMetricType::Memory, performanceMetricName( mApp->getUI(), 1 ) ) );
+	mPerformanceMetrics.push_back(
+		createPerformanceMetric( PerformanceMetricType::Gpu,
+								 mApp->getUI()->i18n( "eproc_gpu_all", "GPU (all adapters)" ) ) );
+	mPerformanceMetrics.push_back( createPerformanceMetric(
+		PerformanceMetricType::Network, performanceMetricName( mApp->getUI(), 3 ) ) );
 	auto* performanceLayout = mRoot->find<PerformanceLayout>( "performance_area" );
 	performanceLayout->setCommand( "previous-performance-metric", [this] {
 		if ( mSelectedPerformanceMetric > 0 )
@@ -1315,6 +1253,142 @@ void App::setupPerformance() {
 	performanceLayout->getKeyBindings().addKeybindString( "up", "previous-performance-metric" );
 	performanceLayout->getKeyBindings().addKeybindString( "down", "next-performance-metric" );
 	selectPerformanceMetric( 0 );
+}
+
+App::PerformanceMetric App::createPerformanceMetric( PerformanceMetricType type, const String& name,
+													 std::string id ) {
+	PerformanceMetric metric;
+	metric.type = type;
+	metric.name = name;
+	metric.gpuId = std::move( id );
+	metric.card = mApp->getUI()->loadLayoutFromString(
+		R"xml(<hbox class="eproc-performance-card" lw="mp" lh="72dp" padding="5dp" margin-bottom="6dp">
+			<Chart id="preview" class="eproc-performance-preview" lw="80dp" lh="mp" margin-right="8dp" />
+			<vbox lw="0" lw8="1" lh="mp">
+				<TextView id="title" lw="mp" lh="wc" />
+				<TextView id="model" class="eproc-performance-muted" lw="mp" lh="wc" text-overflow="ellipsis" clip="content-box" visible="false" />
+				<TextView id="value" lw="mp" lh="wc" />
+			</vbox>
+		</hbox>)xml",
+		mRoot->find<UIWidget>( "perf_cards" ) );
+	metric.preview = metric.card->find<UIChart>( "preview" );
+	metric.value = metric.card->find<UITextView>( "value" );
+	metric.title = metric.card->find<UITextView>( "title" );
+	metric.model = metric.card->find<UITextView>( "model" );
+	metric.title->setText( name );
+	const char* colorName = type == PerformanceMetricType::Cpu		? "--primary"
+							: type == PerformanceMetricType::Memory ? "--theme-warning"
+							: type == PerformanceMetricType::Gpu	? "--theme-success"
+																	: "--font-highlight";
+	const Color fallback = type == PerformanceMetricType::Cpu	   ? Color( 49, 178, 224 )
+						   : type == PerformanceMetricType::Memory ? Color( 190, 151, 226 )
+						   : type == PerformanceMetricType::Gpu	   ? Color( 119, 203, 135 )
+																   : Color( 91, 196, 223 );
+	const Color color = themeColor( mApp->getUI(), colorName, fallback );
+	metric.primary = std::make_shared<RingXYDataSource>( kPerformanceHistorySamples );
+	auto& line = metric.preview->addLineSeries(
+		type == PerformanceMetricType::Gpu ? mApp->getUI()->i18n( "eproc_gpu_usage", "Usage" )
+										   : name );
+	line.setDataSource( metric.primary );
+	line.setColor( color );
+	line.setFilled( true );
+	metric.preview->xAxis().setFormatter(
+		[this]( double value, double ) { return formatPerformanceTime( value ); } );
+	if ( type == PerformanceMetricType::Network ) {
+		metric.preview->yAxis().setFormatter( []( double value, double ) {
+			if ( !std::isfinite( value ) || value <= 0 )
+				return String( "0 B/s" );
+			return String( formatPerformanceRate( static_cast<Int64>(
+				std::min( value, static_cast<double>( std::numeric_limits<Int64>::max() ) ) ) ) );
+		} );
+	} else {
+		metric.preview->yAxis().setFormatter(
+			[]( double value, double ) { return String::format( "%.0f%%", value ); } );
+	}
+	if ( type == PerformanceMetricType::Network ) {
+		metric.secondary = std::make_shared<RingXYDataSource>( kPerformanceHistorySamples );
+		auto& upload =
+			metric.preview->addLineSeries( mApp->getUI()->i18n( "eproc_upload", "Upload" ) );
+		upload.setDataSource( metric.secondary );
+		upload.setColor( themeColor( mApp->getUI(), "--theme-error", Color( 236, 115, 103 ) ) );
+		upload.setFilled( true );
+	}
+	ChartStyle smallStyle = metric.preview->chartStyle();
+	smallStyle.leftMargin = smallStyle.rightMargin = smallStyle.topMargin =
+		smallStyle.bottomMargin = smallStyle.minimumAxisMargin = 2.f;
+	smallStyle.tickLength = 0.f;
+	smallStyle.showTickLabels = false;
+	smallStyle.seriesWidthScale = 0.5f;
+	smallStyle.axisColor = Color( 0, 0, 0, 0 );
+	smallStyle.tickColor = Color( 0, 0, 0, 0 );
+	smallStyle.tickLabelColor = Color( 0, 0, 0, 0 );
+	metric.preview->setChartStyle( smallStyle );
+	if ( type != PerformanceMetricType::Network )
+		metric.preview->setAxisRange( metric.preview->yAxis(), { 0.0, 100.0 } );
+	metric.preview->setAxisRange( metric.preview->xAxis(), { -kPerformanceVisibleSeconds, 0.0 } );
+	// The chart and text are display-only. Let the card receive clicks anywhere inside it.
+	for ( Node* child = metric.card->getFirstChild(); child; child = child->getNextNode() )
+		child->writeNodeFlag( NODE_FLAG_OVER_FIND_ALLOWED, 0 );
+	metric.card->onClick( [this, card = metric.card]( const MouseEvent* ) {
+		for ( size_t i = 0; i < mPerformanceMetrics.size(); ++i ) {
+			if ( mPerformanceMetrics[i].card == card ) {
+				selectPerformanceMetric( i );
+				break;
+			}
+		}
+	} );
+	metric.value->setText( mApp->getUI()->i18n( "eproc_unavailable", "Unavailable" ) );
+	return metric;
+}
+
+void App::reconcileGpuMetrics( const std::vector<GpuInfo>& gpus ) {
+	const size_t count = std::max<size_t>( 1, gpus.size() );
+	bool changed = mPerformanceMetrics.size() != count + 3;
+	for ( size_t i = 0; !changed && i < count; ++i ) {
+		const std::string_view id = gpus.empty() ? std::string_view{} : gpus[i].id;
+		changed = mPerformanceMetrics[i + 2].gpuId != id;
+	}
+	if ( !changed )
+		return;
+
+	UIWidget* selected = mPerformanceMetrics[mSelectedPerformanceMetric].card;
+	std::vector<PerformanceMetric> metrics;
+	metrics.reserve( count + 3 );
+	auto take = [&]( PerformanceMetric& metric ) {
+		metrics.push_back( std::move( metric ) );
+		metric = {};
+	};
+	take( mPerformanceMetrics[0] );
+	take( mPerformanceMetrics[1] );
+	for ( size_t i = 0; i < count; ++i ) {
+		const std::string_view id = gpus.empty() ? std::string_view{} : gpus[i].id;
+		auto existing = std::find_if(
+			mPerformanceMetrics.begin() + 2, mPerformanceMetrics.end() - 1,
+			[&]( const PerformanceMetric& metric ) { return metric.card && metric.gpuId == id; } );
+		if ( existing != mPerformanceMetrics.end() - 1 )
+			take( *existing );
+		else
+			metrics.push_back(
+				createPerformanceMetric( PerformanceMetricType::Gpu, {}, std::string{ id } ) );
+	}
+	take( mPerformanceMetrics.back() );
+	for ( auto& metric : mPerformanceMetrics ) {
+		if ( metric.card )
+			metric.card->close();
+		if ( metric.status.card )
+			metric.status.card->close();
+	}
+	mPerformanceMetrics = std::move( metrics );
+	mSelectedPerformanceMetric = 0;
+	for ( size_t i = 0; i < mPerformanceMetrics.size(); ++i ) {
+		auto& metric = mPerformanceMetrics[i];
+		metric.card->toPosition( i );
+		if ( metric.status.card )
+			metric.status.card->toPosition( i );
+		if ( metric.card == selected )
+			mSelectedPerformanceMetric = i;
+	}
+	selectPerformanceMetric( mSelectedPerformanceMetric );
 }
 
 String App::formatPerformanceTime( double value ) const {
@@ -1336,12 +1410,12 @@ void App::selectPerformanceMetric( size_t metric ) {
 		else
 			card->removeClass( "eproc-performance-card-selected" );
 	}
-	mPerformanceTitle->setText( performanceMetricName( mApp->getUI(), metric ) );
-	mPerformanceSummary->setText( mPerformanceSummaries[metric] );
-	mPerformanceDetail->setText( mPerformanceDetails[metric] );
+	mPerformanceTitle->setText( mPerformanceMetrics[metric].name );
+	mPerformanceSummary->setText( mPerformanceMetrics[metric].summary );
+	mPerformanceDetail->setText( mPerformanceMetrics[metric].detail );
 	mCpuModeControls->setVisible( metric == 0 && !mCoreHistory.empty() );
 	mPerformanceDetailChart->setModel( mPerformanceMetrics[metric].preview->sharedModel() );
-	if ( metric != 3 )
+	if ( mPerformanceMetrics[metric].type != PerformanceMetricType::Network )
 		mPerformanceDetailChart->setAxisRange( mPerformanceDetailChart->yAxis(), { 0.0, 100.0 } );
 	const double now = mPerformanceClock.getElapsedTime().asSeconds();
 	mPerformanceDetailChart->setAxisRange( mPerformanceDetailChart->xAxis(),
@@ -1474,9 +1548,10 @@ void App::updatePerformance( const SystemInfo& sysInfo,
 	const double now = mPerformanceClock.getElapsedTime().asSeconds();
 	const double memoryPercent =
 		sysInfo.totalMemory > 0 ? 100.0 * sysInfo.getUsedMemoryKB() / sysInfo.totalMemory : 0.0;
-	Int64 download = 0, upload = 0, gpuMemory = 0;
-	int gpuUsage = 0;
-	bool hasNetwork = false, hasGpu = false;
+	reconcileGpuMetrics( sysInfo.gpus );
+	auto& network = mPerformanceMetrics.back();
+	Int64 download = 0, upload = 0;
+	bool hasNetwork = false;
 	for ( const auto& process : processes ) {
 		if ( process.netDownload >= 0 ) {
 			download += process.netDownload;
@@ -1486,14 +1561,6 @@ void App::updatePerformance( const SystemInfo& sysInfo,
 			upload += process.netUpload;
 			hasNetwork = true;
 		}
-		if ( process.gpuUsage >= 0 ) {
-			gpuUsage += process.gpuUsage;
-			hasGpu = true;
-		}
-		if ( process.gpuMemory >= 0 ) {
-			gpuMemory += process.gpuMemory;
-			hasGpu = true;
-		}
 	}
 	const bool systemNetwork = sysInfo.networkDownload >= 0 && sysInfo.networkUpload >= 0;
 	if ( systemNetwork ) {
@@ -1501,40 +1568,80 @@ void App::updatePerformance( const SystemInfo& sysInfo,
 		upload = sysInfo.networkUpload;
 		hasNetwork = true;
 	}
-	// Prefer adapter totals when available. Independent processes can saturate different GPU
-	// engines, and allocations shared by processes must only be counted once in system charts.
-	const bool systemGpu = sysInfo.gpuUsage >= 0;
-	if ( systemGpu ) {
-		gpuUsage = sysInfo.gpuUsage;
-		gpuMemory = sysInfo.gpuMemory;
-		hasGpu = true;
-	}
-	mMetricAvailable = { sysInfo.totalMemory > 0 && std::isfinite( sysInfo.cpuUsage ),
-						 sysInfo.totalMemory > 0, hasGpu, hasNetwork };
+	mPerformanceMetrics[0].available = sysInfo.totalMemory > 0 && std::isfinite( sysInfo.cpuUsage );
+	mPerformanceMetrics[1].available = sysInfo.totalMemory > 0;
+	network.available = hasNetwork;
 	mPerformanceMetrics[0].primary->append( { now, sysInfo.cpuUsage } );
 	mPerformanceMetrics[1].primary->append( { now, memoryPercent } );
-	if ( hasGpu )
-		mPerformanceMetrics[2].primary->append(
-			{ now, static_cast<double>( std::min( gpuUsage, 100 ) ) } );
 	if ( hasNetwork ) {
-		mPerformanceMetrics[3].primary->append( { now, static_cast<double>( download ) } );
-		mPerformanceMetrics[3].secondary->append( { now, static_cast<double>( upload ) } );
+		network.primary->append( { now, static_cast<double>( download ) } );
+		network.secondary->append( { now, static_cast<double>( upload ) } );
 	}
 	mPerformanceMetrics[0].value->setText( String::format( "%.1f%%", sysInfo.cpuUsage ) );
 	mPerformanceMetrics[1].value->setText( String::format( "%.1f%%", memoryPercent ) );
-	if ( hasGpu ) {
-		mPerformanceMetrics[2].value->setText( String::format(
-			ui->i18n( systemGpu ? "eproc_gpu_system_value" : "eproc_gpu_tracked_value",
-					  systemGpu ? "%d%% system" : "%d%% tracked" )
-				.toUtf8(),
-			std::min( gpuUsage, 100 ) ) );
-	} else {
-		mPerformanceMetrics[2].value->setText( ui->i18n( "eproc_unavailable", "Unavailable" ) );
-	}
-	mPerformanceMetrics[3].value->setText(
+	network.value->setText(
 		hasNetwork ? String::format( ui->i18n( "eproc_network_value", "%s down" ).toUtf8(),
 									 formatPerformanceRate( download ).c_str() )
 				   : ui->i18n( "eproc_unavailable", "Unavailable" ).toUtf8() );
+
+	for ( size_t i = 2; i + 1 < mPerformanceMetrics.size(); ++i ) {
+		auto& metric = mPerformanceMetrics[i];
+		GpuInfo fallback;
+		if ( sysInfo.gpus.empty() ) {
+			fallback.usage = sysInfo.gpuUsage;
+			fallback.memory = sysInfo.gpuMemory;
+			fallback.usageTracked = fallback.usage < 0;
+			fallback.memoryTracked = fallback.memory < 0;
+			for ( const auto& process : processes ) {
+				if ( fallback.usageTracked && process.gpuUsage >= 0 )
+					fallback.usage =
+						std::min( 100, std::max( fallback.usage, 0 ) + process.gpuUsage );
+				if ( fallback.memoryTracked && process.gpuMemory >= 0 )
+					fallback.memory = std::max<Int64>( fallback.memory, 0 ) + process.gpuMemory;
+			}
+		}
+		const auto& gpu = sysInfo.gpus.empty() ? fallback : sysInfo.gpus[i - 2];
+		metric.name =
+			sysInfo.gpus.empty()
+				? ui->i18n( "eproc_gpu_all", "GPU (all adapters)" ).toUtf8()
+				: String::format( ui->i18n( "eproc_gpu_number", "GPU %zu" ).toUtf8(), i - 2 );
+		metric.title->setText( metric.name );
+		metric.model->setText( gpu.name );
+		metric.model->setVisible( !gpu.name.empty() );
+		metric.card->setTooltipText( gpu.name.empty() ? gpu.id : gpu.name + "\n" + gpu.id );
+		metric.available = !sysInfo.gpus.empty() || gpu.usage >= 0 || gpu.memory >= 0;
+		if ( gpu.usage >= 0 ) {
+			metric.primary->append( { now, static_cast<double>( gpu.usage ) } );
+			metric.value->setText( String::format(
+				ui->i18n( gpu.usageTracked ? "eproc_gpu_tracked_value" : "eproc_gpu_system_value",
+						  gpu.usageTracked ? "%d%% tracked" : "%d%% system" )
+					.toUtf8(),
+				gpu.usage ) );
+		} else {
+			metric.value->setText( ui->i18n( "eproc_unavailable", "Unavailable" ) );
+		}
+		metric.summary = gpu.name.empty() ? metric.name : String( gpu.name );
+		const String usage = gpu.usage >= 0
+								 ? String::format( "%d%%", gpu.usage )
+								 : ui->i18n( "eproc_unavailable", "Unavailable" ).toUtf8();
+		std::string memory = gpu.memory >= 0
+								 ? formatKiBIEC( gpu.memory )
+								 : ui->i18n( "eproc_unavailable", "Unavailable" ).toUtf8();
+		if ( gpu.totalMemory >= 0 )
+			memory += " / " + formatKiBIEC( gpu.totalMemory );
+		metric.detail = String::format(
+			"%s  %s    %s  %s",
+			ui->i18n( gpu.usageTracked ? "eproc_gpu_tracked_usage" : "eproc_gpu_usage",
+					  gpu.usageTracked ? "Tracked usage" : "Usage" )
+				.toUtf8()
+				.c_str(),
+			usage.toUtf8().c_str(),
+			ui->i18n( gpu.memoryTracked ? "eproc_gpu_tracked_memory" : "eproc_gpu_memory",
+					  gpu.memoryTracked ? "Tracked GPU memory" : "GPU memory" )
+				.toUtf8()
+				.c_str(),
+			memory.c_str() );
+	}
 
 	if ( mCoreHistory.size() < sysInfo.coreCpuUsage.size() ) {
 		mCoreHistory.reserve( sysInfo.coreCpuUsage.size() );
@@ -1561,18 +1668,18 @@ void App::updatePerformance( const SystemInfo& sysInfo,
 			String::format( ui->i18n( "eproc_cpu_core_usage", "CPU %zu    %.1f%%" ).toUtf8(), i,
 							sysInfo.coreCpuUsage[i] ) );
 
-	mPerformanceSummaries[0] = String::format(
+	mPerformanceMetrics[0].summary = String::format(
 		ui->i18n( "eproc_cpu_summary", "%.1f%% utilization" ).toUtf8(), sysInfo.cpuUsage );
-	mPerformanceDetails[0] =
+	mPerformanceMetrics[0].detail =
 		String::format( mApp->getUI()
 							->i18n( "eproc_performance_cpu_details",
 									"%d logical processors    %zu processes    Uptime: %s" )
 							.toUtf8(),
 						sysInfo.cpuCount, processes.size(),
 						formatUptime( mApp->getUI(), sysInfo.uptimeSeconds ).toUtf8().c_str() );
-	mPerformanceSummaries[1] = String::format(
+	mPerformanceMetrics[1].summary = String::format(
 		ui->i18n( "eproc_memory_summary", "%.1f%% physical memory" ).toUtf8(), memoryPercent );
-	mPerformanceDetails[1] =
+	mPerformanceMetrics[1].detail =
 		String::format( ui->i18n( "eproc_memory_details",
 								  "In use  %s    Available  %s    Total  %s    Swap  %s / %s" )
 							.toUtf8(),
@@ -1581,36 +1688,20 @@ void App::updatePerformance( const SystemInfo& sysInfo,
 						formatKiBIEC( sysInfo.totalMemory ).c_str(),
 						formatKiBIEC( sysInfo.getUsedSwapKB() ).c_str(),
 						formatKiBIEC( sysInfo.totalSwap ).c_str() );
-	mPerformanceSummaries[2] =
-		ui->i18n( systemGpu ? "eproc_gpu_system_summary" : "eproc_gpu_tracked_summary",
-				  systemGpu ? "System GPU usage" : "Tracked process GPU usage" );
-	if ( hasGpu ) {
-		const std::string memory = gpuMemory >= 0
-									   ? formatKiBIEC( gpuMemory )
-									   : ui->i18n( "eproc_unavailable", "Unavailable" ).toUtf8();
-		mPerformanceDetails[2] = String::format(
-			ui->i18n( systemGpu ? "eproc_gpu_system_details" : "eproc_gpu_tracked_details",
-					  systemGpu ? "Usage  %d%%    GPU memory  %s"
-								: "Usage  %d%%    Tracked GPU memory  %s" )
-				.toUtf8(),
-			std::min( gpuUsage, 100 ), memory.c_str() );
-	} else {
-		mPerformanceDetails[2] =
-			ui->i18n( "eproc_gpu_unavailable", "GPU data is unavailable on this system" );
-	}
-	mPerformanceSummaries[3] =
+	network.summary =
 		ui->i18n( systemNetwork ? "eproc_network_system_summary" : "eproc_network_tracked_summary",
 				  systemNetwork ? "System network traffic" : "Tracked process network traffic" );
 	if ( hasNetwork ) {
-		mPerformanceDetails[3] = String::format(
+		network.detail = String::format(
 			ui->i18n( "eproc_network_details", "Download  %s    Upload  %s" ).toUtf8(),
 			formatPerformanceRate( download ).c_str(), formatPerformanceRate( upload ).c_str() );
 	} else {
-		mPerformanceDetails[3] =
+		network.detail =
 			ui->i18n( "eproc_network_unavailable", "Network data is unavailable on this system" );
 	}
-	mPerformanceSummary->setText( mPerformanceSummaries[mSelectedPerformanceMetric] );
-	mPerformanceDetail->setText( mPerformanceDetails[mSelectedPerformanceMetric] );
+	mPerformanceTitle->setText( mPerformanceMetrics[mSelectedPerformanceMetric].name );
+	mPerformanceSummary->setText( mPerformanceMetrics[mSelectedPerformanceMetric].summary );
+	mPerformanceDetail->setText( mPerformanceMetrics[mSelectedPerformanceMetric].detail );
 }
 
 void App::setupProcessTable() {
@@ -1640,6 +1731,7 @@ void App::setupProcessTable() {
 			view->setModel( mTreeModel );
 		else
 			view->setModel( mSortProxy );
+		view->moveColumn( ProcessModel::ColGpuDevice, ProcessModel::ColGpuMemory + 1 );
 		view->moveColumn( ProcessModel::ColCommand, ProcessModel::ColCount - 1 );
 		for ( size_t column = 0; column < ProcessModel::ColCount; ++column ) {
 			if ( auto* header = view->getHeaderColumn( column ) )
@@ -1738,6 +1830,10 @@ void App::updateProcessCell( UITableCell* cell, bool initial ) {
 	if ( initial ) {
 		const Variant columnClass = index.model()->data( index, ModelRole::Class );
 		cell->setClass( std::string{ columnClass.asStdStringView() } );
+	}
+	if ( index.column() == ProcessModel::ColGpuDevice ) {
+		const Variant tooltip = index.model()->data( index, ModelRole::Tooltip );
+		cell->setTooltipText( tooltip.isValid() ? tooltip.asString() : String{} );
 	}
 	const ProcessInfo* process = processForIndex( index );
 	bool classesChanged = setCellClassEnabled( *cell, "eproc-process-ended",

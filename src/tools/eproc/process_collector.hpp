@@ -18,6 +18,17 @@ enum class ProcessNetworkStatus : Uint8 {
 	DataLost
 };
 
+/** One physical adapter. IDs remain stable between samples; memory is in KiB. */
+struct GpuInfo {
+	std::string id;
+	std::string name;
+	Int64 memory{ -1 };
+	Int64 totalMemory{ -1 };
+	int usage{ -1 };
+	bool usageTracked{ false };
+	bool memoryTracked{ false };
+};
+
 struct SystemInfo {
 	Int64 totalMemory{ 0 };
 	Int64 freeMemory{ 0 };
@@ -34,6 +45,7 @@ struct SystemInfo {
 	Int64 gpuMemory{ -1 };
 	// Per-logical-CPU usage, indexed by CPU number when the platform provides it.
 	std::vector<float> coreCpuUsage;
+	std::vector<GpuInfo> gpus;
 	// Number of units in ProcessInfo::{userTime,sysTime,startTime} per second.
 	Int64 clockTicksPerSecond{ 100 };
 	double uptimeSeconds{ 0.0 };

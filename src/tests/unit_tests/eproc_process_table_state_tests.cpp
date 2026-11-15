@@ -87,3 +87,32 @@ UTEST( EProcProcessTableState, MacOSExposesNetworkButHidesUnavailableGpuColumns 
 	EXPECT_FALSE( isProcessColumnSupported( ProcessModel::ColGpuMemory ) );
 }
 #endif
+
+UTEST( EProcProcessTableState, MigratesGpuDeviceWithoutDiscardingSavedViews ) {
+	auto state = tableState();
+	state["version"] = 6;
+	state["widths"]["widths"].erase( state["widths"]["widths"].end() - 1 );
+	std::vector<size_t> order;
+	for ( size_t i = 0; i < ProcessModel::ColCount - 1; ++i )
+		order.push_back( i );
+	state["column_order"] = order;
+	state["widths"]["widths"][ProcessModel::ColName] = 321;
+	showColumn( state, ProcessModel::ColFamilyMemory );
+	state["tree"] = state;
+	state["tree"]["widths"]["mode"] = "percentage";
+	const auto migrated = parse( state.dump() );
+	ASSERT_TRUE( migrated.is_object() );
+	EXPECT_EQ( migrated["version"].get<int>(), kProcessTableStateVersion );
+	for ( const auto* view : { &migrated, &migrated["tree"] } ) {
+		EXPECT_EQ( ( *view )["widths"]["widths"].size(), ProcessModel::ColCount );
+		EXPECT_EQ( ( *view )["widths"]["widths"][ProcessModel::ColName].get<int>(), 321 );
+		const auto& columns = ( *view )["column_order"];
+		EXPECT_EQ( columns.size(), ProcessModel::ColCount );
+		EXPECT_EQ( columns[ProcessModel::ColGpuMemory + 1].get<size_t>(),
+				   ProcessModel::ColGpuDevice );
+	}
+	EXPECT_EQ( migrated["widths"]["widths"][ProcessModel::ColGpuDevice].get<int>(), 100 );
+	EXPECT_EQ( migrated["tree"]["widths"]["widths"][ProcessModel::ColGpuDevice].get<int>(), 5 );
+	EXPECT_TRUE( showsFamilyMemory( migrated, false ) );
+	EXPECT_TRUE( showsFamilyMemory( migrated, true ) );
+}

@@ -2,6 +2,7 @@
 #define EPROC_PROCESS_INFO_HPP
 
 #include <eepp/core/core.hpp>
+#include <eepp/core/small_vector.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <string>
 
@@ -69,6 +70,8 @@ struct ProcessInfo {
 	// GPU (percentage, -1 if not available)
 	int gpuUsage{ -1 };
 	Int64 gpuMemory{ -1 };
+	// Adapter indexes in the accompanying SystemInfo snapshot; two fit without allocation.
+	SmallVector<Uint32, 2> gpuDevices;
 
 	// Disk I/O totals (bytes, -1 if not available)
 	Int64 ioReadBytes{ -1 };

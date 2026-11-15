@@ -48,6 +48,8 @@ const char* processColumnClass( size_t column ) {
 			return "eproc-process-column-shared-memory";
 		case ProcessModel::ColGpuUsage:
 			return "eproc-process-column-gpu-usage";
+		case ProcessModel::ColGpuDevice:
+			return "eproc-process-column-gpu-device";
 		case ProcessModel::ColGpuMemory:
 			return "eproc-process-column-gpu-memory";
 		case ProcessModel::ColDownload:
@@ -117,6 +119,8 @@ std::string ProcessModel::columnName( const size_t& column ) const {
 			return mUI->i18n( "eproc_column_shared_memory", "Shared Mem" ).toUtf8();
 		case ColGpuUsage:
 			return mUI->i18n( "eproc_column_gpu_usage", "GPU Usage" ).toUtf8();
+		case ColGpuDevice:
+			return mUI->i18n( "eproc_column_gpu_device", "GPU Device" ).toUtf8();
 		case ColGpuMemory:
 			return mUI->i18n( "eproc_column_gpu_memory", "GPU Memory" ).toUtf8();
 		case ColDownload:
@@ -216,6 +220,25 @@ Variant ProcessModel::data( const ModelIndex& index, ModelRole role ) const {
 			default:
 				break;
 		}
+	}
+
+	if ( index.column() == ColGpuDevice &&
+		 ( role == ModelRole::Display || role == ModelRole::Sort || role == ModelRole::Tooltip ) ) {
+		const auto* proc = getProcessByRow( index.row() );
+		if ( !proc )
+			return Variant();
+		String devices;
+		for ( Uint32 device : proc->gpuDevices ) {
+			if ( device >= mSystemInfo.gpus.size() )
+				continue;
+			if ( !devices.empty() )
+				devices += role == ModelRole::Tooltip ? "\n" : ", ";
+			devices += String::format( mUI->i18n( "eproc_gpu_number", "GPU %zu" ).toUtf8(),
+									   static_cast<size_t>( device ) );
+			if ( role == ModelRole::Tooltip && !mSystemInfo.gpus[device].name.empty() )
+				devices += ": " + mSystemInfo.gpus[device].name;
+		}
+		return Variant( std::move( devices ) );
 	}
 
 	if ( role != ModelRole::Display )
@@ -404,6 +427,17 @@ void ProcessModel::applySnapshot( std::vector<ProcessInfo>&& processes, const Sy
 		if ( processStillExists )
 			continue;
 
+		SmallVector<Uint32, 2> devices;
+		for ( Uint32 index : previous.gpuDevices ) {
+			if ( index >= mSystemInfo.gpus.size() )
+				continue;
+			const auto& id = mSystemInfo.gpus[index].id;
+			auto found = std::find_if( sysInfo.gpus.begin(), sysInfo.gpus.end(),
+									   [&]( const GpuInfo& gpu ) { return gpu.id == id; } );
+			if ( found != sysInfo.gpus.end() )
+				devices.push_back( static_cast<Uint32>( found - sysInfo.gpus.begin() ) );
+		}
+		previous.gpuDevices = std::move( devices );
 		previous.status = ProcessStatus::Ended;
 		endedProcesses.emplace_back( std::move( previous ) );
 	}

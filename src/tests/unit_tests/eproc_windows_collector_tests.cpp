@@ -23,12 +23,16 @@ struct PerformanceCountersWindowsTestAccess {
 		return PerformanceCountersWindows::processInstance( name, pid, engine );
 	}
 
+	static std::string adapter( std::wstring_view instance ) {
+		return PerformanceCountersWindows::adapterId( instance );
+	}
+
 	static bool core( std::wstring_view name, unsigned& index ) {
 		return PerformanceCountersWindows::coreInstance( name, index );
 	}
 
 	static void checkLayout() {
-		static_assert( sizeof( PerformanceCountersWindows::GpuSample ) == 16 );
+		static_assert( sizeof( PerformanceCountersWindows::GpuSample ) == 32 );
 		static_assert( sizeof( PerformanceCountersWindows::CoreSample ) == 8 );
 	}
 };
@@ -387,6 +391,20 @@ UTEST( EProcWindowsNetwork, RecoversFromAnInterruptedTraceSession ) {
 	ASSERT_TRUE( monitor.status() == ProcessNetworkStatus::Starting );
 	EXPECT_TRUE( capturesLiveUdp( monitor ) );
 	EXPECT_TRUE( ProcessNetworkMonitorWindowsTestAccess::stopsSession( monitor ) );
+}
+
+UTEST( EProcWindowsCounters, GroupsEnginesByPhysicalAdapter ) {
+	using Counters = PerformanceCountersWindowsTestAccess;
+	const auto first = Counters::adapter( L"luid_0x00000000_0x00001234_phys_0_eng_2_engtype_3D" );
+	EXPECT_TRUE( first == "luid_0x00000000_0x00001234_phys_0" );
+	EXPECT_TRUE( Counters::adapter( L"luid_0x00000000_0x00001234_phys_0_eng_3_engtype_Copy" ) ==
+				 first );
+	EXPECT_TRUE( Counters::adapter( L"luid_0x00000000_0x00001234_phys_0" ) == first );
+	EXPECT_TRUE( Counters::adapter( L"luid_0x00000000_0x00005678_phys_0_eng_2_engtype_3D" ) !=
+				 first );
+	EXPECT_TRUE( Counters::adapter( L"luid_0x00000000_0x00001234_phys_1_eng_2_engtype_3D" ) !=
+				 first );
+	EXPECT_TRUE( Counters::adapter( L"_Total" ).empty() );
 }
 
 #endif

@@ -319,3 +319,39 @@ UTEST( EProcProcessTree, LatePssRejectsReusedPidsAndDoesNotAgeEndedRows ) {
 	EXPECT_EQ( source->visibleCount(), 3u );
 }
 #endif
+
+UTEST( EProcProcessTree, GpuDevicesUseSnapshotNumbersAndRetainIdentityForEndedRows ) {
+	UIApplication app(
+		WindowSettings( 600, 300, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto source = ProcessModel::create( app.getUI() );
+	auto tree = ProcessTreeModel::create( source );
+	SystemInfo system;
+	system.gpus = { { "adapter-a", "Integrated GPU" }, { "adapter-b", "Discrete GPU" } };
+	auto both = process( 1, 0, "both" );
+	both.gpuDevices = { 0, 1 };
+	auto discrete = process( 2, 0, "discrete" );
+	discrete.gpuDevices = { 1 };
+	source->applySnapshot( { both, discrete }, system );
+	auto index = tree->indexForPid( 1, ProcessModel::ColGpuDevice );
+	EXPECT_TRUE( tree->data( index ).toString() == "GPU 0, GPU 1" );
+	EXPECT_TRUE( tree->data( index, ModelRole::Tooltip ).toString() ==
+				 "GPU 0: Integrated GPU\nGPU 1: Discrete GPU" );
+
+	// Reordering adapters must not relabel an ended process as using a different device.
+	std::swap( system.gpus[0], system.gpus[1] );
+	source->applySnapshot( {}, system );
+	index = tree->indexForPid( 2, ProcessModel::ColGpuDevice );
+	EXPECT_TRUE( tree->data( index ).toString() == "GPU 0" );
+	EXPECT_TRUE( tree->data( index, ModelRole::Tooltip ).toString() == "GPU 0: Discrete GPU" );
+	EXPECT_EQ( tree->processForIndex( index )->status, ProcessStatus::Ended );
+
+	// An adapter removed before the process exits cannot leave an index pointing at another GPU.
+	both.gpuDevices = { 0, 1 };
+	source->applySnapshot( { both }, system );
+	system.gpus.erase( system.gpus.begin() );
+	source->applySnapshot( {}, system );
+	index = tree->indexForPid( 1, ProcessModel::ColGpuDevice );
+	EXPECT_TRUE( tree->data( index ).toString() == "GPU 0" );
+	EXPECT_TRUE( tree->data( index, ModelRole::Tooltip ).toString() == "GPU 0: Integrated GPU" );
+}

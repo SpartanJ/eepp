@@ -84,7 +84,7 @@ template <typename Callback> static void consumeVariantText( const Variant& valu
 
 UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	UIAbstractView( tag ),
-	mDragBorderDistance( PixelDensity::dpToPx( 4 ) ),
+	mDragBorderDistance( PixelDensity::dpToPx( 8 ) ),
 	mIconSize( PixelDensity::dpToPxI( 12 ) ),
 	mSortIconSize( PixelDensity::dpToPxI( 20 ) ) {
 	mHeader = eeNew( TableHeaderLayout, ( mTag + "::header" ) );
@@ -700,6 +700,25 @@ void UIAbstractTableView::setHeadersVisible( bool visible ) {
 void UIAbstractTableView::onSizeChange() {
 	UIAbstractView::onSizeChange();
 	createOrUpdateColumns( false );
+}
+
+void UIAbstractTableView::syncColumnPercentages() {
+	if ( mColumnWidthMode != ColumnWidthMode::Percentage || !getModel() )
+		return;
+	const size_t count = getModel()->columnCount();
+	Float totalWidth = 0;
+	for ( size_t i = 0; i < count; ++i ) {
+		if ( !isColumnHidden( i ) )
+			totalWidth += columnData( i ).width;
+	}
+	if ( totalWidth <= 0 )
+		return;
+	// Requested percentages can differ from rendered widths after minimum/maximum clamping.
+	// Using those stale shares makes the dragged divider jump, sometimes in the wrong direction.
+	for ( size_t i = 0; i < count; ++i ) {
+		if ( !isColumnHidden( i ) )
+			columnData( i ).percentage = columnData( i ).width / totalWidth * 100.f;
+	}
 }
 
 void UIAbstractTableView::onColumnSizeChange( const size_t& colIndex, bool fromUserInteraction ) {

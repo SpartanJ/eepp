@@ -3,6 +3,19 @@
 eproc is eepp's native system monitor. It collects process and system statistics on a worker
 thread and displays them in a process table/tree and performance charts.
 
+## GPU monitoring
+
+The Performance tab shows each detected adapter as GPU 0, GPU 1, and so on, with its model
+when available. Each adapter has its own utilization history and memory figures. Numbering follows
+the current adapter list and is shared with the process table's GPU Device column. Hover a device
+cell to see the corresponding models. A process can use several adapters; a listed device may be idle.
+
+Linux uses NVIDIA's NVML and DRM/sysfs counters for AMD and other DRM drivers. Device-wide
+counters are preferred; fallbacks based on accessible DRM clients are marked as tracked usage or
+tracked memory. First-sample rates and unavailable counters stay unavailable. Windows uses WDDM
+counters grouped by adapter and DXGI model names. macOS shows separate IOAccelerator adapters
+when the driver exposes them; per-process GPU attribution is unavailable there.
+
 ## Windows monitoring
 
 Windows supports system and per-process CPU, memory and I/O counters, per-core CPU charts,

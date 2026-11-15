@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <climits>
 #include <cmath>
+#include <dxgi.h>
+#include <eepp/system/sys.hpp>
 #include <limits>
 #include <pdhmsg.h>
 
@@ -36,6 +38,7 @@ PerformanceCountersWindows::~PerformanceCountersWindows() {
 
 void PerformanceCountersWindows::initialize() {
 	mInitialized = true;
+	readAdapterNames();
 	if ( PdhOpenQueryW( nullptr, 0, &mQuery ) != ERROR_SUCCESS )
 		return;
 	// English paths are translated by PDH, including on non-English Windows installations.
@@ -49,6 +52,56 @@ void PerformanceCountersWindows::initialize() {
 	add( L"\\GPU Process Memory(*)\\Shared Usage", mProcessShared );
 	add( L"\\GPU Adapter Memory(*)\\Dedicated Usage", mAdapterDedicated );
 	add( L"\\GPU Adapter Memory(*)\\Shared Usage", mAdapterShared );
+}
+
+void PerformanceCountersWindows::readAdapterNames() {
+	// Resolve DXGI dynamically, like the optional driver APIs on the other backends.
+	void* library = EE::System::Sys::loadObject( "dxgi.dll" );
+	if ( !library )
+		return;
+	using CreateFactory = HRESULT( WINAPI* )( REFIID, void** );
+	auto create = reinterpret_cast<CreateFactory>(
+		EE::System::Sys::loadFunction( library, "CreateDXGIFactory" ) );
+	IDXGIFactory* factory = nullptr;
+	if ( create &&
+		 SUCCEEDED( create( __uuidof( IDXGIFactory ), reinterpret_cast<void**>( &factory ) ) ) ) {
+		IDXGIAdapter* adapter = nullptr;
+		for ( UINT i = 0; factory->EnumAdapters( i, &adapter ) == S_OK; ++i ) {
+			DXGI_ADAPTER_DESC description{};
+			if ( SUCCEEDED( adapter->GetDesc( &description ) ) && description.VendorId != 0x1414 ) {
+				GpuInfo gpu;
+				gpu.id = String::format( "luid_0x%08x_0x%08x_phys_0",
+										 static_cast<unsigned>( description.AdapterLuid.HighPart ),
+										 static_cast<unsigned>( description.AdapterLuid.LowPart ) );
+				gpu.name = String::fromWide( description.Description ).toUtf8();
+				mAdapters.push_back( std::move( gpu ) );
+			}
+			adapter->Release();
+		}
+		factory->Release();
+	}
+	EE::System::Sys::unloadObject( library );
+}
+
+std::string PerformanceCountersWindows::adapterId( std::wstring_view instance ) {
+	if ( instance.substr( 0, 5 ) != L"luid_" )
+		return {};
+	const size_t engine = instance.find( L"_eng_" );
+	instance = instance.substr( 0, engine );
+	// Counter identities are ASCII; avoid locale-sensitive wide conversion.
+	return std::string( instance.begin(), instance.end() );
+}
+
+Uint32 PerformanceCountersWindows::adapterIndex( SystemInfo& system, std::wstring_view instance ) {
+	const std::string id = adapterId( instance );
+	auto found = std::find_if( system.gpus.begin(), system.gpus.end(),
+							   [&]( const GpuInfo& gpu ) { return gpu.id == id; } );
+	if ( found == system.gpus.end() ) {
+		system.gpus.emplace_back();
+		found = std::prev( system.gpus.end() );
+		found->id = id;
+	}
+	return static_cast<Uint32>( found - system.gpus.begin() );
 }
 
 PDH_FMT_COUNTERVALUE_ITEM_W* PerformanceCountersWindows::read( PDH_HCOUNTER counter, DWORD format,
@@ -97,6 +150,12 @@ bool PerformanceCountersWindows::coreInstance( std::wstring_view name, unsigned&
 	return true;
 }
 
+void PerformanceCountersWindows::recordDevice( GpuSample& process, Uint32 adapter ) {
+	if ( std::find( process.devices.begin(), process.devices.end(), adapter ) ==
+		 process.devices.end() )
+		process.devices.push_back( adapter );
+}
+
 void PerformanceCountersWindows::readGpuUsage( SystemInfo& system ) {
 	DWORD count = 0;
 	const auto* items = read( mGpu, PDH_FMT_DOUBLE | PDH_FMT_NOCAP100, count );
@@ -113,10 +172,14 @@ void PerformanceCountersWindows::readGpuUsage( SystemInfo& system ) {
 		// Like Task Manager, show the busiest engine rather than summing independent engines.
 		process.usage = std::max( process.usage, usage );
 		mEngines[engine] += value.doubleValue;
+		const Uint32 adapter = adapterIndex( system, engine );
+		recordDevice( process, adapter );
 	}
 	for ( const auto& [engine, usage] : mEngines ) {
-		system.gpuUsage =
-			std::max( system.gpuUsage, static_cast<int>( std::clamp( usage, 0.0, 100.0 ) ) );
+		const int percent = static_cast<int>( std::clamp( usage, 0.0, 100.0 ) );
+		system.gpuUsage = std::max( system.gpuUsage, percent );
+		auto& gpu = system.gpus[adapterIndex( system, engine )];
+		gpu.usage = std::max( gpu.usage, percent );
 	}
 	// Keys borrow the PDH buffer, which the next counter read will overwrite.
 	mEngines.clear();
@@ -135,13 +198,17 @@ void PerformanceCountersWindows::readGpuMemory( PDH_HCOUNTER counter, bool perPr
 			Int64 pid = 0;
 			std::wstring_view engine;
 			if ( processInstance( items[i].szName, pid, engine ) ) {
-				auto& memory = mProcesses[pid].memory;
-				memory = std::max<Int64>( memory, 0 ) + kib;
+				auto& process = mProcesses[pid];
+				process.memory = std::max<Int64>( process.memory, 0 ) + kib;
+				const Uint32 adapter = adapterIndex( system, engine );
+				recordDevice( process, adapter );
 			}
 		} else if ( std::wstring_view( items[i].szName ).substr( 0, 5 ) == L"luid_" ) {
 			// Adapter counters count shared allocations once. Summing process memory would
 			// count allocations shared by multiple processes more than once.
 			system.gpuMemory = std::max<Int64>( system.gpuMemory, 0 ) + kib;
+			auto& gpu = system.gpus[adapterIndex( system, items[i].szName )];
+			gpu.memory = std::max<Int64>( gpu.memory, 0 ) + kib;
 		}
 	}
 }
@@ -183,6 +250,7 @@ void PerformanceCountersWindows::collect( std::vector<ProcessInfo>& processes,
 			system.cpuUsage = static_cast<float>( totalCpuUsage / mCores.size() );
 	}
 
+	system.gpus = mAdapters;
 	mProcesses.clear();
 	readGpuUsage( system );
 	readGpuMemory( mProcessDedicated, true, system );
@@ -192,6 +260,8 @@ void PerformanceCountersWindows::collect( std::vector<ProcessInfo>& processes,
 	for ( auto& process : processes ) {
 		auto it = mProcesses.find( process.pid );
 		if ( it != mProcesses.end() ) {
+			process.gpuDevices = std::move( it->second.devices );
+			std::sort( process.gpuDevices.begin(), process.gpuDevices.end() );
 			process.gpuUsage = it->second.usage;
 			process.gpuMemory = it->second.memory;
 		}

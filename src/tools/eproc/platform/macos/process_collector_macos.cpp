@@ -1,10 +1,13 @@
 #include "process_collector_macos.hpp"
 #include <eepp/system/monotonicclock.hpp>
 
+#include <CoreFoundation/CFData.h>
 #include <CoreFoundation/CFNumber.h>
+#include <CoreFoundation/CFString.h>
 #include <IOKit/IOKitLib.h>
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <ifaddrs.h>
 #include <libproc.h>
 #include <limits>
@@ -64,6 +67,31 @@ void ProcessCollectorMacOS::collectGpu( SystemInfo& sysInfo ) {
 		return;
 	for ( io_service_t service = IOIteratorNext( iterator ); service != IO_OBJECT_NULL;
 		  service = IOIteratorNext( iterator ) ) {
+		GpuInfo gpu;
+		uint64_t registryId = 0;
+		if ( IORegistryEntryGetRegistryEntryID( service, &registryId ) != KERN_SUCCESS ) {
+			IOObjectRelease( service );
+			continue;
+		}
+		gpu.id = std::to_string( registryId );
+		CFTypeRef model = IORegistryEntrySearchCFProperty(
+			service, kIOServicePlane, CFSTR( "model" ), kCFAllocatorDefault,
+			kIORegistryIterateRecursively | kIORegistryIterateParents );
+		if ( model ) {
+			char name[256]{};
+			if ( CFGetTypeID( model ) == CFStringGetTypeID() &&
+				 CFStringGetCString( static_cast<CFStringRef>( model ), name, sizeof( name ),
+									 kCFStringEncodingUTF8 ) ) {
+				gpu.name = name;
+			} else if ( CFGetTypeID( model ) == CFDataGetTypeID() ) {
+				auto data = static_cast<CFDataRef>( model );
+				const auto* bytes = reinterpret_cast<const char*>( CFDataGetBytePtr( data ) );
+				if ( bytes && CFDataGetLength( data ) > 0 )
+					gpu.name.assign(
+						bytes, strnlen( bytes, static_cast<size_t>( CFDataGetLength( data ) ) ) );
+			}
+			CFRelease( model );
+		}
 		CFTypeRef stats = IORegistryEntryCreateCFProperty(
 			service, CFSTR( "PerformanceStatistics" ), kCFAllocatorDefault, 0 );
 		if ( stats && CFGetTypeID( stats ) == CFDictionaryGetTypeID() ) {
@@ -76,17 +104,22 @@ void ProcessCollectorMacOS::collectGpu( SystemInfo& sysInfo ) {
 			};
 			Int64 usage = 0;
 			if ( number( CFSTR( "Device Utilization %" ), usage ) )
-				sysInfo.gpuUsage = std::max(
-					sysInfo.gpuUsage, static_cast<int>( std::clamp<Int64>( usage, 0, 100 ) ) );
+				gpu.usage = static_cast<int>( std::clamp<Int64>( usage, 0, 100 ) );
 			Int64 bytes = 0;
 			if ( number( CFSTR( "In use system memory" ), bytes ) && bytes >= 0 )
-				sysInfo.gpuMemory = std::max<Int64>( 0, sysInfo.gpuMemory ) + bytes / 1024;
+				gpu.memory = bytes / 1024;
 		}
 		if ( stats )
 			CFRelease( stats );
+		sysInfo.gpuUsage = std::max( sysInfo.gpuUsage, gpu.usage );
+		if ( gpu.memory >= 0 )
+			sysInfo.gpuMemory = std::max<Int64>( 0, sysInfo.gpuMemory ) + gpu.memory;
+		sysInfo.gpus.push_back( std::move( gpu ) );
 		IOObjectRelease( service );
 	}
 	IOObjectRelease( iterator );
+	std::sort( sysInfo.gpus.begin(), sysInfo.gpus.end(),
+			   []( const GpuInfo& a, const GpuInfo& b ) { return a.id < b.id; } );
 }
 
 bool ProcessCollectorMacOS::collect( std::vector<ProcessInfo>& processes, SystemInfo& sysInfo ) {
