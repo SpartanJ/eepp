@@ -564,7 +564,7 @@ function build_link_configuration( package_name, use_ee_icon, use_sdl_main )
 			linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
 		end
 
-	filter { "system:linux", "action:not vs*" }
+	filter { "system:linux or system:bsd or system:haiku", "action:not vs*" }
 		if package_name == "eepp" then
 			-- Shared eepp must resolve its own indirect dependencies beside the library.
 			linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
@@ -1032,6 +1032,9 @@ end
 function eepp_module_vfs_dependencies()
 	links { "efsw-static" }
 	incdirs { "src/modules/vfs/include/", "src/thirdparty/efsw/include" }
+	-- VFS and efsw create threads directly; FreeBSD requires an explicit libpthread link.
+	filter "system:bsd"
+		links { "pthread" }
 	-- The ssh_config evaluator (always built) resolves host names through Winsock.
 	filter "system:windows"
 		links { "ws2_32" }
@@ -2316,6 +2319,9 @@ workspace "eepp"
 		filter {}
 		links { "eterm-static", "languages-syntax-highlighting-static" }
 		eepp_module_vfs_add()
+		filter "system:linux or system:bsd"
+			-- The terminal panel uses openpty(3), provided by libutil.
+			links { "util" }
 		filter "system:haiku"
 			links { "bsd" }
 		filter "system:windows"

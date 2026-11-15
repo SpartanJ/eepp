@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Packages the eepp SDK for Linux, macOS and MinGW (cross).
+# Packages the eepp SDK for Linux, macOS, FreeBSD, Haiku and MinGW (cross).
 #
 # Usage: ./package_sdk.sh <platform> <arch> [--strip] [--version <version>]
 # Examples:
@@ -63,6 +63,8 @@ STAGING="projects/$PLATFORM/sdk/$SDK_DIRNAME"
 LIBS_PLATFORM="$PLATFORM"
 if [ "$PLATFORM" == "macos" ]; then
 	LIBS_PLATFORM="macosx"
+elif [ "$PLATFORM" == "freebsd" ]; then
+	LIBS_PLATFORM="bsd"
 fi
 
 # Stable release tags use the eepp-%d.%d.%d format; strip the tag prefix for
@@ -336,6 +338,10 @@ bundle_sdl3() {
 			;;
 		macos)
 			sdl_path="$(brew --prefix sdl3)/lib/libSDL3.0.dylib"
+			;;
+		haiku)
+			# Haiku has no ldd; query its installed library locations instead.
+			sdl_path="$(findpaths -e B_FIND_PATH_LIB_DIRECTORY libSDL3.so.0 | sed -n '1p')"
 			;;
 		*)
 			# Consume all ldd output to avoid SIGPIPE under pipefail.

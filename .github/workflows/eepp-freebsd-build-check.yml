@@ -1,0 +1,83 @@
+name: FreeBSD
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: write
+
+jobs:
+  FreeBSD:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 2
+        submodules: recursive
+    - name: Set SDK version
+      id: sdk_version
+      run: |
+        if [[ "$GITHUB_REF" == refs/tags/eepp-* ]]; then
+          echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+        else
+          echo "version=nightly" >> "$GITHUB_OUTPUT"
+        fi
+    - name: Build all targets and package SDK
+      uses: vmactions/freebsd-vm@v1
+      env:
+        SDK_VERSION: ${{ steps.sdk_version.outputs.version }}
+      with:
+        release: '14.4'
+        arch: x86_64
+        mem: 8192
+        sync: sshfs
+        envs: SDK_VERSION
+        prepare: |
+          set -eu
+          pkg upgrade -y
+          pkg install -y bash git sdl3 premake5 gmake
+        run: |
+          set -eu
+          mkdir -p build-logs
+          bash -e -o pipefail <<'BUILD'
+          {
+            uname -a
+            premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 gmake
+            gmake -C make/bsd -j"$(sysctl -n hw.ncpu)" config=release_x86_64 all
+            bash projects/scripts/package_sdk.sh freebsd x86_64 --strip --version "$SDK_VERSION"
+
+            # Exercise the archive outside the checkout, including its runtime libraries.
+            sdk_check=$(mktemp -d)
+            tar -xzf projects/freebsd/sdk/eepp-sdk-freebsd-x86_64-*.tar.gz -C "$sdk_check"
+            for manifest in src/tools/*/assets.list; do
+              app=$(basename "$(dirname "$manifest")")
+              test -x "$sdk_check/eepp-sdk/bin/$app"
+            done
+            test -f "$sdk_check/eepp-sdk/bin/libSDL3.so.0"
+            test -f "$sdk_check/eepp-sdk/libs/bsd/x86_64/libeepp.so"
+            (cd "$sdk_check" && EEPP_WINDOW_HIDDEN=1 ./eepp-sdk/bin/ecode --version)
+            rm -rf "$sdk_check"
+          } 2>&1 | tee build-logs/freebsd.log
+          BUILD
+    - name: Upload SDK package
+      uses: actions/upload-artifact@v4
+      with:
+        name: freebsd-eepp-sdk-x86_64
+        path: projects/freebsd/sdk/eepp-sdk-*.tar.gz
+        if-no-files-found: error
+    - name: Publish SDK package
+      if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/eepp-'))
+      uses: softprops/action-gh-release@v3
+      with:
+        tag_name: ${{ steps.sdk_version.outputs.version }}
+        draft: false
+        prerelease: ${{ steps.sdk_version.outputs.version == 'nightly' }}
+        generate_release_notes: false
+        fail_on_unmatched_files: true
+        files: projects/freebsd/sdk/eepp-sdk-freebsd-x86_64-*.tar.gz
+    - name: Upload build logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: freebsd-build-logs
+        path: build-logs/freebsd.log

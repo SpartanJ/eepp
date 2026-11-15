@@ -24,9 +24,11 @@ Applications/           Standalone app bundles (macOS only)
 Every binary in `bin/` is ready to run:
 
 - **Windows:** double-click any `.exe`.
-- **Linux:** run any binary from a file manager or a terminal, for example
+- **Linux and FreeBSD:** run any binary from a file manager or a terminal, for example
   `bin/ecode`. The binaries locate the shared libraries relative to their own
   location (`$ORIGIN` rpath), so the package can live anywhere on disk.
+- **Haiku:** run the binaries from Tracker or a terminal. The package includes the
+  matching shared libraries beside the applications in `bin/`.
 - **macOS:** the shipped binaries and libraries are ad-hoc signed and resolve
   their dependencies through `@loader_path`, so they can be launched straight
   from Finder or a terminal. The macOS SDK also includes app bundles in
@@ -96,6 +98,18 @@ bash projects/scripts/package_sdk.sh windows x86_64 --strip
 brew install sdl3 premake
 bash projects/macos/make_no_fw.sh --backend=SDL3 config=release_arm64
 bash projects/scripts/package_sdk.sh macos arm64
+
+# FreeBSD: native x86_64 build (libraries are stored under libs/bsd/).
+pkg install -y bash git sdl3 premake5 gmake
+premake5 --disable-static-build --with-backend=SDL3 gmake
+gmake -C make/bsd -j$(sysctl -n hw.ncpu) config=release_x86_64 all
+bash projects/scripts/package_sdk.sh freebsd x86_64 --strip
+
+# Haiku: native x86_64 build.
+pkgman install -y libsdl3 libsdl3_devel git gcc premake5
+premake5 --disable-static-build --with-backend=SDL3 gmake
+make -C make/haiku -j$(nproc) config=release_x86_64 all
+bash projects/scripts/package_sdk.sh haiku x86_64 --strip
 ```
 
 For MSVC, generate with `premake5.exe --windows-vc-build --disable-static-build
