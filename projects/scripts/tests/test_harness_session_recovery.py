@@ -20,6 +20,9 @@ def environment(directory):
              ETERM_HARNESS_BINARY=str(BINARY), ETERM_HARNESS_SHELL_PID=str(os.getpid()))
     # Claude exports its mode to hooks; a run inside Claude must not leak its own into fixtures.
     env.pop('CLAUDE_CODE_ENTRYPOINT',None)
+    # A run inside eterm's Codex relay must not connect a fixture to the user's real daemon.
+    env.pop('ETERM_CODEX_SOCKET',None)
+    env.pop('ETERM_CODEX_RELAY_TOKEN',None)
     return env
 
 

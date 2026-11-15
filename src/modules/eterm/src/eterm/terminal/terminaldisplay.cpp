@@ -2423,7 +2423,7 @@ void TerminalDisplay::drawHyperlinkHover() {
 	fillPreview( foreground, 0 );
 	fillPreview( background, border );
 	hover.preview.setFillColor( foreground );
-	hover.preview.draw( position.x + padding, position.y + padding );
+	hover.preview.draw( eefloor( position.x + padding ), eefloor( position.y + padding ) );
 }
 
 bool TerminalDisplay::isHyperlinkAllowed( const std::string& uri ) {

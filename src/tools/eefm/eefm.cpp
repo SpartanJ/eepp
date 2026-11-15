@@ -959,7 +959,8 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 
 bool App::redirectToRunningProcess( const std::vector<std::string>& locations, bool forceSplit ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	if ( mConfig->window.openFoldersInNewWindow )
+	// A plain launch intentionally starts a new window; only explicit locations are forwarded.
+	if ( locations.empty() || mConfig->window.openFoldersInNewWindow )
 		return false;
 	const auto pids = Sys::pidof( FileSystem::fileNameFromPath( Sys::getProcessFilePath() ) );
 	const auto ownPid = Sys::getProcessID();
