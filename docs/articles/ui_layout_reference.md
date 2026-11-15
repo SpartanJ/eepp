@@ -264,6 +264,11 @@ When eepp parses a zero layout dimension for a weighted child whose parent is a 
 does not immediately force the stored size in the normal fixed-size path. The linear layout assigns
 the weighted size during packing.
 
+Weighted shares use whole pixels, with margins accounted for using the same rounding as child
+placement. This keeps trailing controls inside the available content size at fractional display
+scales. A child's minimum or maximum size can override its share; space left unused by a maximum
+size is not redistributed to the other weighted children.
+
 ---
 
 ## 5. Minimum and maximum constraints

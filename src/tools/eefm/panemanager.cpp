@@ -26,12 +26,13 @@ const char* PaneLayout = R"xml(
 		 max-width="50%" text-overflow="ellipsis" clip="content-box" />
 		<hbox class="pane_transfer" layout_width="0" layout_weight="1" gravity="right"
 		 layout_height="wrap_content" visible="false">
-			<PushButton class="transfer_text tool" layout_width="0" layout_weight="1"
-			 layout_gravity="center_vertical" expand-text="true" text-overflow="ellipsis"
+			<PushButton class="transfer_text tool" layout_width="0" layout_weight="0.8"
+			 layout_gravity="center_vertical" expand-text="true" text-align="left" text-overflow="ellipsis"
 			 tooltip='@string(eefm_show_operations, "Show Operations")' />
-			<ProgressBar class="transfer_bar" layout_width="0" layout_weight="1" min-width="0" max-width="140dp"
+			<ProgressBar class="transfer_bar" layout_width="0" layout_weight="0.2" min-width="0"
 			 layout_gravity="center_vertical" display-percent="false" />
-			<PushButton class="transfer_cancel tool" icon="action-close"
+			<PushButton class="transfer_cancel tool" layout_width="wrap_content" layout_height="wrap_content"
+			 layout_gravity="center_vertical" icon="action-close"
 			 tooltip='@string(eefm_cancel_all_operations, "Cancel All Operations")' />
 		</hbox>
 	</hbox>

@@ -131,7 +131,8 @@ void UIPushButton::onAutoSize() {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
 
-	if ( mExpandTextView && mWidthPolicy == SizePolicy::MatchParent )
+	// Expanded text uses the width supplied by the caller or parent layout.
+	if ( mExpandTextView && mWidthPolicy != SizePolicy::WrapContent )
 		return;
 
 	if ( mWidthPolicy == SizePolicy::WrapContent || ( mFlags & UI_AUTO_SIZE ) ) {

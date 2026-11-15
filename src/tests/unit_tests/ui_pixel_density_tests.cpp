@@ -21,6 +21,7 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uihtmltextinput.hpp>
 #include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimessagebox.hpp>
@@ -274,6 +275,42 @@ UTEST( PixelDensityRegression, ButtonLayoutIgnoresMarginsOfLoneVisibleItem ) {
 		EXPECT_EQ( button->updateLayout().x, button->getPixelsSize().x );
 		EXPECT_EQ( text->getPixelsPosition().x, PixelDensity::dpToPx( 4.f ) );
 		EXPECT_EQ( text->getPixelsSize().x, PixelDensity::dpToPx( 72.f ) );
+		eeDelete( button );
+	}
+}
+
+UTEST( PixelDensityRegression, ExpandedButtonsKeepAssignedWidths ) {
+	DensityApplication fixture;
+	auto* ui = fixture.app.getUI();
+	for ( Float density : { 1.f, 1.25f, 1.5f, 2.f, 3.f } ) {
+		PixelDensity::setPixelDensity( density );
+		auto* row = ui->loadLayoutFromString( R"xml(
+<hbox lw="400dp" lh="wc">
+ <PushButton id="weighted_label" lw="0" layout_weight="0.8" lh="wc"
+  expand-text="true" text-align="left" text-overflow="ellipsis" />
+ <Widget id="remaining_space" lw="0" layout_weight="0.2" lh="10dp" />
+</hbox>
+)xml" )
+						->asType<UILinearLayout>();
+		auto* button = row->find<UIPushButton>( "weighted_label" );
+		auto* remainder = row->find<UIWidget>( "remaining_space" );
+		const String longLabel( 200, 'W' );
+		for ( const auto& text : { longLabel, String( "Short" ), longLabel } ) {
+			button->setText( text );
+			ui->flushDirtyStyleAndLayout();
+			EXPECT_NEAR( row->getPixelsSize().x * 0.8f, button->getPixelsSize().x, 0.01f );
+			EXPECT_NEAR( row->getPixelsSize().x * 0.2f, remainder->getPixelsSize().x, 0.01f );
+			EXPECT_EQ( 0.f, button->getTextView()->getRealAlignOffset().x );
+		}
+		// A directly assigned fixed width has the same contract, without a weighted parent.
+		button->setParent( ui->getRoot() );
+		button->setLayoutWeight( 0 );
+		button->setSize( 100, button->getSize().y );
+		button->setText( "" );
+		button->setText( longLabel );
+		ui->flushDirtyStyleAndLayout();
+		EXPECT_EQ( PixelDensity::dpToPx( 100.f ), button->getPixelsSize().x );
+		eeDelete( row );
 		eeDelete( button );
 	}
 }

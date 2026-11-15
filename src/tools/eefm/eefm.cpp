@@ -252,7 +252,7 @@ PushButton.place_eject {
 	background-color: var(--primary);
 }
 .pane_status_bar {
-	padding: 3dp 4dp;
+	padding: 1dp 4dp;
 	/* Same as the table above it, so the status pill sits inside the view (Dolphin). */
 	background-color: var(--list-back);
 }
@@ -334,12 +334,16 @@ ScrollBar::vbutton, ScrollBar::hbutton {
 .pane:focus-within ScrollBar::hbutton:hover {
 	background-color: var(--primary);
 }
-.transfer_text {
+PushButton.transfer_text {
+	padding: 2dp 4dp!important;
 	margin-right: 6dp;
 }
 .transfer_bar {
-	min-width: 120dp;
 	margin-right: 4dp;
+}
+PushButton.transfer_cancel {
+	padding: 2dp 4dp!important;
+	margin-right: 0dp;
 }
 file_drag_label {
 	background-color: var(--menu-back);

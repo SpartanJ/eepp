@@ -230,3 +230,56 @@ UTEST( UILinearLayout, VerticalWeightsNormalize ) {
 	EXPECT_NEAR( 50.f, first->getPixelsSize().getHeight(), 0.1f );
 	EXPECT_NEAR( 150.f, second->getPixelsSize().getHeight(), 0.1f );
 }
+
+UTEST( UILinearLayout, FractionalWeightsAndMarginsKeepChildrenInside ) {
+	for ( Float density : { 1.f, 1.25f, 1.5f, 2.f } ) {
+		UIApplication app( WindowSettings( 640, 480, "Weighted pixel rounding",
+										   WindowStyle::Default, WindowBackend::Default, 32 ),
+						   UIApplication::Settings(
+							   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), density ) );
+		auto* ui = app.getUI();
+		for ( auto orientation : { UIOrientation::Horizontal, UIOrientation::Vertical } ) {
+			auto* layout = UILinearLayout::New();
+			layout->setOrientation( orientation );
+			layout->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+			layout->setPadding( { 1, 1, 1, 1 } );
+			layout->setParent( ui->getRoot() );
+			auto* first = UIWidget::New();
+			auto* second = UIWidget::New();
+			auto* trailing = UIWidget::New();
+			for ( auto* child : { first, second, trailing } ) {
+				child->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+				child->setLayoutMargin( { 6, 6, 4, 4 } );
+				child->setParent( layout );
+			}
+			first->setLayoutWeight( 0.8f );
+			second->setLayoutWeight( 0.2f );
+			trailing->setSize( 19, 19 );
+			for ( auto direction : { UIDirection::LeftToRight, UIDirection::RightToLeft } ) {
+				layout->setDirection( direction );
+				for ( Float size : { 401.f, 203.f, 402.f } ) {
+					layout->setSize( size, size );
+					ui->flushDirtyStyleAndLayout();
+					const bool horizontal = orientation == UIOrientation::Horizontal;
+					const auto padding = layout->getPixelsPadding();
+					for ( auto* child : { first, second, trailing } ) {
+						const Float start = horizontal ? child->getPixelsPosition().x
+													   : child->getPixelsPosition().y;
+						const Float length =
+							horizontal ? child->getPixelsSize().x : child->getPixelsSize().y;
+						const Float end = horizontal ? layout->getPixelsSize().x - padding.Right
+													 : layout->getPixelsSize().y - padding.Bottom;
+						EXPECT_GE( start, horizontal ? padding.Left : padding.Top );
+						EXPECT_LE( start + length, end + 0.01f );
+					}
+					const Float a =
+						horizontal ? first->getPixelsSize().x : first->getPixelsSize().y;
+					const Float b =
+						horizontal ? second->getPixelsSize().x : second->getPixelsSize().y;
+					EXPECT_NEAR( 0.8f, a / ( a + b ), 0.01f );
+				}
+			}
+			eeDelete( layout );
+		}
+	}
+}

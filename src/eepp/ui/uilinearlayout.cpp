@@ -4,6 +4,26 @@
 
 namespace EE { namespace UI {
 
+namespace {
+
+struct WeightedSpace {
+	Float available;
+	Float totalWeight;
+	Float usedWeight{ 0 };
+	Float assigned{ 0 };
+
+	Float next( Float weight ) {
+		// Cumulative integer edges keep independently rounded shares inside the pixel budget.
+		usedWeight += weight;
+		const Float end = eefloor( available * usedWeight / totalWeight + 0.5f );
+		const Float size = end - assigned;
+		assigned = end;
+		return size;
+	}
+};
+
+} // namespace
+
 UILinearLayout* UILinearLayout::NewWithTag( const std::string& tag,
 											const UIOrientation& orientation ) {
 	return eeNew( UILinearLayout, ( tag, orientation ) );
@@ -181,6 +201,15 @@ void UILinearLayout::packVertical() {
 	Float curY = mPaddingPx.Top;
 	Float maxX = 0;
 	auto [freeSize, totalWeight] = getTotalUsedSize();
+	WeightedSpace weighted{ 0, totalWeight };
+	if ( totalWeight > 0 ) {
+		const Float extent = ( getLayoutHeightPolicy() == SizePolicy::MatchParent ||
+							   getLayoutHeightPolicy() == SizePolicy::Fixed )
+								 ? getPixelsSize().getHeight()
+								 : getMatchParentHeight();
+		weighted.available = eemax(
+			eefloor( extent - mPaddingPx.Top - mPaddingPx.Bottom - freeSize.getHeight() ), 0.f );
+	}
 
 	Node* child = mChild;
 
@@ -194,14 +223,7 @@ void UILinearLayout::packVertical() {
 			Vector2f pos( mPaddingPx.Left, curY );
 
 			if ( widget->getLayoutWeight() > 0 && totalWeight > 0 ) {
-				Float totSize =
-					( getLayoutHeightPolicy() == SizePolicy::MatchParent ||
-					  getLayoutHeightPolicy() == SizePolicy::Fixed )
-						? getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom
-						: getMatchParentHeight() - mPaddingPx.Top - mPaddingPx.Bottom;
-				Float newSize = eemax( eeceil( totSize - freeSize.getHeight() ) *
-										   widget->getLayoutWeight() / totalWeight,
-									   0.f );
+				const Float newSize = weighted.next( widget->getLayoutWeight() );
 
 				widget->setPixelsSize( widget->getPixelsSize().getWidth(), newSize );
 			}
@@ -316,6 +338,15 @@ void UILinearLayout::packHorizontal() {
 	Float curX = mPaddingPx.Left;
 	Float maxY = 0;
 	auto [freeSize, totalWeight] = getTotalUsedSize();
+	WeightedSpace weighted{ 0, totalWeight };
+	if ( totalWeight > 0 ) {
+		const Float extent = ( getLayoutWidthPolicy() == SizePolicy::MatchParent ||
+							   getLayoutWidthPolicy() == SizePolicy::Fixed )
+								 ? getPixelsSize().getWidth()
+								 : getMatchParentWidth();
+		weighted.available = eemax(
+			eefloor( extent - mPaddingPx.Left - mPaddingPx.Right - freeSize.getWidth() ), 0.f );
+	}
 
 	// A horizontal linear layout is an inline row: in right-to-left contexts its first child is
 	// placed at the right. Traverse in reverse to preserve node order and physical margins,
@@ -333,14 +364,7 @@ void UILinearLayout::packHorizontal() {
 			Vector2f pos( curX, mPaddingPx.Top );
 
 			if ( widget->getLayoutWeight() > 0 && totalWeight > 0 ) {
-				Float totSize =
-					( getLayoutWidthPolicy() == SizePolicy::MatchParent ||
-					  getLayoutWidthPolicy() == SizePolicy::Fixed )
-						? getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right
-						: getMatchParentWidth() - mPaddingPx.Left - mPaddingPx.Right;
-				Float newSize = eemax( eeceil( totSize - freeSize.getWidth() ) *
-										   widget->getLayoutWeight() / totalWeight,
-									   0.f );
+				const Float newSize = weighted.next( widget->getLayoutWeight() );
 
 				widget->setPixelsSize( newSize, widget->getPixelsSize().getHeight() );
 			}
@@ -440,23 +464,24 @@ std::pair<Sizei, Float> UILinearLayout::getTotalUsedSize() {
 			totalWeight += eemax( widget->getLayoutWeight(), 0.f );
 			Rectf margin = widget->getLayoutPixelsMargin();
 
-			size.x += margin.Left + margin.Right;
+			// Match the leading-margin and trailing-extent rounding used while packing.
+			size.x += eeceil( margin.Left );
 
-			size.y += margin.Top + margin.Bottom;
+			size.y += eeceil( margin.Top );
 
-			if ( widget->getLayoutWidthPolicy() == SizePolicy::Fixed ||
-				 widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
-				if ( 0 == widget->getLayoutWeight() && mOrientation == UIOrientation::Horizontal ) {
-					size.x += widget->getPixelsSize().getWidth();
-				}
-			}
+			if ( ( widget->getLayoutWidthPolicy() == SizePolicy::Fixed ||
+				   widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ) &&
+				 0 == widget->getLayoutWeight() && mOrientation == UIOrientation::Horizontal )
+				size.x += eeceil( widget->getPixelsSize().getWidth() + margin.Right );
+			else
+				size.x += eeceil( margin.Right );
 
-			if ( widget->getLayoutHeightPolicy() == SizePolicy::Fixed ||
-				 widget->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
-				if ( 0 == widget->getLayoutWeight() && mOrientation == UIOrientation::Vertical ) {
-					size.y += widget->getPixelsSize().getHeight();
-				}
-			}
+			if ( ( widget->getLayoutHeightPolicy() == SizePolicy::Fixed ||
+				   widget->getLayoutHeightPolicy() == SizePolicy::WrapContent ) &&
+				 0 == widget->getLayoutWeight() && mOrientation == UIOrientation::Vertical )
+				size.y += eeceil( widget->getPixelsSize().getHeight() + margin.Bottom );
+			else
+				size.y += eeceil( margin.Bottom );
 		}
 
 		child = child->getNextNode();
