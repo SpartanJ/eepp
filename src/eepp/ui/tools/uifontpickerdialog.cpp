@@ -364,7 +364,6 @@ void UIFontPickerDialog::loadWidgets() {
 	mPreviewInput->setText( "The quick brown fox jumps over the lazy dog" );
 	mAntialiasing->setChecked( true );
 	mMonospaceOnly->setChecked( ( mFlags & MonospaceOnly ) != 0 );
-	mMonospaceOnly->setEnabled( ( mFlags & MonospaceOnly ) == 0 );
 
 	if ( ( mFlags & ShowSize ) == 0 ) {
 		if ( auto sizeColumn = root->find<UIWidget>( "size_column" ) )

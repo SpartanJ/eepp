@@ -50,6 +50,7 @@ class EE_API UIFontPickerDialog : public UIWindow {
 	using FontSelectionChangedCb = std::function<void( const UIFontSelection& )>;
 
 	enum Flags {
+		/** Start with the monospace filter checked; users can still disable it. */
 		MonospaceOnly = 1 << 0,
 		ShowSize = 1 << 1,
 		ShowEffects = 1 << 2,

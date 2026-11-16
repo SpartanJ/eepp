@@ -1467,6 +1467,7 @@ struct FcLib {
 	static constexpr int FC_SLANT_OBLIQUE = 110;
 
 	static constexpr int FC_PROPORTIONAL = 0;
+	static constexpr int FC_DUAL = 90;
 	static constexpr int FC_MONO = 100;
 
 	FcConfig* ( *InitLoadConfigAndFonts )( void );
@@ -1713,7 +1714,8 @@ static FontDesc fontDescFromFcPattern( FcLib& fc, FcLib::FcPattern* pattern ) {
 	desc.weight = fcWeightToFontWeight( fcWeight );
 	desc.stretch = fcWidthToFontStretch( fcWidth );
 	desc.italic = fcSlant == FC_S( ITALIC ) || fcSlant == FC_S( OBLIQUE );
-	desc.monospace = fcSpacing == FcLib::FC_MONO;
+	// Dual-width fonts use single- and double-cell advances and belong in monospace lists.
+	desc.monospace = fcSpacing == FcLib::FC_MONO || fcSpacing == FcLib::FC_DUAL;
 	return desc;
 }
 
