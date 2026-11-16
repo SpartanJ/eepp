@@ -1,5 +1,6 @@
 #include "utest.hpp"
 #include <atomic>
+#include <eepp/graphics/image.hpp>
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -96,6 +97,60 @@ static bool waitForThreadPool( const std::shared_ptr<ThreadPool>& threadPool ) {
 static void dispatchDebouncedEditorWork() {
 	Sys::sleep( Milliseconds( 20 ) );
 	SceneManager::instance()->update();
+}
+
+UTEST( UICodeEditor, MinimapUsesSolidPixelRowsAtFractionalDensity ) {
+	class MinimapEditor : public UICodeEditor {
+	  public:
+		using UICodeEditor::drawMinimap;
+
+		using UICodeEditor::getMinimapRect;
+	};
+
+	UIApplication app(
+		WindowSettings( 320, 160, "Minimap Pixel Coverage", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ),
+		ContextSettings( false, 0, 4, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getWindow() != nullptr );
+	auto* editor = eeNew( MinimapEditor, () );
+	editor->setPixelsSize( { 320, 160 } );
+	editor->setVerticalScrollBarEnabled( false );
+	editor->setHorizontalScrollBarEnabled( false );
+	editor->showMinimap( true );
+	auto config = editor->getMinimapConfig();
+	config.maxPercentWidth = 1.f;
+	editor->setMinimapConfig( config );
+	auto scheme = SyntaxColorScheme::getDefaultDark();
+	scheme.setSyntaxStyle( SyntaxStyleTypes::Normal, { Color::White } );
+	scheme.setEditorSyntaxStyle( SyntaxStyleTypes::MinimapBackground, { Color::Black } );
+	scheme.setEditorSyntaxStyle( SyntaxStyleTypes::MinimapVisibleArea, { Color::Transparent } );
+	scheme.setEditorSyntaxStyle( SyntaxStyleTypes::MinimapCurrentLine, { Color::Transparent } );
+	editor->setColorScheme( scheme );
+	String text;
+	for ( int width = 1; width <= 32; ++width ) {
+		text.append( String( width, 'x' ) );
+		text.append( "\n" );
+	}
+	editor->getDocument().textInput( text );
+	for ( size_t line = 0; line < editor->getDocument().linesCount(); ++line )
+		editor->getDocument().getHighlighter()->getLine( line );
+	app.getWindow()->setClearColor( Color::Black );
+	app.getWindow()->clear();
+	editor->drawMinimap( {}, { 0, 32 }, { VisibleIndex{ 0 }, VisibleIndex{ 1 } } );
+	auto image = app.getWindow()->getFrontBufferImage();
+	const auto left = static_cast<Uint32>( editor->getMinimapRect( {} ).round().Left + 8 );
+	for ( Uint32 line = 0; line < 32; ++line ) {
+		for ( Uint32 x = 0; x <= 32; ++x ) {
+			for ( Uint32 row = 0; row < 3; ++row ) {
+				const auto pixel = image.getPixel( left + x, line * 3 + row );
+				const bool ink = x <= line && row < 2;
+				EXPECT_EQ( ink ? 127 : 0, pixel.r );
+				EXPECT_EQ( pixel.r, pixel.g );
+				EXPECT_EQ( pixel.r, pixel.b );
+			}
+		}
+	}
 }
 
 static String makeLargeMarkdownDocument() {

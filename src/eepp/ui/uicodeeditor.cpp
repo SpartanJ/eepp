@@ -5219,10 +5219,15 @@ struct MinimapTextRangesVars {
 void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 								const DocumentViewLineRange& visibleLineRange ) {
 	Float charHeight = PixelDensity::getPixelDensity() * mMinimapConfig.scale;
+	// Pixel-aligned rectangles have consistent coverage across GPUs, including with MSAA.
+	if ( !mMinimapConfig.allowSmoothing )
+		charHeight = eemax( 1.f, Math::round( charHeight ) );
 	Float charSpacing =
 		eemax( 1.f, eefloor( 0.8 * PixelDensity::getPixelDensity() * mMinimapConfig.scale ) );
 	Float lineSpacing = getMinimapLineSpacing();
 	Rectf rect( getMinimapRect( start ) );
+	if ( !mMinimapConfig.allowSmoothing )
+		rect = rect.round();
 	Int64 visibleLinesCount = ( static_cast<Int64>( visibleLineRange.second ) -
 								static_cast<Int64>( visibleLineRange.first ) );
 	Int64 visibleLinesStart = static_cast<Int64>( visibleLineRange.first );
@@ -5245,17 +5250,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 		minimapStartLine = eemax( 0ll, eemin( minimapStartLine, lineCount - maxMinmapLines ) );
 	}
 
-	// Disable multi-sample to avoid rectangle-smoothing
-	bool disableMultisample = !mMinimapConfig.allowSmoothing && GLi->isMultisample();
-	ScopedOp op(
-		[disableMultisample] {
-			if ( disableMultisample )
-				GLi->multisample( false );
-		},
-		[disableMultisample] {
-			if ( disableMultisample )
-				GLi->multisample( true );
-		} );
+	if ( !mMinimapConfig.allowSmoothing )
+		visibleY = Math::round( visibleY );
 
 	GlobalBatchRenderer* BR = GlobalBatchRenderer::instance();
 	BR->setTexture( nullptr );
@@ -5275,6 +5271,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 	}
 
 	Float gutterWidth = PixelDensity::dpToPx( mMinimapConfig.gutterWidth );
+	if ( !mMinimapConfig.allowSmoothing )
+		gutterWidth = Math::round( gutterWidth );
 	Float lineY = rect.Top;
 
 	const auto* batchSyntaxType = &SYNTAX_NORMAL;
@@ -5366,7 +5364,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 				}
 
 				if ( selRect.Left <= v.minimapCutoffX ) {
-					v.BR->batchQuad( selRect );
+					v.BR->batchQuad( mMinimapConfig.allowSmoothing ? selRect : selRect.round() );
 				} else {
 					lineSkip = curLine;
 				}
@@ -5463,6 +5461,9 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 				vline.paddingStart != 0.f
 					? vline.paddingStart / mDocView.getWhiteSpaceWidth() * charSpacing
 					: 0.f;
+
+			if ( !mMinimapConfig.allowSmoothing )
+				paddingStart = Math::round( paddingStart );
 
 			for ( const auto& token : tokens ) {
 				if ( outOfRange )
