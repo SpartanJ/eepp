@@ -28,6 +28,7 @@ jobs:
         key: haiku-r1beta6-x86_64-sdl3-sdk
         vm: 'true'
     - name: Build all targets and package SDK
+      timeout-minutes: 90
       uses: vmactions/haiku-vm@v1
       env:
         SDK_VERSION: ${{ steps.sdk_version.outputs.version }}
@@ -35,7 +36,9 @@ jobs:
         release: r1beta6
         arch: x86_64
         mem: 8192
-        sync: sshfs
+        # Concurrent build-directory creation stalls on the SSHFS-mounted workspace.
+        # Compile and package on BFS, then copy results back to the runner.
+        sync: scp
         envs: SDK_VERSION CCACHE_DIR CCACHE_BASEDIR CCACHE_COMPILERCHECK CCACHE_MAXSIZE
         prepare: |
           set -eu

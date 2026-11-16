@@ -2,6 +2,29 @@
 
 The eepp inspector is a small TCP interface for inspecting and interacting with a running eepp UI. It is useful for debugging layout, CSS, focus, input delivery, multiple windows, and HTML inside `UIWebView`. Its compact JSON replies and server side batches are designed to reduce tool round trips for automated agents.
 
+## Widget inspector: computed values and inheritance
+
+The in-application widget inspector's **Computed** tab shows Property, Value, and Source. Click any
+column header to sort; click it again to reverse the order. An inherited Source names the ancestor
+and the rule supplying the declaration. Click that Source cell to select the ancestor in the tree.
+Element styles are labelled separately from matched selectors; properties without a CSS declaration
+are labelled Native / default.
+
+**Style** shows the selected widget's matched rules and element styles, followed by sections labelled
+Inherited from each ancestor. Ancestor sections contain inheritable properties, declarations used by
+explicit `inherit`, and custom properties. Declarations overridden in the selected widget's cascade
+are annotated `/* overridden */`. Values retain their original `var(...)` expressions; Computed
+shows the widget's current value. A source identifies the CSS declaration, so an animated or directly
+modified native value can differ from the declaration's target.
+
+Both views refresh while visible, including changes to ancestor states, variables, and stylesheets.
+Image alignment is exposed as `text-align` and `gravity` in Computed and through the TCP inspector's
+`css.text-align` and `css.gravity` properties.
+
+**Accessibility** displays metadata and value previews on one line, escaping control characters such
+as `\n`, `\r`, and `\t`. Value previews are limited to 1024 Unicode code points before escaping.
+**Copy full value** copies the original complete text with its line breaks intact.
+
 See [environment variables](environment_variables.md) for the complete framework environment
 reference, including runtime, MSAA, scaling, font, and accessibility overrides.
 

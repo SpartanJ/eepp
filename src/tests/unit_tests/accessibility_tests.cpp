@@ -3108,14 +3108,79 @@ UTEST( Accessibility, InspectorPropertiesUpdateWithoutNativeClients ) {
 	EXPECT_NE( inspector->find<UIPushButton>( "widget_inspector_accessibility_copy" ), nullptr );
 	EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
 	EXPECT_TRUE( property( "Name" ) == "Source" );
-	EXPECT_TRUE( property( "Value" ) == "hello\nworld" );
+	EXPECT_TRUE( property( "Value" ) == "hello\\nworld" );
 	EXPECT_TRUE( property( "Role" ) == "TextBox (" + editor->getElementTag() + ")" );
 	editor->getDocument().insert( 0, { 1, 0 }, "new " );
-	EXPECT_TRUE( property( "Value" ) == "hello\nnew world" );
+	EXPECT_TRUE( property( "Value" ) == "hello\\nnew world" );
 	EXPECT_FALSE( property( "Stable ID" ).empty() );
 	EXPECT_FALSE( property( "Bounds" ).empty() );
 	EXPECT_TRUE( property( "Caret" ).empty() );
 	EXPECT_FALSE( scene->hasActiveAccessibilityClients() );
+}
+
+UTEST( Accessibility, InspectorMultilineMetadataKeepsRowsCompactAndFontResponsive ) {
+	UIApplication app( WindowSettings( 900, 640, "Accessibility inspector rows" ),
+					   accessibilityTestSettings() );
+	auto* scene = app.getUI();
+	scene->getUIThemeManager()->setDefaultEffectsEnabled( false );
+	InspectorTestClipboard clipboard( app.getWindow() );
+	auto* editor = UICodeEditor::New();
+	editor->getDocument().textInput( "short" );
+	auto* inspector = Tools::UIWidgetInspector::create( scene );
+	ASSERT_NE( inspector, nullptr );
+	inspector->setSize( 860, 580 );
+	inspector->setPosition( 0, 0 );
+	auto* tree = inspector->find<UITreeView>( "widget_inspector_nodetree" );
+	auto* table = inspector->find<UITableView>( "widget_inspector_accessibility" );
+	auto* tabs = inspector->findByType<UITabWidget>( UI_TYPE_TABWIDGET );
+	ASSERT_NE( tree, nullptr );
+	ASSERT_NE( table, nullptr );
+	ASSERT_NE( tabs, nullptr );
+	tabs->setTabSelected( 2 );
+	auto* treeModel = static_cast<Models::WidgetTreeModel*>( tree->getModel() );
+	tree->setSelection( treeModel->getModelIndex( editor ) );
+	auto render = [&] {
+		for ( int frame = 0; frame < 5; ++frame ) {
+			scene->update( Milliseconds( 16 ) );
+			app.getWindow()->clear();
+			scene->draw();
+			app.getWindow()->display( false, false );
+		}
+	};
+	render();
+	const auto rowHeight = table->getRowHeight();
+	const auto fontSize = table->getHeaderColumn( 0 )->getTextView()->getFontSize();
+	std::string contents;
+	for ( int line = 0; line < 80; ++line )
+		contents += "line\n";
+	editor->setAccessibilityLabel( "Editor\nname" );
+	editor->setAccessibilityDescription( "First\r\nsecond\tcolumn" );
+	editor->getDocument().reset();
+	editor->getDocument().textInput( contents );
+	render();
+	EXPECT_EQ( table->getRowHeight(), rowHeight );
+	EXPECT_TRUE( inspectorProperty( table, "Value" ) == String::escape( contents ) );
+	EXPECT_TRUE( inspectorProperty( table, "Name" ) == "Editor\\nname" );
+	EXPECT_TRUE( inspectorProperty( table, "Description" ) == "First\\r\\nsecond\\tcolumn" );
+	for ( size_t row = 0; row < table->getModel()->rowCount(); ++row ) {
+		const auto value = table->getModel()->data( table->getModel()->index( row, 1 ) ).toString();
+		EXPECT_TRUE( value.find_first_of( "\r\n\t" ) == std::string::npos );
+	}
+	auto* manager = scene->getAccessibilityManager();
+	const auto info = manager->getNodeInfo( manager->getNodeRef( editor ), true, false );
+	EXPECT_TRUE( info.value == String( contents ) );
+	EXPECT_TRUE( info.name == String( "Editor\nname" ) );
+	auto* copy = inspector->find<UIPushButton>( "widget_inspector_accessibility_copy" );
+	ASSERT_NE( copy, nullptr );
+	copy->sendMouseEvent( Event::MouseClick, {}, EE_BUTTON_LMASK );
+	EXPECT_TRUE( clipboard.text == contents );
+	scene->applyDefaultFont( nullptr, fontSize * 2 );
+	render();
+	EXPECT_GT( table->getRowHeight(), rowHeight );
+	EXPECT_EQ( table->getRowHeight(), table->getHeaderHeight() );
+	scene->applyDefaultFont( nullptr, fontSize );
+	render();
+	EXPECT_EQ( table->getRowHeight(), rowHeight );
 }
 
 UTEST( Accessibility, InspectorValuePreviewIsBoundedWithoutChangingNativeValues ) {
@@ -3171,7 +3236,7 @@ UTEST( Accessibility, InspectorValuePreviewIsBoundedWithoutChangingNativeValues 
 	// lifecycle does, after all lines have been installed.
 	editor->sendCommonEvent( Event::OnDocumentLoaded );
 	EXPECT_TRUE( inspectorProperty( table, "Value (preview)" ) ==
-				 multiline.substr( 0, 1024 ) + " … [truncated]" );
+				 String::escape( multiline.substr( 0, 1024 ) ) + " … [truncated]" );
 	// The limit counts Unicode code points rather than bytes, preserving a multibyte boundary.
 	const auto unicode = std::string( 1023, 'a' ) + "😀z";
 	input->setText( unicode );

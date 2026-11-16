@@ -294,6 +294,45 @@ bool UIStyle::hasLocalProperty( PropertyId propId ) const {
 		   ( mDefinition && mDefinition->getProperty( propId ) );
 }
 
+UIStyle::PropertySource UIStyle::getPropertySource( PropertyId propId ) {
+	const auto* definition = StyleSheetSpecification::instance()->getProperty( propId );
+	if ( !definition )
+		return {};
+	UIStyle* owner = this;
+	const StyleSheetProperty* property = getLocalProperty( propId );
+	if ( !property ) {
+		if ( !definition->isInherited() )
+			return {};
+		property = getInheritedProperty( propId, &owner );
+	}
+	while ( property && owner ) {
+		bool inherit;
+		{
+			auto resolved = owner->resolveProperty( property );
+			inherit = !definition->isIndexed() && resolved.get()->value() == "inherit";
+		}
+		if ( !inherit ) {
+			const StyleSheetStyle* rule = nullptr;
+			const bool element =
+				owner->mElementStyle && property == owner->mElementStyle->getPropertyById( propId );
+			if ( !element && owner->mDefinition ) {
+				const auto& styles = owner->mDefinition->getStyles();
+				for ( auto it = styles.rbegin(); it != styles.rend(); ++it ) {
+					const auto* candidate = ( *it )->getPropertyById( propId );
+					if ( candidate && candidate->getSpecificity() == property->getSpecificity() &&
+						 candidate->getDeclarationOrder() == property->getDeclarationOrder() ) {
+						rule = *it;
+						break;
+					}
+				}
+			}
+			return { property, rule, owner->mWidget };
+		}
+		property = owner->getInheritedProperty( propId, &owner );
+	}
+	return {};
+}
+
 CSS::StyleSheetProperty* UIStyle::getInheritedProperty( CSS::PropertyId propId,
 														UIStyle** ownerStyle ) const {
 	if ( ownerStyle )

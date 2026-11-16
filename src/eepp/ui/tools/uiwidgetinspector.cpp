@@ -3,6 +3,7 @@
 #include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/models/csspropertiesmodel.hpp>
+#include <eepp/ui/models/sortingproxymodel.hpp>
 #include <eepp/ui/models/widgettreemodel.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uicheckbox.hpp>
@@ -262,6 +263,12 @@ class AccessibilityPropertiesModel final
 				 mData[ValueRow].second.empty() ) {
 				mData.emplace_back( "Warning", "Exposed element has no accessible name or value." );
 			}
+			// Automatic table rows follow their tallest text. Keep metadata and bounded document
+			// previews on one line; native accessibility values and Copy full value stay unchanged.
+			for ( auto& property : mData ) {
+				if ( property.second.find_first_of( "\r\n\t\a\b\f\v" ) != std::string::npos )
+					property.second = String::escape( property.second );
+			}
 		}
 		invalidate();
 	}
@@ -476,34 +483,61 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	} );
 
 	UITableView* computedView = cont->find<UITableView>( "widget_inspector_computed" );
-	computedView->setAutoColumnsWidth( true );
+	computedView->setAutoColumnsWidth( false );
 	computedView->setHeadersVisible( true );
+	auto computedModel = CSSPropertiesModel::create();
+	auto computedProxy = SortingProxyModel::New( computedModel );
+	computedProxy->sort( 0, SortOrder::Ascending );
+	computedView->setModel( computedProxy );
+	computedView->setColumnWidthMode( UITableView::ColumnWidthMode::Percentage, false );
+	computedView->setColumnsWidthPercentage( { 30.f, 30.f, 40.f } );
+	computedView->setSetupCellCb( [computedView, nodeTree, sceneNode]( UITableCell* cell ) {
+		cell->on( Event::MouseClick,
+				  [computedView, nodeTree, sceneNode, cell]( const Event* event ) {
+					  if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) )
+						  return;
+					  const auto index = cell->getCurIndex();
+					  if ( !index.isValid() || index.column() != 2 )
+						  return;
+					  auto* proxy = static_cast<SortingProxyModel*>( computedView->getModel() );
+					  auto* model = static_cast<CSSPropertiesModel*>( proxy->getSource().get() );
+					  const auto sourceIndex = proxy->mapToSource( index );
+					  UIWidget* source = model->sourceWidgetAt( sourceIndex.row() );
+					  if ( !source || source == model->getWidget() ||
+						   !containsNode( sceneNode->getRoot(), source ) )
+						  return;
+					  auto* treeModel = static_cast<WidgetTreeModel*>( nodeTree->getModel() );
+					  nodeTree->setSelection( treeModel->getModelIndex( source ) );
+				  } );
+	} );
+	auto showStyles = [stylesEditor, computedModel]( bool preserveScroll ) {
+		const auto scroll = stylesEditor->getScroll();
+		stylesEditor->getDocument().reset();
+		stylesEditor->getDocument().setSyntaxDefinition(
+			SyntaxDefinitionManager::instance()->getByLSPName( "css" ) );
+		stylesEditor->getDocument().textInput( computedModel->getStyleText() );
+		if ( preserveScroll )
+			stylesEditor->setScroll( scroll );
+	};
 	nodeTree->setOnSelection(
-		[computedView, stylesEditor, accessibilityModel]( const ModelIndex& index ) {
+		[computedModel, showStyles, accessibilityModel]( const ModelIndex& index ) {
 			Node* node = static_cast<Node*>( index.internalData() );
-			computedView->setModel( node->isWidget()
-										? CSSPropertiesModel::create( node->asType<UIWidget>() )
-										: CSSPropertiesModel::create() );
-
-			stylesEditor->getDocument().reset();
-			stylesEditor->getDocument().setSyntaxDefinition(
-				SyntaxDefinitionManager::instance()->getByLSPName( "css" ) );
+			computedModel->setWidget( node->isWidget() ? node->asType<UIWidget>() : nullptr );
+			showStyles( false );
 			accessibilityModel->setWidget( node->isWidget() ? node->asType<UIWidget>() : nullptr );
-
-			if ( node->isWidget() ) {
-				UIWidget* widget = node->asType<UIWidget>();
-				if ( widget->getUIStyle() && widget->getUIStyle()->getDefinition() ) {
-					const auto& styles = widget->getUIStyle()->getDefinition()->getStyles();
-					String elemStyle;
-					for ( const auto& style : styles ) {
-						if ( style->getSelector().getName() != ":root" ||
-							 widget->getElementTag() == ":root" )
-							elemStyle += style->build( false, false );
-					}
-					stylesEditor->getDocument().textInput( elemStyle );
-				}
-			}
 		} );
+	// Inspect on demand at a bounded rate, including ancestor pseudo states, variables and theme
+	// replacement. The window owns/cancels the timer; no hooks run in ordinary application styles.
+	uiWin->setInterval(
+		[uiWin, computedView, stylesEditor, computedModel, showStyles] {
+			if ( !uiWin->isVisible() ||
+				 ( !computedView->isVisible() && !stylesEditor->isVisible() ) )
+				return;
+			if ( computedModel->refresh() ||
+				 ( !computedModel->getWidget() && !stylesEditor->getDocument().isEmpty() ) )
+				showStyles( true );
+		},
+		Milliseconds( 250 ) );
 
 	UIPushButton* button = cont->find<UIPushButton>( "pick_widget" );
 

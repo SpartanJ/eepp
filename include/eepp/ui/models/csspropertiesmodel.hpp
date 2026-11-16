@@ -2,89 +2,64 @@
 #define EE_UI_MODELS_CSSPROPERTIESMODEL_HPP
 
 #include <eepp/ui/css/propertydefinition.hpp>
-#include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
-using namespace EE::UI::CSS;
+namespace EE::UI::Models {
 
-namespace EE { namespace UI { namespace Models {
-
-class CSSPropertiesModel final : public Model {
+/** Snapshot of native computed values and their CSS origins, for developer inspection. */
+class EE_API CSSPropertiesModel final : public Model {
   public:
-	static std::shared_ptr<CSSPropertiesModel> create( UIWidget* widget ) {
-		return std::make_shared<CSSPropertiesModel>( widget );
-	}
+	static std::shared_ptr<CSSPropertiesModel> create( UIWidget* widget = nullptr );
 
-	static std::shared_ptr<CSSPropertiesModel> create() {
-		return std::make_shared<CSSPropertiesModel>();
-	}
+	explicit CSSPropertiesModel( UIWidget* widget = nullptr );
 
-	virtual size_t rowCount( const ModelIndex& ) const { return mData.size(); }
+	virtual ~CSSPropertiesModel();
 
-	virtual size_t columnCount( const ModelIndex& ) const { return 2; }
+	virtual size_t rowCount( const ModelIndex& = {} ) const;
 
-	virtual std::string columnName( const size_t& idx ) const {
-		return idx == 1 ? "Property" : "Value";
-	}
+	virtual size_t columnCount( const ModelIndex& = {} ) const;
 
-	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
-		eeASSERT( index.row() < (Int64)mData.size() );
-		if ( mWidget == nullptr || index.row() >= (Int64)mData.size() )
-			return {};
-		PropertyId propId = mData[index.row()];
-		auto propIt = mProps.find( propId );
-		const PropertyDefinition* def = propIt != mProps.end() ? propIt->second : nullptr;
-		if ( !def )
-			return {};
-		if ( role == ModelRole::Display ) {
-			switch ( index.column() ) {
-				case 1:
-					return Variant( mWidget->getPropertyString( def ) );
-				case 0:
-				default:
-					return Variant( def->getName().c_str() );
-			}
-		}
-		return {};
-	}
+	virtual std::string columnName( const size_t& column ) const;
 
-	CSSPropertiesModel() {}
+	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const;
 
-	explicit CSSPropertiesModel( UIWidget* widget ) { setWidget( widget ); }
+	virtual void update();
 
-	virtual ~CSSPropertiesModel() {
-		if ( mWidget && mCloseCb )
-			mWidget->removeEventListener( mCloseCb );
-	}
-
-	void setWidget( UIWidget* widget ) {
-		if ( mWidget && mCloseCb )
-			mWidget->removeEventListener( mCloseCb );
-		mWidget = widget;
-		mData = widget ? widget->getPropertiesImplemented() : std::vector<PropertyId>();
-		for ( const auto& prop : mData ) {
-			const auto* def = StyleSheetSpecification::instance()->getProperty( prop );
-			if ( !def )
-				continue;
-			mProps[prop] = def;
-		}
-		if ( mWidget )
-			mCloseCb = mWidget->on( Event::OnClose, [this]( const Event* ) {
-				mWidget = nullptr;
-				mCloseCb = 0;
-			} );
-	}
+	void setWidget( UIWidget* widget );
 
 	UIWidget* getWidget() const { return mWidget; }
 
-  protected:
+	/** Refreshes values and origins; returns true when the Style text changed. */
+	bool refresh();
+
+	const std::string& getStyleText() const { return mStyleText; }
+
+	/** Borrowed ancestor for a source row. Refresh before using, and validate tree membership. */
+	UIWidget* sourceWidgetAt( Int64 row ) const;
+
+  private:
+	struct Row {
+		const CSS::PropertyDefinition* definition;
+		UIWidget* sourceWidget;
+		std::string value;
+		std::string source;
+
+		bool operator==( const Row& ) const = default;
+	};
+
 	UIWidget* mWidget{ nullptr };
-	std::vector<PropertyId> mData;
-	std::map<PropertyId, const PropertyDefinition*> mProps;
+	std::vector<Row> mRows;
+	std::vector<Row> mScratchRows;
+	std::string mStyleText;
+	std::string mScratchStyleText;
 	Uint32 mCloseCb{ 0 };
+
+	static void appendWidgetName( std::string& output, const UIWidget* widget );
+
+	void buildStyleText();
 };
 
-}}} // namespace EE::UI::Models
+} // namespace EE::UI::Models
 
 #endif // EE_UI_MODELS_CSSPROPERTIESMODEL_HPP

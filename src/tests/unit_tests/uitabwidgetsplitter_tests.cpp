@@ -1285,6 +1285,81 @@ UTEST( UIAbstractTableView, PercentageColumnWidthsScaleAndPreserveAdjacentTotal 
 				 table->getColumnWidth( 2 ) >= 0 );
 }
 
+UTEST( UIAbstractTableView, PercentageColumnsRefitWhenResizeRelaxesMaximumWidths ) {
+	UIApplication app(
+		WindowSettings( 1200, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* table = PercentageTestTable::New();
+	table->setParent( app.getUI()->getRoot() );
+	table->setPixelsSize( 1000, 200 );
+	table->setModel( std::make_shared<ThreeColumnModel>() );
+	table->setColumnsWidthPercentage( { 60.f, 20.f, 20.f } );
+	// eefm updates its caps after the table's resize handler has fitted the columns. Opening
+	// Quick Preview shrinks the view; closing it grows the view while the old caps still apply.
+	auto capColumn = [table] {
+		table->setColumnMaxWidth( 2, eefloor( table->getPixelsSize().x * 0.2f ) );
+	};
+	table->on( Event::OnSizeChange, [capColumn]( const Event* ) { capColumn(); } );
+	capColumn();
+	for ( int cycle = 0; cycle < 3; ++cycle ) {
+		for ( Float width : { 600.f, 1000.f } ) {
+			table->setPixelsSize( width, 200 );
+			app.getUI()->update( Milliseconds( 16 ) );
+			EXPECT_EQ( table->getColumnWidth( 0 ) + table->getColumnWidth( 1 ) +
+						   table->getColumnWidth( 2 ),
+					   table->getContentSpaceWidth() );
+			EXPECT_NEAR( table->getColumnWidth( 2 ), width * 0.2f, 1.f );
+			EXPECT_NEAR( table->getColumnWidthPercentage( 2 ), 20.f, 0.01f );
+			EXPECT_FALSE( table->getHorizontalScrollBar()->isVisible() );
+		}
+	}
+}
+
+UTEST( UIAbstractTableView, PercentageColumnsRefitWhenIndividualOrSharedCapsGrow ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* table = PercentageTestTable::New();
+	table->setParent( app.getUI()->getRoot() );
+	table->setPixelsSize( 600, 200 );
+	table->setModel( std::make_shared<ThreeColumnModel>() );
+	table->setColumnsWidthPercentage( { 50.f, 25.f, 25.f } );
+	table->setColumnMaxWidth( 0, 200 );
+	EXPECT_EQ( table->getColumnWidth( 0 ), 200.f );
+	table->setColumnMaxWidth( 0, 400 );
+	EXPECT_EQ( table->getColumnWidth( 0 ), 300.f );
+	table->setColumnsMaxWidth( 180 );
+	EXPECT_EQ( table->getColumnWidth( 0 ), 180.f );
+	table->setColumnsMaxWidth( 400 );
+	EXPECT_EQ( table->getColumnWidth( 0 ), 300.f );
+	table->setColumnMaxWidth( 0, 200 );
+	table->setColumnMaxWidth( 0, 0 );
+	EXPECT_EQ( table->getColumnWidth( 0 ), 300.f );
+	table->setColumnsMaxWidth( 180 );
+	table->setColumnsMaxWidth( 0 );
+	EXPECT_EQ( table->getColumnWidth( 0 ), 300.f );
+	EXPECT_EQ( table->getColumnWidth( 1 ), 150.f );
+	EXPECT_EQ( table->getColumnWidth( 2 ), 150.f );
+}
+
+UTEST( UIAbstractTableView, FreePixelColumnsStayAtTheirWidthWhenCapsGrow ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* table = PercentageTestTable::New();
+	table->setParent( app.getUI()->getRoot() );
+	table->setPixelsSize( 600, 200 );
+	table->setModel( std::make_shared<ThreeColumnModel>() );
+	table->setColumnWidth( 0, 300 );
+	table->setColumnMaxWidth( 0, 200 );
+	EXPECT_EQ( table->getColumnWidth( 0 ), 200.f );
+	table->setColumnMaxWidth( 0, 400 );
+	EXPECT_EQ( table->getColumnWidth( 0 ), 200.f );
+	table->setColumnsMaxWidth( 180 );
+	table->setColumnsMaxWidth( 400 );
+	EXPECT_EQ( table->getColumnWidth( 0 ), 180.f );
+}
+
 UTEST( UIAbstractTableView, PercentageColumnWidthsPreserveMinimumWidths ) {
 	UIApplication app(
 		WindowSettings( 800, 600, "eepp - unit tests" ),

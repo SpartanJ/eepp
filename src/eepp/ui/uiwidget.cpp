@@ -2605,7 +2605,8 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 								   String::fromFloat( getForegroundBottomRightRadius().x, "px" ),
 								   String::fromFloat( getForegroundBottomRightRadius().y, "px" ) );
 		case PropertyId::BorderType:
-			return Borders::fromBorderType( setBorderEnabled( true )->getBorderType() );
+			return Borders::fromBorderType( mBorder ? mBorder->getBorderType()
+													: BorderType::Inside );
 		case PropertyId::SkinColor:
 			return getSkinColor().toHexString();
 		case PropertyId::Rotation:
@@ -2675,51 +2676,69 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::MaxHeight:
 			return mMaxHeightEq;
 		case PropertyId::BorderLeftColor:
-			return setBorderEnabled( true )->getColorLeft().toHexString();
+			return ( mBorder ? mBorder->getColorLeft() : Color::Transparent ).toHexString();
 		case PropertyId::BorderRightColor:
-			return setBorderEnabled( true )->getColorRight().toHexString();
+			return ( mBorder ? mBorder->getColorRight() : Color::Transparent ).toHexString();
 		case PropertyId::BorderTopColor:
-			return setBorderEnabled( true )->getColorTop().toHexString();
+			return ( mBorder ? mBorder->getColorTop() : Color::Transparent ).toHexString();
 		case PropertyId::BorderBottomColor:
-			return setBorderEnabled( true )->getColorBottom().toHexString();
+			return ( mBorder ? mBorder->getColorBottom() : Color::Transparent ).toHexString();
 		case PropertyId::BorderLeftWidth:
-			return String::fromFloat( setBorderEnabled( true )->getBorders().left.width, "px" );
+			return String::fromFloat( mBorder ? mBorder->getBorders().left.width : 0, "px" );
 		case PropertyId::BorderRightWidth:
-			return String::fromFloat( setBorderEnabled( true )->getBorders().right.width, "px" );
+			return String::fromFloat( mBorder ? mBorder->getBorders().right.width : 0, "px" );
 		case PropertyId::BorderTopWidth:
-			return String::fromFloat( setBorderEnabled( true )->getBorders().top.width, "px" );
+			return String::fromFloat( mBorder ? mBorder->getBorders().top.width : 0, "px" );
 		case PropertyId::BorderBottomWidth:
-			return String::fromFloat( setBorderEnabled( true )->getBorders().bottom.width, "px" );
+			return String::fromFloat( mBorder ? mBorder->getBorders().bottom.width : 0, "px" );
 		case PropertyId::BorderLeftStyle:
-			return Borders::fromBorderStyle( setBorderEnabled( true )->getBorders().left.style );
 		case PropertyId::BorderRightStyle:
-			return Borders::fromBorderStyle( setBorderEnabled( true )->getBorders().right.style );
 		case PropertyId::BorderTopStyle:
-			return Borders::fromBorderStyle( setBorderEnabled( true )->getBorders().top.style );
-		case PropertyId::BorderBottomStyle:
-			return Borders::fromBorderStyle( setBorderEnabled( true )->getBorders().bottom.style );
+		case PropertyId::BorderBottomStyle: {
+			BorderStyle style = mFlags & UI_HTML_ELEMENT ? BorderStyle::None : BorderStyle::Solid;
+			if ( mBorder ) {
+				const auto& borders = mBorder->getBorders();
+				switch ( propertyDef->getPropertyId() ) {
+					case PropertyId::BorderLeftStyle:
+						style = borders.left.style;
+						break;
+					case PropertyId::BorderRightStyle:
+						style = borders.right.style;
+						break;
+					case PropertyId::BorderTopStyle:
+						style = borders.top.style;
+						break;
+					default:
+						style = borders.bottom.style;
+						break;
+				}
+			}
+			return Borders::fromBorderStyle( style );
+		}
 		case PropertyId::BorderTopLeftRadius:
-			return String::format(
-				"%s %s",
-				String::fromFloat( setBorderEnabled( true )->getBorders().radius.topLeft.x, "px" ),
-				String::fromFloat( getBorder()->getBorders().radius.topLeft.y, "px" ) );
 		case PropertyId::BorderTopRightRadius:
-			return String::format(
-				"%s %s",
-				String::fromFloat( setBorderEnabled( true )->getBorders().radius.topRight.x, "px" ),
-				String::fromFloat( getBorder()->getBorders().radius.topRight.y, "px" ) );
 		case PropertyId::BorderBottomLeftRadius:
-			return String::format(
-				"%s %s",
-				String::fromFloat( setBorderEnabled( true )->getBorders().radius.bottomLeft.x,
-								   "px" ),
-				String::fromFloat( getBorder()->getBorders().radius.bottomLeft.y, "px" ) );
-		case PropertyId::BorderBottomRightRadius:
-			return String::format(
-				"%s %s",
-				String::fromFloat( setBorderEnabled( true )->getBorders().radius.bottomRight.x,
-								   "px" ),
-				String::fromFloat( getBorder()->getBorders().radius.bottomRight.y, "px" ) );
+		case PropertyId::BorderBottomRightRadius: {
+			Sizef radius;
+			if ( mBorder ) {
+				const auto& radiuses = mBorder->getBorders().radius;
+				switch ( propertyDef->getPropertyId() ) {
+					case PropertyId::BorderTopLeftRadius:
+						radius = radiuses.topLeft;
+						break;
+					case PropertyId::BorderTopRightRadius:
+						radius = radiuses.topRight;
+						break;
+					case PropertyId::BorderBottomLeftRadius:
+						radius = radiuses.bottomLeft;
+						break;
+					default:
+						radius = radiuses.bottomRight;
+						break;
+				}
+			}
+			return String::fromFloat( radius.x, "px" ) + " " + String::fromFloat( radius.y, "px" );
+		}
 		case PropertyId::BorderSmooth:
 			return mBorder ? ( mBorder->isSmooth() ? "true" : "false" ) : "false";
 		case PropertyId::BackgroundSmooth:

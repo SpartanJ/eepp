@@ -1241,6 +1241,8 @@ treeview::cell::icon {
 
 treeview::cell::expander {
 	min-size: 16dp 16dp;
+	/* UIImage uses text-align too; keep cell text alignment from moving the arrow. */
+	text-align: center;
 }
 
 TreeView,

@@ -112,6 +112,19 @@ class EE_API UIStyle : public UIState {
 		return getLocalProperty( propId );
 	}
 
+	struct PropertySource {
+		const StyleSheetProperty* property{ nullptr };
+		const StyleSheetStyle* rule{ nullptr };
+		UIWidget* widget{ nullptr };
+	};
+
+	/** Returns the declaration supplying a property, following CSS inheritance and resolved
+	 * inherit values. A null rule denotes an element style; an empty result denotes native/default
+	 * state. Borrowed pointers are valid only until the next style or tree change. */
+	PropertySource getPropertySource( PropertyId propId );
+
+	const StyleSheetStyle* getElementStyle() const { return mElementStyle.get(); }
+
 	/** Compares declarations of different IDs that map to the same computed edge. Rule order
 	 * follows stylesheet attachment order; declaration order only breaks ties within a rule. */
 	bool declarationWins( const StyleSheetProperty& candidate, const StyleSheetProperty& other );

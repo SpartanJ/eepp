@@ -446,6 +446,10 @@ std::string UIImage::getPropertyString( const PropertyDefinition* propertyDef,
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::TextAlign:
+			return UIHorizontalAlignmentHelper::toString( getTextAlignment() );
+		case PropertyId::Gravity:
+			return getGravityString();
 		case PropertyId::Src:
 			// TODO: Implement src.
 			return "";
@@ -470,7 +474,8 @@ void UIImage::scheduledUpdate( const Time& time ) {
 
 std::vector<PropertyId> UIImage::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = { PropertyId::ScaleType, PropertyId::Tint };
+	auto local = { PropertyId::ScaleType, PropertyId::Tint, PropertyId::TextAlign,
+				   PropertyId::Gravity };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }

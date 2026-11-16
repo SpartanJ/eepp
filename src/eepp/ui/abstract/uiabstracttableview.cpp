@@ -229,7 +229,10 @@ void UIAbstractTableView::setColumnWidth( const size_t& colIndex, const Float& w
 void UIAbstractTableView::setColumnMaxWidth( const size_t& colIndex, const Float& width ) {
 	if ( columnData( colIndex ).maxWidth != width ) {
 		columnData( colIndex ).maxWidth = width;
-		if ( columnData( colIndex ).width > width ) {
+		// Fitted shares must be reapplied when a cap grows too: resize callbacks can relax
+		// the previous, narrower view's cap after onSizeChange has already fitted the columns.
+		if ( mColumnWidthMode == ColumnWidthMode::Percentage ||
+			 columnData( colIndex ).width > width ) {
 			updateHeaderSize();
 			onColumnSizeChange( colIndex );
 			createOrUpdateColumns( false );
@@ -253,7 +256,8 @@ void UIAbstractTableView::setColumnsMaxWidth( const Float& width ) {
 		return;
 	bool needsRefresh = false;
 	for ( size_t i = 0; i < getModel()->columnCount(); i++ ) {
-		if ( columnData( i ).width > width )
+		if ( columnData( i ).width > width || ( mColumnWidthMode == ColumnWidthMode::Percentage &&
+												columnData( i ).maxWidth != width ) )
 			needsRefresh = true;
 		columnData( i ).maxWidth = width;
 		onColumnSizeChange( i );
