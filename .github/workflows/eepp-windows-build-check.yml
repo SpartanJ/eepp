@@ -28,14 +28,20 @@ jobs:
       run: |
         Invoke-WebRequest -Uri "https://github.com/premake/premake-core/releases/download/v5.0.0-beta6/premake-5.0.0-beta6-windows.zip" -OutFile "premake-5.0.0-beta6-windows.zip"
         Expand-Archive -DestinationPath . -Path premake-5.0.0-beta6-windows.zip
+    - name: Set up compiler cache
+      uses: ./.github/actions/setup-compiler-cache
+      with:
+        key: windows-msvc-x86_64-sdl3-sdk
     - name: Create project
       shell: powershell
       run: |
         ./premake5.exe --windows-vc-build --disable-static-build --with-debug-symbols --with-backend=SDL3 vs2022
     - name: Build
-      shell: cmd
+      shell: pwsh
       run: |
-        msbuild .\make\windows\eepp.sln -m /p:Platform="x64" /p:Configuration="release"
+        & projects/scripts/ci/time.ps1 -Label Build -Command {
+          msbuild .\make\windows\eepp.sln -m /p:Platform="x64" /p:Configuration="release"
+        }
     - name: Application packaging tests
       shell: pwsh
       env:
@@ -56,7 +62,9 @@ jobs:
       if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
       shell: powershell
       run: |
-        .\projects\scripts\package_sdk.ps1 -Platform msvc -Version ${{ steps.sdk_version.outputs.version }}
+        & projects/scripts/ci/time.ps1 -Label "Package SDK" -Command {
+          .\projects\scripts\package_sdk.ps1 -Platform msvc -Version ${{ steps.sdk_version.outputs.version }}
+        }
     - name: Upload SDK package
       if: always()
       uses: actions/upload-artifact@v4
@@ -131,3 +139,7 @@ jobs:
           bin\unit_tests\eepp-unit_tests.pdb
           libs\windows\x86_64\eepp.dll
           libs\windows\x86_64\eepp.pdb
+
+    - name: Report build metrics
+      if: always()
+      uses: ./.github/actions/report-build-metrics

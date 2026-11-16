@@ -41,12 +41,16 @@ jobs:
         else
           echo "version=nightly" >> "$GITHUB_OUTPUT"
         fi
+    - name: Set up compiler cache
+      uses: ./.github/actions/setup-compiler-cache
+      with:
+        key: linux-mingw-x86_64-sdl3-sdk
     - name: Build
       run: |
-        bash projects/mingw32/make.sh --backend=sdl3 -e config=release_x86_64 -j$(nproc)
+        bash projects/scripts/ci/time.sh Build bash projects/mingw32/make.sh --backend=sdl3 -e config=release_x86_64 -j"$(nproc)"
     - name: Package eepp SDK
       run: |
-        bash projects/scripts/package_sdk.sh windows x86_64 --strip --version ${{ steps.sdk_version.outputs.version }}
+        bash projects/scripts/ci/time.sh "Package SDK" bash projects/scripts/package_sdk.sh windows x86_64 --strip --version ${{ steps.sdk_version.outputs.version }}
     - name: Upload SDK package
       uses: actions/upload-artifact@v4
       with:
@@ -63,3 +67,7 @@ jobs:
         fail_on_unmatched_files: true
         files: |
           projects/windows/sdk/eepp-sdk-windows-x86_64-mingw-*.zip
+
+    - name: Report build metrics
+      if: always()
+      uses: ./.github/actions/report-build-metrics

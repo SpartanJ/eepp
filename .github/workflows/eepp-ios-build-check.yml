@@ -12,7 +12,18 @@ jobs:
     - name: Install dependencies
       run: |
         brew install cmake premake
+    - name: Set up compiler cache
+      uses: ./.github/actions/setup-compiler-cache
+      with:
+        key: macos-ios-arm64-sdl2
     - name: Build
+      env:
+        CMAKE_C_COMPILER_LAUNCHER: ccache
+        CMAKE_CXX_COMPILER_LAUNCHER: ccache
       run: |
         cd projects/ios
-        sh ./compile-all.sh config=release_arm64
+        bash ../scripts/ci/time.sh Build sh ./compile-all.sh config=release_arm64
+
+    - name: Report build metrics
+      if: always()
+      uses: ./.github/actions/report-build-metrics

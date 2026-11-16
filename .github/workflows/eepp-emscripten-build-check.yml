@@ -32,6 +32,16 @@ jobs:
       with:
         version: ${{ env.EM_VERSION }}
         actions-cache-folder: ${{ env.EM_CACHE_FOLDER }}
+    - name: Set up compiler cache
+      uses: ./.github/actions/setup-compiler-cache
+      with:
+        key: linux-emscripten-${{ env.EM_VERSION }}-wasm32-sdl2
     - name: Build
+      env:
+        EM_COMPILER_WRAPPER: ccache
       run: |
-        projects/emscripten/make.sh config=release_wasm32
+        bash projects/scripts/ci/time.sh Build bash projects/emscripten/make.sh config=release_wasm32
+
+    - name: Report build metrics
+      if: always()
+      uses: ./.github/actions/report-build-metrics

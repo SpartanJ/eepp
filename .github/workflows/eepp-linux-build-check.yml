@@ -29,12 +29,16 @@ jobs:
         bash projects/linux/scripts/install_sdl3.sh --keep-build
         wget https://cdn.ensoft.dev/eepp-assets/premake-5.0.0-beta6-linux.tar.gz
         tar xvzf premake-5.0.0-beta6-linux.tar.gz
+    - name: Set up compiler cache
+      uses: ./.github/actions/setup-compiler-cache
+      with:
+        key: linux-gcc13-x86_64-sdl3-sdk
     - name: Build
       id: build
       run: |
         ./premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 gmake
         cd make/linux
-        make all -j$(nproc) -e config=release_x86_64
+        bash ../../projects/scripts/ci/time.sh Build make all -j"$(nproc)" -e config=release_x86_64
     - name: Application packaging tests
       run: |
         EEPP_TEST_RESOURCE_BINARY="$PWD/bin/unit_tests/eepp-unit_tests" \
@@ -87,7 +91,7 @@ jobs:
     - name: Package eepp SDK
       if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
       run: |
-        bash projects/scripts/package_sdk.sh linux x86_64 --strip --version ${{ steps.sdk_version.outputs.version }}
+        bash projects/scripts/ci/time.sh "Package SDK" bash projects/scripts/package_sdk.sh linux x86_64 --strip --version ${{ steps.sdk_version.outputs.version }}
     - name: Upload SDK package
       if: always()
       uses: actions/upload-artifact@v4
@@ -210,3 +214,7 @@ jobs:
       with:
         name: linux-test-output
         path: bin/unit_tests/output/*
+
+    - name: Report build metrics
+      if: always()
+      uses: ./.github/actions/report-build-metrics

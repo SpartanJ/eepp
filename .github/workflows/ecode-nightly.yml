@@ -114,9 +114,13 @@ jobs:
           update-alternatives --config gcc
           update-alternatives --config g++
           bash projects/linux/scripts/install_sdl2.sh
+      - name: Set up compiler cache
+        uses: ./.github/actions/setup-compiler-cache
+        with:
+          key: linux-gcc13-x86_64-sdl2-ubuntu20
       - name: Build ecode
         run: |
-          bash projects/linux/ecode/build.app.sh --with-static-cpp --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
+          bash projects/scripts/ci/time.sh "Build and package ecode" bash projects/linux/ecode/build.app.sh --with-static-cpp --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
       - name: Stage input for AnyLinux packaging
         continue-on-error: true
         uses: actions/upload-artifact@v4
@@ -135,6 +139,9 @@ jobs:
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.AppImage
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.AppImage.zsync
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.tar.gz
+      - name: Report build metrics
+        if: always()
+        uses: ./.github/actions/report-build-metrics
 
   build_linux_anylinux:
     name: Linux x86_64 AnyLinux Nightly
@@ -259,10 +266,14 @@ jobs:
         run: |
           sudo apt-get install -y premake4 libfuse2 fuse gcc-aarch64-linux-gnu g++-aarch64-linux-gnu zsync
           bash projects/linux/scripts/install_sdl2.sh --aarch64
+      - name: Set up compiler cache
+        uses: ./.github/actions/setup-compiler-cache
+        with:
+          key: linux-gcc-cross-arm64-sdl2
       - name: Build ecode
         run: |
           bash projects/scripts/patch_commit_number.sh
-          bash projects/linux/ecode/build.app.sh --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
+          bash projects/scripts/ci/time.sh "Build and package ecode" bash projects/linux/ecode/build.app.sh --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
       - name: Upload Files
         uses: softprops/action-gh-release@v3
         with:
@@ -273,6 +284,9 @@ jobs:
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.AppImage
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.AppImage.zsync
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.tar.gz
+      - name: Report build metrics
+        if: always()
+        uses: ./.github/actions/report-build-metrics
 
   build_windows_cross:
     name: Windows x86_64 Nightly
@@ -306,10 +320,14 @@ jobs:
           sudo apt-get install -y premake4 libfuse2t64 fuse mingw-w64
           wget https://cdn.ensoft.dev/eepp-assets/premake-5.0.0-beta6-linux.tar.gz
           tar xvzf premake-5.0.0-beta6-linux.tar.gz
+      - name: Set up compiler cache
+        uses: ./.github/actions/setup-compiler-cache
+        with:
+          key: linux-mingw-x86_64-sdl2
       - name: Build ecode
         run: |
           bash projects/scripts/patch_commit_number.sh
-          bash projects/mingw32/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
+          bash projects/scripts/ci/time.sh "Build and package ecode" bash projects/mingw32/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Upload Files
         uses: softprops/action-gh-release@v3
         with:
@@ -318,6 +336,9 @@ jobs:
           prerelease: true
           files: |
             projects/mingw32/ecode/ecode-windows-${{ env.INSTALL_REF }}-${{ env.RARCH }}.zip
+      - name: Report build metrics
+        if: always()
+        uses: ./.github/actions/report-build-metrics
 
   build_windows_arm64_cross:
     name: Windows arm64 Nightly
@@ -347,10 +368,14 @@ jobs:
           sudo apt-get install -y libfuse2 fuse
           wget https://cdn.ensoft.dev/eepp-assets/premake-5.0.0-beta6-linux.tar.gz
           tar xvzf premake-5.0.0-beta6-linux.tar.gz
+      - name: Set up compiler cache
+        uses: ./.github/actions/setup-compiler-cache
+        with:
+          key: linux-llvm-mingw-arm64-sdl2-${{ hashFiles('projects/mingw32/make.sh') }}
       - name: Build ecode
         run: |
           bash projects/scripts/patch_commit_number.sh
-          bash projects/mingw32/ecode/build.app.sh --arch=arm64 --version ${{ env.INSTALL_REF }}
+          bash projects/scripts/ci/time.sh "Build and package ecode" bash projects/mingw32/ecode/build.app.sh --arch=arm64 --version ${{ env.INSTALL_REF }}
       - name: Upload Files
         uses: softprops/action-gh-release@v3
         with:
@@ -359,6 +384,9 @@ jobs:
           prerelease: true
           files: |
             projects/mingw32/ecode/ecode-windows-${{ env.INSTALL_REF }}-arm64.zip
+      - name: Report build metrics
+        if: always()
+        uses: ./.github/actions/report-build-metrics
 
   build_macos:
     name: macOS arm64 Nightly
@@ -397,10 +425,14 @@ jobs:
           hdiutil attach SDL2-2.32.10.dmg
           sudo cp -r /Volumes/SDL2/SDL2.framework /Library/Frameworks/
           hdiutil detach /Volumes/SDL2
+      - name: Set up compiler cache
+        uses: ./.github/actions/setup-compiler-cache
+        with:
+          key: macos-arm64-sdl2-framework
       - name: Build
         run: |
           bash projects/scripts/patch_commit_number.sh
-          bash projects/macos/ecode/build.app.sh --use-frameworks --version ${{ env.INSTALL_REF }}
+          bash projects/scripts/ci/time.sh "Build and package ecode" bash projects/macos/ecode/build.app.sh --use-frameworks --version ${{ env.INSTALL_REF }}
       - name: Verify SDL2 framework packaging
         run: |
           otool -D projects/macos/ecode/ecode.app/Contents/MacOS/SDL2 | grep -F '@loader_path/SDL2'
@@ -429,6 +461,9 @@ jobs:
           prerelease: true
           files: |
             projects/macos/ecode/ecode-macos-${{ env.INSTALL_REF }}-arm64.dmg
+      - name: Report build metrics
+        if: always()
+        uses: ./.github/actions/report-build-metrics
 
   build_macos_cross:
     name: macOS x86_64 Nightly
@@ -467,10 +502,14 @@ jobs:
           hdiutil attach SDL2-2.32.10.dmg
           sudo cp -r /Volumes/SDL2/SDL2.framework /Library/Frameworks/
           hdiutil detach /Volumes/SDL2
+      - name: Set up compiler cache
+        uses: ./.github/actions/setup-compiler-cache
+        with:
+          key: macos-x86_64-sdl2-framework
       - name: Build
         run: |
           bash projects/scripts/patch_commit_number.sh
-          bash projects/macos/ecode/cross.build.app.sh --version ${{ env.INSTALL_REF }}
+          bash projects/scripts/ci/time.sh "Build and package ecode" bash projects/macos/ecode/cross.build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Verify SDL2 framework packaging
         run: |
           otool -D projects/macos/ecode/ecode.app/Contents/MacOS/SDL2 | grep -F '@loader_path/SDL2'
@@ -499,6 +538,9 @@ jobs:
           prerelease: true
           files: |
             projects/macos/ecode/ecode-macos-${{ env.INSTALL_REF }}-x86_64.dmg
+      - name: Report build metrics
+        if: always()
+        uses: ./.github/actions/report-build-metrics
 
   build_freebsd_x86_64:
     name: FreeBSD x86_64 Nightly
@@ -512,23 +554,34 @@ jobs:
         run: |
           echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
           echo "RARCH=$(uname -m)" >> "$GITHUB_ENV"
+      - name: Set up compiler cache
+        uses: ./.github/actions/setup-compiler-cache
+        with:
+          key: freebsd-14.1-x86_64-sdl2
+          vm: 'true'
       - uses: vmactions/freebsd-vm@v1
         env:
           INSTALL_REF: ${{ needs.release.outputs.version }}
         with:
           release: '14.1'
-          envs: 'INSTALL_REF'
+          envs: 'INSTALL_REF CCACHE_DIR CCACHE_BASEDIR CCACHE_COMPILERCHECK CCACHE_MAXSIZE'
           sync: sshfs
           usesh: true
           mem: 8192
           disable-cache: true
           prepare: |
             pkg upgrade -y
-            pkg install -y bash pcre2 git sdl2 curl premake5 gsed gmake
+            pkg install -y bash pcre2 git sdl2 curl premake5 gsed gmake ccache
           run: |
+            set -eu
+            bash -e -o pipefail <<'BUILD'
+            source projects/scripts/ci/setup-ccache.sh
+            mkdir -p .ci-metrics
+            trap 'ccache --show-stats > .ci-metrics/ccache.txt' EXIT
             git config --global --add safe.directory "$GITHUB_WORKSPACE"
             bash projects/scripts/patch_commit_number.sh
-            sh projects/freebsd/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
+            bash projects/scripts/ci/time.sh "Build and package ecode" bash projects/freebsd/ecode/build.app.sh --version "$INSTALL_REF"
+            BUILD
       - name: Upload Files
         uses: softprops/action-gh-release@v3
         with:
@@ -537,6 +590,11 @@ jobs:
           prerelease: true
           files: |
             projects/freebsd/ecode/ecode-freebsd-${{ env.INSTALL_REF }}-x86_64.tar.gz
+      - name: Report build metrics
+        if: always()
+        uses: ./.github/actions/report-build-metrics
+        with:
+          vm: 'true'
 
   build_haiku_x86_64:
     name: Haiku x86_64 Nightly
@@ -550,20 +608,31 @@ jobs:
         run: |
           echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
           echo "RARCH=$(uname -m)" >> "$GITHUB_ENV"
+      - name: Set up compiler cache
+        uses: ./.github/actions/setup-compiler-cache
+        with:
+          key: haiku-x86_64-sdl2
+          vm: 'true'
       - uses: vmactions/haiku-vm@v1
         env:
           INSTALL_REF: ${{ needs.release.outputs.version }}
         with:
-          envs: 'INSTALL_REF'
+          envs: 'INSTALL_REF CCACHE_DIR CCACHE_BASEDIR CCACHE_COMPILERCHECK CCACHE_MAXSIZE'
           usesh: true
           mem: 8192
           disable-cache: true
           prepare: |
-            pkgman install -y libsdl2 libsdl2_devel git gcc premake5
+            pkgman install -y libsdl2 libsdl2_devel git gcc premake5 ccache
           run: |
+            set -eu
+            bash -e -o pipefail <<'BUILD'
+            source projects/scripts/ci/setup-ccache.sh
+            mkdir -p .ci-metrics
+            trap 'ccache --show-stats > .ci-metrics/ccache.txt' EXIT
             git config --global --add safe.directory "$GITHUB_WORKSPACE"
             bash projects/scripts/patch_commit_number.sh
-            sh projects/haiku/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
+            bash projects/scripts/ci/time.sh "Build and package ecode" bash projects/haiku/ecode/build.app.sh --version "$INSTALL_REF"
+            BUILD
       - name: Upload Files
         uses: softprops/action-gh-release@v3
         with:
@@ -572,6 +641,11 @@ jobs:
           prerelease: true
           files: |
             projects/haiku/ecode/ecode-haiku-${{ env.INSTALL_REF }}-x86_64.tar.gz
+      - name: Report build metrics
+        if: always()
+        uses: ./.github/actions/report-build-metrics
+        with:
+          vm: 'true'
 
   build_windows_msvc:
     name: Windows x86_64 MSVC Nightly
@@ -587,11 +661,15 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v6
       with: { fetch-depth: 0, submodules: 'recursive' }
+    - name: Set up compiler cache
+      uses: ./.github/actions/setup-compiler-cache
+      with:
+        key: windows-msvc-x86_64-sdl2
     - name: Build
       shell: pwsh
       run: |
         .\projects\scripts\patch_commit_number.ps1
-        .\projects\windows\ecode\build.app.ps1
+        & projects/scripts/ci/time.ps1 -Label "Build and package ecode" -Command { .\projects\windows\ecode\build.app.ps1 }
     - name: Upload Files
       uses: softprops/action-gh-release@v3
       with:
@@ -601,6 +679,9 @@ jobs:
         files: |
           ./projects/windows/ecode/ecode-windows-nightly-msvc-x86_64.zip
           ./projects/windows/ecode/ecode-windows-nightly-msvc-x86_64-pdb.zip
+    - name: Report build metrics
+      if: always()
+      uses: ./.github/actions/report-build-metrics
 
   build_windows_arm64_msvc:
     name: Windows arm64 MSVC Nightly
@@ -616,11 +697,15 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v6
       with: { fetch-depth: 0, submodules: 'recursive' }
+    - name: Set up compiler cache
+      uses: ./.github/actions/setup-compiler-cache
+      with:
+        key: windows-msvc-arm64-sdl2
     - name: Build
       shell: pwsh
       run: |
         .\projects\scripts\patch_commit_number.ps1
-        .\projects\windows\ecode\build.app.ps1 -arch arm64
+        & projects/scripts/ci/time.ps1 -Label "Build and package ecode" -Command { .\projects\windows\ecode\build.app.ps1 -arch arm64 }
     - name: Upload Files
       uses: softprops/action-gh-release@v3
       with:
@@ -630,3 +715,6 @@ jobs:
         files: |
           ./projects/windows/ecode/ecode-windows-nightly-msvc-arm64.zip
           ./projects/windows/ecode/ecode-windows-nightly-msvc-arm64-pdb.zip
+    - name: Report build metrics
+      if: always()
+      uses: ./.github/actions/report-build-metrics

@@ -22,6 +22,11 @@ jobs:
         else
           echo "version=nightly" >> "$GITHUB_OUTPUT"
         fi
+    - name: Set up compiler cache
+      uses: ./.github/actions/setup-compiler-cache
+      with:
+        key: freebsd-14.4-x86_64-sdl3-sdk
+        vm: 'true'
     - name: Build all targets and package SDK
       uses: vmactions/freebsd-vm@v1
       env:
@@ -30,21 +35,26 @@ jobs:
         release: '14.4'
         arch: x86_64
         mem: 8192
-        sync: sshfs
-        envs: SDK_VERSION
+        # bsdtar cannot read SDK symlinks reliably through the SSHFS mount.
+        # Build and package on the VM's native filesystem, then copy results back.
+        sync: scp
+        envs: SDK_VERSION CCACHE_DIR CCACHE_BASEDIR CCACHE_COMPILERCHECK CCACHE_MAXSIZE
         prepare: |
           set -eu
           pkg upgrade -y
-          pkg install -y bash git sdl3 premake5 gmake
+          pkg install -y bash git sdl3 premake5 gmake ccache
         run: |
           set -eu
           mkdir -p build-logs
           bash -e -o pipefail <<'BUILD'
+          source projects/scripts/ci/setup-ccache.sh
+          mkdir -p .ci-metrics
+          trap 'ccache --show-stats > .ci-metrics/ccache.txt' EXIT
           {
             uname -a
             premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 gmake
-            gmake -C make/bsd -j"$(sysctl -n hw.ncpu)" config=release_x86_64 all
-            bash projects/scripts/package_sdk.sh freebsd x86_64 --strip --version "$SDK_VERSION"
+            bash projects/scripts/ci/time.sh Build gmake -C make/bsd -j"$(sysctl -n hw.ncpu)" config=release_x86_64 all
+            bash projects/scripts/ci/time.sh "Package SDK" bash projects/scripts/package_sdk.sh freebsd x86_64 --strip --version "$SDK_VERSION"
 
             # Exercise the archive outside the checkout, including its runtime libraries.
             sdk_check=$(mktemp -d)
@@ -81,3 +91,9 @@ jobs:
       with:
         name: freebsd-build-logs
         path: build-logs/freebsd.log
+
+    - name: Report build metrics
+      if: always()
+      uses: ./.github/actions/report-build-metrics
+      with:
+        vm: 'true'

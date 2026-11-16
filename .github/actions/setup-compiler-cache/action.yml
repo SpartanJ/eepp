@@ -1,0 +1,64 @@
+name: Set up compiler cache
+description: Restore compiler results without restoring objects, archives, or generated projects
+inputs:
+  key:
+    description: Platform, toolchain, architecture, and backend variant
+    required: true
+  vm:
+    description: Configure the compiler inside a VM after installing its packages
+    default: 'false'
+  max-size:
+    description: Maximum size of this variant's compiler cache
+    default: 10G
+runs:
+  using: composite
+  steps:
+    - name: Select cache directory
+      id: directory
+      shell: bash
+      env:
+        CACHE_IN_VM: ${{ inputs.vm }}
+        CACHE_MAX_SIZE: ${{ inputs.max-size }}
+      run: |
+        if [[ "$CACHE_IN_VM" == true ]]; then
+          cache_dir="$GITHUB_WORKSPACE/.ci-cache/ccache"
+        elif [[ "$RUNNER_OS" == Windows ]]; then
+          # MSBuild must not track cache files as project outputs and delete them on clean.
+          cache_dir="$(cygpath -m "$TEMP/eepp-ccache")"
+        else
+          cache_dir="$RUNNER_TEMP/eepp-ccache"
+        fi
+        echo "path=$cache_dir" >> "$GITHUB_OUTPUT"
+        {
+          echo "CCACHE_DIR=$cache_dir"
+          echo "CCACHE_BASEDIR=$GITHUB_WORKSPACE"
+          echo "CCACHE_COMPILERCHECK=content"
+          echo "CCACHE_MAXSIZE=$CACHE_MAX_SIZE"
+          echo "EEPP_COMPILER_CACHE=ccache"
+        } >> "$GITHUB_ENV"
+    - name: Restore compiler cache
+      uses: actions/cache@v5
+      with:
+        path: ${{ steps.directory.outputs.path }}
+        key: ccache-v1-${{ inputs.key }}-${{ github.sha }}-${{ github.run_attempt }}
+        restore-keys: ccache-v1-${{ inputs.key }}-
+    - name: Configure GCC and Clang cache
+      if: inputs.vm != 'true' && runner.os != 'Windows'
+      shell: bash
+      run: |
+        if ! command -v ccache >/dev/null 2>&1; then
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            brew install ccache
+          elif [[ $(id -u) == 0 ]]; then
+            apt-get install -y ccache
+          else
+            sudo apt-get install -y ccache
+          fi
+        fi
+        source projects/scripts/ci/setup-ccache.sh
+        echo "$EEPP_CCACHE_WRAPPERS" >> "$GITHUB_PATH"
+    - name: Configure MSVC cache
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        & projects/scripts/ci/setup-ccache.ps1

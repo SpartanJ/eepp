@@ -15,4 +15,10 @@ fi
 premake5 --file=../../premake5.lua --os=ios --with-static-eepp --with-gles1 --with-gles2 --with-static-backend gmake
 
 cd ../../make/ios/
-make -j$(sysctl -n hw.ncpu) $@ eepp-static
+if [ -n "${EEPP_COMPILER_CACHE:-}" ]; then
+    make -j"$(sysctl -n hw.ncpu)" "$@" eepp-static \
+        "CC=$EEPP_COMPILER_CACHE $CLANGPATH" \
+        "CXX=$EEPP_COMPILER_CACHE ${TOOLCHAINPATH}clang++"
+else
+    make -j"$(sysctl -n hw.ncpu)" "$@" eepp-static
+fi

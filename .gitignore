@@ -101,3 +101,5 @@ ecode.dmg
 /projects/*/*/eeiv/
 /projects/*/*/eproc/
 /projects/*/*/eefm/
+.ci-cache/
+.ci-metrics/

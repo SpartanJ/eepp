@@ -1,0 +1,32 @@
+name: Report build metrics
+description: Include build duration and compiler-cache statistics in the job summary
+inputs:
+  vm:
+    description: Read cache statistics captured inside the VM
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Report timings and compiler cache
+      shell: bash
+      env:
+        CACHE_IN_VM: ${{ inputs.vm }}
+      run: |
+        mkdir -p .ci-metrics
+        if [[ "$CACHE_IN_VM" != true ]] && command -v ccache >/dev/null 2>&1; then
+          ccache --show-stats > .ci-metrics/ccache.txt
+        fi
+        {
+          echo '### Build metrics'
+          if [[ -f .ci-metrics/timings.tsv ]]; then
+            echo '| Step | Seconds | Exit code |'
+            echo '| --- | ---: | ---: |'
+            awk -F '\t' '{ printf "| %s | %s | %s |\n", $1, $2, $3 }' .ci-metrics/timings.tsv
+          fi
+          if [[ -f .ci-metrics/ccache.txt ]]; then
+            echo
+            echo '```text'
+            cat .ci-metrics/ccache.txt
+            echo '```'
+          fi
+        } | tee -a "$GITHUB_STEP_SUMMARY"

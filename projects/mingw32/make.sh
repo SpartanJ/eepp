@@ -109,6 +109,12 @@ fi
 
 cd ../../make/windows/ || exit
 
+if [ -n "${EEPP_COMPILER_CACHE:-}" ]; then
+  # The arm64 toolchain is downloaded above, after CI configures compiler wrappers.
+  export CC="$EEPP_COMPILER_CACHE $CC"
+  export CXX="$EEPP_COMPILER_CACHE $CXX"
+fi
+
 if command -v mingw"$ARCH"-make &> /dev/null
 then
   mingw"$ARCH"-make "$@"

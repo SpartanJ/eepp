@@ -20,9 +20,13 @@ jobs:
     - name: Install dependencies
       run: |
         brew install wget sdl3 premake
+    - name: Set up compiler cache
+      uses: ./.github/actions/setup-compiler-cache
+      with:
+        key: macos-arm64-sdl3-sdk
     - name: Build
       run: |
-        bash projects/macos/make_no_fw.sh --backend=SDL3 --with-debug-symbols -e config=release_arm64
+        bash projects/scripts/ci/time.sh Build bash projects/macos/make_no_fw.sh --backend=SDL3 --with-debug-symbols -e config=release_arm64
     - name: Application packaging tests
       run: |
         EEPP_TEST_RESOURCE_BINARY="$PWD/bin/unit_tests/eepp-unit_tests" \
@@ -39,7 +43,7 @@ jobs:
     - name: Package eepp SDK
       if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
       run: |
-        bash projects/scripts/package_sdk.sh macos arm64 --version ${{ steps.sdk_version.outputs.version }}
+        bash projects/scripts/ci/time.sh "Package SDK" bash projects/scripts/package_sdk.sh macos arm64 --version ${{ steps.sdk_version.outputs.version }}
         version="${{ steps.sdk_version.outputs.version }}"
         for app in ecode eefm eeiv eproc; do
           test -f "projects/macos/sdk/$app-macos-${version#eepp-}-arm64.dmg"
@@ -138,3 +142,7 @@ jobs:
       with:
         name: macos-test-output
         path: bin/unit_tests/output/*
+
+    - name: Report build metrics
+      if: always()
+      uses: ./.github/actions/report-build-metrics
