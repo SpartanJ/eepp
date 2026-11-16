@@ -1,3 +1,4 @@
+#include "../window/windowinitialization.hpp"
 #include "accessibility/accessibilitybackend.hpp"
 #include <algorithm>
 #include <cstdio>
@@ -1304,6 +1305,8 @@ EventConnection UISceneNode::onLayoutReady( std::function<void()> callback ) {
 }
 
 void UISceneNode::update( const Time& elapsed ) {
+	if ( unlikely( WindowInitialization::isPending() && !mHostUISceneNode ) )
+		WindowInitialization::beginUpdate( getWindow() );
 	auto context = makeCurrent();
 	// Native accessibility calls can invoke user callbacks that change policy. Resetting their
 	// manager immediately would destroy the backend while it is still executing or replying.
@@ -1382,6 +1385,8 @@ void UISceneNode::update( const Time& elapsed ) {
 		Log::debug( "UISceneNode::update first update took: %.2f ms",
 					mClock.getElapsedTime().asMilliseconds() );
 	}
+	if ( unlikely( WindowInitialization::isPending() && !mHostUISceneNode ) )
+		WindowInitialization::endUpdate( getWindow() );
 }
 
 void UISceneNode::onWidgetDelete( Node* node ) {

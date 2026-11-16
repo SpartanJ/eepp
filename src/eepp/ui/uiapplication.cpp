@@ -1,11 +1,13 @@
 #include <eepp/ui/uiapplication.hpp>
 
+#include "../window/windowinitialization.hpp"
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/systemfontresolver.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/ui/iconmanager.hpp>
@@ -20,6 +22,8 @@
 #include <eepp/window/runtime.hpp>
 
 #include <atomic>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -65,6 +69,12 @@ static std::atomic<bool> sSystemFontsEnabledByDefault{ true };
 UIApplication::UIApplication( const WindowSettings& windowSettings, const Settings& appSettings,
 							  const ContextSettings& contextSettings ) :
 	mSettings( appSettings ) {
+	const char* verbose = std::getenv( "EEPP_VERBOSE_INITIALIZATION" );
+	const bool verboseInitialization = verbose && std::strcmp( verbose, "1" ) == 0;
+	const auto started =
+		verboseInitialization ? MonotonicClock::now() : MonotonicClock::TimePoint{};
+	if ( verboseInitialization )
+		Log::instance()->setLogToStdOut( true );
 	const bool enableSystemFonts = appSettings.enableSystemFonts.value_or(
 		sSystemFontsEnabledByDefault.load( std::memory_order_acquire ) );
 	if ( enableSystemFonts ) {
@@ -91,6 +101,8 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 		std::cerr << "Could not create window, exiting" << std::endl;
 		return;
 	}
+	if ( verboseInitialization )
+		WindowInitialization::begin( mWindow, started );
 	Engine::instance()->getPlatformHelper()->setNativeScrollMomentumEnabled( true );
 	mWindow->setDeferNativeResourceDestructionOnClose( true );
 	mWindow->setQuitCallback( [this]( EE::Window::Window* ) { requestQuit(); } );
@@ -138,8 +150,11 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	SceneManager::instance()->setCurrentSceneNode( mUISceneNode );
 	mWindows.push_back( { mWindow, mUISceneNode, true, false } );
 
-	if ( !appSettings.loadBaseResources )
+	if ( !appSettings.loadBaseResources ) {
+		if ( verboseInitialization )
+			WindowInitialization::baseUIReady( mWindow );
 		return;
+	}
 	FontTrueTypePtr loadedBaseFont;
 	if ( !appSettings.baseFont )
 		loadedBaseFont =
@@ -205,6 +220,8 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 			mUISceneNode->getUIIconThemeManager()->setCurrentTheme(
 				IconManager::init( "uiapplication", remixIconFont, noniconsFont, codIconFont ) );
 	}
+	if ( verboseInitialization )
+		WindowInitialization::baseUIReady( mWindow );
 }
 
 UIApplication::~UIApplication() {

@@ -15,22 +15,22 @@ namespace eproc {
  *  without an NVIDIA driver: an unavailable reader simply reports no GPU information. */
 class NvidiaGpuReader {
   public:
-	NvidiaGpuReader();
+	NvidiaGpuReader() = default;
 	~NvidiaGpuReader();
 	NvidiaGpuReader( const NvidiaGpuReader& ) = delete;
 	NvidiaGpuReader& operator=( const NvidiaGpuReader& ) = delete;
 
-	/** True when libnvidia-ml loaded and nvmlInit() succeeded. */
-	bool isAvailable() const;
-
 	const SmallVector<Uint32, 2>* devicesForProcess( long pid ) const;
 
 	/** Fills per-PID GPU utilization in percent (0..100) and per-PID GPU memory in KiB.
-	 *  Entries are only present for processes actually using the GPU. */
+	 *  Entries are only present for processes actually using the GPU. The first query initializes
+	 *  NVML on the calling collection worker, so driver loading never blocks UI construction. */
 	void query( UnorderedMap<long, int>& usagePercent, UnorderedMap<long, long>& memoryKiB,
 				std::vector<GpuInfo>& gpus );
 
   private:
+	void initialize();
+
 	// Only the NVML declarations this reader uses are mirrored here, the rest of the API lives in
 	// the driver's own nvml.h which is deliberately not vendored.
 	using NvmlDevice = void*;
@@ -101,6 +101,7 @@ class NvidiaGpuReader {
 	void* mLib{ nullptr };
 	Uint32 mDeviceIndex{ 0 };
 	bool mInitialized{ false };
+	bool mInitializationAttempted{ false };
 	unsigned long long mLastTimestamp{ 0 };
 	// Each adapter samples on its own clock cadence; one GPU must not advance another's baseline.
 	UnorderedMap<std::string, unsigned long long> mLastTimestamps;

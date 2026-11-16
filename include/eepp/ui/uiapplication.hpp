@@ -89,6 +89,10 @@ class EE_API UIApplication {
 		std::shared_ptr<System::ThreadPool> threadPool;
 	};
 
+	/** Set EEPP_VERBOSE_INITIALIZATION=1 before construction to enable Log stdout output and
+	 * report cumulative window, base UI, first update and first presentation timings. The timer
+	 * starts at construction; application setup before construction is excluded. Custom loops
+	 * using UISceneNode::update() and Window::display() are also measured. */
 	UIApplication( const WindowSettings& windowSettings, const Settings& appSettings = Settings(),
 				   const ContextSettings& contextSettings = ContextSettings() );
 

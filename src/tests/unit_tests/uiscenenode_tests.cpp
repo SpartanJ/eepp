@@ -1,6 +1,8 @@
 #include "utest.hpp"
 
 #include <array>
+#include <cstdio>
+#include <cstring>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -8,6 +10,7 @@
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
@@ -740,6 +743,87 @@ class TestUIApplication : public UIApplication {
 
 	void markRunning() { mRunning = true; }
 };
+
+namespace {
+
+class InitializationLogReader : public LogReaderInterface {
+  public:
+	InitializationLogReader() { Log::instance()->addLogReader( this ); }
+
+	~InitializationLogReader() { Log::instance()->removeLogReader( this ); }
+
+	void writeLog( const std::string_view& text ) override {
+		if ( text.find( "UIApplication initialization:" ) != std::string_view::npos ) {
+			report.assign( text );
+			++reports;
+		}
+	}
+
+	std::string report;
+	int reports{ 0 };
+};
+
+} // namespace
+
+UTEST( UIApplication, InitializationTimingsFollowCustomLoopAndOnlyPrimaryPresentation ) {
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		UTEST_SKIP( "Terminal runtime supports only one native window" );
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	UTEST_SKIP( "Emscripten supports only one native window" );
+#endif
+	const auto previous = Sys::getEnv( "EEPP_VERBOSE_INITIALIZATION" );
+	ScopedOp environment(
+		[] { Sys::setEnv( "EEPP_VERBOSE_INITIALIZATION", "1" ); },
+		[&previous] { Sys::setEnv( "EEPP_VERBOSE_INITIALIZATION", previous.c_str() ); } );
+	UIApplication::Settings settings( Sys::getProcessPath(), 1.f, false );
+	settings.enableSystemFonts = false;
+	const ContextSettings context( false, 0, 0, GLv_default, true, false );
+	UIApplication app( WindowSettings( 160, 120, "Startup primary" ), settings, context );
+	InitializationLogReader log;
+	EXPECT_TRUE( Log::instance()->isLoggingToStdOut() );
+	EXPECT_EQ( log.reports, 0 );
+	auto* secondary = app.createWindow( WindowSettings( 160, 120, "Startup secondary" ), context );
+	ASSERT_TRUE( secondary != nullptr );
+	secondary->update( Milliseconds( 16 ) );
+	secondary->getWindow()->display( false, false );
+	EXPECT_EQ( log.reports, 0 );
+	app.getUI()->update( Milliseconds( 16 ) );
+	EXPECT_EQ( log.reports, 0 );
+	app.getWindow()->display( false, false );
+	ASSERT_EQ( log.reports, 1 );
+	EXPECT_TRUE( log.report.find( "Startup primary" ) != std::string::npos );
+	double preceding = 0;
+	for ( const char* label : { "Window creation took:", "Base UI took:", "Complete UI took:",
+								"First update took:", "First frame took:" } ) {
+		const auto pos = log.report.find( label );
+		ASSERT_TRUE( pos != std::string::npos );
+		double elapsed = -1;
+		ASSERT_EQ( std::sscanf( log.report.c_str() + pos + std::strlen( label ), "%lf", &elapsed ),
+				   1 );
+		EXPECT_GE( elapsed, preceding );
+		preceding = elapsed;
+	}
+	app.getUI()->update( Milliseconds( 16 ) );
+	app.getWindow()->display( false, false );
+	EXPECT_EQ( log.reports, 1 );
+}
+
+UTEST( UIApplication, InitializationTimingsRequireExactOptIn ) {
+	const auto previous = Sys::getEnv( "EEPP_VERBOSE_INITIALIZATION" );
+	ScopedOp environment(
+		nullptr, [&previous] { Sys::setEnv( "EEPP_VERBOSE_INITIALIZATION", previous.c_str() ); } );
+	for ( const char* value : { "", "0", "true", "01" } ) {
+		Sys::setEnv( "EEPP_VERBOSE_INITIALIZATION", value );
+		UIApplication::Settings settings( Sys::getProcessPath(), 1.f, false );
+		settings.enableSystemFonts = false;
+		UIApplication app( WindowSettings( 160, 120, "Startup disabled" ), settings,
+						   ContextSettings( false, 0, 0, GLv_default, true, false ) );
+		InitializationLogReader log;
+		app.getUI()->update( Milliseconds( 16 ) );
+		app.getWindow()->display( false, false );
+		EXPECT_EQ( log.reports, 0 );
+	}
+}
 
 UTEST( UIApplication, CloseCanRetainWorkspaceWhileExplicitCloseStillDestroysIt ) {
 	const std::string previous = Sys::getEnv( "EEPP_WINDOW_HIDDEN" );

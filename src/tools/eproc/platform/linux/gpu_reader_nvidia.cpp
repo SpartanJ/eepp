@@ -28,7 +28,8 @@ template <typename Fn> Fn resolveSymbol( void* lib, const char* name ) {
 
 } // namespace
 
-NvidiaGpuReader::NvidiaGpuReader() {
+void NvidiaGpuReader::initialize() {
+	mInitializationAttempted = true;
 	mLib = Sys::loadObject( "libnvidia-ml.so.1" );
 	if ( !mLib )
 		mLib = Sys::loadObject( "libnvidia-ml.so" );
@@ -80,16 +81,14 @@ NvidiaGpuReader::~NvidiaGpuReader() {
 		Sys::unloadObject( mLib );
 }
 
-bool NvidiaGpuReader::isAvailable() const {
-	return mInitialized;
-}
-
 void NvidiaGpuReader::query( UnorderedMap<long, int>& usagePercent,
 							 UnorderedMap<long, long>& memoryKiB, std::vector<GpuInfo>& gpus ) {
 	usagePercent.clear();
 	memoryKiB.clear();
 	mProcessDevices.clear();
 
+	if ( !mInitializationAttempted )
+		initialize();
 	if ( !mInitialized )
 		return;
 

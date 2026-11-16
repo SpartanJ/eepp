@@ -46,6 +46,42 @@ EEPP_WINDOW_HIDDEN=1 ./bin/eeiv
 EEPP_RUNTIME=headless EEPP_MSAA=0 ./bin/eeiv
 ```
 
+## Initialization timings
+
+| Variable | Values and default | Effect and scope |
+| --- | --- | --- |
+| `EEPP_VERBOSE_INITIALIZATION` | Exactly `1` enables it; all other values disable it. Default: disabled. | `UIApplication` enables `Log` stdout output and reports initialization milestones once, after its primary window's first buffer swap. Existing log levels and file logging settings remain in effect. |
+
+```sh
+EEPP_VERBOSE_INITIALIZATION=1 ./bin/eproc
+EEPP_VERBOSE_INITIALIZATION=1 ./bin/eefm
+```
+
+The report uses cumulative elapsed milliseconds from the start of `UIApplication` construction:
+
+- **Window creation:** primary native/offscreen window and graphics context creation, including
+  the framework setup preceding it.
+- **Base UI:** completion of `UIApplication` construction, including enabled base resources.
+- **Complete UI:** entry to the primary UI scene's first normal update. Includes application
+  setup performed after construction and before that update.
+- **First update:** completion of that UI scene update.
+- **First frame:** completion of the primary window's first buffer swap, before frame-rate limiting.
+
+Timings are collected along the existing execution path. Enabling this control does not force an
+update, layout, draw, or wait for background work. Custom loops that call `UISceneNode::update()`
+and `Window::display()` are covered without calling `UIApplication::run()`. Secondary windows do
+not produce additional reports. Closing before presentation produces no timing report.
+
+These measurements exclude application work before `UIApplication` construction and are not
+process-launch timings. A presented frame does not imply background loading has finished or that
+the compositor has displayed it. Existing initialization log output is enabled immediately;
+formatting and printing the timing report happen after the measured frame. Headless timings
+measure offscreen rendering and should be compared separately from native runs. Apps using their
+own startup instrumentation, such as ecode, keep their existing timing boundaries.
+
+Readers: [UIApplication](../../src/eepp/ui/uiapplication.cpp) and
+[window initialization measurements](../../src/eepp/window/windowinitialization.cpp).
+
 ## UI scaling, fonts, and color scheme
 
 | Variable | Values and default | Effect and scope |

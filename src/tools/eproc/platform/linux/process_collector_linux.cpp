@@ -733,8 +733,7 @@ bool ProcessCollectorLinux::collect( std::vector<ProcessInfo>& processes, System
 	mGpuUsage.clear();
 	mGpuMemory.clear();
 	mDrmGpuReader.beginSample( sysInfo.gpus );
-	if ( mGpuReader.isAvailable() )
-		mGpuReader.query( mGpuUsage, mGpuMemory, sysInfo.gpus );
+	mGpuReader.query( mGpuUsage, mGpuMemory, sysInfo.gpus );
 
 	// Network packet capture runs continuously in its own thread; this refresh only joins the
 	// current procfs socket ownership with the endpoints seen by that capture thread.

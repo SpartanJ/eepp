@@ -1,3 +1,4 @@
+#include "windowinitialization.hpp"
 #include <SOIL2/src/SOIL2/SOIL2.h>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
@@ -71,6 +72,8 @@ Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard* Cli
 }
 
 Window::~Window() {
+	if ( WindowInitialization::isPending() )
+		WindowInitialization::cancel( this );
 	Private::DragManager::invalidateWindow( this );
 	eeSAFE_DELETE( mClipboard );
 	eeSAFE_DELETE( mInput );
@@ -566,6 +569,8 @@ void Window::display( bool clear, bool limitFrameRate ) {
 	mIME.updateLocation();
 
 	swapBuffers();
+	if ( unlikely( WindowInitialization::isPending() ) )
+		WindowInitialization::presented( this );
 
 	if ( mCurrentView->isDirty() )
 		setView( *mCurrentView );
