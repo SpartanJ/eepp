@@ -66,7 +66,7 @@ static SyntaxColorScheme createDefaultDarkSyntaxColorScheme() {
 		  // eepp colors
 		  { "gutter_background"_sst, Color( "#282a36" ) },
 		  { "whitespace"_sst, Color( "#394484" ) },
-		  { "line_break_column"_sst, Color( "#54575b99" ) },
+		  { "line_break_column"_sst, Color( "#54575b66" ) },
 		  { "matching_bracket"_sst, Color( "#FFFFFF33" ) },
 		  { "matching_selection"_sst, Color( "#3e596e" ) },
 		  { "matching_search"_sst, Color( "#181b1e" ) },

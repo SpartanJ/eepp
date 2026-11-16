@@ -107,12 +107,14 @@ UTEST( UICodeEditor, MinimapUsesSolidPixelRowsAtFractionalDensity ) {
 		using UICodeEditor::getMinimapRect;
 	};
 
+	// Xvfb needs a single-sample window; use EEPP_MSAA=4 for native GPU coverage.
 	UIApplication app(
 		WindowSettings( 320, 160, "Minimap Pixel Coverage", WindowStyle::Default,
 						WindowBackend::Default, 32, {}, 1, false, true ),
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ),
-		ContextSettings( false, 0, 4, GLv_default, true, false ) );
-	ASSERT_TRUE( app.getWindow() != nullptr );
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( app.getWindow() != nullptr && app.getWindow()->isOpen() );
+	ASSERT_TRUE( app.getUI() != nullptr );
 	auto* editor = eeNew( MinimapEditor, () );
 	editor->setPixelsSize( { 320, 160 } );
 	editor->setVerticalScrollBarEnabled( false );

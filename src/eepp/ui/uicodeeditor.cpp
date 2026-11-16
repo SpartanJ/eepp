@@ -351,8 +351,9 @@ void UICodeEditor::draw() {
 		Float lineBreakingOffset = startScroll.x + getGlyphWidth() * mLineBreakingColumn;
 		if ( lineBreakingOffset >= start.x ) {
 			primitives.setColor( Color( mLineBreakColumnColor ).blendAlpha( mAlpha ) );
-			primitives.drawLine( { { lineBreakingOffset, start.y },
-								   { lineBreakingOffset, start.y + editorHeight() } } );
+			// Smoothed GL lines have driver-dependent coverage; keep the ruler on whole pixels.
+			primitives.drawRectangle(
+				Rectf( { lineBreakingOffset, start.y }, { 1.f, editorHeight() } ).round() );
 		}
 	}
 
