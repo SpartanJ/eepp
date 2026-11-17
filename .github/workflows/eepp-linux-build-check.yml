@@ -3,6 +3,7 @@ name: Linux
 on: [push, pull_request]
 
 permissions:
+  actions: write
   contents: write
 
 jobs:
@@ -33,6 +34,7 @@ jobs:
       uses: ./.github/actions/setup-compiler-cache
       with:
         key: linux-gcc13-x86_64-sdl3-sdk
+        max-size: 1500M
     - name: Build
       id: build
       run: |
@@ -215,6 +217,9 @@ jobs:
         name: linux-test-output
         path: bin/unit_tests/output/*
 
+    - name: Save compiler cache
+      continue-on-error: true
+      uses: ./.github/actions/save-compiler-cache
     - name: Report build metrics
       if: always()
       uses: ./.github/actions/report-build-metrics

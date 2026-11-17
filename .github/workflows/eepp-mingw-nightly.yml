@@ -45,6 +45,7 @@ jobs:
       uses: ./.github/actions/setup-compiler-cache
       with:
         key: linux-mingw-x86_64-sdl3-sdk
+        max-size: 300M
     - name: Build
       run: |
         bash projects/scripts/ci/time.sh Build bash projects/mingw32/make.sh --backend=sdl3 -e config=release_x86_64 -j"$(nproc)"
@@ -68,6 +69,9 @@ jobs:
         files: |
           projects/windows/sdk/eepp-sdk-windows-x86_64-mingw-*.zip
 
+    - name: Save compiler cache
+      continue-on-error: true
+      uses: ./.github/actions/save-compiler-cache
     - name: Report build metrics
       if: always()
       uses: ./.github/actions/report-build-metrics

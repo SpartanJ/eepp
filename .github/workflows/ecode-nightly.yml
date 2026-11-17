@@ -118,6 +118,7 @@ jobs:
         uses: ./.github/actions/setup-compiler-cache
         with:
           key: linux-gcc13-x86_64-sdl2-ubuntu20
+          max-size: 250M
       - name: Build ecode
         run: |
           bash projects/scripts/ci/time.sh "Build and package ecode" bash projects/linux/ecode/build.app.sh --with-static-cpp --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
@@ -139,6 +140,9 @@ jobs:
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.AppImage
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.AppImage.zsync
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.tar.gz
+      - name: Save compiler cache
+        continue-on-error: true
+        uses: ./.github/actions/save-compiler-cache
       - name: Report build metrics
         if: always()
         uses: ./.github/actions/report-build-metrics
@@ -270,6 +274,7 @@ jobs:
         uses: ./.github/actions/setup-compiler-cache
         with:
           key: linux-gcc-cross-arm64-sdl2
+          max-size: 250M
       - name: Build ecode
         run: |
           bash projects/scripts/patch_commit_number.sh
@@ -284,6 +289,9 @@ jobs:
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.AppImage
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.AppImage.zsync
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.tar.gz
+      - name: Save compiler cache
+        continue-on-error: true
+        uses: ./.github/actions/save-compiler-cache
       - name: Report build metrics
         if: always()
         uses: ./.github/actions/report-build-metrics
@@ -324,6 +332,7 @@ jobs:
         uses: ./.github/actions/setup-compiler-cache
         with:
           key: linux-mingw-x86_64-sdl2
+          max-size: 250M
       - name: Build ecode
         run: |
           bash projects/scripts/patch_commit_number.sh
@@ -336,6 +345,9 @@ jobs:
           prerelease: true
           files: |
             projects/mingw32/ecode/ecode-windows-${{ env.INSTALL_REF }}-${{ env.RARCH }}.zip
+      - name: Save compiler cache
+        continue-on-error: true
+        uses: ./.github/actions/save-compiler-cache
       - name: Report build metrics
         if: always()
         uses: ./.github/actions/report-build-metrics
@@ -371,7 +383,8 @@ jobs:
       - name: Set up compiler cache
         uses: ./.github/actions/setup-compiler-cache
         with:
-          key: linux-llvm-mingw-arm64-sdl2-${{ hashFiles('projects/mingw32/make.sh') }}
+          key: linux-llvm-mingw-arm64-sdl2
+          max-size: 250M
       - name: Build ecode
         run: |
           bash projects/scripts/patch_commit_number.sh
@@ -384,6 +397,9 @@ jobs:
           prerelease: true
           files: |
             projects/mingw32/ecode/ecode-windows-${{ env.INSTALL_REF }}-arm64.zip
+      - name: Save compiler cache
+        continue-on-error: true
+        uses: ./.github/actions/save-compiler-cache
       - name: Report build metrics
         if: always()
         uses: ./.github/actions/report-build-metrics
@@ -429,6 +445,7 @@ jobs:
         uses: ./.github/actions/setup-compiler-cache
         with:
           key: macos-arm64-sdl2-framework
+          max-size: 250M
       - name: Build
         run: |
           bash projects/scripts/patch_commit_number.sh
@@ -461,6 +478,9 @@ jobs:
           prerelease: true
           files: |
             projects/macos/ecode/ecode-macos-${{ env.INSTALL_REF }}-arm64.dmg
+      - name: Save compiler cache
+        continue-on-error: true
+        uses: ./.github/actions/save-compiler-cache
       - name: Report build metrics
         if: always()
         uses: ./.github/actions/report-build-metrics
@@ -506,6 +526,7 @@ jobs:
         uses: ./.github/actions/setup-compiler-cache
         with:
           key: macos-x86_64-sdl2-framework
+          max-size: 250M
       - name: Build
         run: |
           bash projects/scripts/patch_commit_number.sh
@@ -538,6 +559,9 @@ jobs:
           prerelease: true
           files: |
             projects/macos/ecode/ecode-macos-${{ env.INSTALL_REF }}-x86_64.dmg
+      - name: Save compiler cache
+        continue-on-error: true
+        uses: ./.github/actions/save-compiler-cache
       - name: Report build metrics
         if: always()
         uses: ./.github/actions/report-build-metrics
@@ -558,26 +582,27 @@ jobs:
         uses: ./.github/actions/setup-compiler-cache
         with:
           key: freebsd-14.1-x86_64-sdl2
+          max-size: 250M
           vm: 'true'
       - uses: vmactions/freebsd-vm@v1
         env:
           INSTALL_REF: ${{ needs.release.outputs.version }}
         with:
           release: '14.1'
-          envs: 'INSTALL_REF CCACHE_DIR CCACHE_BASEDIR CCACHE_COMPILERCHECK CCACHE_MAXSIZE'
+          envs: 'INSTALL_REF CCACHE_DIR CCACHE_BASEDIR CCACHE_COMPILERCHECK CCACHE_MAXSIZE CCACHE_COMPRESS CCACHE_COMPRESSLEVEL CCACHE_NOHARDLINK CCACHE_NOFILECLONE'
           sync: sshfs
           usesh: true
           mem: 8192
           disable-cache: true
           prepare: |
             pkg upgrade -y
-            pkg install -y bash pcre2 git sdl2 curl premake5 gsed gmake ccache
+            pkg install -y bash pcre2 git sdl2 curl premake5 gsed gmake ccache4
           run: |
             set -eu
             bash -e -o pipefail <<'BUILD'
             source projects/scripts/ci/setup-ccache.sh
             mkdir -p .ci-metrics
-            trap 'ccache --show-stats > .ci-metrics/ccache.txt' EXIT
+            trap 'ccache --show-stats > .ci-metrics/ccache.txt; ccache --print-stats > .ci-metrics/ccache-stats.tsv' EXIT
             git config --global --add safe.directory "$GITHUB_WORKSPACE"
             bash projects/scripts/patch_commit_number.sh
             bash projects/scripts/ci/time.sh "Build and package ecode" bash projects/freebsd/ecode/build.app.sh --version "$INSTALL_REF"
@@ -590,6 +615,9 @@ jobs:
           prerelease: true
           files: |
             projects/freebsd/ecode/ecode-freebsd-${{ env.INSTALL_REF }}-x86_64.tar.gz
+      - name: Save compiler cache
+        continue-on-error: true
+        uses: ./.github/actions/save-compiler-cache
       - name: Report build metrics
         if: always()
         uses: ./.github/actions/report-build-metrics
@@ -612,12 +640,13 @@ jobs:
         uses: ./.github/actions/setup-compiler-cache
         with:
           key: haiku-x86_64-sdl2
+          max-size: 250M
           vm: 'true'
       - uses: vmactions/haiku-vm@v1
         env:
           INSTALL_REF: ${{ needs.release.outputs.version }}
         with:
-          envs: 'INSTALL_REF CCACHE_DIR CCACHE_BASEDIR CCACHE_COMPILERCHECK CCACHE_MAXSIZE'
+          envs: 'INSTALL_REF CCACHE_DIR CCACHE_BASEDIR CCACHE_COMPILERCHECK CCACHE_MAXSIZE CCACHE_COMPRESS CCACHE_COMPRESSLEVEL CCACHE_NOHARDLINK CCACHE_NOFILECLONE'
           usesh: true
           mem: 8192
           disable-cache: true
@@ -628,7 +657,7 @@ jobs:
             bash -e -o pipefail <<'BUILD'
             source projects/scripts/ci/setup-ccache.sh
             mkdir -p .ci-metrics
-            trap 'ccache --show-stats > .ci-metrics/ccache.txt' EXIT
+            trap 'ccache --show-stats > .ci-metrics/ccache.txt; ccache --print-stats > .ci-metrics/ccache-stats.tsv' EXIT
             git config --global --add safe.directory "$GITHUB_WORKSPACE"
             bash projects/scripts/patch_commit_number.sh
             bash projects/scripts/ci/time.sh "Build and package ecode" bash projects/haiku/ecode/build.app.sh --version "$INSTALL_REF"
@@ -641,6 +670,9 @@ jobs:
           prerelease: true
           files: |
             projects/haiku/ecode/ecode-haiku-${{ env.INSTALL_REF }}-x86_64.tar.gz
+      - name: Save compiler cache
+        continue-on-error: true
+        uses: ./.github/actions/save-compiler-cache
       - name: Report build metrics
         if: always()
         uses: ./.github/actions/report-build-metrics
@@ -665,6 +697,7 @@ jobs:
       uses: ./.github/actions/setup-compiler-cache
       with:
         key: windows-msvc-x86_64-sdl2
+        max-size: 1100M
     - name: Build
       shell: pwsh
       run: |
@@ -679,6 +712,9 @@ jobs:
         files: |
           ./projects/windows/ecode/ecode-windows-nightly-msvc-x86_64.zip
           ./projects/windows/ecode/ecode-windows-nightly-msvc-x86_64-pdb.zip
+    - name: Save compiler cache
+      continue-on-error: true
+      uses: ./.github/actions/save-compiler-cache
     - name: Report build metrics
       if: always()
       uses: ./.github/actions/report-build-metrics
@@ -701,6 +737,7 @@ jobs:
       uses: ./.github/actions/setup-compiler-cache
       with:
         key: windows-msvc-arm64-sdl2
+        max-size: 1100M
     - name: Build
       shell: pwsh
       run: |
@@ -715,6 +752,9 @@ jobs:
         files: |
           ./projects/windows/ecode/ecode-windows-nightly-msvc-arm64.zip
           ./projects/windows/ecode/ecode-windows-nightly-msvc-arm64-pdb.zip
+    - name: Save compiler cache
+      continue-on-error: true
+      uses: ./.github/actions/save-compiler-cache
     - name: Report build metrics
       if: always()
       uses: ./.github/actions/report-build-metrics

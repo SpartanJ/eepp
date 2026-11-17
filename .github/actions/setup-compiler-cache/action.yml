@@ -9,7 +9,7 @@ inputs:
     default: 'false'
   max-size:
     description: Maximum size of this variant's compiler cache
-    default: 10G
+    default: 500M
 runs:
   using: composite
   steps:
@@ -19,6 +19,7 @@ runs:
       env:
         CACHE_IN_VM: ${{ inputs.vm }}
         CACHE_MAX_SIZE: ${{ inputs.max-size }}
+        CACHE_VARIANT: ${{ inputs.key }}
       run: |
         if [[ "$CACHE_IN_VM" == true ]]; then
           cache_dir="$GITHUB_WORKSPACE/.ci-cache/ccache"
@@ -34,14 +35,23 @@ runs:
           echo "CCACHE_BASEDIR=$GITHUB_WORKSPACE"
           echo "CCACHE_COMPILERCHECK=content"
           echo "CCACHE_MAXSIZE=$CACHE_MAX_SIZE"
+          echo "CCACHE_COMPRESS=true"
+          echo "CCACHE_COMPRESSLEVEL=22"
+          echo "CCACHE_NOHARDLINK=true"
+          echo "CCACHE_NOFILECLONE=true"
           echo "EEPP_COMPILER_CACHE=ccache"
+          echo "EEPP_CCACHE_IN_VM=$CACHE_IN_VM"
+          echo "EEPP_CCACHE_VARIANT=$CACHE_VARIANT"
+          echo "EEPP_CCACHE_PREFIX=ccache-v2-$CACHE_VARIANT--"
+          echo "EEPP_CCACHE_KEY=ccache-v2-$CACHE_VARIANT--$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
         } >> "$GITHUB_ENV"
     - name: Restore compiler cache
-      uses: actions/cache@v5
+      # Publishing is explicit, after this job's builds, tests, and packaging succeed.
+      uses: actions/cache/restore@v5
       with:
         path: ${{ steps.directory.outputs.path }}
-        key: ccache-v1-${{ inputs.key }}-${{ github.sha }}-${{ github.run_attempt }}
-        restore-keys: ccache-v1-${{ inputs.key }}-
+        key: ccache-v2-${{ inputs.key }}--${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: ccache-v2-${{ inputs.key }}--
     - name: Configure GCC and Clang cache
       if: inputs.vm != 'true' && runner.os != 'Windows'
       shell: bash
@@ -56,6 +66,7 @@ runs:
           fi
         fi
         source projects/scripts/ci/setup-ccache.sh
+        echo "CCACHE_COMPRESSLEVEL=$CCACHE_COMPRESSLEVEL" >> "$GITHUB_ENV"
         echo "$EEPP_CCACHE_WRAPPERS" >> "$GITHUB_PATH"
     - name: Configure MSVC cache
       if: runner.os == 'Windows'

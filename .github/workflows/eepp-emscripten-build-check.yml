@@ -6,6 +6,10 @@ env:
   EM_VERSION: 4.0.1
   EM_CACHE_FOLDER: emsdk-cache
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   Emscripten:
     runs-on: ubuntu-24.04
@@ -36,12 +40,16 @@ jobs:
       uses: ./.github/actions/setup-compiler-cache
       with:
         key: linux-emscripten-${{ env.EM_VERSION }}-wasm32-sdl2
+        max-size: 300M
     - name: Build
       env:
         EM_COMPILER_WRAPPER: ccache
       run: |
         bash projects/scripts/ci/time.sh Build bash projects/emscripten/make.sh config=release_wasm32
 
+    - name: Save compiler cache
+      continue-on-error: true
+      uses: ./.github/actions/save-compiler-cache
     - name: Report build metrics
       if: always()
       uses: ./.github/actions/report-build-metrics

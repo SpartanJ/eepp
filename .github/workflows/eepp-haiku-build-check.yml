@@ -3,6 +3,7 @@ name: Haiku
 on: [push, pull_request, workflow_dispatch]
 
 permissions:
+  actions: write
   contents: write
 
 jobs:
@@ -26,6 +27,7 @@ jobs:
       uses: ./.github/actions/setup-compiler-cache
       with:
         key: haiku-r1beta6-x86_64-sdl3-sdk
+        max-size: 1G
         vm: 'true'
     - name: Build all targets and package SDK
       timeout-minutes: 90
@@ -39,7 +41,7 @@ jobs:
         # Concurrent build-directory creation stalls on the SSHFS-mounted workspace.
         # Compile and package on BFS, then copy results back to the runner.
         sync: scp
-        envs: SDK_VERSION CCACHE_DIR CCACHE_BASEDIR CCACHE_COMPILERCHECK CCACHE_MAXSIZE
+        envs: SDK_VERSION CCACHE_DIR CCACHE_BASEDIR CCACHE_COMPILERCHECK CCACHE_MAXSIZE CCACHE_COMPRESS CCACHE_COMPRESSLEVEL CCACHE_NOHARDLINK CCACHE_NOFILECLONE
         prepare: |
           set -eu
           pkgman install -y libsdl3 libsdl3_devel git gcc premake5 ccache
@@ -49,7 +51,7 @@ jobs:
           bash -e -o pipefail <<'BUILD'
           source projects/scripts/ci/setup-ccache.sh
           mkdir -p .ci-metrics
-          trap 'ccache --show-stats > .ci-metrics/ccache.txt' EXIT
+          trap 'ccache --show-stats > .ci-metrics/ccache.txt; ccache --print-stats > .ci-metrics/ccache-stats.tsv' EXIT
           {
             uname -a
             premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 gmake
@@ -92,6 +94,9 @@ jobs:
         name: haiku-build-logs
         path: build-logs/haiku.log
 
+    - name: Save compiler cache
+      continue-on-error: true
+      uses: ./.github/actions/save-compiler-cache
     - name: Report build metrics
       if: always()
       uses: ./.github/actions/report-build-metrics

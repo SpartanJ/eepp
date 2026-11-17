@@ -2,6 +2,10 @@ name: iOS
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   iOS:
     runs-on: macos-latest
@@ -16,6 +20,7 @@ jobs:
       uses: ./.github/actions/setup-compiler-cache
       with:
         key: macos-ios-arm64-sdl2
+        max-size: 100M
     - name: Build
       env:
         CMAKE_C_COMPILER_LAUNCHER: ccache
@@ -24,6 +29,9 @@ jobs:
         cd projects/ios
         bash ../scripts/ci/time.sh Build sh ./compile-all.sh config=release_arm64
 
+    - name: Save compiler cache
+      continue-on-error: true
+      uses: ./.github/actions/save-compiler-cache
     - name: Report build metrics
       if: always()
       uses: ./.github/actions/report-build-metrics

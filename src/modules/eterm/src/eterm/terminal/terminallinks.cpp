@@ -196,7 +196,8 @@ std::string TerminalLinks::resolve( std::string_view link, const std::string& wo
 	bool found = exists( path );
 	// A sentence can end with a path and a period. Prefer a real dot-ending filename,
 	// otherwise retry without the period before stripping a compiler's :line:column.
-	if ( !found && ( path.back() == '.' || path.back() == ';' ) ) {
+	if ( !found && ( path.back() == '.' || path.back() == ';' || path.back() == '\'' ||
+					 path.back() == ')' ) ) {
 		path.pop_back();
 		found = exists( path );
 	}
