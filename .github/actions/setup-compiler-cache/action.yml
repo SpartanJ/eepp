@@ -36,7 +36,7 @@ runs:
           echo "CCACHE_COMPILERCHECK=content"
           echo "CCACHE_MAXSIZE=$CACHE_MAX_SIZE"
           echo "CCACHE_COMPRESS=true"
-          echo "CCACHE_COMPRESSLEVEL=22"
+          echo "CCACHE_COMPRESSLEVEL=3"
           echo "CCACHE_NOHARDLINK=true"
           echo "CCACHE_NOFILECLONE=true"
           echo "EEPP_COMPILER_CACHE=ccache"

@@ -1,14 +1,10 @@
 #!/bin/bash
 # Source this after installing the native compiler and ccache, including inside VMs.
 
-# ccache 3 uses zlib (maximum 9); ccache 4 uses Zstandard (maximum 22).
 # Force compression even when a restored configuration disables it.
 unset CCACHE_NOCOMPRESS CCACHE_HARDLINK CCACHE_FILECLONE
 export CCACHE_COMPRESS=true CCACHE_NOHARDLINK=true CCACHE_NOFILECLONE=true
-case "$(ccache --version)" in
-	'ccache version 3.'*) export CCACHE_COMPRESSLEVEL=9 ;;
-	*) export CCACHE_COMPRESSLEVEL=22 ;;
-esac
+export CCACHE_COMPRESSLEVEL=3
 echo "ccache compression enabled: level $CCACHE_COMPRESSLEVEL; cache limit ${CCACHE_MAXSIZE:-default}"
 
 # Keep executable symlinks on the runner/VM's native filesystem: an SSHFS-backed
