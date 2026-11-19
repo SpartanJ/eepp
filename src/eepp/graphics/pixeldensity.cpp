@@ -6,9 +6,14 @@
 
 namespace EE { namespace Graphics {
 
+namespace {
+
+thread_local Float sScopedPixelDensity = 0.f;
+thread_local const Float* sScopedPixelDensitySource = nullptr;
+
+} // namespace
+
 Float PixelDensity::sPixelDensity = 1.f;
-thread_local Float PixelDensity::sScopedPixelDensity = 0.f;
-thread_local const Float* PixelDensity::sScopedPixelDensitySource = nullptr;
 
 PixelDensity::Context::Context( Float density, const Float* source ) :
 	mPreviousSource( sScopedPixelDensitySource ), mPreviousDensity( sScopedPixelDensity ) {

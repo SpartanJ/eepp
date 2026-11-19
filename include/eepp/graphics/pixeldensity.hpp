@@ -128,8 +128,6 @@ class EE_API PixelDensity {
 
   protected:
 	static Float sPixelDensity;
-	static thread_local Float sScopedPixelDensity;
-	static thread_local const Float* sScopedPixelDensitySource;
 };
 
 }} // namespace EE::Graphics
