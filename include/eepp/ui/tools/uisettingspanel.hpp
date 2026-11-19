@@ -27,7 +27,7 @@ enum class PixelDensityMode : Uint8;
 
 namespace EE::UI::Tools {
 
-using Window::PixelDensityMode;
+using EE::Window::PixelDensityMode;
 
 struct SettingView;
 
