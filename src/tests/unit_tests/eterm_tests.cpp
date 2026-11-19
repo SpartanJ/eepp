@@ -154,6 +154,24 @@ waitForSnapshot( const std::shared_ptr<TerminalSession>& session,
 	return nullptr;
 }
 
+static std::vector<TerminalSession::Event>
+waitForProcessExitEvents( const std::shared_ptr<TerminalSession>& session ) {
+	std::vector<TerminalSession::Event> events;
+	const auto deadline = MonotonicClock::now() + Seconds( 1 );
+	// The final snapshot can be visible before the worker queues the ordered exit event.
+	while ( MonotonicClock::now() < deadline ) {
+		bool exited = false;
+		for ( auto& event : session->drainEvents() ) {
+			exited |= event.type == TerminalSession::EventType::ProcessExit;
+			events.emplace_back( std::move( event ) );
+		}
+		if ( exited )
+			break;
+		Sys::sleep( Milliseconds( 1 ) );
+	}
+	return events;
+}
+
 UTEST( eterm_display, startup_uses_default_grid_before_layout ) {
 	EE::UI::UIApplication app(
 		WindowSettings( 640, 480, "eterm startup dimensions", WindowStyle::Hidden ),
@@ -888,19 +906,17 @@ UTEST( eterm_session, process_exit_follows_buffered_output_and_final_snapshot ) 
 	ASSERT_TRUE( ptyPtr->mBytesRead.load( std::memory_order_relaxed ) > 0 );
 	processPtr->mExited.store( true );
 
-	auto finalSnapshot = waitForSnapshot(
-		session, []( const TerminalSnapshot& snapshot ) { return snapshot.processExited; } );
-	ASSERT_TRUE( finalSnapshot != nullptr );
-	EXPECT_EQ( 0, finalSnapshot->exitCode );
-
 	size_t bytesRead = 0;
 	bool sawExit = false;
-	for ( auto& event : session->drainEvents() ) {
+	for ( const auto& event : waitForProcessExitEvents( session ) ) {
 		if ( event.type == TerminalSession::EventType::Data )
 			bytesRead += event.data.size();
 		else if ( event.type == TerminalSession::EventType::ProcessExit )
 			sawExit = true;
 	}
+	auto finalSnapshot = session->snapshot();
+	ASSERT_TRUE( finalSnapshot && finalSnapshot->processExited );
+	EXPECT_EQ( 0, finalSnapshot->exitCode );
 	EXPECT_EQ( static_cast<size_t>( 3 * 1024 ), bytesRead );
 	EXPECT_TRUE( sawExit );
 }
@@ -6430,13 +6446,11 @@ UTEST( eterm_session, program_status_uses_an_ordered_metadata_channel ) {
 		session, []( const TerminalSnapshot& snapshot ) { return !snapshot.cells.empty(); } );
 	ASSERT_TRUE( initial != nullptr );
 
-	const auto drainStatus = [&session]( std::vector<TerminalSession::Event>* all = nullptr ) {
+	const auto drainStatus = [&session] {
 		std::shared_ptr<const ProgramStatusSnapshot> status;
 		for ( auto& event : session->drainEvents() ) {
 			if ( event.type == TerminalSession::EventType::ProgramStatus )
 				status = event.programStatus;
-			if ( all )
-				all->emplace_back( std::move( event ) );
 		}
 		return status;
 	};
@@ -6497,11 +6511,9 @@ UTEST( eterm_session, program_status_uses_an_ordered_metadata_channel ) {
 					 return status.records->size() == 2;
 				 } ) != nullptr );
 	processPtr->mExited.store( true );
-	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
-					 return snapshot.processExited;
-				 } ) != nullptr );
-	std::vector<TerminalSession::Event> events;
-	drainStatus( &events );
+	const auto events = waitForProcessExitEvents( session );
+	const auto finalSnapshot = session->snapshot();
+	ASSERT_TRUE( finalSnapshot && finalSnapshot->processExited );
 	int statusIndex = -1;
 	int exitIndex = -1;
 	std::shared_ptr<const ProgramStatusSnapshot> final;
