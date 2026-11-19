@@ -24,8 +24,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag resume( parser, "continue", "Resume getting a partially-downloaded file",
 					   { 'c', "continue" } );
 	args::Flag compressed( parser, "compressed", "Request compressed response", { "compressed" } );
-	args::ValueFlagList<std::string> postData( parser, "data", "HTTP POST data",
-											   { 'd', "data" } );
+	args::ValueFlagList<std::string> postData( parser, "data", "HTTP POST data", { 'd', "data" } );
 	args::ValueFlagList<std::string> postDataRaw( parser, "data-raw", "HTTP POST data RAW",
 												  { "data-raw" } );
 	args::ValueFlagList<std::string> postUrlEncode(
@@ -97,7 +96,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			}
 
 			// Set the host and port from the URI
-			http.setHost( uri.getHost(), uri.getPort(), uri.getScheme() == "https" );
+			http.setHost( uri );
 
 			// Set the path and query parts for the request
 			request.setUri( uri.getPathEtc() );

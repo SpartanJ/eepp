@@ -464,10 +464,7 @@ class EE_API Http : NonCopyable, public std::enable_shared_from_this<Http> {
 	void setHost( const std::string& host, unsigned short port = 0, bool useSSL = false,
 				  URI proxy = URI() );
 
-	/** @brief Sets the host from an URI (this is the equivalent of calling setHost(
-	 * uri.getHost(),
-
-	 * * uri.getPort(), uri.getScheme() == "https" ) ) */
+	/** @brief Sets the host and port from a URI and enables TLS for the HTTPS scheme. */
 	void setHost( const URI& uri, URI proxy = URI() );
 
 	/** @brief Send a HTTP request and return the server's response.

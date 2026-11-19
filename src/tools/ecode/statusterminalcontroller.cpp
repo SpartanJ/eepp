@@ -155,10 +155,10 @@ UITerminal* StatusTerminalController::createTerminal(
 		mContext->getTerminalFont() ? mContext->getTerminalFont() : mContext->getFontMono(),
 		mContext->termConfig().fontSize.asPixels( 0, Sizef(), mContext->getDisplayDPI() ),
 		initialSize, std::move( program ), std::move( args ), directory,
-		mContext->termConfig().scrollback, nullptr, false, true, env,
-		TerminalSessionOptions{ mContext->termConfig().allowOsc52ClipboardWrite,
-								mContext->termConfig().enableOsc8Hyperlinks,
-								mContext->termConfig().graphemeClustering } );
+		mContext->termConfig().historySize(), nullptr,
+		mContext->getTerminalManager()->getUseFrameBuffer(),
+		!mContext->termConfig().closeTerminalTabOnExit, env,
+		mContext->termConfig().sessionOptions() );
 	UITerminal* term = display ? UITerminal::New( display ) : nullptr;
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
@@ -171,11 +171,8 @@ UITerminal* StatusTerminalController::createTerminal(
 		mContext->getTerminalManager()->getTerminalCurrentColorScheme();
 	auto csIt = terminalColorSchemes.find( currentTerminalColorScheme );
 	term->getTerm()->setAllowMemoryTrimming( true );
-	term->getTerm()->setCursorMode( mContext->termConfig().cursorStyle );
-	term->getTerm()->setLinkDetectionEnabled( mContext->termConfig().detectLinks );
+	mContext->termConfig().applyInitial( term );
 	term->setExclusiveMode( mContext->termConfig().exclusiveMode );
-	term->setScrollViewType( mContext->termConfig().scrollBarType );
-	term->setVerticalScrollMode( mContext->termConfig().scrollBarMode );
 
 	term->setColorScheme( csIt != terminalColorSchemes.end()
 							  ? terminalColorSchemes.at( currentTerminalColorScheme )
@@ -239,16 +236,6 @@ UITerminal* StatusTerminalController::createTerminal(
 			term->setFocus();
 		} );
 	} );
-	term->getTerm()->pushEventCallback( [this, term]( const TerminalDisplay::Event& event ) {
-		if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
-			 mApp->getConfig().term.closeTerminalTabOnExit && term->getData() != 0 ) {
-			UITab* tab = (UITab*)term->getData();
-			auto* tabWidget = mApp->getSplitter()->tabWidgetFromWidget( term );
-			if ( tabWidget )
-				tabWidget->removeTab( tab );
-		}
-	} );
-
 	term->setCommand( "statusbar-panel-expand-contract-toggle",
 					  [this] { mContext->getStatusBar()->togglePanelExpansion(); } );
 
@@ -275,6 +262,7 @@ UITerminal* StatusTerminalController::createTerminal(
 			->setId( "statusbar-panel-expand-contract-toggle" );
 	} );
 
+	mContext->getTerminalManager()->connectTerminal( term, "terminal" );
 	mTabWidget->setTabSelected( tab );
 	return term;
 }

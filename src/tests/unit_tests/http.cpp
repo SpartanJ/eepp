@@ -61,6 +61,39 @@ struct ThreadGate {
 
 } // namespace
 
+UTEST( Http, hostStringSchemeSelectsTransportCaseInsensitively ) {
+	Http http( "HTTPS://Example.Test/" );
+	EXPECT_TRUE( http.isSSL() );
+	EXPECT_EQ( 443u, http.getPort() );
+	EXPECT_STDSTREQ( "example.test", http.getHostName() );
+
+	http.setHost( "HtTp://Example.Test/", 0, true );
+	EXPECT_FALSE( http.isSSL() );
+	EXPECT_EQ( 80u, http.getPort() );
+
+	http.setHost( "httpS://Example.Test/", 8443 );
+	EXPECT_TRUE( http.isSSL() );
+	EXPECT_EQ( 8443u, http.getPort() );
+}
+
+UTEST( Http, uriSchemeSelectsTransportCaseInsensitively ) {
+	Http http;
+	http.setHost( URI( "HTTPS://example.test/path" ) );
+	EXPECT_TRUE( http.isSSL() );
+	EXPECT_EQ( 443u, http.getPort() );
+
+	http.setHost( URI( "HtTp://example.test/path" ) );
+	EXPECT_FALSE( http.isSSL() );
+	EXPECT_EQ( 80u, http.getPort() );
+
+	Http::Pool pool;
+	const auto secure = pool.get( URI( "httpS://example.test:8443/path" ) );
+	EXPECT_TRUE( secure->isSSL() );
+	EXPECT_EQ( 8443u, secure->getPort() );
+	EXPECT_TRUE( secure == pool.get( URI( "https://example.test:8443/other" ) ) );
+	EXPECT_TRUE( secure != pool.get( URI( "http://example.test:8443/path" ) ) );
+}
+
 UTEST( Http, responseHeaderLineLargerThanReceiveBuffer ) {
 	TcpListener listener;
 	ASSERT_EQ( listener.listen( Socket::AnyPort, IpAddress::LocalHost ), Socket::Done );

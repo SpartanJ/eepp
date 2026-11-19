@@ -70,6 +70,25 @@ void TerminalManager::forEachTerminal( const std::function<void( UITerminal* )>&
 	} );
 }
 
+void TerminalManager::connectTerminal( UITerminal* terminal, const char* defaultIcon ) {
+	if ( !terminal )
+		return;
+
+	const auto& preferences = mApp->termConfig();
+	mProgramStatus.watch( terminal, preferences.programStatus, defaultIcon );
+	terminal->getTerm()->setKeepAlive( !preferences.closeTerminalTabOnExit );
+	terminal->getTerm()->pushEventCallback(
+		[&preferences, terminal]( const TerminalDisplay::Event& event ) {
+			if ( event.type != TerminalDisplay::EventType::PROCESS_EXIT ||
+				 !preferences.closeTerminalTabOnExit )
+				return;
+			if ( auto* tabs = UITabWidget::fromOwnedNode( terminal ) ) {
+				if ( auto* tab = tabs->getTabFromOwnedWidget( terminal ) )
+					tabs->removeTab( tab );
+			}
+		} );
+}
+
 UITerminal* TerminalManager::getCurrentTerminal() const {
 	for ( auto* node = mApp->getUISceneNode()->getUIEventDispatcher()->getFocusNode(); node;
 		  node = node->getParent() ) {
@@ -190,7 +209,7 @@ void TerminalManager::updateColorSchemeMenu() {
 }
 
 bool TerminalManager::getUseFrameBuffer() const {
-	return mUseFrameBuffer;
+	return mUseFrameBuffer || mApp->termConfig().useFrameBuffer;
 }
 
 void TerminalManager::setUseFrameBuffer( bool useFrameBuffer ) {
@@ -664,11 +683,8 @@ UITerminal* TerminalManager::createNewTerminal(
 		mApp->getUISceneNode()->getWindow(),
 		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),
 		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
-		std::move( program ), std::move( args ), directory, mApp->termConfig().scrollback, nullptr,
-		mUseFrameBuffer, keepAlive, env,
-		TerminalSessionOptions{ mApp->termConfig().allowOsc52ClipboardWrite,
-								mApp->termConfig().enableOsc8Hyperlinks,
-								mApp->termConfig().graphemeClustering } );
+		std::move( program ), std::move( args ), directory, mApp->termConfig().historySize(),
+		nullptr, getUseFrameBuffer(), keepAlive, env, mApp->termConfig().sessionOptions() );
 	UITerminal* term = display ? UITerminal::New( display ) : nullptr;
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
@@ -677,11 +693,8 @@ UITerminal* TerminalManager::createNewTerminal(
 		return nullptr;
 	}
 
-	term->getTerm()->setCursorMode( mApp->termConfig().cursorStyle );
-	term->getTerm()->setLinkDetectionEnabled( mApp->termConfig().detectLinks );
+	mApp->termConfig().applyInitial( term );
 	term->setExclusiveMode( mApp->termConfig().exclusiveMode );
-	term->setScrollViewType( mApp->termConfig().scrollBarType );
-	term->setVerticalScrollMode( mApp->termConfig().scrollBarMode );
 
 	auto ret = mApp->getSplitter()->createWidgetInTabWidget(
 		tabWidget, term, title.empty() ? mApp->i18n( "shell", "Shell" ).toUtf8() : title, true );
@@ -696,16 +709,7 @@ UITerminal* TerminalManager::createNewTerminal(
 	term->setTitle( title );
 	auto csIt = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
 	term->getTerm()->setAllowMemoryTrimming( true );
-	term->getTerm()->setKeepAlive( !mApp->getConfig().term.closeTerminalTabOnExit );
-	term->getTerm()->pushEventCallback( [this, term]( const TerminalDisplay::Event& event ) {
-		if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
-			 mApp->getConfig().term.closeTerminalTabOnExit && term->getData() != 0 ) {
-			UITab* tab = (UITab*)term->getData();
-			auto* tabWidget = mApp->getSplitter()->tabWidgetFromWidget( term );
-			if ( tabWidget )
-				tabWidget->removeTab( tab );
-		}
-	} );
+	connectTerminal( term, "filetype-bash" );
 	term->setColorScheme( csIt != mTerminalColorSchemes.end()
 							  ? mTerminalColorSchemes.at( mTerminalCurrentColorScheme )
 							  : TerminalColorScheme::getDefault() );

@@ -48,13 +48,7 @@ void AppConfig::load() {
 	terminal.shell = mIni.getValue( "terminal", "shell", terminal.shell );
 	terminal.shellArguments =
 		mIni.getValue( "terminal", "shell_arguments", terminal.shellArguments );
-	terminal.historySize = mIni.getValueU( "terminal", "scrollback", terminal.historySize );
-	terminal.cursorStyle = TerminalCursorHelper::modeFromString( mIni.getValue(
-		"terminal", "cursor_style", TerminalCursorHelper::modeToString( terminal.cursorStyle ) ) );
-	const std::string scrollBarMode = mIni.getValue( "terminal", "scrollbar_mode", "auto" );
-	terminal.scrollBarMode = scrollBarMode == "always_on"	 ? ScrollBarMode::AlwaysOn
-							 : scrollBarMode == "always_off" ? ScrollBarMode::AlwaysOff
-															 : ScrollBarMode::Auto;
+	terminal.load( mIni );
 	terminal.followActivePane =
 		mIni.getValueB( "terminal", "follow_active_pane", terminal.followActivePane );
 
@@ -104,13 +98,7 @@ bool AppConfig::save() {
 	mIni.setValue( "terminal", "color_scheme", terminal.colorScheme );
 	mIni.setValue( "terminal", "shell", terminal.shell );
 	mIni.setValue( "terminal", "shell_arguments", terminal.shellArguments );
-	mIni.setValueU( "terminal", "scrollback", terminal.historySize );
-	mIni.setValue( "terminal", "cursor_style",
-				   TerminalCursorHelper::modeToString( terminal.cursorStyle ) );
-	mIni.setValue( "terminal", "scrollbar_mode",
-				   terminal.scrollBarMode == ScrollBarMode::AlwaysOn	? "always_on"
-				   : terminal.scrollBarMode == ScrollBarMode::AlwaysOff ? "always_off"
-																		: "auto" );
+	terminal.save( mIni );
 	mIni.setValueB( "terminal", "follow_active_pane", terminal.followActivePane );
 
 	mIni.setValueF( "window", "pixel_density", window.pixelDensity );

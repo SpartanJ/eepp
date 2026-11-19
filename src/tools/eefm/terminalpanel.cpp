@@ -226,10 +226,12 @@ bool TerminalPanel::create() {
 	Sizef size(
 		mSplitter->getPixelsSize().getWidth(),
 		eemax( PixelDensity::dpToPx( 120 ), mSplitter->getPixelsSize().getHeight() * 0.3f ) );
-	mTerminal = UITerminal::New(
-		mTerminalFont, PixelDensity::dpToPx( mApp.config().terminal.fontSize ), size,
-		mApp.config().terminal.shell, Process::parseArgs( mApp.config().terminal.shellArguments ),
-		{}, directory, mApp.config().terminal.historySize );
+	const auto& preferences = mApp.config().terminal;
+	auto display = TerminalDisplay::create(
+		mUI->getWindow(), mTerminalFont, PixelDensity::dpToPx( preferences.fontSize ), size,
+		preferences.shell, Process::parseArgs( preferences.shellArguments ), directory,
+		preferences.historySize(), nullptr, false, true, {}, preferences.sessionOptions() );
+	mTerminal = display ? UITerminal::New( display ) : nullptr;
 	if ( !mTerminal || !mTerminal->getTerm() ) {
 		if ( mTerminal )
 			mTerminal->close();
@@ -239,7 +241,8 @@ bool TerminalPanel::create() {
 		return false;
 	}
 	mTerminal->setParent( mApp.parking() );
-	applyConfig();
+	preferences.applyInitial( mTerminal );
+	applyColorScheme();
 	mTerminalDirectory = directory;
 	mTerminalFollowed.clear();
 	mTerminal->setCommand( "toggle-terminal", [this] { show( false ); } );
@@ -347,15 +350,13 @@ const std::map<std::string, TerminalColorScheme>& TerminalPanel::colorSchemes() 
 	return mTerminalColorSchemes;
 }
 
-void TerminalPanel::applyConfig() {
+void TerminalPanel::applyColorScheme() {
 	if ( !mTerminal || !mTerminal->getTerm() )
 		return;
 	const auto& schemes = colorSchemes();
 	auto found = schemes.find( mApp.config().terminal.colorScheme );
 	mTerminal->setColorScheme( found != schemes.end() ? found->second
 													  : TerminalColorScheme::getDefault() );
-	mTerminal->getTerm()->setCursorMode( mApp.config().terminal.cursorStyle );
-	mTerminal->setVerticalScrollMode( mApp.config().terminal.scrollBarMode );
 }
 
 } // namespace eefm

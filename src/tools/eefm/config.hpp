@@ -9,7 +9,7 @@
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/vfs/batchrename.hpp>
 #include <eepp/window/window.hpp>
-#include <eterm/terminal/terminaltypes.hpp>
+#include <eterm/ui/terminalpreferences.hpp>
 
 #include <string>
 
@@ -51,7 +51,9 @@ struct FilesConfig {
 	EE::VFS::BatchRenamePattern::Mode renameMode{ EE::VFS::BatchRenamePattern::Mode::Enumerate };
 };
 
-struct TerminalConfig {
+struct TerminalConfig : eterm::UI::TerminalPreferences {
+	TerminalConfig() { cursorStyle = TerminalCursorMode::SteadyBlock; }
+
 	/** Empty: the bundled monospace font. */
 	std::string fontPath;
 	Float fontSize{ 11 };
@@ -60,9 +62,6 @@ struct TerminalConfig {
 	/** Empty: the user's shell. */
 	std::string shell;
 	std::string shellArguments;
-	size_t historySize{ 10000 };
-	TerminalCursorMode cursorStyle{ TerminalCursorMode::SteadyBlock };
-	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };
 	/** The shell follows the active pane (cd), as Dolphin. */
 	bool followActivePane{ true };
 };

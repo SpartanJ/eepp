@@ -29,38 +29,14 @@ void AppConfig::load() {
 		mIni.getValue( "terminal", "default_working_directory", terminal.defaultWorkingDirectory );
 	terminal.executeInShell =
 		mIni.getValue( "terminal", "execute_in_shell", terminal.executeInShell );
-	terminal.historySize = mIni.getValueU( "terminal", "scrollback", terminal.historySize );
-	terminal.cursorStyle = TerminalCursorHelper::modeFromString( mIni.getValue(
-		"terminal", "cursor_style", TerminalCursorHelper::modeToString( terminal.cursorStyle ) ) );
+	terminal.load( mIni );
 	terminal.useFrameBuffer = mIni.getValueB( "terminal", "framebuffer", terminal.useFrameBuffer );
 	terminal.closeOnExit = mIni.getValueB( "terminal", "close_on_exit", terminal.closeOnExit );
 	terminal.initialTabs = mIni.getValueU( "terminal", "initial_tabs", terminal.initialTabs );
 	terminal.exclusiveMode = mIni.getValueB( "terminal", "exclusive_mode", terminal.exclusiveMode );
 	terminal.inheritWorkingDirectory =
 		mIni.getValueB( "terminal", "inherit_working_directory", terminal.inheritWorkingDirectory );
-	terminal.allowOsc52ClipboardWrite = mIni.getValueB( "terminal", "allow_osc52_clipboard_write",
-														terminal.allowOsc52ClipboardWrite );
-	terminal.enableOsc8Hyperlinks =
-		mIni.getValueB( "terminal", "enable_osc8_hyperlinks", terminal.enableOsc8Hyperlinks );
-	terminal.graphemeClustering =
-		mIni.getValueB( "terminal", "grapheme_clustering", terminal.graphemeClustering );
-	terminal.detectLinks = mIni.getValueB( "terminal", "detect_links", terminal.detectLinks );
-	terminal.showProgramStatus =
-		mIni.getValueB( "terminal", "show_program_status", terminal.showProgramStatus );
-	terminal.programStatusNotifications = mIni.getValueB(
-		"terminal", "program_status_notifications", terminal.programStatusNotifications );
-	terminal.programStatusSounds =
-		mIni.getValueB( "terminal", "program_status_sounds", terminal.programStatusSounds );
-	terminal.programStatusAlertsWhenActive = mIni.getValueB(
-		"terminal", "program_status_alerts_when_active", terminal.programStatusAlertsWhenActive );
-	terminal.programStatusAlertsAllStates = mIni.getValueB(
-		"terminal", "program_status_alerts_all_states", terminal.programStatusAlertsAllStates );
-	terminal.programStatusSound =
-		mIni.getValue( "terminal", "program_status_sound", terminal.programStatusSound );
-	terminal.programStatusSoundVolume =
-		std::clamp( mIni.getValueI( "terminal", "program_status_sound_volume",
-									terminal.programStatusSoundVolume ),
-					0, 100 );
+	terminal.programStatus.load( mIni );
 	terminal.restoreLastSession =
 		mIni.getValueB( "terminal", "restore_last_session", terminal.restoreLastSession );
 	terminal.recoverHarnessSessions =
@@ -73,13 +49,6 @@ void AppConfig::load() {
 		newTerminalBehavior == "vertical"	  ? NewTerminalBehavior::VerticalSplit
 		: newTerminalBehavior == "horizontal" ? NewTerminalBehavior::HorizontalSplit
 											  : NewTerminalBehavior::CurrentTabBar;
-	terminal.scrollBarType = mIni.getValue( "terminal", "scrollbar_type", "overlay" ) == "outside"
-								 ? ScrollViewType::Outside
-								 : ScrollViewType::Overlay;
-	const auto scrollBarMode = mIni.getValue( "terminal", "scrollbar_mode", "auto" );
-	terminal.scrollBarMode = scrollBarMode == "always_on"	 ? ScrollBarMode::AlwaysOn
-							 : scrollBarMode == "always_off" ? ScrollBarMode::AlwaysOff
-															 : ScrollBarMode::Auto;
 	font.path = mIni.getValue( "font", "path", font.path );
 	font.fallbackPath = mIni.getValue( "font", "fallback_path", font.fallbackPath );
 	font.size = mIni.getValueF( "font", "size", font.size );
@@ -139,28 +108,13 @@ bool AppConfig::savePreferences() {
 	mIni.deleteValue( "terminal", "working_directory" );
 	mIni.setValue( "terminal", "default_working_directory", terminal.defaultWorkingDirectory );
 	mIni.setValue( "terminal", "execute_in_shell", terminal.executeInShell );
-	mIni.setValueU( "terminal", "scrollback", terminal.historySize );
-	mIni.setValue( "terminal", "cursor_style",
-				   TerminalCursorHelper::modeToString( terminal.cursorStyle ) );
+	terminal.save( mIni );
 	mIni.setValueB( "terminal", "framebuffer", terminal.useFrameBuffer );
 	mIni.setValueB( "terminal", "close_on_exit", terminal.closeOnExit );
 	mIni.setValueU( "terminal", "initial_tabs", terminal.initialTabs );
 	mIni.setValueB( "terminal", "exclusive_mode", terminal.exclusiveMode );
 	mIni.setValueB( "terminal", "inherit_working_directory", terminal.inheritWorkingDirectory );
-	mIni.setValueB( "terminal", "allow_osc52_clipboard_write", terminal.allowOsc52ClipboardWrite );
-	mIni.setValueB( "terminal", "enable_osc8_hyperlinks", terminal.enableOsc8Hyperlinks );
-	mIni.setValueB( "terminal", "grapheme_clustering", terminal.graphemeClustering );
-	mIni.setValueB( "terminal", "detect_links", terminal.detectLinks );
-	mIni.setValueB( "terminal", "show_program_status", terminal.showProgramStatus );
-	mIni.setValueB( "terminal", "program_status_notifications",
-					terminal.programStatusNotifications );
-	mIni.setValueB( "terminal", "program_status_sounds", terminal.programStatusSounds );
-	mIni.setValueB( "terminal", "program_status_alerts_when_active",
-					terminal.programStatusAlertsWhenActive );
-	mIni.setValueB( "terminal", "program_status_alerts_all_states",
-					terminal.programStatusAlertsAllStates );
-	mIni.setValue( "terminal", "program_status_sound", terminal.programStatusSound );
-	mIni.setValueI( "terminal", "program_status_sound_volume", terminal.programStatusSoundVolume );
+	terminal.programStatus.save( mIni );
 	mIni.setValueB( "terminal", "restore_last_session", terminal.restoreLastSession );
 	mIni.setValueB( "terminal", "recover_harness_sessions", terminal.recoverHarnessSessions );
 	mIni.setValueB( "ui", "smooth_scroll", ui.smoothScroll );
@@ -170,12 +124,6 @@ bool AppConfig::savePreferences() {
 				   : terminal.newTerminalBehavior == NewTerminalBehavior::HorizontalSplit
 					   ? "horizontal"
 					   : "current" );
-	mIni.setValue( "terminal", "scrollbar_type",
-				   terminal.scrollBarType == ScrollViewType::Overlay ? "overlay" : "outside" );
-	mIni.setValue( "terminal", "scrollbar_mode",
-				   terminal.scrollBarMode == ScrollBarMode::AlwaysOn	? "always_on"
-				   : terminal.scrollBarMode == ScrollBarMode::AlwaysOff ? "always_off"
-																		: "auto" );
 	mIni.setValue( "font", "path", font.path );
 	mIni.setValue( "font", "fallback_path", font.fallbackPath );
 	mIni.setValueF( "font", "size", font.size );

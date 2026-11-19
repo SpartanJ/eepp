@@ -2,7 +2,6 @@
 
 #include "appconfig.hpp"
 #include "harnesssessionrecovery.hpp"
-#include "programstatusalerts.hpp"
 #include "settingsactions.hpp"
 #include "uimainlayout.hpp"
 #include <args/args.hxx>
@@ -18,6 +17,7 @@
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <efsw/efsw.hpp>
+#include <eterm/ui/programstatusui.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 using namespace EE;
@@ -38,11 +38,8 @@ struct TerminalLaunchConfig {
 	std::vector<std::string> arguments;
 	std::string workingDirectory;
 	std::string executeInShell;
-	size_t historySize{ 10000 };
-	TerminalCursorMode cursorStyle{ TerminalCursorMode::SteadyUnderline };
 	FontHinting fontHinting{ FontHinting::Full };
 	FontAntialiasing fontAntialiasing{ FontAntialiasing::Grayscale };
-	bool useFrameBuffer{ false };
 	bool closeOnExit{ true };
 	bool launchExecutable{ false };
 };
@@ -96,18 +93,7 @@ class App : private efsw::FileWatchListener {
 
 	void configureTab( UITab* tab );
 
-	/** Shows the terminal's program status in its tab, leaving the title and the terminal alone. */
-	void updateTabProgramStatus( UITab* tab );
-
-	/** Only the terminal the user is using can have its status seen: not a visible split, and not
-	 * one in a window that lost the keyboard to another application. */
-	bool isTerminalActive( const UITerminal* terminal ) const;
-
-	void alertProgramStatus( UITab* tab );
-
 	void updateWidgetProgramStatus( UIWidget* widget );
-
-	String describeProgramStatus( const PresentedProgramStatus& status ) const;
 
 	/** Where the terminal's shell reported to be, else where it started. Empty if neither of them
 	 * can be used as a working directory. */
@@ -233,10 +219,7 @@ class App : private efsw::FileWatchListener {
 	bool managesSession{ false };
 	Clock secondsCounter;
 	SmallVector<UITab*, 8> pendingExitCloseTabs;
-	/** UI-only memory of the done or error each tab's user has seen: the programs' records stay. */
-	UnorderedMap<UITab*, std::shared_ptr<const ProgramStatusSnapshot>> seenProgramStatus;
-	UnorderedMap<UITab*, std::shared_ptr<const ProgramStatusSnapshot>> lastAlertStatus;
-	ProgramStatusAlerts programStatusAlerts;
+	ProgramStatusUI programStatus{ "eterm" };
 	HarnessSessionRecovery harnessRecovery;
 	TerminalSplitterClient splitterClient{ *this };
 };

@@ -2151,6 +2151,7 @@ void App::setTheme( const std::string& path ) {
 	mUISceneNode->setStyleSheet( theme->getStyleSheet(), false );
 
 	mUISceneNode->getStyleSheet().combineStyleSheet( oldMarkers );
+	ProgramStatusUI::installStyles( mUISceneNode );
 
 	updateUIColorScheme( path );
 
@@ -5033,6 +5034,12 @@ void App::init( InitParameters& params ) {
 
 		mWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
 			switch ( event->Type ) {
+				case InputEvent::Window:
+					if ( event->window.type == InputEvent::WindowKeyboardFocusGain ) {
+						mTerminalManager->programStatus().refresh(
+							mTerminalManager->getCurrentTerminal() );
+					}
+					break;
 				case InputEvent::FileDropped: {
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 					// Finder sends application-level opens without a destination window. Its

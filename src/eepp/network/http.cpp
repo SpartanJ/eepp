@@ -1550,17 +1550,19 @@ Http::~Http() {
 }
 
 void Http::setHost( const std::string& host, unsigned short port, bool useSSL, URI proxy ) {
-	std::string name = host;
-	if ( String::toLower( name.substr( 0, 8 ) ) == "https://" ) {
-		name.erase( 0, 8 );
+	constexpr std::string_view httpsPrefix = "https://";
+	constexpr std::string_view httpPrefix = "http://";
+	std::string_view name = host;
+	if ( String::istartsWith( name, httpsPrefix ) ) {
+		name.remove_prefix( httpsPrefix.size() );
 		useSSL = true;
-	} else if ( String::toLower( name.substr( 0, 7 ) ) == "http://" ) {
-		name.erase( 0, 7 );
+	} else if ( String::istartsWith( name, httpPrefix ) ) {
+		name.remove_prefix( httpPrefix.size() );
 		useSSL = false;
 	}
 	if ( !name.empty() && name.back() == '/' )
-		name.pop_back();
-	mHostName = String::toLower( name );
+		name.remove_suffix( 1 );
+	mHostName = String::toLower( std::string{ name } );
 	mIsSSL = useSSL;
 	mPort = port ? port : ( useSSL ? 443 : 80 );
 	mProxy = std::move( proxy );
@@ -1570,7 +1572,8 @@ void Http::setHost( const std::string& host, unsigned short port, bool useSSL, U
 }
 
 void Http::setHost( const URI& uri, URI proxy ) {
-	setHost( uri.getHost(), uri.getPort(), uri.getScheme() == "https", std::move( proxy ) );
+	setHost( uri.getHost(), uri.getPort(), String::iequals( uri.getScheme(), "https" ),
+			 std::move( proxy ) );
 }
 
 Http::Response Http::sendRequest( const Http::Request& request, Time timeout ) {

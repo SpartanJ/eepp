@@ -1,14 +1,36 @@
-#include "programstatusalerts.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <eepp/audio/sound.hpp>
 #include <eepp/audio/soundbuffer.hpp>
+#include <eepp/system/inifile.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/notification.hpp>
 #include <eepp/system/threadpool.hpp>
+#include <eterm/terminal/programstatusalerts.hpp>
 
-namespace eterm {
+namespace eterm::Terminal {
+
+void ProgramStatusPreferences::load( const IniFile& ini ) {
+	show = ini.getValueB( "terminal", "show_program_status", show );
+	notifications = ini.getValueB( "terminal", "program_status_notifications", notifications );
+	sounds = ini.getValueB( "terminal", "program_status_sounds", sounds );
+	whenActive = ini.getValueB( "terminal", "program_status_alerts_when_active", whenActive );
+	allStates = ini.getValueB( "terminal", "program_status_alerts_all_states", allStates );
+	sound = ini.getValue( "terminal", "program_status_sound", sound );
+	volume =
+		std::clamp( ini.getValueI( "terminal", "program_status_sound_volume", volume ), 0, 100 );
+}
+
+void ProgramStatusPreferences::save( IniFile& ini ) const {
+	ini.setValueB( "terminal", "show_program_status", show );
+	ini.setValueB( "terminal", "program_status_notifications", notifications );
+	ini.setValueB( "terminal", "program_status_sounds", sounds );
+	ini.setValueB( "terminal", "program_status_alerts_when_active", whenActive );
+	ini.setValueB( "terminal", "program_status_alerts_all_states", allStates );
+	ini.setValue( "terminal", "program_status_sound", sound );
+	ini.setValueI( "terminal", "program_status_sound_volume", volume );
+}
 
 ProgramStatusAlerts::ProgramStatusAlerts() = default;
 
@@ -42,7 +64,7 @@ bool ProgramStatusAlerts::deliver( std::string title, std::string message, bool 
 		std::string error;
 		const bool success = !notification || Notification::show( title, message, &error );
 		if ( !success )
-			Log::warning( "eterm: %s", error.c_str() );
+			Log::warning( "Terminal program status: %s", error.c_str() );
 		mBusy = false;
 		if ( completed )
 			completed( success, std::move( error ) );
@@ -80,7 +102,7 @@ void ProgramStatusAlerts::playSound( const std::string& name, int volume ) {
 			loaded = mBuffer->loadFromFile( name );
 		}
 		if ( !loaded ) {
-			Log::warning( "eterm: could not load program status sound: %s", name.c_str() );
+			Log::warning( "Could not load program status sound: %s", name.c_str() );
 			mLoadedSound.clear();
 			return;
 		}
@@ -91,4 +113,4 @@ void ProgramStatusAlerts::playSound( const std::string& name, int volume ) {
 	mSound->play();
 }
 
-} // namespace eterm
+} // namespace eterm::Terminal

@@ -15,23 +15,6 @@ struct TabWidgetSplitterDeleter {
 
 namespace {
 
-/** How a tab shows a program status. Each style class has one icon, and none means no status. */
-struct ProgramStatusVisual {
-	const char* icon{ nullptr };
-	const char* styleClass{ nullptr };
-};
-
-constexpr ProgramStatusVisual ProgramStatusWorking{ "loader-2", "program_status_working" };
-constexpr ProgramStatusVisual ProgramStatusBlocked{ "warning", "program_status_blocked" };
-constexpr ProgramStatusVisual ProgramStatusDone{ "ok", "program_status_done" };
-constexpr ProgramStatusVisual ProgramStatusError{ "error", "program_status_error" };
-constexpr ProgramStatusVisual ProgramStatusPaused{ "pause-fill", "program_status_paused" };
-
-constexpr const char* ProgramStatusProgressClass = "program_status_progress";
-constexpr const char* ProgramStatusUnreadClass = "program_status_unread";
-
-constexpr size_t MaxProgramStatusMessageLength = 256;
-
 bool isUsableDirectory( const std::string& path ) {
 	if ( !FileSystem::isDirectory( path ) )
 		return false;
@@ -45,51 +28,13 @@ bool isUsableDirectory( const std::string& path ) {
 /** The class that makes the tab splitter save a widget as a terminal. */
 constexpr const char* SessionTerminalType = "terminal";
 
-/** Results wait for the user. Other states are live: looking at a blocked program doesn't unblock
- * it, and OSC 9;4 errors expire by themselves. */
-bool isProgramStatusResult( const PresentedProgramStatus& status ) {
-	return status.source == ProgramStatusSource::Osc7501 &&
-		   ( status.state == ProgramState::Done || status.state == ProgramState::Error );
-}
-
-ProgramStatusVisual programStatusVisual( const PresentedProgramStatus& status ) {
-	if ( status.source == ProgramStatusSource::Osc9_4 ) {
-		switch ( status.legacyState ) {
-			case LegacyProgressState::Normal:
-			case LegacyProgressState::Indeterminate:
-				return ProgramStatusWorking;
-			case LegacyProgressState::Error:
-				return ProgramStatusError;
-			case LegacyProgressState::PausedOrWarning:
-				return ProgramStatusPaused;
-			case LegacyProgressState::Inactive:
-				break;
-		}
-		return {};
-	}
-	if ( status.source != ProgramStatusSource::Osc7501 )
-		return {};
-	switch ( status.state ) {
-		case ProgramState::Working:
-			return ProgramStatusWorking;
-		case ProgramState::Blocked:
-			return ProgramStatusBlocked;
-		case ProgramState::Done:
-			return ProgramStatusDone;
-		case ProgramState::Error:
-			return ProgramStatusError;
-		case ProgramState::Idle:
-			break;
-	}
-	return {};
-}
-
 } // namespace
 
 void App::TerminalSplitterClient::onTabCreated( UITab* tab, UIWidget* widget ) {
 	if ( mApp.terminalIcon && widget && widget->isType( UI_TYPE_TERMINAL ) )
 		tab->setIcon( mApp.terminalIcon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
 	mApp.configureTab( tab );
+	mApp.updateWidgetProgramStatus( widget );
 }
 
 void App::TerminalSplitterClient::onWidgetFocusChange( UIWidget* widget ) {
@@ -480,184 +425,9 @@ void App::restoreMaximizedTabWidget() {
 		win->close();
 }
 
-void App::updateTabProgramStatus( UITab* tab ) {
-	auto* terminal = terminalFromTab( tab );
-	if ( !terminal || !terminal->getTerm() )
-		return;
-	static const PresentedProgramStatus noStatus;
-	const auto& status = terminal->getTerm()->getProgramStatus();
-	const auto& presented =
-		config->terminal.showProgramStatus && status ? status->presentation : noStatus;
-
-	const bool isResult = isProgramStatusResult( presented );
-	bool seen = false;
-	if ( isResult ) {
-		const auto found = seenProgramStatus.find( tab );
-		seen = found != seenProgramStatus.end() && found->second->presentation == presented;
-		if ( !seen && isTerminalActive( terminal ) ) {
-			seenProgramStatus[tab] = status;
-			seen = true;
-		}
-	} else if ( config->terminal.showProgramStatus ) {
-		// Anything else in between makes the next result a new one, even with the same text.
-		seenProgramStatus.erase( tab );
-	}
-	const bool unread = isResult && !seen;
-	// A seen error keeps its icon until the program clears it: only done means "not seen yet".
-	const auto visual = seen && presented.state == ProgramState::Done
-							? ProgramStatusVisual{}
-							: programStatusVisual( presented );
-	if ( unread != tab->hasClass( ProgramStatusUnreadClass ) ) {
-		if ( unread )
-			tab->addClass( ProgramStatusUnreadClass );
-		else
-			tab->removeClass( ProgramStatusUnreadClass );
-	}
-
-	// Progress updates keep the class, so they only reach the tooltip.
-	bool changed = false;
-	for ( const auto& other : { ProgramStatusWorking, ProgramStatusBlocked, ProgramStatusDone,
-								ProgramStatusError, ProgramStatusPaused } ) {
-		if ( other.styleClass != visual.styleClass && tab->hasClass( other.styleClass ) ) {
-			tab->removeClass( other.styleClass );
-			changed = true;
-		}
-	}
-	if ( visual.styleClass && !tab->hasClass( visual.styleClass ) ) {
-		tab->addClass( visual.styleClass );
-		changed = true;
-	}
-	if ( changed ) {
-		auto* icon = visual.icon ? scene->findIcon( visual.icon ) : terminalIcon;
-		if ( icon )
-			tab->setIcon( icon->createDrawable( PixelDensity::dpToPxI( 12 ) ) );
-	}
-
-	// The bar's width is the only thing CSS can't know. Without the class, the theme's tab remains.
-	if ( visual.styleClass && presented.percentage ) {
-		tab->getUIStyle()->setStyleSheetVariable( StyleSheetVariable(
-			"--program-status-progress",
-			String::format( "%d%%", static_cast<int>( *presented.percentage ) ) ) );
-		if ( !tab->hasClass( ProgramStatusProgressClass ) )
-			tab->addClass( ProgramStatusProgressClass );
-		tab->reloadStyle( false, false, true, true, true );
-	} else if ( tab->hasClass( ProgramStatusProgressClass ) ) {
-		tab->removeClass( ProgramStatusProgressClass );
-	}
-	String description = describeProgramStatus( presented );
-	if ( unread )
-		description += " · " + i18n( "program_status_unread", "Not seen yet" );
-	tab->setTooltipText( description );
-}
-
-void App::alertProgramStatus( UITab* tab ) {
-	auto* terminal = terminalFromTab( tab );
-	if ( !terminal || !terminal->getTerm() )
-		return;
-	const auto status = terminal->getTerm()->getProgramStatus();
-	if ( !status )
-		return;
-	auto& previous = lastAlertStatus[tab];
-	const bool transition = ProgramStatusAlerts::isTransition(
-		previous ? &previous->presentation : nullptr, status->presentation,
-		config->terminal.programStatusAlertsAllStates );
-	previous = status; // Track even suppressed changes: focus/settings never replay old alerts.
-	if ( !transition ||
-		 ( !config->terminal.programStatusAlertsWhenActive && isTerminalActive( terminal ) ) )
-		return;
-	if ( !config->terminal.programStatusNotifications && !config->terminal.programStatusSounds )
-		return;
-	const String title =
-		"eterm · " +
-		String::fromUtf8( ProgramStatusTracker::sanitizeForDisplay( terminal->getTitle() ) )
-			.substr( 0, 80 );
-	String message = describeProgramStatus( status->presentation );
-	if ( message.empty() )
-		message = i18n( "program_status_idle", "Idle" );
-	programStatusAlerts.deliver(
-		title.toUtf8(), message.toUtf8(), config->terminal.programStatusNotifications,
-		config->terminal.programStatusSounds, config->terminal.programStatusSound,
-		config->terminal.programStatusSoundVolume );
-}
-
-bool App::isTerminalActive( const UITerminal* terminal ) const {
-	return appWindow->hasInputFocus() && tabSplitter->getCurWidget() == terminal;
-}
-
 void App::updateWidgetProgramStatus( UIWidget* widget ) {
-	// Selecting a new tab gets here from inside UITabWidget::add(), so the splitter can't tell the
-	// widget's tab yet.
-	if ( auto* tabWidget = widget ? UITabWidget::fromOwnedNode( widget ) : nullptr )
-		updateTabProgramStatus( tabWidget->getTabFromOwnedWidget( widget ) );
-}
-
-String App::describeProgramStatus( const PresentedProgramStatus& status ) const {
-	String description;
-	if ( status.source == ProgramStatusSource::Osc9_4 ) {
-		switch ( status.legacyState ) {
-			case LegacyProgressState::Normal:
-				description = i18n( "program_status_progress", "Progress" );
-				break;
-			case LegacyProgressState::Indeterminate:
-				description = i18n( "program_status_running", "Running" );
-				break;
-			case LegacyProgressState::Error:
-				description = i18n( "program_status_progress_error", "Progress error" );
-				break;
-			case LegacyProgressState::PausedOrWarning:
-				// The protocol doesn't tell them apart: terminals disagree on this state's meaning.
-				description = i18n( "program_status_paused_or_warning", "Paused / warning" );
-				break;
-			case LegacyProgressState::Inactive:
-				break;
-		}
-	} else if ( status.source == ProgramStatusSource::Osc7501 ) {
-		switch ( status.state ) {
-			case ProgramState::Working:
-				description = i18n( "program_status_working", "Working" );
-				break;
-			case ProgramState::Blocked:
-				switch ( status.kind ) {
-					case ProgramBlockKind::Permission:
-						description =
-							i18n( "program_status_blocked_permission", "Needs your permission" );
-						break;
-					case ProgramBlockKind::Question:
-						description =
-							i18n( "program_status_blocked_question", "Has a question for you" );
-						break;
-					case ProgramBlockKind::Auth:
-						description = i18n( "program_status_blocked_auth", "Needs authentication" );
-						break;
-					case ProgramBlockKind::None:
-						description = i18n( "program_status_blocked", "Waiting for you" );
-						break;
-				}
-				break;
-			case ProgramState::Done:
-				description = i18n( "program_status_done", "Done" );
-				break;
-			case ProgramState::Error:
-				description = i18n( "program_status_error", "Failed" );
-				break;
-			case ProgramState::Idle:
-				break;
-		}
-	}
-	if ( description.empty() )
-		return description;
-
-	// The fixed label leads, so a program's own text can't pose as the terminal's report.
-	const auto addPart = [&description]( const String& part ) {
-		if ( !part.empty() )
-			description += " · " + part;
-	};
-	addPart( String::fromUtf8( status.app ) );
-	addPart( String::fromUtf8( status.title ) );
-	addPart( String::fromUtf8( status.message ).substr( 0, MaxProgramStatusMessageLength ) );
-	if ( status.percentage )
-		addPart( String::format( "%d%%", static_cast<int>( *status.percentage ) ) );
-	return description;
+	if ( widget && widget->isType( UI_TYPE_TERMINAL ) )
+		programStatus.refresh( widget->asType<UITerminal>() );
 }
 
 void App::configureTab( UITab* tab ) {
@@ -672,16 +442,9 @@ void App::configureTab( UITab* tab ) {
 			if ( terminalConfig.closeOnExit &&
 				 event.type == TerminalDisplay::EventType::PROCESS_EXIT ) {
 				queueExitCloseTab( tab );
-			} else if ( event.type == TerminalDisplay::EventType::PROGRAM_STATUS_CHANGE ) {
-				alertProgramStatus( tab );
-				updateTabProgramStatus( tab );
 			}
 		} );
 	}
-	tab->on( Event::OnClose, [this, tab]( const Event* ) {
-		seenProgramStatus.erase( tab );
-		lastAlertStatus.erase( tab );
-	} );
 	tab->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
 		const auto* menuEvent = static_cast<const ContextMenuEvent*>( event );
 		auto* menu = menuEvent->getMenu();
@@ -806,11 +569,9 @@ UITerminal* App::newTerminal( const Sizef& initialSize, const std::string& worki
 	}
 	auto display = TerminalDisplay::create(
 		appWindow, terminalFont, terminalFontSize, initialSize, terminalConfig.program,
-		terminalConfig.arguments, workingDirectory, terminalConfig.historySize, nullptr,
-		terminalConfig.useFrameBuffer, !terminalConfig.closeOnExit, environment,
-		TerminalSessionOptions{ config->terminal.allowOsc52ClipboardWrite,
-								config->terminal.enableOsc8Hyperlinks,
-								config->terminal.graphemeClustering } );
+		terminalConfig.arguments, workingDirectory, config->terminal.historySize(), nullptr,
+		config->terminal.useFrameBuffer, !terminalConfig.closeOnExit, environment,
+		config->terminal.sessionOptions() );
 	if ( !display ) {
 		if ( !recoveryDirectory.empty() )
 			FileSystem::dirRemoveAll( recoveryDirectory );
@@ -830,16 +591,14 @@ UITerminal* App::newTerminal( const Sizef& initialSize, const std::string& worki
 	}
 
 	terminal->getTerm()->setAllowMemoryTrimming( true );
-	terminal->getTerm()->setCursorMode( terminalConfig.cursorStyle );
-	terminal->getTerm()->setLinkDetectionEnabled( config->terminal.detectLinks );
+	config->terminal.applyInitial( terminal );
 	terminal->getTerm()->setFontHinting( terminalConfig.fontHinting );
 	terminal->getTerm()->setFontAntialiasing( terminalConfig.fontAntialiasing );
 	terminal->setExclusiveMode( config->terminal.exclusiveMode );
-	terminal->setScrollViewType( config->terminal.scrollBarType );
-	terminal->setVerticalScrollMode( config->terminal.scrollBarMode );
 	if ( selectedColorScheme )
 		terminal->setColorScheme( *selectedColorScheme );
 	terminal->addClass( SessionTerminalType );
+	programStatus.watch( terminal, config->terminal.programStatus, "terminal" );
 
 	addTabKeyBindings( terminal );
 	terminal->on( Event::OnCreateContextMenu, [this, terminal]( const Event* event ) {
@@ -1106,7 +865,7 @@ int App::run( int argc, char* argv[] ) {
 	args::ValueFlag<std::string> shellArgs( parser, "shell-args", "Shell command line arguments",
 											{ "shell-args" }, config->terminal.shellArguments );
 	args::ValueFlag<size_t> historySize( parser, "scrollback", "Maximum history size (lines)",
-										 { 'l', "scrollback" }, config->terminal.historySize );
+										 { 'l', "scrollback" }, config->terminal.historySize() );
 	args::Flag fb( parser, "framebuffer", "Use frame buffer (more memory usage, less CPU usage)",
 				   { "fb", "framebuffer" } );
 	args::ValueFlag<std::string> fontPath( parser, "fontpath", "Font path", { 'f', "font" },
@@ -1196,7 +955,7 @@ int App::run( int argc, char* argv[] ) {
 	}
 	config->terminal.shell = shell.Get();
 	config->terminal.shellArguments = shellArgs.Get();
-	config->terminal.historySize = historySize.Get();
+	config->terminal.scrollback = historySize.Get();
 	config->font.path = fontPath.Get();
 	config->font.fallbackPath = fallbackFontPath.Get();
 	config->font.size = fontSize.Get();
@@ -1317,53 +1076,6 @@ int App::run( int argc, char* argv[] ) {
 		Tab > Tab::Text {
 			text-overflow: ellipsis;
 		}
-		Tab.program_status_working {
-			--program-status-color: var(--primary);
-		}
-		Tab.program_status_blocked,
-		Tab.program_status_paused {
-			--program-status-color: var(--theme-warning);
-		}
-		Tab.program_status_done {
-			--program-status-color: var(--theme-success);
-		}
-		Tab.program_status_error {
-			--program-status-color: var(--theme-error);
-		}
-		/* A variable of the tab doesn't reach its icon, and the theme's hover rule is specific. */
-		Tab.program_status_working > Tab::icon {
-			tint: var(--primary) !important;
-		}
-		Tab.program_status_blocked > Tab::icon,
-		Tab.program_status_paused > Tab::icon {
-			tint: var(--theme-warning) !important;
-		}
-		Tab.program_status_done > Tab::icon {
-			tint: var(--theme-success) !important;
-		}
-		Tab.program_status_error > Tab::icon {
-			tint: var(--theme-error) !important;
-		}
-		Tab.program_status_unread.program_status_done > Tab::text {
-			color: var(--theme-success) !important;
-		}
-		Tab.program_status_unread.program_status_error > Tab::text {
-			color: var(--theme-error) !important;
-		}
-		/* The icon has eight equal spokes: a turn would look still, and 45 degrees wraps unnoticed. */
-		@keyframes program-status-spin {
-			from { rotation: 0; }
-			to { rotation: 45; }
-		}
-		Tab.program_status_working > Tab::icon {
-			animation: program-status-spin 1s steps(6) infinite;
-		}
-		Tab.program_status_progress,
-		Tab.program_status_progress:selected {
-			background-image: rectangle(solid, var(--program-status-color));
-			background-size: var(--program-status-progress) 2dp;
-			background-position: left bottom;
-		}
 		.pseudo_anchor {
 			tint: var(--floating-icon);
 			cursor: arrow;
@@ -1387,6 +1099,7 @@ int App::run( int argc, char* argv[] ) {
 		}
 	)css" );
 
+	ProgramStatusUI::installStyles( scene );
 	auto& resourceScope = *scene->getResourceScope();
 	auto remixIconFont = FontTrueType::New( "eterm-remixicon", resourceScope );
 	auto noniconsFont = FontTrueType::New( "eterm-nonicons", resourceScope );
@@ -1441,11 +1154,8 @@ int App::run( int argc, char* argv[] ) {
 								   : String::split( config->terminal.shellArguments );
 	terminalConfig.workingDirectory = launchFile.getDirectoryPath();
 	terminalConfig.executeInShell = executeInShell.Get();
-	terminalConfig.historySize = config->terminal.historySize;
-	terminalConfig.cursorStyle = config->terminal.cursorStyle;
 	terminalConfig.fontHinting = config->font.hinting;
 	terminalConfig.fontAntialiasing = config->font.antialiasing;
-	terminalConfig.useFrameBuffer = config->terminal.useFrameBuffer;
 	terminalConfig.closeOnExit = config->terminal.closeOnExit;
 	warnBeforeClose = config->window.warnBeforeClose;
 	benchmarkMode = config->window.benchmarkMode;
@@ -1595,7 +1305,7 @@ int App::run( int argc, char* argv[] ) {
 	// Hide first: stopping the file watcher can wait for its polling thread.
 	appWindow->hide();
 	fileWatcher.reset();
-	programStatusAlerts.shutdown();
+	programStatus.alerts().shutdown();
 	return EXIT_SUCCESS;
 }
 

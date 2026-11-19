@@ -9,6 +9,7 @@
 #include <eepp/ui/tools/fileassociationssettings.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
+#include <eterm/ui/terminalsettings.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 #include <limits>
@@ -427,20 +428,14 @@ void SettingsActions::showSettings() {
 			return true;
 		},
 		true );
-	panel->addInteger(
-		{ "terminalScrollback", "terminal.behavior",
-		  mUI->i18n( "eefm_terminal_scrollback", "Scrollback" ),
-		  mUI->i18n( "eefm_terminal_scrollback_desc",
-					 "Lines of history kept. Applies to new terminals." ) },
-		0, std::numeric_limits<int>::max(),
-		[this] {
-			return static_cast<int>( std::min<size_t>( mApp.config().terminal.historySize,
-													   std::numeric_limits<int>::max() ) );
+	eterm::UI::TerminalSettings terminalSettings(
+		panel,
+		[this]( const auto& visit ) {
+			if ( auto* terminal = mApp.terminal().widget() )
+				visit( terminal );
 		},
-		[this]( int value ) {
-			mApp.config().terminal.historySize = value;
-			savePreferences();
-		} );
+		[this] { savePreferences(); } );
+	terminalSettings.addBehavior( mApp.config().terminal );
 
 	panel->addCategory( "terminal.appearance", mUI->i18n( "eefm_terminal", "Terminal" ),
 						mUI->i18n( "eefm_appearance", "Appearance" ) );
@@ -460,76 +455,15 @@ void SettingsActions::showSettings() {
 			mApp.terminal().setFontSize( value );
 			savePreferences();
 		} );
-	std::vector<String> schemeNames{ mUI->i18n( "eefm_default", "Default" ) };
-	std::vector<std::string> schemeIds{ "" };
-	for ( const auto& [name, scheme] : mApp.terminal().colorSchemes() ) {
-		schemeNames.emplace_back( name );
-		schemeIds.emplace_back( name );
-	}
-	panel->addChoice(
-		{ "terminalColorScheme", "terminal.appearance",
-		  mUI->i18n( "eefm_terminal_color_scheme", "Color Scheme" ),
-		  mUI->i18n( "eefm_terminal_color_scheme_desc", "The colors of the terminal." ) },
-		schemeNames,
-		[this, schemeIds] {
-			auto found =
-				std::find( schemeIds.begin(), schemeIds.end(), mApp.config().terminal.colorScheme );
-			return found == schemeIds.end() ? size_t{ 0 }
-											: static_cast<size_t>( found - schemeIds.begin() );
+	terminalSettings.addColorScheme(
+		mApp.terminal().colorSchemes(),
+		[this]() -> const std::string& { return mApp.config().terminal.colorScheme; },
+		[this]( const std::string& name ) {
+			mApp.config().terminal.colorScheme = name;
+			mApp.terminal().applyColorScheme();
 		},
-		[this, schemeIds]( size_t selected ) {
-			mApp.config().terminal.colorScheme =
-				schemeIds[std::min( selected, schemeIds.size() - 1 )];
-			mApp.terminal().applyConfig();
-			savePreferences();
-		} );
-	panel->addChoice(
-		{ "terminalCursorStyle", "terminal.appearance",
-		  mUI->i18n( "eefm_cursor_style", "Cursor Style" ),
-		  mUI->i18n( "eefm_cursor_style_desc", "The shape and blinking of the cursor." ) },
-		{ mUI->i18n( "eefm_blinking_block", "Blinking Block" ),
-		  mUI->i18n( "eefm_steady_block", "Steady Block" ),
-		  mUI->i18n( "eefm_blink_underline", "Blinking Underline" ),
-		  mUI->i18n( "eefm_steady_underline", "Steady Underline" ),
-		  mUI->i18n( "eefm_blink_bar", "Blinking Bar" ),
-		  mUI->i18n( "eefm_steady_bar", "Steady Bar" ) },
-		[this] {
-			static constexpr TerminalCursorMode modes[] = {
-				TerminalCursorMode::BlinkingBlock,	TerminalCursorMode::SteadyBlock,
-				TerminalCursorMode::BlinkUnderline, TerminalCursorMode::SteadyUnderline,
-				TerminalCursorMode::BlinkBar,		TerminalCursorMode::SteadyBar };
-			auto found = std::find( std::begin( modes ), std::end( modes ),
-									mApp.config().terminal.cursorStyle );
-			return found == std::end( modes ) ? size_t{ 0 }
-											  : static_cast<size_t>( found - std::begin( modes ) );
-		},
-		[this]( size_t selected ) {
-			static constexpr TerminalCursorMode modes[] = {
-				TerminalCursorMode::BlinkingBlock,	TerminalCursorMode::SteadyBlock,
-				TerminalCursorMode::BlinkUnderline, TerminalCursorMode::SteadyUnderline,
-				TerminalCursorMode::BlinkBar,		TerminalCursorMode::SteadyBar };
-			mApp.config().terminal.cursorStyle = modes[std::min( selected, size_t{ 5 } )];
-			mApp.terminal().applyConfig();
-			savePreferences();
-		} );
-	panel->addChoice(
-		{ "terminalScrollbarMode", "terminal.appearance",
-		  mUI->i18n( "eefm_scrollbar_mode", "Scrollbar" ),
-		  mUI->i18n( "eefm_scrollbar_mode_desc", "When the terminal scrollbar is shown." ) },
-		{ mUI->i18n( "eefm_auto", "Auto" ), mUI->i18n( "eefm_always_visible", "Always Visible" ),
-		  mUI->i18n( "eefm_always_hidden", "Always Hidden" ) },
-		[this] {
-			return mApp.config().terminal.scrollBarMode == ScrollBarMode::Auto		 ? size_t{ 0 }
-				   : mApp.config().terminal.scrollBarMode == ScrollBarMode::AlwaysOn ? size_t{ 1 }
-																					 : size_t{ 2 };
-		},
-		[this]( size_t selected ) {
-			mApp.config().terminal.scrollBarMode = selected == 0   ? ScrollBarMode::Auto
-												   : selected == 1 ? ScrollBarMode::AlwaysOn
-																   : ScrollBarMode::AlwaysOff;
-			mApp.terminal().applyConfig();
-			savePreferences();
-		} );
+		true );
+	terminalSettings.addAppearance( mApp.config().terminal );
 
 	// Window
 	panel->addCategory( "window.behavior", mUI->i18n( "eefm_window", "Window" ),
