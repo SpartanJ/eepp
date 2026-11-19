@@ -852,6 +852,30 @@ Float WindowSDL::getScale() const {
 	return (Float)realX / (Float)scaledX;
 }
 
+Float WindowSDL::getDisplayScale() const {
+	if ( !mSDLWindow || Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
+		return 1.f;
+	const Float scale = SDL_GetWindowDisplayScale( mSDLWindow );
+	return scale > 0.f ? scale : 1.f;
+}
+
+Float WindowSDL::getPhysicalDisplayDPI() const {
+	if ( !mSDLWindow || Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
+		return 0.f;
+	auto* manager = static_cast<DisplayManagerSDL3*>( Engine::instance()->getDisplayManager() );
+	auto* display = manager->getDisplayIndex(
+		manager->getDisplayIndexFromID( SDL_GetDisplayForWindow( mSDLWindow ) ) );
+	return display ? display->getPhysicalDPI() : 0.f;
+}
+
+void WindowSDL::refreshDisplayMetrics() {
+	if ( !mSDLWindow || Runtime::mode() == RuntimeMode::Terminal )
+		return;
+	int width = 0, height = 0;
+	if ( SDL_GetWindowSizeInPixels( mSDLWindow, &width, &height ) && width > 0 && height > 0 )
+		onWindowResize( width, height );
+}
+
 bool WindowSDL::hasNativeMessageBox() const {
 	return true;
 }

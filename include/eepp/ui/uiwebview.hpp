@@ -142,6 +142,7 @@ class EE_API UIWebView : public UIScrollView {
 
   protected:
 	UIWebView();
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
 
 	UISceneNode* mDocumentScene{ nullptr };
 	UILayout* mDocumentLayout{ nullptr };

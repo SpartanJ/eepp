@@ -95,12 +95,14 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 		return;
 	}
 
-	mWindow = Engine::instance()->createWindow( windowSettings, contextSettings );
+	mWindow = Engine::instance()->createWindow( windowSettings, contextSettings,
+												appSettings.pixelDensity.value_or( 0.f ) );
 
 	if ( nullptr == mWindow || !mWindow->isOpen() ) {
 		std::cerr << "Could not create window, exiting" << std::endl;
 		return;
 	}
+	auto windowContext = Engine::instance()->makeWindowCurrent( mWindow );
 	if ( verboseInitialization )
 		WindowInitialization::begin( mWindow, started );
 	Engine::instance()->getPlatformHelper()->setNativeScrollMomentumEnabled( true );
@@ -112,22 +114,6 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 		[this] { return reopen(); } );
 
 	mDidRun = true;
-
-	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
-	if ( appSettings.pixelDensity && *appSettings.pixelDensity > 0 ) {
-		PixelDensity::setPixelDensity( *appSettings.pixelDensity );
-	} else if ( windowSettings.PixelDensity > 0 ) {
-		PixelDensity::setPixelDensity( windowSettings.PixelDensity );
-	} else if ( environmentDensity > 0 ) {
-		PixelDensity::setPixelDensity( environmentDensity );
-	} else if ( offscreen ) {
-		PixelDensity::setPixelDensity( 1.f );
-	} else {
-		PixelDensity::setPixelDensity(
-			eemax( mWindow->getScale(),
-				   displayManager->getDisplayIndex( mWindow->getCurrentDisplayIndex() )
-					   ->getPixelDensity() ) );
-	}
 
 	if ( !appSettings.basePath || appSettings.basePath->empty() ) {
 		FileSystem::changeWorkingDirectory( Sys::getResourcePath() );
@@ -244,7 +230,8 @@ UIApplication::WindowEntry*
 UIApplication::createWindowInternal( const WindowSettings& windowSettings,
 									 const ContextSettings& contextSettings, bool primary ) {
 	auto context = Engine::instance()->makeWindowCurrent( Engine::instance()->getCurrentWindow() );
-	auto* window = Engine::instance()->createWindow( windowSettings, contextSettings );
+	auto* window = Engine::instance()->createWindow( windowSettings, contextSettings,
+													 mSettings.pixelDensity.value_or( 0.f ) );
 	if ( !window || !window->isOpen() )
 		return nullptr;
 	window->setDeferNativeResourceDestructionOnClose( true );
@@ -254,6 +241,7 @@ UIApplication::createWindowInternal( const WindowSettings& windowSettings,
 
 	auto* ui = UISceneNode::New(
 		window, true, mUISceneNode ? mUISceneNode->getThreadPool() : mSettings.threadPool );
+	auto uiContext = ui->makeCurrent();
 	ui->setAccessibilityPolicy( mSettings.accessibilityPolicy );
 	SceneManager::instance()->add( ui );
 	mWindows.push_back( { window, ui, primary, false } );

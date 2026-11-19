@@ -219,6 +219,8 @@ class EE_API UIRichText : public UIHTMLWidget {
 	virtual void onTextHintsChanged();
 
   protected:
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	friend class UITextSelectionController;
 
 	virtual void updateLogicalDirectionState();

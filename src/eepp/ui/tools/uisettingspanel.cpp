@@ -209,6 +209,37 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 	margin-left: 20dp;
 	layout-gravity: center_vertical;
 }
+.settings_panel .settings_option_content {
+	orientation: horizontal;
+}
+.settings_panel .settings_option_content > #setting_info {
+	layout-width: 0dp;
+	layout-weight: 1;
+}
+.settings_panel .settings_option_content > #setting_control {
+	layout-width: wrap_content;
+	margin-top: 0dp;
+}
+@media (max-width: 700dp) {
+	.settings_panel .settings_option_content {
+		orientation: vertical;
+	}
+	.settings_panel .settings_option_content > #setting_info {
+		layout-width: match_parent;
+		layout-weight: 0;
+	}
+	.settings_panel .settings_option_content > #setting_control {
+		layout-width: match_parent;
+		margin-left: 0dp;
+		margin-top: 8dp;
+		layout-gravity: left;
+	}
+	.settings_panel .settings_choice,
+	.settings_panel .settings_editable_choice,
+	.settings_panel .settings_text {
+		layout-width: match_parent;
+	}
+}
 .settings_panel .settings_bool,
 .settings_panel .settings_action {
 	layout-width: wrap_content;
@@ -270,11 +301,11 @@ static std::string settingsRowLayout( std::string_view control ) {
 	return R"xml(
 <vbox lw="mp" lh="wc" class="settings_option">
 	<hbox lw="mp" lh="wc" class="settings_option_content">
-		<vbox id="setting_info" lw="0" lw8="1" lh="wc">
+		<vbox id="setting_info" lh="wc">
 			<TextView id="setting_name" lw="mp" lh="wc" class="settings_option_name" focusable="false" />
 			<TextView id="setting_description" lw="mp" lh="wc" class="settings_option_description" focusable="false" />
 		</vbox>
-		<hbox id="setting_control" lw="wc" lh="wc" class="settings_option_control">
+		<hbox id="setting_control" lh="wc" class="settings_option_control">
 )xml" + std::string( control ) +
 		   R"xml(
 		</hbox>

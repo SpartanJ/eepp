@@ -74,6 +74,8 @@ class EE_API UITextEdit : public UICodeEditor {
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
   protected:
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	UITextEdit( const std::string& tag );
 
 	Text mHintCache;

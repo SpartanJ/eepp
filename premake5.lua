@@ -1142,6 +1142,7 @@ function build_eepp( build_name )
 			"src/eepp/graphics/*.cpp",
 			"src/eepp/graphics/renderer/*.cpp",
 			"src/eepp/window/*.cpp",
+			"src/eepp/window/platform/*.cpp",
 			"src/eepp/window/draganddrop/*.cpp",
 			"src/eepp/window/backend/*.cpp",
 			"src/eepp/network/*.cpp",

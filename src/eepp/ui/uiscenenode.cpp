@@ -1,6 +1,7 @@
 #include "../window/windowinitialization.hpp"
 #include "accessibility/accessibilitybackend.hpp"
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <eepp/core/small_vector.hpp>
@@ -19,6 +20,7 @@
 #include <eepp/system/packfileindex.hpp>
 #include <eepp/system/packregistry.hpp>
 #include <eepp/system/regex.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
@@ -157,13 +159,217 @@ static void refreshWebViewDocumentLayoutAfterStyleChange( UIWidget* root ) {
 
 UISceneNode* UISceneNode::New( EE::Window::Window* window, bool importDefaultResources,
 							   std::shared_ptr<ThreadPool> threadPool ) {
+	if ( !window )
+		window = Engine::instance()->getCurrentWindow();
+	// Theme managers resolve their default metrics in the initializer list, before the scene
+	// constructor can enter makeCurrent(). Use the target window even inside another scene.
+	auto densityContext = PixelDensity::makeCurrent( window ? window->getPixelDensity()
+															: PixelDensity::getPixelDensity() );
 	return eeNew( UISceneNode, ( window, importDefaultResources, std::move( threadPool ) ) );
+}
+
+const Float& UISceneNode::getPixelDensity() const {
+	return mPixelDensity;
+}
+
+bool UISceneNode::hasPixelDensityOverride() const {
+	return mPixelDensityOverride > 0.f;
+}
+
+UISceneNode* UISceneNode::setPixelDensity( Float density ) {
+	mPixelDensityOverride = std::isfinite( density ) && density > 0.f ? density : 0.f;
+	refreshPixelDensity();
+	return this;
+}
+
+UISceneNode* UISceneNode::clearPixelDensityOverride() {
+	return setPixelDensity( 0.f );
+}
+
+void UISceneNode::refreshPixelDensity() {
+	if ( mDensityTransition || mApplyingDensityRebinds )
+		return;
+	if ( unlikely( !mPendingDensityRebinds.empty() ) )
+		applyPendingDensityRebinds();
+	const Float density = mPixelDensityOverride > 0.f ? mPixelDensityOverride
+						  : mHostUISceneNode		  ? mHostUISceneNode->getPixelDensity()
+						  : mWindow					  ? mWindow->getPixelDensity()
+													  : PixelDensity::getPixelDensity();
+	if ( density != mPixelDensity ||
+		 ( mHostUISceneNode && mFollowParentSize && mParentNode &&
+		   mSize != mParentNode->getPixelsSize() ) ||
+		 ( mWindow && mWindow->getDisplayMetricsVersion() != mWindowDisplayMetricsVersion ) )
+		onPixelDensityChange( mPixelDensity, density );
+}
+
+struct UISceneNode::DensityTransitionState {
+	struct Restore {
+		// The snapshot slot stays in place through reflow and is cleared on deletion or rebinding.
+		UINode* const* widget;
+		UIDensityReflow::RestoreCallback callback;
+	};
+	SmallVector<UINode*, 64> densityNodes;
+	SmallVector<Restore, 8> restores;
+	size_t densityNodesStarted{ 0 };
+	Float previousDensity;
+};
+
+bool UIDensityReflow::isWidgetCurrent() const {
+	return mWidget && mWidget->getUISceneNode() == &mScene && !mWidget->isClosing();
+}
+
+void UIDensityReflow::queueRestore( RestoreCallback callback ) {
+	if ( callback && isWidgetCurrent() )
+		mScene.mDensityTransition->restores.push_back( { &mWidget, std::move( callback ) } );
+}
+
+bool UISceneNode::isDensityTransitionNode( const UINode* node ) const {
+	return mDensityTransition && std::find( mDensityTransition->densityNodes.begin(),
+											mDensityTransition->densityNodes.end(),
+											node ) != mDensityTransition->densityNodes.end();
+}
+
+Float UISceneNode::removeDensityTransitionNode( UINode* node ) {
+	if ( !mDensityTransition )
+		return mPixelDensity;
+	Float density = mPixelDensity;
+	auto& nodes = mDensityTransition->densityNodes;
+	for ( size_t i = 0; i < nodes.size(); ++i ) {
+		if ( nodes[i] == node ) {
+			nodes[i] = nullptr;
+			if ( i >= mDensityTransition->densityNodesStarted )
+				density = mDensityTransition->previousDensity;
+			break;
+		}
+	}
+	return density;
+}
+
+Float UISceneNode::cancelDensityRebind( UINode* node ) {
+	for ( auto& rebind : mPendingDensityRebinds ) {
+		if ( rebind.node == node ) {
+			rebind.node = nullptr;
+			return rebind.previousDensity;
+		}
+	}
+	return 0.f;
+}
+
+void UISceneNode::applyPendingDensityRebinds() {
+	if ( mPendingDensityRebinds.empty() || mApplyingDensityRebinds || mDensityTransition )
+		return;
+	BoolScopedOp applying( mApplyingDensityRebinds, true );
+	auto context = makeCurrent();
+	const size_t count = mPendingDensityRebinds.size();
+	// Scene rebinding walks descendants before their parents. Repair geometry in the opposite
+	// order so children resolve anchors against the destination parent's repaired bounds.
+	for ( auto& rebind : mPendingDensityRebinds ) {
+		if ( rebind.node ) {
+			for ( auto* parent = rebind.node->getParent(); parent && parent != this;
+				  parent = parent->getParent() )
+				++rebind.depth;
+		}
+	}
+	std::sort( mPendingDensityRebinds.begin(), mPendingDensityRebinds.end(),
+			   []( const DensityRebind& a, const DensityRebind& b ) { return a.depth < b.depth; } );
+	for ( size_t i = 0; i < count; ++i ) {
+		const auto [node, previousDensity, depth] = mPendingDensityRebinds[i];
+		if ( !node || node->isClosing() )
+			continue;
+		mPendingDensityRebinds[i].previousDensity = mPixelDensity;
+		node->onPixelDensityChange( previousDensity, mPixelDensity );
+		if ( mPendingDensityRebinds[i].node && node->isLayout() )
+			node->asType<UILayout>()->setLayoutDirty( LayoutInvalidation::Document );
+	}
+	for ( size_t i = 0; i < count; ++i ) {
+		auto* node = mPendingDensityRebinds[i].node;
+		if ( node && !node->isClosing() && node->isWidget() )
+			node->asType<UIWidget>()->reloadStyle( false, true, true, true, true );
+	}
+	mPendingDensityRebinds.erase( mPendingDensityRebinds.begin(),
+								  mPendingDensityRebinds.begin() + count );
+}
+
+void UISceneNode::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	DensityTransitionState state;
+	state.previousDensity = oldDensity;
+	auto& densityNodes = state.densityNodes;
+	const auto visitDescendants = []( auto&& self, Node* parent, const auto& visit ) -> void {
+		for ( Node* child = parent->getFirstChild(); child; child = child->getNextNode() ) {
+			if ( child->isUISceneNode() )
+				continue;
+			visit( child );
+			self( self, child, visit );
+		}
+	};
+	bool hasPlainNodes = false;
+	visitDescendants( visitDescendants, this, [&]( Node* node ) {
+		if ( node->isUINode() )
+			densityNodes.push_back( node->asType<UINode>() );
+		else
+			hasPlainNodes = true;
+	} );
+	ScopedOp resetTransition( nullptr, [this] { mDensityTransition = nullptr; } );
+	mDensityTransition = &state;
+	// The scene context follows mPixelDensity when the transition installs the new value.
+	auto context = makeCurrent();
+	for ( UINode*& node : densityNodes ) {
+		UIDensityReflow reflow( *this, node, oldDensity, newDensity );
+		if ( reflow.isWidgetCurrent() )
+			node->onBeforePixelDensityReflow( reflow );
+	}
+
+	mPixelDensity = newDensity;
+	mWindowDisplayMetricsVersion = mWindow->getDisplayMetricsVersion();
+	if ( hasPlainNodes && oldDensity != newDensity ) {
+		const Float ratio = newDensity / oldDensity;
+		visitDescendants( visitDescendants, this, [ratio]( Node* node ) {
+			if ( !node->isUINode() )
+				node->rescaleLogicalOrigins( ratio );
+		} );
+	}
+	if ( !mHostUISceneNode )
+		mSize = mWindow->getSize().asFloat();
+	else if ( mFollowParentSize && mParentNode )
+		mSize = mParentNode->getPixelsSize();
+	mDpSize = PixelDensity::pxToDp( mSize );
+	updateCenter();
+	setDirty();
+	if ( auto* display = Engine::instance()->getDisplayManager()->getDisplayIndex(
+			 mWindow->getCurrentDisplayIndex() ) )
+		mDPI = display->getDPI();
+	mUIThemeManager->onPixelDensityChange( newDensity );
+	// Hooks can create rows/controls under the new environment. Only nodes which existed in the
+	// old environment need cache repair; newly created nodes already have the new metrics.
+	for ( UINode*& node : densityNodes ) {
+		++state.densityNodesStarted;
+		if ( !node || node->getUISceneNode() != this || node->isClosing() )
+			continue;
+		node->onPixelDensityChange( oldDensity, newDensity );
+		if ( node && node->isLayout() )
+			node->asType<UILayout>()->setLayoutDirty( LayoutInvalidation::Document );
+	}
+	mStyleSheet.updateMediaLists( getMediaFeatures() );
+	reloadStyle( true, true, true );
+	refreshWebViewDocumentLayoutAfterStyleChange( mRoot );
+	flushDirtyStyleAndLayout();
+	for ( auto& restore : state.restores ) {
+		UIDensityReflow reflow( *this, *restore.widget, oldDensity, newDensity );
+		if ( reflow.isWidgetCurrent() )
+			restore.callback( reflow );
+	}
+	updateRootHitTestTraversalBounds();
+	for ( auto* childScene : mChildUISceneNodes )
+		childScene->refreshPixelDensity();
+	invalidateDraw();
 }
 
 UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResources,
 						  std::shared_ptr<ThreadPool> threadPool ) :
 	SceneNode( window ),
 	mRoot( NULL ),
+	mPixelDensity( mWindow->getPixelDensity() ),
+	mWindowDisplayMetricsVersion( mWindow->getDisplayMetricsVersion() ),
 	mIsLoading( false ),
 	mUpdatingLayouts( false ),
 	mUIThemeManager( UIThemeManager::New() ),
@@ -262,6 +468,7 @@ UISceneNode::~UISceneNode() {
 void UISceneNode::resizeNode( EE::Window::Window* ) {
 	if ( mParentNode )
 		return;
+	auto context = makeCurrent();
 	setPixelsSize( mWindow->getSize().asFloat() );
 	onMediaChanged();
 	sendMsg( this, NodeMessage::WindowResize );
@@ -327,6 +534,7 @@ void UISceneNode::onParentChange() {
 	if ( !mParentNode ) {
 		setEventDispatcher( UIEventDispatcher::New( this ) );
 		mOwnsEventDispatcher = true;
+		refreshPixelDensity();
 		return;
 	}
 
@@ -373,7 +581,13 @@ void UISceneNode::initializeEmbeddedFromHost( UISceneNode* hostScene ) {
 	if ( !hostScene || hostScene == this )
 		return;
 
-	mWindow = hostScene->getWindow();
+	if ( mWindow != hostScene->getWindow() ) {
+		if ( mResizeCb != -1 && Engine::instance()->existsWindow( mWindow ) )
+			mWindow->popResizeCallback( mResizeCb );
+		mWindow = hostScene->getWindow();
+		mResizeCb = mWindow->pushResizeCallback( [this]( auto* window ) { resizeNode( window ); } );
+	}
+	refreshPixelDensity();
 	mDPI = hostScene->getDPI();
 	EventDispatcher* hostDispatcher = hostScene->getEventDispatcher();
 	if ( mOwnsEventDispatcher && mEventDispatcher != hostDispatcher )
@@ -392,7 +606,8 @@ void UISceneNode::initializeEmbeddedFromHost( UISceneNode* hostScene ) {
 	UIThemeManager* hostThemeManager = hostScene->getUIThemeManager();
 	if ( hostThemeManager ) {
 		mUIThemeManager->setDefaultFont( hostThemeManager->getDefaultFont() );
-		mUIThemeManager->setDefaultFontSize( hostThemeManager->getDefaultFontSize() );
+		mUIThemeManager->setDefaultFontSize( hostThemeManager->getDefaultFontSize() /
+											 hostScene->getPixelDensity() * getPixelDensity() );
 		mUIThemeManager->setDefaultTheme( hostThemeManager->getDefaultThemeHandle() );
 		mUIThemeManager->setAutoApplyDefaultTheme( hostThemeManager->getAutoApplyDefaultTheme() );
 		mUIThemeManager->setDefaultEffectsEnabled( hostThemeManager->getDefaultEffectsEnabled() );
@@ -883,18 +1098,18 @@ bool UISceneNode::hasStyleSheet() {
 
 void UISceneNode::reloadStyle( bool disableAnimations, bool forceReApplyProperties,
 							   bool resetPropertiesCache ) {
-	if ( NULL != mChild ) {
-		Node* child = mChild;
-
-		while ( NULL != child ) {
-			if ( child->isWidget() ) {
-				child->asType<UIWidget>()->reloadStyle(
-					true, disableAnimations, true, forceReApplyProperties, resetPropertiesCache );
-			}
-
-			child = child->getNextNode();
+	const auto reload = [&]( auto&& self, Node* node ) -> void {
+		if ( node->isUISceneNode() )
+			return;
+		if ( node->isWidget() ) {
+			node->asType<UIWidget>()->reloadStyle( false, disableAnimations, true,
+												   forceReApplyProperties, resetPropertiesCache );
 		}
-	}
+		for ( Node* child = node->getFirstChild(); child; child = child->getNextNode() )
+			self( self, child );
+	};
+	for ( Node* child = getFirstChild(); child; child = child->getNextNode() )
+		reload( reload, child );
 }
 
 bool UISceneNode::hasThreadPool() const {
@@ -985,6 +1200,8 @@ TexturePtr UISceneNode::requestWebTexture( WebResourceRequest request,
 										   WebResourceCache::Callback callback ) {
 	if ( !mWebResourceCache || !mDocumentSessionId )
 		return {};
+	if ( request.svgScale == 1.f && DrawableResolver::isSvgPath( request.uri.getPath() ) )
+		request.svgScale = getPixelDensity();
 	if ( !mReferer.empty() )
 		request.headers.emplace( "referer", mReferer.toString() );
 	std::string cookie = getCookieManager().getCookieHeader( request.uri.getAuthority() );
@@ -1285,7 +1502,7 @@ void UISceneNode::flushDirtyStyleAndLayout() {
 
 bool UISceneNode::isStyleAndLayoutReady() const {
 	return !mIsLoading && !mUpdatingLayouts && mDirtyStyle.empty() && mDirtyStyleState.empty() &&
-		   mDirtyLayouts.empty();
+		   mDirtyLayouts.empty() && mPendingDensityRebinds.empty();
 }
 
 EventConnection UISceneNode::onLayoutReady( std::function<void()> callback ) {
@@ -1305,6 +1522,8 @@ EventConnection UISceneNode::onLayoutReady( std::function<void()> callback ) {
 }
 
 void UISceneNode::update( const Time& elapsed ) {
+	mWindow->updateDisplayMetrics();
+	refreshPixelDensity();
 	if ( unlikely( WindowInitialization::isPending() && !mHostUISceneNode ) )
 		WindowInitialization::beginUpdate( getWindow() );
 	auto context = makeCurrent();
@@ -1347,7 +1566,7 @@ void UISceneNode::update( const Time& elapsed ) {
 					mClock.getElapsedTime().asMilliseconds() );
 	}
 
-	SceneNode::update( elapsed );
+	updateScene( elapsed );
 
 	if ( mFirstUpdate && mVerbose ) {
 		Log::debug( "UISceneNode::update first SceneNode::update update took: %.2f ms",
@@ -1367,8 +1586,10 @@ void UISceneNode::update( const Time& elapsed ) {
 	// provokes the creation of dynamic elements. This is the case of the UIListBox for example
 	// that creates children dynamically only when they are visible.
 	int invalidationDepth = mMaxInvalidationDepth;
-	while ( ( !mDirtyStyle.empty() || !mDirtyStyleState.empty() || !mDirtyLayouts.empty() ) &&
+	while ( ( !mDirtyStyle.empty() || !mDirtyStyleState.empty() || !mDirtyLayouts.empty() ||
+			  !mPendingDensityRebinds.empty() ) &&
 			invalidationDepth > 0 ) {
+		applyPendingDensityRebinds();
 		updateDirtyStyles();
 		updateDirtyStyleStates();
 		updateDirtyLayouts();
@@ -1806,6 +2027,7 @@ const DrawableResolver& UISceneNode::getDrawableResolver() const {
 }
 
 CSS::MediaFeatures UISceneNode::getMediaFeatures() const {
+	auto densityContext = PixelDensity::makeCurrent( getPixelDensity() );
 	CSS::MediaFeatures media;
 	const Sizef& viewportSize = getViewportPixelsSize();
 	media.type = media_type_screen;

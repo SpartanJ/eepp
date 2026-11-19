@@ -3,6 +3,7 @@
 #include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/stylesheetpropertyanimation.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
+#include <eepp/ui/csslayouttypes.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -12,6 +13,37 @@ using namespace EE::UI::CSS;
 using namespace EE::Scene;
 
 namespace EE { namespace UI {
+
+namespace {
+
+enum class VisibilityProperty : Uint8 { Visible, Enabled, Display, Visibility, Untracked };
+
+VisibilityProperty visibilityProperty( PropertyId id ) {
+	switch ( id ) {
+		case PropertyId::Visible:
+			return VisibilityProperty::Visible;
+		case PropertyId::Enabled:
+			return VisibilityProperty::Enabled;
+		case PropertyId::Display:
+			return VisibilityProperty::Display;
+		case PropertyId::Visibility:
+			return VisibilityProperty::Visibility;
+		default:
+			return VisibilityProperty::Untracked;
+	}
+}
+
+Uint8 visibilityValue( VisibilityProperty kind, const StyleSheetProperty* property ) {
+	if ( !property || !property->getPropertyDefinition() || property->getValue() == "inherit" )
+		return 0;
+	if ( kind == VisibilityProperty::Display )
+		return 1 + static_cast<Uint8>( CSSDisplayHelper::fromString( property->getValue() ) );
+	if ( kind == VisibilityProperty::Visibility )
+		return 1 + static_cast<Uint8>( CSSVisibilityHelper::fromString( property->getValue() ) );
+	return property->asBool() ? 2 : 1;
+}
+
+} // namespace
 
 UIStyle* UIStyle::New( UIWidget* widget ) {
 	return eeNew( UIStyle, ( widget ) );
@@ -72,6 +104,10 @@ void UIStyle::setStyleSheetProperty( const StyleSheetProperty& property ) {
 		}
 	} else {
 		mElementStyle->setProperty( property );
+		const auto kind = visibilityProperty( property.getPropertyId() );
+		if ( kind != VisibilityProperty::Untracked && !property.needsValueSubstitution() )
+			mResolvedVisibilityState[static_cast<size_t>( kind )] =
+				visibilityValue( kind, &property );
 	}
 }
 
@@ -455,7 +491,7 @@ void UIStyle::onStateChange() {
 	auto newDefinition =
 		mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, true );
 
-	if ( newDefinition != mDefinition || mForceReapplyProperties ) {
+	if ( newDefinition != mDefinition || mForceReapplyProperties || mFirstState ) {
 		PropertyIdSet changedProperties;
 
 		if ( mDefinition )
@@ -482,9 +518,10 @@ void UIStyle::onStateChange() {
 
 		if ( mElementStyle ) {
 			// Local raw values can stay unchanged while their resolved var()/light-dark() value
-			// changes after a stylesheet update, so include them after definition pruning.
+			// changes after a stylesheet update. Environment reflow also needs literal inline
+			// properties, so include those when property reapplication is forced.
 			for ( const auto& localProperty : mElementStyle->getProperties() ) {
-				if ( localProperty.second.needsValueSubstitution() &&
+				if ( ( mForceReapplyProperties || localProperty.second.needsValueSubstitution() ) &&
 					 localProperty.second.getPropertyDefinition() )
 					changedProperties.insert(
 						localProperty.second.getPropertyDefinition()->getPropertyId() );
@@ -500,6 +537,24 @@ void UIStyle::onStateChange() {
 		for ( PropertyId prop : changedProperties ) {
 			auto resolvedProperty = getResolvedLocalProperty( prop );
 			const StyleSheetProperty* property = resolvedProperty.get();
+			const auto kind = visibilityProperty( prop );
+			if ( kind != VisibilityProperty::Untracked ) {
+				Uint8 value = visibilityValue( kind, property );
+				if ( property && property->getValue() == "inherit" ) {
+					UIStyle* owner = nullptr;
+					if ( auto* inherited = getInheritedProperty( prop, &owner ) ) {
+						auto resolved = owner->resolveProperty( inherited );
+						value = visibilityValue( kind, resolved.get() );
+					}
+				}
+				auto& previous = mResolvedVisibilityState[static_cast<size_t>( kind )];
+				const bool unchanged = value != 0 && previous == value;
+				previous = value;
+				// Compare the resolved value so unchanged CSS variables preserve runtime state
+				// while a media rule that changes a variable still takes effect.
+				if ( unchanged && !mFirstState && mWidget->getUISceneNode()->mDensityTransition )
+					continue;
+			}
 
 			if ( nullptr == property || NULL == property->getPropertyDefinition() ) {
 				const auto def = StyleSheetSpecification::instance()->getProperty( prop );

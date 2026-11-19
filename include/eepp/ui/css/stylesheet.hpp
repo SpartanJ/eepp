@@ -108,6 +108,8 @@ class EE_API StyleSheet {
 	UnorderedMap<const StyleSheetStyle*, SourcePosition> mStyleSourceOrder;
 	SourceOrder mNextStyleSourceOrder{ 0 };
 	MediaQueryList::vector mMediaQueryList;
+	// Parsed query/source nodes may be shared; environment-dependent match state belongs here.
+	UnorderedSet<const MediaQueryList*> mActiveMediaQueries;
 	KeyframesDefinitionMap mKeyframesMap;
 	using ElementDefinitionCache = UnorderedMap<size_t, std::shared_ptr<ElementDefinition>>;
 	mutable ElementDefinitionCache mNodeCache;
@@ -115,6 +117,10 @@ class EE_API StyleSheet {
 	static size_t nodeHash( const std::string& tag, const std::string& id );
 
 	void addMediaQueryList( MediaQueryList::ptr list );
+
+	bool isMediaValid( const MediaQueryList::ptr& list ) const {
+		return !list || mActiveMediaQueries.find( list.get() ) != mActiveMediaQueries.end();
+	}
 
 	bool addStyleToNodeIndex( StyleSheetStyle* style );
 

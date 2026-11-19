@@ -728,7 +728,8 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 	if ( uri.getScheme() != "http" && uri.getScheme() != "https" )
 		return false;
 
-	if ( value == mDrawableRef && mDrawable != nullptr )
+	if ( value == mDrawableRef && mDrawable != nullptr &&
+		 !DrawableResolver::isSvgPath( uri.getPath() ) )
 		return true;
 
 	std::string url = uri.toString();
@@ -839,8 +840,7 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 			// size so both values use the same coordinate system, otherwise
 			// the visible sprite‑atlas region drifts when PixelDensity != 1.
 			if ( mContainer->getBackgroundMode() == BackgroundMode::Html ) {
-				size = Sizef( size.x * PixelDensity::getPixelDensity(),
-							  size.y * PixelDensity::getPixelDensity() );
+				size *= PixelDensity::getPixelDensity() / mDrawable->getRasterScale();
 			}
 		}
 	} else if ( drawableSizeEq == "expand" ) {

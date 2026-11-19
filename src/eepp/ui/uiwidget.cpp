@@ -431,9 +431,9 @@ void UIWidget::detachAccessibilitySource() {
 
 void UIWidget::updateAnchorsDistances() {
 	if ( NULL != mParentNode ) {
-		mDistToBorder = Rect( mPosition.x, mPosition.y,
-							  mParentNode->getPixelsSize().x - ( mPosition.x + mSize.x ),
-							  mParentNode->getPixelsSize().y - ( mPosition.y + mSize.y ) );
+		mAnchorDistancesDp = PixelDensity::pxToDp( Rectf(
+			mPosition.x, mPosition.y, mParentNode->getPixelsSize().x - ( mPosition.x + mSize.x ),
+			mParentNode->getPixelsSize().y - ( mPosition.y + mSize.y ) ) );
 	}
 }
 
@@ -446,6 +446,7 @@ const Rectf& UIWidget::getLayoutPixelsMargin() const {
 }
 
 UIWidget* UIWidget::setLayoutMargin( const Rectf& margin ) {
+	mPhysicalEdges &= ~0xf0;
 	if ( mLayoutMargin != margin ) {
 		mLayoutMargin = margin;
 		mLayoutMarginPx = PixelDensity::dpToPx( mLayoutMargin ).ceil();
@@ -458,6 +459,7 @@ UIWidget* UIWidget::setLayoutMargin( const Rectf& margin ) {
 }
 
 UIWidget* UIWidget::setLayoutMarginLeft( const Float& marginLeft ) {
+	mPhysicalEdges &= ~0x10;
 	if ( mLayoutMargin.Left != marginLeft ) {
 		mLayoutMargin.Left = marginLeft;
 		mLayoutMarginPx.Left = eeceil( PixelDensity::dpToPx( mLayoutMargin.Left ) );
@@ -470,6 +472,7 @@ UIWidget* UIWidget::setLayoutMarginLeft( const Float& marginLeft ) {
 }
 
 UIWidget* UIWidget::setLayoutMarginRight( const Float& marginRight ) {
+	mPhysicalEdges &= ~0x20;
 	if ( mLayoutMargin.Right != marginRight ) {
 		mLayoutMargin.Right = marginRight;
 		mLayoutMarginPx.Right = eeceil( PixelDensity::dpToPx( mLayoutMargin.Right ) );
@@ -482,6 +485,7 @@ UIWidget* UIWidget::setLayoutMarginRight( const Float& marginRight ) {
 }
 
 UIWidget* UIWidget::setLayoutMarginTop( const Float& marginTop ) {
+	mPhysicalEdges &= ~0x40;
 	if ( mLayoutMargin.Top != marginTop ) {
 		mLayoutMargin.Top = marginTop;
 		mLayoutMarginPx.Top = eeceil( PixelDensity::dpToPx( mLayoutMargin.Top ) );
@@ -494,6 +498,7 @@ UIWidget* UIWidget::setLayoutMarginTop( const Float& marginTop ) {
 }
 
 UIWidget* UIWidget::setLayoutMarginBottom( const Float& marginBottom ) {
+	mPhysicalEdges &= ~0x80;
 	if ( mLayoutMargin.Bottom != marginBottom ) {
 		mLayoutMargin.Bottom = marginBottom;
 		mLayoutMarginPx.Bottom = eeceil( PixelDensity::dpToPx( mLayoutMargin.Bottom ) );
@@ -569,6 +574,7 @@ UIWidget* UIWidget::updateLayoutMarginAuto() {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
+	mPhysicalEdges |= 0xf0;
 	if ( mLayoutMarginPx != margin ) {
 		mLayoutMarginPx = margin;
 		mLayoutMargin = PixelDensity::pxToDp( mLayoutMarginPx ).ceil();
@@ -581,6 +587,7 @@ UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginLeft( const Float& marginLeft ) {
+	mPhysicalEdges |= 0x10;
 	if ( mLayoutMarginPx.Left != marginLeft ) {
 		mLayoutMarginPx.Left = marginLeft;
 		mLayoutMargin.Left = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Left ) );
@@ -593,6 +600,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginLeft( const Float& marginLeft ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginRight( const Float& marginRight ) {
+	mPhysicalEdges |= 0x20;
 	if ( mLayoutMarginPx.Right != marginRight ) {
 		mLayoutMarginPx.Right = marginRight;
 		mLayoutMargin.Right = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Right ) );
@@ -605,6 +613,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginRight( const Float& marginRight ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginTop( const Float& marginTop ) {
+	mPhysicalEdges |= 0x40;
 	if ( mLayoutMarginPx.Top != marginTop ) {
 		mLayoutMarginPx.Top = marginTop;
 		mLayoutMargin.Top = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Top ) );
@@ -617,6 +626,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginTop( const Float& marginTop ) {
 }
 
 UIWidget* UIWidget::setLayoutPixelsMarginBottom( const Float& marginBottom ) {
+	mPhysicalEdges |= 0x80;
 	if ( mLayoutMarginPx.Bottom != marginBottom ) {
 		mLayoutMarginPx.Bottom = marginBottom;
 		mLayoutMargin.Bottom = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Bottom ) );
@@ -1420,6 +1430,49 @@ void UIWidget::onSizeChange() {
 	onSizeChange( true );
 }
 
+void UIWidget::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UINode::onPixelDensityChange( oldDensity, newDensity );
+	const auto repairEdges = []( Rectf& logical, Rectf& physical, Uint8 physicalEdges ) {
+		Float Rectf::* const edges[] = { &Rectf::Left, &Rectf::Right, &Rectf::Top, &Rectf::Bottom };
+		for ( Uint8 i = 0; i < 4; ++i ) {
+			if ( physicalEdges & ( 1 << i ) )
+				logical.*edges[i] = PixelDensity::pxToDp( physical.*edges[i] );
+			else
+				physical.*edges[i] = eeceil( PixelDensity::dpToPx( logical.*edges[i] ) );
+		}
+	};
+	repairEdges( mPadding, mPaddingPx, mPhysicalEdges & 0x0f );
+	repairEdges( mLayoutMargin, mLayoutMarginPx, mPhysicalEdges >> 4 );
+	// Anchors retain logical edge distances, including across a root viewport whose physical
+	// size stays fixed. Recomputing distances from the new geometry here would lose that source.
+	if ( mParentNode && ( !mUISceneNode || mUISceneNode->getRoot() != this ) &&
+		 ( mFlags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) ) {
+		const Sizef parentSize = PixelDensity::pxToDp( mParentNode->getPixelsSize() );
+		if ( !( mFlags & UI_ANCHOR_LEFT ) ) {
+			mDpPos.x = parentSize.x - mAnchorDistancesDp.Right - mDpSize.x;
+			mPhysicalGeometry &= ~PhysicalPositionX;
+		} else if ( mFlags & UI_ANCHOR_RIGHT ) {
+			mDpSize.x = eemax( mMinSize.x, parentSize.x - mDpPos.x - mAnchorDistancesDp.Right );
+			mPhysicalGeometry &= ~PhysicalWidth;
+		}
+		if ( !( mFlags & UI_ANCHOR_TOP ) ) {
+			mDpPos.y = parentSize.y - mAnchorDistancesDp.Bottom - mDpSize.y;
+			mPhysicalGeometry &= ~PhysicalPositionY;
+		} else if ( mFlags & UI_ANCHOR_BOTTOM ) {
+			mDpSize.y = eemax( mMinSize.y, parentSize.y - mDpPos.y - mAnchorDistancesDp.Bottom );
+			mPhysicalGeometry &= ~PhysicalHeight;
+		}
+		rebuildPixelDensityGeometry();
+	}
+	if ( mBorder )
+		mBorder->invalidate();
+	if ( mBackground )
+		mBackground->invalidate();
+	if ( mForeground )
+		mForeground->invalidate();
+	notifyLayoutAttrChange();
+}
+
 void UIWidget::onSizeChange( bool notifyLayout ) {
 	if ( mMarginAuto != 0 )
 		calculateAutoMargin();
@@ -1512,8 +1565,7 @@ void UIWidget::updateAnchors( const Vector2f& sizeChange ) {
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
 		if ( NULL != mParentNode ) {
-			newSize.x = mParentNode->getSize().getWidth() - mDpPos.x -
-						PixelDensity::pxToDpI( mDistToBorder.Right );
+			newSize.x = mParentNode->getSize().getWidth() - mDpPos.x - mAnchorDistancesDp.Right;
 
 			if ( newSize.x < mMinSize.getWidth() )
 				newSize.x = mMinSize.getWidth();
@@ -1526,8 +1578,7 @@ void UIWidget::updateAnchors( const Vector2f& sizeChange ) {
 
 	if ( mFlags & UI_ANCHOR_BOTTOM ) {
 		if ( NULL != mParentNode ) {
-			newSize.y =
-				mParentNode->getSize().y - mDpPos.y - PixelDensity::pxToDpI( mDistToBorder.Bottom );
+			newSize.y = mParentNode->getSize().y - mDpPos.y - mAnchorDistancesDp.Bottom;
 
 			if ( newSize.y < mMinSize.getHeight() )
 				newSize.y = mMinSize.getHeight();
@@ -1619,6 +1670,7 @@ Rectf UIWidget::getPixelsContentOffset() const {
 }
 
 UIWidget* UIWidget::setPadding( const Rectf& padding ) {
+	mPhysicalEdges &= ~0x0f;
 	if ( padding != mPadding ) {
 		mPadding = padding;
 		mPaddingPx = PixelDensity::dpToPx( mPadding ).ceil();
@@ -1631,6 +1683,7 @@ UIWidget* UIWidget::setPadding( const Rectf& padding ) {
 }
 
 UIWidget* UIWidget::setPaddingLeft( const Float& paddingLeft ) {
+	mPhysicalEdges &= ~0x01;
 	if ( paddingLeft != mPadding.Left ) {
 		mPadding.Left = paddingLeft;
 		mPaddingPx.Left = eeceil( PixelDensity::dpToPx( mPadding.Left ) );
@@ -1643,6 +1696,7 @@ UIWidget* UIWidget::setPaddingLeft( const Float& paddingLeft ) {
 }
 
 UIWidget* UIWidget::setPaddingRight( const Float& paddingRight ) {
+	mPhysicalEdges &= ~0x02;
 	if ( paddingRight != mPadding.Right ) {
 		mPadding.Right = paddingRight;
 		mPaddingPx.Right = eeceil( PixelDensity::dpToPx( mPadding.Right ) );
@@ -1655,6 +1709,7 @@ UIWidget* UIWidget::setPaddingRight( const Float& paddingRight ) {
 }
 
 UIWidget* UIWidget::setPaddingTop( const Float& paddingTop ) {
+	mPhysicalEdges &= ~0x04;
 	if ( paddingTop != mPadding.Top ) {
 		mPadding.Top = paddingTop;
 		mPaddingPx.Top = eeceil( PixelDensity::dpToPx( mPadding.Top ) );
@@ -1667,6 +1722,7 @@ UIWidget* UIWidget::setPaddingTop( const Float& paddingTop ) {
 }
 
 UIWidget* UIWidget::setPaddingBottom( const Float& paddingBottom ) {
+	mPhysicalEdges &= ~0x08;
 	if ( paddingBottom != mPadding.Bottom ) {
 		mPadding.Bottom = paddingBottom;
 		mPaddingPx.Bottom = eeceil( PixelDensity::dpToPx( mPadding.Bottom ) );
@@ -1679,6 +1735,7 @@ UIWidget* UIWidget::setPaddingBottom( const Float& paddingBottom ) {
 }
 
 UIWidget* UIWidget::setPaddingPixels( const Rectf& padding ) {
+	mPhysicalEdges |= 0x0f;
 	if ( padding != mPaddingPx ) {
 		mPaddingPx = padding;
 		mPadding = PixelDensity::pxToDp( mPaddingPx ).ceil();
@@ -1691,6 +1748,7 @@ UIWidget* UIWidget::setPaddingPixels( const Rectf& padding ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsLeft( const Float& paddingLeft ) {
+	mPhysicalEdges |= 0x01;
 	if ( paddingLeft != mPaddingPx.Left ) {
 		mPaddingPx.Left = paddingLeft;
 		mPadding.Left = eeceil( PixelDensity::pxToDp( mPaddingPx.Left ) );
@@ -1703,6 +1761,7 @@ UIWidget* UIWidget::setPaddingPixelsLeft( const Float& paddingLeft ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsRight( const Float& paddingRight ) {
+	mPhysicalEdges |= 0x02;
 	if ( paddingRight != mPaddingPx.Right ) {
 		mPaddingPx.Right = paddingRight;
 		mPadding.Right = eeceil( PixelDensity::pxToDp( mPaddingPx.Right ) );
@@ -1715,6 +1774,7 @@ UIWidget* UIWidget::setPaddingPixelsRight( const Float& paddingRight ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsTop( const Float& paddingTop ) {
+	mPhysicalEdges |= 0x04;
 	if ( paddingTop != mPaddingPx.Top ) {
 		mPaddingPx.Top = paddingTop;
 		mPadding.Top = eeceil( PixelDensity::pxToDp( mPaddingPx.Top ) );
@@ -1727,6 +1787,7 @@ UIWidget* UIWidget::setPaddingPixelsTop( const Float& paddingTop ) {
 }
 
 UIWidget* UIWidget::setPaddingPixelsBottom( const Float& paddingBottom ) {
+	mPhysicalEdges |= 0x08;
 	if ( paddingBottom != mPaddingPx.Bottom ) {
 		mPaddingPx.Bottom = paddingBottom;
 		mPadding.Bottom = eeceil( PixelDensity::pxToDp( mPaddingPx.Bottom ) );

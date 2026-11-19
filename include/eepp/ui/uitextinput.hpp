@@ -138,6 +138,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
 
   protected:
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	virtual void onTextHintsChanged();
 
 	TextDocument mDoc;

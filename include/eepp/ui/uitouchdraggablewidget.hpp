@@ -43,6 +43,8 @@ class EE_API UITouchDraggableWidget : public UIWidget {
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
   protected:
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	Vector2f mTouchDragPoint;
 	Vector2f mTouchDragVelocity;
 	Vector2f mTouchDragDeceleration;

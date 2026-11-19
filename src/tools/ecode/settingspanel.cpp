@@ -12,6 +12,8 @@
 #include <eepp/ui/tools/fileassociationssettings.hpp>
 #include <eepp/ui/tools/keybindingsconfig.hpp>
 #include <eepp/ui/tools/uikeybindingseditor.hpp>
+#include <eepp/ui/uidropdownmodellist.hpp>
+#include <eepp/ui/uispinbox.hpp>
 #include <limits>
 
 namespace ecode {
@@ -58,7 +60,8 @@ void SettingsPanel::create( Scope scope ) {
 	state.window->setPixelsSize(
 		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
 		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
-	state.window->setMinWindowSize( 640, 440 );
+	state.window->setStyleSheetProperty(
+		StyleSheetProperty( "window-min-size", "min(640dp,90vw) min(440dp,80vh)" ) );
 	state.window->setKeyBindingCommand( "closeWindow", [window = state.window, this] {
 		if ( !SceneManager::instance()->isShuttingDown() ) {
 			window->closeWindow();
@@ -99,6 +102,17 @@ void SettingsPanel::create( Scope scope ) {
 				mApp->saveProject();
 			state.reset();
 		} );
+	auto* scene = mApp->getUISceneNode();
+	state.centeredDensity = scene->getPixelDensity();
+	state.connections += scene->connect( Event::OnLayoutReady, [&state]( const Event* ) {
+		if ( !state.window || state.window->isClosing() )
+			return;
+		const Float density = state.window->getUISceneNode()->getPixelDensity();
+		if ( state.centeredDensity != density ) {
+			state.centeredDensity = density;
+			state.window->center();
+		}
+	} );
 	state.window->center();
 	state.window->showWhenReady();
 	state.panel->focusSearch();
@@ -998,14 +1012,48 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 		[this]( const StyleSheetLength& size ) {
 			mApp->getSettingsActions()->setTerminalFontSize( size );
 		} );
+	addChoice(
+		panel,
+		{ "uiScaleMode", "appearance.fonts", mApp->i18n( "ui_scale_mode", "UI Scale Mode" ),
+		  mApp->i18n(
+			  "ui_scale_mode_desc",
+			  "Follow the configured display scale automatically or use a manual factor." ) },
+		{ mApp->i18n( "auto", "Auto" ), mApp->i18n( "ui_scale_manual", "Manual" ) },
+		[this] { return mApp->getConfig().windowState.pixelDensity > 0.f ? 1 : 0; },
+		[this, &panel]( size_t selected ) {
+			auto& density = mApp->getConfig().windowState.pixelDensity;
+			const bool manual = selected == 1;
+			if ( manual == ( density > 0.f ) )
+				return;
+			if ( manual ) {
+				auto* row = panel.panel->find<UIWidget>( "setting_uiScaleFactor" );
+				auto* spin = row ? row->find<UISpinBox>( "setting_control_widget" ) : nullptr;
+				density = spin ? static_cast<Float>( spin->getValue() )
+							   : eeclamp( mApp->getWindow()->getPixelDensity(), 1.f, 6.f );
+			} else {
+				density = 0.f;
+			}
+			mApp->getWindow()->setPixelDensityOverride( density );
+		} );
 	addFloat(
 		panel,
 		{ "uiScaleFactor", "appearance.fonts", mApp->i18n( "ui_scale_factor", "UI Scale Factor" ),
-		  mApp->i18n( "ui_scale_factor_desc",
-					  "Scale the complete user interface from 1 to 6. Restart required." ) },
+		  mApp->i18n( "ui_scale_factor_desc", "Set a manual user interface scale from 1 to 6." ) },
 		1, 6, 0.1,
-		[this] { return std::max<Float>( 1, mApp->getConfig().windowState.pixelDensity ); },
-		[this]( double value ) { mApp->getConfig().windowState.pixelDensity = value; } );
+		[this] {
+			const Float density = mApp->getConfig().windowState.pixelDensity;
+			return std::max<Float>( 1.f, density > 0.f ? density
+													   : mApp->getWindow()->getPixelDensity() );
+		},
+		[this, &panel]( double value ) {
+			const Float density = static_cast<Float>( value );
+			mApp->getConfig().windowState.pixelDensity = density;
+			mApp->getWindow()->setPixelDensityOverride( density );
+			if ( auto* row = panel.panel->find<UIWidget>( "setting_uiScaleMode" ) ) {
+				auto* mode = row->find<UIDropDownModelList>( "setting_control_widget" );
+				mode->getListView()->getSelection().set( mode->getModel()->index( 1, 0 ) );
+			}
+		} );
 	addBool( panel,
 			 { "editorFontInInputFields", "appearance.fonts",
 			   mApp->i18n( "editor_font_in_input_fields", "Editor Font in Input Fields" ),

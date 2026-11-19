@@ -5,6 +5,8 @@
 #include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/resourcecatalog.hpp>
 #include <eepp/graphics/textureregion.hpp>
+#include <functional>
+#include <future>
 
 namespace EE { namespace Graphics {
 
@@ -38,6 +40,11 @@ class EE_API ResourceScope {
 
 	TexturePtr findTexture( const ResourceKey& key ) const;
 	TexturePtr findTexture( const std::string& key ) const;
+	/** Reuses a visible texture or shares one load and publication for this key with other callers.
+	 * The first caller runs the loader. Callers for the same key wait for that result, and can
+	 * retry a failed load on a later call. The loader must not reenter this method for the same
+	 * key. */
+	TexturePtr findOrLoadTexture( const std::string& key, const std::function<TexturePtr()>& load );
 	DrawablePtr findDrawableSource( const ResourceKey& key ) const;
 	DrawablePtr findDrawableSource( const std::string& key ) const;
 	DrawablePtr findDrawable( const std::string& name, bool firstSearchSprite = false ) const;
@@ -115,6 +122,7 @@ class EE_API ResourceScope {
 	ResourceCatalogPtr mLocalCatalog;
 	FontService mFontService;
 	std::vector<ResourceCatalogPtr> mImports;
+	UnorderedMap<std::string, std::shared_future<TexturePtr>> mPendingTextureLoads;
 	mutable System::Mutex mMutex;
 };
 

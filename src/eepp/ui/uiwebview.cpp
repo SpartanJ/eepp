@@ -286,6 +286,11 @@ Uint32 UIWebView::onMessage( const NodeMessage* message ) {
 	return UIScrollView::onMessage( message );
 }
 
+void UIWebView::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UIScrollView::onPixelDensityChange( oldDensity, newDensity );
+	onSizeChange();
+}
+
 void UIWebView::onSizeChange() {
 	UIScrollView::onSizeChange();
 	onDocumentViewportGeometryChanged();

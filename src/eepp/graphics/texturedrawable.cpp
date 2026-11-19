@@ -23,6 +23,10 @@ Sizef TextureDrawable::getPixelsSize() {
 	return mTexture ? mTexture->getPixelsSize() : Sizef{};
 }
 
+Float TextureDrawable::getRasterScale() const {
+	return mTexture ? mTexture->getRasterScale() : 1.f;
+}
+
 void TextureDrawable::draw() {
 	draw( mPosition );
 }

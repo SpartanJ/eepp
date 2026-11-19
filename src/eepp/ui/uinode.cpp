@@ -27,6 +27,51 @@
 
 namespace EE { namespace UI {
 
+void UINode::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	rescaleLogicalOrigins( newDensity / oldDensity );
+	if ( mPhysicalGeometry & PhysicalPositionX )
+		mDpPos.x = PixelDensity::pxToDp( mPosition.x );
+	if ( mPhysicalGeometry & PhysicalPositionY )
+		mDpPos.y = PixelDensity::pxToDp( mPosition.y );
+	if ( mUISceneNode && mUISceneNode->getRoot() == this ) {
+		mSize = mUISceneNode->getLayoutViewportPixelsSize();
+		mDpSize = PixelDensity::pxToDp( mSize );
+		mPhysicalGeometry |= PhysicalSize;
+	} else {
+		if ( mPhysicalGeometry & PhysicalWidth )
+			mDpSize.x = PixelDensity::pxToDp( mSize.x );
+		if ( mPhysicalGeometry & PhysicalHeight )
+			mDpSize.y = PixelDensity::pxToDp( mSize.y );
+	}
+	rebuildPixelDensityGeometry();
+}
+
+void UINode::rebuildPixelDensityGeometry() {
+	Transformable::setPosition(
+		{ mPhysicalGeometry & PhysicalPositionX ? mPosition.x : PixelDensity::dpToPx( mDpPos.x ),
+		  mPhysicalGeometry & PhysicalPositionY ? mPosition.y
+												: PixelDensity::dpToPx( mDpPos.y ) } );
+	mSize = { mPhysicalGeometry & PhysicalWidth ? mSize.x : PixelDensity::dpToPx( mDpSize.x ),
+			  mPhysicalGeometry & PhysicalHeight ? mSize.y : PixelDensity::dpToPx( mDpSize.y ) };
+	updateCenter();
+	Node::onSizeChange();
+	setDirty();
+	invalidateDraw();
+}
+
+Float UINode::fontSizeForPixelDensityChange( Float size, Float oldDensity,
+											 Float newDensity ) const {
+	if ( mUISceneNode ) {
+		const Float defaultSize = mUISceneNode->getUIThemeManager()->getDefaultFontSize();
+		const Float previousDefault = defaultSize * oldDensity / newDensity;
+		// Reconstruct theme defaults from their retained logical source. Repeatedly scaling an
+		// integer character size would otherwise lose a pixel on fractional round trips.
+		if ( size == previousDefault || size == eefloor( previousDefault ) )
+			return defaultSize;
+	}
+	return size * newDensity / oldDensity;
+}
+
 UINode* UINode::New() {
 	return eeNew( UINode, () );
 }
@@ -50,6 +95,10 @@ UINode::UINode() :
 }
 
 UINode::~UINode() {
+	if ( mUISceneNode ) {
+		mUISceneNode->removeDensityTransitionNode( this );
+		mUISceneNode->cancelDensityRebind( this );
+	}
 	removeSkin();
 
 	eeSAFE_DELETE( mBackground );
@@ -91,12 +140,14 @@ void UINode::nodeToWorldTranslation( Vector2f& Pos ) const {
 }
 
 void UINode::setInternalPosition( const Vector2f& Pos ) {
+	mPhysicalGeometry &= ~PhysicalPosition;
 	mDpPos = Pos;
 	Transformable::setPosition( PixelDensity::dpToPx( Pos ) );
 	setDirty();
 }
 
 void UINode::setPosition( const Vector2f& Pos ) {
+	mPhysicalGeometry &= ~PhysicalPosition;
 	if ( Pos != mDpPos ) {
 		setInternalPosition( Pos );
 		onPositionChange();
@@ -109,6 +160,7 @@ Node* UINode::setPosition( const Float& x, const Float& y ) {
 }
 
 UINode* UINode::setPixelsPosition( const Vector2f& Pos ) {
+	mPhysicalGeometry |= PhysicalPosition;
 	if ( mPosition != Pos ) {
 		mDpPos = PixelDensity::pxToDp( Pos );
 		Transformable::setPosition( Pos );
@@ -132,6 +184,7 @@ const Vector2f& UINode::getPixelsPosition() const {
 }
 
 void UINode::setInternalSize( const Sizef& size ) {
+	mPhysicalGeometry &= ~PhysicalSize;
 	Sizef s( fitMinMaxSizeDp( size ) );
 
 	if ( s != mDpSize ) {
@@ -146,6 +199,7 @@ void UINode::setInternalSize( const Sizef& size ) {
 }
 
 void UINode::setInternalPixelsSize( const Sizef& size ) {
+	mPhysicalGeometry |= PhysicalSize;
 	Sizef s( fitMinMaxSizePx( size ) );
 
 	if ( s != mSize ) {
@@ -160,6 +214,7 @@ void UINode::setInternalPixelsSize( const Sizef& size ) {
 }
 
 Node* UINode::setSize( const Sizef& size ) {
+	mPhysicalGeometry &= ~PhysicalSize;
 	Sizef s( fitMinMaxSizeDp( size ) );
 
 	if ( s != mDpSize ) {
@@ -180,6 +235,7 @@ Node* UINode::setSize( const Float& Width, const Float& Height ) {
 }
 
 UINode* UINode::setPixelsSize( const Sizef& size ) {
+	mPhysicalGeometry |= PhysicalSize;
 	Sizef s( fitMinMaxSizePx( size ) );
 
 	if ( s != mSize ) {
@@ -1963,13 +2019,20 @@ Uint32 UINode::onFocusLoss() {
 }
 
 void UINode::onSceneChange() {
-#ifdef EE_DEBUG
-	UISceneNode* previousScene = mUISceneNode;
-#endif
 	Node::onSceneChange();
 	auto* nextScene = mSceneNode && mSceneNode->isUISceneNode()
 						  ? static_cast<UISceneNode*>( mSceneNode )
 						  : nullptr;
+	auto* previousScene = mUISceneNode;
+	if ( previousScene && previousScene != nextScene ) {
+		const Float snapshotDensity = previousScene->removeDensityTransitionNode( this );
+		const Float pendingDensity = previousScene->cancelDensityRebind( this );
+		const Float previousDensity = pendingDensity > 0.f ? pendingDensity : snapshotDensity;
+		if ( nextScene && previousDensity != nextScene->getPixelDensity() &&
+			 previousScene->getWindow() == nextScene->getWindow() ) {
+			nextScene->mPendingDensityRebinds.push_back( { this, previousDensity } );
+		}
+	}
 	if ( mUISceneNode != mSceneNode )
 		onUISceneNodeChange( nextScene );
 	if ( nextScene )

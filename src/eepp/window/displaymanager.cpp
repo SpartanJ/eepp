@@ -4,6 +4,10 @@ namespace EE { namespace Window {
 
 Display::Display( int displayIndex ) : index( displayIndex ) {}
 
+Float Display::getPhysicalDPI() {
+	return 0.f;
+}
+
 PixelDensitySize Display::getPixelDensitySize() {
 	return PixelDensity::fromDPI( getDPI() );
 }

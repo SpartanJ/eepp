@@ -16,6 +16,7 @@ class EE_API DisplaySDL2 : public Display {
 	Rect getUsableBounds() const;
 
 	Float getDPI();
+	Float getPhysicalDPI();
 
 	const int& getIndex() const;
 
@@ -28,6 +29,14 @@ class EE_API DisplaySDL2 : public Display {
 	Uint32 getRefreshRate() const;
 
 	Sizeu getSize() const;
+
+  protected:
+	friend class DisplayManagerSDL2;
+
+	void invalidateMetrics();
+
+	Sizei mPhysicalDPIResolution;
+	Float mPhysicalDPI{ -1.f };
 };
 
 class EE_API DisplayManagerSDL2 : public DisplayManager {
@@ -40,6 +49,8 @@ class EE_API DisplayManagerSDL2 : public DisplayManager {
 
 	Display* getDisplayIndex( int index );
 
+	void invalidateDisplayMetrics();
+
 	void enableScreenSaver();
 
 	void disableScreenSaver();
@@ -51,6 +62,9 @@ class EE_API DisplayManagerSDL2 : public DisplayManager {
 	void disableBypassCompositor();
 
 	void enableBypassCompositor();
+
+  protected:
+	int mDisplayCount{ 0 };
 };
 
 }}}} // namespace EE::Window::Backend::SDL2

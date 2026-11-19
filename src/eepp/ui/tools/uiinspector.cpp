@@ -119,6 +119,9 @@ WidgetQueryResult UIInspector::query( UISceneNode* scene, const std::string& sel
 std::string UIInspector::property( UIWidget* widget, const std::string& name ) const {
 	if ( !widget || !CSS::StyleSheetSpecification::instance()->getProperty( name ) )
 		return {};
+	auto densityContext = PixelDensity::makeCurrent(
+		widget->getUISceneNode() ? widget->getUISceneNode()->getPixelDensity()
+								 : PixelDensity::getPixelDensity() );
 	return widget->getPropertyString( name );
 }
 

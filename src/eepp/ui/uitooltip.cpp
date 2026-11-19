@@ -91,11 +91,7 @@ UITooltip::UITooltip() :
 		}
 	}
 
-	if ( NULL != theme ) {
-		setFontSize( theme->getDefaultFontSize() );
-	} else {
-		setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
-	}
+	setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 
 	autoPadding();
 

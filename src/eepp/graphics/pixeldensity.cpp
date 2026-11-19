@@ -7,6 +7,41 @@
 namespace EE { namespace Graphics {
 
 Float PixelDensity::sPixelDensity = 1.f;
+thread_local Float PixelDensity::sScopedPixelDensity = 0.f;
+thread_local const Float* PixelDensity::sScopedPixelDensitySource = nullptr;
+
+PixelDensity::Context::Context( Float density, const Float* source ) :
+	mPreviousSource( sScopedPixelDensitySource ), mPreviousDensity( sScopedPixelDensity ) {
+	sScopedPixelDensity = std::isfinite( density ) && density > 0.f ? density : 0.f;
+	sScopedPixelDensitySource = source;
+}
+
+PixelDensity::Context::~Context() {
+	restore();
+}
+
+PixelDensity::Context::Context( Context&& other ) noexcept :
+	mPreviousSource( other.mPreviousSource ),
+	mPreviousDensity( other.mPreviousDensity ),
+	mActive( other.mActive ) {
+	other.mActive = false;
+}
+
+void PixelDensity::Context::restore() {
+	if ( mActive ) {
+		sScopedPixelDensity = mPreviousDensity;
+		sScopedPixelDensitySource = mPreviousSource;
+		mActive = false;
+	}
+}
+
+PixelDensity::Context PixelDensity::makeCurrent( Float density ) {
+	return Context( density );
+}
+
+PixelDensity::Context PixelDensity::bindCurrent( const Float* density ) {
+	return Context( density ? *density : 0.f, density );
+}
 
 Float PixelDensity::toFloat( PixelDensitySize pd ) {
 	switch ( pd ) {
@@ -65,7 +100,12 @@ PixelDensitySize PixelDensity::fromDPI( Float dpi ) {
 }
 
 const Float& PixelDensity::getPixelDensity() {
-	return sPixelDensity;
+	if ( sScopedPixelDensitySource ) {
+		return *sScopedPixelDensitySource > 0.f && std::isfinite( *sScopedPixelDensitySource )
+				   ? *sScopedPixelDensitySource
+				   : sPixelDensity;
+	}
+	return sScopedPixelDensity > 0.f ? sScopedPixelDensity : sPixelDensity;
 }
 
 Float PixelDensity::getEnvironmentPixelDensity() {

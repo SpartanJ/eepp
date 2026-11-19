@@ -143,6 +143,8 @@ class EE_API UITextView : public UIWidget {
 	virtual void onTextHintsChanged();
 
   protected:
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	Text mTextCache;
 	String mString;
 	UIFontStyleConfig mFontStyleConfig;

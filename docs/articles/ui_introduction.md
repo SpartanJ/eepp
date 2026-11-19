@@ -224,6 +224,60 @@ pixel](https://en.wikipedia.org/wiki/Device-independent_pixel), that allow us to
 keep our layout consistent between different screen densities. This concept was
 taken from the [Android pixel density implementation](https://developer.android.com/guide/practices/screens_support.html#density).
 
+Each native window resolves its own UI density at creation and refreshes it when its display scale
+changes. Positive application settings take
+priority over window settings, then `EEPP_PIXEL_DENSITY`, then the native display scale. Automatic
+offscreen and terminal windows use `1`. SDL3 keeps fractional scales such as `1.25` without
+rounding them to a resource density bucket. `Window::getScale()` continues to describe the ratio
+between framebuffer pixels and native window coordinates; `getDisplayScale()` describes the native
+UI scale, and `getPixelDensity()` reports the effective eepp UI density.
+
+Automatic scaling respects the desktop's requested UI scale by default, including on Windows,
+macOS and Linux. Physical monitor PPI is a separate opt-in policy: set
+`WindowSettings::DensityMode = PixelDensityMode::PhysicalPPI`, or use
+`EEPP_PIXEL_DENSITY_MODE=physical-ppi` with the default window policy. It resolves density as
+`max(1, physical PPI / reference PPI)`, with a default reference of 96; unavailable measurements fall back to desktop scale. X11, Windows and
+macOS provide physical measurement; Wayland currently falls back. Fixed application/window/environment
+density overrides take priority in either policy. Generic window INI settings accept
+`pixeldensitymode=default|display-scale|physical-ppi` and optional `pixeldensityreferenceppi`;
+ecode persists those choices alongside `pixeldensity` in the profile's `state.cfg` `[window]` section.
+
+Scene update, draw, and dispatched input callbacks establish the owning density automatically.
+When creating or changing UI in another window, enter its scene context:
+
+```cpp
+{
+    auto context = secondaryScene->makeCurrent();
+    auto* button = UIPushButton::New();
+    button->setSize( 120, 32 ); // logical dp in the secondary scene
+    // PixelDensity::dpToPx() uses this window's UI density here.
+}
+```
+
+The context restores the previous scene, native window, and density on exit. Window-only work can
+use `Engine::makeWindowCurrent()`. Density-only worker work can capture the owning scene's numeric
+density and enter `PixelDensity::makeCurrent(density)` on that thread. These scopes allocate no
+memory, and thread-local overrides do not cross threads.
+
+`PixelDensity::setPixelDensity()` sets the process fallback used outside a scope. The first window
+initializes that fallback; creating another window leaves it unchanged. Changing the fallback
+does not change an existing window's density. Use the window and scene APIs for that:
+
+```cpp
+scene->setPixelDensity( 1.25f );        // reflow this scene and inheriting embedded scenes
+scene->clearPixelDensityOverride();    // follow the embedded host or native window again
+window->setPixelDensityOverride( 2.f ); // inheriting scenes apply it on their next update
+window->setPixelDensityOverride( 0.f ); // return to automatic density (unless the environment overrides it)
+window->setPixelDensityMode( PixelDensityMode::PhysicalPPI ); // change the automatic source live
+window->setPixelDensityReferencePPI( 96.f ); // optional physical-mode calibration
+```
+
+Scene and window guards follow their live density sources, so changing density inside an input
+callback also changes conversions in the rest of that callback. Reflow refreshes fonts before
+styles and layout, preserves physical-pixel geometry, and restores semantic scroll/editor positions.
+The [implementation status](../development/eepp_per_window_dpi_implementation_status.md) records
+platform validation and remaining hardening.
+
 ## Loading the CSS Resource
 
 Following [Load the XML Layout Resource](#load-the-xml-layout-resource) and

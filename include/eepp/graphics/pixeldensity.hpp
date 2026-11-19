@@ -23,6 +23,41 @@ enum class PixelDensitySize : Uint32 {
 
 class EE_API PixelDensity {
   public:
+	/** Thread-local density scope. Nested scopes must be restored in reverse order; moving a
+	 * guard transfers restoration to its new owner. No window or graphics binding is changed. */
+	class EE_API Context {
+	  public:
+		~Context();
+
+		Context( const Context& ) = delete;
+
+		Context& operator=( const Context& ) = delete;
+
+		Context( Context&& other ) noexcept;
+
+		Context& operator=( Context&& ) = delete;
+
+		/** Restores the previous scoped density, at most once. */
+		void restore();
+
+	  private:
+		friend class PixelDensity;
+
+		explicit Context( Float density, const Float* source = nullptr );
+
+		const Float* mPreviousSource;
+		Float mPreviousDensity;
+		bool mActive{ true };
+	};
+
+	/** Uses a positive finite density for this scope. Zero/invalid values select the process
+	 * fallback, including inside another density scope. */
+	static Context makeCurrent( Float density );
+
+	/** Binds a live density source which must outlive the scope. Used by window/scene guards
+	 * so a density change inside an input callback also updates its enclosing execution scope. */
+	static Context bindCurrent( const Float* density );
+
 	static Float toFloat( PixelDensitySize pd );
 
 	static Float toFloat( Uint32 pd );
@@ -33,11 +68,13 @@ class EE_API PixelDensity {
 
 	static PixelDensitySize fromDPI( Float dpi );
 
+	/** Effective density of the innermost scope, or the process fallback outside a scope. */
 	static const Float& getPixelDensity();
 
 	/** Positive EEPP_PIXEL_DENSITY value, or zero when unset or invalid. */
 	static Float getEnvironmentPixelDensity();
 
+	/** Sets the process fallback; does not replace an active scoped density. */
 	static void setPixelDensity( const Float& pixelDensity );
 
 	static void setPixelDensity( const PixelDensitySize& pixelDensity );
@@ -91,6 +128,8 @@ class EE_API PixelDensity {
 
   protected:
 	static Float sPixelDensity;
+	static thread_local Float sScopedPixelDensity;
+	static thread_local const Float* sScopedPixelDensitySource;
 };
 
 }} // namespace EE::Graphics

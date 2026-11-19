@@ -164,6 +164,8 @@ class EE_API UIConsole : public UIWidget,
 	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
 
   protected:
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	struct TextCache {
 		Text text;
 		String::HashType hash{ 0 };

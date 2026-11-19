@@ -28,8 +28,8 @@ class EE_API Engine {
 	SINGLETON_DECLARE_HEADERS( Engine )
 
   public:
-	/** Scoped binding of the current native window and graphics context. Restores the previous
-	 * binding when destroyed. Context objects are movable but cannot be copied. */
+	/** Scoped binding of the current native window, graphics context and UI density. Restores the
+	 * previous binding when destroyed. Context objects are movable but cannot be copied. */
 	class EE_API WindowContext {
 	  public:
 		~WindowContext();
@@ -47,7 +47,7 @@ class EE_API Engine {
 
 		Engine* mEngine{ nullptr };
 		EE::Window::Window* mPreviousWindow{ nullptr };
-		bool mActive{ true };
+		Graphics::PixelDensity::Context mDensityContext;
 	};
 
 	~Engine();
@@ -60,9 +60,11 @@ class EE_API Engine {
 	/** @returns True if the current thread is the main thread. */
 	static bool isMainThread();
 
-	/** Creates a new window. */
+	/** Creates a new window. A positive finite @p pixelDensityOverride overrides the settings /
+	 * environment UI density without changing the requested native window dimensions. */
 	EE::Window::Window* createWindow( WindowSettings Settings,
-									  ContextSettings Context = ContextSettings() );
+									  ContextSettings Context = ContextSettings(),
+									  Float pixelDensityOverride = 0.f );
 
 	/** Destroy the window instance, and set as current other window running ( if any ).
 	 * This function is only useful for multi-window environment. Avoid using it with one window

@@ -178,7 +178,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
 	mLineNumberPaddingLeft( PixelDensity::dpToPx( 6 ) ),
 	mLineNumberPaddingRight( PixelDensity::dpToPx( 6 ) ),
-	mFoldRegionWidth( PixelDensity::dpToPx( 12 ) ),
+	mFoldRegionWidth( PixelDensity::dpToPx( DefaultFoldRegionWidthDp ) ),
 	mPreviewColor( Color::Transparent ),
 	mKeyBindings( getInput() ),
 	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ) {
@@ -211,10 +211,8 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mFontStyleConfig.Font = mFont;
 
 	auto* themeManager = getUISceneNode()->getUIThemeManager();
-	auto* theme = themeManager->getDefaultTheme();
-	// Match UITextView's theme default and whole-pixel character size.
-	setFontSize( static_cast<Uint32>( theme ? theme->getDefaultFontSize()
-											: themeManager->getDefaultFontSize() ) );
+	// Match UITextView's scene-local default and whole-pixel character size.
+	setFontSize( static_cast<Uint32>( themeManager->getDefaultFontSize() ) );
 	mMenuIconSize = getCharacterSize();
 
 	setClipType( ClipType::ContentBox );
@@ -230,6 +228,49 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 UICodeEditor::UICodeEditor( const bool& autoRegisterBaseCommands,
 							const bool& autoRegisterBaseKeybindings ) :
 	UICodeEditor( "codeeditor", autoRegisterBaseCommands, autoRegisterBaseKeybindings ) {}
+
+static bool hasStableScrollAnchor( const UICodeEditor& editor ) {
+	const auto& view = editor.getDocumentView();
+	return editor.hasDocument() && !editor.getDocument().isLoading() &&
+		   !view.isPendingReconstruction() && view.getVisibleLinesCount() > 0;
+}
+
+void UICodeEditor::onBeforePixelDensityReflow( UIDensityReflow& reflow ) {
+	UITouchDraggableWidget::onBeforePixelDensityReflow( reflow );
+	const Float lineHeight = getLineHeight();
+	// Hidden wrapped editors may not have a width or a visible-line cache yet.
+	if ( lineHeight <= 0.f || !hasStableScrollAnchor( *this ) )
+		return;
+	const Float top = getScroll().y / lineHeight;
+	const Float topLine = std::floor( top );
+	const auto anchor = mDocView.getVisibleIndexPosition(
+		static_cast<Doc::VisibleIndex>( static_cast<Int64>( topLine ) ) );
+	const Float fraction = top - topLine;
+	const Float horizontal = getScroll().x;
+	reflow.restoreAfterLayout(
+		[this, anchor, fraction, horizontal]( const UIDensityReflow& reflow ) {
+			// Font and layout changes can invalidate a previously available view.
+			if ( !hasStableScrollAnchor( *this ) )
+				return;
+			const auto range = mDocView.getVisibleLineRange( anchor );
+			if ( range.visibleIndex != Doc::VisibleIndex::invalid ) {
+				const Float height = getLineHeight();
+				setScroll(
+					{ horizontal * reflow.getNewDensity() / reflow.getOldDensity(),
+					  static_cast<Float>( mDocView.getLineYOffset( range.visibleIndex, height ) ) +
+						  fraction * height },
+					false );
+			}
+		} );
+}
+
+void UICodeEditor::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UITouchDraggableWidget::onPixelDensityChange( oldDensity, newDensity );
+	mLineNumberPaddingLeft *= newDensity / oldDensity;
+	mLineNumberPaddingRight *= newDensity / oldDensity;
+	mFoldRegionWidth = PixelDensity::dpToPx( DefaultFoldRegionWidthDp );
+	setFontSize( fontSizeForPixelDensityChange( getFontSize(), oldDensity, newDensity ) );
+}
 
 UICodeEditor::~UICodeEditor() {
 	mAsyncLifetime.invalidate();
@@ -687,6 +728,7 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 }
 
 void UICodeEditor::onFontChanged() {
+	mLinesWidthCache.clear();
 	updateGlyphWidth();
 	mDocView.setFontStyle( mFontStyleConfig );
 	invalidateDraw();
@@ -694,6 +736,7 @@ void UICodeEditor::onFontChanged() {
 }
 
 void UICodeEditor::onFontStyleChanged() {
+	mLinesWidthCache.clear();
 	updateGlyphWidth();
 	mDocView.setFontStyle( mFontStyleConfig );
 	invalidateDraw();
@@ -2287,6 +2330,7 @@ void UICodeEditor::updateScrollBar() {
 	}
 
 	setScrollY( mScroll.y );
+	syncScrollBarValues();
 	mUpdatingScrollBar = false;
 
 	onAutoSize();
@@ -3061,9 +3105,19 @@ const Vector2f& UICodeEditor::getFontShadowOffset() const {
 	return mFontStyleConfig.getFontShadowOffset();
 }
 
+void UICodeEditor::syncScrollBarValues() {
+	const auto maxScroll = getMaxScroll();
+	if ( mHorizontalScrollBarEnabled )
+		mHScrollBar->setValue( maxScroll.x > 0.f ? mScroll.x / maxScroll.x : 0.f, false );
+	if ( mVerticalScrollBarEnabled )
+		mVScrollBar->setValue( maxScroll.y > 0.f ? mScroll.y / maxScroll.y : 0.f, false );
+}
+
 void UICodeEditor::setScroll( const Vector2f& val, bool emitEvent ) {
 	setScrollX( val.x, emitEvent );
 	setScrollY( val.y, emitEvent );
+	if ( !emitEvent )
+		syncScrollBarValues();
 }
 
 bool UICodeEditor::getShowLineEndings() const {

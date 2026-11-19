@@ -2,6 +2,7 @@
 
 #ifdef EE_BACKEND_SDL2
 
+#include <cmath>
 #include <cstring>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -931,6 +932,41 @@ Float WindowSDL::getScale() const {
 	SDL_GL_GetDrawableSize( mSDLWindow, &realX, &realY );
 	SDL_GetWindowSize( mSDLWindow, &scaledX, &scaledY );
 	return (Float)realX / (Float)scaledX;
+}
+
+Float WindowSDL::getDisplayScale() const {
+	if ( !mSDLWindow || Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
+		return 1.f;
+	const Float scale = getScale();
+	const Float backingScale = std::isfinite( scale ) && scale > 0.f ? scale : 1.f;
+#if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_IOS
+	// SDL2 has no per-window content-scale API. Use fractional display DPI when available.
+	// Cocoa uses backing pixels because physical monitor DPI does not represent its UI scale.
+	const int index = SDL_GetWindowDisplayIndex( mSDLWindow );
+	Float dpi = 0.f;
+	if ( index >= 0 && SDL_GetDisplayDPI( index, &dpi, nullptr, nullptr ) == 0 &&
+		 std::isfinite( dpi ) && dpi > 0.f )
+		return eemax( backingScale, dpi / 96.f );
+#endif
+	return backingScale;
+}
+
+Float WindowSDL::getPhysicalDisplayDPI() const {
+	if ( !mSDLWindow || Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
+		return 0.f;
+	const int index = SDL_GetWindowDisplayIndex( mSDLWindow );
+	// The legacy getCurrentDisplayIndex() maps a failed lookup to the primary display.
+	auto* display = Engine::instance()->getDisplayManager()->getDisplayIndex( index );
+	return display ? display->getPhysicalDPI() : 0.f;
+}
+
+void WindowSDL::refreshDisplayMetrics() {
+	if ( !mSDLWindow || Runtime::mode() == RuntimeMode::Terminal )
+		return;
+	int width = 0, height = 0;
+	SDL_GL_GetDrawableSize( mSDLWindow, &width, &height );
+	if ( width > 0 && height > 0 )
+		onWindowResize( width, height );
 }
 
 bool WindowSDL::hasNativeMessageBox() const {

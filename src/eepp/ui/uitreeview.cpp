@@ -21,11 +21,19 @@ UITreeView* UITreeView::New() {
 
 UITreeView::UITreeView() :
 	UIAbstractTableView( "treeview" ),
-	mIndentWidth( PixelDensity::dpToPx( 6 ) ),
-	mExpanderIconSize( PixelDensity::dpToPxI( 12 ) ) {
+	mIndentWidth( PixelDensity::dpToPx( DefaultIndentWidth ) ),
+	mExpanderIconSize( PixelDensity::dpToPxI( DefaultExpanderIconSize ) ) {
 	setClipType( ClipType::ContentBox );
 	mExpandIcon = getUISceneNode()->findIcon( "tree-expanded" );
 	mContractIcon = getUISceneNode()->findIcon( "tree-contracted" );
+}
+
+void UITreeView::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UIAbstractTableView::onPixelDensityChange( oldDensity, newDensity );
+	if ( mDensityDefaultTreeMetrics & 1 )
+		mIndentWidth = PixelDensity::dpToPx( DefaultIndentWidth );
+	if ( mDensityDefaultTreeMetrics & 2 )
+		mExpanderIconSize = PixelDensity::dpToPxI( DefaultExpanderIconSize );
 }
 
 UITreeView::~UITreeView() {
@@ -381,6 +389,7 @@ const Float& UITreeView::getIndentWidth() const {
 }
 
 void UITreeView::setIndentWidth( const Float& indentWidth ) {
+	mDensityDefaultTreeMetrics &= ~1;
 	if ( mIndentWidth != indentWidth ) {
 		mIndentWidth = indentWidth;
 		createOrUpdateColumns( false );
@@ -615,6 +624,7 @@ const size_t& UITreeView::getExpanderIconSize() const {
 }
 
 void UITreeView::setExpanderIconSize( const size_t& expanderSize ) {
+	mDensityDefaultTreeMetrics &= ~2;
 	mExpanderIconSize = expanderSize;
 }
 

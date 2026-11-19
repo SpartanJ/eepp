@@ -1933,8 +1933,7 @@ UTEST( GridContainer, gradientFixtureAutoFitItemsStayInsideOnResize ) {
 	Engine::instance()->createWindow( WindowSettings( 1024, 650, "UIHTML Grid Gradient Test",
 													  WindowStyle::Default, WindowBackend::Default,
 													  32, {}, 1, false, true ),
-									  ContextSettings() );
-	PixelDensity::setPixelDensity( 2.f );
+									  ContextSettings(), 2.f );
 	init_grid_test();
 	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
 	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );

@@ -19,8 +19,39 @@ namespace EE { namespace UI {
 
 namespace {
 
+std::string fileTextureKey( const std::string& path, Float svgScale ) {
+	std::string key( path );
+	FileSystem::filePathRemoveProcessPath( key );
+	if ( svgScale == 1.f )
+		return key;
+	MD5::Context hash;
+	MD5::init( hash );
+	MD5::update( hash, key.data(), key.size() );
+	MD5::update( hash, &svgScale, sizeof( svgScale ) );
+	return "svg:" + MD5::result( hash ).toHexString();
+}
+
+TexturePtr loadFileTexture( ResourceScope& scope, const std::string& path, const std::string& key,
+							Float svgScale ) {
+	return scope.findOrLoadTexture( key, [&] {
+		Image::FormatConfiguration format;
+		format.svgScale( svgScale );
+		return TextureFactory::instance()->loadFromFile(
+			path, false, Texture::ClampMode::ClampToEdge, false, false, format );
+	} );
+}
+
 DrawablePtr parseDataURI( const std::string& name, ResourceScope& resourceScope ) {
-	std::string hash = MD5::fromString( name ).toHexString();
+	MD5::Context hashContext;
+	MD5::init( hashContext );
+	MD5::update( hashContext, name.data(), name.size() );
+	if ( String::startsWith( name, "data:image/svg+xml" ) ) {
+		// Shared catalogs can serve multiple scenes. The SVG source is shared, but its raster
+		// at one target density must not satisfy a request at a different target density.
+		const Float density = PixelDensity::getPixelDensity();
+		MD5::update( hashContext, &density, sizeof( density ) );
+	}
+	std::string hash = MD5::result( hashContext ).toHexString();
 	TexturePtr texture = resourceScope.findTexture( hash );
 	std::string::size_type formatAndEncSep;
 	if ( !texture && ( formatAndEncSep = name.find_first_of( ',' ) ) != std::string::npos ) {
@@ -80,26 +111,86 @@ DrawableResolver::DrawableResolver( UISceneNode& sceneNode ) : mSceneNode( &scen
 DrawableResolver::DrawableResolver( ResourceScope& resourceScope ) :
 	mResourceScope( &resourceScope ) {}
 
+bool DrawableResolver::isSvgPath( std::string_view path ) {
+	return path.size() >= 4 && String::iequals( path.substr( path.size() - 4 ), ".svg" );
+}
+
+bool DrawableResolver::requestFileTexture( const URI& uri,
+										   std::function<void( TexturePtr )> callback ) const {
+	if ( !mSceneNode || !mSceneNode->hasThreadPool() )
+		return false;
+	std::string path = uri.getFSPath();
+	const bool svg = isSvgPath( path );
+	if ( !svg && !Engine::instance()->isSharedGLContextEnabled() )
+		return false;
+	const Float scale = svg ? mSceneNode->getPixelDensity() : 1.f;
+	std::string key = fileTextureKey( path, scale );
+	auto scope = mSceneNode->getResourceScope();
+	if ( auto texture = scope->findTexture( key ) ) {
+		callback( std::move( texture ) );
+		return true;
+	}
+	auto state = mSceneNode->getAsyncResourceLoadState();
+	const Uint64 generation = state ? state->generation.load( std::memory_order_acquire ) : 0;
+	mSceneNode->getThreadPool()->run( [state = std::move( state ), generation,
+									   scope = std::move( scope ), path = std::move( path ),
+									   key = std::move( key ), scale, svg,
+									   callback = std::move( callback )]() mutable {
+		if ( !UISceneNode::isAsyncResourceLoadCurrent( state, generation ) )
+			return;
+		if ( svg ) {
+			Image::FormatConfiguration format;
+			const Float rasterScale = Image::getFormat( path ) == Image::Format::SVG ? scale : 1.f;
+			format.svgScale( rasterScale );
+			auto image = std::make_shared<Image>( std::move( path ), 0, format );
+			if ( !image->getPixelsPtr() )
+				return;
+			UISceneNode::runAsyncResourceOnMainThread(
+				state, generation,
+				[scope = std::move( scope ), key = std::move( key ), rasterScale,
+				 image = std::move( image ), callback = std::move( callback )]( UISceneNode* ) {
+					auto texture = scope->findOrLoadTexture( key, [&] {
+						auto loaded = TextureFactory::instance()->loadFromPixels(
+							image->getPixelsPtr(), image->getWidth(), image->getHeight(),
+							image->getChannels() );
+						if ( loaded )
+							loaded->setRasterScale( rasterScale );
+						return loaded;
+					} );
+					if ( texture )
+						callback( std::move( texture ) );
+				} );
+			return;
+		}
+
+		if ( auto texture = loadFileTexture( *scope, path, key, 1.f ) ) {
+			UISceneNode::runAsyncResourceOnMainThread(
+				state, generation,
+				[texture = std::move( texture ), callback = std::move( callback )](
+					UISceneNode* ) mutable { callback( std::move( texture ) ); } );
+		}
+	} );
+	return true;
+}
+
 DrawablePtr DrawableResolver::resolve( const std::string& name, bool firstSearchSprite ) const {
+	auto densityContext = PixelDensity::makeCurrent( mSceneNode ? mSceneNode->getPixelDensity()
+																: PixelDensity::getPixelDensity() );
 	DrawablePtr drawable;
 	if ( name.empty() )
 		return drawable;
 
 	ResourceScope& resourceScope = mSceneNode ? *mSceneNode->getResourceScope() : *mResourceScope;
 	if ( String::startsWith( name, "file://" ) ) {
-		std::string filePath = name.substr( 7 );
+		// Layouts also use file://assets/... for paths relative to the working directory.
+		std::string path = name.substr( 7 );
 #if EE_PLATFORM == EE_PLATFORM_WIN
-		if ( filePath.size() >= 3 && filePath[0] == '/' && String::isLetter( filePath[1] ) &&
-			 filePath[2] == ':' )
-			filePath.erase( 0, 1 );
+		if ( path.size() >= 3 && path[0] == '/' && String::isLetter( path[1] ) && path[2] == ':' )
+			path.erase( 0, 1 );
 #endif
-		FileSystem::filePathRemoveProcessPath( filePath );
-		TexturePtr texture = resourceScope.findTexture( filePath );
-		if ( !texture ) {
-			texture = TextureFactory::instance()->loadFromFile( filePath );
-			if ( texture )
-				resourceScope.publishLocal( filePath, texture );
-		}
+		FileSystem::filePathRemoveProcessPath( path );
+		const Float scale = isSvgPath( path ) ? PixelDensity::getPixelDensity() : 1.f;
+		auto texture = loadFileTexture( resourceScope, path, fileTextureKey( path, scale ), scale );
 		drawable = texture ? texture->clone() : DrawablePtr{};
 	} else if ( String::startsWith( name, "http://" ) || String::startsWith( name, "https://" ) ) {
 		TexturePtr texture = resourceScope.findTexture( name );

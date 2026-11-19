@@ -186,7 +186,7 @@ void UIViewPager::setDisplacement( const Float& val ) {
 	mDisplacement = val;
 	Float normalizedDisplacement = mDisplacement - mCurrentPage * getLength();
 
-	if ( eeabs( normalizedDisplacement ) > mDragResistance ) {
+	if ( eeabs( normalizedDisplacement ) > PixelDensity::dpToPx( mDragResistance ) ) {
 		if ( mOrientation == UIOrientation::Horizontal ) {
 			mContainer->setPixelsPosition(
 				Vector2f( -mDisplacement, mContainer->getPixelsPosition().y ) );
@@ -264,7 +264,7 @@ void UIViewPager::onMouseMoveEvent() {
 
 void UIViewPager::onMouseUpEvent() {
 	if ( mDragging ) {
-		if ( eeabs( mDisplacement ) > mDragResistance ) {
+		if ( eeabs( mDisplacement ) > PixelDensity::dpToPx( mDragResistance ) ) {
 			Float normalizedDisplacement = mDisplacement - mCurrentPage * getLength();
 			Float length = getLength();
 

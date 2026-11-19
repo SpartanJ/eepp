@@ -1,4 +1,5 @@
 #import <AppKit/AppKit.h>
+#include <cmath>
 #include <eepp/window/platform/macos/platformhelper.hpp>
 #import <objc/runtime.h>
 
@@ -194,6 +195,22 @@ bool setWindowTitleBarSeparatorVisible( void* window, bool visible ) {
 		return true;
 	}
 	return false;
+}
+
+Float getPhysicalDisplayDPI( const Math::Rect& bounds ) {
+	CGDirectDisplayID display = 0;
+	uint32_t count = 0;
+	const CGPoint point =
+		CGPointMake( bounds.Left + bounds.getWidth() / 2, bounds.Top + bounds.getHeight() / 2 );
+	if ( CGGetDisplaysWithPoint( point, 1, &display, &count ) != kCGErrorSuccess || !count )
+		return 0.f;
+	const CGSize size = CGDisplayScreenSize( display );
+	if ( size.width <= 0 || size.height <= 0 )
+		return 0.f;
+	return 25.4f *
+		   std::hypot( static_cast<Float>( CGDisplayPixelsWide( display ) ),
+					   static_cast<Float>( CGDisplayPixelsHigh( display ) ) ) /
+		   std::hypot( static_cast<Float>( size.width ), static_cast<Float>( size.height ) );
 }
 
 bool setWindowTitleBarColor( void* window, Uint8 red, Uint8 green, Uint8 blue ) {

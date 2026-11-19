@@ -1,9 +1,6 @@
 #include <cctype>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
-#include <eepp/window/displaymanager.hpp>
-#include <eepp/window/engine.hpp>
-#include <eepp/window/window.hpp>
 
 using namespace EE::Window;
 
@@ -34,10 +31,6 @@ MediaQuery::MediaQuery( const MediaQuery& val ) {
 }
 
 MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
-	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
-	int currentDisplayIndex = Engine::instance()->getCurrentWindow()->getCurrentDisplayIndex();
-	Display* currentDisplay = displayManager->getDisplayIndex( currentDisplayIndex );
-	Float dpi = currentDisplay->getDPI();
 	MediaQuery::ptr query = std::make_shared<MediaQuery>();
 
 	std::vector<std::string> tokens = String::split( str, " \t\r\n", "", "(" );
@@ -106,8 +99,9 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 								StyleSheetLength length =
 									StyleSheetLength::fromString( exprTokens[1] );
 								expr.valStr = String::toLower( exprTokens[1] );
-								expr.val = (int)length.asPixels( 0, Sizef::Zero, dpi );
+								expr.val = static_cast<int>( length.getValue() );
 								expr.fval = length.getValue();
+								expr.lengthUnit = static_cast<Uint8>( length.getUnit() );
 							}
 						}
 					}
@@ -175,6 +169,13 @@ MediaQueryList::ptr MediaQueryList::parse( const std::string& str ) {
 }
 
 bool MediaQueryList::applyMediaFeatures( const MediaFeatures& features ) {
+	const bool apply = matches( features );
+	const bool changed = apply != mUsed;
+	mUsed = apply;
+	return changed;
+}
+
+bool MediaQueryList::matches( const MediaFeatures& features ) const {
 	bool apply = false;
 
 	for ( auto& query : mQueries ) {
@@ -184,9 +185,7 @@ bool MediaQueryList::applyMediaFeatures( const MediaFeatures& features ) {
 		}
 	}
 
-	bool ret = ( apply != mUsed );
-	mUsed = apply;
-	return ret;
+	return apply;
 }
 
 const Uint32& MediaQueryList::getMarker() const {
@@ -205,6 +204,29 @@ MediaQueryExpression::MediaQueryExpression() {
 }
 
 bool MediaQueryExpression::check( const MediaFeatures& features ) const {
+	int val = this->val;
+	if ( lengthUnit != 255 && feature >= media_feature_width &&
+		 feature <= media_feature_max_device_height ) {
+		const auto unit = static_cast<StyleSheetLength::Unit>( lengthUnit );
+		if ( unit == StyleSheetLength::Px ) {
+			val = static_cast<int>( fval );
+		} else {
+			const Float density = features.pixelDensity > 0.f ? features.pixelDensity : 1.f;
+			auto context = Graphics::PixelDensity::makeCurrent( density );
+			const StyleSheetLength length = unit >= StyleSheetLength::Clamp
+												? StyleSheetLength::fromString( valStr )
+												: StyleSheetLength( fval, unit );
+			val = static_cast<int>(
+				length.asPixels( 0.f, Sizef( features.width * density, features.height * density ),
+								 features.resolution, 12.f * density, 12.f * density ) /
+				density );
+		}
+	} else if ( lengthUnit != 255 && feature >= media_feature_resolution &&
+				feature <= media_feature_max_resolution ) {
+		val = static_cast<int>( fval * ( String::endsWith( valStr, "dppx" )	  ? 96.f
+										 : String::endsWith( valStr, "dpcm" ) ? 2.54f
+																			  : 1.f ) );
+	}
 	switch ( feature ) {
 		case media_feature_width:
 			if ( checkAsBool ) {
@@ -413,7 +435,7 @@ bool MediaQueryExpression::check( const MediaFeatures& features ) const {
 			}
 			break;
 		case media_feature_pixel_density:
-			if ( features.pixelDensity == val )
+			if ( features.pixelDensity == fval )
 				return true;
 			break;
 		case media_feature_min_pixel_density:

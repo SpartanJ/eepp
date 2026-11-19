@@ -20,6 +20,7 @@
 #include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
 #include <nlohmann/json.hpp>
 
 using namespace EE::System;
@@ -127,6 +128,37 @@ UTEST( UIInspector, HandlesInvalidateAndScenesStaySeparate ) {
 	EXPECT_TRUE( UIInspectorServer::instance()->getToken().size() >= 32 );
 	UIInspectorServer::stop();
 	Engine::destroySingleton();
+}
+
+UTEST( UIInspector, CssPropertiesUseOwningSceneDensity ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "Inspector Density", WindowStyle::Default, WindowBackend::Default,
+						32, {}, 0, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.f ) );
+	auto* host = app.getUI();
+	host->setStyleSheet( "" );
+	auto* child = UISceneNode::New( app.getWindow() );
+	child->setParent( host->getRoot() );
+	child->setPixelDensity( 1.5f );
+	UITextView* hostText;
+	UITextView* childText;
+	{
+		auto context = host->makeCurrent();
+		hostText = UITextView::New();
+		hostText->setParent( host->getRoot() );
+		hostText->setFontSize( 14.f );
+	}
+	{
+		auto context = child->makeCurrent();
+		childText = UITextView::New();
+		childText->setParent( child->getRoot() );
+		childText->setFontSize( 21.f );
+	}
+	UIInspector inspector;
+	auto unrelatedDensity = Graphics::PixelDensity::makeCurrent( 3.f );
+	EXPECT_TRUE( inspector.property( hostText, "font-size" ) == "14dp" );
+	EXPECT_TRUE( inspector.property( childText, "font-size" ) == "14dp" );
+	EXPECT_EQ( Graphics::PixelDensity::getPixelDensity(), 3.f );
 }
 
 UTEST( UIInspector, TcpBatchWatchAndMultipleClients ) {
@@ -401,13 +433,18 @@ UTEST( UIInspector, InputActionErrorsAndKeyEvents ) {
 	ASSERT_TRUE( client.receive().contains( "result" ) );
 	EXPECT_EQ( keyDown, 2 );
 	EXPECT_EQ( keyUp, 2 );
+	client.send( { { "id", id++ },
+				   { "method", "input.key" },
+				   { "params", { { "key", "F" }, { "modifiers", { "Ctrl", "Shift" } } } } } );
+	ASSERT_TRUE( client.receive().contains( "result" ) );
+	EXPECT_EQ( scene->getWindow()->getInput()->getModState(), 0u );
 	client.send(
 		{ { "id", id++ }, { "method", "input.key" }, { "params", { { "key", "not-a-key" } } } } );
 	json invalidKey = client.receive();
 	ASSERT_TRUE( invalidKey.contains( "error" ) );
 	EXPECT_TRUE( invalidKey["error"]["code"] == "invalid-params" );
-	EXPECT_EQ( keyDown, 2 );
-	EXPECT_EQ( keyUp, 2 );
+	EXPECT_EQ( keyDown, 3 );
+	EXPECT_EQ( keyUp, 3 );
 	UIInspectorServer::stop();
 	Engine::destroySingleton();
 }

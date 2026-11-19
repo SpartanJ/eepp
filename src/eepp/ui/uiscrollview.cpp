@@ -50,6 +50,25 @@ UIScrollView::UIScrollView( const std::string& tag ) :
 
 UIScrollView::UIScrollView() : UIScrollView( "scrollview" ) {}
 
+void UIScrollView::onBeforePixelDensityReflow( UIDensityReflow& reflow ) {
+	UITouchDraggableWidget::onBeforePixelDensityReflow( reflow );
+	const Vector2f values( mHScroll->getValue(), mVScroll->getValue() );
+	reflow.restoreAfterLayout( [this, values]( const UIDensityReflow& reflow ) {
+		containerUpdate();
+		if ( !reflow.isWidgetCurrent() )
+			return;
+		mVScroll->setValue( values.y );
+		if ( !reflow.isWidgetCurrent() )
+			return;
+		mHScroll->setValue( values.x );
+		if ( !reflow.isWidgetCurrent() )
+			return;
+		updateScroll();
+		if ( reflow.isWidgetCurrent() )
+			stopScrollController();
+	} );
+}
+
 UIScrollView::~UIScrollView() {
 	clearListeners();
 }

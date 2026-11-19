@@ -901,6 +901,10 @@ class EE_API UICodeEditor : public UITouchDraggableWidget, public TextDocument::
 	const Tools::UIDocFindReplace* getFindReplace() const { return mFindReplace; }
 
   protected:
+	virtual void onBeforePixelDensityReflow( UIDensityReflow& reflow );
+
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	static std::shared_ptr<const TextDocument::DocumentRefCommands> getDefaultEditorCommands();
 
 	struct LastXOffset {
@@ -970,6 +974,7 @@ class EE_API UICodeEditor : public UITouchDraggableWidget, public TextDocument::
 	StyleSheetLength mLineSpacing{ 0.f, StyleSheetLength::Px };
 	Float mLineNumberPaddingLeft;
 	Float mLineNumberPaddingRight;
+	static constexpr Float DefaultFoldRegionWidthDp = 12.f;
 	Float mFoldRegionWidth;
 	Color mLineNumberFontColor;
 	Color mLineNumberActiveFontColor;
@@ -1136,6 +1141,8 @@ class EE_API UICodeEditor : public UITouchDraggableWidget, public TextDocument::
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* doc );
 
 	void updateScrollBar();
+
+	void syncScrollBarValues();
 
 	void checkColorPickerAction();
 

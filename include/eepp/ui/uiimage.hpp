@@ -54,6 +54,8 @@ class EE_API UIImage : public UIWidget {
 	UIImage* setScaleType( const UIScaleType& scaleType );
 
   protected:
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	UIScaleType mScaleType;
 	DrawablePtr mDrawable;
 	Color mColor;

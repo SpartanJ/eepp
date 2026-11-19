@@ -6,6 +6,13 @@
 
 namespace EE { namespace UI {
 
+void UITouchDraggableWidget::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	setTouchDragging( false );
+	mScrollController.stop();
+	mTouchDragVelocity = Vector2f::Zero;
+	UIWidget::onPixelDensityChange( oldDensity, newDensity );
+}
+
 UITouchDraggableWidget* UITouchDraggableWidget::New() {
 	return eeNew( UITouchDraggableWidget, () );
 }

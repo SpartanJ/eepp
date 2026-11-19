@@ -89,9 +89,11 @@ struct UIConfig {
 
 struct WindowStateConfig {
 	Float pixelDensity{ 0 };
+	Float pixelDensityReferencePPI{ 0 };
 	Sizei size{ 1280, 720 };
 	std::string winIcon;
 	bool maximized{ false };
+	EE::Window::PixelDensityMode pixelDensityMode{ EE::Window::PixelDensityMode::Default };
 	std::string panelPartition;
 	std::string statusBarPartition;
 	std::string rightPanelPartition{ "75%" };

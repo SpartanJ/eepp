@@ -3,6 +3,14 @@
 
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/resourcescope.hpp>
+#include <functional>
+#include <string_view>
+
+namespace EE {
+
+class URI;
+
+} // namespace EE
 
 namespace EE { namespace UI {
 
@@ -15,6 +23,11 @@ class EE_API DrawableResolver {
 	explicit DrawableResolver( Graphics::ResourceScope& resourceScope );
 
 	Graphics::DrawablePtr resolve( const std::string& name, bool firstSearchSprite = false ) const;
+
+	bool requestFileTexture( const URI& uri,
+							 std::function<void( Graphics::TexturePtr )> callback ) const;
+
+	static bool isSvgPath( std::string_view path );
 	Graphics::DrawablePtr resolveById( Graphics::ResourceNameHash hash ) const;
 	Graphics::DrawablePtr resolveById( String::HashType legacyHash ) const;
 

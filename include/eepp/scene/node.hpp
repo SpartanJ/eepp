@@ -2527,6 +2527,8 @@ class EE_API Node : public Transformable {
 	 */
 	virtual void updateOriginPoint();
 
+	void rescaleLogicalOrigins( Float ratio );
+
 	/**
 	 * @brief Marks the node and children as dirty.
 	 *

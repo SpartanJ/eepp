@@ -33,6 +33,9 @@ class EE_API UIThemeManager {
 
 	const Float& getDefaultFontSize() const;
 
+	/** Refreshes this scene's resolved defaults without modifying its shared theme. */
+	void onPixelDensityChange( Float density );
+
 	UIThemeManager* setDefaultTheme( UITheme* Theme );
 
 	UIThemeManager* setDefaultTheme( UIThemePtr theme );
@@ -80,7 +83,9 @@ class EE_API UIThemeManager {
 
   protected:
 	Font* mFont;
-	Float mFontSize;
+	mutable Float mFontSize;
+	Float mDefaultFontSizeDp{ 12.f };
+	Float mPixelDensity;
 	UIThemePtr mThemeDefault;
 	UnorderedMap<String::HashType, UIThemePtr> mThemes;
 	bool mAutoApplyDefaultTheme;

@@ -119,6 +119,10 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.size.setHeight( iniState.getValueI( "window", "height", defWinSize.getHeight() ) );
 	windowState.maximized = iniState.getValueB( "window", "maximized", false );
 	windowState.pixelDensity = iniState.getValueF( "window", "pixeldensity" );
+	windowState.pixelDensityMode = EE::Window::Window::pixelDensityModeFromString(
+		iniState.getValue( "window", "pixeldensitymode", "default" ) );
+	windowState.pixelDensityReferencePPI =
+		iniState.getValueF( "window", "pixeldensityreferenceppi", 0.f );
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	const char* windowIcon = "icon/ecode-macos.png";
 #else
@@ -356,6 +360,11 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValueI( "window", "height", windowState.size.getHeight() );
 	iniState.setValueB( "window", "maximized", windowState.maximized );
 	iniState.setValueF( "window", "pixeldensity", windowState.pixelDensity );
+	iniState.setValue(
+		"window", "pixeldensitymode",
+		EE::Window::Window::pixelDensityModeToString( windowState.pixelDensityMode ) );
+	iniState.setValueF( "window", "pixeldensityreferenceppi",
+						windowState.pixelDensityReferencePPI );
 	iniState.setValue( "window", "panel_partition", panelPartition );
 	iniState.setValue( "window", "status_bar_partition", statusBarPartition );
 	iniState.setValue( "window", "right_panel_partition", windowState.rightPanelPartition );

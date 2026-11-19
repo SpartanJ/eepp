@@ -19,6 +19,7 @@ void StyleSheet::clear() {
 	mStyleSourceOrder.clear();
 	mNextStyleSourceOrder = 0;
 	mMediaQueryList.clear();
+	mActiveMediaQueries.clear();
 	mKeyframesMap.clear();
 	mNodeCache.clear();
 }
@@ -75,8 +76,11 @@ void StyleSheet::removeAllWithMarker( const Uint32& marker ) {
 
 	std::erase_if( mNodes, [marker]( const auto& node ) { return node->getMarker() == marker; } );
 
-	std::erase_if( mMediaQueryList, [marker]( const auto& mediaQueryList ) {
-		return mediaQueryList->getMarker() == marker;
+	std::erase_if( mMediaQueryList, [this, marker]( const auto& mediaQueryList ) {
+		if ( mediaQueryList->getMarker() != marker )
+			return false;
+		mActiveMediaQueries.erase( mediaQueryList.get() );
+		return true;
 	} );
 
 	std::erase_if( mKeyframesMap,
@@ -102,8 +106,11 @@ void StyleSheet::removeAllWithoutMarker( const Uint32& marker ) {
 
 	std::erase_if( mNodes, [marker]( const auto& node ) { return node->getMarker() != marker; } );
 
-	std::erase_if( mMediaQueryList, [marker]( const auto& mediaQueryList ) {
-		return mediaQueryList->getMarker() != marker;
+	std::erase_if( mMediaQueryList, [this, marker]( const auto& mediaQueryList ) {
+		if ( mediaQueryList->getMarker() == marker )
+			return false;
+		mActiveMediaQueries.erase( mediaQueryList.get() );
+		return true;
 	} );
 
 	std::erase_if( mKeyframesMap,
@@ -190,6 +197,7 @@ StyleSheet& StyleSheet::operator=( const StyleSheet& other ) {
 	mStyleSourceOrder = other.mStyleSourceOrder;
 	mNextStyleSourceOrder = other.mNextStyleSourceOrder;
 	mMediaQueryList = other.mMediaQueryList;
+	mActiveMediaQueries = other.mActiveMediaQueries;
 	mKeyframesMap = other.mKeyframesMap;
 	mNodeCache = other.mNodeCache;
 	return *this;
@@ -319,7 +327,7 @@ std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* eleme
 			const StyleSheetStyleVector& nodes = itNodes->second;
 			for ( StyleSheetStyle* node : nodes ) {
 				if ( ( !privateDefaults || node->getSelector().getSpecificity() < 0 ) &&
-					 node->isMediaValid() &&
+					 isMediaValid( node->getMediaQueryList() ) &&
 					 node->getSelector().select( element, applyPseudoClasses ) ) {
 					applicableNodes.push_back( node );
 				}
@@ -333,7 +341,8 @@ std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* eleme
 			continue;
 		for ( StyleSheetStyle* node : itNodes->second ) {
 			if ( ( !privateDefaults || node->getSelector().getSpecificity() < 0 ) &&
-				 node->isMediaValid() && node->getSelector().select( element, applyPseudoClasses ) )
+				 isMediaValid( node->getMediaQueryList() ) &&
+				 node->getSelector().select( element, applyPseudoClasses ) )
 				applicableNodes.push_back( node );
 		}
 	}
@@ -372,7 +381,8 @@ std::vector<std::shared_ptr<StyleSheetStyle>>
 StyleSheet::getStylesFromSelector( const std::string& selector ) const {
 	std::vector<std::shared_ptr<StyleSheetStyle>> found;
 	for ( const auto& node : mNodes )
-		if ( node->isMediaValid() && node->getSelector().getName() == selector )
+		if ( isMediaValid( node->getMediaQueryList() ) &&
+			 node->getSelector().getName() == selector )
 			found.push_back( node );
 	return found;
 }
@@ -386,7 +396,8 @@ StyleSheet::getStyleFromSelector( const std::string& selector, bool searchBySpec
 	} else {
 		std::vector<std::shared_ptr<StyleSheetStyle>> found;
 		for ( const auto& node : mNodes )
-			if ( node->isMediaValid() && node->getSelector().getName() == selector )
+			if ( isMediaValid( node->getMediaQueryList() ) &&
+				 node->getSelector().getName() == selector )
 				found.push_back( node );
 		if ( !found.empty() ) {
 			std::stable_sort( found.begin(), found.end(),
@@ -413,8 +424,13 @@ bool StyleSheet::updateMediaLists( const MediaFeatures& features ) {
 	bool updateStyles = false;
 
 	for ( auto iter = mMediaQueryList.begin(); iter != mMediaQueryList.end(); iter++ ) {
-		if ( ( *iter )->applyMediaFeatures( features ) )
+		const auto* query = iter->get();
+		if ( ( *iter )->matches( features ) ) {
+			if ( mActiveMediaQueries.insert( query ).second )
+				updateStyles = true;
+		} else if ( mActiveMediaQueries.erase( query ) ) {
 			updateStyles = true;
+		}
 	}
 
 	if ( updateStyles )

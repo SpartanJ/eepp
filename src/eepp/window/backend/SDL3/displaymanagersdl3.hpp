@@ -17,6 +17,7 @@ class EE_API DisplaySDL3 : public Display {
 	Rect getUsableBounds() const;
 
 	Float getDPI();
+	Float getPhysicalDPI();
 
 	const int& getIndex() const;
 
@@ -31,8 +32,14 @@ class EE_API DisplaySDL3 : public Display {
 	Sizeu getSize() const;
 
   protected:
+	friend class DisplayManagerSDL3;
+
+	void refresh( int displayIndex );
+
 	mutable std::vector<DisplayMode> displayModes;
 	SDL_DisplayID mDisplayId;
+	Float mPhysicalDPI{ -1.f };
+	Sizei mPhysicalDPIResolution;
 };
 
 class EE_API DisplayManagerSDL3 : public DisplayManager {
@@ -53,10 +60,15 @@ class EE_API DisplayManagerSDL3 : public DisplayManager {
 
 	void enableBypassCompositor();
 
-	int getDisplayIndexFromID( SDL_DisplayID id ) const;
+	int getDisplayIndexFromID( SDL_DisplayID id );
+
+	void invalidateDisplayList();
 
   protected:
-	std::vector<SDL_DisplayID> mDisplayIds;
+	void updateDisplayList();
+
+	int mDisplayCount{ 0 };
+	bool mDisplayListDirty{ true };
 };
 
 }}}} // namespace EE::Window::Backend::SDL3

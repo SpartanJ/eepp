@@ -1,5 +1,6 @@
 #include <eepp/window/backend/SDL3/base.hpp>
 #include <eepp/window/backend/SDL3/displaymanagersdl3.hpp>
+#include <eepp/window/platform/physicaldisplaymetrics.hpp>
 
 #ifdef EE_BACKEND_SDL3
 
@@ -16,14 +17,14 @@ std::string DisplaySDL3::getName() const {
 
 Rect DisplaySDL3::getBounds() const {
 	SDL_Rect r{};
-	if ( mDisplayId && SDL_GetDisplayBounds( mDisplayId, &r ) == 0 )
+	if ( mDisplayId && SDL_GetDisplayBounds( mDisplayId, &r ) )
 		return Rect( Vector2i( r.x, r.y ), Sizei( r.w, r.h ) );
 	return Rect();
 }
 
 Rect DisplaySDL3::getUsableBounds() const {
 	SDL_Rect r{};
-	if ( mDisplayId && SDL_GetDisplayUsableBounds( mDisplayId, &r ) == 0 )
+	if ( mDisplayId && SDL_GetDisplayUsableBounds( mDisplayId, &r ) )
 		return Rect( Vector2i( r.x, r.y ), Sizei( r.w, r.h ) );
 	return Rect();
 }
@@ -40,6 +41,20 @@ Float DisplaySDL3::getDPI() {
 
 const int& DisplaySDL3::getIndex() const {
 	return index;
+}
+
+Float DisplaySDL3::getPhysicalDPI() {
+	const char* driver = SDL_GetCurrentVideoDriver();
+	if ( !driver || ( std::strcmp( driver, "x11" ) != 0 && std::strcmp( driver, "windows" ) != 0 &&
+					  std::strcmp( driver, "cocoa" ) != 0 ) )
+		return 0.f;
+	const auto mode = getCurrentMode();
+	const Sizei resolution( mode.Width, mode.Height );
+	if ( mPhysicalDPI < 0.f || resolution != mPhysicalDPIResolution ) {
+		mPhysicalDPI = Private::PhysicalDisplayMetrics::getDPI( getBounds() );
+		mPhysicalDPIResolution = resolution;
+	}
+	return mPhysicalDPI;
 }
 
 DisplayMode DisplaySDL3::getCurrentMode() const {
@@ -87,33 +102,56 @@ Sizeu DisplaySDL3::getSize() const {
 	return { static_cast<unsigned int>( mode.Width ), static_cast<unsigned int>( mode.Height ) };
 }
 
-int DisplayManagerSDL3::getDisplayCount() {
-	if ( mDisplayIds.empty() ) {
-		// Initialize SDL video if not already done, similar to SDL2 backend
-		if ( !SDL_WasInit( SDL_INIT_VIDEO ) && !SDL_Init( SDL_INIT_VIDEO ) ) {
-			Log::error( "DisplayManagerSDL3: Failed to initialize SDL video: %s", SDL_GetError() );
-			return 0;
-		}
-		int count = 0;
-		SDL_DisplayID* ids = SDL_GetDisplays( &count );
-		if ( ids ) {
-			mDisplayIds.assign( ids, ids + count );
-			SDL_free( ids );
-		}
+void DisplaySDL3::refresh( int displayIndex ) {
+	index = displayIndex;
+	displayModes.clear();
+	mPhysicalDPI = -1.f;
+}
+
+void DisplayManagerSDL3::invalidateDisplayList() {
+	mDisplayListDirty = true;
+}
+
+void DisplayManagerSDL3::updateDisplayList() {
+	if ( !mDisplayListDirty )
+		return;
+	if ( !SDL_WasInit( SDL_INIT_VIDEO ) && !SDL_Init( SDL_INIT_VIDEO ) ) {
+		Log::error( "DisplayManagerSDL3: Failed to initialize SDL video: %s", SDL_GetError() );
+		return;
 	}
-	return static_cast<int>( mDisplayIds.size() );
+	int count = 0;
+	SDL_DisplayID* ids = SDL_GetDisplays( &count );
+	if ( !ids )
+		return;
+	// Keep Display pointers stable for clients that retained one. The active entries are
+	// ordered as SDL reports them; disconnected entries remain owned at the end.
+	for ( int i = 0; i < count; ++i ) {
+		const auto id = ids[i];
+		auto it = std::find_if( displays.begin() + i, displays.end(), [id]( Display* display ) {
+			return static_cast<DisplaySDL3*>( display )->mDisplayId == id;
+		} );
+		if ( it == displays.end() ) {
+			displays.push_back( eeNew( DisplaySDL3, ( i, id ) ) );
+			it = displays.end() - 1;
+		}
+		std::iter_swap( displays.begin() + i, it );
+		static_cast<DisplaySDL3*>( displays[i] )->refresh( i );
+	}
+	for ( size_t i = count; i < displays.size(); ++i )
+		static_cast<DisplaySDL3*>( displays[i] )->refresh( -1 );
+	mDisplayCount = count;
+	mDisplayListDirty = false;
+	SDL_free( ids );
+}
+
+int DisplayManagerSDL3::getDisplayCount() {
+	updateDisplayList();
+	return mDisplayCount;
 }
 
 Display* DisplayManagerSDL3::getDisplayIndex( int index ) {
-	if ( displays.empty() ) {
-		int count = getDisplayCount();
-		if ( count > 0 && !mDisplayIds.empty() ) {
-			for ( int i = 0; i < count; i++ ) {
-				displays.push_back( eeNew( DisplaySDL3, ( i, mDisplayIds[i] ) ) );
-			}
-		}
-	}
-	return ( index >= 0 && index < (int)displays.size() ) ? displays[index] : nullptr;
+	updateDisplayList();
+	return index >= 0 && index < mDisplayCount ? displays[index] : nullptr;
 }
 
 void DisplayManagerSDL3::enableScreenSaver() {
@@ -146,10 +184,11 @@ void DisplayManagerSDL3::enableBypassCompositor() {
 #endif
 }
 
-int DisplayManagerSDL3::getDisplayIndexFromID( SDL_DisplayID id ) const {
-	for ( size_t i = 0; i < mDisplayIds.size(); ++i ) {
-		if ( mDisplayIds[i] == id )
-			return static_cast<int>( i );
+int DisplayManagerSDL3::getDisplayIndexFromID( SDL_DisplayID id ) {
+	updateDisplayList();
+	for ( int i = 0; i < mDisplayCount; ++i ) {
+		if ( static_cast<DisplaySDL3*>( displays[i] )->mDisplayId == id )
+			return i;
 	}
 	return -1;
 }

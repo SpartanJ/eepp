@@ -93,6 +93,9 @@ class EE_API UITheme {
 
 	const Float& getDefaultFontSize() const;
 
+	/** Logical theme source shared by scenes with different effective densities. */
+	Float getDefaultFontSizeDp() const;
+
 	void setDefaultFontSize( const Float& defaultFontSize );
 
 	UIIconTheme* getIconTheme() const;
@@ -112,6 +115,7 @@ class EE_API UITheme {
 	Graphics::TextureAtlasPtr mTextureAtlas;
 	Font* mDefaultFont;
 	Float mDefaultFontSize;
+	Float mDefaultFontDensity;
 	CSS::StyleSheet mStyleSheet;
 	std::string mStyleSheetPath;
 	UIIconThemePtr mIconTheme;

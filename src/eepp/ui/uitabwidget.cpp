@@ -106,7 +106,7 @@ UITabWidget::UITabWidget() :
 	mAllowDragAndDropTabs( false ),
 	mAllowSwitchTabsInEmptySpaces( false ),
 	mDroppableHoveringColorWasSet( false ),
-	mTabVerticalDragResistance( PixelDensity::dpToPx( 64 ) ) {
+	mTabVerticalDragResistance( PixelDensity::dpToPx( DefaultTabDragResistance ) ) {
 	mFlags |= UI_SCROLLABLE;
 	setHorizontalAlign( UI_HALIGN_CENTER );
 	setClipType( ClipType::ContentBox );
@@ -130,6 +130,13 @@ UITabWidget::UITabWidget() :
 	onSizeChange();
 
 	applyDefaultTheme();
+}
+
+void UITabWidget::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UIWidget::onPixelDensityChange( oldDensity, newDensity );
+	if ( mDensityDefaultDragResistance )
+		mTabVerticalDragResistance = PixelDensity::dpToPx( DefaultTabDragResistance );
+	onSizeChange();
 }
 
 UITabWidget::~UITabWidget() {
@@ -1185,6 +1192,7 @@ const Float& UITabWidget::getTabVerticalDragResistance() const {
 }
 
 void UITabWidget::setTabVerticalDragResistance( const Float& tabVerticalDragResistance ) {
+	mDensityDefaultDragResistance = false;
 	mTabVerticalDragResistance = tabVerticalDragResistance;
 }
 

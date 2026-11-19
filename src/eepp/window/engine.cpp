@@ -31,6 +31,7 @@
 #include <eepp/window/backend/SDL3/backendsdl3.hpp>
 #include <eepp/window/backend/SDL3/platformhelpersdl3.hpp>
 #endif
+#include <cmath>
 #include <eepp/window/draganddrop/dragmanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
@@ -59,18 +60,22 @@ using namespace EE::Graphics;
 namespace EE { namespace Window {
 
 Engine::WindowContext::WindowContext( Engine* engine, EE::Window::Window* window ) :
-	mEngine( engine ), mPreviousWindow( engine->getCurrentWindow() ) {
+	mEngine( engine ),
+	mPreviousWindow( engine->getCurrentWindow() ),
+	mDensityContext( PixelDensity::bindCurrent( window ? &window->getPixelDensity() : nullptr ) ) {
 	mEngine->setCurrentWindow( window );
 }
 
 Engine::WindowContext::~WindowContext() {
-	if ( mActive )
+	if ( mEngine )
 		mEngine->setCurrentWindow( mPreviousWindow );
 }
 
 Engine::WindowContext::WindowContext( WindowContext&& other ) noexcept :
-	mEngine( other.mEngine ), mPreviousWindow( other.mPreviousWindow ), mActive( other.mActive ) {
-	other.mActive = false;
+	mEngine( other.mEngine ),
+	mPreviousWindow( other.mPreviousWindow ),
+	mDensityContext( std::move( other.mDensityContext ) ) {
+	other.mEngine = nullptr;
 }
 
 namespace {
@@ -298,7 +303,10 @@ EE::Window::Window* Engine::createDefaultWindow( const WindowSettings& Settings,
 #endif
 }
 
-EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettings Context ) {
+EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettings Context,
+										  Float pixelDensityOverride ) {
+	if ( !std::isfinite( Settings.PixelDensity ) || Settings.PixelDensity <= 0.f )
+		Settings.PixelDensity = 0.f;
 	Context.Multisamples = Runtime::resolveMultisamples( Context.Multisamples );
 	if ( Runtime::forceHiddenWindows() ) {
 		Settings.Style |= WindowStyle::Hidden;
@@ -355,13 +363,9 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 
 	mWindows.insert( { mWindow->getWindowID(), mWindow } );
 
-	if ( firstWindow ) {
-		const Float density = Settings.PixelDensity > 0
-								  ? Settings.PixelDensity
-								  : PixelDensity::getEnvironmentPixelDensity();
-		if ( density > 0 )
-			PixelDensity::setPixelDensity( density );
-	}
+	window->initializePixelDensity( pixelDensityOverride );
+	if ( firstWindow )
+		PixelDensity::setPixelDensity( window->getPixelDensity() );
 
 	return window;
 }
@@ -417,6 +421,11 @@ void Engine::updateInput() {
 	for ( auto& window : mWindows ) {
 		if ( window.second != pollingWindow )
 			window.second->getInput()->endInputFrame();
+	}
+	// Native backends can report display, scale and pixel-size changes in any order. Query
+	// their final state once after pumping, before any scene runs its environment reflow.
+	for ( auto& entry : mWindows ) {
+		entry.second->updateDisplayMetrics();
 	}
 }
 
@@ -476,15 +485,12 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 	bool Borderless = ini->getValueB( iniKeyName, "borderless", false );
 	bool useDesktopResolution = ini->getValueB( iniKeyName, "usedesktopresolution", false );
 	std::string pixelDensityStr = ini->getValue( iniKeyName, "pixeldensity", "auto" );
-	float pixelDensity = PixelDensity::getPixelDensity();
+	float pixelDensity = 0.f;
 	bool useScreenKeyboard =
 		ini->getValueB( iniKeyName, "usescreenkeyboard", EE_SCREEN_KEYBOARD_ENABLED );
 
 	if ( !pixelDensityStr.empty() ) {
-		if ( String::toLower( pixelDensityStr ) == "auto" ) {
-			Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
-			pixelDensity = currentDisplay->getPixelDensity();
-		} else {
+		if ( String::toLower( pixelDensityStr ) != "auto" ) {
 			float pd = 1;
 			bool res = String::fromString( pd, pixelDensityStr );
 
@@ -522,6 +528,10 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 
 	WindowSettings WinSettings( Width, Height, title, Style, winBackend, BitColor, icon,
 								pixelDensity, useScreenKeyboard );
+	WinSettings.DensityMode = EE::Window::Window::pixelDensityModeFromString(
+		ini->getValue( iniKeyName, "pixeldensitymode", "default" ) );
+	WinSettings.PixelDensityReferencePPI =
+		ini->getValueF( iniKeyName, "pixeldensityreferenceppi", 0.f );
 
 	return WinSettings;
 }

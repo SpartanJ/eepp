@@ -1059,7 +1059,10 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="ui_panel_font_size_desc">Set the font size used by side panels.</string>
 	<string name="editor_font_size_desc">Set the default code editor font size.</string>
 	<string name="terminal_font_size_desc">Set the default integrated terminal font size.</string>
-	<string name="ui_scale_factor_desc">Mettre l’interface à l’échelle de 1 à 6. Redémarrage requis.</string>
+	<string name="ui_scale_factor_desc">Définir manuellement le facteur d’échelle de l’interface entre 1 et 6.</string>
+	<string name="ui_scale_mode">Mode de mise à l’échelle</string>
+	<string name="ui_scale_mode_desc">Suivre automatiquement l’échelle d’affichage configurée ou utiliser un facteur manuel.</string>
+	<string name="ui_scale_manual">Manuel</string>
 	<string name="line_spacing_desc">Définir l’espace vertical supplémentaire entre les lignes. Utiliser 0 pour désactiver.</string>
 	<string name="cursor_blinking_time_desc">Définir l’intervalle de clignotement du curseur. Utiliser 0 pour désactiver.</string>
 	<string name="folds_refresh_freq_desc">Définir la fréquence de recalcul des zones de pliage du code (minimum 1 seconde).</string>

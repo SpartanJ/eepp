@@ -4704,7 +4704,6 @@ void App::init( InitParameters& params ) {
 	mProfilePath = params.profile.empty() ? Sys::getEnv( "ECODE_CONFIG_PATH" ) : params.profile;
 	mPortableMode = params.portable || !mProfilePath.empty();
 	mDisplayDPI = currentDisplay->getDPI();
-	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
 	mUseFrameBuffer = params.frameBuffer;
 	mBenchmarkMode = params.benchmarkMode;
 	mDisablePlugins = params.disablePlugins;
@@ -4736,19 +4735,16 @@ void App::init( InitParameters& params ) {
 														  : 0 );
 	mDisplayDPI = currentDisplay->getDPI();
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-	const Float displayDensity = currentDisplay->getPixelDensity() > 2
-									 ? currentDisplay->getPixelDensity() / 2
-									 : currentDisplay->getPixelDensity();
-#else
-	const Float displayDensity = currentDisplay->getPixelDensity();
-#endif
-	if ( params.pidelDensity > 0 ) {
+	if ( params.pidelDensity > 0 )
 		mConfig.windowState.pixelDensity = params.pidelDensity;
-	} else if ( mConfig.windowState.pixelDensity <= 0 ) {
-		mConfig.windowState.pixelDensity =
-			environmentDensity > 0 ? environmentDensity : displayDensity;
+	Float pixelDensityOverride = mConfig.windowState.pixelDensity;
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	// Retain the editor's compact mobile UI policy without persisting an automatic density.
+	if ( pixelDensityOverride <= 0.f && PixelDensity::getEnvironmentPixelDensity() <= 0.f ) {
+		const Float displayDensity = currentDisplay->getPixelDensity();
+		pixelDensityOverride = displayDensity > 2.f ? displayDensity / 2.f : displayDensity;
 	}
+#endif
 
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
@@ -4758,7 +4754,10 @@ void App::init( InitParameters& params ) {
 
 	WindowSettings winSettings = engine->createWindowSettings( &mConfig.iniState, "window" );
 	winSettings.Title = "ecode";
-	winSettings.PixelDensity = 1;
+	// Saved window dimensions are native pixels. The UI override is passed separately below.
+	winSettings.PixelDensity = 0;
+	winSettings.DensityMode = mConfig.windowState.pixelDensityMode;
+	winSettings.PixelDensityReferencePPI = mConfig.windowState.pixelDensityReferencePPI;
 	winSettings.Width = mConfig.windowState.size.getWidth();
 	winSettings.Height = mConfig.windowState.size.getHeight();
 	if ( winSettings.Icon.empty() ) {
@@ -4876,7 +4875,7 @@ void App::init( InitParameters& params ) {
 		}
 	} );
 
-	mWindow = engine->createWindow( winSettings, mConfig.context );
+	mWindow = engine->createWindow( winSettings, mConfig.context, pixelDensityOverride );
 	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionFullName(),
 			   ecode::Version::getCodename() );
 
@@ -4977,8 +4976,6 @@ void App::init( InitParameters& params ) {
 		// Keep the user's file untouched and start with compiled defaults in memory.
 		if ( !loadKeybindings() )
 			loadKeybindings( true );
-
-		PixelDensity::setPixelDensity( mConfig.windowState.pixelDensity );
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		if ( mConfig.windowState.maximized ) {
@@ -5121,9 +5118,6 @@ void App::init( InitParameters& params ) {
 					break;
 			}
 		} );
-
-		PixelDensity::setPixelDensity(
-			eemax( mWindow->getScale(), mConfig.windowState.pixelDensity ) );
 
 		mUISceneNode = UISceneNode::New( nullptr, true, mThreadPool );
 		mLifetime.setDispatcher( mUISceneNode );

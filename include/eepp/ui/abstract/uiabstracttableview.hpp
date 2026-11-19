@@ -246,6 +246,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	void resetSearchText();
 
   protected:
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	/** Where range selections start, and where the last one ended. */
 	ModelIndex mSelectionAnchor;
 	ModelIndex mSelectionCursor;
@@ -272,6 +274,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 		}
 	};
 
+	static constexpr Float DefaultDragBorderDistance = 8.f;
+	static constexpr Float DefaultIconSize = 12.f;
+	static constexpr Float DefaultSortIconSize = 20.f;
 	Float mRowHeight{ 0 };
 	Float mHeaderHeight{ 16 };
 	mutable std::vector<UITableRow*> mRows;
@@ -284,6 +289,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	Float mDragBorderDistance{ 8 };
 	size_t mIconSize{ 12 };
 	size_t mSortIconSize{ 16 };
+	Uint8 mDensityDefaultMetrics{ 7 };
 	bool mAutoExpandOnSingleColumn{ false };
 	bool mAutoColumnsWidth{ false };
 	bool mRowSearchByName{ true };

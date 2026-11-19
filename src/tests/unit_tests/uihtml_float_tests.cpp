@@ -23,10 +23,11 @@ using namespace EE::UI::Tools;
 using namespace EE::Window;
 using namespace EE::Graphics;
 
-static void init_float_test() {
+static void init_float_test( Float density = 1.f ) {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "Float Layout Test",
 													  WindowStyle::Default, WindowBackend::Default,
-													  32, {}, 1, false, true ) );
+													  32, {}, 1, false, true ),
+									  ContextSettings(), density );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
@@ -926,8 +927,7 @@ UTEST( UIHTMLFloat, floatedListItemsShrinkToFitBlockAnchors ) {
 }
 
 UTEST( UIHTMLFloat, ss64BlockAnchorsAndSvgAtPixelDensity2 ) {
-	init_float_test();
-	PixelDensity::setPixelDensity( 2.f );
+	init_float_test( 2.f );
 	Engine::instance()->getCurrentWindow()->setSize( 475, 900 );
 	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
 	std::string html;

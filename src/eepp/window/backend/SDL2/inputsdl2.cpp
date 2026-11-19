@@ -3,6 +3,7 @@
 #ifdef EE_BACKEND_SDL2
 
 #include <eepp/window/backend/SDL2/cursormanagersdl2.hpp>
+#include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/inputsdl2.hpp>
 #include <eepp/window/backend/SDL2/joystickmanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>
@@ -206,8 +207,24 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 
 	InputEvent event;
 	switch ( SDLEvent.type ) {
+#if SDL_VERSION_ATLEAST( 2, 0, 9 )
+		case SDL_DISPLAYEVENT:
+			static_cast<DisplayManagerSDL2*>( Engine::instance()->getDisplayManager() )
+				->invalidateDisplayMetrics();
+			onDisplayTopologyChange();
+			return;
+#endif
 		case SDL_WINDOWEVENT: {
 			switch ( SDLEvent.window.event ) {
+#if SDL_VERSION_ATLEAST( 2, 0, 18 )
+				case SDL_WINDOWEVENT_DISPLAY_CHANGED: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 1;
+					event.WinID = SDLEvent.window.windowID;
+					event.window.type = InputEvent::WindowDisplayChanged;
+					break;
+				}
+#endif
 				case SDL_WINDOWEVENT_RESIZED: {
 					event.Type = InputEvent::VideoResize;
 					event.WinID = SDLEvent.window.windowID;

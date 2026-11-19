@@ -120,6 +120,8 @@ struct EE_API MediaQueryExpression {
 	float fval2{ 0 };
 	bool checkAsBool{ false };
 	bool negated{ false };
+	// Retain the parsed unit, resolving environment-dependent lengths only during matching.
+	Uint8 lengthUnit{ 255 };
 	std::string valStr;
 
 	MediaQueryExpression();
@@ -160,6 +162,8 @@ class EE_API MediaQueryList {
 	inline bool isUsed() const { return mUsed; }
 
 	bool applyMediaFeatures( const MediaFeatures& features ); // returns true if the isUsed changed
+
+	bool matches( const MediaFeatures& features ) const;
 
 	const Uint32& getMarker() const;
 

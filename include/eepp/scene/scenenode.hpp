@@ -41,11 +41,15 @@ class EE_API SceneNode : public Node {
 	  private:
 		SceneNode* mPreviousScene{ nullptr };
 		Engine::WindowContext mWindowContext;
+		PixelDensity::Context mDensityContext;
 		bool mActive{ true };
 	};
 
 	/** Makes this scene and its native window current for the returned scope. */
 	Context makeCurrent();
+
+	/** Effective UI density for this scene. Plain scenes use their native window's density. */
+	virtual const Float& getPixelDensity() const;
 
 	/**
 	 * @brief Creates a new SceneNode instance.
@@ -427,6 +431,8 @@ class EE_API SceneNode : public Node {
 	void setVerbose( bool verbose );
 
   protected:
+	void updateScene( const Time& elapsed );
+
 	friend class Node;
 	typedef std::unordered_set<Node*> CloseList;
 

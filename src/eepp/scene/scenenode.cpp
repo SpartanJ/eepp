@@ -23,8 +23,8 @@ SceneNode* SceneNode::New( EE::Window::Window* window ) {
 
 SceneNode::Context::Context( SceneNode* scene ) :
 	mPreviousScene( SceneManager::instance()->setCurrentSceneNode( scene ) ),
-	mWindowContext(
-		Engine::instance()->makeWindowCurrent( scene ? scene->getWindow() : nullptr ) ) {}
+	mWindowContext( Engine::instance()->makeWindowCurrent( scene ? scene->getWindow() : nullptr ) ),
+	mDensityContext( PixelDensity::bindCurrent( scene ? &scene->getPixelDensity() : nullptr ) ) {}
 
 SceneNode::Context::~Context() {
 	if ( mActive )
@@ -34,12 +34,17 @@ SceneNode::Context::~Context() {
 SceneNode::Context::Context( Context&& other ) noexcept :
 	mPreviousScene( other.mPreviousScene ),
 	mWindowContext( std::move( other.mWindowContext ) ),
+	mDensityContext( std::move( other.mDensityContext ) ),
 	mActive( other.mActive ) {
 	other.mActive = false;
 }
 
 SceneNode::Context SceneNode::makeCurrent() {
 	return Context( this );
+}
+
+const Float& SceneNode::getPixelDensity() const {
+	return mWindow ? mWindow->getPixelDensity() : PixelDensity::getPixelDensity();
 }
 
 SceneNode::SceneNode( EE::Window::Window* window ) :
@@ -164,6 +169,11 @@ void SceneNode::draw() {
 }
 
 void SceneNode::update( const Time& time ) {
+	mWindow->updateDisplayMetrics();
+	updateScene( time );
+}
+
+void SceneNode::updateScene( const Time& time ) {
 	mElapsed = time;
 
 	mActionManager->update( time );

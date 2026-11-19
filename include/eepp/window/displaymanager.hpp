@@ -21,6 +21,9 @@ class EE_API Display {
 
 	virtual Float getDPI() = 0;
 
+	/** Physical pixels per inch, independent of the desktop UI scale; zero if unavailable. */
+	virtual Float getPhysicalDPI();
+
 	virtual const int& getIndex() const = 0;
 
 	virtual DisplayMode getCurrentMode() const = 0;

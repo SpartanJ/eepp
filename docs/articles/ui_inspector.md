@@ -183,7 +183,13 @@ All examples below omit `id` where the surrounding explanation is enough; real r
 | `watch.subscribe` | One handle or selector; explicit `properties` array; `initial:true` | Subscription and bound target values | `target-not-found`, `property-unknown` |
 | `watch.unsubscribe` | `subscription` required | `{ "unsubscribed": true }` | `invalid-params` |
 
-`ui.contexts` window entries include handle, native ID, title, pixel size and position, and focus. Scene entries include handle, window, kind, parent scene, owner widget, and root widget; WebView scenes include URI. The `revision` increases on observed topology changes. Create/destroy events are checked periodically while clients are connected; `ui.contexts` is the authoritative current snapshot.
+`ui.contexts` window entries include handle, native ID, title, pixel size and position, focus, and
+density diagnostics: `pixelDensity`, `pixelDensityMode`, `pixelDensityReferencePPI`, `pixelDensityOverride`, `displayScale`,
+`framebufferScale`, `physicalDPI` (zero if unavailable), `displayIndex`, and `displayMetricsVersion`.
+Scene entries include handle, window, kind, parent scene, owner widget, root widget, and effective
+`pixelDensity`; WebView scenes include URI. The `revision` increases on observed topology changes.
+Create/destroy events are checked periodically while clients are connected; `ui.contexts` is the
+authoritative current snapshot.
 
 These compact request/response pairs show each method's envelope. Handle numbers and geometry are illustrative; methods also accept the optional fields in the table above. Errors use the shared error envelope.
 
@@ -257,6 +263,119 @@ python3 projects/scripts/eepp-inspect.py tree --scene scene:1 --depth 5
 | `state.*` | `visible`, `enabled`, `focused` booleans |
 | `content.*` | `text` from text controls and HTML text widgets (`UITextNode`, `UITextSpan`, `UIRichText`); rich-text source traversal is capped at 2048 nodes and does not enter nested scenes or text controls. Subject to truncation and secret redaction. |
 | `css.*` | `css.<name>` as eepp's effective `getPropertyString()` serialization, for example `css.font-size` |
+
+## Debugging pixel density and embedded viewports
+
+For a reproducible fractional-density check, launch ecode with an isolated profile and a document:
+
+```sh
+EEPP_RUNTIME=headless EEPP_MSAA=0 EEPP_INSPECTOR=1 EEPP_INSPECTOR_READ_ONLY=1 \
+  ./bin/ecode --profile /tmp/ecode-dpi-inspection --pixel-density 1.25 \
+  --disable-plugins /path/to/document.txt
+```
+
+That option sets the initial scale. To test **live** reflow, open Settings → Appearance → Fonts &
+Scale and edit **UI Scale Factor** repeatedly, for example `1 → 1.5 → 2 → 1.25 → 1`. Editing the
+factor switches **UI Scale Mode** to **Manual** and applies the override in the running window.
+Select **Auto** to clear the saved manual factor and resume the configured automatic policy.
+For automated input, use a read/write inspector session by omitting `EEPP_INSPECTOR_READ_ONLY=1`.
+
+Use the endpoint from stderr to configure the Python client. Query the editor's actual pixel
+geometry alongside its effective CSS values:
+
+```sh
+python3 projects/scripts/eepp-inspect.py contexts
+python3 projects/scripts/eepp-inspect.py query 'codeeditor' \
+  --properties geometry.size geometry.bounds css.font-size css.padding
+python3 projects/scripts/eepp-inspect.py query '#preview'
+python3 projects/scripts/eepp-inspect.py query --scene scene:2 'p' \
+  --properties geometry.size css.font-size
+```
+
+Replace `scene:2` with the preview's returned `documentScene`. Queries in the parent scene do not
+enter the document, and an embedded scene may have its own density override. `geometry.*` and
+`boundsPx` report pixels and can contain fractional values. CSS serialization describes the widget's
+effective property; it is not a record of the original declaration or setter. Compare geometry
+with the applicable units: native UI `px` stays physical, `dp` follows scene density, and HTML `px`
+follows the framework's logical HTML convention. See [pixel density](ui_introduction.md).
+
+WebView document extents, scrollbar visibility, and their resulting viewport can require subsequent
+scheduled updates. Observe after a frame barrier, then compare another observation if values are
+still changing. For example, save this as `dpi-observation.json` and run
+`python3 projects/scripts/eepp-inspect.py batch dpi-observation.json`:
+
+```json
+{"commands":[
+  {"method":"session.nextFrame","return":false,"params":{"count":2}},
+  {"name":"geometry","method":"ui.query","params":{"selector":"#preview","properties":["geometry.size","geometry.bounds"]}},
+  {"name":"image","method":"ui.screenshot","params":{"format":"png"}}
+]}
+```
+
+Frame barriers wait for normal scene updates; they do not guarantee that timed debounces or worker
+rasterization have finished. A watch or repeated screenshot can reveal a later SVG publication.
+When inspecting a file or web SVG across scenes, compare its rendered bounds in each scene with
+that scene's density. The raster can have more pixels at higher density while the image keeps the
+same intrinsic CSS size. Deferred file images may publish their new raster after reflow.
+The screenshot response names a temporary image file; inspect that image and delete it afterward.
+
+Use `ui.contexts` to compare effective window/scene density with `displayScale`, `physicalDPI`, and
+`pixelDensityOverride`. `pixelDensityMode` identifies the automatic policy, even while a positive
+override takes priority. Requery it after monitor movement; the topology `revision` does not identify
+density or geometry changes. `displayMetricsVersion` tracks window environment changes instead.
+There is no direct protocol density-setting command; use the application control or window/scene
+API. CSS property serialization runs under the queried widget's scene density. The corresponding
+C++ values can also be inspected on the UI thread or in a debugger:
+
+| Expression | Meaning |
+| --- | --- |
+| `scene->getPixelDensity()` | Effective UI density, including scene overrides/inheritance. |
+| `scene->getWindow()->getPixelDensity()` | Effective window UI density. |
+| `scene->getWindow()->getDisplayScale()` | Native display/content scale approximation. |
+| `scene->getWindow()->getPhysicalDisplayDPI()` | Physical monitor PPI, or zero if unavailable. |
+| `scene->getWindow()->getScale()` | Framebuffer-to-window-coordinate ratio. |
+| `scene->getWindow()->getDisplayMetricsVersion()` | Revision used to detect window environment changes. |
+| `scene->getViewportPixelsSize()` | Media/visible viewport, which can differ from scrollable content size. |
+| `scene->getLayoutViewportPixelsSize()` | Viewport used to size the scene root. |
+
+For editor scroll-anchor debugging, inspect `editor->getDocumentView().getVisibleLinesCount()`
+and `isPendingReconstruction()`, together with `editor->getDocument().isLoading()`. A hidden,
+zero-width wrapped editor can legitimately have no visible-line cache yet. Density reflow only
+preserves an anchor when the view is ready, and checks readiness again after layout.
+
+Headless automatic density is 1; the explicit `--pixel-density` override above exercises fractional
+UI scaling. To investigate native monitor changes, use the native runtime with
+`EEPP_WINDOW_HIDDEN=1` for hidden-window checks. An explicit density override remains fixed across
+display changes, so automatic native scaling must be checked separately without that override.
+For an opt-in physical-PPI check on a native desktop, use a fresh ecode profile so its saved manual
+scale cannot override automatic detection:
+
+```sh
+EEPP_PIXEL_DENSITY_MODE=physical-ppi ./bin/ecode --profile /tmp/ecode-physical-ppi \
+  --disable-plugins /path/to/document.txt
+```
+
+Omit `--pixel-density`, leave `EEPP_PIXEL_DENSITY` unset, and select **Auto** if the profile has a
+saved scale. Move the window between monitors and
+query `ui.contexts` in an inspector-enabled run: the display index should change, and effective
+density should follow `max(1, physicalDPI / pixelDensityReferencePPI)` where measurement is supported.
+The reference defaults to 96. Desktop scale remains the
+default policy; differing physical PPI alone need not produce different desktop scales. Physical
+measurement is supported on X11, Windows and macOS; Wayland and other unsupported paths currently
+fall back to desktop scale. Headless runs cannot validate native display-event ordering.
+After connecting or removing a monitor, requery `ui.contexts`. SDL2 display indexes can be reused
+as the monitor list changes, so compare `physicalDPI` and `displayMetricsVersion` as well.
+
+Physical measurement does not determine a comfortable font/UI size. To calibrate this optional
+policy, choose a comfortable scale on one monitor and set the reference to
+`that monitor's PPI / preferred scale`. For example, approximately 109 PPI at a preferred scale of
+1.5 gives a reference of about 72.7 PPI. Set `EEPP_PIXEL_DENSITY_REFERENCE_PPI=72.7`, or the profile's
+`[window] pixeldensityreferenceppi`, while leaving `pixeldensity=0` for automatic scaling. This is a
+user preference, not a correction to the measured PPI; the standard reference remains 96 and the
+automatic physical-mode minimum remains 1. A reference of 72 has a typographic interpretation: there
+are 72 points per inch, so this calibration makes an 11dp font approximately 11pt physically where
+the minimum does not apply. It does not redefine CSS px/pt or alter desktop-scale mode. Font-size
+preferences remain separate from UI scale.
 
 ## Batching and chaining
 

@@ -440,9 +440,7 @@ UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
 		mRichText.getFontStyleConfig().Font = sceneNode->getUIThemeManager()->getDefaultFont();
 	}
 
-	if ( NULL != theme ) {
-		mRichText.getFontStyleConfig().CharacterSize = theme->getDefaultFontSize();
-	} else if ( sceneNode ) {
+	if ( sceneNode ) {
 		mRichText.getFontStyleConfig().CharacterSize =
 			sceneNode->getUIThemeManager()->getDefaultFontSize();
 	}
@@ -457,6 +455,11 @@ UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
 		updateLogicalDirectionState();
 		mRichText.setBaseDirection( getTextBaseDirection() );
 	}
+}
+
+void UIRichText::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UIHTMLWidget::onPixelDensityChange( oldDensity, newDensity );
+	setFontSize( fontSizeForPixelDensityChange( getFontSize(), oldDensity, newDensity ) );
 }
 
 UIRichText::~UIRichText() {

@@ -233,6 +233,8 @@ class EE_API UIWindow : public UIWidget {
 	virtual void unserialize( const nlohmann::json& json );
 
   protected:
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	/** Shared native-host factory used by UIWindow subclasses. On Emscripten and in terminal
 	 * runtime it creates a regular in-scene window instead. */
 	static UIWindow* createInApplicationWindow( UIApplication& application,

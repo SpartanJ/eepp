@@ -402,6 +402,8 @@ void TextureLoader::loadFromPixels() {
 				mTexture = TextureFactory::instance()->pushTexture(
 					mFilepath, textureHandle, width, height, mImgWidth, mImgHeight, mMipmap,
 					mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
+				if ( mImgType == Image::Format::SVG )
+					mTexture->setRasterScale( mFormatConfiguration.svgScale() );
 
 				if ( mFilepath.empty() ) {
 					Log::instance()->writef(
