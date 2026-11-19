@@ -27,6 +27,8 @@ void AppConfig::load() {
 	// The legacy working_directory key also captured one-off command-line paths.
 	terminal.defaultWorkingDirectory =
 		mIni.getValue( "terminal", "default_working_directory", terminal.defaultWorkingDirectory );
+	terminal.useCustomWorkingDirectory = mIni.getValueB(
+		"terminal", "use_custom_working_directory", !terminal.defaultWorkingDirectory.empty() );
 	terminal.executeInShell =
 		mIni.getValue( "terminal", "execute_in_shell", terminal.executeInShell );
 	terminal.load( mIni );
@@ -107,6 +109,8 @@ bool AppConfig::savePreferences() {
 	mIni.setValue( "terminal", "shell_arguments", terminal.shellArguments );
 	mIni.deleteValue( "terminal", "working_directory" );
 	mIni.setValue( "terminal", "default_working_directory", terminal.defaultWorkingDirectory );
+	mIni.setValueB( "terminal", "use_custom_working_directory",
+					terminal.useCustomWorkingDirectory );
 	mIni.setValue( "terminal", "execute_in_shell", terminal.executeInShell );
 	terminal.save( mIni );
 	mIni.setValueB( "terminal", "framebuffer", terminal.useFrameBuffer );

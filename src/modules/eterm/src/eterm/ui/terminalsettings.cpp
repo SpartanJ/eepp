@@ -80,6 +80,172 @@ void TerminalSettings::addBehavior( TerminalPreferences& preferences ) {
 		} );
 }
 
+void TerminalSettings::addExclusiveMode( bool& enabled ) {
+	if ( !mScene )
+		return;
+
+	mPanel->addBool(
+		{ "terminalExclusiveMode", "terminal.behavior",
+		  mScene->i18n( "enable_exclusive_mode_by_default", "Enable Exclusive Mode by Default" ),
+		  mScene->i18n( "terminal_exclusive_mode_desc",
+						"Disable global keybindings in open and newly created terminals." ) },
+		&enabled, [actions = mActions]( bool value ) {
+			actions->visit(
+				[value]( UITerminal* terminal ) { terminal->setExclusiveMode( value ); } );
+			actions->save();
+		} );
+}
+
+void TerminalSettings::addShell( std::string& shell, std::string& arguments, Save applyShell,
+								 Save applyArguments ) {
+	if ( !mScene )
+		return;
+
+	static constexpr const char* knownShells[] = { "bash", "sh",  "zsh",		"fish",
+												   "nu",   "csh", "tcsh",		"ksh",
+												   "dash", "cmd", "powershell", "pwsh" };
+	const auto defaultShell = mScene->i18n( "system_default", "System Default" );
+	std::vector<String> shells{ defaultShell };
+	for ( const auto* name : knownShells ) {
+		auto path = Sys::which( name );
+		if ( !path.empty() )
+			shells.emplace_back( path );
+	}
+	if ( !shell.empty() &&
+		 std::find( shells.begin(), shells.end(), String( shell ) ) == shells.end() )
+		shells.emplace_back( shell );
+	mPanel->addEditableChoice(
+		{ "terminalShell", "terminal.behavior", mScene->i18n( "terminal_shell", "Terminal Shell" ),
+		  mScene->i18n( "terminal_shell_desc",
+						"Set the shell executable used by new terminals." ) },
+		std::move( shells ),
+		[&shell, defaultShell] { return shell.empty() ? defaultShell : String( shell ); },
+		[&shell, defaultShell, actions = mActions,
+		 apply = std::move( applyShell )]( const String& choice ) {
+			auto path = choice == defaultShell ? std::string{} : choice.toUtf8();
+			if ( path == shell )
+				return true;
+			if ( !path.empty() && Sys::which( path ).empty() && !FileSystem::fileExists( path ) )
+				return false;
+			shell = std::move( path );
+			if ( apply )
+				apply();
+			actions->save();
+			return true;
+		} );
+	mPanel->addText(
+		{ "terminalShellArguments", "terminal.behavior",
+		  mScene->i18n( "terminal_shell_arguments", "Terminal Shell Arguments" ),
+		  mScene->i18n( "terminal_shell_arguments_desc",
+						"Set shell arguments used by new terminals." ) },
+		[&arguments] { return arguments; },
+		[&arguments, actions = mActions,
+		 apply = std::move( applyArguments )]( const std::string& value ) {
+			if ( arguments != value ) {
+				arguments = value;
+				if ( apply )
+					apply();
+				actions->save();
+			}
+			return true;
+		},
+		true );
+}
+
+void TerminalSettings::addWorkingDirectory( WorkingDirectoryOptions options,
+											std::function<bool( size_t, std::string )> change ) {
+	if ( !mScene )
+		return;
+
+	options.contextChoices.emplace_back( mScene->i18n( "user_home_directory", "User Home" ) );
+	options.contextChoices.emplace_back( mScene->i18n( "other_directory", "Other" ) );
+	mPanel->addCustomWidget(
+		{ "terminalWorkingDirectory", "terminal.behavior",
+		  mScene->i18n( "default_working_directory", "Default Working Directory" ),
+		  mScene->i18n(
+			  "terminal_default_directory_desc",
+			  "Choose where new terminals start when they do not inherit a working directory." ) },
+		[options = std::move( options ), change = std::move( change )]( UIWidget* parent ) {
+			static constexpr auto layoutXml = R"xml(
+				<vbox lw="mp" lh="wc">
+					<DropDownList id="working_dir_combo" lw="mp" lh="wc" popup-to-root="true" />
+					<hbox id="other_dir_container" lw="mp" lh="wc" margin-top="4dp">
+						<TextInput id="other_dir_input" lw="0" lw8="1" lh="wc"
+							hint="@string(other_working_directory, Other Working Directory)" />
+						<PushButton id="other_dir_browse" lw="wc" lh="mp" margin-left="4dp"
+							text="@string(browse, Browse…)" />
+					</hbox>
+				</vbox>
+			)xml";
+			auto* scene = parent->getUISceneNode();
+			auto* layout = scene->loadLayoutFromString( layoutXml, parent );
+			auto* mode = layout->find<UIDropDownList>( "working_dir_combo" );
+			auto* custom = layout->find<UIWidget>( "other_dir_container" );
+			auto* path = custom->find<UITextInput>( "other_dir_input" );
+			const size_t other = options.contextChoices.size() - 1;
+			mode->getListBox()->addListBoxItems( options.contextChoices );
+			mode->getListBox()->setSelected( options.selected );
+			custom->setVisible( options.selected == other );
+			path->setText( String::fromUtf8( options.path ) );
+
+			const auto commit = [mode, path, change] {
+				if ( change( mode->getListBox()->getItemSelectedIndex(),
+							 path->getText().toUtf8() ) )
+					path->removeClass( "error" );
+				else
+					path->addClass( "error" );
+			};
+			const auto debounceTag = reinterpret_cast<Action::UniqueID>( path );
+			const auto flush = [path, commit, debounceTag]( const Event* ) {
+				path->removeActionsByTag( debounceTag );
+				commit();
+			};
+			mode->on( Event::OnValueChange, [mode, custom, other, flush]( const Event* event ) {
+				custom->setVisible( mode->getListBox()->getItemSelectedIndex() == other );
+				flush( event );
+			} );
+			if ( options.commitPathOnFocusLoss ) {
+				path->on( Event::OnTextChanged, [path, commit, debounceTag]( const Event* ) {
+					path->debounce( commit, Milliseconds( 500 ), debounceTag );
+				} );
+				path->on( Event::OnPressEnter, flush );
+				path->on( Event::OnFocusLoss, flush );
+			} else {
+				path->on( Event::OnTextChanged, [commit]( const Event* ) { commit(); } );
+			}
+
+			// The Browse button owns the connection so a native picker can outlive the settings.
+			auto* owner = parent->getParentOfType( UI_TYPE_WINDOW );
+			custom->find<UIPushButton>( "other_dir_browse" )
+				->onClick( [scene, owner, path, browseFrom = options.browseFrom,
+							flags = options.dialogFlags,
+							singleClick = options.singleClickNavigation,
+							result = std::make_shared<EventConnection>()]( const Event* ) {
+					auto folder = FileSystem::expandTilde( path->getText().toUtf8() );
+					if ( !FileSystem::isDirectory( folder ) )
+						folder = browseFrom ? browseFrom() : Sys::getUserDirectory();
+					auto* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags |
+														  UIFileDialog::AllowFolderSelect |
+														  UIFileDialog::ShowOnlyFolders | flags,
+													  "*", folder );
+					dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
+											UI_WIN_MODAL );
+					dialog->setTitle(
+						scene->i18n( "select_working_directory", "Select Working Directory" ) );
+					dialog->setCloseShortcut( KEY_ESCAPE );
+					dialog->setSingleClickNavigation( singleClick );
+					*result =
+						dialog->connect( Event::OpenFile, [owner, path, dialog]( const Event* ) {
+							if ( !owner || !owner->isClosing() )
+								path->setText( String::fromUtf8( dialog->getFullPath() ) );
+						} );
+					dialog->center();
+					dialog->show();
+				} );
+			return layout;
+		} );
+}
+
 void TerminalSettings::addAppearance( TerminalPreferences& preferences ) {
 	if ( !mScene )
 		return;

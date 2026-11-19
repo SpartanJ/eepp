@@ -460,7 +460,7 @@ Uint32 UIScrollView::onMessage( const NodeMessage* Msg ) {
 }
 
 Uint32 UIScrollView::onMouseWheel( const Vector2f& offset, bool ) {
-	if ( !mScrollView || !mVScroll->isEnabled() || !isTouchOverAllowedChildren() )
+	if ( !mScrollView || !mVScroll->isEnabled() || !mContainer->isMouseOverMeOrChildren() )
 		return 0;
 
 	if ( offset.y == 0.f )

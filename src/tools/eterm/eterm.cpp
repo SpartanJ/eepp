@@ -1137,7 +1137,10 @@ int App::run( int argc, char* argv[] ) {
 		resourceScope.getFontService().addFallbackFont( std::move( fallback ) );
 	}
 
-	std::string launchPath = FileSystem::expandTilde( config->terminal.defaultWorkingDirectory );
+	std::string launchPath;
+	terminalConfig.explicitWorkingDirectory = static_cast<bool>( wd );
+	if ( config->terminal.useCustomWorkingDirectory )
+		launchPath = FileSystem::expandTilde( config->terminal.defaultWorkingDirectory );
 	if ( wd ) {
 		launchPath = wd.Get();
 	} else if ( launchPath.empty() || !FileSystem::isDirectory( launchPath ) ) {

@@ -5,6 +5,8 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace EE::UI {
 
@@ -43,6 +45,25 @@ class TerminalSettings {
 	TerminalSettings( UISettingsPanel* panel, VisitTerminals visit, Save save );
 
 	void addBehavior( TerminalPreferences& preferences );
+
+	void addExclusiveMode( bool& enabled );
+
+	void addShell( std::string& shell, std::string& arguments, Save applyShell = {},
+				   Save applyArguments = {} );
+
+	struct WorkingDirectoryOptions {
+		// Context-specific choices precede User Home and Other.
+		std::vector<EE::String> contextChoices;
+		std::string path;
+		std::function<std::string()> browseFrom;
+		size_t selected{ 0 };
+		EE::Uint32 dialogFlags{ 0 };
+		bool singleClickNavigation{ false };
+		bool commitPathOnFocusLoss{ false };
+	};
+
+	void addWorkingDirectory( WorkingDirectoryOptions options,
+							  std::function<bool( size_t, std::string )> change );
 
 	void addAppearance( TerminalPreferences& preferences );
 

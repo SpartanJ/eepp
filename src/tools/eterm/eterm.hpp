@@ -42,6 +42,7 @@ struct TerminalLaunchConfig {
 	FontAntialiasing fontAntialiasing{ FontAntialiasing::Grayscale };
 	bool closeOnExit{ true };
 	bool launchExecutable{ false };
+	bool explicitWorkingDirectory{ false };
 };
 
 class App : private efsw::FileWatchListener {

@@ -130,17 +130,8 @@ void SettingsActions::showSettings() {
 		mSettingsWindow->toFront();
 		return;
 	}
-	UIWindow::StyleConfig windowStyle{ UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
-									   UI_WIN_MODAL };
-	UIWindow* window = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, windowStyle );
+	auto* window = UISettingsPanel::NewWindow( mUI->i18n( "eefm_settings", "Configure eefm" ) );
 	mSettingsWindow = window;
-	window->setId( "settings_panel" );
-	window->setTitle( mUI->i18n( "eefm_settings", "Configure eefm" ) );
-	const Sizef sceneSize = mUI->getPixelsSize();
-	window->setPixelsSize(
-		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
-		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
-	window->setMinWindowSize( 640, 440 );
 	auto* panel = UISettingsPanel::New( window->getContainer() );
 	panel->setId( "settings_panel_content" );
 	panel->setSearchResultsText( mUI->i18n( "eefm_search_results", "Search Results" ) );
@@ -385,49 +376,6 @@ void SettingsActions::showSettings() {
 							mApp.terminal().syncDirectory();
 						savePreferences();
 					} );
-	const std::vector<std::string> knownShells{ "bash", "sh",  "zsh",  "fish", "nu",		"csh",
-												"tcsh", "ksh", "dash", "cmd",  "powershell" };
-	const String defaultShell = mUI->i18n( "eefm_default_shell", "Default" );
-	std::vector<String> shells{ defaultShell };
-	for ( const auto& shell : knownShells ) {
-		std::string path = Sys::which( shell );
-		if ( !path.empty() )
-			shells.emplace_back( path );
-	}
-	if ( !mApp.config().terminal.shell.empty() &&
-		 std::find( shells.begin(), shells.end(), String( mApp.config().terminal.shell ) ) ==
-			 shells.end() )
-		shells.emplace_back( mApp.config().terminal.shell );
-	panel->addEditableChoice(
-		{ "terminalShell", "terminal.behavior", mUI->i18n( "eefm_terminal_shell", "Shell" ),
-		  mUI->i18n( "eefm_terminal_shell_desc",
-					 "The shell started by the terminal panel (Default: your shell). Applies to "
-					 "new terminals." ) },
-		shells,
-		[this, defaultShell] {
-			return mApp.config().terminal.shell.empty() ? defaultShell
-														: String( mApp.config().terminal.shell );
-		},
-		[this, defaultShell]( const String& selection ) {
-			std::string shell = selection == defaultShell ? std::string() : selection.toUtf8();
-			if ( !shell.empty() && Sys::which( shell ).empty() && !FileSystem::fileExists( shell ) )
-				return false;
-			mApp.config().terminal.shell = shell;
-			savePreferences();
-			return true;
-		} );
-	panel->addText(
-		{ "terminalShellArguments", "terminal.behavior",
-		  mUI->i18n( "eefm_terminal_shell_arguments", "Shell Arguments" ),
-		  mUI->i18n( "eefm_terminal_shell_arguments_desc",
-					 "Arguments passed to the shell. Applies to new terminals." ) },
-		[this] { return mApp.config().terminal.shellArguments; },
-		[this]( const std::string& value ) {
-			mApp.config().terminal.shellArguments = value;
-			savePreferences();
-			return true;
-		},
-		true );
 	eterm::UI::TerminalSettings terminalSettings(
 		panel,
 		[this]( const auto& visit ) {
@@ -435,6 +383,8 @@ void SettingsActions::showSettings() {
 				visit( terminal );
 		},
 		[this] { savePreferences(); } );
+	terminalSettings.addShell( mApp.config().terminal.shell,
+							   mApp.config().terminal.shellArguments );
 	terminalSettings.addBehavior( mApp.config().terminal );
 
 	panel->addCategory( "terminal.appearance", mUI->i18n( "eefm_terminal", "Terminal" ),

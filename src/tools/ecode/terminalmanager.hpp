@@ -71,11 +71,7 @@ class TerminalManager {
 
 	void setUseFrameBuffer( bool useFrameBuffer );
 
-	void configureTerminalShell();
-
 	void configureTerminalScrollback();
-
-	void configureTerminalWorkingDir();
 
 	std::string getSelectedWorkingDir() const;
 

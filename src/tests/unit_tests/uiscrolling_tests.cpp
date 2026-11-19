@@ -597,6 +597,18 @@ UTEST( UIScrolling, ScrollableEditorAndConsoleConsumeBeforeAncestor ) {
 	EXPECT_NEAR( 0.f, test.scrollView->getVerticalScrollBar()->getValue(), 0.0001f );
 }
 
+UTEST( UIScrolling, WheelOverBlankViewportScrollsContent ) {
+	WheelPropagationTest test;
+	test.content->setPixelsSize( 160, 600 );
+	test.app.getUI()->flushDirtyStyleAndLayout();
+	auto* viewport = test.scrollView->getContainer();
+	test.hover( viewport, { 200.f, 30.f } );
+	test.wheel( { 0.f, -1.f } );
+
+	EXPECT_EQ( viewport, test.app.getUI()->getEventDispatcher()->getMouseOverNode() );
+	EXPECT_GT( test.scrollView->getVerticalScrollBar()->getValue(), 0.f );
+}
+
 UTEST( UIScrolling, NestedScrollViewsConsumeBeforeAncestorAndBubbleAtBoundary ) {
 	WheelPropagationTest test;
 	auto* inner = UIScrollView::New();

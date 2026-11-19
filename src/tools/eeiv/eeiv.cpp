@@ -125,15 +125,7 @@ void App::showSettings() {
 
 UIWindow* App::createSettingsWindow() {
 	auto* scene = mUIApplication->getUI();
-	UIWindow::StyleConfig style{ UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL };
-	auto* window = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, style );
-	window->setId( "settings_panel" );
-	window->setTitle( "Settings" );
-	const auto sceneSize = scene->getPixelsSize();
-	window->setPixelsSize(
-		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
-		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
-	window->setMinWindowSize( 640, 440 );
+	auto* window = UISettingsPanel::NewWindow( "Settings" );
 
 	auto* panel = UISettingsPanel::New( window->getContainer() );
 	panel->setId( "settings_panel_content" );

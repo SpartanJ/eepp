@@ -16,6 +16,7 @@ class xml_node;
 namespace EE::UI {
 class UICheckBox;
 class UIWidget;
+class UIWindow;
 } // namespace EE::UI
 
 namespace EE::UI::Tools {
@@ -135,6 +136,9 @@ class EE_API SettingsModel {
 
 class EE_API UISettingsPanel : public UILinearLayout {
   public:
+	/** Creates an empty, resizable settings window sized for its scene. */
+	static UIWindow* NewWindow( const String& title, const std::string& id = "settings_panel" );
+
 	static UISettingsPanel* New( UIWidget* parent );
 
 	virtual ~UISettingsPanel();

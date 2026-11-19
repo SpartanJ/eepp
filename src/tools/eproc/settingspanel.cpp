@@ -15,17 +15,8 @@ using namespace EE::UI::Tools;
 namespace eproc {
 
 UIWindow* SettingsPanel::create( App& app ) {
-	UIWindow::StyleConfig windowStyle{ UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
-									   UI_WIN_MODAL };
-	auto* window = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, windowStyle );
-	window->setId( "settings_panel" );
 	auto* scene = app.mApp->getUI();
-	window->setTitle( scene->i18n( "settings", "Settings" ) );
-	const auto sceneSize = scene->getPixelsSize();
-	window->setPixelsSize(
-		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
-		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
-	window->setMinWindowSize( 640, 440 );
+	auto* window = UISettingsPanel::NewWindow( scene->i18n( "settings", "Settings" ) );
 	auto* panel = UISettingsPanel::New( window->getContainer() );
 	panel->setId( "settings_panel_content" );
 	panel->setSearchResultsText( scene->i18n( "search_results", "Search Results" ) );

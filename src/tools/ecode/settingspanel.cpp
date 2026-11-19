@@ -9,9 +9,11 @@
 #include "settingsdocument.hpp"
 #include "settingspage.hpp"
 #include "uitreeviewfs.hpp"
+#include <eepp/system/filesystem.hpp>
 #include <eepp/ui/tools/fileassociationssettings.hpp>
 #include <eepp/ui/tools/keybindingsconfig.hpp>
 #include <eepp/ui/tools/uikeybindingseditor.hpp>
+#include <eepp/ui/uifiledialog.hpp>
 #include <eterm/ui/terminalsettings.hpp>
 #include <limits>
 
@@ -49,17 +51,10 @@ void SettingsPanel::show( Scope scope, const std::string& category ) {
 
 void SettingsPanel::create( Scope scope ) {
 	auto& state = this->state( scope );
-	UIWindow::StyleConfig config{ UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL };
-	state.window = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, config );
-	state.window->setId( scope == Scope::User ? "settings_panel" : "project_settings_panel" );
-	state.window->setTitle( scope == Scope::User
-								? mApp->i18n( "settings", "Settings" )
-								: mApp->i18n( "project_settings", "Project Settings" ) );
-	const auto sceneSize = mApp->getUISceneNode()->getPixelsSize();
-	state.window->setPixelsSize(
-		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
-		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
-	state.window->setMinWindowSize( 640, 440 );
+	state.window = UISettingsPanel::NewWindow(
+		scope == Scope::User ? mApp->i18n( "settings", "Settings" )
+							 : mApp->i18n( "project_settings", "Project Settings" ),
+		scope == Scope::User ? "settings_panel" : "project_settings_panel" );
 	state.window->setKeyBindingCommand( "closeWindow", [window = state.window, this] {
 		if ( !SceneManager::instance()->isShuttingDown() ) {
 			window->closeWindow();
@@ -1374,6 +1369,20 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 		panel.panel,
 		[terminalManager]( const auto& visit ) { terminalManager->forEachTerminal( visit ); },
 		[] {} );
+	terminalSettings.addShell( terminalPreferences.shell, terminalPreferences.shellArgs );
+	terminalSettings.addWorkingDirectory(
+		{ { mApp->i18n( "project_root_directory", "Project Root Directory" ),
+			mApp->i18n( "current_file_directory", "Current File Directory" ) },
+		  terminalPreferences.workingDirOther,
+		  [this] { return mApp->getDefaultFileDialogFolder(); },
+		  static_cast<size_t>( terminalPreferences.workingDir ),
+		  mApp->getConfig().ui.nativeFileDialogs ? Uint32( UIFileDialog::UseNativeFileDialog ) : 0,
+		  mApp->getConfig().editor.singleClickNavigation },
+		[&terminalPreferences]( size_t selected, std::string path ) {
+			terminalPreferences.workingDir = static_cast<TerminalWorkingDir::Mode>( selected );
+			terminalPreferences.workingDirOther = std::move( path );
+			return true;
+		} );
 	terminalSettings.addBehavior( terminalPreferences );
 	terminalSettings.addProgramStatus( terminalPreferences.programStatus,
 									   terminalManager->programStatus() );
@@ -1414,12 +1423,7 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 			mApp->getConfig().term.newTerminalOrientation =
 				orientations[std::min( selected, size_t{ 3 } )];
 		} );
-	addBool( panel,
-			 { "terminalExclusiveMode", "terminal.behavior",
-			   mApp->i18n( "enable_exclusive_mode_by_default", "Enable Exclusive Mode by Default" ),
-			   mApp->i18n( "enable_exclusive_mode_by_default_tooltip",
-						   "Disable global keybindings in newly created terminals." ) },
-			 &mApp->getConfig().term.exclusiveMode );
+	terminalSettings.addExclusiveMode( terminalPreferences.exclusiveMode );
 	addBool( panel,
 			 { "closeTerminalTabOnExit", "terminal.behavior",
 			   mApp->i18n( "close_terminal_tab_on_exit", "Close Terminal Tab on Exit" ),
@@ -1436,22 +1440,7 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 			   mApp->i18n( "warn_before_closing_tab_tooltip",
 						   "Ask before closing a terminal while a program is running." ) },
 			 &mApp->getConfig().term.warnBeforeClosingTab );
-	addAction( panel,
-			   { "terminalShell", "terminal.behavior",
-				 mApp->i18n( "configure_terminal_shell", "Configure Terminal Shell" ),
-				 mApp->i18n( "configure_terminal_shell_desc",
-							 "Set the shell executable and command-line arguments." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->runCommand( "configure-terminal-shell" ); } );
 	terminalSettings.addFrameBuffer( terminalPreferences.useFrameBuffer );
-	addAction( panel,
-			   { "terminalWorkingDirectory", "terminal.behavior",
-				 mApp->i18n( "configure_terminal_working_dir",
-							 "Configure Terminal Default Working Directory" ),
-				 mApp->i18n( "configure_terminal_working_dir_desc",
-							 "Choose the working directory used by new terminals." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->runCommand( "configure-terminal-working-dir" ); } );
 
 	addCategory( panel, "terminal.appearance", mApp->i18n( "terminal", "Terminal" ),
 				 mApp->i18n( "appearance", "Appearance" ) );

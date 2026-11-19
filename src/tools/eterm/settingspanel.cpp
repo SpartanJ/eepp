@@ -14,16 +14,7 @@ using namespace EE::UI::Tools;
 namespace eterm {
 
 UIWindow* SettingsPanel::create( App& app ) {
-	UIWindow::StyleConfig windowStyle{ UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
-									   UI_WIN_MODAL };
-	auto settingsWindow = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, windowStyle );
-	settingsWindow->setId( "settings_panel" );
-	settingsWindow->setTitle( app.i18n( "settings", "Settings" ) );
-	const auto sceneSize = app.scene->getPixelsSize();
-	settingsWindow->setPixelsSize(
-		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
-		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
-	settingsWindow->setMinWindowSize( 640, 440 );
+	auto* settingsWindow = UISettingsPanel::NewWindow( app.i18n( "settings", "Settings" ) );
 	auto* panel = UISettingsPanel::New( settingsWindow->getContainer() );
 	panel->setId( "settings_panel_content" );
 	panel->setSearchResultsText( app.i18n( "search_results", "Search Results" ) );
@@ -239,7 +230,45 @@ UIWindow* SettingsPanel::create( App& app ) {
 	TerminalSettings terminalSettings(
 		panel, [&app]( const auto& visit ) { app.forEachTerminal( visit ); },
 		[&app] { app.savePreferences(); } );
-	terminalSettings.addBehavior( app.config->terminal );
+	auto& terminal = app.config->terminal;
+	terminalSettings.addShell(
+		terminal.shell, terminal.shellArguments,
+		[&app] { app.terminalConfig.program = app.config->terminal.shell; },
+		[&app] {
+			app.terminalConfig.arguments = String::split( app.config->terminal.shellArguments );
+		} );
+	TerminalSettings::WorkingDirectoryOptions directoryOptions;
+	directoryOptions.path = terminal.defaultWorkingDirectory;
+	directoryOptions.selected = terminal.useCustomWorkingDirectory ? 1 : 0;
+	directoryOptions.commitPathOnFocusLoss = true;
+	terminalSettings.addWorkingDirectory(
+		std::move( directoryOptions ), [&app, &terminal]( size_t selected, std::string value ) {
+			const bool custom = selected == 1;
+			if ( custom ) {
+				auto directory = FileSystem::expandTilde( value );
+				if ( !directory.empty() ) {
+					if ( !FileSystem::isDirectory( directory ) )
+						return false;
+					directory = FileSystem::getRealPath( directory );
+				}
+				if ( terminal.useCustomWorkingDirectory &&
+					 terminal.defaultWorkingDirectory == directory )
+					return true;
+				terminal.defaultWorkingDirectory = std::move( directory );
+			} else if ( !terminal.useCustomWorkingDirectory ) {
+				return true;
+			}
+			terminal.useCustomWorkingDirectory = custom;
+			if ( !app.terminalConfig.explicitWorkingDirectory ) {
+				app.terminalConfig.workingDirectory =
+					custom && !terminal.defaultWorkingDirectory.empty()
+						? terminal.defaultWorkingDirectory
+						: Sys::getUserDirectory();
+			}
+			app.savePreferences();
+			return true;
+		} );
+	terminalSettings.addBehavior( terminal );
 	terminalSettings.addProgramStatus( app.config->terminal.programStatus, app.programStatus );
 	panel->addBool(
 		{ "restoreLastSession", "terminal.behavior",
@@ -277,16 +306,7 @@ UIWindow* SettingsPanel::create( App& app ) {
 				static_cast<NewTerminalBehavior>( std::min( selected, size_t{ 2 } ) );
 			app.savePreferences();
 		} );
-	panel->addBool(
-		{ "terminalExclusiveMode", "terminal.behavior",
-		  app.i18n( "enable_exclusive_mode_by_default", "Enable Exclusive Mode by Default" ),
-		  app.i18n( "enable_exclusive_mode_by_default_tooltip",
-					"Disable global keybindings in newly created terminals." ) },
-		&app.config->terminal.exclusiveMode, [&app]( bool value ) {
-			app.forEachTerminal(
-				[value]( UITerminal* terminal ) { terminal->setExclusiveMode( value ); } );
-			app.savePreferences();
-		} );
+	terminalSettings.addExclusiveMode( app.config->terminal.exclusiveMode );
 	panel->addBool(
 		{ "smoothScroll", "terminal.behavior", app.i18n( "smooth_scroll", "Smooth Scrolling" ),
 		  app.i18n( "smooth_scroll_desc", "Animate scrolling from mouse wheels and trackpads." ) },
@@ -312,73 +332,6 @@ UIWindow* SettingsPanel::create( App& app ) {
 						app.warnBeforeClose = value;
 						app.savePreferences();
 					} );
-	const std::vector<std::string> knownShells{ "bash", "sh",  "zsh",		 "fish",
-												"nu",	"csh", "tcsh",		 "ksh",
-												"dash", "cmd", "powershell", "pwsh" };
-	std::vector<String> installedShells;
-	for ( const auto& shell : knownShells ) {
-		auto path = Sys::which( shell );
-		if ( !path.empty() )
-			installedShells.emplace_back( std::move( path ) );
-	}
-	auto currentShell = app.config->terminal.shell;
-	if ( currentShell.empty() ) {
-		if ( const char* shell = std::getenv( "SHELL" ); shell )
-			currentShell = FileSystem::fileExists( shell ) ? shell : Sys::which( shell );
-		if ( currentShell.empty() )
-			currentShell = Sys::which(
-				Sys::getPlatformType() == Sys::PlatformType::Windows ? "powershell" : "bash" );
-	}
-	if ( !currentShell.empty() && std::find( installedShells.begin(), installedShells.end(),
-											 String( currentShell ) ) == installedShells.end() )
-		installedShells.emplace_back( currentShell );
-	panel->addEditableChoice(
-		{ "terminalShell", "terminal.behavior", app.i18n( "terminal_shell", "Terminal Shell" ),
-		  app.i18n( "terminal_shell_desc", "Set the shell executable used by new terminals." ) },
-		installedShells, [currentShell] { return String( currentShell ); },
-		[&app]( const String& selection ) {
-			auto shell = selection.toUtf8();
-			if ( Sys::which( shell ).empty() && !FileSystem::fileExists( shell ) )
-				return false;
-			app.config->terminal.shell = shell;
-			app.terminalConfig.program = shell;
-			app.savePreferences();
-			return true;
-		} );
-	panel->addText(
-		{ "terminalShellArguments", "terminal.behavior",
-		  app.i18n( "terminal_shell_arguments", "Terminal Shell Arguments" ),
-		  app.i18n( "terminal_shell_arguments_desc",
-					"Set shell arguments used by new terminals." ) },
-		[&app] { return app.config->terminal.shellArguments; },
-		[&app]( const std::string& value ) {
-			app.config->terminal.shellArguments = value;
-			app.terminalConfig.arguments = String::split( value );
-			app.savePreferences();
-			return true;
-		},
-		true );
-	panel->addText(
-		{ "terminalDefaultWorkingDirectory", "terminal.behavior",
-		  app.i18n( "default_working_directory", "Default Working Directory" ),
-		  app.i18n( "default_working_directory_desc",
-					"Set the starting directory for new terminals. Leave empty to use your home "
-					"directory. A command-line directory overrides it for that launch." ) },
-		[&app] { return app.config->terminal.defaultWorkingDirectory; },
-		[&app]( const std::string& value ) {
-			auto directory = FileSystem::expandTilde( value );
-			if ( !directory.empty() ) {
-				if ( !FileSystem::isDirectory( directory ) )
-					return false;
-				directory = FileSystem::getRealPath( directory );
-			}
-			app.config->terminal.defaultWorkingDirectory = directory;
-			app.terminalConfig.workingDirectory =
-				directory.empty() ? Sys::getUserDirectory() : std::move( directory );
-			app.savePreferences();
-			return true;
-		},
-		true );
 	terminalSettings.addFrameBuffer( app.config->terminal.useFrameBuffer );
 
 	panel->addCategory( "terminal.appearance", app.i18n( "terminal", "Terminal" ),

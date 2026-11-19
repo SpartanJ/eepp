@@ -37,6 +37,7 @@ struct TerminalConfig : eterm::UI::TerminalPreferences {
 	bool closeOnExit{ true };
 	bool exclusiveMode{ false };
 	bool inheritWorkingDirectory{ true };
+	bool useCustomWorkingDirectory{ false };
 	bool restoreLastSession{ true };
 	bool recoverHarnessSessions{ false };
 	NewTerminalBehavior newTerminalBehavior{ NewTerminalBehavior::CurrentTabBar };
