@@ -70,6 +70,7 @@ struct TerminalConfig {
 struct WindowConfig {
 	/** 0: the display's (or the environment's) pixel density. */
 	Float pixelDensity{ 0 };
+	PixelDensityMode pixelDensityMode{ PixelDensityMode::Default };
 	Uint32 maxFPS{ static_cast<Uint32>( ContextSettings::FrameRateLimitScreenRefreshRate ) };
 	bool vsync{ false };
 	bool showMenuBar{ false };

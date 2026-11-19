@@ -6,8 +6,10 @@
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
 
@@ -62,6 +64,59 @@ UTEST( UISettingsPanelModel, clearRemovesAllRules ) {
 	EXPECT_TRUE( model.categories().empty() );
 	EXPECT_TRUE( model.groups().empty() );
 	EXPECT_TRUE( model.settings().empty() );
+}
+
+UTEST( UISettingsPanel, appliesAndSavesWindowScaleModes ) {
+	Float density = 0.f;
+	PixelDensityMode mode = PixelDensityMode::DisplayScale;
+	int saves = 0;
+	WindowSettings settings( 800, 600, "eepp - UI Scale Settings Test" );
+	settings.DensityMode = mode;
+	UIApplication app( settings, UIApplication::Settings( Sys::getProcessPath() + ".." +
+														  FileSystem::getOSSlash() ) );
+	auto* window = app.getWindow();
+	ASSERT_NE( nullptr, window );
+	auto* panel = UISettingsPanel::New( app.getUI()->getRoot() );
+	ASSERT_TRUE( panel->addCategory( "appearance.fonts", "Appearance", "Fonts and Scale" ) );
+	panel->addUIScaleSettings( "appearance.fonts", *window, density, mode, [&] { ++saves; } );
+	panel->build();
+	panel->selectCategory( "appearance.fonts" );
+	auto* modeRow = panel->find<UIWidget>( "setting_uiScaleMode" );
+	auto* factorRow = panel->find<UIWidget>( "setting_uiScaleFactor" );
+	ASSERT_NE( nullptr, modeRow );
+	ASSERT_NE( nullptr, factorRow );
+	auto* choice = modeRow->find<UIDropDownModelList>( "setting_control_widget" );
+	auto* factor = factorRow->find<UISpinBox>( "setting_control_widget" );
+	ASSERT_NE( nullptr, choice );
+	ASSERT_NE( nullptr, factor );
+
+	auto select = [choice]( int index ) {
+		choice->getListView()->getSelection().set( choice->getModel()->index( index, 0 ) );
+	};
+	EXPECT_EQ( 0, choice->getListView()->getSelection().first().row() );
+	EXPECT_EQ( 0, saves );
+	select( 1 );
+	EXPECT_TRUE( mode == PixelDensityMode::PhysicalPPI );
+	EXPECT_TRUE( window->getPixelDensityMode() == mode );
+	EXPECT_EQ( 1, saves );
+
+	factor->setValue( 1.5 );
+	EXPECT_EQ( 2, choice->getListView()->getSelection().first().row() );
+	EXPECT_EQ( 1.5f, density );
+	EXPECT_EQ( 1.5f, window->getPixelDensityOverride() );
+	EXPECT_EQ( 2, saves );
+
+	select( 0 );
+	EXPECT_TRUE( mode == PixelDensityMode::DisplayScale );
+	EXPECT_TRUE( window->getPixelDensityMode() == mode );
+	EXPECT_EQ( 0.f, density );
+	EXPECT_EQ( 0.f, window->getPixelDensityOverride() );
+	EXPECT_EQ( 3, saves );
+
+	select( 2 );
+	EXPECT_EQ( 1.5f, density );
+	EXPECT_EQ( 1.5f, window->getPixelDensityOverride() );
+	EXPECT_EQ( 4, saves );
 }
 
 UTEST( UISettingsPanel, buildsAndMaterializesCategoriesLazily ) {

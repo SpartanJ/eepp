@@ -50,6 +50,7 @@ class AppConfig {
 	int filterMode{ 0 };
 	int refreshIntervalMs{ 1000 };
 	Float pixelDensity{ 0 };
+	PixelDensityMode pixelDensityMode{ PixelDensityMode::Default };
 	/** In dp; 0 uses the theme default. */
 	Float uiFontSize{ 0 };
 	FontHinting fontHinting{ FontHinting::Full };

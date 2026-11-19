@@ -48,6 +48,8 @@ void AppConfig::load() {
 	const double savedDensity = mState.getValueF( "appearance", "pixel_density", pixelDensity );
 	if ( std::isfinite( savedDensity ) && savedDensity >= 0 && savedDensity <= 6 )
 		pixelDensity = static_cast<Float>( savedDensity );
+	pixelDensityMode = EE::Window::Window::pixelDensityModeFromString(
+		mState.getValue( "appearance", "pixel_density_mode" ) );
 	const int savedHinting = mState.getValueI( "appearance", "font_hinting", 2 );
 	if ( savedHinting >= 0 && savedHinting <= 2 )
 		fontHinting = static_cast<FontHinting>( savedHinting );
@@ -92,6 +94,8 @@ bool AppConfig::save() {
 	mState.setValueI( "process_table", "filter_mode", filterMode );
 	mState.setValueI( "monitoring", "refresh_interval_ms", refreshIntervalMs );
 	mState.setValueF( "appearance", "pixel_density", pixelDensity );
+	mState.setValue( "appearance", "pixel_density_mode",
+					 EE::Window::Window::pixelDensityModeToString( pixelDensityMode ) );
 	mState.setValue( "appearance", "ui_font", uiFontPath );
 	mState.setValue( "appearance", "fallback_font", fallbackFontPath );
 	mState.setValueF( "appearance", "ui_font_size", uiFontSize );

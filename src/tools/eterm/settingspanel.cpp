@@ -101,19 +101,9 @@ UIWindow* SettingsPanel::create( App& app ) {
 		  app.i18n( "terminal_font_size_desc", "Set the default terminal font size." ) },
 		6, 72, 0.5, [&app] { return app.config->font.size; },
 		[&app]( double value ) { app.settingsActions->setTerminalFontSize( value ); } );
-	panel->addFloat(
-		{ "uiScaleFactor", "appearance.fonts", app.i18n( "ui_scale_factor", "UI Scale Factor" ),
-		  app.i18n( "ui_scale_factor_desc",
-					"Scale the complete user interface. Restart required." ) },
-		1, 6, 0.1,
-		[&app] {
-			return app.config->window.pixelDensity > 0 ? app.config->window.pixelDensity
-													   : PixelDensity::getPixelDensity();
-		},
-		[&app]( double value ) {
-			app.config->window.pixelDensity = value;
-			app.savePreferences();
-		} );
+	panel->addUIScaleSettings( "appearance.fonts", *app.appWindow, app.config->window.pixelDensity,
+							   app.config->window.pixelDensityMode,
+							   [&app] { app.savePreferences(); } );
 	panel->addChoice(
 		{ "fontHinting", "appearance.fonts", app.i18n( "ui_font_hint", "Font Hinting" ),
 		  app.i18n( "ui_font_hint_desc", "Control glyph alignment to the pixel grid." ) },

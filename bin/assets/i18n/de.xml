@@ -1076,9 +1076,11 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="ui_panel_font_size_desc">Schriftgröße der Seitenbereiche festlegen.</string>
 	<string name="editor_font_size_desc">Standardschriftgröße des Code-Editors festlegen.</string>
 	<string name="terminal_font_size_desc">Standardschriftgröße des Terminals festlegen.</string>
-	<string name="ui_scale_factor_desc">Die Skalierung der Benutzeroberfläche manuell auf einen Wert von 1 bis 6 einstellen.</string>
+	<string name="ui_scale_factor_desc">Einen festen Skalierungsfaktor zwischen 1 und 6 einstellen. Eine Änderung wählt den Modus Manuell.</string>
 	<string name="ui_scale_mode">Skalierungsmodus</string>
-	<string name="ui_scale_mode_desc">Die konfigurierte Anzeigeskalierung automatisch übernehmen oder einen manuellen Faktor verwenden.</string>
+	<string name="ui_scale_mode_desc">Die Systemskalierung folgt der Einstellung des Betriebssystems für jeden Bildschirm. Die physische Pixeldichte hält die Oberfläche auf verschiedenen Bildschirmen ungefähr gleich groß. Ist die Pixeldichte unbekannt, gilt die Systemskalierung.</string>
+	<string name="ui_scale_auto_system">Auto (Systemskalierung)</string>
+	<string name="ui_scale_auto_physical">Auto (physische Pixeldichte)</string>
 	<string name="ui_scale_manual">Manuell</string>
 	<string name="line_spacing_desc">Zusätzlichen vertikalen Abstand zwischen Editorzeilen festlegen. Zum Deaktivieren 0 einstellen.</string>
 	<string name="cursor_blinking_time_desc">Blinkintervall des Textcursors festlegen. Zum Deaktivieren 0 einstellen.</string>

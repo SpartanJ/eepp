@@ -21,6 +21,7 @@
 #include <args/args.hxx>
 #include <array>
 #include <charconv>
+#include <cstdlib>
 #include <cstring>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/system/iostreammemory.hpp>
@@ -4739,8 +4740,14 @@ void App::init( InitParameters& params ) {
 		mConfig.windowState.pixelDensity = params.pidelDensity;
 	Float pixelDensityOverride = mConfig.windowState.pixelDensity;
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-	// Retain the editor's compact mobile UI policy without persisting an automatic density.
-	if ( pixelDensityOverride <= 0.f && PixelDensity::getEnvironmentPixelDensity() <= 0.f ) {
+	// Use the compact mobile default until an automatic mode or factor is explicitly selected.
+	const char* densityMode = std::getenv( "EEPP_PIXEL_DENSITY_MODE" );
+	const bool useCompactDefault =
+		mConfig.windowState.pixelDensityMode == PixelDensityMode::Default &&
+		( !densityMode || EE::Window::Window::pixelDensityModeFromString( densityMode ) ==
+							  PixelDensityMode::Default );
+	if ( useCompactDefault && pixelDensityOverride <= 0.f &&
+		 PixelDensity::getEnvironmentPixelDensity() <= 0.f ) {
 		const Float displayDensity = currentDisplay->getPixelDensity();
 		pixelDensityOverride = displayDensity > 2.f ? displayDensity / 2.f : displayDensity;
 	}

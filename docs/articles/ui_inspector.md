@@ -355,8 +355,9 @@ EEPP_PIXEL_DENSITY_MODE=physical-ppi ./bin/ecode --profile /tmp/ecode-physical-p
   --disable-plugins /path/to/document.txt
 ```
 
-Omit `--pixel-density`, leave `EEPP_PIXEL_DENSITY` unset, and select **Auto** if the profile has a
-saved scale. Move the window between monitors and
+Omit `--pixel-density` and leave `EEPP_PIXEL_DENSITY` unset. You can also select **Auto (Physical
+PPI)** under **Settings → Appearance → Fonts & Scale** to change the mode live. Move the window
+between monitors and
 query `ui.contexts` in an inspector-enabled run: the display index should change, and effective
 density should follow `max(1, physicalDPI / pixelDensityReferencePPI)` where measurement is supported.
 The reference defaults to 96. Desktop scale remains the

@@ -210,7 +210,7 @@ UISpinBox* UISpinBox::setValue( const double& val ) {
 	if ( fValN == newVal ) {
 		mInput->setText( String::toString( (Int64)iValN ) );
 	} else {
-		mInput->setText( String::toString( newVal ) );
+		mInput->setText( String::fromDouble( newVal, "", "", 6 ) );
 	}
 	mModifyingVal = false;
 

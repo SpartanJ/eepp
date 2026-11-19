@@ -99,20 +99,9 @@ UIWindow* SettingsPanel::create( App& app ) {
 					   : PixelDensity::pxToDp( scene->getUIThemeManager()->getDefaultFontSize() );
 		},
 		[&app]( double value ) { app.setUIFontSize( value ); } );
-	panel->addFloat(
-		{ "uiScaleFactor", "appearance.fonts", scene->i18n( "ui_scale_factor", "UI Scale Factor" ),
-		  scene->i18n( "ui_scale_factor_desc",
-					   "Scale the complete user interface. Restart required." ) },
-		1, 6, 0.1,
-		[&app] {
-			return app.mPixelDensity ? static_cast<double>( *app.mPixelDensity )
-									 : static_cast<double>( PixelDensity::getPixelDensity() );
-		},
-		[&app]( double value ) {
-			app.mPixelDensity = static_cast<Float>( value );
-			app.mConfig->pixelDensity = *app.mPixelDensity;
-			app.savePreferences();
-		} );
+	panel->addUIScaleSettings( "appearance.fonts", *app.mApp->getWindow(),
+							   app.mConfig->pixelDensity, app.mConfig->pixelDensityMode,
+							   [&app] { app.savePreferences(); } );
 	panel->addChoice(
 		{ "fontHinting", "appearance.fonts", scene->i18n( "ui_font_hint", "Font Hinting" ),
 		  scene->i18n( "ui_font_hint_desc", "Control glyph alignment to the pixel grid." ) },

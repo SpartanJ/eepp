@@ -203,15 +203,8 @@ UIWindow* App::createSettingsWindow() {
 			mConsole->setFontSize( value );
 			saveConfig();
 		} );
-	panel->addFloat(
-		{ "uiScaleFactor", "appearance.fonts", "UI Scale Factor",
-		  "Scale the complete user interface. Restart required." },
-		1, 6, 0.1,
-		[this] { return mConfig.UIScale > 0 ? mConfig.UIScale : PixelDensity::getPixelDensity(); },
-		[this]( double value ) {
-			mConfig.UIScale = value;
-			saveConfig();
-		} );
+	panel->addUIScaleSettings( "appearance.fonts", *getWindow(), mConfig.UIScale,
+							   mConfig.UIScaleMode, [this] { saveConfig(); } );
 	panel->addChoice(
 		{ "fontHinting", "appearance.fonts", "Font Hinting",
 		  "Control glyph alignment to the pixel grid." },
@@ -500,6 +493,8 @@ void App::loadConfig() {
 	mConfig.UIFontPath = mIni.getValue( "ui", "font" );
 	mConfig.FallbackFontPath = mIni.getValue( "ui", "fallbackfont" );
 	mConfig.UIScale = mIni.getValueF( "ui", "scale", 0 );
+	mConfig.UIScaleMode =
+		EE::Window::Window::pixelDensityModeFromString( mIni.getValue( "ui", "scale_mode" ) );
 	mConfig.Hinting = Font::fontHintingFromString( mIni.getValue( "ui", "fonthinting", "full" ) );
 	mConfig.Antialiasing =
 		Font::fontAntialiasingFromString( mIni.getValue( "ui", "fontantialiasing", "grayscale" ) );
@@ -538,6 +533,8 @@ void App::saveConfig() {
 	mIni.setValue( "ui", "font", mConfig.UIFontPath );
 	mIni.setValue( "ui", "fallbackfont", mConfig.FallbackFontPath );
 	mIni.setValueF( "ui", "scale", mConfig.UIScale );
+	mIni.setValue( "ui", "scale_mode",
+				   EE::Window::Window::pixelDensityModeToString( mConfig.UIScaleMode ) );
 	mIni.setValue( "ui", "fonthinting", Font::fontHintingToString( mConfig.Hinting ) );
 	mIni.setValue( "ui", "fontantialiasing",
 				   Font::fontAntialiasingToString( mConfig.Antialiasing ) );
@@ -568,6 +565,7 @@ bool App::init() {
 	contextSettings.FrameRateLimit = mConfig.BenchmarkMode ? 0 : mConfig.FrameLimit;
 	contextSettings.SharedGLContext = true;
 	windowSettings.Title = "eeiv";
+	windowSettings.DensityMode = mConfig.UIScaleMode;
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	const char* windowIcon = "eeiv-macos.png";
 	const char* fallbackIcon = "ee-macos.png";

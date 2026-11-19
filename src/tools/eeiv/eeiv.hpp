@@ -28,6 +28,7 @@ class App {
 		int ConsoleFontSize{ 12 };
 		Float AppFontSize{ 12 };
 		Float UIScale{ 0 };
+		PixelDensityMode UIScaleMode{ PixelDensityMode::Default };
 		FontHinting Hinting{ FontHinting::Full };
 		FontAntialiasing Antialiasing{ FontAntialiasing::Grayscale };
 		ColorSchemeExtPreference ColorScheme{ ColorSchemeExtPreference::System };

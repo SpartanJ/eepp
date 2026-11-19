@@ -18,7 +18,16 @@ class UICheckBox;
 class UIWidget;
 } // namespace EE::UI
 
+namespace EE::Window {
+
+class Window;
+enum class PixelDensityMode : Uint8;
+
+} // namespace EE::Window
+
 namespace EE::UI::Tools {
+
+using Window::PixelDensityMode;
 
 struct SettingView;
 
@@ -168,6 +177,11 @@ class EE_API UISettingsPanel : public UILinearLayout {
 
 	bool addFloat( SettingDescriptor descriptor, double min, double max, double step,
 				   std::function<double()> get, std::function<void( double )> set );
+
+	/** Add the window's automatic scaling modes and manual factor. The preferences must outlive
+	 * the panel. The save callback runs after applying a new scale. */
+	void addUIScaleSettings( const std::string& category, EE::Window::Window& window,
+							 Float& density, PixelDensityMode& mode, std::function<void()> save );
 
 	bool addAction( SettingDescriptor descriptor, String buttonText, std::function<void()> action );
 

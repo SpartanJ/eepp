@@ -15,6 +15,7 @@
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitreeview.hpp>
+#include <eepp/window/window.hpp>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -547,6 +548,62 @@ bool UISettingsPanel::addFloat( SettingDescriptor descriptor, double min, double
 		   mImpl->model.addSetting(
 			   { std::move( descriptor ),
 				 FloatSetting{ min, max, step, std::move( get ), std::move( set ) } } );
+}
+
+void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Window::Window& window,
+										  Float& density, PixelDensityMode& mode,
+										  std::function<void()> save ) {
+	enum ScaleChoice : size_t { SystemScale, PhysicalPPI, Manual };
+	auto* scene = getUISceneNode();
+	auto currentChoice = [&window]() -> size_t {
+		if ( window.getPixelDensityOverride() > 0.f )
+			return Manual;
+		return window.getPixelDensityMode() == PixelDensityMode::PhysicalPPI ? PhysicalPPI
+																			 : SystemScale;
+	};
+	auto applyScale = [&window, &density, save = std::move( save )]( Float value ) {
+		density = value;
+		window.setPixelDensityOverride( density );
+		if ( save )
+			save();
+	};
+	addChoice(
+		{ "uiScaleMode", category, scene->i18n( "ui_scale_mode", "UI Scale Mode" ),
+		  scene->i18n(
+			  "ui_scale_mode_desc",
+			  "System Scale follows the operating system's scale for each display. Physical "
+			  "PPI uses the monitor's pixel density to keep the interface a similar physical "
+			  "size. It falls back to System Scale when PPI is unavailable." ) },
+		{ scene->i18n( "ui_scale_auto_system", "Auto (System Scale)" ),
+		  scene->i18n( "ui_scale_auto_physical", "Auto (Physical PPI)" ),
+		  scene->i18n( "ui_scale_manual", "Manual" ) },
+		currentChoice, [this, &window, &mode, currentChoice, applyScale]( size_t selected ) {
+			if ( selected == currentChoice() )
+				return;
+			if ( selected == Manual ) {
+				auto* row = find<UIWidget>( "setting_uiScaleFactor" );
+				auto* spin = row ? row->find<UISpinBox>( "setting_control_widget" ) : nullptr;
+				applyScale( spin ? static_cast<Float>( spin->getValue() )
+								 : std::clamp( window.getPixelDensity(), 1.f, 6.f ) );
+				return;
+			}
+			mode = selected == PhysicalPPI ? PixelDensityMode::PhysicalPPI
+										   : PixelDensityMode::DisplayScale;
+			window.setPixelDensityMode( mode );
+			applyScale( 0.f );
+		} );
+	addFloat(
+		{ "uiScaleFactor", category, scene->i18n( "ui_scale_factor", "UI Scale Factor" ),
+		  scene->i18n( "ui_scale_factor_desc",
+					   "Set a fixed interface scale from 1 to 6. Changing it selects Manual." ) },
+		1, 6, 0.1, [&window] { return window.getPixelDensity(); },
+		[this, applyScale]( double value ) {
+			applyScale( static_cast<Float>( value ) );
+			if ( auto* row = find<UIWidget>( "setting_uiScaleMode" ) ) {
+				auto* choice = row->find<UIDropDownModelList>( "setting_control_widget" );
+				choice->getListView()->getSelection().set( choice->getModel()->index( Manual, 0 ) );
+			}
+		} );
 }
 
 bool UISettingsPanel::addAction( SettingDescriptor descriptor, String buttonText,

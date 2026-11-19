@@ -91,6 +91,8 @@ void AppConfig::load() {
 	font.uiSize = mIni.getValueF( "font", "ui_size", font.uiSize );
 
 	window.pixelDensity = mIni.getValueF( "window", "pixel_density", window.pixelDensity );
+	window.pixelDensityMode = EE::Window::Window::pixelDensityModeFromString(
+		mIni.getValue( "window", "pixel_density_mode" ) );
 	window.maxFPS = mIni.getValueU( "window", "frame_rate_limit", window.maxFPS );
 	window.vsync = mIni.getValueB( "window", "vsync", window.vsync );
 	window.exitOnClose = mIni.getValueB( "window", "exit_on_close", window.exitOnClose );
@@ -184,6 +186,8 @@ bool AppConfig::savePreferences() {
 	mIni.setValue( "font", "ui_path", font.uiPath );
 	mIni.setValueF( "font", "ui_size", font.uiSize );
 	mIni.setValueF( "window", "pixel_density", window.pixelDensity );
+	mIni.setValue( "window", "pixel_density_mode",
+				   EE::Window::Window::pixelDensityModeToString( window.pixelDensityMode ) );
 	mIni.setValueU( "window", "frame_rate_limit", window.maxFPS );
 	mIni.setValueB( "window", "vsync", window.vsync );
 	mIni.setValueB( "window", "exit_on_close", window.exitOnClose );

@@ -1236,16 +1236,6 @@ int App::run( int argc, char* argv[] ) {
 	}
 
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
-	Display* currentDisplay = displayManager->getDisplayIndex(
-		config->windowState.displayIndex >= 0 &&
-				config->windowState.displayIndex < displayManager->getDisplayCount()
-			? config->windowState.displayIndex
-			: 0 );
-	if ( !currentDisplay ) {
-		std::cerr << "Display not found, exiting" << std::endl;
-		return EXIT_FAILURE;
-	}
-
 	const Sizei windowSize( config->windowState.size );
 
 	FontTrueTypePtr uiFont;
@@ -1257,14 +1247,8 @@ int App::run( int argc, char* argv[] ) {
 	UIApplication::Settings appSettings;
 	appSettings.exitOnClose = config->window.exitOnClose;
 	appSettings.basePath = FileSystem::removeLastFolderFromPath( resPath );
-	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
-	if ( config->window.pixelDensity > 0 ) {
+	if ( config->window.pixelDensity > 0 )
 		appSettings.pixelDensity = config->window.pixelDensity;
-	} else if ( environmentDensity > 0 ) {
-		appSettings.pixelDensity = environmentDensity;
-	} else {
-		appSettings.pixelDensity = currentDisplay->getPixelDensity();
-	}
 	appSettings.fontHinting = config->font.hinting;
 	appSettings.fontAntialiasing = config->font.antialiasing;
 	appSettings.baseFont = uiFont.get();
@@ -1277,12 +1261,14 @@ int App::run( int argc, char* argv[] ) {
 #else
 	const char* windowIcon = "icon/eterm.png";
 #endif
-	UIApplication app(
-		WindowSettings( windowSize.getWidth(), windowSize.getHeight(), "eterm",
-						WindowStyle::Default, WindowBackend::Default, 32, resPath + windowIcon ),
-		appSettings,
-		ContextSettings( config->window.vsync, frameRateLimit, config->window.multisamples,
-						 config->window.rendererVersion ) );
+	WindowSettings windowSettings( windowSize.getWidth(), windowSize.getHeight(), "eterm",
+								   WindowStyle::Default, WindowBackend::Default, 32,
+								   resPath + windowIcon );
+	windowSettings.DensityMode = config->window.pixelDensityMode;
+	UIApplication app( windowSettings, appSettings,
+					   ContextSettings( config->window.vsync, frameRateLimit,
+										config->window.multisamples,
+										config->window.rendererVersion ) );
 	appWindow = app.getWindow();
 	application = &app;
 	scene = app.getUI();
