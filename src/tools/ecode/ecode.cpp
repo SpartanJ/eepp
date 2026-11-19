@@ -1601,6 +1601,24 @@ bool App::loadKeybindings( bool defaultsOnly ) {
 		getDefaultSearchKeybindings( "document_search" ), forceRebind, getMigrateKeybindings(),
 		mConfig.iniState, false );
 
+	// Resolve the search bar's own shortcuts and unbindings before inheriting editor shortcuts.
+	KeybindingsConfig::Section documentSearch;
+	KeybindingsConfig::readSection( ini, "document_search", documentSearch );
+	UnorderedSet<KeyBindings::Shortcut> searchShortcuts;
+	for ( const auto& entry : mDocumentSearchKeybindings ) {
+		searchShortcuts.insert(
+			KeyBindings::sanitizeShortcut( bindings.getShortcutFromString( entry.first ) ) );
+	}
+	for ( const auto& [expression, command] : mKeybindings ) {
+		if ( ( command != "repeat-find" && command != "find-prev" ) ||
+			 documentSearch.isUnbound( command ) )
+			continue;
+		const auto shortcut =
+			KeyBindings::sanitizeShortcut( bindings.getShortcutFromString( expression ) );
+		if ( searchShortcuts.insert( shortcut ).second )
+			mDocumentSearchKeybindings.emplace( expression, command );
+	}
+
 	KeybindingsHelper::updateKeybindings( ini, "editor_mouse_bindings", mWindow->getInput(),
 										  mMousebindings, mMousebindingsInvert,
 										  UICodeEditor::getDefaultMousebindings(), forceRebind,

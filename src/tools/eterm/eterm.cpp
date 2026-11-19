@@ -340,9 +340,16 @@ void App::requestCloseTab( UITab* tab ) {
 			  "Are you sure you want to close this terminal?\nIt is still running a process." ) );
 	closeDialogWidget = tab->getOwnedWidget()->asType<UIWidget>();
 	closeDialog->setTitle( "eterm" );
+	closeDialog->setCloseShortcut( KEY_ESCAPE );
 	closeDialog->on( Event::OnConfirm, [this]( const Event* ) {
 		if ( closeDialogWidget && tabSplitter->ownedWidgetExists( closeDialogWidget ) )
 			tabSplitter->closeTab( closeDialogWidget, UITabWidget::FocusTabBehavior::Default );
+	} );
+	closeDialog->on( Event::OnDiscard, [this]( const Event* ) {
+		if ( auto* current = tabSplitter->getCurWidget() )
+			current->setFocus();
+		else
+			tabSplitter->focusSomeWidget();
 	} );
 	closeDialog->on( Event::OnClose, [this]( const Event* ) {
 		closeDialog = nullptr;
