@@ -77,7 +77,9 @@ class PaneManager {
 
 	void goForward( bool newTab = false );
 
-	void goUp( bool newTab = false );
+	enum class UpTarget { CurrentTab, BackgroundTab, ForegroundTab };
+
+	void goUp( UpTarget target = UpTarget::CurrentTab );
 
 	void goHome();
 
