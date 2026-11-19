@@ -19,9 +19,18 @@ namespace EE { namespace UI {
 
 namespace {
 
-std::string fileTextureKey( const std::string& path, Float svgScale ) {
-	std::string key( path );
-	FileSystem::filePathRemoveProcessPath( key );
+std::string fileTexturePath( const std::string& name ) {
+	// Layouts also use file://assets/... for paths relative to the working directory.
+	std::string path = String::startsWith( name, "file://" ) ? name.substr( 7 ) : name;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( path.size() >= 3 && path[0] == '/' && String::isLetter( path[1] ) && path[2] == ':' )
+		path.erase( 0, 1 );
+#endif
+	FileSystem::filePathRemoveProcessPath( path );
+	return path;
+}
+
+std::string fileTextureKey( std::string key, Float svgScale ) {
 	if ( svgScale == 1.f )
 		return key;
 	MD5::Context hash;
@@ -124,7 +133,10 @@ bool DrawableResolver::requestFileTexture( const URI& uri,
 	if ( !svg && !Engine::instance()->isSharedGLContextEnabled() )
 		return false;
 	const Float scale = svg ? mSceneNode->getPixelDensity() : 1.f;
-	std::string key = fileTextureKey( path, scale );
+	// Match the synchronous resolver's key. getFSPath() uses backslashes on Windows.
+	const std::string url = uri.toString();
+	std::string key = fileTextureKey(
+		fileTexturePath( String::startsWith( url, "file://" ) ? url : path ), scale );
 	auto scope = mSceneNode->getResourceScope();
 	if ( auto texture = scope->findTexture( key ) ) {
 		callback( std::move( texture ) );
@@ -182,13 +194,7 @@ DrawablePtr DrawableResolver::resolve( const std::string& name, bool firstSearch
 
 	ResourceScope& resourceScope = mSceneNode ? *mSceneNode->getResourceScope() : *mResourceScope;
 	if ( String::startsWith( name, "file://" ) ) {
-		// Layouts also use file://assets/... for paths relative to the working directory.
-		std::string path = name.substr( 7 );
-#if EE_PLATFORM == EE_PLATFORM_WIN
-		if ( path.size() >= 3 && path[0] == '/' && String::isLetter( path[1] ) && path[2] == ':' )
-			path.erase( 0, 1 );
-#endif
-		FileSystem::filePathRemoveProcessPath( path );
+		const std::string path = fileTexturePath( name );
 		const Float scale = isSvgPath( path ) ? PixelDensity::getPixelDensity() : 1.f;
 		auto texture = loadFileTexture( resourceScope, path, fileTextureKey( path, scale ), scale );
 		drawable = texture ? texture->clone() : DrawablePtr{};
