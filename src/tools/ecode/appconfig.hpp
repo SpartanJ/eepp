@@ -10,7 +10,8 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/window/window.hpp>
 
-#include <eterm/terminal/terminaltypes.hpp>
+#include <eterm/terminal/programstatusalerts.hpp>
+#include <eterm/ui/terminalpreferences.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 #include <eepp/thirdparty/nlohmann/json_fwd.hpp>
@@ -266,7 +267,8 @@ class TerminalWorkingDir {
 	}
 };
 
-struct TerminalConfig {
+struct TerminalConfig : eterm::UI::TerminalPreferences {
+
 	std::string shell;
 	std::string shellArgs;
 	std::string colorScheme{ "eterm" };
@@ -275,19 +277,13 @@ struct TerminalConfig {
 		NewTerminalOrientation::Horizontal };
 	TerminalWorkingDir::Mode workingDir{ TerminalWorkingDir::ProjectRoot };
 	std::string workingDirOther;
-	Uint64 scrollback{ 10000 };
 	bool unsupportedOSWarnDisabled{ false };
 	bool closeTerminalTabOnExit{ false };
 	bool warnBeforeClosingTab{ true };
 	bool exclusiveMode{ false };
 	bool inheritWorkingDirectory{ true };
-	bool enableOsc8Hyperlinks{ true };
-	bool allowOsc52ClipboardWrite{ true };
-	bool graphemeClustering{ true };
-	bool detectLinks{ true };
-	TerminalCursorMode cursorStyle{ TerminalCursorMode::SteadyUnderline };
-	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
-	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };
+	bool useFrameBuffer{ false };
+	ProgramStatusPreferences programStatus;
 };
 
 struct WorkspaceConfig {

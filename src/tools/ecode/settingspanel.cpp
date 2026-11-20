@@ -9,9 +9,12 @@
 #include "settingsdocument.hpp"
 #include "settingspage.hpp"
 #include "uitreeviewfs.hpp"
+#include <eepp/system/filesystem.hpp>
 #include <eepp/ui/tools/fileassociationssettings.hpp>
 #include <eepp/ui/tools/keybindingsconfig.hpp>
 #include <eepp/ui/tools/uikeybindingseditor.hpp>
+#include <eepp/ui/uifiledialog.hpp>
+#include <eterm/ui/terminalsettings.hpp>
 #include <limits>
 
 namespace ecode {
@@ -48,18 +51,10 @@ void SettingsPanel::show( Scope scope, const std::string& category ) {
 
 void SettingsPanel::create( Scope scope ) {
 	auto& state = this->state( scope );
-	UIWindow::StyleConfig config{ UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL };
-	state.window = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, config );
-	state.window->setId( scope == Scope::User ? "settings_panel" : "project_settings_panel" );
-	state.window->setTitle( scope == Scope::User
-								? mApp->i18n( "settings", "Settings" )
-								: mApp->i18n( "project_settings", "Project Settings" ) );
-	const auto sceneSize = mApp->getUISceneNode()->getPixelsSize();
-	state.window->setPixelsSize(
-		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
-		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
-	state.window->setStyleSheetProperty(
-		StyleSheetProperty( "window-min-size", "min(640dp,90vw) min(440dp,80vh)" ) );
+	state.window = UISettingsPanel::NewWindow(
+		scope == Scope::User ? mApp->i18n( "settings", "Settings" )
+							 : mApp->i18n( "project_settings", "Project Settings" ),
+		scope == Scope::User ? "settings_panel" : "project_settings_panel" );
 	state.window->setKeyBindingCommand( "closeWindow", [window = state.window, this] {
 		if ( !SceneManager::instance()->isShuttingDown() ) {
 			window->closeWindow();
@@ -1378,38 +1373,29 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 
 	addCategory( panel, "terminal.behavior", mApp->i18n( "terminal", "Terminal" ),
 				 mApp->i18n( "behavior", "Behavior" ) );
-	addBool( panel,
-			 { "enableOsc8Hyperlinks", "terminal.behavior",
-			   mApp->i18n( "enable_osc8_hyperlinks", "Enable Hyperlinks (OSC 8)" ),
-			   mApp->i18n( "enable_osc8_hyperlinks_desc",
-						   "Allow terminal programs to attach clickable links to text." ) },
-			 &mApp->termConfig().enableOsc8Hyperlinks, [this]( bool value ) {
-				 mApp->getTerminalManager()->forEachTerminal( [value]( UITerminal* terminal ) {
-					 terminal->getTerm()->setOsc8HyperlinksEnabled( value );
-				 } );
-			 } );
-	addBool( panel,
-			 { "detectLinks", "terminal.behavior",
-			   mApp->i18n( "detect_links", "Detect Links and Paths" ),
-			   mApp->i18n( "detect_links_desc",
-						   "Underline URLs and file paths in the text while the default modifier "
-						   "is held, and open them on click." ) },
-			 &mApp->termConfig().detectLinks, [this]( bool value ) {
-				 mApp->getTerminalManager()->forEachTerminal( [value]( UITerminal* terminal ) {
-					 terminal->getTerm()->setLinkDetectionEnabled( value );
-				 } );
-			 } );
-	addBool( panel,
-			 { "graphemeClustering", "terminal.behavior",
-			   mApp->i18n( "grapheme_clustering", "Grapheme Clustering" ),
-			   mApp->i18n( "grapheme_clustering_desc",
-						   "Join emoji sequences, flags and combining characters into single "
-						   "characters (DEC mode 2027)." ) },
-			 &mApp->termConfig().graphemeClustering, [this]( bool value ) {
-				 mApp->getTerminalManager()->forEachTerminal( [value]( UITerminal* terminal ) {
-					 terminal->getTerm()->setGraphemeClusteringEnabled( value );
-				 } );
-			 } );
+	auto* terminalManager = mApp->getTerminalManager();
+	auto& terminalPreferences = mApp->termConfig();
+	TerminalSettings terminalSettings(
+		panel.panel,
+		[terminalManager]( const auto& visit ) { terminalManager->forEachTerminal( visit ); },
+		[] {} );
+	terminalSettings.addShell( terminalPreferences.shell, terminalPreferences.shellArgs );
+	terminalSettings.addWorkingDirectory(
+		{ { mApp->i18n( "project_root_directory", "Project Root Directory" ),
+			mApp->i18n( "current_file_directory", "Current File Directory" ) },
+		  terminalPreferences.workingDirOther,
+		  [this] { return mApp->getDefaultFileDialogFolder(); },
+		  static_cast<size_t>( terminalPreferences.workingDir ),
+		  mApp->getConfig().ui.nativeFileDialogs ? Uint32( UIFileDialog::UseNativeFileDialog ) : 0,
+		  mApp->getConfig().editor.singleClickNavigation },
+		[&terminalPreferences]( size_t selected, std::string path ) {
+			terminalPreferences.workingDir = static_cast<TerminalWorkingDir::Mode>( selected );
+			terminalPreferences.workingDirOther = std::move( path );
+			return true;
+		} );
+	terminalSettings.addBehavior( terminalPreferences );
+	terminalSettings.addProgramStatus( terminalPreferences.programStatus,
+									   terminalManager->programStatus() );
 	addBool(
 		panel,
 		{ "inheritWorkingDirectory", "terminal.behavior",
@@ -1418,18 +1404,6 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 			  "inherit_working_directory_desc",
 			  "Start new tabs and splits in the source terminal's reported local directory." ) },
 		&mApp->termConfig().inheritWorkingDirectory );
-	addBool( panel,
-			 { "allowOsc52ClipboardWrite", "terminal.behavior",
-			   mApp->i18n( "allow_osc52_clipboard_write",
-						   "Allow Programs to Write to Clipboard (OSC 52)" ),
-			   mApp->i18n( "allow_osc52_clipboard_write_desc",
-						   "Allow terminal programs, including programs over SSH, to change the "
-						   "local clipboard." ) },
-			 &mApp->termConfig().allowOsc52ClipboardWrite, [this]( bool value ) {
-				 mApp->getTerminalManager()->forEachTerminal( [value]( UITerminal* terminal ) {
-					 terminal->getTerm()->setAllowOsc52ClipboardWrite( value );
-				 } );
-			 } );
 	addChoice(
 		panel,
 		{ "newTerminalOrientation", "terminal.behavior",
@@ -1459,22 +1433,16 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 			mApp->getConfig().term.newTerminalOrientation =
 				orientations[std::min( selected, size_t{ 3 } )];
 		} );
-	addBool( panel,
-			 { "terminalExclusiveMode", "terminal.behavior",
-			   mApp->i18n( "enable_exclusive_mode_by_default", "Enable Exclusive Mode by Default" ),
-			   mApp->i18n( "enable_exclusive_mode_by_default_tooltip",
-						   "Disable global keybindings in newly created terminals." ) },
-			 &mApp->getConfig().term.exclusiveMode );
+	terminalSettings.addExclusiveMode( terminalPreferences.exclusiveMode );
 	addBool( panel,
 			 { "closeTerminalTabOnExit", "terminal.behavior",
 			   mApp->i18n( "close_terminal_tab_on_exit", "Close Terminal Tab on Exit" ),
 			   mApp->i18n( "close_terminal_tab_on_exit_tooltip",
 						   "Close a terminal tab when its main process exits." ) },
-			 &mApp->getConfig().term.closeTerminalTabOnExit, [this]( bool value ) {
-				 mApp->getSplitter()->forEachWidgetType(
-					 UI_TYPE_TERMINAL, [value]( UIWidget* widget ) {
-						 widget->asType<UITerminal>()->getTerm()->setKeepAlive( !value );
-					 } );
+			 &terminalPreferences.closeTerminalTabOnExit, [terminalManager]( bool value ) {
+				 terminalManager->forEachTerminal( [value]( UITerminal* terminal ) {
+					 terminal->getTerm()->setKeepAlive( !value );
+				 } );
 			 } );
 	addBool( panel,
 			 { "warnBeforeClosingTerminal", "terminal.behavior",
@@ -1482,139 +1450,20 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 			   mApp->i18n( "warn_before_closing_tab_tooltip",
 						   "Ask before closing a terminal while a program is running." ) },
 			 &mApp->getConfig().term.warnBeforeClosingTab );
-	addAction( panel,
-			   { "terminalShell", "terminal.behavior",
-				 mApp->i18n( "configure_terminal_shell", "Configure Terminal Shell" ),
-				 mApp->i18n( "configure_terminal_shell_desc",
-							 "Set the shell executable and command-line arguments." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->runCommand( "configure-terminal-shell" ); } );
-	addInteger(
-		panel,
-		{ "terminalScrollback", "terminal.behavior",
-		  mApp->i18n( "terminal_scrollback", "Terminal Scrollback" ),
-		  mApp->i18n( "configure_terminal_scrollback_desc",
-					  "Set the number of terminal history lines retained." ) },
-		0, std::numeric_limits<int>::max(),
-		[this] {
-			return static_cast<int>( std::min<Uint64>( mApp->getConfig().term.scrollback,
-													   std::numeric_limits<int>::max() ) );
-		},
-		[this]( int value ) { mApp->getConfig().term.scrollback = static_cast<Uint64>( value ); } );
-	addAction( panel,
-			   { "terminalWorkingDirectory", "terminal.behavior",
-				 mApp->i18n( "configure_terminal_working_dir",
-							 "Configure Terminal Default Working Directory" ),
-				 mApp->i18n( "configure_terminal_working_dir_desc",
-							 "Choose the working directory used by new terminals." ) },
-			   mApp->i18n( "configure", "Configure..." ),
-			   [this] { mApp->runCommand( "configure-terminal-working-dir" ); } );
+	terminalSettings.addFrameBuffer( terminalPreferences.useFrameBuffer );
 
 	addCategory( panel, "terminal.appearance", mApp->i18n( "terminal", "Terminal" ),
 				 mApp->i18n( "appearance", "Appearance" ) );
-	std::vector<String> terminalSchemeNames;
-	std::vector<std::string> terminalSchemeIds;
-	for ( const auto& [name, scheme] : mApp->getTerminalManager()->getTerminalColorSchemes() ) {
-		terminalSchemeNames.emplace_back( name );
-		terminalSchemeIds.emplace_back( name );
-	}
-	auto selectedTerminalScheme =
-		std::find( terminalSchemeNames.begin(), terminalSchemeNames.end(),
-				   String( mApp->getTerminalManager()->getTerminalCurrentColorScheme() ) );
-	const size_t selectedTerminalSchemeIndex =
-		selectedTerminalScheme == terminalSchemeNames.end()
-			? 0
-			: static_cast<size_t>( selectedTerminalScheme - terminalSchemeNames.begin() );
-	if ( !terminalSchemeNames.empty() )
-		addChoice(
-			panel,
-			{ "terminalColorScheme", "terminal.appearance",
-			  mApp->i18n( "terminal_color_scheme", "Terminal Color Scheme" ),
-			  mApp->i18n( "terminal_color_scheme_desc",
-						  "Choose the colors used by integrated terminals." ) },
-			terminalSchemeNames,
-			[selectedTerminalSchemeIndex] { return selectedTerminalSchemeIndex; },
-			[this, terminalSchemeIds = std::move( terminalSchemeIds )]( size_t selected ) {
-				mApp->getTerminalManager()->setTerminalColorScheme(
-					terminalSchemeIds[std::min( selected, terminalSchemeIds.size() - 1 )] );
-			} );
-	addChoice(
-		panel,
-		{ "terminalScrollbarType", "terminal.appearance",
-		  mApp->i18n( "scrollbar_type", "Scrollbar Type" ),
-		  mApp->i18n( "scrollbar_type_desc",
-					  "Place the terminal scrollbar over or outside its content." ) },
-		{ mApp->i18n( "overlay", "Overlay" ), mApp->i18n( "outside", "Outside" ) },
-		[this] { return mApp->getConfig().term.scrollBarType == ScrollViewType::Overlay ? 0 : 1; },
-		[this]( size_t selected ) {
-			auto value = selected == 0 ? ScrollViewType::Overlay : ScrollViewType::Outside;
-			mApp->getConfig().term.scrollBarType = value;
-			mApp->getSplitter()->forEachWidgetType( UI_TYPE_TERMINAL, [value]( UIWidget* widget ) {
-				widget->asType<UITerminal>()->setScrollViewType( value );
-			} );
+	terminalSettings.addColorScheme(
+		terminalManager->getTerminalColorSchemes(),
+		[terminalManager]() -> const std::string& {
+			return terminalManager->getTerminalCurrentColorScheme();
 		},
-		{ mApp->i18n( "scroll_overlay_tooltip", "Scrollbar appears over content." ),
-		  mApp->i18n( "scroll_outside_tooltip",
-					  "Scrollbar has its own space, never covers content." ) } );
-	addChoice(
-		panel,
-		{ "terminalCursorStyle", "terminal.appearance",
-		  mApp->i18n( "cursor_style", "Cursor Style" ),
-		  mApp->i18n( "cursor_style_desc", "Choose the terminal cursor shape and animation." ) },
-		{ mApp->i18n( "blinking_block", "Blinking Block" ),
-		  mApp->i18n( "steady_block", "Steady Block" ),
-		  mApp->i18n( "blink_underline", "Blink Underline" ),
-		  mApp->i18n( "steady_underline", "Steady Underline" ),
-		  mApp->i18n( "blink_bar", "Blink Bar" ), mApp->i18n( "steady_bar", "Steady Bar" ) },
-		[this] {
-			static constexpr TerminalCursorMode modes[] = {
-				TerminalCursorMode::BlinkingBlock,	TerminalCursorMode::SteadyBlock,
-				TerminalCursorMode::BlinkUnderline, TerminalCursorMode::SteadyUnderline,
-				TerminalCursorMode::BlinkBar,		TerminalCursorMode::SteadyBar };
-			auto found = std::find( std::begin( modes ), std::end( modes ),
-									mApp->getConfig().term.cursorStyle );
-			return found == std::end( modes ) ? size_t{ 0 } : size_t( found - std::begin( modes ) );
+		[terminalManager]( const std::string& name ) {
+			terminalManager->setTerminalColorScheme( name );
 		},
-		[this]( size_t selected ) {
-			static constexpr TerminalCursorMode modes[] = {
-				TerminalCursorMode::BlinkingBlock,	TerminalCursorMode::SteadyBlock,
-				TerminalCursorMode::BlinkUnderline, TerminalCursorMode::SteadyUnderline,
-				TerminalCursorMode::BlinkBar,		TerminalCursorMode::SteadyBar };
-			auto value = modes[std::min( selected, size_t{ 5 } )];
-			mApp->getConfig().term.cursorStyle = value;
-			mApp->getSplitter()->forEachWidgetType( UI_TYPE_TERMINAL, [value]( UIWidget* widget ) {
-				widget->asType<UITerminal>()->getTerm()->setCursorMode( value );
-			} );
-		} );
-	addChoice(
-		panel,
-		{ "terminalScrollbarMode", "terminal.appearance",
-		  mApp->i18n( "scrollbar_mode", "Scrollbar Mode" ),
-		  mApp->i18n( "scrollbar_mode_desc", "Control when the terminal scrollbar is visible." ) },
-		{ mApp->i18n( "auto", "Auto" ), mApp->i18n( "always_visible", "Always Visible" ),
-		  mApp->i18n( "always_hidden", "Always Hidden" ) },
-		[this] {
-			return mApp->getConfig().term.scrollBarMode == ScrollBarMode::Auto
-					   ? 0
-					   : ( mApp->getConfig().term.scrollBarMode == ScrollBarMode::AlwaysOn ? 1
-																						   : 2 );
-		},
-		[this]( size_t selected ) {
-			auto value = selected == 0 ? ScrollBarMode::Auto
-									   : ( selected == 1 ? ScrollBarMode::AlwaysOn
-														 : ScrollBarMode::AlwaysOff );
-			mApp->getConfig().term.scrollBarMode = value;
-			mApp->getSplitter()->forEachWidgetType( UI_TYPE_TERMINAL, [value]( UIWidget* widget ) {
-				widget->asType<UITerminal>()->setVerticalScrollMode( value );
-			} );
-		},
-		{ mApp->i18n( "scrollbar_mode_auto_tooltip",
-					  "With an overlay scrollbar, show it when the mouse moves over the terminal. "
-					  "With an outside scrollbar, show it when there is a scrollable area." ),
-		  mApp->i18n( "scrollbar_mode_always_visible_tooltip",
-					  "Keep the terminal scrollbar visible." ),
-		  mApp->i18n( "scrollbar_mode_always_hidden_tooltip",
-					  "Keep the terminal scrollbar hidden." ) } );
+		false );
+	terminalSettings.addAppearance( terminalPreferences );
 }
 
 void SettingsPanel::addPluginSettings( PanelState& panel ) {

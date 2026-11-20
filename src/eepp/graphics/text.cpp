@@ -1271,6 +1271,18 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 				i = j;
 			}
 		}
+		if ( caretCluster && !hasExactCluster && index < clusterEnd ) {
+			// A hard line break ends the cluster and uses the preceding glyph's trailing edge.
+			const auto cluster = string.view().substr( clusterStart, clusterEnd - clusterStart );
+			clusterEnd =
+				clusterStart + std::min( cluster.size(), cluster.find_first_of( U"\r\n" ) );
+			if ( index == clusterEnd ) {
+				const Float x = caretCluster->direction == TextDirection::RightToLeft
+									? clusterLeft
+									: clusterRight;
+				return Vector2f{ x, caretCluster->position.y + initialOffset.y }.trunc();
+			}
+		}
 		if ( ligatureCaretMode == LigatureCaretMode::Interpolate && caretCluster &&
 			 !hasExactCluster && index < clusterEnd && string.isGraphemeBoundary( index ) ) {
 			std::size_t boundaryCount = 0;

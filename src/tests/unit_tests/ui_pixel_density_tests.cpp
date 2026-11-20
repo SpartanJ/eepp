@@ -1071,11 +1071,7 @@ UTEST( UISceneDensity, WindowViewportMinimumResolvesBeforeDensitySizeEnforcement
 	scene->setPixelDensity( 1.f );
 	scene->setStyleSheet( "" );
 	auto context = scene->makeCurrent();
-	auto* window = UIWindow::New();
-	window->setParent( scene->getRoot() );
-	window->setStyleSheetProperty(
-		StyleSheetProperty( "window-min-size", "min(640dp,90vw) min(440dp,80vh)" ) );
-	window->setPixelsSize( 700, 500 );
+	auto* window = UISettingsPanel::NewWindow( "Settings" );
 	for ( Float density : { 1.f, 2.f, 1.25f, 1.f } ) {
 		scene->setPixelDensity( density );
 		for ( int i = 0; i < 4; ++i )

@@ -1,0 +1,41 @@
+name: Save compiler cache
+description: Publish new compiler results from successful default-branch builds and prune old snapshots
+runs:
+  using: composite
+  steps:
+    - name: Check for new compiler results
+      id: changes
+      if: >-
+        github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+        (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      shell: bash
+      run: |
+        if [[ "$EEPP_CCACHE_IN_VM" == true ]]; then
+          stats=.ci-metrics/ccache-stats.tsv
+        else
+          stats="$RUNNER_TEMP/eepp-ccache-stats.tsv"
+          ccache --print-stats > "$stats"
+        fi
+        # Setup zeros the counters after restoring. Hits alone do not add results.
+        if [[ -f "$stats" ]] && awk '$1 == "cache_miss" && $2 > 0 { changed = 1 } END { exit !changed }' "$stats"; then
+          echo 'save=true' >> "$GITHUB_OUTPUT"
+        fi
+    - name: Save compiler results
+      if: steps.changes.outputs.save == 'true'
+      uses: actions/cache/save@v5
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: ${{ env.EEPP_CCACHE_KEY }}
+    - name: Prune superseded compiler caches
+      if: steps.changes.outputs.save == 'true'
+      uses: actions/github-script@v8
+      env:
+        CACHE_ACTION_PATH: ${{ github.action_path }}
+      with:
+        script: |
+          const prune = require(`${process.env.CACHE_ACTION_PATH}/prune.js`);
+          await prune({ github, context, core }, {
+            prefix: process.env.EEPP_CCACHE_PREFIX,
+            key: process.env.EEPP_CCACHE_KEY,
+            legacyPrefix: `ccache-v1-${process.env.EEPP_CCACHE_VARIANT}-`,
+          });

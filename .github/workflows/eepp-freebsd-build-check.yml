@@ -3,6 +3,7 @@ name: FreeBSD
 on: [push, pull_request, workflow_dispatch]
 
 permissions:
+  actions: write
   contents: write
 
 jobs:
@@ -26,6 +27,7 @@ jobs:
       uses: ./.github/actions/setup-compiler-cache
       with:
         key: freebsd-14.4-x86_64-sdl3-sdk
+        max-size: 1500M
         vm: 'true'
     - name: Build all targets and package SDK
       uses: vmactions/freebsd-vm@v1
@@ -38,18 +40,18 @@ jobs:
         # bsdtar cannot read SDK symlinks reliably through the SSHFS mount.
         # Build and package on the VM's native filesystem, then copy results back.
         sync: scp
-        envs: SDK_VERSION CCACHE_DIR CCACHE_BASEDIR CCACHE_COMPILERCHECK CCACHE_MAXSIZE
+        envs: SDK_VERSION CCACHE_DIR CCACHE_BASEDIR CCACHE_COMPILERCHECK CCACHE_MAXSIZE CCACHE_COMPRESS CCACHE_COMPRESSLEVEL CCACHE_NOHARDLINK CCACHE_NOFILECLONE
         prepare: |
           set -eu
           pkg upgrade -y
-          pkg install -y bash git sdl3 premake5 gmake ccache
+          pkg install -y bash git sdl3 premake5 gmake ccache4
         run: |
           set -eu
           mkdir -p build-logs
           bash -e -o pipefail <<'BUILD'
           source projects/scripts/ci/setup-ccache.sh
           mkdir -p .ci-metrics
-          trap 'ccache --show-stats > .ci-metrics/ccache.txt' EXIT
+          trap 'ccache --show-stats > .ci-metrics/ccache.txt; ccache --print-stats > .ci-metrics/ccache-stats.tsv' EXIT
           {
             uname -a
             premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 gmake
@@ -92,6 +94,9 @@ jobs:
         name: freebsd-build-logs
         path: build-logs/freebsd.log
 
+    - name: Save compiler cache
+      continue-on-error: true
+      uses: ./.github/actions/save-compiler-cache
     - name: Report build metrics
       if: always()
       uses: ./.github/actions/report-build-metrics

@@ -1,4 +1,3 @@
-#include "../../tools/eterm/programstatusalerts.hpp"
 #include "utest.hpp"
 #include <algorithm>
 #include <atomic>
@@ -29,6 +28,7 @@
 #include <eterm/system/processfactory.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
+#include <eterm/terminal/programstatusalerts.hpp>
 #include <eterm/terminal/pseudoterminal.hpp>
 #include <eterm/terminal/ptyoutputqueue.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
@@ -6573,49 +6573,46 @@ UTEST( eterm_program_status, alert_transitions_ignore_refreshes_and_distinguish_
 	ProgramStatusTracker tracker;
 	tracker.handleReport( "state=working:progress=10" );
 	auto previous = tracker.takeSnapshot();
-	EXPECT_FALSE(
-		eterm::ProgramStatusAlerts::isTransition( nullptr, previous->presentation, false ) );
-	EXPECT_TRUE(
-		eterm::ProgramStatusAlerts::isTransition( nullptr, previous->presentation, true ) );
+	EXPECT_FALSE( ProgramStatusAlerts::isTransition( nullptr, previous->presentation, false ) );
+	EXPECT_TRUE( ProgramStatusAlerts::isTransition( nullptr, previous->presentation, true ) );
 	tracker.handleReport( "state=working:progress=20" );
 	auto next = tracker.takeSnapshot();
-	EXPECT_FALSE( eterm::ProgramStatusAlerts::isTransition( &previous->presentation,
-															next->presentation, true ) );
+	EXPECT_FALSE(
+		ProgramStatusAlerts::isTransition( &previous->presentation, next->presentation, true ) );
 	previous = next;
 	tracker.handleReport( "state=blocked:kind=permission:progress=20" );
 	next = tracker.takeSnapshot();
-	EXPECT_TRUE( eterm::ProgramStatusAlerts::isTransition( &previous->presentation,
-														   next->presentation, false ) );
+	EXPECT_TRUE(
+		ProgramStatusAlerts::isTransition( &previous->presentation, next->presentation, false ) );
 	previous = next;
 	tracker.handleReport( "state=blocked:kind=permission:progress=30:msg=QQ==" );
 	next = tracker.takeSnapshot();
-	EXPECT_FALSE( eterm::ProgramStatusAlerts::isTransition( &previous->presentation,
-															next->presentation, false ) );
+	EXPECT_FALSE(
+		ProgramStatusAlerts::isTransition( &previous->presentation, next->presentation, false ) );
 	previous = next;
 	tracker.handleReport( "state=done" );
 	next = tracker.takeSnapshot();
-	EXPECT_TRUE( eterm::ProgramStatusAlerts::isTransition( &previous->presentation,
-														   next->presentation, false ) );
+	EXPECT_TRUE(
+		ProgramStatusAlerts::isTransition( &previous->presentation, next->presentation, false ) );
 	previous = next;
 	tracker.handleReport( "state=done" );
 	next = tracker.takeSnapshot();
-	EXPECT_FALSE( eterm::ProgramStatusAlerts::isTransition( &previous->presentation,
-															next->presentation, false ) );
+	EXPECT_FALSE(
+		ProgramStatusAlerts::isTransition( &previous->presentation, next->presentation, false ) );
 	tracker.handleReport( "state=working" );
 	tracker.handleReport( "state=done" );
 	next = tracker.takeSnapshot();
-	EXPECT_TRUE( eterm::ProgramStatusAlerts::isTransition( &previous->presentation,
-														   next->presentation, false ) );
+	EXPECT_TRUE(
+		ProgramStatusAlerts::isTransition( &previous->presentation, next->presentation, false ) );
 	tracker.handleReport( "state=clear" );
 	next = tracker.takeSnapshot();
-	EXPECT_FALSE( eterm::ProgramStatusAlerts::isTransition( &previous->presentation,
-															next->presentation, true ) );
+	EXPECT_FALSE(
+		ProgramStatusAlerts::isTransition( &previous->presentation, next->presentation, true ) );
 	tracker.handleLegacyProgress( "2;10" );
 	previous = tracker.takeSnapshot();
-	EXPECT_TRUE(
-		eterm::ProgramStatusAlerts::isTransition( nullptr, previous->presentation, false ) );
+	EXPECT_TRUE( ProgramStatusAlerts::isTransition( nullptr, previous->presentation, false ) );
 	tracker.handleLegacyProgress( "2;20" );
 	next = tracker.takeSnapshot();
-	EXPECT_FALSE( eterm::ProgramStatusAlerts::isTransition( &previous->presentation,
-															next->presentation, false ) );
+	EXPECT_FALSE(
+		ProgramStatusAlerts::isTransition( &previous->presentation, next->presentation, false ) );
 }

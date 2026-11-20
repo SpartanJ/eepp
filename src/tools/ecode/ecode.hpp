@@ -359,18 +359,13 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		t.setCommand( "tree-view-configure-ignore-files",
 					  [this] { treeViewConfigureIgnoreFiles(); } );
 		t.setCommand( "check-languages-health", [this] { checkLanguagesHealth(); } );
-		t.setCommand( "configure-terminal-shell", [this] {
-			if ( mTerminalManager )
-				mTerminalManager->configureTerminalShell();
-		} );
+		t.setCommand( "configure-terminal-shell", [this] { openSettings( "terminal.behavior" ); } );
 		t.setCommand( "configure-terminal-scrollback", [this] {
 			if ( mTerminalManager )
 				mTerminalManager->configureTerminalScrollback();
 		} );
-		t.setCommand( "configure-terminal-working-dir", [this] {
-			if ( mTerminalManager )
-				mTerminalManager->configureTerminalWorkingDir();
-		} );
+		t.setCommand( "configure-terminal-working-dir",
+					  [this] { openSettings( "terminal.behavior" ); } );
 		t.setCommand( "check-for-updates", [this] { mSettingsActions->checkForUpdates( false ); } );
 		t.setCommand( "create-new-window", [this] { openInNewWindow(); } );
 		t.setCommand( "create-new-welcome-tab", [this] { createWelcomeTab(); } );

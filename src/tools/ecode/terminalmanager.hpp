@@ -3,6 +3,7 @@
 
 #include <eepp/ui/splitdirection.hpp>
 #include <eepp/ui/uitabwidget.hpp>
+#include <eterm/ui/programstatusui.hpp>
 #include <eterm/ui/uiterminal.hpp>
 #include <functional>
 
@@ -36,6 +37,10 @@ class TerminalManager {
 
 	UITerminal* getCurrentTerminal() const;
 
+	void connectTerminal( UITerminal* terminal, const char* defaultIcon );
+
+	ProgramStatusUI& programStatus() { return mProgramStatus; }
+
 	std::string getWorkingDir( UITerminal* source ) const;
 
 	UITerminal* createTerminalSplit( SplitDirection direction );
@@ -66,11 +71,7 @@ class TerminalManager {
 
 	void setUseFrameBuffer( bool useFrameBuffer );
 
-	void configureTerminalShell();
-
 	void configureTerminalScrollback();
-
-	void configureTerminalWorkingDir();
 
 	std::string getSelectedWorkingDir() const;
 
@@ -90,6 +91,7 @@ class TerminalManager {
 
 	Float mColorSchemeMenusCreatedWithHeight{ 0 };
 	std::vector<UIPopUpMenu*> mColorSchemeMenus;
+	ProgramStatusUI mProgramStatus{ "ecode" };
 	bool mUseFrameBuffer{ false };
 };
 

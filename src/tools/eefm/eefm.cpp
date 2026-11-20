@@ -828,7 +828,9 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	onClick( "forward", [this] { mPaneManager->goForward(); } );
 	onClick( "forward", [this] { mPaneManager->goForward( true ); }, EE_BUTTON_MIDDLE );
 	onClick( "up", [this] { mPaneManager->goUp(); } );
-	onClick( "up", [this] { mPaneManager->goUp( true ); }, EE_BUTTON_MIDDLE );
+	onClick(
+		"up", [this] { mPaneManager->goUp( PaneManager::UpTarget::BackgroundTab ); },
+		EE_BUTTON_MIDDLE );
 	onClick( "refresh", [this] {
 		if ( auto* tab = mPaneManager->currentTab() )
 			tab->model->refresh();
@@ -1563,6 +1565,9 @@ void App::registerShortcuts() {
 	mUI->setKeyBindingCommand( "go-up", [this] { mPaneManager->goUp(); } );
 	mUI->setKeyBindingCommand( "go-home", [this] { mPaneManager->goHome(); } );
 	mUI->setKeyBindingCommand( "go-up-file", fileCommand( [this] { mPaneManager->goUp(); } ) );
+	mUI->setKeyBindingCommand( "go-up-new-tab", fileCommand( [this] {
+								   mPaneManager->goUp( PaneManager::UpTarget::ForegroundTab );
+							   } ) );
 	mUI->setKeyBindingCommand(
 		"new-folder", onTab( [this]( FileTab* tab ) { mFileOperations->newFolder( tab ); } ) );
 	mUI->setKeyBindingCommand( "copy",
@@ -1662,9 +1667,11 @@ KeyBindings::ShortcutMap App::getDefaultKeybindings() const {
 		{ "mod+q", "quit" },
 		{ "mod+shift+f11", "debug-widget-tree-view" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
+		{ "mod+shift+backspace", "go-up-new-tab" },
 		{ "mod+backspace", "trash" },
 		{ "mod+alt+backspace", "delete" },
 #else
+		{ "mod+backspace", "go-up-new-tab" },
 		{ "delete", "trash" },
 		{ "shift+delete", "delete" },
 #endif

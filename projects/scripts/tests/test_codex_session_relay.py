@@ -85,7 +85,8 @@ def mock_client():
         assert header(sock).split(b'\r\n')[0].split()[1]==b'101'
         return sock
     first=connect()
-    value=json.dumps({'id':1,'method':'thread/resume','params':{'threadId':SESSION}}).encode()
+    value=json.dumps({'id':1,'method':'thread/resume','params':{
+        'threadId':SESSION,'cwd':os.environ['TEST_RECORD_DIRECTORY']}}).encode()
     # Exercise fragmented, masked requests with an interleaved control frame.
     first.sendall(frame(value[:11],True,final=False)+frame(b'ping',True,opcode=9)+frame(value[11:],True,opcode=0))
     assert message(first)['result']['thread']['id']==SESSION
@@ -207,6 +208,31 @@ def mock_client():
     first.close();second.close()
 
 
+def cwd_client():
+    """Check that a wrong-directory response never becomes a usable selection."""
+    from urllib.parse import urlparse
+    args=sys.argv[1:];remote=urlparse(args[1])
+    sock=socket.create_connection((remote.hostname,remote.port),timeout=5)
+    sock.sendall(b'GET / HTTP/1.1\r\nHost: localhost\r\nUpgrade: websocket\r\nAuthorization: Bearer '+
+                 os.environ['ETERM_CODEX_RELAY_TOKEN'].encode()+b'\r\n\r\n')
+    header(sock)
+    params={'threadId':SESSION}
+    if 'TEST_REQUEST_CWD' in os.environ: params['cwd']=os.environ['TEST_REQUEST_CWD']
+    sock.sendall(frame({'id':1,'method':'thread/resume','params':params},True))
+    active=Path(os.environ['TEST_RECORD_DIRECTORY'])/'active.json'
+    if os.environ.get('TEST_REJECT_CWD'):
+        try: message(sock)
+        except (EOFError,OSError): pass
+        else: raise AssertionError('Wrong-directory resume was forwarded to the client')
+        assert active.read_text()==''
+        print('REJECTED',flush=True)
+    else:
+        assert message(sock)['result']['thread']['id']==SESSION
+        assert json.loads(active.read_text())['cwd']==os.environ['TEST_EFFECTIVE_CWD']
+        print('READY',flush=True)
+    sock.close()
+
+
 @unittest.skipUnless(BINARY.exists() and os.name!='nt' and hasattr(socket,'AF_UNIX'),
                      'Native host fixture needs a built eterm and POSIX executable scripts')
 class CodexRelay(unittest.TestCase):
@@ -299,6 +325,77 @@ class CodexRelay(unittest.TestCase):
     def test_stale_default_socket_starts_daemon_and_retries_once(self):
         self.transport(False,stale=True)
 
+    def test_resume_checks_effective_cwd_before_forwarding_the_response(self):
+        for case in ('effective','ignored','omitted','conflicting','invalid','oversized',
+                     'legacy','symlink','override'):
+            with self.subTest(case=case),tempfile.TemporaryDirectory(dir='/tmp') as temp:
+                root=Path(temp).resolve();env=self.make_cli(root)
+                (root/'codex').write_text('#!'+sys.executable+
+                    '\nfrom test_codex_session_relay import cwd_client\ncwd_client()\n')
+                project=root/'project';project.mkdir();other=root/'other';other.mkdir()
+                alias=root/'alias';alias.symlink_to(project,target_is_directory=True)
+                effective=other if case in ('ignored','omitted','conflicting','override') else project
+                if case=='symlink': effective=alias
+                requested=other if case in ('conflicting','override') else project
+                reject=case in ('ignored','omitted','conflicting','invalid','oversized')
+                env.update(TEST_REQUEST_CWD=str(requested),TEST_EFFECTIVE_CWD=str(effective))
+                if case=='omitted': env.pop('TEST_REQUEST_CWD')
+                if reject: env['TEST_REJECT_CWD']='1'
+                (root/'transcript').write_text('fixture')
+                upstream=root/'server.sock';env['ETERM_CODEX_SOCKET']=str(upstream)
+                server=socket.socket(socket.AF_UNIX);server.bind(str(upstream));server.listen(4)
+                server.settimeout(5);failures=[]
+                def serve():
+                    try:
+                        while True:
+                            sock,_=server.accept()
+                            with sock:
+                                try: header(sock)
+                                except EOFError: continue # Closed endpoint probe.
+                                sock.sendall(b'HTTP/1.1 101\r\nUpgrade: websocket\r\n\r\n')
+                                request=message(sock)
+                                result={'thread':{'id':SESSION,'cwd':str(project),
+                                                 'path':str(root/'transcript')}}
+                                if case!='legacy':
+                                    result['cwd']=None if case=='invalid' else str(effective)
+                                if case=='effective': result['thread']['cwd']=str(other)
+                                if case=='oversized': result['padding']='x'*(8*1024*1024)
+                                data=json.dumps({'id':request['id'],'result':result}).encode()
+                                # A response may be partly forwarded before its final fragment
+                                # reveals a mismatch. The final fragment must be withheld.
+                                sock.sendall(frame(data[:15],final=False))
+                                time.sleep(.02)
+                                try: sock.sendall(frame(data[15:],opcode=0))
+                                except (BrokenPipeError,ConnectionResetError):
+                                    if case!='oversized': raise
+                                try:
+                                    while sock.recv(4096): pass
+                                except (ConnectionResetError,socket.timeout): pass
+                                return
+                    except Exception as error: failures.append(error)
+                worker=threading.Thread(target=serve);worker.start()
+                record=descriptor(root,mode='daemon');record.update(cwd=str(project),socket=str(upstream))
+                env['ETERM_RESUME_SESSION']=json.dumps(record)
+                command=[str(BINARY),'--harness-session','resume']
+                if case=='override':
+                    env.pop('ETERM_RESUME_SESSION')
+                    command=[str(BINARY),'--harness-session','codex','--','--cd',str(other)]
+                if case=='conflicting':
+                    env.pop('ETERM_RESUME_SESSION')
+                    command=[str(BINARY),'--harness-session','codex','--','--cd',str(project)]
+                try:
+                    child=subprocess.run(command,cwd=other,
+                        env=env,capture_output=True,text=True,timeout=8)
+                    self.assertEqual(child.returncode,1 if case=='conflicting' else 0,child.stderr)
+                    self.assertEqual(child.stdout.strip(),'REJECTED' if reject else 'READY',child.stderr)
+                    if reject:
+                        self.assertIn('Resume stopped.',child.stderr)
+                        if case!='conflicting': self.assertIn('agent resume exited with status 1',child.stderr)
+                finally:
+                    worker.join(6);server.close()
+                self.assertFalse(worker.is_alive())
+                self.assertFalse(failures,failures)
+
     def transport(self,resume,stale=False):
         with tempfile.TemporaryDirectory(dir='/tmp') as temp:
             root=Path(temp);env=self.make_cli(root);upstream=root/'server.sock'
@@ -324,8 +421,8 @@ class CodexRelay(unittest.TestCase):
                     sock.sendall(b'HTTP/1.1 101\r\nUpgrade: websocket\r\n\r\n')
                     request=message(sock);selected=request['params']['threadId']
                     def response(request,selected,ephemeral=False):
-                        return {'id':request['id'],'result':{'thread':{'id':selected,'sessionId':'wrong-root',
-                            'cwd':temp,'path':str(root/'transcript'),'ephemeral':ephemeral}}}
+                        return {'id':request['id'],'result':{'cwd':temp,'thread':{'id':selected,'sessionId':'wrong-root',
+                            'cwd':str(root/'historical'),'path':str(root/'transcript'),'ephemeral':ephemeral}}}
                     if selected=='interrupted':
                         sock.sendall(frame({'id':99,'method':'fixture/selectionPending'}))
                     elif selected=='delayed':
@@ -387,9 +484,9 @@ class CodexRelay(unittest.TestCase):
                 record=descriptor(root,mode='daemon');record['socket']=str(upstream)
                 env.update(ETERM_RESUME_SESSION=json.dumps(record),EXPECT_RESUME='1')
             command=[str(BINARY),'--harness-session',*(['resume'] if resume else ['codex','--'])]
-            env['TEST_EXPECT_CWD']=str(root.resolve()) if resume else os.getcwd()
+            env['TEST_EXPECT_CWD']=str(root.resolve())
             child=subprocess.Popen(command,env=env,
-                stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                cwd=root,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
             try:
                 ready=child.stdout.readline().strip()
                 self.assertEqual(ready,'READY',child.stderr.read() if not ready else '')
@@ -398,6 +495,7 @@ class CodexRelay(unittest.TestCase):
                 self.assertEqual((saved['session_id'],saved['mode'],saved['owner_pid']),
                                  (OTHER,'daemon',child.pid))
                 self.assertEqual(Path(saved['socket']),upstream)
+                self.assertEqual(saved['cwd'],temp)
                 os.kill(child.pid,signal.SIGINT)
                 self.assertIsNone(child.poll())
                 child.stdin.write('exit\n');child.stdin.flush()

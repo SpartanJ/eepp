@@ -11,7 +11,8 @@
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/window/window.hpp>
-#include <eterm/terminal/terminaltypes.hpp>
+#include <eterm/terminal/programstatusalerts.hpp>
+#include <eterm/ui/terminalpreferences.hpp>
 #include <string>
 
 namespace eterm {
@@ -25,34 +26,22 @@ using EE::Window::PixelDensityMode;
 
 enum class NewTerminalBehavior { CurrentTabBar, VerticalSplit, HorizontalSplit };
 
-struct TerminalConfig {
+struct TerminalConfig : eterm::UI::TerminalPreferences {
+
 	std::string shell;
 	std::string shellArguments;
 	std::string defaultWorkingDirectory;
 	std::string executeInShell;
-	std::string programStatusSound{ "chime" };
-	int programStatusSoundVolume{ 50 };
-	size_t historySize{ 10000 };
+	Terminal::ProgramStatusPreferences programStatus;
 	size_t initialTabs{ 1 };
-	Terminal::TerminalCursorMode cursorStyle{ Terminal::TerminalCursorMode::SteadyUnderline };
 	bool useFrameBuffer{ false };
 	bool closeOnExit{ true };
 	bool exclusiveMode{ false };
 	bool inheritWorkingDirectory{ true };
-	bool allowOsc52ClipboardWrite{ true };
-	bool enableOsc8Hyperlinks{ true };
-	bool graphemeClustering{ true };
-	bool detectLinks{ true };
-	bool showProgramStatus{ true };
-	bool programStatusNotifications{ false };
-	bool programStatusSounds{ false };
-	bool programStatusAlertsWhenActive{ false };
-	bool programStatusAlertsAllStates{ false };
+	bool useCustomWorkingDirectory{ false };
 	bool restoreLastSession{ true };
 	bool recoverHarnessSessions{ false };
 	NewTerminalBehavior newTerminalBehavior{ NewTerminalBehavior::CurrentTabBar };
-	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
-	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };
 };
 
 struct UIConfig {

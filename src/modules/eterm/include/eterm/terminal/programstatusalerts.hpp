@@ -19,10 +19,30 @@ class ThreadPool;
 
 } // namespace EE::System
 
-namespace eterm {
+namespace EE::System {
+
+class IniFile;
+
+} // namespace EE::System
+
+namespace eterm::Terminal {
 
 using namespace EE::Audio;
 using namespace EE::System;
+
+struct ProgramStatusPreferences {
+	std::string sound{ "chime" };
+	int volume{ 50 };
+	bool show{ true };
+	bool notifications{ false };
+	bool sounds{ false };
+	bool whenActive{ false };
+	bool allStates{ false };
+
+	void load( const IniFile& ini );
+
+	void save( IniFile& ini ) const;
+};
 
 /** Opt-in side effects of program status. The worker owns audio and native helper calls; no
  * terminal or UI pointer crosses that boundary. Destroy before the application's audio teardown. */
@@ -36,9 +56,8 @@ class ProgramStatusAlerts {
 
 	/** Percentage/text refreshes aren't state changes. A new done/error revision is a new result,
 	 * even when working -> done was coalesced before reaching the UI. */
-	static bool isTransition( const Terminal::PresentedProgramStatus* previous,
-							  const Terminal::PresentedProgramStatus& next, bool allStates ) {
-		using namespace Terminal;
+	static bool isTransition( const PresentedProgramStatus* previous,
+							  const PresentedProgramStatus& next, bool allStates ) {
 		if ( next.source == ProgramStatusSource::None )
 			return false;
 		const bool rich = next.source == ProgramStatusSource::Osc7501;
@@ -75,4 +94,4 @@ class ProgramStatusAlerts {
 	std::unique_ptr<ThreadPool> mWorker;
 };
 
-} // namespace eterm
+} // namespace eterm::Terminal

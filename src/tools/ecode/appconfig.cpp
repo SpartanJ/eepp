@@ -285,28 +285,15 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.workingDir =
 		TerminalWorkingDir::fromString( ini.getValue( "terminal", "working_dir", "project" ) );
 	term.workingDirOther = ini.getValue( "terminal", "working_dir_other", "" );
-	term.scrollback = ini.getValueI( "terminal", "scrollback", 10000 );
+	term.load( ini );
 	term.unsupportedOSWarnDisabled =
 		ini.getValueB( "terminal", "unsupported_os_warn_disabled", false );
 	term.closeTerminalTabOnExit = ini.getValueB( "terminal", "close_terminal_tab_on_exit", false );
 	term.warnBeforeClosingTab = ini.getValueB( "terminal", "warn_before_closing_tab", true );
 	term.exclusiveMode = ini.getValueB( "terminal", "exclusive_mode", false );
 	term.inheritWorkingDirectory = ini.getValueB( "terminal", "inherit_working_directory", true );
-	term.enableOsc8Hyperlinks = ini.getValueB( "terminal", "enable_osc8_hyperlinks", true );
-	term.allowOsc52ClipboardWrite =
-		ini.getValueB( "terminal", "allow_osc52_clipboard_write", true );
-	term.graphemeClustering = ini.getValueB( "terminal", "grapheme_clustering", true );
-	term.detectLinks = ini.getValueB( "terminal", "detect_links", true );
-	term.cursorStyle = TerminalCursorHelper::modeFromString(
-		ini.getValue( "terminal", "cursor_style", "steady_underline" ) );
-	term.scrollBarType = ini.getValue( "terminal", "scrollbar_type", "overlay" ) == "overlay"
-							 ? ScrollViewType::Overlay
-							 : ScrollViewType::Outside;
-	auto scrollbarMode = ini.getValue( "terminal", "scrollbar_mode", "auto" );
-	term.scrollBarMode =
-		scrollbarMode == "auto"
-			? ScrollBarMode::Auto
-			: ( scrollbarMode == "on" ? ScrollBarMode::AlwaysOn : ScrollBarMode::AlwaysOff );
+	term.useFrameBuffer = ini.getValueB( "terminal", "framebuffer", term.useFrameBuffer );
+	term.programStatus.load( ini );
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
@@ -501,24 +488,14 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 				  NewTerminalOrientation::toString( term.newTerminalOrientation ) );
 	ini.setValue( "terminal", "working_dir", TerminalWorkingDir::toString( term.workingDir ) );
 	ini.setValue( "terminal", "working_dir_other", term.workingDirOther );
-	ini.setValue( "terminal", "scrollback", String::toString( term.scrollback ) );
+	term.save( ini, true );
 	ini.setValueB( "terminal", "unsupported_os_warn_disabled", term.unsupportedOSWarnDisabled );
 	ini.setValueB( "terminal", "close_terminal_tab_on_exit", term.closeTerminalTabOnExit );
 	ini.setValueB( "terminal", "warn_before_closing_tab", term.warnBeforeClosingTab );
 	ini.setValueB( "terminal", "exclusive_mode", term.exclusiveMode );
 	ini.setValueB( "terminal", "inherit_working_directory", term.inheritWorkingDirectory );
-	ini.setValueB( "terminal", "enable_osc8_hyperlinks", term.enableOsc8Hyperlinks );
-	ini.setValueB( "terminal", "allow_osc52_clipboard_write", term.allowOsc52ClipboardWrite );
-	ini.setValueB( "terminal", "grapheme_clustering", term.graphemeClustering );
-	ini.setValueB( "terminal", "detect_links", term.detectLinks );
-	ini.setValue( "terminal", "cursor_style",
-				  TerminalCursorHelper::modeToString( term.cursorStyle ) );
-	ini.setValue( "terminal", "scrollbar_type",
-				  term.scrollBarType == ScrollViewType::Overlay ? "overlay"sv : "outside"sv );
-	ini.setValue( "terminal", "scrollbar_mode",
-				  term.scrollBarMode == ScrollBarMode::Auto
-					  ? "auto"sv
-					  : ( term.scrollBarMode == ScrollBarMode::AlwaysOn ? "on"sv : "off" ) );
+	ini.setValueB( "terminal", "framebuffer", term.useFrameBuffer );
+	term.programStatus.save( ini );
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",
 				  Renderer::graphicsLibraryVersionToString( context.Version ) );

@@ -3548,6 +3548,9 @@ Int64 UICodeEditor::getColFromXOffset( VisibleIndex visibleIndex, const Float& x
 						.substr( visibleIndexRange.start().column(), visibleIndexRange.length() );
 
 		if ( !isMonospaceLine( pos.line() ) ) {
+			// The hit test is for one visual row. A document newline adds an empty paragraph.
+			if ( !line.empty() && line.back() == '\n' )
+				line.remove_suffix( 1 );
 			return visibleIndexRange.start().column() +
 				   Text::findCharacterFromPos(
 					   Vector2i( eemax( -xOffset + x, 0.f ), 0 ), true, mFont, getCharacterSize(),
@@ -3577,14 +3580,15 @@ Int64 UICodeEditor::getColFromXOffset( VisibleIndex visibleIndex, const Float& x
 		return visibleIndexRange.start().column() + static_cast<Int64>( line.size() ) - 1;
 	}
 
+	const String& line = mDoc->line( pos.line() ).getText();
 	if ( !isMonospaceLine( pos.line() ) ) {
 		return Text::findCharacterFromPos(
-			Vector2i( x, 0 ), true, mFont, getCharacterSize(), mDoc->line( pos.line() ).getText(),
-			mFontStyleConfig.Style, mTabWidth, 0.f, mTabStops ? 0 : std::optional<Float>(),
+			Vector2i( x, 0 ), true, mFont, getCharacterSize(),
+			line.view().substr( 0, line.size() - 1 ), mFontStyleConfig.Style, mTabWidth, 0.f,
+			mTabStops ? 0 : std::optional<Float>(),
 			mDoc->line( pos.line() ).getTextHints() | getWidgetTextDrawHints(), mTextDirection );
 	}
 
-	const String& line = mDoc->line( pos.line() ).getText();
 	Int64 len = line.length();
 	Float glyphWidth = getGlyphWidth();
 	Float xOffset = 0;

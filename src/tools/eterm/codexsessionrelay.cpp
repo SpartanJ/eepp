@@ -39,6 +39,8 @@ struct SelectionState {
 	const std::string& directory;
 	const std::string& home;
 	const std::string& upstream;
+	const std::string& workingDirectory;
+	std::string cwdFailure;
 	// The last conversation known to be selected, and the generation that confirmed it.
 	nlohmann::json current;
 	Uint64 confirmed{ 0 };
@@ -65,6 +67,7 @@ struct SelectionState {
 struct Selection {
 	struct Pending {
 		std::string id;
+		std::string cwd;
 		Uint64 generation;
 	};
 	SelectionState& state;
@@ -92,6 +95,18 @@ struct Selection {
 			state.settle();
 	}
 
+	void responseLost( const char* reason ) {
+		if ( state.cwdFailure.empty() &&
+			 std::any_of( pending.begin(), pending.end(),
+						  []( const Pending& request ) { return !request.cwd.empty(); } ) ) {
+			state.cwdFailure =
+				"eterm: could not verify the Codex working directory: " + std::string( reason ) +
+				". Resume stopped.\n";
+			state.forget();
+		}
+		cancelPending( reason );
+	}
+
 	// A request that could not be observed may have been a selection, captured or not. It acts as
 	// an unseen newer selection: responses to earlier requests can no longer be trusted.
 	void requestLost( const char* reason, bool permanent ) {
@@ -112,7 +127,7 @@ struct Selection {
 	}
 
 	void consume( const nlohmann::json& value, bool request ) {
-		if ( !value.is_object() || !value.contains( "id" ) ||
+		if ( !state.cwdFailure.empty() || !value.is_object() || !value.contains( "id" ) ||
 			 !( value["id"].is_string() || value["id"].is_number_integer() ) )
 			return;
 		const auto id = value["id"].dump();
@@ -124,7 +139,19 @@ struct Selection {
 					requestLost( "too many concurrent selections", false );
 					return;
 				}
-				pending.push_back( { id, ++state.generation } );
+				std::string cwd;
+				const auto params = value.find( "params" );
+				// The initial selection must honor the local launch directory, including rejoin
+				// paths that omit cwd despite --cd. Later selections can request another directory.
+				if ( !state.generation ) {
+					cwd = state.workingDirectory;
+				} else if ( params != value.end() && params->is_object() ) {
+					const auto directory = params->find( "cwd" );
+					if ( directory != params->end() && directory->is_string() &&
+						 directory->get_ref<const std::string&>().size() <= 4096 )
+						cwd = directory->get_ref<const std::string&>();
+				}
+				pending.push_back( { id, std::move( cwd ), ++state.generation } );
 				++state.unresolved;
 				// Never save the old conversation while a different selection is unconfirmed.
 				HarnessSessionRecovery::publish( state.directory, {} );
@@ -139,21 +166,12 @@ struct Selection {
 			if ( it->id != id )
 				continue;
 			const auto generation = it->generation;
+			auto requestedCwd = std::move( it->cwd );
 			pending.erase( it );
 			--state.unresolved;
 			// An error proves this request kept the previous thread: nothing changed.
 			if ( value.contains( "error" ) ) {
 				state.settle();
-				return;
-			}
-			// An older request succeeded after a newer one was sent. The daemon may be on either
-			// thread, so no record is certain until a newer selection confirms one.
-			if ( generation != state.generation ) {
-				state.forget();
-				return;
-			}
-			if ( state.blind ) {
-				clear( "another connection's requests are not observable" );
 				return;
 			}
 			const auto result = value.find( "result" );
@@ -166,10 +184,45 @@ struct Selection {
 				clear( "selection response has no thread" );
 				return;
 			}
+			// The response's cwd is the effective configuration, while thread metadata can
+			// describe the stored conversation. Keep thread.cwd as a fallback when it is absent.
+			const nlohmann::json missing;
+			const auto& cwd = result->contains( "cwd" )	  ? ( *result )["cwd"]
+							  : thread->contains( "cwd" ) ? ( *thread )["cwd"]
+														  : missing;
+			if ( !requestedCwd.empty() ) {
+				const auto* actual = cwd.get_ptr<const std::string*>();
+				const bool valid = actual && !actual->empty() && actual->size() <= 4096 &&
+								   actual->find( '\0' ) == std::string::npos &&
+								   !FileSystem::isRelativePath( *actual );
+				if ( !valid ||
+					 ( *actual != requestedCwd && FileSystem::getRealPath( *actual ) !=
+													  FileSystem::getRealPath( requestedCwd ) ) ) {
+					state.cwdFailure =
+						"eterm: Codex did not apply the requested working directory " +
+						nlohmann::json( requestedCwd ).dump() +
+						( valid ? "; the daemon returned " + cwd.dump() : "; its cwd is invalid" ) +
+						". Resume stopped. Close other clients attached to this session and "
+						"retry.\n";
+					clear( "daemon did not apply the requested working directory" );
+					// Withhold the completed response: the TUI must not enter the wrong workspace.
+					return;
+				}
+			}
+			// An older request succeeded after a newer one was sent. The daemon may be on either
+			// thread, so no record is certain until a newer selection confirms one.
+			if ( generation != state.generation ) {
+				state.forget();
+				return;
+			}
+			if ( state.blind ) {
+				clear( "another connection's requests are not observable" );
+				return;
+			}
 			auto record = HarnessSessionRecovery::descriptor(
 				"codex",
 				{ { "session_id", thread->value( "id", nlohmann::json{} ) },
-				  { "cwd", thread->value( "cwd", nlohmann::json{} ) },
+				  { "cwd", cwd },
 				  { "transcript_path", thread->value( "path", nlohmann::json{} ) } },
 				state.home );
 			if ( thread->value( "ephemeral", nlohmann::json{} ) == true ) {
@@ -241,13 +294,13 @@ struct Direction {
 			if ( request )
 				selection.requestLost( "request observation stopped", true );
 			else
-				selection.cancelPending( "protocol observation stopped" );
+				selection.responseLost( "protocol observation stopped" );
 		}
 		if ( frames.takeOversizedMessage() ) {
 			if ( request )
 				selection.requestLost( "request exceeds the 8 MiB observation limit", false );
 			else
-				selection.cancelPending( "selection message exceeds the 8 MiB observation limit" );
+				selection.responseLost( "selection message exceeds the 8 MiB observation limit" );
 		}
 	}
 
@@ -282,7 +335,7 @@ struct Direction {
 		} else {
 			observe( data, selection, request );
 		}
-		return true;
+		return selection.state.cwdFailure.empty();
 	}
 };
 
@@ -315,16 +368,19 @@ struct Relay {
 	std::string home;
 	std::string upstream;
 	std::string token;
-	SelectionState selection{ directory, home, upstream, {}, 0 };
+	std::string workingDirectory;
+	SelectionState selection{ directory, home, upstream, workingDirectory, {}, {}, 0 };
 	TcpListener listener;
 	std::array<std::unique_ptr<Connection>, 8> connections;
 	std::thread worker;
 	std::atomic<bool> stopped{ false };
 
-	Relay( std::string directory, std::string home, std::string upstream ) :
+	Relay( std::string directory, std::string home, std::string upstream,
+		   std::string workingDirectory ) :
 		directory( std::move( directory ) ),
 		home( std::move( home ) ),
-		upstream( std::move( upstream ) ) {}
+		upstream( std::move( upstream ) ),
+		workingDirectory( std::move( workingDirectory ) ) {}
 
 	~Relay() {
 		stopped = true;
@@ -489,7 +545,7 @@ int CodexSessionRelay::run( const std::vector<std::string>& arguments ) {
 		}
 	}
 	probe.disconnect();
-	Relay relay( Sys::getEnv( "ETERM_HARNESS_DIRECTORY" ), home, upstream );
+	Relay relay( Sys::getEnv( "ETERM_HARNESS_DIRECTORY" ), home, upstream, workingDirectory );
 	auto remote = relay.listen();
 	if ( remote.empty() ) {
 		std::cerr << "eterm: could not create the private Codex relay.\n";
@@ -527,7 +583,15 @@ int CodexSessionRelay::run( const std::vector<std::string>& arguments ) {
 			value = std::move( workingDirectory );
 		}
 	}
-	return Process::runForeground( executable, args, environment );
+	const int result = Process::runForeground( executable, args, environment );
+	relay.stopped = true;
+	relay.worker.join();
+	if ( !relay.selection.cwdFailure.empty() ) {
+		// Print after the TUI restores the terminal, so the reason remains visible in the shell.
+		std::cerr << relay.selection.cwdFailure;
+		return result ? result : 1;
+	}
+	return result;
 }
 
 } // namespace eterm

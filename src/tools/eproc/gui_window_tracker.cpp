@@ -63,14 +63,15 @@ namespace eproc {
 struct GuiWindowTracker::X11Api {
 	using OpenDisplayFn = Display* ( * )( const char* );
 	using CloseDisplayFn = int ( * )( Display* );
-	using DefaultRootWindowFn = Window ( * )( Display* );
+	using DefaultRootWindowFn = ::Window ( * )( Display* );
 	using InternAtomFn = Atom ( * )( Display*, const char*, Bool );
-	using GetWindowPropertyFn = int ( * )( Display*, Window, Atom, long, long, Bool, Atom, Atom*,
+	using GetWindowPropertyFn = int ( * )( Display*, ::Window, Atom, long, long, Bool, Atom, Atom*,
 										   int*, unsigned long*, unsigned long*, unsigned char** );
 	using FreeFn = int ( * )( void* );
 	using SyncFn = int ( * )( Display*, Bool );
 	using SetErrorHandlerFn = XErrorHandler ( * )( XErrorHandler );
-	using QueryTreeFn = Status ( * )( Display*, Window, Window*, Window*, Window**, unsigned int* );
+	using QueryTreeFn = Status ( * )( Display*, ::Window, ::Window*, ::Window*, ::Window**,
+									  unsigned int* );
 
 	void* library{ nullptr };
 	OpenDisplayFn openDisplay{ nullptr };
@@ -148,7 +149,7 @@ static int ignoreMissingWindowError( Display* display, XErrorEvent* event ) {
 // format, or is longer than MAX_PROPERTY_ITEMS, in which case the reply would be truncated into an
 // incomplete list.
 template <typename X11Api>
-static unsigned char* fetchProperty( X11Api& api, Display* display, Window window, Atom property,
+static unsigned char* fetchProperty( X11Api& api, Display* display, ::Window window, Atom property,
 									 Atom expectedType, unsigned long& itemCount,
 									 long maxItems = MAX_PROPERTY_ITEMS ) {
 	itemCount = 0;
@@ -250,7 +251,7 @@ void GuiWindowTracker::scanXEmbedWindows( unsigned long pidAtom ) {
 	if ( mXEmbedAtom == 0 )
 		return;
 	Display* display = static_cast<Display*>( mDisplay );
-	std::vector<std::pair<Window, unsigned>> pending;
+	std::vector<std::pair<::Window, unsigned>> pending;
 	pending.emplace_back( mRootWindow, 0 );
 	size_t visited = 0;
 	while ( !pending.empty() && visited < MAX_TRAY_SCAN_WINDOWS ) {
@@ -264,9 +265,9 @@ void GuiWindowTracker::scanXEmbedWindows( unsigned long pidAtom ) {
 		}
 		if ( depth >= MAX_TRAY_SCAN_DEPTH )
 			continue;
-		Window root = 0;
-		Window parent = 0;
-		Window* children = nullptr;
+		::Window root = 0;
+		::Window parent = 0;
+		::Window* children = nullptr;
 		unsigned int count = 0;
 		if ( mX11->queryTree( display, window, &root, &parent, &children, &count ) ) {
 			for ( unsigned int i = 0; i < count && pending.size() < MAX_TRAY_SCAN_WINDOWS; ++i )

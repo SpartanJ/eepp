@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <deque>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/ui/databinding/uibindinggroup.hpp>
 #include <eepp/ui/databinding/uidatabind.hpp>
@@ -12,9 +13,11 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uispinbox.hpp>
+#include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitreeview.hpp>
+#include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/window.hpp>
 
 #define PUGIXML_HEADER_ONLY
@@ -124,6 +127,9 @@ class UISettingsCategoryModel final : public Model {
 	Node* mRoot{ nullptr };
 };
 
+static constexpr int SettingsSidebarWidthDp = 220;
+static constexpr int SettingsRowsMaxWidthDp = 820;
+
 static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 <style>
 <![CDATA[
@@ -152,7 +158,6 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 	color: var(--font);
 }
 .settings_panel #settings_rows {
-	max-width: 820dp;
 	padding: 20dp 28dp 28dp 28dp;
 	layout-gravity: center_horizontal;
 }
@@ -279,7 +284,7 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 ]]>
 </style>
 <vbox lw="mp" lh="mp" class="settings_panel">
-	<Splitter id="settings_splitter" lw="mp" lh="mp" orientation="horizontal" splitter-partition="220dp">
+	<Splitter id="settings_splitter" lw="mp" lh="mp" orientation="horizontal">
 		<vbox id="settings_sidebar" lw="0" lh="0" min-width="160dp">
 			<TextInput id="settings_filter" lw="mp" lh="wc" hint="@string(search_settings, Search settings...)" />
 			<TreeView id="settings_categories" lw="mp" lh="o" lw8="1" />
@@ -442,6 +447,21 @@ bool SettingsModel::hasCategory( const std::string& id ) const {
 						[&id]( const auto& item ) { return item.id == id; } );
 }
 
+UIWindow* UISettingsPanel::NewWindow( const String& title, const std::string& id ) {
+	UIWindow::StyleConfig style{ UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL };
+	auto* window = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, style );
+	window->setId( id );
+	window->setTitle( title );
+	const auto sceneSize = window->getUISceneNode()->getPixelsSize();
+	window->setPixelsSize(
+		{ std::min( sceneSize.getWidth() * 0.9f,
+					PixelDensity::dpToPx( SettingsSidebarWidthDp + SettingsRowsMaxWidthDp ) ),
+		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
+	window->setStyleSheetProperty(
+		StyleSheetProperty( "window-min-size", "min(640dp,90vw) min(440dp,80vh)" ) );
+	return window;
+}
+
 UISettingsPanel* UISettingsPanel::New( UIWidget* parent ) {
 	return eeNew( UISettingsPanel, ( parent ) );
 }
@@ -455,7 +475,10 @@ UISettingsPanel::UISettingsPanel( UIWidget* parent ) :
 														   String::hash( "UISettingsPanel" ) );
 	mImpl->search = layout->find<UITextInput>( "settings_filter" );
 	mImpl->categories = layout->find<UITreeView>( "settings_categories" );
+	layout->find<UISplitter>( "settings_splitter" )
+		->setSplitPartition( { SettingsSidebarWidthDp, CSS::StyleSheetLength::Dp } );
 	mImpl->settings = layout->find<UILinearLayout>( "settings_rows" );
+	mImpl->settings->setMaxWidthEq( String::toString( SettingsRowsMaxWidthDp ) + "dp" );
 	mImpl->pageTitle = layout->find<UITextView>( "settings_page_title" );
 	mImpl->scroll = layout->find<UIScrollView>( "settings_scroll" );
 	mImpl->fullPage = layout->find<UILinearLayout>( "settings_full_page" );

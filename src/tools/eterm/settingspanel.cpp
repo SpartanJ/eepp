@@ -3,10 +3,9 @@
 
 #include <eepp/ui/tools/fileassociationssettings.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
-#include <eepp/ui/uidropdownlist.hpp>
-#include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eterm/ui/terminalsettings.hpp>
 
 #include <string>
 
@@ -15,16 +14,7 @@ using namespace EE::UI::Tools;
 namespace eterm {
 
 UIWindow* SettingsPanel::create( App& app ) {
-	UIWindow::StyleConfig windowStyle{ UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
-									   UI_WIN_MODAL };
-	auto settingsWindow = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, windowStyle );
-	settingsWindow->setId( "settings_panel" );
-	settingsWindow->setTitle( app.i18n( "settings", "Settings" ) );
-	const auto sceneSize = app.scene->getPixelsSize();
-	settingsWindow->setPixelsSize(
-		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
-		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
-	settingsWindow->setMinWindowSize( 640, 440 );
+	auto* settingsWindow = UISettingsPanel::NewWindow( app.i18n( "settings", "Settings" ) );
 	auto* panel = UISettingsPanel::New( settingsWindow->getContainer() );
 	panel->setId( "settings_panel_content" );
 	panel->setSearchResultsText( app.i18n( "search_results", "Search Results" ) );
@@ -227,203 +217,49 @@ UIWindow* SettingsPanel::create( App& app ) {
 
 	panel->addCategory( "terminal.behavior", app.i18n( "terminal", "Terminal" ),
 						app.i18n( "behavior", "Behavior" ) );
-	panel->addBool( { "enableOsc8Hyperlinks", "terminal.behavior",
-					  app.i18n( "enable_osc8_hyperlinks", "Enable Hyperlinks (OSC 8)" ),
-					  app.i18n( "enable_osc8_hyperlinks_desc",
-								"Allow terminal programs to attach clickable links to text." ) },
-					&app.config->terminal.enableOsc8Hyperlinks, [&app]( bool value ) {
-						app.forEachTerminal( [value]( UITerminal* terminal ) {
-							terminal->getTerm()->setOsc8HyperlinksEnabled( value );
-						} );
-						app.savePreferences();
-					} );
-	panel->addBool( { "detectLinks", "terminal.behavior",
-					  app.i18n( "detect_links", "Detect Links and Paths" ),
-					  app.i18n( "detect_links_desc",
-								"Underline URLs and file paths in the text while the default "
-								"modifier is held, and open them on click." ) },
-					&app.config->terminal.detectLinks, [&app]( bool value ) {
-						app.forEachTerminal( [value]( UITerminal* terminal ) {
-							terminal->getTerm()->setLinkDetectionEnabled( value );
-						} );
-						app.savePreferences();
-					} );
-	panel->addBool( { "showProgramStatus", "terminal.behavior",
-					  app.i18n( "show_program_status", "Show Program Status" ),
-					  app.i18n( "show_program_status_desc",
-								"Show in each tab whether its program is working, waiting for you, "
-								"finished or failed, when the program reports it." ) },
-					&app.config->terminal.showProgramStatus, [&app]( bool ) {
-						app.forEachTerminal( [&app]( UITerminal* terminal ) {
-							app.updateWidgetProgramStatus( terminal );
-						} );
-						app.savePreferences();
-					} );
-	panel->addCategory( "terminal.alerts", app.i18n( "terminal", "Terminal" ),
-						app.i18n( "program_status_alerts", "Program Status Alerts" ) );
-	panel->addBool( { "programStatusNotifications", "terminal.alerts",
-					  app.i18n( "programStatusNotifications", "OS Notifications" ),
-					  app.i18n( "programStatusNotifications_desc",
-								"Send OS notifications when a program needs attention, finishes or "
-								"fails." ) },
-					&app.config->terminal.programStatusNotifications,
-					[&app]( bool ) { app.savePreferences(); } );
-	panel->addAction(
-		{ "testProgramStatusNotification", "terminal.alerts",
-		  app.i18n( "test_notification", "Test Notification" ),
-		  app.i18n( "test_notification_desc",
-					"Send one OS notification, even when automatic notifications are disabled." ) },
-		app.i18n( "test", "Test" ), [&app] {
-			const auto feedback = [&app]( const String& text ) {
-				// Resolve on the UI thread: settings may have been closed while the helper ran.
-				if ( auto* row =
-						 app.scene->find<UIWidget>( "setting_testProgramStatusNotification" ) )
-					row->find<UITextView>( "setting_description" )->setText( text );
-			};
-			feedback( app.i18n( "sending_notification", "Sending test notification…" ) );
-			const bool accepted = app.programStatusAlerts.deliver(
-				app.i18n( "test_notification_title", "eterm · Test notification" ).toUtf8(),
-				app.i18n( "test_notification_message", "This is a test notification from eterm." )
-					.toUtf8(),
-				true, false, {}, 0, true, [&app, feedback]( bool success, std::string error ) {
-					// App joins the alert worker before destroying the scene.
-					app.scene->runOnMainThread( [&app, feedback, success,
-												 error = std::move( error )] {
-						feedback( success
-									  ? app.i18n( "notification_submitted",
-												  "Notification submitted. If no banner appears, "
-												  "check OS notification permissions and Do Not "
-												  "Disturb (eterm on macOS)." )
-									  : String::fromUtf8( error ) );
-					} );
-				} );
-			if ( !accepted )
-				feedback( app.i18n( "notification_busy",
-									"Another alert is being delivered. Try again shortly." ) );
+	TerminalSettings terminalSettings(
+		panel, [&app]( const auto& visit ) { app.forEachTerminal( visit ); },
+		[&app] { app.savePreferences(); } );
+	auto& terminal = app.config->terminal;
+	terminalSettings.addShell(
+		terminal.shell, terminal.shellArguments,
+		[&app] { app.terminalConfig.program = app.config->terminal.shell; },
+		[&app] {
+			app.terminalConfig.arguments = String::split( app.config->terminal.shellArguments );
 		} );
-	panel->addBool(
-		{ "programStatusSounds", "terminal.alerts", app.i18n( "programStatusSounds", "Play Sound" ),
-		  app.i18n( "programStatusSounds_desc",
-					"Play the selected sound on program status changes." ) },
-		&app.config->terminal.programStatusSounds, [&app]( bool ) { app.savePreferences(); } );
-	panel->addBool( { "programStatusAlertsWhenActive", "terminal.alerts",
-					  app.i18n( "programStatusAlertsWhenActive", "Alert for Active Terminal" ),
-					  app.i18n( "programStatusAlertsWhenActive_desc",
-								"Also alert while you are using that terminal." ) },
-					&app.config->terminal.programStatusAlertsWhenActive,
-					[&app]( bool ) { app.savePreferences(); } );
-	panel->addBool( { "programStatusAlertsAllStates", "terminal.alerts",
-					  app.i18n( "programStatusAlertsAllStates", "Include Working and Idle" ),
-					  app.i18n( "programStatusAlertsAllStates_desc",
-								"Also alert when programs start working or become idle. Percentage "
-								"and text updates stay silent." ) },
-					&app.config->terminal.programStatusAlertsAllStates,
-					[&app]( bool ) { app.savePreferences(); } );
-	panel->addCustomWidget(
-		{ "programStatusSound", "terminal.alerts", app.i18n( "alert_sound", "Sound" ),
-		  app.i18n( "alert_sound_desc",
-					"Choose a built-in sound or an MP3, WAV (PCM), Ogg/Vorbis or FLAC file." ) },
-		[&app]( UIWidget* parent ) {
-			auto* layout = app.scene->loadLayoutFromString( R"xml(
-				<vbox lw="mp" lh="wc">
-					<hbox lw="mp" lh="wc">
-						<DropDownList id="program_status_sound_choice" lw="0" lw8="1" lh="wc" />
-						<PushButton id="program_status_sound_browse" lw="wc" lh="wc" margin-left="4dp" />
-					</hbox>
-					<TextView id="program_status_sound_path" lw="mp" lh="wc" word-wrap="true" />
-				</vbox>
-			)xml",
-															parent );
-			auto* choice = layout->find<UIDropDownList>( "program_status_sound_choice" );
-			choice->getListBox()->addListBoxItems( { app.i18n( "chime", "Chime" ),
-													 app.i18n( "bell", "Bell" ),
-													 app.i18n( "pulse", "Pulse" ) } );
-			const auto sync = [&app] {
-				auto* drop = app.scene->find<UIDropDownList>( "program_status_sound_choice" );
-				auto* path = app.scene->find<UITextView>( "program_status_sound_path" );
-				if ( !drop || !path )
-					return;
-				const auto& sound = app.config->terminal.programStatusSound;
-				const Uint32 selected = sound == "chime"   ? 0
-										: sound == "bell"  ? 1
-										: sound == "pulse" ? 2
-														   : 3;
-				// This widget's data is a local guard against programmatic selection callbacks.
-				drop->setData( 1 );
-				if ( selected == 3 ) {
-					const auto filename = String::fromUtf8( FileSystem::fileNameFromPath( sound ) );
-					if ( drop->getListBox()->getItemsCount() == 3 )
-						drop->getListBox()->addListBoxItem( filename );
-					else
-						drop->getListBox()->setItemText( 3, filename );
-				} else if ( drop->getListBox()->getItemsCount() > 3 ) {
-					drop->getListBox()->removeListBoxItem( 3 );
+	TerminalSettings::WorkingDirectoryOptions directoryOptions;
+	directoryOptions.path = terminal.defaultWorkingDirectory;
+	directoryOptions.selected = terminal.useCustomWorkingDirectory ? 1 : 0;
+	directoryOptions.commitPathOnFocusLoss = true;
+	terminalSettings.addWorkingDirectory(
+		std::move( directoryOptions ), [&app, &terminal]( size_t selected, std::string value ) {
+			const bool custom = selected == 1;
+			if ( custom ) {
+				auto directory = FileSystem::expandTilde( value );
+				if ( !directory.empty() ) {
+					if ( !FileSystem::isDirectory( directory ) )
+						return false;
+					directory = FileSystem::getRealPath( directory );
 				}
-				drop->getListBox()->setSelected( selected );
-				drop->setData( 0 );
-				path->setText( selected == 3 ? String::fromUtf8( sound ) : String{} );
-				path->setTooltipText( path->getText() );
-				path->setVisible( selected == 3 );
-			};
-			sync();
-			const auto browse = [&app, sync] {
-				if ( app.scene->find<UIFileDialog>( "program_status_sound_dialog" ) )
-					return;
-				const auto& sound = app.config->terminal.programStatusSound;
-				const std::string directory = FileSystem::fileExists( sound )
-												  ? FileSystem::fileRemoveFileName( sound )
-												  : Sys::getUserDirectory();
-				auto* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags,
-												  "*.mp3;*.wav;*.ogg;*.flac", directory );
-				dialog->setId( "program_status_sound_dialog" );
-				dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
-										UI_WIN_MODAL );
-				dialog->setTitle( app.i18n( "select_alert_sound", "Select Alert Sound" ) );
-				dialog->setCloseShortcut( KEY_ESCAPE );
-				dialog->on( Event::OpenFile, [&app, sync]( const Event* event ) {
-					app.config->terminal.programStatusSound =
-						event->getNode()->asType<UIFileDialog>()->getFullPath();
-					app.savePreferences();
-					sync();
-				} );
-				dialog->on( Event::OnWindowClose, [sync]( const Event* ) { sync(); } );
-				dialog->center();
-				dialog->show();
-			};
-			auto* browseButton = layout->find<UIPushButton>( "program_status_sound_browse" );
-			browseButton->setText( app.i18n( "browse", "Browse…" ) );
-			browseButton->onClick( [browse]( const Event* ) { browse(); } );
-			choice->on( Event::OnValueChange, [&app, choice, sync]( const Event* ) {
-				if ( choice->getData() )
-					return;
-				const auto selected = choice->getListBox()->getItemSelectedIndex();
-				if ( selected < 3 ) {
-					static constexpr const char* sounds[] = { "chime", "bell", "pulse" };
-					app.config->terminal.programStatusSound = sounds[selected];
-					app.savePreferences();
-					sync();
-				}
-			} );
-			return layout;
-		} );
-	panel->addInteger(
-		{ "programStatusSoundVolume", "terminal.alerts", app.i18n( "alert_volume", "Sound Volume" ),
-		  app.i18n( "alert_volume_desc", "Volume from 0 to 100." ) },
-		0, 100, [&app] { return app.config->terminal.programStatusSoundVolume; },
-		[&app]( int value ) {
-			app.config->terminal.programStatusSoundVolume = value;
+				if ( terminal.useCustomWorkingDirectory &&
+					 terminal.defaultWorkingDirectory == directory )
+					return true;
+				terminal.defaultWorkingDirectory = std::move( directory );
+			} else if ( !terminal.useCustomWorkingDirectory ) {
+				return true;
+			}
+			terminal.useCustomWorkingDirectory = custom;
+			if ( !app.terminalConfig.explicitWorkingDirectory ) {
+				app.terminalConfig.workingDirectory =
+					custom && !terminal.defaultWorkingDirectory.empty()
+						? terminal.defaultWorkingDirectory
+						: Sys::getUserDirectory();
+			}
 			app.savePreferences();
+			return true;
 		} );
-	panel->addAction(
-		{ "previewProgramStatusSound", "terminal.alerts",
-		  app.i18n( "preview_sound", "Preview Sound" ),
-		  app.i18n( "preview_sound_desc",
-					"Play the selected sound once, even when sound alerts are disabled." ) },
-		app.i18n( "play", "Play" ), [&app] {
-			app.programStatusAlerts.deliver( {}, {}, false, true,
-											 app.config->terminal.programStatusSound,
-											 app.config->terminal.programStatusSoundVolume, true );
-		} );
+	terminalSettings.addBehavior( terminal );
+	terminalSettings.addProgramStatus( app.config->terminal.programStatus, app.programStatus );
 	panel->addBool(
 		{ "restoreLastSession", "terminal.behavior",
 		  app.i18n( "restore_last_session", "Restore Last Session" ),
@@ -439,17 +275,6 @@ UIWindow* SettingsPanel::create( App& app ) {
 			  "Standalone sessions require hooks; see the eterm integration guide. Recovery is not "
 			  "guaranteed." ) },
 		&app.config->terminal.recoverHarnessSessions, [&app]( bool ) { app.savePreferences(); } );
-	panel->addBool( { "graphemeClustering", "terminal.behavior",
-					  app.i18n( "grapheme_clustering", "Grapheme Clustering" ),
-					  app.i18n( "grapheme_clustering_desc",
-								"Join emoji sequences, flags and combining characters into single "
-								"characters (DEC mode 2027)." ) },
-					&app.config->terminal.graphemeClustering, [&app]( bool value ) {
-						app.forEachTerminal( [value]( UITerminal* terminal ) {
-							terminal->getTerm()->setGraphemeClusteringEnabled( value );
-						} );
-						app.savePreferences();
-					} );
 	panel->addBool(
 		{ "inheritWorkingDirectory", "terminal.behavior",
 		  app.i18n( "inherit_working_directory", "Inherit Working Directory" ),
@@ -457,18 +282,6 @@ UIWindow* SettingsPanel::create( App& app ) {
 			  "inherit_working_directory_desc",
 			  "Start new tabs and splits in the source terminal's reported local directory." ) },
 		&app.config->terminal.inheritWorkingDirectory, [&app]( bool ) { app.savePreferences(); } );
-	panel->addBool( { "allowOsc52ClipboardWrite", "terminal.behavior",
-					  app.i18n( "allow_osc52_clipboard_write",
-								"Allow Programs to Write to Clipboard (OSC 52)" ),
-					  app.i18n( "allow_osc52_clipboard_write_desc",
-								"Allow terminal programs, including programs over SSH, to change "
-								"the local clipboard." ) },
-					&app.config->terminal.allowOsc52ClipboardWrite, [&app]( bool value ) {
-						app.forEachTerminal( [value]( UITerminal* terminal ) {
-							terminal->getTerm()->setAllowOsc52ClipboardWrite( value );
-						} );
-						app.savePreferences();
-					} );
 	panel->addChoice(
 		{ "newTerminalBehavior", "terminal.behavior",
 		  app.i18n( "new_terminal_behavior", "New Terminal Behavior" ),
@@ -483,16 +296,7 @@ UIWindow* SettingsPanel::create( App& app ) {
 				static_cast<NewTerminalBehavior>( std::min( selected, size_t{ 2 } ) );
 			app.savePreferences();
 		} );
-	panel->addBool(
-		{ "terminalExclusiveMode", "terminal.behavior",
-		  app.i18n( "enable_exclusive_mode_by_default", "Enable Exclusive Mode by Default" ),
-		  app.i18n( "enable_exclusive_mode_by_default_tooltip",
-					"Disable global keybindings in newly created terminals." ) },
-		&app.config->terminal.exclusiveMode, [&app]( bool value ) {
-			app.forEachTerminal(
-				[value]( UITerminal* terminal ) { terminal->setExclusiveMode( value ); } );
-			app.savePreferences();
-		} );
+	terminalSettings.addExclusiveMode( app.config->terminal.exclusiveMode );
 	panel->addBool(
 		{ "smoothScroll", "terminal.behavior", app.i18n( "smooth_scroll", "Smooth Scrolling" ),
 		  app.i18n( "smooth_scroll_desc", "Animate scrolling from mouse wheels and trackpads." ) },
@@ -518,205 +322,31 @@ UIWindow* SettingsPanel::create( App& app ) {
 						app.warnBeforeClose = value;
 						app.savePreferences();
 					} );
-	const std::vector<std::string> knownShells{ "bash", "sh",  "zsh",		 "fish",
-												"nu",	"csh", "tcsh",		 "ksh",
-												"dash", "cmd", "powershell", "pwsh" };
-	std::vector<String> installedShells;
-	for ( const auto& shell : knownShells ) {
-		auto path = Sys::which( shell );
-		if ( !path.empty() )
-			installedShells.emplace_back( std::move( path ) );
-	}
-	auto currentShell = app.config->terminal.shell;
-	if ( currentShell.empty() ) {
-		if ( const char* shell = std::getenv( "SHELL" ); shell )
-			currentShell = FileSystem::fileExists( shell ) ? shell : Sys::which( shell );
-		if ( currentShell.empty() )
-			currentShell = Sys::which(
-				Sys::getPlatformType() == Sys::PlatformType::Windows ? "powershell" : "bash" );
-	}
-	if ( !currentShell.empty() && std::find( installedShells.begin(), installedShells.end(),
-											 String( currentShell ) ) == installedShells.end() )
-		installedShells.emplace_back( currentShell );
-	panel->addEditableChoice(
-		{ "terminalShell", "terminal.behavior", app.i18n( "terminal_shell", "Terminal Shell" ),
-		  app.i18n( "terminal_shell_desc", "Set the shell executable used by new terminals." ) },
-		installedShells, [currentShell] { return String( currentShell ); },
-		[&app]( const String& selection ) {
-			auto shell = selection.toUtf8();
-			if ( Sys::which( shell ).empty() && !FileSystem::fileExists( shell ) )
-				return false;
-			app.config->terminal.shell = shell;
-			app.terminalConfig.program = shell;
-			app.savePreferences();
-			return true;
-		} );
-	panel->addText(
-		{ "terminalShellArguments", "terminal.behavior",
-		  app.i18n( "terminal_shell_arguments", "Terminal Shell Arguments" ),
-		  app.i18n( "terminal_shell_arguments_desc",
-					"Set shell arguments used by new terminals." ) },
-		[&app] { return app.config->terminal.shellArguments; },
-		[&app]( const std::string& value ) {
-			app.config->terminal.shellArguments = value;
-			app.terminalConfig.arguments = String::split( value );
-			app.savePreferences();
-			return true;
-		},
-		true );
-	panel->addText(
-		{ "terminalDefaultWorkingDirectory", "terminal.behavior",
-		  app.i18n( "default_working_directory", "Default Working Directory" ),
-		  app.i18n( "default_working_directory_desc",
-					"Set the starting directory for new terminals. Leave empty to use your home "
-					"directory. A command-line directory overrides it for that launch." ) },
-		[&app] { return app.config->terminal.defaultWorkingDirectory; },
-		[&app]( const std::string& value ) {
-			auto directory = FileSystem::expandTilde( value );
-			if ( !directory.empty() ) {
-				if ( !FileSystem::isDirectory( directory ) )
-					return false;
-				directory = FileSystem::getRealPath( directory );
-			}
-			app.config->terminal.defaultWorkingDirectory = directory;
-			app.terminalConfig.workingDirectory =
-				directory.empty() ? Sys::getUserDirectory() : std::move( directory );
-			app.savePreferences();
-			return true;
-		},
-		true );
-	panel->addInteger(
-		{ "terminalScrollback", "terminal.behavior",
-		  app.i18n( "terminal_scrollback", "Terminal Scrollback" ),
-		  app.i18n( "configure_terminal_scrollback_desc",
-					"Set retained terminal history lines." ) },
-		0, std::numeric_limits<int>::max(),
-		[&app] {
-			return static_cast<int>( std::min<size_t>( app.config->terminal.historySize,
-													   std::numeric_limits<int>::max() ) );
-		},
-		[&app]( int value ) {
-			app.config->terminal.historySize = value;
-			app.terminalConfig.historySize = value;
-			app.savePreferences();
-		} );
-	panel->addBool(
-		{ "terminalFrameBuffer", "terminal.behavior", app.i18n( "framebuffer", "Use Framebuffer" ),
-		  app.i18n(
-			  "framebuffer_desc",
-			  "Render terminals through an FBO instead of the default VBO path. This can improve "
-			  "rendering performance by using a different invalidation strategy." ) },
-		&app.config->terminal.useFrameBuffer, [&app]( bool value ) {
-			app.terminalConfig.useFrameBuffer = value;
-			app.savePreferences();
-		} );
+	terminalSettings.addFrameBuffer( app.config->terminal.useFrameBuffer );
 
 	panel->addCategory( "terminal.appearance", app.i18n( "terminal", "Terminal" ),
 						app.i18n( "appearance", "Appearance" ) );
-	std::vector<String> schemeNames{ app.i18n( "default", "Default" ) };
-	std::vector<std::string> schemeIds{ "" };
-	for ( const auto& [name, scheme] : app.terminalColorSchemes ) {
-		schemeNames.emplace_back( name );
-		schemeIds.emplace_back( name );
-	}
-	if ( !schemeIds.empty() )
-		panel->addChoice(
-			{ "terminalColorScheme", "terminal.appearance",
-			  app.i18n( "terminal_color_scheme", "Terminal Color Scheme" ),
-			  app.i18n( "terminal_color_scheme_desc", "Choose the colors used by terminals." ) },
-			schemeNames,
-			[&app, schemeIds] {
-				auto found =
-					std::find( schemeIds.begin(), schemeIds.end(), app.config->theme.colorScheme );
-				return found == schemeIds.end() ? size_t{ 0 }
-												: static_cast<size_t>( found - schemeIds.begin() );
-			},
-			[&app, schemeIds]( size_t selected ) {
-				app.config->theme.colorScheme =
-					schemeIds[std::min( selected, schemeIds.size() - 1 )];
-				if ( app.config->theme.colorScheme.empty() ) {
-					app.selectedColorScheme = nullptr;
-					auto defaultScheme = TerminalColorScheme::getDefault();
-					app.forEachTerminal( [&defaultScheme]( UITerminal* terminal ) {
-						terminal->setColorScheme( defaultScheme );
-					} );
-					app.savePreferences();
-					return;
-				}
-				auto found = app.terminalColorSchemes.find( app.config->theme.colorScheme );
-				if ( found != app.terminalColorSchemes.end() ) {
-					app.selectedColorScheme = &found->second;
-					app.forEachTerminal( [&app]( UITerminal* terminal ) {
-						terminal->setColorScheme( *app.selectedColorScheme );
-					} );
-				}
-				app.savePreferences();
-			} );
-	panel->addChoice(
-		{ "terminalScrollbarType", "terminal.appearance",
-		  app.i18n( "scrollbar_type", "Scrollbar Type" ),
-		  app.i18n( "scrollbar_type_desc",
-					"Place the scrollbar over or outside terminal content." ) },
-		{ app.i18n( "overlay", "Overlay" ), app.i18n( "outside", "Outside" ) },
-		[&app] { return app.config->terminal.scrollBarType == ScrollViewType::Overlay ? 0 : 1; },
-		[&app]( size_t selected ) {
-			app.config->terminal.scrollBarType =
-				selected == 0 ? ScrollViewType::Overlay : ScrollViewType::Outside;
-			app.forEachTerminal( [&app]( UITerminal* terminal ) {
-				terminal->setScrollViewType( app.config->terminal.scrollBarType );
-			} );
-			app.savePreferences();
-		} );
-	panel->addChoice(
-		{ "terminalCursorStyle", "terminal.appearance", app.i18n( "cursor_style", "Cursor Style" ),
-		  app.i18n( "cursor_style_desc", "Choose the terminal cursor shape and animation." ) },
-		{ app.i18n( "blinking_block", "Blinking Block" ),
-		  app.i18n( "steady_block", "Steady Block" ),
-		  app.i18n( "blink_underline", "Blink Underline" ),
-		  app.i18n( "steady_underline", "Steady Underline" ), app.i18n( "blink_bar", "Blink Bar" ),
-		  app.i18n( "steady_bar", "Steady Bar" ) },
-		[&app] {
-			static constexpr TerminalCursorMode modes[] = {
-				TerminalCursorMode::BlinkingBlock,	TerminalCursorMode::SteadyBlock,
-				TerminalCursorMode::BlinkUnderline, TerminalCursorMode::SteadyUnderline,
-				TerminalCursorMode::BlinkBar,		TerminalCursorMode::SteadyBar };
-			auto found = std::find( std::begin( modes ), std::end( modes ),
-									app.config->terminal.cursorStyle );
-			return found == std::end( modes ) ? size_t{ 0 }
-											  : static_cast<size_t>( found - std::begin( modes ) );
+	terminalSettings.addColorScheme(
+		app.terminalColorSchemes,
+		[&app]() -> const std::string& { return app.config->theme.colorScheme; },
+		[&app]( const std::string& name ) {
+			app.config->theme.colorScheme = name;
+			const auto found = app.terminalColorSchemes.find( name );
+			app.selectedColorScheme =
+				found == app.terminalColorSchemes.end() ? nullptr : &found->second;
+			if ( app.selectedColorScheme ) {
+				app.forEachTerminal( [&app]( UITerminal* terminal ) {
+					terminal->setColorScheme( *app.selectedColorScheme );
+				} );
+			} else {
+				const auto defaultScheme = TerminalColorScheme::getDefault();
+				app.forEachTerminal( [&defaultScheme]( UITerminal* terminal ) {
+					terminal->setColorScheme( defaultScheme );
+				} );
+			}
 		},
-		[&app]( size_t selected ) {
-			static constexpr TerminalCursorMode modes[] = {
-				TerminalCursorMode::BlinkingBlock,	TerminalCursorMode::SteadyBlock,
-				TerminalCursorMode::BlinkUnderline, TerminalCursorMode::SteadyUnderline,
-				TerminalCursorMode::BlinkBar,		TerminalCursorMode::SteadyBar };
-			app.config->terminal.cursorStyle = modes[std::min( selected, size_t{ 5 } )];
-			app.terminalConfig.cursorStyle = app.config->terminal.cursorStyle;
-			app.forEachTerminal( [&app]( UITerminal* terminal ) {
-				terminal->getTerm()->setCursorMode( app.config->terminal.cursorStyle );
-			} );
-			app.savePreferences();
-		} );
-	panel->addChoice(
-		{ "terminalScrollbarMode", "terminal.appearance",
-		  app.i18n( "scrollbar_mode", "Scrollbar Mode" ),
-		  app.i18n( "scrollbar_mode_desc", "Control when the terminal scrollbar is visible." ) },
-		{ app.i18n( "auto", "Auto" ), app.i18n( "always_visible", "Always Visible" ),
-		  app.i18n( "always_hidden", "Always Hidden" ) },
-		[&app] {
-			return app.config->terminal.scrollBarMode == ScrollBarMode::Auto	   ? 0
-				   : app.config->terminal.scrollBarMode == ScrollBarMode::AlwaysOn ? 1
-																				   : 2;
-		},
-		[&app]( size_t selected ) {
-			app.config->terminal.scrollBarMode = selected == 0	 ? ScrollBarMode::Auto
-												 : selected == 1 ? ScrollBarMode::AlwaysOn
-																 : ScrollBarMode::AlwaysOff;
-			app.forEachTerminal( [&app]( UITerminal* terminal ) {
-				terminal->setVerticalScrollMode( app.config->terminal.scrollBarMode );
-			} );
-			app.savePreferences();
-		} );
+		true );
+	terminalSettings.addAppearance( app.config->terminal );
 	panel->addBool( { "alwaysShowTabBar", "terminal.appearance",
 					  app.i18n( "always_show_tab_bar", "Always Show Tab Bar" ),
 					  app.i18n( "always_show_tab_bar_desc",

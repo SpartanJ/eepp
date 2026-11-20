@@ -9,6 +9,7 @@
 #include <eepp/ui/tools/fileassociationssettings.hpp>
 #include <eepp/ui/tools/uifontpickerdialog.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
+#include <eterm/ui/terminalsettings.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 #include <limits>
@@ -129,17 +130,8 @@ void SettingsActions::showSettings() {
 		mSettingsWindow->toFront();
 		return;
 	}
-	UIWindow::StyleConfig windowStyle{ UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
-									   UI_WIN_MODAL };
-	UIWindow* window = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, windowStyle );
+	auto* window = UISettingsPanel::NewWindow( mUI->i18n( "eefm_settings", "Configure eefm" ) );
 	mSettingsWindow = window;
-	window->setId( "settings_panel" );
-	window->setTitle( mUI->i18n( "eefm_settings", "Configure eefm" ) );
-	const Sizef sceneSize = mUI->getPixelsSize();
-	window->setPixelsSize(
-		{ std::min( sceneSize.getWidth() * 0.9f, PixelDensity::dpToPx( 1280 ) ),
-		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
-	window->setMinWindowSize( 640, 440 );
 	auto* panel = UISettingsPanel::New( window->getContainer() );
 	panel->setId( "settings_panel_content" );
 	panel->setSearchResultsText( mUI->i18n( "eefm_search_results", "Search Results" ) );
@@ -375,63 +367,16 @@ void SettingsActions::showSettings() {
 							mApp.terminal().syncDirectory();
 						savePreferences();
 					} );
-	const std::vector<std::string> knownShells{ "bash", "sh",  "zsh",  "fish", "nu",		"csh",
-												"tcsh", "ksh", "dash", "cmd",  "powershell" };
-	const String defaultShell = mUI->i18n( "eefm_default_shell", "Default" );
-	std::vector<String> shells{ defaultShell };
-	for ( const auto& shell : knownShells ) {
-		std::string path = Sys::which( shell );
-		if ( !path.empty() )
-			shells.emplace_back( path );
-	}
-	if ( !mApp.config().terminal.shell.empty() &&
-		 std::find( shells.begin(), shells.end(), String( mApp.config().terminal.shell ) ) ==
-			 shells.end() )
-		shells.emplace_back( mApp.config().terminal.shell );
-	panel->addEditableChoice(
-		{ "terminalShell", "terminal.behavior", mUI->i18n( "eefm_terminal_shell", "Shell" ),
-		  mUI->i18n( "eefm_terminal_shell_desc",
-					 "The shell started by the terminal panel (Default: your shell). Applies to "
-					 "new terminals." ) },
-		shells,
-		[this, defaultShell] {
-			return mApp.config().terminal.shell.empty() ? defaultShell
-														: String( mApp.config().terminal.shell );
+	eterm::UI::TerminalSettings terminalSettings(
+		panel,
+		[this]( const auto& visit ) {
+			if ( auto* terminal = mApp.terminal().widget() )
+				visit( terminal );
 		},
-		[this, defaultShell]( const String& selection ) {
-			std::string shell = selection == defaultShell ? std::string() : selection.toUtf8();
-			if ( !shell.empty() && Sys::which( shell ).empty() && !FileSystem::fileExists( shell ) )
-				return false;
-			mApp.config().terminal.shell = shell;
-			savePreferences();
-			return true;
-		} );
-	panel->addText(
-		{ "terminalShellArguments", "terminal.behavior",
-		  mUI->i18n( "eefm_terminal_shell_arguments", "Shell Arguments" ),
-		  mUI->i18n( "eefm_terminal_shell_arguments_desc",
-					 "Arguments passed to the shell. Applies to new terminals." ) },
-		[this] { return mApp.config().terminal.shellArguments; },
-		[this]( const std::string& value ) {
-			mApp.config().terminal.shellArguments = value;
-			savePreferences();
-			return true;
-		},
-		true );
-	panel->addInteger(
-		{ "terminalScrollback", "terminal.behavior",
-		  mUI->i18n( "eefm_terminal_scrollback", "Scrollback" ),
-		  mUI->i18n( "eefm_terminal_scrollback_desc",
-					 "Lines of history kept. Applies to new terminals." ) },
-		0, std::numeric_limits<int>::max(),
-		[this] {
-			return static_cast<int>( std::min<size_t>( mApp.config().terminal.historySize,
-													   std::numeric_limits<int>::max() ) );
-		},
-		[this]( int value ) {
-			mApp.config().terminal.historySize = value;
-			savePreferences();
-		} );
+		[this] { savePreferences(); } );
+	terminalSettings.addShell( mApp.config().terminal.shell,
+							   mApp.config().terminal.shellArguments );
+	terminalSettings.addBehavior( mApp.config().terminal );
 
 	panel->addCategory( "terminal.appearance", mUI->i18n( "eefm_terminal", "Terminal" ),
 						mUI->i18n( "eefm_appearance", "Appearance" ) );
@@ -451,76 +396,15 @@ void SettingsActions::showSettings() {
 			mApp.terminal().setFontSize( value );
 			savePreferences();
 		} );
-	std::vector<String> schemeNames{ mUI->i18n( "eefm_default", "Default" ) };
-	std::vector<std::string> schemeIds{ "" };
-	for ( const auto& [name, scheme] : mApp.terminal().colorSchemes() ) {
-		schemeNames.emplace_back( name );
-		schemeIds.emplace_back( name );
-	}
-	panel->addChoice(
-		{ "terminalColorScheme", "terminal.appearance",
-		  mUI->i18n( "eefm_terminal_color_scheme", "Color Scheme" ),
-		  mUI->i18n( "eefm_terminal_color_scheme_desc", "The colors of the terminal." ) },
-		schemeNames,
-		[this, schemeIds] {
-			auto found =
-				std::find( schemeIds.begin(), schemeIds.end(), mApp.config().terminal.colorScheme );
-			return found == schemeIds.end() ? size_t{ 0 }
-											: static_cast<size_t>( found - schemeIds.begin() );
+	terminalSettings.addColorScheme(
+		mApp.terminal().colorSchemes(),
+		[this]() -> const std::string& { return mApp.config().terminal.colorScheme; },
+		[this]( const std::string& name ) {
+			mApp.config().terminal.colorScheme = name;
+			mApp.terminal().applyColorScheme();
 		},
-		[this, schemeIds]( size_t selected ) {
-			mApp.config().terminal.colorScheme =
-				schemeIds[std::min( selected, schemeIds.size() - 1 )];
-			mApp.terminal().applyConfig();
-			savePreferences();
-		} );
-	panel->addChoice(
-		{ "terminalCursorStyle", "terminal.appearance",
-		  mUI->i18n( "eefm_cursor_style", "Cursor Style" ),
-		  mUI->i18n( "eefm_cursor_style_desc", "The shape and blinking of the cursor." ) },
-		{ mUI->i18n( "eefm_blinking_block", "Blinking Block" ),
-		  mUI->i18n( "eefm_steady_block", "Steady Block" ),
-		  mUI->i18n( "eefm_blink_underline", "Blinking Underline" ),
-		  mUI->i18n( "eefm_steady_underline", "Steady Underline" ),
-		  mUI->i18n( "eefm_blink_bar", "Blinking Bar" ),
-		  mUI->i18n( "eefm_steady_bar", "Steady Bar" ) },
-		[this] {
-			static constexpr TerminalCursorMode modes[] = {
-				TerminalCursorMode::BlinkingBlock,	TerminalCursorMode::SteadyBlock,
-				TerminalCursorMode::BlinkUnderline, TerminalCursorMode::SteadyUnderline,
-				TerminalCursorMode::BlinkBar,		TerminalCursorMode::SteadyBar };
-			auto found = std::find( std::begin( modes ), std::end( modes ),
-									mApp.config().terminal.cursorStyle );
-			return found == std::end( modes ) ? size_t{ 0 }
-											  : static_cast<size_t>( found - std::begin( modes ) );
-		},
-		[this]( size_t selected ) {
-			static constexpr TerminalCursorMode modes[] = {
-				TerminalCursorMode::BlinkingBlock,	TerminalCursorMode::SteadyBlock,
-				TerminalCursorMode::BlinkUnderline, TerminalCursorMode::SteadyUnderline,
-				TerminalCursorMode::BlinkBar,		TerminalCursorMode::SteadyBar };
-			mApp.config().terminal.cursorStyle = modes[std::min( selected, size_t{ 5 } )];
-			mApp.terminal().applyConfig();
-			savePreferences();
-		} );
-	panel->addChoice(
-		{ "terminalScrollbarMode", "terminal.appearance",
-		  mUI->i18n( "eefm_scrollbar_mode", "Scrollbar" ),
-		  mUI->i18n( "eefm_scrollbar_mode_desc", "When the terminal scrollbar is shown." ) },
-		{ mUI->i18n( "eefm_auto", "Auto" ), mUI->i18n( "eefm_always_visible", "Always Visible" ),
-		  mUI->i18n( "eefm_always_hidden", "Always Hidden" ) },
-		[this] {
-			return mApp.config().terminal.scrollBarMode == ScrollBarMode::Auto		 ? size_t{ 0 }
-				   : mApp.config().terminal.scrollBarMode == ScrollBarMode::AlwaysOn ? size_t{ 1 }
-																					 : size_t{ 2 };
-		},
-		[this]( size_t selected ) {
-			mApp.config().terminal.scrollBarMode = selected == 0   ? ScrollBarMode::Auto
-												   : selected == 1 ? ScrollBarMode::AlwaysOn
-																   : ScrollBarMode::AlwaysOff;
-			mApp.terminal().applyConfig();
-			savePreferences();
-		} );
+		true );
+	terminalSettings.addAppearance( mApp.config().terminal );
 
 	// Window
 	panel->addCategory( "window.behavior", mUI->i18n( "eefm_window", "Window" ),

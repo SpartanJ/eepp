@@ -1,6 +1,7 @@
 #include "utest.hpp"
 #include <eepp/system/base64.hpp>
 
+#include <array>
 #include <random>
 #include <string>
 
@@ -28,6 +29,34 @@ size_t decodeInto( const std::string& encoded, Base64::DecodeMode mode, std::str
 }
 
 } // namespace
+
+UTEST( Base64, encodes_kitty_sized_unaligned_input_with_exact_output_capacity ) {
+	std::string bytes( 1, '#' );
+	std::string digits;
+	for ( size_t group = 0; group < 1024; ++group ) {
+		bytes += "\xFB\xFF\xEF";
+		digits += "+//v";
+	}
+	bytes += "fo";
+	const auto* input = reinterpret_cast<const unsigned char*>( bytes.data() + 1 );
+	constexpr std::array<std::string_view, 3> tails{ "", "Zg==", "Zm8=" };
+	for ( size_t tailSize = 0; tailSize < tails.size(); ++tailSize ) {
+		const size_t size = 3072 + tailSize;
+		std::string expected = digits;
+		expected += tails[tailSize];
+		std::string output( expected.size() + 3, '#' );
+		char* encoded = output.data() + 1;
+
+		ASSERT_EQ( static_cast<size_t>( -1 ),
+				   Base64::encode( size, input, expected.size(), encoded ) );
+		ASSERT_EQ( std::string::npos, output.find_first_not_of( '#' ) );
+		ASSERT_EQ( expected.size(), Base64::encode( size, input, expected.size() + 1, encoded ) );
+		EXPECT_TRUE( expected == std::string_view( encoded, expected.size() ) );
+		EXPECT_TRUE( encoded[expected.size()] == '\0' );
+		EXPECT_TRUE( output.front() == '#' );
+		EXPECT_TRUE( output.back() == '#' );
+	}
+}
 
 UTEST( Base64, round_trips_every_length_in_every_mode ) {
 	std::mt19937 rng( 3 );

@@ -777,6 +777,15 @@ UTEST( FontRendering, latinOpenTypeFeaturesAreExplicitAndCachedByTextHints ) {
 	EXPECT_LE( closestGlyph.x, afterLigature.x );
 	EXPECT_EQ( 1, Text::findCharacterFromPos( insideLigature.asInt(), true, font.get(), 24, text,
 											  Text::Regular, 4, 0, {}, ligatureHints ) );
+	for ( const String& withLineBreak : { String( "fi\n" ), String( "fi\nnext" ) } ) {
+		const auto inside = Text::findCharacterPos( 1, font.get(), 24, withLineBreak, Text::Regular,
+													4, 0, {}, true, ligatureHints );
+		const auto after = Text::findCharacterPos( 2, font.get(), 24, withLineBreak, Text::Regular,
+												   4, 0, {}, true, ligatureHints );
+		EXPECT_EQ( insideLigature.x, inside.x );
+		EXPECT_EQ( afterLigature.x, after.x );
+		EXPECT_EQ( afterLigature.y, after.y );
+	}
 }
 
 UTEST( FontRendering, codeEditorUsesSelectedLigatureFeatures ) {
@@ -805,6 +814,41 @@ UTEST( FontRendering, codeEditorUsesSelectedLigatureFeatures ) {
 		editor->getDocument().line( 0 ).getTextHints() | TextHints::ContextualAlternates |
 			TextHints::NoKerning );
 	EXPECT_NEAR( shapedOffset.x, editorOffset.x, 0.01 );
+}
+
+UTEST( FontRendering, textEditSelectionReachesCaretAtShapedLineEnd ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Text Edit Selection Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
+	ASSERT_TRUE( app.getWindow() && app.getWindow()->isOpen() );
+	auto* edit = UITextEdit::New();
+	edit->setPixelsSize( { 900, 180 } );
+	edit->setLineWrapType( LineWrapType::Viewport );
+	const String message( U"Build fixes.\n\n"
+						  U"• Android — Added the platform sources to the NDK makefile. The ecode "
+						  U"release APK built with both arm64 and x86_64 libraries." );
+	edit->setText( message );
+	auto& document = edit->getDocument();
+	document.selectAll();
+	ASSERT_TRUE( document.getSelectedText() == message );
+	const auto range = document.getSelection( true );
+	for ( auto wrapMode : { LineWrapMode::NoWrap, LineWrapMode::Word } ) {
+		edit->setLineWrapMode( wrapMode );
+		ASSERT_EQ( wrapMode == LineWrapMode::Word,
+				   edit->getDocumentView().isWrappedLine( range.end().line() ) );
+		const auto rects = edit->getTextRangeRectangles( range, {}, {}, {}, {}, true );
+		ASSERT_FALSE( rects.empty() );
+		const auto caret = edit->getTextPositionOffset( range.end(), {}, false, false,
+														Text::LigatureCaretMode::ClosestGlyph );
+		EXPECT_NEAR( caret.x, rects.back().Right, 0.01 );
+		const auto row = edit->getDocumentView().toVisibleIndex( range.end().line(), true );
+		for ( int x = static_cast<int>( caret.x ); x <= static_cast<int>( caret.x ) + 3; ++x ) {
+			const auto column = edit->getColFromXOffset( row, x );
+			EXPECT_GE( column, range.end().column() - 1 );
+			EXPECT_LE( column, range.end().column() );
+		}
+	}
 }
 
 UTEST( FontRendering, sceneTextHintsPropagateAndWidgetsCanOverrideThem ) {

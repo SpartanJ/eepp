@@ -3,11 +3,12 @@ name: macOS
 on: [push, pull_request]
 
 permissions:
+  actions: write
   contents: write
 
 jobs:
   MacOS:
-    runs-on: macos-latest
+    runs-on: macos-15
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
@@ -24,6 +25,7 @@ jobs:
       uses: ./.github/actions/setup-compiler-cache
       with:
         key: macos-arm64-sdl3-sdk
+        max-size: 1100M
     - name: Build
       run: |
         bash projects/scripts/ci/time.sh Build bash projects/macos/make_no_fw.sh --backend=SDL3 --with-debug-symbols -e config=release_arm64
@@ -143,6 +145,9 @@ jobs:
         name: macos-test-output
         path: bin/unit_tests/output/*
 
+    - name: Save compiler cache
+      continue-on-error: true
+      uses: ./.github/actions/save-compiler-cache
     - name: Report build metrics
       if: always()
       uses: ./.github/actions/report-build-metrics

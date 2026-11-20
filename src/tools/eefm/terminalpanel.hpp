@@ -54,8 +54,9 @@ class TerminalPanel {
 	/** The shell follows the active pane (cd), unless a full screen program runs. */
 	void syncDirectory();
 
-	/** Applies the Terminal appearance settings to the terminal, if any. */
-	void applyConfig();
+	UITerminal* widget() const { return mTerminal; }
+
+	void applyColorScheme();
 
 	/** The terminal color schemes bundled with eterm and the user's (lazily loaded). */
 	const std::map<std::string, TerminalColorScheme>& colorSchemes();

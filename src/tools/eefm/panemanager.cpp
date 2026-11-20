@@ -726,19 +726,26 @@ void PaneManager::goForward( bool newTab ) {
 	}
 }
 
-void PaneManager::goUp( bool newTab ) {
+void PaneManager::goUp( UpTarget target ) {
 	auto* tab = currentTab();
 	if ( !tab )
 		return;
-	URI parent = Location::parent( tab->model->uri() );
-	if ( parent != tab->model->uri() ) {
-		if ( newTab ) {
-			openTab( *tab->pane, parent, false );
-		} else {
-			// Like Dolphin, the folder we leave stays selected in its parent.
-			tab->selectLater( Location::entryName( tab->model->uri() ) );
-			navigate( tab, parent );
-		}
+	const auto& uri = tab->model->uri();
+	URI parent = Location::parent( uri );
+	if ( parent == uri )
+		return;
+	if ( target == UpTarget::BackgroundTab ) {
+		openTab( *tab->pane, parent, false );
+		return;
+	}
+	// Like Dolphin, the folder we leave stays selected in its parent.
+	if ( target == UpTarget::ForegroundTab ) {
+		auto* opened = openTab( *tab->pane, parent );
+		opened->selectLater( Location::entryName( uri ) );
+		opened->view->setFocus();
+	} else {
+		tab->selectLater( Location::entryName( uri ) );
+		navigate( tab, std::move( parent ) );
 	}
 }
 

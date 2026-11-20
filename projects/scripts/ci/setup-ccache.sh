@@ -1,8 +1,15 @@
 #!/bin/bash
 # Source this after installing the native compiler and ccache, including inside VMs.
 
-EEPP_CCACHE_WRAPPERS="$(dirname "$CCACHE_DIR")/compiler-wrappers"
-mkdir -p "$EEPP_CCACHE_WRAPPERS"
+# Force compression even when a restored configuration disables it.
+unset CCACHE_NOCOMPRESS CCACHE_HARDLINK CCACHE_FILECLONE
+export CCACHE_COMPRESS=true CCACHE_NOHARDLINK=true CCACHE_NOFILECLONE=true
+export CCACHE_COMPRESSLEVEL=3
+echo "ccache compression enabled: level $CCACHE_COMPRESSLEVEL; cache limit ${CCACHE_MAXSIZE:-default}"
+
+# Keep executable symlinks on the runner/VM's native filesystem: an SSHFS-backed
+# workspace can resolve their absolute targets on the host instead of in the VM.
+EEPP_CCACHE_WRAPPERS=$(mktemp -d "${TMPDIR:-/tmp}/eepp-compiler-wrappers.XXXXXX")
 eepp_ccache_binary=$(command -v ccache)
 for eepp_compiler in cc c++ gcc g++ clang clang++ \
 	aarch64-linux-gnu-gcc aarch64-linux-gnu-g++; do
