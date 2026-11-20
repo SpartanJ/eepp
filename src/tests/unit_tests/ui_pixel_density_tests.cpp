@@ -26,6 +26,7 @@
 #include <eepp/ui/tools/uimergeview.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uihtmlimage.hpp>
@@ -36,6 +37,7 @@
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
@@ -1082,6 +1084,33 @@ UTEST( UISceneDensity, WindowViewportMinimumResolvesBeforeDensitySizeEnforcement
 	}
 }
 
+UTEST( UISceneDensity, CheckAndRadioIndicatorsKeepTheirLabelGap ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 2.f );
+	auto context = scene->makeCurrent();
+	auto* box = UICheckBox::New();
+	auto* radio = UIRadioButton::New();
+	for ( auto* control : { static_cast<UITextView*>( box ), static_cast<UITextView*>( radio ) } ) {
+		control->setParent( scene->getRoot() );
+		control->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+		control->setText( "Disable Welcome Screen" );
+	}
+	const auto gap = []( const UITextView* label, const UIWidget* indicator ) {
+		return label->getRealAlignOffset().x + label->getPixelsPadding().Left -
+			   indicator->getPixelsPosition().x - indicator->getPixelsSize().x;
+	};
+
+	for ( const Float density : { 2.f, 1.f, 1.25f, 2.f } ) {
+		scene->setPixelDensity( density );
+		scene->update( Time::Zero );
+		EXPECT_NEAR( gap( box, box->getInactiveButton() ), box->getTextSeparation() * density,
+					 0.01f );
+		EXPECT_NEAR( gap( radio, radio->getInactiveButton() ), radio->getTextSeparation() * density,
+					 0.01f );
+	}
+}
+
 UTEST( UISceneDensity, SettingsControlsStayReachableWhenLogicalViewportNarrows ) {
 	DensityApplication fixture;
 	auto* scene = fixture.app.getUI();
@@ -1387,6 +1416,42 @@ UTEST( UISceneDensity, ScrollPositionAndWrappedEditorAnchorSurviveReflow ) {
 		EXPECT_NEAR( editor->verticalThumb(), editor->getScroll().y / editor->getMaxScroll().y,
 					 0.001f );
 	}
+}
+
+UTEST( UISceneDensity, WrappedEditorKeepsScrollAnchorWhenViewportResizes ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setStyleSheet( "" );
+	scene->setPixelDensity( 1.25f );
+	auto context = scene->makeCurrent();
+	auto* editor = eeNew( DensityEditor, () );
+	editor->setParent( scene->getRoot() );
+	editor->setPixelsSize( 300, 180 );
+	editor->setLineWrapMode( LineWrapMode::Word );
+	String lines;
+	for ( int i = 0; i < 200; ++i )
+		lines += "A sufficiently long document line with wrapping content and a stable anchor.\n";
+	editor->getDocument().textInput( lines );
+	scene->update( Time::Zero );
+
+	const auto& view = editor->getDocumentView();
+	const TextPosition anchor( 50, 0 );
+	const auto lineHeight = editor->getLineHeight();
+	const auto anchorOffset = [&] {
+		return view.getLineYOffset( view.getVisibleLineRange( anchor ).visibleIndex, lineHeight );
+	};
+	const auto narrowOffset = anchorOffset();
+	editor->setScroll( { 0.f, static_cast<Float>( narrowOffset ) }, false );
+	editor->setPixelsSize( 700, 380 );
+	scene->update( Time::Zero );
+	ASSERT_LT( anchorOffset(), narrowOffset );
+	EXPECT_NEAR( editor->getScroll().y, anchorOffset(), 1.f );
+	EXPECT_NEAR( editor->verticalThumb(), editor->getScroll().y / editor->getMaxScroll().y,
+				 0.001f );
+
+	editor->setPixelsSize( 300, 180 );
+	scene->update( Time::Zero );
+	EXPECT_NEAR( editor->getScroll().y, narrowOffset, 1.f );
 }
 
 UTEST( UISceneDensity, HiddenWrappedEditorWithoutLayoutHasNoScrollAnchor ) {
@@ -2062,6 +2127,36 @@ UTEST( PixelDensityRegression, BreezeTabIconKeepsBalancedOuterMargins ) {
 			EXPECT_NEAR( trailingGap, PixelDensity::dpToPx( 4.f ), 1.f );
 		}
 		eeDelete( tabs );
+	}
+}
+
+UTEST( UISceneDensity, TabContentsKeepTheirSpacingThroughDensityChanges ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 2.f );
+	auto context = scene->makeCurrent();
+	auto* tabs = UITabWidget::New();
+	tabs->setParent( scene->getRoot() );
+	tabs->setSize( 300, 100 );
+	tabs->setTabsClosable( true );
+	auto* tab = tabs->add( "Welcome", UIWidget::New() );
+	tab->setIcon( DrawablePtr( RectangleDrawable::New( {}, Sizef( 32, 32 ) ) ) );
+	tab->getIcon()->setSize( 16, 16 );
+	scene->update( Time::Zero );
+
+	for ( const Float density : { 2.f, 1.f, 1.25f, 2.f } ) {
+		scene->setPixelDensity( density );
+		scene->update( Time::Zero );
+		auto* icon = tab->getIcon();
+		auto* label = tab->getTextView();
+		auto* close = tab->getCloseButton();
+		EXPECT_NEAR( icon->getPixelsPosition().x, std::ceil( 4.f * density ), 1.f );
+		EXPECT_NEAR( label->getPixelsPosition().x - icon->getPixelsPosition().x -
+						 icon->getPixelsSize().x,
+					 std::ceil( 2.f * density ), 1.f );
+		EXPECT_NEAR( tab->getPixelsSize().x - close->getPixelsPosition().x -
+						 close->getPixelsSize().x,
+					 std::ceil( 4.f * density ), 1.f );
 	}
 }
 

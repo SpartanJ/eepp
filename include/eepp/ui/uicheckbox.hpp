@@ -61,6 +61,8 @@ class EE_API UICheckBox : public UITextView {
 
 	virtual void onSizeChange();
 
+	virtual void onBeforePixelDensityReflow( UIDensityReflow& reflow );
+
 	void switchState();
 
 	virtual void onAlphaChange();

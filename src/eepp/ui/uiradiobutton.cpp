@@ -1,6 +1,7 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uidensityreflow.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 
 namespace EE { namespace UI {
@@ -105,6 +106,12 @@ void UIRadioButton::onAutoSize() {
 	}
 
 	alignFix();
+}
+
+void UIRadioButton::onBeforePixelDensityReflow( UIDensityReflow& reflow ) {
+	UITextView::onBeforePixelDensityReflow( reflow );
+	// The indicator children rebuild their sizes after the label.
+	reflow.restoreAfterLayout( [this]( const UIDensityReflow& ) { onAutoSize(); } );
 }
 
 void UIRadioButton::onSizeChange() {

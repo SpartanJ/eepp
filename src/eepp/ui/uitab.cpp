@@ -193,8 +193,8 @@ void UITab::onParentChange() {
 
 void UITab::onSizeChange() {
 	onAutoSize();
-	if ( NULL != getTabWidget() && !getTabWidget()->mPositioningTabRows )
-		getTabWidget()->orderTabs();
+	if ( auto* tabWidget = getTabWidget(); tabWidget && !tabWidget->mPositioningTabs )
+		tabWidget->orderTabs();
 	UISelectButton::onSizeChange();
 }
 
@@ -308,8 +308,8 @@ void UITab::onAutoSize() {
 	setInternalWidth( w );
 
 	if ( getSize().getWidth() != w ) {
-		if ( NULL != getTabWidget() )
-			getTabWidget()->orderTabs();
+		if ( tTabW && !tTabW->mPositioningTabs )
+			tTabW->orderTabs();
 	}
 
 	if ( getTextView()->getTextWidth() > getTextView()->getSize().getWidth() )
@@ -352,6 +352,13 @@ bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
 			mOwnedName = attribute.value();
 			setOwnedNode();
 			break;
+		case PropertyId::LayoutHeight: {
+			// On a tab, auto-sizing controls the width independently of its fixed height.
+			const auto autoSize = mFlags & UI_AUTO_SIZE;
+			const bool applied = UISelectButton::applyProperty( attribute );
+			mFlags |= autoSize;
+			return applied;
+		}
 		default:
 			return UISelectButton::applyProperty( attribute );
 	}

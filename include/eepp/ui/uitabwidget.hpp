@@ -285,6 +285,8 @@ class EE_API UITabWidget : public UIWidget {
 	void forEachTab( std::function<void( UITab* )> fn, Uint32 filterOwnedType = UI_TYPE_UNKNOWN );
 
   protected:
+	virtual void onBeforePixelDensityReflow( UIDensityReflow& reflow );
+
 	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
 
 	friend class UITab;
@@ -306,7 +308,7 @@ class EE_API UITabWidget : public UIWidget {
 	bool mEnabledCreateContextMenu{ false };
 	bool mEnableTabSwitcher{ false };
 	bool mTabSwitcherRunning{ false };
-	bool mPositioningTabRows{ false };
+	bool mPositioningTabs{ false };
 	bool mDensityDefaultDragResistance{ true };
 	TabPosition mTabPosition{ TabPosition::Top };
 	static constexpr Float DefaultTabDragResistance = 64.f;

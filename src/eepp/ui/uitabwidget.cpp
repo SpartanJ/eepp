@@ -2,6 +2,7 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/models/itemlistmodel.hpp>
+#include <eepp/ui/uidensityreflow.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -130,6 +131,20 @@ UITabWidget::UITabWidget() :
 	onSizeChange();
 
 	applyDefaultTheme();
+}
+
+void UITabWidget::onBeforePixelDensityReflow( UIDensityReflow& reflow ) {
+	UIWidget::onBeforePixelDensityReflow( reflow );
+	reflow.restoreAfterLayout( [this]( const UIDensityReflow& ) {
+		// Measure the tab contents after their fonts, icons, and margins have been rebuilt.
+		mPositioningTabs = true;
+		for ( auto* tab : mTabs ) {
+			tab->onAutoSize();
+			tab->updateLayout();
+		}
+		mPositioningTabs = false;
+		onSizeChange();
+	} );
 }
 
 void UITabWidget::onPixelDensityChange( Float oldDensity, Float newDensity ) {
@@ -665,7 +680,7 @@ void UITabWidget::posTabRows() {
 	Float y = mTabBar->getPixelsPadding().Top;
 
 	// Each row resizing itself would reorder every tab.
-	mPositioningTabRows = true;
+	mPositioningTabs = true;
 	for ( UITab* tab : mTabs ) {
 		const Float rowHeight = mStyleConfig.TabHeight != 0
 									? PixelDensity::dpToPx( mStyleConfig.TabHeight )
@@ -676,7 +691,7 @@ void UITabWidget::posTabRows() {
 			tab->setPixelsPosition( 0, y );
 		y += rowHeight + mStyleConfig.TabSeparation;
 	}
-	mPositioningTabRows = false;
+	mPositioningTabs = false;
 
 	mTabBar->setPixelsSize( viewportSize.getWidth(),
 							eemax( viewportSize.getHeight(), getTabsExtent() ) );
