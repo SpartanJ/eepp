@@ -199,11 +199,23 @@ void UINode::setInternalSize( const Sizef& size ) {
 }
 
 void UINode::setInternalPixelsSize( const Sizef& size ) {
-	mPhysicalGeometry |= PhysicalSize;
+	setInternalPixelsSize( size, PhysicalSize );
+}
+
+void UINode::setInternalPixelsSize( const Sizef& size, Uint8 physicalAxes ) {
+	mPhysicalGeometry |= physicalAxes;
 	Sizef s( fitMinMaxSizePx( size ) );
 
 	if ( s != mSize ) {
-		mDpSize = PixelDensity::pxToDp( s ).ceil();
+		const Sizef logicalSize = PixelDensity::pxToDp( s );
+		if ( mPhysicalGeometry & PhysicalWidth )
+			mDpSize.x = eeceil( logicalSize.x );
+		else if ( s.x != mSize.x )
+			mDpSize.x = logicalSize.x;
+		if ( mPhysicalGeometry & PhysicalHeight )
+			mDpSize.y = eeceil( logicalSize.y );
+		else if ( s.y != mSize.y )
+			mDpSize.y = logicalSize.y;
 		mSize = s;
 		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 		updateCenter();
@@ -256,11 +268,11 @@ UINode* UINode::setPixelsSize( const Float& x, const Float& y ) {
 }
 
 void UINode::setInternalPixelsWidth( const Float& width ) {
-	setInternalPixelsSize( Sizef( width, mSize.y ) );
+	setInternalPixelsSize( Sizef( width, mSize.y ), PhysicalWidth );
 }
 
 void UINode::setInternalPixelsHeight( const Float& height ) {
-	setInternalPixelsSize( Sizef( mSize.x, height ) );
+	setInternalPixelsSize( Sizef( mSize.x, height ), PhysicalHeight );
 }
 
 void UINode::setMinSize( const Sizef& size ) {

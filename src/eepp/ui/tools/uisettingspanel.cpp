@@ -602,7 +602,9 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 			applyScale( static_cast<Float>( value ) );
 			if ( auto* row = find<UIWidget>( "setting_uiScaleMode" ) ) {
 				auto* choice = row->find<UIDropDownModelList>( "setting_control_widget" );
-				choice->getListView()->getSelection().set( choice->getModel()->index( Manual, 0 ) );
+				if ( choice )
+					choice->getListView()->getSelection().set(
+						choice->getModel()->index( Manual, 0 ) );
 			}
 		} );
 }

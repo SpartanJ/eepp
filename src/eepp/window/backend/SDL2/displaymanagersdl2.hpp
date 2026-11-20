@@ -44,6 +44,9 @@ class EE_API DisplayManagerSDL2 : public DisplayManager {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	static void setDPIAwareness();
 #endif
+#if defined( EE_X11_PLATFORM )
+	static Float getX11DesktopScale( eeWindowHandle display );
+#endif
 
 	int getDisplayCount();
 

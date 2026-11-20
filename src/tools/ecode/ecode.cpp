@@ -2085,6 +2085,7 @@ const SyntaxColorScheme* App::getCurrentColorScheme() const {
 }
 
 void App::setTheme( const std::string& path ) {
+	auto context = mUISceneNode->makeCurrent();
 	UIThemePtr theme;
 
 	if ( path == "syntax_color_scheme" ) {
@@ -2098,13 +2099,15 @@ void App::setTheme( const std::string& path ) {
 	} else {
 		theme = UITheme::load( "uitheme", "uitheme", "", mFont, path );
 	}
-	theme->setDefaultFontSize( mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
+	theme->setDefaultFontSize( mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI ),
+							   mUISceneNode->getPixelDensity() );
 
 	if ( path != getDefaultThemePath() ) {
 		auto style = theme->getStyleSheet().getStyleFromSelector( ":root" );
 		if ( style ) {
 			auto inheritsBaseTheme = style->getVariableByName( "--inherit-base-theme" );
 			if ( !inheritsBaseTheme.isEmpty() ) {
+				theme->getStyleSheet().updateMediaLists( mUISceneNode->getMediaFeatures() );
 				StyleSheetParser parser;
 				parser.loadFromFile( getDefaultThemePath() );
 				for ( auto& tstyle : parser.getStyleSheet().getStyles() ) {

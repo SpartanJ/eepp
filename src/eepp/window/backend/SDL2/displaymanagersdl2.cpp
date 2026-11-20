@@ -3,6 +3,20 @@
 #include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
 #include <eepp/window/platform/physicaldisplaymetrics.hpp>
 
+#if defined( EE_X11_PLATFORM ) && defined( SDL_VIDEO_DRIVER_X11 ) && __has_include( <X11/Xresource.h> )
+#define EE_SDL2_X11_DESKTOP_SCALE
+#include <X11/Xatom.h>
+#include <eepp/window/backend/SDL2/syswm.hpp>
+#define Display SDLNativeDisplay
+#define Status int
+#include <X11/Xresource.h>
+#undef Status
+#undef Display
+#include <cmath>
+#include <cstdlib>
+#include <memory>
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 #include <emscripten.h>
 #endif
@@ -34,6 +48,71 @@ void DisplayManagerSDL2::setDPIAwareness() {
 		}
 #endif
 	}
+}
+#endif
+
+#if defined( EE_X11_PLATFORM )
+Float DisplayManagerSDL2::getX11DesktopScale( eeWindowHandle display ) {
+#ifdef EE_SDL2_X11_DESKTOP_SCALE
+	if ( !display )
+		return 0.f;
+	// Read RESOURCE_MANAGER directly. XResourceManagerString caches the startup settings.
+	using Library = std::unique_ptr<void, decltype( &Sys::unloadObject )>;
+	static const Library x11(
+		[] {
+			auto* library = Sys::loadObject( "libX11.so.6", false );
+			return library ? library : Sys::loadObject( "libX11.so", false );
+		}(),
+		Sys::unloadObject );
+	if ( !x11 )
+		return 0.f;
+#define EE_X11_LOAD( fn )  \
+	static const auto fn = \
+		reinterpret_cast<decltype( &::fn )>( Sys::loadFunction( x11.get(), #fn, false ) );
+	EE_X11_LOAD( XDefaultRootWindow )
+	EE_X11_LOAD( XInternAtom )
+	EE_X11_LOAD( XGetWindowProperty )
+	EE_X11_LOAD( XFree )
+	EE_X11_LOAD( XrmInitialize )
+	EE_X11_LOAD( XrmGetStringDatabase )
+	EE_X11_LOAD( XrmGetResource )
+	EE_X11_LOAD( XrmDestroyDatabase )
+#undef EE_X11_LOAD
+	if ( !XDefaultRootWindow || !XInternAtom || !XGetWindowProperty || !XFree || !XrmInitialize ||
+		 !XrmGetStringDatabase || !XrmGetResource || !XrmDestroyDatabase )
+		return 0.f;
+	const Atom resourceManager = XInternAtom( display, "RESOURCE_MANAGER", True );
+	if ( !resourceManager )
+		return 0.f;
+	Atom type = 0;
+	int format = 0;
+	unsigned long count = 0, remaining = 0;
+	unsigned char* data = nullptr;
+	const int status =
+		XGetWindowProperty( display, XDefaultRootWindow( display ), resourceManager, 0, 16384,
+							False, XA_STRING, &type, &format, &count, &remaining, &data );
+	std::unique_ptr<unsigned char, decltype( XFree )> resources( data, XFree );
+	if ( status != Success || type != XA_STRING || format != 8 || !resources || remaining )
+		return 0.f;
+	XrmInitialize();
+	std::unique_ptr<_XrmHashBucketRec, decltype( XrmDestroyDatabase )> database(
+		XrmGetStringDatabase( reinterpret_cast<const char*>( resources.get() ) ),
+		XrmDestroyDatabase );
+	if ( !database )
+		return 0.f;
+	XrmValue value{};
+	char* valueType = nullptr;
+	if ( !XrmGetResource( database.get(), "Xft.dpi", "Xft.Dpi", &valueType, &value ) ||
+		 !value.addr )
+		return 0.f;
+	char* end = nullptr;
+	const Float dpi = std::strtof( value.addr, &end );
+	return end != value.addr && *end == '\0' && std::isfinite( dpi ) && dpi > 0.f ? dpi / 96.f
+																				  : 0.f;
+#else
+	(void)display;
+	return 0.f;
+#endif
 }
 #endif
 

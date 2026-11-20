@@ -2089,6 +2089,7 @@ class EE_API UINode : public Node {
 	 * @param size The new size in pixels.
 	 */
 	void setInternalPixelsSize( const Sizef& size );
+	void setInternalPixelsSize( const Sizef& size, Uint8 physicalAxes );
 
 	/**
 	 * @brief Sets the internal width in pixels.

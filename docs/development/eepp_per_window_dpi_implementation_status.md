@@ -5,8 +5,9 @@ baseline `2613ec0921e628786f4dcbe8db2b1fa379b0ae47`.
 
 ## Implemented dynamic-DPI milestone
 
-- **Phase 1:** movable, nested, allocation-free thread-local density guards. Numeric worker scopes
-  use a snapshot; window/scene scopes bind live sources so a change inside a callback also updates
+- **Phase 1:** movable, nested, allocation-free thread-local density guards. Active and suspended
+  window or scene bindings retain a numeric snapshot if their density source is destroyed. Numeric
+  worker scopes use a snapshot. Window and scene scopes bind live sources so a change inside a callback also updates
   its enclosing scope. The inherited `SceneNode::Context` remains the only scene binding, including
   base pointers and mixed UI/plain scenes.
 - **Phase 2:** application override > window override > environment > native scale > 1. Exact
@@ -58,10 +59,10 @@ baseline `2613ec0921e628786f4dcbe8db2b1fa379b0ae47`.
   window's display ID. Both Auto modes round to the nearest 0.25 by default. Set
   `EEPP_PIXEL_DENSITY_ROUNDING=0` to use exact automatic values.
 - **Phase 8:** SDL2 DPI lookup uses the requested display index. Automatic UI scale uses the
-  window's effective DPI on Windows when available and otherwise the drawable-to-window ratio
-  (or 1 if unavailable). Physical PPI is queried separately. Display-change events are
-  supported where available. SDL2 display events invalidate cached mode and physical PPI data
-  before refreshing windows. SDL2 can reuse display indexes, so wrappers stay associated with
+  window's effective DPI on Windows, `Xft.dpi` on X11, and configured display density on Android
+  when available. The fallback uses the drawable-to-window ratio or 1. Physical PPI is queried
+  separately. Display-change events are supported where available. SDL2 display events invalidate
+  cached mode and physical PPI data before refreshing windows. SDL2 can reuse display indexes, so wrappers stay associated with
   their index slots and refresh their data when the display list changes. Unresolved indexes use
   the window's desktop scale. Movement and size events also trigger refresh. Supported SDL2
   Windows hints request per-monitor-v2 awareness/scaling before video initialization.

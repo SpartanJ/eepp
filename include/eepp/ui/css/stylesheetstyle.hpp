@@ -57,6 +57,8 @@ class EE_API StyleSheetStyle {
 
 	void setVariable( const StyleSheetVariable& variable, bool setSelectorSpecificity = true );
 
+	/** @deprecated Use StyleSheet::isMediaValid() for a rule in a stylesheet. This accessor
+	 * only reflects a standalone query evaluated by MediaQueryList::applyMediaFeatures(). */
 	inline bool isMediaValid() const { return !mMediaQueryList || mMediaQueryList->isUsed(); }
 
 	const MediaQueryList::ptr& getMediaQueryList() const;

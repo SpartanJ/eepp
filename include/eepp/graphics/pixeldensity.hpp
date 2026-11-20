@@ -11,6 +11,18 @@
 
 using namespace EE::Math;
 
+namespace EE { namespace Window {
+
+class Window;
+
+}} // namespace EE::Window
+
+namespace EE { namespace UI {
+
+class UISceneNode;
+
+}} // namespace EE::UI
+
 namespace EE { namespace Graphics {
 
 enum class PixelDensitySize : Uint32 {
@@ -45,8 +57,10 @@ class EE_API PixelDensity {
 
 		explicit Context( Float density, const Float* source = nullptr );
 
-		const Float* mPreviousSource;
-		Float mPreviousDensity;
+		Context** findBinding();
+		Context* mPrevious;
+		const Float* mSource;
+		Float mDensity;
 		bool mActive{ true };
 	};
 
@@ -128,6 +142,12 @@ class EE_API PixelDensity {
 
   protected:
 	static Float sPixelDensity;
+
+  private:
+	friend class EE::Window::Window;
+	friend class EE::UI::UISceneNode;
+
+	static void snapshotBindings( const Float* source );
 };
 
 }} // namespace EE::Graphics

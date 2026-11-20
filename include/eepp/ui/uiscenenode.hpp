@@ -1214,6 +1214,7 @@ class EE_API UISceneNode : public SceneNode {
 	virtual void onSceneChange();
 
 	void updateParentSizeListener();
+	void resizeToParent();
 	void onViewportPixelsSizeChange();
 	const Sizef& getRootPixelsSize() const;
 

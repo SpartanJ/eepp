@@ -24,6 +24,8 @@ bool setNativeScrollMomentumEnabled( bool enabled );
 
 Float getPhysicalDisplayDPI( const Math::Rect& bounds );
 
+Float getBackingDisplayDPI( const Math::Rect& bounds, Float windowBackingScale );
+
 bool setWindowTitleBarSeparatorVisible( void* window, bool visible );
 
 bool setWindowTitleBarColor( void* window, Uint8 red, Uint8 green, Uint8 blue );

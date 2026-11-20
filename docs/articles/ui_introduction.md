@@ -232,15 +232,16 @@ Set `EEPP_PIXEL_DENSITY_ROUNDING=0` to use the exact automatic scale. `Window::g
 describes the ratio between framebuffer pixels and native window coordinates, `getDisplayScale()`
 returns the raw native UI scale, and `getPixelDensity()` reports the effective eepp UI density.
 
-Automatic scaling uses the desktop's requested UI scale with SDL3. With SDL2 it uses the window's
-effective DPI on Windows when available. Other SDL2 drivers use the drawable-to-window ratio,
-which can stay at 1 on desktops that apply scaling without exposing it to SDL2. Physical monitor
+Automatic scaling uses the desktop's requested UI scale with SDL3. SDL2 uses the window's
+effective DPI on Windows, the desktop's `Xft.dpi` setting on X11, and Android's configured
+display density when available. SDL2 falls back to the drawable-to-window ratio. Physical monitor
 PPI is a separate opt-in policy: set
 `WindowSettings::DensityMode = PixelDensityMode::PhysicalPPI`, or use
 `EEPP_PIXEL_DENSITY_MODE=physical-ppi` with the default window policy. It resolves density as
 `max(1, physical PPI / reference PPI)`, with a default reference of 96. X11, Windows, and macOS
-provide physical measurements. On macOS the calculation prefers the panel's native mode when
-available. Missing measurements fall back to desktop scale, including on Wayland. Fixed
+provide physical measurements. On macOS the automatic calculation uses the window's backing
+pixels per inch to account for scaled display modes. Panel PPI remains available for diagnostics.
+Missing measurements fall back to desktop scale, including on Wayland. Fixed
 application, window, and environment density overrides take priority in either policy. Generic
 window INI settings accept `pixeldensitymode=default|display-scale|physical-ppi` and optional
 `pixeldensityreferenceppi`. ecode persists those choices alongside `pixeldensity` in the profile's

@@ -103,7 +103,19 @@ bool Window::refreshPixelDensity() {
 	} else {
 		Float automaticDensity = displayScale;
 		if ( mPixelDensityMode == PixelDensityMode::PhysicalPPI ) {
-			const Float dpi = getPhysicalDisplayDPI();
+			Float dpi = getPhysicalDisplayDPI();
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+			if ( dpi > 0.f ) {
+				auto* display =
+					Engine::instance()->getDisplayManager()->getDisplayIndex( displayIndex );
+				if ( display ) {
+					const Float backingDPI =
+						Private::getBackingDisplayDPI( display->getBounds(), getScale() );
+					if ( backingDPI > 0.f )
+						dpi = backingDPI;
+				}
+			}
+#endif
 			if ( std::isfinite( dpi ) && dpi > 0.f )
 				automaticDensity = eemax( 1.f, dpi / getPixelDensityReferencePPI() );
 		}
@@ -222,6 +234,7 @@ Float Window::getDisplayScale() const {
 }
 
 Window::~Window() {
+	PixelDensity::snapshotBindings( &mPixelDensity );
 	if ( WindowInitialization::isPending() )
 		WindowInitialization::cancel( this );
 	Private::DragManager::invalidateWindow( this );

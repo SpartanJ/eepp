@@ -159,6 +159,8 @@ class EE_API MediaQueryList {
 
 	static MediaQueryList::ptr parse( const std::string& str );
 
+	/** Returns the result of the last applyMediaFeatures() on this standalone query.
+	 * Use StyleSheet::isMediaValid() for matches owned by a stylesheet. */
 	inline bool isUsed() const { return mUsed; }
 
 	bool applyMediaFeatures( const MediaFeatures& features ); // returns true if the isUsed changed

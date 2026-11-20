@@ -96,7 +96,11 @@ class EE_API UITheme {
 	/** Logical theme source shared by scenes with different effective densities. */
 	Float getDefaultFontSizeDp() const;
 
+	/** Sets a pixel size measured at the current density. */
 	void setDefaultFontSize( const Float& defaultFontSize );
+
+	/** Sets a pixel size measured at an explicit density, independent of the calling scope. */
+	void setDefaultFontSize( const Float& defaultFontSize, Float density );
 
 	UIIconTheme* getIconTheme() const;
 

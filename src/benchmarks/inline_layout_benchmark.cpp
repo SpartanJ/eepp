@@ -124,7 +124,8 @@ UTEST( Benchmark, CSSClassIndexLookup ) {
 	Clock legacyMatchingClock;
 	for ( int iteration = 0; iteration < matchingIterations; ++iteration ) {
 		for ( const auto& style : parser.getStyleSheet().getStyles() ) {
-			if ( style->isMediaValid() && style->getSelector().select( widget, false ) )
+			if ( parser.getStyleSheet().isMediaValid( style->getMediaQueryList() ) &&
+				 style->getSelector().select( widget, false ) )
 				++legacyMatchCount;
 		}
 	}

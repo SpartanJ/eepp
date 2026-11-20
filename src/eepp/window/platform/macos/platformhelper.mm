@@ -198,12 +198,19 @@ bool setWindowTitleBarSeparatorVisible( void* window, bool visible ) {
 	return false;
 }
 
-Float getPhysicalDisplayDPI( const Math::Rect& bounds ) {
+static CGDirectDisplayID getDisplayAtBounds( const Math::Rect& bounds ) {
 	CGDirectDisplayID display = 0;
 	uint32_t count = 0;
 	const CGPoint point =
 		CGPointMake( bounds.Left + bounds.getWidth() / 2, bounds.Top + bounds.getHeight() / 2 );
 	if ( CGGetDisplaysWithPoint( point, 1, &display, &count ) != kCGErrorSuccess || !count )
+		return kCGNullDirectDisplay;
+	return display;
+}
+
+Float getPhysicalDisplayDPI( const Math::Rect& bounds ) {
+	const auto display = getDisplayAtBounds( bounds );
+	if ( display == kCGNullDirectDisplay )
 		return 0.f;
 	const CGSize size = CGDisplayScreenSize( display );
 	if ( size.width <= 0 || size.height <= 0 )
@@ -233,6 +240,21 @@ Float getPhysicalDisplayDPI( const Math::Rect& bounds ) {
 		return 0.f;
 	return 25.4f * std::hypot( static_cast<Float>( width ), static_cast<Float>( height ) ) /
 		   std::hypot( static_cast<Float>( size.width ), static_cast<Float>( size.height ) );
+}
+
+Float getBackingDisplayDPI( const Math::Rect& bounds, Float windowBackingScale ) {
+	const auto display = getDisplayAtBounds( bounds );
+	if ( display == kCGNullDirectDisplay || !std::isfinite( windowBackingScale ) ||
+		 windowBackingScale <= 0.f )
+		return 0.f;
+	const CGSize millimeters = CGDisplayScreenSize( display );
+	const CGSize points = CGDisplayBounds( display ).size;
+	if ( millimeters.width <= 0 || millimeters.height <= 0 || points.width <= 0 ||
+		 points.height <= 0 )
+		return 0.f;
+	// The compositor can map these backing pixels to a different number of panel pixels.
+	return 25.4f * windowBackingScale * std::hypot( points.width, points.height ) /
+		   std::hypot( millimeters.width, millimeters.height );
 }
 
 bool setWindowTitleBarColor( void* window, Uint8 red, Uint8 green, Uint8 blue ) {

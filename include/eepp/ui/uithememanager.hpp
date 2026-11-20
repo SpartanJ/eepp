@@ -32,7 +32,7 @@ class EE_API UIThemeManager {
 	Font* getDefaultFont() const;
 
 	/** Sets the manager's font size in pixels at its current density, overriding the theme default.
-	 * The size scales with subsequent density changes. */
+	 * The size scales with subsequent density changes and applies only to this manager. */
 	UIThemeManager* setDefaultFontSize( const Float& fontSize );
 
 	const Float& getDefaultFontSize() const;

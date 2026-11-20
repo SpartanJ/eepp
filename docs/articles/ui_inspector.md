@@ -360,7 +360,9 @@ PPI)** under **Settings → Appearance → Fonts & Scale** to change the mode li
 between monitors and
 query `ui.contexts` in an inspector-enabled run: the display index should change, and effective
 density should follow `max(1, physicalDPI / pixelDensityReferencePPI)` rounded to the nearest 0.25
-where measurement is supported. Set `EEPP_PIXEL_DENSITY_ROUNDING=0` to compare the exact values.
+where measurement is supported. In a scaled macOS display mode the automatic calculation uses
+backing pixels per inch, and `physicalDPI` still describes the panel. Set
+`EEPP_PIXEL_DENSITY_ROUNDING=0` to compare the exact automatic density.
 The reference defaults to 96. Desktop scale remains the
 default policy; differing physical PPI alone need not produce different desktop scales. Physical
 measurement is supported on X11, Windows and macOS; Wayland and other unsupported paths currently

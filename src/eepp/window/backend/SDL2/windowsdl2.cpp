@@ -29,8 +29,11 @@
 #include <eepp/window/draganddrop/cocoadraganddrop.hpp>
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_WIN
+#if EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM )
 #include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
 #include <eepp/window/draganddrop/win32draganddrop.hpp>
 #endif
 
@@ -949,6 +952,17 @@ Float WindowSDL::getDisplayScale() const {
 		if ( dpi > 0 )
 			return dpi / 96.f;
 	}
+#elif defined( EE_X11_PLATFORM )
+	const Float desktopScale = DisplayManagerSDL2::getX11DesktopScale( getWindowHandler() );
+	if ( desktopScale > 0.f )
+		return desktopScale;
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	// SDL's diagonal DPI on Android comes from the configured densityDpi.
+	const int index = SDL_GetWindowDisplayIndex( mSDLWindow );
+	Float dpi = 0.f;
+	if ( index >= 0 && SDL_GetDisplayDPI( index, &dpi, nullptr, nullptr ) == 0 &&
+		 std::isfinite( dpi ) && dpi > 0.f )
+		return dpi / 96.f;
 #endif
 	// Other SDL2 drivers expose the backing ratio. Hardware DPI is a separate policy.
 	const Float scale = getScale();

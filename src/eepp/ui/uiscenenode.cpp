@@ -209,10 +209,9 @@ void UISceneNode::refreshPixelDensity() {
 	if ( displayChanged )
 		refreshDisplayDPI();
 	if ( resized )
-		setPixelsSize( mParentNode->getPixelsSize() );
-	onMediaChanged();
-	if ( resized )
-		sendMsg( this, NodeMessage::WindowResize );
+		resizeToParent();
+	else
+		onMediaChanged();
 	refreshChildSceneMetrics();
 }
 
@@ -442,6 +441,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window, bool importDefaultResource
 }
 
 UISceneNode::~UISceneNode() {
+	PixelDensity::snapshotBindings( &mPixelDensity );
 	mNodeFlags |= NODE_FLAG_CLOSE;
 	onClose();
 	// Native backends must detach while their scene and semantic root are still alive.
@@ -794,14 +794,23 @@ void UISceneNode::updateParentSizeListener() {
 		return;
 
 	auto context = makeCurrent();
-	setPixelsSize( getParent()->getPixelsSize() );
+	resizeToParent();
 	mCurOnSizeChangeListener = getParent()->on( Event::OnSizeChange, [this]( const Event* ) {
 		auto context = makeCurrent();
 		setDirty();
-		setPixelsSize( getParent()->getPixelsSize() );
+		resizeToParent();
+	} );
+}
+
+void UISceneNode::resizeToParent() {
+	const Sizef previousViewport = getViewportPixelsSize();
+	setPixelsSize( getParent()->getPixelsSize() );
+	if ( previousViewport != getViewportPixelsSize() ) {
+		onViewportPixelsSizeChange();
+	} else {
 		onMediaChanged();
 		sendMsg( this, NodeMessage::WindowResize );
-	} );
+	}
 }
 
 void UISceneNode::setTranslator( Translator translator ) {
@@ -1690,7 +1699,7 @@ void UISceneNode::applyDefaultFont( Font* font, Float size ) {
 	UITheme* theme = mUIThemeManager->getDefaultTheme();
 	mUIThemeManager->setDefaultFontSize( size );
 	if ( theme )
-		theme->setDefaultFontSize( size );
+		theme->setDefaultFontSize( size, getPixelDensity() );
 	if ( font ) {
 		mUIThemeManager->setDefaultFont( font );
 		if ( theme )

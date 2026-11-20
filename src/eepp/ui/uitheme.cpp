@@ -392,8 +392,12 @@ const Float& UITheme::getDefaultFontSize() const {
 }
 
 void UITheme::setDefaultFontSize( const Float& defaultFontSize ) {
+	setDefaultFontSize( defaultFontSize, PixelDensity::getPixelDensity() );
+}
+
+void UITheme::setDefaultFontSize( const Float& defaultFontSize, Float density ) {
 	mDefaultFontSize = defaultFontSize;
-	mDefaultFontDensity = PixelDensity::getPixelDensity();
+	mDefaultFontDensity = std::isfinite( density ) && density > 0.f ? density : 1.f;
 }
 
 Float UITheme::getDefaultFontSizeDp() const {

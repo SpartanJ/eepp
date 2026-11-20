@@ -90,6 +90,22 @@ struct DensityApplication {
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 2.f ) };
 };
 
+Float getPhysicalAutoBackingPPI( EE::Window::Window* window ) {
+	const Float panelPPI = window->getPhysicalDisplayDPI();
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	if ( panelPPI > 0.f ) {
+		DensityEnvironment rounding( "EEPP_PIXEL_DENSITY_ROUNDING" );
+		Sys::setEnv( "EEPP_PIXEL_DENSITY_ROUNDING", "0" );
+		const Float reference = window->getPixelDensityReferencePPI();
+		window->setPixelDensityReferencePPI( 1.f );
+		const Float backingPPI = window->getPixelDensity();
+		window->setPixelDensityReferencePPI( reference );
+		return backingPPI;
+	}
+#endif
+	return panelPPI;
+}
+
 template <typename Base> class PasswordInputProbe : public Base {
   public:
 	PasswordInputProbe() : Base() {}
@@ -100,6 +116,8 @@ template <typename Base> class PasswordInputProbe : public Base {
 class PixelSetterWidget : public UIWidget {
   public:
 	PixelSetterWidget() : UIWidget( "pixel-setter-test" ) {}
+	using UIWidget::setInternalPixelsHeight;
+	using UIWidget::setInternalPixelsWidth;
 
 	int paddingChanges{ 0 };
 	int marginChanges{ 0 };
@@ -242,7 +260,8 @@ UTEST( PixelDensityContext, NestedScopesRestoreFallbackAndConversions ) {
 UTEST( PixelDensityContext, MovingGuardTransfersIdempotentRestoration ) {
 	static_assert( !std::is_copy_constructible_v<PixelDensity::Context> );
 	static_assert( !std::is_move_assignable_v<PixelDensity::Context> );
-	static_assert( sizeof( PixelDensity::Context ) <= sizeof( void* ) + 2 * sizeof( Float ) );
+	// An active guard also links to the enclosing guard so destruction can snapshot both.
+	static_assert( sizeof( PixelDensity::Context ) <= 2 * sizeof( void* ) + 2 * sizeof( Float ) );
 	RestoreDensity restore;
 	PixelDensity::setPixelDensity( 1.f );
 	auto outer = PixelDensity::makeCurrent( 1.25f );
@@ -299,6 +318,43 @@ UTEST( PixelDensityContext, LiveSourcesTrackChangesAndRestoreNestedSnapshots ) {
 		EXPECT_EQ( PixelDensity::getPixelDensity(), 1.5f );
 	}
 	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.f );
+}
+
+UTEST( UISceneDensity, DestroyedSceneBindingsKeepTheirLastDensity ) {
+	DensityApplication fixture;
+	auto* scene = UISceneNode::New( fixture.app.getWindow() );
+	scene->setPixelDensity( 1.5f );
+	const Float* source = &scene->getPixelDensity();
+	auto context = scene->makeCurrent();
+	{
+		auto suspended = PixelDensity::makeCurrent( 1.25f );
+		auto active = PixelDensity::bindCurrent( source );
+		scene->setPixelDensity( 1.75f );
+		eeDelete( scene );
+		EXPECT_NE( &PixelDensity::getPixelDensity(), source );
+		EXPECT_EQ( PixelDensity::getPixelDensity(), 1.75f );
+		EXPECT_EQ( PixelDensity::dpToPx( 8.f ), 14.f );
+	}
+	EXPECT_NE( &PixelDensity::getPixelDensity(), source );
+	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.75f );
+}
+
+UTEST( PerWindowDensity, DestroyedWindowBindingsKeepTheirLastDensity ) {
+	DensityApplication fixture;
+	auto* engine = Engine::instance();
+	auto* window =
+		engine->createWindow( WindowSettings( 320, 240, "Destroyed density binding",
+											  WindowStyle::Default | WindowStyle::Hidden,
+											  WindowBackend::Default, 32, {}, 1.5f, false, true ),
+							  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( window != nullptr );
+	engine->setCurrentWindow( fixture.app.getWindow() );
+	auto context = engine->makeWindowCurrent( window );
+	const Float* source = &window->getPixelDensity();
+	window->setPixelDensityOverride( 1.75f );
+	engine->destroyWindow( window );
+	EXPECT_NE( &PixelDensity::getPixelDensity(), source );
+	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.75f );
 }
 
 UTEST( PerWindowDensity, IndependentWindowsAndNestedSceneContexts ) {
@@ -483,7 +539,7 @@ UTEST( PerWindowDensity, AutomaticSourcesCanChangeLiveAndOverridesKeepPriority )
 	EXPECT_EQ( window->getPixelDensity(), window->getDisplayScale() );
 	window->setPixelDensityMode( PixelDensityMode::PhysicalPPI );
 	scene->update( Time::Zero );
-	const Float physicalDPI = window->getPhysicalDisplayDPI();
+	const Float physicalDPI = getPhysicalAutoBackingPPI( window );
 	const Float physicalDensity =
 		physicalDPI > 0.f ? eemax( 1.f, physicalDPI / 96.f ) : window->getDisplayScale();
 	EXPECT_EQ( window->getPixelDensity(), physicalDensity );
@@ -523,11 +579,11 @@ UTEST( PerWindowDensity, PhysicalAutoRoundsToNearestQuarterUnlessDisabled ) {
 	DensityApplication fixture;
 	auto* window = fixture.app.getWindow();
 	auto* scene = fixture.app.getUI();
-	const Float physicalDPI = window->getPhysicalDisplayDPI();
-	if ( physicalDPI <= 0.f )
-		UTEST_SKIP( "Physical display PPI is unavailable" );
 	window->setPixelDensityMode( PixelDensityMode::PhysicalPPI );
 	window->setPixelDensityOverride( 0.f );
+	const Float physicalDPI = getPhysicalAutoBackingPPI( window );
+	if ( physicalDPI <= 0.f )
+		UTEST_SKIP( "Physical display PPI is unavailable" );
 	for ( const auto& [raw, expected] : { std::pair{ 1.41f, 1.5f }, std::pair{ 1.61f, 1.5f },
 										  std::pair{ 1.89f, 2.f }, std::pair{ 2.61f, 2.5f } } ) {
 		window->setPixelDensityReferencePPI( physicalDPI / raw );
@@ -839,6 +895,26 @@ UTEST( UISceneDensity, EmbeddedSceneCanCreateSiblingDuringReflow ) {
 	EXPECT_EQ( second->getPixelDensity(), 1.5f );
 }
 
+UTEST( UISceneDensity, DensityRequestedDuringChildPropagationAppliesOnNextUpdate ) {
+	DensityApplication fixture;
+	auto* host = fixture.app.getUI();
+	auto* child = UISceneNode::New( fixture.app.getWindow() );
+	child->setParent( host->getRoot() );
+	auto context = child->makeCurrent();
+	auto* probe = eeNew( DensityReflowProbe, () );
+	probe->capture = [&]( UIDensityReflow& reflow ) {
+		if ( reflow.getNewDensity() == 1.5f )
+			host->setPixelDensity( 1.25f );
+	};
+
+	host->setPixelDensity( 1.5f );
+	EXPECT_EQ( host->getPixelDensity(), 1.5f );
+	EXPECT_EQ( child->getPixelDensity(), 1.5f );
+	host->update( Time::Zero );
+	EXPECT_EQ( host->getPixelDensity(), 1.25f );
+	EXPECT_EQ( child->getPixelDensity(), 1.25f );
+}
+
 UTEST( UISceneDensity, ReparentedWidgetSubtreeUsesDestinationDensity ) {
 	DensityApplication fixture;
 	auto* host = fixture.app.getUI();
@@ -944,6 +1020,49 @@ UTEST( UISceneDensity, EmbeddedViewportResizeUpdatesMediaWithoutDensityReflow ) 
 	EXPECT_EQ( reflows, 0 );
 	EXPECT_TRUE( child->getPixelsSize() == parent->getPixelsSize() );
 	EXPECT_EQ( child->getSize().x, 128.f );
+}
+
+UTEST( UISceneDensity, EmbeddedViewportResizeReappliesViewportLengths ) {
+	DensityApplication fixture;
+	auto* host = fixture.app.getUI();
+	host->setPixelDensity( 1.f );
+	auto hostContext = host->makeCurrent();
+	auto* parent = UIWidget::New();
+	parent->setSize( 200.f, 160.f );
+	auto* child = UISceneNode::New( fixture.app.getWindow() );
+	child->setParent( parent );
+	auto context = child->makeCurrent();
+	child->setPixelsSize( 100.f, 100.f );
+	auto* widget = eeNew( DensityReflowProbe, () );
+	widget->setId( "viewport-length" );
+	int reflows = 0;
+	widget->capture = [&]( UIDensityReflow& ) { ++reflows; };
+	child->setStyleSheet( "#viewport-length { width: 50vw; height: 20dp; }" );
+	EXPECT_EQ( widget->getPixelsSize().x, 50.f );
+	child->update( Time::Zero );
+	EXPECT_EQ( widget->getPixelsSize().x, 100.f );
+	parent->setPixelsSize( 240.f, 160.f );
+	child->update( Time::Zero );
+	EXPECT_EQ( widget->getPixelsSize().x, 120.f );
+	EXPECT_EQ( reflows, 0 );
+}
+
+UTEST( UISceneDensity, InternalPixelSettersPreserveTheOtherLogicalAxis ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.25f );
+	auto context = scene->makeCurrent();
+	auto* width = eeNew( PixelSetterWidget, () );
+	auto* height = eeNew( PixelSetterWidget, () );
+	width->setSize( 100.5f, 20.5f );
+	height->setSize( 100.5f, 20.5f );
+	width->setInternalPixelsWidth( 40.f );
+	height->setInternalPixelsHeight( 30.f );
+	scene->setPixelDensity( 2.f );
+	EXPECT_EQ( width->getPixelsSize().x, 40.f );
+	EXPECT_EQ( width->getPixelsSize().y, 41.f );
+	EXPECT_EQ( height->getPixelsSize().x, 201.f );
+	EXPECT_EQ( height->getPixelsSize().y, 30.f );
 }
 
 UTEST( UISceneDensity, WindowViewportMinimumResolvesBeforeDensitySizeEnforcement ) {
@@ -1086,6 +1205,29 @@ UTEST( UISceneDensity, SharedMediaQueriesMatchEachSceneIndependently ) {
 		EXPECT_TRUE( hostWidget->getBackgroundColor() ==
 					 ( density == 1.25f ? Color( "#00ff00" ) : Color::Red ) );
 	}
+}
+
+UTEST( UISceneDensity, StylesheetQueriesExposeTheirOwnActiveRules ) {
+	CSS::StyleSheetParser parser;
+	ASSERT_TRUE( parser.loadFromString( std::string_view{ R"css(
+:root { --scale-marker: standard; }
+@media (pixel-density: 2) { :root { --scale-marker: high; } }
+)css" } ) );
+	CSS::StyleSheet standard;
+	standard = parser.getStyleSheet();
+	CSS::StyleSheet high;
+	high = parser.getStyleSheet();
+	CSS::MediaFeatures features{};
+	features.type = CSS::media_type_screen;
+	features.pixelDensity = 1.f;
+	standard.updateMediaLists( features );
+	features.pixelDensity = 2.f;
+	EXPECT_TRUE( high.updateMediaLists( features ) );
+	auto rule = high.getStyleFromSelector( ":root", true );
+	ASSERT_TRUE( rule && rule->getMediaQueryList() );
+	EXPECT_TRUE( high.isMediaValid( rule->getMediaQueryList() ) );
+	EXPECT_FALSE( standard.isMediaValid( rule->getMediaQueryList() ) );
+	EXPECT_TRUE( standard.getStyleFromSelector( ":root", true ).get() != rule.get() );
 }
 
 UTEST( UISceneDensity, MediaLengthsResolveFromFeaturesWithoutAmbientWindow ) {
@@ -2103,6 +2245,14 @@ UTEST( UISceneDensity, ManagerFontSizeOverrideIsSceneLocal ) {
 	EXPECT_EQ( manager->getDefaultFontSize(), 22.f );
 	manager->setDefaultTheme( theme );
 	EXPECT_EQ( manager->getDefaultFontSize(), 22.f );
+}
+
+UTEST( UISceneDensity, ThemeFontSizeCanUseAnExplicitDensity ) {
+	auto context = PixelDensity::makeCurrent( 3.f );
+	auto theme = UITheme::New( "density-theme", "density-theme" );
+	theme->setDefaultFontSize( 20.f, 2.f );
+	EXPECT_EQ( theme->getDefaultFontSize(), 20.f );
+	EXPECT_EQ( theme->getDefaultFontSizeDp(), 10.f );
 }
 
 UTEST( PixelDensityRegression, BreezePreservesConfiguredCodeEditorFontSize ) {

@@ -42,6 +42,11 @@ class EE_API StyleSheet {
 
 	bool updateMediaLists( const MediaFeatures& features );
 
+	/** Returns the query's match for this stylesheet after updateMediaLists(). */
+	bool isMediaValid( const MediaQueryList::ptr& list ) const {
+		return !list || mActiveMediaQueries.find( list.get() ) != mActiveMediaQueries.end();
+	}
+
 	bool isMediaQueryListEmpty() const;
 
 	StyleSheetStyleVector getStyleSheetStyleByAtRule( const AtRuleType& atRuleType ) const;
@@ -117,10 +122,6 @@ class EE_API StyleSheet {
 	static size_t nodeHash( const std::string& tag, const std::string& id );
 
 	void addMediaQueryList( MediaQueryList::ptr list );
-
-	bool isMediaValid( const MediaQueryList::ptr& list ) const {
-		return !list || mActiveMediaQueries.find( list.get() ) != mActiveMediaQueries.end();
-	}
 
 	bool addStyleToNodeIndex( StyleSheetStyle* style );
 
