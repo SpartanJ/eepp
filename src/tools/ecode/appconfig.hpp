@@ -93,6 +93,7 @@ struct WindowStateConfig {
 	Sizei size{ 1280, 720 };
 	std::string winIcon;
 	bool maximized{ false };
+	bool useLegacyPixelDensity{ false };
 	PixelDensityMode pixelDensityMode{ PixelDensityMode::Default };
 	std::string panelPartition;
 	std::string statusBarPartition;

@@ -4736,8 +4736,10 @@ void App::init( InitParameters& params ) {
 														  : 0 );
 	mDisplayDPI = currentDisplay->getDPI();
 
-	if ( params.pidelDensity > 0 )
+	if ( params.pidelDensity > 0 ) {
 		mConfig.windowState.pixelDensity = params.pidelDensity;
+		mConfig.windowState.useLegacyPixelDensity = false;
+	}
 	Float pixelDensityOverride = mConfig.windowState.pixelDensity;
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	// Use the compact mobile default until an automatic mode or factor is explicitly selected.
@@ -5126,6 +5128,15 @@ void App::init( InitParameters& params ) {
 			}
 		} );
 
+		if ( mConfig.windowState.useLegacyPixelDensity ) {
+			// Older ecode versions used the startup framebuffer scale as a minimum on HiDPI
+			// displays.
+			const Float backingScale = mWindow->getScale();
+			if ( backingScale > pixelDensityOverride ) {
+				mWindow->setPixelDensityOverride( backingScale );
+				PixelDensity::setPixelDensity( mWindow->getPixelDensity() );
+			}
+		}
 		mUISceneNode = UISceneNode::New( nullptr, true, mThreadPool );
 		mLifetime.setDispatcher( mUISceneNode );
 		mUISceneNode->setThreadPool( mThreadPool );

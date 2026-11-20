@@ -98,15 +98,25 @@ bool Window::refreshPixelDensity() {
 	const Float oldDensity = mPixelDensity;
 	const Float displayScale = getDisplayScale();
 	const int displayIndex = getCurrentDisplayIndex();
-	Float automaticDensity = displayScale;
-	if ( mPixelDensityOverride <= 0.f && mPixelDensityMode == PixelDensityMode::PhysicalPPI ) {
-		const Float dpi = getPhysicalDisplayDPI();
-		if ( std::isfinite( dpi ) && dpi > 0.f )
-			automaticDensity = eemax( 1.f, dpi / getPixelDensityReferencePPI() );
+	if ( mPixelDensityOverride > 0.f ) {
+		mPixelDensity = mPixelDensityOverride;
+	} else {
+		Float automaticDensity = displayScale;
+		if ( mPixelDensityMode == PixelDensityMode::PhysicalPPI ) {
+			const Float dpi = getPhysicalDisplayDPI();
+			if ( std::isfinite( dpi ) && dpi > 0.f )
+				automaticDensity = eemax( 1.f, dpi / getPixelDensityReferencePPI() );
+		}
+		if ( !std::isfinite( automaticDensity ) || automaticDensity <= 0.f )
+			automaticDensity = 1.f;
+		const char* rounding = std::getenv( "EEPP_PIXEL_DENSITY_ROUNDING" );
+		if ( !rounding || std::string_view( rounding ) != "0" ) {
+			Float whole;
+			const Float fraction = std::modf( automaticDensity, &whole );
+			automaticDensity = eemax( 0.25f, whole + std::round( fraction * 4.f ) * 0.25f );
+		}
+		mPixelDensity = automaticDensity;
 	}
-	mPixelDensity = mPixelDensityOverride > 0.f ? mPixelDensityOverride
-					: std::isfinite( automaticDensity ) && automaticDensity > 0.f ? automaticDensity
-																				  : 1.f;
 	if ( mPixelDensity != oldDensity || mDisplayScale != displayScale ||
 		 mDensityDisplayIndex != displayIndex )
 		++mDisplayMetricsVersion;

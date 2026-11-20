@@ -1011,9 +1011,12 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 			mApp->getSettingsActions()->setTerminalFontSize( size );
 		} );
 	auto& windowState = mApp->getConfig().windowState;
-	panel.panel->addUIScaleSettings( "appearance.fonts", *mApp->getWindow(),
-									 windowState.pixelDensity, windowState.pixelDensityMode,
-									 [this] { mApp->saveConfig(); } );
+	panel.panel->addUIScaleSettings(
+		"appearance.fonts", *mApp->getWindow(), windowState.pixelDensity,
+		windowState.pixelDensityMode, [this] {
+			mApp->getConfig().windowState.useLegacyPixelDensity = false;
+			mApp->saveConfig();
+		} );
 	addBool( panel,
 			 { "editorFontInInputFields", "appearance.fonts",
 			   mApp->i18n( "editor_font_in_input_fields", "Editor Font in Input Fields" ),

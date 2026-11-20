@@ -937,18 +937,22 @@ Float WindowSDL::getScale() const {
 Float WindowSDL::getDisplayScale() const {
 	if ( !mSDLWindow || Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
 		return 1.f;
-	const Float scale = getScale();
-	const Float backingScale = std::isfinite( scale ) && scale > 0.f ? scale : 1.f;
-#if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_IOS
-	// SDL2 has no per-window content-scale API. Use fractional display DPI when available.
-	// Cocoa uses backing pixels because physical monitor DPI does not represent its UI scale.
-	const int index = SDL_GetWindowDisplayIndex( mSDLWindow );
-	Float dpi = 0.f;
-	if ( index >= 0 && SDL_GetDisplayDPI( index, &dpi, nullptr, nullptr ) == 0 &&
-		 std::isfinite( dpi ) && dpi > 0.f )
-		return eemax( backingScale, dpi / 96.f );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	// SDL2 can use pixel coordinates on Windows, so its drawable ratio can stay at 1 even
+	// when the desktop requests a different scale. Query the DPI assigned to this window.
+	using GetWindowDpi = UINT( WINAPI* )( HWND );
+	static const auto getWindowDpi = reinterpret_cast<GetWindowDpi>(
+		GetProcAddress( GetModuleHandleW( L"user32.dll" ), "GetDpiForWindow" ) );
+	const HWND window = getWindowHandler();
+	if ( getWindowDpi && window ) {
+		const UINT dpi = getWindowDpi( window );
+		if ( dpi > 0 )
+			return dpi / 96.f;
+	}
 #endif
-	return backingScale;
+	// Other SDL2 drivers expose the backing ratio. Hardware DPI is a separate policy.
+	const Float scale = getScale();
+	return std::isfinite( scale ) && scale > 0.f ? scale : 1.f;
 }
 
 Float WindowSDL::getPhysicalDisplayDPI() const {

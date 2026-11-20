@@ -52,11 +52,14 @@ baseline `2613ec0921e628786f4dcbe8db2b1fa379b0ae47`.
 - **Phase 7:** display/scale/move/pixel-size events mark pending metrics. Window refresh queries
   final native state after input pumping; Engine processes it before scene updates. Scene updates
   also support legacy loops that pump Input directly. The UI update checks pending window metrics
-  once before layout and enters the rebind helper only when work is queued. Environment revisions
-  avoid repeated reflow for low-level events and refresh metadata even with fixed UI overrides. SDL3 invalidates
-  display enumeration after display events and resolves physical PPI using the window's display ID.
-- **Phase 8:** SDL2 DPI lookup uses the requested display index; its window scale uses continuous
-  DPI/backing-scale approximation, with Cocoa using backing scale. Display-change events are
+  once before layout and enters the rebind helper only when work is queued. Metadata-only changes
+  update scene DPI and media matches. Density reflow runs when a scene's effective density changes.
+  SDL3 invalidates display enumeration after display events and resolves physical PPI using the
+  window's display ID. Both Auto modes round to the nearest 0.25 by default. Set
+  `EEPP_PIXEL_DENSITY_ROUNDING=0` to use exact automatic values.
+- **Phase 8:** SDL2 DPI lookup uses the requested display index. Automatic UI scale uses the
+  window's effective DPI on Windows when available and otherwise the drawable-to-window ratio
+  (or 1 if unavailable). Physical PPI is queried separately. Display-change events are
   supported where available. SDL2 display events invalidate cached mode and physical PPI data
   before refreshing windows. SDL2 can reuse display indexes, so wrappers stay associated with
   their index slots and refresh their data when the display list changes. Unresolved indexes use
@@ -178,8 +181,8 @@ Final verification:
   screenshot capture and visual inspection succeeded.
 - Native hidden-window ecode with physical-PPI mode and reference 72: fresh welcome and document
   launches passed; live Settings changes through 1.5, 2, 1.25 and 1 passed, including panel centering.
-  Reported physical PPI was 108.903 and initial automatic density was 1.51255. Exact fractional
-  densities are currently preserved; optional rounding is a policy discussion, not implemented.
+  Reported physical PPI was 108.903 and initial automatic density was 1.51255 before the rounding
+  policy was added. The same calculation rounds to 1.5 with the default policy.
 - A legacy ecode profile switched from manual 1.75 to physical-PPI Auto, then to 1.33 and back
   to Auto. Auto persisted across relaunch. Injected pointer events verified that the Settings
   panel can be dragged after density reflow. Simulated SDL3 display add/remove events verified
@@ -192,8 +195,8 @@ Final verification:
 
 - Real mixed-density monitor movement and event ordering, especially on Windows and macOS.
   Synthetic events and explicit overrides do not replace this validation.
-- SDL2 coordinate/input behavior on real Windows/macOS desktops; its DPI approximation cannot
-  guarantee SDL3 parity on every platform/compositor.
+- SDL2 coordinate/input behavior on real Windows/macOS desktops. The drawable-to-window fallback
+  can only reflect scaling exposed by the SDL2 video driver.
 - Web SVGs without a `.svg` path can use an explicit `WebResourceRequest::svgScale`. Automatic
   detection of extensionless SVG URLs and sharing response bytes across raster variants are future
   improvements.

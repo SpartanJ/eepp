@@ -1,4 +1,5 @@
 #import <AppKit/AppKit.h>
+#include <IOKit/graphics/IOGraphicsTypes.h>
 #include <cmath>
 #include <eepp/window/platform/macos/platformhelper.hpp>
 #import <objc/runtime.h>
@@ -207,9 +208,30 @@ Float getPhysicalDisplayDPI( const Math::Rect& bounds ) {
 	const CGSize size = CGDisplayScreenSize( display );
 	if ( size.width <= 0 || size.height <= 0 )
 		return 0.f;
-	return 25.4f *
-		   std::hypot( static_cast<Float>( CGDisplayPixelsWide( display ) ),
-					   static_cast<Float>( CGDisplayPixelsHigh( display ) ) ) /
+	// Scaled desktop modes can render at a different resolution than the panel itself.
+	CGDisplayModeRef mode = nullptr;
+	if ( CFArrayRef modes = CGDisplayCopyAllDisplayModes( display, nullptr ) ) {
+		const CFIndex count = CFArrayGetCount( modes );
+		for ( CFIndex i = 0; i < count; ++i ) {
+			auto candidate = static_cast<CGDisplayModeRef>(
+				const_cast<void*>( CFArrayGetValueAtIndex( modes, i ) ) );
+			if ( CGDisplayModeGetIOFlags( candidate ) & kDisplayModeNativeFlag ) {
+				mode = CGDisplayModeRetain( candidate );
+				break;
+			}
+		}
+		CFRelease( modes );
+	}
+	if ( !mode )
+		mode = CGDisplayCopyDisplayMode( display );
+	if ( !mode )
+		return 0.f;
+	const auto width = CGDisplayModeGetPixelWidth( mode );
+	const auto height = CGDisplayModeGetPixelHeight( mode );
+	CGDisplayModeRelease( mode );
+	if ( !width || !height )
+		return 0.f;
+	return 25.4f * std::hypot( static_cast<Float>( width ), static_cast<Float>( height ) ) /
 		   std::hypot( static_cast<Float>( size.width ), static_cast<Float>( size.height ) );
 }
 

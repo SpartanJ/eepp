@@ -573,7 +573,8 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 			  "ui_scale_mode_desc",
 			  "System Scale follows the operating system's scale for each display. Physical "
 			  "PPI uses the monitor's pixel density to keep the interface a similar physical "
-			  "size. It falls back to System Scale when PPI is unavailable." ) },
+			  "size. It falls back to System Scale when PPI is unavailable. Both Auto modes "
+			  "round to the nearest 0.25 by default." ) },
 		{ scene->i18n( "ui_scale_auto_system", "Auto (System Scale)" ),
 		  scene->i18n( "ui_scale_auto_physical", "Auto (Physical PPI)" ),
 		  scene->i18n( "ui_scale_manual", "Manual" ) },

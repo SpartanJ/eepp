@@ -1096,6 +1096,7 @@ class EE_API UISceneNode : public SceneNode {
 	Sizef mDpSize;
 	struct DensityTransitionState;
 	DensityTransitionState* mDensityTransition{ nullptr };
+	SmallVector<UISceneNode*, 4>* mRefreshingChildScenes{ nullptr };
 	struct DensityRebind {
 		UINode* node;
 		Float previousDensity;
@@ -1217,6 +1218,8 @@ class EE_API UISceneNode : public SceneNode {
 	const Sizef& getRootPixelsSize() const;
 
 	void refreshPixelDensity();
+	void refreshDisplayDPI();
+	void refreshChildSceneMetrics();
 
 	void onPixelDensityChange( Float oldDensity, Float newDensity );
 

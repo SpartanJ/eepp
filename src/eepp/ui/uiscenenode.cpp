@@ -193,13 +193,46 @@ void UISceneNode::refreshPixelDensity() {
 		applyPendingDensityRebinds();
 	const Float density = mPixelDensityOverride > 0.f ? mPixelDensityOverride
 						  : mHostUISceneNode		  ? mHostUISceneNode->getPixelDensity()
-						  : mWindow					  ? mWindow->getPixelDensity()
-													  : PixelDensity::getPixelDensity();
-	if ( density != mPixelDensity ||
-		 ( mHostUISceneNode && mFollowParentSize && mParentNode &&
-		   mSize != mParentNode->getPixelsSize() ) ||
-		 ( mWindow && mWindow->getDisplayMetricsVersion() != mWindowDisplayMetricsVersion ) )
+													  : mWindow->getPixelDensity();
+	const bool densityChanged = density != mPixelDensity;
+	const bool displayChanged = mWindow->getDisplayMetricsVersion() != mWindowDisplayMetricsVersion;
+	const bool resized = mHostUISceneNode && mFollowParentSize && mParentNode &&
+						 mSize != mParentNode->getPixelsSize();
+	if ( ( !densityChanged && !displayChanged && !resized ) || mRefreshingChildScenes )
+		return;
+	if ( densityChanged ) {
 		onPixelDensityChange( mPixelDensity, density );
+		return;
+	}
+
+	auto context = makeCurrent();
+	if ( displayChanged )
+		refreshDisplayDPI();
+	if ( resized )
+		setPixelsSize( mParentNode->getPixelsSize() );
+	onMediaChanged();
+	if ( resized )
+		sendMsg( this, NodeMessage::WindowResize );
+	refreshChildSceneMetrics();
+}
+
+void UISceneNode::refreshDisplayDPI() {
+	mWindowDisplayMetricsVersion = mWindow->getDisplayMetricsVersion();
+	if ( auto* display = Engine::instance()->getDisplayManager()->getDisplayIndex(
+			 mWindow->getCurrentDisplayIndex() ) )
+		mDPI = display->getDPI();
+}
+
+void UISceneNode::refreshChildSceneMetrics() {
+	if ( mChildUISceneNodes.empty() )
+		return;
+	SmallVector<UISceneNode*, 4> children( mChildUISceneNodes.begin(), mChildUISceneNodes.end() );
+	ScopedOp reset( nullptr, [this] { mRefreshingChildScenes = nullptr; } );
+	mRefreshingChildScenes = &children;
+	for ( auto* child : children ) {
+		if ( child )
+			child->refreshPixelDensity();
+	}
 }
 
 struct UISceneNode::DensityTransitionState {
@@ -320,8 +353,8 @@ void UISceneNode::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 	}
 
 	mPixelDensity = newDensity;
-	mWindowDisplayMetricsVersion = mWindow->getDisplayMetricsVersion();
-	if ( hasPlainNodes && oldDensity != newDensity ) {
+	refreshDisplayDPI();
+	if ( hasPlainNodes ) {
 		const Float ratio = newDensity / oldDensity;
 		visitDescendants( visitDescendants, this, [ratio]( Node* node ) {
 			if ( !node->isUINode() )
@@ -335,9 +368,6 @@ void UISceneNode::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 	mDpSize = PixelDensity::pxToDp( mSize );
 	updateCenter();
 	setDirty();
-	if ( auto* display = Engine::instance()->getDisplayManager()->getDisplayIndex(
-			 mWindow->getCurrentDisplayIndex() ) )
-		mDPI = display->getDPI();
 	mUIThemeManager->onPixelDensityChange( newDensity );
 	// Hooks can create rows/controls under the new environment. Only nodes which existed in the
 	// old environment need cache repair; newly created nodes already have the new metrics.
@@ -359,8 +389,7 @@ void UISceneNode::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 			restore.callback( reflow );
 	}
 	updateRootHitTestTraversalBounds();
-	for ( auto* childScene : mChildUISceneNodes )
-		childScene->refreshPixelDensity();
+	refreshChildSceneMetrics();
 	invalidateDraw();
 }
 
@@ -606,8 +635,8 @@ void UISceneNode::initializeEmbeddedFromHost( UISceneNode* hostScene ) {
 	UIThemeManager* hostThemeManager = hostScene->getUIThemeManager();
 	if ( hostThemeManager ) {
 		mUIThemeManager->setDefaultFont( hostThemeManager->getDefaultFont() );
-		mUIThemeManager->setDefaultFontSize( hostThemeManager->getDefaultFontSize() /
-											 hostScene->getPixelDensity() * getPixelDensity() );
+		mUIThemeManager->mFallbackFontSizeDp =
+			hostThemeManager->getDefaultFontSize() / hostScene->getPixelDensity();
 		mUIThemeManager->setDefaultTheme( hostThemeManager->getDefaultThemeHandle() );
 		mUIThemeManager->setAutoApplyDefaultTheme( hostThemeManager->getAutoApplyDefaultTheme() );
 		mUIThemeManager->setDefaultEffectsEnabled( hostThemeManager->getDefaultEffectsEnabled() );
@@ -751,14 +780,23 @@ void UISceneNode::unregisterChildUISceneNode( UISceneNode* sceneNode ) {
 
 	if ( it != mChildUISceneNodes.end() )
 		mChildUISceneNodes.erase( it );
+	if ( mRefreshingChildScenes ) {
+		// Propagation callbacks can remove siblings or attach new scenes at a reused address.
+		auto& childScenes = *mRefreshingChildScenes;
+		auto snapshot = std::find( childScenes.begin(), childScenes.end(), sceneNode );
+		if ( snapshot != childScenes.end() )
+			*snapshot = nullptr;
+	}
 }
 
 void UISceneNode::updateParentSizeListener() {
 	if ( !mParentNode || !mFollowParentSize )
 		return;
 
+	auto context = makeCurrent();
 	setPixelsSize( getParent()->getPixelsSize() );
 	mCurOnSizeChangeListener = getParent()->on( Event::OnSizeChange, [this]( const Event* ) {
+		auto context = makeCurrent();
 		setDirty();
 		setPixelsSize( getParent()->getPixelsSize() );
 		onMediaChanged();

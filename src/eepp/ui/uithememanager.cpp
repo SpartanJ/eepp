@@ -106,18 +106,23 @@ Font* UIThemeManager::getDefaultFont() const {
 }
 
 UIThemeManager* UIThemeManager::setDefaultFontSize( const Float& fontSize ) {
-	mDefaultFontSizeDp = fontSize / mPixelDensity;
+	mDefaultFontSizeOverrideDp = fontSize / mPixelDensity;
 	mFontSize = fontSize;
 	return this;
 }
 
 const Float& UIThemeManager::getDefaultFontSize() const {
-	mFontSize = ( mThemeDefault ? mThemeDefault->getDefaultFontSizeDp() : mDefaultFontSizeDp ) *
-				mPixelDensity;
+	if ( !mDefaultFontSizeOverrideDp ) {
+		mFontSize =
+			( mThemeDefault ? mThemeDefault->getDefaultFontSizeDp() : mFallbackFontSizeDp ) *
+			mPixelDensity;
+	}
 	return mFontSize;
 }
 
 void UIThemeManager::onPixelDensityChange( Float density ) {
+	if ( mDefaultFontSizeOverrideDp && density != mPixelDensity )
+		mFontSize = *mDefaultFontSizeOverrideDp * density;
 	mPixelDensity = density;
 	getDefaultFontSize();
 }
