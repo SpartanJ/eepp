@@ -1,5 +1,8 @@
-#include <array>
 #include <eepp/system/base64.hpp>
+
+#include "base64scalar.hpp"
+
+#include <array>
 #include <eepp/system/cpu.hpp>
 
 #if defined( EE_ARCH_X86_64 )
@@ -11,6 +14,77 @@
 namespace EE { namespace System {
 
 namespace {
+
+using namespace EE::System::Private;
+
+#if defined( EE_ARCH_X86_64 )
+constexpr size_t Base64EncodeBlockSize = 24;
+
+#if defined( __GNUC__ ) || defined( __clang__ )
+__attribute__( ( target( "avx2" ) ) )
+#endif
+void encodeBase64BlocksAVX2( size_t blockCount, const unsigned char* in, char* out ) {
+	// Each 128-bit lane encodes four triplets. The second load starts at byte 8 so both
+	// overlapping loads stay inside the 24-byte block, even for the final block.
+	const __m256i shuffle = _mm256_setr_epi8( 1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10, 5,
+											  4, 6, 5, 8, 7, 9, 8, 11, 10, 12, 11, 14, 13, 15, 14 );
+	const __m256i highMask = _mm256_set1_epi32( 0x0FC0FC00 );
+	const __m256i highShift = _mm256_set1_epi32( 0x04000040 );
+	const __m256i lowMask = _mm256_set1_epi32( 0x003F03F0 );
+	const __m256i lowShift = _mm256_set1_epi32( 0x01000010 );
+	const __m256i offsets = _mm256_broadcastsi128_si256(
+		_mm_setr_epi8( 'A', 'a' - 26, '0' - 52, '0' - 52, '0' - 52, '0' - 52, '0' - 52, '0' - 52,
+					   '0' - 52, '0' - 52, '0' - 52, '0' - 52, '+' - 62, '/' - 63, 0, 0 ) );
+	const __m256i upperEnd = _mm256_set1_epi8( 25 );
+	const __m256i lowerEnd = _mm256_set1_epi8( 51 );
+	for ( size_t block = 0; block < blockCount; ++block ) {
+		const __m128i lo = _mm_loadu_si128( reinterpret_cast<const __m128i*>( in ) );
+		const __m128i hi = _mm_loadu_si128( reinterpret_cast<const __m128i*>( in + 8 ) );
+		const __m256i lanes = _mm256_inserti128_si256( _mm256_castsi128_si256( lo ), hi, 1 );
+		// Shuffle each triplet ABC to BACB. The masks isolate alternating sextets and the
+		// 16-bit multiplications shift them into their respective output bytes.
+		const __m256i shuffled = _mm256_shuffle_epi8( lanes, shuffle );
+		const __m256i high =
+			_mm256_mulhi_epu16( _mm256_and_si256( shuffled, highMask ), highShift );
+		const __m256i low = _mm256_mullo_epi16( _mm256_and_si256( shuffled, lowMask ), lowShift );
+		const __m256i values = _mm256_or_si256( high, low );
+		// Select offset 0 for uppercase, 1 for lowercase, and 2..13 for digits, '+' and '/'.
+		const __m256i indices = _mm256_sub_epi8( _mm256_subs_epu8( values, lowerEnd ),
+												 _mm256_cmpgt_epi8( values, upperEnd ) );
+		const __m256i encoded = _mm256_add_epi8( values, _mm256_shuffle_epi8( offsets, indices ) );
+		_mm256_storeu_si256( reinterpret_cast<__m256i*>( out ), encoded );
+		in += Base64EncodeBlockSize;
+		out += 32;
+	}
+}
+
+const auto encodeBase64Blocks = CPU::hasAVX2() ? encodeBase64BlocksAVX2 : nullptr;
+#elif defined( EE_ARCH_ARM64 )
+constexpr size_t Base64EncodeBlockSize = 48;
+
+void encodeBase64Blocks( size_t blockCount, const unsigned char* in, char* out ) {
+	const uint8x16x4_t alphabet = vld1q_u8_x4( reinterpret_cast<const uint8_t*>( Base64Alphabet ) );
+	const uint8x16_t mask = vdupq_n_u8( 63 );
+	for ( size_t block = 0; block < blockCount; ++block ) {
+		// Deinterleave 16 triplets, then interleave the four ASCII digits of each group.
+		const uint8x16x3_t triplets = vld3q_u8( in );
+		const uint8x16_t a = triplets.val[0];
+		const uint8x16_t b = triplets.val[1];
+		const uint8x16_t c = triplets.val[2];
+		const uint8x16_t first = vshrq_n_u8( a, 2 );
+		const uint8x16_t second = vorrq_u8( vshlq_n_u8( a, 4 ), vshrq_n_u8( b, 4 ) );
+		const uint8x16_t third = vorrq_u8( vshlq_n_u8( b, 2 ), vshrq_n_u8( c, 6 ) );
+		uint8x16x4_t encoded;
+		encoded.val[0] = vqtbl4q_u8( alphabet, first );
+		encoded.val[1] = vqtbl4q_u8( alphabet, vandq_u8( second, mask ) );
+		encoded.val[2] = vqtbl4q_u8( alphabet, vandq_u8( third, mask ) );
+		encoded.val[3] = vqtbl4q_u8( alphabet, vandq_u8( c, mask ) );
+		vst4q_u8( reinterpret_cast<uint8_t*>( out ), encoded );
+		in += Base64EncodeBlockSize;
+		out += 64;
+	}
+}
+#endif
 
 constexpr Uint8 BASE64_INVALID = 0xFF;
 constexpr Uint8 BASE64_PADDING = 0xFE;
@@ -320,35 +394,28 @@ size_t Base64::decode( size_t in_len, const char* in, size_t out_len, unsigned c
 }
 
 size_t Base64::encode( size_t in_len, const unsigned char* in, size_t out_len, char* out ) {
-	static const Uint8 base64enc_tab[] =
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-	const size_t encodedLen = ( ( in_len + 2 ) / 3 ) * 4;
-	if ( out_len <= encodedLen )
+	if ( out_len < encodeSafeOutLen( in_len ) )
 		return static_cast<size_t>( -1 );
 
-	size_t ii = 0;
-	size_t io = 0;
-	const size_t bulkEnd = in_len - in_len % 3;
-	for ( ; ii < bulkEnd; ii += 3 ) {
-		const Uint32 value = ( static_cast<Uint32>( in[ii] ) << 16 ) |
-							 ( static_cast<Uint32>( in[ii + 1] ) << 8 ) | in[ii + 2];
-		out[io++] = base64enc_tab[value >> 18];
-		out[io++] = base64enc_tab[( value >> 12 ) & 63];
-		out[io++] = base64enc_tab[( value >> 6 ) & 63];
-		out[io++] = base64enc_tab[value & 63];
+	size_t produced = 0;
+#if defined( EE_ARCH_X86_64 )
+	const bool hasBlockEncoder = encodeBase64Blocks != nullptr;
+#elif defined( EE_ARCH_ARM64 )
+	constexpr bool hasBlockEncoder = true;
+#endif
+#if defined( EE_ARCH_X86_64 ) || defined( EE_ARCH_ARM64 )
+	if ( in_len >= Base64EncodeBlockSize && hasBlockEncoder ) {
+		const size_t blockCount = in_len / Base64EncodeBlockSize;
+		encodeBase64Blocks( blockCount, in, out );
+		const size_t consumed = blockCount * Base64EncodeBlockSize;
+		produced = blockCount * ( Base64EncodeBlockSize / 3 * 4 );
+		in += consumed;
+		in_len -= consumed;
+		out += produced;
 	}
+#endif
 
-	if ( ii < in_len ) {
-		const Uint32 value = static_cast<Uint32>( in[ii] ) << 16 |
-							 ( ii + 1 < in_len ? static_cast<Uint32>( in[ii + 1] ) << 8 : 0 );
-		out[io++] = base64enc_tab[value >> 18];
-		out[io++] = base64enc_tab[( value >> 12 ) & 63];
-		out[io++] = ii + 1 < in_len ? base64enc_tab[( value >> 6 ) & 63] : '=';
-		out[io++] = '=';
-	}
-
-	out[io] = 0;
-	return io;
+	return produced + encodeBase64Scalar( in_len, in, out );
 }
 
 bool Base64::encode( std::string_view in, std::string& out ) {
