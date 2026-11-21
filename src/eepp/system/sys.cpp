@@ -772,10 +772,19 @@ std::string Sys::getDateTimeStr() {
 }
 
 std::string Sys::epochToString( const Uint64& epochTimestamp, const std::string& format ) {
-	std::time_t t = epochTimestamp;
-	auto tm = *std::localtime( &t );
+	const std::time_t timestamp = static_cast<std::time_t>( epochTimestamp );
+	std::tm localTime{};
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( localtime_s( &localTime, &timestamp ) != 0 )
+		return {};
+#else
+	if ( localtime_r( &timestamp, &localTime ) == nullptr )
+		return {};
+#endif
+
 	std::ostringstream oss;
-	oss << std::put_time( &tm, format.c_str() );
+	oss << std::put_time( &localTime, format.c_str() );
 	return oss.str();
 }
 
@@ -1356,9 +1365,9 @@ std::vector<std::string> Sys::getEnvSplit( const std::string& name ) {
 static ULONG_PTR GetParentProcessId() {
 	ULONG_PTR pbi[6];
 	ULONG ulSize = 0;
-	LONG( WINAPI * NtQueryInformationProcess )
-	( HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation,
-	  ULONG ProcessInformationLength, PULONG ReturnLength );
+	LONG( WINAPI * NtQueryInformationProcess )(
+		HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation,
+		ULONG ProcessInformationLength, PULONG ReturnLength );
 	*(FARPROC*)&NtQueryInformationProcess =
 		GetProcAddress( LoadLibraryA( "NTDLL.DLL" ), "NtQueryInformationProcess" );
 	if ( NtQueryInformationProcess ) {
