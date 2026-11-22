@@ -911,6 +911,10 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 		}
 		case ecode::PluginMessageType::UIThemeReloaded: {
 			mStatusCustomTokenizer.reset();
+			if ( mBranchesTree ) {
+				mBranchHintColor = getVarColor( "--font-hint" );
+				mBranchesTree->invalidateDraw();
+			}
 			if ( mDiffGutterEnabled )
 				updateDiffGutterColors();
 			updateUINow( true );
@@ -1726,26 +1730,70 @@ void GitPlugin::pull( const std::string& repoPath ) {
 	runMergeLikeAsync( [repoPath]( Git& git ) { return git.pull( repoPath ); }, repoPath );
 }
 
-void GitPlugin::push( const std::string& repoPath, std::string branchName ) {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::OK_CANCEL,
-		i18n( "git_confirm_push_changes",
-			  "Are you sure you want to push the local changes to the remote server?" ) );
+void GitPlugin::push( const std::string& repoPath, std::string branchName,
+					  bool confirmOnlyOnMismatch ) {
+	if ( !mGit )
+		return;
 
-	msgBox->on(
-		Event::OnConfirm, [this, repoPath, branchName = std::move( branchName )]( auto ) mutable {
-			runAsync(
-				[this, repoPath, branchName = std::move( branchName )]() {
-					if ( !branchName.empty() )
-						return mGit->pushBranch( branchName, repoPath );
-					std::optional<Git::Branch> branch = getBranchFromRepoPath( repoPath );
-					bool pushNewBranch = branch && !branch->name.empty() && branch->remote.empty();
-					if ( pushNewBranch )
-						return mGit->pushNewBranch( branch->name, repoPath );
-					return mGit->push( repoPath );
-				},
-				true, true, true, true );
+	runAsyncTask( [git = mGit, lifetime = mLifetime.weakHandle(),
+				   branchName = std::move( branchName ), repoPath,
+				   confirmOnlyOnMismatch]() mutable {
+		auto target = git->resolvePush( branchName, repoPath );
+		lifetime.run( [target = std::move( target ), repoPath = std::move( repoPath ),
+					   confirmOnlyOnMismatch]( GitPlugin* plugin ) mutable {
+			plugin->confirmPush( std::move( repoPath ), std::move( target ),
+								 confirmOnlyOnMismatch );
 		} );
+	} );
+}
+
+void GitPlugin::confirmPush( std::string repoPath, Git::PushTarget target,
+							 bool confirmOnlyOnMismatch ) {
+	if ( target.fail() ) {
+		showMessage( LSPMessageType::Warning, target.result );
+		return;
+	}
+
+	String prompt;
+	if ( !confirmOnlyOnMismatch || target.needsConfirmation() ) {
+		if ( !target.destinationRef.empty() ) {
+			constexpr auto heads = "refs/heads/"sv;
+			const auto source = std::string_view{ target.sourceRef }.substr( heads.size() );
+			auto destination = std::string_view{ target.destinationRef };
+			if ( String::startsWith( destination, heads ) )
+				destination.remove_prefix( heads.size() );
+			std::string remoteBranch;
+			if ( target.remote != "." )
+				remoteBranch.append( target.remote ).append( "/" );
+			remoteBranch.append( destination );
+			prompt = String::fromUtf8(
+				String::format( i18n( "git_confirm_push_to", "Push '%s' to '%s'?" ).toUtf8(),
+								source, remoteBranch ) );
+		} else {
+			prompt =
+				i18n( "git_confirm_push_changes",
+					  "Are you sure you want to push the local changes to the remote server?" );
+		}
+	}
+
+	auto execute = [target = std::move( target ),
+					repoPath = std::move( repoPath )]( GitPlugin* plugin ) mutable {
+		plugin->runAsync(
+			[git = plugin->mGit, target = std::move( target ), repoPath = std::move( repoPath )] {
+				return git->push( target, repoPath );
+			},
+			true, true, true, true );
+	};
+	if ( prompt.empty() ) {
+		execute( this );
+		return;
+	}
+
+	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL, prompt );
+	msgBox->getButtonOK()->setText( i18n( "git_push", "Push" ) );
+	msgBox->on( Event::OnConfirm,
+				[lifetime = mLifetime.weakHandle(), execute = std::move( execute )](
+					auto ) mutable { lifetime.run( std::move( execute ) ); } );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
 	msgBox->center();
@@ -1856,18 +1904,16 @@ void GitPlugin::commit( const std::string& repoPath, bool mergeCommit ) {
 		bool amend = chkAmend->isChecked();
 		bool bypassHook = chkBypassHook->isChecked();
 		bool pushCommit = chkPush->isChecked();
-		std::optional<Git::Branch> branch = getBranchFromRepoPath( repoPath );
 		auto git = mGit;
 		const auto lifetime = mLifetime.weakHandle();
 
 		msgBox->closeWindow();
 		runAsync(
-			[git = std::move( git ), lifetime, branch = std::move( branch ), msg, amend, bypassHook,
+			[git = std::move( git ), lifetime, msg = std::move( msg ), amend, bypassHook,
 			 pushCommit, repoPath, mergeCommit]() {
-				bool pushNewBranch = branch && !branch->name.empty() && branch->remote.empty();
 				auto res = git->commit( msg, amend, bypassHook, repoPath, mergeCommit );
 				if ( res.success() ) {
-					lifetime.run( [mergeCommit, repoPath]( GitPlugin* plugin ) {
+					lifetime.run( [mergeCommit, pushCommit, repoPath]( GitPlugin* plugin ) {
 						plugin->mLastCommitMsg.clear();
 						plugin->invalidateHistory();
 						if ( mergeCommit ) {
@@ -1879,18 +1925,15 @@ void GitPlugin::commit( const std::string& repoPath, bool mergeCommit ) {
 									"git_conflict_resolver" );
 							}
 						}
+						if ( pushCommit )
+							plugin->push( repoPath, {}, true );
 					} );
-					if ( pushCommit ) {
-						if ( pushNewBranch )
-							return git->pushNewBranch( branch->name, repoPath );
-						return git->push( repoPath );
-					}
 				} else {
 					lifetime.run( [msg]( GitPlugin* plugin ) { plugin->mLastCommitMsg = msg; } );
 				}
 				return res;
 			},
-			true, true, true, true, true );
+			true, true, !pushCommit, true, true );
 	} );
 
 	msgBox->on( Event::OnDiscard, [this, msgBox]( const Event* ) {
@@ -4166,6 +4209,22 @@ void GitPlugin::buildSidePanelTab() {
 	mBranchesTree->setExpandersAsIcons( true );
 	mBranchesTree->setIndentWidth( PixelDensity::dpToPx( 16 ) );
 	mBranchesTree->setScrollViewType( ScrollViewType::Overlay );
+	mBranchHintColor = getVarColor( "--font-hint" );
+	mBranchesTree->setOnUpdateCellCb( [this]( UITableCell* cell, Model* model ) {
+		const auto start =
+			static_cast<const GitBranchModel*>( model )->metadataStart( cell->getCurIndex() );
+		if ( !start )
+			return;
+		auto* textView = cell->getTextView();
+		auto* text = textView->getTextCache();
+		const auto length = text->getString().size();
+		if ( start < length ) {
+			Color color( mBranchHintColor );
+			color.a = color.a * textView->getAlpha() / 255.f;
+			// The tree is already updating this cell for drawing.
+			text->setFillColor( color, start, static_cast<Uint32>( length - 1 ) );
+		}
+	} );
 	mBranchesTree->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( !modelEvent->getModelIndex().hasParent() )
@@ -4706,8 +4765,8 @@ void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus, b
 		return;
 	mLoader->setVisible( true );
 	const auto lifetime = mLifetime.weakHandle();
-	runAsyncTask( [lifetime, fn, _updateStatus, _updateBranches, displaySuccessMsg,
-				   updateBranchesOnError, updateStatusOnError, historyChanged] {
+	runAsyncTask( [lifetime, fn = std::move( fn ), _updateStatus, _updateBranches,
+				   displaySuccessMsg, updateBranchesOnError, updateStatusOnError, historyChanged] {
 		auto res = fn();
 		lifetime.run( [res = std::move( res ), _updateStatus, _updateBranches, displaySuccessMsg,
 					   updateBranchesOnError, updateStatusOnError,

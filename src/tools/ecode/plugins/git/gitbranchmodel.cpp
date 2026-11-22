@@ -9,6 +9,7 @@ size_t GitBranchModel::hashBranches( const std::vector<Git::Branch>& branches ) 
 		hash = hashCombine( hash, String::hash( branch.name ), String::hash( branch.remote ),
 							String::hash( branch.lastCommit ), branch.type, branch.ahead,
 							branch.behind, String::hash( branch.date ), branch.localOnly,
+							branch.gone, String::hash( branch.sameNameUpstreamRemote ),
 							String::hash( branch.worktreePath ) );
 	return hash;
 }
@@ -32,19 +33,22 @@ std::string GitBranchModel::refTypeToString( Git::RefType type ) const {
 GitBranchModel::GitBranchModel( std::vector<Git::Branch>&& branches, size_t hash,
 								GitPlugin* gitPlugin ) :
 	mPlugin( gitPlugin ), mHash( hash ) {
-	std::map<std::string, std::vector<Git::Branch>> branchTypes;
+	std::map<std::pair<std::string, Git::RefType>, std::vector<Git::Branch>> branchTypes;
 	for ( auto& branch : branches ) {
-		auto& type = branchTypes[refTypeToString( branch.type )];
+		auto& type = branchTypes[{ refTypeToString( branch.type ), branch.type }];
 		type.emplace_back( std::move( branch ) );
 	}
 	for ( auto& branch : branchTypes ) {
-		BranchData data{ std::move( branch.first ), std::move( branch.second ), {} };
+		BranchData data{ branch.first.first, std::move( branch.second ), {}, {} };
 		data.historyDisplay.reserve( data.data.size() );
+		if ( data.data.front().type == Git::RefType::Head )
+			data.localLabels.reserve( data.data.size() );
 		for ( const auto& ref : data.data ) {
 			String kind;
 			switch ( ref.type ) {
 				case Git::RefType::Head:
 					kind = mPlugin->i18n( "git_local_branch", "Local" );
+					data.localLabels.emplace_back( localBranchLabel( ref ) );
 					break;
 				case Git::RefType::Remote:
 					kind = mPlugin->i18n( "git_remote_branch", "Remote" );
@@ -60,6 +64,33 @@ GitBranchModel::GitBranchModel( std::vector<Git::Branch>&& branches, size_t hash
 		}
 		mBranches.emplace_back( std::move( data ) );
 	}
+}
+
+GitBranchModel::LocalBranchLabel
+GitBranchModel::localBranchLabel( const Git::Branch& branch ) const {
+	std::string label = branch.name;
+	if ( !branch.sameNameUpstreamRemote.empty() ) {
+		label.append( " = " ).append( branch.sameNameUpstreamRemote );
+	} else if ( !branch.remote.empty() ) {
+		label.append( " → " ).append( branch.remote );
+	}
+	if ( branch.ahead && branch.behind ) {
+		label += String::format( " (+%lld/-%lld)", static_cast<long long>( branch.ahead ),
+								 static_cast<long long>( branch.behind ) );
+	} else if ( branch.ahead ) {
+		label += String::format( " (+%lld)", static_cast<long long>( branch.ahead ) );
+	} else if ( branch.behind ) {
+		label += String::format( " (-%lld)", static_cast<long long>( branch.behind ) );
+	} else if ( branch.gone ) {
+		label += String::format( " (%s)", mPlugin->i18n( "gone", "gone" ).toUtf8() );
+	} else if ( branch.localOnly ) {
+		label +=
+			String::format( " (%s)", mPlugin->i18n( "git_local_only", "local only" ).toUtf8() );
+	}
+	return { String::fromUtf8( label ),
+			 label.size() == branch.name.size()
+				 ? 0
+				 : static_cast<Uint32>( String::utf8Length( branch.name ) ) };
 }
 
 size_t GitBranchModel::rowCount( const ModelIndex& index ) const {
@@ -114,24 +145,9 @@ Variant GitBranchModel::data( const ModelIndex& index, ModelRole role ) const {
 					if ( branch.type == Git::Remote &&
 						 String::startsWith( branch.name, "origin/" ) ) {
 						return Variant( std::string_view{ branch.name }.substr( 7 ).data() );
-					} else if ( branch.type == Git::Head && ( branch.ahead || branch.behind ) ) {
-						if ( branch.ahead && branch.behind ) {
-							return Variant( String::format( "%s (+%ld/-%ld)", branch.name,
-															branch.ahead, branch.behind ) );
-						} else if ( branch.ahead ) {
-							return Variant(
-								String::format( "%s (+%ld)", branch.name, branch.ahead ) );
-						} else {
-							return Variant(
-								String::format( "%s (-%ld)", branch.name, branch.behind ) );
-						}
-					} else if ( branch.type == Git::Head && branch.gone ) {
-						return Variant( String::format(
-							"%s (%s)", branch.name, mPlugin->i18n( "gone", "gone" ).toUtf8() ) );
-					} else if ( branch.type == Git::Head && branch.localOnly ) {
-						return Variant( String::format(
-							"%s (%s)", branch.name,
-							mPlugin->i18n( "git_local_only", "local only" ).toUtf8() ) );
+					} else if ( branch.type == Git::Head ) {
+						return Variant(
+							&mBranches[index.internalId()].localLabels[index.row()].text );
 					} else if ( branch.type == Git::Stash ) {
 						return Variant( String::format( "%s: %s", branch.date, branch.name ) );
 					}
@@ -164,6 +180,14 @@ Variant GitBranchModel::data( const ModelIndex& index, ModelRole role ) const {
 				const Git::Branch& branch = mBranches[index.internalId()].data[index.row()];
 				switch ( index.column() ) {
 					case Column::Name: {
+						if ( branch.type == Git::Head && !branch.remote.empty() ) {
+							const auto& label =
+								mBranches[index.internalId()].localLabels[index.row()].text;
+							if ( branch.worktreePath.empty() )
+								return Variant( &label );
+							return Variant( label + "\n" +
+											mPlugin->branchWorktreeMessage( branch ) );
+						}
 						if ( !branch.worktreePath.empty() )
 							return Variant( mPlugin->branchWorktreeMessage( branch ) );
 						if ( branch.type == Git::Stash ) {
@@ -209,6 +233,13 @@ std::optional<Git::Branch> GitBranchModel::branch( const std::string& name ) con
 		}
 	}
 	return {};
+}
+
+Uint32 GitBranchModel::metadataStart( const ModelIndex& index ) const {
+	if ( !index.isValid() || index.internalId() == -1 || index.column() != Column::Name )
+		return 0;
+	const auto& labels = mBranches[index.internalId()].localLabels;
+	return labels.empty() ? 0 : labels[index.row()].metadataStart;
 }
 
 ModelIndex GitBranchModel::refTypeIndex( Git::RefType refType ) const {

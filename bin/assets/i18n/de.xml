@@ -373,6 +373,7 @@ ecode versucht, externes Terminal zu öffnen.</string>
 	<string name="git_confirm_delete_untracked_items">Möchten Sie wirklich %d nicht versionierte Elemente dauerhaft löschen?</string>
 	<string name="git_confirm_drop_stash">Sind Sie sicher, dass Sie den ausgewählten Stash fallen lassen möchten?</string>
 	<string name="git_confirm_push_changes">Sind Sie sicher, dass Sie lokale Änderungen gen Remoteserver pushen wollen?</string>
+	<string name="git_confirm_push_to">„%s“ nach „%s“ pushen?</string>
 	<string name="git_create_branch">Zweig erstellen</string>
 	<string name="git_create_branch_ask">Neuen Zweig am aktuellen Zweig erstellen (HEAD).
 Zweignamen eingeben:</string>

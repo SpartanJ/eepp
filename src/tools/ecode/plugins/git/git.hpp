@@ -247,6 +247,18 @@ class Git {
 		std::string branch;
 	};
 
+	struct PushTarget : public Result {
+		std::string sourceRef;
+		std::string remote;
+		std::string destinationRef;
+		bool useDefault{ true };
+		bool setUpstream{ false };
+
+		bool needsConfirmation() const {
+			return !destinationRef.empty() && sourceRef != destinationRef;
+		}
+	};
+
 	struct CountResult : public Result {
 		int64_t behind{ 0 };
 		int64_t ahead{ 0 };
@@ -285,7 +297,7 @@ class Git {
 	struct Branch {
 		/** Branch name */
 		std::string name;
-		/** remote name, will be empty for local branches */
+		/** Short upstream ref for local branches, full display name for remote refs. */
 		std::string remote;
 		/** last commit on this branch, may be empty **/
 		std::string lastCommit;
@@ -295,6 +307,9 @@ class Git {
 
 		/** Worktree where this local branch is checked out; empty when it is not in use. */
 		std::string worktreePath;
+
+		/** Remote name for a local branch whose upstream has the same branch name. */
+		std::string sameNameUpstreamRemote;
 
 		/** if it's HEAD how much ahead and behind the current local branch is against remote */
 		int64_t ahead{ 0 };
@@ -436,11 +451,9 @@ class Git {
 
 	Result pull( const std::string& projectDir = "" );
 
-	Result push( const std::string& projectDir = "" );
+	PushTarget resolvePush( const std::string& branch, const std::string& projectDir ) const;
 
-	Result pushBranch( const std::string& branch, const std::string& projectDir );
-
-	Result pushNewBranch( const std::string& branch, const std::string& projectDir );
+	Result push( const PushTarget& target, const std::string& projectDir );
 
 	CheckoutResult checkout( const std::string& branch, const std::string& projectDir = "" ) const;
 

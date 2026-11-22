@@ -152,6 +152,7 @@ class GitPlugin : public PluginBase {
 	Uint32 mOldTextStyle{ 0 };
 	Uint32 mOldTextAlign{ 0 };
 	Color mOldBackgroundColor;
+	Color mBranchHintColor;
 	UITabWidget* mSidePanel{ nullptr };
 	UITab* mTab{ nullptr };
 	UIWidget* mTabContents{ nullptr };
@@ -376,7 +377,10 @@ class GitPlugin : public PluginBase {
 
 	void pull( const std::string& repoPath );
 
-	void push( const std::string& repoPath, std::string branchName = {} );
+	void push( const std::string& repoPath, std::string branchName = {},
+			   bool confirmOnlyOnMismatch = false );
+
+	void confirmPush( std::string repoPath, Git::PushTarget target, bool confirmOnlyOnMismatch );
 
 	void fetch( const std::string& repoPath );
 
