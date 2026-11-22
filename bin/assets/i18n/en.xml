@@ -357,6 +357,7 @@ ecode will try to open an external terminal.</string>
 	<string name="git_confirm_delete_untracked_items">Are you sure you want to permanently delete %d untracked items?</string>
 	<string name="git_confirm_drop_stash">Do you want to drop the selected stash?</string>
 	<string name="git_confirm_push_changes">Are you sure you want to push the local changes to the remote server?</string>
+	<string name="git_confirm_push_to">Push '%s' to '%s'?</string>
 	<string name="git_create_branch">Create Branch</string>
 	<string name="git_create_branch_ask">Create new branch at current branch (HEAD).
 Enter the name for the branch:</string>

@@ -777,50 +777,111 @@ Git::Result Git::pull( const std::string& projectDir ) {
 	return gitSimple( "pull --prune", projectDir );
 }
 
-Git::Result Git::push( const std::string& projectDir ) {
-	return gitSimple( "push", projectDir );
-}
-
-Git::Result Git::pushBranch( const std::string& branch, const std::string& projectDir ) {
-	Result result;
-	result.returnCode =
-		git( { "for-each-ref", "--format=%(upstream:remotename)%09%(upstream:remoteref)", "--",
-			   "refs/heads/" + branch },
-			 projectDir, result.result );
-	if ( result.fail() )
-		return result;
-
-	const auto separator = result.result.find( '\t' );
-	if ( separator == std::string::npos ) {
-		result.returnCode = EXIT_FAILURE;
-		result.result = "Local branch not found: " + branch;
-		return result;
+Git::PushTarget Git::resolvePush( const std::string& branch, const std::string& projectDir ) const {
+	PushTarget target;
+	const bool selectedBranch = !branch.empty();
+	if ( selectedBranch ) {
+		target.sourceRef = "refs/heads/" + branch;
+	} else {
+		int exitCode = git( "symbolic-ref --quiet HEAD", projectDir, target.sourceRef );
+		if ( exitCode == 1 ) // Detached HEAD. Let Git report the result of a plain push.
+			return target;
+		if ( exitCode != EXIT_SUCCESS ) {
+			target.returnCode = exitCode;
+			target.result = std::move( target.sourceRef );
+			return target;
+		}
+		String::trimInPlace( target.sourceRef, '\n' );
 	}
-	if ( separator == 0 )
-		return pushNewBranch( branch, projectDir );
 
-	const auto remote = result.result.substr( 0, separator );
-	const auto remoteRef = String::rTrim( result.result.substr( separator + 1 ), '\n' );
-	result.returnCode = git( { "push", "--porcelain", "--recurse-submodules=check", "--", remote,
-							   "refs/heads/" + branch + ":" + remoteRef },
-							 projectDir, result.result );
-	return result;
+	std::string output;
+	target.returnCode =
+		git( { "for-each-ref", "--count=1",
+			   "--format=%(refname)%09%(upstream)%09%(upstream:remotename)%09%(upstream:remoteref)"
+			   "%09%(push)%09%(push:remotename)%09%(push:remoteref)",
+			   "--", target.sourceRef },
+			 projectDir, output );
+	if ( target.fail() ) {
+		target.result = std::move( output );
+		return target;
+	}
+
+	auto fields = String::split( String::rTrim( std::string_view{ output }, '\n' ), '\t', true );
+	if ( fields.size() != 7 || fields[0] != target.sourceRef ) {
+		if ( selectedBranch ) {
+			target.returnCode = EXIT_FAILURE;
+			target.result = "Local branch not found: " + branch;
+		}
+		return target;
+	}
+
+	if ( selectedBranch || fields[1].empty() ) {
+		target.useDefault = false;
+		target.setUpstream = fields[1].empty();
+		target.remote = target.setUpstream ? "origin"sv : fields[2];
+		target.destinationRef =
+			target.setUpstream ? std::string_view{ target.sourceRef } : fields[3];
+		return target;
+	}
+
+	const auto pushTrackingRef = fields[4];
+	const auto pushRemote = fields[5];
+	auto pushRef = fields[6];
+	if ( pushRemote.empty() )
+		return target;
+
+	// Git provides the remote ref directly for configured push refspecs. For push.default,
+	// it supplies a tracking ref when the default resolves for this branch.
+	if ( pushRef.empty() && !pushTrackingRef.empty() ) {
+		std::string mode;
+		int exitCode = git( "config --get push.default", projectDir, mode );
+		if ( exitCode != EXIT_SUCCESS && exitCode != 1 )
+			return target;
+		String::trimInPlace( mode, '\n' );
+		if ( mode == "matching" )
+			return target;
+		if ( mode == "upstream" || mode == "tracking" ) {
+			if ( pushRemote != fields[2] )
+				return target;
+			pushRef = fields[3];
+		} else {
+			pushRef = target.sourceRef;
+		}
+	}
+	if ( !pushRef.empty() ) {
+		target.remote = pushRemote;
+		target.destinationRef = pushRef;
+	}
+	return target;
 }
 
-Git::Result Git::pushNewBranch( const std::string& branch, const std::string& projectDir ) {
-	auto res = gitSimple(
-		String::format(
-			"push --porcelain --recurse-submodules=check origin refs/heads/%s:refs/heads/%s",
-			branch, branch ),
-		projectDir );
+Git::Result Git::push( const PushTarget& target, const std::string& projectDir ) {
+	if ( target.useDefault ) {
+		if ( !target.destinationRef.empty() ) {
+			auto current = resolvePush( {}, projectDir );
+			if ( current.fail() )
+				return current;
+			if ( !current.useDefault || current.sourceRef != target.sourceRef ||
+				 current.remote != target.remote ||
+				 current.destinationRef != target.destinationRef ) {
+				return { "Push destination changed. Review the branch and try again.",
+						 EXIT_FAILURE };
+			}
+		}
+		return gitSimple( "push", projectDir );
+	}
 
-	if ( res.fail() )
-		return res;
-
-	gitSimple( String::format( "branch --set-upstream-to=origin/%s %s", branch, branch ),
-			   projectDir );
-
-	return res;
+	Result result;
+	result.returnCode = git( { "push", "--porcelain", "--recurse-submodules=check", "--",
+							   target.remote, target.sourceRef + ":" + target.destinationRef },
+							 projectDir, result.result );
+	if ( result.success() && target.setUpstream ) {
+		const auto branch = target.sourceRef.substr( "refs/heads/"sv.size() );
+		std::string output;
+		git( { "branch", "--set-upstream-to=" + target.remote + "/" + branch, "--", branch },
+			 projectDir, output );
+	}
+	return result;
 }
 
 Git::CheckoutResult Git::checkout( const std::string& branch,
@@ -1159,6 +1220,8 @@ Git::Branch parseLocalBranch( const std::string_view& raw ) {
 	ret.type = Git::RefType::Head;
 	if ( split.size() > 4 )
 		parseAheadBehind( split[4], ret );
+	if ( split.size() > 8 && !split[2].empty() && split[7] != "." && split[0] == split[8] )
+		ret.sameNameUpstreamRemote = split[7];
 	return ret;
 }
 
@@ -1192,7 +1255,7 @@ static Git::Branch parseTag( std::string_view raw ) {
 std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_view filterBranch,
 													 const std::string& projectDir ) {
 	// clang-format off
-	std::string args( "for-each-ref --format '%(refname)	%(refname:short)	%(upstream:short)	%(objectname)	%(upstream:track,nobracket)	%(symref)	%(refname:lstrip=3)%00%(worktreepath)%00' --sort=v:refname" );
+	std::string args( "for-each-ref --format '%(refname)\t%(refname:short)\t%(upstream:short)\t%(objectname)\t%(upstream:track,nobracket)\t%(symref)\t%(refname:lstrip=3)\t%(upstream:remotename)\t%(upstream:remoteref)%00%(worktreepath)%00' --sort=v:refname" );
 	// clang-format on
 
 	if ( filterBranch.empty() ) {
@@ -1224,7 +1287,7 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 				break;
 			const auto line = remaining.substr( 0, refEnd );
 			const auto worktreePath = remaining.substr( refEnd + 1, pathEnd - refEnd - 1 );
-			auto branch = String::trim( String::trim( line, '\'' ), '\t' );
+			auto branch = String::trim( line, '\t' );
 			if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
 				auto parsedBranch = parseLocalBranch( branch );
 				if ( !parsedBranch.isEmpty() ) {

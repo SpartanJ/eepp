@@ -27,10 +27,16 @@ class GitBranchModel : public Model {
 
 	enum Column { Name, Remote, Type, LastCommit, HistoryDisplay };
 
+	struct LocalBranchLabel {
+		String text;
+		Uint32 metadataStart;
+	};
+
 	struct BranchData {
 		std::string branch;
 		std::vector<Git::Branch> data;
 		std::vector<String> historyDisplay;
+		std::vector<LocalBranchLabel> localLabels;
 	};
 
 	std::string refTypeToString( Git::RefType type ) const;
@@ -63,12 +69,16 @@ class GitBranchModel : public Model {
 
 	std::optional<Git::Branch> branch( const std::string& name ) const;
 
+	Uint32 metadataStart( const ModelIndex& index ) const;
+
 	ModelIndex refTypeIndex( Git::RefType refType ) const;
 
   protected:
 	std::vector<BranchData> mBranches;
 	GitPlugin* mPlugin{ nullptr };
 	size_t mHash{ 0 };
+
+	LocalBranchLabel localBranchLabel( const Git::Branch& branch ) const;
 };
 
 } // namespace ecode
