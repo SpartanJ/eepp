@@ -51,11 +51,8 @@ void DisplayManagerSDL2::setDPIAwareness() {
 }
 #endif
 
-#if defined( EE_X11_PLATFORM )
-Float DisplayManagerSDL2::getX11DesktopScale( eeWindowHandle display ) {
 #ifdef EE_SDL2_X11_DESKTOP_SCALE
-	if ( !display )
-		return 0.f;
+static Float readX11DesktopScale( eeWindowHandle display ) {
 	// Read RESOURCE_MANAGER directly. XResourceManagerString caches the startup settings.
 	using Library = std::unique_ptr<void, decltype( &Sys::unloadObject )>;
 	static const Library x11(
@@ -70,7 +67,6 @@ Float DisplayManagerSDL2::getX11DesktopScale( eeWindowHandle display ) {
 	static const auto fn = \
 		reinterpret_cast<decltype( &::fn )>( Sys::loadFunction( x11.get(), #fn, false ) );
 	EE_X11_LOAD( XDefaultRootWindow )
-	EE_X11_LOAD( XInternAtom )
 	EE_X11_LOAD( XGetWindowProperty )
 	EE_X11_LOAD( XFree )
 	EE_X11_LOAD( XrmInitialize )
@@ -78,18 +74,15 @@ Float DisplayManagerSDL2::getX11DesktopScale( eeWindowHandle display ) {
 	EE_X11_LOAD( XrmGetResource )
 	EE_X11_LOAD( XrmDestroyDatabase )
 #undef EE_X11_LOAD
-	if ( !XDefaultRootWindow || !XInternAtom || !XGetWindowProperty || !XFree || !XrmInitialize ||
+	if ( !XDefaultRootWindow || !XGetWindowProperty || !XFree || !XrmInitialize ||
 		 !XrmGetStringDatabase || !XrmGetResource || !XrmDestroyDatabase )
-		return 0.f;
-	const Atom resourceManager = XInternAtom( display, "RESOURCE_MANAGER", True );
-	if ( !resourceManager )
 		return 0.f;
 	Atom type = 0;
 	int format = 0;
 	unsigned long count = 0, remaining = 0;
 	unsigned char* data = nullptr;
 	const int status =
-		XGetWindowProperty( display, XDefaultRootWindow( display ), resourceManager, 0, 16384,
+		XGetWindowProperty( display, XDefaultRootWindow( display ), XA_RESOURCE_MANAGER, 0, 16384,
 							False, XA_STRING, &type, &format, &count, &remaining, &data );
 	std::unique_ptr<unsigned char, decltype( XFree )> resources( data, XFree );
 	if ( status != Success || type != XA_STRING || format != 8 || !resources || remaining )
@@ -109,10 +102,23 @@ Float DisplayManagerSDL2::getX11DesktopScale( eeWindowHandle display ) {
 	const Float dpi = std::strtof( value.addr, &end );
 	return end != value.addr && *end == '\0' && std::isfinite( dpi ) && dpi > 0.f ? dpi / 96.f
 																				  : 0.f;
+}
+#endif
+
+#if defined( EE_X11_PLATFORM )
+Float DisplayManagerSDL2::getX11DesktopScale( eeWindowHandle display ) {
+#ifdef EE_SDL2_X11_DESKTOP_SCALE
+	if ( display ) {
+		if ( mX11Display != display || !mX11DesktopScale ) {
+			mX11Display = display;
+			mX11DesktopScale = readX11DesktopScale( display );
+		}
+		return *mX11DesktopScale;
+	}
 #else
 	(void)display;
-	return 0.f;
 #endif
+	return 0.f;
 }
 #endif
 
@@ -237,6 +243,9 @@ void DisplaySDL2::invalidateMetrics() {
 }
 
 void DisplayManagerSDL2::invalidateDisplayMetrics() {
+#if defined( EE_X11_PLATFORM )
+	mX11DesktopScale.reset();
+#endif
 	for ( auto* display : displays )
 		static_cast<DisplaySDL2*>( display )->invalidateMetrics();
 }

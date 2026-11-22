@@ -2,6 +2,7 @@
 #define EE_WINDOW_DISPLAYMANAGERSDL2_HPP
 
 #include <eepp/window/displaymanager.hpp>
+#include <optional>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
@@ -47,7 +48,7 @@ class EE_API DisplayManagerSDL2 : public DisplayManager {
 	static void setDPIAwareness();
 #endif
 #if defined( EE_X11_PLATFORM )
-	static Float getX11DesktopScale( eeWindowHandle display );
+	Float getX11DesktopScale( eeWindowHandle display );
 #endif
 
 	int getDisplayCount();
@@ -70,6 +71,10 @@ class EE_API DisplayManagerSDL2 : public DisplayManager {
 
   protected:
 	int mDisplayCount{ 0 };
+#if defined( EE_X11_PLATFORM )
+	eeWindowHandle mX11Display{};
+	std::optional<Float> mX11DesktopScale;
+#endif
 };
 
 }}}} // namespace EE::Window::Backend::SDL2

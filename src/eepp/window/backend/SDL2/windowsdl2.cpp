@@ -953,7 +953,8 @@ Float WindowSDL::getDisplayScale() const {
 			return dpi / 96.f;
 	}
 #elif defined( EE_X11_PLATFORM )
-	const Float desktopScale = DisplayManagerSDL2::getX11DesktopScale( getWindowHandler() );
+	auto* displays = static_cast<DisplayManagerSDL2*>( Engine::instance()->getDisplayManager() );
+	const Float desktopScale = displays->getX11DesktopScale( getWindowHandler() );
 	if ( desktopScale > 0.f )
 		return desktopScale;
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID

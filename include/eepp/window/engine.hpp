@@ -1,12 +1,13 @@
 #ifndef EE_WINDOWCENGINE_H
 #define EE_WINDOWCENGINE_H
 
-#include <eepp/system/scopedop.hpp>
+#include <eepp/system/private/scopedrestoretarget.hpp>
 #include <eepp/window/base.hpp>
 #include <eepp/window/displaymanager.hpp>
 #include <eepp/window/platformhelper.hpp>
 #include <eepp/window/window.hpp>
 
+#include <functional>
 #include <memory>
 
 namespace EE { namespace Graphics {

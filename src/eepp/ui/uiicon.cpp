@@ -8,12 +8,18 @@ namespace EE { namespace UI {
 
 namespace {
 
+int iconPixelSize( Float size, Float density ) {
+	return std::max( 1, static_cast<int>( size * density ) );
+}
+
 class DensityIconDrawable final : public Drawable {
   public:
-	DensityIconDrawable( std::shared_ptr<const UIIcon> icon, Float size, DrawablePtr drawable ) :
+	DensityIconDrawable( std::shared_ptr<const UIIcon> icon, Float size, int pixelSize,
+						 DrawablePtr drawable ) :
 		Drawable( CUSTOM ),
 		mIcon( std::move( icon ) ),
 		mSize( size ),
+		mPixelSize( pixelSize ),
 		mDrawable( std::move( drawable ) ) {}
 
 	Sizef getSize() { return mDrawable->getSize(); }
@@ -35,19 +41,23 @@ class DensityIconDrawable final : public Drawable {
 		auto source = mDrawable->clone();
 		if ( !source )
 			return {};
-		auto drawable = makeResource<DensityIconDrawable>( mIcon, mSize, std::move( source ) );
+		auto drawable =
+			makeResource<DensityIconDrawable>( mIcon, mSize, mPixelSize, std::move( source ) );
 		drawable->setColor( mColor );
 		drawable->setPosition( mPosition );
 		return drawable;
 	}
 
 	DrawablePtr recreateForDensity( Float density ) const {
-		return mIcon->createDrawableDp( mSize, density );
+		return mPixelSize == iconPixelSize( mSize, density )
+				   ? DrawablePtr{}
+				   : mIcon->createDrawableDp( mSize, density );
 	}
 
   private:
 	std::shared_ptr<const UIIcon> mIcon;
 	Float mSize;
+	int mPixelSize;
 	DrawablePtr mDrawable;
 };
 
@@ -88,11 +98,13 @@ DrawablePtr UIIcon::createDrawable( const int& size ) const {
 }
 
 DrawablePtr UIIcon::createDrawableDp( Float size, Float pixelDensity ) const {
-	auto drawable = createDrawable( std::max( 1, static_cast<int>( size * pixelDensity ) ) );
+	const int pixelSize = iconPixelSize( size, pixelDensity );
+	auto drawable = createDrawable( pixelSize );
 	auto icon = weak_from_this().lock();
 	if ( !drawable || !icon )
 		return drawable;
-	return makeResource<DensityIconDrawable>( std::move( icon ), size, std::move( drawable ) );
+	return makeResource<DensityIconDrawable>( std::move( icon ), size, pixelSize,
+											  std::move( drawable ) );
 }
 
 DrawablePtr UIIcon::recreateDrawableForDensity( const DrawablePtr& drawable, Float pixelDensity ) {

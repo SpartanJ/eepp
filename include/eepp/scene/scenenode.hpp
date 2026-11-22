@@ -4,6 +4,7 @@
 #include <atomic>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/scene/node.hpp>
+#include <eepp/system/private/scopedrestoretarget.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/window/cursor.hpp>
 #include <eepp/window/engine.hpp>

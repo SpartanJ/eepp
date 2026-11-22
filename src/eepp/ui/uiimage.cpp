@@ -33,7 +33,16 @@ UIImage::UIImage() : UIImage( "image" ) {}
 
 void UIImage::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 	UIWidget::onPixelDensityChange( oldDensity, newDensity );
-	onAutoSize();
+	if ( auto drawable = UIIcon::recreateDrawableForDensity( mDrawable, newDensity ) ) {
+		if ( mSizeFromDrawable ) {
+			const auto size = drawable->getPixelsSize().asInt().asFloat();
+			setInternalPixelsSize( size );
+			mSizeFromDrawable = mSize == size;
+		}
+		setDrawable( std::move( drawable ) );
+	} else {
+		onAutoSize();
+	}
 	calcDestSize();
 }
 
@@ -109,7 +118,8 @@ void UIImage::onAutoSize() {
 		return;
 
 	Sizef size( getPixelsSize() );
-	if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == getPixelsSize() )
+	const bool needsNaturalSize = ( mFlags & UI_AUTO_SIZE ) && size == Sizef::Zero;
+	if ( needsNaturalSize )
 		size = drawableSize.asInt().asFloat();
 
 	if ( mWidthPolicy == SizePolicy::WrapContent && mHeightPolicy == SizePolicy::WrapContent ) {
@@ -172,8 +182,11 @@ void UIImage::onAutoSize() {
 		}
 	}
 
-	if ( mSize != size )
+	if ( mSize != size ) {
 		setInternalPixelsSize( size );
+		mSizeFromDrawable = needsNaturalSize && mWidthPolicy == SizePolicy::Fixed &&
+							mHeightPolicy == SizePolicy::Fixed && mSize == size;
+	}
 }
 
 void UIImage::calcDestSize() {
@@ -333,6 +346,7 @@ void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
 }
 
 void UIImage::onSizeChange() {
+	mSizeFromDrawable = false;
 	onAutoSize();
 	calcDestSize();
 	UIWidget::onSizeChange();

@@ -64,6 +64,7 @@ class EE_API UIImage : public UIWidget {
 	DrawableResourceConnection mResourceChangeConnection;
 	Uint32 mSpriteChangeCb{ 0 };
 	bool mDeferLoad{ false };
+	bool mSizeFromDrawable{ false };
 	std::shared_ptr<std::atomic<bool>> mAsyncImageAlive;
 	Uint64 mRemoteImageLoadId{ 0 };
 

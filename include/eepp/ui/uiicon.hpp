@@ -37,7 +37,7 @@ class EE_API UIIcon : public std::enable_shared_from_this<UIIcon> {
 	/** Creates an icon at a logical size that UI consumers can re-rasterize on density changes. */
 	DrawablePtr createDrawableDp( Float size, Float pixelDensity ) const;
 
-	/** Returns a new raster for an icon created with createDrawableDp(), or an empty handle. */
+	/** Returns a new raster for a logical icon whose target pixel size changed. */
 	static DrawablePtr recreateDrawableForDensity( const DrawablePtr& drawable,
 												   Float pixelDensity );
 

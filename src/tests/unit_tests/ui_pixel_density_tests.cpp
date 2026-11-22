@@ -45,6 +45,7 @@
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
+#include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uisvg.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
@@ -1333,6 +1334,40 @@ UTEST( UISceneDensity, SettingsControlsStayReachableWhenLogicalViewportNarrows )
 	}
 }
 
+UTEST( UISceneDensity, SettingsScaleFactorTracksEffectiveWindowDensity ) {
+	DensityApplication fixture;
+	auto context = fixture.app.getUI()->makeCurrent();
+	auto* scene = fixture.app.getUI();
+	auto* window = fixture.app.getWindow();
+	window->setPixelDensityOverride( 1.25f );
+	Float setting = 0.f;
+	auto mode = PixelDensityMode::DisplayScale;
+	int saves = 0;
+	auto* panel = UISettingsPanel::New( scene->getRoot() );
+	panel->setPixelsSize( scene->getPixelsSize() );
+	panel->addCategory( "appearance.fonts", "Appearance", "Fonts & Scale" );
+	panel->addUIScaleSettings( "appearance.fonts", window, setting, mode, [&] { ++saves; } );
+	panel->build();
+	panel->setFilter( "UI Scale Factor" );
+	scene->update( Time::Zero );
+	auto* row = panel->find<UIWidget>( "setting_uiScaleFactor" );
+	ASSERT_TRUE( row != nullptr );
+	auto* factor = row->find<UISpinBox>( "setting_control_widget" );
+	ASSERT_TRUE( factor != nullptr );
+	EXPECT_EQ( factor->getValue(), 1.25 );
+
+	window->setPixelDensityOverride( 2.f );
+	scene->update( Time::Zero );
+	EXPECT_EQ( factor->getValue(), 2.0 );
+	EXPECT_EQ( setting, 0.f );
+	EXPECT_EQ( saves, 0 );
+	factor->setValue( 1.5 );
+	scene->update( Time::Zero );
+	EXPECT_EQ( factor->getValue(), 1.5 );
+	EXPECT_EQ( setting, 1.5f );
+	EXPECT_EQ( saves, 1 );
+}
+
 UTEST( UISceneDensity, RuntimeVisibilitySurvivesWhileChangedMediaStateApplies ) {
 	DensityApplication fixture;
 	auto* scene = fixture.app.getUI();
@@ -2384,6 +2419,41 @@ UTEST( UISceneDensity, ExistingMenuIconsMatchFreshIconsAfterDensityChanges ) {
 		EXPECT_NEAR( menu->getPixelsSize().getHeight(), freshMenu->getPixelsSize().getHeight(),
 					 1.f );
 		eeDelete( freshMenu );
+	}
+}
+
+UTEST( UISceneDensity, LogicalImageIconsRerasterizeAndKeepTheirSizingPolicy ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	auto icon =
+		UISVGIcon::New( "Square", "<svg width='16' height='16' xmlns='http://www.w3.org/2000/svg'>"
+								  "<rect width='16' height='16' fill='white'/></svg>" );
+	auto* natural = UIImage::New();
+	auto* autoSized = UIImage::New();
+	autoSized->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	auto* fixed = UIImage::New();
+	fixed->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	fixed->setPixelsSize( 40, 30 );
+	for ( auto* image : { natural, autoSized, fixed } )
+		image->setDrawable( icon->createDrawableDp( 16.f, 1.f ) );
+
+	auto* tree = UITreeView::New();
+	tree->setStyleSheetProperty( StyleSheetProperty( "icon-size", "11dp" ) );
+	tree->setStyleSheetProperty( StyleSheetProperty( "expander-icon-size", "11dp" ) );
+	for ( Float density : { 1.f, 2.5f, 1.25f, 1.f } ) {
+		scene->setPixelDensity( density );
+		scene->update( Time::Zero );
+		const Sizef expected( 16.f * density, 16.f * density );
+		ASSERT_TRUE( natural->getDrawable() && autoSized->getDrawable() && fixed->getDrawable() );
+		EXPECT_TRUE( natural->getDrawable()->getPixelsSize() == expected );
+		EXPECT_TRUE( fixed->getDrawable()->getPixelsSize() == expected );
+		EXPECT_TRUE( natural->getPixelsSize() == expected );
+		EXPECT_TRUE( autoSized->getPixelsSize() == expected );
+		EXPECT_TRUE( fixed->getPixelsSize() == Sizef( 40.f, 30.f ) );
+		EXPECT_EQ( tree->getIconSize(), static_cast<size_t>( 11.f * density ) );
+		EXPECT_EQ( tree->getExpanderIconSize(), static_cast<size_t>( 11.f * density ) );
 	}
 }
 

@@ -209,8 +209,9 @@ Final verification:
 - Stylesheet media queries have per-sheet results, the legacy accessors document their standalone
   semantics, and ecode evaluates media matches for theme inheritance. Theme-manager font overrides
   take precedence, and theme font setters accept an explicit density.
-- SDL2/X11 System Scale uses configured `Xft.dpi` with a drawable fallback. An XSETTINGS-only desktop
-  still gets that fallback. Single-axis pixel setters and the settings dropdown null guard are fixed.
+- SDL2/X11 System Scale reads `Xft.dpi` when opening an X11 connection and after display topology
+  changes. Window moves reuse the cached result. An XSETTINGS-only desktop uses the drawable
+  fallback. Single-axis pixel setters and the settings dropdown null guard are fixed.
 - Windows 10 SDL2 passed manual RDP checks at 100% and 125% for live scaling, window placement after
   relaunch, and pointer alignment. The wrapped-editor scroll jump on maximize was fixed, passed the
   native resize regression, and was retested by the user.
@@ -232,8 +233,10 @@ Final verification:
   Manual starts from the current effective scale, including an active per-display value.
 - Windows identifies the monitor from the native window and its monitor interface. macOS uses
   the display UUID. X11 uses the connector and the monitor's EDID, so two monitors with the same
-  model name can keep distinct settings on their respective connectors. Other drivers and X11
-  displays without EDID or a unique native output match continue to use the selected Auto policy.
+  EDID can keep distinct settings on their respective connectors. Moving a monitor to a different
+  port or using a dock that changes the output name requires setting the override for that
+  connector. Other drivers and X11 displays without EDID or a unique native output match continue
+  to use the selected Auto policy.
   The picker also excludes entries whose display keys are shared.
 - The five Linux SDL3 apps built. The native suite passed 2,583 tests with six UDisks environment
   skips. Native X11 checks covered moving between two displays, separate exact factors, restart,
@@ -250,11 +253,12 @@ Final verification:
   Android uses the app-private directory for user-directory lookups, which fixes startup when
   `HOME` is unset.
 
-## Remaining validation
-
-- Exercise the new per-display settings UI on Windows and macOS. The new native font and display
-  identity code passed MinGW and macOS SDK syntax checks.
-- Repeat the display override checks through a physical monitor disconnect and reconnect.
+- Windows RDP saved separate factors for both monitors and kept the open Settings panel centered
+  when the window moved to a smaller viewport at the same UI scale. The macOS picker showed
+  3024 × 1964 for the Retina panel and 1920 × 1080 for the external display. The user confirmed
+  that a saved override was restored after physically disconnecting and reconnecting a monitor.
+- The opt-in X11 font lookup holds the server grab while reading the XSETTINGS owner and its
+  property. It flushes the ungrab before parsing the font preference.
 
 ## Lower-priority follow-ups
 
@@ -264,8 +268,7 @@ Final verification:
   override currently takes precedence.
 - Retain the source of programmatic font sizes where practical. The current reflow heuristic can
   treat an explicit size equal to the floored theme default as theme-derived.
-- Measure display queries during continuous window drags and the UI-thread wait on an in-flight
-  texture request for the same key before changing either path.
+- Measure the UI-thread wait on an in-flight texture request for the same key before changing it.
 - Extensionless web SVGs can request an explicit `WebResourceRequest::svgScale`. Automatic detection
   and sharing response bytes across raster variants can follow separately. Application and plugin
   pixel caches may also need their own regression coverage.

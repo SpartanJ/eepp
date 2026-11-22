@@ -636,16 +636,25 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 
 	enum ScaleChoice : size_t { SystemScale, PhysicalPPI, Manual };
 	auto* scene = getUISceneNode();
-	auto updatingFactor = std::make_shared<bool>( false );
-	auto refreshFactor = [this, window, updating = std::weak_ptr<bool>( updatingFactor )] {
-		auto flag = updating.lock();
-		if ( !flag )
+	struct ScaleFactorState {
+		Float lastDensity;
+		bool updating{ false };
+	};
+	auto factorState = std::make_shared<ScaleFactorState>( window->getPixelDensity() );
+	auto refreshFactor = [this, window, weakState = std::weak_ptr<ScaleFactorState>( factorState )](
+							 bool onlyIfChanged = false ) {
+		auto state = weakState.lock();
+		if ( !state )
 			return;
+		const Float effectiveDensity = window->getPixelDensity();
+		if ( onlyIfChanged && state->lastDensity == effectiveDensity )
+			return;
+		state->lastDensity = effectiveDensity;
 		auto* row = find<UIWidget>( "setting_uiScaleFactor" );
 		auto* spin = row ? row->find<UISpinBox>( "setting_control_widget" ) : nullptr;
 		if ( spin ) {
-			BoolScopedOp updatingValue( *flag, true );
-			spin->setValue( window->getPixelDensity() );
+			BoolScopedOp updatingValue( state->updating, true );
+			spin->setValue( effectiveDensity );
 		}
 	};
 	auto currentChoice = [window]() -> size_t {
@@ -690,9 +699,10 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 		  scene->i18n( "ui_scale_factor_desc",
 					   "Set a fixed interface scale from 1 to 6. Changing it selects Manual." ) },
 		1, 6, 0.1, [window] { return window->getPixelDensity(); },
-		[this, applyScale, updatingFactor = std::move( updatingFactor )]( double value ) {
-			if ( *updatingFactor )
+		[this, applyScale, factorState = std::move( factorState )]( double value ) {
+			if ( factorState->updating )
 				return;
+			factorState->lastDensity = static_cast<Float>( value );
 			applyScale( static_cast<Float>( value ) );
 			if ( auto* row = find<UIWidget>( "setting_uiScaleMode" ) ) {
 				auto* choice = row->find<UIDropDownModelList>( "setting_control_widget" );
@@ -701,6 +711,8 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 						choice->getModel()->index( Manual, 0 ) );
 			}
 		} );
+	mImpl->connections += scene->connect(
+		Event::OnLayoutReady, [refreshFactor]( const Event* ) { refreshFactor( true ); } );
 	if ( !overrides )
 		return;
 	addAction(

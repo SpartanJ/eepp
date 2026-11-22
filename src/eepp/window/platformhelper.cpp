@@ -63,7 +63,9 @@ static std::string getXSettingsFont() {
 		Sys::loadFunction( library.get(), "XGrabServer", false ) );
 	const auto ungrab = reinterpret_cast<decltype( &::XUngrabServer )>(
 		Sys::loadFunction( library.get(), "XUngrabServer", false ) );
-	if ( !grab || !ungrab )
+	const auto flush = reinterpret_cast<decltype( &::XFlush )>(
+		Sys::loadFunction( library.get(), "XFlush", false ) );
+	if ( !grab || !ungrab || !flush )
 		return {};
 	Atom type = None;
 	int format = 0;
@@ -76,6 +78,7 @@ static std::string getXSettingsFont() {
 						   : property( display.get(), owner, settings, 0, 64 * 1024, False,
 									   settings, &type, &format, &count, &remaining, &bytes );
 	ungrab( display.get() );
+	flush( display.get() );
 	std::unique_ptr<unsigned char, decltype( free )> data( bytes, free );
 	if ( status != Success || type != settings || format != 8 || !data || count < 12 ||
 		 bytes[0] > 1 )

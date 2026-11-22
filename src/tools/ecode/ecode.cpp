@@ -2841,15 +2841,12 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 							  bool interactiveFileHeaders ) {
 	if ( UIDiffView::isMultiFileDiff( content ) ) {
 		auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" ) + ": " + originalFilePath;
-		UIIcon* icon = getUISceneNode()->findIcon( "filetype-diff" );
-		if ( !icon )
-			icon = getUISceneNode()->findIcon( "file" );
+		auto icon = findIcon( "filetype-diff" );
 
 		auto multiDiff = UIMultiDiffView::New( content, repoPath, mConfig.editor.diffViewMode,
 											   interactiveFileHeaders );
 		auto [tab, iv] = getSplitter()->createWidget( multiDiff, diffViewTitle );
-		if ( icon )
-			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
+		tab->setIcon( icon ? std::move( icon ) : findIcon( "file" ) );
 		tab->setText( diffViewTitle );
 
 		for ( auto* diffView : multiDiff->getDiffViews() ) {
@@ -2873,11 +2870,8 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 	} else {
 		tab->setText( diffViewTitle );
 	}
-	UIIcon* icon = getUISceneNode()->findIcon( "filetype-diff" );
-	if ( !icon )
-		icon = getUISceneNode()->findIcon( "file" );
-	if ( icon )
-		tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
+	auto icon = findIcon( "filetype-diff" );
+	tab->setIcon( icon ? std::move( icon ) : findIcon( "file" ) );
 	diffView->setHeadersVisible( true );
 	diffView->loadFromPatch( content, originalFilePath, oldFilePath );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
@@ -2892,14 +2886,11 @@ void App::loadDiffFromPath( const std::string& path ) {
 	if ( UIDiffView::isMultiFileDiff( content ) ) {
 		auto diffViewTitle =
 			i18n( "diff_viewer", "Diff Viewer" ) + ": " + FileSystem::fileNameFromPath( path );
-		UIIcon* icon = getUISceneNode()->findIcon( "filetype-diff" );
-		if ( !icon )
-			icon = getUISceneNode()->findIcon( "file" );
+		auto icon = findIcon( "filetype-diff" );
 
 		auto multiDiff = UIMultiDiffView::New( content, "", mConfig.editor.diffViewMode );
 		auto [tab, iv] = getSplitter()->createWidget( multiDiff, diffViewTitle );
-		if ( icon )
-			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
+		tab->setIcon( icon ? std::move( icon ) : findIcon( "file" ) );
 		tab->setText( diffViewTitle );
 
 		for ( auto* diffView : multiDiff->getDiffViews() ) {
@@ -3514,15 +3505,15 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			return;
 		const DocEvent* synEvent = static_cast<const DocEvent*>( event );
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
-		UIIcon* icon = mUISceneNode->findIcon(
+		auto icon = findIcon(
 			UIIconThemeManager::getIconNameFromFileName( synEvent->getDoc()->getFilename() ) );
 		if ( !icon )
-			icon = mUISceneNode->findIcon( "file" );
+			icon = findIcon( "file" );
 		if ( !icon )
 			return;
 		if ( editor->getData() ) {
 			UITab* tab = (UITab*)editor->getData();
-			tab->setIcon( icon->createDrawable( mMenuIconSize ) );
+			tab->setIcon( std::move( icon ) );
 		}
 		editor->getDocument().setHExtLanguageType( mProjectDocConfig.hExtLanguageType );
 
@@ -4148,8 +4139,9 @@ void App::initProjectTreeViewUI() {
 		  FileSystemModel::Inode, FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
 		  FileSystemModel::Permissions, FileSystemModel::ModificationTime, FileSystemModel::Path },
 		true );
-	mProjectTreeView->setIconSize( mMenuIconSize );
-	mProjectTreeView->setExpanderIconSize( mMenuIconSize );
+	const auto iconSize = mConfig.ui.fontSize.toString();
+	mProjectTreeView->setStyleSheetProperty( StyleSheetProperty( "icon-size", iconSize ) );
+	mProjectTreeView->setStyleSheetProperty( StyleSheetProperty( "expander-icon-size", iconSize ) );
 	mProjectTreeView->setExpandedIcon( "folder-open" );
 	mProjectTreeView->setContractedIcon( "folder" );
 	mProjectTreeView->setHeadersVisible( false );
