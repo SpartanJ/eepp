@@ -213,7 +213,9 @@ UIWelcomeScreen* UIWelcomeScreen::createWelcomeScreen( App* app, UITabWidget* in
 	auto ret = app->getSplitter()->createWidgetInTabWidget(
 		tabWidget, welcomeScreen, app->i18n( "welcome", "Welcome" ), true );
 	app->getSplitter()->removeUnusedTab( tabWidget, true, false );
-	ret.first->setIcon( app->findIcon( "ecode", PixelDensity::dpToPxI( 16 ) ) );
+	auto* scene = tabWidget->getUISceneNode();
+	if ( auto* icon = scene->findIcon( "ecode" ) )
+		ret.first->setIcon( icon->createDrawableDp( 16.f, scene->getPixelDensity() ) );
 	return welcomeScreen;
 }
 

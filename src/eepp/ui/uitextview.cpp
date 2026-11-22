@@ -431,7 +431,10 @@ void UITextView::onAutoSize() {
 	}
 
 	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		Float totW = (int)getTextWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		const Float textWidth = getTextWidth();
+		// Reserve the last fractional pixel before testing whether the full text fits.
+		Float totW = ( hasTextOverflow() ? eeceil( textWidth ) : eefloor( textWidth ) ) +
+					 mPaddingPx.Left + mPaddingPx.Right;
 
 		if ( !getMaxWidthEq().empty() ) {
 			Float oldW = totW;

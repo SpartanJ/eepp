@@ -31,6 +31,8 @@ Math::Sizeu getNativeDisplayPixelSize( const Math::Rect& bounds );
 
 Float getPhysicalDisplayDPI( const Math::Rect& bounds );
 
+Float getDisplayBackingScale( const Math::Rect& bounds );
+
 Float getBackingDisplayDPI( const Math::Rect& bounds, Float windowBackingScale );
 
 bool setWindowTitleBarSeparatorVisible( void* window, bool visible );

@@ -275,6 +275,18 @@ Float getPhysicalDisplayDPI( const Math::Rect& bounds ) {
 		   std::hypot( static_cast<Float>( size.width ), static_cast<Float>( size.height ) );
 }
 
+Float getDisplayBackingScale( const Math::Rect& bounds ) {
+	const auto display = getDisplayAtBounds( bounds );
+	if ( display != kCGNullDirectDisplay ) {
+		for ( NSScreen* screen in [NSScreen screens] ) {
+			NSNumber* screenNumber = [screen deviceDescription][@"NSScreenNumber"];
+			if ( screenNumber && [screenNumber unsignedIntValue] == display )
+				return [screen backingScaleFactor];
+		}
+	}
+	return 1.f;
+}
+
 Float getBackingDisplayDPI( const Math::Rect& bounds, Float windowBackingScale ) {
 	const auto display = getDisplayAtBounds( bounds );
 	if ( display == kCGNullDirectDisplay || !std::isfinite( windowBackingScale ) ||

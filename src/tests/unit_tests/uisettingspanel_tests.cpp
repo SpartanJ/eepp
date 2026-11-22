@@ -9,6 +9,8 @@
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uitextinput.hpp>
@@ -125,6 +127,61 @@ UTEST( UISettingsPanel, appliesAndSavesWindowScaleModes ) {
 	EXPECT_EQ( manualScale, window->getPixelDensityOverride() );
 	EXPECT_EQ( manualScale, factor->getValue() );
 	EXPECT_EQ( 4, saves );
+}
+
+UTEST( UISettingsPanel, perDisplayOverrideStartsFromAutomaticScale ) {
+	Float density = 0.f;
+	PixelDensityMode mode = PixelDensityMode::PhysicalPPI;
+	DisplayDensityOverrides overrides;
+	WindowSettings settings( 800, 600, "eepp - Per-display Scale Test" );
+	settings.DensityMode = mode;
+	UIApplication app( settings, UIApplication::Settings( Sys::getProcessPath() + ".." +
+														  FileSystem::getOSSlash() ) );
+	auto* window = app.getWindow();
+	ASSERT_NE( nullptr, window );
+	const auto key = window->getDisplayDensityKey();
+	if ( key.empty() )
+		UTEST_SKIP( "The current display has no persistent identity" );
+	const Float physicalDPI = window->getPhysicalDisplayDPI();
+	if ( physicalDPI > 0.f )
+		window->setPixelDensityReferencePPI( physicalDPI / 1.5f );
+	const Float automatic = window->getPixelDensity();
+
+	auto* scene = app.getUI();
+	auto* panel = UISettingsPanel::New( scene->getRoot() );
+	ASSERT_TRUE( panel->addCategory( "appearance.fonts", "Appearance", "Fonts and Scale" ) );
+	panel->addUIScaleSettings( "appearance.fonts", window, density, mode, {}, &overrides );
+	panel->build();
+	panel->selectCategory( "appearance.fonts" );
+	auto* row = panel->find<UIWidget>( "setting_uiDisplayScale" );
+	ASSERT_NE( nullptr, row );
+	auto* configure = row->find<UIPushButton>( "setting_control_widget" );
+	ASSERT_NE( nullptr, configure );
+	configure->sendMouseEvent( Event::MouseClick, {}, EE_BUTTON_LMASK );
+	auto* dialog = scene->find<UIMessageBox>( "display_scale_dialog" );
+	ASSERT_NE( nullptr, dialog );
+	auto* factor = dialog->find<UISpinBox>( "display_scale_factor" );
+	auto* custom = dialog->find<UICheckBox>( "display_scale_override" );
+	ASSERT_NE( nullptr, factor );
+	ASSERT_NE( nullptr, custom );
+	EXPECT_FALSE( factor->isEnabled() );
+	EXPECT_EQ( automatic, factor->getValue() );
+
+	custom->setChecked( true );
+	EXPECT_TRUE( factor->isEnabled() );
+	factor->setValue( 3.1 );
+	custom->setChecked( false );
+	EXPECT_FALSE( factor->isEnabled() );
+	EXPECT_EQ( automatic, factor->getValue() );
+	EXPECT_TRUE( overrides.empty() );
+
+	custom->setChecked( true );
+	const Float seed = std::clamp( automatic, 1.f, 6.f );
+	EXPECT_EQ( seed, factor->getValue() );
+	dialog->sendCommonEvent( Event::OnConfirm );
+	const auto saved = overrides.find( key );
+	ASSERT_TRUE( saved != overrides.end() );
+	EXPECT_EQ( seed, saved->second );
 }
 
 UTEST( UISettingsPanel, buildsAndMaterializesCategoriesLazily ) {

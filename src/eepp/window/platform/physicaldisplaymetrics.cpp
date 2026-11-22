@@ -128,6 +128,19 @@ static HMONITOR getMonitor( const Math::Rect& bounds ) {
 	RECT rect{ bounds.Left, bounds.Top, bounds.Right, bounds.Bottom };
 	return MonitorFromRect( &rect, MONITOR_DEFAULTTONULL );
 }
+
+static bool getMonitorDPI( const Math::Rect& bounds, MONITOR_DPI_TYPE type, UINT& x, UINT& y ) {
+	const HMONITOR monitor = getMonitor( bounds );
+	if ( !monitor )
+		return false;
+	std::unique_ptr<void, decltype( &Sys::unloadObject )> library(
+		Sys::loadObject( "shcore.dll", false ), Sys::unloadObject );
+	if ( !library )
+		return false;
+	const auto getDpi = reinterpret_cast<decltype( &::GetDpiForMonitor )>(
+		Sys::loadFunction( library.get(), "GetDpiForMonitor", false ) );
+	return getDpi && SUCCEEDED( getDpi( monitor, type, &x, &y ) );
+}
 #endif
 
 Float PhysicalDisplayMetrics::getDPI( const Math::Rect& bounds ) {
@@ -136,17 +149,8 @@ Float PhysicalDisplayMetrics::getDPI( const Math::Rect& bounds ) {
 #if defined( EE_HAS_PHYSICAL_X11_METRICS )
 	return getX11DisplayMetrics( bounds, nullptr );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-	const HMONITOR monitor = getMonitor( bounds );
-	if ( !monitor )
-		return 0.f;
-	std::unique_ptr<void, decltype( &Sys::unloadObject )> library(
-		Sys::loadObject( "shcore.dll", false ), Sys::unloadObject );
-	if ( !library )
-		return 0.f;
-	const auto getDpi = reinterpret_cast<decltype( &::GetDpiForMonitor )>(
-		Sys::loadFunction( library.get(), "GetDpiForMonitor", false ) );
 	UINT x = 0, y = 0;
-	return getDpi && SUCCEEDED( getDpi( monitor, MDT_RAW_DPI, &x, &y ) ) && x && y
+	return getMonitorDPI( bounds, MDT_RAW_DPI, x, y ) && x && y
 			   ? std::sqrt( static_cast<Float>( x ) * y )
 			   : 0.f;
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
@@ -158,6 +162,11 @@ Float PhysicalDisplayMetrics::getDPI( const Math::Rect& bounds ) {
 }
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+Float PhysicalDisplayMetrics::getScale( const Math::Rect& bounds ) {
+	UINT x = 0, y = 0;
+	return getMonitorDPI( bounds, MDT_EFFECTIVE_DPI, x, y ) ? x / 96.f : 0.f;
+}
+
 std::string PhysicalDisplayMetrics::getPersistentId( eeWindowHandle window ) {
 	return getPersistentMonitorId( window ? MonitorFromWindow( window, MONITOR_DEFAULTTONULL )
 										  : nullptr );

@@ -733,8 +733,12 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 				box->showWhenReady();
 			};
 
+			struct DisplayScaleEntry {
+				std::string key;
+				Float automaticScale;
+			};
 			struct DisplayScaleDraft {
-				std::vector<std::string> keys;
+				std::vector<DisplayScaleEntry> displays;
 				DisplayDensityOverrides values;
 				bool loading{ false };
 			};
@@ -770,7 +774,8 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 											: String( displayName );
 					labels.push_back( String( std::to_string( index + 1 ) ) + ". " + name + " · " +
 									  std::to_string( size.x ) + " × " + std::to_string( size.y ) );
-					draft->keys.push_back( std::move( key ) );
+					draft->displays.push_back(
+						{ std::move( key ), window->getAutomaticPixelDensity( index ) } );
 				}
 			}
 			if ( labels.empty() ) {
@@ -820,27 +825,33 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 
 			const auto loadSelected = [draft, list, useCustom, factor]( const Event* ) {
 				const auto index = list->getItemSelectedIndex();
-				if ( index >= draft->keys.size() )
+				if ( index >= draft->displays.size() )
 					return;
-				const auto value = draft->values.find( draft->keys[index] );
+				const auto& display = draft->displays[index];
+				const auto value = draft->values.find( display.key );
 				const bool custom = value != draft->values.end();
-				draft->loading = true;
-				factor->setValue( custom ? value->second : 1.f );
+				const Float scale = custom ? value->second : display.automaticScale;
+				BoolScopedOp loadingValue( draft->loading, true );
+				factor->setMinValue( eemin( 1.f, scale ) )->setMaxValue( eemax( 6.f, scale ) );
+				factor->setValue( scale );
 				factor->setEnabled( custom );
 				useCustom->setChecked( custom );
-				draft->loading = false;
 			};
-			const auto updateSelected = [draft, list, useCustom, factor]( const Event* ) {
+			const auto updateSelected = [draft, list, useCustom, factor,
+										 loadSelected]( const Event* ) {
 				const auto index = list->getItemSelectedIndex();
-				if ( draft->loading || index >= draft->keys.size() )
+				if ( draft->loading || index >= draft->displays.size() )
 					return;
-				const auto& key = draft->keys[index];
-				const bool custom = useCustom->isChecked();
-				factor->setEnabled( custom );
-				if ( custom )
+				const auto& key = draft->displays[index].key;
+				if ( useCustom->isChecked() ) {
+					BoolScopedOp loadingValue( draft->loading, true );
+					factor->setMinValue( 1 )->setMaxValue( 6 );
+					factor->setEnabled( true );
 					draft->values[key] = static_cast<Float>( factor->getValue() );
-				else
+				} else {
 					draft->values.erase( key );
+					loadSelected( nullptr );
+				}
 			};
 			picker->on( Event::OnSelectionChanged, loadSelected );
 			useCustom->on( Event::OnValueChange, updateSelected );
@@ -849,7 +860,8 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 
 			box->on( Event::OnConfirm,
 					 [box, draft, window, overrides, save, refreshFactor]( const Event* ) {
-						 for ( const auto& key : draft->keys ) {
+						 for ( const auto& display : draft->displays ) {
+							 const auto& key = display.key;
 							 const auto value = draft->values.find( key );
 							 const auto old = overrides->find( key );
 							 const Float scale = value != draft->values.end() ? value->second : 0.f;

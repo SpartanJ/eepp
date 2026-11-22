@@ -16,6 +16,8 @@ class PhysicalDisplayMetrics {
 	static Float getDPI( const Math::Rect& bounds );
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+	static Float getScale( const Math::Rect& bounds );
+
 	static std::string getPersistentId( eeWindowHandle window );
 	static std::string getPersistentMonitorId( void* monitor );
 #endif

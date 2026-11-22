@@ -76,8 +76,9 @@ UIIcon* Plugin::findIcon( const std::string& iconName ) {
 }
 
 DrawablePtr Plugin::iconDrawable( const std::string& iconName, Float dpSize ) {
-	UIIcon* icon = findIcon( iconName );
-	return icon ? icon->createDrawable( PixelDensity::dpToPx( dpSize ) ) : DrawablePtr{};
+	auto* scene = getUISceneNode();
+	auto* icon = scene->findIcon( iconName );
+	return icon ? icon->createDrawableDp( dpSize, scene->getPixelDensity() ) : DrawablePtr{};
 }
 
 void Plugin::showMessage( LSPMessageType type, const std::string& message,

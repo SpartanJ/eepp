@@ -20,6 +20,12 @@ class IniFile;
 
 }
 
+namespace EE::UI::Tools {
+
+class UISettingsPanel;
+
+} // namespace EE::UI::Tools
+
 namespace EE { namespace Window {
 
 namespace Platform {
@@ -676,6 +682,7 @@ class EE_API Window {
 
 	friend class Engine;
 	friend class Input;
+	friend class UI::Tools::UISettingsPanel;
 	friend struct Private::NativeDragAccess;
 
 	mutable WindowInfo mWindow;
@@ -739,6 +746,11 @@ class EE_API Window {
 	/** Resolves the initial UI density after the backend has created the native window. */
 	void initializePixelDensity( Float pixelDensityOverride );
 	const std::string& getDisplayDensityKey( int displayIndex ) const;
+
+	Float getAutomaticPixelDensity( int displayIndex ) const;
+
+	Float resolveAutomaticPixelDensity( Float displayScale, int displayIndex,
+										bool currentDisplay = true ) const;
 
 	static PixelDensityMode resolvePixelDensityMode( PixelDensityMode mode );
 	static Float resolvePixelDensityReferencePPI( Float reference );

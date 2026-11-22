@@ -2388,6 +2388,39 @@ UTEST( UISceneDensity, TabContentsKeepTheirSpacingThroughDensityChanges ) {
 	}
 }
 
+UTEST( UISceneDensity, TabLabelUsesAvailableWidthAfterDensityChange ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.f );
+	scene->combineStyleSheet( "tab > tab::text { text-overflow: ellipsis; }" );
+	auto context = scene->makeCurrent();
+	auto icon =
+		UISVGIcon::New( "Square", "<svg width='16' height='16' xmlns='http://www.w3.org/2000/svg'>"
+								  "<rect width='16' height='16' fill='white'/></svg>" );
+	auto* tabs = UITabWidget::New();
+	tabs->setParent( scene->getRoot() );
+	tabs->setSize( 300, 100 );
+	tabs->setTabsClosable( true );
+	auto* tab = tabs->add( "Welcome", UIWidget::New(), icon->createDrawableDp( 16.f, 1.f ) );
+	auto* label = tab->getTextView();
+
+	for ( Float density : { 1.f, 1.5f, 1.f } ) {
+		scene->setPixelDensity( density );
+		scene->update( Time::Zero );
+		EXPECT_TRUE( label->hasTextOverflow() );
+		EXPECT_EQ( 16.f * density, tab->getIcon()->getPixelsSize().x );
+		EXPECT_TRUE( label->getText() == label->getTextCache()->getString() );
+	}
+
+	tabs->setMaxTabWidth( "48dp" );
+	scene->update( Time::Zero );
+	EXPECT_TRUE( label->getText() != label->getTextCache()->getString() );
+	tabs->setMaxTabWidth( "200dp" );
+	scene->setPixelDensity( 1.5f );
+	scene->update( Time::Zero );
+	EXPECT_TRUE( label->getText() == label->getTextCache()->getString() );
+}
+
 UTEST( UISceneDensity, ExistingMenuIconsMatchFreshIconsAfterDensityChanges ) {
 	DensityApplication fixture;
 	auto* scene = fixture.app.getUI();

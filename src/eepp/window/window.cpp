@@ -12,6 +12,7 @@
 #include <eepp/version.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/cursormanager.hpp>
+#include <eepp/window/displaymanager.hpp>
 #include <eepp/window/draganddrop/dragmanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
@@ -108,43 +109,70 @@ bool Window::refreshPixelDensity() {
 		if ( override != overrides.end() && override->second >= 1.f && override->second <= 6.f )
 			densityOverride = override->second;
 	}
-	if ( densityOverride > 0.f ) {
-		mPixelDensity = densityOverride;
-	} else {
-		Float automaticDensity = displayScale;
-		if ( mPixelDensityMode == PixelDensityMode::PhysicalPPI ) {
-			Float dpi = getPhysicalDisplayDPI();
-#if EE_PLATFORM == EE_PLATFORM_MACOS
-			if ( dpi > 0.f ) {
-				auto* display =
-					Engine::instance()->getDisplayManager()->getDisplayIndex( displayIndex );
-				if ( display ) {
-					const Float backingDPI =
-						Private::getBackingDisplayDPI( display->getBounds(), getScale() );
-					if ( backingDPI > 0.f )
-						dpi = backingDPI;
-				}
-			}
-#endif
-			if ( std::isfinite( dpi ) && dpi > 0.f )
-				automaticDensity = eemax( 1.f, dpi / getPixelDensityReferencePPI() );
-		}
-		if ( !std::isfinite( automaticDensity ) || automaticDensity <= 0.f )
-			automaticDensity = 1.f;
-		const char* rounding = std::getenv( "EEPP_PIXEL_DENSITY_ROUNDING" );
-		if ( !rounding || std::string_view( rounding ) != "0" ) {
-			Float whole;
-			const Float fraction = std::modf( automaticDensity, &whole );
-			automaticDensity = eemax( 0.25f, whole + std::round( fraction * 4.f ) * 0.25f );
-		}
-		mPixelDensity = automaticDensity;
-	}
+	mPixelDensity = densityOverride > 0.f
+						? densityOverride
+						: resolveAutomaticPixelDensity( displayScale, displayIndex );
 	if ( mPixelDensity != oldDensity || mDisplayScale != displayScale ||
 		 mDensityDisplayIndex != displayIndex )
 		++mDisplayMetricsVersion;
 	mDisplayScale = displayScale;
 	mDensityDisplayIndex = displayIndex;
 	return mPixelDensity != oldDensity;
+}
+
+Float Window::getAutomaticPixelDensity( int displayIndex ) const {
+	Float displayScale = getDisplayScale();
+	if ( displayIndex == getCurrentDisplayIndex() )
+		return resolveAutomaticPixelDensity( displayScale, displayIndex );
+
+	auto* display = Engine::instance()->getDisplayManager()->getDisplayIndex( displayIndex );
+	if ( !display )
+		return 1.f;
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	displayScale = Private::getDisplayBackingScale( display->getBounds() );
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	const Float monitorScale = Private::PhysicalDisplayMetrics::getScale( display->getBounds() );
+	if ( monitorScale > 0.f )
+		displayScale = monitorScale;
+#endif
+	return resolveAutomaticPixelDensity( displayScale, displayIndex, false );
+}
+
+Float Window::resolveAutomaticPixelDensity( Float displayScale, int displayIndex,
+											bool currentDisplay ) const {
+	Float density = displayScale;
+	if ( mPixelDensityMode == PixelDensityMode::PhysicalPPI ) {
+		const auto getDisplay = [displayIndex] {
+			return Engine::instance()->getDisplayManager()->getDisplayIndex( displayIndex );
+		};
+		auto* display = currentDisplay ? nullptr : getDisplay();
+		Float dpi = currentDisplay ? getPhysicalDisplayDPI()
+								   : ( display ? display->getPhysicalDPI() : 0.f );
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+		if ( dpi > 0.f ) {
+			if ( !display )
+				display = getDisplay();
+			if ( display ) {
+				const Float backingScale = currentDisplay ? getScale() : displayScale;
+				const Float backingDPI =
+					Private::getBackingDisplayDPI( display->getBounds(), backingScale );
+				if ( backingDPI > 0.f )
+					dpi = backingDPI;
+			}
+		}
+#endif
+		if ( std::isfinite( dpi ) && dpi > 0.f )
+			density = eemax( 1.f, dpi / getPixelDensityReferencePPI() );
+	}
+	if ( !std::isfinite( density ) || density <= 0.f )
+		density = 1.f;
+	const char* rounding = std::getenv( "EEPP_PIXEL_DENSITY_ROUNDING" );
+	if ( !rounding || std::string_view( rounding ) != "0" ) {
+		Float whole;
+		const Float fraction = std::modf( density, &whole );
+		density = eemax( 0.25f, whole + std::round( fraction * 4.f ) * 0.25f );
+	}
+	return density;
 }
 
 Float Window::getPhysicalDisplayDPI() const {
