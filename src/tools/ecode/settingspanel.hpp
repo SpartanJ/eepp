@@ -25,7 +25,6 @@ class SettingsPanel {
 		UISettingsPanel* panel{ nullptr };
 		EventConnectionList connections;
 		std::vector<std::shared_ptr<SettingsDocument>> documents;
-		Float centeredDensity{ 1.f };
 
 		void reset();
 	};

@@ -39,6 +39,9 @@ class EE_API Display {
 
 	virtual Sizeu getSize() const = 0;
 
+	/** Native panel dimensions in pixels when available, otherwise the current display mode. */
+	Sizeu getNativePixelSize() const;
+
 	virtual ~Display();
 
 	PixelDensitySize getPixelDensitySize();

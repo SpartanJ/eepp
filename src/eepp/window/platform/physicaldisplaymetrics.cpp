@@ -174,7 +174,8 @@ std::string PhysicalDisplayMetrics::getPersistentMonitorId( void* handle ) {
 	if ( !EnumDisplayDevicesW( info.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME ) ||
 		 !device.DeviceID[0] )
 		return {};
-	return "win-" + System::MD5::fromString( String::fromWide( device.DeviceID ) ).toHexString();
+	return "win-" +
+		   System::MD5::fromString( String::fromWide( device.DeviceID ).toUtf8() ).toHexString();
 }
 #endif
 

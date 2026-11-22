@@ -27,6 +27,8 @@ std::string getPersistentDisplayId( const Math::Rect& bounds );
 
 Float getSystemUIFontSize();
 
+Math::Sizeu getNativeDisplayPixelSize( const Math::Rect& bounds );
+
 Float getPhysicalDisplayDPI( const Math::Rect& bounds );
 
 Float getBackingDisplayDPI( const Math::Rect& bounds, Float windowBackingScale );

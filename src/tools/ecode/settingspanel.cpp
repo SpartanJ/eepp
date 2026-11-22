@@ -95,18 +95,6 @@ void SettingsPanel::create( Scope scope ) {
 				mApp->saveProject();
 			state.reset();
 		} );
-	auto* scene = mApp->getUISceneNode();
-	state.centeredDensity = scene->getPixelDensity();
-	state.connections += scene->connect( Event::OnLayoutReady, [&state]( const Event* ) {
-		if ( !state.window || state.window->isClosing() )
-			return;
-		const Float density = state.window->getUISceneNode()->getPixelDensity();
-		if ( state.centeredDensity != density ) {
-			state.centeredDensity = density;
-			state.window->center();
-		}
-	} );
-	state.window->center();
 	state.window->showWhenReady();
 	state.panel->focusSearch();
 }

@@ -1,9 +1,57 @@
+#include <algorithm>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <limits>
 
 namespace EE { namespace UI {
+
+namespace {
+
+class DensityIconDrawable final : public Drawable {
+  public:
+	DensityIconDrawable( std::shared_ptr<const UIIcon> icon, Float size, DrawablePtr drawable ) :
+		Drawable( CUSTOM ),
+		mIcon( std::move( icon ) ),
+		mSize( size ),
+		mDrawable( std::move( drawable ) ) {}
+
+	Sizef getSize() { return mDrawable->getSize(); }
+
+	Sizef getPixelsSize() { return mDrawable->getPixelsSize(); }
+
+	void draw() { draw( getPosition() ); }
+
+	void draw( const Vector2f& position ) { draw( position, getPixelsSize() ); }
+
+	void draw( const Vector2f& position, const Sizef& size ) {
+		mDrawable->setColor( mColor );
+		mDrawable->draw( position, size );
+	}
+
+	bool isStateful() { return false; }
+
+	DrawablePtr clone() const {
+		auto source = mDrawable->clone();
+		if ( !source )
+			return {};
+		auto drawable = makeResource<DensityIconDrawable>( mIcon, mSize, std::move( source ) );
+		drawable->setColor( mColor );
+		drawable->setPosition( mPosition );
+		return drawable;
+	}
+
+	DrawablePtr recreateForDensity( Float density ) const {
+		return mIcon->createDrawableDp( mSize, density );
+	}
+
+  private:
+	std::shared_ptr<const UIIcon> mIcon;
+	Float mSize;
+	DrawablePtr mDrawable;
+};
+
+} // namespace
 
 UIIconPtr UIIcon::New( const std::string& name ) {
 	return UIIconPtr( eeNew( UIIcon, ( name ) ), ResourceDeleter<UIIcon>() );
@@ -37,6 +85,19 @@ const DrawablePtr& UIIcon::getSource( const int& size ) const {
 DrawablePtr UIIcon::createDrawable( const int& size ) const {
 	const DrawablePtr& source = getSource( size );
 	return source ? source->clone() : DrawablePtr{};
+}
+
+DrawablePtr UIIcon::createDrawableDp( Float size, Float pixelDensity ) const {
+	auto drawable = createDrawable( std::max( 1, static_cast<int>( size * pixelDensity ) ) );
+	auto icon = weak_from_this().lock();
+	if ( !drawable || !icon )
+		return drawable;
+	return makeResource<DensityIconDrawable>( std::move( icon ), size, std::move( drawable ) );
+}
+
+DrawablePtr UIIcon::recreateDrawableForDensity( const DrawablePtr& drawable, Float pixelDensity ) {
+	auto* icon = dynamic_cast<const DensityIconDrawable*>( drawable.get() );
+	return icon ? icon->recreateForDensity( pixelDensity ) : DrawablePtr{};
 }
 
 void UIIcon::setSource( const int& size, DrawablePtr drawable ) {

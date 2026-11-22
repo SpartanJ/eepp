@@ -31,11 +31,13 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uihtmlimage.hpp>
 #include <eepp/ui/uihtmltextinput.hpp>
+#include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uirichtext.hpp>
@@ -1237,6 +1239,44 @@ UTEST( UISceneDensity, WindowViewportMinimumResolvesBeforeDensitySizeEnforcement
 	}
 }
 
+UTEST( UISceneDensity, SettingsWindowFitsAndRecentersWhenViewportOrDisplayChanges ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.25f );
+	scene->setViewportPixelsSize( { 1200.f, 1000.f } );
+	auto context = scene->makeCurrent();
+	auto* settings = UISettingsPanel::NewWindow( "Settings" );
+	settings->show();
+	const auto checkFit = [&] {
+		scene->update( Time::Zero );
+		const auto viewport = scene->getViewportPixelsSize();
+		const auto size = settings->getPixelsSize();
+		const auto position = settings->getPixelsPosition();
+		EXPECT_LE( size.x, viewport.x );
+		EXPECT_LE( size.y, viewport.y );
+		EXPECT_NEAR( position.x, ( viewport.x - size.x ) / 2.f, 1.f );
+		EXPECT_NEAR( position.y, ( viewport.y - size.y ) / 2.f, 1.f );
+	};
+
+	settings->setPixelsPosition( 190.f, 100.f );
+	scene->setViewportPixelsSize( { 740.f, 480.f } );
+	checkFit();
+	const auto fittedSize = settings->getPixelsSize();
+
+	settings->setPixelsPosition( 1.f, 2.f );
+	scene->update( Time::Zero );
+	EXPECT_TRUE( settings->getPixelsPosition() == Vector2f( 1.f, 2.f ) );
+	fixture.app.getWindow()->setPixelDensityOverride( 1.5f );
+	checkFit();
+	EXPECT_EQ( scene->getPixelDensity(), 1.25f );
+	EXPECT_TRUE( settings->getPixelsSize() == fittedSize );
+
+	scene->setPixelDensity( 2.5f );
+	checkFit();
+	scene->setViewportPixelsSize( { 540.f, 360.f } );
+	checkFit();
+}
+
 UTEST( UISceneDensity, CheckAndRadioIndicatorsKeepTheirLabelGap ) {
 	DensityApplication fixture;
 	auto* scene = fixture.app.getUI();
@@ -2310,6 +2350,40 @@ UTEST( UISceneDensity, TabContentsKeepTheirSpacingThroughDensityChanges ) {
 		EXPECT_NEAR( tab->getPixelsSize().x - close->getPixelsPosition().x -
 						 close->getPixelsSize().x,
 					 std::ceil( 4.f * density ), 1.f );
+	}
+}
+
+UTEST( UISceneDensity, ExistingMenuIconsMatchFreshIconsAfterDensityChanges ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 2.5f );
+	auto context = scene->makeCurrent();
+	auto font = FontTrueType::New( "DensityMenuIcons", *scene->getResourceScope() );
+	ASSERT_TRUE( font->loadFromFile( Sys::getProcessPath() + "../assets/fonts/nonicons.ttf" ) );
+	auto icon = UIGlyphIcon::New( "Menu icon", font.get(), 61719 );
+	auto* menu = UIPopUpMenu::New();
+	menu->setParent( scene->getRoot() );
+	const auto addIcon = [&]( UIMenu* target, Float density ) {
+		return target->add( "Open File...", icon->createDrawableDp( 11.f, density ), "Ctrl+O" );
+	};
+	auto* item = addIcon( menu, 2.5f );
+	for ( Float density : { 2.5f, 1.f, 1.25f, 2.5f } ) {
+		scene->setPixelDensity( density );
+		scene->update( Time::Zero );
+		auto* freshMenu = UIPopUpMenu::New();
+		freshMenu->setParent( scene->getRoot() );
+		auto* freshItem = addIcon( freshMenu, density );
+		scene->update( Time::Zero );
+		auto* image = item->getIcon();
+		auto* freshImage = freshItem->getIcon();
+		ASSERT_TRUE( image->getDrawable() && freshImage->getDrawable() );
+		EXPECT_TRUE( image->getDrawable()->getPixelsSize() ==
+					 freshImage->getDrawable()->getPixelsSize() );
+		EXPECT_TRUE( image->getPixelsSize() == freshImage->getPixelsSize() );
+		EXPECT_TRUE( image->getPixelsPosition() == freshImage->getPixelsPosition() );
+		EXPECT_NEAR( menu->getPixelsSize().getHeight(), freshMenu->getPixelsSize().getHeight(),
+					 1.f );
+		eeDelete( freshMenu );
 	}
 }
 

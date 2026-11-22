@@ -111,6 +111,8 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual void onSizeChange();
 
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	virtual void onAlphaChange();
 
 	virtual void onStateChange();

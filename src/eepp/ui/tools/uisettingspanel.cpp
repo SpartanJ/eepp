@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <deque>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/system/log.hpp>
@@ -453,19 +454,66 @@ bool SettingsModel::hasCategory( const std::string& id ) const {
 						[&id]( const auto& item ) { return item.id == id; } );
 }
 
+namespace {
+
+class SettingsPanelWindow final : public UIWindow {
+  public:
+	SettingsPanelWindow( const String& title, const std::string& id ) :
+		UIWindow( SIMPLE_LAYOUT, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL ) {
+		setId( id );
+		setTitle( title );
+		auto* scene = getUISceneNode();
+		const auto viewport = scene->getViewportPixelsSize();
+		setPixelsSize(
+			{ std::min( viewport.x * 0.9f,
+						PixelDensity::dpToPx( SettingsSidebarWidthDp + SettingsRowsMaxWidthDp ) ),
+			  std::min( viewport.y * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
+		mLayoutReady =
+			scene->connect( Event::OnLayoutReady, [this]( const Event* ) { fitInViewport(); } );
+		fitInViewport();
+	}
+
+  private:
+	EventConnection mLayoutReady;
+	Sizef mViewport;
+	Float mDensity{ 0.f };
+	Uint32 mDisplayMetricsVersion{ 0 };
+
+	void fitInViewport() {
+		if ( isClosing() )
+			return;
+		auto* scene = getUISceneNode();
+		const auto viewport = scene->getViewportPixelsSize();
+		const auto density = scene->getPixelDensity();
+		const auto version = scene->getWindow()->getDisplayMetricsVersion();
+		if ( viewport.x <= 0.f || viewport.y <= 0.f ||
+			 ( viewport == mViewport && density == mDensity && version == mDisplayMetricsVersion ) )
+			return;
+		mViewport = viewport;
+		mDensity = density;
+		mDisplayMetricsVersion = version;
+
+		const auto viewportDp = PixelDensity::pxToDp( viewport );
+		const auto decoration = getSize() - getSizeWithoutDecoration();
+		const auto available = viewportDp - decoration;
+		setMinWindowSize(
+			std::max( 0.f, std::min( { 640.f, viewportDp.x * 0.9f, available.x } ) ),
+			std::max( 0.f, std::min( { 440.f, viewportDp.y * 0.8f, available.y } ) ) );
+		const auto size = getPixelsSize();
+		if ( size.x > viewport.x || size.y > viewport.y ) {
+			setPixelsSize( size.x > viewport.x ? std::floor( viewport.x * 0.9f ) : size.x,
+						   size.y > viewport.y ? std::floor( viewport.y * 0.9f ) : size.y );
+		}
+		const auto offset = ( viewport - getPixelsSize() ) * 0.5f;
+		setPixelsPosition( std::max( 0.f, std::floor( offset.x ) ),
+						   std::max( 0.f, std::floor( offset.y ) ) );
+	}
+};
+
+} // namespace
+
 UIWindow* UISettingsPanel::NewWindow( const String& title, const std::string& id ) {
-	UIWindow::StyleConfig style{ UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL };
-	auto* window = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, style );
-	window->setId( id );
-	window->setTitle( title );
-	const auto sceneSize = window->getUISceneNode()->getPixelsSize();
-	window->setPixelsSize(
-		{ std::min( sceneSize.getWidth() * 0.9f,
-					PixelDensity::dpToPx( SettingsSidebarWidthDp + SettingsRowsMaxWidthDp ) ),
-		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
-	window->setStyleSheetProperty(
-		StyleSheetProperty( "window-min-size", "min(640dp,90vw) min(440dp,80vh)" ) );
-	return window;
+	return eeNew( SettingsPanelWindow, ( title, id ) );
 }
 
 UISettingsPanel* UISettingsPanel::New( UIWidget* parent ) {
@@ -661,6 +709,10 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 					   "Set individual scales for connected displays in either Auto mode." ) },
 		scene->i18n( "ui_display_scale_configure", "Configure…" ),
 		[scene, window, overrides, refreshFactor, save = std::move( save )] {
+			using EE::Window::Engine;
+			using EE::Window::Runtime;
+			using EE::Window::RuntimeMode;
+
 			const auto title = scene->i18n( "ui_display_scale", "Per-display Scale" );
 			const auto showMessage = [title]( const String& message ) {
 				auto* box = UIMessageBox::New( UIMessageBox::OK, message );
@@ -677,11 +729,10 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 			auto draft = std::make_shared<DisplayScaleDraft>();
 			draft->values = *overrides;
 			std::vector<String> labels;
-			auto* manager = Window::Engine::instance()->getDisplayManager();
+			auto* manager = Engine::instance()->getDisplayManager();
 			const int currentDisplay = window->getCurrentDisplayIndex();
 			Uint32 selected = 0;
-			if ( !Window::Runtime::isOffscreen() &&
-				 Window::Runtime::mode() != Window::RuntimeMode::Terminal ) {
+			if ( !Runtime::isOffscreen() && Runtime::mode() != RuntimeMode::Terminal ) {
 				const auto currentKey = window->getDisplayDensityKey();
 				const int count = std::max( 0, manager->getDisplayCount() );
 				std::vector<std::string> keys( count );
@@ -700,14 +751,13 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 					auto* display = manager->getDisplayIndex( index );
 					if ( index == currentDisplay )
 						selected = static_cast<Uint32>( labels.size() );
-					const auto mode = display->getCurrentMode();
+					const auto size = display->getNativePixelSize();
 					const auto displayName = display->getName();
 					const String name = displayName.empty()
 											? scene->i18n( "ui_display_scale_display", "Display" )
 											: String( displayName );
 					labels.push_back( String( std::to_string( index + 1 ) ) + ". " + name + " · " +
-									  std::to_string( mode.Width ) + " × " +
-									  std::to_string( mode.Height ) );
+									  std::to_string( size.x ) + " × " + std::to_string( size.y ) );
 					draft->keys.push_back( std::move( key ) );
 				}
 			}

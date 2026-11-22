@@ -230,13 +230,9 @@ Float getSystemUIFontSize() {
 	return [NSFont systemFontSize];
 }
 
-Float getPhysicalDisplayDPI( const Math::Rect& bounds ) {
-	const auto display = getDisplayAtBounds( bounds );
+static Math::Sizeu getNativeDisplayPixelSize( CGDirectDisplayID display ) {
 	if ( display == kCGNullDirectDisplay )
-		return 0.f;
-	const CGSize size = CGDisplayScreenSize( display );
-	if ( size.width <= 0 || size.height <= 0 )
-		return 0.f;
+		return {};
 	// Scaled desktop modes can render at a different resolution than the panel itself.
 	CGDisplayModeRef mode = nullptr;
 	if ( CFArrayRef modes = CGDisplayCopyAllDisplayModes( display, nullptr ) ) {
@@ -254,13 +250,28 @@ Float getPhysicalDisplayDPI( const Math::Rect& bounds ) {
 	if ( !mode )
 		mode = CGDisplayCopyDisplayMode( display );
 	if ( !mode )
-		return 0.f;
+		return {};
 	const auto width = CGDisplayModeGetPixelWidth( mode );
 	const auto height = CGDisplayModeGetPixelHeight( mode );
 	CGDisplayModeRelease( mode );
-	if ( !width || !height )
+	return { static_cast<Uint32>( width ), static_cast<Uint32>( height ) };
+}
+
+Math::Sizeu getNativeDisplayPixelSize( const Math::Rect& bounds ) {
+	return getNativeDisplayPixelSize( getDisplayAtBounds( bounds ) );
+}
+
+Float getPhysicalDisplayDPI( const Math::Rect& bounds ) {
+	const auto display = getDisplayAtBounds( bounds );
+	if ( display == kCGNullDirectDisplay )
 		return 0.f;
-	return 25.4f * std::hypot( static_cast<Float>( width ), static_cast<Float>( height ) ) /
+	const CGSize size = CGDisplayScreenSize( display );
+	if ( size.width <= 0 || size.height <= 0 )
+		return 0.f;
+	const auto pixels = getNativeDisplayPixelSize( display );
+	if ( !pixels.x || !pixels.y )
+		return 0.f;
+	return 25.4f * std::hypot( static_cast<Float>( pixels.x ), static_cast<Float>( pixels.y ) ) /
 		   std::hypot( static_cast<Float>( size.width ), static_cast<Float>( size.height ) );
 }
 

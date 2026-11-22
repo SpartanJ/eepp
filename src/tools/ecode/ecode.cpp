@@ -1434,7 +1434,13 @@ void App::setFocusEditorOnClose( UIMessageBox* msgBox ) {
 }
 
 DrawablePtr App::findIcon( const std::string& name ) {
-	return findIcon( name, mMenuIconSize );
+	if ( name.empty() )
+		return {};
+	auto context = mUISceneNode->makeCurrent();
+	auto* icon = mUISceneNode->findIcon( name );
+	return icon ? icon->createDrawableDp( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ),
+										  mUISceneNode->getPixelDensity() )
+				: DrawablePtr{};
 }
 
 DrawablePtr App::findIcon( const std::string& name, const size_t iconSize ) {

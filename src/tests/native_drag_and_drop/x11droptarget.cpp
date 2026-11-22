@@ -35,6 +35,8 @@ using namespace EE::System;
 
 using namespace EE;
 using namespace EE::Window;
+using EE::Window::Private::NativeDragAccess;
+using EE::Window::Private::X11Library;
 
 #define EE_X11_TEST_FUNCTIONS( F ) \
 	F( XChangeProperty )           \
@@ -55,7 +57,7 @@ using namespace EE::Window;
 
 namespace {
 
-struct X11TestFunctions : Private::X11Library {
+struct X11TestFunctions : X11Library {
 #define EE_DECLARE_X11_FUNCTION( name ) decltype( &::name ) name{ nullptr };
 	EE_X11_TEST_FUNCTIONS( EE_DECLARE_X11_FUNCTION )
 #undef EE_DECLARE_X11_FUNCTION
@@ -225,14 +227,13 @@ int runAutomatedNativeDropTests() {
 	window->setPosition( 40, 60 );
 	window->show();
 	auto dnd = DragAndDrop::forWindow( *window );
-	if ( Private::NativeDragAccess::getNativeDragContext( *window ).kind !=
-			 NativeWindowContext::Kind::X11 ||
+	if ( NativeDragAccess::getNativeDragContext( *window ).kind != NativeWindowContext::Kind::X11 ||
 		 !dnd.getCapabilities().dataTarget ) {
 		Engine::destroySingleton();
 		x11.XCloseDisplay( peer );
 		return TestSkipped;
 	}
-	const auto context = Private::NativeDragAccess::getNativeDragContext( *window );
+	const auto context = NativeDragAccess::getNativeDragContext( *window );
 	const auto target = static_cast<::X11Window>( context.handles.x11.window );
 	auto* eeppDisplay = static_cast<::X11Display*>( context.handles.x11.display );
 	// The source uses the peer connection: it must be destroyed before the connection closes.
