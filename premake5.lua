@@ -786,6 +786,14 @@ function add_static_links()
 	-- The linking order DOES matter
 	-- Expose the symbols that need one static library AFTER adding that static lib
 
+	if os.istarget("linux") or os.istarget("bsd") then
+		-- Keep bundled libraries from intercepting calls in system libraries loaded by libdecor.
+		linkoptions {
+			"-Wl,--exclude-libs=libharfbuzz.a:libfreetype.a:liblibpng.a:libzlib.a:" ..
+			"libharfbuzz-debug.a:libfreetype-debug.a:liblibpng-debug.a:libzlib-debug.a"
+		}
+	end
+
 	-- Add static backends
 	if next(static_backends) ~= nil then
 		for _, value in pairs( static_backends ) do
