@@ -1031,6 +1031,7 @@ int App::run( int argc, char* argv[] ) {
 								   WindowStyle::Default, WindowBackend::Default, 32,
 								   resPath + windowIcon );
 	windowSettings.DensityMode = config->window.pixelDensityMode;
+	windowSettings.DensityOverrides = config->window.displayDensityOverrides;
 	UIApplication app( windowSettings, appSettings,
 					   ContextSettings( config->window.vsync, frameRateLimit,
 										config->window.multisamples,

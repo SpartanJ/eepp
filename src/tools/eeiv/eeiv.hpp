@@ -29,6 +29,7 @@ class App {
 		Float AppFontSize{ 12 };
 		Float UIScale{ 0 };
 		PixelDensityMode UIScaleMode{ PixelDensityMode::Default };
+		EE::Window::DisplayDensityOverrides displayDensityOverrides;
 		FontHinting Hinting{ FontHinting::Full };
 		FontAntialiasing Antialiasing{ FontAntialiasing::Grayscale };
 		ColorSchemeExtPreference ColorScheme{ ColorSchemeExtPreference::System };

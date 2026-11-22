@@ -279,6 +279,15 @@ UTEST( PixelDensityContext, MovingGuardTransfersIdempotentRestoration ) {
 		EXPECT_EQ( PixelDensity::getPixelDensity(), 1.25f );
 	}
 	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.25f );
+	{
+		auto inner = PixelDensity::makeCurrent( 2.f );
+		auto movedOuter = std::move( outer );
+		EXPECT_EQ( PixelDensity::getPixelDensity(), 2.f );
+		inner.restore();
+		EXPECT_EQ( PixelDensity::getPixelDensity(), 1.25f );
+		movedOuter.restore();
+		EXPECT_EQ( PixelDensity::getPixelDensity(), 1.f );
+	}
 	outer.restore();
 	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.f );
 }
@@ -357,6 +366,87 @@ UTEST( PerWindowDensity, DestroyedWindowBindingsKeepTheirLastDensity ) {
 	engine->destroyWindow( window );
 	EXPECT_NE( &PixelDensity::getPixelDensity(), source );
 	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.75f );
+}
+
+UTEST( PerWindowDensity, ContextSkipsDestroyedPreviousWindow ) {
+	DensityApplication fixture;
+	auto* engine = Engine::instance();
+	auto* live = fixture.app.getWindow();
+	auto* previous =
+		engine->createWindow( WindowSettings( 320, 240, "Previous window binding",
+											  WindowStyle::Default | WindowStyle::Hidden,
+											  WindowBackend::Default, 32, {}, 1.5f, false, true ),
+							  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( previous != nullptr );
+	engine->setCurrentWindow( live );
+	{
+		auto outer = engine->makeWindowCurrent( previous );
+		{
+			auto repeated = engine->makeWindowCurrent( previous );
+			{
+				auto explicitDensity = PixelDensity::makeCurrent( 1.875f );
+				{
+					auto inner = engine->makeWindowCurrent( live );
+					auto moved = std::move( inner );
+					engine->destroyWindow( previous );
+					EXPECT_EQ( engine->getCurrentWindow(), live );
+				}
+				EXPECT_EQ( PixelDensity::getPixelDensity(), 1.875f );
+			}
+			EXPECT_EQ( engine->getCurrentWindow(), live );
+			EXPECT_EQ( PixelDensity::getPixelDensity(), live->getPixelDensity() );
+			live->setPixelDensityOverride( 2.25f );
+			EXPECT_EQ( PixelDensity::getPixelDensity(), 2.25f );
+		}
+		EXPECT_EQ( engine->getCurrentWindow(), live );
+		EXPECT_EQ( PixelDensity::getPixelDensity(), live->getPixelDensity() );
+	}
+	EXPECT_EQ( engine->getCurrentWindow(), live );
+}
+
+UTEST( UISceneDensity, ContextSkipsDestroyedPreviousScene ) {
+	DensityApplication fixture;
+	auto* manager = SceneManager::instance();
+	auto* engine = Engine::instance();
+	auto* original = manager->getCurrentSceneNode();
+	auto* liveWindow = fixture.app.getWindow();
+	auto* previousWindow =
+		engine->createWindow( WindowSettings( 320, 240, "Previous scene binding",
+											  WindowStyle::Default | WindowStyle::Hidden,
+											  WindowBackend::Default, 32, {}, 1.5f, false, true ),
+							  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	ASSERT_TRUE( previousWindow != nullptr );
+	engine->setCurrentWindow( liveWindow );
+	auto live = std::unique_ptr<UISceneNode>( UISceneNode::New( liveWindow ) );
+	live->setPixelDensity( 2.25f );
+	auto* previous = UISceneNode::New( previousWindow );
+	{
+		auto outer = previous->makeCurrent();
+		{
+			auto repeated = previous->makeCurrent();
+			{
+				auto inner = live->makeCurrent();
+				auto moved = std::move( inner );
+				eeDelete( previous );
+				EXPECT_EQ( manager->getCurrentSceneNode(), live.get() );
+			}
+			EXPECT_EQ( manager->getCurrentSceneNode(), live.get() );
+			EXPECT_EQ( engine->getCurrentWindow(), liveWindow );
+			EXPECT_EQ( PixelDensity::getPixelDensity(), 2.25f );
+			live->setPixelDensity( 2.5f );
+			EXPECT_EQ( PixelDensity::getPixelDensity(), 2.5f );
+		}
+		EXPECT_EQ( manager->getCurrentSceneNode(), live.get() );
+		EXPECT_EQ( PixelDensity::getPixelDensity(), 2.5f );
+	}
+	EXPECT_EQ( manager->getCurrentSceneNode(), original );
+	{
+		auto current = live->makeCurrent();
+		live.reset();
+		EXPECT_EQ( manager->getCurrentSceneNode(), nullptr );
+	}
+	EXPECT_EQ( manager->getCurrentSceneNode(), original );
+	engine->destroyWindow( previousWindow );
 }
 
 UTEST( PerWindowDensity, IndependentWindowsAndNestedSceneContexts ) {
@@ -571,6 +661,69 @@ UTEST( PerWindowDensity, AutomaticSourcesCanChangeLiveAndOverridesKeepPriority )
 	window->setPixelDensityMode( PixelDensityMode::DisplayScale );
 	scene->update( Time::Zero );
 	EXPECT_EQ( scene->getPixelDensity(), window->getDisplayScale() );
+}
+
+UTEST( PerWindowDensity, DisplayOverridesRoundTripAndReset ) {
+	IniFile ini;
+	ini.setValueF( "display_scale_overrides", "display-a", 1.61 );
+	ini.setValueF( "display_scale_overrides", "display-b", 2 );
+	ini.setValueF( "display_scale_overrides", "invalid", 12 );
+	auto overrides = EE::Window::Window::loadDisplayDensityOverrides( ini );
+	ASSERT_EQ( overrides.size(), 2u );
+	EXPECT_EQ( overrides.at( "display-a" ), 1.61f );
+	EXPECT_EQ( overrides.at( "display-b" ), 2.f );
+
+	overrides.erase( "display-a" );
+	EE::Window::Window::saveDisplayDensityOverrides( ini, overrides );
+	EXPECT_FALSE( ini.keyValueExists( "display_scale_overrides", "display-a" ) );
+	EXPECT_FALSE( ini.keyValueExists( "display_scale_overrides", "invalid" ) );
+	EXPECT_TRUE( EE::Window::Window::loadDisplayDensityOverrides( ini ) == overrides );
+}
+
+UTEST( PerWindowDensity, DisplayOverrideAppliesToBothAutoModesAtStartupAndWhileRunning ) {
+	DensityEnvironment environment;
+	Sys::setEnv( "EEPP_PIXEL_DENSITY", "" );
+	RestoreDensity restore;
+	UIApplication app(
+		WindowSettings( 320, 240, "Display Density Override", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 0.f, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 0.f ) );
+	auto* window = app.getWindow();
+	ASSERT_TRUE( window != nullptr );
+	const auto key = window->getDisplayDensityKey();
+	if ( key.empty() )
+		UTEST_SKIP( "Persistent display identity is unavailable" );
+	window->setPixelDensityOverride( 0.f );
+	window->setPixelDensityMode( PixelDensityMode::DisplayScale );
+	const Float systemScale = window->getPixelDensity();
+
+	EXPECT_TRUE( window->setDisplayDensityOverride( "disconnected-display", 2.f ) );
+	EXPECT_EQ( window->getPixelDensity(), systemScale );
+	EXPECT_TRUE( window->setDisplayDensityOverride( key, 1.61f ) );
+	EXPECT_EQ( window->getPixelDensity(), 1.61f );
+	window->setPixelDensityMode( PixelDensityMode::PhysicalPPI );
+	app.getUI()->update( Time::Zero );
+	EXPECT_EQ( app.getUI()->getPixelDensity(), 1.61f );
+	window->setPixelDensityOverride( 2.25f );
+	EXPECT_EQ( window->getPixelDensity(), 2.25f );
+	window->setPixelDensityOverride( 0.f );
+	EXPECT_EQ( window->getPixelDensity(), 1.61f );
+
+	WindowSettings savedSettings = window->getWindowInfo()->WindowConfig;
+	savedSettings.Width = 320;
+	savedSettings.Height = 240;
+	savedSettings.PixelDensity = 0.f;
+	savedSettings.Title = "Saved Display Density";
+	auto* reopened = app.createWindow( savedSettings );
+	ASSERT_TRUE( reopened != nullptr );
+	ASSERT_TRUE( reopened->getWindow()->getDisplayDensityKey() == key );
+	EXPECT_EQ( reopened->getWindow()->getPixelDensity(), 1.61f );
+
+	window->setPixelDensityMode( PixelDensityMode::DisplayScale );
+	EXPECT_FALSE( window->setDisplayDensityOverride( key, 0.9f ) );
+	EXPECT_TRUE( window->setDisplayDensityOverride( key, 0.f ) );
+	EXPECT_EQ( window->getPixelDensity(), systemScale );
+	EXPECT_EQ( window->getDisplayDensityOverrides().size(), 1u );
 }
 
 UTEST( PerWindowDensity, PhysicalAutoRoundsToNearestQuarterUnlessDisabled ) {

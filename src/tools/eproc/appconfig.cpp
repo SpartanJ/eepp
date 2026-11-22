@@ -3,6 +3,7 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
+#include <eepp/window/platformhelper.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -41,7 +42,9 @@ void AppConfig::load() {
 					MinRefreshIntervalMs, MaxRefreshIntervalMs );
 	uiFontPath = mState.getValue( "appearance", "ui_font", uiFontPath );
 	fallbackFontPath = mState.getValue( "appearance", "fallback_font", fallbackFontPath );
-	const double savedFontSize = mState.getValueF( "appearance", "ui_font_size", uiFontSize );
+	const double savedFontSize = mState.keyValueExists( "appearance", "ui_font_size" )
+									 ? mState.getValueF( "appearance", "ui_font_size", uiFontSize )
+									 : PlatformHelper::getSystemUIFontSize( uiFontSize );
 	if ( std::isfinite( savedFontSize ) &&
 		 ( savedFontSize == 0 || ( savedFontSize >= 6 && savedFontSize <= 72 ) ) )
 		uiFontSize = static_cast<Float>( savedFontSize );
@@ -50,6 +53,7 @@ void AppConfig::load() {
 		pixelDensity = static_cast<Float>( savedDensity );
 	pixelDensityMode = EE::Window::Window::pixelDensityModeFromString(
 		mState.getValue( "appearance", "pixel_density_mode" ) );
+	displayDensityOverrides = EE::Window::Window::loadDisplayDensityOverrides( mState );
 	const int savedHinting = mState.getValueI( "appearance", "font_hinting", 2 );
 	if ( savedHinting >= 0 && savedHinting <= 2 )
 		fontHinting = static_cast<FontHinting>( savedHinting );
@@ -96,6 +100,7 @@ bool AppConfig::save() {
 	mState.setValueF( "appearance", "pixel_density", pixelDensity );
 	mState.setValue( "appearance", "pixel_density_mode",
 					 EE::Window::Window::pixelDensityModeToString( pixelDensityMode ) );
+	EE::Window::Window::saveDisplayDensityOverrides( mState, displayDensityOverrides );
 	mState.setValue( "appearance", "ui_font", uiFontPath );
 	mState.setValue( "appearance", "fallback_font", fallbackFontPath );
 	mState.setValueF( "appearance", "ui_font_size", uiFontSize );

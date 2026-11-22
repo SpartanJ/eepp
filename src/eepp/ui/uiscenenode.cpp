@@ -247,12 +247,12 @@ struct UISceneNode::DensityTransitionState {
 };
 
 bool UIDensityReflow::isWidgetCurrent() const {
-	return mWidget && mWidget->getUISceneNode() == &mScene && !mWidget->isClosing();
+	return mScene && mWidget && mWidget->getUISceneNode() == mScene && !mWidget->isClosing();
 }
 
 void UIDensityReflow::queueRestore( RestoreCallback callback ) {
 	if ( callback && isWidgetCurrent() )
-		mScene.mDensityTransition->restores.push_back( { &mWidget, std::move( callback ) } );
+		mScene->mDensityTransition->restores.push_back( { &mWidget, std::move( callback ) } );
 }
 
 bool UISceneNode::isDensityTransitionNode( const UINode* node ) const {
@@ -346,7 +346,7 @@ void UISceneNode::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 	// The scene context follows mPixelDensity when the transition installs the new value.
 	auto context = makeCurrent();
 	for ( UINode*& node : densityNodes ) {
-		UIDensityReflow reflow( *this, node, oldDensity, newDensity );
+		UIDensityReflow reflow( this, node, oldDensity, newDensity );
 		if ( reflow.isWidgetCurrent() )
 			node->onBeforePixelDensityReflow( reflow );
 	}
@@ -383,7 +383,7 @@ void UISceneNode::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 	refreshWebViewDocumentLayoutAfterStyleChange( mRoot );
 	flushDirtyStyleAndLayout();
 	for ( auto& restore : state.restores ) {
-		UIDensityReflow reflow( *this, *restore.widget, oldDensity, newDensity );
+		UIDensityReflow reflow( this, *restore.widget, oldDensity, newDensity );
 		if ( reflow.isWidgetCurrent() )
 			restore.callback( reflow );
 	}

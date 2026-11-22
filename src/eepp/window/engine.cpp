@@ -59,23 +59,35 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Window {
 
-Engine::WindowContext::WindowContext( Engine* engine, EE::Window::Window* window ) :
+Engine::WindowContext::WindowContext( Engine* engine, EE::Window::Window* window,
+									  const Float* density ) :
 	mEngine( engine ),
 	mPreviousWindow( engine->getCurrentWindow() ),
-	mDensityContext( PixelDensity::bindCurrent( window ? &window->getPixelDensity() : nullptr ) ) {
+	mDensityContext( density ? *density : 0.f, density, true ) {
 	mEngine->setCurrentWindow( window );
 }
 
 Engine::WindowContext::~WindowContext() {
-	if ( mEngine )
-		mEngine->setCurrentWindow( mPreviousWindow );
+	if ( !mEngine )
+		return;
+	if ( mPreviousWindow.isValid() ) {
+		mEngine->setCurrentWindow( mPreviousWindow.get() );
+	} else if ( mEngine == Engine::existsSingleton() ) {
+		auto* window = mEngine->getCurrentWindow();
+		mDensityContext.restoreKeepingTarget( window ? &window->getPixelDensity() : nullptr );
+	}
 }
 
 Engine::WindowContext::WindowContext( WindowContext&& other ) noexcept :
 	mEngine( other.mEngine ),
-	mPreviousWindow( other.mPreviousWindow ),
+	mPreviousWindow( std::move( other.mPreviousWindow ) ),
 	mDensityContext( std::move( other.mDensityContext ) ) {
 	other.mEngine = nullptr;
+}
+
+void Engine::WindowContext::keepCurrentTarget( const Float* density ) {
+	mPreviousWindow.invalidate();
+	mDensityContext.restoreKeepingTarget( density );
 }
 
 namespace {
@@ -239,6 +251,7 @@ std::shared_ptr<ResourceScope> Engine::getDefaultResourceScope() const {
 }
 
 void Engine::destroy() {
+	System::Private::ScopedRestoreTarget<EE::Window::Window>::invalidateAll();
 	for ( auto& it : mWindows ) {
 		eeSAFE_DELETE( it.second );
 	}
@@ -371,6 +384,7 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 }
 
 void Engine::destroyWindow( EE::Window::Window* window ) {
+	System::Private::ScopedRestoreTarget<EE::Window::Window>::invalidate( window );
 	UIInspectorServer::notifyWindowDestroyed( window );
 	mWindows.erase( window->getWindowID() );
 
@@ -447,7 +461,7 @@ void Engine::setCurrentWindow( EE::Window::Window* window ) {
 }
 
 Engine::WindowContext Engine::makeWindowCurrent( EE::Window::Window* window ) {
-	return WindowContext( this, window );
+	return WindowContext( this, window, window ? &window->getPixelDensity() : nullptr );
 }
 
 Uint32 Engine::getWindowCount() const {

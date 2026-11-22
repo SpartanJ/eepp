@@ -957,12 +957,12 @@ Float WindowSDL::getDisplayScale() const {
 	if ( desktopScale > 0.f )
 		return desktopScale;
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
-	// SDL's diagonal DPI on Android comes from the configured densityDpi.
+	// SDL's diagonal DPI on Android comes from the configured densityDpi (160 is Android's 1×).
 	const int index = SDL_GetWindowDisplayIndex( mSDLWindow );
 	Float dpi = 0.f;
 	if ( index >= 0 && SDL_GetDisplayDPI( index, &dpi, nullptr, nullptr ) == 0 &&
 		 std::isfinite( dpi ) && dpi > 0.f )
-		return dpi / 96.f;
+		return dpi / 160.f;
 #endif
 	// Other SDL2 drivers expose the backing ratio. Hardware DPI is a separate policy.
 	const Float scale = getScale();

@@ -24,8 +24,9 @@ namespace EE { namespace Scene {
 class EE_API SceneNode : public Node {
   public:
 	/** Scoped binding of a scene and its native graphics context on the application thread.
-	 * Restores both previous bindings on destruction. The scenes and windows must outlive the
-	 * scope. Context objects are movable but cannot be copied. */
+	 * Restores the previous scene, window and density together. If a previous target has
+	 * been destroyed, the current target and its scoped density are retained. Context objects
+	 * are movable but cannot be copied. */
 	class EE_API Context {
 	  public:
 		explicit Context( SceneNode* scene );
@@ -39,13 +40,12 @@ class EE_API SceneNode : public Node {
 		Context& operator=( Context&& ) = delete;
 
 	  private:
-		SceneNode* mPreviousScene{ nullptr };
+		System::Private::ScopedRestoreTarget<SceneNode> mPreviousScene;
 		Engine::WindowContext mWindowContext;
-		PixelDensity::Context mDensityContext;
-		bool mActive{ true };
 	};
 
-	/** Makes this scene and its native window current for the returned scope. */
+	/** Makes this scene and its native window current for the returned scope. If the previous
+	 * scene was destroyed, the current scene stays bound. */
 	Context makeCurrent();
 
 	/** Effective UI density for this scene. Plain scenes use their native window's density. */

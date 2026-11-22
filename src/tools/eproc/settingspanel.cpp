@@ -90,9 +90,10 @@ UIWindow* SettingsPanel::create( App& app ) {
 					   : PixelDensity::pxToDp( scene->getUIThemeManager()->getDefaultFontSize() );
 		},
 		[&app]( double value ) { app.setUIFontSize( value ); } );
-	panel->addUIScaleSettings( "appearance.fonts", *app.mApp->getWindow(),
-							   app.mConfig->pixelDensity, app.mConfig->pixelDensityMode,
-							   [&app] { app.savePreferences(); } );
+	panel->addUIScaleSettings(
+		"appearance.fonts", app.mApp->getWindow(), app.mConfig->pixelDensity,
+		app.mConfig->pixelDensityMode, [&app] { app.savePreferences(); },
+		&app.mConfig->displayDensityOverrides );
 	panel->addChoice(
 		{ "fontHinting", "appearance.fonts", scene->i18n( "ui_font_hint", "Font Hinting" ),
 		  scene->i18n( "ui_font_hint_desc", "Control glyph alignment to the pixel grid." ) },

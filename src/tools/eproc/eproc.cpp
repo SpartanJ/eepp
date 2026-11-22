@@ -409,6 +409,7 @@ bool App::init() {
 	WindowSettings ws( windowWidth, windowHeight, "", WindowStyle::Default, WindowBackend::Default,
 					   32, Sys::getResourcePath( "eproc" ) + windowIcon );
 	ws.DensityMode = mConfig->pixelDensityMode;
+	ws.DensityOverrides = mConfig->displayDensityOverrides;
 	ContextSettings ctx;
 	ctx.Multisamples = mConfig->multisamples;
 	ctx.VSync = mConfig->vsync;

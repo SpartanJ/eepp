@@ -13,6 +13,7 @@ using namespace EE::Math;
 
 namespace EE { namespace Window {
 
+class Engine;
 class Window;
 
 }} // namespace EE::Window
@@ -54,14 +55,19 @@ class EE_API PixelDensity {
 
 	  private:
 		friend class PixelDensity;
+		friend class EE::Window::Engine;
 
-		explicit Context( Float density, const Float* source = nullptr );
+		explicit Context( Float density, const Float* source = nullptr, bool target = false );
 
-		Context** findBinding();
+		void restoreKeepingTarget( const Float* source );
+
+		Context*& findIncomingLink();
+
 		Context* mPrevious;
 		const Float* mSource;
 		Float mDensity;
 		bool mActive{ true };
+		bool mTargetBinding{ false };
 	};
 
 	/** Uses a positive finite density for this scope. Zero/invalid values select the process

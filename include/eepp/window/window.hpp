@@ -11,7 +11,14 @@
 #include <eepp/window/nativewindowcontext.hpp>
 
 #include <limits>
+#include <map>
 #include <string_view>
+
+namespace EE::System {
+
+class IniFile;
+
+}
 
 namespace EE { namespace Window {
 
@@ -55,6 +62,9 @@ enum class WindowBackend : Uint32 { SDL2, SDL3, Default };
 
 /** Automatic UI density source. Explicit density overrides take priority in every mode. */
 enum class PixelDensityMode : Uint8 { Default, DisplayScale, PhysicalPPI };
+
+/** Fixed densities keyed by native display identity, applied only in automatic modes. */
+using DisplayDensityOverrides = std::map<std::string, Float>;
 
 /** Pixel layout requested from Window::readFrameBuffer(). */
 enum class FramePixelFormat : Uint8 { RGB24, RGBA32 };
@@ -123,6 +133,7 @@ class WindowSettings {
 	bool UseScreenKeyboard{ EE_SCREEN_KEYBOARD_ENABLED };
 	bool DisableHiDPI{ false };
 	PixelDensityMode DensityMode{ PixelDensityMode::Default };
+	DisplayDensityOverrides DensityOverrides;
 	Float PixelDensityReferencePPI{ 0 }; //!< Zero uses the environment reference, then 96 PPI.
 };
 
@@ -383,6 +394,19 @@ class EE_API Window {
 
 	/** Physical monitor pixels per inch, or zero when unavailable. */
 	virtual Float getPhysicalDisplayDPI() const;
+
+	/** Returns an empty key when the current display has no persistent identity. */
+	std::string getDisplayDensityKey() const;
+
+	/** Sets an exact density from 1 to 6 for a display. Zero removes the override. */
+	bool setDisplayDensityOverride( const std::string& key, Float density );
+
+	const DisplayDensityOverrides& getDisplayDensityOverrides() const;
+
+	static DisplayDensityOverrides loadDisplayDensityOverrides( System::IniFile& ini );
+
+	static void saveDisplayDensityOverrides( System::IniFile& ini,
+											 const DisplayDensityOverrides& overrides );
 
 	PixelDensityMode getPixelDensityMode() const;
 
@@ -674,6 +698,8 @@ class EE_API Window {
 	Float mPixelDensityOverride{ 0.f };
 	Float mDisplayScale{ 1.f };
 	int mDensityDisplayIndex{ -1 };
+	mutable int mDisplayDensityKeyIndex{ -1 };
+	mutable std::string mDisplayDensityKey;
 	Uint32 mDisplayMetricsVersion{ 0 };
 	bool mDisplayMetricsDirty{ false };
 	bool mDisplayTopologyDirty{ false };
@@ -712,6 +738,8 @@ class EE_API Window {
 
 	/** Resolves the initial UI density after the backend has created the native window. */
 	void initializePixelDensity( Float pixelDensityOverride );
+	const std::string& getDisplayDensityKey( int displayIndex ) const;
+
 	static PixelDensityMode resolvePixelDensityMode( PixelDensityMode mode );
 	static Float resolvePixelDensityReferencePPI( Float reference );
 

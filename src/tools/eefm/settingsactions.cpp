@@ -231,8 +231,9 @@ void SettingsActions::showSettings() {
 			savePreferences();
 		} );
 	panel->addUIScaleSettings(
-		"appearance.fonts", *mApp.window(), mApp.config().window.pixelDensity,
-		mApp.config().window.pixelDensityMode, [this] { savePreferences(); } );
+		"appearance.fonts", mApp.window(), mApp.config().window.pixelDensity,
+		mApp.config().window.pixelDensityMode, [this] { savePreferences(); },
+		&mApp.config().window.displayDensityOverrides );
 	panel->addChoice(
 		{ "fontHinting", "appearance.fonts", mUI->i18n( "eefm_font_hinting", "Font Hinting" ),
 		  mUI->i18n( "eefm_font_hinting_desc", "Align glyphs to the pixel grid." ) },

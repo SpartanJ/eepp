@@ -96,6 +96,7 @@ struct WindowStateConfig {
 	bool maximized{ false };
 	bool useLegacyPixelDensity{ false };
 	PixelDensityMode pixelDensityMode{ PixelDensityMode::Default };
+	DisplayDensityOverrides displayDensityOverrides;
 	std::string panelPartition;
 	std::string statusBarPartition;
 	std::string rightPanelPartition{ "75%" };

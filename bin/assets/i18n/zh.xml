@@ -846,6 +846,14 @@ file in the directory tree.</string>
 	<string name="ui_scale_auto_system">自动（系统缩放）</string>
 	<string name="ui_scale_auto_physical">自动（物理像素密度）</string>
 	<string name="ui_scale_manual">手动</string>
+	<string name="ui_display_scale">按显示器设置缩放</string>
+	<string name="ui_display_scale_desc">在任一自动模式下，分别设置已连接显示器的缩放比例。</string>
+	<string name="ui_display_scale_configure">配置…</string>
+	<string name="ui_display_scale_unavailable">当前配置不支持按显示器设置缩放。</string>
+	<string name="ui_display_scale_requires_auto">选择自动缩放模式以使用各显示器的缩放设置。</string>
+	<string name="ui_display_scale_prompt">选择显示器。取消勾选可对此显示器使用自动缩放。</string>
+	<string name="ui_display_scale_display">显示器</string>
+	<string name="ui_display_scale_custom">使用自定义缩放</string>
 	<string name="line_spacing_desc">设置编辑器行之间的额外垂直间距。设置为 0 可禁用。</string>
 	<string name="cursor_blinking_time_desc">设置文本光标闪烁间隔。设置为 0 可禁用。</string>
 	<string name="folds_refresh_freq_desc">设置重新计算代码折叠区域的频率（最少 1 秒）。</string>

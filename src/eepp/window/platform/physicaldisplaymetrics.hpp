@@ -2,6 +2,10 @@
 #define EE_WINDOW_PHYSICALDISPLAYMETRICS_HPP
 
 #include <eepp/math/rect.hpp>
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#include <eepp/window/windowhandle.hpp>
+#endif
+#include <string>
 
 namespace EE { namespace Window { namespace Private {
 
@@ -10,6 +14,13 @@ namespace EE { namespace Window { namespace Private {
 class PhysicalDisplayMetrics {
   public:
 	static Float getDPI( const Math::Rect& bounds );
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	static std::string getPersistentId( eeWindowHandle window );
+	static std::string getPersistentMonitorId( void* monitor );
+#endif
+
+	static std::string getPersistentId( const Math::Rect& bounds );
 };
 
 }}} // namespace EE::Window::Private

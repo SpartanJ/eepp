@@ -8,6 +8,7 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/inifile.hpp>
 #include <eepp/version.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/cursormanager.hpp>
@@ -20,6 +21,8 @@
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 #include <eepp/window/platform/macos/platformhelper.hpp>
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+#include <eepp/window/platform/physicaldisplaymetrics.hpp>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -98,8 +101,15 @@ bool Window::refreshPixelDensity() {
 	const Float oldDensity = mPixelDensity;
 	const Float displayScale = getDisplayScale();
 	const int displayIndex = getCurrentDisplayIndex();
-	if ( mPixelDensityOverride > 0.f ) {
-		mPixelDensity = mPixelDensityOverride;
+	auto& overrides = mWindow.WindowConfig.DensityOverrides;
+	Float densityOverride = mPixelDensityOverride;
+	if ( densityOverride <= 0.f && !overrides.empty() ) {
+		const auto override = overrides.find( getDisplayDensityKey( displayIndex ) );
+		if ( override != overrides.end() && override->second >= 1.f && override->second <= 6.f )
+			densityOverride = override->second;
+	}
+	if ( densityOverride > 0.f ) {
+		mPixelDensity = densityOverride;
 	} else {
 		Float automaticDensity = displayScale;
 		if ( mPixelDensityMode == PixelDensityMode::PhysicalPPI ) {
@@ -143,6 +153,71 @@ Float Window::getPhysicalDisplayDPI() const {
 	auto* display =
 		Engine::instance()->getDisplayManager()->getDisplayIndex( getCurrentDisplayIndex() );
 	return display ? display->getPhysicalDPI() : 0.f;
+}
+
+std::string Window::getDisplayDensityKey() const {
+	return getDisplayDensityKey( getCurrentDisplayIndex() );
+}
+
+const std::string& Window::getDisplayDensityKey( int displayIndex ) const {
+	if ( mDisplayDensityKeyIndex != displayIndex ) {
+		mDisplayDensityKeyIndex = displayIndex;
+		mDisplayDensityKey.clear();
+		if ( displayIndex >= 0 && !Runtime::isOffscreen() &&
+			 Runtime::mode() != RuntimeMode::Terminal ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+			mDisplayDensityKey =
+				Private::PhysicalDisplayMetrics::getPersistentId( getWindowHandler() );
+#else
+			auto* display =
+				Engine::instance()->getDisplayManager()->getDisplayIndex( displayIndex );
+			if ( display )
+				mDisplayDensityKey = display->getPersistentId();
+#endif
+		}
+	}
+	return mDisplayDensityKey;
+}
+
+bool Window::setDisplayDensityOverride( const std::string& key, Float density ) {
+	if ( key.empty() || ( density != 0.f && !( density >= 1.f && density <= 6.f ) ) )
+		return false;
+	auto& overrides = mWindow.WindowConfig.DensityOverrides;
+	if ( density == 0.f )
+		overrides.erase( key );
+	else
+		overrides[key] = density;
+	refreshPixelDensity();
+	return true;
+}
+
+const DisplayDensityOverrides& Window::getDisplayDensityOverrides() const {
+	return mWindow.WindowConfig.DensityOverrides;
+}
+
+namespace {
+
+constexpr auto DisplayScaleOverridesSection = "display_scale_overrides";
+
+} // namespace
+
+DisplayDensityOverrides Window::loadDisplayDensityOverrides( System::IniFile& ini ) {
+	DisplayDensityOverrides overrides;
+	const auto count = ini.getNumValues( DisplayScaleOverridesSection );
+	for ( unsigned i = 0; i < count; ++i ) {
+		auto key = ini.getValueName( DisplayScaleOverridesSection, i );
+		const double value = ini.getValueF( DisplayScaleOverridesSection, key );
+		if ( !key.empty() && value >= 1. && value <= 6. )
+			overrides.emplace( std::move( key ), static_cast<Float>( value ) );
+	}
+	return overrides;
+}
+
+void Window::saveDisplayDensityOverrides( System::IniFile& ini,
+										  const DisplayDensityOverrides& overrides ) {
+	ini.deleteKey( DisplayScaleOverridesSection );
+	for ( const auto& [key, density] : overrides )
+		ini.setValueF( DisplayScaleOverridesSection, key, density );
 }
 
 PixelDensityMode Window::getPixelDensityMode() const {
@@ -208,6 +283,10 @@ void Window::updateDisplayMetrics() {
 	mDisplayMetricsDirty = false;
 	auto context = Engine::instance()->makeWindowCurrent( this );
 	const auto version = mDisplayMetricsVersion;
+	if ( mDisplayTopologyDirty ) {
+		mDisplayDensityKeyIndex = -1;
+		mDisplayDensityKey.clear();
+	}
 	refreshPixelDensity();
 	if ( mDisplayTopologyDirty && mDisplayMetricsVersion == version )
 		++mDisplayMetricsVersion;
@@ -234,6 +313,7 @@ Float Window::getDisplayScale() const {
 }
 
 Window::~Window() {
+	System::Private::ScopedRestoreTarget<Window>::invalidate( this );
 	PixelDensity::snapshotBindings( &mPixelDensity );
 	if ( WindowInitialization::isPending() )
 		WindowInitialization::cancel( this );

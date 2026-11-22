@@ -4788,6 +4788,7 @@ void App::init( InitParameters& params ) {
 	// Saved window dimensions are native pixels. The UI override is passed separately below.
 	winSettings.PixelDensity = 0;
 	winSettings.DensityMode = mConfig.windowState.pixelDensityMode;
+	winSettings.DensityOverrides = mConfig.windowState.displayDensityOverrides;
 	winSettings.PixelDensityReferencePPI = mConfig.windowState.pixelDensityReferencePPI;
 	winSettings.Width = mConfig.windowState.size.getWidth();
 	winSettings.Height = mConfig.windowState.size.getHeight();

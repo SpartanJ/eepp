@@ -3,6 +3,7 @@
 
 #include <eepp/core/string.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/window/window.hpp>
 #include <functional>
 #include <memory>
 #include <string>
@@ -28,6 +29,7 @@ enum class PixelDensityMode : Uint8;
 
 namespace EE::UI::Tools {
 
+using EE::Window::DisplayDensityOverrides;
 using EE::Window::PixelDensityMode;
 
 struct SettingView;
@@ -182,10 +184,12 @@ class EE_API UISettingsPanel : public UILinearLayout {
 	bool addFloat( SettingDescriptor descriptor, double min, double max, double step,
 				   std::function<double()> get, std::function<void( double )> set );
 
-	/** Add the window's automatic scaling modes and manual factor. The preferences must outlive
-	 * the panel. The save callback runs after applying a new scale. */
-	void addUIScaleSettings( const std::string& category, EE::Window::Window& window,
-							 Float& density, PixelDensityMode& mode, std::function<void()> save );
+	/** Add the window's automatic scaling modes and manual factor. A null window adds no
+	 * settings. The preferences must outlive the panel. The save callback runs after applying
+	 * a new scale. */
+	void addUIScaleSettings( const std::string& category, EE::Window::Window* window,
+							 Float& density, PixelDensityMode& mode, std::function<void()> save,
+							 DisplayDensityOverrides* overrides = nullptr );
 
 	bool addAction( SettingDescriptor descriptor, String buttonText, std::function<void()> action );
 

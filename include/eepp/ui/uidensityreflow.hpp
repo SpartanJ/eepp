@@ -35,13 +35,13 @@ class EE_API UIDensityReflow : NonCopyable {
 	friend class UISceneNode;
 	using RestoreCallback = SmallUniqueFunction<void( const UIDensityReflow& ), 32>;
 
-	UIDensityReflow( UISceneNode& scene, UINode* const& widget, Float oldDensity,
+	UIDensityReflow( UISceneNode* scene, UINode* const& widget, Float oldDensity,
 					 Float newDensity ) :
 		mScene( scene ), mWidget( widget ), mOldDensity( oldDensity ), mNewDensity( newDensity ) {}
 
 	void queueRestore( RestoreCallback callback );
 
-	UISceneNode& mScene;
+	UISceneNode* mScene;
 	UINode* const& mWidget;
 	Float mOldDensity;
 	Float mNewDensity;

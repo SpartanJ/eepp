@@ -4,6 +4,7 @@
 #include <eepp/config.hpp>
 #include <eepp/math/rect.hpp>
 #include <functional>
+#include <string>
 
 namespace EE { namespace Window { namespace Private {
 
@@ -21,6 +22,10 @@ class WindowVisibility {
 };
 
 bool setNativeScrollMomentumEnabled( bool enabled );
+
+std::string getPersistentDisplayId( const Math::Rect& bounds );
+
+Float getSystemUIFontSize();
 
 Float getPhysicalDisplayDPI( const Math::Rect& bounds );
 

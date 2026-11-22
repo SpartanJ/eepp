@@ -4,6 +4,10 @@ namespace EE { namespace Window {
 
 Display::Display( int displayIndex ) : index( displayIndex ) {}
 
+std::string Display::getPersistentId() const {
+	return {};
+}
+
 Float Display::getPhysicalDPI() {
 	return 0.f;
 }

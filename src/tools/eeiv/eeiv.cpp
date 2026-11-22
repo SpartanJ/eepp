@@ -9,6 +9,7 @@
 #include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/platformhelper.hpp>
 
 using namespace EE::Network;
 using namespace EE::Window;
@@ -195,8 +196,9 @@ UIWindow* App::createSettingsWindow() {
 			mConsole->setFontSize( value );
 			saveConfig();
 		} );
-	panel->addUIScaleSettings( "appearance.fonts", *getWindow(), mConfig.UIScale,
-							   mConfig.UIScaleMode, [this] { saveConfig(); } );
+	panel->addUIScaleSettings(
+		"appearance.fonts", getWindow(), mConfig.UIScale, mConfig.UIScaleMode,
+		[this] { saveConfig(); }, &mConfig.displayDensityOverrides );
 	panel->addChoice(
 		{ "fontHinting", "appearance.fonts", "Font Hinting",
 		  "Control glyph alignment to the pixel grid." },
@@ -481,12 +483,15 @@ void App::loadConfig() {
 											   ContextSettings::FrameRateLimitScreenRefreshRate );
 	mConfig.TransitionTime = mIni.getValueF( "viewer", "transitiontime", 200 );
 	mConfig.ConsoleFontSize = mIni.getValueI( "viewer", "consolefontsize", 12 );
-	mConfig.AppFontSize = mIni.getValueF( "viewer", "appfontsize", 12 );
+	mConfig.AppFontSize = mIni.keyValueExists( "viewer", "appfontsize" )
+							  ? mIni.getValueF( "viewer", "appfontsize", 12 )
+							  : PlatformHelper::getSystemUIFontSize( 12.f );
 	mConfig.UIFontPath = mIni.getValue( "ui", "font" );
 	mConfig.FallbackFontPath = mIni.getValue( "ui", "fallbackfont" );
 	mConfig.UIScale = mIni.getValueF( "ui", "scale", 0 );
 	mConfig.UIScaleMode =
 		EE::Window::Window::pixelDensityModeFromString( mIni.getValue( "ui", "scale_mode" ) );
+	mConfig.displayDensityOverrides = EE::Window::Window::loadDisplayDensityOverrides( mIni );
 	mConfig.Hinting = Font::fontHintingFromString( mIni.getValue( "ui", "fonthinting", "full" ) );
 	mConfig.Antialiasing =
 		Font::fontAntialiasingFromString( mIni.getValue( "ui", "fontantialiasing", "grayscale" ) );
@@ -527,6 +532,7 @@ void App::saveConfig() {
 	mIni.setValueF( "ui", "scale", mConfig.UIScale );
 	mIni.setValue( "ui", "scale_mode",
 				   EE::Window::Window::pixelDensityModeToString( mConfig.UIScaleMode ) );
+	EE::Window::Window::saveDisplayDensityOverrides( mIni, mConfig.displayDensityOverrides );
 	mIni.setValue( "ui", "fonthinting", Font::fontHintingToString( mConfig.Hinting ) );
 	mIni.setValue( "ui", "fontantialiasing",
 				   Font::fontAntialiasingToString( mConfig.Antialiasing ) );
@@ -558,6 +564,7 @@ bool App::init() {
 	contextSettings.SharedGLContext = true;
 	windowSettings.Title = "eeiv";
 	windowSettings.DensityMode = mConfig.UIScaleMode;
+	windowSettings.DensityOverrides = mConfig.displayDensityOverrides;
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	const char* windowIcon = "eeiv-macos.png";
 	const char* fallbackIcon = "ee-macos.png";

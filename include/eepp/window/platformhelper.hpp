@@ -11,6 +11,10 @@ class EE_API PlatformHelper {
   public:
 	virtual ~PlatformHelper() {}
 
+	/** Returns a system UI font size in dp when EEPP_USE_SYSTEM_UI_FONT_SIZE is set to 1,
+	 * or fallback when disabled or unavailable. */
+	static Float getSystemUIFontSize( Float fallback = 0.f );
+
 	/** Open a URL in a separate, system-provided application.
 	 * @return true if success
 	 */

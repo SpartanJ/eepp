@@ -24,6 +24,9 @@ class EE_API Display {
 	/** Physical pixels per inch, independent of the desktop UI scale; zero if unavailable. */
 	virtual Float getPhysicalDPI();
 
+	/** Native identity suitable for persisted settings, or empty when unavailable. */
+	virtual std::string getPersistentId() const;
+
 	virtual const int& getIndex() const = 0;
 
 	virtual DisplayMode getCurrentMode() const = 0;

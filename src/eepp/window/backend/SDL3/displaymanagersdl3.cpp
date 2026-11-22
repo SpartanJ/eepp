@@ -12,7 +12,8 @@ DisplaySDL3::DisplaySDL3( int index, SDL_DisplayID displayId ) :
 	Display( index ), mDisplayId( displayId ) {}
 
 std::string DisplaySDL3::getName() const {
-	return std::string( mDisplayId ? SDL_GetDisplayName( mDisplayId ) : "Unknown" );
+	const char* name = mDisplayId ? SDL_GetDisplayName( mDisplayId ) : nullptr;
+	return name ? name : "";
 }
 
 Rect DisplaySDL3::getBounds() const {
@@ -41,6 +42,21 @@ Float DisplaySDL3::getDPI() {
 
 const int& DisplaySDL3::getIndex() const {
 	return index;
+}
+
+std::string DisplaySDL3::getPersistentId() const {
+	const char* driver = SDL_GetCurrentVideoDriver();
+	if ( !driver || ( std::strcmp( driver, "x11" ) != 0 && std::strcmp( driver, "cocoa" ) != 0 &&
+					  std::strcmp( driver, "windows" ) != 0 ) )
+		return {};
+#if EE_PLATFORM == EE_PLATFORM_WIN && defined( SDL_PROP_DISPLAY_WINDOWS_HMONITOR_POINTER )
+	if ( auto* monitor =
+			 SDL_GetPointerProperty( SDL_GetDisplayProperties( mDisplayId ),
+									 SDL_PROP_DISPLAY_WINDOWS_HMONITOR_POINTER, nullptr ) ) {
+		return Private::PhysicalDisplayMetrics::getPersistentMonitorId( monitor );
+	}
+#endif
+	return Private::PhysicalDisplayMetrics::getPersistentId( getBounds() );
 }
 
 Float DisplaySDL3::getPhysicalDPI() {

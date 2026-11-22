@@ -277,8 +277,16 @@ EEPP_RUNTIME=headless EEPP_MSAA=0 EEPP_INSPECTOR=1 EEPP_INSPECTOR_READ_ONLY=1 \
 That option sets the initial scale. To test **live** reflow, open Settings → Appearance → Fonts &
 Scale and edit **UI Scale Factor** repeatedly, for example `1 → 1.5 → 2 → 1.25 → 1`. Editing the
 factor switches **UI Scale Mode** to **Manual** and applies the override in the running window.
-Select **Auto** to clear the saved manual factor and resume the configured automatic policy.
+Select an **Auto** mode to clear the saved manual factor and resume the selected automatic policy.
 For automated input, use a read/write inspector session by omitting `EEPP_INSPECTOR_READ_ONLY=1`.
+
+To test per-display overrides, run with the native runtime and select an Auto mode. Open
+**Per-display Scale** in **Fonts & Scale**. Choose a connected display, enable **Use a custom
+scale**, and set a factor from 1 to 6. Clear the checkbox to restore Auto for that display.
+You can edit several displays before clicking **OK**. Move the window and requery `ui.contexts`
+to see its effective `pixelDensity`. The
+`pixelDensityOverride` field reports the global Manual factor, so it stays zero while a
+display-specific factor is applied.
 
 Use the endpoint from stderr to configure the Python client. Query the editor's actual pixel
 geometry alongside its effective CSS values:

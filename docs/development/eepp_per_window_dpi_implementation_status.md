@@ -192,16 +192,80 @@ Final verification:
   are clean. The normal formatting wrapper could not create its temporary index in read-only
   `.git`, so the equivalent changed-line `clang-format-diff` path was used without Git writes.
 
-## Remaining validation and hardening
+## Review status
 
-- Real mixed-density monitor movement and event ordering, especially on Windows and macOS.
-  Synthetic events and explicit overrides do not replace this validation.
-- SDL2 coordinate/input behavior on real Windows/macOS desktops. The drawable-to-window fallback
-  can only reflect scaling exposed by the SDL2 video driver.
-- Web SVGs without a `.svg` path can use an explicit `WebResourceRequest::svgScale`. Automatic
-  detection of extensionless SVG URLs and sharing response bytes across raster variants are future
-  improvements.
-- Application and plugin code can retain its own pixel metrics. Those caches need testing in the
-  relevant tool or plugin as mixed-density use expands.
-- Programmatic font sizes without retained units still use the plan's provisional scaling path;
-  CSS and theme defaults reconstruct from their semantic sources.
+- Legacy ecode profiles keep their existing startup scale, including the previous Retina backing
+  minimum. Linux and macOS startup checks covered legacy settings and new profiles.
+- macOS Physical PPI uses the window's backing pixels for layout. The panel's native PPI remains
+  available for diagnostics. Native 1× and 2× backing calculations were checked, and the user
+  confirmed both Auto modes during manual testing, including a live scaled-resolution change.
+- Unchanged-density display updates refresh DPI and media matches. Embedded viewport changes also
+  refresh viewport-dependent styles. Regression tests verify that both paths skip density reflow.
+- Active and suspended density bindings snapshot the last value when their owner is destroyed.
+  When a saved scene or window is gone at scope exit, the enclosing binding follows the live
+  target's density. Linux regressions cover this with nested and moved guards, including a live
+  density change after unwinding and an independent explicit density scope. The earlier
+  restoration tests also passed on macOS and Windows SDL2.
+- Stylesheet media queries have per-sheet results, the legacy accessors document their standalone
+  semantics, and ecode evaluates media matches for theme inheritance. Theme-manager font overrides
+  take precedence, and theme font setters accept an explicit density.
+- SDL2/X11 System Scale uses configured `Xft.dpi` with a drawable fallback. An XSETTINGS-only desktop
+  still gets that fallback. Single-axis pixel setters and the settings dropdown null guard are fixed.
+- Windows 10 SDL2 passed manual RDP checks at 100% and 125% for live scaling, window placement after
+  relaunch, and pointer alignment. The wrapped-editor scroll jump on maximize was fixed, passed the
+  native resize regression, and was retested by the user.
+- macOS SDL2 passed a Retina → HDMI TV → Retina monitor move. The checkbox gap tracked
+  8 → 4 → 8 pixels, and the test tab width returned to 184 pixels. The Welcome screen version and
+  shortcuts survived a separate live scale change. Linux passed the 90 density and 127 tab-filtered
+  tests after the widget fixes, with overlap between the filters.
+
+## First-run fonts and per-display overrides
+
+- ecode, eefm, eproc, eterm, and eeiv use their established UI font defaults. Set
+  `EEPP_USE_SYSTEM_UI_FONT_SIZE=1` to seed missing UI sizes from the OS. Saved sizes take
+  precedence. The flag also covers ecode's panel font. Editor and terminal fonts retain their
+  own defaults.
+- **Per-display Scale** lets users choose a connected display and save an exact factor. Each
+  override applies in both Auto modes and can be cleared independently. Global Manual and
+  environment overrides still take precedence. The Linux picker check saved an override for
+  the second display from the first and verified that Cancel discards edits for both. Selecting
+  Manual starts from the current effective scale, including an active per-display value.
+- Windows identifies the monitor from the native window and its monitor interface. macOS uses
+  the display UUID. X11 uses the connector and the monitor's EDID, so two monitors with the same
+  model name can keep distinct settings on their respective connectors. Other drivers and X11
+  displays without EDID or a unique native output match continue to use the selected Auto policy.
+  The picker also excludes entries whose display keys are shared.
+- The five Linux SDL3 apps built. The native suite passed 2,583 tests with six UDisks environment
+  skips. Native X11 checks covered moving between two displays, separate exact factors, restart,
+  and resetting either display independently. Simulated duplicate names, disconnect, reconnect,
+  and reorder also passed. With a GTK preference of 12pt, a fresh ecode profile kept its
+  established 11dp defaults and an opt-in profile seeded 12dp. The opt-in profile kept its
+  saved 12dp when the GTK preference changed to 14pt.
+- The Android ecode APK built and ran on the Pixel_9_API_35 emulator. SDL2 System Scale now uses
+  160 dpi as Android's 1× baseline. Auto reported 2.625 at 420 dpi and rounded to 2.75. At
+  320 dpi it reported 2.0. Settings stayed reachable after reflow, and Physical PPI used the
+  System Scale fallback. With system font seeding enabled and Android font scale set to 1.3,
+  an existing ecode profile kept 11dp
+  and a fresh profile seeded 14.3dp. The emulator's original density and font scale were restored.
+  Android uses the app-private directory for user-directory lookups, which fixes startup when
+  `HOME` is unset.
+
+## Remaining validation
+
+- Exercise the new per-display settings UI on Windows and macOS. The new native font and display
+  identity code passed MinGW and macOS SDK syntax checks.
+- Repeat the display override checks through a physical monitor disconnect and reconnect.
+
+## Lower-priority follow-ups
+
+- Decide whether CSS `resolution` should use display DPI or follow an explicit scene density.
+  Today it reports display DPI while `pixel-density` reflects the scene.
+- Decide whether the settings UI should allow Auto to override `EEPP_PIXEL_DENSITY`. The environment
+  override currently takes precedence.
+- Retain the source of programmatic font sizes where practical. The current reflow heuristic can
+  treat an explicit size equal to the floored theme default as theme-derived.
+- Measure display queries during continuous window drags and the UI-thread wait on an in-flight
+  texture request for the same key before changing either path.
+- Extensionless web SVGs can request an explicit `WebResourceRequest::svgScale`. Automatic detection
+  and sharing response bytes across raster variants can follow separately. Application and plugin
+  pixel caches may also need their own regression coverage.

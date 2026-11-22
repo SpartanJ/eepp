@@ -1,5 +1,6 @@
 #include "utest.hpp"
 
+#include <algorithm>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
@@ -78,7 +79,8 @@ UTEST( UISettingsPanel, appliesAndSavesWindowScaleModes ) {
 	ASSERT_NE( nullptr, window );
 	auto* panel = UISettingsPanel::New( app.getUI()->getRoot() );
 	ASSERT_TRUE( panel->addCategory( "appearance.fonts", "Appearance", "Fonts and Scale" ) );
-	panel->addUIScaleSettings( "appearance.fonts", *window, density, mode, [&] { ++saves; } );
+	panel->addUIScaleSettings( "appearance.fonts", nullptr, density, mode, [&] { ++saves; } );
+	panel->addUIScaleSettings( "appearance.fonts", window, density, mode, [&] { ++saves; } );
 	panel->build();
 	panel->selectCategory( "appearance.fonts" );
 	auto* modeRow = panel->find<UIWidget>( "setting_uiScaleMode" );
@@ -112,10 +114,16 @@ UTEST( UISettingsPanel, appliesAndSavesWindowScaleModes ) {
 	EXPECT_EQ( 0.f, density );
 	EXPECT_EQ( 0.f, window->getPixelDensityOverride() );
 	EXPECT_EQ( 3, saves );
+	EXPECT_EQ( factor->getValue(), std::clamp( window->getPixelDensity(), 1.f, 6.f ) );
 
+	const auto displayKey = window->getDisplayDensityKey();
+	if ( !displayKey.empty() )
+		ASSERT_TRUE( window->setDisplayDensityOverride( displayKey, 1.61f ) );
+	const Float manualScale = std::clamp( window->getPixelDensity(), 1.f, 6.f );
 	select( 2 );
-	EXPECT_EQ( 1.5f, density );
-	EXPECT_EQ( 1.5f, window->getPixelDensityOverride() );
+	EXPECT_EQ( manualScale, density );
+	EXPECT_EQ( manualScale, window->getPixelDensityOverride() );
+	EXPECT_EQ( manualScale, factor->getValue() );
 	EXPECT_EQ( 4, saves );
 }
 

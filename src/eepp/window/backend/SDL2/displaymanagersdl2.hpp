@@ -18,6 +18,8 @@ class EE_API DisplaySDL2 : public Display {
 	Float getDPI();
 	Float getPhysicalDPI();
 
+	std::string getPersistentId() const;
+
 	const int& getIndex() const;
 
 	DisplayMode getCurrentMode() const;

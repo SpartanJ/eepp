@@ -148,6 +148,14 @@ const int& DisplaySDL2::getIndex() const {
 	return index;
 }
 
+std::string DisplaySDL2::getPersistentId() const {
+	const char* driver = SDL_GetCurrentVideoDriver();
+	if ( !driver || ( std::strcmp( driver, "x11" ) != 0 && std::strcmp( driver, "cocoa" ) != 0 &&
+					  std::strcmp( driver, "windows" ) != 0 ) )
+		return {};
+	return Private::PhysicalDisplayMetrics::getPersistentId( getBounds() );
+}
+
 Float DisplaySDL2::getPhysicalDPI() {
 	const char* driver = SDL_GetCurrentVideoDriver();
 	if ( !driver || ( std::strcmp( driver, "x11" ) != 0 && std::strcmp( driver, "windows" ) != 0 &&

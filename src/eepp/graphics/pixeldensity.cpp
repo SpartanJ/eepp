@@ -15,10 +15,11 @@ thread_local Float sScopedPixelDensity = 0.f;
 
 Float PixelDensity::sPixelDensity = 1.f;
 
-PixelDensity::Context::Context( Float density, const Float* source ) :
+PixelDensity::Context::Context( Float density, const Float* source, bool target ) :
 	mPrevious( sCurrentContext ),
 	mSource( source ),
-	mDensity( std::isfinite( density ) && density > 0.f ? density : 0.f ) {
+	mDensity( std::isfinite( density ) && density > 0.f ? density : 0.f ),
+	mTargetBinding( target ) {
 	sCurrentContext = this;
 	sScopedPixelDensity = mDensity;
 }
@@ -31,27 +32,46 @@ PixelDensity::Context::Context( Context&& other ) noexcept :
 	mPrevious( other.mPrevious ),
 	mSource( other.mSource ),
 	mDensity( other.mDensity ),
-	mActive( other.mActive ) {
+	mActive( other.mActive ),
+	mTargetBinding( other.mTargetBinding ) {
 	if ( mActive )
-		*other.findBinding() = this;
+		other.findIncomingLink() = this;
 	other.mActive = false;
 }
 
-PixelDensity::Context** PixelDensity::Context::findBinding() {
-	auto** binding = &sCurrentContext;
-	while ( *binding != this )
-		binding = &( *binding )->mPrevious;
-	return binding;
+PixelDensity::Context*& PixelDensity::Context::findIncomingLink() {
+	if ( sCurrentContext == this )
+		return sCurrentContext;
+	auto* newer = sCurrentContext;
+	while ( newer->mPrevious != this )
+		newer = newer->mPrevious;
+	return newer->mPrevious;
 }
 
 void PixelDensity::Context::restore() {
 	if ( mActive ) {
-		auto** binding = findBinding();
-		*binding = mPrevious;
-		if ( binding == &sCurrentContext )
+		const bool wasCurrent = sCurrentContext == this;
+		findIncomingLink() = mPrevious;
+		if ( wasCurrent )
 			sScopedPixelDensity = mPrevious ? mPrevious->mDensity : 0.f;
 		mActive = false;
 	}
+}
+
+void PixelDensity::Context::restoreKeepingTarget( const Float* source ) {
+	if ( mActive && sCurrentContext == this ) {
+		for ( auto* previous = mPrevious; previous; previous = previous->mPrevious ) {
+			if ( !previous->mTargetBinding )
+				continue;
+			// Keep the enclosing scene/window density on the live target. Explicit
+			// density scopes keep their own values until they unwind.
+			previous->mSource = source;
+			previous->mDensity =
+				source && std::isfinite( *source ) && *source > 0.f ? *source : 0.f;
+			break;
+		}
+	}
+	restore();
 }
 
 PixelDensity::Context PixelDensity::makeCurrent( Float density ) {

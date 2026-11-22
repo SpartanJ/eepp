@@ -229,10 +229,11 @@ UICodeEditor::UICodeEditor( const bool& autoRegisterBaseCommands,
 							const bool& autoRegisterBaseKeybindings ) :
 	UICodeEditor( "codeeditor", autoRegisterBaseCommands, autoRegisterBaseKeybindings ) {}
 
-static bool hasStableScrollAnchor( const UICodeEditor& editor ) {
-	const auto& view = editor.getDocumentView();
-	return editor.hasDocument() && !editor.getDocument().isLoading() &&
-		   !view.isPendingReconstruction() && view.getVisibleLinesCount() > 0;
+static bool hasStableScrollAnchor( const UICodeEditor* editor ) {
+	if ( !editor || !editor->hasDocument() || editor->getDocument().isLoading() )
+		return false;
+	const auto& view = editor->getDocumentView();
+	return !view.isPendingReconstruction() && view.getVisibleLinesCount() > 0;
 }
 
 struct EditorScrollAnchor {
@@ -240,29 +241,31 @@ struct EditorScrollAnchor {
 	Float fraction;
 };
 
-static std::optional<EditorScrollAnchor> captureScrollAnchor( const UICodeEditor& editor ) {
-	const Float lineHeight = editor.getLineHeight();
+static std::optional<EditorScrollAnchor> captureScrollAnchor( const UICodeEditor* editor ) {
 	// Hidden wrapped editors may not have a width or a visible-line cache yet.
-	if ( lineHeight <= 0.f || !hasStableScrollAnchor( editor ) )
+	if ( !hasStableScrollAnchor( editor ) )
 		return std::nullopt;
-	const Float top = editor.getScroll().y / lineHeight;
+	const Float lineHeight = editor->getLineHeight();
+	if ( lineHeight <= 0.f )
+		return std::nullopt;
+	const Float top = editor->getScroll().y / lineHeight;
 	const Float topLine = std::floor( top );
 	return EditorScrollAnchor{
-		editor.getDocumentView().getVisibleIndexPosition(
+		editor->getDocumentView().getVisibleIndexPosition(
 			static_cast<Doc::VisibleIndex>( static_cast<Int64>( topLine ) ) ),
 		top - topLine };
 }
 
-static void restoreScrollAnchor( UICodeEditor& editor, const EditorScrollAnchor& anchor,
+static void restoreScrollAnchor( UICodeEditor* editor, const EditorScrollAnchor& anchor,
 								 Float horizontal ) {
 	// Font and layout changes can invalidate a previously available view.
 	if ( !hasStableScrollAnchor( editor ) )
 		return;
-	const auto& view = editor.getDocumentView();
+	const auto& view = editor->getDocumentView();
 	const auto range = view.getVisibleLineRange( anchor.position );
 	if ( range.visibleIndex != Doc::VisibleIndex::invalid ) {
-		const Float height = editor.getLineHeight();
-		editor.setScroll(
+		const Float height = editor->getLineHeight();
+		editor->setScroll(
 			{ horizontal, static_cast<Float>( view.getLineYOffset( range.visibleIndex, height ) ) +
 							  anchor.fraction * height },
 			false );
@@ -271,12 +274,12 @@ static void restoreScrollAnchor( UICodeEditor& editor, const EditorScrollAnchor&
 
 void UICodeEditor::onBeforePixelDensityReflow( UIDensityReflow& reflow ) {
 	UITouchDraggableWidget::onBeforePixelDensityReflow( reflow );
-	const auto anchor = captureScrollAnchor( *this );
+	const auto anchor = captureScrollAnchor( this );
 	if ( !anchor )
 		return;
 	reflow.restoreAfterLayout(
 		[this, anchor = *anchor, horizontal = getScroll().x]( const UIDensityReflow& reflow ) {
-			restoreScrollAnchor( *this, anchor,
+			restoreScrollAnchor( this, anchor,
 								 horizontal * reflow.getNewDensity() / reflow.getOldDensity() );
 		} );
 }
@@ -771,11 +774,11 @@ void UICodeEditor::invalidateLineWrapMaxWidth( bool force ) {
 		case LineWrapType::Viewport: {
 			// The same pixel offset can point to a different document line after rewrapping.
 			const auto anchor = !force && mDocView.isWrapEnabled() && mScroll.y > 0.f
-									? captureScrollAnchor( *this )
+									? captureScrollAnchor( this )
 									: std::nullopt;
 			mDocView.setMaxWidth( getViewportWidth(), force );
 			if ( anchor )
-				restoreScrollAnchor( *this, *anchor, mScroll.x );
+				restoreScrollAnchor( this, *anchor, mScroll.x );
 			break;
 		}
 		case LineWrapType::LineBreakingColumn:

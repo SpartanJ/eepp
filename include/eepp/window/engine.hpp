@@ -1,6 +1,7 @@
 #ifndef EE_WINDOWCENGINE_H
 #define EE_WINDOWCENGINE_H
 
+#include <eepp/system/scopedop.hpp>
 #include <eepp/window/base.hpp>
 #include <eepp/window/displaymanager.hpp>
 #include <eepp/window/platformhelper.hpp>
@@ -12,6 +13,12 @@ namespace EE { namespace Graphics {
 class ResourceCatalog;
 class ResourceScope;
 }} // namespace EE::Graphics
+
+namespace EE { namespace Scene {
+
+class SceneNode;
+
+}} // namespace EE::Scene
 
 namespace EE { namespace System {
 class IniFile;
@@ -28,8 +35,9 @@ class EE_API Engine {
 	SINGLETON_DECLARE_HEADERS( Engine )
 
   public:
-	/** Scoped binding of the current native window, graphics context and UI density. Restores the
-	 * previous binding when destroyed. Context objects are movable but cannot be copied. */
+	/** Scoped binding of the current native window, graphics context and UI density. If the
+	 * previous window was destroyed, the current window stays bound. Context objects are movable
+	 * on the application thread but cannot be copied. */
 	class EE_API WindowContext {
 	  public:
 		~WindowContext();
@@ -42,11 +50,14 @@ class EE_API Engine {
 
 	  private:
 		friend class Engine;
+		friend class Scene::SceneNode;
 
-		WindowContext( Engine* engine, EE::Window::Window* window );
+		WindowContext( Engine* engine, EE::Window::Window* window, const Float* density );
+
+		void keepCurrentTarget( const Float* density );
 
 		Engine* mEngine{ nullptr };
-		EE::Window::Window* mPreviousWindow{ nullptr };
+		System::Private::ScopedRestoreTarget<EE::Window::Window> mPreviousWindow;
 		Graphics::PixelDensity::Context mDensityContext;
 	};
 

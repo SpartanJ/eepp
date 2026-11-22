@@ -1,4 +1,5 @@
 #import <AppKit/AppKit.h>
+#import <ApplicationServices/ApplicationServices.h>
 #include <IOKit/graphics/IOGraphicsTypes.h>
 #include <cmath>
 #include <eepp/window/platform/macos/platformhelper.hpp>
@@ -206,6 +207,27 @@ static CGDirectDisplayID getDisplayAtBounds( const Math::Rect& bounds ) {
 	if ( CGGetDisplaysWithPoint( point, 1, &display, &count ) != kCGErrorSuccess || !count )
 		return kCGNullDirectDisplay;
 	return display;
+}
+
+std::string getPersistentDisplayId( const Math::Rect& bounds ) {
+	const auto display = getDisplayAtBounds( bounds );
+	if ( display == kCGNullDirectDisplay )
+		return {};
+	CFUUIDRef uuid = CGDisplayCreateUUIDFromDisplayID( display );
+	if ( !uuid )
+		return {};
+	CFStringRef value = CFUUIDCreateString( kCFAllocatorDefault, uuid );
+	CFRelease( uuid );
+	if ( !value )
+		return {};
+	char text[37];
+	const bool valid = CFStringGetCString( value, text, sizeof( text ), kCFStringEncodingASCII );
+	CFRelease( value );
+	return valid ? std::string( "mac-" ) + text : std::string();
+}
+
+Float getSystemUIFontSize() {
+	return [NSFont systemFontSize];
 }
 
 Float getPhysicalDisplayDPI( const Math::Rect& bounds ) {

@@ -22,6 +22,7 @@ using namespace EE::Graphics;
 using namespace EE::Math;
 using namespace EE::System;
 using namespace EE::UI;
+using EE::Window::DisplayDensityOverrides;
 using EE::Window::PixelDensityMode;
 
 enum class NewTerminalBehavior { CurrentTabBar, VerticalSplit, HorizontalSplit };
@@ -62,6 +63,7 @@ struct FontConfig {
 struct WindowConfig {
 	Float pixelDensity{ 0 };
 	PixelDensityMode pixelDensityMode{ PixelDensityMode::Default };
+	DisplayDensityOverrides displayDensityOverrides;
 	Uint32 maxFPS{ static_cast<Uint32>( ContextSettings::FrameRateLimitScreenRefreshRate ) };
 	bool vsync{ false };
 	bool benchmarkMode{ false };

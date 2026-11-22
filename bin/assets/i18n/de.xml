@@ -1082,6 +1082,14 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="ui_scale_auto_system">Auto (Systemskalierung)</string>
 	<string name="ui_scale_auto_physical">Auto (physische Pixeldichte)</string>
 	<string name="ui_scale_manual">Manuell</string>
+	<string name="ui_display_scale">Skalierung pro Bildschirm</string>
+	<string name="ui_display_scale_desc">Legt die Skalierung verbundener Bildschirme für beide Automatikmodi einzeln fest.</string>
+	<string name="ui_display_scale_configure">Konfigurieren…</string>
+	<string name="ui_display_scale_unavailable">Die Skalierung pro Bildschirm ist in dieser Konfiguration nicht verfügbar.</string>
+	<string name="ui_display_scale_requires_auto">Wählen Sie einen Automatikmodus, um die Skalierung pro Bildschirm zu verwenden.</string>
+	<string name="ui_display_scale_prompt">Wählen Sie einen Bildschirm. Deaktivieren Sie das Kontrollkästchen für die automatische Skalierung.</string>
+	<string name="ui_display_scale_display">Bildschirm</string>
+	<string name="ui_display_scale_custom">Benutzerdefinierte Skalierung</string>
 	<string name="line_spacing_desc">Zusätzlichen vertikalen Abstand zwischen Editorzeilen festlegen. Zum Deaktivieren 0 einstellen.</string>
 	<string name="cursor_blinking_time_desc">Blinkintervall des Textcursors festlegen. Zum Deaktivieren 0 einstellen.</string>
 	<string name="folds_refresh_freq_desc">Häufigkeit der Neuberechnung von Faltungsbereichen festlegen (mindestens 1 Sekunde).</string>

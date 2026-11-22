@@ -708,6 +708,7 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	WindowSettings ws( width, height, "eefm", WindowStyle::Default, WindowBackend::Default, 32,
 					   Sys::getResourcePath( "eefm" ) + windowIcon );
 	ws.DensityMode = mConfig->window.pixelDensityMode;
+	ws.DensityOverrides = mConfig->window.displayDensityOverrides;
 	UIApplication::Settings appSettings;
 	appSettings.exitOnClose = mConfig->window.exitOnClose;
 	appSettings.basePath = Sys::getResourcePath( "eefm" );
