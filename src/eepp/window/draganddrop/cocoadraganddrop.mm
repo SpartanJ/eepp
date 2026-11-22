@@ -197,7 +197,7 @@ void CocoaDragAndDrop::enableFileCopies( void* window ) {
 		// SDL2 requires Generic, but a copy-only source must not offer that operation to Finder:
 		// Finder can interpret it as a move. Accept Copy here and keep SDL's file delivery intact.
 		if ( ( [sender draggingSourceOperationMask] & NSDragOperationCopy ) &&
-			 [[sender draggingPasteboard].types containsObject:NSFilenamesPboardType] )
+			 [[sender draggingPasteboard].types containsObject:NSPasteboardTypeFileURL] )
 			return NSDragOperationCopy;
 		using Handler = NSDragOperation ( * )( id, SEL, id<NSDraggingInfo> );
 		return reinterpret_cast<Handler>( previousHandler )( target, selector, sender );
