@@ -21,6 +21,7 @@
 #include <args/args.hxx>
 #include <array>
 #include <charconv>
+#include <cstdlib>
 #include <cstring>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/system/iostreammemory.hpp>
@@ -1433,7 +1434,13 @@ void App::setFocusEditorOnClose( UIMessageBox* msgBox ) {
 }
 
 DrawablePtr App::findIcon( const std::string& name ) {
-	return findIcon( name, mMenuIconSize );
+	if ( name.empty() )
+		return {};
+	auto context = mUISceneNode->makeCurrent();
+	auto* icon = mUISceneNode->findIcon( name );
+	return icon ? icon->createDrawableDp( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ),
+										  mUISceneNode->getPixelDensity() )
+				: DrawablePtr{};
 }
 
 DrawablePtr App::findIcon( const std::string& name, const size_t iconSize ) {
@@ -2102,6 +2109,7 @@ const SyntaxColorScheme* App::getCurrentColorScheme() const {
 }
 
 void App::setTheme( const std::string& path ) {
+	auto context = mUISceneNode->makeCurrent();
 	UIThemePtr theme;
 
 	if ( path == "syntax_color_scheme" ) {
@@ -2115,13 +2123,15 @@ void App::setTheme( const std::string& path ) {
 	} else {
 		theme = UITheme::load( "uitheme", "uitheme", "", mFont, path );
 	}
-	theme->setDefaultFontSize( mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
+	theme->setDefaultFontSize( mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI ),
+							   mUISceneNode->getPixelDensity() );
 
 	if ( path != getDefaultThemePath() ) {
 		auto style = theme->getStyleSheet().getStyleFromSelector( ":root" );
 		if ( style ) {
 			auto inheritsBaseTheme = style->getVariableByName( "--inherit-base-theme" );
 			if ( !inheritsBaseTheme.isEmpty() ) {
+				theme->getStyleSheet().updateMediaLists( mUISceneNode->getMediaFeatures() );
 				StyleSheetParser parser;
 				parser.loadFromFile( getDefaultThemePath() );
 				for ( auto& tstyle : parser.getStyleSheet().getStyles() ) {
@@ -2831,15 +2841,12 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 							  bool interactiveFileHeaders ) {
 	if ( UIDiffView::isMultiFileDiff( content ) ) {
 		auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" ) + ": " + originalFilePath;
-		UIIcon* icon = getUISceneNode()->findIcon( "filetype-diff" );
-		if ( !icon )
-			icon = getUISceneNode()->findIcon( "file" );
+		auto icon = findIcon( "filetype-diff" );
 
 		auto multiDiff = UIMultiDiffView::New( content, repoPath, mConfig.editor.diffViewMode,
 											   interactiveFileHeaders );
 		auto [tab, iv] = getSplitter()->createWidget( multiDiff, diffViewTitle );
-		if ( icon )
-			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
+		tab->setIcon( icon ? std::move( icon ) : findIcon( "file" ) );
 		tab->setText( diffViewTitle );
 
 		for ( auto* diffView : multiDiff->getDiffViews() ) {
@@ -2863,11 +2870,8 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 	} else {
 		tab->setText( diffViewTitle );
 	}
-	UIIcon* icon = getUISceneNode()->findIcon( "filetype-diff" );
-	if ( !icon )
-		icon = getUISceneNode()->findIcon( "file" );
-	if ( icon )
-		tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
+	auto icon = findIcon( "filetype-diff" );
+	tab->setIcon( icon ? std::move( icon ) : findIcon( "file" ) );
 	diffView->setHeadersVisible( true );
 	diffView->loadFromPatch( content, originalFilePath, oldFilePath );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
@@ -2882,14 +2886,11 @@ void App::loadDiffFromPath( const std::string& path ) {
 	if ( UIDiffView::isMultiFileDiff( content ) ) {
 		auto diffViewTitle =
 			i18n( "diff_viewer", "Diff Viewer" ) + ": " + FileSystem::fileNameFromPath( path );
-		UIIcon* icon = getUISceneNode()->findIcon( "filetype-diff" );
-		if ( !icon )
-			icon = getUISceneNode()->findIcon( "file" );
+		auto icon = findIcon( "filetype-diff" );
 
 		auto multiDiff = UIMultiDiffView::New( content, "", mConfig.editor.diffViewMode );
 		auto [tab, iv] = getSplitter()->createWidget( multiDiff, diffViewTitle );
-		if ( icon )
-			tab->setIcon( icon->createDrawable( getMenuIconSize() ) );
+		tab->setIcon( icon ? std::move( icon ) : findIcon( "file" ) );
 		tab->setText( diffViewTitle );
 
 		for ( auto* diffView : multiDiff->getDiffViews() ) {
@@ -3504,15 +3505,15 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			return;
 		const DocEvent* synEvent = static_cast<const DocEvent*>( event );
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
-		UIIcon* icon = mUISceneNode->findIcon(
+		auto icon = findIcon(
 			UIIconThemeManager::getIconNameFromFileName( synEvent->getDoc()->getFilename() ) );
 		if ( !icon )
-			icon = mUISceneNode->findIcon( "file" );
+			icon = findIcon( "file" );
 		if ( !icon )
 			return;
 		if ( editor->getData() ) {
 			UITab* tab = (UITab*)editor->getData();
-			tab->setIcon( icon->createDrawable( mMenuIconSize ) );
+			tab->setIcon( std::move( icon ) );
 		}
 		editor->getDocument().setHExtLanguageType( mProjectDocConfig.hExtLanguageType );
 
@@ -4138,8 +4139,9 @@ void App::initProjectTreeViewUI() {
 		  FileSystemModel::Inode, FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
 		  FileSystemModel::Permissions, FileSystemModel::ModificationTime, FileSystemModel::Path },
 		true );
-	mProjectTreeView->setIconSize( mMenuIconSize );
-	mProjectTreeView->setExpanderIconSize( mMenuIconSize );
+	const auto iconSize = mConfig.ui.fontSize.toString();
+	mProjectTreeView->setStyleSheetProperty( StyleSheetProperty( "icon-size", iconSize ) );
+	mProjectTreeView->setStyleSheetProperty( StyleSheetProperty( "expander-icon-size", iconSize ) );
 	mProjectTreeView->setExpandedIcon( "folder-open" );
 	mProjectTreeView->setContractedIcon( "folder" );
 	mProjectTreeView->setHeadersVisible( false );
@@ -4723,7 +4725,6 @@ void App::init( InitParameters& params ) {
 	mProfilePath = params.profile.empty() ? Sys::getEnv( "ECODE_CONFIG_PATH" ) : params.profile;
 	mPortableMode = params.portable || !mProfilePath.empty();
 	mDisplayDPI = currentDisplay->getDPI();
-	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
 	mUseFrameBuffer = params.frameBuffer;
 	mBenchmarkMode = params.benchmarkMode;
 	mDisablePlugins = params.disablePlugins;
@@ -4755,19 +4756,24 @@ void App::init( InitParameters& params ) {
 														  : 0 );
 	mDisplayDPI = currentDisplay->getDPI();
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-	const Float displayDensity = currentDisplay->getPixelDensity() > 2
-									 ? currentDisplay->getPixelDensity() / 2
-									 : currentDisplay->getPixelDensity();
-#else
-	const Float displayDensity = currentDisplay->getPixelDensity();
-#endif
 	if ( params.pidelDensity > 0 ) {
 		mConfig.windowState.pixelDensity = params.pidelDensity;
-	} else if ( mConfig.windowState.pixelDensity <= 0 ) {
-		mConfig.windowState.pixelDensity =
-			environmentDensity > 0 ? environmentDensity : displayDensity;
+		mConfig.windowState.useLegacyPixelDensity = false;
 	}
+	Float pixelDensityOverride = mConfig.windowState.pixelDensity;
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	// Use the compact mobile default until an automatic mode or factor is explicitly selected.
+	const char* densityMode = std::getenv( "EEPP_PIXEL_DENSITY_MODE" );
+	const bool useCompactDefault =
+		mConfig.windowState.pixelDensityMode == PixelDensityMode::Default &&
+		( !densityMode || EE::Window::Window::pixelDensityModeFromString( densityMode ) ==
+							  PixelDensityMode::Default );
+	if ( useCompactDefault && pixelDensityOverride <= 0.f &&
+		 PixelDensity::getEnvironmentPixelDensity() <= 0.f ) {
+		const Float displayDensity = currentDisplay->getPixelDensity();
+		pixelDensityOverride = displayDensity > 2.f ? displayDensity / 2.f : displayDensity;
+	}
+#endif
 
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
@@ -4777,7 +4783,11 @@ void App::init( InitParameters& params ) {
 
 	WindowSettings winSettings = engine->createWindowSettings( &mConfig.iniState, "window" );
 	winSettings.Title = "ecode";
-	winSettings.PixelDensity = 1;
+	// Saved window dimensions are native pixels. The UI override is passed separately below.
+	winSettings.PixelDensity = 0;
+	winSettings.DensityMode = mConfig.windowState.pixelDensityMode;
+	winSettings.DensityOverrides = mConfig.windowState.displayDensityOverrides;
+	winSettings.PixelDensityReferencePPI = mConfig.windowState.pixelDensityReferencePPI;
 	winSettings.Width = mConfig.windowState.size.getWidth();
 	winSettings.Height = mConfig.windowState.size.getHeight();
 	if ( winSettings.Icon.empty() ) {
@@ -4895,7 +4905,7 @@ void App::init( InitParameters& params ) {
 		}
 	} );
 
-	mWindow = engine->createWindow( winSettings, mConfig.context );
+	mWindow = engine->createWindow( winSettings, mConfig.context, pixelDensityOverride );
 	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionFullName(),
 			   ecode::Version::getCodename() );
 
@@ -4996,8 +5006,6 @@ void App::init( InitParameters& params ) {
 		// Keep the user's file untouched and start with compiled defaults in memory.
 		if ( !loadKeybindings() )
 			loadKeybindings( true );
-
-		PixelDensity::setPixelDensity( mConfig.windowState.pixelDensity );
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		if ( mConfig.windowState.maximized ) {
@@ -5147,9 +5155,15 @@ void App::init( InitParameters& params ) {
 			}
 		} );
 
-		PixelDensity::setPixelDensity(
-			eemax( mWindow->getScale(), mConfig.windowState.pixelDensity ) );
-
+		if ( mConfig.windowState.useLegacyPixelDensity ) {
+			// Older ecode versions used the startup framebuffer scale as a minimum on HiDPI
+			// displays.
+			const Float backingScale = mWindow->getScale();
+			if ( backingScale > pixelDensityOverride ) {
+				mWindow->setPixelDensityOverride( backingScale );
+				PixelDensity::setPixelDensity( mWindow->getPixelDensity() );
+			}
+		}
 		mUISceneNode = UISceneNode::New( nullptr, true, mThreadPool );
 		mLifetime.setDispatcher( mUISceneNode );
 		mUISceneNode->setThreadPool( mThreadPool );

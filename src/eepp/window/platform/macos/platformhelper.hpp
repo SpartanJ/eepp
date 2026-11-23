@@ -2,7 +2,9 @@
 #define EE_WINDOW_PLATFORM_MACOS_PLATFORMHELPER_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/math/rect.hpp>
 #include <functional>
+#include <string>
 
 namespace EE { namespace Window { namespace Private {
 
@@ -20,6 +22,19 @@ class WindowVisibility {
 };
 
 bool setNativeScrollMomentumEnabled( bool enabled );
+
+std::string getPersistentDisplayId( const Math::Rect& bounds );
+
+Float getSystemUIFontSize();
+
+Math::Sizeu getNativeDisplayPixelSize( const Math::Rect& bounds );
+
+Float getPhysicalDisplayDPI( const Math::Rect& bounds );
+
+Float getDisplayBackingScale( const Math::Rect& bounds );
+
+Float getBackingDisplayDPI( const Math::Rect& bounds, Float windowBackingScale,
+							Float* diagonalInches = nullptr );
 
 bool setWindowTitleBarSeparatorVisible( void* window, bool visible );
 

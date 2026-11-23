@@ -763,10 +763,8 @@ void DebuggerPlugin::buildSidePanelTab() {
 	if ( mTabContents && !mTab ) {
 		if ( mProjectPath.empty() )
 			return;
-		UIIcon* icon = findIcon( "debug" );
-		mTab =
-			mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
-							 icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
+		mTab = mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
+								iconDrawable( "debug", 12.f ) );
 		mTab->setId( "debugger_tab" );
 		mTab->setTextAsFallback( true );
 
@@ -822,11 +820,10 @@ void DebuggerPlugin::buildSidePanelTab() {
 		</vbox>
 	</vbox>
 	)html";
-	UIIcon* icon = findIcon( "debug" );
 	mTabContents =
 		getUISceneNode()->loadLayoutFromString( STYLE, nullptr, String::hash( "debugger_plugin" ) );
 	mTab = mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
-							icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
+							iconDrawable( "debug", 12.f ) );
 	mTab->setId( "debugger_tab" );
 	mTab->setTextAsFallback( true );
 

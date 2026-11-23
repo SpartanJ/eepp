@@ -1232,7 +1232,8 @@ void ProjectBuildManager::buildSidePanelTab() {
 			</ScrollView>
 		)html" );
 	mTab = mSidePanel->add( mUISceneNode->i18n( "build", "Build" ), node,
-							icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
+							icon ? icon->createDrawableDp( 12.f, mUISceneNode->getPixelDensity() )
+								 : nullptr );
 	mTab->setId( "build_tab" );
 	mTab->setTextAsFallback( true );
 

@@ -24,6 +24,8 @@ SceneManager::~SceneManager() {
 	}
 
 	mSceneNodes.clear();
+	if ( existsSingleton() == this )
+		System::Private::ScopedRestoreTarget<SceneNode>::invalidateAll();
 }
 
 SceneNode* SceneManager::add( SceneNode* sceneNode ) {

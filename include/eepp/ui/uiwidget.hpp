@@ -1636,16 +1636,20 @@ class EE_API UIWidget : public UINode {
 	friend class AccessibilityWidgetResolver;
 	friend class UIStyle;
 
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	// Keep byte-sized members first so they can reuse UINode's tail padding.
 	mutable bool mIntrinsicWidthsDirty{ true };
 	Uint8 mCursor{ static_cast<Uint8>( Cursor::Arrow ) };
 	Uint8 mMarginAuto{ 0 };
 	bool mApplyingLogicalEdge{ false };
+	// Low four bits are padding; high four bits are margins (left/right/top/bottom).
+	Uint8 mPhysicalEdges{ 0 };
 	std::string mTag;
 	UITheme* mTheme;
 	UIStyle* mStyle;
 	UITooltip* mTooltip;
-	Rect mDistToBorder;
+	Rectf mAnchorDistancesDp;
 	Rectf mLayoutMargin;
 	Rectf mLayoutMarginPx;
 	Rectf mPadding;

@@ -95,7 +95,6 @@ void SettingsPanel::create( Scope scope ) {
 				mApp->saveProject();
 			state.reset();
 		} );
-	state.window->center();
 	state.window->showWhenReady();
 	state.panel->focusSearch();
 }
@@ -994,14 +993,15 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 		[this]( const StyleSheetLength& size ) {
 			mApp->getSettingsActions()->setTerminalFontSize( size );
 		} );
-	addFloat(
-		panel,
-		{ "uiScaleFactor", "appearance.fonts", mApp->i18n( "ui_scale_factor", "UI Scale Factor" ),
-		  mApp->i18n( "ui_scale_factor_desc",
-					  "Scale the complete user interface from 1 to 6. Restart required." ) },
-		1, 6, 0.1,
-		[this] { return std::max<Float>( 1, mApp->getConfig().windowState.pixelDensity ); },
-		[this]( double value ) { mApp->getConfig().windowState.pixelDensity = value; } );
+	auto& windowState = mApp->getConfig().windowState;
+	panel.panel->addUIScaleSettings(
+		"appearance.fonts", mApp->getWindow(), windowState.pixelDensity,
+		windowState.pixelDensityMode,
+		[this] {
+			mApp->getConfig().windowState.useLegacyPixelDensity = false;
+			mApp->saveConfig();
+		},
+		&windowState.displayDensityOverrides );
 	addBool( panel,
 			 { "editorFontInInputFields", "appearance.fonts",
 			   mApp->i18n( "editor_font_in_input_fields", "Editor Font in Input Fields" ),

@@ -27,6 +27,24 @@ void updateSpinBoxLayout( UIApplication& app ) {
 
 } // namespace
 
+UTEST( SpinBox, DisplaysOnlyMeaningfulDecimalDigits ) {
+	UIApplication app(
+		EE::Window::WindowSettings( 800, 600, "Spinbox decimal formatting" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	ASSERT_NE( nullptr, app.getUI() );
+	auto* spin = UISpinBox::New();
+	spin->setParent( app.getUI()->getRoot() );
+	spin->allowFloatingPoint( true );
+	spin->setValue( 10.0 );
+	EXPECT_STDSTREQ( "10", spin->getTextInput()->getText().toUtf8() );
+	spin->setValue( 1.2 );
+	EXPECT_STDSTREQ( "1.2", spin->getTextInput()->getText().toUtf8() );
+	spin->setValue( 1.25 );
+	EXPECT_STDSTREQ( "1.25", spin->getTextInput()->getText().toUtf8() );
+	spin->setValue( 1.234567 );
+	EXPECT_STDSTREQ( "1.234567", spin->getTextInput()->getText().toUtf8() );
+}
+
 UTEST( SpinBoxSizing, WrappedHeightFollowsLiveFontAndInputPaddingChanges ) {
 	for ( Float density : { 1.f, 2.f } ) {
 		UIApplication app( WindowSettings( 800, 600, "Wrapped spinbox sizing" ),

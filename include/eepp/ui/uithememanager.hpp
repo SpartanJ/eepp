@@ -4,10 +4,12 @@
 #include <eepp/graphics/resourcescope.hpp>
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uitheme.hpp>
+#include <optional>
 
 namespace EE { namespace UI {
 
 class UINode;
+class UISceneNode;
 
 class EE_API UIThemeManager {
   public:
@@ -29,9 +31,14 @@ class EE_API UIThemeManager {
 
 	Font* getDefaultFont() const;
 
+	/** Sets the manager's font size in pixels at its current density, overriding the theme default.
+	 * The size scales with subsequent density changes and applies only to this manager. */
 	UIThemeManager* setDefaultFontSize( const Float& fontSize );
 
 	const Float& getDefaultFontSize() const;
+
+	/** Refreshes this scene's resolved defaults without modifying its shared theme. */
+	void onPixelDensityChange( Float density );
 
 	UIThemeManager* setDefaultTheme( UITheme* Theme );
 
@@ -80,7 +87,9 @@ class EE_API UIThemeManager {
 
   protected:
 	Font* mFont;
-	Float mFontSize;
+	mutable Float mFontSize;
+	Float mFallbackFontSizeDp{ 12.f };
+	Float mPixelDensity;
 	UIThemePtr mThemeDefault;
 	UnorderedMap<String::HashType, UIThemePtr> mThemes;
 	bool mAutoApplyDefaultTheme;
@@ -96,6 +105,10 @@ class EE_API UIThemeManager {
 	Graphics::ResourceScopePtr mResourceScope;
 
 	UIThemeManager();
+
+  private:
+	friend class UISceneNode;
+	std::optional<Float> mDefaultFontSizeOverrideDp;
 };
 
 }} // namespace EE::UI

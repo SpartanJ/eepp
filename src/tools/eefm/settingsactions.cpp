@@ -230,18 +230,10 @@ void SettingsActions::showSettings() {
 			applyUIFont( nullptr, mApp.config().font.uiSize );
 			savePreferences();
 		} );
-	panel->addFloat(
-		{ "uiScaleFactor", "appearance.fonts", mUI->i18n( "eefm_ui_scale", "UI Scale Factor" ),
-		  mUI->i18n( "eefm_ui_scale_desc", "Scale the whole interface. Restart required." ) },
-		1, 6, 0.1,
-		[this] {
-			return mApp.config().window.pixelDensity > 0 ? mApp.config().window.pixelDensity
-														 : PixelDensity::getPixelDensity();
-		},
-		[this]( double value ) {
-			mApp.config().window.pixelDensity = value;
-			savePreferences();
-		} );
+	panel->addUIScaleSettings(
+		"appearance.fonts", mApp.window(), mApp.config().window.pixelDensity,
+		mApp.config().window.pixelDensityMode, [this] { savePreferences(); },
+		&mApp.config().window.displayDensityOverrides );
 	panel->addChoice(
 		{ "fontHinting", "appearance.fonts", mUI->i18n( "eefm_font_hinting", "Font Hinting" ),
 		  mUI->i18n( "eefm_font_hinting_desc", "Align glyphs to the pixel grid." ) },

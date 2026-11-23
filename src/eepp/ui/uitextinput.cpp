@@ -59,11 +59,7 @@ UITextInput::UITextInput( const std::string& tag ) :
 		}
 	}
 
-	if ( NULL != theme ) {
-		setHintFontSize( theme->getDefaultFontSize() );
-	} else {
-		setHintFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
-	}
+	setHintFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 
 	subscribeScheduledUpdate();
 
@@ -78,6 +74,12 @@ UITextInput::UITextInput( const std::string& tag ) :
 }
 
 UITextInput::UITextInput() : UITextInput( "textinput" ) {}
+
+void UITextInput::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	const Float hintSize = getHintFontSize();
+	UITextView::onPixelDensityChange( oldDensity, newDensity );
+	setHintFontSize( fontSizeForPixelDensityChange( hintSize, oldDensity, newDensity ) );
+}
 
 UITextInput::~UITextInput() {
 	eeSAFE_DELETE( mHintCache );

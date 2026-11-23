@@ -401,6 +401,14 @@ void UIPushButton::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
+void UIPushButton::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UIWidget::onPixelDensityChange( oldDensity, newDensity );
+	if ( mIcon ) {
+		if ( auto icon = UIIcon::recreateDrawableForDensity( mIcon->getDrawable(), newDensity ) )
+			setIcon( std::move( icon ) );
+	}
+}
+
 void UIPushButton::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 	setThemeSkin( Theme, "button" );

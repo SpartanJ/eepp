@@ -5,9 +5,7 @@
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/texturedrawable.hpp>
-#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/network/http.hpp>
-#include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
 #include <eepp/ui/uirichtext.hpp>
@@ -17,41 +15,7 @@
 #include <eepp/window/engine.hpp>
 #include <pugixml/pugixml.hpp>
 
-#include <mutex>
-
 namespace EE { namespace UI {
-
-namespace {
-
-std::string getTextureCacheName( const Network::URI& uri ) {
-	std::string filePath( uri.toString() );
-	if ( String::startsWith( filePath, "file://" ) )
-		filePath = filePath.substr( 7 );
-	else
-		filePath = uri.getFSPath();
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	if ( filePath.size() >= 3 && filePath[0] == '/' && String::isLetter( filePath[1] ) &&
-		 filePath[2] == ':' )
-		filePath = filePath.substr( 1 );
-#endif
-	FileSystem::filePathRemoveProcessPath( filePath );
-	return filePath;
-}
-
-TexturePtr loadFileTextureCached( const ResourceScopePtr& scope, const std::string& filePath,
-								  const std::string& cacheName ) {
-	static std::mutex loadMutex;
-	std::lock_guard<std::mutex> lock( loadMutex );
-	if ( TexturePtr texture = scope->findTexture( cacheName ) )
-		return texture;
-	TexturePtr texture = TextureFactory::instance()->loadFromFile(
-		filePath, false, Texture::ClampMode::ClampToEdge, false, false );
-	if ( texture )
-		scope->publishLocal( cacheName, texture );
-	return texture;
-}
-
-} // namespace
 
 UIHTMLImage* UIHTMLImage::New() {
 	return eeNew( UIHTMLImage, () );
@@ -134,6 +98,7 @@ const DrawablePtr& UIHTMLImage::getDrawable() const {
 UIHTMLImage* UIHTMLImage::setDrawable( DrawablePtr drawable ) {
 	if ( drawable == mDrawable )
 		return this;
+	++mRemoteImageLoadId;
 	Sizef oldSize( mSize );
 	clearDrawable();
 	mDrawable = std::move( drawable );
@@ -191,6 +156,7 @@ bool UIHTMLImage::applyProperty( const StyleSheetProperty& property ) {
 	const PropertyId propertyId = property.getPropertyDefinition()->getPropertyId();
 	switch ( propertyId ) {
 		case PropertyId::Src: {
+			++mRemoteImageLoadId;
 			if ( property.getValue().empty() )
 				return true;
 			std::string path( property.getValue() );
@@ -270,7 +236,8 @@ bool UIHTMLImage::applyProperty( const StyleSheetProperty& property ) {
 Float UIHTMLImage::getMinIntrinsicWidth() const {
 	if ( mWidthPolicy == SizePolicy::Fixed )
 		return getPropertyWidth();
-	return ( getDrawable() ? getDrawable()->getMinIntrinsicWidth() * PixelDensity::getPixelDensity()
+	return ( getDrawable() ? getDrawable()->getMinIntrinsicWidth() *
+								 PixelDensity::getPixelDensity() / getDrawable()->getRasterScale()
 						   : 0.f ) +
 		   mPaddingPx.Left + mPaddingPx.Right;
 }
@@ -278,7 +245,8 @@ Float UIHTMLImage::getMinIntrinsicWidth() const {
 Float UIHTMLImage::getMaxIntrinsicWidth() const {
 	if ( mWidthPolicy == SizePolicy::Fixed )
 		return getPropertyWidth();
-	return ( getDrawable() ? getDrawable()->getMaxIntrinsicWidth() * PixelDensity::getPixelDensity()
+	return ( getDrawable() ? getDrawable()->getMaxIntrinsicWidth() *
+								 PixelDensity::getPixelDensity() / getDrawable()->getRasterScale()
 						   : 0.f ) +
 		   mPaddingPx.Left + mPaddingPx.Right;
 }
@@ -327,8 +295,10 @@ UIHTMLImage* UIHTMLImage::setScaleType( const UIScaleType& type ) {
 }
 
 void UIHTMLImage::autoSizeImage() {
-	Sizef drawableSize =
-		mDrawable ? mDrawable->getPixelsSize() * PixelDensity::getPixelDensity() : Sizef::Zero;
+	Sizef drawableSize = mDrawable
+							 ? mDrawable->getPixelsSize() *
+								   ( PixelDensity::getPixelDensity() / mDrawable->getRasterScale() )
+							 : Sizef::Zero;
 	if ( drawableSize.x <= 0.f || drawableSize.y <= 0.f )
 		return;
 	Sizef size = getPixelsSize();
@@ -489,41 +459,15 @@ void UIHTMLImage::onDrawableResourceChange() {
 
 bool UIHTMLImage::loadFileDrawable( const Network::URI& uri ) {
 	UISceneNode* scene = getUISceneNode();
-	if ( !scene || !scene->getThreadPool() ||
-		 !EE::Window::Engine::instance()->isSharedGLContextEnabled() )
+	if ( !scene || !scene->hasThreadPool() )
 		return false;
-	Uint64 loadId = ++mRemoteImageLoadId;
-	std::string filePath = uri.getFSPath();
-	std::string cacheName = getTextureCacheName( uri );
-	ResourceScopePtr resourceScope = scene->getResourceScope();
-	if ( TexturePtr texture = resourceScope->findTexture( cacheName ) ) {
-		setDrawable( std::move( texture ) );
-		return true;
-	}
-	auto resourceState = scene->getAsyncResourceLoadState();
-	Uint64 generation =
-		resourceState ? resourceState->generation.load( std::memory_order_acquire ) : 0;
 	if ( !mAsyncImageAlive )
 		mAsyncImageAlive = std::make_shared<std::atomic<bool>>( true );
-	auto alive = mAsyncImageAlive;
-	scene->getThreadPool()->run( [resourceState, generation, resourceScope, alive, loadId,
-								  filePath = std::move( filePath ),
-								  cacheName = std::move( cacheName ), this] {
-		if ( !UISceneNode::isAsyncResourceLoadCurrent( resourceState, generation ) || !alive ||
-			 !alive->load( std::memory_order_acquire ) )
-			return;
-		TexturePtr texture = loadFileTextureCached( resourceScope, filePath, cacheName );
-		if ( !texture )
-			return;
-		UISceneNode::runAsyncResourceOnMainThread(
-			resourceState, generation, [alive, loadId, texture, this]( UISceneNode* ) mutable {
-				if ( !alive || !alive->load( std::memory_order_acquire ) ||
-					 loadId != mRemoteImageLoadId )
-					return;
+	return scene->getDrawableResolver().requestFileTexture(
+		uri, [alive = mAsyncImageAlive, loadId = mRemoteImageLoadId, this]( TexturePtr texture ) {
+			if ( alive->load( std::memory_order_acquire ) && loadId == mRemoteImageLoadId )
 				setDrawable( std::move( texture ) );
-			} );
-	} );
-	return true;
+		} );
 }
 
 void UIHTMLImage::loadRemoteDrawable( const Network::URI& uri ) {
@@ -536,10 +480,8 @@ void UIHTMLImage::loadRemoteDrawable( const Network::URI& uri ) {
 			mDrawable && mDrawable->getDrawableType() == Drawable::TEXTUREDRAWABLE
 				? static_cast<TextureDrawable*>( mDrawable.get() )
 				: nullptr;
-		if ( !current || current->getTexture() != texture ) {
-			++mRemoteImageLoadId;
+		if ( !current || current->getTexture() != texture )
 			setDrawable( std::move( texture ) );
-		}
 		return;
 	}
 	WebResourceRequest request;
@@ -557,10 +499,8 @@ void UIHTMLImage::loadRemoteDrawable( const Network::URI& uri ) {
 			mDrawable && mDrawable->getDrawableType() == Drawable::TEXTUREDRAWABLE
 				? static_cast<TextureDrawable*>( mDrawable.get() )
 				: nullptr;
-		if ( !current || current->getTexture() != texture ) {
-			++mRemoteImageLoadId;
+		if ( !current || current->getTexture() != texture )
 			setDrawable( std::move( texture ) );
-		}
 	}
 }
 

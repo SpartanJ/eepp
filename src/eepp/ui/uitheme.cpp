@@ -302,6 +302,7 @@ UITheme::UITheme( const std::string& name, const std::string& Abbr, Graphics::Fo
 	mTextureAtlas(),
 	mDefaultFont( defaultFont ),
 	mDefaultFontSize( PixelDensity::dpToPx( PixelDensity::getPixelDensity() > 1.4 ? 11 : 12 ) ),
+	mDefaultFontDensity( PixelDensity::getPixelDensity() ),
 	mIconTheme( UIIconTheme::New( name ) ),
 	mResourceCatalog( ResourceCatalog::New() ) {}
 
@@ -391,7 +392,16 @@ const Float& UITheme::getDefaultFontSize() const {
 }
 
 void UITheme::setDefaultFontSize( const Float& defaultFontSize ) {
+	setDefaultFontSize( defaultFontSize, PixelDensity::getPixelDensity() );
+}
+
+void UITheme::setDefaultFontSize( const Float& defaultFontSize, Float density ) {
 	mDefaultFontSize = defaultFontSize;
+	mDefaultFontDensity = std::isfinite( density ) && density > 0.f ? density : 1.f;
+}
+
+Float UITheme::getDefaultFontSizeDp() const {
+	return mDefaultFontSize / mDefaultFontDensity;
 }
 
 UIIconTheme* UITheme::getIconTheme() const {

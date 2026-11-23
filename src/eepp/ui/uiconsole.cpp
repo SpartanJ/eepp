@@ -78,6 +78,11 @@ UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& a
 	subscribeScheduledUpdate();
 }
 
+void UIConsole::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UIWidget::onPixelDensityChange( oldDensity, newDensity );
+	setFontSize( fontSizeForPixelDensityChange( getFontSize(), oldDensity, newDensity ) );
+}
+
 UIConsole::~UIConsole() {
 	if ( Log::existsSingleton() )
 		Log::instance()->removeLogReader( this );

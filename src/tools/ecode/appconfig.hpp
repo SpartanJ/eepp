@@ -90,9 +90,13 @@ struct UIConfig {
 
 struct WindowStateConfig {
 	Float pixelDensity{ 0 };
+	Float pixelDensityReferencePPI{ 0 };
 	Sizei size{ 1280, 720 };
 	std::string winIcon;
 	bool maximized{ false };
+	bool useLegacyPixelDensity{ false };
+	PixelDensityMode pixelDensityMode{ PixelDensityMode::Default };
+	DisplayDensityOverrides displayDensityOverrides;
 	std::string panelPartition;
 	std::string statusBarPartition;
 	std::string rightPanelPartition{ "75%" };

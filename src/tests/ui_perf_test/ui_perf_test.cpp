@@ -209,8 +209,6 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		return EXIT_FAILURE;
 
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-	PixelDensity::setPixelDensity(
-		Engine::instance()->getDisplayManager()->getDisplayIndex( 0 )->getPixelDensity() );
 	auto fontHandle = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
 	auto iconFontHandle = FontTrueType::New( "icon", "assets/fonts/remixicon.ttf" );
 	FontTrueType* font = fontHandle.get();

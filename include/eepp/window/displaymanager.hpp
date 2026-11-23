@@ -21,6 +21,12 @@ class EE_API Display {
 
 	virtual Float getDPI() = 0;
 
+	/** Physical pixels per inch, independent of the desktop UI scale; zero if unavailable. */
+	virtual Float getPhysicalDPI();
+
+	/** Native identity suitable for persisted settings, or empty when unavailable. */
+	virtual std::string getPersistentId() const;
+
 	virtual const int& getIndex() const = 0;
 
 	virtual DisplayMode getCurrentMode() const = 0;
@@ -32,6 +38,9 @@ class EE_API Display {
 	virtual Uint32 getRefreshRate() const = 0;
 
 	virtual Sizeu getSize() const = 0;
+
+	/** Native panel dimensions in pixels when available, otherwise the current display mode. */
+	Sizeu getNativePixelSize() const;
 
 	virtual ~Display();
 

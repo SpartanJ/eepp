@@ -1,4 +1,7 @@
 #import <AppKit/AppKit.h>
+#import <ApplicationServices/ApplicationServices.h>
+#include <IOKit/graphics/IOGraphicsTypes.h>
+#include <cmath>
 #include <eepp/window/platform/macos/platformhelper.hpp>
 #import <objc/runtime.h>
 
@@ -194,6 +197,112 @@ bool setWindowTitleBarSeparatorVisible( void* window, bool visible ) {
 		return true;
 	}
 	return false;
+}
+
+static CGDirectDisplayID getDisplayAtBounds( const Math::Rect& bounds ) {
+	CGDirectDisplayID display = 0;
+	uint32_t count = 0;
+	const CGPoint point =
+		CGPointMake( bounds.Left + bounds.getWidth() / 2, bounds.Top + bounds.getHeight() / 2 );
+	if ( CGGetDisplaysWithPoint( point, 1, &display, &count ) != kCGErrorSuccess || !count )
+		return kCGNullDirectDisplay;
+	return display;
+}
+
+std::string getPersistentDisplayId( const Math::Rect& bounds ) {
+	const auto display = getDisplayAtBounds( bounds );
+	if ( display == kCGNullDirectDisplay )
+		return {};
+	CFUUIDRef uuid = CGDisplayCreateUUIDFromDisplayID( display );
+	if ( !uuid )
+		return {};
+	CFStringRef value = CFUUIDCreateString( kCFAllocatorDefault, uuid );
+	CFRelease( uuid );
+	if ( !value )
+		return {};
+	char text[37];
+	const bool valid = CFStringGetCString( value, text, sizeof( text ), kCFStringEncodingASCII );
+	CFRelease( value );
+	return valid ? std::string( "mac-" ) + text : std::string();
+}
+
+Float getSystemUIFontSize() {
+	return [NSFont systemFontSize];
+}
+
+static Math::Sizeu getNativeDisplayPixelSize( CGDirectDisplayID display ) {
+	if ( display == kCGNullDirectDisplay )
+		return {};
+	// Scaled desktop modes can render at a different resolution than the panel itself.
+	CGDisplayModeRef mode = nullptr;
+	if ( CFArrayRef modes = CGDisplayCopyAllDisplayModes( display, nullptr ) ) {
+		const CFIndex count = CFArrayGetCount( modes );
+		for ( CFIndex i = 0; i < count; ++i ) {
+			auto candidate = static_cast<CGDisplayModeRef>(
+				const_cast<void*>( CFArrayGetValueAtIndex( modes, i ) ) );
+			if ( CGDisplayModeGetIOFlags( candidate ) & kDisplayModeNativeFlag ) {
+				mode = CGDisplayModeRetain( candidate );
+				break;
+			}
+		}
+		CFRelease( modes );
+	}
+	if ( !mode )
+		mode = CGDisplayCopyDisplayMode( display );
+	if ( !mode )
+		return {};
+	const auto width = CGDisplayModeGetPixelWidth( mode );
+	const auto height = CGDisplayModeGetPixelHeight( mode );
+	CGDisplayModeRelease( mode );
+	return { static_cast<Uint32>( width ), static_cast<Uint32>( height ) };
+}
+
+Math::Sizeu getNativeDisplayPixelSize( const Math::Rect& bounds ) {
+	return getNativeDisplayPixelSize( getDisplayAtBounds( bounds ) );
+}
+
+Float getPhysicalDisplayDPI( const Math::Rect& bounds ) {
+	const auto display = getDisplayAtBounds( bounds );
+	if ( display == kCGNullDirectDisplay )
+		return 0.f;
+	const CGSize size = CGDisplayScreenSize( display );
+	if ( size.width <= 0 || size.height <= 0 )
+		return 0.f;
+	const auto pixels = getNativeDisplayPixelSize( display );
+	if ( !pixels.x || !pixels.y )
+		return 0.f;
+	return 25.4f * std::hypot( static_cast<Float>( pixels.x ), static_cast<Float>( pixels.y ) ) /
+		   std::hypot( static_cast<Float>( size.width ), static_cast<Float>( size.height ) );
+}
+
+Float getDisplayBackingScale( const Math::Rect& bounds ) {
+	const auto display = getDisplayAtBounds( bounds );
+	if ( display != kCGNullDirectDisplay ) {
+		for ( NSScreen* screen in [NSScreen screens] ) {
+			NSNumber* screenNumber = [screen deviceDescription][@"NSScreenNumber"];
+			if ( screenNumber && [screenNumber unsignedIntValue] == display )
+				return [screen backingScaleFactor];
+		}
+	}
+	return 1.f;
+}
+
+Float getBackingDisplayDPI( const Math::Rect& bounds, Float windowBackingScale,
+							Float* diagonalInches ) {
+	const auto display = getDisplayAtBounds( bounds );
+	if ( display == kCGNullDirectDisplay || !std::isfinite( windowBackingScale ) ||
+		 windowBackingScale <= 0.f )
+		return 0.f;
+	const CGSize millimeters = CGDisplayScreenSize( display );
+	const CGSize points = CGDisplayBounds( display ).size;
+	if ( millimeters.width <= 0 || millimeters.height <= 0 || points.width <= 0 ||
+		 points.height <= 0 )
+		return 0.f;
+	const auto diagonalMm = std::hypot( millimeters.width, millimeters.height );
+	if ( diagonalInches )
+		*diagonalInches = diagonalMm / 25.4;
+	// The compositor can map these backing pixels to a different number of panel pixels.
+	return 25.4f * windowBackingScale * std::hypot( points.width, points.height ) / diagonalMm;
 }
 
 bool setWindowTitleBarColor( void* window, Uint8 red, Uint8 green, Uint8 blue ) {

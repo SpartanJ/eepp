@@ -6,7 +6,93 @@
 
 namespace EE { namespace Graphics {
 
+namespace {
+
+thread_local PixelDensity::Context* sCurrentContext = nullptr;
+thread_local Float sScopedPixelDensity = 0.f;
+
+} // namespace
+
 Float PixelDensity::sPixelDensity = 1.f;
+
+PixelDensity::Context::Context( Float density, const Float* source, bool target ) :
+	mPrevious( sCurrentContext ),
+	mSource( source ),
+	mDensity( std::isfinite( density ) && density > 0.f ? density : 0.f ),
+	mTargetBinding( target ) {
+	sCurrentContext = this;
+	sScopedPixelDensity = mDensity;
+}
+
+PixelDensity::Context::~Context() {
+	restore();
+}
+
+PixelDensity::Context::Context( Context&& other ) noexcept :
+	mPrevious( other.mPrevious ),
+	mSource( other.mSource ),
+	mDensity( other.mDensity ),
+	mActive( other.mActive ),
+	mTargetBinding( other.mTargetBinding ) {
+	if ( mActive )
+		other.findIncomingLink() = this;
+	other.mActive = false;
+}
+
+PixelDensity::Context*& PixelDensity::Context::findIncomingLink() {
+	if ( sCurrentContext == this )
+		return sCurrentContext;
+	auto* newer = sCurrentContext;
+	while ( newer->mPrevious != this )
+		newer = newer->mPrevious;
+	return newer->mPrevious;
+}
+
+void PixelDensity::Context::restore() {
+	if ( mActive ) {
+		const bool wasCurrent = sCurrentContext == this;
+		findIncomingLink() = mPrevious;
+		if ( wasCurrent )
+			sScopedPixelDensity = mPrevious ? mPrevious->mDensity : 0.f;
+		mActive = false;
+	}
+}
+
+void PixelDensity::Context::restoreKeepingTarget( const Float* source ) {
+	if ( mActive && sCurrentContext == this ) {
+		for ( auto* previous = mPrevious; previous; previous = previous->mPrevious ) {
+			if ( !previous->mTargetBinding )
+				continue;
+			// Keep the enclosing scene/window density on the live target. Explicit
+			// density scopes keep their own values until they unwind.
+			previous->mSource = source;
+			previous->mDensity =
+				source && std::isfinite( *source ) && *source > 0.f ? *source : 0.f;
+			break;
+		}
+	}
+	restore();
+}
+
+PixelDensity::Context PixelDensity::makeCurrent( Float density ) {
+	return Context( density );
+}
+
+PixelDensity::Context PixelDensity::bindCurrent( const Float* density ) {
+	return Context( density ? *density : 0.f, density );
+}
+
+void PixelDensity::snapshotBindings( const Float* source ) {
+	// Suspended contexts must also stop borrowing the value before they become current again.
+	for ( auto* context = sCurrentContext; context; context = context->mPrevious ) {
+		if ( context->mSource == source ) {
+			context->mDensity = std::isfinite( *source ) && *source > 0.f ? *source : 0.f;
+			context->mSource = nullptr;
+			if ( context == sCurrentContext )
+				sScopedPixelDensity = context->mDensity;
+		}
+	}
+}
 
 Float PixelDensity::toFloat( PixelDensitySize pd ) {
 	switch ( pd ) {
@@ -65,7 +151,11 @@ PixelDensitySize PixelDensity::fromDPI( Float dpi ) {
 }
 
 const Float& PixelDensity::getPixelDensity() {
-	return sPixelDensity;
+	if ( sCurrentContext ) {
+		if ( const Float* source = sCurrentContext->mSource )
+			return *source > 0.f && std::isfinite( *source ) ? *source : sPixelDensity;
+	}
+	return sScopedPixelDensity > 0.f ? sScopedPixelDensity : sPixelDensity;
 }
 
 Float PixelDensity::getEnvironmentPixelDensity() {

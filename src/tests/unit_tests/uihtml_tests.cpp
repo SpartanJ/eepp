@@ -6230,8 +6230,7 @@ UTEST( UIBackground, imageAtlasPositioningPixelDensity2 ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 653, "Background Atlas Test PD2", VisualTestWindowStyle,
 						WindowBackend::Default, 32, {}, 1, false, true ),
-		ContextSettings( false, 0, 0, GLv_default, true, false ) );
-	EE::Graphics::PixelDensity::setPixelDensity( 2.0f );
+		ContextSettings( false, 0, 0, GLv_default, true, false ), 2.f );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 	UISceneNode* sceneNode = init_test_inline_block();

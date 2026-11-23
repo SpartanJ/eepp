@@ -1,14 +1,19 @@
 #include <algorithm>
+#include <cmath>
 #include <deque>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/databinding/uibindinggroup.hpp>
 #include <eepp/ui/databinding/uidatabind.hpp>
 #include <eepp/ui/models/itemlistmodel.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicombobox.hpp>
+#include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uidropdownmodellist.hpp>
+#include <eepp/ui/uilistbox.hpp>
+#include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
@@ -18,6 +23,9 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/engine.hpp>
+#include <eepp/window/runtime.hpp>
+#include <eepp/window/window.hpp>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -214,6 +222,37 @@ static constexpr const char* SETTINGS_PANEL_LAYOUT = R"xml(
 	margin-left: 20dp;
 	layout-gravity: center_vertical;
 }
+.settings_panel .settings_option_content {
+	orientation: horizontal;
+}
+.settings_panel .settings_option_content > #setting_info {
+	layout-width: 0dp;
+	layout-weight: 1;
+}
+.settings_panel .settings_option_content > #setting_control {
+	layout-width: wrap_content;
+	margin-top: 0dp;
+}
+@media (max-width: 700dp) {
+	.settings_panel .settings_option_content {
+		orientation: vertical;
+	}
+	.settings_panel .settings_option_content > #setting_info {
+		layout-width: match_parent;
+		layout-weight: 0;
+	}
+	.settings_panel .settings_option_content > #setting_control {
+		layout-width: match_parent;
+		margin-left: 0dp;
+		margin-top: 8dp;
+		layout-gravity: left;
+	}
+	.settings_panel .settings_choice,
+	.settings_panel .settings_editable_choice,
+	.settings_panel .settings_text {
+		layout-width: match_parent;
+	}
+}
 .settings_panel .settings_bool,
 .settings_panel .settings_action {
 	layout-width: wrap_content;
@@ -275,11 +314,11 @@ static std::string settingsRowLayout( std::string_view control ) {
 	return R"xml(
 <vbox lw="mp" lh="wc" class="settings_option">
 	<hbox lw="mp" lh="wc" class="settings_option_content">
-		<vbox id="setting_info" lw="0" lw8="1" lh="wc">
+		<vbox id="setting_info" lh="wc">
 			<TextView id="setting_name" lw="mp" lh="wc" class="settings_option_name" focusable="false" />
 			<TextView id="setting_description" lw="mp" lh="wc" class="settings_option_description" focusable="false" />
 		</vbox>
-		<hbox id="setting_control" lw="wc" lh="wc" class="settings_option_control">
+		<hbox id="setting_control" lh="wc" class="settings_option_control">
 )xml" + std::string( control ) +
 		   R"xml(
 		</hbox>
@@ -415,18 +454,66 @@ bool SettingsModel::hasCategory( const std::string& id ) const {
 						[&id]( const auto& item ) { return item.id == id; } );
 }
 
+namespace {
+
+class SettingsPanelWindow final : public UIWindow {
+  public:
+	SettingsPanelWindow( const String& title, const std::string& id ) :
+		UIWindow( SIMPLE_LAYOUT, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL ) {
+		setId( id );
+		setTitle( title );
+		auto* scene = getUISceneNode();
+		const auto viewport = scene->getViewportPixelsSize();
+		setPixelsSize(
+			{ std::min( viewport.x * 0.9f,
+						PixelDensity::dpToPx( SettingsSidebarWidthDp + SettingsRowsMaxWidthDp ) ),
+			  std::min( viewport.y * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
+		mLayoutReady =
+			scene->connect( Event::OnLayoutReady, [this]( const Event* ) { fitInViewport(); } );
+		fitInViewport();
+	}
+
+  private:
+	EventConnection mLayoutReady;
+	Sizef mViewport;
+	Float mDensity{ 0.f };
+	Uint32 mDisplayMetricsVersion{ 0 };
+
+	void fitInViewport() {
+		if ( isClosing() )
+			return;
+		auto* scene = getUISceneNode();
+		const auto viewport = scene->getViewportPixelsSize();
+		const auto density = scene->getPixelDensity();
+		const auto version = scene->getWindow()->getDisplayMetricsVersion();
+		if ( viewport.x <= 0.f || viewport.y <= 0.f ||
+			 ( viewport == mViewport && density == mDensity && version == mDisplayMetricsVersion ) )
+			return;
+		mViewport = viewport;
+		mDensity = density;
+		mDisplayMetricsVersion = version;
+
+		const auto viewportDp = PixelDensity::pxToDp( viewport );
+		const auto decoration = getSize() - getSizeWithoutDecoration();
+		const auto available = viewportDp - decoration;
+		setMinWindowSize(
+			std::max( 0.f, std::min( { 640.f, viewportDp.x * 0.9f, available.x } ) ),
+			std::max( 0.f, std::min( { 440.f, viewportDp.y * 0.8f, available.y } ) ) );
+		const auto size = getPixelsSize();
+		if ( size.x > viewport.x || size.y > viewport.y ) {
+			setPixelsSize( size.x > viewport.x ? std::floor( viewport.x * 0.9f ) : size.x,
+						   size.y > viewport.y ? std::floor( viewport.y * 0.9f ) : size.y );
+		}
+		const auto offset = ( viewport - getPixelsSize() ) * 0.5f;
+		setPixelsPosition( std::max( 0.f, std::floor( offset.x ) ),
+						   std::max( 0.f, std::floor( offset.y ) ) );
+	}
+};
+
+} // namespace
+
 UIWindow* UISettingsPanel::NewWindow( const String& title, const std::string& id ) {
-	UIWindow::StyleConfig style{ UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL };
-	auto* window = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, style );
-	window->setId( id );
-	window->setTitle( title );
-	const auto sceneSize = window->getUISceneNode()->getPixelsSize();
-	window->setPixelsSize(
-		{ std::min( sceneSize.getWidth() * 0.9f,
-					PixelDensity::dpToPx( SettingsSidebarWidthDp + SettingsRowsMaxWidthDp ) ),
-		  std::min( sceneSize.getHeight() * 0.9f, PixelDensity::dpToPx( 900 ) ) } );
-	window->setMinWindowSize( 640, 440 );
-	return window;
+	return eeNew( SettingsPanelWindow, ( title, id ) );
 }
 
 UISettingsPanel* UISettingsPanel::New( UIWidget* parent ) {
@@ -538,6 +625,266 @@ bool UISettingsPanel::addFloat( SettingDescriptor descriptor, double min, double
 		   mImpl->model.addSetting(
 			   { std::move( descriptor ),
 				 FloatSetting{ min, max, step, std::move( get ), std::move( set ) } } );
+}
+
+void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Window::Window* window,
+										  Float& density, PixelDensityMode& mode,
+										  std::function<void()> save,
+										  DisplayDensityOverrides* overrides ) {
+	if ( !window )
+		return;
+
+	enum ScaleChoice : size_t { BestFit, SystemScale, PhysicalPPI, Manual };
+	auto* scene = getUISceneNode();
+	struct ScaleFactorState {
+		Float lastDensity;
+		bool updating{ false };
+	};
+	auto factorState = std::make_shared<ScaleFactorState>( window->getPixelDensity() );
+	auto refreshFactor = [this, window, weakState = std::weak_ptr<ScaleFactorState>( factorState )](
+							 bool onlyIfChanged = false ) {
+		auto state = weakState.lock();
+		if ( !state )
+			return;
+		const Float effectiveDensity = window->getPixelDensity();
+		if ( onlyIfChanged && state->lastDensity == effectiveDensity )
+			return;
+		state->lastDensity = effectiveDensity;
+		auto* row = find<UIWidget>( "setting_uiScaleFactor" );
+		auto* spin = row ? row->find<UISpinBox>( "setting_control_widget" ) : nullptr;
+		if ( spin ) {
+			BoolScopedOp updatingValue( state->updating, true );
+			spin->setValue( effectiveDensity );
+		}
+	};
+	auto currentChoice = [window]() -> size_t {
+		if ( window->getPixelDensityOverride() > 0.f )
+			return Manual;
+		if ( window->getPixelDensityMode() == PixelDensityMode::BestFit )
+			return BestFit;
+		return window->getPixelDensityMode() == PixelDensityMode::PhysicalPPI ? PhysicalPPI
+																			  : SystemScale;
+	};
+	auto applyScale = [window, &density, save]( Float value ) {
+		density = value;
+		window->setPixelDensityOverride( density );
+		if ( save )
+			save();
+	};
+	addChoice(
+		{ "uiScaleMode", category, scene->i18n( "ui_scale_mode", "UI Scale Mode" ),
+		  scene->i18n(
+			  "ui_scale_mode_desc",
+			  "Best Fit follows the platform's scale where available and uses screen size and "
+			  "pixel density for its estimates. System Scale follows the operating system. "
+			  "Physical PPI uses the monitor's pixel density to keep the interface a similar "
+			  "physical size, with System Scale as a fallback." ) },
+		{ scene->i18n( "ui_scale_auto_best_fit", "Auto (Best Fit)" ),
+		  scene->i18n( "ui_scale_auto_system", "Auto (System Scale)" ),
+		  scene->i18n( "ui_scale_auto_physical", "Auto (Physical PPI)" ),
+		  scene->i18n( "ui_scale_manual", "Manual" ) },
+		currentChoice,
+		[window, &mode, currentChoice, applyScale, refreshFactor]( size_t selected ) {
+			if ( selected == currentChoice() )
+				return;
+			if ( selected == Manual ) {
+				applyScale( std::clamp( window->getPixelDensity(), 1.f, 6.f ) );
+			} else {
+				constexpr PixelDensityMode modes[]{ PixelDensityMode::BestFit,
+													PixelDensityMode::DisplayScale,
+													PixelDensityMode::PhysicalPPI };
+				mode = modes[selected];
+				window->setPixelDensityMode( mode );
+				applyScale( 0.f );
+			}
+			refreshFactor();
+		} );
+	addFloat(
+		{ "uiScaleFactor", category, scene->i18n( "ui_scale_factor", "UI Scale Factor" ),
+		  scene->i18n( "ui_scale_factor_desc",
+					   "Set a fixed interface scale from 1 to 6. Changing it selects Manual." ) },
+		1, 6, 0.1, [window] { return window->getPixelDensity(); },
+		[this, applyScale, factorState = std::move( factorState )]( double value ) {
+			if ( factorState->updating )
+				return;
+			factorState->lastDensity = static_cast<Float>( value );
+			applyScale( static_cast<Float>( value ) );
+			if ( auto* row = find<UIWidget>( "setting_uiScaleMode" ) ) {
+				auto* choice = row->find<UIDropDownModelList>( "setting_control_widget" );
+				if ( choice )
+					choice->getListView()->getSelection().set(
+						choice->getModel()->index( Manual, 0 ) );
+			}
+		} );
+	mImpl->connections += scene->connect(
+		Event::OnLayoutReady, [refreshFactor]( const Event* ) { refreshFactor( true ); } );
+	if ( !overrides )
+		return;
+	addAction(
+		{ "uiDisplayScale", category, scene->i18n( "ui_display_scale", "Per-display Scale" ),
+		  scene->i18n( "ui_display_scale_desc",
+					   "Set individual scales for connected displays in any Auto mode." ) },
+		scene->i18n( "ui_display_scale_configure", "Configure…" ),
+		[scene, window, overrides, refreshFactor, save = std::move( save )] {
+			using EE::Window::Engine;
+			using EE::Window::Runtime;
+			using EE::Window::RuntimeMode;
+
+			const auto title = scene->i18n( "ui_display_scale", "Per-display Scale" );
+			const auto showMessage = [title]( const String& message ) {
+				auto* box = UIMessageBox::New( UIMessageBox::OK, message );
+				box->setTitle( title );
+				box->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+				box->showWhenReady();
+			};
+
+			struct DisplayScaleEntry {
+				std::string key;
+				Float automaticScale;
+			};
+			struct DisplayScaleDraft {
+				std::vector<DisplayScaleEntry> displays;
+				DisplayDensityOverrides values;
+				bool loading{ false };
+			};
+			auto draft = std::make_shared<DisplayScaleDraft>();
+			draft->values = *overrides;
+			std::vector<String> labels;
+			auto* manager = Engine::instance()->getDisplayManager();
+			const int currentDisplay = window->getCurrentDisplayIndex();
+			Uint32 selected = 0;
+			if ( !Runtime::isOffscreen() && Runtime::mode() != RuntimeMode::Terminal ) {
+				const auto currentKey = window->getDisplayDensityKey();
+				const int count = std::max( 0, manager->getDisplayCount() );
+				std::vector<std::string> keys( count );
+				UnorderedMap<std::string, int> keyCounts;
+				for ( int index = 0; index < count; ++index ) {
+					if ( auto* display = manager->getDisplayIndex( index ) ) {
+						keys[index] =
+							index == currentDisplay ? currentKey : display->getPersistentId();
+						++keyCounts[keys[index]];
+					}
+				}
+				for ( int index = 0; index < count; ++index ) {
+					auto& key = keys[index];
+					if ( key.empty() || keyCounts[key] != 1 )
+						continue;
+					auto* display = manager->getDisplayIndex( index );
+					if ( index == currentDisplay )
+						selected = static_cast<Uint32>( labels.size() );
+					const auto size = display->getNativePixelSize();
+					const auto displayName = display->getName();
+					const String name = displayName.empty()
+											? scene->i18n( "ui_display_scale_display", "Display" )
+											: String( displayName );
+					labels.push_back( String( std::to_string( index + 1 ) ) + ". " + name + " · " +
+									  std::to_string( size.x ) + " × " + std::to_string( size.y ) );
+					draft->displays.push_back(
+						{ std::move( key ), window->getAutomaticPixelDensity( index ) } );
+				}
+			}
+			if ( labels.empty() ) {
+				showMessage( scene->i18n( "ui_display_scale_unavailable",
+										  "Per-display scaling is unavailable on this setup." ) );
+				return;
+			}
+			if ( window->getPixelDensityOverride() > 0.f ) {
+				showMessage(
+					scene->i18n( "ui_display_scale_requires_auto",
+								 "Select an Auto scale mode to use per-display scales." ) );
+				return;
+			}
+			auto* box = UIMessageBox::New(
+				UIMessageBox::DROPDOWNLIST,
+				scene->i18n(
+					"ui_display_scale_prompt",
+					"Choose a display. Clear the checkbox to use Auto for that display." ) );
+			box->setId( "display_scale_dialog" );
+			box->setTitle( title );
+			box->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+
+			auto* picker = box->getDropDownList();
+			picker->setId( "display_scale_picker" );
+			picker->setSize( 320, picker->getSize().getHeight() );
+			auto* list = picker->getListBox();
+			list->addListBoxItems( labels );
+			list->setSelected( selected );
+			picker->setText( labels[selected] );
+
+			auto* controls = UILinearLayout::NewHorizontal();
+			controls->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
+				->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
+				->setParent( picker->getParent() );
+			controls->toPosition( picker->getNodeIndex() + 1 );
+			auto* useCustom = UICheckBox::New();
+			useCustom->setId( "display_scale_override" );
+			useCustom->setText( scene->i18n( "ui_display_scale_custom", "Use a custom scale" ) );
+			useCustom->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+				->setParent( controls );
+			auto* factor = UISpinBox::New();
+			factor->setId( "display_scale_factor" );
+			factor->setMinValue( 1 )->setMaxValue( 6 )->setClickStep( 0.1 );
+			factor->allowFloatingPoint( true );
+			factor->setSize( 100, 24 );
+			factor->setLayoutMargin( Rectf( 12, 0, 0, 0 ) )->setParent( controls );
+
+			const auto loadSelected = [draft, list, useCustom, factor]( const Event* ) {
+				const auto index = list->getItemSelectedIndex();
+				if ( index >= draft->displays.size() )
+					return;
+				const auto& display = draft->displays[index];
+				const auto value = draft->values.find( display.key );
+				const bool custom = value != draft->values.end();
+				const Float scale = custom ? value->second : display.automaticScale;
+				BoolScopedOp loadingValue( draft->loading, true );
+				factor->setMinValue( eemin( 1.f, scale ) )->setMaxValue( eemax( 6.f, scale ) );
+				factor->setValue( scale );
+				factor->setEnabled( custom );
+				useCustom->setChecked( custom );
+			};
+			const auto updateSelected = [draft, list, useCustom, factor,
+										 loadSelected]( const Event* ) {
+				const auto index = list->getItemSelectedIndex();
+				if ( draft->loading || index >= draft->displays.size() )
+					return;
+				const auto& key = draft->displays[index].key;
+				if ( useCustom->isChecked() ) {
+					BoolScopedOp loadingValue( draft->loading, true );
+					factor->setMinValue( 1 )->setMaxValue( 6 );
+					factor->setEnabled( true );
+					draft->values[key] = static_cast<Float>( factor->getValue() );
+				} else {
+					draft->values.erase( key );
+					loadSelected( nullptr );
+				}
+			};
+			picker->on( Event::OnSelectionChanged, loadSelected );
+			useCustom->on( Event::OnValueChange, updateSelected );
+			factor->on( Event::OnValueChange, updateSelected );
+			loadSelected( nullptr );
+
+			box->on( Event::OnConfirm,
+					 [box, draft, window, overrides, save, refreshFactor]( const Event* ) {
+						 for ( const auto& display : draft->displays ) {
+							 const auto& key = display.key;
+							 const auto value = draft->values.find( key );
+							 const auto old = overrides->find( key );
+							 const Float scale = value != draft->values.end() ? value->second : 0.f;
+							 const Float previous = old != overrides->end() ? old->second : 0.f;
+							 if ( previous != scale )
+								 window->setDisplayDensityOverride( key, scale );
+						 }
+						 if ( *overrides != window->getDisplayDensityOverrides() ) {
+							 *overrides = window->getDisplayDensityOverrides();
+							 refreshFactor();
+							 if ( save )
+								 save();
+						 }
+						 if ( !box->isClosing() )
+							 box->closeWindow();
+					 } );
+			box->showWhenReady();
+		} );
 }
 
 bool UISettingsPanel::addAction( SettingDescriptor descriptor, String buttonText,

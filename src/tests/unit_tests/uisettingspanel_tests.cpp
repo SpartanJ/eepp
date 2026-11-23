@@ -1,13 +1,18 @@
 #include "utest.hpp"
 
+#include <algorithm>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
 
@@ -62,6 +67,128 @@ UTEST( UISettingsPanelModel, clearRemovesAllRules ) {
 	EXPECT_TRUE( model.categories().empty() );
 	EXPECT_TRUE( model.groups().empty() );
 	EXPECT_TRUE( model.settings().empty() );
+}
+
+UTEST( UISettingsPanel, appliesAndSavesWindowScaleModes ) {
+	Float density = 0.f;
+	PixelDensityMode mode = PixelDensityMode::DisplayScale;
+	int saves = 0;
+	WindowSettings settings( 800, 600, "eepp - UI Scale Settings Test" );
+	settings.DensityMode = mode;
+	UIApplication app( settings, UIApplication::Settings( Sys::getProcessPath() + ".." +
+														  FileSystem::getOSSlash() ) );
+	auto* window = app.getWindow();
+	ASSERT_NE( nullptr, window );
+	auto* panel = UISettingsPanel::New( app.getUI()->getRoot() );
+	ASSERT_TRUE( panel->addCategory( "appearance.fonts", "Appearance", "Fonts and Scale" ) );
+	panel->addUIScaleSettings( "appearance.fonts", nullptr, density, mode, [&] { ++saves; } );
+	panel->addUIScaleSettings( "appearance.fonts", window, density, mode, [&] { ++saves; } );
+	panel->build();
+	panel->selectCategory( "appearance.fonts" );
+	auto* modeRow = panel->find<UIWidget>( "setting_uiScaleMode" );
+	auto* factorRow = panel->find<UIWidget>( "setting_uiScaleFactor" );
+	ASSERT_NE( nullptr, modeRow );
+	ASSERT_NE( nullptr, factorRow );
+	auto* choice = modeRow->find<UIDropDownModelList>( "setting_control_widget" );
+	auto* factor = factorRow->find<UISpinBox>( "setting_control_widget" );
+	ASSERT_NE( nullptr, choice );
+	ASSERT_NE( nullptr, factor );
+
+	auto select = [choice]( int index ) {
+		choice->getListView()->getSelection().set( choice->getModel()->index( index, 0 ) );
+	};
+	EXPECT_EQ( 1, choice->getListView()->getSelection().first().row() );
+	EXPECT_EQ( 0, saves );
+	select( 2 );
+	EXPECT_TRUE( mode == PixelDensityMode::PhysicalPPI );
+	EXPECT_TRUE( window->getPixelDensityMode() == mode );
+	EXPECT_EQ( 1, saves );
+
+	factor->setValue( 1.5 );
+	EXPECT_EQ( 3, choice->getListView()->getSelection().first().row() );
+	EXPECT_EQ( 1.5f, density );
+	EXPECT_EQ( 1.5f, window->getPixelDensityOverride() );
+	EXPECT_EQ( 2, saves );
+
+	select( 1 );
+	EXPECT_TRUE( mode == PixelDensityMode::DisplayScale );
+	EXPECT_TRUE( window->getPixelDensityMode() == mode );
+	EXPECT_EQ( 0.f, density );
+	EXPECT_EQ( 0.f, window->getPixelDensityOverride() );
+	EXPECT_EQ( 3, saves );
+	EXPECT_EQ( factor->getValue(), std::clamp( window->getPixelDensity(), 1.f, 6.f ) );
+
+	select( 0 );
+	EXPECT_TRUE( mode == PixelDensityMode::BestFit );
+	EXPECT_TRUE( window->getPixelDensityMode() == mode );
+	EXPECT_EQ( 4, saves );
+
+	const auto displayKey = window->getDisplayDensityKey();
+	if ( !displayKey.empty() ) {
+		ASSERT_TRUE( window->setDisplayDensityOverride( displayKey, 1.61f ) );
+		EXPECT_EQ( 1.61f, window->getPixelDensity() );
+	}
+	const Float manualScale = std::clamp( window->getPixelDensity(), 1.f, 6.f );
+	select( 3 );
+	EXPECT_EQ( manualScale, density );
+	EXPECT_EQ( manualScale, window->getPixelDensityOverride() );
+	EXPECT_EQ( manualScale, factor->getValue() );
+	EXPECT_EQ( 5, saves );
+}
+
+UTEST( UISettingsPanel, perDisplayOverrideStartsFromAutomaticScale ) {
+	Float density = 0.f;
+	PixelDensityMode mode = PixelDensityMode::PhysicalPPI;
+	DisplayDensityOverrides overrides;
+	WindowSettings settings( 800, 600, "eepp - Per-display Scale Test" );
+	settings.DensityMode = mode;
+	UIApplication app( settings, UIApplication::Settings( Sys::getProcessPath() + ".." +
+														  FileSystem::getOSSlash() ) );
+	auto* window = app.getWindow();
+	ASSERT_NE( nullptr, window );
+	const auto key = window->getDisplayDensityKey();
+	if ( key.empty() )
+		UTEST_SKIP( "The current display has no persistent identity" );
+	const Float physicalDPI = window->getPhysicalDisplayDPI();
+	if ( physicalDPI > 0.f )
+		window->setPixelDensityReferencePPI( physicalDPI / 1.5f );
+	const Float automatic = window->getPixelDensity();
+
+	auto* scene = app.getUI();
+	auto* panel = UISettingsPanel::New( scene->getRoot() );
+	ASSERT_TRUE( panel->addCategory( "appearance.fonts", "Appearance", "Fonts and Scale" ) );
+	panel->addUIScaleSettings( "appearance.fonts", window, density, mode, {}, &overrides );
+	panel->build();
+	panel->selectCategory( "appearance.fonts" );
+	auto* row = panel->find<UIWidget>( "setting_uiDisplayScale" );
+	ASSERT_NE( nullptr, row );
+	auto* configure = row->find<UIPushButton>( "setting_control_widget" );
+	ASSERT_NE( nullptr, configure );
+	configure->sendMouseEvent( Event::MouseClick, {}, EE_BUTTON_LMASK );
+	auto* dialog = scene->find<UIMessageBox>( "display_scale_dialog" );
+	ASSERT_NE( nullptr, dialog );
+	auto* factor = dialog->find<UISpinBox>( "display_scale_factor" );
+	auto* custom = dialog->find<UICheckBox>( "display_scale_override" );
+	ASSERT_NE( nullptr, factor );
+	ASSERT_NE( nullptr, custom );
+	EXPECT_FALSE( factor->isEnabled() );
+	EXPECT_EQ( automatic, factor->getValue() );
+
+	custom->setChecked( true );
+	EXPECT_TRUE( factor->isEnabled() );
+	factor->setValue( 3.1 );
+	custom->setChecked( false );
+	EXPECT_FALSE( factor->isEnabled() );
+	EXPECT_EQ( automatic, factor->getValue() );
+	EXPECT_TRUE( overrides.empty() );
+
+	custom->setChecked( true );
+	const Float seed = std::clamp( automatic, 1.f, 6.f );
+	EXPECT_EQ( seed, factor->getValue() );
+	dialog->sendCommonEvent( Event::OnConfirm );
+	const auto saved = overrides.find( key );
+	ASSERT_TRUE( saved != overrides.end() );
+	EXPECT_EQ( seed, saved->second );
 }
 
 UTEST( UISettingsPanel, buildsAndMaterializesCategoriesLazily ) {

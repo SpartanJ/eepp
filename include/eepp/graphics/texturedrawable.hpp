@@ -18,6 +18,7 @@ class EE_API TextureDrawable : public DrawableResource {
 
 	Sizef getSize();
 	Sizef getPixelsSize();
+	virtual Float getRasterScale() const;
 	void draw();
 	void draw( const Vector2f& position );
 	void draw( const Vector2f& position, const Sizef& size );

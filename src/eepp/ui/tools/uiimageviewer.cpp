@@ -352,14 +352,19 @@ void UIImageViewer::updateImageLayout() {
 		return;
 
 	// Use source dimensions directly to avoid rounding twice at fractional pixel densities.
-	Sizef imageSize( mUseNativeImageSize ? mImage->getDrawable()->getSize()
-										 : mImage->getDrawable()->getPixelsSize() );
+	Sizef imageSize( mImage->getDrawable()->getSize() );
+	if ( !mUseNativeImageSize )
+		imageSize = PixelDensity::dpToPx( imageSize );
 
 	Sizef oriented = imageSize;
 	if ( static_cast<Uint8>( mOrientation ) >= 5 )
 		std::swap( oriented.x, oriented.y );
 	const Float scale = std::min( { 1.f, mSize.x / oriented.x, mSize.y / oriented.y } );
-	mImage->setPixelsSize( eefloor( imageSize.x * scale ), eefloor( imageSize.y * scale ) );
+	// Fractional UI density can produce fractional pixels even at full image size. Keep those
+	// dimensions proportional; snap only when fitting the image into a smaller viewport.
+	mImage->setPixelsSize(
+		scale < 1.f ? Sizef( eefloor( imageSize.x * scale ), eefloor( imageSize.y * scale ) )
+					: imageSize );
 	mImage->center();
 }
 

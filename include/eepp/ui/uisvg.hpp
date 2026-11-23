@@ -1,7 +1,15 @@
 #ifndef EE_UI_UISVG_HPP
 #define EE_UI_UISVG_HPP
 
+#include <eepp/scene/mainthreadlifetime.hpp>
 #include <eepp/ui/uiimage.hpp>
+#include <optional>
+
+namespace EE::Graphics {
+
+class Image;
+
+} // namespace EE::Graphics
 
 namespace EE { namespace UI {
 
@@ -20,16 +28,24 @@ class EE_API UISvg : public UIImage {
 	const std::string& getSvgXml() const;
 
   protected:
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
+	virtual void onUISceneNodeChange( UISceneNode* scene );
+
 	UISvg();
 
 	void onSizeChange();
 
 	std::string mSvgXml;
 	Uint64 mTaskId{ 0 };
+	Uint64 mRasterGeneration{ 0 };
+	std::optional<Scene::MainThreadLifetime<UISvg>> mRasterLifetime;
 
 	void loadSvgXml( const pugi::xml_node& node );
 	void scheduleRasterize();
-	void rasterizeSvg( const std::string& svgXml, const Sizef& targetSize );
+	static std::shared_ptr<Image> rasterizeSvg( const std::string& svgXml,
+												const Sizef& targetSize );
+	void publishRaster( const Image& image, const Sizef& logicalSize, Uint64 generation );
 	void clearThreadTag();
 };
 

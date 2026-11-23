@@ -593,7 +593,7 @@ static DrawablePtr getIconDrawable( const std::string& name, UISceneNode* sceneN
 		UIIcon* icon = sceneNode->findIcon( name );
 		if ( icon ) {
 			// TODO: Fix size
-			iconDrawable = icon->createDrawable( PixelDensity::dpToPx( 16 ) );
+			iconDrawable = icon->createDrawableDp( 16.f, sceneNode->getPixelDensity() );
 		}
 	}
 	if ( !iconDrawable ) {

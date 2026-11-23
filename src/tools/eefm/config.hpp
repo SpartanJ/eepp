@@ -69,6 +69,8 @@ struct TerminalConfig : eterm::UI::TerminalPreferences {
 struct WindowConfig {
 	/** 0: the display's (or the environment's) pixel density. */
 	Float pixelDensity{ 0 };
+	PixelDensityMode pixelDensityMode{ PixelDensityMode::Default };
+	DisplayDensityOverrides displayDensityOverrides;
 	Uint32 maxFPS{ static_cast<Uint32>( ContextSettings::FrameRateLimitScreenRefreshRate ) };
 	bool vsync{ false };
 	bool showMenuBar{ false };

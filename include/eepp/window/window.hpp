@@ -11,6 +11,20 @@
 #include <eepp/window/nativewindowcontext.hpp>
 
 #include <limits>
+#include <map>
+#include <string_view>
+
+namespace EE::System {
+
+class IniFile;
+
+}
+
+namespace EE::UI::Tools {
+
+class UISettingsPanel;
+
+} // namespace EE::UI::Tools
 
 namespace EE { namespace Window {
 
@@ -51,6 +65,12 @@ enum class WindowFlashOperation {
 };
 
 enum class WindowBackend : Uint32 { SDL2, SDL3, Default };
+
+/** Automatic UI density source. Explicit density overrides take priority in every mode. */
+enum class PixelDensityMode : Uint8 { Default, DisplayScale, PhysicalPPI, BestFit };
+
+/** Fixed densities keyed by native display identity, applied only in automatic modes. */
+using DisplayDensityOverrides = std::map<std::string, Float>;
 
 /** Pixel layout requested from Window::readFrameBuffer(). */
 enum class FramePixelFormat : Uint8 { RGB24, RGBA32 };
@@ -118,6 +138,9 @@ class WindowSettings {
 	Float PixelDensity{ 0 }; //!< Zero leaves UI density to EEPP_PIXEL_DENSITY or display detection.
 	bool UseScreenKeyboard{ EE_SCREEN_KEYBOARD_ENABLED };
 	bool DisableHiDPI{ false };
+	PixelDensityMode DensityMode{ PixelDensityMode::Default };
+	DisplayDensityOverrides DensityOverrides;
+	Float PixelDensityReferencePPI{ 0 }; //!< Zero uses the environment reference, then 96 PPI.
 };
 
 /** @brief ContextSettings Small class that contains the renderer context information */
@@ -371,6 +394,62 @@ class EE_API Window {
 	/** @return The size of the pixel in screen coordinates. This is the device scale factor. */
 	virtual Float getScale() const;
 
+	/** Native monitor/UI content scale. Independent from the framebuffer coordinate ratio
+	 * returned by getScale(). Unsupported and offscreen backends return 1. */
+	virtual Float getDisplayScale() const;
+
+	/** Physical monitor pixels per inch, or zero when unavailable. */
+	virtual Float getPhysicalDisplayDPI() const;
+
+	/** Returns an empty key when the current display has no persistent identity. */
+	std::string getDisplayDensityKey() const;
+
+	/** Sets an exact density from 1 to 6 for a display. Zero removes the override. */
+	bool setDisplayDensityOverride( const std::string& key, Float density );
+
+	const DisplayDensityOverrides& getDisplayDensityOverrides() const;
+
+	static DisplayDensityOverrides loadDisplayDensityOverrides( System::IniFile& ini );
+
+	static void saveDisplayDensityOverrides( System::IniFile& ini,
+											 const DisplayDensityOverrides& overrides );
+
+	PixelDensityMode getPixelDensityMode() const;
+
+	/** Changes the automatic density source; Default honors EEPP_PIXEL_DENSITY_MODE. */
+	void setPixelDensityMode( PixelDensityMode mode );
+
+	Float getPixelDensityReferencePPI() const;
+
+	void setPixelDensityReferencePPI( Float reference );
+
+	static PixelDensityMode pixelDensityModeFromString( std::string_view mode );
+
+	static const char* pixelDensityModeToString( PixelDensityMode mode );
+
+	/** First-run preference for eepp apps. An environment mode still takes precedence. */
+	static PixelDensityMode getNewProfilePixelDensityMode();
+
+	/** Current effective UI density, including live automatic/override changes. */
+	const Float& getPixelDensity() const;
+
+	/** Explicit window/environment density, or zero for native display detection. */
+	Float getPixelDensityOverride() const;
+
+	bool hasPixelDensityOverride() const;
+
+	/** Changes this window's UI override. Scenes apply the resulting environment on update. */
+	void setPixelDensityOverride( Float density );
+
+	/** Refreshes native scale/display metadata; returns whether effective UI density changed. */
+	bool refreshPixelDensity();
+
+	Uint32 getDisplayMetricsVersion() const;
+
+	/** Applies pending native display metrics once after input pumping. Engine and scene updates
+	 * call this automatically; custom loops may also call it before density-sensitive work. */
+	void updateDisplayMetrics();
+
 	/** @return If the application is running returns true ( If you Init correctly the window and is
 	 * running ). */
 	bool isRunning() const;
@@ -606,6 +685,7 @@ class EE_API Window {
 
 	friend class Engine;
 	friend class Input;
+	friend class UI::Tools::UISettingsPanel;
 	friend struct Private::NativeDragAccess;
 
 	mutable WindowInfo mWindow;
@@ -624,6 +704,23 @@ class EE_API Window {
 	std::function<void()> mMainLoop;
 	FrameBufferUniquePtr mLogicalFrameBuffer;
 	std::unique_ptr<FramePresenter> mFramePresenter;
+	Float mPixelDensity{ 1.f };
+	Float mPixelDensityOverride{ 0.f };
+	Float mDisplayScale{ 1.f };
+	int mDensityDisplayIndex{ -1 };
+	mutable int mDisplayDensityKeyIndex{ -1 };
+	mutable std::string mDisplayDensityKey;
+	Uint32 mDisplayMetricsVersion{ 0 };
+	bool mDisplayMetricsDirty{ false };
+	bool mDisplayTopologyDirty{ false };
+	PixelDensityMode mPixelDensityMode{ PixelDensityMode::DisplayScale };
+#ifdef EE_X11_PLATFORM
+	mutable struct {
+		Float systemScale{ 0.f };
+		Float windowScale{ 0.f };
+		Float logicalScale{ 0.f };
+	} mX11BestFitScale;
+#endif
 
 	class FrameData {
 	  public:
@@ -655,6 +752,27 @@ class EE_API Window {
 	};
 
 	FrameData mFrameData;
+
+	/** Resolves the initial UI density after the backend has created the native window. */
+	void initializePixelDensity( Float pixelDensityOverride );
+	const std::string& getDisplayDensityKey( int displayIndex ) const;
+
+	Float getAutomaticPixelDensity( int displayIndex ) const;
+
+	Float resolveAutomaticPixelDensity( Float displayScale, int displayIndex,
+										bool currentDisplay = true ) const;
+
+	Float resolveBestFitPixelDensity( Float displayScale, int displayIndex,
+									  bool currentDisplay ) const;
+
+#ifdef EE_X11_PLATFORM
+	virtual bool usesX11DisplayScaling() const;
+#endif
+
+	static PixelDensityMode resolvePixelDensityMode( PixelDensityMode mode );
+	static Float resolvePixelDensityReferencePPI( Float reference );
+
+	virtual void refreshDisplayMetrics();
 
 	/** Set the flag state to be the current window */
 	virtual void setCurrent();

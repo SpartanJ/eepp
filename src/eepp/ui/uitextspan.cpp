@@ -46,9 +46,7 @@ UITextSpan::UITextSpan( const std::string& tag ) : UIRichText( tag ) {
 			mRichText.getFontStyleConfig().Font = sceneNode->getUIThemeManager()->getDefaultFont();
 		}
 
-		if ( NULL != theme ) {
-			mRichText.getFontStyleConfig().CharacterSize = theme->getDefaultFontSize();
-		} else if ( sceneNode ) {
+		if ( sceneNode ) {
 			mRichText.getFontStyleConfig().CharacterSize =
 				sceneNode->getUIThemeManager()->getDefaultFontSize();
 		}

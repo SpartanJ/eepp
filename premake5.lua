@@ -713,7 +713,7 @@ function generate_os_links()
 	elseif os.istarget("mingw32") then
 		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "oleaut32", "uuid", "shell32", "shlwapi", "dwrite", "uiautomationcore", "comctl32", "advapi32" } )
 	elseif os.istarget("macosx") then
-		multiple_insert( os_links, { "eepp-macos-helper-static", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
+		multiple_insert( os_links, { "eepp-macos-helper-static", "ApplicationServices.framework", "Cocoa.framework", "OpenGL.framework", "CoreFoundation.framework", "CoreServices.framework", "CoreText.framework" } )
 	elseif os.istarget("bsd") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.istarget("haiku") then
@@ -1159,6 +1159,7 @@ function build_eepp( build_name )
 			"src/eepp/graphics/*.cpp",
 			"src/eepp/graphics/renderer/*.cpp",
 			"src/eepp/window/*.cpp",
+			"src/eepp/window/platform/*.cpp",
 			"src/eepp/window/draganddrop/*.cpp",
 			"src/eepp/window/backend/*.cpp",
 			"src/eepp/network/*.cpp",

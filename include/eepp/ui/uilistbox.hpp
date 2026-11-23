@@ -113,6 +113,8 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 	UIListBoxItem* getReferenceItem() const { return mDummyItem; }
 
   protected:
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	friend class UIListBoxItem;
 	friend class UIItemContainer<UIListBox>;
 	friend class UIDropDownList;

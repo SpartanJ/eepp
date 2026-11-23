@@ -295,6 +295,8 @@ class EE_API Input {
 	Time getElapsedSinceLastKeyboardOrMouseEvent() const;
 
   protected:
+	void onDisplayTopologyChange();
+
 	friend class Window;
 	friend struct Private::NativeDragAccess;
 

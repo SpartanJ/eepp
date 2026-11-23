@@ -5,6 +5,12 @@
 #include <eepp/core/string.hpp>
 #include <eepp/math/vector2.hpp>
 
+namespace EE::Scene {
+
+class Node;
+
+} // namespace EE::Scene
+
 namespace EE { namespace Math {
 
 /** @brief Helper class to define the origin point of a translation/rotation/scaling */
@@ -36,6 +42,9 @@ template <typename T> class tOriginPoint : public Vector2<T> {
 	void setYEq( const std::string& yEq );
 
   protected:
+	friend class EE::Scene::Node;
+
+	bool mCustomFromDp{ false };
 	std::string mXEq;
 	std::string mYEq;
 };

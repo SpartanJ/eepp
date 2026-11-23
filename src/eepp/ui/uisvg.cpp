@@ -31,8 +31,26 @@ UISvg::UISvg() : UIImage( "svg" ) {
 	mFlags |= UI_LOADS_ITS_CHILDREN;
 }
 
-UISvg::~UISvg() {
+void UISvg::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UIImage::onPixelDensityChange( oldDensity, newDensity );
+	if ( mSvgXml.empty() )
+		return;
+	++mRasterGeneration;
 	clearThreadTag();
+	// Read the final target size after the scene has reapplied styles and settled layout.
+	debounce( [this] { scheduleRasterize(); }, Time::Zero, (UintPtr)this );
+}
+
+UISvg::~UISvg() {
+	if ( mRasterLifetime )
+		mRasterLifetime->invalidate();
+	clearThreadTag();
+}
+
+void UISvg::onUISceneNodeChange( UISceneNode* scene ) {
+	UIImage::onUISceneNodeChange( scene );
+	if ( mRasterLifetime )
+		mRasterLifetime->setDispatcher( scene );
 }
 
 Uint32 UISvg::getType() const {
@@ -66,21 +84,39 @@ void UISvg::scheduleRasterize() {
 	auto size = getPixelsSize();
 	if ( size.getWidth() <= 0.f || size.getHeight() <= 0.f )
 		return;
+	const Float density = getUISceneNode()->getPixelDensity();
+	const Sizef logicalSize = size / density;
+	const Uint64 generation = ++mRasterGeneration;
 
 	if ( !getUISceneNode()->hasThreadPool() ) {
-		rasterizeSvg( mSvgXml, size );
+		auto densityContext = PixelDensity::makeCurrent( density );
+		if ( auto image = rasterizeSvg( mSvgXml, size ) ) {
+			runOnMainThread( [this, generation, logicalSize, image = std::move( image )] {
+				publishRaster( *image, logicalSize, generation );
+			} );
+		}
 		return;
 	}
 
 	clearThreadTag();
+	if ( !mRasterLifetime )
+		mRasterLifetime.emplace( this, getUISceneNode() );
 
 	std::string svgXml( mSvgXml );
 	mTaskId = getUISceneNode()->getThreadPool()->run(
-		[this, svgXml = std::move( svgXml ), size] { rasterizeSvg( svgXml, size ); }, {},
-		(Uint64)this );
+		[lifetime = mRasterLifetime->weakHandle(), svgXml = std::move( svgXml ), size, density,
+		 generation, logicalSize] {
+			auto densityContext = PixelDensity::makeCurrent( density );
+			if ( auto image = rasterizeSvg( svgXml, size ) ) {
+				lifetime.run( [generation, logicalSize, image = std::move( image )]( UISvg* svg ) {
+					svg->publishRaster( *image, logicalSize, generation );
+				} );
+			}
+		},
+		{}, (Uint64)this );
 }
 
-void UISvg::rasterizeSvg( const std::string& svgXml, const Sizef& targetSize ) {
+std::shared_ptr<Image> UISvg::rasterizeSvg( const std::string& svgXml, const Sizef& targetSize ) {
 	pugi::xml_document document;
 	std::string rasterXml;
 	if ( document.load_buffer( svgXml.data(), svgXml.size() ) ) {
@@ -100,8 +136,25 @@ void UISvg::rasterizeSvg( const std::string& svgXml, const Sizef& targetSize ) {
 		rasterXml = std::move( writer.result );
 	}
 	const std::string& source = rasterXml.empty() ? svgXml : rasterXml;
-	TexturePtr texture = TextureFactory::instance()->loadFromMemory(
-		(const unsigned char*)source.data(), source.size() );
+	Image::FormatConfiguration format;
+	int width = 0, height = 0, channels = 0;
+	if ( Image::getInfoFromMemory( reinterpret_cast<const Uint8*>( source.data() ), source.size(),
+								   &width, &height, &channels ) &&
+		 width > 0 && height > 0 ) {
+		format.svgScale( eemax( targetSize.x / width, targetSize.y / height ) );
+	}
+	Image image( reinterpret_cast<const Uint8*>( source.data() ), source.size(), 0, format );
+	return image.getPixelsPtr() ? std::make_shared<Image>( std::move( image ) ) : nullptr;
+}
+
+void UISvg::publishRaster( const Image& image, const Sizef& logicalSize, Uint64 generation ) {
+	if ( generation != mRasterGeneration || isClosing() )
+		return;
+	// The widget's window may have changed since decoding began. Upload only for a current
+	// result, using the graphics context that owns the widget now.
+	auto context = getUISceneNode()->makeCurrent();
+	TexturePtr texture = TextureFactory::instance()->loadFromPixels(
+		image.getPixelsPtr(), image.getWidth(), image.getHeight(), image.getChannels() );
 
 	if ( !texture )
 		return;
@@ -109,12 +162,8 @@ void UISvg::rasterizeSvg( const std::string& svgXml, const Sizef& targetSize ) {
 	SpritePtr sprite = Sprite::New();
 	// TextureRegion destination sizes are density-independent and get converted back to pixels by
 	// the drawable. The SVG texture is already rasterized at the widget's physical pixel size.
-	sprite->createStatic( std::move( texture ), PixelDensity::pxToDp( targetSize ) );
-
-	runOnMainThread( [this, sprite = std::move( sprite )]() mutable {
-		if ( sprite )
-			setDrawable( std::move( sprite ) );
-	} );
+	sprite->createStatic( std::move( texture ), logicalSize );
+	setDrawable( std::move( sprite ) );
 }
 
 void UISvg::onSizeChange() {

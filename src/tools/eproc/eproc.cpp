@@ -315,8 +315,6 @@ Color themeColor( UISceneNode* ui, const char* name, Color fallback ) {
 App::App() {
 	mConfig = std::make_unique<AppConfig>( Sys::getConfigPath( "eproc" ) );
 	mConfig->load();
-	if ( mConfig->pixelDensity > 0 )
-		mPixelDensity = mConfig->pixelDensity;
 	mFontHinting = mConfig->fontHinting;
 	mFontAntialiasing = mConfig->fontAntialiasing;
 	mColorScheme = mConfig->colorScheme;
@@ -410,6 +408,8 @@ bool App::init() {
 #endif
 	WindowSettings ws( windowWidth, windowHeight, "", WindowStyle::Default, WindowBackend::Default,
 					   32, Sys::getResourcePath( "eproc" ) + windowIcon );
+	ws.DensityMode = mConfig->pixelDensityMode;
+	ws.DensityOverrides = mConfig->displayDensityOverrides;
 	ContextSettings ctx;
 	ctx.Multisamples = mConfig->multisamples;
 	ctx.VSync = mConfig->vsync;
@@ -425,7 +425,7 @@ bool App::init() {
 	settings.basePath = Sys::getResourcePath( "eproc" );
 	settings.baseFont = uiFont.get();
 	settings.threadPool = ThreadPool::createShared( 2 );
-	settings.pixelDensity = mPixelDensity;
+	settings.pixelDensity = mPixelDensity.value_or( mConfig->pixelDensity );
 	settings.fontHinting = mFontHinting;
 	settings.fontAntialiasing = mFontAntialiasing;
 	mApp = std::make_unique<UIApplication>( ws, settings, ctx );

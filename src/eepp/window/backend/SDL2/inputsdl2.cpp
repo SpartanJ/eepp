@@ -3,6 +3,7 @@
 #ifdef EE_BACKEND_SDL2
 
 #include <eepp/window/backend/SDL2/cursormanagersdl2.hpp>
+#include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/inputsdl2.hpp>
 #include <eepp/window/backend/SDL2/joystickmanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>
@@ -206,8 +207,24 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 
 	InputEvent event;
 	switch ( SDLEvent.type ) {
+#if SDL_VERSION_ATLEAST( 2, 0, 9 )
+		case SDL_DISPLAYEVENT:
+			static_cast<DisplayManagerSDL2*>( Engine::instance()->getDisplayManager() )
+				->invalidateDisplayMetrics();
+			onDisplayTopologyChange();
+			return;
+#endif
 		case SDL_WINDOWEVENT: {
 			switch ( SDLEvent.window.event ) {
+#if SDL_VERSION_ATLEAST( 2, 0, 18 )
+				case SDL_WINDOWEVENT_DISPLAY_CHANGED: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 1;
+					event.WinID = SDLEvent.window.windowID;
+					event.window.type = InputEvent::WindowDisplayChanged;
+					break;
+				}
+#endif
 				case SDL_WINDOWEVENT_RESIZED: {
 					event.Type = InputEvent::VideoResize;
 					event.WinID = SDLEvent.window.windowID;
@@ -394,22 +411,24 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_MOUSEBUTTONDOWN: {
+			const Float eventWindowScale = getEventWindowScale( mWindow, SDLEvent.button.windowID );
 			event.Type = InputEvent::MouseButtonDown;
 			event.button.button = SDLEvent.button.button;
 			event.button.which = SDLEvent.button.windowID;
 			event.button.state = SDLEvent.button.state;
-			event.button.x = SDLEvent.button.x;
-			event.button.y = SDLEvent.button.y;
+			event.button.x = static_cast<Int16>( SDLEvent.button.x * eventWindowScale );
+			event.button.y = static_cast<Int16>( SDLEvent.button.y * eventWindowScale );
 			event.WinID = SDLEvent.button.windowID;
 			break;
 		}
 		case SDL_MOUSEBUTTONUP: {
+			const Float eventWindowScale = getEventWindowScale( mWindow, SDLEvent.button.windowID );
 			event.Type = InputEvent::MouseButtonUp;
 			event.button.button = SDLEvent.button.button;
 			event.button.which = SDLEvent.button.windowID;
 			event.button.state = SDLEvent.button.state;
-			event.button.x = SDLEvent.button.x;
-			event.button.y = SDLEvent.button.y;
+			event.button.x = static_cast<Int16>( SDLEvent.button.x * eventWindowScale );
+			event.button.y = static_cast<Int16>( SDLEvent.button.y * eventWindowScale );
 			event.WinID = SDLEvent.button.windowID;
 			break;
 		}
@@ -427,7 +446,14 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 
 			// Legacy buttons require whole ticks; fractional movement still reaches MouseWheel.
 			if ( SDLEvent.wheel.y != 0 || SDLEvent.wheel.x != 0 ) {
+#if SDL_VERSION_ATLEAST( 2, 26, 0 )
+				x = SDLEvent.wheel.mouseX;
+				y = SDLEvent.wheel.mouseY;
+#else
 				SDL_GetMouseState( &x, &y );
+#endif
+				const Float eventWindowScale =
+					getEventWindowScale( mWindow, SDLEvent.wheel.windowID );
 
 				if ( SDLEvent.wheel.y > 0 ) {
 					button = EE_BUTTON_WHEELUP;
@@ -442,8 +468,8 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 				}
 
 				event.button.button = button;
-				event.button.x = x;
-				event.button.y = y;
+				event.button.x = static_cast<Int16>( x * eventWindowScale );
+				event.button.y = static_cast<Int16>( y * eventWindowScale );
 				event.button.which = SDLEvent.wheel.windowID;
 
 				event.Type = InputEvent::MouseButtonDown;

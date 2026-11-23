@@ -668,6 +668,16 @@ struct UIInspectorServer::Impl {
 						   { "title", window->getTitle() },
 						   { "sizePx", json::array( { size.x, size.y } ) },
 						   { "positionPx", json::array( { pos.x, pos.y } ) },
+						   { "pixelDensity", window->getPixelDensity() },
+						   { "pixelDensityMode", EE::Window::Window::pixelDensityModeToString(
+													 window->getPixelDensityMode() ) },
+						   { "pixelDensityOverride", window->getPixelDensityOverride() },
+						   { "pixelDensityReferencePPI", window->getPixelDensityReferencePPI() },
+						   { "displayScale", window->getDisplayScale() },
+						   { "framebufferScale", window->getScale() },
+						   { "physicalDPI", window->getPhysicalDisplayDPI() },
+						   { "displayIndex", window->getCurrentDisplayIndex() },
+						   { "displayMetricsVersion", window->getDisplayMetricsVersion() },
 						   { "focused", window->hasFocus() } };
 			newWindows.emplace( entry["handle"].get<std::string>(), entry );
 			windows.push_back( std::move( entry ) );
@@ -693,6 +703,7 @@ struct UIInspectorServer::Impl {
 			}
 			json entry = {
 				{ "handle", inspector.sceneHandle( scene ) },
+				{ "pixelDensity", scene->getPixelDensity() },
 				{ "window", scene->getWindow()
 								? json( inspector.windowHandle( scene->getWindow() ) )
 								: json( nullptr ) },
@@ -1184,19 +1195,20 @@ struct UIInspectorServer::Impl {
 							fail( "invalid-params", "Unknown modifier" );
 					}
 				}
-				auto sendKey = [&]( InputEvent::EventType type ) {
+				const Uint32 previousModifiers = input->getModState();
+				auto sendKey = [&]( InputEvent::EventType type, Uint32 mods ) {
 					InputEvent event( type );
 					event.WinID = window->getWindowID();
 					event.key = {};
 					event.key.keysym.sym = key;
 					event.key.keysym.scancode = input->getScancodeFromKey( key );
-					event.key.keysym.mod = modifiers;
+					event.key.keysym.mod = mods;
 					input->pushEvent( event );
 				};
 				if ( action != "up" )
-					sendKey( InputEvent::KeyDown );
+					sendKey( InputEvent::KeyDown, modifiers );
 				if ( action != "down" && inspector.window( windowHandle ) )
-					sendKey( InputEvent::KeyUp );
+					sendKey( InputEvent::KeyUp, action == "press" ? previousModifiers : modifiers );
 				return { { "key", name }, { "action", action } };
 			}
 			if ( method == "input.text" ) {

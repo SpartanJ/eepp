@@ -11,6 +11,7 @@
 #include <eepp/ui/tools/uiaudioplayer.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/uinodelink.hpp>
+#include <eepp/window/platformhelper.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 #include <nlohmann/json.hpp>
@@ -93,8 +94,12 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 					  std::vector<std::string>& recentFolders, const std::string& resPath,
 					  PluginManager* pluginManager, const Sizei& displaySize, bool sync ) {
 	keybindingsPath = confPath + "keybindings.cfg";
-	ini.loadFromFile( confPath + "config.cfg" );
-	iniState.loadFromFile( confPath + "state.cfg" );
+	const auto configPath = confPath + "config.cfg";
+	const auto statePath = confPath + "state.cfg";
+	const bool newProfile =
+		!FileSystem::fileExists( configPath ) && !FileSystem::fileExists( statePath );
+	ini.loadFromFile( configPath );
+	iniState.loadFromFile( statePath );
 	std::string recent = iniState.getValue( "files", "recentfiles", "" );
 	recentFiles = urlDecode( String::split( recent, ';' ) );
 	std::string recentFol = iniState.getValue( "folders", "recentfolders", "" );
@@ -119,6 +124,24 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.size.setHeight( iniState.getValueI( "window", "height", defWinSize.getHeight() ) );
 	windowState.maximized = iniState.getValueB( "window", "maximized", false );
 	windowState.pixelDensity = iniState.getValueF( "window", "pixeldensity" );
+	windowState.useLegacyPixelDensity =
+		windowState.pixelDensity > 0.f && !iniState.keyValueExists( "window", "pixeldensitymode" );
+	windowState.pixelDensityMode = newProfile
+									   ? EE::Window::Window::getNewProfilePixelDensityMode()
+									   : EE::Window::Window::pixelDensityModeFromString(
+											 iniState.getValue( "window", "pixeldensitymode" ) );
+	if ( newProfile && windowState.pixelDensityMode == PixelDensityMode::BestFit ) {
+		// Other startup code can write profile files before the first full config save.
+		iniState.setValue(
+			"window", "pixeldensitymode",
+			EE::Window::Window::pixelDensityModeToString( windowState.pixelDensityMode ) );
+		if ( !iniState.writeFileAtomic() )
+			Log::warning( "Could not save the initial UI scale mode to %s", statePath.c_str() );
+	}
+	windowState.displayDensityOverrides =
+		EE::Window::Window::loadDisplayDensityOverrides( iniState );
+	windowState.pixelDensityReferencePPI =
+		iniState.getValueF( "window", "pixeldensityreferenceppi", 0.f );
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	const char* windowIcon = "icon/ecode-macos.png";
 #else
@@ -153,8 +176,12 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		ini.getValueB( "editor", "open_documents_in_main_split", false );
 	editor.fontFeatures =
 		Graphics::Text::fontFeaturesFromString( ini.getValue( "editor", "font_features" ) );
-	ui.fontSize = ini.getValue( "ui", "font_size", "11dp" );
-	ui.panelFontSize = ini.getValue( "ui", "panel_font_size", "11dp" );
+	std::string defaultUIFontSize = "11dp";
+	if ( !ini.keyValueExists( "ui", "font_size" ) ||
+		 !ini.keyValueExists( "ui", "panel_font_size" ) )
+		defaultUIFontSize = String::fromFloat( PlatformHelper::getSystemUIFontSize( 11.f ), "dp" );
+	ui.fontSize = ini.getValue( "ui", "font_size", defaultUIFontSize );
+	ui.panelFontSize = ini.getValue( "ui", "panel_font_size", defaultUIFontSize );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
 	ui.showStatusBar = ini.getValueB( "ui", "show_status_bar", true );
 	ui.showMenuBar = ini.getValueB( "ui", "show_menu_bar", false );
@@ -343,6 +370,16 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValueI( "window", "height", windowState.size.getHeight() );
 	iniState.setValueB( "window", "maximized", windowState.maximized );
 	iniState.setValueF( "window", "pixeldensity", windowState.pixelDensity );
+	// Keep the legacy startup behavior on later launches until the user changes the scale.
+	if ( !windowState.useLegacyPixelDensity ) {
+		iniState.setValue(
+			"window", "pixeldensitymode",
+			EE::Window::Window::pixelDensityModeToString( windowState.pixelDensityMode ) );
+		iniState.setValueF( "window", "pixeldensityreferenceppi",
+							windowState.pixelDensityReferencePPI );
+	}
+	EE::Window::Window::saveDisplayDensityOverrides( iniState,
+													 windowState.displayDensityOverrides );
 	iniState.setValue( "window", "panel_partition", panelPartition );
 	iniState.setValue( "window", "status_bar_partition", statusBarPartition );
 	iniState.setValue( "window", "right_panel_partition", windowState.rightPanelPartition );

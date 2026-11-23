@@ -31,6 +31,7 @@
 #include <eepp/window/backend/SDL3/backendsdl3.hpp>
 #include <eepp/window/backend/SDL3/platformhelpersdl3.hpp>
 #endif
+#include <cmath>
 #include <eepp/window/draganddrop/dragmanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
@@ -58,19 +59,35 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Window {
 
-Engine::WindowContext::WindowContext( Engine* engine, EE::Window::Window* window ) :
-	mEngine( engine ), mPreviousWindow( engine->getCurrentWindow() ) {
+Engine::WindowContext::WindowContext( Engine* engine, EE::Window::Window* window,
+									  const Float* density ) :
+	mEngine( engine ),
+	mPreviousWindow( engine->getCurrentWindow() ),
+	mDensityContext( density ? *density : 0.f, density, true ) {
 	mEngine->setCurrentWindow( window );
 }
 
 Engine::WindowContext::~WindowContext() {
-	if ( mActive )
-		mEngine->setCurrentWindow( mPreviousWindow );
+	if ( !mEngine )
+		return;
+	if ( mPreviousWindow.isValid() ) {
+		mEngine->setCurrentWindow( mPreviousWindow.get() );
+	} else if ( mEngine == Engine::existsSingleton() ) {
+		auto* window = mEngine->getCurrentWindow();
+		mDensityContext.restoreKeepingTarget( window ? &window->getPixelDensity() : nullptr );
+	}
 }
 
 Engine::WindowContext::WindowContext( WindowContext&& other ) noexcept :
-	mEngine( other.mEngine ), mPreviousWindow( other.mPreviousWindow ), mActive( other.mActive ) {
-	other.mActive = false;
+	mEngine( other.mEngine ),
+	mPreviousWindow( std::move( other.mPreviousWindow ) ),
+	mDensityContext( std::move( other.mDensityContext ) ) {
+	other.mEngine = nullptr;
+}
+
+void Engine::WindowContext::keepCurrentTarget( const Float* density ) {
+	mPreviousWindow.invalidate();
+	mDensityContext.restoreKeepingTarget( density );
 }
 
 namespace {
@@ -234,6 +251,7 @@ std::shared_ptr<ResourceScope> Engine::getDefaultResourceScope() const {
 }
 
 void Engine::destroy() {
+	System::Private::ScopedRestoreTarget<EE::Window::Window>::invalidateAll();
 	for ( auto& it : mWindows ) {
 		eeSAFE_DELETE( it.second );
 	}
@@ -298,7 +316,10 @@ EE::Window::Window* Engine::createDefaultWindow( const WindowSettings& Settings,
 #endif
 }
 
-EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettings Context ) {
+EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettings Context,
+										  Float pixelDensityOverride ) {
+	if ( !std::isfinite( Settings.PixelDensity ) || Settings.PixelDensity <= 0.f )
+		Settings.PixelDensity = 0.f;
 	Context.Multisamples = Runtime::resolveMultisamples( Context.Multisamples );
 	if ( Runtime::forceHiddenWindows() ) {
 		Settings.Style |= WindowStyle::Hidden;
@@ -355,18 +376,15 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 
 	mWindows.insert( { mWindow->getWindowID(), mWindow } );
 
-	if ( firstWindow ) {
-		const Float density = Settings.PixelDensity > 0
-								  ? Settings.PixelDensity
-								  : PixelDensity::getEnvironmentPixelDensity();
-		if ( density > 0 )
-			PixelDensity::setPixelDensity( density );
-	}
+	window->initializePixelDensity( pixelDensityOverride );
+	if ( firstWindow )
+		PixelDensity::setPixelDensity( window->getPixelDensity() );
 
 	return window;
 }
 
 void Engine::destroyWindow( EE::Window::Window* window ) {
+	System::Private::ScopedRestoreTarget<EE::Window::Window>::invalidate( window );
 	UIInspectorServer::notifyWindowDestroyed( window );
 	mWindows.erase( window->getWindowID() );
 
@@ -418,6 +436,11 @@ void Engine::updateInput() {
 		if ( window.second != pollingWindow )
 			window.second->getInput()->endInputFrame();
 	}
+	// Native backends can report display, scale and pixel-size changes in any order. Query
+	// their final state once after pumping, before any scene runs its environment reflow.
+	for ( auto& entry : mWindows ) {
+		entry.second->updateDisplayMetrics();
+	}
 }
 
 EE::Window::Window* Engine::getCurrentWindow() const {
@@ -438,7 +461,7 @@ void Engine::setCurrentWindow( EE::Window::Window* window ) {
 }
 
 Engine::WindowContext Engine::makeWindowCurrent( EE::Window::Window* window ) {
-	return WindowContext( this, window );
+	return WindowContext( this, window, window ? &window->getPixelDensity() : nullptr );
 }
 
 Uint32 Engine::getWindowCount() const {
@@ -476,15 +499,12 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 	bool Borderless = ini->getValueB( iniKeyName, "borderless", false );
 	bool useDesktopResolution = ini->getValueB( iniKeyName, "usedesktopresolution", false );
 	std::string pixelDensityStr = ini->getValue( iniKeyName, "pixeldensity", "auto" );
-	float pixelDensity = PixelDensity::getPixelDensity();
+	float pixelDensity = 0.f;
 	bool useScreenKeyboard =
 		ini->getValueB( iniKeyName, "usescreenkeyboard", EE_SCREEN_KEYBOARD_ENABLED );
 
 	if ( !pixelDensityStr.empty() ) {
-		if ( String::toLower( pixelDensityStr ) == "auto" ) {
-			Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
-			pixelDensity = currentDisplay->getPixelDensity();
-		} else {
+		if ( String::toLower( pixelDensityStr ) != "auto" ) {
 			float pd = 1;
 			bool res = String::fromString( pd, pixelDensityStr );
 
@@ -522,6 +542,10 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 
 	WindowSettings WinSettings( Width, Height, title, Style, winBackend, BitColor, icon,
 								pixelDensity, useScreenKeyboard );
+	WinSettings.DensityMode = EE::Window::Window::pixelDensityModeFromString(
+		ini->getValue( iniKeyName, "pixeldensitymode", "default" ) );
+	WinSettings.PixelDensityReferencePPI =
+		ini->getValueF( iniKeyName, "pixeldensityreferenceppi", 0.f );
 
 	return WinSettings;
 }

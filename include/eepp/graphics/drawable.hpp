@@ -51,6 +51,9 @@ class EE_API Drawable {
 
 	virtual Sizef getPixelsSize() = 0;
 
+	/** Ratio of raster pixels to source pixels for images decoded at a requested scale. */
+	virtual Float getRasterScale() const { return 1.f; }
+
 	virtual Float getMinIntrinsicWidth() { return getPixelsSize().getWidth(); }
 
 	virtual Float getMaxIntrinsicWidth() { return getPixelsSize().getWidth(); }

@@ -2,6 +2,7 @@
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uidensityreflow.hpp>
 
 namespace EE { namespace UI {
 
@@ -108,6 +109,12 @@ void UICheckBox::onAutoSize() {
 	}
 
 	alignFix();
+}
+
+void UICheckBox::onBeforePixelDensityReflow( UIDensityReflow& reflow ) {
+	UITextView::onBeforePixelDensityReflow( reflow );
+	// The indicator children rebuild their sizes after the label.
+	reflow.restoreAfterLayout( [this]( const UIDensityReflow& ) { onAutoSize(); } );
 }
 
 void UICheckBox::onSizeChange() {

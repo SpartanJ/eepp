@@ -1068,8 +1068,12 @@ void Node::forEachChild( std::function<void( Node* )> func ) {
 }
 
 void Node::onSceneChange() {
+	auto* previousScene = mSceneNode;
 	mSceneNode = findSceneNode();
 	eeASSERT( !mSceneNode->removeFromCloseQueue( this ) );
+	if ( ( mRotationOriginPoint.mCustomFromDp || mScaleOriginPoint.mCustomFromDp ) && !isUINode() &&
+		 previousScene && mSceneNode && previousScene != mSceneNode )
+		rescaleLogicalOrigins( mSceneNode->getPixelDensity() / previousScene->getPixelDensity() );
 
 	Node* child = mChild;
 
@@ -1464,14 +1468,31 @@ void Node::applyScaleOrigin() {
 	}
 }
 
+void Node::rescaleLogicalOrigins( Float ratio ) {
+	if ( ratio == 1.f )
+		return;
+	if ( mRotationOriginPoint.OriginType == OriginPoint::OriginCustom &&
+		 mRotationOriginPoint.mCustomFromDp ) {
+		mRotationOriginPoint *= ratio;
+		applyRotationOrigin();
+	}
+	if ( mScaleOriginPoint.OriginType == OriginPoint::OriginCustom &&
+		 mScaleOriginPoint.mCustomFromDp ) {
+		mScaleOriginPoint *= ratio;
+		applyScaleOrigin();
+	}
+}
+
 void Node::setRotationOriginPointPixels( const OriginPoint& center ) {
 	mRotationOriginPoint = center;
+	mRotationOriginPoint.mCustomFromDp = false;
 	updateOriginPoint();
 	applyRotationOrigin();
 }
 
 void Node::setRotationOriginPoint( const OriginPoint& center ) {
 	mRotationOriginPoint = PixelDensity::dpToPx( center );
+	mRotationOriginPoint.mCustomFromDp = center.OriginType == OriginPoint::OriginCustom;
 	updateOriginPoint();
 	applyRotationOrigin();
 }
@@ -1527,6 +1548,7 @@ void Node::setRotation( float angle ) {
 
 void Node::setRotation( const Float& angle, const OriginPoint& center ) {
 	mRotationOriginPoint = PixelDensity::dpToPx( center );
+	mRotationOriginPoint.mCustomFromDp = center.OriginType == OriginPoint::OriginCustom;
 	updateOriginPoint();
 	setRotation( angle );
 }
@@ -1561,12 +1583,14 @@ const OriginPoint& Node::getScaleOriginPoint() const {
 
 void Node::setScaleOriginPointPixels( const OriginPoint& center ) {
 	mScaleOriginPoint = center;
+	mScaleOriginPoint.mCustomFromDp = false;
 	updateOriginPoint();
 	applyScaleOrigin();
 }
 
 void Node::setScaleOriginPoint( const OriginPoint& center ) {
 	mScaleOriginPoint = PixelDensity::dpToPx( center );
+	mScaleOriginPoint.mCustomFromDp = center.OriginType == OriginPoint::OriginCustom;
 	updateOriginPoint();
 	applyScaleOrigin();
 }
@@ -1597,6 +1621,7 @@ Vector2f Node::getScaleCenter() const {
 
 void Node::setScale( const Vector2f& scale, const OriginPoint& center ) {
 	mScaleOriginPoint = PixelDensity::dpToPx( center );
+	mScaleOriginPoint.mCustomFromDp = center.OriginType == OriginPoint::OriginCustom;
 	setScale( Vector2f( scale.x, scale.y ) );
 }
 

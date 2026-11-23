@@ -186,6 +186,8 @@ class EE_API UIStyle : public UIState {
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
 	bool mFirstState;
+	// Last resolved declarations for visible, enabled, display and visibility. Zero is absent.
+	Uint8 mResolvedVisibilityState[4]{};
 
 	explicit UIStyle( UIWidget* widget );
 

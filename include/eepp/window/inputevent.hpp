@@ -30,9 +30,10 @@ class InputEvent {
 		WindowKeyboardFocusGain, /**< Window has gained keyboard focus */
 		WindowKeyboardFocusLost, /**< Window has lost keyboard focus */
 		WindowClose,			 /**< The window manager requests that the window be closed */
-		WindowTakeFocus, /**< Window is being offered a focus (should SetWindowInputFocus() on
-							itself or a subwindow, or ignore) */
-		WindowHitTest	 /**< Window had a hit test that wasn't SDL_HITTEST_NORMAL. */
+		WindowTakeFocus,	 /**< Window is being offered a focus (should SetWindowInputFocus() on
+								itself or a subwindow, or ignore) */
+		WindowHitTest,		 /**< Window had a hit test that wasn't SDL_HITTEST_NORMAL. */
+		WindowDisplayChanged /**< Native display or UI scale changed. */
 	};
 
 	inline InputEvent() : Type( NoEvent ) {}

@@ -48,6 +48,8 @@ class EE_API UIRadioButton : public UITextView {
 
 	virtual void onSizeChange();
 
+	virtual void onBeforePixelDensityReflow( UIDensityReflow& reflow );
+
 	void switchState();
 
 	void autoActivate();

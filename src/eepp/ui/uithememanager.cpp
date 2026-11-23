@@ -10,6 +10,7 @@ UIThemeManager* UIThemeManager::New() {
 UIThemeManager::UIThemeManager() :
 	mFont( NULL ),
 	mFontSize( PixelDensity::dpToPx( 12 ) ),
+	mPixelDensity( PixelDensity::getPixelDensity() ),
 	mThemeDefault( NULL ),
 	mAutoApplyDefaultTheme( true ),
 	mEnableDefaultEffects( false ),
@@ -105,12 +106,25 @@ Font* UIThemeManager::getDefaultFont() const {
 }
 
 UIThemeManager* UIThemeManager::setDefaultFontSize( const Float& fontSize ) {
+	mDefaultFontSizeOverrideDp = fontSize / mPixelDensity;
 	mFontSize = fontSize;
 	return this;
 }
 
 const Float& UIThemeManager::getDefaultFontSize() const {
+	if ( !mDefaultFontSizeOverrideDp ) {
+		mFontSize =
+			( mThemeDefault ? mThemeDefault->getDefaultFontSizeDp() : mFallbackFontSizeDp ) *
+			mPixelDensity;
+	}
 	return mFontSize;
+}
+
+void UIThemeManager::onPixelDensityChange( Float density ) {
+	if ( mDefaultFontSizeOverrideDp && density != mPixelDensity )
+		mFontSize = *mDefaultFontSizeOverrideDp * density;
+	mPixelDensity = density;
+	getDefaultFontSize();
 }
 
 UIThemeManager* UIThemeManager::setDefaultTheme( UITheme* Theme ) {

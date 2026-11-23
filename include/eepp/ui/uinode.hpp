@@ -7,6 +7,7 @@
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/uiclip.hpp>
+#include <eepp/ui/uidensityreflow.hpp>
 #include <eepp/ui/uidirection.hpp>
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uiskin.hpp>
@@ -1620,6 +1621,19 @@ class EE_API UINode : public Node {
 	void click();
 
   protected:
+	friend class UISceneNode;
+
+	/** Reads semantic state under the old density and registers optional post-layout restores.
+	 * The scene invokes this before repairing geometry or applying styles for the new viewport. */
+	virtual void onBeforePixelDensityReflow( UIDensityReflow& ) {}
+
+	/** Repairs persistent density-derived state; UISceneNode owns traversal and reflow. */
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
+	void rebuildPixelDensityGeometry();
+
+	Float fontSizeForPixelDensityChange( Float size, Float oldDensity, Float newDensity ) const;
+
 	Vector2f mDpPos;
 	Sizef mDpSize;
 	Sizef mMinSize;
@@ -1658,6 +1672,15 @@ class EE_API UINode : public Node {
 	// Three 2-bit LogicalAlignSlot values: 0 = physical, 1 = start, 2 = end. Every slot defaults
 	// to start, which resolves to the historical physical left alignment in LTR contexts.
 	Uint8 mLogicalAlign{ 0x15 };
+	// Physical setters retain physical geometry across environment changes. Internal layout
+	// passes can assign new geometry afterward; ordinary DP setters clear the respective bits.
+	static constexpr Uint8 PhysicalPositionX = 1;
+	static constexpr Uint8 PhysicalPositionY = 2;
+	static constexpr Uint8 PhysicalWidth = 4;
+	static constexpr Uint8 PhysicalHeight = 8;
+	static constexpr Uint8 PhysicalPosition = PhysicalPositionX | PhysicalPositionY;
+	static constexpr Uint8 PhysicalSize = PhysicalWidth | PhysicalHeight;
+	Uint8 mPhysicalGeometry{ 0 };
 
 	/**
 	 * @brief Default constructor.
@@ -2066,6 +2089,7 @@ class EE_API UINode : public Node {
 	 * @param size The new size in pixels.
 	 */
 	void setInternalPixelsSize( const Sizef& size );
+	void setInternalPixelsSize( const Sizef& size, Uint8 physicalAxes );
 
 	/**
 	 * @brief Sets the internal width in pixels.

@@ -13,6 +13,8 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <limits>
 #include <memory>
 
 #include <imageresampler/resampler.h>
@@ -1097,13 +1099,22 @@ void Image::svgLoad( NSVGimage* image, Sizei hint ) {
 
 	NSVGrasterizer* rast = NULL;
 	unsigned char* img = NULL;
-	int w, h;
-
 	Float scale = mFormatConfiguration.svgScale();
 	if ( hint.x > 0 && hint.y > 0 && image->width > 0 && image->height > 0 )
 		scale = std::min( { scale, 1.f, hint.x / image->width, hint.y / image->height } );
-	w = std::max( 1, int( image->width * scale ) );
-	h = std::max( 1, int( image->height * scale ) );
+	const double width = image->width * scale;
+	const double height = image->height * scale;
+	// NanoSVG takes int dimensions and stride and indexes the output using int arithmetic.
+	// Check the scaled size before converting to an integer or allocating the raster.
+	if ( !std::isfinite( width ) || !std::isfinite( height ) || width < 0.0 || height < 0.0 ||
+		 !( scale > 0.f ) ||
+		 std::max( 1.0, width ) * std::max( 1.0, height ) >
+			 std::numeric_limits<int>::max() / 4.0 ) {
+		nsvgDelete( image );
+		return;
+	}
+	const int w = std::max( 1, static_cast<int>( width ) );
+	const int h = std::max( 1, static_cast<int>( height ) );
 
 	rast = nsvgCreateRasterizer();
 

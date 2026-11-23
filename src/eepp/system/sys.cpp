@@ -2306,9 +2306,11 @@ std::string Sys::getUserDirectory() {
 			return std::string( homeDrive ) + homePath;
 	}
 	return "";
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	return Window::Engine::instance()->getPlatformHelper()->getInternalStoragePath();
 #else
-	// On Unix-based systems, use HOME
-	return std::string{ std::getenv( "HOME" ) };
+	const char* home = std::getenv( "HOME" );
+	return home ? home : "";
 #endif
 }
 

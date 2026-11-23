@@ -35,6 +35,9 @@ using namespace EE::System;
 
 using namespace EE;
 using namespace EE::Window;
+using EE::Window::Private::DragManager;
+using EE::Window::Private::NativeDragAccess;
+using EE::Window::Private::X11Library;
 
 #define EE_X11_TEST_FUNCTIONS( F ) \
 	F( XChangeProperty )           \
@@ -100,7 +103,7 @@ constexpr TestCase testCases[]{
 	{ "Desktop proxy fallback", Scenario::DesktopProxyFallback },
 };
 
-struct X11TestFunctions : Private::X11Library {
+struct X11TestFunctions : X11Library {
 #define EE_DECLARE_X11_FUNCTION( name ) decltype( &::name ) name{ nullptr };
 	EE_X11_TEST_FUNCTIONS( EE_DECLARE_X11_FUNCTION )
 #undef EE_DECLARE_X11_FUNCTION
@@ -146,8 +149,7 @@ int runAutomatedNativeDragTests() {
 	window->display();
 	Sys::sleep( Milliseconds( 100 ) );
 	auto drag = DragAndDrop::forWindow( *window );
-	if ( Private::NativeDragAccess::getNativeDragContext( *window ).kind !=
-			 NativeWindowContext::Kind::X11 ||
+	if ( NativeDragAccess::getNativeDragContext( *window ).kind != NativeWindowContext::Kind::X11 ||
 		 !drag.getCapabilities().fileSource ) {
 		Engine::destroySingleton();
 		x11.XCloseDisplay( peer );
@@ -271,7 +273,7 @@ int runAutomatedNativeDragTests() {
 		std::string expected, received;
 		DragAndDrop::encodeFileUriList( offer, expected );
 		window->getClipboard()->setText( "eepp-dnd-clipboard" );
-		const auto context = Private::NativeDragAccess::getNativeDragContext( *window );
+		const auto context = NativeDragAccess::getNativeDragContext( *window );
 		x11.XRaiseWindow( peer, context.handles.x11.window );
 		x11.XSetInputFocus( peer, context.handles.x11.window, RevertToParent, CurrentTime );
 		x11.XWarpPointer( peer, 0, context.handles.x11.window, 0, 0, 0, 0, 100, 100 );
@@ -288,7 +290,7 @@ int runAutomatedNativeDragTests() {
 			offer.preview.image = &oversized;
 			const auto invalid = drag.startDrag( offer, [&]( DragResult ) { ++completions; } );
 			passed &= invalid.status == DragStartStatus::InvalidOffer && !completions &&
-					  !Private::DragManager::hasSession() && !previewWindow();
+					  !DragManager::hasSession() && !previewWindow();
 			offer.preview.image = &snapshot;
 		}
 		auto started = drag.startDrag( offer, [&]( DragResult value ) {
@@ -565,8 +567,8 @@ int runAutomatedNativeDragTests() {
 	destination->show();
 	destination->clear();
 	destination->display();
-	const auto originContext = Private::NativeDragAccess::getNativeDragContext( *window );
-	const auto destinationContext = Private::NativeDragAccess::getNativeDragContext( *destination );
+	const auto originContext = NativeDragAccess::getNativeDragContext( *window );
+	const auto destinationContext = NativeDragAccess::getNativeDragContext( *destination );
 	SmallVector<std::string, 2> legacyFiles;
 	destination->getInput()->pushCallback( [&]( InputEvent* event ) {
 		if ( event->Type == InputEvent::FileDropped ) {
@@ -631,7 +633,7 @@ int runAutomatedNativeDragTests() {
 		drag.startDrag( { { { "/tmp/destruction.txt" } } }, [&]( DragResult result ) {
 			++destructionCompletions;
 			destructionPassed =
-				result.reason == DragEndReason::Cancelled && !Private::DragManager::hasSession();
+				result.reason == DragEndReason::Cancelled && !DragManager::hasSession();
 			Engine::instance()->updateInput();
 		} );
 	Engine::instance()->destroyWindow( window );
@@ -646,7 +648,7 @@ int runAutomatedNativeDragTests() {
 	// Engine shutdown must release an active source without calling observers after UI teardown.
 	auto* shutdownWindow =
 		Engine::instance()->createWindow( { 320, 240, "eepp XDND shutdown source" } );
-	const auto shutdownContext = Private::NativeDragAccess::getNativeDragContext( *shutdownWindow );
+	const auto shutdownContext = NativeDragAccess::getNativeDragContext( *shutdownWindow );
 	x11.XRaiseWindow( peer, shutdownContext.handles.x11.window );
 	x11.XSetInputFocus( peer, shutdownContext.handles.x11.window, RevertToParent, CurrentTime );
 	x11.XWarpPointer( peer, 0, shutdownContext.handles.x11.window, 0, 0, 0, 0, 100, 100 );
@@ -662,7 +664,7 @@ int runAutomatedNativeDragTests() {
 											   [&]( DragResult ) { ++shutdownCompletions; } );
 	Engine::destroySingleton();
 	const bool shutdownPassed = shutdownStart.status == DragStartStatus::Started &&
-								shutdownCompletions == 0 && !Private::DragManager::hasSession() &&
+								shutdownCompletions == 0 && !DragManager::hasSession() &&
 								!previewWindow();
 	passed &= shutdownPassed;
 	std::cout << "Engine shutdown: completions=" << shutdownCompletions

@@ -249,6 +249,12 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mUISceneNode->setIsLoading( loading );
 }
 
+void UIWindow::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UIWidget::onPixelDensityChange( oldDensity, newDensity );
+	mShadowOffset *= newDensity / oldDensity;
+	onSizeChange();
+}
+
 UIWindow::~UIWindow() {
 	mClosing = true;
 	if ( NULL != getUISceneNode() && !getUISceneNode()->isClosing() &&
@@ -713,6 +719,15 @@ void UIWindow::applyMinWinSize() {
 }
 
 void UIWindow::onSizeChange() {
+	if ( mUISceneNode && mUISceneNode->isDensityTransitionNode( this ) ) {
+		// Decoration callbacks can run before CSS has resolved a viewport-relative minimum.
+		// Repair the children now, then enforce the final minimum after reflow has completed.
+		debounce( [this] { onSizeChange(); }, Time::Zero,
+				  String::hash( "window::density-layout" ) );
+		fixChildrenSize();
+		UIWidget::onSizeChange();
+		return;
+	}
 	Sizef size( getMinWindowSizeWithDecoration() );
 
 	if ( getSize().getWidth() < size.getWidth() || getSize().getHeight() < size.getHeight() ) {
@@ -778,7 +793,8 @@ const Sizef& UIWindow::getSize() const {
 void UIWindow::fixChildrenSize() {
 	Sizef size( PixelDensity::dpToPx( getMinWindowSizeWithDecoration() ) );
 
-	if ( mSize.getWidth() < size.getWidth() || mSize.getHeight() < size.getHeight() ) {
+	if ( ( !mUISceneNode || !mUISceneNode->isDensityTransitionNode( this ) ) &&
+		 ( mSize.getWidth() < size.getWidth() || mSize.getHeight() < size.getHeight() ) ) {
 		internalSize( eemin( mSize.getWidth(), size.getWidth() ),
 					  eemin( mSize.getHeight(), size.getHeight() ) );
 	}

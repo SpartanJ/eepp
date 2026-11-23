@@ -44,7 +44,7 @@ std::string makeRequestKey( CachePartitionId partition, const WebResourceRequest
 		key += '\n';
 	}
 	key += request.body;
-	key += String::format( "\n%d:%d:%d:%.4f", request.clampToEdge, request.mipmaps,
+	key += String::format( "\n%d:%d:%d:%.9g", request.clampToEdge, request.mipmaps,
 						   request.compressTexture, request.svgScale );
 	return key;
 }
@@ -375,11 +375,18 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 		std::string error;
 		std::size_t retainedBytes = 0;
 		bool success = response.isOK() && !response.getBody().empty();
+		Float rasterScale = 1.f;
 
 		if ( success && entryRequest.kind == WebResourceKind::Image ) {
-			image = std::make_unique<Image>(
-				reinterpret_cast<const Uint8*>( response.getBody().data() ),
-				response.getBody().size() );
+			const auto* bytes = reinterpret_cast<const Uint8*>( response.getBody().data() );
+			const size_t length = response.getBody().size();
+			Image::FormatConfiguration format;
+			if ( entryRequest.svgScale != 1.f &&
+				 Image::getFormat( bytes, length ) == Image::Format::SVG ) {
+				rasterScale = entryRequest.svgScale;
+				format.svgScale( rasterScale );
+			}
+			image = std::make_unique<Image>( bytes, length, 0, format );
 			if ( !image->getPixels() || !texture ) {
 				success = false;
 				error = "Invalid image data";
@@ -404,9 +411,10 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 													 operationId ) )
 					return;
 			}
+			texture->setRasterScale( rasterScale );
 			texture->replace( image.get() );
-			retainedBytes = static_cast<std::size_t>( texture->getSize().getWidth() *
-													  texture->getSize().getHeight() * 4 );
+			retainedBytes = static_cast<std::size_t>( texture->getImageWidth() ) *
+							texture->getImageHeight() * 4;
 		}
 
 		std::vector<Impl::Subscriber> subscribers;

@@ -68,6 +68,40 @@ TexturePtr ResourceScope::findTexture( const std::string& key ) const {
 	return {};
 }
 
+TexturePtr ResourceScope::findOrLoadTexture( const std::string& key,
+											 const std::function<TexturePtr()>& load ) {
+	if ( auto texture = findTexture( key ) )
+		return texture;
+
+	std::shared_future<TexturePtr> result;
+	std::packaged_task<TexturePtr()> task;
+	{
+		Lock lock( mMutex );
+		auto pending = mPendingTextureLoads.find( key );
+		if ( pending != mPendingTextureLoads.end() ) {
+			result = pending->second;
+		} else {
+			task = std::packaged_task<TexturePtr()>( [&] {
+				// A load may have finished between the initial lookup and acquiring mMutex.
+				if ( auto texture = findTexture( key ) )
+					return texture;
+				auto texture = load();
+				if ( texture )
+					publishLocal( key, texture );
+				return texture;
+			} );
+			result = task.get_future().share();
+			mPendingTextureLoads.emplace( key, result );
+		}
+	}
+	if ( task.valid() ) {
+		task();
+		Lock lock( mMutex );
+		mPendingTextureLoads.erase( key );
+	}
+	return result.get();
+}
+
 DrawablePtr ResourceScope::findDrawableSource( const ResourceKey& key ) const {
 	return findDrawableSource( key.value() );
 }

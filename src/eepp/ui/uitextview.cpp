@@ -51,11 +51,7 @@ UITextView::UITextView( const std::string& tag ) :
 		}
 	}
 
-	if ( NULL != theme ) {
-		setFontSize( theme->getDefaultFontSize() );
-	} else {
-		setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
-	}
+	setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 
 	if ( hasNonDefaultDirection() )
 		mTextCache.setDirection( getTextBaseDirection() );
@@ -64,6 +60,11 @@ UITextView::UITextView( const std::string& tag ) :
 }
 
 UITextView::UITextView() : UITextView( "textview" ) {}
+
+void UITextView::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UIWidget::onPixelDensityChange( oldDensity, newDensity );
+	setFontSize( fontSizeForPixelDensityChange( getFontSize(), oldDensity, newDensity ) );
+}
 
 UITextView::~UITextView() {}
 
@@ -430,7 +431,10 @@ void UITextView::onAutoSize() {
 	}
 
 	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		Float totW = (int)getTextWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		const Float textWidth = getTextWidth();
+		// Reserve the last fractional pixel before testing whether the full text fits.
+		Float totW = ( hasTextOverflow() ? eeceil( textWidth ) : eefloor( textWidth ) ) +
+					 mPaddingPx.Left + mPaddingPx.Right;
 
 		if ( !getMaxWidthEq().empty() ) {
 			Float oldW = totW;

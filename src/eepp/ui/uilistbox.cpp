@@ -84,6 +84,11 @@ UIListBox::UIListBox( const std::string& tag ) :
 
 UIListBox::UIListBox() : UIListBox( "listbox" ) {}
 
+void UIListBox::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UITouchDraggableWidget::onPixelDensityChange( oldDensity, newDensity );
+	onSizeChange();
+}
+
 UIListBox::~UIListBox() {}
 
 Uint32 UIListBox::getType() const {

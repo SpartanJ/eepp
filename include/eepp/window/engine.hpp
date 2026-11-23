@@ -1,17 +1,25 @@
 #ifndef EE_WINDOWCENGINE_H
 #define EE_WINDOWCENGINE_H
 
+#include <eepp/system/private/scopedrestoretarget.hpp>
 #include <eepp/window/base.hpp>
 #include <eepp/window/displaymanager.hpp>
 #include <eepp/window/platformhelper.hpp>
 #include <eepp/window/window.hpp>
 
+#include <functional>
 #include <memory>
 
 namespace EE { namespace Graphics {
 class ResourceCatalog;
 class ResourceScope;
 }} // namespace EE::Graphics
+
+namespace EE { namespace Scene {
+
+class SceneNode;
+
+}} // namespace EE::Scene
 
 namespace EE { namespace System {
 class IniFile;
@@ -28,8 +36,9 @@ class EE_API Engine {
 	SINGLETON_DECLARE_HEADERS( Engine )
 
   public:
-	/** Scoped binding of the current native window and graphics context. Restores the previous
-	 * binding when destroyed. Context objects are movable but cannot be copied. */
+	/** Scoped binding of the current native window, graphics context and UI density. If the
+	 * previous window was destroyed, the current window stays bound. Context objects are movable
+	 * on the application thread but cannot be copied. */
 	class EE_API WindowContext {
 	  public:
 		~WindowContext();
@@ -42,12 +51,15 @@ class EE_API Engine {
 
 	  private:
 		friend class Engine;
+		friend class Scene::SceneNode;
 
-		WindowContext( Engine* engine, EE::Window::Window* window );
+		WindowContext( Engine* engine, EE::Window::Window* window, const Float* density );
+
+		void keepCurrentTarget( const Float* density );
 
 		Engine* mEngine{ nullptr };
-		EE::Window::Window* mPreviousWindow{ nullptr };
-		bool mActive{ true };
+		System::Private::ScopedRestoreTarget<EE::Window::Window> mPreviousWindow;
+		Graphics::PixelDensity::Context mDensityContext;
 	};
 
 	~Engine();
@@ -60,9 +72,11 @@ class EE_API Engine {
 	/** @returns True if the current thread is the main thread. */
 	static bool isMainThread();
 
-	/** Creates a new window. */
+	/** Creates a new window. A positive finite @p pixelDensityOverride overrides the settings /
+	 * environment UI density without changing the requested native window dimensions. */
 	EE::Window::Window* createWindow( WindowSettings Settings,
-									  ContextSettings Context = ContextSettings() );
+									  ContextSettings Context = ContextSettings(),
+									  Float pixelDensityOverride = 0.f );
 
 	/** Destroy the window instance, and set as current other window running ( if any ).
 	 * This function is only useful for multi-window environment. Avoid using it with one window

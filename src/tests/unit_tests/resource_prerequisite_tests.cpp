@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <eepp/core/lrucache.hpp>
 #include <eepp/graphics/drawablegroup.hpp>
@@ -39,6 +40,7 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
+#include <future>
 #include <limits>
 #include <memory>
 #include <mutex>
@@ -572,6 +574,50 @@ UTEST( ResourcePrerequisites, resourceScopesResolveOnlyLocalAndExplicitlyImporte
 	laterCatalog.reset();
 	window->display( false );
 	Engine::destroySingleton();
+}
+
+UTEST( ResourcePrerequisites, textureLoadsShareOnlyTheSameScopeAndKey ) {
+	struct LoadTestTexture : Texture {};
+	auto scope = ResourceScope::New();
+	auto otherScope = ResourceScope::New();
+	TexturePtr firstTexture = std::make_shared<LoadTestTexture>();
+	TexturePtr otherTexture = std::make_shared<LoadTestTexture>();
+	LoaderGate gate;
+	std::atomic<int> sameKeyLoads{ 0 };
+	auto first = std::async( std::launch::async, [&] {
+		return scope->findOrLoadTexture( "shared", [&] {
+			++sameKeyLoads;
+			gate.run();
+			return firstTexture;
+		} );
+	} );
+	gate.waitUntilStarted();
+	auto sameKey = std::async( std::launch::async, [&] {
+		return scope->findOrLoadTexture( "shared", [&] {
+			++sameKeyLoads;
+			return otherTexture;
+		} );
+	} );
+	auto differentKey = std::async( std::launch::async, [&] {
+		return scope->findOrLoadTexture( "other", [&] { return otherTexture; } );
+	} );
+	auto differentScope = std::async( std::launch::async, [&] {
+		return otherScope->findOrLoadTexture( "shared", [&] { return otherTexture; } );
+	} );
+	const auto keyStatus = differentKey.wait_for( std::chrono::seconds( 2 ) );
+	const auto scopeStatus = differentScope.wait_for( std::chrono::seconds( 2 ) );
+	gate.finish();
+	EXPECT_TRUE( keyStatus == std::future_status::ready );
+	EXPECT_TRUE( scopeStatus == std::future_status::ready );
+	EXPECT_TRUE( first.get() == firstTexture );
+	EXPECT_TRUE( sameKey.get() == firstTexture );
+	EXPECT_TRUE( differentKey.get() == otherTexture );
+	EXPECT_TRUE( differentScope.get() == otherTexture );
+	EXPECT_EQ( sameKeyLoads.load(), 1 );
+	EXPECT_TRUE( scope->findTexture( "shared" ) == firstTexture );
+	EXPECT_TRUE( scope->findOrLoadTexture( "retry", [] { return TexturePtr{}; } ) == nullptr );
+	EXPECT_TRUE( scope->findOrLoadTexture( "retry", [&] { return firstTexture; } ) ==
+				 firstTexture );
 }
 
 UTEST( ResourcePrerequisites, defaultResourceScopeImportsGlobalCatalog ) {

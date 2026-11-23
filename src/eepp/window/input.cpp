@@ -99,11 +99,25 @@ bool Input::pushEvent( const InputEvent& event ) {
 	return true;
 }
 
+void Input::onDisplayTopologyChange() {
+	Engine::instance()->forEachWindow( []( Window* window ) {
+		window->mDisplayMetricsDirty = true;
+		window->mDisplayTopologyDirty = true;
+	} );
+}
+
 void Input::processEvent( InputEvent* Event ) {
+	// Raw window callbacks and resize handling run before scene dispatch. Bind only density
+	// here; scene dispatch already binds graphics, avoiding extra GL switches per native event.
+	auto densityContext = Graphics::PixelDensity::bindCurrent( &mWindow->getPixelDensity() );
 	mLastEvent.restart();
 
 	switch ( Event->Type ) {
 		case InputEvent::Window: {
+			if ( Event->window.type == InputEvent::WindowDisplayChanged ||
+				 Event->window.type == InputEvent::WindowSizeChanged ||
+				 Event->window.type == InputEvent::WindowMoved )
+				mWindow->mDisplayMetricsDirty = true;
 			if ( Event->window.type == InputEvent::WindowClose )
 				mWindow->onCloseRequest();
 			break;
@@ -267,6 +281,8 @@ void Input::processEvent( InputEvent* Event ) {
 			break;
 		}
 		case InputEvent::VideoResize: {
+			mWindow->mDisplayMetricsDirty = true;
+			auto windowContext = Engine::instance()->makeWindowCurrent( mWindow );
 			mWindow->onWindowResize( Event->resize.w, Event->resize.h );
 			break;
 		}

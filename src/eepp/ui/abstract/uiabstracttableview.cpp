@@ -84,9 +84,9 @@ template <typename Callback> static void consumeVariantText( const Variant& valu
 
 UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	UIAbstractView( tag ),
-	mDragBorderDistance( PixelDensity::dpToPx( 8 ) ),
-	mIconSize( PixelDensity::dpToPxI( 12 ) ),
-	mSortIconSize( PixelDensity::dpToPxI( 20 ) ) {
+	mDragBorderDistance( PixelDensity::dpToPx( DefaultDragBorderDistance ) ),
+	mIconSize( PixelDensity::dpToPxI( DefaultIconSize ) ),
+	mSortIconSize( PixelDensity::dpToPxI( DefaultSortIconSize ) ) {
 	mHeader = eeNew( TableHeaderLayout, ( mTag + "::header" ) );
 	mHeader->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mHeader->setParent( this )->setVisible( true )->setEnabled( true );
@@ -95,6 +95,17 @@ UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 		if ( mVScroll->getAlpha() == 0.f || mVScroll->getAlpha() == 1.f )
 			updateColumnsWidth();
 	} );
+}
+
+void UIAbstractTableView::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UIAbstractView::onPixelDensityChange( oldDensity, newDensity );
+	if ( mDensityDefaultMetrics & 1 )
+		mDragBorderDistance = PixelDensity::dpToPx( DefaultDragBorderDistance );
+	if ( mDensityDefaultMetrics & 2 )
+		mIconSize = PixelDensity::dpToPxI( DefaultIconSize );
+	if ( mDensityDefaultMetrics & 4 )
+		mSortIconSize = PixelDensity::dpToPxI( DefaultSortIconSize );
+	scheduleRowHeightUpdate();
 }
 
 UIAbstractTableView::~UIAbstractTableView() {
@@ -924,6 +935,7 @@ const Float& UIAbstractTableView::getDragBorderDistance() const {
 }
 
 void UIAbstractTableView::setDragBorderDistance( const Float& dragBorderDistance ) {
+	mDensityDefaultMetrics &= ~1;
 	mDragBorderDistance = dragBorderDistance;
 }
 
@@ -1462,6 +1474,7 @@ const size_t& UIAbstractTableView::getIconSize() const {
 }
 
 void UIAbstractTableView::setIconSize( const size_t& iconSize ) {
+	mDensityDefaultMetrics &= ~2;
 	mIconSize = iconSize;
 }
 
@@ -1470,6 +1483,7 @@ const size_t& UIAbstractTableView::getSortIconSize() const {
 }
 
 void UIAbstractTableView::setSortIconSize( const size_t& sortIconSize ) {
+	mDensityDefaultMetrics &= ~4;
 	mSortIconSize = sortIconSize;
 }
 

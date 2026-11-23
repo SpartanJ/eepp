@@ -2,6 +2,7 @@
 
 #ifdef EE_BACKEND_SDL2
 
+#include <cmath>
 #include <cstring>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -29,8 +30,11 @@
 #include <eepp/window/draganddrop/cocoadraganddrop.hpp>
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_WIN
+#if EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM )
 #include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
 #include <eepp/window/draganddrop/win32draganddrop.hpp>
 #endif
 
@@ -932,6 +936,67 @@ Float WindowSDL::getScale() const {
 	SDL_GL_GetDrawableSize( mSDLWindow, &realX, &realY );
 	SDL_GetWindowSize( mSDLWindow, &scaledX, &scaledY );
 	return (Float)realX / (Float)scaledX;
+}
+
+Float WindowSDL::getDisplayScale() const {
+	if ( !mSDLWindow || Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
+		return 1.f;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	// SDL2 can use pixel coordinates on Windows, so its drawable ratio can stay at 1 even
+	// when the desktop requests a different scale. Query the DPI assigned to this window.
+	using GetWindowDpi = UINT( WINAPI* )( HWND );
+	static const auto getWindowDpi = reinterpret_cast<GetWindowDpi>(
+		GetProcAddress( GetModuleHandleW( L"user32.dll" ), "GetDpiForWindow" ) );
+	const HWND window = getWindowHandler();
+	if ( getWindowDpi && window ) {
+		const UINT dpi = getWindowDpi( window );
+		if ( dpi > 0 )
+			return dpi / 96.f;
+	}
+#elif defined( EE_X11_PLATFORM )
+	if ( usesX11DisplayScaling() ) {
+		auto* displays =
+			static_cast<DisplayManagerSDL2*>( Engine::instance()->getDisplayManager() );
+		const Float desktopScale = displays->getX11DesktopScale( getWindowHandler() );
+		if ( desktopScale > 0.f )
+			return desktopScale;
+	}
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	// SDL's diagonal DPI on Android comes from the configured densityDpi (160 is Android's 1×).
+	const int index = SDL_GetWindowDisplayIndex( mSDLWindow );
+	Float dpi = 0.f;
+	if ( index >= 0 && SDL_GetDisplayDPI( index, &dpi, nullptr, nullptr ) == 0 &&
+		 std::isfinite( dpi ) && dpi > 0.f )
+		return dpi / 160.f;
+#endif
+	// Other SDL2 drivers expose the backing ratio. Hardware DPI is a separate policy.
+	const Float scale = getScale();
+	return std::isfinite( scale ) && scale > 0.f ? scale : 1.f;
+}
+
+#ifdef EE_X11_PLATFORM
+bool WindowSDL::usesX11DisplayScaling() const {
+	const char* driver = SDL_GetCurrentVideoDriver();
+	return driver && std::strcmp( driver, "x11" ) == 0;
+}
+#endif
+
+Float WindowSDL::getPhysicalDisplayDPI() const {
+	if ( !mSDLWindow || Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
+		return 0.f;
+	const int index = SDL_GetWindowDisplayIndex( mSDLWindow );
+	// The legacy getCurrentDisplayIndex() maps a failed lookup to the primary display.
+	auto* display = Engine::instance()->getDisplayManager()->getDisplayIndex( index );
+	return display ? display->getPhysicalDPI() : 0.f;
+}
+
+void WindowSDL::refreshDisplayMetrics() {
+	if ( !mSDLWindow || Runtime::mode() == RuntimeMode::Terminal )
+		return;
+	int width = 0, height = 0;
+	SDL_GL_GetDrawableSize( mSDLWindow, &width, &height );
+	if ( width > 0 && height > 0 )
+		onWindowResize( width, height );
 }
 
 bool WindowSDL::hasNativeMessageBox() const {

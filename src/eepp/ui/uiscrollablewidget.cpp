@@ -34,6 +34,25 @@ bool UIScrollableWidget::isType( const Uint32& type ) const {
 	return UIScrollableWidget::getType() == type ? true : UITouchDraggableWidget::isType( type );
 }
 
+void UIScrollableWidget::onBeforePixelDensityReflow( UIDensityReflow& reflow ) {
+	UITouchDraggableWidget::onBeforePixelDensityReflow( reflow );
+	const Vector2f values( mHScroll->getValue(), mVScroll->getValue() );
+	reflow.restoreAfterLayout( [this, values]( const UIDensityReflow& reflow ) {
+		onContentSizeChange();
+		if ( !reflow.isWidgetCurrent() )
+			return;
+		mVScroll->setValue( values.y );
+		if ( !reflow.isWidgetCurrent() )
+			return;
+		mHScroll->setValue( values.x );
+		if ( !reflow.isWidgetCurrent() )
+			return;
+		updateScroll();
+		if ( reflow.isWidgetCurrent() )
+			stopScrollController();
+	} );
+}
+
 void UIScrollableWidget::onSizeChange() {
 	onContentSizeChange();
 	UIWidget::onSizeChange();

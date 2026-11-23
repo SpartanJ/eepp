@@ -23,23 +23,36 @@ SceneNode* SceneNode::New( EE::Window::Window* window ) {
 
 SceneNode::Context::Context( SceneNode* scene ) :
 	mPreviousScene( SceneManager::instance()->setCurrentSceneNode( scene ) ),
-	mWindowContext(
-		Engine::instance()->makeWindowCurrent( scene ? scene->getWindow() : nullptr ) ) {}
+	mWindowContext( Engine::instance(), scene ? scene->getWindow() : nullptr,
+					scene ? &scene->getPixelDensity() : nullptr ) {}
 
 SceneNode::Context::~Context() {
-	if ( mActive )
-		SceneManager::instance()->setCurrentSceneNode( mPreviousScene );
+	if ( !mWindowContext.mEngine )
+		return;
+	auto* manager = SceneManager::existsSingleton();
+	if ( manager && mPreviousScene.isValid() && mWindowContext.mPreviousWindow.isValid() ) {
+		manager->setCurrentSceneNode( mPreviousScene.get() );
+		return;
+	}
+	auto* engine = Engine::existsSingleton();
+	auto* window = engine ? engine->getCurrentWindow() : nullptr;
+	auto* scene = manager ? manager->getCurrentSceneNode() : nullptr;
+	const Float* density = window ? &window->getPixelDensity() : nullptr;
+	if ( window && scene && scene->getWindow() == window )
+		density = &scene->getPixelDensity();
+	mWindowContext.keepCurrentTarget( density );
 }
 
 SceneNode::Context::Context( Context&& other ) noexcept :
-	mPreviousScene( other.mPreviousScene ),
-	mWindowContext( std::move( other.mWindowContext ) ),
-	mActive( other.mActive ) {
-	other.mActive = false;
-}
+	mPreviousScene( std::move( other.mPreviousScene ) ),
+	mWindowContext( std::move( other.mWindowContext ) ) {}
 
 SceneNode::Context SceneNode::makeCurrent() {
 	return Context( this );
+}
+
+const Float& SceneNode::getPixelDensity() const {
+	return mWindow ? mWindow->getPixelDensity() : PixelDensity::getPixelDensity();
 }
 
 SceneNode::SceneNode( EE::Window::Window* window ) :
@@ -81,6 +94,7 @@ SceneNode::SceneNode( EE::Window::Window* window ) :
 }
 
 SceneNode::~SceneNode() {
+	System::Private::ScopedRestoreTarget<SceneNode>::invalidate( this );
 	if ( -1 != mResizeCb && NULL != Engine::existsSingleton() &&
 		 Engine::instance()->existsWindow( mWindow ) ) {
 		mWindow->popResizeCallback( mResizeCb );
@@ -94,6 +108,12 @@ SceneNode::~SceneNode() {
 		eeSAFE_DELETE( mEventDispatcher );
 
 	mFrameBuffer.reset();
+
+	// Close callbacks can also have opened scopes while this scene was still current.
+	System::Private::ScopedRestoreTarget<SceneNode>::invalidate( this );
+	if ( auto* manager = SceneManager::existsSingleton();
+		 manager && manager->getCurrentSceneNode() == this )
+		manager->setCurrentSceneNode( nullptr );
 }
 
 void SceneNode::enableFrameBuffer() {
@@ -164,6 +184,11 @@ void SceneNode::draw() {
 }
 
 void SceneNode::update( const Time& time ) {
+	mWindow->updateDisplayMetrics();
+	updateScene( time );
+}
+
+void SceneNode::updateScene( const Time& time ) {
 	mElapsed = time;
 
 	mActionManager->update( time );

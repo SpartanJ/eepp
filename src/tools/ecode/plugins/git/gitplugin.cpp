@@ -4006,10 +4006,8 @@ void GitPlugin::buildSidePanelTab() {
 	if ( mTabContents && !mTab ) {
 		if ( mProjectPath.empty() )
 			return;
-		UIIcon* icon = findIcon( "source-control" );
-		mTab =
-			mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
-							 icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
+		mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
+								iconDrawable( "source-control", 12.f ) );
 		mTab->setId( "source_control_tab" );
 		mTab->setTextAsFallback( true );
 		return;
@@ -4149,7 +4147,6 @@ void GitPlugin::buildSidePanelTab() {
 		<Loader margin-top="32dp" id="git_panel_loader" indeterminate="true" lw="24dp" lh="24dp" outline-thickness="2dp" visible="false" layout_gravity="bottom|right" margin-bottom="24dp" margin-right="24dp" />
 	</RelativeLayout>
 	)html";
-	UIIcon* icon = findIcon( "source-control" );
 	std::string color =
 		!mHighlightStyleColor.empty() && Color::isColorString( mHighlightStyleColor )
 			? mHighlightStyleColor
@@ -4159,7 +4156,7 @@ void GitPlugin::buildSidePanelTab() {
 		String::format( STYLE, color, color, color ), nullptr, String::hash( "git_plugin_style" ) );
 
 	mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
-							icon ? icon->createDrawable( PixelDensity::dpToPx( 12 ) ) : nullptr );
+							iconDrawable( "source-control", 12.f ) );
 	mTab->setId( "source_control_tab" );
 	mTab->setTextAsFallback( true );
 

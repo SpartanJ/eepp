@@ -21,10 +21,11 @@ using namespace EE::Scene;
 using namespace EE::UI;
 using namespace EE::UI::Tools;
 
-static UISceneNode* createScene() {
+static UISceneNode* createScene( Float density = 1.f ) {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "SVG Test", WindowStyle::Default,
 													  WindowBackend::Default, 32, {}, 1, false,
-													  true ) );
+													  true ),
+									  ContextSettings(), density );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
@@ -275,9 +276,8 @@ UTEST( UISvg, percentageHeightResolvesAfterContainingBlockLayout ) {
 }
 
 UTEST( UISvg, percentageSizeUsesPhysicalContainingBlockAtPixelDensity2 ) {
-	auto sceneNode = createScene();
+	auto sceneNode = createScene( 2.f );
 	ASSERT_TRUE( sceneNode != nullptr );
-	PixelDensity::setPixelDensity( 2.f );
 
 	std::string html = R"html(<!doctype html>
 <html>

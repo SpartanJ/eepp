@@ -43,6 +43,8 @@ class UIThemeManager;
 class UIIconThemeManager;
 class UIEventDispatcher;
 class UIWidget;
+class UINode;
+class UIDensityReflow;
 class UIWindow;
 class UILayout;
 class UIIcon;
@@ -80,6 +82,16 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	static UISceneNode* New( EE::Window::Window* window = NULL, bool importDefaultResources = true,
 							 std::shared_ptr<ThreadPool> threadPool = nullptr );
+
+	/** Effective scene density: explicit override, embedded host, then native window. */
+	virtual const Float& getPixelDensity() const;
+
+	bool hasPixelDensityOverride() const;
+
+	/** Reflows the scene at a positive finite density. Zero clears the override. */
+	UISceneNode* setPixelDensity( Float density );
+
+	UISceneNode* clearPixelDensityOverride();
 
 	/**
 	 * @brief Destroys the UISceneNode and cleans up resources.
@@ -1066,6 +1078,9 @@ class EE_API UISceneNode : public SceneNode {
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
+	friend class EE::UI::UIStyle;
+	friend class EE::UI::UINode;
+	friend class EE::UI::UIDensityReflow;
 	friend class EE::UI::AccessibilityManager;
 	friend class EE::Window::Engine;
 
@@ -1079,6 +1094,18 @@ class EE_API UISceneNode : public SceneNode {
 	UIRoot* mRoot{ nullptr };
 	std::unique_ptr<AccessibilityManager> mAccessibilityManager;
 	Sizef mDpSize;
+	struct DensityTransitionState;
+	DensityTransitionState* mDensityTransition{ nullptr };
+	SmallVector<UISceneNode*, 4>* mRefreshingChildScenes{ nullptr };
+	struct DensityRebind {
+		UINode* node;
+		Float previousDensity;
+		Uint32 depth{ 0 };
+	};
+	SmallVector<DensityRebind, 0> mPendingDensityRebinds;
+	Float mPixelDensity{ 1.f };
+	Float mPixelDensityOverride{ 0.f };
+	Uint32 mWindowDisplayMetricsVersion{ 0 };
 	Uint32 mFlags;
 	Translator mTranslator;
 	std::vector<UIWindow*> mWindowsList;
@@ -1087,6 +1114,7 @@ class EE_API UISceneNode : public SceneNode {
 	static constexpr Uint8 AccessibilityClientActive = 0x04;
 	bool mIsLoading{ false };
 	bool mUpdatingLayouts{ false };
+	bool mApplyingDensityRebinds{ false };
 	bool mStyleDuringLoad{ false };
 	Uint8 mAccessibilityState{ static_cast<Uint8>( AccessibilityPolicy::Auto ) };
 	Uint32 mPendingHTTPStyleSheetLoads{ 0 };
@@ -1186,8 +1214,23 @@ class EE_API UISceneNode : public SceneNode {
 	virtual void onSceneChange();
 
 	void updateParentSizeListener();
+	void resizeToParent();
 	void onViewportPixelsSizeChange();
 	const Sizef& getRootPixelsSize() const;
+
+	void refreshPixelDensity();
+	void refreshDisplayDPI();
+	void refreshChildSceneMetrics();
+
+	void onPixelDensityChange( Float oldDensity, Float newDensity );
+
+	Float removeDensityTransitionNode( UINode* node );
+
+	Float cancelDensityRebind( UINode* node );
+
+	void applyPendingDensityRebinds();
+	bool isDensityTransitionNode( const UINode* node ) const;
+
 	UISceneNode* getHostUISceneNode() const;
 	void updateHostUISceneNode();
 	void registerChildUISceneNode( UISceneNode* sceneNode );

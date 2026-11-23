@@ -193,8 +193,8 @@ void UITab::onParentChange() {
 
 void UITab::onSizeChange() {
 	onAutoSize();
-	if ( NULL != getTabWidget() && !getTabWidget()->mPositioningTabRows )
-		getTabWidget()->orderTabs();
+	if ( auto* tabWidget = getTabWidget(); tabWidget && !tabWidget->mPositioningTabs )
+		tabWidget->orderTabs();
 	UISelectButton::onSizeChange();
 }
 
@@ -283,37 +283,48 @@ void UITab::onAutoSize() {
 
 	const Rectf iconMargin = PixelDensity::pxToDp( getInnerWidgetPixelsMargin( mIcon ) );
 	const Rectf closeMargin = PixelDensity::pxToDp( getInnerWidgetPixelsMargin( mCloseButton ) );
-	Float nonTextW =
+	const Rectf textMargin = PixelDensity::pxToDp( getInnerWidgetPixelsMargin( mTextBox ) );
+	const Rectf padding = PixelDensity::pxToDp( calculatePadding() );
+	const Float nonTextW =
 		( NULL != mIcon && mIcon->isVisible()
 			  ? mIcon->getSize().getWidth() + iconMargin.Left + iconMargin.Right
 			  : 0 ) +
 		( NULL != mCloseButton && mCloseButton->isVisible()
 			  ? mCloseButton->getSize().getWidth() + closeMargin.Left + closeMargin.Right
 			  : 0 ) +
-		getSkinSize().getWidth();
+		textMargin.Left + textMargin.Right +
+		eemax( getSkinSize().getWidth(), padding.Left + padding.Right );
 
-	Float textW = mTextBox->isVisible() ? mTextBox->getSize().getWidth() : 0.f;
-	Float w = textW + nonTextW;
+	if ( tTabW && mTextBox->isVisible() ) {
+		// An old cap can leave the text box narrow after its surroundings have resized.
+		if ( mMaxWidthEq.empty() ) {
+			mTextBox->setMaxWidthEq( "" );
+		} else {
+			const Float textLimit = eemax( 0.f, getMaxSize().getWidth() - nonTextW );
+			mTextBox->setMaxWidthEq( String::fromFloat( textLimit, "dp" ) );
+		}
+	}
 
+	Float w = ( mTextBox->isVisible() ? mTextBox->getSize().getWidth() : 0.f ) + nonTextW;
 	if ( NULL != tTabW ) {
 		if ( !mMinWidthEq.empty() )
 			w = eemax( w, getMinSize().getWidth() );
 		if ( !mMaxWidthEq.empty() )
 			w = eemin( w, getMaxSize().getWidth() );
-
-		if ( textW > w - nonTextW )
-			getTextView()->setMaxWidthEq( String::format( "%.0fdp", w - nonTextW ) );
 	}
 
 	setInternalWidth( w );
 
 	if ( getSize().getWidth() != w ) {
-		if ( NULL != getTabWidget() )
-			getTabWidget()->orderTabs();
+		if ( tTabW && !tTabW->mPositioningTabs )
+			tTabW->orderTabs();
 	}
 
-	if ( getTextView()->getTextWidth() > getTextView()->getSize().getWidth() )
-		getTextView()->setHorizontalAlignment( UIHorizontalAlignment::Start );
+	const auto& textPadding = mTextBox->getPixelsPadding();
+	if ( mTextBox->getTextWidth() >
+		 mTextBox->getPixelsSize().getWidth() - textPadding.Left - textPadding.Right ) {
+		mTextBox->setHorizontalAlignment( UIHorizontalAlignment::Start );
+	}
 }
 
 std::string UITab::getPropertyString( const PropertyDefinition* propertyDef,
@@ -352,6 +363,13 @@ bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
 			mOwnedName = attribute.value();
 			setOwnedNode();
 			break;
+		case PropertyId::LayoutHeight: {
+			// On a tab, auto-sizing controls the width independently of its fixed height.
+			const auto autoSize = mFlags & UI_AUTO_SIZE;
+			const bool applied = UISelectButton::applyProperty( attribute );
+			mFlags |= autoSize;
+			return applied;
+		}
 		default:
 			return UISelectButton::applyProperty( attribute );
 	}

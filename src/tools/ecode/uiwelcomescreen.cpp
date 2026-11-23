@@ -120,34 +120,34 @@ static const auto LAYOUT = R"xml(
 				<image id="home_logo" lw="wc" min-width="128dp" lh="128dp" lg="center" />
 				<vbox lg="center">
 					<tv id="home_title" text="ecode" lg="center" />
-					<tv id="version_number" text="version x.x.x" lg="center" />
+					<tv id="version_number" lg="center" />
 				</vbox>
 			</hbox>
 			<tv class="bold" text="@string(shortcuts, Shortcuts)" lg="center" margin-top="16dp" />
 			<vbox lw="mp" lh="wc" lg="center">
 				<hbox class="shortcut" lg="center">
 					<tv class="name" id="menu" text="@string(main_menu, Main Menu)" />
-					<tv class="shortcut" id="main_menu_shortcut" text="Ctrl + M" />
+					<tv class="shortcut" id="main_menu_shortcut" />
 				</hbox>
 				<hbox class="shortcut" lg="center">
 					<tv class="name" id="command_palette" text="@string(command_palette, Command Palette)" />
-					<tv class="shortcut" id="command_palette_shortcut" text="Ctrl + P" />
+					<tv class="shortcut" id="command_palette_shortcut" />
 				</hbox>
 				<hbox class="shortcut" lg="center">
 					<tv class="name" id="locate" text="@string(locate_files_and_symbols, Locate Files & Symbols)" />
-					<tv class="shortcut" id="locate_shortcut" text="Ctrl + K" />
+					<tv class="shortcut" id="locate_shortcut" />
 				</hbox>
 				<hbox class="shortcut" lg="center">
 					<tv class="name" text="@string(global_search, Global Search)" id="open-global-search" />
-					<tv class="shortcut" text="Ctrl + Shift + F" id="global_search_shortcut" />
+					<tv class="shortcut" id="global_search_shortcut" />
 				</hbox>
 				<hbox class="shortcut" lg="center">
 					<tv class="name" text="@string(open_folder, Open Folder)" id="open_folder" />
-					<tv class="shortcut" text="Ctrl + Shift + O" id="open_folder_shortcut" />
+					<tv class="shortcut" id="open_folder_shortcut" />
 				</hbox>
 				<hbox class="shortcut" lg="center">
 					<tv class="name" id="open_file" text="@string(open_file, Open File)" />
-					<tv class="shortcut" id="open_file_shortcut" text="Ctrl + O" />
+					<tv class="shortcut" id="open_file_shortcut" />
 				</hbox>
 				<hbox layout-gravity="center">
 					<Widget id="light_color_scheme_but" class="color_scheme_icon" />
@@ -213,7 +213,9 @@ UIWelcomeScreen* UIWelcomeScreen::createWelcomeScreen( App* app, UITabWidget* in
 	auto ret = app->getSplitter()->createWidgetInTabWidget(
 		tabWidget, welcomeScreen, app->i18n( "welcome", "Welcome" ), true );
 	app->getSplitter()->removeUnusedTab( tabWidget, true, false );
-	ret.first->setIcon( app->findIcon( "ecode", PixelDensity::dpToPxI( 16 ) ) );
+	auto* scene = tabWidget->getUISceneNode();
+	if ( auto* icon = scene->findIcon( "ecode" ) )
+		ret.first->setIcon( icon->createDrawableDp( 16.f, scene->getPixelDensity() ) );
 	return welcomeScreen;
 }
 

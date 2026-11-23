@@ -1,12 +1,14 @@
 #include "appconfig.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/window/platformhelper.hpp>
 #include <eepp/window/window.hpp>
 #include <nlohmann/json.hpp>
 
 using namespace EE::Graphics;
 using namespace EE::System;
 using namespace EE::UI;
+using EE::Window::PlatformHelper;
 using namespace eterm::Terminal;
 using EE::eemax;
 
@@ -19,6 +21,8 @@ AppConfig::AppConfig( std::string configPath ) : mConfigPath( std::move( configP
 }
 
 void AppConfig::load() {
+	const bool newProfile =
+		!FileSystem::fileExists( mIni.path() ) && !FileSystem::fileExists( mState.path() );
 	mIni.loadFromFile( mIni.path() );
 	mState.loadFromFile( mState.path() );
 	terminal.shell = mIni.getValue( "terminal", "shell", terminal.shell );
@@ -59,9 +63,15 @@ void AppConfig::load() {
 	font.antialiasing = Font::fontAntialiasingFromString( mIni.getValue(
 		"font", "antialiasing", Font::fontAntialiasingToString( font.antialiasing ) ) );
 	font.uiPath = mIni.getValue( "font", "ui_path", font.uiPath );
-	font.uiSize = mIni.getValueF( "font", "ui_size", font.uiSize );
+	font.uiSize = mIni.keyValueExists( "font", "ui_size" )
+					  ? mIni.getValueF( "font", "ui_size", font.uiSize )
+					  : PlatformHelper::getSystemUIFontSize( font.uiSize );
 
 	window.pixelDensity = mIni.getValueF( "window", "pixel_density", window.pixelDensity );
+	window.pixelDensityMode = newProfile ? EE::Window::Window::getNewProfilePixelDensityMode()
+										 : EE::Window::Window::pixelDensityModeFromString(
+											   mIni.getValue( "window", "pixel_density_mode" ) );
+	window.displayDensityOverrides = EE::Window::Window::loadDisplayDensityOverrides( mIni );
 	window.maxFPS = mIni.getValueU( "window", "frame_rate_limit", window.maxFPS );
 	window.vsync = mIni.getValueB( "window", "vsync", window.vsync );
 	window.exitOnClose = mIni.getValueB( "window", "exit_on_close", window.exitOnClose );
@@ -136,6 +146,9 @@ bool AppConfig::savePreferences() {
 	mIni.setValue( "font", "ui_path", font.uiPath );
 	mIni.setValueF( "font", "ui_size", font.uiSize );
 	mIni.setValueF( "window", "pixel_density", window.pixelDensity );
+	mIni.setValue( "window", "pixel_density_mode",
+				   EE::Window::Window::pixelDensityModeToString( window.pixelDensityMode ) );
+	EE::Window::Window::saveDisplayDensityOverrides( mIni, window.displayDensityOverrides );
 	mIni.setValueU( "window", "frame_rate_limit", window.maxFPS );
 	mIni.setValueB( "window", "vsync", window.vsync );
 	mIni.setValueB( "window", "exit_on_close", window.exitOnClose );

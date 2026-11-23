@@ -287,6 +287,10 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 
 	Sizef getPixelsSize();
 
+	virtual Float getRasterScale() const { return mRasterScale; }
+
+	void setRasterScale( Float scale ) { mRasterScale = scale; }
+
 	void draw();
 
 	void draw( const Vector2f& position );
@@ -369,6 +373,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	CoordinateType mCoordinateType;
 
 	int mInternalFormat;
+	Float mRasterScale{ 1.f };
 
 	void applyClampMode();
 

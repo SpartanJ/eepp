@@ -1,3 +1,4 @@
+#include <eepp/window/backend/SDL3/displaymanagersdl3.hpp>
 #include <eepp/window/backend/SDL3/inputsdl3.hpp>
 #include <eepp/window/backend/SDL3/joystickmanagersdl3.hpp>
 #include <eepp/window/backend/SDL3/windowsdl3.hpp>
@@ -198,6 +199,17 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 	event.WinID = 0;
 
 	switch ( SDLEvent.type ) {
+		case SDL_EVENT_DISPLAY_ADDED:
+		case SDL_EVENT_DISPLAY_REMOVED:
+		case SDL_EVENT_DISPLAY_MOVED:
+		case SDL_EVENT_DISPLAY_ORIENTATION:
+		case SDL_EVENT_DISPLAY_DESKTOP_MODE_CHANGED:
+		case SDL_EVENT_DISPLAY_CURRENT_MODE_CHANGED:
+		case SDL_EVENT_DISPLAY_CONTENT_SCALE_CHANGED:
+			static_cast<DisplayManagerSDL3*>( Engine::instance()->getDisplayManager() )
+				->invalidateDisplayList();
+			onDisplayTopologyChange();
+			return;
 		case SDL_EVENT_WINDOW_SHOWN: {
 			event.Type = InputEvent::Window;
 			event.window.gain = 1;
@@ -233,6 +245,14 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 				mDPIScale = eventWindowScale;
 			event.resize.w = static_cast<int>( SDLEvent.window.data1 * eventWindowScale );
 			event.resize.h = static_cast<int>( SDLEvent.window.data2 * eventWindowScale );
+			break;
+		}
+		case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
+		case SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED: {
+			event.Type = InputEvent::Window;
+			event.window.gain = 1;
+			event.WinID = SDLEvent.window.windowID;
+			event.window.type = InputEvent::WindowDisplayChanged;
 			break;
 		}
 		case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED: {

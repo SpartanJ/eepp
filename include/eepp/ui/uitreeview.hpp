@@ -128,17 +128,22 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual void setTableFlags( Uint32 flags );
 
   protected:
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	enum class IterationDecision {
 		Continue,
 		Break,
 		Stop,
 	};
 
+	static constexpr Float DefaultIndentWidth = 6.f;
+	static constexpr Float DefaultExpanderIconSize = 12.f;
 	Float mIndentWidth;
 	Sizef mContentSize;
 	UIIcon* mExpandIcon{ nullptr };
 	UIIcon* mContractIcon{ nullptr };
 	size_t mExpanderIconSize{ 16 };
+	Uint8 mDensityDefaultTreeMetrics{ 3 };
 	bool mExpandersAsIcons{ false };
 	bool mDisableCellClipping{ false };
 

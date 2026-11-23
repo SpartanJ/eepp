@@ -16,7 +16,7 @@ class UIIcon;
 using UIIconPtr = ResourcePtr<UIIcon>;
 using UIIconWeakPtr = ResourceWeakPtr<UIIcon>;
 
-class EE_API UIIcon {
+class EE_API UIIcon : public std::enable_shared_from_this<UIIcon> {
   public:
 	static UIIconPtr New( const std::string& name );
 
@@ -33,6 +33,13 @@ class EE_API UIIcon {
 	/** Creates a private drawable instance for a consumer. This must not be called from a rendering
 	 * loop; retain the returned instance instead. */
 	DrawablePtr createDrawable( const int& size ) const;
+
+	/** Creates an icon at a logical size that UI consumers can re-rasterize on density changes. */
+	DrawablePtr createDrawableDp( Float size, Float pixelDensity ) const;
+
+	/** Returns a new raster for a logical icon whose target pixel size changed. */
+	static DrawablePtr recreateDrawableForDensity( const DrawablePtr& drawable,
+												   Float pixelDensity );
 
 	virtual void setSource( const int& size, DrawablePtr drawable );
 

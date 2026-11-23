@@ -91,6 +91,10 @@ class EE_API WindowSDL : public Window {
 
 	virtual Float getScale() const;
 
+	virtual Float getDisplayScale() const;
+
+	virtual Float getPhysicalDisplayDPI() const;
+
 	virtual bool hasNativeMessageBox() const;
 
 	virtual bool showMessageBox( const MessageBoxType& type, const std::string& title,
@@ -127,6 +131,12 @@ class EE_API WindowSDL : public Window {
 	int getCurrentDisplayIndex() const;
 
   protected:
+	virtual void refreshDisplayMetrics();
+
+#ifdef EE_X11_PLATFORM
+	bool usesX11DisplayScaling() const;
+#endif
+
 	NativeWindowContext getNativeDragContext();
 
 	bool isNativeFileTargetSupported() const;

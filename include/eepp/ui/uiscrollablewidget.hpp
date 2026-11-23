@@ -62,6 +62,8 @@ class EE_API UIScrollableWidget : public UITouchDraggableWidget {
 	virtual bool isScrollable() const;
 
   protected:
+	virtual void onBeforePixelDensityReflow( UIDensityReflow& reflow );
+
 	ScrollViewType mScrollViewType;
 	ScrollBarMode mVScrollMode;
 	ScrollBarMode mHScrollMode;
