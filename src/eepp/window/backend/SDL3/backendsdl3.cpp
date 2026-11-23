@@ -2,6 +2,7 @@
 
 #ifdef EE_BACKEND_SDL3
 
+#include <eepp/window/backend/backendhelper.hpp>
 #include <eepp/window/draganddrop/waylanddraganddrop.hpp>
 #include <eepp/window/runtime.hpp>
 
@@ -18,6 +19,20 @@
 #endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL3 {
+
+bool WindowBackendSDL3::initVideo() {
+	if ( SDL_WasInit( SDL_INIT_VIDEO ) )
+		return true;
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	if ( Runtime::mode() == RuntimeMode::Native &&
+		 !SDL_GetAppMetadataProperty( SDL_PROP_APP_METADATA_IDENTIFIER_STRING ) ) {
+		const auto appId = BackendHelper::packagedAppId();
+		if ( !appId.empty() )
+			SDL_SetAppMetadataProperty( SDL_PROP_APP_METADATA_IDENTIFIER_STRING, appId.c_str() );
+	}
+#endif
+	return SDL_Init( SDL_INIT_VIDEO );
+}
 
 WindowBackendSDL3::WindowBackendSDL3() : WindowBackendLibrary() {
 	// A window-close callback owns the decision to close, hide, or cancel. Keep native Quit

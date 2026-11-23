@@ -11,13 +11,16 @@
 #else
 #include <wayland/wayland-client.h>
 #endif
+#define EE_HAS_WAYLAND_CLIENT
 
 // Generated marshal flags and their dispatch entry point require client headers >= 1.20.
 #ifdef WL_MARSHAL_FLAG_DESTROY
 #define EE_HAS_WAYLAND_DRAG_SOURCE
+#endif
 
 #include <algorithm>
 #include <dlfcn.h>
+#include <initializer_list>
 
 namespace EE { namespace Window { namespace Private {
 
@@ -36,13 +39,13 @@ class WaylandLibrary {
 			dlclose( handle );
 	}
 
+	static bool hasGlobals( std::initializer_list<const char*> names );
+
+#ifdef EE_HAS_WAYLAND_DRAG_SOURCE
 	bool load() {
 		if ( handle )
 			return true;
-		handle = dlopen( "libwayland-client.so.0", RTLD_NOW | RTLD_LOCAL );
-		if ( !handle )
-			handle = dlopen( "libwayland-client.so", RTLD_NOW | RTLD_LOCAL );
-		if ( !handle )
+		if ( !open() )
 			return false;
 #define EE_WL_FUNCTION( name )                                           \
 	name = reinterpret_cast<decltype( name )>( dlsym( handle, #name ) ); \
@@ -165,12 +168,19 @@ class WaylandLibrary {
 	const wl_interface *registry{}, *callback{}, *compositor{}, *subcompositor{}, *subsurface{},
 		*region{}, *surface{}, *shm{}, *shm_pool{}, *buffer{}, *seat{}, *pointer{},
 		*data_device_manager{}, *data_device{}, *data_source{};
+#endif
 
   private:
+	bool open() {
+		handle = dlopen( "libwayland-client.so.0", RTLD_NOW | RTLD_LOCAL );
+		if ( !handle )
+			handle = dlopen( "libwayland-client.so", RTLD_NOW | RTLD_LOCAL );
+		return handle != nullptr;
+	}
+
 	void* handle{ nullptr };
 };
 
 }}} // namespace EE::Window::Private
-#endif
 #endif
 #endif

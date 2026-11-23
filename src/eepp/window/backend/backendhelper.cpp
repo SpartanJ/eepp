@@ -5,6 +5,21 @@
 
 using namespace EE::System;
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+namespace EE { namespace Window { namespace Backend {
+
+std::string BackendHelper::packagedAppId() {
+	auto name = FileSystem::fileNameFromPath( Sys::getProcessFilePath() );
+	// Linux packages use <app>.bin for the executable and <app>.desktop for its launcher.
+	if ( name.size() <= 4 || !name.ends_with( ".bin" ) )
+		return {};
+	name.resize( name.size() - 4 );
+	return name;
+}
+
+}}} // namespace EE::Window::Backend
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include <cstdint>
 #include <initguid.h>

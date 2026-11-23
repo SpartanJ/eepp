@@ -15,12 +15,14 @@ done
 
 uname -a
 
+SDLVER=$(awk -F '"' '/^remote_sdl3_version_number =/ { print $2; exit }' ../../premake5.lua)
 if [[ "$ARCH" == "arm64" ]]; then
 echo "Building SDL3 for arch $ARCH"
 CROSS_PREFIX="/usr/local/cross-tools/aarch64-w64-mingw32"
 
-if [ -f "$CROSS_PREFIX/bin/SDL3.dll" ]; then
-echo "SDL3 found in cross-tools folder"
+if [ -f "$CROSS_PREFIX/bin/SDL3.dll" ] &&
+   [ "$(awk '/^Version:/ { print $2; exit }' "$CROSS_PREFIX/lib/pkgconfig/sdl3.pc" 2>/dev/null)" = "$SDLVER" ]; then
+echo "SDL3 $SDLVER found in cross-tools folder"
 exit 0
 fi
 
@@ -28,8 +30,6 @@ else
 echo "Building SDL3 for arch $(uname -m)"
 CROSS_PREFIX=
 fi
-
-SDLVER=$(grep "remote_sdl3_version_number =" ../../premake5.lua | awk '{print $3}' | tr -d '"')
 
 echo "SDL3 version $SDLVER"
 echo "$PATH"

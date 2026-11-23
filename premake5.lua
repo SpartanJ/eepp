@@ -202,14 +202,14 @@ remote_sdl2_version_number = "2.32.10"
 remote_sdl2_version = "SDL2-" .. remote_sdl2_version_number
 remote_sdl2_devel_src_url = "https://libsdl.org/release/" .. remote_sdl2_version .. ".zip"
 remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-" .. remote_sdl2_version_number .. "-VC.zip"
-remote_sdl2_devel_vc_arm64_url = "https://github.com/mmozeiko/build-sdl2/releases/download/2025-12-14/SDL2-arm64-2025-12-14.zip"
+remote_sdl2_devel_vc_arm64_url = "https://github.com/mmozeiko/build-sdl2/releases/download/2026-11-22/SDL2-arm64-2026-11-22.zip"
 remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-" .. remote_sdl2_version_number .. "-mingw.zip"
 remote_sdl2_arm64_cross_tools_path = "/usr/local/cross-tools/aarch64-w64-mingw32"
-remote_sdl3_version_number = "3.4.10"
+remote_sdl3_version_number = "3.4.20"
 remote_sdl3_version = "SDL3-" .. remote_sdl3_version_number
 remote_sdl3_devel_src_url = "https://libsdl.org/release/" .. remote_sdl3_version .. ".zip"
 remote_sdl3_devel_vc_url = "https://www.libsdl.org/release/SDL3-devel-" .. remote_sdl3_version_number .. "-VC.zip"
-remote_sdl3_devel_vc_arm64_url = "https://github.com/mmozeiko/build-sdl3/releases/download/2026-06-07/SDL3-arm64-2026-06-07.zip"
+remote_sdl3_devel_vc_arm64_url = "https://github.com/mmozeiko/build-sdl3/releases/download/2026-11-22/SDL3-arm64-2026-11-22.zip"
 remote_sdl3_devel_mingw_url = "https://www.libsdl.org/release/SDL3-devel-" .. remote_sdl3_version_number .. "-mingw.zip"
 remote_sdl3_arm64_cross_tools_path = "/usr/local/cross-tools/aarch64-w64-mingw32"
 sdl_version_dir_override = nil
@@ -297,9 +297,10 @@ function popen( executable_path )
 	return result
 end
 
-function download_and_extract_sdl(sdl_url, sdl_version_dir)
+function download_and_extract_sdl(sdl_url, sdl_version_dir, extract_dir)
 	local dest_dir = "src/thirdparty/"
 	local local_file = dest_dir .. sdl_version_dir .. ".zip"
+	extract_dir = extract_dir or dest_dir
 	local urls = { sdl_url }
 	local filename = sdl_url:match("^https://libsdl%.org/release/(.+)$") or
 		sdl_url:match("^https://www%.libsdl%.org/release/(.+)$")
@@ -312,8 +313,8 @@ function download_and_extract_sdl(sdl_url, sdl_version_dir)
 		local res, response_code = http.download(url, local_file, { timeout = 60 })
 		if res == "OK" and response_code == 200 then
 			print("Downloaded successfully to: " .. local_file)
-			zip.extract(local_file, dest_dir)
-			print("Extracted " .. local_file .. " into " .. dest_dir)
+			zip.extract(local_file, extract_dir)
+			print("Extracted " .. local_file .. " into " .. extract_dir)
 			return
 		end
 		os.remove(local_file)
@@ -357,16 +358,23 @@ function download_and_extract_dependencies()
 	sdl_version_dir_override = nil
 
 	if _OPTIONS["windows-vc-build"] and is_arm64_arch() then
-		sdl_version_dir_override = get_sdl_arm64_version_name()
+		local url = get_sdl_devel_url("vc_arm64")
+		local archive = url:match("/([^/]+)%.zip$")
+		-- The archive's top-level directory does not include its release date.
+		sdl_version_dir_override = archive .. "/" .. get_sdl_arm64_version_name()
+		if not os.isdir("src/thirdparty/" .. sdl_version_dir_override) then
+			local extract_dir = "src/thirdparty/" .. archive
+			os.mkdir(extract_dir)
+			download_and_extract_sdl(url, archive, extract_dir)
+		end
+		copy_sdl()
+		return
 	end
 
 	local sdl_version_dir = get_sdl_version_dir()
 
 	if not os.isdir("src/thirdparty/" .. sdl_version_dir) then
-		if _OPTIONS["windows-vc-build"] and is_arm64_arch() then
-			download_and_extract_sdl(get_sdl_devel_url("vc_arm64"), sdl_version_dir)
-			copy_sdl()
-		elseif _OPTIONS["windows-vc-build"] then
+		if _OPTIONS["windows-vc-build"] then
 			download_and_extract_sdl(get_sdl_devel_url("vc"), sdl_version_dir)
 			copy_sdl()
 		elseif _OPTIONS["windows-mingw-build"] and not is_arm64_arch() then

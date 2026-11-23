@@ -392,7 +392,7 @@ backends = { }
 static_backends = { }
 backend_selected = false
 remote_sdl2_version = "SDL2-2.32.10"
-remote_sdl3_version = "SDL3-3.4.10"
+remote_sdl3_version = "SDL3-3.4.20"
 
 function build_arch_configuration()
 	if os.is_real("mingw32") or os.is_real("mingw64") then

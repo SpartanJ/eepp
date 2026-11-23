@@ -9,6 +9,7 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/window/backend/SDL3/backendsdl3.hpp>
 #include <eepp/window/backend/SDL3/clipboardsdl3.hpp>
 #include <eepp/window/backend/SDL3/cursormanagersdl3.hpp>
 #include <eepp/window/backend/SDL3/displaymanagersdl3.hpp>
@@ -190,7 +191,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.ContextConfig.DoubleBuffering = true;
 #endif
 
-	if ( !SDL_WasInit( SDL_INIT_VIDEO ) && !SDL_Init( SDL_INIT_VIDEO ) ) {
+	if ( !WindowBackendSDL3::initVideo() ) {
 		Log::error( "Unable to initialize SDL: %s", SDL_GetError() );
 
 		logFailureInit( "WindowSDL", getVersion() );

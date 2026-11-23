@@ -1,4 +1,5 @@
 #include <eepp/system/sys.hpp>
+#include <eepp/window/backend/SDL2/backendsdl2.hpp>
 #include <eepp/window/backend/SDL2/base.hpp>
 #include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
 #include <eepp/window/platform/physicaldisplaymetrics.hpp>
@@ -254,8 +255,8 @@ int DisplayManagerSDL2::getDisplayCount() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	setDPIAwareness();
 #endif
-	if ( !SDL_WasInit( SDL_INIT_VIDEO ) )
-		SDL_Init( SDL_INIT_VIDEO );
+	if ( !WindowBackendSDL2::initVideo() )
+		return -1;
 	const int count = SDL_GetNumVideoDisplays();
 	if ( count != mDisplayCount ) {
 		invalidateDisplayMetrics();

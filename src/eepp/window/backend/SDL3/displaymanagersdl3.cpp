@@ -1,3 +1,4 @@
+#include <eepp/window/backend/SDL3/backendsdl3.hpp>
 #include <eepp/window/backend/SDL3/base.hpp>
 #include <eepp/window/backend/SDL3/displaymanagersdl3.hpp>
 #include <eepp/window/platform/physicaldisplaymetrics.hpp>
@@ -131,7 +132,7 @@ void DisplayManagerSDL3::invalidateDisplayList() {
 void DisplayManagerSDL3::updateDisplayList() {
 	if ( !mDisplayListDirty )
 		return;
-	if ( !SDL_WasInit( SDL_INIT_VIDEO ) && !SDL_Init( SDL_INIT_VIDEO ) ) {
+	if ( !WindowBackendSDL3::initVideo() ) {
 		Log::error( "DisplayManagerSDL3: Failed to initialize SDL video: %s", SDL_GetError() );
 		return;
 	}
