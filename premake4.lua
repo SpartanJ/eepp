@@ -834,10 +834,11 @@ function add_static_links()
 	-- Expose the symbols that need one static library AFTER adding that static lib
 
 	if os.is_real("linux") or os.is_real("bsd") then
-		-- Keep bundled libraries from intercepting calls in system libraries loaded by libdecor.
+		-- Isolate the bundled font and PNG libraries from libdecor's system dependencies.
+		-- Static libssh2 consumers use the zlib symbols exported by eepp.
 		linkoptions {
-			"-Wl,--exclude-libs=libharfbuzz.a:libfreetype.a:liblibpng.a:libzlib.a:" ..
-			"libharfbuzz-debug.a:libfreetype-debug.a:liblibpng-debug.a:libzlib-debug.a"
+			"-Wl,--exclude-libs=libharfbuzz.a:libfreetype.a:liblibpng.a:" ..
+			"libharfbuzz-debug.a:libfreetype-debug.a:liblibpng-debug.a"
 		}
 	end
 
