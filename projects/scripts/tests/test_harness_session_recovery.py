@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -33,6 +34,88 @@ def descriptor(directory, kind='codex', mode='standalone'):
 
 @unittest.skipUnless(BINARY.exists(), 'Build eterm first')
 class HarnessRecovery(unittest.TestCase):
+    @unittest.skipUnless(sys.platform=='linux' and shutil.which('fish'),
+                         'Shutdown ordering fixture needs Linux signals and fish')
+    def test_window_snapshot_survives_harness_exit_before_window_shutdown(self):
+        for kind,case in (('codex','exited'),('claude','exited'),('codex','alive'),
+                          ('codex','reused'),('codex','cleared')):
+            with self.subTest(kind=kind,case=case),tempfile.TemporaryDirectory() as temp:
+                root=Path(temp).resolve();profile=root/'profile';profile.mkdir()
+                work=root/'work';work.mkdir();(root/'transcript').write_text('fixture')
+                (profile/'config.cfg').write_text('[terminal]\nshell='+shutil.which('fish')+
+                    '\nrecover_harness_sessions=true\nrestore_last_session=true\nclose_on_exit=false\n'
+                    'use_custom_working_directory=true\ndefault_working_directory='+str(work)+'\n')
+                writer=root/'writer.py'
+                writer.write_text('import os,json,time\nfrom pathlib import Path\n'
+                    'directory=Path(os.environ["ETERM_HARNESS_DIRECTORY"])\n'
+                    'record=json.loads(os.environ["TEST_DESCRIPTOR"])\n'
+                    '(directory/"active.json").write_text(json.dumps(record))\n'
+                    'Path(os.environ["TEST_READY"]).write_text(str(directory))\n'
+                    'time.sleep(60)\n')
+                owner=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)'])
+                record=descriptor(root,kind);record.update(cwd=str(work),owner_pid=owner.pid)
+                if case in ('reused','exited'): record['owner_started']=0
+                ready=root/'ready';log_path=root/'log'
+                env=dict(os.environ,ETERM_CONFIG_PATH=str(profile),EEPP_RUNTIME='headless',
+                    TEST_DESCRIPTOR=json.dumps(record),TEST_READY=str(ready),
+                    TEST_WRITER=str(writer),TEST_PYTHON=sys.executable)
+                for key in tuple(env):
+                    if key.startswith('ETERM_HARNESS_') or key in (
+                            'ETERM_RESUME_SESSION','ETERM_SHELL_INTEGRATION','CLAUDE_CODE_PLUGIN_DIRS'):
+                        env.pop(key,None)
+                child=None
+                with log_path.open('w') as log:
+                    try:
+                        child=subprocess.Popen([str(BINARY),'--shell-args=--no-config\n--init-command\n'
+                            'command "$TEST_PYTHON" "$TEST_WRITER"'],cwd=work,
+                            env=env,stdout=log,stderr=log)
+                        deadline=time.monotonic()+10
+                        while not ready.exists() and child.poll() is None and time.monotonic()<deadline:
+                            time.sleep(.02)
+                        self.assertTrue(ready.exists(),log_path.read_text()[-2000:])
+                        if case=='exited':
+                            owner.terminate();owner.wait(timeout=5)
+                        if case=='cleared':
+                            (Path(ready.read_text())/'active.json').write_text('')
+                        child.send_signal(signal.SIGTERM);child.wait(timeout=10)
+                        self.assertEqual(child.returncode,0,log_path.read_text()[-2000:])
+                        saved=json.loads((profile/'session.json').read_text())
+                        def panes(value):
+                            if isinstance(value,dict):
+                                if 'working_directory' in value: yield value
+                                for nested in value.values(): yield from panes(nested)
+                            elif isinstance(value,list):
+                                for nested in value: yield from panes(nested)
+                        pane,=panes(saved)
+                        self.assertEqual(pane['working_directory'],str(work))
+                        if case in ('reused','cleared'):
+                            self.assertNotIn('harness_session',pane)
+                        else:
+                            resume=pane['harness_session']
+                            self.assertEqual((resume['harness'],resume['session_id'],resume['cwd']),
+                                             (kind,SESSION,str(work)))
+                            self.assertNotIn('owner_pid',resume)
+                            self.assertNotIn('owner_started',resume)
+                            # The durable descriptor must remain usable after the old owner and
+                            # disposable pane directory have gone, as they do across a reboot.
+                            executable=root/kind
+                            executable.write_text('#!'+sys.executable+'\nimport os,sys,json\n'
+                                'print(json.dumps(dict(args=sys.argv[1:],cwd=os.getcwd())))\n')
+                            executable.chmod(0o700)
+                            launch=environment(root)
+                            launch.update(ETERM_RESUME_SESSION=json.dumps(resume),
+                                          PATH=temp+os.pathsep+os.environ['PATH'])
+                            result=subprocess.run([str(BINARY),'--harness-session','resume'],
+                                env=launch,cwd=root,capture_output=True,text=True,timeout=5)
+                            self.assertEqual(result.returncode,0,result.stderr)
+                            resumed=json.loads(result.stdout)
+                            self.assertEqual(resumed['cwd'],str(work))
+                            self.assertEqual(resumed['args'],['resume','--no-daemon',SESSION]
+                                if kind=='codex' else ['--resume',SESSION])
+                    finally:
+                        if child and child.poll() is None: child.kill();child.wait()
+                        if owner.poll() is None: owner.kill();owner.wait()
+
     @unittest.skipUnless(sys.platform=='linux' and shutil.which('fish'),
                          'Executable replacement regression needs Linux /proc and fish')
     def test_new_tabs_after_executable_replacement(self):
