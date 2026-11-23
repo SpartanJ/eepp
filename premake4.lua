@@ -392,7 +392,7 @@ backends = { }
 static_backends = { }
 backend_selected = false
 remote_sdl2_version = "SDL2-2.32.10"
-remote_sdl3_version = "SDL3-3.4.10"
+remote_sdl3_version = "SDL3-3.4.20"
 
 function build_arch_configuration()
 	if os.is_real("mingw32") or os.is_real("mingw64") then
@@ -832,6 +832,15 @@ end
 function add_static_links()
 	-- The linking order DOES matter
 	-- Expose the symbols that need one static library AFTER adding that static lib
+
+	if os.is_real("linux") or os.is_real("bsd") then
+		-- Isolate the bundled font and PNG libraries from libdecor's system dependencies.
+		-- Static libssh2 consumers use the zlib symbols exported by eepp.
+		linkoptions {
+			"-Wl,--exclude-libs=libharfbuzz.a:libfreetype.a:liblibpng.a:" ..
+			"libharfbuzz-debug.a:libfreetype-debug.a:liblibpng-debug.a"
+		}
+	end
 
 	-- Add static backends
 	if next(static_backends) ~= nil then

@@ -525,7 +525,7 @@ timing leak. Our SSH integration signs with Ed25519, so this was relevant. The i
 | --- | --- | --- |
 | Tracked `src/thirdparty/SDL2` | `include/SDL_version.h`: 2.0.12 | Android `projects/android-project/app/jni/eepp.mk` sets `SDL_PATH` to this tree. |
 | SDL2 download pin | `premake5.lua` and `premake4.lua`: 2.32.10 | Separate from tracked 2.0.12 tree. iOS helper follows this pin. |
-| SDL3 download pin | Premake scripts: 3.4.10 | Separate backend; do not apply SDL2 version ranges blindly. |
+| SDL3 download pin | Premake scripts: 3.4.20 | Separate backend; do not apply SDL2 version ranges blindly. |
 | System SDL on desktop | Package/toolchain selected at build time | Repository source does not prove installed or redistributed binary version. |
 
 High source matches for the old Android tree include CVE-2020-14409 (blit arithmetic),

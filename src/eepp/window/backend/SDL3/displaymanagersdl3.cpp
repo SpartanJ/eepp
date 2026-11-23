@@ -1,3 +1,4 @@
+#include <eepp/window/backend/SDL3/backendsdl3.hpp>
 #include <eepp/window/backend/SDL3/base.hpp>
 #include <eepp/window/backend/SDL3/displaymanagersdl3.hpp>
 
@@ -89,8 +90,7 @@ Sizeu DisplaySDL3::getSize() const {
 
 int DisplayManagerSDL3::getDisplayCount() {
 	if ( mDisplayIds.empty() ) {
-		// Initialize SDL video if not already done, similar to SDL2 backend
-		if ( !SDL_WasInit( SDL_INIT_VIDEO ) && !SDL_Init( SDL_INIT_VIDEO ) ) {
+		if ( !WindowBackendSDL3::initVideo() ) {
 			Log::error( "DisplayManagerSDL3: Failed to initialize SDL video: %s", SDL_GetError() );
 			return 0;
 		}

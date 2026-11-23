@@ -16,6 +16,8 @@ class EE_API WindowBackendSDL2 : public WindowBackendLibrary {
 	WindowBackendSDL2();
 
 	~WindowBackendSDL2();
+
+	static bool initVideo();
 };
 
 }}}} // namespace EE::Window::Backend::SDL2

@@ -3,9 +3,11 @@
 
 #include <eepp/config.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_WIN
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX
 #include <string>
+#endif
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
 struct HWND__;
 typedef HWND__* HWND;
 #endif
@@ -14,6 +16,9 @@ namespace EE { namespace Window { namespace Backend {
 
 class BackendHelper {
   public:
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	static std::string packagedAppId();
+#endif
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	static bool isProcessRunning( const char* processName, bool killProcess = false );
 

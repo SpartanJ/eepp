@@ -1,3 +1,4 @@
+#include "../../eepp/window/draganddrop/waylandlibrary.hpp"
 #include "utest.h"
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
@@ -6,10 +7,61 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/runtime.hpp>
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX && defined( EE_HAS_WAYLAND_CLIENT )
+#include <chrono>
+#include <cstdlib>
+#include <eepp/network/locallistener.hpp>
+#include <eepp/network/socketselector.hpp>
+#include <future>
+#include <unistd.h>
+#endif
+
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
 using namespace EE::Window;
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX && defined( EE_HAS_WAYLAND_CLIENT )
+UTEST( Runtime, waylandRegistryProbeTimesOutWhenServerDoesNotReply ) {
+	using namespace EE::Network;
+	if ( std::getenv( "WAYLAND_SOCKET" ) )
+		return;
+	void* wayland = Sys::loadObject( "libwayland-client.so.0", false );
+	if ( !wayland )
+		return;
+	ScopedOp releaseWayland( nullptr, [&] { Sys::unloadObject( wayland ); } );
+	char directory[] = "/tmp/eepp-wayland-probe-XXXXXX";
+	ASSERT_TRUE( mkdtemp( directory ) != nullptr );
+	ScopedOp removeDirectory( nullptr, [&] { rmdir( directory ); } );
+	const auto path = std::string( directory ) + "/wayland";
+	const bool hadDisplay = std::getenv( "WAYLAND_DISPLAY" ) != nullptr;
+	const auto previousDisplay = Sys::getEnv( "WAYLAND_DISPLAY" );
+	ASSERT_TRUE( Sys::setEnv( "WAYLAND_DISPLAY", path.c_str() ) );
+	ScopedOp restoreDisplay( nullptr, [&] {
+		if ( hadDisplay )
+			Sys::setEnv( "WAYLAND_DISPLAY", previousDisplay.c_str() );
+		else
+			unsetenv( "WAYLAND_DISPLAY" );
+	} );
+
+	LocalListener listener;
+	ASSERT_EQ( listener.listen( path ), Socket::Done );
+	SocketSelector selector;
+	selector.add( listener );
+	auto probe = std::async( std::launch::async, [] {
+		return EE::Window::Private::WaylandLibrary::hasGlobals( { "wp_fifo_manager_v1" } );
+	} );
+	LocalSocket peer;
+	const bool connected = selector.wait( Seconds( 2 ) ) && listener.accept( peer ) == Socket::Done;
+	listener.close();
+	const auto status = probe.wait_for( std::chrono::seconds( 2 ) );
+	// Disconnect even if the probe regresses, so the test can report the timeout failure.
+	peer.disconnect();
+	EXPECT_TRUE( connected );
+	EXPECT_TRUE( status == std::future_status::ready );
+	EXPECT_FALSE( probe.get() );
+}
+#endif
 
 UTEST( Runtime, hiddenWindowOverrideRequiresOneAndPreservesRuntime ) {
 	const std::string previous = Sys::getEnv( "EEPP_WINDOW_HIDDEN" );

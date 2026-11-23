@@ -25,7 +25,7 @@ done
 # Function to install dependencies
 install_dependencies() {
     sudo apt-get update
-    sudo apt-get install -y build-essential unzip wget wayland-protocols \
+    sudo apt-get install -y build-essential pkg-config unzip wget wayland-protocols \
                             libasound2-dev \
                             libdbus-1-dev \
                             libegl1-mesa-dev \
@@ -48,6 +48,29 @@ install_dependencies() {
                             libxt-dev \
                             libxv-dev \
                             libxxf86vm-dev || exit
+}
+
+# Ubuntu 20.04 is the x86-64 release baseline and has no libdecor development package.
+# Build libdecor there so the shipped SDL can dynamically load it on newer desktops.
+install_libdecor() {
+    if pkg-config --exists libdecor-0; then
+        return
+    fi
+    if apt-cache show libdecor-0-dev >/dev/null 2>&1; then
+        sudo apt-get install -y libdecor-0-dev
+        return
+    fi
+    local version=0.2.5
+    local archive="libdecor-$version.tar.gz"
+    sudo apt-get install -y meson ninja-build libcairo2-dev libpango1.0-dev
+    wget --timeout=60 --tries=2 -O "$archive" \
+        "https://gitlab.freedesktop.org/libdecor/libdecor/-/archive/$version/$archive"
+    echo "39c109a9a7eae943ba34d18a282c447d5729f9c486c8bc05ea305e4acd341522  $archive" | sha256sum -c -
+    tar -xzf "$archive"
+    meson setup "libdecor-$version/build" "libdecor-$version" --prefix=/usr/local \
+        -Ddemo=false -Dgtk=disabled
+    ninja -C "libdecor-$version/build"
+    sudo ninja -C "libdecor-$version/build" install
 }
 
 # Function to install cross-compile dependencies for aarch64
@@ -100,6 +123,9 @@ cd "$BUILD_DIR" || exit
 
 # Install dependencies
 install_dependencies
+if [ "$ARCH" != "aarch64" ]; then
+    install_libdecor
+fi
 
 # Download SDL2 source code
 echo "Downloading SDL2 version ${SDL_VERSION}..."

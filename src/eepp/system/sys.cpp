@@ -1538,8 +1538,9 @@ std::string Sys::getProcessFilePath() {
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 	char path[] = "/proc/self/exe";
 	ssize_t len = readlink( path, exename, PATH_MAX - 1 );
-	if ( len > 0 )
-		exename[len] = '\0';
+	if ( len <= 0 )
+		return {};
+	exename[len] = '\0';
 #elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
 	/* use realpath to resolve a symlink if the process was launched from one.
 	** This happens when Homebrew installs a cack and creates a symlink in

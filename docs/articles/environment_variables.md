@@ -254,6 +254,7 @@ eepp's own overrides, but do not have an eepp-defined global default.
 | Variable | Owner and common use |
 | --- | --- |
 | `SDL_VIDEODRIVER` / `SDL_VIDEO_DRIVER` | SDL2 / SDL3 video driver, such as `x11`, `wayland`, or `offscreen` when supported. eepp sets both spellings to `offscreen` for its headless runtime and on platforms where its terminal runtime uses that driver. |
+| `SDL_VIDEO_WAYLAND_WMCLASS` / `SDL_APP_ID` | SDL2 / SDL3 application ID for desktop integration. Linux packages default to the executable name with the `.bin` suffix removed, matching the packaged `.desktop` file. |
 | `SDL_VIDEO_EGL_DRIVER` / `SDL_EGL_LIBRARY` | SDL2 / SDL3 EGL library path. On Linux offscreen runs, eepp also retains a reference to the selected library; fallback `libEGL.so.1`. |
 | `SDL_AUDIODRIVER` / `SDL_AUDIO_DRIVER` | SDL2 / SDL3 audio backend. `dummy` is useful for silent tests with the SDL-based MojoAL backend. |
 | `SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS` | Both backends default this hint to `0` when no value was supplied. Controls fullscreen-window minimization on focus loss where supported. |
@@ -266,6 +267,10 @@ eepp's own overrides, but do not have an eepp-defined global default.
 | `GALLIUM_DRIVER` | Mesa: `llvmpipe` selects the LLVM software renderer when using the software path. |
 | `__GLX_VENDOR_LIBRARY_NAME` | libglvnd/GLX: `mesa` selects Mesa dispatch, useful when the normal GLX vendor is NVIDIA. |
 | `LP_NUM_THREADS` | llvmpipe rendering-worker count. `0` disables rendering threading; otherwise use an integer worker count. Default follows the available CPU cores, subject to driver limits. |
+
+For native Linux SDL2 launches with both displays available, eepp prefers Wayland when the
+compositor advertises `fifo-v1`, an output and the shell protocols needed for a decorated window.
+Set `SDL_VIDEODRIVER=x11` to use X11 or XWayland explicitly. SDL3 uses its own driver selection.
 
 Complete dependency references: [SDL3 hints](https://wiki.libsdl.org/SDL3/CategoryHints),
 [Mesa environment variables](https://docs.mesa3d.org/envvars.html), and
