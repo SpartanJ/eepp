@@ -6149,8 +6149,8 @@ UTEST( UIBackground, imageAtlasPositioning ) {
 
 	win->clear();
 	SceneManager::instance()->draw();
-	win->display();
 
+	// Capture the rendered frame before a buffer swap can replace it.
 	compareImages( utest_state, utest_result, win, "eepp-ui-background-atlas", "html", 4 );
 
 	Engine::destroySingleton();
@@ -6246,7 +6246,6 @@ UTEST( UIBackground, imageAtlasPositioningPixelDensity2 ) {
 
 	win->clear();
 	SceneManager::instance()->draw();
-	win->display();
 
 	compareImages( utest_state, utest_result, win, "eepp-ui-background-atlas-pd2", "html", 4 );
 
