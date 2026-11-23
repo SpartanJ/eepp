@@ -470,11 +470,16 @@ nlohmann::json HarnessSessionRecovery::capture( const UITerminal* terminal ) con
 		const auto pid = value["owner_pid"].get<ProcessID>();
 		if ( pid == 0 )
 			return {};
-		// A start time distinguishes the owner from an unrelated process that reused its PID.
-		if ( Sys::getProcessInfo( pid ).name.empty() ||
-			 ( value.contains( "owner_started" ) &&
-			   value["owner_started"] != Sys::getProcessCreationTime( pid ) ) )
-			return {};
+		// Shutdown can stop the harness before the window saves. Its last confirmed record
+		// still names a resumable conversation; returning to a shell prompt clears it explicitly.
+		// Reject a reused live PID, but do not discard the record just because its owner exited.
+		if ( value.contains( "owner_started" ) ) {
+			if ( !value["owner_started"].is_number_integer() )
+				return {};
+			const auto started = Sys::getProcessCreationTime( pid );
+			if ( started >= 0 && value["owner_started"] != started )
+				return {};
+		}
 		value.erase( "owner_pid" );
 		value.erase( "owner_started" );
 		return value;

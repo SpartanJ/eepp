@@ -537,11 +537,16 @@ int CodexSessionRelay::run( const std::vector<std::string>& arguments ) {
 		}
 		const int result = Process::runForeground( executable, { "app-server", "daemon", "start" },
 												   { { "ETERM_HARNESS_DIRECTORY", "" } } );
-		if ( result )
-			return result;
-		if ( probe.connect( upstream, Seconds( 5 ) ) != Socket::Done ) {
-			std::cerr << "eterm: Codex daemon is unavailable after start.\n";
-			return 1;
+		// A connect timeout waits for a pending connection, not for a missing socket to appear.
+		// Cold startup can publish the socket after `start` returns; concurrent pane restores
+		// can also find a daemon another start command is already bringing up.
+		const auto deadline = MonotonicClock::now() + Seconds( 10 );
+		while ( probe.connect( upstream, Milliseconds( 100 ) ) != Socket::Done ) {
+			if ( MonotonicClock::now() >= deadline ) {
+				std::cerr << "eterm: Codex daemon is unavailable after start.\n";
+				return result ? result : 1;
+			}
+			Sys::sleep( Milliseconds( 50 ) );
 		}
 	}
 	probe.disconnect();

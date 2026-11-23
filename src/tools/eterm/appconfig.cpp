@@ -194,8 +194,9 @@ bool AppConfig::saveSession( const nlohmann::json& session ) {
 	if ( !FileSystem::isDirectory( mConfigPath ) && !FileSystem::makeDir( mConfigPath, true ) )
 		return false;
 	// Titles can come from programs, so an invalid sequence must not fail the whole session.
-	return FileSystem::fileWrite(
-		sessionPath(), session.dump( -1, ' ', false, nlohmann::json::error_handler_t::replace ) );
+	return FileSystem::fileWriteAtomic(
+		sessionPath(), session.dump( -1, ' ', false, nlohmann::json::error_handler_t::replace ),
+		true );
 }
 
 } // namespace eterm

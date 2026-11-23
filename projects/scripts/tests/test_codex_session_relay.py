@@ -66,6 +66,8 @@ def mock_client():
     if args==['app-server','daemon','start']:
         root=Path(os.environ['TEST_RECORD_DIRECTORY'])
         with (root/'daemon-started').open('a') as log: log.write('start\n')
+        if os.environ.get('TEST_DAEMON_BACKGROUND'):
+            sys.exit(int(os.environ.get('TEST_DAEMON_STATUS','0')))
         deadline=time.monotonic()+5
         while not (root/'daemon-ready').exists() and time.monotonic()<deadline: time.sleep(.01)
         assert (root/'daemon-ready').exists()
@@ -325,6 +327,11 @@ class CodexRelay(unittest.TestCase):
     def test_stale_default_socket_starts_daemon_and_retries_once(self):
         self.transport(False,stale=True)
 
+    def test_recovery_waits_for_cold_daemon_to_create_its_socket(self):
+        for missing,status in ((True,0),(False,0),(True,1)):
+            with self.subTest(missing=missing,start_status=status):
+                self.transport(True,stale=True,startup_delay=.25,missing=missing,start_status=status)
+
     def test_resume_checks_effective_cwd_before_forwarding_the_response(self):
         for case in ('effective','ignored','omitted','conflicting','invalid','oversized',
                      'legacy','symlink','override'):
@@ -396,14 +403,17 @@ class CodexRelay(unittest.TestCase):
                 self.assertFalse(worker.is_alive())
                 self.assertFalse(failures,failures)
 
-    def transport(self,resume,stale=False):
+    def transport(self,resume,stale=False,startup_delay=0,missing=False,start_status=0):
         with tempfile.TemporaryDirectory(dir='/tmp') as temp:
             root=Path(temp);env=self.make_cli(root);upstream=root/'server.sock'
             if stale:
                 upstream=root/'app-server-control'/'app-server-control.sock'
                 upstream.parent.mkdir()
-                previous=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
-                previous.bind(str(upstream));previous.close()
+                if not missing:
+                    previous=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
+                    previous.bind(str(upstream));previous.close()
+                if startup_delay:
+                    env.update(TEST_DAEMON_BACKGROUND='1',TEST_DAEMON_STATUS=str(start_status))
             else:
                 env['ETERM_CODEX_SOCKET']=str(upstream)
             server=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
@@ -470,7 +480,9 @@ class CodexRelay(unittest.TestCase):
                     while not stopped.is_set() and not (root/'daemon-started').exists():
                         time.sleep(.01)
                     if stopped.is_set(): return
-                    upstream.unlink();server.bind(str(upstream));server.listen(8)
+                    if stopped.wait(startup_delay): return
+                    if upstream.exists(): upstream.unlink()
+                    server.bind(str(upstream));server.listen(8)
                     (root/'daemon-ready').touch()
                 while not stopped.is_set():
                     try: sock,_=server.accept()
