@@ -2927,7 +2927,7 @@ Font* UISceneNode::getFontFromNamesList( std::string_view names, Uint32 fontStyl
 
 			size_t size = fontFamily.size();
 			if ( fontStyle )
-				fontFamily += "#" + Text::styleFlagToString( fontStyle );
+				fontFamily.append( "#" ).append( Text::styleFlagToString( fontStyle ) );
 
 			font = mResourceScope->findFont( fontFamily ).get();
 
@@ -2948,7 +2948,7 @@ Font* UISceneNode::getFontFromNamesList( std::string_view names, Uint32 fontStyl
 				fontFamily = SystemFontResolver::instance()->resolve( query ).family;
 
 				if ( fontStyle )
-					fontFamily += "#" + Text::styleFlagToString( fontStyle );
+					fontFamily.append( "#" ).append( Text::styleFlagToString( fontStyle ) );
 
 				font = mResourceScope->findFont( fontFamily ).get();
 			}
@@ -2963,7 +2963,7 @@ Font* UISceneNode::getFontFromNamesList( std::string_view names, Uint32 fontStyl
 				if ( !desc.path.empty() ) {
 					std::string family = desc.family;
 					if ( fontStyle )
-						family += "#" + Text::styleFlagToString( fontStyle );
+						family.append( "#" ).append( Text::styleFlagToString( fontStyle ) );
 
 					if ( ( font = mResourceScope->findFont( family ).get() ) )
 						return true;
@@ -3073,7 +3073,7 @@ void UISceneNode::loadFontStyleVariants( Font* font, const std::string& family )
 			style |= Text::Bold;
 		std::string queryFamily = family;
 		if ( style )
-			queryFamily += "#" + Text::styleFlagToString( style );
+			queryFamily.append( "#" ).append( Text::styleFlagToString( style ) );
 		FontPtr existingHandle = mResourceScope->findFont( queryFamily );
 		Font* existing = existingHandle.get();
 		if ( existing && existing->getType() == FontType::TTF )

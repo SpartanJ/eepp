@@ -46,7 +46,8 @@ struct TarFixture {
 		std::snprintf( header.data() + 136, 12, "%011o", 1700000000 );
 		std::fill_n( header.data() + 148, 8, ' ' );
 		header[156] = type;
-		std::copy_n( link.data(), std::min<size_t>( link.size(), 100 ), header.data() + 157 );
+		if ( !link.empty() )
+			std::copy_n( link.data(), std::min<size_t>( link.size(), 100 ), header.data() + 157 );
 		std::copy_n( "ustar", 5, header.data() + 257 );
 		header[263] = header[264] = '0';
 		unsigned sum = 0;

@@ -1338,7 +1338,7 @@ class PendingAuthenticator : public SSHAuthenticationHandler {
 	request( const SSHAuthenticationRequest& ) override {
 		std::lock_guard<std::mutex> lock( mMutex );
 		if ( mReleased )
-			return makeReadyTask( std::optional<std::vector<std::string>>() );
+			return Task<std::optional<std::vector<std::string>>>::ready( std::nullopt );
 		mPending.emplace_back();
 		return Task<std::optional<std::vector<std::string>>>::create( mPending.back() );
 	}

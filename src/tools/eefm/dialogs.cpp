@@ -7,6 +7,7 @@
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/vfs/path.hpp>
 #include <memory>
+#include <utility>
 
 namespace eefm {
 
@@ -17,11 +18,11 @@ template <typename T> struct OnceCallback {
 	std::function<void( T )> fn;
 	bool done{ false };
 
-	void operator()( T value ) {
+	template <typename U = T> void operator()( U&& value ) {
 		if ( done )
 			return;
 		done = true;
-		fn( std::move( value ) );
+		fn( std::forward<U>( value ) );
 	}
 };
 

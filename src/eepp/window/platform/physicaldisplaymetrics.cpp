@@ -137,7 +137,9 @@ static bool getMonitorDPI( const Math::Rect& bounds, MONITOR_DPI_TYPE type, UINT
 		Sys::loadObject( "shcore.dll", false ), Sys::unloadObject );
 	if ( !library )
 		return false;
-	const auto getDpi = reinterpret_cast<decltype( &::GetDpiForMonitor )>(
+	// The SDK declaration is gated on targeting Windows 8.1 or later.
+	using GetDpiForMonitorFn = HRESULT( WINAPI* )( HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT* );
+	const auto getDpi = reinterpret_cast<GetDpiForMonitorFn>(
 		Sys::loadFunction( library.get(), "GetDpiForMonitor", false ) );
 	return getDpi && SUCCEEDED( getDpi( monitor, type, &x, &y ) );
 }

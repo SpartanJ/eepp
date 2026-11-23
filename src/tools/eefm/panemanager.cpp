@@ -936,13 +936,17 @@ void PaneManager::updateStatus( Pane& pane ) {
 			text = String::format( mUI->i18n( "eefm_selected_count", "%s selected" ).toUtf8(),
 								   describe( selectedFolders, selectedFiles ) );
 			if ( selectedFiles ) {
-				text +=
-					" (" + FileSystem::sizeToString( static_cast<Int64>( selectedBytes ) ) + ")";
+				text += " (";
+				text += FileSystem::sizeToString( static_cast<Int64>( selectedBytes ) );
+				text += ')';
 			}
 		} else {
 			text = describe( folders, files );
-			if ( files )
-				text += " (" + FileSystem::sizeToString( static_cast<Int64>( bytes ) ) + ")";
+			if ( files ) {
+				text += " (";
+				text += FileSystem::sizeToString( static_cast<Int64>( bytes ) );
+				text += ')';
+			}
 		}
 		if ( model.loadState() == VFSDirectoryModel::LoadState::Loading )
 			text = String::format( mUI->i18n( "eefm_loading_status", "Loading... %s" ).toUtf8(),

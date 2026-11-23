@@ -170,10 +170,8 @@ class SFTPDirectoryImpl : public DirectoryHandleImpl {
 													  sizeof( longEntry ), &attrs );
 					if ( rc == LIBSSH2_ERROR_EAGAIN )
 						return std::nullopt;
-					if ( rc < 0 ) {
-						return VFSResult<DirectoryBatch>(
-							Err( c.lastError( base, "readdir failed" ) ) );
-					}
+					if ( rc < 0 )
+						return Err( c.lastError( base, "readdir failed" ) );
 					if ( rc == 0 ) {
 						state->batch.endOfDirectory = true;
 						*eof = true;
@@ -183,11 +181,9 @@ class SFTPDirectoryImpl : public DirectoryHandleImpl {
 					std::string entryName( name, static_cast<size_t>( rc ) );
 					if ( entryName == "." || entryName == ".." )
 						continue;
-					if ( !VFSPath::validName( entryName, base ) ) {
-						return VFSResult<DirectoryBatch>(
-							Err( VFSError( VFSErrorCode::ProtocolError, base,
-										   "Invalid SFTP directory entry name" ) ) );
-					}
+					if ( !VFSPath::validName( entryName, base ) )
+						return Err( VFSError( VFSErrorCode::ProtocolError, base,
+											  "Invalid SFTP directory entry name" ) );
 					VFSFileInfo info;
 					info.name = std::move( entryName );
 					info.hidden = info.name[0] == '.';
@@ -200,7 +196,7 @@ class SFTPDirectoryImpl : public DirectoryHandleImpl {
 				// Only symlinks cost an extra round trip, and only when targets are requested.
 				while ( state->linkIndex < state->links.size() ) {
 					if ( token.isCancellationRequested() )
-						return VFSResult<DirectoryBatch>( Err( cancelledError( base ) ) );
+						return Err( cancelledError( base ) );
 					VFSFileInfo& link = state->batch.entries[state->links[state->linkIndex]];
 					URI linkURI = base.withAppendedSegment( link.name );
 					std::string path = sftpPath( linkURI );
@@ -210,10 +206,10 @@ class SFTPDirectoryImpl : public DirectoryHandleImpl {
 					if ( *target )
 						link.targetType = typeFromPermissions( target->value().permissions );
 					else if ( !c.isUsable() )
-						return VFSResult<DirectoryBatch>( Err( target->error() ) );
+						return Err( target->error() );
 					++state->linkIndex;
 				}
-				return VFSResult<DirectoryBatch>( Ok( std::move( state->batch ) ) );
+				return Ok( std::move( state->batch ) );
 			} );
 	}
 
@@ -270,12 +266,12 @@ class SFTPFileImpl : public FileHandleImpl {
 					if ( rc == LIBSSH2_ERROR_EAGAIN )
 						return std::nullopt;
 					if ( rc < 0 )
-						return VFSResult<size_t>( Err( c.lastError( uri, "read failed" ) ) );
+						return Err( c.lastError( uri, "read failed" ) );
 					if ( rc == 0 )
 						break;
 					*done += static_cast<size_t>( rc );
 				}
-				return VFSResult<size_t>( Ok( *done ) );
+				return Ok( *done );
 			} );
 	}
 
@@ -304,10 +300,10 @@ class SFTPFileImpl : public FileHandleImpl {
 					if ( rc == LIBSSH2_ERROR_EAGAIN )
 						return std::nullopt;
 					if ( rc < 0 )
-						return VFSResult<size_t>( Err( c.lastError( uri, "write failed" ) ) );
+						return Err( c.lastError( uri, "write failed" ) );
 					*done += static_cast<size_t>( rc );
 				}
-				return VFSResult<size_t>( Ok( *done ) );
+				return Ok( *done );
 			} );
 	}
 

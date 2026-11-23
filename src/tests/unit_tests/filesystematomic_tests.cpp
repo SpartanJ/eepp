@@ -18,7 +18,7 @@ UTEST( FileSystem, privateTempDirectoryAndAtomicReplacement ) {
 #if defined( EE_PLATFORM_POSIX )
 	struct stat info{};
 	ASSERT_EQ( stat( directory.path.c_str(), &info ), 0 );
-	EXPECT_EQ( info.st_mode & 0777, 0700 );
+	EXPECT_EQ( info.st_mode & 0777u, 0700u );
 #endif
 	const auto path = directory.path + "/record";
 	ASSERT_TRUE( FileSystem::fileWriteAtomic( path, "old" ) );
@@ -32,7 +32,7 @@ UTEST( FileSystem, privateTempDirectoryAndAtomicReplacement ) {
 	EXPECT_TRUE( data == replacement );
 #if defined( EE_PLATFORM_POSIX )
 	ASSERT_EQ( stat( path.c_str(), &info ), 0 );
-	EXPECT_EQ( info.st_mode & 0777, 0600 );
+	EXPECT_EQ( info.st_mode & 0777u, 0600u );
 #endif
 	EXPECT_FALSE( FileSystem::fileWriteAtomic( path + "/impossible", "new" ) );
 	ASSERT_TRUE( FileSystem::fileGet( path, data ) );

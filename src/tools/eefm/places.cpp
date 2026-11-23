@@ -74,6 +74,8 @@ std::map<std::string, std::string> userDirs( const std::string& home ) {
 	return dirs;
 }
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_BSD
 /** File systems mounted from another machine: listed in Remote, like Dolphin's network shares. */
 bool isNetworkFileSystem( const std::string& type ) {
 	static const char* types[] = { "nfs",			"nfs4",			"cifs",			 "smb3",
@@ -112,6 +114,7 @@ std::string networkShareName( const std::string& source, const std::string& moun
 		return share.empty() ? mountPoint : share;
 	return share.empty() ? server : String::format( nameFormat, share, server );
 }
+#endif
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 
@@ -491,7 +494,8 @@ bool Places::hasHidden() const {
 						[]( const Place& place ) { return place.hidden; } );
 }
 
-std::vector<Place> Places::devices( const std::string& rootName, const std::string& shareNameFormat,
+std::vector<Place> Places::devices( const std::string& rootName,
+									[[maybe_unused]] const std::string& shareNameFormat,
 									const CancellationToken& token ) {
 	std::vector<Place> devices;
 	if ( token.isCancellationRequested() )
@@ -505,11 +509,14 @@ std::vector<Place> Places::devices( const std::string& rootName, const std::stri
 		}
 		devices.push_back( Place{ std::move( name ), std::move( uri ), icon, section, true } );
 	};
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	EE_PLATFORM == EE_PLATFORM_BSD
 	// Network mounts are never touched here (no stat): an unreachable server would block.
 	auto addNetworkShare = [&]( const std::string& source, const std::string& mountPoint ) {
 		addDevice( networkShareName( source, mountPoint, shareNameFormat ), mountPoint,
 				   "place-network", PlaceSection::Remote );
 	};
+#endif
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 	// Device node -> label, from the udev by-label links.
 	std::map<std::string, std::string> labels;
