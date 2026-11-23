@@ -15,6 +15,7 @@ AppConfig::AppConfig( std::string configDirectory ) {
 void AppConfig::load() {
 	if ( !FileSystem::fileExists( mPath ) ) {
 		font.uiSize = PlatformHelper::getSystemUIFontSize( font.uiSize );
+		window.pixelDensityMode = EE::Window::Window::getNewProfilePixelDensityMode();
 		return;
 	}
 	mIni.loadFromFile( mPath );

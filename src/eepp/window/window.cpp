@@ -1,3 +1,4 @@
+#include "pixeldensitypolicy.hpp"
 #include "windowinitialization.hpp"
 #include <SOIL2/src/SOIL2/SOIL2.h>
 #include <cmath>
@@ -24,6 +25,8 @@
 #include <eepp/window/platform/macos/platformhelper.hpp>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 #include <eepp/window/platform/physicaldisplaymetrics.hpp>
+#elif defined( EE_X11_PLATFORM )
+#include "platform/x11scalesettings.hpp"
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -140,6 +143,9 @@ Float Window::getAutomaticPixelDensity( int displayIndex ) const {
 
 Float Window::resolveAutomaticPixelDensity( Float displayScale, int displayIndex,
 											bool currentDisplay ) const {
+	if ( mPixelDensityMode == PixelDensityMode::BestFit )
+		return resolveBestFitPixelDensity( displayScale, displayIndex, currentDisplay );
+
 	Float density = displayScale;
 	if ( mPixelDensityMode == PixelDensityMode::PhysicalPPI ) {
 		const auto getDisplay = [displayIndex] {
@@ -167,13 +173,68 @@ Float Window::resolveAutomaticPixelDensity( Float displayScale, int displayIndex
 	if ( !std::isfinite( density ) || density <= 0.f )
 		density = 1.f;
 	const char* rounding = std::getenv( "EEPP_PIXEL_DENSITY_ROUNDING" );
-	if ( !rounding || std::string_view( rounding ) != "0" ) {
-		Float whole;
-		const Float fraction = std::modf( density, &whole );
-		density = eemax( 0.25f, whole + std::round( fraction * 4.f ) * 0.25f );
-	}
-	return density;
+	return rounding && std::string_view( rounding ) == "0"
+			   ? density
+			   : Private::roundAutomaticPixelDensity( density );
 }
+
+Float Window::resolveBestFitPixelDensity( Float displayScale, int displayIndex,
+										  bool currentDisplay ) const {
+	if ( !std::isfinite( displayScale ) || displayScale <= 0.f )
+		displayScale = 1.f;
+	if ( Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
+		return displayScale;
+#if EE_PLATFORM == EE_PLATFORM_MACOS || defined( EE_X11_PLATFORM )
+	Float logicalScale = 0.f;
+#ifdef EE_X11_PLATFORM
+	if ( !usesX11DisplayScaling() )
+		return displayScale;
+	if ( mX11BestFitScale.systemScale != displayScale ) {
+		const auto scales = Private::getX11ScaleSettings();
+		mX11BestFitScale = { displayScale, scales.windowScale, scales.logicalScale };
+	}
+	if ( mX11BestFitScale.windowScale > 1.f && mX11BestFitScale.windowScale <= 6.f )
+		return mX11BestFitScale.windowScale;
+	logicalScale = mX11BestFitScale.logicalScale > 0.f && mX11BestFitScale.logicalScale <= 6.f
+					   ? mX11BestFitScale.logicalScale
+					   : displayScale;
+#endif
+	const char* roundingOption = std::getenv( "EEPP_PIXEL_DENSITY_ROUNDING" );
+	const bool rounding = !roundingOption || std::string_view( roundingOption ) != "0";
+	auto* display = Engine::instance()->getDisplayManager()->getDisplayIndex( displayIndex );
+	if ( display ) {
+		Float diagonal = 0.f;
+		Float ppi = 0.f;
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+		const Float backingScale = currentDisplay ? getScale() : displayScale;
+		ppi = Private::getBackingDisplayDPI( display->getBounds(), backingScale, &diagonal );
+#else
+		ppi = currentDisplay ? getPhysicalDisplayDPI() : display->getPhysicalDPI();
+		if ( ppi > 0.f ) {
+			const auto mode = display->getCurrentMode();
+			diagonal =
+				std::hypot( static_cast<Float>( mode.Width ), static_cast<Float>( mode.Height ) ) /
+				ppi;
+		}
+#endif
+		const Float estimate =
+			Private::estimateBestFitPixelDensity( ppi, diagonal, logicalScale, rounding );
+		if ( estimate > 0.f )
+			return estimate;
+	}
+	return rounding ? Private::roundAutomaticPixelDensity( displayScale ) : displayScale;
+#else
+	(void)displayIndex;
+	(void)currentDisplay;
+	return displayScale;
+#endif
+}
+
+#ifdef EE_X11_PLATFORM
+bool Window::usesX11DisplayScaling() const {
+	return false;
+}
+#endif
 
 Float Window::getPhysicalDisplayDPI() const {
 	if ( Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
@@ -255,6 +316,9 @@ PixelDensityMode Window::getPixelDensityMode() const {
 void Window::setPixelDensityMode( PixelDensityMode mode ) {
 	mPixelDensityMode = resolvePixelDensityMode( mode );
 	mWindow.WindowConfig.DensityMode = mode;
+#ifdef EE_X11_PLATFORM
+	mX11BestFitScale = {};
+#endif
 	refreshPixelDensity();
 }
 
@@ -281,24 +345,34 @@ Float Window::resolvePixelDensityReferencePPI( Float reference ) {
 }
 
 PixelDensityMode Window::pixelDensityModeFromString( std::string_view mode ) {
+	if ( mode == "best-fit" )
+		return PixelDensityMode::BestFit;
 	return mode == "physical-ppi"	 ? PixelDensityMode::PhysicalPPI
 		   : mode == "display-scale" ? PixelDensityMode::DisplayScale
 									 : PixelDensityMode::Default;
 }
 
 const char* Window::pixelDensityModeToString( PixelDensityMode mode ) {
+	if ( mode == PixelDensityMode::BestFit )
+		return "best-fit";
 	return mode == PixelDensityMode::PhysicalPPI	? "physical-ppi"
 		   : mode == PixelDensityMode::DisplayScale ? "display-scale"
 													: "default";
+}
+
+PixelDensityMode Window::getNewProfilePixelDensityMode() {
+	const char* value = std::getenv( "EEPP_PIXEL_DENSITY_MODE" );
+	return value && pixelDensityModeFromString( value ) != PixelDensityMode::Default
+			   ? PixelDensityMode::Default
+			   : PixelDensityMode::BestFit;
 }
 
 PixelDensityMode Window::resolvePixelDensityMode( PixelDensityMode mode ) {
 	if ( mode != PixelDensityMode::Default )
 		return mode;
 	const char* value = std::getenv( "EEPP_PIXEL_DENSITY_MODE" );
-	return value && pixelDensityModeFromString( value ) == PixelDensityMode::PhysicalPPI
-			   ? PixelDensityMode::PhysicalPPI
-			   : PixelDensityMode::DisplayScale;
+	const auto configured = value ? pixelDensityModeFromString( value ) : PixelDensityMode::Default;
+	return configured == PixelDensityMode::Default ? PixelDensityMode::DisplayScale : configured;
 }
 
 Uint32 Window::getDisplayMetricsVersion() const {
@@ -314,6 +388,9 @@ void Window::updateDisplayMetrics() {
 	if ( mDisplayTopologyDirty ) {
 		mDisplayDensityKeyIndex = -1;
 		mDisplayDensityKey.clear();
+#ifdef EE_X11_PLATFORM
+		mX11BestFitScale = {};
+#endif
 	}
 	refreshPixelDensity();
 	if ( mDisplayTopologyDirty && mDisplayMetricsVersion == version )

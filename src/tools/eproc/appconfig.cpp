@@ -19,6 +19,7 @@ AppConfig::AppConfig( std::string configPath ) : mConfigPath( std::move( configP
 }
 
 void AppConfig::load() {
+	const bool newProfile = !FileSystem::fileExists( mState.path() );
 	mState.loadFromFile( mState.path() );
 
 	windowState.size.setWidth( mState.getValueI( "window", "width", windowState.size.getWidth() ) );
@@ -51,8 +52,9 @@ void AppConfig::load() {
 	const double savedDensity = mState.getValueF( "appearance", "pixel_density", pixelDensity );
 	if ( std::isfinite( savedDensity ) && savedDensity >= 0 && savedDensity <= 6 )
 		pixelDensity = static_cast<Float>( savedDensity );
-	pixelDensityMode = EE::Window::Window::pixelDensityModeFromString(
-		mState.getValue( "appearance", "pixel_density_mode" ) );
+	pixelDensityMode = newProfile ? EE::Window::Window::getNewProfilePixelDensityMode()
+								  : EE::Window::Window::pixelDensityModeFromString(
+										mState.getValue( "appearance", "pixel_density_mode" ) );
 	displayDensityOverrides = EE::Window::Window::loadDisplayDensityOverrides( mState );
 	const int savedHinting = mState.getValueI( "appearance", "font_hinting", 2 );
 	if ( savedHinting >= 0 && savedHinting <= 2 )

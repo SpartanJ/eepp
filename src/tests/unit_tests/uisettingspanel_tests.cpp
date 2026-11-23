@@ -97,20 +97,20 @@ UTEST( UISettingsPanel, appliesAndSavesWindowScaleModes ) {
 	auto select = [choice]( int index ) {
 		choice->getListView()->getSelection().set( choice->getModel()->index( index, 0 ) );
 	};
-	EXPECT_EQ( 0, choice->getListView()->getSelection().first().row() );
+	EXPECT_EQ( 1, choice->getListView()->getSelection().first().row() );
 	EXPECT_EQ( 0, saves );
-	select( 1 );
+	select( 2 );
 	EXPECT_TRUE( mode == PixelDensityMode::PhysicalPPI );
 	EXPECT_TRUE( window->getPixelDensityMode() == mode );
 	EXPECT_EQ( 1, saves );
 
 	factor->setValue( 1.5 );
-	EXPECT_EQ( 2, choice->getListView()->getSelection().first().row() );
+	EXPECT_EQ( 3, choice->getListView()->getSelection().first().row() );
 	EXPECT_EQ( 1.5f, density );
 	EXPECT_EQ( 1.5f, window->getPixelDensityOverride() );
 	EXPECT_EQ( 2, saves );
 
-	select( 0 );
+	select( 1 );
 	EXPECT_TRUE( mode == PixelDensityMode::DisplayScale );
 	EXPECT_TRUE( window->getPixelDensityMode() == mode );
 	EXPECT_EQ( 0.f, density );
@@ -118,15 +118,22 @@ UTEST( UISettingsPanel, appliesAndSavesWindowScaleModes ) {
 	EXPECT_EQ( 3, saves );
 	EXPECT_EQ( factor->getValue(), std::clamp( window->getPixelDensity(), 1.f, 6.f ) );
 
+	select( 0 );
+	EXPECT_TRUE( mode == PixelDensityMode::BestFit );
+	EXPECT_TRUE( window->getPixelDensityMode() == mode );
+	EXPECT_EQ( 4, saves );
+
 	const auto displayKey = window->getDisplayDensityKey();
-	if ( !displayKey.empty() )
+	if ( !displayKey.empty() ) {
 		ASSERT_TRUE( window->setDisplayDensityOverride( displayKey, 1.61f ) );
+		EXPECT_EQ( 1.61f, window->getPixelDensity() );
+	}
 	const Float manualScale = std::clamp( window->getPixelDensity(), 1.f, 6.f );
-	select( 2 );
+	select( 3 );
 	EXPECT_EQ( manualScale, density );
 	EXPECT_EQ( manualScale, window->getPixelDensityOverride() );
 	EXPECT_EQ( manualScale, factor->getValue() );
-	EXPECT_EQ( 4, saves );
+	EXPECT_EQ( 5, saves );
 }
 
 UTEST( UISettingsPanel, perDisplayOverrideStartsFromAutomaticScale ) {

@@ -287,7 +287,8 @@ Float getDisplayBackingScale( const Math::Rect& bounds ) {
 	return 1.f;
 }
 
-Float getBackingDisplayDPI( const Math::Rect& bounds, Float windowBackingScale ) {
+Float getBackingDisplayDPI( const Math::Rect& bounds, Float windowBackingScale,
+							Float* diagonalInches ) {
 	const auto display = getDisplayAtBounds( bounds );
 	if ( display == kCGNullDirectDisplay || !std::isfinite( windowBackingScale ) ||
 		 windowBackingScale <= 0.f )
@@ -297,9 +298,11 @@ Float getBackingDisplayDPI( const Math::Rect& bounds, Float windowBackingScale )
 	if ( millimeters.width <= 0 || millimeters.height <= 0 || points.width <= 0 ||
 		 points.height <= 0 )
 		return 0.f;
+	const auto diagonalMm = std::hypot( millimeters.width, millimeters.height );
+	if ( diagonalInches )
+		*diagonalInches = diagonalMm / 25.4;
 	// The compositor can map these backing pixels to a different number of panel pixels.
-	return 25.4f * windowBackingScale * std::hypot( points.width, points.height ) /
-		   std::hypot( millimeters.width, millimeters.height );
+	return 25.4f * windowBackingScale * std::hypot( points.width, points.height ) / diagonalMm;
 }
 
 bool setWindowTitleBarColor( void* window, Uint8 red, Uint8 green, Uint8 blue ) {

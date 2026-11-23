@@ -953,10 +953,13 @@ Float WindowSDL::getDisplayScale() const {
 			return dpi / 96.f;
 	}
 #elif defined( EE_X11_PLATFORM )
-	auto* displays = static_cast<DisplayManagerSDL2*>( Engine::instance()->getDisplayManager() );
-	const Float desktopScale = displays->getX11DesktopScale( getWindowHandler() );
-	if ( desktopScale > 0.f )
-		return desktopScale;
+	if ( usesX11DisplayScaling() ) {
+		auto* displays =
+			static_cast<DisplayManagerSDL2*>( Engine::instance()->getDisplayManager() );
+		const Float desktopScale = displays->getX11DesktopScale( getWindowHandler() );
+		if ( desktopScale > 0.f )
+			return desktopScale;
+	}
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
 	// SDL's diagonal DPI on Android comes from the configured densityDpi (160 is Android's 1×).
 	const int index = SDL_GetWindowDisplayIndex( mSDLWindow );
@@ -969,6 +972,13 @@ Float WindowSDL::getDisplayScale() const {
 	const Float scale = getScale();
 	return std::isfinite( scale ) && scale > 0.f ? scale : 1.f;
 }
+
+#ifdef EE_X11_PLATFORM
+bool WindowSDL::usesX11DisplayScaling() const {
+	const char* driver = SDL_GetCurrentVideoDriver();
+	return driver && std::strcmp( driver, "x11" ) == 0;
+}
+#endif
 
 Float WindowSDL::getPhysicalDisplayDPI() const {
 	if ( !mSDLWindow || Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )

@@ -859,6 +859,13 @@ Float WindowSDL::getDisplayScale() const {
 	return scale > 0.f ? scale : 1.f;
 }
 
+#ifdef EE_X11_PLATFORM
+bool WindowSDL::usesX11DisplayScaling() const {
+	const char* driver = SDL_GetCurrentVideoDriver();
+	return driver && std::strcmp( driver, "x11" ) == 0;
+}
+#endif
+
 Float WindowSDL::getPhysicalDisplayDPI() const {
 	if ( !mSDLWindow || Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
 		return 0.f;

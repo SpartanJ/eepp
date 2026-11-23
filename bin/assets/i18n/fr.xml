@@ -1062,12 +1062,13 @@ Redémarrer ecode pour voir les changements.</string>
 	<string name="terminal_font_size_desc">Set the default integrated terminal font size.</string>
 	<string name="ui_scale_factor_desc">Définir un facteur fixe entre 1 et 6. Toute modification sélectionne le mode Manuel.</string>
 	<string name="ui_scale_mode">Mode de mise à l’échelle</string>
-	<string name="ui_scale_mode_desc">L’échelle système suit celle du système d’exploitation pour chaque écran. La densité physique utilise la densité de pixels du moniteur pour conserver une taille physique similaire. Si cette densité est inconnue, l’échelle système est utilisée.</string>
+	<string name="ui_scale_mode_desc">L’échelle adaptée suit celle de la plateforme lorsqu’elle est disponible et se base sur la taille et la densité de pixels de l’écran pour ses estimations. L’échelle système suit celle du système d’exploitation. La densité physique préserve une taille physique similaire et utilise l’échelle système si nécessaire.</string>
+	<string name="ui_scale_auto_best_fit">Auto (échelle adaptée)</string>
 	<string name="ui_scale_auto_system">Auto (échelle système)</string>
 	<string name="ui_scale_auto_physical">Auto (densité physique)</string>
 	<string name="ui_scale_manual">Manuel</string>
 	<string name="ui_display_scale">Échelle par écran</string>
-	<string name="ui_display_scale_desc">Définit l’échelle de chaque écran connecté dans les deux modes automatiques.</string>
+	<string name="ui_display_scale_desc">Définit l’échelle de chaque écran connecté dans n’importe quel mode automatique.</string>
 	<string name="ui_display_scale_configure">Configurer…</string>
 	<string name="ui_display_scale_unavailable">Le réglage de l’échelle par écran est indisponible dans cette configuration.</string>
 	<string name="ui_display_scale_requires_auto">Sélectionnez un mode automatique pour utiliser une échelle par écran.</string>

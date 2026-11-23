@@ -1,3 +1,4 @@
+#include "../../eepp/window/pixeldensitypolicy.hpp"
 #include "utest.hpp"
 
 #include <atomic>
@@ -611,6 +612,50 @@ UTEST( PerWindowDensity, WindowEnvironmentAndAutomaticPrecedence ) {
 		EXPECT_EQ( automatic->getPixelDensity(), automatic->getWindow()->getDisplayScale() );
 		EXPECT_EQ( PixelDensity::getPixelDensity(), 1.25f );
 	}
+}
+
+UTEST( PerWindowDensity, BestFitEstimatesMatchReferenceDisplays ) {
+	using EE::Window::Private::estimateBestFitPixelDensity;
+	const Float expected[][4] = {
+		{ 1.f, 1.5f, 2.25f, 3.f },
+		{ 1.25f, 1.5f, 2.25f, 3.f },
+		{ 1.25f, 1.5f, 2.25f, 3.f },
+	};
+	const Float diagonals[] = { 24.f, 27.f, 32.f };
+	const Sizef resolutions[] = { { 1920, 1080 }, { 2560, 1440 }, { 3840, 2160 }, { 5120, 2880 } };
+	for ( size_t display = 0; display < 3; ++display ) {
+		for ( size_t mode = 0; mode < 4; ++mode ) {
+			const auto size = resolutions[mode];
+			const Float ppi = std::hypot( size.x, size.y ) / diagonals[display];
+			EXPECT_EQ( estimateBestFitPixelDensity( ppi, diagonals[display], 0.f, true ),
+					   expected[display][mode] );
+		}
+	}
+	EXPECT_EQ( estimateBestFitPixelDensity( 220.f, 15.4f, 0.f, true ), 2.25f );
+	EXPECT_EQ( estimateBestFitPixelDensity( 254.f, 14.2f, 0.f, true ), 2.5f );
+	EXPECT_EQ( estimateBestFitPixelDensity( 220.f, 15.4f, 0.f, false ), 220.f / 100.f );
+	EXPECT_EQ( estimateBestFitPixelDensity( 108.8f, 27.f, 1.75f, true ), 1.75f );
+	EXPECT_EQ( estimateBestFitPixelDensity( 108.8f, 27.f, 1.125f, true ), 1.5f );
+	EXPECT_EQ( estimateBestFitPixelDensity( 0.f, 27.f, 0.f, true ), 0.f );
+	EXPECT_EQ( estimateBestFitPixelDensity( 108.8f, 0.f, 0.f, true ), 0.f );
+	EXPECT_EQ( estimateBestFitPixelDensity( 600.f, 27.f, 0.f, true ), 0.f );
+}
+
+UTEST( PerWindowDensity, BestFitModeRoundTripsAndRespectsTheEnvironment ) {
+	using EEWindow = EE::Window::Window;
+	DensityEnvironment modeEnvironment( "EEPP_PIXEL_DENSITY_MODE" );
+	Sys::setEnv( "EEPP_PIXEL_DENSITY_MODE", "" );
+	EXPECT_TRUE( EEWindow::getNewProfilePixelDensityMode() == PixelDensityMode::BestFit );
+	EXPECT_STDSTREQ( EEWindow::pixelDensityModeToString( PixelDensityMode::BestFit ), "best-fit" );
+	EXPECT_TRUE( EEWindow::pixelDensityModeFromString( "best-fit" ) == PixelDensityMode::BestFit );
+	Sys::setEnv( "EEPP_PIXEL_DENSITY_MODE", "physical-ppi" );
+	EXPECT_TRUE( EEWindow::getNewProfilePixelDensityMode() == PixelDensityMode::Default );
+	Sys::setEnv( "EEPP_PIXEL_DENSITY_MODE", "best-fit" );
+	WindowSettings settings( 320, 240, "Best Fit Environment" );
+	UIApplication app(
+		settings,
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 0.f ) );
+	EXPECT_TRUE( app.getWindow()->getPixelDensityMode() == PixelDensityMode::BestFit );
 }
 
 UTEST( PerWindowDensity, AutomaticSourcesCanChangeLiveAndOverridesKeepPriority ) {

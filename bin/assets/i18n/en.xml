@@ -1064,12 +1064,13 @@ Restart ecode to see the changes.</string>
 	<string name="terminal_font_size_desc">Set the default integrated terminal font size.</string>
 	<string name="ui_scale_factor_desc">Set a fixed interface scale from 1 to 6. Changing it selects Manual.</string>
 	<string name="ui_scale_mode">UI Scale Mode</string>
-	<string name="ui_scale_mode_desc">System Scale follows the operating system’s scale for each display. Physical PPI uses the monitor’s pixel density to keep the interface a similar physical size. It falls back to System Scale when PPI is unavailable.</string>
+	<string name="ui_scale_mode_desc">Best Fit follows the platform's scale where available and uses screen size and pixel density for its estimates. System Scale follows the operating system. Physical PPI uses the monitor's pixel density to keep the interface a similar physical size, with System Scale as a fallback.</string>
+	<string name="ui_scale_auto_best_fit">Auto (Best Fit)</string>
 	<string name="ui_scale_auto_system">Auto (System Scale)</string>
 	<string name="ui_scale_auto_physical">Auto (Physical PPI)</string>
 	<string name="ui_scale_manual">Manual</string>
 	<string name="ui_display_scale">Per-display Scale</string>
-	<string name="ui_display_scale_desc">Set individual scales for connected displays in either Auto mode.</string>
+	<string name="ui_display_scale_desc">Set individual scales for connected displays in any Auto mode.</string>
 	<string name="ui_display_scale_configure">Configure…</string>
 	<string name="ui_display_scale_unavailable">Per-display scaling is unavailable on this setup.</string>
 	<string name="ui_display_scale_requires_auto">Select an Auto scale mode to use per-display scales.</string>

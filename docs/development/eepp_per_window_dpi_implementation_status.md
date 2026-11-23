@@ -14,7 +14,7 @@ baseline `2613ec0921e628786f4dcbe8db2b1fa379b0ae47`.
   fractional values are retained. Offscreen/terminal automatic density is 1. Only the first window
   initializes the legacy process fallback; subsequent windows and live transitions leave it alone.
   `getScale()` retains its framebuffer/native-coordinate meaning.
-  The automatic policy defaults to desktop UI scale. Opt-in `PhysicalPPI` uses physical monitor
+  The library's default automatic policy uses desktop UI scale. Opt-in `PhysicalPPI` uses physical monitor
   `max(1, PPI/reference)` (96 by default) on X11, Windows and macOS, with desktop-scale fallback where measurements are unavailable.
   The policy is configurable per window, through `EEPP_PIXEL_DENSITY_MODE`, and in INI/ecode state.
 - **Phase 3:** explicit scene overrides, embedded host inheritance and native window inheritance.
@@ -56,7 +56,7 @@ baseline `2613ec0921e628786f4dcbe8db2b1fa379b0ae47`.
   once before layout and enters the rebind helper only when work is queued. Metadata-only changes
   update scene DPI and media matches. Density reflow runs when a scene's effective density changes.
   SDL3 invalidates display enumeration after display events and resolves physical PPI using the
-  window's display ID. Both Auto modes round to the nearest 0.25 by default. Set
+  window's display ID. System Scale and Physical PPI round to the nearest 0.25 by default. Set
   `EEPP_PIXEL_DENSITY_ROUNDING=0` to use exact automatic values.
 - **Phase 8:** SDL2 DPI lookup uses the requested display index. Automatic UI scale uses the
   window's effective DPI on Windows, `Xft.dpi` on X11, and configured display density on Android
@@ -227,7 +227,7 @@ Final verification:
   precedence. The flag also covers ecode's panel font. Editor and terminal fonts retain their
   own defaults.
 - **Per-display Scale** lets users choose a connected display and save an exact factor. Each
-  override applies in both Auto modes and can be cleared independently. Global Manual and
+  override applies in every Auto mode and can be cleared independently. Global Manual and
   environment overrides still take precedence. The Linux picker check saved an override for
   the second display from the first and verified that Cancel discards edits for both. Selecting
   Manual starts from the current effective scale, including an active per-display value.
@@ -259,6 +259,20 @@ Final verification:
   that a saved override was restored after physically disconnecting and reconnecting a monitor.
 - The opt-in X11 font lookup holds the server grab while reading the XSETTINGS owner and its
   property. It flushes the ungrab before parsing the font preference.
+
+## Auto (Best Fit)
+
+New ecode, eefm, eproc, eterm, and eeiv profiles default to Best Fit. Existing profiles without
+a saved mode retain their previous scale policy. Select Best Fit in Settings or set
+`EEPP_PIXEL_DENSITY_MODE=best-fit` when the window uses the default policy.
+
+Best Fit uses the native scale on Windows, Wayland, Android, and iOS. On macOS it uses the
+current backing pixels per inch. On X11 it honors a whole-window scale above 1 when available.
+Otherwise the physical estimate competes with the desktop's logical DPI divided by 96.
+The estimate divides pixels per inch by `clamp(100 - 4 * (diagonalInches - 20), 60, 100)`,
+then clamps the result to 1–6. Estimated scales round to the nearest quarter step, with
+`EEPP_PIXEL_DENSITY_ROUNDING=0` preserving the calculated value. Missing or implausible physical
+measurements fall back to System Scale.
 
 ## Lower-priority follow-ups
 

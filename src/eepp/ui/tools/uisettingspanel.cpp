@@ -634,7 +634,7 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 	if ( !window )
 		return;
 
-	enum ScaleChoice : size_t { SystemScale, PhysicalPPI, Manual };
+	enum ScaleChoice : size_t { BestFit, SystemScale, PhysicalPPI, Manual };
 	auto* scene = getUISceneNode();
 	struct ScaleFactorState {
 		Float lastDensity;
@@ -660,6 +660,8 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 	auto currentChoice = [window]() -> size_t {
 		if ( window->getPixelDensityOverride() > 0.f )
 			return Manual;
+		if ( window->getPixelDensityMode() == PixelDensityMode::BestFit )
+			return BestFit;
 		return window->getPixelDensityMode() == PixelDensityMode::PhysicalPPI ? PhysicalPPI
 																			  : SystemScale;
 	};
@@ -673,11 +675,12 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 		{ "uiScaleMode", category, scene->i18n( "ui_scale_mode", "UI Scale Mode" ),
 		  scene->i18n(
 			  "ui_scale_mode_desc",
-			  "System Scale follows the operating system's scale for each display. Physical "
-			  "PPI uses the monitor's pixel density to keep the interface a similar physical "
-			  "size. It falls back to System Scale when PPI is unavailable. Both Auto modes "
-			  "round to the nearest 0.25 by default." ) },
-		{ scene->i18n( "ui_scale_auto_system", "Auto (System Scale)" ),
+			  "Best Fit follows the platform's scale where available and uses screen size and "
+			  "pixel density for its estimates. System Scale follows the operating system. "
+			  "Physical PPI uses the monitor's pixel density to keep the interface a similar "
+			  "physical size, with System Scale as a fallback." ) },
+		{ scene->i18n( "ui_scale_auto_best_fit", "Auto (Best Fit)" ),
+		  scene->i18n( "ui_scale_auto_system", "Auto (System Scale)" ),
 		  scene->i18n( "ui_scale_auto_physical", "Auto (Physical PPI)" ),
 		  scene->i18n( "ui_scale_manual", "Manual" ) },
 		currentChoice,
@@ -687,8 +690,10 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 			if ( selected == Manual ) {
 				applyScale( std::clamp( window->getPixelDensity(), 1.f, 6.f ) );
 			} else {
-				mode = selected == PhysicalPPI ? PixelDensityMode::PhysicalPPI
-											   : PixelDensityMode::DisplayScale;
+				constexpr PixelDensityMode modes[]{ PixelDensityMode::BestFit,
+													PixelDensityMode::DisplayScale,
+													PixelDensityMode::PhysicalPPI };
+				mode = modes[selected];
 				window->setPixelDensityMode( mode );
 				applyScale( 0.f );
 			}
@@ -718,7 +723,7 @@ void UISettingsPanel::addUIScaleSettings( const std::string& category, EE::Windo
 	addAction(
 		{ "uiDisplayScale", category, scene->i18n( "ui_display_scale", "Per-display Scale" ),
 		  scene->i18n( "ui_display_scale_desc",
-					   "Set individual scales for connected displays in either Auto mode." ) },
+					   "Set individual scales for connected displays in any Auto mode." ) },
 		scene->i18n( "ui_display_scale_configure", "Configure…" ),
 		[scene, window, overrides, refreshFactor, save = std::move( save )] {
 			using EE::Window::Engine;

@@ -1079,12 +1079,13 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="terminal_font_size_desc">Standardschriftgröße des Terminals festlegen.</string>
 	<string name="ui_scale_factor_desc">Einen festen Skalierungsfaktor zwischen 1 und 6 einstellen. Eine Änderung wählt den Modus Manuell.</string>
 	<string name="ui_scale_mode">Skalierungsmodus</string>
-	<string name="ui_scale_mode_desc">Die Systemskalierung folgt der Einstellung des Betriebssystems für jeden Bildschirm. Die physische Pixeldichte hält die Oberfläche auf verschiedenen Bildschirmen ungefähr gleich groß. Ist die Pixeldichte unbekannt, gilt die Systemskalierung.</string>
+	<string name="ui_scale_mode_desc">Die optimale Skalierung übernimmt die Skalierung der Plattform, sofern verfügbar. Für Schätzungen nutzt sie Bildschirmgröße und Pixeldichte. Die Systemskalierung folgt dem Betriebssystem. Die physische Pixeldichte hält die Oberfläche auf verschiedenen Bildschirmen ungefähr gleich groß und verwendet bei Bedarf die Systemskalierung.</string>
+	<string name="ui_scale_auto_best_fit">Auto (optimale Skalierung)</string>
 	<string name="ui_scale_auto_system">Auto (Systemskalierung)</string>
 	<string name="ui_scale_auto_physical">Auto (physische Pixeldichte)</string>
 	<string name="ui_scale_manual">Manuell</string>
 	<string name="ui_display_scale">Skalierung pro Bildschirm</string>
-	<string name="ui_display_scale_desc">Legt die Skalierung verbundener Bildschirme für beide Automatikmodi einzeln fest.</string>
+	<string name="ui_display_scale_desc">Legt die Skalierung verbundener Bildschirme für jeden Automatikmodus einzeln fest.</string>
 	<string name="ui_display_scale_configure">Konfigurieren…</string>
 	<string name="ui_display_scale_unavailable">Die Skalierung pro Bildschirm ist in dieser Konfiguration nicht verfügbar.</string>
 	<string name="ui_display_scale_requires_auto">Wählen Sie einen Automatikmodus, um die Skalierung pro Bildschirm zu verwenden.</string>

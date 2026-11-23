@@ -67,7 +67,7 @@ enum class WindowFlashOperation {
 enum class WindowBackend : Uint32 { SDL2, SDL3, Default };
 
 /** Automatic UI density source. Explicit density overrides take priority in every mode. */
-enum class PixelDensityMode : Uint8 { Default, DisplayScale, PhysicalPPI };
+enum class PixelDensityMode : Uint8 { Default, DisplayScale, PhysicalPPI, BestFit };
 
 /** Fixed densities keyed by native display identity, applied only in automatic modes. */
 using DisplayDensityOverrides = std::map<std::string, Float>;
@@ -427,6 +427,9 @@ class EE_API Window {
 
 	static const char* pixelDensityModeToString( PixelDensityMode mode );
 
+	/** First-run preference for eepp apps. An environment mode still takes precedence. */
+	static PixelDensityMode getNewProfilePixelDensityMode();
+
 	/** Current effective UI density, including live automatic/override changes. */
 	const Float& getPixelDensity() const;
 
@@ -711,6 +714,13 @@ class EE_API Window {
 	bool mDisplayMetricsDirty{ false };
 	bool mDisplayTopologyDirty{ false };
 	PixelDensityMode mPixelDensityMode{ PixelDensityMode::DisplayScale };
+#ifdef EE_X11_PLATFORM
+	mutable struct {
+		Float systemScale{ 0.f };
+		Float windowScale{ 0.f };
+		Float logicalScale{ 0.f };
+	} mX11BestFitScale;
+#endif
 
 	class FrameData {
 	  public:
@@ -751,6 +761,13 @@ class EE_API Window {
 
 	Float resolveAutomaticPixelDensity( Float displayScale, int displayIndex,
 										bool currentDisplay = true ) const;
+
+	Float resolveBestFitPixelDensity( Float displayScale, int displayIndex,
+									  bool currentDisplay ) const;
+
+#ifdef EE_X11_PLATFORM
+	virtual bool usesX11DisplayScaling() const;
+#endif
 
 	static PixelDensityMode resolvePixelDensityMode( PixelDensityMode mode );
 	static Float resolvePixelDensityReferencePPI( Float reference );

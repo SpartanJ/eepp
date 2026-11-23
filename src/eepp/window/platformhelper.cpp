@@ -13,13 +13,14 @@
 #include <eepp/window/engine.hpp>
 #include <jni.h>
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+#include "platform/x11scalesettings.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/sys.hpp>
 #include <memory>
 #if __has_include( <X11/Xlib.h> )
 #include <X11/Xlib.h>
-#define EE_HAS_X11_FONT_SETTINGS
+#define EE_HAS_XSETTINGS
 #endif
 #endif
 
@@ -28,8 +29,13 @@ namespace EE { namespace Window {
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 using namespace System;
 
-#ifdef EE_HAS_X11_FONT_SETTINGS
-static std::string getXSettingsFont() {
+#ifdef EE_HAS_XSETTINGS
+struct XSettings {
+	std::string fontName;
+	Private::X11ScaleSettings scale;
+};
+
+static XSettings readXSettings() {
 	std::unique_ptr<void, decltype( &Sys::unloadObject )> library(
 		Sys::loadObject( "libX11.so.6", false ), Sys::unloadObject );
 	if ( !library )
@@ -80,7 +86,7 @@ static std::string getXSettingsFont() {
 	ungrab( display.get() );
 	flush( display.get() );
 	std::unique_ptr<unsigned char, decltype( free )> data( bytes, free );
-	if ( status != Success || type != settings || format != 8 || !data || count < 12 ||
+	if ( status != Success || type != settings || format != 8 || !data || remaining || count < 12 ||
 		 bytes[0] > 1 )
 		return {};
 	const bool littleEndian = bytes[0] == 0;
@@ -95,6 +101,7 @@ static std::string getXSettingsFont() {
 	const auto aligned = []( size_t length ) { return ( length + 3 ) & ~size_t{ 3 }; };
 	const Uint32 settingsCount = read( 8, 4 );
 	size_t offset = 12;
+	XSettings result;
 	for ( Uint32 i = 0; i < settingsCount && count - offset >= 4; ++i ) {
 		const auto entryType = bytes[offset];
 		const auto nameLength = read( offset + 2, 2 );
@@ -112,14 +119,29 @@ static std::string getXSettingsFont() {
 			if ( textLength > count - offset || aligned( textLength ) > count - offset )
 				break;
 			if ( name == "Gtk/FontName" )
-				return std::string( reinterpret_cast<const char*>( bytes + offset ), textLength );
+				result.fontName.assign( reinterpret_cast<const char*>( bytes + offset ),
+										textLength );
 			size = aligned( textLength );
+		} else if ( entryType == 0 ) {
+			const auto value = static_cast<Int32>( read( offset, 4 ) );
+			if ( name == "Gdk/WindowScalingFactor" && value > 0 )
+				result.scale.windowScale = static_cast<Float>( value );
+			if ( name == "Xft/DPI" && value > 0 )
+				result.scale.logicalScale = static_cast<Float>( value ) / ( 96.f * 1024.f );
 		}
 		offset += size;
 	}
-	return {};
+	return result;
 }
 #endif
+
+Private::X11ScaleSettings Private::getX11ScaleSettings() {
+#ifdef EE_HAS_XSETTINGS
+	return readXSettings().scale;
+#else
+	return {};
+#endif
+}
 
 static Float parseFontSize( const std::string& value ) {
 	char* end = nullptr;
@@ -146,9 +168,9 @@ static Float getDesktopUIFontSize() {
 			return size;
 	}
 	std::string font;
-#ifdef EE_HAS_X11_FONT_SETTINGS
+#ifdef EE_HAS_XSETTINGS
 	if ( !Sys::getEnv( "DISPLAY" ).empty() )
-		font = getXSettingsFont();
+		font = readXSettings().fontName;
 #endif
 	if ( font.empty() ) {
 		IniFile gtk( config + "gtk-3.0/settings.ini" );

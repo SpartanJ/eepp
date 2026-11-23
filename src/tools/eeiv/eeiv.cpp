@@ -458,8 +458,11 @@ void App::setBackgroundColor( const Color& color ) {
 
 void App::loadConfig() {
 	const std::string configPath( mStorePath + "eeiv.ini" );
+	const std::string statePath( mStorePath + "state.cfg" );
+	const bool hasConfig = FileSystem::fileExists( configPath );
+	const bool newProfile = !hasConfig && !FileSystem::fileExists( statePath );
 	mIni.loadFromFile( configPath );
-	if ( FileSystem::fileExists( configPath ) )
+	if ( hasConfig )
 		mIni.readFile();
 	else
 		FileSystem::makeDir( mStorePath );
@@ -467,7 +470,7 @@ void App::loadConfig() {
 	mConfig.Fade = mIni.getValueB( "viewer", "fade", true );
 	mConfig.LateLoading = mIni.getValueB( "viewer", "lateloading", true );
 	mConfig.BlockWheelSpeed = mIni.getValueB( "viewer", "blockwheelspeed", true );
-	IniFile state( mStorePath + "state.cfg" );
+	IniFile state( statePath );
 	mConfig.ShowInfo =
 		state.getValueB( "viewer", "showinfo", mIni.getValueB( "viewer", "showinfo", true ) );
 	mTextureFilter = state.getValue( "viewer", "filter", "nearest" ) == "linear"
@@ -490,7 +493,9 @@ void App::loadConfig() {
 	mConfig.FallbackFontPath = mIni.getValue( "ui", "fallbackfont" );
 	mConfig.UIScale = mIni.getValueF( "ui", "scale", 0 );
 	mConfig.UIScaleMode =
-		EE::Window::Window::pixelDensityModeFromString( mIni.getValue( "ui", "scale_mode" ) );
+		newProfile
+			? EE::Window::Window::getNewProfilePixelDensityMode()
+			: EE::Window::Window::pixelDensityModeFromString( mIni.getValue( "ui", "scale_mode" ) );
 	mConfig.displayDensityOverrides = EE::Window::Window::loadDisplayDensityOverrides( mIni );
 	mConfig.Hinting = Font::fontHintingFromString( mIni.getValue( "ui", "fonthinting", "full" ) );
 	mConfig.Antialiasing =

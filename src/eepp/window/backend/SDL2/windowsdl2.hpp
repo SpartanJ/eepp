@@ -133,6 +133,10 @@ class EE_API WindowSDL : public Window {
   protected:
 	virtual void refreshDisplayMetrics();
 
+#ifdef EE_X11_PLATFORM
+	bool usesX11DisplayScaling() const;
+#endif
+
 	NativeWindowContext getNativeDragContext();
 
 	bool isNativeFileTargetSupported() const;

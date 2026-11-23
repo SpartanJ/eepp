@@ -843,12 +843,13 @@ file in the directory tree.</string>
 	<string name="terminal_font_size_desc">Set the default integrated terminal font size.</string>
 	<string name="ui_scale_factor_desc">设置 1 到 6 之间的固定界面缩放比例。更改此值会切换到手动模式。</string>
 	<string name="ui_scale_mode">界面缩放模式</string>
-	<string name="ui_scale_mode_desc">系统缩放遵循操作系统为每个显示器设置的缩放比例。物理像素密度按显示器的像素密度缩放，使界面保持相近的物理尺寸。无法获取像素密度时，将使用系统缩放。</string>
+	<string name="ui_scale_mode_desc">最佳适配优先使用平台提供的缩放比例，也可根据屏幕尺寸和像素密度估算。系统缩放遵循操作系统的设置。物理像素密度根据显示器的像素密度保持界面的物理尺寸相近，必要时使用系统缩放。</string>
+	<string name="ui_scale_auto_best_fit">自动（最佳适配）</string>
 	<string name="ui_scale_auto_system">自动（系统缩放）</string>
 	<string name="ui_scale_auto_physical">自动（物理像素密度）</string>
 	<string name="ui_scale_manual">手动</string>
 	<string name="ui_display_scale">按显示器设置缩放</string>
-	<string name="ui_display_scale_desc">在任一自动模式下，分别设置已连接显示器的缩放比例。</string>
+	<string name="ui_display_scale_desc">在任意自动模式下，分别设置已连接显示器的缩放比例。</string>
 	<string name="ui_display_scale_configure">配置…</string>
 	<string name="ui_display_scale_unavailable">当前配置不支持按显示器设置缩放。</string>
 	<string name="ui_display_scale_requires_auto">选择自动缩放模式以使用各显示器的缩放设置。</string>

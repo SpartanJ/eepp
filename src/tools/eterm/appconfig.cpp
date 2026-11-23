@@ -21,6 +21,8 @@ AppConfig::AppConfig( std::string configPath ) : mConfigPath( std::move( configP
 }
 
 void AppConfig::load() {
+	const bool newProfile =
+		!FileSystem::fileExists( mIni.path() ) && !FileSystem::fileExists( mState.path() );
 	mIni.loadFromFile( mIni.path() );
 	mState.loadFromFile( mState.path() );
 	terminal.shell = mIni.getValue( "terminal", "shell", terminal.shell );
@@ -66,8 +68,9 @@ void AppConfig::load() {
 					  : PlatformHelper::getSystemUIFontSize( font.uiSize );
 
 	window.pixelDensity = mIni.getValueF( "window", "pixel_density", window.pixelDensity );
-	window.pixelDensityMode = EE::Window::Window::pixelDensityModeFromString(
-		mIni.getValue( "window", "pixel_density_mode" ) );
+	window.pixelDensityMode = newProfile ? EE::Window::Window::getNewProfilePixelDensityMode()
+										 : EE::Window::Window::pixelDensityModeFromString(
+											   mIni.getValue( "window", "pixel_density_mode" ) );
 	window.displayDensityOverrides = EE::Window::Window::loadDisplayDensityOverrides( mIni );
 	window.maxFPS = mIni.getValueU( "window", "frame_rate_limit", window.maxFPS );
 	window.vsync = mIni.getValueB( "window", "vsync", window.vsync );
