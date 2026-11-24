@@ -86,6 +86,9 @@ class EE_API UISceneNode : public SceneNode {
 	/** Effective scene density: explicit override, embedded host, then native window. */
 	virtual const Float& getPixelDensity() const;
 
+	/** Whether widget metrics are currently being updated for an effective density change. */
+	bool isReflowingPixelDensity() const { return mDensityTransition || mApplyingDensityRebinds; }
+
 	bool hasPixelDensityOverride() const;
 
 	/** Reflows the scene at a positive finite density. Zero clears the override. */

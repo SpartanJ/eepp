@@ -176,6 +176,12 @@ const Vector2f& UISprite::getAlignOffset() const {
 	return mAlignOffset;
 }
 
+void UISprite::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UIWidget::onPixelDensityChange( oldDensity, newDensity );
+	updateSize();
+	autoAlign();
+}
+
 void UISprite::onSizeChange() {
 	autoAlign();
 	notifyLayoutAttrChange( LayoutInvalidation::Self );

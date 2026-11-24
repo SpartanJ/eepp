@@ -149,6 +149,7 @@ class UITerminal : public UITouchDraggableWidget {
 	Uint64 mPendingScrollCommand{ 0 };
 	Clock mMouseClock;
 	std::shared_ptr<TerminalDisplay> mTerm;
+	Float mTerminalDensity;
 	Uint32 mTerminalEventCallbackId{ 0 };
 	UITerminalFind* mFindBar{ nullptr };
 
@@ -182,9 +183,13 @@ class UITerminal : public UITouchDraggableWidget {
 
 	virtual void onSizeChange();
 
+	virtual void onBeforePixelDensityReflow( UIDensityReflow& reflow );
+
 	virtual void onAlphaChange();
 
 	virtual void onPaddingChange();
+
+	void updateTerminalLayout();
 
 	virtual Uint32 onFocus( NodeFocusReason reason );
 

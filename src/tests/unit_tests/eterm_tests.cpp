@@ -304,6 +304,31 @@ UTEST( eterm_display, placeholder_grid_resizes_after_layout ) {
 				 } ) != nullptr );
 }
 
+UTEST( eterm_display, widget_reflows_display_metrics_at_the_new_density ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm density reflow", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto* scene = app.getUI();
+	scene->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	SizingProcessFactory factory;
+	auto display =
+		TerminalDisplay::create( app.getWindow(), scene->getUIThemeManager()->getDefaultFont(), 13,
+								 { 300, 180 }, "shell", {}, "", 100, &factory, false );
+	ASSERT_TRUE( display != nullptr );
+	auto* terminal = eterm::UI::UITerminal::New( display );
+	terminal->setSize( 300, 180 );
+	terminal->setPadding( { 4, 2, 4, 2 } );
+	for ( Float density : { 2.f, 1.5f, 1.f } ) {
+		scene->setPixelDensity( density );
+		EXPECT_EQ( 13.f * density, display->getFontSize() );
+		EXPECT_EQ( 300.f * density, display->getSize().x );
+		EXPECT_EQ( 180.f * density, display->getSize().y );
+		EXPECT_EQ( 4.f * density, display->getPadding().Left );
+		EXPECT_EQ( 2.f * density, display->getPadding().Top );
+	}
+}
+
 class SelectionTestDisplay : public TerminalDisplay {
   public:
 	SelectionTestDisplay( EE::Window::Window* window, Font* font,

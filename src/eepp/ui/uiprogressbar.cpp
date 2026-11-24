@@ -136,6 +136,11 @@ Uint32 UIProgressBar::onValueChange() {
 	return 1;
 }
 
+void UIProgressBar::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	UIWidget::onPixelDensityChange( oldDensity, newDensity );
+	onSizeChange();
+}
+
 void UIProgressBar::onSizeChange() {
 	Sizef fSize( ( ( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right ) * getProgress() ) /
 					 getTotalSteps(),

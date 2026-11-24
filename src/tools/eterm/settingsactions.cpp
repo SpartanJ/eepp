@@ -96,11 +96,11 @@ void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {
 				mApp->config->font.path = selection.font.path;
 				mApp->config->font.size = selection.size;
 				mApp->terminalFont = font.get();
-				mApp->terminalFontSize = PixelDensity::dpToPx( mApp->config->font.size );
 				FontFamily::loadFromRegular( mApp->terminalFont );
 				mApp->forEachTerminal( [this]( UITerminal* terminal ) {
 					terminal->setFont( mApp->terminalFont );
-					terminal->setFontSize( mApp->terminalFontSize );
+					terminal->setFontSize( mApp->config->font.size *
+										   terminal->getUISceneNode()->getPixelDensity() );
 				} );
 			}
 		}
@@ -118,9 +118,9 @@ void SettingsActions::setUIFontSize( Float size ) {
 
 void SettingsActions::setTerminalFontSize( Float size ) {
 	mApp->config->font.size = size;
-	mApp->terminalFontSize = PixelDensity::dpToPx( size );
-	mApp->forEachTerminal(
-		[this]( UITerminal* terminal ) { terminal->setFontSize( mApp->terminalFontSize ); } );
+	mApp->forEachTerminal( [size]( UITerminal* terminal ) {
+		terminal->setFontSize( size * terminal->getUISceneNode()->getPixelDensity() );
+	} );
 	mApp->savePreferences();
 }
 

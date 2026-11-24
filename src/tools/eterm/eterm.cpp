@@ -568,10 +568,10 @@ UITerminal* App::newTerminal( const Sizef& initialSize, const std::string& worki
 			HarnessSessionRecovery::prepare( environment, resume ? *resume : nlohmann::json{} );
 	}
 	auto display = TerminalDisplay::create(
-		appWindow, terminalFont, terminalFontSize, initialSize, terminalConfig.program,
-		terminalConfig.arguments, workingDirectory, config->terminal.historySize(), nullptr,
-		config->terminal.useFrameBuffer, !terminalConfig.closeOnExit, environment,
-		config->terminal.sessionOptions() );
+		appWindow, terminalFont, config->font.size * scene->getPixelDensity(), initialSize,
+		terminalConfig.program, terminalConfig.arguments, workingDirectory,
+		config->terminal.historySize(), nullptr, config->terminal.useFrameBuffer,
+		!terminalConfig.closeOnExit, environment, config->terminal.sessionOptions() );
 	if ( !display ) {
 		if ( !recoveryDirectory.empty() )
 			FileSystem::dirRemoveAll( recoveryDirectory );
@@ -1150,7 +1150,6 @@ int App::run( int argc, char* argv[] ) {
 	warnBeforeClose = config->window.warnBeforeClose;
 	benchmarkMode = config->window.benchmarkMode;
 	managesSession = !wd && !initialTabs && terminalConfig.executeInShell.empty();
-	terminalFontSize = PixelDensity::dpToPx( config->font.size );
 
 	mainLayout = UIMainLayout::New();
 	mainLayout->setParent( scene->getRoot() );

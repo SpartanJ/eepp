@@ -1,4 +1,5 @@
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uidensityreflow.hpp>
 #include <eepp/ui/uiwidgettable.hpp>
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -133,25 +134,20 @@ void UIWidgetTable::onSizeChange() {
 	updatePageStep();
 }
 
+void UIWidgetTable::onBeforePixelDensityReflow( UIDensityReflow& reflow ) {
+	UITouchDraggableWidget::onBeforePixelDensityReflow( reflow );
+	reflow.restoreAfterLayout( [this] { onSizeChange(); } );
+}
+
 void UIWidgetTable::containerResize() {
-	Rectf padding = mContainerPadding + mPadding;
-
-	mContainer->setPosition( padding.Left, padding.Top );
-
-	if ( mHScrollBar->isVisible() ) {
-		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left,
-								   mSize.getHeight() - padding.Top -
-									   mHScrollBar->getPixelsSize().getHeight() );
-	} else {
-		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left,
-								   mSize.getHeight() - padding.Bottom - padding.Top );
-	}
-
-	if ( mVScrollBar->isVisible() ) {
-		mContainer->setPixelsSize( mContainer->getPixelsSize().getWidth() -
-									   mVScrollBar->getPixelsSize().getWidth(),
-								   mContainer->getPixelsSize().getHeight() );
-	}
+	const Rectf padding = PixelDensity::dpToPx( mContainerPadding ) + mPaddingPx;
+	Sizef viewport = mSize - padding;
+	if ( mHScrollBar->isVisible() )
+		viewport.y -= mHScrollBar->getPixelsSize().getHeight();
+	if ( mVScrollBar->isVisible() )
+		viewport.x -= mVScrollBar->getPixelsSize().getWidth();
+	mContainer->setPixelsPosition( padding.Left, padding.Top );
+	mContainer->setPixelsSize( viewport );
 
 	setDefaultColumnsWidth();
 	updateScrollBar();

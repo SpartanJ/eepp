@@ -2482,12 +2482,12 @@ Sizei TerminalDisplay::getGridPixelSize() const {
 	return { columns * cell.getWidth(), rows * cell.getHeight() };
 }
 
-void TerminalDisplay::onSizeChange() {
+void TerminalDisplay::onSizeChange( bool fontChanged ) {
 	Sizei gridSize( gridSizeFromTermDimensions(
 		mFont, mFontSize,
 		mSize - Vector2f( mPadding.Left + mPadding.Right, mPadding.Top + mPadding.Bottom ) ) );
 
-	if ( mSession && ( !mSnapshot || gridSize.getWidth() != mSnapshot->columns ||
+	if ( mSession && ( fontChanged || !mSnapshot || gridSize.getWidth() != mSnapshot->columns ||
 					   gridSize.getHeight() != mSnapshot->rows ) ) {
 		const Sizei cellSize = getCellPixelSize();
 		mSession->resize( gridSize.getWidth(), gridSize.getHeight(),
@@ -2642,7 +2642,7 @@ Font* TerminalDisplay::getFont() const {
 void TerminalDisplay::setFont( Font* font ) {
 	if ( mFont != font ) {
 		mFont = font;
-		onSizeChange();
+		onSizeChange( true );
 	}
 }
 
@@ -2676,7 +2676,7 @@ void TerminalDisplay::setFontSize( const Float& fontSize ) {
 	Float fontSizeClamp = eeclamp( fontSize, 4.f, 120.f );
 	if ( mFontSize != fontSizeClamp ) {
 		mFontSize = fontSizeClamp;
-		onSizeChange();
+		onSizeChange( true );
 	}
 }
 
@@ -2697,6 +2697,17 @@ void TerminalDisplay::setSize( const Sizef& size ) {
 	if ( mSize != size ) {
 		mSize = size;
 		onSizeChange();
+	}
+}
+
+void TerminalDisplay::setLayout( const Sizef& size, const Rectf& padding, Float fontSize ) {
+	const Rectf pixelsPadding = padding.ceil();
+	const bool fontChanged = mFontSize != fontSize;
+	if ( fontChanged || mSize != size || mPadding != pixelsPadding ) {
+		mFontSize = fontSize;
+		mSize = size;
+		mPadding = pixelsPadding;
+		onSizeChange( fontChanged );
 	}
 }
 

@@ -211,7 +211,6 @@ class App : private efsw::FileWatchListener {
 	std::unique_ptr<efsw::FileWatcher> fileWatcher;
 	std::atomic<bool> keybindingsChanged{ false };
 	const TerminalColorScheme* selectedColorScheme{ nullptr };
-	Float terminalFontSize{ 12 };
 	bool warnBeforeClose{ false };
 	bool closeApproved{ false };
 	bool benchmarkMode{ false };

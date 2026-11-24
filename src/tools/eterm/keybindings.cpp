@@ -162,7 +162,7 @@ void App::openKeybindingsFile() {
 		return;
 	}
 	editor->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-	editor->setFontSize( terminalFontSize );
+	editor->setFontSize( config->font.size * scene->getPixelDensity() );
 	editor->setSyntaxDefinition( editor->getDocument().guessSyntax() );
 	editor->getDocument().setCommand( "save-doc", [editor] { editor->getDocument().save(); } );
 	registerTabCommands( editor->getDocument(), editor );

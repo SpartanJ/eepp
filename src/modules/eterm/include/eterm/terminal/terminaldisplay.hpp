@@ -280,6 +280,9 @@ class TerminalDisplay {
 
 	void setSize( const Sizef& size );
 
+	/** Applies framebuffer geometry and font size together before resizing the terminal grid. */
+	void setLayout( const Sizef& size, const Rectf& padding, Float fontSize );
+
 	bool isDirty() const { return mDirty; }
 
 	void invalidate();
@@ -515,7 +518,7 @@ class TerminalDisplay {
 
 	Vector2i positionToPixel( const Vector2i& pos ) const;
 
-	void onSizeChange();
+	void onSizeChange( bool fontChanged = false );
 
 	void onProcessExit( int exitCode );
 

@@ -2,6 +2,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uidensityreflow.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
@@ -84,8 +85,17 @@ UIListBox::UIListBox( const std::string& tag ) :
 
 UIListBox::UIListBox() : UIListBox( "listbox" ) {}
 
+void UIListBox::onBeforePixelDensityReflow( UIDensityReflow& reflow ) {
+	UITouchDraggableWidget::onBeforePixelDensityReflow( reflow );
+	reflow.restoreAfterLayout( [this] {
+		findMaxWidth();
+		onSizeChange();
+	} );
+}
+
 void UIListBox::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 	UITouchDraggableWidget::onPixelDensityChange( oldDensity, newDensity );
+	autoPadding();
 	onSizeChange();
 }
 

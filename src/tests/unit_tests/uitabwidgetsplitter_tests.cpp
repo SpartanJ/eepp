@@ -1787,6 +1787,30 @@ UTEST( UIAbstractTableView, PercentageColumnsRecomputeWhenVerticalScrollbarAppea
 	EXPECT_FALSE( table->getHorizontalScrollBar()->isVisible() );
 }
 
+UTEST( UIAbstractTableView, FittedColumnsKeepBothScrollbarsHiddenWhenRowsFit ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - unit tests" ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
+	auto* table = PercentageTestTable::New();
+	table->setParent( app.getUI() );
+	table->setPixelsSize( 555, 100 );
+	table->setModel( std::make_shared<ThreeColumnModel>( 10 ) );
+	table->setColumnsWidthPercentage( { 50.f, 25.f, 25.f } );
+	app.getUI()->update( Milliseconds( 16 ) );
+	ASSERT_TRUE( table->getVerticalScrollBar()->isVisible() );
+	ASSERT_FALSE( table->getHorizontalScrollBar()->isVisible() );
+
+	const Float fittedHeight = table->getContentSize().getHeight();
+	for ( Float width : { 555.f, 582.f, 555.f } ) {
+		table->setPixelsSize( width, fittedHeight );
+		app.getUI()->update( Milliseconds( 16 ) );
+		EXPECT_FALSE( table->getVerticalScrollBar()->isVisible() );
+		EXPECT_FALSE( table->getHorizontalScrollBar()->isVisible() );
+		EXPECT_EQ( width, table->getColumnWidth( 0 ) + table->getColumnWidth( 1 ) +
+							  table->getColumnWidth( 2 ) );
+	}
+}
+
 UTEST( UIAbstractTableView, AutoPixelColumnsRecomputeWhenVerticalScrollbarAppears ) {
 	UIApplication app(
 		WindowSettings( 800, 600, "eepp - unit tests" ),

@@ -122,50 +122,28 @@ UIScrollBar* UIScrollableWidget::getHorizontalScrollBar() const {
 void UIScrollableWidget::onContentSizeChange() {
 	Sizef contentSize( getContentSize() );
 
-	if ( ScrollBarMode::AlwaysOn == mHScrollMode ) {
-		mHScroll->setVisible( true )->setEnabled( true );
-	} else if ( ScrollBarMode::AlwaysOff == mHScrollMode ) {
-		mHScroll->setVisible( false )->setEnabled( false );
-	} else {
-		Float totW =
-			getPixelsSize().getWidth() - getPixelsPadding().Left - getPixelsPadding().Right;
+	const Float viewportWidth = getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right;
+	const Float viewportHeight = getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom;
+	const bool verticalScrollConsumesWidth =
+		mScrollViewType == ScrollViewType::Outside || mVScroll->getAlpha() != 0.f;
 
-		if ( mScrollViewType == ScrollViewType::Outside )
-			totW -= mVScroll->getPixelsSize().getWidth();
+	// Establish overflow before reserving space for auto scrollbars. Otherwise each bar can
+	// create the overflow that makes the other appear, even when the content fits.
+	bool verticalVisible =
+		mVScrollMode == ScrollBarMode::AlwaysOn ||
+		( mVScrollMode == ScrollBarMode::Auto && contentSize.getHeight() > viewportHeight );
+	const Float availableWidth = viewportWidth - ( verticalVisible && verticalScrollConsumesWidth
+													   ? mVScroll->getPixelsSize().getWidth()
+													   : 0 );
+	const bool horizontalVisible =
+		mHScrollMode == ScrollBarMode::AlwaysOn ||
+		( mHScrollMode == ScrollBarMode::Auto && contentSize.getWidth() > availableWidth );
+	if ( horizontalVisible && mVScrollMode == ScrollBarMode::Auto )
+		verticalVisible =
+			contentSize.getHeight() > viewportHeight - mHScroll->getPixelsSize().getHeight();
 
-		bool visible = contentSize.getWidth() > totW;
-
-		mHScroll->setVisible( visible )->setEnabled( visible );
-	}
-
-	if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
-		mVScroll->setVisible( true )->setEnabled( true );
-	} else if ( ScrollBarMode::AlwaysOff == mVScrollMode ) {
-		mVScroll->setVisible( false )->setEnabled( false );
-	} else {
-		Float totH = getPixelsSize().getHeight() - getPixelsPadding().Top -
-					 getPixelsPadding().Bottom -
-					 ( ScrollBarMode::AlwaysOff == mHScrollMode || !mHScroll->isVisible()
-						   ? 0
-						   : mHScroll->getPixelsSize().getHeight() );
-
-		bool visible = contentSize.getHeight() > totH;
-
-		mVScroll->setVisible( visible )->setEnabled( visible );
-	}
-
-	if ( ScrollBarMode::Auto == mHScrollMode ) {
-		Float totW =
-			getPixelsSize().getWidth() - getPixelsPadding().Left - getPixelsPadding().Right -
-			( mVScroll->isVisible() &&
-					  ( mScrollViewType == ScrollViewType::Outside || mVScroll->getAlpha() != 0.f )
-				  ? mVScroll->getPixelsSize().getWidth()
-				  : 0 );
-
-		bool visible = contentSize.getWidth() > totW;
-
-		mHScroll->setVisible( visible )->setEnabled( visible );
-	}
+	mVScroll->setVisible( verticalVisible )->setEnabled( verticalVisible );
+	mHScroll->setVisible( horizontalVisible )->setEnabled( horizontalVisible );
 
 	Sizef size = getPixelsSize() - mPaddingPx;
 

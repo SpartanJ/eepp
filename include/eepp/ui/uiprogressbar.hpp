@@ -89,6 +89,8 @@ class EE_API UIProgressBar : public UIWidget {
 
 	virtual Uint32 onValueChange();
 
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+
 	virtual void onSizeChange();
 
 	virtual void onPaddingChange();

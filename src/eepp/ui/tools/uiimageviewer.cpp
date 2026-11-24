@@ -7,6 +7,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
+#include <eepp/ui/uidensityreflow.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -347,14 +348,40 @@ void UIImageViewer::onSizeChange() {
 	}
 }
 
+void UIImageViewer::onBeforePixelDensityReflow( UIDensityReflow& reflow ) {
+	UIWidget::onBeforePixelDensityReflow( reflow );
+	const auto imageSize = mImage->getPixelsSize();
+	if ( !mImage->getDrawable() || imageSize.x <= 0 || imageSize.y <= 0 ) {
+		reflow.restoreAfterLayout( [this] { mLoader->center(); } );
+		return;
+	}
+	const auto pan = ( mImage->getPixelsPosition() - ( mSize - imageSize ) * 0.5f ) / imageSize;
+	reflow.restoreAfterLayout( [this, generation = mLoadGeneration.load(), pan,
+								scale = mImage->getScale()]( const UIDensityReflow& reflow ) {
+		mLoader->center();
+		if ( !reflow.isWidgetCurrent() || generation != mLoadGeneration || !mImage->getDrawable() )
+			return;
+		updateImageLayout();
+		if ( !reflow.isWidgetCurrent() )
+			return;
+		mImage->setScale( scale );
+		const auto size = mImage->getPixelsSize();
+		mImage->setPixelsPosition( ( mSize - size ) * 0.5f + pan * size );
+	} );
+}
+
 void UIImageViewer::updateImageLayout() {
 	if ( !mImage || !mImage->getDrawable() )
 		return;
 
 	// Use source dimensions directly to avoid rounding twice at fractional pixel densities.
-	Sizef imageSize( mImage->getDrawable()->getSize() );
+	const auto& drawable = mImage->getDrawable();
+	Sizef imageSize( drawable->getSize() );
 	if ( !mUseNativeImageSize )
 		imageSize = PixelDensity::dpToPx( imageSize );
+	else if ( drawable->getDrawableType() == Drawable::TEXTURE ||
+			  drawable->getDrawableType() == Drawable::TEXTUREDRAWABLE )
+		imageSize = drawable->getPixelsSize();
 
 	Sizef oriented = imageSize;
 	if ( static_cast<Uint8>( mOrientation ) >= 5 )

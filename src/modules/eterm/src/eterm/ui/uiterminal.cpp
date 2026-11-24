@@ -5,6 +5,7 @@
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/ui/uidensityreflow.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -109,7 +110,8 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	UITouchDraggableWidget( "terminal" ),
 	mKeyBindings( getInput() ),
 	mVScroll( UIScrollBar::NewVertical() ),
-	mTerm( terminalDisplay ) {
+	mTerm( terminalDisplay ),
+	mTerminalDensity( getUISceneNode()->getPixelDensity() ) {
 	setClipType( ClipType::ContentBox );
 	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
 	if ( !terminalDisplay )
@@ -232,12 +234,8 @@ void UITerminal::onAlphaChange() {
 }
 
 void UITerminal::onPaddingChange() {
-	mTerm->setPadding(
-		{ mPaddingPx.Left, mPaddingPx.Top,
-		  mPaddingPx.Right +
-			  ( mViewType == ScrollViewType::Outside ? mVScroll->getPixelsSize().getWidth() : 0.f ),
-		  mPaddingPx.Bottom } );
-	onContentSizeChange();
+	if ( mTerminalDensity == getUISceneNode()->getPixelDensity() )
+		updateTerminalLayout();
 	UIWidget::onPaddingChange();
 }
 
@@ -394,6 +392,9 @@ void UITerminal::scheduledUpdate( const Time& time ) {
 	UITouchDraggableWidget::scheduledUpdate( time );
 	if ( !mTerm )
 		return;
+	// Scene rebinding also changes the effective density.
+	if ( mTerminalDensity != getUISceneNode()->getPixelDensity() )
+		updateTerminalLayout();
 	auto terminal = mTerm;
 
 	auto mousePos = getInput()->getRelativeMousePos();
@@ -766,16 +767,33 @@ void UITerminal::onPositionChange() {
 }
 
 void UITerminal::onSizeChange() {
-	mTerm->setSize( { getPixelsSize().getWidth(), getPixelsSize().getHeight() } );
-	mTerm->setPadding(
+	if ( mTerminalDensity == getUISceneNode()->getPixelDensity() )
+		updateTerminalLayout();
+	UIWidget::onSizeChange();
+}
+
+void UITerminal::onBeforePixelDensityReflow( UIDensityReflow& reflow ) {
+	UITouchDraggableWidget::onBeforePixelDensityReflow( reflow );
+	// Publish one resize once the font, viewport and scrollbar share the new density.
+	reflow.restoreAfterLayout( [this] { updateTerminalLayout(); } );
+}
+
+void UITerminal::updateTerminalLayout() {
+	if ( !mTerm )
+		return;
+	const Float density = getUISceneNode()->getPixelDensity();
+	const Float fontSize = mTerm->getFontSize() * ( density / mTerminalDensity );
+	mTerminalDensity = density;
+	mTerm->setLayout(
+		getPixelsSize(),
 		{ mPaddingPx.Left, mPaddingPx.Top,
 		  mPaddingPx.Right +
 			  ( mViewType == ScrollViewType::Outside ? mVScroll->getPixelsSize().getWidth() : 0.f ),
-		  mPaddingPx.Bottom } );
+		  mPaddingPx.Bottom },
+		fontSize );
 	onContentSizeChange();
 	if ( mFindBar && mFindBar->isVisible() )
 		mFindBar->updatePosition();
-	UIWidget::onSizeChange();
 }
 
 Uint32 UITerminal::onFocus( NodeFocusReason reason ) {

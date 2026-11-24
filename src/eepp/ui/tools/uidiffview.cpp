@@ -737,13 +737,13 @@ UIDiffView::UIDiffView() :
 	mEditor->on( Event::OnFontChanged, [this]( auto ) { mPlugin->registerUpdate( mEditor ); } );
 	mLeftEditor->on( Event::OnFontChanged, [this]( auto ) {
 		mLeftPlugin->registerUpdate( mLeftEditor );
-		mRightEditor->setFontSize( mLeftEditor->getFontSize() );
-		mRightPlugin->registerUpdate( mRightEditor );
+		if ( !getUISceneNode()->isReflowingPixelDensity() )
+			mRightEditor->setFontSize( mLeftEditor->getFontSize() );
 	} );
 	mRightEditor->on( Event::OnFontChanged, [this]( auto ) {
 		mRightPlugin->registerUpdate( mRightEditor );
-		mLeftEditor->setFontSize( mRightEditor->getFontSize() );
-		mLeftPlugin->registerUpdate( mLeftEditor );
+		if ( !getUISceneNode()->isReflowingPixelDensity() )
+			mLeftEditor->setFontSize( mRightEditor->getFontSize() );
 	} );
 	mRightEditor->getVScrollBar()->on( Event::OnSizeChange,
 									   [this]( auto ) { updateModeButton(); } );

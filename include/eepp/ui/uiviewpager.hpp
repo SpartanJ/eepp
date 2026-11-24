@@ -88,6 +88,8 @@ class EE_API UIViewPager : public UIWidget {
 
 	virtual void onSizeChange();
 
+	virtual void onBeforePixelDensityReflow( UIDensityReflow& reflow );
+
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
 	void updateChildren();
@@ -99,6 +101,8 @@ class EE_API UIViewPager : public UIWidget {
 	Float getLength() const;
 
 	void moveToPage( const Int32& pageNum, bool animate = true );
+
+	void repositionCurrentPage();
 
 	Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 

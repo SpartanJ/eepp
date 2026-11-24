@@ -9,6 +9,7 @@
 #include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/clock.hpp>
@@ -39,6 +40,7 @@
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uirichtext.hpp>
@@ -47,6 +49,7 @@
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uispinbox.hpp>
+#include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uisvg.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
@@ -55,6 +58,7 @@
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwebview.hpp>
 #include <eepp/ui/uiwidgettable.hpp>
+#include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/window/input.hpp>
 #include <limits>
 #include <thread>
@@ -2873,4 +2877,123 @@ UTEST( PixelDensityRegression, TableContainerPaddingAndOriginStayLogical ) {
 	EXPECT_TRUE( table->getContainerPadding() == expected );
 	EXPECT_EQ( table->getContainer()->getPosition().x, expected.Left );
 	EXPECT_EQ( table->getContainer()->getPosition().y, expected.Top );
+}
+
+UTEST( PixelDensityRegression, SideBySideDiffScalesEachEditorsFontOnce ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI()->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	auto* diff = UIDiffView::New();
+	diff->setViewMode( UIDiffView::ViewMode::SideBySide );
+	diff->loadFromStrings( "old\n", "new\n" );
+	diff->getLeftEditor()->setFontSize( 16 );
+	EXPECT_EQ( 16.f, diff->getRightEditor()->getFontSize() );
+	for ( Float density : { 2.f, 1.5f, 1.f } ) {
+		scene->setPixelDensity( density );
+		EXPECT_EQ( 16.f * density, diff->getLeftEditor()->getFontSize() );
+		EXPECT_EQ( 16.f * density, diff->getRightEditor()->getFontSize() );
+	}
+	diff->getRightEditor()->setFontSize( 18 );
+	EXPECT_EQ( 18.f, diff->getLeftEditor()->getFontSize() );
+}
+
+UTEST( PixelDensityRegression, ListBoxRemeasuresTextAfterFontReflow ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI()->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	auto* list = UIListBox::New();
+	list->setSize( 120, 72 );
+	list->addListBoxItems( std::vector<String>( 12, "A list item wider than the viewport" ) );
+	scene->update( Time::Zero );
+	const auto width = list->getMaxTextWidth();
+	ASSERT_GT( width, 120u );
+	list->getHorizontalScrollBar()->setValue( 0.5f );
+	scene->setPixelDensity( 2.f );
+	EXPECT_GT( list->getMaxTextWidth(), width * 1.5f );
+	EXPECT_EQ( 0.5f, list->getHorizontalScrollBar()->getValue() );
+	scene->setPixelDensity( 1.f );
+	EXPECT_EQ( width, list->getMaxTextWidth() );
+}
+
+UTEST( PixelDensityRegression, ProgressFillerAndSpriteAlignmentReflow ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI()->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	auto* progress = UIProgressBar::New();
+	progress->setSize( 200, 20 );
+	progress->setPadding( { 4, 3, 4, 3 } );
+	progress->setProgress( 50 );
+	auto drawable = Sprite::New();
+	drawable->addFrame( TextureFactory::instance()->createEmptyTexture( 20, 10 ) );
+	auto* sprite = UISprite::New();
+	sprite->setSprite( drawable );
+	sprite->unsetFlags( UI_AUTO_SIZE );
+	sprite->setHorizontalAlign( UI_HALIGN_CENTER );
+	sprite->setSize( 100, 50 );
+	auto* region = drawable->getCurrentTextureRegion();
+	ASSERT_TRUE( region );
+	scene->update( Time::Zero );
+	for ( Float density : { 2.f, 1.5f, 1.f } ) {
+		scene->setPixelDensity( density );
+		EXPECT_EQ( 96.f * density, progress->getFiller()->getPixelsSize().x );
+		EXPECT_EQ( 4.f * density, progress->getFiller()->getPixelsPosition().x );
+		EXPECT_EQ( ( sprite->getPixelsSize().x - region->getPixelsSize().x ) / 2.f,
+				   sprite->getAlignOffset().x );
+	}
+}
+
+UTEST( PixelDensityRegression, ImageViewerKeepsPanAndZoomDuringReflow ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI()->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	auto* viewer = UIImageViewer::New();
+	viewer->setSize( 200, 100 );
+	viewer->setAutoFitOnSizeChange( true );
+	viewer->setUseNativeImageSize( true );
+	auto* image = viewer->getImage();
+	image->setDrawable( TextureFactory::instance()->createEmptyTexture( 20, 10 ) );
+	image->setPixelsSize( 20, 10 );
+	image->setPixelsPosition( 100, 48 );
+	image->setScale( 2.f );
+	scene->setPixelDensity( 2.f );
+	EXPECT_TRUE( image->getPixelsSize() == Sizef( 20, 10 ) );
+	EXPECT_TRUE( image->getPixelsPosition() == Vector2f( 200, 98 ) );
+	EXPECT_TRUE( image->getScale() == Vector2f( 2, 2 ) );
+	scene->setPixelDensity( 1.f );
+	EXPECT_TRUE( image->getPixelsPosition() == Vector2f( 100, 48 ) );
+}
+
+UTEST( PixelDensityRegression, TableViewportAndSelectedPageReflow ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI()->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	auto* table = UIWidgetTable::New();
+	table->unsetFlags( UI_AUTO_PADDING );
+	table->setSize( 200, 100 );
+	table->setPadding( { 4, 3, 4, 3 } );
+	table->setColumnsCount( 1 )->setRowHeight( 20 );
+	table->setVerticalScrollMode( ScrollBarMode::AlwaysOff );
+	table->setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
+	auto* row = UIWidgetTableRow::New();
+	row->setParent( table->getContainer() );
+	row->setColumn( 0, UIWidget::New() );
+	table->add( row );
+
+	auto* pager = UIViewPager::New();
+	pager->setSize( 200, 100 );
+	for ( int i = 0; i < 2; ++i )
+		UIWidget::New()->setParent( pager );
+	auto* pages = pager->getFirstChild()->asType<UINode>();
+	int pageChanges = 0;
+	pager->on( Event::OnPageChanged, [&]( const Event* ) { ++pageChanges; } );
+	pager->setCurrentPage( 1, true );
+	for ( Float density : { 2.f, 1.f } ) {
+		scene->setPixelDensity( density );
+		scene->update( Seconds( 1 ) );
+		EXPECT_EQ( 192.f * density, table->getContainer()->getPixelsSize().x );
+		EXPECT_EQ( 4.f * density, table->getContainer()->getPixelsPosition().x );
+		EXPECT_EQ( 1, pager->getCurrentPage() );
+		EXPECT_EQ( -200.f * density, pages->getPixelsPosition().x );
+		EXPECT_EQ( 1, pageChanges );
+	}
 }

@@ -1,4 +1,5 @@
 #include <eepp/scene/actions/move.hpp>
+#include <eepp/ui/uidensityreflow.hpp>
 #include <eepp/ui/uiviewpager.hpp>
 
 namespace EE { namespace UI {
@@ -120,6 +121,25 @@ void UIViewPager::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
+void UIViewPager::onBeforePixelDensityReflow( UIDensityReflow& reflow ) {
+	UIWidget::onBeforePixelDensityReflow( reflow );
+	const bool pageChanging = !mContainer->getActions().empty();
+	mContainer->clearActions();
+	if ( mDragging ) {
+		mDragging = false;
+		if ( getEventDispatcher()->getNodeDragging() == this )
+			getEventDispatcher()->setNodeDragging( nullptr );
+	}
+	reflow.restoreAfterLayout( [this, pageChanging]( const UIDensityReflow& reflow ) {
+		updateChildren();
+		if ( !reflow.isWidgetCurrent() )
+			return;
+		repositionCurrentPage();
+		if ( pageChanging && reflow.isWidgetCurrent() )
+			sendCommonEvent( Event::OnPageChanged );
+	} );
+}
+
 Uint32 UIViewPager::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseDown: {
@@ -221,12 +241,17 @@ void UIViewPager::moveToPage( const Int32& pageNum, bool animate ) {
 			} );
 			mContainer->runAction( action );
 		} else {
-			Float val = -getLength() * mCurrentPage;
-			mContainer->setPosition(
-				mOrientation == UIOrientation::Horizontal ? Sizef( val, 0.f ) : Sizef( 0.f, val ) );
+			repositionCurrentPage();
 			sendCommonEvent( Event::OnPageChanged );
 		}
 	}
+}
+
+void UIViewPager::repositionCurrentPage() {
+	mDisplacement = mCurrentPage * getLength();
+	mContainer->setPixelsPosition( mOrientation == UIOrientation::Horizontal
+									   ? Vector2f( -mDisplacement, 0.f )
+									   : Vector2f( 0.f, -mDisplacement ) );
 }
 
 Uint32 UIViewPager::onCalculateDrag( const Vector2f&, const Uint32& flags ) {

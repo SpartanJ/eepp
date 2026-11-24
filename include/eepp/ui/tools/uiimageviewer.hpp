@@ -167,6 +167,8 @@ class EE_API UIImageViewer : public UIWidget, public WidgetCommandExecuter {
 
 	virtual void onSizeChange() override;
 
+	void onBeforePixelDensityReflow( UIDensityReflow& reflow ) override;
+
 	virtual Uint32 onMessage( const NodeMessage* ) override;
 
 	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped ) override;

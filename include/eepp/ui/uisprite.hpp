@@ -59,6 +59,7 @@ class EE_API UISprite : public UIWidget {
 
 	virtual void onSizeChange();
 
+	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
 };
 
 }} // namespace EE::UI

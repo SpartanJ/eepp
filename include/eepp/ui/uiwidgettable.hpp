@@ -118,6 +118,8 @@ class EE_API UIWidgetTable : public UITouchDraggableWidget {
 
 	virtual void onSizeChange();
 
+	virtual void onBeforePixelDensityReflow( UIDensityReflow& reflow );
+
 	virtual void onAlphaChange();
 
 	virtual void onPaddingChange();
