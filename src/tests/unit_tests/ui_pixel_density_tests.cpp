@@ -3033,3 +3033,42 @@ UTEST( PixelDensityRegression, TableViewportAndSelectedPageReflow ) {
 		EXPECT_EQ( 1, pageChanges );
 	}
 }
+
+UTEST( UISceneDensity, ParentOwnedChildSizesSurviveDensityReflow ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setStyleSheet( "" );
+	UITabWidget* tabs;
+	UIWidget* page;
+	UIWidget* first;
+	UIWidget* last;
+	{
+		auto context = scene->makeCurrent();
+		auto* root = scene->loadLayoutFromString( R"xml(
+<vbox lw="mp" lh="mp">
+	<TabWidget id="tabs" lw="mp" lh="0" lw8="1" />
+	<Splitter lw="mp" lh="200dp" orientation="horizontal" splitter-partition="100dp">
+		<vbox id="first" lw="0" lh="0" />
+		<vbox id="last" lw="0" lh="0" />
+	</Splitter>
+</vbox>
+		)xml" );
+		tabs = root->find<UITabWidget>( "tabs" );
+		// The tab widget owns its page's size policies; the page declares wrap_content.
+		page = scene->loadLayoutFromString( R"xml(<vbox id="page" lw="mp" lh="wc" />)xml", tabs );
+		tabs->add( "Page", page );
+		first = root->find<UIWidget>( "first" );
+		last = root->find<UIWidget>( "last" );
+	}
+	scene->update( Time::Zero );
+	EXPECT_TRUE( page->getLayoutHeightPolicy() == SizePolicy::Fixed );
+	EXPECT_TRUE( page->getPixelsSize() == tabs->getContainerNode()->getPixelsSize() );
+	for ( Float density : { 1.f, 2.f, 1.25f } ) {
+		scene->setPixelDensity( density );
+		scene->update( Time::Zero );
+		EXPECT_TRUE( page->getLayoutHeightPolicy() == SizePolicy::Fixed );
+		EXPECT_TRUE( page->getPixelsSize() == tabs->getContainerNode()->getPixelsSize() );
+		EXPECT_GT( first->getPixelsSize().getHeight(), 0.f );
+		EXPECT_GT( last->getPixelsSize().getWidth(), 0.f );
+	}
+}

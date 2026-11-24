@@ -518,13 +518,24 @@ void UIStyle::onStateChange() {
 
 		if ( mElementStyle ) {
 			// Local raw values can stay unchanged while their resolved var()/light-dark() value
-			// changes after a stylesheet update. Environment reflow also needs literal inline
-			// properties, so include those when property reapplication is forced.
+			// changes after a stylesheet update. A density reflow also needs literal inline
+			// properties whose pixel values depend on density, such as font sizes and icons.
+			// Other forced reloads (color scheme, contrast, viewport) don't change those.
+			// Layout sizes are never re-applied as literals: density reflow rebuilds geometry
+			// from the logical size, and the declared value can be stale. An owning layout can
+			// replace it (UITabWidget fixes its pages' policies, UISplitter sizes lw="0" panes),
+			// and re-applying it would undo that.
+			const bool reapplyLiterals =
+				mForceReapplyProperties && mWidget->getUISceneNode()->isReflowingPixelDensity();
 			for ( const auto& localProperty : mElementStyle->getProperties() ) {
-				if ( ( mForceReapplyProperties || localProperty.second.needsValueSubstitution() ) &&
-					 localProperty.second.getPropertyDefinition() )
-					changedProperties.insert(
-						localProperty.second.getPropertyDefinition()->getPropertyId() );
+				const auto* definition = localProperty.second.getPropertyDefinition();
+				if ( !definition )
+					continue;
+				const PropertyId id = definition->getPropertyId();
+				if ( localProperty.second.needsValueSubstitution() ||
+					 ( reapplyLiterals && id != PropertyId::LayoutWidth &&
+					   id != PropertyId::LayoutHeight ) )
+					changedProperties.insert( id );
 			}
 		}
 

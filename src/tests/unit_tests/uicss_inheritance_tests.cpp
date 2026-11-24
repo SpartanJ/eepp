@@ -859,6 +859,41 @@ UTEST( CSSVariables, LightDarkLowerWinnerUpdatesWhileOverridden ) {
 	EXPECT_EQ( child->getAlpha(), 63.75f );
 }
 
+UTEST( CSSVariables, ColorSchemeSwitchKeepsLayoutOwnedChildGeometry ) {
+	UIApplication app(
+		WindowSettings( 800, 600, "eepp - CSS Color Scheme Splitter Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	UISceneNode* sceneNode = app.getUI();
+	sceneNode->setColorSchemePreference( ColorSchemePreference::Dark );
+	// The splitter assigns its panes' sizes; their literal lw="0" lh="0" must not be re-applied
+	// by the forced style reload of a color scheme switch.
+	UIWidget* root = sceneNode->loadLayoutFromString( R"html(
+<Splitter id="splitter" lw="mp" lh="mp" orientation="horizontal" splitter-partition="200dp">
+	<style>
+		@media (prefers-color-scheme: light) { #first { background-color: white; } }
+	</style>
+	<vbox id="first" lw="0" lh="0" />
+	<vbox id="last" lw="0" lh="0" />
+</Splitter>
+	)html" );
+	UIWidget* first = root->querySelector( "#first" );
+	UIWidget* last = root->querySelector( "#last" );
+	ASSERT_TRUE( first != nullptr && last != nullptr );
+	sceneNode->update( Time::Zero );
+	const Sizef firstSize = first->getPixelsSize();
+	const Sizef lastSize = last->getPixelsSize();
+	EXPECT_GT( firstSize.getWidth(), 0.f );
+	EXPECT_GT( firstSize.getHeight(), 0.f );
+	EXPECT_GT( lastSize.getWidth(), 0.f );
+
+	sceneNode->setColorSchemePreference( ColorSchemePreference::Light );
+	sceneNode->update( Time::Zero );
+	EXPECT_TRUE( first->getBackgroundColor() == Color::White );
+	EXPECT_TRUE( first->getPixelsSize() == firstSize );
+	EXPECT_TRUE( last->getPixelsSize() == lastSize );
+}
+
 UTEST( CSSVariables, StylesheetReloadUsesNewLowerWinner ) {
 	UIApplication app(
 		WindowSettings( 800, 600, "eepp - CSS Reload State Rollback Test", WindowStyle::Default,
