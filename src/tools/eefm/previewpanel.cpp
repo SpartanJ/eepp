@@ -400,6 +400,7 @@ void PreviewPanel::load() {
 				->i18n( "eefm_preview_size_limit", "Preview is limited to files up to %s." )
 				.toUtf8(),
 			FileSystem::sizeToString( limit ) ) );
+		mOpen->setFocus();
 		return;
 	}
 	mCancellation.emplace();
