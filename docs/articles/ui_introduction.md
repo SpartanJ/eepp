@@ -225,14 +225,15 @@ keep our layout consistent between different screen densities. This concept was
 taken from the [Android pixel density implementation](https://developer.android.com/guide/practices/screens_support.html#density).
 
 Each native window resolves its own UI density at creation and refreshes it when its display scale
-changes. Positive application settings take
-priority over window settings, then `EEPP_PIXEL_DENSITY`, then the native display scale. Automatic
-offscreen and terminal windows use `1`. Both automatic modes round to the nearest 0.25 by default.
-Set `EEPP_PIXEL_DENSITY_ROUNDING=0` to use the exact automatic scale. `Window::getScale()`
+changes. Positive application settings take priority over window settings, then
+`EEPP_PIXEL_DENSITY`, then automatic scaling. Windows using the default mode select Best Fit unless
+`EEPP_PIXEL_DENSITY_MODE` selects another automatic mode. Automatic offscreen and terminal windows
+use `1`. See [UI scaling environment variables](environment_variables.md#ui-scaling-fonts-and-color-scheme)
+for the modes and their rounding behavior. `Window::getScale()`
 describes the ratio between framebuffer pixels and native window coordinates, `getDisplayScale()`
 returns the raw native UI scale, and `getPixelDensity()` reports the effective eepp UI density.
 
-Automatic scaling uses the desktop's requested UI scale with SDL3. SDL2 uses the window's
+System Scale uses the desktop's requested UI scale with SDL3. SDL2 uses the window's
 effective DPI on Windows, the desktop's `Xft.dpi` setting on X11, and Android's configured
 display density when available. SDL2 falls back to the drawable-to-window ratio. Physical monitor
 PPI is a separate opt-in policy: set
@@ -241,9 +242,8 @@ PPI is a separate opt-in policy: set
 `max(1, physical PPI / reference PPI)`, with a default reference of 96. X11, Windows, and macOS
 provide physical measurements. On macOS the automatic calculation uses the window's backing
 pixels per inch to account for scaled display modes. Panel PPI remains available for diagnostics.
-Missing measurements fall back to desktop scale, including on Wayland. Fixed
-application, window, and environment density overrides take priority in either policy. Generic
-window INI settings accept `pixeldensitymode=default|display-scale|physical-ppi` and optional
+Missing measurements fall back to desktop scale, including on Wayland. Generic
+window INI settings accept `pixeldensitymode=default|best-fit|display-scale|physical-ppi` and optional
 `pixeldensityreferenceppi`. ecode persists those choices alongside `pixeldensity` in the profile's
 `state.cfg` `[window]` section.
 Older ecode profiles with a positive saved `pixeldensity` keep their previous startup scale,

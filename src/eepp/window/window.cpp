@@ -143,8 +143,11 @@ Float Window::getAutomaticPixelDensity( int displayIndex ) const {
 
 Float Window::resolveAutomaticPixelDensity( Float displayScale, int displayIndex,
 											bool currentDisplay ) const {
+// Emscripten uses the rounded browser scale for Best Fit and Display Scale.
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	if ( mPixelDensityMode == PixelDensityMode::BestFit )
 		return resolveBestFitPixelDensity( displayScale, displayIndex, currentDisplay );
+#endif
 
 	Float density = displayScale;
 	if ( mPixelDensityMode == PixelDensityMode::PhysicalPPI ) {
@@ -372,7 +375,7 @@ PixelDensityMode Window::resolvePixelDensityMode( PixelDensityMode mode ) {
 		return mode;
 	const char* value = std::getenv( "EEPP_PIXEL_DENSITY_MODE" );
 	const auto configured = value ? pixelDensityModeFromString( value ) : PixelDensityMode::Default;
-	return configured == PixelDensityMode::Default ? PixelDensityMode::DisplayScale : configured;
+	return configured == PixelDensityMode::Default ? PixelDensityMode::BestFit : configured;
 }
 
 Uint32 Window::getDisplayMetricsVersion() const {

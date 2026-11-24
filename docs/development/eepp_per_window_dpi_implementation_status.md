@@ -262,11 +262,12 @@ Final verification:
 
 ## Auto (Best Fit)
 
-New ecode, eefm, eproc, eterm, and eeiv profiles default to Best Fit. Existing profiles without
-a saved mode retain their previous scale policy. Select Best Fit in Settings or set
-`EEPP_PIXEL_DENSITY_MODE=best-fit` when the window uses the default policy.
+Best Fit is the default automatic mode for all windows, including standalone examples. A recognized
+`EEPP_PIXEL_DENSITY_MODE` can select another mode for windows using `Default`. A saved explicit mode
+or fixed scale takes precedence.
 
-Best Fit uses the native scale on Windows, Wayland, Android, and iOS. On macOS it uses the
+Best Fit uses the native scale on Windows, Wayland, Android, and iOS. On Emscripten it rounds
+the browser scale to the nearest quarter step by default. On macOS it uses the
 current backing pixels per inch. On X11 it honors a whole-window scale above 1 when available.
 Otherwise the physical estimate competes with the desktop's logical DPI divided by 96.
 The estimate divides pixels per inch by `clamp(100 - 4 * (diagonalInches - 20), 60, 100)`,

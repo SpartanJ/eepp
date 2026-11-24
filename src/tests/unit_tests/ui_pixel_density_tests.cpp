@@ -607,10 +607,11 @@ UTEST( PerWindowDensity, WindowEnvironmentAndAutomaticPrecedence ) {
 	EXPECT_EQ( PixelDensity::getPixelDensity(), 1.25f );
 	for ( const char* invalid : { "", "invalid", "0", "-1", "inf", "nan" } ) {
 		Sys::setEnv( "EEPP_PIXEL_DENSITY", invalid );
+		WindowSettings settings( 160, 120, "Automatic Density", WindowStyle::Default,
+								 WindowBackend::Default, 32, {}, 0.f, false, true );
+		settings.DensityMode = PixelDensityMode::DisplayScale;
 		auto* automatic =
-			app.createWindow( WindowSettings( 160, 120, "Automatic Density", WindowStyle::Default,
-											  WindowBackend::Default, 32, {}, 0.f, false, true ),
-							  ContextSettings( false, 0, 0, GLv_default, true, false ) );
+			app.createWindow( settings, ContextSettings( false, 0, 0, GLv_default, true, false ) );
 		ASSERT_TRUE( automatic != nullptr );
 		EXPECT_FALSE( automatic->getWindow()->hasPixelDensityOverride() );
 		EXPECT_EQ( automatic->getPixelDensity(), automatic->getWindow()->getDisplayScale() );
@@ -679,6 +680,9 @@ UTEST( PerWindowDensity, AutomaticSourcesCanChangeLiveAndOverridesKeepPriority )
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 0.f ) );
 	auto* window = app.getWindow();
 	auto* scene = app.getUI();
+	EXPECT_TRUE( window->getPixelDensityMode() == PixelDensityMode::BestFit );
+	Sys::setEnv( "EEPP_PIXEL_DENSITY_MODE", "display-scale" );
+	window->setPixelDensityMode( PixelDensityMode::Default );
 	EXPECT_TRUE( window->getPixelDensityMode() == PixelDensityMode::DisplayScale );
 	EXPECT_EQ( window->getPixelDensity(), window->getDisplayScale() );
 	window->setPixelDensityMode( PixelDensityMode::PhysicalPPI );
@@ -2759,6 +2763,38 @@ UTEST( PixelDensityRegression, EditorLineNumberPaddingScalesExactlyOnce ) {
 	EXPECT_EQ( editor->getLineNumberPaddingRight(), 10.f );
 	EXPECT_EQ( editor->getLineNumberWidth(),
 			   eeceil( editor->getLineNumberDigits() * editor->getGlyphWidth() + 16.f ) );
+}
+
+UTEST( PixelDensityRegression, EditorTextOriginSnapsWithFractionalPluginSpace ) {
+	struct FractionalSpacePlugin : UICodeEditorPlugin {
+		std::string getId() override { return "fractional-space"; }
+		std::string getTitle() override { return ""; }
+		std::string getDescription() override { return ""; }
+		bool isReady() const override { return true; }
+		void onRegister( UICodeEditor* editor ) override {
+			editor->registerGutterSpace( this, 5.4f, 0 );
+			editor->registerTopSpace( this, 26.6f, 0 );
+		}
+		void onUnregister( UICodeEditor* editor ) override {
+			editor->unregisterGutterSpace( this );
+			editor->unregisterTopSpace( this );
+		}
+	} plugin;
+	DensityApplication fixture;
+	auto* ui = fixture.app.getUI();
+	auto* editor = UICodeEditor::New();
+	editor->setParent( ui->getRoot() );
+	editor->setPixelsSize( 400, 200 );
+	editor->getDocument().textInput( "first\nsecond" );
+	editor->registerPlugin( &plugin );
+	ui->update( Time::Zero );
+
+	const auto origin = editor->getScreenScroll();
+	EXPECT_EQ( origin.x, std::round( origin.x ) );
+	EXPECT_EQ( origin.y - editor->getScreenStart().y, 27.f );
+	const auto secondLine = editor->getScreenPosition( { 1, 0 } ).getPosition();
+	EXPECT_EQ( secondLine.y, origin.y + editor->getLineHeight() );
+	EXPECT_TRUE( editor->resolveScreenPosition( secondLine ) == Doc::TextPosition( 1, 0 ) );
 }
 
 UTEST( PixelDensityRegression, DiffGuttersUsePhysicalGlyphWidthAndGrowWithLineNumbers ) {

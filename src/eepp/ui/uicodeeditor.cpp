@@ -382,10 +382,9 @@ void UICodeEditor::draw() {
 	Float charSize = getCharacterSize();
 	Float lineHeight = getLineHeight();
 	int lineNumberDigits = getLineNumberDigits();
-	Float gutterWidth = getGutterWidth();
 	Vector2f screenStart( getScreenStart() );
-	Vector2f start( screenStart.x + gutterWidth, screenStart.y + getPluginsTopSpace() );
-	Vector2f startScroll( start - mScroll );
+	Vector2f startScroll( getScreenScroll() );
+	Vector2f start( startScroll + mScroll );
 	Primitives primitives;
 	TextPosition cursor( mDoc->getSelection().start() );
 
@@ -1476,10 +1475,7 @@ Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 
 TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position, bool clamp ) const {
 	Vector2f localPos( convertToNodeSpace( position ) );
-	localPos += mScroll;
-	localPos.x -= mPaddingPx.Left + getGutterWidth();
-	localPos.y -= mPaddingPx.Top;
-	localPos.y -= getPluginsTopSpace();
+	localPos -= getScreenScroll() - getScreenPos();
 	auto visibleLineIndex = static_cast<VisibleIndex>( eefloor( localPos.y / getLineHeight() ) );
 	if ( clamp ) {
 		visibleLineIndex =
@@ -1501,9 +1497,7 @@ Sizef UICodeEditor::getViewportDimensions() const {
 
 Rectf UICodeEditor::getScreenPosition( const TextPosition& position ) const {
 	Float lineHeight = getLineHeight();
-	Vector2f screenStart( getScreenStart() );
-	Vector2f start( screenStart.x + getGutterWidth(), screenStart.y + getPluginsTopSpace() );
-	Vector2f startScroll( start - mScroll );
+	Vector2f startScroll( getScreenScroll() );
 	auto offset = getTextPositionOffsetSanitized( position, lineHeight );
 	return { { static_cast<Float>( startScroll.x + offset.x ),
 			   static_cast<Float>( startScroll.y + offset.y ) },
@@ -2173,12 +2167,10 @@ void UICodeEditor::checkColorPickerAction() {
 }
 
 Vector2f UICodeEditor::getRelativeScreenPosition( const TextPosition& pos ) {
-	Float gutterWidth = getGutterWidth();
-	Vector2f start( gutterWidth, getPluginsTopSpace() );
-	Vector2f startScroll( start - mScroll );
+	Vector2f startScroll( getScreenScroll() - getScreenPos() );
 	auto offset = getTextPositionOffset( pos );
 	return { static_cast<Float>( startScroll.x + offset.x ),
-			 static_cast<Float>( startScroll.y + offset.y + mPaddingPx.Top + getLineOffset() ) };
+			 static_cast<Float>( startScroll.y + offset.y + getLineOffset() ) };
 }
 
 bool UICodeEditor::getShowLinesRelativePosition() const {
@@ -4843,7 +4835,7 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 					  startScroll.y + mDocView.getLineYOffset( i, lineHeight ) + lineOffset ) );
 
 		if ( mShowLineNumber ) {
-			Text::draw( String::View{ pos }, lnPos, mFontStyleConfig.Font, fontSize,
+			Text::draw( String::View{ pos }, lnPos.round(), mFontStyleConfig.Font, fontSize,
 						( i >= selection.start().line() && i <= selection.end().line() )
 							? mLineNumberActiveFontColor
 							: mLineNumberFontColor,
@@ -5711,16 +5703,15 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 }
 
 Vector2f UICodeEditor::getScreenStart() const {
-	return Vector2f( eefloor( mScreenPos.x + mPaddingPx.Left ),
-					 eefloor( mScreenPos.y + mPaddingPx.Top ) );
+	const auto& screenPos = getScreenPos();
+	return Vector2f( eefloor( screenPos.x + mPaddingPx.Left ),
+					 eefloor( screenPos.y + mPaddingPx.Top ) );
 }
 
 Vector2f UICodeEditor::getScreenScroll() const {
-	Float gutterWidth = getGutterWidth();
-	Vector2f screenStart( getScreenStart() );
-	Vector2f start( screenStart.x + gutterWidth, screenStart.y + getPluginsTopSpace() );
-	Vector2f startScroll( start - mScroll );
-	return startScroll;
+	// Fractional gutter and top bar sizes can put bitmap glyphs between framebuffer pixels.
+	return ( getScreenStart() + Vector2f( getGutterWidth(), getPluginsTopSpace() ) ).round() -
+		   mScroll;
 }
 
 Float UICodeEditor::getMinimapLineSpacing() const {
