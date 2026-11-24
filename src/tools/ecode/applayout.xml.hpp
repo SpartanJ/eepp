@@ -246,7 +246,7 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	margin-top: 4dp;
 	background-color: var(--font-hint);
 }
-.settings_panel PushButton {
+#build_settings_panel PushButton {
 	padding-top: 2dp;
 	padding-bottom: 2dp;
 }
@@ -291,7 +291,7 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 .settings_panel .os_select > CheckBox {
 	margin-right: 8dp;
 }
-.settings_panel .save_cont > PushButton {
+#build_settings_panel .save_cont > PushButton {
 	margin: 8dp 0dp 0dp 4dp;
 	padding: 4dp 16dp 4dp 16dp;
 }
