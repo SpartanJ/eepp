@@ -131,6 +131,8 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual Uint32 onKeyUp( const KeyEvent& Event );
 
+	virtual Uint32 onFocusLoss();
+
 	void updateTextBox();
 
 	/** Inner margins provide spacing only when another inner widget is visible. */

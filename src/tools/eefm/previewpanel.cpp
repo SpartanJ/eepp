@@ -55,6 +55,9 @@ class QuickLookEditor : public UICodeEditor {
 				case KEY_ESCAPE:
 					mPreview.show( false );
 					return 1;
+				case KEY_RETURN:
+					mPreview.open();
+					return 1;
 				default:
 					break;
 			}
@@ -140,17 +143,17 @@ void PreviewPanel::create() {
 	mContent = mRoot->find<UIWidget>( "preview_content" );
 	mName = mRoot->find<UITextView>( "preview_name" );
 	mOpen = mRoot->find<UIPushButton>( "preview_open" );
-	mOpen->onClick( [this]( const MouseEvent* ) {
-		if ( mURI && mDefaultApplication ) {
-			mApp.fileOps().openWith( { *mURI }, std::move( *mDefaultApplication ) );
-			show( false );
-		}
-	} );
+	mOpen->onClick( [this]( auto ) { open(); } );
 	mMessage = mRoot->find<UITextView>( "preview_message" );
 	mLoader = mRoot->find<UILoader>( "preview_loader" );
-	mRoot->find<UIWidget>( "preview_close" )->onClick( [this]( const MouseEvent* ) {
+	mRoot->find<UIWidget>( "preview_close" )->onClick( [this]( auto ) { show( false ); } );
+}
+
+void PreviewPanel::open() {
+	if ( mURI && mDefaultApplication ) {
+		mApp.fileOps().openWith( { *mURI }, std::move( *mDefaultApplication ) );
 		show( false );
-	} );
+	}
 }
 
 void PreviewPanel::show( bool visible ) {
@@ -457,10 +460,12 @@ void PreviewPanel::load() {
 					mEditor->setShowFoldingRegion( false );
 					mEditor->setHighlightCurrentLine( false );
 					mEditor->setInteractiveLinks( false );
+					mEditor->setFindReplaceEnabled( true );
 				}
 
 				mEditor->setDocument( std::move( preview.document ) );
 				mEditor->setVisible( true );
+				mEditor->setFocus();
 				hideLoader();
 			} else if ( preview.kind == PreviewKind::Image ) {
 				if ( !mImage ) {
@@ -483,6 +488,7 @@ void PreviewPanel::load() {
 				// One spinner spans the VFS read and image decode without changing style or phase.
 				mImage->getLoader()->setVisible( false );
 				mLoader->toFront();
+				mOpen->setFocus();
 			} else if ( preview.kind == PreviewKind::Audio ) {
 				if ( !mAudio ) {
 					mAudio = UIAudioPlayer::New();
@@ -499,9 +505,11 @@ void PreviewPanel::load() {
 					showMessage( mApp.ui()->i18n( "eefm_preview_invalid_audio",
 												  "This audio file could not be decoded." ) );
 				}
+				mOpen->setFocus();
 			} else {
 				showMessage( mApp.ui()->i18n( "eefm_preview_unsupported",
 											  "No preview is available for this file type." ) );
+				mOpen->setFocus();
 			}
 		} );
 }

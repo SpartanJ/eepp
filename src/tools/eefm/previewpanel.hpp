@@ -66,6 +66,8 @@ class PreviewPanel {
 
 	void setPartition( std::string partition ) { mPartition = std::move( partition ); }
 
+	void open();
+
   private:
 	void create();
 

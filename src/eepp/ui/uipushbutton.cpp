@@ -521,23 +521,35 @@ void UIPushButton::onAlignChange() {
 	mTextBox->setVerticalAlign( getVerticalAlign() );
 }
 
+static bool isActivationKey( const Keycode& keyCode ) {
+	return keyCode == KEY_RETURN || keyCode == KEY_KP_ENTER;
+}
+
 Uint32 UIPushButton::onKeyDown( const KeyEvent& event ) {
-	if ( event.getKeyCode() == KEY_RETURN || event.getKeyCode() == KEY_KP_ENTER ) {
+	if ( isActivationKey( event.getKeyCode() ) ) {
+		// Press before activating: the click handler may move focus away (closing a panel,
+		// opening a dialog), and onFocusLoss must be able to release the state, since the
+		// matching key up will then be delivered to another node.
+		pushState( UIState::StatePressed );
 		NodeMessage Msg( this, NodeMessage::MouseClick, EE_BUTTON_LMASK );
 		messagePost( &Msg );
 		onMouseClick( Vector2i( 0, 0 ), EE_BUTTON_LMASK );
-		pushState( UIState::StatePressed );
 	}
 
 	return UIWidget::onKeyDown( event );
 }
 
-Uint32 UIPushButton::onKeyUp( const KeyEvent& Event ) {
-	if ( Event.getKeyCode() == KEY_RETURN ) {
+Uint32 UIPushButton::onKeyUp( const KeyEvent& event ) {
+	if ( isActivationKey( event.getKeyCode() ) )
 		popState( UIState::StatePressed );
-	}
 
-	return UIWidget::onKeyUp( Event );
+	return UIWidget::onKeyUp( event );
+}
+
+Uint32 UIPushButton::onFocusLoss() {
+	popState( UIState::StatePressed );
+
+	return UIWidget::onFocusLoss();
 }
 
 void UIPushButton::setIconMinimumSize( const Sizei& minIconSize ) {

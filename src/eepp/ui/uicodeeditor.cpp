@@ -1166,7 +1166,7 @@ void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 			onDocumentClosed( mDoc.get() );
 		mDoc = doc;
 		if ( mAutoRegisterBaseCommands )
-			mDoc->setSharedRefCommands( getDefaultEditorCommands() );
+			registerCommands();
 		mDoc->registerClient( this );
 		mDocView.setDocument( doc );
 		onDocumentChanged( oldDocURI );
@@ -5080,10 +5080,13 @@ void UICodeEditor::registerCommands() {
 	// This is the only default editor command bound to a specific editor instance.
 	mDoc->setCommand( "find-replace", [this] { showFindReplace(); } );
 
-	mUnlockedCmd.reserve( 8 );
-	mUnlockedCmd.insert( { "copy", "select-all", "open-containing-folder",
-						   "copy-containing-folder-path", "copy-file-path",
-						   "copy-file-path-and-position", "open-context-menu", "find-replace" } );
+	if ( mUnlockedCmd.empty() ) {
+		mUnlockedCmd.reserve( 8 );
+		mUnlockedCmd.insert( { "copy", "select-all", "open-containing-folder",
+							   "copy-containing-folder-path", "copy-file-path",
+							   "copy-file-path-and-position", "open-context-menu",
+							   "find-replace" } );
+	}
 }
 
 void UICodeEditor::showFindReplace() {
