@@ -923,6 +923,10 @@ bool String::isNumber( const std::string& value, bool AllowDot, bool AllowScient
 	return isNumber( std::string_view( value ), AllowDot, AllowScientific );
 }
 
+bool String::isNumber( const char* value, bool AllowDot, bool AllowScientific ) {
+	return isNumber( std::string_view( value ? value : "" ), AllowDot, AllowScientific );
+}
+
 bool String::isNumber( std::string_view value, bool AllowDot, bool AllowScientific ) {
 	if ( AllowScientific ) {
 		Float t;

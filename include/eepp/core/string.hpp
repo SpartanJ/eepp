@@ -171,6 +171,9 @@ class EE_API String {
 	static bool isNumber( std::string_view value, bool AllowDot = false,
 						  bool AllowScientific = false );
 
+	/** @return If the C string represents a number. Keeps literal calls unambiguous. */
+	static bool isNumber( const char* value, bool AllowDot = false, bool AllowScientific = false );
+
 	/** @return If the value passed is a letter */
 	static bool isLetter( const int& value );
 

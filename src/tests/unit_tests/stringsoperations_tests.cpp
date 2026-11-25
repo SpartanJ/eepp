@@ -113,6 +113,9 @@ UTEST( String, isNumberStringView ) {
 	EXPECT_TRUE( String::isNumber( std::string_view( "1.5" ), true ) );
 	EXPECT_FALSE( String::isNumber( std::string_view( "1.5" ) ) );
 	EXPECT_TRUE( String::isNumber( std::string_view( "1e3" ), false, true ) );
+	// Literals stay unambiguous between the std::string and std::string_view overloads.
+	EXPECT_TRUE( String::isNumber( "123" ) );
+	EXPECT_FALSE( String::isNumber( "12a" ) );
 }
 
 UTEST( String, md5StringViewHashesBytes ) {
@@ -122,6 +125,9 @@ UTEST( String, md5StringViewHashesBytes ) {
 					 MD5::fromString( std::string_view( text ) ).toHexString() );
 	EXPECT_STDSTREQ( MD5::fromString( std::string( "Dell" ) ).toHexString(),
 					 MD5::fromString( std::string_view( text ).substr( 0, 4 ) ).toHexString() );
+	// A default-constructed view has a null pointer and hashes as empty input.
+	EXPECT_STDSTREQ( MD5::fromString( std::string_view{} ).toHexString(),
+					 "d41d8cd98f00b204e9800998ecf8427e" );
 }
 
 UTEST( String, numberClean ) {

@@ -1585,6 +1585,20 @@ UTEST( UISceneDensity, MediaResolutionPreservesFractionalDpi ) {
 	}
 }
 
+UTEST( UISceneDensity, MediaResolutionMatchesEquivalentDpiAndDppx ) {
+	// 1.3 * 96 and the literal 124.8 round to adjacent floats.
+	MediaFeatures features{};
+	features.type = media_type_screen;
+	features.pixelDensity = 1.3f;
+	features.resolution = features.pixelDensity * 96.f;
+	for ( const auto* source : { "(resolution:1.3dppx)", "(resolution:124.8dpi)",
+								 "(min-resolution:124.8dpi)", "(max-resolution:124.8dpi)" } ) {
+		auto query = MediaQuery::parse( source );
+		ASSERT_TRUE( query );
+		EXPECT_TRUE( query->check( features ) );
+	}
+}
+
 UTEST( UISceneDensity, ProgrammaticBackgroundGeometryFollowsDensity ) {
 	DensityApplication fixture;
 	auto* scene = fixture.app.getUI();

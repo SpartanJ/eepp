@@ -201,6 +201,10 @@ void MD5::init( Context& ctx ) {
 }
 
 void MD5::update( Context& ctx, const void* data, unsigned long size ) {
+	// An empty view or buffer can carry a null pointer, which memcpy must not receive.
+	if ( size == 0 )
+		return;
+
 	Uint32 saved_lo;
 	unsigned long used, available;
 

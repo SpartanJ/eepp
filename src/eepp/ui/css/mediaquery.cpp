@@ -1,4 +1,5 @@
 #include <cctype>
+#include <cmath>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 
@@ -202,6 +203,10 @@ MediaQueryExpression::MediaQueryExpression() {
 	val = 0;
 	val2 = 0;
 }
+
+// The scene's density times 96 and a parsed dpi literal can round to adjacent floats, so
+// (resolution: 1.3dppx) and (resolution: 124.8dpi) would disagree at 1.3x.
+static constexpr float ResolutionTolerance = 0.01f;
 
 bool MediaQueryExpression::check( const MediaFeatures& features ) const {
 	int val = this->val;
@@ -423,17 +428,17 @@ bool MediaQueryExpression::check( const MediaFeatures& features ) const {
 			}
 			break;
 		case media_feature_resolution:
-			if ( features.resolution == resolution ) {
+			if ( std::abs( features.resolution - resolution ) <= ResolutionTolerance ) {
 				return true;
 			}
 			break;
 		case media_feature_min_resolution:
-			if ( features.resolution >= resolution ) {
+			if ( features.resolution + ResolutionTolerance >= resolution ) {
 				return true;
 			}
 			break;
 		case media_feature_max_resolution:
-			if ( features.resolution <= resolution ) {
+			if ( features.resolution - ResolutionTolerance <= resolution ) {
 				return true;
 			}
 			break;
