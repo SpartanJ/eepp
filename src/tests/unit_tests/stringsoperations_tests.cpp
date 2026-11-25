@@ -5,6 +5,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
 #include <filesystem>
 #include <string_view>
@@ -103,6 +104,24 @@ UTEST( String, fromStringView ) {
 	Int32 intValue = 0;
 	EXPECT_TRUE( String::fromString( intValue, std::string_view( values ).substr( 0, 4 ) ) );
 	EXPECT_EQ( 1234, intValue );
+}
+
+UTEST( String, isNumberStringView ) {
+	const std::string label = "DP-1 2560";
+	EXPECT_TRUE( String::isNumber( std::string_view( label ).substr( 5 ) ) );
+	EXPECT_FALSE( String::isNumber( std::string_view( label ) ) );
+	EXPECT_TRUE( String::isNumber( std::string_view( "1.5" ), true ) );
+	EXPECT_FALSE( String::isNumber( std::string_view( "1.5" ) ) );
+	EXPECT_TRUE( String::isNumber( std::string_view( "1e3" ), false, true ) );
+}
+
+UTEST( String, md5StringViewHashesBytes ) {
+	// A view must hash its UTF-8 bytes like std::string, not convert to a UTF-32 String.
+	const std::string text = "Dell U2720Q \xC3\xA9";
+	EXPECT_STDSTREQ( MD5::fromString( text ).toHexString(),
+					 MD5::fromString( std::string_view( text ) ).toHexString() );
+	EXPECT_STDSTREQ( MD5::fromString( std::string( "Dell" ) ).toHexString(),
+					 MD5::fromString( std::string_view( text ).substr( 0, 4 ) ).toHexString() );
 }
 
 UTEST( String, numberClean ) {

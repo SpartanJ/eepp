@@ -41,6 +41,9 @@ class EE_API MD5 {
 	/** Calculates the md5 hash from a string */
 	static Result fromString( const std::string& str );
 
+	/** Calculates the md5 hash from the bytes of a string view */
+	static Result fromString( std::string_view str );
+
 	/** Calculates the md5 hash from a string */
 	static Result fromString( const String& str );
 

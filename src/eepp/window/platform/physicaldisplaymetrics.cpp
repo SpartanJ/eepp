@@ -3,7 +3,6 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
-#include <eepp/window/displaymanager.hpp>
 #include <memory>
 
 #if ( EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD ) && \
@@ -15,7 +14,6 @@
 #undef None
 #undef Status
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-// Include eepp headers first: <windows.h> defines macros such as KEY_EXECUTE.
 #include <shellscalingapi.h>
 #include <windows.h>
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
@@ -210,25 +208,6 @@ std::string PhysicalDisplayMetrics::getPersistentId( const Math::Rect& bounds ) 
 #else
 	return {};
 #endif
-}
-
-std::string PhysicalDisplayMetrics::getWaylandPersistentId( const Display* display,
-															DisplayManager* manager ) {
-	if ( !display || !manager || display->getIndex() < 0 )
-		return {};
-
-	const auto name = String::trim( display->getName(), " \t\r\n" );
-	// SDL generates numeric names from display indices or instance IDs when no label is given.
-	if ( name.empty() || String::isNumber( name ) || String::iequals( name, "unknown" ) )
-		return {};
-
-	const int count = manager->getDisplayCount();
-	for ( int index = 0; index < count; ++index ) {
-		auto* other = manager->getDisplayIndex( index );
-		if ( other && other != display && String::trim( other->getName(), " \t\r\n" ) == name )
-			return {};
-	}
-	return "wayland-" + MD5::fromString( name ).toHexString();
 }
 
 }}} // namespace EE::Window::Private

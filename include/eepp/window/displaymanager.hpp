@@ -9,6 +9,8 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Window {
 
+class DisplayManager;
+
 class EE_API Display {
   public:
 	Display( int displayIndex );
@@ -51,6 +53,11 @@ class EE_API Display {
   protected:
 	int index;
 	mutable std::vector<DisplayMode> displayModes;
+
+	/** Persistent identity from the display's label, for backends without native monitor
+	 * identities such as Wayland. Empty unless the label is meaningful and unique among the
+	 * manager's displays. */
+	std::string getLabelPersistentId( DisplayManager* manager ) const;
 };
 
 class EE_API DisplayManager {

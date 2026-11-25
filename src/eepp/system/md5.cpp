@@ -339,7 +339,11 @@ MD5::Result MD5::fromMemory( const Uint8* data, Uint64 size ) {
 }
 
 MD5::Result MD5::fromString( const std::string& str ) {
-	return fromMemory( (const Uint8*)str.c_str(), str.size() );
+	return fromString( std::string_view( str ) );
+}
+
+MD5::Result MD5::fromString( std::string_view str ) {
+	return fromMemory( reinterpret_cast<const Uint8*>( str.data() ), str.size() );
 }
 
 MD5::Result MD5::fromString( const String& str ) {

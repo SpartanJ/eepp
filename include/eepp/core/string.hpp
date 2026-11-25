@@ -167,6 +167,10 @@ class EE_API String {
 	static bool isNumber( const std::string& value, bool AllowDot = false,
 						  bool AllowScientific = false );
 
+	/** @return If the string view represents a number. */
+	static bool isNumber( std::string_view value, bool AllowDot = false,
+						  bool AllowScientific = false );
+
 	/** @return If the value passed is a letter */
 	static bool isLetter( const int& value );
 

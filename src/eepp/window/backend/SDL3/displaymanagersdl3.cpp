@@ -53,8 +53,7 @@ std::string DisplaySDL3::getPersistentId() const {
 	if ( !driver )
 		return {};
 	if ( std::strcmp( driver, "wayland" ) == 0 ) {
-		return PhysicalDisplayMetrics::getWaylandPersistentId(
-			this, Engine::instance()->getDisplayManager() );
+		return getLabelPersistentId( Engine::instance()->getDisplayManager() );
 	}
 	if ( std::strcmp( driver, "x11" ) != 0 && std::strcmp( driver, "cocoa" ) != 0 &&
 		 std::strcmp( driver, "windows" ) != 0 )
