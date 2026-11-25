@@ -1,10 +1,8 @@
 #ifndef EE_UI_UIHTMLIMAGE_HPP
 #define EE_UI_UIHTMLIMAGE_HPP
 
-#include <atomic>
 #include <eepp/network/uri.hpp>
 #include <eepp/ui/uihtmlwidget.hpp>
-#include <memory>
 
 namespace EE { namespace UI {
 
@@ -89,8 +87,6 @@ class EE_API UIHTMLImage : public UIHTMLWidget {
 
 	void onDrawableResourceChange();
 
-	bool loadFileDrawable( const Network::URI& uri );
-
 	void loadRemoteDrawable( const Network::URI& uri );
 
 	UIScaleType mScaleType{ UIScaleType::Expand };
@@ -102,8 +98,6 @@ class EE_API UIHTMLImage : public UIHTMLWidget {
 	Uint32 mSpriteChangeCb{ 0 };
 	bool mDeferLoad{ false };
 	bool mNeedsStyleSizeReconciliation{ false };
-	std::shared_ptr<std::atomic<bool>> mAsyncImageAlive;
-	Uint64 mRemoteImageLoadId{ 0 };
 	std::string mAlt;
 };
 

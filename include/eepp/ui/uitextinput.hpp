@@ -141,12 +141,14 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
 
 	virtual void onTextHintsChanged();
+	void setInternalHintFontSize( Uint32 characterSize );
 
 	TextDocument mDoc;
 	Float mWaitCursorTime;
 	Vector2f mCurPos;
 	Text* mHintCache;
 	FontStyleConfig mHintStyleConfig;
+	FontSizeSource mHintFontSizeSource;
 	int mCursorPos;
 	bool mAllowEditing;
 	bool mShowingWait;

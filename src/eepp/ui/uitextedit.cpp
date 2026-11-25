@@ -33,7 +33,7 @@ UITextEdit::UITextEdit( const std::string& tag ) : UICodeEditor( tag, true, true
 		setFont( theme->getDefaultFont() );
 	}
 
-	setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
+	setBaseFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 
 	if ( NULL == getFont() ) {
 		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
@@ -45,16 +45,16 @@ UITextEdit::UITextEdit( const std::string& tag ) : UICodeEditor( tag, true, true
 
 	mHintCache.setTextHints( getWidgetTextDrawHints() );
 	setHintFont( theme && theme->getDefaultFont() ? theme->getDefaultFont() : getFont() );
-	setHintFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
+	setInternalHintFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 
 	disableEditorFeatures();
 	applyDefaultTheme();
 }
 
 void UITextEdit::onPixelDensityChange( Float oldDensity, Float newDensity ) {
-	const Float hintSize = getHintFontSize();
 	UICodeEditor::onPixelDensityChange( oldDensity, newDensity );
-	setHintFontSize( fontSizeForPixelDensityChange( hintSize, oldDensity, newDensity ) );
+	setInternalHintFontSize(
+		resolveFontSize( mHintFontSizeSource, newDensity, getHintFontSize() ) );
 }
 
 UITextEdit::~UITextEdit() {}
@@ -167,12 +167,17 @@ Uint32 UITextEdit::getHintFontSize() const {
 }
 
 UITextEdit* UITextEdit::setHintFontSize( const Uint32& characterSize ) {
+	mHintFontSizeSource = explicitFontSize( characterSize );
+	setInternalHintFontSize( characterSize );
+	return this;
+}
+
+void UITextEdit::setInternalHintFontSize( Uint32 characterSize ) {
 	if ( characterSize != mHintCache.getCharacterSize() ) {
 		mHintCache.setFontSize( characterSize );
 		mHintStyleConfig.CharacterSize = characterSize;
 		invalidateDraw();
 	}
-	return this;
 }
 
 const Uint32& UITextEdit::getHintFontStyle() const {

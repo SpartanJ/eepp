@@ -95,9 +95,7 @@ void Window::initializePixelDensity( Float pixelDensityOverride ) {
 }
 
 void Window::setPixelDensityOverride( Float density ) {
-	mPixelDensityOverride = std::isfinite( density ) && density > 0.f
-								? density
-								: PixelDensity::getEnvironmentPixelDensity();
+	mPixelDensityOverride = std::isfinite( density ) && density > 0.f ? density : 0.f;
 	refreshPixelDensity();
 }
 

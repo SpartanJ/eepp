@@ -7734,11 +7734,12 @@ UTEST( UIHTML, DeferredFileImageLoadsAsync ) {
 	if ( img == nullptr )
 		releaseBlocker.store( true, std::memory_order_release );
 	ASSERT_TRUE( img != nullptr );
-	EXPECT_TRUE( img->getDrawable() == nullptr );
+	EXPECT_TRUE( img->getDrawable() && img->getDrawable()->getPixelsSize() == Sizef{} );
 
 	releaseBlocker.store( true, std::memory_order_release );
 
-	for ( int i = 0; i < 200 && img->getDrawable() == nullptr; ++i ) {
+	for ( int i = 0; i < 200 && img->getDrawable() && img->getDrawable()->getPixelsSize().x == 0;
+		  ++i ) {
 		win->getInput()->update();
 		SceneManager::instance()->update();
 		sceneNode->updateDirtyLayouts();
@@ -7916,7 +7917,7 @@ UTEST( UIHTML, DeferredFileImageRelayoutsAncestors ) {
 	if ( img == nullptr )
 		releaseBlocker.store( true, std::memory_order_release );
 	ASSERT_TRUE( img != nullptr );
-	EXPECT_TRUE( img->getDrawable() == nullptr );
+	EXPECT_TRUE( img->getDrawable() && img->getDrawable()->getPixelsSize() == Sizef{} );
 
 	Float articleInitialHeight = article->getPixelsSize().getHeight();
 	Float bodyInitialHeight = body->getPixelsSize().getHeight();

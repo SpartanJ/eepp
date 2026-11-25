@@ -1085,7 +1085,13 @@ class EE_API UISceneNode : public SceneNode {
 	friend class EE::UI::UINode;
 	friend class EE::UI::UIDensityReflow;
 	friend class EE::UI::AccessibilityManager;
+	friend class DrawableResolver;
 	friend class EE::Window::Engine;
+
+	static void
+	postAsyncResourceOnMainThread( const std::shared_ptr<AsyncResourceLoadState>& resourceState,
+								   Uint64 generation, AsyncResourceMainThreadFunc func,
+								   const Time& delay = Seconds( 0 ) );
 
 	// Engine lifecycle boundary for process-static main-thread resource deliveries. Shutdown first
 	// rejects execution while retaining captures, then purges them after scene-owned producers have

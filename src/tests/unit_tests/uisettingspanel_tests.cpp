@@ -1,3 +1,4 @@
+#include "scopedenvironmentvariable.hpp"
 #include "utest.hpp"
 
 #include <algorithm>
@@ -70,9 +71,11 @@ UTEST( UISettingsPanelModel, clearRemovesAllRules ) {
 }
 
 UTEST( UISettingsPanel, appliesAndSavesWindowScaleModes ) {
+	ScopedEnvironmentVariable environmentDensity( "EEPP_PIXEL_DENSITY", "1.75" );
 	Float density = 0.f;
 	PixelDensityMode mode = PixelDensityMode::DisplayScale;
 	int saves = 0;
+	Float savedDensity = 0.f;
 	WindowSettings settings( 800, 600, "eepp - UI Scale Settings Test" );
 	settings.DensityMode = mode;
 	UIApplication app( settings, UIApplication::Settings( Sys::getProcessPath() + ".." +
@@ -82,7 +85,10 @@ UTEST( UISettingsPanel, appliesAndSavesWindowScaleModes ) {
 	auto* panel = UISettingsPanel::New( app.getUI()->getRoot() );
 	ASSERT_TRUE( panel->addCategory( "appearance.fonts", "Appearance", "Fonts and Scale" ) );
 	panel->addUIScaleSettings( "appearance.fonts", nullptr, density, mode, [&] { ++saves; } );
-	panel->addUIScaleSettings( "appearance.fonts", window, density, mode, [&] { ++saves; } );
+	panel->addUIScaleSettings( "appearance.fonts", window, density, mode, [&] {
+		++saves;
+		savedDensity = density;
+	} );
 	panel->build();
 	panel->selectCategory( "appearance.fonts" );
 	auto* modeRow = panel->find<UIWidget>( "setting_uiScaleMode" );
@@ -97,11 +103,17 @@ UTEST( UISettingsPanel, appliesAndSavesWindowScaleModes ) {
 	auto select = [choice]( int index ) {
 		choice->getListView()->getSelection().set( choice->getModel()->index( index, 0 ) );
 	};
-	EXPECT_EQ( 1, choice->getListView()->getSelection().first().row() );
+	EXPECT_EQ( 3, choice->getListView()->getSelection().first().row() );
+	EXPECT_EQ( 1.75f, window->getPixelDensityOverride() );
+	EXPECT_EQ( 1.75f, factor->getValue() );
+	EXPECT_EQ( 0.f, density );
 	EXPECT_EQ( 0, saves );
 	select( 2 );
 	EXPECT_TRUE( mode == PixelDensityMode::PhysicalPPI );
 	EXPECT_TRUE( window->getPixelDensityMode() == mode );
+	EXPECT_EQ( 0.f, window->getPixelDensityOverride() );
+	EXPECT_EQ( 0.f, savedDensity );
+	EXPECT_STDSTREQ( "1.75", Sys::getEnv( "EEPP_PIXEL_DENSITY" ) );
 	EXPECT_EQ( 1, saves );
 
 	factor->setValue( 1.5 );

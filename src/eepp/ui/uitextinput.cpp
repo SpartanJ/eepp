@@ -59,7 +59,7 @@ UITextInput::UITextInput( const std::string& tag ) :
 		}
 	}
 
-	setHintFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
+	setInternalHintFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 
 	subscribeScheduledUpdate();
 
@@ -76,9 +76,9 @@ UITextInput::UITextInput( const std::string& tag ) :
 UITextInput::UITextInput() : UITextInput( "textinput" ) {}
 
 void UITextInput::onPixelDensityChange( Float oldDensity, Float newDensity ) {
-	const Float hintSize = getHintFontSize();
 	UITextView::onPixelDensityChange( oldDensity, newDensity );
-	setHintFontSize( fontSizeForPixelDensityChange( hintSize, oldDensity, newDensity ) );
+	setInternalHintFontSize(
+		resolveFontSize( mHintFontSizeSource, newDensity, getHintFontSize() ) );
 }
 
 UITextInput::~UITextInput() {
@@ -823,13 +823,17 @@ Uint32 UITextInput::getHintFontSize() const {
 }
 
 UITextView* UITextInput::setHintFontSize( const Uint32& characterSize ) {
+	mHintFontSizeSource = explicitFontSize( characterSize );
+	setInternalHintFontSize( characterSize );
+	return this;
+}
+
+void UITextInput::setInternalHintFontSize( Uint32 characterSize ) {
 	if ( mHintCache->getCharacterSize() != characterSize ) {
 		mHintStyleConfig.CharacterSize = characterSize;
 		mHintCache->setFontSize( characterSize );
 		invalidateDraw();
 	}
-
-	return this;
 }
 
 const Uint32& UITextInput::getHintFontStyle() const {

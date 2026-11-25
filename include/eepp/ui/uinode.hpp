@@ -1632,7 +1632,14 @@ class EE_API UINode : public Node {
 
 	void rebuildPixelDensityGeometry();
 
-	Float fontSizeForPixelDensityChange( Float size, Float oldDensity, Float newDensity ) const;
+	struct FontSizeSource {
+		Float pixels{ 0.f };
+		Float density{ 0.f }; // Zero means the size comes from the theme.
+	};
+
+	FontSizeSource explicitFontSize( Float pixels ) const;
+
+	Float resolveFontSize( const FontSizeSource& source, Float density, Float currentSize ) const;
 
 	Vector2f mDpPos;
 	Sizef mDpSize;

@@ -229,10 +229,13 @@ class EE_API UIRichText : public UIHTMLWidget {
 
 	void applyTextAlign( Uint32 align );
 
+	void setInternalFontSize( Uint32 characterSize );
+
 	// Registered only while this owner is cached by a document selection controller. The
 	// destructor uses it before mRichText is destroyed, unlike UIWidget::OnClose.
 	UITextSelectionController* mDocumentSelectionController{ nullptr };
 	RichText mRichText;
+	FontSizeSource mFontSizeSource;
 	Int64 mSelCurInit{ 0 };
 	Int64 mSelCurEnd{ 0 };
 	bool mSelecting{ false };

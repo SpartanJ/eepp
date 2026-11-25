@@ -212,7 +212,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 
 	auto* themeManager = getUISceneNode()->getUIThemeManager();
 	// Match UITextView's scene-local default and whole-pixel character size.
-	setFontSize( static_cast<Uint32>( themeManager->getDefaultFontSize() ) );
+	setBaseFontSize( static_cast<Uint32>( themeManager->getDefaultFontSize() ) );
 	mMenuIconSize = getCharacterSize();
 
 	setClipType( ClipType::ContentBox );
@@ -289,7 +289,14 @@ void UICodeEditor::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 	mLineNumberPaddingLeft *= newDensity / oldDensity;
 	mLineNumberPaddingRight *= newDensity / oldDensity;
 	mFoldRegionWidth = PixelDensity::dpToPx( DefaultFoldRegionWidthDp );
-	setFontSize( fontSizeForPixelDensityChange( getFontSize(), oldDensity, newDensity ) );
+	const Float baseSize = resolveFontSize( mFontSizeSource, newDensity, mFontSize );
+	if ( getFontSize() == mFontSize ) {
+		setBaseFontSize( baseSize );
+	} else {
+		const Float zoomedSize = getFontSize() * ( newDensity / oldDensity );
+		mFontSize = baseSize;
+		setInternalFontSize( zoomedSize );
+	}
 }
 
 UICodeEditor::~UICodeEditor() {
@@ -738,7 +745,7 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 	if ( mFont != font ) {
 		mFont = font;
 		mFontStyleConfig.Font = mFont;
-		setFontSize( mFontSize );
+		setBaseFontSize( mFontSize );
 		invalidateDraw();
 		invalidateEditor();
 		onFontChanged();
@@ -936,10 +943,15 @@ bool UICodeEditor::setInternalFontSize( const Float& size ) {
 }
 
 bool UICodeEditor::setFontSize( const Float& size ) {
-	bool set = setInternalFontSize( size );
-	if ( set )
+	mFontSizeSource = explicitFontSize( size );
+	return setBaseFontSize( size );
+}
+
+bool UICodeEditor::setBaseFontSize( const Float& size ) {
+	const bool changed = setInternalFontSize( size );
+	if ( mFontStyleConfig.Font )
 		mFontSize = mFontStyleConfig.CharacterSize;
-	return set;
+	return changed;
 }
 
 const Float& UICodeEditor::getFontSize() const {

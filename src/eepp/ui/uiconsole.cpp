@@ -51,6 +51,7 @@ UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& a
 	registerKeybindings();
 
 	mFontStyleConfig.Font = font;
+	mFontSizeSource = explicitFontSize( mFontStyleConfig.CharacterSize );
 	if ( nullptr == font )
 		mFontStyleConfig.Font = getUISceneNode()->getResourceScope()->findFont( "monospace" ).get();
 
@@ -80,7 +81,7 @@ UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& a
 
 void UIConsole::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 	UIWidget::onPixelDensityChange( oldDensity, newDensity );
-	setFontSize( fontSizeForPixelDensityChange( getFontSize(), oldDensity, newDensity ) );
+	setInternalFontSize( resolveFontSize( mFontSizeSource, newDensity, getFontSize() ) );
 }
 
 UIConsole::~UIConsole() {
@@ -310,13 +311,18 @@ std::vector<PropertyId> UIConsole::getPropertiesImplemented() const {
 }
 
 UIConsole* UIConsole::setFontSize( const Float& size ) {
+	mFontSizeSource = explicitFontSize( size );
+	setInternalFontSize( size );
+	return this;
+}
+
+void UIConsole::setInternalFontSize( Float size ) {
 	if ( mFontStyleConfig.CharacterSize != size ) {
 		mFontStyleConfig.CharacterSize =
 			eeabs( size - (int)size ) == 0.5f || (int)size == size ? size : eefloor( size );
 		invalidateDraw();
 		onFontChanged();
 	}
-	return this;
 }
 
 const Float& UIConsole::getFontSize() const {

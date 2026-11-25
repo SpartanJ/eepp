@@ -2,12 +2,14 @@
 #include "utest.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/ninepatch.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/sprite.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/network/http.hpp>
@@ -30,6 +32,7 @@
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicombobox.hpp>
+#include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uihtmlimage.hpp>
 #include <eepp/ui/uihtmltextinput.hpp>
@@ -39,6 +42,7 @@
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uipushbutton.hpp>
@@ -60,15 +64,18 @@
 #include <eepp/ui/uiwidgettable.hpp>
 #include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/window/input.hpp>
+#include <future>
 #include <limits>
 #include <thread>
 #include <type_traits>
 
 using namespace EE;
 using namespace EE::Graphics;
+using namespace EE::Network;
 using namespace EE::Scene;
 using namespace EE::System;
 using namespace EE::UI;
+using namespace EE::UI::CSS;
 using namespace EE::UI::Tools;
 using EE::Window::PixelDensityMode;
 
@@ -1473,10 +1480,12 @@ UTEST( UISceneDensity, UnchangedKeyframeAnimationKeepsItsAction ) {
 UTEST( UISceneDensity, SharedMediaQueriesMatchEachSceneIndependently ) {
 	DensityApplication fixture;
 	auto* scene = fixture.app.getUI();
-	CSS::StyleSheetParser parser;
+	StyleSheetParser parser;
 	ASSERT_TRUE( parser.loadFromString( std::string_view{ R"css(
 #media-density { background-color: #ff0000; }
-@media (pixel-density: 1.25) { #media-density { background-color: #00ff00; } }
+@media (pixel-density: 1.25) and (resolution: 1.25dppx) {
+  #media-density { background-color: #00ff00; }
+}
 @media (min-width: 700dp) { #media-density { width: 80dp; } }
 )css" } ) );
 	auto* child = UISceneNode::New( fixture.app.getWindow() );
@@ -1514,17 +1523,17 @@ UTEST( UISceneDensity, SharedMediaQueriesMatchEachSceneIndependently ) {
 }
 
 UTEST( UISceneDensity, StylesheetQueriesExposeTheirOwnActiveRules ) {
-	CSS::StyleSheetParser parser;
+	StyleSheetParser parser;
 	ASSERT_TRUE( parser.loadFromString( std::string_view{ R"css(
 :root { --scale-marker: standard; }
 @media (pixel-density: 2) { :root { --scale-marker: high; } }
 )css" } ) );
-	CSS::StyleSheet standard;
+	StyleSheet standard;
 	standard = parser.getStyleSheet();
-	CSS::StyleSheet high;
+	StyleSheet high;
 	high = parser.getStyleSheet();
-	CSS::MediaFeatures features{};
-	features.type = CSS::media_type_screen;
+	MediaFeatures features{};
+	features.type = media_type_screen;
 	features.pixelDensity = 1.f;
 	standard.updateMediaLists( features );
 	features.pixelDensity = 2.f;
@@ -1537,8 +1546,8 @@ UTEST( UISceneDensity, StylesheetQueriesExposeTheirOwnActiveRules ) {
 }
 
 UTEST( UISceneDensity, MediaLengthsResolveFromFeaturesWithoutAmbientWindow ) {
-	CSS::MediaFeatures features{};
-	features.type = CSS::media_type_screen;
+	MediaFeatures features{};
+	features.type = media_type_screen;
 	features.width = 600;
 	features.height = 400;
 	features.pixelDensity = 1.25f;
@@ -1547,14 +1556,56 @@ UTEST( UISceneDensity, MediaLengthsResolveFromFeaturesWithoutAmbientWindow ) {
 	for ( const auto* source :
 		  { "(min-width:600dp)", "(min-width:600px)", "(min-width:6.25in)", "(resolution:120dpi)",
 			"(resolution:1.25dppx)", "(pixel-density:1.25)" } ) {
-		auto query = CSS::MediaQuery::parse( source );
+		auto query = MediaQuery::parse( source );
 		ASSERT_TRUE( query != nullptr );
 		EXPECT_TRUE( query->check( features ) );
 	}
-	auto excluded = CSS::MediaQuery::parse( "(max-width:599dp)" );
+	auto excluded = MediaQuery::parse( "(max-width:599dp)" );
 	ASSERT_TRUE( excluded != nullptr );
 	EXPECT_FALSE( excluded->check( features ) );
 	EXPECT_EQ( PixelDensity::getPixelDensity(), 3.f );
+}
+
+UTEST( UISceneDensity, MediaResolutionPreservesFractionalDpi ) {
+	MediaFeatures features{};
+	features.type = media_type_screen;
+	features.pixelDensity = 1.61f;
+	features.resolution = features.pixelDensity * 96.f;
+	for ( const auto* source : { "(resolution:1.61dppx)", "(min-resolution:154.5dpi)",
+								 "(max-resolution:1.6125dppx)" } ) {
+		auto query = MediaQuery::parse( source );
+		ASSERT_TRUE( query );
+		EXPECT_TRUE( query->check( features ) );
+	}
+	for ( const auto* source : { "(resolution:154dpi)", "(max-resolution:154.5dpi)",
+								 "(min-resolution:1.6125dppx)", "(min-pixel-density:1.6125)" } ) {
+		auto query = MediaQuery::parse( source );
+		ASSERT_TRUE( query );
+		EXPECT_FALSE( query->check( features ) );
+	}
+}
+
+UTEST( UISceneDensity, ProgrammaticBackgroundGeometryFollowsDensity ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	auto* widget = UIWidget::New();
+	widget->setParent( scene->getRoot() );
+	widget->setPixelsSize( 100, 100 );
+	widget->setBackgroundDrawable(
+		TextureDrawable::New( TextureFactory::instance()->createEmptyTexture( 8, 8 ) ) );
+	widget->setBackgroundSize( "16dp 20dp" );
+	widget->setBackgroundPositionX( "5dp" );
+	widget->setBackgroundPositionY( "6dp" );
+	auto* layer = widget->setBackgroundFillEnabled( true )->getLayer( 0 );
+	layer->setSize( widget->getPixelsSize() );
+	EXPECT_TRUE( layer->getDrawableSize() == Sizef( 16, 20 ) );
+	EXPECT_TRUE( layer->getOffset() == Vector2f( 5, 6 ) );
+	scene->setPixelDensity( 2.f );
+	EXPECT_TRUE( widget->getPixelsSize() == Sizef( 100, 100 ) );
+	EXPECT_TRUE( layer->getDrawableSize() == Sizef( 32, 40 ) );
+	EXPECT_TRUE( layer->getOffset() == Vector2f( 10, 12 ) );
 }
 
 UTEST( UISceneDensity, HtmlPixelsFollowTheirLogicalFontContract ) {
@@ -1796,7 +1847,7 @@ UTEST( PerWindowDensity, WindowChangesReachInheritingScenesBeforeUpdate ) {
 	EXPECT_EQ( PixelDensity::getPixelDensity(), fallback );
 }
 
-UTEST( PerWindowDensity, DisplayMetricsUpdateMediaWithoutDensityReflow ) {
+UTEST( PerWindowDensity, DisplayDPIUpdatesWithoutChangingMediaResolution ) {
 	DensityApplication fixture;
 	auto* window = fixture.app.getWindow();
 	auto* host = fixture.app.getUI();
@@ -1816,7 +1867,7 @@ UTEST( PerWindowDensity, DisplayMetricsUpdateMediaWithoutDensityReflow ) {
 	ASSERT_GT( displayDPI, 1.f );
 	child->setTestDPI( 1.f );
 	child->setStyleSheet( "#dpi-probe { background-color: #ff0000; } "
-						  "@media (resolution:1dpi) { "
+						  "@media (resolution:1.25dppx) { "
 						  "#dpi-probe { background-color: #00ff00; } }" );
 	EXPECT_TRUE( childProbe->getBackgroundColor() == Color( "#00ff00" ) );
 
@@ -1828,7 +1879,7 @@ UTEST( PerWindowDensity, DisplayMetricsUpdateMediaWithoutDensityReflow ) {
 	EXPECT_EQ( child->getPixelDensity(), 1.25f );
 	EXPECT_EQ( reflows, 0 );
 	EXPECT_EQ( child->getDPI(), displayDPI );
-	EXPECT_TRUE( childProbe->getBackgroundColor() == Color::Red );
+	EXPECT_TRUE( childProbe->getBackgroundColor() == Color( "#00ff00" ) );
 }
 
 UTEST( UISceneDensity, DefaultMetricsScaleAndExplicitPixelMetricsStayFixed ) {
@@ -1994,6 +2045,215 @@ UTEST( UISceneDensity, SharedSvgDataUrisKeepDensitySpecificRasters ) {
 	}
 }
 
+UTEST( UISceneDensity, AsyncFileLookupJoinsAnInFlightTexture ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	auto context = scene->makeCurrent();
+	scene->setThreadPool( nullptr );
+	auto scope = scene->getResourceScope();
+	const std::string key = "pending-file-texture.png";
+	const std::string uri = "file://" + key;
+	auto texture = TextureFactory::instance()->createEmptyTexture( 8, 6 );
+	ASSERT_TRUE( texture != nullptr );
+
+	std::promise<void> started;
+	std::promise<void> finish;
+	auto startedSignal = started.get_future();
+	auto finishSignal = finish.get_future();
+	auto worker = std::async( std::launch::async, [&] {
+		return scope->findOrLoadTexture( key, [&] {
+			started.set_value();
+			// Let a blocking lookup fail the assertions instead of hanging the test.
+			finishSignal.wait_for( std::chrono::seconds( 3 ) );
+			return texture;
+		} );
+	} );
+	startedSignal.wait();
+
+	auto drawable = scene->getDrawableResolver().resolveAsync( uri );
+	auto clone = drawable ? drawable->clone() : DrawablePtr{};
+	auto* widget = UIWidget::New();
+	widget->setParent( scene->getRoot() );
+	auto* background = widget->setBackgroundFillEnabled( true );
+	background->setDrawable( 0, clone );
+	background->setDrawableSize( 0, "contain" );
+	auto* layer = background->getLayer( 0 );
+	layer->setSize( Sizef( 16, 12 ) );
+	EXPECT_TRUE( drawable && drawable->getPixelsSize() == Sizef{} );
+	EXPECT_TRUE( clone && clone->getPixelsSize() == Sizef{} );
+	EXPECT_TRUE( layer->getDrawableSize() == Sizef{} );
+	int changes = 0;
+	DrawableResourceConnection connection;
+	if ( clone ) {
+		connection = static_cast<TextureDrawable*>( clone.get() )
+						 ->connectResourceChange( [&]( DrawableResource& ) { ++changes; } );
+	}
+
+	finish.set_value();
+	EXPECT_TRUE( worker.get() == texture );
+	EXPECT_EQ( changes, 0 );
+	scene->update( Milliseconds( 16 ) );
+
+	EXPECT_TRUE( drawable && drawable->getPixelsSize() == Sizef( 8, 6 ) );
+	EXPECT_TRUE( clone && clone->getPixelsSize() == Sizef( 8, 6 ) );
+	EXPECT_TRUE( layer->getDrawableSize() == Sizef( 16, 12 ) );
+	EXPECT_EQ( changes, 1 );
+	EXPECT_TRUE( scope->findTexture( key ) == texture );
+	auto cached = scene->getDrawableResolver().resolveAsync( uri );
+	EXPECT_TRUE( cached && cached->getPixelsSize() == Sizef( 8, 6 ) );
+}
+
+UTEST( UISceneDensity, SyncFileLookupCanCompleteAQueuedAsyncLoad ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.5f );
+	auto context = scene->makeCurrent();
+	auto pool = ThreadPool::createShared( 1 );
+	scene->setThreadPool( pool );
+
+	const std::string path =
+		Sys::getTempPath() + "eepp-async-file-" + String::toString( Sys::getSystemTime() ) + ".svg";
+	ASSERT_TRUE( FileSystem::fileWrite( path, std::string_view( DensityTestSvg ) ) );
+	ScopedOp removeFile( nullptr, [&] { FileSystem::fileRemove( path ); } );
+	const std::string uri = URI::fromFSPath( path ).toString();
+
+	std::promise<void> release;
+	auto finish = release.get_future();
+	// The single worker cannot start preparing the SVG until after the synchronous lookup.
+	pool->run( [finish = std::move( finish )] { finish.wait_for( std::chrono::seconds( 3 ) ); } );
+
+	auto& resolver = scene->getDrawableResolver();
+	auto first = resolver.resolveAsync( uri );
+	auto second = resolver.resolveAsync( uri );
+	EXPECT_TRUE( first && first->getPixelsSize() == Sizef{} );
+	EXPECT_TRUE( second && second->getPixelsSize() == Sizef{} );
+	auto synchronous = resolver.resolve( uri );
+	release.set_value();
+	ASSERT_TRUE( synchronous && synchronous->getPixelsSize() == Sizef( 15, 9 ) );
+
+	scene->update( Milliseconds( 16 ) );
+	ASSERT_TRUE( first && second );
+	EXPECT_TRUE( first->getPixelsSize() == Sizef( 15, 9 ) );
+	EXPECT_TRUE( second->getPixelsSize() == Sizef( 15, 9 ) );
+	const auto texture = static_cast<TextureDrawable*>( synchronous.get() )->getTexture();
+	EXPECT_TRUE( static_cast<TextureDrawable*>( first.get() )->getTexture() == texture );
+	EXPECT_TRUE( static_cast<TextureDrawable*>( second.get() )->getTexture() == texture );
+}
+
+UTEST( UISceneDensity, WorkerFileLookupDoesNotWaitBehindItsQueuedPreparation ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	auto pool = ThreadPool::createShared( 1 );
+	scene->setThreadPool( pool );
+
+	const std::string path = Sys::getTempPath() + "eepp-worker-file-" +
+							 String::toString( Sys::getSystemTime() ) + ".svg";
+	ASSERT_TRUE( FileSystem::fileWrite( path, std::string_view( DensityTestSvg ) ) );
+	ScopedOp removeFile( nullptr, [&] { FileSystem::fileRemove( path ); } );
+	const std::string uri = URI::fromFSPath( path ).toString();
+	auto& resolver = scene->getDrawableResolver();
+
+	std::promise<void> start;
+	auto startSignal = start.get_future();
+	std::promise<DrawablePtr> lookup;
+	auto lookupResult = lookup.get_future();
+	// The only worker requests the file synchronously while its preparation is queued behind it.
+	pool->run( [&] {
+		startSignal.wait_for( std::chrono::seconds( 3 ) );
+		lookup.set_value( resolver.resolve( uri ) );
+	} );
+	auto pending = resolver.resolveAsync( uri );
+	ASSERT_TRUE( pending && pending->getPixelsSize() == Sizef{} );
+	start.set_value();
+	ASSERT_TRUE( lookupResult.wait_for( std::chrono::seconds( 3 ) ) == std::future_status::ready );
+	// Without a shared GL context the worker cannot upload, so it returns instead of waiting.
+	auto joined = lookupResult.get();
+	EXPECT_TRUE( !joined || joined->getPixelsSize() == Sizef( 10, 6 ) );
+
+	std::promise<void> drained;
+	auto drainedSignal = drained.get_future();
+	pool->run( [&] { drained.set_value(); } );
+	ASSERT_TRUE( drainedSignal.wait_for( std::chrono::seconds( 3 ) ) == std::future_status::ready );
+	for ( int frame = 0; frame < 3 && pending->getPixelsSize() == Sizef{}; ++frame )
+		scene->update( Milliseconds( 16 ) );
+	EXPECT_TRUE( pending->getPixelsSize() == Sizef( 10, 6 ) );
+}
+
+UTEST( UISceneDensity, CancelledFilePreparationCanBeRetried ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	auto pool = ThreadPool::createShared( 1 );
+	scene->setThreadPool( pool );
+
+	const std::string path = Sys::getTempPath() + "eepp-cancelled-file-" +
+							 String::toString( Sys::getSystemTime() ) + ".svg";
+	ASSERT_TRUE( FileSystem::fileWrite( path, std::string_view( DensityTestSvg ) ) );
+	ScopedOp removeFile( nullptr, [&] { FileSystem::fileRemove( path ); } );
+	const std::string uri = URI::fromFSPath( path ).toString();
+
+	auto& resolver = scene->getDrawableResolver();
+	auto old = resolver.resolveAsync( uri );
+	std::promise<void> prepared;
+	auto preparedSignal = prepared.get_future();
+	pool->run( [&] { prepared.set_value(); } );
+	preparedSignal.wait();
+	scene->invalidateAsyncResourceLoads();
+	scene->update( Milliseconds( 16 ) );
+	ASSERT_TRUE( old && old->getPixelsSize() == Sizef{} );
+
+	std::string replacement( DensityTestSvg );
+	String::replaceAll( replacement, "width='10'", "width='12'" );
+	ASSERT_TRUE( FileSystem::fileWrite( path, std::string_view( replacement ) ) );
+	auto ready = resolver.resolve( uri );
+	EXPECT_TRUE( ready && ready->getPixelsSize() == Sizef( 12, 6 ) );
+}
+
+UTEST( UISceneDensity, ClearingSourceDetachesPendingLocalImages ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	auto pool = ThreadPool::createShared( 1 );
+	scene->setThreadPool( pool );
+	const std::string path = Sys::getTempPath() + "eepp-cleared-image-" +
+							 String::toString( Sys::getSystemTime() ) + " local.svg";
+	ASSERT_TRUE( FileSystem::fileWrite( path, std::string_view( DensityTestSvg ) ) );
+	ScopedOp removeFile( nullptr, [&] { FileSystem::fileRemove( path ); } );
+	URI file = URI::fromFSPath( path );
+	file.setHost( "localhost" );
+	const auto source = file.toString();
+
+	std::promise<void> proceed;
+	auto proceedSignal = proceed.get_future().share();
+	pool->run( [proceedSignal] { proceedSignal.wait(); } );
+	ScopedOp releaseWorker( nullptr, [&] { proceed.set_value(); } );
+	auto* image = UIImage::New();
+	auto* htmlImage = UIHTMLImage::New();
+	for ( auto* widget :
+		  { static_cast<UIWidget*>( image ), static_cast<UIWidget*>( htmlImage ) } ) {
+		widget->setParent( scene->getRoot() );
+		widget->setStyleSheetProperty( StyleSheetProperty( "defer", "true" ) );
+		widget->setStyleSheetProperty( StyleSheetProperty( "src", source ) );
+	}
+	auto pending = image->getDrawable();
+	ASSERT_TRUE( pending && pending->getPixelsSize() == Sizef{} );
+	ASSERT_TRUE( htmlImage->getDrawable() && htmlImage->getDrawable()->getPixelsSize() == Sizef{} );
+	image->setStyleSheetProperty( StyleSheetProperty( "src", "" ) );
+	htmlImage->setStyleSheetProperty( StyleSheetProperty( "src", "" ) );
+	EXPECT_FALSE( image->getDrawable() );
+	EXPECT_FALSE( htmlImage->getDrawable() );
+	auto ready = scene->getDrawableResolver().resolve( source );
+	ASSERT_TRUE( ready && ready->getPixelsSize() == Sizef( 10, 6 ) );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_TRUE( pending->getPixelsSize() == Sizef( 10, 6 ) );
+	EXPECT_FALSE( image->getDrawable() );
+	EXPECT_FALSE( htmlImage->getDrawable() );
+}
+
 UTEST( UISceneDensity, FileSvgVariantsShareSourceWithoutChangingHtmlIntrinsicSize ) {
 	DensityApplication fixture;
 	auto* scene = fixture.app.getUI();
@@ -2025,7 +2285,8 @@ UTEST( UISceneDensity, FileSvgVariantsShareSourceWithoutChangingHtmlIntrinsicSiz
 	deferred->setStyleSheetProperty( StyleSheetProperty( "defer", "true" ) );
 	deferred->setStyleSheetProperty( StyleSheetProperty( "src", uri ) );
 	Clock clock;
-	while ( !deferred->getDrawable() && clock.getElapsedTime() < Seconds( 2 ) ) {
+	while ( ( !deferred->getDrawable() || deferred->getDrawable()->getPixelsSize().x == 0 ) &&
+			clock.getElapsedTime() < Seconds( 2 ) ) {
 		scene->update( Milliseconds( 16 ) );
 		Sys::sleep( Milliseconds( 1 ) );
 	}
@@ -2049,8 +2310,8 @@ UTEST( UISceneDensity, SharedWebSvgCacheKeepsSceneRasterVariants ) {
 	cache->setFetcher(
 		[&fetches]( const WebResourceRequest&, WebResourceCache::FetchCompletion complete ) {
 			++fetches;
-			auto status = Network::Http::Response::Ok;
-			complete( Network::Http::Response::createFakeResponse( {}, status, DensityTestSvg ) );
+			auto status = Http::Response::Ok;
+			complete( Http::Response::createFakeResponse( {}, status, DensityTestSvg ) );
 		} );
 	WebResourceRequest request;
 	request.uri = URI( "https://example.invalid/icon.svg?variant=red" );
@@ -2063,6 +2324,107 @@ UTEST( UISceneDensity, SharedWebSvgCacheKeepsSceneRasterVariants ) {
 	EXPECT_TRUE( scene->requestWebTexture( request, {} ) == first );
 	EXPECT_EQ( fetches, 2 );
 	EXPECT_EQ( cache->getRetainedBytes(), ( 10u * 6u + 20u * 12u ) * 4u );
+}
+
+UTEST( UISceneDensity, ExtensionlessWebSvgRefreshesAnImageAndBackground ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	auto cache = WebResourceCache::New();
+	cache->setFetcher( []( const WebResourceRequest&, WebResourceCache::FetchCompletion complete ) {
+		auto status = Http::Response::Ok;
+		complete( Http::Response::createFakeResponse( {}, status, DensityTestSvg ) );
+	} );
+	scene->setWebResourceCache( cache );
+	auto* root = scene->loadLayoutFromString( R"xml(
+		<vbox>
+			<Image id="picture" src="https://example.invalid/picture" />
+			<vbox id="background" style="background-image: url('https://example.invalid/picture');" />
+		</vbox>
+	)xml" );
+	ASSERT_TRUE( root );
+	auto* pictureNode = root->find( "picture" );
+	auto* backgroundNode = root->find( "background" );
+	ASSERT_TRUE( pictureNode && pictureNode->isType( UI_TYPE_IMAGE ) );
+	ASSERT_TRUE( backgroundNode && backgroundNode->isWidget() );
+	auto* picture = pictureNode->asType<UIImage>();
+	auto* background = backgroundNode->asType<UIWidget>();
+	auto* layer = background->setBackgroundFillEnabled( true )->getLayer( 0 );
+	ASSERT_TRUE( picture->getDrawable() && layer->getDrawable() );
+	EXPECT_EQ( picture->getDrawable()->getPixelsSize().x, 10.f );
+	EXPECT_EQ( layer->getDrawable()->getPixelsSize().x, 10.f );
+
+	scene->setPixelDensity( 2.f );
+	ASSERT_TRUE( picture->getDrawable() && layer->getDrawable() );
+	EXPECT_EQ( picture->getDrawable()->getPixelsSize().x, 20.f );
+	EXPECT_EQ( layer->getDrawable()->getPixelsSize().x, 20.f );
+}
+
+UTEST( UISceneDensity, ExtensionlessWebBitmapSharesItsTextureAcrossDensities ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 2.f );
+	auto context = scene->makeCurrent();
+	std::string bitmap;
+	ASSERT_TRUE( FileSystem::fileGet( Sys::getProcessPath() + "../assets/icon/ee.png", bitmap ) );
+	auto cache = WebResourceCache::New();
+	int fetches = 0;
+	WebResourceCache::FetchCompletion finish;
+	cache->setFetcher(
+		[&]( const WebResourceRequest&, WebResourceCache::FetchCompletion complete ) {
+			++fetches;
+			finish = std::move( complete );
+		} );
+	scene->setWebResourceCache( cache );
+	WebResourceRequest request;
+	request.uri = URI( "https://example.invalid/picture" );
+	auto first = scene->requestWebTexture( request, {} );
+	ASSERT_TRUE( first && finish );
+	EXPECT_EQ( first->getImageWidth(), 1u );
+	scene->setPixelDensity( 1.5f );
+	EXPECT_TRUE( scene->requestWebTexture( request, {} ) == first );
+	EXPECT_EQ( fetches, 1 );
+	EXPECT_EQ( cache->getEntryCount(), size_t{ 1 } );
+	auto status = Http::Response::Ok;
+	finish( Http::Response::createFakeResponse( {}, status, bitmap ) );
+	ASSERT_TRUE( first && first->getImageWidth() > 1u );
+	EXPECT_EQ( first->getRasterScale(), 1.f );
+
+	scene->setPixelDensity( 1.5f );
+	EXPECT_TRUE( scene->requestWebTexture( request, {} ) == first );
+	scene->setPixelDensity( 1.f );
+	EXPECT_TRUE( scene->requestWebTexture( request, {} ) == first );
+	EXPECT_EQ( fetches, 1 );
+	EXPECT_EQ( cache->getEntryCount(), size_t{ 1 } );
+}
+
+UTEST( UISceneDensity, PendingWebSvgUsesTheLatestSceneDensity ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.f );
+	auto context = scene->makeCurrent();
+	auto cache = WebResourceCache::New();
+	int fetches = 0;
+	WebResourceCache::FetchCompletion finish;
+	cache->setFetcher(
+		[&]( const WebResourceRequest&, WebResourceCache::FetchCompletion complete ) {
+			++fetches;
+			finish = std::move( complete );
+		} );
+	scene->setWebResourceCache( cache );
+	WebResourceRequest request;
+	request.uri = URI( "https://example.invalid/picture" );
+	auto texture = scene->requestWebTexture( request, {} );
+	ASSERT_TRUE( texture && finish );
+	scene->setPixelDensity( 2.f );
+	EXPECT_TRUE( scene->requestWebTexture( request, {} ) == texture );
+	auto status = Http::Response::Ok;
+	finish( Http::Response::createFakeResponse( {}, status, DensityTestSvg ) );
+	EXPECT_EQ( texture->getImageWidth(), 20u );
+	EXPECT_EQ( texture->getRasterScale(), 2.f );
+	EXPECT_TRUE( scene->requestWebTexture( request, {} ) == texture );
+	EXPECT_EQ( fetches, 1 );
 }
 
 UTEST( UISceneDensity, SvgRerasterizesAtFinalPhysicalTargetSize ) {
@@ -2727,6 +3089,54 @@ UTEST( UISceneDensity, ThemeFontSizeCanUseAnExplicitDensity ) {
 	theme->setDefaultFontSize( 20.f, 2.f );
 	EXPECT_EQ( theme->getDefaultFontSize(), 20.f );
 	EXPECT_EQ( theme->getDefaultFontSizeDp(), 10.f );
+}
+
+UTEST( UISceneDensity, ExplicitFontSizesMatchingThemeDefaultsKeepTheirSource ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setStyleSheet( StyleSheet{} );
+	scene->getUIThemeManager()->setDefaultFontSize( 22.f ); // 11dp at the fixture's 2x scale.
+	scene->setPixelDensity( 1.25f );
+	auto context = scene->makeCurrent();
+	auto* root = scene->getRoot();
+	auto* label = UITextView::New();
+	auto* input = UITextInput::New();
+	auto* editor = UICodeEditor::New();
+	auto* edit = UITextEdit::New();
+	auto* richText = UIRichText::New();
+	auto* console = UIConsole::NewOpt( nullptr, false, false );
+	for ( auto* widget :
+		  std::initializer_list<UIWidget*>{ label, input, editor, edit, richText, console } )
+		widget->setParent( root );
+
+	EXPECT_EQ( label->getFontSize(), 13u );
+	EXPECT_EQ( input->getFontSize(), 13u );
+	EXPECT_EQ( editor->getFontSize(), 13.f );
+	input->setFontSize( 13 );
+	input->setHintFontSize( 13 );
+	editor->setFontSize( 13.f );
+	edit->setHintFontSize( 13 );
+	richText->setFontSize( 13 );
+	console->setFontSize( 13.f );
+
+	for ( Float density : { 2.f, 1.25f, 2.f, 1.25f } ) {
+		scene->setPixelDensity( density );
+		const Float explicitSize = 13.f * ( density / 1.25f );
+		const auto wholeSize = static_cast<Uint32>( explicitSize );
+		EXPECT_EQ( label->getFontSize(), static_cast<Uint32>( 11.f * density ) );
+		EXPECT_EQ( input->getFontSize(), wholeSize );
+		EXPECT_EQ( input->getHintFontSize(), wholeSize );
+		EXPECT_EQ( editor->getFontSize(), explicitSize );
+		EXPECT_EQ( edit->getHintFontSize(), wholeSize );
+		EXPECT_EQ( richText->getFontSize(), wholeSize );
+		EXPECT_EQ( console->getFontSize(), static_cast<Float>( wholeSize ) );
+	}
+
+	editor->fontSizeGrow();
+	scene->setPixelDensity( 2.f );
+	EXPECT_GT( editor->getFontSize(), 13.f * ( 2.f / 1.25f ) );
+	editor->fontSizeReset();
+	EXPECT_EQ( editor->getFontSize(), 13.f * ( 2.f / 1.25f ) );
 }
 
 UTEST( PixelDensityRegression, BreezePreservesConfiguredCodeEditorFontSize ) {

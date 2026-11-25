@@ -80,7 +80,10 @@ class EE_API UITextEdit : public UICodeEditor {
 
 	Text mHintCache;
 	FontStyleConfig mHintStyleConfig;
+	FontSizeSource mHintFontSizeSource;
 	HintDisplay mHintDisplay{ HintDisplay::Always };
+
+	void setInternalHintFontSize( Uint32 characterSize );
 
 	virtual void drawLineText( const Int64& line, Vector2f position, const Float& fontSize,
 							   const Float& lineHeight,

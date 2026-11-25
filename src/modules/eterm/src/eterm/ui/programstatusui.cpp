@@ -333,13 +333,14 @@ void ProgramStatusUI::installStyles( UISceneNode* scene ) {
 		Tab.program_status_unread.program_status_error > Tab::text {
 			color: var(--theme-error) !important;
 		}
-		/* The icon has eight equal spokes: a turn would look still, and 45 degrees wraps unnoticed. */
+		/* Full turns: the small icon's center isn't pixel-aligned, so it only lines up after 360deg.
+		   The 5deg offset avoids the unrotated frame, which is sharper than rotated ones. */
 		@keyframes program-status-spin {
-			from { rotation: 0; }
-			to { rotation: 45; }
+			from { rotation: 5; }
+			to { rotation: 365; }
 		}
 		Tab.program_status_working > Tab::icon {
-			animation: program-status-spin 1s steps(6) infinite;
+			animation: program-status-spin 6s steps(36) infinite;
 		}
 		Tab.program_status_progress,
 		Tab.program_status_progress:selected {

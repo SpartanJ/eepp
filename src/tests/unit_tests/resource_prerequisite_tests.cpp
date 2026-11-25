@@ -27,10 +27,15 @@
 #include <eepp/graphics/textureatlasloader.hpp>
 #include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/textureloader.hpp>
 #include <eepp/graphics/vertexbufferregistry.hpp>
+#include <eepp/network/uri.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/resourceloader.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/ui/models/variant.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiimage.hpp>
@@ -198,6 +203,35 @@ EE::Window::Window* createLifecycleTestWindow( const std::string& title ) {
 		WindowSettings( 64, 64, title, WindowStyle::Default, WindowBackend::Default, 32, {}, 1,
 						false, true ),
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+}
+
+// A 2x2 uncompressed RGBA DDS. Its format check reaches the compressed-texture support query.
+std::vector<Uint8> makeUncompressedDds() {
+	std::vector<Uint8> data( 4 + 124 + 2 * 2 * 4, 0 );
+	const auto put = [&]( size_t offset, Uint32 value ) {
+		for ( size_t i = 0; i < 4; ++i )
+			data[offset + i] = static_cast<Uint8>( value >> ( 8 * i ) );
+	};
+	data[0] = 'D';
+	data[1] = 'D';
+	data[2] = 'S';
+	data[3] = ' ';
+	put( 4, 124 );			// Header size.
+	put( 8, 0x100F );		// Caps, height, width, pitch and pixel format.
+	put( 12, 2 );			// Height.
+	put( 16, 2 );			// Width.
+	put( 20, 8 );			// Pitch.
+	put( 76, 32 );			// Pixel format size.
+	put( 80, 0x41 );		// RGB with alpha.
+	put( 88, 32 );			// Bits per pixel.
+	put( 92, 0x00FF0000 );	// Red mask.
+	put( 96, 0x0000FF00 );	// Green mask.
+	put( 100, 0x000000FF ); // Blue mask.
+	put( 104, 0xFF000000 ); // Alpha mask.
+	put( 108, 0x1000 );		// Texture caps.
+	for ( size_t i = 128; i < data.size(); ++i )
+		data[i] = 0xFF;
+	return data;
 }
 
 } // namespace
@@ -618,6 +652,44 @@ UTEST( ResourcePrerequisites, textureLoadsShareOnlyTheSameScopeAndKey ) {
 	EXPECT_TRUE( scope->findOrLoadTexture( "retry", [] { return TexturePtr{}; } ) == nullptr );
 	EXPECT_TRUE( scope->findOrLoadTexture( "retry", [&] { return firstTexture; } ) ==
 				 firstTexture );
+}
+
+UTEST( ResourcePrerequisites, texturePreparationDoesNotQueryADestroyedRenderer ) {
+	createLifecycleTestWindow( "Texture preparation renderer lifetime test" );
+	const auto dds = makeUncompressedDds();
+	TextureLoader loader( dds.data(), static_cast<unsigned int>( dds.size() ) );
+	Engine::destroySingleton();
+	ASSERT_TRUE( GLi == nullptr );
+	// Worker preparation can outlive the renderer. It must use the capabilities captured with
+	// the loader instead of reading the destroyed renderer.
+	loader.prepare();
+	EXPECT_TRUE( loader.getTexture() == nullptr );
+}
+
+UTEST( ResourcePrerequisites, deferredFileTexturePreparationOutlivesEngineShutdown ) {
+	EE::Window::Window* window = createLifecycleTestWindow( "Deferred texture shutdown test" );
+	const std::string path = Sys::getTempPath() + "eepp-deferred-shutdown-" +
+							 String::toString( Sys::getSystemTime() ) + ".dds";
+	ASSERT_TRUE( FileSystem::fileWrite( path, makeUncompressedDds() ) );
+	ScopedOp removeFile( nullptr, [&] { FileSystem::fileRemove( path ); } );
+
+	auto pool = ThreadPool::createShared( 1 );
+	std::promise<void> release;
+	auto releaseSignal = release.get_future();
+	// Hold the only worker so the preparation runs after the renderer is destroyed.
+	pool->run( [&releaseSignal] { releaseSignal.wait_for( std::chrono::seconds( 5 ) ); } );
+
+	UISceneNode* scene = UISceneNode::New( window );
+	scene->setThreadPool( pool );
+	auto drawable = scene->getDrawableResolver().resolveAsync( URI::fromFSPath( path ).toString() );
+	EXPECT_TRUE( drawable != nullptr );
+	eeDelete( scene );
+	Engine::destroySingleton();
+	ASSERT_TRUE( GLi == nullptr );
+
+	release.set_value();
+	pool.reset();
+	EXPECT_TRUE( drawable && drawable->getPixelsSize() == Sizef{} );
 }
 
 UTEST( ResourcePrerequisites, defaultResourceScopeImportsGlobalCatalog ) {

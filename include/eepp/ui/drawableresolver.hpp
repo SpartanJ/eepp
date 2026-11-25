@@ -3,16 +3,11 @@
 
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/resourcescope.hpp>
-#include <functional>
 #include <string_view>
 
-namespace EE {
-
-class URI;
-
-} // namespace EE
-
 namespace EE { namespace UI {
+
+using namespace EE::Graphics;
 
 class UISceneNode;
 
@@ -20,23 +15,25 @@ class UISceneNode;
 class EE_API DrawableResolver {
   public:
 	explicit DrawableResolver( UISceneNode& sceneNode );
-	explicit DrawableResolver( Graphics::ResourceScope& resourceScope );
+	explicit DrawableResolver( ResourceScope& resourceScope );
 
-	Graphics::DrawablePtr resolve( const std::string& name, bool firstSearchSprite = false ) const;
+	/** Resolves local files synchronously, including files whose load is already in progress. */
+	DrawablePtr resolve( const std::string& name, bool firstSearchSprite = false ) const;
 
-	bool requestFileTexture( const URI& uri,
-							 std::function<void( Graphics::TexturePtr )> callback ) const;
+	/** Returns a cached local texture or an empty drawable that updates on the UI thread.
+	 * An uncached local file requires a scene with a thread pool. Other sources use resolve(). */
+	DrawablePtr resolveAsync( const std::string& name, bool firstSearchSprite = false ) const;
 
 	static bool isSvgPath( std::string_view path );
-	Graphics::DrawablePtr resolveById( Graphics::ResourceNameHash hash ) const;
-	Graphics::DrawablePtr resolveById( String::HashType legacyHash ) const;
+	DrawablePtr resolveById( ResourceNameHash hash ) const;
+	DrawablePtr resolveById( String::HashType legacyHash ) const;
 
 	void setPrintWarnings( bool printWarnings );
 	bool getPrintWarnings() const;
 
   protected:
 	UISceneNode* mSceneNode{ nullptr };
-	Graphics::ResourceScope* mResourceScope{ nullptr };
+	ResourceScope* mResourceScope{ nullptr };
 	bool mPrintWarnings{ false };
 };
 

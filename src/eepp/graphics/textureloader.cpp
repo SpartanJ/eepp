@@ -23,6 +23,15 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
+namespace {
+
+constexpr Uint8 DirectUploadCaptured = 1 << 0;
+constexpr Uint8 DirectUploadS3TC = 1 << 1;
+constexpr Uint8 DirectUploadPVRTC = 1 << 2;
+constexpr Uint8 DirectUploadETC1 = 1 << 3;
+
+} // namespace
+
 TextureLoader::TextureLoader( IOStream& Stream, const bool& Mipmap,
 							  const Texture::ClampMode& ClampMode, const bool& CompressTexture,
 							  const bool& KeepLocalCopy ) :
@@ -31,7 +40,9 @@ TextureLoader::TextureLoader( IOStream& Stream, const bool& Mipmap,
 	mClampMode( ClampMode ),
 	mCompressTexture( CompressTexture ),
 	mLocalCopy( KeepLocalCopy ),
-	mStream( &Stream ) {}
+	mStream( &Stream ) {
+	captureDirectUploadSupport();
+}
 
 TextureLoader::TextureLoader( const std::string& Filepath, const bool& Mipmap,
 							  const Texture::ClampMode& ClampMode, const bool& CompressTexture,
@@ -41,7 +52,9 @@ TextureLoader::TextureLoader( const std::string& Filepath, const bool& Mipmap,
 	mMipmap( Mipmap ),
 	mClampMode( ClampMode ),
 	mCompressTexture( CompressTexture ),
-	mLocalCopy( KeepLocalCopy ) {}
+	mLocalCopy( KeepLocalCopy ) {
+	captureDirectUploadSupport();
+}
 
 TextureLoader::TextureLoader( const unsigned char* ImagePtr, const unsigned int& Size,
 							  const bool& Mipmap, const Texture::ClampMode& ClampMode,
@@ -52,7 +65,9 @@ TextureLoader::TextureLoader( const unsigned char* ImagePtr, const unsigned int&
 	mCompressTexture( CompressTexture ),
 	mLocalCopy( KeepLocalCopy ),
 	mImagePtr( ImagePtr ),
-	mSize( Size ) {}
+	mSize( Size ) {
+	captureDirectUploadSupport();
+}
 
 TextureLoader::TextureLoader( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap,
 							  const Texture::ClampMode& ClampMode, const bool& CompressTexture,
@@ -63,7 +78,9 @@ TextureLoader::TextureLoader( Pack* Pack, const std::string& FilePackPath, const
 	mClampMode( ClampMode ),
 	mCompressTexture( CompressTexture ),
 	mLocalCopy( KeepLocalCopy ),
-	mPack( Pack ) {}
+	mPack( Pack ) {
+	captureDirectUploadSupport();
+}
 
 TextureLoader::TextureLoader( const unsigned char* Pixels, const unsigned int& Width,
 							  const unsigned int& Height, const unsigned int& Channels,
@@ -84,6 +101,29 @@ TextureLoader::TextureLoader( const unsigned char* Pixels, const unsigned int& W
 TextureLoader::~TextureLoader() {
 	eeSAFE_DELETE( mColorKey );
 	freePixels();
+}
+
+void TextureLoader::captureDirectUploadSupport() {
+	// prepare() may run on a worker after the renderer is destroyed, so it must not query GLi.
+	// Extension support is fixed for the renderer's lifetime: capture it with the loader.
+	if ( !GLi )
+		return;
+	Uint8 support = DirectUploadCaptured;
+	if ( GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) )
+		support |= DirectUploadS3TC;
+	if ( GLi->isExtension( EEGL_IMG_texture_compression_pvrtc ) )
+		support |= DirectUploadPVRTC;
+	if ( GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) &&
+		 GLi->isExtension( EEGL_ARB_ES3_compatibility ) )
+		support |= DirectUploadETC1;
+	mDirectUploadSupport = support;
+}
+
+bool TextureLoader::supportsDirectUpload( Uint8 format ) {
+	// A loader created before the renderer existed captures support on first use.
+	if ( !( mDirectUploadSupport & DirectUploadCaptured ) )
+		captureDirectUploadSupport();
+	return ( mDirectUploadSupport & format ) != 0;
 }
 
 void TextureLoader::freePixels() {
@@ -107,6 +147,14 @@ void TextureLoader::freePixels() {
 }
 
 void TextureLoader::load() {
+	prepare();
+	loadFromPixels();
+}
+
+void TextureLoader::prepare() {
+	if ( mTexLoaded )
+		return;
+
 	mTE.restart();
 
 	if ( TEX_LT_PATH == mLoadType )
@@ -119,8 +167,6 @@ void TextureLoader::load() {
 		loadFromStream();
 
 	mTexLoaded = true;
-
-	loadFromPixels();
 }
 
 void TextureLoader::loadFile() {
@@ -135,8 +181,7 @@ void TextureLoader::loadFromFile() {
 	if ( FileSystem::fileExists( mFilepath ) ) {
 		mImgType = Image::getFormat( mFilepath );
 
-		if ( Image::Format::DDS == mImgType &&
-			 GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+		if ( Image::Format::DDS == mImgType && supportsDirectUpload( DirectUploadS3TC ) ) {
 			loadFile();
 			mDirectUpload = true;
 			stbi__dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels,
@@ -144,14 +189,12 @@ void TextureLoader::loadFromFile() {
 		} else if ( Image::Format::PVR == mImgType &&
 					stbi__pvr_info_from_path( mFilepath.c_str(), &mImgWidth, &mImgHeight,
 											  &mChannels, &mIsCompressed ) &&
-					( !mIsCompressed || GLi->isExtension( EEGL_IMG_texture_compression_pvrtc ) ) ) {
+					( !mIsCompressed || supportsDirectUpload( DirectUploadPVRTC ) ) ) {
 			// If the PVR is valid, and the pvrtc extension is present or it's not compressed ( so
 			// it doesn't need the extension ) means that it can be uploaded directly to the GPU.
 			loadFile();
 			mDirectUpload = true;
-		} else if ( Image::Format::PKM == mImgType &&
-					GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) &&
-					GLi->isExtension( EEGL_ARB_ES3_compatibility ) ) {
+		} else if ( Image::Format::PKM == mImgType && supportsDirectUpload( DirectUploadETC1 ) ) {
 			loadFile();
 			mIsCompressed = mDirectUpload = true;
 			stbi__pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
@@ -194,7 +237,7 @@ void TextureLoader::loadFromPack() {
 void TextureLoader::loadFromMemory() {
 	mImgType = Image::getFormat( mImagePtr, mSize );
 
-	if ( Image::Format::DDS == mImgType && GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+	if ( Image::Format::DDS == mImgType && supportsDirectUpload( DirectUploadS3TC ) ) {
 		mPixels = (Uint8*)eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
 		stbi__dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels,
@@ -203,13 +246,11 @@ void TextureLoader::loadFromMemory() {
 	} else if ( Image::Format::PVR == mImgType &&
 				stbi__pvr_info_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels,
 											&mIsCompressed ) &&
-				( !mIsCompressed || GLi->isExtension( EEGL_IMG_texture_compression_pvrtc ) ) ) {
+				( !mIsCompressed || supportsDirectUpload( DirectUploadPVRTC ) ) ) {
 		mPixels = (Uint8*)eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
 		mDirectUpload = true;
-	} else if ( Image::Format::PKM == mImgType &&
-				GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) &&
-				GLi->isExtension( EEGL_ARB_ES3_compatibility ) ) {
+	} else if ( Image::Format::PKM == mImgType && supportsDirectUpload( DirectUploadETC1 ) ) {
 		mPixels = (Uint8*)eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
 		stbi__pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
@@ -237,8 +278,7 @@ void TextureLoader::loadFromStream() {
 
 		mImgType = static_cast<Image::Format>( stbi_test_from_callbacks( &callbacks, mStream ) );
 
-		if ( Image::Format::DDS == mImgType &&
-			 GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+		if ( Image::Format::DDS == mImgType && supportsDirectUpload( DirectUploadS3TC ) ) {
 			mSize = mStream->getSize();
 			mPixels = (Uint8*)eeMalloc( mSize );
 			mStream->seek( 0 );
@@ -251,16 +291,14 @@ void TextureLoader::loadFromStream() {
 		} else if ( Image::Format::PVR == mImgType &&
 					stbi__pvr_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight,
 												   &mChannels, &mIsCompressed ) &&
-					( !mIsCompressed || GLi->isExtension( EEGL_IMG_texture_compression_pvrtc ) ) ) {
+					( !mIsCompressed || supportsDirectUpload( DirectUploadPVRTC ) ) ) {
 			mSize = mStream->getSize();
 			mPixels = (Uint8*)eeMalloc( mSize );
 			mStream->seek( 0 );
 			mStream->read( reinterpret_cast<char*>( mPixels ), mSize );
 			mStream->seek( 0 );
 			mDirectUpload = true;
-		} else if ( Image::Format::PKM == mImgType &&
-					GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) &&
-					GLi->isExtension( EEGL_ARB_ES3_compatibility ) ) {
+		} else if ( Image::Format::PKM == mImgType && supportsDirectUpload( DirectUploadETC1 ) ) {
 			mSize = mStream->getSize();
 			mPixels = (Uint8*)eeMalloc( mSize );
 			mStream->seek( 0 );

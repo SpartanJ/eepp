@@ -275,7 +275,7 @@ does not change an existing window's density. Use the window and scene APIs for 
 scene->setPixelDensity( 1.25f );        // reflow this scene and inheriting embedded scenes
 scene->clearPixelDensityOverride();    // follow the embedded host or native window again
 window->setPixelDensityOverride( 2.f ); // inheriting scenes apply it on their next update
-window->setPixelDensityOverride( 0.f ); // return to automatic density (unless the environment overrides it)
+window->setPixelDensityOverride( 0.f ); // return to automatic density for this window
 window->setPixelDensityMode( PixelDensityMode::PhysicalPPI ); // change the automatic source live
 window->setPixelDensityReferencePPI( 96.f ); // optional physical-mode calibration
 ```

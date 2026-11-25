@@ -7,6 +7,13 @@
 #endif
 #include <string>
 
+namespace EE::Window {
+
+class Display;
+class DisplayManager;
+
+} // namespace EE::Window
+
 namespace EE { namespace Window { namespace Private {
 
 /** Optional native monitor measurements. Queries run on the UI thread and return zero when
@@ -23,6 +30,9 @@ class PhysicalDisplayMetrics {
 #endif
 
 	static std::string getPersistentId( const Math::Rect& bounds );
+
+	/** Returns a best-effort key for a unique Wayland display label. */
+	static std::string getWaylandPersistentId( const Display* display, DisplayManager* manager );
 };
 
 }}} // namespace EE::Window::Private

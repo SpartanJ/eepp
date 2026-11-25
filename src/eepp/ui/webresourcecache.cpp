@@ -6,6 +6,8 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cctype>
+#include <cstdio>
 #include <mutex>
 #include <vector>
 
@@ -26,26 +28,57 @@ std::string canonicalURI( URI uri ) {
 	return uri.toString();
 }
 
-std::string makeRequestKey( CachePartitionId partition, const WebResourceRequest& request ) {
-	std::string key =
-		String::format( "%llu\n%u\n%u\n%d\n%s\n", static_cast<unsigned long long>( partition ),
-						static_cast<Uint32>( request.kind ), static_cast<Uint32>( request.method ),
-						request.validateCertificate, canonicalURI( request.uri ).c_str() );
+// Room for the raster scale that appendRasterScale() writes at the end of a key.
+constexpr std::size_t RasterScaleCapacity = 32;
+
+// Key fields shared by every raster scale of a request. The key is complete after
+// appendRasterScale(), and has room for it.
+std::string makeRequestKeyBase( CachePartitionId partition, const WebResourceRequest& request ) {
+	const std::string uri = canonicalURI( request.uri );
+	std::size_t size = 64 + uri.size() + request.body.size() + RasterScaleCapacity;
+	for ( const auto& header : request.headers )
+		size += header.first.size() + header.second.size() + 2;
+	std::string key;
+	key.reserve( size );
+
+	char buffer[96];
+	int length = std::snprintf(
+		buffer, sizeof( buffer ), "%llu\n%u\n%u\n%d\n",
+		static_cast<unsigned long long>( partition ), static_cast<Uint32>( request.kind ),
+		static_cast<Uint32>( request.method ), request.validateCertificate );
+	key.append( buffer, length );
+	key += uri;
+	key += '\n';
 	for ( const auto& header : request.headers ) {
-		std::string name = String::toLower( header.first );
 		// Documents can change with authentication, while static resources remain reusable as
 		// cookies evolve. Referer changes with navigation history but does not identify content.
-		if ( ( name == "cookie" && request.kind != WebResourceKind::Document ) ||
-			 name == "referer" )
+		if ( ( String::iequals( header.first, "cookie" ) &&
+			   request.kind != WebResourceKind::Document ) ||
+			 String::iequals( header.first, "referer" ) )
 			continue;
-		key += name;
+		for ( char c : header.first )
+			key += static_cast<char>( std::tolower( static_cast<unsigned char>( c ) ) );
 		key += ':';
 		key += header.second;
 		key += '\n';
 	}
 	key += request.body;
-	key += String::format( "\n%d:%d:%d:%.9g", request.clampToEdge, request.mipmaps,
-						   request.compressTexture, request.svgScale );
+	length = std::snprintf( buffer, sizeof( buffer ), "\n%d:%d:%d:", request.clampToEdge,
+							request.mipmaps, request.compressTexture );
+	key.append( buffer, length );
+	return key;
+}
+
+void appendRasterScale( std::string& key, Float svgScale ) {
+	char buffer[RasterScaleCapacity];
+	const int length = std::snprintf( buffer, sizeof( buffer ), "%.9g", svgScale );
+	key.append( buffer, length );
+}
+
+std::string makeRequestKey( CachePartitionId partition, const WebResourceRequest& request,
+							Float svgScale ) {
+	std::string key = makeRequestKeyBase( partition, request );
+	appendRasterScale( key, svgScale );
 	return key;
 }
 
@@ -66,6 +99,14 @@ struct WebResourceCache::Impl {
 		Callback callback;
 	};
 
+	// The entry can move to another raster-scale key while the HTTP request is in flight.
+	struct ImageLoad {
+		std::string key;
+		std::string sourceKey;
+		DocumentSessionId session;
+		bool canRetarget{ true };
+	};
+
 	struct Entry {
 		CachePartitionId partition{ 0 };
 		WebResourceLoadState state{ WebResourceLoadState::Empty };
@@ -74,6 +115,7 @@ struct WebResourceCache::Impl {
 		Uint64 operationEpoch{ 0 };
 		Uint64 operationId{ 0 };
 		WebResourceRequest request;
+		std::shared_ptr<ImageLoad> imageLoad;
 		std::shared_ptr<const std::string> data;
 		TexturePtr texture;
 		std::vector<Subscriber> subscribers;
@@ -83,6 +125,7 @@ struct WebResourceCache::Impl {
 		Time retryAt;
 		std::size_t retainedBytes{ 0 };
 		int status{ 0 };
+		bool bitmap{ false };
 		std::string error;
 	};
 
@@ -90,6 +133,7 @@ struct WebResourceCache::Impl {
 		CachePartitionId partition{ 0 };
 		Uint64 generation{ 0 };
 		WebOriginKey origin;
+		UnorderedMap<std::string, std::weak_ptr<ImageLoad>> pendingImages;
 	};
 
 	mutable std::mutex mutex;
@@ -179,6 +223,37 @@ struct WebResourceCache::Impl {
 		return entry.state == WebResourceLoadState::Loading &&
 			   entry.operationEpoch == operationEpoch && entry.operationId == operationId;
 	}
+
+	void retargetImage( Session& session, const std::string& sourceKey, const std::string& key,
+						Float scale ) {
+		if ( entries.find( key ) != entries.end() )
+			return;
+		auto pending = session.pendingImages.find( sourceKey );
+		if ( pending == session.pendingImages.end() )
+			return;
+		auto load = pending->second.lock();
+		if ( !load || !load->canRetarget )
+			return;
+		auto old = entries.find( load->key );
+		if ( old == entries.end() || old->second.imageLoad != load )
+			return;
+		Entry entry = std::move( old->second );
+		entries.erase( old );
+		load->key = key;
+		entry.request.svgScale = scale;
+		entries.emplace( key, std::move( entry ) );
+	}
+
+	void finishImageLoad( const std::shared_ptr<ImageLoad>& load ) {
+		if ( !load )
+			return;
+		auto session = sessions.find( load->session );
+		if ( session == sessions.end() )
+			return;
+		auto pending = session->second.pendingImages.find( load->sourceKey );
+		if ( pending != session->second.pendingImages.end() && pending->second.lock() == load )
+			session->second.pendingImages.erase( pending );
+	}
 };
 
 WebResourceCachePtr WebResourceCache::New() {
@@ -257,6 +332,7 @@ Uint64 WebResourceCache::beginNavigation( DocumentSessionId session, const URI& 
 	if ( it == mImpl->sessions.end() )
 		return 0;
 	mImpl->releaseSessionLeases( session );
+	it->second.pendingImages.clear();
 	it->second.origin = WebOriginKey::fromURI( uri );
 	return ++it->second.generation;
 }
@@ -275,7 +351,22 @@ CachePartitionId WebResourceCache::getSessionPartition( DocumentSessionId sessio
 
 void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation,
 									WebResourceRequest request, Callback callback ) {
+	this->request( session, generation, std::move( request ), std::move( callback ), false );
+}
+
+TexturePtr WebResourceCache::requestTexture( DocumentSessionId session, Uint64 generation,
+											 WebResourceRequest request, Callback callback ) {
+	request.kind = WebResourceKind::Image;
+	return this->request( session, generation, std::move( request ), std::move( callback ), true );
+}
+
+TexturePtr WebResourceCache::request( DocumentSessionId session, Uint64 generation,
+									  WebResourceRequest request, Callback callback,
+									  bool needsTexture, bool automaticScale ) {
 	std::string key;
+	TexturePtr texture;
+	TexturePtr placeholder;
+	std::shared_ptr<Impl::ImageLoad> imageLoad;
 	WebResourceResult immediate;
 	bool hasImmediate = false;
 	bool startRequest = false;
@@ -283,15 +374,45 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 	Uint64 operationId = 0;
 	Fetcher fetcher;
 	std::shared_ptr<Http::Pool> transport;
-	{
-		std::lock_guard<std::mutex> lock( mImpl->mutex );
+	for ( ;; ) {
+		std::unique_lock<std::mutex> lock( mImpl->mutex );
 		auto sessionIt = mImpl->sessions.find( session );
 		if ( sessionIt == mImpl->sessions.end() || sessionIt->second.generation != generation )
-			return;
-		key = makeRequestKey( sessionIt->second.partition, request );
+			return {};
+		auto& owner = sessionIt->second;
+		// Build the shared fields once; the 1x and requested-scale keys differ only in the suffix.
+		std::string sourceKey = makeRequestKeyBase( owner.partition, request );
+		key.reserve( sourceKey.capacity() );
+		key.assign( sourceKey );
+		appendRasterScale( sourceKey, 1.f );
+		appendRasterScale( key, request.svgScale );
+		auto source = mImpl->entries.find( sourceKey );
+		if ( source != mImpl->entries.end() && source->second.bitmap &&
+			 source->second.state == WebResourceLoadState::Ready ) {
+			key = sourceKey;
+		} else if ( automaticScale ) {
+			mImpl->retargetImage( owner, sourceKey, key, request.svgScale );
+		}
+		auto existing = mImpl->entries.find( key );
+		if ( needsTexture && !placeholder &&
+			 ( existing == mImpl->entries.end() || !existing->second.texture ) ) {
+			lock.unlock();
+			placeholder = TextureFactory::instance()->createEmptyTexture(
+				1, 1, 4, Color::Transparent, false,
+				request.clampToEdge ? Texture::ClampMode::ClampToEdge
+									: Texture::ClampMode::ClampRepeat,
+				request.mipmaps, request.compressTexture, canonicalURI( request.uri ) );
+			if ( !placeholder )
+				return {};
+			// The bitmap could have completed while the GPU allocation was in progress.
+			continue;
+		}
 		auto entryIt = mImpl->entries.try_emplace( key ).first;
 		auto& entry = entryIt->second;
-		entry.partition = sessionIt->second.partition;
+		entry.partition = owner.partition;
+		if ( !entry.texture )
+			entry.texture = std::move( placeholder );
+		texture = entry.texture;
 		mImpl->lease( session, entry );
 		if ( entry.state == WebResourceLoadState::Ready ) {
 			immediate = { true, entry.state, entry.status, {}, {}, entry.data, entry.texture };
@@ -311,26 +432,38 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 				operationEpoch = entry.operationEpoch;
 				operationId = entry.operationId;
 				entry.request = request;
+				if ( automaticScale ) {
+					imageLoad = std::make_shared<Impl::ImageLoad>(
+						Impl::ImageLoad{ key, std::move( sourceKey ), session } );
+					entry.imageLoad = imageLoad;
+					owner.pendingImages[imageLoad->sourceKey] = imageLoad;
+				}
 				entry.error.clear();
 				++mImpl->inFlightCount;
 				startRequest = true;
 				fetcher = mImpl->fetcher;
 				if ( !fetcher ) {
-					auto& pool = mImpl->transports[sessionIt->second.partition];
+					auto& pool = mImpl->transports[owner.partition];
 					if ( !pool )
 						pool = std::make_shared<Http::Pool>( mImpl->connectionOptions );
 					transport = pool;
 				}
+			} else if ( entry.imageLoad &&
+						( !automaticScale || entry.imageLoad->session != session ) ) {
+				// A fixed-scale caller or another scene needs this raster even if the first scene
+				// moves.
+				entry.imageLoad->canRetarget = false;
 			}
 		}
+		break;
 	}
 	if ( hasImmediate ) {
 		if ( callback )
 			callback( immediate );
-		return;
+		return texture;
 	}
 	if ( !startRequest )
-		return;
+		return texture;
 
 	// Collects the Set-Cookie fields of every response in the redirect chain, attributed to the
 	// origin that actually sent each one. Progress callbacks run on the request's worker before its
@@ -343,16 +476,23 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 	auto trail = std::make_shared<CookieTrail>();
 	trail->requested = request.uri;
 	auto weak = weak_from_this();
-	auto process = [weak, key, operationEpoch, operationId, trail]( Http::Response& response ) {
+	auto process = [weak, key, operationEpoch, operationId, trail, imageLoad,
+					kind = request.kind]( Http::Response& response ) {
 		auto self = weak.lock();
 		if ( !self )
 			return;
 
 		WebResourceRequest entryRequest;
 		TexturePtr texture;
+		const auto* bytes = reinterpret_cast<const Uint8*>( response.getBody().data() );
+		const size_t length = response.getBody().size();
+		bool success = response.isOK() && length != 0;
+		const bool isImage = kind == WebResourceKind::Image;
+		const bool isSvg =
+			success && isImage && Image::getFormat( bytes, length ) == Image::Format::SVG;
 		{
 			std::lock_guard<std::mutex> lock( self->mImpl->mutex );
-			auto entryIt = self->mImpl->entries.find( key );
+			auto entryIt = self->mImpl->entries.find( imageLoad ? imageLoad->key : key );
 			if ( entryIt == self->mImpl->entries.end() ||
 				 !self->mImpl->matchesOperation( entryIt->second, operationEpoch, operationId ) )
 				return;
@@ -360,6 +500,8 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 			// serialize unrelated cache operations or execute device work under the cache mutex.
 			entryRequest = entryIt->second.request;
 			texture = entryIt->second.texture;
+			if ( imageLoad && isSvg )
+				imageLoad->canRetarget = false;
 		}
 
 		const int status = static_cast<int>( response.getStatus() );
@@ -374,15 +516,13 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 		std::unique_ptr<Image> image;
 		std::string error;
 		std::size_t retainedBytes = 0;
-		bool success = response.isOK() && !response.getBody().empty();
 		Float rasterScale = 1.f;
+		bool bitmap = false;
 
-		if ( success && entryRequest.kind == WebResourceKind::Image ) {
-			const auto* bytes = reinterpret_cast<const Uint8*>( response.getBody().data() );
-			const size_t length = response.getBody().size();
+		if ( success && isImage ) {
 			Image::FormatConfiguration format;
-			if ( entryRequest.svgScale != 1.f &&
-				 Image::getFormat( bytes, length ) == Image::Format::SVG ) {
+			bitmap = !isSvg;
+			if ( !bitmap ) {
 				rasterScale = entryRequest.svgScale;
 				format.svgScale( rasterScale );
 			}
@@ -405,7 +545,7 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 			// code.
 			{
 				std::lock_guard<std::mutex> lock( self->mImpl->mutex );
-				auto entryIt = self->mImpl->entries.find( key );
+				auto entryIt = self->mImpl->entries.find( imageLoad ? imageLoad->key : key );
 				if ( entryIt == self->mImpl->entries.end() ||
 					 !self->mImpl->matchesOperation( entryIt->second, operationEpoch,
 													 operationId ) )
@@ -425,13 +565,15 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 		WebResourceRequest completedRequest;
 		{
 			std::lock_guard<std::mutex> lock( self->mImpl->mutex );
-			auto entryIt = self->mImpl->entries.find( key );
+			auto entryIt = self->mImpl->entries.find( imageLoad ? imageLoad->key : key );
 			// Key and state are insufficient here: clear() may have removed the old entry and a
 			// newer request may already have created another Loading entry for the same key.
 			if ( entryIt == self->mImpl->entries.end() ||
 				 !self->mImpl->matchesOperation( entryIt->second, operationEpoch, operationId ) )
 				return;
 			auto& entry = entryIt->second;
+			self->mImpl->finishImageLoad( entry.imageLoad );
+			entry.imageLoad.reset();
 			self->mImpl->inFlightCount--;
 			entry.status = status;
 			entry.lastUsed = self->mImpl->now();
@@ -441,6 +583,7 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 			if ( success ) {
 				entry.state = WebResourceLoadState::Ready;
 				entry.data = std::move( data );
+				entry.bitmap = bitmap;
 				entry.error.clear();
 				self->mImpl->retainedBytes += entry.retainedBytes;
 				result = { true,	   entry.state,	 entry.status, {}, std::move( cookies ),
@@ -463,6 +606,17 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 					subscribers.emplace_back( std::move( subscriber ) );
 				else
 					discardedSubscribers.emplace_back( std::move( subscriber ) );
+			}
+			if ( success && bitmap && completedRequest.svgScale != 1.f ) {
+				// The requested scale mattered until the response was identified. Retain
+				// bitmaps under the density-independent key for subsequent lookups.
+				auto bitmapKey = makeRequestKey( entry.partition, completedRequest, 1.f );
+				if ( self->mImpl->entries.find( bitmapKey ) == self->mImpl->entries.end() ) {
+					Impl::Entry bitmapEntry = std::move( entry );
+					self->mImpl->entries.erase( entryIt );
+					self->mImpl->entries.emplace( std::move( bitmapKey ),
+												  std::move( bitmapEntry ) );
+				}
 			}
 			self->mImpl->pruneLocked( releasedEntries );
 		}
@@ -526,47 +680,6 @@ void WebResourceCache::requestData( DocumentSessionId session, Uint64 generation
 			},
 			httpRequest, request.timeout );
 	}
-}
-
-TexturePtr WebResourceCache::requestTexture( DocumentSessionId session, Uint64 generation,
-											 WebResourceRequest request, Callback callback ) {
-	request.kind = WebResourceKind::Image;
-	std::string key;
-	TexturePtr texture;
-	{
-		std::lock_guard<std::mutex> lock( mImpl->mutex );
-		auto sessionIt = mImpl->sessions.find( session );
-		if ( sessionIt == mImpl->sessions.end() || sessionIt->second.generation != generation )
-			return {};
-		key = makeRequestKey( sessionIt->second.partition, request );
-		auto entry = mImpl->entries.find( key );
-		if ( entry != mImpl->entries.end() )
-			texture = entry->second.texture;
-	}
-	if ( !texture ) {
-		texture = TextureFactory::instance()->createEmptyTexture(
-			1, 1, 4, Color::Transparent, false,
-			request.clampToEdge ? Texture::ClampMode::ClampToEdge : Texture::ClampMode::ClampRepeat,
-			request.mipmaps, request.compressTexture, canonicalURI( request.uri ) );
-		TexturePtr discardedTexture;
-		{
-			std::lock_guard<std::mutex> lock( mImpl->mutex );
-			auto sessionIt = mImpl->sessions.find( session );
-			if ( sessionIt == mImpl->sessions.end() || sessionIt->second.generation != generation )
-				return {};
-			auto entry = mImpl->entries.try_emplace( key ).first;
-			if ( !entry->second.texture ) {
-				entry->second.texture = texture;
-			} else {
-				// A concurrent request won publication. Keep the discarded texture alive until
-				// after unlocking so its final GPU resource release cannot run under the cache
-				// mutex.
-				discardedTexture = std::move( texture );
-				texture = entry->second.texture;
-			}
-		}
-	}
-	requestData( session, generation, std::move( request ), std::move( callback ) );
 	return texture;
 }
 
@@ -650,6 +763,8 @@ void WebResourceCache::clear() {
 		// Values are moved out first so clearing the container cannot release resource handles
 		// while the cache mutex is held.
 		mImpl->entries.clear();
+		for ( auto& session : mImpl->sessions )
+			session.second.pendingImages.clear();
 		mImpl->retainedBytes = 0;
 		mImpl->inFlightCount = 0;
 	}

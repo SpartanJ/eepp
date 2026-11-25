@@ -1,15 +1,22 @@
+#include <eepp/core/small_vector.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/textureloader.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/md5.hpp>
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#include <eepp/system/packregistry.hpp>
+#endif
 #include <eepp/ui/drawableresolver.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/engine.hpp>
+#include <mutex>
 
 using namespace EE::Graphics;
 using namespace EE::Network;
@@ -20,35 +27,121 @@ namespace EE { namespace UI {
 namespace {
 
 std::string fileTexturePath( const std::string& name ) {
-	// Layouts also use file://assets/... for paths relative to the working directory.
-	std::string path = String::startsWith( name, "file://" ) ? name.substr( 7 ) : name;
+	std::string path;
+	if ( !String::startsWith( name, "file://" ) ) {
+		path = name;
+	} else {
+		URI uri( name );
+		if ( uri.getHost().empty() || uri.getHost() == "localhost" ) {
+			path = uri.getFSPath();
+		} else {
+			// Layouts also use file://assets/... for paths relative to the working directory.
+			URI::decode( std::string_view( name ).substr( 7 ), path );
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	if ( path.size() >= 3 && path[0] == '/' && String::isLetter( path[1] ) && path[2] == ':' )
-		path.erase( 0, 1 );
+			if ( !uri.getPath().empty() && !FileSystem::fileExists( path ) ) {
+				auto* packs = PackRegistry::instance();
+				if ( !packs->isFallbackToPacksActive() || !packs->exists( path ) )
+					path = uri.getFSPath();
+			}
 #endif
+		}
+	}
 	FileSystem::filePathRemoveProcessPath( path );
 	return path;
 }
 
-std::string fileTextureKey( std::string key, Float svgScale ) {
+// Bitmaps are cached under their path, so only scaled SVGs build a separate key in svgKey.
+const std::string& fileTextureKey( const std::string& path, Float svgScale, std::string& svgKey ) {
 	if ( svgScale == 1.f )
-		return key;
+		return path;
 	MD5::Context hash;
 	MD5::init( hash );
-	MD5::update( hash, key.data(), key.size() );
+	MD5::update( hash, path.data(), path.size() );
 	MD5::update( hash, &svgScale, sizeof( svgScale ) );
-	return "svg:" + MD5::result( hash ).toHexString();
+	svgKey = "svg:" + MD5::result( hash ).toHexString();
+	return svgKey;
 }
 
-TexturePtr loadFileTexture( ResourceScope& scope, const std::string& path, const std::string& key,
-							Float svgScale ) {
-	return scope.findOrLoadTexture( key, [&] {
-		Image::FormatConfiguration format;
-		format.svgScale( svgScale );
-		return TextureFactory::instance()->loadFromFile(
-			path, false, Texture::ClampMode::ClampToEdge, false, false, format );
-	} );
+TexturePtr loadFileTexture( const std::string& path, Float svgScale ) {
+	Image::FormatConfiguration format;
+	format.svgScale( svgScale );
+	return TextureFactory::instance()->loadFromFile( path, false, Texture::ClampMode::ClampToEdge,
+													 false, false, format );
 }
+
+struct FileTextureLoad {
+	TextureLoader loader;
+	std::once_flag preparation;
+	std::exception_ptr error;
+
+	FileTextureLoad( const std::string& path, Float scale ) : loader( path ) {
+		Image::FormatConfiguration format;
+		format.svgScale( scale );
+		loader.setFormatConfiguration( format );
+	}
+
+	void prepare() {
+		std::call_once( preparation, [this] {
+			try {
+				loader.prepare();
+			} catch ( ... ) {
+				error = std::current_exception();
+			}
+		} );
+	}
+
+	TexturePtr upload() {
+		prepare();
+		if ( error )
+			std::rethrow_exception( error );
+		loader.load();
+		return loader.getTexture();
+	}
+};
+
+class PendingTextureDrawable final : public TextureDrawable {
+  public:
+	struct Load {
+		TexturePtr texture;
+		// A pending image usually has its drawable and one clone.
+		SmallVector<std::weak_ptr<PendingTextureDrawable>, 2> drawables;
+
+		void finish( TexturePtr ready ) {
+			texture = std::move( ready );
+			for ( const auto& drawable : drawables ) {
+				if ( auto instance = drawable.lock() ) {
+					instance->mLoad.reset();
+					instance->setName( texture->getName() );
+					instance->setTexture( texture );
+				}
+			}
+		}
+	};
+
+	explicit PendingTextureDrawable( const std::shared_ptr<Load>& load ) :
+		TextureDrawable( load->texture ), mLoad( load ) {}
+
+	static TextureDrawablePtr New( const std::shared_ptr<Load>& load ) {
+		if ( load->texture )
+			return TextureDrawable::New( load->texture );
+		auto drawable = makeResource<PendingTextureDrawable>( load );
+		load->drawables.emplace_back( drawable );
+		return drawable;
+	}
+
+	DrawablePtr clone() const override {
+		auto load = mLoad.lock();
+		if ( !load )
+			return TextureDrawable::clone();
+		auto drawable = New( load );
+		drawable->setColor( mColor );
+		drawable->setPosition( mPosition );
+		return drawable;
+	}
+
+  private:
+	std::weak_ptr<Load> mLoad;
+};
 
 DrawablePtr parseDataURI( const std::string& name, ResourceScope& resourceScope ) {
 	MD5::Context hashContext;
@@ -124,65 +217,60 @@ bool DrawableResolver::isSvgPath( std::string_view path ) {
 	return path.size() >= 4 && String::iequals( path.substr( path.size() - 4 ), ".svg" );
 }
 
-bool DrawableResolver::requestFileTexture( const URI& uri,
-										   std::function<void( TexturePtr )> callback ) const {
-	if ( !mSceneNode || !mSceneNode->hasThreadPool() )
-		return false;
-	std::string path = uri.getFSPath();
-	const bool svg = isSvgPath( path );
-	if ( !svg && !Engine::instance()->isSharedGLContextEnabled() )
-		return false;
-	const Float scale = svg ? mSceneNode->getPixelDensity() : 1.f;
-	// Match the synchronous resolver's key. getFSPath() uses backslashes on Windows.
-	const std::string url = uri.toString();
-	std::string key = fileTextureKey(
-		fileTexturePath( String::startsWith( url, "file://" ) ? url : path ), scale );
-	auto scope = mSceneNode->getResourceScope();
-	if ( auto texture = scope->findTexture( key ) ) {
-		callback( std::move( texture ) );
-		return true;
-	}
-	auto state = mSceneNode->getAsyncResourceLoadState();
-	const Uint64 generation = state ? state->generation.load( std::memory_order_acquire ) : 0;
-	mSceneNode->getThreadPool()->run( [state = std::move( state ), generation,
-									   scope = std::move( scope ), path = std::move( path ),
-									   key = std::move( key ), scale, svg,
-									   callback = std::move( callback )]() mutable {
-		if ( !UISceneNode::isAsyncResourceLoadCurrent( state, generation ) )
-			return;
-		if ( svg ) {
-			Image::FormatConfiguration format;
-			const Float rasterScale = Image::getFormat( path ) == Image::Format::SVG ? scale : 1.f;
-			format.svgScale( rasterScale );
-			auto image = std::make_shared<Image>( std::move( path ), 0, format );
-			if ( !image->getPixelsPtr() )
-				return;
-			UISceneNode::runAsyncResourceOnMainThread(
-				state, generation,
-				[scope = std::move( scope ), key = std::move( key ), rasterScale,
-				 image = std::move( image ), callback = std::move( callback )]( UISceneNode* ) {
-					auto texture = scope->findOrLoadTexture( key, [&] {
-						auto loaded = TextureFactory::instance()->loadFromPixels(
-							image->getPixelsPtr(), image->getWidth(), image->getHeight(),
-							image->getChannels() );
-						if ( loaded )
-							loaded->setRasterScale( rasterScale );
-						return loaded;
-					} );
-					if ( texture )
-						callback( std::move( texture ) );
-				} );
-			return;
-		}
+DrawablePtr DrawableResolver::resolveAsync( const std::string& name,
+											bool firstSearchSprite ) const {
+	if ( !String::startsWith( name, "file://" ) )
+		return resolve( name, firstSearchSprite );
 
-		if ( auto texture = loadFileTexture( *scope, path, key, 1.f ) ) {
-			UISceneNode::runAsyncResourceOnMainThread(
-				state, generation,
-				[texture = std::move( texture ), callback = std::move( callback )](
-					UISceneNode* ) mutable { callback( std::move( texture ) ); } );
-		}
-	} );
-	return true;
+	const std::string path = fileTexturePath( name );
+	auto scope = mSceneNode ? mSceneNode->getResourceScope() : ResourceScopePtr{};
+	const Float density =
+		mSceneNode ? mSceneNode->getPixelDensity() : PixelDensity::getPixelDensity();
+	const Float scale = isSvgPath( path ) ? density : 1.f;
+	std::string svgKey;
+	const std::string& key = fileTextureKey( path, scale, svgKey );
+	if ( auto cached = ( scope ? scope.get() : mResourceScope )->findTexture( key ) )
+		return cached->clone();
+
+	if ( !mSceneNode )
+		return {};
+	auto pool = mSceneNode->getThreadPool();
+	if ( pool && !pool->numThreads() )
+		pool.reset();
+
+	// Allocated only for uncached files: the drawables wait on it until the texture is ready.
+	auto pending = std::make_shared<PendingTextureDrawable::Load>();
+	auto state = mSceneNode->getAsyncResourceLoadState();
+	const Uint64 generation = state->generation.load( std::memory_order_acquire );
+	auto result = ResourceScope::requestTextureLoad(
+		scope, key, pool.get(),
+		[&] {
+			// Construct on the scene thread: the loader captures renderer capabilities here.
+			auto load = std::make_shared<FileTextureLoad>( path, scale );
+			return ResourceScope::TextureLoad{
+				[load, state, generation] {
+					// A cancelled request skips decoding. Its upload is discarded.
+					if ( UISceneNode::isAsyncResourceLoadCurrent( state, generation ) )
+						load->prepare();
+				},
+				[load] { return load->upload(); } };
+		},
+		[state, generation]( std::function<void()> upload ) {
+			UISceneNode::postAsyncResourceOnMainThread(
+				state, generation, [upload = std::move( upload )]( UISceneNode* ) { upload(); } );
+		},
+		[state, generation, pending]( TexturePtr texture ) {
+			if ( texture ) {
+				UISceneNode::postAsyncResourceOnMainThread(
+					state, generation,
+					[pending, texture = std::move( texture )]( UISceneNode* ) mutable {
+						pending->finish( std::move( texture ) );
+					} );
+			}
+		} );
+	if ( !result )
+		return {};
+	return *result ? ( *result )->clone() : PendingTextureDrawable::New( pending );
 }
 
 DrawablePtr DrawableResolver::resolve( const std::string& name, bool firstSearchSprite ) const {
@@ -196,7 +284,9 @@ DrawablePtr DrawableResolver::resolve( const std::string& name, bool firstSearch
 	if ( String::startsWith( name, "file://" ) ) {
 		const std::string path = fileTexturePath( name );
 		const Float scale = isSvgPath( path ) ? PixelDensity::getPixelDensity() : 1.f;
-		auto texture = loadFileTexture( resourceScope, path, fileTextureKey( path, scale ), scale );
+		std::string svgKey;
+		auto texture = resourceScope.findOrLoadTexture(
+			fileTextureKey( path, scale, svgKey ), [&] { return loadFileTexture( path, scale ); } );
 		drawable = texture ? texture->clone() : DrawablePtr{};
 	} else if ( String::startsWith( name, "http://" ) || String::startsWith( name, "https://" ) ) {
 		TexturePtr texture = resourceScope.findTexture( name );

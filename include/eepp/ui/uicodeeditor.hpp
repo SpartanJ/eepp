@@ -971,6 +971,7 @@ class EE_API UICodeEditor : public UITouchDraggableWidget, public TextDocument::
 	Vector2f mScroll;
 	Float mMouseWheelScroll;
 	Float mFontSize;
+	FontSizeSource mFontSizeSource;
 	StyleSheetLength mLineSpacing{ 0.f, StyleSheetLength::Px };
 	Float mLineNumberPaddingLeft;
 	Float mLineNumberPaddingRight;
@@ -1300,6 +1301,8 @@ class EE_API UICodeEditor : public UITouchDraggableWidget, public TextDocument::
 	}
 
 	bool setInternalFontSize( const Float& size );
+
+	bool setBaseFontSize( const Float& size );
 
 	virtual void onAutoSize();
 

@@ -1,5 +1,6 @@
 #include "physicaldisplaymetrics.hpp"
 #include <cmath>
+#include <eepp/core/string.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
 #include <memory>
@@ -10,6 +11,8 @@
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
+#undef None
+#undef Status
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 #include <shellscalingapi.h>
 #include <windows.h>
@@ -17,9 +20,11 @@
 #include <eepp/window/platform/macos/platformhelper.hpp>
 #endif
 
+#include <eepp/window/displaymanager.hpp>
+
 namespace EE { namespace Window { namespace Private {
 
-using System::Sys;
+using namespace EE::System;
 
 #if defined( EE_HAS_PHYSICAL_X11_METRICS )
 static std::string getX11MonitorId( void* x11, void* randr, ::Display* connection, RROutput id,
@@ -35,9 +40,9 @@ static std::string getX11MonitorId( void* x11, void* randr, ::Display* connectio
 	if ( !atom || !free || !property )
 		return {};
 	const Atom edid = atom( connection, "EDID", True );
-	if ( edid == None )
+	if ( !edid )
 		return {};
-	Atom type = None;
+	Atom type{};
 	int format = 0;
 	unsigned long count = 0, remaining = 0;
 	unsigned char* bytes = nullptr;
@@ -49,7 +54,7 @@ static std::string getX11MonitorId( void* x11, void* randr, ::Display* connectio
 	// Include the connector to distinguish displays with identical EDID blocks.
 	std::string identity( output->name, output->nameLen );
 	identity.append( reinterpret_cast<const char*>( data.get() ), count );
-	return "x11-" + System::MD5::fromString( identity ).toHexString();
+	return "x11-" + MD5::fromString( identity ).toHexString();
 }
 
 static Float getX11DisplayMetrics( const Math::Rect& bounds, std::string* identity ) {
@@ -185,8 +190,7 @@ std::string PhysicalDisplayMetrics::getPersistentMonitorId( void* handle ) {
 	if ( !EnumDisplayDevicesW( info.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME ) ||
 		 !device.DeviceID[0] )
 		return {};
-	return "win-" +
-		   System::MD5::fromString( String::fromWide( device.DeviceID ).toUtf8() ).toHexString();
+	return "win-" + MD5::fromString( String::fromWide( device.DeviceID ).toUtf8() ).toHexString();
 }
 #endif
 
@@ -206,6 +210,25 @@ std::string PhysicalDisplayMetrics::getPersistentId( const Math::Rect& bounds ) 
 #else
 	return {};
 #endif
+}
+
+std::string PhysicalDisplayMetrics::getWaylandPersistentId( const Display* display,
+															DisplayManager* manager ) {
+	if ( !display || !manager || display->getIndex() < 0 )
+		return {};
+
+	const auto name = String::trim( display->getName(), " \t\r\n" );
+	// SDL generates numeric names from display indices or instance IDs when no label is given.
+	if ( name.empty() || String::isNumber( name ) || String::iequals( name, "unknown" ) )
+		return {};
+
+	const int count = manager->getDisplayCount();
+	for ( int index = 0; index < count; ++index ) {
+		auto* other = manager->getDisplayIndex( index );
+		if ( other && other != display && String::trim( other->getName(), " \t\r\n" ) == name )
+			return {};
+	}
+	return "wayland-" + MD5::fromString( name ).toHexString();
 }
 
 }}} // namespace EE::Window::Private

@@ -47,8 +47,6 @@ void UIImage::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 }
 
 UIImage::~UIImage() {
-	if ( mAsyncImageAlive )
-		mAsyncImageAlive->store( false, std::memory_order_release );
 	clearDrawable();
 }
 
@@ -63,7 +61,6 @@ bool UIImage::isType( const Uint32& type ) const {
 UIImage* UIImage::setDrawable( DrawablePtr drawable ) {
 	if ( drawable == mDrawable )
 		return this;
-	++mRemoteImageLoadId;
 
 	Sizef oldSize( mSize );
 
@@ -87,11 +84,11 @@ UIImage* UIImage::setDrawable( DrawablePtr drawable ) {
 						->connectResourceChange(
 							[this]( DrawableResource& ) { onDrawableResourceChange(); } );
 			}
-
-			if ( isSubscribedForScheduledUpdate() )
-				unsubscribeScheduledUpdate();
 		}
 	}
+	if ( ( !mDrawable || mDrawable->getDrawableType() != Drawable::SPRITE ) &&
+		 isSubscribedForScheduledUpdate() )
+		unsubscribeScheduledUpdate();
 
 	onAutoSize();
 
@@ -198,6 +195,11 @@ void UIImage::calcDestSize() {
 			return;
 
 		Sizef pxSize( mDrawable->getPixelsSize() );
+		if ( pxSize.x <= 0 || pxSize.y <= 0 ) {
+			mDestSize = Sizef::Zero;
+			autoAlign();
+			return;
+		}
 		Float Scale1 = ( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) / pxSize.x;
 		Float Scale2 = ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / pxSize.y;
 
@@ -294,19 +296,6 @@ void UIImage::onDrawableResourceChange() {
 			notifyLayoutAttrChangeParent( LayoutInvalidation::ParentReplacedFormatting );
 		invalidateDraw();
 	} );
-}
-
-bool UIImage::loadFileDrawable( const Network::URI& uri ) {
-	UISceneNode* scene = getUISceneNode();
-	if ( !scene || !scene->hasThreadPool() )
-		return false;
-	if ( !mAsyncImageAlive )
-		mAsyncImageAlive = std::make_shared<std::atomic<bool>>( true );
-	return scene->getDrawableResolver().requestFileTexture(
-		uri, [alive = mAsyncImageAlive, loadId = mRemoteImageLoadId, this]( TexturePtr texture ) {
-			if ( alive->load( std::memory_order_acquire ) && loadId == mRemoteImageLoadId )
-				setDrawable( std::move( texture ) );
-		} );
 }
 
 void UIImage::loadRemoteDrawable( const Network::URI& uri ) {
@@ -432,9 +421,10 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			applyTextAlignProperty( attribute );
 			break;
 		case PropertyId::Src: {
-			++mRemoteImageLoadId;
-			if ( attribute.getValue().empty() )
-				return true;
+			if ( attribute.getValue().empty() ) {
+				setDrawable( DrawablePtr{} );
+				break;
+			}
 
 			std::string path( attribute.getValue() );
 			URI uri( path );
@@ -450,8 +440,12 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 				break;
 			}
 
-			if ( mDeferLoad && uri.getScheme() == "file" && loadFileDrawable( uri ) )
-				break;
+			if ( mDeferLoad && scene && uri.getScheme() == "file" ) {
+				if ( auto drawable = scene->getDrawableResolver().resolveAsync( path ) ) {
+					setDrawable( std::move( drawable ) );
+					break;
+				}
+			}
 
 			DrawablePtr createdDrawable =
 				StyleSheetSpecification::instance()->getDrawableImageParser().createDrawable(

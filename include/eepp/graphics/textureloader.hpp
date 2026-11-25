@@ -109,6 +109,11 @@ class EE_API TextureLoader {
 	/** Starts loading the texture */
 	void load();
 
+	/** Reads and decodes the source without uploading it. May run on a worker, including after
+	 * the renderer is destroyed: compressed-format support is captured when the loader is
+	 * constructed. */
+	void prepare();
+
   protected:
 	Uint32 mLoadType{ 0 };	   // From memory, from path, from pack
 	Uint8* mPixels{ nullptr }; // Texture Info
@@ -120,6 +125,8 @@ class EE_API TextureLoader {
 	unsigned int mWidth{ 0 };
 	unsigned int mHeight{ 0 };
 	bool mMipmap{ false };
+	// Compressed formats the renderer can upload directly; fills existing padding.
+	Uint8 mDirectUploadSupport{ 0 };
 	Int32 mChannels{ 0 };
 	Texture::ClampMode mClampMode{ Texture::ClampMode::ClampToEdge };
 	bool mCompressTexture{ false };
@@ -142,6 +149,10 @@ class EE_API TextureLoader {
 	int mIsCompressed{ 0 };
 
 	Clock mTE;
+
+	void captureDirectUploadSupport();
+
+	bool supportsDirectUpload( Uint8 format );
 
 	void loadFile();
 	void freePixels();

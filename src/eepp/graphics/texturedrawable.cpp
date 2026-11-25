@@ -7,12 +7,20 @@ TextureDrawablePtr TextureDrawable::New( TexturePtr texture ) {
 }
 
 TextureDrawable::TextureDrawable( TexturePtr texture ) :
-	DrawableResource( Drawable::TEXTUREDRAWABLE, texture ? texture->getName() : "" ),
-	mTexture( std::move( texture ) ) {
+	DrawableResource( Drawable::TEXTUREDRAWABLE, texture ? texture->getName() : "" ) {
+	setTexture( std::move( texture ) );
+}
+
+void TextureDrawable::setTexture( TexturePtr texture ) {
+	if ( texture == mTexture )
+		return;
+	mTextureChangeConnection.disconnect();
+	mTexture = std::move( texture );
 	if ( mTexture ) {
 		mTextureChangeConnection =
 			mTexture->connectResourceChange( [this]( DrawableResource& ) { onResourceChange(); } );
 	}
+	onResourceChange();
 }
 
 Sizef TextureDrawable::getSize() {

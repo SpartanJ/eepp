@@ -1,6 +1,7 @@
 #include <eepp/window/backend/SDL3/backendsdl3.hpp>
 #include <eepp/window/backend/SDL3/base.hpp>
 #include <eepp/window/backend/SDL3/displaymanagersdl3.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/window/platform/physicaldisplaymetrics.hpp>
 
 #ifdef EE_BACKEND_SDL3
@@ -8,6 +9,8 @@
 #include <cstdlib>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL3 {
+
+using namespace EE::Window::Private;
 
 DisplaySDL3::DisplaySDL3( int index, SDL_DisplayID displayId ) :
 	Display( index ), mDisplayId( displayId ) {}
@@ -47,17 +50,23 @@ const int& DisplaySDL3::getIndex() const {
 
 std::string DisplaySDL3::getPersistentId() const {
 	const char* driver = SDL_GetCurrentVideoDriver();
-	if ( !driver || ( std::strcmp( driver, "x11" ) != 0 && std::strcmp( driver, "cocoa" ) != 0 &&
-					  std::strcmp( driver, "windows" ) != 0 ) )
+	if ( !driver )
+		return {};
+	if ( std::strcmp( driver, "wayland" ) == 0 ) {
+		return PhysicalDisplayMetrics::getWaylandPersistentId(
+			this, Engine::instance()->getDisplayManager() );
+	}
+	if ( std::strcmp( driver, "x11" ) != 0 && std::strcmp( driver, "cocoa" ) != 0 &&
+		 std::strcmp( driver, "windows" ) != 0 )
 		return {};
 #if EE_PLATFORM == EE_PLATFORM_WIN && defined( SDL_PROP_DISPLAY_WINDOWS_HMONITOR_POINTER )
 	if ( auto* monitor =
 			 SDL_GetPointerProperty( SDL_GetDisplayProperties( mDisplayId ),
 									 SDL_PROP_DISPLAY_WINDOWS_HMONITOR_POINTER, nullptr ) ) {
-		return Private::PhysicalDisplayMetrics::getPersistentMonitorId( monitor );
+		return PhysicalDisplayMetrics::getPersistentMonitorId( monitor );
 	}
 #endif
-	return Private::PhysicalDisplayMetrics::getPersistentId( getBounds() );
+	return PhysicalDisplayMetrics::getPersistentId( getBounds() );
 }
 
 Float DisplaySDL3::getPhysicalDPI() {
@@ -68,7 +77,7 @@ Float DisplaySDL3::getPhysicalDPI() {
 	const auto mode = getCurrentMode();
 	const Sizei resolution( mode.Width, mode.Height );
 	if ( mPhysicalDPI < 0.f || resolution != mPhysicalDPIResolution ) {
-		mPhysicalDPI = Private::PhysicalDisplayMetrics::getDPI( getBounds() );
+		mPhysicalDPI = PhysicalDisplayMetrics::getDPI( getBounds() );
 		mPhysicalDPIResolution = resolution;
 	}
 	return mPhysicalDPI;

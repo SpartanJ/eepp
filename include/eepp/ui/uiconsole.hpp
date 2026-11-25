@@ -165,6 +165,7 @@ class EE_API UIConsole : public UIWidget,
 
   protected:
 	virtual void onPixelDensityChange( Float oldDensity, Float newDensity );
+	void setInternalFontSize( Float size );
 
 	struct TextCache {
 		Text text;
@@ -180,6 +181,7 @@ class EE_API UIConsole : public UIWidget,
 	std::deque<String> mLastCommands;
 	std::vector<TextCache> mTextCache;
 	UIFontStyleConfig mFontStyleConfig;
+	FontSizeSource mFontSizeSource;
 	Uint32 mMaxLogLines{ 8192 };
 	Uint32 mLigatureFeatures{ 0 };
 	TextDocument mDoc;

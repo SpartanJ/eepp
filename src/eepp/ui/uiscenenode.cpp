@@ -1247,8 +1247,10 @@ TexturePtr UISceneNode::requestWebTexture( WebResourceRequest request,
 										   WebResourceCache::Callback callback ) {
 	if ( !mWebResourceCache || !mDocumentSessionId )
 		return {};
-	if ( request.svgScale == 1.f && DrawableResolver::isSvgPath( request.uri.getPath() ) )
+	const bool automaticScale = request.svgScale == 1.f;
+	if ( automaticScale )
 		request.svgScale = getPixelDensity();
+	request.kind = WebResourceKind::Image;
 	if ( !mReferer.empty() )
 		request.headers.emplace( "referer", mReferer.toString() );
 	std::string cookie = getCookieManager().getCookieHeader( request.uri.getAuthority() );
@@ -1274,8 +1276,9 @@ TexturePtr UISceneNode::requestWebTexture( WebResourceRequest request,
 		if ( callback )
 			callback( result );
 	};
-	return mWebResourceCache->requestTexture( mDocumentSessionId, getDocumentGeneration(),
-											  std::move( request ), std::move( wrapped ) );
+	return mWebResourceCache->request( mDocumentSessionId, getDocumentGeneration(),
+									   std::move( request ), std::move( wrapped ), true,
+									   automaticScale );
 }
 
 static std::string getErrorContext( size_t offset, std::string_view content ) {
@@ -2085,8 +2088,8 @@ CSS::MediaFeatures UISceneNode::getMediaFeatures() const {
 	media.color = 8;
 	media.monochrome = 0;
 	media.colorIndex = 256;
-	media.resolution = static_cast<int>( getDPI() );
 	media.pixelDensity = PixelDensity::getPixelDensity();
+	media.resolution = media.pixelDensity * 96.f;
 	media.prefersColorScheme =
 		mColorSchemePreference == ColorSchemePreference::Dark ? "dark" : "light";
 	media.prefersContrast = ContrastPreferences::toString( mContrastPreference );
@@ -2858,17 +2861,20 @@ void UISceneNode::runAsyncResourceOnMainThread(
 		return;
 	}
 
-	{
-		std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
-		const auto queueState =
-			sAsyncResourceMainThreadQueueState.load( std::memory_order_relaxed );
-		if ( queueState == AsyncResourceMainThreadQueueState::Closing ||
-			 ( queueState == AsyncResourceMainThreadQueueState::Open &&
-			   isAsyncResourceLoadCurrent( resourceState, generation ) ) ) {
-			sAsyncResourceMainThreadQueue.push_back(
-				{ resourceState, generation, std::move( func ), delay, Clock() } );
-			sAsyncResourceMainThreadPending.store( true, std::memory_order_release );
-		}
+	postAsyncResourceOnMainThread( resourceState, generation, std::move( func ), delay );
+}
+
+void UISceneNode::postAsyncResourceOnMainThread(
+	const std::shared_ptr<AsyncResourceLoadState>& resourceState, Uint64 generation,
+	AsyncResourceMainThreadFunc func, const Time& delay ) {
+	std::lock_guard<std::mutex> lock( sAsyncResourceMainThreadMutex );
+	const auto queueState = sAsyncResourceMainThreadQueueState.load( std::memory_order_relaxed );
+	if ( queueState == AsyncResourceMainThreadQueueState::Closing ||
+		 ( queueState == AsyncResourceMainThreadQueueState::Open &&
+		   isAsyncResourceLoadCurrent( resourceState, generation ) ) ) {
+		sAsyncResourceMainThreadQueue.push_back(
+			{ resourceState, generation, std::move( func ), delay, Clock() } );
+		sAsyncResourceMainThreadPending.store( true, std::memory_order_release );
 	}
 }
 

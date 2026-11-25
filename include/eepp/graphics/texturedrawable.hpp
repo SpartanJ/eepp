@@ -28,6 +28,8 @@ class EE_API TextureDrawable : public DrawableResource {
 	const TexturePtr& getTexture() const;
 
   protected:
+	void setTexture( TexturePtr texture );
+
 	TexturePtr mTexture;
 	DrawableResourceConnection mTextureChangeConnection;
 };

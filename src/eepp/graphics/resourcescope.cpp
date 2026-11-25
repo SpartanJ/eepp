@@ -5,6 +5,7 @@
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/window/engine.hpp>
 
 using namespace EE::System;
@@ -75,31 +76,201 @@ TexturePtr ResourceScope::findOrLoadTexture( const std::string& key,
 
 	std::shared_future<TexturePtr> result;
 	std::packaged_task<TexturePtr()> task;
+	std::shared_ptr<DeferredTextureLoad> deferred;
+	PendingTextureLoad expired;
 	{
 		Lock lock( mMutex );
 		auto pending = mPendingTextureLoads.find( key );
+		if ( pending != mPendingTextureLoads.end() && pending->second.deferred ) {
+			deferred = pending->second.deferred->lock();
+			if ( !deferred ) {
+				expired = std::move( pending->second );
+				mPendingTextureLoads.erase( pending );
+				pending = mPendingTextureLoads.end();
+			}
+		}
 		if ( pending != mPendingTextureLoads.end() ) {
-			result = pending->second;
+			result = pending->second.result;
+			if ( deferred && deferred->upload.valid() ) {
+				// A thread that can upload finishes a deferred load directly. Waiting on the scene
+				// would block the scene thread forever, and could block a worker behind its own
+				// queued preparation or while the scene thread waits for that worker. A worker
+				// without a shared GL context could not upload this texture itself either.
+				if ( !canUploadTextures() )
+					return {};
+				task = std::move( deferred->upload );
+			}
 		} else {
-			task = std::packaged_task<TexturePtr()>( [&] {
-				// A load may have finished between the initial lookup and acquiring mMutex.
-				if ( auto texture = findTexture( key ) )
-					return texture;
-				auto texture = load();
-				if ( texture )
-					publishLocal( key, texture );
-				return texture;
-			} );
+			task = textureLoadTask( key, load );
 			result = task.get_future().share();
-			mPendingTextureLoads.emplace( key, result );
+			mPendingTextureLoads.emplace( key, PendingTextureLoad{ result, {}, {} } );
 		}
 	}
-	if ( task.valid() ) {
-		task();
-		Lock lock( mMutex );
-		mPendingTextureLoads.erase( key );
+
+	if ( task.valid() )
+		runTextureLoad( key, std::move( task ), result );
+	// Another thread that can upload is finishing a taken deferred load. Drop our ownership
+	// before waiting so a discarded load still releases its promise.
+	const bool wasDeferred = static_cast<bool>( deferred );
+	deferred.reset();
+	try {
+		return result.get();
+	} catch ( const std::future_error& error ) {
+		if ( wasDeferred && error.code() == std::future_errc::broken_promise )
+			return {};
+		throw;
 	}
-	return result.get();
+}
+
+bool ResourceScope::canUploadTextures() {
+	return Engine::isMainThread() ||
+		   ( Engine::isEngineRunning() && Engine::instance()->isSharedGLContextEnabled() );
+}
+
+ResourceScope::DeferredTextureLoad::DeferredTextureLoad( const ResourceScopePtr& scope,
+														 const std::string& key ) :
+	scope( scope ), key( key ) {}
+
+ResourceScope::DeferredTextureLoad::~DeferredTextureLoad() {
+	if ( auto owner = scope.lock() )
+		owner->cancelUnownedTextureLoad( key );
+}
+
+std::optional<TexturePtr>
+ResourceScope::requestTextureLoad( const ResourceScopePtr& scope, const std::string& key,
+								   ThreadPool* pool, const std::function<TextureLoad()>& createLoad,
+								   PostTextureUpload dispatch, TextureLoadCallback ready ) {
+	if ( auto texture = scope->findTexture( key ) )
+		return texture;
+
+	std::shared_ptr<DeferredTextureLoad> deferred;
+	std::function<void()> prepare;
+	PendingTextureLoad expired;
+	{
+		Lock lock( scope->mMutex );
+		auto pending = scope->mPendingTextureLoads.find( key );
+		if ( pending != scope->mPendingTextureLoads.end() && pending->second.deferred ) {
+			deferred = pending->second.deferred->lock();
+			if ( !deferred ) {
+				expired = std::move( pending->second );
+				scope->mPendingTextureLoads.erase( pending );
+				pending = scope->mPendingTextureLoads.end();
+			}
+		}
+		if ( pending == scope->mPendingTextureLoads.end() ) {
+			if ( auto texture = scope->mLocalCatalog->findTexture( key ) )
+				return texture;
+			if ( !pool )
+				return std::nullopt;
+			auto load = createLoad();
+			prepare = std::move( load.prepare );
+			deferred = std::make_shared<DeferredTextureLoad>( scope, key );
+			deferred->upload = scope->textureLoadTask( key, std::move( load.upload ) );
+			auto result = deferred->upload.get_future().share();
+			pending =
+				scope->mPendingTextureLoads
+					.emplace( key,
+							  PendingTextureLoad{ std::move( result ),
+												  {},
+												  std::weak_ptr<DeferredTextureLoad>{ deferred } } )
+					.first;
+		}
+		pending->second.callbacks.push_back( std::move( ready ) );
+		if ( !deferred || !deferred->upload.valid() )
+			return TexturePtr{};
+		if ( !deferred->prepared ) {
+			deferred->dispatchers.push_back( std::move( dispatch ) );
+			dispatch = {};
+		}
+	}
+
+	// The key lives in the load, so the queued closures don't copy it.
+	const auto finish = [scope, deferred] { scope->finishTextureLoad( deferred ); };
+	if ( dispatch )
+		dispatch( finish );
+	if ( prepare ) {
+		pool->run( [scope, deferred, prepare = std::move( prepare ), finish] {
+			prepare();
+			decltype( deferred->dispatchers ) dispatchers;
+			{
+				Lock lock( scope->mMutex );
+				deferred->prepared = true;
+				dispatchers.swap( deferred->dispatchers );
+			}
+			for ( auto& post : dispatchers )
+				post( finish );
+		} );
+	}
+	return TexturePtr{};
+}
+
+void ResourceScope::finishTextureLoad( const std::shared_ptr<DeferredTextureLoad>& deferred ) {
+	const std::string& key = deferred->key;
+	std::packaged_task<TexturePtr()> task;
+	std::shared_future<TexturePtr> result;
+	std::shared_ptr<DeferredTextureLoad> pendingLoad;
+	{
+		Lock lock( mMutex );
+		auto pending = mPendingTextureLoads.find( key );
+		if ( pending == mPendingTextureLoads.end() || !pending->second.deferred )
+			return;
+		pendingLoad = pending->second.deferred->lock();
+		if ( pendingLoad != deferred )
+			return;
+		task = std::move( deferred->upload );
+		result = pending->second.result;
+	}
+	if ( task.valid() )
+		runTextureLoad( key, std::move( task ), result );
+}
+
+void ResourceScope::cancelUnownedTextureLoad( const std::string& key ) {
+	PendingTextureLoad expired;
+	{
+		Lock lock( mMutex );
+		auto pending = mPendingTextureLoads.find( key );
+		if ( pending == mPendingTextureLoads.end() || !pending->second.deferred ||
+			 !pending->second.deferred->expired() )
+			return;
+		expired = std::move( pending->second );
+		mPendingTextureLoads.erase( pending );
+	}
+}
+
+std::packaged_task<TexturePtr()>
+ResourceScope::textureLoadTask( const std::string& key, std::function<TexturePtr()> load ) {
+	return std::packaged_task<TexturePtr()>( [this, key, load = std::move( load )] {
+		// A load may have finished between the initial lookup and acquiring mMutex.
+		if ( auto texture = findTexture( key ) )
+			return texture;
+		auto texture = load();
+		if ( texture )
+			publishLocal( key, texture );
+		return texture;
+	} );
+}
+
+void ResourceScope::runTextureLoad( const std::string& key, std::packaged_task<TexturePtr()> task,
+									const std::shared_future<TexturePtr>& result ) {
+	task();
+	decltype( PendingTextureLoad::callbacks ) callbacks;
+	{
+		Lock lock( mMutex );
+		auto pending = mPendingTextureLoads.find( key );
+		callbacks.swap( pending->second.callbacks );
+		mPendingTextureLoads.erase( pending );
+	}
+	if ( callbacks.empty() )
+		return;
+
+	TexturePtr texture;
+	try {
+		texture = result.get();
+	} catch ( ... ) {
+		// Report failure to subscribers. Synchronous callers receive the exception via get().
+	}
+	for ( auto& callback : callbacks )
+		callback( texture );
 }
 
 DrawablePtr ResourceScope::findDrawableSource( const ResourceKey& key ) const {
@@ -482,7 +653,7 @@ bool ResourceScope::removeCatalog( const ResourceCatalogPtr& catalog ) {
 }
 
 void ResourceScope::clearImports() {
-	std::vector<ResourceCatalogPtr> imports;
+	decltype( mImports ) imports;
 	{
 		Lock lock( mMutex );
 		imports = std::move( mImports );

@@ -28,6 +28,10 @@
 namespace EE { namespace UI {
 
 void UINode::onPixelDensityChange( Float oldDensity, Float newDensity ) {
+	if ( mBackground )
+		mBackground->invalidate();
+	if ( mForeground )
+		mForeground->invalidate();
 	rescaleLogicalOrigins( newDensity / oldDensity );
 	if ( mPhysicalGeometry & PhysicalPositionX )
 		mDpPos.x = PixelDensity::pxToDp( mPosition.x );
@@ -59,17 +63,16 @@ void UINode::rebuildPixelDensityGeometry() {
 	invalidateDraw();
 }
 
-Float UINode::fontSizeForPixelDensityChange( Float size, Float oldDensity,
-											 Float newDensity ) const {
-	if ( mUISceneNode ) {
-		const Float defaultSize = mUISceneNode->getUIThemeManager()->getDefaultFontSize();
-		const Float previousDefault = defaultSize * oldDensity / newDensity;
-		// Reconstruct theme defaults from their retained logical source. Repeatedly scaling an
-		// integer character size would otherwise lose a pixel on fractional round trips.
-		if ( size == previousDefault || size == eefloor( previousDefault ) )
-			return defaultSize;
-	}
-	return size * newDensity / oldDensity;
+UINode::FontSizeSource UINode::explicitFontSize( Float pixels ) const {
+	return { pixels,
+			 mUISceneNode ? mUISceneNode->getPixelDensity() : PixelDensity::getPixelDensity() };
+}
+
+Float UINode::resolveFontSize( const FontSizeSource& source, Float density,
+							   Float currentSize ) const {
+	if ( source.density > 0.f )
+		return source.pixels * ( density / source.density );
+	return mUISceneNode ? mUISceneNode->getUIThemeManager()->getDefaultFontSize() : currentSize;
 }
 
 UINode* UINode::New() {

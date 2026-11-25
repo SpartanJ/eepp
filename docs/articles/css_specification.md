@@ -3501,6 +3501,7 @@ The following at-rules are currently supported:
   The `pixel-density` feature is specified as a `float` value representing the current pixel density
   used by the application. It is a range feature, meaning that you can also use the prefixed
   min-pixel-density and max-pixel-density variants to query minimum and maximum values, respectively.
+  The `resolution` feature uses the same scene density, with `1dppx` equivalent to `96dpi`.
 
   Also, eepp only uses `screen` media type.
 

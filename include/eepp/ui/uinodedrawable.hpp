@@ -133,6 +133,8 @@ class EE_API UINodeDrawable : public Drawable {
 		const std::string& getAttachmentEq() const;
 
 	  protected:
+		friend class UINodeDrawable;
+
 		UINodeDrawable* mContainer;
 		Sizef mSize;
 		Sizef mDrawableSize;
@@ -142,6 +144,7 @@ class EE_API UINodeDrawable : public Drawable {
 		std::string mSizeEq;
 		bool mNeedsUpdate{ false };
 		bool mColorWasSet{ false };
+		Float mRemoteDrawableDensity{ 0.f };
 		DrawablePtr mDrawable;
 		std::string mDrawableRef;
 		Sizef mDrawableRefSize;
@@ -159,6 +162,8 @@ class EE_API UINodeDrawable : public Drawable {
 		virtual void onColorFilterChange();
 
 		void update();
+
+		bool needsRemoteDrawableRefresh() const;
 
 		DrawablePtr createDrawable( const std::string& value, const Sizef& size );
 

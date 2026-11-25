@@ -179,8 +179,9 @@ void UINodeDrawable::setDrawable( int index, DrawablePtr drawable ) {
 }
 
 void UINodeDrawable::setDrawable( int index, const std::string& drawable ) {
-	if ( drawable != getLayer( index )->getDrawableRef() ) {
-		getLayer( index )->setDrawable( drawable );
+	auto* layer = getLayer( index );
+	if ( drawable != layer->getDrawableRef() || layer->needsRemoteDrawableRefresh() ) {
+		layer->setDrawable( drawable );
 		invalidateOwner();
 	}
 }
@@ -262,6 +263,8 @@ void UINodeDrawable::setClipEnabled( bool clipEnabled ) {
 void UINodeDrawable::invalidate() {
 	mNeedsUpdate = true;
 	mBackgroundColor.invalidate();
+	for ( auto& layer : mGroup )
+		layer.second->invalidate();
 }
 
 void UINodeDrawable::invalidateOwner() {
@@ -666,12 +669,15 @@ void UINodeDrawable::LayerDrawable::setDrawable( DrawablePtr drawable ) {
 
 	mDrawable = std::move( drawable );
 	mDrawableRef = "";
+	mRemoteDrawableDensity = 0.f;
 	invalidate();
 
 	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
-		mResourceChangeConnection =
-			reinterpret_cast<DrawableResource*>( mDrawable.get() )
-				->connectResourceChange( [this]( DrawableResource& ) { invalidate(); } );
+		mResourceChangeConnection = reinterpret_cast<DrawableResource*>( mDrawable.get() )
+										->connectResourceChange( [this]( DrawableResource& ) {
+											invalidate();
+											mContainer->invalidateOwner();
+										} );
 	}
 }
 
@@ -689,6 +695,7 @@ void UINodeDrawable::LayerDrawable::setDrawable( const std::string& drawableRef 
 
 	if ( loadRemoteDrawable( drawableRef ) ) {
 		mDrawableRef = drawableRef;
+		invalidate();
 		return;
 	}
 
@@ -728,31 +735,25 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 	if ( uri.getScheme() != "http" && uri.getScheme() != "https" )
 		return false;
 
-	if ( value == mDrawableRef && mDrawable != nullptr &&
-		 !DrawableResolver::isSvgPath( uri.getPath() ) )
+	const Float density = scene->getPixelDensity();
+	if ( value == mDrawableRef && mDrawable && density == mRemoteDrawableDensity )
 		return true;
 
 	std::string url = uri.toString();
-	if ( TexturePtr texture = scene->getResourceScope()->findTexture( url ) ) {
-		TextureDrawable* current =
-			mDrawable && mDrawable->getDrawableType() == Drawable::TEXTUREDRAWABLE
-				? static_cast<TextureDrawable*>( mDrawable.get() )
-				: nullptr;
-		if ( !current || current->getTexture() != texture )
-			setDrawable( std::move( texture ) );
-		return true;
+	TexturePtr texture = scene->getResourceScope()->findTexture( url );
+	if ( !texture ) {
+		WebResourceRequest request;
+		request.uri = uri;
+		request.kind = WebResourceKind::Image;
+		request.proxy = Http::getEnvProxyURI();
+		texture = scene->requestWebTexture(
+			std::move( request ), [url = std::move( url )]( const WebResourceResult& result ) {
+				if ( !result.success )
+					Log::debug( "UINodeDrawable::LayerDrawable::loadRemoteDrawable: could not "
+								"download image: %s. Error: %d\n%s",
+								url, result.status, result.error );
+			} );
 	}
-	WebResourceRequest request;
-	request.uri = uri;
-	request.kind = WebResourceKind::Image;
-	request.proxy = Http::getEnvProxyURI();
-	TexturePtr texture = scene->requestWebTexture(
-		std::move( request ), [url = std::move( url )]( const WebResourceResult& result ) {
-			if ( !result.success )
-				Log::debug( "UINodeDrawable::LayerDrawable::loadRemoteDrawable: could not "
-							"download image: %s. Error: %d\n%s",
-							url, result.status, result.error );
-		} );
 	if ( texture ) {
 		TextureDrawable* current =
 			mDrawable && mDrawable->getDrawableType() == Drawable::TEXTUREDRAWABLE
@@ -762,7 +763,16 @@ bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value
 			setDrawable( std::move( texture ) );
 	}
 
+	mRemoteDrawableDensity = density;
 	return true;
+}
+
+bool UINodeDrawable::LayerDrawable::needsRemoteDrawableRefresh() const {
+	if ( mRemoteDrawableDensity == 0.f )
+		return false;
+	auto* owner = mContainer->getOwner();
+	auto* scene = owner ? owner->getUISceneNode() : nullptr;
+	return scene && scene->getPixelDensity() != mRemoteDrawableDensity;
 }
 
 DrawablePtr UINodeDrawable::LayerDrawable::createDrawable( const std::string& value,
@@ -820,11 +830,11 @@ void UINodeDrawable::LayerDrawable::setDrawableSize( const Sizef& drawableSize )
 }
 
 Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawableSizeEq ) {
-	Sizef size;
-
-	if ( NULL == mDrawable )
+	if ( !mDrawable || ( mDrawable->getDrawableType() == Drawable::TEXTUREDRAWABLE &&
+						 !static_cast<TextureDrawable*>( mDrawable.get() )->getTexture() ) )
 		return Sizef::Zero;
 
+	Sizef size;
 	if ( drawableSizeEq == "auto" ) {
 		if ( mDrawable->getDrawableType() == Drawable::RECTANGLE ||
 			 mDrawable->getDrawableType() == LINEARGRADIENT ||
@@ -1095,7 +1105,7 @@ void UINodeDrawable::LayerDrawable::update() {
 
 	// Drawables built from a reference can depend on the layer size. A copy, because the setter
 	// resets the member it would otherwise be reading.
-	if ( !mDrawableRef.empty() && mDrawableRefSize != mSize ) {
+	if ( !mDrawableRef.empty() && ( mDrawableRefSize != mSize || needsRemoteDrawableRefresh() ) ) {
 		const std::string drawableRef = mDrawableRef;
 		setDrawable( drawableRef );
 	}

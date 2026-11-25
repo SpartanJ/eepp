@@ -2,6 +2,7 @@
 #include <eepp/window/backend/SDL2/backendsdl2.hpp>
 #include <eepp/window/backend/SDL2/base.hpp>
 #include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/window/platform/physicaldisplaymetrics.hpp>
 
 #if defined( EE_X11_PLATFORM ) && defined( SDL_VIDEO_DRIVER_X11 ) && __has_include( <X11/Xresource.h> )
@@ -23,6 +24,8 @@
 #endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
+
+using namespace EE::Window::Private;
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 static bool DISPLAY_REQUEST_DPI_AWARENESS = true;
@@ -157,10 +160,16 @@ const int& DisplaySDL2::getIndex() const {
 
 std::string DisplaySDL2::getPersistentId() const {
 	const char* driver = SDL_GetCurrentVideoDriver();
-	if ( !driver || ( std::strcmp( driver, "x11" ) != 0 && std::strcmp( driver, "cocoa" ) != 0 &&
-					  std::strcmp( driver, "windows" ) != 0 ) )
+	if ( !driver )
 		return {};
-	return Private::PhysicalDisplayMetrics::getPersistentId( getBounds() );
+	if ( std::strcmp( driver, "wayland" ) == 0 ) {
+		return PhysicalDisplayMetrics::getWaylandPersistentId(
+			this, Engine::instance()->getDisplayManager() );
+	}
+	if ( std::strcmp( driver, "x11" ) != 0 && std::strcmp( driver, "cocoa" ) != 0 &&
+		 std::strcmp( driver, "windows" ) != 0 )
+		return {};
+	return PhysicalDisplayMetrics::getPersistentId( getBounds() );
 }
 
 Float DisplaySDL2::getPhysicalDPI() {
@@ -171,7 +180,7 @@ Float DisplaySDL2::getPhysicalDPI() {
 	const auto mode = getCurrentMode();
 	const Sizei resolution( mode.Width, mode.Height );
 	if ( mPhysicalDPI < 0.f || resolution != mPhysicalDPIResolution ) {
-		mPhysicalDPI = Private::PhysicalDisplayMetrics::getDPI( getBounds() );
+		mPhysicalDPI = PhysicalDisplayMetrics::getDPI( getBounds() );
 		mPhysicalDPIResolution = resolution;
 	}
 	return mPhysicalDPI;

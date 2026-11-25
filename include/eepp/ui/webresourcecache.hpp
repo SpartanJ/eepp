@@ -14,6 +14,10 @@
 
 namespace EE { namespace UI {
 
+using namespace EE::Graphics;
+using namespace EE::Network;
+using namespace EE::System;
+
 /** Shared ownership handle for a WebResourceCache.
  *
  * A cache can be installed into more than one UIWebView. Sharing the cache does not by itself make
@@ -66,7 +70,7 @@ struct EE_API WebOriginKey {
 	bool operator!=( const WebOriginKey& other ) const { return !( *this == other ); }
 
 	/** Creates an origin key from a URI, normalizing the scheme and host to lowercase. */
-	static WebOriginKey fromURI( const Network::URI& uri );
+	static WebOriginKey fromURI( const URI& uri );
 };
 
 /** Semantic type of a cached web resource.
@@ -80,7 +84,7 @@ enum class WebResourceKind : Uint8 {
 	StyleSheet,
 	/** Downloadable font response. */
 	Font,
-	/** Image response decoded into a Graphics::Texture. */
+	/** Image response decoded into a Texture. */
 	Image
 };
 
@@ -113,21 +117,21 @@ struct EE_API WebResourceRequest {
 	using CompletionDispatcher = std::function<void( std::function<void()> )>;
 
 	/** Absolute URI to fetch. Fragments are removed and the URI is normalized for cache lookup. */
-	Network::URI uri;
+	URI uri;
 	/** Semantic resource type. */
 	WebResourceKind kind{ WebResourceKind::Document };
 	/** HTTP method. The method is part of cache identity. */
-	Network::Http::Request::Method method{ Network::Http::Request::Method::Get };
+	Http::Request::Method method{ Http::Request::Method::Get };
 	/** HTTP request headers. See the type documentation for cache-key rules. */
-	Network::Http::Request::FieldTable headers;
+	Http::Request::FieldTable headers;
 	/** HTTP request body. The complete body is part of cache identity. */
 	std::string body;
 	/** Maximum duration allowed for the HTTP request. */
-	System::Time timeout{ System::Seconds( 5 ) };
+	Time timeout{ Seconds( 5 ) };
 	/** Whether HTTPS certificates must be validated. */
 	bool validateCertificate{ true };
 	/** Optional HTTP proxy URI. An empty URI uses a direct connection. */
-	Network::URI proxy;
+	URI proxy;
 	/** Whether HTTP redirects should be followed. */
 	bool followRedirect{ true };
 	/** Image-only texture wrapping policy. True selects ClampToEdge. */
@@ -174,7 +178,7 @@ struct EE_API WebResourceResult {
 	/** Shared immutable response body for documents, stylesheets, and fonts. */
 	std::shared_ptr<const std::string> data;
 	/** Shared texture for image resources. */
-	Graphics::TexturePtr texture;
+	TexturePtr texture;
 };
 
 /** Shared HTTP-backed document resource cache.
@@ -205,12 +209,12 @@ class EE_API WebResourceCache : public std::enable_shared_from_this<WebResourceC
 	static WebResourceCachePtr New();
 
 	/** Creates a cache with independent bounded HTTP transports for each cache partition. */
-	static WebResourceCachePtr New( const Network::Http::ConnectionPoolOptions& options );
+	static WebResourceCachePtr New( const Http::ConnectionPoolOptions& options );
 
 	/** Creates an empty cache with a 30-second TTL, 1-second retry delay, and 64 MiB budget. */
 	WebResourceCache();
 
-	explicit WebResourceCache( const Network::Http::ConnectionPoolOptions& options );
+	explicit WebResourceCache( const Http::ConnectionPoolOptions& options );
 
 	/** Cancels cache delivery and releases all retained entries and sessions. */
 	~WebResourceCache();
@@ -238,7 +242,7 @@ class EE_API WebResourceCache : public std::enable_shared_from_this<WebResourceC
 	 * @param session Session performing the navigation.
 	 * @param uri Destination document URI, used to record its origin.
 	 * @return The new generation, or zero when the session does not exist. */
-	Uint64 beginNavigation( DocumentSessionId session, const Network::URI& uri );
+	Uint64 beginNavigation( DocumentSessionId session, const URI& uri );
 
 	/** @return The current generation for a session, or zero when it does not exist. */
 	Uint64 getSessionGeneration( DocumentSessionId session ) const;
@@ -263,17 +267,17 @@ class EE_API WebResourceCache : public std::enable_shared_from_this<WebResourceC
 	 * without a new HTTP request. This function must be called where texture creation is valid, and
 	 * the request must provide an appropriate completionDispatcher for asynchronous GPU upload.
 	 * @return The cached/new texture, or null for an invalid or stale session. */
-	Graphics::TexturePtr requestTexture( DocumentSessionId session, Uint64 generation,
-										 WebResourceRequest request, Callback callback = {} );
+	TexturePtr requestTexture( DocumentSessionId session, Uint64 generation,
+							   WebResourceRequest request, Callback callback = {} );
 
 	/** Sets the retention duration used when an entry's final document lease is released. */
-	void setTTL( System::Time ttl );
+	void setTTL( Time ttl );
 	/** @return The current post-lease retention duration. */
-	System::Time getTTL() const;
+	Time getTTL() const;
 	/** Sets how long a failed entry suppresses another fetch attempt. */
-	void setRetryDelay( System::Time delay );
+	void setRetryDelay( Time delay );
 	/** @return The current failed-request retry delay. */
-	System::Time getRetryDelay() const;
+	Time getRetryDelay() const;
 	/** Sets the maximum retained response/texture byte estimate.
 	 *
 	 * Applying a smaller budget immediately evicts least-recently-used unleased entries where
@@ -305,7 +309,7 @@ class EE_API WebResourceCache : public std::enable_shared_from_this<WebResourceC
 	void clear();
 
 	/** Completion supplied to a custom Fetcher. */
-	using FetchCompletion = std::function<void( Network::Http::Response )>;
+	using FetchCompletion = std::function<void( Http::Response )>;
 	/** Custom fetch implementation, primarily intended for deterministic tests.
 	 *
 	 * The fetcher must eventually invoke FetchCompletion exactly once. Production uses
@@ -316,6 +320,11 @@ class EE_API WebResourceCache : public std::enable_shared_from_this<WebResourceC
 	void setFetcher( Fetcher fetcher );
 
   private:
+	friend class UISceneNode;
+
+	TexturePtr request( DocumentSessionId session, Uint64 generation, WebResourceRequest request,
+						Callback callback, bool texture, bool automaticScale = false );
+
 	/** Private implementation containing synchronized sessions and cache entries. */
 	struct Impl;
 	/** Exclusive implementation state. */

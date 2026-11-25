@@ -148,6 +148,7 @@ class EE_API UITextView : public UIWidget {
 	Text mTextCache;
 	String mString;
 	UIFontStyleConfig mFontStyleConfig;
+	FontSizeSource mFontSizeSource;
 	Vector2f mRealAlignOffset;
 	Int32 mSelCurInit;
 	Int32 mSelCurEnd;
@@ -164,6 +165,8 @@ class EE_API UITextView : public UIWidget {
 	TextTransform::Value mTextTransform{ TextTransform::None };
 
 	UITextView();
+
+	void setInternalFontSize( Uint32 characterSize );
 
 	virtual void drawSelection( Text& textCache );
 

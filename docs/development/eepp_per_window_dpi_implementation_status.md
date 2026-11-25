@@ -34,8 +34,9 @@ baseline `2613ec0921e628786f4dcbe8db2b1fa379b0ae47`.
   declarations with CSS variables. Changed media rules still apply.
 - **Phase 5:** themes retain logical font sources; each scene theme manager resolves its own
   defaults without modifying shared themes. Text, rich text/spans, inputs/hints, editors, tooltips
-  and consoles update before layout. Defaults reconstruct on fractional round trips; other resolved
-  UI font sizes scale provisionally before CSS reapplication. Native CSS px remains physical;
+  and consoles update before layout. Text widgets that track the theme default reconstruct it at the
+  new density. Explicit font sizes retain the size and scene density at assignment and rescale from
+  that source before CSS reapplication. Native CSS px remains physical;
   HTML px retains logical scaling. Media lengths resolve against supplied features, and stylesheet
   copies own independent match state while sharing parsed sources. Fractional density and
   DPI/dppx/dpcm resolution matching are covered.
@@ -92,7 +93,9 @@ the process fallback after creation.
 
 ecode's Settings → Appearance → Fonts & Scale → UI Scale Factor updates the window override live.
 It accepts 1–6 and persists the chosen manual scale. Select **Auto** under **UI Scale Mode** to
-clear the saved factor and apply the configured automatic policy. Existing positive values retain
+clear the saved factor and apply the configured automatic policy. This also clears any environment
+factor on the running window across all displays. The environment can supply a factor again when a
+new window opens. Existing positive values retain
 their effect on upgrade because older profiles used the same key for detected and manual values.
 For automatic monitor checks, launch without `--pixel-density` or `EEPP_PIXEL_DENSITY` overrides.
 
@@ -110,7 +113,7 @@ On this Linux x86-64 build, `sizeof` comparisons against the current repository 
 | `Scene::Node` | 560 | 560 |
 | `OriginPoint` | 80 | 80 |
 | `Texture` | 208 | 216 |
-| `ResourceScope` | 176 | 248 |
+| `ResourceScope` | 176 | 264 |
 | `Engine::WindowContext` | 24 | 32 |
 | `SceneNode::Context` | 40 | 64 |
 | `UINode` | 824 | 824 |
@@ -144,9 +147,20 @@ after a display is disconnected.
 Custom origin provenance uses existing alignment padding. Textures retain one raster scale value,
 which adds eight bytes per texture including padding. Deferred file SVG decoding moves the image
 buffer to the owning scene for upload and caches textures at each requested density.
-Each resource scope tracks in-flight file texture loads by cache key. Matching bitmap requests
-share the result, and deferred SVGs use the same lookup for upload and publication. The scope
-mutex covers the in-flight map. Decode and upload run after releasing it.
+Each resource scope tracks in-flight file texture loads by cache key. Local file lookups through
+`DrawableResolver::resolve()` return the final texture, including when joining an existing load.
+`resolveAsync()` returns a cached texture or a blank drawable. Deferred image widgets use this
+path. A worker prepares file data for upload on the UI thread. A synchronous UI lookup can
+finish that same upload directly. A synchronous worker lookup finishes it only with a shared GL
+context; otherwise it returns an empty texture instead of waiting for the UI thread. Preparation
+skips cancelled requests, and loaders capture compressed-format support at construction, so
+preparation never reads the renderer. The drawable and its clones adopt the completed texture
+and notify their consumers. Cached lookups allocate no pending state, and bitmap paths serve as
+their own cache keys. Imports, load subscribers and upload dispatchers keep their common counts
+inline: two catalogs per scope and one subscriber per load.
+Web images use the response format to apply scene density to SVGs, including extensionless URLs.
+Confirmed bitmap textures use a density-independent cache key. Both raster keys of a request
+share one build of the common fields.
 
 ## Verification
 
@@ -201,6 +215,8 @@ Final verification:
   confirmed both Auto modes during manual testing, including a live scaled-resolution change.
 - Unchanged-density display updates refresh DPI and media matches. Embedded viewport changes also
   refresh viewport-dependent styles. Regression tests verify that both paths skip density reflow.
+  CSS `resolution` and `pixel-density` use the effective scene density, so an override applies to
+  both queries.
 - Active and suspended density bindings snapshot the last value when their owner is destroyed.
   When a saved scene or window is gone at scope exit, the enclosing binding follows the live
   target's density. Linux regressions cover this with nested and moved guards, including a live
@@ -235,9 +251,10 @@ Final verification:
   the display UUID. X11 uses the connector and the monitor's EDID, so two monitors with the same
   EDID can keep distinct settings on their respective connectors. Moving a monitor to a different
   port or using a dock that changes the output name requires setting the override for that
-  connector. Other drivers and X11 displays without EDID or a unique native output match continue
-  to use the selected Auto policy.
-  The picker also excludes entries whose display keys are shared.
+  connector. Wayland uses SDL's display label when it is meaningful and unique among connected
+  displays. A different label, such as after a compositor or port change, needs a new override.
+  Displays without a usable key use the selected Auto policy. The picker excludes entries with
+  shared keys.
 - The five Linux SDL3 apps built. The native suite passed 2,583 tests with six UDisks environment
   skips. Native X11 checks covered moving between two displays, separate exact factors, restart,
   and resetting either display independently. Simulated duplicate names, disconnect, reconnect,
@@ -277,13 +294,5 @@ measurements fall back to System Scale.
 
 ## Lower-priority follow-ups
 
-- Decide whether CSS `resolution` should use display DPI or follow an explicit scene density.
-  Today it reports display DPI while `pixel-density` reflects the scene.
-- Decide whether the settings UI should allow Auto to override `EEPP_PIXEL_DENSITY`. The environment
-  override currently takes precedence.
-- Retain the source of programmatic font sizes where practical. The current reflow heuristic can
-  treat an explicit size equal to the floored theme default as theme-derived.
-- Measure the UI-thread wait on an in-flight texture request for the same key before changing it.
-- Extensionless web SVGs can request an explicit `WebResourceRequest::svgScale`. Automatic detection
-  and sharing response bytes across raster variants can follow separately. Application and plugin
-  pixel caches may also need their own regression coverage.
+- Sharing web SVG response bytes across raster variants remains a cache optimization. Application
+  and plugin pixel caches may also need their own regression coverage.

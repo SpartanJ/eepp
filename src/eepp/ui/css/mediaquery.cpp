@@ -205,6 +205,7 @@ MediaQueryExpression::MediaQueryExpression() {
 
 bool MediaQueryExpression::check( const MediaFeatures& features ) const {
 	int val = this->val;
+	float resolution = static_cast<float>( val );
 	if ( lengthUnit != 255 && feature >= media_feature_width &&
 		 feature <= media_feature_max_device_height ) {
 		const auto unit = static_cast<StyleSheetLength::Unit>( lengthUnit );
@@ -223,9 +224,11 @@ bool MediaQueryExpression::check( const MediaFeatures& features ) const {
 		}
 	} else if ( lengthUnit != 255 && feature >= media_feature_resolution &&
 				feature <= media_feature_max_resolution ) {
-		val = static_cast<int>( fval * ( String::endsWith( valStr, "dppx" )	  ? 96.f
-										 : String::endsWith( valStr, "dpcm" ) ? 2.54f
-																			  : 1.f ) );
+		resolution = fval;
+		if ( String::endsWith( valStr, "dppx" ) )
+			resolution *= 96.f;
+		else if ( String::endsWith( valStr, "dpcm" ) )
+			resolution *= 2.54f;
 	}
 	switch ( feature ) {
 		case media_feature_width:
@@ -420,17 +423,17 @@ bool MediaQueryExpression::check( const MediaFeatures& features ) const {
 			}
 			break;
 		case media_feature_resolution:
-			if ( features.resolution == val ) {
+			if ( features.resolution == resolution ) {
 				return true;
 			}
 			break;
 		case media_feature_min_resolution:
-			if ( features.resolution >= val ) {
+			if ( features.resolution >= resolution ) {
 				return true;
 			}
 			break;
 		case media_feature_max_resolution:
-			if ( features.resolution <= val ) {
+			if ( features.resolution <= resolution ) {
 				return true;
 			}
 			break;

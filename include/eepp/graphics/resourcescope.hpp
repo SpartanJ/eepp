@@ -1,14 +1,30 @@
 #ifndef EE_GRAPHICS_RESOURCESCOPE_HPP
 #define EE_GRAPHICS_RESOURCESCOPE_HPP
 
+#include <eepp/core/small_vector.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/fontservice.hpp>
 #include <eepp/graphics/resourcecatalog.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <functional>
 #include <future>
+#include <optional>
+
+namespace EE::System {
+
+class ThreadPool;
+
+} // namespace EE::System
+
+namespace EE::UI {
+
+class DrawableResolver;
+
+} // namespace EE::UI
 
 namespace EE { namespace Graphics {
+
+using namespace EE::System;
 
 class ResourceScope;
 using ResourceScopePtr = ResourcePtr<ResourceScope>;
@@ -43,8 +59,11 @@ class EE_API ResourceScope {
 	/** Reuses a visible texture or shares one load and publication for this key with other callers.
 	 * The first caller runs the loader. Callers for the same key wait for that result, and can
 	 * retry a failed load on a later call. The loader must not reenter this method for the same
-	 * key. */
+	 * key. A scene's deferred file load is finished by the calling thread when it can upload
+	 * textures. A worker without a shared GL context receives an empty texture instead of
+	 * waiting for the scene thread. */
 	TexturePtr findOrLoadTexture( const std::string& key, const std::function<TexturePtr()>& load );
+
 	DrawablePtr findDrawableSource( const ResourceKey& key ) const;
 	DrawablePtr findDrawableSource( const std::string& key ) const;
 	DrawablePtr findDrawable( const std::string& name, bool firstSearchSprite = false ) const;
@@ -116,14 +135,65 @@ class EE_API ResourceScope {
 	ResourceCatalogPtr getLocalCatalog() const;
 
   private:
+	friend class UI::DrawableResolver;
+
+	using TextureLoadCallback = std::function<void( TexturePtr )>;
+	using PostTextureUpload = std::function<void( std::function<void()> )>;
+
+	struct TextureLoad {
+		/** Runs on a worker. Upload must prepare the source itself when it runs first. */
+		std::function<void()> prepare;
+		std::function<TexturePtr()> upload;
+	};
+
+	struct DeferredTextureLoad {
+		DeferredTextureLoad( const ResourceScopePtr& scope, const std::string& key );
+
+		~DeferredTextureLoad();
+
+		std::weak_ptr<ResourceScope> scope;
+		std::string key;
+		std::packaged_task<TexturePtr()> upload;
+		// Usually a single scene waits for a load.
+		SmallVector<PostTextureUpload, 1> dispatchers;
+		bool prepared{ false };
+	};
+
+	struct PendingTextureLoad {
+		std::shared_future<TexturePtr> result;
+		SmallVector<TextureLoadCallback, 1> callbacks;
+		// Queued preparation and upload callbacks own the deferred load. If they are all
+		// discarded, the load removes itself and releases its prepared data.
+		std::optional<std::weak_ptr<DeferredTextureLoad>> deferred;
+	};
+
+	static std::optional<TexturePtr>
+	requestTextureLoad( const ResourceScopePtr& scope, const std::string& key, ThreadPool* pool,
+						const std::function<TextureLoad()>& createLoad, PostTextureUpload dispatch,
+						TextureLoadCallback ready );
+
+	/** Whether the calling thread can upload a deferred texture itself. */
+	static bool canUploadTextures();
+
+	void finishTextureLoad( const std::shared_ptr<DeferredTextureLoad>& deferred );
+
+	void cancelUnownedTextureLoad( const std::string& key );
+
+	std::packaged_task<TexturePtr()> textureLoadTask( const std::string& key,
+													  std::function<TexturePtr()> load );
+
+	void runTextureLoad( const std::string& key, std::packaged_task<TexturePtr()> task,
+						 const std::shared_future<TexturePtr>& result );
+
 	void attachFontService( const FontPtr& font );
 	void detachFontService( const FontPtr& font );
 
 	ResourceCatalogPtr mLocalCatalog;
 	FontService mFontService;
-	std::vector<ResourceCatalogPtr> mImports;
-	UnorderedMap<std::string, std::shared_future<TexturePtr>> mPendingTextureLoads;
-	mutable System::Mutex mMutex;
+	// Scenes import the default local catalog and the default theme catalog.
+	SmallVector<ResourceCatalogPtr, 2> mImports;
+	UnorderedMap<std::string, PendingTextureLoad> mPendingTextureLoads;
+	mutable Mutex mMutex;
 };
 
 /** Engine-owned process defaults for pure Graphics and application-wide resolution. */

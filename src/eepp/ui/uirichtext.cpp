@@ -459,7 +459,7 @@ UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
 
 void UIRichText::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 	UIHTMLWidget::onPixelDensityChange( oldDensity, newDensity );
-	setFontSize( fontSizeForPixelDensityChange( getFontSize(), oldDensity, newDensity ) );
+	setInternalFontSize( resolveFontSize( mFontSizeSource, newDensity, getFontSize() ) );
 }
 
 UIRichText::~UIRichText() {
@@ -752,9 +752,15 @@ Uint32 UIRichText::getFontSize() const {
 }
 
 UIRichText* UIRichText::setFontSize( const Uint32& characterSize ) {
-	if ( mRichText.getFontStyleConfig().CharacterSize != characterSize ) {
-		if ( characterSize == 0 )
-			return this;
+	if ( characterSize != 0 ) {
+		mFontSizeSource = explicitFontSize( characterSize );
+		setInternalFontSize( characterSize );
+	}
+	return this;
+}
+
+void UIRichText::setInternalFontSize( Uint32 characterSize ) {
+	if ( characterSize != 0 && mRichText.getFontStyleConfig().CharacterSize != characterSize ) {
 		mRichText.getFontStyleConfig().CharacterSize = characterSize;
 		mRichText.invalidate();
 		mLineHeightPxDirty = true;
@@ -763,7 +769,6 @@ UIRichText* UIRichText::setFontSize( const Uint32& characterSize ) {
 		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentReplacedFormatting );
 		updateDefaultSpansStyle();
 	}
-	return this;
 }
 
 const Uint32& UIRichText::getFontStyle() const {

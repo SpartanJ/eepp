@@ -51,7 +51,7 @@ UITextView::UITextView( const std::string& tag ) :
 		}
 	}
 
-	setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
+	setInternalFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 
 	if ( hasNonDefaultDirection() )
 		mTextCache.setDirection( getTextBaseDirection() );
@@ -63,7 +63,7 @@ UITextView::UITextView() : UITextView( "textview" ) {}
 
 void UITextView::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 	UIWidget::onPixelDensityChange( oldDensity, newDensity );
-	setFontSize( fontSizeForPixelDensityChange( getFontSize(), oldDensity, newDensity ) );
+	setInternalFontSize( resolveFontSize( mFontSizeSource, newDensity, getFontSize() ) );
 }
 
 UITextView::~UITextView() {}
@@ -124,9 +124,15 @@ Uint32 UITextView::getFontSize() const {
 }
 
 UITextView* UITextView::setFontSize( const Uint32& characterSize ) {
-	if ( mTextCache.getCharacterSize() != characterSize ) {
-		if ( characterSize == 0 )
-			return this;
+	if ( characterSize != 0 ) {
+		mFontSizeSource = explicitFontSize( characterSize );
+		setInternalFontSize( characterSize );
+	}
+	return this;
+}
+
+void UITextView::setInternalFontSize( Uint32 characterSize ) {
+	if ( characterSize != 0 && mTextCache.getCharacterSize() != characterSize ) {
 		mFontStyleConfig.CharacterSize = characterSize;
 		mTextCache.setFontSize( characterSize );
 		recalculate();
@@ -134,8 +140,6 @@ UITextView* UITextView::setFontSize( const Uint32& characterSize ) {
 		notifyLayoutAttrChange( LayoutInvalidation::TextFormatting );
 		invalidateDraw();
 	}
-
-	return this;
 }
 
 const Uint32& UITextView::getFontStyle() const {

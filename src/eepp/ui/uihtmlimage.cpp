@@ -28,8 +28,6 @@ UIHTMLImage::UIHTMLImage() : UIHTMLWidget( "img" ) {
 }
 
 UIHTMLImage::~UIHTMLImage() {
-	if ( mAsyncImageAlive )
-		mAsyncImageAlive->store( false, std::memory_order_release );
 	clearDrawable();
 }
 
@@ -98,7 +96,6 @@ const DrawablePtr& UIHTMLImage::getDrawable() const {
 UIHTMLImage* UIHTMLImage::setDrawable( DrawablePtr drawable ) {
 	if ( drawable == mDrawable )
 		return this;
-	++mRemoteImageLoadId;
 	Sizef oldSize( mSize );
 	clearDrawable();
 	mDrawable = std::move( drawable );
@@ -116,10 +113,11 @@ UIHTMLImage* UIHTMLImage::setDrawable( DrawablePtr drawable ) {
 					static_cast<DrawableResource*>( mDrawable.get() )
 						->connectResourceChange(
 							[this]( DrawableResource& ) { onDrawableResourceChange(); } );
-			if ( isSubscribedForScheduledUpdate() )
-				unsubscribeScheduledUpdate();
 		}
 	}
+	if ( ( !mDrawable || mDrawable->getDrawableType() != Drawable::SPRITE ) &&
+		 isSubscribedForScheduledUpdate() )
+		unsubscribeScheduledUpdate();
 	autoSizeImage();
 	if ( mSize != oldSize )
 		notifyLayoutAttrChangeParent( LayoutInvalidation::ParentReplacedFormatting );
@@ -156,9 +154,10 @@ bool UIHTMLImage::applyProperty( const StyleSheetProperty& property ) {
 	const PropertyId propertyId = property.getPropertyDefinition()->getPropertyId();
 	switch ( propertyId ) {
 		case PropertyId::Src: {
-			++mRemoteImageLoadId;
-			if ( property.getValue().empty() )
-				return true;
+			if ( property.getValue().empty() ) {
+				setDrawable( DrawablePtr{} );
+				break;
+			}
 			std::string path( property.getValue() );
 			URI uri( path );
 			UISceneNode* scene = getUISceneNode();
@@ -170,8 +169,12 @@ bool UIHTMLImage::applyProperty( const StyleSheetProperty& property ) {
 				loadRemoteDrawable( uri );
 				break;
 			}
-			if ( mDeferLoad && uri.getScheme() == "file" && loadFileDrawable( uri ) )
-				break;
+			if ( mDeferLoad && scene && uri.getScheme() == "file" ) {
+				if ( auto drawable = scene->getDrawableResolver().resolveAsync( path ) ) {
+					setDrawable( std::move( drawable ) );
+					break;
+				}
+			}
 			DrawablePtr drawable =
 				StyleSheetSpecification::instance()->getDrawableImageParser().createDrawable(
 					path, mSize, this );
@@ -426,9 +429,13 @@ void UIHTMLImage::calcDestSize() {
 					  mSize.y - mPaddingPx.Top - mPaddingPx.Bottom };
 	} else if ( mScaleType == UIScaleType::FitInside && mDrawable ) {
 		Sizef pixels( mDrawable->getPixelsSize() );
-		Float scale = eemin( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) / pixels.x,
-							 ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / pixels.y );
-		mDestSize = scale < 1.f ? pixels * scale : pixels;
+		mDestSize = pixels;
+		if ( pixels.x > 0 && pixels.y > 0 ) {
+			Float scale = eemin( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) / pixels.x,
+								 ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / pixels.y );
+			if ( scale < 1.f )
+				mDestSize *= scale;
+		}
 	} else if ( mDrawable ) {
 		mDestSize = mDrawable->getPixelsSize();
 	}
@@ -455,19 +462,6 @@ void UIHTMLImage::onDrawableResourceChange() {
 		invalidateIntrinsicSize();
 		invalidateDraw();
 	} );
-}
-
-bool UIHTMLImage::loadFileDrawable( const Network::URI& uri ) {
-	UISceneNode* scene = getUISceneNode();
-	if ( !scene || !scene->hasThreadPool() )
-		return false;
-	if ( !mAsyncImageAlive )
-		mAsyncImageAlive = std::make_shared<std::atomic<bool>>( true );
-	return scene->getDrawableResolver().requestFileTexture(
-		uri, [alive = mAsyncImageAlive, loadId = mRemoteImageLoadId, this]( TexturePtr texture ) {
-			if ( alive->load( std::memory_order_acquire ) && loadId == mRemoteImageLoadId )
-				setDrawable( std::move( texture ) );
-		} );
 }
 
 void UIHTMLImage::loadRemoteDrawable( const Network::URI& uri ) {
