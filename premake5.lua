@@ -493,6 +493,15 @@ function get_architecture()
 	return "x86_64"
 end
 
+-- MinGW binaries embed the C++ runtime and winpthread: packages ship no MinGW runtime DLLs, and
+-- toolchains using the POSIX thread model cannot link libstdc++ without winpthread.
+function set_mingw_static_runtime()
+	filter { "system:windows", "action:not vs*" }
+		linkoptions { "-static-libgcc", "-static-libstdc++" }
+		linkoptions { "-Wl,-Bstatic", "-lstdc++", "-Wl,--whole-archive", "-lwinpthread", "-Wl,--no-whole-archive", "-Wl,-Bdynamic" }
+	filter {}
+end
+
 function build_link_configuration( package_name, use_ee_icon, use_sdl_main )
 	filter {}
 	incdirs { "include" }
@@ -628,9 +637,7 @@ function build_link_configuration( package_name, use_ee_icon, use_sdl_main )
 		defines { "NDEBUG" }
 		targetname ( package_name .. extension )
 
-	filter { "system:windows", "action:not vs*" }
-	    linkoptions { "-static-libgcc", "-static-libstdc++" }
-	    linkoptions { "-Wl,-Bstatic", "-lstdc++", "-Wl,--whole-archive", "-lwinpthread", "-Wl,--no-whole-archive", "-Wl,-Bdynamic" }
+	set_mingw_static_runtime()
 
 	filter { "system:windows", "action:vs*" }
 		if table.contains( backends, "SDL2" ) then
@@ -1127,9 +1134,7 @@ function build_vfs_module( shared )
 
 		if shared then
 			postsymlinklib_arch( "eepp-vfs" )
-			filter { "system:windows", "action:not vs*" }
-				links { "winpthread" }
-			filter {}
+			set_mingw_static_runtime()
 		end
 end
 
@@ -1804,10 +1809,9 @@ workspace "eepp"
 			links { "eepp-shared" }
 			defines { "EE_MAPS_EXPORTS" }
 			build_base_cpp_configuration( "eepp-maps" )
+			set_mingw_static_runtime()
 			postsymlinklib_arch( "eepp-maps" )
 			target_dir_lib("")
-			filter { "system:windows", "action:not vs*" }
-				links { "winpthread" }
 			filter "action:not vs*"
 				buildoptions { "-Wall" }
 	end
@@ -1837,6 +1841,7 @@ workspace "eepp"
 			links { "chipmunk-static", "eepp-shared" }
 			defines { "EE_PHYSICS_EXPORTS" }
 			build_base_cpp_configuration( "eepp-physics" )
+			set_mingw_static_runtime()
 			postsymlinklib_arch( "eepp-physics" )
 			target_dir_lib("")
 			filter "action:not vs*"
@@ -1892,8 +1897,7 @@ workspace "eepp"
 		files { "src/thirdparty/efsw/src/agent/*.cpp" }
 		links { "efsw-static" }
 		build_base_cpp_configuration( "efsw-agent" )
-		filter { "system:windows", "action:not vs*" }
-			links { "winpthread" }
+		set_mingw_static_runtime()
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 		filter "system:macosx"

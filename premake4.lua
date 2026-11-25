@@ -494,13 +494,18 @@ function build_base_cpp_configuration( package_name )
 		buildoptions { "-s USE_PTHREADS=1" }
 end
 
-function add_cross_config_links()
-	if not is_vs() then
-		if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") then -- if is crosscompiling from *nix
-	    	linkoptions { "-static-libgcc", "-static-libstdc++" }
-	    	linkoptions { "-Wl,-Bstatic", "-lstdc++", "-Wl,--whole-archive", "-lwinpthread", "-Wl,--no-whole-archive", "-Wl,-Bdynamic" }
-		end
+-- MinGW binaries embed the C++ runtime and winpthread: packages ship no MinGW runtime DLLs, and
+-- toolchains using the POSIX thread model cannot link libstdc++ without winpthread.
+function add_mingw_static_runtime()
+	if not is_vs() and ( os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") ) then
+		linkoptions { "-static-libgcc", "-static-libstdc++" }
+		linkoptions { "-Wl,-Bstatic", "-lstdc++", "-Wl,--whole-archive", "-lwinpthread", "-Wl,--no-whole-archive", "-Wl,-Bdynamic" }
+	end
+end
 
+function add_cross_config_links()
+	add_mingw_static_runtime()
+	if not is_vs() then
 		if os.is_real("ios") then
 			linkoptions { "-static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic" }
 		end
@@ -1200,9 +1205,7 @@ function build_vfs_module( shared )
 		if shared then
 			postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp-vfs" )
 			postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/unit_tests/", "eepp-vfs" )
-			if os.is_real("mingw32") or os.is_real("mingw64") or (os.is("windows") and not is_vs()) then
-				links { "winpthread" }
-			end
+			add_mingw_static_runtime()
 		end
 end
 
@@ -1774,6 +1777,7 @@ solution "eepp"
 			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "eepp-maps" )
+		add_mingw_static_runtime()
 		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp-maps" )
 
 	project "eepp-physics-static"
@@ -1807,6 +1811,7 @@ solution "eepp"
 			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "eepp-physics" )
+		add_mingw_static_runtime()
 		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp-physics" )
 
 	project "eterm-static"
@@ -1862,9 +1867,7 @@ solution "eepp"
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end
-		if ( os.is_real("mingw32") or os.is_real("mingw64") ) or ( os.is("windows") and not is_vs() ) then
-			links { "winpthread" }
-		end
+		add_mingw_static_runtime()
 		if os.is_real("macosx") then
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		end

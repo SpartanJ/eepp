@@ -3,6 +3,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/window/displaymanager.hpp>
 #include <memory>
 
 #if ( EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD ) && \
@@ -14,13 +15,12 @@
 #undef None
 #undef Status
 #elif EE_PLATFORM == EE_PLATFORM_WIN
+// Include eepp headers first: <windows.h> defines macros such as KEY_EXECUTE.
 #include <shellscalingapi.h>
 #include <windows.h>
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 #include <eepp/window/platform/macos/platformhelper.hpp>
 #endif
-
-#include <eepp/window/displaymanager.hpp>
 
 namespace EE { namespace Window { namespace Private {
 
