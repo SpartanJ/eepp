@@ -7,6 +7,8 @@
 
 namespace EE { namespace UI {
 
+class VectorRaster;
+
 class EE_API UIImage : public UIWidget {
   public:
 	static UIImage* New();
@@ -61,6 +63,8 @@ class EE_API UIImage : public UIWidget {
 	Vector2f mAlignOffset;
 	Vector2f mDestSize;
 	DrawableResourceConnection mResourceChangeConnection;
+	// Created only for images whose source can be an SVG.
+	std::unique_ptr<VectorRaster> mVectorRaster;
 	Uint32 mSpriteChangeCb{ 0 };
 	bool mDeferLoad{ false };
 	bool mSizeFromDrawable{ false };

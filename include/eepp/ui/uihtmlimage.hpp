@@ -3,8 +3,11 @@
 
 #include <eepp/network/uri.hpp>
 #include <eepp/ui/uihtmlwidget.hpp>
+#include <memory>
 
 namespace EE { namespace UI {
+
+class VectorRaster;
 
 /** HTML replaced image element. CSS box/layout behavior comes from UIHTMLWidget. */
 class EE_API UIHTMLImage : public UIHTMLWidget {
@@ -77,6 +80,9 @@ class EE_API UIHTMLImage : public UIHTMLWidget {
 
 	void autoSizeImage();
 
+	/** The drawable's size in physical pixels for layout. */
+	Sizef layoutDrawableSize() const;
+
 	void reconcileStyleSize();
 
 	bool hasUnresolvedPercentageSize() const;
@@ -95,6 +101,8 @@ class EE_API UIHTMLImage : public UIHTMLWidget {
 	Vector2f mAlignOffset;
 	Vector2f mDestSize;
 	DrawableResourceConnection mResourceChangeConnection;
+	// Created only for images whose source can be an SVG.
+	std::unique_ptr<VectorRaster> mVectorRaster;
 	Uint32 mSpriteChangeCb{ 0 };
 	bool mDeferLoad{ false };
 	bool mNeedsStyleSizeReconciliation{ false };

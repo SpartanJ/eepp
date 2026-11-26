@@ -13,6 +13,8 @@ using namespace EE::System;
 
 #include <eepp/graphics/rendermode.hpp>
 
+#include <optional>
+
 struct NSVGimage;
 
 namespace EE { namespace System {
@@ -401,6 +403,15 @@ class EE_API Image {
 	/** @return The image dimensions */
 	Sizei getSize();
 
+	/** @return The size of the SVG this image was rasterized from, in SVG units. Zero for images
+	 * that did not come from an SVG. */
+	const Sizef& getVectorSize() const { return mVectorSize; }
+
+	/** @return The size in pixels of an SVG of @p vectorSize units rasterized at @p scale: the
+	 * scaled size truncated, at least one pixel per side. Nothing when a side is not finite, is
+	 * negative or is past the int range. */
+	static std::optional<Sizei> svgRasterSize( const Sizef& vectorSize, Float scale );
+
 	/** Save the Image to a new File in a specific format */
 	virtual bool saveToFile( const std::string& filepath, const SaveType& Format );
 
@@ -492,6 +503,7 @@ class EE_API Image {
 	unsigned int mHeight;
 	unsigned int mChannels;
 	Uint32 mSize;
+	Sizef mVectorSize;
 	bool mAvoidFree;
 	bool mLoadedFromStbi;
 	FormatConfiguration mFormatConfiguration;

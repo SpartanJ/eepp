@@ -175,7 +175,7 @@ struct EE_API WebResourceResult {
 	 * attributed to the origin that sent it. A cross-origin redirect never lends its cookies to
 	 * the requested origin. */
 	std::vector<WebResourceCookies> cookies;
-	/** Shared immutable response body for documents, stylesheets, and fonts. */
+	/** Shared immutable response body for documents, stylesheets, fonts, and SVG images. */
 	std::shared_ptr<const std::string> data;
 	/** Shared texture for image resources. */
 	TexturePtr texture;

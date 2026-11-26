@@ -80,6 +80,22 @@ baseline `2613ec0921e628786f4dcbe8db2b1fa379b0ae47`.
   to preserve aspect ratio.
   Image destination caches, list geometry and WebView viewport invalidation receive density hooks;
   WebView document/scrollbar reconciliation continues through its normal scheduled updates.
+  SVG images and backgrounds rasterize at their drawn size. They start at intrinsic size times
+  density; once a background layer, `UIImage` or `UIHTMLImage` knows its destination, it
+  requests the source again at that exact size on the next scene update, debouncing later
+  resizes by 150 ms. Hacker News vote arrows went from a 48×48 raster drawn at 15×15 to an exact
+  15×15 raster at 1.5×. File and data-URI SVGs rasterize on the scene's thread pool and upload
+  on the UI thread, sharing the deferred texture-load path with request merging and
+  cancellation. Web SVG image entries keep their source, which counts toward the web cache
+  budget, so other sizes rasterize from it the same way: one download and one cache entry serve
+  every size. The current raster keeps drawing until the new one is ready, and results for
+  destroyed consumers or superseded sizes are dropped. Scenes without a thread pool rasterize on
+  the UI thread. Exact-size rasters are shared while in use through a weak cache in the resource
+  scope, so continuous resizes don't accumulate textures. Rasters keep the SVG's aspect ratio;
+  ones that would exceed 4096 pixels per side keep their current resolution. Fit and natural
+  sizing use the raster's size at the density, not its drawn size. Consumers allocate the
+  helper only for sources that can be SVG, and background layers only once they draw an SVG
+  raster.
 
 ## Compatibility decisions
 

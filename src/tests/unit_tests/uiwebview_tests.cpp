@@ -13,6 +13,7 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/resourcescope.hpp>
+#include <eepp/graphics/texturedrawable.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/tcplistener.hpp>
 #include <eepp/network/tcpsocket.hpp>
@@ -1357,6 +1358,183 @@ UTEST( UIWebView, HackerNewsGrowUntilVerticalScrollbarDisappearsSettlesViewport 
 	EXPECT_NEAR( documentScene->getPixelsSize().getWidth(), extent.getWidth(), 0.5f );
 	EXPECT_NEAR( documentScene->getViewportPixelsSize().getWidth(), 2345.f, 0.5f );
 	EXPECT_FALSE( webView->getHorizontalScrollBar()->isVisible() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, HackerNewsVoteArrowsRasterizeAtTheirDrawnSize ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 650, "UIWebView SVG raster size test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1.5f, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+	sceneNode->setPixelDensity( 1.5f );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 1000, 600 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	webView->loadURI( URI( "file://" + Sys::getProcessPath() + "assets/html/hn_frontpage.html" ) );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	// Backgrounds measure their drawn size while drawing, so draw like the application does.
+	for ( int i = 0; i < 60; i++ ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		win->clear();
+		SceneManager::instance()->draw();
+	}
+
+	// triangle.svg is 32x32 and news.css draws it with background-size: 10px, so 15x15 at 1.5x.
+	// It used to stay a 48x48 raster (32 at 1.5x) shrunk into that box. Only drawn rows matter:
+	// rows below the view rasterize when they scroll into it.
+	auto arrows = documentScene->getRoot()->querySelectorAll( ".votearrow" );
+	ASSERT_GE( arrows.size(), (size_t)30 );
+	TexturePtr shared;
+	size_t drawn = 0;
+	for ( auto* arrow : arrows ) {
+		if ( arrow->asType<UIWidget>()->getScreenRect().Bottom >
+			 webView->getPixelsSize().getHeight() )
+			continue;
+		++drawn;
+		auto* background = arrow->asType<UIWidget>()->getBackground();
+		ASSERT_TRUE( background != nullptr );
+		auto* layer = background->getLayer( 0 );
+		ASSERT_TRUE( layer != nullptr && layer->getDrawable() != nullptr );
+		ASSERT_EQ( layer->getDrawable()->getDrawableType(), Drawable::TEXTUREDRAWABLE );
+		const auto& texture =
+			static_cast<TextureDrawable*>( layer->getDrawable().get() )->getTexture();
+		ASSERT_TRUE( texture != nullptr && texture->isVectorRaster() );
+		EXPECT_NEAR( layer->getDrawableSize().getWidth(), 15.f, 0.01f );
+		EXPECT_NEAR( texture->getPixelsSize().getWidth(), 15.f, 0.5f );
+		EXPECT_NEAR( texture->getPixelsSize().getHeight(), 15.f, 0.5f );
+		// Every arrow draws the same size, so they share one raster.
+		if ( !shared )
+			shared = texture;
+		EXPECT_TRUE( texture == shared );
+	}
+	EXPECT_GE( drawn, (size_t)5 );
+	shared.reset();
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, HtmlSvgImageRasterizesAtItsDrawnSize ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView SVG image raster size test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1.5f, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+	sceneNode->setPixelDensity( 1.5f );
+
+	const std::string path = Sys::getTempPath() + "eepp-html-svg-drawn-size-" +
+							 String::toString( Sys::getSystemTime() ) + ".html";
+	const std::string svg =
+		URI::fromFSPath( Sys::getProcessPath() + "assets/html/triangle.svg" ).toString();
+	ASSERT_TRUE( FileSystem::fileWrite( path, "<html><body><img id='arrow' src='" + svg +
+												  "' width='10' height='10'></body></html>" ) );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 600, 400 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	webView->loadURI( URI::fromFSPath( path ) );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	for ( int i = 0; i < 30; i++ ) {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+	}
+	FileSystem::fileRemove( path );
+
+	// triangle.svg is 32x32, drawn at width='10' height='10': 15x15 at 1.5x instead of 48x48.
+	auto* image = documentScene->getRoot()->find<UIHTMLImage>( "arrow" );
+	ASSERT_TRUE( image != nullptr && image->getDrawable() != nullptr );
+	ASSERT_EQ( image->getDrawable()->getDrawableType(), Drawable::TEXTUREDRAWABLE );
+	const auto& texture = static_cast<TextureDrawable*>( image->getDrawable().get() )->getTexture();
+	ASSERT_TRUE( texture != nullptr && texture->isVectorRaster() );
+	EXPECT_NEAR( texture->getPixelsSize().getWidth(), 15.f, 0.5f );
+	EXPECT_NEAR( texture->getPixelsSize().getHeight(), 15.f, 0.5f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIWebView, HtmlSvgImageKeepsItsIntrinsicWidthWhenRerasterized ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 640, 480, "UIWebView SVG intrinsic width test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1.5f, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" ).get();
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+	sceneNode->setPixelDensity( 1.5f );
+
+	// A 37.3x17.9 SVG: 55x26 at 1.5x, squeezed into a 10px column.
+	const std::string base =
+		Sys::getTempPath() + "eepp-html-svg-intrinsic-" + String::toString( Sys::getSystemTime() );
+	ASSERT_TRUE( FileSystem::fileWrite(
+		base + ".svg", std::string_view( "<svg xmlns='http://www.w3.org/2000/svg' width='37.3' "
+										 "height='17.9'><rect width='37.3' height='17.9' "
+										 "fill='red'/></svg>" ) ) );
+	ASSERT_TRUE( FileSystem::fileWrite(
+		base + ".html", "<html><body><div style='width:10px'><img id='picture' src='" +
+							URI::fromFSPath( base + ".svg" ).toString() +
+							"' style='max-width:100%'></div></body></html>" ) );
+
+	UIWebView* webView = UIWebView::New();
+	webView->setParent( sceneNode->getRoot() );
+	webView->setPixelsSize( 600, 400 );
+	webView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	webView->loadURI( URI::fromFSPath( base + ".html" ) );
+	UISceneNode* documentScene = webView->getDocumentSceneNode();
+	ASSERT_TRUE( documentScene != nullptr );
+	auto pump = [&]() {
+		win->getInput()->update();
+		SceneManager::instance()->update( Seconds( 1.f / 60.f ) );
+		win->clear();
+		SceneManager::instance()->draw();
+	};
+	pump();
+	auto* image = documentScene->getRoot()->find<UIHTMLImage>( "picture" );
+	ASSERT_TRUE( image != nullptr );
+	const Float intrinsicWidth = image->getMaxIntrinsicWidth();
+	EXPECT_NEAR( intrinsicWidth, 55.f, 0.01f );
+	for ( int i = 0; i < 30; i++ )
+		pump();
+	FileSystem::fileRemove( base + ".svg" );
+	FileSystem::fileRemove( base + ".html" );
+
+	// The image draws a 15px-wide raster now, but its intrinsic width is still the SVG's.
+	ASSERT_EQ( image->getDrawable()->getDrawableType(), Drawable::TEXTUREDRAWABLE );
+	const auto& texture = static_cast<TextureDrawable*>( image->getDrawable().get() )->getTexture();
+	ASSERT_TRUE( texture != nullptr );
+	EXPECT_NEAR( texture->getPixelsSize().getWidth(), 15.f, 0.5f );
+	EXPECT_NEAR( image->getMaxIntrinsicWidth(), intrinsicWidth, 0.01f );
 
 	Engine::destroySingleton();
 }

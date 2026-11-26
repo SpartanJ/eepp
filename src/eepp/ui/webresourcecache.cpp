@@ -140,6 +140,9 @@ struct WebResourceCache::Impl {
 	Clock clock;
 	UnorderedMap<DocumentSessionId, Session> sessions;
 	UnorderedMap<std::string, Entry> entries;
+	// Density-independent image keys whose ready bitmap lives under a scaled key, because the
+	// density-independent key was taken, e.g. by a request still loading or failed.
+	UnorderedMap<std::string, std::string> bitmapAliases;
 	UnorderedMap<CachePartitionId, std::shared_ptr<Http::Pool>> transports;
 	Http::ConnectionPoolOptions connectionOptions;
 	Time ttl{ Seconds( 30 ) };
@@ -187,6 +190,13 @@ struct WebResourceCache::Impl {
 	eraseEntry( UnorderedMap<std::string, Entry>::iterator it,
 				std::vector<Entry>& releasedEntries ) {
 		retainedBytes -= std::min( retainedBytes, it->second.retainedBytes );
+		// Aliases to this entry would only hold their keys from now on.
+		for ( auto alias = bitmapAliases.begin(); alias != bitmapAliases.end(); ) {
+			if ( alias->second == it->first )
+				alias = bitmapAliases.erase( alias );
+			else
+				++alias;
+		}
 		// Move owning handles out before erasing. releasedEntries outlives the caller's lock guard,
 		// so final resource destruction cannot run under the cache mutex.
 		releasedEntries.emplace_back( std::move( it->second ) );
@@ -222,6 +232,20 @@ struct WebResourceCache::Impl {
 	bool matchesOperation( const Entry& entry, Uint64 operationEpoch, Uint64 operationId ) const {
 		return entry.state == WebResourceLoadState::Loading &&
 			   entry.operationEpoch == operationEpoch && entry.operationId == operationId;
+	}
+
+	// The key of a ready bitmap stored under a scaled key for sourceKey, or null. Drops stale
+	// aliases.
+	const std::string* readyBitmapAlias( const std::string& sourceKey ) {
+		auto alias = bitmapAliases.find( sourceKey );
+		if ( alias == bitmapAliases.end() )
+			return nullptr;
+		auto entry = entries.find( alias->second );
+		if ( entry != entries.end() && entry->second.bitmap &&
+			 entry->second.state == WebResourceLoadState::Ready )
+			return &alias->second;
+		bitmapAliases.erase( alias );
+		return nullptr;
 	}
 
 	void retargetImage( Session& session, const std::string& sourceKey, const std::string& key,
@@ -390,6 +414,8 @@ TexturePtr WebResourceCache::request( DocumentSessionId session, Uint64 generati
 		if ( source != mImpl->entries.end() && source->second.bitmap &&
 			 source->second.state == WebResourceLoadState::Ready ) {
 			key = sourceKey;
+		} else if ( const std::string* alias = mImpl->readyBitmapAlias( sourceKey ) ) {
+			key = *alias;
 		} else if ( automaticScale ) {
 			mImpl->retargetImage( owner, sourceKey, key, request.svgScale );
 		}
@@ -551,10 +577,18 @@ TexturePtr WebResourceCache::request( DocumentSessionId session, Uint64 generati
 													 operationId ) )
 					return;
 			}
-			texture->setRasterScale( rasterScale );
+			if ( bitmap )
+				texture->setRasterScale( rasterScale );
+			else
+				texture->setVectorRaster( rasterScale, image->getVectorSize() );
 			texture->replace( image.get() );
 			retainedBytes = static_cast<std::size_t>( texture->getImageWidth() ) *
 							texture->getImageHeight() * 4;
+			if ( !bitmap ) {
+				// Keep the SVG source, so other sizes rasterize without downloading it again.
+				data = std::make_shared<const std::string>( response.getBody() );
+				retainedBytes += data->size();
+			}
 		}
 
 		std::vector<Impl::Subscriber> subscribers;
@@ -612,10 +646,14 @@ TexturePtr WebResourceCache::request( DocumentSessionId session, Uint64 generati
 				// bitmaps under the density-independent key for subsequent lookups.
 				auto bitmapKey = makeRequestKey( entry.partition, completedRequest, 1.f );
 				if ( self->mImpl->entries.find( bitmapKey ) == self->mImpl->entries.end() ) {
+					self->mImpl->bitmapAliases.erase( bitmapKey );
 					Impl::Entry bitmapEntry = std::move( entry );
 					self->mImpl->entries.erase( entryIt );
 					self->mImpl->entries.emplace( std::move( bitmapKey ),
 												  std::move( bitmapEntry ) );
+				} else {
+					// The key is taken: lookups use this entry until that one holds a bitmap.
+					self->mImpl->bitmapAliases[std::move( bitmapKey )] = entryIt->first;
 				}
 			}
 			self->mImpl->pruneLocked( releasedEntries );
@@ -763,6 +801,7 @@ void WebResourceCache::clear() {
 		// Values are moved out first so clearing the container cannot release resource handles
 		// while the cache mutex is held.
 		mImpl->entries.clear();
+		mImpl->bitmapAliases.clear();
 		for ( auto& session : mImpl->sessions )
 			session.second.pendingImages.clear();
 		mImpl->retainedBytes = 0;

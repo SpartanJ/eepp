@@ -954,6 +954,7 @@ Image::Image( Image&& other ) noexcept :
 	mHeight( other.mHeight ),
 	mChannels( other.mChannels ),
 	mSize( other.mSize ),
+	mVectorSize( other.mVectorSize ),
 	mAvoidFree( other.mAvoidFree ),
 	mLoadedFromStbi( other.mLoadedFromStbi ),
 	mFormatConfiguration( std::move( other.mFormatConfiguration ) ) {
@@ -975,6 +976,7 @@ Image& Image::operator=( Image&& other ) noexcept {
 		mHeight = other.mHeight;
 		mChannels = other.mChannels;
 		mSize = other.mSize;
+		mVectorSize = other.mVectorSize;
 		mAvoidFree = other.mAvoidFree;
 		mLoadedFromStbi = other.mLoadedFromStbi;
 		mFormatConfiguration = std::move( other.mFormatConfiguration );
@@ -1093,6 +1095,21 @@ std::vector<Uint8> webpPacker( const Image& img, Uint32 quality, Uint32 compress
 	return dst;
 }
 
+std::optional<Sizei> Image::svgRasterSize( const Sizef& vectorSize, Float scale ) {
+	// The product is taken in floats, as NanoSVG scales, and widened before truncating.
+	const auto axis = [scale]( Float units ) -> std::optional<int> {
+		const double size = units * scale;
+		if ( !std::isfinite( size ) || size < 0.0 || size > std::numeric_limits<int>::max() )
+			return std::nullopt;
+		return std::max( 1, static_cast<int>( size ) );
+	};
+	const auto width = axis( vectorSize.x );
+	const auto height = axis( vectorSize.y );
+	if ( !width || !height )
+		return std::nullopt;
+	return Sizei( *width, *height );
+}
+
 void Image::svgLoad( NSVGimage* image, Sizei hint ) {
 	if ( image == NULL )
 		return;
@@ -1102,19 +1119,17 @@ void Image::svgLoad( NSVGimage* image, Sizei hint ) {
 	Float scale = mFormatConfiguration.svgScale();
 	if ( hint.x > 0 && hint.y > 0 && image->width > 0 && image->height > 0 )
 		scale = std::min( { scale, 1.f, hint.x / image->width, hint.y / image->height } );
-	const double width = image->width * scale;
-	const double height = image->height * scale;
 	// NanoSVG takes int dimensions and stride and indexes the output using int arithmetic.
-	// Check the scaled size before converting to an integer or allocating the raster.
-	if ( !std::isfinite( width ) || !std::isfinite( height ) || width < 0.0 || height < 0.0 ||
-		 !( scale > 0.f ) ||
-		 std::max( 1.0, width ) * std::max( 1.0, height ) >
+	// Check the scaled size before allocating the raster.
+	const auto rasterSize = svgRasterSize( Sizef( image->width, image->height ), scale );
+	if ( !rasterSize || !( scale > 0.f ) ||
+		 static_cast<double>( rasterSize->x ) * rasterSize->y >
 			 std::numeric_limits<int>::max() / 4.0 ) {
 		nsvgDelete( image );
 		return;
 	}
-	const int w = std::max( 1, static_cast<int>( width ) );
-	const int h = std::max( 1, static_cast<int>( height ) );
+	const int w = rasterSize->x;
+	const int h = rasterSize->y;
 
 	rast = nsvgCreateRasterizer();
 
@@ -1127,6 +1142,7 @@ void Image::svgLoad( NSVGimage* image, Sizei hint ) {
 			mPixels = img;
 			mWidth = w;
 			mHeight = h;
+			mVectorSize = Sizef( image->width, image->height );
 			mChannels = 4;
 			mSize = w * h * 4;
 			mLoadedFromStbi = true;
@@ -1207,6 +1223,8 @@ void Image::create( const Uint32& Width, const Uint32& Height, const Uint32& Cha
 	mWidth = Width;
 	mHeight = Height;
 	mChannels = Channels;
+	// A raw bitmap: no longer the raster of an SVG.
+	mVectorSize = {};
 
 	allocate( mWidth * mHeight * mChannels, DefaultColor, initWithDefaultColor );
 }
@@ -1600,6 +1618,7 @@ Graphics::Image& Image::operator=( const Image& right ) {
 	mHeight = right.mHeight;
 	mChannels = right.mChannels;
 	mSize = right.mSize;
+	mVectorSize = right.mVectorSize;
 	mAvoidFree = right.mAvoidFree;
 	mLoadedFromStbi = right.mLoadedFromStbi;
 

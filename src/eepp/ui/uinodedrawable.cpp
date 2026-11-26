@@ -1,8 +1,10 @@
+#include "vectorraster.hpp"
 #include <array>
 #include <cctype>
 #include <eepp/core/core.hpp>
 #include <eepp/graphics/drawableresource.hpp>
 #include <eepp/graphics/image.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/texturedrawable.hpp>
@@ -670,6 +672,9 @@ void UINodeDrawable::LayerDrawable::setDrawable( DrawablePtr drawable ) {
 	mDrawable = std::move( drawable );
 	mDrawableRef = "";
 	mRemoteDrawableDensity = 0.f;
+	// A pending raster of the previous source must not land on the new drawable.
+	mVectorRaster.reset();
+	mVectorRasterUnavailable = false;
 	invalidate();
 
 	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
@@ -691,19 +696,24 @@ void UINodeDrawable::LayerDrawable::setDrawable( const std::string& drawableRef 
 		return;
 	}
 
+	// Rebuilding the same reference keeps its raster helper, with the raster already made; the
+	// drawable setter drops the helper of any other source.
+	const bool sameSource = drawableRef == mDrawableRef;
+	std::unique_ptr<VectorRaster> vectorRaster = sameSource ? std::move( mVectorRaster ) : nullptr;
+	const bool vectorRasterUnavailable = sameSource && mVectorRasterUnavailable;
+
 	mDrawableRefSize = mSize;
 
-	if ( loadRemoteDrawable( drawableRef ) ) {
-		mDrawableRef = drawableRef;
+	if ( !loadRemoteDrawable( drawableRef ) ) {
+		DrawablePtr drawable = createDrawable( drawableRef, mSize );
+		setDrawable( std::move( drawable ) );
+	} else {
 		invalidate();
-		return;
 	}
 
-	DrawablePtr drawable = createDrawable( drawableRef, mSize );
-
-	setDrawable( std::move( drawable ) );
-
 	mDrawableRef = drawableRef;
+	mVectorRaster = std::move( vectorRaster );
+	mVectorRasterUnavailable = vectorRasterUnavailable;
 }
 
 bool UINodeDrawable::LayerDrawable::loadRemoteDrawable( const std::string& value ) {
@@ -834,6 +844,11 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 						 !static_cast<TextureDrawable*>( mDrawable.get() )->getTexture() ) )
 		return Sizef::Zero;
 
+	// An SVG raster made for the drawn size keeps its SVG's natural geometry, so swapping rasters
+	// neither resizes nor moves the background.
+	const Sizef naturalPixels = mDrawable->getNaturalPixelsSize();
+	const Sizef naturalSize = mDrawable->getNaturalSize();
+
 	Sizef size;
 	if ( drawableSizeEq == "auto" ) {
 		if ( mDrawable->getDrawableType() == Drawable::RECTANGLE ||
@@ -843,26 +858,28 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 			 mDrawable->getDrawableType() == REPEATINGRADIALGRADIENT ) {
 			size = mSize;
 		} else {
-			size = mDrawable->getPixelsSize();
+			size = naturalPixels;
 			// For Html mode, mOffset (from calcPosition) is in CSS‑physical pixels
 			// (scaled by PixelDensity via convertLength -> dpToPx), but
 			// getPixelsSize() returns raw image pixels.  Scale the intrinsic
 			// size so both values use the same coordinate system, otherwise
 			// the visible sprite‑atlas region drifts when PixelDensity != 1.
-			if ( mContainer->getBackgroundMode() == BackgroundMode::Html ) {
+			// An SVG's natural size is already at the density.
+			if ( mContainer->getBackgroundMode() == BackgroundMode::Html &&
+				 !mDrawable->isVectorRaster() ) {
 				size *= PixelDensity::getPixelDensity() / mDrawable->getRasterScale();
 			}
 		}
 	} else if ( drawableSizeEq == "expand" ) {
 		size = mSize;
 	} else if ( drawableSizeEq == "contain" ) {
-		Sizef drawableSize( mDrawable->getSize() );
+		Sizef drawableSize( naturalSize );
 		Float Scale1 = mSize.getWidth() / drawableSize.getWidth();
 		Float Scale2 = mSize.getHeight() / drawableSize.getHeight();
 		Scale1 = eemin( Scale1, Scale2 );
 		size = Sizef( drawableSize.getWidth() * Scale1, drawableSize.getHeight() * Scale1 );
 	} else if ( drawableSizeEq == "cover" ) {
-		Sizef drawableSize( mDrawable->getSize() );
+		Sizef drawableSize( naturalSize );
 		Float Scale1 = mSize.getWidth() / drawableSize.getWidth();
 		Float Scale2 = mSize.getHeight() / drawableSize.getHeight();
 		Scale1 = eemax( Scale1, Scale2 );
@@ -881,7 +898,7 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 					 mDrawable->getDrawableType() == Drawable::REPEATINGRADIALGRADIENT ) {
 					size = mSize;
 				} else {
-					size = mDrawable->getSize();
+					size = naturalSize;
 				}
 			} else if ( sizePart[0] != "auto" ) {
 				CSS::StyleSheetLength wl( sizePart[0] );
@@ -889,7 +906,7 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 					wl, mContainer->getOwner()->getPixelsSize().getWidth() );
 
 				if ( sizePart[1] == "auto" ) {
-					Sizef drawableSize( mDrawable->getSize() );
+					Sizef drawableSize( naturalSize );
 					size.y =
 						drawableSize.getHeight() * ( size.getWidth() / drawableSize.getWidth() );
 				} else {
@@ -902,7 +919,7 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 				size.y = mContainer->getOwner()->convertLength(
 					hl, mContainer->getOwner()->getPixelsSize().getHeight() );
 
-				Sizef drawableSize( mDrawable->getSize() );
+				Sizef drawableSize( naturalSize );
 				size.x = drawableSize.getWidth() * ( size.getHeight() / drawableSize.getHeight() );
 			}
 		}
@@ -1114,6 +1131,32 @@ void UINodeDrawable::LayerDrawable::update() {
 	mOffset = calcPosition( mPositionX, mPositionY );
 
 	mNeedsUpdate = false;
+
+	updateVectorRaster();
+}
+
+void UINodeDrawable::LayerDrawable::updateVectorRaster() {
+	if ( mDrawableRef.empty() ) {
+		mVectorRaster.reset();
+		return;
+	}
+	if ( !mVectorRaster ) {
+		if ( mVectorRasterUnavailable )
+			return;
+		// Most layers never draw an SVG raster: create the helper only for those that do.
+		if ( !mDrawable || !mDrawable->isVectorRaster() )
+			return;
+		UINode* owner = mContainer->getOwner();
+		mVectorRaster = VectorRaster::create(
+			owner,
+			CSS::DrawableImageParser::urlSource( FunctionString::parse( mDrawableRef ), owner ),
+			[this] { return VectorRaster::textureDrawableOf( mDrawable ); } );
+		if ( !mVectorRaster ) {
+			mVectorRasterUnavailable = true;
+			return;
+		}
+	}
+	mVectorRaster->update( mDrawableSize );
 }
 
 }} // namespace EE::UI

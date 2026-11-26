@@ -168,6 +168,23 @@ DrawablePtr DrawableImageParser::createDrawable( const std::string& value, const
 	return {};
 }
 
+std::string DrawableImageParser::urlSource( const FunctionString& function, UINode* node ) {
+	const auto& params = function.getParameters();
+	if ( function.getName() != "url" || params.empty() || params.front().empty() ||
+		 params.front().front() == '@' )
+		return {};
+	if ( String::startsWith( params.front(), "data:image/" ) ) {
+		// The function parser splits a data URI at its commas.
+		std::string source( params.front() );
+		for ( size_t i = 1; i < params.size(); i++ ) {
+			source += ',';
+			source += params[i];
+		}
+		return source;
+	}
+	return node->getUISceneNode()->solveRelativePath( params.front() ).toString();
+}
+
 void DrawableImageParser::addParser( const std::string& name,
 									 const DrawableImageParserFunc& func ) {
 	if ( exists( name ) ) {
@@ -900,26 +917,11 @@ void DrawableImageParser::registerBaseParsers() {
 
 	mFuncs["url"] = []( const FunctionString& functionType, const Sizef& /*size*/,
 						UINode* node ) -> DrawablePtr {
-		if ( functionType.getParameters().size() < 1 )
+		if ( functionType.getParameters().empty() )
 			return {};
-		const auto& param = functionType.getParameters().at( 0 );
-		if ( functionType.getName() == "url" && !param.empty() && param[0] != '@' &&
-			 !String::startsWith( param, "data:image/" ) ) {
-			DrawablePtr drawable = node->getUISceneNode()->getDrawableResolver().resolve(
-				node->getUISceneNode()->solveRelativePath( param ).toString() );
-			return drawable;
-		} else if ( functionType.getParameters().size() > 1 &&
-					String::startsWith( param, "data:image/" ) ) {
-			auto cparam = functionType.getParameters().at( 0 );
-			for ( size_t i = 1; i < functionType.getParameters().size(); i++ ) {
-				cparam += ',';
-				cparam += functionType.getParameters().at( i );
-			}
-			DrawablePtr drawable = node->getUISceneNode()->getDrawableResolver().resolve( cparam );
-			return drawable;
-		}
-		DrawablePtr drawable = node->getUISceneNode()->getDrawableResolver().resolve( param );
-		return drawable;
+		const std::string source = urlSource( functionType, node );
+		return node->getUISceneNode()->getDrawableResolver().resolve(
+			source.empty() ? functionType.getParameters().front() : source );
 	};
 
 	mFuncs["icon"] = []( const FunctionString& functionType, const Sizef& size,

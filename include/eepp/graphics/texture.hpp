@@ -287,9 +287,33 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 
 	Sizef getPixelsSize();
 
+	/** @return The size to lay the texture out at, in dp. An SVG raster reports its SVG at the
+	 * current density, whatever size it was rasterized at. */
+	Sizef getNaturalSize();
+
+	/** @return getNaturalSize() in pixels. */
+	Sizef getNaturalPixelsSize();
+
 	virtual Float getRasterScale() const { return mRasterScale; }
 
-	void setRasterScale( Float scale ) { mRasterScale = scale; }
+	/** Sets the texture pixels per source pixel of a raster image. Marks it as not vector. */
+	void setRasterScale( Float scale ) {
+		mRasterScale = scale;
+		mVectorSize = {};
+		mFlags &= ~TEX_FLAG_VECTOR;
+	}
+
+	/** Marks the texture as an SVG of @p vectorSize SVG units rasterized at @p scale texture
+	 * pixels per unit. */
+	void setVectorRaster( Float scale, const Sizef& vectorSize ) {
+		mRasterScale = scale;
+		mVectorSize = vectorSize;
+		mFlags |= TEX_FLAG_VECTOR;
+	}
+
+	/** @return Whether the texture holds an SVG raster, which can be rasterized again at another
+	 * scale. */
+	bool isVectorRaster() const { return ( mFlags & TEX_FLAG_VECTOR ) != 0; }
 
 	void draw();
 
@@ -336,7 +360,8 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 		TEX_FLAG_MODIFIED = ( 1 << 1 ),
 		TEX_FLAG_COMPRESSED = ( 1 << 2 ),
 		TEX_FLAG_LOCKED = ( 1 << 3 ),
-		TEX_FLAG_GRABBED = ( 1 << 4 )
+		TEX_FLAG_GRABBED = ( 1 << 4 ),
+		TEX_FLAG_VECTOR = ( 1 << 5 )
 	};
 
 	friend class TextureFactory;

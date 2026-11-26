@@ -122,6 +122,32 @@ TexturePtr ResourceScope::findOrLoadTexture( const std::string& key,
 	}
 }
 
+TexturePtr ResourceScope::findSharedRaster( const std::string& key ) const {
+	Lock lock( mMutex );
+	auto it = mSharedRasters.find( key );
+	return it != mSharedRasters.end() ? it->second.lock() : TexturePtr{};
+}
+
+TexturePtr ResourceScope::publishSharedRaster( const std::string& key, TexturePtr texture ) {
+	if ( !texture )
+		return texture;
+	Lock lock( mMutex );
+	auto [it, inserted] = mSharedRasters.try_emplace( key );
+	if ( !inserted ) {
+		if ( auto shared = it->second.lock() )
+			return shared;
+	}
+	it->second = texture;
+	// Expired entries only hold their key: drop them as new rasters arrive.
+	for ( auto entry = mSharedRasters.begin(); entry != mSharedRasters.end(); ) {
+		if ( entry->second.expired() )
+			entry = mSharedRasters.erase( entry );
+		else
+			++entry;
+	}
+	return texture;
+}
+
 bool ResourceScope::canUploadTextures() {
 	return Engine::isMainThread() ||
 		   ( Engine::isEngineRunning() && Engine::instance()->isSharedGLContextEnabled() );
@@ -139,9 +165,14 @@ ResourceScope::DeferredTextureLoad::~DeferredTextureLoad() {
 std::optional<TexturePtr>
 ResourceScope::requestTextureLoad( const ResourceScopePtr& scope, const std::string& key,
 								   ThreadPool* pool, const std::function<TextureLoad()>& createLoad,
-								   PostTextureUpload dispatch, TextureLoadCallback ready ) {
+								   PostTextureUpload dispatch, TextureLoadCallback ready,
+								   bool sharedRaster ) {
 	if ( auto texture = scope->findTexture( key ) )
 		return texture;
+	if ( sharedRaster ) {
+		if ( auto texture = scope->findSharedRaster( key ) )
+			return texture;
+	}
 
 	std::shared_ptr<DeferredTextureLoad> deferred;
 	std::function<void()> prepare;
@@ -160,12 +191,21 @@ ResourceScope::requestTextureLoad( const ResourceScopePtr& scope, const std::str
 		if ( pending == scope->mPendingTextureLoads.end() ) {
 			if ( auto texture = scope->mLocalCatalog->findTexture( key ) )
 				return texture;
+			if ( sharedRaster ) {
+				// A shared raster may have been published since the unlocked lookup.
+				auto shared = scope->mSharedRasters.find( key );
+				if ( shared != scope->mSharedRasters.end() ) {
+					if ( auto texture = shared->second.lock() )
+						return texture;
+				}
+			}
 			if ( !pool )
 				return std::nullopt;
 			auto load = createLoad();
 			prepare = std::move( load.prepare );
 			deferred = std::make_shared<DeferredTextureLoad>( scope, key );
-			deferred->upload = scope->textureLoadTask( key, std::move( load.upload ) );
+			deferred->upload =
+				scope->textureLoadTask( key, std::move( load.upload ), sharedRaster );
 			auto result = deferred->upload.get_future().share();
 			pending =
 				scope->mPendingTextureLoads
@@ -237,15 +277,23 @@ void ResourceScope::cancelUnownedTextureLoad( const std::string& key ) {
 	}
 }
 
-std::packaged_task<TexturePtr()>
-ResourceScope::textureLoadTask( const std::string& key, std::function<TexturePtr()> load ) {
-	return std::packaged_task<TexturePtr()>( [this, key, load = std::move( load )] {
+std::packaged_task<TexturePtr()> ResourceScope::textureLoadTask( const std::string& key,
+																 std::function<TexturePtr()> load,
+																 bool sharedRaster ) {
+	return std::packaged_task<TexturePtr()>( [this, key, load = std::move( load ), sharedRaster] {
 		// A load may have finished between the initial lookup and acquiring mMutex.
 		if ( auto texture = findTexture( key ) )
 			return texture;
+		if ( sharedRaster ) {
+			if ( auto texture = findSharedRaster( key ) )
+				return texture;
+		}
 		auto texture = load();
-		if ( texture )
-			publishLocal( key, texture );
+		if ( !texture )
+			return texture;
+		if ( sharedRaster )
+			return publishSharedRaster( key, std::move( texture ) );
+		publishLocal( key, texture );
 		return texture;
 	} );
 }

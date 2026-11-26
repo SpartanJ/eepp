@@ -147,6 +147,8 @@ class EE_API TextureLoader {
 	bool mPixelsUseSystemFree{ false };
 	Image::Format mImgType{ 0 };
 	int mIsCompressed{ 0 };
+	// The size of a decoded SVG, in SVG units.
+	Sizef mVectorSize;
 
 	Clock mTE;
 

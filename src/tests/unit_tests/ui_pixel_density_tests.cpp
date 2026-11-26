@@ -1,6 +1,7 @@
 #include "../../eepp/window/pixeldensitypolicy.hpp"
 #include "utest.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <eepp/graphics/font.hpp>
@@ -64,6 +65,7 @@
 #include <eepp/ui/uiwidgettable.hpp>
 #include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/window/input.hpp>
+#include <functional>
 #include <future>
 #include <limits>
 #include <thread>
@@ -2195,6 +2197,607 @@ UTEST( UISceneDensity, WorkerFileLookupDoesNotWaitBehindItsQueuedPreparation ) {
 	EXPECT_TRUE( pending->getPixelsSize() == Sizef( 10, 6 ) );
 }
 
+UTEST( UISceneDensity, SvgImagesRasterizeAtTheirDrawnSize ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.5f );
+	auto context = scene->makeCurrent();
+	const std::string path = Sys::getTempPath() + "eepp-svg-drawn-size-" +
+							 String::toString( Sys::getSystemTime() ) + ".svg";
+	ASSERT_TRUE( FileSystem::fileWrite(
+		path, std::string_view( "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'>"
+								"<rect width='32' height='32' fill='red'/></svg>" ) ) );
+	ScopedOp removeFile( nullptr, [&] { FileSystem::fileRemove( path ); } );
+
+	auto createImage = [&]() {
+		auto* image = UIImage::New();
+		image->setParent( scene->getRoot() );
+		image->setScaleType( UIScaleType::Expand );
+		image->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		image->setStyleSheetProperty(
+			StyleSheetProperty( "src", URI::fromFSPath( path ).toString() ) );
+		image->setSize( 10, 10 );
+		return image;
+	};
+	auto textureOf = []( UIImage* image ) -> TexturePtr {
+		const auto& drawable = image->getDrawable();
+		return drawable && drawable->getDrawableType() == Drawable::TEXTUREDRAWABLE
+				   ? static_cast<TextureDrawable*>( drawable.get() )->getTexture()
+				   : TexturePtr{};
+	};
+	auto* first = createImage();
+	auto* second = createImage();
+	// The SVG first rasterizes at the scene density: 48x48 for a 15x15 image.
+	ASSERT_TRUE( textureOf( first ) && textureOf( first )->getPixelsSize() == Sizef( 48, 48 ) );
+
+	for ( int frame = 0; frame < 3; ++frame )
+		scene->update( Milliseconds( 16 ) );
+	auto texture = textureOf( first );
+	ASSERT_TRUE( texture && texture->isVectorRaster() );
+	EXPECT_TRUE( texture->getPixelsSize() == Sizef( 15, 15 ) );
+	// Images drawn at the same size share one raster.
+	EXPECT_TRUE( textureOf( second ) == texture );
+
+	// A resize rasterizes again once the size settles. The debounce uses real time.
+	first->setSize( 20, 20 );
+	scene->update( Milliseconds( 16 ) );
+	EXPECT_TRUE( textureOf( first )->getPixelsSize() == Sizef( 15, 15 ) );
+	Clock settle;
+	while ( textureOf( first )->getPixelsSize() != Sizef( 30, 30 ) &&
+			settle.getElapsedTime() < Seconds( 2 ) ) {
+		std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+		scene->update( Milliseconds( 16 ) );
+	}
+	EXPECT_TRUE( textureOf( first )->getPixelsSize() == Sizef( 30, 30 ) );
+	EXPECT_TRUE( textureOf( second )->getPixelsSize() == Sizef( 15, 15 ) );
+}
+
+UTEST( UISceneDensity, SvgImageRastersDecodeOnTheThreadPool ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	scene->setPixelDensity( 1.5f );
+	auto context = scene->makeCurrent();
+	auto pool = ThreadPool::createShared( 1 );
+	scene->setThreadPool( pool );
+	const std::string path =
+		Sys::getTempPath() + "eepp-svg-async-" + String::toString( Sys::getSystemTime() ) + ".svg";
+	ASSERT_TRUE( FileSystem::fileWrite(
+		path, std::string_view( "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'>"
+								"<rect width='32' height='32' fill='red'/></svg>" ) ) );
+	ScopedOp removeFile( nullptr, [&] { FileSystem::fileRemove( path ); } );
+	const std::string dataUri =
+		"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E"
+		"%3Crect width='32' height='32' fill='blue'/%3E%3C/svg%3E";
+
+	auto createImage = [&]( const std::string& source ) {
+		auto* image = UIImage::New();
+		image->setParent( scene->getRoot() );
+		image->setScaleType( UIScaleType::Expand );
+		image->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		image->setStyleSheetProperty( StyleSheetProperty( "src", source ) );
+		image->setSize( 10, 10 );
+		return image;
+	};
+	auto pixelsOf = []( UIImage* image ) {
+		const auto& drawable = image->getDrawable();
+		return drawable && drawable->getDrawableType() == Drawable::TEXTUREDRAWABLE &&
+					   static_cast<TextureDrawable*>( drawable.get() )->getTexture()
+				   ? static_cast<TextureDrawable*>( drawable.get() )->getTexture()->getPixelsSize()
+				   : Sizef{};
+	};
+	auto pumpUntil = [&]( const std::function<bool()>& done ) {
+		Clock clock;
+		while ( !done() && clock.getElapsedTime() < Seconds( 2 ) ) {
+			std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+			scene->update( Milliseconds( 16 ) );
+		}
+	};
+	auto holdWorker = [&]() {
+		auto release = std::make_shared<std::promise<void>>();
+		pool->run( [signal = release->get_future().share()] {
+			signal.wait_for( std::chrono::seconds( 3 ) );
+		} );
+		return release;
+	};
+
+	auto* file = createImage( URI::fromFSPath( path ).toString() );
+	auto* data = createImage( dataUri );
+	auto release = holdWorker();
+	for ( int frame = 0; frame < 3; ++frame )
+		scene->update( Milliseconds( 16 ) );
+	// The worker is busy: both images keep drawing their density raster meanwhile.
+	EXPECT_TRUE( pixelsOf( file ) == Sizef( 48, 48 ) );
+	EXPECT_TRUE( pixelsOf( data ) == Sizef( 48, 48 ) );
+	release->set_value();
+	pumpUntil( [&] {
+		return pixelsOf( file ) == Sizef( 15, 15 ) && pixelsOf( data ) == Sizef( 15, 15 );
+	} );
+	EXPECT_TRUE( pixelsOf( file ) == Sizef( 15, 15 ) );
+	EXPECT_TRUE( pixelsOf( data ) == Sizef( 15, 15 ) );
+
+	// A raster finishing after its image dropped the source is ignored.
+	auto* closing = createImage( dataUri );
+	closing->setSize( 12, 12 );
+	release = holdWorker();
+	for ( int frame = 0; frame < 3; ++frame )
+		scene->update( Milliseconds( 16 ) );
+	closing->setStyleSheetProperty( StyleSheetProperty( "src", "" ) );
+	release->set_value();
+	std::promise<void> drained;
+	auto drainedSignal = drained.get_future();
+	pool->run( [&] { drained.set_value(); } );
+	ASSERT_TRUE( drainedSignal.wait_for( std::chrono::seconds( 3 ) ) == std::future_status::ready );
+	for ( int frame = 0; frame < 5; ++frame )
+		scene->update( Milliseconds( 16 ) );
+	EXPECT_TRUE( closing->getDrawable() == nullptr );
+}
+
+namespace {
+
+const char SquareTestSvg[] = "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'>"
+							 "<rect width='32' height='32' fill='red'/></svg>";
+
+struct SvgImageFixture {
+	DensityApplication fixture;
+	UISceneNode* scene{ fixture.app.getUI() };
+	std::string path;
+
+	explicit SvgImageFixture( Float density, std::string_view svg = SquareTestSvg ) {
+		scene->setPixelDensity( density );
+		path = Sys::getTempPath() + "eepp-svg-fixture-" + String::toString( Sys::getSystemTime() ) +
+			   ".svg";
+		FileSystem::fileWrite( path, svg );
+	}
+
+	~SvgImageFixture() { FileSystem::fileRemove( path ); }
+
+	std::string uri() const { return URI::fromFSPath( path ).toString(); }
+
+	UIImage* createImage( const std::string& source, UIScaleType scaleType, Sizef size,
+						  Node* parent = nullptr ) {
+		auto* image = UIImage::New();
+		image->setParent( parent ? parent : scene->getRoot() );
+		image->setScaleType( scaleType );
+		image->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		image->setStyleSheetProperty( StyleSheetProperty( "src", source ) );
+		image->setSize( size );
+		return image;
+	}
+
+	static Sizef texturePixels( const DrawablePtr& drawable ) {
+		return drawable && drawable->getDrawableType() == Drawable::TEXTUREDRAWABLE &&
+					   static_cast<TextureDrawable*>( drawable.get() )->getTexture()
+				   ? static_cast<TextureDrawable*>( drawable.get() )->getTexture()->getPixelsSize()
+				   : Sizef{};
+	}
+
+	// Raster debounces use real time.
+	void pumpUntil( const std::function<bool()>& done ) {
+		Clock clock;
+		while ( !done() && clock.getElapsedTime() < Seconds( 2 ) ) {
+			std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+			scene->update( Milliseconds( 16 ) );
+		}
+	}
+};
+
+} // namespace
+
+UTEST( UISceneDensity, SvgRasterActionOutlivesItsHelperInALeftScene ) {
+	SvgImageFixture svg( 1.5f );
+	auto context = svg.scene->makeCurrent();
+	auto* other = UISceneNode::New( svg.fixture.app.getWindow(), false );
+	SceneManager::instance()->add( other );
+	// The first raster request is queued in the image's scene.
+	auto* image = svg.createImage( svg.uri(), UIScaleType::Expand, { 10, 10 } );
+	EXPECT_TRUE( SvgImageFixture::texturePixels( image->getDrawable() ) == Sizef( 48, 48 ) );
+	// Moving the image and dropping its source destroys the helper, but can only remove actions
+	// from the scene the image is in now.
+	image->setParent( other->getRoot() );
+	image->setStyleSheetProperty( StyleSheetProperty( "src", "" ) );
+	for ( int frame = 0; frame < 3; ++frame ) {
+		svg.scene->update( Milliseconds( 16 ) );
+		other->update( Milliseconds( 16 ) );
+	}
+	EXPECT_TRUE( image->getDrawable() == nullptr );
+	SceneManager::instance()->remove( other );
+	eeDelete( other );
+}
+
+UTEST( UISceneDensity, SvgLayerRasterDoesNotReplaceANewDrawable ) {
+	SvgImageFixture svg( 1.5f );
+	auto context = svg.scene->makeCurrent();
+	auto* widget = UIWidget::New();
+	widget->setParent( svg.scene->getRoot() );
+	widget->setSize( 20, 20 );
+	auto* background = widget->setBackgroundFillEnabled( true );
+	background->setDrawable( 0, "url(" + svg.uri() + ")" );
+	background->setDrawableSize( 0, "contain" );
+	auto* layer = background->getLayer( 0 );
+	// The container sizes its layers while drawing. Measuring the layer then queues a 30x30
+	// raster of the 48x48 SVG.
+	layer->setSize( Sizef( 30, 30 ) );
+	EXPECT_NEAR( layer->getDrawableSize().getWidth(), 30.f, 0.5f );
+	auto bitmap = TextureFactory::instance()->createEmptyTexture( 3, 3 );
+	ASSERT_TRUE( bitmap != nullptr );
+	layer->setDrawable( bitmap );
+	for ( int frame = 0; frame < 3; ++frame ) {
+		svg.scene->update( Milliseconds( 16 ) );
+		layer->getDrawableSize();
+	}
+	ASSERT_EQ( layer->getDrawable()->getDrawableType(), Drawable::TEXTUREDRAWABLE );
+	EXPECT_TRUE( static_cast<TextureDrawable*>( layer->getDrawable().get() )->getTexture() ==
+				 bitmap );
+}
+
+UTEST( UISceneDensity, SvgFitInsideImageGrowsBackToItsNaturalSize ) {
+	SvgImageFixture svg( 1.5f );
+	auto context = svg.scene->makeCurrent();
+	auto* image = svg.createImage( svg.uri(), UIScaleType::FitInside, { 10, 10 } );
+	auto pixels = [&] { return SvgImageFixture::texturePixels( image->getDrawable() ); };
+	svg.pumpUntil( [&] { return pixels() == Sizef( 15, 15 ); } );
+	EXPECT_TRUE( pixels() == Sizef( 15, 15 ) );
+	// The fit uses the SVG's natural 48x48, not the 15x15 raster it draws now.
+	image->setSize( 20, 20 );
+	svg.pumpUntil( [&] { return pixels() == Sizef( 30, 30 ); } );
+	EXPECT_TRUE( pixels() == Sizef( 30, 30 ) );
+}
+
+UTEST( UISceneDensity, SvgRasterLimitAppliesToTheRasterSize ) {
+	SvgImageFixture svg( 1.f, "<svg xmlns='http://www.w3.org/2000/svg' width='64' height='8'>"
+							  "<rect width='64' height='8' fill='red'/></svg>" );
+	auto context = svg.scene->makeCurrent();
+	// The raster keeps the 8:1 aspect ratio, so an 8x80 box needs a 640x80 raster.
+	auto* tall = svg.createImage( svg.uri(), UIScaleType::Expand, { 8, 80 } );
+	svg.pumpUntil(
+		[&] { return SvgImageFixture::texturePixels( tall->getDrawable() ) == Sizef( 640, 80 ); } );
+	EXPECT_TRUE( SvgImageFixture::texturePixels( tall->getDrawable() ) == Sizef( 640, 80 ) );
+	// An 8x600 box would need 4800x600, past the limit: the raster stays as it is.
+	auto* taller = svg.createImage( svg.uri(), UIScaleType::Expand, { 8, 600 } );
+	for ( int frame = 0; frame < 5; ++frame )
+		svg.scene->update( Milliseconds( 16 ) );
+	EXPECT_TRUE( SvgImageFixture::texturePixels( taller->getDrawable() ) == Sizef( 64, 8 ) );
+}
+
+UTEST( UISceneDensity, WebSvgSizesRasterizeFromOneDownload ) {
+	SvgImageFixture svg( 1.f );
+	auto context = svg.scene->makeCurrent();
+	auto cache = WebResourceCache::New();
+	svg.scene->setWebResourceCache( cache );
+	int fetches = 0;
+	cache->setFetcher(
+		[&fetches]( const WebResourceRequest&, WebResourceCache::FetchCompletion complete ) {
+			++fetches;
+			auto status = Http::Response::Ok;
+			complete( Http::Response::createFakeResponse( {}, status, SquareTestSvg ) );
+		} );
+	const std::string uri = "https://example.invalid/arrow.svg";
+	std::vector<UIImage*> images;
+	for ( Float size : { 10.f, 15.f, 20.f, 25.f } )
+		images.push_back( svg.createImage( uri, UIScaleType::Expand, { size, size } ) );
+	svg.pumpUntil( [&] {
+		return std::all_of( images.begin(), images.end(), [&]( UIImage* image ) {
+			return SvgImageFixture::texturePixels( image->getDrawable() ) == image->getPixelsSize();
+		} );
+	} );
+	for ( auto* image : images ) {
+		EXPECT_TRUE( SvgImageFixture::texturePixels( image->getDrawable() ) ==
+					 image->getPixelsSize() );
+	}
+	// One download serves every size, and only the base image stays in the web cache.
+	EXPECT_EQ( fetches, 1 );
+	EXPECT_EQ( cache->getEntryCount(), 1u );
+	EXPECT_EQ( cache->getRetainedBytes(), 32u * 32u * 4u + ( sizeof( SquareTestSvg ) - 1u ) );
+}
+
+UTEST( UISceneDensity, DeferredHtmlImageThatFailsDropsItsDrawable ) {
+	DensityApplication fixture;
+	auto* scene = fixture.app.getUI();
+	auto context = scene->makeCurrent();
+	scene->setThreadPool( ThreadPool::createShared( 1 ) );
+	auto* image = UIHTMLImage::New();
+	image->setParent( scene->getRoot() );
+	image->setStyleSheetProperty( StyleSheetProperty( "defer", "true" ) );
+	image->setStyleSheetProperty( StyleSheetProperty(
+		"src", URI::fromFSPath( Sys::getTempPath() + "eepp-missing-image-" +
+								String::toString( Sys::getSystemTime() ) + ".svg" )
+				   .toString() ) );
+	ASSERT_TRUE( image->getDrawable() != nullptr );
+	// Without a drawable the image draws its alt text, as after a failed synchronous load.
+	Clock clock;
+	while ( image->getDrawable() && clock.getElapsedTime() < Seconds( 2 ) ) {
+		std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+		scene->update( Milliseconds( 16 ) );
+	}
+	EXPECT_TRUE( image->getDrawable() == nullptr );
+}
+
+UTEST( UISceneDensity, ScaledWebBitmapServesLaterScalesAfterItsBaseRequestFails ) {
+	DensityApplication fixture;
+	auto context = fixture.app.getUI()->makeCurrent();
+	auto cache = WebResourceCache::New();
+	std::vector<WebResourceCache::FetchCompletion> completions;
+	cache->setFetcher(
+		[&completions]( const WebResourceRequest&, WebResourceCache::FetchCompletion complete ) {
+			completions.emplace_back( std::move( complete ) );
+		} );
+	auto session = cache->createSession( cache->createPartition() );
+	auto generation = cache->beginNavigation( session, URI( "https://example.invalid/" ) );
+	std::string bitmap;
+	ASSERT_TRUE( FileSystem::fileGet( Sys::getProcessPath() + "../assets/icon/ee.png", bitmap ) );
+	WebResourceRequest request;
+	request.uri = URI( "https://example.invalid/logo" );
+	request.kind = WebResourceKind::Image;
+	auto requestAt = [&]( Float scale ) {
+		request.svgScale = scale;
+		return cache->requestTexture( session, generation, request, {} );
+	};
+
+	requestAt( 1.f );
+	auto second = requestAt( 2.f );
+	ASSERT_EQ( completions.size(), 2u );
+	// The 2x response is a bitmap, but the 1x request still holds the density-independent key.
+	auto ok = Http::Response::Ok;
+	completions[1]( Http::Response::createFakeResponse( {}, ok, bitmap ) );
+	auto notFound = Http::Response::NotFound;
+	completions[0]( Http::Response::createFakeResponse( {}, notFound, "" ) );
+	ASSERT_TRUE( second && second->getImageWidth() > 1u );
+
+	auto third = requestAt( 3.f );
+	EXPECT_TRUE( third == second );
+	EXPECT_EQ( completions.size(), 2u );
+}
+
+UTEST( UISceneDensity, WebSvgRasterOutlivesATemporaryResolver ) {
+	SvgImageFixture svg( 1.f );
+	auto context = svg.scene->makeCurrent();
+	auto cache = WebResourceCache::New();
+	svg.scene->setWebResourceCache( cache );
+	WebResourceCache::FetchCompletion completion;
+	cache->setFetcher(
+		[&completion]( const WebResourceRequest&, WebResourceCache::FetchCompletion complete ) {
+			completion = std::move( complete );
+		} );
+	TexturePtr raster;
+	{
+		DrawableResolver resolver( *svg.scene );
+		EXPECT_TRUE( resolver.resolveSvgRaster( "https://example.invalid/arrow.svg", 0.5f,
+												[&raster]( TexturePtr texture ) {
+													raster = std::move( texture );
+												} ) == nullptr );
+	}
+	// The response arrives after the resolver that asked for it is gone.
+	ASSERT_TRUE( completion );
+	auto ok = Http::Response::Ok;
+	completion( Http::Response::createFakeResponse( {}, ok, SquareTestSvg ) );
+	svg.pumpUntil( [&] { return raster != nullptr; } );
+	ASSERT_TRUE( raster != nullptr );
+	EXPECT_TRUE( raster->getPixelsSize() == Sizef( 16, 16 ) );
+}
+
+UTEST( UISceneDensity, WebSvgRastersStayInTheirCachePartition ) {
+	SvgImageFixture svg( 1.f );
+	auto context = svg.scene->makeCurrent();
+	auto* other = UISceneNode::New( svg.fixture.app.getWindow(), false );
+	other->setParent( svg.scene->getRoot() );
+	other->setPixelDensity( 1.f );
+	other->setResourceScope( svg.scene->getResourceScope() );
+	auto cache = WebResourceCache::New();
+	svg.scene->setWebResourceCache( cache, cache->createPartition() );
+	other->setWebResourceCache( cache, cache->createPartition() );
+	// Each partition downloads its own response for the URL: a 32x32 and then a 64x64 SVG.
+	int fetches = 0;
+	cache->setFetcher(
+		[&fetches]( const WebResourceRequest&, WebResourceCache::FetchCompletion complete ) {
+			auto ok = Http::Response::Ok;
+			complete( Http::Response::createFakeResponse(
+				{}, ok,
+				fetches++ == 0 ? std::string( SquareTestSvg )
+							   : std::string( "<svg xmlns='http://www.w3.org/2000/svg' "
+											  "width='64' height='64'><rect width='64' "
+											  "height='64' fill='blue'/></svg>" ) ) );
+		} );
+	const std::string url = "https://example.invalid/arrow.svg";
+	auto rasterIn = [&]( UISceneNode* scene ) {
+		TexturePtr raster;
+		auto ready = [&raster]( TexturePtr texture ) { raster = std::move( texture ); };
+		if ( auto texture = scene->getDrawableResolver().resolveSvgRaster( url, 0.5f, ready ) )
+			raster = texture;
+		svg.pumpUntil( [&] {
+			other->update( Milliseconds( 16 ) );
+			return raster != nullptr;
+		} );
+		return raster;
+	};
+	auto first = rasterIn( svg.scene );
+	auto second = rasterIn( other );
+	ASSERT_TRUE( first && second );
+	EXPECT_EQ( fetches, 2 );
+	EXPECT_TRUE( first->getPixelsSize() == Sizef( 16, 16 ) );
+	EXPECT_TRUE( second->getPixelsSize() == Sizef( 32, 32 ) );
+}
+
+UTEST( UISceneDensity, SvgRasterLimitUsesTheSvgSize ) {
+	// The 64.9x8 SVG rasterizes to 64x8. At 8x512 it would need trunc( 64.9 * 64 ) = 4153 pixels.
+	SvgImageFixture svg( 1.f, "<svg xmlns='http://www.w3.org/2000/svg' width='64.9' height='8'>"
+							  "<rect width='64.9' height='8' fill='red'/></svg>" );
+	auto context = svg.scene->makeCurrent();
+	auto* image = svg.createImage( svg.uri(), UIScaleType::Expand, { 8, 512 } );
+	for ( int frame = 0; frame < 5; ++frame )
+		svg.scene->update( Milliseconds( 16 ) );
+	EXPECT_TRUE( SvgImageFixture::texturePixels( image->getDrawable() ) == Sizef( 64, 8 ) );
+}
+
+UTEST( UISceneDensity, SvgFitInsideSizeDoesNotDependOnResizeHistory ) {
+	SvgImageFixture svg( 1.5f,
+						 "<svg xmlns='http://www.w3.org/2000/svg' width='37.3' "
+						 "height='17.9'><rect width='37.3' height='17.9' fill='red'/></svg>" );
+	auto context = svg.scene->makeCurrent();
+	auto* fresh = svg.createImage( svg.uri(), UIScaleType::FitInside, { 12, 12 } );
+	auto* resized = svg.createImage( svg.uri(), UIScaleType::FitInside, { 7, 7 } );
+	auto pixels = []( UIImage* image ) {
+		return SvgImageFixture::texturePixels( image->getDrawable() );
+	};
+	svg.pumpUntil( [&] { return pixels( resized ).x > 0 && pixels( resized ).x <= 11.f; } );
+	resized->setSize( 12, 12 );
+	svg.pumpUntil( [&] { return pixels( resized ) == pixels( fresh ); } );
+	EXPECT_TRUE( pixels( resized ) == pixels( fresh ) );
+}
+
+UTEST( UISceneDensity, SvgResizeBackDropsTheQueuedRaster ) {
+	SvgImageFixture svg( 1.5f );
+	auto context = svg.scene->makeCurrent();
+	auto* image = svg.createImage( svg.uri(), UIScaleType::Expand, { 10, 10 } );
+	auto pixels = [&] { return SvgImageFixture::texturePixels( image->getDrawable() ); };
+	svg.pumpUntil( [&] { return pixels() == Sizef( 15, 15 ); } );
+	ASSERT_TRUE( pixels() == Sizef( 15, 15 ) );
+	// Growing queues a 30x30 raster; shrinking back before it runs leaves the 15x15 one in place.
+	// A stale request would show the 30x30 raster until the image asked for 15x15 again.
+	image->setSize( 20, 20 );
+	svg.scene->update( Milliseconds( 16 ) );
+	image->setSize( 10, 10 );
+	bool showedStaleRaster = false;
+	Clock clock;
+	while ( clock.getElapsedTime() < Milliseconds( 400 ) ) {
+		std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+		svg.scene->update( Milliseconds( 16 ) );
+		showedStaleRaster |= pixels() == Sizef( 30, 30 );
+	}
+	EXPECT_FALSE( showedStaleRaster );
+	EXPECT_TRUE( pixels() == Sizef( 15, 15 ) );
+}
+
+namespace {
+
+const char FractionalTestSvg[] =
+	"<svg xmlns='http://www.w3.org/2000/svg' width='37.3' "
+	"height='17.9'><rect width='37.3' height='17.9' fill='red'/></svg>";
+
+} // namespace
+
+UTEST( UISceneDensity, SvgRerasterKeepsBackgroundLayout ) {
+	SvgImageFixture svg( 1.5f, FractionalTestSvg );
+	auto context = svg.scene->makeCurrent();
+	// The 37.3x17.9 SVG rasterizes to 55x26 at 1.5x.
+	auto* widget = UIWidget::New();
+	widget->setParent( svg.scene->getRoot() );
+	auto* background = widget->setBackgroundFillEnabled( true );
+	background->setDrawable( 0, "url(" + svg.uri() + ")" );
+	background->setDrawableSize( 0, "contain" );
+	auto* layer = background->getLayer( 0 );
+	layer->setSize( Sizef( 40, 40 ) );
+	const Sizef backgroundSize = layer->getDrawableSize();
+	svg.pumpUntil( [&] {
+		layer->getDrawableSize();
+		return SvgImageFixture::texturePixels( layer->getDrawable() ) != Sizef( 55, 26 );
+	} );
+	ASSERT_TRUE( SvgImageFixture::texturePixels( layer->getDrawable() ) != Sizef( 55, 26 ) );
+	EXPECT_TRUE( layer->getDrawableSize() == backgroundSize );
+}
+
+UTEST( UISceneDensity, SvgRasterForAnEarlierSizeIsDroppedWhileTheNextWaits ) {
+	SvgImageFixture svg( 1.5f );
+	auto context = svg.scene->makeCurrent();
+	auto pool = ThreadPool::createShared( 1 );
+	svg.scene->setThreadPool( pool );
+	auto release = std::make_shared<std::promise<void>>();
+	pool->run( [signal = release->get_future().share()] {
+		signal.wait_for( std::chrono::seconds( 3 ) );
+	} );
+	auto* image = svg.createImage( svg.uri(), UIScaleType::Expand, { 10, 10 } );
+	auto pixels = [&] { return SvgImageFixture::texturePixels( image->getDrawable() ); };
+	// The 15x15 raster is requested and waits for the worker; then the image grows.
+	for ( int frame = 0; frame < 3; ++frame )
+		svg.scene->update( Milliseconds( 16 ) );
+	image->setSize( 20, 20 );
+	release->set_value();
+	bool showedEarlierRaster = false;
+	Clock clock;
+	while ( pixels() != Sizef( 30, 30 ) && clock.getElapsedTime() < Seconds( 2 ) ) {
+		std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+		svg.scene->update( Milliseconds( 16 ) );
+		showedEarlierRaster |= pixels() == Sizef( 15, 15 );
+	}
+	EXPECT_FALSE( showedEarlierRaster );
+	EXPECT_TRUE( pixels() == Sizef( 30, 30 ) );
+}
+
+UTEST( UISceneDensity, SvgRasterCoversItsDestinationDespiteFloatRounding ) {
+	// 13 / 22 rounds down as a float, and 22 times it truncates to 12.
+	SvgImageFixture svg( 1.f, "<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22'>"
+							  "<rect width='22' height='22' fill='red'/></svg>" );
+	auto context = svg.scene->makeCurrent();
+	auto* image = svg.createImage( svg.uri(), UIScaleType::Expand, { 13, 13 } );
+	svg.pumpUntil(
+		[&] { return SvgImageFixture::texturePixels( image->getDrawable() ) != Sizef( 22, 22 ); } );
+	EXPECT_TRUE( SvgImageFixture::texturePixels( image->getDrawable() ) == Sizef( 13, 13 ) );
+}
+
+UTEST( UISceneDensity, ImageCreateClearsItsSvgSize ) {
+	const std::string source = "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='15'>"
+							   "<rect width='32' height='15' fill='red'/></svg>";
+	Image image( reinterpret_cast<const Uint8*>( source.data() ),
+				 static_cast<unsigned int>( source.size() ) );
+	EXPECT_TRUE( image.getVectorSize() == Sizef( 32, 15 ) );
+	image.create( 3, 4, 4 );
+	EXPECT_TRUE( image.getVectorSize() == Sizef() );
+}
+
+UTEST( UISceneDensity, SvgNaturalSizeMatchesItsDecodedSize ) {
+	// At 1.3x a 10-unit SVG decodes to 13 pixels: Image multiplies the floats before widening.
+	SvgImageFixture svg( 1.3f, "<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'>"
+							   "<rect width='10' height='10' fill='red'/></svg>" );
+	auto context = svg.scene->makeCurrent();
+	// In a larger box the image draws at its natural size, which is its decoded raster.
+	auto* image = svg.createImage( svg.uri(), UIScaleType::FitInside, { 20, 20 } );
+	for ( int frame = 0; frame < 5; ++frame )
+		svg.scene->update( Milliseconds( 16 ) );
+	EXPECT_TRUE( SvgImageFixture::texturePixels( image->getDrawable() ) == Sizef( 13, 13 ) );
+}
+
+UTEST( UISceneDensity, SvgCollapsedImageDropsItsQueuedRaster ) {
+	SvgImageFixture svg( 1.5f );
+	auto context = svg.scene->makeCurrent();
+	auto* image = svg.createImage( svg.uri(), UIScaleType::Expand, { 10, 10 } );
+	auto pixels = [&] { return SvgImageFixture::texturePixels( image->getDrawable() ); };
+	svg.pumpUntil( [&] { return pixels() == Sizef( 15, 15 ); } );
+	ASSERT_TRUE( pixels() == Sizef( 15, 15 ) );
+	// Growing queues a 30x30 raster; collapsing before it runs must drop it. A zero size would
+	// restore the natural size, so collapse to under a pixel instead.
+	image->setSize( 20, 20 );
+	svg.scene->update( Milliseconds( 16 ) );
+	image->setSize( 0.5f, 0.5f );
+	bool showedQueuedRaster = false;
+	Clock clock;
+	while ( clock.getElapsedTime() < Milliseconds( 400 ) ) {
+		std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+		svg.scene->update( Milliseconds( 16 ) );
+		showedQueuedRaster |= pixels() == Sizef( 30, 30 );
+	}
+	EXPECT_FALSE( showedQueuedRaster );
+}
+
+UTEST( UISceneDensity, SvgRasterSizeBeyondIntRangeIsRejected ) {
+	// The 4000x0.000001 SVG rasterizes to 4000x1. Drawn 4 pixels tall it would need
+	// 4000 * 4e6 = 1.6e10 pixels across: the size must be rejected before it is narrowed to int,
+	// which only a sanitizer can observe.
+	SvgImageFixture svg( 1.f, "<svg xmlns='http://www.w3.org/2000/svg' width='4000' "
+							  "height='0.000001'><rect width='4000' height='0.000001' "
+							  "fill='red'/></svg>" );
+	auto context = svg.scene->makeCurrent();
+	auto* image = svg.createImage( svg.uri(), UIScaleType::Expand, { 4, 4 } );
+	ASSERT_TRUE( image->getDrawable() != nullptr );
+	ASSERT_EQ( image->getDrawable()->getDrawableType(), Drawable::TEXTUREDRAWABLE );
+	auto* drawable = static_cast<TextureDrawable*>( image->getDrawable().get() );
+	ASSERT_TRUE( drawable->getTexture() != nullptr );
+	const TexturePtr base = drawable->getTexture();
+	ASSERT_TRUE( base->isVectorRaster() );
+	ASSERT_TRUE( base->getPixelsSize() == Sizef( 4000, 1 ) );
+	for ( int frame = 0; frame < 5; ++frame )
+		svg.scene->update( Milliseconds( 16 ) );
+	EXPECT_TRUE( drawable->getTexture() == base );
+}
+
 UTEST( UISceneDensity, CancelledFilePreparationCanBeRetried ) {
 	DensityApplication fixture;
 	auto* scene = fixture.app.getUI();
@@ -2337,7 +2940,9 @@ UTEST( UISceneDensity, SharedWebSvgCacheKeepsSceneRasterVariants ) {
 	EXPECT_EQ( second->getRasterScale(), 2.f );
 	EXPECT_TRUE( scene->requestWebTexture( request, {} ) == first );
 	EXPECT_EQ( fetches, 2 );
-	EXPECT_EQ( cache->getRetainedBytes(), ( 10u * 6u + 20u * 12u ) * 4u );
+	// Each entry keeps its SVG source to rasterize other drawn sizes.
+	EXPECT_EQ( cache->getRetainedBytes(),
+			   ( 10u * 6u + 20u * 12u ) * 4u + 2u * ( sizeof( DensityTestSvg ) - 1u ) );
 }
 
 UTEST( UISceneDensity, ExtensionlessWebSvgRefreshesAnImageAndBackground ) {

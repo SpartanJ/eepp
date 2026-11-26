@@ -31,6 +31,18 @@ Sizef TextureDrawable::getPixelsSize() {
 	return mTexture ? mTexture->getPixelsSize() : Sizef{};
 }
 
+Sizef TextureDrawable::getNaturalSize() {
+	return mTexture ? mTexture->getNaturalSize() : Sizef{};
+}
+
+Sizef TextureDrawable::getNaturalPixelsSize() {
+	return mTexture ? mTexture->getNaturalPixelsSize() : Sizef{};
+}
+
+bool TextureDrawable::isVectorRaster() const {
+	return mTexture && mTexture->isVectorRaster();
+}
+
 Float TextureDrawable::getRasterScale() const {
 	return mTexture ? mTexture->getRasterScale() : 1.f;
 }

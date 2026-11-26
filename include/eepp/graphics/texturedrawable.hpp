@@ -18,6 +18,9 @@ class EE_API TextureDrawable : public DrawableResource {
 
 	Sizef getSize();
 	Sizef getPixelsSize();
+	Sizef getNaturalSize();
+	Sizef getNaturalPixelsSize();
+	bool isVectorRaster() const;
 	virtual Float getRasterScale() const;
 	void draw();
 	void draw( const Vector2f& position );
@@ -27,9 +30,10 @@ class EE_API TextureDrawable : public DrawableResource {
 
 	const TexturePtr& getTexture() const;
 
-  protected:
+	/** Draws @p texture from now on and notifies resource-change listeners. */
 	void setTexture( TexturePtr texture );
 
+  protected:
 	TexturePtr mTexture;
 	DrawableResourceConnection mTextureChangeConnection;
 };

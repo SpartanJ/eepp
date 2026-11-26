@@ -211,6 +211,7 @@ void TextureLoader::loadFromFile() {
 			mImgWidth = image.getWidth();
 			mImgHeight = image.getHeight();
 			mChannels = image.getChannels();
+			mVectorSize = image.getVectorSize();
 		}
 	} else if ( PackRegistry::instance()->isFallbackToPacksActive() ) {
 		mPack = PackRegistry::instance()->exists( mFilepath );
@@ -264,6 +265,7 @@ void TextureLoader::loadFromMemory() {
 		mImgWidth = image.getWidth();
 		mImgHeight = image.getHeight();
 		mChannels = image.getChannels();
+		mVectorSize = image.getVectorSize();
 	}
 }
 
@@ -319,6 +321,7 @@ void TextureLoader::loadFromStream() {
 			mImgWidth = image.getWidth();
 			mImgHeight = image.getHeight();
 			mChannels = image.getChannels();
+			mVectorSize = image.getVectorSize();
 
 			mStream->seek( 0 );
 		}
@@ -441,7 +444,7 @@ void TextureLoader::loadFromPixels() {
 					mFilepath, textureHandle, width, height, mImgWidth, mImgHeight, mMipmap,
 					mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 				if ( mImgType == Image::Format::SVG )
-					mTexture->setRasterScale( mFormatConfiguration.svgScale() );
+					mTexture->setVectorRaster( mFormatConfiguration.svgScale(), mVectorSize );
 
 				if ( mFilepath.empty() ) {
 					Log::instance()->writef(

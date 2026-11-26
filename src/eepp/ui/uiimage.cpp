@@ -1,3 +1,4 @@
+#include "vectorraster.hpp"
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/sprite.hpp>
@@ -61,6 +62,8 @@ bool UIImage::isType( const Uint32& type ) const {
 UIImage* UIImage::setDrawable( DrawablePtr drawable ) {
 	if ( drawable == mDrawable )
 		return this;
+	// The raster helper belongs to one source; the src handler sets it again.
+	mVectorRaster.reset();
 
 	Sizef oldSize( mSize );
 
@@ -110,7 +113,7 @@ void UIImage::onAutoSize() {
 	if ( nullptr == mDrawable )
 		return;
 
-	Sizef drawableSize = mDrawable->getPixelsSize();
+	Sizef drawableSize = mDrawable->getNaturalPixelsSize();
 	if ( drawableSize.getWidth() <= 0 || drawableSize.getHeight() <= 0 )
 		return;
 
@@ -194,7 +197,7 @@ void UIImage::calcDestSize() {
 		if ( NULL == mDrawable )
 			return;
 
-		Sizef pxSize( mDrawable->getPixelsSize() );
+		Sizef pxSize( mDrawable->getNaturalPixelsSize() );
 		if ( pxSize.x <= 0 || pxSize.y <= 0 ) {
 			mDestSize = Sizef::Zero;
 			autoAlign();
@@ -212,12 +215,15 @@ void UIImage::calcDestSize() {
 			mDestSize = pxSize;
 		}
 	} else if ( mDrawable ) {
-		mDestSize = mDrawable->getPixelsSize();
+		mDestSize = mDrawable->getNaturalPixelsSize();
 	}
 
 	mDestSize = mDestSize.floor();
 
 	autoAlign();
+
+	if ( mVectorRaster )
+		mVectorRaster->update( mDestSize );
 }
 
 void UIImage::draw() {
@@ -437,29 +443,24 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 
 			if ( uri.getScheme() == "http" || uri.getScheme() == "https" ) {
 				loadRemoteDrawable( uri );
-				break;
-			}
-
-			if ( mDeferLoad && scene && uri.getScheme() == "file" ) {
-				if ( auto drawable = scene->getDrawableResolver().resolveAsync( path ) ) {
-					setDrawable( std::move( drawable ) );
-					break;
-				}
-			}
-
-			DrawablePtr createdDrawable =
-				StyleSheetSpecification::instance()->getDrawableImageParser().createDrawable(
-					path, mSize, this );
-			if ( createdDrawable ) {
+			} else if ( DrawablePtr deferred =
+							mDeferLoad && scene && uri.getScheme() == "file"
+								? scene->getDrawableResolver().resolveAsync( path )
+								: DrawablePtr{} ) {
+				setDrawable( std::move( deferred ) );
+			} else if ( DrawablePtr createdDrawable = StyleSheetSpecification::instance()
+														  ->getDrawableImageParser()
+														  .createDrawable( path, mSize, this ) ) {
 				setDrawable( std::move( createdDrawable ) );
+			} else if ( scene ) {
+				setDrawable( scene->getDrawableResolver().resolve( path ) );
 			} else {
-				if ( scene ) {
-					setDrawable( scene->getDrawableResolver().resolve( path ) );
-				} else {
-					DrawableResolver resolver( defaultResourceScope() );
-					setDrawable( resolver.resolve( path ) );
-				}
+				DrawableResolver resolver( defaultResourceScope() );
+				setDrawable( resolver.resolve( path ) );
 			}
+			mVectorRaster = VectorRaster::create( this, std::move( path ), [this] {
+				return VectorRaster::textureDrawableOf( mDrawable );
+			} );
 			break;
 		}
 		case PropertyId::Icon: {

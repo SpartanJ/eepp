@@ -1,3 +1,4 @@
+#include "vectorraster.hpp"
 #include <eepp/ui/accessibility/accessibilitywidgetresolver.hpp>
 #include <eepp/ui/uihtmlimage.hpp>
 #define PUGIXML_HEADER_ONLY
@@ -96,6 +97,8 @@ const DrawablePtr& UIHTMLImage::getDrawable() const {
 UIHTMLImage* UIHTMLImage::setDrawable( DrawablePtr drawable ) {
 	if ( drawable == mDrawable )
 		return this;
+	// The raster helper belongs to one source; the src handler sets it again.
+	mVectorRaster.reset();
 	Sizef oldSize( mSize );
 	clearDrawable();
 	mDrawable = std::move( drawable );
@@ -167,25 +170,24 @@ bool UIHTMLImage::applyProperty( const StyleSheetProperty& property ) {
 			}
 			if ( uri.getScheme() == "http" || uri.getScheme() == "https" ) {
 				loadRemoteDrawable( uri );
-				break;
-			}
-			if ( mDeferLoad && scene && uri.getScheme() == "file" ) {
-				if ( auto drawable = scene->getDrawableResolver().resolveAsync( path ) ) {
-					setDrawable( std::move( drawable ) );
-					break;
-				}
-			}
-			DrawablePtr drawable =
-				StyleSheetSpecification::instance()->getDrawableImageParser().createDrawable(
-					path, mSize, this );
-			if ( drawable )
+			} else if ( DrawablePtr deferred =
+							mDeferLoad && scene && uri.getScheme() == "file"
+								? scene->getDrawableResolver().resolveAsync( path )
+								: DrawablePtr{} ) {
+				setDrawable( std::move( deferred ) );
+			} else if ( DrawablePtr drawable = StyleSheetSpecification::instance()
+												   ->getDrawableImageParser()
+												   .createDrawable( path, mSize, this ) ) {
 				setDrawable( std::move( drawable ) );
-			else if ( scene )
+			} else if ( scene ) {
 				setDrawable( scene->getDrawableResolver().resolve( path ) );
-			else {
+			} else {
 				DrawableResolver resolver( defaultResourceScope() );
 				setDrawable( resolver.resolve( path ) );
 			}
+			mVectorRaster = VectorRaster::create( this, std::move( path ), [this] {
+				return VectorRaster::textureDrawableOf( mDrawable );
+			} );
 			break;
 		}
 		case PropertyId::ScaleType: {
@@ -239,19 +241,27 @@ bool UIHTMLImage::applyProperty( const StyleSheetProperty& property ) {
 Float UIHTMLImage::getMinIntrinsicWidth() const {
 	if ( mWidthPolicy == SizePolicy::Fixed )
 		return getPropertyWidth();
-	return ( getDrawable() ? getDrawable()->getMinIntrinsicWidth() *
-								 PixelDensity::getPixelDensity() / getDrawable()->getRasterScale()
-						   : 0.f ) +
-		   mPaddingPx.Left + mPaddingPx.Right;
+	Float width = 0.f;
+	if ( getDrawable() && getDrawable()->isVectorRaster() ) {
+		width = layoutDrawableSize().x;
+	} else if ( getDrawable() ) {
+		width = getDrawable()->getMinIntrinsicWidth() * PixelDensity::getPixelDensity() /
+				getDrawable()->getRasterScale();
+	}
+	return width + mPaddingPx.Left + mPaddingPx.Right;
 }
 
 Float UIHTMLImage::getMaxIntrinsicWidth() const {
 	if ( mWidthPolicy == SizePolicy::Fixed )
 		return getPropertyWidth();
-	return ( getDrawable() ? getDrawable()->getMaxIntrinsicWidth() *
-								 PixelDensity::getPixelDensity() / getDrawable()->getRasterScale()
-						   : 0.f ) +
-		   mPaddingPx.Left + mPaddingPx.Right;
+	Float width = 0.f;
+	if ( getDrawable() && getDrawable()->isVectorRaster() ) {
+		width = layoutDrawableSize().x;
+	} else if ( getDrawable() ) {
+		width = getDrawable()->getMaxIntrinsicWidth() * PixelDensity::getPixelDensity() /
+				getDrawable()->getRasterScale();
+	}
+	return width + mPaddingPx.Left + mPaddingPx.Right;
 }
 
 std::string UIHTMLImage::getPropertyString( const PropertyDefinition* property,
@@ -297,11 +307,19 @@ UIHTMLImage* UIHTMLImage::setScaleType( const UIScaleType& type ) {
 	return this;
 }
 
+Sizef UIHTMLImage::layoutDrawableSize() const {
+	if ( !mDrawable )
+		return Sizef::Zero;
+	// An SVG raster made for the drawn size reports its SVG's natural size, so rerasterizing
+	// doesn't change layout.
+	if ( mDrawable->isVectorRaster() )
+		return mDrawable->getNaturalPixelsSize();
+	return mDrawable->getPixelsSize() *
+		   ( PixelDensity::getPixelDensity() / mDrawable->getRasterScale() );
+}
+
 void UIHTMLImage::autoSizeImage() {
-	Sizef drawableSize = mDrawable
-							 ? mDrawable->getPixelsSize() *
-								   ( PixelDensity::getPixelDensity() / mDrawable->getRasterScale() )
-							 : Sizef::Zero;
+	Sizef drawableSize = layoutDrawableSize();
 	if ( drawableSize.x <= 0.f || drawableSize.y <= 0.f )
 		return;
 	Sizef size = getPixelsSize();
@@ -428,7 +446,7 @@ void UIHTMLImage::calcDestSize() {
 		mDestSize = { mSize.x - mPaddingPx.Left - mPaddingPx.Right,
 					  mSize.y - mPaddingPx.Top - mPaddingPx.Bottom };
 	} else if ( mScaleType == UIScaleType::FitInside && mDrawable ) {
-		Sizef pixels( mDrawable->getPixelsSize() );
+		Sizef pixels( mDrawable->getNaturalPixelsSize() );
 		mDestSize = pixels;
 		if ( pixels.x > 0 && pixels.y > 0 ) {
 			Float scale = eemin( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) / pixels.x,
@@ -437,10 +455,13 @@ void UIHTMLImage::calcDestSize() {
 				mDestSize *= scale;
 		}
 	} else if ( mDrawable ) {
-		mDestSize = mDrawable->getPixelsSize();
+		mDestSize = mDrawable->getNaturalPixelsSize();
 	}
 	mDestSize = mDestSize.floor();
 	mAlignOffset = { mPaddingPx.Left, mPaddingPx.Top };
+
+	if ( mVectorRaster )
+		mVectorRaster->update( mDestSize );
 }
 
 void UIHTMLImage::clearDrawable() {
@@ -454,6 +475,13 @@ void UIHTMLImage::clearDrawable() {
 
 void UIHTMLImage::onDrawableResourceChange() {
 	runOnMainThread( [this] {
+		// A deferred load that failed leaves an empty texture: drop it to show the alt text, as a
+		// failed synchronous load does.
+		if ( mDrawable && mDrawable->getDrawableType() == Drawable::TEXTUREDRAWABLE &&
+			 !static_cast<TextureDrawable*>( mDrawable.get() )->getTexture() ) {
+			setDrawable( DrawablePtr{} );
+			return;
+		}
 		Sizef oldSize( mSize );
 		autoSizeImage();
 		calcDestSize();

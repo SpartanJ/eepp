@@ -16,6 +16,7 @@ using namespace EE::Scene;
 namespace EE { namespace UI {
 
 class UINode;
+class VectorRaster;
 
 enum class BackgroundMode { Native, Html };
 
@@ -144,11 +145,15 @@ class EE_API UINodeDrawable : public Drawable {
 		std::string mSizeEq;
 		bool mNeedsUpdate{ false };
 		bool mColorWasSet{ false };
+		// The drawable reference names no SVG source to rasterize again.
+		bool mVectorRasterUnavailable{ false };
 		Float mRemoteDrawableDensity{ 0.f };
 		DrawablePtr mDrawable;
 		std::string mDrawableRef;
 		Sizef mDrawableRefSize;
 		DrawableResourceConnection mResourceChangeConnection;
+		// Created only for layers that draw an SVG raster.
+		std::unique_ptr<VectorRaster> mVectorRaster;
 		RepeatX mRepeatX{ RepeatX::NoRepeat };
 		RepeatY mRepeatY{ RepeatY::NoRepeat };
 		std::string mOriginEq{ "padding-box" };
@@ -162,6 +167,8 @@ class EE_API UINodeDrawable : public Drawable {
 		virtual void onColorFilterChange();
 
 		void update();
+
+		void updateVectorRaster();
 
 		bool needsRemoteDrawableRefresh() const;
 

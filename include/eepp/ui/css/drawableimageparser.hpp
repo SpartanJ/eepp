@@ -32,6 +32,10 @@ class EE_API DrawableImageParser {
 
 	void addParser( const std::string& name, const DrawableImageParserFunc& func );
 
+	/** @return The image source of a url() function: a data URI, or a URL resolved against the
+	 * node's document. Empty for other functions and resource references. */
+	static std::string urlSource( const FunctionString& function, UINode* node );
+
   protected:
 	std::map<std::string, DrawableImageParserFunc> mFuncs;
 

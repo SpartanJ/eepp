@@ -2,8 +2,8 @@
 #define EE_GRAPHICS_DRAWABLE_HPP
 
 #include <eepp/graphics/blendmode.hpp>
-#include <eepp/graphics/resource.hpp>
 #include <eepp/graphics/rendermode.hpp>
+#include <eepp/graphics/resource.hpp>
 #include <eepp/math/size.hpp>
 #include <eepp/system/color.hpp>
 using namespace EE::Math;
@@ -50,6 +50,18 @@ class EE_API Drawable {
 	virtual Sizef getSize() = 0;
 
 	virtual Sizef getPixelsSize() = 0;
+
+	/** @return The size to lay the drawable out at, in dp. It differs from getSize() for an SVG
+	 * raster, which keeps the size of its SVG at the current density whatever size it was
+	 * rasterized at, so that rasterizing it again doesn't change layout. */
+	virtual Sizef getNaturalSize() { return getSize(); }
+
+	/** @return getNaturalSize() in pixels. */
+	virtual Sizef getNaturalPixelsSize() { return getPixelsSize(); }
+
+	/** @return Whether the drawable draws an SVG raster: its natural size is already at the
+	 * current density, and it can be rasterized again at the size it is drawn at. */
+	virtual bool isVectorRaster() const { return false; }
 
 	/** Ratio of raster pixels to source pixels for images decoded at a requested scale. */
 	virtual Float getRasterScale() const { return 1.f; }

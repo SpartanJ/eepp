@@ -925,6 +925,19 @@ Sizef Texture::getPixelsSize() {
 	return Sizef( mImgWidth, mImgHeight );
 }
 
+Sizef Texture::getNaturalSize() {
+	const Sizef pixels = getNaturalPixelsSize();
+	return Sizef( PixelDensity::pxToDp( pixels.x ), PixelDensity::pxToDp( pixels.y ) );
+}
+
+Sizef Texture::getNaturalPixelsSize() {
+	if ( isVectorRaster() && mVectorSize.x > 0.f && mVectorSize.y > 0.f ) {
+		if ( auto size = Image::svgRasterSize( mVectorSize, PixelDensity::getPixelDensity() ) )
+			return size->asFloat();
+	}
+	return Sizef( mImgWidth, mImgHeight );
+}
+
 void Texture::draw() {
 	drawFast( mPosition.x, mPosition.y, 0, Vector2f::One, mColor );
 }

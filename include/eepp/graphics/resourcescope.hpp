@@ -64,6 +64,14 @@ class EE_API ResourceScope {
 	 * waiting for the scene thread. */
 	TexturePtr findOrLoadTexture( const std::string& key, const std::function<TexturePtr()>& load );
 
+	/** Finds a texture shared only while something uses it, such as an SVG rasterized at one
+	 * drawn size. */
+	TexturePtr findSharedRaster( const std::string& key ) const;
+
+	/** Shares @p texture under @p key while it is in use, without keeping it alive. If a texture
+	 * shared under the key is still alive, it is returned instead. */
+	TexturePtr publishSharedRaster( const std::string& key, TexturePtr texture );
+
 	DrawablePtr findDrawableSource( const ResourceKey& key ) const;
 	DrawablePtr findDrawableSource( const std::string& key ) const;
 	DrawablePtr findDrawable( const std::string& name, bool firstSearchSprite = false ) const;
@@ -167,10 +175,12 @@ class EE_API ResourceScope {
 		std::optional<std::weak_ptr<DeferredTextureLoad>> deferred;
 	};
 
+	/** Shared raster loads publish into the cache of rasters shared while in use, instead of the
+	 * local catalog. */
 	static std::optional<TexturePtr>
 	requestTextureLoad( const ResourceScopePtr& scope, const std::string& key, ThreadPool* pool,
 						const std::function<TextureLoad()>& createLoad, PostTextureUpload dispatch,
-						TextureLoadCallback ready );
+						TextureLoadCallback ready, bool sharedRaster = false );
 
 	/** Whether the calling thread can upload a deferred texture itself. */
 	static bool canUploadTextures();
@@ -180,7 +190,8 @@ class EE_API ResourceScope {
 	void cancelUnownedTextureLoad( const std::string& key );
 
 	std::packaged_task<TexturePtr()> textureLoadTask( const std::string& key,
-													  std::function<TexturePtr()> load );
+													  std::function<TexturePtr()> load,
+													  bool sharedRaster = false );
 
 	void runTextureLoad( const std::string& key, std::packaged_task<TexturePtr()> task,
 						 const std::shared_future<TexturePtr>& result );
@@ -193,6 +204,7 @@ class EE_API ResourceScope {
 	// Scenes import the default local catalog and the default theme catalog.
 	SmallVector<ResourceCatalogPtr, 2> mImports;
 	UnorderedMap<std::string, PendingTextureLoad> mPendingTextureLoads;
+	UnorderedMap<std::string, std::weak_ptr<Texture>> mSharedRasters;
 	mutable Mutex mMutex;
 };
 
