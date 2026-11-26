@@ -684,6 +684,8 @@ class EE_API TextDocument {
 
 	String getAllSelectedText() const;
 
+	void getAllSelectedTextToBuffer( String& buffer ) const;
+
 	/** Built-in command names without constructing a document or including per-document commands.
 	 */
 	static std::vector<std::string> getDefaultCommandList();
@@ -799,6 +801,9 @@ class EE_API TextDocument {
   protected:
 	friend class TextUndoStack;
 	friend class FoldRangeService;
+
+	// The caller holds the document and line locks.
+	void appendText( const TextRange& range, String& buffer ) const;
 
 	EE::System::UUID mUUID;
 	Uint64 mModificationId{ 0 };

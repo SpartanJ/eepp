@@ -2,6 +2,7 @@
 
 #ifdef EE_BACKEND_SDL3
 
+#include <eepp/window/backend/SDL3/clipboardsdl3.hpp>
 #include <eepp/window/backend/backendhelper.hpp>
 #include <eepp/window/draganddrop/waylanddraganddrop.hpp>
 #include <eepp/window/runtime.hpp>
@@ -61,6 +62,7 @@ WindowBackendSDL3::WindowBackendSDL3() : WindowBackendLibrary() {
 }
 
 WindowBackendSDL3::~WindowBackendSDL3() {
+	ClipboardSDL::sPrimarySelectionSupport = ClipboardSDL::PrimarySelectionSupport::Unknown;
 #ifdef EE_HAS_WAYLAND_DRAG_SOURCE
 	Private::WaylandDragAndDrop::shutdown();
 #endif

@@ -21,6 +21,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/clipboard.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/inputevent.hpp>
@@ -522,6 +523,51 @@ UTEST( eterm_display, selection_clamps_each_axis_independently ) {
 		EXPECT_EQ( grid.x, outside.x );
 		EXPECT_EQ( y < 110 ? 0 : 23, outside.y );
 	}
+}
+
+UTEST( eterm_display, selection_released_outside_publishes_primary ) {
+	EE::UI::UIApplication app(
+		WindowSettings( 640, 480, "eterm outside selection release", WindowStyle::Hidden ),
+		EE::UI::UIApplication::Settings( Sys::getProcessPath() + "../", 1 ) );
+	auto pty = std::make_unique<MockPty>();
+	pty->mBuffer = "outside drag";
+	auto session =
+		TerminalSession::create( std::move( pty ), std::make_unique<MockProcess>(), 100 );
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return !snapshot.cells.empty() && snapshot.cells.front().u == 'o';
+				 } ) != nullptr );
+
+	SelectionTestDisplay display( app.getWindow(),
+								  app.getUI()->getUIThemeManager()->getDefaultFont(), session );
+	auto* clipboard = app.getWindow()->getClipboard();
+	ASSERT_FALSE( clipboard->supportsPrimarySelection() );
+	EXPECT_FALSE( clipboard->hasPrimarySelection() );
+	auto* input = app.getWindow()->getInput();
+	const auto cell = display.getCellPixelSize();
+	const Vector2i start{ 11, 11 };
+	const Vector2i end{ 11 + 6 * cell.getWidth(), 11 };
+	input->injectButtonPress( EE_BUTTON_LEFT );
+	display.onMouseDown( start, EE_BUTTON_LMASK );
+	display.onMouseMove( end, EE_BUTTON_LMASK );
+	const auto selected = display.getSelection();
+	ASSERT_FALSE( selected.empty() );
+	EXPECT_FALSE( clipboard->hasPrimarySelection() );
+
+	input->injectButtonRelease( EE_BUTTON_LEFT );
+	display.update( false );
+	EXPECT_TRUE( clipboard->hasPrimarySelection() );
+	EXPECT_STDSTREQ( selected, clipboard->getPrimarySelectionText() );
+
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return snapshot.hasSelection;
+				 } ) != nullptr );
+	display.update();
+	session->selectionClear();
+	ASSERT_TRUE( waitForSnapshot( session, []( const TerminalSnapshot& snapshot ) {
+					 return !snapshot.hasSelection;
+				 } ) != nullptr );
+	display.update();
+	EXPECT_FALSE( clipboard->hasPrimarySelection() );
 }
 
 UTEST( eterm_display, selection_auto_scroll_uses_only_vertical_widget_bounds ) {

@@ -1,3 +1,4 @@
+#include "primaryselection.hpp"
 #include <algorithm>
 #include <cmath>
 #include <eepp/core/containers.hpp>
@@ -244,6 +245,7 @@ UITextSelectionController::~UITextSelectionController() {
 }
 
 void UITextSelectionController::setHost( UIWidget* host ) {
+	PrimarySelection::cancel( this );
 	mHost = host;
 }
 
@@ -451,6 +453,7 @@ bool UITextSelectionController::hasSelection() const {
 }
 
 void UITextSelectionController::clear() {
+	PrimarySelection::cancel( this );
 	mMenuItemConnection.disconnect();
 	mMenuCloseConnection.disconnect();
 	if ( mCurrentMenu ) {
@@ -625,6 +628,15 @@ void UITextSelectionController::resolveAndProject() {
 			owner->setTextSelectionRange( { 0, 0 } );
 	}
 	mSelectedOwners = std::move( nextSelected );
+
+	if ( mHost && hasSelection() ) {
+		PrimarySelection::schedule(
+			*mHost, *this, []( const UITextSelectionController& controller, String& text ) {
+				controller.appendSelectionText( text );
+			} );
+	} else {
+		PrimarySelection::cancel( this );
+	}
 }
 
 UITextSelectionController::Point
@@ -723,10 +735,12 @@ bool UITextSelectionController::onMouseUp( const Vector2i& position, Uint32 flag
 	if ( !mDragging || !( flags & EE_BUTTON_LMASK ) )
 		return false;
 	Point point = hitTest( position.asFloat() );
-	if ( point.isValid() ) {
+	if ( point.isValid() && ( point.owner != mRawSelection.focus.owner ||
+							  point.offset != mRawSelection.focus.offset ) ) {
 		mRawSelection.focus = point;
 		resolveAndProject();
 	}
+	PrimarySelection::flush( this );
 	mDragging = false;
 	mSuppressClick = mSuppressClick || std::abs( position.x - mDragStart.x ) > 3 ||
 					 std::abs( position.y - mDragStart.y ) > 3;
@@ -907,6 +921,11 @@ void UITextSelectionController::updateSelectionDrag() {
 
 String UITextSelectionController::getSelectionString() const {
 	String result;
+	appendSelectionText( result );
+	return result;
+}
+
+void UITextSelectionController::appendSelectionText( String& result ) const {
 	UIRichText* previous = nullptr;
 	auto containingCell = []( const UIRichText* owner ) -> const UIHTMLWidget* {
 		for ( const Node* node = owner; node; node = node->getParent() ) {
@@ -920,25 +939,31 @@ String UITextSelectionController::getSelectionString() const {
 	};
 	for ( const auto& slice : mSelectedSlices ) {
 		auto* owner = slice.owner;
-		String fragment = owner->getRichText().getSelectionString( { slice.start, slice.end } );
-		if ( fragment.empty() )
-			continue;
 		// A parent can occur again after a nested owner. Only crossings between owners
 		// introduce document separators; RichText already supplies local line breaks.
-		if ( previous && previous != owner && !result.empty() &&
-			 result[result.size() - 1] != '\n' && fragment[0] != '\n' ) {
-			const UIHTMLWidget* previousCell = containingCell( previous );
-			const UIHTMLWidget* nextCell = containingCell( owner );
-			if ( previousCell && nextCell && previousCell != nextCell &&
-				 previousCell->getParent() == nextCell->getParent() )
-				result += '\t';
-			else
-				result += '\n';
+		const auto separatorPos = result.size();
+		const bool needsSeparator = previous && previous != owner && result.back() != '\n';
+		if ( needsSeparator )
+			result += '\n';
+		const auto fragmentStart = result.size();
+		owner->getRichText().appendSelectionText( { slice.start, slice.end }, result );
+		if ( result.size() == fragmentStart ) {
+			result.resize( separatorPos );
+			continue;
 		}
-		result += fragment;
+		if ( needsSeparator ) {
+			if ( result[fragmentStart] == '\n' ) {
+				result.erase( separatorPos, 1 );
+			} else {
+				const UIHTMLWidget* previousCell = containingCell( previous );
+				const UIHTMLWidget* nextCell = containingCell( owner );
+				if ( previousCell && nextCell && previousCell != nextCell &&
+					 previousCell->getParent() == nextCell->getParent() )
+					result[separatorPos] = '\t';
+			}
+		}
 		previous = owner;
 	}
-	return result;
 }
 
 bool UITextSelectionController::copySelection() {

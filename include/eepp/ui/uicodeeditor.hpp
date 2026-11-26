@@ -1084,6 +1084,8 @@ class EE_API UICodeEditor : public UITouchDraggableWidget, public TextDocument::
 
 	virtual Uint32 onTextEditing( const TextEditingEvent& event );
 
+	void pastePrimarySelection( const Vector2i* position = nullptr );
+
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	virtual Uint32 onKeyUp( const KeyEvent& event );

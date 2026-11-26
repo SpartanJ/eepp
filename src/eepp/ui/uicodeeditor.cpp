@@ -1,4 +1,5 @@
 #include "eepp/ui/uistyle.hpp"
+#include "primaryselection.hpp"
 #include <algorithm>
 #include <cmath>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -300,6 +301,7 @@ void UICodeEditor::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 }
 
 UICodeEditor::~UICodeEditor() {
+	PrimarySelection::cancel( this );
 	mAsyncLifetime.invalidate();
 
 	if ( getUISceneNode()->hasThreadPool() ) {
@@ -1168,6 +1170,7 @@ TextDocument& UICodeEditor::getDocument() {
 
 void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 	if ( mDoc.get() != doc.get() ) {
+		PrimarySelection::cancel( this );
 		URI oldDocURI = mDoc->getURI();
 		std::size_t clientsOfTypeCount =
 			mDoc->clientOfTypeCount( TextDocument::Client::Type::Core );
@@ -1251,6 +1254,7 @@ Uint32 UICodeEditor::onFocus( NodeFocusReason reason ) {
 }
 
 Uint32 UICodeEditor::onFocusLoss() {
+	PrimarySelection::flush( this );
 	if ( mMouseDown )
 		getInput()->captureMouse( false );
 	stopMinimapDragging( getInput()->getMousePos().asFloat() );
@@ -1989,6 +1993,7 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		}
 
 		tryExecuteMouseBinding( shortcut );
+		PrimarySelection::flush( this );
 	} else if ( flags & EE_BUTTON_WDMASK ) {
 		if ( getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-shrink" );
@@ -2062,17 +2067,8 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 			Engine::instance()->openURI( link.toUtf8() );
 			resetLinkOver( position );
 		}
-	} else if ( ( flags & EE_BUTTON_MMASK ) && isMouseOverMeOrChildren() ) {
-		auto txt( getUISceneNode()->getWindow()->getClipboard()->getText() );
-		if ( !isLocked() && !txt.empty() ) {
-			if ( mDoc->hasSelection() ) {
-				auto selTxt = mDoc->getSelectedText();
-				if ( !selTxt.empty() )
-					txt = selTxt;
-			}
-			mDoc->setSelection( resolveScreenPosition( position.asFloat() ) );
-			mDoc->textInput( txt );
-		}
+	} else if ( ( flags & EE_BUTTON_MMASK ) && isMouseOverMeOrChildren() && mFont ) {
+		pastePrimarySelection( &position );
 	}
 	return 1;
 }
@@ -2522,6 +2518,20 @@ void UICodeEditor::onDocumentInterestingCursorChange( const TextPosition& ) {
 }
 
 void UICodeEditor::onDocumentSelectionChange( const Doc::TextRange& ) {
+	// Publish from the view handling input, including its context menu. Read all cursors
+	// after debouncing so a selection notification never has to scan the cursor list.
+	const auto& selections = mDoc->getSelections();
+	if ( ( hasFocus() || ( mCurrentMenu && mCurrentMenu->hasFocusWithin() ) ) &&
+		 isTextSelectionEnabled() && !mDoc->isLoading() &&
+		 ( selections.size() > 1 ||
+		   ( !selections.empty() && selections.front().hasSelection() ) ) ) {
+		PrimarySelection::schedule( *this, *this, []( const UICodeEditor& editor, String& text ) {
+			if ( editor.isTextSelectionEnabled() && !editor.mDoc->isLoading() )
+				editor.mDoc->getAllSelectedTextToBuffer( text );
+		} );
+	} else {
+		PrimarySelection::cancel( this );
+	}
 	resetCursor();
 	invalidateDraw();
 	sendCommonEvent( Event::OnSelectionChanged );
@@ -3257,6 +3267,7 @@ void UICodeEditor::setTextSelection( const bool& active ) {
 		mFlags |= UI_TEXT_SELECTION_ENABLED;
 	} else {
 		mFlags &= ~UI_TEXT_SELECTION_ENABLED;
+		PrimarySelection::cancel( this );
 	}
 }
 
@@ -4023,6 +4034,20 @@ void UICodeEditor::cut() {
 
 void UICodeEditor::paste() {
 	mDoc->pasteText( String::fromUtf8( getUISceneNode()->getWindow()->getClipboard()->getText() ) );
+	sendCommonEvent( Event::OnTextPasted );
+}
+
+void UICodeEditor::pastePrimarySelection( const Vector2i* position ) {
+	if ( isLocked() || mDoc->isLoading() )
+		return;
+	auto text = PrimarySelection::getPasteText( *this );
+	if ( text.empty() )
+		return;
+	if ( position ) {
+		mDoc->resetSelection();
+		mDoc->setSelection( resolveScreenPosition( position->asFloat() ) );
+	}
+	mDoc->pasteText( String::fromUtf8( text ) );
 	sendCommonEvent( Event::OnTextPasted );
 }
 
@@ -5046,6 +5071,7 @@ std::shared_ptr<const TextDocument::DocumentRefCommands> UICodeEditor::getDefaul
 			EE_CODE_EDITOR_COMMAND( "copy", copy ),
 			EE_CODE_EDITOR_COMMAND( "cut", cut ),
 			EE_CODE_EDITOR_COMMAND( "paste", paste ),
+			EE_CODE_EDITOR_COMMAND( "paste-primary-selection", pastePrimarySelection ),
 			EE_CODE_EDITOR_COMMAND( "font-size-grow", fontSizeGrow ),
 			EE_CODE_EDITOR_COMMAND( "font-size-shrink", fontSizeShrink ),
 			EE_CODE_EDITOR_COMMAND( "font-size-reset", fontSizeReset ),

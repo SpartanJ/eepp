@@ -1,3 +1,4 @@
+#include "primaryselection.hpp"
 #include <algorithm>
 #include <cmath>
 #include <eepp/core/debug.hpp>
@@ -463,6 +464,7 @@ void UIRichText::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 }
 
 UIRichText::~UIRichText() {
+	PrimarySelection::cancel( this );
 	if ( mDocumentSelectionController )
 		mDocumentSelectionController->onOwnerWillBeDestroyed( this );
 }
@@ -2568,6 +2570,7 @@ void UIRichText::setTextSelectionEnabled( bool active ) {
 		mFlags |= UI_TEXT_SELECTION_ENABLED;
 	} else {
 		mFlags &= ~UI_TEXT_SELECTION_ENABLED;
+		PrimarySelection::cancel( this );
 	}
 	if ( auto* controller = getTextSelectionControllerInTree() )
 		controller->refresh();
@@ -2655,6 +2658,7 @@ Uint32 UIRichText::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 	}
 	if ( isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) ) {
 		mSelecting = false;
+		PrimarySelection::flush( this );
 	}
 
 	return UIHTMLWidget::onMouseClick( position, flags );
@@ -2673,6 +2677,7 @@ Uint32 UIRichText::onFocusLoss() {
 	if ( getTextSelectionControllerInTree() )
 		return 1;
 
+	PrimarySelection::flush( this );
 	selCurEnd( selCurInit() );
 	onSelectionChange();
 
@@ -2688,7 +2693,20 @@ Uint32 UIRichText::onKeyDown( const KeyEvent& event ) {
 }
 
 void UIRichText::onSelectionChange() {
+	const auto previous = mRichText.getSelection();
 	mRichText.setSelection( { mSelCurInit, mSelCurEnd } );
+	if ( !mDocumentSelectionController &&
+		 ( previous.start != mSelCurInit || previous.end != mSelCurEnd ) ) {
+		if ( isTextSelectionEnabled() && mSelCurInit != mSelCurEnd &&
+			 !getTextSelectionControllerInTree() ) {
+			PrimarySelection::schedule( *this, *this, []( const UIRichText& view, String& text ) {
+				if ( view.isTextSelectionEnabled() && !view.getTextSelectionControllerInTree() )
+					view.mRichText.appendSelectionText( view.mRichText.getSelection(), text );
+			} );
+		} else {
+			PrimarySelection::cancel( this );
+		}
+	}
 	invalidateDraw();
 }
 

@@ -23,6 +23,8 @@ class EE_API ClipboardSDL : public Clipboard {
 
 	bool hasPrimarySelection() const;
 
+	bool supportsPrimarySelection() const;
+
 	std::string getPrimarySelectionText();
 
 	void setPrimarySelectionText( const std::string& text );
@@ -33,6 +35,12 @@ class EE_API ClipboardSDL : public Clipboard {
 	ClipboardSDL( EE::Window::Window* window );
 
 	void init();
+
+  private:
+	friend class WindowBackendSDL2;
+
+	enum class PrimarySelectionSupport : Uint8 { Unknown, Unsupported, Supported };
+	static PrimarySelectionSupport sPrimarySelectionSupport;
 };
 
 }}}} // namespace EE::Window::Backend::SDL2

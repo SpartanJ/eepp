@@ -2,11 +2,15 @@
 #include <eepp/window/backend/SDL3/clipboardsdl3.hpp>
 #include <eepp/window/backend/SDL3/windowsdl3.hpp>
 
+#include <cstring>
 #include <memory>
 
 #ifdef EE_BACKEND_SDL3
 
 namespace EE { namespace Window { namespace Backend { namespace SDL3 {
+
+ClipboardSDL::PrimarySelectionSupport ClipboardSDL::sPrimarySelectionSupport =
+	PrimarySelectionSupport::Unknown;
 
 namespace {
 
@@ -32,7 +36,16 @@ ClipboardSDL::ClipboardSDL( EE::Window::Window* window ) : Clipboard( window ) {
 
 ClipboardSDL::~ClipboardSDL() {}
 
-void ClipboardSDL::init() {}
+void ClipboardSDL::init() {
+	if ( sPrimarySelectionSupport == PrimarySelectionSupport::Unknown ) {
+		const char* driver =
+			nativePrimarySelectionEnabled() ? SDL_GetCurrentVideoDriver() : nullptr;
+		sPrimarySelectionSupport =
+			driver && ( std::strcmp( driver, "x11" ) == 0 || std::strcmp( driver, "wayland" ) == 0 )
+				? PrimarySelectionSupport::Supported
+				: PrimarySelectionSupport::Unsupported;
+	}
+}
 
 void ClipboardSDL::setText( const std::string& text ) {
 	SDL_SetClipboardText( text.c_str() );
@@ -46,16 +59,29 @@ std::string ClipboardSDL::getText() {
 }
 
 bool ClipboardSDL::hasPrimarySelection() const {
-	// SDL3 may not have primary selection support
-	return false;
+	return supportsPrimarySelection() ? SDL_HasPrimarySelectionText()
+									  : Clipboard::hasPrimarySelection();
+}
+
+bool ClipboardSDL::supportsPrimarySelection() const {
+	return sPrimarySelectionSupport == PrimarySelectionSupport::Supported;
 }
 
 std::string ClipboardSDL::getPrimarySelectionText() {
-	return getText();
+	if ( supportsPrimarySelection() ) {
+		char* text = SDL_GetPrimarySelectionText();
+		std::string str( text ? text : "" );
+		SDL_free( text );
+		return str;
+	}
+	return Clipboard::getPrimarySelectionText();
 }
 
 void ClipboardSDL::setPrimarySelectionText( const std::string& text ) {
-	// No-op
+	if ( supportsPrimarySelection() )
+		SDL_SetPrimarySelectionText( text.c_str() );
+	else
+		Clipboard::setPrimarySelectionText( text );
 }
 
 String ClipboardSDL::getWideText() {

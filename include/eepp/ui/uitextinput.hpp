@@ -271,6 +271,12 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	void paste();
 
+	void pastePrimarySelection( const Vector2i* position = nullptr );
+
+	void pasteText( String pasted );
+
+	void updateDocumentPrimarySelection();
+
 	void updateIMELocation();
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );

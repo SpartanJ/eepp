@@ -335,6 +335,9 @@ class EE_API RichText : public Drawable {
 	/** @return A character interval as a string, honoring selection exclusions. */
 	String getSelectionString( TextSelectionRange range ) const;
 
+	/** Append selected text and honor selection exclusions. */
+	void appendSelectionText( TextSelectionRange range, String& text ) const;
+
 	/** Tries to update the layout if has been invalidated. This is automatically called before
 	 * draw. */
 	void updateLayout();

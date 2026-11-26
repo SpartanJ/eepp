@@ -10,6 +10,33 @@
 using namespace EE::UI::Doc;
 using namespace EE::System;
 
+UTEST( TextDocument, SelectionBufferPreservesRangesAndReusesCapacity ) {
+	TextDocument doc( false );
+	doc.textInput( EE::String( U"alpha\nbéta\ngamma" ) );
+	doc.resetSelection( TextRanges{
+		TextRange{ { 1, 2 }, { 0, 3 } },
+		TextRange{ { 1, 3 }, { 1, 3 } },
+		TextRange{ { 2, 1 }, { 2, 4 } },
+	} );
+	EE::String buffer;
+	buffer.reserve( 128 );
+	const auto capacity = buffer.capacity();
+
+	doc.getAllSelectedTextToBuffer( buffer );
+	EXPECT_STDSTREQ( "ha\nbé\namm", buffer.toUtf8() );
+	EXPECT_EQ( capacity, buffer.capacity() );
+
+	doc.resetSelection( TextRange{ { 0, 0 }, { 0, 1 } } );
+	doc.getAllSelectedTextToBuffer( buffer );
+	EXPECT_STDSTREQ( "a", buffer.toUtf8() );
+	EXPECT_EQ( capacity, buffer.capacity() );
+
+	doc.resetSelection( TextRange{ { 0, 0 }, { 0, 0 } } );
+	doc.getAllSelectedTextToBuffer( buffer );
+	EXPECT_TRUE( buffer.empty() );
+	EXPECT_EQ( capacity, buffer.capacity() );
+}
+
 UTEST( TextDocument, DetectedLineEndingsOverrideTheDefaultForNewDocuments ) {
 	for ( const auto initial : { TextFormat::LineEnding::CR, TextFormat::LineEnding::CRLF,
 								 TextFormat::LineEnding::LF } ) {

@@ -198,6 +198,12 @@ class EE_API UITextView : public UIWidget {
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	Int32 characterIndexAt( const Vector2i& position );
+
+	void updatePrimarySelection();
+
 	virtual void selCurInit( const Int32& init );
 
 	virtual void selCurEnd( const Int32& end );

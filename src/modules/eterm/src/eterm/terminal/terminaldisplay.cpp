@@ -495,6 +495,7 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 }
 
 TerminalDisplay::~TerminalDisplay() {
+	Clipboard::clearEmulatedPrimarySelection( this );
 	if ( mSession )
 		mSession->shutdown();
 }
@@ -794,9 +795,7 @@ bool TerminalDisplay::update( bool isMouseOverMe ) {
 	}
 	if ( mAlreadyClickedLButton ) {
 		if ( !( mWindow->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
-			mWindow->getInput()->captureMouse( false );
-			mDraggingSel = false;
-			mSelectionOverridesMouseCapture = false;
+			finishMouseSelection();
 		} else if ( !isMouseOverMe ) {
 			onMouseMove( mWindow->getInput()->getRelativeMousePos(),
 						 mWindow->getInput()->getPressTrigger() );
@@ -857,6 +856,8 @@ void TerminalDisplay::consumeSnapshot() {
 		}
 	}
 
+	if ( mSnapshot && mSnapshot->hasSelection && !snapshot->hasSelection )
+		Clipboard::clearEmulatedPrimarySelection( this );
 	mSnapshot = std::move( snapshot );
 	mSnapshotGeneration = mSnapshot->generation;
 	mCursor = mSnapshot->cursor;
@@ -1064,35 +1065,23 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 		 action != TerminalShortcutAction::FONTSIZE_SHRINK )
 		return;
 	switch ( action ) {
-		case TerminalShortcutAction::PASTE: {
-			getClipboard();
-			if ( !mClipboardUtf8.empty() ) {
-				if ( mMode & MODE_BRCKTPASTE ) {
-					mSession->writeRaw( "\033[200~" );
-					mSession->writeRaw( std::move( mClipboardUtf8 ) );
-					mSession->writeRaw( "\033[201~" );
-				} else {
-					mSession->writeRaw( std::move( mClipboardUtf8 ) );
-				}
-			}
-			break;
-		}
+		case TerminalShortcutAction::PASTE:
 		case TerminalShortcutAction::PASTE_SELECTION: {
-			std::string selection =
-				mWindow->getClipboard()->hasPrimarySelection()
-					? mWindow->getClipboard()->getPrimarySelectionText()
-					: ( hasSelection() ? getSelection()
-									   : mWindow->getClipboard()->getPrimarySelectionText() );
-			sanitizeInput( selection );
-			if ( !selection.empty() ) {
-				if ( mMode & MODE_BRCKTPASTE ) {
-					mSession->writeRaw( "\033[200~" );
-					mSession->writeRaw( std::move( selection ) );
-					mSession->writeRaw( "\033[201~" );
-				} else {
-					mSession->writeRaw( std::move( selection ) );
-				}
+			auto* clipboard = mWindow->getClipboard();
+			if ( action == TerminalShortcutAction::PASTE_SELECTION ) {
+				mClipboardUtf8 = clipboard->getPrimarySelectionPasteText();
+				sanitizeInput( mClipboardUtf8 );
+			} else {
+				getClipboard();
 			}
+			if ( mClipboardUtf8.empty() )
+				break;
+			const bool bracketed = mMode & MODE_BRCKTPASTE;
+			if ( bracketed )
+				mSession->writeRaw( "\033[200~" );
+			mSession->writeRaw( std::move( mClipboardUtf8 ) );
+			if ( bracketed )
+				mSession->writeRaw( "\033[201~" );
 			break;
 		}
 		case TerminalShortcutAction::COPY: {
@@ -1187,6 +1176,7 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 		 ( getSelectionMode() == SEL_EMPTY || getSelectionMode() == SEL_IDLE ) ) {
 		auto gridPos{ positionToGrid( pos ) };
 		mSession->selectionStart( gridPos.x, gridPos.y, SNAP_WORD );
+		publishPrimarySelection();
 	}
 }
 
@@ -1219,6 +1209,7 @@ void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 		auto gridPos{ positionToGrid( pos ) };
 		mSession->selectionExtend(
 			gridPos.x, gridPos.y, modifiers & KEYMOD_SHIFT ? SEL_RECTANGULAR : SEL_REGULAR, false );
+		mSelectionChangedByMouse = true;
 	}
 	// Shift overrides application mouse capture so the user can select terminal text. Sending the
 	// same event to the application would make the override ineffective.
@@ -1243,8 +1234,10 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 	if ( !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
 		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 		mSession->selectionStart( gridPos.x, gridPos.y, SNAP_LINE );
+		mSelectionChangedByMouse = true;
 	} else if ( !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) ) {
 		if ( !mDraggingSel ) {
+			Clipboard::clearEmulatedPrimarySelection( this );
 			mSession->selectionStart( gridPos.x, gridPos.y, 0 );
 			mDraggingSel = true;
 			mSelectionOverridesMouseCapture = selectionOverride;
@@ -1289,21 +1282,10 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 	const bool appCapturingMouse = isAppCapturingMouse();
 	const bool selectionOverride =
 		mSelectionOverridesMouseCapture || ( appCapturingMouse && shiftPressed );
-	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
-		mDraggingSel = false;
-	}
-
-	if ( ( flags & EE_BUTTON_LMASK ) && mWindow->getClipboard()->hasPrimarySelection() ) {
-		mWindow->getClipboard()->setPrimarySelectionText( getSelection() );
-	}
-
 	Uint32 smod = Input::sanitizeMod( modifiers );
 
-	if ( flags & EE_BUTTON_LMASK ) {
-		mAlreadyClickedLButton = false;
-		mWindow->getInput()->captureMouse( false );
-		mSelectionOverridesMouseCapture = false;
-	}
+	if ( flags & EE_BUTTON_LMASK )
+		finishMouseSelection();
 
 	if ( flags & EE_BUTTON_MMASK )
 		mAlreadyClickedMButton = false;
@@ -1336,6 +1318,24 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 		mSession->mouseReport( TerminalMouseEventType::MouseButtonRelease, positionToGrid( pos ),
 							   positionToPixel( pos ), flags, modifiers );
 	}
+}
+
+void TerminalDisplay::publishPrimarySelection() {
+	auto selection = getSelection();
+	if ( !selection.empty() )
+		mWindow->getClipboard()->publishPrimarySelection( selection, this );
+	else
+		Clipboard::clearEmulatedPrimarySelection( this );
+}
+
+void TerminalDisplay::finishMouseSelection() {
+	if ( mSelectionChangedByMouse )
+		publishPrimarySelection();
+	mSelectionChangedByMouse = false;
+	mDraggingSel = false;
+	mAlreadyClickedLButton = false;
+	mWindow->getInput()->captureMouse( false );
+	mSelectionOverridesMouseCapture = false;
 }
 
 Color TerminalDisplay::termColor( unsigned int terminalColor ) const {

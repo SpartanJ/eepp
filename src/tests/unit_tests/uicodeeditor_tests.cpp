@@ -12,6 +12,8 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitextinput.hpp>
+#include <eepp/window/clipboard.hpp>
 
 #include "../../tools/ecode/keybindingshelper.cpp"
 
@@ -21,6 +23,35 @@ using namespace EE::UI::Tools;
 using namespace EE::UI::Doc;
 using namespace EE::Scene;
 using namespace EE::System;
+
+UTEST( UICodeEditor, EmulatedPrimarySelectionFlushesAndClearsWithItsOwner ) {
+	UIApplication app( WindowSettings{ 320, 240, "Emulated primary selection" } );
+	auto* clipboard = app.getWindow()->getClipboard();
+	ASSERT_FALSE( clipboard->supportsPrimarySelection() );
+	auto* editor = UICodeEditor::New();
+	editor->setParent( app.getUI()->getRoot() );
+	editor->setFocus();
+	auto& document = editor->getDocument();
+	document.textInput( "editor selection" );
+	document.selectAll();
+	EXPECT_FALSE( clipboard->hasPrimarySelection() );
+	EXPECT_STDSTREQ( "editor selection", clipboard->getPrimarySelectionPasteText() );
+
+	auto* input = UITextInput::New();
+	input->setParent( app.getUI()->getRoot() );
+	input->setText( "input selection" );
+	input->getDocument().selectAll();
+	EXPECT_STDSTREQ( "editor selection", clipboard->getPrimarySelectionPasteText() );
+	document.setSelection( TextPosition{ 0, 0 } );
+	EXPECT_FALSE( clipboard->hasPrimarySelection() );
+
+	input->setFocus();
+	input->getDocument().setSelection( TextPosition{ 0, 0 } );
+	input->getDocument().selectAll();
+	EXPECT_STDSTREQ( "input selection", clipboard->getPrimarySelectionPasteText() );
+	input->setMode( UITextInput::TextInputMode::Password );
+	EXPECT_FALSE( clipboard->hasPrimarySelection() );
+}
 
 UTEST( UICodeEditor, FindReplaceBindsOwnerAndRestoresPlainScene ) {
 	UIApplication app(

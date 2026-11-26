@@ -1,3 +1,4 @@
+#include "primaryselection.hpp"
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -66,7 +67,9 @@ void UITextView::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 	setInternalFontSize( resolveFontSize( mFontSizeSource, newDensity, getFontSize() ) );
 }
 
-UITextView::~UITextView() {}
+UITextView::~UITextView() {
+	PrimarySelection::cancel( this );
+}
 
 Uint32 UITextView::getType() const {
 	return UI_TYPE_TEXTVIEW;
@@ -510,6 +513,7 @@ void UITextView::alignFix() {
 }
 
 Uint32 UITextView::onFocusLoss() {
+	PrimarySelection::flush( this );
 	UIWidget::onFocusLoss();
 
 	selCurEnd( selCurInit() );
@@ -589,14 +593,7 @@ Vector2f UITextView::getAlignOffset() const {
 
 Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
-		Vector2f nodePos( Vector2f( Pos.x, Pos.y ) );
-		worldToNode( nodePos );
-		nodePos = PixelDensity::dpToPx( nodePos ) - mRealAlignOffset -
-				  Vector2f( mPaddingPx.Left, mPaddingPx.Top );
-		nodePos.x = eemax( 0.f, nodePos.x );
-		nodePos.y = eemax( 0.f, nodePos.y );
-
-		Int32 curPos = mTextCache.findCharacterFromPos( nodePos.asInt() );
+		const Int32 curPos = characterIndexAt( Pos );
 
 		if ( -1 != curPos ) {
 			Int32 tSelCurInit, tSelCurEnd;
@@ -625,14 +622,7 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) &&
 		 getEventDispatcher()->getMouseDownNode() == this ) {
-		Vector2f nodePos( Vector2f( Pos.x, Pos.y ) );
-		worldToNode( nodePos );
-		nodePos = PixelDensity::dpToPx( nodePos ) - mRealAlignOffset -
-				  Vector2f( mPaddingPx.Left, mPaddingPx.Top );
-		nodePos.x = eemax( 0.f, nodePos.x );
-		nodePos.y = eemax( 0.f, nodePos.y );
-
-		Int32 curPos = getVisibleTextCache().findCharacterFromPos( nodePos.asInt() );
+		const Int32 curPos = characterIndexAt( Pos );
 
 		if ( -1 != curPos ) {
 			if ( !mSelecting ) {
@@ -649,6 +639,22 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 	}
 
 	return UIWidget::onMouseDown( Pos, Flags );
+}
+
+Uint32 UITextView::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( flags & EE_BUTTON_LMASK )
+		PrimarySelection::flush( this );
+	return UIWidget::onMouseUp( position, flags );
+}
+
+Int32 UITextView::characterIndexAt( const Vector2i& position ) {
+	Vector2f local = position.asFloat();
+	worldToNode( local );
+	local = PixelDensity::dpToPx( local ) - mRealAlignOffset -
+			Vector2f( mPaddingPx.Left, mPaddingPx.Top );
+	local.x = eemax( 0.f, local.x );
+	local.y = eemax( 0.f, local.y );
+	return getVisibleTextCache().findCharacterFromPos( local.asInt(), true );
 }
 
 void UITextView::drawSelection( Text& textCache ) {
@@ -694,6 +700,7 @@ void UITextView::setTextSelectionEnabled( bool active ) {
 		mFlags |= UI_TEXT_SELECTION_ENABLED;
 	} else {
 		mFlags &= ~UI_TEXT_SELECTION_ENABLED;
+		PrimarySelection::cancel( this );
 	}
 }
 
@@ -725,6 +732,7 @@ void UITextView::setTextSelectionRange( TextSelectionRange range ) {
 void UITextView::selCurInit( const Int32& init ) {
 	if ( mSelCurInit != init ) {
 		mSelCurInit = init;
+		updatePrimarySelection();
 		invalidateDraw();
 	}
 }
@@ -732,8 +740,25 @@ void UITextView::selCurInit( const Int32& init ) {
 void UITextView::selCurEnd( const Int32& end ) {
 	if ( mSelCurEnd != end ) {
 		mSelCurEnd = end;
+		updatePrimarySelection();
 		invalidateDraw();
 	}
+}
+
+void UITextView::updatePrimarySelection() {
+	if ( !isTextSelectionEnabled() || mSelCurInit == mSelCurEnd ) {
+		PrimarySelection::cancel( this );
+		return;
+	}
+	PrimarySelection::schedule( *this, *this, []( const UITextView& view, String& text ) {
+		if ( !view.isTextSelectionEnabled() )
+			return;
+		auto [start, end] = std::minmax( view.mSelCurInit, view.mSelCurEnd );
+		const auto size = static_cast<Int64>( view.mString.size() );
+		const auto from = std::clamp<Int64>( start, 0, size );
+		const auto to = std::clamp<Int64>( end, from, size );
+		text.append( view.mString, from, to - from );
+	} );
 }
 
 Int32 UITextView::selCurInit() {

@@ -13,6 +13,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		EE::System::FileSystem::changeWorkingDirectory( cwd );
 	else
 		EE::System::FileSystem::changeWorkingDirectory( EE::System::Sys::getProcessPath() );
+	// Keep native rendering while isolating automatic PRIMARY publication from the desktop.
+	EE::System::Sys::setEnv( "EEPP_DISABLE_NATIVE_PRIMARY_SELECTION", "1" );
 	EE::UI::UIApplication::setSystemFontsEnabledByDefault( false );
 	return utest_main( argc, argv );
 }

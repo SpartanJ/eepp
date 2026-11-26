@@ -2,6 +2,8 @@
 #include <eepp/window/backend/SDL2/clipboardsdl2.hpp>
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>
 
+#include <cstring>
+
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 #include <emscripten-browser-clipboard/emscripten_browser_clipboard.h>
 #endif
@@ -9,6 +11,9 @@
 #ifdef EE_BACKEND_SDL2
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
+
+ClipboardSDL::PrimarySelectionSupport ClipboardSDL::sPrimarySelectionSupport =
+	PrimarySelectionSupport::Unknown;
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 static std::string sContent;
@@ -19,6 +24,16 @@ ClipboardSDL::ClipboardSDL( EE::Window::Window* window ) : Clipboard( window ) {
 ClipboardSDL::~ClipboardSDL() {}
 
 void ClipboardSDL::init() {
+#if SDL_VERSION_ATLEAST( 2, 26, 0 )
+	if ( sPrimarySelectionSupport == PrimarySelectionSupport::Unknown ) {
+		const char* driver =
+			nativePrimarySelectionEnabled() ? SDL_GetCurrentVideoDriver() : nullptr;
+		sPrimarySelectionSupport =
+			driver && ( std::strcmp( driver, "x11" ) == 0 || std::strcmp( driver, "wayland" ) == 0 )
+				? PrimarySelectionSupport::Supported
+				: PrimarySelectionSupport::Unsupported;
+	}
+#endif
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	Log::info( "Initialized emscripten clipboard" );
 	emscripten_browser_clipboard::paste(
@@ -62,7 +77,15 @@ std::string ClipboardSDL::getText() {
 
 bool ClipboardSDL::hasPrimarySelection() const {
 #if SDL_VERSION_ATLEAST( 2, 26, 0 )
-	return SDL_HasPrimarySelectionText();
+	if ( supportsPrimarySelection() )
+		return SDL_HasPrimarySelectionText();
+#endif
+	return Clipboard::hasPrimarySelection();
+}
+
+bool ClipboardSDL::supportsPrimarySelection() const {
+#if SDL_VERSION_ATLEAST( 2, 26, 0 )
+	return sPrimarySelectionSupport == PrimarySelectionSupport::Supported;
 #else
 	return false;
 #endif
@@ -70,23 +93,24 @@ bool ClipboardSDL::hasPrimarySelection() const {
 
 std::string ClipboardSDL::getPrimarySelectionText() {
 #if SDL_VERSION_ATLEAST( 2, 26, 0 )
-	if ( SDL_HasPrimarySelectionText() ) {
+	if ( supportsPrimarySelection() ) {
 		char* text = SDL_GetPrimarySelectionText();
-		std::string str( text );
+		std::string str( text ? text : "" );
 		SDL_free( text );
 		return str;
 	}
 #endif
-
-	return getText();
+	return Clipboard::getPrimarySelectionText();
 }
 
 void ClipboardSDL::setPrimarySelectionText( const std::string& text ) {
 #if SDL_VERSION_ATLEAST( 2, 26, 0 )
-	if ( SDL_HasPrimarySelectionText() ) {
+	if ( supportsPrimarySelection() ) {
 		SDL_SetPrimarySelectionText( text.c_str() );
+		return;
 	}
 #endif
+	Clipboard::setPrimarySelectionText( text );
 }
 
 String ClipboardSDL::getWideText() {

@@ -1,3 +1,4 @@
+#include "primaryselection.hpp"
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -82,6 +83,7 @@ void UITextInput::onPixelDensityChange( Float oldDensity, Float newDensity ) {
 }
 
 UITextInput::~UITextInput() {
+	PrimarySelection::cancel( this );
 	eeSAFE_DELETE( mHintCache );
 	eeSAFE_DELETE( mPassCache );
 }
@@ -210,11 +212,14 @@ Uint32 UITextInput::onFocus( NodeFocusReason reason ) {
 
 	if ( mSelectAllDocOnTabNavigate && reason == NodeFocusReason::Tab )
 		mDoc.selectAll();
+	else if ( reason == NodeFocusReason::Click && mMouseDown )
+		updateDocumentPrimarySelection();
 
 	return 1;
 }
 
 Uint32 UITextInput::onFocusLoss() {
+	PrimarySelection::flush( this );
 	getSceneNode()->getWindow()->stopTextInput();
 	return UITextView::onFocusLoss();
 }
@@ -332,6 +337,7 @@ UITextInput* UITextInput::setMode( TextInputMode mode ) {
 	if ( mMode != mode ) {
 		mMode = mode;
 		if ( mMode == TextInputMode::Password ) {
+			PrimarySelection::cancel( this );
 			if ( !mPassCache ) {
 				mPassCache = Text::New();
 				mPassCache->setTextHints( getTextHints() );
@@ -473,6 +479,7 @@ Uint32 UITextInput::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 			mMouseDown = false;
 			getInput()->captureMouse( false );
 		}
+		PrimarySelection::flush( this );
 	} else if ( ( flags & EE_BUTTON_RMASK ) && mEnabledCreateContextMenu ) {
 		onCreateContextMenu( position, flags );
 	}
@@ -488,6 +495,10 @@ Uint32 UITextInput::onMessage( const NodeMessage* message ) {
 
 Uint32 UITextInput::onMouseClick( const Vector2i& position, const Uint32& flags ) {
 	UITextView::onMouseClick( position, flags );
+	if ( ( flags & EE_BUTTON_MMASK ) && mAllowEditing && getVisibleTextCache().getFont() &&
+		 !getUISceneNode()->getWindow()->getIME().isEditing() ) {
+		pastePrimarySelection( &position );
+	}
 	if ( ( flags & EE_BUTTON_LMASK ) &&
 		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 		mDoc.selectLine();
@@ -577,8 +588,21 @@ void UITextInput::onDocumentCursorChange( const TextPosition& ) {
 }
 
 void UITextInput::onDocumentSelectionChange( const TextRange& ) {
+	updateDocumentPrimarySelection();
 	onSelectionChange();
 	notifyAccessibilityEvent( AccessibilityEvent::SelectionChanged );
+}
+
+void UITextInput::updateDocumentPrimarySelection() {
+	if ( hasFocus() && mMode != TextInputMode::Password && isTextSelectionEnabled() &&
+		 mDoc.getSelection().hasSelection() ) {
+		PrimarySelection::schedule( *this, *this, []( const UITextInput& input, String& text ) {
+			if ( input.mMode != TextInputMode::Password && input.isTextSelectionEnabled() )
+				input.mDoc.getTextToBuffer( input.mDoc.getSelection(), text );
+		} );
+	} else {
+		PrimarySelection::cancel( this );
+	}
 }
 
 void UITextInput::onDocumentLineCountChange( const size_t&, const size_t& ) {}
@@ -890,7 +914,25 @@ void UITextInput::cut() {
 }
 
 void UITextInput::paste() {
-	String pasted( getUISceneNode()->getWindow()->getClipboard()->getText() );
+	pasteText( String::fromUtf8( getUISceneNode()->getWindow()->getClipboard()->getText() ) );
+}
+
+void UITextInput::pastePrimarySelection( const Vector2i* position ) {
+	if ( !mAllowEditing )
+		return;
+	auto text = PrimarySelection::getPasteText( *this );
+	if ( text.empty() )
+		return;
+	if ( position ) {
+		const Int32 column = characterIndexAt( *position );
+		if ( column < 0 )
+			return;
+		mDoc.setSelection( TextPosition{ 0, column } );
+	}
+	pasteText( String::fromUtf8( text ) );
+}
+
+void UITextInput::pasteText( String pasted ) {
 	if ( mEscapePastedText ) {
 		pasted.escape();
 	} else {
@@ -905,6 +947,7 @@ void UITextInput::registerCommands() {
 	mDoc.setCommand( "copy", [this] { copy(); } );
 	mDoc.setCommand( "cut", [this] { cut(); } );
 	mDoc.setCommand( "paste", [this] { paste(); } );
+	mDoc.setCommand( "paste-primary-selection", [this] { pastePrimarySelection(); } );
 	mDoc.setCommand( "press-enter", [this] { onPressEnter(); } );
 }
 
@@ -939,6 +982,7 @@ void UITextInput::registerKeybindings() {
 		{ { KEY_C, KeyMod::getDefaultModifier() }, "copy" },
 		{ { KEY_X, KeyMod::getDefaultModifier() }, "cut" },
 		{ { KEY_V, KeyMod::getDefaultModifier() }, "paste" },
+		{ { KEY_INSERT, KEYMOD_SHIFT }, "paste" },
 		{ { KEY_A, KeyMod::getDefaultModifier() }, "select-all" },
 	} );
 }

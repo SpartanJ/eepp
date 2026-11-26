@@ -446,10 +446,15 @@ String RichText::getSelectionString() const {
 }
 
 String RichText::getSelectionString( TextSelectionRange range ) const {
-	const_cast<RichText*>( this )->updateLayout();
+	String text;
+	appendSelectionText( range, text );
+	return text;
+}
+
+void RichText::appendSelectionText( TextSelectionRange range, String& text ) const {
 	if ( range.start == range.end )
-		return "";
-	String res;
+		return;
+	const_cast<RichText*>( this )->updateLayout();
 	for ( const auto& segment : getSelectedSegments( range ) ) {
 		Int64 start = segment.start;
 		Int64 end = segment.end;
@@ -457,37 +462,32 @@ String RichText::getSelectionString( TextSelectionRange range ) const {
 		for ( const auto& line : mLines ) {
 			for ( const auto& span : line.spans ) {
 				// Check if there was a newline before this span
-				while ( lastEndIdx < span.startCharIndex ) {
-					if ( lastEndIdx >= start && lastEndIdx < end ) {
-						res += '\n';
-					}
-					lastEndIdx++;
-				}
+				const Int64 gapStart = std::max( lastEndIdx, start );
+				const Int64 gapEnd = std::min( span.startCharIndex, end );
+				if ( gapStart < gapEnd )
+					text.append( gapEnd - gapStart, '\n' );
 
 				Int64 spanStart = std::max( start, span.startCharIndex );
 				Int64 spanEnd = std::min( end, span.endCharIndex );
 
 				if ( spanStart < spanEnd ) {
 					if ( span.type == RenderSpan::Type::Text && span.text ) {
-						res += span.text->getString().substr( spanStart - span.startCharIndex,
-															  spanEnd - spanStart );
+						text.append( span.text->getString(), spanStart - span.startCharIndex,
+									 spanEnd - spanStart );
 					} else {
 						// It's a drawable or custom size, it takes 1 "character" index.
-						res += ' ';
+						text += ' ';
 					}
 				}
 				lastEndIdx = span.endCharIndex;
 			}
 		}
 		// Check for trailing newlines
-		while ( lastEndIdx < mTotalCharacterCount ) {
-			if ( lastEndIdx >= start && lastEndIdx < end )
-				res += '\n';
-			lastEndIdx++;
-		}
+		const Int64 gapStart = std::max( lastEndIdx, start );
+		const Int64 gapEnd = std::min( mTotalCharacterCount, end );
+		if ( gapStart < gapEnd )
+			text.append( gapEnd - gapStart, '\n' );
 	}
-
-	return res;
 }
 
 Sizef RichText::getPixelsSize() {

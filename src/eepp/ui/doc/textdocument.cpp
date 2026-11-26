@@ -1416,8 +1416,12 @@ void TextDocument::getTextToBuffer( const TextRange& range, String& buffer ) con
 	Lock l( mLinesMutex );
 	Lock l2( *mDocumentMutex );
 
-	TextRange nrange = sanitizeRange( range.normalized() );
 	buffer.clear();
+	appendText( range, buffer );
+}
+
+void TextDocument::appendText( const TextRange& range, String& buffer ) const {
+	TextRange nrange = sanitizeRange( range.normalized() );
 	if ( !nrange.hasSelection() )
 		return;
 
@@ -1437,7 +1441,7 @@ void TextDocument::getTextToBuffer( const TextRange& range, String& buffer ) con
 		totalSize += endCol;
 	}
 
-	buffer.reserve( totalSize );
+	buffer.reserve( buffer.size() + totalSize );
 
 	if ( startLine == endLine ) {
 		buffer.append( mLines[startLine].getText(), startCol, endCol - startCol );
@@ -1460,15 +1464,24 @@ String TextDocument::getText() const {
 
 String TextDocument::getAllSelectedText() const {
 	String text;
-	for ( size_t i = 0; i < mSelection.size(); ++i ) {
-		String sel( getSelectedText( i ) );
-		if ( !sel.empty() ) {
-			text += std::move( sel );
-			if ( i != mSelection.size() - 1 )
-				text += "\n";
-		}
-	}
+	getAllSelectedTextToBuffer( text );
 	return text;
+}
+
+void TextDocument::getAllSelectedTextToBuffer( String& buffer ) const {
+	Lock l( mLinesMutex );
+	Lock l2( *mDocumentMutex );
+
+	buffer.clear();
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		const auto& range = mSelection[i];
+		if ( range.start() == range.end() )
+			continue;
+		const auto size = buffer.size();
+		appendText( range, buffer );
+		if ( buffer.size() != size && i + 1 < mSelection.size() )
+			buffer += '\n';
+	}
 }
 
 String TextDocument::toString() {

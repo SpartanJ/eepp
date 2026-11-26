@@ -135,6 +135,8 @@ class EE_API UITextSelectionController {
 
 	void resolveAndProject();
 
+	void appendSelectionText( String& text ) const;
+
 	int indexOf( const UIRichText* owner ) const;
 
 	int sliceIndexOf( Point point ) const;

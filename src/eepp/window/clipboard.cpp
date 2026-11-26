@@ -1,14 +1,35 @@
 #include <eepp/window/clipboard.hpp>
+
+#include <cstdlib>
 #include <memory>
+#include <string_view>
 
 namespace EE { namespace Window {
 
+std::string Clipboard::sEmulatedPrimarySelection;
+const void* Clipboard::sEmulatedPrimarySelectionOwner = nullptr;
+void ( *Clipboard::sPrimarySelectionFlushCallback )() = nullptr;
+
 Clipboard::Clipboard( EE::Window::Window* window ) : mWindow( window ) {}
 
-Clipboard::~Clipboard() {}
+Clipboard::~Clipboard() {
+	clearEmulatedPrimarySelection( this );
+}
 
 EE::Window::Window* Clipboard::getWindow() const {
 	return mWindow;
+}
+
+bool Clipboard::hasPrimarySelection() const {
+	return !sEmulatedPrimarySelection.empty();
+}
+
+std::string Clipboard::getPrimarySelectionText() {
+	return sEmulatedPrimarySelection.empty() ? getText() : sEmulatedPrimarySelection;
+}
+
+void Clipboard::setPrimarySelectionText( const std::string& text ) {
+	setEmulatedPrimarySelection( text, this );
 }
 
 bool Clipboard::setMimeData( std::vector<std::pair<std::string, std::string>> dataByMimeType ) {
@@ -47,6 +68,41 @@ const std::vector<std::string>& Clipboard::getTextMimeTypes() {
 	static const std::vector<std::string> types{ "text/plain;charset=utf-8", "UTF8_STRING",
 												 "text/plain", "TEXT", "STRING" };
 	return types;
+}
+
+void Clipboard::publishPrimarySelection( const std::string& text, const void* owner ) {
+	if ( supportsPrimarySelection() )
+		setPrimarySelectionText( text );
+	else
+		setEmulatedPrimarySelection( text, owner );
+}
+
+void Clipboard::clearEmulatedPrimarySelection( const void* owner ) {
+	if ( owner && sEmulatedPrimarySelectionOwner == owner ) {
+		sEmulatedPrimarySelection.clear();
+		sEmulatedPrimarySelectionOwner = nullptr;
+	}
+}
+
+std::string Clipboard::getPrimarySelectionPasteText() {
+	if ( sPrimarySelectionFlushCallback )
+		sPrimarySelectionFlushCallback();
+	return getPrimarySelectionText();
+}
+
+bool Clipboard::nativePrimarySelectionEnabled() {
+	// Test-only override to exercise native rendering with an in-app selection buffer.
+	const char* disabled = std::getenv( "EEPP_DISABLE_NATIVE_PRIMARY_SELECTION" );
+	return !disabled || std::string_view( disabled ) != "1";
+}
+
+void Clipboard::setPrimarySelectionFlushCallback( void ( *callback )() ) {
+	sPrimarySelectionFlushCallback = callback;
+}
+
+void Clipboard::setEmulatedPrimarySelection( const std::string& text, const void* owner ) {
+	sEmulatedPrimarySelection = text;
+	sEmulatedPrimarySelectionOwner = text.empty() ? nullptr : owner;
 }
 
 }} // namespace EE::Window
