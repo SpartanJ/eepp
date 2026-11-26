@@ -141,6 +141,10 @@ Float Window::getAutomaticPixelDensity( int displayIndex ) const {
 
 Float Window::resolveAutomaticPixelDensity( Float displayScale, int displayIndex,
 											bool currentDisplay ) const {
+	// A terminal reports its effective UI scale, including the host's policy and overrides.
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return displayScale;
+
 // Emscripten uses the rounded browser scale for Best Fit and Display Scale.
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	if ( mPixelDensityMode == PixelDensityMode::BestFit )
@@ -183,7 +187,7 @@ Float Window::resolveBestFitPixelDensity( Float displayScale, int displayIndex,
 										  bool currentDisplay ) const {
 	if ( !std::isfinite( displayScale ) || displayScale <= 0.f )
 		displayScale = 1.f;
-	if ( Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
+	if ( Runtime::isOffscreen() )
 		return displayScale;
 #if EE_PLATFORM == EE_PLATFORM_MACOS || defined( EE_X11_PLATFORM )
 	Float logicalScale = 0.f;

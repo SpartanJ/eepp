@@ -4756,11 +4756,15 @@ void App::init( InitParameters& params ) {
 														  : 0 );
 	mDisplayDPI = currentDisplay->getDPI();
 
-	if ( params.pidelDensity > 0 ) {
+	const bool hasCommandLineDensity = params.pidelDensity > 0;
+	if ( hasCommandLineDensity ) {
 		mConfig.windowState.pixelDensity = params.pidelDensity;
 		mConfig.windowState.useLegacyPixelDensity = false;
 	}
+	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
 	Float pixelDensityOverride = mConfig.windowState.pixelDensity;
+	if ( environmentDensity > 0.f && !hasCommandLineDensity )
+		pixelDensityOverride = environmentDensity;
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	// Use the compact mobile default until an automatic mode or factor is explicitly selected.
 	const char* densityMode = std::getenv( "EEPP_PIXEL_DENSITY_MODE" );
@@ -4768,8 +4772,7 @@ void App::init( InitParameters& params ) {
 		mConfig.windowState.pixelDensityMode == PixelDensityMode::Default &&
 		( !densityMode || EE::Window::Window::pixelDensityModeFromString( densityMode ) ==
 							  PixelDensityMode::Default );
-	if ( useCompactDefault && pixelDensityOverride <= 0.f &&
-		 PixelDensity::getEnvironmentPixelDensity() <= 0.f ) {
+	if ( useCompactDefault && pixelDensityOverride <= 0.f ) {
 		const Float displayDensity = currentDisplay->getPixelDensity();
 		pixelDensityOverride = displayDensity > 2.f ? displayDensity / 2.f : displayDensity;
 	}
@@ -5155,7 +5158,7 @@ void App::init( InitParameters& params ) {
 			}
 		} );
 
-		if ( mConfig.windowState.useLegacyPixelDensity ) {
+		if ( mConfig.windowState.useLegacyPixelDensity && environmentDensity <= 0.f ) {
 			// Older ecode versions used the startup framebuffer scale as a minimum on HiDPI
 			// displays.
 			const Float backingScale = mWindow->getScale();

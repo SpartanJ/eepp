@@ -376,6 +376,9 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 
 	mWindows.insert( { mWindow->getWindowID(), mWindow } );
 
+	if ( Runtime::mode() == RuntimeMode::Terminal && !window->hasPixelDensityOverride() &&
+		 !( std::isfinite( pixelDensityOverride ) && pixelDensityOverride > 0.f ) )
+		TerminalRuntime::instance().waitForPixelDensity();
 	window->initializePixelDensity( pixelDensityOverride );
 	if ( firstWindow )
 		PixelDensity::setPixelDensity( window->getPixelDensity() );

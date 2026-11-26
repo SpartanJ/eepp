@@ -854,7 +854,9 @@ Float WindowSDL::getScale() const {
 }
 
 Float WindowSDL::getDisplayScale() const {
-	if ( !mSDLWindow || Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return TerminalRuntime::instance().getPixelDensity();
+	if ( !mSDLWindow || Runtime::isOffscreen() )
 		return 1.f;
 	const Float scale = SDL_GetWindowDisplayScale( mSDLWindow );
 	return scale > 0.f ? scale : 1.f;

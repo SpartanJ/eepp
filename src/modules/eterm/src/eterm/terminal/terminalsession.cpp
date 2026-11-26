@@ -82,9 +82,13 @@ class TerminalSession::WorkerDisplay final : public ITerminalDisplay {
 		if ( !presentation )
 			presentation = std::make_shared<TerminalGraphicsPresentation>();
 		presentation->requiredUpdateSequence = mGraphics ? mGraphics->requiredUpdateSequence : 0;
-		for ( auto& update : updates )
-			presentation->requiredUpdateSequence =
-				mSession.enqueueGraphicsUpdate( std::move( update ) );
+		if ( !updates.empty() && updates.front().type == TerminalGraphicsUpdateType::ResetAll ) {
+			mSession.mGraphicsUpdates.replace( std::move( updates ), presentation );
+		} else {
+			for ( auto& update : updates )
+				presentation->requiredUpdateSequence =
+					mSession.mGraphicsUpdates.enqueue( std::move( update ) );
+		}
 		mGraphics = std::move( presentation );
 	}
 
@@ -424,6 +428,7 @@ TerminalSession::TerminalSession( PtyPtr&& pty, ProcPtr&& process, size_t histor
 	mEmulator->setAllowOsc52ClipboardWrite( options.allowOsc52ClipboardWrite );
 	mEmulator->setOsc8HyperlinksEnabled( options.enableOsc8Hyperlinks );
 	mEmulator->setGraphemeClusteringEnabled( options.graphemeClustering );
+	mEmulator->setHostUIScale( options.hostUIScale );
 	mEmulator->redraw();
 #ifdef _WIN32
 	mWakeupEvent = CreateEventW( nullptr, FALSE, FALSE, nullptr );
@@ -577,6 +582,10 @@ void TerminalSession::resize( int columns, int rows, int pixelWidth, int pixelHe
 	enqueue( ResizeCommand{ columns, rows, pixelWidth, pixelHeight } );
 }
 
+void TerminalSession::setHostUIScale( Float scale ) {
+	enqueue( HostUIScaleCommand{ scale } );
+}
+
 void TerminalSession::scrollUp( int amount ) {
 	enqueue( ScrollCommand{ amount, -1 } );
 }
@@ -726,10 +735,6 @@ std::vector<TerminalGraphicsUpdate> TerminalSession::drainGraphicsUpdates() {
 	return mGraphicsUpdates.drain();
 }
 
-Uint64 TerminalSession::enqueueGraphicsUpdate( TerminalGraphicsUpdate update ) {
-	return mGraphicsUpdates.enqueue( std::move( update ) );
-}
-
 void TerminalSession::enqueueEvent( Event event, bool coalescable ) {
 	std::lock_guard<std::mutex> lock( mEventMutex );
 	if ( coalescable ) {
@@ -818,6 +823,8 @@ void TerminalSession::processCommand( Command&& command ) {
 				mEmulator->textInput( value.codepoint );
 			} else if constexpr ( std::is_same_v<T, ResizeCommand> ) {
 				mEmulator->resize( value.columns, value.rows, value.pixelWidth, value.pixelHeight );
+			} else if constexpr ( std::is_same_v<T, HostUIScaleCommand> ) {
+				mEmulator->setHostUIScale( value.scale );
 			} else if constexpr ( std::is_same_v<T, ScrollCommand> ) {
 				TerminalArg argument( value.amount );
 				if ( value.direction < 0 )
@@ -906,7 +913,6 @@ void TerminalSession::processCommand( Command&& command ) {
 				value.response->ready = true;
 				value.response->condition.notify_one();
 			} else if constexpr ( std::is_same_v<T, GraphicsResyncCommand> ) {
-				mGraphicsUpdates.resetResync();
 				mEmulator->requestGraphicsResync();
 			} else if constexpr ( std::is_same_v<T, SearchQueryCommand> ) {
 				if ( value.query.requestId ==

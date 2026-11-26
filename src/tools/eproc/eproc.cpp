@@ -425,7 +425,9 @@ bool App::init() {
 	settings.basePath = Sys::getResourcePath( "eproc" );
 	settings.baseFont = uiFont.get();
 	settings.threadPool = ThreadPool::createShared( 2 );
-	settings.pixelDensity = mPixelDensity.value_or( mConfig->pixelDensity );
+	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
+	settings.pixelDensity = mPixelDensity.value_or(
+		environmentDensity > 0.f ? environmentDensity : mConfig->pixelDensity );
 	settings.fontHinting = mFontHinting;
 	settings.fontAntialiasing = mFontAntialiasing;
 	mApp = std::make_unique<UIApplication>( ws, settings, ctx );

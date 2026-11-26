@@ -10,6 +10,7 @@
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/platformhelper.hpp>
+#include <eepp/window/runtime.hpp>
 
 using namespace EE::Network;
 using namespace EE::Window;
@@ -511,7 +512,7 @@ void App::loadConfig() {
 }
 
 void App::updateConfig() {
-	if ( !getWindow() || !getWindow()->isOpen() )
+	if ( Runtime::mode() == RuntimeMode::Terminal || !getWindow() || !getWindow()->isOpen() )
 		return;
 	// WindowSettings uses screen coordinates; saving drawable pixels doubles the next Retina
 	// window.
@@ -528,7 +529,8 @@ void App::saveConfig() {
 	mIni.setValueI( "viewer", "blockwheelspeed", mConfig.BlockWheelSpeed );
 	mIni.setValueI( "window", "vsync", mConfig.VSync );
 	mIni.setValueI( "window", "frameratelimit", mConfig.FrameLimit );
-	mIni.setValueI( "window", "maximizeatstart", mConfig.MaximizeAtStart );
+	if ( Runtime::mode() != RuntimeMode::Terminal )
+		mIni.setValueI( "window", "maximizeatstart", mConfig.MaximizeAtStart );
 	mIni.setValueF( "viewer", "transitiontime", mConfig.TransitionTime );
 	mIni.setValueI( "viewer", "consolefontsize", mConfig.ConsoleFontSize );
 	mIni.setValueF( "viewer", "appfontsize", mConfig.AppFontSize );
@@ -603,7 +605,10 @@ bool App::init() {
 	appSettings.fallbackFont = fallbackFont.get();
 	appSettings.fontHinting = mConfig.Hinting;
 	appSettings.fontAntialiasing = mConfig.Antialiasing;
-	if ( mConfig.UIScale > 0 )
+	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
+	if ( environmentDensity > 0.f )
+		appSettings.pixelDensity = environmentDensity;
+	else if ( mConfig.UIScale > 0.f )
 		appSettings.pixelDensity = mConfig.UIScale;
 	mUIApplication =
 		std::make_unique<UIApplication>( windowSettings, appSettings, contextSettings );

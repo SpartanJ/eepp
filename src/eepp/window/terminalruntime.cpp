@@ -1,8 +1,11 @@
 #include <cerrno>
+#include <chrono>
+#include <condition_variable>
 #include <cstdio>
 #include <cstdlib>
 #include <eepp/system/log.hpp>
 #include <eepp/window/input.hpp>
+#include <eepp/window/terminal/private/kittyuiscale.hpp>
 #include <eepp/window/terminal/terminalruntime.hpp>
 #include <eepp/window/window.hpp>
 #include <string>
@@ -26,7 +29,15 @@
 
 namespace EE { namespace Window {
 
+using Private::KittyUIScale;
+
 struct TerminalRuntime::State {
+	std::mutex densityMutex;
+	std::condition_variable densityCondition;
+	std::chrono::steady_clock::time_point densityDeadline;
+	std::atomic<Float> density{ 1.f };
+	bool densityProbeComplete{ false };
+	bool densityQueryAnswered{ false };
 #if defined( EE_PLATFORM_POSIX )
 	termios termiosState{};
 	bool hasTermios{ false };
@@ -218,9 +229,16 @@ Math::Sizei TerminalRuntime::pixelSize() const {
 }
 
 void TerminalRuntime::attach( Window& window ) {
-	if ( mReading.exchange( true ) )
+	if ( !mState || mReading.exchange( true ) )
 		return;
 	mWindow = &window;
+	mState->density.store( 1.f, std::memory_order_relaxed );
+	mState->densityQueryAnswered = false;
+	mState->densityDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds( 150 );
+	const auto query = KittyUIScale::Query;
+	constexpr std::string_view attributesQuery = "\033[c";
+	mState->densityProbeComplete = !write( query.data(), query.size() ) ||
+								   !write( attributesQuery.data(), attributesQuery.size() );
 	mInputThread = std::thread( &TerminalRuntime::readInput, this );
 }
 
@@ -230,6 +248,18 @@ void TerminalRuntime::detach() {
 	if ( mInputThread.joinable() )
 		mInputThread.join();
 	mWindow = nullptr;
+}
+
+void TerminalRuntime::waitForPixelDensity() {
+	if ( !mState )
+		return;
+	std::unique_lock<std::mutex> lock( mState->densityMutex );
+	mState->densityCondition.wait_until( lock, mState->densityDeadline,
+										 [this] { return mState->densityProbeComplete; } );
+}
+
+Float TerminalRuntime::getPixelDensity() const {
+	return mState ? mState->density.load( std::memory_order_relaxed ) : 1.f;
 }
 
 namespace {
@@ -437,6 +467,26 @@ void TerminalRuntime::readInput() {
 	pending.reserve( 256 );
 	Math::Sizei lastSize = pixelSize();
 	Vector2i lastMouse;
+	const auto finishDensityProbe = [this]( std::optional<Float> reply ) {
+		bool changed = false;
+		{
+			std::lock_guard<std::mutex> lock( mState->densityMutex );
+			// A Device Attributes reply ends the startup wait. The scale can still arrive later.
+			if ( reply && !mState->densityQueryAnswered ) {
+				mState->densityQueryAnswered = true;
+				if ( *reply > 0.f )
+					changed =
+						mState->density.exchange( *reply, std::memory_order_relaxed ) != *reply;
+			}
+			mState->densityProbeComplete = true;
+		}
+		mState->densityCondition.notify_one();
+		if ( changed ) {
+			InputEvent event( InputEvent::Window );
+			event.window = { 0, InputEvent::WindowDisplayChanged };
+			mWindow->getInput()->enqueueEvent( event );
+		}
+	};
 	while ( mReading.load( std::memory_order_relaxed ) ) {
 #if defined( EE_PLATFORM_POSIX )
 		pollfd descriptor{ mFd, POLLIN, 0 };
@@ -461,16 +511,19 @@ void TerminalRuntime::readInput() {
 				pending.append( data, count );
 		}
 #endif
-		// Kitty graphics acknowledgements are APC strings. They are not input events, and leaving
-		// an unrecognized ESC _ prefix at the front would block all subsequent keyboard and mouse
-		// input.
-		while ( pending.size() >= 2 && pending[0] == '\033' && pending[1] == '_' ) {
-			const size_t end = pending.find( "\033\\", 2 );
-			if ( end == std::string::npos )
+		while ( pending.size() >= 2 && pending[0] == '\033' ) {
+			if ( pending[1] == '_' ) {
+				const size_t end = pending.find( "\033\\", 2 );
+				if ( end == std::string::npos )
+					break;
+				if ( auto reply = KittyUIScale::parseReply(
+						 std::string_view( pending ).substr( 2, end - 2 ) ) )
+					finishDensityProbe( reply );
+				pending.erase( 0, end + 2 );
+				continue;
+			}
+			if ( pending[1] != '[' )
 				break;
-			pending.erase( 0, end + 2 );
-		}
-		while ( pending.size() >= 3 && pending[0] == '\033' && pending[1] == '[' ) {
 			size_t end = 2;
 			while ( end < pending.size() && !( pending[end] >= '@' && pending[end] <= '~' ) )
 				++end;
@@ -478,7 +531,9 @@ void TerminalRuntime::readInput() {
 				break;
 			const char final = pending[end];
 			const std::string params = pending.substr( 2, end - 2 );
-			if ( params.empty() && ( final == 'I' || final == 'O' ) ) {
+			if ( final == 'c' && !params.empty() && params.front() == '?' ) {
+				finishDensityProbe( std::nullopt );
+			} else if ( params.empty() && ( final == 'I' || final == 'O' ) ) {
 				mFocused.store( final == 'I', std::memory_order_relaxed );
 				InputEvent event( InputEvent::Window );
 				event.window = { static_cast<Uint8>( final == 'I' ),

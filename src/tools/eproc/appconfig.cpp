@@ -4,6 +4,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/window/platformhelper.hpp>
+#include <eepp/window/runtime.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -86,12 +87,14 @@ bool AppConfig::save() {
 	if ( !FileSystem::isDirectory( mConfigPath ) && !FileSystem::makeDir( mConfigPath, true ) )
 		return false;
 
-	mState.setValueI( "window", "width", windowState.size.getWidth() );
-	mState.setValueI( "window", "height", windowState.size.getHeight() );
-	mState.setValueI( "window", "x", windowState.position.x );
-	mState.setValueI( "window", "y", windowState.position.y );
-	mState.setValueI( "window", "display_index", windowState.displayIndex );
-	mState.setValueB( "window", "maximized", windowState.maximized );
+	if ( Runtime::mode() != RuntimeMode::Terminal ) {
+		mState.setValueI( "window", "width", windowState.size.getWidth() );
+		mState.setValueI( "window", "height", windowState.size.getHeight() );
+		mState.setValueI( "window", "x", windowState.position.x );
+		mState.setValueI( "window", "y", windowState.position.y );
+		mState.setValueI( "window", "display_index", windowState.displayIndex );
+		mState.setValueB( "window", "maximized", windowState.maximized );
+	}
 	mState.setValue( "process_table", "state", processTableState );
 	mState.setValueB( "process_table", "divide_cpu_usage", divideCpuUsage );
 	mState.setValueB( "performance", "cpu_per_core", performancePerCore );
@@ -119,7 +122,7 @@ bool AppConfig::save() {
 }
 
 void AppConfig::captureWindowState( EE::Window::Window* window ) {
-	if ( !window )
+	if ( !window || Runtime::mode() == RuntimeMode::Terminal )
 		return;
 
 	windowState.size = Sys::getPlatformType() == Sys::PlatformType::macOS

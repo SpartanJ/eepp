@@ -1013,7 +1013,10 @@ int App::run( int argc, char* argv[] ) {
 	UIApplication::Settings appSettings;
 	appSettings.exitOnClose = config->window.exitOnClose;
 	appSettings.basePath = FileSystem::removeLastFolderFromPath( resPath );
-	if ( config->window.pixelDensity > 0 )
+	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
+	if ( environmentDensity > 0.f && !pixelDensity )
+		appSettings.pixelDensity = environmentDensity;
+	else if ( config->window.pixelDensity > 0.f )
 		appSettings.pixelDensity = config->window.pixelDensity;
 	appSettings.fontHinting = config->font.hinting;
 	appSettings.fontAntialiasing = config->font.antialiasing;

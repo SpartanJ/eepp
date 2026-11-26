@@ -467,6 +467,8 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 	std::shared_ptr<TerminalDisplay> terminal = std::shared_ptr<TerminalDisplay>(
 		new TerminalDisplay( window, font, fontSize, pixelsSize, useFrameBuffer ) );
 
+	if ( options.hostUIScale <= 0.f && window )
+		options.hostUIScale = window->getPixelDensity();
 	terminal->mSession =
 		TerminalSession::create( std::move( pseudoTerminal ), std::move( process ), historySize,
 								 terminal->makeColorPalette(), options );
@@ -808,21 +810,19 @@ void TerminalDisplay::drainGraphicsUpdates() {
 		return;
 	auto updates = mSession->drainGraphicsUpdates();
 	if ( !updates.empty() ) {
-		if ( !mGraphicsRenderer->applyUpdates( std::move( updates ) ) ) {
-			mGraphicsRenderer->reset();
-			mLastAppliedGraphicsSequence = 0;
-			if ( !mGraphicsResyncPending ) {
-				mGraphicsResyncPending = true;
+		mDirty = true;
+		const auto result = mGraphicsRenderer->applyUpdates( updates );
+		if ( result != KittyGraphicsRenderer::UpdateResult::Applied ) {
+			// Keep the last displayed image while the worker republishes its current state.
+			// Retrying the same failed upload immediately would keep both threads busy.
+			if ( result == KittyGraphicsRenderer::UpdateResult::ResyncNeeded )
 				mSession->requestGraphicsResync();
-			}
 			return;
 		}
-		mLastAppliedGraphicsSequence = mGraphicsRenderer->lastAppliedSequence();
-		mGraphicsResyncPending = false;
 		if ( mSnapshot && mSnapshot->graphics &&
-			 mSnapshot->graphics->requiredUpdateSequence <= mLastAppliedGraphicsSequence )
+			 mSnapshot->graphics->requiredUpdateSequence <=
+				 mGraphicsRenderer->lastAppliedSequence() )
 			mGraphicsRenderer->setPresentation( mSnapshot->graphics );
-		mDirty = true;
 	}
 }
 
@@ -865,9 +865,6 @@ void TerminalDisplay::consumeSnapshot() {
 	if ( mSnapshot->graphics &&
 		 mSnapshot->graphics->requiredUpdateSequence <= mGraphicsRenderer->lastAppliedSequence() ) {
 		mGraphicsRenderer->setPresentation( mSnapshot->graphics );
-	} else if ( mSnapshot->graphics && !mGraphicsResyncPending ) {
-		mGraphicsResyncPending = true;
-		mSession->requestGraphicsResync();
 	}
 	const int presentationBits = mMode & MODE_BLINK;
 	mMode = mSnapshot->windowMode | presentationBits;
@@ -2709,6 +2706,11 @@ void TerminalDisplay::setLayout( const Sizef& size, const Rectf& padding, Float 
 		mPadding = pixelsPadding;
 		onSizeChange( fontChanged );
 	}
+}
+
+void TerminalDisplay::setHostUIScale( Float scale ) {
+	if ( mSession )
+		mSession->setHostUIScale( scale );
 }
 
 void TerminalDisplay::invalidate() {

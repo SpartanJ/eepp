@@ -18,6 +18,7 @@
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uimenuitem.hpp>
 #include <eepp/ui/uimessagebox.hpp>
+#include <eepp/window/runtime.hpp>
 
 #include <algorithm>
 #include <args/args.hxx>
@@ -712,7 +713,10 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 	UIApplication::Settings appSettings;
 	appSettings.exitOnClose = mConfig->window.exitOnClose;
 	appSettings.basePath = Sys::getResourcePath( "eefm" );
-	if ( mConfig->window.pixelDensity > 0 )
+	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
+	if ( environmentDensity > 0.f )
+		appSettings.pixelDensity = environmentDensity;
+	else if ( mConfig->window.pixelDensity > 0.f )
 		appSettings.pixelDensity = mConfig->window.pixelDensity;
 	appSettings.fontHinting = mConfig->font.hinting;
 	appSettings.fontAntialiasing = mConfig->font.antialiasing;
@@ -1061,18 +1065,23 @@ void App::loadState() {
 
 void App::saveState() {
 	nlohmann::json state = nlohmann::json::object();
-	auto* window = mApp->getWindow();
-	bool maximized = window->isMaximized();
-	state["window"] = { { "maximized", maximized } };
-	if ( !maximized ) {
-		// WindowSettings takes screen coordinates; drawable pixels would grow on each HiDPI
-		// restore.
-		const auto size = window->getSizeInScreenCoordinates();
-		state["window"]["width"] = size.getWidth();
-		state["window"]["height"] = size.getHeight();
-	} else if ( mState.contains( "window" ) ) {
-		state["window"]["width"] = mState["window"].value( "width", 1400 );
-		state["window"]["height"] = mState["window"].value( "height", 820 );
+	if ( Runtime::mode() == RuntimeMode::Terminal ) {
+		if ( mState.contains( "window" ) )
+			state["window"] = mState["window"];
+	} else {
+		auto* window = mApp->getWindow();
+		const bool maximized = window->isMaximized();
+		state["window"] = { { "maximized", maximized } };
+		if ( !maximized ) {
+			// WindowSettings takes screen coordinates; drawable pixels would grow on each HiDPI
+			// restore.
+			const auto size = window->getSizeInScreenCoordinates();
+			state["window"]["width"] = size.getWidth();
+			state["window"]["height"] = size.getHeight();
+		} else if ( mState.contains( "window" ) ) {
+			state["window"]["width"] = mState["window"].value( "width", 1400 );
+			state["window"]["height"] = mState["window"].value( "height", 820 );
+		}
 	}
 	mTerminalPanel->rememberSize();
 	state["terminal_partition"] = mTerminalPanel->partition();

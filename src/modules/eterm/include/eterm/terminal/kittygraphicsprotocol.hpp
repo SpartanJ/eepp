@@ -169,7 +169,7 @@ class KittyGraphicsProtocol {
   private:
 	struct Image {
 		struct Frame {
-			std::vector<Uint8> rgba;
+			std::shared_ptr<std::vector<Uint8>> rgba;
 			Int32 gapMs{ 40 };
 			Uint32 usageHint{ 0 };
 		};

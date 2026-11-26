@@ -22,11 +22,26 @@ Local file and temporary-file transfer media are intentionally not enabled. POSI
 objects are opened read-only and immediately unlinked as required by the protocol. Direct
 transmission remains the portable path and works through SSH.
 
+## UI scale for terminal applications
+
+An eepp application started with `EEPP_RUNTIME=terminal` can query eterm for the scale of the
+scene displaying it. The startup probe is a standard Kitty direct RGB query with a reserved ID
+and a version marker. It leaves no image on screen or in the graphics cache. Eterm includes
+`eepp-scale` in the reply for this probe, expressed as an integer in millionths of the effective UI
+scale. The terminal font size is independent.
+
+This also works through SSH when the session forwards graphics queries and replies. An explicit
+application scale, including `EEPP_PIXEL_DENSITY`, takes precedence. When the terminal provides no
+scale, Auto uses 1×. A valid response arriving after the 150 ms startup deadline can still update
+the application. The application requests the scale once per launch.
+
 ## Resource and threading behavior
 
 Decoded root images are stored as premultiplied-independent RGBA8 CPU buffers on the worker. GPU
 textures exist only on the UI/GL thread. Incremental updates carry monotonically increasing sequence
-numbers; a bounded queue gap triggers a complete graphics resynchronization. Image count, placement
+numbers. A queue overflow triggers a replay of the worker's current state. The replay shares pixel
+buffers and uploads them in bounded batches, with an exception for a single large frame. The last
+displayed images stay visible until the replacement uploads successfully. Image count, placement
 count, APC size, decoded transfer size, and total image storage are bounded. Unreferenced images are
 evicted oldest-first when storage is needed.
 

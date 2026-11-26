@@ -65,6 +65,7 @@ enum class TerminalGraphicsUpdateType : Uint8 {
 
 struct TerminalGraphicsUpdate {
 	std::shared_ptr<const std::vector<Uint8>> pixels;
+	std::shared_ptr<const TerminalGraphicsPresentation> recoveryPresentation; // ResetAll only.
 	Sizei imageSize;
 	Rect region;
 	Uint64 sequence{ 0 };
@@ -87,16 +88,19 @@ class TerminalGraphicsUpdateQueue {
 
 	Uint64 enqueue( TerminalGraphicsUpdate update );
 
+	/** Replaces pending mutations with a complete graphics state beginning with ResetAll. */
+	void replace( std::vector<TerminalGraphicsUpdate>&& updates,
+				  const std::shared_ptr<TerminalGraphicsPresentation>& presentation );
+
 	std::vector<TerminalGraphicsUpdate> drain();
 
 	size_t queuedBytes() const;
 
 	bool needsResync() const;
 
-	void resetResync();
-
   private:
 	mutable std::mutex mMutex;
+	std::deque<TerminalGraphicsUpdate> mReplacement;
 	std::deque<TerminalGraphicsUpdate> mUpdates;
 	size_t mMaxUpdates{ 0 };
 	size_t mMaxBytes{ 0 };

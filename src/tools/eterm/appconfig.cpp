@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/window/platformhelper.hpp>
+#include <eepp/window/runtime.hpp>
 #include <eepp/window/window.hpp>
 #include <nlohmann/json.hpp>
 
@@ -9,6 +10,8 @@ using namespace EE::Graphics;
 using namespace EE::System;
 using namespace EE::UI;
 using EE::Window::PlatformHelper;
+using EE::Window::Runtime;
+using EE::Window::RuntimeMode;
 using namespace eterm::Terminal;
 using EE::eemax;
 
@@ -170,18 +173,20 @@ bool AppConfig::savePreferences() {
 bool AppConfig::saveWindowState() {
 	if ( !FileSystem::isDirectory( mConfigPath ) && !FileSystem::makeDir( mConfigPath, true ) )
 		return false;
-	mState.setValueI( "window", "width", windowState.size.getWidth() );
-	mState.setValueI( "window", "height", windowState.size.getHeight() );
-	mState.setValueI( "window", "x", windowState.position.x );
-	mState.setValueI( "window", "y", windowState.position.y );
-	mState.setValueI( "window", "display_index", windowState.displayIndex );
-	mState.setValueB( "window", "maximized", windowState.maximized );
+	if ( Runtime::mode() != RuntimeMode::Terminal ) {
+		mState.setValueI( "window", "width", windowState.size.getWidth() );
+		mState.setValueI( "window", "height", windowState.size.getHeight() );
+		mState.setValueI( "window", "x", windowState.position.x );
+		mState.setValueI( "window", "y", windowState.position.y );
+		mState.setValueI( "window", "display_index", windowState.displayIndex );
+		mState.setValueB( "window", "maximized", windowState.maximized );
+	}
 	mState.setValueF( "window", "tab_bar_width", windowState.tabBarWidth );
 	return mState.writeFile();
 }
 
 void AppConfig::captureWindowState( EE::Window::Window* window ) {
-	if ( !window )
+	if ( !window || Runtime::mode() == RuntimeMode::Terminal )
 		return;
 	windowState.size = Sys::getPlatformType() == Sys::PlatformType::macOS
 						   ? window->getSizeInScreenCoordinates()

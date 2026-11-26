@@ -116,12 +116,14 @@ struct TerminalColorPalette {
 	Uint32 background{ 0 };
 };
 
-/** Parser permissions applied before reading child output. */
+/** Parser configuration applied before reading child output. */
 struct TerminalSessionOptions {
 	bool allowOsc52ClipboardWrite{ true };
 	bool enableOsc8Hyperlinks{ true };
 	/** DEC mode 2027 at startup and after a reset. */
 	bool graphemeClustering{ true };
+	/** Effective UI scale of the host scene, or zero when the session has no UI. */
+	Float hostUIScale{ 0.f };
 };
 
 /**
@@ -208,6 +210,8 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 
 	void setGraphemeClusteringEnabled( bool enabled );
 	void setPresentationRate( Uint32 framesPerSecond );
+
+	void setHostUIScale( Float scale );
 	void setDataEventsEnabled( bool enabled );
 	void setPromptEventsEnabled( bool enabled );
 	void reset();
@@ -293,6 +297,9 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	struct PresentationRateCommand {
 		Uint32 framesPerSecond{ 60 };
 	};
+	struct HostUIScaleCommand {
+		Float scale;
+	};
 	struct RestartCommand {
 		PtyPtr pty;
 		ProcPtr process;
@@ -319,15 +326,14 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	struct PromptEventsCommand : BoolCommand {};
 	struct FocusCommand : BoolCommand {};
 
-	using Command =
-		std::variant<WriteCommand, WriteRawCommand, KeyCommand, TextInputCommand, ResizeCommand,
-					 ScrollCommand, SelectionStartCommand, SelectionExtendCommand,
-					 SelectionClearCommand, MouseCommand, WheelCommand, FocusCommand,
-					 CursorModeCommand, PaletteCommand, PresentationRateCommand, AllowTrimCommand,
-					 DataEventsCommand, PromptEventsCommand, TerminateCommand, RestartCommand,
-					 ResetCommand, SelectionRequestCommand, GraphicsResyncCommand,
-					 SearchQueryCommand, SearchNavigateCommand, SearchClearCommand,
-					 Osc52PolicyCommand, Osc8PolicyCommand, GraphemeClusteringCommand>;
+	using Command = std::variant<
+		WriteCommand, WriteRawCommand, KeyCommand, TextInputCommand, ResizeCommand, ScrollCommand,
+		SelectionStartCommand, SelectionExtendCommand, SelectionClearCommand, MouseCommand,
+		WheelCommand, FocusCommand, CursorModeCommand, PaletteCommand, PresentationRateCommand,
+		AllowTrimCommand, DataEventsCommand, PromptEventsCommand, TerminateCommand, RestartCommand,
+		ResetCommand, SelectionRequestCommand, GraphicsResyncCommand, SearchQueryCommand,
+		SearchNavigateCommand, SearchClearCommand, Osc52PolicyCommand, Osc8PolicyCommand,
+		GraphemeClusteringCommand, HostUIScaleCommand>;
 
 	TerminalSession( PtyPtr&& pty, ProcPtr&& process, size_t historySize,
 					 TerminalColorPalette palette, TerminalSessionOptions options );
@@ -344,8 +350,6 @@ class TerminalSession final : public std::enable_shared_from_this<TerminalSessio
 	void processCommand( Command&& command );
 	void enqueueEvent( Event event, bool coalescable );
 	void publishSnapshot( std::shared_ptr<const TerminalSnapshot> snapshot );
-	Uint64 enqueueGraphicsUpdate( TerminalGraphicsUpdate update );
-
 	std::shared_ptr<WorkerDisplay> mWorkerDisplay;
 	std::unique_ptr<TerminalEmulator> mEmulator;
 	std::thread mWorker;

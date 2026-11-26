@@ -6,6 +6,8 @@
 #include <eepp/system/iostreammemory.hpp>
 
 #include <algorithm>
+#include <array>
+#include <bit>
 #include <charconv>
 #include <cstring>
 #include <limits>
@@ -518,46 +520,55 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 			auto frame = image->second.frames.find( frameNumber );
 			if ( frame == image->second.frames.end() ) {
 				Image::Frame newFrame;
-				newFrame.rgba.resize( static_cast<size_t>( image->second.size.getWidth() ) *
-									  image->second.size.getHeight() * 4 );
-				if ( data.columns ) {
-					const Uint32 baseFrame = *data.columns;
-					if ( baseFrame == 1 )
-						newFrame.rgba = *image->second.pixels;
-					else {
-						auto base = image->second.frames.find( baseFrame );
-						if ( base == image->second.frames.end() )
-							return { response( data, KittyGraphicsError::NotFound ),
-									 KittyGraphicsError::NotFound, false };
-						newFrame.rgba = base->second.rgba;
-					}
-				} else if ( data.yOffset ) {
-					const Uint32 color = *data.yOffset;
-					for ( size_t offset = 0; offset < newFrame.rgba.size(); offset += 4 ) {
-						newFrame.rgba[offset] = static_cast<Uint8>( color >> 24 );
-						newFrame.rgba[offset + 1] = static_cast<Uint8>( color >> 16 );
-						newFrame.rgba[offset + 2] = static_cast<Uint8>( color >> 8 );
-						newFrame.rgba[offset + 3] = static_cast<Uint8>( color );
-					}
-				}
+				const size_t frameBytes = static_cast<size_t>( image->second.size.getWidth() ) *
+										  image->second.size.getHeight() * 4;
 				const size_t maxFrameStorage =
 					mMaxStorageBytes > std::numeric_limits<size_t>::max() / 5
 						? std::numeric_limits<size_t>::max()
 						: mMaxStorageBytes * 5;
 				if ( mFrameStorageBytes > maxFrameStorage ||
-					 newFrame.rgba.size() > maxFrameStorage - mFrameStorageBytes )
+					 frameBytes > maxFrameStorage - mFrameStorageBytes )
 					return { response( data, KittyGraphicsError::NoSpace ),
 							 KittyGraphicsError::NoSpace, false };
+				newFrame.rgba = std::make_shared<std::vector<Uint8>>( frameBytes );
+				if ( data.columns ) {
+					const Uint32 baseFrame = *data.columns;
+					if ( baseFrame == 1 )
+						*newFrame.rgba = *image->second.pixels;
+					else {
+						auto base = image->second.frames.find( baseFrame );
+						if ( base == image->second.frames.end() )
+							return { response( data, KittyGraphicsError::NotFound ),
+									 KittyGraphicsError::NotFound, false };
+						*newFrame.rgba = *base->second.rgba;
+					}
+				} else if ( data.yOffset ) {
+					const Uint32 color = *data.yOffset;
+					const Uint32 pixel = std::bit_cast<Uint32>( std::array<Uint8, 4>{
+						static_cast<Uint8>( color >> 24 ), static_cast<Uint8>( color >> 16 ),
+						static_cast<Uint8>( color >> 8 ), static_cast<Uint8>( color ) } );
+					const std::array<Uint32, 4> block{ pixel, pixel, pixel, pixel };
+					auto* rgba = newFrame.rgba->data();
+					const size_t blockBytes = frameBytes - frameBytes % sizeof( block );
+					size_t offset = 0;
+					for ( ; offset < blockBytes; offset += sizeof( block ) )
+						std::memcpy( rgba + offset, block.data(), sizeof( block ) );
+					for ( ; offset < frameBytes; offset += sizeof( pixel ) )
+						std::memcpy( rgba + offset, &pixel, sizeof( pixel ) );
+				}
 				newFrame.gapMs = data.zIndex.value_or( 40 );
 				newFrame.usageHint = data.usageHint.value_or( 0 );
-				mFrameStorageBytes += newFrame.rgba.size();
+				mFrameStorageBytes += frameBytes;
 				frame = image->second.frames.emplace( frameNumber, std::move( newFrame ) ).first;
 				createdFrame = true;
 			} else {
 				if ( data.zIndex && *data.zIndex != 0 )
 					frame->second.gapMs = *data.zIndex;
 			}
-			destinationPixels = &frame->second.rgba;
+			auto& rgba = frame->second.rgba;
+			if ( rgba.use_count() != 1 )
+				rgba = std::make_shared<std::vector<Uint8>>( *rgba );
+			destinationPixels = rgba.get();
 		}
 
 		const bool replace = data.xOffset.value_or( 0 ) == 1;
@@ -600,7 +611,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 				? Rect( 0, 0, image->second.size.getWidth(), image->second.size.getHeight() )
 				: Rect( destinationX, destinationY, destinationX + width, destinationY + height );
 		update.pixels = createdFrame
-							? std::make_shared<const std::vector<Uint8>>( *destinationPixels )
+							? image->second.frames.at( frameNumber ).rgba
 							: std::make_shared<const std::vector<Uint8>>( std::move( finalPatch ) );
 		if ( !createdFrame && !mUpdates.empty() && mUpdates.back().type == update.type &&
 			 mUpdates.back().imageId == update.imageId &&
@@ -649,7 +660,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::finishTransfer( PendingTransfer
 	existing = mImages.find( imageId );
 	if ( existing != mImages.end() ) {
 		for ( const auto& frame : existing->second.frames )
-			mFrameStorageBytes -= frame.second.rgba.size();
+			mFrameStorageBytes -= frame.second.rgba->size();
 		mPlacements.erase( std::remove_if( mPlacements.begin(), mPlacements.end(),
 										   [imageId]( const Placement& p ) {
 											   return p.visible.imageId == imageId;
@@ -879,7 +890,7 @@ KittyGraphicsHandleResult KittyGraphicsProtocol::remove( const KittyGraphicsComm
 					 false };
 		const bool changed = !image->second.frames.empty();
 		for ( const auto& frame : image->second.frames ) {
-			mFrameStorageBytes -= frame.second.rgba.size();
+			mFrameStorageBytes -= frame.second.rgba->size();
 			TerminalGraphicsUpdate update;
 			update.type = TerminalGraphicsUpdateType::DeleteFrame;
 			update.imageId = selectedImage;
@@ -1185,9 +1196,9 @@ KittyGraphicsProtocol::composeFrames( const KittyGraphicsCommandData& data ) {
 	if ( !ensureRootRGBA( imageId, image->second ) )
 		return { response( data, KittyGraphicsError::NoSpace ), KittyGraphicsError::NoSpace,
 				 false };
-	auto pixelsFor = [&]( Uint32 frameNumber ) -> std::vector<Uint8>* {
+	auto pixelsFor = [&]( Uint32 frameNumber ) -> std::shared_ptr<std::vector<Uint8>>* {
 		if ( frameNumber == 1 )
-			return image->second.pixels.get();
+			return &image->second.pixels;
 		auto frame = image->second.frames.find( frameNumber );
 		return frame == image->second.frames.end() ? nullptr : &frame->second.rgba;
 	};
@@ -1225,16 +1236,14 @@ KittyGraphicsProtocol::composeFrames( const KittyGraphicsCommandData& data ) {
 	const size_t rowBytes = static_cast<size_t>( width ) * 4;
 	for ( Uint32 row = 0; row < height; ++row )
 		std::memcpy( sourceCopy.data() + static_cast<size_t>( row ) * rowBytes,
-					 source->data() + static_cast<size_t>( sourceY + row ) * imageStride +
+					 ( *source )->data() + static_cast<size_t>( sourceY + row ) * imageStride +
 						 static_cast<size_t>( sourceX ) * 4,
 					 rowBytes );
-	if ( destinationFrame == 1 && image->second.pixels.use_count() != 1 ) {
-		image->second.pixels = std::make_shared<std::vector<Uint8>>( *image->second.pixels );
-		destination = image->second.pixels.get();
-	}
+	if ( destination->use_count() != 1 )
+		*destination = std::make_shared<std::vector<Uint8>>( **destination );
 	const bool replace = data.cursorMovement.value_or( 0 ) == 1;
 	for ( Uint32 row = 0; row < height; ++row ) {
-		Uint8* target = destination->data() +
+		Uint8* target = ( *destination )->data() +
 						static_cast<size_t>( destinationY + row ) * imageStride +
 						static_cast<size_t>( destinationX ) * 4;
 		const Uint8* overlay = sourceCopy.data() + static_cast<size_t>( row ) * rowBytes;
@@ -1312,7 +1321,7 @@ void KittyGraphicsProtocol::eraseImage( KittyImageId imageId ) {
 		return;
 	mStorageBytes -= image->second.pixels->size();
 	for ( const auto& frame : image->second.frames )
-		mFrameStorageBytes -= frame.second.rgba.size();
+		mFrameStorageBytes -= frame.second.rgba->size();
 	recyclePixels( image->second );
 	mImages.erase( image );
 	TerminalGraphicsUpdate update;
@@ -1662,7 +1671,7 @@ void KittyGraphicsProtocol::resync() {
 			createFrame.imageSize = image.second.size;
 			createFrame.region =
 				Rect( 0, 0, image.second.size.getWidth(), image.second.size.getHeight() );
-			createFrame.pixels = std::make_shared<const std::vector<Uint8>>( frame.second.rgba );
+			createFrame.pixels = frame.second.rgba;
 			mUpdates.emplace_back( std::move( createFrame ) );
 		}
 	}

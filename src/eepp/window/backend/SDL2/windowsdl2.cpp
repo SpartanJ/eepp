@@ -939,7 +939,9 @@ Float WindowSDL::getScale() const {
 }
 
 Float WindowSDL::getDisplayScale() const {
-	if ( !mSDLWindow || Runtime::isOffscreen() || Runtime::mode() == RuntimeMode::Terminal )
+	if ( Runtime::mode() == RuntimeMode::Terminal )
+		return TerminalRuntime::instance().getPixelDensity();
+	if ( !mSDLWindow || Runtime::isOffscreen() )
 		return 1.f;
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	// SDL2 can use pixel coordinates on Windows, so its drawable ratio can stay at 1 even

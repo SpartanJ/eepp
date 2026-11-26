@@ -38,6 +38,12 @@ class EE_API TerminalRuntime {
 	/** @return The terminal viewport size in pixels, or an empty size when unavailable. */
 	Math::Sizei pixelSize() const;
 
+	/** Waits until the startup density probe completes or reaches its deadline. */
+	void waitForPixelDensity();
+
+	/** @return The terminal's negotiated UI scale, or 1 when unavailable. */
+	Float getPixelDensity() const;
+
 	/** Attaches the top-level window that receives decoded terminal input and resize events. */
 	void attach( Window& window );
 

@@ -26,10 +26,12 @@ UITerminal* UITerminal::New( Font* font, const Float& fontSize, const Sizef& pix
 							 const std::string& workingDir, const size_t& historySize,
 							 IProcessFactory* processFactory, bool useFrameBuffer,
 							 bool keepAlive ) {
-	auto win = SceneManager::instance()->getUISceneNode()->getWindow();
-	auto terminal =
-		TerminalDisplay::create( win, font, fontSize, pixelsSize, program, args, workingDir,
-								 historySize, processFactory, useFrameBuffer, keepAlive, env );
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	TerminalSessionOptions options;
+	options.hostUIScale = scene->getPixelDensity();
+	auto terminal = TerminalDisplay::create( scene->getWindow(), font, fontSize, pixelsSize,
+											 program, args, workingDir, historySize, processFactory,
+											 useFrameBuffer, keepAlive, env, options );
 	return UITerminal::New( terminal );
 }
 
@@ -81,6 +83,7 @@ void UITerminal::draw() {
 void UITerminal::registerNewTerminal() {
 	if ( !mTerm )
 		return;
+	mTerm->setHostUIScale( getUISceneNode()->getPixelDensity() );
 	mTerminalEventCallbackId =
 		mTerm->pushEventCallback( [this]( const TerminalDisplay::Event& event ) {
 			switch ( event.type ) {
@@ -783,6 +786,8 @@ void UITerminal::updateTerminalLayout() {
 		return;
 	const Float density = getUISceneNode()->getPixelDensity();
 	const Float fontSize = mTerm->getFontSize() * ( density / mTerminalDensity );
+	if ( density != mTerminalDensity )
+		mTerm->setHostUIScale( density );
 	mTerminalDensity = density;
 	mTerm->setLayout(
 		getPixelsSize(),
@@ -931,13 +936,15 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 }
 
 void UITerminal::restart() {
-	auto win = SceneManager::instance()->getUISceneNode()->getWindow();
+	auto* scene = getUISceneNode();
+	TerminalSessionOptions options;
+	options.hostUIScale = scene->getPixelDensity();
 	if ( mTerm && mTerminalEventCallbackId )
 		mTerm->popEventCallback( mTerminalEventCallbackId );
-	mTerm = TerminalDisplay::create( win, mTerm->getFont(), mTerm->getFontSize(), mTerm->getSize(),
-									 mTerm->getProgram(), mTerm->getArgs(), mTerm->getWorkingDir(),
-									 mTerm->getHistorySize(), nullptr, mTerm->useFrameBuffer(),
-									 mTerm->getKeepAlive(), mTerm->getEnv() );
+	mTerm = TerminalDisplay::create(
+		scene->getWindow(), mTerm->getFont(), mTerm->getFontSize(), mTerm->getSize(),
+		mTerm->getProgram(), mTerm->getArgs(), mTerm->getWorkingDir(), mTerm->getHistorySize(),
+		nullptr, mTerm->useFrameBuffer(), mTerm->getKeepAlive(), mTerm->getEnv(), options );
 	mTerminalEventCallbackId = 0;
 	registerNewTerminal();
 	syncFontRenderingConfig();

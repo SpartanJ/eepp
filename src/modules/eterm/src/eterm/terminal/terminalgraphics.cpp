@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <eterm/terminal/terminalgraphics.hpp>
+#include <iterator>
 
 namespace eterm { namespace Terminal {
 
@@ -18,7 +20,9 @@ Uint64 TerminalGraphicsUpdateQueue::enqueue( TerminalGraphicsUpdate update ) {
 	if ( !mUpdates.empty() && isFullImageUpdate( update.type ) &&
 		 isFullImageUpdate( mUpdates.back().type ) && mUpdates.back().imageId == update.imageId ) {
 		const size_t previousBytes = mUpdates.back().payloadBytes();
-		if ( payloadBytes <= mMaxBytes - ( mQueuedBytes - previousBytes ) ) {
+		const size_t otherBytes = mQueuedBytes - previousBytes;
+		if ( mUpdates.size() == 1 ||
+			 ( otherBytes <= mMaxBytes && payloadBytes <= mMaxBytes - otherBytes ) ) {
 			update.sequence = mUpdates.back().sequence;
 			if ( mUpdates.back().type == TerminalGraphicsUpdateType::CreateImage )
 				update.type = TerminalGraphicsUpdateType::CreateImage;
@@ -30,8 +34,11 @@ Uint64 TerminalGraphicsUpdateQueue::enqueue( TerminalGraphicsUpdate update ) {
 
 	update.sequence = ++mNextSequence;
 
-	if ( mUpdates.size() >= mMaxUpdates || mQueuedBytes > mMaxBytes ||
-		 payloadBytes > mMaxBytes - mQueuedBytes ) {
+	// The Kitty decoder bounds individual payloads. A single large frame can make progress
+	// without allowing an unbounded backlog of frames behind it.
+	if ( mUpdates.size() >= mMaxUpdates ||
+		 ( !mUpdates.empty() &&
+		   ( mQueuedBytes > mMaxBytes || payloadBytes > mMaxBytes - mQueuedBytes ) ) ) {
 		mUpdates.clear();
 		mQueuedBytes = 0;
 		mNeedsResync = true;
@@ -47,31 +54,56 @@ Uint64 TerminalGraphicsUpdateQueue::enqueue( TerminalGraphicsUpdate update ) {
 	return mNextSequence;
 }
 
+void TerminalGraphicsUpdateQueue::replace(
+	std::vector<TerminalGraphicsUpdate>&& updates,
+	const std::shared_ptr<TerminalGraphicsPresentation>& presentation ) {
+	std::lock_guard<std::mutex> lock( mMutex );
+	mUpdates.clear();
+	mQueuedBytes = 0;
+	mNeedsResync = false;
+	for ( auto& update : updates )
+		update.sequence = ++mNextSequence;
+	presentation->requiredUpdateSequence = mNextSequence;
+	// Retain references to the authoritative pixels even if later incremental updates overflow.
+	if ( !updates.empty() )
+		updates.front().recoveryPresentation = presentation;
+	mReplacement.assign( std::make_move_iterator( updates.begin() ),
+						 std::make_move_iterator( updates.end() ) );
+}
+
 std::vector<TerminalGraphicsUpdate> TerminalGraphicsUpdateQueue::drain() {
 	std::vector<TerminalGraphicsUpdate> updates;
 	std::lock_guard<std::mutex> lock( mMutex );
-	updates.reserve( mUpdates.size() );
-	while ( !mUpdates.empty() ) {
-		updates.emplace_back( std::move( mUpdates.front() ) );
-		mUpdates.pop_front();
+	const size_t limit = std::max( size_t{ 1 }, mMaxUpdates );
+	updates.reserve( std::min( limit, mReplacement.size() + mUpdates.size() ) );
+	size_t bytes = 0;
+	while ( updates.size() < limit && ( !mReplacement.empty() || !mUpdates.empty() ) ) {
+		const bool replaying = !mReplacement.empty();
+		auto& pending = replaying ? mReplacement : mUpdates;
+		const size_t payload = pending.front().payloadBytes();
+		// Make progress on a large image by allowing one payload above the byte limit.
+		if ( bytes && payload && ( bytes > mMaxBytes || payload > mMaxBytes - bytes ) )
+			break;
+		bytes += payload;
+		if ( !replaying )
+			mQueuedBytes -= payload;
+		updates.emplace_back( std::move( pending.front() ) );
+		pending.pop_front();
 	}
-	mQueuedBytes = 0;
 	return updates;
 }
 
 size_t TerminalGraphicsUpdateQueue::queuedBytes() const {
 	std::lock_guard<std::mutex> lock( mMutex );
-	return mQueuedBytes;
+	size_t bytes = mQueuedBytes;
+	for ( const auto& update : mReplacement )
+		bytes += update.payloadBytes();
+	return bytes;
 }
 
 bool TerminalGraphicsUpdateQueue::needsResync() const {
 	std::lock_guard<std::mutex> lock( mMutex );
 	return mNeedsResync;
-}
-
-void TerminalGraphicsUpdateQueue::resetResync() {
-	std::lock_guard<std::mutex> lock( mMutex );
-	mNeedsResync = false;
 }
 
 }} // namespace eterm::Terminal

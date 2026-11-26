@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <deque>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/glyphdrawable.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/textlayout.hpp>
@@ -24,10 +25,12 @@
 #include <eepp/window/input.hpp>
 #include <eepp/window/inputevent.hpp>
 #include <eepp/window/runtime.hpp>
+#include <eepp/window/terminal/private/kittyuiscale.hpp>
 #include <eterm/system/iprocess.hpp>
 #include <eterm/system/processfactory.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
+#include <eterm/terminal/kittygraphicsrenderer.hpp>
 #include <eterm/terminal/programstatusalerts.hpp>
 #include <eterm/terminal/pseudoterminal.hpp>
 #include <eterm/terminal/ptyoutputqueue.hpp>
@@ -51,6 +54,7 @@
 using namespace eterm::Terminal;
 using namespace eterm::System;
 using namespace EE::System;
+using EE::Window::Private::KittyUIScale;
 
 class MockPty : public IPseudoTerminal {
   public:
@@ -646,6 +650,151 @@ UTEST( eterm_session, graphics_update_queue_overflow_requires_resync ) {
 	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
 	EXPECT_EQ( TerminalGraphicsUpdateType::Resync, updates[0].type );
 	EXPECT_EQ( static_cast<Uint64>( 2 ), updates[0].sequence );
+	EXPECT_EQ( static_cast<size_t>( 0 ), queue.queuedBytes() );
+}
+
+UTEST( eterm_session, graphics_renderer_keeps_presentation_while_waiting_for_resync ) {
+	KittyGraphicsRenderer renderer;
+	auto presentation = std::make_shared<TerminalGraphicsPresentation>();
+	presentation->placements.emplace_back();
+	renderer.setPresentation( presentation );
+	ASSERT_TRUE( renderer.hasPlacements( KittyGraphicsRenderer::Pass::NonNegative ) );
+	TerminalGraphicsUpdate overflow;
+	overflow.type = TerminalGraphicsUpdateType::Resync;
+	EXPECT_EQ( KittyGraphicsRenderer::UpdateResult::ResyncNeeded,
+			   renderer.applyUpdates( { overflow } ) );
+	EXPECT_TRUE( renderer.hasPlacements( KittyGraphicsRenderer::Pass::NonNegative ) );
+}
+
+UTEST( eterm_session, graphics_renderer_commits_recovery_only_after_all_uploads ) {
+	using namespace EE::UI;
+	using namespace EE::Window;
+	using Result = KittyGraphicsRenderer::UpdateResult;
+	UIApplication app( WindowSettings( 160, 120, "Graphics recovery" ),
+					   UIApplication::Settings( Sys::getProcessPath() + "../" ),
+					   ContextSettings( false, 0 ) );
+	ASSERT_TRUE( app.getWindow() );
+	auto* window = app.getWindow();
+	window->setClearColor( Color::Black );
+	KittyGraphicsRenderer renderer;
+	TerminalGraphicsUpdate image;
+	image.imageId = 7;
+	image.imageSize = Sizei( 1, 1 );
+	image.pixels = std::make_shared<const std::vector<Uint8>>( 4, 0xFF );
+	image.type = TerminalGraphicsUpdateType::CreateImage;
+	image.sequence = 1;
+	ASSERT_EQ( Result::Applied, renderer.applyUpdates( { image } ) );
+	const auto presentationFor = []( KittyImageId imageId, Uint64 sequence ) {
+		auto presentation = std::make_shared<TerminalGraphicsPresentation>();
+		presentation->requiredUpdateSequence = sequence;
+		auto& placement = presentation->placements.emplace_back();
+		placement.imageId = imageId;
+		placement.sourcePixels = Rect( 0, 0, 1, 1 );
+		placement.columns = placement.rows = 1;
+		return presentation;
+	};
+	const auto expectImage = [&] {
+		window->clear();
+		const auto size = window->getSize();
+		renderer.draw( KittyGraphicsRenderer::Pass::NonNegative, {}, size.asFloat(),
+					   size.asFloat() );
+		GlobalBatchRenderer::instance()->draw();
+		Uint8 pixel[4]{};
+		FrameReadback readback{ pixel, { 1, 1 }, sizeof( pixel ) };
+		readback.position = { size.x / 2, size.y / 2 };
+		ASSERT_TRUE( window->readFrameBuffer( readback ) );
+		EXPECT_EQ( Uint8{ 255 }, pixel[0] );
+	};
+	const auto oldPresentation = presentationFor( image.imageId, 1 );
+	renderer.setPresentation( oldPresentation );
+	expectImage();
+
+	TerminalGraphicsUpdate reset;
+	reset.type = TerminalGraphicsUpdateType::ResetAll;
+	reset.sequence = 3;
+	auto replacement = image;
+	replacement.imageId = 8;
+	replacement.sequence = 4;
+	reset.recoveryPresentation = presentationFor( replacement.imageId, 5 );
+	ASSERT_EQ( Result::Applied, renderer.applyUpdates( { reset, replacement } ) );
+	EXPECT_EQ( Uint64{ 1 }, renderer.lastAppliedSequence() );
+	expectImage();
+	auto incompleteImage = replacement;
+	incompleteImage.sequence = 5;
+	incompleteImage.pixels.reset();
+	EXPECT_EQ( Result::RecoveryFailed, renderer.applyUpdates( { incompleteImage } ) );
+	EXPECT_EQ( Uint64{ 1 }, renderer.lastAppliedSequence() );
+	expectImage();
+
+	reset.sequence = 6;
+	reset.recoveryPresentation = presentationFor( replacement.imageId, 7 );
+	replacement.sequence = 7;
+	EXPECT_EQ( Result::Applied, renderer.applyUpdates( { reset } ) );
+	EXPECT_EQ( Uint64{ 1 }, renderer.lastAppliedSequence() );
+	EXPECT_EQ( Result::Applied, renderer.applyUpdates( { replacement } ) );
+	EXPECT_EQ( Uint64{ 7 }, renderer.lastAppliedSequence() );
+	// A stale text snapshot cannot replace the newly committed placement metadata.
+	renderer.setPresentation( oldPresentation );
+	expectImage();
+}
+
+UTEST( eterm_session, graphics_update_queue_accepts_one_frame_above_backlog_budget ) {
+	TerminalGraphicsUpdateQueue queue( 4, 8 );
+	TerminalGraphicsUpdate frame;
+	frame.type = TerminalGraphicsUpdateType::CreateImage;
+	frame.imageId = 7;
+	frame.pixels = std::make_shared<const std::vector<Uint8>>( 12, 1 );
+	EXPECT_EQ( static_cast<Uint64>( 1 ), queue.enqueue( frame ) );
+	EXPECT_FALSE( queue.needsResync() );
+	frame.type = TerminalGraphicsUpdateType::ReplaceImage;
+	frame.pixels = std::make_shared<const std::vector<Uint8>>( 16, 2 );
+	EXPECT_EQ( static_cast<Uint64>( 1 ), queue.enqueue( std::move( frame ) ) );
+	EXPECT_EQ( static_cast<size_t>( 16 ), queue.queuedBytes() );
+	auto updates = queue.drain();
+	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::CreateImage, updates[0].type );
+	EXPECT_EQ( static_cast<Uint8>( 2 ), updates[0].pixels->front() );
+}
+
+UTEST( eterm_session, graphics_update_queue_keeps_recovery_across_another_overflow ) {
+	TerminalGraphicsUpdateQueue queue( 4, 8 );
+	TerminalGraphicsUpdate patch;
+	patch.type = TerminalGraphicsUpdateType::UpdateRegion;
+	patch.pixels = std::make_shared<const std::vector<Uint8>>( 8, 1 );
+	queue.enqueue( patch );
+	queue.enqueue( patch );
+	ASSERT_TRUE( queue.needsResync() );
+	queue.drain();
+
+	TerminalGraphicsUpdate reset;
+	reset.type = TerminalGraphicsUpdateType::ResetAll;
+	TerminalGraphicsUpdate image;
+	image.type = TerminalGraphicsUpdateType::CreateImage;
+	image.pixels = std::make_shared<const std::vector<Uint8>>( 12, 2 );
+	image.imageId = 7;
+	TerminalGraphicsUpdate secondImage = image;
+	secondImage.imageId = 8;
+	auto presentation = std::make_shared<TerminalGraphicsPresentation>();
+	queue.replace( { reset, image, secondImage }, presentation );
+	EXPECT_EQ( Uint64{ 5 }, presentation->requiredUpdateSequence );
+	EXPECT_FALSE( queue.needsResync() );
+	queue.enqueue( patch );
+	queue.enqueue( std::move( patch ) );
+	EXPECT_TRUE( queue.needsResync() );
+	EXPECT_EQ( static_cast<size_t>( 24 ), queue.queuedBytes() );
+	auto updates = queue.drain();
+	ASSERT_EQ( static_cast<size_t>( 2 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::ResetAll, updates[0].type );
+	EXPECT_EQ( static_cast<Uint64>( 3 ), updates[0].sequence );
+	EXPECT_TRUE( updates[0].recoveryPresentation == presentation );
+	EXPECT_EQ( static_cast<Uint64>( 4 ), updates[1].sequence );
+	EXPECT_EQ( static_cast<size_t>( 12 ), queue.queuedBytes() );
+	updates = queue.drain();
+	ASSERT_EQ( static_cast<size_t>( 2 ), updates.size() );
+	EXPECT_EQ( TerminalGraphicsUpdateType::CreateImage, updates[0].type );
+	EXPECT_EQ( static_cast<Uint64>( 5 ), updates[0].sequence );
+	EXPECT_EQ( TerminalGraphicsUpdateType::Resync, updates[1].type );
+	EXPECT_EQ( static_cast<Uint64>( 7 ), updates[1].sequence );
 	EXPECT_EQ( static_cast<size_t>( 0 ), queue.queuedBytes() );
 }
 
@@ -1378,6 +1527,25 @@ UTEST( eterm, kitty_graphics_resync_republishes_authoritative_images ) {
 	EXPECT_EQ( static_cast<size_t>( 4 ), updates[1].pixels->size() );
 }
 
+UTEST( eterm, kitty_graphics_resync_shares_animation_pixels_until_modified ) {
+	KittyGraphicsProtocol protocol;
+	ASSERT_TRUE( protocol.handle( "a=t,f=32,s=1,v=1,i=27;AQIDBA==" ).changed );
+	ASSERT_TRUE( protocol.handle( "a=f,f=32,s=1,v=1,i=27,r=2,X=1;BQYHCA==" ).changed );
+	auto initial = protocol.takeUpdates();
+	ASSERT_EQ( size_t{ 2 }, initial.size() );
+	protocol.resync();
+	auto replay = protocol.takeUpdates();
+	ASSERT_EQ( size_t{ 3 }, replay.size() );
+	EXPECT_TRUE( initial.back().pixels == replay.back().pixels );
+
+	ASSERT_TRUE( protocol.handle( "a=f,f=32,s=1,v=1,i=27,r=2,X=1;CQoLDA==" ).changed );
+	EXPECT_EQ( Uint8{ 5 }, replay.back().pixels->front() );
+	protocol.resync();
+	auto refreshed = protocol.takeUpdates();
+	ASSERT_EQ( size_t{ 3 }, refreshed.size() );
+	EXPECT_EQ( Uint8{ 9 }, refreshed.back().pixels->front() );
+}
+
 UTEST( eterm, kitty_graphics_root_frame_patch_publishes_only_changed_rectangle ) {
 	KittyGraphicsProtocol protocol;
 	protocol.handle( "a=t,f=32,s=2,v=1,i=29;AQIDBAUGBwg=" );
@@ -1474,6 +1642,27 @@ UTEST( eterm, kitty_graphics_animation_frame_create_control_and_compose ) {
 	updates = protocol.takeUpdates();
 	ASSERT_EQ( static_cast<size_t>( 1 ), updates.size() );
 	EXPECT_EQ( TerminalGraphicsUpdateType::DeleteFrame, updates[0].type );
+}
+
+UTEST( eterm, kitty_graphics_animation_fills_background_in_rgba_order ) {
+	KittyGraphicsProtocol protocol;
+	constexpr size_t width = 17;
+	std::string encoded;
+	ASSERT_TRUE( Base64::encode( std::string( width * 4, '\0' ), encoded ) );
+	ASSERT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=t,f=32,s=17,v=1,i=30;" + encoded ).error );
+	protocol.takeUpdates();
+
+	ASSERT_EQ( KittyGraphicsError::None,
+			   protocol.handle( "a=f,i=30,f=32,s=1,v=1,X=1,Y=305419896;AQIDBA==" ).error );
+	auto updates = protocol.takeUpdates();
+	ASSERT_EQ( size_t{ 1 }, updates.size() );
+	ASSERT_EQ( TerminalGraphicsUpdateType::CreateFrame, updates[0].type );
+	ASSERT_TRUE( updates[0].pixels != nullptr );
+	std::vector<Uint8> expected{ 1, 2, 3, 4 };
+	for ( size_t pixel = 1; pixel < width; ++pixel )
+		expected.insert( expected.end(), { 0x12, 0x34, 0x56, 0x78 } );
+	EXPECT_TRUE( expected == *updates[0].pixels );
 }
 
 UTEST( eterm, kitty_graphics_delete_placements_and_uppercase_frees_data ) {
@@ -1952,6 +2141,60 @@ UTEST( eterm, printable_runs_replace_kitty_placeholders ) {
 	EXPECT_EQ( static_cast<size_t>( 0 ), display->mGraphics->placements.size() );
 	EXPECT_EQ( static_cast<Rune>( 'X' ), display->mFirstGlyph.u );
 	EXPECT_EQ( static_cast<Rune>( 'Y' ), display->mSecondGlyph.u );
+}
+
+UTEST( eterm, kitty_graphics_scale_probe_is_read_only_and_reports_host_scale ) {
+	auto pty = std::make_unique<MockPty>();
+	auto* input = pty.get();
+	input->mLoopWrites = false;
+	input->mMaxRead = 1;
+	input->mBuffer = KittyUIScale::Query;
+	auto display = std::make_shared<MockDisplay>();
+	auto term =
+		TerminalEmulator::create( std::move( pty ), std::make_unique<MockProcess>(), display );
+	term->setHostUIScale( 1.375f );
+	term->update();
+	EXPECT_STDSTREQ( input->mWrites, "\033_Gi=1162170449,eepp-scale=1375000;OK\033\\" );
+
+	input->mWrites.clear();
+	input->mBuffer += "\033_Ga=p,i=1162170449;\033\\";
+	term->update();
+	EXPECT_STDSTREQ( input->mWrites, "\033_Gi=1162170449;ENOENT\033\\" );
+
+	input->mWrites.clear();
+	input->mBuffer += "\033_Ga=q,i=1162170449,t=d,f=24,s=2,v=1;AAAAAAAA\033\\";
+	term->update();
+	EXPECT_STDSTREQ( input->mWrites, "\033_Gi=1162170449;OK\033\\" );
+
+	input->mWrites.clear();
+	input->mBuffer += KittyUIScale::Query;
+	term->setHostUIScale( 2.25f );
+	term->update();
+	EXPECT_STDSTREQ( input->mWrites, "\033_Gi=1162170449,eepp-scale=2250000;OK\033\\" );
+
+	input->mWrites.clear();
+	input->mBuffer += KittyUIScale::Query;
+	term->setHostUIScale( 0.f );
+	term->update();
+	EXPECT_STDSTREQ( input->mWrites, "\033_Gi=1162170449;OK\033\\" );
+}
+
+UTEST( eterm, kitty_graphics_scale_reply_validates_id_status_and_range ) {
+	const auto expected = KittyUIScale::parseReply( "Gi=1162170449,eepp-scale=1333333;OK" );
+	ASSERT_TRUE( expected.has_value() );
+	EXPECT_EQ( *expected, 1.333333f );
+	for ( const char* reply :
+		  { "Gi=1162170449;OK", "Gi=1162170449,eepp-scale=1375000;EINVAL",
+			"Gi=1162170449,eepp-scale=16000001;OK", "Gi=1162170449,eepp-scale=249999;OK",
+			"Gi=1162170449,eepp-scale=1375000extra;OK", "Gi=1162170449,eepp-scale=1375000,;OK",
+			"Gi=1162170449,eepp-scale=1375000,eepp-scale=1500000;OK" } ) {
+		const auto fallback = KittyUIScale::parseReply( reply );
+		ASSERT_TRUE( fallback.has_value() );
+		EXPECT_EQ( *fallback, 0.f );
+	}
+	EXPECT_FALSE( KittyUIScale::parseReply( "Gi=31,eepp-scale=1375000;OK" ).has_value() );
+	EXPECT_FALSE(
+		KittyUIScale::parseReply( "Geepp-scale=1375000,eepp-scale=1500000;OK" ).has_value() );
 }
 
 UTEST( eterm, kitty_graphics_apc_is_fragmentation_safe_and_not_terminal_text ) {

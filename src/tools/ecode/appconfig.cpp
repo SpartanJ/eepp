@@ -12,6 +12,7 @@
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/uinodelink.hpp>
 #include <eepp/window/platformhelper.hpp>
+#include <eepp/window/runtime.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 #include <nlohmann/json.hpp>
@@ -355,20 +356,23 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	}
 
 	editor.colorScheme = colorSchemeName;
-	windowState.size = Sys::getPlatformType() == Sys::PlatformType::macOS
-						   ? win->getSizeInScreenCoordinates()
-						   : win->getLastWindowedSizeInScreenCoordinates();
-	windowState.maximized = win->isMaximized();
-	windowState.displayIndex = win->getCurrentDisplayIndex();
-	windowState.position = win->getPosition();
-	if ( windowState.position.x < 0 )
-		windowState.position.x = 0;
-	if ( windowState.position.y < 0 )
-		windowState.position.y = 0;
+	if ( Runtime::mode() != RuntimeMode::Terminal ) {
+		windowState.size = Sys::getPlatformType() == Sys::PlatformType::macOS
+							   ? win->getSizeInScreenCoordinates()
+							   : win->getLastWindowedSizeInScreenCoordinates();
+		windowState.maximized = win->isMaximized();
+		windowState.displayIndex = win->getCurrentDisplayIndex();
+		windowState.position = win->getPosition();
+		windowState.position.x = eemax( 0, windowState.position.x );
+		windowState.position.y = eemax( 0, windowState.position.y );
+		iniState.setValueI( "window", "width", windowState.size.getWidth() );
+		iniState.setValueI( "window", "height", windowState.size.getHeight() );
+		iniState.setValueB( "window", "maximized", windowState.maximized );
+		iniState.setValueI( "window", "display_index", windowState.displayIndex );
+		iniState.setValueI( "window", "x", windowState.position.x );
+		iniState.setValueI( "window", "y", windowState.position.y );
+	}
 	ini.setValue( "editor", "colorscheme", editor.colorScheme );
-	iniState.setValueI( "window", "width", windowState.size.getWidth() );
-	iniState.setValueI( "window", "height", windowState.size.getHeight() );
-	iniState.setValueB( "window", "maximized", windowState.maximized );
 	iniState.setValueF( "window", "pixeldensity", windowState.pixelDensity );
 	// Keep the legacy startup behavior on later launches until the user changes the scale.
 	if ( !windowState.useLegacyPixelDensity ) {
@@ -383,9 +387,6 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValue( "window", "panel_partition", panelPartition );
 	iniState.setValue( "window", "status_bar_partition", statusBarPartition );
 	iniState.setValue( "window", "right_panel_partition", windowState.rightPanelPartition );
-	iniState.setValueI( "window", "display_index", windowState.displayIndex );
-	iniState.setValueI( "window", "x", windowState.position.x );
-	iniState.setValueI( "window", "y", windowState.position.y );
 	iniState.setValue( "files", "recentfiles", String::join( urlEncode( recentFiles ), ';' ) );
 	iniState.setValue( "folders", "recentfolders",
 					   String::join( urlEncode( recentFolders ), ';' ) );

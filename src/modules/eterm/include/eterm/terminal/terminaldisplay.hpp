@@ -283,6 +283,8 @@ class TerminalDisplay {
 	/** Applies framebuffer geometry and font size together before resizing the terminal grid. */
 	void setLayout( const Sizef& size, const Rectf& padding, Float fontSize );
 
+	void setHostUIScale( Float scale );
+
 	bool isDirty() const { return mDirty; }
 
 	void invalidate();
@@ -450,8 +452,6 @@ class TerminalDisplay {
 	Uint32 mRows{ 0 };
 	Uint32 mClickStep{ 5 };
 	Uint64 mSnapshotGeneration{ 0 };
-	Uint64 mLastAppliedGraphicsSequence{ 0 };
-	bool mGraphicsResyncPending{ false };
 	FontHinting mFontHinting{ FontHinting::Full };
 	FontAntialiasing mFontAntialiasing{ FontAntialiasing::Grayscale };
 	FrameBufferUniquePtr mFrameBuffer;

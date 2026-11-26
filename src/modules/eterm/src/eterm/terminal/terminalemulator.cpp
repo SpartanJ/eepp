@@ -46,9 +46,11 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/version.hpp>
 #include <eepp/window/input.hpp>
+#include <eepp/window/terminal/private/kittyuiscale.hpp>
 
 using namespace EE::Network;
 using namespace EE::System;
+using EE::Window::Private::KittyUIScale;
 
 #include <algorithm>
 #include <assert.h>
@@ -3523,9 +3525,15 @@ void TerminalEmulator::strhandle( void ) {
 		}
 	}
 	if ( mStrescseq.type == '_' && mStrescseq.len > 0 && mStrescseq.buf[0] == 'G' ) {
-		auto result =
-			mKittyGraphics.handle( std::string_view{ mStrescseq.buf + 1, mStrescseq.len - 1 },
-								   Vector2i( mTerm.c.x, mTerm.c.y ) );
+		const std::string_view command{ mStrescseq.buf + 1, mStrescseq.len - 1 };
+		if ( KittyUIScale::isQuery( command ) ) {
+			const auto reply = KittyUIScale::reply( mHostUIScale );
+			if ( !reply.empty() ) {
+				ttyreply( reply.data(), reply.size(), 0, true );
+				return;
+			}
+		}
+		auto result = mKittyGraphics.handle( command, Vector2i( mTerm.c.x, mTerm.c.y ) );
 		if ( !result.response.empty() )
 			ttyreply( result.response.data(), result.response.size(), 0, true );
 		if ( result.changed )
@@ -5932,6 +5940,10 @@ int TerminalEmulator::write( const char* buf, size_t buflen ) {
 
 void TerminalEmulator::resize( int columns, int rows ) {
 	resize( columns, rows, mPixelWidth, mPixelHeight );
+}
+
+void TerminalEmulator::setHostUIScale( Float scale ) {
+	mHostUIScale = scale;
 }
 
 void TerminalEmulator::resize( int columns, int rows, int pixelWidth, int pixelHeight ) {

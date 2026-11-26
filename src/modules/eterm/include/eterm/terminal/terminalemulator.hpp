@@ -169,6 +169,8 @@ class TerminalEmulator final {
 
 	void resize( int columns, int rows, int pixelWidth, int pixelHeight );
 
+	void setHostUIScale( Float scale );
+
 	void redraw();
 
 	/** Worker-owned terminal state reset (RIS semantics without replacing the PTY/process). */
@@ -396,6 +398,7 @@ class TerminalEmulator final {
 	int mPendingPtyPixelHeight{ 0 };
 	int mPixelWidth{ 0 };
 	int mPixelHeight{ 0 };
+	Float mHostUIScale{ 0.f };
 	Clock mPendingPtyResizeClock;
 
 	TerminalGlyph mBlankRowGlyph{};
