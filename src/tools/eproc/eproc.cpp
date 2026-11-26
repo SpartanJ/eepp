@@ -668,20 +668,22 @@ bool App::init() {
 				<ScrollView class="eproc-performance-sidebar" lw="276dp" lh="mp">
 					<vbox id="perf_cards" lw="mp" lh="wc" padding="8dp" />
 				</ScrollView>
-				<vbox lw="0" lw8="1" lh="mp" padding="14dp">
+				<vbox lw="0" lw8="1" lh="mp" padding="8dp">
 					<hbox lw="mp" lh="wc" margin-bottom="8dp">
-						<TextView id="perf_title" lw="0" lw8="1" lh="wc" />
+						<vbox lw="0" lw8="1" lh="wc">
+							<TextView id="perf_title" lw="mp" lh="wc" />
+							<TextView id="perf_summary" class="eproc-performance-muted" lw="mp" lh="wc" margin-bottom="8dp" />
+						</vbox>
 						<hbox id="perf_cpu_mode" lw="wc" lh="wc">
 							<SelectButton id="perf_overall" lw="wc" lh="wc" margin-right="4dp" selected="true" />
 							<SelectButton id="perf_per_core" lw="wc" lh="wc" />
 						</hbox>
 					</hbox>
-					<TextView id="perf_summary" class="eproc-performance-muted" lw="mp" lh="wc" margin-bottom="8dp" />
 					<Chart id="perf_detail_chart" class="eproc-performance-chart" lw="mp" lh="0" lw8="1" />
 					<ScrollView id="perf_cores_scroll" lw="mp" lh="0" lw8="1" visible="false">
 						<FlowLayout id="perf_cores_stack" lw="mp" lh="wc" row-valign="top" />
 					</ScrollView>
-					<TextView id="perf_detail" lw="mp" lh="wc" margin-top="12dp" word-wrap="true" />
+					<TextView id="perf_detail" lw="mp" lh="wc" margin-top="8dp" word-wrap="true" />
 				</vbox>
 			</eproc-performance-layout>
 			<!-- Tab definitions -->
