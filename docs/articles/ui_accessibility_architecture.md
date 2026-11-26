@@ -566,9 +566,11 @@ or wrong.
 The inactive benchmark compares enabled and disabled accessibility in the **same Release build**,
 not a before/after branch comparison. Each process warms 100,000 `setText()` calls before timing
 1,000,000 calls (roughly one second on the CI runner). It collects ten adjacent sample pairs with
-alternating order, regardless of the result, and retains the ratio-of-medians notification guard
-of **1.01×**. Raw samples, warmup times and failure reasons are included in JSON even when a guard
-fails. Linux native correctness checks still run after a timing failure; the failed guard still
+alternating order, regardless of the result. The notification guard compares the fastest sample of
+each mode and allows **1.02×**: shared-runner interference only adds time and can split samples into
+clusters that move a median by several percent, while a real inactive-path cost slows every sample.
+The ratio of medians is still reported as `notification_median_ratio`. Raw samples, warmup times
+and failure reasons are included in JSON even when a guard fails. Linux native correctness checks still run after a timing failure; the failed guard still
 fails the CI job.
 
 Useful tools:

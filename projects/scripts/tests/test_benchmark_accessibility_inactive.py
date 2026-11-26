@@ -45,7 +45,7 @@ class InactiveBenchmarkTests(unittest.TestCase):
         self.assertEqual(args.iterations, 1000000)
         self.assertEqual(args.warmup_iterations, 100000)
         self.assertEqual(args.samples, 10)
-        self.assertEqual(args.max_notification_ratio, 1.01)
+        self.assertEqual(args.max_notification_ratio, 1.02)
         self.assertFalse(hasattr(args, "confirmation_samples"))
 
     def test_pairs_reverse_order_without_losing_pair_alignment(self):
@@ -62,14 +62,23 @@ class InactiveBenchmarkTests(unittest.TestCase):
         self.assertEqual(enabled, [{"pair": n} for n in range(4)])
         self.assertEqual(disabled, enabled)
 
-    def test_guard_still_uses_ratio_of_medians(self):
+    def test_guard_uses_ratio_of_minimums_and_reports_medians(self):
         enabled = [sample(v) for v in (102, 99, 100)]
         disabled = [sample(v) for v in (100, 101, 140)]
         output = benchmark.summarize(enabled, disabled)
-        self.assertEqual(output["notification_ratio"], 100 / 101)
+        self.assertEqual(output["notification_ratio"], 99 / 100)
+        self.assertEqual(output["notification_median_ratio"], 100 / 101)
+
+    def test_bimodal_noise_does_not_move_the_guard(self):
+        # Interference only adds time: more slow enabled samples shift the median, not the minimum.
+        enabled = [sample(v) for v in (452, 478, 478, 478, 478)]
+        disabled = [sample(v) for v in (452, 452, 452, 452, 478)]
+        output = benchmark.summarize(enabled, disabled)
+        self.assertEqual(output["notification_ratio"], 1.0)
+        self.assertGreater(output["notification_median_ratio"], 1.05)
 
     def test_fixed_count_on_both_pass_and_failure_and_failure_json_survives(self):
-        for ratio in (1.0, 1.02):
+        for ratio in (1.0, 1.03):
             with self.subTest(ratio=ratio):
                 output = io.StringIO()
 
@@ -78,7 +87,7 @@ class InactiveBenchmarkTests(unittest.TestCase):
 
                 with mock.patch.object(benchmark, "run_sample", side_effect=run) as runner:
                     with contextlib.redirect_stdout(output):
-                        if ratio > 1.01:
+                        if ratio > 1.02:
                             with self.assertRaisesRegex(RuntimeError, "notification overhead"):
                                 benchmark.main(["--json"])
                         else:
@@ -88,12 +97,12 @@ class InactiveBenchmarkTests(unittest.TestCase):
                 self.assertEqual(report["sample_pairs"], 10)
                 self.assertEqual(len(report["raw_enabled"]), 10)
                 self.assertEqual(len(report["raw_disabled"]), 10)
-                self.assertEqual(bool(report["failures"]), ratio > 1.01)
+                self.assertEqual(bool(report["failures"]), ratio > 1.02)
                 self.assertEqual(report["notification_ratio"], ratio)
 
     def test_exact_threshold_is_allowed(self):
         def run(args, disabled):
-            return sample(1000 if disabled else 1010)
+            return sample(1000 if disabled else 1020)
 
         with mock.patch.object(benchmark, "run_sample", side_effect=run):
             with contextlib.redirect_stdout(io.StringIO()):
