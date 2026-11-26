@@ -175,6 +175,7 @@ void SettingsPanel::setCategoryEnabled( PanelState& state, const std::string& ca
 										bool enabled, const std::string& excludedSetting ) {
 	state.panel->setCategoryEnabled( category, enabled, excludedSetting );
 }
+
 void SettingsPanel::addUserSettings( PanelState& panel ) {
 	addCategory( panel, "general.keybindings", mApp->i18n( "general", "General" ),
 				 mApp->i18n( "kb_title", "Keyboard Shortcuts" ) );
@@ -251,6 +252,50 @@ void SettingsPanel::addUserSettings( PanelState& panel ) {
 									 "Plugins Manager." ) } );
 		},
 		true );
+
+	addCategory( panel, "general.logging", mApp->i18n( "general", "General" ),
+				 mApp->i18n( "logging", "Logging" ) );
+	auto& logging = mApp->getConfig().logging;
+	addBool(
+		panel,
+		{ "logRotationEnabled", "general.logging",
+		  mApp->i18n( "log_rotation_enabled", "Enable Log Rotation" ),
+		  mApp->mLogsPath.empty()
+			  ? mApp->i18n( "log_rotation_inactive_desc",
+							"File logging is off for this process. Rotation settings are saved "
+							"for future launches." )
+			  : mApp->i18n( "log_rotation_enabled_desc",
+							"Limit file log growth by archiving older log files." ) },
+		&logging.rotationEnabled, [this, &panel]( bool enabled ) {
+			mApp->applyLogRotationConfig();
+			setCategoryEnabled( panel, "general.logging", enabled, "logRotationEnabled" );
+		} );
+	addInteger(
+		panel,
+		{ "logMaxFileSizeMiB", "general.logging",
+		  mApp->i18n( "log_max_file_size", "Maximum Log File Size (MiB)" ),
+		  mApp->i18n( "log_max_file_size_desc",
+					  "Rotate the active log when the next entry would exceed this size." ) },
+		LoggingConfig::MinFileSizeMiB, LoggingConfig::MaxFileSizeMiB,
+		[&logging] { return logging.getMaxFileSizeMiB(); },
+		[this, &logging]( int size ) {
+			logging.setMaxFileSizeMiB( size );
+			mApp->applyLogRotationConfig();
+		} );
+	addInteger(
+		panel,
+		{ "logMaxBackupFiles", "general.logging",
+		  mApp->i18n( "log_max_backup_files", "Number of Backup Log Files" ),
+		  mApp->i18n( "log_max_backup_files_desc",
+					  "Reducing this limit removes older archives while rotation is enabled. "
+					  "Zero keeps only the active file." ) },
+		LoggingConfig::MinBackupFiles, LoggingConfig::MaxBackupFiles,
+		[&logging] { return logging.getMaxBackupFiles(); },
+		[this, &logging]( int count ) {
+			logging.setMaxBackupFiles( count );
+			mApp->applyLogRotationConfig();
+		} );
+	setCategoryEnabled( panel, "general.logging", logging.rotationEnabled, "logRotationEnabled" );
 
 	addCategory( panel, "general.behavior", mApp->i18n( "general", "General" ),
 				 mApp->i18n( "behavior", "Behavior" ) );

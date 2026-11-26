@@ -6,6 +6,7 @@
 #include "version.hpp"
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/tools/uiaudioplayer.hpp>
@@ -90,6 +91,12 @@ static std::vector<std::string> urlDecode( const std::vector<std::string>& vec )
 	return decoded;
 }
 
+void AppConfig::loadLoggingConfig( const std::string& confPath ) {
+	// A pathless INI parser reads the early policy without logging before the sink is ready.
+	IOStreamFile stream( confPath + "config.cfg" );
+	logging.load( IniFile( stream ) );
+}
+
 void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 					  std::string& initColorScheme, std::vector<std::string>& recentFiles,
 					  std::vector<std::string>& recentFolders, const std::string& resPath,
@@ -100,6 +107,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	const bool newProfile =
 		!FileSystem::fileExists( configPath ) && !FileSystem::fileExists( statePath );
 	ini.loadFromFile( configPath );
+	logging.load( ini );
 	iniState.loadFromFile( statePath );
 	std::string recent = iniState.getValue( "files", "recentfiles", "" );
 	recentFiles = urlDecode( String::split( recent, ';' ) );
@@ -372,6 +380,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 		iniState.setValueI( "window", "x", windowState.position.x );
 		iniState.setValueI( "window", "y", windowState.position.y );
 	}
+	logging.save( ini );
 	ini.setValue( "editor", "colorscheme", editor.colorScheme );
 	iniState.setValueF( "window", "pixeldensity", windowState.pixelDensity );
 	// Keep the legacy startup behavior on later launches until the user changes the scale.

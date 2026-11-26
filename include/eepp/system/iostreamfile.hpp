@@ -31,12 +31,12 @@ class EE_API IOStreamFile : public IOStream {
 
 	bool isOpen();
 
-	/** @brief Synchronizes the buffer associated with the stream to its controlled output sequence.
-	** This effectively means that all unwritten characters in the buffer are written to its
-	*controlled output sequence as soon as possible. */
-	void flush();
+	/** @brief Writes buffered output to the open stream.
+	 * @return True when the stream was flushed successfully. */
+	bool flush();
 
-	void close();
+	/** @return True if the stream is closed without a write error or was already closed. */
+	bool close();
 
   protected:
 	std::FILE* mFS;

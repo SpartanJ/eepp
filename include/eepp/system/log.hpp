@@ -3,12 +3,15 @@
 
 #include <eepp/core/string.hpp>
 #include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/monotonicclock.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/singleton.hpp>
 #include <eepp/system/sys.hpp>
 #include <unordered_map>
 
 namespace EE { namespace System {
+
+class IniFile;
 
 /** @brief The reader interface is useful if you want to keep track of what is write in the log, for
  * example for a console. */
@@ -28,6 +31,42 @@ enum class LogLevel : int {
 	Assert,	  ///< Asserted critical condition.
 };
 
+struct LogRotationConfig {
+	static constexpr Uint32 MaxBackupFiles = 100;
+
+	Uint64 maxFileSize{ 0 };	///< Bytes per file. Zero disables rotation.
+	Uint32 maxBackupFiles{ 3 }; ///< Zero discards the previous active file on rollover.
+};
+
+/** Size-based rotation preferences persisted in an INI `[logging]` section. */
+struct EE_API LoggingConfig {
+  private:
+	int mMaxFileSizeMiB{ 5 };
+	int mMaxBackupFiles{ 3 };
+
+  public:
+	static constexpr int MinFileSizeMiB = 1;
+	static constexpr int MaxFileSizeMiB = 1024;
+	static constexpr int MinBackupFiles = 0;
+	static constexpr int MaxBackupFiles = LogRotationConfig::MaxBackupFiles;
+
+	bool rotationEnabled{ true };
+
+	void load( const IniFile& ini );
+
+	void save( IniFile& ini ) const;
+
+	int getMaxFileSizeMiB() const { return mMaxFileSizeMiB; }
+
+	void setMaxFileSizeMiB( int size );
+
+	int getMaxBackupFiles() const { return mMaxBackupFiles; }
+
+	void setMaxBackupFiles( int count );
+
+	LogRotationConfig rotation() const;
+};
+
 /** @brief Global log file. The engine will log everything in this file. */
 class EE_API Log : protected Mutex {
 	SINGLETON_DECLARE_HEADERS( Log )
@@ -45,6 +84,10 @@ class EE_API Log : protected Mutex {
 
 	static Log* create( const std::string& logPath, const LogLevel& level, bool stdOutLog,
 						bool liveWrite );
+
+	/** Sets the path and rotation policy together, including on an existing singleton. */
+	static Log* create( const std::string& logPath, const LogLevel& level, bool stdOutLog,
+						bool liveWrite, const LogRotationConfig& rotation );
 
 	static Log* create( const LogLevel& level, bool stdOutLog, bool liveWrite );
 
@@ -91,8 +134,7 @@ class EE_API Log : protected Mutex {
 	template <typename... Args> void writef( std::string_view format, Args&&... args ) {
 		auto result = String::format(
 			format, FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
-		write( result );
-		write( "\n" );
+		writel( result );
 	}
 
 	/** @returns A reference of the current written log. */
@@ -104,7 +146,8 @@ class EE_API Log : protected Mutex {
 	/** @brief Enabled or disables to output the Writes to stdout. */
 	void setLogToStdOut( const bool& output );
 
-	/** @returns If the file is forced to flush the data on every Write call. */
+	/** @returns If the file is forced to flush on every write.
+	 * Synchronize externally when borrowing this reference across changes to the file sink. */
 	const bool& isLiveWrite() const;
 
 	/** @brief Activate or deactivate to flush the written data to the log on every Write call. */
@@ -125,11 +168,18 @@ class EE_API Log : protected Mutex {
 	 * logged. */
 	void setLogLevelThreshold( const LogLevel& logLevelThreshold );
 
-	/** @return The file path of the log file (if any). */
+	/** @return The file path of the log file (if any).
+	 * Synchronize externally when borrowing this reference across changes to the file sink. */
 	const std::string& getFilePath() const;
 
 	/** Sets the file path of the log file. */
 	void setFilePath( const std::string& filePath );
+
+	/** Enable size-based rotation. The caller must own the active and backup files exclusively
+	 * for writing. Ordinary readers are allowed, subject to platform sharing rules. */
+	void setRotationConfig( const LogRotationConfig& config );
+
+	LogRotationConfig getRotationConfig() const;
 
 	/** @return True if the logs are being buffered in memory */
 	bool getKeepLog() const;
@@ -230,6 +280,41 @@ class EE_API Log : protected Mutex {
 
 	std::string logLevelWithTimestamp( const LogLevel& level, const std::string_view& text,
 									   bool appendNewLine );
+
+  private:
+	mutable Mutex mFileMutex;
+	LogRotationConfig mRotation;
+	Uint64 mCurrentFileSize{ 0 };
+	MonotonicClock::TimePoint mOpenRetry{};
+	MonotonicClock::TimePoint mRotationRetry{};
+	MonotonicClock::TimePoint mCleanupRetry{};
+	MonotonicClock::TimePoint mSizeRetry{};
+	bool mFileSizeValid{ false };
+	bool mCleanupPending{ false };
+
+	Log( const std::string& logPath, const LogLevel& level, bool stdOutLog, bool liveWrite,
+		 const LogRotationConfig& rotation );
+
+	static Log* createImpl( const std::string& logPath, const LogLevel& level, bool stdOutLog,
+							bool liveWrite, const LogRotationConfig* rotation );
+
+	bool setFilePathLocked( const std::string& filePath );
+
+	bool setRotationConfigLocked( const LogRotationConfig& config );
+
+	void writeToFile( std::string_view text, bool appendNewLine, bool saving = false );
+
+	const char* writeToFileLocked( std::string_view text, bool appendNewLine );
+
+	bool openFSLocked();
+
+	bool closeFSLocked();
+
+	bool updateFileSizeLocked();
+
+	bool rotateFilesLocked();
+
+	bool pruneArchivesLocked();
 };
 
 }} // namespace EE::System

@@ -25,6 +25,7 @@
 #include <cstring>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/logfilefamily.hpp>
 #include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
 #include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/tools/keybindingsconfig.hpp>
@@ -830,7 +831,7 @@ bool App::isAnyStatusBarSectionVisible() const {
 }
 
 bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync,
-					  bool stdOutLogs, bool disableFileLogs ) {
+					  bool stdOutLogs, bool disableFileLogs, LogFileFamily& logFileFamily ) {
 	if ( !mPortableMode )
 		mPortableMode = FileSystem::fileExists( Sys::getProcessPath() + "portable_mode.txt" );
 	auto [ok, configPath] = generateConfigPath();
@@ -876,9 +877,12 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 		FileSystem::makeDir( mPlaygroundPath );
 	FileSystem::dirAddSlashAtEnd( mPlaygroundPath );
 
-	mLogsPath = mConfigPath + "ecode.log";
+	mConfig.loadLoggingConfig( mConfigPath );
+	mLogsPath =
+		disableFileLogs ? std::string{} : logFileFamily.acquire( mConfigPath + "ecode.log" );
 
-	Log::create( mLogsPath, logLevel, stdOutLogs, !disableFileLogs );
+	Log::create( mLogsPath, logLevel, stdOutLogs, !mLogsPath.empty(),
+				 mLogsPath.empty() ? LogRotationConfig{} : mConfig.logging.rotation() );
 
 	Log::instance()->setKeepLog( true );
 
@@ -891,10 +895,16 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 
 	mConfig.load( mConfigPath, mKeybindingsPath, mInitColorScheme, mRecentFiles, mRecentFolders,
 				  mResPath, mPluginManager.get(), displaySize.asInt(), sync );
+	applyLogRotationConfig();
 	defaultResourceScope().getFontService().setHinting( mConfig.ui.fontHinting );
 	defaultResourceScope().getFontService().setAntialiasing( mConfig.ui.fontAntialiasing );
 
 	return firstRun;
+}
+
+void App::applyLogRotationConfig() {
+	if ( !mLogsPath.empty() )
+		Log::instance()->setRotationConfig( mConfig.logging.rotation() );
 }
 
 void App::saveConfig() {
@@ -4711,7 +4721,7 @@ void App::tintTitleBar() {
 	mUISceneNode->updateWindowTitleBarColor();
 }
 
-void App::init( InitParameters& params ) {
+void App::init( InitParameters& params, LogFileFamily& logFileFamily ) {
 	Http::setThreadPool( mThreadPool );
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
@@ -4741,7 +4751,7 @@ void App::init( InitParameters& params ) {
 	FileSystem::dirAddSlashAtEnd( mResPath );
 
 	bool firstRun = loadConfig( params.logLevel, currentDisplay->getSize(), params.prematureExit,
-								params.stdOutLogs, params.disableFileLogs );
+								params.stdOutLogs, params.disableFileLogs, logFileFamily );
 
 	if ( params.prematureExit )
 		return;
@@ -5766,26 +5776,23 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		}
 	}
 
+	LogFileFamily logFileFamily;
 	appInstance = eeNew( App, ( jobs, args ) );
-	appInstance->init( params );
+	appInstance->init( params, logFileFamily );
 
 	if ( exportLangPath && !exportLangPath.Get().empty() ) {
 		Sys::windowAttachConsole();
 		exportLanguages( exportLangPath.Get(), exportLang.Get(), appInstance->getLanguagesPath() );
-		return EXIT_SUCCESS;
-	}
-
-	if ( health || ( healthLang && !healthLang.Get().empty() ) ) {
+	} else if ( health || ( healthLang && !healthLang.Get().empty() ) ) {
 		Sys::windowAttachConsole();
 		Language::LanguagesSyntaxHighlighting::load();
 		SyntaxDefinitionManager::instance()->loadFromFolder( appInstance->getLanguagesPath() );
 		FeaturesHealth::doHealth( appInstance->getPluginManager(), healthLang.Get(),
 								  healthFormat.Get() );
-		return EXIT_SUCCESS;
 	}
 
+	// Join app workers, including font warm-up, before engine and static teardown.
 	eeSAFE_DELETE( appInstance );
-
 	Engine::destroySingleton();
 	MemoryManager::showResults();
 

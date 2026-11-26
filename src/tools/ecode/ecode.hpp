@@ -29,6 +29,12 @@
 using namespace eterm::UI;
 using namespace EE::UI::Tools;
 
+namespace EE::System {
+
+class LogFileFamily;
+
+} // namespace EE::System
+
 namespace ecode {
 
 class AutoCompletePlugin;
@@ -75,7 +81,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		bool readOnly{ false };
 	};
 
-	void init( InitParameters& );
+	void init( InitParameters& params, LogFileFamily& logFileFamily );
 
 	void createWidgetInspector();
 
@@ -107,7 +113,9 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool commandExists( const std::string& command ) const;
 
 	bool loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync, bool stdOutLogs,
-					 bool disableFileLogs );
+					 bool disableFileLogs, LogFileFamily& logFileFamily );
+
+	void applyLogRotationConfig();
 
 	void saveConfig();
 

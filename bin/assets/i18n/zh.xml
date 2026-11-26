@@ -1176,4 +1176,12 @@ file in the directory tree.</string>
 	<string name="kb_restore_all_action">恢复默认设置</string>
 	<string name="exit_on_close">关闭窗口时退出</string>
 	<string name="exit_on_close_desc">关闭窗口时退出应用。禁用此选项可保持应用及其工作区运行。</string>
+	<string name="logging">日志</string>
+	<string name="log_rotation_enabled">启用日志轮转</string>
+	<string name="log_rotation_enabled_desc">通过归档较旧的日志文件限制日志大小。</string>
+	<string name="log_rotation_inactive_desc">此进程已关闭文件日志。轮转设置将保留，供下次启动使用。</string>
+	<string name="log_max_file_size">日志文件大小上限 (MiB)</string>
+	<string name="log_max_file_size_desc">当下一条记录会使当前日志超过此大小时进行轮转。</string>
+	<string name="log_max_backup_files">日志备份文件数</string>
+	<string name="log_max_backup_files_desc">启用轮转时，降低此上限会删除较旧的归档。设为 0 时仅保留当前日志文件。</string>
 </resources>

@@ -322,6 +322,8 @@ void FileSystemListener::notifyChange( const FileInfo& file ) {
 }
 
 void FileSystemListener::notifyMove( const FileInfo& oldFile, const FileInfo& newFile ) {
+	if ( isIgnored( oldFile.getFilepath() ) )
+		return;
 	std::string oldPath( oldFile.getFilepath() );
 	std::string newPath( newFile.getFilepath() );
 	const bool directoryMoved = newFile.isDirectory();
@@ -341,6 +343,8 @@ void FileSystemListener::notifyMove( const FileInfo& oldFile, const FileInfo& ne
 }
 
 void FileSystemListener::notifyDelete( const FileInfo& file ) {
+	if ( isIgnored( file.getFilepath() ) )
+		return;
 	mSplitter->forEachDoc( [&]( TextDocument& doc ) {
 		if ( file.getFilepath() == doc.getFileInfo().getFilepath() )
 			doc.setDirtyOnFileSystem( true );

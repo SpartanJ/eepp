@@ -15,6 +15,7 @@
 #include <eepp/system/directorypack.hpp>
 #include <eepp/system/fileassociation.hpp>
 #include <eepp/system/fileinfo.hpp>
+#include <eepp/system/filelock.hpp>
 #include <eepp/system/filemapped.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/functionstring.hpp>
@@ -31,6 +32,7 @@
 #include <eepp/system/ipc.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/logfilefamily.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/monotonicclock.hpp>

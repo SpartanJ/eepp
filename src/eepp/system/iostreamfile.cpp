@@ -1,7 +1,7 @@
 #include <eepp/core/memorymanager.hpp>
-#include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
+#include <limits>
 
 namespace EE { namespace System {
 
@@ -27,11 +27,10 @@ ios_size IOStreamFile::read( char* data, ios_size size ) {
 }
 
 ios_size IOStreamFile::write( const char* data, ios_size size ) {
-	if ( isOpen() ) {
-		std::fwrite( data, 1, size, mFS );
-	}
-
-	return size;
+	if ( !isOpen() || size <= 0 ||
+		 static_cast<Uint64>( size ) > std::numeric_limits<std::size_t>::max() )
+		return 0;
+	return std::fwrite( data, 1, static_cast<std::size_t>( size ), mFS );
 }
 
 ios_size IOStreamFile::seek( ios_size position ) {
@@ -73,17 +72,16 @@ bool IOStreamFile::isOpen() {
 	return NULL != mFS;
 }
 
-void IOStreamFile::flush() {
-	if ( mFS )
-		std::fflush( mFS );
+bool IOStreamFile::flush() {
+	return mFS && std::fflush( mFS ) == 0;
 }
 
-void IOStreamFile::close() {
-	if ( isOpen() ) {
-		std::fclose( mFS );
-
-		mFS = NULL;
-	}
+bool IOStreamFile::close() {
+	if ( !mFS )
+		return true;
+	auto* stream = mFS;
+	mFS = nullptr;
+	return std::fclose( stream ) == 0;
 }
 
 }} // namespace EE::System

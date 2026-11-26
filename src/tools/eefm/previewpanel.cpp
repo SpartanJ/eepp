@@ -462,6 +462,9 @@ void PreviewPanel::load() {
 					mEditor->setHighlightCurrentLine( false );
 					mEditor->setInteractiveLinks( false );
 					mEditor->setFindReplaceEnabled( true );
+					mEditor->setInteractiveLinks( true );
+					mEditor->setHighlightSelectionMatch( true );
+					mEditor->setHighlightMatchingBracket( true );
 				}
 
 				mEditor->setDocument( std::move( preview.document ) );

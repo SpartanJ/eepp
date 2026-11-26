@@ -1386,4 +1386,12 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="kb_restore_all_action">Standardbelegung wiederherstellen</string>
 	<string name="exit_on_close">Beim Schließen beenden</string>
 	<string name="exit_on_close_desc">Die Anwendung beim Schließen des Fensters beenden. Deaktivieren, um die Anwendung und ihren Arbeitsbereich geöffnet zu lassen.</string>
+	<string name="logging">Protokollierung</string>
+	<string name="log_rotation_enabled">Protokollrotation aktivieren</string>
+	<string name="log_rotation_enabled_desc">Das Wachstum der Protokolldateien durch Archivieren älterer Protokolle begrenzen.</string>
+	<string name="log_rotation_inactive_desc">Die Dateiprotokollierung ist für diesen Prozess deaktiviert. Die Rotationseinstellungen werden für künftige Starts gespeichert.</string>
+	<string name="log_max_file_size">Maximale Größe der Protokolldatei (MiB)</string>
+	<string name="log_max_file_size_desc">Das aktuelle Protokoll archivieren, wenn der nächste Eintrag diese Größe überschreiten würde.</string>
+	<string name="log_max_backup_files">Anzahl archivierter Protokolldateien</string>
+	<string name="log_max_backup_files_desc">Eine niedrigere Grenze entfernt bei aktiver Rotation ältere Archive. Bei null bleibt nur die aktuelle Protokolldatei erhalten.</string>
 </resources>

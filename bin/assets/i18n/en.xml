@@ -1371,4 +1371,12 @@ Restart ecode to see the changes.</string>
 	<string name="kb_restore_all_action">Restore Defaults</string>
 	<string name="exit_on_close">Exit on Close</string>
 	<string name="exit_on_close_desc">Exit when closing the window. Disable to keep the application and its workspace open.</string>
+	<string name="logging">Logging</string>
+	<string name="log_rotation_enabled">Enable Log Rotation</string>
+	<string name="log_rotation_enabled_desc">Limit file log growth by archiving older log files.</string>
+	<string name="log_rotation_inactive_desc">File logging is off for this process. Rotation settings are saved for future launches.</string>
+	<string name="log_max_file_size">Maximum Log File Size (MiB)</string>
+	<string name="log_max_file_size_desc">Rotate the active log when the next entry would exceed this size.</string>
+	<string name="log_max_backup_files">Number of Backup Log Files</string>
+	<string name="log_max_backup_files_desc">Reducing this limit removes older archives while rotation is enabled. Zero keeps only the active file.</string>
 </resources>

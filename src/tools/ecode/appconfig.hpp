@@ -4,6 +4,7 @@
 #include <eepp/config.hpp>
 #include <eepp/math/size.hpp>
 #include <eepp/system/inifile.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
@@ -328,9 +329,12 @@ class AppConfig {
 	SearchBarConfig searchBarConfig;
 	GlobalSearchBarConfig globalSearchBarConfig;
 	WorkspaceConfig workspace;
+	LoggingConfig logging;
 	LanguagesExtensions languagesExtensions;
 
 	bool isNewVersion() const;
+
+	void loadLoggingConfig( const std::string& confPath );
 
 	void load( const std::string& confPath, std::string& keybindingsPath,
 			   std::string& initColorScheme, std::vector<std::string>& recentFiles,
