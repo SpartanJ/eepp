@@ -44,7 +44,7 @@ jobs:
         prepare: |
           set -eu
           pkg upgrade -y
-          pkg install -y bash git sdl3 premake5 gmake ccache4
+          pkg install -y bash git sdl3 premake5 gmake ccache4 pkgconf libxcb libxkbcommon dbus
         run: |
           set -eu
           mkdir -p build-logs
@@ -54,6 +54,7 @@ jobs:
           trap 'ccache --show-stats > .ci-metrics/ccache.txt; ccache --print-stats > .ci-metrics/ccache-stats.tsv' EXIT
           {
             uname -a
+            pkg-config --print-errors --exists dbus-1 xcb xcb-xkb xkbcommon xkbcommon-x11
             premake5 --disable-static-build --with-debug-symbols --with-backend=SDL3 gmake
             bash projects/scripts/ci/time.sh Build gmake -C make/bsd -j"$(sysctl -n hw.ncpu)" config=release_x86_64 all
             bash projects/scripts/ci/time.sh "Package SDK" bash projects/scripts/package_sdk.sh freebsd x86_64 --strip --version "$SDK_VERSION"

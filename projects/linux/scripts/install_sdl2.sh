@@ -38,11 +38,14 @@ install_dependencies() {
                             libudev-dev \
                             libwayland-dev \
                             libx11-dev \
+                            libxcb1-dev \
+                            libxcb-xkb-dev \
                             libxcursor-dev \
                             libxext-dev \
                             libxi-dev \
                             libxinerama-dev \
                             libxkbcommon-dev \
+                            libxkbcommon-x11-dev \
                             libxrandr-dev \
                             libxss-dev \
                             libxt-dev \

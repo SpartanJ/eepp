@@ -1,5 +1,7 @@
 #include "utest.hpp"
 #include "vfs_test_utils.hpp"
+#include <atomic>
+#include <chrono>
 #include <eepp/scene/mainthreadexecutor.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/time.hpp>
@@ -7,6 +9,8 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/vfs/detail/memoryhandles.hpp>
 #include <eepp/vfs/ui/vfsdirectorymodel.hpp>
+#include <eepp/window/input.hpp>
+#include <future>
 
 using namespace EE::System;
 
@@ -486,6 +490,89 @@ UTEST( MainThreadExecutor, runsDeferredOnSceneUpdate ) {
 	// Functions still queued when the executor dies are dropped.
 	scene->update( Time::Zero );
 	EXPECT_EQ( 4u, order.size() );
+}
+
+UTEST( MainThreadExecutor, workerWakesHiddenWindow ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Executor Wake Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* scene = app.getUI();
+	ASSERT_TRUE( scene != nullptr );
+	auto* input = app.getWindow()->getInput();
+	input->update();
+
+	bool woke = false;
+	bool ran = false;
+	Scene::MainThreadExecutor executor( scene,
+										[&] { woke = EE::Window::Input::tryWakeUpEventLoop(); } );
+	std::promise<void> start;
+	auto started = start.get_future();
+	std::thread worker( [&] {
+		started.wait();
+		executor.execute( [&] { ran = true; } );
+	} );
+
+	// The timeout bounds a test failure. The worker's wake must bring us back to scene update
+	// before it expires, including when the wake arrives just before waitEvent().
+	using Clock = std::chrono::steady_clock;
+	const auto deadline = Clock::now() + std::chrono::seconds( 3 );
+	start.set_value();
+	while ( !ran ) {
+		const auto remaining =
+			std::chrono::duration_cast<std::chrono::milliseconds>( deadline - Clock::now() );
+		if ( remaining.count() <= 0 )
+			break;
+		input->waitEvent( Milliseconds( static_cast<Int32>( remaining.count() ) ) );
+		input->update();
+		scene->update( Time::Zero );
+	}
+	const auto elapsed = Clock::now();
+	worker.join();
+	EXPECT_TRUE( woke );
+	EXPECT_TRUE( ran );
+	EXPECT_TRUE( elapsed < deadline - std::chrono::milliseconds( 100 ) );
+}
+
+UTEST( MainThreadExecutor, shutdownWhileWakeIsInFlight ) {
+	UIApplication app(
+		WindowSettings( 320, 240, "eepp - Executor Shutdown Test", WindowStyle::Default,
+						WindowBackend::Default, 32 ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	auto* scene = app.getUI();
+	ASSERT_TRUE( scene != nullptr );
+
+	std::promise<void> waking;
+	std::promise<void> releaseWake;
+	auto wakeStarted = waking.get_future();
+	auto wakeReleased = releaseWake.get_future();
+	std::atomic<unsigned> wakeCount{ 0 };
+	bool ran = false;
+	bool timedOut = false;
+	Scene::MainThreadExecutor executor( scene, [&] {
+		if ( wakeCount.fetch_add( 1 ) != 0 )
+			return;
+		waking.set_value();
+		timedOut = wakeReleased.wait_for( std::chrono::seconds( 3 ) ) != std::future_status::ready;
+	} );
+	std::thread worker( [&] { executor.execute( [&] { ran = true; } ); } );
+	const bool inFlight =
+		wakeStarted.wait_for( std::chrono::seconds( 3 ) ) == std::future_status::ready;
+	if ( inFlight ) {
+		executor.execute( [&] { ran = true; } );
+		EXPECT_EQ( 2u, executor.pending() );
+		executor.shutdown();
+		executor.execute( [&] { ran = true; } );
+		EXPECT_EQ( 0u, executor.pending() );
+	}
+	releaseWake.set_value();
+	worker.join();
+
+	scene->update( Time::Zero );
+	EXPECT_TRUE( inFlight );
+	EXPECT_EQ( 1u, wakeCount.load() );
+	EXPECT_FALSE( timedOut );
+	EXPECT_FALSE( ran );
 }
 
 UTEST( VFSDirectoryModel, subclassConstructionDefersListingAndItemCountsToUIExecutor ) {

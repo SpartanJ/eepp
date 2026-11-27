@@ -52,10 +52,8 @@ newoption {
     description = "Set the shared data directory",
 }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
-newoption { trigger = "with-shared-vfs", description = "Builds and links the VFS module as a shared library instead of a static library." }
-if _OPTIONS["with-static-eepp"] and _OPTIONS["with-shared-vfs"] then
-	error("--with-shared-vfs requires eepp-shared; it cannot be combined with --with-static-eepp")
-end
+newoption { trigger = "without-globalshortcuts-x11", description = "Builds the Global Shortcuts module without the X11 backend." }
+newoption { trigger = "without-globalshortcuts-wayland", description = "Builds Global Shortcuts without the Wayland portal backend." }
 newoption { trigger = "without-vfs-sftp", description = "Disables sftp:// support in the eepp-vfs module (otherwise the vendored libssh2 is built)." }
 newoption { trigger = "with-lto", description = "Enables Link-Time Optimization for release builds." }
 
@@ -430,7 +428,7 @@ function build_base_configuration( package_name )
 	filter {}
 end
 
-function build_base_cpp_configuration( package_name )
+function build_base_cpp_configuration( package_name, uses_shared_eepp )
 	if not os.istarget("windows") then
 		buildoptions{ "-fPIC" }
 	end
@@ -439,7 +437,7 @@ function build_base_cpp_configuration( package_name )
 	set_apple_config()
 	build_arch_configuration()
 
-	if _OPTIONS["with-static-eepp"] then
+	if _OPTIONS["with-static-eepp"] and not uses_shared_eepp then
 		defines { "EE_STATIC" }
 	end
 
@@ -797,9 +795,22 @@ function parse_args()
 	end
 end
 
+local linux_or_bsd = os.istarget("linux") or os.istarget("bsd")
+
+local function eepp_module_dbus_link()
+	if linux_or_bsd then
+		links { "eepp-dbus-static" }
+		if os.istarget("linux") then
+			links { "dl" }
+		end
+	end
+end
+
 function add_static_links()
 	-- The linking order DOES matter
 	-- Expose the symbols that need one static library AFTER adding that static lib
+
+	eepp_module_dbus_link()
 
 	if os.istarget("linux") or os.istarget("bsd") then
 		-- Isolate the bundled font and PNG libraries from libdecor's system dependencies.
@@ -1089,18 +1100,53 @@ function eepp_module_vfs_dependencies()
 	end
 end
 
+function eepp_module_eterm_add()
+	incdirs { "src/modules/eterm/include/" }
+	links { "eterm-static" }
+	defines { "EE_ETERM_STATIC" }
+end
+
 function eepp_module_vfs_add()
 	incdirs { "src/modules/vfs/include/", "src/thirdparty/efsw/include" }
 	if vfs_sftp_enabled() then
 		defines { "EE_VFS_SFTP" }
 	end
-	if _OPTIONS["with-shared-vfs"] then
-		links { "eepp-vfs" }
-	else
-		links { "eepp-vfs-static" }
-		defines { "EE_VFS_STATIC" }
-		eepp_module_vfs_dependencies()
-	end
+	links { "eepp-vfs-static" }
+	defines { "EE_VFS_STATIC" }
+	eepp_module_vfs_dependencies()
+end
+
+function build_eterm_module( shared )
+	local name = shared and "eepp-eterm" or "eterm"
+	project(shared and name or "eterm-static")
+		kind(shared and "SharedLib" or "StaticLib")
+		language "C++"
+		cppdialect "C++20"
+		incdirs { "include", "src/modules/eterm/include/", "src/modules/eterm/src/" }
+		files { "src/modules/eterm/src/**.cpp" }
+		defines { shared and "EE_ETERM_EXPORTS" or "EE_ETERM_STATIC" }
+		if os_ishost("msys") then
+			defines { "WINVER=0x0602" }
+		end
+		build_base_cpp_configuration( name, shared )
+		target_dir_lib("")
+		if shared then
+			links { "eepp-shared" }
+			set_mingw_static_runtime()
+			postsymlinklib_arch( name )
+			filter "system:not windows"
+				buildoptions { "-fvisibility=hidden" }
+			filter "system:linux or system:bsd"
+				links { "util", "pthread" }
+			filter "system:macosx"
+				linkoptions { "-Wl,-install_name,@rpath/%{cfg.buildtarget.name}", "-Wl,-rpath,@loader_path" }
+			filter {}
+		end
+		filter "action:not vs*"
+			buildoptions { "-Wall" }
+		filter { "action:export-compile-commands", "system:macosx" }
+			buildoptions { "-std=c++20" }
+		filter {}
 end
 
 function build_vfs_module( shared )
@@ -1122,10 +1168,7 @@ function build_vfs_module( shared )
 		else
 			excludes { "src/modules/vfs/src/eepp/vfs/sftp/**.cpp" }
 		end
-		if _OPTIONS["with-static-eepp"] then
-			defines { "EE_STATIC" }
-		end
-		build_base_cpp_configuration( name )
+		build_base_cpp_configuration( name, shared )
 		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
@@ -1135,6 +1178,114 @@ function build_vfs_module( shared )
 		if shared then
 			postsymlinklib_arch( "eepp-vfs" )
 			set_mingw_static_runtime()
+		end
+end
+
+local globalshortcuts_x11_packages = "xcb xcb-xkb xkbcommon-x11 xkbcommon"
+
+local function globalshortcuts_backend_available(backend, packages)
+	if not linux_or_bsd or _OPTIONS["without-globalshortcuts-" .. backend] then
+		return false
+	end
+	if popen("pkg-config --exists " .. packages .. " && echo yes"):match("yes") == nil then
+		print("Global Shortcuts " .. backend .. " backend disabled: missing development packages for " .. packages)
+		return false
+	end
+	return true
+end
+
+local globalshortcuts_x11 = globalshortcuts_backend_available("x11", globalshortcuts_x11_packages)
+local dbus_transport = linux_or_bsd and
+	popen("pkg-config --exists dbus-1 && echo yes"):match("yes") ~= nil
+local globalshortcuts_portal = dbus_transport and not _OPTIONS["without-globalshortcuts-wayland"]
+if linux_or_bsd and not _OPTIONS["without-globalshortcuts-wayland"] and not dbus_transport then
+	print("Global Shortcuts wayland backend disabled: missing development packages for dbus-1")
+end
+local dbus_transport_cflags = dbus_transport and popen("pkg-config --cflags dbus-1"):gsub("%s+$", "")
+
+local function eepp_module_dbus_headers( transport )
+	incdirs { "src/modules/dbus/include" }
+	if transport then
+		buildoptions { dbus_transport_cflags }
+	end
+end
+
+local function build_dbus_module()
+	project "eepp-dbus-static"
+		kind "StaticLib"
+		language "C++"
+		incdirs { "include" }
+		eepp_module_dbus_headers( dbus_transport )
+		files { "src/modules/dbus/src/**.cpp" }
+		if dbus_transport then
+			defines { "EE_DBUS_TRANSPORT" }
+		end
+		build_base_cpp_configuration( "eepp-dbus-static" )
+		buildoptions { "-fvisibility=hidden" }
+		target_dir_lib("")
+end
+
+local function eepp_module_globalshortcuts_dependencies()
+	if globalshortcuts_portal then
+		eepp_module_dbus_link()
+	end
+	if globalshortcuts_x11 then
+		for library in popen("pkg-config --libs-only-l " .. globalshortcuts_x11_packages):gmatch("-l([^%s]+)") do
+			links { library }
+		end
+		linkoptions { ( popen("pkg-config --libs-only-L --libs-only-other " .. globalshortcuts_x11_packages):gsub("%s+$", "") ) }
+	end
+	filter "system:windows"
+		links { "user32" }
+	filter "system:macosx"
+		links { "Carbon.framework", "CoreFoundation.framework" }
+	filter "system:bsd"
+		links { "pthread" }
+	filter {}
+end
+
+function eepp_module_globalshortcuts_add( shared )
+	incdirs { "src/modules/globalshortcuts/include" }
+	if shared then
+		links { "eepp-globalshortcuts" }
+	else
+		links { "eepp-globalshortcuts-static" }
+		defines { "EE_GLOBALSHORTCUTS_STATIC" }
+		eepp_module_globalshortcuts_dependencies()
+	end
+end
+
+function build_globalshortcuts_module( shared )
+	local name = shared and "eepp-globalshortcuts" or "eepp-globalshortcuts-static"
+	project(name)
+		kind(shared and "SharedLib" or "StaticLib")
+		language "C++"
+		defines { shared and "EE_GLOBALSHORTCUTS_EXPORTS" or "EE_GLOBALSHORTCUTS_STATIC" }
+		incdirs { "include", "src/modules/globalshortcuts/include",
+				"src/modules/globalshortcuts/src", "src/thirdparty" }
+		files { "src/modules/globalshortcuts/src/**.cpp" }
+		if globalshortcuts_x11 then
+			defines { "EE_GLOBALSHORTCUTS_X11" }
+			buildoptions { ( popen("pkg-config --cflags " .. globalshortcuts_x11_packages):gsub("%s+$", "") ) }
+		end
+		if globalshortcuts_portal then
+			defines { "EE_GLOBALSHORTCUTS_PORTAL" }
+			eepp_module_dbus_headers( true )
+		end
+		build_base_cpp_configuration( name, shared )
+		target_dir_lib("")
+		if shared then
+			links { "eepp-shared" }
+			eepp_module_globalshortcuts_dependencies()
+			set_mingw_static_runtime()
+			postsymlinklib_arch( name )
+			filter "system:not windows"
+				buildoptions { "-fvisibility=hidden" }
+			filter "system:linux or system:bsd or system:haiku"
+				linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
+			filter "system:macosx"
+				linkoptions { "-Wl,-install_name,@rpath/%{cfg.buildtarget.name}", "-Wl,-rpath,@loader_path" }
+			filter {}
 		end
 end
 
@@ -1157,6 +1308,11 @@ function eepp_module_backward_add( ecode_mode )
 end
 
 function build_eepp( build_name )
+
+	if linux_or_bsd then
+		eepp_module_dbus_headers()
+	end
+
 	files { "src/eepp/core/*.cpp",
 			"src/eepp/math/*.cpp",
 			"src/eepp/system/*.cpp",
@@ -1842,30 +1998,20 @@ workspace "eepp"
 			defines { "EE_PHYSICS_EXPORTS" }
 			build_base_cpp_configuration( "eepp-physics" )
 			set_mingw_static_runtime()
+			filter { "system:windows", "action:not vs*" }
+				-- Keep the embedded runtime private while preserving the existing Chipmunk exports.
+				linkoptions { "-Wl,--exclude-libs,libgcc.a:libgcc_eh.a:libstdc++.a:libwinpthread.a" }
+			filter {}
 			postsymlinklib_arch( "eepp-physics" )
 			target_dir_lib("")
 			filter "action:not vs*"
 				buildoptions { "-Wall" }
 	end
 
-	project "eterm-static"
-		kind "StaticLib"
-		language "C++"
-		cppdialect "C++20"
-		incdirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
-		files { "src/modules/eterm/src/**.cpp" }
-		if _OPTIONS["with-static-eepp"] then
-			defines { "EE_STATIC" }
-		end
-		if os_ishost("msys") then
-			defines { "WINVER=0x0602" }
-		end
-		build_base_cpp_configuration( "eterm" )
-		target_dir_lib("")
-		filter "action:not vs*"
-			buildoptions { "-Wall" }
-		filter { "action:export-compile-commands", "system:macosx" }
-			buildoptions { "-std=c++20" }
+	build_eterm_module( false )
+	if not os.istarget("emscripten") then
+		build_eterm_module( true )
+	end
 
 	if vfs_sftp_enabled() then
 	project "libssh2-static"
@@ -1905,8 +2051,52 @@ workspace "eepp"
 		filter {}
 
 	build_vfs_module( false )
-	if _OPTIONS["with-shared-vfs"] then
+	if not os.istarget("emscripten") then
 		build_vfs_module( true )
+	end
+	if linux_or_bsd then
+		build_dbus_module()
+	end
+	build_globalshortcuts_module( false )
+	if not os.istarget("emscripten") then
+		build_globalshortcuts_module( true )
+	end
+	if os.istarget("windows") then
+		project "eepp-globalshortcuts-windows-tests"
+			kind "ConsoleApp"
+			language "C++"
+			files { "src/tests/globalshortcuts/windows.cpp" }
+			eepp_module_globalshortcuts_add( not _OPTIONS["with-static-eepp"] )
+			eepp_module_globalshortcuts_dependencies()
+			build_link_configuration( "eepp-globalshortcuts-windows-tests", false, false )
+	elseif os.istarget("macosx") then
+		project "eepp-globalshortcuts-macos-spike"
+			kind "ConsoleApp"
+			language "C++"
+			targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
+			files { "src/tests/globalshortcuts/macos_spike.mm" }
+			links { "AppKit.framework", "Carbon.framework" }
+			build_base_cpp_configuration( "eepp-globalshortcuts-macos-spike" )
+	elseif globalshortcuts_x11 and popen("pkg-config --exists xcb-xtest && echo yes"):match("yes") then
+		project "eepp-globalshortcuts-x11-tests"
+			kind "ConsoleApp"
+			language "C++"
+			files { "src/tests/globalshortcuts/x11.cpp" }
+			eepp_module_globalshortcuts_add( not _OPTIONS["with-static-eepp"] )
+			eepp_module_globalshortcuts_dependencies()
+			buildoptions { ( popen("pkg-config --cflags xcb-xtest " .. globalshortcuts_x11_packages):gsub("%s+$", "") ) }
+			links { "xcb-xtest" }
+			build_link_configuration( "eepp-globalshortcuts-x11-tests", false, false )
+	end
+	if globalshortcuts_portal then
+		project "eepp-globalshortcuts-wayland-tests"
+			kind "ConsoleApp"
+			language "C++"
+			files { "src/tests/globalshortcuts/wayland.cpp" }
+			eepp_module_globalshortcuts_add( not _OPTIONS["with-static-eepp"] )
+			eepp_module_dbus_headers( true )
+			eepp_module_dbus_link()
+			build_link_configuration( "eepp-globalshortcuts-wayland-tests", false, false )
 	end
 
 	project "languages-syntax-highlighting-static"
@@ -2231,8 +2421,9 @@ workspace "eepp"
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
 		eepp_module_backward_add( true )
-		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
-		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static", "tinyexpr-static" }
+		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/languages-syntax-highlighting/src" }
+		links { "efsw-static", "languages-syntax-highlighting-static", "libyaml-static", "tinyexpr-static" }
+		eepp_module_eterm_add()
 		build_link_configuration( "ecode", false )
 		filter { "system:windows" }
 			links { "gumbo-parser-static" }
@@ -2273,14 +2464,16 @@ workspace "eepp"
 
 	project "eterm"
 		set_kind()
+		eepp_module_globalshortcuts_add()
 		if os.istarget("windows") then
 			dependson { "eterm-session" }
 		end
 		language "C++"
 		eepp_module_backward_add( false )
-		incdirs { "src/thirdparty/efsw/include", "src/modules/eterm/include/", "src/thirdparty" }
+		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		files { "src/tools/eterm/**.cpp" }
-		links { "efsw-static", "eterm-static" }
+		links { "efsw-static" }
+		eepp_module_eterm_add()
 		build_link_configuration( "eterm", false )
 		filter { "system:windows", "action:vs*" }
 			files { "bin/assets/icon/eterm.rc", "bin/assets/icon/eterm.ico" }
@@ -2333,13 +2526,18 @@ workspace "eepp"
 		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eefm.x64.res" }
 		filter {}
-		incdirs { "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
+		incdirs { "src/thirdparty", "src/modules/languages-syntax-highlighting/src" }
 		files { "src/tools/eefm/*.cpp" }
+		if linux_or_bsd then
+			eepp_module_dbus_headers()
+			eepp_module_dbus_link()
+		end
 		filter "system:macosx"
 			files { "src/tools/eefm/*.mm" }
 			links { "Cocoa.framework" }
 		filter {}
-		links { "eterm-static", "languages-syntax-highlighting-static" }
+		links { "languages-syntax-highlighting-static" }
+		eepp_module_eterm_add()
 		eepp_module_vfs_add()
 		filter "system:linux or system:bsd"
 			-- The terminal panel uses openpty(3), provided by libutil.
@@ -2433,8 +2631,7 @@ workspace "eepp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/benchmarks")
 		language "C++"
 		files { "src/benchmarks/vtbench/main.cpp" }
-		incdirs { "src/modules/eterm/include/" }
-		links { "eterm-static" }
+		eepp_module_eterm_add()
 		build_link_configuration( "eterm-vtbench", true, false )
 	end
 
@@ -2442,6 +2639,9 @@ workspace "eepp"
 		kind "ConsoleApp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
 		defines { "EE_UNIT_TESTS" }
+		eepp_module_globalshortcuts_add()
+		incdirs { "src/modules/globalshortcuts/src" }
+		files { "src/tests/unit_tests/globalshortcuts/*.cpp" }
 		if os.istarget("windows") then
 			-- Native drag-and-drop regression tests call OLE directly and reference COM GUIDs.
 			links { "ole32", "uuid" }
@@ -2466,8 +2666,9 @@ workspace "eepp"
 				links { get_backend_link_name( "SDL3" ) }
 			end
 		end
-		links { "eterm-static", "languages-syntax-highlighting-static" }
-		incdirs { "src/modules/eterm/include/", "src/thirdparty", "src/modules/vfs/src/" }
+		links { "languages-syntax-highlighting-static" }
+		eepp_module_eterm_add()
+		incdirs { "src/thirdparty", "src/modules/vfs/src/" }
 		if vfs_sftp_enabled() then
 			incdirs { "src/thirdparty/libssh2/include" }
 		end

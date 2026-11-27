@@ -21,6 +21,8 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
+#include <eterm/config.hpp>
+
 #include <eterm/system/iprocessfactory.hpp>
 
 using namespace eterm::System;
@@ -28,7 +30,7 @@ using namespace eterm::Terminal;
 
 namespace eterm { namespace System {
 
-class ProcessFactory : public IProcessFactory {
+class EE_ETERM_API ProcessFactory : public IProcessFactory {
   public:
 	ProcessFactory() = default;
 

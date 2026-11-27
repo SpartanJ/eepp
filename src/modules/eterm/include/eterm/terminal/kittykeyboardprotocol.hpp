@@ -1,6 +1,8 @@
 #ifndef ETERM_KITTYKEYBOARDPROTOCOL_HPP
 #define ETERM_KITTYKEYBOARDPROTOCOL_HPP
 
+#include <eterm/config.hpp>
+
 #include <cstdint>
 #include <eepp/core/small_vector.hpp>
 #include <eepp/window/keycodes.hpp>
@@ -27,7 +29,7 @@ constexpr Uint32 KITTY_KEYBOARD_SUPPORTED_FLAGS = 31u;
 
 enum class KittyKeyEventType : Uint8 { Press = 1, Repeat = 2, Release = 3 };
 
-struct KittyKeyboardState {
+struct EE_ETERM_API KittyKeyboardState {
 	static constexpr size_t MaxStackDepth = 64;
 
 	Uint32 flags{ 0 };
@@ -53,7 +55,7 @@ struct KittyEncodedKey {
 	bool handled{ false };
 };
 
-class KittyKeyboardEncoder {
+class EE_ETERM_API KittyKeyboardEncoder {
   public:
 	static KittyEncodedKey encode( const KittyKeyEvent& event, Uint32 activeFlags );
 

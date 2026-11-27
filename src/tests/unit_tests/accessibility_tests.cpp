@@ -742,7 +742,7 @@ UTEST( Accessibility, RebindingWithinHostPreservesIdentity ) {
 	EXPECT_FALSE( manager->isValid( ref ) );
 }
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_FREEBSD
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 UTEST( Accessibility, QueuedNativeInitializationOutlivesRemovedWindows ) {
 	if ( std::getenv( "EEPP_DISABLE_ACCESSIBILITY" ) )
 		UTEST_SKIP( "Native accessibility is disabled by the environment" );

@@ -42,12 +42,10 @@ archive providers update the backing file and preserve the member path. Custom c
 can override `VFSProvider::relocateURI()` without application-side scheme checks. It returns `false`
 and leaves `saved` unchanged when unaffected or its provider is unregistered.
 
-The default is `eepp-vfs-static`; generate with `--with-shared-vfs` to build and link `eepp-vfs`
-as a shared library. Public types and non-inline functions use `EE_VFS_API`, controlled by
-`EE_VFS_EXPORTS` for the DLL and `EE_VFS_STATIC` for static builds, independently of core eepp
-exports. The Premake helper sets the consumer flags and dependencies. The MinGW helper accepts
-`--with-shared-vfs` as well. Combining it with `--with-static-eepp` is rejected: a shared VFS
-must use the same eepp DLL as the application, including its resource and UI singletons.
+Full desktop builds produce both `eepp-vfs-static` and the shared `eepp-vfs` library. In-tree
+applications link the static archive. SDK consumers can link the shared VFS module and the shared
+eepp core. Define `EE_VFS_STATIC` when linking the static VFS archive. VFS exports are controlled by
+`EE_VFS_API`, independently of core eepp exports.
 
 ## Tasks, results and threads
 

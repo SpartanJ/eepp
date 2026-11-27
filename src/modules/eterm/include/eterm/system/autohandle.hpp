@@ -22,10 +22,12 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 
+#include <eterm/config.hpp>
+
 namespace eterm { namespace System {
 
 // This class is designed to automatically free a resource handle when destructed
-class AutoHandle final {
+class EE_ETERM_API AutoHandle final {
   public:
 #ifdef _WIN32
 	// On Windows we deal with the Windows API, which means HANDLE is used as the handle to files

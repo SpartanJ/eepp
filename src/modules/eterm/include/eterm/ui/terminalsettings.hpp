@@ -1,6 +1,8 @@
 #ifndef ETERM_UI_TERMINALSETTINGS_HPP
 #define ETERM_UI_TERMINALSETTINGS_HPP
 
+#include <eterm/config.hpp>
+
 #include <eepp/core/string.hpp>
 #include <functional>
 #include <map>
@@ -37,7 +39,7 @@ class UITerminal;
 struct TerminalPreferences;
 
 /** Registers terminal controls on the host's settings panel. The host owns the preferences. */
-class TerminalSettings {
+class EE_ETERM_API TerminalSettings {
   public:
 	using VisitTerminals = std::function<void( const std::function<void( UITerminal* )>& )>;
 	using Save = std::function<void()>;

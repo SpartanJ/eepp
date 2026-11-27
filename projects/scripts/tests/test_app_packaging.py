@@ -49,6 +49,9 @@ class PackagingFixture(unittest.TestCase):
             path = self.source / "assets" / asset
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(asset)
+        for module in ("eterm", "maps", "physics", "vfs", "globalshortcuts"):
+            headers = Path("src/modules") / module / "include"
+            shutil.copytree(ROOT / headers, self.root / headers)
         self.output = self.root / "output"
         self.env = dict(os.environ)
 
@@ -411,10 +414,35 @@ touch "{finished}"
         libraries = self.root / "libs/linux"
         libraries.mkdir(parents=True)
         shutil.copy2(self.source / "libeepp.so", libraries)
+        shared_modules = ("eterm", "maps", "physics", "vfs", "globalshortcuts")
+        for module in shared_modules:
+            (libraries / f"libeepp-{module}.so").write_text(module)
+        (libraries / "libeepp-globalshortcuts-static.a").write_text("static shortcuts")
+        (libraries / "libeepp-dbus-static.a").write_text("static dbus")
         self.run_script("scripts/package_sdk.sh", "linux", "x86_64")
         self.assertTrue(finished.exists())
         with tarfile.open(self.root / "projects/linux/sdk/eepp-sdk-linux-x86_64-nightly.tar.gz") as package:
             self.assertEqual(package.extractfile("eepp-sdk/bin/libSDL3.so.0").read(), b"SDL3")
+            for module in shared_modules:
+                library = f"libeepp-{module}.so"
+                for directory in ("bin", "libs/linux/x86_64"):
+                    self.assertEqual(package.extractfile(f"eepp-sdk/{directory}/{library}").read(),
+                                     module.encode())
+            for header in (
+                "eterm/terminal/terminalsession.hpp",
+                "eepp/maps/tilemap.hpp",
+                "eepp/physics/moment.hpp",
+                "eepp/thirdparty/chipmunk/chipmunk.h",
+                "eepp/vfs/path.hpp",
+                "eepp/globalshortcuts/service.hpp",
+            ):
+                self.assertIn(f"eepp-sdk/include/{header}", package.getnames())
+            self.assertEqual(package.extractfile(
+                "eepp-sdk/libs/linux/x86_64/libeepp-globalshortcuts-static.a").read(),
+                b"static shortcuts")
+            self.assertEqual(package.extractfile(
+                "eepp-sdk/libs/linux/x86_64/libeepp-dbus-static.a").read(),
+                b"static dbus")
 
         # Keep reporting real ldd failures even when its output includes a matching library.
         self.command("ldd", f"echo 'libSDL3.so.0 => {runtime} (0x1)'\nexit 3")
@@ -430,6 +458,33 @@ touch "{finished}"
             self.assertIn("sample/sample.exe", package.namelist())
             self.assertIn("sample/SDL3.dll", package.namelist())
             self.assertNotIn("sample/SDL2.dll", package.namelist())
+
+    def test_mingw_sdk_module_libraries(self):
+        (self.root / "include").mkdir()
+        (self.root / "docs/articles").mkdir(parents=True)
+        (self.source / "SDL3.dll").write_text("SDL3")
+        libraries = self.root / "libs/windows/x86_64"
+        libraries.mkdir(parents=True)
+        modules = ("eepp", "eepp-eterm", "eepp-maps", "eepp-physics", "eepp-vfs")
+        for module in modules:
+            (libraries / f"{module}.dll").write_text(module)
+
+        for archive_format in ("premake5", "premake4"):
+            with self.subTest(archive_format=archive_format):
+                for module in modules:
+                    name = f"{module}.lib" if archive_format == "premake5" else f"lib{module}.a"
+                    (libraries / name).write_text("import " + module)
+                self.run_script("scripts/package_sdk.sh", "windows", "x86_64")
+                sdk = self.root / "projects/windows/sdk/eepp-sdk-windows-x86_64-mingw-nightly.zip"
+                with zipfile.ZipFile(sdk) as package:
+                    for module in modules:
+                        for directory in ("bin", "libs/windows/x86_64"):
+                            self.assertEqual(package.read(f"eepp-sdk/{directory}/{module}.dll"),
+                                             module.encode())
+                        name = f"{module}.lib" if archive_format == "premake5" else f"lib{module}.a"
+                        self.assertEqual(package.read(f"eepp-sdk/libs/windows/x86_64/{name}"),
+                                         ("import " + module).encode())
+                        (libraries / name).unlink()
 
     def test_invalid_cli_and_version(self):
         for args in (("--version",), ("--arch", "invalid"), ("--unknown",), ("--version", "../bad")):
@@ -668,6 +723,32 @@ class PowerShellPackaging(PackagingFixture):
         if check:
             self.assertEqual(result.returncode, 0, result.stdout)
         return result
+
+    def test_windows_sdk_module_libraries(self):
+        (self.root / "include").mkdir()
+        (self.root / "docs/articles").mkdir(parents=True)
+        libraries = self.root / "libs/windows/x86_64"
+        modules = ("eepp-eterm", "eepp-maps", "eepp-physics", "eepp-vfs")
+        for module in modules:
+            (libraries / f"{module}.dll").write_text(module)
+            (libraries / f"{module}.lib").write_text("import " + module)
+        result = subprocess.run(
+            [POWERSHELL, "-NoProfile", "-NonInteractive", "-File",
+             str(self.root / "projects/scripts/package_sdk.ps1")],
+            env=self.env, cwd=self.root, encoding="utf-8", errors="replace",
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout)
+        sdk = self.root / "projects/windows/sdk/eepp-sdk-windows-x86_64-msvc-nightly.zip"
+        with zipfile.ZipFile(sdk) as package:
+            for module in modules:
+                for directory in ("bin", "libs/windows/x86_64"):
+                    self.assertEqual(package.read(f"eepp-sdk/{directory}/{module}.dll"),
+                                     module.encode())
+                self.assertEqual(package.read(f"eepp-sdk/libs/windows/x86_64/{module}.lib"),
+                                 ("import " + module).encode())
+            self.assertIn("eepp-sdk/include/eterm/config.hpp", package.namelist())
+            self.assertIn("eepp-sdk/include/eepp/vfs/path.hpp", package.namelist())
 
     def test_windows_zip_assets_and_fresh_staging(self):
         self.package_windows()

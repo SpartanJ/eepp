@@ -940,6 +940,23 @@ void UISettingsPanel::setCategoryEnabled( const std::string& category, bool enab
 	setCategoryEnabled( *mImpl, category, enabled, excludedSetting );
 }
 
+void UISettingsPanel::setSettingDescription( const std::string& id, String description ) {
+	auto& settings = mImpl->model.settings();
+	for ( size_t i = 0; i < settings.size(); ++i ) {
+		auto& descriptor = settings[i].descriptor;
+		if ( descriptor.id != id )
+			continue;
+		if ( descriptor.description != description ) {
+			descriptor.description = std::move( description );
+			if ( i < mImpl->settingViews.size() && mImpl->settingViews[i].row )
+				mImpl->settingViews[i]
+					.row->find<UITextView>( "setting_description" )
+					->setText( descriptor.description );
+		}
+		return;
+	}
+}
+
 void UISettingsPanel::refreshTextSetting( const std::string& id ) {
 	refreshTextSetting( *mImpl, id );
 }

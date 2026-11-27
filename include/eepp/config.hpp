@@ -160,20 +160,22 @@
 
 #endif
 
-#ifndef EE_STATIC
 #if EE_PLATFORM == EE_PLATFORM_WIN
-// Windows platforms
+#define EE_API_EXPORT __declspec( dllexport )
+#define EE_API_IMPORT __declspec( dllimport )
+#elif defined( __GNUC__ ) && __GNUC__ >= 4
+#define EE_API_EXPORT __attribute__( ( visibility( "default" ) ) )
+#define EE_API_IMPORT EE_API_EXPORT
+#else
+#define EE_API_EXPORT
+#define EE_API_IMPORT
+#endif
+
+#ifndef EE_STATIC
 #ifdef EE_EXPORTS
-// From DLL side, we must export
-#define EE_API __declspec( dllexport )
+#define EE_API EE_API_EXPORT
 #else
-// From client application side, we must import
-#define EE_API __declspec( dllimport )
-#endif
-#else
-#if ( __GNUC__ >= 4 )
-#define EE_API __attribute__( ( visibility( "default" ) ) )
-#endif
+#define EE_API EE_API_IMPORT
 #endif
 #endif
 

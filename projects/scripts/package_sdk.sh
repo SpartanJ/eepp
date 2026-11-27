@@ -194,7 +194,7 @@ copy_binary() {
 for entry in bin/eepp-*; do
 	[ -e "$entry" ] || continue
 	case "${entry##*/}" in
-		*-debug | *-debug.exe | eepp-native-dnd-tests* | *.dll | *.so | *.dylib | *.a | *.data | *.html | *.js | *.wasm)
+		*-debug | *-debug.exe | eepp-native-dnd-tests* | eepp-globalshortcuts-*-tests* | *.dll | *.so | *.dylib | *.a | *.data | *.html | *.js | *.wasm)
 			continue
 			;;
 	esac
@@ -224,23 +224,28 @@ if [ ! -d "$LIBS_SRC" ]; then
 fi
 
 if [ "$PLATFORM" == "macos" ]; then
-	SHARED_LIBS=(libeepp.dylib libeepp-maps.dylib libeepp-physics.dylib)
+	SHARED_LIBS=(libeepp.dylib libeepp-eterm.dylib libeepp-vfs.dylib libeepp-maps.dylib libeepp-physics.dylib libeepp-globalshortcuts.dylib)
 	STATIC_LIBS=(
 		libeepp-maps-static.a
 		libeepp-physics-static.a
+		libeepp-globalshortcuts-static.a
 		libeterm.a
 		liblanguages-syntax-highlighting.a
 	)
 elif [ "$PLATFORM" == "windows" ]; then
-	SHARED_LIBS=(eepp.dll eepp-maps.dll eepp-physics.dll)
+	SHARED_LIBS=(eepp.dll eepp-eterm.dll eepp-vfs.dll eepp-maps.dll eepp-physics.dll eepp-globalshortcuts.dll)
 	# Premake 5 names MinGW import/static archives *.lib on Windows, like MSVC, plus
 	# the statically linked modules and tools.
 	STATIC_LIBS=(
 		eepp.lib
+		eepp-eterm.lib
+		eepp-vfs.lib
 		eepp-maps.lib
 		eepp-physics.lib
 		eepp-maps-static.lib
 		eepp-physics-static.lib
+		eepp-globalshortcuts.lib
+		eepp-globalshortcuts-static.lib
 		eterm.lib
 		languages-syntax-highlighting.lib
 	)
@@ -251,13 +256,18 @@ elif [ "$PLATFORM" == "windows" ]; then
 		done
 	fi
 else
-	SHARED_LIBS=(libeepp.so libeepp-maps.so libeepp-physics.so)
+	SHARED_LIBS=(libeepp.so libeepp-eterm.so libeepp-vfs.so libeepp-maps.so libeepp-physics.so libeepp-globalshortcuts.so)
 	STATIC_LIBS=(
 		libeepp-maps-static.a
 		libeepp-physics-static.a
+		libeepp-globalshortcuts-static.a
 		libeterm.a
 		liblanguages-syntax-highlighting.a
 	)
+fi
+
+if [ "$PLATFORM" = linux ] || [ "$PLATFORM" = freebsd ]; then
+	STATIC_LIBS+=(libeepp-dbus-static.a)
 fi
 
 copy_lib() {
@@ -322,6 +332,9 @@ done
 # ---------------------------------------------------------------------------
 
 cp -r include "$STAGING/include"
+for module in eterm maps physics vfs globalshortcuts; do
+	cp -r "src/modules/$module/include/." "$STAGING/include/"
+done
 cp -r docs/articles "$STAGING/docs/articles"
 sed "s/@SDK_VERSION@/$SDK_VERSION/g" projects/scripts/eepp-sdk-README.md > "$STAGING/README.md"
 
@@ -390,7 +403,7 @@ fix_macos_ids() {
 			fi
 			while read -r dep; do
 				case "$(basename "$dep")" in
-					libeepp.dylib | libeepp-maps.dylib | libeepp-physics.dylib)
+					libeepp.dylib | libeepp-eterm.dylib | libeepp-vfs.dylib | libeepp-maps.dylib | libeepp-physics.dylib | libeepp-globalshortcuts.dylib)
 						install_name_tool -change "$dep" "@loader_path/$(basename "$dep")" "$binary"
 						;;
 					libSDL3*.dylib)

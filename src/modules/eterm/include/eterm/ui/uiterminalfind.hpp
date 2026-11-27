@@ -1,6 +1,8 @@
 #ifndef ETERM_UI_UITERMINALFIND_HPP
 #define ETERM_UI_UITERMINALFIND_HPP
 
+#include <eterm/config.hpp>
+
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uitextinput.hpp>
@@ -13,7 +15,7 @@ namespace eterm { namespace UI {
 
 class UITerminal;
 
-class UITerminalFind : public UILinearLayout {
+class EE_ETERM_API UITerminalFind : public UILinearLayout {
   public:
 	static UITerminalFind* New( UITerminal* terminal );
 

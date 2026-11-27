@@ -35,6 +35,8 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
+#include <eterm/config.hpp>
+
 #include <eepp/core/containers.hpp>
 #include <eepp/core/small_vector.hpp>
 #include <eepp/math/vector2.hpp>
@@ -70,7 +72,7 @@ constexpr size_t MAX_KITTY_GRAPHICS_APC_SIZE = 16 * 1024 * 1024;
 constexpr size_t MAX_GENERIC_STRING_SEQUENCE_SIZE = 1024 * 1024;
 
 /* Internal representation of the screen */
-struct Term {
+struct EE_ETERM_API Term {
 	int row{ 0 };		   /* nb row */
 	int col{ 0 };		   /* nb col */
 	Line* line{ nullptr }; /* screen */
@@ -143,7 +145,7 @@ enum class PromptState {
 
 enum class TerminalMouseEventType { MouseMotion, MouseButtonDown, MouseButtonRelease };
 
-class TerminalEmulator final {
+class EE_ETERM_API TerminalEmulator final {
   public:
 	using DpyPtr = std::weak_ptr<ITerminalDisplay>;
 	using PtyPtr = std::unique_ptr<IPseudoTerminal>;

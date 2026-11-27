@@ -1,6 +1,8 @@
 #ifndef ETERM_TERMINALGRAPHICS_HPP
 #define ETERM_TERMINALGRAPHICS_HPP
 
+#include <eterm/config.hpp>
+
 #include <deque>
 #include <eepp/math/rect.hpp>
 #include <eepp/math/size.hpp>
@@ -78,7 +80,7 @@ struct TerminalGraphicsUpdate {
 };
 
 /** Bounded ordered worker-to-UI mutation queue with explicit overflow recovery. */
-class TerminalGraphicsUpdateQueue {
+class EE_ETERM_API TerminalGraphicsUpdateQueue {
   public:
 	static constexpr size_t DefaultMaxUpdates = 1024;
 	static constexpr size_t DefaultMaxBytes = 32 * 1024 * 1024;

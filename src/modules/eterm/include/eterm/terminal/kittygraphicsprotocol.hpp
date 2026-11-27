@@ -1,8 +1,8 @@
 #ifndef ETERM_KITTYGRAPHICSPROTOCOL_HPP
 #define ETERM_KITTYGRAPHICSPROTOCOL_HPP
 
-#include <eepp/config.hpp>
 #include <eepp/system/clock.hpp>
+#include <eterm/config.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -121,7 +121,7 @@ struct KittyGraphicsStats {
 	Uint64 evictions{ 0 };
 };
 
-class KittyGraphicsProtocol {
+class EE_ETERM_API KittyGraphicsProtocol {
   public:
 	explicit KittyGraphicsProtocol( size_t maxStorageBytes = 320 * 1024 * 1024,
 									size_t maxImages = 4096, size_t maxPlacements = 65536 );

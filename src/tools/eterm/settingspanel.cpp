@@ -1,9 +1,13 @@
 #include "settingspanel.hpp"
 #include "eterm.hpp"
+#include "quakewindow.hpp"
 
 #include <eepp/ui/tools/fileassociationssettings.hpp>
 #include <eepp/ui/tools/uisettingspanel.hpp>
+#include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eterm/ui/terminalsettings.hpp>
 
@@ -12,6 +16,21 @@
 using namespace EE::UI::Tools;
 
 namespace eterm {
+
+namespace {
+
+using Slot = QuakeWindow::ShortcutSlot;
+constexpr const char* PrimaryShortcutSetting = "quakeShortcut";
+constexpr const char* SecondaryShortcutSetting = "quakeSecondaryShortcut";
+
+} // namespace
+
+void SettingsPanel::refreshQuakeShortcutLabels( UISettingsPanel& panel,
+												const QuakeWindow& dropDown ) {
+	auto labels = dropDown.shortcutLabels();
+	panel.setSettingDescription( PrimaryShortcutSetting, std::move( labels[0] ) );
+	panel.setSettingDescription( SecondaryShortcutSetting, std::move( labels[1] ) );
+}
 
 UIWindow* SettingsPanel::create( App& app ) {
 	auto* settingsWindow = UISettingsPanel::NewWindow( app.i18n( "settings", "Settings" ) );
@@ -26,6 +45,56 @@ UIWindow* SettingsPanel::create( App& app ) {
 		  app.i18n( "kb_title", "Keyboard Shortcuts" ),
 		  {} },
 		[&app]( UIWidget* parent ) { return app.createKeybindingsEditor( parent ); }, true );
+
+	if ( app.dropDown ) {
+		panel->addCategory( "general.global_shortcuts", app.i18n( "general", "General" ),
+							app.i18n( "global_shortcuts", "Global Shortcuts" ) );
+		for ( const auto slot : { Slot::Primary, Slot::Secondary } ) {
+			const bool secondary = slot == Slot::Secondary;
+			const auto title =
+				secondary ? app.i18n( "quake_secondary_shortcut", "Secondary Quake Shortcut" )
+						  : app.i18n( "quake_toggle_shortcut", "Show or Hide Quake Terminal" );
+			panel->addAction(
+				{ secondary ? SecondaryShortcutSetting : PrimaryShortcutSetting,
+				  "general.global_shortcuts",
+				  title,
+				  {} },
+				app.i18n( "quake_edit_shortcut", "Change Shortcut..." ), [&app, slot, title] {
+					if ( app.dropDown->handleShortcutSettings( slot ) )
+						return;
+					const bool secondary = slot == Slot::Secondary;
+					auto* dialog = UIMessageBox::New(
+						UIMessageBox::INPUT,
+						secondary ? app.i18n( "quake_secondary_shortcut_prompt",
+											  "Enter a shortcut or leave it blank to disable it." )
+								  : app.i18n( "quake_shortcut_prompt",
+											  "Enter a shortcut such as Mod+Shift+F11." ) );
+					dialog->setTitle( title );
+					dialog->setCloseShortcut( { KEY_ESCAPE } );
+					auto* input = dialog->getTextInput();
+					input->setId( secondary ? "quake_secondary_shortcut_input"
+											: "quake_shortcut_input" );
+					input->setText( String( app.dropDown->shortcut( slot ) ) );
+					auto validate = [&app, dialog, input, slot]( const Event* ) {
+						dialog->getButtonOK()->setEnabled( QuakeWindow::isShortcutSyntaxValid(
+							*app.appWindow->getInput(),
+							String::trim( input->getText().toUtf8(), " \t" ), slot ) );
+					};
+					input->on( Event::OnTextChanged, validate );
+					validate( nullptr );
+					dialog->on( Event::OnConfirm, [&app, dialog, input, slot]( const Event* ) {
+						if ( !dialog->getButtonOK()->isEnabled() )
+							return;
+						app.dropDown->changeShortcut(
+							slot, String::trim( input->getText().toUtf8(), " \t" ) );
+						dialog->close();
+					} );
+					dialog->center();
+					dialog->showWhenReady();
+				} );
+		}
+		refreshQuakeShortcutLabels( *panel, *app.dropDown );
+	}
 
 	FileAssociationsSettings::addLauncherTo( panel, "eterm" );
 
@@ -132,6 +201,66 @@ UIWindow* SettingsPanel::create( App& app ) {
 			app.application->setExitOnClose( value );
 			app.savePreferences();
 		} );
+	if ( app.dropDown ) {
+		panel->addCategory( "window.quake", app.i18n( "window", "Window" ),
+							app.i18n( "quake_mode", "Quake Mode" ) );
+		panel->addInteger(
+			{ "quakeWidthPercent", "window.quake", app.i18n( "quake_width", "Window Width (%)" ),
+			  app.i18n( "quake_width_desc", "Percentage of the display's usable width." ) },
+			QuakeConfig::MinSizePercent, QuakeConfig::MaxSizePercent,
+			[&app] { return app.config->quake.widthPercent; },
+			[&app]( int value ) {
+				app.config->quake.widthPercent = value;
+				app.dropDown->geometryChanged( QuakeWindow::GeometrySetting::Width );
+				app.savePreferences();
+			} );
+		panel->addInteger(
+			{ "quakeHeightPercent", "window.quake", app.i18n( "quake_height", "Window Height (%)" ),
+			  app.i18n( "quake_height_desc", "Percentage of the display's usable height." ) },
+			QuakeConfig::MinSizePercent, QuakeConfig::MaxSizePercent,
+			[&app] { return app.config->quake.heightPercent; },
+			[&app]( int value ) {
+				app.config->quake.heightPercent = value;
+				app.dropDown->geometryChanged( QuakeWindow::GeometrySetting::Height );
+				app.savePreferences();
+			} );
+		panel->addChoice(
+			{ "quakeHorizontalAlignment", "window.quake",
+			  app.i18n( "quake_horizontal_alignment", "Horizontal Alignment" ),
+			  app.i18n( "quake_horizontal_alignment_desc",
+						"Choose where the window sits along the top edge." ) },
+			{ app.i18n( "left", "Left" ), app.i18n( "center", "Center" ),
+			  app.i18n( "right", "Right" ) },
+			[&app] { return static_cast<size_t>( app.config->quake.horizontalAlignment ); },
+			[&app]( size_t selected ) {
+				app.config->quake.horizontalAlignment =
+					static_cast<UIHorizontalAlignment>( selected );
+				app.dropDown->geometryChanged( QuakeWindow::GeometrySetting::Alignment );
+				app.savePreferences();
+			} );
+		panel->addInteger(
+			{ "quakeAnimationMs", "window.quake",
+			  app.i18n( "quake_animation_ms", "Slide Animation (ms)" ),
+			  app.i18n( "quake_animation_ms_desc",
+						"Set the slide duration. Use 0 to disable animation." ) },
+			0, QuakeConfig::MaxAnimationMs, [&app] { return app.config->quake.animationMs; },
+			[&app]( int value ) {
+				app.config->quake.animationMs = value;
+				app.savePreferences();
+			} );
+		panel->addBool( { "quakeLaunchHidden", "window.quake",
+						  app.i18n( "quake_launch_hidden", "Launch Hidden" ),
+						  app.i18n( "quake_launch_hidden_desc",
+									"Wait for a show request after the next launch." ) },
+						&app.config->quake.launchHidden,
+						[&app]( bool ) { app.savePreferences(); } );
+		panel->addBool( { "quakeHideOnFocusLoss", "window.quake",
+						  app.i18n( "quake_hide_on_focus_loss", "Hide on Focus Loss" ),
+						  app.i18n( "quake_hide_on_focus_loss_desc",
+									"Hide when you switch away from the terminal." ) },
+						&app.config->quake.hideOnFocusLoss,
+						[&app]( bool ) { app.savePreferences(); } );
+	}
 	panel->addCategory( "window.renderer", app.i18n( "window", "Window" ),
 						app.i18n( "renderer", "Renderer" ) );
 	panel->addBool(

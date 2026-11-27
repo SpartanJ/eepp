@@ -1,4 +1,6 @@
 #include "eterm.hpp"
+#include "quakeinstance.hpp"
+#include "quakewindow.hpp"
 #include <eepp/system/scopedop.hpp>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -87,7 +89,7 @@ void App::saveWindowState() {
 		return;
 	config->captureWindowState( appWindow );
 	if ( !config->saveWindowState() )
-		Log::error( "Could not save eterm window state to %s", config->getConfigPath() );
+		Log::error( "Could not save eterm window state to %s", config->getStateDirectory() );
 	saveSession();
 }
 
@@ -124,7 +126,7 @@ void App::saveSession() {
 	if ( !( pendingSessionRestore ? config->saveSession( pendingSessionRestore.getSession() )
 								  : config->saveSession( tabSplitter->serializeNode(
 										tabSplitter->getBaseLayout()->getFirstChild() ) ) ) ) {
-		Log::error( "Could not save eterm session to %s", config->getConfigPath() );
+		Log::error( "Could not save eterm session to %s", config->getStateDirectory() );
 	}
 }
 
@@ -209,7 +211,7 @@ void App::createNewTerminal() {
 void App::updateWindowTitle() {
 	if ( !appWindow )
 		return;
-	String title{ "eterm" };
+	String title( config->isQuakeMode() ? "eterm Quake" : "eterm" );
 	if ( tabSplitter ) {
 		if ( auto* terminal = tabSplitter->getCurWidget() &&
 									  tabSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL )
@@ -821,20 +823,28 @@ bool App::closeWindow( EE::Window::Window* ) {
 	return false;
 }
 
-// The configuration provides the defaults of the other arguments, so its path must be known before
-// the parser that needs those defaults exists.
-static std::string profileFromArguments( int argc, char* argv[] ) {
+struct LaunchProfile {
+	std::string path;
+	bool quake{ false };
+};
+
+// The configuration provides the defaults of the other arguments, so its profile must be known
+// before the parser that needs those defaults exists.
+static LaunchProfile profileFromArguments( int argc, char* argv[] ) {
 	constexpr std::string_view Prefix = "--profile=";
+	LaunchProfile profile;
 	for ( int i = 1; i < argc; i++ ) {
 		std::string_view arg( argv[i] );
 		if ( arg == "--" )
 			break;
-		if ( arg == "--profile" )
-			return i + 1 < argc ? argv[i + 1] : "";
-		if ( String::startsWith( arg, Prefix ) )
-			return std::string( arg.substr( Prefix.size() ) );
+		if ( arg == "--profile" && i + 1 < argc )
+			profile.path = argv[++i];
+		else if ( String::startsWith( arg, Prefix ) )
+			profile.path = arg.substr( Prefix.size() );
+		else if ( arg == "--quake" )
+			profile.quake = true;
 	}
-	return "";
+	return profile;
 }
 
 int App::run( int argc, char* argv[] ) {
@@ -842,17 +852,12 @@ int App::run( int argc, char* argv[] ) {
 	Log::instance()->setLogToStdOut( !Runtime::isOffscreen() );
 	Log::instance()->setLiveWrite( true );
 #endif
-	auto configPath = profileFromArguments( argc, argv );
-	if ( !configPath.empty() ) {
-		if ( !FileSystem::isDirectory( configPath ) && !FileSystem::makeDir( configPath, true ) ) {
-			std::cerr << "Could not create profile directory: " << configPath << std::endl;
-			return EXIT_FAILURE;
-		}
-	} else {
+	auto launchProfile = profileFromArguments( argc, argv );
+	auto& configPath = launchProfile.path;
+	if ( configPath.empty() )
 		configPath = Sys::getEnv( "ETERM_CONFIG_PATH" );
-	}
-	config = std::make_unique<eterm::AppConfig>( configPath.empty() ? Sys::getConfigPath( "eterm" )
-																	: configPath );
+	config = std::make_unique<eterm::AppConfig>(
+		configPath.empty() ? Sys::getConfigPath( "eterm" ) : configPath, launchProfile.quake );
 	config->load();
 	args::ArgumentParser parser(
 		"eterm", "Environment: set ETERM_CONFIG_PATH to use another configuration directory for "
@@ -860,6 +865,11 @@ int App::run( int argc, char* argv[] ) {
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
 	args::ValueFlag<std::string> profile( parser, "profile", "Start with profile at <path>",
 										  { "profile" }, "" );
+	args::Flag quake( parser, "quake", "Start or toggle the Quake drop-down terminal",
+					  { "quake" } );
+	args::ValueFlag<std::string> quakeShortcut(
+		parser, "shortcut", "Override the Quake toggle shortcut for this launch",
+		{ "quake-shortcut" }, config->quake.shortcut );
 	args::ValueFlag<std::string> shell( parser, "shell", "Shell name or path", { 's', "shell" },
 										config->terminal.shell );
 	args::ValueFlag<std::string> shellArgs( parser, "shell-args", "Shell command line arguments",
@@ -953,6 +963,33 @@ int App::run( int argc, char* argv[] ) {
 		std::cerr << parser;
 		return EXIT_FAILURE;
 	}
+	if ( quakeShortcut && !quake ) {
+		std::cerr << "eterm: --quake-shortcut requires --quake\n";
+		return EXIT_FAILURE;
+	}
+	std::optional<QuakeInstance> quakeInstance;
+	if ( quake && !listColorSchemes ) {
+		switch ( quakeInstance.emplace().start() ) {
+			case QuakeInstance::Start::Forwarded:
+				if ( std::any_of( argv + 1, argv + argc, []( std::string_view argument ) {
+						 return argument != "--quake" && argument != "--";
+					 } ) )
+					std::cerr
+						<< "eterm: Sent a toggle to the running Quake console. Launch options "
+						   "apply only when starting a new console.\n";
+				return EXIT_SUCCESS;
+			case QuakeInstance::Start::Failed:
+				std::cerr << "eterm: Could not start Quake mode or contact the existing console\n";
+				return EXIT_FAILURE;
+			case QuakeInstance::Start::Owner:
+				break;
+		}
+	}
+	if ( profile && !FileSystem::isDirectory( configPath ) &&
+		 !FileSystem::makeDir( configPath, true ) && !FileSystem::isDirectory( configPath ) ) {
+		std::cerr << "Could not create profile directory: " << configPath << std::endl;
+		return EXIT_FAILURE;
+	}
 	config->terminal.shell = shell.Get();
 	config->terminal.shellArguments = shellArgs.Get();
 	config->terminal.scrollback = historySize.Get();
@@ -1002,7 +1039,18 @@ int App::run( int argc, char* argv[] ) {
 	}
 
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
-	const Sizei windowSize( config->windowState.size );
+	Sizei windowSize( config->windowState.size );
+	Uint32 windowStyle = WindowStyle::Default;
+	Rect quakeGeometry;
+	Sizei quakeExplicitSize;
+	if ( quake ) {
+		quakeExplicitSize = { width ? windowSize.getWidth() : 0,
+							  height ? windowSize.getHeight() : 0 };
+		quakeGeometry = QuakeWindow::geometry( config->quake, quakeExplicitSize,
+											   config->windowState.displayIndex );
+		windowSize = quakeGeometry.getSize();
+		windowStyle = WindowStyle::Borderless | WindowStyle::Hidden;
+	}
 
 	FontTrueTypePtr uiFont;
 	if ( !config->font.uiPath.empty() && FileSystem::fileExists( config->font.uiPath ) ) {
@@ -1011,7 +1059,7 @@ int App::run( int argc, char* argv[] ) {
 			uiFont.reset();
 	}
 	UIApplication::Settings appSettings;
-	appSettings.exitOnClose = config->window.exitOnClose;
+	appSettings.exitOnClose = quake || config->window.exitOnClose;
 	appSettings.basePath = FileSystem::removeLastFolderFromPath( resPath );
 	const Float environmentDensity = PixelDensity::getEnvironmentPixelDensity();
 	if ( environmentDensity > 0.f && !pixelDensity )
@@ -1030,9 +1078,9 @@ int App::run( int argc, char* argv[] ) {
 #else
 	const char* windowIcon = "icon/eterm.png";
 #endif
-	WindowSettings windowSettings( windowSize.getWidth(), windowSize.getHeight(), "eterm",
-								   WindowStyle::Default, WindowBackend::Default, 32,
-								   resPath + windowIcon );
+	WindowSettings windowSettings( windowSize.getWidth(), windowSize.getHeight(),
+								   quake ? "eterm Quake" : "eterm", windowStyle,
+								   WindowBackend::Default, 32, resPath + windowIcon );
 	windowSettings.DensityMode = config->window.pixelDensityMode;
 	windowSettings.DensityOverrides = config->window.displayDensityOverrides;
 	UIApplication app( windowSettings, appSettings,
@@ -1235,12 +1283,12 @@ int App::run( int argc, char* argv[] ) {
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	createGlobalMenuBar();
 #endif
-	if ( config->windowState.position != Vector2i( -1, -1 ) &&
+	if ( !quake && config->windowState.position != Vector2i( -1, -1 ) &&
 		 config->windowState.displayIndex < displayManager->getDisplayCount() ) {
 		appWindow->setPosition( config->windowState.position.x, config->windowState.position.y );
 	}
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	if ( config->windowState.maximized ) {
+	if ( !quake && config->windowState.maximized ) {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 		scene->runOnMainThread( [this] { appWindow->maximize(); } );
 #elif EE_PLATFORM != EE_PLATFORM_MACOS
@@ -1250,9 +1298,12 @@ int App::run( int argc, char* argv[] ) {
 #endif
 
 	appWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
-		if ( event->Type == InputEvent::Window &&
-			 event->window.type == InputEvent::WindowKeyboardFocusGain )
+		if ( event->Type != InputEvent::Window )
+			return;
+		if ( event->window.type == InputEvent::WindowKeyboardFocusGain )
 			updateWidgetProgramStatus( tabSplitter ? tabSplitter->getCurWidget() : nullptr );
+		else if ( event->window.type == InputEvent::WindowKeyboardFocusLost && dropDown )
+			dropDown->onFocusLost();
 	} );
 	appWindow->setCloseRequestCallback( [this]( EE::Window::Window* window ) {
 		return application->handleCloseRequest( window ) && closeWindow( window );
@@ -1261,7 +1312,18 @@ int App::run( int argc, char* argv[] ) {
 		if ( window->isOpen() && closeWindow( window ) )
 			window->close();
 	} );
-	appWindow->runMainLoop( [this] {
+	std::optional<QuakeWindow> quakeWindow;
+	if ( quakeInstance ) {
+		dropDown =
+			&quakeWindow.emplace( *appWindow, *scene, *config, quakeGeometry, quakeExplicitSize,
+								  [this] { settingsActions->refreshQuakeShortcutLabels(); } );
+		dropDown->start( quakeShortcut.Get() );
+		quakeInstance->windowReady();
+	}
+	appWindow->runMainLoop( [this, &quakeInstance] {
+		// Give native resize and display-scale events a pass through input and layout before
+		// painting the first frame at the slide's starting position.
+		const bool openingFramePending = dropDown && dropDown->needsOpeningFrame();
 		appWindow->getInput()->update();
 		SceneManager::instance()->update();
 		if ( keybindingsChanged.exchange( false, std::memory_order_acq_rel ) )
@@ -1276,16 +1338,26 @@ int App::run( int argc, char* argv[] ) {
 		}
 		if ( !appWindow->isOpen() )
 			return;
-		if ( !appWindow->isMinimized() &&
+		if ( dropDown && quakeInstance->takeToggleRequest() )
+			dropDown->toggle();
+		const bool sliding = dropDown && dropDown->update();
+		const bool needsOpeningFrame = dropDown && dropDown->needsOpeningFrame();
+		const bool openingFrame = openingFramePending && needsOpeningFrame;
+		if ( openingFrame )
+			dropDown->mapForOpeningFrame();
+		if ( ( !needsOpeningFrame || openingFrame ) && !appWindow->isMinimized() &&
 			 ( appWindow->isVisible() || Runtime::forceHiddenWindows() ||
 			   Runtime::isOffscreen() ) &&
-			 ( benchmarkMode || scene->invalidated() ) ) {
+			 ( openingFrame || benchmarkMode || scene->invalidated() ) ) {
 			appWindow->clear();
 			SceneManager::instance()->draw();
-			appWindow->display();
-		} else {
+			appWindow->display( true, !openingFrame );
+			if ( openingFrame )
+				dropDown->openingFramePresented();
+		} else if ( !needsOpeningFrame || openingFrame ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-			appWindow->getInput()->waitEvent( Milliseconds( appWindow->hasFocus() ? 16 : 100 ) );
+			appWindow->getInput()->waitEvent(
+				Milliseconds( sliding || appWindow->hasFocus() ? 16 : 100 ) );
 #endif
 		}
 		if ( benchmarkMode && secondsCounter.getElapsedTime() >= Seconds( 1 ) ) {
@@ -1293,9 +1365,14 @@ int App::run( int argc, char* argv[] ) {
 			secondsCounter.restart();
 		}
 	} );
+	dropDown = nullptr;
 	// Native destruction is deferred to keep the GL context alive during UI teardown.
-	// Hide first: stopping the file watcher can wait for its polling thread.
+	// Hide before joining the background listeners and releasing the global shortcut.
 	appWindow->hide();
+	if ( quakeInstance )
+		quakeInstance->stopListening();
+	// The shortcut service closes before its executor and the window are destroyed.
+	quakeWindow.reset();
 	fileWatcher.reset();
 	programStatus.alerts().shutdown();
 	return EXIT_SUCCESS;

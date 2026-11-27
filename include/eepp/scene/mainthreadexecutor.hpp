@@ -23,6 +23,11 @@ class EE_API MainThreadExecutor : public Executor {
   public:
 	explicit MainThreadExecutor( Node* dispatcher );
 
+	/** Invokes wake after scheduling each batch, on the submitting thread and outside executor
+	 * locks. The callback must be nonblocking and safe to call from concurrent submitters. Its
+	 * wake destination must remain valid until any concurrent execute() calls have returned. */
+	MainThreadExecutor( Node* dispatcher, Function wake );
+
 	~MainThreadExecutor() override;
 
 	MainThreadExecutor( const MainThreadExecutor& ) = delete;
@@ -31,9 +36,9 @@ class EE_API MainThreadExecutor : public Executor {
 
 	void execute( Function function ) override;
 
-	/** Detaches the executor from its dispatcher node and drops the queued functions. Functions
-	 * executed afterwards are dropped too. Call it before the dispatcher node is destroyed when
-	 * work may still be executed on this executor (it must then outlive that work). */
+	/** Detaches the executor from its dispatcher node and drops functions still in its queue.
+	 * Waits for in-flight scheduling on the node. A batch already taken by a scene update, and
+	 * any pending wake callbacks, can still run. The executor itself must outlive execute(). */
 	void shutdown();
 
 	/** @return Number of functions waiting for the main thread. */

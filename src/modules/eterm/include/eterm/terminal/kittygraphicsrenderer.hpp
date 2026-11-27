@@ -1,6 +1,8 @@
 #ifndef ETERM_KITTYGRAPHICSRENDERER_HPP
 #define ETERM_KITTYGRAPHICSRENDERER_HPP
 
+#include <eterm/config.hpp>
+
 #include <eepp/graphics/texture.hpp>
 #include <eterm/terminal/terminalgraphics.hpp>
 #include <optional>
@@ -10,7 +12,7 @@ using namespace EE::Graphics;
 
 namespace eterm { namespace Terminal {
 
-class KittyGraphicsRenderer {
+class EE_ETERM_API KittyGraphicsRenderer {
   public:
 	enum class Pass : Uint8 { VeryNegative, Negative, NonNegative };
 	enum class UpdateResult : Uint8 { Applied, ResyncNeeded, RecoveryFailed };

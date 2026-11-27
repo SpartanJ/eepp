@@ -1,6 +1,6 @@
 #include <eepp/config.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_FREEBSD
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 
 #include "accessibilitybackendatspi.hpp"
 
@@ -180,12 +180,12 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 	}
 	std::string pathStorage = pathFromRef( event.ref );
 	DBusMessage* message =
-		mDBus.messageNewSignal( pathStorage.c_str(), "org.a11y.atspi.Event.Object", signal );
+		mDBus->messageNewSignal( pathStorage.c_str(), "org.a11y.atspi.Event.Object", signal );
 	if ( !message )
 		return;
 	DBusMessageIter iter;
 	DBusMessageIter variant;
-	mDBus.messageIterInitAppend( message, &iter );
+	mDBus->messageIterInitAppend( message, &iter );
 	appendBasic( iter, 's', &detail );
 	Int32 detail1 = 0;
 	if ( event.type == AccessibilityEvent::FocusChanged )
@@ -211,21 +211,21 @@ void AtSpiApplication::onEvent( AccessibilityManager& manager,
 	bool childrenChanged =
 		event.type == AccessibilityEvent::Created || event.type == AccessibilityEvent::Destroyed;
 	if ( childrenChanged ) {
-		mDBus.messageIterOpenContainer( &iter, 'v', "(so)", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "(so)", &variant );
 		appendRef( variant, event.related );
 	} else if ( event.type == AccessibilityEvent::RoleChanged ||
 				( event.type == AccessibilityEvent::StateChanged &&
 				  info.role == AccessibilityRole::TextBox ) ) {
 		Uint32 nativeRole =
 			hasState( info.states, AccessibilityState::Protected ) ? 40 : role( info.role );
-		mDBus.messageIterOpenContainer( &iter, 'v', "u", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "u", &variant );
 		appendBasic( variant, 'u', &nativeRole );
 	} else {
 		const char* empty = "";
-		mDBus.messageIterOpenContainer( &iter, 'v', "s", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "s", &variant );
 		appendBasic( variant, 's', &empty );
 	}
-	mDBus.messageIterCloseContainer( &iter, &variant );
+	mDBus->messageIterCloseContainer( &iter, &variant );
 	appendEventProperties( iter );
 	send( message );
 }
@@ -322,20 +322,20 @@ void AtSpiApplication::sendObjectEvent( AccessibilityNodeRef ref, const char* si
 										const char* detail, Int32 offset, Int32 length,
 										const String& text ) {
 	auto path = pathFromRef( ref );
-	auto* message = mDBus.messageNewSignal( path.c_str(), "org.a11y.atspi.Event.Object", signal );
+	auto* message = mDBus->messageNewSignal( path.c_str(), "org.a11y.atspi.Event.Object", signal );
 	if ( !message )
 		return;
 	DBusMessageIter iter;
 	DBusMessageIter variant;
-	mDBus.messageIterInitAppend( message, &iter );
+	mDBus->messageIterInitAppend( message, &iter );
 	appendBasic( iter, 's', &detail );
 	appendBasic( iter, 'i', &offset );
 	appendBasic( iter, 'i', &length );
 	auto utf8 = text.toUtf8();
 	const char* value = utf8.c_str();
-	mDBus.messageIterOpenContainer( &iter, 'v', "s", &variant );
+	mDBus->messageIterOpenContainer( &iter, 'v', "s", &variant );
 	appendBasic( variant, 's', &value );
-	mDBus.messageIterCloseContainer( &iter, &variant );
+	mDBus->messageIterCloseContainer( &iter, &variant );
 	appendEventProperties( iter );
 	send( message );
 }
@@ -405,20 +405,20 @@ void AtSpiApplication::sendWindowChanged( AccessibilityManager& manager, bool ad
 	ScopedManager scopedManager( *this, &manager );
 	auto root = manager.getRoot();
 	DBusMessage* message =
-		mDBus.messageNewSignal( RootPath, "org.a11y.atspi.Event.Object", "ChildrenChanged" );
+		mDBus->messageNewSignal( RootPath, "org.a11y.atspi.Event.Object", "ChildrenChanged" );
 	if ( !message )
 		return;
 	DBusMessageIter iter;
 	DBusMessageIter variant;
-	mDBus.messageIterInitAppend( message, &iter );
+	mDBus->messageIterInitAppend( message, &iter );
 	const char* detail = added ? "add" : "remove";
 	appendBasic( iter, 's', &detail );
 	Int32 detail2 = 0;
 	appendBasic( iter, 'i', &index );
 	appendBasic( iter, 'i', &detail2 );
-	mDBus.messageIterOpenContainer( &iter, 'v', "(so)", &variant );
+	mDBus->messageIterOpenContainer( &iter, 'v', "(so)", &variant );
 	appendRef( variant, root );
-	mDBus.messageIterCloseContainer( &iter, &variant );
+	mDBus->messageIterCloseContainer( &iter, &variant );
 	appendEventProperties( iter );
 	send( message );
 }

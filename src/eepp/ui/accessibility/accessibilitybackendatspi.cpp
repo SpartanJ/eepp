@@ -1,6 +1,6 @@
 #include <eepp/config.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_FREEBSD
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 
 #include "accessibilitybackendatspi.hpp"
 
@@ -31,42 +31,43 @@ AtSpiApplication::AtSpiApplication( AccessibilityManager& manager ) :
 }
 
 void AtSpiApplication::initialize() {
-	if ( !mDBus.load() )
+	mDBus = Dbus::DbusLibrary::load();
+	if ( !mDBus )
 		return initializationFinished();
-	DBusConnection* sessionBus = mDBus.busGet( 0, nullptr );
+	DBusConnection* sessionBus = mDBus->busGet( DBusBusSession, nullptr );
 	if ( !sessionBus )
 		return initializationFinished();
-	DBusMessage* request =
-		mDBus.messageNewMethodCall( "org.a11y.Bus", "/org/a11y/bus", "org.a11y.Bus", "GetAddress" );
+	DBusMessage* request = mDBus->messageNewMethodCall( "org.a11y.Bus", "/org/a11y/bus",
+														"org.a11y.Bus", "GetAddress" );
 	if ( !request ) {
-		mDBus.connectionUnref( sessionBus );
+		mDBus->connectionUnref( sessionBus );
 		return initializationFinished();
 	}
 	DBusMessage* reply =
-		mDBus.connectionSendWithReplyAndBlock( sessionBus, request, 1000, nullptr );
-	mDBus.messageUnref( request );
+		mDBus->connectionSendWithReplyAndBlock( sessionBus, request, 1000, nullptr );
+	mDBus->messageUnref( request );
 	// busGet() returns an owned reference to a shared connection. Release, never close it.
-	mDBus.connectionUnref( sessionBus );
+	mDBus->connectionUnref( sessionBus );
 	if ( !reply )
 		return initializationFinished();
 	const char* address = nullptr;
-	const bool gotAddress = mDBus.messageGetArgs( reply, nullptr, 's', &address, 0 ) != 0;
+	const bool gotAddress = mDBus->messageGetArgs( reply, nullptr, 's', &address, 0 ) != 0;
 	if ( gotAddress && address ) {
-		mConnection = mDBus.connectionOpenPrivate( address, nullptr );
-		if ( mConnection && !mDBus.busRegister( mConnection, nullptr ) ) {
-			mDBus.connectionClose( mConnection );
-			mDBus.connectionUnref( mConnection );
+		mConnection = mDBus->connectionOpenPrivate( address, nullptr );
+		if ( mConnection && !mDBus->busRegister( mConnection, nullptr ) ) {
+			mDBus->connectionClose( mConnection );
+			mDBus->connectionUnref( mConnection );
 			mConnection = nullptr;
 		}
 	}
-	mDBus.messageUnref( reply );
+	mDBus->messageUnref( reply );
 	if ( mConnection ) {
 		// Client disconnections are watched per client (watchClient()), not with a bus-wide
 		// NameOwnerChanged match that would wake us for every application on the bus.
-		mDBus.connectionAddFilter( mConnection, &AtSpiApplication::clientDisconnected, this,
-								   nullptr );
+		mDBus->connectionAddFilter( mConnection, &AtSpiApplication::clientDisconnected, this,
+									nullptr );
 		registerApplication();
-		if ( mConnection && mDBus.connectionGetUnixFd( mConnection, &mConnectionFd ) &&
+		if ( mConnection && mDBus->connectionGetUnixFd( mConnection, &mConnectionFd ) &&
 			 pipe( mWakePipe ) == 0 ) {
 			for ( int fd : mWakePipe )
 				fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK );
@@ -94,8 +95,8 @@ AtSpiApplication::~AtSpiApplication() {
 			close( mWakePipe[0] );
 			close( mWakePipe[1] );
 		}
-		mDBus.connectionClose( mConnection );
-		mDBus.connectionUnref( mConnection );
+		mDBus->connectionClose( mConnection );
+		mDBus->connectionUnref( mConnection );
 	}
 }
 
@@ -163,9 +164,9 @@ void AtSpiApplication::update() {
 	// Signals queued by widget updates must leave the connection even when no client sends
 	// another query. Otherwise typing notifications wait indefinitely in libdbus's queue.
 	if ( mOutgoingPending ) {
-		mDBus.connectionReadWrite( mConnection, 0 );
-		mOutgoingPending = mDBus.connectionGetOutgoingSize( mConnection ) > 0;
-		if ( mDBus.connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains )
+		mDBus->connectionReadWrite( mConnection, 0 );
+		mOutgoingPending = mDBus->connectionGetOutgoingSize( mConnection ) > 0;
+		if ( mDBus->connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains )
 			mDispatchRequested.store( true, std::memory_order_release );
 	}
 	if ( !mPendingWindowAdds.empty() ) {
@@ -187,17 +188,17 @@ void AtSpiApplication::update() {
 			mProfile->batch( 0, profileStart, 0, false );
 		return;
 	}
-	mDBus.connectionReadWrite( mConnection, 0 );
+	mDBus->connectionReadWrite( mConnection, 0 );
 	constexpr size_t MaxMessagesPerUpdate = 256;
 	constexpr auto DispatchBudget = Milliseconds( 2 );
 	const auto dispatchStart = MonotonicClock::now();
 	size_t messages = 0;
 	double maximumMessage = 0;
 	while ( messages < MaxMessagesPerUpdate &&
-			mDBus.connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains ) {
+			mDBus->connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains ) {
 		const auto messageStart = mProfile ? AccessibilityDispatchProfile::Clock::now()
 										   : AccessibilityDispatchProfile::Clock::time_point{};
-		mDBus.connectionDispatch( mConnection );
+		mDBus->connectionDispatch( mConnection );
 		++messages;
 		if ( mProfile ) {
 			maximumMessage = std::max( maximumMessage,
@@ -209,12 +210,12 @@ void AtSpiApplication::update() {
 		if ( MonotonicClock::now() - dispatchStart >= DispatchBudget )
 			break;
 	}
-	mDBus.connectionReadWrite( mConnection, 0 );
+	mDBus->connectionReadWrite( mConnection, 0 );
 	// connectionReadWrite() can move multiple requests from the socket into libdbus. Once the
 	// socket is drained, poll() will not wake us for requests that remain in libdbus's internal
 	// dispatch queue. Preserve the bounded per-update work without stranding that backlog.
 	const bool backlog =
-		mDBus.connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains;
+		mDBus->connectionGetDispatchStatus( mConnection ) == DBusDispatchDataRemains;
 	if ( mProfile )
 		mProfile->batch( messages, profileStart, maximumMessage, backlog );
 	if ( backlog ) {
@@ -261,12 +262,12 @@ void AtSpiApplication::waitForMessages() {
 DBusHandlerResult AtSpiApplication::handleMessage( DBusConnection*, DBusMessage* message,
 												   void* userData ) {
 	auto backend = static_cast<AtSpiApplication*>( userData );
-	const char* interface = backend->mDBus.messageGetInterface( message );
-	const char* member = backend->mDBus.messageGetMember( message );
+	const char* interface = backend->mDBus->messageGetInterface( message );
+	const char* member = backend->mDBus->messageGetMember( message );
 	const bool registryPropertySet =
 		interface && member && std::strcmp( interface, "org.freedesktop.DBus.Properties" ) == 0 &&
 		std::strcmp( member, "Set" ) == 0 &&
-		std::strcmp( backend->mDBus.messageGetPath( message ), RootPath ) == 0;
+		std::strcmp( backend->mDBus->messageGetPath( message ), RootPath ) == 0;
 	if ( !registryPropertySet )
 		backend->activate( message );
 	if ( backend->handleMessage( message ) != 0 ) {
@@ -277,14 +278,14 @@ DBusHandlerResult AtSpiApplication::handleMessage( DBusConnection*, DBusMessage*
 }
 
 void AtSpiApplication::activate( DBusMessage* message ) {
-	const char* sender = mDBus.messageGetSender( message );
+	const char* sender = mDBus->messageGetSender( message );
 	// Registry bookkeeping is not evidence of an assistive client. Its bus connection
 	// normally outlives every screen reader and would otherwise pin the active flag forever.
 	if ( !sender || mRegistryBusName == sender || !mClients.emplace( sender ).second )
 		return;
 	mHasActiveClients.store( true, std::memory_order_release );
 	if ( isAccessibilityTraceEnabled() ) {
-		const char* member = mDBus.messageGetMember( message );
+		const char* member = mDBus->messageGetMember( message );
 		std::fprintf( stderr, "eepp accessibility: AT-SPI client %s connected (first call %s)\n",
 					  sender, member ? member : "?" );
 	}
@@ -307,18 +308,18 @@ void AtSpiApplication::watchClient( const char* name ) {
 	// The bus daemon handles one connection's requests in order, so the check runs after the
 	// match is installed: a client that already left is reported by the check, and one that
 	// leaves later by the match.
-	mDBus.busAddMatch( mConnection, clientMatchRule( name ).c_str(), nullptr );
-	DBusMessage* check = mDBus.messageNewMethodCall(
+	mDBus->busAddMatch( mConnection, clientMatchRule( name ).c_str(), nullptr );
+	DBusMessage* check = mDBus->messageNewMethodCall(
 		"org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameHasOwner" );
 	if ( !check )
 		return;
 	DBusMessageIter iter;
-	mDBus.messageIterInitAppend( check, &iter );
+	mDBus->messageIterInitAppend( check, &iter );
 	appendBasic( iter, 's', &name );
 	Uint32 serial = 0;
-	if ( mDBus.connectionSend( mConnection, check, &serial ) )
+	if ( mDBus->connectionSend( mConnection, check, &serial ) )
 		mClientChecks.emplace( serial, name );
-	mDBus.messageUnref( check );
+	mDBus->messageUnref( check );
 	if ( !mOutgoingPending ) {
 		mOutgoingPending = true;
 		Window::Input::wakeUpEventLoop();
@@ -331,7 +332,7 @@ void AtSpiApplication::clientGone( const char* name ) {
 		return;
 	if ( isAccessibilityTraceEnabled() )
 		std::fprintf( stderr, "eepp accessibility: AT-SPI client %s disconnected\n", name );
-	mDBus.busRemoveMatch( mConnection, clientMatchRule( name ).c_str(), nullptr );
+	mDBus->busRemoveMatch( mConnection, clientMatchRule( name ).c_str(), nullptr );
 	mClients.erase( found );
 	const bool active = !mClients.empty();
 	if ( !active ) {
@@ -345,7 +346,7 @@ void AtSpiApplication::clientGone( const char* name ) {
 DBusHandlerResult AtSpiApplication::clientDisconnected( DBusConnection*, DBusMessage* message,
 														void* userData ) {
 	auto* application = static_cast<AtSpiApplication*>( userData );
-	auto& dbus = application->mDBus;
+	const auto& dbus = *application->mDBus;
 	const int type = dbus.messageGetType( message );
 	if ( type == DBusMessageTypeMethodReturn || type == DBusMessageTypeError ) {
 		// The reply to a watchClient() NameHasOwner check.
@@ -378,8 +379,8 @@ DBusHandlerResult AtSpiApplication::clientDisconnected( DBusConnection*, DBusMes
 void AtSpiApplication::send( DBusMessage* reply ) {
 	if ( !reply )
 		return;
-	mDBus.connectionSend( mConnection, reply, nullptr );
-	mDBus.messageUnref( reply );
+	mDBus->connectionSend( mConnection, reply, nullptr );
+	mDBus->messageUnref( reply );
 	if ( !mOutgoingPending ) {
 		mOutgoingPending = true;
 		Window::Input::wakeUpEventLoop();
@@ -387,59 +388,60 @@ void AtSpiApplication::send( DBusMessage* reply ) {
 }
 
 void AtSpiApplication::sendBasic( DBusMessage* request, int type, const void* value ) {
-	DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+	DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 	DBusMessageIter iter;
-	mDBus.messageIterInitAppend( reply, &iter );
+	mDBus->messageIterInitAppend( reply, &iter );
 	appendBasic( iter, type, value );
 	send( reply );
 }
 
 void AtSpiApplication::registerApplication() {
-	mBusName = mDBus.busGetUniqueName( mConnection );
+	mBusName = mDBus->busGetUniqueName( mConnection );
 	static const DBusObjectPathVTable vtable{
 		nullptr, &AtSpiApplication::handleMessage, nullptr, nullptr, nullptr, nullptr };
 	if ( mBusName.empty() ||
-		 !mDBus.connectionRegisterObjectPath( mConnection, RootPath, &vtable, this ) ||
-		 !mDBus.connectionRegisterObjectPath( mConnection, CachePath, &vtable, this ) ||
-		 !mDBus.connectionRegisterFallback( mConnection, "/org/eepp/a11y", &vtable, this ) ) {
-		mDBus.connectionClose( mConnection );
-		mDBus.connectionUnref( mConnection );
+		 !mDBus->connectionRegisterObjectPath( mConnection, RootPath, &vtable, this ) ||
+		 !mDBus->connectionRegisterObjectPath( mConnection, CachePath, &vtable, this ) ||
+		 !mDBus->connectionRegisterFallback( mConnection, "/org/eepp/a11y", &vtable, this ) ) {
+		mDBus->connectionClose( mConnection );
+		mDBus->connectionUnref( mConnection );
 		mConnection = nullptr;
 		return;
 	}
 
 	DBusMessage* embed =
-		mDBus.messageNewMethodCall( "org.a11y.atspi.Registry", "/org/a11y/atspi/accessible/root",
-									"org.a11y.atspi.Socket", "Embed" );
+		mDBus->messageNewMethodCall( "org.a11y.atspi.Registry", "/org/a11y/atspi/accessible/root",
+									 "org.a11y.atspi.Socket", "Embed" );
 	if ( !embed )
 		return;
 	DBusMessageIter iter;
-	mDBus.messageIterInitAppend( embed, &iter );
+	mDBus->messageIterInitAppend( embed, &iter );
 	appendApplicationRef( iter );
-	DBusMessage* reply = mDBus.connectionSendWithReplyAndBlock( mConnection, embed, 1000, nullptr );
-	mDBus.messageUnref( embed );
-	if ( reply && mDBus.messageGetType( reply ) != DBusMessageTypeError ) {
+	DBusMessage* reply =
+		mDBus->connectionSendWithReplyAndBlock( mConnection, embed, 1000, nullptr );
+	mDBus->messageUnref( embed );
+	if ( reply && mDBus->messageGetType( reply ) != DBusMessageTypeError ) {
 		DBusMessageIter iter;
 		DBusMessageIter structure;
-		if ( mDBus.messageIterInit( reply, &iter ) ) {
-			mDBus.messageIterRecurse( &iter, &structure );
+		if ( mDBus->messageIterInit( reply, &iter ) ) {
+			mDBus->messageIterRecurse( &iter, &structure );
 			const char* bus = nullptr;
 			const char* path = nullptr;
-			mDBus.messageIterGetBasic( &structure, &bus );
-			if ( mDBus.messageIterNext( &structure ) )
-				mDBus.messageIterGetBasic( &structure, &path );
+			mDBus->messageIterGetBasic( &structure, &bus );
+			if ( mDBus->messageIterNext( &structure ) )
+				mDBus->messageIterGetBasic( &structure, &path );
 			if ( bus && path ) {
 				mRegistryBusName = bus;
 				mRegistryPath = path;
 			}
 		}
-		mDBus.messageUnref( reply );
+		mDBus->messageUnref( reply );
 		return;
 	}
 	if ( reply )
-		mDBus.messageUnref( reply );
-	mDBus.connectionClose( mConnection );
-	mDBus.connectionUnref( mConnection );
+		mDBus->messageUnref( reply );
+	mDBus->connectionClose( mConnection );
+	mDBus->connectionUnref( mConnection );
 	mConnection = nullptr;
 }
 

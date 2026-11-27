@@ -18,7 +18,7 @@ class EE_API InputSDL : public Input {
 
 	void waitEvent( const Time& timeout = Time::Zero );
 
-	static void wakeUpEventLoop();
+	static bool wakeUpEventLoop();
 
 	bool grabInput();
 

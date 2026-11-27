@@ -1,6 +1,8 @@
 #ifndef ETERM_UI_UITERMINAL_HPP
 #define ETERM_UI_UITERMINAL_HPP
 
+#include <eterm/config.hpp>
+
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
@@ -15,7 +17,7 @@ namespace eterm { namespace UI {
 
 class UITerminalFind;
 
-class UITerminal : public UITouchDraggableWidget {
+class EE_ETERM_API UITerminal : public UITouchDraggableWidget {
   public:
 	static UITerminal* New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
 							const std::string& program = "",

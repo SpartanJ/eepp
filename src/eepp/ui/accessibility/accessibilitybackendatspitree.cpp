@@ -1,6 +1,6 @@
 #include <eepp/config.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_FREEBSD
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 
 #include "accessibilitybackendatspi.hpp"
 
@@ -313,50 +313,50 @@ std::string AtSpiApplication::actionKeyBinding( const AccessibilityNodeInfo& inf
 bool AtSpiApplication::readPropertySet( DBusMessage* request, const char*& interface,
 										const char*& property, DBusMessageIter& variant ) {
 	DBusMessageIter iter;
-	if ( !mDBus.messageIterInit( request, &iter ) || mDBus.messageIterGetArgType( &iter ) != 's' )
+	if ( !mDBus->messageIterInit( request, &iter ) || mDBus->messageIterGetArgType( &iter ) != 's' )
 		return false;
-	mDBus.messageIterGetBasic( &iter, &interface );
-	if ( !mDBus.messageIterNext( &iter ) || mDBus.messageIterGetArgType( &iter ) != 's' )
+	mDBus->messageIterGetBasic( &iter, &interface );
+	if ( !mDBus->messageIterNext( &iter ) || mDBus->messageIterGetArgType( &iter ) != 's' )
 		return false;
-	mDBus.messageIterGetBasic( &iter, &property );
-	if ( !mDBus.messageIterNext( &iter ) || mDBus.messageIterGetArgType( &iter ) != 'v' )
+	mDBus->messageIterGetBasic( &iter, &property );
+	if ( !mDBus->messageIterNext( &iter ) || mDBus->messageIterGetArgType( &iter ) != 'v' )
 		return false;
-	mDBus.messageIterRecurse( &iter, &variant );
+	mDBus->messageIterRecurse( &iter, &variant );
 	return interface && property;
 }
 
 void AtSpiApplication::appendRef( DBusMessageIter& iter, AccessibilityNodeRef ref ) {
 	DBusMessageIter structure;
-	mDBus.messageIterOpenContainer( &iter, 'r', nullptr, &structure );
+	mDBus->messageIterOpenContainer( &iter, 'r', nullptr, &structure );
 	const bool valid = ref == ApplicationRef || ref.isValid();
 	const char* bus = valid ? mBusName.c_str() : "";
 	std::string pathStorage = valid ? pathFromRef( ref ) : "/org/a11y/atspi/null";
 	const char* path = pathStorage.c_str();
 	appendBasic( structure, 's', &bus );
 	appendBasic( structure, 'o', &path );
-	mDBus.messageIterCloseContainer( &iter, &structure );
+	mDBus->messageIterCloseContainer( &iter, &structure );
 }
 
 void AtSpiApplication::appendEventProperties( DBusMessageIter& iter ) {
 	DBusMessageIter array;
-	mDBus.messageIterOpenContainer( &iter, 'a', "{sv}", &array );
-	mDBus.messageIterCloseContainer( &iter, &array );
+	mDBus->messageIterOpenContainer( &iter, 'a', "{sv}", &array );
+	mDBus->messageIterCloseContainer( &iter, &array );
 }
 
 void AtSpiApplication::appendDesktopRef( DBusMessageIter& iter ) {
 	DBusMessageIter structure;
-	mDBus.messageIterOpenContainer( &iter, 'r', nullptr, &structure );
+	mDBus->messageIterOpenContainer( &iter, 'r', nullptr, &structure );
 	const char* bus = mRegistryBusName.c_str();
 	const char* path = mRegistryPath.c_str();
 	appendBasic( structure, 's', &bus );
 	appendBasic( structure, 'o', &path );
-	mDBus.messageIterCloseContainer( &iter, &structure );
+	mDBus->messageIterCloseContainer( &iter, &structure );
 }
 
 void AtSpiApplication::appendInterfaces( DBusMessageIter& iter, AccessibilityNodeRef ref,
 										 const AccessibilityNodeInfo& info ) {
 	DBusMessageIter array;
-	mDBus.messageIterOpenContainer( &iter, 'a', "s", &array );
+	mDBus->messageIterOpenContainer( &iter, 'a', "s", &array );
 	const char* accessible = "org.a11y.atspi.Accessible";
 	const char* component = "org.a11y.atspi.Component";
 	appendBasic( array, 's', &accessible );
@@ -386,7 +386,7 @@ void AtSpiApplication::appendInterfaces( DBusMessageIter& iter, AccessibilityNod
 		const char* application = "org.a11y.atspi.Application";
 		appendBasic( array, 's', &application );
 	}
-	mDBus.messageIterCloseContainer( &iter, &array );
+	mDBus->messageIterCloseContainer( &iter, &array );
 }
 
 void AtSpiApplication::appendStates( DBusMessageIter& iter, const AccessibilityNodeInfo& info ) {
@@ -425,10 +425,10 @@ void AtSpiApplication::appendStates( DBusMessageIter& iter, const AccessibilityN
 			  26 );
 	addState( info.text.valid, 38 );
 	DBusMessageIter array;
-	mDBus.messageIterOpenContainer( &iter, 'a', "u", &array );
+	mDBus->messageIterOpenContainer( &iter, 'a', "u", &array );
 	appendBasic( array, 'u', &words[0] );
 	appendBasic( array, 'u', &words[1] );
-	mDBus.messageIterCloseContainer( &iter, &array );
+	mDBus->messageIterCloseContainer( &iter, &array );
 }
 
 Int32 AtSpiApplication::indexInParent( AccessibilityNodeRef ref ) {

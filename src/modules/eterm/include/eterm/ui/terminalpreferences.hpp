@@ -1,6 +1,8 @@
 #ifndef ETERM_UI_TERMINALPREFERENCES_HPP
 #define ETERM_UI_TERMINALPREFERENCES_HPP
 
+#include <eterm/config.hpp>
+
 #include <eepp/ui/uiscrollview.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 
@@ -20,7 +22,7 @@ namespace eterm::UI {
 
 class UITerminal;
 
-struct TerminalPreferences {
+struct EE_ETERM_API TerminalPreferences {
 	EE::Uint64 scrollback{ 10000 };
 	Terminal::TerminalCursorMode cursorStyle{ Terminal::TerminalCursorMode::SteadyUnderline };
 	EE::UI::ScrollViewType scrollBarType{ EE::UI::ScrollViewType::Overlay };

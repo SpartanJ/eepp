@@ -18,6 +18,8 @@ class SettingsActions {
 
 	void closeSettings();
 
+	void refreshQuakeShortcutLabels();
+
 	void openFontPicker( bool uiFont, bool fallbackFont = false );
 
 	void setUIFontSize( Float size );

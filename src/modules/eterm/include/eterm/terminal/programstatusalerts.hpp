@@ -1,5 +1,7 @@
 #pragma once
 
+#include <eterm/config.hpp>
+
 #include <atomic>
 #include <eepp/system/clock.hpp>
 #include <eterm/terminal/programstatus.hpp>
@@ -30,7 +32,7 @@ namespace eterm::Terminal {
 using namespace EE::Audio;
 using namespace EE::System;
 
-struct ProgramStatusPreferences {
+struct EE_ETERM_API ProgramStatusPreferences {
 	std::string sound{ "chime" };
 	int volume{ 50 };
 	bool show{ true };
@@ -46,7 +48,7 @@ struct ProgramStatusPreferences {
 
 /** Opt-in side effects of program status. The worker owns audio and native helper calls; no
  * terminal or UI pointer crosses that boundary. Destroy before the application's audio teardown. */
-class ProgramStatusAlerts {
+class EE_ETERM_API ProgramStatusAlerts {
   public:
 	ProgramStatusAlerts();
 

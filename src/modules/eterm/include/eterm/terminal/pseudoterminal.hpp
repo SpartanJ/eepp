@@ -21,6 +21,8 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
+#include <eterm/config.hpp>
+
 #include <eepp/math/vector2.hpp>
 #include <eterm/system/autohandle.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
@@ -42,7 +44,7 @@ class Process;
 
 namespace Terminal {
 
-class PseudoTerminal final : public IPseudoTerminal {
+class EE_ETERM_API PseudoTerminal final : public IPseudoTerminal {
   public:
 	virtual ~PseudoTerminal();
 

@@ -1,6 +1,8 @@
 #ifndef ETERM_TERMINALCOLORSCHEME_HPP
 #define ETERM_TERMINALCOLORSCHEME_HPP
 
+#include <eterm/config.hpp>
+
 #include <eepp/system/color.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/pack.hpp>
@@ -12,7 +14,7 @@ using namespace EE::System;
 
 namespace eterm { namespace Terminal {
 
-class TerminalColorScheme {
+class EE_ETERM_API TerminalColorScheme {
   public:
 	static TerminalColorScheme getDefault();
 

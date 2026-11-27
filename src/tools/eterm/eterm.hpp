@@ -33,6 +33,8 @@ using namespace eterm;
 
 namespace eterm {
 
+class QuakeWindow;
+
 struct TerminalLaunchConfig {
 	std::string program;
 	std::vector<std::string> arguments;
@@ -185,6 +187,7 @@ class App : private efsw::FileWatchListener {
 	bool closeWindow( EE::Window::Window* );
 
 	EE::Window::Window* appWindow{ nullptr };
+	QuakeWindow* dropDown{ nullptr };
 	UIApplication* application{ nullptr };
 	UISceneNode* scene{ nullptr };
 	UIMainLayout* mainLayout{ nullptr };

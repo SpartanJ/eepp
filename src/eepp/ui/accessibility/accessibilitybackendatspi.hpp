@@ -3,14 +3,14 @@
 
 #include <eepp/config.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_FREEBSD
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 
 #include "accessibilitybackend.hpp"
 #include "accessibilitydispatchprofile.hpp"
 #include <atomic>
 #include <cstring>
 #include <eepp/core/containers.hpp>
-#include <eepp/system/sys.hpp>
+#include <eepp/system/dbus/dbuslibrary.hpp>
 #include <eepp/ui/accessibility/accessibilitymanager.hpp>
 #include <memory>
 #include <string>
@@ -21,8 +21,8 @@
  * AT-SPI (Linux/FreeBSD) accessibility backend.
  *
  * One AtSpiApplication is shared by every window of the process and owns a private connection
- * to the accessibility bus. libdbus is loaded at runtime, so eepp has no build-time D-Bus
- * dependency. The implementation is split by concern:
+ * to the accessibility bus. AT-SPI uses the eepp-dbus module and needs no
+ * libdbus development headers. The implementation is split by concern:
  *  - accessibilitybackendatspi.cpp:        connection, I/O thread, dispatch, client tracking and
  *                                          the AccessibilityBackend entry point.
  *  - accessibilitybackendatspievents.cpp:  manager events -> AT-SPI signals, text diffing.
@@ -32,195 +32,12 @@
 
 namespace EE { namespace UI { namespace AtSpi {
 
-constexpr int DBusMessageTypeMethodReturn = 2;
-constexpr int DBusMessageTypeError = 3;
+using namespace System::Dbus::Native;
 
 inline bool isSelectionContainerRole( AccessibilityRole role ) {
 	return role == AccessibilityRole::List || role == AccessibilityRole::Table ||
 		   role == AccessibilityRole::Tree || role == AccessibilityRole::TabList;
 }
-
-struct DBusConnection;
-struct DBusMessage;
-struct DBusError;
-
-struct DBusMessageIter {
-	void* dummy1;
-	void* dummy2;
-	Uint32 dummy3;
-	int dummy4;
-	int dummy5;
-	int dummy6;
-	int dummy7;
-	int dummy8;
-	int dummy9;
-	int dummy10;
-	int dummy11;
-	int pad1;
-	void* pad2;
-	void* pad3;
-};
-
-using DBusHandlerResult = int;
-using DBusDispatchStatus = int;
-using DBusMessageFunction = DBusHandlerResult ( * )( DBusConnection*, DBusMessage*, void* );
-
-constexpr DBusDispatchStatus DBusDispatchDataRemains = 0;
-
-struct DBusObjectPathVTable {
-	void ( *unregisterFunction )( DBusConnection*, void* );
-	DBusMessageFunction messageFunction;
-	void ( *padding1 )( void* );
-	void ( *padding2 )( void* );
-	void ( *padding3 )( void* );
-	void ( *padding4 )( void* );
-};
-
-class DBusLibrary {
-  public:
-	using BusGet = DBusConnection* ( * )( int, DBusError* );
-	using BusRegister = int ( * )( DBusConnection*, DBusError* );
-	using BusGetUniqueName = const char* ( * )( DBusConnection* );
-	using BusAddMatch = void ( * )( DBusConnection*, const char*, DBusError* );
-	using BusRemoveMatch = BusAddMatch;
-	using ConnectionAddFilter = int ( * )( DBusConnection*, DBusMessageFunction, void*,
-										   void ( * )( void* ) );
-	using ConnectionOpenPrivate = DBusConnection* ( * )( const char*, DBusError* );
-	using ConnectionClose = void ( * )( DBusConnection* );
-	using ConnectionUnref = void ( * )( DBusConnection* );
-	using ConnectionReadWrite = int ( * )( DBusConnection*, int );
-	using ConnectionGetDispatchStatus = DBusDispatchStatus ( * )( DBusConnection* );
-	using ConnectionDispatch = DBusDispatchStatus ( * )( DBusConnection* );
-	using ConnectionGetUnixFd = int ( * )( DBusConnection*, int* );
-	using ConnectionGetOutgoingSize = long ( * )( DBusConnection* );
-	using ConnectionRegisterObjectPath = int ( * )( DBusConnection*, const char*,
-													const DBusObjectPathVTable*, void* );
-	using ConnectionRegisterFallback = ConnectionRegisterObjectPath;
-	using ConnectionSend = int ( * )( DBusConnection*, DBusMessage*, Uint32* );
-	using ConnectionSendWithReplyAndBlock = DBusMessage* ( * )( DBusConnection*, DBusMessage*, int,
-																DBusError* );
-	using MessageNewMethodCall = DBusMessage* ( * )( const char*, const char*, const char*,
-													 const char* );
-	using MessageGetArgs = int ( * )( DBusMessage*, DBusError*, int, ... );
-	using MessageGetString = const char* ( * )( DBusMessage* );
-	using MessageGetType = int ( * )( DBusMessage* );
-	using MessageGetReplySerial = Uint32 ( * )( DBusMessage* );
-	using MessageNewMethodReturn = DBusMessage* ( * )( DBusMessage* );
-	using MessageNewError = DBusMessage* ( * )( DBusMessage*, const char*, const char* );
-	using MessageNewSignal = DBusMessage* ( * )( const char*, const char*, const char* );
-	using MessageIterInitAppend = void ( * )( DBusMessage*, DBusMessageIter* );
-	using MessageIterInit = int ( * )( DBusMessage*, DBusMessageIter* );
-	using MessageIterGetBasic = void ( * )( DBusMessageIter*, void* );
-	using MessageIterNext = int ( * )( DBusMessageIter* );
-	using MessageIterGetArgType = int ( * )( DBusMessageIter* );
-	using MessageIterRecurse = void ( * )( DBusMessageIter*, DBusMessageIter* );
-	using MessageIterAppendBasic = int ( * )( DBusMessageIter*, int, const void* );
-	using MessageIterOpenContainer = int ( * )( DBusMessageIter*, int, const char*,
-												DBusMessageIter* );
-	using MessageIterCloseContainer = int ( * )( DBusMessageIter*, DBusMessageIter* );
-	using MessageUnref = void ( * )( DBusMessage* );
-
-	~DBusLibrary() {
-		if ( mHandle )
-			System::Sys::unloadObject( mHandle );
-	}
-
-	bool load() {
-		mHandle = System::Sys::loadObject( "libdbus-1.so.3" );
-		if ( !mHandle )
-			mHandle = System::Sys::loadObject( "libdbus-1.so" );
-		return loadSymbol( busGet, "dbus_bus_get" ) &&
-			   loadSymbol( busRegister, "dbus_bus_register" ) &&
-			   loadSymbol( busGetUniqueName, "dbus_bus_get_unique_name" ) &&
-			   loadSymbol( busAddMatch, "dbus_bus_add_match" ) &&
-			   loadSymbol( busRemoveMatch, "dbus_bus_remove_match" ) &&
-			   loadSymbol( connectionAddFilter, "dbus_connection_add_filter" ) &&
-			   loadSymbol( connectionOpenPrivate, "dbus_connection_open_private" ) &&
-			   loadSymbol( connectionClose, "dbus_connection_close" ) &&
-			   loadSymbol( connectionUnref, "dbus_connection_unref" ) &&
-			   loadSymbol( connectionReadWrite, "dbus_connection_read_write" ) &&
-			   loadSymbol( connectionGetDispatchStatus, "dbus_connection_get_dispatch_status" ) &&
-			   loadSymbol( connectionDispatch, "dbus_connection_dispatch" ) &&
-			   loadSymbol( connectionGetUnixFd, "dbus_connection_get_unix_fd" ) &&
-			   loadSymbol( connectionGetOutgoingSize, "dbus_connection_get_outgoing_size" ) &&
-			   loadSymbol( connectionRegisterObjectPath, "dbus_connection_register_object_path" ) &&
-			   loadSymbol( connectionRegisterFallback, "dbus_connection_register_fallback" ) &&
-			   loadSymbol( connectionSend, "dbus_connection_send" ) &&
-			   loadSymbol( connectionSendWithReplyAndBlock,
-						   "dbus_connection_send_with_reply_and_block" ) &&
-			   loadSymbol( messageNewMethodCall, "dbus_message_new_method_call" ) &&
-			   loadSymbol( messageNewMethodReturn, "dbus_message_new_method_return" ) &&
-			   loadSymbol( messageNewError, "dbus_message_new_error" ) &&
-			   loadSymbol( messageNewSignal, "dbus_message_new_signal" ) &&
-			   loadSymbol( messageGetPath, "dbus_message_get_path" ) &&
-			   loadSymbol( messageGetInterface, "dbus_message_get_interface" ) &&
-			   loadSymbol( messageGetMember, "dbus_message_get_member" ) &&
-			   loadSymbol( messageGetType, "dbus_message_get_type" ) &&
-			   loadSymbol( messageGetReplySerial, "dbus_message_get_reply_serial" ) &&
-			   loadSymbol( messageGetSender, "dbus_message_get_sender" ) &&
-			   loadSymbol( messageGetArgs, "dbus_message_get_args" ) &&
-			   loadSymbol( messageIterInitAppend, "dbus_message_iter_init_append" ) &&
-			   loadSymbol( messageIterInit, "dbus_message_iter_init" ) &&
-			   loadSymbol( messageIterGetBasic, "dbus_message_iter_get_basic" ) &&
-			   loadSymbol( messageIterNext, "dbus_message_iter_next" ) &&
-			   loadSymbol( messageIterGetArgType, "dbus_message_iter_get_arg_type" ) &&
-			   loadSymbol( messageIterRecurse, "dbus_message_iter_recurse" ) &&
-			   loadSymbol( messageIterAppendBasic, "dbus_message_iter_append_basic" ) &&
-			   loadSymbol( messageIterOpenContainer, "dbus_message_iter_open_container" ) &&
-			   loadSymbol( messageIterCloseContainer, "dbus_message_iter_close_container" ) &&
-			   loadSymbol( messageUnref, "dbus_message_unref" );
-	}
-
-	BusGet busGet{};
-	BusRegister busRegister{};
-	BusGetUniqueName busGetUniqueName{};
-	BusAddMatch busAddMatch{};
-	BusRemoveMatch busRemoveMatch{};
-	ConnectionAddFilter connectionAddFilter{};
-	ConnectionOpenPrivate connectionOpenPrivate{};
-	ConnectionClose connectionClose{};
-	ConnectionUnref connectionUnref{};
-	ConnectionReadWrite connectionReadWrite{};
-	ConnectionGetDispatchStatus connectionGetDispatchStatus{};
-	ConnectionDispatch connectionDispatch{};
-	ConnectionGetUnixFd connectionGetUnixFd{};
-	ConnectionGetOutgoingSize connectionGetOutgoingSize{};
-	ConnectionRegisterObjectPath connectionRegisterObjectPath{};
-	ConnectionRegisterFallback connectionRegisterFallback{};
-	ConnectionSend connectionSend{};
-	ConnectionSendWithReplyAndBlock connectionSendWithReplyAndBlock{};
-	MessageNewMethodCall messageNewMethodCall{};
-	MessageNewMethodReturn messageNewMethodReturn{};
-	MessageNewError messageNewError{};
-	MessageNewSignal messageNewSignal{};
-	MessageGetString messageGetPath{};
-	MessageGetString messageGetInterface{};
-	MessageGetString messageGetMember{};
-	MessageGetString messageGetSender{};
-	MessageGetType messageGetType{};
-	MessageGetReplySerial messageGetReplySerial{};
-	MessageGetArgs messageGetArgs{};
-	MessageIterInitAppend messageIterInitAppend{};
-	MessageIterInit messageIterInit{};
-	MessageIterGetBasic messageIterGetBasic{};
-	MessageIterNext messageIterNext{};
-	MessageIterGetArgType messageIterGetArgType{};
-	MessageIterRecurse messageIterRecurse{};
-	MessageIterAppendBasic messageIterAppendBasic{};
-	MessageIterOpenContainer messageIterOpenContainer{};
-	MessageIterCloseContainer messageIterCloseContainer{};
-	MessageUnref messageUnref{};
-
-  private:
-	void* mHandle{};
-
-	template <typename T> bool loadSymbol( T& symbol, const char* name ) {
-		if ( !mHandle )
-			return false;
-		symbol = reinterpret_cast<T>( System::Sys::loadFunction( mHandle, name ) );
-		return symbol != nullptr;
-	}
-};
 
 class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplication> {
   public:
@@ -279,7 +96,7 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 	std::vector<std::pair<Uint64, AccessibilityManager*>> mManagers;
 	std::vector<AccessibilityManager*> mPendingWindowAdds;
 	Uint64 mNextManagerId{ 1 };
-	DBusLibrary mDBus;
+	const System::Dbus::DbusLibrary* mDBus{ nullptr };
 	std::unique_ptr<AccessibilityDispatchProfile> mProfile;
 	DBusConnection* mConnection{};
 	int mConnectionFd{ -1 };
@@ -338,7 +155,7 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 	void sendBasic( DBusMessage* request, int type, const void* value );
 
 	void sendError( DBusMessage* request, const char* name, const char* message ) {
-		send( mDBus.messageNewError( request, name, message ) );
+		send( mDBus->messageNewError( request, name, message ) );
 	}
 
 	void registerApplication();
@@ -415,7 +232,7 @@ class AtSpiApplication final : public std::enable_shared_from_this<AtSpiApplicat
 								  AccessibilityAction action ) const;
 
 	void appendBasic( DBusMessageIter& iter, int type, const void* value ) {
-		mDBus.messageIterAppendBasic( &iter, type, value );
+		mDBus->messageIterAppendBasic( &iter, type, value );
 	}
 
 	bool readPropertySet( DBusMessage* request, const char*& interface, const char*& property,

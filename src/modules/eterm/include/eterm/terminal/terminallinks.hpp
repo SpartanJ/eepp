@@ -1,6 +1,8 @@
 #ifndef ETERM_TERMINALLINKS_HPP
 #define ETERM_TERMINALLINKS_HPP
 
+#include <eterm/config.hpp>
+
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -10,7 +12,7 @@ namespace eterm { namespace Terminal {
 
 /** Links found in terminal text without OSC 8: URLs with a scheme and file paths, matched with
  * Ghostty's default link pattern. */
-class TerminalLinks {
+class EE_ETERM_API TerminalLinks {
   public:
 	/** A match as UTF-8 byte offsets, [start, end). */
 	struct Match {

@@ -88,16 +88,27 @@ try {
 	# libraries that were not built are skipped with a warning.
 	# -----------------------------------------------------------------------
 
-	$SharedLibs = @("eepp.dll", "eepp-maps.dll", "eepp-physics.dll")
+	$SharedLibs = @(
+		"eepp.dll",
+		"eepp-eterm.dll",
+		"eepp-maps.dll",
+		"eepp-physics.dll",
+		"eepp-vfs.dll",
+		"eepp-globalshortcuts.dll"
+	)
 
 	# Premake 5 emits *.lib archives for both Windows toolchains. The archive
 	# contents still belong to the compiler selected for this SDK.
 	$LinkLibs = @(
 		"eepp.lib",
+		"eepp-eterm.lib",
 		"eepp-maps.lib",
 		"eepp-physics.lib",
+		"eepp-vfs.lib",
+		"eepp-globalshortcuts.lib",
 		"eepp-maps-static.lib",
 		"eepp-physics-static.lib",
+		"eepp-globalshortcuts-static.lib",
 		"eterm.lib",
 		"languages-syntax-highlighting.lib"
 	)
@@ -131,6 +142,9 @@ try {
 	# -----------------------------------------------------------------------
 
 	Copy-Item -Recurse -Path "include" -Destination "$Staging\include"
+	foreach ($Module in @("eterm", "maps", "physics", "vfs", "globalshortcuts")) {
+		Copy-Item -Recurse -Force -Path "src\modules\$Module\include\*" -Destination "$Staging\include"
+	}
 	Copy-Item -Recurse -Path "docs\articles" -Destination "$Staging\docs\articles"
 	(Get-Content "projects\scripts\eepp-sdk-README.md" -Raw) -replace '@SDK_VERSION@', $Version | Set-Content "$Staging\README.md"
 

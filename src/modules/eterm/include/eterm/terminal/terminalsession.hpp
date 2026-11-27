@@ -1,6 +1,8 @@
 #ifndef ETERM_TERMINALSESSION_HPP
 #define ETERM_TERMINALSESSION_HPP
 
+#include <eterm/config.hpp>
+
 #include <eepp/math/vector2.hpp>
 #include <eepp/window/keycodes.hpp>
 #include <eterm/system/iprocess.hpp>
@@ -133,7 +135,7 @@ struct TerminalSessionOptions {
  * history, selection, and cursor. UI code may only enqueue commands, drain events, or retain an
  * immutable snapshot returned by snapshot(). No session callback is invoked by the worker.
  */
-class TerminalSession final : public std::enable_shared_from_this<TerminalSession> {
+class EE_ETERM_API TerminalSession final : public std::enable_shared_from_this<TerminalSession> {
   public:
 	using PtyPtr = std::unique_ptr<IPseudoTerminal>;
 	using ProcPtr = std::unique_ptr<IProcess>;

@@ -21,6 +21,8 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
+#include <eterm/config.hpp>
+
 #include <eterm/system/autohandle.hpp>
 #include <eterm/system/ipipe.hpp>
 #include <memory>
@@ -29,7 +31,7 @@ namespace eterm { namespace System {
 
 class Process;
 
-class Pipe : public IPipe {
+class EE_ETERM_API Pipe : public IPipe {
   public:
 	Pipe( Pipe&& ) = delete;
 

@@ -41,6 +41,9 @@ class EE_API Input {
 	/** Wakes the backend's shared event loop without retaining a window-owned Input object. */
 	static void wakeUpEventLoop();
 
+	/** @return Whether the backend queued a wake event. Requires a live event backend. */
+	static bool tryWakeUpEventLoop();
+
 	/** @return If the mouse and keyboard are grabbed. */
 	virtual bool grabInput() = 0;
 

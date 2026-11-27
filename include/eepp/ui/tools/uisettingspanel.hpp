@@ -209,6 +209,9 @@ class EE_API UISettingsPanel : public UILinearLayout {
 	void setCategoryEnabled( const std::string& category, bool enabled,
 							 const std::string& excludedSetting = {} );
 
+	/** Updates a setting's description, including rows created later. */
+	void setSettingDescription( const std::string& id, String description );
+
 	void refreshTextSetting( const std::string& id );
 
 	void setSearchResultsText( String text );

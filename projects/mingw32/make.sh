@@ -3,16 +3,12 @@ cd "$(dirname "$0")" || exit
 
 ARCH=32
 BACKEND=sdl2
-VFS_SHARED_ARG=
 MAKE_ARGS=()
 for i in "$@"; do
   case $i in
     config=*)
       CONFIG="${i#*=}"
       MAKE_ARGS+=("$i")
-      ;;
-    --with-shared-vfs)
-      VFS_SHARED_ARG="--with-shared-vfs"
       ;;
     --backend=*)
       BACKEND="${i#*=}"
@@ -82,7 +78,7 @@ detect_backend_name()
   fi
 }
 
-PREMAKE5_ARGS="--file=../../premake5.lua --os=windows --cc=gcc --windows-mingw-build --with-backend=$(detect_backend_arg) $PREMAKE5_ARCH $VFS_SHARED_ARG gmake"
+PREMAKE5_ARGS="--file=../../premake5.lua --os=windows --cc=gcc --windows-mingw-build --with-backend=$(detect_backend_arg) $PREMAKE5_ARCH gmake"
 
 if command -v premake5 &> /dev/null
 then

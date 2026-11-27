@@ -70,11 +70,11 @@ void InputSDL::waitEvent( const Time& timeout ) {
 	}
 }
 
-void InputSDL::wakeUpEventLoop() {
+bool InputSDL::wakeUpEventLoop() {
 	SDL_Event event{};
 	event.type = SDL_USEREVENT;
 	event.user.data1 = &WakeEventMarker;
-	SDL_PushEvent( &event );
+	return SDL_PushEvent( &event ) == 1;
 }
 
 bool InputSDL::grabInput() {

@@ -1,6 +1,6 @@
 #include <eepp/config.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_FREEBSD
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 
 #include "accessibilitybackendatspi.hpp"
 
@@ -12,9 +12,9 @@
 namespace EE { namespace UI { namespace AtSpi {
 
 DBusHandlerResult AtSpiApplication::handleMessage( DBusMessage* request ) {
-	const char* path = mDBus.messageGetPath( request );
-	const char* interface = mDBus.messageGetInterface( request );
-	const char* member = mDBus.messageGetMember( request );
+	const char* path = mDBus->messageGetPath( request );
+	const char* interface = mDBus->messageGetInterface( request );
+	const char* member = mDBus->messageGetMember( request );
 	if ( !interface || !member )
 		return 1;
 	if ( path && std::strcmp( path, CachePath ) == 0 )
@@ -50,12 +50,12 @@ DBusHandlerResult AtSpiApplication::handleCache( DBusMessage* request, const cha
 												 const char* member ) {
 	if ( std::strcmp( interface, "org.a11y.atspi.Cache" ) == 0 &&
 		 std::strcmp( member, "GetItems" ) == 0 ) {
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
 		DBusMessageIter array;
-		mDBus.messageIterInitAppend( reply, &iter );
-		mDBus.messageIterOpenContainer( &iter, 'a', "((so)(so)a(so)assusau)", &array );
-		mDBus.messageIterCloseContainer( &iter, &array );
+		mDBus->messageIterInitAppend( reply, &iter );
+		mDBus->messageIterOpenContainer( &iter, 'a', "((so)(so)a(so)assusau)", &array );
+		mDBus->messageIterCloseContainer( &iter, &array );
 		send( reply );
 		return 0;
 	}
@@ -63,20 +63,20 @@ DBusHandlerResult AtSpiApplication::handleCache( DBusMessage* request, const cha
 		 std::strcmp( member, "Get" ) == 0 ) {
 		const char* requestedInterface = nullptr;
 		const char* property = nullptr;
-		if ( !mDBus.messageGetArgs( request, nullptr, 's', &requestedInterface, 's', &property,
-									0 ) ||
+		if ( !mDBus->messageGetArgs( request, nullptr, 's', &requestedInterface, 's', &property,
+									 0 ) ||
 			 !requestedInterface || !property ||
 			 std::strcmp( requestedInterface, "org.a11y.atspi.Cache" ) != 0 ||
 			 std::strcmp( property, "version" ) != 0 )
 			return 1;
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
 		DBusMessageIter variant;
-		mDBus.messageIterInitAppend( reply, &iter );
-		mDBus.messageIterOpenContainer( &iter, 'v', "u", &variant );
+		mDBus->messageIterInitAppend( reply, &iter );
+		mDBus->messageIterOpenContainer( &iter, 'v', "u", &variant );
 		Uint32 version = 1;
 		appendBasic( variant, 'u', &version );
-		mDBus.messageIterCloseContainer( &iter, &variant );
+		mDBus->messageIterCloseContainer( &iter, &variant );
 		send( reply );
 		return 0;
 	}
@@ -101,10 +101,10 @@ DBusHandlerResult AtSpiApplication::handleAccessible( DBusMessage* request,
 		}
 	} else if ( std::strcmp( member, "GetChildAtIndex" ) == 0 ) {
 		Int32 index = -1;
-		mDBus.messageGetArgs( request, nullptr, 'i', &index, 0 );
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		mDBus->messageGetArgs( request, nullptr, 'i', &index, 0 );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
-		mDBus.messageIterInitAppend( reply, &iter );
+		mDBus->messageIterInitAppend( reply, &iter );
 		if ( ref == ApplicationRef && index >= 0 &&
 			 static_cast<size_t>( index ) < mManagers.size() ) {
 			auto manager = std::next( mManagers.begin(), index )->second;
@@ -115,11 +115,11 @@ DBusHandlerResult AtSpiApplication::handleAccessible( DBusMessage* request,
 		}
 		send( reply );
 	} else if ( std::strcmp( member, "GetChildren" ) == 0 ) {
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
 		DBusMessageIter array;
-		mDBus.messageIterInitAppend( reply, &iter );
-		mDBus.messageIterOpenContainer( &iter, 'a', "(so)", &array );
+		mDBus->messageIterInitAppend( reply, &iter );
+		mDBus->messageIterOpenContainer( &iter, 'a', "(so)", &array );
 		if ( ref == ApplicationRef ) {
 			for ( const auto& entry : mManagers ) {
 				ScopedManager scopedManager( *this, entry.second );
@@ -129,22 +129,22 @@ DBusHandlerResult AtSpiApplication::handleAccessible( DBusMessage* request,
 			for ( const auto& child : mManager->getChildren( ref ) )
 				appendRef( array, child );
 		}
-		mDBus.messageIterCloseContainer( &iter, &array );
+		mDBus->messageIterCloseContainer( &iter, &array );
 		send( reply );
 	} else if ( std::strcmp( member, "GetIndexInParent" ) == 0 ) {
 		Int32 index = indexInParent( ref );
 		sendBasic( request, 'i', &index );
 	} else if ( std::strcmp( member, "GetApplication" ) == 0 ) {
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
-		mDBus.messageIterInitAppend( reply, &iter );
+		mDBus->messageIterInitAppend( reply, &iter );
 		appendApplicationRef( iter );
 		send( reply );
 	} else if ( std::strcmp( member, "GetInterfaces" ) == 0 ) {
 		auto info = getNodeInfo( ref, false );
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
-		mDBus.messageIterInitAppend( reply, &iter );
+		mDBus->messageIterInitAppend( reply, &iter );
 		appendInterfaces( iter, ref, info );
 		send( reply );
 	} else if ( std::strcmp( member, "GetState" ) == 0 ) {
@@ -157,37 +157,37 @@ DBusHandlerResult AtSpiApplication::handleAccessible( DBusMessage* request,
 			if ( isSelectionContainerRole( mManager->getNodeRole( parent ) ) )
 				rememberSelection( parent );
 		}
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
-		mDBus.messageIterInitAppend( reply, &iter );
+		mDBus->messageIterInitAppend( reply, &iter );
 		appendStates( iter, info );
 		send( reply );
 	} else if ( std::strcmp( member, "GetAttributes" ) == 0 ) {
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
 		DBusMessageIter attributes;
-		mDBus.messageIterInitAppend( reply, &iter );
-		mDBus.messageIterOpenContainer( &iter, 'a', "{ss}", &attributes );
+		mDBus->messageIterInitAppend( reply, &iter );
+		mDBus->messageIterOpenContainer( &iter, 'a', "{ss}", &attributes );
 		const auto headingLevel = mManager ? mManager->getNodeHeadingLevel( ref ) : 0;
 		if ( headingLevel ) {
 			DBusMessageIter entry;
-			mDBus.messageIterOpenContainer( &attributes, 'e', nullptr, &entry );
+			mDBus->messageIterOpenContainer( &attributes, 'e', nullptr, &entry );
 			const char* key = "level";
 			const std::string level = String::toString( headingLevel );
 			const char* value = level.c_str();
 			appendBasic( entry, 's', &key );
 			appendBasic( entry, 's', &value );
-			mDBus.messageIterCloseContainer( &attributes, &entry );
+			mDBus->messageIterCloseContainer( &attributes, &entry );
 		}
-		mDBus.messageIterCloseContainer( &iter, &attributes );
+		mDBus->messageIterCloseContainer( &iter, &attributes );
 		send( reply );
 	} else if ( std::strcmp( member, "GetRelationSet" ) == 0 ) {
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
 		DBusMessageIter relations;
-		mDBus.messageIterInitAppend( reply, &iter );
-		mDBus.messageIterOpenContainer( &iter, 'a', "(ua(so))", &relations );
-		mDBus.messageIterCloseContainer( &iter, &relations );
+		mDBus->messageIterInitAppend( reply, &iter );
+		mDBus->messageIterOpenContainer( &iter, 'a', "(ua(so))", &relations );
+		mDBus->messageIterCloseContainer( &iter, &relations );
 		send( reply );
 	} else if ( std::strcmp( member, "GetAccessibleId" ) == 0 ) {
 		std::string valueStorage = pathFromRef( ref );
@@ -224,7 +224,7 @@ DBusHandlerResult AtSpiApplication::handleSelection( DBusMessage* request, Acces
 		return 1;
 	Int32 index = -1;
 	if ( std::strcmp( member, "GetSelectedChild" ) == 0 ) {
-		if ( !mDBus.messageGetArgs( request, nullptr, 'i', &index, 0 ) )
+		if ( !mDBus->messageGetArgs( request, nullptr, 'i', &index, 0 ) )
 			return 1;
 		const auto& selected = rememberSelection( ref );
 		if ( index < 0 || static_cast<size_t>( index ) >= selected.size() ) {
@@ -232,14 +232,14 @@ DBusHandlerResult AtSpiApplication::handleSelection( DBusMessage* request, Acces
 					   "Invalid selection index" );
 			return 0;
 		}
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
-		mDBus.messageIterInitAppend( reply, &iter );
+		mDBus->messageIterInitAppend( reply, &iter );
 		appendRef( iter, selected[index] );
 		send( reply );
 	} else if ( std::strcmp( member, "IsChildSelected" ) == 0 ||
 				std::strcmp( member, "SelectChild" ) == 0 ) {
-		if ( !mDBus.messageGetArgs( request, nullptr, 'i', &index, 0 ) )
+		if ( !mDBus->messageGetArgs( request, nullptr, 'i', &index, 0 ) )
 			return 1;
 		const auto child = index >= 0 ? getChild( ref, index ) : AccessibilityNodeRef{};
 		// Establish the old selection before an action emits its change; reads reuse this
@@ -271,26 +271,26 @@ DBusHandlerResult AtSpiApplication::handleComponent( DBusMessage* request, Acces
 	if ( std::strcmp( member, "GetExtents" ) == 0 ) {
 		auto info = getNodeInfo( ref, false );
 		Uint32 coordinateType = 0;
-		mDBus.messageGetArgs( request, nullptr, 'u', &coordinateType, 0 );
+		mDBus->messageGetArgs( request, nullptr, 'u', &coordinateType, 0 );
 		auto bounds = boundsForCoordinateType( ref, info, coordinateType );
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
 		DBusMessageIter structure;
-		mDBus.messageIterInitAppend( reply, &iter );
-		mDBus.messageIterOpenContainer( &iter, 'r', nullptr, &structure );
+		mDBus->messageIterInitAppend( reply, &iter );
+		mDBus->messageIterOpenContainer( &iter, 'r', nullptr, &structure );
 		Int32 values[] = { static_cast<Int32>( bounds.Left ), static_cast<Int32>( bounds.Top ),
 						   static_cast<Int32>( bounds.getWidth() ),
 						   static_cast<Int32>( bounds.getHeight() ) };
 		for ( auto value : values )
 			appendBasic( structure, 'i', &value );
-		mDBus.messageIterCloseContainer( &iter, &structure );
+		mDBus->messageIterCloseContainer( &iter, &structure );
 		send( reply );
 	} else if ( std::strcmp( member, "Contains" ) == 0 ) {
 		auto info = getNodeInfo( ref, false );
 		Int32 x = 0;
 		Int32 y = 0;
 		Uint32 coordinateType = 0;
-		mDBus.messageGetArgs( request, nullptr, 'i', &x, 'i', &y, 'u', &coordinateType, 0 );
+		mDBus->messageGetArgs( request, nullptr, 'i', &x, 'i', &y, 'u', &coordinateType, 0 );
 		int contains =
 			boundsForCoordinateType( ref, info, coordinateType ).contains( Math::Vector2f( x, y ) );
 		sendBasic( request, 'b', &contains );
@@ -298,7 +298,7 @@ DBusHandlerResult AtSpiApplication::handleComponent( DBusMessage* request, Acces
 		Int32 x = 0;
 		Int32 y = 0;
 		Uint32 coordinateType = 0;
-		mDBus.messageGetArgs( request, nullptr, 'i', &x, 'i', &y, 'u', &coordinateType, 0 );
+		mDBus->messageGetArgs( request, nullptr, 'i', &x, 'i', &y, 'u', &coordinateType, 0 );
 		if ( coordinateType == 0 ) {
 			auto scene = mManager ? mManager->getSceneNode() : nullptr;
 			if ( scene && scene->getWindow() ) {
@@ -311,9 +311,9 @@ DBusHandlerResult AtSpiApplication::handleComponent( DBusMessage* request, Acces
 			x += static_cast<Int32>( parent.bounds.Left );
 			y += static_cast<Int32>( parent.bounds.Top );
 		}
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
-		mDBus.messageIterInitAppend( reply, &iter );
+		mDBus->messageIterInitAppend( reply, &iter );
 		appendRef( iter, mManager ? mManager->hitTest( Math::Vector2f( x, y ) )
 								  : AccessibilityNodeRef{} );
 		send( reply );
@@ -324,11 +324,11 @@ DBusHandlerResult AtSpiApplication::handleComponent( DBusMessage* request, Acces
 	} else if ( std::strcmp( member, "GetPosition" ) == 0 ) {
 		auto info = getNodeInfo( ref, false );
 		Uint32 coordinateType = 0;
-		mDBus.messageGetArgs( request, nullptr, 'u', &coordinateType, 0 );
+		mDBus->messageGetArgs( request, nullptr, 'u', &coordinateType, 0 );
 		auto bounds = boundsForCoordinateType( ref, info, coordinateType );
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
-		mDBus.messageIterInitAppend( reply, &iter );
+		mDBus->messageIterInitAppend( reply, &iter );
 		Int32 x = static_cast<Int32>( bounds.Left );
 		Int32 y = static_cast<Int32>( bounds.Top );
 		appendBasic( iter, 'i', &x );
@@ -336,9 +336,9 @@ DBusHandlerResult AtSpiApplication::handleComponent( DBusMessage* request, Acces
 		send( reply );
 	} else if ( std::strcmp( member, "GetSize" ) == 0 ) {
 		auto info = getNodeInfo( ref, false );
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
-		mDBus.messageIterInitAppend( reply, &iter );
+		mDBus->messageIterInitAppend( reply, &iter );
 		Int32 width = static_cast<Int32>( info.bounds.getWidth() );
 		Int32 height = static_cast<Int32>( info.bounds.getHeight() );
 		appendBasic( iter, 'i', &width );
@@ -367,11 +367,11 @@ DBusHandlerResult AtSpiApplication::handleAction( DBusMessage* request, Accessib
 	if ( std::strcmp( member, "GetNActions" ) == 0 ) {
 		sendBasic( request, 'i', &count );
 	} else if ( std::strcmp( member, "GetActions" ) == 0 ) {
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
 		DBusMessageIter array;
-		mDBus.messageIterInitAppend( reply, &iter );
-		mDBus.messageIterOpenContainer( &iter, 'a', "(sss)", &array );
+		mDBus->messageIterInitAppend( reply, &iter );
+		mDBus->messageIterOpenContainer( &iter, 'a', "(sss)", &array );
 		for ( Int32 index = 0; index < count; ++index ) {
 			DBusMessageIter structure;
 			auto action = actionAt( actions, index );
@@ -379,17 +379,17 @@ DBusHandlerResult AtSpiApplication::handleAction( DBusMessage* request, Accessib
 			const char* empty = "";
 			const std::string bindingStorage = actionKeyBinding( info, action );
 			const char* binding = bindingStorage.c_str();
-			mDBus.messageIterOpenContainer( &array, 'r', nullptr, &structure );
+			mDBus->messageIterOpenContainer( &array, 'r', nullptr, &structure );
 			appendBasic( structure, 's', &name );
 			appendBasic( structure, 's', &empty );
 			appendBasic( structure, 's', &binding );
-			mDBus.messageIterCloseContainer( &array, &structure );
+			mDBus->messageIterCloseContainer( &array, &structure );
 		}
-		mDBus.messageIterCloseContainer( &iter, &array );
+		mDBus->messageIterCloseContainer( &iter, &array );
 		send( reply );
 	} else {
 		Int32 index = -1;
-		mDBus.messageGetArgs( request, nullptr, 'i', &index, 0 );
+		mDBus->messageGetArgs( request, nullptr, 'i', &index, 0 );
 		if ( index < 0 || index >= count )
 			return 1;
 		auto action = actionAt( actions, index );
@@ -429,7 +429,7 @@ DBusHandlerResult AtSpiApplication::handleText( DBusMessage* request, Accessibil
 	if ( std::strcmp( member, "GetText" ) == 0 ) {
 		Int32 start = 0;
 		Int32 end = -1;
-		mDBus.messageGetArgs( request, nullptr, 'i', &start, 'i', &end, 0 );
+		mDBus->messageGetArgs( request, nullptr, 'i', &start, 'i', &end, 0 );
 		start = std::max( 0, std::min( start, characterCount ) );
 		end = end < 0 ? characterCount : std::max( start, std::min( end, characterCount ) );
 		std::string textStorage = mManager->getTextRange( ref, start, end ).toUtf8();
@@ -438,7 +438,7 @@ DBusHandlerResult AtSpiApplication::handleText( DBusMessage* request, Accessibil
 	} else if ( std::strcmp( member, "GetStringAtOffset" ) == 0 ) {
 		Int32 offset = 0;
 		Uint32 granularity = 0;
-		mDBus.messageGetArgs( request, nullptr, 'i', &offset, 'u', &granularity, 0 );
+		mDBus->messageGetArgs( request, nullptr, 'i', &offset, 'u', &granularity, 0 );
 		offset = std::max( 0, std::min( offset, characterCount ) );
 		Int32 start = offset;
 		Int32 end = offset;
@@ -477,58 +477,58 @@ DBusHandlerResult AtSpiApplication::handleText( DBusMessage* request, Accessibil
 		}
 		std::string textStorage = text.toUtf8();
 		const char* textValue = textStorage.c_str();
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
-		mDBus.messageIterInitAppend( reply, &iter );
+		mDBus->messageIterInitAppend( reply, &iter );
 		appendBasic( iter, 's', &textValue );
 		appendBasic( iter, 'i', &start );
 		appendBasic( iter, 'i', &end );
 		send( reply );
 	} else if ( std::strcmp( member, "GetCharacterAtOffset" ) == 0 ) {
 		Int32 offset = 0;
-		mDBus.messageGetArgs( request, nullptr, 'i', &offset, 0 );
+		mDBus->messageGetArgs( request, nullptr, 'i', &offset, 0 );
 		const String character = offset >= 0 && offset < characterCount
 									 ? mManager->getTextRange( ref, offset, offset + 1 )
 									 : String();
 		Int32 value = character.empty() ? 0 : static_cast<Int32>( character[0] );
 		sendBasic( request, 'i', &value );
 	} else if ( std::strcmp( member, "GetAttributes" ) == 0 ) {
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
 		DBusMessageIter attributes;
-		mDBus.messageIterInitAppend( reply, &iter );
-		mDBus.messageIterOpenContainer( &iter, 'a', "{ss}", &attributes );
-		mDBus.messageIterCloseContainer( &iter, &attributes );
+		mDBus->messageIterInitAppend( reply, &iter );
+		mDBus->messageIterOpenContainer( &iter, 'a', "{ss}", &attributes );
+		mDBus->messageIterCloseContainer( &iter, &attributes );
 		Int32 start = 0;
 		appendBasic( iter, 'i', &start );
 		appendBasic( iter, 'i', &characterCount );
 		send( reply );
 	} else if ( std::strcmp( member, "GetDefaultAttributes" ) == 0 ||
 				std::strcmp( member, "GetDefaultAttributeSet" ) == 0 ) {
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
 		DBusMessageIter attributes;
-		mDBus.messageIterInitAppend( reply, &iter );
-		mDBus.messageIterOpenContainer( &iter, 'a', "{ss}", &attributes );
-		mDBus.messageIterCloseContainer( &iter, &attributes );
+		mDBus->messageIterInitAppend( reply, &iter );
+		mDBus->messageIterOpenContainer( &iter, 'a', "{ss}", &attributes );
+		mDBus->messageIterCloseContainer( &iter, &attributes );
 		send( reply );
 	} else if ( std::strcmp( member, "GetNSelections" ) == 0 ) {
 		Int32 count = info.text.selectionStart != info.text.selectionEnd ? 1 : 0;
 		sendBasic( request, 'i', &count );
 	} else if ( std::strcmp( member, "GetSelection" ) == 0 ) {
 		Int32 selection = -1;
-		mDBus.messageGetArgs( request, nullptr, 'i', &selection, 0 );
+		mDBus->messageGetArgs( request, nullptr, 'i', &selection, 0 );
 		if ( selection != 0 || info.text.selectionStart == info.text.selectionEnd )
 			return 1;
-		DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+		DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 		DBusMessageIter iter;
-		mDBus.messageIterInitAppend( reply, &iter );
+		mDBus->messageIterInitAppend( reply, &iter );
 		appendBasic( iter, 'i', &info.text.selectionStart );
 		appendBasic( iter, 'i', &info.text.selectionEnd );
 		send( reply );
 	} else if ( std::strcmp( member, "SetCaretOffset" ) == 0 ) {
 		Int32 offset = -1;
-		mDBus.messageGetArgs( request, nullptr, 'i', &offset, 0 );
+		mDBus->messageGetArgs( request, nullptr, 'i', &offset, 0 );
 		int success = offset >= 0 && offset <= characterCount && mManager &&
 					  mManager->performAction( ref, { AccessibilityAction::SetTextSelection,
 													  String( String::toString( offset ) + ":" +
@@ -541,11 +541,11 @@ DBusHandlerResult AtSpiApplication::handleText( DBusMessage* request, Accessibil
 		Int32 start = info.text.caretOffset;
 		Int32 end = start;
 		bool valid = std::strcmp( member, "AddSelection" ) == 0
-						 ? mDBus.messageGetArgs( request, nullptr, 'i', &start, 'i', &end, 0 )
+						 ? mDBus->messageGetArgs( request, nullptr, 'i', &start, 'i', &end, 0 )
 					 : std::strcmp( member, "SetSelection" ) == 0
-						 ? mDBus.messageGetArgs( request, nullptr, 'i', &selection, 'i', &start,
-												 'i', &end, 0 )
-						 : mDBus.messageGetArgs( request, nullptr, 'i', &selection, 0 );
+						 ? mDBus->messageGetArgs( request, nullptr, 'i', &selection, 'i', &start,
+												  'i', &end, 0 )
+						 : mDBus->messageGetArgs( request, nullptr, 'i', &selection, 0 );
 		int success = valid && selection == 0 && start >= 0 && end >= start &&
 					  end <= characterCount && mManager &&
 					  mManager->performAction( ref, { AccessibilityAction::SetTextSelection,
@@ -566,7 +566,7 @@ DBusHandlerResult AtSpiApplication::handleEditableText( DBusMessage* request,
 		 std::strcmp( member, "SetTextContents" ) != 0 || !mManager )
 		return 1;
 	const char* contents = nullptr;
-	if ( !mDBus.messageGetArgs( request, nullptr, 's', &contents, 0 ) )
+	if ( !mDBus->messageGetArgs( request, nullptr, 's', &contents, 0 ) )
 		return 1;
 	// The client sent the whole new text, so copying the old one costs no more than the request.
 	// Report the replacement as its minimal diff instead of the reset and insert it performs.
@@ -586,7 +586,7 @@ DBusHandlerResult AtSpiApplication::handlePropertiesGet( DBusMessage* request,
 														 AccessibilityNodeRef ref ) {
 	const char* requestedInterface = nullptr;
 	const char* property = nullptr;
-	if ( !mDBus.messageGetArgs( request, nullptr, 's', &requestedInterface, 's', &property, 0 ) ||
+	if ( !mDBus->messageGetArgs( request, nullptr, 's', &requestedInterface, 's', &property, 0 ) ||
 		 !requestedInterface || !property )
 		return 1;
 	const bool includeValue = std::strcmp( requestedInterface, "org.a11y.atspi.Value" ) == 0 &&
@@ -602,14 +602,14 @@ DBusHandlerResult AtSpiApplication::handlePropertiesGet( DBusMessage* request,
 	if ( mManager && std::strcmp( requestedInterface, "org.a11y.atspi.Text" ) == 0 &&
 		 std::strcmp( property, "CaretOffset" ) == 0 )
 		info.text = mManager->getTextInfo( ref );
-	DBusMessage* reply = mDBus.messageNewMethodReturn( request );
+	DBusMessage* reply = mDBus->messageNewMethodReturn( request );
 	DBusMessageIter iter;
 	DBusMessageIter variant;
-	mDBus.messageIterInitAppend( reply, &iter );
+	mDBus->messageIterInitAppend( reply, &iter );
 	if ( std::strcmp( requestedInterface, "org.a11y.atspi.Action" ) == 0 &&
 		 std::strcmp( property, "NActions" ) == 0 ) {
 		Int32 value = static_cast<Int32>( __builtin_popcount( nativeActions( info.actions ) ) );
-		mDBus.messageIterOpenContainer( &iter, 'v', "i", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "i", &variant );
 		appendBasic( variant, 'i', &value );
 	} else if ( std::strcmp( requestedInterface, "org.a11y.atspi.Selection" ) == 0 &&
 				std::strcmp( property, "NSelectedChildren" ) == 0 &&
@@ -617,7 +617,7 @@ DBusHandlerResult AtSpiApplication::handlePropertiesGet( DBusMessage* request,
 				hasState( mManager->getNodeState( ref ),
 						  AccessibilityState::SelectionContainer ) ) {
 		Int32 count = static_cast<Int32>( rememberSelection( ref ).size() );
-		mDBus.messageIterOpenContainer( &iter, 'v', "i", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "i", &variant );
 		appendBasic( variant, 'i', &count );
 	} else if ( std::strcmp( requestedInterface, "org.a11y.atspi.Text" ) == 0 && info.text.valid &&
 				( std::strcmp( property, "CharacterCount" ) == 0 ||
@@ -625,7 +625,7 @@ DBusHandlerResult AtSpiApplication::handlePropertiesGet( DBusMessage* request,
 		Int32 value = std::strcmp( property, "CharacterCount" ) == 0
 						  ? ( mManager ? mManager->getTextLength( ref ) : 0 )
 						  : info.text.caretOffset;
-		mDBus.messageIterOpenContainer( &iter, 'v', "i", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "i", &variant );
 		appendBasic( variant, 'i', &value );
 	} else if ( std::strcmp( requestedInterface, "org.a11y.atspi.Value" ) == 0 &&
 				info.range.valid ) {
@@ -639,37 +639,37 @@ DBusHandlerResult AtSpiApplication::handlePropertiesGet( DBusMessage* request,
 		else if ( std::strcmp( property, "MinimumIncrement" ) == 0 )
 			value = info.range.smallChange;
 		else {
-			mDBus.messageUnref( reply );
+			mDBus->messageUnref( reply );
 			return 1;
 		}
-		mDBus.messageIterOpenContainer( &iter, 'v', "d", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "d", &variant );
 		appendBasic( variant, 'd', &value );
 	} else if ( std::strcmp( property, "Name" ) == 0 ||
 				std::strcmp( property, "Description" ) == 0 ) {
 		std::string text =
 			( std::strcmp( property, "Name" ) == 0 ? info.name : info.description ).toUtf8();
 		const char* value = text.c_str();
-		mDBus.messageIterOpenContainer( &iter, 'v', "s", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "s", &variant );
 		appendBasic( variant, 's', &value );
 	} else if ( std::strcmp( property, "HelpText" ) == 0 ) {
 		const char* value = "";
-		mDBus.messageIterOpenContainer( &iter, 'v', "s", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "s", &variant );
 		appendBasic( variant, 's', &value );
 	} else if ( std::strcmp( property, "Locale" ) == 0 ) {
 		const char* value = "C";
-		mDBus.messageIterOpenContainer( &iter, 'v', "s", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "s", &variant );
 		appendBasic( variant, 's', &value );
 	} else if ( std::strcmp( property, "AccessibleId" ) == 0 ) {
 		std::string valueStorage = pathFromRef( ref );
 		const char* value = valueStorage.c_str();
-		mDBus.messageIterOpenContainer( &iter, 'v', "s", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "s", &variant );
 		appendBasic( variant, 's', &value );
 	} else if ( std::strcmp( property, "ChildCount" ) == 0 ) {
 		Int32 value = static_cast<Int32>( getChildCount( ref ) );
-		mDBus.messageIterOpenContainer( &iter, 'v', "i", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "i", &variant );
 		appendBasic( variant, 'i', &value );
 	} else if ( std::strcmp( property, "Parent" ) == 0 ) {
-		mDBus.messageIterOpenContainer( &iter, 'v', "(so)", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "(so)", &variant );
 		if ( ref == ApplicationRef )
 			appendDesktopRef( variant );
 		else
@@ -678,20 +678,20 @@ DBusHandlerResult AtSpiApplication::handlePropertiesGet( DBusMessage* request,
 				std::strcmp( property, "Version" ) == 0 ||
 				std::strcmp( property, "AtspiVersion" ) == 0 ) {
 		const char* value = std::strcmp( property, "ToolkitName" ) == 0 ? "eepp" : "0.1";
-		mDBus.messageIterOpenContainer( &iter, 'v', "s", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "s", &variant );
 		appendBasic( variant, 's', &value );
 	} else if ( std::strcmp( property, "ProcessId" ) == 0 ) {
 		Int32 value = static_cast<Int32>( getpid() );
-		mDBus.messageIterOpenContainer( &iter, 'v', "i", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "i", &variant );
 		appendBasic( variant, 'i', &value );
 	} else if ( std::strcmp( property, "Id" ) == 0 ) {
-		mDBus.messageIterOpenContainer( &iter, 'v', "i", &variant );
+		mDBus->messageIterOpenContainer( &iter, 'v', "i", &variant );
 		appendBasic( variant, 'i', &mApplicationId );
 	} else {
-		mDBus.messageUnref( reply );
+		mDBus->messageUnref( reply );
 		return 1;
 	}
-	mDBus.messageIterCloseContainer( &iter, &variant );
+	mDBus->messageIterCloseContainer( &iter, &variant );
 	send( reply );
 	return 0;
 }
@@ -704,12 +704,12 @@ DBusHandlerResult AtSpiApplication::handlePropertiesSet( DBusMessage* request,
 		const char* requestedInterface = nullptr;
 		const char* property = nullptr;
 		if ( !readPropertySet( request, requestedInterface, property, variant ) ||
-			 mDBus.messageIterGetArgType( &variant ) != 'i' ||
+			 mDBus->messageIterGetArgType( &variant ) != 'i' ||
 			 std::strcmp( requestedInterface, "org.a11y.atspi.Application" ) != 0 ||
 			 std::strcmp( property, "Id" ) != 0 )
 			return 1;
-		mDBus.messageIterGetBasic( &variant, &mApplicationId );
-		send( mDBus.messageNewMethodReturn( request ) );
+		mDBus->messageIterGetBasic( &variant, &mApplicationId );
+		send( mDBus->messageNewMethodReturn( request ) );
 		return 0;
 	}
 	DBusMessageIter variant;
@@ -717,9 +717,9 @@ DBusHandlerResult AtSpiApplication::handlePropertiesSet( DBusMessage* request,
 	const char* property = nullptr;
 	double value = 0;
 	if ( !readPropertySet( request, requestedInterface, property, variant ) ||
-		 mDBus.messageIterGetArgType( &variant ) != 'd' )
+		 mDBus->messageIterGetArgType( &variant ) != 'd' )
 		return 1;
-	mDBus.messageIterGetBasic( &variant, &value );
+	mDBus->messageIterGetBasic( &variant, &value );
 	if ( !requestedInterface || !property ||
 		 std::strcmp( requestedInterface, "org.a11y.atspi.Value" ) != 0 ||
 		 std::strcmp( property, "CurrentValue" ) != 0 )
@@ -731,7 +731,7 @@ DBusHandlerResult AtSpiApplication::handlePropertiesSet( DBusMessage* request,
 	if ( !mManager || !mManager->performAction( ref, { AccessibilityAction::SetValue,
 													   String( String::toString( value ) ) } ) )
 		return 1;
-	send( mDBus.messageNewMethodReturn( request ) );
+	send( mDBus->messageNewMethodReturn( request ) );
 	return 0;
 }
 

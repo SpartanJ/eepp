@@ -1,6 +1,8 @@
 #ifndef ETERM_UI_PROGRAMSTATUSUI_HPP
 #define ETERM_UI_PROGRAMSTATUSUI_HPP
 
+#include <eterm/config.hpp>
+
 #include <eepp/core/containers.hpp>
 #include <eepp/core/string.hpp>
 #include <eterm/terminal/programstatusalerts.hpp>
@@ -20,7 +22,7 @@ using EE::UI::UISceneNode;
 class UITerminal;
 
 /** Tracks status for the application's terminal widgets and shares one alert limiter. */
-class ProgramStatusUI {
+class EE_ETERM_API ProgramStatusUI {
   public:
 	explicit ProgramStatusUI( const char* applicationName );
 

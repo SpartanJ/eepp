@@ -47,8 +47,17 @@ Add `include/` to your include path and link against the libraries in
 
 - Dynamic linking: link against the shared library (`eepp.dll` / `libeepp.so` /
   `libeepp.dylib` and the matching import library when applicable).
-- The optional modules (`eepp-maps`, `eepp-physics`) and the `eterm` /
-  `languages-syntax-highlighting` static libraries are also provided.
+- The SDK also ships `eepp-eterm`, `eepp-maps`, `eepp-physics`, and `eepp-vfs` as shared
+  libraries with their public headers and Windows import libraries. Link the modules you use
+  alongside the shared eepp core. Full desktop builds produce all four modules.
+- Static Maps, Physics, eterm, and language syntax highlighting libraries are also included.
+  Define `EE_ETERM_STATIC` when linking the `eterm` static library.
+- Global Shortcuts provides `eepp-globalshortcuts` for shared linking and
+  `eepp-globalshortcuts-static` for static linking. Use `<eepp/globalshortcuts.hpp>` for either
+  variant. The API is in `EE::System::GlobalShortcuts`. Define `EE_GLOBALSHORTCUTS_STATIC`
+  in a static consumer and link the native backend libraries used by that archive.
+  For the Wayland portal backend, also link `eepp-dbus-static` on Linux and FreeBSD
+  and `dl` on Linux. The shared module uses the eepp shared library.
 
 For MSVC applications, include `<SDL3/SDL_main.h>` in exactly one source file and link
 `SDL3.lib` alongside eepp, using the matching SDL3 development headers and import library.
@@ -100,7 +109,7 @@ bash projects/macos/make_no_fw.sh --backend=SDL3 config=release_arm64
 bash projects/scripts/package_sdk.sh macos arm64
 
 # FreeBSD: native x86_64 build (libraries are stored under libs/bsd/).
-pkg install -y bash git sdl3 premake5 gmake
+pkg install -y bash git sdl3 premake5 gmake pkgconf libxcb libxkbcommon dbus
 premake5 --disable-static-build --with-backend=SDL3 gmake
 gmake -C make/bsd -j$(sysctl -n hw.ncpu) config=release_x86_64 all
 bash projects/scripts/package_sdk.sh freebsd x86_64 --strip

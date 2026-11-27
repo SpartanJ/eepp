@@ -56,10 +56,16 @@ bool Input::consumeNativeDragRelease() {
 }
 
 void Input::wakeUpEventLoop() {
+	tryWakeUpEventLoop();
+}
+
+bool Input::tryWakeUpEventLoop() {
 #if defined( EE_BACKEND_SDL3 )
-	Backend::SDL3::InputSDL::wakeUpEventLoop();
+	return Backend::SDL3::InputSDL::wakeUpEventLoop();
 #elif defined( EE_BACKEND_SDL2 )
-	Backend::SDL2::InputSDL::wakeUpEventLoop();
+	return Backend::SDL2::InputSDL::wakeUpEventLoop();
+#else
+	return false;
 #endif
 }
 

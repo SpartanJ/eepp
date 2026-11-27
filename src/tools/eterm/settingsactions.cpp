@@ -33,6 +33,13 @@ void SettingsActions::closeSettings() {
 		mSettingsWindow->closeWindow();
 }
 
+void SettingsActions::refreshQuakeShortcutLabels() {
+	if ( mSettingsWindow && mApp->dropDown ) {
+		auto* panel = mSettingsWindow->find<Tools::UISettingsPanel>( "settings_panel_content" );
+		SettingsPanel::refreshQuakeShortcutLabels( *panel, *mApp->dropDown );
+	}
+}
+
 void SettingsActions::openFontPicker( bool uiFont, bool fallbackFont ) {
 	const Uint32 flags = UIFontPickerDialog::ShowStyle |
 						 ( fallbackFont ? 0 : UIFontPickerDialog::ShowSize ) |

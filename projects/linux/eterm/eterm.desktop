@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=eterm
+Comment=Terminal emulator
+Exec=eterm
+Icon=eterm
+Terminal=false
+Categories=System;TerminalEmulator;
+Actions=Quake;
+
+[Desktop Action Quake]
+Name=Start Quake Mode
+Exec=eterm --quake

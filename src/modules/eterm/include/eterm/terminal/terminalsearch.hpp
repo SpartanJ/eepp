@@ -1,6 +1,8 @@
 #ifndef ETERM_TERMINALSEARCH_HPP
 #define ETERM_TERMINALSEARCH_HPP
 
+#include <eterm/config.hpp>
+
 #include <eepp/core/string.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 
@@ -48,7 +50,7 @@ struct TerminalSearchMatch {
 };
 
 /** Worker-side search engine over chronological, non-owning terminal rows. */
-class TerminalSearch {
+class EE_ETERM_API TerminalSearch {
   public:
 	static constexpr size_t MinimumQueryLength = 2;
 

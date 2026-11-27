@@ -8,12 +8,14 @@
 #include <eepp/system/inifile.hpp>
 #include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
+#include <eepp/ui/uidirection.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/window/window.hpp>
 #include <eterm/terminal/programstatusalerts.hpp>
 #include <eterm/ui/terminalpreferences.hpp>
 #include <string>
+#include <string_view>
 
 namespace eterm {
 
@@ -47,6 +49,21 @@ struct TerminalConfig : eterm::UI::TerminalPreferences {
 
 struct UIConfig {
 	bool smoothScroll{ false };
+};
+
+struct QuakeConfig {
+	static constexpr int MinSizePercent = 10;
+	static constexpr int MaxSizePercent = 100;
+	static constexpr int MaxAnimationMs = 1000;
+
+	std::string shortcut{ "mod+shift+f11" };
+	std::string secondaryShortcut;
+	int widthPercent{ MaxSizePercent };
+	int heightPercent{ 90 };
+	int animationMs{ 160 };
+	UIHorizontalAlignment horizontalAlignment{ UIHorizontalAlignment::Center };
+	bool launchHidden{ true };
+	bool hideOnFocusLoss{ false };
 };
 
 struct FontConfig {
@@ -96,8 +113,11 @@ struct AppConfig {
 	ThemeConfig theme;
 	UIConfig ui;
 	WindowStateConfig windowState;
+	QuakeConfig quake;
 
-	explicit AppConfig( std::string configPath );
+	explicit AppConfig( std::string configPath, bool quakeMode = false );
+
+	bool isQuakeMode() const { return mQuakeMode; }
 
 	void load();
 
@@ -106,6 +126,9 @@ struct AppConfig {
 	bool savePreferences();
 
 	bool saveWindowState();
+
+	/** Record the first unavailable-backend notice in Quake state. */
+	bool takeQuakeShortcutUnavailableNotice();
 
 	void captureWindowState( EE::Window::Window* window );
 
@@ -117,12 +140,22 @@ struct AppConfig {
 
 	const std::string& getConfigPath() const { return mConfigPath; }
 
+	const std::string& getStateDirectory() const { return mStateDirectory; }
+
   private:
-	std::string sessionPath() const { return mConfigPath + "session.json"; }
+	std::string sessionPath() const { return mStateDirectory + "session.json"; }
+
+	std::string_view tabPreferencesSection() const;
+
+	std::string_view restorePreferencesSection() const;
+
+	IniFile preferences() const;
 
 	std::string mConfigPath;
-	IniFile mIni;
+	std::string mStateDirectory;
+	IniFile mSavedPreferences;
 	IniFile mState;
+	bool mQuakeMode;
 };
 
 } // namespace eterm

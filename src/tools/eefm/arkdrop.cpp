@@ -1,8 +1,9 @@
 #include "arkdrop.hpp"
 
-#include <eepp/system/sys.hpp>
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+#include <eepp/system/dbus/dbuslibrary.hpp>
+#endif
 
-using namespace EE::System;
 using namespace EE::Window;
 
 namespace eefm {
@@ -11,83 +12,6 @@ namespace {
 
 constexpr const char* ServiceType = "application/x-kde-ark-dndextract-service";
 constexpr const char* PathType = "application/x-kde-ark-dndextract-path";
-
-struct DBusConnection;
-struct DBusMessage;
-
-/** libdbus' public DBusError layout. */
-struct DBusError {
-	const char* name;
-	const char* message;
-	unsigned int flags;
-	void* padding;
-};
-
-constexpr int DBusBusSession = 0;
-constexpr int DBusTypeInvalid = 0;
-constexpr int DBusTypeString = 's';
-constexpr int DBusReplyTimeoutMs = 25000;
-
-/** The libdbus functions one method call needs, loaded at runtime (as eepp's AT-SPI backend
- * does), so eefm has no build-time D-Bus dependency. Loaded once and never unloaded. */
-class DBusFunctions {
-  public:
-	static const DBusFunctions& get() {
-		static const DBusFunctions functions;
-		return functions;
-	}
-
-	bool loaded() const { return mLoaded; }
-
-	void ( *errorInit )( DBusError* ){ nullptr };
-	void ( *errorFree )( DBusError* ){ nullptr };
-	unsigned int ( *errorIsSet )( const DBusError* ){ nullptr };
-	DBusConnection* ( *busGetPrivate )( int, DBusError* ){ nullptr };
-	void ( *connectionSetExitOnDisconnect )( DBusConnection*, unsigned int ){ nullptr };
-	void ( *connectionClose )( DBusConnection* ){ nullptr };
-	void ( *connectionUnref )( DBusConnection* ){ nullptr };
-	DBusMessage* ( *messageNewMethodCall )( const char*, const char*, const char*,
-											const char* ){ nullptr };
-	unsigned int ( *messageAppendArgs )( DBusMessage*, int, ... ){ nullptr };
-	DBusMessage* ( *connectionSendWithReplyAndBlock )( DBusConnection*, DBusMessage*, int,
-													   DBusError* ){ nullptr };
-	void ( *messageUnref )( DBusMessage* ){ nullptr };
-	/** Validators that report instead of asserting, unlike the message constructors. */
-	unsigned int ( *validateBusName )( const char*, DBusError* ){ nullptr };
-	unsigned int ( *validatePath )( const char*, DBusError* ){ nullptr };
-	unsigned int ( *validateUtf8 )( const char*, DBusError* ){ nullptr };
-
-  private:
-	DBusFunctions() {
-		void* handle = Sys::loadObject( "libdbus-1.so.3" );
-		if ( !handle )
-			handle = Sys::loadObject( "libdbus-1.so" );
-		mLoaded = handle && load( handle, errorInit, "dbus_error_init" ) &&
-				  load( handle, errorFree, "dbus_error_free" ) &&
-				  load( handle, errorIsSet, "dbus_error_is_set" ) &&
-				  load( handle, busGetPrivate, "dbus_bus_get_private" ) &&
-				  load( handle, connectionSetExitOnDisconnect,
-						"dbus_connection_set_exit_on_disconnect" ) &&
-				  load( handle, connectionClose, "dbus_connection_close" ) &&
-				  load( handle, connectionUnref, "dbus_connection_unref" ) &&
-				  load( handle, messageNewMethodCall, "dbus_message_new_method_call" ) &&
-				  load( handle, messageAppendArgs, "dbus_message_append_args" ) &&
-				  load( handle, connectionSendWithReplyAndBlock,
-						"dbus_connection_send_with_reply_and_block" ) &&
-				  load( handle, messageUnref, "dbus_message_unref" ) &&
-				  load( handle, validateBusName, "dbus_validate_bus_name" ) &&
-				  load( handle, validatePath, "dbus_validate_path" ) &&
-				  load( handle, validateUtf8, "dbus_validate_utf8" );
-	}
-
-	template <typename Function>
-	static bool load( void* handle, Function& function, const char* name ) {
-		function = reinterpret_cast<Function>( Sys::loadFunction( handle, name ) );
-		return function != nullptr;
-	}
-
-	bool mLoaded{ false };
-};
 
 } // namespace
 
@@ -102,14 +26,22 @@ bool ArkDrop::isArkDrop( const DataDrop& drop ) {
 
 std::string ArkDrop::extract( const DataDrop& drop, const std::string& folder,
 							  const Translator& translator ) {
-	const std::string* service = drop.find( ServiceType );
-	const std::string* path = drop.find( PathType );
-	const auto& dbus = DBusFunctions::get();
-	if ( !dbus.loaded() )
+	auto unavailable = [&] {
 		return translator
 			.getString( "eefm_dbus_unavailable",
 						"D-Bus is unavailable (libdbus-1 could not be loaded)" )
 			.toUtf8();
+	};
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+	using EE::System::Dbus::DbusLibrary;
+	using namespace EE::System::Dbus::Native;
+	constexpr int DBusReplyTimeoutMs = 25000;
+	const std::string* service = drop.find( ServiceType );
+	const std::string* path = drop.find( PathType );
+	const auto* library = DbusLibrary::load();
+	if ( !library )
+		return unavailable();
+	const auto& dbus = *library;
 	DBusError error;
 	dbus.errorInit( &error );
 	auto takeError = [&]( std::string fallback ) {
@@ -168,6 +100,9 @@ std::string ArkDrop::extract( const DataDrop& drop, const std::string& folder,
 	dbus.connectionClose( connection );
 	dbus.connectionUnref( connection );
 	return result;
+#else
+	return unavailable();
+#endif
 }
 
 } // namespace eefm

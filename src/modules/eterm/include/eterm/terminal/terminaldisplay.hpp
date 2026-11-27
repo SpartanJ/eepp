@@ -1,7 +1,6 @@
 #ifndef ETERM_TERMINALDISPLAY_HPP
 #define ETERM_TERMINALDISPLAY_HPP
 
-#include <eepp/config.hpp>
 #include <eepp/core/small_vector.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/framebuffer.hpp>
@@ -11,6 +10,7 @@
 #include <eepp/window/inputevent.hpp>
 #include <eepp/window/keycodes.hpp>
 #include <eepp/window/window.hpp>
+#include <eterm/config.hpp>
 #include <eterm/system/iprocessfactory.hpp>
 #include <eterm/terminal/terminalcolorscheme.hpp>
 #include <eterm/terminal/terminalsession.hpp>
@@ -99,7 +99,7 @@ struct TerminalKeyMapShortcut {
 	int altscrn{ 0 }; /* 0: don't care, -1: not alt screen, 1: alt screen */
 };
 
-class TerminalKeyMap {
+class EE_ETERM_API TerminalKeyMap {
   private:
 	std::unordered_map<Keycode, std::vector<TerminalKeyMapEntry>> mKeyMap;
 	std::unordered_map<Scancode, std::vector<TerminalKeyMapEntry>> mPlatformKeyMap;
@@ -133,7 +133,7 @@ class TerminalKeyMap {
 
 extern TerminalKeyMap terminalKeyMap;
 
-class TerminalDisplay {
+class EE_ETERM_API TerminalDisplay {
   public:
 	enum class EventType {
 		TITLE,

@@ -451,8 +451,9 @@ not leave handles behind either.
 ### AT-SPI (Linux and FreeBSD)
 
 One `AtSpi::AtSpiApplication` is shared by all windows of the process and owns a private
-connection to the accessibility bus. libdbus is loaded at runtime (`DBusLibrary`), so there is no
-build-time D-Bus dependency. Object paths encode `/org/eepp/a11y/<manager>/<source>/<id>`.
+connection to the accessibility bus. The static `eepp-dbus` module loads libdbus at runtime
+through `EE::System::Dbus::DbusLibrary::load()`. AT-SPI builds without libdbus development
+headers. Object paths encode `/org/eepp/a11y/<manager>/<source>/<id>`.
 
 A peer other than the registry that calls the application becomes a client. Its disconnection is
 watched with a `NameOwnerChanged` match on its own unique name, not a bus-wide match that would

@@ -1,5 +1,85 @@
 # eterm shell integration
 
+## Quake mode
+
+Run `eterm --quake` to start the drop-down terminal. It starts hidden by default when its global
+shortcut is available. Run the command again to show or raise the console, or to hide it when
+it has keyboard focus. A desktop shortcut can run the same command even without a global
+shortcut backend. In that case, Quake starts visibly and reports the unavailable backend in a
+dialog once per profile. Later launches log the failure to standard error.
+
+eterm opens a dialog about a shortcut only when no Quake shortcut works, or when a change you
+just made fails. While one shortcut still toggles the console, problems with the other go to
+standard error and appear next to it in **Settings → General → Global Shortcuts**, for example
+`(in use)`, `(invalid)`, or **Not assigned in desktop settings**.
+
+Quake mode runs a single console across profiles. Launch options such as `--profile` and
+`--quake-shortcut` apply when starting that console. Regular eterm windows can run alongside
+it. The terminal, tabs, and running programs stay alive while the console is hidden.
+
+Where the desktop supports built-in global shortcuts, **Mod+Shift+F11** toggles the console by
+default. Mod is Command on macOS and Ctrl on Linux, BSD, and Windows. Saved shortcuts carry forward. Set `--quake-shortcut=alt+f1` to override the primary
+shortcut for one launch. Both the primary and the optional secondary shortcut toggle the same
+console. If neither shortcut works, eterm shows the console and reports the problem.
+
+eterm always links the static Global Shortcuts module. Linux and BSD builds enable its X11 and
+Wayland backends when `pkg-config` finds the development packages for XCB and xkbcommon, or D-Bus,
+respectively. macOS registers shortcuts on the main application event loop through Carbon.
+`Meta` is Command and `Alt` is Option in shortcut settings. macOS can reserve function keys
+for hardware controls, so a letter shortcut such as `Meta+Ctrl+Shift+J` is useful for testing.
+
+Both modes share the selected profile's `config.cfg`, keybindings, and color schemes. Use `--profile`
+or `ETERM_CONFIG_PATH` to select a profile. Quake mode keeps its own tab bar and session restore
+preferences in `[quake]`. Its `state.cfg` and `session.json` are saved in the profile's `quake`
+subdirectory.
+
+These are the Quake defaults in `config.cfg`.
+
+```ini
+[quake]
+shortcut = mod+shift+f11
+secondary_shortcut =
+width_percent = 100
+height_percent = 90
+horizontal_alignment = center
+animation_ms = 160
+launch_hidden = 1
+hide_on_focus_loss = 0
+tab_position = bottom
+always_show_tab_bar = 1
+show_tab_bar_when_split = 1
+restore_last_session = 1
+```
+
+In a Quake window, use **Settings → Window → Quake Mode** to set width and height as percentages
+of the display's usable area, choose left, center, or right alignment, and set slide duration in
+milliseconds. Set the duration to `0` for an instant toggle. Turn off **Launch Hidden** to show the
+window on startup. Turn on **Hide on Focus Loss** to hide the window when you switch away. Set
+the built-in shortcuts in **Settings → General → Global Shortcuts** when available. Clear the
+secondary field to disable it. Changes apply to the running window. **Launch Hidden** controls the
+next launch. On Wayland, eterm uses the desktop's shortcut settings to change existing assignments
+when supported. Adding or removing the secondary shortcut can ask for desktop approval.
+`--width`, `--height`, and `--quake-shortcut` set initial values for one launch.
+
+On desktops that expose global pointer coordinates, Quake opens on the display under the pointer.
+On Wayland, the compositor controls top-level window placement and focus. eterm shows the window
+immediately at the compositor's chosen position. A launcher toggle can leave keyboard focus with
+the previous application, in which case another toggle raises the console again.
+The portal may ask the user to grant or change the shortcut. For an unpackaged host build, install
+the supplied `eterm.desktop` in an XDG applications directory and make `eterm` available on `PATH`
+so the portal can identify it as `eterm`.
+
+### Haiku
+
+In **Deskbar → Preferences → Shortcuts**, add a binding for the full path to eterm followed by
+`--quake`. For **Ctrl+Shift+F11**, set **Shift** and **Control** to **Either**, select **F11** in
+the **Key** column, and click **Save & apply** after entering the command. Haiku uses **Alt+F1**
+for workspace switching. The shortcut starts Quake mode on the first press and toggles the
+existing console on subsequent presses. If you use a launcher executable, have it start eterm
+as a separate process so SDL can register eterm with the desktop.
+
+## Shell behavior
+
 eterm and ecode expose these options under **Settings → Terminal → Behavior**. They are enabled
 by default and saved in the `[terminal]` section of each application's `config.cfg`:
 

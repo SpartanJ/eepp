@@ -1,7 +1,7 @@
 #ifndef ETERM_PROGRAMSTATUS_HPP
 #define ETERM_PROGRAMSTATUS_HPP
 
-#include <eepp/config.hpp>
+#include <eterm/config.hpp>
 
 #include <memory>
 #include <optional>
@@ -90,7 +90,7 @@ struct ProgramStatusSnapshot {
  * only costs the snapshot that every PTY read used to publish. Its state survives reads, so a
  * sequence fragmented across them is still recognized.
  */
-class ProgramStatusScanner {
+class EE_ETERM_API ProgramStatusScanner {
   public:
 	/** @param parserAtGround The parser holds no partial sequence or buffered bytes. */
 	bool isMetadataOnly( const char* data, size_t size, bool parserAtGround ) {
@@ -117,7 +117,7 @@ class ProgramStatusScanner {
  * separate stores, and neither protocol ever writes into the other's. Owned by the worker-side
  * emulator; the UI only receives snapshots. Keeps no clock: the owner decides when OSC 9;4 expired.
  */
-class ProgramStatusTracker {
+class EE_ETERM_API ProgramStatusTracker {
   public:
 	/** The limit includes the ESC ] introducer and the terminator. Both terminators get the room
 	 * ST needs, so a BEL-terminated report can be one byte short of the protocol's limit, which
