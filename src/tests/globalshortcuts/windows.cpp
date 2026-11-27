@@ -199,6 +199,11 @@ void testOffscreen() {
 
 } // namespace
 
+// Keep the native console entry point when config.hpp renames main to SDL_main under MSVC.
+#ifdef main
+#undef main
+#endif
+
 int main( int argc, char** argv ) {
 	try {
 		const std::string_view mode = argc > 1 ? argv[1] : "";
