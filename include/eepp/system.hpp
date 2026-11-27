@@ -30,6 +30,7 @@
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/iostreamzip.hpp>
 #include <eepp/system/ipc.hpp>
+#include <eepp/system/locale.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/logfilefamily.hpp>
@@ -44,6 +45,7 @@
 #include <eepp/system/pak.hpp>
 #include <eepp/system/parsermatcher.hpp>
 #include <eepp/system/patternmatcher.hpp>
+#include <eepp/system/pluralrules.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/system/rc4.hpp>
 #include <eepp/system/regex.hpp>

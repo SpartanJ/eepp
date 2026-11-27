@@ -251,6 +251,7 @@
 ../../include/eepp/system/iostreampak.hpp
 ../../include/eepp/system/iostreamstring.hpp
 ../../include/eepp/system/iostreamzip.hpp
+../../include/eepp/system/locale.hpp
 ../../include/eepp/system/lock.hpp
 ../../include/eepp/system/log.hpp
 ../../include/eepp/system/luapattern.hpp
@@ -259,6 +260,7 @@
 ../../include/eepp/system/pack.hpp
 ../../include/eepp/system/packmanager.hpp
 ../../include/eepp/system/pak.hpp
+../../include/eepp/system/pluralrules.hpp
 ../../include/eepp/system/process.hpp
 ../../include/eepp/system/rc4.hpp
 ../../include/eepp/system/resourceloader.hpp
@@ -761,6 +763,10 @@
 ../../src/eepp/system/iostreampak.cpp
 ../../src/eepp/system/iostreamstring.cpp
 ../../src/eepp/system/iostreamzip.cpp
+../../src/eepp/system/locale.cpp
+../../src/eepp/system/localedata.generated.cpp
+../../src/eepp/system/localedata.hpp
+../../src/eepp/system/localeinternal.hpp
 ../../src/eepp/system/lock.cpp
 ../../src/eepp/system/log.cpp
 ../../src/eepp/system/lua-str.cpp
@@ -793,6 +799,7 @@
 ../../src/eepp/system/platform/win/threadimpl.hpp
 ../../src/eepp/system/platform/win/threadlocalimpl.cpp
 ../../src/eepp/system/platform/win/threadlocalimpl.hpp
+../../src/eepp/system/pluralrules.cpp
 ../../src/eepp/system/process.cpp
 ../../src/eepp/system/rc4.cpp
 ../../src/eepp/system/resourceloader.cpp

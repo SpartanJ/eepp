@@ -25,6 +25,7 @@
 #include <cstring>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/locale.hpp>
 #include <eepp/system/logfilefamily.hpp>
 #include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
 #include <eepp/ui/iconmanager.hpp>
@@ -5187,11 +5188,16 @@ void App::init( InitParameters& params, LogFileFamily& logFileFamily ) {
 			params.language = mConfig.ui.language;
 		if ( !params.language.empty() )
 			mUISceneNode->getTranslator().setCurrentLanguage( params.language );
-		std::string currentLanguage( mUISceneNode->getTranslator().getCurrentLanguage() );
+		auto& translator = mUISceneNode->getTranslator();
 		mi18nPath = mResPath + "i18n" + FileSystem::getOSSlash();
-		std::string langPath( mi18nPath + currentLanguage + ".xml" );
-		if ( currentLanguage != "en" && FileSystem::fileExists( langPath ) )
-			mUISceneNode->getTranslator().loadFromFile( langPath );
+		for ( LocaleId locale( translator.getCurrentLanguage() ); locale.isValid();
+			  locale = locale.fallback() ) {
+			if ( locale.getTag() == "en" )
+				break;
+			const auto langPath = mi18nPath + std::string( locale.getTag() ) + ".xml";
+			if ( FileSystem::fileExists( langPath ) )
+				translator.loadFromFile( langPath );
+		}
 
 		if ( !params.colorScheme.empty() ) {
 			mUIColorScheme =

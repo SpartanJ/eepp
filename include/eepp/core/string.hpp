@@ -577,6 +577,12 @@ class EE_API String {
 	static std::string toString( const float& i );
 	static std::string toString( const double& i );
 
+	/** The shortest decimal text that parses back to the same double, independent of the
+	 * global locale. Like std::to_chars' general format, very large and very small magnitudes
+	 * use exponent notation, such as 1e+21 and 1e-07. Non-finite values give inf, -inf or nan.
+	 */
+	static std::string toShortestString( const double& value );
+
 	static std::string fromFloat( const Float& value, const std::string& append = "",
 								  const std::string& prepend = "", size_t digitsAfterComma = 2 );
 

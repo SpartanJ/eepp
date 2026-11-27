@@ -23,12 +23,28 @@
 
 #include <cpp-unicodelib/unicodelib.h>
 
-#if ( __GNUC__ >= 11 || ( __clang__ && __clang_major__ >= 12 ) ) && \
-	EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-#define STD_SUPPORTS_FIXED_TO_CHARS
+// Floating-point to_chars: MSVC's STL, libstdc++ 11 and libc++ 14. Apple ships the libc++
+// implementation in the OS library from macOS 13.3 and iOS 16.3.
+#if defined( _MSC_VER ) || ( defined( _GLIBCXX_RELEASE ) && _GLIBCXX_RELEASE >= 11 )
+#define STD_SUPPORTS_FLOAT_TO_CHARS
+#elif defined( _LIBCPP_VERSION ) && _LIBCPP_VERSION >= 14000
+#if defined( __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ )
+#if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 130300
+#define STD_SUPPORTS_FLOAT_TO_CHARS
+#endif
+#elif defined( __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ )
+#if __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ >= 160300
+#define STD_SUPPORTS_FLOAT_TO_CHARS
+#endif
+#elif !defined( __APPLE__ )
+#define STD_SUPPORTS_FLOAT_TO_CHARS
+#endif
 #endif
 
-#ifndef STD_SUPPORTS_FIXED_TO_CHARS
+#ifndef STD_SUPPORTS_FLOAT_TO_CHARS
+#include <cmath>
+#include <iomanip>
+#include <locale>
 #include <sstream>
 #endif
 
@@ -129,13 +145,34 @@ template <typename T> static bool _fromString( T& t, std::string_view s, int bas
 template <class T> static std::string _toString( const T& value, size_t digitsAfterComma = 2 ) {
 	char buffer[32];
 	if constexpr ( (std::is_same_v<T, float> || std::is_same_v<T, double>)) {
-#ifdef STD_SUPPORTS_FIXED_TO_CHARS
+		// A finite T has at most digits - min_exponent significant fractional digits (1074 for a
+		// double, 149 for a float); later digits are zeros. The callers that pass a precision
+		// strip trailing zeros, so clamping changes no output. It keeps the precision in
+		// to_chars' int range and bounds the fallback buffer below.
+		constexpr std::size_t maxFractionDigits =
+			std::numeric_limits<T>::digits - std::numeric_limits<T>::min_exponent;
+		const int precision = static_cast<int>( std::min( digitsAfterComma, maxFractionDigits ) );
+#ifdef STD_SUPPORTS_FLOAT_TO_CHARS
 		auto [ptr, ec] = std::to_chars( buffer, buffer + sizeof( buffer ), value,
-										std::chars_format::fixed, digitsAfterComma );
-		return ec == std::errc() ? std::string( buffer, ptr ) : std::string{};
+										std::chars_format::fixed, precision );
+		if ( ec == std::errc() )
+			return std::string( buffer, ptr );
+		if ( ec != std::errc::value_too_large )
+			return {};
+		// Rare: fixed notation needs up to max_exponent10 + 1 integer digits (309 for a double),
+		// plus the sign, the dot and the requested decimals. Format straight into the result.
+		std::string text( std::numeric_limits<T>::max_exponent10 + 3 + precision, '\0' );
+		const auto wide = std::to_chars( text.data(), text.data() + text.size(), value,
+										 std::chars_format::fixed, precision );
+		if ( wide.ec != std::errc() )
+			return {};
+		text.resize( wide.ptr - text.data() );
+		return text;
 #else
+		// Same output as to_chars: classic locale and exactly digitsAfterComma decimals.
 		std::ostringstream ss;
-		ss << std::fixed << value;
+		ss.imbue( std::locale::classic() );
+		ss << std::fixed << std::setprecision( precision ) << value;
 		return ss.str();
 #endif
 	} else {
@@ -302,6 +339,28 @@ std::string String::toString( const float& i ) {
 
 std::string String::toString( const double& i ) {
 	return _toString<>( i );
+}
+
+std::string String::toShortestString( const double& value ) {
+#ifdef STD_SUPPORTS_FLOAT_TO_CHARS
+	char buffer[32];
+	const auto result =
+		std::to_chars( buffer, buffer + sizeof( buffer ), value, std::chars_format::general );
+	return std::string( buffer, result.ptr );
+#else
+	std::ostringstream stream;
+	stream.imbue( std::locale::classic() );
+	std::string text;
+	for ( int precision = 1; precision <= std::numeric_limits<double>::max_digits10; ++precision ) {
+		stream.str( {} );
+		stream << std::setprecision( precision ) << value;
+		text = stream.str();
+		double roundTrip;
+		if ( !std::isfinite( value ) || ( fromString( roundTrip, text ) && roundTrip == value ) )
+			break;
+	}
+	return text;
+#endif
 }
 
 std::string String::fromFloat( const Float& value, const std::string& append,

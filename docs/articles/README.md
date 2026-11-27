@@ -10,6 +10,7 @@ supported behavior; class headers and current source code remain the reference f
 | Look up a CSS property, selector, or value | [CSS specification](css_specification.md) | [CSS for application UI](ui_css_for_applications.md) when styling native widgets |
 | Render HTML or Markdown content | [HTML compatibility layer](ui_html_compatibility.md) | [CSS specification](css_specification.md) for supported properties and values |
 | Preview and edit native XML/CSS layouts | [UI editor](ui_editor.md) | [Application UI authoring](ui_authoring.md), [Runtime UI inspector](ui_inspector.md) |
+| Translate application text and format localized numbers | [Localization with Locale and Translator](localization.md) | [Date and time controls](ui_date_time_pickers.md), [UI direction and RTL](ui_rtl.md) |
 | Support right-to-left languages or logical `start`/`end` layouts | [UI direction and RTL](ui_rtl.md) | [CSS specification](css_specification.md#direction) for `direction` and flow-relative properties |
 | Inspect or automate a running UI | [Runtime UI inspector](ui_inspector.md) | [Application UI authoring](ui_authoring.md) for a layout debugging workflow |
 | Look up environment variables, defaults, or runtime overrides | [Environment variables](environment_variables.md) | [Runtime UI inspector](ui_inspector.md) for automation, [UI introduction](ui_introduction.md) for rendering preferences |

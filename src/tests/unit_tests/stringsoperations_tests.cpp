@@ -8,6 +8,7 @@
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
 #include <filesystem>
+#include <limits>
 #include <string_view>
 #include <vector>
 
@@ -833,4 +834,49 @@ UTEST( String, constantTimeEqualsBytes ) {
 	EXPECT_FALSE( String::constantTimeEquals( "token", "token-long" ) );
 	EXPECT_TRUE( String::constantTimeEquals( "a\0b"sv, "a\0b"sv ) );
 	EXPECT_FALSE( String::constantTimeEquals( "a\0b"sv, "a\0c"sv ) );
+}
+
+UTEST( String, fromDoubleFormatsValuesWiderThanTheStackBuffer ) {
+	EXPECT_TRUE( String::fromDouble( 1234.5678 ) == "1234.57" );
+	EXPECT_TRUE( String::fromDouble( 1e21, "", "", 17 ) == "1000000000000000000000" );
+	EXPECT_TRUE( String::fromDouble( 1e30 ) == "1000000000000000019884624838656" );
+	EXPECT_TRUE( String::fromDouble( -1e30 ) == "-1000000000000000019884624838656" );
+	const auto largest = String::fromDouble( std::numeric_limits<double>::max(), "", "", 40 );
+	EXPECT_EQ( 309u, largest.size() );
+	EXPECT_TRUE( largest.starts_with( "179769313486231570814527423731704356798" ) );
+	EXPECT_TRUE( String::toShortestString( std::numeric_limits<float>::max() ) ==
+				 "3.4028234663852886e+38" );
+	EXPECT_EQ( 39u, String::fromFloat( std::numeric_limits<float>::max() ).size() );
+}
+
+UTEST( String, fixedFloatingOutputMatchesOnEveryPlatform ) {
+	EXPECT_TRUE( String::fromDouble( 1.23456789 ) == "1.23" );
+	EXPECT_TRUE( String::fromDouble( 1.23456789, "", "", 4 ) == "1.2346" );
+	EXPECT_TRUE( String::fromDouble( 2.5, "", "", 0 ) == "2" );
+	EXPECT_TRUE( String::fromDouble( 0.125, "", "", 2 ) == "0.12" );
+	EXPECT_TRUE( String::fromDouble( -0.5, "px", "", 3 ) == "-0.5px" );
+	EXPECT_TRUE( String::fromFloat( 1.5f ) == "1.5" );
+	EXPECT_TRUE( String::toString( 2.5 ) == "2.50" );
+	EXPECT_TRUE( String::toString( 1.0f / 3.0f ) == "0.33" );
+}
+
+UTEST( String, fixedFloatingPrecisionIsBoundedBeforeConversion ) {
+	// 2^32 used to wrap to precision 0 in to_chars while sizing a 4 GiB fallback buffer. Where
+	// size_t cannot hold 2^32 (32-bit targets such as WebAssembly), its maximum is oversized too.
+	constexpr Uint64 twoTo32 = Uint64( 1 ) << 32;
+	constexpr size_t wrapping = twoTo32 <= std::numeric_limits<size_t>::max()
+									? static_cast<size_t>( twoTo32 )
+									: std::numeric_limits<size_t>::max();
+	EXPECT_TRUE( String::fromDouble( 0.1, "", "", wrapping ) ==
+				 "0.1000000000000000055511151231257827021181583404541015625" );
+	EXPECT_TRUE( String::fromDouble( 1e30, "", "", wrapping ) ==
+				 "1000000000000000019884624838656" );
+	const auto smallest = String::fromDouble( std::numeric_limits<double>::denorm_min(), "", "",
+											  std::numeric_limits<size_t>::max() );
+	EXPECT_EQ( 2u + 1074u, smallest.size() );
+	EXPECT_TRUE( smallest.starts_with( "0.000" ) );
+	EXPECT_TRUE( smallest.ends_with( "625" ) );
+	EXPECT_EQ(
+		2u + 149u,
+		String::fromFloat( std::numeric_limits<float>::denorm_min(), "", "", wrapping ).size() );
 }
